@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <load src="../html/header.html" title="JJY シミュレータ" description="JJYの信号をシミュレートします。"
+    url="https://nanase.cc/tools/jjy/simulator" />
+</head>
+
+<body>
+  <div id="app"></div>
+  <script type="module">
+    import { createAndMount } from '@/appBase';
+    import SimulatorApp from './SimulatorApp.vue';
+
+    createAndMount('#app', SimulatorApp);
+  </script>
+</body>
+
+</html>

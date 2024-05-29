@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <load src="../html/header.html" title="タイマIC 555 計算機" description="タイマIC 555 の各種数値を計算するツールです。"
+    url="https://nanase.cc/tools/electric/timer555" />
+</head>
+
+<body>
+  <div id="app"></div>
+  <script type="module">
+    import { createAndMount } from '@/appBase';
+    import Timer555App from './Timer555App.vue';
+
+    createAndMount('#app', Timer555App);
+  </script>
+</body>
+
+</html>
