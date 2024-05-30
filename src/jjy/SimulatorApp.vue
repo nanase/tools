@@ -323,6 +323,11 @@ async function clickSoundPlaying() {
   width: 30px;
   height: 80px;
   border: solid 2px #121212;
+  transition: transform 0.2s;
+
+  &:hover {
+    transform: scale(1.15);
+  }
 }
 
 .timecode-legend {
