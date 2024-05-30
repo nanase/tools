@@ -362,5 +362,6 @@ async function clickSoundPlaying() {
   border: solid 2px #f4f5fa;
   border-top-width: 5px;
   border-bottom-width: 5px;
+  outline: #121212 2px solid;
 }
 </style>
