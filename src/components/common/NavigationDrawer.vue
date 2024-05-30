@@ -18,7 +18,7 @@ const opened = defineModel<boolean>('opened');
         href="/tools/electric/timer555"
         role="menuitem"
       >
-        <template v-slot:prepend>
+        <template #prepend>
           <v-icon icon="mdi-chip" size="large" />
         </template>
       </v-list-item>
@@ -32,7 +32,7 @@ const opened = defineModel<boolean>('opened');
         href="/tools/jjy/simulator"
         role="menuitem"
       >
-        <template v-slot:prepend>
+        <template #prepend>
           <v-icon icon="mdi-alarm" size="large" />
         </template>
       </v-list-item>

@@ -244,8 +244,8 @@ async function clickSoundPlaying() {
           direction="horizontal"
           density="compact"
         >
-          <v-radio label="挿入" :value="true"></v-radio>
-          <v-radio label="削除" :value="false"></v-radio>
+          <v-radio label="挿入" :value="true" />
+          <v-radio label="削除" :value="false" />
         </v-radio-group>
       </v-col>
       <v-col cols="6" sm="4" lg="3">
@@ -275,7 +275,7 @@ async function clickSoundPlaying() {
         <div>
           <div class="text-caption">音の周波数（Hz）</div>
           <v-slider v-model="soundFreq" min="20" max="24000" step="1" thumb-label>
-            <template v-slot:append>
+            <template #append>
               <v-text-field
                 v-model="soundFreq"
                 density="compact"
@@ -294,13 +294,13 @@ async function clickSoundPlaying() {
         </div>
         <div>
           <div class="text-caption">ボリューム</div>
-          <v-slider v-model="soundVolume" min="0" max="1" thumb-label></v-slider>
+          <v-slider v-model="soundVolume" min="0" max="1" thumb-label />
         </div>
       </v-col>
     </v-row>
 
-    <template v-slot:footer>
-      <v-divider></v-divider>
+    <template #footer>
+      <v-divider />
       <v-footer>
         <v-container>
           <h4>参考文献</h4>

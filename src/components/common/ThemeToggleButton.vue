@@ -103,7 +103,7 @@ onBeforeUnmount(() => {
 
 <template>
   <v-tooltip text="テーマを切り替え" aria-label="テーマを切り替え">
-    <template v-slot:activator="{ props }">
+    <template #activator="{ props }">
       <v-btn
         v-bind="props"
         :icon="theme.global.current.value.dark ? 'mdi-weather-night' : 'mdi-white-balance-sunny'"
