@@ -33,6 +33,7 @@ const jjyOptions = ref<EncodeOptions>({
   stopDuration: 3,
 });
 const soundPlaying = ref<boolean>();
+const soundSendMode = ref<boolean>();
 const soundFreq = ref<number>(440);
 const soundVolume = ref<number>(0.5);
 let synth: Tone.Synth<Tone.SynthOptions> | null = null;
@@ -64,12 +65,16 @@ watch(
     let position = Tone.now();
 
     function tone(duration: number, high: boolean) {
-      synth?.triggerAttackRelease(
-        Number.isFinite(Number(soundFreq.value)) ? Math.min(Math.max(Number(soundFreq.value), 20), 24000) : 440,
-        duration,
-        position,
-        soundVolume.value * (high ? 1.0 : 0.1),
-      );
+      const freq = soundSendMode.value
+        ? 13333.333
+        : Number.isFinite(Number(soundFreq.value))
+          ? Math.min(Math.max(Number(soundFreq.value), 20), 24000)
+          : 440;
+
+      if (synth != null) {
+        synth.oscillator.type = soundSendMode.value ? 'square' : 'sine';
+        synth.triggerAttackRelease(freq, duration, position, soundVolume.value * (high ? 1.0 : 0.1));
+      }
       position += duration;
     }
 
@@ -162,7 +167,6 @@ async function clickSoundPlaying() {
   if (!soundPlaying.value && synth == null) {
     await Tone.start();
     synth = new Tone.Synth({
-      oscillator: { type: 'sine' },
       envelope: { attack: 0.05, decay: 0.05, sustain: 0.8, release: 0.05 },
     }).toDestination();
   } else {
@@ -269,12 +273,55 @@ async function clickSoundPlaying() {
     </v-row>
     <v-row>
       <v-col cols="6" sm="4" lg="3">
-        <v-checkbox v-model="soundPlaying" label="音の再生" hide-details @click="clickSoundPlaying" />
+        <v-checkbox v-model="soundPlaying" label="音の再生" hide-details @click="clickSoundPlaying" density="compact" />
+        <v-checkbox v-model="soundSendMode" label="時刻合わせモード" hide-details density="compact" />
+        <v-dialog max-width="640">
+          <template #activator="{ props }">
+            <v-btn v-bind="props" prepend-icon="mdi-help" variant="outlined">時刻合わせのやりかた</v-btn>
+          </template>
+          <template #default="{ isActive }">
+            <v-card title="時刻合わせのやりかた">
+              <v-card-text>
+                <p>
+                  お使いのデバイスにスピーカーまたはイヤホンを接続して「音の再生」と「時刻合わせモード」を有効にしてください。スピーカーまたはイヤホンの配線部分に電波時計を近づけると受信が始まります。
+                </p>
+                <p>
+                  サウンドデバイスによってはローパスフィルターによって 40kHz
+                  の信号が生成できず時刻合わせができない場合があります。時刻合わせによって生じた問題について責任は負いかねます。ご了承ください。
+                </p>
+              </v-card-text>
+              <v-container class="py-0">
+                <v-row no-gutters>
+                  <v-col cols="6">
+                    <v-checkbox
+                      v-model="soundPlaying"
+                      label="音の再生"
+                      hide-details
+                      @click="clickSoundPlaying"
+                      density="compact"
+                    />
+                  </v-col>
+                  <v-col cols="6">
+                    <v-checkbox v-model="soundSendMode" label="時刻合わせモード" hide-details density="compact" />
+                  </v-col>
+                  <v-col cols="12">
+                    <div class="text-caption">ボリューム</div>
+                    <v-slider v-model="soundVolume" min="0" max="1" thumb-label />
+                  </v-col>
+                </v-row>
+              </v-container>
+              <v-card-actions>
+                <v-spacer />
+                <v-btn text="閉じる" @click="isActive.value = false" />
+              </v-card-actions>
+            </v-card>
+          </template>
+        </v-dialog>
       </v-col>
       <v-col cols="6" sm="4" lg="3">
         <div>
           <div class="text-caption">音の周波数（Hz）</div>
-          <v-slider v-model="soundFreq" min="20" max="24000" step="1" thumb-label>
+          <v-slider v-model="soundFreq" min="20" max="24000" step="1" thumb-label :disabled="soundSendMode">
             <template #append>
               <v-text-field
                 v-model="soundFreq"
