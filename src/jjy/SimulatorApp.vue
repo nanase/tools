@@ -115,7 +115,7 @@ watch(
           playingCallsign = true;
 
           for (let i = 0; i < 2; i++) {
-            tone(0.2, false);
+            tone(0.3, false);
 
             // J .---
             short();
@@ -139,7 +139,7 @@ watch(
             tone(0.05, false);
           }
 
-          tone(0.8 + 0.1, false);
+          tone(0.6 + 0.1, false);
         }
 
         break;
