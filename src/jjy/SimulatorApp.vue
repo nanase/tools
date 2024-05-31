@@ -2,22 +2,12 @@
 import { ref, watch, computed } from 'vue';
 import { definePeriodicCall } from '@/lib/vue';
 import dayjs, { Dayjs } from '@/lib/dayjs';
-import {
-  encode,
-  StopAfterItems,
-  StopDurationItems,
-  CallSignItems,
-  TimeCodeName,
-  TimeCodeSignalDescription,
-  getTimeCodeDescription,
-  callsignEnabled,
-  type TimeCode,
-  type EncodeOptions,
-} from '@/lib/jjy';
+import { encode, StopAfterItems, StopDurationItems, CallSignItems, type TimeCode, type EncodeOptions } from '@/lib/jjy';
 import * as Tone from 'tone';
 
 import AppBase from '@/components/common/AppBase.vue';
 import AnimatedClock from '@/components/common/AnimatedClock.vue';
+import TimeBars from '@/components/jjy/TimeBars.vue';
 
 const time = ref<Dayjs>(dayjs());
 const timeOnSeconds = ref<Dayjs>(dayjs().startOf('second'));
@@ -190,35 +180,7 @@ async function clickSoundPlaying() {
     </v-row>
     <v-row no-gutters>
       <v-col cols="12" v-for="n in 2" :key="n" class="d-flex justify-center">
-        <v-sheet
-          v-for="(timebar, index) in timeBars.slice((n - 1) * 30, (n - 1) * 30 + 30)"
-          :key="index"
-          class="timecode d-inline-flex justify-center align-center"
-          :class="{
-            now: timeOnSeconds.second() === (n - 1) * 30 + index,
-            'marker-position': timebar === 'P',
-            'marker-zero': timebar === '0',
-            'marker-one': timebar === '1',
-            'marker-sign': timebar === 'S',
-          }"
-        >
-          <v-tooltip activator="parent" location="bottom" open-delay="100">
-            <div class="timecode-tooltip-title">
-              <div
-                class="timecode-legend"
-                :class="{
-                  'marker-position': timebar === 'P',
-                  'marker-zero': timebar === '0',
-                  'marker-one': timebar === '1',
-                  'marker-sign': timebar === 'S',
-                }"
-              ></div>
-              <span>{{ (n - 1) * 30 + index }}: {{ TimeCodeName[timebar] }}</span>
-            </div>
-            <div>{{ getTimeCodeDescription((n - 1) * 30 + index, callsignEnabled(timeOnSeconds, jjyOptions)) }}</div>
-            <div>{{ TimeCodeSignalDescription[timebar] }}</div>
-          </v-tooltip>
-        </v-sheet>
+        <TimeBars :time-codes="timeBars" :time="timeOnSeconds" :jjyOptions :length="30" :offset="(n - 1) * 30" />
       </v-col>
     </v-row>
     <v-row>
@@ -364,56 +326,3 @@ async function clickSoundPlaying() {
     </template>
   </AppBase>
 </template>
-
-<style lang="scss" scoped>
-.timecode {
-  width: 30px;
-  height: 80px;
-  border: solid 2px #121212;
-  transition: transform 0.2s;
-
-  &:hover {
-    transform: scale(1.15);
-  }
-}
-
-.timecode-legend {
-  width: 15px;
-  height: 15px;
-  border: solid 1px #121212;
-  display: inline-block;
-  margin-right: 5px;
-}
-
-.timecode-tooltip-title {
-  font-size: 125%;
-  font-weight: bold;
-}
-
-.marker-position {
-  background-size: auto auto;
-  background-color: #f44336;
-  background-image: repeating-linear-gradient(60deg, transparent, transparent 10px, #ffebee 10px, #ffebee 20px);
-}
-
-.marker-zero {
-  background-color: #2196f3;
-}
-
-.marker-one {
-  background-color: #ffd54f;
-}
-
-.marker-sign {
-  background-size: auto auto;
-  background-color: #009688;
-  background-image: repeating-linear-gradient(0deg, transparent, transparent 10px, #e0f2f1 10px, #e0f2f1 20px);
-}
-
-.now {
-  border: solid 2px #f4f5fa;
-  border-top-width: 5px;
-  border-bottom-width: 5px;
-  outline: #121212 2px solid;
-}
-</style>
