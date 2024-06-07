@@ -37,9 +37,12 @@ defineExpose({
         <v-app-bar-nav-icon variant="text" @click.stop="drawer = !drawer" aria-label="ナビゲーションを表示" />
         <v-toolbar-title>{{ toolbarTitle }}</v-toolbar-title>
         <template #append>
+          <slot name="toolbar"></slot>
           <ThemeToggleButton />
         </template>
       </v-app-bar>
+
+      <slot name="header"></slot>
 
       <v-container class="bg-containerBackground">
         <slot></slot>
