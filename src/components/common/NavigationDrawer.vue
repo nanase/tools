@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { defineModel } from 'vue';
-
 const { pageId } = defineProps<{
   pageId: string;
 }>();
