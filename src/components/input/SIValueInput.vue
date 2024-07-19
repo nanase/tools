@@ -3,7 +3,7 @@ import { ref, watch, onMounted } from 'vue';
 import { SIValue, type SIPrefixSymbol } from '../../lib/siPrefix';
 import { VTextField } from 'vuetify/components';
 
-const { label, variant, density, placeholder, unit, prefixSymbols, readonly } = defineProps<{
+const { label, variant, density, placeholder, unit, prefixSymbols, readonly, fractionDigits } = defineProps<{
   label?: string;
   variant?: 'outlined' | 'plain' | 'filled' | 'underlined' | 'solo' | 'solo-inverted' | 'solo-filled' | undefined;
   density?: null | 'default' | 'comfortable' | 'compact';
@@ -11,6 +11,7 @@ const { label, variant, density, placeholder, unit, prefixSymbols, readonly } = 
   unit?: string;
   prefixSymbols?: readonly SIPrefixSymbol[];
   readonly?: boolean;
+  fractionDigits?: number;
 }>();
 const actualValue = defineModel<number>('value');
 const fraction = ref<string>();
