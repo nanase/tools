@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, onMounted } from 'vue';
-import { SIValue, type SIPrefixSymbol } from '../../lib/siPrefix';
+import { SIValue, Rules, type SIPrefixSymbol } from '../../lib/siPrefix';
 import { VTextField } from 'vuetify/components';
 
 const { label, variant, density, placeholder, unit, prefixSymbols, readonly, fractionDigits } = defineProps<{
@@ -12,20 +12,11 @@ const { label, variant, density, placeholder, unit, prefixSymbols, readonly, fra
   prefixSymbols?: readonly SIPrefixSymbol[];
   readonly?: boolean;
   fractionDigits?: number;
+  rule?: ((value: any) => boolean | string)[];
 }>();
 const actualValue = defineModel<number>('value');
 const fraction = ref<string>();
 const field = ref<VTextField>();
-
-const rules = {
-  required: (value: string) => !!value || '値を入力してください',
-  value: (value: string) => Number.isFinite(SIValue.parse(value).fraction) || '不正な値です',
-  notZero: (value: string) => Number(value) !== 0 || '値を 0 にはできません',
-  notNegative: (value: string) => {
-    const siValue = SIValue.parse(value);
-    return (Number.isFinite(siValue.fraction) && siValue.fraction >= 0) || '負値にはできません';
-  },
-};
 
 watch(
   () => actualValue.value,
@@ -63,7 +54,7 @@ function fractionValueUpdated(value: string) {
         :variant="variant"
         :density="density"
         :placeholder="placeholder"
-        :rules="readonly ? [] : [rules.required, rules.value, rules.notZero, rules.notNegative]"
+        :rules="readonly ? [] : rule ? rule : [Rules.required, Rules.value, Rules.notZero, Rules.notNegative]"
         :readonly="readonly"
         :prefix="unit"
         class="text-align-right"
