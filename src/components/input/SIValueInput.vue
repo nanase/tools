@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import { SIValue, type SIPrefixSymbol } from '../../lib/siPrefix';
+import { VTextField } from 'vuetify/components';
 
 const { label, variant, density, placeholder, unit, prefixSymbols, readonly } = defineProps<{
   label?: string;
@@ -13,6 +14,7 @@ const { label, variant, density, placeholder, unit, prefixSymbols, readonly } = 
 }>();
 const actualValue = defineModel<number>('value');
 const fraction = ref<string>();
+const field = ref<VTextField>();
 
 const rules = {
   required: (value: string) => !!value || '値を入力してください',
@@ -27,12 +29,20 @@ const rules = {
 watch(
   () => actualValue.value,
   () => {
-    if (typeof actualValue.value !== 'undefined' && Number.isFinite(actualValue.value) && readonly) {
-      const siValue = SIValue.fit(actualValue.value, prefixSymbols ?? ['']);
-      fraction.value = `${siValue.fraction.toFixed(3)}${siValue.prefix.symbol}`;
-    }
+    updateFractionValue();
   },
 );
+
+onMounted(() => {
+  updateFractionValue();
+});
+
+function updateFractionValue() {
+  if (typeof actualValue.value !== 'undefined' && Number.isFinite(actualValue.value) && !field.value?.focused) {
+    const siValue = SIValue.fit(actualValue.value, prefixSymbols ?? ['']);
+    fraction.value = `${siValue.fraction.toFixed(fractionDigits ?? 3)}${siValue.prefix.symbol}`;
+  }
+}
 
 function fractionValueUpdated(value: string) {
   const decodedValue = SIValue.parse(value);
@@ -59,6 +69,7 @@ function fractionValueUpdated(value: string) {
         reverse
         inputmode="numeric"
         @update:model-value="fractionValueUpdated"
+        ref="field"
       >
       </v-text-field>
     </v-col>
