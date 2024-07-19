@@ -2,7 +2,7 @@
 import { ref, watch } from 'vue';
 
 import AppBase from '../components/common/AppBase.vue';
-import ValueInput from '../components/input/ValueInput.vue';
+import SIValueInput from '../components/input/SIValueInput.vue';
 import MathJax from '../components/common/MathJax.vue';
 
 const r1Value = ref<number>();
@@ -67,7 +67,7 @@ watch(
       <v-col cols="12" sm="8">
         <v-row>
           <v-col cols="4">
-            <ValueInput
+            <SIValueInput
               v-model:value="r1Value"
               label="R1の抵抗値"
               variant="underlined"
@@ -78,7 +78,7 @@ watch(
             />
           </v-col>
           <v-col cols="4">
-            <ValueInput
+            <SIValueInput
               v-model:value="r2Value"
               label="R2の抵抗値"
               variant="underlined"
@@ -89,7 +89,7 @@ watch(
             />
           </v-col>
           <v-col cols="4">
-            <ValueInput
+            <SIValueInput
               v-model:value="c1Value"
               label="C1の静電容量"
               variant="underlined"
@@ -100,7 +100,7 @@ watch(
             />
           </v-col>
           <v-col cols="4">
-            <ValueInput
+            <SIValueInput
               v-model:value="vccValue"
               label="電源電圧"
               variant="underlined"
@@ -113,7 +113,7 @@ watch(
 
         <v-row>
           <v-col cols="3">
-            <ValueInput
+            <SIValueInput
               v-model:value="freqValue"
               label="周波数"
               variant="underlined"
@@ -124,7 +124,7 @@ watch(
             />
           </v-col>
           <v-col cols="3">
-            <ValueInput
+            <SIValueInput
               v-model:value="hTimeValue"
               label="Hレベル時間"
               variant="underlined"
@@ -135,7 +135,7 @@ watch(
             />
           </v-col>
           <v-col cols="3">
-            <ValueInput
+            <SIValueInput
               v-model:value="lTimeValue"
               label="Lレベル時間"
               variant="underlined"
@@ -146,7 +146,7 @@ watch(
             />
           </v-col>
           <v-col cols="3">
-            <ValueInput
+            <SIValueInput
               v-model:value="dutyRatioValue"
               label="デューティ比"
               variant="underlined"
@@ -156,7 +156,7 @@ watch(
             />
           </v-col>
           <v-col cols="3">
-            <ValueInput
+            <SIValueInput
               v-model:value="r1MaxCurrentValue"
               label="R1の最大電流"
               variant="underlined"
@@ -167,7 +167,7 @@ watch(
             />
           </v-col>
           <v-col cols="3">
-            <ValueInput
+            <SIValueInput
               v-model:value="r1MaxPowerValue"
               label="R1の最大損失"
               variant="underlined"
