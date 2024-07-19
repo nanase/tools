@@ -12,5 +12,18 @@
 <link rel="icon" sizes="16x16" href="/favicon.ico" />
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<script>
+  (function setBackgroundColorPreliminary() {
+    const vuetifyColorSchemeName = 'vuetify-color-scheme';
+    const darkBackground = '#121212';
+    const lightBackground = '#ffffff';
+
+    function getColorScheme() {
+      return localStorage.getItem(vuetifyColorSchemeName) ?? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    }
+
+    window.document.documentElement.style.backgroundColor = getColorScheme() === 'dark' ? darkBackground : lightBackground;
+  })();
+</script>
 <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 <title>{=$title}</title>
