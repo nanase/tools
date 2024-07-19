@@ -11,18 +11,18 @@ function applyColorScheme(scheme: PrefersColorScheme) {
     theme.global.name.value = '';
 
     document.querySelectorAll('.color-responsive').forEach((element) => {
-      element.classList.remove('.color-responsive-dark', '.color-responsive-light');
+      element.classList.remove('color-responsive-dark', 'color-responsive-light');
     });
   } else {
     theme.global.name.value = scheme;
 
     document.querySelectorAll('.color-responsive').forEach((element) => {
       if (scheme === 'light') {
-        element.classList.add('.color-responsive-light');
-        element.classList.remove('.color-responsive-dark');
+        element.classList.add('color-responsive-light');
+        element.classList.remove('color-responsive-dark');
       } else {
-        element.classList.add('.color-responsive-dark');
-        element.classList.remove('.color-responsive-light');
+        element.classList.add('color-responsive-dark');
+        element.classList.remove('color-responsive-light');
       }
     });
   }
