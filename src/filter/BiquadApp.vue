@@ -83,6 +83,7 @@ const bandwidth = ref<number>(1.0);
 const gain = ref<number>(0.0);
 const samplingFreq = ref<number>(48000.0);
 
+const impulseLength = ref<number>(256);
 const coefficients = computed<Coefficients>(() => {
   const parameters: BiquadFilterParameter = {
     q: q.value,
@@ -92,6 +93,41 @@ const coefficients = computed<Coefficients>(() => {
   return filterType.value.func(samplingFreq.value, cutoffFreq.value, parameters);
 });
 const normalizedCoefficients = computed<number[]>(() => coefficients.value.normalizeToFiveParameters());
+const impulseResponse = computed<Float64Array>(() =>
+  ImpulseResponse.getImpulseResponse(coefficients.value, impulseLength.value),
+);
+const transformedResponse = computed<{ real: Float64Array; imag: Float64Array }>(() => {
+  const real = new Float64Array(impulseResponse.value);
+  const imag = new Float64Array(impulseLength.value);
+  transform(real, imag);
+
+  return { real, imag };
+});
+const phaseResponse = computed<Float64Array>(
+  () =>
+    new Float64Array(
+      (function* () {
+        for (let i = 0; i < impulseLength.value / 2; i++) {
+          yield (Math.atan2(transformedResponse.value.imag[i], transformedResponse.value.real[i]) * 180.0) / Math.PI;
+        }
+      })(),
+    ),
+);
+const frequencyResponse = computed<Float64Array>(
+  () =>
+    new Float64Array(
+      (function* () {
+        for (let i = 0; i < impulseLength.value / 2; i++) {
+          yield Math.log10(
+            Math.sqrt(
+              transformedResponse.value.real[i] * transformedResponse.value.real[i] +
+                transformedResponse.value.imag[i] * transformedResponse.value.imag[i],
+            ),
+          ) * 20;
+        }
+      })(),
+    ),
+);
 
 function updateDiagram() {
   function setTextContent(document: Document | null | undefined, id: string, text: string) {
@@ -123,26 +159,16 @@ function updateGraph() {
     return;
   }
 
-  const real = ImpulseResponse.getImpulseResponse(coefficients.value, 1024);
-  const imag = Array(real.length).fill(0);
-  transform(real, imag);
-  const phaseResponse = Array(real.length / 2)
-    .fill(0)
-    .map((_, i) => (Math.atan2(imag[i], real[i]) * 180.0) / Math.PI);
-  const frequencyResponse = Array(real.length / 2)
-    .fill(0)
-    .map((_, i) => Math.log10(Math.sqrt(real[i] * real[i] + imag[i] * imag[i])) * 20);
-
   const datasets: ChartDataset<'line', number[]>[] = [
     {
       label: '周波数応答',
-      data: frequencyResponse,
+      data: [...frequencyResponse.value],
       pointStyle: false,
       yAxisID: 'y',
     },
     {
       label: '位相応答',
-      data: phaseResponse,
+      data: [...phaseResponse.value],
       pointStyle: false,
       yAxisID: 'y1',
     },
@@ -159,12 +185,10 @@ function updateImpulseGraph() {
     return;
   }
 
-  const impulse = ImpulseResponse.getImpulseResponse(coefficients.value, 1024);
-
   const datasets: ChartDataset<'bar', number[]>[] = [
     {
       label: 'インパルス応答',
-      data: impulse.slice(0, 128),
+      data: [...impulseResponse.value.slice(0, impulseLength.value / 8)],
       pointStyle: false,
       borderWidth: 0,
       backgroundColor: 'rgb(54, 162, 235)',
@@ -175,10 +199,10 @@ function updateImpulseGraph() {
   chartState.chart.update('none');
 }
 
+watch(() => normalizedCoefficients.value, updateDiagram);
 watch(
-  () => [filterType.value, cutoffFreq.value, q.value, bandwidth.value, gain.value, samplingFreq.value],
+  () => transformedResponse.value,
   () => {
-    updateDiagram();
     updateGraph();
     updateImpulseGraph();
   },
@@ -200,7 +224,7 @@ function initializeChart(canvas: HTMLCanvasElement): Chart {
     type: 'line',
     data: {
       datasets: [],
-      labels: Array(512)
+      labels: Array(impulseLength.value / 2)
         .fill(0)
         .map((_, i) => i),
     },
@@ -248,7 +272,7 @@ function initializeImpulseChart(canvas: HTMLCanvasElement): Chart {
     type: 'bar',
     data: {
       datasets: [],
-      labels: Array(128)
+      labels: Array(impulseLength.value / 8)
         .fill(0)
         .map((_, i) => i),
     },
