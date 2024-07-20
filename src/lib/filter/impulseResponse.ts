@@ -1,7 +1,7 @@
 import type { Coefficients } from './coefficients';
 
 export class ImpulseResponse {
-  static getImpulseResponse(coefficients: Coefficients, size: number) {
+  static getImpulseResponse(coefficients: Coefficients, length: number) {
     let fiveParamsCoefficients: number[] = [];
 
     if (coefficients.length === 6) {
@@ -12,10 +12,10 @@ export class ImpulseResponse {
       throw new Error('Invalid coefficients');
     }
 
-    const impulses = new Float64Array(size);
+    const impulses = new Float64Array(length);
     let [o1, o2, i0, i1, i2] = [0.0, 0.0, 1.0, 0.0, 0.0];
 
-    for (let i = 0; i < size; i++) {
+    for (let i = 0; i < length; i++) {
       impulses[i] =
         fiveParamsCoefficients[0] * i0 +
         fiveParamsCoefficients[1] * i1 +
