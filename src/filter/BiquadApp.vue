@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { Rules } from '@/lib/siPrefix';
 import { useTheme } from 'vuetify';
 import { reapplyTheme } from '@/lib/theme';
@@ -83,6 +83,16 @@ const bandwidth = ref<number>(1.0);
 const gain = ref<number>(0.0);
 const samplingFreq = ref<number>(48000.0);
 
+const coefficients = computed<Coefficients>(() => {
+  const parameters: BiquadFilterParameter = {
+    q: q.value,
+    bandwidth: bandwidth.value,
+    gain: gain.value,
+  };
+  return filterType.value.func(samplingFreq.value, cutoffFreq.value, parameters);
+});
+const normalizedCoefficients = computed<number[]>(() => coefficients.value.normalizeToFiveParameters());
+
 function setTextContent(document: Document | null | undefined, id: string, text: string) {
   if (!document) {
     return;
@@ -96,22 +106,15 @@ function setTextContent(document: Document | null | undefined, id: string, text:
 }
 
 function updateDiagram() {
-  const parameters: BiquadFilterParameter = {
-    q: q.value,
-    bandwidth: bandwidth.value,
-    gain: gain.value,
-  };
-  const coefficients = filterType.value.func(samplingFreq.value, cutoffFreq.value, parameters);
-  const normalized = coefficients.normalizeToFiveParameters();
   const diagram = window.document.querySelector('.diagram');
 
   if (diagram) {
     const diagramDom = (diagram as HTMLObjectElement).contentDocument;
-    setTextContent(diagramDom, 'b0', normalized[0].toFixed(9));
-    setTextContent(diagramDom, 'b1', normalized[1].toFixed(9));
-    setTextContent(diagramDom, 'b2', normalized[2].toFixed(9));
-    setTextContent(diagramDom, 'a1', normalized[3].toFixed(9));
-    setTextContent(diagramDom, 'a2', normalized[4].toFixed(9));
+    setTextContent(diagramDom, 'b0', normalizedCoefficients.value[0].toFixed(9));
+    setTextContent(diagramDom, 'b1', normalizedCoefficients.value[1].toFixed(9));
+    setTextContent(diagramDom, 'b2', normalizedCoefficients.value[2].toFixed(9));
+    setTextContent(diagramDom, 'a1', normalizedCoefficients.value[3].toFixed(9));
+    setTextContent(diagramDom, 'a2', normalizedCoefficients.value[4].toFixed(9));
   }
 }
 
@@ -122,13 +125,7 @@ function updateGraph() {
     return;
   }
 
-  const parameters: BiquadFilterParameter = {
-    q: q.value,
-    bandwidth: bandwidth.value,
-    gain: gain.value,
-  };
-  const coefficients = filterType.value.func(samplingFreq.value, cutoffFreq.value, parameters);
-  const real = ImpulseResponse.getImpulseResponse(coefficients, 1024);
+  const real = ImpulseResponse.getImpulseResponse(coefficients.value, 1024);
   const imag = Array(real.length).fill(0);
   transform(real, imag);
   const phaseResponse = Array(real.length / 2)
@@ -164,13 +161,7 @@ function updateImpulseGraph() {
     return;
   }
 
-  const parameters: BiquadFilterParameter = {
-    q: q.value,
-    bandwidth: bandwidth.value,
-    gain: gain.value,
-  };
-  const coefficients = filterType.value.func(samplingFreq.value, cutoffFreq.value, parameters);
-  const impulse = ImpulseResponse.getImpulseResponse(coefficients, 1024);
+  const impulse = ImpulseResponse.getImpulseResponse(coefficients.value, 1024);
 
   const datasets: ChartDataset<'bar', number[]>[] = [
     {
