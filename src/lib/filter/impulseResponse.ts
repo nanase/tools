@@ -2,10 +2,10 @@ import type { Coefficients } from './coefficients';
 
 export class ImpulseResponse {
   static getImpulseResponse(coefficients: Coefficients, length: number) {
-    let normalizedCoefficients: number[] = [];
+    let normalizedCoefficients: Float64Array = new Float64Array(5);
 
     if (coefficients.length === 6) {
-      normalizedCoefficients = coefficients.normalizeToFiveParameters();
+      coefficients.normalizeToFiveParameters(normalizedCoefficients);
     } else if (coefficients.length === 5) {
       normalizedCoefficients = coefficients;
     } else {
@@ -18,7 +18,7 @@ export class ImpulseResponse {
     return impulses;
   }
 
-  static calcImpulseResponse(buffer: Float64Array, coefficients: number[]): void {
+  static calcImpulseResponse(buffer: Float64Array, coefficients: Float64Array): void {
     if (coefficients.length !== 5) {
       throw new Error('Coefficients must to be normalized.');
     }

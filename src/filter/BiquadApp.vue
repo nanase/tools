@@ -92,7 +92,7 @@ const coefficients = computed<Coefficients>(() => {
   };
   return filterType.value.func(samplingFreq.value, cutoffFreq.value, parameters);
 });
-const normalizedCoefficients = computed<number[]>(() => coefficients.value.normalizeToFiveParameters());
+const normalizedCoefficients = computed<Float64Array>(() => coefficients.value.normalizeToFiveParameters());
 const impulseResponse = computed<Float64Array>(() =>
   ImpulseResponse.getImpulseResponse(coefficients.value, impulseLength.value),
 );
