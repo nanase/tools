@@ -42,6 +42,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         'electric/timer555': resolve(root, 'electric', 'timer555.html'),
+        'filter/biquad': resolve(root, 'filter', 'biquad.html'),
         'jjy/simulator': resolve(root, 'jjy', 'simulator.html'),
       },
       output: {

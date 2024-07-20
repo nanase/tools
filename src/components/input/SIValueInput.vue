@@ -3,17 +3,20 @@ import { ref, watch, onMounted } from 'vue';
 import { SIValue, Rules, type SIPrefixSymbol } from '../../lib/siPrefix';
 import { VTextField } from 'vuetify/components';
 
-const { label, variant, density, placeholder, unit, prefixSymbols, readonly, fractionDigits } = defineProps<{
-  label?: string;
-  variant?: 'outlined' | 'plain' | 'filled' | 'underlined' | 'solo' | 'solo-inverted' | 'solo-filled' | undefined;
-  density?: null | 'default' | 'comfortable' | 'compact';
-  placeholder?: string;
-  unit?: string;
-  prefixSymbols?: readonly SIPrefixSymbol[];
-  readonly?: boolean;
-  fractionDigits?: number;
-  rule?: ((value: any) => boolean | string)[];
-}>();
+const { label, variant, density, placeholder, unit, prefixSymbols, readonly, disabled, fractionDigits, hideDetails } =
+  defineProps<{
+    label?: string;
+    variant?: 'outlined' | 'plain' | 'filled' | 'underlined' | 'solo' | 'solo-inverted' | 'solo-filled' | undefined;
+    density?: null | 'default' | 'comfortable' | 'compact';
+    placeholder?: string;
+    unit?: string;
+    prefixSymbols?: readonly SIPrefixSymbol[];
+    readonly?: boolean;
+    disabled?: boolean;
+    fractionDigits?: number;
+    rule?: ((value: any) => boolean | string)[];
+    hideDetails?: boolean | 'auto';
+  }>();
 const actualValue = defineModel<number>('value');
 const fraction = ref<string>();
 const field = ref<VTextField>();
@@ -50,18 +53,20 @@ function fractionValueUpdated(value: string) {
     <v-col>
       <v-text-field
         v-model:model-value="fraction"
-        :label="label"
-        :variant="variant"
-        :density="density"
-        :placeholder="placeholder"
+        :label
+        :variant
+        :density
+        :placeholder
         :rules="readonly ? [] : rule ? rule : [Rules.required, Rules.value, Rules.notZero, Rules.notNegative]"
-        :readonly="readonly"
+        :readonly
+        :disabled
         :prefix="unit"
         class="text-align-right"
         reverse
         inputmode="numeric"
         @update:model-value="fractionValueUpdated"
         ref="field"
+        :hide-details
       >
       </v-text-field>
     </v-col>

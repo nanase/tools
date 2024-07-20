@@ -22,6 +22,16 @@ export const PageList: PageSection[] = [
     ],
   },
   {
+    id: 'filter',
+    pages: [
+      {
+        id: 'filter/biquad',
+        title: '双2次フィルタ',
+        icon: 'mdi-filter',
+      },
+    ],
+  },
+  {
     id: 'jjy',
     pages: [
       {

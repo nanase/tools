@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <load src="../html/header.html" title="双2次フィルタ" description="双2次フィルタ（Biquad filter）の各種数値を計算するツールです。"
+    url="https://nanase.cc/tools/filter/biquad" />
+</head>
+
+<body>
+  <div id="app"></div>
+  <script type="module">
+    import { createAndMount } from '@/appBase';
+    import BiquadApp from './BiquadApp.vue';
+
+    createAndMount('#app', BiquadApp);
+  </script>
+</body>
+
+</html>
