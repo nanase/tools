@@ -93,19 +93,17 @@ const coefficients = computed<Coefficients>(() => {
 });
 const normalizedCoefficients = computed<number[]>(() => coefficients.value.normalizeToFiveParameters());
 
-function setTextContent(document: Document | null | undefined, id: string, text: string) {
-  if (!document) {
-    return;
-  }
-
-  const element = document.getElementById(id);
-
-  if (element) {
-    element.textContent = text;
-  }
-}
-
 function updateDiagram() {
+  function setTextContent(document: Document | null | undefined, id: string, text: string) {
+    if (document) {
+      const element = document.getElementById(id);
+
+      if (element) {
+        element.textContent = text;
+      }
+    }
+  }
+
   const diagram = window.document.querySelector('.diagram');
 
   if (diagram) {
