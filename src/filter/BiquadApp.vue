@@ -1,16 +1,17 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue';
+import { ref, watch } from 'vue';
 import { Rules } from '@/lib/siPrefix';
 import { useTheme } from 'vuetify';
 import { reapplyTheme } from '@/lib/theme';
-import {
-  BiquadFilterCoefficients,
-  type BiquadFilterParameter,
-  type Coefficients,
-} from '@/lib/biquadFilterCoefficients';
+import { BiquadFilterCoefficients, type BiquadFilterParameter } from '@/lib/filter/biquadFilterCoefficients';
+import { Coefficients } from '@/lib/filter/coefficients';
+import Chart, { type ChartDataset } from 'chart.js/auto';
 
 import AppBase from '@/components/common/AppBase.vue';
 import SIValueInput from '@/components/input/SIValueInput.vue';
+import ChartBase from '@/components/common/ChartBase.vue';
+import { ImpulseResponse } from '@/lib/filter/impulseResponse';
+import { transform } from '@/lib/fft';
 
 interface FilterType {
   title: string;
@@ -47,13 +48,13 @@ const filterTypeItem: FilterType[] = [
   {
     title: 'ローシェルフフィルタ (LSF)',
     value: 'lowshelf',
-    requiredParameter: ['q', 'bandwidth', 'gain'],
+    requiredParameter: ['q', 'gain'],
     func: BiquadFilterCoefficients.lowshelf,
   },
   {
     title: 'ハイシェルフフィルタ (HSF)',
     value: 'highshelf',
-    requiredParameter: ['q', 'bandwidth', 'gain'],
+    requiredParameter: ['q', 'gain'],
     func: BiquadFilterCoefficients.highshelf,
   },
   {
@@ -73,6 +74,8 @@ const filterTypeItem: FilterType[] = [
 const theme = useTheme();
 const diagram = ref<HTMLObjectElement>();
 const filterType = ref<FilterType>(filterTypeItem[0]);
+const chart = ref<InstanceType<typeof ChartBase>>();
+const impulseChart = ref<InstanceType<typeof ChartBase>>();
 
 const cutoffFreq = ref<number>(1000.0);
 const q = ref<number>(0.707106781);
@@ -92,37 +95,185 @@ function setTextContent(document: Document | null | undefined, id: string, text:
   }
 }
 
-watch(
-  () => [cutoffFreq.value, q.value, bandwidth.value, gain.value, samplingFreq.value],
-  () => {
-    const parameters: BiquadFilterParameter = {
-      q: q.value,
-      bandwidth: bandwidth.value,
-      gain: gain.value,
-    };
-    const coefficients = filterType.value.func(samplingFreq.value, cutoffFreq.value, parameters);
-    const normalized = coefficients.normalizeToFiveParameters();
-    const diagram = window.document.querySelector('.diagram');
+function updateDiagram() {
+  const parameters: BiquadFilterParameter = {
+    q: q.value,
+    bandwidth: bandwidth.value,
+    gain: gain.value,
+  };
+  const coefficients = filterType.value.func(samplingFreq.value, cutoffFreq.value, parameters);
+  const normalized = coefficients.normalizeToFiveParameters();
+  const diagram = window.document.querySelector('.diagram');
 
-    if (!diagram) {
-      return;
-    }
-
+  if (diagram) {
     const diagramDom = (diagram as HTMLObjectElement).contentDocument;
     setTextContent(diagramDom, 'b0', normalized[0].toFixed(9));
     setTextContent(diagramDom, 'b1', normalized[1].toFixed(9));
     setTextContent(diagramDom, 'b2', normalized[2].toFixed(9));
     setTextContent(diagramDom, 'a1', normalized[3].toFixed(9));
     setTextContent(diagramDom, 'a2', normalized[4].toFixed(9));
+  }
+}
+
+function updateGraph() {
+  const chartState = chart.value?.getChart();
+
+  if (!chartState || !chartState.ready) {
+    return;
+  }
+
+  const parameters: BiquadFilterParameter = {
+    q: q.value,
+    bandwidth: bandwidth.value,
+    gain: gain.value,
+  };
+  const coefficients = filterType.value.func(samplingFreq.value, cutoffFreq.value, parameters);
+  const real = ImpulseResponse.getImpulseResponse(coefficients, 1024);
+  const imag = Array(real.length).fill(0);
+  transform(real, imag);
+  const phaseResponse = Array(real.length / 2)
+    .fill(0)
+    .map((_, i) => (Math.atan2(imag[i], real[i]) * 180.0) / Math.PI);
+  const frequencyResponse = Array(real.length / 2)
+    .fill(0)
+    .map((_, i) => Math.log10(Math.sqrt(real[i] * real[i] + imag[i] * imag[i])) * 20);
+
+  const datasets: ChartDataset<'line', number[]>[] = [
+    {
+      label: '周波数応答',
+      data: frequencyResponse,
+      pointStyle: false,
+      yAxisID: 'y',
+    },
+    {
+      label: '位相応答',
+      data: phaseResponse,
+      pointStyle: false,
+      yAxisID: 'y1',
+    },
+  ];
+
+  chartState.chart.data.datasets = datasets as unknown as ChartDataset<'line', number[]>[];
+  chartState.chart.update('none');
+}
+
+function updateImpulseGraph() {
+  const chartState = impulseChart.value?.getChart();
+
+  if (!chartState || !chartState.ready) {
+    return;
+  }
+
+  const parameters: BiquadFilterParameter = {
+    q: q.value,
+    bandwidth: bandwidth.value,
+    gain: gain.value,
+  };
+  const coefficients = filterType.value.func(samplingFreq.value, cutoffFreq.value, parameters);
+  const impulse = ImpulseResponse.getImpulseResponse(coefficients, 1024);
+
+  const datasets: ChartDataset<'bar', number[]>[] = [
+    {
+      label: 'インパルス応答',
+      data: impulse.slice(0, 128),
+      pointStyle: false,
+      borderWidth: 0,
+      backgroundColor: 'rgb(54, 162, 235)',
+    },
+  ];
+
+  chartState.chart.data.datasets = datasets as unknown as ChartDataset<'bar', number[]>[];
+  chartState.chart.update('none');
+}
+
+watch(
+  () => [filterType.value, cutoffFreq.value, q.value, bandwidth.value, gain.value, samplingFreq.value],
+  () => {
+    updateDiagram();
+    updateGraph();
+    updateImpulseGraph();
   },
 );
 
 function onSVGLoaded() {
   reapplyTheme(theme);
+  updateDiagram();
+  updateGraph();
+  updateImpulseGraph();
 
   if (diagram.value) {
     diagram.value.style.opacity = '1';
   }
+}
+
+function initializeChart(canvas: HTMLCanvasElement): Chart {
+  return new Chart(canvas, {
+    type: 'line',
+    data: {
+      datasets: [],
+      labels: Array(512)
+        .fill(0)
+        .map((_, i) => i),
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        // tooltip: {
+        //   callbacks: {
+        //     label: function (item: TooltipItem<'bar'>) {
+        //       return `${item.dataset.label}`;
+        //     },
+        //     footer: function footer(items: TooltipItem<'bar'>[]): string {
+        //       // const { type, value } = items[0].raw as { value: number; type: string };
+        //       // return `${dayjs.duration(value, 'seconds').format('H時間m分s秒')}`;
+        //       return 'test';
+        //     },
+        //   },
+        // },
+      },
+      scales: {
+        y: {
+          type: 'linear',
+          display: true,
+          max: 20.0,
+          min: -80.0,
+        },
+        y1: {
+          type: 'linear',
+          display: true,
+          position: 'right',
+          max: 180.0,
+          min: -180.0,
+          grid: {
+            drawOnChartArea: false, // only want the grid lines for one axis to show up
+          },
+        },
+      },
+    },
+  });
+}
+
+function initializeImpulseChart(canvas: HTMLCanvasElement): Chart {
+  return new Chart(canvas, {
+    type: 'bar',
+    data: {
+      datasets: [],
+      labels: Array(128)
+        .fill(0)
+        .map((_, i) => i),
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          type: 'linear',
+          display: true,
+        },
+      },
+    },
+  });
 }
 </script>
 
@@ -273,13 +424,27 @@ function onSVGLoaded() {
         </v-row>
       </v-col>
       <v-col cols="12" md="5" class="text-center">
-        <object
-          ref="diagram"
-          class="diagram color-responsive"
-          type="image/svg+xml"
-          data="/tools/filter/biquad.svg"
-          @load="onSVGLoaded"
-        ></object>
+        <v-row>
+          <v-col cols="12">
+            <object
+              ref="diagram"
+              class="diagram color-responsive"
+              type="image/svg+xml"
+              data="/tools/filter/biquad.svg"
+              @load="onSVGLoaded"
+            ></object>
+          </v-col>
+          <v-col cols="12">
+            <div style="max-height: 500px">
+              <ChartBase ref="chart" :initializer="initializeChart" />
+            </div>
+          </v-col>
+          <v-col cols="12">
+            <div style="max-height: 500px">
+              <ChartBase ref="impulseChart" :initializer="initializeImpulseChart" />
+            </div>
+          </v-col>
+        </v-row>
       </v-col>
     </v-row>
   </AppBase>
