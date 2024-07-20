@@ -1,11 +1,11 @@
-import type { Coefficients } from './coefficients';
+import { Coefficients } from './coefficients';
 
 export class ImpulseResponse {
-  static getImpulseResponse(coefficients: Coefficients, length: number) {
+  static getImpulseResponse(coefficients: Float64Array, length: number) {
     let normalizedCoefficients: Float64Array = new Float64Array(5);
 
     if (coefficients.length === 6) {
-      coefficients.normalizeToFiveParameters(normalizedCoefficients);
+      Coefficients.normalizeToFiveParameters(coefficients, normalizedCoefficients);
     } else if (coefficients.length === 5) {
       normalizedCoefficients = coefficients;
     } else {

@@ -17,7 +17,12 @@ interface FilterType {
   title: string;
   value: string;
   requiredParameter: ('q' | 'bandwidth' | 'gain')[];
-  func: (samplingRate: number, cutoff: number, parameter?: BiquadFilterParameter) => Coefficients;
+  func: (
+    coefficients: Float64Array,
+    samplingRate: number,
+    cutoff: number,
+    parameter?: BiquadFilterParameter,
+  ) => Float64Array;
 }
 
 const filterTypeItem: FilterType[] = [
@@ -84,15 +89,15 @@ const gain = ref<number>(0.0);
 const samplingFreq = ref<number>(48000.0);
 
 const impulseLength = ref<number>(256);
-const coefficients = computed<Coefficients>(() => {
+const coefficients = computed<Float64Array>(() => {
   const parameters: BiquadFilterParameter = {
     q: q.value,
     bandwidth: bandwidth.value,
     gain: gain.value,
   };
-  return filterType.value.func(samplingFreq.value, cutoffFreq.value, parameters);
+  return filterType.value.func(new Float64Array(6), samplingFreq.value, cutoffFreq.value, parameters);
 });
-const normalizedCoefficients = computed<Float64Array>(() => coefficients.value.normalizeToFiveParameters());
+const normalizedCoefficients = computed<Float64Array>(() => Coefficients.normalizeToFiveParameters(coefficients.value));
 const impulseResponse = computed<Float64Array>(() =>
   ImpulseResponse.getImpulseResponse(coefficients.value, impulseLength.value),
 );
