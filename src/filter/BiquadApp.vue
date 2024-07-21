@@ -251,6 +251,9 @@ function initializeChart(canvas: HTMLCanvasElement): Chart {
           position: 'right',
           max: 180.0,
           min: -180.0,
+          ticks: {
+            stepSize: 90,
+          },
           grid: {
             drawOnChartArea: false, // only want the grid lines for one axis to show up
           },
