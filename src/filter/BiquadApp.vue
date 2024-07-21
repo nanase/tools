@@ -3,26 +3,17 @@ import { computed, ref, watch } from 'vue';
 import { Rules } from '@/lib/siPrefix';
 import { useTheme } from 'vuetify';
 import { reapplyTheme } from '@/lib/theme';
-import { BiquadFilterCoefficients, type BiquadFilterParameter } from '@/lib/filter/biquadFilterCoefficients';
-import { Coefficients } from '@/lib/filter/coefficients';
+import { BiquadFilter, type BiquadFilterType } from '@/lib/filter/biquadFilter';
 import Chart, { type ChartDataset } from 'chart.js/auto';
 
 import AppBase from '@/components/common/AppBase.vue';
 import SIValueInput from '@/components/input/SIValueInput.vue';
 import ChartBase from '@/components/common/ChartBase.vue';
-import { ImpulseResponse } from '@/lib/filter/impulseResponse';
-import { transform } from '@/lib/fft';
 
 interface FilterType {
   title: string;
-  value: string;
+  value: BiquadFilterType;
   requiredParameter: ('q' | 'bandwidth' | 'gain')[];
-  func: (
-    coefficients: Float64Array,
-    samplingRate: number,
-    cutoff: number,
-    parameter?: BiquadFilterParameter,
-  ) => Float64Array;
 }
 
 const filterTypeItem: FilterType[] = [
@@ -30,49 +21,41 @@ const filterTypeItem: FilterType[] = [
     title: 'ローパスフィルタ (LPF)',
     value: 'lowpass',
     requiredParameter: ['q'],
-    func: BiquadFilterCoefficients.lowpass,
   },
   {
     title: 'ハイパスフィルタ (HPF)',
     value: 'highpass',
     requiredParameter: ['q'],
-    func: BiquadFilterCoefficients.highpass,
   },
   {
     title: 'バンドパスフィルタ (BPF)',
     value: 'bandpass',
     requiredParameter: ['q', 'bandwidth'],
-    func: BiquadFilterCoefficients.bandpass,
   },
   {
     title: 'バンドストップフィルタ (BSF)',
     value: 'bandstop',
     requiredParameter: ['bandwidth'],
-    func: BiquadFilterCoefficients.bandstop,
   },
   {
     title: 'ローシェルフフィルタ (LSF)',
     value: 'lowshelf',
     requiredParameter: ['q', 'gain'],
-    func: BiquadFilterCoefficients.lowshelf,
   },
   {
     title: 'ハイシェルフフィルタ (HSF)',
     value: 'highshelf',
     requiredParameter: ['q', 'gain'],
-    func: BiquadFilterCoefficients.highshelf,
   },
   {
     title: 'ピーキングフィルタ (Peaking)',
     value: 'peaking',
     requiredParameter: ['bandwidth', 'gain'],
-    func: BiquadFilterCoefficients.peaking,
   },
   {
     title: 'オールパスフィルタ (Allpass)',
     value: 'allpass',
     requiredParameter: ['q'],
-    func: BiquadFilterCoefficients.allpass,
   },
 ];
 
@@ -89,50 +72,7 @@ const gain = ref<number>(0.0);
 const samplingFreq = ref<number>(48000.0);
 
 const impulseLength = ref<number>(256);
-const coefficients = computed<Float64Array>(() => {
-  const parameters: BiquadFilterParameter = {
-    q: q.value,
-    bandwidth: bandwidth.value,
-    gain: gain.value,
-  };
-  return filterType.value.func(new Float64Array(6), samplingFreq.value, cutoffFreq.value, parameters);
-});
-const normalizedCoefficients = computed<Float64Array>(() => Coefficients.normalizeToFiveParameters(coefficients.value));
-const impulseResponse = computed<Float64Array>(() =>
-  ImpulseResponse.getImpulseResponse(coefficients.value, impulseLength.value),
-);
-const transformedResponse = computed<{ real: Float64Array; imag: Float64Array }>(() => {
-  const real = new Float64Array(impulseResponse.value);
-  const imag = new Float64Array(impulseLength.value);
-  transform(real, imag);
-
-  return { real, imag };
-});
-const phaseResponse = computed<Float64Array>(
-  () =>
-    new Float64Array(
-      (function* () {
-        for (let i = 0; i < impulseLength.value / 2; i++) {
-          yield (Math.atan2(transformedResponse.value.imag[i], transformedResponse.value.real[i]) * 180.0) / Math.PI;
-        }
-      })(),
-    ),
-);
-const frequencyResponse = computed<Float64Array>(
-  () =>
-    new Float64Array(
-      (function* () {
-        for (let i = 0; i < impulseLength.value / 2; i++) {
-          yield Math.log10(
-            Math.sqrt(
-              transformedResponse.value.real[i] * transformedResponse.value.real[i] +
-                transformedResponse.value.imag[i] * transformedResponse.value.imag[i],
-            ),
-          ) * 20;
-        }
-      })(),
-    ),
-);
+const biquadFilter = computed<BiquadFilter>(() => new BiquadFilter(impulseLength.value));
 
 function updateDiagram() {
   function setTextContent(document: Document | null | undefined, id: string, text: string) {
@@ -149,11 +89,11 @@ function updateDiagram() {
 
   if (diagram) {
     const diagramDom = (diagram as HTMLObjectElement).contentDocument;
-    setTextContent(diagramDom, 'b0', normalizedCoefficients.value[0].toFixed(9));
-    setTextContent(diagramDom, 'b1', normalizedCoefficients.value[1].toFixed(9));
-    setTextContent(diagramDom, 'b2', normalizedCoefficients.value[2].toFixed(9));
-    setTextContent(diagramDom, 'a1', normalizedCoefficients.value[3].toFixed(9));
-    setTextContent(diagramDom, 'a2', normalizedCoefficients.value[4].toFixed(9));
+    setTextContent(diagramDom, 'b0', biquadFilter.value.normalizedCoefficients[0].toFixed(9));
+    setTextContent(diagramDom, 'b1', biquadFilter.value.normalizedCoefficients[1].toFixed(9));
+    setTextContent(diagramDom, 'b2', biquadFilter.value.normalizedCoefficients[2].toFixed(9));
+    setTextContent(diagramDom, 'a1', biquadFilter.value.normalizedCoefficients[3].toFixed(9));
+    setTextContent(diagramDom, 'a2', biquadFilter.value.normalizedCoefficients[4].toFixed(9));
   }
 }
 
@@ -167,13 +107,13 @@ function updateGraph() {
   const datasets: ChartDataset<'line', number[]>[] = [
     {
       label: '周波数応答',
-      data: [...frequencyResponse.value],
+      data: [...biquadFilter.value.frequencyResponse],
       pointStyle: false,
       yAxisID: 'y',
     },
     {
       label: '位相応答',
-      data: [...phaseResponse.value],
+      data: [...biquadFilter.value.phaseResponse],
       pointStyle: false,
       yAxisID: 'y1',
     },
@@ -193,7 +133,7 @@ function updateImpulseGraph() {
   const datasets: ChartDataset<'bar', number[]>[] = [
     {
       label: 'インパルス応答',
-      data: [...impulseResponse.value.slice(0, impulseLength.value / 8)],
+      data: [...biquadFilter.value.impluseResponse.slice(0, impulseLength.value / 8)],
       pointStyle: false,
       borderWidth: 0,
       backgroundColor: 'rgb(54, 162, 235)',
@@ -204,20 +144,26 @@ function updateImpulseGraph() {
   chartState.chart.update('none');
 }
 
-watch(() => normalizedCoefficients.value, updateDiagram);
+function updateFilterCoefficients() {
+  biquadFilter.value.setFilter(filterType.value.value, samplingFreq.value, cutoffFreq.value, {
+    q: q.value,
+    bandwidth: bandwidth.value,
+    gain: gain.value,
+  });
+
+  updateDiagram();
+  updateGraph();
+  updateImpulseGraph();
+}
+
 watch(
-  () => transformedResponse.value,
-  () => {
-    updateGraph();
-    updateImpulseGraph();
-  },
+  () => [filterType.value, cutoffFreq.value, q.value, bandwidth.value, gain.value, samplingFreq.value],
+  updateFilterCoefficients,
 );
 
 function onSVGLoaded() {
   reapplyTheme(theme);
-  updateDiagram();
-  updateGraph();
-  updateImpulseGraph();
+  updateFilterCoefficients();
 
   if (diagram.value) {
     diagram.value.style.opacity = '1';
