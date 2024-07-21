@@ -292,7 +292,7 @@ function initializeImpulseChart(canvas: HTMLCanvasElement): Chart {
             />
           </v-col>
           <v-col cols="6" sm="8">
-            <LogSlider v-model="cutoffFreq" :max="samplingFreq / 2" :min="1" thumb-label hide-details />
+            <LogSlider v-model="cutoffFreq" :max="samplingFreq / 2" :min="10" thumb-label hide-details />
           </v-col>
         </v-row>
 
@@ -397,7 +397,7 @@ function initializeImpulseChart(canvas: HTMLCanvasElement): Chart {
             />
           </v-col>
           <v-col cols="6" sm="8">
-            <LogSlider v-model="samplingFreq" :max="192000" :min="0.001" thumb-label hide-details />
+            <LogSlider v-model="samplingFreq" :max="192000" :min="10" thumb-label hide-details />
           </v-col>
         </v-row>
       </v-col>
