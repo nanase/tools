@@ -116,7 +116,7 @@ function updateGraph() {
 
   const datasets: ChartDataset<'line', number[]>[] = [
     {
-      label: '周波数応答 (Hz)',
+      label: '周波数応答 (dB)',
       data: [...biquadFilter.value.frequencyResponse],
       pointStyle: false,
       yAxisID: 'y',
