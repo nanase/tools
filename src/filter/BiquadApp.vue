@@ -117,7 +117,25 @@ function updateGraph() {
     return;
   }
 
-  const datasets: ChartDataset<'line', number[]>[] = [
+  function segmentedPhaseResponse() {
+    const data: { x: number; y: number }[] = [];
+    let prevValue = biquadFilter.value.phaseResponse[0];
+
+    for (let i = 0; i < impulseLength.value; i++) {
+      const currentValue = biquadFilter.value.phaseResponse[i];
+
+      if (Math.abs(currentValue - prevValue) >= 120.0 && i < impulseLength.value - 1) {
+        data.push({ x: (graphXLabel.value[i] + graphXLabel.value[i + 1]) / 2, y: Number.NaN });
+      }
+
+      data.push({ x: graphXLabel.value[i], y: biquadFilter.value.phaseResponse[i] });
+      prevValue = currentValue;
+    }
+
+    return data;
+  }
+
+  const datasets: ChartDataset<'line', { x: number; y: number }[] | number[]>[] = [
     {
       label: '周波数応答 (dB)',
       data: [...biquadFilter.value.frequencyResponse],
@@ -126,7 +144,7 @@ function updateGraph() {
     },
     {
       label: '位相応答 (deg)',
-      data: [...biquadFilter.value.phaseResponse],
+      data: segmentedPhaseResponse(),
       pointStyle: false,
       yAxisID: 'y1',
     },
@@ -235,6 +253,10 @@ function initializeChart(canvas: HTMLCanvasElement): Chart {
         //     },
         //   },
         // },
+      },
+      parsing: {
+        xAxisKey: 'x',
+        yAxisKey: 'y',
       },
       scales: {
         x: {
