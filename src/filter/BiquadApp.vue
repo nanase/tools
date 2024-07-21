@@ -9,6 +9,7 @@ import Chart, { type ChartDataset } from 'chart.js/auto';
 import AppBase from '@/components/common/AppBase.vue';
 import SIValueInput from '@/components/input/SIValueInput.vue';
 import ChartBase from '@/components/common/ChartBase.vue';
+import LogSlider from '@/components/input/LogSlider.vue';
 
 interface FilterType {
   title: string;
@@ -291,9 +292,7 @@ function initializeImpulseChart(canvas: HTMLCanvasElement): Chart {
             />
           </v-col>
           <v-col cols="6" sm="8">
-            <v-slider v-model="cutoffFreq" :max="samplingFreq / 2" :min="0.0" thumb-label hide-details>
-              <template #thumb-label="{ modelValue }"> {{ Number(modelValue).toFixed(0) }} </template>
-            </v-slider>
+            <LogSlider v-model="cutoffFreq" :max="samplingFreq / 2" :min="1" thumb-label hide-details />
           </v-col>
         </v-row>
 
@@ -398,9 +397,7 @@ function initializeImpulseChart(canvas: HTMLCanvasElement): Chart {
             />
           </v-col>
           <v-col cols="6" sm="8">
-            <v-slider v-model="samplingFreq" :max="192000" :min="0.0" :step="1" thumb-label hide-details>
-              <template #thumb-label="{ modelValue }"> {{ Number(modelValue).toFixed(0) }} </template>
-            </v-slider>
+            <LogSlider v-model="samplingFreq" :max="192000" :min="0.001" thumb-label hide-details />
           </v-col>
         </v-row>
       </v-col>
