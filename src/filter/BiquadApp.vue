@@ -333,17 +333,14 @@ function initializeImpulseChart(canvas: HTMLCanvasElement): Chart {
             />
           </v-col>
           <v-col cols="6" sm="8">
-            <v-slider
+            <LogSlider
               v-model="q"
               :max="16.0"
-              :min="0.0"
-              :step="Math.SQRT1_2 / 8"
+              :min="0.0001"
               thumb-label
               hide-details
               :disabled="!filterType.requiredParameter.includes('q')"
-            >
-              <template #thumb-label="{ modelValue }"> {{ Number(modelValue).toFixed(4) }} </template>
-            </v-slider>
+            />
           </v-col>
         </v-row>
 
