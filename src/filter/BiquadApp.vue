@@ -239,6 +239,7 @@ function initializeChart(canvas: HTMLCanvasElement): Chart {
       scales: {
         x: {
           type: 'logarithmic',
+          min: 20.0,
         },
         y: {
           type: 'linear',
