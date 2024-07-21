@@ -2901,6 +2901,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"chartjs-plugin-annotation@npm:^3.0.1":
+  version: 3.0.1
+  resolution: "chartjs-plugin-annotation@npm:3.0.1"
+  peerDependencies:
+    chart.js: ">=4.0.0"
+  checksum: 10c0/eeb76e3ebca8147710863c948636898e25605cf1490cf8dcb5df85ffb87079eb7076356fd9de846e89c943be3f745a91ca67d769a4e30159470cbabe933389ce
+  languageName: node
+  linkType: hard
+
 "chokidar@npm:>=3.0.0 <4.0.0, chokidar@npm:^3.6.0":
   version: 3.6.0
   resolution: "chokidar@npm:3.6.0"
@@ -7494,6 +7503,7 @@ __metadata:
     axios: "npm:^1.7.2"
     axios-retry: "npm:^4.4.1"
     chart.js: "npm:^4.4.3"
+    chartjs-plugin-annotation: "npm:^3.0.1"
     dayjs: "npm:^1.11.11"
     eslint: "npm:^8.57.0"
     eslint-plugin-vue: "npm:^9.27.0"

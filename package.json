@@ -39,6 +39,7 @@
     "axios": "^1.7.2",
     "axios-retry": "^4.4.1",
     "chart.js": "^4.4.3",
+    "chartjs-plugin-annotation": "^3.0.1",
     "dayjs": "^1.11.11",
     "eslint": "^8.57.0",
     "eslint-plugin-vue": "^9.27.0",

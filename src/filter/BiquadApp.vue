@@ -5,11 +5,14 @@ import { useTheme } from 'vuetify';
 import { reapplyTheme } from '@/lib/theme';
 import { BiquadFilter, type BiquadFilterType } from '@/lib/filter/biquadFilter';
 import Chart, { type ChartDataset } from 'chart.js/auto';
+import annotationPlugin, { type AnnotationOptions } from 'chartjs-plugin-annotation';
 
 import AppBase from '@/components/common/AppBase.vue';
 import SIValueInput from '@/components/input/SIValueInput.vue';
 import ChartBase from '@/components/common/ChartBase.vue';
 import LogSlider from '@/components/input/LogSlider.vue';
+
+Chart.register(annotationPlugin);
 
 interface FilterType {
   title: string;
@@ -131,6 +134,22 @@ function updateGraph() {
 
   if (chartState.chart.options.scales?.x) {
     chartState.chart.options.scales.x.max = samplingFreq.value / 2;
+  }
+
+  const annotations = chartState.chart.options.plugins?.annotation?.annotations;
+
+  if (annotations) {
+    const annotationOptions: AnnotationOptions = {
+      type: 'line',
+      xMax: cutoffFreq.value,
+      xMin: cutoffFreq.value,
+      z: 10,
+      borderColor: '#aaa',
+      borderWidth: 2,
+      borderDash: [5],
+    };
+
+    annotations['cutoffFreqLine'] = annotationOptions;
   }
 
   chartState.chart.data.labels = graphXLabel.value;
