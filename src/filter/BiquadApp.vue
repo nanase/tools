@@ -71,8 +71,17 @@ const bandwidth = ref<number>(1.0);
 const gain = ref<number>(0.0);
 const samplingFreq = ref<number>(48000.0);
 
-const impulseLength = ref<number>(256);
+const impulseLength = ref<number>(1024);
 const biquadFilter = computed<BiquadFilter>(() => new BiquadFilter(impulseLength.value));
+const graphXLabel = computed<number[]>(() => {
+  const array = Array(impulseLength.value / 2).fill(0);
+
+  for (let i = 0; i < array.length; i++) {
+    array[i] = (samplingFreq.value / 2 / array.length) * i;
+  }
+
+  return array;
+});
 
 function updateDiagram() {
   function setTextContent(document: Document | null | undefined, id: string, text: string) {
@@ -106,19 +115,24 @@ function updateGraph() {
 
   const datasets: ChartDataset<'line', number[]>[] = [
     {
-      label: '周波数応答',
+      label: '周波数応答 (Hz)',
       data: [...biquadFilter.value.frequencyResponse],
       pointStyle: false,
       yAxisID: 'y',
     },
     {
-      label: '位相応答',
+      label: '位相応答 (deg)',
       data: [...biquadFilter.value.phaseResponse],
       pointStyle: false,
       yAxisID: 'y1',
     },
   ];
 
+  if (chartState.chart.options.scales?.x) {
+    chartState.chart.options.scales.x.max = samplingFreq.value / 2;
+  }
+
+  chartState.chart.data.labels = graphXLabel.value;
   chartState.chart.data.datasets = datasets as unknown as ChartDataset<'line', number[]>[];
   chartState.chart.update('none');
 }
@@ -133,12 +147,18 @@ function updateImpulseGraph() {
   const datasets: ChartDataset<'bar', number[]>[] = [
     {
       label: 'インパルス応答',
-      data: [...biquadFilter.value.impluseResponse.slice(0, impulseLength.value / 8)],
+      data: [...biquadFilter.value.impluseResponse.slice(0, impulseLength.value / 4)],
       pointStyle: false,
       borderWidth: 0,
       backgroundColor: 'rgb(54, 162, 235)',
     },
   ];
+
+  if (chartState.chart.data.labels?.length != impulseLength.value / 4) {
+    chartState.chart.data.labels = Array(impulseLength.value / 4)
+      .fill(0)
+      .map((_, i) => i);
+  }
 
   chartState.chart.data.datasets = datasets as unknown as ChartDataset<'bar', number[]>[];
   chartState.chart.update('none');
@@ -197,15 +217,16 @@ function initializeChart(canvas: HTMLCanvasElement): Chart {
         // },
       },
       scales: {
+        x: {
+          type: 'logarithmic',
+        },
         y: {
           type: 'linear',
-          display: true,
           max: 20.0,
-          min: -80.0,
+          min: -60.0,
         },
         y1: {
           type: 'linear',
-          display: true,
           position: 'right',
           max: 180.0,
           min: -180.0,
@@ -223,9 +244,6 @@ function initializeImpulseChart(canvas: HTMLCanvasElement): Chart {
     type: 'bar',
     data: {
       datasets: [],
-      labels: Array(impulseLength.value / 8)
-        .fill(0)
-        .map((_, i) => i),
     },
     options: {
       responsive: true,
@@ -233,7 +251,6 @@ function initializeImpulseChart(canvas: HTMLCanvasElement): Chart {
       scales: {
         y: {
           type: 'linear',
-          display: true,
         },
       },
     },
