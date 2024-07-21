@@ -154,7 +154,9 @@ function updateGraph() {
     chartState.chart.options.scales.x.max = samplingFreq.value / 2;
   }
 
-  const annotations = chartState.chart.options.plugins?.annotation?.annotations;
+  const annotations = chartState.chart.options.plugins?.annotation?.annotations as
+    | Record<string, AnnotationOptions>
+    | undefined;
 
   if (annotations) {
     const annotationOptions: AnnotationOptions = {
