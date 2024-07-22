@@ -24,7 +24,7 @@ const impulseChart = ref<InstanceType<typeof ChartBase>>();
 
 const cutoffFreq = ref<number>(1000.0);
 const q = ref<number>(0.707106781);
-const gain = ref<number>(0.0);
+const gain = ref<number>(6.0);
 const samplingFreq = ref<number>(48000.0);
 
 const impulseLength = ref<number>(1024);
