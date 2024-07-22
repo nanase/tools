@@ -359,8 +359,8 @@ function initializeImpulseChart(canvas: HTMLCanvasElement): Chart {
           <v-col cols="6" sm="8">
             <LogSlider
               v-model="q"
-              :max="16.0"
-              :min="0.0001"
+              :max="32.0"
+              :min="0.01"
               thumb-label
               hide-details
               :disabled="!filterType.requiredParameter.includes('q')"
