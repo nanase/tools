@@ -125,5 +125,12 @@ export const impulseChartOptions: ChartConfiguration<'bar'> = {
         type: 'linear',
       },
     },
+    plugins: {
+      legend: {
+        labels: {
+          usePointStyle: true,
+        },
+      },
+    },
   },
 };

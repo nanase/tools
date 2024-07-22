@@ -151,9 +151,10 @@ function updateImpulseGraph() {
     {
       label: 'インパルス応答',
       data: [...biquadFilter.value.impluseResponse.slice(0, impulseGraphLength.value)],
-      pointStyle: false,
+      pointStyle: 'rect',
       borderWidth: 0,
       backgroundColor: 'rgb(54, 162, 235)',
+      barPercentage: 1.2,
     },
   ];
 
