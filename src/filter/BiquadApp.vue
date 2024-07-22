@@ -6,6 +6,7 @@ import { reapplyTheme } from '@/lib/theme';
 import { BiquadFilter } from '@/lib/filter/biquadFilter';
 import Chart, { type ChartDataset } from 'chart.js/auto';
 import annotationPlugin, { type AnnotationOptions } from 'chartjs-plugin-annotation';
+import * as Tone from 'tone';
 
 import AppBase from '@/components/common/AppBase.vue';
 import SIValueInput from '@/components/input/SIValueInput.vue';
@@ -38,6 +39,11 @@ const graphXLabel = computed<number[]>(() => {
 
   return array;
 });
+
+const soundPlaying = ref<boolean>();
+const soundVolume = ref<number>(-30);
+let synth: Tone.Noise | null = null;
+let toneFilter: Tone.BiquadFilter | null = null;
 
 function updateDiagram() {
   function setTextContent(document: Document | null | undefined, id: string, text: string) {
@@ -172,6 +178,15 @@ watch(
   () => [filterType.value, cutoffFreq.value, q.value, gain.value, samplingFreq.value],
   () => {
     updateFilterCoefficients();
+
+    if (toneFilter) {
+      toneFilter.set({
+        frequency: cutoffFreq.value,
+        Q: q.value,
+        gain: gain.value,
+        type: filterType.value.toneFilterType,
+      });
+    }
   },
 );
 
@@ -330,6 +345,22 @@ watch(
           </v-col>
           <v-col cols="6" sm="8">
             <LogSlider v-model="samplingFreq" :max="192000" :min="10" thumb-label hide-details />
+          </v-col>
+        </v-row>
+        <v-row>
+          <v-divider />
+          <v-col cols="4">
+            <v-checkbox
+              v-model="soundPlaying"
+              label="音の再生"
+              hide-details
+              @click="clickSoundPlaying"
+              density="compact"
+            />
+          </v-col>
+          <v-col cols="8">
+            <div class="text-caption">ボリューム (dB)</div>
+            <v-slider v-model="soundVolume" :min="-80" :max="0" thumb-label />
           </v-col>
         </v-row>
       </v-col>
