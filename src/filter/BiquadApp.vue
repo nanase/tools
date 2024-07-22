@@ -7,6 +7,7 @@ import { BiquadFilter } from '@/lib/filter/biquadFilter';
 import Chart, { type ChartDataset } from 'chart.js/auto';
 import annotationPlugin, { type AnnotationOptions } from 'chartjs-plugin-annotation';
 import * as Tone from 'tone';
+import MathJax from '@/components/common/MathJax.vue';
 
 import AppBase from '@/components/common/AppBase.vue';
 import SIValueInput from '@/components/input/SIValueInput.vue';
@@ -30,6 +31,8 @@ const samplingFreq = ref<number>(48000.0);
 
 const impulseLength = ref<number>(1024);
 const biquadFilter = computed<BiquadFilter>(() => new BiquadFilter(impulseLength.value));
+const coefficients = ref<number[]>([1, 0, 0, 0, 0, 0]);
+const normalizedCoefficients = ref<number[]>([1, 0, 0, 0, 0]);
 const graphXLabel = computed<number[]>(() => {
   const array = Array(impulseLength.value / 2).fill(0);
 
@@ -168,6 +171,9 @@ function updateFilterCoefficients() {
     q: q.value,
     gain: gain.value,
   });
+
+  coefficients.value = [...biquadFilter.value.coefficients];
+  normalizedCoefficients.value = [...biquadFilter.value.normalizedCoefficients];
 
   updateDiagram();
   updateGraph();
@@ -462,6 +468,77 @@ watch(
             </div>
           </v-col>
         </v-row>
+      </v-col>
+    </v-row>
+    <v-row>
+      <v-divider />
+      <v-col cols="6">
+        <h4 class="mb-3">フィルタ係数</h4>
+        <MathJax>
+          <p class="mb-3">
+            \( H(z) = \displaystyle\frac{b_0 + b_1 z^{-1} + b_2 z^{-2}}{a_0 + a_1 z^{-1} + a_2 z^{-2}} \)
+          </p>
+          <table class="ml-3">
+            <tbody>
+              <tr>
+                <td>\( b_0 = \)</td>
+                <td class="text-right">{{ coefficients[0].toFixed(9) }}</td>
+              </tr>
+              <tr>
+                <td>\( b_1 = \)</td>
+                <td class="text-right">{{ coefficients[1].toFixed(9) }}</td>
+              </tr>
+              <tr>
+                <td>\( b_2 = \)</td>
+                <td class="text-right">{{ coefficients[2].toFixed(9) }}</td>
+              </tr>
+              <tr>
+                <td>\( a_0 = \)</td>
+                <td class="text-right">{{ coefficients[3].toFixed(9) }}</td>
+              </tr>
+              <tr>
+                <td>\( a_1 = \)</td>
+                <td class="text-right">{{ coefficients[4].toFixed(9) }}</td>
+              </tr>
+              <tr>
+                <td>\( a_2 = \)</td>
+                <td class="text-right">{{ coefficients[5].toFixed(9) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </MathJax>
+      </v-col>
+      <v-col cols="6">
+        <h4 class="mb-3">正規化フィルタ係数</h4>
+        <MathJax>
+          <p class="mb-3">
+            \( H(z) = \displaystyle\frac{b_0 + b_1 z^{-1} + b_2 z^{-2}}{1 + a_1 z^{-1} + a_2 z^{-2}} \)
+          </p>
+          <table class="ml-3">
+            <tbody>
+              <tr>
+                <td>\( b_0 = \)</td>
+                <td class="text-right">{{ normalizedCoefficients[0].toFixed(9) }}</td>
+              </tr>
+              <tr>
+                <td>\( b_1 = \)</td>
+                <td class="text-right">{{ normalizedCoefficients[1].toFixed(9) }}</td>
+              </tr>
+              <tr>
+                <td>\( b_2 = \)</td>
+                <td class="text-right">{{ normalizedCoefficients[2].toFixed(9) }}</td>
+              </tr>
+              <tr>
+                <td>\( a_1 = \)</td>
+                <td class="text-right">{{ normalizedCoefficients[3].toFixed(9) }}</td>
+              </tr>
+              <tr>
+                <td>\( a_2 = \)</td>
+                <td class="text-right">{{ normalizedCoefficients[4].toFixed(9) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </MathJax>
       </v-col>
     </v-row>
 
