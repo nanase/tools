@@ -172,6 +172,7 @@ function updateGraph() {
     annotations['cutoffFreqLine'] = annotationOptions;
   }
 
+  chartState.chart.scales.y.options.max = Math.round(Math.max(0, ...biquadFilter.value.frequencyResponse) + 10);
   chartState.chart.data.labels = graphXLabel.value;
   chartState.chart.data.datasets = datasets as unknown as ChartDataset<'line', number[]>[];
   chartState.chart.update('none');
@@ -267,7 +268,6 @@ function initializeChart(canvas: HTMLCanvasElement): Chart {
         },
         y: {
           type: 'linear',
-          max: 20.0,
           min: -60.0,
         },
         y1: {
