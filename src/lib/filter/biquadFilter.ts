@@ -12,7 +12,6 @@ export type BiquadFilterType =
 
 export interface BiquadFilterParameter {
   q?: number;
-  bandwidth?: number;
   gain?: number;
 }
 
@@ -157,13 +156,12 @@ export class BiquadFilter {
     parameter?: BiquadFilterParameter,
   ): Float64Array {
     const q = parameter?.q ?? Math.SQRT1_2;
-    const bandwidth = parameter?.bandwidth ?? 1.0;
     const omega = BiquadFilter.calcOmega(samplingRate, cutoff);
-    const alpha = Math.sin(omega) * Math.sinh(((Math.log(2.0) / 2.0) * bandwidth * omega) / Math.sin(omega));
+    const alpha = Math.sin(omega) / (2.0 * q);
 
-    coefficients[0] = alpha * q;
+    coefficients[0] = alpha;
     coefficients[1] = 0.0;
-    coefficients[2] = -alpha * q;
+    coefficients[2] = -alpha;
     coefficients[3] = 1.0 + alpha;
     coefficients[4] = -2.0 * Math.cos(omega);
     coefficients[5] = 1.0 - alpha;
@@ -177,9 +175,9 @@ export class BiquadFilter {
     cutoff: number,
     parameter?: BiquadFilterParameter,
   ): Float64Array {
-    const bandwidth = parameter?.bandwidth ?? 1.0;
+    const q = parameter?.q ?? Math.SQRT1_2;
     const omega = BiquadFilter.calcOmega(samplingRate, cutoff);
-    const alpha = Math.sin(omega) * Math.sinh(((Math.log(2.0) / 2.0) * bandwidth * omega) / Math.sin(omega));
+    const alpha = Math.sin(omega) / (2.0 * q);
 
     coefficients[0] = 1.0;
     coefficients[1] = -2.0 * Math.cos(omega);
@@ -242,9 +240,9 @@ export class BiquadFilter {
     parameter?: BiquadFilterParameter,
   ): Float64Array {
     const gain = parameter?.gain ?? 0.0;
-    const bandwidth = parameter?.bandwidth ?? 1.0;
+    const q = parameter?.q ?? Math.SQRT1_2;
     const omega = BiquadFilter.calcOmega(samplingRate, cutoff);
-    const alpha = Math.sin(omega) * Math.sinh(((Math.log(2.0) / 2.0) * bandwidth * omega) / Math.sin(omega));
+    const alpha = Math.sin(omega) / (2.0 * q);
     const a = Math.pow(10.0, gain / 40.0);
 
     coefficients[0] = 1.0 + alpha * a;

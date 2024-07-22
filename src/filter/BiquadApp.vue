@@ -3,7 +3,7 @@ import { computed, ref, watch } from 'vue';
 import { Rules } from '@/lib/siPrefix';
 import { useTheme } from 'vuetify';
 import { reapplyTheme } from '@/lib/theme';
-import { BiquadFilter, type BiquadFilterType } from '@/lib/filter/biquadFilter';
+import { BiquadFilter } from '@/lib/filter/biquadFilter';
 import Chart, { type ChartDataset } from 'chart.js/auto';
 import annotationPlugin, { type AnnotationOptions } from 'chartjs-plugin-annotation';
 
@@ -12,56 +12,9 @@ import SIValueInput from '@/components/input/SIValueInput.vue';
 import ChartBase from '@/components/common/ChartBase.vue';
 import LogSlider from '@/components/input/LogSlider.vue';
 
+import { type FilterType, filterTypeItem, chartOptions, impulseChartOptions } from './biquadAppConfig';
+
 Chart.register(annotationPlugin);
-
-interface FilterType {
-  title: string;
-  value: BiquadFilterType;
-  requiredParameter: ('q' | 'bandwidth' | 'gain')[];
-}
-
-const filterTypeItem: FilterType[] = [
-  {
-    title: 'ローパスフィルタ (LPF)',
-    value: 'lowpass',
-    requiredParameter: ['q'],
-  },
-  {
-    title: 'ハイパスフィルタ (HPF)',
-    value: 'highpass',
-    requiredParameter: ['q'],
-  },
-  {
-    title: 'バンドパスフィルタ (BPF)',
-    value: 'bandpass',
-    requiredParameter: ['q', 'bandwidth'],
-  },
-  {
-    title: 'バンドストップフィルタ (BSF)',
-    value: 'bandstop',
-    requiredParameter: ['bandwidth'],
-  },
-  {
-    title: 'ローシェルフフィルタ (LSF)',
-    value: 'lowshelf',
-    requiredParameter: ['q', 'gain'],
-  },
-  {
-    title: 'ハイシェルフフィルタ (HSF)',
-    value: 'highshelf',
-    requiredParameter: ['q', 'gain'],
-  },
-  {
-    title: 'ピーキングフィルタ (Peaking)',
-    value: 'peaking',
-    requiredParameter: ['bandwidth', 'gain'],
-  },
-  {
-    title: 'オールパスフィルタ (Allpass)',
-    value: 'allpass',
-    requiredParameter: ['q'],
-  },
-];
 
 const theme = useTheme();
 const diagram = ref<HTMLObjectElement>();
@@ -71,7 +24,6 @@ const impulseChart = ref<InstanceType<typeof ChartBase>>();
 
 const cutoffFreq = ref<number>(1000.0);
 const q = ref<number>(0.707106781);
-const bandwidth = ref<number>(1.0);
 const gain = ref<number>(0.0);
 const samplingFreq = ref<number>(48000.0);
 
@@ -208,7 +160,6 @@ function updateImpulseGraph() {
 function updateFilterCoefficients() {
   biquadFilter.value.setFilter(filterType.value.value, samplingFreq.value, cutoffFreq.value, {
     q: q.value,
-    bandwidth: bandwidth.value,
     gain: gain.value,
   });
 
@@ -218,8 +169,10 @@ function updateFilterCoefficients() {
 }
 
 watch(
-  () => [filterType.value, cutoffFreq.value, q.value, bandwidth.value, gain.value, samplingFreq.value],
-  updateFilterCoefficients,
+  () => [filterType.value, cutoffFreq.value, q.value, gain.value, samplingFreq.value],
+  () => {
+    updateFilterCoefficients();
+  },
 );
 
 function onSVGLoaded() {
@@ -232,78 +185,42 @@ function onSVGLoaded() {
 }
 
 function initializeChart(canvas: HTMLCanvasElement): Chart {
-  return new Chart(canvas, {
-    type: 'line',
-    data: {
-      datasets: [],
-      labels: Array(impulseLength.value / 2)
-        .fill(0)
-        .map((_, i) => i),
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        // tooltip: {
-        //   callbacks: {
-        //     label: function (item: TooltipItem<'bar'>) {
-        //       return `${item.dataset.label}`;
-        //     },
-        //     footer: function footer(items: TooltipItem<'bar'>[]): string {
-        //       // const { type, value } = items[0].raw as { value: number; type: string };
-        //       // return `${dayjs.duration(value, 'seconds').format('H時間m分s秒')}`;
-        //       return 'test';
-        //     },
-        //   },
-        // },
-      },
-      parsing: {
-        xAxisKey: 'x',
-        yAxisKey: 'y',
-      },
-      scales: {
-        x: {
-          type: 'logarithmic',
-          min: 20.0,
-        },
-        y: {
-          type: 'linear',
-          min: -60.0,
-        },
-        y1: {
-          type: 'linear',
-          position: 'right',
-          max: 180.0,
-          min: -180.0,
-          ticks: {
-            stepSize: 90,
-          },
-          grid: {
-            drawOnChartArea: false, // only want the grid lines for one axis to show up
-          },
-        },
-      },
-    },
-  });
+  return new Chart(canvas, chartOptions);
 }
 
 function initializeImpulseChart(canvas: HTMLCanvasElement): Chart {
-  return new Chart(canvas, {
-    type: 'bar',
-    data: {
-      datasets: [],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      scales: {
-        y: {
-          type: 'linear',
-        },
-      },
-    },
-  });
+  return new Chart(canvas, impulseChartOptions);
 }
+
+async function clickSoundPlaying() {
+  if (soundPlaying.value) {
+    synth?.stop();
+  } else {
+    if (synth == null) {
+      await Tone.start();
+
+      toneFilter = new Tone.BiquadFilter({
+        frequency: cutoffFreq.value,
+        Q: q.value,
+        gain: gain.value,
+      }).toDestination();
+
+      synth = new Tone.Noise().connect(toneFilter);
+    }
+
+    synth.volume.value = soundVolume.value;
+    synth.start();
+  }
+}
+
+watch(
+  () => soundVolume.value,
+  () => {
+    if (synth) {
+      synth.volume.value = soundVolume.value;
+    }
+  },
+);
 </script>
 
 <template>
@@ -365,35 +282,6 @@ function initializeImpulseChart(canvas: HTMLCanvasElement): Chart {
               hide-details
               :disabled="!filterType.requiredParameter.includes('q')"
             />
-          </v-col>
-        </v-row>
-
-        <v-row>
-          <v-col cols="6" sm="4">
-            <SIValueInput
-              v-model:value="bandwidth"
-              label="帯域幅"
-              variant="underlined"
-              density="compact"
-              unit="oct"
-              :fraction-digits="3"
-              :rule="[Rules.required, Rules.value, Rules.notNegative]"
-              hide-details
-              :disabled="!filterType.requiredParameter.includes('bandwidth')"
-            />
-          </v-col>
-          <v-col cols="6" sm="8">
-            <v-slider
-              v-model="bandwidth"
-              :max="12"
-              :min="0.001"
-              :step="0.1"
-              thumb-label
-              hide-details
-              :disabled="!filterType.requiredParameter.includes('bandwidth')"
-            >
-              <template #thumb-label="{ modelValue }"> {{ Number(modelValue).toFixed(3) }} </template>
-            </v-slider>
           </v-col>
         </v-row>
 
