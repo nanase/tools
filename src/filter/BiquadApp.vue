@@ -30,6 +30,7 @@ const gain = ref<number>(6.0);
 const samplingFreq = ref<number>(48000.0);
 
 const impulseLength = ref<number>(1024);
+const impulseGraphLength = ref<number>(1024 / 4);
 const biquadFilter = computed<BiquadFilter>(() => new BiquadFilter(impulseLength.value));
 const coefficients = ref<number[]>([1, 0, 0, 0, 0, 0]);
 const normalizedCoefficients = ref<number[]>([1, 0, 0, 0, 0]);
@@ -149,15 +150,15 @@ function updateImpulseGraph() {
   const datasets: ChartDataset<'bar', number[]>[] = [
     {
       label: 'インパルス応答',
-      data: [...biquadFilter.value.impluseResponse.slice(0, impulseLength.value / 4)],
+      data: [...biquadFilter.value.impluseResponse.slice(0, impulseGraphLength.value)],
       pointStyle: false,
       borderWidth: 0,
       backgroundColor: 'rgb(54, 162, 235)',
     },
   ];
 
-  if (chartState.chart.data.labels?.length != impulseLength.value / 4) {
-    chartState.chart.data.labels = Array(impulseLength.value / 4)
+  if (chartState.chart.data.labels?.length != impulseGraphLength.value) {
+    chartState.chart.data.labels = Array(impulseGraphLength.value)
       .fill(0)
       .map((_, i) => i);
   }
@@ -181,8 +182,12 @@ function updateFilterCoefficients() {
 }
 
 watch(
-  () => [filterType.value, cutoffFreq.value, q.value, gain.value, samplingFreq.value],
+  () => [impulseLength.value, filterType.value, cutoffFreq.value, q.value, gain.value, samplingFreq.value],
   () => {
+    if (impulseGraphLength.value > impulseLength.value) {
+      impulseGraphLength.value = impulseLength.value;
+    }
+
     updateFilterCoefficients();
 
     if (toneFilter) {
@@ -195,6 +200,8 @@ watch(
     }
   },
 );
+
+watch(() => impulseGraphLength.value, updateImpulseGraph);
 
 function onSVGLoaded() {
   reapplyTheme(theme);
@@ -417,7 +424,7 @@ watch(
         </v-row>
 
         <v-row>
-          <v-divider />
+          <v-divider class="mt-3" />
           <v-col cols="4">
             <v-checkbox
               v-model="soundPlaying"
@@ -443,6 +450,37 @@ watch(
           </v-col>
           <v-col cols="8">
             <v-slider v-model="soundVolume" :min="-80" :max="30" thumb-label />
+          </v-col>
+        </v-row>
+
+        <v-row>
+          <v-divider class="mb-3" />
+          <v-col cols="6">
+            <v-select
+              label="インパルス長"
+              density="compact"
+              variant="underlined"
+              v-model="impulseLength"
+              :items="[256, 512, 1024, 2048, 4096, 8192, 16384, 32768]"
+              hide-details
+            />
+          </v-col>
+          <v-col cols="6">
+            <v-select
+              label="インパルス応答のグラフ長"
+              density="compact"
+              variant="underlined"
+              v-model="impulseGraphLength"
+              :items="[
+                impulseLength / 32,
+                impulseLength / 16,
+                impulseLength / 4,
+                impulseLength / 8,
+                impulseLength / 2,
+                impulseLength,
+              ]"
+              hide-details
+            />
           </v-col>
         </v-row>
       </v-col>
