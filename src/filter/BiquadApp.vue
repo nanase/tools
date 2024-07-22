@@ -457,12 +457,12 @@ function initializeImpulseChart(canvas: HTMLCanvasElement): Chart {
             ></object>
           </v-col>
           <v-col cols="12">
-            <div style="max-height: 500px">
+            <div style="height: 250px">
               <ChartBase ref="chart" :initializer="initializeChart" />
             </div>
           </v-col>
           <v-col cols="12">
-            <div style="max-height: 500px">
+            <div style="height: 250px">
               <ChartBase ref="impulseChart" :initializer="initializeImpulseChart" />
             </div>
           </v-col>
