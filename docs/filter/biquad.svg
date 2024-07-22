@@ -36,11 +36,11 @@
       <path d="M192 143h27v28.57h-27zm0 0"/>
     </clipPath>
   </defs>
-  <text id="b0" x="65" y="10" style="fill:var(--color);" font-size="7">1.000000000</text>
-  <text id="b1" x="65" y="67.5" style="fill:var(--color);" font-size="7">0.000000000</text>
-  <text id="b2" x="65" y="127.5" style="fill:var(--color);" font-size="7">0.000000000</text>
-  <text id="a1" x="140" y="67.5" style="fill:var(--color);" font-size="7">0.000000000</text>
-  <text id="a2" x="140" y="127.5" style="fill:var(--color);" font-size="7">0.000000000</text>
+  <text id="b0" x="60" y="8" style="fill:var(--color);" font-size="8">1.000000000</text>
+  <text id="b1" x="60" y="65" style="fill:var(--color);" font-size="8">0.000000000</text>
+  <text id="b2" x="60" y="125" style="fill:var(--color);" font-size="8">0.000000000</text>
+  <text id="a1" x="135" y="65" style="fill:var(--color);" font-size="8">0.000000000</text>
+  <text id="a2" x="135" y="125" style="fill:var(--color);" font-size="8">0.000000000</text>
 
   <path d="M37.56 40.04l-1.84-3.67h7.35l-3.67 7.35zM57.54 23.2l-3.67 1.83v-7.35l3.67 1.84 3.67 1.84zm0 0" style="fill:var(--color);"/>
   <path d="M54.1 21.36H10m29.4 15.01v-14.7M28.38 43.72h22.04v22.05H28.38zm0 0" fill="none" style="stroke:var(--color);" stroke-width=".73"/>
