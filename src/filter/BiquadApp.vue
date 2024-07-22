@@ -464,6 +464,28 @@ watch(
         </v-row>
       </v-col>
     </v-row>
+
+    <template #footer>
+      <v-divider />
+      <v-footer>
+        <v-container>
+          <h4>参考文献</h4>
+          <ul>
+            <li>
+              <a href="https://webaudio.github.io/Audio-EQ-Cookbook/audio-eq-cookbook.html" target="_blank"
+                >Cookbook formulae for audio equalizer biquad filter coefficients</a
+              >
+            </li>
+            <li>
+              <a href="https://developer.mozilla.org/en-US/docs/Web/API/BiquadFilterNode/type" target="_blank"
+                >BiquadFilterNode: type property</a
+              >
+              - Web APIs | MDN
+            </li>
+          </ul>
+        </v-container>
+      </v-footer>
+    </template>
   </AppBase>
 </template>
 
