@@ -95,13 +95,13 @@ function updateGraph() {
 
   const datasets: ChartDataset<'line', { x: number; y: number }[] | number[]>[] = [
     {
-      label: '周波数応答 (dB)',
+      label: '振幅 (dB)',
       data: [...biquadFilter.value.frequencyResponse],
       pointStyle: false,
       yAxisID: 'y',
     },
     {
-      label: '位相応答 (deg)',
+      label: '位相 (deg)',
       data: segmentedPhaseResponse(),
       pointStyle: false,
       yAxisID: 'y1',
