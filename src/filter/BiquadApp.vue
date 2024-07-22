@@ -257,7 +257,7 @@ watch(
         </v-row>
 
         <v-row>
-          <v-col cols="6" sm="4">
+          <v-col cols="4">
             <SIValueInput
               v-model:value="cutoffFreq"
               label="カットオフ周波数"
@@ -270,13 +270,26 @@ watch(
               hide-details
             />
           </v-col>
-          <v-col cols="6" sm="8">
+          <v-col cols="7">
             <LogSlider v-model="cutoffFreq" :max="samplingFreq / 2" :min="10" thumb-label hide-details />
+          </v-col>
+          <v-col cols="1">
+            <v-menu>
+              <template v-slot:activator="{ props }">
+                <v-btn icon="mdi-dots-horizontal" v-bind="props" variant="plain" density="compact" />
+              </template>
+              <v-list>
+                <v-list-item title="10 kHz" @click="cutoffFreq = 10.0e3" />
+                <v-list-item title="1 kHz" @click="cutoffFreq = 1.0e3" />
+                <v-list-item title="100 Hz" @click="cutoffFreq = 100.0" />
+                <v-list-item title="10 Hz" @click="cutoffFreq = 10.0" />
+              </v-list>
+            </v-menu>
           </v-col>
         </v-row>
 
         <v-row>
-          <v-col cols="6" sm="4">
+          <v-col cols="4">
             <SIValueInput
               v-model:value="q"
               label="Q"
@@ -288,20 +301,37 @@ watch(
               :disabled="!filterType.requiredParameter.includes('q')"
             />
           </v-col>
-          <v-col cols="6" sm="8">
+          <v-col cols="7">
             <LogSlider
               v-model="q"
-              :max="32.0"
+              :max="128.0"
               :min="0.01"
               thumb-label
               hide-details
               :disabled="!filterType.requiredParameter.includes('q')"
             />
           </v-col>
+          <v-col cols="1">
+            <v-menu>
+              <template v-slot:activator="{ props }">
+                <v-btn icon="mdi-dots-horizontal" v-bind="props" variant="plain" density="compact" />
+              </template>
+              <v-list>
+                <v-list-item title="16.0000" @click="q = Math.pow(Math.SQRT2, 8)" />
+                <v-list-item title="8.0000" @click="q = Math.pow(Math.SQRT2, 6)" />
+                <v-list-item title="4.0000" @click="q = Math.pow(Math.SQRT2, 4)" />
+                <v-list-item title="2.0000" @click="q = Math.pow(Math.SQRT2, 2)" />
+                <v-list-item title="1.4142" @click="q = Math.SQRT2" />
+                <v-list-item title="1.0000" @click="q = 1.0" />
+                <v-list-item title="0.7071 (デフォルト)" @click="q = Math.SQRT1_2" />
+                <v-list-item title="0.5000" @click="q = 0.5" />
+              </v-list>
+            </v-menu>
+          </v-col>
         </v-row>
 
         <v-row>
-          <v-col cols="6" sm="4">
+          <v-col cols="4">
             <SIValueInput
               v-model:value="gain"
               label="増幅量"
@@ -314,11 +344,11 @@ watch(
               :disabled="!filterType.requiredParameter.includes('gain')"
             />
           </v-col>
-          <v-col cols="6" sm="8">
+          <v-col cols="7">
             <v-slider
               v-model="gain"
-              :max="30"
-              :min="-30"
+              :max="40"
+              :min="-40"
               :step="0.1"
               thumb-label
               hide-details
@@ -327,10 +357,26 @@ watch(
               <template #thumb-label="{ modelValue }"> {{ Number(modelValue).toFixed(2) }} </template>
             </v-slider>
           </v-col>
+          <v-col cols="1">
+            <v-menu>
+              <template v-slot:activator="{ props }">
+                <v-btn icon="mdi-dots-horizontal" v-bind="props" variant="plain" density="compact" />
+              </template>
+              <v-list>
+                <v-list-item title="+ 9.00 dB" @click="gain = 9.0" />
+                <v-list-item title="+ 6.00 dB" @click="gain = 6.0" />
+                <v-list-item title="+ 3.00 dB" @click="gain = 3.0" />
+                <v-list-item title=" 0.00 dB" @click="gain = 0.0" />
+                <v-list-item title="- 3.00 dB" @click="gain = -3.0" />
+                <v-list-item title="- 6.00 dB" @click="gain = -6.0" />
+                <v-list-item title="- 9.00 dB" @click="gain = -9.0" />
+              </v-list>
+            </v-menu>
+          </v-col>
         </v-row>
 
         <v-row>
-          <v-col cols="6" sm="4">
+          <v-col cols="4">
             <SIValueInput
               v-model:value="samplingFreq"
               label="サンプリング周波数"
@@ -343,10 +389,27 @@ watch(
               hide-details
             />
           </v-col>
-          <v-col cols="6" sm="8">
+          <v-col cols="7">
             <LogSlider v-model="samplingFreq" :max="192000" :min="10" thumb-label hide-details />
           </v-col>
+          <v-col cols="1">
+            <v-menu>
+              <template v-slot:activator="{ props }">
+                <v-btn icon="mdi-dots-horizontal" v-bind="props" variant="plain" density="compact" />
+              </template>
+              <v-list>
+                <v-list-item title="192.000 kHz" @click="samplingFreq = 192.0e3" />
+                <v-list-item title="96.000 kHz" @click="samplingFreq = 96.0e3" />
+                <v-list-item title="88.200 kHz" @click="samplingFreq = 88.2e3" />
+                <v-list-item title="48.000 kHz" @click="samplingFreq = 48.0e3" />
+                <v-list-item title="44.100 kHz" @click="samplingFreq = 44.1e3" />
+                <v-list-item title="32.000 kHz" @click="samplingFreq = 32.0e3" />
+                <v-list-item title="22.050 Hz" @click="samplingFreq = 22.05e3" />
+              </v-list>
+            </v-menu>
+          </v-col>
         </v-row>
+
         <v-row>
           <v-divider />
           <v-col cols="4">
@@ -358,9 +421,22 @@ watch(
               density="compact"
             />
           </v-col>
+        </v-row>
+        <v-row>
+          <v-col cols="4">
+            <SIValueInput
+              v-model:value="soundVolume"
+              label="ボリューム"
+              variant="underlined"
+              density="compact"
+              unit="dB"
+              :fraction-digits="2"
+              :rule="[Rules.required, Rules.value]"
+              hide-details
+            />
+          </v-col>
           <v-col cols="8">
-            <div class="text-caption">ボリューム (dB)</div>
-            <v-slider v-model="soundVolume" :min="-80" :max="0" thumb-label />
+            <v-slider v-model="soundVolume" :min="-80" :max="30" thumb-label />
           </v-col>
         </v-row>
       </v-col>
