@@ -127,6 +127,7 @@ function updateGraph() {
     annotations['cutoffFreqLine'] = annotationOptions;
   }
 
+  chartState.chart.scales.x.options.min = 200 / 2 ** (Math.log2(impulseLength.value) - 8);
   chartState.chart.scales.y.options.max = Math.round(Math.max(0, ...biquadFilter.value.frequencyResponse) + 10);
   chartState.chart.data.labels = graphXLabel.value;
   chartState.chart.data.datasets = datasets as unknown as ChartDataset<'line', number[]>[];
