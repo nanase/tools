@@ -15,6 +15,7 @@ import ChartBase from '@/components/common/ChartBase.vue';
 import LogSlider from '@/components/input/LogSlider.vue';
 
 import { type FilterType, filterTypeItem, chartOptions, impulseChartOptions } from './biquadAppConfig';
+import { divide, sequence } from '@/lib/array';
 
 Chart.register(annotationPlugin);
 
@@ -34,15 +35,7 @@ const impulseGraphLength = ref<number>(1024 / 4);
 const biquadFilter = computed<BiquadFilter>(() => new BiquadFilter(impulseLength.value));
 const coefficients = ref<number[]>([1, 0, 0, 0, 0, 0]);
 const normalizedCoefficients = ref<number[]>([1, 0, 0, 0, 0]);
-const graphXLabel = computed<number[]>(() => {
-  const array = Array(impulseLength.value / 2).fill(0);
-
-  for (let i = 0; i < array.length; i++) {
-    array[i] = (samplingFreq.value / 2 / array.length) * i;
-  }
-
-  return array;
-});
+const graphXLabel = computed<number[]>(() => divide(samplingFreq.value / 2, impulseLength.value / 2));
 
 const soundPlaying = ref<boolean>();
 const soundVolume = ref<number>(-30);
@@ -159,9 +152,7 @@ function updateImpulseGraph() {
   ];
 
   if (chartState.chart.data.labels?.length != impulseGraphLength.value) {
-    chartState.chart.data.labels = Array(impulseGraphLength.value)
-      .fill(0)
-      .map((_, i) => i);
+    chartState.chart.data.labels = sequence(impulseGraphLength.value);
   }
 
   chartState.chart.data.datasets = datasets as unknown as ChartDataset<'bar', number[]>[];
