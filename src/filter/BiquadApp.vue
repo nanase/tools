@@ -320,9 +320,23 @@ watch(
           <v-col cols="1">
             <v-menu>
               <template v-slot:activator="{ props }">
-                <v-btn icon="mdi-dots-horizontal" v-bind="props" variant="plain" density="compact" />
+                <v-btn icon="" v-bind="props" variant="plain" density="compact">
+                  <v-icon
+                    v-if="(filterType.value === 'lowshelf' || filterType.value === 'highshelf') && soundPlaying"
+                    color="warning"
+                    icon="mdi-alert"
+                  />
+                  <v-icon v-else icon="mdi-dots-horizontal" />
+                </v-btn>
               </template>
               <v-list>
+                <v-list-item
+                  v-if="(filterType.value === 'lowshelf' || filterType.value === 'highshelf') && soundPlaying"
+                  title="再生される音には Q のパラメータは反映されません"
+                  active-color="warning"
+                  active
+                  density="compact"
+                />
                 <v-list-item title="16.0000" @click="q = Math.pow(Math.SQRT2, 8)" />
                 <v-list-item title="8.0000" @click="q = Math.pow(Math.SQRT2, 6)" />
                 <v-list-item title="4.0000" @click="q = Math.pow(Math.SQRT2, 4)" />
