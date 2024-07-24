@@ -464,14 +464,7 @@ watch(
               density="compact"
               variant="underlined"
               v-model="impulseGraphLength"
-              :items="[
-                impulseLength / 32,
-                impulseLength / 16,
-                impulseLength / 4,
-                impulseLength / 8,
-                impulseLength / 2,
-                impulseLength,
-              ]"
+              :items="Array.from({ length: Math.log2(impulseLength) - 2 }, (_, i) => 8 << i)"
               hide-details
             />
           </v-col>
