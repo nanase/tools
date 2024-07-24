@@ -79,7 +79,7 @@ function updateGraph() {
     for (let i = 1; i < impulseLength.value; i++) {
       const currentValue = biquadFilter.value.phaseResponse[i];
 
-      if (Math.abs(currentValue - prevValue) >= 120.0 && i < impulseLength.value - 1) {
+      if (Math.abs(currentValue - prevValue) >= 180.0 && i < impulseLength.value - 1) {
         data.push({ x: (graphXLabel.value[i] + graphXLabel.value[i + 1]) / 2, y: Number.NaN });
       }
 
