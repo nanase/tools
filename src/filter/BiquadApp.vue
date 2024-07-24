@@ -24,6 +24,7 @@ const diagram = ref<HTMLObjectElement>();
 const filterType = ref<FilterType>(filterTypeItem[0]);
 const chart = ref<InstanceType<typeof ChartBase>>();
 const impulseChart = ref<InstanceType<typeof ChartBase>>();
+const chartMinimumMagnitude = ref<number>(-60.0);
 
 const cutoffFreq = ref<number>(1000.0);
 const q = ref<number>(0.707106781);
@@ -135,6 +136,7 @@ function updateGraph() {
 
   chartState.chart.scales.x.options.min = 200 / 2 ** (Math.log2(impulseLength.value) - 8);
   chartState.chart.scales.y.options.max = Math.round(Math.max(0, ...biquadFilter.value.frequencyResponse) + 10);
+  chartState.chart.scales.y.options.min = chartMinimumMagnitude.value;
   chartState.chart.data.labels = graphXLabel.value;
   chartState.chart.data.datasets = datasets as unknown as ChartDataset<'line', number[]>[];
   chartState.chart.update('none');
@@ -214,6 +216,7 @@ watch(
   },
 );
 
+watch(() => chartMinimumMagnitude.value, updateGraph);
 watch(() => impulseGraphLength.value, updateImpulseGraph);
 
 function onSVGLoaded() {
@@ -501,6 +504,26 @@ watch(
               :items="Array.from({ length: Math.log2(impulseLength) - 2 }, (_, i) => 8 << i)"
               hide-details
             />
+          </v-col>
+        </v-row>
+
+        <v-row>
+          <v-col cols="4">
+            <SIValueInput
+              v-model:value="chartMinimumMagnitude"
+              label="周波数応答の最小振幅"
+              variant="underlined"
+              density="compact"
+              unit="dB"
+              :fraction-digits="0"
+              :rule="[Rules.required, Rules.value]"
+              hide-details
+            />
+          </v-col>
+          <v-col cols="8">
+            <v-slider v-model="chartMinimumMagnitude" :max="0" :min="-150" :step="10" thumb-label hide-details>
+              <template #thumb-label="{ modelValue }"> {{ Number(modelValue).toFixed(0) }} </template>
+            </v-slider>
           </v-col>
         </v-row>
       </v-col>
