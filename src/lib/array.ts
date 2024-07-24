@@ -31,3 +31,32 @@ export function divide(value: number, divider: number): number[] {
 
   return array;
 }
+
+export function findMinMax(...array: number[]): { max: number; min: number; maxIndex: number; minIndex: number } {
+  if (array.length === 0) {
+    throw new Error('Array is empty');
+  }
+
+  let max = array[0];
+  let min = array[0];
+  let maxIndex = 0;
+  let minIndex = 0;
+
+  for (let i = 1; i < array.length; i++) {
+    if (array[i] > max) {
+      max = array[i];
+      maxIndex = i;
+    }
+    if (array[i] < min) {
+      min = array[i];
+      minIndex = i;
+    }
+  }
+
+  return {
+    max: max,
+    min: min,
+    maxIndex: maxIndex,
+    minIndex: minIndex,
+  };
+}

@@ -15,7 +15,7 @@ import ChartBase from '@/components/common/ChartBase.vue';
 import LogSlider from '@/components/input/LogSlider.vue';
 
 import { type FilterType, filterTypeItem, chartOptions, impulseChartOptions } from './biquadAppConfig';
-import { divide, sequence } from '@/lib/array';
+import { divide, findMinMax, sequence } from '@/lib/array';
 
 Chart.register(annotationPlugin);
 
@@ -35,6 +35,12 @@ const impulseGraphLength = ref<number>(1024 / 4);
 const biquadFilter = computed<BiquadFilter>(() => new BiquadFilter(impulseLength.value));
 const coefficients = ref<number[]>([1, 0, 0, 0, 0, 0]);
 const normalizedCoefficients = ref<number[]>([1, 0, 0, 0, 0]);
+const magnitudeOnCutoff = ref<number>(0);
+const maxMagnitude = ref<number>(0);
+const minMagnitude = ref<number>(0);
+const maxMagnitudeFrequency = ref<number>(0);
+const minMagnitudeFrequency = ref<number>(0);
+const sumImpulse = ref<number>(0);
 const graphXLabel = computed<number[]>(() => divide(samplingFreq.value / 2, impulseLength.value / 2));
 
 const soundPlaying = ref<boolean>();
@@ -168,6 +174,20 @@ function updateFilterCoefficients() {
 
   coefficients.value = [...biquadFilter.value.coefficients];
   normalizedCoefficients.value = [...biquadFilter.value.normalizedCoefficients];
+
+  magnitudeOnCutoff.value =
+    (biquadFilter.value.frequencyResponse[Math.floor((cutoffFreq.value / samplingFreq.value) * impulseLength.value)] +
+      biquadFilter.value.frequencyResponse[
+        Math.floor((cutoffFreq.value / samplingFreq.value) * impulseLength.value + 1)
+      ]) /
+    2;
+
+  const minMax = findMinMax(...biquadFilter.value.frequencyResponse);
+  maxMagnitude.value = minMax.max;
+  minMagnitude.value = minMax.min;
+  maxMagnitudeFrequency.value = (samplingFreq.value / impulseLength.value) * minMax.maxIndex;
+  minMagnitudeFrequency.value = (samplingFreq.value / impulseLength.value) * minMax.minIndex;
+  sumImpulse.value = biquadFilter.value.impluseResponse.reduce((p, c) => p + c, 0.0);
 
   updateDiagram();
   updateGraph();
@@ -576,6 +596,53 @@ watch(
               </tr>
             </tbody>
           </table>
+        </MathJax>
+      </v-col>
+      <v-col cols="6">
+        <h4 class="mb-3">カットオフ周波数の振幅</h4>
+        <MathJax>
+          <table class="text-right">
+            <tbody>
+              <tr>
+                <td>\( f_c = \)</td>
+                <td>{{ cutoffFreq.toFixed(3) }} [Hz]</td>
+              </tr>
+              <tr>
+                <td>\( A_{f_c} = \)</td>
+                <td>{{ Number.isNaN(magnitudeOnCutoff) ? '---' : magnitudeOnCutoff.toFixed(3) }} [dB]</td>
+              </tr>
+            </tbody>
+          </table>
+        </MathJax>
+      </v-col>
+      <v-col cols="6">
+        <h4 class="mb-3">最大と最小振幅</h4>
+        <MathJax>
+          <table class="text-right">
+            <tbody>
+              <tr>
+                <td>\( \max A = \)</td>
+                <td>{{ maxMagnitude.toFixed(3) }} [dB]</td>
+                <td>@ \( f_c = \)</td>
+                <td>{{ maxMagnitudeFrequency.toFixed(3) }} [Hz]</td>
+              </tr>
+              <tr>
+                <td>\( \min A = \)</td>
+                <td>{{ minMagnitude.toFixed(3) }} [dB]</td>
+                <td>@ \( f_c = \)</td>
+                <td>{{ minMagnitudeFrequency.toFixed(3) }} [Hz]</td>
+              </tr>
+            </tbody>
+          </table>
+        </MathJax>
+      </v-col>
+      <v-col cols="6">
+        <h4 class="mb-3">インパルス応答の総和</h4>
+        <MathJax>
+          <p>
+            <span> \( \sum y = \) </span>
+            {{ sumImpulse.toFixed(6) }}
+          </p>
         </MathJax>
       </v-col>
     </v-row>
