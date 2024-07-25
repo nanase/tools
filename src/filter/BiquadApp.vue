@@ -118,12 +118,20 @@ function updateGraph() {
           data: [...biquadFilter.value.frequencyResponse],
           pointStyle: false,
           yAxisID: 'y',
+          hidden:
+            typeof chartState.chart.data.datasets[0]?.hidden === 'undefined'
+              ? false
+              : !chartState.chart.isDatasetVisible(0),
         },
         {
           label: '位相 (deg)',
           data: segmentedPhaseResponse(),
           pointStyle: false,
           yAxisID: 'y1',
+          hidden:
+            typeof chartState.chart.data.datasets[1]?.hidden === 'undefined'
+              ? false
+              : !chartState.chart.isDatasetVisible(1),
         },
       ],
       labels: graphXLabel.value,
@@ -162,6 +170,10 @@ function updateImpulseGraph() {
           borderWidth: 0,
           backgroundColor: 'rgb(54, 162, 235)',
           barPercentage: 1.2,
+          hidden:
+            typeof chartState.chart.data.datasets[0]?.hidden === 'undefined'
+              ? false
+              : !chartState.chart.isDatasetVisible(0),
         },
       ],
       labels: sequence(impulseGraphLength.value),
