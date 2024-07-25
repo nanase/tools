@@ -61,10 +61,10 @@ function updateDiagram() {
     deepAssign(document?.getElementById(id), { textContent: text });
   }
 
-  const diagram = window.document.querySelector('.diagram');
+  const diagram = window.document.querySelector<HTMLObjectElement>('.diagram');
 
   if (diagram) {
-    const diagramDom = (diagram as HTMLObjectElement).contentDocument;
+    const diagramDom = diagram.contentDocument;
     setTextContent(diagramDom, 'b0', biquadFilter.value.normalizedCoefficients[0].toFixed(9));
     setTextContent(diagramDom, 'b1', biquadFilter.value.normalizedCoefficients[1].toFixed(9));
     setTextContent(diagramDom, 'b2', biquadFilter.value.normalizedCoefficients[2].toFixed(9));
