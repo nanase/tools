@@ -1,5 +1,6 @@
 import { type BiquadFilterType } from '@/lib/filter/biquadFilter';
 import type { ChartConfiguration } from 'chart.js/auto';
+import type { AnnotationOptions } from 'chartjs-plugin-annotation';
 import * as Tone from 'tone';
 
 export interface FilterType {
@@ -133,4 +134,11 @@ export const impulseChartOptions: ChartConfiguration<'bar'> = {
       },
     },
   },
+};
+
+export const cutoffAnnotationOptions: AnnotationOptions = {
+  type: 'line',
+  borderColor: '#aaa',
+  borderWidth: 2,
+  borderDash: [5],
 };

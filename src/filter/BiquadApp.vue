@@ -14,7 +14,13 @@ import SIValueInput from '@/components/input/SIValueInput.vue';
 import ChartBase from '@/components/common/ChartBase.vue';
 import LogSlider from '@/components/input/LogSlider.vue';
 
-import { type FilterType, filterTypeItem, chartOptions, impulseChartOptions } from './biquadAppConfig';
+import {
+  type FilterType,
+  filterTypeItem,
+  chartOptions,
+  impulseChartOptions,
+  cutoffAnnotationOptions,
+} from './biquadAppConfig';
 import { divide, findMinMax, sequence } from '@/lib/array';
 
 Chart.register(annotationPlugin);
@@ -121,17 +127,13 @@ function updateGraph() {
     | undefined;
 
   if (annotations) {
-    const annotationOptions: AnnotationOptions = {
-      type: 'line',
-      xMax: cutoffFreq.value,
-      xMin: cutoffFreq.value,
-      z: 10,
-      borderColor: '#aaa',
-      borderWidth: 2,
-      borderDash: [5],
-    };
-
-    annotations['cutoffFreqLine'] = annotationOptions;
+    annotations['cutoffFreqLine'] = Object.assign(
+      {
+        xMax: cutoffFreq.value,
+        xMin: cutoffFreq.value,
+      },
+      cutoffAnnotationOptions,
+    );
   }
 
   chartState.chart.scales.x.options.min = 200 / 2 ** (Math.log2(impulseLength.value) - 8);
