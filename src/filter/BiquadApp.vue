@@ -4,8 +4,8 @@ import { Rules } from '@/lib/siPrefix';
 import { useTheme } from 'vuetify';
 import { reapplyTheme } from '@/lib/theme';
 import { BiquadFilter } from '@/lib/filter/biquadFilter';
-import Chart, { type ChartDataset } from 'chart.js/auto';
-import annotationPlugin, { type AnnotationOptions } from 'chartjs-plugin-annotation';
+import Chart from 'chart.js/auto';
+import annotationPlugin from 'chartjs-plugin-annotation';
 import * as Tone from 'tone';
 import MathJax from '@/components/common/MathJax.vue';
 
@@ -22,6 +22,7 @@ import {
   cutoffAnnotationOptions,
 } from './biquadAppConfig';
 import { divide, findMinMax, sequence } from '@/lib/array';
+import { deepAssign, RawObject } from '@/lib/object';
 
 Chart.register(annotationPlugin);
 
@@ -57,13 +58,7 @@ let toneFilter: Tone.BiquadFilter | null = null;
 
 function updateDiagram() {
   function setTextContent(document: Document | null | undefined, id: string, text: string) {
-    if (document) {
-      const element = document.getElementById(id);
-
-      if (element) {
-        element.textContent = text;
-      }
-    }
+    deepAssign(document?.getElementById(id), { textContent: text });
   }
 
   const diagram = window.document.querySelector('.diagram');
@@ -103,45 +98,51 @@ function updateGraph() {
     return data;
   }
 
-  const datasets: ChartDataset<'line', { x: number; y: number }[] | number[]>[] = [
-    {
-      label: '振幅 (dB)',
-      data: [...biquadFilter.value.frequencyResponse],
-      pointStyle: false,
-      yAxisID: 'y',
+  deepAssign(chartState.chart.options.plugins?.annotation?.annotations, {
+    cutoffFreqLine: new RawObject(
+      Object.assign(
+        {
+          xMax: cutoffFreq.value,
+          xMin: cutoffFreq.value,
+        },
+        cutoffAnnotationOptions,
+      ),
+    ),
+  });
+
+  deepAssign(chartState.chart, {
+    data: {
+      datasets: [
+        {
+          label: '振幅 (dB)',
+          data: [...biquadFilter.value.frequencyResponse],
+          pointStyle: false,
+          yAxisID: 'y',
+        },
+        {
+          label: '位相 (deg)',
+          data: segmentedPhaseResponse(),
+          pointStyle: false,
+          yAxisID: 'y1',
+        },
+      ],
+      labels: graphXLabel.value,
     },
-    {
-      label: '位相 (deg)',
-      data: segmentedPhaseResponse(),
-      pointStyle: false,
-      yAxisID: 'y1',
-    },
-  ];
-
-  if (chartState.chart.options.scales?.x) {
-    chartState.chart.options.scales.x.max = samplingFreq.value / 2;
-  }
-
-  const annotations = chartState.chart.options.plugins?.annotation?.annotations as
-    | Record<string, AnnotationOptions>
-    | undefined;
-
-  if (annotations) {
-    annotations['cutoffFreqLine'] = Object.assign(
-      {
-        xMax: cutoffFreq.value,
-        xMin: cutoffFreq.value,
+    scales: {
+      x: {
+        options: {
+          max: samplingFreq.value / 2,
+          min: 200 / 2 ** (Math.log2(impulseLength.value) - 8),
+        },
       },
-      cutoffAnnotationOptions,
-    );
-  }
-
-  chartState.chart.scales.x.options.min = 200 / 2 ** (Math.log2(impulseLength.value) - 8);
-  chartState.chart.scales.y.options.max = Math.round(Math.max(0, ...biquadFilter.value.frequencyResponse) + 10);
-  chartState.chart.scales.y.options.min = chartMinimumMagnitude.value;
-  chartState.chart.data.labels = graphXLabel.value;
-  chartState.chart.data.datasets = datasets as unknown as ChartDataset<'line', number[]>[];
-  chartState.chart.update('none');
+      y: {
+        options: {
+          max: Math.round(Math.max(0, ...biquadFilter.value.frequencyResponse) + 10),
+          min: chartMinimumMagnitude.value,
+        },
+      },
+    },
+  }).update('none');
 }
 
 function updateImpulseGraph() {
@@ -151,23 +152,21 @@ function updateImpulseGraph() {
     return;
   }
 
-  const datasets: ChartDataset<'bar', number[]>[] = [
-    {
-      label: 'インパルス応答',
-      data: [...biquadFilter.value.impluseResponse.slice(0, impulseGraphLength.value)],
-      pointStyle: 'rect',
-      borderWidth: 0,
-      backgroundColor: 'rgb(54, 162, 235)',
-      barPercentage: 1.2,
+  deepAssign(chartState.chart, {
+    data: {
+      datasets: [
+        {
+          label: 'インパルス応答',
+          data: [...biquadFilter.value.impluseResponse.slice(0, impulseGraphLength.value)],
+          pointStyle: 'rect',
+          borderWidth: 0,
+          backgroundColor: 'rgb(54, 162, 235)',
+          barPercentage: 1.2,
+        },
+      ],
+      labels: sequence(impulseGraphLength.value),
     },
-  ];
-
-  if (chartState.chart.data.labels?.length != impulseGraphLength.value) {
-    chartState.chart.data.labels = sequence(impulseGraphLength.value);
-  }
-
-  chartState.chart.data.datasets = datasets as unknown as ChartDataset<'bar', number[]>[];
-  chartState.chart.update('none');
+  }).update('none');
 }
 
 function updateFilterCoefficients() {
