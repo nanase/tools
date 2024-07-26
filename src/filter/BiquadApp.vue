@@ -115,7 +115,7 @@ function updateGraph() {
       datasets: [
         {
           label: '振幅 (dB)',
-          data: [...biquadFilter.value.frequencyResponse],
+          data: biquadFilter.value.frequencyResponse,
           pointStyle: false,
           yAxisID: 'y',
           hidden:
@@ -165,7 +165,7 @@ function updateImpulseGraph() {
       datasets: [
         {
           label: 'インパルス応答',
-          data: [...biquadFilter.value.impluseResponse.slice(0, impulseGraphLength.value)],
+          data: biquadFilter.value.impluseResponse.slice(0, impulseGraphLength.value),
           pointStyle: 'rect',
           borderWidth: 0,
           backgroundColor: 'rgb(54, 162, 235)',
