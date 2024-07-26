@@ -186,10 +186,10 @@ function updateFilterCoefficients() {
     q: q.value,
     gain: gain.value,
   });
-
   coefficients.value = [...biquadFilter.value.coefficients];
   normalizedCoefficients.value = [...biquadFilter.value.normalizedCoefficients];
 
+  biquadFilter.value.transform();
   magnitudeOnCutoff.value =
     (biquadFilter.value.frequencyResponse[Math.floor((cutoffFreq.value / samplingFreq.value) * impulseLength.value)] +
       biquadFilter.value.frequencyResponse[

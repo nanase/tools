@@ -1,4 +1,4 @@
-import { transform } from '../fft';
+import { transform as fft } from '../fft';
 
 export type BiquadFilterType =
   | 'lowpass'
@@ -36,13 +36,15 @@ export class BiquadFilter {
     BiquadFilter[type](this._coefficients, samplingRate, cutoff, parameter);
     BiquadFilter.normalizeCoefficients(this._coefficients, this._normalizedCoefficients);
     BiquadFilter.calcImpulseResponse(this._impluseResponse, this._normalizedCoefficients);
+  }
 
+  transform() {
     for (let i = 0; i < this.impulseLength; i++) {
       this._real[i] = this._impluseResponse[i];
       this._imag[i] = 0.0;
     }
 
-    transform(this._real, this._imag);
+    fft(this._real, this._imag);
 
     for (let i = 0; i < this.impulseLength / 2; i++) {
       this._phaseResponse[i] = (Math.atan2(this._imag[i], this._real[i]) * 180.0) / Math.PI;
