@@ -659,13 +659,17 @@ watch(
               <tr>
                 <td>\( \max A = \)</td>
                 <td>{{ maxMagnitude.toFixed(3) }} [dB]</td>
-                <td>@ \( f_c = \)</td>
+              </tr>
+              <tr>
+                <td>\( f_{\max A} = \)</td>
                 <td>{{ maxMagnitudeFrequency.toFixed(3) }} [Hz]</td>
               </tr>
               <tr>
-                <td>\( \min A = \)</td>
+                <td class="mb-2">\( \min A = \)</td>
                 <td>{{ minMagnitude.toFixed(3) }} [dB]</td>
-                <td>@ \( f_c = \)</td>
+              </tr>
+              <tr>
+                <td>\( f_{\min A} = \)</td>
                 <td>{{ minMagnitudeFrequency.toFixed(3) }} [Hz]</td>
               </tr>
             </tbody>
