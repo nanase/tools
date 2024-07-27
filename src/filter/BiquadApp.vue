@@ -145,7 +145,7 @@ function updateGraph() {
       },
       y: {
         options: {
-          max: Math.round(Math.max(0, ...biquadFilter.value.frequencyResponse) + 10),
+          max: Math.round(Math.max(findMinMax(biquadFilter.value.frequencyResponse).max, 0) + 10),
           min: chartMinimumMagnitude.value,
         },
       },
@@ -197,7 +197,7 @@ function updateFilterCoefficients() {
       ]) /
     2;
 
-  const minMax = findMinMax(...biquadFilter.value.frequencyResponse);
+  const minMax = findMinMax(biquadFilter.value.frequencyResponse);
   maxMagnitude.value = minMax.max;
   minMagnitude.value = minMax.min;
   maxMagnitudeFrequency.value = (samplingFreq.value / impulseLength.value) * minMax.maxIndex;
