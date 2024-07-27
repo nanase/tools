@@ -32,25 +32,25 @@ export function divide(value: number, divider: number): number[] {
   return array;
 }
 
-export function findMinMax(...array: number[]): { max: number; min: number; maxIndex: number; minIndex: number } {
-  if (array.length === 0) {
-    throw new Error('Array is empty');
-  }
+export function findMinMax(array: Iterable<number>): { max: number; min: number; maxIndex: number; minIndex: number } {
+  let max = -Infinity;
+  let min = Infinity;
+  let maxIndex = -1;
+  let minIndex = -1;
+  let i = 0;
 
-  let max = array[0];
-  let min = array[0];
-  let maxIndex = 0;
-  let minIndex = 0;
-
-  for (let i = 1; i < array.length; i++) {
-    if (array[i] > max) {
-      max = array[i];
+  for (const value of array) {
+    if (value > max) {
+      max = value;
       maxIndex = i;
     }
-    if (array[i] < min) {
-      min = array[i];
+
+    if (value < min) {
+      min = value;
       minIndex = i;
     }
+
+    i++;
   }
 
   return {
