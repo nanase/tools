@@ -8,6 +8,8 @@ import Chart from 'chart.js/auto';
 import annotationPlugin from 'chartjs-plugin-annotation';
 import * as Tone from 'tone';
 import MathJax from '@/components/common/MathJax.vue';
+import type { WorkerResult } from './biquadWorkerType';
+import biquadWorker from './biquadWorker?worker';
 
 import AppBase from '@/components/common/AppBase.vue';
 import SIValueInput from '@/components/input/SIValueInput.vue';
@@ -32,6 +34,7 @@ const filterType = ref<FilterType>(filterTypeItem[0]);
 const chart = ref<InstanceType<typeof ChartBase>>();
 const impulseChart = ref<InstanceType<typeof ChartBase>>();
 const chartMinimumMagnitude = ref<number>(-60.0);
+const processingPreciseCalc = ref<boolean>(false);
 
 const cutoffFreq = ref<number>(1000.0);
 const q = ref<number>(0.707106781);
@@ -40,6 +43,8 @@ const samplingFreq = ref<number>(48000.0);
 
 const impulseLength = ref<number>(1024);
 const impulseGraphLength = ref<number>(1024 / 4);
+const lastCalcImpulseLength = ref<number>(1024);
+const preciseImpulseLength = ref<number>(2 ** 16);
 const biquadFilter = computed<BiquadFilter>(() => new BiquadFilter(impulseLength.value));
 const coefficients = ref<number[]>([1, 0, 0, 0, 0, 0]);
 const normalizedCoefficients = ref<number[]>([1, 0, 0, 0, 0]);
@@ -182,6 +187,7 @@ function updateImpulseGraph() {
 }
 
 function updateFilterCoefficients() {
+  lastCalcImpulseLength.value = impulseLength.value;
   biquadFilter.value.setFilter(filterType.value.value, samplingFreq.value, cutoffFreq.value, {
     q: q.value,
     gain: gain.value,
@@ -278,6 +284,44 @@ watch(
     }
   },
 );
+
+async function invokePreciseCalc() {
+  if (processingPreciseCalc.value) {
+    return;
+  }
+
+  lastCalcImpulseLength.value = preciseImpulseLength.value;
+
+  processingPreciseCalc.value = true;
+  const result = await new Promise<WorkerResult>((resolve, reject) => {
+    const worker = new biquadWorker();
+
+    worker.onmessage = function (ev: MessageEvent<WorkerResult>) {
+      resolve(ev.data);
+    };
+    worker.onmessageerror = function (ev) {
+      reject(ev);
+    };
+
+    worker.postMessage({
+      impulseLength: preciseImpulseLength.value,
+      filterType: filterType.value.value,
+      samplingFreq: samplingFreq.value,
+      cutoffFreq: cutoffFreq.value,
+      q: q.value,
+      gain: gain.value,
+    });
+  });
+
+  magnitudeOnCutoff.value = result.magnitudeOnCutoff;
+  maxMagnitude.value = result.maxMagnitude;
+  minMagnitude.value = result.minMagnitude;
+  maxMagnitudeFrequency.value = result.maxMagnitudeFrequency;
+  minMagnitudeFrequency.value = result.minMagnitudeFrequency;
+  sumImpulse.value = result.sumImpulse;
+
+  processingPreciseCalc.value = false;
+}
 </script>
 
 <template>
@@ -633,6 +677,35 @@ watch(
             </tbody>
           </table>
         </MathJax>
+      </v-col>
+    </v-row>
+    <v-row>
+      <v-divider />
+      <v-col cols="12">
+        <h4 class="mb-5">インパルス長</h4>
+        <v-row>
+          <v-col cols="4">
+            <v-select
+              label="インパルス長"
+              density="compact"
+              variant="underlined"
+              v-model="preciseImpulseLength"
+              :items="[16, 17, 18, 19, 20, 21, 22, 23, 24].map((b) => 2 ** b)"
+              hide-details
+              :disabled="processingPreciseCalc"
+              :loading="processingPreciseCalc"
+            />
+          </v-col>
+          <v-col cols="auto">
+            <v-btn variant="outlined" @click="invokePreciseCalc" :disabled="processingPreciseCalc">再計算</v-btn>
+          </v-col>
+          <v-col cols="12">
+            <MathJax>
+              計算時のインパルス長 <span>\( N = \)</span> {{ lastCalcImpulseLength }}（周波数分解能
+              <span>\( \frac{f_c}{N} = \)</span> {{ (samplingFreq / lastCalcImpulseLength).toFixed(3) }} [Hz]）
+            </MathJax>
+          </v-col>
+        </v-row>
       </v-col>
       <v-col cols="6">
         <h4 class="mb-3">カットオフ周波数の振幅</h4>
