@@ -680,7 +680,7 @@ watch(
         <h4 class="mb-3">インパルス応答の総和</h4>
         <MathJax>
           <p>
-            <span> \( \sum y = \) </span>
+            <span> \( \displaystyle\sum^{N-1}_{n=0} y[n] = \) </span>
             {{ sumImpulse.toFixed(6) }}
           </p>
         </MathJax>
