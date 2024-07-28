@@ -8,7 +8,7 @@ import Chart from 'chart.js/auto';
 import annotationPlugin from 'chartjs-plugin-annotation';
 import * as Tone from 'tone';
 import MathJax from '@/components/common/MathJax.vue';
-import type { WorkerResult } from './biquadWorkerType';
+import type { WorkerParameter, WorkerResult } from './biquadWorkerType';
 import biquadWorker from './biquadWorker?worker';
 
 import AppBase from '@/components/common/AppBase.vue';
@@ -25,6 +25,7 @@ import {
 } from './biquadAppConfig';
 import { divide, findMinMax, sequence } from '@/lib/array';
 import { deepAssign, RawObject } from '@/lib/object';
+import { WorkerManager } from '@/lib/worker';
 
 Chart.register(annotationPlugin);
 
@@ -60,6 +61,7 @@ const soundPlaying = ref<boolean>();
 const soundVolume = ref<number>(-30);
 let synth: Tone.Noise | null = null;
 let toneFilter: Tone.BiquadFilter | null = null;
+const biquadWorkerManager = new WorkerManager<WorkerParameter, WorkerResult>(biquadWorker);
 
 function updateDiagram() {
   function setTextContent(document: Document | null | undefined, id: string, text: string) {
@@ -290,29 +292,16 @@ async function invokePreciseCalc() {
     return;
   }
 
-  lastCalcImpulseLength.value = preciseImpulseLength.value;
-
   processingPreciseCalc.value = true;
-  const result = await new Promise<WorkerResult>((resolve, reject) => {
-    const worker = new biquadWorker();
 
-    worker.onmessage = function (ev: MessageEvent<WorkerResult>) {
-      resolve(ev.data);
-    };
-    worker.onmessageerror = function (ev) {
-      reject(ev);
-    };
-
-    worker.postMessage({
-      impulseLength: preciseImpulseLength.value,
-      filterType: filterType.value.value,
-      samplingFreq: samplingFreq.value,
-      cutoffFreq: cutoffFreq.value,
-      q: q.value,
-      gain: gain.value,
-    });
+  const result = await biquadWorkerManager.invoke({
+    impulseLength: preciseImpulseLength.value,
+    filterType: filterType.value.value,
+    samplingFreq: samplingFreq.value,
+    cutoffFreq: cutoffFreq.value,
+    q: q.value,
+    gain: gain.value,
   });
-
   magnitudeOnCutoff.value = result.magnitudeOnCutoff;
   maxMagnitude.value = result.maxMagnitude;
   minMagnitude.value = result.minMagnitude;
