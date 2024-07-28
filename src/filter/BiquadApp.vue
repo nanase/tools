@@ -309,6 +309,7 @@ async function invokePreciseCalc() {
   minMagnitudeFrequency.value = result.minMagnitudeFrequency;
   sumImpulse.value = result.sumImpulse;
 
+  lastCalcImpulseLength.value = preciseImpulseLength.value;
   processingPreciseCalc.value = false;
 }
 </script>
@@ -686,7 +687,13 @@ async function invokePreciseCalc() {
             />
           </v-col>
           <v-col cols="auto">
-            <v-btn variant="outlined" @click="invokePreciseCalc" :disabled="processingPreciseCalc">再計算</v-btn>
+            <v-btn
+              variant="outlined"
+              @click="invokePreciseCalc"
+              :disabled="processingPreciseCalc || preciseImpulseLength === lastCalcImpulseLength"
+              :loading="processingPreciseCalc"
+              >再計算</v-btn
+            >
           </v-col>
           <v-col cols="12">
             <MathJax>
