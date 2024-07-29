@@ -621,7 +621,7 @@ async function invokePreciseCalc() {
               density="compact"
               variant="underlined"
               v-model="preciseImpulseLength"
-              :items="[16, 17, 18, 19, 20, 21, 22, 23, 24].map((b) => 2 ** b)"
+              :items="sequence(16, 25).map((b) => 2 ** b)"
               hide-details
               :disabled="processingPreciseCalc"
               :loading="processingPreciseCalc"
