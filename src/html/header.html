@@ -24,6 +24,15 @@
 
     window.document.documentElement.style.backgroundColor = getColorScheme() === 'dark' ? darkBackground : lightBackground;
   })();
+
+  window.MathJax = {
+    startup: {
+      typeset: false,
+    },
+    svg: {
+      fontCache: 'global'
+    },
+  };
 </script>
-<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
 <title>{=$title}</title>
