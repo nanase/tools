@@ -3,25 +3,13 @@ import { ref, watch } from 'vue';
 import type { VSlider } from 'vuetify/components';
 
 const {
-  variant,
-  density,
-  disabled,
-  readonly,
   max,
   min,
   resolution = 100,
-  thumbLabel,
-  hideDetails,
 } = defineProps<{
   max: number;
   min: number;
   resolution?: number;
-  variant?: 'outlined' | 'plain' | 'filled' | 'underlined' | 'solo' | 'solo-inverted' | 'solo-filled' | undefined;
-  density?: null | 'default' | 'comfortable' | 'compact';
-  disabled?: boolean;
-  readonly?: boolean;
-  thumbLabel?: boolean | 'always';
-  hideDetails?: boolean | 'auto';
 }>();
 
 const linearValue = defineModel<number>();
@@ -53,12 +41,6 @@ function logarithmicValueUpdated() {
     @end="movement = false"
     :max="Math.log(max) * resolution"
     :min="Math.log(min) * resolution"
-    :variant
-    :density
-    :readonly
-    :disabled
-    :hide-details
-    :thumb-label
   >
     <template #thumb-label> {{ Number(linearValue).toFixed(3) }} </template>
   </v-slider>

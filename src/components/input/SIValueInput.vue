@@ -1,22 +1,15 @@
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue';
+import { ref, watch, onMounted, useAttrs } from 'vue';
 import { SIValue, Rules, type SIPrefixSymbol } from '../../lib/siPrefix';
 import { VTextField } from 'vuetify/components';
 
-const { label, variant, density, placeholder, unit, prefixSymbols, readonly, disabled, fractionDigits, hideDetails } =
-  defineProps<{
-    label?: string;
-    variant?: 'outlined' | 'plain' | 'filled' | 'underlined' | 'solo' | 'solo-inverted' | 'solo-filled' | undefined;
-    density?: null | 'default' | 'comfortable' | 'compact';
-    placeholder?: string;
-    unit?: string;
-    prefixSymbols?: readonly SIPrefixSymbol[];
-    readonly?: boolean;
-    disabled?: boolean;
-    fractionDigits?: number;
-    rule?: ((value: any) => boolean | string)[];
-    hideDetails?: boolean | 'auto';
-  }>();
+const { unit, prefixSymbols, fractionDigits } = defineProps<{
+  unit?: string;
+  prefixSymbols?: readonly SIPrefixSymbol[];
+  fractionDigits?: number;
+  rule?: ((value: any) => boolean | string)[];
+}>();
+const attrs = useAttrs();
 const actualValue = defineModel<number>('value');
 const fraction = ref<string>();
 const field = ref<VTextField>();
@@ -49,26 +42,15 @@ function fractionValueUpdated(value: string) {
 </script>
 
 <template>
-  <v-row no-gutters>
-    <v-col>
-      <v-text-field
-        v-model:model-value="fraction"
-        :label
-        :variant
-        :density
-        :placeholder
-        :rules="readonly ? [] : rule ? rule : [Rules.required, Rules.value, Rules.notZero, Rules.notNegative]"
-        :readonly
-        :disabled
-        :prefix="unit"
-        class="text-align-right"
-        reverse
-        inputmode="numeric"
-        @update:model-value="fractionValueUpdated"
-        ref="field"
-        :hide-details
-      >
-      </v-text-field>
-    </v-col>
-  </v-row>
+  <v-text-field
+    v-model:model-value="fraction"
+    :rules="attrs.readonly ? [] : rule ? rule : [Rules.required, Rules.value, Rules.notZero, Rules.notNegative]"
+    :prefix="unit"
+    class="text-align-right"
+    reverse
+    inputmode="numeric"
+    @update:model-value="fractionValueUpdated"
+    ref="field"
+  >
+  </v-text-field>
 </template>
