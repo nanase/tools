@@ -15,8 +15,8 @@ const Tag = tag;
 declare global {
   interface Window {
     MathJax: {
-      typesetPromise: (nodes: Iterable<Node>) => Promise<void>;
-      typesetClear: (nodes: Iterable<Node>) => Promise<void>;
+      typesetPromise: (nodes?: Iterable<Node>) => Promise<void>;
+      typesetClear: (nodes?: Iterable<Node>) => Promise<void>;
     };
   }
 }
