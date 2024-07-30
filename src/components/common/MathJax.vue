@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 
 const {
   tag = 'span',
@@ -29,6 +29,7 @@ if (!('MathJax' in window)) {
 
 const raw = ref<HTMLElement>();
 const formula = ref<HTMLElement>();
+const FormulaTag = computed<string>(() => (block ? 'div' : 'span'));
 const observer = new MutationObserver(typeset);
 
 async function typeset() {
@@ -91,7 +92,7 @@ defineExpose({ typeset });
     <span ref="raw" class="mathjax-raw">
       <slot></slot>
     </span>
-    <span ref="formula"></span>
+    <FormulaTag ref="formula"></FormulaTag>
   </Tag>
 </template>
 
