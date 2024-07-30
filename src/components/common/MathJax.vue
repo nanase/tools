@@ -1,33 +1,84 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { onMounted, onUnmounted, ref, watch } from 'vue';
 
-const { tag = 'span', block } = defineProps<{
+const {
+  tag = 'span',
+  block,
+  overlook,
+} = defineProps<{
   tag?: string;
   block?: boolean;
+  overlook?: boolean;
 }>();
 const Tag = tag;
 
-const container = ref<HTMLElement>();
-
-onMounted(async () => {
-  if (container.value) {
-    if (container.value.children.length === 0) {
-      if (block) {
-        container.value.innerText = `$$ ${container.value.innerText} $$`;
-      } else {
-        container.value.innerText = `\\( ${container.value.innerText} \\)`;
-      }
-    }
-
-    await (window as any).MathJax.startup.promise;
-    (window as any).MathJax.typesetClear([container.value]);
-    await (window as any).MathJax.typesetPromise([container.value]);
+declare global {
+  interface Window {
+    MathJax: {
+      typesetPromise: (nodes: Iterable<Node>) => Promise<void>;
+      typesetClear: (nodes: Iterable<Node>) => Promise<void>;
+    };
   }
-});
+}
+
+if (!('MathJax' in window)) {
+  console.warn('window.MathJax does not exist. For typesetting, MathJax import is required.');
+}
+
+const raw = ref<HTMLElement>();
+const formula = ref<HTMLElement>();
+const observer = new MutationObserver(typeset);
+
+async function typeset() {
+  if (!raw.value || !formula.value) {
+    return;
+  }
+
+  if (raw.value.children.length === 0) {
+    if (block) {
+      formula.value.innerText = `$$ ${raw.value.innerText} $$`;
+    } else {
+      formula.value.innerText = `\\( ${raw.value.innerText} \\)`;
+    }
+  } else {
+    formula.value.innerText = raw.value.innerText;
+  }
+
+  await window.MathJax.typesetPromise([formula.value]);
+}
+
+async function updateObservation() {
+  if (!raw.value || !formula.value) {
+    return;
+  }
+
+  if (overlook) {
+    observer.disconnect();
+    window.MathJax.typesetClear([formula.value]);
+  } else {
+    await typeset();
+    observer.observe(raw.value, { childList: true, subtree: true, characterData: true });
+  }
+}
+
+watch(() => overlook, updateObservation);
+onMounted(updateObservation);
+onUnmounted(() => observer.disconnect);
+
+defineExpose({ typeset });
 </script>
 
 <template>
-  <Tag ref="container">
-    <slot></slot>
+  <Tag>
+    <span ref="raw" class="mathjax-raw">
+      <slot></slot>
+    </span>
+    <span ref="formula"></span>
   </Tag>
 </template>
+
+<style lang="scss">
+.mathjax-raw {
+  display: none;
+}
+</style>
