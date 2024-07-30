@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 
 const {
   tag = 'span',
@@ -30,13 +30,14 @@ if (!('MathJax' in window)) {
 const raw = ref<HTMLElement>();
 const formula = ref<HTMLElement>();
 const FormulaTag = computed<string>(() => (block ? 'div' : 'span'));
-const observer = new MutationObserver(typeset);
+const observer = new MutationObserver(updateObservation);
 
 async function typeset() {
   if (!formula.value) {
     return;
   }
 
+  await nextTick();
   prepareFormulaNode();
   await window.MathJax.typesetPromise([formula.value]);
 }
