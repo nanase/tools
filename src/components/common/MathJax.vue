@@ -3,10 +3,12 @@ import { onMounted, onUnmounted, ref, watch } from 'vue';
 
 const {
   tag = 'span',
+  node,
   block,
   overlook,
 } = defineProps<{
   tag?: string;
+  node?: boolean;
   block?: boolean;
   overlook?: boolean;
 }>();
@@ -34,7 +36,7 @@ async function typeset() {
     return;
   }
 
-  if (raw.value.children.length === 0) {
+  if (raw.value.children.length === 0 && !node) {
     if (block) {
       formula.value.innerText = `$$ ${raw.value.innerText} $$`;
     } else {
