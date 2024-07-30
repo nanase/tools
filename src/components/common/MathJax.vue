@@ -32,6 +32,15 @@ const formula = ref<HTMLElement>();
 const observer = new MutationObserver(typeset);
 
 async function typeset() {
+  if (!formula.value) {
+    return;
+  }
+
+  prepareFormulaNode();
+  await window.MathJax.typesetPromise([formula.value]);
+}
+
+function prepareFormulaNode() {
   if (!raw.value || !formula.value) {
     return;
   }
@@ -51,26 +60,27 @@ async function typeset() {
       formula.value.appendChild(childNode.cloneNode(true));
     }
   }
-
-  await window.MathJax.typesetPromise([formula.value]);
 }
 
 async function updateObservation() {
-  if (!raw.value || !formula.value) {
-    return;
-  }
-
   if (overlook) {
-    observer.disconnect();
-    window.MathJax.typesetClear([formula.value]);
+    if (formula.value) {
+      window.MathJax.typesetClear([formula.value]);
+      prepareFormulaNode();
+    }
   } else {
     await typeset();
-    observer.observe(raw.value, { childList: true, subtree: true, characterData: true });
   }
 }
 
-watch(() => overlook, updateObservation);
-onMounted(updateObservation);
+watch(() => [node, block, overlook], updateObservation);
+onMounted(async () => {
+  await updateObservation();
+
+  if (raw.value) {
+    observer.observe(raw.value, { childList: true, subtree: true, characterData: true });
+  }
+});
 onUnmounted(() => observer.disconnect);
 
 defineExpose({ typeset });
