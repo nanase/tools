@@ -543,71 +543,67 @@ async function invokePreciseCalc() {
       <v-divider />
       <v-col cols="6">
         <h4 class="mb-3">フィルタ係数</h4>
-        <MathJax>
-          <p class="mb-3">
-            \( H(z) = \displaystyle\frac{b_0 + b_1 z^{-1} + b_2 z^{-2}}{a_0 + a_1 z^{-1} + a_2 z^{-2}} \)
-          </p>
-          <table class="ml-3">
-            <tbody>
-              <tr>
-                <td>\( b_0 = \)</td>
-                <td class="text-right">{{ coefficients[0].toFixed(9) }}</td>
-              </tr>
-              <tr>
-                <td>\( b_1 = \)</td>
-                <td class="text-right">{{ coefficients[1].toFixed(9) }}</td>
-              </tr>
-              <tr>
-                <td>\( b_2 = \)</td>
-                <td class="text-right">{{ coefficients[2].toFixed(9) }}</td>
-              </tr>
-              <tr>
-                <td>\( a_0 = \)</td>
-                <td class="text-right">{{ coefficients[3].toFixed(9) }}</td>
-              </tr>
-              <tr>
-                <td>\( a_1 = \)</td>
-                <td class="text-right">{{ coefficients[4].toFixed(9) }}</td>
-              </tr>
-              <tr>
-                <td>\( a_2 = \)</td>
-                <td class="text-right">{{ coefficients[5].toFixed(9) }}</td>
-              </tr>
-            </tbody>
-          </table>
+        <MathJax tag="p" class="mb-3">
+          H(z) = \displaystyle\frac{b_0 + b_1 z^{-1} + b_2 z^{-2}}{a_0 + a_1 z^{-1} + a_2 z^{-2}}
         </MathJax>
+        <table class="ml-3">
+          <tbody>
+            <tr>
+              <MathJax tag="td">b_0 =</MathJax>
+              <td class="text-right">{{ coefficients[0].toFixed(9) }}</td>
+            </tr>
+            <tr>
+              <MathJax tag="td">b_1 =</MathJax>
+              <td class="text-right">{{ coefficients[1].toFixed(9) }}</td>
+            </tr>
+            <tr>
+              <MathJax tag="td">b_2 =</MathJax>
+              <td class="text-right">{{ coefficients[2].toFixed(9) }}</td>
+            </tr>
+            <tr>
+              <MathJax tag="td">a_0 =</MathJax>
+              <td class="text-right">{{ coefficients[3].toFixed(9) }}</td>
+            </tr>
+            <tr>
+              <MathJax tag="td">a_1 =</MathJax>
+              <td class="text-right">{{ coefficients[4].toFixed(9) }}</td>
+            </tr>
+            <tr>
+              <MathJax tag="td">a_2 =</MathJax>
+              <td class="text-right">{{ coefficients[5].toFixed(9) }}</td>
+            </tr>
+          </tbody>
+        </table>
       </v-col>
       <v-col cols="6">
         <h4 class="mb-3">正規化フィルタ係数</h4>
-        <MathJax>
-          <p class="mb-3">
-            \( H(z) = \displaystyle\frac{b_0 + b_1 z^{-1} + b_2 z^{-2}}{1 + a_1 z^{-1} + a_2 z^{-2}} \)
-          </p>
-          <table class="ml-3">
-            <tbody>
-              <tr>
-                <td>\( b_0 = \)</td>
-                <td class="text-right">{{ normalizedCoefficients[0].toFixed(9) }}</td>
-              </tr>
-              <tr>
-                <td>\( b_1 = \)</td>
-                <td class="text-right">{{ normalizedCoefficients[1].toFixed(9) }}</td>
-              </tr>
-              <tr>
-                <td>\( b_2 = \)</td>
-                <td class="text-right">{{ normalizedCoefficients[2].toFixed(9) }}</td>
-              </tr>
-              <tr>
-                <td>\( a_1 = \)</td>
-                <td class="text-right">{{ normalizedCoefficients[3].toFixed(9) }}</td>
-              </tr>
-              <tr>
-                <td>\( a_2 = \)</td>
-                <td class="text-right">{{ normalizedCoefficients[4].toFixed(9) }}</td>
-              </tr>
-            </tbody>
-          </table>
+        <MathJax tag="p" class="mb-3">
+          H(z) = \displaystyle\frac{b_0 + b_1 z^{-1} + b_2 z^{-2}}{1 + a_1 z^{-1} + a_2 z^{-2}}
         </MathJax>
+        <table class="ml-3">
+          <tbody>
+            <tr>
+              <MathJax tag="td">b_0 =</MathJax>
+              <td class="text-right">{{ normalizedCoefficients[0].toFixed(9) }}</td>
+            </tr>
+            <tr>
+              <MathJax tag="td">b_1 =</MathJax>
+              <td class="text-right">{{ normalizedCoefficients[1].toFixed(9) }}</td>
+            </tr>
+            <tr>
+              <MathJax tag="td">b_2 =</MathJax>
+              <td class="text-right">{{ normalizedCoefficients[2].toFixed(9) }}</td>
+            </tr>
+            <tr>
+              <MathJax tag="td">a_1 =</MathJax>
+              <td class="text-right">{{ normalizedCoefficients[3].toFixed(9) }}</td>
+            </tr>
+            <tr>
+              <MathJax tag="td">a_2 =</MathJax>
+              <td class="text-right">{{ normalizedCoefficients[4].toFixed(9) }}</td>
+            </tr>
+          </tbody>
+        </table>
       </v-col>
     </v-row>
     <v-row>
@@ -637,63 +633,52 @@ async function invokePreciseCalc() {
             >
           </v-col>
           <v-col cols="12">
-            <MathJax>
-              計算時のインパルス長 <span>\( N = \)</span> {{ lastCalcImpulseLength }}（周波数分解能
-              <span>\( \frac{f_c}{N} = \)</span> {{ (samplingFreq / lastCalcImpulseLength).toFixed(3) }} [Hz]）
-            </MathJax>
+            計算時のインパルス長 <MathJax>N = </MathJax> {{ lastCalcImpulseLength }}（周波数分解能
+            <MathJax>\frac{f_c}{N} = </MathJax> {{ (samplingFreq / lastCalcImpulseLength).toFixed(3) }} [Hz]）
           </v-col>
         </v-row>
       </v-col>
       <v-col cols="6">
         <h4 class="mb-3">カットオフ周波数の振幅</h4>
-        <MathJax>
-          <table class="text-right">
-            <tbody>
-              <tr>
-                <td>\( f_c = \)</td>
-                <td>{{ cutoffFreq.toFixed(3) }} [Hz]</td>
-              </tr>
-              <tr>
-                <td>\( A_{f_c} = \)</td>
-                <td>{{ Number.isNaN(magnitudeOnCutoff) ? '---' : magnitudeOnCutoff.toFixed(3) }} [dB]</td>
-              </tr>
-            </tbody>
-          </table>
-        </MathJax>
+        <table class="text-right">
+          <tbody>
+            <tr>
+              <MathJax tag="td">f_c =</MathJax>
+              <td>{{ cutoffFreq.toFixed(3) }} [Hz]</td>
+            </tr>
+            <tr>
+              <MathJax tag="td">A_{f_c} =</MathJax>
+              <td>{{ Number.isNaN(magnitudeOnCutoff) ? '---' : magnitudeOnCutoff.toFixed(3) }} [dB]</td>
+            </tr>
+          </tbody>
+        </table>
       </v-col>
       <v-col cols="6">
         <h4 class="mb-3">最大と最小振幅</h4>
-        <MathJax>
-          <table class="text-right">
-            <tbody>
-              <tr>
-                <td>\( \max A = \)</td>
-                <td>{{ maxMagnitude.toFixed(3) }} [dB]</td>
-              </tr>
-              <tr>
-                <td>\( f_{\max A} = \)</td>
-                <td>{{ maxMagnitudeFrequency.toFixed(3) }} [Hz]</td>
-              </tr>
-              <tr>
-                <td class="mb-2">\( \min A = \)</td>
-                <td>{{ minMagnitude.toFixed(3) }} [dB]</td>
-              </tr>
-              <tr>
-                <td>\( f_{\min A} = \)</td>
-                <td>{{ minMagnitudeFrequency.toFixed(3) }} [Hz]</td>
-              </tr>
-            </tbody>
-          </table>
-        </MathJax>
+        <table class="text-right">
+          <tbody>
+            <tr>
+              <MathJax tag="td">\max A =</MathJax>
+              <td>{{ maxMagnitude.toFixed(3) }} [dB]</td>
+            </tr>
+            <tr>
+              <MathJax tag="td">f_{\max A} =</MathJax>
+              <td>{{ maxMagnitudeFrequency.toFixed(3) }} [Hz]</td>
+            </tr>
+            <tr>
+              <MathJax tag="td" class="mb-2">\min A =</MathJax>
+              <td>{{ minMagnitude.toFixed(3) }} [dB]</td>
+            </tr>
+            <tr>
+              <MathJax tag="td">f_{\min A} =</MathJax>
+              <td>{{ minMagnitudeFrequency.toFixed(3) }} [Hz]</td>
+            </tr>
+          </tbody>
+        </table>
       </v-col>
       <v-col cols="6">
         <h4 class="mb-3">インパルス応答の総和</h4>
-        <MathJax>
-          <p>
-            <span> \( \displaystyle\sum^{N-1}_{n=0} y[n] = \) </span>
-            {{ sumImpulse.toFixed(6) }}
-          </p>
-        </MathJax>
+        <MathJax>\displaystyle\sum^{N-1}_{n=0} y[n] =</MathJax> {{ sumImpulse.toFixed(6) }}
       </v-col>
     </v-row>
 
