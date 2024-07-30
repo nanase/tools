@@ -41,7 +41,13 @@ async function typeset() {
       formula.value.innerText = `\\( ${raw.value.innerText} \\)`;
     }
   } else {
-    formula.value.innerText = raw.value.innerText;
+    while (formula.value.lastElementChild) {
+      formula.value.removeChild(formula.value.lastElementChild);
+    }
+
+    for (const childNode of raw.value.childNodes) {
+      formula.value.appendChild(childNode.cloneNode(true));
+    }
   }
 
   await window.MathJax.typesetPromise([formula.value]);
