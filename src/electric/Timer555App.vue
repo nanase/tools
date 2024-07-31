@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
+import { Rules } from '@/lib/siPrefix';
 
 import AppBase from '../components/common/AppBase.vue';
 import SIValueInput from '../components/input/SIValueInput.vue';
 import MathJax from '../components/common/MathJax.vue';
+import InputRow from '@/components/input/InputRow.vue';
 
 const r1Value = ref<number>();
 const r2Value = ref<number>();
@@ -65,51 +67,103 @@ watch(
   <AppBase page-id="electric/timer555" toolbar-title="タイマIC 555 計算機">
     <v-row>
       <v-col cols="12" sm="8">
-        <v-row>
-          <v-col cols="4">
-            <SIValueInput
-              v-model:value="r1Value"
-              label="R1の抵抗値"
-              variant="underlined"
-              density="compact"
-              placeholder="1k"
-              unit="Ω"
-              :prefix-symbols="['G', 'M', 'k', '', 'm']"
-            />
-          </v-col>
-          <v-col cols="4">
-            <SIValueInput
-              v-model:value="r2Value"
-              label="R2の抵抗値"
-              variant="underlined"
-              density="compact"
-              placeholder="1k"
-              unit="Ω"
-              :prefix-symbols="['G', 'M', 'k', '', 'm']"
-            />
-          </v-col>
-          <v-col cols="4">
-            <SIValueInput
-              v-model:value="c1Value"
-              label="C1の静電容量"
-              variant="underlined"
-              density="compact"
-              placeholder="0.01μ"
-              unit="F"
-              :prefix-symbols="['', 'm', 'μ', 'n', 'p']"
-            />
-          </v-col>
-          <v-col cols="4">
-            <SIValueInput
-              v-model:value="vccValue"
-              label="電源電圧"
-              variant="underlined"
-              density="compact"
-              placeholder="5"
-              unit="V"
-            />
-          </v-col>
-        </v-row>
+        <InputRow
+          v-model="r1Value"
+          label="R1の抵抗値"
+          variant="underlined"
+          density="compact"
+          unit="Ω"
+          scale="log"
+          :max="1e6"
+          :min="100"
+          :fraction-digits="3"
+          :prefix-symbols="['M', 'k', '', 'm']"
+          :rule="[Rules.required, Rules.value, Rules.notNegative, Rules.notZero]"
+          cols="4"
+          hide-details
+        >
+          <template #menu-list>
+            <v-list-item title="100.0 kΩ" @click="r1Value = 100.0e3" />
+            <v-list-item title="47.0 kΩ" @click="r1Value = 47.0e3" />
+            <v-list-item title="10.0 kΩ" @click="r1Value = 10.0e3" />
+            <v-list-item title="4.7 kΩ" @click="r1Value = 4.7e3" />
+            <v-list-item title="1.0 kΩ" @click="r1Value = 1.0e3" />
+            <v-list-item title="470 Ω" @click="r1Value = 470.0" />
+          </template>
+        </InputRow>
+
+        <InputRow
+          v-model="r2Value"
+          label="R2の抵抗値"
+          variant="underlined"
+          density="compact"
+          unit="Ω"
+          scale="log"
+          :max="1e6"
+          :min="100"
+          :fraction-digits="3"
+          :prefix-symbols="['M', 'k', '', 'm']"
+          :rule="[Rules.required, Rules.value, Rules.notNegative, Rules.notZero]"
+          cols="4"
+          hide-details
+        >
+          <template #menu-list>
+            <v-list-item title="100.0 kΩ" @click="r2Value = 100.0e3" />
+            <v-list-item title="47.0 kΩ" @click="r2Value = 47.0e3" />
+            <v-list-item title="10.0 kΩ" @click="r2Value = 10.0e3" />
+            <v-list-item title="4.7 kΩ" @click="r2Value = 4.7e3" />
+            <v-list-item title="1.0 kΩ" @click="r2Value = 1.0e3" />
+            <v-list-item title="470 Ω" @click="r2Value = 470.0" />
+          </template>
+        </InputRow>
+
+        <InputRow
+          v-model="c1Value"
+          label="C1の静電容量"
+          variant="underlined"
+          density="compact"
+          unit="F"
+          scale="log"
+          :max="1e-3"
+          :min="1e-12"
+          :fraction-digits="3"
+          :prefix-symbols="['', 'm', 'μ', 'n', 'p']"
+          :rule="[Rules.required, Rules.value, Rules.notNegative, Rules.notZero]"
+          cols="4"
+          hide-details
+        >
+          <template #menu-list>
+            <v-list-item title="100.0 μF" @click="c1Value = 100.0e-6" />
+            <v-list-item title="10.0 μF" @click="c1Value = 10.0e-6" />
+            <v-list-item title="1.0 μF" @click="c1Value = 1.0e-6" />
+            <v-list-item title="0.1 μF" @click="c1Value = 0.1e-6" />
+            <v-list-item title="0.01 μF" @click="c1Value = 0.01e-6" />
+            <v-list-item title="0.001 μF" @click="c1Value = 0.001e-6" />
+          </template>
+        </InputRow>
+
+        <InputRow
+          v-model="vccValue"
+          label="電源電圧"
+          variant="underlined"
+          density="compact"
+          unit="V"
+          :max="18"
+          :min="1"
+          scale="log"
+          :fraction-digits="2"
+          :rule="[Rules.required, Rules.value, Rules.notNegative, Rules.notZero]"
+          cols="4"
+          hide-details
+        >
+          <template #menu-list>
+            <v-list-item title="18 V" @click="vccValue = 18" />
+            <v-list-item title="9 V" @click="vccValue = 9" />
+            <v-list-item title="5 V" @click="vccValue = 5" />
+            <v-list-item title="3.3 V" @click="vccValue = 3.3" />
+            <v-list-item title="1.8 V" @click="vccValue = 1.8" />
+          </template>
+        </InputRow>
 
         <v-row>
           <v-col cols="3">
