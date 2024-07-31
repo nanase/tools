@@ -7,10 +7,10 @@ import SIValueInput from '../components/input/SIValueInput.vue';
 import MathJax from '../components/common/MathJax.vue';
 import InputRow from '@/components/input/InputRow.vue';
 
-const r1Value = ref<number>();
-const r2Value = ref<number>();
-const c1Value = ref<number>();
-const vccValue = ref<number>();
+const r1Value = ref<number>(10e3);
+const r2Value = ref<number>(10e3);
+const c1Value = ref<number>(0.1e-6);
+const vccValue = ref<number>(5);
 const freqValue = ref<number>();
 const hTimeValue = ref<number>();
 const lTimeValue = ref<number>();
@@ -47,6 +47,7 @@ watch(
       dutyRatioValue.value = ((r1 + r2) / (r1 + 2 * r2)) * 100;
     }
   },
+  { immediate: true },
 );
 
 watch(
@@ -60,6 +61,7 @@ watch(
       r1MaxPowerValue.value = vcc ** 2 / r1;
     }
   },
+  { immediate: true },
 );
 </script>
 
