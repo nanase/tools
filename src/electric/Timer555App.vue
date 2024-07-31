@@ -2,9 +2,9 @@
 import { ref, watch } from 'vue';
 import { Rules } from '@/lib/siPrefix';
 
-import AppBase from '../components/common/AppBase.vue';
-import SIValueInput from '../components/input/SIValueInput.vue';
-import MathJax from '../components/common/MathJax.vue';
+import AppBase from '@/components/common/AppBase.vue';
+import SIValueInput from '@/components/input/SIValueInput.vue';
+import MathJax from '@/components/common/MathJax.vue';
 import InputRow from '@/components/input/InputRow.vue';
 
 const r1Value = ref<number>(10e3);
@@ -17,14 +17,6 @@ const lTimeValue = ref<number>();
 const dutyRatioValue = ref<number>();
 const r1MaxCurrentValue = ref<number>();
 const r1MaxPowerValue = ref<number>();
-
-// function encodeSIValue(value: number): { fraction: string; exponent: string } {
-//   if (value >= 1000.0) {
-//     return { fraction: (value / 1000.0).toFixed(3), exponent: 'k' };
-//   }
-
-//   return { fraction: value.toFixed(3), exponent: '' };
-// }
 
 watch(
   () => [r1Value.value, r2Value.value, c1Value.value],
