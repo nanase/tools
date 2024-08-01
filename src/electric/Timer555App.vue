@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import { Rules, SIValue } from '@/lib/siPrefix';
-import Chart from 'chart.js/auto';
+import Chart, { type TooltipItem } from 'chart.js/auto';
 
 import AppBase from '@/components/common/AppBase.vue';
 import SIValueInput from '@/components/input/SIValueInput.vue';
@@ -76,6 +76,17 @@ function initializeChart(canvas: HTMLCanvasElement): Chart {
       plugins: {
         legend: {
           display: false,
+        },
+        tooltip: {
+          callbacks: {
+            title: function (item: TooltipItem<'line'>[]) {
+              const siValue = SIValue.fit(Number(item[0].parsed.x), ['', 'm', 'μ', 'n', 'p']);
+              return `${siValue.fraction.toFixed(1)}${siValue.prefix.symbol}s`;
+            },
+            label: function (item: TooltipItem<'line'>) {
+              return `出力: ${item.parsed.y}V`;
+            },
+          },
         },
       },
       scales: {
