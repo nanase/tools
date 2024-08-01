@@ -95,17 +95,12 @@ function initializeChart(canvas: HTMLCanvasElement): Chart {
           min: 0.0,
           alignToPixels: true,
           ticks: {
-            callback(tickValue, number, ticks) {
+            callback(tickValue) {
               if (tickValue === 0) {
                 return '0';
               } else {
                 const siValue = SIValue.fit(Number(tickValue), ['', 'm', 'μ', 'n', 'p']);
-
-                if (number === ticks.length - 1) {
-                  return `${siValue.fraction.toFixed(1)}${siValue.prefix.symbol}s`;
-                } else {
-                  return `${siValue.fraction.toFixed(0)}${siValue.prefix.symbol}s`;
-                }
+                return `${siValue.fraction.toFixed(1)}${siValue.prefix.symbol}s`;
               }
             },
           },
