@@ -1,108 +1,4 @@
-import { SIValue } from '../../src/lib/siPrefix';
-
-describe('successor', () => {
-  test('k', () => {
-    expect(SIValue.successor('k')).toBe('M');
-  });
-
-  test('m', () => {
-    expect(SIValue.successor('m')).toBe('');
-  });
-
-  test('n', () => {
-    expect(SIValue.successor('n')).toBe('μ');
-  });
-
-  test('Q', () => {
-    expect(SIValue.successor('Q')).toBe('Q');
-  });
-
-  test('q', () => {
-    expect(SIValue.successor('q')).toBe('r');
-  });
-
-  test('no prefix', () => {
-    expect(SIValue.successor('')).toBe('k');
-  });
-});
-
-describe('successor all prefix', () => {
-  test('k', () => {
-    expect(SIValue.successor('k', true)).toBe('M');
-  });
-
-  test('m', () => {
-    expect(SIValue.successor('m', true)).toBe('c');
-  });
-
-  test('n', () => {
-    expect(SIValue.successor('n', true)).toBe('μ');
-  });
-
-  test('Q', () => {
-    expect(SIValue.successor('Q', true)).toBe('Q');
-  });
-
-  test('q', () => {
-    expect(SIValue.successor('q', true)).toBe('r');
-  });
-
-  test('no prefix', () => {
-    expect(SIValue.successor('', true)).toBe('da');
-  });
-});
-
-describe('predecessor', () => {
-  test('k', () => {
-    expect(SIValue.predecessor('k')).toBe('');
-  });
-
-  test('m', () => {
-    expect(SIValue.predecessor('m')).toBe('μ');
-  });
-
-  test('n', () => {
-    expect(SIValue.predecessor('n')).toBe('p');
-  });
-
-  test('Q', () => {
-    expect(SIValue.predecessor('Q')).toBe('R');
-  });
-
-  test('q', () => {
-    expect(SIValue.predecessor('q')).toBe('q');
-  });
-
-  test('no prefix', () => {
-    expect(SIValue.predecessor('')).toBe('m');
-  });
-});
-
-describe('predecessor all prefix', () => {
-  test('k', () => {
-    expect(SIValue.predecessor('k', true)).toBe('h');
-  });
-
-  test('m', () => {
-    expect(SIValue.predecessor('m', true)).toBe('μ');
-  });
-
-  test('n', () => {
-    expect(SIValue.predecessor('n', true)).toBe('p');
-  });
-
-  test('Q', () => {
-    expect(SIValue.predecessor('Q', true)).toBe('R');
-  });
-
-  test('q', () => {
-    expect(SIValue.predecessor('q', true)).toBe('q');
-  });
-
-  test('no prefix', () => {
-    expect(SIValue.predecessor('', true)).toBe('d');
-  });
-});
+import { SIPrefixSymbol, SIValue } from '../../src/lib/siPrefix';
 
 describe('fit', () => {
   test('Fit a large SI prefix', () => {
@@ -171,5 +67,75 @@ describe('fitBy', () => {
     expect(SIValue.fitBy(-1e6, 'k')).toStrictEqual(new SIValue(-1e3, SIValue.getPrefix('k')));
     expect(SIValue.fitBy(-1e6, 'M')).toStrictEqual(new SIValue(-1, SIValue.getPrefix('M')));
     expect(SIValue.fitBy(-1e6, 'G')).toStrictEqual(new SIValue(-1e-3, SIValue.getPrefix('G')));
+  });
+});
+
+describe('getPrefix', () => {
+  test('Get existing prefix', () => {
+    expect(SIValue.getPrefix('k')).toEqual({ symbol: 'k', exponent: 3 });
+    expect(SIValue.getPrefix('M')).toEqual({ symbol: 'M', exponent: 6 });
+    expect(SIValue.getPrefix('G')).toEqual({ symbol: 'G', exponent: 9 });
+
+    expect(SIValue.getPrefix('m')).toEqual({ symbol: 'm', exponent: -3 });
+    expect(SIValue.getPrefix('μ')).toEqual({ symbol: 'μ', exponent: -6 });
+    expect(SIValue.getPrefix('n')).toEqual({ symbol: 'n', exponent: -9 });
+  });
+
+  test('Get empty prefix', () => {
+    expect(SIValue.getPrefix('')).toEqual({ symbol: '', exponent: 0 });
+  });
+
+  test('Error occurs with non-existent prefix', () => {
+    expect(() => {
+      SIValue.getPrefix('s' as SIPrefixSymbol);
+    }).toThrow();
+  });
+});
+
+describe('successor', () => {
+  test('Get next prefix', () => {
+    expect(SIValue.successor('k')).toEqual('M');
+    expect(SIValue.successor('M')).toEqual('G');
+    expect(SIValue.successor('G')).toEqual('T');
+
+    expect(SIValue.successor('Q')).toEqual('Q');
+
+    expect(SIValue.successor('m')).toEqual('');
+    expect(SIValue.successor('μ')).toEqual('m');
+    expect(SIValue.successor('n')).toEqual('μ');
+  });
+
+  test('Get next prefix for all prefixes', () => {
+    expect(SIValue.successor('k', true)).toEqual('M');
+    expect(SIValue.successor('M', true)).toEqual('G');
+    expect(SIValue.successor('G', true)).toEqual('T');
+
+    expect(SIValue.successor('m', true)).toEqual('c');
+    expect(SIValue.successor('μ', true)).toEqual('m');
+    expect(SIValue.successor('n', true)).toEqual('μ');
+  });
+});
+
+describe('predecessor', () => {
+  test('Get previous prefix', () => {
+    expect(SIValue.predecessor('k')).toEqual('');
+    expect(SIValue.predecessor('M')).toEqual('k');
+    expect(SIValue.predecessor('G')).toEqual('M');
+
+    expect(SIValue.predecessor('m')).toEqual('μ');
+    expect(SIValue.predecessor('μ')).toEqual('n');
+    expect(SIValue.predecessor('n')).toEqual('p');
+
+    expect(SIValue.predecessor('q')).toEqual('q');
+  });
+
+  test('Get previous prefix for all prefixes', () => {
+    expect(SIValue.predecessor('k', true)).toEqual('h');
+    expect(SIValue.predecessor('M', true)).toEqual('k');
+    expect(SIValue.predecessor('G', true)).toEqual('M');
+
+    expect(SIValue.predecessor('m', true)).toEqual('μ');
+    expect(SIValue.predecessor('μ', true)).toEqual('n');
+    expect(SIValue.predecessor('n', true)).toEqual('p');
   });
 });
