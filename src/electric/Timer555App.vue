@@ -82,6 +82,7 @@ function initializeChart(canvas: HTMLCanvasElement): Chart {
         x: {
           type: 'linear',
           min: 0.0,
+          alignToPixels: true,
           ticks: {
             showLabelBackdrop: true,
             callback(tickValue, number, ticks) {
@@ -100,6 +101,7 @@ function initializeChart(canvas: HTMLCanvasElement): Chart {
           },
         },
         y: {
+          offset: true,
           ticks: {
             callback(tickValue) {
               if (tickValue === 0) {
@@ -123,10 +125,8 @@ function updateChart() {
   }
 
   const data: { x: number; y: number }[] = [];
-  let t = 0;
-  data.push({ x: -lTimeValue.value, y: 0 });
-
-  for (let i = 0; i < 5; i++) {
+  let t = (lTimeValue.value + hTimeValue.value) * -3;
+  for (let i = 0; i < 6; i++) {
     data.push({ x: t, y: vccValue.value });
     t += hTimeValue.value;
 
@@ -152,7 +152,8 @@ function updateChart() {
     scales: {
       x: {
         options: {
-          max: t - lTimeValue.value,
+          min: (lTimeValue.value + hTimeValue.value) * -2.1,
+          max: (lTimeValue.value + hTimeValue.value) * 2.1,
         },
       },
     },
