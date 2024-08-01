@@ -342,7 +342,9 @@ function updateChart() {
         <img class="color-responsive" src="/electric/timer555.svg" style="width: 100%; max-width: 400px" />
       </v-col>
     </v-row>
+
     <v-row>
+      <v-divider />
       <v-col cols="12">
         <MathJax>
           <p>
