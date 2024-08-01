@@ -95,7 +95,6 @@ function initializeChart(canvas: HTMLCanvasElement): Chart {
           min: 0.0,
           alignToPixels: true,
           ticks: {
-            showLabelBackdrop: true,
             callback(tickValue, number, ticks) {
               if (tickValue === 0) {
                 return '0';
