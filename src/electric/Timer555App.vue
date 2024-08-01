@@ -1,25 +1,29 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
-import { Rules } from '@/lib/siPrefix';
+import { Rules, SIValue } from '@/lib/siPrefix';
+import Chart from 'chart.js/auto';
 
 import AppBase from '@/components/common/AppBase.vue';
 import SIValueInput from '@/components/input/SIValueInput.vue';
 import MathJax from '@/components/common/MathJax.vue';
 import InputRow from '@/components/input/InputRow.vue';
+import ChartBase from '@/components/common/ChartBase.vue';
+import { deepAssign } from '@/lib/object';
 
+const chart = ref<InstanceType<typeof ChartBase>>();
 const r1Value = ref<number>(10e3);
 const r2Value = ref<number>(10e3);
 const c1Value = ref<number>(0.1e-6);
 const vccValue = ref<number>(5);
-const freqValue = ref<number>();
-const hTimeValue = ref<number>();
-const lTimeValue = ref<number>();
+const freqValue = ref<number>(0);
+const hTimeValue = ref<number>(0);
+const lTimeValue = ref<number>(0);
 const dutyRatioValue = ref<number>();
 const r1MaxCurrentValue = ref<number>();
 const r1MaxPowerValue = ref<number>();
 
 watch(
-  () => [r1Value.value, r2Value.value, c1Value.value],
+  () => [r1Value.value, r2Value.value, c1Value.value, chart.value],
   () => {
     const r1 = r1Value.value;
     const r2 = r2Value.value;
@@ -37,6 +41,8 @@ watch(
       hTimeValue.value = (1 / Math.LOG2E) * ((r1 + r2) * c1);
       lTimeValue.value = (1 / Math.LOG2E) * (r2 * c1);
       dutyRatioValue.value = ((r1 + r2) / (r1 + 2 * r2)) * 100;
+
+      updateChart();
     }
   },
   { immediate: true },
@@ -51,10 +57,107 @@ watch(
     if (typeof vcc !== 'undefined' && typeof r1 !== 'undefined' && Number.isFinite(vcc) && Number.isFinite(r1)) {
       r1MaxCurrentValue.value = vcc / r1;
       r1MaxPowerValue.value = vcc ** 2 / r1;
+
+      updateChart();
     }
   },
   { immediate: true },
 );
+
+function initializeChart(canvas: HTMLCanvasElement): Chart {
+  return new Chart(canvas, {
+    type: 'line',
+    data: {
+      datasets: [],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: false,
+        },
+      },
+      scales: {
+        x: {
+          type: 'linear',
+          min: 0.0,
+          ticks: {
+            showLabelBackdrop: true,
+            callback(tickValue, number, ticks) {
+              if (tickValue === 0) {
+                return '0';
+              } else {
+                const siValue = SIValue.fit(Number(tickValue), ['', 'm', 'μ', 'n', 'p']);
+
+                if (number === ticks.length - 1) {
+                  return `${siValue.fraction.toFixed(1)}${siValue.prefix.symbol}s`;
+                } else {
+                  return `${siValue.fraction.toFixed(0)}${siValue.prefix.symbol}s`;
+                }
+              }
+            },
+          },
+        },
+        y: {
+          ticks: {
+            callback(tickValue) {
+              if (tickValue === 0) {
+                return '0';
+              } else {
+                return `${Number(tickValue).toFixed(1)}V`;
+              }
+            },
+          },
+        },
+      },
+    },
+  });
+}
+
+function updateChart() {
+  const chartState = chart.value?.getChart();
+
+  if (!chartState || !chartState.ready) {
+    return;
+  }
+
+  const data: { x: number; y: number }[] = [];
+  let t = 0;
+  data.push({ x: -lTimeValue.value, y: 0 });
+
+  for (let i = 0; i < 5; i++) {
+    data.push({ x: t, y: vccValue.value });
+    t += hTimeValue.value;
+
+    data.push({ x: t, y: 0 });
+    t += lTimeValue.value;
+  }
+
+  deepAssign(chartState.chart, {
+    data: {
+      datasets: [
+        {
+          label: '出力',
+          data,
+          pointStyle: false,
+          hidden:
+            typeof chartState.chart.data.datasets[0]?.hidden === 'undefined'
+              ? false
+              : !chartState.chart.isDatasetVisible(0),
+          stepped: 'before',
+        },
+      ],
+    },
+    scales: {
+      x: {
+        options: {
+          max: t - lTimeValue.value,
+        },
+      },
+    },
+  }).update('none');
+}
 </script>
 
 <template>
@@ -224,6 +327,14 @@ watch(
               unit="W"
               :prefix-symbols="['', 'm', 'μ', 'n']"
             />
+          </v-col>
+        </v-row>
+
+        <v-row>
+          <v-col cols="12">
+            <div style="height: 250px">
+              <ChartBase ref="chart" :initializer="initializeChart" />
+            </div>
           </v-col>
         </v-row>
       </v-col>
