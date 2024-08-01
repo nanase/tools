@@ -139,3 +139,37 @@ describe('fit', () => {
     expect(SIValue.fit(-1e6, ['G', 'M', 'k', ''])).toStrictEqual(new SIValue(-1, SIValue.getPrefix('M')));
   });
 });
+
+describe('fitBy', () => {
+  test('Fit a large SI prefix', () => {
+    expect(SIValue.fitBy(1e6, 'k')).toStrictEqual(new SIValue(1e3, SIValue.getPrefix('k')));
+    expect(SIValue.fitBy(1e6, 'M')).toStrictEqual(new SIValue(1, SIValue.getPrefix('M')));
+    expect(SIValue.fitBy(1e6, 'G')).toStrictEqual(new SIValue(1e-3, SIValue.getPrefix('G')));
+
+    expect(SIValue.fitBy(5e6, 'k')).toStrictEqual(new SIValue(5e3, SIValue.getPrefix('k')));
+    expect(SIValue.fitBy(5e6, 'M')).toStrictEqual(new SIValue(5, SIValue.getPrefix('M')));
+    expect(SIValue.fitBy(5e6, 'G')).toStrictEqual(new SIValue(5e-3, SIValue.getPrefix('G')));
+  });
+
+  test('Fit a small SI prefix', () => {
+    expect(SIValue.fitBy(1e-9, 'μ')).toStrictEqual(new SIValue(1e-3, SIValue.getPrefix('μ')));
+    expect(SIValue.fitBy(1e-9, 'n')).toStrictEqual(new SIValue(1, SIValue.getPrefix('n')));
+    expect(SIValue.fitBy(1e-9, 'p')).toEqual({ fraction: expect.closeTo(1e3), prefix: SIValue.getPrefix('p') });
+
+    expect(SIValue.fitBy(5e-9, 'μ')).toStrictEqual(new SIValue(5e-3, SIValue.getPrefix('μ')));
+    expect(SIValue.fitBy(5e-9, 'n')).toStrictEqual(new SIValue(5, SIValue.getPrefix('n')));
+    expect(SIValue.fitBy(5e-9, 'p')).toStrictEqual(new SIValue(5e3, SIValue.getPrefix('p')));
+  });
+
+  test('Fit a base SI prefix', () => {
+    expect(SIValue.fitBy(0, 'm')).toStrictEqual(new SIValue(0, SIValue.getPrefix('m')));
+    expect(SIValue.fitBy(0, '')).toStrictEqual(new SIValue(0, SIValue.getPrefix('')));
+    expect(SIValue.fitBy(0, 'k')).toStrictEqual(new SIValue(0, SIValue.getPrefix('k')));
+  });
+
+  test('Fit with a negative value', () => {
+    expect(SIValue.fitBy(-1e6, 'k')).toStrictEqual(new SIValue(-1e3, SIValue.getPrefix('k')));
+    expect(SIValue.fitBy(-1e6, 'M')).toStrictEqual(new SIValue(-1, SIValue.getPrefix('M')));
+    expect(SIValue.fitBy(-1e6, 'G')).toStrictEqual(new SIValue(-1e-3, SIValue.getPrefix('G')));
+  });
+});
