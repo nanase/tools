@@ -132,4 +132,10 @@ describe('fit', () => {
     expect(SIValue.fit(0, ['', 'm', 'μ', 'n', 'p'])).toStrictEqual(new SIValue(0, SIValue.getPrefix('')));
     expect(SIValue.fit(0, ['m', 'μ', 'n', 'p'])).toStrictEqual(new SIValue(0, SIValue.getPrefix('')));
   });
+
+  test('Fit with a negative value', () => {
+    expect(SIValue.fit(-1e6, ['k', ''])).toStrictEqual(new SIValue(-1e3, SIValue.getPrefix('k')));
+    expect(SIValue.fit(-1e6, ['M', 'k', ''])).toStrictEqual(new SIValue(-1, SIValue.getPrefix('M')));
+    expect(SIValue.fit(-1e6, ['G', 'M', 'k', ''])).toStrictEqual(new SIValue(-1, SIValue.getPrefix('M')));
+  });
 });

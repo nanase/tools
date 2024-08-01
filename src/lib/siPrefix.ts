@@ -99,6 +99,9 @@ export class SIValue {
     }
 
     if (value !== 0.0) {
+      const sign = Math.sign(value);
+      value = Math.abs(value);
+
       const prefixes = symbols
         .map((s) => {
           const prefix = SIValue.getPrefix(s);
@@ -108,7 +111,7 @@ export class SIValue {
         })
         .sort((a, b) => a.rank - b.rank);
 
-      return new SIValue(prefixes[0].practicalValue, prefixes[0].prefix);
+      return new SIValue(prefixes[0].practicalValue * sign, prefixes[0].prefix);
     } else {
       return new SIValue(0, BaseSIPrefix);
     }
@@ -119,10 +122,12 @@ export class SIValue {
       return new SIValue(value, BaseSIPrefix);
     }
 
+    const sign = Math.sign(value);
+    value = Math.abs(value);
     const prefix = SIValue.getPrefix(symbol);
     const practicalValue = value * 10 ** -prefix.exponent;
 
-    return new SIValue(practicalValue, prefix);
+    return new SIValue(practicalValue * sign, prefix);
   }
 
   static getPrefix(symbol: SIPrefixSymbol): SIPrefix {
