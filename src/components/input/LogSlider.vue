@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
-import type { VSlider } from 'vuetify/components';
 
 const {
   max,
@@ -14,7 +13,6 @@ const {
 
 const linearValue = defineModel<number>();
 const logarithmicValue = ref<number>(0);
-const slider = ref<typeof VSlider>();
 const movement = ref<boolean>();
 
 watch(
@@ -34,7 +32,6 @@ function logarithmicValueUpdated() {
 
 <template>
   <v-slider
-    ref="slider"
     v-model:model-value="logarithmicValue"
     @update:model-value="logarithmicValueUpdated"
     @start="movement = true"
