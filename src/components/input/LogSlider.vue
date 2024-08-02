@@ -8,12 +8,12 @@ const { max, min } = defineProps<{
 
 const linearValue = defineModel<number>();
 const logarithmicValue = ref<number>(0);
-const movement = ref<boolean>();
+const moving = ref<boolean>(false);
 
 watch(
   () => linearValue.value,
   () => {
-    if (linearValue.value && !movement.value) {
+    if (linearValue.value && !moving.value) {
       logarithmicValue.value = Math.log(linearValue.value);
     }
   },
@@ -29,8 +29,8 @@ function logarithmicValueUpdated() {
   <v-slider
     v-model:model-value="logarithmicValue"
     @update:model-value="logarithmicValueUpdated"
-    @start="movement = true"
-    @end="movement = false"
+    @start="moving = true"
+    @end="moving = false"
     :max="Math.log(max)"
     :min="Math.log(min)"
   >
