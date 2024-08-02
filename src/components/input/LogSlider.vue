@@ -39,6 +39,10 @@ function logarithmicValueUpdated() {
     :max="Math.log(max) * resolution"
     :min="Math.log(min) * resolution"
   >
-    <template #thumb-label> {{ Number(linearValue).toFixed(3) }} </template>
+    <template #thumb-label>
+      <slot name="thumb-label" :linearValue :logarithmicValue>
+        {{ Number(linearValue).toFixed(3) }}
+      </slot>
+    </template>
   </v-slider>
 </template>
