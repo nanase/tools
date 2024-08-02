@@ -1,14 +1,9 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 
-const {
-  max,
-  min,
-  resolution = 100,
-} = defineProps<{
+const { max, min } = defineProps<{
   max: number;
   min: number;
-  resolution?: number;
 }>();
 
 const linearValue = defineModel<number>();
@@ -19,14 +14,14 @@ watch(
   () => linearValue.value,
   () => {
     if (linearValue.value && !movement.value) {
-      logarithmicValue.value = Math.log(linearValue.value) * resolution;
+      logarithmicValue.value = Math.log(linearValue.value);
     }
   },
   { immediate: true },
 );
 
 function logarithmicValueUpdated() {
-  linearValue.value = Math.exp(logarithmicValue.value / resolution);
+  linearValue.value = Math.exp(logarithmicValue.value);
 }
 </script>
 
@@ -36,8 +31,8 @@ function logarithmicValueUpdated() {
     @update:model-value="logarithmicValueUpdated"
     @start="movement = true"
     @end="movement = false"
-    :max="Math.log(max) * resolution"
-    :min="Math.log(min) * resolution"
+    :max="Math.log(max)"
+    :min="Math.log(min)"
   >
     <template #thumb-label>
       <slot name="thumb-label" :linearValue :logarithmicValue>
