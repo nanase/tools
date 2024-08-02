@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 
-const { max, min } = defineProps<{
+const { max, min, step } = defineProps<{
   max: number;
   min: number;
+  step?: number;
 }>();
 
 const linearValue = defineModel<number>();
@@ -33,6 +34,7 @@ function logarithmicValueUpdated() {
     @end="moving = false"
     :max="Math.log(max)"
     :min="Math.log(min)"
+    :step="typeof step !== 'undefined' ? Math.log(step) : undefined"
   >
     <template #thumb-label>
       <slot name="thumb-label" :linearValue :logarithmicValue>
