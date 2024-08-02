@@ -81,7 +81,7 @@ function initializeChart(canvas: HTMLCanvasElement): Chart {
           callbacks: {
             title: function (item: TooltipItem<'line'>[]) {
               const siValue = SIValue.fit(Number(item[0].parsed.x), ['', 'm', 'μ', 'n', 'p']);
-              return `${siValue.fraction.toFixed(1)}${siValue.prefix.symbol}s`;
+              return `${siValue.toFixed(1)}s`;
             },
             label: function (item: TooltipItem<'line'>) {
               return `出力: ${item.parsed.y}V`;
@@ -100,7 +100,7 @@ function initializeChart(canvas: HTMLCanvasElement): Chart {
                 return '0';
               } else {
                 const siValue = SIValue.fit(Number(tickValue), ['', 'm', 'μ', 'n', 'p']);
-                return `${siValue.fraction.toFixed(1)}${siValue.prefix.symbol}s`;
+                return `${siValue.toFixed(1)}s`;
               }
             },
           },

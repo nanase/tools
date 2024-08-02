@@ -28,7 +28,7 @@ onMounted(() => {
 function updateFractionValue() {
   if (typeof actualValue.value !== 'undefined' && Number.isFinite(actualValue.value) && !field.value?.focused) {
     const siValue = SIValue.fit(actualValue.value, prefixSymbols ?? ['']);
-    fraction.value = `${siValue.fraction.toFixed(fractionDigits ?? 3)}${siValue.prefix.symbol}`;
+    fraction.value = `${siValue.toFixed(fractionDigits ?? 3)}`;
   }
 }
 
