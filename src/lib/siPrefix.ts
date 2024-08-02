@@ -68,6 +68,14 @@ export class SIValue {
     return this.fraction * 10 ** this.prefix.exponent;
   }
 
+  toString() {
+    return `${this.fraction}${this.prefix.symbol}`;
+  }
+
+  toFixed(fractionDigits?: number) {
+    return `${this.fraction.toFixed(fractionDigits)}${this.prefix.symbol}`;
+  }
+
   static getPrefixSymbols(allPrefix?: boolean): SIPrefixSymbol[] {
     return prefixes.filter((p) => p.exponent % (allPrefix ? 1 : 3) === 0).map((p) => p.symbol);
   }

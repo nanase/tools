@@ -1,5 +1,33 @@
 import { SIPrefixSymbol, SIValue } from '../../src/lib/siPrefix';
 
+describe('toString', () => {
+  test('Convert to string', () => {
+    expect(new SIValue(1, SIValue.getPrefix('k')).toString()).toEqual('1k');
+    expect(new SIValue(5, SIValue.getPrefix('M')).toString()).toEqual('5M');
+    expect(new SIValue(0.5, SIValue.getPrefix('G')).toString()).toEqual('0.5G');
+
+    expect(new SIValue(-1, SIValue.getPrefix('k')).toString()).toEqual('-1k');
+    expect(new SIValue(-5, SIValue.getPrefix('M')).toString()).toEqual('-5M');
+    expect(new SIValue(-0.5, SIValue.getPrefix('G')).toString()).toEqual('-0.5G');
+  });
+});
+
+describe('toFixed', () => {
+  test('Convert to string with a parameter of fraction digits', () => {
+    expect(new SIValue(1, SIValue.getPrefix('k')).toFixed(1)).toEqual('1.0k');
+    expect(new SIValue(5, SIValue.getPrefix('M')).toFixed(2)).toEqual('5.00M');
+    expect(new SIValue(0.5, SIValue.getPrefix('G')).toFixed(3)).toEqual('0.500G');
+
+    expect(new SIValue(-1, SIValue.getPrefix('k')).toFixed(1)).toEqual('-1.0k');
+    expect(new SIValue(-5, SIValue.getPrefix('M')).toFixed(2)).toEqual('-5.00M');
+    expect(new SIValue(-0.5, SIValue.getPrefix('G')).toFixed(3)).toEqual('-0.500G');
+  });
+
+  test('Convert to string without a parameter of fraction digits', () => {
+    expect(new SIValue(1, SIValue.getPrefix('k')).toFixed()).toEqual('1k');
+  });
+});
+
 describe('fit', () => {
   test('Fit a large SI prefix', () => {
     expect(SIValue.fit(1e6, ['k', ''])).toStrictEqual(new SIValue(1e3, SIValue.getPrefix('k')));
