@@ -1,10 +1,16 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 
-const { max, min, step } = defineProps<{
+const {
+  max,
+  min,
+  step,
+  constant = 0,
+} = defineProps<{
   max: number;
   min: number;
   step?: number;
+  constant?: number;
 }>();
 
 const linearValue = defineModel<number>();
@@ -15,14 +21,14 @@ watch(
   () => linearValue.value,
   () => {
     if (linearValue.value && !moving.value) {
-      logarithmicValue.value = Math.log(linearValue.value);
+      logarithmicValue.value = Math.log(linearValue.value + constant);
     }
   },
   { immediate: true },
 );
 
 function logarithmicValueUpdated() {
-  linearValue.value = Math.exp(logarithmicValue.value);
+  linearValue.value = Math.exp(logarithmicValue.value) - constant;
 }
 </script>
 

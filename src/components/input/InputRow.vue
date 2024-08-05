@@ -18,6 +18,7 @@ const {
   variant,
   max = 1,
   min = 0,
+  constant = 0,
   step,
   fractionDigits = 0,
   menuIcon = 'mdi-dots-horizontal',
@@ -36,6 +37,7 @@ const {
   hideDetails?: boolean;
   max?: number;
   min?: number;
+  constant?: number;
   step?: number;
   fractionDigits?: number;
   unit?: string;
@@ -65,7 +67,7 @@ const value = defineModel<number>();
       />
     </v-col>
     <v-col>
-      <LogSlider v-if="scale === 'log'" v-model="value" :max :min :density :disabled :hideDetails />
+      <LogSlider v-if="scale === 'log'" v-model="value" :max :min :constant :density :disabled :hideDetails />
       <v-slider v-else v-model="value" :max :min :step :density :disabled :hideDetails>
         <template #thumb-label="{ modelValue }"> {{ Number(modelValue).toFixed(fractionDigits) }} </template>
       </v-slider>
