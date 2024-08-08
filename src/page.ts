@@ -12,11 +12,21 @@ export interface PageSection {
 
 export const PageList: PageSection[] = [
   {
+    id: 'control',
+    pages: [
+      {
+        id: 'control/pid',
+        title: 'PID制御',
+        icon: 'mdi-ship-wheel',
+      },
+    ],
+  },
+  {
     id: 'electric',
     pages: [
       {
         id: 'electric/timer555',
-        title: 'タイマIC 555 計算機',
+        title: 'タイマIC 555',
         icon: 'mdi-chip',
       },
     ],

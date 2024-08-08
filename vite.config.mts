@@ -43,6 +43,7 @@ export default defineConfig({
     outDir,
     rollupOptions: {
       input: {
+        'control/pid': resolve(root, 'control', 'pid.html'),
         'electric/timer555': resolve(root, 'electric', 'timer555.html'),
         'filter/biquad': resolve(root, 'filter', 'biquad.html'),
         'jjy/simulator': resolve(root, 'jjy', 'simulator.html'),

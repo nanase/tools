@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <load src="../html/header.html" title="PID制御" description="PID制御のシミュレータツールです。"
+    url="https://nanase.cc/tools/control/pid" />
+</head>
+
+<body>
+  <div id="app"></div>
+  <script type="module">
+    import { createAndMount } from '@/appBase';
+    import PIDApp from './PIDApp.vue';
+
+    createAndMount('#app', PIDApp);
+  </script>
+</body>
+
+</html>
