@@ -3,11 +3,13 @@ import { ref, watch, computed } from 'vue';
 import { definePeriodicCall } from '@/lib/vue';
 import dayjs, { Dayjs } from '@/lib/dayjs';
 import { encode, StopAfterItems, StopDurationItems, CallSignItems, type TimeCode, type EncodeOptions } from '@/lib/jjy';
+import { Rules } from '@/lib/siPrefix';
 import * as Tone from 'tone';
 
 import AppBase from '@/components/common/AppBase.vue';
 import AnimatedClock from '@/components/common/AnimatedClock.vue';
 import TimeBars from '@/components/jjy/TimeBars.vue';
+import InputRow from '@/components/input/InputRow.vue';
 
 const time = ref<Dayjs>(dayjs());
 const timeOnSeconds = ref<Dayjs>(dayjs().startOf('second'));
@@ -281,30 +283,31 @@ async function clickSoundPlaying() {
         </v-dialog>
       </v-col>
       <v-col cols="6" sm="4" lg="3">
-        <div>
-          <div class="text-caption">音の周波数（Hz）</div>
-          <v-slider v-model="soundFreq" min="20" max="24000" step="1" thumb-label :disabled="soundSendMode">
-            <template #append>
-              <v-text-field
-                v-model="soundFreq"
-                density="compact"
-                variant="underlined"
-                style="width: 100px"
-                type="number"
-                prefix="Hz"
-                class="text-align-right"
-                inputmode="numeric"
-                reverse
-                hide-details
-                single-line
-              />
-            </template>
-          </v-slider>
-        </div>
-        <div>
-          <div class="text-caption">ボリューム</div>
-          <v-slider v-model="soundVolume" min="0" max="1" thumb-label />
-        </div>
+        <InputRow
+          v-model="soundFreq"
+          label="音の周波数"
+          variant="underlined"
+          density="compact"
+          :max="24000"
+          :min="20"
+          scale="log"
+          unit="Hz"
+          :rule="[Rules.required, Rules.value, Rules.notNegative]"
+          cols="5"
+          hide-details
+        />
+        <InputRow
+          v-model="soundVolume"
+          label="ボリューム"
+          variant="underlined"
+          density="compact"
+          :max="1"
+          :min="0"
+          :fraction-digits="3"
+          :rule="[Rules.required, Rules.value, Rules.notNegative]"
+          cols="5"
+          hide-details
+        />
       </v-col>
     </v-row>
 
