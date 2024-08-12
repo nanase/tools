@@ -14,6 +14,7 @@ import biquadWorker from './biquadWorker?worker';
 import AppBase from '@/components/common/AppBase.vue';
 import ChartBase from '@/components/common/ChartBase.vue';
 import InputRow from '@/components/input/InputRow.vue';
+import SignalIndicator from '@/components/common/SignalIndicator.vue';
 
 import {
   type FilterType,
@@ -25,6 +26,7 @@ import {
 import { divide, findMinMax, sequence } from '@/lib/array';
 import { deepAssign, RawObject } from '@/lib/object';
 import { WorkerManager } from '@/lib/worker';
+import { definePeriodicCall } from '@/lib/vue';
 
 Chart.register(annotationPlugin);
 
@@ -58,7 +60,9 @@ const graphXLabel = computed<number[]>(() => divide(samplingFreq.value / 2, impu
 
 const soundPlaying = ref<boolean>();
 const soundVolume = ref<number>(-30);
+const soundSignal = ref<number>(-Infinity);
 let synth: Tone.Noise | null = null;
+let meter: Tone.Meter | null = null;
 let toneFilter: Tone.BiquadFilter | null = null;
 const biquadWorkerManager = new WorkerManager<WorkerParameter, WorkerResult>(biquadWorker);
 
@@ -270,6 +274,8 @@ async function clickSoundPlaying() {
       }).toDestination();
 
       synth = new Tone.Noise().connect(toneFilter);
+      meter = new Tone.Meter({ smoothing: 0 });
+      toneFilter.connect(meter);
     }
 
     synth.volume.value = soundVolume.value;
@@ -285,6 +291,16 @@ watch(
     }
   },
 );
+
+definePeriodicCall(async () => {
+  if (meter == null) {
+    return 0.2;
+  }
+
+  const rawValue = meter.getValue();
+  soundSignal.value = Array.isArray(rawValue) ? rawValue[0] : rawValue;
+  return 0.2;
+});
 
 async function invokePreciseCalc() {
   if (processingPreciseCalc.value) {
@@ -457,6 +473,33 @@ async function invokePreciseCalc() {
               hide-details
               @click="clickSoundPlaying"
               density="compact"
+            />
+          </v-col>
+          <v-col cols="8" align-self="center">
+            <SignalIndicator
+              style="height: 16px"
+              :value="soundSignal"
+              :max="-30"
+              :min="-50"
+              :disabled="!soundPlaying"
+            />
+            <SignalIndicator
+              style="height: 16px"
+              :value="soundSignal"
+              :max="-9"
+              :min="-30"
+              :disabled="!soundPlaying"
+              fillColor="orange"
+              strokeColor="orange"
+            />
+            <SignalIndicator
+              style="height: 16px"
+              :value="soundSignal"
+              :max="0"
+              :min="-9"
+              :disabled="!soundPlaying"
+              fillColor="red"
+              strokeColor="red"
             />
           </v-col>
         </v-row>
