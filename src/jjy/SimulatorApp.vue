@@ -10,6 +10,7 @@ import AppBase from '@/components/common/AppBase.vue';
 import AnimatedClock from '@/components/common/AnimatedClock.vue';
 import TimeBars from '@/components/jjy/TimeBars.vue';
 import InputRow from '@/components/input/InputRow.vue';
+import SignalIndicator from '@/components/common/SignalIndicator.vue';
 
 const time = ref<Dayjs>(dayjs());
 const timeOnSeconds = ref<Dayjs>(dayjs().startOf('second'));
@@ -28,7 +29,9 @@ const soundPlaying = ref<boolean>();
 const soundSendMode = ref<boolean>();
 const soundFreq = ref<number>(440);
 const soundVolume = ref<number>(0.5);
+const soundSignal = ref<number>(-Infinity);
 let synth: Tone.Synth<Tone.SynthOptions> | null = null;
+let meter: Tone.Meter | null = null;
 let playingCallsign = false;
 
 definePeriodicCall(async () => {
@@ -161,10 +164,22 @@ async function clickSoundPlaying() {
     synth = new Tone.Synth({
       envelope: { attack: 0.05, decay: 0.05, sustain: 0.8, release: 0.05 },
     }).toDestination();
+    meter = new Tone.Meter({ smoothing: 0 });
+    synth.connect(meter);
   } else {
     synth?.triggerRelease();
   }
 }
+
+definePeriodicCall(async () => {
+  if (meter == null) {
+    return 0.1;
+  }
+
+  const rawValue = meter.getValue();
+  soundSignal.value = Array.isArray(rawValue) ? rawValue[0] : rawValue;
+  return 0.1;
+});
 </script>
 
 <template>
@@ -237,7 +252,11 @@ async function clickSoundPlaying() {
     </v-row>
     <v-row>
       <v-col cols="6" sm="4" lg="3">
-        <v-checkbox v-model="soundPlaying" label="音の再生" hide-details @click="clickSoundPlaying" density="compact" />
+        <v-checkbox v-model="soundPlaying" label="音の再生" hide-details @click="clickSoundPlaying" density="compact">
+          <template #append>
+            <SignalIndicator :value="soundSignal" :max="-10" :min="-30" :disabled="!soundPlaying" />
+          </template>
+        </v-checkbox>
         <v-checkbox v-model="soundSendMode" label="時刻合わせモード" hide-details density="compact" />
         <v-dialog max-width="640">
           <template #activator="{ props }">
