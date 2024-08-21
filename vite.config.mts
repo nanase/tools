@@ -45,6 +45,7 @@ export default defineConfig({
       input: {
         'control/pid': resolve(root, 'control', 'pid.html'),
         'electric/timer555': resolve(root, 'electric', 'timer555.html'),
+        'electric/combination': resolve(root, 'electric', 'combination.html'),
         'filter/biquad': resolve(root, 'filter', 'biquad.html'),
         'jjy/simulator': resolve(root, 'jjy', 'simulator.html'),
       },

@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <load src="../html/header.html" title="受動素子 組み合わせ計算機" description="受動素子の組み合わせの近似値を計算します。"
+    url="https://nanase.cc/tools/electric/combination" />
+</head>
+
+<body>
+  <div id="app"></div>
+  <script type="module">
+    import { createAndMount } from '@/appBase';
+    import App from './combination/App.vue';
+
+    createAndMount('#app', App);
+  </script>
+</body>
+
+</html>

@@ -25,6 +25,11 @@ export const PageList: PageSection[] = [
     id: 'electric',
     pages: [
       {
+        id: 'electric/combination',
+        title: '受動素子 組み合わせ',
+        icon: 'mdi-resistor',
+      },
+      {
         id: 'electric/timer555',
         title: 'タイマIC 555',
         icon: 'mdi-chip',
