@@ -72,6 +72,10 @@ export class SIValue {
     return `${this.fraction}${this.prefix.symbol}`;
   }
 
+  toSimpleString(fractionDigits?: number) {
+    return `${Number(this.fraction.toFixed(fractionDigits))}${this.prefix.symbol}`;
+  }
+
   toFixed(fractionDigits?: number) {
     return `${this.fraction.toFixed(fractionDigits)}${this.prefix.symbol}`;
   }
