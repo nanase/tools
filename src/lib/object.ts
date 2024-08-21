@@ -33,3 +33,11 @@ export function deepAssign<T>(target: T, source: SourceType): T {
 
   return target;
 }
+
+export function ternary<T>(condition: boolean | undefined | null, truthy: T, falsy: T, nullish: T): T {
+  if (typeof condition === 'undefined' || condition == null) {
+    return nullish;
+  }
+
+  return condition ? truthy : falsy;
+}
