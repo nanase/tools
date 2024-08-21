@@ -1,0 +1,1 @@
+.result-table tbody tr.best-combination{font-weight:700}.result-table tbody tr:not(.best-combination){opacity:.4;transition-duration:.28s;transition-property:opacity}.result-table tbody tr:not(.best-combination):hover{opacity:1}
