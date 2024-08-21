@@ -37,6 +37,7 @@ const currentApproxIndex = ref<number>(0);
 
 const componentType = ref<ComponentTypeItem>(componentTypeItem[0]);
 const inputProps = ref(initialInputProps);
+const currentInputProps = computed(() => inputProps.value[componentType.value.value]);
 const series = ref<SeriesItem>(seriesItem[3]);
 const targetErrorRate = ref<TargetErrorRateItem>(targetErrorRateItems[2]);
 const startedApprox = ref<boolean>();
@@ -66,10 +67,10 @@ async function approximate() {
 
   for (const approx of approxResults.value) {
     approx.componentType = componentType.value;
-    approx.targetComponentValue = inputProps.value[componentType.value.value].componentTargetValue;
-    approx.minValue = inputProps.value[componentType.value.value].minValue;
-    approx.maxValue = inputProps.value[componentType.value.value].maxValue;
-    approx.excludedValues = inputProps.value[componentType.value.value].excludedValues;
+    approx.targetComponentValue = currentInputProps.value.componentTargetValue;
+    approx.minValue = currentInputProps.value.minValue;
+    approx.maxValue = currentInputProps.value.maxValue;
+    approx.excludedValues = currentInputProps.value.excludedValues;
     approx.series = ESeries[series.value.value];
     approx.targetErrorRate = targetErrorRate.value;
     approx.finished = undefined;
@@ -156,9 +157,9 @@ function addExcludedValue() {
     [Rules.required, Rules.value, Rules.notNegative, Rules.notZero].every(
       (r) => r(additionalExcludedValue.value.toString()) === true,
     ) &&
-    !inputProps.value[componentType.value.value].excludedValues.includes(additionalExcludedValue.value)
+    !currentInputProps.value.excludedValues.includes(additionalExcludedValue.value)
   ) {
-    inputProps.value[componentType.value.value].excludedValues.push(additionalExcludedValue.value);
+    currentInputProps.value.excludedValues.push(additionalExcludedValue.value);
   }
 }
 
@@ -187,7 +188,7 @@ async function onClickStartApprox() {
       </v-col>
       <v-col cols="8">
         <SIValueInput
-          v-model:value="inputProps[componentType.value].componentTargetValue"
+          v-model:value="currentInputProps.componentTargetValue"
           :label="`求める${componentType.valueLabel}`"
           variant="underlined"
           density="compact"
@@ -217,7 +218,7 @@ async function onClickStartApprox() {
             <v-combobox
               v-bind="activatorProps"
               multiple
-              :model-value="inputProps[componentType.value].excludedValues"
+              :model-value="currentInputProps.excludedValues"
               :label="`除外する${componentType.valueLabel}（オプション）`"
               :suffix="componentType.unit"
               density="compact"
@@ -253,7 +254,7 @@ async function onClickStartApprox() {
                       <v-btn color="success" type="submit" variant="outlined" block>追加</v-btn>
                     </v-col>
                     <v-col cols="3">
-                      <v-btn variant="outlined" block @click="inputProps[componentType.value].excludedValues = []">
+                      <v-btn variant="outlined" block @click="currentInputProps.excludedValues = []">
                         全てクリア
                       </v-btn>
                     </v-col>
@@ -263,12 +264,12 @@ async function onClickStartApprox() {
                   density="compact"
                   @click:select="
                     (param) =>
-                      (inputProps[componentType.value].excludedValues = inputProps[
-                        componentType.value
-                      ].excludedValues.filter((v) => v !== param.id))
+                      (currentInputProps.excludedValues = currentInputProps.excludedValues.filter(
+                        (v) => v !== param.id,
+                      ))
                   "
                 >
-                  <v-list-item v-for="(value, key) in inputProps[componentType.value].excludedValues" :key :value slim>
+                  <v-list-item v-for="(value, key) in currentInputProps.excludedValues" :key :value slim>
                     {{ SIValue.fit(value, componentType.prefixSymbols) }}{{ componentType.unit }}
                     <template #prepend>
                       <v-icon icon="mdi-close" />
@@ -289,7 +290,7 @@ async function onClickStartApprox() {
     <v-row>
       <v-col cols="4">
         <SIValueInput
-          v-model:value="inputProps[componentType.value].minValue"
+          v-model:value="currentInputProps.minValue"
           :label="`使用する最小の${componentType.valueLabel}`"
           variant="underlined"
           density="compact"
@@ -302,7 +303,7 @@ async function onClickStartApprox() {
       </v-col>
       <v-col cols="4">
         <SIValueInput
-          v-model:value="inputProps[componentType.value].maxValue"
+          v-model:value="currentInputProps.maxValue"
           :label="`使用する最大の${componentType.valueLabel}`"
           variant="underlined"
           density="compact"
