@@ -60,3 +60,29 @@ export function findMinMax(array: Iterable<number>): { max: number; min: number;
     minIndex: minIndex,
   };
 }
+
+export function* generateForDepth<T>(array: Array<T>, depth: number): Iterable<Array<T>> {
+  const n = array.length;
+  const indices = Array(depth).fill(0);
+
+  while (true) {
+    yield indices.map((i) => array[i]);
+
+    let i = depth - 1;
+
+    while (i >= 0) {
+      indices[i]++;
+
+      if (indices[i] < n) {
+        break;
+      }
+
+      indices[i] = 0;
+      i--;
+    }
+
+    if (i < 0) {
+      break;
+    }
+  }
+}
