@@ -136,11 +136,11 @@ export function* approximate(
   }
 }
 
-interface TermNode {
+export interface TermNode {
   type: 'term';
   children: number;
 }
-interface OperationNode {
+export interface OperationNode {
   type: 'parallel' | 'series';
   children: (OperationNode | TermNode)[];
 }
