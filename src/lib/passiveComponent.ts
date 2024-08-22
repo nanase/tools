@@ -149,22 +149,22 @@ export type CombinationNode = OperationNode | TermNode;
 
 export class Combination {
   componentNodes: readonly ComponentNode[];
-  syntaxTree: OperationNode;
+  nodes: OperationNode;
 
   constructor(componentNodes: ComponentNode[]) {
     this.componentNodes = structuredClone(componentNodes);
-    this.syntaxTree = Combination.generateSyntaxTree(componentNodes);
+    this.nodes = Combination.generateSyntaxTree(componentNodes);
   }
 
   equals(other: Combination): boolean {
-    return Combination.equalsInternal(this.syntaxTree, other.syntaxTree);
+    return Combination.equalsInternal(this.nodes, other.nodes);
   }
 
   toString(
     siSymbols: SIPrefixSymbol[] = ['T', 'G', 'M', 'k', '', 'm', 'μ', 'n', 'p', 'f'],
     fractionDigits: number = 3,
   ): string {
-    return Combination.toStringInternal(this.syntaxTree, siSymbols, fractionDigits);
+    return Combination.toStringInternal(this.nodes, siSymbols, fractionDigits);
   }
 
   calcValue(componentType: ComponentType): number {
