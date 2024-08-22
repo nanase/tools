@@ -5,6 +5,7 @@ import { SIValue } from '@/lib/siPrefix';
 import { ternary } from '@/lib/object';
 
 import type { ApproxResult } from './constants';
+import CombinationDialog from './CombinationDialog.vue';
 
 const { results } = defineProps<{
   results: ApproxResult[];
@@ -45,7 +46,8 @@ function combinationToTableItem(combinations: Combination[], result: ApproxResul
       value: SIValue.fit(value, result.componentType.prefixSymbols).toSimpleString(3),
       isBestValue: value === result.bestComponentValue,
       error: errorRateToString(combination, result),
-      combination: combination.toString(result.componentType.prefixSymbols),
+      combinationText: combination.toString(result.componentType.prefixSymbols),
+      combination,
     };
   });
 }
@@ -84,11 +86,19 @@ function combinationToTableItem(combinations: Combination[], result: ApproxResul
         page-text="全{2}個の結果 / {0}-{1}"
       >
         <template #item="{ item }">
-          <tr :class="{ 'best-combination': item.isBestValue }">
-            <td>{{ item.value }}</td>
-            <td>{{ item.error }}</td>
-            <td>{{ item.combination }}</td>
-          </tr>
+          <CombinationDialog :combination="item.combination" :result>
+            <template #activator="{ props: activatorProps }">
+              <tr
+                v-bind="activatorProps"
+                :class="{ 'best-combination': item.isBestValue }"
+                @click="console.info(result)"
+              >
+                <td>{{ item.value }}</td>
+                <td>{{ item.error }}</td>
+                <td>{{ item.combinationText }}</td>
+              </tr>
+            </template>
+          </CombinationDialog>
         </template>
       </v-data-table>
     </v-tabs-window-item>
