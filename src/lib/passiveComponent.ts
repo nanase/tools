@@ -145,6 +145,8 @@ export interface OperationNode {
   children: (OperationNode | TermNode)[];
 }
 
+export type CombinationNode = OperationNode | TermNode;
+
 export class Combination {
   componentNodes: readonly ComponentNode[];
   syntaxTree: OperationNode;
