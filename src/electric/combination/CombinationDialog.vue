@@ -170,7 +170,7 @@ const nodes = computed<Node[]>(() => {
 </script>
 
 <template>
-  <v-dialog>
+  <v-dialog style="max-width: 600px">
     <template #activator="{ props }">
       <slot name="activator" :props></slot>
     </template>
@@ -250,9 +250,7 @@ const nodes = computed<Node[]>(() => {
             </template>
           </VueFlow>
         </v-card-text>
-        <v-card-text>
-          {{ combination.toString(result.componentType.prefixSymbols) }}
-        </v-card-text>
+        <v-card-text> 組み合わせ式: {{ combination.toString(result.componentType.prefixSymbols) }} </v-card-text>
 
         <v-card-actions>
           <v-spacer></v-spacer>
