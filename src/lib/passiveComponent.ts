@@ -377,6 +377,13 @@ export class Combination {
     this.nodes = Combination.generateSyntaxTree(componentNodes);
   }
 
+  get numberOfTypes(): number {
+    return this.componentNodes
+      .filter((node) => typeof node === 'object')
+      .map((node) => node.value)
+      .filter((value, index, array) => array.indexOf(value) === index).length;
+  }
+
   equals(other: Combination): boolean {
     return Combination.equalsInternal(this.nodes, other.nodes);
   }

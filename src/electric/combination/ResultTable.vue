@@ -36,6 +36,7 @@ function toTableHaders(result: ApproxResult) {
     },
     { title: '誤差率 (%)', value: 'error' },
     { title: '組み合わせ', value: 'combination' },
+    { title: '素子の種類数', value: 'numberOfTypes' },
   ];
 }
 
@@ -47,6 +48,7 @@ function combinationToTableItem(combinations: Combination[], result: ApproxResul
       isBestValue: value === result.bestComponentValue,
       error: errorRateToString(combination, result),
       combinationText: combination.toString(result.componentType.prefixSymbols),
+      numberOfTypes: combination.numberOfTypes,
       combination,
     };
   });
@@ -97,6 +99,7 @@ function combinationToTableItem(combinations: Combination[], result: ApproxResul
                 <td>{{ item.value }}</td>
                 <td>{{ item.error }}</td>
                 <td>{{ item.combinationText }}</td>
+                <td>{{ item.numberOfTypes }}</td>
               </tr>
             </template>
           </CombinationDialog>
