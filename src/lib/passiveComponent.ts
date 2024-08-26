@@ -35,6 +35,227 @@ export const ESeries = {
   ],
 };
 
+export interface ColorCode {
+  figure: string | null;
+  name: string;
+  code: string | null;
+  color: {
+    hex: string;
+    luster: boolean;
+  };
+  multiplier: number | null;
+  tolerance: {
+    percent: number;
+    letter: string;
+  } | null;
+}
+
+export const ColorCodes: ColorCode[] = [
+  {
+    figure: null,
+    name: 'None',
+    code: null,
+    color: {
+      hex: '#00000000',
+      luster: false,
+    },
+    multiplier: null,
+    tolerance: {
+      percent: 20,
+      letter: 'M',
+    },
+  },
+  {
+    figure: null,
+    name: 'Pink',
+    code: 'PK',
+    color: {
+      hex: '#ccceccff',
+      luster: false,
+    },
+    multiplier: 1e-3,
+    tolerance: null,
+  },
+  {
+    figure: null,
+    name: 'Silver',
+    code: 'SR',
+    color: {
+      hex: '#ccceccff',
+      luster: true,
+    },
+    multiplier: 1e-2,
+    tolerance: {
+      percent: 10,
+      letter: 'K',
+    },
+  },
+  {
+    figure: null,
+    name: 'Gold',
+    code: 'GD',
+    color: {
+      hex: '#cc9a34ff',
+      luster: true,
+    },
+    multiplier: 1e-1,
+    tolerance: {
+      percent: 5,
+      letter: 'J',
+    },
+  },
+  {
+    figure: '0',
+    name: 'Black',
+    code: 'BK',
+    color: {
+      hex: '#0b0000ff',
+      luster: false,
+    },
+    multiplier: 1,
+    tolerance: null,
+  },
+  {
+    figure: '1',
+    name: 'Brown',
+    code: 'BN',
+    color: {
+      hex: '#643234ff',
+      luster: false,
+    },
+    multiplier: 1e1,
+    tolerance: {
+      percent: 1,
+      letter: 'F',
+    },
+  },
+  {
+    figure: '2',
+    name: 'Red',
+    code: 'RD',
+    color: {
+      hex: '#ff0000ff',
+      luster: false,
+    },
+    multiplier: 1e2,
+    tolerance: {
+      percent: 2,
+      letter: 'G',
+    },
+  },
+  {
+    figure: '3',
+    name: 'Orange',
+    code: 'OG',
+    color: {
+      hex: '#fc6604ff',
+      luster: false,
+    },
+    multiplier: 1e3,
+    tolerance: {
+      percent: 0.05,
+      letter: 'W',
+    },
+  },
+  {
+    figure: '4',
+    name: 'Yellow',
+    code: 'YE',
+    color: {
+      hex: '#fcfe04ff',
+      luster: false,
+    },
+    multiplier: 1e4,
+    tolerance: {
+      percent: 0.02,
+      letter: 'P',
+    },
+  },
+  {
+    figure: '5',
+    name: 'Green',
+    code: 'GN',
+    color: {
+      hex: '#34ce34ff',
+      luster: false,
+    },
+    multiplier: 1e5,
+    tolerance: {
+      percent: 0.5,
+      letter: 'D',
+    },
+  },
+  {
+    figure: '6',
+    name: 'Blue',
+    code: 'BU',
+    color: {
+      hex: '#6466fcff',
+      luster: false,
+    },
+    multiplier: 1e6,
+    tolerance: {
+      percent: 0.25,
+      letter: 'C',
+    },
+  },
+  {
+    figure: '7',
+    name: 'Violet',
+    code: 'VT',
+    color: {
+      hex: '#cc66fcff',
+      luster: false,
+    },
+    multiplier: 1e7,
+    tolerance: {
+      percent: 0.1,
+      letter: 'B',
+    },
+  },
+  {
+    figure: '8',
+    name: 'Gray',
+    code: 'GY',
+    color: {
+      hex: '#949294ff',
+      luster: false,
+    },
+    multiplier: 1e8,
+    tolerance: {
+      percent: 0.01,
+      letter: 'L(A)',
+    },
+  },
+  {
+    figure: '9',
+    name: 'White',
+    code: 'WH',
+    color: {
+      hex: '#ffffffff',
+      luster: false,
+    },
+    multiplier: 1e9,
+    tolerance: null,
+  },
+];
+
+export function getColorCodes(value: number, tolerancePercent: number, type: '4-band' | '5-band'): ColorCode[] {
+  const exponentRange = type === '4-band' ? 1 : 2;
+  const exponent = Math.floor(Math.log10(value)) - exponentRange;
+  const referenceValue = Math.round(value / 10 ** exponent);
+  const values =
+    type === '4-band'
+      ? [Math.floor(referenceValue / 10), referenceValue % 10]
+      : [Math.floor(referenceValue / 100), (referenceValue / 10) % 10, referenceValue % 10];
+
+  return [
+    ...values.map((v) => ColorCodes[v + 4]),
+    ColorCodes.find((code) => code.multiplier === 10 ** exponent) ?? ColorCodes[0],
+    ColorCodes.find((code) => code.tolerance?.percent === tolerancePercent) ?? ColorCodes[0],
+  ];
+}
+
 export interface PassiveComponent {
   value: number;
 }
