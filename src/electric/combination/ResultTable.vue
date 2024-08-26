@@ -90,6 +90,7 @@ function combinationToTableItem(combinations: Combination[], result: ApproxResul
             <template #activator="{ props: activatorProps }">
               <tr
                 v-bind="activatorProps"
+                class="calculated"
                 :class="{ 'best-combination': item.isBestValue }"
                 @click="console.info(result)"
               >
@@ -106,12 +107,14 @@ function combinationToTableItem(combinations: Combination[], result: ApproxResul
 </template>
 
 <style lang="scss">
-.result-table tbody {
-  tr.best-combination {
+.result-table tr.calculated {
+  cursor: pointer;
+
+  &.best-combination {
     font-weight: bold;
   }
 
-  tr:not(.best-combination) {
+  &:not(.best-combination) {
     opacity: 0.4;
     transition-duration: 0.28s;
     transition-property: opacity;
