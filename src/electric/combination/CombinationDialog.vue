@@ -4,7 +4,9 @@ import type { Node, Edge } from '@vue-flow/core';
 import { VueFlow } from '@vue-flow/core';
 import { Handle, Position } from '@vue-flow/core';
 import dagre from '@dagrejs/dagre';
-import type { Combination, CombinationNode } from '@/lib/passiveComponent';
+import AxialLead from '@/components/common/AxialLead.vue';
+
+import { getColorCodes, type Combination, type CombinationNode } from '@/lib/passiveComponent';
 import type { ApproxResult } from './constants';
 import { SIValue } from '@/lib/siPrefix';
 
@@ -33,6 +35,7 @@ function generateGraph(node: CombinationNode): { nodes: Node[]; edges: Edge[] } 
         id: nodeId,
         type: 'component',
         data: {
+          value: currentNode.children,
           label: `${SIValue.fit(currentNode.children, result.componentType.prefixSymbols).toSimpleString(3)}${result.componentType.unit}`,
         },
         position,
@@ -216,16 +219,32 @@ const nodes = computed<Node[]>(() => {
               <Handle class="no-handle" type="source" :position="Position.Right" />
             </template>
             <template #node-component="{ data }">
-              <div
-                class="node-component"
-                :style="{
-                  width: componentSize.width + 'px',
-                  height: componentSize.height + 'px',
-                  borderWidth: componentSize.borderWidth + 'px',
-                }"
-              >
-                {{ data.label }}
-              </div>
+              <AxialLead
+                v-if="result.componentType.value === 'resistor'"
+                :text="data.label"
+                color="#fbddc9"
+                barsAlign="right"
+                :colorCodes="getColorCodes(data.value, 5, '4-band')"
+                :barWidth="4"
+                :separatorWidth="1"
+                style="color: black; width: 70px; height: 15px; font-size: 50%; margin: 2px; padding: 0 5px"
+              />
+              <AxialLead
+                v-else-if="result.componentType.value === 'capacitor'"
+                :text="data.label"
+                color="#111111"
+                style="color: white; width: 70px; height: 15px; font-size: 50%; margin: 2px; padding: 0 5px"
+              />
+              <AxialLead
+                v-else-if="result.componentType.value === 'inductor'"
+                :text="data.label"
+                color="#68b697"
+                barsAlign="right"
+                :colorCodes="getColorCodes(data.value * 1e6, 10, '4-band')"
+                :barWidth="4"
+                :separatorWidth="1"
+                style="color: black; width: 70px; height: 15px; font-size: 50%; margin: 2px; padding: 0 5px"
+              />
               <Handle class="no-handle" type="target" :position="Position.Left" />
               <Handle class="no-handle" type="source" :position="Position.Right" />
             </template>
