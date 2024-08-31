@@ -28,7 +28,7 @@ export interface InvokeResult {
   result?: {
     // Note: With WebWoker, the type information of Combination class is
     //       NEVER serialized! So I'll return the result as a pure array (or object).
-    componentNodes?: ComponentNode[];
+    componentNodes?: readonly ComponentNode[];
     total: number;
     current: number;
   };

@@ -371,7 +371,7 @@ export class Combination {
   componentNodes: readonly ComponentNode[];
   nodes: OperationNode;
 
-  constructor(componentNodes: ComponentNode[]) {
+  constructor(componentNodes: readonly ComponentNode[]) {
     this.componentNodes = structuredClone(componentNodes);
     this.nodes = Combination.generateSyntaxTree(componentNodes);
   }
@@ -449,7 +449,7 @@ export class Combination {
     return false;
   }
 
-  private static generateSyntaxTree(componentNodes: ComponentNode[]): OperationNode {
+  private static generateSyntaxTree(componentNodes: readonly ComponentNode[]): OperationNode {
     const stack: (OperationNode | TermNode)[] = [];
 
     for (let i = componentNodes.length - 1; i >= 0; i--) {
