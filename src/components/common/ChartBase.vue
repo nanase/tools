@@ -2,7 +2,7 @@
 import { ref, markRaw, onBeforeUnmount } from 'vue';
 import Chart from 'chart.js/auto';
 
-import { type State } from '@/lib/state';
+import { type State } from '@nanase/alnilam';
 
 const { initializer } = defineProps<{
   initializer: (canvas: HTMLCanvasElement) => Chart;

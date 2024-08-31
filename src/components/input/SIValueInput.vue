@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, useAttrs } from 'vue';
-import { SIValue, Rules, type SIPrefixSymbol } from '../../lib/siPrefix';
+import { SIValue, Rules, type SIPrefixSymbol } from '@nanase/alnilam';
 import { VTextField } from 'vuetify/components';
 
 const { unit, prefixSymbols, fractionDigits } = defineProps<{

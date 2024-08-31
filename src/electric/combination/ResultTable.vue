@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import type { Combination } from '@/lib/passiveComponent';
-import { SIValue } from '@/lib/siPrefix';
-import { ternary } from '@/lib/object';
+import { SIValue, ternary } from '@nanase/alnilam';
 
 import type { ApproxResult } from './constants';
 import CombinationDialog from './CombinationDialog.vue';

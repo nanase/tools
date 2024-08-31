@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue';
-import { definePeriodicCall } from '@/lib/vue';
+import { definePeriodicCall, Rules } from '@nanase/alnilam';
 import dayjs, { Dayjs } from '@/lib/dayjs';
 import { encode, StopAfterItems, StopDurationItems, CallSignItems, type TimeCode, type EncodeOptions } from '@/lib/jjy';
-import { Rules } from '@/lib/siPrefix';
 import * as Tone from 'tone';
 
 import AppBase from '@/components/common/AppBase.vue';

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
-import { Rules, SIValue } from '@/lib/siPrefix';
+import { Rules, SIValue, deepAssign } from '@nanase/alnilam';
 import Chart, { type TooltipItem } from 'chart.js/auto';
 
 import AppBase from '@/components/common/AppBase.vue';
@@ -8,7 +8,6 @@ import SIValueInput from '@/components/input/SIValueInput.vue';
 import MathJax from '@/components/common/MathJax.vue';
 import InputRow from '@/components/input/InputRow.vue';
 import ChartBase from '@/components/common/ChartBase.vue';
-import { deepAssign } from '@/lib/object';
 
 const chart = ref<InstanceType<typeof ChartBase>>();
 const r1Value = ref<number>(10e3);
