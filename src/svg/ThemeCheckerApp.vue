@@ -30,6 +30,7 @@ onMounted(() => {
       },
       () => {
         editor!.scrollContainer.style.height = '300px';
+        onUpdateEditor.call(editor!, svgExample);
         editor!.addListener('update', onUpdateEditor);
       },
     );
