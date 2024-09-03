@@ -56,4 +56,14 @@ export const PageList: PageSection[] = [
       },
     ],
   },
+  {
+    id: 'svg',
+    pages: [
+      {
+        id: 'svg/theme-checker',
+        title: 'SVG テーマスキーマチェッカー',
+        icon: 'mdi-theme-light-dark',
+      },
+    ],
+  },
 ];

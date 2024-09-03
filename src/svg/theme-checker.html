@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <load src="../html/header.html" title="SVG テーマスキーマチェッカー" description="SVG がテーマスキーマでどのように閲覧できるかをチェックできるツールです。"
+    url="https://nanase.cc/tools/svg/theme-checker" />
+</head>
+
+<body>
+  <div id="app"></div>
+  <script type="module">
+    import { createAndMount } from '@/appBase';
+    import ThemeCheckerApp from './ThemeCheckerApp.vue';
+
+    createAndMount('#app', ThemeCheckerApp);
+  </script>
+</body>
+
+</html>

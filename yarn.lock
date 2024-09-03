@@ -3844,6 +3844,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"dompurify@npm:^3.1.6":
+  version: 3.1.6
+  resolution: "dompurify@npm:3.1.6"
+  checksum: 10c0/3de1cca187c78d3d8cb4134fc2985b644d6a81f6b4e024c77cfb04c1c2f38544ccf7b0ea37a48ce22fcca64594170ed7c22252574c75b801c44345cdd7b06c64
+  languageName: node
+  linkType: hard
+
 "domutils@npm:^3.0.1":
   version: 3.1.0
   resolution: "domutils@npm:3.1.0"
@@ -7242,6 +7249,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"prism-code-editor@npm:^3.4.0":
+  version: 3.4.0
+  resolution: "prism-code-editor@npm:3.4.0"
+  checksum: 10c0/61a68b47f3874a7fa5458c2e47d845935282983708d9484f0e6028f4d57601b89523223b3bb519f04b03e0ed44746a4b27196bf1ced1dd24aab99bfc5d5a0eac
+  languageName: node
+  linkType: hard
+
 "proc-log@npm:^3.0.0":
   version: 3.0.0
   resolution: "proc-log@npm:3.0.0"
@@ -8284,6 +8298,7 @@ __metadata:
     chart.js: "npm:^4.4.4"
     chartjs-plugin-annotation: "npm:^3.0.1"
     dayjs: "npm:^1.11.13"
+    dompurify: "npm:^3.1.6"
     eslint: "npm:^9.9.1"
     eslint-plugin-vue: "npm:^9.27.0"
     jest: "npm:^29.7.0"
@@ -8292,6 +8307,7 @@ __metadata:
     postcss: "npm:^8.4.44"
     postcss-html: "npm:^1.7.0"
     prettier: "npm:^3.3.3"
+    prism-code-editor: "npm:^3.4.0"
     sass: "npm:^1.77.8"
     stylelint: "npm:^16.9.0"
     stylelint-config-standard-scss: "npm:^13.1.0"

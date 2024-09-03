@@ -48,6 +48,7 @@ export default defineConfig({
         'electric/combination': resolve(root, 'electric', 'combination.html'),
         'filter/biquad': resolve(root, 'filter', 'biquad.html'),
         'jjy/simulator': resolve(root, 'jjy', 'simulator.html'),
+        'svg/theme-checker': resolve(root, 'svg', 'theme-checker.html'),
       },
       output: {
         chunkFileNames: 'assets/tools-[name]-[hash].js',
