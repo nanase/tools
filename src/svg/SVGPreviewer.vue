@@ -91,6 +91,7 @@ function insertSVGIntoIframe(svgSvgElement: SVGSVGElement, iframe: HTMLIFrameEle
   iframeDoc.body.appendChild(svgSvgElement);
   iframeDoc.body.style.margin = '0';
   iframeDoc.body.style.overflow = 'hidden';
+  iframeDoc.body.parentElement!.style.cursor = 'grab';
   iframeDoc.body.classList.add(`theme-${theme}`);
 }
 
