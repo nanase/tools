@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <load src="./html/header.html" title="Tools + Simulator" description="Web上で各種計算＋シミュレーションができるツール群です"
+    url="https://nanase.cc/tools/" />
+</head>
+
+<body>
+  <div id="app"></div>
+  <script type="module">
+    import { createAndMount } from '@/appBase';
+    import IndexApp from './IndexApp.vue';
+
+    createAndMount('#app', IndexApp);
+  </script>
+</body>
+
+</html>

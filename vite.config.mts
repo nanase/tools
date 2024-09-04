@@ -43,6 +43,7 @@ export default defineConfig({
     outDir,
     rollupOptions: {
       input: {
+        '': resolve(root, 'index.html'),
         'control/pid': resolve(root, 'control', 'pid.html'),
         'electric/timer555': resolve(root, 'electric', 'timer555.html'),
         'electric/combination': resolve(root, 'electric', 'combination.html'),
