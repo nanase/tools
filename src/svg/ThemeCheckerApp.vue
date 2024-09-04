@@ -17,7 +17,8 @@ const editorElement = ref<HTMLElement | null>(null);
 const editorTheme = computed<string>(() => (theme.global.current.value.dark ? 'github-dark' : 'github-light'));
 const svgElement = ref<SVGSVGElement>();
 const position = ref<{ x: number; y: number }>({ x: 0, y: 0 });
-const scale = ref<number>(1.0);
+const lightScale = ref<number>(1.0);
+const darkScale = ref<number>(1.0);
 
 onMounted(() => {
   if (editorElement.value) {
@@ -64,10 +65,30 @@ function isSVGSVGElement(node: Node): node is SVGSVGElement {
   <AppBase page-id="svg/theme-checker" toolbar-title="SVG テーマスキーマチェッカー">
     <v-row no-gutters>
       <v-col cols="6" class="text-center">
-        <SVGPreviewer theme="light" :svgElement v-model:position="position" v-model:scale="scale" />
+        <SVGPreviewer
+          theme="light"
+          :svgElement
+          v-model:position="position"
+          :scale="lightScale"
+          @scale-changed="
+            (newScale) => {
+              darkScale = newScale;
+            }
+          "
+        />
       </v-col>
       <v-col cols="6">
-        <SVGPreviewer theme="dark" :svgElement v-model:position="position" v-model:scale="scale" />
+        <SVGPreviewer
+          theme="dark"
+          :svgElement
+          v-model:position="position"
+          :scale="darkScale"
+          @scale-changed="
+            (newScale) => {
+              lightScale = newScale;
+            }
+          "
+        />
       </v-col>
     </v-row>
     <v-row>
