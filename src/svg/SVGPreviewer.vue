@@ -55,6 +55,7 @@ function setScale(value: number) {
 }
 
 function setTransform(body: HTMLElement) {
+  body.style.transformOrigin = 'top left';
   body.style.transform = `translate(${position.value?.x}px, ${position.value?.y}px) scale(${getScale()})`;
 }
 
@@ -154,14 +155,15 @@ function addEventListener(document: Document, iframe: HTMLIFrameElement): void {
         return;
       }
 
-      let scale = getScale();
       const { x, y } = getAdjustedMousePosition(e.clientX, e.clientY);
-      const xs = (x - position.value.x) / scale;
-      const ys = (y - position.value.y) / scale;
       const delta = e.deltaY > 0 ? -0.1 : 0.1;
+
+      let scale = getScale();
+      const prevScale = scale;
       scale *= 1 + 0.1 * Math.sign(delta);
-      position.value.x = x - xs * scale;
-      position.value.y = y - ys * scale;
+
+      position.value.x -= (x * (scale - prevScale)) / scale;
+      position.value.y -= (y * (scale - prevScale)) / scale;
 
       setScale(scale);
       setTransform(body);
