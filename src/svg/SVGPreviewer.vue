@@ -108,8 +108,6 @@ function addEventListener(document: Document, iframe: HTMLIFrameElement): void {
   const body = document.body;
   let isDragging = false;
   let startX: number, startY: number;
-  position.value = { x: 0, y: 0 };
-  setScale(1.0);
 
   const iframeRect = iframe.getBoundingClientRect();
 
@@ -170,6 +168,8 @@ function addEventListener(document: Document, iframe: HTMLIFrameElement): void {
     },
     { passive: false },
   );
+
+  setTransform(body);
 }
 </script>
 
