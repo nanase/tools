@@ -8,7 +8,7 @@ import DOMPurify from 'dompurify';
 
 import AppBase from '@/components/common/AppBase.vue';
 import type { PrismEditor } from 'prism-code-editor';
-import svgExample from '@/../public/electric/timer555.svg?raw';
+import svgExample from '@/../public/svg/example.svg?raw';
 import SVGPreviewer from './SVGPreviewer.vue';
 
 const theme = useTheme();

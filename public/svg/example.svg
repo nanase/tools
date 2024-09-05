@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="256" height="256" viewBox="0 0 89.301 89.301">
+  <style>
+    :root {
+      --color-primary: #69c5ff;
+      --color-secondary: #425beb;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --color-primary: #fff;
+        --color-secondary: #a3a3a3;
+      }
+    }
+  </style>
+  <defs>
+    <linearGradient xlink:href="#a" id="b" x1="18.15" x2="57.165" y1="2.561" y2="70.137" gradientUnits="userSpaceOnUse"/>
+    <linearGradient id="a">
+      <stop offset="0" stop-color="var(--color-primary)"/>
+      <stop offset="1" stop-color="var(--color-secondary)"/>
+    </linearGradient>
+    <linearGradient xlink:href="#a" id="c" x1="18.15" x2="57.165" y1="2.561" y2="70.137" gradientTransform="translate(32.872)" gradientUnits="userSpaceOnUse"/>
+  </defs>
+  <g fill-rule="evenodd">
+    <path fill="url(#b)" d="M50 19.98c.843 0 1.738.428 2.236 1.291l4.563 7.902a11.754 11.754 0 0 1 0 11.748L27.237 92.124A11.754 11.754 0 0 1 17.063 98H7.938c-1.994 0-3.234-2.148-2.237-3.875L47.766 21.27A2.586 2.586 0 0 1 50 19.98z" transform="translate(-5.349 -14.339)"/>
+    <path fill="url(#c)" d="M50 19.981c-.843 0-1.738.427-2.237 1.29l-4.562 7.903a11.754 11.754 0 0 0 0 11.748l28.224 48.885-14.937-6.468a10.632 10.632 0 0 0-11.18 1.717l-13 11.259c-.662.574-.247 1.685.63 1.685h59.124c1.994 0 3.233-2.148 2.236-3.875L52.235 21.272A2.585 2.585 0 0 0 50 19.982z" transform="translate(-5.349 -14.339)"/>
+  </g>
+</svg>
