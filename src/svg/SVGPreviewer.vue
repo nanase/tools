@@ -7,10 +7,12 @@ const { theme, svgElement, scale } = defineProps<{
   scale?: number;
 }>();
 
-const emits = defineEmits<{ (e: 'scaleChanged', scale: number): void }>();
+const emits = defineEmits<{ (e: 'scaleChanged', scale: number): void; (e: 'svgMounted'): void }>();
 const position = defineModel<{ x: number; y: number }>('position');
 const innerScale = ref<number>(1.0);
 const previewElement = ref<HTMLIFrameElement | null>(null);
+
+defineExpose({ setInitialTransform });
 
 watch(
   () => svgElement,
@@ -20,6 +22,7 @@ watch(
       updateSvgStyles(newNode);
       insertSVGIntoIframe(newNode, previewElement.value, theme);
       addEventListener(previewElement.value.contentDocument, previewElement.value);
+      emits('svgMounted');
     }
   },
 );
@@ -44,6 +47,36 @@ watch(
     }
   },
 );
+
+function setInitialTransform() {
+  if (
+    !previewElement.value ||
+    !previewElement.value.contentDocument ||
+    previewElement.value.contentDocument.body.children.length === 0 ||
+    !position.value
+  ) {
+    return;
+  }
+
+  const body = previewElement.value.contentDocument.body;
+  const svgDOMRect = body.children[0].getBoundingClientRect();
+  const cotainerDOMRect = previewElement.value.getBoundingClientRect();
+
+  if (cotainerDOMRect.width > svgDOMRect.width && cotainerDOMRect.height > svgDOMRect.height) {
+    // 表示領域 ＞ SVGのサイズ
+    position.value.x = (cotainerDOMRect.width - svgDOMRect.width) / 2;
+    position.value.y = (cotainerDOMRect.height - svgDOMRect.height) / 2;
+    setScale(1.0);
+  } else {
+    // 表示領域 ＜ SVGのサイズ
+    const newScale =
+      Math.min(cotainerDOMRect.width / svgDOMRect.width, cotainerDOMRect.height / svgDOMRect.height) * 0.9;
+
+    position.value.x = (cotainerDOMRect.width - svgDOMRect.width * newScale) / 2;
+    position.value.y = (cotainerDOMRect.height - svgDOMRect.height * newScale) / 2;
+    setScale(newScale);
+  }
+}
 
 function getScale(): number {
   return innerScale.value ?? 1.0;

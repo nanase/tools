@@ -13,6 +13,8 @@ import SVGPreviewer from './SVGPreviewer.vue';
 
 const theme = useTheme();
 let editor: PrismEditor | null = null;
+const lightPreviewer = ref<InstanceType<typeof SVGPreviewer>>();
+const darkPreviewer = ref<InstanceType<typeof SVGPreviewer>>();
 const editorElement = ref<HTMLElement | null>(null);
 const editorTheme = computed<string>(() => (theme.global.current.value.dark ? 'github-dark' : 'github-light'));
 const svgElement = ref<SVGSVGElement>();
@@ -59,6 +61,10 @@ function onUpdateEditor(this: PrismEditor, value: string) {
 function isSVGSVGElement(node: Node): node is SVGSVGElement {
   return node.nodeName === 'svg';
 }
+
+function setInitialTransform() {
+  lightPreviewer.value?.setInitialTransform();
+}
 </script>
 
 <template>
@@ -66,6 +72,7 @@ function isSVGSVGElement(node: Node): node is SVGSVGElement {
     <v-row no-gutters>
       <v-col cols="6" class="text-center">
         <SVGPreviewer
+          ref="lightPreviewer"
           theme="light"
           :svgElement
           v-model:position="position"
@@ -75,10 +82,12 @@ function isSVGSVGElement(node: Node): node is SVGSVGElement {
               darkScale = newScale;
             }
           "
+          @svg-mounted.once="setInitialTransform"
         />
       </v-col>
       <v-col cols="6">
         <SVGPreviewer
+          ref="darkPreviewer"
           theme="dark"
           :svgElement
           v-model:position="position"
