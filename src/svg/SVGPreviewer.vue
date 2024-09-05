@@ -89,11 +89,11 @@ function updateSvgStyles(svgElement: SVGSVGElement): void {
   let styleText = styleElement.textContent;
 
   styleText = styleText.replace(
-    /@media\s*\(prefers-color-scheme:\s*dark\)\s*\{([^}]+)\}/g,
+    /@media\s*\(\s*prefers-color-scheme\s*:\s*dark\s*\)\s*\{([^}]+)\}/g,
     '.svg-inner-theme-dark {$1}',
   );
   styleText = styleText.replace(
-    /@media\s*\(prefers-color-scheme:\s*light\)\s*\{([^}]+)\}/g,
+    /@media\s*\(\s*prefers-color-scheme\s*:\s*light\s*\)\s*\{([^}]+)\}/g,
     '.svg-inner-theme-light {$1}',
   );
   styleText = styleText.replace(/:root/g, 'svg');
