@@ -57,7 +57,7 @@ watch(
 );
 
 function onUpdateEditor(this: PrismEditor, value: string) {
-  const cleanElement = DOMPurify.sanitize(value, { RETURN_DOM: true });
+  const cleanElement = DOMPurify.sanitize(value, { RETURN_DOM: true, ADD_TAGS: ['use'] });
 
   if (cleanElement.hasChildNodes() && isSVGSVGElement(cleanElement.childNodes[0])) {
     svgElement.value = cleanElement.childNodes[0];
