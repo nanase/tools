@@ -109,8 +109,21 @@ async function setInitialTransform() {
         />
       </v-col>
     </v-row>
-    <v-row>
-      <v-col>
+    <v-row no-gutters class="mt-1">
+      <v-col class="d-flex justify-end">
+        <v-tooltip text="全体を表示">
+          <template #activator="{ props }">
+            <v-btn
+              v-bind="props"
+              icon="mdi-fit-to-screen-outline"
+              variant="plain"
+              density="comfortable"
+              @click="setInitialTransform"
+            ></v-btn>
+          </template>
+        </v-tooltip>
+      </v-col>
+      <v-col cols="12">
         <div ref="editorElement"></div>
       </v-col>
     </v-row>
