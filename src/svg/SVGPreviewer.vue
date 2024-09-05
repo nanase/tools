@@ -76,7 +76,7 @@ function insertSVGIntoIframe(svgSvgElement: SVGSVGElement, iframe: HTMLIFrameEle
   iframeDoc.body.style.margin = '0';
   iframeDoc.body.style.overflow = 'hidden';
   iframeDoc.body.parentElement!.style.cursor = 'grab';
-  iframeDoc.body.classList.add(`theme-${theme}`);
+  iframeDoc.body.classList.add(`svg-inner-theme-${theme}`);
 }
 
 function updateSvgStyles(svgElement: SVGSVGElement): void {
@@ -88,8 +88,14 @@ function updateSvgStyles(svgElement: SVGSVGElement): void {
 
   let styleText = styleElement.textContent;
 
-  styleText = styleText.replace(/@media\s*\(prefers-color-scheme:\s*dark\)\s*\{([^}]+)\}/g, '.theme-dark {$1}');
-  styleText = styleText.replace(/@media\s*\(prefers-color-scheme:\s*light\)\s*\{([^}]+)\}/g, '.theme-light {$1}');
+  styleText = styleText.replace(
+    /@media\s*\(prefers-color-scheme:\s*dark\)\s*\{([^}]+)\}/g,
+    '.svg-inner-theme-dark {$1}',
+  );
+  styleText = styleText.replace(
+    /@media\s*\(prefers-color-scheme:\s*light\)\s*\{([^}]+)\}/g,
+    '.svg-inner-theme-light {$1}',
+  );
   styleText = styleText.replace(/:root/g, 'svg');
 
   const newStyleElement = document.createElement('style');
@@ -168,7 +174,7 @@ function addEventListener(document: Document, iframe: HTMLIFrameElement): void {
 </script>
 
 <template>
-  <iframe ref="previewElement" class="preview" :class="`theme-${theme}`"></iframe>
+  <iframe ref="previewElement" class="preview" :class="`preview-theme-${theme}`"></iframe>
 </template>
 
 <style lang="scss" scoped>
@@ -190,12 +196,12 @@ function addEventListener(document: Document, iframe: HTMLIFrameElement): void {
     linear-gradient(45deg, transparent 75%, var(--preview-checker-color) 75%),
     linear-gradient(135deg, transparent 75%, var(--preview-checker-color) 75%);
 
-  &.theme-light {
+  &.preview-theme-light {
     --preview-background-color: white;
     --preview-checker-color: #f8f8f8;
   }
 
-  &.theme-dark {
+  &.preview-theme-dark {
     --preview-background-color: #111;
     --preview-checker-color: #191919;
   }
