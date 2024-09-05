@@ -38,6 +38,12 @@ onMounted(() => {
       },
     );
   }
+
+  DOMPurify.addHook('afterSanitizeAttributes', function (node) {
+    if (node.hasAttribute('xlink:href') && !node.getAttribute('xlink:href')?.match(/^#/)) {
+      node.remove();
+    }
+  });
 });
 
 watch(
