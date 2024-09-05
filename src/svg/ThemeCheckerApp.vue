@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, computed, onMounted } from 'vue';
+import { ref, watch, computed, onMounted, nextTick } from 'vue';
 import { useTheme } from 'vuetify';
 import { basicEditor, updateTheme } from 'prism-code-editor/setups';
 import { loadTheme } from 'prism-code-editor/themes';
@@ -62,7 +62,16 @@ function isSVGSVGElement(node: Node): node is SVGSVGElement {
   return node.nodeName === 'svg';
 }
 
-function setInitialTransform() {
+async function setInitialTransform() {
+  // set position / scale to initial value
+  position.value = { x: 0, y: 0 };
+  lightScale.value = 1.0;
+  darkScale.value = 1.0;
+
+  // apply
+  await nextTick();
+
+  // at last, (re)calc transform
   lightPreviewer.value?.setInitialTransform();
 }
 </script>
