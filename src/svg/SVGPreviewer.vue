@@ -179,6 +179,7 @@ function addEventListener(document: Document, iframe: HTMLIFrameElement): void {
 
 <style lang="scss" scoped>
 .preview {
+  color-scheme: light;
   height: 100%;
   width: 100%;
   min-height: 300px;
