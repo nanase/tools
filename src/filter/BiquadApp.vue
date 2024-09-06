@@ -10,8 +10,8 @@ import {
   RawObject,
   WorkerManager,
   definePeriodicCall,
+  useTheme,
 } from '@nanase/alnilam';
-import { useTheme } from 'vuetify';
 import { BiquadFilter } from '@/lib/filter/biquadFilter';
 import Chart from 'chart.js/auto';
 import annotationPlugin from 'chartjs-plugin-annotation';
