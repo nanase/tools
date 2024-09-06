@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue';
-import { definePeriodicCall, Rules } from '@nanase/alnilam';
+import { useIntervalFn } from '@vueuse/core';
+import { Rules } from '@nanase/alnilam';
 import dayjs, { Dayjs } from '@/lib/dayjs';
 import { encode, StopAfterItems, StopDurationItems, CallSignItems, type TimeCode, type EncodeOptions } from '@/lib/jjy';
 import * as Tone from 'tone';
@@ -33,7 +34,7 @@ let synth: Tone.Synth<Tone.SynthOptions> | null = null;
 let meter: Tone.Meter | null = null;
 let playingCallsign = false;
 
-definePeriodicCall(async () => {
+useIntervalFn(() => {
   if (!stopped.value) {
     time.value = dayjs().subtract(timeDiff.value, 'milliseconds');
   }
@@ -45,9 +46,7 @@ definePeriodicCall(async () => {
       timeOnMinutes.value = time.value.startOf('minute');
     }
   }
-
-  return 0.05;
-});
+}, 50);
 
 watch(
   () => timeOnSeconds.value,
@@ -170,15 +169,12 @@ async function clickSoundPlaying() {
   }
 }
 
-definePeriodicCall(async () => {
-  if (meter == null) {
-    return 0.1;
+useIntervalFn(() => {
+  if (meter) {
+    const rawValue = meter.getValue();
+    soundSignal.value = Array.isArray(rawValue) ? rawValue[0] : rawValue;
   }
-
-  const rawValue = meter.getValue();
-  soundSignal.value = Array.isArray(rawValue) ? rawValue[0] : rawValue;
-  return 0.1;
-});
+}, 100);
 </script>
 
 <template>

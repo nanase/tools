@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
+import { useIntervalFn } from '@vueuse/core';
 import {
   Rules,
   reapplyTheme,
@@ -9,7 +10,6 @@ import {
   deepAssign,
   RawObject,
   WorkerManager,
-  definePeriodicCall,
   useTheme,
 } from '@nanase/alnilam';
 import { BiquadFilter } from '@/lib/filter/biquadFilter';
@@ -297,15 +297,12 @@ watch(
   },
 );
 
-definePeriodicCall(async () => {
-  if (meter == null) {
-    return 0.2;
+useIntervalFn(() => {
+  if (meter) {
+    const rawValue = meter.getValue();
+    soundSignal.value = Array.isArray(rawValue) ? rawValue[0] : rawValue;
   }
-
-  const rawValue = meter.getValue();
-  soundSignal.value = Array.isArray(rawValue) ? rawValue[0] : rawValue;
-  return 0.2;
-});
+}, 200);
 
 async function invokePreciseCalc() {
   if (processingPreciseCalc.value) {
