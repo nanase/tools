@@ -28,7 +28,7 @@
   "devDependencies": {
     "@dagrejs/dagre": "^1.1.4",
     "@mdi/font": "^7.4.47",
-    "@nanase/alnilam": "https://github.com/nanase/alnilam.git#0.4.6",
+    "@nanase/alnilam": "https://github.com/nanase/alnilam.git#0.4.9",
     "@rushstack/eslint-patch": "^1.10.4",
     "@types/dompurify": "^3.0.5",
     "@types/js-yaml": "^4.0.9",

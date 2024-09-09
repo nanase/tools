@@ -716,14 +716,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nanase/alnilam@https://github.com/nanase/alnilam.git#0.4.6":
-  version: 0.4.6
-  resolution: "@nanase/alnilam@https://github.com/nanase/alnilam.git#commit=038ff44cd620f8e5c795b2d935aeebe5650ed40e"
+"@nanase/alnilam@https://github.com/nanase/alnilam.git#0.4.9":
+  version: 0.4.9
+  resolution: "@nanase/alnilam@https://github.com/nanase/alnilam.git#commit=eaeca5b1c54cd20e6183e6399c8043ed9f5ce4f3"
   dependencies:
     dayjs: "npm:^1.11.13"
     vue: "npm:^3.5.3"
     vuetify: "npm:^3.7.1"
-  checksum: 10c0/225272829c37ccaf6dfdc30fe49578f9206345e67de91949aeb2ebec0dd12ec5bf4f55cd15e0a2ea7d84a5c9ba99d8eeb5a011401b872c3f559db692f5375491
+  checksum: 10c0/b4c0900a7a3ca730f29489b2d21522d11f644db5b3674f6682afcc73c18b3daabc83dfab6792282090013bd45e2500da3b5607d07232ea15586cbc8148c4ff54
   languageName: node
   linkType: hard
 
@@ -6412,7 +6412,7 @@ __metadata:
   dependencies:
     "@dagrejs/dagre": "npm:^1.1.4"
     "@mdi/font": "npm:^7.4.47"
-    "@nanase/alnilam": "https://github.com/nanase/alnilam.git#0.4.6"
+    "@nanase/alnilam": "https://github.com/nanase/alnilam.git#0.4.9"
     "@rushstack/eslint-patch": "npm:^1.10.4"
     "@types/dompurify": "npm:^3.0.5"
     "@types/js-yaml": "npm:^4.0.9"
