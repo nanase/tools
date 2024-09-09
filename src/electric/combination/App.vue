@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { Rules, SIValue, WorkerManager } from '@nanase/alnilam';
+import { SIValue } from '@nanase/alnilam/siPrefix';
+import { Rules } from '@nanase/alnilam/inputRule';
+import { WorkerManager } from '@nanase/alnilam/worker';
 import { ESeries, Combination } from '@/lib/passiveComponent';
 
 import AppBase from '@/components/common/AppBase.vue';

@@ -1,4 +1,5 @@
-import { generateForDepth, SIValue, type SIPrefixSymbol } from '@nanase/alnilam';
+import { SIValue, type SIPrefixSymbol } from '@nanase/alnilam/siPrefix';
+import { generateForDepth } from '@nanase/alnilam/array';
 
 export const ESeries = {
   E1: [100],

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
-import { Rules, SIValue, deepAssign } from '@nanase/alnilam';
+import { SIValue } from '@nanase/alnilam/siPrefix';
+import { deepAssign } from '@nanase/alnilam/object';
+import { Rules } from '@nanase/alnilam/inputRule';
 import Chart, { type TooltipItem } from 'chart.js/auto';
 
 import AppBase from '@/components/common/AppBase.vue';

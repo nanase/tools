@@ -1,5 +1,5 @@
 import type { Combination, ComponentType, ESeries } from '@/lib/passiveComponent';
-import type { SIPrefixSymbol } from '@nanase/alnilam';
+import type { SIPrefixSymbol } from '@nanase/alnilam/siPrefix';
 
 export interface ComponentTypeItem {
   title: string;

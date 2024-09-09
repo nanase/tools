@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import SIValueInput from '@/components/input/SIValueInput.vue';
 import LogSlider from '@/components/input/LogSlider.vue';
-import type { SIPrefixSymbol } from '@nanase/alnilam';
+import type { SIPrefixSymbol } from '@nanase/alnilam/siPrefix';
 
 const {
   label,

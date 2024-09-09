@@ -1,6 +1,6 @@
 import { BiquadFilter } from '@/lib/filter/biquadFilter';
 import type { WorkerParameter, WorkerResult } from './biquadWorkerType';
-import { findMinMax } from '@nanase/alnilam';
+import { findMinMax } from '@nanase/alnilam/array';
 
 self.addEventListener('message', (event: MessageEvent<WorkerParameter>) => {
   console.info(`[biquadWorker] start impulseLength: ${event.data.impulseLength}`);

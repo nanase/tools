@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue';
 import { useIntervalFn } from '@vueuse/core';
-import { Rules } from '@nanase/alnilam';
+import { Rules } from '@nanase/alnilam/inputRule';
 import dayjs, { Dayjs } from '@/lib/dayjs';
 import { encode, StopAfterItems, StopDurationItems, CallSignItems, type TimeCode, type EncodeOptions } from '@/lib/jjy';
 import * as Tone from 'tone';

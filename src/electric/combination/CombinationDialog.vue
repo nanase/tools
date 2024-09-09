@@ -8,7 +8,7 @@ import AxialLead from '@/components/common/AxialLead.vue';
 
 import { getColorCodes, type Combination, type CombinationNode } from '@/lib/passiveComponent';
 import type { ApproxResult } from './constants';
-import { SIValue } from '@nanase/alnilam';
+import { SIValue } from '@nanase/alnilam/siPrefix';
 
 const { result, combination } = defineProps<{
   result: ApproxResult;

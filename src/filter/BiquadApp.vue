@@ -1,17 +1,11 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { useIntervalFn } from '@vueuse/core';
-import {
-  Rules,
-  reapplyTheme,
-  divide,
-  findMinMax,
-  sequence,
-  deepAssign,
-  RawObject,
-  WorkerManager,
-  useTheme,
-} from '@nanase/alnilam';
+import { deepAssign, RawObject } from '@nanase/alnilam/object';
+import { divide, findMinMax, sequence } from '@nanase/alnilam/array';
+import { Rules } from '@nanase/alnilam/inputRule';
+import { reapplyTheme, useTheme } from '@nanase/alnilam/theme';
+import { WorkerManager } from '@nanase/alnilam/worker';
 import { BiquadFilter } from '@/lib/filter/biquadFilter';
 import Chart from 'chart.js/auto';
 import annotationPlugin from 'chartjs-plugin-annotation';

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
-import { deepAssign, Rules } from '@nanase/alnilam';
+import { deepAssign } from '@nanase/alnilam/object';
+import { Rules } from '@nanase/alnilam/inputRule';
 import { PIDController } from './PIDController';
 import Chart from 'chart.js/auto';
 
