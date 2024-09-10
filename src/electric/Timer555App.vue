@@ -5,7 +5,7 @@ import { deepAssign } from '@nanase/alnilam/object';
 import { Rules } from '@nanase/alnilam/inputRule';
 import Chart, { type TooltipItem } from 'chart.js/auto';
 
-import AppBase from '@/components/common/AppBase.vue';
+import ToolAppBase from '@/components/common/ToolAppBase.vue';
 import SIValueInput from '@/components/input/SIValueInput.vue';
 import MathJax from '@/components/common/MathJax.vue';
 import InputRow from '@/components/input/InputRow.vue';
@@ -168,7 +168,7 @@ function updateChart() {
 </script>
 
 <template>
-  <AppBase page-id="electric/timer555" toolbar-title="タイマIC 555 計算機">
+  <ToolAppBase page-id="electric/timer555" toolbar-title="タイマIC 555 計算機">
     <v-row>
       <v-col cols="12" sm="8">
         <InputRow
@@ -374,5 +374,5 @@ function updateChart() {
         </MathJax>
       </v-col>
     </v-row>
-  </AppBase>
+  </ToolAppBase>
 </template>

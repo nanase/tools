@@ -6,7 +6,7 @@ import dayjs, { Dayjs } from '@/lib/dayjs';
 import { encode, StopAfterItems, StopDurationItems, CallSignItems, type TimeCode, type EncodeOptions } from '@/lib/jjy';
 import * as Tone from 'tone';
 
-import AppBase from '@/components/common/AppBase.vue';
+import ToolAppBase from '@/components/common/ToolAppBase.vue';
 import AnimatedClock from '@/components/common/AnimatedClock.vue';
 import TimeBars from '@/components/jjy/TimeBars.vue';
 import InputRow from '@/components/input/InputRow.vue';
@@ -178,7 +178,7 @@ useIntervalFn(() => {
 </script>
 
 <template>
-  <AppBase page-id="jjy/simulator" toolbar-title="JJY シミュレータ">
+  <ToolAppBase page-id="jjy/simulator" toolbar-title="JJY シミュレータ">
     <v-row no-gutters align="center" justify="center">
       <v-col cols="5" sm="7">
         <AnimatedClock :time="time" style="font-size: 125%" />
@@ -341,5 +341,5 @@ useIntervalFn(() => {
         </v-container>
       </v-footer>
     </template>
-  </AppBase>
+  </ToolAppBase>
 </template>

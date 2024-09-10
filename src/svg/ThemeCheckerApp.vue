@@ -6,7 +6,7 @@ import { loadTheme } from 'prism-code-editor/themes';
 import 'prism-code-editor/prism/languages/xml';
 import DOMPurify from 'dompurify';
 
-import AppBase from '@/components/common/AppBase.vue';
+import ToolAppBase from '@/components/common/ToolAppBase.vue';
 import type { PrismEditor } from 'prism-code-editor';
 import svgExample from '@/../public/svg/example.svg?raw';
 import SVGPreviewer from './SVGPreviewer.vue';
@@ -83,7 +83,7 @@ async function setInitialTransform() {
 </script>
 
 <template>
-  <AppBase page-id="svg/theme-checker" toolbar-title="SVG テーマスキーマチェッカー">
+  <ToolAppBase page-id="svg/theme-checker" toolbar-title="SVG テーマスキーマチェッカー">
     <v-row no-gutters>
       <v-col cols="6" class="text-center">
         <SVGPreviewer
@@ -133,5 +133,5 @@ async function setInitialTransform() {
         <div ref="editorElement"></div>
       </v-col>
     </v-row>
-  </AppBase>
+  </ToolAppBase>
 </template>

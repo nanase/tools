@@ -5,7 +5,7 @@ import { Rules } from '@nanase/alnilam/inputRule';
 import { PIDController } from './PIDController';
 import Chart from 'chart.js/auto';
 
-import AppBase from '@/components/common/AppBase.vue';
+import ToolAppBase from '@/components/common/ToolAppBase.vue';
 import ChartBase from '@/components/common/ChartBase.vue';
 import InputRow from '@/components/input/InputRow.vue';
 
@@ -153,7 +153,7 @@ function updateChart() {
 </script>
 
 <template>
-  <AppBase page-id="control/pid" toolbar-title="PID制御">
+  <ToolAppBase page-id="control/pid" toolbar-title="PID制御">
     <v-row>
       <v-col cols="12" md="6">
         <InputRow
@@ -297,5 +297,5 @@ function updateChart() {
         </v-row>
       </v-col>
     </v-row>
-  </AppBase>
+  </ToolAppBase>
 </template>

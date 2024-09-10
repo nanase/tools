@@ -5,7 +5,7 @@ import { Rules } from '@nanase/alnilam/inputRule';
 import { WorkerManager } from '@nanase/alnilam/worker';
 import { ESeries, Combination } from '@/lib/passiveComponent';
 
-import AppBase from '@/components/common/AppBase.vue';
+import ToolAppBase from '@/components/common/ToolAppBase.vue';
 import SIValueInput from '@/components/input/SIValueInput.vue';
 import ResultTable from './ResultTable.vue';
 
@@ -174,7 +174,7 @@ async function onClickStartApprox() {
 </script>
 
 <template>
-  <AppBase page-id="electric/combination" toolbar-title="受動素子 組み合わせ計算機">
+  <ToolAppBase page-id="electric/combination" toolbar-title="受動素子 組み合わせ計算機">
     <v-row>
       <v-col cols="4">
         <v-select
@@ -364,5 +364,5 @@ async function onClickStartApprox() {
         <ResultTable :results="approxResults" />
       </v-col>
     </v-row>
-  </AppBase>
+  </ToolAppBase>
 </template>

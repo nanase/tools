@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import AppBase from '@/components/common/AppBase.vue';
+import ToolAppBase from '@/components/common/ToolAppBase.vue';
 import { PageList } from '@/page';
 </script>
 
 <template>
-  <AppBase page-id="index" toolbar-title="Tools + Simulator">
+  <ToolAppBase page-id="index" toolbar-title="Tools + Simulator">
     <v-list class="pb-0 d-flex flex-column fill-height" role="menu">
       <template v-for="(section, index) in PageList" :key="section.id">
         <v-list-subheader>{{ section.name }}</v-list-subheader>
@@ -24,5 +24,5 @@ import { PageList } from '@/page';
         <div class="mb-5"></div>
       </template>
     </v-list>
-  </AppBase>
+  </ToolAppBase>
 </template>

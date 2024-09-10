@@ -14,7 +14,7 @@ import MathJax from '@/components/common/MathJax.vue';
 import type { WorkerParameter, WorkerResult } from './biquadWorkerType';
 import biquadWorker from './biquadWorker?worker';
 
-import AppBase from '@/components/common/AppBase.vue';
+import ToolAppBase from '@/components/common/ToolAppBase.vue';
 import ChartBase from '@/components/common/ChartBase.vue';
 import InputRow from '@/components/input/InputRow.vue';
 import SignalIndicator from '@/components/common/SignalIndicator.vue';
@@ -326,7 +326,7 @@ async function invokePreciseCalc() {
 </script>
 
 <template>
-  <AppBase page-id="filter/biquad" toolbar-title="双2次フィルタ">
+  <ToolAppBase page-id="filter/biquad" toolbar-title="双2次フィルタ">
     <v-row>
       <v-col cols="12" md="7">
         <v-row>
@@ -742,7 +742,7 @@ async function invokePreciseCalc() {
         </v-container>
       </v-footer>
     </template>
-  </AppBase>
+  </ToolAppBase>
 </template>
 
 <style lang="scss" scoped>
