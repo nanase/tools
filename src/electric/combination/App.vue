@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, toRaw, watch } from 'vue';
+import { useWebWorker, type UseWebWorkerReturn } from '@vueuse/core';
 import { SIValue } from '@nanase/alnilam/siPrefix';
 import { Rules } from '@nanase/alnilam/inputRule';
-import { WorkerManager } from '@nanase/alnilam/worker';
 import { ESeries, Combination } from '@/lib/passiveComponent';
 
 import ToolAppBase from '@/components/common/ToolAppBase.vue';
@@ -10,7 +10,7 @@ import SIValueInput from '@/components/input/SIValueInput.vue';
 import ResultTable from './ResultTable.vue';
 
 import approximateWorker from './worker?worker';
-import type { WorkerParameter, WorkerResult } from './workerType';
+import type { InitializeParameter, InvokeParameter, WorkerResult } from './workerType';
 import {
   componentTypeItem,
   initialInputProps,
@@ -22,7 +22,7 @@ import {
   type TargetErrorRateItem,
 } from './constants';
 
-const approxResults = ref<ApproxResult[]>(
+const approxResults = ref<(ApproxResult & { worker: UseWebWorkerReturn<WorkerResult> })[]>(
   [2, 3, 4, 5].map((num) => ({
     componentNumber: num,
     componentType: componentTypeItem[0],
@@ -32,40 +32,75 @@ const approxResults = ref<ApproxResult[]>(
     maxValue: 0,
     excludedValues: [],
     targetErrorRate: targetErrorRateItems[2],
+    worker: useWebWorker<WorkerResult>(new approximateWorker()),
   })),
 );
-const currentApproxIndex = ref<number>(0);
-
 const componentType = ref<ComponentTypeItem>(componentTypeItem[0]);
 const inputProps = ref(initialInputProps);
 const currentInputProps = computed(() => inputProps.value[componentType.value.value]);
 const series = ref<SeriesItem>(seriesItem[3]);
 const targetErrorRate = ref<TargetErrorRateItem>(targetErrorRateItems[2]);
-const startedApprox = ref<boolean>();
+const startedApprox = computed<boolean>(() => approxResults.value.some((r) => r.finishReason === 'calculating'));
 const abortApprox = ref<boolean>();
 const additionalExcludedValue = ref<number>(1000);
-const approximateWorkerManager = new WorkerManager<WorkerParameter, WorkerResult>(approximateWorker);
 const approxProgress = computed<number>(() => {
   if (!startedApprox.value) {
     return 0;
   }
 
-  const currentApprox = approxResults.value[currentApproxIndex.value];
-  if (
-    typeof currentApprox.currentCombination === 'undefined' ||
-    typeof currentApprox.totalCombinations === 'undefined' ||
-    currentApprox.totalCombinations === 0
-  ) {
-    return 0;
-  }
+  const total = approxResults.value.reduce((prev, current) => prev + (current.totalCombinations ?? 0), 0);
+  const current = approxResults.value.reduce((prev, current) => prev + (current.currentCombination ?? 0), 0);
 
-  return (currentApprox.currentCombination / currentApprox.totalCombinations) * 100;
+  return total === 0 ? 0 : (current / total) * 100;
 });
 
-async function approximate() {
-  startedApprox.value = true;
-  let index = 0;
+for (const approxResult of approxResults.value) {
+  watch(
+    () => approxResult.worker.data,
+    (result) => {
+      if (result.result) {
+        const r = result.result;
+        ({ current: approxResult.currentCombination, total: approxResult.totalCombinations } = r);
 
+        if (r.componentNodes) {
+          const combination = new Combination(toRaw(r.componentNodes));
+
+          if (!approxResult.resultCombinations?.some((a) => a.equals(combination))) {
+            approxResult.resultCombinations?.unshift(combination);
+
+            approxResult.bestComponentValue = combination.calcValue(approxResult.componentType.value);
+            const errorRate =
+              (approxResult.bestComponentValue - approxResult.targetComponentValue) / approxResult.targetComponentValue;
+
+            if (
+              typeof approxResult.targetErrorRate.value === 'number' &&
+              Math.abs(errorRate) <= approxResult.targetErrorRate.value
+            ) {
+              approxResult.finishReason = 'finishedByUnderErrorRate';
+              approxResult.finished = true;
+              return;
+            }
+          }
+        }
+      }
+
+      if (result.done) {
+        approxResult.finishReason = 'finishedAllCombination';
+        approxResult.finished = true;
+        return;
+      }
+
+      if (abortApprox.value) {
+        approxResult.finishReason = 'aborted';
+        approxResult.finished = true;
+      } else {
+        approxResult.worker.post({ type: 'invoke' } as const satisfies InvokeParameter);
+      }
+    },
+  );
+}
+
+async function approximate() {
   for (const approx of approxResults.value) {
     approx.componentType = componentType.value;
     approx.targetComponentValue = currentInputProps.value.componentTargetValue;
@@ -74,24 +109,14 @@ async function approximate() {
     approx.excludedValues = currentInputProps.value.excludedValues;
     approx.series = ESeries[series.value.value];
     approx.targetErrorRate = targetErrorRate.value;
-    approx.finished = undefined;
-    approx.finishReason = undefined;
+    approx.finished = false;
+    approx.finishReason = 'calculating';
     approx.bestComponentValue = 0;
     approx.resultCombinations = [];
     approx.totalCombinations = 0;
     approx.currentCombination = 0;
-  }
 
-  for (const approx of approxResults.value) {
-    if (abortApprox.value) {
-      break;
-    }
-
-    currentApproxIndex.value = index++;
-    approx.finished = false;
-    approx.finishReason = 'calculating';
-
-    await approximateWorkerManager.invoke({
+    approx.worker.post({
       type: 'initialize',
       value: approx.targetComponentValue,
       componentType: approx.componentType.value,
@@ -101,56 +126,9 @@ async function approximate() {
       maxValue: approx.maxValue,
       excludedValues: [...approx.excludedValues],
       progressBeacon: 1e6,
-    });
-
-    while (!abortApprox.value) {
-      const approxResult = await approximateWorkerManager.invoke({ type: 'invoke' });
-
-      if (approxResult.type !== 'invoke') {
-        approx.finishReason = 'error';
-        break;
-      }
-
-      if (approxResult.result) {
-        const r = approxResult.result;
-        approx.currentCombination = r.current;
-        approx.totalCombinations = r.total;
-
-        if (r.componentNodes) {
-          const combination = new Combination(r.componentNodes);
-
-          if (!approx.resultCombinations?.some((a) => a.equals(combination))) {
-            approx.resultCombinations?.unshift(combination);
-
-            approx.bestComponentValue = combination.calcValue(approx.componentType.value);
-            const errorRate = (approx.bestComponentValue - approx.targetComponentValue) / approx.targetComponentValue;
-
-            if (
-              typeof approx.targetErrorRate.value === 'number' &&
-              Math.abs(errorRate) <= approx.targetErrorRate.value
-            ) {
-              approx.finishReason = 'finishedByUnderErrorRate';
-              break;
-            }
-          }
-        }
-      }
-
-      if (approxResult.done) {
-        approx.finishReason = 'finishedAllCombination';
-        break;
-      }
-    }
-
-    if (abortApprox.value) {
-      approx.finishReason = 'aborted';
-    }
-
-    approx.finished = true;
+    } as const satisfies InitializeParameter);
+    approx.worker.post({ type: 'invoke' } as const satisfies InvokeParameter);
   }
-
-  abortApprox.value = false;
-  startedApprox.value = false;
 }
 
 function addExcludedValue() {
@@ -168,6 +146,7 @@ async function onClickStartApprox() {
   if (startedApprox.value) {
     abortApprox.value = true;
   } else {
+    abortApprox.value = false;
     await approximate();
   }
 }

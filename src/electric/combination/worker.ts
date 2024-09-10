@@ -1,18 +1,13 @@
 import { approximate, type ApproximateResult } from '@/lib/passiveComponent';
-import type {
-  InitializeParameter,
-  InitializeResult,
-  InvokeParameter,
-  InvokeResult,
-  WorkerParameter,
-} from './workerType';
+import type { InitializeParameter, InvokeParameter, WorkerParameter, WorkerResult } from './workerType';
 
 let approxIterator: Generator<ApproximateResult, void> | null = null;
+let componentNumber: number;
 
 self.addEventListener('message', (event: MessageEvent<WorkerParameter>) => {
   switch (event.data.type) {
     case 'initialize': {
-      self.postMessage(initialize(event.data));
+      initialize(event.data);
       break;
     }
 
@@ -23,7 +18,7 @@ self.addEventListener('message', (event: MessageEvent<WorkerParameter>) => {
   }
 });
 
-function initialize(parameter: InitializeParameter): InitializeResult {
+function initialize(parameter: InitializeParameter) {
   approxIterator = approximate(
     parameter.value,
     parameter.componentType,
@@ -35,15 +30,14 @@ function initialize(parameter: InitializeParameter): InitializeResult {
     parameter.progressBeacon,
   );
 
+  componentNumber = parameter.componentNumber;
   console.info(`[worker] initialized`);
-  return { type: 'initialize' };
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-function invoke(parameter: InvokeParameter): InvokeResult {
+function invoke(parameter: InvokeParameter): WorkerResult {
   if (!approxIterator) {
     return {
-      type: 'invoke',
       done: false,
     };
   }
@@ -51,11 +45,11 @@ function invoke(parameter: InvokeParameter): InvokeResult {
   const iterationResult = approxIterator.next();
 
   return {
-    type: 'invoke',
     done: iterationResult.done ?? false,
     result: iterationResult.value
       ? {
           componentNodes: iterationResult.value.combination?.componentNodes,
+          componentNumber,
           total: iterationResult.value.total,
           current: iterationResult.value.current,
         }
