@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, watch, computed, onMounted, nextTick } from 'vue';
+import { ref, watch, computed, nextTick } from 'vue';
+import { whenever } from '@vueuse/core';
 import { useTheme } from 'vuetify';
 import { basicEditor, updateTheme } from 'prism-code-editor/setups';
 import { loadTheme } from 'prism-code-editor/themes';
@@ -22,10 +23,17 @@ const position = ref<{ x: number; y: number }>({ x: 0, y: 0 });
 const lightScale = ref<number>(1.0);
 const darkScale = ref<number>(1.0);
 
-onMounted(() => {
-  if (editorElement.value) {
+DOMPurify.addHook('afterSanitizeAttributes', function (node) {
+  if (node.hasAttribute('xlink:href') && !node.getAttribute('xlink:href')?.match(/^#/)) {
+    node.remove();
+  }
+});
+
+whenever(
+  () => editorElement.value,
+  (editorElement) => {
     editor = basicEditor(
-      editorElement.value,
+      editorElement,
       {
         language: 'xml',
         theme: editorTheme.value,
@@ -37,14 +45,8 @@ onMounted(() => {
         editor!.addListener('update', onUpdateEditor);
       },
     );
-  }
-
-  DOMPurify.addHook('afterSanitizeAttributes', function (node) {
-    if (node.hasAttribute('xlink:href') && !node.getAttribute('xlink:href')?.match(/^#/)) {
-      node.remove();
-    }
-  });
-});
+  },
+);
 
 watch(
   () => editorTheme.value,
