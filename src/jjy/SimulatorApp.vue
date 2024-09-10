@@ -3,11 +3,11 @@ import { ref, watch, computed } from 'vue';
 import { useIntervalFn } from '@vueuse/core';
 import { Rules } from '@nanase/alnilam/inputRule';
 import dayjs, { Dayjs } from '@nanase/alnilam/dayjs';
+import { AnimatedClock } from '@nanase/alnilam/components';
 import { encode, StopAfterItems, StopDurationItems, CallSignItems, type TimeCode, type EncodeOptions } from '@/lib/jjy';
 import * as Tone from 'tone';
 
 import ToolAppBase from '@/components/common/ToolAppBase.vue';
-import AnimatedClock from '@/components/common/AnimatedClock.vue';
 import TimeBars from '@/components/jjy/TimeBars.vue';
 import InputRow from '@/components/input/InputRow.vue';
 import SignalIndicator from '@/components/common/SignalIndicator.vue';
