@@ -100,37 +100,6 @@ for (const approxResult of approxResults.value) {
   );
 }
 
-async function approximate() {
-  for (const approx of approxResults.value) {
-    approx.componentType = componentType.value;
-    approx.targetComponentValue = currentInputProps.value.componentTargetValue;
-    approx.minValue = currentInputProps.value.minValue;
-    approx.maxValue = currentInputProps.value.maxValue;
-    approx.excludedValues = currentInputProps.value.excludedValues;
-    approx.series = ESeries[series.value.value];
-    approx.targetErrorRate = targetErrorRate.value;
-    approx.finished = false;
-    approx.finishReason = 'calculating';
-    approx.bestComponentValue = 0;
-    approx.resultCombinations = [];
-    approx.totalCombinations = 0;
-    approx.currentCombination = 0;
-
-    approx.worker.post({
-      type: 'initialize',
-      value: approx.targetComponentValue,
-      componentType: approx.componentType.value,
-      componentNumber: approx.componentNumber,
-      series: [...approx.series],
-      minValue: approx.minValue,
-      maxValue: approx.maxValue,
-      excludedValues: [...approx.excludedValues],
-      progressBeacon: 1e6,
-    } as const satisfies InitializeParameter);
-    approx.worker.post({ type: 'invoke' } as const satisfies InvokeParameter);
-  }
-}
-
 function addExcludedValue() {
   if (
     [Rules.required, Rules.value, Rules.notNegative, Rules.notZero].every(
@@ -142,12 +111,40 @@ function addExcludedValue() {
   }
 }
 
-async function onClickStartApprox() {
+function onClickStartApprox() {
   if (startedApprox.value) {
     abortApprox.value = true;
   } else {
     abortApprox.value = false;
-    await approximate();
+
+    for (const approx of approxResults.value) {
+      approx.componentType = componentType.value;
+      approx.targetComponentValue = currentInputProps.value.componentTargetValue;
+      approx.minValue = currentInputProps.value.minValue;
+      approx.maxValue = currentInputProps.value.maxValue;
+      approx.excludedValues = currentInputProps.value.excludedValues;
+      approx.series = ESeries[series.value.value];
+      approx.targetErrorRate = targetErrorRate.value;
+      approx.finished = false;
+      approx.finishReason = 'calculating';
+      approx.bestComponentValue = 0;
+      approx.resultCombinations = [];
+      approx.totalCombinations = 0;
+      approx.currentCombination = 0;
+
+      approx.worker.post({
+        type: 'initialize',
+        value: approx.targetComponentValue,
+        componentType: approx.componentType.value,
+        componentNumber: approx.componentNumber,
+        series: [...approx.series],
+        minValue: approx.minValue,
+        maxValue: approx.maxValue,
+        excludedValues: [...approx.excludedValues],
+        progressBeacon: 1e6,
+      } as const satisfies InitializeParameter);
+      approx.worker.post({ type: 'invoke' } as const satisfies InvokeParameter);
+    }
   }
 }
 </script>
