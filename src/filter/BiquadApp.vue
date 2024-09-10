@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import { useIntervalFn } from '@vueuse/core';
+import { useIntervalFn, useWebWorker } from '@vueuse/core';
 import { deepAssign, RawObject } from '@nanase/alnilam/object';
 import { divide, findMinMax, sequence } from '@nanase/alnilam/array';
 import { Rules } from '@nanase/alnilam/inputRule';
 import { reapplyTheme, useTheme } from '@nanase/alnilam/theme';
-import { WorkerManager } from '@nanase/alnilam/worker';
 import { BiquadFilter } from '@/lib/filter/biquadFilter';
 import Chart from 'chart.js/auto';
 import annotationPlugin from 'chartjs-plugin-annotation';
@@ -63,7 +62,7 @@ const soundSignal = ref<number>(-Infinity);
 let synth: Tone.Noise | null = null;
 let meter: Tone.Meter | null = null;
 let toneFilter: Tone.BiquadFilter | null = null;
-const biquadWorkerManager = new WorkerManager<WorkerParameter, WorkerResult>(biquadWorker);
+const { data: biquadWorkerResult, post: postToBiquadWorker } = useWebWorker<WorkerResult>(new biquadWorker());
 
 function updateDiagram() {
   function setTextContent(document: Document | null | undefined, id: string, text: string) {
@@ -304,25 +303,31 @@ async function invokePreciseCalc() {
   }
 
   processingPreciseCalc.value = true;
-
-  const result = await biquadWorkerManager.invoke({
+  postToBiquadWorker({
     impulseLength: preciseImpulseLength.value,
     filterType: filterType.value.value,
     samplingFreq: samplingFreq.value,
     cutoffFreq: cutoffFreq.value,
     q: q.value,
     gain: gain.value,
-  });
-  magnitudeOnCutoff.value = result.magnitudeOnCutoff;
-  maxMagnitude.value = result.maxMagnitude;
-  minMagnitude.value = result.minMagnitude;
-  maxMagnitudeFrequency.value = result.maxMagnitudeFrequency;
-  minMagnitudeFrequency.value = result.minMagnitudeFrequency;
-  sumImpulse.value = result.sumImpulse;
-
-  lastCalcImpulseLength.value = preciseImpulseLength.value;
-  processingPreciseCalc.value = false;
+  } as const satisfies WorkerParameter);
 }
+
+watch(
+  () => biquadWorkerResult.value,
+  (result) => {
+    ({
+      magnitudeOnCutoff: magnitudeOnCutoff.value,
+      maxMagnitude: maxMagnitude.value,
+      minMagnitude: minMagnitude.value,
+      maxMagnitudeFrequency: maxMagnitudeFrequency.value,
+      minMagnitudeFrequency: minMagnitudeFrequency.value,
+      sumImpulse: sumImpulse.value,
+    } = result);
+    lastCalcImpulseLength.value = preciseImpulseLength.value;
+    processingPreciseCalc.value = false;
+  },
+);
 </script>
 
 <template>
