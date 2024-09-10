@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
+import { useMutationObserver } from '@vueuse/core';
 
 const {
   tag = 'span',
@@ -30,7 +31,6 @@ if (!('MathJax' in window)) {
 const raw = ref<HTMLElement>();
 const formula = ref<HTMLElement>();
 const FormulaTag = computed<string>(() => (block ? 'div' : 'span'));
-const observer = new MutationObserver(updateObservation);
 
 async function typeset() {
   if (!formula.value) {
@@ -76,15 +76,8 @@ async function updateObservation() {
 }
 
 watch(() => [node, block, overlook], updateObservation);
-onMounted(async () => {
-  await updateObservation();
-
-  if (raw.value) {
-    observer.observe(raw.value, { childList: true, subtree: true, characterData: true });
-  }
-});
-onUnmounted(() => observer.disconnect);
-
+onMounted(updateObservation);
+useMutationObserver(raw, updateObservation, { childList: true, subtree: true, characterData: true });
 defineExpose({ typeset });
 </script>
 
