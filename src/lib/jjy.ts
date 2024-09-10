@@ -1,4 +1,6 @@
-import dayjs, { Dayjs } from '@/lib/dayjs';
+import dayjs, { Dayjs } from '@nanase/alnilam/dayjs';
+import dayOfYear from 'dayjs/plugin/dayOfYear';
+dayjs.extend(dayOfYear);
 
 export type TimeCode = 'P' | '0' | '1' | 'S';
 

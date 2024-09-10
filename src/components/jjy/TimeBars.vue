@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Dayjs } from '@/lib/dayjs';
+import { Dayjs } from '@nanase/alnilam/dayjs';
 import {
   TimeCodeName,
   TimeCodeSignalDescription,
