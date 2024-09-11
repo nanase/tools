@@ -1,0 +1,1 @@
+class u{constructor(t){this.obj=t}}function c(o,t){if(typeof o<"u"&&o!=null)for(const n of Object.keys(t))t[n]instanceof u?o[n]=t[n].obj:t[n]===null?o[n]=null:!Array.isArray(t[n])&&typeof t[n]=="object"?o[n]=c(o[n],t[n]):o[n]=t[n];return o}function l(o,t,n,r){return typeof o>"u"||o==null?r:o?t:n}export{u as i,l as s,c as y};
