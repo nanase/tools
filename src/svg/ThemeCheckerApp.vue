@@ -135,5 +135,21 @@ async function setInitialTransform() {
         <div ref="editorElement"></div>
       </v-col>
     </v-row>
+
+    <template #footer>
+      <v-divider />
+      <v-footer>
+        <v-container>
+          <h4>参考文献</h4>
+          <ul>
+            <li>
+              <a href="https://zenn.dev/nanase_t/articles/7c14092b24424c" target="_blank">
+                SVG テーマスキーマチェッカーの技術参考記事
+              </a>
+            </li>
+          </ul>
+        </v-container>
+      </v-footer>
+    </template>
   </ToolAppBase>
 </template>
