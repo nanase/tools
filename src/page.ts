@@ -1,3 +1,6 @@
+import { toRef, type MaybeRefOrGetter } from '@vueuse/core';
+import { computed, ref } from 'vue';
+
 export interface Page {
   id: string;
   title: string;
@@ -85,3 +88,24 @@ export const PageList: PageSection[] = [
     ],
   },
 ];
+
+declare global {
+  interface Window {
+    pageId?: string;
+  }
+}
+
+export function usePage(pageId?: MaybeRefOrGetter<string | undefined>) {
+  const pageIdRef = pageId ? toRef(pageId) : ref<string | undefined>(window.pageId);
+
+  const section = computed<PageSection | undefined>(() =>
+    PageList.find((section) => section.pages.some((page) => page.id === pageIdRef.value)),
+  );
+  const page = computed<Page | undefined>(() => section.value?.pages.find((page) => page.id === pageIdRef.value));
+
+  return {
+    pageId: pageIdRef,
+    section,
+    page,
+  };
+}
