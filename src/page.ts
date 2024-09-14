@@ -1,6 +1,7 @@
 export interface Page {
   id: string;
   title: string;
+  menuTitle?: string;
   description?: string;
   path?: string;
   icon?: string;
@@ -31,13 +32,15 @@ export const PageList: PageSection[] = [
     pages: [
       {
         id: 'electric/combination',
-        title: '受動素子 組み合わせ',
+        title: '受動素子組み合わせ計算機',
+        menuTitle: '受動素子組み合わせ',
         icon: 'mdi-resistor',
         description: '抵抗器、コンデンサ、インダクタについて、任意の値に近似できる組み合わせを探索します。',
       },
       {
         id: 'electric/timer555',
-        title: 'タイマIC 555',
+        title: 'タイマIC 555 シミュレータ',
+        menuTitle: 'タイマIC 555',
         icon: 'mdi-chip',
         description: '抵抗器とコンデンサによってタイマICの出力の変化をシミュレートします。',
       },
@@ -45,7 +48,7 @@ export const PageList: PageSection[] = [
   },
   {
     id: 'filter',
-    name: 'フィルタ回路',
+    name: 'デジタルフィルタ',
     pages: [
       {
         id: 'filter/biquad',
@@ -57,11 +60,12 @@ export const PageList: PageSection[] = [
   },
   {
     id: 'jjy',
-    name: 'JJY（標準電波）',
+    name: 'JJY',
     pages: [
       {
         id: 'jjy/simulator',
         title: 'JJY シミュレータ',
+        menuTitle: 'シミュレータ',
         icon: 'mdi-alarm',
         description: '電波時計などで利用されているJJYの信号をシミュレートします。',
       },
@@ -74,6 +78,7 @@ export const PageList: PageSection[] = [
       {
         id: 'svg/theme-checker',
         title: 'SVG テーマスキーマチェッカー',
+        menuTitle: 'テーマスキーマチェッカー',
         icon: 'mdi-theme-light-dark',
         description: 'ライトテーマとダークテーマによって、SVGの外観が意図したものになるかを確認できます。',
       },
