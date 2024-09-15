@@ -85,7 +85,7 @@ async function setInitialTransform() {
 </script>
 
 <template>
-  <ToolAppBase page-id="svg/theme-checker" toolbar-title="SVG テーマスキーマチェッカー">
+  <ToolAppBase>
     <v-row no-gutters>
       <v-col cols="6" class="text-center">
         <SVGPreviewer

@@ -4,7 +4,7 @@ import { PageList } from '@/page';
 </script>
 
 <template>
-  <ToolAppBase page-id="index" toolbar-title="Tools + Simulator">
+  <ToolAppBase title="Tools + Simulators">
     <v-list class="pb-0 d-flex flex-column fill-height" role="menu">
       <template v-for="(section, index) in PageList" :key="section.id">
         <v-list-subheader>{{ section.name }}</v-list-subheader>

@@ -150,7 +150,7 @@ function onClickStartApprox() {
 </script>
 
 <template>
-  <ToolAppBase page-id="electric/combination" toolbar-title="受動素子 組み合わせ計算機">
+  <ToolAppBase>
     <v-row>
       <v-col cols="4">
         <v-select

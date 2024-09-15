@@ -153,7 +153,7 @@ function updateChart() {
 </script>
 
 <template>
-  <ToolAppBase page-id="control/pid" toolbar-title="PID制御">
+  <ToolAppBase>
     <v-row>
       <v-col cols="12" md="6">
         <InputRow

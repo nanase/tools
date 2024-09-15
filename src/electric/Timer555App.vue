@@ -168,7 +168,7 @@ function updateChart() {
 </script>
 
 <template>
-  <ToolAppBase page-id="electric/timer555" toolbar-title="タイマIC 555 計算機">
+  <ToolAppBase>
     <v-row>
       <v-col cols="12" sm="8">
         <InputRow

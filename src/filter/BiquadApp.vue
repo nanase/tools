@@ -331,7 +331,7 @@ watch(
 </script>
 
 <template>
-  <ToolAppBase page-id="filter/biquad" toolbar-title="双2次フィルタ">
+  <ToolAppBase>
     <v-row>
       <v-col cols="12" md="7">
         <v-row>

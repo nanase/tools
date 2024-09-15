@@ -178,7 +178,7 @@ useIntervalFn(() => {
 </script>
 
 <template>
-  <ToolAppBase page-id="jjy/simulator" toolbar-title="JJY シミュレータ">
+  <ToolAppBase>
     <v-row no-gutters align="center" justify="center">
       <v-col cols="5" sm="7">
         <AnimatedClock :time="time" style="font-size: 125%" />
