@@ -618,6 +618,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@fortawesome/fontawesome-free@npm:^6.6.0":
+  version: 6.6.0
+  resolution: "@fortawesome/fontawesome-free@npm:6.6.0"
+  checksum: 10c0/35c55bfecac9eb4943cf94f4380093dbe286fa29ce593488252644322b83e28eecbac757cef3eabdff7b3df67fc531c4f6dce6a3b00236f5de0174e186a9b5bb
+  languageName: node
+  linkType: hard
+
 "@humanwhocodes/module-importer@npm:^1.0.1":
   version: 1.0.1
   resolution: "@humanwhocodes/module-importer@npm:1.0.1"
@@ -6411,6 +6418,7 @@ __metadata:
   resolution: "tools@workspace:."
   dependencies:
     "@dagrejs/dagre": "npm:^1.1.4"
+    "@fortawesome/fontawesome-free": "npm:^6.6.0"
     "@mdi/font": "npm:^7.4.47"
     "@nanase/alnilam": "https://github.com/nanase/alnilam.git#0.4.9"
     "@rushstack/eslint-patch": "npm:^1.10.4"

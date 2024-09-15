@@ -27,6 +27,7 @@
   },
   "devDependencies": {
     "@dagrejs/dagre": "^1.1.4",
+    "@fortawesome/fontawesome-free": "^6.6.0",
     "@mdi/font": "^7.4.47",
     "@nanase/alnilam": "https://github.com/nanase/alnilam.git#0.4.9",
     "@rushstack/eslint-patch": "^1.10.4",
