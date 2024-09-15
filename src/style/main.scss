@@ -1,23 +1,13 @@
-@use '@/style/media';
-
 html {
   font-family: 'IBM Plex Sans JP', Roboto, sans-serif;
-  color: #1e1e1e;
-  font-size: 100%;
-
-  @include media.size(md) {
-    font-size: 87.5%;
-  }
-
-  @include media.size(sm) {
-    font-size: 75%;
-  }
+  font-size: 15px;
 }
 
 a,
 a:visited,
 a:hover {
-  color: inherit;
+  /* stylelint-disable-next-line custom-property-pattern */
+  color: var(--v-v2-content-color);
 }
 
 ul {
