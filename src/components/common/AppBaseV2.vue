@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { usePage } from '@/page';
-import { useVuetifyTheme } from '@/lib/useVuetifyTheme';
 
 const { pageId, title, icon } = defineProps<{
   pageId?: string;
@@ -9,7 +8,6 @@ const { pageId, title, icon } = defineProps<{
   icon?: string;
 }>();
 
-const { isDark, toggle: toggleTheme } = useVuetifyTheme();
 const { page } = usePage(pageId);
 const drawerOpened = ref<boolean>();
 const errorSnackbar = ref<boolean>();
@@ -67,48 +65,8 @@ defineExpose({
           />
         </slot>
         <v-toolbar-title v-if="!drawerOpened" class="ml-1">{{ title ?? page?.title }}</v-toolbar-title>
-        <slot name="appbarAppend"></slot>
         <template #append>
-          <slot name="toolbarPrepend"></slot>
-
-          <v-menu :close-on-content-click="false">
-            <template v-slot:activator="{ props }">
-              <v-btn icon v-bind="props" variant="plain" aria-label="ページオプションを表示">
-                <v-icon>mdi-dots-horizontal</v-icon>
-              </v-btn>
-            </template>
-
-            <v-list slim density="compact">
-              <v-list-item @click="toggleTheme">
-                <v-switch
-                  hide-details
-                  flat
-                  :ripple="false"
-                  v-model:model-value="isDark"
-                  aria-label="テーマを切り替え"
-                  true-icon="mdi-weather-night"
-                  false-icon="mdi-white-balance-sunny"
-                >
-                  <template #prepend>テーマを切り替え</template>
-                </v-switch>
-              </v-list-item>
-
-              <v-divider />
-
-              <v-list-item class="px-1">
-                <v-btn
-                  icon
-                  variant="plain"
-                  aria-label="GitHubのリポジトリに移動"
-                  href="https://github.com/nanase/tools/"
-                >
-                  <v-icon icon="fa:fab fa-github" />
-                </v-btn>
-              </v-list-item>
-            </v-list>
-          </v-menu>
-
-          <slot name="toolbarAppend"></slot>
+          <slot name="appbarAppend"></slot>
         </template>
       </v-app-bar>
 

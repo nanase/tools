@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import AppBaseV2 from '@/components/common/AppBaseV2.vue';
 import { PageList } from '@/page';
+import { useVuetifyTheme } from '@/lib/useVuetifyTheme';
 
 const { pageId, title } = defineProps<{
   pageId?: string;
   title?: string;
 }>();
+
+const { isDark, toggle: toggleTheme } = useVuetifyTheme();
 </script>
 
 <template>
@@ -50,6 +53,40 @@ const { pageId, title } = defineProps<{
           </v-list>
         </template>
       </v-list>
+    </template>
+
+    <template #appbarAppend>
+      <v-menu :close-on-content-click="false">
+        <template v-slot:activator="{ props }">
+          <v-btn icon v-bind="props" variant="plain" aria-label="ページオプションを表示">
+            <v-icon>mdi-dots-horizontal</v-icon>
+          </v-btn>
+        </template>
+
+        <v-list slim density="compact">
+          <v-list-item @click="toggleTheme">
+            <v-switch
+              hide-details
+              flat
+              :ripple="false"
+              v-model:model-value="isDark"
+              aria-label="テーマを切り替え"
+              true-icon="mdi-weather-night"
+              false-icon="mdi-white-balance-sunny"
+            >
+              <template #prepend>テーマを切り替え</template>
+            </v-switch>
+          </v-list-item>
+
+          <v-divider />
+
+          <v-list-item class="px-1">
+            <v-btn icon variant="plain" aria-label="GitHubのリポジトリに移動" href="https://github.com/nanase/tools/">
+              <v-icon icon="fa:fab fa-github" />
+            </v-btn>
+          </v-list-item>
+        </v-list>
+      </v-menu>
     </template>
 
     <template #header>
