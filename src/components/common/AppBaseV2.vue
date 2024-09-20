@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { usePage } from '@/page';
+import ShakingIcon from './ShakingIcon.vue';
 
 const { pageId, title, icon } = defineProps<{
   pageId?: string;
@@ -41,7 +42,7 @@ defineExpose({
       <slot name="errorSnackbar">
         <v-row>
           <v-col cols="1">
-            <v-icon class="warning-icon" icon="mdi-alert" size="medium" color="warning"></v-icon>
+            <ShakingIcon icon="mdi-alert" size="medium" color="warning" />
           </v-col>
           <v-col>データを取得できませんでした。<br />しばらくしてから再読み込みしてください。</v-col>
         </v-row>
@@ -100,35 +101,5 @@ defineExpose({
 /* stylelint-disable-next-line selector-class-pattern */
 .error-snackbar :deep(.v-snackbar__wrapper) {
   border: var(--v-v2-snackbar-border);
-
-  .warning-icon {
-    animation: shake 3s infinite;
-  }
-
-  @keyframes shake {
-    0% {
-      transform: translate(0, 0);
-    }
-
-    2% {
-      transform: translate(2px, 0);
-    }
-
-    6% {
-      transform: translate(-2px, 0);
-    }
-
-    10% {
-      transform: translate(2px, 0);
-    }
-
-    14% {
-      transform: translate(-2px, 0);
-    }
-
-    18% {
-      transform: translate(0, 0);
-    }
-  }
 }
 </style>
