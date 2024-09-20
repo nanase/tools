@@ -99,7 +99,7 @@ const drawerOpened = ref<boolean>();
 
       <slot name="header"></slot>
 
-      <v-container>
+      <v-container class="pb-16 mb-16">
         <slot></slot>
       </v-container>
 
