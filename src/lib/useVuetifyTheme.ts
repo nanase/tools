@@ -11,10 +11,6 @@ export function useVuetifyTheme(options: UseVuetifyThemeOptions = {}) {
     get: () => theme.global.current.value.dark,
     set: (value: boolean) => applyColorScheme(theme, value ? 'dark' : 'light'),
   });
-  const isLight = computed({
-    get: () => !theme.global.current.value.dark,
-    set: (value: boolean) => applyColorScheme(theme, value ? 'light' : 'dark'),
-  });
 
   function reapply() {
     reapplyTheme(theme);
@@ -32,7 +28,6 @@ export function useVuetifyTheme(options: UseVuetifyThemeOptions = {}) {
     theme,
     reapply,
     toggle,
-    isLight,
     isDark,
   } as const;
 }
