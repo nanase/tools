@@ -9,18 +9,9 @@ const { pageId, title, icon } = defineProps<{
   icon?: string;
 }>();
 
+const errorSnackbarShown = defineModel<boolean>('errorSnackbarShown');
 const { page } = usePage(pageId);
 const drawerOpened = ref<boolean>();
-const errorSnackbar = ref<boolean>();
-
-defineExpose({
-  showErrorSnackbar: function () {
-    errorSnackbar.value = true;
-  },
-  closeErrorSnackbar: function () {
-    errorSnackbar.value = false;
-  },
-});
 </script>
 
 <template>
@@ -38,7 +29,7 @@ defineExpose({
       </v-list>
     </v-navigation-drawer>
 
-    <v-snackbar class="error-snackbar" v-model="errorSnackbar" timeout="10000" color="v2SnackbarBackground">
+    <v-snackbar class="error-snackbar" v-model="errorSnackbarShown" timeout="10000" color="v2SnackbarBackground">
       <slot name="errorSnackbar">
         <v-row>
           <v-col cols="1">
@@ -48,7 +39,7 @@ defineExpose({
         </v-row>
       </slot>
       <template #actions>
-        <v-btn color="red-lighten-2" variant="plain" @click="errorSnackbar = false">
+        <v-btn color="red-lighten-2" variant="plain" @click="errorSnackbarShown = false">
           <v-icon>mdi-close</v-icon>
         </v-btn>
       </template>
