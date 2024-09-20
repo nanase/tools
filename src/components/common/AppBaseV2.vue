@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import { useDisplay } from 'vuetify';
 import { usePage } from '@/page';
 import ShakingIcon from './ShakingIcon.vue';
 
@@ -10,6 +11,7 @@ const { pageId, title, icon } = defineProps<{
 }>();
 
 const errorSnackbarShown = defineModel<boolean>('errorSnackbarShown');
+const { smAndDown, mdAndDown } = useDisplay();
 const { page } = usePage(pageId);
 const drawerOpened = ref<boolean>();
 </script>
@@ -46,20 +48,53 @@ const drawerOpened = ref<boolean>();
     </v-snackbar>
 
     <v-main>
-      <v-app-bar class="app-bar" flat floating color="v2AppBarBackground" density="comfortable">
+      <v-app-bar
+        class="app-bar"
+        flat
+        floating
+        color="v2AppBarBackground"
+        :density="smAndDown ? 'compact' : 'comfortable'"
+        :scroll-behavior="mdAndDown ? 'hide' : undefined"
+        :scroll-threshold="48"
+      >
         <slot name="appbarPrepend">
           <v-app-bar-nav-icon
-            v-if="!drawerOpened"
+            v-if="!drawerOpened && (icon ?? page?.icon)"
+            transition="slide-x-transition"
+            class="mr-n3"
+            :icon="icon ?? page?.icon"
+            :ripple="false"
             variant="plain"
-            @click.stop="drawerOpened = !drawerOpened"
-            aria-label="ナビゲーションを表示"
-            :icon="icon ?? page?.icon ?? 'mdi-menu'"
           />
         </slot>
-        <v-toolbar-title v-if="!drawerOpened" class="ml-1">{{ title ?? page?.title }}</v-toolbar-title>
+        <v-toolbar-title v-if="!drawerOpened" transition="slide-x-transition" class="ml-5">
+          {{ title ?? page?.title }}
+        </v-toolbar-title>
         <template #append>
           <slot name="appbarAppend"></slot>
         </template>
+      </v-app-bar>
+
+      <v-app-bar
+        v-if="mdAndDown"
+        transition="slide-y-transition"
+        class="app-bar-sub"
+        flat
+        floating
+        color="v2AppBarBackground"
+        density="compact"
+        height="48"
+      >
+        <v-btn
+          variant="plain"
+          density="compact"
+          @click.stop="drawerOpened = !drawerOpened"
+          aria-label="ナビゲーションを表示"
+          :ripple="false"
+        >
+          <v-icon size="small">mdi-menu</v-icon>
+          <div class="ml-3 text-subtitle-2 opacity-90">Menu</div>
+        </v-btn>
       </v-app-bar>
 
       <slot name="header"></slot>
@@ -86,7 +121,11 @@ const drawerOpened = ref<boolean>();
 }
 
 .app-bar {
-  border-bottom-width: 2px;
+  border-bottom-width: 1.5px;
+}
+
+.app-bar-sub {
+  border-bottom-width: 0.5px;
 }
 
 /* stylelint-disable-next-line selector-class-pattern */
