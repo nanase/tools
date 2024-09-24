@@ -62,9 +62,11 @@ const drawerOpened = ref<boolean>();
             v-if="!drawerOpened && (icon ?? page?.icon)"
             transition="slide-x-transition"
             class="mr-n3"
+            variant="plain"
             :icon="icon ?? page?.icon"
             :ripple="false"
-            variant="plain"
+            @click.stop="drawerOpened = !drawerOpened"
+            aria-label="ナビゲーションを表示"
           />
         </slot>
         <v-toolbar-title v-if="!drawerOpened" transition="slide-x-transition" class="ml-5">
