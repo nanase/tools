@@ -1,4 +1,5 @@
 /** 探索の入力と結果の組み立て（DOM に依存しない）: 使う値、組の平坦化と式、誤差の表記、カラーコード */
+import { COLORS, type ColorKey, DIGIT_KEYS } from '../../lib/colorcode';
 import { eList, type Series, same } from '../../lib/eseries';
 import { parts } from '../../lib/format';
 import type { Ty } from './params';
@@ -87,20 +88,10 @@ export function errTxt(e: number): string {
 /* ---------- カラーコード ---------- */
 /** [名前, 色]。色は SVG の fill（金・銀はグラデーションの参照） */
 export type Band = readonly [string, string];
-const CC: readonly Band[] = [
-  ['黒', '#0b0000'],
-  ['茶', '#643234'],
-  ['赤', '#ff0000'],
-  ['橙', '#fc6604'],
-  ['黄', '#fcfe04'],
-  ['緑', '#34ce34'],
-  ['青', '#6466fc'],
-  ['紫', '#cc66fc'],
-  ['灰', '#949294'],
-  ['白', '#ffffff'],
-];
-export const GOLD: Band = ['金', 'url(#lu-g)'];
-export const SILVER: Band = ['銀', 'url(#lu-s)'];
+const band = (k: ColorKey): Band => [COLORS[k].n, COLORS[k].fill ?? 'none'];
+const CC: readonly Band[] = DIGIT_KEYS.map(band);
+export const GOLD: Band = band('gd');
+export const SILVER: Band = band('sv');
 
 /**
  * 有効数字 2 桁で表せる値は 4 本帯（数字 2・乗数・許容差 tol）。

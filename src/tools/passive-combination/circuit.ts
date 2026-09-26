@@ -1,4 +1,5 @@
 /** 組み合わせの回路図（SVG の文字列。DOM に依存しない）。抵抗器・インダクタはカラーコード付きの本体で描く */
+import { BAND_GRADIENTS, RESISTOR_BODY } from '../../lib/colorcode';
 import { esc } from '../../lib/dom';
 import { fmt } from '../../lib/format';
 import { type Cand, codeOf, conn, leaves, type Node } from './model';
@@ -13,7 +14,7 @@ const LW = 76,
   VG = 4,
   TW = 16;
 /** 本体の色: 抵抗器は肌色、インダクタは緑 */
-const BODY = { R: '#fbddc9', L: '#68b697' };
+const BODY = { R: RESISTOR_BODY, L: '#68b697' };
 /** 帯の x 位置（本体の左端から）: 4 本帯・5 本帯 */
 const BX4 = [8, 14, 20, 33],
   BX5 = [6, 11, 16, 21, 34];
@@ -116,10 +117,7 @@ function lay(x: Node, ty: Ty): Lay {
   };
 }
 
-const DEFS =
-  '<defs><linearGradient id="lu-g" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#cc9a34"/><stop offset=".66" stop-color="#f5ebd6"/><stop offset="1" stop-color="#cc9a34"/></linearGradient>' +
-  '<linearGradient id="lu-s" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#cccecc"/><stop offset=".66" stop-color="#f5f5f5"/><stop offset="1" stop-color="#cccecc"/></linearGradient>' +
-  '<linearGradient id="bdsh" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".45"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".18"/></linearGradient></defs>';
+const DEFS = `<defs>${BAND_GRADIENTS}</defs>`;
 
 /** 候補 c の回路図。両端に端子を置き、幅に合わせて縮める（最大で 2 倍まで拡大） */
 export function circuitSvg(c: Cand, ty: Ty): string {
