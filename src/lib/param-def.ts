@@ -41,8 +41,8 @@ export interface ParamDef {
   /** 初期値 */
   v: number;
   ph: string;
-  /** プリセット [値, 表示]（小さい順）。空ならプリセットの列を出さない */
-  pre: [number, string][];
+  /** プリセット [値, 表示, title]（小さい順）。空ならプリセットの列を出さない */
+  pre: [number, string, string?][];
   /** スライダーの目盛りラベル [値, 表示]。範囲外のものは出さない */
   tk: [number, string][];
 

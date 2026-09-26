@@ -71,6 +71,14 @@ export const TOOLS: Tool[] = [
     ic: 'cc',
     k: '色帯 color code e系列 許容差 resistor',
   },
+  {
+    id: 'pcb-coil',
+    c: '電子回路',
+    t: 'PCBコイル',
+    d: 'プリント基板上のうずまき状の配線で作るコイルについて、インダクタンス・抵抗・Q と共振用のコンデンサを求めます。',
+    ic: 'pc',
+    k: 'pcb スパイラル うずまき アンテナ インダクタンス nfc rfid spiral coil antenna inductor',
+  },
 ];
 export const IC: Record<string, string> = {
   sq: '<path class="a" d="M4 38H16V10H40V38H52V10H76V38H88V10H112V38H116"/><path class="b" d="M16 31C24 22 32 18 40 17C44 24 48 29 52 31C60 22 68 18 76 17C80 24 84 29 88 31C96 22 104 18 112 17"/>',
@@ -80,6 +88,7 @@ export const IC: Record<string, string> = {
   jjy: '<path class="a" d="M4 38V10H7V38H16V10H26V38H28V10H34V38H40V10H50V38H52V10H58V38H64V10H74V38H76V10H79V38H88V10H91V38H100V10H110V38H116"/>',
   svg: '<circle class="a" cx="42" cy="24" r="12"/><path class="a" d="M42 4V7M42 41V44M22 24H25M59 24H62"/><path class="b" d="M80 10A15 15 0 1 0 96 36A12 12 0 0 1 80 10Z"/>',
   cc: '<path class="c" d="M4 24H30M90 24H116"/><rect class="c" x="30" y="14" width="60" height="20" rx="8"/><path class="a" d="M42 14V34M52 14V34M62 14V34"/><path class="b" d="M78 14V34"/>',
+  pc: '<path class="c" d="M4 6H42"/><path class="a" d="M42 6H78V42H42V10H74V38H46V14H70V34H50V18H66V30H54V22H62"/><path class="c d" d="M62 22H116"/>',
 };
 
 /** 準備中を後ろへ */
