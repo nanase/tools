@@ -1,0 +1,11 @@
+---
+// 動作原理と式。この分の符号を代入した式（#subst）は client.ts が入れる
+import { EQS } from './math';
+---
+<p>JJY は情報通信研究機構が送信する標準電波で、おおたかどや山（福島県）から 40 kHz、はがね山（佐賀県・福岡県境）から 60 kHz で送られます。搬送波の振幅を毎秒の正秒で高出力（100 %）に上げ、一定の時間 <math><mi>τ</mi></math> のあと低出力（10 %）に下げます。この <math><mi>τ</mi></math> の長さが 1 秒ぶんの符号です。</p>
+<p>59 秒の P0 と 0 秒の M のマーカが続くところが分の始まりで、続く 60 個の符号がその分の時・分・通算日・年・曜日を表します。数値は 10 進の桁ごとの 2 進数（BCD）で、ビットに重みを掛けて足すと元の値に戻ります。PA1・PA2 は時と分のビットの偶数パリティです。毎時 15 分と 45 分は、40〜48 秒にモールス符号の「JJY」を 2 回送り、50〜55 秒で停波の予告を送ります。</p>
+<div class="eqs">
+  <Fragment set:html={EQS} />
+  <div class="subst" id="subst" role="group" aria-label="この分の符号を代入した式"></div>
+</div>
+<p class="cite">出典: 情報通信研究機構 日本標準時グループ「<a href="https://jjy.nict.go.jp/jjy/trans/index.html" target="_blank" rel="noopener">標準電波の出し方</a>」。参考: <a href="https://ja.wikipedia.org/wiki/JJY" target="_blank" rel="noopener">JJY</a>（Wikipedia）、<a href="https://shogo82148.github.io/web-jjy/" target="_blank" rel="noopener">JJYシミュレータWeb版</a></p>

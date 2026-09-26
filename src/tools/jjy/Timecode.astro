@@ -1,0 +1,21 @@
+---
+// タイムコードの枠の中身: 凡例、60 秒ぶんのバー、選んだ秒の説明。符号の色と説明は client.ts が入れる
+---
+<div class="tc-top">
+  <ul class="lgd" aria-label="凡例">
+    <li><i class="tc-P" aria-hidden="true"></i>マーカ（M・P）</li>
+    <li><i class="tc-0" aria-hidden="true"></i>0</li>
+    <li><i class="tc-1" aria-hidden="true"></i>1</li>
+    <li><i class="tc-S" aria-hidden="true"></i>コールサイン</li>
+  </ul>
+  <button type="button" class="tg" id="follow" disabled>現在の秒に戻す</button>
+</div>
+<div class="tc" id="tc" tabindex="0" role="img" aria-label="タイムコード">
+  {Array.from({ length: 60 }, (_, s) => <span class:list={['tb', { l10: s % 10 === 0, l5: s % 5 === 0 }]} data-s={s}></span>)}
+</div>
+<dl class="metrics bi" aria-live="off">
+  <div class="m"><dt>選んだ秒</dt><dd id="b-s"></dd></div>
+  <div class="m"><dt>符号</dt><dd id="b-c"></dd></div>
+  <div class="m"><dt>信号</dt><dd id="b-sig" class="tx"></dd></div>
+  <div class="m m-wide"><dt>意味</dt><dd id="b-mean" class="tx"></dd></div>
+</dl>
