@@ -5,6 +5,7 @@ import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
 import RelatedTools from '../components/RelatedTools.astro';
+import { order, TOOLS } from '../data/tools';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import '../tools/jjy/style.css';
 import { DEFAULTS } from '../tools/jjy/code';
@@ -16,6 +17,12 @@ import Timecode from '../tools/jjy/Timecode.astro';
 const name = 'JJY シミュレータ';
 const off = offRows(DEFAULTS);
 const rows = (tab: OptRow['tab']) => OPT_ROWS.filter((r) => r.tab === tab);
+/* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
+const CAT = '信号・通信';
+const related = [
+  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'jjy')),
+  ...TOOLS.filter((t) => t.c !== CAT && !t.s),
+];
 ---
 <SiteLayout title={name} tool={{ id: 'jjy', name }} description="電波時計などで利用されているJJYの信号をシミュレートします。" note="時刻はこの端末の時計をもとにしています。">
   <PageTitle title={name}>電波時計などで利用されている標準電波 JJY の信号をシミュレートします。日本標準時から 1 分ごとのタイムコードを作り、符号の種類で色分けして表示します。音で鳴らして、電波時計の時刻合わせにも使えます。</PageTitle>
@@ -70,7 +77,7 @@ const rows = (tab: OptRow['tab']) => OPT_ROWS.filter((r) => r.tab === tab);
     </Collapsible>
   </div>
 
-  <RelatedTools current="jjy" category="信号・通信" />
+  <RelatedTools list={related} />
   <script>
     import '../tools/jjy/client';
   </script>
