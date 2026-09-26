@@ -2,7 +2,7 @@
 import Collapsible from '../components/Collapsible.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
-import ToolCard from '../components/ToolCard.astro';
+import RelatedTools from '../components/RelatedTools.astro';
 import { TOOLS } from '../data/tools';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import '../tools/svg-theme-checker/style.css';
@@ -64,12 +64,7 @@ const view = 'ドラッグで移動、ホイールで拡大縮小';
     </Collapsible>
   </div>
 
-  <Panel hid="hd-rel" title="関連ツール" class="rel">
-    <a slot="aux" class="aux" href={import.meta.env.BASE_URL}>すべてのツール</a>
-    <div class="units" id="related">
-      {related.map((t) => <ToolCard t={t} />)}
-    </div>
-  </Panel>
+  <RelatedTools list={related} />
   <script>
     import '../tools/svg-theme-checker/client';
   </script>
