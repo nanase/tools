@@ -1,3 +1,11 @@
+/*
+ * 全ページ共通のスタイル（SiteLayout が読み込む）。
+ * 2 つ以上のツールで使うものだけをここに置く。1 つのツールだけで使うもの（枠の並び、
+ * ツール固有の部品、共通部品の上書き）は src/tools/<id>/style.css に書き、
+ * ページ（src/pages/<id>.astro）の frontmatter で SiteLayout の import の後に import する。
+ * 例: src/tools/timer555/style.css・src/pages/timer555.astro
+ */
+
 /* ===== tokens (light) ===== */
 :root{
   color-scheme:light;
@@ -164,7 +172,7 @@ a.unit:hover h3{text-decoration:underline;text-decoration-color:var(--ink-3);tex
 .unit.soon h3{color:var(--ink-2)}
 .empty{margin-top:24px;color:var(--ink-2)}
 
-/* ===== timer 555 ===== */
+/* ===== tool page ===== */
 .ttl{position:relative;padding:24px 0 16px}
 .ttl-h{display:flex;align-items:center;gap:8px}
 .ttl h1{font-size:clamp(23px,4.4vw,32px);line-height:1.25}
@@ -177,10 +185,12 @@ a.unit:hover h3{text-decoration:underline;text-decoration-color:var(--ink-3);tex
 .mini{position:sticky;top:var(--rail-h);z-index:20;display:flex;gap:24px;margin:0 -16px 14px;padding:6px 16px;background:var(--rail-2);color:var(--rail-ink-2);font:500 12.5px/1.5 var(--mono);white-space:nowrap;overflow:hidden}
 .mini b{color:var(--rail-ink);font-weight:700;font-size:14px;margin-left:.6em}
 .tgrid{display:grid;gap:26px 16px;padding-top:10px;grid-template-columns:minmax(0,1fr)}
+/* 枠の並び（grid-template-areas など）は各ツールの style.css で決める。
+   .col は PC で縦に積む列、スマホでは中の枠を .tgrid に直接並べる（order で順を変えられる） */
+.col{display:contents}
 @media (min-width:1000px){
   .mini{display:none}
-  .tgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr);grid-template-rows:auto auto 1fr auto;grid-template-areas:"in out" "in wave" "in sch" "thy thy";align-items:start}
-  .a-in{grid-area:in}.a-out{grid-area:out}.a-wave{grid-area:wave}.a-sch{grid-area:sch}.a-thy{grid-area:thy}
+  .col{display:flex;flex-direction:column;gap:26px;min-width:0}
 }
 .rel{margin-top:26px}
 
@@ -195,11 +205,20 @@ a.unit:hover h3{text-decoration:underline;text-decoration-color:var(--ink-3);tex
 .c-val{grid-area:val;min-width:0}
 .c-unit{grid-area:unit;font:500 15px/1 var(--mono);color:var(--ink-2)}
 .c-sub{grid-area:sub;min-width:0}
-.a-in{container-type:inline-size}
+.ptab{container-type:inline-size}
 @container (max-width:520px){
   .prow{grid-template-columns:1.9rem minmax(0,1fr) 1.5rem;grid-template-areas:"sym name name" "sym val unit" "sym sub sub";row-gap:6px}
+  .prow.wide{grid-template-areas:"sym name name" "sym sub sub"}
   .c-sym{padding-top:0;line-height:1.35}
 }
+/* 選択肢だけの行（ChoiceRow） */
+.prow.wide{grid-template-areas:"sym name name name" "sym sub sub sub"}
+.c-name .qbtn{display:inline-grid;margin-left:6px;vertical-align:-3px}
+.c-val .seg{display:flex;width:100%}
+.c-val .seg button{flex:1 1 auto;min-width:0;white-space:nowrap;height:40px;padding:0 6px;font:500 13px/1.2 var(--sans)}
+/* 無効にした行（ParamGroup.setOff・Choice.setOff） */
+.prow.off .c-val,.prow.off .c-unit,.prow.off .sl,.prow.off .chip{opacity:.4}
+.prow.off .c-val,.prow.off .sl,.prow.off .chips{pointer-events:none}
 .fld{display:grid;grid-template-columns:48px minmax(0,1fr) 48px;height:48px;border:1px solid var(--line-2);border-radius:var(--r);background:var(--inset);overflow:hidden}
 .fld:focus-within{border-color:var(--focus);box-shadow:0 0 0 1px var(--focus)}
 .fld input{min-width:0;width:100%;border:0;background:transparent;color:var(--ink);font:700 18px/1 var(--mono);text-align:center;padding:0 4px;font-variant-numeric:tabular-nums}
@@ -227,6 +246,7 @@ a.unit:hover h3{text-decoration:underline;text-decoration-color:var(--ink-3);tex
 .sl input::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:22px;margin-top:-10px;border:2px solid var(--ink);border-radius:4px;background:var(--surface)}
 .sl input::-moz-range-thumb{width:10px;height:18px;border:2px solid var(--ink);border-radius:4px;background:var(--surface)}
 .sl input:focus-visible{outline-offset:0}
+.sl input:disabled{cursor:default}
 .tk{position:absolute;left:7px;right:7px;top:24px;height:18px;pointer-events:none}
 .tk i{position:absolute;top:0;width:1px;height:4px;background:var(--line-2)}
 .tk i.M{height:7px;background:var(--ink-3)}
@@ -235,7 +255,9 @@ a.unit:hover h3{text-decoration:underline;text-decoration-color:var(--ink-3);tex
 .chip{min-height:30px;min-width:42px;padding:0 8px;border:1px solid var(--line);border-radius:4px;background:none;color:var(--ink-2);font:500 13px/1 var(--mono);cursor:pointer}
 .chip:hover{border-color:var(--line-2);color:var(--ink)}
 .chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--surface)}
-@media (pointer:coarse){.chip{min-height:40px}.sl input{height:40px}.tk{top:30px}.seg button{height:36px}}
+.chip:disabled{opacity:.35;cursor:default}
+.chip:disabled:hover{border-color:var(--line);color:var(--ink-2)}
+@media (pointer:coarse){.chip{min-height:40px}.sl input{height:40px}.tk{top:30px}.seg button{height:36px}.c-val .seg button{height:44px}}
 
 /* results */
 .a-out{container-type:inline-size}
@@ -245,6 +267,7 @@ a.unit:hover h3{text-decoration:underline;text-decoration-color:var(--ink-3);tex
 .m dt{font-size:12.5px;color:var(--ink-2)}
 .m dd{margin:0;font:500 19px/1.35 var(--mono);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
 .m .u{margin-left:.28em;font-size:.74em;color:var(--ink-2)}
+.m-wide{grid-column:1/-1}
 .m-main dd{font-size:clamp(30px,9cqi,46px);font-weight:700;line-height:1.15;letter-spacing:-.01em}
 .m-note{display:block;margin-top:2px;font:12px/1.5 var(--sans);color:var(--warn)}
 @container (min-width:480px){.metrics{grid-template-columns:repeat(3,minmax(0,1fr))}}
@@ -270,6 +293,7 @@ a.unit:hover h3{text-decoration:underline;text-decoration-color:var(--ink-3);tex
 .th{stroke:var(--ch2);stroke-width:1;stroke-dasharray:3 4;opacity:.7}
 .scope text.tl{fill:var(--ch2);paint-order:stroke;stroke:var(--screen);stroke-width:4px;stroke-linejoin:round}
 .mk1{fill:var(--ch1)}
+.mk2{fill:var(--ch2)}
 .hide2 .c2x{display:none}
 @media (max-width:559px){.scope text{font-size:14px}}
 
@@ -307,13 +331,13 @@ a.unit:hover h3{text-decoration:underline;text-decoration-color:var(--ink-3);tex
   html.theming,html.theming *,html.theming *::before,html.theming *::after{transition:background-color .3s ease,color .3s ease,border-color .3s ease,fill .3s ease,stroke .3s ease,box-shadow .3s ease!important}
 }
 .thy-body>p:not(.cite){color:var(--ink-2);line-height:1.9;max-width:62ch}
+.thy-body>p+p:not(.cite){margin-top:10px}
 .eqs{display:grid;gap:20px;margin:14px 0 0;padding:18px 16px;background:var(--inset);border-radius:var(--r);overflow-x:auto}
 .eqs math{margin:0;justify-self:start}
 .subst{display:grid;gap:10px 0;justify-items:start;margin-top:2px;padding-top:18px;border-top:1px dashed var(--line-2)}
 .cite{margin-top:12px;font-size:12.5px;color:var(--ink-3)}
 .cite a{color:var(--ink-2)}
 .subst math{color:var(--ink-2)}
-.subst math:nth-child(2){margin-bottom:12px}
 @media (max-width:479px){.eqs{padding:12px 10px}}
 
 /* footer */

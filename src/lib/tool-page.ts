@@ -1,50 +1,79 @@
 /**
  * ツールのページに共通の動き: 「?」の吹き出し、開閉できる枠、関連ツールの件数。
- * 各ツールの入口スクリプトから 1 度だけ呼ぶ
+ * 各ツールの入口スクリプトから initToolPage() を 1 度だけ呼ぶ。見出し以外の「?」は addTip で足す
  */
 import { $, $$ } from './dom';
 import { fx, POP_IN, POP_OUT, RM } from './motion';
 import { initSite } from './site';
 
-/* 「?」の吹き出し（PageTitle.astro） */
-function initHelp(): void {
-  const btn = $('#descBtn'),
-    desc = $('#desc'),
-    box = $('.ttl');
-  const place = () => {
-    const r = box.getBoundingClientRect(),
-      b = btn.getBoundingClientRect();
-    const cx = b.left + b.width / 2 - r.left,
-      w = desc.offsetWidth;
-    const bx = Math.max(0, Math.min(cx - 24, r.width - w));
-    desc.style.setProperty('--bx', `${bx}px`);
-    desc.style.setProperty('--ax', `${cx - bx}px`);
-  };
-  const isOpen = () => btn.getAttribute('aria-expanded') === 'true';
-  const set = (open: boolean) => {
-    if (open === isOpen()) return;
-    btn.setAttribute('aria-expanded', String(open));
-    if (open) {
-      desc.hidden = false;
-      place();
-      fx(desc, POP_IN, 160);
-    } else
-      fx(desc, POP_OUT, 120, () => {
-        if (!isOpen()) desc.hidden = true;
-      });
-  };
-  btn.addEventListener('click', () => set(!isOpen()));
+/* ---------- 「?」の吹き出し ---------- */
+interface Tip {
+  btn: HTMLElement;
+  el: HTMLElement;
+  box: HTMLElement;
+  below: boolean;
+}
+const tips: Tip[] = [];
+const tipOpen = (t: Tip) => t.btn.getAttribute('aria-expanded') === 'true';
+function placeTip(t: Tip): void {
+  const r = t.box.getBoundingClientRect(),
+    b = t.btn.getBoundingClientRect();
+  const cx = b.left + b.width / 2 - r.left,
+    w = t.el.offsetWidth;
+  const bx = Math.max(0, Math.min(cx - 24, r.width - w));
+  t.el.style.setProperty('--bx', `${bx}px`);
+  t.el.style.setProperty('--ax', `${cx - bx}px`);
+  if (t.below) t.el.style.top = `${b.bottom - r.top + 10}px`;
+}
+function setTip(t: Tip, open: boolean): void {
+  if (open === tipOpen(t)) return;
+  if (open) for (const o of tips) if (o !== t) setTip(o, false);
+  t.btn.setAttribute('aria-expanded', String(open));
+  if (open) {
+    t.box.style.zIndex = '24';
+    t.el.hidden = false;
+    placeTip(t);
+    fx(t.el, POP_IN, 160);
+  } else
+    fx(t.el, POP_OUT, 120, () => {
+      if (tipOpen(t)) return;
+      t.el.hidden = true;
+      t.box.style.zIndex = '';
+    });
+}
+let tipsBound = false;
+function bindTips(): void {
+  if (tipsBound) return;
+  tipsBound = true;
   document.addEventListener('click', (e) => {
-    if (isOpen() && !(e.target as Element).closest('#descBtn, #desc')) set(false);
+    const n = e.target as Node;
+    for (const t of tips) if (tipOpen(t) && !t.btn.contains(n) && !t.el.contains(n)) setTip(t, false);
   });
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && isOpen()) {
-      set(false);
-      btn.focus();
-    }
+    if (e.key !== 'Escape') return;
+    for (const t of tips)
+      if (tipOpen(t)) {
+        setTip(t, false);
+        t.btn.focus();
+      }
   });
   addEventListener('resize', () => {
-    if (isOpen()) place();
+    for (const t of tips) if (tipOpen(t)) placeTip(t);
+  });
+}
+
+/**
+ * 「?」ボタン btn で吹き出し el（class="desc" role="tooltip" hidden）を開閉する。
+ * el は box（position:relative の祖先）の中に置き、ボタンの位置に合わせて矢印を出す。
+ * below なら el の上端をボタンの下に合わせる（見出し以外の「?」）。ほかの吹き出しは閉じる
+ */
+export function addTip(btn: HTMLElement, el: HTMLElement, box: HTMLElement, below = false): void {
+  const t = { btn, el, box, below };
+  tips.push(t);
+  bindTips();
+  btn.addEventListener('click', (e) => {
+    e.preventDefault();
+    setTip(t, !tipOpen(t));
   });
 }
 
@@ -91,7 +120,7 @@ function initRelated(): void {
 
 export function initToolPage(): void {
   initSite();
-  initHelp();
+  addTip($('#descBtn'), $('#desc'), $('.ttl'));
   initCollapsible();
   initRelated();
 }
