@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { eList, linList, nearIdx, nextOf, prevOf, same } from '../../src/lib/eseries';
+import { eList, inSeries, linList, nearIdx, nextOf, pow2List, prevOf, same } from '../../src/lib/eseries';
 
 describe('eList', () => {
   it('1 桁ぶんの E6', () => {
@@ -61,5 +61,33 @@ describe('前後の値', () => {
   it('same は相対誤差 1e-9 まで同じとみなす', () => {
     expect(same(0.1 + 0.2, 0.3)).toBe(true);
     expect(same(4700, 4701)).toBe(false);
+  });
+});
+
+describe('E1〜E192', () => {
+  it('E1・E3 は 10 の累乗と 2.2・4.7', () => {
+    expect(eList(1, 1e-3, 1e9)).toHaveLength(13);
+    expect(eList(3, 1, 10)).toEqual([1, 2.2, 4.7, 10]);
+  });
+
+  it('E48・E96・E192 は 1 桁に 48・96・192 個、3 桁の値', () => {
+    expect(eList(48, 1, 9.99)).toHaveLength(48);
+    expect(eList(96, 1, 9.99)).toHaveLength(96);
+    const L = eList(192, 100, 1000);
+    expect(L).toHaveLength(193);
+    expect(L).toContain(101);
+    expect(L).toContain(988);
+    expect(eList(192, 1e-12, 1e-11)).toContain(1.01e-12);
+  });
+
+  it('inSeries', () => {
+    expect(inSeries(12, 4700)).toBe(true);
+    expect(inSeries(12, 5000)).toBe(false);
+    expect(inSeries(192, 1.24e-6)).toBe(true);
+    expect(inSeries(12, 0)).toBe(false);
+  });
+
+  it('pow2List', () => {
+    expect(pow2List(8, 10)).toEqual([256, 512, 1024]);
   });
 });

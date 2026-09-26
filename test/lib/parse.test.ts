@@ -50,3 +50,41 @@ describe('parse', () => {
     expect(parse(raw, unit)).toBeNaN();
   });
 });
+
+describe('parse: 符号と単位', () => {
+  it.each([
+    ['-12.5', 'm', -12.5],
+    ['−3', 'm', -3],
+    ['–3', 'm', -3],
+    ['+3dB', 'dB', 3],
+    ['-6 dB', 'dB', -6],
+    ['−1e-3', '', -1e-3],
+    ['-4.7m', '', -0.0047],
+  ] as const)('符号つき %s (%s) → %d', (raw, unit, v) => {
+    expect(parse(raw, unit, true)).toBe(v);
+  });
+
+  it('符号を読まない既定では負の値は NaN', () => {
+    expect(parse('-6', 'dB')).toBeNaN();
+    expect(parse('+3', 'dB')).toBeNaN();
+    expect(parse('-', 'dB', true)).toBeNaN();
+  });
+
+  it.each([
+    ['1.5kHz', 'Hz', 1500],
+    ['44.1 kHz', 'Hz', 44100],
+    ['48k', 'Hz', 48000],
+    ['50%', '%', 50],
+    ['4.7m', 'm', 4.7],
+    ['4.7', 'm', 4.7],
+    ['2.5m/s', 'm/s', 2.5],
+    ['2.5m', 'm/s', 0.0025],
+    ['10uH', 'H', 1e-5],
+    ['10 μH', 'H', 1e-5],
+    ['10ms', 's', 0.01],
+    ['4.7m', '', 0.0047],
+    ['1k', '', 1000],
+  ] as const)('%s (%s) → %d', (raw, unit, v) => {
+    expect(parse(raw, unit)).toBe(v);
+  });
+});

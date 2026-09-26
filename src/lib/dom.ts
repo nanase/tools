@@ -8,3 +8,7 @@ export const $$ = <T extends Element = HTMLElement>(s: string, r: ParentNode = d
   ...r.querySelectorAll<T>(s),
 ];
 export const norm = (s: string): string => s.normalize('NFKC').toLowerCase();
+
+/** HTML に埋め込む文字列のエスケープ */
+export const esc = (s: string): string =>
+  s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c] ?? c);

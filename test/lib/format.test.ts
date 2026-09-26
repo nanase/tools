@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fmt, parts, ro } from '../../src/lib/format';
+import { fmt, minus, parts, plain, ro } from '../../src/lib/format';
 import { nice } from '../../src/lib/scope';
 
 describe('SI 接頭辞つきの整形', () => {
@@ -52,5 +52,29 @@ describe('nice', () => {
     [1.2e-6, 2e-6],
   ])('%d → %d', (x, v) => {
     expect(nice(x)).toBe(v);
+  });
+});
+
+describe('接頭辞なしの表記', () => {
+  it.each([
+    [0.0047, undefined, '0.0047'],
+    [-12.5, undefined, '−12.5'],
+    [20, undefined, '20'],
+    [0, undefined, '0'],
+    [1e-5, undefined, '1e-5'],
+    [1.5e-5, undefined, '1.5e-5'],
+    [1.23456789, 3, '1.23'],
+    [123456.7, 6, '123457'],
+  ])('%d (sig %s) → %s', (v, sig, s) => {
+    expect(plain(v, sig)).toBe(s);
+  });
+
+  it('有限でない値はダッシュ', () => {
+    expect(plain(Number.NaN)).toBe('—');
+  });
+
+  it('minus は先頭のハイフンをマイナス記号にする', () => {
+    expect(minus('-3')).toBe('−3');
+    expect(minus('3-1')).toBe('3-1');
   });
 });
