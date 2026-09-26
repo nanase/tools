@@ -1,0 +1,31 @@
+---
+import ToolLayout from '@/layouts/ToolLayout.astro';
+import SimulatorTool from '@/jjy/SimulatorTool.vue';
+---
+
+<ToolLayout
+  title="JJY シミュレータ"
+  description="電波時計などで利用されているJJYの信号をシミュレートします。"
+  pageId="jjy/simulator"
+>
+  <SimulatorTool client:only="vue" />
+
+  <hr class="my-8 border-[var(--color-on-background)]/10" />
+  <footer class="pb-8">
+    <h4 class="mb-2 font-semibold">参考文献</h4>
+    <ul>
+      <li>
+        <a href="https://jjy.nict.go.jp/jjy/trans/index.html" target="_blank">
+          標準電波の出し方
+        </a>
+        - 情報通信研究機構 日本標準時グループ
+      </li>
+      <li>
+        <a href="https://ja.wikipedia.org/wiki/JJY" target="_blank">JJY</a> - Wikipedia
+      </li>
+      <li>
+        <a href="https://shogo82148.github.io/web-jjy/" target="_blank">JJYシミュレータWeb版</a>
+      </li>
+    </ul>
+  </footer>
+</ToolLayout>

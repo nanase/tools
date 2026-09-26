@@ -1,0 +1,18 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import AppShell from '@/components/layout/AppShell.vue';
+
+interface Props {
+  title: string;
+  description?: string;
+  pageId?: string;
+}
+
+const { title, description = '', pageId = '' } = Astro.props;
+---
+
+<BaseLayout title={title} description={description} pageId={pageId}>
+  <AppShell title={title} pageId={pageId} client:load>
+    <slot />
+  </AppShell>
+</BaseLayout>

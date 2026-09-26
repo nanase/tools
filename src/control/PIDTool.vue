@@ -5,7 +5,6 @@ import { Rules } from '@nanase/alnilam/inputRule';
 import { PIDController } from './PIDController';
 import Chart from 'chart.js/auto';
 
-import ToolAppBase from '@/components/common/ToolAppBase.vue';
 import ChartBase from '@/components/common/ChartBase.vue';
 import InputRow from '@/components/input/InputRow.vue';
 
@@ -153,149 +152,101 @@ function updateChart() {
 </script>
 
 <template>
-  <ToolAppBase>
-    <v-row>
-      <v-col cols="12" md="6">
-        <InputRow
-          v-model="initialPosition"
-          label="初期位置"
-          variant="underlined"
-          density="compact"
-          :max="100"
-          :min="-100"
-          unit="m"
-          :fraction-digits="3"
-          :rule="[Rules.required, Rules.value]"
-          cols="4"
-          hide-details
-        >
-        </InputRow>
+  <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+    <div class="space-y-3">
+      <InputRow
+        v-model="initialPosition"
+        label="初期位置"
+        :max="100"
+        :min="-100"
+        unit="m"
+        :fraction-digits="3"
+        :rule="[Rules.required, Rules.value]"
+      />
 
-        <InputRow
-          v-model="targetPosition"
-          label="目標位置"
-          variant="underlined"
-          density="compact"
-          :max="100"
-          :min="-100"
-          unit="m"
-          :fraction-digits="3"
-          :rule="[Rules.required, Rules.value]"
-          cols="4"
-          hide-details
-        >
-        </InputRow>
+      <InputRow
+        v-model="targetPosition"
+        label="目標位置"
+        :max="100"
+        :min="-100"
+        unit="m"
+        :fraction-digits="3"
+        :rule="[Rules.required, Rules.value]"
+      />
 
-        <InputRow
-          v-model="initialVelocity"
-          label="初速"
-          variant="underlined"
-          density="compact"
-          :max="100"
-          :min="-100"
-          unit="m/s"
-          :fraction-digits="3"
-          :rule="[Rules.required, Rules.value]"
-          cols="4"
-          hide-details
-        >
-        </InputRow>
+      <InputRow
+        v-model="initialVelocity"
+        label="初速"
+        :max="100"
+        :min="-100"
+        unit="m/s"
+        :fraction-digits="3"
+        :rule="[Rules.required, Rules.value]"
+      />
 
-        <InputRow
-          v-model="riverSpeed"
-          label="周囲の流速"
-          variant="underlined"
-          density="compact"
-          :max="100"
-          :min="-100"
-          unit="m/s"
-          :fraction-digits="3"
-          :rule="[Rules.required, Rules.value]"
-          cols="4"
-          hide-details
-        >
-        </InputRow>
+      <InputRow
+        v-model="riverSpeed"
+        label="周囲の流速"
+        :max="100"
+        :min="-100"
+        unit="m/s"
+        :fraction-digits="3"
+        :rule="[Rules.required, Rules.value]"
+      />
 
-        <InputRow
-          v-model="responsiveness"
-          label="加速の応答性"
-          variant="underlined"
-          density="compact"
-          :max="1"
-          :min="0.0001"
-          scale="log"
-          :fraction-digits="4"
-          :rule="[Rules.required, Rules.value]"
-          cols="4"
-          hide-details
-        >
-        </InputRow>
+      <InputRow
+        v-model="responsiveness"
+        label="加速の応答性"
+        :max="1"
+        :min="0.0001"
+        scale="log"
+        :fraction-digits="4"
+        :rule="[Rules.required, Rules.value]"
+      />
 
-        <v-divider class="my-5" />
+      <hr class="my-4 border-[var(--color-on-background)]/10" />
 
-        <InputRow
-          v-model="kp"
-          label="Kp"
-          variant="underlined"
-          density="compact"
-          :max="20.0001"
-          :min="0.0001"
-          :constant="0.0001"
-          scale="log"
-          :fraction-digits="4"
-          :rule="[Rules.required, Rules.value, Rules.notNegative]"
-          cols="4"
-          hide-details
-        >
-        </InputRow>
+      <InputRow
+        v-model="kp"
+        label="Kp"
+        :max="20.0001"
+        :min="0.0001"
+        :constant="0.0001"
+        scale="log"
+        :fraction-digits="4"
+        :rule="[Rules.required, Rules.value, Rules.notNegative]"
+      />
 
-        <InputRow
-          v-model="ki"
-          label="Ki"
-          variant="underlined"
-          density="compact"
-          :max="20.0001"
-          :min="0.0001"
-          :constant="0.0001"
-          scale="log"
-          :fraction-digits="4"
-          :rule="[Rules.required, Rules.value, Rules.notNegative]"
-          cols="4"
-          hide-details
-        >
-        </InputRow>
+      <InputRow
+        v-model="ki"
+        label="Ki"
+        :max="20.0001"
+        :min="0.0001"
+        :constant="0.0001"
+        scale="log"
+        :fraction-digits="4"
+        :rule="[Rules.required, Rules.value, Rules.notNegative]"
+      />
 
-        <InputRow
-          v-model="kd"
-          label="Kd"
-          variant="underlined"
-          density="compact"
-          :max="20.0001"
-          :min="0.0001"
-          :constant="0.0001"
-          scale="log"
-          :fraction-digits="4"
-          :rule="[Rules.required, Rules.value, Rules.notNegative]"
-          cols="4"
-          hide-details
-        >
-        </InputRow>
-      </v-col>
+      <InputRow
+        v-model="kd"
+        label="Kd"
+        :max="20.0001"
+        :min="0.0001"
+        :constant="0.0001"
+        scale="log"
+        :fraction-digits="4"
+        :rule="[Rules.required, Rules.value, Rules.notNegative]"
+      />
+    </div>
 
-      <v-col cols="12" md="6" class="text-center">
-        <v-row>
-          <v-col cols="12">
-            <div style="height: 250px">
-              <ChartBase ref="positionChart" :initializer="initializePositionChart" />
-            </div>
-          </v-col>
-          <v-col cols="12">
-            <div style="height: 250px">
-              <ChartBase ref="velocityChart" :initializer="initializeVelocityChart" />
-            </div>
-          </v-col>
-        </v-row>
-      </v-col>
-    </v-row>
-  </ToolAppBase>
+    <div class="space-y-4">
+      <div class="h-[250px]">
+        <ChartBase ref="positionChart" :initializer="initializePositionChart" />
+      </div>
+      <div class="h-[250px]">
+        <ChartBase ref="velocityChart" :initializer="initializeVelocityChart" />
+      </div>
+    </div>
+  </div>
 </template>

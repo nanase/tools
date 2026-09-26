@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import type { Node, Edge } from '@vue-flow/core';
 import { VueFlow } from '@vue-flow/core';
 import { Handle, Position } from '@vue-flow/core';
 import dagre from '@dagrejs/dagre';
 import AxialLead from '@/components/common/AxialLead.vue';
+import { DialogRoot, DialogPortal, DialogContent, DialogOverlay, DialogClose } from 'radix-vue';
 
 import { getColorCodes, type Combination, type CombinationNode } from '@/lib/passiveComponent';
 import type { ApproxResult } from './constants';
@@ -14,6 +15,8 @@ const { result, combination } = defineProps<{
   result: ApproxResult;
   combination: Combination;
 }>();
+
+const dialogOpen = ref(false);
 
 const position = { x: 0, y: 0 };
 const terminalSize = { width: 7.5, height: 7.5, borderWidth: 3 };
@@ -50,7 +53,7 @@ function generateGraph(node: CombinationNode): { nodes: Node[]; edges: Edge[] } 
       return [nodeId];
     } else if (currentNode.type === 'series') {
       let lastNodeIds = parentIds;
-      currentNode.children.forEach((child) => {
+      for (const child of currentNode.children) {
         const nodeIds = traverse(child, lastNodeIds);
 
         if (lastNodeIds.length > 1 && nodeIds.length > 1) {
@@ -66,7 +69,6 @@ function generateGraph(node: CombinationNode): { nodes: Node[]; edges: Edge[] } 
             position,
           });
 
-          // delete old edges
           for (const fromId of lastNodeIds) {
             for (const toId of junctionToNodeIds) {
               edges.splice(
@@ -76,7 +78,6 @@ function generateGraph(node: CombinationNode): { nodes: Node[]; edges: Edge[] } 
             }
           }
 
-          // create new edges
           for (const parentId of lastNodeIds) {
             edges.push({
               id: `e${parentId}-${junctionNodeId}`,
@@ -94,8 +95,7 @@ function generateGraph(node: CombinationNode): { nodes: Node[]; edges: Edge[] } 
         }
 
         lastNodeIds = nodeIds;
-        return nodeIds;
-      });
+      }
       return lastNodeIds;
     } else if (currentNode.type === 'parallel') {
       return currentNode.children.flatMap((child) => traverse(child, parentIds));
@@ -170,13 +170,15 @@ const nodes = computed<Node[]>(() => {
 </script>
 
 <template>
-  <v-dialog style="max-width: 600px">
-    <template #activator="{ props }">
-      <slot name="activator" :props></slot>
-    </template>
-    <template #default="{ isActive }">
-      <v-card>
-        <v-card-text style="height: 150px">
+  <slot name="activator" :props="{ onClick: () => (dialogOpen = true) }" />
+
+  <DialogRoot v-model:open="dialogOpen">
+    <DialogPortal>
+      <DialogOverlay class="fixed inset-0 z-40 bg-black/30" />
+      <DialogContent
+        class="fixed top-1/2 left-1/2 z-50 w-full max-w-xl -translate-x-1/2 -translate-y-1/2 rounded-lg bg-[var(--color-surface)] p-6 shadow-xl focus:outline-none"
+      >
+        <div style="height: 150px">
           <VueFlow
             :nodes
             :edges="combinationGraphData.edges"
@@ -249,19 +251,23 @@ const nodes = computed<Node[]>(() => {
               <Handle class="no-handle" type="source" :position="Position.Right" />
             </template>
           </VueFlow>
-        </v-card-text>
-        <v-card-text> 組み合わせ式: {{ combination.toString(result.componentType.prefixSymbols) }} </v-card-text>
-
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn text="閉じる" @click="isActive.value = false"></v-btn>
-        </v-card-actions>
-      </v-card>
-    </template>
-  </v-dialog>
+        </div>
+        <p class="mt-3 text-sm">
+          組み合わせ式: {{ combination.toString(result.componentType.prefixSymbols) }}
+        </p>
+        <div class="mt-4 flex justify-end">
+          <DialogClose as-child>
+            <button class="rounded px-4 py-1.5 text-sm transition-colors hover:bg-[var(--color-on-background)]/10">
+              閉じる
+            </button>
+          </DialogClose>
+        </div>
+      </DialogContent>
+    </DialogPortal>
+  </DialogRoot>
 </template>
 
-<style lang="scss" scoped>
+<style>
 .no-handle {
   border: none;
   height: unset;
@@ -279,15 +285,5 @@ const nodes = computed<Node[]>(() => {
   border: solid #888;
   border-radius: 50px;
   background-color: #888;
-}
-
-.node-component {
-  border: solid black;
-  border-radius: 10px;
-  background-color: #fbddc9;
-  color: black;
-  font-size: 10px;
-  padding-left: 5px;
-  line-height: 200%;
 }
 </style>

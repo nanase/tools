@@ -2,8 +2,6 @@
 import { ref, markRaw, onBeforeUnmount } from 'vue';
 import Chart from 'chart.js/auto';
 
-import { type State } from '@nanase/alnilam/state';
-
 const { initializer } = defineProps<{
   initializer: (canvas: HTMLCanvasElement) => Chart;
 }>();
@@ -27,22 +25,16 @@ onBeforeUnmount(() => {
 });
 
 defineExpose({
-  getChart: function (): State<Chart, 'chart'> {
+  getChart() {
     if (!chart.value) {
       initialize();
     }
 
     if (!chart.value) {
-      return {
-        ready: false,
-        chart: null,
-      };
+      return { ready: false as const, chart: null };
     }
 
-    return {
-      ready: true,
-      chart: chart.value,
-    };
+    return { ready: true as const, chart: chart.value };
   },
 });
 </script>

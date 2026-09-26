@@ -63,12 +63,10 @@ function setInitialTransform() {
   const cotainerDOMRect = previewElement.value.getBoundingClientRect();
 
   if (cotainerDOMRect.width > svgDOMRect.width && cotainerDOMRect.height > svgDOMRect.height) {
-    // 表示領域 ＞ SVGのサイズ
     position.value.x = (cotainerDOMRect.width - svgDOMRect.width) / 2;
     position.value.y = (cotainerDOMRect.height - svgDOMRect.height) / 2;
     setScale(1.0);
   } else {
-    // 表示領域 ＜ SVGのサイズ
     const newScale =
       Math.min(cotainerDOMRect.width / svgDOMRect.width, cotainerDOMRect.height / svgDOMRect.height) * 0.9;
 
@@ -233,12 +231,12 @@ function addEventListener(document: Document, iframe: HTMLIFrameElement): void {
     linear-gradient(135deg, transparent 75%, var(--preview-checker-color) 75%);
 }
 
-.preview.preview-theme-light {
+.preview-theme-light {
   --preview-background-color: white;
   --preview-checker-color: #f8f8f8;
 }
 
-.preview.preview-theme-dark {
+.preview-theme-dark {
   --preview-background-color: #111;
   --preview-checker-color: #191919;
 }

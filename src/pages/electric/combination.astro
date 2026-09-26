@@ -1,0 +1,17 @@
+---
+import ToolLayout from '@/layouts/ToolLayout.astro';
+import CombinationTool from '@/electric/combination/CombinationTool.vue';
+---
+
+<ToolLayout title="受動素子の組み合わせ">
+  <div class="flex flex-col gap-6">
+    <section>
+      <h2 class="mb-2 text-lg font-semibold">受動素子の組み合わせ</h2>
+      <p class="text-sm opacity-70">
+        直列・並列接続で合成される受動素子（抵抗器・コンデンサ・インダクタ）の組み合わせを検索し、指定した値に最も近い組み合わせを求めます。
+      </p>
+    </section>
+
+    <CombinationTool client:only="vue" />
+  </div>
+</ToolLayout>

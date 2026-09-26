@@ -1,4 +1,4 @@
-/// <reference types="vite/client" />
+/// <reference path=".astro/types.d.ts" />
 
 interface ImportMetaEnv {
   readonly VITE_GENET_MUSIC_LIST_URL: string;

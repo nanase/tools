@@ -5,10 +5,6 @@ const root = resolve(__dirname);
 const srcDir = resolve(root, 'src');
 
 export default defineConfig({
-  root: srcDir,
-  base: '/tools/',
-  publicDir: resolve(root, 'public'),
-  envDir: root,
   resolve: {
     alias: [{ find: '@', replacement: srcDir }],
   },
@@ -20,11 +16,6 @@ export default defineConfig({
       reporter: ['text', 'json'],
       include: ['src/**/*.{ts,vue}'],
       exclude: ['**/index.ts'],
-    },
-    server: {
-      deps: {
-        inline: ['vuetify'],
-      },
     },
   },
 });

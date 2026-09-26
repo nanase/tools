@@ -1,0 +1,12 @@
+---
+import ToolLayout from '@/layouts/ToolLayout.astro';
+import PIDTool from '@/control/PIDTool.vue';
+---
+
+<ToolLayout
+  title="PID制御"
+  description="フィードバック制御の一種であるPID制御を各項を調整しながらシミュレートします。"
+  pageId="control/pid"
+>
+  <PIDTool client:only="vue" />
+</ToolLayout>

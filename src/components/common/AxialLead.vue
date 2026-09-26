@@ -36,7 +36,7 @@ const {
   </div>
 </template>
 
-<style lang="scss">
+<style>
 .axial-lead {
   position: relative;
   min-width: 10px;
@@ -50,19 +50,19 @@ const {
   box-shadow:
     inset color-mix(in hsl shorter hue, v-bind(color), #ffff 50%) 5px 5px 10px 0,
     inset color-mix(in hsl shorter hue, v-bind(color), #00000040 50%) -5px -5px 10px 0;
+}
 
-  .label {
-    position: absolute;
-    align-items: center;
-    display: flex;
-    height: 100%;
-    width: 100%;
-  }
+.axial-lead .label {
+  position: absolute;
+  align-items: center;
+  display: flex;
+  height: 100%;
+  width: 100%;
+}
 
-  .bar-container {
-    display: flex;
-    height: 100%;
-    width: 100%;
-  }
+.axial-lead .bar-container {
+  display: flex;
+  height: 100%;
+  width: 100%;
 }
 </style>

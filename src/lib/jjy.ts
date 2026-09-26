@@ -1,6 +1,4 @@
-import dayjs, { Dayjs } from '@nanase/alnilam/dayjs';
-import dayOfYear from 'dayjs/plugin/dayOfYear';
-dayjs.extend(dayOfYear);
+import { startOfMinute, addSeconds, getSeconds, getMinutes, getHours, getYear, getDay, getDayOfYear } from 'date-fns';
 
 export type TimeCode = 'P' | '0' | '1' | 'S';
 
@@ -109,49 +107,54 @@ function parity(n: number): boolean {
   return parity;
 }
 
-export function encode(time: Dayjs, options?: EncodeOptions): TimeCode[] {
-  const timeCopy = dayjs(time).startOf('minute');
+export function encode(time: Date, options?: EncodeOptions): TimeCode[] {
+  const timeCopy = startOfMinute(time);
   const timeCodes: TimeCode[] = [];
-  time.subtract;
 
   for (let i = 0; i < 60; i++) {
-    timeCodes[i] = encodeOnSecond(timeCopy.add(i, 'seconds'), options);
+    timeCodes[i] = encodeOnSecond(addSeconds(timeCopy, i), options);
   }
 
   return timeCodes;
 }
 
-export function callsignEnabled(time: Dayjs, options?: EncodeOptions): boolean {
+export function callsignEnabled(time: Date, options?: EncodeOptions): boolean {
   return (
-    (options?.callSign === 'force' || time.minute() === 15 || time.minute() === 45) &&
+    (options?.callSign === 'force' || getMinutes(time) === 15 || getMinutes(time) === 45) &&
     !(options?.callSign === 'disable')
   );
 }
 
-export function encodeOnSecond(time: Dayjs, options?: EncodeOptions): TimeCode {
+export function encodeOnSecond(time: Date, options?: EncodeOptions): TimeCode {
   const callsignEnable = callsignEnabled(time, options);
+  const second = getSeconds(time);
+  const minute = getMinutes(time);
+  const hour = getHours(time);
+  const year = getYear(time);
+  const dayOfYear = getDayOfYear(time);
+  const dayOfWeek = getDay(time);
 
-  switch (time.second()) {
+  switch (second) {
     case 0:
       return 'P';
 
     case 1:
-      return flag((time.minute() / 10) & 0x04);
+      return flag((minute / 10) & 0x04);
     case 2:
-      return flag((time.minute() / 10) & 0x02);
+      return flag((minute / 10) & 0x02);
     case 3:
-      return flag((time.minute() / 10) & 0x01);
+      return flag((minute / 10) & 0x01);
     case 4:
       return '0';
 
     case 5:
-      return flag(time.minute() % 10 & 0x08);
+      return flag(minute % 10 & 0x08);
     case 6:
-      return flag(time.minute() % 10 & 0x04);
+      return flag(minute % 10 & 0x04);
     case 7:
-      return flag(time.minute() % 10 & 0x02);
+      return flag(minute % 10 & 0x02);
     case 8:
-      return flag(time.minute() % 10 & 0x01);
+      return flag(minute % 10 & 0x01);
     case 9:
       return 'P';
 
@@ -159,20 +162,20 @@ export function encodeOnSecond(time: Dayjs, options?: EncodeOptions): TimeCode {
     case 11:
       return '0';
     case 12:
-      return flag((time.hour() / 10) & 0x02);
+      return flag((hour / 10) & 0x02);
     case 13:
-      return flag((time.hour() / 10) & 0x01);
+      return flag((hour / 10) & 0x01);
     case 14:
       return '0';
 
     case 15:
-      return flag(time.hour() % 10 & 0x08);
+      return flag(hour % 10 & 0x08);
     case 16:
-      return flag(time.hour() % 10 & 0x04);
+      return flag(hour % 10 & 0x04);
     case 17:
-      return flag(time.hour() % 10 & 0x02);
+      return flag(hour % 10 & 0x02);
     case 18:
-      return flag(time.hour() % 10 & 0x01);
+      return flag(hour % 10 & 0x01);
     case 19:
       return 'P';
 
@@ -180,40 +183,40 @@ export function encodeOnSecond(time: Dayjs, options?: EncodeOptions): TimeCode {
     case 21:
       return '0';
     case 22:
-      return flag((time.dayOfYear() / 100) & 0x02);
+      return flag((dayOfYear / 100) & 0x02);
     case 23:
-      return flag((time.dayOfYear() / 100) & 0x01);
+      return flag((dayOfYear / 100) & 0x01);
     case 24:
       return '0';
 
     case 25:
-      return flag((time.dayOfYear() / 10) % 10 & 0x08);
+      return flag((dayOfYear / 10) % 10 & 0x08);
     case 26:
-      return flag((time.dayOfYear() / 10) % 10 & 0x04);
+      return flag((dayOfYear / 10) % 10 & 0x04);
     case 27:
-      return flag((time.dayOfYear() / 10) % 10 & 0x02);
+      return flag((dayOfYear / 10) % 10 & 0x02);
     case 28:
-      return flag((time.dayOfYear() / 10) % 10 & 0x01);
+      return flag((dayOfYear / 10) % 10 & 0x01);
     case 29:
       return 'P';
 
     case 30:
-      return flag(time.dayOfYear() % 10 & 0x08);
+      return flag(dayOfYear % 10 & 0x08);
     case 31:
-      return flag(time.dayOfYear() % 10 & 0x04);
+      return flag(dayOfYear % 10 & 0x04);
     case 32:
-      return flag(time.dayOfYear() % 10 & 0x02);
+      return flag(dayOfYear % 10 & 0x02);
     case 33:
-      return flag(time.dayOfYear() % 10 & 0x01);
+      return flag(dayOfYear % 10 & 0x01);
     case 34:
       return '0';
 
     case 35:
       return '0';
     case 36:
-      return flag(parity(((time.hour() / 10) << 4) | time.hour() % 10));
+      return flag(parity(((hour / 10) << 4) | hour % 10));
     case 37:
-      return flag(parity(((time.minute() / 10) << 4) | time.minute() % 10));
+      return flag(parity(((minute / 10) << 4) | minute % 10));
     case 38:
       return flag(options?.summerTimeNotice);
     case 39:
@@ -222,32 +225,32 @@ export function encodeOnSecond(time: Dayjs, options?: EncodeOptions): TimeCode {
     case 40:
       return callsignEnable ? 'S' : flag(options?.summerTime);
     case 41:
-      return callsignEnable ? 'S' : flag(((time.year() % 100) / 10) & 0x08);
+      return callsignEnable ? 'S' : flag(((year % 100) / 10) & 0x08);
     case 42:
-      return callsignEnable ? 'S' : flag(((time.year() % 100) / 10) & 0x04);
+      return callsignEnable ? 'S' : flag(((year % 100) / 10) & 0x04);
     case 43:
-      return callsignEnable ? 'S' : flag(((time.year() % 100) / 10) & 0x02);
+      return callsignEnable ? 'S' : flag(((year % 100) / 10) & 0x02);
     case 44:
-      return callsignEnable ? 'S' : flag(((time.year() % 100) / 10) & 0x01);
+      return callsignEnable ? 'S' : flag(((year % 100) / 10) & 0x01);
 
     case 45:
-      return callsignEnable ? 'S' : flag(time.year() % 10 & 0x08);
+      return callsignEnable ? 'S' : flag(year % 10 & 0x08);
     case 46:
-      return callsignEnable ? 'S' : flag(time.year() % 10 & 0x04);
+      return callsignEnable ? 'S' : flag(year % 10 & 0x04);
     case 47:
-      return callsignEnable ? 'S' : flag(time.year() % 10 & 0x02);
+      return callsignEnable ? 'S' : flag(year % 10 & 0x02);
     case 48:
-      return callsignEnable ? 'S' : flag(time.year() % 10 & 0x01);
+      return callsignEnable ? 'S' : flag(year % 10 & 0x01);
 
     case 49:
       return 'P';
 
     case 50:
-      return callsignEnable ? flag((options?.stopAfter ?? 0) & 0x04) : flag(time.day() & 0x04);
+      return callsignEnable ? flag((options?.stopAfter ?? 0) & 0x04) : flag(dayOfWeek & 0x04);
     case 51:
-      return callsignEnable ? flag((options?.stopAfter ?? 0) & 0x02) : flag(time.day() & 0x02);
+      return callsignEnable ? flag((options?.stopAfter ?? 0) & 0x02) : flag(dayOfWeek & 0x02);
     case 52:
-      return callsignEnable ? flag((options?.stopAfter ?? 0) & 0x01) : flag(time.day() & 0x01);
+      return callsignEnable ? flag((options?.stopAfter ?? 0) & 0x01) : flag(dayOfWeek & 0x01);
 
     case 53:
       return callsignEnable && options?.stopAfter !== 0 ? flag(options?.stopType) : flag(options?.leapSecondNotice);

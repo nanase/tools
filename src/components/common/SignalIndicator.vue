@@ -51,16 +51,16 @@ watch(
   </svg>
 </template>
 
-<style lang="scss">
+<style>
 .signal-indicator {
   min-height: 16px;
+}
 
-  .lamp {
-    fill: transparent;
-    fill-opacity: 0;
-    stroke: #0dab0d;
-    stroke-width: 10px;
-    filter: drop-shadow(0 0 10px #0dab0d);
-  }
+.signal-indicator .lamp {
+  fill: transparent;
+  fill-opacity: 0;
+  stroke: #0dab0d;
+  stroke-width: 10px;
+  filter: drop-shadow(0 0 10px #0dab0d);
 }
 </style>

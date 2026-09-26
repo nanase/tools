@@ -83,15 +83,9 @@ defineExpose({ typeset });
 
 <template>
   <Tag>
-    <span ref="raw" class="mathjax-raw">
+    <span ref="raw" class="hidden">
       <slot></slot>
     </span>
     <FormulaTag ref="formula"></FormulaTag>
   </Tag>
 </template>
-
-<style lang="scss">
-.mathjax-raw {
-  display: none;
-}
-</style>

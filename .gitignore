@@ -31,9 +31,6 @@ lerna-debug.log*
 # coverage
 coverage/
 
-# Stylelint
-.stylelintcache
-
 # yarn
 .pnp.*
 .yarn/*
@@ -46,5 +43,11 @@ coverage/
 # tsc
 tsconfig.node.tsbuildinfo
 
-#vite
+# vite
 vite.config.ts.timestamp-*
+
+# astro
+.astro/
+
+# claude code
+.claude/settings.local.json

@@ -1,0 +1,42 @@
+---
+import ToolLayout from '@/layouts/ToolLayout.astro';
+import BiquadTool from '@/filter/BiquadTool.vue';
+---
+
+<ToolLayout title="双2次フィルタ">
+  <div class="flex flex-col gap-6">
+    <section>
+      <h2 class="mb-2 text-lg font-semibold">双2次フィルタ</h2>
+      <p class="text-sm opacity-70">
+        双2次フィルタ（Biquad filter）の各種数値を計算するツールです。
+      </p>
+    </section>
+
+    <BiquadTool client:only="vue" />
+
+    <footer class="border-t border-[var(--color-on-background)]/10 pt-4">
+      <h4 class="mb-2 font-semibold">参考文献</h4>
+      <ul class="list-inside list-disc space-y-1 text-sm">
+        <li>
+          <a
+            href="https://webaudio.github.io/Audio-EQ-Cookbook/audio-eq-cookbook.html"
+            target="_blank"
+            class="text-[var(--color-primary)] hover:underline"
+          >
+            Cookbook formulae for audio equalizer biquad filter coefficients
+          </a>
+        </li>
+        <li>
+          <a
+            href="https://developer.mozilla.org/en-US/docs/Web/API/BiquadFilterNode/type"
+            target="_blank"
+            class="text-[var(--color-primary)] hover:underline"
+          >
+            BiquadFilterNode: type property
+          </a>
+          - Web APIs | MDN
+        </li>
+      </ul>
+    </footer>
+  </div>
+</ToolLayout>
