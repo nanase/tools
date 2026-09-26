@@ -1,0 +1,61 @@
+/* SVG テーマスキーマチェッカーのページだけのスタイル（共通は src/styles/site.css） */
+
+/* 見出しが折り返しても「?」を最後の語の横に置く。折り返しは語の切れ目（wbr）だけ */
+.ttl-h{display:block;padding-right:26px}
+.ttl-h h1{display:inline;word-break:keep-all;overflow-wrap:anywhere}
+/* 画面案では見出しとボタンの間に空白（約 4px）が入っていたので、その分を足して 12px にする */
+.ttl-h .qbtn{display:inline-grid;margin:0 -26px 0 12px;vertical-align:.32em}
+
+@media (min-width:1000px){
+  .tgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr);grid-template-areas:"code view" "thy thy"}
+  .a-code{grid-area:code;display:flex;flex-direction:column}
+  .a-view{grid-area:view}
+  .a-thy{grid-area:thy;align-self:start}
+  .a-code .ed{flex:1 1 0;height:auto;min-height:320px}
+}
+
+/* 状態表示（オシロの表示窓と同じ英語表記のバー） */
+.stag.hold b{color:var(--warn)}
+
+/* プレビュー（ライト・ダークの 2 画面） */
+.a-view{container-type:inline-size}
+.views{display:grid;gap:14px;grid-template-columns:minmax(0,1fr)}
+.vw{min-width:0;margin:0}
+.vcap{display:flex;align-items:baseline;justify-content:space-between;gap:4px 10px;flex-wrap:wrap;margin-bottom:6px;font:500 12px/1.3 var(--mono);color:var(--ink-3)}
+.vcap b{color:var(--ink);font-weight:700}
+.pane{position:relative;aspect-ratio:16/10;overflow:hidden;border:1px solid var(--line);border-radius:var(--r);box-shadow:inset 0 1px 3px rgb(0 0 0 / .19);cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;
+  background-color:var(--pv-bg);background-size:20px 20px;background-position:0 0,10px 0,10px -10px,0 10px;
+  background-image:linear-gradient(45deg,var(--pv-ck) 26%,transparent 26%),linear-gradient(135deg,var(--pv-ck) 26%,transparent 26%),linear-gradient(45deg,transparent 75%,var(--pv-ck) 75%),linear-gradient(135deg,transparent 75%,var(--pv-ck) 75%)}
+/* 背景はページの配色に関係なく、再現する環境の色で固定する */
+.pane.lt{--pv-bg:#fff;--pv-ck:#f8f8f8;color-scheme:light}
+.pane.dk{--pv-bg:#111;--pv-ck:#191919;color-scheme:dark}
+.pane.grab{cursor:grabbing}
+.pane img{position:absolute;left:0;top:0;max-width:none;transform-origin:0 0;pointer-events:none;-webkit-user-drag:none}
+@container (min-width:520px){
+  .views{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .pane{aspect-ratio:1/1}
+}
+
+/* コード入力（textarea の下に色分けした写しを重ねる） */
+.ed{position:relative;display:grid;grid-template-columns:auto minmax(max-content,1fr);grid-template-rows:minmax(100%,max-content);height:320px;overflow:auto;overscroll-behavior:contain;border:1px solid var(--line-2);border-radius:var(--r);background:var(--inset);font:500 13px/1.6 var(--mono);font-variant-ligatures:none}
+.ed:focus-within{border-color:var(--focus);box-shadow:0 0 0 1px var(--focus)}
+.ed.drop{border-style:dashed;border-color:var(--ink-2)}
+.gut{position:sticky;left:0;z-index:1;padding:10px 8px 10px 10px;border-right:1px solid var(--line);background:var(--inset);color:var(--ink-3);text-align:right;white-space:pre;user-select:none;-webkit-user-select:none}
+.gut .er{color:var(--warn);font-weight:700}
+.cz{display:grid;min-width:0}
+.cz>pre,.cz>textarea{grid-area:1/1;margin:0;padding:10px 14px 10px 10px;border:0;border-radius:0;font:inherit;letter-spacing:0;tab-size:2;white-space:pre;overflow-wrap:normal;word-wrap:normal;font-variant-ligatures:none}
+.cz>pre{pointer-events:none;color:var(--ink-2)}
+.cz>textarea{display:block;width:100%;height:100%;min-height:0;resize:none;overflow:hidden;background:transparent;color:transparent;caret-color:var(--ink);outline:none;-webkit-text-fill-color:transparent}
+.cz>textarea::selection{background:color-mix(in srgb,var(--focus) 32%,transparent)}
+.x-t{color:var(--ink)}
+.x-a{color:var(--ink-2)}
+.x-v{color:var(--ink)}
+.x-p{color:var(--ink-3)}
+.x-cm{color:var(--ink-3);font-style:italic}
+.x-tx{color:var(--ink-2)}
+@media (pointer:coarse){.ed{font-size:16px}}
+.a-code .msg:first-of-type{margin-top:6px}
+#rmMsg:empty{min-height:0}
+
+/* 動作原理 */
+.a-thy code{padding:0 .3em;border-radius:3px;background:var(--inset);color:var(--ink);font:500 .88em var(--mono);overflow-wrap:anywhere}
