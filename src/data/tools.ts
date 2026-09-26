@@ -64,13 +64,12 @@ export const TOOLS: Tool[] = [
     k: 'dark light ダーク ライト テーマ',
   },
   {
-    s: 1,
     id: 'colorcode',
     c: '電子回路',
     t: '抵抗カラーコード',
-    d: '4 本帯・5 本帯のカラーコードを読み取り、抵抗値から色の並びも逆引きします。',
+    d: '4〜6 本帯のカラーコードを読み取り、抵抗値から色の並びも逆引きします。',
     ic: 'cc',
-    k: '色帯 color code',
+    k: '色帯 color code e系列 許容差 resistor',
   },
 ];
 export const IC: Record<string, string> = {
