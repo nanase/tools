@@ -1,0 +1,51 @@
+/* 受動素子組み合わせ計算機のページだけのスタイル（共通は src/styles/site.css） */
+@media (min-width:1000px){
+  .tgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr);grid-template-rows:auto auto 1fr auto;grid-template-areas:"in out" "in wave" "in sch" "thy thy";align-items:start}
+  .a-in{grid-area:in}.a-out{grid-area:out}.a-wave{grid-area:wave}.a-sch{grid-area:sch}.a-thy{grid-area:thy}
+}
+
+/* 追加欄: 入力欄 | ＋追加（数値欄の片側だけ版） */
+.fld.add{grid-template-columns:minmax(0,1fr) 48px}
+.stp svg.pl{width:10px;height:10px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
+/* 除外した値: 押すと外れるチップ */
+.chip.xc{display:inline-flex;align-items:center;gap:6px;border-color:var(--line-2);color:var(--ink)}
+.chip.xc svg{width:9px;height:9px;fill:none;stroke:var(--ink-3);stroke-width:1.8;stroke-linecap:round}
+.chip.xc:hover svg{stroke:var(--ink)}
+.chip.clr{border-style:dashed;font-family:var(--sans);font-size:12.5px}
+
+/* results */
+.m-st{grid-column:1/-1}
+@container (min-width:480px){.m-st{grid-column:auto}}
+.m-st dd{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;font-family:var(--sans);font-size:15px;font-weight:700}
+.m-q{margin-left:.5em;font:500 12.5px var(--sans);color:var(--ink-2)}
+#o-x{font-size:17px}
+.m-st .tg{font:500 12.5px/1 var(--sans)}
+
+/* candidates（候補の一覧） */
+.a-sch{container-type:inline-size}
+.clist{display:grid;margin:0 -6px}
+.cr{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"v e" "x k";column-gap:12px;row-gap:1px;align-items:baseline;width:100%;margin:0;padding:8px 6px;border:0;border-top:1px solid var(--line);border-radius:0;background:none;color:var(--ink);text-align:left;cursor:pointer}
+.cr:first-child,.cr-h+.cr{border-top:0}
+.cr .v{grid-area:v;font:500 15px/1.4 var(--mono);font-variant-numeric:tabular-nums}
+.cr .e{grid-area:e;font:500 13px/1.4 var(--mono);color:var(--ink-2);text-align:right;font-variant-numeric:tabular-nums}
+.cr .x{grid-area:x;min-width:0;font:500 12.5px/1.5 var(--mono);color:var(--ink-2);overflow-wrap:anywhere}
+.cr .k{grid-area:k;font-size:12px;color:var(--ink-3);text-align:right;white-space:nowrap}
+.cr.best .v{font-weight:700}
+button.cr:hover{background:var(--inset)}
+button.cr:focus-visible{outline-offset:-2px}
+.cr[aria-pressed="true"],.cr[aria-pressed="true"]:hover{background:var(--ink);color:var(--surface)}
+.cr[aria-pressed="true"] .e,.cr[aria-pressed="true"] .x,.cr[aria-pressed="true"] .k{color:var(--surface);opacity:.8}
+.cr-h{display:none;cursor:default;padding-top:0;padding-bottom:4px;border-bottom:1px solid var(--line-2)}
+.cr-h span{font:12px/1.4 var(--sans)!important;color:var(--ink-3)!important}
+@container (min-width:560px){
+  .cr{grid-template-columns:9.5rem 7rem minmax(0,1fr) 3rem;grid-template-areas:"v e x k";align-items:baseline}
+  .cr .e{text-align:right;padding-right:10px}
+  .cr .x{font-size:13.5px}
+  .cr-h{display:grid}
+}
+.empty-c{padding:6px 0;font-size:13.5px;color:var(--ink-3)}
+
+/* 組み合わせの回路（最大幅は SVG の style で決める） */
+.cmb-w{padding:4px 0 2px}
+.s-bd{stroke-width:1}
+.s-sh{fill:url(#bdsh);pointer-events:none}

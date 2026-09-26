@@ -1,0 +1,66 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/passive-combination/style.css';
+import ExcludeRow from '../tools/passive-combination/ExcludeRow.astro';
+import { NS, NUM_KEYS, numDef, SERIES_CHOICES, STOPS, TY, TYPES } from '../tools/passive-combination/params';
+import Theory from '../tools/passive-combination/Theory.astro';
+
+const id = 'passive-combination';
+const name = '受動素子組み合わせ計算機';
+---
+<SiteLayout title={name} tool={{ id, name }} description="抵抗器・コンデンサ・インダクタを組み合わせて、目標の値に近い合成値を E 系列から探します">
+  <PageTitle title={name}>抵抗器・コンデンサ・インダクタを 2〜5 本つないで、目標の値に近い合成値になる組み合わせを E 系列の値から探します。直列と並列を入れ子にしたつなぎ方をすべて調べ、本数ごとに誤差の小さい順に並べます。</PageTitle>
+  <div class="mini" aria-hidden="true"><span id="mn"></span><span>誤差<b id="me"></b></span></div>
+
+  <div class="tgrid">
+    <Panel hid="hd-in" title="入力" class="a-in">
+      <div slot="aux" class="seg" id="ctype" role="group" aria-label="素子の種類">
+        {TYPES.map((t) => <button type="button" data-v={t} aria-pressed={t === 'R' ? 'true' : 'false'}>{TY[t].nm}</button>)}
+      </div>
+      <div class="ptab">
+        {NUM_KEYS.map((k) => <ParamRow d={numDef(k, 'R')} />)}
+        <ChoiceRow k="es" sym="E" name="E 系列" sub="組み合わせに使う値の刻み" layout="chips" msg choices={SERIES_CHOICES.map((s) => [s, `E${s}`] as const)} value={12} />
+        <ExcludeRow />
+        <ChoiceRow k="stop" sym="<i>ε</i>" name="探索を終える誤差" sub="この誤差以内が見つかった本数は、そこで終える" layout="chips" choices={STOPS.map(([, l], i) => [i, l] as const)} value={2} />
+      </div>
+    </Panel>
+
+    <Panel hid="hd-out" title="計算結果" class="a-out">
+      <div slot="aux" class="seg" id="nsel" role="group" aria-label="組み合わせる本数">
+        {NS.map((n) => <button type="button" data-v={n} aria-pressed={n === 3 ? 'true' : 'false'}>{n} 本</button>)}
+      </div>
+      <dl class="metrics">
+        <div class="m m-main"><dt id="o-vl">合成抵抗</dt><dd id="o-v"></dd></div>
+        <div class="m"><dt>誤差 <i>ε</i></dt><dd id="o-e"></dd></div>
+        <div class="m"><dt>素子の種類数</dt><dd id="o-k"></dd></div>
+        <div class="m m-st"><dt>探索</dt><dd><span id="o-s" aria-live="polite"></span><button type="button" class="tg" id="runBtn" hidden></button></dd></div>
+        <div class="m m-wide"><dt>組み合わせ <span class="m-q" style="margin:0">+ は直列、∥ は並列</span></dt><dd id="o-x"></dd></div>
+      </dl>
+    </Panel>
+
+    <Panel hid="hd-cmb" title="組み合わせの回路" class="a-wave">
+      <span slot="aux" class="aux" id="cmb-aux"></span>
+      <div class="cmb-w" id="cmbw"></div>
+    </Panel>
+
+    <Panel hid="hd-cand" title="候補" class="a-sch">
+      <span slot="aux" class="aux">誤差の小さい順</span>
+      <div class="clist" id="clist" role="group" aria-labelledby="hd-cand"></div>
+    </Panel>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools current={id} category="電子回路" />
+  <script>
+    import '../tools/passive-combination/client';
+  </script>
+</SiteLayout>
