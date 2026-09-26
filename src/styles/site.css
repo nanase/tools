@@ -342,9 +342,10 @@ a.unit:hover h3{text-decoration:underline;text-decoration-color:var(--ink-3);tex
 
 /* footer */
 .foot{margin-top:40px;background:var(--rail);color:var(--rail-ink-2)}
-.foot .wrap{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 20px;padding-top:12px;padding-bottom:12px;font-size:12.5px}
+.foot .wrap{display:flex;align-items:center;justify-content:space-between;gap:8px 20px;padding-top:12px;padding-bottom:12px;font-size:12.5px}
+.foot .wrap>span{flex:1;min-width:0}
 .foot a{color:var(--rail-ink)}
-.gh{display:inline-grid;place-items:center;width:40px;height:40px;border-radius:4px;color:var(--rail-ink-2)}
+.gh{flex:none;display:inline-grid;place-items:center;width:40px;height:40px;border-radius:4px;color:var(--rail-ink-2)}
 .gh:hover{color:var(--rail-ink);background:var(--rail-2)}
 .gh svg{width:22px;height:22px;fill:currentColor}
 .foot :focus-visible{outline-color:var(--rail-focus)}
