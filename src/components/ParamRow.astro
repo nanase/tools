@@ -21,7 +21,7 @@ const { d } = Astro.props;
     {d.slider !== false && <div class="sl"><input type="range" min="0" step="1" aria-label={`${d.nm} ${d.name}`}><div class="tk" aria-hidden="true"></div></div>}
     {d.pre.length > 0 && (
       <div class="chips" role="group" aria-label={`${d.nm} のよく使う値`}>
-        {d.pre.map(([v, l]) => <button type="button" class="chip" data-v={v} aria-pressed="false">{l}</button>)}
+        {d.pre.map(([v, l, t]) => <button type="button" class="chip" data-v={v} aria-pressed="false" title={t}>{l}</button>)}
       </div>
     )}
   </div>

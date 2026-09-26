@@ -1,4 +1,4 @@
-/** 数値の解釈: 4.7k 4k7 4R7 0.1u 100n 1e3 4.7 kΩ 3V3 1meg 1.5kHz −6dB 50% 全角 */
+/** 数値の解釈: 4.7k 4k7 4R7 0.1u 100n 1e3 4.7 kΩ 3V3 1meg 1.5kHz −6dB 50% 0.5mm 8mil 35µm 全角 */
 const MUL: Record<string, number> = {
   p: 1e-12,
   n: 1e-9,
@@ -14,7 +14,7 @@ const MUL: Record<string, number> = {
 };
 
 /** 入力欄の単位。'' は単位なし */
-export type Unit = '' | 'Ω' | 'F' | 'H' | 'V' | 'A' | 'W' | 'Hz' | 's' | 'dB' | '%' | 'm' | 'm/s';
+export type Unit = '' | 'Ω' | 'F' | 'H' | 'V' | 'A' | 'W' | 'Hz' | 's' | 'dB' | '%' | 'm' | 'm/s' | 'mm' | 'µm';
 
 /** 末尾に書かれた単位を外す。接頭辞と紛らわしいものは数字の直後だけ外す */
 const STRIP: Partial<Record<Unit, [RegExp, string]>> = {
@@ -31,7 +31,12 @@ const STRIP: Partial<Record<Unit, [RegExp, string]>> = {
   /* 4.7m は 4.7 メートル（ミリではない） */
   m: [/([\d.])m$/, '$1'],
   'm/s': [/m\/s$/i, ''],
+  mm: [/mm$/i, ''],
+  µm: [/[uμ]m$/i, ''],
 };
+
+/** 接頭辞を読まない単位（0.5m を 0.5 mm と取り違えないように） */
+const NO_PREFIX = new Set<Unit>(['mm', 'µm']);
 
 /**
  * 文字列を数値に読む。読めなければ NaN。
@@ -55,8 +60,18 @@ export function parse(raw: string, unit: Unit, signed = false): number {
     const v = s.match(/^(\d+)[vV](\d+)$/);
     if (v) return sg * Number(`${v[1]}.${v[2]}`);
   }
+  /* mm の欄は mil（1/1000 インチ）でも読む */
+  let k = 1;
+  if (unit === 'mm' && /mils?$/i.test(s)) {
+    k = 0.0254;
+    s = s.replace(/mils?$/i, '');
+  }
   const st = STRIP[unit];
   if (st) s = s.replace(st[0], st[1]);
+  if (NO_PREFIX.has(unit)) {
+    const p = s.match(/^((?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?)$/);
+    return p ? sg * Number((Number(p[1]) * k).toPrecision(12)) : NaN;
+  }
   s = s.replace(/meg$/i, 'M');
   let m = s.match(/^(\d+)([pnuμmkKMGRr])(\d+)$/);
   if (m) return sg * Number((Number(`${m[1]}.${m[3]}`) * MUL[m[2]]).toPrecision(12));

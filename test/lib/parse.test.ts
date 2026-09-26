@@ -88,3 +88,30 @@ describe('parse: 符号と単位', () => {
     expect(parse(raw, unit)).toBe(v);
   });
 });
+
+describe('parse: mm と µm（接頭辞を読まない）', () => {
+  it.each([
+    ['0.5', 'mm', 0.5],
+    ['0.5mm', 'mm', 0.5],
+    ['0.5 MM', 'mm', 0.5],
+    ['8mil', 'mm', 0.2032],
+    ['10 mils', 'mm', 0.254],
+    ['35', 'µm', 35],
+    ['35um', 'µm', 35],
+    ['35µm', 'µm', 35],
+    ['35μm', 'µm', 35],
+    ['１２', 'µm', 12],
+  ] as const)('%s (%s) → %d', (raw, unit, v) => {
+    expect(parse(raw, unit)).toBe(v);
+  });
+
+  it.each([
+    ['0.5m', 'mm'],
+    ['1k', 'mm'],
+    ['8mil', 'µm'],
+    ['35n', 'µm'],
+    ['-1', 'mm'],
+  ] as const)('不正値 %s (%s) は NaN', (raw, unit) => {
+    expect(parse(raw, unit)).toBeNaN();
+  });
+});
