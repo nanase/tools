@@ -1,0 +1,11 @@
+---
+/** E 系列の切替（Panel の slot="aux" に置く）。動作は ParamGroup が受け持つ */
+interface Props {
+  id: string;
+  value?: 6 | 12 | 24;
+}
+const { id, value = 12 } = Astro.props;
+---
+<div class="seg" id={id} role="group" aria-label="抵抗とコンデンサの刻み" title="スライダーと ▲▼ の刻み">
+  {([6, 12, 24] as const).map(s => <button type="button" data-s={s} aria-pressed={s === value ? 'true' : 'false'}>E{s}</button>)}
+</div>

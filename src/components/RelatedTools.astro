@@ -1,0 +1,19 @@
+---
+/** 関連ツール。表示件数の調整は lib/tool-page.ts */
+import { order, TOOLS } from '../data/tools';
+import Panel from './Panel.astro';
+import ToolCard from './ToolCard.astro';
+
+interface Props {
+  current: string;
+  category: string;
+}
+const { current, category } = Astro.props;
+const list = order(TOOLS.filter((t) => t.c === category && t.id !== current));
+---
+<Panel hid="hd-rel" title="関連ツール" class="rel">
+  <a slot="aux" class="aux" href={import.meta.env.BASE_URL}>すべてのツール</a>
+  <div class="units" id="related">
+    {list.map((t) => <ToolCard t={t} />)}
+  </div>
+</Panel>

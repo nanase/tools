@@ -1,0 +1,12 @@
+---
+/** 開閉できる枠（閉じると見出しの載った水平線だけ）。初期状態は閉じる。動作は lib/tool-page.ts */
+interface Props {
+  hid: string;
+  title: string;
+}
+const { hid, title } = Astro.props;
+---
+<details class="pnl a-thy">
+  <summary><h2 id={hid} style="font:inherit">{title}</h2></summary>
+  <div class="thy-body"><slot /></div>
+</details>

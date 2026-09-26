@@ -1,0 +1,36 @@
+---
+/**
+ * オシロスコープ風の表示窓。目盛りはビルド時に出す。
+ * CH2 に重ねる補助線は slot="overlay"（CH2 と一緒に隠れる）。動作は lib/scope.ts の ScopeView
+ */
+import { gridSvg } from '../lib/scope';
+
+interface Props {
+  id: string;
+  label: string;
+  ch1: string;
+  ch1Title: string;
+  /** CH2 の名前（HTML） */
+  ch2?: string;
+  ch2Title?: string;
+  trig: string;
+}
+const { id, label, ch1, ch1Title, ch2, ch2Title, trig } = Astro.props;
+---
+<div id={id}>
+  <div class="sbar">
+    <span class="stag" title={ch1Title}><i class="sw" aria-hidden="true"></i>CH1 {ch1} <b class="s-vd"></b>/div</span>
+    {ch2 && <button type="button" class="tg" aria-pressed="true" title={ch2Title}><i class="sw c2" aria-hidden="true"></i>CH2 <Fragment set:html={ch2} /></button>}
+    <span class="stag">H <b class="s-td"></b>/div</span>
+    <span class="stag">TRIG {trig}</span>
+  </div>
+  <div class="scope">
+    <svg viewBox="-50 -14 462 280" role="img" aria-label={label}>
+      <g set:html={gridSvg()} />
+      <g class="c2x"><slot name="overlay" /></g>
+      {ch2 && <path class="t2 c2x" />}
+      <path class="t1" />
+      <g class="axes"></g>
+    </svg>
+  </div>
+</div>

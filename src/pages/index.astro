@@ -1,0 +1,37 @@
+---
+import ToolCard from '../components/ToolCard.astro';
+import { CATS, order, TOOLS } from '../data/tools';
+import SiteLayout from '../layouts/SiteLayout.astro';
+
+const shelves = CATS.map((c) => [c, order(TOOLS.filter((t) => t.c === c))] as const);
+---
+<SiteLayout description="電子回路・信号処理の計算とシミュレーションができるツール集">
+  <section class="hero" aria-labelledby="h-home">
+    <h1 id="h-home" tabindex="-1">Tools + Simulators</h1>
+  </section>
+
+  <div class="filter">
+    <label class="qf">
+      <svg class="ic-s" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>
+      <span class="sr">ツールを絞り込み</span>
+      <input id="q" type="search" placeholder="例: 555、抵抗、dB" autocomplete="off" spellcheck="false" enterkeyhint="search" title="/ で移動">
+    </label>
+    <div class="cats" id="cats" role="group" aria-label="カテゴリ">
+      <button type="button" class="cat" data-c="all" aria-pressed="true">すべて<span class="n">{TOOLS.length}</span></button>
+      {shelves.map(([c, L]) => <button type="button" class="cat" data-c={c} aria-pressed="false">{c}<span class="n">{L.length}</span></button>)}
+      <span class="count" id="count" aria-live="polite">{TOOLS.length} / {TOOLS.length}</span>
+    </div>
+  </div>
+  <div id="shelves">
+    {shelves.map(([c, L]) => (
+      <section aria-label={c} data-c={c}>
+        <h2 class="shelf-h">{c}<span class="n">{L.length}</span></h2>
+        <div class="units">{L.map((t) => <ToolCard t={t} filterable />)}</div>
+      </section>
+    ))}
+    <p class="empty" hidden>該当するツールはありません。</p>
+  </div>
+  <script>
+    import '../scripts/home';
+  </script>
+</SiteLayout>

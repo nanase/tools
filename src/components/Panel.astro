@@ -1,0 +1,13 @@
+---
+/** 枠: 細い線に見出しを載せる。右端に載せる補足・ボタンは slot="aux" */
+interface Props {
+  hid: string;
+  title: string;
+  class?: string;
+}
+const { hid, title, class: cls } = Astro.props;
+---
+<section class:list={['pnl', cls]} aria-labelledby={hid}>
+  <div class="ph"><h2 id={hid}>{title}</h2><slot name="aux" /></div>
+  <slot />
+</section>

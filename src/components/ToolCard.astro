@@ -1,0 +1,17 @@
+---
+import { href, IC, keys, type Tool } from '../data/tools';
+
+interface Props {
+  t: Tool;
+  /** トップの絞り込みの対象にする（検索文字列を持たせる） */
+  filterable?: boolean;
+}
+const { t, filterable } = Astro.props;
+const soon = !!t.s;
+const Tag = soon ? 'div' : 'a';
+---
+<Tag class:list={['unit', { soon }]} href={soon ? undefined : href(t)} data-k={filterable ? keys(t) : undefined}>
+  <div class="scr"><svg class="ic" viewBox="0 0 120 48" aria-hidden="true" set:html={IC[t.ic]} /></div>
+  <div class="u-meta"><span class:list={['led', { on: !soon }]} aria-hidden="true"></span>{soon ? '準備中' : '公開中'}</div>
+  <h3>{t.t}</h3><p>{t.d}</p>
+</Tag>

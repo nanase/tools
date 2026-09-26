@@ -1,0 +1,14 @@
+---
+/** ページ見出しと「?」の吹き出し（説明文は常時表示しない）。説明文は slot。動作は lib/tool-page.ts */
+interface Props {
+  title: string;
+}
+const { title } = Astro.props;
+---
+<div class="ttl">
+  <div class="ttl-h">
+    <h1 tabindex="-1">{title}</h1>
+    <button type="button" class="qbtn" id="descBtn" aria-expanded="false" aria-controls="desc" aria-label="このツールについて" title="このツールについて">?</button>
+  </div>
+  <p class="desc" id="desc" role="tooltip" hidden><slot /></p>
+</div>

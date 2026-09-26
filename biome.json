@@ -27,5 +27,39 @@
       "semicolons": "always",
       "trailingCommas": "all"
     }
-  }
+  },
+  "css": {
+    "formatter": {
+      "enabled": false
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["**/*.astro"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "noUnusedImports": "off",
+            "noUnusedVariables": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["**/*.css"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noDescendingSpecificity": "off"
+          },
+          "complexity": {
+            "noImportantStyles": "off"
+          },
+          "correctness": {
+            "noInvalidGridAreas": "off"
+          }
+        }
+      }
+    }
+  ]
 }

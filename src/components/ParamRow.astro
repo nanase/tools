@@ -1,0 +1,26 @@
+---
+/** 数値入力の 1 行。値・目盛り・▲▼ の行き先はブラウザ側（lib/param.ts）が入れる */
+import type { ParamDef } from '../lib/param-def';
+
+interface Props {
+  d: ParamDef;
+}
+const { d } = Astro.props;
+---
+<div class="prow" id={`p-${d.k}`}>
+  <div class="c-sym" aria-hidden="true" set:html={d.sym} />
+  <label class="c-name" for={`in-${d.k}`}><span class="sr">{d.nm} </span>{d.name}<small>{d.sub}</small></label>
+  <div class="c-val"><div class="fld">
+    <button type="button" class="stp" data-d="-1"><svg viewBox="0 0 12 8" aria-hidden="true"><path d="M6 7L1 1H11Z"/></svg><small></small></button>
+    <input id={`in-${d.k}`} type="text" inputmode="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done" placeholder={d.ph} aria-describedby={`u-${d.k} m-${d.k}`}>
+    <button type="button" class="stp" data-d="1"><svg viewBox="0 0 12 8" aria-hidden="true"><path d="M6 1L11 7H1Z"/></svg><small></small></button>
+  </div></div>
+  <div class="c-unit" id={`u-${d.k}`}>{d.unit}</div>
+  <div class="c-sub">
+    <p class="msg" id={`m-${d.k}`} aria-live="polite"></p>
+    <div class="sl"><input type="range" min="0" step="1" aria-label={`${d.nm} ${d.name}`}><div class="tk" aria-hidden="true"></div></div>
+    <div class="chips" role="group" aria-label={`${d.nm} のよく使う値`}>
+      {d.pre.map(([v, l]) => <button type="button" class="chip" data-v={v} aria-pressed="false">{l}</button>)}
+    </div>
+  </div>
+</div>
