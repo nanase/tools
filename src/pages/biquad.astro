@@ -5,7 +5,7 @@ import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
 import RelatedTools from '../components/RelatedTools.astro';
-import { order, TOOLS } from '../data/tools';
+import { TOOLS } from '../data/tools';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import '../tools/biquad/style.css';
 import { gridSvg } from '../lib/scope';
@@ -17,9 +17,8 @@ import Theory from '../tools/biquad/Theory.astro';
 const name = '双2次フィルタ';
 const row = (ks: string[]) => PARAMS.filter((d) => ks.includes(d.k));
 const t0 = TYPES[0];
-/* 同じカテゴリに他のツールがないため、フィルタ・信号に近いものを選ぶ */
-const REL = ['pid', 'rc', 'db', 'lc', 'opamp'];
-const related = order(TOOLS.filter((t) => REL.includes(t.id)));
+/* 同じカテゴリにほかのツールがないため、公開中のほかのツールを並べる */
+const related = TOOLS.filter((t) => !t.s && t.id !== 'biquad');
 ---
 <SiteLayout title={name} tool={{ id: 'biquad', name }} note="係数と特性は倍精度の数値計算による参考値です。" description="各種フィルタ特性に対応する双2次フィルタ（バイクアッドフィルタ）の係数を計算します。">
   <PageTitle title={name}>双2次フィルタ（バイクアッドフィルタ）の係数を、フィルタの種類・カットオフ周波数・Q・増幅量・サンプリング周波数から求めます。周波数特性とインパルス応答を描き、ホワイトノイズに掛けた音も聞けます。</PageTitle>
