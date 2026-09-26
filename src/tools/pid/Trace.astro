@@ -1,0 +1,36 @@
+---
+/**
+ * 応答の表示窓（横 10 s/div、縦は値に合わせる）。目盛りはビルド時に出し、波形・軸・基準線は client.ts が描く。
+ * 要素の id は `${id}-tr`（波形）・`${id}-rl`（基準線）など
+ */
+import { gridSvg } from '../../lib/scope';
+
+interface Props {
+  id: string;
+  /** 1 か 2（色） */
+  ch: 1 | 2;
+  /** 「POS」など */
+  name: string;
+  chTitle: string;
+  refTitle: string;
+  label: string;
+}
+const { id, ch, name, chTitle, refTitle, label } = Astro.props;
+const c1 = ch === 1;
+---
+<div class="sbar">
+  <span class="stag" title={chTitle}><i class:list={['sw', { c2: !c1 }]} aria-hidden="true"></i>CH{ch} {name} <b id={`${id}-vd`}></b>/div</span>
+  <span class="stag">H <b>10 s</b>/div</span>
+  <span class="stag" title={refTitle}>REF <b id={`${id}-ref`}></b></span>
+  <span class="stag">Δt 100 ms</span>
+  <span class="stag wn" id={`${id}-dv`} hidden>DIVERGED</span>
+</div>
+<div class="scope">
+  <svg viewBox="-66 -14 478 280" id={`${id}-svg`} role="img" aria-label={label}>
+    <g set:html={gridSvg()} />
+    <path class:list={['th', { c1 }]} id={`${id}-rl`}/><text class:list={['tl', { c1 }]} id={`${id}-rt`} x="396" text-anchor="end"></text>
+    {c1 && <Fragment><path class="th c1" id={`${id}-tl`}/><text class="tl c1" id={`${id}-tt`} y="12"></text></Fragment>}
+    <path class={`t${ch}`} id={`${id}-tr`}/>
+    <g id={`${id}-ax`}></g>
+  </svg>
+</div>
