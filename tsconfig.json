@@ -1,14 +1,5 @@
 {
   "extends": "astro/tsconfigs/strict",
-  "include": ["src/**/*", "src/**/*.astro", "src/**/*.vue"],
-  "exclude": [
-    "src/test/**"
-  ],
-  "compilerOptions": {
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./src/*"]
-    },
-    "types": ["vitest/globals"]
-  }
+  "include": [".astro/types.d.ts", "src/**/*", "test/**/*", "scripts/**/*"],
+  "exclude": ["docs", "legacy"]
 }
