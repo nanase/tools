@@ -29,32 +29,7 @@
 .a-wave{container-type:inline-size}
 .m dd.tx{font:14px/1.6 var(--sans)}
 .m dd .tg{margin-top:6px;display:flex;width:max-content}
-.tg:disabled{border-color:var(--line);background:none;color:var(--ink-3);opacity:.6;cursor:default}
-.bi{margin-top:12px}
-@container (max-width:479px){.bi .m:nth-child(3){grid-column:1/-1}}
-
-/* タイムコード（旧ページの色分けバー表示を踏襲）。PC は 30 本 × 2 段、狭い枠は 15 本 × 4 段 */
-.tc-top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 14px;margin-bottom:10px}
-.lgd{display:flex;flex-wrap:wrap;gap:4px 16px;margin:0;padding:0;list-style:none;font-size:12.5px;color:var(--ink-2)}
-.lgd li{display:inline-flex;align-items:center;gap:6px}
-.lgd i{display:inline-block;width:12px;height:12px;border:1px solid var(--line-2);border-radius:2px}
-.tc{display:grid;grid-template-columns:repeat(30,minmax(0,1fr));gap:24px 3px;padding:12px 10px 28px;border:1px solid var(--line);border-radius:var(--r);background:var(--inset);cursor:pointer;touch-action:manipulation}
-.tc:focus-visible{outline-offset:3px}
-.tb{position:relative;height:72px;border:1px solid var(--line-2);border-radius:2px}
-.tb::after{position:absolute;left:0;top:calc(100% + 6px);font:11px/1 var(--mono);color:var(--ink-3)}
-.tb.l10::after{content:attr(data-s)}
-.tc-P{background:repeating-linear-gradient(60deg,var(--ink-2) 0 4px,transparent 4px 8px)}
-.tc-S{background:repeating-linear-gradient(0deg,var(--ink-3) 0 4px,transparent 4px 8px)}
-.tc-0{background:var(--ch2)}
-.tc-1{background:var(--ch1)}
-.tb.sel{z-index:1;transform:scale(1.14)}
-.tb.now{outline:2px solid var(--accent);outline-offset:2px}
-@container (max-width:479px){
-  .tc{grid-template-columns:repeat(15,minmax(0,1fr));gap:22px 3px}
-  .tb{height:52px}
-  .tb.l5::after{content:attr(data-s)}
-}
-@media (prefers-reduced-motion:no-preference){.tb{transition:transform .15s}}
+/* タイムコードは timecode.css（Timecode.astro が読み込む） */
 
 /* 動作原理と式 */
 .eqs mtd{padding:2px 14px 2px 0;text-align:left}

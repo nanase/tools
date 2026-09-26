@@ -1,0 +1,42 @@
+/* JJY デコーダのページだけのスタイル（共通は src/styles/site.css、タイムコードは ../jjy/timecode.css） */
+
+/* 枠の並び。スマホは 入力 → 受信 → タイムコード → 復号した時刻 → フラグ → 式。
+   PC は左の列に 入力・受信、右の列に タイムコード・復号した時刻・フラグ */
+.a-in{order:1}.a-rx{order:2}.a-wave{order:3}.a-out{order:4}.a-flg{order:5}.a-thy{order:6}
+@media (min-width:1000px){
+  .tgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr);grid-template-areas:"c1 c2" "thy thy";align-items:start}
+  .c1{grid-area:c1}.c2{grid-area:c2}
+  .a-thy{grid-area:thy}
+}
+.desc{font-weight:400}
+.c-sym .led{margin:0 0 0 2px;vertical-align:middle}
+/* ファイルを枠へ落としているとき */
+.a-in.drop{border-color:var(--focus);box-shadow:inset 0 0 0 1px var(--focus)}
+
+/* 結果（m-note は警告、m-sub は中立の補足） */
+.a-wave,.a-rx,.a-flg{container-type:inline-size}
+.m dd .tx,.m dd.tx{font:14px/1.6 var(--sans)}
+.m-sub{display:block;margin-top:2px;font:12px/1.5 var(--sans);color:var(--ink-3)}
+.m-main .m-sub,.m-main .m-note{margin-top:4px;letter-spacing:0}
+.m dt .bn{margin-right:6px;font:700 11.5px/1 var(--mono);color:var(--ink-2)}
+.m dd.dim{color:var(--ink-3)}
+.a-rx .metrics{margin-top:12px}
+
+/* 表示窓: 包絡線と、しきい値（破線） */
+.a-rx .sw.c2{height:0;border-top:2px dashed var(--ch2);background:none}
+.rd{margin-left:auto;font-variant-numeric:tabular-nums}
+.mkl{stroke:var(--screen-ink);stroke-width:1;stroke-dasharray:5 4;opacity:.45}
+.scope text.rg{opacity:.75}
+@media (max-width:559px){.rd{margin-left:0}}
+
+/* タイムコード: 受け取っていない秒は枠だけ、読めない秒は警告色の斜線。ファイルの中の分の選択 */
+.tc-x{background:repeating-linear-gradient(135deg,var(--warn) 0 2px,transparent 2px 7px);border-color:var(--warn)!important}
+.fmins{margin:0 0 10px}
+.chip.bad{color:var(--warn)}
+
+/* 動作原理と式 */
+.eqs mtd{padding:2px 14px 2px 0;text-align:left}
+
+/* 知らせ（WAV を保存したとき） */
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:40;transform:translateX(-50%);max-width:calc(100vw - 32px);padding:9px 14px;border-radius:var(--r);background:var(--ink);color:var(--surface);font-size:13.5px;transition:opacity .2s}
+.toast[data-off]{opacity:0;pointer-events:none}

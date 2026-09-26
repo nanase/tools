@@ -89,7 +89,8 @@ export const FIELDS = {
 /** 偶数パリティを取る秒（PA1: 時、PA2: 分） */
 export const PA1 = [12, 13, 15, 16, 17, 18] as const;
 export const PA2 = [1, 2, 3, 5, 6, 7, 8] as const;
-const MARKERS = [0, 9, 19, 29, 39, 49, 59];
+/** マーカ（M・P1〜P5・P0）の秒 */
+export const MARKERS = [0, 9, 19, 29, 39, 49, 59] as const;
 
 /** この分にコールサインを送るか */
 export const callSignOn = (mi: number, o: Options): boolean =>

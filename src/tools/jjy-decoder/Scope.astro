@@ -1,0 +1,45 @@
+---
+/**
+ * 受信の表示窓: 選んだ秒の包絡線（10 × 6 div、100 ms/div、高出力 = 100 %）としきい値。
+ * 目盛り・区切り・軸はビルド時に出し、包絡線としきい値は client.ts が描く
+ */
+import { DV, GY, gridSvg, SH } from '../../lib/scope';
+
+/** 時刻（ms、秒の始まりから）の横位置。0 を左から 1 div に置く */
+const X = (t: number) => DV + (t / 100) * DV;
+const marks =
+  `<path class="mkl" d="M${X(350)} 0V${SH}M${X(650)} 0V${SH}"/>` +
+  (
+    [
+      ['P', 200],
+      ['1', 500],
+      ['0', 800],
+    ] as const
+  )
+    .map(([k, t]) => `<text class="rg" x="${X(t)}" y="16" text-anchor="middle">${k}</text>`)
+    .join('');
+let axes = '';
+for (let i = 1; i <= 9; i += 2)
+  axes += `<text x="${i * DV}" y="${SH + 17}" text-anchor="middle">${i === 1 ? '0' : `${((i - 1) / 10).toFixed(1)} s`}</text>`;
+for (let j = 0; j <= 5; j++)
+  axes += `<text x="-10" y="${GY - j * DV + 4}" text-anchor="end">${j ? `${j * 20} %` : '0'}</text>`;
+axes += `<path class="mk1" d="M-8 ${GY - 5}L-1 ${GY}L-8 ${GY + 5}Z"/><path class="mk1" d="M${DV - 5} -12L${DV + 5} -12L${DV} -5Z"/>`;
+---
+<div class="sbar">
+  <span class="stag" title="包絡線（高出力を 100 % とする）"><i class="sw" aria-hidden="true"></i>CH1 ENV <b>20 %</b>/div</span>
+  <span class="stag" title="しきい値"><i class="sw c2" aria-hidden="true"></i>θ <b id="s-th">---</b></span>
+  <span class="stag">H <b>100 ms</b>/div</span>
+  <span class="stag">TRIG <b id="s-trig">FREE</b> ↑</span>
+  <span class="stag">τ <b id="s-tau">---</b></span>
+  <span class="stag rd">SYNC <b id="s-sync">IDLE</b></span>
+</div>
+<div class="scope">
+  <svg viewBox="-50 -14 462 280" id="scope-svg" role="img" aria-label="包絡線">
+    <g set:html={gridSvg()} />
+    <g set:html={marks} />
+    <path class="th" id="thr-l" />
+    <text class="tl" id="thr-t" x="396" text-anchor="end">θ</text>
+    <path class="t1" id="tr1" />
+    <g set:html={axes} />
+  </svg>
+</div>
