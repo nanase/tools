@@ -28,6 +28,8 @@ bun install
 
 GitHub Actions（[.github/workflows/ci.yml](.github/workflows/ci.yml)）が、PR と main への push ごとに lint・型検査・テスト・ビルドを行います。main へ push すると、ビルド結果を GitHub Pages へ公開します。
 
+依存の更新は [Renovate](https://docs.renovatebot.com/) が PR を立てます。設定は [renovate.json](renovate.json) にあります。TypeScript は 6 系、Node は v26 系に留めます。PR は自動マージしません。
+
 ## 旧 URL の転送
 
 旧 URL（`/tools/electric/timer555.html` など）と新 URL の対応表は `src/data/redirects.ts` にあります。ビルドすると旧パスに転送ページが出ます。
