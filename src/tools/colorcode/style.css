@@ -1,0 +1,82 @@
+/* 抵抗カラーコードのページだけのスタイル（共通は src/styles/site.css） */
+
+/* 枠の並び: PC は左に値と E 系列、右に色帯と計算結果。スマホは色帯・値・計算結果・E 系列の順 */
+.a-fig{order:1}.a-in{order:2}.a-out{order:3}.a-es{order:4}.a-thy{order:5}
+@media (min-width:1000px){
+  .tgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr);align-items:start}
+  .a-thy{grid-column:1/-1}
+}
+
+/* results */
+.m-q{margin-left:.5em;font:500 12.5px var(--sans);color:var(--ink-2)}
+.m-es{grid-column:1/-1}
+@container (min-width:480px){.m-es{grid-column:span 2}}
+.cseq{display:flex;flex-wrap:wrap;gap:4px 14px;font:700 16px/1.5 var(--sans)}
+.cseq span{display:inline-flex;align-items:center;gap:6px}
+.cseq small{font:500 12.5px var(--mono);color:var(--ink-2)}
+
+/* 色見本（色帯の色。名前と数字を必ず添える） */
+.csw{flex:none;display:inline-block;width:16px;height:16px;border-radius:3px;background:var(--c);box-shadow:inset 0 0 0 1px rgb(0 0 0 / .3),0 0 0 1px var(--line-2)}
+.csw.no{background:#fbddc9;box-shadow:inset 0 0 0 1px rgb(0 0 0 / .3);outline:1px dashed var(--ink-3);outline-offset:1px}
+
+/* 色帯の図（受動素子のカラーコード付き部品を拡大したもの） */
+.a-fig{container-type:inline-size}
+.rz{max-width:560px;margin:0 auto}
+.rsvg{display:block;width:100%;height:auto}
+.r-ld{fill:none;stroke:var(--ink-3);stroke-width:3.5;stroke-linecap:round}
+.r-bd{stroke-width:1.5}
+.r-no{fill:none;stroke:#000;stroke-opacity:.4;stroke-width:1.5;stroke-dasharray:5 4}
+.r-hit{fill:transparent;cursor:pointer}
+.r-ln{fill:none;stroke:var(--line-2);stroke-width:1.3}
+.r-ln.on{stroke:var(--ink);stroke-width:2.2}
+.r-mk{fill:var(--ink)}
+.s-sh{fill:url(#bdsh);pointer-events:none}
+.bl{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr))}
+.bt{display:flex;flex-direction:column;align-items:center;gap:1px;width:calc(100% - 4px);min-width:0;margin:0 2px;padding:5px 0 6px;border:1px solid var(--line);border-radius:4px;background:none;color:var(--ink);line-height:1.3;cursor:pointer;overflow:hidden}
+.bt small{font-size:10.5px;color:var(--ink-3);white-space:nowrap}
+.bt b{font-size:15px;line-height:1.35}
+.bt span{font:500 10.5px/1.3 var(--mono);color:var(--ink-2);white-space:nowrap}
+.bt:hover{border-color:var(--line-2)}
+.bt[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--surface)}
+.bt[aria-pressed="true"] small,.bt[aria-pressed="true"] span{color:var(--surface);opacity:.8}
+.bt:focus-visible{outline-offset:1px}
+@container (min-width:480px){.bt small,.bt span{font-size:11.5px}.bt b{font-size:16px}}
+
+/* 色の選択肢（選んでいる帯の色） */
+.pal{margin-top:16px;padding:12px 2px 0;border-top:1px solid var(--line)}
+.pal-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 10px;font-size:14px;font-weight:700;line-height:1.35}
+.pal-h small{font-size:12px;font-weight:400;color:var(--ink-3)}
+.chip.cc{display:inline-flex;align-items:center;gap:5px;min-height:36px;padding:0 8px 0 6px;color:var(--ink-2);font-size:11.5px}
+.chip.cc b{font:700 14px/1 var(--sans);color:var(--ink)}
+.chip.cc[aria-pressed="true"],.chip.cc[aria-pressed="true"] b{color:var(--surface)}
+.chip.cc[aria-pressed="true"] .csw{box-shadow:inset 0 0 0 1px rgb(0 0 0 / .3),0 0 0 1.5px var(--surface)}
+.pal .chips{margin-top:8px}
+@media (pointer:coarse){.chip.cc{min-height:42px}}
+
+/* E 系列の一覧 */
+.a-es{container-type:inline-size}
+.elist{display:grid}
+.erow{display:grid;grid-template-columns:4.2rem minmax(0,1fr);column-gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.erow:first-child{border-top:0;padding-top:2px}
+.erow .en{font:700 15px/1.25 var(--mono)}
+.erow .en small{display:block;font:500 11.5px/1.4 var(--mono);color:var(--ink-3)}
+.ev{display:flex;flex-wrap:wrap;align-items:center;gap:5px 8px;min-width:0}
+.ok{display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:700}
+.ok svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.nx{flex-basis:100%;font-size:12.5px;color:var(--ink-3)}
+@container (min-width:440px){.nx{flex-basis:auto}}
+.chip.nb{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:40px;padding:4px 10px}
+.chip.nb b{font:500 14px/1 var(--mono);color:var(--ink)}
+.chip.nb small{font:500 11px/1 var(--mono);color:var(--ink-3)}
+
+/* 色の表（動作原理と式） */
+.ctw{margin-top:14px;overflow-x:auto}
+.ctab{border-collapse:collapse;font:500 13px/1.4 var(--mono);font-variant-numeric:tabular-nums}
+.ctab th,.ctab td{padding:5px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+.ctab thead th{font:12px/1.4 var(--sans);color:var(--ink-3);border-bottom-color:var(--line-2);vertical-align:bottom}
+.ctab th:first-child,.ctab td:first-child{text-align:left;padding-left:2px}
+.ctab tbody th{font:700 13.5px/1.4 var(--sans)}
+.ctab tbody th span{display:inline-flex;align-items:center;gap:7px}
+.ctab .x{color:var(--ink-3)}
+.ctab tr:last-child>*{border-bottom:0}
+@media (max-width:479px){.ctab th,.ctab td{padding:5px 6px}}

@@ -1,66 +1,41 @@
 # tools
 
-This is miscellaneous web tools page! 🐾
+電子回路・信号処理の計算とシミュレーションができるツール集です。<https://nanase.cc/tools/>
 
-## Recommended IDE Setup
+Astro とフレームワークなしの TypeScript で作っています。見た目と動作の基準は [design/](design/) のモックです。
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur) + [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin).
+## 準備
 
-## Type Support for `.vue` Imports in TS
-
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin) to make the TypeScript language service aware of `.vue` types.
-
-If the standalone TypeScript plugin doesn't feel fast enough to you, Volar has also implemented a [Take Over Mode](https://github.com/johnsoncodehk/volar/discussions/471#discussioncomment-1361669) that is more performant. You can enable it by the following steps:
-
-1. Disable the built-in TypeScript Extension
-   1. Run `Extensions: Show Built-in Extensions` from VSCode's command palette
-   2. Find `TypeScript and JavaScript Language Features`, right click and select `Disable (Workspace)`
-2. Reload the VSCode window by running `Developer: Reload Window` from the command palette.
-
-## Customize configuration
-
-See [Vite Configuration Reference](https://vitejs.dev/config/).
-
-## Project Setup
+[mise](https://mise.jdx.dev/) で Node と bun を入れ、依存を入れます。
 
 ```sh
-npm install
+mise install
+bun install
 ```
 
-### Compile and Hot-Reload for Development
+## コマンド
 
-Default URL: http://localhost:5173/kemov/
+| コマンド | 内容 |
+| --- | --- |
+| `bun run dev` | 開発サーバ（<http://localhost:4321/tools/>） |
+| `bun run build` | `dist/` へビルドする |
+| `bun run preview` | ビルド結果を確かめる |
+| `bun run check` | 型検査（astro check） |
+| `bun run lint` | Biome で検査する（`lint:fix` で直す） |
+| `bun run test` | Vitest でテストする |
 
-```sh
-npm run dev
-```
+## CI と公開
 
-### Type-Check, Compile and Minify for Production
+GitHub Actions（[.github/workflows/ci.yml](.github/workflows/ci.yml)）が、PR と main への push ごとに lint・型検査・テスト・ビルドを行います。main へ push すると、ビルド結果を GitHub Pages へ公開します。
 
-```sh
-npm run build
-```
+依存の更新は [Renovate](https://docs.renovatebot.com/) が PR を立てます。設定は [renovate.json](renovate.json) にあります。TypeScript は 6 系、Node は v26 系に留めます。PR は自動マージしません。
 
-### Preview Compiled Project for Production
+## 旧 URL の転送
 
-Default URL: http://localhost:4173/kemov/
+旧 URL（`/tools/electric/timer555.html` など）と新 URL の対応表は `src/data/redirects.ts` にあります。ビルドすると旧パスに転送ページが出ます。
 
-```sh
-npm run preview
-```
+本番の転送は Cloudflare の Bulk Redirects で行います。`bun run redirects` で `redirects/cloudflare.csv` を作り直し、ダッシュボードの Bulk Redirects で、リストへ CSV を取り込みます。
 
-### Lint with [ESLint](https://eslint.org/)
-
-```sh
-npm run lint
-```
-
-### CSS Lint with [Stylelint](https://stylelint.io/)
-
-```sh
-npm run lint:style
-```
-
-## LICENSE
+## ライセンス
 
 MIT

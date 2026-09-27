@@ -1,0 +1,35 @@
+---
+// フィードバック制御のブロック図（回路図の部品で描く）。r・w・α の値は client.ts が入れる
+---
+<svg class="sch" viewBox="0 0 340 126" role="img" aria-label="フィードバック制御のブロック図。目標位置 r から位置 x を引いた誤差 e を PID 制御器に入れ、操作量 u が 1 次遅れの加速を経て速度 v になる。v に流速 w を足して積分したものが位置 x で、x を入力側へ戻す。">
+  <path class="s-w" d="M13.5 58H30M52 58H69M126 58H149M250 58H265M241 14V48"/>
+  <path class="s-w n2" d="M206 58H231"/>
+  <path class="s-w n1" d="M306 58H330.5M320 58V112H43V68"/>
+  <path class="s-ar" d="M28 54.5L34 58L28 61.5ZM64 54.5L70 58L64 61.5ZM144 54.5L150 58L144 61.5ZM260 54.5L266 58L260 61.5ZM237.5 43L241 49L244.5 43Z"/>
+  <path class="s-ar n2" d="M226 54.5L232 58L226 61.5Z"/>
+  <path class="s-ar n1" d="M39.5 73L43 67L46.5 73Z"/>
+  <circle class="s-p" cx="43" cy="58" r="9"/>
+  <circle class="s-p" cx="241" cy="58" r="9"/>
+  <rect class="s-ic" x="70" y="40" width="56" height="36"/>
+  <rect class="s-ic" x="150" y="40" width="56" height="36"/>
+  <rect class="s-ic" x="266" y="40" width="40" height="36"/>
+  <circle class="s-o" cx="10" cy="58" r="3.5"/>
+  <circle class="s-j n1" cx="320" cy="58" r="2.6"/>
+  <circle class="s-o n1" cx="334" cy="58" r="3.5"/>
+  <text class="s-n" x="28" y="50" text-anchor="middle">+</text>
+  <text class="s-n" x="53" y="80" text-anchor="middle">−</text>
+  <text class="s-n" x="229" y="50" text-anchor="middle">+</text>
+  <text class="s-n" x="250" y="44" text-anchor="middle">+</text>
+  <text class="s-ic-t" x="98" y="63" text-anchor="middle">PID</text>
+  <text class="s-t" x="178" y="54" text-anchor="middle">加速</text>
+  <text class="s-v" id="bd-a" x="178" y="70" text-anchor="middle"></text>
+  <text class="s-l" x="286" y="64" text-anchor="middle" font-size="17">∫</text>
+  <text class="s-l" x="10" y="46" text-anchor="middle">r</text>
+  <text class="s-v" id="bd-r" x="2" y="84"></text>
+  <text class="s-l" x="60" y="50" text-anchor="middle">e</text>
+  <text class="s-l" x="138" y="50" text-anchor="middle">u</text>
+  <text class="s-l" x="213" y="50" text-anchor="middle">v</text>
+  <text class="s-l" x="248" y="22">w</text>
+  <text class="s-v" id="bd-w" x="248" y="36"></text>
+  <text class="s-l" x="327" y="50" text-anchor="middle">x</text>
+</svg>

@@ -1,0 +1,71 @@
+---
+import Collapsible from '../components/Collapsible.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import { TOOLS } from '../data/tools';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/svg-theme-checker/style.css';
+import { gutterHtml, hlHtml, lineCount } from '../tools/svg-theme-checker/code';
+import { EXAMPLE } from '../tools/svg-theme-checker/example';
+import Theory from '../tools/svg-theme-checker/Theory.astro';
+
+const id = 'svg-theme-checker';
+const name = 'SVG テーマスキーマチェッカー';
+/* SVG のカテゴリはこのツールだけなので、関連ツールにはほかの公開中のツールを並べる */
+const related = TOOLS.filter((t) => !t.s && t.id !== id);
+const self = TOOLS.find((t) => t.id === id);
+const view = 'ドラッグで移動、ホイールで拡大縮小';
+---
+<SiteLayout title={name} tool={{ id, name }} description={self?.d ?? ''} note="読み込んだ SVG はこの端末の中だけで処理し、送信しません。">
+  <PageTitle title={name} titleHtml="SVG テーマスキーマ<wbr>チェッカー">ライトテーマとダークテーマで、SVG の外観が意図したとおりになるかを並べて確かめます。コードを書き換えると、両方のプレビューがすぐに変わります。</PageTitle>
+
+  <div class="tgrid">
+    <Panel hid="hd-view" title="プレビュー" class="a-view">
+      <div slot="aux" class="seg" id="zseg" role="group" aria-label="表示倍率">
+        <button type="button" data-z="out" aria-label="縮小" title="縮小（−）">−</button><button type="button" data-z="one" aria-label="等倍" title="等倍（1）">1:1</button><button type="button" data-z="fit" aria-label="全体を表示" title="全体を表示（0）">全体</button><button type="button" data-z="in" aria-label="拡大" title="拡大（+）">+</button>
+      </div>
+      <div class="sbar">
+        <span class="stag" id="st-run"><b>RUN</b></span>
+        <span class="stag">ZOOM <b id="st-z">—</b></span>
+        <span class="stag">SIZE <b id="st-sz">—</b></span>
+        <span class="stag">viewBox <b id="st-vb">—</b></span>
+      </div>
+      <div class="views">
+        <figure class="vw">
+          <figcaption class="vcap"><b>LIGHT</b><span>prefers-color-scheme: light</span></figcaption>
+          <div class="pane lt" id="pvL" tabindex="0" role="region" aria-label="ライトテーマでの表示" title={view}><img id="imL" alt="" draggable="false" hidden></div>
+        </figure>
+        <figure class="vw">
+          <figcaption class="vcap"><b>DARK</b><span>prefers-color-scheme: dark</span></figcaption>
+          <div class="pane dk" id="pvD" tabindex="0" role="region" aria-label="ダークテーマでの表示" title={view}><img id="imD" alt="" draggable="false" hidden></div>
+        </figure>
+      </div>
+    </Panel>
+
+    <Panel hid="hd-code" title="SVG コード" class="a-code">
+      <div slot="aux" class="seg" role="group" aria-label="コードの読み込み">
+        <button type="button" id="openBtn" title="SVG ファイルを開く（ここへドロップしても開けます）">開く</button><button type="button" id="exBtn" title="例の SVG に戻す">例に戻す</button>
+      </div>
+      <div class="ed" id="ed">
+        <div class="gut" id="gut" aria-hidden="true" set:html={gutterHtml(lineCount(EXAMPLE))} />
+        <div class="cz">
+          <pre id="hl" aria-hidden="true" set:html={hlHtml(EXAMPLE)} />
+          <textarea id="code" rows="1" wrap="off" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" aria-label="SVG のコード" aria-describedby="codeMsg rmMsg" title="Tab: 字下げ　Shift+Tab: 字下げを戻す　Esc の後に Tab: 次の項目へ">{EXAMPLE}</textarea>
+        </div>
+      </div>
+      <p class="msg" id="codeMsg" aria-live="polite"></p>
+      <p class="msg" id="rmMsg" aria-live="polite"></p>
+      <input type="file" id="file" accept=".svg,image/svg+xml" hidden>
+    </Panel>
+
+    <Collapsible hid="hd-thy" title="動作原理">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools list={related} />
+  <script>
+    import '../tools/svg-theme-checker/client';
+  </script>
+</SiteLayout>

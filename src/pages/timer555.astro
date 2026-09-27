@@ -1,0 +1,59 @@
+---
+import Collapsible from '../components/Collapsible.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import Scope from '../components/Scope.astro';
+import SeriesSwitch from '../components/SeriesSwitch.astro';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/timer555/style.css';
+import { PARAMS } from '../tools/timer555/params';
+import Schematic from '../tools/timer555/Schematic.astro';
+import Theory from '../tools/timer555/Theory.astro';
+
+const name = 'タイマIC 555 シミュレータ';
+---
+<SiteLayout title={name} tool={{ id: 'timer555', name }} description="555 を非安定マルチバイブレータとして使うときの、発振周波数・デューティ比・出力波形を求めます。">
+  <PageTitle title={name}>555 を非安定マルチバイブレータとして使うときの、発振周波数・デューティ比・出力波形を求めます。抵抗 2 本とコンデンサ 1 個の値、電源電圧を変えると、結果と波形がすぐに変わります。</PageTitle>
+  <div class="mini" aria-hidden="true"><span><i>f</i><b id="mf"></b></span><span><i>D</i><b id="md"></b></span><span><i>T</i><b id="mT"></b></span></div>
+
+  <div class="tgrid">
+    <Panel hid="hd-in" title="入力" class="a-in">
+      <SeriesSwitch slot="aux" id="eser" />
+      <div class="ptab">{PARAMS.map((d) => <ParamRow d={d} />)}</div>
+    </Panel>
+
+    <Panel hid="hd-out" title="計算結果" class="a-out">
+      <dl class="metrics">
+        <div class="m m-main"><dt>発振周波数 <i>f</i></dt><dd id="o-f"></dd></div>
+        <div class="m"><dt>H レベル時間 <i>t</i><sub>H</sub></dt><dd id="o-tH"></dd></div>
+        <div class="m"><dt>L レベル時間 <i>t</i><sub>L</sub></dt><dd id="o-tL"></dd></div>
+        <div class="m"><dt>周期 <i>T</i></dt><dd id="o-T"></dd></div>
+        <div class="m"><dt>デューティ比 <i>D</i></dt><dd id="o-D"></dd></div>
+        <div class="m"><dt><i>R</i><sub>1</sub> の最大電流</dt><dd id="o-I"></dd></div>
+        <div class="m"><dt><i>R</i><sub>1</sub> の最大損失</dt><dd><span id="o-P"></span><span class="m-note" id="o-Pn"></span></dd></div>
+      </dl>
+    </Panel>
+
+    <Panel hid="hd-wave" title="出力波形" class="a-wave">
+      <span slot="aux" class="aux">定常状態</span>
+      <Scope id="wave" label="出力波形" ch1="OUT" ch1Title="出力（3 番ピン）" ch2="V<sub>C1</sub>" ch2Title="C1 の電圧（2・6 番ピン）" trig="CH1 ↑">
+        <Fragment slot="overlay"><path class="th" id="thr-l"/><text class="tl" id="thr-t2" x="396" text-anchor="end"></text><text class="tl" id="thr-t1" x="396" text-anchor="end"></text></Fragment>
+      </Scope>
+    </Panel>
+
+    <Panel hid="hd-sch" title="回路図" class="a-sch">
+      <Schematic />
+    </Panel>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools current="timer555" category="電子回路" />
+  <script>
+    import '../tools/timer555/client';
+  </script>
+</SiteLayout>

@@ -1,0 +1,84 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import { order, TOOLS } from '../data/tools';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/jjy/style.css';
+import { DEFAULTS } from '../tools/jjy/code';
+import { OPT_ROWS, type OptRow, offRows } from '../tools/jjy/options';
+import { PARAMS } from '../tools/jjy/params';
+import Theory from '../tools/jjy/Theory.astro';
+import Timecode from '../tools/jjy/Timecode.astro';
+
+const name = 'JJY シミュレータ';
+const off = offRows(DEFAULTS);
+const rows = (tab: OptRow['tab']) => OPT_ROWS.filter((r) => r.tab === tab);
+/* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
+const CAT = '信号・通信';
+const related = [
+  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'jjy')),
+  ...TOOLS.filter((t) => t.c !== CAT && !t.s),
+];
+---
+<SiteLayout title={name} tool={{ id: 'jjy', name }} description="電波時計などで利用されているJJYの信号をシミュレートします。" note="時刻はこの端末の時計をもとにしています。">
+  <PageTitle title={name}>電波時計などで利用されている標準電波 JJY の信号をシミュレートします。日本標準時から 1 分ごとのタイムコードを作り、符号の種類で色分けして表示します。音で鳴らして、電波時計の時刻合わせにも使えます。</PageTitle>
+  <div class="mini" aria-hidden="true"><span>JST<b id="mt"></b></span><span>SEC<b id="ms"></b></span><span>CODE<b id="mc"></b></span></div>
+
+  <div class="tgrid">
+    <div class="col c1">
+      <Panel hid="hd-out" title="時刻" class="a-out">
+        <div slot="aux" class="seg" id="run" role="group" aria-label="時刻の進行"><button type="button" data-v="1" aria-pressed="true">動作</button><button type="button" data-v="0" aria-pressed="false">停止</button></div>
+        <dl class="metrics">
+          <div class="m m-main"><dt>日本標準時（JST）</dt><dd id="o-time"></dd></div>
+          <div class="m"><dt>日付</dt><dd id="o-date"></dd></div>
+          <div class="m"><dt>曜日</dt><dd id="o-wd"></dd></div>
+          <div class="m"><dt>年の通算日</dt><dd id="o-doy"></dd></div>
+          <div class="m"><dt>現在時刻との差</dt><dd><span id="o-diff"></span><button type="button" class="tg" id="nowBtn">現在時刻に戻す</button></dd></div>
+        </dl>
+      </Panel>
+
+      <Panel hid="hd-snd" title="音" class="a-snd">
+        <div class="ptab">
+          <ChoiceRow k="play" sym={'<span class="led" id="sndLed"></span>'} name="再生" sub="高出力 100 %・低出力 10 % の音量" choices={[['0', '停止'], ['1', '再生']]} value="0" msg />
+          <ChoiceRow k="mode" sym="<i>~</i>" name="音の種類" sub="時刻合わせは 13.333 kHz の矩形波" choices={[['tone', '可聴音'], ['sync', '時刻合わせ']]} value="tone" msg>
+            <button slot="help" type="button" class="qbtn" id="syncBtn" aria-expanded="false" aria-controls="syncTip" aria-label="時刻合わせのやりかた" title="時刻合わせのやりかた">?</button>
+          </ChoiceRow>
+          {PARAMS.map((d) => <ParamRow d={d} />)}
+        </div>
+        <p class="desc" id="syncTip" role="tooltip" hidden>スピーカーかイヤホンをつなぎ、「時刻合わせ」を選んで再生します。配線の近くに電波時計を置くと受信が始まります。13.333 kHz の矩形波の第 3 高調波（40 kHz）を使うため、サウンドデバイスのローパスフィルタで 40 kHz が出ず、合わせられない場合があります。時刻合わせによって生じた問題について責任は負いかねます。</p>
+      </Panel>
+    </div>
+
+    <div class="col c2">
+      <Panel hid="hd-wave" title="タイムコード" class="a-wave">
+        <span slot="aux" class="aux" id="w-aux"></span>
+        <Timecode />
+      </Panel>
+
+      <Panel hid="hd-in1" title="夏時間・閏秒" class="a-in a-in1">
+        <div class="ptab">
+          {rows(1).map((r) => <ChoiceRow k={r.k} sym={r.sym} symClass="bit" nm={r.sym} name={r.name} sub={r.sub} choices={r.ch} value={DEFAULTS[r.k]} layout={r.wide ? 'chips' : 'seg'} wide={r.wide} msg class={off[r.k] ? 'opt off' : 'opt'} />)}
+        </div>
+      </Panel>
+    </div>
+
+    <Panel hid="hd-in2" title="コールサイン・停波" class="a-in a-in2">
+      <div class="ptab">
+        {rows(2).map((r) => <ChoiceRow k={r.k} sym={r.sym} symClass="bit" nm={r.sym} name={r.name} sub={r.sub} choices={r.ch} value={DEFAULTS[r.k]} layout={r.wide ? 'chips' : 'seg'} wide={r.wide} msg class={off[r.k] ? 'opt off' : 'opt'} />)}
+      </div>
+    </Panel>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools list={related} />
+  <script>
+    import '../tools/jjy/client';
+  </script>
+</SiteLayout>

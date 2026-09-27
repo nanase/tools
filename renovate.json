@@ -1,0 +1,28 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "timezone": "Asia/Tokyo",
+  "packageRules": [
+    {
+      "description": "@astrojs/check が TypeScript 7 に未対応のため 6 系に留める",
+      "matchDepNames": ["typescript"],
+      "allowedVersions": "<7"
+    },
+    {
+      "description": "Node は v26 系に留める",
+      "matchManagers": ["mise"],
+      "matchDepNames": ["node"],
+      "allowedVersions": "<27"
+    },
+    {
+      "description": "Node の型定義も v26 系に留める",
+      "matchDepNames": ["@types/node"],
+      "allowedVersions": "<27"
+    },
+    {
+      "description": ".mise.toml と package.json の packageManager を同じ PR で上げる",
+      "matchDepNames": ["bun"],
+      "groupName": "bun"
+    }
+  ]
+}

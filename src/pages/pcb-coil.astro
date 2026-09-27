@@ -1,0 +1,109 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import { TOOLS, type Tool } from '../data/tools';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/pcb-coil/style.css';
+import { gridSvg } from '../lib/scope';
+import { SHAPES } from '../tools/pcb-coil/coil';
+import { PARAMS, shapeSub } from '../tools/pcb-coil/params';
+import { frGrid } from '../tools/pcb-coil/plot';
+import Theory from '../tools/pcb-coil/Theory.astro';
+
+const name = 'PCBコイル';
+const row = (ks: string[]) => PARAMS.filter((d) => ks.includes(d.k));
+/* 同じ電子回路の公開中のツール、続いて信号・フィルタに近いもの */
+const related = ['passive-combination', 'timer555', 'jjy', 'biquad', 'pid']
+  .map((id) => TOOLS.find((t) => t.id === id))
+  .filter((t): t is Tool => !!t && !t.s);
+---
+<SiteLayout title={name} tool={{ id: 'pcb-coil', name }} note="計算結果は近似式による参考値です。" description="プリント基板上のうずまき状の配線で作るコイルについて、インダクタンス・抵抗・Q と共振用のコンデンサを求めます。">
+  <PageTitle title={name}>プリント基板の銅箔で作るうずまき状のコイル（スパイラルコイル）について、形と寸法からインダクタンス・抵抗・Q を求め、指定の周波数で共振させるコンデンサの値を出します。NFC や RFID のアンテナの設計に使えます。</PageTitle>
+  <div class="mini" aria-hidden="true"><span><i>L</i><b id="mL"></b></span><span><i>Q</i><b id="mQ"></b></span><span><i>C</i><b id="mC"></b></span></div>
+
+  <div class="tgrid">
+    <div class="col">
+      <Panel hid="hd-dim" title="形と寸法" class="a-dim">
+        <div class="ptab">
+          <ChoiceRow k="shape" name="形" sub={shapeSub(SHAPES[0])} choices={SHAPES.map((s) => [s.v, s.ab] as const)} value={SHAPES[0].v} />
+          {row(['n', 'dout', 'w', 's']).map((d) => <ParamRow d={d} />)}
+        </div>
+      </Panel>
+      <Panel hid="hd-mat" title="銅箔と周波数" class="a-mat">
+        <div class="ptab">{row(['t', 'f']).map((d) => <ParamRow d={d} />)}</div>
+      </Panel>
+    </div>
+
+    <div class="col">
+      <Panel hid="hd-fig" title="コイルの形" class="a-fig">
+        <span slot="aux" class="aux">部品面から見た形・縮尺どおり</span>
+        <div class="sbar">
+          <span class="stag"><i class="sw" aria-hidden="true"></i>CH1 TRACE <b id="fg-w"></b></span>
+          <span class="stag">SHAPE <b id="fg-sh"></b></span>
+          <span class="stag">GRID <b id="fg-div"></b>/div</span>
+          <span class="stag">TURNS <b id="fg-n"></b></span>
+        </div>
+        <div class="scope">
+          <svg viewBox="-6 -6 412 252" id="fg-svg" role="img" aria-label="コイルの形">
+            <g set:html={gridSvg()} />
+            <path class="coil" id="fg-coil"/>
+            <g id="fg-pads"></g>
+            <g id="fg-dim"></g>
+          </svg>
+        </div>
+      </Panel>
+
+      <Panel hid="hd-fr" title="周波数特性" class="a-fr">
+        <span slot="aux" class="aux">Q と交流抵抗</span>
+        <div class="sbar">
+          <span class="stag" title="Q"><i class="sw" aria-hidden="true"></i>CH1 Q <b id="fr-qd"></b>/div</span>
+          <span class="stag" title="交流抵抗"><i class="sw c2" aria-hidden="true"></i>CH2 R<sub>AC</sub> <b id="fr-rd"></b>/div</span>
+          <span class="stag">X LOG <b>1 kHz – 100 MHz</b></span>
+          <span class="stag rd" id="fr-cur"></span>
+        </div>
+        <div class="scope">
+          <svg viewBox="-50 -16 500 282" id="fr-svg" role="img" aria-label="周波数特性">
+            <g set:html={frGrid()} />
+            <path class="mkt" id="fr-dt"/>
+            <path class="mkl" id="fr-f"/>
+            <path class="mkt" id="fr-lm"/>
+            <defs><clipPath id="fr-clip"><rect x="0" y="-2" width="400" height="244"/></clipPath></defs>
+            <g clip-path="url(#fr-clip)"><path class="t2" id="fr-t2"/><path class="t2 ov" id="fr-t2o"/><path class="t1" id="fr-t1"/><path class="t1 ov" id="fr-t1o"/></g>
+            <path class="cur" id="fr-cl"/>
+            <g id="fr-ax"></g>
+          </svg>
+        </div>
+      </Panel>
+
+      <Panel hid="hd-out" title="計算結果" class="a-out">
+        <dl class="metrics">
+          <div class="m m-main"><dt>インダクタンス <i>L</i>（電流シート近似）</dt><dd><span id="o-L"></span><span class="m-note" id="o-Ln"></span></dd></div>
+          <div class="m"><dt>修正 Wheeler 式</dt><dd><span id="o-Lmw"></span><span class="m-sub" id="o-Lmws"></span></dd></div>
+          <div class="m"><dt>単項式近似</dt><dd><span id="o-Lmn"></span><span class="m-sub" id="o-Lmns"></span></dd></div>
+          <div class="m"><dt>内径 <i>d</i><sub>in</sub></dt><dd id="o-din"></dd></div>
+          <div class="m"><dt>充填率 <i>ρ</i></dt><dd id="o-rho"></dd></div>
+          <div class="m"><dt>配線の長さ <i>ℓ</i></dt><dd><span id="o-len"></span><span class="m-sub" id="o-lens"></span><span class="m-note" id="o-lenn"></span></dd></div>
+          <div class="m"><dt>直流抵抗 <i>R</i><sub>DC</sub></dt><dd id="o-rdc"></dd></div>
+          <div class="m"><dt>表皮の深さ <i>δ</i></dt><dd><span id="o-dl"></span><span class="m-sub" id="o-dls"></span></dd></div>
+          <div class="m"><dt>交流抵抗 <i>R</i><sub>AC</sub></dt><dd><span id="o-rac"></span><span class="m-sub" id="o-racs"></span></dd></div>
+          <div class="m"><dt><i>Q</i></dt><dd id="o-q"></dd></div>
+          <div class="m"><dt>共振コンデンサ <i>C</i></dt><dd><span id="o-c"></span><span class="m-sub" id="o-cs"></span></dd></div>
+          <div class="m"><dt>帯域幅 <i>f</i>/<i>Q</i></dt><dd id="o-bw"></dd></div>
+        </dl>
+      </Panel>
+    </div>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools list={related} />
+  <script>
+    import '../tools/pcb-coil/client';
+  </script>
+</SiteLayout>

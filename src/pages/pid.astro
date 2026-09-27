@@ -1,0 +1,68 @@
+---
+import Collapsible from '../components/Collapsible.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import { TOOLS } from '../data/tools';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/pid/style.css';
+import BlockDiagram from '../tools/pid/BlockDiagram.astro';
+import { GAINS, PLANT } from '../tools/pid/params';
+import Theory from '../tools/pid/Theory.astro';
+import Trace from '../tools/pid/Trace.astro';
+
+const name = 'PID制御';
+/* 制御のカテゴリはこのツールだけなので、関連ツールには公開中のほかのツールを並べる */
+const related = TOOLS.filter((t) => !t.s && t.id !== 'pid');
+---
+<SiteLayout title={name} tool={{ id: 'pid', name }} description="フィードバック制御の一種であるPID制御を各項を調整しながらシミュレートします。" note="シミュレーション結果は簡略化したモデルによる参考値です。">
+  <PageTitle title={name}>流れのある水の中で、物体を目標の位置へ動かして留める PID 制御を 100 秒間シミュレートします。比例・積分・微分の各ゲインや流速を変えると、位置と速度の応答、整定時間などの指標がすぐに変わります。</PageTitle>
+  <div class="mini" aria-hidden="true"><span><i>t</i><sub>s</sub><b id="mts"></b></span><span>OS<b id="mos"></b></span><span><i>e</i><sub>end</sub><b id="mee"></b></span></div>
+
+  <div class="tgrid">
+    <div class="a-in">
+      <Panel hid="hd-gain" title="PID ゲイン">
+        <div class="ptab">{GAINS.map((d) => <ParamRow d={d} />)}</div>
+      </Panel>
+      <Panel hid="hd-plant" title="制御対象">
+        <div class="ptab">{PLANT.map((d) => <ParamRow d={d} />)}</div>
+      </Panel>
+    </div>
+
+    <Panel hid="hd-pos" title="位置" class="a-pos">
+      <span slot="aux" class="aux">ステップ応答</span>
+      <Trace id="sp" ch={1} name="POS" chTitle="位置 x" refTitle="目標位置 r" label="位置の応答" />
+    </Panel>
+
+    <Panel hid="hd-vel" title="速度" class="a-vel">
+      <span slot="aux" class="aux">流れに対する速さ</span>
+      <Trace id="sv" ch={2} name="VEL" chTitle="速度 v" refTitle="位置を保つのに要る速度 −w" label="速度の応答" />
+    </Panel>
+
+    <Panel hid="hd-sch" title="ブロック図" class="a-sch">
+      <BlockDiagram />
+    </Panel>
+
+    <Panel hid="hd-out" title="計算結果" class="a-out">
+      <dl class="metrics">
+        <div class="m m-main"><dt>整定時間 <i>t</i><sub>s</sub>（±2 %）</dt><dd><span id="o-ts"></span><span class="m-note" id="o-tsn"></span></dd></div>
+        <div class="m"><dt>立ち上がり時間 <i>t</i><sub>r</sub></dt><dd id="o-tr"></dd></div>
+        <div class="m"><dt>オーバーシュート</dt><dd id="o-os"></dd></div>
+        <div class="m"><dt>ピーク時刻 <i>t</i><sub>p</sub></dt><dd id="o-tp"></dd></div>
+        <div class="m"><dt>終了時の偏差 <i>e</i><sub>end</sub></dt><dd id="o-ee"></dd></div>
+        <div class="m"><dt>誤差の積分 IAE</dt><dd id="o-iae"></dd></div>
+        <div class="m"><dt>最大速度 |<i>v</i>|<sub>max</sub></dt><dd id="o-vm"></dd></div>
+      </dl>
+    </Panel>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools list={related} />
+  <script>
+    import '../tools/pid/client';
+  </script>
+</SiteLayout>

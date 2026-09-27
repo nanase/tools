@@ -1,0 +1,106 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import { order, TOOLS } from '../data/tools';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/jjy-decoder/style.css';
+import Timecode from '../tools/jjy/Timecode.astro';
+import { FLAGS } from '../tools/jjy-decoder/flags';
+import { F_PARAM } from '../tools/jjy-decoder/params';
+import Scope from '../tools/jjy-decoder/Scope.astro';
+import Theory from '../tools/jjy-decoder/Theory.astro';
+
+const name = 'JJY デコーダ';
+/* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
+const CAT = '信号・通信';
+const related = [
+  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'jjy-decoder')),
+  ...TOOLS.filter((t) => t.c !== CAT && !t.s),
+];
+---
+<SiteLayout title={name} tool={{ id: 'jjy-decoder', name }} description="音声から JJY の信号を読み取り、信号が表す時刻とフラグに復号します。" note="音声はこの端末の中だけで処理し、送信しません。時刻のずれはこの端末の時計と比べています。">
+  <PageTitle title={name}>音声から標準電波 JJY のタイムコードを読み取り、信号が表す時刻とフラグに復号します。JJY シミュレータの可聴音のような、正弦波の振幅を高出力と低出力で切り替えた音を読み取れます。</PageTitle>
+  <div class="mini" aria-hidden="true"><span>JST<b id="mt">--:--:--</b></span><span>SYNC<b id="ms">IDLE</b></span><span>SEC<b id="mc">--</b></span></div>
+
+  <div class="tgrid">
+    <div class="col c1">
+      <Panel hid="hd-in" title="入力" class="a-in">
+        <div class="ptab">
+          <ChoiceRow k="src" sym={'<span class="led" id="rxLed"></span>'} name="入力元" sub="音声の取り込み口" choices={[['mic', 'マイク'], ['file', 'ファイル'], ['test', 'テスト信号']]} value="mic" msg>
+            <button slot="help" type="button" class="qbtn" id="srcBtn" aria-expanded="false" aria-controls="srcTip" aria-label="入力元について" title="入力元について">?</button>
+          </ChoiceRow>
+          <div class="prow" id="p-run">
+            <div class="c-sym" aria-hidden="true"></div>
+            <div class="c-name" id="n-run"><span id="runName">受信</span><small id="runSub">マイク・ライン入力</small></div>
+            <div class="c-val">
+              <div class="seg" id="runSeg" role="group" aria-labelledby="n-run"><button type="button" data-v="0" aria-pressed="true">停止</button><button type="button" data-v="1" aria-pressed="false">開始</button></div>
+              <div class="seg" id="fileSeg" hidden><button type="button" id="fileBtn">ファイルを選ぶ</button></div>
+              <input type="file" id="fileIn" accept="audio/*,.wav,.mp3,.m4a,.ogg,.flac" hidden>
+            </div>
+            <div class="c-sub"><p class="msg" id="m-run" aria-live="polite"></p><button type="button" class="tg" id="wavBtn" hidden>WAV を保存（3 分）</button></div>
+          </div>
+          <ChoiceRow k="fm" sym="<i>f</i><sub>0</sub>" name="搬送波" sub="周波数の決め方" choices={[['auto', '自動'], ['manual', '手動']]} value="auto" msg />
+          <ParamRow d={F_PARAM} />
+          <ChoiceRow k="mon" sym="<i>~</i>" name="モニター" sub="テスト信号をスピーカーで鳴らす" choices={[['0', '出さない'], ['1', '出す']]} value="0" msg />
+        </div>
+        <p class="desc" id="srcTip" role="tooltip" hidden>マイクとライン入力は、エコー除去・ノイズ抑制・自動音量調整を切って取り込みます。JJY シミュレータの可聴音を別の端末で鳴らしてマイクに近づけるか、ケーブルでライン入力へつなぎます。テスト信号は、この端末の時計の時刻をシミュレータと同じ規則で符号にした 440 Hz の音で、マイクを通さずにそのまま解読します。</p>
+      </Panel>
+
+      <Panel hid="hd-rx" title="受信" class="a-rx">
+        <span slot="aux" class="aux" id="rx-aux"></span>
+        <Scope />
+        <dl class="metrics">
+          <div class="m"><dt>同期</dt><dd id="r-sync" class="tx">停止中</dd></div>
+          <div class="m"><dt>入力レベル</dt><dd id="r-lvl">—</dd></div>
+          <div class="m"><dt>高出力と低出力の比</dt><dd id="r-hl">—</dd></div>
+          <div class="m"><dt>読めた秒</dt><dd id="r-ok">—</dd></div>
+          <div class="m"><dt>立ち上がりのずれ</dt><dd id="r-jit">—</dd></div>
+          <div class="m"><dt>搬送波</dt><dd id="r-f">—</dd></div>
+        </dl>
+      </Panel>
+    </div>
+
+    <div class="col c2">
+      <Panel hid="hd-wave" title="タイムコード" class="a-wave">
+        <span slot="aux" class="aux" id="w-aux"></span>
+        <Timecode legend={[['tc-x', '読めない'], ['', '未受信']]} follow="受信中の秒に戻す" third={['b-w', 'パルス幅', false]}>
+          <div class="chips fmins" id="fmins" role="group" aria-label="ファイルの中の分" hidden></div>
+        </Timecode>
+      </Panel>
+
+      <Panel hid="hd-out" title="復号した時刻" class="a-out">
+        <span slot="aux" class="aux" id="o-aux"></span>
+        <dl class="metrics">
+          <div class="m m-main"><dt>日本標準時（JST）</dt><dd><span id="o-time">--:--:--</span><span class="m-sub" id="o-note"></span></dd></div>
+          <div class="m"><dt>年</dt><dd id="o-y">—</dd></div>
+          <div class="m"><dt>日付</dt><dd id="o-date">—</dd></div>
+          <div class="m"><dt>曜日</dt><dd id="o-wd">—</dd></div>
+          <div class="m"><dt>年の通算日</dt><dd id="o-doy">—</dd></div>
+          <div class="m"><dt id="o-diffT">現在時刻とのずれ</dt><dd id="o-diff">—</dd></div>
+          <div class="m"><dt>復号した分</dt><dd id="o-cnt">—</dd></div>
+        </dl>
+      </Panel>
+
+      <Panel hid="hd-flg" title="フラグ" class="a-flg">
+        <span slot="aux" class="aux" id="f-aux"></span>
+        <dl class="metrics">
+          {FLAGS.map(([b, n], i) => <div class="m"><dt>{b && <span class="bn">{b}</span>}{n}</dt><dd id={`fl${i}`} class="dim">—</dd></div>)}
+        </dl>
+      </Panel>
+    </div>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools list={related} />
+  <div class="toast" id="toast" role="status" aria-live="polite" data-off></div>
+  <script>
+    import '../tools/jjy-decoder/client';
+  </script>
+</SiteLayout>

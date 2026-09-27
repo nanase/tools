@@ -1,0 +1,16 @@
+---
+/** E 系列の切替（Panel の slot="aux" に置く）。動作は ParamGroup が受け持つ */
+import type { Series } from '../lib/eseries';
+
+interface Props {
+  id: string;
+  value?: Series;
+  /** 並べる系列 */
+  series?: readonly Series[];
+  label?: string;
+}
+const { id, value = 12, series = [6, 12, 24], label = '抵抗とコンデンサの刻み' } = Astro.props;
+---
+<div class="seg" id={id} role="group" aria-label={label} title="スライダーと ▲▼ の刻み">
+  {series.map(s => <button type="button" data-s={s} aria-pressed={s === value ? 'true' : 'false'}>E{s}</button>)}
+</div>

@@ -1,0 +1,38 @@
+---
+// 555 非安定マルチバイブレータの回路図（B 案）。素子の値は client.ts が入れる
+---
+<svg class="sch" viewBox="0 0 320 272" role="img" aria-label="555 非安定マルチバイブレータの回路図。VCC から R1、R2、C1 を直列に GND へ。R1 と R2 の接続点を 7 番ピン（DIS）、R2 と C1 の接続点を 6 番（THR）と 2 番（TRIG）へ。5 番ピン（CV）は 10 nF で GND へ。3 番ピンが出力。">
+  <path class="s-w" d="M40 24H224M80 24V36M80 76V106M80 204V250M40 250H224M80 96H150M180 24V70M224 24V70M180 212V250M224 212V228M224 233V250M40 250V258"/>
+  <path class="s-w" d="M32 258H48M35 262H45M38 266H42"/>
+  <path class="s-w n2" d="M80 146V196M80 156H128M128 136V176M128 136H150M128 176H150"/>
+  <path class="s-w n1" d="M250 136H290"/>
+  <circle class="s-o" cx="40" cy="24" r="3.5"/>
+  <rect class="s-p" x="74" y="36" width="12" height="40"/>
+  <rect class="s-p" x="74" y="106" width="12" height="40"/>
+  <path class="s-pl" d="M68 196H92M68 204H92M216 228H232M216 233H232"/>
+  <rect class="s-ic" x="150" y="70" width="100" height="142"/>
+  <circle class="s-j" cx="80" cy="24" r="2.6"/><circle class="s-j" cx="180" cy="24" r="2.6"/>
+  <circle class="s-j" cx="80" cy="96" r="2.6"/><circle class="s-j n2" cx="80" cy="156" r="2.6"/><circle class="s-j n2" cx="128" cy="156" r="2.6"/>
+  <circle class="s-j" cx="80" cy="250" r="2.6"/><circle class="s-j" cx="180" cy="250" r="2.6"/>
+  <circle class="s-o n1" cx="294" cy="136" r="3.5"/>
+  <text class="s-l" x="40" y="12" text-anchor="middle">V<tspan font-size="9" dy="3">CC</tspan></text>
+  <text class="s-v" id="s-vcc" x="54" y="14"></text>
+  <text class="s-l" x="64" y="52" text-anchor="end">R<tspan font-size="9" dy="3">1</tspan></text>
+  <text class="s-v" id="s-r1" x="64" y="70" text-anchor="end"></text>
+  <text class="s-l" x="64" y="122" text-anchor="end">R<tspan font-size="9" dy="3">2</tspan></text>
+  <text class="s-v" id="s-r2" x="64" y="140" text-anchor="end"></text>
+  <text class="s-l" x="62" y="194" text-anchor="end">C<tspan font-size="9" dy="3">1</tspan></text>
+  <text class="s-v" id="s-c1" x="62" y="214" text-anchor="end"></text>
+  <text class="s-n" x="238" y="235">10 nF</text>
+  <text class="s-ic-t" x="200" y="146" text-anchor="middle">555</text>
+  <text class="s-t" x="156" y="100">DIS</text><text class="s-t" x="156" y="140">THR</text><text class="s-t" x="156" y="180">TRIG</text>
+  <text class="s-t" x="244" y="140" text-anchor="end">OUT</text>
+  <text class="s-t" x="180" y="86" text-anchor="middle">VCC</text><text class="s-t" x="224" y="86" text-anchor="middle">RST</text>
+  <text class="s-t" x="180" y="204" text-anchor="middle">GND</text><text class="s-t" x="224" y="204" text-anchor="middle">CV</text>
+  <text class="s-n" x="146" y="92" text-anchor="end">7</text><text class="s-n" x="146" y="132" text-anchor="end">6</text><text class="s-n" x="146" y="172" text-anchor="end">2</text>
+  <text class="s-n" x="184" y="64">8</text><text class="s-n" x="228" y="64">4</text>
+  <text class="s-n" x="184" y="224">1</text><text class="s-n" x="228" y="224">5</text>
+  <text class="s-n" x="256" y="131">3</text>
+  <text class="s-t" x="294" y="124" text-anchor="middle">OUT</text>
+  <text class="s-t" x="56" y="264">GND</text>
+</svg>

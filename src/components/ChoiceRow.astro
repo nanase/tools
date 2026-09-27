@@ -1,0 +1,51 @@
+---
+/**
+ * 選択肢だけの行（パラメータ表の 1 行）。動作は lib/choice.ts の Choice（new Choice($('#p-{k}'), fn)）。
+ * layout="seg": 値の欄に区切りボタン、"chips": 補足の段にチップを並べる。
+ * 項目名の直後に置くもの（「?」ボタンなど）は slot="help"
+ */
+type V = string | number | boolean;
+
+interface Props {
+  k: string;
+  /** 記号の HTML。'' なら空欄 */
+  sym?: string;
+  /** 記号の欄に足すクラス */
+  symClass?: string;
+  /** 読み上げ用の短い名前（項目名の前に読む） */
+  nm?: string;
+  name: string;
+  sub?: string;
+  /** [値, 表示, title] */
+  choices: readonly (readonly [V, string] | readonly [V, string, string])[];
+  value: V;
+  layout?: 'seg' | 'chips';
+  /** 項目名を行の幅いっぱいに出す（chips 向け） */
+  wide?: boolean;
+  /** メッセージの欄を置く（Choice の note・setOff で使う） */
+  msg?: boolean;
+  class?: string;
+}
+const { k, sym = '', symClass, nm, name, sub, choices, value, layout = 'seg', wide, msg, class: cls } = Astro.props;
+const nid = `n-${k}`;
+const btns = choices.map(([v, l, t]) => ({ v: String(v), l, t, on: String(v) === String(value) }));
+---
+<div class:list={['prow', { wide }, cls]} id={`p-${k}`}>
+  <div class:list={['c-sym', symClass]} aria-hidden="true" set:html={sym} />
+  <div class="c-name"><span id={nid}>{nm && <span class="sr">{nm} </span>}{name}</span><slot name="help" />{sub != null && <small>{sub}</small>}</div>
+  {layout === 'seg' && (
+    <div class="c-val"><div class="seg" role="group" aria-labelledby={nid}>
+      {btns.map((b) => <button type="button" data-v={b.v} aria-pressed={b.on ? 'true' : 'false'} title={b.t}>{b.l}</button>)}
+    </div></div>
+  )}
+  {(msg || layout === 'chips') && (
+    <div class="c-sub">
+      {msg && <p class="msg" aria-live="polite"></p>}
+      {layout === 'chips' && (
+        <div class="chips" role="group" aria-labelledby={nid}>
+          {btns.map((b) => <button type="button" class="chip" data-v={b.v} aria-pressed={b.on ? 'true' : 'false'} title={b.t}>{b.l}</button>)}
+        </div>
+      )}
+    </div>
+  )}
+</div>

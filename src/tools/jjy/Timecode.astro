@@ -1,0 +1,37 @@
+---
+/**
+ * タイムコードの枠の中身: 凡例、60 秒ぶんのバー、選んだ秒の説明。符号の色と説明は各ページの client.ts が入れる。
+ * JJY シミュレータと JJY デコーダで共有する。バーの前に置くもの（デコーダの分の選択など）は既定の slot
+ */
+import './timecode.css';
+
+interface Props {
+  /** 凡例に足す項目 [クラス, 表示]。クラスが '' なら枠だけ */
+  legend?: readonly (readonly [string, string])[];
+  /** 選んだ秒を解く（現在の秒を追う）ボタンの表示 */
+  follow?: string;
+  /** 3 つ目の項目 [id, 見出し, 文章なら true] */
+  third?: readonly [string, string, boolean];
+}
+const { legend = [], follow = '現在の秒に戻す', third = ['b-sig', '信号', true] } = Astro.props;
+---
+<div class="tc-top">
+  <ul class="lgd" aria-label="凡例">
+    <li><i class="tc-P" aria-hidden="true"></i>マーカ（M・P）</li>
+    <li><i class="tc-0" aria-hidden="true"></i>0</li>
+    <li><i class="tc-1" aria-hidden="true"></i>1</li>
+    <li><i class="tc-S" aria-hidden="true"></i>コールサイン</li>
+    {legend.map(([c, l]) => <li><i class={c || undefined} aria-hidden="true"></i>{l}</li>)}
+  </ul>
+  <button type="button" class="tg" id="follow" disabled>{follow}</button>
+</div>
+<slot />
+<div class="tc" id="tc" tabindex="0" role="img" aria-label="タイムコード">
+  {Array.from({ length: 60 }, (_, s) => <span class:list={['tb', { l10: s % 10 === 0, l5: s % 5 === 0 }]} data-s={s}></span>)}
+</div>
+<dl class="metrics bi" aria-live="off">
+  <div class="m"><dt>選んだ秒</dt><dd id="b-s"></dd></div>
+  <div class="m"><dt>符号</dt><dd id="b-c"></dd></div>
+  <div class="m"><dt>{third[1]}</dt><dd id={third[0]} class={third[2] ? 'tx' : undefined}></dd></div>
+  <div class="m m-wide"><dt>意味</dt><dd id="b-mean" class="tx"></dd></div>
+</dl>

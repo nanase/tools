@@ -1,0 +1,86 @@
+---
+import Collapsible from '../components/Collapsible.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import SeriesSwitch from '../components/SeriesSwitch.astro';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/colorcode/style.css';
+import { TC_KEYS, TOL_KEYS } from '../lib/colorcode';
+import { BAND_COUNTS, INIT } from '../tools/colorcode/model';
+import { R_DEF, STEP_SERIES, STEP_SERIES_INIT } from '../tools/colorcode/params';
+import Theory from '../tools/colorcode/Theory.astro';
+import { ccChip, figFrame } from '../tools/colorcode/view';
+
+const id = 'colorcode';
+const name = '抵抗カラーコード';
+---
+<SiteLayout title={name} tool={{ id, name }} description="抵抗器の色帯から抵抗値・許容差・温度係数を読み取り、抵抗値から色の並びを求めます。値が E 系列のどれに載っているかも示します" note="画面上の色は、実物の抵抗器の色と異なって見えることがあります。">
+  <PageTitle title={name}>抵抗器の色帯（カラーコード）から抵抗値・許容差・温度係数を読み取ります。抵抗値を入れると、逆に色の並びを求めます。4 本帯・5 本帯・6 本帯に対応し、その値が E 系列のどれに載っているかも示します。</PageTitle>
+  <div class="mini" aria-hidden="true"><span id="mn"></span><span id="mt"></span><span id="mc"></span></div>
+
+  <div class="tgrid">
+    <div class="col">
+      <Panel hid="hd-in" title="値" class="a-in">
+        <SeriesSwitch slot="aux" id="esel" value={STEP_SERIES_INIT} series={STEP_SERIES} label="▲▼ とスライダーの刻み" />
+        <div class="ptab">
+          <ParamRow d={R_DEF} />
+          <div class="prow wide" id="p-tol">
+            <div class="c-sym" aria-hidden="true"><i>t</i></div>
+            <div class="c-name"><span id="n-tol">許容差</span><small>許容差の帯の色。4 本帯の「なし」は帯が 3 本の抵抗器</small></div>
+            <div class="c-sub"><div class="chips" id="tolC" role="group" aria-labelledby="n-tol" set:html={TOL_KEYS.map((k) => ccChip('t', k, k === INIT.tol)).join('')} /></div>
+          </div>
+          <div class="prow wide off" id="p-tc">
+            <div class="c-sym" aria-hidden="true"><i>α</i></div>
+            <div class="c-name"><span id="n-tc">温度係数</span><small id="s-tc">6 本帯のときに使います</small></div>
+            <div class="c-sub"><div class="chips" id="tcC" role="group" aria-labelledby="n-tc" hidden set:html={TC_KEYS.map((k) => ccChip('tc', k, false)).join('')} /></div>
+          </div>
+        </div>
+      </Panel>
+
+      <Panel hid="hd-es" title="E 系列" class="a-es">
+        <span slot="aux" class="aux" id="es-aux"></span>
+        <div class="elist" id="elist"></div>
+      </Panel>
+    </div>
+
+    <div class="col">
+      <Panel hid="hd-fig" title="色帯" class="a-fig">
+        <div slot="aux" class="seg" id="nsel" role="group" aria-label="帯の数">
+          {BAND_COUNTS.map((n) => <button type="button" data-n={n} aria-pressed={n === INIT.n ? 'true' : 'false'}>{n} 本帯</button>)}
+        </div>
+        <div class="rz">
+          <div id="fig" set:html={figFrame()} />
+          <div class="bl" id="bl" role="group" aria-label="色を変える帯"></div>
+        </div>
+        <div class="pal">
+          <p class="pal-h"><span id="pal-h"></span><small id="pal-s"></small></p>
+          <div class="chips" id="pal" role="group" aria-labelledby="pal-h"></div>
+          <p class="msg" id="m-pal" aria-live="polite"></p>
+        </div>
+      </Panel>
+
+      <Panel hid="hd-out" title="計算結果" class="a-out">
+        <dl class="metrics">
+          <div class="m m-main"><dt>抵抗値</dt><dd id="o-v"></dd></div>
+          <div class="m"><dt>許容差</dt><dd id="o-t"></dd></div>
+          <div class="m"><dt>最小値</dt><dd id="o-lo"></dd></div>
+          <div class="m"><dt>最大値</dt><dd id="o-hi"></dd></div>
+          <div class="m"><dt>温度係数 <i>α</i></dt><dd id="o-tc"></dd></div>
+          <div class="m m-es"><dt>載っている E 系列</dt><dd id="o-es"></dd></div>
+          <div class="m m-wide"><dt>色の並び</dt><dd class="cseq" id="o-c"></dd></div>
+        </dl>
+      </Panel>
+    </div>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools current={id} category="電子回路" />
+  <script>
+    import '../tools/colorcode/client';
+  </script>
+</SiteLayout>

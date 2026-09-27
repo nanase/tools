@@ -1,0 +1,35 @@
+/* JJY シミュレータのページだけのスタイル（共通は src/styles/site.css） */
+
+/* 枠の並び。スマホは 時刻 → タイムコード → 音 → 夏時間・閏秒 → コールサイン・停波 → 式。
+   PC は左の列に 時刻・音、右の列に タイムコード・夏時間・閏秒、その下に全幅で コールサイン・停波 */
+.a-out{order:1}.a-wave{order:2}.a-snd{order:3}.a-in1{order:4}.a-in2{order:5}.a-thy{order:6}
+@media (min-width:1000px){
+  .tgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr);grid-template-areas:"c1 c2" "in2 in2" "thy thy";align-items:start}
+  .c1{grid-area:c1}.c2{grid-area:c2}
+  .a-in2 .ptab{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:32px;align-items:start}
+  .a-in2 .prow:nth-child(2){padding-top:4px}
+  .a-in2 .prow:nth-last-child(2){border-bottom:0;padding-bottom:0}
+  .a-in2{grid-area:in2}.a-thy{grid-area:thy}
+}
+.desc{font-weight:400}
+
+/* 選択肢だけの行（ビット名を記号の列に置く） */
+.prow.opt{grid-template-columns:3.3rem minmax(0,1fr) 13rem;grid-template-areas:"sym name val" "sym sub sub"}
+.prow.opt.wide{grid-template-areas:"sym name name" "sym sub sub"}
+.c-sym.bit{padding-top:1px;font:700 12px/1.6 var(--mono);color:var(--ink-2);white-space:nowrap}
+.c-sym .led{margin:0 0 0 2px;vertical-align:middle}
+.prow.opt .msg{min-height:0}
+.prow.opt .msg:empty{display:none}
+@container (max-width:520px){
+  .prow.opt{grid-template-columns:2.9rem minmax(0,1fr);grid-template-areas:"sym name" "sym val" "sym sub"}
+  .prow.opt.wide{grid-template-areas:"sym name" "sym sub"}
+}
+
+/* 時刻 */
+.a-wave{container-type:inline-size}
+.m dd.tx{font:14px/1.6 var(--sans)}
+.m dd .tg{margin-top:6px;display:flex;width:max-content}
+/* タイムコードは timecode.css（Timecode.astro が読み込む） */
+
+/* 動作原理と式 */
+.eqs mtd{padding:2px 14px 2px 0;text-align:left}

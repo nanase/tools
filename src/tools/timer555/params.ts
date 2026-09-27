@@ -1,0 +1,103 @@
+import type { ParamDef } from '../../lib/param-def';
+
+const RP: [number, string][] = [
+  [470, '470'],
+  [1e3, '1k'],
+  [4.7e3, '4.7k'],
+  [10e3, '10k'],
+  [47e3, '47k'],
+  [100e3, '100k'],
+];
+const RT: [number, string][] = [
+  [100, '100'],
+  [1e3, '1k'],
+  [1e4, '10k'],
+  [1e5, '100k'],
+  [1e6, '1M'],
+];
+
+export type Key = 'r1' | 'r2' | 'c1' | 'vcc';
+
+export const PARAMS: (ParamDef & { k: Key })[] = [
+  {
+    k: 'r1',
+    nm: 'R1',
+    sym: '<i>R</i><sub>1</sub>',
+    name: 'タイミング抵抗 1',
+    sub: 'VCC–DIS 間',
+    unit: 'Ω',
+    min: 100,
+    max: 1e6,
+    v: 1e4,
+    ph: '例 4.7k',
+    pre: RP,
+    tk: RT,
+  },
+  {
+    k: 'r2',
+    nm: 'R2',
+    sym: '<i>R</i><sub>2</sub>',
+    name: 'タイミング抵抗 2',
+    sub: 'DIS–THR 間',
+    unit: 'Ω',
+    min: 100,
+    max: 1e6,
+    v: 1e4,
+    ph: '例 4k7',
+    pre: RP,
+    tk: RT,
+  },
+  {
+    k: 'c1',
+    nm: 'C1',
+    sym: '<i>C</i><sub>1</sub>',
+    name: 'タイミング容量',
+    sub: 'THR–GND 間',
+    unit: 'F',
+    min: 1e-12,
+    max: 1e-3,
+    v: 1e-7,
+    ph: '例 100n',
+    pre: [
+      [1e-9, '0.001μ'],
+      [1e-8, '0.01μ'],
+      [1e-7, '0.1μ'],
+      [1e-6, '1μ'],
+      [1e-5, '10μ'],
+      [1e-4, '100μ'],
+    ],
+    tk: [
+      [1e-12, '1p'],
+      [1e-9, '1n'],
+      [1e-6, '1μ'],
+      [1e-3, '1m'],
+    ],
+  },
+  {
+    k: 'vcc',
+    nm: 'VCC',
+    sym: '<i>V</i><sub>CC</sub>',
+    name: '電源電圧',
+    sub: '8 番ピン',
+    unit: 'V',
+    min: 1,
+    max: 18,
+    v: 5,
+    lin: { step: 0.1, big: 1, major: 5 },
+    ph: '例 3.3',
+    pre: [
+      [1.8, '1.8'],
+      [3.3, '3.3'],
+      [5, '5'],
+      [9, '9'],
+      [18, '18'],
+    ],
+    tk: [
+      [1, '1'],
+      [5, '5'],
+      [9, '9'],
+      [12, '12'],
+      [18, '18'],
+    ],
+  },
+];

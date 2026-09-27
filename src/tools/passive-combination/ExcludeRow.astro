@@ -1,0 +1,19 @@
+---
+/** 除外する値の行: 入力欄 | ＋追加。追加した値は押すと外れるチップで並べる。動作は client.ts */
+import { TY } from './params';
+
+const T = TY.R;
+---
+<div class="prow" id="p-ex">
+  <div class="c-sym" aria-hidden="true"><i>{T.s}</i><sub>ex</sub></div>
+  <label class="c-name" for="in-ex"><span class="nm">使わない{T.q}</span><small>目標と同じ値は常に除く</small></label>
+  <div class="c-val"><div class="fld add">
+    <input id="in-ex" type="text" inputmode="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done" placeholder={T.ph} aria-describedby="u-ex m-ex">
+    <button type="button" class="stp" id="exAdd" aria-label="除外に追加"><svg class="pl" viewBox="0 0 10 10" aria-hidden="true"><path d="M5 1V9M1 5H9"/></svg><small>追加</small></button>
+  </div></div>
+  <div class="c-unit" id="u-ex">{T.u}</div>
+  <div class="c-sub">
+    <p class="msg" id="m-ex" aria-live="polite"></p>
+    <div class="chips" id="exChips" role="group" aria-label="除外している値"></div>
+  </div>
+</div>

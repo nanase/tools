@@ -1,0 +1,7 @@
+---
+// 動作原理
+---
+<p>プレビューは、SVG を <code>&lt;img&gt;</code> で埋め込んだときと同じ扱いで描きます。README などに置いた画像と同じく、スクリプトは動かず、外部のファイルも読み込まれません。</p>
+<p>ライトとダークの違いは、SVG の中の <code>@media (prefers-color-scheme: …)</code> だけです。ライト側ではライトの条件を真・ダークの条件を偽に置き換え、ダーク側ではその逆にします。<code>color-scheme</code> もそれぞれのテーマに固定するので、<code>light-dark()</code> も切り替わります。</p>
+<p>コードは描く前に許可リストで組み立て直します。リストにない要素（<code>script</code>・<code>foreignObject</code> など）と属性（<code>onload</code> などのイベント属性）、<code>javascript:</code> の URL、ファイル内の <code>#</code> 以外を指す参照は取り除きます。</p>
+<p class="cite">参考: <a href="https://zenn.dev/nanase_t/articles/7c14092b24424c" target="_blank" rel="noopener">SVG テーマスキーマチェッカーの技術参考記事</a>（Zenn）</p>

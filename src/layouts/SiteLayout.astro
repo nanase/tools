@@ -1,0 +1,44 @@
+---
+import '../styles/site.css';
+import Fonts from '../components/Fonts.astro';
+import Footer from '../components/Footer.astro';
+import Rail from '../components/Rail.astro';
+
+interface Props {
+  /** <title>。省略するとサイト名だけ */
+  title?: string;
+  description: string;
+  /** ツールのページなら、その id（メニューの現在地）とページ名（上部バー） */
+  tool?: { id: string; name: string };
+  /** フッターの注記。省略時は「計算結果は理想素子モデルによる参考値です。」 */
+  note?: string;
+}
+const { title, description, tool, note } = Astro.props;
+const site = 'Tools + Simulators';
+---
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<script is:inline>try{var t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}</script>
+<title>{title ? `${title} | ${site}` : site}</title>
+<meta name="description" content={description}>
+<meta property="og:title" content={title ?? site}>
+<meta property="og:type" content="website">
+<meta property="og:url" content={new URL(Astro.url.pathname, Astro.site).href}>
+<link rel="canonical" href={new URL(Astro.url.pathname, Astro.site).href}>
+<link rel="icon" sizes="16x16" href="/favicon.ico">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<Fonts />
+</head>
+<body>
+<Rail current={tool?.id} page={tool?.name} />
+<main class="wrap">
+  <slot />
+</main>
+<Footer note={note} />
+</body>
+</html>
