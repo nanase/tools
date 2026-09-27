@@ -15,6 +15,11 @@
       "allowedVersions": "<27"
     },
     {
+      "description": "Node の型定義も v26 系に留める",
+      "matchDepNames": ["@types/node"],
+      "allowedVersions": "<27"
+    },
+    {
       "description": ".mise.toml と package.json の packageManager を同じ PR で上げる",
       "matchDepNames": ["bun"],
       "groupName": "bun"
