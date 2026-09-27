@@ -18,11 +18,15 @@ bun install
 | コマンド | 内容 |
 | --- | --- |
 | `bun run dev` | 開発サーバ（<http://localhost:4321/tools/>） |
-| `bun run build` | `docs/` へビルドする（GitHub Pages が main の `docs/` を配信する） |
+| `bun run build` | `dist/` へビルドする |
 | `bun run preview` | ビルド結果を確かめる |
 | `bun run check` | 型検査（astro check） |
 | `bun run lint` | Biome で検査する（`lint:fix` で直す） |
 | `bun run test` | Vitest でテストする |
+
+## CI と公開
+
+GitHub Actions（[.github/workflows/ci.yml](.github/workflows/ci.yml)）が、PR と main への push ごとに lint・型検査・テスト・ビルドを行います。main へ push すると、ビルド結果を GitHub Pages へ公開します。
 
 ## 旧 URL の転送
 

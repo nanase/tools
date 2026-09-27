@@ -7,7 +7,7 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["**", "!**/docs", "!**/design", "!**/.astro", "!public/**/*.svg"]
+    "includes": ["**", "!**/design", "!**/.astro", "!public/**/*.svg"]
   },
   "formatter": {
     "enabled": true,

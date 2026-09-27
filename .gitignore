@@ -36,6 +36,7 @@ tsconfig.node.tsbuildinfo
 vite.config.ts.timestamp-*
 
 # astro
+dist/
 .astro/
 
 # claude code
