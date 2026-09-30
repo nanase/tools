@@ -27,7 +27,7 @@ const name = '受動素子組み合わせ計算機';
         {NUM_KEYS.map((k) => <ParamRow d={numDef(k, 'R')} />)}
         <ChoiceRow k="es" sym="E" name="E 系列" sub="組み合わせに使う値の刻み" layout="chips" msg choices={SERIES_CHOICES.map((s) => [s, `E${s}`] as const)} value={12} />
         <ExcludeRow />
-        <ChoiceRow k="stop" sym="<i>ε</i>" name="探索を終える誤差" sub="この誤差以内が見つかった本数は、そこで終える" layout="chips" choices={STOPS.map(([, l], i) => [i, l] as const)} value={2} />
+        <ChoiceRow k="stop" sym="<i>ε</i>" name="探索を終える誤差" sub="この誤差以内が見つかった本数は、そこで探索を終えます" layout="chips" choices={STOPS.map(([, l], i) => [i, l] as const)} value={2} fold />
       </div>
     </Panel>
 

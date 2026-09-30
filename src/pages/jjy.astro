@@ -9,6 +9,7 @@ import { order, TOOLS } from '../data/tools';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import '../tools/jjy/style.css';
 import { DEFAULTS } from '../tools/jjy/code';
+import Fan from '../tools/jjy/Fan.astro';
 import { OPT_ROWS, type OptRow, offRows } from '../tools/jjy/options';
 import { PARAMS } from '../tools/jjy/params';
 import Theory from '../tools/jjy/Theory.astro';
@@ -33,7 +34,7 @@ const related = [
       <Panel hid="hd-out" title="時刻" class="a-out">
         <div slot="aux" class="seg" id="run" role="group" aria-label="時刻の進行"><button type="button" data-v="1" aria-pressed="true">動作</button><button type="button" data-v="0" aria-pressed="false">停止</button></div>
         <dl class="metrics">
-          <div class="m m-main"><dt>日本標準時（JST）</dt><dd id="o-time"></dd></div>
+          <div class="m m-main"><dt>日本標準時（JST）</dt><dd class="clk"><span id="o-time"></span><Fan id="fan" /></dd></div>
           <div class="m"><dt>日付</dt><dd id="o-date"></dd></div>
           <div class="m"><dt>曜日</dt><dd id="o-wd"></dd></div>
           <div class="m"><dt>年の通算日</dt><dd id="o-doy"></dd></div>
@@ -42,12 +43,12 @@ const related = [
       </Panel>
 
       <Panel hid="hd-snd" title="音" class="a-snd">
+        <div slot="aux" class="seg"><button type="button" id="playBtn" aria-pressed="false" title="信号を音で鳴らす（低出力は高出力の 10 % の音量）"><span class="led" id="sndLed" aria-hidden="true"></span><span id="playT">再生</span></button></div>
         <div class="ptab">
-          <ChoiceRow k="play" sym={'<span class="led" id="sndLed"></span>'} name="再生" sub="高出力 100 %・低出力 10 % の音量" choices={[['0', '停止'], ['1', '再生']]} value="0" msg />
           <ChoiceRow k="mode" sym="<i>~</i>" name="音の種類" sub="時刻合わせは 13.333 kHz の矩形波" choices={[['tone', '可聴音'], ['sync', '時刻合わせ']]} value="tone" msg>
             <button slot="help" type="button" class="qbtn" id="syncBtn" aria-expanded="false" aria-controls="syncTip" aria-label="時刻合わせのやりかた" title="時刻合わせのやりかた">?</button>
           </ChoiceRow>
-          {PARAMS.map((d) => <ParamRow d={d} />)}
+          {PARAMS.map((d) => <ParamRow d={d} fold={d.k === 'f'} />)}
         </div>
         <p class="desc" id="syncTip" role="tooltip" hidden>スピーカーかイヤホンをつなぎ、「時刻合わせ」を選んで再生します。配線の近くに電波時計を置くと受信が始まります。13.333 kHz の矩形波の第 3 高調波（40 kHz）を使うため、サウンドデバイスのローパスフィルタで 40 kHz が出ず、合わせられない場合があります。時刻合わせによって生じた問題について責任は負いかねます。</p>
       </Panel>
@@ -59,18 +60,18 @@ const related = [
         <Timecode />
       </Panel>
 
-      <Panel hid="hd-in1" title="夏時間・閏秒" class="a-in a-in1">
+      <Collapsible hid="hd-in1" title="夏時間・閏秒" class="a-in a-in1">
         <div class="ptab">
           {rows(1).map((r) => <ChoiceRow k={r.k} sym={r.sym} symClass="bit" nm={r.sym} name={r.name} sub={r.sub} choices={r.ch} value={DEFAULTS[r.k]} layout={r.wide ? 'chips' : 'seg'} wide={r.wide} msg class={off[r.k] ? 'opt off' : 'opt'} />)}
         </div>
-      </Panel>
+      </Collapsible>
     </div>
 
-    <Panel hid="hd-in2" title="コールサイン・停波" class="a-in a-in2">
+    <Collapsible hid="hd-in2" title="コールサイン・停波" class="a-in a-in2">
       <div class="ptab">
         {rows(2).map((r) => <ChoiceRow k={r.k} sym={r.sym} symClass="bit" nm={r.sym} name={r.name} sub={r.sub} choices={r.ch} value={DEFAULTS[r.k]} layout={r.wide ? 'chips' : 'seg'} wide={r.wide} msg class={off[r.k] ? 'opt off' : 'opt'} />)}
       </div>
-    </Panel>
+    </Collapsible>
 
     <Collapsible hid="hd-thy" title="動作原理と式">
       <Theory />

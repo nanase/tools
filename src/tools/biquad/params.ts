@@ -94,7 +94,11 @@ const FSLIST = [
   192e3,
 ];
 
-export type Key = 'fc' | 'q' | 'g' | 'fs' | 'vol' | 'n' | 'len' | 'bot' | 'np';
+export type Key = 'fc' | 'q' | 'g' | 'fs' | 'vol' | 'n' | 'bot' | 'np';
+
+/** インパルス応答の表示長 L の選択肢（グラフの 8 div に入れるサンプル数）と初期値。解析長 N を超えるものは選べない */
+export const LENS = pow2List(3, 12);
+export const L0 = 256;
 
 export const FS0 = 48e3;
 type Def = ParamDef & { k: Key };
@@ -281,33 +285,11 @@ const DEFS: Def[] = [
     ],
   },
   {
-    k: 'len',
-    nm: 'L',
-    sym: '<i>L</i>',
-    name: 'インパルス応答の表示長',
-    sub: 'グラフの 8 div に入れるサンプル数',
-    unit: '',
-    min: 8,
-    max: 1024,
-    v: 256,
-    ph: '例 256',
-    list: pow2List(3, 15),
-    log: true,
-    snap: true,
-    jump: 2,
-    format: COUNT,
-    pre: [],
-    /* 並びの 1 つおき（8, 32, 128, …） */
-    tk: pow2List(3, 15)
-      .filter((_, i) => i % 2 === 0)
-      .map((v) => [v, String(v)]),
-  },
-  {
     k: 'bot',
     nm: 'Amin',
     sym: '<i>A</i><sub>min</sub>',
-    name: '周波数特性の最小振幅',
-    sub: 'グラフの縦軸の下端',
+    name: '最小振幅',
+    sub: '周波数特性のグラフの縦軸の下端',
     unit: 'dB',
     min: -150,
     max: 0,
@@ -330,8 +312,8 @@ const DEFS: Def[] = [
     k: 'np',
     nm: 'N′',
     sym: '<i>N</i>′',
-    name: '精密計算のインパルス長',
-    sub: '計算結果の「精密計算」で使う',
+    name: '精密計算の長さ',
+    sub: '「精密計算」で使うインパルス長（FFT 点数）',
     unit: '',
     min: 65536,
     max: 2 ** 24,

@@ -1,0 +1,12 @@
+---
+/**
+ * 行の入力欄を畳む・開くボタン（ParamRow・ChoiceRow の fold）。項目名の右に置く。
+ * 畳んでいる間は今の値の要約を添える。動作は lib/tool-page.ts
+ */
+interface Props {
+  k: string;
+  name: string;
+}
+const { k, name } = Astro.props;
+---
+<button type="button" class="fsw" aria-expanded="false" aria-controls={`fb-${k}`}><span class="sr">{name}の入力欄 </span><span class="fsum"></span><svg viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1L5 5L9 1"/></svg></button>

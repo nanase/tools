@@ -15,6 +15,8 @@ interface Props {
 }
 const { title, description, tool, note } = Astro.props;
 const site = 'Tools + Simulators';
+/* アイコンは public/ に置く。ルート（/favicon.ico）はドメインのものなので base を付ける */
+const base = import.meta.env.BASE_URL;
 ---
 <!doctype html>
 <html lang="ja">
@@ -29,9 +31,9 @@ const site = 'Tools + Simulators';
 <meta property="og:type" content="website">
 <meta property="og:url" content={new URL(Astro.url.pathname, Astro.site).href}>
 <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site).href}>
-<link rel="icon" sizes="16x16" href="/favicon.ico">
-<link rel="icon" type="image/svg+xml" href="/favicon.svg">
-<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="icon" sizes="16x16 32x32 48x48" href={`${base}favicon.ico`}>
+<link rel="icon" type="image/svg+xml" href={`${base}favicon.svg`}>
+<link rel="apple-touch-icon" href={`${base}apple-touch-icon.png`}>
 <Fonts />
 </head>
 <body>

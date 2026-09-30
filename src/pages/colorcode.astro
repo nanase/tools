@@ -28,13 +28,13 @@ const name = '抵抗カラーコード';
           <ParamRow d={R_DEF} />
           <div class="prow wide" id="p-tol">
             <div class="c-sym" aria-hidden="true"><i>t</i></div>
-            <div class="c-name"><span id="n-tol">許容差</span><small>許容差の帯の色。4 本帯の「なし」は帯が 3 本の抵抗器</small></div>
-            <div class="c-sub"><div class="chips" id="tolC" role="group" aria-labelledby="n-tol" set:html={TOL_KEYS.map((k) => ccChip('t', k, k === INIT.tol)).join('')} /></div>
+            <div class="c-name"><span class="pn" id="n-tol">許容差</span><p class="desc tip" id="t-tol" role="tooltip" hidden>許容差の帯の色。4 本帯の「なし」は帯が 3 本の抵抗器</p></div>
+            <div class="c-sub"><div class="chips" id="tolC" role="group" aria-labelledby="n-tol" aria-describedby="t-tol" set:html={TOL_KEYS.map((k) => ccChip('t', k, k === INIT.tol)).join('')} /></div>
           </div>
           <div class="prow wide off" id="p-tc">
             <div class="c-sym" aria-hidden="true"><i>α</i></div>
-            <div class="c-name"><span id="n-tc">温度係数</span><small id="s-tc">6 本帯のときに使います</small></div>
-            <div class="c-sub"><div class="chips" id="tcC" role="group" aria-labelledby="n-tc" hidden set:html={TC_KEYS.map((k) => ccChip('tc', k, false)).join('')} /></div>
+            <div class="c-name"><span class="pn" id="n-tc">温度係数</span><p class="desc tip" id="t-tc" role="tooltip" hidden>温度係数の帯（6 本目）の色（ppm/K）</p></div>
+            <div class="c-sub"><p class="msg" id="s-tc">6 本帯のときに使います</p><div class="chips" id="tcC" role="group" aria-labelledby="n-tc" aria-describedby="t-tc" hidden set:html={TC_KEYS.map((k) => ccChip('tc', k, false)).join('')} /></div>
           </div>
         </div>
       </Panel>

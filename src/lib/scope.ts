@@ -10,14 +10,15 @@ export const SW = 400,
   DV = 40,
   GY = 200;
 
-/** 目盛り（ビルド時に使う） */
-export function gridSvg(): string {
+/** 目盛り（ビルド時に使う）。rows は縦の div の数（既定の 6 なら高さ SH） */
+export function gridSvg(rows = 6): string {
+  const h = rows * DV;
   let g = '';
-  for (let i = 0; i <= 10; i++) g += `<path class="gl" d="M${i * DV} 0V${SH}"/>`;
-  for (let j = 0; j <= 6; j++) g += `<path class="gl" d="M0 ${j * DV}H${SW}"/>`;
-  for (let x = 8; x < SW; x += 8) g += `<path class="gb" d="M${x} ${SH / 2 - 3}v6"/>`;
-  for (let y = 8; y < SH; y += 8) g += `<path class="gb" d="M${SW / 2 - 3} ${y}h6"/>`;
-  return `${g}<rect class="gb" x="0" y="0" width="${SW}" height="${SH}"/>`;
+  for (let i = 0; i <= 10; i++) g += `<path class="gl" d="M${i * DV} 0V${h}"/>`;
+  for (let j = 0; j <= rows; j++) g += `<path class="gl" d="M0 ${j * DV}H${SW}"/>`;
+  for (let x = 8; x < SW; x += 8) g += `<path class="gb" d="M${x} ${h / 2 - 3}v6"/>`;
+  for (let y = 8; y < h; y += 8) g += `<path class="gb" d="M${SW / 2 - 3} ${y}h6"/>`;
+  return `${g}<rect class="gb" x="0" y="0" width="${SW}" height="${h}"/>`;
 }
 
 /** 1-2-5 の切りのよい値に切り上げる */

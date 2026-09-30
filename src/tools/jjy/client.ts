@@ -6,6 +6,7 @@ import { ParamGroup } from '../../lib/param';
 import { addTip, initToolPage } from '../../lib/tool-page';
 import { JjyAudio } from './audio';
 import { CNAME, CSIG, callSignOn, DEFAULTS, type Minute, meaning, type Options, Signal, stopOn } from './code';
+import { drawFan } from './fan';
 import { substHtml } from './math';
 import { apply, OPT_ROWS, offRows, rowNotes } from './options';
 import { type Key, PARAMS } from './params';
@@ -47,15 +48,25 @@ function syncOpts(t: Minute['t']): void {
   }
 }
 
+const txt = (id: string, s: string) => {
+  $(id).textContent = s;
+};
+const html = (id: string, s: string) => {
+  $(id).innerHTML = s;
+};
+
 /* ---------- 音 ---------- */
 const g = new ParamGroup<Key>(PARAMS, (v) => {
   audio.freq = v.f;
   audio.vol = v.vol;
   audio.params();
 });
-const play = new Choice($('#p-play'), async (v) => {
-  const ok = await audio.setPlay(v === '1');
-  play.note(ok ? '' : '音を出せませんでした');
+/** 再生（枠の右上のボタン）。鳴らせなかったときは音の種類の行に知らせる */
+const playBtn = $('#playBtn');
+let playErr = '';
+playBtn.addEventListener('click', async () => {
+  const ok = await audio.setPlay(!audio.play);
+  playErr = ok ? '' : '音を出せませんでした';
   syncSnd();
 });
 const mode = new Choice<'tone' | 'sync'>($('#p-mode'), (v) => {
@@ -64,20 +75,14 @@ const mode = new Choice<'tone' | 'sync'>($('#p-mode'), (v) => {
   syncSnd();
 });
 function syncSnd(): void {
-  play.set(audio.play ? '1' : '0');
+  playBtn.setAttribute('aria-pressed', String(audio.play));
+  /* 双2次フィルタの再生ボタンと同じく、鳴らしている間は LED を点ける */
+  $('#sndLed').classList.toggle('on', audio.play);
+  txt('#playT', audio.play ? '停止' : '再生');
   const fixed = audio.mode === 'sync',
     sr = audio.sampleRate;
   g.setOff('f', fixed, '時刻合わせでは 13.333 kHz に固定します');
-  mode.note(fixed && sr ? `出力のサンプリング周波数 ${fmt(sr, 'Hz')}` : '');
-}
-/* 信号の強さを LED の明るさにする */
-const led = $('#sndLed');
-function meter(): void {
-  const k = audio.meter(),
-    on = k > 0.02;
-  if (!on && !led.classList.contains('on')) return;
-  led.classList.toggle('on', on);
-  led.style.opacity = on ? (0.35 + 0.65 * k).toFixed(2) : '';
+  mode.note(playErr || (fixed && sr ? `出力のサンプリング周波数 ${fmt(sr, 'Hz')}` : ''), playErr ? 'er' : '');
 }
 
 /* ---------- 時刻・タイムコード ---------- */
@@ -90,13 +95,6 @@ let cur: Minute | null = null,
   /** 押して固定した秒と、マウスで指している秒（-1 はなし） */
   pinned = -1,
   hover = -1;
-
-const txt = (id: string, s: string) => {
-  $(id).textContent = s;
-};
-const html = (id: string, s: string) => {
-  $(id).innerHTML = s;
-};
 
 function rebuild(m0: number): void {
   cur = sig.minute(m0);
@@ -128,7 +126,7 @@ function clock(ms: number): void {
     hms = `${p2(t.h)}:${p2(t.mi)}:${p2(t.s)}`;
   txt('#o-time', hms);
   txt('#o-date', `${t.y}/${p2(t.mo)}/${p2(t.d)}`);
-  html('#o-wd', `${WD[t.wd]}<span class="u">${t.wd}</span>`);
+  html('#o-wd', `${WD[t.wd]}曜日<span class="u">${t.wd}</span>`);
   html('#o-doy', `${t.doy}<span class="u">日目</span>`);
   txt('#mt', hms);
   txt('#ms', p2(t.s));
@@ -221,9 +219,12 @@ follow.addEventListener('click', () => {
   showCursor();
 });
 
+const fan = $<SVGElement>('#fan');
+
 function frame(): void {
   const t = simNow(),
     m0 = Math.floor(t / 60000) * 60000;
+  drawFan(fan, t);
   if (m0 !== curMin) rebuild(m0);
   const s = Math.floor((t - m0) / 1000);
   if (s !== curSec) {
@@ -231,7 +232,6 @@ function frame(): void {
     clock(t);
     showCursor();
   }
-  meter();
   requestAnimationFrame(frame);
 }
 

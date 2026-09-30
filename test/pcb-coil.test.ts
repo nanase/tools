@@ -8,6 +8,7 @@ import {
   fRes,
   fSkin,
   fTenth,
+  MU0,
   NMAX,
   nearE24,
   nGeo,
@@ -18,8 +19,20 @@ import {
   shapeOf,
   spiral,
 } from '../src/tools/pcb-coil/coil';
+import { dropDb, qMax, search } from '../src/tools/pcb-coil/design';
+import { calcStack, EPS0, ER_FR4, ellipKE, layerDist, loopM, stackFor, stackOf } from '../src/tools/pcb-coil/layers';
 import { doutPatch, fmtF, nPatch, PARAMS, roF, wPatch } from '../src/tools/pcb-coil/params';
-import { divOf, figPlot, frPlot, frRead, LX } from '../src/tools/pcb-coil/plot';
+import {
+  coil3d,
+  divOf,
+  figPlot,
+  frPlot,
+  frRead,
+  LX,
+  layerPaths,
+  symAxis,
+  thickScale,
+} from '../src/tools/pcb-coil/plot';
 
 /** 相対誤差 */
 const rel = (a: number, b: number) => Math.abs(a - b) / Math.abs(b);
@@ -354,5 +367,207 @@ describe('表示窓', () => {
     expect(p.qOver).not.toBe('');
     expect(p.label).toContain('より上は配線の長さが波長の 1/10 を超えるため破線');
     expect(frRead(r, null).html).toBe('f <b>13.56 MHz</b> Q <b>184</b> R <b>4.63 Ω</b>');
+  });
+});
+
+describe('多層', () => {
+  const sq = shapeOf('sq'),
+    X = { n: 5, dout: 40, w: 0.5, s: 0.5, t: 35 },
+    F = 13.56e6;
+
+  it('完全楕円積分と同軸の円形ループの相互インダクタンス', () => {
+    const [K, E] = ellipKE(0.5);
+    expect(rel(K, 1.685750354812596)).toBeLessThan(1e-12);
+    expect(rel(E, 1.467462209339427)).toBeLessThan(1e-12);
+    /* 遠く離れたループは磁気双極子の近似 μ0 π a² b² / (2 h³) に近づく */
+    expect(rel(loopM(0.01, 0.01, 1), (MU0 * Math.PI * 1e-8) / 2)).toBeLessThan(1e-3);
+    expect(rel(loopM(0.01, 0.02, 0.003), loopM(0.02, 0.01, 0.003))).toBeLessThan(1e-12);
+  });
+
+  it('1 層は calc と同じ', () => {
+    const a = calc(sq, X, F),
+      b = calcStack(sq, X, F, stackFor(1), 'ser');
+    expect(b.L).toBe(a.L);
+    expect(b.rac).toBe(a.rac);
+    expect(b.srf).toBe(Infinity);
+  });
+
+  it('2 層: 直列は 2(1 + k) 倍、並列は (1 + k)/2 倍、層の間の容量は 1/3', () => {
+    const st = stackOf('2-16'),
+      s = calcStack(sq, X, F, st, 'ser'),
+      p = calcStack(sq, X, F, st, 'par'),
+      k = s.k[0];
+    expect(k).toBeGreaterThan(0.5);
+    expect(k).toBeLessThan(0.95);
+    expect(rel(s.L, s.L1 * 2 * (1 + k))).toBeLessThan(1e-12);
+    expect(rel(p.L, p.L1 * ((1 + k) / 2))).toBeLessThan(1e-12);
+    expect(rel(p.rdc * 4, s.rdc)).toBeLessThan(1e-12);
+    const c = (EPS0 * ER_FR4 * 0.5e-3 * s.len1) / 1.53e-3;
+    expect(rel(s.cSum, c)).toBeLessThan(1e-12);
+    expect(rel(s.cp, c / 3)).toBeLessThan(1e-12);
+    expect(p.srf).toBe(Infinity);
+  });
+
+  it('層が近いほど結合が強く、層が多いほど L が増える', () => {
+    const k = (v: string) => calcStack(sq, X, F, stackOf(v), 'ser').k[0];
+    expect(k('2-08')).toBeGreaterThan(k('2-10'));
+    expect(k('2-10')).toBeGreaterThan(k('2-16'));
+    const l4 = calcStack(sq, X, F, stackOf('4-16'), 'ser');
+    expect(l4.L / l4.L1).toBeGreaterThan(10);
+    expect(l4.L / l4.L1).toBeLessThan(16);
+    expect(layerDist(stackOf('4-16'), 0, 3, 35e-6)).toBeCloseTo((0.21 + 1.07 + 0.21) * 1e-3 + 3 * 35e-6, 12);
+  });
+});
+
+describe('条件から探す', () => {
+  const base = {
+    f: 50e3,
+    st: stackOf('2-16'),
+    conn: 'ser' as const,
+    t: 35,
+    dmax: 80,
+    wmin: 0.2,
+    smin: 0.2,
+    band: 20,
+    rmin: 16,
+    rmax: 100,
+  };
+
+  it('帯域 ±20 % の両端を −3 dB に収める Q の上限', () => {
+    expect(qMax(20)).toBeCloseTo(1 / 0.45, 12);
+    expect(dropDb(qMax(20), 0.8)).toBeCloseTo(-10 * Math.log10(2), 12);
+    expect(qMax(0)).toBe(Infinity);
+  });
+
+  it('条件を満たす候補を磁界の強い順に返す', () => {
+    const r = search(base);
+    expect(r.length).toBeGreaterThan(3);
+    for (let i = 1; i < r.length; i++) expect(r[i].h1).toBeLessThanOrEqual(r[i - 1].h1);
+    for (const c of r) {
+      expect(c.rTot).toBeGreaterThanOrEqual(16 * (1 - 1e-9));
+      expect(c.rTot).toBeLessThanOrEqual(100 * (1 + 1e-9));
+      expect(c.q).toBeLessThanOrEqual(qMax(20) * (1 + 1e-9));
+      expect(c.w).toBeGreaterThanOrEqual(0.2);
+      expect(c.s).toBe(0.2);
+    }
+    expect(r[0].sh.v).toBe('sq');
+    expect(r[0].dout).toBe(80);
+    /* 六角形は角が 80 mm に収まる外径 */
+    expect(r.find((c) => c.sh.v === 'hex')?.dout).toBe(69.2);
+    expect(search({ ...base, rmax: 1 })).toEqual([]);
+  });
+});
+
+describe('3D', () => {
+  const sq = shapeOf('sq'),
+    P = spiral(4, 5, 19.75, 1) as [number, number][],
+    near = (a: readonly number[], b: readonly number[]) => Math.hypot(a[0] - b[0], a[1] - b[1]) < 1e-9;
+  /* 符号付き面積（x 右・y 上）: 時計回りは負 */
+  const turn = (L: readonly (readonly number[])[]) => {
+    let a = 0;
+    for (let i = 1; i < L.length; i++) a += L[i - 1][0] * L[i][1] - L[i][0] * L[i - 1][1];
+    return a;
+  };
+
+  it('直列は前の層の終わりから次の層が始まり、並列は同じ形', () => {
+    for (const k of [0, 4]) {
+      const L = layerPaths(P, 4, 'ser', k, 1).paths;
+      for (let i = 0; i < 3; i++) expect(near(L[i][L[i].length - 1], L[i + 1][0])).toBe(true);
+    }
+    const Q = layerPaths(P, 2, 'par', 4, 1);
+    expect(Q.paths[1]).toEqual(Q.paths[0]);
+    expect(Q.vias).toEqual([
+      { p: P[0], a: 0, b: 1 },
+      { p: P[P.length - 1], a: 0, b: 1 },
+    ]);
+  });
+
+  it('正方形の鏡映は対称軸で行い、向きが傾かない（辺が軸にそろう）', () => {
+    const L = layerPaths(P, 2, 'ser', 4, 1).paths[1];
+    /* つなぎの短い線（先頭）を除いた各辺が水平か垂直 */
+    for (let i = 2; i < L.length; i++) {
+      const dx = Math.abs(L[i][0] - L[i - 1][0]),
+        dy = Math.abs(L[i][1] - L[i - 1][1]);
+      expect(Math.min(dx, dy)).toBeLessThan(1e-9);
+    }
+    expect(symAxis(4, [-1, 1])).toBeCloseTo((3 * Math.PI) / 4, 12);
+    expect(symAxis(6, [0, 1])).toBeCloseTo(Math.PI / 2, 12);
+  });
+
+  it('どの層も表面から見て時計回りに流れる', () => {
+    for (const k of [0, 4]) for (const L of layerPaths(P, 6, 'ser', k, 1).paths) expect(turn(L)).toBeLessThan(0);
+  });
+
+  it('ビアはほかの巻線・端子と重ならない（1 巻でも）', () => {
+    /* 点と線分の距離 */
+    const dist = (q: readonly number[], a: readonly number[], b: readonly number[]) => {
+      const dx = b[0] - a[0],
+        dy = b[1] - a[1],
+        t = Math.max(0, Math.min(1, ((q[0] - a[0]) * dx + (q[1] - a[1]) * dy) / (dx * dx + dy * dy || 1)));
+      return Math.hypot(q[0] - a[0] - t * dx, q[1] - a[1] - t * dy);
+    };
+    for (const n of [1, 2, 5])
+      for (const [k, a0] of [
+        [4, 19.75],
+        [6, 19.75],
+        [8, 19.75],
+        [0, 19.75],
+      ] as const) {
+        const Pn = spiral(k, n, a0, 1) as [number, number][],
+          { paths, vias } = layerPaths(Pn, 4, 'ser', k, 1);
+        for (const v of vias) {
+          /* つなぐ 2 層では、ビアに入る・出る短い線を除いた配線から 0.3 間隔以上離れる */
+          for (let i = v.a; i <= v.b; i++) {
+            const L = paths[i];
+            for (let x = 1; x < L.length; x++) {
+              if (near(L[x - 1], v.p) || near(L[x], v.p)) continue;
+              expect(dist(v.p, L[x - 1], L[x])).toBeGreaterThan(0.3);
+            }
+          }
+          expect(Math.hypot(v.p[0] - Pn[0][0], v.p[1] - Pn[0][1])).toBeGreaterThan(0.3);
+        }
+        /* 別のつなぎ目のビアは同じ位置に重ねない */
+        for (let x = 1; x < vias.length; x++)
+          for (let y = 0; y < x; y++) expect(near(vias[x].p, vias[y].p)).toBe(false);
+      }
+  });
+
+  it('ビアの数（直列は層の数 − 1、並列は 2）と、回しても変わらない大きさ', () => {
+    const d = (st: string, conn: 'ser' | 'par', az = -0.5, el = 0.6) =>
+      coil3d({ sh: sq, n: 5, dout: 40, w: 0.5, s: 0.5, st: stackOf(st), conn, az, el, zoom: 1 }).svg;
+    const v = (x: string) => (x.match(/class="via"/g) ?? []).length;
+    expect(v(d('4-16', 'ser'))).toBe(3);
+    expect(v(d('4-16', 'par'))).toBe(2);
+    expect(v(d('1', 'ser'))).toBe(0);
+    /* ビアの ○ は、つなぐ層ごとに付く（直列 4 層は 3 本 × 2、並列 4 層は 2 本 × 4） */
+    expect((d('4-16', 'ser').match(/class="vpad"/g) ?? []).length).toBe(6);
+    expect((d('4-16', 'par').match(/class="vpad"/g) ?? []).length).toBe(8);
+    /* 配線の太さ（倍率で決まる）は向きによらない */
+    const wd = (x: string) => /stroke-width:([\d.]+)px/.exec(x)?.[1];
+    expect(wd(d('2-16', 'ser', 0.3, -0.8))).toBe(wd(d('2-16', 'ser', -1, 0.2)));
+  });
+
+  it('基板の厚さが図の厚さに出る', () => {
+    expect(thickScale(40)).toBeCloseTo(6.25, 12);
+    expect(thickScale(4)).toBe(1);
+    expect(thickScale(200)).toBe(10);
+    /* 真横から見ると、表面と裏面の縦の差が板厚 × 拡大率 × 倍率に比例する */
+    const span = (st: string) => {
+      const x = coil3d({
+          sh: sq,
+          n: 5,
+          dout: 40,
+          w: 0.5,
+          s: 0.5,
+          st: stackOf(st),
+          conn: 'ser',
+          az: 0,
+          el: 0,
+          zoom: 1,
+        }).svg,
+        ys = [...x.matchAll(/class="vpad" cx="[\d.-]+" cy="([\d.-]+)"/g)].map((m) => Number(m[1]));
+      return Math.max(...ys) - Math.min(...ys);
+    };
+    expect(span('2-16') / span('2-08')).toBeGreaterThan(1.9);
   });
 });

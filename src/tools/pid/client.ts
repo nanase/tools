@@ -2,9 +2,9 @@
 import { $ } from '../../lib/dom';
 import { fmt, plain, ro } from '../../lib/format';
 import { ParamGroup } from '../../lib/param';
-import { DV, SH, SW } from '../../lib/scope';
+import { DV, SW } from '../../lib/scope';
 import { initToolPage } from '../../lib/tool-page';
-import { DT, type In, metrics, simulate, trace } from './model';
+import { DT, type In, metrics, ROWS, simulate, trace } from './model';
 import { type Key, PARAMS } from './params';
 
 const html = (id: string, s: string) => {
@@ -26,10 +26,12 @@ const E0 = '<msub><mi>e</mi><mn>0</mn></msub>';
 const DASH = '—';
 
 initToolPage();
+/** 応答の表示窓の高さ */
+const PH = ROWS * DV;
 
 /** 応答の表示窓に描く。ref は基準線（目標など） */
 function scope(id: string, data: ArrayLike<number>, ref: number, unit: string, ch: 1 | 2, refLabel: string) {
-  const t = trace(data, ref);
+  const t = trace(data, ref, ROWS);
   $(`#${id}-tr`).setAttribute('d', t.d);
   const yr = +t.Y(ref);
   $(`#${id}-rl`).setAttribute('d', `M0 ${yr}H${SW}`);
@@ -38,10 +40,10 @@ function scope(id: string, data: ArrayLike<number>, ref: number, unit: string, c
   rt.innerHTML = refLabel;
   let a = '';
   for (let i = 0; i <= 10; i += 2)
-    a += `<text x="${i * DV}" y="${SH + 17}" text-anchor="middle">${i ? `${i * 10} s` : '0'}</text>`;
-  for (let j = 0; j <= 6; j++) {
+    a += `<text x="${i * DV}" y="${PH + 17}" text-anchor="middle">${i ? `${i * 10} s` : '0'}</text>`;
+  for (let j = 0; j <= ROWS; j++) {
     const v = (j - t.k) * t.vd;
-    a += `<text x="-10" y="${SH - j * DV + 4}" text-anchor="end">${v ? big(v, unit, 3) : '0'}</text>`;
+    a += `<text x="-10" y="${PH - j * DV + 4}" text-anchor="end">${v ? big(v, unit, 3) : '0'}</text>`;
   }
   a += `<path class="mk${ch}" d="M-8 ${t.y0 - 5}L-1 ${t.y0}L-8 ${t.y0 + 5}Z"/><path class="mk${ch}" d="M-5 -12L5 -12L0 -5Z"/>`;
   $(`#${id}-ax`).innerHTML = a;
@@ -81,7 +83,7 @@ function render(v: In): void {
     tt = $('#sp-tt');
   if (M.ts != null && M.ts > 0) {
     const xs = +sp.X(M.ts);
-    tl.setAttribute('d', `M${xs} 0V${SH}`);
+    tl.setAttribute('d', `M${xs} 0V${PH}`);
     tt.setAttribute('x', String(xs > 340 ? xs - 5 : xs + 5));
     tt.setAttribute('text-anchor', xs > 340 ? 'end' : 'start');
     tt.innerHTML = `t${tsub('s')}`;

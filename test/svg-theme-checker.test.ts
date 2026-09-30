@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { gutterHtml, hl, hlHtml, indentEdit, lineCount, newlineEdit } from '../src/tools/svg-theme-checker/code';
+import { gutterHtml, hl, hlCss, hlHtml, indentEdit, lineCount, newlineEdit } from '../src/tools/svg-theme-checker/code';
 import {
   type AttrIn,
   checkAttr,
@@ -326,6 +326,21 @@ describe('コード入力', () => {
       '<span class="x-p">&lt;![CDATA[</span><span class="x-tx">a&lt;b</span><span class="x-p">]]&gt;</span>',
     );
     expect(hl('<?xml version="1.0"?>')).toBe('<span class="x-cm">&lt;?xml version=&quot;1.0&quot;?&gt;</span>');
+  });
+
+  it('style 要素の中は CSS として色分けする', () => {
+    expect(hlCss('@media (x) { :root { --a: #fff; } }')).toBe(
+      '<span class="x-k">@media</span><span class="x-v"> (x) </span><span class="x-p">{</span><span class="x-t"> :root </span><span class="x-p">{</span><span class="x-a"> --a</span><span class="x-p">:</span><span class="x-v"> #fff</span><span class="x-p">;</span><span class="x-a"> </span><span class="x-p">}</span><span class="x-a"> </span><span class="x-p">}</span>',
+    );
+    expect(hlCss('a{fill:red/* c */}')).toBe(
+      '<span class="x-t">a</span><span class="x-p">{</span><span class="x-a">fill</span><span class="x-p">:</span><span class="x-v">red</span><span class="x-cm">/* c */</span><span class="x-p">}</span>',
+    );
+    expect(hl('<style>a{}</style>')).toBe(
+      '<span class="x-p">&lt;</span><span class="x-t">style</span><span class="x-p">&gt;</span><span class="x-t">a</span><span class="x-p">{</span><span class="x-p">}</span><span class="x-p">&lt;/</span><span class="x-t">style</span><span class="x-p">&gt;</span>',
+    );
+    expect(hl('<style><![CDATA[a{}]]></style>')).toContain(
+      '<span class="x-p">&lt;![CDATA[</span><span class="x-t">a</span><span class="x-p">{</span><span class="x-p">}</span><span class="x-p">]]&gt;</span>',
+    );
   });
 
   it('末尾が改行なら写しに 1 行足す', () => {

@@ -1,18 +1,24 @@
 /* 双2次フィルタのページだけのスタイル（共通は src/styles/site.css） */
 
-/* 並び: スマホは 1 列（入力→周波数特性→インパルス応答→結果→係数→ブロック図→試聴→解析）、PC は左に入力系・右に出力系 */
-.a-in{order:1}.a-fr{order:2}.a-imp{order:3}.a-out{order:4}.a-coef{order:5}.a-blk{order:6}.a-snd{order:7}.a-ana{order:8}.a-thy{order:9}
+/* 並び: スマホは 1 列（入力→周波数特性→インパルス応答→結果→ブロック図と係数→試聴）、PC は左に入力系・右に出力系 */
+.a-in{order:1}.a-fr{order:2}.a-imp{order:3}.a-out{order:4}.a-coef{order:5}.a-snd{order:6}.a-thy{order:7}
+/* PC: 上段は左に入力・試聴、右に周波数特性・インパルス応答。下段は左にブロック図と係数、右に計算結果 */
 @media (min-width:1000px){
-  .tgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr);align-items:start}
-  .a-thy{grid-column:1/-1}
+  .tgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr);grid-template-areas:"ca cb" "coef out" "thy thy";align-items:start}
+  .c-a{grid-area:ca}.c-b{grid-area:cb}.a-coef{grid-area:coef}.a-out{grid-area:out}.a-thy{grid-area:thy}
 }
 
 /* 枠の右上のボタン（再生の LED・計算中の無効） */
 .seg button{display:inline-flex;align-items:center;gap:7px}
 .seg button:disabled{opacity:.45;cursor:default;color:var(--ink-3)}
 
-/* フィルタの種類の行 */
-.ptype .c-sub{padding-top:6px}
+/* フィルタの種類（入力の枠の右上）。狭い画面では詰める */
+@media (max-width:479px){.ptype button{padding:0 5px}}
+/* 表示と計算の設定（周波数特性・インパルス応答・計算結果の枠の下）。周波数特性の 2 項目は横に並べる */
+.ptab.ana,.ana2{margin-top:14px;border-top:1px solid var(--line)}
+.ptab.ana .prow:first-child,.ana2 .prow{padding-top:12px}
+.ana2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:24px;align-items:start}
+@media (max-width:559px){.ana2{grid-template-columns:minmax(0,1fr)}.ana2 .ptab+.ptab{border-top:1px solid var(--line)}}
 
 /* 計算結果 */
 .a-coef{container-type:inline-size}
@@ -43,8 +49,11 @@
 /* レベルメーター（表示窓の横長版） */
 .lv-hot{fill:var(--warn)}
 
-/* ブロック図 */
-.a-blk .sch{max-width:440px}
+/* ブロック図と係数（どちらかを出す） */
+.cap{margin:0 0 6px;font:500 12px/1.3 var(--mono);color:var(--ink-3)}
+.cap i{font-family:var(--math);font-style:italic}
+.cbar{display:flex;justify-content:flex-end;margin-bottom:10px}
+.a-coef .sch{max-width:440px}
 .s-ah{fill:var(--ink-2)}
 .s-ah.n1{fill:var(--ch1)}
 .s-v{font-size:11px}

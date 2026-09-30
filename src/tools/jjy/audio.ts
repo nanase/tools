@@ -1,6 +1,6 @@
 /**
  * JJY の信号を Web Audio API で鳴らす。
- * 発振器 → 包絡線（高 1・低 0.1）→ 音量 → 計測 → 出力。包絡線の変化は先読みして予約する
+ * 発振器 → 包絡線（高 1・低 0.1）→ 音量 → 出力。包絡線の変化は先読みして予約する
  */
 import { LOW, type Signal } from './code';
 
@@ -24,15 +24,13 @@ export interface Clock {
 export class JjyAudio {
   play = false;
   mode: 'tone' | 'sync' = 'tone';
-  /** 可聴音の周波数（Hz）と音量（%） */
+  /** 可聴音の周波数（Hz）と音量（dB、0 dB = フルスケール） */
   freq = 440;
-  vol = 50;
+  vol = -30;
   private ac: AudioContext | null = null;
   private osc: OscillatorNode | null = null;
   private env: GainNode | null = null;
   private master: GainNode | null = null;
-  private an: AnalyserNode | null = null;
-  private buf = new Float32Array(1024);
   /** 包絡線を予約し終えた時刻（表示時刻の ms） */
   private schedTo: number | null = null;
 
@@ -53,18 +51,15 @@ export class JjyAudio {
     const ac = new AC(),
       osc = ac.createOscillator(),
       env = ac.createGain(),
-      master = ac.createGain(),
-      an = ac.createAnalyser();
-    an.fftSize = this.buf.length;
+      master = ac.createGain();
     env.gain.value = 0;
     master.gain.value = 0;
-    osc.connect(env).connect(master).connect(an).connect(ac.destination);
+    osc.connect(env).connect(master).connect(ac.destination);
     osc.start();
     this.ac = ac;
     this.osc = osc;
     this.env = env;
     this.master = master;
-    this.an = an;
     return ac;
   }
 
@@ -76,7 +71,7 @@ export class JjyAudio {
       now = ac.currentTime;
     osc.type = sync ? 'square' : 'sine';
     osc.frequency.setValueAtTime(sync ? SYNC_F : this.freq, now);
-    master.gain.setTargetAtTime(this.play ? this.vol / 100 : 0, now, 0.015);
+    master.gain.setTargetAtTime(this.play ? 10 ** (this.vol / 20) : 0, now, 0.015);
   }
 
   private latency(): number {
@@ -150,19 +145,5 @@ export class JjyAudio {
       }, 200);
     }
     return ok;
-  }
-
-  /**
-   * 信号の強さ（0〜1）: -30〜-10 dBFS の RMS を割り当てる（旧実装の SignalIndicator と同じ範囲）。
-   * 鳴らしていなければ 0
-   */
-  meter(): number {
-    const { an, buf } = this;
-    if (!an || !this.play) return 0;
-    an.getFloatTimeDomainData(buf);
-    let s = 0;
-    for (const x of buf) s += x * x;
-    const db = 10 * Math.log10(s / buf.length + 1e-12);
-    return Math.max(0, Math.min(1, (db + 30) / 20));
   }
 }

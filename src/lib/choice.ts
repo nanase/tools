@@ -70,9 +70,9 @@ export class Choice<V extends string = string> {
     if (this.msgEl.textContent !== text) this.msgEl.textContent = text;
   }
 
-  /** 項目名の下の補足を変える */
+  /** 項目名の吹き出しの補足を変える */
   setSub(text: string): void {
-    const s = this.root.querySelector('.c-name small');
+    const s = this.root.querySelector('.c-name .tip');
     if (s) s.textContent = text;
   }
 }

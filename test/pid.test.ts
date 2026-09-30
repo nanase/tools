@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { valueList } from '../src/lib/param-core';
-import { DT, type In, metrics, N, PIDController, simulate, trace, vscale } from '../src/tools/pid/model';
+import { DT, type In, metrics, N, PIDController, ROWS, simulate, trace, vscale } from '../src/tools/pid/model';
 import { PARAMS } from '../src/tools/pid/params';
 
 const DEF: In = { kp: 0.0047, ki: 0, kd: 0.33, x0: 0, r: 50, v0: 0, w: -1, al: 0.05 };
@@ -81,6 +81,16 @@ describe('表示窓の縦軸', () => {
     expect(vscale(-29.1, 2.5, 1)).toEqual({ vd: 10, k: 4 });
     /* 振れ幅がなければ既定の vd で中央に置く */
     expect(vscale(0, 0, 1)).toEqual({ vd: 1, k: 3 });
+  });
+
+  it('ページの表示窓（ROWS div）でも 0 を目盛線に置いて収める', () => {
+    expect(ROWS).toBe(4);
+    expect(vscale(-0.02, 53.4, 1, ROWS)).toEqual({ vd: 20, k: 1 });
+    expect(vscale(-30, 20, 1, ROWS)).toEqual({ vd: 20, k: 2 });
+    expect(vscale(0, 0, 1, ROWS)).toEqual({ vd: 1, k: 2 });
+    const { S } = run();
+    const p = trace(S.X, 50, ROWS);
+    expect([p.vd, p.k, p.y0]).toEqual([20, 1, 120]);
   });
 
   it('画面案と同じレンジ', () => {

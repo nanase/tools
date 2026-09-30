@@ -157,16 +157,18 @@ export interface Coil extends Ac {
   Lmw: number;
   /** 単項式近似（円は NaN） */
   Lmn: number;
-  /** 配線の長さ（中心線） */
+  /** 配線の長さ（中心線。多層の直列では全層の和） */
   len: number;
   rdc: number;
+  /** 抵抗の倍率（ρℓ/(w t) に掛ける。多層の並列で電流が分かれる分。1 層・直列は 1） */
+  rk: number;
 }
 
-/** 周波数 f での表皮の深さ・実効厚さ（Yue と Wong）・交流抵抗・Q・共振容量・帯域幅 */
-export function ac(f: number, L: number, len: number, w: number, t: number): Ac {
+/** 周波数 f での表皮の深さ・実効厚さ（Yue と Wong）・交流抵抗・Q・共振容量・帯域幅。rk は抵抗の倍率（Coil.rk） */
+export function ac(f: number, L: number, len: number, w: number, t: number, rk = 1): Ac {
   const dl = Math.sqrt(RHO_CU / (Math.PI * f * MU0)),
     teff = dl * (1 - Math.exp(-t / dl));
-  const rac = (RHO_CU * len) / (w * teff),
+  const rac = (rk * RHO_CU * len) / (w * teff),
     q = (2 * Math.PI * f * L) / rac;
   return { f, dl, teff, rac, q, c: 1 / ((2 * Math.PI * f) ** 2 * L), bw: f / q };
 }
@@ -190,7 +192,7 @@ export function calc(sh: Shape, x: Dims, f: number): Coil {
       : NaN;
   const len = polyLen(spiral(sh.k, n, d / 2 - w / 2, w + s));
   const rdc = (RHO_CU * len) / (w * t);
-  return { n, d, w, s, t, din, davg, rho, L, Lmw, Lmn, len, rdc, ...ac(f, L, len, w, t) };
+  return { n, d, w, s, t, din, davg, rho, L, Lmw, Lmn, len, rdc, rk: 1, ...ac(f, L, len, w, t) };
 }
 
 /** E24 で最も近い値（対数で測る） */

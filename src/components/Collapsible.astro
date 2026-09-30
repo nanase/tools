@@ -1,12 +1,16 @@
 ---
-/** 開閉できる枠（閉じると見出しの載った水平線だけ）。初期状態は閉じる。動作は lib/tool-page.ts */
+/**
+ * 開閉できる枠（閉じると見出しの載った水平線だけ）。初期状態は閉じる。動作は lib/tool-page.ts。
+ * class を省くと動作原理と式の枠（a-thy）になる。入力を畳む枠は class で並びの名前を渡す
+ */
 interface Props {
   hid: string;
   title: string;
+  class?: string;
 }
-const { hid, title } = Astro.props;
+const { hid, title, class: cls = 'a-thy' } = Astro.props;
 ---
-<details class="pnl a-thy">
+<details class:list={['pnl clps', cls]}>
   <summary><h2 id={hid} style="font:inherit">{title}</h2></summary>
   <div class="thy-body"><slot /></div>
 </details>

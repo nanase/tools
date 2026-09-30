@@ -1,6 +1,7 @@
 /** MathML の組み立て（動作原理と式の固定部分と、現在の値を代入した式） */
 import { parts } from '../../lib/format';
 import type { Coil, Shape } from './coil';
+import type { Stacked } from './layers';
 import { partsF, sig } from './params';
 
 export const mi = (x: string, up?: boolean): string => `<mi${up ? ' mathvariant="normal"' : ''}>${x}</mi>`;
@@ -58,8 +59,11 @@ const qty = (v: number, u: string, s = 4): string => {
 const mm = (v: number, s = 4): string =>
   `<mrow>${num(v, s)}<mspace width="0.17em"/><mi mathvariant="normal">mm</mi></mrow>`;
 
-/** 代入した式（#subst の中身）。w・s は画面の値 [mm] */
-export function substHtml(g: Coil, sh: Shape, w: number, s: number): string {
+/** 代入した式（#subst の中身）。w・s は画面の値 [mm]。多層なら層の合成と自己共振も出す */
+export function substHtml(g: Coil & Partial<Stacked>, sh: Shape, w: number, s: number): string {
+  /* 多層では電流シート近似は 1 層ぶんの値 */
+  const L1 = g.L1 ?? g.L,
+    nl = g.nl ?? 1;
   const [c1, c2, c3, c4] = sh.c,
     dO_ = g.d * 1e3,
     dI_ = g.din * 1e3,
@@ -96,9 +100,43 @@ export function substHtml(g: Coil, sh: Shape, w: number, s: number): string {
       frac(row(mu0, DOT, sup(num(g.n), two), DOT, mm(dA_), DOT, num(c1)), two),
       par(row(ln(frac(num(c2), r3)), PL, num(c3), DOT, r3, PL, num(c4), DOT, sq(r3))),
       AP,
-      qty(g.L, 'H', 4),
+      qty(L1, 'H', 4),
     ),
   );
+  if (nl > 1) {
+    h += blk(
+      row(
+        L_,
+        EQ,
+        Ls('gmd'),
+        g.conn === 'par' ? '<mo>×</mo>' : DOT,
+        num(g.L / L1, 4),
+        EQ,
+        qty(L1, 'H', 4),
+        '<mo>×</mo>',
+        num(g.L / L1, 4),
+        AP,
+        qty(g.L, 'H', 4),
+        `<mspace width="1em"/><mtext>（${nl} 層・${g.conn === 'par' ? '並列' : '直列'}）</mtext>`,
+      ),
+    );
+    if (g.conn === 'ser' && g.cp && g.srf)
+      h += blk(
+        row(
+          sub(mi('C'), mi('p')),
+          EQ,
+          frac(mn('4'), row(mn('3'), DOT, sq(num(nl)))),
+          DOT,
+          qty(g.cSum ?? 0, 'F', 3),
+          AP,
+          qty(g.cp, 'F', 3),
+          CM,
+          sub(f_, mi('SRF', true)),
+          AP,
+          qty(g.srf, 'Hz', 3),
+        ),
+      );
+  }
   h += blk(row(dl, AP, qty(g.dl, 'm', 3), CM, tef, AP, qty(g.teff, 'm', 3), CM, Rac, AP, qty(g.rac, 'Ω', 3)));
   h += blk(
     row(
