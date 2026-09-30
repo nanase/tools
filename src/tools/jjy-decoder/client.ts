@@ -9,6 +9,7 @@ import { ParamGroup } from '../../lib/param';
 import { DV, GY, SW } from '../../lib/scope';
 import { addTip, initToolPage } from '../../lib/tool-page';
 import { CNAME, DEFAULTS, meaning, Signal, WIDTH } from '../jjy/code';
+import { drawFan } from '../jjy/fan';
 import { diffHtml, jst, p2, WD } from '../jjy/time';
 import { Decoder, decodeAll, evalFrame, type Frame, half, hm, hms, nn, type Res, type Sym, todOf } from './decoder';
 import { analyzeFile, type FileEnv, peakF } from './dsp';
@@ -43,6 +44,17 @@ const html = (id: string, h: string) => {
   const el = $(id);
   if (el.innerHTML !== h) el.innerHTML = h;
 };
+/**
+ * 復号の結果の印（項目名の後ろ）: ok は読めた、ng は読めなかった、
+ * pv は仮の値（パリティや 1 分の終わりを確かめる前）、'' はまだ受け取っていない
+ */
+type Mark = '' | 'ok' | 'ng' | 'pv';
+const mark = (id: string, m: Mark) => {
+  const el = $(id).closest<HTMLElement>('.m');
+  if (!el || (el.dataset.ck ?? '') === m) return;
+  if (m) el.dataset.ck = m;
+  else delete el.dataset.ck;
+};
 
 /* =====================================================================
    入力
@@ -50,6 +62,8 @@ const html = (id: string, h: string) => {
 type Src = 'mic' | 'file' | 'test';
 type Fm = 'auto' | 'manual';
 const ui = { src: 'mic' as Src, fm: 'auto' as Fm, mon: false };
+/** モニター（テスト信号をスピーカーで鳴らす）の音量: −30 dB */
+const MON = 10 ** (-30 / 20);
 const SRC_SUB: Record<Src, string> = {
   mic: 'マイク・ライン入力',
   file: 'WAV・MP3 など（先頭の 10 分まで）',
@@ -63,7 +77,6 @@ const g = new ParamGroup<'f'>([F_PARAM], (v, k) => {
   manualF = v.f;
   carrierChanged();
 });
-const fIn = $<HTMLInputElement>('#in-f');
 
 const src = new Choice<Src>($('#p-src'), (v) => {
   if (live.on) liveStop();
@@ -82,9 +95,9 @@ const fm = new Choice<Fm>($('#p-fm'), (v) => {
 });
 const mon = new Choice<'0' | '1'>($('#p-mon'), (v) => {
   ui.mon = v === '1';
-  if (gen.mon && live.ac) gen.mon.gain.setTargetAtTime(ui.mon ? 0.6 : 0, live.ac.currentTime, 0.015);
+  if (gen.mon && live.ac) gen.mon.gain.setTargetAtTime(ui.mon ? MON : 0, live.ac.currentTime, 0.015);
 });
-const runBtns = $$<HTMLButtonElement>('#runSeg button');
+const runBtn = $('#runBtn');
 const mRun = $('#m-run');
 
 /** 入力の行の状態（押せる・押せない、注記）を今の入力元に合わせる */
@@ -92,49 +105,39 @@ function syncIn(): void {
   const s = ui.src,
     file = s === 'file';
   src.set(s);
-  for (const b of runBtns) b.setAttribute('aria-pressed', String((b.dataset.v === '1') === live.on));
+  runBtn.setAttribute('aria-pressed', String(live.on));
+  txt('#runT', live.on ? '停止' : '開始');
   $('#runSeg').hidden = file;
   $('#fileSeg').hidden = !file;
   $('#wavBtn').hidden = s !== 'test';
   txt('#runName', file ? 'ファイル' : '受信');
-  txt('#runSub', SRC_SUB[s]);
+  txt('#t-run', SRC_SUB[s]);
   fm.set(ui.fm);
-  const monOff = s !== 'test';
   mon.set(ui.mon ? '1' : '0');
-  mon.setOff(monOff, 'テスト信号のときだけ使います');
+  /* モニターはテスト信号のときだけ使うので、ほかの入力元では行ごと隠す */
+  mon.root.hidden = s !== 'test';
   showCarrier();
 }
 
-/** 搬送波の行: 自動のときは使っている周波数を欄に出す */
+/** 搬送波の行: 自動のときは周波数の行を隠し、使っている周波数を注記に出す */
 function showCarrier(): void {
   const f = curF(),
     auto = ui.fm === 'auto';
-  g.setOff(
-    'f',
-    auto,
-    f > 0 ? '自動: 最も振幅の大きい周波数を使っています' : '自動: 入力から最も振幅の大きい周波数を探します',
+  $('#p-f').hidden = auto;
+  fm.note(
+    !auto
+      ? ''
+      : f > 0
+        ? `自動: ${fmt(Number(f.toPrecision(5)), 'Hz', 5)} を使っています`
+        : '自動: 入力から最も振幅の大きい周波数を探します',
   );
-  if (auto) {
-    if (f > 0) {
-      g.set('f', Number(f.toPrecision(5)), { silent: true });
-      fIn.placeholder = F_PARAM.ph;
-    } else {
-      fIn.value = '';
-      fIn.placeholder = '—';
-    }
-    for (const b of $$('#p-f .chip')) b.setAttribute('aria-pressed', 'false');
-  } else {
-    fIn.placeholder = F_PARAM.ph;
-    if (g.get('f') !== manualF) g.set('f', manualF, { silent: true });
-  }
+  if (!auto && g.get('f') !== manualF) g.set('f', manualF, { silent: true });
 }
 const curF = (): number => (ui.src === 'file' ? (fileRes?.f ?? Number.NaN) : live.f);
 
-$('#runSeg').addEventListener('click', async (e) => {
-  const b = (e.target as Element).closest<HTMLElement>('[data-v]');
-  if (!b) return;
-  if (b.dataset.v === '1' && !live.on) await liveStart(ui.src);
-  else if (b.dataset.v === '0' && live.on) liveStop();
+runBtn.addEventListener('click', async () => {
+  if (!live.on) await liveStart(ui.src);
+  else liveStop();
   syncIn();
 });
 
@@ -375,7 +378,7 @@ const gen = {
 function genStart(ac: AudioContext): GainNode {
   const out = ac.createGain(),
     m = ac.createGain();
-  m.gain.value = ui.mon ? 0.6 : 0;
+  m.gain.value = ui.mon ? MON : 0;
   out.connect(m).connect(ac.destination);
   Object.assign(gen, {
     out,
@@ -652,7 +655,7 @@ function renderBars(v: View): void {
     const h = fileRes.frames
       .map((f, i) => {
         const ok = !!f.res?.ok;
-        return `<button type="button" class="chip${ok ? '' : ' bad'}" data-i="${i}" aria-pressed="${i === fsel}"${ok ? '' : ' title="検査を通らなかった分"'}>${hm(f.res) || '??:??'}</button>`;
+        return `<button type="button" class="chip${ok ? '' : ' bad'}" data-i="${i}" aria-pressed="${i === fsel}" title="${ok ? '検査を通った分' : '検査を通らなかった分'}"><span class="ck" aria-hidden="true">${ok ? '\u2714\uFE0E' : '？'}</span>${hm(f.res) || '??:??'}</button>`;
       })
       .join('');
     if (fmins.innerHTML !== h) fmins.innerHTML = h;
@@ -845,21 +848,28 @@ interface DateItems {
   mo?: number;
   day?: number;
   wd: number;
+  /** 曜日のビットを読めなかった */
+  wdBad?: boolean;
   doy?: number;
+  /** 仮の値（読めた項目の印を ✔ ではなく ？ にする） */
+  prov?: boolean;
 }
 function dateItems(o: DateItems): void {
+  const ok: Mark = o.prov ? 'pv' : 'ok';
   const note = o.yNote ? `<span class="m-sub">${o.yNote}</span>` : '';
   html('#o-y', o.Y > 0 ? `${o.Y}${note}` : `—${note}`);
-  html('#o-date', o.mo && o.day ? `${o.mo}<span class="u">月</span>${o.day}<span class="u">日</span>` : '—');
-  html('#o-wd', o.wd >= 0 ? `${WD[o.wd]}<span class="u">${o.wd}</span>` : '—');
+  mark('#o-y', o.Y > 0 ? ok : '');
+  const date = !!(o.mo && o.day);
+  html('#o-date', date ? `${o.mo}<span class="u">月</span>${o.day}<span class="u">日</span>` : '—');
+  mark('#o-date', date ? ok : Number.isNaN(o.doy) ? 'ng' : '');
+  html('#o-wd', o.wd >= 0 ? `${WD[o.wd]}曜日<span class="u">${o.wd}</span>` : '—');
+  mark('#o-wd', o.wd >= 0 ? ok : o.wdBad ? 'ng' : '');
+  const doy = o.doy !== undefined && o.doy > 0;
   html(
     '#o-doy',
-    o.doy !== undefined && o.doy > 0
-      ? `${o.doy}<span class="u">日目</span>`
-      : Number.isNaN(o.doy)
-        ? '<span class="tx">読めません</span>'
-        : '—',
+    doy ? `${o.doy}<span class="u">日目</span>` : Number.isNaN(o.doy) ? '<span class="tx">読めません</span>' : '—',
   );
+  mark('#o-doy', doy ? ok : Number.isNaN(o.doy) ? 'ng' : '');
 }
 const resItems = (r: Res): DateItems => ({
   Y: r.Y,
@@ -867,6 +877,7 @@ const resItems = (r: Res): DateItems => ({
   mo: r.mo,
   day: r.day,
   wd: nn(r.w) ? r.w : (r.wdC ?? -1),
+  wdBad: Number.isNaN(r.w),
   doy: r.d,
 });
 function countHtml(L: Frame[]): string {
@@ -875,13 +886,17 @@ function countHtml(L: Frame[]): string {
     ? `${ok}<span class="u">分</span>${L.length > ok ? `<span class="m-note">検査を通らなかった分 ${L.length - ok}</span>` : ''}`
     : '—';
 }
+const fan = $<SVGElement>('#fan');
 function renderTime(v: View): void {
   let time = '--:--:--',
     note = '',
     aux = '',
     diffT = '現在時刻とのずれ',
     diff = '—',
-    di: DateItems = { Y: Number.NaN, yNote: '', wd: -1 };
+    di: DateItems = { Y: Number.NaN, yNote: '', wd: -1 },
+    /** 扇形に渡す時刻（ms）。ファイルでは時刻が進まないので出さない */
+    fanT: number | null = null,
+    tm: Mark = '';
   if (v.file) {
     diffT = 'ファイル先頭の時刻';
     const fr = v.fr,
@@ -893,6 +908,7 @@ function renderTime(v: View): void {
       diff = `${hms(st)}<span class="u">.${Math.round((((st % 1000) + 1000) % 1000) / 100)}</span>`;
       aux = `ファイルの ${Math.floor(fr.t0 / 60000)}:${p2(Math.floor(fr.t0 / 1000) % 60)} から`;
       if (!r.ok) note = '検査を通らなかった分です';
+      tm = r.ok ? 'ok' : 'ng';
     }
     if (r) di = resItems(r);
     html('#o-cnt', countHtml(fileRes?.frames ?? []));
@@ -910,29 +926,32 @@ function renderTime(v: View): void {
       const now = Date.now();
       if (a.off != null) {
         const t = jst(now + a.off);
+        fanT = now + a.off;
         time = `${p2(t.h)}:${p2(t.mi)}:${p2(t.s)}`;
         di = { Y: t.y, yNote: yNote(a.r), mo: t.mo, day: t.d, wd: t.wd, doy: t.doy };
         diff = diffHtml(a.off);
       } else {
         const tod = a.tod ?? 0;
-        time = hms(todOf(now) + tod);
+        fanT = todOf(now) + tod;
+        time = hms(fanT);
         di = { ...resItems(a.r), wd: nn(a.r.w) ? a.r.w : -1 };
         diff = diffHtml(tod);
       }
+      /* 仮の値であることは項目名の印（？）で示す */
       note = !live.on
         ? '受信を止めたため、端末の時計で進めています'
-        : prov
-          ? a.r.pa1 && a.r.pa2
-            ? '1 分を読み終える前の仮の値です'
-            : 'パリティを確かめる前の仮の値です'
-          : dec.state !== 'LOCK'
-            ? '信号が途切れたため、端末の時計で進めています'
-            : '';
+        : !prov && dec.state !== 'LOCK'
+          ? '信号が途切れたため、端末の時計で進めています'
+          : '';
       aux = prov ? '受信中の分から' : `${hm(a.r)} の分から`;
+      tm = prov ? 'pv' : 'ok';
+      di.prov = prov;
     }
     html('#o-cnt', countHtml(dec.frames));
   } else html('#o-cnt', '—');
   html('#o-time', time);
+  mark('#o-time', tm);
+  drawFan(fan, fanT);
   html('#o-note', note);
   html('#o-diff', diff);
   txt('#o-diffT', diffT);
@@ -951,6 +970,7 @@ function renderFlags(v: View): void {
     const [val, note, bad] = r ? f(r) : (['—'] as const);
     const el = $(`#fl${i}`);
     el.className = val === '—' ? 'dim' : '';
+    mark(`#fl${i}`, val === '—' ? '' : bad ? 'ng' : 'ok');
     html(
       `#fl${i}`,
       (bad && !note ? `<span style="color:var(--warn)">${val}</span>` : val) +

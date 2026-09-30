@@ -5,10 +5,10 @@ import { prevOf } from '../../lib/eseries';
 import { fmt, ro } from '../../lib/format';
 import { ParamGroup } from '../../lib/param';
 import { DV, SH, SW } from '../../lib/scope';
-import { initToolPage } from '../../lib/tool-page';
+import { initToolPage, setFoldable } from '../../lib/tool-page';
 import { type Analysis, analyze, coef, type FilterParams, type Summary } from './filter';
 import { hzMath, substHtml } from './math';
-import { fcPatch, hzT, type Key, PARAMS, sup, type TypeDef, typeOf } from './params';
+import { fcPatch, hzT, type Key, L0, LENS, PARAMS, sup, type TypeDef, typeOf } from './params';
 import { type FrPlot, fixed, frIndex, frPlot, type ImpPlot, impPlot, LV_HOT, lvX, sig } from './plot';
 import type { Job, Reply } from './worker';
 
@@ -33,7 +33,7 @@ function toast(msg: string): void {
 }
 
 /* ---------- 状態 ---------- */
-let type: TypeDef = typeOf($('#p-type .chip[aria-pressed="true"]').dataset.v ?? '');
+let type: TypeDef = typeOf($('#p-type [aria-pressed="true"]').dataset.v ?? '');
 /** 最後に計算した結果（グラフの元） */
 let S: { N: number; fs: number; fc: number; res: Analysis } | null = null;
 /** 計算のたびに増やす。精密計算の結果が今の入力のものかを見分ける */
@@ -89,6 +89,11 @@ function renderCoef(): void {
     txt(`#c-${id}`, fixed(v[i], 9));
   });
 }
+/* ブロック図と係数は同じものの 2 つの表し方。既定はブロック図 */
+new Choice($('#bview'), (v) => {
+  $('#v-blk').hidden = v !== 'blk';
+  $('#v-coef').hidden = v !== 'coef';
+});
 new Choice($('#cmode'), (v) => {
   normOn = v === '1';
   html('#hz', hzMath(normOn));
@@ -168,11 +173,26 @@ bindChannel($('#ch2f'), $('#fr-scope'), 'hide2');
 
 /* ---------- インパルス応答 ---------- */
 let imK: number | null = null,
-  IM: ImpPlot | null = null;
+  IM: ImpPlot | null = null,
+  /** 表示長 L（選択肢） */
+  len = L0;
+const len$ = new Choice($('#p-len'), (v) => {
+  len = Number(v);
+  len$.note('');
+  drawImp();
+});
+/** 解析長 N を超える表示長は選べない。超えていたら N にする */
+function limitLen(N: number): void {
+  for (const L of LENS) len$.disable(String(L), L > N);
+  if (len > N) {
+    len = N;
+    len$.set(String(N));
+    len$.note(`N に合わせて ${N} にしました`, 'er');
+  }
+}
 function drawImp(): void {
   if (!S) return;
-  const { N, res } = S,
-    len = val('len');
+  const { N, res } = S;
   IM = impPlot(res.h, N, len);
   const st = $('#im-st');
   st.setAttribute('d', IM.stem);
@@ -372,10 +392,14 @@ $('#playBtn').addEventListener('click', () => {
 });
 
 /* ---------- 入力 ---------- */
-const type$ = new Choice($('#p-type'), (v) => {
-  type = typeOf(v);
-  type$.setSub(`${type.t}（${type.ab}）`);
+/** 増幅量 G は LSF・HSF・PEQ だけで使う。使わない間は畳んで開けなくする */
+function useGain(): void {
   g?.setOff('g', !type.g, `${type.ab} では使いません`);
+  setFoldable($('#p-g'), !!type.g);
+}
+new Choice($('#p-type'), (v) => {
+  type = typeOf(v);
+  useGain();
   /* math 要素は HTMLElement ではないので hidden は属性で切り替える */
   $('#eq-a').toggleAttribute('hidden', !type.g);
   for (const e of $$('.egrp')) e.hidden = e.dataset.t !== type.v;
@@ -387,7 +411,6 @@ g = new ParamGroup<Key>(PARAMS, (_, k) => {
   if (!k) return;
   if (k === 'vol') setVol();
   else if (k === 'bot') drawFr();
-  else if (k === 'len') drawImp();
   else if (k === 'np') syncPrec();
   else compute();
 });
@@ -403,13 +426,8 @@ G.on('fs', (fs) => {
     G.note('fc', `fs/2 = ${hzT(h)} 未満にするため ${hzT(w)} にしました`, 'er');
   }
 });
-G.on('n', (N) => {
-  G.update('len', { max: N });
-  if (G.get('len') > N) {
-    G.set('len', N, { silent: true });
-    G.note('len', `N に合わせて ${N} にしました`, 'er');
-  }
-});
-G.setOff('g', !type.g, `${type.ab} では使いません`);
+G.on('n', limitLen);
+limitLen(G.get('n'));
+useGain();
 compute();
 drawLv(-Infinity);

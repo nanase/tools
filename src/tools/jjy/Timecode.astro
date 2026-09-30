@@ -30,7 +30,7 @@ const { legend = [], follow = '現在の秒に戻す', third = ['b-sig', '信号
   {Array.from({ length: 60 }, (_, s) => <span class:list={['tb', { l10: s % 10 === 0, l5: s % 5 === 0 }]} data-s={s}></span>)}
 </div>
 <dl class="metrics bi" aria-live="off">
-  <div class="m"><dt>選んだ秒</dt><dd id="b-s"></dd></div>
+  <div class="m"><dt>選択された秒</dt><dd id="b-s"></dd></div>
   <div class="m"><dt>符号</dt><dd id="b-c"></dd></div>
   <div class="m"><dt>{third[1]}</dt><dd id={third[0]} class={third[2] ? 'tx' : undefined}></dd></div>
   <div class="m m-wide"><dt>意味</dt><dd id="b-mean" class="tx"></dd></div>

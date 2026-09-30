@@ -1,10 +1,11 @@
 /* PCB コイルのページだけのスタイル（共通は src/styles/site.css） */
 
-/* 並び: スマホは 1 列（形と寸法→形の図→銅箔と周波数→周波数特性→計算結果）、PC は左に入力・右に図と結果 */
-.a-dim{order:1}.a-fig{order:2}.a-mat{order:3}.a-fr{order:4}.a-out{order:5}.a-thy{order:6}
+/* 並び: スマホは 1 列（形と寸法→形の図→基板と周波数→周波数特性→計算結果→条件から探す）、
+   PC は左に入力・右に図と結果、その下に全幅で条件から探す */
+.a-dim{order:1}.a-fig{order:2}.a-mat{order:3}.a-fr{order:4}.a-out{order:5}.a-find{order:6}.a-thy{order:7}
 @media (min-width:1000px){
   .tgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr);align-items:start}
-  .a-thy{grid-column:1/-1}
+  .a-find,.a-thy{grid-column:1/-1}
 }
 
 /* 計算結果 */
@@ -29,3 +30,58 @@
 .dim{fill:none;stroke:var(--screen-ink);stroke-width:1}
 .dah{fill:var(--screen-ink)}
 .ext{fill:none;stroke:var(--screen-ink);stroke-width:1;stroke-dasharray:2 3;opacity:.7}
+
+/* 3D（斜めから見た図）: 半透明の基板（表面は明るく、裏面は暗い緑）、層ごとに色を少しずつ変えた銅箔、
+   電流の向きに流れる黄色の粒。右上に電流の表示と初期位置のボタン */
+.cap{margin:0 0 6px;font-size:12.5px;line-height:1.6;color:var(--ink-3)}
+.c3w{position:relative;border:1px solid var(--line);border-radius:var(--r);background:var(--inset);overflow:hidden}
+.c3d{display:block;width:100%;height:auto;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
+.c3d:active{cursor:grabbing}
+.c3b{position:absolute;top:8px;right:8px;display:flex;gap:6px}
+.c3b .tg.ib{justify-content:center;width:32px;min-height:32px;padding:0;background:var(--surface)}
+.c3b .ic-s .dot{fill:currentColor;stroke:none}
+.c3b .tg[aria-pressed="false"]{background:var(--surface)}
+.pcb{stroke:#2f7d44;stroke-width:1;stroke-opacity:.6}
+.pcb.top{fill:#3aa35a;fill-opacity:.22}
+.pcb.bot{fill:#1d5c30;fill-opacity:.3}
+.pcb.side{fill:#2f7d44;fill-opacity:.12}
+.tr{fill:none;stroke-linejoin:round;stroke-linecap:round}
+.tr.l1{stroke:#dd8e3c}
+.tr.l2{stroke:#c3722e}
+.tr.l3{stroke:#d69a55}
+.tr.l4{stroke:#b5652a}
+.tr.l5{stroke:#e0a466}
+.tr.l6{stroke:#a95d27}
+.flow{fill:none;stroke:#ffd21f;stroke-width:2.6;stroke-linecap:round;stroke-dasharray:0 14;animation:flow 1.4s linear infinite}
+@keyframes flow{to{stroke-dashoffset:-14}}
+.nocur .cur{display:none}
+.via{fill:none;stroke:var(--ink-2);stroke-width:1.6;stroke-dasharray:3 3}
+.vpad{fill:none;stroke:var(--ink-2);stroke-width:1.4}
+.term{fill:var(--surface);stroke:var(--ink);stroke-width:1.6}
+.c3d text{fill:var(--ink-2);font:500 11px var(--sans)}
+.c3d text.ex{font-size:9px;fill:var(--ink-3)}
+
+/* 条件から探す: 条件の 2 列と、候補の一覧（押すと入力に反映） */
+.a-find{container-type:inline-size}
+.find-note{margin:0 0 4px;font-size:13px;line-height:1.8;color:var(--ink-2)}
+.fgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:28px;align-items:start}
+.fl{display:grid;margin:14px -6px 0;border-top:1px solid var(--line-2);transition:opacity .15s}
+.fl.busy{opacity:.45}
+.fr{display:grid;grid-template-columns:minmax(0,2.3fr) repeat(5,minmax(0,1fr));column-gap:12px;align-items:baseline;width:100%;margin:0;padding:8px 6px;border:0;border-top:1px solid var(--line);border-radius:0;background:none;color:var(--ink);text-align:left;font:500 14px/1.45 var(--mono);font-variant-numeric:tabular-nums;cursor:pointer}
+.fr:first-child,.fr-h+.fr{border-top:0}
+.fr b{font-weight:500}
+.fr.best b{font-weight:700}
+.fr small{display:block;font:12px/1.45 var(--sans);color:var(--ink-3)}
+.fr .c1 b{font-family:var(--sans)}
+.fr-h{cursor:default;padding-top:6px;padding-bottom:4px}
+.fr-h span{font:12px/1.4 var(--sans);color:var(--ink-3)}
+button.fr:hover{background:var(--inset)}
+button.fr:focus-visible{outline-offset:-2px}
+.empty-c{padding:10px 6px;font-size:13.5px;color:var(--ink-3)}
+@container (max-width:720px){
+  .fgrid{grid-template-columns:minmax(0,1fr)}
+  .fr{grid-template-columns:repeat(3,minmax(0,1fr));row-gap:6px}
+  .fr .c1{grid-column:1/-1}
+  .fr-h{display:none}
+  .fr>span[data-l]::before{content:attr(data-l);display:block;font:11px/1.4 var(--sans);color:var(--ink-3)}
+}

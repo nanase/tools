@@ -7,6 +7,9 @@
   .a-thy{grid-column:1/-1}
 }
 
+/* 温度係数の行: 6 本帯でないときだけ注記を出す */
+#s-tc:empty{display:none}
+
 /* results */
 .m-q{margin-left:.5em;font:500 12.5px var(--sans);color:var(--ink-2)}
 .m-es{grid-column:1/-1}

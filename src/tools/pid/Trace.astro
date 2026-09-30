@@ -1,9 +1,10 @@
 ---
 /**
- * 応答の表示窓（横 10 s/div、縦は値に合わせる）。目盛りはビルド時に出し、波形・軸・基準線は client.ts が描く。
+ * 応答の表示窓（横 10 s/div × 縦 ROWS div、縦の刻みは値に合わせる）。目盛りはビルド時に出し、波形・軸・基準線は client.ts が描く。
  * 要素の id は `${id}-tr`（波形）・`${id}-rl`（基準線）など
  */
-import { gridSvg } from '../../lib/scope';
+import { DV, gridSvg } from '../../lib/scope';
+import { ROWS } from './model';
 
 interface Props {
   id: string;
@@ -17,6 +18,7 @@ interface Props {
 }
 const { id, ch, name, chTitle, refTitle, label } = Astro.props;
 const c1 = ch === 1;
+const h = ROWS * DV;
 ---
 <div class="sbar">
   <span class="stag" title={chTitle}><i class:list={['sw', { c2: !c1 }]} aria-hidden="true"></i>CH{ch} {name} <b id={`${id}-vd`}></b>/div</span>
@@ -26,8 +28,8 @@ const c1 = ch === 1;
   <span class="stag wn" id={`${id}-dv`} hidden>DIVERGED</span>
 </div>
 <div class="scope">
-  <svg viewBox="-66 -14 478 280" id={`${id}-svg`} role="img" aria-label={label}>
-    <g set:html={gridSvg()} />
+  <svg viewBox={`-66 -14 478 ${h + 40}`} id={`${id}-svg`} role="img" aria-label={label}>
+    <g set:html={gridSvg(ROWS)} />
     <path class:list={['th', { c1 }]} id={`${id}-rl`}/><text class:list={['tl', { c1 }]} id={`${id}-rt`} x="396" text-anchor="end"></text>
     {c1 && <Fragment><path class="th c1" id={`${id}-tl`}/><text class="tl c1" id={`${id}-tt`} y="12"></text></Fragment>}
     <path class={`t${ch}`} id={`${id}-tr`}/>

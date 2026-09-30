@@ -1,0 +1,5 @@
+/* 時刻と、秒を刻む扇形（Fan.astro）。時刻の dd に .clk を付けて並べる */
+.clk{display:flex;align-items:center;gap:.4em}
+.fan{flex:none;width:.72em;height:.72em;overflow:visible}
+.fan circle{fill:none;stroke:var(--line-2);stroke-width:1}
+.fan path{fill:var(--ink)}

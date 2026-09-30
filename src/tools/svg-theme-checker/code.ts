@@ -1,10 +1,79 @@
 /** コード入力: 色分け、行番号、字下げ。DOM に依存しない（ビルド時の初期表示にも使う） */
 import { esc } from '../../lib/dom';
 
-/** XML を色分けした HTML にする。長すぎるときは色分けしない */
+const T = (c: string, t: string) => (t ? `<span class="${c}">${esc(t)}</span>` : '');
+
+/**
+ * CSS の 1 区切り（{ ; } の手前まで）。{ の手前はセレクタ（@ で始まれば at ルールと条件）、
+ * それ以外は宣言（: の手前がプロパティ、後ろが値）。コメントはどこにあっても色分けする
+ */
+function cssSeg(seg: string, end: string): string {
+  let o = '',
+    role: 'sel' | 'prop' | 'val' = end === '{' ? 'sel' : 'prop',
+    first = true;
+  for (const part of seg.split(/(\/\*[\s\S]*?(?:\*\/|$))/)) {
+    if (!part) continue;
+    if (part.startsWith('/*')) {
+      o += T('x-cm', part);
+      continue;
+    }
+    let rest = part;
+    if (first && rest.trim()) {
+      first = false;
+      const at = /^(\s*)(@[\w-]+)/.exec(rest);
+      if (at) {
+        o += at[1] + T('x-k', at[2]);
+        rest = rest.slice(at[0].length);
+        role = 'val';
+      }
+    }
+    if (role === 'prop') {
+      const c = rest.indexOf(':');
+      if (c < 0) {
+        o += T('x-a', rest);
+        continue;
+      }
+      o += T('x-a', rest.slice(0, c)) + T('x-p', ':');
+      rest = rest.slice(c + 1);
+      role = 'val';
+    }
+    o += T(role === 'sel' ? 'x-t' : 'x-v', rest);
+  }
+  return o;
+}
+
+/** style 要素の中身（CSS）を色分けした HTML にする */
+export function hlCss(s: string): string {
+  let o = '',
+    i = 0;
+  const n = s.length;
+  while (i < n) {
+    if (s.startsWith('<![CDATA[', i) || s.startsWith(']]>', i)) {
+      const m = s[i] === '<' ? '<![CDATA[' : ']]>';
+      o += T('x-p', m);
+      i += m.length;
+      continue;
+    }
+    let j = i;
+    while (j < n && !'{};'.includes(s[j]) && !s.startsWith('<![CDATA[', j) && !s.startsWith(']]>', j)) {
+      if (s.startsWith('/*', j)) {
+        const e = s.indexOf('*/', j + 2);
+        j = e < 0 ? n : e + 2;
+      } else if (s[j] === '"' || s[j] === "'") {
+        const e = s.indexOf(s[j], j + 1);
+        j = e < 0 ? n : e + 1;
+      } else j++;
+    }
+    const end = '{};'.includes(s[j] ?? '') ? (s[j] ?? '') : '';
+    o += cssSeg(s.slice(i, j), end) + T('x-p', end);
+    i = j + end.length;
+  }
+  return o;
+}
+
+/** XML を色分けした HTML にする。style 要素の中は CSS として色分けする。長すぎるときは色分けしない */
 export function hl(s: string): string {
   if (s.length > 300000) return esc(s);
-  const T = (c: string, t: string) => (t ? `<span class="${c}">${esc(t)}</span>` : '');
   const RN = /<\/?[A-Za-z_][\w:.-]*/y,
     WS = /\s+/y,
     CL = /\/?>/y,
@@ -17,9 +86,19 @@ export function hl(s: string): string {
     return m ? m[0] : null;
   };
   let o = '',
-    i = 0;
+    i = 0,
+    /** 直前が style の開始タグなら、閉じタグまでを CSS として色分けする */
+    css = false;
   const n = s.length;
   while (i < n) {
+    if (css) {
+      css = false;
+      const e = s.slice(i).search(/<\/style/i),
+        j = e < 0 ? n : i + e;
+      o += hlCss(s.slice(i, j));
+      i = j;
+      continue;
+    }
     const lt = s.indexOf('<', i);
     if (lt < 0) {
       o += T('x-tx', s.slice(i));
@@ -56,7 +135,8 @@ export function hl(s: string): string {
       i++;
       continue;
     }
-    const cl = tag[1] === '/' ? 2 : 1;
+    const cl = tag[1] === '/' ? 2 : 1,
+      isStyle = cl === 1 && tag.slice(cl).toLowerCase() === 'style';
     o += T('x-p', tag.slice(0, cl)) + T('x-t', tag.slice(cl));
     i += tag.length;
     while (i < n) {
@@ -70,6 +150,7 @@ export function hl(s: string): string {
       if (m) {
         o += T('x-p', m);
         i += m.length;
+        css = isStyle && m === '>';
         break;
       }
       if (s[i] === '<') break;

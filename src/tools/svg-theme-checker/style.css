@@ -6,12 +6,9 @@
 /* 画面案では見出しとボタンの間に空白（約 4px）が入っていたので、その分を足して 12px にする */
 .ttl-h .qbtn{display:inline-grid;margin:0 -26px 0 12px;vertical-align:.32em}
 
+/* 枠の並び: プレビュー、その下に SVG コード。どちらもページの幅いっぱい */
 @media (min-width:1000px){
-  .tgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr);grid-template-areas:"code view" "thy thy"}
-  .a-code{grid-area:code;display:flex;flex-direction:column}
-  .a-view{grid-area:view}
-  .a-thy{grid-area:thy;align-self:start}
-  .a-code .ed{flex:1 1 0;height:auto;min-height:320px}
+  .a-code .ed{height:440px}
 }
 
 /* 状態表示（オシロの表示窓と同じ英語表記のバー） */
@@ -35,6 +32,7 @@
   .views{grid-template-columns:repeat(2,minmax(0,1fr))}
   .pane{aspect-ratio:1/1}
 }
+@container (min-width:900px){.pane{aspect-ratio:4/3}}
 
 /* コード入力（textarea の下に色分けした写しを重ねる） */
 .ed{position:relative;display:grid;grid-template-columns:auto minmax(max-content,1fr);grid-template-rows:minmax(100%,max-content);height:320px;overflow:auto;overscroll-behavior:contain;border:1px solid var(--line-2);border-radius:var(--r);background:var(--inset);font:500 13px/1.6 var(--mono);font-variant-ligatures:none}
@@ -47,11 +45,16 @@
 .cz>pre{pointer-events:none;color:var(--ink-2)}
 .cz>textarea{display:block;width:100%;height:100%;min-height:0;resize:none;overflow:hidden;background:transparent;color:transparent;caret-color:var(--ink);outline:none;-webkit-text-fill-color:transparent}
 .cz>textarea::selection{background:color-mix(in srgb,var(--focus) 32%,transparent)}
-.x-t{color:var(--ink)}
-.x-a{color:var(--ink-2)}
-.x-v{color:var(--ink)}
+/* 色分け（コード専用の色。波形の信号色は使わない）: タグ・セレクタ、属性・プロパティ、値、at ルール、コメント */
+.ed{--hl-t:#1f5ea8;--hl-a:#8a4a00;--hl-v:#0d7148;--hl-k:#8a2c9e;--hl-cm:#6b737a}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .ed{--hl-t:#80b4ff;--hl-a:#e5a95f;--hl-v:#7fd4a2;--hl-k:#d7a0f2;--hl-cm:#7f888f}}
+:root[data-theme="dark"] .ed{--hl-t:#80b4ff;--hl-a:#e5a95f;--hl-v:#7fd4a2;--hl-k:#d7a0f2;--hl-cm:#7f888f}
+.x-t{color:var(--hl-t)}
+.x-a{color:var(--hl-a)}
+.x-v{color:var(--hl-v)}
+.x-k{color:var(--hl-k)}
 .x-p{color:var(--ink-3)}
-.x-cm{color:var(--ink-3);font-style:italic}
+.x-cm{color:var(--hl-cm);font-style:italic}
 .x-tx{color:var(--ink-2)}
 @media (pointer:coarse){.ed{font-size:16px}}
 .a-code .msg:first-of-type{margin-top:6px}

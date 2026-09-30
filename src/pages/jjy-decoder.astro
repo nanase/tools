@@ -8,6 +8,7 @@ import RelatedTools from '../components/RelatedTools.astro';
 import { order, TOOLS } from '../data/tools';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import '../tools/jjy-decoder/style.css';
+import Fan from '../tools/jjy/Fan.astro';
 import Timecode from '../tools/jjy/Timecode.astro';
 import { FLAGS } from '../tools/jjy-decoder/flags';
 import { F_PARAM } from '../tools/jjy-decoder/params';
@@ -29,21 +30,22 @@ const related = [
   <div class="tgrid">
     <div class="col c1">
       <Panel hid="hd-in" title="入力" class="a-in">
+        <div slot="aux" class="srcbar">
+          <div class="seg" id="p-src" role="group" aria-label="入力元"><button type="button" data-v="mic" aria-pressed="true">マイク</button><button type="button" data-v="file" aria-pressed="false">ファイル</button><button type="button" data-v="test" aria-pressed="false">テスト信号</button></div>
+          <button type="button" class="qbtn" id="srcBtn" aria-expanded="false" aria-controls="srcTip" aria-label="入力元について" title="入力元について">?</button>
+        </div>
         <div class="ptab">
-          <ChoiceRow k="src" sym={'<span class="led" id="rxLed"></span>'} name="入力元" sub="音声の取り込み口" choices={[['mic', 'マイク'], ['file', 'ファイル'], ['test', 'テスト信号']]} value="mic" msg>
-            <button slot="help" type="button" class="qbtn" id="srcBtn" aria-expanded="false" aria-controls="srcTip" aria-label="入力元について" title="入力元について">?</button>
-          </ChoiceRow>
           <div class="prow" id="p-run">
             <div class="c-sym" aria-hidden="true"></div>
-            <div class="c-name" id="n-run"><span id="runName">受信</span><small id="runSub">マイク・ライン入力</small></div>
+            <div class="c-name"><span class="pn" id="runName">受信</span><p class="desc tip" id="t-run" role="tooltip" hidden>マイク・ライン入力</p></div>
             <div class="c-val">
-              <div class="seg" id="runSeg" role="group" aria-labelledby="n-run"><button type="button" data-v="0" aria-pressed="true">停止</button><button type="button" data-v="1" aria-pressed="false">開始</button></div>
-              <div class="seg" id="fileSeg" hidden><button type="button" id="fileBtn">ファイルを選ぶ</button></div>
+              <div class="seg" id="runSeg"><button type="button" id="runBtn" aria-pressed="false" aria-describedby="t-run"><span class="led" id="rxLed" aria-hidden="true"></span><span id="runT">開始</span></button></div>
+              <div class="seg" id="fileSeg" hidden><button type="button" id="fileBtn" aria-describedby="t-run">ファイルを選ぶ</button></div>
               <input type="file" id="fileIn" accept="audio/*,.wav,.mp3,.m4a,.ogg,.flac" hidden>
             </div>
             <div class="c-sub"><p class="msg" id="m-run" aria-live="polite"></p><button type="button" class="tg" id="wavBtn" hidden>WAV を保存（3 分）</button></div>
           </div>
-          <ChoiceRow k="fm" sym="<i>f</i><sub>0</sub>" name="搬送波" sub="周波数の決め方" choices={[['auto', '自動'], ['manual', '手動']]} value="auto" msg />
+          <ChoiceRow k="fm" sym="<i>f</i><sub>0</sub>" name="搬送波" sub="周波数の決め方。自動は入力から最も振幅の大きい周波数を使います" choices={[['auto', '自動'], ['manual', '手動']]} value="auto" msg />
           <ParamRow d={F_PARAM} />
           <ChoiceRow k="mon" sym="<i>~</i>" name="モニター" sub="テスト信号をスピーカーで鳴らす" choices={[['0', '出さない'], ['1', '出す']]} value="0" msg />
         </div>
@@ -75,7 +77,7 @@ const related = [
       <Panel hid="hd-out" title="復号した時刻" class="a-out">
         <span slot="aux" class="aux" id="o-aux"></span>
         <dl class="metrics">
-          <div class="m m-main"><dt>日本標準時（JST）</dt><dd><span id="o-time">--:--:--</span><span class="m-sub" id="o-note"></span></dd></div>
+          <div class="m m-main"><dt>日本標準時（JST）</dt><dd><span class="clk"><span id="o-time">--:--:--</span><Fan id="fan" /></span><span class="m-sub" id="o-note"></span></dd></div>
           <div class="m"><dt>年</dt><dd id="o-y">—</dd></div>
           <div class="m"><dt>日付</dt><dd id="o-date">—</dd></div>
           <div class="m"><dt>曜日</dt><dd id="o-wd">—</dd></div>

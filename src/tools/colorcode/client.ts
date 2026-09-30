@@ -70,7 +70,7 @@ function renderRows(): void {
   }
   const on = code.n === 6;
   $('#p-tc').classList.toggle('off', !on);
-  txt('#s-tc', on ? '温度係数の帯（6 本目）の色（ppm/K）' : '6 本帯のときに使います');
+  txt('#s-tc', on ? '' : '6 本帯のときに使います');
   $('#tcC').hidden = !on;
   for (const b of tcBtns) {
     b.setAttribute('aria-pressed', String(on && b.dataset.k === code.tc));

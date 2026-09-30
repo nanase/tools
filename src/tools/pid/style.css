@@ -7,9 +7,9 @@
 }
 
 /* 単位の列（m/s が入る幅） */
-.prow{grid-template-columns:2.2rem minmax(0,1fr) 13rem 2.6rem}
+.prow{grid-template-columns:2.2rem minmax(0,1fr) 12rem 2.6rem}
 .c-unit{white-space:nowrap}
-@container (max-width:520px){
+@container (max-width:400px){
   .prow{grid-template-columns:1.9rem minmax(0,1fr) 2.4rem}
 }
 

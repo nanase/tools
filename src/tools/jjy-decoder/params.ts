@@ -6,7 +6,7 @@ export const F_PARAM: ParamDef & { k: 'f' } = {
   nm: '搬送波の',
   sym: '',
   name: '周波数',
-  sub: '手動のときの搬送波',
+  sub: '手動で決める搬送波の周波数',
   unit: 'Hz',
   min: 20,
   max: 24000,

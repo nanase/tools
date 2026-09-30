@@ -10,7 +10,8 @@ import SiteLayout from '../layouts/SiteLayout.astro';
 import '../tools/pcb-coil/style.css';
 import { gridSvg } from '../lib/scope';
 import { SHAPES } from '../tools/pcb-coil/coil';
-import { PARAMS, shapeSub } from '../tools/pcb-coil/params';
+import { gapsText, LAYERS, STACKS } from '../tools/pcb-coil/layers';
+import { FIND_PARAMS, PARAMS, shapeSub } from '../tools/pcb-coil/params';
 import { frGrid } from '../tools/pcb-coil/plot';
 import Theory from '../tools/pcb-coil/Theory.astro';
 
@@ -28,32 +29,54 @@ const related = ['passive-combination', 'timer555', 'jjy', 'biquad', 'pid']
   <div class="tgrid">
     <div class="col">
       <Panel hid="hd-dim" title="形と寸法" class="a-dim">
-        <div class="ptab">
-          <ChoiceRow k="shape" name="形" sub={shapeSub(SHAPES[0])} choices={SHAPES.map((s) => [s.v, s.ab] as const)} value={SHAPES[0].v} />
-          {row(['n', 'dout', 'w', 's']).map((d) => <ParamRow d={d} />)}
+        <div slot="aux" class="seg" id="p-shape" role="group" aria-label="形">
+          {SHAPES.map((s, i) => <button type="button" data-v={s.v} aria-pressed={i === 0 ? 'true' : 'false'} title={shapeSub(s)}>{s.ab}</button>)}
         </div>
+        <div class="ptab">{row(['n', 'dout', 'w', 's']).map((d) => <ParamRow d={d} />)}</div>
       </Panel>
-      <Panel hid="hd-mat" title="銅箔と周波数" class="a-mat">
-        <div class="ptab">{row(['t', 'f']).map((d) => <ParamRow d={d} />)}</div>
+      <Panel hid="hd-mat" title="基板と周波数" class="a-mat">
+        <div slot="aux" class="seg" id="p-nl" role="group" aria-label="層数">
+          {LAYERS.map((n) => <button type="button" data-v={n} aria-pressed={n === 1 ? 'true' : 'false'} title={n === 1 ? '片面の 1 層だけに巻く' : `${n} 層に同じうずまきを重ねる`}>{n} 層</button>)}
+        </div>
+        <div class="ptab">
+          <ChoiceRow k="stack" name="基板の構成" sub="板厚と、隣り合う銅箔の間の誘電体（FR-4、比誘電率 4.4）の厚さ。一般的な構成の概数です" choices={STACKS.filter((s) => s.n > 1).map((s) => [s.v, s.ab, `層の間 ${gapsText(s)}`] as const)} value="2-16" layout="chips" wide msg class="multi" />
+          <ChoiceRow k="conn" name="層の接続" sub="直列はインダクタンスを稼ぎ、並列は抵抗を下げる" choices={[['ser', '直列'], ['par', '並列']]} value="ser" msg class="multi" />
+          {row(['t', 'f']).map((d) => <ParamRow d={d} />)}
+        </div>
       </Panel>
     </div>
 
     <div class="col">
       <Panel hid="hd-fig" title="コイルの形" class="a-fig">
-        <span slot="aux" class="aux">部品面から見た形・縮尺どおり</span>
-        <div class="sbar">
-          <span class="stag"><i class="sw" aria-hidden="true"></i>CH1 TRACE <b id="fg-w"></b></span>
-          <span class="stag">SHAPE <b id="fg-sh"></b></span>
-          <span class="stag">GRID <b id="fg-div"></b>/div</span>
-          <span class="stag">TURNS <b id="fg-n"></b></span>
+        <div slot="aux" class="seg" id="fview" role="group" aria-label="図の見せ方">
+          <button type="button" data-v="3d" aria-pressed="true" title="斜めから見た立体。層のつなぎ方と電流の向きを示す（ドラッグで回す、ホイールかピンチで拡大縮小）">3D</button><button type="button" data-v="top" aria-pressed="false" title="表面から見た形（縮尺どおり、寸法つき）">2D</button>
         </div>
-        <div class="scope">
-          <svg viewBox="-6 -6 412 252" id="fg-svg" role="img" aria-label="コイルの形">
-            <g set:html={gridSvg()} />
-            <path class="coil" id="fg-coil"/>
-            <g id="fg-pads"></g>
-            <g id="fg-dim"></g>
-          </svg>
+        <div id="v3d">
+          <div class="c3w" id="c3w">
+            <svg class="c3d" id="c3d" viewBox="0 0 400 280" role="img" aria-label="コイルの立体図"><g id="c3d-g"></g></svg>
+            <div class="c3b">
+              <button type="button" class="tg ib" id="c3cur" aria-pressed="true" aria-label="電流の向きを表示" title="電流の向き（流れる粒）を表示する"><svg class="ic-s" viewBox="0 0 24 24" aria-hidden="true"><circle class="dot" cx="4" cy="12" r="1.6"/><circle class="dot" cx="9" cy="12" r="1.6"/><path d="M13 12h8M17 8l4 4-4 4"/></svg></button>
+              <button type="button" class="tg ib" id="c3home" aria-label="初期位置に戻す" title="向きと大きさを初めの状態に戻す"><svg class="ic-s" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3"/><path d="M4.5 4v4.5H9"/></svg></button>
+            </div>
+          </div>
+        </div>
+        <div id="vtop" hidden>
+          <p class="cap">表面から見た形・縮尺どおり</p>
+          <div class="sbar">
+            <span class="stag"><i class="sw" aria-hidden="true"></i>CH1 TRACE <b id="fg-w"></b></span>
+            <span class="stag">SHAPE <b id="fg-sh"></b></span>
+            <span class="stag">GRID <b id="fg-div"></b>/div</span>
+            <span class="stag">TURNS <b id="fg-n"></b></span>
+            <span class="stag">LAYERS <b id="fg-l"></b></span>
+          </div>
+          <div class="scope">
+            <svg viewBox="-6 -6 412 252" id="fg-svg" role="img" aria-label="コイルの形">
+              <g set:html={gridSvg()} />
+              <path class="coil" id="fg-coil"/>
+              <g id="fg-pads"></g>
+              <g id="fg-dim"></g>
+            </svg>
+          </div>
         </div>
       </Panel>
 
@@ -71,6 +94,7 @@ const related = ['passive-combination', 'timer555', 'jjy', 'biquad', 'pid']
             <path class="mkt" id="fr-dt"/>
             <path class="mkl" id="fr-f"/>
             <path class="mkt" id="fr-lm"/>
+            <path class="mkt" id="fr-sr"/>
             <defs><clipPath id="fr-clip"><rect x="0" y="-2" width="400" height="244"/></clipPath></defs>
             <g clip-path="url(#fr-clip)"><path class="t2" id="fr-t2"/><path class="t2 ov" id="fr-t2o"/><path class="t1" id="fr-t1"/><path class="t1 ov" id="fr-t1o"/></g>
             <path class="cur" id="fr-cl"/>
@@ -81,7 +105,7 @@ const related = ['passive-combination', 'timer555', 'jjy', 'biquad', 'pid']
 
       <Panel hid="hd-out" title="計算結果" class="a-out">
         <dl class="metrics">
-          <div class="m m-main"><dt>インダクタンス <i>L</i>（電流シート近似）</dt><dd><span id="o-L"></span><span class="m-note" id="o-Ln"></span></dd></div>
+          <div class="m m-main"><dt>インダクタンス <i>L</i>（電流シート近似）</dt><dd><span id="o-L"></span><span class="m-sub" id="o-Ls"></span><span class="m-note" id="o-Ln"></span></dd></div>
           <div class="m"><dt>修正 Wheeler 式</dt><dd><span id="o-Lmw"></span><span class="m-sub" id="o-Lmws"></span></dd></div>
           <div class="m"><dt>単項式近似</dt><dd><span id="o-Lmn"></span><span class="m-sub" id="o-Lmns"></span></dd></div>
           <div class="m"><dt>内径 <i>d</i><sub>in</sub></dt><dd id="o-din"></dd></div>
@@ -93,9 +117,19 @@ const related = ['passive-combination', 'timer555', 'jjy', 'biquad', 'pid']
           <div class="m"><dt><i>Q</i></dt><dd id="o-q"></dd></div>
           <div class="m"><dt>共振コンデンサ <i>C</i></dt><dd><span id="o-c"></span><span class="m-sub" id="o-cs"></span></dd></div>
           <div class="m"><dt>帯域幅 <i>f</i>/<i>Q</i></dt><dd id="o-bw"></dd></div>
+          <div class="m"><dt>自己共振（層の間の容量）</dt><dd><span id="o-srf"></span><span class="m-sub" id="o-srfs"></span><span class="m-note" id="o-srfn"></span></dd></div>
         </dl>
       </Panel>
     </div>
+
+    <Collapsible hid="hd-find" title="条件から探す" class="a-find">
+      <p class="find-note" id="find-note"></p>
+      <div class="fgrid">
+        <div class="ptab">{FIND_PARAMS.slice(0, 3).map((d) => <ParamRow d={d} />)}</div>
+        <div class="ptab">{FIND_PARAMS.slice(3).map((d) => <ParamRow d={d} />)}</div>
+      </div>
+      <div class="fl" id="fl" role="group" aria-labelledby="hd-find" aria-live="polite"></div>
+    </Collapsible>
 
     <Collapsible hid="hd-thy" title="動作原理と式">
       <Theory />

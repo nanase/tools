@@ -1,0 +1,10 @@
+---
+/** 時刻の横で秒を刻む扇形。動作は fan.ts の drawFan（id の svg 要素を渡す） */
+import './fan.css';
+
+interface Props {
+  id: string;
+}
+const { id } = Astro.props;
+---
+<svg class="fan" id={id} viewBox="-10 -10 20 20" aria-hidden="true"><circle r="9"/><path/></svg>

@@ -10,7 +10,7 @@ import SiteLayout from '../layouts/SiteLayout.astro';
 import '../tools/biquad/style.css';
 import { gridSvg } from '../lib/scope';
 import { hzMath } from '../tools/biquad/math';
-import { PARAMS, TYPES } from '../tools/biquad/params';
+import { L0, LENS, PARAMS, TYPES } from '../tools/biquad/params';
 import { blockSvg, lvGrid } from '../tools/biquad/plot';
 import Theory from '../tools/biquad/Theory.astro';
 
@@ -25,12 +25,12 @@ const related = TOOLS.filter((t) => !t.s && t.id !== 'biquad');
   <div class="mini" aria-hidden="true"><span id="mt"></span><span><i>f</i><sub>c</sub><b id="mfc"></b></span><span><i>Q</i><b id="mq2"></b></span><span><i>A</i>(<i>f</i><sub>c</sub>)<b id="ma"></b></span></div>
 
   <div class="tgrid">
-    <div class="col">
+    <div class="col c-a">
       <Panel hid="hd-in" title="入力" class="a-in">
-        <div class="ptab">
-          <ChoiceRow k="type" name="フィルタの種類" sub={`${t0.t}（${t0.ab}）`} choices={TYPES.map((t) => [t.v, t.ab, t.t] as const)} value={t0.v} layout="chips" wide class="ptype" />
-          {row(['fc', 'q', 'g', 'fs']).map((d) => <ParamRow d={d} />)}
+        <div slot="aux" class="seg ptype" id="p-type" role="group" aria-label="フィルタの種類">
+          {TYPES.map((t) => <button type="button" data-v={t.v} aria-pressed={t.v === t0.v ? 'true' : 'false'} title={t.t}>{t.ab}</button>)}
         </div>
+        <div class="ptab">{row(['fc', 'q', 'g', 'fs']).map((d) => <ParamRow d={d} fold={d.k === 'g'} />)}</div>
       </Panel>
 
       <Panel hid="hd-snd" title="試聴" class="a-snd">
@@ -49,13 +49,9 @@ const related = TOOLS.filter((t) => !t.s && t.id !== 'biquad');
         </div>
         <div class="ptab">{row(['vol']).map((d) => <ParamRow d={d} />)}</div>
       </Panel>
-
-      <Panel hid="hd-ana" title="解析" class="a-ana">
-        <div class="ptab">{row(['n', 'len', 'bot', 'np']).map((d) => <ParamRow d={d} />)}</div>
-      </Panel>
     </div>
 
-    <div class="col">
+    <div class="col c-b">
       <Panel hid="hd-fr" title="周波数特性" class="a-fr">
         <span slot="aux" class="aux" id="fr-aux"></span>
         <div class="sbar">
@@ -74,6 +70,7 @@ const related = TOOLS.filter((t) => !t.s && t.id !== 'biquad');
             <g id="fr-axes"></g>
           </svg>
         </div>
+        <div class="ana2">{row(['n', 'bot']).map((d) => <div class="ptab"><ParamRow d={d} fold /></div>)}</div>
       </Panel>
 
       <Panel hid="hd-imp" title="インパルス応答" class="a-imp">
@@ -93,36 +90,46 @@ const related = TOOLS.filter((t) => !t.s && t.id !== 'biquad');
             <g id="im-axes"></g>
           </svg>
         </div>
+        <div class="ptab ana">
+          <ChoiceRow k="len" sym="<i>L</i>" nm="L" name="表示長" sub="インパルス応答のグラフの 8 div に入れるサンプル数（解析長 N まで）" choices={LENS.map((v) => [v, String(v)] as const)} value={L0} layout="chips" wide msg />
+        </div>
       </Panel>
+    </div>
 
-      <Panel hid="hd-out" title="計算結果" class="a-out">
-        <div slot="aux" class="seg"><button type="button" id="precBtn">精密計算</button></div>
-        <dl class="metrics">
-          <div class="m m-main"><dt><i>f</i><sub>c</sub> での振幅 <i>A</i>(<i>f</i><sub>c</sub>)</dt><dd id="o-afc"></dd></div>
-          <div class="m"><dt>最大振幅 max <i>A</i></dt><dd id="o-max"></dd></div>
-          <div class="m"><dt>最大振幅の周波数</dt><dd id="o-maxf"></dd></div>
-          <div class="m o2"><dt>インパルス応答の総和 Σ<i>h</i>[<i>n</i>]</dt><dd id="o-sum"></dd></div>
-          <div class="m"><dt>最小振幅 min <i>A</i></dt><dd id="o-min"></dd></div>
-          <div class="m"><dt>最小振幅の周波数</dt><dd id="o-minf"></dd></div>
-          <div class="m o2"><dt>解析長 <i>N</i></dt><dd><span id="o-n"></span><span class="m-sub" id="o-df"></span></dd></div>
-        </dl>
-      </Panel>
+    <Panel hid="hd-out" title="計算結果" class="a-out">
+      <div slot="aux" class="seg"><button type="button" id="precBtn">精密計算</button></div>
+      <dl class="metrics">
+        <div class="m m-main"><dt><i>f</i><sub>c</sub> での振幅 <i>A</i>(<i>f</i><sub>c</sub>)</dt><dd id="o-afc"></dd></div>
+        <div class="m"><dt>最大振幅 max <i>A</i></dt><dd id="o-max"></dd></div>
+        <div class="m"><dt>最大振幅の周波数</dt><dd id="o-maxf"></dd></div>
+        <div class="m o2"><dt>インパルス応答の総和 Σ<i>h</i>[<i>n</i>]</dt><dd id="o-sum"></dd></div>
+        <div class="m"><dt>最小振幅 min <i>A</i></dt><dd id="o-min"></dd></div>
+        <div class="m"><dt>最小振幅の周波数</dt><dd id="o-minf"></dd></div>
+        <div class="m o2"><dt>解析長 <i>N</i></dt><dd><span id="o-n"></span><span class="m-sub" id="o-df"></span></dd></div>
+      </dl>
+      <div class="ptab ana">{row(['np']).map((d) => <ParamRow d={d} fold />)}</div>
+    </Panel>
 
-      <Panel hid="hd-coef" title="フィルタ係数" class="a-coef">
-        <div slot="aux" class="seg" id="cmode" role="group" aria-label="係数の表し方">
-          <button type="button" data-v="1" aria-pressed="true" title="a0 で割り、a0 = 1 にした係数">正規化</button><button type="button" data-v="0" aria-pressed="false" title="Cookbook の式そのままの係数">元の値</button>
+    <Panel hid="hd-coef" title="ブロック図と係数" class="a-coef">
+      <div slot="aux" class="seg" id="bview" role="group" aria-label="表示">
+        <button type="button" data-v="blk" aria-pressed="true" title="直接形 I のブロック図（a0 = 1 に正規化した係数）">ブロック図</button><button type="button" data-v="coef" aria-pressed="false" title="伝達関数と 6 つの係数">係数</button>
+      </div>
+      <div id="v-blk">
+        <p class="cap">直接形 I・<i>a</i><sub>0</sub> = 1</p>
+        <svg class="sch" viewBox="0 0 360 216" role="img" aria-label="直接形 I の双2次フィルタのブロック図。入力 x[n] を 2 段の遅延に通し、b0・b1・b2 を掛けて加算器へ。出力 y[n] を 2 段の遅延に通し、−a1・−a2 を掛けて同じ加算器へ戻す。" set:html={blockSvg()} />
+      </div>
+      <div id="v-coef" hidden>
+        <div class="cbar">
+          <div class="seg" id="cmode" role="group" aria-label="係数の表し方">
+            <button type="button" data-v="1" aria-pressed="true" title="a0 で割り、a0 = 1 にした係数">正規化</button><button type="button" data-v="0" aria-pressed="false" title="Cookbook の式そのままの係数">元の値</button>
+          </div>
         </div>
         <div class="hz" id="hz" set:html={hzMath(true)} />
         <dl class="metrics coef">
           {['b0', 'b1', 'b2', 'a0', 'a1', 'a2'].map((c) => <div class="m"><dt><i>{c[0]}</i><sub>{c[1]}</sub></dt><dd id={`c-${c}`}></dd></div>)}
         </dl>
-      </Panel>
-
-      <Panel hid="hd-blk" title="ブロック図" class="a-blk">
-        <span slot="aux" class="aux">直接形 I・<i>a</i><sub>0</sub> = 1</span>
-        <svg class="sch" viewBox="0 0 360 216" role="img" aria-label="直接形 I の双2次フィルタのブロック図。入力 x[n] を 2 段の遅延に通し、b0・b1・b2 を掛けて加算器へ。出力 y[n] を 2 段の遅延に通し、−a1・−a2 を掛けて同じ加算器へ戻す。" set:html={blockSvg()} />
-      </Panel>
-    </div>
+      </div>
+    </Panel>
 
     <Collapsible hid="hd-thy" title="動作原理と式">
       <Theory />

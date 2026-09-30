@@ -1,6 +1,7 @@
 /* タイマIC 555 のページだけのスタイル（共通は src/styles/site.css） */
+/* 枠の並び: PC は左の列に入力・計算結果、右の列に出力波形・回路図。スマホは入力・計算結果・出力波形・回路図の順 */
 @media (min-width:1000px){
-  .tgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr);grid-template-rows:auto auto 1fr auto;grid-template-areas:"in out" "in wave" "in sch" "thy thy";align-items:start}
-  .a-in{grid-area:in}.a-out{grid-area:out}.a-wave{grid-area:wave}.a-sch{grid-area:sch}.a-thy{grid-area:thy}
+  .tgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr);align-items:start}
+  .a-thy{grid-column:1/-1}
 }
 .subst math:nth-child(2){margin-bottom:12px}

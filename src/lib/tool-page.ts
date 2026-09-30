@@ -1,20 +1,22 @@
 /**
- * ツールのページに共通の動き: 「?」の吹き出し、開閉できる枠、関連ツールの件数。
+ * ツールのページに共通の動き: 「?」の吹き出し、項目名の吹き出し、畳める行、開閉できる枠、関連ツールの件数。
  * 各ツールの入口スクリプトから initToolPage() を 1 度だけ呼ぶ。見出し以外の「?」は addTip で足す
  */
 import { $, $$ } from './dom';
-import { fx, POP_IN, POP_OUT, RM } from './motion';
+import { FADE_IN, fx, POP_IN, POP_OUT, RM } from './motion';
 import { initSite } from './site';
 
-/* ---------- 「?」の吹き出し ---------- */
+/* ---------- 吹き出し（「?」ボタンと項目名） ---------- */
 interface Tip {
   btn: HTMLElement;
   el: HTMLElement;
   box: HTMLElement;
   below: boolean;
+  /** ボタンなら aria-expanded を合わせる（項目名は合わせない） */
+  isBtn: boolean;
+  open: boolean;
 }
 const tips: Tip[] = [];
-const tipOpen = (t: Tip) => t.btn.getAttribute('aria-expanded') === 'true';
 function placeTip(t: Tip): void {
   const r = t.box.getBoundingClientRect(),
     b = t.btn.getBoundingClientRect();
@@ -26,9 +28,10 @@ function placeTip(t: Tip): void {
   if (t.below) t.el.style.top = `${b.bottom - r.top + 10}px`;
 }
 function setTip(t: Tip, open: boolean): void {
-  if (open === tipOpen(t)) return;
+  if (open === t.open) return;
   if (open) for (const o of tips) if (o !== t) setTip(o, false);
-  t.btn.setAttribute('aria-expanded', String(open));
+  t.open = open;
+  if (t.isBtn) t.btn.setAttribute('aria-expanded', String(open));
   if (open) {
     t.box.style.zIndex = '24';
     t.el.hidden = false;
@@ -36,7 +39,7 @@ function setTip(t: Tip, open: boolean): void {
     fx(t.el, POP_IN, 160);
   } else
     fx(t.el, POP_OUT, 120, () => {
-      if (tipOpen(t)) return;
+      if (t.open) return;
       t.el.hidden = true;
       t.box.style.zIndex = '';
     });
@@ -47,18 +50,18 @@ function bindTips(): void {
   tipsBound = true;
   document.addEventListener('click', (e) => {
     const n = e.target as Node;
-    for (const t of tips) if (tipOpen(t) && !t.btn.contains(n) && !t.el.contains(n)) setTip(t, false);
+    for (const t of tips) if (t.open && !t.btn.contains(n) && !t.el.contains(n)) setTip(t, false);
   });
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
     for (const t of tips)
-      if (tipOpen(t)) {
+      if (t.open) {
         setTip(t, false);
-        t.btn.focus();
+        if (t.isBtn) t.btn.focus();
       }
   });
   addEventListener('resize', () => {
-    for (const t of tips) if (tipOpen(t)) placeTip(t);
+    for (const t of tips) if (t.open) placeTip(t);
   });
 }
 
@@ -68,18 +71,105 @@ function bindTips(): void {
  * below なら el の上端をボタンの下に合わせる（見出し以外の「?」）。ほかの吹き出しは閉じる
  */
 export function addTip(btn: HTMLElement, el: HTMLElement, box: HTMLElement, below = false): void {
-  const t = { btn, el, box, below };
+  const t: Tip = { btn, el, box, below, isBtn: true, open: false };
   tips.push(t);
   bindTips();
   btn.addEventListener('click', (e) => {
     e.preventDefault();
-    setTip(t, !tipOpen(t));
+    setTip(t, !t.open);
   });
+}
+
+/**
+ * 項目名（.pn）の吹き出し（.tip）: マウスは指している間、タッチは押すたびに開閉する。
+ * マウスで押したときはラベルの既定の動き（入力欄へ移る）を残す。補足が空の行では開かない
+ */
+function initHints(): void {
+  let touch = false;
+  for (const pn of $$('.c-name .pn')) {
+    const el = pn.parentElement?.querySelector<HTMLElement>('.tip'),
+      box = pn.closest<HTMLElement>('.prow');
+    if (!el || !box) continue;
+    const t: Tip = { btn: pn, el, box, below: true, isBtn: false, open: false };
+    tips.push(t);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const can = () => !!el.textContent?.trim();
+    pn.addEventListener('pointerenter', (e) => {
+      if (e.pointerType !== 'mouse' || !can()) return;
+      clearTimeout(timer);
+      timer = setTimeout(() => setTip(t, true), 200);
+    });
+    pn.addEventListener('pointerleave', (e) => {
+      if (e.pointerType !== 'mouse') return;
+      clearTimeout(timer);
+      setTip(t, false);
+    });
+    pn.addEventListener('pointerdown', (e) => {
+      touch = e.pointerType !== 'mouse';
+    });
+    pn.addEventListener('click', (e) => {
+      if (!touch) return;
+      e.preventDefault();
+      if (can()) setTip(t, !t.open);
+    });
+  }
+  bindTips();
+}
+
+/* ---------- 畳める行（FoldSwitch.astro） ---------- */
+/** 数値に SI 接頭辞が付いていれば単位と詰める（10 k + Ω → 10 kΩ、5 + V → 5 V） */
+const withUnit = (v: string, u: string) => (!u ? v : /[a-zµμ]$/i.test(v) ? `${v}${u}` : `${v} ${u}`);
+/** 畳んだ行に添える今の値 */
+function foldSummary(row: HTMLElement): string {
+  if (row.classList.contains('off')) return row.querySelector('.msg')?.textContent?.trim() || '使いません';
+  const inp = row.querySelector<HTMLInputElement>('.fld:not(.add) input');
+  if (inp) return withUnit(inp.value.trim() || '—', row.querySelector('.c-unit')?.textContent?.trim() ?? '');
+  const on = row.querySelector('.fbody [aria-pressed="true"]');
+  if (on) return on.textContent?.trim() ?? '';
+  const n = row.querySelectorAll('.fbody .chips .chip').length;
+  return n ? `${n} 個` : 'なし';
+}
+/** 行を開く・畳む */
+function setFold(row: HTMLElement, open: boolean): void {
+  row.classList.toggle('shut', !open);
+  $('.fsw', row).setAttribute('aria-expanded', String(open));
+  if (open) for (const c of $$(':scope > .fbody > *', row)) fx(c, FADE_IN, 200);
+}
+/**
+ * 畳める行を使うかどうかを切り替える（例: 双2次フィルタの増幅量は LSF・HSF・PEQ だけ）。
+ * 使わない間は畳んで、開けないようにする
+ */
+export function setFoldable(row: HTMLElement, on: boolean): void {
+  const b = $<HTMLButtonElement>('.fsw', row);
+  b.disabled = !on;
+  if (!on) setFold(row, false);
+}
+function initFolds(): void {
+  for (const row of $$('.prow.fold')) {
+    const b = $<HTMLButtonElement>('.fsw', row),
+      sum = $('.fsum', b);
+    let queued = false;
+    const upd = () => {
+      queued = false;
+      const s = foldSummary(row);
+      if (sum.textContent !== s) sum.textContent = s;
+    };
+    const later = () => {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(upd);
+    };
+    b.addEventListener('click', () => setFold(row, row.classList.contains('shut')));
+    /* 値は入口スクリプトが入れる。入れた後と、行の中が変わるたびに要約を作り直す */
+    new MutationObserver(later).observe(row, { subtree: true, childList: true, characterData: true, attributes: true });
+    row.addEventListener('focusout', later);
+    setTimeout(upd);
+  }
 }
 
 /* 開閉できる枠（Collapsible.astro） */
 function initCollapsible(): void {
-  for (const box of $$<HTMLDetailsElement>('details.a-thy')) {
+  for (const box of $$<HTMLDetailsElement>('details.clps')) {
     const body = $('.thy-body', box);
     $('summary', box).addEventListener('click', (e) => {
       if (RM.matches || !body.animate) return;
@@ -121,6 +211,8 @@ function initRelated(): void {
 export function initToolPage(): void {
   initSite();
   addTip($('#descBtn'), $('#desc'), $('.ttl'));
+  initHints();
+  initFolds();
   initCollapsible();
   initRelated();
 }

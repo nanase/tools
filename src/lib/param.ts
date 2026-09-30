@@ -97,7 +97,8 @@ class Param {
   relabel(): void {
     const { d, row: r } = this;
     $('.c-sym', r).innerHTML = d.sym;
-    $('.c-name', r).innerHTML = `<span class="sr">${esc(d.nm)} </span>${esc(d.name)}<small>${esc(d.sub)}</small>`;
+    $('.c-name .pn', r).innerHTML = `<span class="sr">${esc(d.nm)} </span>${esc(d.name)}`;
+    $('.c-name .tip', r).textContent = d.sub;
     $('.c-unit', r).textContent = d.unit;
     this.inp.placeholder = d.ph;
     this.rng?.setAttribute('aria-label', `${d.nm} ${d.name}`);

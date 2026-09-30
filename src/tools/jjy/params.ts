@@ -1,4 +1,11 @@
-import type { ParamDef } from '../../lib/param-def';
+import { linList } from '../../lib/eseries';
+import { minus } from '../../lib/format';
+import type { ParamDef, ParamFormat } from '../../lib/param-def';
+
+/** dB: 小数 2 桁まで */
+const dbIn = (v: number): string => minus(String(Number(v.toFixed(2))));
+const dbT = (v: number): string => `${dbIn(v)} dB`;
+const DB: ParamFormat = { input: dbIn, step: (v) => (v > 0 ? '+' : '') + dbIn(v), text: dbT };
 
 export type Key = 'f' | 'vol';
 
@@ -36,28 +43,27 @@ export const PARAMS: (ParamDef & { k: Key })[] = [
     nm: 'A',
     sym: '<i>A</i>',
     name: '音量',
-    sub: '高出力のときの振幅',
-    unit: '%',
-    min: 0,
-    max: 100,
-    v: 50,
-    lin: { step: 1, big: 10, major: 25, minor: 5 },
-    sign: 'nonneg',
-    ph: '例 50',
-    bad: '読めない値です（例 50・12.5）',
-    pre: [
-      [10, '10'],
-      [25, '25'],
-      [50, '50'],
-      [75, '75'],
-      [100, '100'],
-    ],
+    sub: '高出力のときの大きさ（0 dB = フルスケール）',
+    unit: 'dB',
+    min: -60,
+    max: 0,
+    v: -30,
+    ph: '例 −20',
+    list: linList(-60, 0, 1),
+    jump: 6,
+    sign: 'any',
+    format: DB,
+    fix: (v) => {
+      const w = Math.min(0, Math.max(-60, v));
+      return [w, w === v ? '' : `${dbT(v)} は範囲外のため${w === 0 ? '上限' : '下限'} ${dbT(w)} にしました`];
+    },
+    bad: '読めない値です（例 −6・−20）',
+    pre: [],
     tk: [
+      [-60, '−60'],
+      [-40, '−40'],
+      [-20, '−20'],
       [0, '0'],
-      [25, '25'],
-      [50, '50'],
-      [75, '75'],
-      [100, '100'],
     ],
   },
 ];

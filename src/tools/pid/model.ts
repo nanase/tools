@@ -1,5 +1,5 @@
 /** 流れの中の物体を PID 制御で目標の位置へ動かすシミュレーション（DOM に依存しない） */
-import { DV, nice, SH } from '../../lib/scope';
+import { DV, nice } from '../../lib/scope';
 
 /** 刻み幅 [s] とステップ数（100 s ぶん） */
 export const DT = 0.1,
@@ -150,20 +150,23 @@ export function metrics({ X, V, n }: Sim, x0: number, r: number): Metrics {
   return o;
 }
 
+/** 応答の表示窓の縦の div の数（横 10 div より低くして、位置と速度の 2 枚を並べやすくする） */
+export const ROWS = 4;
+
 /**
- * 縦軸のレンジ。0 を目盛線に置き、lo〜hi が 6 div（上下 0.1 div のはみ出しは許す）に収まる
+ * 縦軸のレンジ。0 を目盛線に置き、lo〜hi が rows div（上下 0.1 div のはみ出しは許す）に収まる
  * 最小の 1-2-5 の vd を選ぶ。k は 0 の位置（下から何 div か）
  */
-export function vscale(lo: number, hi: number, fb: number): { vd: number; k: number } {
+export function vscale(lo: number, hi: number, fb: number, rows = 6): { vd: number; k: number } {
   lo = Math.min(lo, 0);
   hi = Math.max(hi, 0);
-  let vd = hi - lo > 0 ? nice((hi - lo) / 6) : fb;
+  let vd = hi - lo > 0 ? nice((hi - lo) / rows) : fb;
   for (let t = 0; t < 80; t++, vd = nice(vd * 1.5)) {
     let best = -1,
       bs = Infinity;
-    for (let k = 0; k <= 6; k++) {
+    for (let k = 0; k <= rows; k++) {
       const bot = -k * vd,
-        top = (6 - k) * vd,
+        top = (rows - k) * vd,
         tol = vd * 0.1;
       if (lo >= bot - tol && hi <= top + tol) {
         const s = Math.abs(top - hi - (lo - bot));
@@ -175,11 +178,11 @@ export function vscale(lo: number, hi: number, fb: number): { vd: number; k: num
     }
     if (best >= 0) return { vd, k: best };
   }
-  return { vd, k: 3 };
+  return { vd, k: rows >> 1 };
 }
 
-/** 表示窓（横 10 s/div）に描く折れ線と座標変換。ref は含めてレンジを決める値（目標など） */
-export function trace(data: ArrayLike<number>, ref: number) {
+/** 表示窓（横 10 s/div、縦 rows div）に描く折れ線と座標変換。ref は含めてレンジを決める値（目標など） */
+export function trace(data: ArrayLike<number>, ref: number, rows = 6) {
   let lo = ref,
     hi = ref;
   for (let i = 0; i < data.length; i++) {
@@ -187,8 +190,8 @@ export function trace(data: ArrayLike<number>, ref: number) {
     if (v < lo) lo = v;
     if (v > hi) hi = v;
   }
-  const { vd, k } = vscale(lo, hi, 1),
-    y0 = SH - k * DV;
+  const { vd, k } = vscale(lo, hi, 1, rows),
+    y0 = rows * DV - k * DV;
   const Y = (v: number) => (y0 - (v / vd) * DV).toFixed(1),
     X = (t: number) => ((t / 10) * DV).toFixed(1);
   let d = '';
