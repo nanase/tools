@@ -1,0 +1,24 @@
+/* スペクトラムアナライザのページだけのスタイル（共通は src/styles/site.css、入力とモニターの枠は ../audio/style.css） */
+
+/* 枠の並び。スマホは 入力 → モニター → スペクトラム（スペクトログラムと切り替え） → 解析 → 測定 → 式。
+   PC は左の列に 入力・モニター・解析・測定、右の列に スペクトラム */
+.a-in{order:1}.a-snd{order:2}.a-sp{order:3}.a-fft{order:4}.a-out{order:5}.a-thy{order:6}
+/* スペクトログラムだけの設定（時間の幅・チャンネル）は、スペクトログラムを出している間だけ */
+.a-sp:not(.sg) .sg-only{display:none}
+.a-sp:not(.sg) .ptab .prow:nth-last-child(2){border-bottom:0;padding-bottom:0}
+@media (min-width:1000px){
+  .tgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr);grid-template-areas:"c1 c2" "thy thy";align-items:start}
+  .c1{grid-area:c1}.c2{grid-area:c2}.a-thy{grid-area:thy}
+}
+
+/* スペクトラム: PEAK HOLD は同じ色の点線 */
+.st1{stroke:var(--ch1)}.st2{stroke:var(--ch2)}
+.hold{stroke-width:1;stroke-dasharray:2 3;opacity:.75}
+
+/* スペクトログラム: テーマに依らず黒い地。色は強度の弱い順に 黒 → 紫 → 青 → 緑 → 赤 → 白 */
+.a-sg{--sg0:#000000;--sg1:#5b1a8f;--sg2:#2050e0;--sg3:#1fb04a;--sg4:#e3261f;--sg5:#ffffff}
+.a-sg .scope{--screen:#000000;--grid-2:#3b474e;--screen-ink:#aab3b8;border-color:#2b3237}
+.cv-sg canvas{left:calc(100% * 50 / 462);top:calc(100% * 14 / 282);width:calc(100% * 400 / 462);height:calc(100% * 240 / 282)}
+.cbar{display:inline-block;width:72px;height:8px;border:1px solid var(--line);border-radius:2px;background:linear-gradient(90deg,var(--sg0),var(--sg1),var(--sg2),var(--sg3),var(--sg4),var(--sg5))}
+.a-out .m-sub{display:block;margin-top:2px;font:500 12px/1.5 var(--mono);color:var(--ink-3);letter-spacing:0}
+.m-main .m-sub{margin-top:4px}

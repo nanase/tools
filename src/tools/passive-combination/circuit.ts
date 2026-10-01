@@ -1,7 +1,7 @@
 /** 組み合わせの回路図（SVG の文字列。DOM に依存しない）。抵抗器・インダクタはカラーコード付きの本体で描く */
 import { BAND_GRADIENTS, RESISTOR_BODY } from '../../lib/colorcode';
 import { esc } from '../../lib/dom';
-import { fmt } from '../../lib/format';
+import { fmt, fmtR } from '../../lib/format';
 import { type Cand, codeOf, conn, leaves, type Node } from './model';
 import { TY, type Ty } from './params';
 
@@ -156,7 +156,7 @@ export function circuitSvg(c: Cand, ty: Ty): string {
               }`,
           )
           .join('、')}`;
-  const label = `${c.n} 本の${T.nm}の回路: ${c.x}（+ は直列、∥ は並列）。合成値 ${fmt(c.v, T.u, 6)}${cc}`;
+  const label = `${c.n} 本の${T.nm}の回路: ${c.x}（+ は直列、∥ は並列）。合成値 ${fmtR(c.v, T.u, 6)}${cc}`;
   return (
     `<svg class="sch" viewBox="0 0 ${vw} ${vh}" role="img" aria-label="${esc(label)}">` +
     DEFS +

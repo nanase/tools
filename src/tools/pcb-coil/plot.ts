@@ -2,7 +2,7 @@
  * 表示窓（10 × 6 div）に描く SVG の組み立て（DOM に依存しない）:
  * コイルの形（縮尺どおり）と、Q・交流抵抗の周波数特性（1 kHz – 100 MHz の対数）
  */
-import { fmt, parts } from '../../lib/format';
+import { fmt, fmtR, parts } from '../../lib/format';
 import { DV, SH, SW } from '../../lib/scope';
 import { type Ac, ac, type Coil, fSkin, fTenth, type Shape, spiral } from './coil';
 import type { Conn, Stack } from './layers';
@@ -188,10 +188,10 @@ export function frPlot(g: Coil & { srf?: number }): FrPlot {
     qd,
     rd,
     label:
-      `Q と交流抵抗の周波数特性。横軸は 1 kHz から 100 MHz の対数、縦軸は Q ${sig(qd, 2)}/div と交流抵抗 ${fmt(rd, 'Ω', 2)}/div。${hzT(g.f)} で Q ${sig(g.q, 3)}、交流抵抗 ${fmt(g.rac, 'Ω')}。` +
-      (inX(ft) ? `表皮の深さが銅箔の厚さと等しくなるのは ${fmt(ft, 'Hz', 3)}。` : '') +
+      `Q と交流抵抗の周波数特性。横軸は 1 kHz から 100 MHz の対数、縦軸は Q ${sig(qd, 2)}/div と交流抵抗 ${fmt(rd, 'Ω', 2)}/div。${hzT(g.f)} で Q ${sig(g.q, 3, true)}、交流抵抗 ${fmtR(g.rac, 'Ω')}。` +
+      (inX(ft) ? `表皮の深さが銅箔の厚さと等しくなるのは ${fmtR(ft, 'Hz', 3)}。` : '') +
       (fl < F1 ? `${fmt(Math.max(fl, F0), 'Hz', 3)} より上は配線の長さが波長の 1/10 を超えるため破線。` : '') +
-      (srfIn ? `層の間の容量による自己共振は ${fmt(fs, 'Hz', 3)}。` : ''),
+      (srfIn ? `層の間の容量による自己共振は ${fmtR(fs, 'Hz', 3)}。` : ''),
   };
 }
 
@@ -202,7 +202,7 @@ export function frRead(g: Coil, x: number | null): { f: number; a: Ac; html: str
   return {
     f,
     a,
-    html: `${x == null ? 'f' : 'CUR'} <b>${fmt(f, 'Hz', 4)}</b> Q <b>${sig(a.q, 3)}</b> R <b>${fmt(a.rac, 'Ω', 3)}</b>`,
+    html: `${x == null ? 'f' : 'CUR'} <b>${fmtR(f, 'Hz', 4)}</b> Q <b>${sig(a.q, 3, true)}</b> R <b>${fmtR(a.rac, 'Ω', 3)}</b>`,
   };
 }
 

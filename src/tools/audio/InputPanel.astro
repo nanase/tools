@@ -1,0 +1,58 @@
+---
+/**
+ * 入力の枠（マイク・ファイル・テスト信号）。オシロスコープとスペクトラムアナライザで共有する。
+ * 枠の右上に入力元の切り替えと開始・停止（ファイルは再生・一時停止）を置く。初めはマイクを止めた状態。
+ * 入力元ごとの行は .ptab の data-src で出し分ける（style.css）。動作は input.ts
+ */
+import ChoiceRow from '../../components/ChoiceRow.astro';
+import Panel from '../../components/Panel.astro';
+import ParamRow from '../../components/ParamRow.astro';
+import { PHASES, RATIOS, TF_PARAM } from './params';
+import { WAVES } from './signal';
+
+interface Props {
+  /** テスト信号の周波数比・位相差の行を出す（リサジュー用） */
+  ratio?: boolean;
+}
+const { ratio } = Astro.props;
+const SRCS = [
+  [
+    'mic',
+    'マイク',
+    'マイク・ライン入力。エコー除去・ノイズ抑制・自動音量調整を切って取り込みます。モノラルのマイクは CH1 と CH2 に同じ音を入れます',
+  ],
+  ['file', 'ファイル', 'WAV・MP3・FLAC など'],
+  ['test', 'テスト信号', 'この端末の中で作る音。マイクを通さず、そのまま表示します'],
+] as const;
+---
+<Panel hid="hd-in" title="入力" class="a-in">
+  <div slot="aux" class="srcbar">
+    <div class="seg" id="p-src" role="group" aria-label="入力元">
+      {SRCS.map(([v, l, t]) => <button type="button" data-v={v} aria-pressed={v === 'mic' ? 'true' : 'false'} title={t}>{l}</button>)}
+    </div>
+    <div class="seg"><button type="button" id="runBtn" aria-pressed="false" title="マイクから取り込む・止める"><span class="led" id="runLed" aria-hidden="true"></span><span id="runT">開始</span></button></div>
+  </div>
+  <p class="msg in-msg" id="in-msg" aria-live="polite"></p>
+  <div class="ptab" id="in-tab" data-src="mic">
+    <div class="prow" id="p-file">
+      <div class="c-sym" aria-hidden="true"></div>
+      <div class="c-name"><span class="pn">ファイル</span><p class="desc tip" role="tooltip" hidden>WAV・MP3・FLAC など。この枠へ落としても読み込めます。終わりまで再生したら先頭に戻ります</p></div>
+      <div class="c-val"><div class="seg"><button type="button" id="fileBtn">ファイルを選ぶ</button></div><input type="file" id="fileIn" accept="audio/*,.wav,.mp3,.m4a,.ogg,.flac" hidden></div>
+      <div class="c-sub">
+        <p class="msg" id="m-file" aria-live="polite">まだ選んでいません</p>
+        <div class="seek"><div class="sl"><input type="range" id="seek" min="0" max="1000" step="1" value="0" style="--p:0" aria-label="再生位置" disabled></div><p class="msg" id="m-pos">0:00 / 0:00</p></div>
+      </div>
+    </div>
+    <ChoiceRow k="tw" name="波形" choices={WAVES} value="sine" layout="chips" wide />
+    <ParamRow d={TF_PARAM} />
+    {ratio && <ChoiceRow k="tr" name="周波数比 CH1 : CH2" sub="リサジュー図形の形が決まります" choices={RATIOS.map((r) => [r, r.replace(':', ' : ')] as const)} value="2:3" layout="chips" wide />}
+    {ratio && <ChoiceRow k="tph" sym="<i>φ</i>" nm="φ" name="位相差" sub="CH1 に対する CH2 の位相" choices={PHASES.map((d) => [d, `${d}°`] as const)} value={0} layout="chips" wide />}
+    <div class="prow wide" id="p-lv">
+      <div class="c-sym" aria-hidden="true"></div>
+      <div class="c-name"><span class="pn">レベル</span><p class="desc tip" role="tooltip" hidden>直近 50 ms のピーク（dBFS）。−3 dBFS を超えると色が変わります</p></div>
+      <div class="c-sub"><div class="lvs" role="group" aria-label="入力レベル">
+        {[0, 1].map((c) => <div class="lvr"><span>{c ? 'R' : 'L'}</span><span class="lvb" aria-hidden="true"><i id={`lv${c}`}></i></span><b id={`lt${c}`}>—</b></div>)}
+      </div></div>
+    </div>
+  </div>
+</Panel>

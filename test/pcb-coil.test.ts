@@ -336,7 +336,10 @@ describe('入力の依存', () => {
     expect(fmtF(5.6e-13, 3)).toBe('560 fF');
     expect(fmtF(9.99996e-13)).toBe('1 pF');
     expect(fmtF(6.903e-11, 3)).toBe('69 pF');
-    expect(roF(1.8e-6)).toBe('1.8<span class="u">μF</span>');
+    /* 計算結果の読み取り窓（roF）と keep は末尾の 0 を残す */
+    expect(roF(1.8e-6)).toBe('1.800<span class="u">μF</span>');
+    expect(fmtF(5.6e-13, 3, true)).toBe('560 fF');
+    expect(fmtF(6.9e-11, 3, true)).toBe('69.0 pF');
   });
 });
 

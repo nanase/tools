@@ -5,8 +5,11 @@ import type { ParamDef, ParamFormat, ParamPatch } from '../../lib/param-def';
 import { NMAX, nGeo, nMax, type Shape } from './coil';
 
 /* ---------- 表記 ---------- */
-/** 有効数字 s 桁、負はマイナス記号 */
-export const sig = (v: number, s = 4): string => minus(String(Number(v.toPrecision(s))));
+/** 有効数字 s 桁、負はマイナス記号。計算結果（keep）は末尾の 0 を残す */
+export const sig = (v: number, s = 4, keep = false): string => {
+  const t = v.toPrecision(s);
+  return minus(keep && !t.includes('e') ? t : String(Number(t)));
+};
 export const mmT = (v: number): string => `${sig(v)} mm`;
 const umT = (v: number): string => `${sig(v)} µm`;
 /** 周波数: 入力欄 */
@@ -15,17 +18,18 @@ const hzIn = (v: number): string => {
   return x ? `${n} ${x}` : n;
 };
 export const hzT = (v: number): string => fmt(v, 'Hz', 5);
-/** 容量の表記。共有の parts は p までなので、1 pF 未満は f（フェムト）で書く */
-export function partsF(v: number, s = 4): [string, string] {
+/** 容量の表記。共有の parts は p までなので、1 pF 未満は f（フェムト）で書く。計算結果（keep）は末尾の 0 を残す */
+export function partsF(v: number, s = 4, keep = false): [string, string] {
   if (v > 0 && v < 1e-12) {
-    const m = Number((v / 1e-15).toPrecision(s));
-    if (m < 1000) return [String(m), 'fF'];
+    const m = v / 1e-15;
+    if (Number(m.toPrecision(s)) < 1000) return [sig(m, s, keep), 'fF'];
   }
-  return parts(v, 'F', s);
+  return parts(v, 'F', s, keep);
 }
-export const fmtF = (v: number, s?: number): string => partsF(v, s).join(' ');
+export const fmtF = (v: number, s?: number, keep = false): string => partsF(v, s, keep).join(' ');
+/** 計算結果の読み取り窓用（末尾の 0 を残す） */
 export const roF = (v: number, s?: number): string => {
-  const [n, x] = partsF(v, s);
+  const [n, x] = partsF(v, s, true);
   return `${n}<span class="u">${x}</span>`;
 };
 const MM: ParamFormat = { input: (v) => sig(v), step: (v) => sig(v), text: mmT };

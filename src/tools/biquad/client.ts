@@ -2,9 +2,10 @@
 import { Choice } from '../../lib/choice';
 import { $, $$ } from '../../lib/dom';
 import { prevOf } from '../../lib/eseries';
-import { fmt, ro } from '../../lib/format';
+import { fmt, fmtR, ro } from '../../lib/format';
 import { ParamGroup } from '../../lib/param';
 import { DV, SH, SW } from '../../lib/scope';
+import { storeToggle } from '../../lib/store';
 import { initToolPage, setFoldable } from '../../lib/tool-page';
 import { type Analysis, analyze, coef, type FilterParams, type Summary } from './filter';
 import { hzMath, substHtml } from './math';
@@ -54,7 +55,7 @@ function showResults(r: Summary, N: number): void {
   html('#o-minf', ro(r.minF, 'Hz', 5));
   html('#o-sum', fixed(r.sum, 6));
   txt('#o-n', N >= 65536 ? `${N}（2${sup(Math.log2(N))}）` : String(N));
-  txt('#o-df', `Δf = fs/N = ${fmt(val('fs') / N, 'Hz', 5)}`);
+  txt('#o-df', `Δf = fs/N = ${fmtR(val('fs') / N, 'Hz', 5)}`);
 }
 
 function compute(): void {
@@ -160,7 +161,7 @@ function frCursor(): void {
   $('#fr-cur').setAttribute('d', frK == null ? '' : `M${FR.X((k * fs) / N).toFixed(1)} 0V${SH}`);
   html(
     '#fr-rd',
-    `CUR <b>${fmt((k * fs) / N, 'Hz', 4)}</b> <b>${fixed(res.mag[k], 2)}</b> dB <b>${fixed(res.ph[k], 1)}</b>°`,
+    `CUR <b>${fmtR((k * fs) / N, 'Hz', 4)}</b> <b>${fixed(res.mag[k], 2)}</b> dB <b>${fixed(res.ph[k], 1)}</b>°`,
   );
 }
 bindCursor($('#fr-svg'), (x) => {
@@ -170,6 +171,8 @@ bindCursor($('#fr-svg'), (x) => {
 });
 bindChannel($('#ch1f'), $('#fr-scope'), 'hide1');
 bindChannel($('#ch2f'), $('#fr-scope'), 'hide2');
+storeToggle($('#ch1f'));
+storeToggle($('#ch2f'));
 
 /* ---------- インパルス応答 ---------- */
 let imK: number | null = null,
@@ -213,7 +216,7 @@ function imCursor(): void {
   const h = S.res.h,
     k = Math.max(0, Math.min(IM.nEnd - 1, imK ?? 0));
   $('#im-cur').setAttribute('d', imK == null ? '' : `M${IM.X(k).toFixed(1)} 0V${IH}`);
-  html('#im-rd', `CUR <i>n</i> = <b>${k}</b> <i>h</i> = <b>${sig(h[k], 6)}</b>`);
+  html('#im-rd', `CUR <i>n</i> = <b>${k}</b> <i>h</i> = <b>${sig(h[k], 6, true)}</b>`);
 }
 bindCursor($('#im-svg'), (x) => {
   if (!IM) return;

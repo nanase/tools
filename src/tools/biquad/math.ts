@@ -56,15 +56,17 @@ const qty = (v: number, u: string) => {
   return `<mrow><mn>${n}</mn><mspace width="0.17em"/><mi mathvariant="normal">${x}</mi></mrow>`;
 };
 const num = (v: number) => `<mn>${sig(v, 4)}</mn>`;
+/** 計算した値（末尾の 0 を残す） */
+const numR = (v: number) => `<mn>${sig(v, 4, true)}</mn>`;
 
 /** 今の値を ω0・α（と A）に代入した式 */
 export function substHtml(fs: number, fc: number, q: number, g: number, gain: boolean): string {
   const w = (2 * Math.PI * fc) / fs,
     a = Math.sin(w) / (2 * q);
   let h = blk(
-    `${w0 + EQ + frac(row(two, mi('π'), DOT, qty(fc, 'Hz')), qty(fs, 'Hz')) + APPROX + num(w)}<mspace width="0.17em"/><mi mathvariant="normal">rad</mi>`,
+    `${w0 + EQ + frac(row(two, mi('π'), DOT, qty(fc, 'Hz')), qty(fs, 'Hz')) + APPROX + numR(w)}<mspace width="0.17em"/><mi mathvariant="normal">rad</mi>`,
   );
-  h += blk(al + EQ + frac(row('<mi>sin</mi>', FN, num(w)), row(two, DOT, num(q))) + APPROX + num(a));
-  if (gain) h += blk(AA + EQ + sup(mn(10), row(num(g), SLASH, mn(40))) + APPROX + num(10 ** (g / 40)));
+  h += blk(al + EQ + frac(row('<mi>sin</mi>', FN, numR(w)), row(two, DOT, num(q))) + APPROX + numR(a));
+  if (gain) h += blk(AA + EQ + sup(mn(10), row(num(g), SLASH, mn(40))) + APPROX + numR(10 ** (g / 40)));
   return h;
 }

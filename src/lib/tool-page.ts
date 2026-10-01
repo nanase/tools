@@ -5,6 +5,7 @@
 import { $, $$ } from './dom';
 import { FADE_IN, fx, POP_IN, POP_OUT, RM } from './motion';
 import { initSite } from './site';
+import { resetAll } from './store';
 
 /* ---------- 吹き出し（「?」ボタンと項目名） ---------- */
 interface Tip {
@@ -221,6 +222,7 @@ function initMini(): void {
 
 export function initToolPage(): void {
   initSite();
+  document.getElementById('resetBtn')?.addEventListener('click', resetAll);
   addTip($('#descBtn'), $('#desc'), $('.ttl'));
   initHints();
   initFolds();

@@ -2,9 +2,10 @@
 import { Choice } from '../../lib/choice';
 import { $, esc } from '../../lib/dom';
 import { eList, inSeries, type Series, same } from '../../lib/eseries';
-import { fmt, parts, ro } from '../../lib/format';
+import { fmt, fmtR, parts, ro } from '../../lib/format';
 import { ParamGroup } from '../../lib/param';
 import { parse } from '../../lib/parse';
+import { store, stored } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
 import { circuitSvg } from './circuit';
 import { type Cand, cand, errTxt, type TyState, usable } from './model';
@@ -21,18 +22,28 @@ const txt = (id: string, s: string) => {
   $(id).textContent = s;
 };
 
-/* ---------- 入力の状態（種類ごとに持つ） ---------- */
+/* ---------- 入力の状態（種類ごとに持つ）。ブラウザに保存し、開き直したときに戻す ---------- */
 const ST: Record<Ty, TyState> = {
   R: { ...TY.R.v, ex: [] },
   C: { ...TY.C.v, ex: [] },
   L: { ...TY.L.v, ex: [] },
 };
+{
+  const sv = stored('st') as Partial<Record<Ty, Partial<TyState>>> | undefined;
+  const ok = (x: unknown, t: Ty): x is number => typeof x === 'number' && x >= TY[t].lo && x <= TY[t].hi;
+  for (const t of ['R', 'C', 'L'] as const) {
+    const s = sv?.[t];
+    if (!s || !ok(s.t, t) || !ok(s.min, t) || !ok(s.max, t) || s.min > s.max) continue;
+    ST[t] = { t: s.t, min: s.min, max: s.max, ex: Array.isArray(s.ex) ? s.ex.filter((x) => ok(x, t)) : [] };
+  }
+}
 let ty: Ty = 'R',
   es: Series = 12,
   stopI = 2,
   nSel: N = 3;
 
 /* ---------- 数値の行: 目標・最小・最大 ---------- */
+/* 値は種類ごとの状態（ST）として保存するので、行ごとには保存しない */
 const g = new ParamGroup<NumKey>(
   NUM_KEYS.map((k) => numDef(k, 'R')),
   (v, k) => {
@@ -41,6 +52,8 @@ const g = new ParamGroup<NumKey>(
     renderEs();
     schedule();
   },
+  null,
+  { save: false },
 );
 g.on('min', (v) => {
   if (v > g.get('max')) {
@@ -214,7 +227,9 @@ let W: Worker | null = null,
 const busy = () => NS.some((n) => RES[n].st === 'run' || RES[n].st === 'wait');
 
 /** 入力が続けて変わるときは 0.25 秒待ってから探索する */
+/** 入力が変わったら保存して、少し待って探し直す */
 function schedule(): void {
+  store('st', ST);
   clearTimeout(runT);
   runT = setTimeout(run, 250);
 }
@@ -295,8 +310,9 @@ const ST_TXT: Record<Exclude<St, 'run'>, string> = {
   err: 'エラーで中止しました',
 };
 const stTxt = (r: Res) => (r.st === 'run' ? `探索中 ${(r.p * 100).toFixed(1)} %` : ST_TXT[r.st]);
-const qty = (v: number, u: string, sig = 6) => {
-  const [n, x] = parts(v, u, sig);
+/** MathML の量。合成値（keep）は末尾の 0 を残す */
+const qty = (v: number, u: string, sig = 6, keep = false) => {
+  const [n, x] = parts(v, u, sig, keep);
   return `<mn>${n}</mn><mspace width="0.17em"/><mi mathvariant="normal">${x}</mi>`;
 };
 const runBtn = $('#runBtn');
@@ -330,7 +346,7 @@ function render(): void {
   runBtn.textContent = anyRun ? '中止' : 'もう一度探索';
   runBtn.dataset.a = anyRun ? 'stop' : 'run';
   /* スマホで上に留まる要約 */
-  html('#mn', `${nSel} 本<b>${c ? esc(fmt(c.v, u, 6)) : '—'}</b>`);
+  html('#mn', `${nSel} 本<b>${c ? esc(fmtR(c.v, u, 6)) : '—'}</b>`);
   txt('#me', c ? errTxt(c.e) : '—');
   /* 候補 */
   txt('#cmb-aux', c ? `${r.sel + 1} 番目の候補` : '');
@@ -341,7 +357,7 @@ function render(): void {
           r.list
             .map(
               (c, i) =>
-                `<button type="button" class="cr${i ? '' : ' best'}" data-i="${i}" aria-pressed="${i === r.sel}" aria-label="${esc(`${fmt(c.v, u, 6)}、誤差 ${errTxt(c.e)}、${c.x}、${c.k} 種類`)}"><span class="v">${esc(fmt(c.v, u, 6))}</span><span class="e">${esc(errTxt(c.e))}</span><span class="x">${esc(c.x)}</span><span class="k">${c.k} 種</span></button>`,
+                `<button type="button" class="cr${i ? '' : ' best'}" data-i="${i}" aria-pressed="${i === r.sel}" aria-label="${esc(`${fmtR(c.v, u, 6)}、誤差 ${errTxt(c.e)}、${c.x}、${c.k} 種類`)}"><span class="v">${esc(fmtR(c.v, u, 6))}</span><span class="e">${esc(errTxt(c.e))}</span><span class="x">${esc(c.x)}</span><span class="k">${c.k} 種</span></button>`,
             )
             .join('')
       : `<p class="empty-c">${r.st === 'run' || r.st === 'wait' ? '探索しています…' : r.st === 'none' ? '使える値がありません。範囲か E 系列を変えてください' : 'まだ候補がありません'}</p>`,
@@ -353,8 +369,8 @@ function render(): void {
   html(
     '#subst',
     c
-      ? `<math display="block"><mi>${T.s}</mi><mo>=</mo><mtext>${esc(c.x)}</mtext><mo>&#x2248;</mo>${qty(c.v, u)}</math>` +
-          `<math display="block"><mi>ε</mi><mo>=</mo><mfrac><mrow>${qty(c.v, u)}<mo>&#x2212;</mo>${qty(t, u)}</mrow>${qty(t, u)}</mfrac><mo>&#xD7;</mo><mn>100</mn><mspace width="0.2em"/><mi mathvariant="normal">%</mi><mo>&#x2248;</mo><mn>${esc(errTxt(c.e).replace(/ %$/, ''))}</mn><mspace width="0.2em"/><mi mathvariant="normal">%</mi></math>` +
+      ? `<math display="block"><mi>${T.s}</mi><mo>=</mo><mtext>${esc(c.x)}</mtext><mo>&#x2248;</mo>${qty(c.v, u, 6, true)}</math>` +
+          `<math display="block"><mi>ε</mi><mo>=</mo><mfrac><mrow>${qty(c.v, u, 6, true)}<mo>&#x2212;</mo>${qty(t, u)}</mrow>${qty(t, u)}</mfrac><mo>&#xD7;</mo><mn>100</mn><mspace width="0.2em"/><mi mathvariant="normal">%</mi><mo>&#x2248;</mo><mn>${esc(errTxt(c.e).replace(/ %$/, ''))}</mn><mspace width="0.2em"/><mi mathvariant="normal">%</mi></math>` +
           `<math display="block"><mphantom><mi>ε</mi></mphantom><mspace width="0.2em"/><mtext>（</mtext>${X}<mo>=</mo>${qty(t, u)}<mtext>、組み合わせの + は直列、∥ は並列）</mtext></math>`
       : '<math display="block"><mtext>候補が見つかると、ここに値を代入した式を出します</mtext></math>',
   );
@@ -376,7 +392,6 @@ runBtn.addEventListener('click', () => {
   else run();
 });
 
-/* ---------- 初期化 ---------- */
-renderEx();
-renderEs();
+/* ---------- 初期化（保存した値を行に出す。種類を保存していれば Choice が後で切り替える） ---------- */
+applyType();
 run();

@@ -14,7 +14,7 @@ const MUL: Record<string, number> = {
 };
 
 /** 入力欄の単位。'' は単位なし */
-export type Unit = '' | 'Ω' | 'F' | 'H' | 'V' | 'A' | 'W' | 'Hz' | 's' | 'dB' | '%' | 'm' | 'm/s' | 'mm' | 'µm';
+export type Unit = '' | 'Ω' | 'F' | 'H' | 'V' | 'A' | 'W' | 'Hz' | 's' | 'dB' | '%' | 'm' | 'm/s' | 'mm' | 'µm' | 'FS';
 
 /** 末尾に書かれた単位を外す。接頭辞と紛らわしいものは数字の直後だけ外す */
 const STRIP: Partial<Record<Unit, [RegExp, string]>> = {
@@ -27,6 +27,8 @@ const STRIP: Partial<Record<Unit, [RegExp, string]>> = {
   Hz: [/hz$/i, ''],
   s: [/(sec|s)$/, ''],
   dB: [/db$/i, ''],
+  /* フルスケールを 1 とする振幅 */
+  FS: [/fs$/i, ''],
   '%': [/%$/, ''],
   /* 4.7m は 4.7 メートル（ミリではない） */
   m: [/([\d.])m$/, '$1'],

@@ -1,0 +1,124 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import { order, TOOLS } from '../data/tools';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/audio/style.css';
+import '../tools/spectrum/style.css';
+import InputPanel from '../tools/audio/InputPanel.astro';
+import MonitorPanel from '../tools/audio/MonitorPanel.astro';
+import { WINS } from '../tools/spectrum/fft';
+import { P, SPANS } from '../tools/spectrum/params';
+import Theory from '../tools/spectrum/Theory.astro';
+
+const name = 'スペクトラムアナライザ';
+/* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
+const CAT = '信号・通信';
+const related = [
+  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'spectrum')),
+  ...TOOLS.filter((t) => t.c !== CAT && !t.s),
+];
+---
+<SiteLayout title={name} tool={{ id: 'spectrum', name }} description="マイクや音楽ファイルの音を FFT で周波数に分け、スペクトラムとスペクトログラムで表示します。" note="音声はこの端末の中だけで処理し、送信しません。">
+  <PageTitle title={name}>マイクや音楽ファイルの音を FFT で周波数ごとの強さに分け、スペクトラムと、時間とともに流れるスペクトログラムで表示します。</PageTitle>
+  <div class="mini" aria-hidden="true"><span>PEAK<b id="mf">—</b></span><span>LV<b id="ml">—</b></span><span>NOTE<b id="mn">—</b></span></div>
+
+  <div class="tgrid">
+    <div class="col c1">
+      <InputPanel />
+      <MonitorPanel />
+      <Panel hid="hd-fft" title="解析" class="a-fft">
+        <div class="ptab">
+          <ParamRow d={P.n} />
+          <ChoiceRow k="win" sym="<i>w</i>" nm="w" name="窓関数" sub="ハン: 汎用。矩形: 漏れが大きいが山は細い。ブラックマン-ハリス: 小さな成分を見る。フラットトップ: 振幅を正しく読む" choices={WINS.map(([v, l]) => [v, l] as const)} value="hann" layout="chips" wide />
+          <ChoiceRow k="avg" name="平均化" sub="パワーを指数移動平均でならす。強いほどゆっくり変わる" choices={[['off', 'なし'], ['lo', '弱'], ['hi', '強']]} value="lo" />
+        </div>
+      </Panel>
+      <Panel hid="hd-out" title="測定" class="a-out">
+        <span slot="aux" class="aux" id="o-aux">CH1 と CH2 の大きいほう</span>
+        <dl class="metrics">
+          <div class="m m-main"><dt>ピークの周波数</dt><dd><span id="o-pf">—</span><span class="m-sub" id="o-pn"></span></dd></div>
+          <div class="m"><dt>ピークのレベル</dt><dd id="o-pl">—</dd></div>
+          <div class="m"><dt>周波数分解能 Δ<i>f</i></dt><dd id="o-df">—</dd></div>
+          <div class="m"><dt>フレーム長 <i>N</i>/<i>f</i><sub>s</sub></dt><dd id="o-fl">—</dd></div>
+          <div class="m"><dt>標本化周波数 <i>f</i><sub>s</sub></dt><dd id="o-fs">—</dd></div>
+          <div class="m"><dt>等価雑音帯域幅</dt><dd><span id="o-enbw">—</span><span class="m-sub" id="o-enbwf"></span></dd></div>
+          <div class="m"><dt>窓のコヒーレントゲイン</dt><dd id="o-cg">—</dd></div>
+        </dl>
+      </Panel>
+    </div>
+
+    <div class="col c2">
+      <Panel hid="hd-sp" title="スペクトラム" class="a-sp">
+        <div slot="aux" class="pbar">
+          <div class="seg" id="p-view" role="group" aria-label="表示"><button type="button" data-v="sp" aria-pressed="true" title="周波数ごとの強さ">スペクトラム</button><button type="button" data-v="sg" aria-pressed="false" title="周波数ごとの強さの時間の変化">スペクトログラム</button></div>
+          <div class="seg"><button type="button" id="runS" aria-pressed="true" title="表示を止める・再び動かす"><span class="led on" id="runSLed" aria-hidden="true"></span><span id="runST">RUN</span></button></div>
+        </div>
+
+        <div id="v-sp">
+          <div class="sbar">
+            <button type="button" class="tg" id="ch1" aria-pressed="true" title="CH1（L）"><i class="sw" aria-hidden="true"></i>CH1 L</button>
+            <button type="button" class="tg" id="ch2" aria-pressed="true" title="CH2（R）"><i class="sw c2" aria-hidden="true"></i>CH2 R</button>
+            <button type="button" class="tg" id="hold" aria-pressed="false" title="最大値を残す（点線）">PEAK HOLD</button>
+            <span class="stag">Y <b id="s-y">20 dB</b>/div</span>
+            <span class="stag">X <b id="s-x">LOG</b></span>
+            <span class="stag"><b id="s-n">N 4096 · HANN</b></span>
+          </div>
+          <div class="scope">
+            <svg viewBox="-50 -14 462 282" id="sp-svg" role="img" aria-label="スペクトラム">
+              <defs><clipPath id="sp-clip"><rect x="0" y="-1" width="400" height="242"/></clipPath></defs>
+              <g id="sp-grid"></g>
+              <g clip-path="url(#sp-clip)"><path class="t2 hold st2" id="sp-h2"/><path class="t1 hold st1" id="sp-h1"/><path class="t2" id="sp-t2"/><path class="t1" id="sp-t1"/></g>
+              <path class="cur" id="sp-cur"/>
+            </svg>
+          </div>
+          <div class="sbar rdbar"><span class="stag rd" id="sp-rd"></span></div>
+        </div>
+
+        <div id="v-sg" class="a-sg" hidden>
+          <div class="sbar">
+            <span class="stag"><b id="cb-lo">−120</b><i class="cbar" aria-hidden="true"></i><b id="cb-hi">0</b> dBFS</span>
+            <span class="stag">H <b id="sg-h">2 s</b>/div</span>
+            <span class="stag"><b id="sg-c">CH1 と CH2 の平均</b></span>
+          </div>
+          <div class="scope">
+            <div class="cv cv-sg">
+              <canvas id="sg-cv" width="600" height="240"></canvas>
+              <svg viewBox="-50 -14 462 282" id="sg-svg" role="img" aria-label="スペクトログラム"><g id="sg-grid"></g><path class="cur" id="sg-cur"/></svg>
+            </div>
+          </div>
+          <div class="sbar rdbar"><span class="stag rd" id="sg-rd"></span></div>
+        </div>
+
+        <!-- 周波数軸と強度の範囲はどちらの表示にも使う。時間の幅とチャンネルはスペクトログラムだけ -->
+        <div class="ana2">
+          <div class="ptab">
+            <ChoiceRow k="ax" name="周波数軸" sub="対数: 1 オクターブを同じ幅に。メル: 人が感じる音の高さに近い目盛り" choices={[['lin', 'リニア'], ['log', '対数'], ['mel', 'メル']]} value="log" fold />
+            <ParamRow d={P.fl} fold />
+            <ParamRow d={P.fh} fold />
+            <ChoiceRow k="span" name="時間の幅" sub="スペクトログラムの横幅に入れる時間" choices={SPANS.map((v) => [v, `${v} s`] as const)} value={10} layout="chips" wide fold class="sg-only" />
+          </div>
+          <div class="ptab">
+            <ChoiceRow k="ym" name="縦軸" sub="dB: 対数の目盛り。リニア: 振幅そのまま（最高強度を上端にする）" choices={[['db', 'dB'], ['lin', 'リニア']]} value="db" fold />
+            <ParamRow d={P.top} fold />
+            <ParamRow d={P.bot} fold />
+            <ChoiceRow k="sgc" name="チャンネル" sub="スペクトログラムに描くチャンネル" choices={[['1', 'CH1'], ['2', 'CH2'], ['mix', '平均']]} value="mix" fold class="sg-only" />
+          </div>
+        </div>
+      </Panel>
+    </div>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools list={related} />
+  <script>
+    import '../tools/spectrum/client';
+  </script>
+</SiteLayout>

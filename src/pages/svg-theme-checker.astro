@@ -18,7 +18,7 @@ const self = TOOLS.find((t) => t.id === id);
 const view = 'ドラッグで移動、ホイールで拡大縮小';
 ---
 <SiteLayout title={name} tool={{ id, name }} description={self?.d ?? ''} note="SVG コードは外部には送信されません。">
-  <PageTitle title={name} titleHtml="SVG テーマスキーマ<wbr>チェッカー">ライトテーマとダークテーマで、SVG の外観が意図したとおりになるかを並べて確かめます。コードを書き換えると、両方のプレビューがすぐに変わります。</PageTitle>
+  <PageTitle noReset title={name} titleHtml="SVG テーマスキーマ<wbr>チェッカー">ライトテーマとダークテーマで、SVG の外観が意図したとおりになるかを並べて確かめます。コードを書き換えると、両方のプレビューがすぐに変わります。</PageTitle>
 
   <div class="tgrid">
     <Panel hid="hd-view" title="プレビュー" class="a-view">

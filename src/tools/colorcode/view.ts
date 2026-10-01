@@ -5,6 +5,7 @@ import { fmt, parts } from '../../lib/format';
 import {
   type Code,
   devTxt,
+  digitsOf,
   type ERow,
   keyOf,
   meaning,
@@ -15,6 +16,7 @@ import {
   roleName,
   rolesOf,
   tolOf,
+  tolSig,
 } from './model';
 
 /** 色見本。帯なしは本体の色に破線の枠 */
@@ -144,8 +146,9 @@ export const eRowsHtml = (rows: readonly ERow[], R: number): string =>
     .join('');
 
 /* ---------- 代入した式 ---------- */
-const qty = (v: number, u: string, sig = 6) => {
-  const [n, x] = parts(v, u, sig);
+/** MathML の量。計算した値（keep）は末尾の 0 を残す */
+const qty = (v: number, u: string, sig = 6, keep = false) => {
+  const [n, x] = parts(v, u, sig, keep);
   return `<mn>${n}</mn><mspace width="0.17em"/><mi mathvariant="normal">${x}</mi>`;
 };
 const mexp = (x: number) => (x < 0 ? `<mrow><mo>&#x2212;</mo><mn>${-x}</mn></mrow>` : `<mn>${x}</mn>`);
@@ -157,7 +160,9 @@ const X = '<mo>&#xD7;</mo>',
 export function substHtml(c: Code): string {
   const R = ohmsOf(c),
     t = tolOf(c),
-    d = c.d;
+    d = c.d,
+    rs = digitsOf(c),
+    ts = tolSig(t);
   const coef =
     d.length === 2
       ? `<mn>10</mn>${X}<mn>${d[0]}</mn><mo>+</mo><mn>${d[1]}</mn>`
@@ -165,11 +170,11 @@ export function substHtml(c: Code): string {
   const tt = `<mn>${Number((t / 100).toPrecision(6))}</mn>`;
   const tc = COLORS[c.tc].tc ?? 0;
   return (
-    `<math display="block"><mi>R</mi><mo>=</mo>${LP}${coef}${RP}${X}<msup><mn>10</mn>${mexp(c.m)}</msup><mspace width="0.17em"/><mi mathvariant="normal">Ω</mi><mo>=</mo>${qty(R, 'Ω')}</math>` +
-    `<math display="block"><msub><mi>R</mi><mi>min</mi></msub><mo>=</mo>${qty(R, 'Ω')}${X}${LP}<mn>1</mn><mo>&#x2212;</mo>${tt}${RP}<mo>=</mo>${qty(R * (1 - t / 100), 'Ω')}</math>` +
-    `<math display="block"><msub><mi>R</mi><mi>max</mi></msub><mo>=</mo>${qty(R, 'Ω')}${X}${LP}<mn>1</mn><mo>+</mo>${tt}${RP}<mo>=</mo>${qty(R * (1 + t / 100), 'Ω')}</math>` +
+    `<math display="block"><mi>R</mi><mo>=</mo>${LP}${coef}${RP}${X}<msup><mn>10</mn>${mexp(c.m)}</msup><mspace width="0.17em"/><mi mathvariant="normal">Ω</mi><mo>=</mo>${qty(R, 'Ω', rs, true)}</math>` +
+    `<math display="block"><msub><mi>R</mi><mi>min</mi></msub><mo>=</mo>${qty(R, 'Ω', rs, true)}${X}${LP}<mn>1</mn><mo>&#x2212;</mo>${tt}${RP}<mo>=</mo>${qty(R * (1 - t / 100), 'Ω', ts, true)}</math>` +
+    `<math display="block"><msub><mi>R</mi><mi>max</mi></msub><mo>=</mo>${qty(R, 'Ω', rs, true)}${X}${LP}<mn>1</mn><mo>+</mo>${tt}${RP}<mo>=</mo>${qty(R * (1 + t / 100), 'Ω', ts, true)}</math>` +
     (c.n === 6
-      ? `<math display="block"><mfrac><mrow><mi mathvariant="normal">&#x394;</mi><mi>R</mi></mrow><mrow><mi mathvariant="normal">&#x394;</mi><mi>T</mi></mrow></mfrac><mo>=</mo><mi>R</mi><mi>&#x3B1;</mi><mo>=</mo>${qty(R, 'Ω')}${X}<mn>${tc}</mn>${X}<msup><mn>10</mn><mrow><mo>&#x2212;</mo><mn>6</mn></mrow></msup><mspace width="0.17em"/><mi mathvariant="normal">/K</mi><mo>=</mo>${qty(R * tc * 1e-6, 'Ω/K', 4)}</math>`
+      ? `<math display="block"><mfrac><mrow><mi mathvariant="normal">&#x394;</mi><mi>R</mi></mrow><mrow><mi mathvariant="normal">&#x394;</mi><mi>T</mi></mrow></mfrac><mo>=</mo><mi>R</mi><mi>&#x3B1;</mi><mo>=</mo>${qty(R, 'Ω', rs, true)}${X}<mn>${tc}</mn>${X}<msup><mn>10</mn><mrow><mo>&#x2212;</mo><mn>6</mn></mrow></msup><mspace width="0.17em"/><mi mathvariant="normal">/K</mi><mo>=</mo>${qty(R * tc * 1e-6, 'Ω/K', rs, true)}</math>`
       : '')
   );
 }

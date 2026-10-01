@@ -1,6 +1,6 @@
 /** PID 制御のページの入口: 入力 → シミュレーション → 結果・応答・ブロック図・代入式 */
 import { $ } from '../../lib/dom';
-import { fmt, plain, ro } from '../../lib/format';
+import { fmt, fmtR, plain, ro } from '../../lib/format';
 import { ParamGroup } from '../../lib/param';
 import { DV, SW } from '../../lib/scope';
 import { initToolPage } from '../../lib/tool-page';
@@ -17,8 +17,9 @@ const txt = (id: string, s: string) => {
 const big = (v: number, u: string, sig?: number): string =>
   Math.abs(v) >= 1e12 ? `${v < 0 ? '−' : ''}${Math.abs(v).toExponential(2).replace('e+', 'e')} ${u}` : fmt(v, u, sig);
 const tsub = (s: string) => `<tspan dy="2" font-size="0.75em">${s}</tspan>`;
-const qty = (v: number, u = '') =>
-  `<mn>${plain(v, 4)}</mn>${u ? `<mspace width="0.17em"/><mi mathvariant="normal">${u}</mi>` : ''}`;
+/** MathML の量。計算した値（keep）は末尾の 0 を残す */
+const qty = (v: number, u = '', keep = false) =>
+  `<mn>${plain(v, 4, keep)}</mn>${u ? `<mspace width="0.17em"/><mi mathvariant="normal">${u}</mi>` : ''}`;
 const msub = (a: string, b: string) => `<msub><mi>${a}</mi><mi mathvariant="normal">${b}</mi></msub>`;
 const DOT = '<mo>&#x22C5;</mo>';
 const DTM = '<mi mathvariant="normal">Δ</mi><mi>t</mi>';
@@ -72,11 +73,11 @@ function render(v: In): void {
   html('#o-os', M.os == null ? DASH : `${os}<span class="u">%</span>`);
   html('#o-tp', M.tp == null ? DASH : ro(M.tp, 's'));
   html('#o-ee', ro(M.ee, 'm'));
-  html('#o-iae', `${plain(M.iae, 4)}<span class="u">m·s</span>`);
+  html('#o-iae', `${plain(M.iae, 4, true)}<span class="u">m·s</span>`);
   html('#o-vm', ro(M.vm, 'm/s'));
-  txt('#mts', M.ts == null ? DASH : fmt(M.ts, 's'));
+  txt('#mts', M.ts == null ? DASH : fmtR(M.ts, 's'));
   txt('#mos', M.os == null ? DASH : `${M.os.toFixed(1)} %`);
-  txt('#mee', fmt(M.ee, 'm'));
+  txt('#mee', fmtR(M.ee, 'm'));
 
   const sp = scope('sp', S.X, r, 'm', 1, 'r');
   const tl = $('#sp-tl'),
@@ -99,11 +100,11 @@ function render(v: In): void {
   $('#sp-dv').hidden = $('#sv-dv').hidden = !M.div;
   $('#sp-svg').setAttribute(
     'aria-label',
-    `位置の応答。${fmt(x0, 'm')} から目標 ${fmt(r, 'm')} へ。縦軸 ${big(sp.vd, 'm', 3)}/div、横軸 10 s/div。${M.ts != null ? `整定時間 ${fmt(M.ts, 's')}。` : ''}`,
+    `位置の応答。${fmt(x0, 'm')} から目標 ${fmt(r, 'm')} へ。縦軸 ${big(sp.vd, 'm', 3)}/div、横軸 10 s/div。${M.ts != null ? `整定時間 ${fmtR(M.ts, 's')}。` : ''}`,
   );
   $('#sv-svg').setAttribute(
     'aria-label',
-    `速度の応答。最大 ${fmt(M.vm, 'm/s')}。縦軸 ${big(sv.vd, 'm/s', 3)}/div、横軸 10 s/div。`,
+    `速度の応答。最大 ${fmtR(M.vm, 'm/s')}。縦軸 ${big(sv.vd, 'm/s', 3)}/div、横軸 10 s/div。`,
   );
 
   txt('#bd-r', fmt(r, 'm', 4));
@@ -115,9 +116,9 @@ function render(v: In): void {
     u0 = kp * e0 + ki * e0 * DT + (kd * e0) / DT;
   html(
     '#subst',
-    `<math display="block">${E0}<mo>=</mo><mi>r</mi><mo>−</mo><msub><mi>x</mi><mn>0</mn></msub><mo>=</mo>${qty(r, 'm')}<mo>−</mo><mrow><mo>(</mo>${qty(x0, 'm')}<mo>)</mo></mrow><mo>=</mo>${qty(e0, 'm')}</math>` +
+    `<math display="block">${E0}<mo>=</mo><mi>r</mi><mo>−</mo><msub><mi>x</mi><mn>0</mn></msub><mo>=</mo>${qty(r, 'm')}<mo>−</mo><mrow><mo>(</mo>${qty(x0, 'm')}<mo>)</mo></mrow><mo>=</mo>${qty(e0, 'm', true)}</math>` +
       `<math display="block"><msub><mi>u</mi><mn>0</mn></msub><mo>=</mo>${msub('K', 'P')}${E0}<mo>+</mo>${msub('K', 'I')}${E0}${DTM}<mo>+</mo>${msub('K', 'D')}<mfrac>${E0}<mrow>${DTM}</mrow></mfrac></math>` +
-      `<math display="block"><mphantom><msub><mi>u</mi><mn>0</mn></msub></mphantom><mo>=</mo>${qty(kp)}${DOT}${qty(e0)}<mo>+</mo>${qty(ki)}${DOT}${qty(e0)}${DOT}<mn>0.1</mn><mo>+</mo>${qty(kd)}${DOT}<mfrac>${qty(e0)}<mn>0.1</mn></mfrac><mo>&#x2248;</mo>${qty(u0)}</math>`,
+      `<math display="block"><mphantom><msub><mi>u</mi><mn>0</mn></msub></mphantom><mo>=</mo>${qty(kp)}${DOT}${qty(e0, '', true)}<mo>+</mo>${qty(ki)}${DOT}${qty(e0, '', true)}${DOT}<mn>0.1</mn><mo>+</mo>${qty(kd)}${DOT}<mfrac>${qty(e0, '', true)}<mn>0.1</mn></mfrac><mo>&#x2248;</mo>${qty(u0, '', true)}</math>`,
   );
 }
 

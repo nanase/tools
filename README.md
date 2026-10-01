@@ -24,6 +24,8 @@ bun install
 | `bun run lint` | Biome で検査する（`lint:fix` で直す） |
 | `bun run test` | Vitest でテストする |
 
+Astro と Vitest は [scripts/node.ts](scripts/node.ts) を通して、mise が入れた Node（`.mise.toml` の版）で動かします。PATH の先にほかの版の Node があっても使いません。版が違えば止まります。
+
 ## CI と公開
 
 GitHub Actions（[.github/workflows/ci.yml](.github/workflows/ci.yml)）が、PR と main への push ごとに lint・型検査・テスト・ビルドを行います。main へ push すると、ビルド結果を GitHub Pages へ公開します。

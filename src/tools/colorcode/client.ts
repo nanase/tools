@@ -2,15 +2,18 @@
 import { COLORS, type ColorKey } from '../../lib/colorcode';
 import { $, $$, esc } from '../../lib/dom';
 import type { Series } from '../../lib/eseries';
-import { fmt, ro } from '../../lib/format';
+import { fmt, fmtR, ro } from '../../lib/format';
 import { ParamGroup } from '../../lib/param';
+import { store, stored } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
 import {
   type Bands,
   type Code,
+  digitsOf,
   eRows,
   fromValue,
   INIT,
+  isCode,
   keyOf,
   ohmsOf,
   optsOf,
@@ -21,6 +24,7 @@ import {
   rolesOf,
   seriesOf,
   tolOf,
+  tolSig,
   withBands,
 } from './model';
 import { R_DEF, seriesPatch } from './params';
@@ -35,19 +39,26 @@ const txt = (id: string, s: string) => {
   $(id).textContent = s;
 };
 
-let code: Code = INIT,
+/* 色帯はブラウザに保存し、開き直したときに戻す（抵抗値の欄は色帯から決まるので保存しない） */
+const sc = stored('code');
+let code: Code = isCode(sc) ? sc : INIT,
   sel: Role = 'd0';
 
 /* ---------- 抵抗値の行 ---------- */
 /** 確定した抵抗値を色帯に当てはめ、表せる値を行へ戻す */
-const g = new ParamGroup<'R'>([R_DEF], (v, k) => {
-  if (!k) return;
-  const a = fromValue(v.R, code);
-  code = a.code;
-  msgPal('');
-  update();
-  g.note('R', a.note, a.er ? 'er' : '');
-});
+const g = new ParamGroup<'R'>(
+  [R_DEF],
+  (v, k) => {
+    if (!k) return;
+    const a = fromValue(v.R, code);
+    code = a.code;
+    msgPal('');
+    update();
+    g.note('R', a.note, a.er ? 'er' : '');
+  },
+  null,
+  { save: false },
+);
 /** 色帯から決まった値を行に出す（コールバックは呼ばない） */
 const syncR = () => g.set('R', ohmsOf(code), { silent: true });
 
@@ -58,6 +69,7 @@ esel.addEventListener('click', (e) => {
   if (!b || b.getAttribute('aria-pressed') === 'true') return;
   for (const x of $$('button', esel)) x.setAttribute('aria-pressed', String(x === b));
   g.update('R', seriesPatch(Number(b.dataset.s) as Series));
+  store('esel', b.dataset.s);
 });
 
 /* ---------- 許容差・温度係数の行 ---------- */
@@ -175,14 +187,16 @@ function renderOut(R: number): void {
   const t = tolOf(code),
     ins = seriesOf(R),
     tc = COLORS[code.tc].tc;
-  html('#o-v', ro(R, 'Ω', 6));
+  const rs = digitsOf(code),
+    ts = tolSig(t);
+  html('#o-v', ro(R, 'Ω', rs));
   html('#o-t', `±${t}<span class="u">%</span>${code.tol === 'no' ? '<span class="m-q">帯なし</span>' : ''}`);
-  html('#o-lo', ro(R * (1 - t / 100), 'Ω', 6));
-  html('#o-hi', ro(R * (1 + t / 100), 'Ω', 6));
+  html('#o-lo', ro(R * (1 - t / 100), 'Ω', ts));
+  html('#o-hi', ro(R * (1 + t / 100), 'Ω', ts));
   html('#o-tc', code.n === 6 ? `${tc}<span class="u">ppm/K</span>` : '—<span class="m-q">6 本帯のみ</span>');
   html('#o-es', ins.length ? ins.map((s) => `E${s}`).join('・') : '—<span class="m-q">どの E 系列にもない値</span>');
   html('#o-c', colorSeq(code));
-  html('#mn', `R<b>${esc(fmt(R, 'Ω', 6))}</b>`);
+  html('#mn', `R<b>${esc(fmtR(R, 'Ω', rs))}</b>`);
   txt('#mt', pct(t));
   txt(
     '#mc',
@@ -207,6 +221,8 @@ function update(): void {
   syncR();
   renderOut(R);
   renderE(R);
+  store('code', code);
 }
 
 update();
+document.querySelector<HTMLElement>(`#esel [data-s="${stored('esel')}"]:not([aria-pressed="true"])`)?.click();

@@ -1,16 +1,22 @@
 ---
-/** ページ見出しと「?」の吹き出し（説明文は常時表示しない）。説明文は slot。動作は lib/tool-page.ts */
+/**
+ * ページ見出しと「?」の吹き出し（説明文は常時表示しない）。説明文は slot。
+ * 右端に、保存した設定を消して既定値に戻すボタンを置く（lib/store.ts）。動作は lib/tool-page.ts
+ */
 interface Props {
   title: string;
   /** 見出しを HTML で出すとき（<wbr> で折り返し位置を決めるなど）。title はページ名として別に使う */
   titleHtml?: string;
+  /** 保存する設定がないページでは、もとに戻すボタンを出さない */
+  noReset?: boolean;
 }
-const { title, titleHtml } = Astro.props;
+const { title, titleHtml, noReset } = Astro.props;
 ---
 <div class="ttl">
   <div class="ttl-h">
     {titleHtml ? <h1 tabindex="-1" set:html={titleHtml} /> : <h1 tabindex="-1">{title}</h1>}
     <button type="button" class="qbtn" id="descBtn" aria-expanded="false" aria-controls="desc" aria-label="このツールについて" title="このツールについて">?</button>
+    {!noReset && <button type="button" class="rst" id="resetBtn" aria-label="設定をもとに戻す" title="設定をもとに戻す（保存した設定を消して既定値で開き直す）"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4.5V9h4.5"/></svg></button>}
   </div>
   <p class="desc" id="desc" role="tooltip" hidden><slot /></p>
 </div>
