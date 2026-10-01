@@ -1,0 +1,15 @@
+---
+/**
+ * モニターの枠（入力の音をスピーカーで鳴らす）。JJY シミュレータの「音」の枠と同じ作りで、開閉できる。
+ * マイクの間はハウリングを避けるため使わない（枠ごと畳んで開けなくする、.lock）。動作は input.ts
+ */
+import ParamRow from '../../components/ParamRow.astro';
+import { VOL_PARAM } from './params';
+---
+<details class="pnl clps a-snd lock">
+  <summary aria-disabled="true"><h2 id="hd-snd" style="font:inherit">モニター</h2><span class="snd-note">マイクでは使いません</span></summary>
+  <div class="thy-body">
+    <div class="ph"><div class="seg"><button type="button" id="monBtn" aria-pressed="false" title="入力の音をスピーカーで鳴らす"><span class="led" id="monLed" aria-hidden="true"></span><span id="monT">再生</span></button></div></div>
+    <div class="ptab"><ParamRow d={VOL_PARAM} /></div>
+  </div>
+</details>

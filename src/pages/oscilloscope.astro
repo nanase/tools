@@ -1,0 +1,123 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import { order, TOOLS } from '../data/tools';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import { gridSvg } from '../lib/scope';
+import '../tools/audio/style.css';
+import '../tools/oscilloscope/style.css';
+import InputPanel from '../tools/audio/InputPanel.astro';
+import MonitorPanel from '../tools/audio/MonitorPanel.astro';
+import { HY, MODES, P, POS, XL, XR } from '../tools/oscilloscope/params';
+import Theory from '../tools/oscilloscope/Theory.astro';
+
+const name = 'オシロスコープ';
+/* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
+const CAT = '信号・通信';
+const related = [
+  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'oscilloscope')),
+  ...TOOLS.filter((t) => t.c !== CAT && !t.s),
+];
+const pct = (v: number) => `${v * 100} %`;
+---
+<SiteLayout title={name} tool={{ id: 'oscilloscope', name }} description="マイクや音楽ファイルの音を波形で表示します。トリガと表示範囲を変えられ、リサジューも描けます。" note="音声はこの端末の中だけで処理し、送信しません。">
+  <PageTitle title={name}>マイクや音楽ファイルの音を、オシロスコープのように波形で表示します。トリガで波形を止めて見られ、L と R を X-Y に描くリサジューも出せます。</PageTitle>
+  <div class="mini" aria-hidden="true"><span><i>f</i><b id="mf">—</b></span><span>CH1<b id="mr">—</b></span><span>TRIG<b id="mt">—</b></span></div>
+
+  <div class="tgrid">
+    <div class="col c1">
+      <InputPanel ratio />
+      <MonitorPanel />
+      <Panel hid="hd-out" title="測定" class="a-out">
+        <span slot="aux" class="aux" id="o-aux">CH1</span>
+        <dl class="metrics">
+          <div class="m m-main"><dt>周波数 <i>f</i></dt><dd id="o-f">—</dd></div>
+          <div class="m"><dt>周期 <i>T</i></dt><dd id="o-T">—</dd></div>
+          <div class="m"><dt>位相差 CH2 − CH1</dt><dd id="o-ph">—</dd></div>
+          <div class="m"><dt>CH1 実効値</dt><dd id="o-r1">—</dd></div>
+          <div class="m"><dt>CH2 実効値</dt><dd id="o-r2">—</dd></div>
+          <div class="m"><dt>CH1 ピーク</dt><dd id="o-p1">—</dd></div>
+          <div class="m"><dt>CH2 ピーク</dt><dd id="o-p2">—</dd></div>
+        </dl>
+      </Panel>
+    </div>
+
+    <div class="col c2">
+      <Panel hid="hd-wave" title="波形" class="a-wave">
+        <div slot="aux" class="pbar">
+          <div class="seg" id="p-view" role="group" aria-label="表示"><button type="button" data-v="yt" aria-pressed="true" title="時間に対する波形">波形</button><button type="button" data-v="xy" aria-pressed="false" title="CH1 と CH2 を X-Y に描く">リサジュー</button></div>
+          <div class="seg"><button type="button" id="runO" aria-pressed="true" title="表示を止める・再び動かす"><span class="led on" id="runOLed" aria-hidden="true"></span><span id="runOT">RUN</span></button></div>
+        </div>
+
+        <div id="v-yt">
+          <div class="sbar">
+            <button type="button" class="tg" id="ch1" aria-pressed="true" title="CH1（L）"><i class="sw" aria-hidden="true"></i>CH1 L <b class="s-vd">0.2</b>/div</button>
+            <button type="button" class="tg" id="ch2" aria-pressed="true" title="CH2（R）"><i class="sw c2" aria-hidden="true"></i>CH2 R <b class="s-vd">0.2</b>/div</button>
+            <span class="stag">H <b id="s-hd">200 μs</b>/div</span>
+            <span class="stag">TRIG <b id="s-trig">CH1 ↑ ±0.00</b></span>
+            <span class="stag st"><b id="s-st">AUTO</b></span>
+          </div>
+          <div class="scope" id="w-scope">
+            <svg viewBox="-50 -14 462 354" id="w-svg" role="img" aria-label="波形">
+              <defs><clipPath id="w-clip"><rect x="0" y="0" width="400" height="320"/></clipPath></defs>
+              <g set:html={gridSvg(8)} />
+              <path class="th" id="w-th"/>
+              <g clip-path="url(#w-clip)"><path class="t2 c2x" id="w-t2"/><path class="t1 c1x" id="w-t1"/></g>
+              <path class="cur" id="w-cur"/>
+              <g id="w-axes"></g>
+            </svg>
+          </div>
+          <div class="sbar rdbar"><span class="stag rd" id="w-rd"></span></div>
+          <div class="ana2">
+            <div class="ptab">
+              <ParamRow d={P.hd} fold />
+              <ParamRow d={P.vd} fold />
+              <ChoiceRow k="lay" name="CH1 と CH2" sub="分けると CH1 を上に、CH2 を下に 2 div ずつずらします" choices={[['ov', '重ねる'], ['sp', '分ける']]} value="ov" fold />
+              <ChoiceRow k="tp" name="トリガの位置" sub="トリガの時刻（▼）を表示窓の左から何 % に置くか" choices={POS.map((v) => [v, pct(v)] as const)} value={0.1} layout="chips" wide fold />
+            </div>
+            <div class="ptab">
+              <ChoiceRow k="tm" name="トリガのモード" sub="AUTO: トリガがなければそのまま流す。NORMAL: トリガが来るまで前の波形を残す。SINGLE: 1 回だけ取り込んで止める" choices={MODES} value="auto" fold />
+              <ChoiceRow k="ts" name="トリガのソース" choices={[['1', 'CH1（L）'], ['2', 'CH2（R）']]} value="1" fold />
+              <ChoiceRow k="tsl" name="トリガのスロープ" sub="両方向: 立ち上がり・立ち下がりのどちらでも、レベルを横切ればトリガする。レベルが 0 ならゼロ点交差" choices={[['up', '↑ 立ち上がり'], ['down', '↓ 立ち下がり'], ['both', '↕ 両方向']]} value="up" layout="chips" wide fold />
+              <ParamRow d={P.tl} fold />
+              <ChoiceRow k="tn" name="ノイズ除去" sub="波形がレベルからこの幅だけ離れるまで、次のトリガを受け付けない" choices={(Object.keys(HY) as (keyof typeof HY)[]).map((k) => [k, k === 'off' ? 'なし' : `${k === 'lo' ? '弱' : '強'} ${HY[k]}`] as const)} value="lo" fold />
+            </div>
+          </div>
+        </div>
+
+        <div id="v-xy" hidden>
+          <div class="sbar">
+            <span class="stag" id="x-ax">X <b>CH1</b> Y <b>CH2</b></span>
+            <span class="stag"><b id="x-dv">0.25</b>/div</span>
+            <span class="stag">CORR <b id="x-corr">—</b></span>
+          </div>
+          <div class="scope">
+            <div class="cv cv-xy">
+              <canvas id="x-cv" width="320" height="320"></canvas>
+              <svg viewBox="-16 -16 352 352" id="x-svg" role="img" aria-label="リサジュー図形"></svg>
+            </div>
+          </div>
+          <div class="ptab ana">
+            <ChoiceRow k="xm" name="軸" sub="X-Y: 横に CH1、縦に CH2。M-S: 45° 回し、L だけの音を左上、R だけの音を右上、モノラルの音を縦の線に描く" choices={[['xy', 'X-Y'], ['ms', 'M-S']]} value="xy" fold />
+            <ChoiceRow k="xr" name="表示範囲" sub="中心から端までの振幅（フルスケールを 1 とする）" choices={XR.map((v) => [v, `±${v}`] as const)} value={1} layout="chips" wide fold />
+            <ChoiceRow k="xl" name="描く長さ" sub="直近のこの時間の音を線でつなぐ" choices={XL.map((v) => [v, `${v * 1000} ms`] as const)} value={0.02} layout="chips" wide fold />
+            <ChoiceRow k="xp" name="残光" sub="前に描いた線を薄くしながら残す" choices={[['off', 'なし'], ['short', '短い'], ['long', '長い']]} value="short" fold />
+          </div>
+        </div>
+      </Panel>
+    </div>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools list={related} />
+  <script>
+    import '../tools/oscilloscope/client';
+  </script>
+</SiteLayout>

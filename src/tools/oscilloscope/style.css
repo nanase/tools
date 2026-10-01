@@ -1,0 +1,20 @@
+/* オシロスコープのページだけのスタイル（共通は src/styles/site.css、入力とモニターの枠は ../audio/style.css） */
+
+/* 枠の並び。スマホは 入力 → モニター → 波形 → 測定 → 式。
+   PC は左の列に 入力・モニター・測定、右の列に 波形（リサジューと切り替え） */
+.a-in{order:1}.a-snd{order:2}.a-wave{order:3}.a-out{order:4}.a-thy{order:5}
+@media (min-width:1000px){
+  .tgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr);grid-template-areas:"c1 c2" "thy thy";align-items:start}
+  .c1{grid-area:c1}.c2{grid-area:c2}.a-thy{grid-area:thy}
+}
+
+/* 表示窓: トリガレベルの線（動かしている間だけ）とつまみ */
+.th{stroke-width:1;stroke-dasharray:3 4;opacity:.8}
+.st1{stroke:var(--ch1)}.st2{stroke:var(--ch2)}
+#w-tlm{cursor:ns-resize}
+
+/* リサジュー: 正方形の表示窓（8 × 8 div）に、線を描くキャンバスを重ねる */
+#v-xy .scope{max-width:440px;margin:0 auto}
+.cv-xy canvas{left:calc(100% * 16 / 352);top:calc(100% * 16 / 352);width:calc(100% * 320 / 352);height:calc(100% * 320 / 352)}
+.scope text.xyl{opacity:.8}
+.mkl{stroke:var(--screen-ink);stroke-width:1;stroke-dasharray:5 4;opacity:.45}

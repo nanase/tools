@@ -64,6 +64,22 @@ export const TOOLS: Tool[] = [
     k: '電波時計 標準電波 タイムコード 復号 デコード 受信 マイク decoder',
   },
   {
+    id: 'oscilloscope',
+    c: '信号・通信',
+    t: 'オシロスコープ',
+    d: 'マイクや音楽ファイルの音を波形で表示します。トリガと表示範囲を変えられ、リサジューも描けます。',
+    ic: 'os',
+    k: 'oscilloscope 波形 トリガ リサジュー lissajous マイク 音声 オーディオ audio',
+  },
+  {
+    id: 'spectrum',
+    c: '信号・通信',
+    t: 'スペクトラムアナライザ',
+    d: 'マイクや音楽ファイルの音を FFT で周波数に分け、スペクトラムとスペクトログラムで表示します。',
+    ic: 'sp',
+    k: 'spectrum analyzer fft スペクトル スペクトログラム spectrogram 周波数 窓関数 メル mel マイク 音声 オーディオ audio',
+  },
+  {
     id: 'svg-theme-checker',
     c: 'SVG',
     t: 'SVG テーマスキーマチェッカー',
@@ -97,6 +113,8 @@ export const IC: Record<string, string> = {
   jjyd: '<path class="b" d="M4 16L5 7L7 25L9 7L11 25L13 7L15 25L17 7L19 25L21 7L23 25L25 7L27 17.5L29 14.5L31 17.5L33 7L35 25L37 7L39 25L41 7L43 25L45 7L47 17.5L49 14.5L51 17.5L53 14.5L55 17.5L57 14.5L59 17.5L61 7L63 25L65 7L67 17.5L69 14.5L71 17.5L73 14.5L75 17.5L77 14.5L79 17.5L81 14.5L83 17.5L85 14.5L87 17.5L89 7L91 25L93 7L95 25L97 7L99 25L101 7L103 17.5L105 14.5L107 17.5L109 14.5L111 17.5L113 14.5L115 17.5"/><path class="a" d="M4 43V33H26V43H32V33H46V43H60V33H66V43H88V33H102V43H116"/>',
   svg: '<circle class="a" cx="42" cy="24" r="12"/><path class="a" d="M42 4V7M42 41V44M22 24H25M59 24H62"/><path class="b" d="M80 10A15 15 0 1 0 96 36A12 12 0 0 1 80 10Z"/>',
   cc: '<path class="c" d="M4 24H30M90 24H116"/><rect class="c" x="30" y="14" width="60" height="20" rx="8"/><path class="a" d="M42 14V34M52 14V34M62 14V34"/><path class="b" d="M78 14V34"/>',
+  os: '<path class="c d" d="M4 24H116"/><path class="a" d="M4 24C10 9 16 9 22 24S34 39 40 24S52 9 58 24S70 39 76 24S88 9 94 24S106 39 112 24"/><path class="b" d="M4 30C12 17 19 17 27 30S43 43 51 30S67 17 75 30S91 43 99 30S112 21 116 26"/>',
+  sp: '<path class="c d" d="M4 44H116"/><path class="a" d="M4 41L12 40L18 33L22 9L26 34L34 38L40 37L44 22L48 37L58 39L64 38L67 30L70 39L82 41L88 40L91 35L94 41L116 43"/>',
   pc: '<path class="c" d="M4 6H42"/><path class="a" d="M42 6H78V42H42V10H74V38H46V14H70V34H50V18H66V30H54V22H62"/><path class="c d" d="M62 22H116"/>',
 };
 

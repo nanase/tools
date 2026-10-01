@@ -1,0 +1,51 @@
+/* 入力の枠とモニターの枠（オシロスコープ・スペクトラムアナライザで共有。共通は src/styles/site.css） */
+
+/* 枠の右上のボタン（LED は入力が動いている間・鳴らしている間） */
+.ph .seg button{display:inline-flex;align-items:center;justify-content:center;gap:7px}
+.seg button:disabled{opacity:.45;cursor:default;color:var(--ink-3)}
+/* 入力元と開始・停止を枠の右上に並べる */
+.ph>.srcbar{position:absolute;top:0;right:10px;transform:translateY(-50%);display:flex;align-items:center;gap:8px;padding-left:6px;background:var(--bg)}
+@media (max-width:479px){.srcbar{gap:6px}.srcbar .seg button{padding:0 6px}}
+/* ファイルを枠へ落としているとき */
+.a-in.drop{border-color:var(--focus);box-shadow:inset 0 0 0 1px var(--focus)}
+/* 入力の知らせ（マイクを使えないときなど）。ないときは出さない */
+.in-msg{margin:0 8px 6px}
+.in-msg:empty{display:none}
+/* 入力元ごとの行: ファイルはファイルのとき、波形・周波数・周波数比・位相差はテスト信号のときだけ */
+#in-tab:not([data-src="file"]) #p-file,
+#in-tab:not([data-src="test"]) :is(#p-tw,#p-tf,#p-tr,#p-tph){display:none}
+
+/* モニターの枠: マイクの間は畳んで開けない。見出しの右に理由を出し、開閉の印は消す */
+.a-snd>summary .snd-note{font-size:12.5px;font-weight:400;color:var(--ink-3)}
+.a-snd:not(.lock)>summary .snd-note{display:none}
+.a-snd.lock>summary{cursor:default}
+.a-snd.lock>summary::after{display:none}
+
+/* ファイルの再生位置 */
+.seek{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;margin-top:4px}
+.seek .sl{padding-bottom:0}
+.seek .msg{white-space:nowrap;font-variant-numeric:tabular-nums}
+
+/* 入力レベル（メーターの標準の緑。−3 dBFS を超えると警告色。−3 dBFS の位置に線） */
+:root{--lv-ok:#2f9a46}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--lv-ok:#46c464}}
+:root[data-theme="dark"]{--lv-ok:#46c464}
+.lvs{display:grid;gap:5px;margin-top:2px}
+.lvr{display:grid;grid-template-columns:1.1em minmax(0,1fr) 6.6em;align-items:center;gap:8px;font:500 12px/1 var(--mono);color:var(--ink-2)}
+.lvr b{text-align:right;font-weight:500;color:var(--ink);font-variant-numeric:tabular-nums}
+.lvb{position:relative;height:8px;border:1px solid var(--line);border-radius:2px;background:var(--inset);overflow:hidden}
+.lvb i{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--lv-ok)}
+.lvb i.hot{background:var(--warn)}
+.lvb::after{content:"";position:absolute;top:0;bottom:0;left:95%;width:1px;background:var(--line-2)}
+
+/* 表示窓に重ねるキャンバス（SVG の描画範囲に合わせて置く） */
+.cv{position:relative}
+.cv canvas{position:absolute;display:block}
+.cv svg{position:relative}
+
+/* 枠の右上に 2 つのボタンの組を並べる（表示の切り替えと RUN） */
+.ph>.pbar{position:absolute;top:0;right:10px;transform:translateY(-50%);display:flex;align-items:center;gap:8px;padding-left:6px;background:var(--bg)}
+.scope svg{touch-action:pan-y}
+.cur{stroke:var(--screen-ink);stroke-width:1}
+.rdbar .rd{white-space:pre}
+.stag.st b{display:inline-block;min-width:5.2em}
