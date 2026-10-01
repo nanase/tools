@@ -38,17 +38,23 @@ const VW = 320,
   BY = 14,
   BH = 80,
   BW = 20,
-  VH = 132,
   CY = BY + BH / 2;
+/* 本体・帯・印・押せる範囲は上の座標で描き、左右の中央を軸に K 倍に縮める（S）。
+   リード線と引き出し線は縮めずに図の幅いっぱいに引く */
+const K = 0.72,
+  S = `translate(${(VW / 2) * (1 - K)} 0) scale(${K})`,
+  sx = (x: number) => VW / 2 + (x - VW / 2) * K,
+  BB = (BY + BH) * K,
+  VH = Math.round(BB) + 38;
 
 /** 図の固定部分（リード線・本体・陰影）。帯は #r-bands、引き出し線・印・押せる範囲は #r-ov に入れる */
 export const figFrame = (): string =>
   `<svg class="rsvg" id="rsvg" viewBox="0 0 ${VW} ${VH}" role="img"><defs>${BAND_GRADIENTS}` +
   `<clipPath id="rclip"><rect x="50" y="${BY}" width="220" height="${BH}" rx="30"/></clipPath></defs>` +
-  `<path class="r-ld" d="M4 ${CY}H50M270 ${CY}H316"/>` +
-  `<rect class="r-bd" x="50" y="${BY}" width="220" height="${BH}" rx="30" fill="${RESISTOR_BODY}" style="stroke:color-mix(in srgb,${RESISTOR_BODY},#000 45%)"/>` +
+  `<path class="r-ld" d="M4 ${CY * K}H${sx(50)}M${sx(270)} ${CY * K}H316"/>` +
+  `<g transform="${S}"><rect class="r-bd" x="50" y="${BY}" width="220" height="${BH}" rx="30" fill="${RESISTOR_BODY}" style="stroke:color-mix(in srgb,${RESISTOR_BODY},#000 45%)"/>` +
   '<g id="r-bands" clip-path="url(#rclip)"></g>' +
-  `<rect class="s-sh" x="50" y="${BY}" width="220" height="${BH}" rx="30"/><g id="r-ov"></g></svg>`;
+  `<rect class="s-sh" x="50" y="${BY}" width="220" height="${BH}" rx="30"/></g><g id="r-ov"></g></svg>`;
 
 /** 図の読み上げ */
 export function figLabel(c: Code): string {
@@ -80,10 +86,11 @@ export function overlaySvg(c: Code, sel: Role): string {
     si = roles.indexOf(sel);
   let s = '';
   xs.forEach((x, i) => {
-    const bx = x + BW / 2,
+    const bx = sx(x + BW / 2).toFixed(1),
       cx = (VW * (i + 0.5)) / N;
-    s += `<path class="r-ln${i === si ? ' on' : ''}" d="M${bx} ${BY + BH + 3}V${BY + BH + 9}L${cx.toFixed(1)} ${VH - 8}V${VH}"/>`;
+    s += `<path class="r-ln${i === si ? ' on' : ''}" d="M${bx} ${(BB + 3).toFixed(1)}V${(BB + 9).toFixed(1)}L${cx.toFixed(1)} ${VH - 8}V${VH}"/>`;
   });
+  s += `<g transform="${S}">`;
   if (si >= 0) {
     const bx = xs[si] + BW / 2;
     s += `<path class="r-mk" d="M${bx - 7} 1H${bx + 7}L${bx} 10Z"/>`;
@@ -91,7 +98,7 @@ export function overlaySvg(c: Code, sel: Role): string {
   xs.forEach((x, i) => {
     s += `<rect class="r-hit" data-b="${i}" x="${x - 3}" y="0" width="${BW + 6}" height="${BY + BH + 10}"/>`;
   });
-  return s;
+  return `${s}</g>`;
 }
 
 /** 帯ごとの選択ボタン */

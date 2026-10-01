@@ -119,18 +119,30 @@ function lay(x: Node, ty: Ty): Lay {
 
 const DEFS = `<defs>${BAND_GRADIENTS}</defs>`;
 
-/** 候補 c の回路図。両端に端子を置き、幅に合わせて縮める（最大で 2 倍まで拡大） */
+/* 図の枠（縦横比を固定する）の幅・高さと、拡大の上限。幅は 5 本の直列が等倍で収まる大きさ */
+const BOX_W = 5 * LW + 4 * GAP + 2 * (TW + 5),
+  BOX_H = 200,
+  MAX_S = 1.6;
+
+/**
+ * 候補 c の回路図。枠の縦横比は本数・つなぎ方によらず同じで、図は枠に収まるように拡大・縮小して中央に置く。
+ * 両端の端子は枠の左右に置く
+ */
 export function circuitSvg(c: Cand, ty: Ty): string {
   const T = TY[ty],
     L = lay(c.tr, ty),
     g: G = { w: [], b: [], j: [], t: [] },
     ox = TW + 5,
-    oy = 4;
-  L.d(g, ox, oy);
-  const vw = L.w + 2 * ox,
-    vh = L.h + oy * 2,
-    py = oy + L.y;
-  g.w.push(`M5 ${py}H${ox}M${ox + L.w} ${py}H${vw - 5}`);
+    oy = 4,
+    s = Math.min(BOX_W / (L.w + 2 * ox), BOX_H / (L.h + 2 * oy), MAX_S),
+    r1 = (x: number) => Math.round(x * 10) / 10,
+    vw = r1(BOX_W / s),
+    vh = r1(BOX_H / s),
+    lx = r1((vw - L.w) / 2),
+    ly = r1((vh - L.h) / 2);
+  L.d(g, lx, ly);
+  const py = ly + L.y;
+  g.w.push(`M5 ${py}H${lx}M${r1(lx + L.w)} ${py}H${r1(vw - 5)}`);
   const cc =
     ty === 'C'
       ? ''
@@ -146,12 +158,12 @@ export function circuitSvg(c: Cand, ty: Ty): string {
           .join('、')}`;
   const label = `${c.n} 本の${T.nm}の回路: ${c.x}（+ は直列、∥ は並列）。合成値 ${fmt(c.v, T.u, 6)}${cc}`;
   return (
-    `<svg class="sch" viewBox="0 0 ${vw} ${vh}" style="max-width:${Math.round(vw * 2)}px" role="img" aria-label="${esc(label)}">` +
+    `<svg class="sch" viewBox="0 0 ${vw} ${vh}" role="img" aria-label="${esc(label)}">` +
     DEFS +
     `<path class="s-w" d="${g.w.join('')}"/>` +
     g.b.join('') +
     g.j.map(([x, y]) => `<circle class="s-j" cx="${x}" cy="${y}" r="2.6"/>`).join('') +
-    `<circle class="s-o" cx="5" cy="${py}" r="3.5"/><circle class="s-o" cx="${vw - 5}" cy="${py}" r="3.5"/>` +
+    `<circle class="s-o" cx="5" cy="${py}" r="3.5"/><circle class="s-o" cx="${r1(vw - 5)}" cy="${py}" r="3.5"/>` +
     g.t.join('') +
     '</svg>'
   );

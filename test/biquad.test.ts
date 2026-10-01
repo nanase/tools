@@ -277,15 +277,15 @@ describe('表示窓', () => {
     expect(frIndex(1, 48e3, 1024)).toBe(1);
   });
 
-  it('インパルス応答: 画面案と同じ縦軸と 0 の位置', () => {
+  it('インパルス応答: 縦 4 div の縦軸と 0 の位置', () => {
     const h = (t: FilterType, q: number) => analyze({ t, fs: 48e3, fc: 1e3, q, g: 6 }, 1024, true).h;
     const lp = impPlot(h('lowpass', S2), 1024, 256);
-    expect([lp.vd, lp.d, lp.nEnd]).toEqual([0.02, 32, 289]);
-    expect(lp.zero).toBe('M0 200H400');
+    expect([lp.vd, lp.d, lp.nEnd]).toEqual([0.05, 32, 289]);
+    expect(lp.zero).toBe('M0 120H400');
     const hp = impPlot(h('highpass', S2), 1024, 256);
-    expect([hp.vd, hp.zero]).toEqual([0.2, 'M0 200H400']);
+    expect([hp.vd, hp.zero]).toEqual([0.5, 'M0 120H400']);
     const bp = impPlot(h('bandpass', 8), 1024, 1024);
-    expect([bp.vd, bp.d, bp.nEnd, bp.zero]).toEqual([0.01, 128, 1024, 'M0 120H400']);
+    expect([bp.vd, bp.d, bp.nEnd, bp.zero]).toEqual([0.01, 128, 1024, 'M0 80H400']);
     expect(bp.width).toBe(1);
   });
 

@@ -1,7 +1,7 @@
 /* 受動素子組み合わせ計算機のページだけのスタイル（共通は src/styles/site.css） */
 @media (min-width:1000px){
-  .tgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr);grid-template-rows:auto auto 1fr auto;grid-template-areas:"in out" "in wave" "in sch" "thy thy";align-items:start}
-  .a-in{grid-area:in}.a-out{grid-area:out}.a-wave{grid-area:wave}.a-sch{grid-area:sch}.a-thy{grid-area:thy}
+  .tgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr);grid-template-rows:auto 1fr auto;grid-template-areas:"in out" "in sch" "thy thy";align-items:start}
+  .a-in{grid-area:in}.a-out{grid-area:out}.a-sch{grid-area:sch}.a-thy{grid-area:thy}
 }
 
 /* 追加欄: 入力欄 | ＋追加（数値欄の片側だけ版） */
@@ -15,10 +15,13 @@
 
 /* results */
 .m-st{grid-column:1/-1}
-@container (min-width:480px){.m-st{grid-column:auto}}
+@container (min-width:360px){.m-st{grid-column:auto}}
+@container (min-width:560px){.m-st{grid-column:span 2}}
 .m-st dd{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;font-family:var(--sans);font-size:15px;font-weight:700}
 .m-q{margin-left:.5em;font:500 12.5px var(--sans);color:var(--ink-2)}
 #o-x{font-size:17px}
+.m-wide dt{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:.5em}
+.cmb-aux{margin-left:auto!important;color:var(--ink-3)}
 .m-st .tg{font:500 12.5px/1 var(--sans)}
 
 /* candidates（候補の一覧） */
@@ -45,7 +48,8 @@ button.cr:focus-visible{outline-offset:-2px}
 }
 .empty-c{padding:6px 0;font-size:13.5px;color:var(--ink-3)}
 
-/* 組み合わせの回路（最大幅は SVG の style で決める） */
-.cmb-w{padding:4px 0 2px}
+/* 組み合わせの回路（計算結果の下）。枠の大きさは本数・つなぎ方によらず同じ */
+.cmb-w{padding:10px 0 2px;border-top:1px solid var(--line)}
+.cmb-w .sch{max-width:none}
 .s-bd{stroke-width:1}
 .s-sh{fill:url(#bdsh);pointer-events:none}

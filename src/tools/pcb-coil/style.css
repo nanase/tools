@@ -21,8 +21,6 @@
 .scope text.p2{fill:var(--ch2)}
 .scope text.dl{paint-order:stroke;stroke:var(--screen);stroke-width:4px;stroke-linejoin:round}
 .t1.ov,.t2.ov{stroke-dasharray:4 4;opacity:.55}
-.rd{margin-left:auto;font-variant-numeric:tabular-nums}
-@media (max-width:559px){.rd{margin-left:0}}
 
 /* コイルの形（縮尺どおり） */
 .coil{fill:none;stroke:var(--ch1);stroke-linejoin:miter;stroke-miterlimit:10;stroke-linecap:butt}
@@ -33,7 +31,6 @@
 
 /* 3D（斜めから見た図）: 半透明の基板（表面は明るく、裏面は暗い緑）、層ごとに色を少しずつ変えた銅箔、
    電流の向きに流れる黄色の粒。右上に電流の表示と初期位置のボタン */
-.cap{margin:0 0 6px;font-size:12.5px;line-height:1.6;color:var(--ink-3)}
 .c3w{position:relative;border:1px solid var(--line);border-radius:var(--r);background:var(--inset);overflow:hidden}
 .c3d{display:block;width:100%;height:auto;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
 .c3d:active{cursor:grabbing}

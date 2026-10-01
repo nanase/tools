@@ -61,7 +61,7 @@ function compute(v: Record<Key, number>): void {
       ? `1 層 ${fmt(r.L1, 'H', 4)} の ${sig(r.L / r.L1, 3)} 倍・隣り合う層の結合 ${r.k.map((k) => sig(k, 2)).join('・')}`
       : '',
   );
-  txt('#o-Ln', r.s > 3 * r.w ? '間隔が幅の 3 倍を超えるため、誤差が論文の最大 8 % より大きくなることがあります' : '');
+  txt('#o-Ln', r.s > 3 * r.w ? '間隔が幅の 3 倍を超えるため、誤差が理論値の最大 8 % より大きくなることがあります' : '');
   html('#o-Lmw', ro(r.Lmw, 'H'));
   txt('#o-Lmws', shape.K ? diff(r.Lmw) : '円形の係数は論文にありません');
   html('#o-Lmn', ro(r.Lmn, 'H'));
@@ -75,7 +75,7 @@ function compute(v: Record<Key, number>): void {
     (r.nl > 1 && r.conn === 'ser' ? `1 層 ${fmt(r.len1, 'm', 4)} × ${r.nl}・` : '') +
       `波長の ${lr >= 0.1 ? sig(lr, 2) : `1/${Math.round(1 / lr)}`}`,
   );
-  txt('#o-lenn', lr > 0.1 ? '波長の 1/10 を超えるため、集中定数としての計算は目安になりません' : '');
+  txt('#o-lenn', lr > 0.1 ? '波長の 1/10 を超えるため、集中定数としての計算値は不確定です' : '');
   html('#o-rdc', ro(r.rdc, 'Ω'));
   html('#o-dl', ro(r.dl, 'm', 3));
   txt('#o-dls', `実効厚さ ${fmt(r.teff, 'm', 3)}`);

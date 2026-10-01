@@ -9,7 +9,7 @@ import { initToolPage, setFoldable } from '../../lib/tool-page';
 import { type Analysis, analyze, coef, type FilterParams, type Summary } from './filter';
 import { hzMath, substHtml } from './math';
 import { fcPatch, hzT, type Key, L0, LENS, PARAMS, sup, type TypeDef, typeOf } from './params';
-import { type FrPlot, fixed, frIndex, frPlot, type ImpPlot, impPlot, LV_HOT, lvX, sig } from './plot';
+import { type FrPlot, fixed, frIndex, frPlot, IH, type ImpPlot, impPlot, LV_HOT, lvX, sig } from './plot';
 import type { Job, Reply } from './worker';
 
 const html = (id: string, s: string) => {
@@ -212,7 +212,7 @@ function imCursor(): void {
   if (!S || !IM) return;
   const h = S.res.h,
     k = Math.max(0, Math.min(IM.nEnd - 1, imK ?? 0));
-  $('#im-cur').setAttribute('d', imK == null ? '' : `M${IM.X(k).toFixed(1)} 0V${SH}`);
+  $('#im-cur').setAttribute('d', imK == null ? '' : `M${IM.X(k).toFixed(1)} 0V${IH}`);
   html('#im-rd', `CUR <i>n</i> = <b>${k}</b> <i>h</i> = <b>${sig(h[k], 6)}</b>`);
 }
 bindCursor($('#im-svg'), (x) => {
