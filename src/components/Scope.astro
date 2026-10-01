@@ -20,7 +20,7 @@ const { id, label, ch1, ch1Title, ch2, ch2Title, trig } = Astro.props;
 <div id={id}>
   <div class="sbar">
     <span class="stag" title={ch1Title}><i class="sw" aria-hidden="true"></i>CH1 {ch1} <b class="s-vd"></b>/div</span>
-    {ch2 && <button type="button" class="tg" aria-pressed="true" title={ch2Title}><i class="sw c2" aria-hidden="true"></i>CH2 <Fragment set:html={ch2} /></button>}
+    {ch2 && <button type="button" class="tg" id={`${id}-ch2`} aria-pressed="true" title={ch2Title}><i class="sw c2" aria-hidden="true"></i>CH2 <Fragment set:html={ch2} /></button>}
     <span class="stag">H <b class="s-td"></b>/div</span>
     <span class="stag">TRIG {trig}</span>
   </div>

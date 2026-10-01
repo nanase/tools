@@ -51,13 +51,17 @@ export const ln = (x: string): string => row('<mi>ln</mi><mo>&#x2061;</mo>', par
 export const sq = (x: string): string => sup(x, two);
 
 /* ---------- 現在の値を代入した式 ---------- */
-const num = (v: number, s = 4): string => `<mn>${sig(v, s)}</mn>`;
-const qty = (v: number, u: string, s = 4): string => {
-  const [n, x] = u === 'F' ? partsF(v, s) : parts(v, u, s);
+/* 数・量・長さ。計算した値は末尾の 0 を残す（numR・qtyR・mmR） */
+const num = (v: number, s = 4, keep = false): string => `<mn>${sig(v, s, keep)}</mn>`;
+const numR = (v: number, s = 4): string => num(v, s, true);
+const qty = (v: number, u: string, s = 4, keep = false): string => {
+  const [n, x] = u === 'F' ? partsF(v, s, keep) : parts(v, u, s, keep);
   return `<mrow><mn>${n}</mn><mspace width="0.17em"/><mi mathvariant="normal">${x}</mi></mrow>`;
 };
-const mm = (v: number, s = 4): string =>
-  `<mrow>${num(v, s)}<mspace width="0.17em"/><mi mathvariant="normal">mm</mi></mrow>`;
+const qtyR = (v: number, u: string, s = 4): string => qty(v, u, s, true);
+const mm = (v: number, s = 4, keep = false): string =>
+  `<mrow>${num(v, s, keep)}<mspace width="0.17em"/><mi mathvariant="normal">mm</mi></mrow>`;
+const mmR = (v: number, s = 4): string => mm(v, s, true);
 
 /** 代入した式（#subst の中身）。w・s は画面の値 [mm]。多層なら層の合成と自己共振も出す */
 export function substHtml(g: Coil & Partial<Stacked>, sh: Shape, w: number, s: number): string {
@@ -68,11 +72,13 @@ export function substHtml(g: Coil & Partial<Stacked>, sh: Shape, w: number, s: n
     dO_ = g.d * 1e3,
     dI_ = g.din * 1e3,
     dA_ = g.davg * 1e3,
-    r3 = num(g.rho, 3);
+    r3 = numR(g.rho, 3);
   let h = blk(
-    row(dI, EQ, mm(dO_), MI, two, DOT, num(g.n), DOT, mm(w), MI, two, DOT, num(g.n - 1), DOT, mm(s), EQ, mm(dI_)),
+    row(dI, EQ, mm(dO_), MI, two, DOT, num(g.n), DOT, mm(w), MI, two, DOT, num(g.n - 1), DOT, mm(s), EQ, mmR(dI_)),
   );
-  h += blk(row(dA, EQ, mm(dA_), CM, rho, EQ, frac(row(num(dO_), MI, num(dI_)), row(num(dO_), PL, num(dI_))), AP, r3));
+  h += blk(
+    row(dA, EQ, mmR(dA_), CM, rho, EQ, frac(row(num(dO_), MI, numR(dI_)), row(num(dO_), PL, numR(dI_))), AP, r3),
+  );
   h += blk(
     row(
       cS(1),
@@ -97,10 +103,10 @@ export function substHtml(g: Coil & Partial<Stacked>, sh: Shape, w: number, s: n
     row(
       Ls('gmd'),
       EQ,
-      frac(row(mu0, DOT, sup(num(g.n), two), DOT, mm(dA_), DOT, num(c1)), two),
+      frac(row(mu0, DOT, sup(num(g.n), two), DOT, mmR(dA_), DOT, num(c1)), two),
       par(row(ln(frac(num(c2), r3)), PL, num(c3), DOT, r3, PL, num(c4), DOT, sq(r3))),
       AP,
-      qty(L1, 'H', 4),
+      qtyR(L1, 'H', 4),
     ),
   );
   if (nl > 1) {
@@ -110,13 +116,13 @@ export function substHtml(g: Coil & Partial<Stacked>, sh: Shape, w: number, s: n
         EQ,
         Ls('gmd'),
         g.conn === 'par' ? '<mo>×</mo>' : DOT,
-        num(g.L / L1, 4),
+        numR(g.L / L1, 4),
         EQ,
-        qty(L1, 'H', 4),
+        qtyR(L1, 'H', 4),
         '<mo>×</mo>',
-        num(g.L / L1, 4),
+        numR(g.L / L1, 4),
         AP,
-        qty(g.L, 'H', 4),
+        qtyR(g.L, 'H', 4),
         `<mspace width="1em"/><mtext>（${nl} 層・${g.conn === 'par' ? '並列' : '直列'}）</mtext>`,
       ),
     );
@@ -127,28 +133,28 @@ export function substHtml(g: Coil & Partial<Stacked>, sh: Shape, w: number, s: n
           EQ,
           frac(mn('4'), row(mn('3'), DOT, sq(num(nl)))),
           DOT,
-          qty(g.cSum ?? 0, 'F', 3),
+          qtyR(g.cSum ?? 0, 'F', 3),
           AP,
-          qty(g.cp, 'F', 3),
+          qtyR(g.cp, 'F', 3),
           CM,
           sub(f_, mi('SRF', true)),
           AP,
-          qty(g.srf, 'Hz', 3),
+          qtyR(g.srf, 'Hz', 3),
         ),
       );
   }
-  h += blk(row(dl, AP, qty(g.dl, 'm', 3), CM, tef, AP, qty(g.teff, 'm', 3), CM, Rac, AP, qty(g.rac, 'Ω', 3)));
+  h += blk(row(dl, AP, qtyR(g.dl, 'm', 3), CM, tef, AP, qtyR(g.teff, 'm', 3), CM, Rac, AP, qtyR(g.rac, 'Ω', 3)));
   h += blk(
     row(
       mi('Q'),
       EQ,
-      frac(row(two, pi, DOT, qty(g.f, 'Hz'), DOT, qty(g.L, 'H', 4)), qty(g.rac, 'Ω', 3)),
+      frac(row(two, pi, DOT, qty(g.f, 'Hz'), DOT, qtyR(g.L, 'H', 4)), qtyR(g.rac, 'Ω', 3)),
       AP,
-      num(g.q, 3),
+      numR(g.q, 3),
       CM,
       mi('C'),
       AP,
-      qty(g.c, 'F', 3),
+      qtyR(g.c, 'F', 3),
     ),
   );
   return h;

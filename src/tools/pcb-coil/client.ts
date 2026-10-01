@@ -1,7 +1,7 @@
 /** PCB コイルのページの入口: 形と寸法 → インダクタンス・抵抗・Q・共振 → 結果・形の図・周波数特性・代入式 */
 import { Choice } from '../../lib/choice';
 import { $, $$, esc } from '../../lib/dom';
-import { fmt, ro } from '../../lib/format';
+import { fmt, fmtR, ro } from '../../lib/format';
 import { RM } from '../../lib/motion';
 import { ParamGroup } from '../../lib/param';
 import { SH, SW } from '../../lib/scope';
@@ -58,7 +58,7 @@ function compute(v: Record<Key, number>): void {
   txt(
     '#o-Ls',
     r.nl > 1
-      ? `1 層 ${fmt(r.L1, 'H', 4)} の ${sig(r.L / r.L1, 3)} 倍・隣り合う層の結合 ${r.k.map((k) => sig(k, 2)).join('・')}`
+      ? `1 層 ${fmtR(r.L1, 'H', 4)} の ${sig(r.L / r.L1, 3, true)} 倍・隣り合う層の結合 ${r.k.map((k) => sig(k, 2, true)).join('・')}`
       : '',
   );
   txt('#o-Ln', r.s > 3 * r.w ? '間隔が幅の 3 倍を超えるため、誤差が理論値の最大 8 % より大きくなることがあります' : '');
@@ -66,30 +66,30 @@ function compute(v: Record<Key, number>): void {
   txt('#o-Lmws', shape.K ? diff(r.Lmw) : '円形の係数は論文にありません');
   html('#o-Lmn', ro(r.Lmn, 'H'));
   txt('#o-Lmns', shape.m ? diff(r.Lmn) : '円形の係数は論文にありません');
-  html('#o-din', `${sig(r.din * 1e3, 4)}<span class="u">mm</span>`);
+  html('#o-din', `${sig(r.din * 1e3, 4, true)}<span class="u">mm</span>`);
   html('#o-rho', r.rho.toFixed(3));
   html('#o-len', ro(r.len, 'm'));
   const lr = r.len / (C0 / r.f);
   txt(
     '#o-lens',
-    (r.nl > 1 && r.conn === 'ser' ? `1 層 ${fmt(r.len1, 'm', 4)} × ${r.nl}・` : '') +
-      `波長の ${lr >= 0.1 ? sig(lr, 2) : `1/${Math.round(1 / lr)}`}`,
+    (r.nl > 1 && r.conn === 'ser' ? `1 層 ${fmtR(r.len1, 'm', 4)} × ${r.nl}・` : '') +
+      `波長の ${lr >= 0.1 ? sig(lr, 2, true) : `1/${Math.round(1 / lr)}`}`,
   );
   txt('#o-lenn', lr > 0.1 ? '波長の 1/10 を超えるため、集中定数としての計算値は不確定です' : '');
   html('#o-rdc', ro(r.rdc, 'Ω'));
   html('#o-dl', ro(r.dl, 'm', 3));
-  txt('#o-dls', `実効厚さ ${fmt(r.teff, 'm', 3)}`);
+  txt('#o-dls', `実効厚さ ${fmtR(r.teff, 'm', 3)}`);
   html('#o-rac', ro(r.rac, 'Ω'));
-  txt('#o-racs', `直流抵抗の ${sig(r.rac / r.rdc, 3)} 倍`);
-  html('#o-q', sig(r.q, 3));
+  txt('#o-racs', `直流抵抗の ${sig(r.rac / r.rdc, 3, true)} 倍`);
+  html('#o-q', sig(r.q, 3, true));
   const ce = nearE24(r.c);
   html('#o-c', roF(r.c));
-  txt('#o-cs', `E24 の ${fmtF(ce, 3)} なら ${fmt(fRes(r.L, ce), 'Hz', 4)}`);
+  txt('#o-cs', `E24 の ${fmtF(ce, 3)} なら ${fmtR(fRes(r.L, ce), 'Hz', 4)}`);
   html('#o-bw', ro(r.bw, 'Hz', 3));
   showSrf(r);
-  txt('#mL', fmt(r.L, 'H', 4));
-  txt('#mQ', sig(r.q, 3));
-  txt('#mC', fmtF(r.c, 3));
+  txt('#mL', fmtR(r.L, 'H', 4));
+  txt('#mQ', sig(r.q, 3, true));
+  txt('#mC', fmtF(r.c, 3, true));
   drawFig(r, v.w, v.s);
   draw3d();
   /* 探す条件のうち基板と周波数の設定が変わったときだけ探し直す */
@@ -112,7 +112,7 @@ function showSrf(r: Stacked): void {
       ? '1 層では層の間の容量がありません'
       : r.conn === 'par'
         ? '並列では層の間に電位差がありません'
-        : `層の間の容量 ${fmtF(r.cp, 3)}（重なった配線の平行平板・縁は含めない）`,
+        : `層の間の容量 ${fmtF(r.cp, 3, true)}（重なった配線の平行平板・縁は含めない）`,
   );
   txt(
     '#o-srfn',
@@ -315,7 +315,8 @@ const conn$ = new Choice<Conn>($('#p-conn'), (v) => {
   compute(G.values());
 });
 new Choice($('#p-nl'), (v) => {
-  stack = stackFor(Number(v));
+  /* 保存した構成に戻すときは、層数が同じならその構成のまま */
+  if (stack.n !== Number(v)) stack = stackFor(Number(v));
   syncLayers();
   compute(G.values());
 });
@@ -380,11 +381,11 @@ function find(): void {
           return (
             `<button type="button" class="fr${i ? '' : ' best'}" data-i="${i}" title="押すと入力に反映する">` +
             `<span class="c1"><b>${esc(c.sh.ab)} ${sig(c.dout, 4)} mm</b><small>${c.n} 巻${lay}・幅 ${sig(c.w, 3)}・間隔 ${sig(c.s, 3)} mm</small></span>` +
-            `<span data-l="L"><b>${esc(fmt(g.L, 'H', 3))}</b></span>` +
-            `<span data-l="抵抗"><b>${esc(fmt(c.rTot, 'Ω', 3))}</b><small>${c.rAdd > 0.05 ? `コイル ${esc(fmt(g.rac, 'Ω', 3))} + ${esc(fmt(c.rAdd, 'Ω', 2))}` : 'コイルだけ'}</small></span>` +
-            `<span data-l="共振コンデンサ"><b>${esc(fmtF(c.ce, 2))}</b><small>E24・${esc(fmt(c.fe, 'Hz', 3))}</small></span>` +
-            `<span data-l="Q（足した抵抗込み）"><b>${sig(c.q, 3)}</b>${Number.isNaN(c.edge) ? '' : `<small>両端 ${sig(c.edge, 2).replace('-', '−')} dB</small>`}</span>` +
-            `<span data-l="1 m 先の磁界"><b>${esc(fmt(c.h1, 'A/m', 3))}</b><small>1 V あたり</small></span>` +
+            `<span data-l="L"><b>${esc(fmtR(g.L, 'H', 3))}</b></span>` +
+            `<span data-l="抵抗"><b>${esc(fmtR(c.rTot, 'Ω', 3))}</b><small>${c.rAdd > 0.05 ? `コイル ${esc(fmtR(g.rac, 'Ω', 3))} + ${esc(fmtR(c.rAdd, 'Ω', 2))}` : 'コイルだけ'}</small></span>` +
+            `<span data-l="共振コンデンサ"><b>${esc(fmtF(c.ce, 2))}</b><small>E24・${esc(fmtR(c.fe, 'Hz', 3))}</small></span>` +
+            `<span data-l="Q（足した抵抗込み）"><b>${sig(c.q, 3, true)}</b>${Number.isNaN(c.edge) ? '' : `<small>両端 ${sig(c.edge, 2, true)} dB</small>`}</span>` +
+            `<span data-l="1 m 先の磁界"><b>${esc(fmtR(c.h1, 'A/m', 3))}</b><small>1 V あたり</small></span>` +
             '</button>'
           );
         })

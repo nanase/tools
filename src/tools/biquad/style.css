@@ -14,11 +14,6 @@
 
 /* フィルタの種類（入力の枠の右上）。狭い画面では詰める */
 @media (max-width:479px){.ptype button{padding:0 5px}}
-/* 表示と計算の設定（周波数特性・インパルス応答・計算結果の枠の下）。周波数特性の 2 項目は横に並べる */
-.ptab.ana,.ana2{margin-top:14px;border-top:1px solid var(--line)}
-.ptab.ana .prow:first-child,.ana2 .prow{padding-top:12px}
-.ana2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:24px;align-items:start}
-@media (max-width:559px){.ana2{grid-template-columns:minmax(0,1fr)}.ana2 .ptab+.ptab{border-top:1px solid var(--line)}}
 
 /* 計算結果 */
 .a-coef{container-type:inline-size}

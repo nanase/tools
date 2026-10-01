@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fmt, minus, parts, plain, ro } from '../../src/lib/format';
+import { fmt, fmtR, minus, parts, plain, ro } from '../../src/lib/format';
 import { nice } from '../../src/lib/scope';
 
 describe('SI 接頭辞つきの整形', () => {
@@ -35,8 +35,22 @@ describe('SI 接頭辞つきの整形', () => {
     expect(parts(5, '')).toEqual(['5', '']);
   });
 
-  it('ro は単位を小さく出す HTML', () => {
+  it('ro は単位を小さく出す HTML。計算結果なので末尾の 0 を残す', () => {
     expect(ro(480.898, 'Hz')).toBe('480.9<span class="u">Hz</span>');
+    expect(ro(440.3, 'Hz', 5)).toBe('440.30<span class="u">Hz</span>');
+    expect(ro(1000, 'Hz', 5)).toBe('1.0000<span class="u">kHz</span>');
+  });
+
+  it('fmtR は末尾の 0 を残す（fmt は落とす）', () => {
+    expect(fmtR(440.3, 'Hz', 5)).toBe('440.30 Hz');
+    expect(fmt(440.3, 'Hz', 5)).toBe('440.3 Hz');
+    expect(fmtR(4700, 'Ω', 2)).toBe('4.7 kΩ');
+    expect(fmtR(999_999, 'Hz')).toBe('1.000 MHz');
+    expect(fmtR(-0.0015, 'A')).toBe('−1.500 mA');
+    expect(fmtR(0, 'V')).toBe('0 V');
+    /* 桁が整数部より少ないときは丸めた整数（指数表記にしない） */
+    expect(fmtR(123456, 'Ω', 2)).toBe('120 kΩ');
+    expect(parts(4700, '', 4, true)).toEqual(['4.700', 'k']);
   });
 });
 
@@ -71,6 +85,13 @@ describe('接頭辞なしの表記', () => {
 
   it('有限でない値はダッシュ', () => {
     expect(plain(Number.NaN)).toBe('—');
+  });
+
+  it('keep なら末尾の 0 を残す', () => {
+    expect(plain(12.5, 4, true)).toBe('12.50');
+    expect(plain(-3, 3, true)).toBe('−3.00');
+    expect(plain(0, 4, true)).toBe('0');
+    expect(plain(123456.7, 3, true)).toBe('123000');
   });
 
   it('minus は先頭のハイフンをマイナス記号にする', () => {

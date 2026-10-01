@@ -4,7 +4,7 @@
  */
 import { Choice } from '../../lib/choice';
 import { $, $$ } from '../../lib/dom';
-import { fmt, minus } from '../../lib/format';
+import { fmt, fmtR, minus, ro } from '../../lib/format';
 import { ParamGroup } from '../../lib/param';
 import { DV, GY, SW } from '../../lib/scope';
 import { addTip, initToolPage } from '../../lib/tool-page';
@@ -125,11 +125,7 @@ function showCarrier(): void {
     auto = ui.fm === 'auto';
   $('#p-f').hidden = auto;
   fm.note(
-    !auto
-      ? ''
-      : f > 0
-        ? `自動: ${fmt(Number(f.toPrecision(5)), 'Hz', 5)} を使っています`
-        : '自動: 入力から最も振幅の大きい周波数を探します',
+    !auto ? '' : f > 0 ? `自動: ${fmtR(f, 'Hz', 5)} を使っています` : '自動: 入力から最も振幅の大きい周波数を探します',
   );
   if (!auto && g.get('f') !== manualF) g.set('f', manualF, { silent: true });
 }
@@ -833,7 +829,7 @@ function renderStats(v: View): void {
       ? `±${q.jit.toFixed(1)}<span class="u">ms</span>`
       : '—',
   );
-  html('#r-f', f > 0 ? fmt(Number(f.toPrecision(5)), 'Hz', 5).replace(/ (\S+)$/, '<span class="u">$1</span>') : '—');
+  html('#r-f', f > 0 ? ro(f, 'Hz', 5) : '—');
   txt(
     '#rx-aux',
     v.file ? (fileRes ? '48 kHz に変換して解読' : '') : live.on && live.ac ? fmt(live.ac.sampleRate, 'Hz', 3) : '',

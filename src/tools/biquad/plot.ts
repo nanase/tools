@@ -13,8 +13,11 @@ export function fixed(v: number, d: number): string {
   return /^-0\.?0*$/.test(s) ? s.slice(1) : minus(s);
 }
 
-/** 有効数字 s 桁、負はマイナス記号 */
-export const sig = (v: number, s: number): string => minus(String(Number(v.toPrecision(s))));
+/** 有効数字 s 桁、負はマイナス記号。計算結果（keep）は末尾の 0 を残す */
+export const sig = (v: number, s: number, keep = false): string => {
+  const t = v.toPrecision(s);
+  return minus(keep && !t.includes('e') ? t : String(Number(t)));
+};
 
 /**
  * 点列を折れ線にする。1 px あたり 2 区画に間引き、区画ごとに最初・最小・最大・最後を残す（鋭いピークを落とさない）。

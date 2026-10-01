@@ -4,6 +4,7 @@
  */
 import { $ } from './dom';
 import { fmt } from './format';
+import { storeToggle } from './store';
 
 export const SW = 400,
   SH = 240,
@@ -62,6 +63,7 @@ export class ScopeView {
       tg.setAttribute('aria-pressed', String(on));
       $('.scope', root).classList.toggle('hide2', !on);
     });
+    if (tg?.id) storeToggle(tg);
   }
 
   draw(f: Frame): void {

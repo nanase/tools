@@ -23,6 +23,7 @@ import {
 } from './param-core';
 import type { ParamDef, ParamPatch } from './param-def';
 import { parse } from './parse';
+import { store, stored } from './store';
 
 export type MsgKind = '' | 'pv' | 'er';
 
@@ -295,26 +296,52 @@ function bindRepeat(btn: HTMLElement, fn: (big: boolean) => void): void {
 
 /**
  * 入力の行のまとまり。E 系列の切替を共有し、値が確定するたびに onChange を呼ぶ。
- * 行は id="p-{k}" で探すので、複数の .ptab・枠に分かれていてよい
+ * 行は id="p-{k}" で探すので、複数の .ptab・枠に分かれていてよい。
+ * 確定した値と E 系列はブラウザに保存し（lib/store.ts）、開き直したときに戻す
  */
 export class ParamGroup<K extends string = string> {
   series: Series = 12;
   private readonly ps: Map<K, Param>;
+  /** 値と E 系列をブラウザに保存するか */
+  private readonly save: boolean;
   private readonly subs = new Map<K, Set<(v: number) => void>>();
 
   /**
    * @param onChange 確定のたびに全項目の値で呼ぶ。k は確定した項目（生成時の 1 回目は undefined）
    * @param seriesEl E 系列の切替（SeriesSwitch）
+   * @param opt save: false なら保存しない（値をほかの状態から決めるページ）
+   *
+   * 保存した値は生成時の 1 回目の onChange に含め、さらにその直後（マイクロタスク）に項目ごとの確定として
+   * 購読（on）と onChange を呼ぶ（項目の確定で連動するページでも戻るように）
    */
   constructor(
     defs: readonly ParamDef[],
     private readonly onChange: (v: Record<K, number>, k?: K) => void,
     seriesEl?: HTMLElement | null,
+    opt: { save?: boolean } = {},
   ) {
+    this.save = opt.save !== false;
     const on = seriesEl?.querySelector<HTMLElement>('[aria-pressed="true"]');
     if (on) this.series = Number(on.dataset.s) as Series;
+    const ss = this.save ? stored('series') : undefined,
+      sb = seriesEl?.querySelector<HTMLElement>(`[data-s="${ss}"]`);
+    if (sb && seriesEl) {
+      this.series = Number(ss) as Series;
+      for (const x of $$('button', seriesEl)) x.setAttribute('aria-pressed', String(x === sb));
+    }
     this.ps = new Map(defs.map((d) => [d.k as K, new Param(d, this)]));
-    for (const p of this.ps.values()) {
+    /* 保存した値: 範囲に入るものは今戻す。入らないもの（範囲がほかの項目で決まる fc など）は、
+       ほかの項目を戻して範囲が変わった後に、もう一度確かめて戻す */
+    const back: K[] = [],
+      late: [K, number][] = [];
+    for (const [k, p] of this.ps) {
+      const sv = this.save ? stored(`p:${k}`) : undefined;
+      if (typeof sv === 'number' && Number.isFinite(sv) && !same(sv, p.v)) {
+        if (sv >= p.d.min && sv <= p.d.max) {
+          p.v = sv;
+          back.push(k);
+        } else late.push([k, sv]);
+      }
       p.buildList();
       p.set(p.v, undefined, true);
     }
@@ -322,10 +349,19 @@ export class ParamGroup<K extends string = string> {
       const b = (e.target as Element).closest<HTMLElement>('[data-s]');
       if (!b) return;
       this.series = Number(b.dataset.s) as Series;
+      if (this.save) store('series', this.series);
       for (const x of $$('button', seriesEl)) x.setAttribute('aria-pressed', String(x === b));
       for (const p of this.ps.values()) if (followsGroup(p.d)) p.refresh();
     });
     this.onChange(this.values());
+    if (back.length || late.length)
+      queueMicrotask(() => {
+        for (const k of back) this.changed(k);
+        for (const [k, v] of late) {
+          const { d } = this.p(k);
+          if (v >= d.min && v <= d.max) this.set(k, v);
+        }
+      });
   }
 
   private p(k: K): Param {
@@ -360,6 +396,7 @@ export class ParamGroup<K extends string = string> {
    */
   set(k: K, v: number, opt: { silent?: boolean } = {}): void {
     this.p(k).set(v, undefined, opt.silent);
+    if (opt.silent && this.save) store(`p:${k}`, v);
   }
 
   /** 行の下にメッセージを出す（次に値が動くか入力されるまで残る）。kind: er は警告色、pv は強調 */
@@ -398,6 +435,7 @@ export class ParamGroup<K extends string = string> {
   changed(k: string): void {
     const kk = k as K;
     const v = this.p(kk).v;
+    if (this.save) store(`p:${kk}`, v);
     for (const fn of this.subs.get(kk) ?? []) fn(v);
     this.onChange(this.values(), kk);
   }

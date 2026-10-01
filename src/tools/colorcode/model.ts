@@ -90,8 +90,28 @@ export const optsOf = (r: Role, n: Bands): readonly ColorKey[] =>
 
 /** 色帯の抵抗値 */
 export const ohmsOf = (c: Code): number => decode(c.d, c.m);
+
+/** 保存しておいた色帯として使えるか（帯の数・数字・乗数・許容差・温度係数がそろっている） */
+export function isCode(x: unknown): x is Code {
+  if (!x || typeof x !== 'object') return false;
+  const c = x as Partial<Code>;
+  return (
+    (c.n === 4 || c.n === 5 || c.n === 6) &&
+    Array.isArray(c.d) &&
+    c.d.length === (c.n === 4 ? 2 : 3) &&
+    c.d.every((v, i) => Number.isInteger(v) && v >= (i ? 0 : 1) && v <= 9) &&
+    typeof c.m === 'number' &&
+    MULT_KEYS.some((k) => COLORS[k].m === c.m) &&
+    optsOf('t', c.n).includes(c.tol as ColorKey) &&
+    TC_KEYS.includes(c.tc as ColorKey)
+  );
+}
 /** 許容差（%） */
 export const tolOf = (c: Code): number => COLORS[c.tol].t ?? 20;
+/** 抵抗値の有効数字（数字の帯の本数） */
+export const digitsOf = (c: Code): number => c.d.length;
+/** 許容差の端の値（R × (1 ± 許容差)）の有効数字: 許容差の桁が読める桁数（4〜6 桁） */
+export const tolSig = (t: number): number => Math.min(6, Math.max(4, Math.ceil(-Math.log10(t / 100) - 1e-9) + 2));
 
 /** 帯 r を色 k にする */
 export function pick(c: Code, r: Role, k: ColorKey): Code {
