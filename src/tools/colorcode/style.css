@@ -13,7 +13,8 @@
 /* results */
 .m-q{margin-left:.5em;font:500 12.5px var(--sans);color:var(--ink-2)}
 .m-es{grid-column:1/-1}
-@container (min-width:480px){.m-es{grid-column:span 2}}
+@container (min-width:360px){.m-es{grid-column:span 2}}
+@container (min-width:560px){.m-es{grid-column:1/-1}}
 .cseq{display:flex;flex-wrap:wrap;gap:4px 14px;font:700 16px/1.5 var(--sans)}
 .cseq span{display:inline-flex;align-items:center;gap:6px}
 .cseq small{font:500 12.5px var(--mono);color:var(--ink-2)}
@@ -37,13 +38,13 @@
 .bl{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr))}
 .bt{display:flex;flex-direction:column;align-items:center;gap:1px;width:calc(100% - 4px);min-width:0;margin:0 2px;padding:5px 0 6px;border:1px solid var(--line);border-radius:4px;background:none;color:var(--ink);line-height:1.3;cursor:pointer;overflow:hidden}
 .bt small{font-size:10.5px;color:var(--ink-3);white-space:nowrap}
-.bt b{font-size:15px;line-height:1.35}
-.bt span{font:500 10.5px/1.3 var(--mono);color:var(--ink-2);white-space:nowrap}
+.bt b{font-size:19px;line-height:1.35}
+.bt span{font:500 13px/1.3 var(--mono);color:var(--ink-2);white-space:nowrap}
 .bt:hover{border-color:var(--line-2)}
 .bt[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--surface)}
 .bt[aria-pressed="true"] small,.bt[aria-pressed="true"] span{color:var(--surface);opacity:.8}
 .bt:focus-visible{outline-offset:1px}
-@container (min-width:480px){.bt small,.bt span{font-size:11.5px}.bt b{font-size:16px}}
+@container (min-width:480px){.bt small{font-size:11.5px}.bt span{font-size:14.5px}.bt b{font-size:22px}}
 
 /* 色の選択肢（選んでいる帯の色） */
 .pal{margin-top:16px;padding:12px 2px 0;border-top:1px solid var(--line)}

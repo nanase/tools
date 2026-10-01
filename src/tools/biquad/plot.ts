@@ -186,6 +186,10 @@ export interface ImpPlot {
   X: (n: number) => number;
 }
 
+/** インパルス応答の表示窓の縦の div の数と高さ（周波数特性より低くする） */
+export const IR = 4,
+  IH = IR * DV;
+
 /** n = 0 を 1 div 目に置き、表示長 L を 8 div に収める。縦軸は応答の符号の偏りで 0 の位置を決める */
 export function impPlot(h: Float64Array, N: number, len: number): ImpPlot {
   const L = Math.min(len, N),
@@ -198,19 +202,19 @@ export function impPlot(h: Float64Array, N: number, len: number): ImpPlot {
     if (h[n] < mn) mn = h[n];
   }
   /* ほぼ正だけなら 0 を下から 1 div、ほぼ負だけなら上から 1 div、それ以外は中央に置く */
-  let zj = 3,
-    vd = nice(Math.max(mx, -mn) / 2.8);
-  const vp = nice(mx / 4.6),
-    vn = nice(-mn / 4.6);
+  let zj = IR / 2,
+    vd = nice(Math.max(mx, -mn) / (IR / 2 - 0.2));
+  const vp = nice(mx / (IR - 1.4)),
+    vn = nice(-mn / (IR - 1.4));
   if (mx > 0 && -mn <= vp * 0.95) {
     zj = 1;
     vd = vp;
   } else if (mn < 0 && mx <= vn * 0.95) {
-    zj = 5;
+    zj = IR - 1;
     vd = vn;
   }
   if (!(vd > 0) || !Number.isFinite(vd)) vd = 1;
-  const y0 = SH - zj * DV,
+  const y0 = IH - zj * DV,
     Y = (v: number) => y0 - (v / vd) * DV,
     X = (n: number) => DV + (n / d) * DV,
     sp = DV / d;
@@ -248,9 +252,9 @@ export function impPlot(h: Float64Array, N: number, len: number): ImpPlot {
     return Math.abs(r) < vd * 1e-6 ? '0' : minus(String(r));
   };
   let a = '';
-  for (let j = 0; j <= 6; j++)
-    a += `<text x="-10" y="${SH - j * DV + 4}" text-anchor="end">${lab((j - zj) * vd)}</text>`;
-  for (let i = 1; i <= 9; i += 2) a += `<text x="${i * DV}" y="${SH + 17}" text-anchor="middle">${(i - 1) * d}</text>`;
+  for (let j = 0; j <= IR; j++)
+    a += `<text x="-10" y="${IH - j * DV + 4}" text-anchor="end">${lab((j - zj) * vd)}</text>`;
+  for (let i = 1; i <= 9; i += 2) a += `<text x="${i * DV}" y="${IH + 17}" text-anchor="middle">${(i - 1) * d}</text>`;
   a += `<path class="mk1" d="M-8 ${y0 - 5}L-1 ${y0}L-8 ${y0 + 5}Z"/><path class="mk1" d="M${DV - 5} -12L${DV + 5} -12L${DV} -5Z"/>`;
   return {
     stem: p,

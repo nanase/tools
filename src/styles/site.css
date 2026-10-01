@@ -186,8 +186,13 @@ a.unit:hover h3{text-decoration:underline;text-decoration-color:var(--ink-3);tex
 /* 枠の並び（grid-template-areas など）は各ツールの style.css で決める。
    .col は PC で縦に積む列、スマホでは中の枠を .tgrid に直接並べる（order で順を変えられる） */
 .col{display:contents}
+/* PC では画面の下に留め、計算結果（.a-out の大きい値）が画面にない間だけ出す（lib/tool-page.ts が .show を付ける）。
+   出ている間はフッターの下に同じ高さの余白を足し、フッターを隠さない */
 @media (min-width:1000px){
-  .mini{display:none}
+  :root{--mini-h:36px}
+  .mini{position:fixed;top:auto;bottom:0;left:0;right:0;align-items:center;height:var(--mini-h);margin:0;padding:0 max(16px,calc((100% - 1180px) / 2 + 16px));box-shadow:0 -4px 14px rgb(0 0 0 / .14);transform:translateY(100%);visibility:hidden;transition:transform .2s ease,visibility .2s}
+  .mini.show{transform:none;visibility:visible}
+  html.mini-on .foot{padding-bottom:var(--mini-h)}
   .col{display:flex;flex-direction:column;gap:26px;min-width:0}
 }
 .rel{margin-top:26px}
@@ -289,12 +294,17 @@ a.unit:hover h3{text-decoration:underline;text-decoration-color:var(--ink-3);tex
 .m-wide{grid-column:1/-1}
 .m-main dd{font-size:clamp(30px,9cqi,46px);font-weight:700;line-height:1.15;letter-spacing:-.01em}
 .m-note{display:block;margin-top:2px;font:12px/1.5 var(--sans);color:var(--warn)}
-@container (min-width:480px){.metrics{grid-template-columns:repeat(3,minmax(0,1fr))}}
+/* 枠の幅に合わせて 2・3・4 列。.c3 は 3 列まで（補足の行が長い結果） */
+@container (min-width:360px){.metrics{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@container (min-width:560px){.metrics:not(.c3){grid-template-columns:repeat(4,minmax(0,1fr))}}
 
 /* scope（表示窓） */
 .sbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin-bottom:8px;font:500 12px/1.3 var(--mono);color:var(--ink-2)}
 .sbar b{color:var(--ink);font-weight:700}
 .stag{display:inline-flex;align-items:center;gap:6px}
+/* カーソル位置の読み値: 表示窓の下に右寄せ（<div class="sbar rdbar"><span class="stag rd">） */
+.rdbar{justify-content:flex-end;margin:8px 0 0}
+.rdbar .rd{font-variant-numeric:tabular-nums}
 .sw{display:inline-block;width:14px;height:3px;border-radius:1px;background:var(--ch1)}
 .sw.c2{background:var(--ch2)}
 .tg{display:inline-flex;align-items:center;gap:6px;min-height:30px;padding:0 10px;border:1px solid var(--line-2);border-radius:4px;background:var(--surface);color:var(--ink);font:500 12px/1 var(--mono);cursor:pointer}

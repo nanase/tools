@@ -11,7 +11,7 @@ import '../tools/biquad/style.css';
 import { gridSvg } from '../lib/scope';
 import { hzMath } from '../tools/biquad/math';
 import { L0, LENS, PARAMS, TYPES } from '../tools/biquad/params';
-import { blockSvg, lvGrid } from '../tools/biquad/plot';
+import { blockSvg, IH, IR, lvGrid } from '../tools/biquad/plot';
 import Theory from '../tools/biquad/Theory.astro';
 
 const name = '双2次フィルタ';
@@ -30,7 +30,7 @@ const related = TOOLS.filter((t) => !t.s && t.id !== 'biquad');
         <div slot="aux" class="seg ptype" id="p-type" role="group" aria-label="フィルタの種類">
           {TYPES.map((t) => <button type="button" data-v={t.v} aria-pressed={t.v === t0.v ? 'true' : 'false'} title={t.t}>{t.ab}</button>)}
         </div>
-        <div class="ptab">{row(['fc', 'q', 'g', 'fs']).map((d) => <ParamRow d={d} fold={d.k === 'g'} />)}</div>
+        <div class="ptab">{row(['fc', 'q', 'g', 'fs']).map((d) => <ParamRow d={d} fold={d.k === 'g' || d.k === 'fs'} />)}</div>
       </Panel>
 
       <Panel hid="hd-snd" title="試聴" class="a-snd">
@@ -58,7 +58,6 @@ const related = TOOLS.filter((t) => !t.s && t.id !== 'biquad');
           <button type="button" class="tg" id="ch1f" aria-pressed="true" title="振幅"><i class="sw" aria-hidden="true"></i>CH1 MAG <b id="fr-vd"></b>/div</button>
           <button type="button" class="tg" id="ch2f" aria-pressed="true" title="位相"><i class="sw c2" aria-hidden="true"></i>CH2 PHASE <b>60°</b>/div</button>
           <span class="stag">X LOG <b id="fr-x"></b></span>
-          <span class="stag rd" id="fr-rd"></span>
         </div>
         <div class="scope" id="fr-scope">
           <svg viewBox="-50 -16 494 282" id="fr-svg" role="img" aria-label="周波数特性">
@@ -70,6 +69,7 @@ const related = TOOLS.filter((t) => !t.s && t.id !== 'biquad');
             <g id="fr-axes"></g>
           </svg>
         </div>
+        <div class="sbar rdbar"><span class="stag rd" id="fr-rd"></span></div>
         <div class="ana2">{row(['n', 'bot']).map((d) => <div class="ptab"><ParamRow d={d} fold /></div>)}</div>
       </Panel>
 
@@ -79,19 +79,19 @@ const related = TOOLS.filter((t) => !t.s && t.id !== 'biquad');
           <span class="stag"><i class="sw" aria-hidden="true"></i>CH1 <i>h</i>[<i>n</i>] <b id="im-vd"></b>/div</span>
           <span class="stag">H <b id="im-hd"></b> S/div</span>
           <span class="stag">TRIG <i>n</i> = 0</span>
-          <span class="stag rd" id="im-rd"></span>
         </div>
         <div class="scope">
-          <svg viewBox="-56 -16 468 282" id="im-svg" role="img" aria-label="インパルス応答">
-            <defs><clipPath id="im-clip"><rect x="0" y="0" width="400" height="240"/></clipPath></defs>
-            <g set:html={gridSvg()} />
+          <svg viewBox={`-56 -16 468 ${IH + 42}`} id="im-svg" role="img" aria-label="インパルス応答">
+            <defs><clipPath id="im-clip"><rect x="0" y="0" width="400" height={IH}/></clipPath></defs>
+            <g set:html={gridSvg(IR)} />
             <g clip-path="url(#im-clip)"><path class="stz" id="im-z"/><path class="stm" id="im-st"/><g id="im-dots"></g></g>
             <path class="cur" id="im-cur"/>
             <g id="im-axes"></g>
           </svg>
         </div>
+        <div class="sbar rdbar"><span class="stag rd" id="im-rd"></span></div>
         <div class="ptab ana">
-          <ChoiceRow k="len" sym="<i>L</i>" nm="L" name="表示長" sub="インパルス応答のグラフの 8 div に入れるサンプル数（解析長 N まで）" choices={LENS.map((v) => [v, String(v)] as const)} value={L0} layout="chips" wide msg />
+          <ChoiceRow k="len" sym="<i>L</i>" nm="L" name="表示長" sub="インパルス応答のグラフの 8 div に入れるサンプル数（解析長 N まで）" choices={LENS.map((v) => [v, String(v)] as const)} value={L0} layout="chips" wide msg fold />
         </div>
       </Panel>
     </div>

@@ -61,7 +61,6 @@ const related = ['passive-combination', 'timer555', 'jjy', 'biquad', 'pid']
           </div>
         </div>
         <div id="vtop" hidden>
-          <p class="cap">表面から見た形・縮尺どおり</p>
           <div class="sbar">
             <span class="stag"><i class="sw" aria-hidden="true"></i>CH1 TRACE <b id="fg-w"></b></span>
             <span class="stag">SHAPE <b id="fg-sh"></b></span>
@@ -86,7 +85,6 @@ const related = ['passive-combination', 'timer555', 'jjy', 'biquad', 'pid']
           <span class="stag" title="Q"><i class="sw" aria-hidden="true"></i>CH1 Q <b id="fr-qd"></b>/div</span>
           <span class="stag" title="交流抵抗"><i class="sw c2" aria-hidden="true"></i>CH2 R<sub>AC</sub> <b id="fr-rd"></b>/div</span>
           <span class="stag">X LOG <b>1 kHz – 100 MHz</b></span>
-          <span class="stag rd" id="fr-cur"></span>
         </div>
         <div class="scope">
           <svg viewBox="-50 -16 500 282" id="fr-svg" role="img" aria-label="周波数特性">
@@ -101,10 +99,11 @@ const related = ['passive-combination', 'timer555', 'jjy', 'biquad', 'pid']
             <g id="fr-ax"></g>
           </svg>
         </div>
+        <div class="sbar rdbar"><span class="stag rd" id="fr-cur"></span></div>
       </Panel>
 
       <Panel hid="hd-out" title="計算結果" class="a-out">
-        <dl class="metrics">
+        <dl class="metrics c3">
           <div class="m m-main"><dt>インダクタンス <i>L</i>（電流シート近似）</dt><dd><span id="o-L"></span><span class="m-sub" id="o-Ls"></span><span class="m-note" id="o-Ln"></span></dd></div>
           <div class="m"><dt>修正 Wheeler 式</dt><dd><span id="o-Lmw"></span><span class="m-sub" id="o-Lmws"></span></dd></div>
           <div class="m"><dt>単項式近似</dt><dd><span id="o-Lmn"></span><span class="m-sub" id="o-Lmns"></span></dd></div>

@@ -208,6 +208,17 @@ function initRelated(): void {
   new ResizeObserver(fit).observe(box);
 }
 
+/* 計算結果の要約（.mini）。PC では画面の下に留め、計算結果の大きい値が画面にない間だけ出す */
+function initMini(): void {
+  const mini = document.querySelector('.mini'),
+    out = document.querySelector('.a-out .m-main') ?? document.querySelector('.a-out');
+  if (!mini || !out) return;
+  new IntersectionObserver(([e]) => {
+    mini.classList.toggle('show', !e.isIntersecting);
+    document.documentElement.classList.toggle('mini-on', !e.isIntersecting);
+  }).observe(out);
+}
+
 export function initToolPage(): void {
   initSite();
   addTip($('#descBtn'), $('#desc'), $('.ttl'));
@@ -215,4 +226,5 @@ export function initToolPage(): void {
   initFolds();
   initCollapsible();
   initRelated();
+  initMini();
 }
