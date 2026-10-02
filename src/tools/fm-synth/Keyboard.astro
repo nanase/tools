@@ -1,0 +1,31 @@
+---
+/**
+ * 音の高さを選ぶ鍵盤（2 オクターブと上の C）。左右のボタンでオクターブを動かす。
+ * 鍵の音名・周波数・押下状態は client.ts が入れる（data-i は左端の C からの半音の数）
+ */
+import { KEYS } from './params';
+
+const BLACK = new Set([1, 3, 6, 8, 10]);
+const nW = Array.from({ length: KEYS }, (_, i) => i).filter((i) => !BLACK.has(i % 12)).length;
+const W = 100 / nW,
+  BW = W * 0.62;
+let wi = 0;
+const keys = Array.from({ length: KEYS }, (_, i) => {
+  const black = BLACK.has(i % 12);
+  /* 黒鍵は左右の白鍵の境目に置く */
+  const k = { i, black, left: black ? wi * W - BW / 2 : wi * W };
+  if (!black) wi++;
+  return k;
+});
+---
+<div class="kbar">
+  <div class="seg" role="group" aria-label="鍵盤のオクターブ">
+    <button type="button" id="octDn" aria-label="1 オクターブ下へ" title="1 オクターブ下へ"><svg viewBox="0 0 8 12" aria-hidden="true"><path d="M7 1L1 6L7 11Z" /></svg></button><button type="button" id="octUp" aria-label="1 オクターブ上へ" title="1 オクターブ上へ"><svg viewBox="0 0 8 12" aria-hidden="true"><path d="M1 1L7 6L1 11Z" /></svg></button>
+  </div>
+  <span class="kb-rng" id="kb-rng"></span>
+  <span class="kb-now"><b id="kb-note"></b><span id="kb-hz"></span></span>
+</div>
+<div class="kb" id="kb" role="group" aria-label="鍵盤（音の高さ）">
+  {keys.filter((k) => !k.black).map((k) => <button type="button" class="kk w" data-i={k.i} style={`left:${k.left.toFixed(3)}%;width:${W.toFixed(3)}%`} aria-pressed="false"><span></span></button>)}
+  {keys.filter((k) => k.black).map((k) => <button type="button" class="kk b" data-i={k.i} style={`left:${k.left.toFixed(3)}%;width:${BW.toFixed(3)}%`} aria-pressed="false"></button>)}
+</div>

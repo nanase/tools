@@ -80,6 +80,14 @@ export const TOOLS: Tool[] = [
     k: 'spectrum analyzer fft スペクトル スペクトログラム spectrogram 周波数 窓関数 メル mel マイク 音声 オーディオ audio',
   },
   {
+    id: 'fm-synth',
+    c: '信号・通信',
+    t: 'FM音源',
+    d: 'ヤマハの FM 音源 IC のように 4 つのオペレータをアルゴリズムでつなぎ、波形とスペクトラムを表示して音でも鳴らします。',
+    ic: 'fm',
+    k: 'fm synth synthesizer シンセサイザー 周波数変調 オペレータ アルゴリズム 変調指数 opn ym2612 ym2203 ym2608 ベッセル 音色 オーディオ audio',
+  },
+  {
     id: 'svg-theme-checker',
     c: 'SVG',
     t: 'SVG テーマスキーマチェッカー',
@@ -115,6 +123,7 @@ export const IC: Record<string, string> = {
   cc: '<path class="c" d="M4 24H30M90 24H116"/><rect class="c" x="30" y="14" width="60" height="20" rx="8"/><path class="a" d="M42 14V34M52 14V34M62 14V34"/><path class="b" d="M78 14V34"/>',
   os: '<path class="c d" d="M4 24H116"/><path class="a" d="M4 24C10 9 16 9 22 24S34 39 40 24S52 9 58 24S70 39 76 24S88 9 94 24S106 39 112 24"/><path class="b" d="M4 30C12 17 19 17 27 30S43 43 51 30S67 17 75 30S91 43 99 30S112 21 116 26"/>',
   sp: '<path class="c d" d="M4 44H116"/><path class="a" d="M4 41L12 40L18 33L22 9L26 34L34 38L40 37L44 22L48 37L58 39L64 38L67 30L70 39L82 41L88 40L91 35L94 41L116 43"/>',
+  fm: '<path class="c d" d="M4 24H116"/><path class="a" d="M4 24L6 13.5L8 8.2L10 9.8L12 16L14 23.4L16 29.5L18 33.4L20 35.5L22 36.1L24 35.7L26 34.3L28 31.8L30 28.2L32 24L34 19.8L36 16.2L38 13.7L40 12.3L42 11.9L44 12.5L46 14.6L48 18.5L50 24.6L52 32L54 38.2L56 39.8L58 34.5L60 24L62 13.5L64 8.2L66 9.8L68 16L70 23.4L72 29.5L74 33.4L76 35.5L78 36.1L80 35.7L82 34.3L84 31.8L86 28.2L88 24L90 19.8L92 16.2L94 13.7L96 12.3L98 11.9L100 12.5L102 14.6L104 18.5L106 24.6L108 32L110 38.2L112 39.8L114 34.5L116 24"/>',
   pc: '<path class="c" d="M4 6H42"/><path class="a" d="M42 6H78V42H42V10H74V38H46V14H70V34H50V18H66V30H54V22H62"/><path class="c d" d="M62 22H116"/>',
 };
 

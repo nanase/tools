@@ -1,0 +1,84 @@
+/* FM 音源のページだけのスタイル（共通は src/styles/site.css） */
+
+/* 枠の並び。スマホは 波形 → アルゴリズム → オペレータ → 音 → 式。
+   PC は左の列に アルゴリズム・音、右の列に 波形・オペレータ */
+.a-wave{order:1}.a-alg{order:2}.a-ops{order:3}.a-snd{order:4}.a-thy{order:5}
+@media (min-width:1000px){
+  .tgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr);grid-template-areas:"c1 c2" "thy thy";align-items:start}
+  .c1{grid-area:c1}.c2{grid-area:c2}.a-thy{grid-area:thy}
+}
+
+/* 枠の右上の再生ボタン（JJY シミュレータと同じ。鳴らしている間は LED が点く） */
+#playBtn{display:inline-flex;align-items:center;gap:7px}
+.snd-msg{margin:0 8px 6px}
+.snd-msg:empty{display:none}
+
+/* 鍵盤: 左右のボタンでオクターブを動かす。選んでいる鍵に印（現在地の印と同じ色） */
+.kbar{display:flex;align-items:center;gap:10px;margin:0 0 8px}
+.kbar .seg button{display:inline-grid;place-items:center;width:34px;padding:0}
+.kbar .seg button:disabled{opacity:.4;cursor:default}
+.kbar .seg svg{width:8px;height:12px;fill:currentColor}
+.kb-rng{font:500 12px/1 var(--mono);color:var(--ink-3)}
+.kb-now{margin-left:auto;font:500 12.5px/1 var(--mono);color:var(--ink-2);font-variant-numeric:tabular-nums}
+.kb-now b{margin-right:.6em;font-size:16px;color:var(--ink)}
+.kb{position:relative;height:92px;margin-bottom:6px;touch-action:none;user-select:none;-webkit-user-select:none}
+.kk{position:absolute;top:0;padding:0;border:1px solid var(--line-2);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.kk.w{height:100%;border-right-width:0;border-radius:0 0 4px 4px;background:var(--surface)}
+.kk.w[data-i="24"]{border-right-width:1px}
+.kk.b{z-index:1;height:58%;border-color:var(--rail);border-radius:0 0 3px 3px;background:var(--rail)}
+.kk.w:hover{background:var(--inset)}
+.kk.w:active{background:var(--line)}
+.kk.b:hover,.kk.b:active{background:var(--rail-2)}
+.kk.w span{position:absolute;left:0;right:0;bottom:5px;font:500 9.5px/1 var(--mono);color:var(--ink-3);text-align:center;pointer-events:none}
+.kk[aria-pressed="true"]::after{content:"";position:absolute;left:50%;bottom:20px;width:7px;height:7px;margin-left:-3.5px;border-radius:50%;background:var(--accent);box-shadow:0 0 5px var(--accent)}
+.kk.b[aria-pressed="true"]::after{bottom:8px}
+.kk:focus-visible{z-index:2;outline-offset:-3px}
+
+/* オペレータ: 1 行に 波形 | 周波数比 | 強さのスライダーと値。狭い枠では 2 段にする */
+.ops{container-type:inline-size}
+.op{display:grid;grid-template-columns:5.6rem auto minmax(0,1fr);grid-template-areas:"h w c";align-items:center;column-gap:14px;row-gap:8px;padding:9px 4px;border-bottom:1px solid var(--line)}
+.op:first-child{padding-top:2px}
+.op:last-child{border-bottom:0;padding-bottom:0}
+.op-h{grid-area:h;display:flex;flex-direction:column;line-height:1.3}
+.op-h b{font:700 14px var(--mono)}
+.op-role{font-size:11.5px;color:var(--ink-3);white-space:nowrap}
+.op-w{grid-area:w}
+.op-w button{display:inline-grid;place-items:center;padding:0 5px}
+.op-w svg{display:block;width:20px;height:12px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linejoin:round}
+.op-c{grid-area:c;display:grid;grid-template-columns:6.4rem minmax(0,1fr) 4.2rem;align-items:center;column-gap:12px;min-width:0}
+.op-r{display:grid;grid-template-columns:28px minmax(0,1fr) 28px;height:32px;border:1px solid var(--line-2);border-radius:var(--r);background:var(--inset);overflow:hidden}
+.op-r output{display:grid;place-items:center;font:700 14px/1 var(--mono);font-variant-numeric:tabular-nums}
+.ostp{display:grid;place-items:center;padding:0;border:0;background:none;color:var(--ink-2);cursor:pointer;touch-action:manipulation}
+.ostp:first-child{border-right:1px solid var(--line)}
+.ostp:last-child{border-left:1px solid var(--line)}
+.ostp svg{width:10px;height:7px;fill:currentColor}
+.ostp:hover{background:var(--surface);color:var(--ink)}
+.ostp[aria-disabled="true"]{opacity:.35;cursor:default;background:none}
+.ostp:focus-visible{outline-offset:-3px}
+.sl.op-a{padding-bottom:0}
+.op-v{text-align:right;font:500 13.5px/1 var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+@container (max-width:620px){
+  .op{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"h w" "c c"}
+  .op-h{flex-direction:row;align-items:baseline;gap:8px}
+}
+@container (max-width:340px){.op-w button{padding:0 3px}}
+@media (pointer:coarse){.op-r{height:40px}.op-r{grid-template-columns:36px minmax(0,1fr) 36px}}
+
+/* アルゴリズムの結線図 */
+.sch.alg{max-width:440px;margin-top:14px}
+.d-ah{fill:var(--ink-2)}
+.d-ah.n1{fill:var(--ch1)}
+.d-car{stroke:var(--ch1)}
+.d-op{fill:var(--ink);font:700 13px var(--mono)}
+.d-out{fill:var(--ch1);font:700 11px var(--mono)}
+.d-fbt{fill:var(--ink-2);font:500 10.5px var(--mono)}
+.d-fb.off{stroke-dasharray:3 3;opacity:.5}
+
+/* 表示窓: カーソル */
+.scope svg{touch-action:pan-y}
+.cur{stroke:var(--screen-ink);stroke-width:1}
+.rdbar .rd{white-space:pre}
+.t1.sp{stroke-width:1.6}
+
+/* 動作原理と式 */
+.cite i{font-style:italic}
