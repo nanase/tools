@@ -1,0 +1,119 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import { order, TOOLS } from '../data/tools';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import { gridSvg } from '../lib/scope';
+import '../tools/fm-synth/style.css';
+import { algH, algSvg, algText, DW } from '../tools/fm-synth/diagram';
+import Keyboard from '../tools/fm-synth/Keyboard.astro';
+import Operators from '../tools/fm-synth/Operators.astro';
+import { ALG0, FB0, HMAX, NORM0, PERIODS, RANGES, VOL } from '../tools/fm-synth/params';
+import { ALGS, FB_LABEL } from '../tools/fm-synth/synth';
+import Theory from '../tools/fm-synth/Theory.astro';
+
+const name = 'FM音源';
+/* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
+const CAT = '信号・通信';
+const related = [
+  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'fm-synth')),
+  ...TOOLS.filter((t) => t.c !== CAT && !t.s),
+];
+const chain = (a: number) =>
+  ALGS[a].e.length
+    ? `${ALGS[a].e.map(([j, k]) => `${j + 1}→${k + 1}`).join('、')}、出力 ${ALGS[a].c.map((k) => k + 1).join('・')}`
+    : '変調なし、すべて出力';
+---
+<SiteLayout title={name} tool={{ id: 'fm-synth', name }} description="ヤマハの FM 音源 IC のような 4 オペレータの FM 音源で、アルゴリズムと変調の強さを変えながら波形とスペクトラムを表示し、音でも鳴らします。" note="エンベロープと LFO を持たない、簡略化したモデルによる波形です。">
+  <PageTitle title={name}>ヤマハの FM 音源 IC（OPN 系）のように、4 つのオペレータを 8 通りのアルゴリズムでつないで音を作ります。オペレータの波形・周波数比・変調指数を変えると、波形とスペクトラムがすぐに変わります。鍵盤を押すと音で聞けます。</PageTitle>
+
+  <div class="tgrid">
+    <div class="col c1">
+      <Panel hid="hd-alg" title="アルゴリズム" class="a-alg">
+        <div class="ptab">
+          <ChoiceRow k="alg" name="アルゴリズム" sub="オペレータのつなぎ方。右端の列にあるオペレータ（キャリア）の和が出力になり、ほかのオペレータ（モジュレータ）は矢印の先の位相を変調する" choices={ALGS.map((_, a) => [a, String(a), chain(a)] as const)} value={ALG0} layout="chips" wide />
+          <ChoiceRow k="fb" name="帰還量" sub="OP1 の出力を自身の位相へ戻す量（位相のずれの最大値）。OPN の FB 0〜7 と同じ値" choices={FB_LABEL.map((l, i) => [i, l, `FB ${i}`] as const)} value={FB0} layout="chips" wide />
+          <ChoiceRow k="norm" name="音量の調整" sub="キャリアの振幅の合計が 1 を超えたら、出力を合計で割ってピークをフルスケール以内に収める。キャリアが増えても音が大きくなりすぎない。しないを選ぶと、キャリアをそのまま足す" choices={[['on', 'する'], ['off', 'しない']]} value={NORM0} />
+        </div>
+        <svg class="sch alg" id="alg-svg" viewBox={`0 0 ${DW} ${algH(ALG0)}`} role="img" aria-label={algText(ALG0)} set:html={algSvg(ALG0, FB0)} />
+      </Panel>
+
+      <Panel hid="hd-snd" title="音" class="a-snd">
+        <div slot="aux" class="seg"><button type="button" id="playBtn" aria-pressed="false" title="鳴らし続ける（止めている間は、鍵盤を押している間だけ鳴らす）"><span class="led" id="sndLed" aria-hidden="true"></span><span id="playT">再生</span></button></div>
+        <p class="msg er snd-msg" id="snd-msg" aria-live="polite"></p>
+        <Keyboard />
+        <div class="ptab">
+          <ParamRow d={VOL} />
+        </div>
+      </Panel>
+    </div>
+
+    <div class="col c2">
+      <Panel hid="hd-wave" title="波形" class="a-wave">
+        <div slot="aux" class="seg" id="p-view" role="group" aria-label="表示"><button type="button" data-v="yt" aria-pressed="true" title="時間に対する波形">波形</button><button type="button" data-v="sp" aria-pressed="false" title="周波数ごとの大きさ">スペクトラム</button></div>
+
+        <div id="v-yt">
+          <div class="sbar">
+            <span class="stag"><i class="sw" aria-hidden="true"></i>CH1 OUT <b id="w-vd"></b>/div</span>
+            <span class="stag">H <b id="w-hd"></b>/div</span>
+            <span class="stag"><i>f</i><sub>0</sub> <b id="w-f0"></b></span>
+            <span class="stag" id="w-norm" title="音量の調整で出力に掛けている値" hidden>NORM <b></b></span>
+          </div>
+          <div class="scope">
+            <svg viewBox="-50 -14 462 194" id="w-svg" role="img" aria-label="出力の波形">
+              <defs><clipPath id="w-clip"><rect x="0" y="0" width="400" height="160"/></clipPath></defs>
+              <g set:html={gridSvg(4)} />
+              <g clip-path="url(#w-clip)"><path class="t1" id="w-t1"/></g>
+              <path class="cur" id="w-cur"/>
+              <g id="w-axes"></g>
+            </svg>
+          </div>
+          <div class="sbar rdbar"><span class="stag rd" id="w-rd"></span></div>
+          <div class="ana2">
+            <div class="ptab"><ChoiceRow k="per" name="表示する周期" sub="基本周波数の何周期ぶんを表示窓の幅に入れるか" choices={PERIODS.map((v) => [v, String(v)] as const)} value={2} fold /></div>
+            <div class="ptab"><ChoiceRow k="rng" name="表示範囲" sub="中心から端までの振幅（フルスケールを 1 とする）" choices={RANGES.map((v) => [v, `±${v}`] as const)} value={1} fold /></div>
+          </div>
+        </div>
+
+        <div id="v-sp" hidden>
+          <div class="sbar">
+            <span class="stag"><i class="sw" aria-hidden="true"></i>CH1 OUT <b>20 dB</b>/div</span>
+            <span class="stag">X <b id="s-x"></b></span>
+            <span class="stag">WIN <b>B-HARRIS</b></span>
+          </div>
+          <div class="scope">
+            <svg viewBox="-56 -14 468 194" id="s-svg" role="img" aria-label="出力のスペクトラム">
+              <defs><clipPath id="s-clip"><rect x="0" y="0" width="400" height="160"/></clipPath></defs>
+              <g set:html={gridSvg(4)} />
+              <g clip-path="url(#s-clip)"><path class="t1 sp" id="s-t1"/></g>
+              <path class="cur" id="s-cur"/>
+              <g id="s-axes"></g>
+            </svg>
+          </div>
+          <div class="sbar rdbar"><span class="stag rd" id="s-rd"></span></div>
+          <div class="ptab ana">
+            <ChoiceRow k="hm" name="横軸の範囲" sub="基本周波数の何倍までを表示窓の幅に入れるか" choices={HMAX.map((v) => [v, `${v} 倍`] as const)} value={16} fold />
+          </div>
+        </div>
+      </Panel>
+
+      <Panel hid="hd-ops" title="オペレータ" class="a-ops">
+        <span slot="aux" class="aux">波形・周波数比・変調指数</span>
+        <Operators />
+      </Panel>
+    </div>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools list={related} />
+  <script>
+    import '../tools/fm-synth/client';
+  </script>
+</SiteLayout>
