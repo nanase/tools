@@ -12,7 +12,8 @@
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "test": "bun scripts/node.ts vitest run",
-    "redirects": "bun scripts/redirects-csv.ts"
+    "redirects": "bun scripts/redirects-csv.ts",
+    "chaconne": "bun scripts/chaconne.ts"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",

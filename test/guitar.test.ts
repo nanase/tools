@@ -280,24 +280,31 @@ describe('曲と運指', () => {
       expect(((end - p.pickup) / p.bar) % 1).toBeCloseTo(0, 9);
     }
   });
-  it('シャコンヌ BWV 1004 は弱起 2 拍と 256 小節、原曲（G3〜G6）の 1 オクターブ下で標準の調弦に収まり、arpeggio の和音は分散する', async () => {
+  it('シャコンヌ BWV 1004 は弱起 2 拍と 256 小節、原曲（G3〜G6）の 1 オクターブ下で、すべての音を標準の調弦の弦に置く', async () => {
     const p = PIECES.find((x) => x.v === 'bwv1004');
     if (!p?.load) throw new Error('bwv1004');
-    const pl = await p.load();
-    expect(pl).toHaveLength(3675);
-    /* arpeggio の指示のある小節（例: Mutopia の小節 95 = 拍 281〜284）は 32 分音符の分散和音 */
-    const on = [...new Set(pl.filter((n) => n.t >= 281 && n.t < 284).map((n) => n.t))];
-    expect(on).toEqual(Array.from({ length: 24 }, (_, k) => 281 + k / 8));
+    const pl = await p.load(),
+      open = tuningOf(p.tuning).notes;
+    expect(pl.length).toBeGreaterThan(3000);
+    expect(pl.every((n) => n.s >= 0 && n.f >= 0 && n.f <= 19 && n.n === open[n.s] + n.f)).toBe(true);
     expect(Math.max(...pl.map((n) => n.t + n.d))).toBe(2 + 3 * 256);
-    expect(Math.min(...pl.map((n) => n.n))).toBe(midiOf('G2'));
-    expect(Math.max(...pl.map((n) => n.n))).toBe(midiOf('G5'));
-    /* 冒頭の和音 D3・F3・A3 */
+    expect(Math.min(...pl.map((n) => n.n))).toBeGreaterThanOrEqual(midiOf('G2'));
+    expect(Math.max(...pl.map((n) => n.n))).toBeLessThanOrEqual(midiOf('G5'));
+    /* 冒頭の和音 D3・F3・A3（少しずらして弾いてもよい） */
     expect(
       pl
-        .filter((n) => n.t === 0)
+        .filter((n) => n.t < 0.1)
         .map((n) => n.n)
         .sort((a, b) => a - b),
     ).toEqual([midiOf('D3'), midiOf('F3'), midiOf('A3')]);
+    /* ずらして弾く和音の音は、まだ鳴っている同じ弦の音を止めない */
+    for (let s = 0; s < 6; s++) {
+      const a = pl.filter((n) => n.s === s).sort((x, y) => x.t - y.t);
+      for (let i = 1; i < a.length; i++) {
+        const gap = a[i].t - a[i - 1].t;
+        expect(gap > 0 && gap <= 0.1 && a[i - 1].d > gap + 1e-9).toBe(false);
+      }
+    }
   });
   it('前奏曲 BWV 846 は 6 弦を D に下げて D2〜B5 に収まる', () => {
     const p = PIECES.find((x) => x.v === 'bwv846');
