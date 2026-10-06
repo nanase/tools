@@ -3,7 +3,8 @@
  * 16 本の遅延線のフィードバック遅延網（FDN。Jot・Chaigne 1991）で作る。
  * 遅延線の出口の 1 次の低域通過で、中音域（500 Hz）と高音域（4 kHz）の残響時間を合わせる。
  * 残響音の大きさは拡散音場の式から決める: 1 m 先の直接音に対する残響音の音圧の比は 1/r_c（r_c は臨界距離）。
- * 直接音は 1 m 先の大きさのまま出し、聴く位置 r [m] の直接音と残響音の比になるように、残響音に r/r_c を掛ける
+ * 聴く位置 r [m] での直接音と残響音の比 r/r_c にしたうえで、全体（両者のエネルギーの和）を 1 m 先の直接音の
+ * 大きさにそろえる（部屋や位置を変えても、全体の大きさが大きく変わらないように）
  */
 
 /** 空気の音速 [m/s] */
@@ -77,17 +78,27 @@ export interface ReverbSpec {
   off: boolean;
   t60: number;
   t60Hi: number;
-  /** 残響音に掛ける大きさ（聴く位置 r ÷ 臨界距離 r_c） */
+  /** 残響音に掛ける大きさ（聴く位置 r ÷ 臨界距離 r_c）と、全体をそろえるために直接音・残響音に掛ける大きさ */
   wet: number;
+  norm: number;
   pre: number;
   /** 遅延線の長さの目安 [s]（平均自由行程を進む時間） */
   mfpT: number;
 }
 
 export function reverbSpec(r: Room, dist: number): ReverbSpec {
-  if (r.v === 'off') return { off: true, t60: 1, t60Hi: 1, wet: 0, pre: 0, mfpT: 0.01 };
-  const a = acoustics(r);
-  return { off: false, t60: a.t60, t60Hi: a.t60Hi, wet: dist / a.rc, pre: a.pre, mfpT: a.mfp / C_AIR };
+  if (r.v === 'off') return { off: true, t60: 1, t60Hi: 1, wet: 0, norm: 1, pre: 0, mfpT: 0.01 };
+  const a = acoustics(r),
+    wet = dist / a.rc;
+  return {
+    off: false,
+    t60: a.t60,
+    t60Hi: a.t60Hi,
+    wet,
+    norm: 1 / Math.sqrt(1 + wet * wet),
+    pre: a.pre,
+    mfpT: a.mfp / C_AIR,
+  };
 }
 
 /** 遅延線の数（2 の累乗。アダマール行列で混ぜる） */
@@ -134,12 +145,14 @@ export class Reverb {
   private pre = new Float64Array(1);
   private pp = 0;
   private gIn = 0;
+  private norm = 1;
   private off = true;
 
   constructor(readonly fs: number) {}
 
   set(s: ReverbSpec): void {
     this.off = s.off;
+    this.norm = s.norm;
     if (s.off) return;
     const fs = this.fs,
       /* 最も短い線は平均自由行程の 0.6 倍（10〜40 ms） */
@@ -165,14 +178,14 @@ export class Reverb {
      * 線の数 N の割合で出ていく。インパルス応答のエネルギーが wet² になるようにする
      */
     const decay = (s.t60 * fs) / (6 * Math.log(10));
-    this.gIn = s.wet * Math.sqrt(total / (N * decay));
+    this.gIn = s.norm * s.wet * Math.sqrt(total / (N * decay));
     const np = Math.max(1, Math.round(s.pre * fs));
     if (this.pre.length !== np) this.pre = new Float64Array(np);
     else this.pre.fill(0);
     this.pp = 0;
   }
 
-  /** L・R の off から len 標本に残響音を足す */
+  /** L・R の off から len 標本に残響音を足す（直接音は全体をそろえる大きさにする） */
   process(L: Float32Array | Float64Array, R: Float32Array | Float64Array, off: number, len: number): void {
     if (this.off) return;
     const { bufs, len: ln, pos, b0, a1, z, x, pre } = this,
@@ -212,8 +225,8 @@ export class Reverb {
         bufs[j][pos[j]] = k * x[j] + (j & 1 ? -g : g) * u;
         pos[j] = pos[j] + 1 === ln[j] ? 0 : pos[j] + 1;
       }
-      L[i] += w * l;
-      R[i] += w * r;
+      L[i] = this.norm * L[i] + w * l;
+      R[i] = this.norm * R[i] + w * r;
     }
   }
 }

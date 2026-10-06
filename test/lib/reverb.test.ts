@@ -12,8 +12,14 @@ function ir(v: string, dist: number, sec: number): [Float32Array, Float32Array] 
   L[0] = 1;
   R[0] = 1;
   for (let i = 0; i < n; i += 128) rv.process(L, R, i, Math.min(128, n - i));
-  L[0] -= 1;
-  R[0] -= 1;
+  /* 直接音（全体をそろえる大きさを掛けたもの）を除き、残響音を直接音 1 に対する大きさに戻す */
+  const k = reverbSpec(roomOf(v), dist).norm;
+  L[0] -= k;
+  R[0] -= k;
+  for (let i = 0; i < n; i++) {
+    L[i] /= k;
+    R[i] /= k;
+  }
   return [L, R];
 }
 /** 周波数 f を中心とする 1 オクターブのエネルギーの平均 [dB] */
@@ -92,8 +98,10 @@ describe('部屋の残響', () => {
     }
     expect(Math.abs(lr / Math.sqrt(ll * rr))).toBeLessThan(0.1);
   });
-  it('なしなら何も足さない', () => {
+  it('なしなら何も足さない。全体のエネルギーは直接音 1 m 先にそろう', () => {
     const [L] = ir('off', 10, 0.1);
     expect(L.every((v) => v === 0)).toBe(true);
+    const s = reverbSpec(roomOf('church'), 15);
+    expect(s.norm ** 2 * (1 + s.wet ** 2)).toBeCloseTo(1, 12);
   });
 });
