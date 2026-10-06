@@ -14,7 +14,7 @@ import Theory from '../tools/passive-combination/Theory.astro';
 const id = 'passive-combination';
 const name = '受動素子組み合わせ計算機';
 ---
-<SiteLayout title={name} tool={{ id, name }} description="抵抗器・コンデンサ・インダクタを組み合わせて、目標の値に近い合成値を E 系列から探します">
+<SiteLayout title={name} tool={{ id, name }} note="計算結果は理想素子モデルによる参考値です。" description="抵抗器・コンデンサ・インダクタを組み合わせて、目標の値に近い合成値を E 系列から探します">
   <PageTitle title={name}>抵抗器・コンデンサ・インダクタを 2〜5 本つないで、目標の値に近い合成値になる組み合わせを E 系列の値から探します。直列と並列を入れ子にしたつなぎ方をすべて調べ、本数ごとに誤差の小さい順に並べます。</PageTitle>
   <div class="mini" aria-hidden="true"><span id="mn"></span><span>誤差<b id="me"></b></span></div>
 

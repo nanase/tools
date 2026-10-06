@@ -10,7 +10,7 @@ interface Props {
   description: string;
   /** ツールのページなら、その id（メニューの現在地）とページ名（上部バー） */
   tool?: { id: string; name: string };
-  /** フッターの注記。省略時は「計算結果は理想素子モデルによる参考値です。」 */
+  /** フッターの注記。省略時は出さない */
   note?: string;
 }
 const { title, description, tool, note } = Astro.props;
