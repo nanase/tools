@@ -14,7 +14,26 @@ const MUL: Record<string, number> = {
 };
 
 /** 入力欄の単位。'' は単位なし */
-export type Unit = '' | 'Ω' | 'F' | 'H' | 'V' | 'A' | 'W' | 'Hz' | 's' | 'dB' | '%' | 'm' | 'm/s' | 'mm' | 'µm' | 'FS';
+export type Unit =
+  | ''
+  | 'Ω'
+  | 'F'
+  | 'H'
+  | 'V'
+  | 'A'
+  | 'W'
+  | 'Hz'
+  | 's'
+  | 'dB'
+  | '%'
+  | 'm'
+  | 'm/s'
+  | 'mm'
+  | 'µm'
+  | 'FS'
+  | 'N'
+  | 'L'
+  | '°';
 
 /** 末尾に書かれた単位を外す。接頭辞と紛らわしいものは数字の直後だけ外す */
 const STRIP: Partial<Record<Unit, [RegExp, string]>> = {
@@ -35,10 +54,15 @@ const STRIP: Partial<Record<Unit, [RegExp, string]>> = {
   'm/s': [/m\/s$/i, ''],
   mm: [/mm$/i, ''],
   µm: [/[uμ]m$/i, ''],
+  /* 張力（ニュートン）。小文字の n はナノなので外さない */
+  N: [/N$/, ''],
+  /* 容積（リットル） */
+  L: [/(l|L|ℓ)$/, ''],
+  '°': [/(°|度|deg)$/i, ''],
 };
 
 /** 接頭辞を読まない単位（0.5m を 0.5 mm と取り違えないように） */
-const NO_PREFIX = new Set<Unit>(['mm', 'µm']);
+const NO_PREFIX = new Set<Unit>(['mm', 'µm', 'N', 'L', '°']);
 
 /**
  * 文字列を数値に読む。読めなければ NaN。
