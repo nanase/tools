@@ -119,6 +119,14 @@ export const TOOLS: Tool[] = [
     ic: 'pc',
     k: 'pcb スパイラル うずまき アンテナ インダクタンス nfc rfid spiral coil antenna inductor',
   },
+  {
+    id: 'organ',
+    c: '音響',
+    t: 'オルガン音響モデル',
+    d: 'エアジェットとリードの自励振動、管の共鳴、風箱の風、教会の残響から、パイプオルガンの音を物理モデルで計算して鳴らします。',
+    ic: 'og',
+    k: 'organ pipe organ パイプオルガン acoustic physical model 物理モデル フルー管 flue リード管 reed ジェット jet エッジトーン 共鳴管 resonator ストップ stop レジストレーション registration プリンシパル ゲダクト トランペット 風箱 wind トレモラント tremulant 調律 temperament 教会 残響 reverb 演奏 バッハ bach オーディオ audio',
+  },
 ];
 export const IC: Record<string, string> = {
   sq: '<path class="a" d="M4 38H16V10H40V38H52V10H76V38H88V10H112V38H116"/><path class="b" d="M16 31C24 22 32 18 40 17C44 24 48 29 52 31C60 22 68 18 76 17C80 24 84 29 88 31C96 22 104 18 112 17"/>',
@@ -134,6 +142,7 @@ export const IC: Record<string, string> = {
   fm: '<path class="c d" d="M4 24H116"/><path class="a" d="M4 24L6 13.5L8 8.2L10 9.8L12 16L14 23.4L16 29.5L18 33.4L20 35.5L22 36.1L24 35.7L26 34.3L28 31.8L30 28.2L32 24L34 19.8L36 16.2L38 13.7L40 12.3L42 11.9L44 12.5L46 14.6L48 18.5L50 24.6L52 32L54 38.2L56 39.8L58 34.5L60 24L62 13.5L64 8.2L66 9.8L68 16L70 23.4L72 29.5L74 33.4L76 35.5L78 36.1L80 35.7L82 34.3L84 31.8L86 28.2L88 24L90 19.8L92 16.2L94 13.7L96 12.3L98 11.9L100 12.5L102 14.6L104 18.5L106 24.6L108 32L110 38.2L112 39.8L114 34.5L116 24"/>',
   gt: '<path class="c" d="M4 10H116M4 38H116"/><path class="a" d="M4 24C16 24 20 13 34 13S52 35 66 35S84 13 98 13S110 24 116 24"/><path class="b" d="M4 24C16 24 20 17 34 17S52 31 66 31S84 17 98 17S110 24 116 24"/>',
   pc: '<path class="c" d="M4 6H42"/><path class="a" d="M42 6H78V42H42V10H74V38H46V14H70V34H50V18H66V30H54V22H62"/><path class="c d" d="M62 22H116"/>',
+  og: '<path class="c" d="M4 44H116"/><path class="a" d="M14 44V8M26 44V14M38 44V19M50 44V23M62 44V26M74 44V29M86 44V31M98 44V33M110 44V35"/><path class="b" d="M11 38H17M23 39H29M35 40H41M47 40H53M59 41H65M71 41H77M83 42H89M95 42H101M107 42H113"/>',
 };
 
 /** 準備中を後ろへ */

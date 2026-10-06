@@ -1,0 +1,94 @@
+/* オルガン音響モデルのページだけのスタイル（共通は src/styles/site.css） */
+
+/* 枠の並び。スマホは 管と鍵盤 → 演奏 → ストップ → 風と調律 → 整音 → 部屋 → 音の波形 → 計算結果 → 式 → 楽譜の出典。
+   PC は上に 管と鍵盤（全幅）、左の列に 演奏・ストップ・風と調律、右の列に 整音・部屋・音の波形・計算結果、その下に 式・出典（全幅） */
+.a-pp{order:1}.a-play{order:2}.a-stops{order:3}.a-wind{order:4}.a-voice{order:5}.a-room{order:6}.a-wave{order:7}.a-out{order:8}.a-thy{order:9}.a-src{order:10}
+@media (min-width:1000px){
+  .tgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr);grid-template-areas:"pp pp" "c1 c2" "thy thy" "src src";align-items:start}
+  .a-pp{grid-area:pp}.c1{grid-area:c1}.c2{grid-area:c2}.a-thy{grid-area:thy}.a-src{grid-area:src}
+}
+
+/* 図の下の設定 */
+.a-pp .ptab{margin-top:6px}
+
+/* 音の波形（開閉できる枠）の表示の切り替え */
+.wv-sw{margin:4px 0 12px}
+/* 枠の右上のボタン */
+#playBtn{display:inline-flex;align-items:center;gap:7px}
+/* テンポと音量: スライダーと値（音量の行の右端に、すべて止めるボタン） */
+.vgrid{display:grid;grid-template-columns:4rem minmax(0,1fr) 4.2rem auto;align-items:center;gap:6px 12px;margin:12px 8px 0;padding-top:12px;border-top:1px solid var(--line)}
+.vl{font-size:14px;font-weight:700}
+.vgrid .sl{padding-bottom:0}
+.vgrid output{text-align:right;font:500 13.5px/1 var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.snd-msg{margin:6px 8px 0}
+.snd-msg:empty{display:none}
+.pl-bar{margin:8px 8px 0;font:500 12.5px/1.5 var(--mono);color:var(--ink-2);text-align:right}
+.pl-bar:empty{display:none}
+
+/* 管と鍵盤。狭い画面では横にスクロールする */
+.ppw{overflow-x:auto;overscroll-behavior-x:contain;border:1px solid var(--line);border-radius:var(--r);background:var(--screen);box-shadow:inset 0 1px 3px rgb(0 0 0 / .12)}
+.ppw{--og-pipe:#c3c8bf;--og-rd:#b9a678;--og-mouth:#3b434a;--og-chest:var(--inset);--kb-w:#f4f5f1;--kb-b:#2a2f33;--kb-on:#b4bab0}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]) .ppw{--og-pipe:#5d646a;--og-rd:#6f6448;--og-mouth:#14171a;--og-chest:var(--surface);--kb-w:#d9dcd6;--kb-b:#15181a;--kb-on:#8d938a}
+}
+:root[data-theme="dark"] .ppw{--og-pipe:#5d646a;--og-rd:#6f6448;--og-mouth:#14171a;--og-chest:var(--surface);--kb-w:#d9dcd6;--kb-b:#15181a;--kb-on:#8d938a}
+.ppd{display:block;width:100%;min-width:900px;height:auto;touch-action:pan-x pan-y;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
+.ppd:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+.og-chest{fill:var(--og-chest);stroke:var(--line-2);stroke-width:1}
+.og-pipe{fill:var(--og-pipe);stroke:var(--line-2);stroke-width:.5}
+.og-pipe.rd{fill:var(--og-rd)}
+.og-foot{fill:var(--og-pipe);opacity:.75}
+.og-cap{fill:var(--ink-3)}
+.og-mouth,.og-boot{fill:var(--og-mouth)}
+.kb-n{fill:var(--ink-3);font:500 9.5px var(--mono);pointer-events:none}
+.kk{stroke:var(--line-2);stroke-width:.8}
+.kk.w{fill:var(--kb-w)}
+.kk.b{fill:var(--kb-b)}
+.kk.w.on{fill:var(--kb-on)}
+.kk.b.on{fill:var(--ink-3)}
+/* 管の中の音圧（信号色）: 残像は帯、スローは線 */
+.og-v{fill:none;stroke:var(--ch1);stroke-width:1.4;stroke-linejoin:round;pointer-events:none}
+.og-v.band{fill:var(--ch1);fill-opacity:.4;stroke-width:.6;stroke-opacity:.8}
+.og-rip{fill:none;stroke:var(--ch1);stroke-width:1.6;pointer-events:none}
+.og-hv{fill:var(--focus);opacity:.18;pointer-events:none}
+.og-cur{fill:none;stroke:var(--focus);stroke-width:2;pointer-events:none}
+.pp-note{margin-left:auto}
+@media (max-width:559px){.pp-note{margin-left:0}}
+
+/* ストップ: 鍵盤ごとに、押して入れ切りするチップ */
+.stops{display:grid;gap:12px;padding:4px 8px 6px}
+.sdn{margin:0 0 6px;font:700 13px/1.4 var(--sans);color:var(--ink-2)}
+.sdiv .chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip.stop{font-family:var(--mono)}
+
+/* 計算結果 */
+.m-sub{display:block;margin-top:2px;font:12px/1.5 var(--sans);color:var(--ink-3)}
+.m-main .m-sub{margin-top:4px}
+.vmet,.rmet{margin-top:12px}
+.vmet .m dd,.rmet .m dd{font-size:16px}
+.a-voice,.a-room{container-type:inline-size}
+
+/* 表示窓: カーソル、部分音の印 */
+.scope svg{touch-action:pan-y}
+.cur{stroke:var(--screen-ink);stroke-width:1}
+.rdbar .rd{white-space:pre}
+.t1.sp{stroke-width:1.6}
+.gl2{stroke:var(--grid);stroke-width:1;opacity:.55}
+.mkp{stroke:var(--ch2);stroke-width:1.4;fill:none}
+.scope text.r2{fill:var(--ch2)}
+
+/* 動作原理と式、楽譜の出典 */
+.cite i{font-style:italic}
+.a-src{font-size:14.5px}
+.srcs{display:grid;gap:14px;margin:0;padding:0;list-style:none}
+.srcs li{max-width:72ch;color:var(--ink-2);line-height:1.8}
+.srcs b{color:var(--ink)}
+.srcs a{color:var(--ink-2)}
+
+/* 曲の選択（ドロップダウン）: 項目名の右に、残りの幅いっぱいに置く */
+.prow.pick{grid-template-columns:2.2rem auto minmax(0,1fr);grid-template-areas:"sym name val"}
+.sel{position:relative}
+.sel select{appearance:none;width:100%;height:40px;padding:0 34px 0 12px;border:1px solid var(--line-2);border-radius:var(--r);background:var(--inset);color:var(--ink);font:500 13.5px/1.2 var(--mono);text-overflow:ellipsis;cursor:pointer}
+.sel select:hover{border-color:var(--ink-3)}
+.sel select option{background:var(--surface);color:var(--ink)}
+.sel::after{content:"";position:absolute;top:50%;right:14px;width:7px;height:7px;border-right:1.6px solid var(--ink-2);border-bottom:1.6px solid var(--ink-2);transform:translateY(-70%) rotate(45deg);pointer-events:none}

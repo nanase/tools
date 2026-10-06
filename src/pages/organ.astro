@@ -1,0 +1,196 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import { order, TOOLS } from '../data/tools';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import { ROOMS } from '../lib/reverb';
+import { gridSvg } from '../lib/scope';
+import '../tools/organ/style.css';
+import Credits from '../tools/organ/Credits.astro';
+import { A4S, CUT, DIST, EXAG, FMAX, SCALE, SLOW, SPANS, WIND } from '../tools/organ/params';
+import { PIECES } from '../tools/organ/score';
+import { DIVS, STOPS } from '../tools/organ/stops';
+import Theory from '../tools/organ/Theory.astro';
+import { TEMPERAMENTS } from '../tools/organ/tuning';
+
+const name = 'オルガン音響モデル';
+/* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
+const CAT = '音響';
+const related = [
+  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'organ')),
+  ...TOOLS.filter((t) => t.c !== CAT && !t.s),
+];
+---
+<SiteLayout title={name} tool={{ id: 'organ', name }} description="パイプオルガンを物理モデルで鳴らします。フルー管のエアジェットとリード管の舌の自励振動、管の共鳴、風箱の風と教会の残響から、管の振動と音を計算します。" note="音と計算結果は、論文の模型を簡略化した物理モデルによるものです。">
+  <PageTitle title={name}>フルー管（唇管）は、口から吹き出す空気の薄い流れ（ジェット）が管の中の音で揺れ、唇の内と外へ振り分けられて音を保つ自励振動として、リード管（舌管）は、真鍮の舌がシャロットに当たって風を断続させる自励振動として計算します。管の長さと太さ、口の寸法、風圧から、管ごとの音が決まります。ストップを選んで鍵を押すと、その管が鳴ります。教会の残響を付けて、曲の演奏もできます。</PageTitle>
+  <div class="mini" aria-hidden="true"><span><i>f</i><sub>1</sub><b id="mF"></b></span><span><i>θ</i><b id="mTh"></b></span><span><i>U</i><sub>j</sub><b id="mU"></b></span></div>
+
+  <div class="tgrid">
+    <Panel hid="hd-pp" title="管と鍵盤" class="a-pp">
+      <div slot="aux" class="seg" id="p-nv" role="group" aria-label="振動の見せ方"><button type="button" data-v="blur" aria-pressed="true" title="実際の速さで、管の中の音圧の振れる範囲を描く">残像</button><button type="button" data-v="slow" aria-pressed="false" title="振動をゆっくりにして、管の中の音圧の分布を描く">スロー</button></div>
+      <div class="sbar">
+        <span class="stag"><i class="sw" aria-hidden="true"></i>管の中の音圧 <b id="pp-ex"></b></span>
+        <span class="stag" id="pp-tm"></span>
+        <span class="stag" id="pp-tune"></span>
+        <span class="stag pp-note" id="pp-note"></span>
+      </div>
+      <div class="ppw" id="ppw">
+        <svg class="ppd" id="ppd" tabindex="0" role="group" aria-roledescription="鍵盤" aria-label="選んだストップの管と鍵盤。鍵か管を押すと、選んだ鍵盤のストップの管が鳴る。左右の矢印キーで半音、上下でオクターブを選び、Enter で弾く"></svg>
+      </div>
+      <p class="sr" id="pp-live" aria-live="polite"></p>
+      <div class="ptab">
+        <ChoiceRow k="view" name="描く管" sub="図に並べるストップ。鍵盤はそのストップの鍵盤になる" choices={STOPS.map((s) => [s.id, s.name] as const)} value="p8" layout="chips" wide />
+      </div>
+      <div class="ana2">
+        <div class="ptab">
+          <ChoiceRow k="ex" name="振幅の強調" sub="管の中の音圧の分布を描く幅の倍率" choices={EXAG.map((v) => [v, `×${v}`] as const)} value={1} fold />
+        </div>
+        <div class="ptab" id="sl-row" hidden>
+          <ChoiceRow k="sl" name="スローの速さ" sub="振動を何分の 1 の速さで描くか" choices={SLOW.map((v) => [v, `1/${v}`] as const)} value={50} fold />
+        </div>
+      </div>
+    </Panel>
+
+    <div class="col c1">
+      <Panel hid="hd-play" title="演奏" class="a-play">
+        <div slot="aux" class="seg"><button type="button" id="playBtn" aria-pressed="false" title="選んだ曲を演奏する・止める"><span class="led" id="playLed" aria-hidden="true"></span><span id="playT">演奏</span></button></div>
+        <div class="ptab">
+          <div class="prow pick" id="p-piece">
+            <div class="c-sym" aria-hidden="true"></div>
+            <div class="c-name"><label class="pn" id="n-piece" for="piece">曲</label><p class="desc tip" id="t-piece" role="tooltip" hidden>著作権の切れた曲の電子楽譜から変換したもの。演奏を始めると、曲ごとのストップ（レジストレーション）に切り替える</p></div>
+            <div class="c-val sel"><select id="piece" autocomplete="off" aria-describedby="t-piece">{PIECES.map((p) => <option value={p.v} title={p.by}>{p.name}</option>)}</select></div>
+          </div>
+        </div>
+        <div class="vgrid">
+          <label class="vl" for="tempo">テンポ</label>
+          <div class="sl"><input type="range" id="tempo" min="25" max="150" step="5" aria-describedby="tempov" title="曲の標準の速さに対する割合。演奏中も変えられる"></div>
+          <output id="tempov" for="tempo"></output>
+          <span></span>
+          <label class="vl" for="vol">音量</label>
+          <div class="sl"><input type="range" id="vol" min="-60" max="0" step="1" aria-describedby="volv" title="スピーカーへ出す大きさ（0 dB で、1 m 先の音圧 1 Pa をフルスケールにする）"></div>
+          <output id="volv" for="vol"></output>
+          <button type="button" class="tg" id="muteBtn" title="すべての弁を閉じる">すべて止める</button>
+        </div>
+        <p class="pl-bar" id="pl-bar" aria-live="off"></p>
+        <p class="msg er snd-msg" id="snd-msg" aria-live="polite"></p>
+      </Panel>
+
+      <Panel hid="hd-stops" title="ストップ" class="a-stops">
+        <div slot="aux" class="seg" id="p-div" role="group" aria-label="弾く鍵盤">
+          {DIVS.map((d, i) => <button type="button" data-v={d.v} aria-pressed={i === 0 ? 'true' : 'false'} title={`図の下の鍵盤で ${d.name} を弾く`}>{d.short}</button>)}
+        </div>
+        <div class="stops" id="stops">
+          {DIVS.map((d) => (
+            <div class="sdiv" data-div={d.v}>
+              <p class="sdn">{d.name}</p>
+              <div class="chips" role="group" aria-label={`${d.name}のストップ`}>
+                {STOPS.filter((s) => s.div === d.v).map((s) => <button type="button" class="chip stop" data-stop={s.id} aria-pressed="false" title={s.note}>{s.name}</button>)}
+              </div>
+            </div>
+          ))}
+        </div>
+      </Panel>
+
+      <Panel hid="hd-wind" title="風と調律" class="a-wind">
+        <div class="ptab">
+          <ParamRow d={WIND} />
+          <ChoiceRow k="trem" name="トレモラント" sub="風箱の圧力を周期的に揺らして、音に揺れを付ける装置" choices={[['off', 'なし'], ['on', 'あり']]} value="off" />
+          <ChoiceRow k="sag" name="風の揺れ" sub="多くの管が鳴ると、送風が追いつかずに風箱の圧力が少し下がる。安定なら下がらない" choices={[['0', '安定'], ['1', '柔らかい']]} value="1" />
+          <ChoiceRow k="temp" name="調律法" sub="平均律と、バロック時代の不等分の調律。管の長さを変えて合わせる" choices={TEMPERAMENTS.map((t) => [t.v, t.name] as const)} value="equal" layout="chips" wide />
+          <ChoiceRow k="a4" name="基準の高さ" sub="A4 の周波数" choices={A4S.map((v) => [v, `${v} Hz`] as const)} value={440} />
+        </div>
+      </Panel>
+    </div>
+
+    <div class="col c2">
+      <Panel hid="hd-voice" title="整音" class="a-voice">
+        <span slot="aux" class="aux" id="vo-aux"></span>
+        <div class="ptab">
+          <ParamRow d={SCALE} />
+          <ParamRow d={CUT} />
+        </div>
+        <dl class="metrics vmet">
+          <div class="m"><dt>口の幅 ÷ 円周 <i>α</i></dt><dd id="v-al"></dd></div>
+          <div class="m"><dt>ジェットの厚さ ÷ 口の幅 <i>γ</i></dt><dd id="v-ga"></dd></div>
+          <div class="m"><dt>足の圧力 ÷ 風圧</dt><dd id="v-toe"></dd></div>
+          <div class="m"><dt>鍵の範囲</dt><dd id="v-rng"></dd></div>
+        </dl>
+      </Panel>
+
+      <Panel hid="hd-room" title="部屋" class="a-room">
+        <div class="ptab">
+          <ChoiceRow k="room" name="部屋" sub="響きを付ける部屋。寸法と吸音率から残響時間を求める（再生の音だけに付け、音の波形と計算結果には含めない）" choices={ROOMS.map((r) => [r.v, r.name, r.v === 'off' ? '残響なし' : `${r.dim.join(' × ')} m、平均吸音率 ${r.a}`] as const)} value="church" layout="chips" wide />
+          <ParamRow d={DIST} />
+        </div>
+        <dl class="metrics rmet">
+          <div class="m"><dt>残響時間 <i>T</i><sub>60</sub>（500 Hz）</dt><dd id="r-t"></dd></div>
+          <div class="m"><dt>残響時間 <i>T</i><sub>60</sub>（4 kHz）</dt><dd id="r-th"></dd></div>
+          <div class="m"><dt>臨界距離 <i>r</i><sub>c</sub></dt><dd id="r-rc"></dd></div>
+          <div class="m"><dt>残響音 ÷ 直接音</dt><dd id="r-dr"></dd></div>
+        </dl>
+      </Panel>
+
+      <Collapsible hid="hd-wave" title="音の波形" class="a-wave">
+        <div class="seg wv-sw" id="p-ov" role="group" aria-label="表示"><button type="button" data-v="yt" aria-pressed="true" title="1 m 先の音圧の時間変化">波形</button><button type="button" data-v="sp" aria-pressed="false" title="周波数ごとの大きさ（定常の部分）">スペクトラム</button></div>
+        <div id="v-yt">
+          <div class="sbar">
+            <span class="stag"><i class="sw" aria-hidden="true"></i>CH1 音圧 <b id="w-vd"></b>/div</span>
+            <span class="stag">H <b id="w-hd"></b>/div</span>
+            <span class="stag" id="w-st"></span>
+          </div>
+          <div class="scope">
+            <svg viewBox="-50 -14 462 194" id="w-svg" role="img" aria-label="音の波形">
+              <defs><clipPath id="w-clip"><rect x="0" y="0" width="400" height="160"/></clipPath></defs>
+              <g set:html={gridSvg(4)} />
+              <g clip-path="url(#w-clip)"><path class="t1" id="w-t1"/></g>
+              <path class="cur" id="w-cur"/>
+              <g id="w-axes"></g>
+            </svg>
+          </div>
+          <div class="sbar rdbar"><span class="stag rd" id="w-rd"></span></div>
+          <div class="ptab ana"><ChoiceRow k="span" name="表示する長さ" sub="弁を開いてからの時間" choices={SPANS.map((v) => [v, v < 1 ? `${v * 1000} ms` : `${v} s`] as const)} value={0.2} fold /></div>
+        </div>
+        <div id="v-sp" hidden>
+          <div class="sbar">
+            <span class="stag"><i class="sw" aria-hidden="true"></i>CH1 音圧 <b>30 dB</b>/div</span>
+            <span class="stag">X <b id="s-x"></b></span>
+            <span class="stag">WIN <b>B-HARRIS</b></span>
+          </div>
+          <div class="scope">
+            <svg viewBox="-56 -14 468 194" id="s-svg" role="img" aria-label="音のスペクトラム">
+              <defs><clipPath id="s-clip"><rect x="0" y="0" width="400" height="160"/></clipPath></defs>
+              <g set:html={gridSvg(4)} />
+              <g clip-path="url(#s-clip)"><path class="t1 sp" id="s-t1"/></g>
+              <path class="cur" id="s-cur"/>
+              <g id="s-axes"></g>
+            </svg>
+          </div>
+          <div class="sbar rdbar"><span class="stag rd" id="s-rd"></span></div>
+          <div class="ptab ana"><ChoiceRow k="fmax" name="横軸の範囲" sub="スペクトラムの右端の周波数" choices={FMAX.map((v) => [v, `${v / 1000} kHz`] as const)} value={5000} fold /></div>
+        </div>
+      </Collapsible>
+
+      <Panel hid="hd-res" title="計算結果" class="a-out">
+        <span slot="aux" class="aux" id="res-aux">最後に弾いた管</span>
+        <dl class="metrics" id="res"></dl>
+      </Panel>
+    </div>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+
+    <Collapsible hid="hd-src" title="楽譜の出典" class="a-src">
+      <Credits />
+    </Collapsible>
+  </div>
+
+  <RelatedTools list={related} />
+  <script>
+    import '../tools/organ/client';
+  </script>
+</SiteLayout>
