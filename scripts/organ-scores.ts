@@ -4,8 +4,7 @@
  *
  * 鍵盤は譜表で分ける: 右手の譜表を h = 0（第 1 手鍵盤）、左手の譜表を h = 1（第 2 手鍵盤）、ペダルを h = 2。
  * 実際には両手とも同じ手鍵盤で弾くことが多い曲でも、データは譜表で分けておく。
- * 同じ時刻・同じ高さの音は同じ鍵盤の中でだけ 1 つにまとめ、2 つの手鍵盤で同時に鳴る同じ音は両方残す。
- * BWV 578 は IMSLP の MIDI（Pierre Gouin、CC BY-SA 4.0）を bwv578.mid に置けば作り、なければ飛ばす
+ * 同じ時刻・同じ高さの音は同じ鍵盤の中でだけ 1 つにまとめ、2 つの手鍵盤で同時に鳴る同じ音は両方残す
  */
 import { build, type Kind, type Midi, noteName, type Piece, type RawNote } from './score-midi';
 
@@ -136,6 +135,32 @@ function octaves(m: Midi, log: (s: string) => void): RawNote[] {
   return out;
 }
 
+/**
+ * BWV 578 の MIDI（Pierre Gouin 作成）の 3 トラックは、0 がテンポ、1 が両手（音色はオルガン）、2 がペダル（ファゴット）。
+ * 両手は 1 つのトラックなので、譜表に分けずに h = 0 に入れる。ペダルは 16' の響きを出すために、すべての音を 1 オクターブ下の
+ * 音と同時に鳴らす（組の高いほうが譜面の高さ）。1 にも、ペダルの組の低いほうと同じ時刻・同じ高さの音が入っていて、
+ * 小節 63 からは、さらに 1 オクターブ下（32'）の音も入る。ペダルは組の高いほうだけを使い、1 からは、ペダルの音と同じ時刻に
+ * 始まる、その 1・2 オクターブ下の音を除く（16' はレジストレーションのサブバスで鳴らす）。
+ * テンポは最初の時刻に 2 つあり（♩ = 88.00 と 87.95）、後ろのほうを基本にする
+ */
+function gouin(m: Midi, log: (s: string) => void): RawNote[] {
+  const P = m.notes.filter((x) => x.tr === 2),
+    pair = (x: RawNote, d: number) => P.some((y) => y.t0 === x.t0 && y.n === x.n + d),
+    hi = P.filter((x) => pair(x, -12)),
+    lo = P.filter((x) => pair(x, 12));
+  if (hi.length + lo.length !== P.length) throw new Error('bwv578: ペダルに 1 オクターブ下の組のない音があります');
+  const copy = (x: RawNote) => hi.some((y) => y.t0 === x.t0 && (y.n - x.n === 12 || y.n - x.n === 24)),
+    M = m.notes.filter((x) => x.tr === 1),
+    gone = M.filter(copy);
+  log(
+    `ペダルの組の低いほう ${lo.length} 音と、両手のトラックのペダルの写し ${gone.length} 音` +
+      `（うち 2 オクターブ下 ${gone.filter((x) => hi.some((y) => y.t0 === x.t0 && y.n - x.n === 24)).length}）を除いた`,
+  );
+  const t0 = m.tempo.filter((x) => x.t === 0);
+  m.tempo = [...t0.slice(-1), ...m.tempo.filter((x) => x.t > 0)];
+  return [...M.filter((x) => !copy(x)), ...hi];
+}
+
 const mutopia = (id: number) => `https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=${id}`;
 const common =
   '時刻と長さを 4 分音符の 1/480 に寄せ、同じ鍵盤で同じ時刻の同じ高さの音を 1 つにまとめた。強弱とテンポは使わない。';
@@ -212,19 +237,26 @@ const pieces: Piece[] = [
     fix: octaves,
   },
   {
-    /* IMSLP の MIDI を入手したら、トラックの割り当て・拍子・出典の URL を確かめる */
     name: 'bwv578',
     title: 'J. S. バッハ「フーガ ト短調 BWV 578」（小フーガ）',
-    source: ['音符は IMSLP の MIDI（Pierre Gouin 作成）から変換した。'],
-    changes: [`変更: ${common}`],
+    source: [
+      '音符は IMSLP の MIDI（Pierre Gouin 作成、Les Éditions Outremontaises、2017、',
+      'https://imslp.org/wiki/File:PMLP153148-Bach_578_Fugue_Gm.mid）から変換した。',
+    ],
+    changes: [
+      '変更: 両手のトラックを h = 0、ペダルのトラックを h = 2 にした。ペダルの 1 オクターブ下の重ねと、両手のトラックに入っていた',
+      'ペダルの 1・2 オクターブ下の写しを除いた。テンポは MIDI の変化（♩ = 88 が基本）を、基本に対する比として TEMPO に入れた。',
+      '音の長さと時刻の細かなずれ（演奏の表情）は MIDI のまま使い、4 分音符の 1/480 に寄せた。強弱は使わない。',
+    ],
     license: 'cc-by-sa-4.0',
     tracks: [
       [1, 0],
-      [2, 1],
-      [3, 2],
+      [2, 2],
     ],
     meter: [4, 4],
     pickup: 0,
+    tempo: true,
+    fix: gouin,
   },
 ];
 

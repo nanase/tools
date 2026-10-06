@@ -81,6 +81,21 @@ export const PIECES: readonly Piece[] = [
     tempoMap: [],
     load: () => import('./scores/bwv582').then((m) => ({ notes: m.notes(), tempo: m.TEMPO })),
   },
+  {
+    v: 'bwv578',
+    name: 'フーガ ト短調 BWV 578（小フーガ）',
+    by: 'J. S. バッハ',
+    bpm: 88,
+    tempo: '♩ = 88（終わりは MIDI のテンポの変化に従う）',
+    bar: 4,
+    pickup: 0,
+    /* 両手は 1 つのトラックなので、どちらも第 1 手鍵盤で弾く */
+    hands: ['I', 'I', 'P'],
+    /* プリンシパルの合唱（8'・4'・2'・ミクスチュア）と、ペダルの 16'・8' */
+    stops: ['p8', 'p4', 'p2', 'mix', 'sb16', 'ob8'],
+    tempoMap: [],
+    load: () => import('./scores/bwv578').then((m) => ({ notes: m.notes(), tempo: m.TEMPO })),
+  },
 ];
 export const pieceOf = (v: string): Piece => PIECES.find((p) => p.v === v) ?? PIECES[0];
 

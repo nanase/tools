@@ -1,5 +1,5 @@
 ---
-// 楽譜の出典と、各曲の標準のテンポとレジストレーション。BWV 645 の音符は CC BY-SA 2.5 の楽譜から変換したので、ここに帰属を表示する
+// 楽譜の出典と、各曲の標準のテンポとレジストレーション。BWV 645 の音符は CC BY-SA 2.5、BWV 578 は CC BY-SA 4.0 の楽譜から変換したので、ここに帰属を表示する
 import { pieceOf } from './score';
 import { stopName } from './stops';
 
@@ -13,4 +13,5 @@ const MU = 'https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=';
   <li><b>トッカータとフーガ ニ短調 BWV 565</b>（J. S. バッハの作とされる）: 音符は <a href={`${MU}1780`}>Mutopia Project の楽譜</a>（入力 Anonymous、底本 Bach-Gesellschaft Ausgabe, 1867、Mutopia-2011/09/11-1780、パブリックドメイン）の MIDI から変換しました。Adagio・Prestissimo などの区間ごとの速さは、このツールで付けています。両手とも第 1 手鍵盤で弾きます。{meta('bwv565')}</li>
   <li><b>コラール前奏曲「目覚めよと呼ぶ声あり」BWV 645</b>（J. S. バッハ「シューブラー・コラール集」より）: 音符は <a href={`${MU}601`}>Mutopia Project の楽譜</a>（入力 Bart Golsteijn、底本 Bach-Gesellschaft, Leipzig、Mutopia-2006/06/29-601）の MIDI から変換し、反復を展開しました。右手（ritornello）は第 2 手鍵盤、左手（コラールの旋律）は第 1 手鍵盤で弾きます。原作のライセンスは <a href="https://creativecommons.org/licenses/by-sa/2.5/deed.ja">クリエイティブ・コモンズ 表示 - 継承 2.5（CC BY-SA 2.5）</a>で、元の MIDI と、そこから作った音符のデータ（<a href="https://github.com/nanase/tools/tree/main/src/tools/organ/scores">src/tools/organ/scores</a> の bwv645）も同じライセンスで公開します。{meta('bwv645')}</li>
   <li><b>パッサカリアとフーガ ハ短調 BWV 582</b>（J. S. バッハ）: 音符は <a href={`${MU}741`}>Mutopia Project の楽譜</a>（入力 Urs Metzger、底本 C. F. Peters, Leipzig (8656)、Mutopia-2006/04/21-741、パブリックドメイン）の MIDI から変換しました。MIDI に含まれていた、ストップの代わりに 1 オクターブ上下へ写した声部（4'・16' の複製）は除いています。テンポの変化は MIDI の値を使っています。{meta('bwv582')}</li>
+  <li><b>フーガ ト短調 BWV 578（小フーガ）</b>（J. S. バッハ）: 音符は <a href="https://imslp.org/wiki/File:PMLP153148-Bach_578_Fugue_Gm.mid">IMSLP の MIDI</a>（作成 Pierre Gouin、Les Éditions Outremontaises、2017）から変換しました。MIDI でペダルに重ねてあった 1 オクターブ下の音（16' の代わり）は除き、テンポの変化と、音の長さや時刻の細かなずれ（演奏の表情）は MIDI のものを使っています。両手とも第 1 手鍵盤で弾きます。原作のライセンスは <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.ja">クリエイティブ・コモンズ 表示 - 継承 4.0 国際（CC BY-SA 4.0）</a>で、元の MIDI と、そこから作った音符のデータ（<a href="https://github.com/nanase/tools/tree/main/src/tools/organ/scores">src/tools/organ/scores</a> の bwv578）も同じライセンスで公開します。{meta('bwv578')}</li>
 </ul>
