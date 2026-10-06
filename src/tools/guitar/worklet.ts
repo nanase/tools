@@ -16,8 +16,8 @@ declare function registerProcessor(name: string, ctor: new () => AudioWorkletPro
 /** 主スレッドから送るもの。at は AudioContext の時刻 [s]（過ぎていればすぐ）、pan は定位（−1 が左、1 が右） */
 export type GtMsg =
   | { type: 'body'; d: BodyDesc }
-  | { type: 'pluck'; at: number; p: PluckMsg; pan: number }
-  | { type: 'damp'; at: number; si: number; tau: number }
+  | { type: 'pluck'; at: number; p: PluckMsg; pan: number; id: number }
+  | { type: 'damp'; at: number; si: number; tau: number; id: number }
   | { type: 'noise'; at: number; si: number; buf: Float32Array; pan: number }
   | { type: 'stop'; tau: number };
 
@@ -45,8 +45,8 @@ registerProcessor(
       };
     }
     private fire(m: Ev): void {
-      if (m.type === 'pluck') this.e.pluck(m.p, m.pan);
-      else if (m.type === 'damp') this.e.damp(m.si, m.tau);
+      if (m.type === 'pluck') this.e.pluck(m.p, m.pan, m.id);
+      else if (m.type === 'damp') this.e.damp(m.si, m.tau, m.id);
       else this.e.noise(m.si, m.buf, m.pan);
     }
     process(_in: Float32Array[][], outputs: Float32Array[][]): boolean {

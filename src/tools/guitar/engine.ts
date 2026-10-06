@@ -74,6 +74,8 @@ class Voice {
     fs: number,
     /** 出力のチャンネルごとの重み */
     readonly g: readonly number[],
+    /** 撥弦の番号（指を離す相手を決める。0 は番号なし） */
+    readonly id: number,
   ) {
     this.si = p.si;
     const n2 = 2 * p.N,
@@ -250,10 +252,13 @@ export class Engine {
     }
   }
 
-  /** 弦を弾く。同じ弦の前の振動は指が触れて消える。pan はステレオの定位（−1 が左、1 が右） */
-  pluck(p: PluckMsg, pan = 0): void {
+  /**
+   * 弦を弾く。同じ弦の前の振動は指が触れて消える。pan はステレオの定位（−1 が左、1 が右）、
+   * id は撥弦の番号（damp で、この撥弦だけを止めるときに使う）
+   */
+  pluck(p: PluckMsg, pan = 0, id = 0): void {
     this.damp(p.si, FADE_S);
-    const v = new Voice(p, this.fs, this.gains(pan));
+    const v = new Voice(p, this.fs, this.gains(pan), id);
     let sv = 0,
       sh = 0;
     for (let i = 0; i < v.n; i++)
@@ -266,10 +271,13 @@ export class Engine {
     this.voices.push(v);
   }
 
-  /** 弦の振動を時定数 tau [s] で止める（指を離す・触れる） */
-  damp(si: number, tau = DAMP_S): void {
+  /**
+   * 弦の振動を時定数 tau [s] で止める（指を離す・触れる）。id を渡すと、その撥弦だけを止める
+   * （指を離すより先に同じ弦を弾き直していたら、弾き直した音は止めない）
+   */
+  damp(si: number, tau = DAMP_S, id = 0): void {
     const g = Math.exp(-1 / (tau * this.fs));
-    for (const v of this.voices) if (v.si === si) v.fade = Math.min(v.fade, g);
+    for (const v of this.voices) if (v.si === si && (!id || v.id === id)) v.fade = Math.min(v.fade, g);
   }
 
   /** すべての弦を止める */

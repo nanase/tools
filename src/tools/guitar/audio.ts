@@ -21,6 +21,8 @@ export class GuitarAudio {
   private body: BodyDesc | null = null;
   private db = -30;
   private idle: ReturnType<typeof setTimeout> | undefined;
+  /** 撥弦の番号 */
+  private seq = 0;
 
   /** サンプリング周波数（AudioContext を作る前は 48 kHz とみなす） */
   get fs(): number {
@@ -76,14 +78,17 @@ export class GuitarAudio {
     this.post({ type: 'body', d });
   }
 
-  /** 弦を弾く（at は AudioContext の時刻。0 ならすぐ。pan は定位で、−1 が左、1 が右） */
-  pluck(p: PluckMsg, at = 0, pan = 0): void {
+  /** 弦を弾く（at は AudioContext の時刻。0 ならすぐ。pan は定位で、−1 が左、1 が右）。撥弦の番号を返す */
+  pluck(p: PluckMsg, at = 0, pan = 0): number {
     this.keep();
-    this.post({ type: 'pluck', at, p, pan });
+    const id = ++this.seq;
+    this.post({ type: 'pluck', at, p, pan, id });
+    return id;
   }
 
-  damp(si: number, at = 0, tau = 0.06): void {
-    this.post({ type: 'damp', at, si, tau });
+  /** 弦 si の指を離す。id を渡すと、その撥弦だけを止める（0 なら弦の音をすべて） */
+  damp(si: number, at = 0, id = 0, tau = 0.06): void {
+    this.post({ type: 'damp', at, si, tau, id });
   }
 
   noise(si: number, buf: Float32Array, at = 0, pan = 0): void {

@@ -760,18 +760,23 @@ function eventsOf(pl: Placed[]): Ev[] {
     notes = pl.filter((x) => x.s >= 0).sort((a, b) => a.t - b.t || a.s - b.s),
     last = Math.max(...notes.map((x) => x.t + x.d)),
     ev: Ev[] = [];
+  let rollJit = 0;
   notes.forEach((x, i) => {
     const next = notes.slice(i + 1).find((y) => y.s === x.s),
       prev = [...notes.slice(0, i)].reverse().find((y) => y.s === x.s),
       end = x.t + x.d,
-      /* 少し揺らす（時刻 ±6 ms、強さ ±10%）。低い弦は少し強く */
-      jit = (r() - 0.5) * 0.012,
+      /* 少し揺らす（時刻 ±6 ms、強さ ±10%）。低い弦は少し強く。
+         少しずらして弾く和音（前の音から 0.1 拍未満）は、ずらし方を崩さないよう最初の音と同じだけ動かす */
+      dt = i ? x.t - notes[i - 1].t : 1,
+      rj = (r() - 0.5) * 0.012,
+      jit = dt > 1e-6 && dt < 0.1 ? rollJit : rj,
       amp = V.amp * (0.9 + 0.2 * r()) * (x.s >= 3 ? 1.1 : 1),
       /* 最後の和音は響かせたままにする */
       off = x.f > 0 && end < last - 1e-6 && (!next || next.t > end + 1e-6) ? end : null;
     let slide: Ev['slide'] = null;
     if (prev && prev.f > 0 && x.f > 0 && prev.f !== x.f && x.t - (prev.t + prev.d) < 0.6 && r() < 0.7)
       slide = { from: prev.f, gap: x.t - prev.t };
+    rollJit = jit;
     ev.push({ b: x.t, jit, si: x.s, f: x.f, amp, off, slide });
   });
   return ev;
@@ -861,9 +866,10 @@ function tick(): void {
         buf = slideOf(e.si, e.slide.from, e.f, dur, p.i);
       if (buf) audio.noise(e.si, buf, at - dur, slidePan(e.si, e.slide.from, e.f));
     }
-    audio.pluck(msgOf(e.si, m, pl.f), at, panOf(e.si, e.f));
+    const id = audio.pluck(msgOf(e.si, m, pl.f), at, panOf(e.si, e.f));
+    /* 指を離すのは、この音だけ（離す前に同じ弦をずらした和音で弾き直していても、その音は止めない） */
     const off = e.off !== null ? atOf(e.off) + 0.02 : null;
-    if (off !== null) audio.damp(e.si, off);
+    if (off !== null) audio.damp(e.si, off, id);
     neck.set(e.si, {
       pl,
       t0: toPerf(at),

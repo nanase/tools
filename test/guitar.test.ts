@@ -196,6 +196,26 @@ describe('音', () => {
     for (let i = 0; i < y.length; i += 128) e.render(y, i, 128);
     expect(rms(24000, 48000)).toBeLessThan(1e-5);
   });
+  it('指を離すのは、その撥弦だけ（先に同じ弦を弾き直した音は止めない）', () => {
+    const g = guitar('nylon'),
+      m = modesOf(g, 2, 2, FS),
+      pl = pluckOf(g, 2, m, { pos: 0.13, amp: 1.2e-3, width: 12e-3, rel: 8e-5, angle: Math.PI / 4 }),
+      msg = { si: 2, N: m.N, w: m.w, s: m.s, f: pl.f },
+      e = new Engine(FS),
+      y = new Float32Array(FS / 4),
+      rms = (a: Float32Array) => Math.sqrt(a.reduce((s, v) => s + v * v, 0) / a.length);
+    e.setBody(bodyDesc(g.body));
+    e.pluck(msg, 0, 1);
+    e.render(y, 0, 128);
+    e.pluck(msg, 0, 2);
+    e.damp(2, 0.005, 1);
+    for (let i = 0; i < y.length; i += 128) e.render(y, i, 128);
+    expect(rms(y.subarray(y.length / 2))).toBeGreaterThan(1e-3);
+    e.damp(2, 0.005, 2);
+    const z = new Float32Array(FS);
+    for (let i = 0; i < z.length; i += 128) e.render(z, i, 128);
+    expect(rms(z.subarray(FS / 2))).toBeLessThan(1e-5);
+  });
   it('ステレオの定位は再生だけに効き、モノラルの音は変わらない', () => {
     const g = guitar('nylon'),
       m = modesOf(g, 1, 3, FS),
