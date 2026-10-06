@@ -1,5 +1,5 @@
 /**
- * ギターの音を Web Audio API で鳴らす: AudioWorklet（worklet.ts）→ 音量 → 出力。
+ * ギターの音を Web Audio API で鳴らす: AudioWorklet（worklet.ts、ステレオ）→ 音量 → 出力。
  * AudioContext は弦を弾いた操作の中で作る（自動再生の制限）。鳴らしていない間は止めて CPU を休ませる
  */
 import type { BodyDesc, PluckMsg } from './engine';
@@ -21,6 +21,8 @@ export class GuitarAudio {
   private body: BodyDesc | null = null;
   private db = -30;
   private idle: ReturnType<typeof setTimeout> | undefined;
+  /** 撥弦の番号 */
+  private seq = 0;
 
   /** サンプリング周波数（AudioContext を作る前は 48 kHz とみなす） */
   get fs(): number {
@@ -40,7 +42,7 @@ export class GuitarAudio {
     this.loading ??= ac.audioWorklet
       .addModule(workletUrl)
       .then(() => {
-        const node = new AudioWorkletNode(ac, 'guitar-model', { numberOfInputs: 0, outputChannelCount: [1] }),
+        const node = new AudioWorkletNode(ac, 'guitar-model', { numberOfInputs: 0, outputChannelCount: [2] }),
           master = ac.createGain();
         master.gain.value = 10 ** (this.db / 20);
         node.connect(master).connect(ac.destination);
@@ -76,18 +78,21 @@ export class GuitarAudio {
     this.post({ type: 'body', d });
   }
 
-  /** 弦を弾く（at は AudioContext の時刻。0 ならすぐ） */
-  pluck(p: PluckMsg, at = 0): void {
+  /** 弦を弾く（at は AudioContext の時刻。0 ならすぐ。pan は定位で、−1 が左、1 が右）。撥弦の番号を返す */
+  pluck(p: PluckMsg, at = 0, pan = 0): number {
     this.keep();
-    this.post({ type: 'pluck', at, p });
+    const id = ++this.seq;
+    this.post({ type: 'pluck', at, p, pan, id });
+    return id;
   }
 
-  damp(si: number, at = 0, tau = 0.06): void {
-    this.post({ type: 'damp', at, si, tau });
+  /** 弦 si の指を離す。id を渡すと、その撥弦だけを止める（0 なら弦の音をすべて） */
+  damp(si: number, at = 0, id = 0, tau = 0.06): void {
+    this.post({ type: 'damp', at, si, tau, id });
   }
 
-  noise(si: number, buf: Float32Array, at = 0): void {
-    this.post({ type: 'noise', at, si, buf }, [buf.buffer]);
+  noise(si: number, buf: Float32Array, at = 0, pan = 0): void {
+    this.post({ type: 'noise', at, si, buf, pan }, [buf.buffer]);
   }
 
   /** 予定を消して、すべての弦を止める */

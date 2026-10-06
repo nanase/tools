@@ -1,12 +1,15 @@
 /* ギター音響モデルのページだけのスタイル（共通は src/styles/site.css） */
 
 /* 枠の並び。スマホは 指板 → 演奏 → 弾き方 → 弦 → 胴 → 音の波形 → 計算結果 → 式 → 楽譜の出典。
-   PC は上に 指板（全幅）、左の列に 演奏・弾き方・弦、右の列に 胴・音の波形、その下に 計算結果・式・出典（全幅） */
+   PC は上に 指板（全幅）、左の列に 演奏・弾き方・弦、右の列に 胴・音の波形・計算結果、その下に 式・出典（全幅） */
 .a-neck{order:1}.a-play{order:2}.a-pk{order:3}.a-str{order:4}.a-body{order:5}.a-wave{order:6}.a-out{order:7}.a-thy{order:8}.a-src{order:9}
 @media (min-width:1000px){
-  .tgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr);grid-template-areas:"neck neck" "c1 c2" "out out" "thy thy" "src src";align-items:start}
-  .a-neck{grid-area:neck}.c1{grid-area:c1}.c2{grid-area:c2}.a-out{grid-area:out}.a-thy{grid-area:thy}.a-src{grid-area:src}
+  .tgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr);grid-template-areas:"neck neck" "c1 c2" "thy thy" "src src";align-items:start}
+  .a-neck{grid-area:neck}.c1{grid-area:c1}.c2{grid-area:c2}.a-thy{grid-area:thy}.a-src{grid-area:src}
 }
+
+/* 指板の図の下の設定（図の枠が区切りになるので、上の線は引かない） */
+.a-neck .ana2{border-top:0}
 
 /* 音の波形（開閉できる枠）の表示の切り替え */
 .wv-sw{margin:4px 0 12px}
@@ -24,19 +27,26 @@
 
 /* 指板と弦。狭い画面では横にスクロールする */
 .nkw{overflow-x:auto;overscroll-behavior-x:contain;border:1px solid var(--line);border-radius:var(--r);background:var(--screen);box-shadow:inset 0 1px 3px rgb(0 0 0 / .12)}
+/* 指板の図の色。ライトは指板を中間の明るさにして、暗い弦を指板と表板のどちらの上でも見えるようにする */
+.nkw{--nk-top:var(--inset);--nk-head:var(--rail-2);--nk-board:#b4bab0;--nk-fr:#f4f5f1;--nk-fr-o:1;--nk-in:#f4f5f1;--nk-in-o:.9;--nk-nut:var(--surface);--nk-hole:var(--rail);--nk-s:#3b434a;--nk-ny:#4f5860;--nk-wd:#262c31}
+/* ダーク: 指板と表板を表示窓の地より明るくして、穴（暗い）と分ける */
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]) .nkw{--nk-top:var(--surface);--nk-board:var(--rail-2);--nk-fr:var(--rail-ink-2);--nk-fr-o:.8;--nk-in:var(--rail-ink-2);--nk-in-o:.45;--nk-hole:#000;--nk-s:var(--ink-2);--nk-ny:var(--ink-3);--nk-wd:var(--ink-2)}
+}
+:root[data-theme="dark"] .nkw{--nk-top:var(--surface);--nk-board:var(--rail-2);--nk-fr:var(--rail-ink-2);--nk-fr-o:.8;--nk-in:var(--rail-ink-2);--nk-in-o:.45;--nk-hole:#000;--nk-s:var(--ink-2);--nk-ny:var(--ink-3);--nk-wd:var(--ink-2)}
 .neck{display:block;width:100%;min-width:600px;height:auto;touch-action:pan-x pan-y;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
 .neck:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
-.nk-top{fill:var(--inset)}
+.nk-top{fill:var(--nk-top)}
 .nk-edge{stroke:var(--line-2);stroke-width:1}
 .nk-ros{fill:none;stroke:var(--line-2);stroke-width:1.2}
-.nk-hole{fill:var(--rail)}
+.nk-hole{fill:var(--nk-hole)}
 .nk-br{fill:var(--rail-2)}
 .nk-sad{stroke:var(--surface);stroke-width:2.5;stroke-linecap:round}
-.nk-head{fill:var(--rail-2)}
-.nk-board{fill:var(--rail)}
-.nk-in{fill:var(--rail-ink-2);opacity:.45}
-.nk-fr{stroke:var(--rail-ink-2);stroke-width:1.6;opacity:.8}
-.nk-nut{stroke:var(--surface);stroke-width:5;stroke-linecap:round}
+.nk-head{fill:var(--nk-head)}
+.nk-board{fill:var(--nk-board)}
+.nk-in{fill:var(--nk-in);opacity:var(--nk-in-o)}
+.nk-fr{stroke:var(--nk-fr);stroke-width:1.6;opacity:var(--nk-fr-o)}
+.nk-nut{stroke:var(--nk-nut);stroke-width:5;stroke-linecap:round}
 .nk-n{fill:var(--ink-3);font:500 10px var(--mono)}
 .nk-sn{fill:var(--rail-ink-2);font:700 10px var(--mono)}
 /* 鳴っている弦の印（LED と同じ色） */
@@ -47,9 +57,9 @@
 /* 弾いた点から広がる輪（振動と同じ信号色） */
 .nk-rip{fill:none;stroke:var(--ch1);stroke-width:2;pointer-events:none}
 /* 弦: プレーンは淡く、巻弦は濃く細かい刻みを付ける */
-.nk-s{fill:none;stroke:var(--ink-2);stroke-linecap:round}
-.nk-s.ny{stroke:var(--ink-3)}
-.nk-s.wd{stroke:var(--ink-2);stroke-dasharray:1.2 .8}
+.nk-s{fill:none;stroke:var(--nk-s);stroke-linecap:round}
+.nk-s.ny{stroke:var(--nk-ny)}
+.nk-s.wd{stroke:var(--nk-wd);stroke-dasharray:1.2 .8}
 .nk-strs .nk-s{stroke-width:1.6}
 /* 振動（信号色）: 残像は帯、スローは線 */
 .nk-v{fill:none;stroke:var(--ch1);stroke-width:1.8;stroke-linejoin:round}
@@ -57,15 +67,6 @@
 .nk-f{fill:var(--accent);stroke:var(--surface);stroke-width:1.5;filter:drop-shadow(0 0 3px var(--accent))}
 .nk-hv{fill:var(--focus);opacity:.13;pointer-events:none}
 .nk-cur{fill:none;stroke:var(--focus);stroke-width:2;pointer-events:none}
-/* ダーク: 指板と表板を表示窓の地より明るくして、穴（暗い）と分ける */
-@media (prefers-color-scheme:dark){
-  :root:not([data-theme="light"]) .nk-board,:root:not([data-theme="light"]) .nk-head{fill:var(--rail-2)}
-  :root:not([data-theme="light"]) .nk-top{fill:var(--surface)}
-  :root:not([data-theme="light"]) .nk-hole{fill:#000}
-}
-:root[data-theme="dark"] .nk-board,:root[data-theme="dark"] .nk-head{fill:var(--rail-2)}
-:root[data-theme="dark"] .nk-top{fill:var(--surface)}
-:root[data-theme="dark"] .nk-hole{fill:#000}
 .nk-note{margin-left:auto}
 @media (max-width:559px){.nk-note{margin-left:0}}
 
@@ -107,3 +108,11 @@
 .srcs li{max-width:72ch;color:var(--ink-2);line-height:1.8}
 .srcs b{color:var(--ink)}
 .srcs a{color:var(--ink-2)}
+
+/* 曲の選択（ドロップダウン）: 項目名の右に、残りの幅いっぱいに置く */
+.prow.pick{grid-template-columns:2.2rem auto minmax(0,1fr);grid-template-areas:"sym name val"}
+.sel{position:relative}
+.sel select{appearance:none;width:100%;height:40px;padding:0 34px 0 12px;border:1px solid var(--line-2);border-radius:var(--r);background:var(--inset);color:var(--ink);font:500 13.5px/1.2 var(--mono);text-overflow:ellipsis;cursor:pointer}
+.sel select:hover{border-color:var(--ink-3)}
+.sel select option{background:var(--surface);color:var(--ink)}
+.sel::after{content:"";position:absolute;top:50%;right:14px;width:7px;height:7px;border-right:1.6px solid var(--ink-2);border-bottom:1.6px solid var(--ink-2);transform:translateY(-70%) rotate(45deg);pointer-events:none}

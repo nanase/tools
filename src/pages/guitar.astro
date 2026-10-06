@@ -79,7 +79,11 @@ const tunName = (n: readonly number[]) => {
       <Panel hid="hd-play" title="演奏" class="a-play">
         <div slot="aux" class="seg"><button type="button" id="playBtn" aria-pressed="false" title="選んだ曲を演奏する・止める"><span class="led" id="playLed" aria-hidden="true"></span><span id="playT">演奏</span></button></div>
         <div class="ptab">
-          <ChoiceRow k="piece" name="曲" sub="著作権の切れた曲を、このツールでギター用に編曲したもの。運指（弦とフレット）は自動で決める" choices={PIECES.map((p) => [p.v, p.name, p.by] as const)} value={PIECES[0].v} layout="chips" wide />
+          <div class="prow pick" id="p-piece">
+            <div class="c-sym" aria-hidden="true"></div>
+            <div class="c-name"><label class="pn" id="n-piece" for="piece">曲</label><p class="desc tip" id="t-piece" role="tooltip" hidden>著作権の切れた曲を、このツールでギター用に編曲したもの。運指（弦とフレット）は自動で決める</p></div>
+            <div class="c-val sel"><select id="piece" autocomplete="off" aria-describedby="t-piece">{PIECES.map((p) => <option value={p.v} title={p.by}>{p.name}</option>)}</select></div>
+          </div>
         </div>
         <div class="vgrid">
           <label class="vl" for="tempo">テンポ</label>
@@ -205,25 +209,25 @@ const tunName = (n: readonly number[]) => {
           <div class="ptab ana"><ChoiceRow k="fmax" name="横軸の範囲" sub="スペクトラムの右端の周波数" choices={FMAX.map((v) => [v, `${v / 1000} kHz`] as const)} value={5000} fold /></div>
         </div>
       </Collapsible>
-    </div>
 
-    <Panel hid="hd-res" title="計算結果" class="a-out">
-      <span slot="aux" class="aux" id="res-aux">最後に弾いた音</span>
-      <dl class="metrics">
-        <div class="m m-main"><dt>第 1 部分音 <i>f</i><sub>1</sub></dt><dd><span id="o-f1"></span><span class="m-sub" id="o-f1s"></span></dd></div>
-        <div class="m"><dt>振動する長さ <i>L</i><sub>v</sub></dt><dd id="o-lv"></dd></div>
-        <div class="m"><dt>線密度 <i>μ</i></dt><dd id="o-mu"></dd></div>
-        <div class="m"><dt>波の速さ <i>c</i></dt><dd id="o-c"></dd></div>
-        <div class="m"><dt>特性インピーダンス <i>Z</i><sub>0</sub></dt><dd id="o-z0"></dd></div>
-        <div class="m"><dt>非調和性係数 <i>β</i></dt><dd id="o-b"></dd></div>
-        <div class="m"><dt>10 倍音のずれ</dt><dd id="o-b10"></dd></div>
-        <div class="m"><dt>減衰時間 <i>T</i><sub>60</sub>（垂直）</dt><dd><span id="o-tv"></span><span class="m-sub" id="o-tvs"></span></dd></div>
-        <div class="m"><dt>減衰時間 <i>T</i><sub>60</sub>（平行）</dt><dd><span id="o-th"></span><span class="m-sub" id="o-ths"></span></dd></div>
-        <div class="m"><dt>胴へ逃げる損失</dt><dd><span id="o-eb"></span><span class="m-sub" id="o-ebs"></span></dd></div>
-        <div class="m"><dt>弾く位置 <i>L</i><sub>v</sub>/<i>x</i><sub>p</sub></dt><dd><span id="o-xp"></span><span class="m-sub" id="o-xps"></span></dd></div>
-        <div class="m"><dt>駒の力の初期値</dt><dd id="o-f0"></dd></div>
-      </dl>
-    </Panel>
+      <Panel hid="hd-res" title="計算結果" class="a-out">
+        <span slot="aux" class="aux" id="res-aux">最後に弾いた音</span>
+        <dl class="metrics">
+          <div class="m m-main"><dt>第 1 部分音 <i>f</i><sub>1</sub></dt><dd><span id="o-f1"></span><span class="m-sub" id="o-f1s"></span></dd></div>
+          <div class="m"><dt>振動する長さ <i>L</i><sub>v</sub></dt><dd id="o-lv"></dd></div>
+          <div class="m"><dt>線密度 <i>μ</i></dt><dd id="o-mu"></dd></div>
+          <div class="m"><dt>波の速さ <i>c</i></dt><dd id="o-c"></dd></div>
+          <div class="m"><dt>特性インピーダンス <i>Z</i><sub>0</sub></dt><dd id="o-z0"></dd></div>
+          <div class="m"><dt>非調和性係数 <i>β</i></dt><dd id="o-b"></dd></div>
+          <div class="m"><dt>10 倍音のずれ</dt><dd id="o-b10"></dd></div>
+          <div class="m"><dt>減衰時間 <i>T</i><sub>60</sub>（垂直）</dt><dd><span id="o-tv"></span><span class="m-sub" id="o-tvs"></span></dd></div>
+          <div class="m"><dt>減衰時間 <i>T</i><sub>60</sub>（平行）</dt><dd><span id="o-th"></span><span class="m-sub" id="o-ths"></span></dd></div>
+          <div class="m"><dt>胴へ逃げる損失</dt><dd><span id="o-eb"></span><span class="m-sub" id="o-ebs"></span></dd></div>
+          <div class="m"><dt>弾く位置 <i>L</i><sub>v</sub>/<i>x</i><sub>p</sub></dt><dd><span id="o-xp"></span><span class="m-sub" id="o-xps"></span></dd></div>
+          <div class="m"><dt>駒の力の初期値</dt><dd id="o-f0"></dd></div>
+        </dl>
+      </Panel>
+    </div>
 
     <Collapsible hid="hd-thy" title="動作原理と式">
       <Theory />

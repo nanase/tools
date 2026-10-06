@@ -18,7 +18,7 @@ import { Neck } from './neck';
 import { slideNoise } from './noise';
 import { AMP, ANGLE, DIA, HOLE, POS, SCALE, SLANT, type StrKey, TEN, THICK, VOL0, VOLUME } from './params';
 import { BH, bodyPlot, fAtX, OH, specPlot, wavePlot, Y1_TOP, Y2_TOP } from './plot';
-import { finger, type Piece, type Placed, pieceOf } from './score';
+import { finger, PIECES, type Piece, type Placed, pieceOf } from './score';
 import {
   betaOf,
   f1Of,
@@ -122,7 +122,14 @@ const sl = choice<string>('sl', (v) => {
   neck.setSlow(Number(v));
   neckBar();
 });
-const piece = choice<string>('piece', () => {
+/* 曲（ドロップダウン）。選んだ曲は保存する */
+const piece = $<HTMLSelectElement>('#piece');
+{
+  const v = stored('c:p-piece');
+  if (typeof v === 'string' && PIECES.some((p) => p.v === v)) piece.value = v;
+}
+piece.addEventListener('change', () => {
+  store('c:p-piece', piece.value);
   if (P) stopPiece();
 });
 const span = choice<string>('span', () => drawOut());
@@ -197,6 +204,22 @@ const pluckSpec = (si: number, amp = V.amp): PluckSpec => ({
   angle: (V.ang * Math.PI) / 180,
 });
 const msgOf = (si: number, m: Modes, f: Float64Array): PluckMsg => ({ si, N: m.N, w: m.w, s: m.s, f });
+
+/*
+ * ステレオの定位（再生だけ。−1 が左、1 が右）。模型ではなく聞こえ方の目安で、図の向き（左がヘッド、右が駒）に合わせる。
+ * 低い弦をわずかに左、高い弦を右に置き、弾く点が駒に近いほど右、ネックに寄るほど左へずらす。
+ * 押さえるフレットが高いほど、振動する部分が駒の側へ寄るので少し右へ。胴のモードごとの広がりは engine.ts で付ける
+ */
+const strPan = (si: number) => (0.12 * (2.5 - si)) / 2.5;
+function panOf(si: number, fret: number): number {
+  const L = G.L;
+  return strPan(si) + (1.2 * (0.13 - posOf(si))) / L + (0.25 * fretX(L, fret)) / L;
+}
+/** フレットノイズの定位: 左手のある、すべる区間の中ほど */
+function slidePan(si: number, a: number, b: number): number {
+  const L = G.L;
+  return strPan(si) - 0.45 + (0.5 * (fretX(L, a) + fretX(L, b))) / 2 / L;
+}
 
 /** 調弦に合わせる間は、張力を音程の合う値にする（i を省くと全部） */
 function retune(i?: number): void {
@@ -629,12 +652,12 @@ async function pluck(si: number, fret: number | null): Promise<void> {
     const dur = Math.min(0.18, 0.05 + 0.012 * Math.abs(f - prev)),
       buf = slideOf(si, prev, f, dur, seedN++);
     if (buf) {
-      audio.noise(si, buf, 0);
+      audio.noise(si, buf, 0, slidePan(si, prev, f));
       delay = dur * 0.85;
     }
   }
   const an = audio.now();
-  audio.pluck(msgOf(si, m, pl.f), delay && an !== null ? an + delay : 0);
+  audio.pluck(msgOf(si, m, pl.f), delay && an !== null ? an + delay : 0, panOf(si, f));
   neck.set(si, { pl, t0: t + delay, damp: Infinity, fret: f, dir: (V.ang * Math.PI) / 180, xb: posOf(si) });
   txt('#nk-live', `${si + 1} 弦 ${f ? `${f} フレット` : '開放'}`);
   if (P) return;
@@ -737,18 +760,23 @@ function eventsOf(pl: Placed[]): Ev[] {
     notes = pl.filter((x) => x.s >= 0).sort((a, b) => a.t - b.t || a.s - b.s),
     last = Math.max(...notes.map((x) => x.t + x.d)),
     ev: Ev[] = [];
+  let rollJit = 0;
   notes.forEach((x, i) => {
     const next = notes.slice(i + 1).find((y) => y.s === x.s),
       prev = [...notes.slice(0, i)].reverse().find((y) => y.s === x.s),
       end = x.t + x.d,
-      /* 少し揺らす（時刻 ±6 ms、強さ ±10%）。低い弦は少し強く */
-      jit = (r() - 0.5) * 0.012,
+      /* 少し揺らす（時刻 ±6 ms、強さ ±10%）。低い弦は少し強く。
+         少しずらして弾く和音（前の音から 0.1 拍未満）は、ずらし方を崩さないよう最初の音と同じだけ動かす */
+      dt = i ? x.t - notes[i - 1].t : 1,
+      rj = (r() - 0.5) * 0.012,
+      jit = dt > 1e-6 && dt < 0.1 ? rollJit : rj,
       amp = V.amp * (0.9 + 0.2 * r()) * (x.s >= 3 ? 1.1 : 1),
       /* 最後の和音は響かせたままにする */
       off = x.f > 0 && end < last - 1e-6 && (!next || next.t > end + 1e-6) ? end : null;
     let slide: Ev['slide'] = null;
     if (prev && prev.f > 0 && x.f > 0 && prev.f !== x.f && x.t - (prev.t + prev.d) < 0.6 && r() < 0.7)
       slide = { from: prev.f, gap: x.t - prev.t };
+    rollJit = jit;
     ev.push({ b: x.t, jit, si: x.s, f: x.f, amp, off, slide });
   });
   return ev;
@@ -836,11 +864,12 @@ function tick(): void {
     if (e.slide) {
       const dur = Math.min(0.12, Math.max(0.04, e.slide.gap * spb * 0.5)),
         buf = slideOf(e.si, e.slide.from, e.f, dur, p.i);
-      if (buf) audio.noise(e.si, buf, at - dur);
+      if (buf) audio.noise(e.si, buf, at - dur, slidePan(e.si, e.slide.from, e.f));
     }
-    audio.pluck(msgOf(e.si, m, pl.f), at);
+    const id = audio.pluck(msgOf(e.si, m, pl.f), at, panOf(e.si, e.f));
+    /* 指を離すのは、この音だけ（離す前に同じ弦をずらした和音で弾き直していても、その音は止めない） */
     const off = e.off !== null ? atOf(e.off) + 0.02 : null;
-    if (off !== null) audio.damp(e.si, off);
+    if (off !== null) audio.damp(e.si, off, id);
     neck.set(e.si, {
       pl,
       t0: toPerf(at),

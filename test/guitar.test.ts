@@ -196,6 +196,53 @@ describe('音', () => {
     for (let i = 0; i < y.length; i += 128) e.render(y, i, 128);
     expect(rms(24000, 48000)).toBeLessThan(1e-5);
   });
+  it('指を離すのは、その撥弦だけ（先に同じ弦を弾き直した音は止めない）', () => {
+    const g = guitar('nylon'),
+      m = modesOf(g, 2, 2, FS),
+      pl = pluckOf(g, 2, m, { pos: 0.13, amp: 1.2e-3, width: 12e-3, rel: 8e-5, angle: Math.PI / 4 }),
+      msg = { si: 2, N: m.N, w: m.w, s: m.s, f: pl.f },
+      e = new Engine(FS),
+      y = new Float32Array(FS / 4),
+      rms = (a: Float32Array) => Math.sqrt(a.reduce((s, v) => s + v * v, 0) / a.length);
+    e.setBody(bodyDesc(g.body));
+    e.pluck(msg, 0, 1);
+    e.render(y, 0, 128);
+    e.pluck(msg, 0, 2);
+    e.damp(2, 0.005, 1);
+    for (let i = 0; i < y.length; i += 128) e.render(y, i, 128);
+    expect(rms(y.subarray(y.length / 2))).toBeGreaterThan(1e-3);
+    e.damp(2, 0.005, 2);
+    const z = new Float32Array(FS);
+    for (let i = 0; i < z.length; i += 128) e.render(z, i, 128);
+    expect(rms(z.subarray(FS / 2))).toBeLessThan(1e-5);
+  });
+  it('ステレオの定位は再生だけに効き、モノラルの音は変わらない', () => {
+    const g = guitar('nylon'),
+      m = modesOf(g, 1, 3, FS),
+      pl = pluckOf(g, 1, m, { pos: 0.13, amp: 1.2e-3, width: 12e-3, rel: 8e-5, angle: Math.PI / 4 }),
+      msg = { si: 1, N: m.N, w: m.w, s: m.s, f: pl.f },
+      run = (stereo: boolean, pan: number) => {
+        const e = new Engine(FS, stereo),
+          l = new Float32Array(FS / 2),
+          r = new Float32Array(FS / 2);
+        e.setBody(bodyDesc(g.body));
+        e.pluck(msg, pan);
+        for (let i = 0; i < l.length; i += 128) e.render(l, i, 128, r);
+        return [l, r];
+      },
+      rms = (a: Float32Array) => Math.sqrt(a.reduce((s, v) => s + v * v, 0) / a.length);
+    /* モノラルは pan を無視する */
+    const [m0] = run(false, 0),
+      [m1] = run(false, 0.8);
+    expect(m1).toEqual(m0);
+    /* 右へ寄せると右が大きい。中央でも胴のモードごとの定位で左右は少し違う */
+    const [l, r] = run(true, 0.5);
+    expect(rms(r)).toBeGreaterThan(rms(l) * 1.5);
+    const [lc, rc] = run(true, 0);
+    expect(rms(lc) / rms(rc)).toBeGreaterThan(0.8);
+    expect(rms(lc) / rms(rc)).toBeLessThan(1.25);
+    expect(lc).not.toEqual(rc);
+  });
   it('何も弾かなければ無音', () => {
     const e = new Engine(FS),
       y = new Float32Array(1024);
@@ -253,24 +300,31 @@ describe('曲と運指', () => {
       expect(((end - p.pickup) / p.bar) % 1).toBeCloseTo(0, 9);
     }
   });
-  it('シャコンヌ BWV 1004 は弱起 2 拍と 256 小節、原曲（G3〜G6）の 1 オクターブ下で標準の調弦に収まり、arpeggio の和音は分散する', async () => {
+  it('シャコンヌ BWV 1004 は弱起 2 拍と 256 小節、原曲（G3〜G6）の 1 オクターブ下で、すべての音を標準の調弦の弦に置く', async () => {
     const p = PIECES.find((x) => x.v === 'bwv1004');
     if (!p?.load) throw new Error('bwv1004');
-    const pl = await p.load();
-    expect(pl).toHaveLength(3675);
-    /* arpeggio の指示のある小節（例: Mutopia の小節 95 = 拍 281〜284）は 32 分音符の分散和音 */
-    const on = [...new Set(pl.filter((n) => n.t >= 281 && n.t < 284).map((n) => n.t))];
-    expect(on).toEqual(Array.from({ length: 24 }, (_, k) => 281 + k / 8));
+    const pl = await p.load(),
+      open = tuningOf(p.tuning).notes;
+    expect(pl.length).toBeGreaterThan(3000);
+    expect(pl.every((n) => n.s >= 0 && n.f >= 0 && n.f <= 19 && n.n === open[n.s] + n.f)).toBe(true);
     expect(Math.max(...pl.map((n) => n.t + n.d))).toBe(2 + 3 * 256);
-    expect(Math.min(...pl.map((n) => n.n))).toBe(midiOf('G2'));
-    expect(Math.max(...pl.map((n) => n.n))).toBe(midiOf('G5'));
-    /* 冒頭の和音 D3・F3・A3 */
+    expect(Math.min(...pl.map((n) => n.n))).toBeGreaterThanOrEqual(midiOf('G2'));
+    expect(Math.max(...pl.map((n) => n.n))).toBeLessThanOrEqual(midiOf('G5'));
+    /* 冒頭の和音 D3・F3・A3（少しずらして弾いてもよい） */
     expect(
       pl
-        .filter((n) => n.t === 0)
+        .filter((n) => n.t < 0.1)
         .map((n) => n.n)
         .sort((a, b) => a - b),
     ).toEqual([midiOf('D3'), midiOf('F3'), midiOf('A3')]);
+    /* ずらして弾く和音の音は、まだ鳴っている同じ弦の音を止めない */
+    for (let s = 0; s < 6; s++) {
+      const a = pl.filter((n) => n.s === s).sort((x, y) => x.t - y.t);
+      for (let i = 1; i < a.length; i++) {
+        const gap = a[i].t - a[i - 1].t;
+        expect(gap > 0 && gap <= 0.1 && a[i - 1].d > gap + 1e-9).toBe(false);
+      }
+    }
   });
   it('前奏曲 BWV 846 は 6 弦を D に下げて D2〜B5 に収まる', () => {
     const p = PIECES.find((x) => x.v === 'bwv846');

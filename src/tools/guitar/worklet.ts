@@ -1,6 +1,7 @@
 /**
  * ギターの音を作る AudioWorklet。audio.ts が ?worker&url で読み込み、'guitar-model' として使う。
- * 受け取った撥弦・指を離す・こすれる音を、指定の時刻（AudioContext の時刻）に標本の単位で始める
+ * 受け取った撥弦・指を離す・こすれる音を、指定の時刻（AudioContext の時刻）に標本の単位で始める。
+ * 出力はステレオ（pan で弦ごとの定位を少しずらす。再生だけで、表示用の計算には使わない）
  */
 import { type BodyDesc, Engine, type PluckMsg } from './engine';
 
@@ -12,12 +13,12 @@ declare class AudioWorkletProcessor {
 }
 declare function registerProcessor(name: string, ctor: new () => AudioWorkletProcessor): void;
 
-/** 主スレッドから送るもの。at は AudioContext の時刻 [s]（過ぎていればすぐ） */
+/** 主スレッドから送るもの。at は AudioContext の時刻 [s]（過ぎていればすぐ）、pan は定位（−1 が左、1 が右） */
 export type GtMsg =
   | { type: 'body'; d: BodyDesc }
-  | { type: 'pluck'; at: number; p: PluckMsg }
-  | { type: 'damp'; at: number; si: number; tau: number }
-  | { type: 'noise'; at: number; si: number; buf: Float32Array }
+  | { type: 'pluck'; at: number; p: PluckMsg; pan: number; id: number }
+  | { type: 'damp'; at: number; si: number; tau: number; id: number }
+  | { type: 'noise'; at: number; si: number; buf: Float32Array; pan: number }
   | { type: 'stop'; tau: number };
 
 type Ev = Exclude<GtMsg, { type: 'body' } | { type: 'stop' }>;
@@ -25,8 +26,10 @@ type Ev = Exclude<GtMsg, { type: 'body' } | { type: 'stop' }>;
 registerProcessor(
   'guitar-model',
   class extends AudioWorkletProcessor {
-    private readonly e = new Engine(sampleRate);
+    private readonly e = new Engine(sampleRate, true);
     private q: Ev[] = [];
+    /** 右の出力がないときに捨てる先 */
+    private readonly spare = new Float32Array(128);
     constructor() {
       super();
       this.port.onmessage = (ev: MessageEvent<GtMsg>) => {
@@ -42,14 +45,15 @@ registerProcessor(
       };
     }
     private fire(m: Ev): void {
-      if (m.type === 'pluck') this.e.pluck(m.p);
-      else if (m.type === 'damp') this.e.damp(m.si, m.tau);
-      else this.e.noise(m.si, m.buf);
+      if (m.type === 'pluck') this.e.pluck(m.p, m.pan, m.id);
+      else if (m.type === 'damp') this.e.damp(m.si, m.tau, m.id);
+      else this.e.noise(m.si, m.buf, m.pan);
     }
     process(_in: Float32Array[][], outputs: Float32Array[][]): boolean {
       const out = outputs[0];
       if (!out.length) return true;
       const ch = out[0],
+        chR = out[1] ?? this.spare,
         n = ch.length;
       let i = 0;
       while (i < n) {
@@ -63,10 +67,9 @@ registerProcessor(
           }
           this.fire(this.q.shift() as Ev);
         }
-        this.e.render(ch, i, j - i);
+        this.e.render(ch, i, j - i, chR);
         i = j;
       }
-      for (let c = 1; c < out.length; c++) out[c].set(ch);
       return true;
     }
   },
