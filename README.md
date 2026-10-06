@@ -43,3 +43,5 @@ GitHub Actions（[.github/workflows/ci.yml](.github/workflows/ci.yml)）が、PR
 MIT
 
 ただし [src/tools/guitar/chaconne.mid](src/tools/guitar/chaconne.mid) と [src/tools/guitar/chaconne.ts](src/tools/guitar/chaconne.ts)（ギター音響モデルで演奏するシャコンヌの楽譜と、そこから `bun run chaconne` で作る音符と運指）は、[Mutopia Project の楽譜](https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=1426)（入力 Hajo Dezelski）から変換して編集したもので、原作と同じ [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/) で公開します。
+
+[src/tools/piano/scores/](src/tools/piano/scores/) の moonlight1〜3（`.mid` と `.ts`。ピアノ音響モデルで演奏するベートーヴェン「月光」の楽譜と、そこから `bun run piano-scores` で作る音符）は、[Mutopia Project の楽譜](https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=276)（入力 Stewart Holmes）の MIDI から変換したもので、原作と同じ [CC BY-SA 2.5](https://creativecommons.org/licenses/by-sa/2.5/) で公開します。同じディレクトリのほかの曲は、原作がパブリックドメインです。

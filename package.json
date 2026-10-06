@@ -13,7 +13,8 @@
     "lint:fix": "biome check --write .",
     "test": "bun scripts/node.ts vitest run",
     "redirects": "bun scripts/redirects-csv.ts",
-    "chaconne": "bun scripts/chaconne.ts"
+    "chaconne": "bun scripts/chaconne.ts",
+    "piano-scores": "bun scripts/piano-scores.ts"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",

@@ -1,0 +1,242 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import { order, TOOLS } from '../data/tools';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import { ROOMS } from '../lib/reverb';
+import { gridSvg } from '../lib/scope';
+import '../tools/piano/style.css';
+import Credits from '../tools/piano/Credits.astro';
+import { A4S, DIST, EXAG, FMAX, HARD, SLOW, SPANS, THICK, THUMP, UNI, VEL } from '../tools/piano/params';
+import { boardGrid } from '../tools/piano/plot';
+import { PIECES } from '../tools/piano/score';
+import { WOODS } from '../tools/piano/soundboard';
+import { PIANO_TYPES } from '../tools/piano/strings';
+import Theory from '../tools/piano/Theory.astro';
+
+const name = 'ピアノ音響モデル';
+/* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
+const CAT = '音響';
+const related = [
+  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'piano')),
+  ...TOOLS.filter((t) => t.c !== CAT && !t.s),
+];
+---
+<SiteLayout title={name} tool={{ id: 'piano', name }} description="グランドピアノを物理モデルで鳴らします。弦の長さ・太さ・張力、フェルトのハンマー、ユニゾンの弦と響板の結合、ダンパーとペダル、部屋の残響から、弦の振動と音を計算します。" note="音と計算結果は、論文の模型を簡略化した物理モデルによるものです。">
+  <PageTitle title={name}>弦の振動（曲げ剛性と周波数で変わる損失を含む硬い弦）、フェルトのハンマーとの衝突、駒でつながった 2〜3 本のユニゾンの弦と響板（多数のモード）を計算して、ピアノの音を作ります。鍵や弦を押すと、その鍵を打ちます。ハンマーの速さ、ピアノの大きさ、調律、響板の厚さを変えると、音と振動がすぐに変わります。部屋の残響を付けて、曲の演奏もできます。</PageTitle>
+  <div class="mini" aria-hidden="true"><span><i>f</i><sub>1</sub><b id="mF"></b></span><span><i>T</i><sub>60</sub><b id="mT"></b></span><span><i>B</i><b id="mB"></b></span></div>
+
+  <div class="tgrid">
+    <Panel hid="hd-kb" title="鍵盤と弦" class="a-kb">
+      <div slot="aux" class="seg" id="p-nv" role="group" aria-label="振動の見せ方"><button type="button" data-v="blur" aria-pressed="true" title="実際の速さで、目に見える残像（振れる範囲）を描く">残像</button><button type="button" data-v="slow" aria-pressed="false" title="振動をゆっくりにして、弦の形を描く。減衰は実際の速さ">スロー</button></div>
+      <div class="sbar">
+        <span class="stag"><i class="sw" aria-hidden="true"></i>弦の変位 <b id="kb-ex"></b></span>
+        <span class="stag" id="kb-tm"></span>
+        <span class="stag"><span class="led" id="pedLed" aria-hidden="true"></span>ペダル</span>
+        <span class="stag kb-note" id="kb-note"></span>
+      </div>
+      <div class="kbw" id="kbw">
+        <svg class="kbd" id="kbd" tabindex="0" role="group" aria-roledescription="鍵盤" aria-label="鍵盤と弦（上から見た図）。鍵か弦を押すと、その鍵を打ち、離すとダンパーが下りる。左右の矢印キーで半音、上下でオクターブを選び、Enter で打つ"></svg>
+      </div>
+      <p class="sr" id="kb-live" aria-live="polite"></p>
+      <div class="ana2">
+        <div class="ptab">
+          <ChoiceRow k="ex" name="振幅の強調" sub="弦の変位を何倍にして描くか。×1 は弦の間隔に対して実際の大きさ（弦の長さは縮め、間隔は広げて描く）" choices={EXAG.map((v) => [v, `×${v}`] as const)} value={10} fold />
+        </div>
+        <div class="ptab" id="sl-row" hidden>
+          <ChoiceRow k="sl" name="スローの速さ" sub="振動を何分の 1 の速さで描くか" choices={SLOW.map((v) => [v, `1/${v}`] as const)} value={50} fold />
+        </div>
+      </div>
+    </Panel>
+
+    <div class="col c1">
+      <Panel hid="hd-play" title="演奏" class="a-play">
+        <div slot="aux" class="seg"><button type="button" id="playBtn" aria-pressed="false" title="選んだ曲を演奏する・止める"><span class="led" id="playLed" aria-hidden="true"></span><span id="playT">演奏</span></button></div>
+        <div class="ptab">
+          <div class="prow pick" id="p-piece">
+            <div class="c-sym" aria-hidden="true"></div>
+            <div class="c-name"><label class="pn" id="n-piece" for="piece">曲</label><p class="desc tip" id="t-piece" role="tooltip" hidden>著作権の切れた曲の電子楽譜から変換したもの。強さとペダルはこのツールで付ける</p></div>
+            <div class="c-val sel"><select id="piece" autocomplete="off" aria-describedby="t-piece">{PIECES.map((p) => <option value={p.v} title={p.by}>{p.name}</option>)}</select></div>
+          </div>
+        </div>
+        <div class="vgrid">
+          <label class="vl" for="tempo">テンポ</label>
+          <div class="sl"><input type="range" id="tempo" min="25" max="150" step="5" aria-describedby="tempov" title="曲の標準の速さに対する割合。演奏中も変えられる"></div>
+          <output id="tempov" for="tempo"></output>
+          <span></span>
+          <label class="vl" for="vol">音量</label>
+          <div class="sl"><input type="range" id="vol" min="-60" max="0" step="1" aria-describedby="volv" title="スピーカーへ出す大きさ（0 dB で、1 m 先の音圧 1 Pa をフルスケールにする）"></div>
+          <output id="volv" for="vol"></output>
+          <button type="button" class="tg" id="muteBtn" title="鳴っている弦をすべて止める（ダンパーを下ろす）">すべて止める</button>
+        </div>
+        <p class="pl-bar" id="pl-bar" aria-live="off"></p>
+        <p class="msg er snd-msg" id="snd-msg" aria-live="polite"></p>
+      </Panel>
+
+      <Panel hid="hd-hit" title="打鍵" class="a-hit">
+        <div class="ptab">
+          <ParamRow d={VEL} />
+          <ChoiceRow k="hard" name="ハンマーの硬さ" sub="フェルトの硬さ（整音）。硬いほど衝突が短く、高い倍音が強い明るい音になる" choices={HARD.map(([v, l]) => [v, l] as const)} value="1" />
+          <ChoiceRow k="ped" name="ダンパーペダル" sub="踏むとすべてのダンパーが弦から離れ、離した鍵の音も響き続け、ほかの弦も共鳴する。自動では、曲は低音が変わるところで踏みかえ、鍵盤では踏まない" choices={[['auto', '自動'], ['on', '踏む'], ['off', '踏まない']]} value="auto" />
+          <ChoiceRow k="th" name="鍵盤の音" sub="鍵が底に当たる衝撃が、棚板と枠を通して響板を叩く音（コトンという音）の大きさ。強く打つほど大きい" choices={THUMP} value="1" />
+          <ChoiceRow k="soft" name="ソフトペダル" sub="踏むと鍵盤とハンマーが横にずれ、3 本弦の鍵は 2 本、2 本弦の鍵は 1 本だけを、フェルトの柔らかい所で打つ。打たない弦も駒を通して揺れる" choices={[['off', '踏まない'], ['on', '踏む']]} value="off" />
+        </div>
+      </Panel>
+
+      <Panel hid="hd-str" title="弦" class="a-str">
+        <div slot="aux" class="seg" id="p-type" role="group" aria-label="ピアノの大きさ" data-nosave>
+          {PIANO_TYPES.map((t, i) => <button type="button" data-v={t.v} aria-pressed={i === 0 ? 'true' : 'false'} title={`${t.name}（${t.size} cm、最も長い弦 ${t.Lmax} m 程度、響板 ${t.area} m²）`}>{t.v === 'concert' ? 'コンサート' : t.v === 'grand' ? 'グランド' : 'アップライト'}</button>)}
+        </div>
+        <div class="ptab">
+          <ChoiceRow k="tun" name="調律" sub="平均律は第 1 部分音を平均律の周波数にする。ストレッチは、弦の非調和性で高くなる部分音にオクターブを合わせ、高音を高く、低音を低くする" choices={[['stretch', 'ストレッチ'], ['equal', '平均律']]} value="stretch" />
+          <ChoiceRow k="a4" name="基準の高さ" sub="A4 の第 1 部分音の周波数" choices={A4S.map((v) => [v, `${v} Hz`] as const)} value={440} />
+          <ParamRow d={UNI} />
+        </div>
+        <div class="stw">
+          <table class="stab" id="stab">
+            <thead><tr><th scope="col">鍵</th><th scope="col">弦長</th><th scope="col">本数</th><th scope="col">外径</th><th scope="col">張力</th><th scope="col"><i>B</i></th><th scope="col">調律</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </Panel>
+    </div>
+
+    <div class="col c2">
+      <Panel hid="hd-board" title="響板" class="a-board">
+        <div class="ptab">
+          <ChoiceRow k="wood" name="響板の木材" sub="スプルース（ドイツトウヒなど）とエゾマツ。軽く硬い木ほど、駒が動きやすく音がよく出る" choices={WOODS.map((w) => [w.v, w.name, `密度 ${w.rho} kg/m³、ヤング率 ${w.EL / 1e9}・${w.ER / 1e9} GPa（木目の方向・直交方向）`] as const)} value="spruce" />
+          <ParamRow d={THICK} />
+        </div>
+        <dl class="metrics bmet">
+          <div class="m"><dt>最も低いモード <i>f</i><sub>b1</sub></dt><dd id="b-f1"></dd></div>
+          <div class="m"><dt>モードの間隔 Δ<i>f</i></dt><dd id="b-df"></dd></div>
+          <div class="m"><dt>一致周波数 <i>f</i><sub>c</sub></dt><dd id="b-fc"></dd></div>
+          <div class="m"><dt>平均のアドミタンス</dt><dd id="b-y"></dd></div>
+          <div class="m"><dt>面積 <i>A</i></dt><dd id="b-a"></dd></div>
+          <div class="m"><dt>面密度 <i>ρh</i></dt><dd id="b-rh"></dd></div>
+        </dl>
+        <div class="sbar bsbar">
+          <span class="stag"><i class="sw" aria-hidden="true"></i>CH1 駒のアドミタンス <b>10 dB</b>/div</span>
+          <span class="stag"><i class="sw c2" aria-hidden="true"></i>CH2 音圧 ÷ 力 <b>10 dB</b>/div</span>
+          <span class="stag">X LOG <b>20 Hz – 10 kHz</b></span>
+        </div>
+        <div class="scope">
+          <svg viewBox="-46 -16 492 282" id="b-svg" role="img" aria-label="響板の応答">
+            <defs><clipPath id="b-clip"><rect x="0" y="-2" width="400" height="244"/></clipPath></defs>
+            <g set:html={boardGrid()} />
+            <g clip-path="url(#b-clip)"><path class="t2" id="b-t2"/><path class="t1" id="b-t1"/></g>
+            <g id="b-pt"></g>
+            <path class="cur" id="b-cur"/>
+            <g id="b-axes"></g>
+          </svg>
+        </div>
+        <div class="sbar rdbar"><span class="stag rd" id="b-rd"></span></div>
+      </Panel>
+
+      <Panel hid="hd-room" title="部屋" class="a-room">
+        <div class="ptab">
+          <ChoiceRow k="room" name="部屋" sub="響きを付ける部屋。寸法と吸音率から残響時間を求める（再生の音だけに付け、音の波形と計算結果には含めない）" choices={ROOMS.map((r) => [r.v, r.name, r.v === 'off' ? '残響なし' : `${r.dim.join(' × ')} m、平均吸音率 ${r.a}`] as const)} value="small" layout="chips" wide />
+          <ParamRow d={DIST} />
+        </div>
+        <dl class="metrics rmet">
+          <div class="m"><dt>残響時間 <i>T</i><sub>60</sub>（500 Hz）</dt><dd id="r-t"></dd></div>
+          <div class="m"><dt>残響時間 <i>T</i><sub>60</sub>（4 kHz）</dt><dd id="r-th"></dd></div>
+          <div class="m"><dt>臨界距離 <i>r</i><sub>c</sub></dt><dd id="r-rc"></dd></div>
+          <div class="m"><dt>残響音 ÷ 直接音</dt><dd id="r-dr"></dd></div>
+        </dl>
+      </Panel>
+
+      <Collapsible hid="hd-wave" title="音の波形" class="a-wave">
+        <div class="seg wv-sw" id="p-ov" role="group" aria-label="表示"><button type="button" data-v="yt" aria-pressed="true" title="1 m 先の音圧の時間変化">波形</button><button type="button" data-v="sp" aria-pressed="false" title="周波数ごとの大きさ（初めの 1.37 秒）">スペクトラム</button><button type="button" data-v="hm" aria-pressed="false" title="ハンマーが弦を押す力の時間変化">ハンマーの力</button></div>
+        <div id="v-yt">
+          <div class="sbar">
+            <span class="stag"><i class="sw" aria-hidden="true"></i>CH1 音圧 <b id="w-vd"></b>/div</span>
+            <span class="stag">H <b id="w-hd"></b>/div</span>
+            <span class="stag" id="w-st"></span>
+          </div>
+          <div class="scope">
+            <svg viewBox="-50 -14 462 194" id="w-svg" role="img" aria-label="音の波形">
+              <defs><clipPath id="w-clip"><rect x="0" y="0" width="400" height="160"/></clipPath></defs>
+              <g set:html={gridSvg(4)} />
+              <g clip-path="url(#w-clip)"><path class="t1" id="w-t1"/></g>
+              <path class="cur" id="w-cur"/>
+              <g id="w-axes"></g>
+            </svg>
+          </div>
+          <div class="sbar rdbar"><span class="stag rd" id="w-rd"></span></div>
+          <div class="ptab ana"><ChoiceRow k="span" name="表示する長さ" sub="打ってからの時間" choices={SPANS.map((v) => [v, v < 1 ? `${v * 1000} ms` : `${v} s`] as const)} value={0.2} fold /></div>
+        </div>
+        <div id="v-sp" hidden>
+          <div class="sbar">
+            <span class="stag"><i class="sw" aria-hidden="true"></i>CH1 音圧 <b>30 dB</b>/div</span>
+            <span class="stag">X <b id="s-x"></b></span>
+            <span class="stag">WIN <b>B-HARRIS</b></span>
+          </div>
+          <div class="scope">
+            <svg viewBox="-56 -14 468 194" id="s-svg" role="img" aria-label="音のスペクトラム">
+              <defs><clipPath id="s-clip"><rect x="0" y="0" width="400" height="160"/></clipPath></defs>
+              <g set:html={gridSvg(4)} />
+              <g clip-path="url(#s-clip)"><path class="t1 sp" id="s-t1"/></g>
+              <path class="cur" id="s-cur"/>
+              <g id="s-axes"></g>
+            </svg>
+          </div>
+          <div class="sbar rdbar"><span class="stag rd" id="s-rd"></span></div>
+          <div class="ptab ana"><ChoiceRow k="fmax" name="横軸の範囲" sub="スペクトラムの右端の周波数" choices={FMAX.map((v) => [v, `${v / 1000} kHz`] as const)} value={5000} fold /></div>
+        </div>
+        <div id="v-hm" hidden>
+          <div class="sbar">
+            <span class="stag"><i class="sw" aria-hidden="true"></i>CH1 ハンマーの力 <b id="h-vd"></b>/div</span>
+            <span class="stag">H <b id="h-hd"></b>/div</span>
+            <span class="stag" id="h-st"></span>
+          </div>
+          <div class="scope">
+            <svg viewBox="-50 -14 462 194" id="h-svg" role="img" aria-label="ハンマーの力">
+              <defs><clipPath id="h-clip"><rect x="0" y="0" width="400" height="160"/></clipPath></defs>
+              <g set:html={gridSvg(4)} />
+              <g clip-path="url(#h-clip)"><path class="t1" id="h-t1"/></g>
+              <path class="cur" id="h-cur"/>
+              <g id="h-axes"></g>
+            </svg>
+          </div>
+          <div class="sbar rdbar"><span class="stag rd" id="h-rd"></span></div>
+        </div>
+      </Collapsible>
+
+      <Panel hid="hd-res" title="計算結果" class="a-out">
+        <span slot="aux" class="aux" id="res-aux">最後に打った鍵</span>
+        <dl class="metrics">
+          <div class="m m-main"><dt>第 1 部分音 <i>f</i><sub>1</sub></dt><dd><span id="o-f1"></span><span class="m-sub" id="o-f1s"></span></dd></div>
+          <div class="m"><dt>弦長 <i>L</i></dt><dd><span id="o-l"></span><span class="m-sub" id="o-ls"></span></dd></div>
+          <div class="m"><dt>張力 <i>T</i></dt><dd><span id="o-t"></span><span class="m-sub" id="o-ts"></span></dd></div>
+          <div class="m"><dt>特性インピーダンス <i>Z</i><sub>0</sub></dt><dd id="o-z0"></dd></div>
+          <div class="m"><dt>非調和性係数 <i>B</i></dt><dd><span id="o-b"></span><span class="m-sub" id="o-bs"></span></dd></div>
+          <div class="m"><dt>ハンマー</dt><dd><span id="o-mh"></span><span class="m-sub" id="o-mhs"></span></dd></div>
+          <div class="m"><dt>接触時間 <i>t</i><sub>c</sub></dt><dd><span id="o-tc"></span><span class="m-sub" id="o-tcs"></span></dd></div>
+          <div class="m"><dt>打つ点 <i>x</i><sub>0</sub>/<i>L</i></dt><dd><span id="o-x0"></span><span class="m-sub" id="o-x0s"></span></dd></div>
+          <div class="m"><dt>減衰時間 <i>T</i><sub>60</sub>（初め）</dt><dd><span id="o-t1"></span><span class="m-sub" id="o-t1s"></span></dd></div>
+          <div class="m"><dt>減衰時間 <i>T</i><sub>60</sub>（後）</dt><dd><span id="o-t2"></span><span class="m-sub" id="o-t2s"></span></dd></div>
+          <div class="m"><dt>ダンパーで止まる時間</dt><dd><span id="o-td"></span><span class="m-sub" id="o-tds"></span></dd></div>
+          <div class="m"><dt>響板のアドミタンス</dt><dd><span id="o-y"></span><span class="m-sub" id="o-ys"></span></dd></div>
+        </dl>
+      </Panel>
+    </div>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+
+    <Collapsible hid="hd-src" title="楽譜の出典" class="a-src">
+      <Credits />
+    </Collapsible>
+  </div>
+
+  <RelatedTools list={related} />
+  <script>
+    import '../tools/piano/client';
+  </script>
+</SiteLayout>
