@@ -196,6 +196,33 @@ describe('音', () => {
     for (let i = 0; i < y.length; i += 128) e.render(y, i, 128);
     expect(rms(24000, 48000)).toBeLessThan(1e-5);
   });
+  it('ステレオの定位は再生だけに効き、モノラルの音は変わらない', () => {
+    const g = guitar('nylon'),
+      m = modesOf(g, 1, 3, FS),
+      pl = pluckOf(g, 1, m, { pos: 0.13, amp: 1.2e-3, width: 12e-3, rel: 8e-5, angle: Math.PI / 4 }),
+      msg = { si: 1, N: m.N, w: m.w, s: m.s, f: pl.f },
+      run = (stereo: boolean, pan: number) => {
+        const e = new Engine(FS, stereo),
+          l = new Float32Array(FS / 2),
+          r = new Float32Array(FS / 2);
+        e.setBody(bodyDesc(g.body));
+        e.pluck(msg, pan);
+        for (let i = 0; i < l.length; i += 128) e.render(l, i, 128, r);
+        return [l, r];
+      },
+      rms = (a: Float32Array) => Math.sqrt(a.reduce((s, v) => s + v * v, 0) / a.length);
+    /* モノラルは pan を無視する */
+    const [m0] = run(false, 0),
+      [m1] = run(false, 0.8);
+    expect(m1).toEqual(m0);
+    /* 右へ寄せると右が大きい。中央でも胴のモードごとの定位で左右は少し違う */
+    const [l, r] = run(true, 0.5);
+    expect(rms(r)).toBeGreaterThan(rms(l) * 1.5);
+    const [lc, rc] = run(true, 0);
+    expect(rms(lc) / rms(rc)).toBeGreaterThan(0.8);
+    expect(rms(lc) / rms(rc)).toBeLessThan(1.25);
+    expect(lc).not.toEqual(rc);
+  });
   it('何も弾かなければ無音', () => {
     const e = new Engine(FS),
       y = new Float32Array(1024);
