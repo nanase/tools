@@ -14,7 +14,7 @@ import Theory from '../tools/timer555/Theory.astro';
 
 const name = 'タイマIC 555 シミュレータ';
 ---
-<SiteLayout title={name} tool={{ id: 'timer555', name }} description="555 を非安定マルチバイブレータとして使うときの、発振周波数・デューティ比・出力波形を求めます。">
+<SiteLayout title={name} tool={{ id: 'timer555', name }} note="計算結果は理想素子モデルによる参考値です。" description="555 を非安定マルチバイブレータとして使うときの、発振周波数・デューティ比・出力波形を求めます。">
   <PageTitle title={name}>555 を非安定マルチバイブレータとして使うときの、発振周波数・デューティ比・出力波形を求めます。抵抗 2 本とコンデンサ 1 個の値、電源電圧を変えると、結果と波形がすぐに変わります。</PageTitle>
   <div class="mini" aria-hidden="true"><span><i>f</i><b id="mf"></b></span><span><i>D</i><b id="md"></b></span><span><i>T</i><b id="mT"></b></span></div>
 

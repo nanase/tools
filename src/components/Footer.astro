@@ -1,10 +1,10 @@
 ---
 /** フッター: 注記の一文と GitHub アイコン */
 interface Props {
-  /** 注記。省略時は理想素子モデルの注記 */
+  /** 注記。省略時は出さない */
   note?: string | undefined;
 }
-const { note = '計算結果は理想素子モデルによる参考値です。' } = Astro.props;
+const { note } = Astro.props;
 ---
 <footer class="foot">
   <div class="wrap">
