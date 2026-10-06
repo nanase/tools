@@ -9,6 +9,7 @@ import { measSec, measureF0, sound } from '../src/tools/organ/tune';
 import { TUNED } from '../src/tools/organ/tuned';
 import { tuneStop } from '../src/tools/organ/tuner';
 import { deviations, pitchHz, TEMPERAMENTS, temperamentOf } from '../src/tools/organ/tuning';
+import { analyze } from '../src/tools/organ/voice';
 
 const FS = 48000;
 const cents = (a: number, b: number) => 1200 * Math.log2(a / b);
@@ -76,6 +77,18 @@ describe('管', () => {
     expect(new FluePipe({ ...s, l: s.l * 0.9, fit }, FS).fit.p).not.toBe(fit.p);
     const r = pipesOf(stopOf('tr8'), 60, OPT0)[0].spec as ReedSpec;
     expect(new ReedPipe({ ...r, fit: new ReedPipe(r, FS).fit }, FS).fit).toEqual(new ReedPipe(r, FS).fit);
+  });
+  it('プリンシパルの C5 は 60 ms で定常の −3 dB に届き、立ち上がりの増幅は定常の音を変えない', () => {
+    const t = tuneStop('p8', { temp: 'equal', a4: 440, voicing: {} }, FS, TUNED)[36][0],
+      s = t.spec as FlueSpec,
+      x = sound(new FluePipe(s, FS), FS, 0.6, 800),
+      y = sound(new FluePipe({ ...s, onset: 1 }, FS), FS, 0.6, 800),
+      a = analyze(x, t.fMeas, FS, 'flue', false),
+      b = analyze(y, t.fMeas, FS, 'flue', false);
+    expect(a.rise).toBeLessThan(0.06);
+    expect(b.rise).toBeGreaterThan(0.08);
+    expect(Math.abs(20 * Math.log10(a.rms / b.rms))).toBeLessThan(0.2);
+    for (let k = 0; k < 4; k++) expect(Math.abs(20 * Math.log10(a.amp[k] / b.amp[k]))).toBeLessThan(1);
   });
   it('tanh の近似は 1e-4 以内', () => {
     for (let x = -6; x <= 6; x += 0.01) expect(Math.abs(tanhP(x) - Math.tanh(x))).toBeLessThan(1e-4);

@@ -185,8 +185,9 @@ export interface FlueSpec extends WindSpec {
   fastTanh?: boolean;
   /** 乱数の種 */
   seed?: number;
-  /** ジェットの増幅 e^{α_i W} の上限（省くと AMP_MAX） */
+  /** ジェットの増幅 e^{α_i W} の上限（省くと AMP_MAX）と、立ち上がりの小さい振れでの倍率（省くと AMP_ONSET。1 でなし） */
   ampMax?: number;
+  onset?: number;
   /** 先に求めた往復の損失（省くと作るときに求める） */
   fit?: LossFit;
 }
@@ -208,6 +209,18 @@ export const MOUTH = 1.2;
  * 20 倍（W/h ≈ 7.5 に当たる）で切る（試作で決めた概数。15〜20 で 8' C から上の第 1 モードが安定した）
  */
 export const AMP_MAX = 20;
+/**
+ * 立ち上がりの、小さい振れでのジェットの増幅の上限（AMP_MAX に対する倍率）。AMP_MAX は振れが大きく飽和したときの値で、
+ * 振れの小さい立ち上がりのジェットは線形の増幅 e^{α_i W} を受ける。そこで、ジェットの変位（AMP_MAX で求めた値）の
+ * 1 周期の実効値が b に届くまでは、増幅を最大でこの倍率まで大きくし、b に近づくにつれて 1 倍へ戻す（包絡で決めるので、
+ * 波形は歪めない。定常では変位の実効値が 2〜3 b なので、定常の音は変わらない）。
+ * 倍率は、寸法の近い管の実測（長さ 312 mm・内径 27 mm・第 1 共鳴 475 Hz・足の圧力 360 Pa。弁を開いてから足の圧力が
+ * 定常になるまで 26〜45 ms で、基音もそれと並んで育つ。Castellengo 2004、ISMA）に、プリンシパルの C5 が合うように
+ * 決めた概数（1 倍では定常の −3 dB まで 90 ms、3 倍で 40 ms。4 倍では大きく行き過ぎた）。
+ * 1 倍のときの立ち上がりは管の周期の約 40 倍（−3 dB まで）で、Keeler (1972) の約 200 本の管の平均（定常まで、
+ * プリンシパル族で 50 周期、フルート族で 25〜30 周期。Castellengo 1999 の引用）と比べても遅かった
+ */
+export const AMP_ONSET = 3;
 
 /** フルー管の設計から求めた値（表示・検証用） */
 export interface FlueInfo {
@@ -233,7 +246,8 @@ export function flueF1(s: Pick<FlueSpec, 'l' | 'd' | 'H' | 'stopped'>): number {
  * フルー管。管の中の圧力の進行波を 2 本の遅延線（口 → 端、端 → 口）で持ち、口では
  * 口の空気の慣性（端補正 M の質量）・管の特性インピーダンス・唇の渦の損失と、ジェット駆動の圧力の釣り合いを
  * 台形則で解く（渦の損失 k_v |u| u の |u| は 1 標本前の値で置いて 1 次にする）。
- * ジェットの変位は η = (h / U_j) e^{α_i W} v_ac(t − τ)（α_i = 0.4 / h、τ = W / (0.4 U_j)）に乱流の雑音を足し、
+ * ジェットの変位は η = (h / U_j) e^{α_i W} v_ac(t − τ)（α_i = 0.4 / h、τ = W / (0.4 U_j)。増幅は AMP_MAX で切り、
+ * 立ち上がりの小さい振れでは AMP_ONSET まで大きくする）に乱流の雑音を足し、
  * 管に入る流量は Bickley の分布で Q_in = b H U_j (1 + tanh((η − y0) / b))（b = 0.4 h）、
  * 音源は Δp = (ρ δ_d / (W H)) dQ_in/dt（δ_d = (4/π) √(2 h W)）。
  * 式の組み立ては Terrien・Vergez・de la Cuadra・Fabre (2013) のまとめにより、部品は Verge (1995) の博士論文
@@ -279,6 +293,8 @@ export class FluePipe {
   private readonly dg: number;
   private readonly cn: number;
   private readonly nzK: number;
+  private readonly kOn: number;
+  private readonly kE: number;
   /* 開いた端の放射の遅れ（聞く位置までの距離の差）と重み */
   private readonly eBuf: Float64Array;
   private readonly emask: number;
@@ -306,6 +322,8 @@ export class FluePipe {
   private iU = 0;
   private diU = 0;
   private kc = 0;
+  /** ジェットの変位 ÷ b の 2 乗の、1 周期の平均（立ち上がりの増幅を決める） */
+  private env = 0;
   /** 弁を閉じて、音が消えた */
   done = false;
 
@@ -359,7 +377,11 @@ export class FluePipe {
     this.kv = rho / (2 * ALPHA_VC * ALPHA_VC * Sm * Sm);
     const dd = (4 / Math.PI) * Math.sqrt(2 * s.h * s.W);
     this.kSf = (((s.sign ?? 1) * rho * dd) / Sm) * fs;
-    this.Gj = s.h * Math.min(s.ampMax ?? AMP_MAX, Math.exp((0.4 * s.W) / s.h));
+    const amp = s.ampMax ?? AMP_MAX,
+      lin = Math.exp((0.4 * s.W) / s.h);
+    this.Gj = s.h * Math.min(amp, lin);
+    /* 立ち上がりの増幅の倍率 − 1（線形の増幅が上限より小さい管は 0） */
+    this.kOn = Math.max(1, Math.min((s.onset ?? AMP_ONSET) * amp, lin) / amp) - 1;
     this.ib = 1 / (0.4 * s.h);
     this.bH = 0.4 * s.h * s.H;
     this.tauK = (s.W / CP) * fs;
@@ -380,6 +402,7 @@ export class FluePipe {
     this.eBuf = new Float64Array(el);
     this.emask = el - 1;
     this.info = { M, Lac, f1, short: bd.short, g: bd.g, p: bd.p };
+    this.kE = 1 - Math.exp(-f1 / fs);
     this.fit = { g: bd.g, p: bd.p, fs, len: s.l };
   }
 
@@ -409,8 +432,9 @@ export class FluePipe {
       iZc = 1 / Zc,
       gate = this.gate,
       sq2r = Math.sqrt(2 / AIR.rho);
-    let { wi, ji, u, F, Q, pm, tx, ty, lz, pf, g, nz, seed, ew, ue, Uj, dUj, iU, diU, kc } = this,
+    let { wi, ji, u, F, Q, pm, tx, ty, lz, pf, g, nz, seed, ew, ue, Uj, dUj, iU, diU, kc, env } = this,
       peak = 0;
+    const { kOn, kE } = this;
     for (let i = 0; i < len; i++) {
       const pc = toe * wind[i];
       let acc = 0;
@@ -440,10 +464,12 @@ export class FluePipe {
           fr = td - ti,
           j0 = jet[(ji - ti) & jmask],
           j1 = jet[(ji - ti - 1) & jmask],
-          eta = Gj * (j0 + fr * (j1 - j0)) * iU + nzK * nz,
-          x = (eta - y0) * ib;
+          a = Gj * (j0 + fr * (j1 - j0)) * iU * ib,
+          r = env < 1 ? 1 - env : 0,
+          x = (1 + kOn * r * r) * a + (nzK * nz - y0) * ib;
+        env += kE * (a * a - env);
         Qn = bH * Uj * (1 + (fast ? tanhP(x) : Math.tanh(x)));
-      }
+      } else env -= kE * env;
       const dps = kSf * (Qn - Q);
       Q = Qn;
       /*
@@ -507,6 +533,7 @@ export class FluePipe {
     this.iU = iU;
     this.diU = diU;
     this.kc = kc;
+    this.env = env;
     /* 弁を閉じたあと、足の圧力も音も十分小さくなったら止める */
     if (!gate && g === 0 && pf < 1e-3 && peak < 1e-6) this.done = true;
   }
