@@ -13,7 +13,7 @@ export interface Tool {
   s?: 1;
 }
 
-export const CATS = ['電子回路', '制御', 'デジタルフィルタ', '信号・通信', 'SVG'];
+export const CATS = ['電子回路', '制御', 'デジタルフィルタ', '信号・通信', '音響', 'SVG'];
 export const TOOLS: Tool[] = [
   {
     id: 'timer555',
@@ -65,7 +65,7 @@ export const TOOLS: Tool[] = [
   },
   {
     id: 'oscilloscope',
-    c: '信号・通信',
+    c: '音響',
     t: 'オシロスコープ',
     d: 'マイクや音楽ファイルの音を波形で表示します。トリガと表示範囲を変えられ、リサジューも描けます。',
     ic: 'os',
@@ -73,7 +73,7 @@ export const TOOLS: Tool[] = [
   },
   {
     id: 'spectrum',
-    c: '信号・通信',
+    c: '音響',
     t: 'スペクトラムアナライザ',
     d: 'マイクや音楽ファイルの音を FFT で周波数に分け、スペクトラムとスペクトログラムで表示します。',
     ic: 'sp',
@@ -81,7 +81,7 @@ export const TOOLS: Tool[] = [
   },
   {
     id: 'fm-synth',
-    c: '信号・通信',
+    c: '音響',
     t: 'FM音源',
     d: 'ヤマハの FM 音源 IC のように 4 つのオペレータをアルゴリズムでつなぎ、波形とスペクトラムを表示して音でも鳴らします。',
     ic: 'fm',
@@ -89,7 +89,7 @@ export const TOOLS: Tool[] = [
   },
   {
     id: 'guitar',
-    c: '信号・通信',
+    c: '音響',
     t: 'ギター音響モデル',
     d: '弦の材質・太さ・張力、押さえるフレット、弾き方、表板と胴から、アコースティックギターの振動と音を物理モデルで計算して鳴らします。',
     ic: 'gt',

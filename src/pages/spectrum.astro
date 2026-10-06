@@ -17,7 +17,7 @@ import Theory from '../tools/spectrum/Theory.astro';
 
 const name = 'スペクトラムアナライザ';
 /* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
-const CAT = '信号・通信';
+const CAT = '音響';
 const related = [
   ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'spectrum')),
   ...TOOLS.filter((t) => t.c !== CAT && !t.s),
