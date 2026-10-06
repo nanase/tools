@@ -41,3 +41,5 @@ GitHub Actions（[.github/workflows/ci.yml](.github/workflows/ci.yml)）が、PR
 ## ライセンス
 
 MIT
+
+ただし [src/tools/guitar/chaconne.ts](src/tools/guitar/chaconne.ts)（ギター音響モデルで演奏するシャコンヌの音符と運指）は、[Mutopia Project の楽譜](https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=1426)（入力 Hajo Dezelski）から変換したもので、原作と同じ [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/) で公開します。

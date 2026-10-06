@@ -1,0 +1,16 @@
+---
+// 楽譜の出典と、各曲の調弦・標準のテンポ。シャコンヌの音符は CC BY-SA 3.0 の楽譜から変換したので、ここに帰属を表示する
+import { pieceOf } from './score';
+import { tuningOf } from './strings';
+
+const meta = (v: string) => {
+  const p = pieceOf(v);
+  return `調弦 ${tuningOf(p.tuning).name}、標準のテンポ ${p.beat} = ${p.bpm}。`;
+};
+---
+<ul class="srcs">
+  <li><b>シャコンヌ ニ短調 BWV 1004</b>（J. S. バッハ「無伴奏ヴァイオリンのためのパルティータ第 2 番」より）: 音符は <a href="https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=1426">Mutopia Project の楽譜</a>（入力 Hajo Dezelski、底本 Bach-Gesellschaft Edition 1879 Band 27.1、Mutopia-2019/05/30-1426）の MIDI から変換しました。実音を 1 オクターブ下げてギターの音域に移し、同じ時刻の同じ高さの音を 1 つにまとめています。和音だけが書かれ「arpeggio」と指示された小節（89〜120・201〜208）は、拍ごとに 32 分音符で「低・中・高・中」を 2 回往復する分散和音に展開しました。弦とフレットはこのツールの運指で付けています。原作のライセンスは <a href="https://creativecommons.org/licenses/by-sa/3.0/deed.ja">クリエイティブ・コモンズ 表示 - 継承 3.0 非移植（CC BY-SA 3.0）</a>で、変換した音符と運指のデータ（<a href="https://github.com/nanase/tools/blob/main/src/tools/guitar/chaconne.ts">src/tools/guitar/chaconne.ts</a>）も同じライセンスで公開します。{meta('bwv1004')}</li>
+  <li><b>前奏曲 ハ長調 BWV 846</b>（J. S. バッハ「平均律クラヴィーア曲集 第 1 巻」より）: 原曲（パブリックドメイン）をこのツールで入力し、全音上げてニ長調にし、6 弦を D に下げた調弦で弾けるようにしました。{meta('bwv846')}</li>
+  <li><b>メヌエット ト長調 BWV Anh. 114</b>（「アンナ・マグダレーナ・バッハのための音楽帳」より。C. ペツォールト作とされる）: 旋律は原曲（パブリックドメイン）を 1 オクターブ下げたもので、低音はこのツールで付けた簡単な伴奏です。{meta('minuet')}</li>
+  <li><b>グリーンスリーブス</b>（16 世紀のイングランドの旋律、パブリックドメイン）: 旋律に、このツールで低音と内声を付けました。{meta('green')}</li>
+</ul>
