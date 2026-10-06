@@ -1,5 +1,12 @@
 /* オルガン音響モデルのページだけのスタイル（共通は src/styles/site.css） */
 
+/* 押している鍵の色（白鍵も黒鍵も。警告色の --warn とは分ける） */
+:root{--key-on:#d7262e}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){--key-on:#ff5a4f}
+}
+:root[data-theme="dark"]{--key-on:#ff5a4f}
+
 /* 枠の並び。スマホは 管と鍵盤 → 演奏 → ストップ → 風と調律 → 整音 → 部屋 → 音の波形 → 計算結果 → 式 → 楽譜の出典。
    PC は上に 管と鍵盤（全幅）、左の列に 演奏・ストップ・風と調律、右の列に 整音・部屋・音の波形・計算結果、その下に 式・出典（全幅） */
 .a-pp{order:1}.a-play{order:2}.a-stops{order:3}.a-wind{order:4}.a-voice{order:5}.a-room{order:6}.a-wave{order:7}.a-out{order:8}.a-thy{order:9}.a-src{order:10}
@@ -27,11 +34,11 @@
 
 /* 管と鍵盤。狭い画面では横にスクロールする */
 .ppw{overflow-x:auto;overscroll-behavior-x:contain;border:1px solid var(--line);border-radius:var(--r);background:var(--screen);box-shadow:inset 0 1px 3px rgb(0 0 0 / .12)}
-.ppw{--og-pipe:#c3c8bf;--og-rd:#b9a678;--og-mouth:#3b434a;--og-chest:var(--inset);--kb-w:#f4f5f1;--kb-b:#2a2f33;--kb-on:#b4bab0}
+.ppw{--og-pipe:#c3c8bf;--og-rd:#b9a678;--og-mouth:#3b434a;--og-chest:var(--inset);--kb-w:#f4f5f1;--kb-b:#2a2f33}
 @media (prefers-color-scheme:dark){
-  :root:not([data-theme="light"]) .ppw{--og-pipe:#5d646a;--og-rd:#6f6448;--og-mouth:#14171a;--og-chest:var(--surface);--kb-w:#d9dcd6;--kb-b:#15181a;--kb-on:#8d938a}
+  :root:not([data-theme="light"]) .ppw{--og-pipe:#5d646a;--og-rd:#6f6448;--og-mouth:#14171a;--og-chest:var(--surface);--kb-w:#d9dcd6;--kb-b:#15181a}
 }
-:root[data-theme="dark"] .ppw{--og-pipe:#5d646a;--og-rd:#6f6448;--og-mouth:#14171a;--og-chest:var(--surface);--kb-w:#d9dcd6;--kb-b:#15181a;--kb-on:#8d938a}
+:root[data-theme="dark"] .ppw{--og-pipe:#5d646a;--og-rd:#6f6448;--og-mouth:#14171a;--og-chest:var(--surface);--kb-w:#d9dcd6;--kb-b:#15181a}
 .ppd{display:block;width:100%;min-width:900px;height:auto;touch-action:pan-x pan-y;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
 .ppd:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
 .og-chest{fill:var(--og-chest);stroke:var(--line-2);stroke-width:1}
@@ -44,8 +51,14 @@
 .kk{stroke:var(--line-2);stroke-width:.8}
 .kk.w{fill:var(--kb-w)}
 .kk.b{fill:var(--kb-b)}
-.kk.w.on{fill:var(--kb-on)}
-.kk.b.on{fill:var(--ink-3)}
+.kk.on{fill:var(--key-on)}
+/* 鍵盤の札（II・I・P）。管を描いている鍵盤の札は塗り、風箱から線でつなぐ */
+.kb-l{fill:none;stroke:var(--line-2);stroke-width:1}
+.kb-l.on{fill:var(--ink);stroke:var(--ink)}
+.kb-lt{fill:var(--ink-2);font:700 12px var(--mono);pointer-events:none}
+.kb-lt.on{fill:var(--surface)}
+.og-link{fill:none;stroke:var(--ink-3);stroke-width:1.4}
+.kb-t{fill:var(--ink-2);font:500 12px var(--mono)}
 /* 管の中の音圧（信号色）: 残像は帯、スローは線 */
 .og-v{fill:none;stroke:var(--ch1);stroke-width:1.4;stroke-linejoin:round;pointer-events:none}
 .og-v.band{fill:var(--ch1);fill-opacity:.4;stroke-width:.6;stroke-opacity:.8}
@@ -55,11 +68,13 @@
 .pp-note{margin-left:auto}
 @media (max-width:559px){.pp-note{margin-left:0}}
 
-/* ストップ: 鍵盤ごとに、押して入れ切りするチップ */
+/* ストップ: 鍵盤ごと（上から第 2 手鍵盤・第 1 手鍵盤・ペダル）に、押して入れ切りするチップ。管が鳴っている間は LED を点ける */
 .stops{display:grid;gap:12px;padding:4px 8px 6px}
-.sdn{margin:0 0 6px;font:700 13px/1.4 var(--sans);color:var(--ink-2)}
+.sdn{display:flex;align-items:center;gap:8px;margin:0 0 6px;font:700 13px/1.4 var(--sans);color:var(--ink-2)}
+.sdv{display:inline-grid;place-items:center;min-width:26px;height:20px;padding:0 4px;border:1px solid var(--line-2);border-radius:4px;font:700 11.5px/1 var(--mono)}
 .sdiv .chips{display:flex;flex-wrap:wrap;gap:6px}
-.chip.stop{font-family:var(--mono)}
+.chip.stop{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono)}
+.s-key{display:inline-flex;align-items:center;gap:6px}
 
 /* 計算結果 */
 .m-sub{display:block;margin-top:2px;font:12px/1.5 var(--sans);color:var(--ink-3)}

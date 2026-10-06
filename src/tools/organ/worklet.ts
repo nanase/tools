@@ -1,7 +1,8 @@
 /**
  * オルガンの音を作る AudioWorklet。audio.ts が ?worker&url で読み込み、'organ-model' として使う。
  * 管の弁を開く・閉じるを、指定の時刻（AudioContext の時刻）に標本の単位で行う。
- * 出力はステレオで、部屋の残響を足す（再生だけ。表示用の計算には使わない）
+ * 出力はステレオで、部屋の残響を足す（再生だけ。表示用の計算には使わない）。
+ * 弁の開いている管のストップが変わったら、主スレッドへ知らせる（ストップのボタンの点灯）
  */
 import { Reverb, type ReverbSpec } from '../../lib/reverb';
 import { Engine, type PipeMsg, type WindDesc } from './engine';
@@ -14,13 +15,22 @@ declare class AudioWorkletProcessor {
 }
 declare function registerProcessor(name: string, ctor: new () => AudioWorkletProcessor): void;
 
-/** 主スレッドから送るもの。at は AudioContext の時刻 [s]（過ぎていればすぐ） */
+/**
+ * 主スレッドから送るもの。at は AudioContext の時刻 [s]（過ぎていればすぐ）。
+ * release はその時刻にすべての弁を閉じ（予定は残す）、stop は予定を消してすぐにすべての弁を閉じる
+ */
 export type OgMsg =
   | { type: 'wind'; w: WindDesc }
   | { type: 'room'; r: ReverbSpec }
   | { type: 'on'; at: number; p: PipeMsg[] }
   | { type: 'off'; at: number; ids: string[] }
+  | { type: 'release'; at: number }
   | { type: 'stop' };
+/** 主スレッドへ送るもの: 弁の開いている管のストップ（前に送ってから開いて閉じたものも含める） */
+export type OgOut = { type: 'stops'; ids: string[] };
+
+/** 弁の開いているストップを調べる間隔 [処理の回数]（128 標本ごと。48 kHz で約 21 ms） */
+const REPORT = 8;
 
 type Ev = Extract<OgMsg, { at: number }>;
 
@@ -31,6 +41,10 @@ registerProcessor(
     private readonly rv = new Reverb(sampleRate);
     private q: Ev[] = [];
     private readonly spare = new Float32Array(128);
+    /** 前に送ってから弁を開いたストップと、前に送ったもの */
+    private readonly flash = new Set<string>();
+    private sent = '';
+    private tick = 0;
     constructor() {
       super();
       this.port.onmessage = (ev: MessageEvent<OgMsg>) => {
@@ -49,8 +63,22 @@ registerProcessor(
       };
     }
     private fire(m: Ev): void {
-      if (m.type === 'on') for (const p of m.p) this.e.on(p);
-      else for (const id of m.ids) this.e.off(id);
+      if (m.type === 'on')
+        for (const p of m.p) {
+          this.e.on(p);
+          this.flash.add(p.id.slice(0, p.id.indexOf(':')));
+        }
+      else if (m.type === 'off') for (const id of m.ids) this.e.off(id);
+      else this.e.allOff();
+    }
+    /** 弁の開いているストップが変わっていれば送る */
+    private report(): void {
+      const ids = [...this.e.openStops(this.flash)].sort(),
+        key = ids.join(',');
+      this.flash.clear();
+      if (key === this.sent) return;
+      this.sent = key;
+      this.port.postMessage({ type: 'stops', ids } satisfies OgOut);
     }
     process(_in: Float32Array[][], outputs: Float32Array[][]): boolean {
       const out = outputs[0];
@@ -73,6 +101,10 @@ registerProcessor(
         i = j;
       }
       this.rv.process(ch, chR, 0, n);
+      if (++this.tick >= REPORT) {
+        this.tick = 0;
+        this.report();
+      }
       return true;
     }
   },

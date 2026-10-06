@@ -415,6 +415,10 @@ export class FluePipe {
   off(): void {
     this.gate = 0;
   }
+  /** 弁が開いているか */
+  get open(): boolean {
+    return this.gate === 1;
+  }
 
   /**
    * out[off] から len 標本に、1 m 先の音圧 [Pa] を足す。wind は風箱の圧力 [Pa]（out と同じ標本の並び、
@@ -720,6 +724,9 @@ export class ReedPipe {
   }
   off(): void {
     this.gate = 0;
+  }
+  get open(): boolean {
+    return this.gate === 1;
   }
 
   /** FluePipe.render と同じ */

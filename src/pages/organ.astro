@@ -13,7 +13,7 @@ import '../tools/organ/style.css';
 import Credits from '../tools/organ/Credits.astro';
 import { A4S, CUT, DIST, EXAG, FMAX, SCALE, SLOW, SPANS, WIND } from '../tools/organ/params';
 import { PIECES } from '../tools/organ/score';
-import { DIVS, STOPS } from '../tools/organ/stops';
+import { divOf, STOPS } from '../tools/organ/stops';
 import Theory from '../tools/organ/Theory.astro';
 import { TEMPERAMENTS } from '../tools/organ/tuning';
 
@@ -24,6 +24,9 @@ const related = [
   ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'organ')),
   ...TOOLS.filter((t) => t.c !== CAT && !t.s),
 ];
+/* 鍵盤は実際のコンソールと同じく、上から第 2 手鍵盤・第 1 手鍵盤・ペダルの順に並べる */
+const CONSOLE = (['II', 'I', 'P'] as const).map(divOf);
+const consoleStops = CONSOLE.flatMap((d) => STOPS.filter((s) => s.div === d.v));
 ---
 <SiteLayout title={name} tool={{ id: 'organ', name }} description="パイプオルガンを物理モデルで鳴らします。フルー管のエアジェットとリード管の舌の自励振動、管の共鳴、風箱の風と教会の残響から、管の振動と音を計算します。" note="音と計算結果は、論文の模型を簡略化した物理モデルによるものです。">
   <PageTitle title={name}>フルー管（唇管）は、口から吹き出す空気の薄い流れ（ジェット）が管の中の音で揺れ、唇の内と外へ振り分けられて音を保つ自励振動として、リード管（舌管）は、真鍮の舌がシャロットに当たって風を断続させる自励振動として計算します。管の長さと太さ、口の寸法、風圧から、管ごとの音が決まります。ストップを選んで鍵を押すと、その管が鳴ります。教会の残響を付けて、曲の演奏もできます。</PageTitle>
@@ -39,11 +42,11 @@ const related = [
         <span class="stag pp-note" id="pp-note"></span>
       </div>
       <div class="ppw" id="ppw">
-        <svg class="ppd" id="ppd" tabindex="0" role="group" aria-roledescription="鍵盤" aria-label="選んだストップの管と鍵盤。鍵か管を押すと、選んだ鍵盤のストップの管が鳴る。左右の矢印キーで半音、上下でオクターブを選び、Enter で弾く"></svg>
+        <svg class="ppd" id="ppd" tabindex="0" role="group" aria-roledescription="鍵盤" aria-label="上から第 2 手鍵盤・第 1 手鍵盤・ペダルの 3 つの鍵盤と、描く管に選んだストップの管。鍵か管を押すと、その鍵盤の入っているストップの管が鳴る。左右の矢印キーで半音、上下の矢印キーで鍵盤、Page Up と Page Down でオクターブを選び、Enter で弾く"></svg>
       </div>
       <p class="sr" id="pp-live" aria-live="polite"></p>
       <div class="ptab">
-        <ChoiceRow k="view" name="描く管" sub="図に並べるストップ。鍵盤はそのストップの鍵盤になる" choices={STOPS.map((s) => [s.id, s.name] as const)} value="p8" layout="chips" wide />
+        <ChoiceRow k="view" name="描く管" sub="図に並べるストップ。そのストップの鍵盤（左の札を塗り、風箱から線でつなぐ）の鍵の上に管を描く" choices={consoleStops.map((s) => [s.id, s.name] as const)} value="p8" layout="chips" wide />
       </div>
       <div class="ana2">
         <div class="ptab">
@@ -69,7 +72,7 @@ const related = [
           <label class="vl" for="tempo">テンポ</label>
           <div class="sl"><input type="range" id="tempo" min="25" max="150" step="5" aria-describedby="tempov" title="曲の標準の速さに対する割合。演奏中も変えられる"></div>
           <output id="tempov" for="tempo"></output>
-          <span></span>
+          <button type="button" class="tg" id="relBtn" title="押しているすべての鍵から手を離す（演奏は続ける）">リリース</button>
           <label class="vl" for="vol">音量</label>
           <div class="sl"><input type="range" id="vol" min="-60" max="0" step="1" aria-describedby="volv" title="スピーカーへ出す大きさ（0 dB で、1 m 先の音圧 1 Pa をフルスケールにする）"></div>
           <output id="volv" for="vol"></output>
@@ -80,15 +83,13 @@ const related = [
       </Panel>
 
       <Panel hid="hd-stops" title="ストップ" class="a-stops">
-        <div slot="aux" class="seg" id="p-div" role="group" aria-label="弾く鍵盤">
-          {DIVS.map((d, i) => <button type="button" data-v={d.v} aria-pressed={i === 0 ? 'true' : 'false'} title={`図の下の鍵盤で ${d.name} を弾く`}>{d.short}</button>)}
-        </div>
+        <span slot="aux" class="aux s-key"><span class="led on" aria-hidden="true"></span>鳴っている</span>
         <div class="stops" id="stops">
-          {DIVS.map((d) => (
+          {CONSOLE.map((d) => (
             <div class="sdiv" data-div={d.v}>
-              <p class="sdn">{d.name}</p>
+              <p class="sdn"><span class="sdv" aria-hidden="true">{d.short}</span>{d.name}</p>
               <div class="chips" role="group" aria-label={`${d.name}のストップ`}>
-                {STOPS.filter((s) => s.div === d.v).map((s) => <button type="button" class="chip stop" data-stop={s.id} aria-pressed="false" title={s.note}>{s.name}</button>)}
+                {STOPS.filter((s) => s.div === d.v).map((s) => <button type="button" class="chip stop" data-stop={s.id} aria-pressed="false" title={`${s.note}。管が鳴っている間は印が点く`}><span class="led" aria-hidden="true"></span>{s.name}</button>)}
               </div>
             </div>
           ))}

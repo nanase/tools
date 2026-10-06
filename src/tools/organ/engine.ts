@@ -54,8 +54,17 @@ function flowOf(m: PipeMsg, p: number): number {
   return 0.5 * s.w * s.y0 * v;
 }
 
+/** 設定の数の値が同じか（調律し直した管は、鳴り残っていても別の管として作り直す） */
+function sameSpec(a: object, b: object): boolean {
+  const o = b as Record<string, unknown>;
+  for (const [k, v] of Object.entries(a)) if (typeof v === 'number' && o[k] !== v) return false;
+  return true;
+}
+
 export class Engine {
   private readonly live = new Map<string, Live>();
+  /** 作り直した古い管に付ける番号 */
+  private seq = 0;
   private wind: WindDesc = { p0: { I: 800, II: 700, P: 900 }, tremHz: 5, tremDepth: 0, sag: 0, tau: 0.05 };
   /** 風箱ごとの、空気の量による圧力の下がりの状態 [Pa] と、その標本ごとの値 */
   private readonly drop = new Float64Array(3);
@@ -72,12 +81,18 @@ export class Engine {
     this.wind = w;
   }
 
-  /** 管を鳴らす（同じ番号の管が鳴っていれば、弁を開き直す） */
+  /** 管を鳴らす（同じ番号・同じ設定の管が鳴っていれば、弁を開き直す） */
   on(m: PipeMsg): void {
     const cur = this.live.get(m.id);
-    if (cur) {
+    if (cur && sameSpec(cur.pipe.spec, m.spec)) {
       cur.pipe.on();
       return;
+    }
+    /* 設定の違う古い管は、弁を閉じて別の番号で鳴り終わらせる */
+    if (cur) {
+      cur.pipe.off();
+      this.live.delete(m.id);
+      this.live.set(`${m.id}#${++this.seq}`, cur);
     }
     const pipe =
       m.kind === 'flue' ? new FluePipe(m.spec as FlueSpec, this.fs) : new ReedPipe(m.spec as ReedSpec, this.fs);
@@ -104,6 +119,12 @@ export class Engine {
   /** 鳴っている管の番号 */
   active(): string[] {
     return [...this.live.keys()];
+  }
+
+  /** 弁の開いている管のストップ（管の番号の「:」の前） */
+  openStops(out: Set<string>): Set<string> {
+    for (const [id, l] of this.live) if (l.pipe.open) out.add(id.slice(0, id.indexOf(':')));
+    return out;
   }
 
   /** out[off] から len 標本を書く（上書き）。len は 128 以下。ステレオなら左を out、右を outR に書く */

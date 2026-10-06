@@ -4,7 +4,7 @@
  */
 import type { ReverbSpec } from '../../lib/reverb';
 import type { PipeMsg, WindDesc } from './engine';
-import type { OgMsg } from './worklet';
+import type { OgMsg, OgOut } from './worklet';
 import workletUrl from './worklet.ts?worker&url';
 
 type Ctor = typeof AudioContext;
@@ -38,6 +38,8 @@ export class OrganAudio {
   private room: ReverbSpec | null = null;
   private db = -30;
   private idle: ReturnType<typeof setTimeout> | undefined;
+  /** 弁の開いている管のストップが変わったときに呼ぶ */
+  onStops: ((ids: string[]) => void) | null = null;
 
   get fs(): number {
     return this.ac?.sampleRate ?? FS;
@@ -64,6 +66,9 @@ export class OrganAudio {
         lim.release.value = 0.15;
         master.gain.value = 10 ** (this.db / 20);
         node.connect(master).connect(lim).connect(ac.destination);
+        node.port.onmessage = (e: MessageEvent<OgOut>) => {
+          if (e.data.type === 'stops') this.onStops?.(e.data.ids);
+        };
         this.node = node;
         this.master = master;
         if (this.wind) this.post({ type: 'wind', w: this.wind });
@@ -106,6 +111,10 @@ export class OrganAudio {
   }
   off(ids: string[], at = 0): void {
     if (ids.length) this.post({ type: 'off', at, ids });
+  }
+  /** 時刻 at にすべての弁を閉じる（その後の予定は残す） */
+  release(at = 0): void {
+    this.post({ type: 'release', at });
   }
   /** 予定を消して、すべての弁を閉じる */
   stop(): void {

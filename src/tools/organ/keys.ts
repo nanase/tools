@@ -1,21 +1,27 @@
 /**
- * 管と鍵盤の図。選んだストップの管を、鍵の上に並べて正面から描く（管の長さと太さは実際に比例させ、図に収まるように
- * 縮める）。鳴っている管には、管の中の音圧の分布（定在波）を描く。残像は振れる範囲、スローは瞬間の分布。
- * 下の鍵盤で、選んだ鍵盤（第 1・第 2 手鍵盤、ペダル）を弾く
+ * 管と鍵盤の図。実際のコンソールと同じく、第 2 手鍵盤・第 1 手鍵盤を上下に重ね、ペダルを一番下に置いて、3 つの鍵盤を
+ * 同時に描く（押している鍵は赤）。その上に、選んだストップの管を、そのストップの鍵盤の鍵に合わせて正面から描く
+ * （管の長さと太さは実際に比例させ、図に収まるように縮める）。管を描いている鍵盤は、左の札と線で示す。
+ * 鳴っている管には、管の中の音圧の分布（定在波）を描く。残像は振れる範囲、スローは瞬間の分布
  */
+import { type Div, divOf } from './stops';
 import { isBlack } from './tuning';
 
-/** 図の座標: 幅・高さ、鍵盤の左右の端と上端、白鍵・黒鍵の長さ、管の足の下端 */
+/** 図の座標: 幅・高さ、鍵盤の左右の端（左に鍵盤の札）、管の足の下端（風箱の上面）と風箱の厚さ */
 const W = 1000,
-  H = 360,
-  KX0 = 6,
+  H = 446,
+  KX0 = 46,
   KX1 = 994,
-  KY = 282,
-  WH = 72,
-  BH = 44,
-  BASE = 268;
+  BASE = 238,
+  CHEST = 10;
+/** 鍵盤の段（上から第 2 手鍵盤・第 1 手鍵盤・ペダル）: 上端・白鍵の長さ・黒鍵の長さ */
+const ROWS: readonly { div: Div; y: number; wh: number; bh: number }[] = [
+  { div: 'II', y: 256, wh: 54, bh: 33 },
+  { div: 'I', y: 316, wh: 54, bh: 33 },
+  { div: 'P', y: 384, wh: 58, bh: 30 },
+];
 /** 最も長い管を描く長さ（足を除く） */
-const LEN_PX = 220;
+const LEN_PX = 196;
 /** 管の足（口より下）の長さ */
 const FOOT = 16;
 /** 分布を描く点の数・残像の位相の数・倍音の数 */
@@ -50,7 +56,7 @@ export interface Sounding {
 }
 
 export interface KeysOpt {
-  onKey(key: number, down: boolean): void;
+  onKey(div: Div, key: number, down: boolean): void;
   now(): number;
 }
 
@@ -61,9 +67,29 @@ const el = <K extends keyof SVGElementTagNameMap>(tag: K, cls: string, parent: E
   parent.appendChild(e);
   return e;
 };
+const rowOf = (d: Div) => ROWS.find((r) => r.div === d) ?? ROWS[0];
+const kk = (d: Div, key: number) => `${d}:${key}`;
+
+/** 鍵の矩形 [x, y, 幅, 高さ]（鍵盤 d の範囲で、白鍵を等しく並べる） */
+function keyRect(d: Div, key: number): [number, number, number, number] {
+  const { lo, hi } = divOf(d),
+    r = rowOf(d);
+  let n = 0,
+    wi = 0;
+  for (let k = lo; k <= hi; k++)
+    if (!isBlack(k)) {
+      n++;
+      if (k < key) wi++;
+    }
+  const ww = (KX1 - KX0) / n;
+  if (!isBlack(key)) return [KX0 + wi * ww, r.y, ww, r.wh];
+  const bw = ww * (d === 'P' ? 0.5 : 0.58);
+  return [KX0 + wi * ww - bw / 2, r.y, bw, r.bh];
+}
 
 export class Keys {
-  /** 鍵盤の範囲（MIDI の番号） */
+  /** 管を描く鍵盤と、その範囲（MIDI の番号） */
+  private div: Div = 'I';
   private lo = 36;
   private hi = 96;
   /** 鍵ごとの管（ミクスチュアは複数） */
@@ -74,49 +100,43 @@ export class Keys {
   private mode: 'blur' | 'slow' = 'blur';
   private slow = 50;
   private readonly snd = new Map<number, Sounding[]>();
-  private readonly down = new Set<number>();
+  private readonly down = new Set<string>();
   private rips: { x: number; y: number; t0: number }[] = [];
   private readonly gStatic: SVGGElement;
   private readonly gVib: SVGPathElement;
   private readonly gRip: SVGGElement;
   private readonly gKeys: SVGGElement;
-  private keyEls = new Map<number, SVGRectElement>();
+  private readonly gLbl: SVGGElement;
+  private readonly title: SVGTextElement;
+  private readonly keyEls = new Map<string, SVGRectElement>();
   private readonly hover: SVGRectElement;
   private readonly cursor: SVGRectElement;
   private raf = 0;
-  private cur = 60;
-  private readonly ptr = new Map<number, number>();
+  private cur: { div: Div; key: number } = { div: 'I', key: 60 };
+  private readonly ptr = new Map<number, { div: Div; key: number }>();
 
   constructor(
     readonly svg: SVGSVGElement,
     private readonly opt: KeysOpt,
   ) {
     svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    this.title = el('text', 'kb-t', svg);
+    this.title.setAttribute('x', String(KX0));
+    this.title.setAttribute('y', '14');
     this.gStatic = el('g', 'og-st', svg);
     this.gVib = el('path', 'og-v', svg);
     this.gRip = el('g', 'og-rips', svg);
+    this.gLbl = el('g', 'og-lbls', svg);
     this.gKeys = el('g', 'og-keys', svg);
     this.hover = el('rect', 'og-hv', svg);
     this.cursor = el('rect', 'og-cur', svg);
     this.hover.style.display = this.cursor.style.display = 'none';
+    this.drawKeys();
     this.bind();
   }
 
   /* ---------- 座標 ---------- */
-  private nWhite(): number {
-    let n = 0;
-    for (let k = this.lo; k <= this.hi; k++) if (!isBlack(k)) n++;
-    return n;
-  }
-  private keyRect(key: number): [number, number, number, number] {
-    let wi = 0;
-    for (let k = this.lo; k < key; k++) if (!isBlack(k)) wi++;
-    const ww = (KX1 - KX0) / this.nWhite();
-    if (!isBlack(key)) return [KX0 + wi * ww, KY, ww, WH];
-    const bw = ww * 0.58;
-    return [KX0 + wi * ww - bw / 2, KY, bw, BH];
-  }
-  /** 鍵の管の中心の x（半音ごとに等しい間隔） */
+  /** 鍵の管の中心の x（管を描く鍵盤の範囲で、半音ごとに等しい間隔） */
   private px(key: number, slot = 0, n = 1): number {
     const sp = (KX1 - KX0) / (this.hi - this.lo + 1),
       x = KX0 + (key - this.lo + 0.5) * sp;
@@ -128,20 +148,27 @@ export class Keys {
   }
 
   /* ---------- 設定 ---------- */
-  /** 鍵盤の範囲と、表示するストップの管 */
-  setRank(lo: number, hi: number, pipes: PipeGeo[][]): void {
+  /** 管を描く鍵盤と、その鍵盤の範囲の鍵ごとの管 */
+  setRank(div: Div, pipes: PipeGeo[][]): void {
+    const { lo, hi } = divOf(div);
+    this.div = div;
     this.lo = lo;
     this.hi = hi;
     this.pipes = pipes;
-    const lmax = Math.max(...pipes.flat().map((g) => g.l)),
-      dmax = Math.max(...pipes.flat().map((g) => g.d)),
+    const all = pipes.flat(),
+      lmax = Math.max(0.3, ...all.map((g) => g.l)),
+      dmax = Math.max(1e-3, ...all.map((g) => g.d)),
       sp = (KX1 - KX0) / (hi - lo + 1);
-    this.scale = LEN_PX / Math.max(0.3, lmax);
+    this.scale = LEN_PX / lmax;
     this.wscale = (0.86 * sp) / dmax;
     this.snd.clear();
     this.drawStatic();
-    this.drawKeys();
+    this.drawLabels();
     this.kick();
+  }
+  /** 図の上に書く、描いている管の名前 */
+  setTitle(s: string): void {
+    if (this.title.textContent !== s) this.title.textContent = s;
   }
   setExag(k: number): void {
     this.exag = k;
@@ -155,37 +182,38 @@ export class Keys {
     this.slow = n;
     this.kick();
   }
-  setDown(key: number, on: boolean): void {
-    if (on) this.down.add(key);
-    else this.down.delete(key);
-    this.keyEls.get(key)?.classList.toggle('on', on);
+  /** 鍵盤 div の鍵 key を押している（赤く塗る） */
+  setDown(div: Div, key: number, on: boolean): void {
+    const k = kk(div, key);
+    if (on) this.down.add(k);
+    else this.down.delete(k);
+    this.keyEls.get(k)?.classList.toggle('on', on);
   }
-  /** 鍵 key の管を鳴らす（同じ鍵の前の音は置きかえる） */
+  /** 管を描く鍵盤の鍵 key の管を鳴らす（同じ鍵の前の音は置きかえる） */
   set(key: number, s: Sounding[]): void {
+    if (!s.length) return;
     this.snd.set(key, s);
-    const g = this.pipes[key - this.lo]?.[0];
-    if (g) this.rips.push({ x: this.px(key), y: BASE - FOOT, t0: s[0]?.t0 ?? this.opt.now() });
+    if (this.pipes[key - this.lo]?.[0]) this.rips.push({ x: this.px(key), y: BASE - FOOT, t0: s[0].t0 });
     this.kick();
   }
-  /** 鍵 key の弁を時刻 t に閉じる */
+  /** 管を描く鍵盤の鍵 key の弁を時刻 t に閉じる */
   release(key: number, t: number): void {
     for (const s of this.snd.get(key) ?? []) if (s.t1 > t) s.t1 = t;
     this.kick();
   }
+  /** 管の振動と、押している鍵の印を消す */
   clear(): void {
     this.snd.clear();
-    for (const k of [...this.down]) this.setDown(k, false);
+    for (const k of this.down) this.keyEls.get(k)?.classList.remove('on');
+    this.down.clear();
     this.kick();
-  }
-  sounding(): Set<number> {
-    return new Set(this.snd.keys());
   }
 
   /* ---------- 描画 ---------- */
   private drawStatic(): void {
     let h = '';
     /* 管を並べる台（風箱）の上面 */
-    h += `<rect class="og-chest" x="${KX0}" y="${BASE}" width="${KX1 - KX0}" height="${KY - BASE - 4}"/>`;
+    h += `<rect class="og-chest" x="${KX0}" y="${BASE}" width="${KX1 - KX0}" height="${CHEST}"/>`;
     this.pipes.forEach((ps, i) => {
       const key = i + this.lo;
       ps.forEach((g, j) => {
@@ -208,34 +236,49 @@ export class Keys {
           h += `<rect class="og-boot" x="${(x - Math.max(1.5, w * 0.35)).toFixed(2)}" y="${BASE - FOOT - 6}" width="${Math.max(3, w * 0.7).toFixed(2)}" height="6"/>`;
       });
     });
-    /* オクターブの目印 */
     this.gStatic.innerHTML = h;
   }
 
+  /** 鍵盤の札（II・I・P）。管を描いている鍵盤の札を塗り、風箱から線でつなぐ */
+  private drawLabels(): void {
+    let h = '';
+    for (const r of ROWS) {
+      const d = divOf(r.div),
+        y = r.y + r.wh / 2,
+        on = r.div === this.div;
+      /* 風箱の左端から、ほかの札の左を通って札へ */
+      if (on) h += `<path class="og-link" d="M${KX0} ${BASE + CHEST / 2}H3V${y}H8"/>`;
+      h += `<rect class="kb-l${on ? ' on' : ''}" x="8" y="${y - 12}" width="28" height="24" rx="4"/>`;
+      h += `<text class="kb-lt${on ? ' on' : ''}" x="22" y="${y + 4.5}" text-anchor="middle">${d.short}</text>`;
+    }
+    this.gLbl.innerHTML = h;
+  }
+
   private drawKeys(): void {
-    this.gKeys.innerHTML = '';
-    this.keyEls.clear();
-    const order = [];
-    for (let k = this.lo; k <= this.hi; k++) if (!isBlack(k)) order.push(k);
-    for (let k = this.lo; k <= this.hi; k++) if (isBlack(k)) order.push(k);
-    for (const k of order) {
-      const r = el('rect', isBlack(k) ? 'kk b' : 'kk w', this.gKeys),
-        [x, y, w, h] = this.keyRect(k);
-      r.setAttribute('x', x.toFixed(2));
-      r.setAttribute('y', String(y));
-      r.setAttribute('width', w.toFixed(2));
-      r.setAttribute('height', String(h));
-      r.setAttribute('rx', '2');
-      r.classList.toggle('on', this.down.has(k));
-      this.keyEls.set(k, r);
+    for (const r of ROWS) {
+      const { lo, hi } = divOf(r.div),
+        g = el('g', `kb kb-${r.div}`, this.gKeys),
+        order = [];
+      for (let k = lo; k <= hi; k++) if (!isBlack(k)) order.push(k);
+      for (let k = lo; k <= hi; k++) if (isBlack(k)) order.push(k);
+      for (const k of order) {
+        const e = el('rect', isBlack(k) ? 'kk b' : 'kk w', g),
+          [x, y, w, h] = keyRect(r.div, k);
+        e.setAttribute('x', x.toFixed(2));
+        e.setAttribute('y', String(y));
+        e.setAttribute('width', w.toFixed(2));
+        e.setAttribute('height', String(h));
+        e.setAttribute('rx', '2');
+        this.keyEls.set(kk(r.div, k), e);
+      }
+      let t = '';
+      for (let k = lo; k <= hi; k++) {
+        if (k % 12) continue;
+        const [x, , w] = keyRect(r.div, k);
+        t += `<text class="kb-n" x="${(x + w / 2).toFixed(1)}" y="${r.y + r.wh - 6}" text-anchor="middle">C${k / 12 - 1}</text>`;
+      }
+      g.insertAdjacentHTML('beforeend', t);
     }
-    let t = '';
-    for (let k = this.lo; k <= this.hi; k++) {
-      if (k % 12) continue;
-      const [x, , w] = this.keyRect(k);
-      t += `<text class="kb-n" x="${(x + w / 2).toFixed(1)}" y="${KY + WH - 6}" text-anchor="middle">C${k / 12 - 1}</text>`;
-    }
-    this.gKeys.insertAdjacentHTML('beforeend', t);
   }
 
   private kick(): void {
@@ -337,35 +380,39 @@ export class Keys {
   }
 
   /* ---------- 操作 ---------- */
-  private hit(x: number, y: number): number | null {
-    if (x < KX0 || x > KX1 || y < 0 || y > KY + WH) return null;
-    if (y >= KY) {
-      if (y <= KY + BH)
-        for (let k = this.lo; k <= this.hi; k++) {
+  /** 点 (x, y) の鍵（鍵盤の鍵か、管を描いている鍵盤の管） */
+  private hit(x: number, y: number): { div: Div; key: number } | null {
+    if (x < KX0 || x > KX1) return null;
+    for (const r of ROWS) {
+      if (y < r.y || y > r.y + r.wh) continue;
+      const { lo, hi } = divOf(r.div);
+      if (y <= r.y + r.bh)
+        for (let k = lo; k <= hi; k++) {
           if (!isBlack(k)) continue;
-          const [bx, , bw] = this.keyRect(k);
-          if (x >= bx && x <= bx + bw) return k;
+          const [bx, , bw] = keyRect(r.div, k);
+          if (x >= bx && x <= bx + bw) return { div: r.div, key: k };
         }
-      for (let k = this.lo; k <= this.hi; k++) {
+      for (let k = lo; k <= hi; k++) {
         if (isBlack(k)) continue;
-        const [wx, , ww] = this.keyRect(k);
-        if (x >= wx && x <= wx + ww) return k;
+        const [wx, , ww] = keyRect(r.div, k);
+        if (x >= wx && x <= wx + ww) return { div: r.div, key: k };
       }
       return null;
     }
+    if (y > BASE) return null;
     const sp = (KX1 - KX0) / (this.hi - this.lo + 1),
       k = Math.round((x - KX0) / sp - 0.5) + this.lo;
     if (k < this.lo || k > this.hi) return null;
     const g = this.pipes[k - this.lo]?.[0];
-    return g && y >= BASE - FOOT - g.l * this.scale - 6 && y <= BASE ? k : null;
+    return g && y >= BASE - FOOT - g.l * this.scale - 6 ? { div: this.div, key: k } : null;
   }
 
-  private showRect(rc: SVGRectElement, key: number | null): void {
-    if (key === null) {
+  private showRect(rc: SVGRectElement, at: { div: Div; key: number } | null): void {
+    if (at === null) {
       rc.style.display = 'none';
       return;
     }
-    const [x, y, w, h] = this.keyRect(key);
+    const [x, y, w, h] = keyRect(at.div, at.key);
     rc.setAttribute('x', (x + 1).toFixed(1));
     rc.setAttribute('y', String(y + 1));
     rc.setAttribute('width', (w - 2).toFixed(1));
@@ -386,7 +433,7 @@ export class Keys {
       const k = this.ptr.get(e.pointerId);
       if (k === undefined) return;
       this.ptr.delete(e.pointerId);
-      if (![...this.ptr.values()].includes(k)) this.opt.onKey(k, false);
+      if (![...this.ptr.values()].some((x) => x.div === k.div && x.key === k.key)) this.opt.onKey(k.div, k.key, false);
     };
     svg.addEventListener('pointerdown', (e) => {
       if (e.button !== 0) return;
@@ -399,7 +446,7 @@ export class Keys {
         /* 合成したイベントなど、捕まえられないポインタ */
       }
       this.ptr.set(e.pointerId, k);
-      this.opt.onKey(k, true);
+      this.opt.onKey(k.div, k.key, true);
     });
     svg.addEventListener('pointerup', up);
     svg.addEventListener('pointercancel', up);
@@ -412,25 +459,30 @@ export class Keys {
     svg.addEventListener('pointerleave', () => this.showRect(this.hover, null));
     svg.addEventListener('focus', () => this.showRect(this.cursor, this.cur));
     svg.addEventListener('blur', () => this.showRect(this.cursor, null));
-    let held: number | null = null;
+    let held: { div: Div; key: number } | null = null;
     svg.addEventListener('keydown', (e) => {
-      if (e.key === 'ArrowLeft') this.cur = Math.max(this.lo, this.cur - 1);
-      else if (e.key === 'ArrowRight') this.cur = Math.min(this.hi, this.cur + 1);
-      else if (e.key === 'ArrowDown') this.cur = Math.max(this.lo, this.cur - 12);
-      else if (e.key === 'ArrowUp') this.cur = Math.min(this.hi, this.cur + 12);
+      const c = this.cur,
+        ri = ROWS.findIndex((r) => r.div === c.div);
+      if (e.key === 'ArrowLeft') c.key--;
+      else if (e.key === 'ArrowRight') c.key++;
+      else if (e.key === 'PageDown') c.key -= 12;
+      else if (e.key === 'PageUp') c.key += 12;
+      else if (e.key === 'ArrowUp') c.div = ROWS[Math.max(0, ri - 1)].div;
+      else if (e.key === 'ArrowDown') c.div = ROWS[Math.min(ROWS.length - 1, ri + 1)].div;
       else if (e.key === 'Enter' || e.key === ' ') {
         if (!e.repeat && held === null) {
-          held = this.cur;
-          this.opt.onKey(held, true);
+          held = { ...c };
+          this.opt.onKey(held.div, held.key, true);
         }
       } else return;
       e.preventDefault();
-      this.cur = Math.min(this.hi, Math.max(this.lo, this.cur));
-      this.showRect(this.cursor, this.cur);
+      const { lo, hi } = divOf(c.div);
+      c.key = Math.min(hi, Math.max(lo, c.key));
+      this.showRect(this.cursor, c);
     });
     svg.addEventListener('keyup', (e) => {
       if ((e.key === 'Enter' || e.key === ' ') && held !== null) {
-        this.opt.onKey(held, false);
+        this.opt.onKey(held.div, held.key, false);
         held = null;
       }
     });

@@ -132,6 +132,28 @@ describe('音', () => {
     for (let t = 1; t < 1.95; t += 0.02) env.push(rms(tr, t, t + 0.02));
     expect(Math.max(...env) / Math.min(...env)).toBeGreaterThan(1.05);
   });
+  it('弁の開いている管のストップを数え、設定の違う同じ番号の管は作り直す', () => {
+    const e = new Engine(FS),
+      y = new Float32Array(128 * 40),
+      m = msg('p8', 60),
+      g = msg('g8', 60);
+    e.setWind(WIND);
+    e.on(m);
+    e.on(g);
+    for (let i = 0; i < 128 * 20; i += 128) e.render(y, i, 128);
+    expect([...e.openStops(new Set())].sort()).toEqual(['g8', 'p8']);
+    e.off(g.id);
+    expect([...e.openStops(new Set())]).toEqual(['p8']);
+    /* 同じ設定なら弁を開き直すだけ、違う設定（調律し直した管）なら古い管を鳴り終わらせて作り直す */
+    e.on(m);
+    expect(e.active().length).toBe(2);
+    e.on({ ...m, spec: { ...(m.spec as FlueSpec), l: (m.spec as FlueSpec).l * 1.01 } });
+    expect(e.active().length).toBe(3);
+    expect([...e.openStops(new Set())]).toEqual(['p8']);
+    e.allOff();
+    for (let i = 0; i < 2 * FS; i += 128) e.render(new Float32Array(128), 0, 128);
+    expect(e.active().length).toBe(0);
+  });
   it('ステレオの定位は再生だけに効く', () => {
     const run = (stereo: boolean, pan: number) => {
       const e = new Engine(FS, stereo),
@@ -169,6 +191,18 @@ describe('曲', () => {
       }
       for (const id of p.stops) expect(STOPS.some((s) => s.id === id)).toBe(true);
     }
+  });
+  it('BWV 578 は、ペダルの 1 オクターブ下の重ねと両手のトラックのペダルの写しを除いてある', async () => {
+    const { notes, tempo } = await (PIECES.find((p) => p.v === 'bwv578') as (typeof PIECES)[number]).load(),
+      ped = notes.filter((x) => x.h === 2),
+      man = notes.filter((x) => x.h === 0);
+    expect(ped.length).toBe(179);
+    expect(ped.some((x) => ped.some((y) => y.t === x.t && y.n === x.n - 12))).toBe(false);
+    expect(Math.min(...man.map((x) => x.n))).toBeGreaterThanOrEqual(38);
+    expect(notes.some((x) => x.h === 1)).toBe(false);
+    /* 終わりの 2 小節の ritardando */
+    expect(tempo[0][0]).toBeGreaterThan(260);
+    expect(tempo[tempo.length - 1][1]).toBeLessThan(0.7);
   });
   it('単位: 圧力 Pa', () => {
     expect(parse('800Pa', 'Pa')).toBe(800);

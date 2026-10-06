@@ -1,7 +1,8 @@
 /**
  * オルガン音響モデルのページの入口: ストップ・風・調律・整音・部屋の入力 → 管の設定と調律（Worker）→
  * 管と鍵盤の図・計算結果・音の波形・音。鍵や管を押すと、その鍵盤の入っているストップの管が鳴る。
- * 曲の演奏は先の音を少しずつ予約する
+ * 曲の演奏は先の音を少しずつ予約する。手で押した鍵と曲の鍵は、鍵ごとに押している数を数え、
+ * 押したときに弁を開いた管を覚えておいて、その管の弁を閉じる
  */
 import { Choice } from '../../lib/choice';
 import { $, $$ } from '../../lib/dom';
@@ -20,7 +21,7 @@ import { flueView, geoOf, type OrganSpec, panOf, pipeMsg, reedView, type Tuned }
 import { CUT, DIST, SCALE, VOL0, WIND } from './params';
 import type { FlueSpec } from './pipes';
 import { type Div, PIECES, type Piece, pieceOf, type ScoreNote, TempoMap } from './score';
-import { DIVS, divOf, STOPS, type Stop, stopOf } from './stops';
+import { divOf, STOPS, type Stop, stopOf } from './stops';
 import type { TuneIn, TuneOut } from './tuner';
 import { noteName } from './tuning';
 import type { Job, Reply } from './worker';
@@ -54,12 +55,8 @@ const voicing: Record<string, { scale?: number; cut?: number }> = (() => {
   return v && typeof v === 'object' ? (v as Record<string, { scale?: number; cut?: number }>) : {};
 })();
 
-const divCh = choice<Div>('div', (v) => showRank(view.value, v));
 const view = choice<string>('view', (v) => {
-  const s = stopOf(v);
-  divCh.set(s.div);
-  store('c:p-div', s.div);
-  showRank(v, s.div);
+  showRank(v);
   syncVoice();
 });
 const trem = choice<'off' | 'on'>('trem', () => syncWind());
@@ -99,6 +96,7 @@ const audio = new OrganAudio();
 const stopBtns = $$<HTMLButtonElement>('button.stop');
 function syncStops(): void {
   for (const b of stopBtns) b.setAttribute('aria-pressed', String(on.has(b.dataset.stop as string)));
+  rankTitle();
 }
 $('#stops').addEventListener('click', (e) => {
   const b = (e.target as Element).closest<HTMLButtonElement>('button.stop');
@@ -106,25 +104,114 @@ $('#stops').addEventListener('click', (e) => {
   setStop(b.dataset.stop as string, !on.has(b.dataset.stop as string));
   store('stops', [...on]);
 });
-/** ストップを入れる・切る。鍵を押している間なら、その管も鳴らす・止める */
+/**
+ * ストップを入れる・切る。鍵を押している間なら、実際のオルガンのスライダーと同じく、その鍵の管の弁も開く・閉じる。
+ * 曲の先の音で、弁を開くのがまだ先の鍵は、その時刻に合わせる
+ */
 function setStop(id: string, v: boolean): void {
   if (v === on.has(id)) return;
   if (v) on.add(id);
   else on.delete(id);
   syncStops();
   const s = stopOf(id),
-    held = PL ? PL.held : S.held;
-  for (const [k, d] of held) {
-    if (d !== s.div) continue;
-    if (v) audio.on(msgsOf(id, k));
-    else audio.off(idsOf(id, k));
+    now = audio.now() ?? 0;
+  for (const h of held.values()) {
+    if (h.div !== s.div) continue;
+    const at = h.at > now ? h.at : 0;
+    if (v) openStop(h, id, at);
+    else {
+      audio.off(h.ids.get(id) ?? [], at);
+      h.ids.delete(id);
+    }
   }
+  /* 描く管のストップなら、押している鍵の管の振動も出す・止める */
+  if (id === view.value)
+    for (const k of vis.keys()) {
+      const [d, key] = splitKey(k);
+      if (d !== s.div) continue;
+      if (v) keys.set(key, soundingOf(key, nowS()));
+      else keys.release(key, nowS());
+    }
+}
+/** 弁の開いている管のストップのボタンを点ける（AudioWorklet が知らせる） */
+audio.onStops = (ids) => {
+  for (const b of stopBtns) b.querySelector('.led')?.classList.toggle('on', ids.includes(b.dataset.stop as string));
+};
+
+/* ---------- 押している鍵と弁 ---------- */
+/** 押している鍵 1 つ（鍵盤と鍵ごと） */
+interface Held {
+  div: Div;
+  key: number;
+  /** 押している数（手と曲の音、曲の中で重なる同じ鍵の音） */
+  n: number;
+  /** 弁を開いた時刻（AudioContext の時刻。0 ならすぐ） */
+  at: number;
+  /** 弁を開いた管の番号（ストップ → 列） */
+  ids: Map<string, string[]>;
+}
+const held = new Map<string, Held>();
+/** 手で押している鍵 */
+const hand = new Set<string>();
+const keyOf = (d: Div, k: number) => `${d}:${k}`;
+const splitKey = (s: string): [Div, number] => {
+  const i = s.indexOf(':');
+  return [s.slice(0, i) as Div, Number(s.slice(i + 1))];
+};
+/** 押している鍵 h の、ストップ id の管の弁を開く（調律がまだなら開かず、調律が届いたときに開く） */
+function openStop(h: Held, id: string, at: number): void {
+  const m = msgsOf(id, h.key);
+  if (!m.length) return;
+  h.ids.set(
+    id,
+    m.map((x) => x.id),
+  );
+  audio.on(m, at);
+}
+/** 鍵を押す（at は AudioContext の時刻。0 ならすぐ）。押している数が 0 から 1 になったら、入っているストップの弁を開く */
+function keyOn(d: Div, k: number, at: number): void {
+  const key = keyOf(d, k),
+    cur = held.get(key);
+  if (cur) {
+    cur.n++;
+    return;
+  }
+  const h: Held = { div: d, key: k, n: 1, at, ids: new Map() };
+  held.set(key, h);
+  for (const s of STOPS) if (s.div === d && on.has(s.id)) openStop(h, s.id, at);
+}
+/** 鍵を離す。押している数が 0 になったら、押したときに開いた管の弁を閉じる（弁を開く前なら、開いた時刻に閉じる） */
+function keyOff(d: Div, k: number, at: number): void {
+  const key = keyOf(d, k),
+    h = held.get(key);
+  if (!h || --h.n > 0) return;
+  held.delete(key);
+  audio.off([...h.ids.values()].flat(), Math.max(at, h.at));
+}
+
+/** 押している鍵の見た目（赤い鍵と、描く管の振動）。手と曲の音で同じ鍵を押していれば数える */
+const vis = new Map<string, number>();
+function show(d: Div, k: number, down: boolean, t: number): void {
+  const key = keyOf(d, k),
+    was = vis.get(key) ?? 0,
+    c = Math.max(0, was + (down ? 1 : -1));
+  if (c) vis.set(key, c);
+  else vis.delete(key);
+  if (c > 0 === was > 0) return;
+  keys.setDown(d, k, c > 0);
+  const s = stopOf(view.value);
+  if (s.div !== d) return;
+  if (c > 0 && on.has(s.id)) keys.set(k, soundingOf(k, t));
+  else if (!c) keys.release(k, t);
+}
+/** 押している鍵の見た目をすべて消す */
+function clearShow(): void {
+  vis.clear();
+  keys.clear();
 }
 
 /* ---------- 管の設定と調律（Worker） ---------- */
 const S = {
-  /** 鍵盤で押している鍵（鍵 → 鍵盤） */
-  held: new Map<number, Div>(),
   /** 計算結果に出す管（最後に弾いた鍵と、その鍵盤の描くストップ） */
   last: { stop: 'p8', key: 60 },
 };
@@ -160,8 +247,14 @@ function retune(): void {
     const m = e.data;
     tuned.set(m.stop, m.pipes);
     txt('#pp-tune', m.done < m.total ? `調律中 ${m.done}/${m.total}` : '');
+    /* 押している鍵で、調律がまだで開けなかった管の弁を開く */
+    if (on.has(m.stop)) {
+      const d = stopOf(m.stop).div,
+        now = audio.now() ?? 0;
+      for (const h of held.values()) if (h.div === d && !h.ids.has(m.stop)) openStop(h, m.stop, h.at > now ? h.at : 0);
+    }
     if (m.stop === view.value) {
-      showRank(view.value, divCh.value);
+      showRank(view.value);
       syncVoice();
     }
     if (m.stop === S.last.stop) {
@@ -178,11 +271,10 @@ const pipesOf = (id: string, k: number): Tuned[] | null => {
 };
 const msgsOf = (id: string, k: number): PipeMsg[] =>
   (pipesOf(id, k) ?? []).map((t) => pipeMsg(t, panOf(stopOf(id), k, t.rank)));
-const idsOf = (id: string, k: number): string[] => (pipesOf(id, k) ?? []).map((t) => t.id);
 
 /* ---------- 管と鍵盤 ---------- */
 const keys = new Keys($<SVGSVGElement>('#ppd'), {
-  onKey: (k, down) => (down ? void press(k) : lift(k)),
+  onKey: (d, k, down) => (down ? void press(d, k) : lift(d, k)),
   now: nowS,
 });
 keys.setMode(nv.value);
@@ -193,17 +285,24 @@ function ppBar(): void {
   txt('#pp-ex', `×${ex.value}`);
   txt('#pp-tm', nv.value === 'slow' ? `スロー 1/${sl.value}` : '実時間（残像）');
 }
-/** 描く管を並べる（鍵盤 d の、ストップ id の管。鍵盤とストップの鍵盤が違えば、その鍵盤の範囲だけ） */
-function showRank(id: string, d: Div): void {
-  const dv = divOf(d),
-    s = stopOf(id),
-    sd = divOf(s.div),
+/** 描く管を並べる（ストップ id の管を、そのストップの鍵盤の鍵の上に）。押している鍵の管は振動も出す */
+function showRank(id: string): void {
+  const s = stopOf(id),
+    d = divOf(s.div),
     pipes = [];
-  for (let k = dv.lo; k <= dv.hi; k++) {
-    const t = s.div === d && k >= sd.lo && k <= sd.hi ? (pipesOf(id, k) ?? []) : [];
-    pipes.push(t.map(geoOf));
-  }
-  keys.setRank(dv.lo, dv.hi, pipes);
+  for (let k = d.lo; k <= d.hi; k++) pipes.push((pipesOf(id, k) ?? []).map(geoOf));
+  keys.setRank(s.div, pipes);
+  rankTitle();
+  if (on.has(id))
+    for (const k of vis.keys()) {
+      const [dv, key] = splitKey(k);
+      if (dv === s.div) keys.set(key, soundingOf(key, nowS()));
+    }
+}
+/** 図の上に、描いている管のストップと鍵盤（ストップが切ってあればそれも）を書く */
+function rankTitle(): void {
+  const s = stopOf(view.value);
+  keys.setTitle(`${s.name}・${divOf(s.div).name}${on.has(s.id) ? '' : '（ストップは切）'}`);
 }
 /** 鍵 k を押したときの、描く管の振動 */
 function soundingOf(k: number, t0: number): Sounding[] {
@@ -479,20 +578,20 @@ for (const id of ['#w-svg', '#s-svg'])
 /* ---------- 鍵盤 ---------- */
 const NO_SOUND = '音を出せませんでした';
 const sndMsg = (s: string) => txt('#snd-msg', s);
-async function press(k: number): Promise<void> {
-  if (PL) return;
-  const d = divCh.value;
-  S.held.set(k, d);
-  keys.setDown(k, true);
+/** 鍵盤 d の鍵 k を手で押す（曲の演奏中も弾ける） */
+async function press(d: Div, k: number): Promise<void> {
+  const key = keyOf(d, k);
+  if (hand.has(key)) return;
+  hand.add(key);
+  show(d, k, true, nowS());
   const ok = await audio.ready();
   sndMsg(ok ? '' : NO_SOUND);
-  if (!ok) return;
+  /* 音を出せないか、準備の間に離した */
+  if (!ok || !hand.has(key)) return;
   if (audio.fs !== tunedFs) retune();
   audio.setWind(windDesc());
-  const msgs = STOPS.filter((s) => s.div === d && on.has(s.id)).flatMap((s) => msgsOf(s.id, k));
-  audio.on(msgs);
-  if (on.has(view.value) && stopOf(view.value).div === d) keys.set(k, soundingOf(k, nowS()));
-  txt('#pp-live', noteName(k));
+  keyOn(d, k, 0);
+  txt('#pp-live', `${divOf(d).short} ${noteName(k)}`);
   const first =
     STOPS.find((s) => s.div === d && on.has(s.id) && s.id === view.value) ??
     STOPS.find((s) => s.div === d && on.has(s.id));
@@ -502,14 +601,11 @@ async function press(k: number): Promise<void> {
     renderOut();
   }
 }
-function lift(k: number): void {
-  if (PL) return;
-  const d = S.held.get(k);
-  S.held.delete(k);
-  keys.setDown(k, false);
-  if (!d) return;
-  audio.off(STOPS.filter((s) => s.div === d).flatMap((s) => idsOf(s.id, k)));
-  keys.release(k, nowS());
+function lift(d: Div, k: number): void {
+  const key = keyOf(d, k);
+  if (!hand.delete(key)) return;
+  show(d, k, false, nowS());
+  keyOff(d, k, 0);
 }
 
 /* 音量（スライダーだけ） */
@@ -547,12 +643,52 @@ tempoIn.addEventListener('input', () => {
 $('#muteBtn').addEventListener('click', () => {
   if (PL) stopPiece();
   audio.stop();
-  S.held.clear();
-  keys.clear();
+  held.clear();
+  hand.clear();
+  clearShow();
+});
+/**
+ * リリース: いま押しているすべての鍵（手でも曲でも、すべての鍵盤）から手を離し、すべての弁を閉じる（管は自然に鳴り止む）。
+ * 演奏は止めず、まだ鳴り始めていない曲の音は予定どおり鳴らす。離した曲の音は、あとで離す予定が来ても何もしない
+ */
+$('#relBtn').addEventListener('click', () => {
+  const now = audio.now() ?? 0,
+    t = nowS();
+  for (const key of hand) {
+    const [d, k] = splitKey(key);
+    show(d, k, false, t);
+  }
+  hand.clear();
+  const p = PL,
+    ahead: Note[] = [];
+  if (p)
+    for (const x of p.down) {
+      if (x.at > now) {
+        ahead.push(x);
+        continue;
+      }
+      p.down.delete(x);
+      x.st = 2;
+      if (x.vis === 1) show(x.div, x.key, false, t);
+      x.vis = 2;
+    }
+  for (const [key, h] of held) if (h.at <= now) held.delete(key);
+  audio.release();
+  /* 鳴り始めた鍵とまとめて数えていた、まだ先の曲の音は押し直す */
+  for (const x of ahead) if (!held.has(keyOf(x.div, x.key))) keyOn(x.div, x.key, x.at);
 });
 
 /* ---------- 演奏 ---------- */
-type Ev = { b: number; type: 'on' | 'off'; key: number; div: Div };
+/** 曲の音 1 つ。st は 0 = まだ・1 = 押している・2 = 離した、vis は図の鍵の印（0 = まだ・1 = 出している・2 = 消した） */
+interface Note {
+  key: number;
+  div: Div;
+  /** 弁を開いた時刻（AudioContext の時刻） */
+  at: number;
+  st: 0 | 1 | 2;
+  vis: 0 | 1 | 2;
+}
+type Ev = { b: number; type: 'on' | 'off'; n: Note };
 interface Play {
   ev: Ev[];
   i: number;
@@ -564,9 +700,8 @@ interface Play {
   bars: number;
   timer: ReturnType<typeof setInterval>;
   piece: Piece;
-  /** 予約した時点で押している鍵（鍵盤ごとに数える） */
-  held: Map<number, Div>;
-  count: Map<string, number>;
+  /** 予約した時点で押している曲の音 */
+  down: Set<Note>;
 }
 let PL: Play | null = null;
 const cache = new Map<string, { notes: ScoreNote[]; tempo: readonly (readonly [number, number])[] }>();
@@ -574,10 +709,10 @@ const spbOf = (pc: Piece) => 60 / (pc.bpm * (V.tempo / 100));
 function eventsOf(pc: Piece, notes: ScoreNote[]): Ev[] {
   const ev: Ev[] = [];
   for (const x of notes) {
-    const div = pc.hands[x.h] ?? 'I';
-    ev.push({ b: x.t, type: 'on', key: x.n, div });
+    const n: Note = { key: x.n, div: pc.hands[x.h] ?? 'I', at: 0, st: 0, vis: 0 };
+    ev.push({ b: x.t, type: 'on', n });
     /* 同じ鍵を続けて弾くときに弁が閉じる間をあける */
-    ev.push({ b: x.t + Math.max(x.d * 0.95, x.d - 0.06), type: 'off', key: x.n, div });
+    ev.push({ b: x.t + Math.max(x.d * 0.95, x.d - 0.06), type: 'off', n });
   }
   return ev.sort((a, b) => a.b - b.b || (a.type === 'off' ? -1 : 1) - (b.type === 'off' ? -1 : 1));
 }
@@ -606,7 +741,6 @@ async function startPiece(): Promise<void> {
     cache.set(pc.v, data);
   }
   if (PL || piece.value !== pc.v) return;
-  for (const k of [...S.held.keys()]) lift(k);
   /* 曲のレジストレーション */
   for (const s of STOPS) setStop(s.id, pc.stops.includes(s.id));
   store('stops', [...on]);
@@ -625,8 +759,7 @@ async function startPiece(): Promise<void> {
     bars: Math.ceil((end - pc.pickup) / pc.bar),
     timer: setInterval(tick, 40),
     piece: pc,
-    held: new Map(),
-    count: new Map(),
+    down: new Set(),
   };
   txt('#pl-bar', '');
   syncPlay();
@@ -637,7 +770,9 @@ function stopPiece(): void {
   clearInterval(PL.timer);
   PL = null;
   audio.stop();
-  keys.clear();
+  held.clear();
+  hand.clear();
+  clearShow();
   txt('#pl-bar', '');
   syncPlay();
 }
@@ -655,44 +790,33 @@ function tick(): void {
     p.spb = spb;
   }
   const atOf = (b: number) => p.at0 + (p.tm.tau(b) - p.tau0) * p.spb,
-    toPerf = (a: number) => nowS() + (a - an),
-    vd = divCh.value;
+    toPerf = (a: number) => nowS() + (a - an);
   while (p.i < p.ev.length && atOf(p.ev[p.i].b) < an + AHEAD) {
     const e = p.ev[p.i++],
+      x = e.n,
       at = Math.max(an, atOf(e.b)),
-      tp = toPerf(at),
-      ck = `${e.div}:${e.key}`,
-      n = (p.count.get(ck) ?? 0) + (e.type === 'on' ? 1 : -1);
-    p.count.set(ck, Math.max(0, n));
-    /* 同じ鍵盤の同じ鍵が重なっている間は、弁は開いたまま */
-    if ((e.type === 'on' && n > 1) || (e.type === 'off' && n > 0)) continue;
-    const stops = STOPS.filter((s) => s.div === e.div && on.has(s.id));
+      tp = toPerf(at);
     if (e.type === 'on') {
-      p.held.set(e.key, e.div);
-      audio.on(
-        stops.flatMap((s) => msgsOf(s.id, e.key)),
-        at,
-      );
-      if (e.div === vd && on.has(view.value) && stopOf(view.value).div === e.div) {
-        const key = e.key;
-        later(tp, () => {
-          keys.setDown(key, true);
-          keys.set(key, soundingOf(key, tp));
-        });
-      }
+      x.st = 1;
+      x.at = at;
+      p.down.add(x);
+      keyOn(x.div, x.key, at);
+      later(tp, () => {
+        if (PL !== p || x.vis) return;
+        x.vis = 1;
+        show(x.div, x.key, true, tp);
+      });
     } else {
-      p.held.delete(e.key);
-      audio.off(
-        stops.flatMap((s) => idsOf(s.id, e.key)),
-        at,
-      );
-      if (e.div === vd) {
-        const key = e.key;
-        later(tp, () => {
-          keys.setDown(key, false);
-          keys.release(key, tp);
-        });
-      }
+      /* リリースで離した音は何もしない */
+      if (x.st !== 1) continue;
+      x.st = 2;
+      p.down.delete(x);
+      keyOff(x.div, x.key, at);
+      later(tp, () => {
+        if (PL !== p || x.vis !== 1) return;
+        x.vis = 2;
+        show(x.div, x.key, false, tp);
+      });
     }
   }
   const pc = p.piece,
@@ -716,7 +840,6 @@ ppBar();
 showOut();
 roomView();
 syncWind();
-showRank(view.value, divCh.value);
+showRank(view.value);
 syncVoice();
 retune();
-void DIVS;
