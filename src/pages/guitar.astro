@@ -89,7 +89,7 @@ const tunName = (n: readonly number[]) => {
           <label class="vl" for="tempo">テンポ</label>
           <div class="sl"><input type="range" id="tempo" min="25" max="150" step="5" aria-describedby="tempov" title="曲の標準の速さに対する割合。演奏中も変えられる"></div>
           <output id="tempov" for="tempo"></output>
-          <span></span>
+          <button type="button" class="tg" id="relBtn" title="鳴っている弦をすべて止める（演奏は続ける）">リリース</button>
           <label class="vl" for="vol">音量</label>
           <div class="sl"><input type="range" id="vol" min="-60" max="0" step="1" aria-describedby="volv" title="スピーカーへ出す大きさ（0 dB で、1 m 先の音圧 1 Pa をフルスケールにする）"></div>
           <output id="volv" for="vol"></output>
@@ -210,8 +210,8 @@ const tunName = (n: readonly number[]) => {
         </div>
       </Collapsible>
 
-      <Panel hid="hd-res" title="計算結果" class="a-out">
-        <span slot="aux" class="aux" id="res-aux">最後に弾いた音</span>
+      <Collapsible hid="hd-res" title="計算結果" class="a-out">
+        <p class="aux res-aux" id="res-aux">最後に弾いた音</p>
         <dl class="metrics">
           <div class="m m-main"><dt>第 1 部分音 <i>f</i><sub>1</sub></dt><dd><span id="o-f1"></span><span class="m-sub" id="o-f1s"></span></dd></div>
           <div class="m"><dt>振動する長さ <i>L</i><sub>v</sub></dt><dd id="o-lv"></dd></div>
@@ -226,7 +226,7 @@ const tunName = (n: readonly number[]) => {
           <div class="m"><dt>弾く位置 <i>L</i><sub>v</sub>/<i>x</i><sub>p</sub></dt><dd><span id="o-xp"></span><span class="m-sub" id="o-xps"></span></dd></div>
           <div class="m"><dt>駒の力の初期値</dt><dd id="o-f0"></dd></div>
         </dl>
-      </Panel>
+      </Collapsible>
     </div>
 
     <Collapsible hid="hd-thy" title="動作原理と式">

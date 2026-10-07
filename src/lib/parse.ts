@@ -34,7 +34,8 @@ export type Unit =
   | 'FS'
   | 'N'
   | 'L'
-  | '°';
+  | '°'
+  | 'セント';
 
 /** 末尾に書かれた単位を外す。接頭辞と紛らわしいものは数字の直後だけ外す */
 const STRIP: Partial<Record<Unit, [RegExp, string]>> = {
@@ -62,10 +63,12 @@ const STRIP: Partial<Record<Unit, [RegExp, string]>> = {
   /* 容積（リットル） */
   L: [/(l|L|ℓ)$/, ''],
   '°': [/(°|度|deg)$/i, ''],
+  /* 音程（1 オクターブ = 1200 セント） */
+  セント: [/(セント|cents?|¢)$/i, ''],
 };
 
 /** 接頭辞を読まない単位（0.5m を 0.5 mm と取り違えないように） */
-const NO_PREFIX = new Set<Unit>(['mm', 'µm', 'N', 'L', '°']);
+const NO_PREFIX = new Set<Unit>(['mm', 'µm', 'N', 'L', '°', 'セント']);
 
 /**
  * 文字列を数値に読む。読めなければ NaN。

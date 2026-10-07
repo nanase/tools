@@ -15,7 +15,8 @@
     "organ-scores": "bun scripts/organ-scores.ts",
     "organ-tune": "bun scripts/organ-tune.ts",
     "redirects": "bun scripts/redirects-csv.ts",
-    "chaconne": "bun scripts/chaconne.ts"
+    "chaconne": "bun scripts/chaconne.ts",
+    "piano-scores": "bun scripts/piano-scores.ts"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",

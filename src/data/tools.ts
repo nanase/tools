@@ -96,6 +96,14 @@ export const TOOLS: Tool[] = [
     k: 'guitar acoustic physical model 物理モデル 弦 string 張力 tension フレット fret 響板 表板 soundboard ヘルムホルツ helmholtz 撥弦 pluck 非調和性 inharmonicity モード合成 modal synthesis 演奏 バッハ bach クラシック ナイロン スチール オーディオ audio',
   },
   {
+    id: 'piano',
+    c: '音響',
+    t: 'ピアノ音響モデル',
+    d: 'ハンマーと弦の衝突、ユニゾンの弦と響板の結合、ダンパーとペダル、部屋の残響から、グランドピアノの振動と音を物理モデルで計算して鳴らします。',
+    ic: 'pn',
+    k: 'piano grand acoustic physical model 物理モデル 弦 string ハンマー hammer フェルト felt 響板 soundboard 非調和性 inharmonicity ユニゾン unison 二段減衰 double decay ダンパー damper ペダル pedal 共鳴 sympathetic 残響 reverb モード合成 modal synthesis 演奏 バッハ ベートーヴェン 月光 サティ オーディオ audio',
+  },
+  {
     id: 'svg-theme-checker',
     c: 'SVG',
     t: 'SVG テーマスキーマチェッカー',
@@ -141,6 +149,7 @@ export const IC: Record<string, string> = {
   sp: '<path class="c d" d="M4 44H116"/><path class="a" d="M4 41L12 40L18 33L22 9L26 34L34 38L40 37L44 22L48 37L58 39L64 38L67 30L70 39L82 41L88 40L91 35L94 41L116 43"/>',
   fm: '<path class="c d" d="M4 24H116"/><path class="a" d="M4 24L6 13.5L8 8.2L10 9.8L12 16L14 23.4L16 29.5L18 33.4L20 35.5L22 36.1L24 35.7L26 34.3L28 31.8L30 28.2L32 24L34 19.8L36 16.2L38 13.7L40 12.3L42 11.9L44 12.5L46 14.6L48 18.5L50 24.6L52 32L54 38.2L56 39.8L58 34.5L60 24L62 13.5L64 8.2L66 9.8L68 16L70 23.4L72 29.5L74 33.4L76 35.5L78 36.1L80 35.7L82 34.3L84 31.8L86 28.2L88 24L90 19.8L92 16.2L94 13.7L96 12.3L98 11.9L100 12.5L102 14.6L104 18.5L106 24.6L108 32L110 38.2L112 39.8L114 34.5L116 24"/>',
   gt: '<path class="c" d="M4 10H116M4 38H116"/><path class="a" d="M4 24C16 24 20 13 34 13S52 35 66 35S84 13 98 13S110 24 116 24"/><path class="b" d="M4 24C16 24 20 17 34 17S52 31 66 31S84 17 98 17S110 24 116 24"/>',
+  pn: '<path class="c" d="M4 44H116"/><path class="c" d="M10 44V30M24 44V30M38 44V30M52 44V30M66 44V30M80 44V30M94 44V30M108 44V30"/><path class="a" d="M8 4V30M16 8V30M24 12V30M32 15V30M40 18V30M48 20V30M56 22V30M64 24V30M72 25V30M80 26V30M88 27V30M96 28V30M104 28.5V30"/><path class="b" d="M4 30C20 30 22 22 36 22S60 34 76 30S104 26 116 28"/>',
   pc: '<path class="c" d="M4 6H42"/><path class="a" d="M42 6H78V42H42V10H74V38H46V14H70V34H50V18H66V30H54V22H62"/><path class="c d" d="M62 22H116"/>',
   og: '<path class="c" d="M4 44H116"/><path class="a" d="M14 44V8M26 44V14M38 44V19M50 44V23M62 44V26M74 44V29M86 44V31M98 44V33M110 44V35"/><path class="b" d="M11 38H17M23 39H29M35 40H41M47 40H53M59 41H65M71 41H77M83 42H89M95 42H101M107 42H113"/>',
 };
