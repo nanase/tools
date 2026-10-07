@@ -345,6 +345,7 @@ function status(): void {
 }
 
 /* ---------- 描画への受け渡し ---------- */
+let lastKey = '';
 function render(): void {
   placeAf();
   if (!R || !st || !tb) return;
@@ -382,6 +383,10 @@ function render(): void {
   const vw = view(),
     b = basis(v.pan, v.tilt);
   const V: ViewU = { view: [vw.x0, vw.y0, vw.w, vw.h], right: b.r, up: b.u, fwd: b.f, eye: [0, EYE, 0] };
+  /* 映像に関わる値が同じなら、ためた分を捨てない（許容錯乱円だけを変えたときなど） */
+  const key = JSON.stringify([stKey, L.mode, L.chrom, L.opt[3], V.view, v.pan, v.tilt]);
+  if (key === lastKey) return;
+  lastKey = key;
   R.set(L, V);
 }
 
