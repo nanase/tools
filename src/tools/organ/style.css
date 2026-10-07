@@ -7,9 +7,9 @@
 }
 :root[data-theme="dark"]{--key-on:#ff5a4f}
 
-/* 枠の並び。スマホは 管と鍵盤 → 演奏 → ストップ → 風と調律 → 整音 → 残響 → 音の波形 → 計算結果 → 式 → 楽譜の出典。
-   PC は上に 管と鍵盤（全幅）、左の列に 演奏・ストップ・風と調律、右の列に 整音・残響・音の波形・計算結果、その下に 式・出典（全幅） */
-.a-pp{order:1}.a-play{order:2}.a-stops{order:3}.a-wind{order:4}.a-voice{order:5}.a-room{order:6}.a-wave{order:7}.a-out{order:8}.a-thy{order:9}.a-src{order:10}
+/* 枠の並び。スマホは 管と鍵盤（ストップを含む） → 演奏 → 風と調律 → 整音 → 残響 → 音の波形 → 計算結果 → 式 → 楽譜の出典。
+   PC は上に 管と鍵盤（全幅）、左の列に 演奏・風と調律、右の列に 整音・残響・音の波形・計算結果、その下に 式・出典（全幅） */
+.a-pp{order:1}.a-play{order:2}.a-wind{order:3}.a-voice{order:4}.a-room{order:5}.a-wave{order:6}.a-out{order:7}.a-thy{order:8}.a-src{order:9}
 @media (min-width:1000px){
   .tgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr);grid-template-areas:"pp pp" "c1 c2" "thy thy" "src src";align-items:start}
   .a-pp{grid-area:pp}.c1{grid-area:c1}.c2{grid-area:c2}.a-thy{grid-area:thy}.a-src{grid-area:src}
@@ -70,19 +70,41 @@
 .pp-note{margin-left:auto}
 @media (max-width:559px){.pp-note{margin-left:0}}
 
-/* ストップ: 鍵盤ごと（上から第 2 手鍵盤・第 1 手鍵盤・ペダル）に、押して入れ切りするチップ。管が鳴っている間は LED を点ける */
-.stops{display:grid;gap:12px;padding:4px 8px 6px}
-.sdn{display:flex;align-items:center;gap:8px;margin:0 0 6px;font:700 13px/1.4 var(--sans);color:var(--ink-2)}
-.sdv{display:inline-grid;place-items:center;min-width:26px;height:20px;padding:0 4px;border:1px solid var(--line-2);border-radius:4px;font:700 11.5px/1 var(--mono)}
-.sdiv .chips{display:flex;flex-wrap:wrap;gap:6px}
-.chip.stop,.chip.vstop{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono)}
-/* 描く管: 鍵盤ごとに、札と名前の右にチップを並べる（狭い画面では上下に） */
-.vdivs{display:grid;gap:8px}
-.vdiv{display:grid;grid-template-columns:8.2rem minmax(0,1fr);align-items:start;gap:4px 10px}
-.vdiv .sdn{margin:0;min-height:30px}
-.vdiv .chips{margin-top:0}
-@media (max-width:559px){.vdiv{grid-template-columns:minmax(0,1fr)}}
+/*
+ * ストップ（鍵盤の図のすぐ下）: 鍵盤ごと（上から第 2 手鍵盤・第 1 手鍵盤・ペダル）に、入・切のボタン（管が鳴っている間は LED）と、
+ * 図に描くストップを選ぶ小さなボタンを並べる。広い画面では鍵盤の名前を左の列に、狭い画面では上に置く
+ */
+.cons{margin-top:12px}
+.cons-h{display:flex;flex-wrap:wrap;align-items:center;gap:4px 14px;padding:0 8px 6px}
+.cons-t{margin:0 auto 0 0;font:700 13.5px/1.3 var(--sans);color:var(--ink)}
 .s-key{display:inline-flex;align-items:center;gap:6px}
+.s-key .ic-p{width:10px;height:15px;color:var(--ch1)}
+.cdivs{border-top:1px solid var(--line)}
+.cdiv{display:grid;grid-template-columns:10.5rem minmax(0,1fr);align-items:start;gap:6px 12px;padding:10px 8px;border-bottom:1px solid var(--line)}
+.cdiv:last-child{border-bottom:0}
+.sdn{display:flex;align-items:center;gap:8px;min-height:30px;margin:0;font:700 13px/1.4 var(--sans);color:var(--ink-2)}
+.sdv{display:inline-grid;place-items:center;min-width:26px;height:20px;padding:0 4px;border:1px solid var(--line-2);border-radius:4px;font:700 11.5px/1 var(--mono)}
+.cst{display:flex;flex-wrap:wrap;gap:6px}
+.st{display:inline-flex}
+.chip.stop{display:inline-flex;align-items:center;gap:7px;border-radius:4px 0 0 4px;font-family:var(--mono)}
+.chip.cpl{font-family:var(--mono)}
+.drw{display:inline-grid;place-items:center;min-width:28px;min-height:30px;padding:0 6px;border:1px solid var(--line);border-left:0;border-radius:0 4px 4px 0;background:none;color:var(--ink-3);cursor:pointer}
+.drw:hover{border-color:var(--line-2);color:var(--ink)}
+/* 図に描いているストップ: 図の管の中の音圧と同じ色の管の印 */
+.drw[aria-pressed="true"]{background:var(--inset);border-color:var(--line-2);color:var(--ch1)}
+.drw:focus-visible{outline-offset:-2px}
+.ic-p{width:11px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linejoin:round}
+.drw[aria-pressed="true"] .ic-p{fill:currentColor;fill-opacity:.35}
+/* スウェル: 第 2 手鍵盤の名前の下に、スライダーと値 */
+.swl{display:grid;grid-template-columns:auto minmax(0,1fr) 2.6rem;align-items:center;gap:6px;margin-top:2px}
+.swl .vl{font-size:12.5px;font-weight:500;color:var(--ink-2)}
+.swl .sl{padding-bottom:0}
+.swl output{text-align:right;font:500 12.5px/1 var(--mono);white-space:nowrap}
+@media (max-width:559px){
+  .cdiv{grid-template-columns:minmax(0,1fr)}
+  .swl{max-width:20rem}
+}
+@media (pointer:coarse){.drw{min-height:40px;min-width:36px}}
 
 /* 計算結果（開閉できる枠。最後に弾いた管の補足を本文の先頭に右寄せで） */
 .res-aux{margin:0 0 10px;text-align:right}

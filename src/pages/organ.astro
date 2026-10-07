@@ -26,6 +26,11 @@ const related = [
 ];
 /* 鍵盤は実際のコンソールと同じく、上から第 2 手鍵盤・第 1 手鍵盤・ペダルの順に並べる */
 const CONSOLE = (['II', 'I', 'P'] as const).map(divOf);
+const COUPLERS = [
+  ['II/I', '第 2 手鍵盤のストップを、第 1 手鍵盤の鍵でも鳴らす'],
+  ['I/P', '第 1 手鍵盤のストップを、ペダルの鍵でも鳴らす'],
+  ['II/P', '第 2 手鍵盤のストップを、ペダルの鍵でも鳴らす'],
+] as const;
 ---
 <SiteLayout title={name} tool={{ id: 'organ', name }} description="パイプオルガンを物理モデルで鳴らします。フルー管のエアジェットとリード管の舌の自励振動、管の共鳴、風箱の風と教会の残響から、管の振動と音を計算します。" note="音と計算結果は、論文の模型を簡略化した物理モデルによるものです。">
   <PageTitle title={name}>フルー管（唇管）は、口から吹き出す空気の薄い流れ（ジェット）が管の中の音で揺れ、唇の内と外へ振り分けられて音を保つ自励振動として、リード管（舌管）は、真鍮の舌がシャロットに当たって風を断続させる自励振動として計算します。管の長さと太さ、口の寸法、風圧から、管ごとの音が決まります。ストップを選んで鍵を押すと、その管が鳴ります。教会の残響を付けて、曲の演奏もできます。</PageTitle>
@@ -38,28 +43,46 @@ const CONSOLE = (['II', 'I', 'P'] as const).map(divOf);
         <span class="stag"><i class="sw" aria-hidden="true"></i>管の中の音圧 <b id="pp-ex"></b></span>
         <span class="stag" id="pp-tm"></span>
         <span class="stag" id="pp-tune"></span>
+        <span class="stag" id="pp-load"></span>
         <span class="stag pp-note" id="pp-note"></span>
       </div>
       <div class="ppw" id="ppw">
-        <svg class="ppd" id="ppd" tabindex="0" role="group" aria-roledescription="鍵盤" aria-label="上から第 2 手鍵盤・第 1 手鍵盤・ペダルの 3 つの鍵盤と、描く管に選んだストップの管。鍵か管を押すと、その鍵盤の入っているストップの管が鳴る。左右の矢印キーで半音、上下の矢印キーで鍵盤、Page Up と Page Down でオクターブを選び、Enter で弾く"></svg>
+        <svg class="ppd" id="ppd" tabindex="0" role="group" aria-roledescription="鍵盤" aria-label="上から第 2 手鍵盤・第 1 手鍵盤・ペダルの 3 つの鍵盤と、図に描くストップの管。鍵か管を押すと、その鍵盤の入っているストップの管が鳴る。左右の矢印キーで半音、上下の矢印キーで鍵盤、Page Up と Page Down でオクターブを選び、Enter で弾く"></svg>
       </div>
       <p class="sr" id="pp-live" aria-live="polite"></p>
-      <div class="ptab">
-        <div class="prow wide" id="p-view">
-          <div class="c-sym" aria-hidden="true"></div>
-          <div class="c-name"><span class="pn" id="n-view">描く管</span><p class="desc tip" id="t-view" role="tooltip" hidden>図に並べるストップ。そのストップの鍵盤（左の札を塗り、風箱から線でつなぐ）の鍵の上に管を描く。印はストップの枠と同じく、そのストップの管が鳴っている間に点く</p></div>
-          <div class="fbody" id="fb-view">
-            <div class="c-sub">
-              <div class="vdivs" role="group" aria-labelledby="n-view" aria-describedby="t-view">
-                {CONSOLE.map((d) => (
-                  <div class="vdiv">
-                    <p class="sdn"><span class="sdv" aria-hidden="true">{d.short}</span>{d.name}</p>
-                    <div class="chips" role="group" aria-label={`${d.name}のストップ`}>
-                      {STOPS.filter((s) => s.div === d.v).map((s) => <button type="button" class="chip vstop" data-v={s.id} aria-pressed={s.id === 'p8' ? 'true' : 'false'}><span class="led" aria-hidden="true"></span>{s.name}</button>)}
-                    </div>
+      <div class="cons" id="stops">
+        <div class="cons-h">
+          <h3 class="cons-t">ストップ</h3>
+          <span class="aux s-key"><span class="led on" aria-hidden="true"></span>鳴っている</span>
+          <span class="aux s-key"><svg class="ic-p" viewBox="0 0 12 18" aria-hidden="true"><path d="M3.5 1.5h5v10h-5zM3.5 11.5 6 16.5l2.5-5"/></svg>図に描く</span>
+        </div>
+        <div class="cdivs" id="p-view" role="group" aria-label="ストップ。名前のボタンで入・切、右の小さなボタンで図に描くストップを選ぶ">
+          {CONSOLE.map((d) => (
+            <div class="cdiv" data-div={d.v}>
+              <div class="cdh">
+                <p class="sdn"><span class="sdv" aria-hidden="true">{d.short}</span>{d.name}</p>
+                {d.v === 'II' && (
+                  <div class="swl">
+                    <label class="vl" for="swell">スウェル</label>
+                    <div class="sl"><input type="range" id="swell" min="0" max="100" step="5" aria-describedby="swellv" title="第 2 手鍵盤の箱の扉の開き。閉じると音が小さく、高い音ほど弱まる"></div>
+                    <output id="swellv" for="swell"></output>
                   </div>
+                )}
+              </div>
+              <div class="cst" role="group" aria-label={`${d.name}のストップ`}>
+                {STOPS.filter((s) => s.div === d.v).map((s) => (
+                  <span class="st">
+                    <button type="button" class="chip stop" data-stop={s.id} aria-pressed="false" title={`${s.note}。管が鳴っている間は印が点く`}><span class="led" aria-hidden="true"></span>{s.name}</button>
+                    <button type="button" class="drw" data-v={s.id} aria-pressed={s.id === 'p8' ? 'true' : 'false'} aria-label={`${s.name}（${d.name}）を図に描く`} title="図に描く"><svg class="ic-p" viewBox="0 0 12 18" aria-hidden="true"><path d="M3.5 1.5h5v10h-5zM3.5 11.5 6 16.5l2.5-5"/></svg></button>
+                  </span>
                 ))}
               </div>
+            </div>
+          ))}
+          <div class="cdiv cpls">
+            <div class="cdh"><p class="sdn">カプラー</p></div>
+            <div class="cst" role="group" aria-label="カプラー">
+              {COUPLERS.map(([c, t]) => <button type="button" class="chip cpl" data-cpl={c} aria-pressed="false" title={t}>{c}</button>)}
             </div>
           </div>
         </div>
@@ -98,19 +121,6 @@ const CONSOLE = (['II', 'I', 'P'] as const).map(divOf);
         <p class="msg er snd-msg" id="snd-msg" aria-live="polite"></p>
       </Panel>
 
-      <Panel hid="hd-stops" title="ストップ" class="a-stops">
-        <span slot="aux" class="aux s-key"><span class="led on" aria-hidden="true"></span>鳴っている</span>
-        <div class="stops" id="stops">
-          {CONSOLE.map((d) => (
-            <div class="sdiv" data-div={d.v}>
-              <p class="sdn"><span class="sdv" aria-hidden="true">{d.short}</span>{d.name}</p>
-              <div class="chips" role="group" aria-label={`${d.name}のストップ`}>
-                {STOPS.filter((s) => s.div === d.v).map((s) => <button type="button" class="chip stop" data-stop={s.id} aria-pressed="false" title={`${s.note}。管が鳴っている間は印が点く`}><span class="led" aria-hidden="true"></span>{s.name}</button>)}
-              </div>
-            </div>
-          ))}
-        </div>
-      </Panel>
 
       <Panel hid="hd-wind" title="風と調律" class="a-wind">
         <div class="ptab">

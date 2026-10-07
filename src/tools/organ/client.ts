@@ -92,21 +92,47 @@ piece.addEventListener('change', () => {
 const V = { wind: WIND.v, dist: DIST.v, tempo: 100 };
 const audio = new OrganAudio();
 
-/* ---------- ストップ ---------- */
+/* ---------- ストップとカプラー ---------- */
 const stopBtns = $$<HTMLButtonElement>('button.stop');
 function syncStops(): void {
   for (const b of stopBtns) b.setAttribute('aria-pressed', String(on.has(b.dataset.stop as string)));
   rankTitle();
 }
 $('#stops').addEventListener('click', (e) => {
-  const b = (e.target as Element).closest<HTMLButtonElement>('button.stop');
+  const b = (e.target as Element).closest<HTMLButtonElement>('button.stop, button.cpl');
   if (!b) return;
-  setStop(b.dataset.stop as string, !on.has(b.dataset.stop as string));
-  store('stops', [...on]);
+  if (b.dataset.stop) {
+    setStop(b.dataset.stop, !on.has(b.dataset.stop));
+    store('stops', [...on]);
+  } else {
+    const c = b.dataset.cpl as Coupler;
+    setCoupler(c, !couplers.has(c));
+    store('couplers', [...couplers]);
+  }
 });
+/** カプラー: 第 2 手鍵盤を第 1 手鍵盤で、第 1・第 2 手鍵盤をペダルで鳴らす（同じ高さ） */
+type Coupler = 'II/I' | 'I/P' | 'II/P';
+const COUPLERS: readonly Coupler[] = ['II/I', 'I/P', 'II/P'];
+const couplers = new Set<Coupler>(
+  (() => {
+    const v = stored('couplers');
+    return Array.isArray(v) ? (v as Coupler[]) : [];
+  })().filter((c) => COUPLERS.includes(c)),
+);
+const cplBtns = $$<HTMLButtonElement>('button.cpl');
+function syncCouplers(): void {
+  for (const b of cplBtns) b.setAttribute('aria-pressed', String(couplers.has(b.dataset.cpl as Coupler)));
+}
+/** 鍵盤 d の鍵で鳴る鍵盤（自分と、カプラーでつないだ鍵盤。カプラーはつながない: I/P は II/I を通さない） */
+function sourcesOf(d: Div): Div[] {
+  if (d === 'I') return couplers.has('II/I') ? ['I', 'II'] : ['I'];
+  if (d === 'P')
+    return ['P', ...(couplers.has('I/P') ? (['I'] as const) : []), ...(couplers.has('II/P') ? (['II'] as const) : [])];
+  return ['II'];
+}
 /**
- * ストップを入れる・切る。鍵を押している間なら、実際のオルガンのスライダーと同じく、その鍵の管の弁も開く・閉じる。
- * 曲の先の音で、弁を開くのがまだ先の鍵は、その時刻に合わせる
+ * ストップを入れる・切る。鍵を押している間なら、実際のオルガンのスライダーと同じく、その鍵の管の弁も開く・閉じる
+ * （カプラーでつないだ鍵盤の鍵も）。曲の先の音で、弁を開くのがまだ先の鍵は、その時刻に合わせる
  */
 function setStop(id: string, v: boolean): void {
   if (v === on.has(id)) return;
@@ -116,29 +142,64 @@ function setStop(id: string, v: boolean): void {
   const s = stopOf(id),
     now = audio.now() ?? 0;
   for (const h of held.values()) {
-    if (h.div !== s.div) continue;
+    if (!sourcesOf(h.div).includes(s.div)) continue;
     const at = h.at > now ? h.at : 0;
     if (v) openStop(h, id, at);
-    else {
-      audio.off(h.ids.get(id) ?? [], at);
-      h.ids.delete(id);
-    }
+    else closeStop(h, id, at);
   }
   /* 描く管のストップなら、押している鍵の管の振動も出す・止める */
   if (id === view.value)
     for (const k of vis.keys()) {
       const [d, key] = splitKey(k);
-      if (d !== s.div) continue;
+      if (!sourcesOf(d).includes(s.div)) continue;
       if (v) keys.set(key, soundingOf(key, nowS()));
       else keys.release(key, nowS());
     }
 }
-/** 弁の開いている管のストップの、ストップと描く管のボタンを点ける（AudioWorklet が知らせる） */
-const ledBtns = [...stopBtns, ...$$<HTMLButtonElement>('button.vstop')];
+/** カプラーを入れる・切る。鍵を押している間なら、つないだ鍵盤の入っているストップの弁も開く・閉じる */
+function setCoupler(c: Coupler, v: boolean): void {
+  if (v === couplers.has(c)) return;
+  const before = new Map([...held.values()].map((h) => [h, sourcesOf(h.div)] as const));
+  if (v) couplers.add(c);
+  else couplers.delete(c);
+  syncCouplers();
+  const now = audio.now() ?? 0;
+  for (const [h, was] of before) {
+    const at = h.at > now ? h.at : 0,
+      now2 = sourcesOf(h.div);
+    for (const st of STOPS) {
+      if (!on.has(st.id)) continue;
+      const a = was.includes(st.div),
+        b = now2.includes(st.div);
+      if (!a && b) openStop(h, st.id, at);
+      else if (a && !b) closeStop(h, st.id, at);
+    }
+  }
+}
+/** 計算が間に合わないときの、同時に鳴らす管の数の上限（AudioWorklet が知らせる） */
+audio.onBudget = (n) => txt('#pp-load', n ? `計算が重いので管を ${n} 本までに` : '');
+/** 弁の開いている管のストップのボタンを点ける（AudioWorklet が知らせる） */
 audio.onStops = (ids) => {
-  for (const b of ledBtns)
-    b.querySelector('.led')?.classList.toggle('on', ids.includes((b.dataset.stop ?? b.dataset.v) as string));
+  for (const b of stopBtns) b.querySelector('.led')?.classList.toggle('on', ids.includes(b.dataset.stop as string));
 };
+
+/* ---------- スウェル ---------- */
+const swellIn = $<HTMLInputElement>('#swell');
+function setSwell(v: number): void {
+  swellIn.value = String(v);
+  swellIn.style.setProperty('--p', (v / 100).toFixed(4));
+  swellIn.setAttribute('aria-valuetext', v ? `開き ${v} %` : '閉じている');
+  txt('#swellv', v ? `${v} %` : '閉');
+  audio.setSwell(v / 100);
+}
+{
+  const v = stored('swell');
+  setSwell(typeof v === 'number' && v >= 0 && v <= 100 ? Math.round(v / 5) * 5 : 100);
+}
+swellIn.addEventListener('input', () => {
+  setSwell(Number(swellIn.value));
+  store('swell', Number(swellIn.value));
+});
 
 /* ---------- 押している鍵と弁 ---------- */
 /** 押している鍵 1 つ（鍵盤と鍵ごと） */
@@ -153,6 +214,10 @@ interface Held {
   ids: Map<string, string[]>;
 }
 const held = new Map<string, Held>();
+/**
+ * 弁を開いている管（管の番号 → 開けている鍵の数と、弁を開いた時刻）。カプラーで、同じ管を 2 つの鍵盤の鍵が開けることがある
+ */
+const pipes = new Map<string, { n: number; at: number }>();
 /** 手で押している鍵 */
 const hand = new Set<string>();
 const keyOf = (d: Div, k: number) => `${d}:${k}`;
@@ -160,15 +225,47 @@ const splitKey = (s: string): [Div, number] => {
   const i = s.indexOf(':');
   return [s.slice(0, i) as Div, Number(s.slice(i + 1))];
 };
-/** 押している鍵 h の、ストップ id の管の弁を開く（調律がまだなら開かず、調律が届いたときに開く） */
+/**
+ * 押している鍵 h の、ストップ id の管の弁を開く（調律がまだなら開かず、調律が届いたときに開く）。ほかの鍵が開けている管は、
+ * 数を足すだけ（こちらのほうが早く開くなら、その時刻にも開く）
+ */
 function openStop(h: Held, id: string, at: number): void {
   const m = msgsOf(id, h.key);
-  if (!m.length) return;
+  if (!m.length || h.ids.has(id)) return;
   h.ids.set(
     id,
     m.map((x) => x.id),
   );
-  audio.on(m, at);
+  const send = m.filter((x) => {
+    const c = pipes.get(x.id);
+    if (!c) {
+      pipes.set(x.id, { n: 1, at });
+      return true;
+    }
+    c.n++;
+    if (at >= c.at) return false;
+    c.at = at;
+    return true;
+  });
+  audio.on(send, at);
+}
+/** 押している鍵 h の、ストップ id の管の弁を閉じる（ほかの鍵が開けていない管だけ。弁を開く前なら、開いた時刻に） */
+function closeStop(h: Held, id: string, at: number): void {
+  closePipes(h.ids.get(id) ?? [], at);
+  h.ids.delete(id);
+}
+function closePipes(ids: string[], at: number): void {
+  const out: [string, number][] = [];
+  for (const x of ids) {
+    const c = pipes.get(x);
+    if (!c || --c.n > 0) continue;
+    pipes.delete(x);
+    out.push([x, Math.max(at, c.at)]);
+  }
+  /* 閉じる時刻ごとにまとめて送る */
+  const byAt = new Map<number, string[]>();
+  for (const [x, t] of out) byAt.set(t, [...(byAt.get(t) ?? []), x]);
+  for (const [t, xs] of byAt) audio.off(xs, t);
 }
 /** 鍵を押す（at は AudioContext の時刻。0 ならすぐ）。押している数が 0 から 1 になったら、入っているストップの弁を開く */
 function keyOn(d: Div, k: number, at: number): void {
@@ -178,9 +275,10 @@ function keyOn(d: Div, k: number, at: number): void {
     cur.n++;
     return;
   }
-  const h: Held = { div: d, key: k, n: 1, at, ids: new Map() };
+  const h: Held = { div: d, key: k, n: 1, at, ids: new Map() },
+    src = sourcesOf(d);
   held.set(key, h);
-  for (const s of STOPS) if (s.div === d && on.has(s.id)) openStop(h, s.id, at);
+  for (const s of STOPS) if (src.includes(s.div) && on.has(s.id)) openStop(h, s.id, at);
 }
 /** 鍵を離す。押している数が 0 になったら、押したときに開いた管の弁を閉じる（弁を開く前なら、開いた時刻に閉じる） */
 function keyOff(d: Div, k: number, at: number): void {
@@ -188,7 +286,7 @@ function keyOff(d: Div, k: number, at: number): void {
     h = held.get(key);
   if (!h || --h.n > 0) return;
   held.delete(key);
-  audio.off([...h.ids.values()].flat(), Math.max(at, h.at));
+  closePipes([...h.ids.values()].flat(), Math.max(at, h.at));
 }
 
 /** 押している鍵の見た目（赤い鍵と、描く管の振動）。手と曲の音で同じ鍵を押していれば数える */
@@ -202,7 +300,7 @@ function show(d: Div, k: number, down: boolean, t: number): void {
   if (c > 0 === was > 0) return;
   keys.setDown(d, k, c > 0);
   const s = stopOf(view.value);
-  if (s.div !== d) return;
+  if (!sourcesOf(d).includes(s.div)) return;
   if (c > 0 && on.has(s.id)) keys.set(k, soundingOf(k, t));
   else if (!c) keys.release(k, t);
 }
@@ -253,7 +351,8 @@ function retune(): void {
     if (on.has(m.stop)) {
       const d = stopOf(m.stop).div,
         now = audio.now() ?? 0;
-      for (const h of held.values()) if (h.div === d && !h.ids.has(m.stop)) openStop(h, m.stop, h.at > now ? h.at : 0);
+      for (const h of held.values())
+        if (sourcesOf(h.div).includes(d) && !h.ids.has(m.stop)) openStop(h, m.stop, h.at > now ? h.at : 0);
     }
     if (m.stop === view.value) {
       showRank(view.value);
@@ -646,6 +745,7 @@ $('#muteBtn').addEventListener('click', () => {
   if (PL) stopPiece();
   audio.stop();
   held.clear();
+  pipes.clear();
   hand.clear();
   clearShow();
 });
@@ -676,6 +776,13 @@ $('#relBtn').addEventListener('click', () => {
     }
   for (const [key, h] of held) if (h.at <= now) held.delete(key);
   audio.release();
+  /* 弁を数え直す: まだ先の鍵の弁を、その時刻に開き直す */
+  pipes.clear();
+  for (const h of held.values()) {
+    const ids = [...h.ids.keys()];
+    h.ids.clear();
+    for (const id of ids) openStop(h, id, h.at);
+  }
   /* 鳴り始めた鍵とまとめて数えていた、まだ先の曲の音は押し直す */
   for (const x of ahead) if (!held.has(keyOf(x.div, x.key))) keyOn(x.div, x.key, x.at);
 });
@@ -745,7 +852,9 @@ async function startPiece(): Promise<void> {
   if (PL || piece.value !== pc.v) return;
   /* 曲のレジストレーション */
   for (const s of STOPS) setStop(s.id, pc.stops.includes(s.id));
+  for (const c of COUPLERS) setCoupler(c, pc.couplers.includes(c));
   store('stops', [...on]);
+  store('couplers', [...couplers]);
   audio.setWind(windDesc());
   const notes = data.notes,
     end = Math.max(...notes.map((x) => x.t + x.d)),
@@ -773,6 +882,7 @@ function stopPiece(): void {
   PL = null;
   audio.stop();
   held.clear();
+  pipes.clear();
   hand.clear();
   clearShow();
   txt('#pl-bar', '');
@@ -838,6 +948,7 @@ $('#playBtn').addEventListener('click', () => {
 
 /* ---------- 起動 ---------- */
 syncStops();
+syncCouplers();
 ppBar();
 showOut();
 roomView();
