@@ -73,7 +73,10 @@
 .stab tbody tr:hover{background:var(--inset)}
 .stab tbody tr[aria-selected="true"] td:first-child{box-shadow:inset 3px 0 var(--accent);font-weight:700}
 
-/* 計算結果 */
+/* 計算結果（開閉できる枠。最後に打った鍵の補足を本文の先頭に置く） */
+.res-aux{margin:0 0 10px;text-align:right}
+/* 開閉できる枠の本文の段落の幅・色・行の高さ（site.css の .thy-body>p）を、補足には使わない */
+.a-out .thy-body>p.res-aux{max-width:none;color:var(--ink-3);line-height:1.3}
 .m-sub{display:block;margin-top:2px;font:12px/1.5 var(--sans);color:var(--ink-3)}
 .m-main .m-sub{margin-top:4px}
 .bmet,.rmet{margin-top:12px}

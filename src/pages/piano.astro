@@ -207,8 +207,8 @@ const related = [
         </div>
       </Collapsible>
 
-      <Panel hid="hd-res" title="計算結果" class="a-out">
-        <span slot="aux" class="aux" id="res-aux">最後に打った鍵</span>
+      <Collapsible hid="hd-res" title="計算結果" class="a-out">
+        <p class="aux res-aux" id="res-aux">最後に打った鍵</p>
         <dl class="metrics">
           <div class="m m-main"><dt>第 1 部分音 <i>f</i><sub>1</sub></dt><dd><span id="o-f1"></span><span class="m-sub" id="o-f1s"></span></dd></div>
           <div class="m"><dt>弦長 <i>L</i></dt><dd><span id="o-l"></span><span class="m-sub" id="o-ls"></span></dd></div>
@@ -223,7 +223,7 @@ const related = [
           <div class="m"><dt>ダンパーで止まる時間</dt><dd><span id="o-td"></span><span class="m-sub" id="o-tds"></span></dd></div>
           <div class="m"><dt>響板のアドミタンス</dt><dd><span id="o-y"></span><span class="m-sub" id="o-ys"></span></dd></div>
         </dl>
-      </Panel>
+      </Collapsible>
     </div>
 
     <Collapsible hid="hd-thy" title="動作原理と式">
