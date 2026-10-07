@@ -1,0 +1,204 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import { order, TOOLS } from '../data/tools';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/pole-zero/style.css';
+import { gridSvg } from '../lib/scope';
+import { IH, IR, lvGrid } from '../tools/biquad/plot';
+import { GAIN0, GAINS, L0, LENS, PARAMS, PRESET0, PRESETS, SEL, SRCS } from '../tools/pole-zero/params';
+import { ZS } from '../tools/pole-zero/plot';
+import Theory from '../tools/pole-zero/Theory.astro';
+
+const name = '極と零点';
+const id = 'pole-zero';
+const desc = 'z 平面に極と零点を置いて動かし、デジタルフィルタの周波数特性・インパルス応答・係数を求めます。';
+const prm = (k: string) => {
+  const d = PARAMS.find((x) => x.k === k);
+  if (!d) throw new Error(k);
+  return d;
+};
+/* 同じカテゴリのツールを先に、続けて公開中のほかのツールを並べる */
+const pub = order(TOOLS.filter((t) => !t.s && t.id !== id));
+const related = [...pub.filter((t) => t.c === 'デジタルフィルタ'), ...pub.filter((t) => t.c !== 'デジタルフィルタ')];
+---
+<SiteLayout title={name} tool={{ id, name }} note="特性・係数・共振の値は、極と零点の位置から倍精度で求めた参考値です。" description={desc}>
+  <PageTitle title={name}>z 平面に極と零点を置いて動かし、デジタルフィルタの周波数特性（振幅・位相・群遅延）、インパルス応答、伝達関数の係数と双2次の縦続を求めます。周波数特性の上の点から極と零点へ引いた線の長さと角度で、振幅と位相が決まる様子を見られます。ホワイトノイズや鋸歯状波に掛けた音も聞けます。</PageTitle>
+  <div class="mini" aria-hidden="true"><span id="mst"></span><span>max |<i>H</i>|<b id="mmx"></b></span><span>次数<b id="mord"></b></span></div>
+
+  <div class="tgrid">
+    <div class="col c-a">
+      <Panel hid="hd-z" title="z 平面" class="a-z">
+        <div slot="aux" class="seg zbar" role="group" aria-label="点の追加と削除">
+          <button type="button" id="addP" title="極の対を足す">＋極</button><button type="button" id="addZ" title="零点の対を足す">＋零点</button><button type="button" id="delB" title="選んだ点を消す（Delete）">削除</button>
+        </div>
+        <div class="sbar">
+          <span class="stag" title="極（共役の対は 2 個と数える）"><i class="sw" aria-hidden="true"></i>× 極 <b id="z-np"></b></span>
+          <span class="stag" title="零点（共役の対は 2 個と数える）"><i class="sw c2" aria-hidden="true"></i>○ 零点 <b id="z-nz"></b></span>
+          <span class="stag" title="周波数特性のカーソルの位置（単位円の上の点）"><i>ω</i> <b id="z-w"></b></span>
+        </div>
+        <div class="scope zpl">
+          <svg viewBox={`-6 -6 ${ZS + 12} ${ZS + 12}`} id="z-svg" tabindex="0" role="img" aria-label="z 平面">
+            <defs><clipPath id="z-clip"><rect x="0" y="0" width={ZS} height={ZS}/></clipPath></defs>
+            <g id="z-grid"></g>
+            <g id="z-lines"></g>
+            <g id="z-pts"></g>
+            <g id="z-cur"></g>
+          </svg>
+        </div>
+        <div class="sbar rdbar" id="z-rd"></div>
+        <p class="msg er z-msg" id="z-msg" aria-live="polite"></p>
+        <div class="ptab">
+          <ChoiceRow k="pre" name="プリセット" sub="よく使う配置" choices={PRESETS.map((p) => [p.v, p.name, p.t] as const)} value={PRESET0} layout="chips" wide />
+          {SEL.map((d) => <ParamRow d={d} />)}
+          <ChoiceRow k="km" sym="<i>k</i>" nm="k" name="利得" sub="H(z) に掛ける定数。1 なら振幅は線の長さの積の比そのもの" choices={GAINS} value={GAIN0} />
+          <ParamRow d={prm('fs')} />
+        </div>
+      </Panel>
+
+      <Panel hid="hd-snd" title="試聴" class="a-snd">
+        <div slot="aux" class="srcbar">
+          <div class="seg" id="p-src" role="group" aria-label="入力の音">
+            {SRCS.map(([v, l, t]) => <button type="button" data-v={v} aria-pressed={v === 'noise' ? 'true' : 'false'} title={t}>{l}</button>)}
+          </div>
+          <div class="seg"><button type="button" id="playBtn" aria-pressed="false" title="入力の音にこのフィルタを掛けて鳴らす"><span class="led" aria-hidden="true"></span><span id="playT">再生</span></button></div>
+        </div>
+        <div class="sbar">
+          <span class="stag">IN <b id="lv-in">WHITE NOISE</b></span>
+          <span class="stag"><i class="sw" aria-hidden="true"></i>OUT <b id="lv-t">---</b> dBFS</span>
+          <span class="stag">FS <b id="lv-fs">---</b></span>
+        </div>
+        <div class="scope lvl">
+          <svg viewBox="-12 -4 424 42" role="img" aria-label="出力レベル">
+            <g set:html={lvGrid()} />
+            <rect class="dt1" id="lv-bar" x="0" y="5" width="0" height="12"/>
+            <rect class="lv-hot" id="lv-hot" x="0" y="5" width="0" height="12"/>
+          </svg>
+        </div>
+        <p class="msg er snd-msg" id="snd-msg" aria-live="polite"></p>
+        <div class="ptab">
+          <ParamRow d={prm('vol')} />
+          <ParamRow d={prm('sf')} />
+        </div>
+      </Panel>
+    </div>
+
+    <div class="col c-b">
+      <Panel hid="hd-fr" title="周波数特性" class="a-fr">
+        <div slot="aux" class="seg" id="p-ch2" role="group" aria-label="CH2 に描くもの">
+          <button type="button" data-v="ph" aria-pressed="true" title="位相 ∠H">位相</button><button type="button" data-v="gd" aria-pressed="false" title="群遅延 τ = −dφ/dω（サンプル）">群遅延</button>
+        </div>
+        <div class="sbar">
+          <button type="button" class="tg" id="ch1f" aria-pressed="true" title="振幅"><i class="sw" aria-hidden="true"></i>CH1 MAG <b id="fr-vd"></b>/div</button>
+          <button type="button" class="tg" id="ch2f" aria-pressed="true" title="位相か群遅延"><i class="sw c2" aria-hidden="true"></i>CH2 <span id="fr-c2"></span> <b id="fr-vd2"></b>/div</button>
+          <span class="stag"><span id="fr-xm"></span> <b id="fr-x"></b></span>
+        </div>
+        <div class="scope" id="fr-scope">
+          <svg viewBox="-50 -16 494 282" id="fr-svg" role="img" aria-label="周波数特性">
+            <defs><clipPath id="fr-clip"><rect x="0" y="0" width="400" height="240"/></clipPath></defs>
+            <g id="fr-grid"></g>
+            <g clip-path="url(#fr-clip)"><path class="t2 c2x" id="fr-t2"/><path class="t1 c1x" id="fr-t1"/></g>
+            <path class="cur" id="fr-cur"/>
+            <g id="fr-axes"></g>
+          </svg>
+        </div>
+        <div class="sbar rdbar" id="fr-rd"></div>
+        <div class="ana2">
+          <div class="ptab"><ChoiceRow k="fx" name="横軸" sub="線形なら単位円の角度と同じ並び" choices={[['lin', '線形'], ['log', '対数']]} value="lin" /></div>
+          <div class="ptab"><ParamRow d={prm('bot')} /></div>
+        </div>
+      </Panel>
+
+      <Panel hid="hd-geo" title="距離と角度" class="a-geo">
+        <span slot="aux" class="aux" id="geo-aux"></span>
+        <div class="geq" id="geo-eq"></div>
+        <div class="stw">
+          <table class="stab gtab" id="geo-tab">
+            <caption class="sr">e の jω 乗から各根への線の長さと角度</caption>
+            <thead><tr><th scope="col">根</th><th scope="col">位置</th><th scope="col">長さ <i>d</i></th><th scope="col">角度 <i>φ</i></th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </Panel>
+
+      <Panel hid="hd-imp" title="インパルス応答" class="a-imp">
+        <span slot="aux" class="aux">単位インパルス入力</span>
+        <div class="sbar">
+          <span class="stag"><i class="sw" aria-hidden="true"></i>CH1 <i>h</i>[<i>n</i>] <b id="im-vd"></b>/div</span>
+          <span class="stag">H <b id="im-hd"></b> S/div</span>
+          <span class="stag">TRIG <i>n</i> = 0</span>
+        </div>
+        <div class="scope">
+          <svg viewBox={`-56 -16 468 ${IH + 42}`} id="im-svg" role="img" aria-label="インパルス応答">
+            <defs><clipPath id="im-clip"><rect x="0" y="0" width="400" height={IH}/></clipPath></defs>
+            <g set:html={gridSvg(IR)} />
+            <g clip-path="url(#im-clip)"><path class="stz" id="im-z"/><path class="stm" id="im-st"/><g id="im-dots"></g></g>
+            <path class="cur" id="im-cur"/>
+            <g id="im-axes"></g>
+          </svg>
+        </div>
+        <div class="sbar rdbar"><span class="stag rd" id="im-rd"></span></div>
+        <div class="ptab ana">
+          <ChoiceRow k="len" sym="<i>L</i>" nm="L" name="表示長" sub="インパルス応答のグラフの 8 div に入れるサンプル数" choices={LENS.map((v) => [v, String(v)] as const)} value={L0} layout="chips" wide />
+        </div>
+      </Panel>
+    </div>
+
+    <Panel hid="hd-out" title="計算結果" class="a-out">
+      <dl class="metrics">
+        <div class="m m-main"><dt>最大の利得 max |<i>H</i>|</dt><dd id="o-max"></dd></div>
+        <div class="m"><dt>最大の周波数</dt><dd><span id="o-maxf"></span><span class="m-sub" id="o-maxw"></span></dd></div>
+        <div class="m"><dt>安定性</dt><dd><span id="o-st"></span><span class="m-note" id="o-stn"></span></dd></div>
+        <div class="m"><dt>次数</dt><dd><span id="o-ord"></span><span class="m-sub" id="o-ordn"></span></dd></div>
+        <div class="m"><dt>直流の利得 |<i>H</i>(1)|</dt><dd id="o-dc"></dd></div>
+        <div class="m"><dt><i>f</i><sub>s</sub>/2 の利得 |<i>H</i>(−1)|</dt><dd id="o-ny"></dd></div>
+        <div class="m"><dt>極の最大の半径</dt><dd id="o-rmax"></dd></div>
+        <div class="m"><dt>利得 <i>k</i></dt><dd><span id="o-k"></span><span class="m-note" id="o-kn"></span></dd></div>
+      </dl>
+      <div class="stw ptw">
+        <table class="stab ptab2" id="pt-tab">
+          <caption class="sr">極と零点の位置と、極の共振の周波数・Q・時定数</caption>
+          <thead><tr><th scope="col">点</th><th scope="col">半径 <i>r</i></th><th scope="col">角度 <i>θ</i></th><th scope="col">周波数 <i>f</i></th><th scope="col"><i>Q</i></th><th scope="col">時定数 <i>τ</i></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </Panel>
+
+    <Panel hid="hd-coef" title="係数" class="a-coef">
+      <div slot="aux" class="seg" id="cview" role="group" aria-label="表し方">
+        <button type="button" data-v="tf" aria-pressed="true" title="伝達関数の分子と分母の係数（直接形）">伝達関数</button><button type="button" data-v="sos" aria-pressed="false" title="双2次の段に分けた係数">双2次の縦続</button>
+      </div>
+      <div id="v-tf">
+        <div class="hz" id="tf-hz"></div>
+        <div class="stw"><table class="stab ctab" id="tf-tab">
+          <caption class="sr">伝達関数の分子 b と分母 a の係数</caption>
+          <thead><tr><th scope="col"><i>i</i></th><th scope="col"><i>b</i><sub><i>i</i></sub></th><th scope="col"><i>a</i><sub><i>i</i></sub></th></tr></thead>
+          <tbody></tbody>
+        </table></div>
+      </div>
+      <div id="v-sos" hidden>
+        <div class="hz" id="sos-hz"></div>
+        <p class="cap">極が単位円から遠い段から順に並べる。利得 <i>k</i> は 1 段目の分子に掛けた</p>
+        <div class="stw"><table class="stab ctab" id="sos-tab">
+          <caption class="sr">双2次の段ごとの係数</caption>
+          <thead><tr><th scope="col"><i>i</i></th><th scope="col"><i>b</i><sub>0<i>i</i></sub></th><th scope="col"><i>b</i><sub>1<i>i</i></sub></th><th scope="col"><i>b</i><sub>2<i>i</i></sub></th><th scope="col"><i>a</i><sub>1<i>i</i></sub></th><th scope="col"><i>a</i><sub>2<i>i</i></sub></th></tr></thead>
+          <tbody></tbody>
+        </table></div>
+      </div>
+    </Panel>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools list={related} />
+  <div class="toast" id="toast" role="status" aria-live="polite" data-off></div>
+  <script>
+    import '../tools/pole-zero/client';
+  </script>
+</SiteLayout>
