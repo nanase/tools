@@ -6,7 +6,7 @@
 export type Filtered = 'pink' | 'brown' | 'blue' | 'violet' | 'gray';
 
 /**
- * ピンク: Kellett の精密版（44.1 kHz で設計）。6 つの 1 次の低域通過の和と直達の項
+ * ピンク: Kellett の精密版（44.1 kHz で設計）。6 つの 1 次のフィルタ（うち 5 つは低域通過、極が負の 1 つは高域で大きい）の和と直達の項
  * H(z) = Σ w_k / (1 − p_k z⁻¹) + K0 + K1 z⁻¹
  */
 export const KP = [0.99886, 0.99332, 0.969, 0.8665, 0.55, -0.7616] as const;

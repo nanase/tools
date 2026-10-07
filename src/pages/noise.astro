@@ -34,7 +34,7 @@ const related = [
       <Panel hid="hd-gen" title="ノイズ" class="a-gen">
         <div class="ptab">
           <ChoiceRow k="kind" name="種類" sub="色の名前は、パワースペクトル密度の傾き（周波数が 2 倍になるごとの dB）で決まる" choices={KINDS.map(([v, l, t]) => [v, l, t] as const)} value="pink" layout="chips" wide />
-          <ChoiceRow k="pm" name="ピンクの作り方" sub="フィルタ: 6 つの 1 次の低域通過の和（Kellett）。1/f からのずれは ±0.03 dB。Voss–McCartney: 間隔を倍々にして引き直す乱数の和。ずれは ±0.9 dB" choices={[['kellett', 'Kellett のフィルタ'], ['voss', 'Voss–McCartney']]} value="kellett" layout="chips" wide />
+          <ChoiceRow k="pm" name="ピンクの作り方" sub="フィルタ: 6 つの 1 次のフィルタの和（Kellett）。1/f からのずれは ±0.03 dB。Voss–McCartney: 間隔を倍々にして引き直す乱数の和。ずれは ±0.9 dB" choices={[['kellett', 'Kellett のフィルタ'], ['voss', 'Voss–McCartney']]} value="kellett" layout="chips" wide />
           <ParamRow d={P.den} />
         </div>
       </Panel>
