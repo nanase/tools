@@ -2,6 +2,7 @@
  * 演奏する曲（著作権の切れた曲の電子楽譜から変換したもの）と、強さとペダルの付け方（DOM に依存しない）。
  * 音符のデータは scores/ にあり、曲を選んだときに読み込む
  */
+import { rng } from '../guitar/body';
 import type { ScoreNote } from './scores/types';
 
 export type { ScoreNote };
@@ -149,6 +150,44 @@ export function pedalPoints(notes: readonly ScoreNote[], minGap = 0.9): number[]
     }
   }
   return pts;
+}
+
+/** 演奏の出来事。時刻は拍で持ち、予約するときに今のテンポで秒に直す。打鍵の i は音符の番号 */
+export type PlayEv =
+  | { b: number; type: 'on'; key: number; v: number; jit: number; i: number }
+  | { b: number; type: 'off'; key: number }
+  | { b: number; type: 'pedal'; on: boolean };
+
+/**
+ * 曲の出来事: 音符の打鍵と離鍵（同じ鍵を続けて打つときは、離鍵を打鍵の少し前に）とペダル。vel は強さ mf の
+ * ハンマーの速さ [m/s]、pedal はダンパーペダル（自動・踏む・踏まない）。同じ拍なら 離鍵・ペダル → 打鍵 の順
+ */
+export function playEvents(
+  pc: Piece,
+  notes: readonly ScoreNote[],
+  vel: number,
+  pedal: 'auto' | 'on' | 'off',
+): PlayEv[] {
+  const r = rng(5),
+    vo = voicing(notes),
+    ev: PlayEv[] = [];
+  notes.forEach((x, i) => {
+    const v = Math.min(7, vel * pc.lv * vo[i] * (0.92 + 0.16 * r())),
+      jit = (r() - 0.5) * 0.008;
+    ev.push({ b: x.t, type: 'on', key: x.n, v, jit, i });
+    ev.push({ b: x.t + x.d * 0.97, type: 'off', key: x.n });
+  });
+  if (pedal !== 'off') {
+    const pts = pedal === 'on' ? [0] : pedalPoints(notes);
+    for (const t of pts) {
+      if (t > 0) ev.push({ b: t - 0.02, type: 'pedal', on: false });
+      ev.push({ b: t + 0.12, type: 'pedal', on: true });
+    }
+    const end = Math.max(...notes.map((x) => x.t + x.d));
+    ev.push({ b: end + 2, type: 'pedal', on: false });
+  }
+  const rank = (e: PlayEv) => (e.type === 'off' ? 0 : e.type === 'pedal' ? 1 : 2);
+  return ev.sort((a, b) => a.b - b.b || rank(a) - rank(b));
 }
 
 /**

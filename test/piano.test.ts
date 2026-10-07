@@ -5,7 +5,7 @@ import { coupled, cvec, project } from '../src/tools/piano/eig';
 import { boardDesc, Engine, minPhaseFir } from '../src/tools/piano/engine';
 import { type StruckString, strike } from '../src/tools/piano/hammer';
 import { hammerOf, makePiano, NO_DAMPER, type Piano, strikeKey } from '../src/tools/piano/model';
-import { PIECES, pedalPoints, TempoMap, voicing } from '../src/tools/piano/score';
+import { PIECES, pedalPoints, pieceOf, playEvents, TempoMap, voicing } from '../src/tools/piano/score';
 import { admittance, hfPressure, makeBoard, pressure, sigma } from '../src/tools/piano/soundboard';
 import {
   etaOf,
@@ -452,5 +452,83 @@ describe('曲の強さとペダル', () => {
       }
       if (bars[p.v]) expect(Math.ceil((end - p.pickup) / p.bar - 1e-9)).toBe(bars[p.v]);
     }
+  });
+});
+
+describe('曲の音符がすべて鳴る', () => {
+  it('月光 第 1 楽章の 3 連符は途切れない（LilyPond の MIDI で落ちていた小節 9・46 の E4 を戻した）', async () => {
+    const notes = await pieceOf('moon1').load(),
+      on = new Set(notes.map((x) => Math.round(x.t * 3)));
+    for (const b of [9, 46])
+      expect(notes.some((x) => x.n === 64 && Math.abs(x.t - ((b - 1) * 4 + 2 / 3)) < 1e-6)).toBe(true);
+    const last = Math.max(...on);
+    for (let k = 1; k < last; k++) if (on.has(k - 1) && on.has(k + 1)) expect(on.has(k)).toBe(true);
+  });
+  it('どの曲も、すべての音符に打鍵の出来事がちょうど 1 つあり、同じ鍵の離鍵は打鍵の数だけある', async () => {
+    for (const p of PIECES) {
+      const notes = await p.load(),
+        ev = playEvents(p, notes, 2.5, 'auto'),
+        ons = ev.filter((e) => e.type === 'on');
+      expect(ons.length).toBe(notes.length);
+      expect(new Set(ons.map((e) => (e.type === 'on' ? e.i : -1))).size).toBe(notes.length);
+      expect(ev.filter((e) => e.type === 'off').length).toBe(notes.length);
+    }
+  });
+  /** 曲の範囲 [b0, b1) 拍を演奏のとおりに予約して鳴らし、打った鍵のモードが 40 ms 後も鳴っていない音符を返す */
+  async function silent(v: string, b0: number, b1: number): Promise<number[]> {
+    const pc = pieceOf(v),
+      notes = await pc.load(),
+      ev = playEvents(pc, notes, 2.5, 'auto').filter((e) => e.b >= b0 && e.b < b1),
+      tm = new TempoMap(pc.tempoMap),
+      spb = 60 / pc.bpm,
+      t0 = tm.tau(b0) * spb,
+      e = new Engine(FS),
+      /* 打鍵ごとの声（Engine の中の配列は、鳴らすたびに作り直される） */
+      voices = () => (e as unknown as { voices: { n: number; own: Int16Array }[] }).voices,
+      held = new Map<number, number>(),
+      wait: { at: number; i: number; key: number; v: { n: number; own: Int16Array } }[] = [],
+      bad: number[] = [],
+      y = new Float32Array(128);
+    let pedal = false,
+      k = 0;
+    e.setBoard(boardDesc(P.board));
+    for (let i = 0; k < ev.length || wait.length; i += 128) {
+      const t = t0 + i / FS;
+      while (k < ev.length && tm.tau(ev[k].b) * spb <= t) {
+        const x = ev[k++];
+        if (x.type === 'pedal') {
+          pedal = x.on;
+          e.setPedal(pedal);
+        } else if (x.type === 'off') {
+          const c = (held.get(x.key) ?? 1) - 1;
+          if (c > 0) held.set(x.key, c);
+          else {
+            held.delete(x.key);
+            e.release(x.key);
+          }
+        } else {
+          held.set(x.key, (held.get(x.key) ?? 0) + 1);
+          e.strike(
+            strikeKey(P, { key: x.key, v: x.v, soft: false, free: (q) => pedal || held.has(q) || q >= NO_DAMPER }, FS)
+              .msg,
+          );
+          wait.push({ at: t + 0.04, i: x.i, key: x.key, v: voices()[voices().length - 1] });
+        }
+      }
+      e.render(y, 0, 128);
+      for (let j = wait.length - 1; j >= 0; j--) {
+        const w = wait[j];
+        if (w.at > t) continue;
+        let own = 0;
+        for (let m = 0; m < w.v.n; m++) if (w.v.own[m] === w.key) own++;
+        if (!own) bad.push(w.i);
+        wait.splice(j, 1);
+      }
+    }
+    return bad;
+  }
+  it('打った鍵のモードは、刈り込まれずに 40 ms 後も鳴っている（月光 第 1 楽章の小節 9、第 3 楽章の初め）', async () => {
+    expect(await silent('moon1', 32, 36)).toEqual([]);
+    expect(await silent('moon3', 0, 12)).toEqual([]);
   });
 });

@@ -71,6 +71,35 @@ function cadenza(m: Midi, log: (s: string) => void): RawNote[] {
   return out;
 }
 
+/**
+ * LilyPond 2.10 の MIDI は、同じ譜表のほかの声部で同じ高さの音が鳴っているうちに始まり、それより先に終わる音を落とす。
+ * 月光 第 1 楽章では、右手の旋律の E4（4 分音符）と重なる 3 連符の E4（.ly の topsecondary の「gis, b e」の e）が、
+ * 小節 9 と 46 の 1 拍目の 3 つ目で落ちている（独立に作られた別の MIDI と比べて、落ちているのはこの 2 音だけ）。
+ * [小節, 音の高さ]
+ */
+const DROPPED_M1: [number, number][] = [
+  [9, 64],
+  [46, 64],
+];
+
+/** 月光 第 1 楽章の、MIDI で落ちた 3 連符の音を戻す（右手の譜表、小節の 1 拍目の 3 つ目の 3 連符の 8 分音符） */
+function restoreTriplets(m: Midi, log: (s: string) => void): RawNote[] {
+  const q = m.ppq,
+    out = [...m.notes];
+  if (q % 3) throw new Error(`4 分音符の tick 数 ${q} が 3 で割り切れません`);
+  for (const [bar, n] of DROPPED_M1) {
+    const t0 = (bar - 1) * 4 * q + (2 * q) / 3,
+      t1 = t0 + q / 3;
+    if (out.some((x) => x.tr === 1 && x.n === n && x.t0 === t0))
+      throw new Error(`小節 ${bar} の ${noteName(n)} はすでにあります`);
+    if (!out.some((x) => x.tr === 1 && x.n === n && x.t0 < t0 && x.t1 >= t1))
+      throw new Error(`小節 ${bar} で、${noteName(n)} を落とす原因の同じ高さの音がありません`);
+    out.push({ tr: 1, n, t0, t1 });
+  }
+  log(`MIDI で落ちていた 3 連符の音を戻した: ${DROPPED_M1.map(([b, n]) => `小節 ${b} の ${noteName(n)}`).join('、')}`);
+  return out;
+}
+
 const mutopia = (id: number) => `https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=${id}`;
 const common =
   '時刻と長さを 4 分音符の 1/480 に寄せ、同じ時刻の同じ高さの音を 1 つにまとめた。強弱とテンポは使わない。';
@@ -127,7 +156,11 @@ const pieces: Piece[] = [
       '音符は Mutopia Project の楽譜（Stewart Holmes 作成、底本 Berners, 1908 (edited by A. Winterberger)、',
       `Mutopia-2007/02/11-276、${mutopia(276)}）の MIDI から変換した。`,
     ],
-    changes: [`変更: ${common}`],
+    changes: [
+      '変更: LilyPond の MIDI で落ちていた 3 連符の 2 音（小節 9 と 46 の 1 拍目の E4。旋律の同じ高さの音と重なる）を、',
+      '.ly のとおりに戻した。',
+      common,
+    ],
     license: 'cc-by-sa-2.5',
     tracks: [
       [1, 0],
@@ -135,6 +168,7 @@ const pieces: Piece[] = [
     ],
     meter: [2, 2],
     pickup: 0,
+    fix: restoreTriplets,
   },
   {
     name: 'moonlight2',

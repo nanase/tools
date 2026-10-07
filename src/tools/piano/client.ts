@@ -10,7 +10,7 @@ import { acoustics, reverbSpec, roomOf } from '../../lib/reverb';
 import { SW } from '../../lib/scope';
 import { store, stored } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
-import { C, cabs, rng } from '../guitar/body';
+import { C, cabs } from '../guitar/body';
 import { spectra, toDb } from '../spectrum/fft';
 import { PianoAudio } from './audio';
 import { type BoardDesc, boardDesc } from './engine';
@@ -18,7 +18,7 @@ import { Keys } from './keys';
 import { damperRate, makePiano, NO_DAMPER, type Piano, type PianoSpec, type Strike, strikeKey } from './model';
 import { DIST, THICK, UNI, VEL, VOL0 } from './params';
 import { BH, boardPlot, fAtX, forcePlot, OH, specPlot, wavePlot, Y1_TOP, Y2_TOP } from './plot';
-import { PIECES, type Piece, pedalPoints, pieceOf, type ScoreNote, TempoMap, voicing } from './score';
+import { PIECES, type Piece, type PlayEv, pieceOf, playEvents, type ScoreNote, TempoMap } from './score';
 import { admittance, pressure, yMeanOf } from './soundboard';
 import { inharm, KEY_HI, KEY_LO, KEYS, noteHz, noteName, PIANO_TYPES, pianoTypeOf } from './strings';
 import type { Job, Reply } from './worker';
@@ -335,7 +335,7 @@ function cursor(svg: SVGSVGElement, h: number, fn: (x: number | null) => void): 
   svg.addEventListener('pointerleave', () => fn(null));
 }
 
-/* ---------- 部屋 ---------- */
+/* ---------- 残響（部屋） ---------- */
 function roomView(): void {
   const r = roomOf(room.value),
     off = r.v === 'off',
@@ -627,11 +627,7 @@ $('#muteBtn').addEventListener('click', () => {
 });
 
 /* ---------- 演奏 ---------- */
-/** 演奏の出来事。時刻は拍で持ち、予約するときに今のテンポで秒に直す */
-type Ev =
-  | { b: number; type: 'on'; key: number; v: number; jit: number }
-  | { b: number; type: 'off'; key: number }
-  | { b: number; type: 'pedal'; on: boolean };
+type Ev = PlayEv;
 interface Play {
   ev: Ev[];
   i: number;
@@ -654,31 +650,6 @@ interface Play {
 let PL: Play | null = null;
 const noteCache = new Map<string, ScoreNote[]>();
 const spbOf = (pc: Piece) => 60 / (pc.bpm * (V.tempo / 100));
-/** 曲の出来事: 音符の打鍵と離鍵（同じ鍵を続けて打つときは、離鍵を打鍵の少し前に）とペダル */
-function eventsOf(pc: Piece, notes: ScoreNote[]): Ev[] {
-  const r = rng(5),
-    vo = voicing(notes),
-    ev: Ev[] = [],
-    lv = pc.lv;
-  notes.forEach((x, i) => {
-    const v = Math.min(7, V.vel * lv * vo[i] * (0.92 + 0.16 * r())),
-      jit = (r() - 0.5) * 0.008;
-    ev.push({ b: x.t, type: 'on', key: x.n, v, jit });
-    ev.push({ b: x.t + x.d * 0.97, type: 'off', key: x.n });
-  });
-  if (ped.value !== 'off') {
-    const pts = ped.value === 'on' ? [0] : pedalPoints(notes);
-    for (const t of pts) {
-      if (t > 0) ev.push({ b: t - 0.02, type: 'pedal', on: false });
-      ev.push({ b: t + 0.12, type: 'pedal', on: true });
-    }
-    const end = Math.max(...notes.map((x) => x.t + x.d));
-    ev.push({ b: end + 2, type: 'pedal', on: false });
-  }
-  /* 同じ拍なら 離鍵・ペダル → 打鍵 */
-  const rank = (e: Ev) => (e.type === 'off' ? 0 : e.type === 'pedal' ? 1 : 2);
-  return ev.sort((a, b) => a.b - b.b || rank(a) - rank(b));
-}
 function syncPlay(): void {
   $('#playBtn').setAttribute('aria-pressed', String(!!PL));
   $('#playLed').classList.toggle('on', !!PL);
@@ -707,7 +678,7 @@ async function startPiece(): Promise<void> {
   for (const k of S.held) lift(k);
   audio.pedal(false);
   keys.setPedal(false);
-  const ev = eventsOf(pc, notes),
+  const ev = playEvents(pc, notes, V.vel, ped.value),
     now = audio.now() ?? 0,
     end = Math.max(...notes.map((x) => x.t + x.d));
   PL = {
