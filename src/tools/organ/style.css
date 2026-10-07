@@ -49,7 +49,8 @@
 .og-cap{fill:var(--ink-3)}
 .og-mouth,.og-boot{fill:var(--og-mouth)}
 .kb-n{fill:var(--ink-3);font:500 9.5px var(--mono);pointer-events:none}
-.kk{stroke:var(--line-2);stroke-width:.8}
+/* 鍵の上で始めたタッチは、スクロールせずにグリッサンドにする（図を横にスクロールするのは管の図やスクロールバーで） */
+.kk{stroke:var(--line-2);stroke-width:.8;touch-action:none}
 .kk.w{fill:var(--kb-w)}
 .kk.b{fill:var(--kb-b)}
 .kk.on{fill:var(--key-on)}

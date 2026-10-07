@@ -2,7 +2,8 @@
  * 管と鍵盤の図。実際のコンソールと同じく、第 2 手鍵盤・第 1 手鍵盤を上下に重ね、ペダルを一番下に置いて、3 つの鍵盤を
  * 同時に描く（押している鍵は赤）。その上に、選んだストップの管を、そのストップの鍵盤の鍵に合わせて正面から描く
  * （管の長さと太さは実際に比例させ、図に収まるように縮める）。管を描いている鍵盤は、左の札と線で示す。
- * 鳴っている管には、管の中の音圧の分布（定在波）を描く。残像は振れる範囲、スローは瞬間の分布
+ * 鳴っている管には、管の中の音圧の分布（定在波）を描く。残像は振れる範囲、スローは瞬間の分布。
+ * 鍵を押したまま動かすとグリッサンドになる（押し始めた鍵盤の中で。ポインタごとに別々に動く）
  */
 import { type Div, divOf } from './stops';
 import { isBlack } from './tuning';
@@ -113,7 +114,8 @@ export class Keys {
   private readonly cursor: SVGRectElement;
   private raf = 0;
   private cur: { div: Div; key: number } = { div: 'I', key: 60 };
-  private readonly ptr = new Map<number, { div: Div; key: number }>();
+  /** ポインタごとに押している鍵と、押し始めたのが管の図か（なぞる範囲は押し始めた鍵盤の段か、管の図の中だけ） */
+  private readonly ptr = new Map<number, { div: Div; key: number; pipe: boolean }>();
 
   constructor(
     readonly svg: SVGSVGElement,
@@ -407,6 +409,33 @@ export class Keys {
     return g && y >= BASE - FOOT - g.l * this.scale - 6 ? { div: this.div, key: k } : null;
   }
 
+  /**
+   * なぞっている点 (x, y) の鍵。押し始めた鍵盤の段の中だけで探す（上下の段へ移らない。段の外は段の端に寄せ、
+   * 左右の端より外は端の鍵）。管の図で押し始めたら、管の図の並びで探す
+   */
+  private slide(s: { div: Div; pipe: boolean }, x: number, y: number): number {
+    const { lo, hi } = divOf(s.div),
+      xx = Math.min(KX1 - 0.5, Math.max(KX0 + 0.5, x));
+    if (s.pipe) {
+      const sp = (KX1 - KX0) / (this.hi - this.lo + 1);
+      return Math.min(this.hi, Math.max(this.lo, Math.round((xx - KX0) / sp - 0.5) + this.lo));
+    }
+    const r = rowOf(s.div),
+      yy = Math.min(r.y + r.wh - 0.5, Math.max(r.y + 0.5, y));
+    if (yy <= r.y + r.bh)
+      for (let k = lo; k <= hi; k++) {
+        if (!isBlack(k)) continue;
+        const [bx, , bw] = keyRect(s.div, k);
+        if (xx >= bx && xx <= bx + bw) return k;
+      }
+    for (let k = lo; k <= hi; k++) {
+      if (isBlack(k)) continue;
+      const [wx, , ww] = keyRect(s.div, k);
+      if (xx >= wx && xx <= wx + ww) return k;
+    }
+    return hi;
+  }
+
   private showRect(rc: SVGRectElement, at: { div: Div; key: number } | null): void {
     if (at === null) {
       rc.style.display = 'none';
@@ -423,38 +452,78 @@ export class Keys {
 
   private bind(): void {
     const { svg } = this;
-    const at = (e: PointerEvent) => {
+    const pt = (e: PointerEvent) => {
       const m = svg.getScreenCTM();
-      if (!m) return null;
-      const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(m.inverse());
-      return this.hit(p.x, p.y);
+      return m ? new DOMPoint(e.clientX, e.clientY).matrixTransform(m.inverse()) : null;
+    };
+    const at = (e: PointerEvent) => {
+      const p = pt(e);
+      return p ? this.hit(p.x, p.y) : null;
+    };
+    /** ポインタ id の鍵を離す（ほかのポインタが同じ鍵を押していれば、音は止めない） */
+    const lift = (id: number, div: Div, key: number) => {
+      if (![...this.ptr].some(([i, x]) => i !== id && x.div === div && x.key === key)) this.opt.onKey(div, key, false);
     };
     const up = (e: PointerEvent) => {
       const k = this.ptr.get(e.pointerId);
       if (k === undefined) return;
       this.ptr.delete(e.pointerId);
-      if (![...this.ptr.values()].some((x) => x.div === k.div && x.key === k.key)) this.opt.onKey(k.div, k.key, false);
+      lift(e.pointerId, k.div, k.key);
     };
     svg.addEventListener('pointerdown', (e) => {
       if (e.button !== 0) return;
-      const k = at(e);
-      if (k === null) return;
+      const p = pt(e),
+        k = p ? this.hit(p.x, p.y) : null;
+      if (!p || k === null) return;
       e.preventDefault();
       try {
         svg.setPointerCapture(e.pointerId);
       } catch {
         /* 合成したイベントなど、捕まえられないポインタ */
       }
-      this.ptr.set(e.pointerId, k);
+      this.ptr.set(e.pointerId, { ...k, pipe: p.y <= BASE });
       this.opt.onKey(k.div, k.key, true);
     });
+    /*
+     * 鍵の上で始めたタッチは、スクロールさせずにグリッサンドにする。SVG の中の要素の touch-action は効かないブラウザが
+     * あるので、touchstart を止める（管の図で始めたタッチは、図を横にスクロールする）
+     */
+    svg.addEventListener(
+      'touchstart',
+      (e) => {
+        const t = e.changedTouches[0],
+          m = svg.getScreenCTM();
+        if (!t || !m) return;
+        const p = new DOMPoint(t.clientX, t.clientY).matrixTransform(m.inverse());
+        if (p.y > BASE && this.hit(p.x, p.y)) e.preventDefault();
+      },
+      { passive: false },
+    );
     svg.addEventListener('pointerup', up);
     svg.addEventListener('pointercancel', up);
     svg.addEventListener('pointermove', (e) => {
-      if (e.pointerType !== 'mouse' || this.ptr.size) return;
-      const k = at(e);
-      this.showRect(this.hover, k);
-      svg.style.cursor = k !== null ? 'pointer' : '';
+      const s = this.ptr.get(e.pointerId);
+      if (!s) {
+        if (e.pointerType !== 'mouse' || this.ptr.size) return;
+        const k = at(e);
+        this.showRect(this.hover, k);
+        svg.style.cursor = k !== null ? 'pointer' : '';
+        return;
+      }
+      /* グリッサンド: 押したまま動かすと、入った鍵を押して前の鍵を離す。図の外へ出たら離す */
+      const r = svg.getBoundingClientRect();
+      if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) {
+        up(e);
+        return;
+      }
+      const p = pt(e);
+      if (!p) return;
+      const key = this.slide(s, p.x, p.y);
+      if (key === s.key) return;
+      const old = s.key;
+      s.key = key;
+      this.opt.onKey(s.div, key, true);
+      lift(e.pointerId, s.div, old);
     });
     svg.addEventListener('pointerleave', () => this.showRect(this.hover, null));
     svg.addEventListener('focus', () => this.showRect(this.cursor, this.cur));
