@@ -530,7 +530,6 @@ function syncPedal(): void {
   audio.pedal(on);
   keys.setPedal(on);
   $('#pedLed').classList.toggle('on', on);
-  if (!on) for (const k of keys.sounding()) if (!S.held.has(k)) keys.dampAt(k, nowS(), sdOf(k));
 }
 /** 表示用のダンパーの減衰率（第 1 部分音） */
 const sdOf = (k: number) => (k < NO_DAMPER ? damperRate(PM.keys[k - KEY_LO], 1) : 0);
@@ -548,23 +547,31 @@ async function press(k: number): Promise<void> {
     v = qv(V.vel),
     view = audio.strike(k, v, soft.value === 'on', Number(thump.value), freeOf(S.held, livePedal()));
   txt('#kb-live', noteName(k));
-  view.then((vw) =>
-    keys.set(k, { view: vw, t0: t, damp: S.held.has(k) || livePedal() ? Infinity : nowS(), sd: sdOf(k) }),
-  );
-  if (S.last !== k) {
-    S.last = k;
-    table();
-    results();
-    boardView();
-  }
-  renderOut();
+  /* ダンパーは図が鍵とペダルの状態から決める（表示が届く前に離していても、離した時刻から止める） */
+  view.then((vw) => keys.set(k, { view: vw, t0: t, damp: Infinity, sd: sdOf(k) }));
+  S.last = k;
+  showLastSoon();
+}
+/** 最後に打った鍵の表・計算結果・響板・音の波形（グリッサンドで続けて打つときは、まとめて 1 回描く） */
+let shown = -1,
+  showTimer: ReturnType<typeof setTimeout> | undefined;
+function showLastSoon(): void {
+  clearTimeout(showTimer);
+  showTimer = setTimeout(() => {
+    if (shown !== S.last) {
+      shown = S.last;
+      table();
+      results();
+      boardView();
+    }
+    renderOut();
+  }, 60);
 }
 function lift(k: number): void {
   if (PL) return;
   S.held.delete(k);
   keys.setDown(k, false);
   audio.release(k);
-  if (!livePedal()) keys.dampAt(k, nowS(), sdOf(k));
 }
 
 /* 音量（スライダーだけ） */
@@ -604,14 +611,12 @@ tempoIn.addEventListener('input', () => {
 /* リリース: 押しているすべての鍵（手でも曲でも）から手を離し、ペダルで上がっているダンパーも下ろす。
    演奏は続け、曲なら次の打鍵・ペダルからまた効く。曲があとで離す鍵は、もう離れていても問題ない */
 $('#relBtn').addEventListener('click', () => {
-  const an = audio.now() ?? 0,
-    t = nowS();
+  const an = audio.now() ?? 0;
   S.held.clear();
   audio.releaseAll(an);
   keys.upAll();
   keys.setPedal(false);
   $('#pedLed').classList.remove('on');
-  for (const k of keys.sounding()) keys.dampAt(k, t, sdOf(k));
   const p = PL;
   if (!p) return;
   /* 予約済みの出来事のうち、今より前に打った鍵とペダルを離したことにする（今より後の予約はそのまま） */
@@ -744,7 +749,6 @@ function tick(): void {
         keys.setPedal(e.on);
         $('#pedLed').classList.toggle('on', e.on);
       });
-      if (!e.on) for (const k of keys.sounding()) if (!p.held.has(k)) later(p, tp, () => keys.dampAt(k, tp, sdOf(k)));
     } else if (e.type === 'off') {
       const n = (p.held.get(e.key) ?? 1) - 1;
       if (n > 0) p.held.set(e.key, n);
@@ -752,7 +756,6 @@ function tick(): void {
       if (n > 0) continue;
       audio.release(e.key, at);
       later(p, tp, () => keys.setDown(e.key, false));
-      if (!p.pedal) later(p, tp, () => keys.dampAt(e.key, tp, sdOf(e.key)));
     } else {
       p.held.set(e.key, (p.held.get(e.key) ?? 0) + 1);
       p.lastOn.set(e.key, at);

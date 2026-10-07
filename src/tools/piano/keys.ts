@@ -2,6 +2,9 @@
  * 鍵盤と弦の図（グランドピアノを上から見た向き。手前に鍵盤、奥へ弦が伸び、低音が左）。
  * 弦の長さは実際の長さに比例させ、弦の間隔と振動の幅は見やすいように広げて描く。
  * ハンマーが打つ点・ダンパー・駒を示し、鳴っている弦の振動（残像・スロー）を描く。鍵や弦を押して弾く操作を受ける
+ * （押したまま動かすと、ポインタの入った鍵を押し、前の鍵を離す。グリッサンド）。振動は音と同じく、ダンパーが
+ * 下りると（鍵を離していてペダルも踏んでいない）止まる。画面で 0.5 px より小さい間は描かず、打ったときより
+ * 60 dB 小さくなったら（聞こえなくなる目安）消す
  */
 import type { StringView } from './model';
 import { isBlack, KEY_HI, KEY_LO, KEYS } from './strings';
@@ -28,6 +31,44 @@ const PX_MM = SP / 13.7;
 /** 弾いた点から広がる輪の時間 [s] と最大の半径 */
 const RIP_S = 0.6,
   RIP_R = 26;
+/** 描くのをやめる振れ: 画面での大きさ [px] と、打ったときの振れに対する比（−60 dB） */
+const MIN_PX = 0.5,
+  MIN_REL = 1e-3;
+
+/**
+ * ポインタごとに押している鍵を持ち、押したまま動かしたときに鍵を押し替える（グリッサンド）。DOM に依存しない。
+ * ほかのポインタが押している鍵は打ち直さず、離さない
+ */
+export class Gliss {
+  private readonly ptr = new Map<number, number | null>();
+  constructor(private readonly onKey: (key: number, down: boolean) => void) {}
+  /** ポインタ id がこの図で押しているか（鍵の外へ出ていても） */
+  has(id: number): boolean {
+    return this.ptr.has(id);
+  }
+  get size(): number {
+    return this.ptr.size;
+  }
+  /** ポインタ id の押している鍵を k にする（null は鍵の外） */
+  move(id: number, k: number | null): void {
+    const cur = this.ptr.get(id) ?? null;
+    if (k === cur && this.ptr.has(id)) return;
+    this.ptr.set(id, k);
+    const held = [...this.ptr.values()];
+    if (cur !== null && !held.includes(cur)) this.onKey(cur, false);
+    if (k !== null && k !== cur && held.filter((x) => x === k).length === 1) this.onKey(k, true);
+  }
+  /** ポインタ id を離す */
+  up(id: number): void {
+    if (!this.ptr.has(id)) return;
+    this.move(id, null);
+    this.ptr.delete(id);
+  }
+}
+
+/** ダンパーが下りてからの振れの倍率（時刻 t は s.damp と同じ絶対の時刻 [s]） */
+export const damperFade = (s: Pick<Sounding, 'damp' | 'sd'>, t: number): number =>
+  t > s.damp ? Math.exp(-s.sd * (t - s.damp)) : 1;
 
 /** 1 つの鍵の弦（描く寸法） */
 export interface KeyGeo {
@@ -44,9 +85,11 @@ export interface Sounding {
   view: StringView;
   /** 打った時刻 [s] */
   t0: number;
-  /** ダンパーが下りた時刻 [s]（下りていなければ Infinity）と、そのときの減衰率 [1/s] */
+  /** ダンパーが下りた時刻 [s]（下りていなければ Infinity）と、ダンパーで増える減衰率 [1/s] */
   damp: number;
   sd: number;
+  /** 打ったときの振れ [m]（描き始めに求める） */
+  peak0?: number;
 }
 
 export interface KeysOpt {
@@ -89,6 +132,11 @@ export class Keys {
   private readonly pend: { key: number; s: Sounding }[] = [];
   private readonly down = new Set<number>();
   private pedal = false;
+  /** 鍵ごとの最後に離した時刻と、最後にペダルを離した時刻 [s]（打つ前の表示を作ってから鍵を離したときに使う） */
+  private readonly upAt = new Float64Array(KEYS).fill(-Infinity);
+  private pedalOffAt = -Infinity;
+  /** 画面の 1 px あたりの図の単位の逆数（図の単位あたりの px） */
+  private pxPerUnit = 1;
   private rips: { x: number; y: number; t0: number }[] = [];
   private readonly gStatic: SVGGElement;
   private readonly gDamp: SVGGElement;
@@ -100,12 +148,13 @@ export class Keys {
   private raf = 0;
   private cur = 60;
   /** ポインタごとの押している鍵 */
-  private readonly ptr = new Map<number, number>();
+  private readonly gl: Gliss;
 
   constructor(
     readonly svg: SVGSVGElement,
     private readonly opt: KeysOpt,
   ) {
+    this.gl = new Gliss((k, d) => this.opt.onKey(k, d));
     svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
     this.gStatic = el('g', 'kb-st', svg);
     this.gDamp = el('g', 'kb-dmp', svg);
@@ -162,22 +211,46 @@ export class Keys {
     this.slow = n;
     this.kick();
   }
-  /** 鍵を押している表示 */
+  /** 鍵を押している表示。離したとき、ペダルを踏んでいなければダンパーが下りて弦が止まり始める */
   setDown(key: number, on: boolean): void {
     if (on) this.down.add(key);
-    else this.down.delete(key);
+    else {
+      this.down.delete(key);
+      const t = this.opt.now();
+      this.upAt[key - KEY_LO] = t;
+      if (!this.pedal) this.dampKey(key, t);
+    }
     this.keyEls[key - KEY_LO]?.classList.toggle('on', on);
     this.drawDampers();
   }
   /** すべての鍵を離した表示にする */
   upAll(): void {
-    for (const k of this.down) this.keyEls[k - KEY_LO]?.classList.remove('on');
+    const t = this.opt.now();
+    for (const k of this.down) {
+      this.keyEls[k - KEY_LO]?.classList.remove('on');
+      this.upAt[k - KEY_LO] = t;
+      if (!this.pedal) this.dampKey(k, t);
+    }
     this.down.clear();
     this.drawDampers();
   }
+  /** ペダル。離すと、押していない鍵の弦のダンパーが下りる */
   setPedal(on: boolean): void {
+    if (this.pedal && !on) {
+      const t = this.opt.now();
+      this.pedalOffAt = t;
+      for (const k of new Set([...this.snd.keys(), ...this.pend.map((p) => p.key)]))
+        if (!this.down.has(k)) this.dampKey(k, t);
+    }
     this.pedal = on;
     this.drawDampers();
+  }
+  /** 鍵 key のダンパーが時刻 t に下りた（ダンパーのない弦は止まらない） */
+  private dampKey(key: number, t: number): void {
+    if (!this.geo[key - KEY_LO]?.damper) return;
+    const s = this.snd.get(key);
+    if (s && s.damp > t) s.damp = t;
+    for (const p of this.pend) if (p.key === key && p.s.damp > t && p.s.t0 < t) p.s.damp = t;
   }
   /** 弦の振動を始める（t0 が先なら、その時刻に始める） */
   set(key: number, s: Sounding): void {
@@ -187,14 +260,26 @@ export class Keys {
     } else this.start(key, s);
     this.kick();
   }
-  /** ダンパーが下りた（鍵 key の振動を、時刻 t から減衰させる） */
+  /**
+   * 鍵 key の振動を、時刻 t から減衰率 sd [1/s] で止める（すべて止めるとき）。すでにダンパーで止まり始めていれば、
+   * そこまでの減衰を保ったまま、t から速い減衰に切り替える
+   */
   dampAt(key: number, t: number, sd: number): void {
     const s = this.snd.get(key);
-    if (s && s.damp > t) {
-      s.damp = t;
-      s.sd = sd;
+    if (s) {
+      if (s.damp >= t) {
+        s.damp = t;
+        s.sd = sd;
+      } else if (sd > s.sd) {
+        s.damp = t - (s.sd * (t - s.damp)) / sd;
+        s.sd = sd;
+      }
     }
-    for (const p of this.pend) if (p.key === key && p.s.damp > t && p.s.t0 < t) p.s.damp = t;
+    for (const p of this.pend)
+      if (p.key === key && p.s.damp > t && p.s.t0 < t) {
+        p.s.damp = t;
+        p.s.sd = sd;
+      }
   }
   /** 予定と振動をすべて消す */
   clear(): void {
@@ -207,6 +292,10 @@ export class Keys {
   }
 
   private start(key: number, s: Sounding): void {
+    /* 打ったあと、表示を始める前に鍵を離していた（ダンパーが下りていた）ら、その時刻から止め始める */
+    const up = this.upAt[key - KEY_LO];
+    if (!this.down.has(key) && !this.pedal && this.geo[key - KEY_LO]?.damper && up >= s.t0)
+      s.damp = Math.min(s.damp, Math.max(up, this.pedalOffAt));
     this.snd.set(key, s);
     const g = this.geo[key - KEY_LO];
     if (g) this.rips.push({ x: this.sx(key), y: this.sy(g.x0), t0: s.t0 });
@@ -276,7 +365,9 @@ export class Keys {
   /** 1 コマ描く。鳴っている弦がなくなったら止める */
   private frame(): void {
     this.raf = 0;
-    const now = this.opt.now();
+    const now = this.opt.now(),
+      w = this.svg.getBoundingClientRect().width;
+    this.pxPerUnit = w > 0 ? w / W : 1;
     while (this.pend.length && this.pend[0].s.t0 <= now) {
       const p = this.pend.shift() as { key: number; s: Sounding };
       this.start(p.key, p.s);
@@ -305,10 +396,13 @@ export class Keys {
     return this.rips.length > 0;
   }
 
-  /** 部分音ごとの、時刻 to の位相・時刻 td の減衰での変位 [m] */
+  /**
+   * 部分音ごとの、時刻 to の位相・時刻 td の減衰での変位 [m]（to・td は打ってからの時間）。
+   * ダンパーが下りていれば、下りた時刻（s.damp は絶対の時刻）からの減衰を掛ける
+   */
   private coef(s: Sounding, to: number, td: number): Float64Array {
     const c = new Float64Array(PARTS),
-      fade = td > s.damp ? Math.exp(-s.sd * (td - s.damp)) : 1;
+      fade = damperFade(s, s.t0 + td);
     for (const p of s.view.parts) {
       if (p.n > PARTS) continue;
       let y = 0;
@@ -326,6 +420,16 @@ export class Keys {
   private drawString(key: number, s: Sounding, now: number): string | null {
     const t = now - s.t0;
     if (t < 0) return '';
+    if (s.peak0 === undefined) {
+      const c0 = this.coef(s, 0, 0);
+      let p0 = 0;
+      for (let j = 0; j <= PTS; j++) {
+        let y = 0;
+        for (let n = 0; n < PARTS; n++) if (c0[n]) y += c0[n] * SIN[n][j];
+        p0 = Math.max(p0, Math.abs(y));
+      }
+      s.peak0 = p0;
+    }
     const x = this.sx(key),
       g = this.geo[key - KEY_LO],
       k = this.exag * PX_MM * 1000,
@@ -365,8 +469,10 @@ export class Keys {
       for (let j = PTS; j >= 0; j--) d += `L${(x + lo[j] * k).toFixed(1)} ${ys(j)}`;
       d += 'Z';
     }
-    /* 0.5 µm を下回ったら消す */
-    return peak > 5e-7 ? d : null;
+    /* 打ったときより 60 dB 小さくなったら（聞こえなくなる目安）消す。画面で 0.5 px より小さい間は描かない
+       （振幅の強調を大きくすれば、また見える） */
+    if (peak < MIN_REL * (s.peak0 ?? 0)) return null;
+    return peak * k * this.pxPerUnit >= MIN_PX ? d : '';
   }
 
   /* ---------- 操作 ---------- */
@@ -415,12 +521,7 @@ export class Keys {
       const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(m.inverse());
       return this.hit(p.x, p.y);
     };
-    const up = (e: PointerEvent) => {
-      const k = this.ptr.get(e.pointerId);
-      if (k === undefined) return;
-      this.ptr.delete(e.pointerId);
-      if (![...this.ptr.values()].includes(k)) this.opt.onKey(k, false);
-    };
+    const up = (e: PointerEvent) => this.gl.up(e.pointerId);
     svg.addEventListener('pointerdown', (e) => {
       if (e.button !== 0) return;
       const k = at(e);
@@ -431,18 +532,26 @@ export class Keys {
       } catch {
         /* 合成したイベントなど、捕まえられないポインタ */
       }
-      this.ptr.set(e.pointerId, k);
-      this.opt.onKey(k, true);
+      this.showRect(this.hover, null);
+      this.gl.move(e.pointerId, k);
     });
     svg.addEventListener('pointerup', up);
     svg.addEventListener('pointercancel', up);
     svg.addEventListener('pointermove', (e) => {
-      if (e.pointerType !== 'mouse' || this.ptr.size) return;
+      /* 押したまま動かすと、ポインタの入った鍵を押し、前の鍵を離す（図の外や鍵のない所では離す） */
+      if (this.gl.has(e.pointerId)) {
+        this.gl.move(e.pointerId, at(e));
+        return;
+      }
+      if (e.pointerType !== 'mouse' || this.gl.size) return;
       const k = at(e);
       this.showRect(this.hover, k);
       svg.style.cursor = k !== null ? 'pointer' : '';
     });
-    svg.addEventListener('pointerleave', () => this.showRect(this.hover, null));
+    svg.addEventListener('pointerleave', (e) => {
+      if (this.gl.has(e.pointerId)) this.gl.move(e.pointerId, null);
+      this.showRect(this.hover, null);
+    });
     svg.addEventListener('focus', () => this.showRect(this.cursor, this.cur));
     svg.addEventListener('blur', () => this.showRect(this.cursor, null));
     let held: number | null = null;

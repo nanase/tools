@@ -4,7 +4,8 @@ import { C } from '../src/tools/guitar/body';
 import { coupled, cvec, project } from '../src/tools/piano/eig';
 import { boardDesc, Engine, minPhaseFir } from '../src/tools/piano/engine';
 import { type StruckString, strike } from '../src/tools/piano/hammer';
-import { hammerOf, makePiano, NO_DAMPER, type Piano, strikeKey } from '../src/tools/piano/model';
+import { damperFade, Gliss } from '../src/tools/piano/keys';
+import { damperRate, hammerOf, makePiano, NO_DAMPER, type Piano, strikeKey } from '../src/tools/piano/model';
 import { PIECES, pedalPoints, pieceOf, playEvents, TempoMap, voicing } from '../src/tools/piano/score';
 import { admittance, hfPressure, makeBoard, pressure, sigma } from '../src/tools/piano/soundboard';
 import {
@@ -569,5 +570,36 @@ describe('曲の音符がすべて鳴る', () => {
   it('打った鍵のモードは、刈り込まれずに 40 ms 後も鳴っている（月光 第 1 楽章の小節 9、第 3 楽章の初め）', async () => {
     expect(await silent('moon1', 32, 36)).toEqual([]);
     expect(await silent('moon3', 0, 12)).toEqual([]);
+  });
+});
+
+describe('鍵盤と弦の図', () => {
+  it('グリッサンド: 押したまま動かすと、入った鍵を押して前の鍵を離す。ほかの指が押している鍵は打ち直さず、離さない', () => {
+    const log: string[] = [],
+      g = new Gliss((k, d) => log.push(`${k}${d ? '↓' : '↑'}`));
+    g.move(1, 60);
+    g.move(1, 60);
+    g.move(1, 62);
+    g.move(1, null);
+    g.move(1, 64);
+    g.up(1);
+    expect(log).toEqual(['60↓', '60↑', '62↓', '62↑', '64↓', '64↑']);
+    log.length = 0;
+    g.move(1, 60);
+    g.move(2, 64);
+    g.move(1, 64);
+    g.up(2);
+    g.move(1, 65);
+    g.up(1);
+    expect(log).toEqual(['60↓', '64↓', '60↑', '64↑', '65↓', '65↑']);
+    expect(g.size).toBe(0);
+  });
+  it('ダンパーが下りると、図の弦の振れも音と同じ減衰率で小さくなる（下りるまでは 1）', () => {
+    const km = P.keys[60 - KEY_LO],
+      sd = damperRate(km, 1),
+      s = { damp: 10, sd };
+    expect(damperFade(s, 9.5)).toBe(1);
+    expect(damperFade(s, 10 + Math.log(1000) / sd)).toBeCloseTo(1e-3, 9);
+    expect(damperFade({ damp: Infinity, sd }, 1e6)).toBe(1);
   });
 });

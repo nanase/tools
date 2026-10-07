@@ -49,8 +49,8 @@
 .kb-d{fill:var(--ink-3);opacity:.85}
 .kb-d.up{opacity:.35}
 .kb-n{fill:var(--ink-3);font:500 9.5px var(--mono);pointer-events:none}
-/* 鍵: 押している鍵（手で押した鍵も、曲で押している鍵も）は赤く塗る */
-.kk{stroke:var(--line-2);stroke-width:.8}
+/* 鍵: 押している鍵（手で押した鍵も、曲で押している鍵も）は赤く塗る。鍵の上のタッチはなぞってグリッサンドにする（図の横のスクロールは弦の所とスクロールバーで） */
+.kk{stroke:var(--line-2);stroke-width:.8;touch-action:none}
 .kk.w{fill:var(--kb-w)}
 .kk.b{fill:var(--kb-b)}
 .kk.on{fill:var(--key-on)}
