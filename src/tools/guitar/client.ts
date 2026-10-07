@@ -1,11 +1,12 @@
 /**
- * ギター音響モデルのページの入口: 弦・弾き方・胴の入力 → 弦と胴の模型 → 指板の図・計算結果・胴の応答・音の波形・音。
+ * ギター音響モデルのページの入口: 弦・弾き方・胴・部屋の入力 → 弦と胴の模型 → 指板の図・計算結果・胴の応答・音の波形・音。
  * 弦を押すと、そのフレットを押さえて弾く。曲の演奏は先の音を少しずつ AudioWorklet へ予約する
  */
 import { Choice } from '../../lib/choice';
 import { $, esc } from '../../lib/dom';
 import { fmt, fmtR, minus, plain, ro } from '../../lib/format';
 import { ParamGroup } from '../../lib/param';
+import { acoustics, reverbSpec, roomOf } from '../../lib/reverb';
 import { SW } from '../../lib/scope';
 import { store, stored } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
@@ -16,7 +17,7 @@ import { type BodyDesc, bodyDesc, type PluckMsg } from './engine';
 import { type Guitar, type Modes, modesOf, type PluckSpec, pluckOf, t60, toolOf, tuneCoupled } from './model';
 import { Neck } from './neck';
 import { slideNoise } from './noise';
-import { AMP, ANGLE, DIA, HOLE, POS, SCALE, SLANT, type StrKey, TEN, THICK, VOL0, VOLUME } from './params';
+import { AMP, ANGLE, DIA, DIST, HOLE, POS, SCALE, SLANT, type StrKey, TEN, THICK, VOL0, VOLUME } from './params';
 import { BH, bodyPlot, fAtX, OH, specPlot, wavePlot, Y1_TOP, Y2_TOP } from './plot';
 import { finger, PIECES, type Piece, type Placed, pieceOf } from './score';
 import {
@@ -110,6 +111,7 @@ const mat = choice<string>('mat', (v) => {
 const wood = choice<string>('wood', () => rebuild());
 const tool = choice<string>('tool', () => renderOut());
 const nz = choice<string>('nz', () => {});
+const room = choice<string>('room', () => roomView());
 const nv = choice<'blur' | 'slow'>('nv', (v) => {
   neck.setMode(v);
   neckBar();
@@ -147,6 +149,7 @@ const V = {
   h: THICK.v,
   V: VOLUME.v,
   dh: HOLE.v,
+  dist: DIST.v,
   /** テンポ（曲の標準に対する %） */
   tempo: 100,
 };
@@ -304,7 +307,7 @@ function syncStrRows(): void {
   P2.note('T', tm.value === 'auto' ? `${tuningOf(tun.value).name}の調弦に合わせた値` : '');
 }
 
-const P1 = new ParamGroup<string>([POS, SLANT, AMP, ANGLE, SCALE, THICK, VOLUME, HOLE], (v, k) => {
+const P1 = new ParamGroup<string>([POS, SLANT, AMP, ANGLE, SCALE, THICK, VOLUME, HOLE, DIST], (v, k) => {
   V.pos = v.pos;
   V.slant = v.slant;
   V.amp = v.amp;
@@ -313,6 +316,7 @@ const P1 = new ParamGroup<string>([POS, SLANT, AMP, ANGLE, SCALE, THICK, VOLUME,
   V.h = v.h;
   V.V = v.V;
   V.dh = v.dh;
+  V.dist = v.dist;
   if (!G) return;
   if (k === 'pos' || k === 'slant') {
     neck.setPos(posAll());
@@ -325,6 +329,7 @@ const P1 = new ParamGroup<string>([POS, SLANT, AMP, ANGLE, SCALE, THICK, VOLUME,
     retune();
     rebuild();
   } else if (k === 'h' || k === 'V' || k === 'dh') rebuild();
+  else if (k === 'dist') roomView();
 });
 const P2 = new ParamGroup<StrKey>(
   [DIA, TEN],
@@ -483,6 +488,18 @@ function cursor(svg: SVGSVGElement, h: number, fn: (x: number | null) => void): 
     fn(p.x >= 0 && p.x <= SW && p.y >= 0 && p.y <= h ? p.x : null);
   });
   svg.addEventListener('pointerleave', () => fn(null));
+}
+
+/* ---------- 残響（部屋。再生の音だけに付ける） ---------- */
+function roomView(): void {
+  const r = roomOf(room.value),
+    off = r.v === 'off',
+    a = acoustics(r);
+  html('#r-t', off ? '—' : ro(a.t60, 's', 3));
+  html('#r-th', off ? '—' : ro(a.t60Hi, 's', 3));
+  html('#r-rc', off ? '—' : ro(a.rc, 'm', 3));
+  html('#r-dr', off ? '—' : `${minus((20 * Math.log10(V.dist / a.rc)).toFixed(1))}<span class="u">dB</span>`);
+  audio.setRoom(reverbSpec(r, V.dist));
 }
 
 /* ---------- 音の波形（Web Worker で計算） ---------- */
@@ -910,6 +927,7 @@ rebuild();
 neck.setPos(posAll());
 neckBar();
 showOut();
+roomView();
 /* 保存した値を戻したあと（マイクロタスク）にもう一度合わせる */
 queueMicrotask(() => {
   neck.setPos(posAll());
