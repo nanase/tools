@@ -77,7 +77,7 @@ export type Up = 'near' | 'lin';
 
 /**
  * 色差を fx × fy 倍に戻す（実数）。near は同じ値を繰り返し、lin は標本を受け持つ画素の中心に置いて線形に補間する
- * （2 倍では libjpeg の fancy upsampling と同じ 3:1 の重み）
+ * （2 倍では libjpeg 6b の fancy upsampling と同じ 3:1 の重み）
  */
 export function upsample(p: Plane, fx: number, fy: number, mode: Up): Float32Array {
   const W = p.w * fx,

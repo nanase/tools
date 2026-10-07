@@ -62,7 +62,7 @@ export const HUFFS = [
 /** 復号の色差の補間 */
 export const UPS = [
   ['near', '最近傍', '間引いた色差の値をそのまま繰り返す'],
-  ['lin', '線形', '隣の標本と 3:1 の重みで補間する（libjpeg の既定）'],
+  ['lin', '線形', '隣の標本と 3:1 の重みで補間する（libjpeg 6b と libjpeg-turbo の既定）'],
 ] as const;
 
 /** 画像の表示 */

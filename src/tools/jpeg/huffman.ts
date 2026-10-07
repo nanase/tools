@@ -1,6 +1,6 @@
 /**
  * ハフマン符号: 表の定義（BITS・HUFFVAL）から符号を作る（T.81 Annex C）、出現回数から最適な表を作る
- * （T.81 K.2 の手順。libjpeg の jpeg_gen_optimal_table と同じ）、記号の大きさの区分（SSSS）と付加ビット
+ * （T.81 K.2 の手順。libjpeg 6b の jpeg_gen_optimal_table と同じ）、記号の大きさの区分（SSSS）と付加ビット
  */
 import type { HuffSpec } from './tables';
 
@@ -71,7 +71,7 @@ export function optimalSpec(freq: ArrayLike<number>): HuffSpec {
   }
   const bits = new Int32Array(33);
   for (let i = 0; i <= 256; i++) if (size[i]) bits[size[i]]++;
-  /* 16 を超える長さを詰める（K.3） */
+  /* 16 を超える長さを詰める（図 K.3） */
   for (let i = 32; i > 16; i--)
     while (bits[i] > 0) {
       let j = i - 2;
