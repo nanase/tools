@@ -2,7 +2,9 @@
  * オルガンの音を作る AudioWorklet。audio.ts が ?worker&url で読み込み、'organ-model' として使う。
  * 管の弁を開く・閉じるを、指定の時刻（AudioContext の時刻）に標本の単位で行う。
  * 出力はステレオで、部屋の残響を足す（再生だけ。表示用の計算には使わない）。
- * 弁の開いている管のストップが変わったら、主スレッドへ知らせる（ストップのボタンの点灯）
+ * 弁の開いている管のストップが変わったら、主スレッドへ知らせる（ストップのボタンの点灯）。
+ * 計算の時間を測り、1 回の処理の持ち時間の 7 割を超えたら、同時に鳴らす管の数に上限を設けて音切れを防ぐ
+ * （ストップとカプラーを全部入れた和音では、管が 150 本を超えることがある）
  */
 import { Reverb, type ReverbSpec } from '../../lib/reverb';
 import { Engine, type PipeMsg, type WindDesc } from './engine';
@@ -22,15 +24,23 @@ declare function registerProcessor(name: string, ctor: new () => AudioWorkletPro
 export type OgMsg =
   | { type: 'wind'; w: WindDesc }
   | { type: 'room'; r: ReverbSpec }
+  | { type: 'swell'; s: number }
   | { type: 'on'; at: number; p: PipeMsg[] }
   | { type: 'off'; at: number; ids: string[] }
   | { type: 'release'; at: number }
   | { type: 'stop' };
-/** 主スレッドへ送るもの: 弁の開いている管のストップ（前に送ってから開いて閉じたものも含める） */
-export type OgOut = { type: 'stops'; ids: string[] };
+/**
+ * 主スレッドへ送るもの: 弁の開いている管のストップ（前に送ってから開いて閉じたものも含める）と、
+ * 同時に鳴らす管の数の上限（上限がなければ 0）
+ */
+export type OgOut = { type: 'stops'; ids: string[] } | { type: 'budget'; n: number };
 
 /** 弁の開いているストップを調べる間隔 [処理の回数]（128 標本ごと。48 kHz で約 21 ms） */
 const REPORT = 8;
+/** 計算の重さを測る間隔 [処理の回数]（約 0.5 s）と、上限を設ける・外す重さ（持ち時間に対する割合） */
+const LOAD_N = 188,
+  LOAD_HI = 0.7,
+  LOAD_LO = 0.4;
 
 type Ev = Extract<OgMsg, { at: number }>;
 
@@ -45,12 +55,16 @@ registerProcessor(
     private readonly flash = new Set<string>();
     private sent = '';
     private tick = 0;
+    /* 計算の時間の合計 [ms] と回数（Date.now は 1 ms 刻みだが、多くの回数で平均すれば偏らない） */
+    private busy = 0;
+    private blocks = 0;
     constructor() {
       super();
       this.port.onmessage = (ev: MessageEvent<OgMsg>) => {
         const m = ev.data;
         if (m.type === 'wind') this.e.setWind(m.w);
         else if (m.type === 'room') this.rv.set(m.r);
+        else if (m.type === 'swell') this.e.setSwell(m.s);
         else if (m.type === 'stop') {
           this.q = [];
           this.e.allOff();
@@ -71,6 +85,19 @@ registerProcessor(
       else if (m.type === 'off') for (const id of m.ids) this.e.off(id);
       else this.e.allOff();
     }
+    /** 計算の重さから、同時に鳴らす管の数の上限を決める */
+    private load(n: number): void {
+      const e = this.e,
+        r = this.busy / ((this.blocks * n * 1000) / sampleRate),
+        live = e.active().length,
+        was = e.budget;
+      this.busy = 0;
+      this.blocks = 0;
+      if (r > LOAD_HI) e.budget = Math.max(16, Math.floor((live * LOAD_HI) / r));
+      else if (r < LOAD_LO && Number.isFinite(e.budget)) e.budget = e.budget + 8 > live + 32 ? Infinity : e.budget + 8;
+      if (e.budget !== was)
+        this.port.postMessage({ type: 'budget', n: Number.isFinite(e.budget) ? e.budget : 0 } satisfies OgOut);
+    }
     /** 弁の開いているストップが変わっていれば送る */
     private report(): void {
       const ids = [...this.e.openStops(this.flash)].sort(),
@@ -85,7 +112,8 @@ registerProcessor(
       if (!out.length) return true;
       const ch = out[0],
         chR = out[1] ?? this.spare,
-        n = ch.length;
+        n = ch.length,
+        t0 = Date.now();
       let i = 0;
       while (i < n) {
         let j = n;
@@ -101,6 +129,8 @@ registerProcessor(
         i = j;
       }
       this.rv.process(ch, chR, 0, n);
+      this.busy += Date.now() - t0;
+      if (++this.blocks >= LOAD_N) this.load(n);
       if (++this.tick >= REPORT) {
         this.tick = 0;
         this.report();

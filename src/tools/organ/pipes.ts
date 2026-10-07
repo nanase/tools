@@ -190,6 +190,11 @@ export interface FlueSpec extends WindSpec {
   onset?: number;
   /** 先に求めた往復の損失（省くと作るときに求める） */
   fit?: LossFit;
+  /**
+   * 鳴らすモード（省くと 1）。ハーモニック・フルートは倍の長さの開管を第 2 モードで鳴らす（ジェットの走行時間を鳴らす高さに
+   * 合わせるので、第 1 モードは位相がそろわない）。立ち上がりの増幅は、このモードの周波数を中心にする
+   */
+  mode?: number;
 }
 
 /** ジェットの速さを求める間隔 [標本]（間は線形に補間する。足の圧力の変化は数 ms より遅い） */
@@ -415,9 +420,10 @@ export class FluePipe {
     this.eBuf = new Float64Array(el);
     this.emask = el - 1;
     this.info = { M, Lac, f1, short: bd.short, g: bd.g, p: bd.p };
-    this.kE = 1 - Math.exp(-f1 / fs);
+    const fm = f1 * (s.mode ?? 1);
+    this.kE = 1 - Math.exp(-fm / fs);
     {
-      const w0 = (2 * Math.PI * Math.min(f1, 0.4 * fs)) / fs,
+      const w0 = (2 * Math.PI * Math.min(fm, 0.4 * fs)) / fs,
         al = Math.sin(w0) / (2 * ONSET_Q),
         a0 = 1 + al;
       this.qb0 = al / a0;

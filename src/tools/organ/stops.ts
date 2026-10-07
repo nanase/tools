@@ -82,6 +82,14 @@ export interface FlueStop {
   noise: number;
   /** θ の上限（足の穴で足の圧力を下げて抑える） */
   theta: number;
+  /** この鍵より下には管がない（高音だけのストップ） */
+  from?: number;
+  /** 列ごとに閉管か（省くと stopped。コルネットの 8' だけ閉管など） */
+  stoppedRanks?: readonly boolean[];
+  /** 目標の高さからのずれ [セント]（鍵盤の音の関数。セレストは少し高く調律して、対の列とうなりを作る） */
+  cents?: (midi: number) => number;
+  /** この範囲 [最低, 最高] の鍵は、倍の長さの開管を第 2 モードで鳴らす（ハーモニック・フルート） */
+  harmonic?: readonly [number, number];
 }
 
 /** リード管のストップ */
@@ -144,10 +152,34 @@ const PRINCIPAL = { alpha: 0.25, beta: 0.25, gamma: 0.02, y0: 0.3, noise: 0.05, 
 const FLUTE = { alpha: 0.2, beta: 0.4, gamma: 0.02, y0: 0.2, noise: 0.05, stopped: true, theta: 8 } as const;
 /** 開いたフルート（4'・2 2/3'）の整音: 口とカットアップは太いフルートと同じ、開管（推測） */
 const OPEN_FLUTE = { ...FLUTE, stopped: false } as const;
+/**
+ * 弦（サリツィオナール・セレスト）の整音: 口の幅は円周の 1/4、カットアップは口の幅の 0.3（Fletcher 1977 の、静かな弦の
+ * 音のストップの比）。管は標準より 10 半音細くし（推測）、θ の上限は 13 にする（10 ではプリンシパルより 12 dB 小さく、
+ * 13 で 10 dB 小さい。低いカットアップ 0.2 では 14 を超えると低音が第 2 モードの倍音へ寄り、18 で 1 オクターブ上へ跳んだ）。
+ * 実際のガンバの鋭い音（多くの高い倍音）は、ひげ（Bart）などの働きによるもので、この模型では出ないので、
+ * 柔らかい弦のストップ（サリツィオナール）にとどめる
+ */
+const STRING = { alpha: 0.25, beta: 0.3, gamma: 0.02, y0: 0.2, noise: 0.05, stopped: false, theta: 13 } as const;
 
 export type Stop = FlueStop | ReedStop;
 
 export const STOPS: readonly Stop[] = [
+  /*
+   * 2 段の手鍵盤とペダルの折衷型（ドイツのバロックの合唱に、フランスのロマン派の色を足したもの）。並びと名前は、
+   * Mühleisen のテュービンゲンのオルガン（2004、II/P 25 ストップ）とモンタバウアーのオルガン（2014、III/P 40 ストップ）の
+   * 仕様を参考にした。第 1 手鍵盤（Hauptwerk）・第 2 手鍵盤（Schwellwerk、箱に入る）・ペダルの順に、高さの順に並べる
+   */
+  /* 手鍵盤の 16' の閉管（ゲダクトより 2 半音細い。推測） */
+  {
+    kind: 'flue',
+    id: 'bd16',
+    name: "Bourdon 16'",
+    div: 'I',
+    note: '蓋で閉じた管の 16 フィート。鍵盤の音の 1 オクターブ下で、和音に重さを足す',
+    ranks: () => [0.5],
+    scale: 4,
+    ...FLUTE,
+  },
   {
     kind: 'flue',
     id: 'p8',
@@ -158,6 +190,17 @@ export const STOPS: readonly Stop[] = [
     scale: 0,
     ...PRINCIPAL,
   },
+  /* 開いた太いフルート（フルートの 4' と同じ整音の 8'） */
+  {
+    kind: 'flue',
+    id: 'hf8',
+    name: "Hohlflöte 8'",
+    div: 'I',
+    note: '太い開いた管の 8 フィート。高い倍音の少ない、丸く大きなフルートの音',
+    ranks: () => [1],
+    scale: 6,
+    ...OPEN_FLUTE,
+  },
   {
     kind: 'flue',
     id: 'p4',
@@ -166,6 +209,27 @@ export const STOPS: readonly Stop[] = [
     note: 'プリンシパルの 1 オクターブ上',
     ranks: () => [2],
     scale: 0,
+    ...PRINCIPAL,
+  },
+  {
+    kind: 'flue',
+    id: 'wf4',
+    name: "Waldflöte 4'",
+    div: 'I',
+    note: '開いたフルートの 4 フィート。第 1 手鍵盤のフルートの合唱に',
+    ranks: () => [2],
+    scale: 4,
+    ...OPEN_FLUTE,
+  },
+  /* 合唱のクイントはプリンシパルより 1 半音細い（推測） */
+  {
+    kind: 'flue',
+    id: 'q3',
+    name: "Quinte 2 2/3'",
+    div: 'I',
+    note: 'プリンシパルの第 3 倍音（1 オクターブと 5 度上）。プレヌムの輪郭を足す',
+    ranks: () => [3],
+    scale: -1,
     ...PRINCIPAL,
   },
   {
@@ -189,6 +253,54 @@ export const STOPS: readonly Stop[] = [
     scale: -2,
     ...PRINCIPAL,
   },
+  /*
+   * コルネット: 8'（閉管）・4'・2 2/3'・2'・1 3/5' の 5 列の太いフルートで、c' から上だけにある（フランスの古典のオルガンの
+   * Cornet V と同じ）。C6 から上は、高すぎて鳴らない 1 3/5' を 1 オクターブ下げ、2' を除く
+   */
+  {
+    kind: 'flue',
+    id: 'cor',
+    name: 'Cornet V',
+    div: 'I',
+    note: "c' から上の 5 列（8'・4'・2 2/3'・2'・1 3/5'）。倍音を重ねた独奏用の音",
+    ranks: (midi) => (midi < 84 ? [1, 2, 3, 4, 5] : [1, 2, 3, 2.5]),
+    scale: 4,
+    ...OPEN_FLUTE,
+    from: 60,
+    stoppedRanks: [true],
+  },
+  /*
+   * トランペットとポザウネの共鳴管と舌の厚さは Pasi Organs の公開資料 "Reed Pipes"（pasiorgans.com/pdfs/reeds.pdf、
+   * Hauptwerk の Trumpet 8'（German shallots）と Pedal の Posaune 16'。楽器名と単位の記載がなく、値から mm と推定）
+   */
+  {
+    kind: 'reed',
+    id: 'tr8',
+    name: "Trompete 8'",
+    div: 'I',
+    note: '円錐の共鳴管のリード管。全部の倍音が強い、輝かしい音',
+    top: 93,
+    ratio: 1,
+    bore: 'cone',
+    n0: 0,
+    d1: [0.12, 0.093, 0.07, 0.058, 0.048, 0.04],
+    d0: [0.021, 0.0155, 0.011, 0.008, 0.007, 0.007],
+    L: [2.15, 1.05, 0.54, 0.26, 0.12, 0.043],
+    e: [0.5e-3, 0.35e-3, 0.25e-3, 0.14e-3, 0.1e-3],
+    wK: 1,
+    side: 0.62,
+  },
+  /* 弦に近いプリンシパル（標準より 3 半音細い。推測） */
+  {
+    kind: 'flue',
+    id: 'gp8',
+    name: "Geigenprincipal 8'",
+    div: 'II',
+    note: '細めのプリンシパル。第 2 手鍵盤の合唱の土台で、やや弦の音に近い',
+    ranks: () => [1],
+    scale: -3,
+    ...PRINCIPAL,
+  },
   /* フルートは +4〜+9 半音（Wikipedia "Organ flue pipe scaling" の範囲から +6 を選んだ推測） */
   {
     kind: 'flue',
@@ -199,6 +311,50 @@ export const STOPS: readonly Stop[] = [
     ranks: () => [1],
     scale: 6,
     ...FLUTE,
+  },
+  {
+    kind: 'flue',
+    id: 'sal8',
+    name: "Salicional 8'",
+    div: 'II',
+    note: '細い管の、柔らかい弦の音のストップ。ゆっくり立ち上がる',
+    ranks: () => [1],
+    scale: -10,
+    ...STRING,
+  },
+  /*
+   * ヴォア・セレスト: サリツィオナールと同じ管を少し高く調律し、対で鳴らしてうなりを作る（c から上）。ずれは C で 19 セント、
+   * 5 オクターブ上で 4 セントへ直線で減らし、うなりの速さを 1〜5 Hz にそろえる（調律師の例。Hauptwerk のフォーラム）
+   */
+  {
+    kind: 'flue',
+    id: 'vc8',
+    name: "Voix céleste 8'",
+    div: 'II',
+    note: 'サリツィオナールを少し高く調律した列。いっしょに入れると、ゆっくりうねる音になる',
+    ranks: () => [1],
+    scale: -10,
+    ...STRING,
+    from: 48,
+    cents: (midi) => 19 - (15 * (midi - 36)) / 60,
+  },
+  /*
+   * ハーモニック・フルート: c' から b'' は倍の長さの開管を第 2 モードで鳴らす（Cavaillé-Coll の Flûte harmonique。実際の管は
+   * 中ほどの小さな穴で第 1 モードを抑えるが、模型には穴がなく、ジェットの走行時間を鳴らす高さに合わせて第 2 モードを選ぶ）。
+   * それより上では第 1 モードへ落ちたので、低音と同じく普通の開管にする。口とカットアップはプリンシパルと同じ（太くすると
+   * 第 2 モードが保てなかった）で、唇のずれを小さくして偶数次の倍音を弱め、フルートらしくする（推測）
+   */
+  {
+    kind: 'flue',
+    id: 'fh8',
+    name: "Flûte harmonique 8'",
+    div: 'II',
+    note: "c' から b'' は倍の長さの管を 1 オクターブ上（第 2 モード）で鳴らす。基音の強い、澄んで力のあるフルート",
+    ranks: () => [1],
+    scale: 1,
+    ...PRINCIPAL,
+    y0: 0.1,
+    harmonic: [60, 83],
   },
   {
     kind: 'flue',
@@ -219,6 +375,79 @@ export const STOPS: readonly Stop[] = [
     ranks: () => [3],
     scale: 4,
     ...OPEN_FLUTE,
+  },
+  {
+    kind: 'flue',
+    id: 'fl2',
+    name: "Flageolett 2'",
+    div: 'II',
+    note: '開いたフルートの 2 フィート。明るい高い音を足す',
+    ranks: () => [4],
+    scale: 2,
+    ...OPEN_FLUTE,
+  },
+  /* テルツは C6 から上を 1 オクターブ下げる（高すぎる管は鳴らなかった） */
+  {
+    kind: 'flue',
+    id: 't135',
+    name: "Terz 1 3/5'",
+    div: 'II',
+    note: '第 5 倍音（2 オクターブと長 3 度上）のフルート。ナザルトと重ねてコルネットの色を作る',
+    ranks: (midi) => (midi < 84 ? [5] : [2.5]),
+    scale: 4,
+    ...OPEN_FLUTE,
+  },
+  /*
+   * オーボエ: トランペットより細い円錐の共鳴管と細い舌（推測。実際の管の先のベル（漏斗）と蓋は模型にない）
+   */
+  {
+    kind: 'reed',
+    id: 'hb8',
+    name: "Oboe 8'",
+    div: 'II',
+    note: '細い円錐の共鳴管のリード管。鼻にかかった、柔らかいオーボエの音',
+    top: 88,
+    ratio: 1,
+    bore: 'cone',
+    n0: 0,
+    d1: [0.065, 0.05, 0.038, 0.03, 0.024, 0.02],
+    d0: [0.012, 0.009, 0.0075, 0.0065, 0.006, 0.006],
+    L: [2.05, 1.02, 0.5, 0.25, 0.12, 0.06],
+    e: [0.35e-3, 0.25e-3, 0.18e-3, 0.12e-3, 0.09e-3],
+    wK: 0.7,
+    side: 0.62,
+  },
+  /*
+   * クルムホルンは、Audsley (1905) の Clarinet 8'（円筒、約半分の長さ）の内径と長さで代える（CC〜c3）。
+   * 舌の厚さはトランペットと同じとした（概数）
+   */
+  {
+    kind: 'reed',
+    id: 'kr8',
+    name: "Krummhorn 8'",
+    div: 'II',
+    note: '細い円筒の共鳴管のリード管。奇数次の倍音が強い、鼻にかかった音',
+    top: 88,
+    ratio: 1,
+    bore: 'cyl',
+    n0: 0,
+    d1: [0.0445, 0.0318, 0.0286, 0.0238, 0.0206],
+    d0: [0.0445, 0.0318, 0.0286, 0.0238, 0.0206],
+    L: [1.31, 0.648, 0.337, 0.168, 0.09],
+    e: [0.5e-3, 0.35e-3, 0.25e-3, 0.14e-3, 0.1e-3],
+    wK: 0.8,
+    side: 0,
+  },
+  /* ペダルの開いたプリンシパルの 16'（標準より 2 半音太い。推測） */
+  {
+    kind: 'flue',
+    id: 'pb16',
+    name: "Principalbass 16'",
+    div: 'P',
+    note: 'ペダルの開いたプリンシパルの 16 フィート。サブバスより輪郭のはっきりした低音',
+    ranks: () => [0.5],
+    scale: 2,
+    ...PRINCIPAL,
   },
   /* 木管のサブバスは円の等価な内径で表す（+8 半音で C1 は 220 mm。概数） */
   {
@@ -243,47 +472,25 @@ export const STOPS: readonly Stop[] = [
     scale: 2,
     ...PRINCIPAL,
   },
-  /*
-   * トランペットとポザウネの共鳴管と舌の厚さは Pasi Organs の公開資料 "Reed Pipes"（pasiorgans.com/pdfs/reeds.pdf、
-   * Hauptwerk の Trumpet 8'（German shallots）と Pedal の Posaune 16'。楽器名と単位の記載がなく、値から mm と推定）
-   */
   {
-    kind: 'reed',
-    id: 'tr8',
-    name: "Trompete 8'",
-    div: 'I',
-    note: '円錐の共鳴管のリード管。全部の倍音が強い、輝かしい音',
-    top: 93,
-    ratio: 1,
-    bore: 'cone',
-    n0: 0,
-    d1: [0.12, 0.093, 0.07, 0.058, 0.048, 0.04],
-    d0: [0.021, 0.0155, 0.011, 0.008, 0.007, 0.007],
-    L: [2.15, 1.05, 0.54, 0.26, 0.12, 0.043],
-    e: [0.5e-3, 0.35e-3, 0.25e-3, 0.14e-3, 0.1e-3],
-    wK: 1,
-    side: 0.62,
+    kind: 'flue',
+    id: 'gb8',
+    name: "Gedecktbass 8'",
+    div: 'P',
+    note: 'ペダルの蓋で閉じた 8 フィート。柔らかい低音',
+    ranks: () => [1],
+    scale: 6,
+    ...FLUTE,
   },
-  /*
-   * クルムホルンは、Audsley (1905) の Clarinet 8'（円筒、約半分の長さ）の内径と長さで代える（CC〜c3）。
-   * 舌の厚さはトランペットと同じとした（概数）
-   */
   {
-    kind: 'reed',
-    id: 'kr8',
-    name: "Krummhorn 8'",
-    div: 'II',
-    note: '細い円筒の共鳴管のリード管。奇数次の倍音が強い、鼻にかかった音',
-    top: 88,
-    ratio: 1,
-    bore: 'cyl',
-    n0: 0,
-    d1: [0.0445, 0.0318, 0.0286, 0.0238, 0.0206],
-    d0: [0.0445, 0.0318, 0.0286, 0.0238, 0.0206],
-    L: [1.31, 0.648, 0.337, 0.168, 0.09],
-    e: [0.5e-3, 0.35e-3, 0.25e-3, 0.14e-3, 0.1e-3],
-    wK: 0.8,
-    side: 0,
+    kind: 'flue',
+    id: 'cb4',
+    name: "Choralbass 4'",
+    div: 'P',
+    note: 'ペダルのプリンシパルの 4 フィート。ペダルでコラールの旋律を弾くときに',
+    ranks: () => [2],
+    scale: 0,
+    ...PRINCIPAL,
   },
   {
     kind: 'reed',
@@ -299,6 +506,23 @@ export const STOPS: readonly Stop[] = [
     d0: [0.033, 0.022, 0.018, 0.014],
     L: [4.48, 2.23, 1.065, 0.52],
     e: [1.05e-3, 0.63e-3, 0.46e-3],
+    wK: 1,
+    side: 0.62,
+  },
+  {
+    kind: 'reed',
+    id: 'ptr8',
+    name: "Trompete 8'",
+    div: 'P',
+    note: 'ペダルのトランペット。第 1 手鍵盤のトランペットと同じ寸法の管で、低音に輝きを足す',
+    top: 93,
+    ratio: 1,
+    bore: 'cone',
+    n0: 0,
+    d1: [0.12, 0.093, 0.07, 0.058, 0.048, 0.04],
+    d0: [0.021, 0.0155, 0.011, 0.008, 0.007, 0.007],
+    L: [2.15, 1.05, 0.54, 0.26, 0.12, 0.043],
+    e: [0.5e-3, 0.35e-3, 0.25e-3, 0.14e-3, 0.1e-3],
     wK: 1,
     side: 0.62,
   },
@@ -423,24 +647,30 @@ export function pipesOf(s: Stop, midi: number, o: PipeOpt = OPT0): PipeDef[] {
     };
     return [{ kind: 'reed', spec, f }];
   }
+  if (s.from !== undefined && midi < s.from) return [];
+  const fC = fT * 2 ** ((s.cents?.(midi) ?? 0) / 1200),
+    md = s.harmonic && midi >= s.harmonic[0] && midi <= s.harmonic[1] ? 2 : 1;
   return s.ranks(midi).map((r, k) => {
-    const fE = f8(midi) * r,
-      f = fT * r,
-      d = topfer(s.stopped ? 2 * fE : fE, o.scale ?? s.scale),
+    const stopped = s.stoppedRanks?.[k] ?? s.stopped,
+      fE = f8(midi) * r,
+      f = fC * r,
+      d = topfer(stopped ? 2 * fE : fE, o.scale ?? s.scale),
       H = s.alpha * Math.PI * d,
       h = s.gamma * H,
       M = (MOUTH * d * d) / H,
-      l = AIR.c / ((s.stopped ? 4 : 2) * f) - M - (s.stopped ? 0 : END_CORR * (d / 2)),
+      /* ハーモニックは倍の長さ（第 2 モードが f になる長さ） */
+      l = (md * AIR.c) / ((stopped ? 4 : 2) * f) - M - (stopped ? 0 : END_CORR * (d / 2)),
       /* 足の穴で θ を上限に抑える。風箱の圧力でも θ が下限に届かない高い管は、カットアップを下げる */
       Ufull = Math.sqrt((2 * P) / AIR.rho),
-      W = Math.min((o.cut ?? s.beta) * H, Ufull / (THETA_MIN * f)),
+      /* ハーモニックは θ を上限ちょうどにする（遅いジェットでは第 1 モードへ落ちる） */
+      W = Math.min((o.cut ?? s.beta) * H, Ufull / ((md > 1 ? s.theta : THETA_MIN) * f)),
       pMax = (AIR.rho * (s.theta * f * W) ** 2) / 2,
       toe = Math.min(1, pMax / P),
       Uj = Math.sqrt((2 * P * toe) / AIR.rho);
     const spec: FlueSpec = {
       l,
       d,
-      stopped: s.stopped,
+      stopped,
       H,
       W,
       h,
@@ -451,6 +681,7 @@ export function pipesOf(s: Stop, midi: number, o: PipeOpt = OPT0): PipeDef[] {
       tPallet: T_PALLET,
       tFoot: tFootOf(d),
       seed: midi * 7 + k * 101 + 1,
+      ...(md > 1 ? { mode: md } : {}),
     };
     return { kind: 'flue', spec, f };
   });

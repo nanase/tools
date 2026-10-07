@@ -3,7 +3,11 @@
  * 鳴らす管（pipes.ts）を持ち、風箱ごとの圧力を標本ごとに作って管に渡し、1 m 先の音圧を足して出す。
  * 風箱の圧力は、静かな圧力に、トレモラント（周期的な揺れ）と、鳴っている管が使う空気の量による下がり
  * （送風の遅れを 1 次遅れで表す）を加えたもの。
- * ステレオ（再生だけ）では、管ごとに左右の重みを変える。重みは聞こえ方の目安で、模型には基づかない
+ * ステレオ（再生だけ）では、管ごとに左右の重みを変える。重みは聞こえ方の目安で、模型には基づかない。
+ * 第 2 手鍵盤の管は箱（スウェル）に入っていて、扉を閉じると高い音ほど弱まる。扉の開き s（0 で閉じる、1 で開く）で、
+ * 扉を通る音 √s と、閉じた箱を通る音（1 次の低域通過、160 Hz）を混ぜる（閉じると 30 Hz ではほとんど弱まらず、8 kHz で
+ * 約 35 dB 弱まり、少し開くと急に大きくなる。Colin Pykett "Swell boxes: their effect on pipe sounds" の平均の特性。
+ * √s は概数）。扉を開き切ると、箱の音はそのまま
  */
 import { panGains } from '../guitar/engine';
 import { AIR, FluePipe, type FlueSpec, ReedPipe, type ReedSpec } from './pipes';
@@ -35,6 +39,10 @@ export interface WindDesc {
   tau: number;
 }
 
+/** スウェルの箱に入っている風箱（第 2 手鍵盤）と、閉じた箱の低域通過の境目 [Hz] */
+const SWELL_CHEST = 1,
+  SWELL_FC = 160;
+
 interface Live {
   pipe: FluePipe | ReedPipe;
   chest: number;
@@ -65,20 +73,36 @@ export class Engine {
   private readonly live = new Map<string, Live>();
   /** 作り直した古い管に付ける番号 */
   private seq = 0;
+  /** 同時に鳴らす管の数の上限（計算が間に合わないときに AudioWorklet が下げる） */
+  budget = Infinity;
   private wind: WindDesc = { p0: { I: 800, II: 700, P: 900 }, tremHz: 5, tremDepth: 0, sag: 0, tau: 0.05 };
   /** 風箱ごとの、空気の量による圧力の下がりの状態 [Pa] と、その標本ごとの値 */
   private readonly drop = new Float64Array(3);
   private readonly wbuf = [new Float64Array(128), new Float64Array(128), new Float64Array(128)];
   private readonly mono = new Float64Array(128);
   private phase = 0;
+  /* スウェル: 扉を通る音の割合（目標と今の値）、閉じた箱の低域通過の係数と状態、箱の中の管の和 */
+  private swellTo = 1;
+  private swellA = 1;
+  private readonly swK: number;
+  private readonly swZ = [0, 0];
+  private readonly swL = new Float64Array(128);
+  private readonly swR = new Float64Array(128);
 
   constructor(
     readonly fs: number,
     readonly stereo = false,
-  ) {}
+  ) {
+    this.swK = 1 - Math.exp((-2 * Math.PI * SWELL_FC) / fs);
+  }
 
   setWind(w: WindDesc): void {
     this.wind = w;
+  }
+
+  /** スウェルの扉の開き（0 で閉じる、1 で開く） */
+  setSwell(s: number): void {
+    this.swellTo = Math.sqrt(Math.min(1, Math.max(0, s)));
   }
 
   /** 管を鳴らす（同じ番号・同じ設定の管が鳴っていれば、弁を開き直す） */
@@ -87,6 +111,17 @@ export class Engine {
     if (cur && sameSpec(cur.pipe.spec, m.spec)) {
       cur.pipe.on();
       return;
+    }
+    /* 上限に達していたら、弁を閉じて鳴り終わりかけの管を 1 本やめる。それもなければ新しい管は鳴らさない */
+    if (this.live.size >= this.budget) {
+      let gone = false;
+      for (const [id, l] of this.live)
+        if (!l.pipe.open) {
+          this.live.delete(id);
+          gone = true;
+          break;
+        }
+      if (!gone) return;
     }
     /* 設定の違う古い管は、弁を閉じて別の番号で鳴り終わらせる */
     if (cur) {
@@ -151,17 +186,46 @@ export class Engine {
       }
     });
     this.phase = (this.phase + dph * len) % (2 * Math.PI);
-    const m = this.mono;
+    const m = this.mono,
+      /* 扉が開き切っていれば、箱の中の管もそのまま足す */
+      box = this.swellA < 1 || this.swellTo < 1,
+      { swL, swR } = this;
+    if (box) {
+      swL.fill(0, 0, len);
+      swR.fill(0, 0, len);
+    }
     for (const [id, l] of this.live) {
       m.fill(0, 0, len);
       l.pipe.render(m, 0, len, this.wbuf[l.chest]);
-      const gl = l.g[0];
-      for (let i = 0; i < len; i++) out[off + i] += gl * m[i];
-      if (outR && l.g[1] !== undefined) {
+      const inBox = box && l.chest === SWELL_CHEST,
+        L = inBox ? swL : out,
+        R = inBox ? swR : outR,
+        o = inBox ? 0 : off,
+        gl = l.g[0];
+      for (let i = 0; i < len; i++) L[o + i] += gl * m[i];
+      if (R && l.g[1] !== undefined) {
         const gr = l.g[1];
-        for (let i = 0; i < len; i++) outR[off + i] += gr * m[i];
+        for (let i = 0; i < len; i++) R[o + i] += gr * m[i];
       }
       if (l.pipe.done) this.live.delete(id);
+    }
+    if (box) {
+      /* 扉の開きは 1 回の処理の間に直線で動かす */
+      const a0 = this.swellA,
+        a1 = a0 + (this.swellTo - a0) * Math.min(1, len / (0.03 * fs)),
+        k = this.swK;
+      this.swellA = Math.abs(a1 - this.swellTo) < 1e-4 ? this.swellTo : a1;
+      for (let c = 0; c < (outR ? 2 : 1); c++) {
+        const x = c ? swR : swL,
+          y = (c ? outR : out) as Float32Array | Float64Array;
+        let z = this.swZ[c];
+        for (let i = 0; i < len; i++) {
+          const a = a0 + ((a1 - a0) * i) / len;
+          z += k * (x[i] - z);
+          y[off + i] += a * x[i] + (1 - a) * z;
+        }
+        this.swZ[c] = z;
+      }
     }
   }
 }

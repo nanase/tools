@@ -36,10 +36,13 @@ export class OrganAudio {
   private loading: Promise<boolean> | null = null;
   private wind: WindDesc | null = null;
   private room: ReverbSpec | null = null;
+  private swell = 1;
   private db = -30;
   private idle: ReturnType<typeof setTimeout> | undefined;
   /** 弁の開いている管のストップが変わったときに呼ぶ */
   onStops: ((ids: string[]) => void) | null = null;
+  /** 同時に鳴らす管の数の上限が変わったときに呼ぶ（上限がなければ 0） */
+  onBudget: ((n: number) => void) | null = null;
 
   get fs(): number {
     return this.ac?.sampleRate ?? FS;
@@ -68,11 +71,13 @@ export class OrganAudio {
         node.connect(master).connect(lim).connect(ac.destination);
         node.port.onmessage = (e: MessageEvent<OgOut>) => {
           if (e.data.type === 'stops') this.onStops?.(e.data.ids);
+          else if (e.data.type === 'budget') this.onBudget?.(e.data.n);
         };
         this.node = node;
         this.master = master;
         if (this.wind) this.post({ type: 'wind', w: this.wind });
         if (this.room) this.post({ type: 'room', r: this.room });
+        this.post({ type: 'swell', s: this.swell });
         return true;
       })
       .catch(() => false);
@@ -98,6 +103,11 @@ export class OrganAudio {
   setWind(w: WindDesc): void {
     this.wind = w;
     this.post({ type: 'wind', w });
+  }
+  /** スウェルの扉の開き（0 で閉じる、1 で開く） */
+  setSwell(s: number): void {
+    this.swell = s;
+    this.post({ type: 'swell', s });
   }
   setRoom(r: ReverbSpec): void {
     this.room = r;

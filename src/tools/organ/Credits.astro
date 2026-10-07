@@ -5,7 +5,7 @@ import { stopName } from './stops';
 
 const meta = (v: string) => {
   const p = pieceOf(v);
-  return `標準のテンポ ${p.tempo}。ストップ ${p.stops.map(stopName).join('・')}。`;
+  return `標準のテンポ ${p.tempo}。ストップ ${p.stops.map(stopName).join('・')}${p.couplers.length ? `、カプラー ${p.couplers.join('・')}` : ''}。`;
 };
 const MU = 'https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=';
 /* Mutopia の MIDI には装飾が入っていないので、.ly の原本から展開したことを書く */

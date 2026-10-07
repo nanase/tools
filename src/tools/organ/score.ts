@@ -22,14 +22,16 @@ export interface Piece {
   pickup: number;
   /** 譜表ごとに弾く鍵盤（右手・左手・ペダル） */
   hands: readonly [Div, Div, Div];
-  /** 使うストップ（ストップの id） */
+  /** 使うストップ（ストップの id）とカプラー */
   stops: readonly string[];
+  couplers: readonly ('II/I' | 'I/P' | 'II/P')[];
   /** テンポの変化 [拍, 標準のテンポに対する比]（曲のデータの TEMPO より先に使う。空ならデータのもの） */
   tempoMap: readonly (readonly [number, number])[];
   load: () => Promise<{ notes: ScoreNote[]; tempo: readonly (readonly [number, number])[] }>;
 }
 
-const PLENUM = ['p8', 'p4', 'p2', 'mix', 'sb16', 'ob8', 'po16'];
+/** オルガノ・プレノ: 第 1 手鍵盤のプリンシパルの合唱（16' から ミクスチュアまで）と、ペダルの 16'・8'・4' とポザウネ */
+const PLENUM = ['bd16', 'p8', 'p4', 'q3', 'p2', 'mix', 'pb16', 'sb16', 'ob8', 'cb4', 'po16'];
 
 export const PIECES: readonly Piece[] = [
   {
@@ -42,6 +44,7 @@ export const PIECES: readonly Piece[] = [
     pickup: 0,
     hands: ['I', 'I', 'P'],
     stops: PLENUM,
+    couplers: [],
     /* 小節 1 Adagio、4 Prestissimo、30 フーガ、127 Recitativo、130 Adagissimo、133 Presto、136 の 4 拍目 Adagio、141 Molto Adagio */
     tempoMap: [
       [0, 0.6],
@@ -65,6 +68,7 @@ export const PIECES: readonly Piece[] = [
     pickup: 0.5,
     hands: ['II', 'I', 'P'],
     stops: ['g8', 'f4', 'tr8', 'sb16', 'ob8'],
+    couplers: [],
     tempoMap: [],
     load: () => import('./scores/bwv645').then((m) => ({ notes: m.notes(), tempo: m.TEMPO })),
   },
@@ -78,6 +82,7 @@ export const PIECES: readonly Piece[] = [
     pickup: 1,
     hands: ['I', 'I', 'P'],
     stops: PLENUM,
+    couplers: [],
     tempoMap: [],
     load: () => import('./scores/bwv582').then((m) => ({ notes: m.notes(), tempo: m.TEMPO })),
   },
@@ -93,6 +98,7 @@ export const PIECES: readonly Piece[] = [
     hands: ['I', 'I', 'P'],
     /* プリンシパルの合唱（8'・4'・2'・ミクスチュア）と、ペダルの 16'・8' */
     stops: ['p8', 'p4', 'p2', 'mix', 'sb16', 'ob8'],
+    couplers: [],
     tempoMap: [],
     load: () => import('./scores/bwv578').then((m) => ({ notes: m.notes(), tempo: m.TEMPO })),
   },

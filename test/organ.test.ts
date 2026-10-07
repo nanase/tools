@@ -43,17 +43,45 @@ describe('管', () => {
     expect(topfer(f)).toBeCloseTo(0.1555, 9);
     expect(topfer(f * 2 ** (16 / 12))).toBeCloseTo(0.1555 / 2, 9);
   });
-  it('どのストップも、鍵盤の範囲の全部の鍵に管がある', () => {
+  it('どのストップも、鍵盤の範囲の全部の鍵に管がある（高音だけのストップは、その鍵から上に）', () => {
+    expect(STOPS.length).toBe(28);
+    expect(new Set(STOPS.map((s) => s.id)).size).toBe(28);
     for (const s of STOPS) {
-      const d = divOf(s.div);
-      for (let k = d.lo; k <= d.hi; k += 7) {
+      const d = divOf(s.div),
+        from = s.kind === 'flue' ? (s.from ?? d.lo) : d.lo;
+      for (let k = d.lo; k <= d.hi; k++) {
         const p = pipesOf(s, k, OPT0);
-        expect(p.length).toBeGreaterThan(0);
+        if (k < from) expect(p.length).toBe(0);
+        else expect(p.length).toBeGreaterThan(0);
         for (const x of p) expect(x.f).toBeGreaterThan(20);
       }
+      /* 調律の表にも、同じ数の管がある */
+      TUNED[s.id].forEach((r, i) => {
+        expect(r.length).toBe(pipesOf(s, d.lo + i, OPT0).length);
+      });
     }
     expect(stopOf('mix').kind).toBe('flue');
     expect(pipesOf(stopOf('mix'), 60, OPT0).length).toBe(3);
+  });
+  it("コルネットは c' から上の 5 列で 8' だけ閉管、セレストは少し高く、ハーモニック・フルートは倍の長さを第 2 モードで鳴らす", () => {
+    const cor = pipesOf(stopOf('cor'), 60, OPT0);
+    expect(cor.map((p) => Math.round(p.f / pipesOf(stopOf('p8'), 60, OPT0)[0].f))).toEqual([1, 2, 3, 4, 5]);
+    expect(cor.map((p) => (p.spec as FlueSpec).stopped)).toEqual([true, false, false, false, false]);
+    expect(pipesOf(stopOf('cor'), 59, OPT0).length).toBe(0);
+    /* セレストは C で 19 セント、5 オクターブ上で 4 セント高い */
+    const vc = (k: number) => cents(pipesOf(stopOf('vc8'), k, OPT0)[0].f, pipesOf(stopOf('sal8'), k, OPT0)[0].f);
+    expect(vc(48)).toBeCloseTo(16, 6);
+    expect(vc(96)).toBeCloseTo(4, 6);
+    /* ハーモニック・フルート: c' から b'' は第 2 モード（管は約 2 倍）で、調律の表で目標の近く（4 セント以内）に鳴る */
+    const h = pipesOf(stopOf('fh8'), 72, OPT0)[0].spec as FlueSpec,
+      o = pipesOf(stopOf('fh8'), 59, OPT0)[0].spec as FlueSpec;
+    expect(h.mode).toBe(2);
+    expect(o.mode).toBeUndefined();
+    expect(h.l / (pipesOf(stopOf('p8'), 72, OPT0)[0].spec as FlueSpec).l).toBeGreaterThan(1.9);
+    const t = tuneStop('fh8', { temp: 'equal', a4: 440, voicing: {} }, FS, TUNED)[72 - 36][0],
+      x = sound(new FluePipe(t.spec as FlueSpec, FS), FS, 1, 720),
+      r = measureF0(x, FS, t.f / 2, t.f * 2, measSec(t.f));
+    expect(Math.abs(cents(r.f, t.f))).toBeLessThan(4);
   });
   it('プリンシパルの C4 は調律の表で目標から 2 セント以内に鳴る', () => {
     const t = tuneStop('p8', { temp: 'equal', a4: 440, voicing: {} }, FS, TUNED)[24][0],
@@ -184,6 +212,40 @@ describe('音', () => {
     for (let i = 0; i < 2 * FS; i += 128) e.render(new Float32Array(128), 0, 128);
     expect(e.active().length).toBe(0);
   });
+  it('スウェル: 開き切ればそのまま、閉じると高い音ほど弱まる（第 2 手鍵盤の管だけ）', () => {
+    const run = (sw: number, id: string, k: number) => {
+      const e = new Engine(FS, true),
+        l = new Float32Array(FS),
+        r = new Float32Array(FS);
+      e.setWind(WIND);
+      e.setSwell(sw);
+      e.on({ ...msg(id, k), pan: 0 });
+      for (let i = 0; i < l.length; i += 128) e.render(l, i, 128, r);
+      return l;
+    };
+    expect(run(1, 'g8', 60)).toEqual(run(1, 'g8', 60));
+    const open = run(1, 'n3', 84),
+      shut = run(0, 'n3', 84),
+      low = 20 * Math.log10(rms(run(0, 'g8', 36), 0.6, 1) / rms(run(1, 'g8', 36), 0.6, 1)),
+      high = 20 * Math.log10(rms(shut, 0.6, 1) / rms(open, 0.6, 1));
+    /* g8 の C2（65 Hz）は数 dB、n3 の C6（3.1 kHz）は 20 dB 以上 */
+    expect(low).toBeGreaterThan(-6);
+    expect(high).toBeLessThan(-20);
+    /* 第 1 手鍵盤の管は変わらない */
+    expect(run(0, 'p8', 60)).toEqual(run(1, 'p8', 60));
+  });
+  it('同時に鳴らす管の数の上限を超えると、鳴り終わりかけの管をやめ、なければ新しい管を鳴らさない', () => {
+    const e = new Engine(FS);
+    e.setWind(WIND);
+    e.budget = 2;
+    e.on(msg('p8', 60));
+    e.on(msg('p8', 62));
+    e.on(msg('p8', 64));
+    expect(e.active()).toEqual(['p8:60', 'p8:62']);
+    e.off('p8:60');
+    e.on(msg('p8', 64));
+    expect(e.active()).toEqual(['p8:62', 'p8:64']);
+  });
   it('ステレオの定位は再生だけに効く', () => {
     const run = (stereo: boolean, pan: number) => {
       const e = new Engine(FS, stereo),
@@ -220,6 +282,7 @@ describe('曲', () => {
         expect(x.n).toBeLessThanOrEqual(d.hi);
       }
       for (const id of p.stops) expect(STOPS.some((s) => s.id === id)).toBe(true);
+      expect(p.couplers.every((c) => ['II/I', 'I/P', 'II/P'].includes(c))).toBe(true);
     }
   });
   it('装飾を展開してある: BWV 565 の冒頭はモルデント（A–G–A）、BWV 645 と 582 にはトリル', async () => {

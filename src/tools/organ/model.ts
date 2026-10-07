@@ -41,7 +41,7 @@ export const pipeMsg = (t: Tuned, pan: number): PipeMsg => ({
 export function geoOf(t: Tuned): PipeGeo {
   if (t.kind === 'flue') {
     const s = t.spec as FlueSpec;
-    return { l: s.l, d: s.d, kind: s.stopped ? 'stopped' : 'open' };
+    return { l: s.l, d: s.d, kind: s.stopped ? 'stopped' : 'open', mode: s.mode };
   }
   const s = t.spec as ReedSpec;
   return { l: s.L, d: s.d1, d0: s.d0, kind: s.bore };

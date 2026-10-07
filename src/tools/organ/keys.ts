@@ -40,6 +40,8 @@ export interface PipeGeo {
   d: number;
   d0?: number;
   kind: 'open' | 'stopped' | 'cone' | 'cyl';
+  /** 鳴らすモード（ハーモニック・フルートは 2。省くと 1） */
+  mode?: number;
 }
 
 /** 鳴っている管 */
@@ -321,12 +323,13 @@ export class Keys {
   }
 
   /**
-   * 管の中の音圧の分布（第 m 倍音、u は口・リードの側からの位置 0〜1）。開管は両端が圧力の節で sin(mπu)、
+   * 管の中の音圧の分布（第 m 倍音、u は口・リードの側からの位置 0〜1）。開管は両端が圧力の節で sin(mπu)
+   * （第 2 モードで鳴らすハーモニック・フルートは sin(2mπu)）、
    * 閉管は口が節で閉じた端が腹の sin(mπu/2)（m が奇数のときが共鳴）、円筒の共鳴管はリードの側が腹で cos(mπu/2)、
    * 円錐は頂点から測った距離 r で sin(mπr)/(mπr)（リードの側は頂点を切り取った位置 r = 0.08）
    */
   private shape(g: PipeGeo, m: number, u: number): number {
-    if (g.kind === 'open') return Math.sin(m * Math.PI * u);
+    if (g.kind === 'open') return Math.sin(m * (g.mode ?? 1) * Math.PI * u);
     if (g.kind === 'stopped') return Math.sin((m * Math.PI * u) / 2);
     if (g.kind === 'cyl') return Math.cos((m * Math.PI * u) / 2);
     const r = 0.08 + 0.92 * u;
