@@ -7,8 +7,8 @@
 }
 :root[data-theme="dark"]{--key-on:#ff5a4f}
 
-/* 枠の並び。スマホは 管と鍵盤 → 演奏 → ストップ → 風と調律 → 整音 → 部屋 → 音の波形 → 計算結果 → 式 → 楽譜の出典。
-   PC は上に 管と鍵盤（全幅）、左の列に 演奏・ストップ・風と調律、右の列に 整音・部屋・音の波形・計算結果、その下に 式・出典（全幅） */
+/* 枠の並び。スマホは 管と鍵盤 → 演奏 → ストップ → 風と調律 → 整音 → 残響 → 音の波形 → 計算結果 → 式 → 楽譜の出典。
+   PC は上に 管と鍵盤（全幅）、左の列に 演奏・ストップ・風と調律、右の列に 整音・残響・音の波形・計算結果、その下に 式・出典（全幅） */
 .a-pp{order:1}.a-play{order:2}.a-stops{order:3}.a-wind{order:4}.a-voice{order:5}.a-room{order:6}.a-wave{order:7}.a-out{order:8}.a-thy{order:9}.a-src{order:10}
 @media (min-width:1000px){
   .tgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr);grid-template-areas:"pp pp" "c1 c2" "thy thy" "src src";align-items:start}
@@ -27,6 +27,7 @@
 .vl{font-size:14px;font-weight:700}
 .vgrid .sl{padding-bottom:0}
 .vgrid output{text-align:right;font:500 13.5px/1 var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.vgrid .tg{justify-content:center}
 .snd-msg{margin:6px 8px 0}
 .snd-msg:empty{display:none}
 .pl-bar{margin:8px 8px 0;font:500 12.5px/1.5 var(--mono);color:var(--ink-2);text-align:right}
@@ -73,7 +74,13 @@
 .sdn{display:flex;align-items:center;gap:8px;margin:0 0 6px;font:700 13px/1.4 var(--sans);color:var(--ink-2)}
 .sdv{display:inline-grid;place-items:center;min-width:26px;height:20px;padding:0 4px;border:1px solid var(--line-2);border-radius:4px;font:700 11.5px/1 var(--mono)}
 .sdiv .chips{display:flex;flex-wrap:wrap;gap:6px}
-.chip.stop{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono)}
+.chip.stop,.chip.vstop{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono)}
+/* 描く管: 鍵盤ごとに、札と名前の右にチップを並べる（狭い画面では上下に） */
+.vdivs{display:grid;gap:8px}
+.vdiv{display:grid;grid-template-columns:8.2rem minmax(0,1fr);align-items:start;gap:4px 10px}
+.vdiv .sdn{margin:0;min-height:30px}
+.vdiv .chips{margin-top:0}
+@media (max-width:559px){.vdiv{grid-template-columns:minmax(0,1fr)}}
 .s-key{display:inline-flex;align-items:center;gap:6px}
 
 /* 計算結果 */

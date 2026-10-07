@@ -133,9 +133,11 @@ function setStop(id: string, v: boolean): void {
       else keys.release(key, nowS());
     }
 }
-/** 弁の開いている管のストップのボタンを点ける（AudioWorklet が知らせる） */
+/** 弁の開いている管のストップの、ストップと描く管のボタンを点ける（AudioWorklet が知らせる） */
+const ledBtns = [...stopBtns, ...$$<HTMLButtonElement>('button.vstop')];
 audio.onStops = (ids) => {
-  for (const b of stopBtns) b.querySelector('.led')?.classList.toggle('on', ids.includes(b.dataset.stop as string));
+  for (const b of ledBtns)
+    b.querySelector('.led')?.classList.toggle('on', ids.includes((b.dataset.stop ?? b.dataset.v) as string));
 };
 
 /* ---------- 押している鍵と弁 ---------- */
@@ -371,7 +373,7 @@ function syncWind(): void {
   audio.setWind(windDesc());
 }
 
-/* ---------- 部屋 ---------- */
+/* ---------- 残響（部屋） ---------- */
 function roomView(): void {
   const r = roomOf(room.value),
     off = r.v === 'off',
