@@ -1,0 +1,30 @@
+---
+// 動作原理と式。代入した式（#subst）は client.ts が入れる
+import { EQS, inl, mi, row, sub } from './theory';
+
+const F = inl(row(mi('F'), '<mo>(</mo>', mi('u'), '<mo>,</mo>', mi('v'), '<mo>)</mo>')),
+  Q = inl(row(mi('Q'), '<mo>(</mo>', mi('u'), '<mo>,</mo>', mi('v'), '<mo>)</mo>')),
+  s = inl(mi('s')),
+  CB = inl(sub(mi('C'), mi('b'))),
+  CR = inl(sub(mi('C'), mi('r'))),
+  Y = inl(mi('Y')),
+  SS = inl(mi('SSSS', true)),
+  RR = inl(mi('RRRR', true)),
+  RS = inl(mi('RRRRSSSS', true)),
+  MSE = inl(mi('MSE', true));
+const P = [
+  `JPEG のベースライン方式は、画像を色の成分に分け、8×8 画素のブロックごとに離散コサイン変換（DCT）で周波数の成分に変え、周波数ごとに決めた刻みで量子化して細かい情報を捨て、残った値をハフマン符号で詰めます。情報が失われるのは色差の間引きと量子化（と途中の丸め）だけで、そのあとの記号化とハフマン符号は可逆です。`,
+  `色は JFIF の式で RGB から輝度 ${Y} と色差 ${CB}・${CR} に変えます。人の目は明るさに比べて色の細かさに鈍いため、色差の標本は横（4:2:2）か縦横（4:2:0）に 1/2 に間引きます。間引いた標本は受け持つ画素の平均で、その中心にあるとみなします。輝度のブロックと、同じ範囲の色差のブロックをまとめたものを MCU（最小符号化単位）といい、画像の端は MCU の大きさまで端の画素を繰り返して埋めます。`,
+  `DCT は、ブロックの 64 個の標本を、64 個の基底の模様の重み ${F} に置き換えます。左上の係数は平均の明るさ（から 128 を引いたもの）の 8 倍で DC 係数、ほかを AC 係数といいます。なめらかな画像では、エネルギーが低い周波数の少数の係数に集まります。DCT と逆 DCT は、丸めを除けば元に戻る変換です。`,
+  `量子化は、係数を量子化テーブルの値 ${Q} で割って丸めます。高い周波数ほど ${Q} が大きく、細かい模様の小さな係数の多くが 0 になります。品質は IJG（libjpeg）の決め方で、基準の表を倍率 ${s} [%] で拡大縮小し、1〜255 に収めます。品質 50 で基準の表のまま、100 ですべて 1 です。量子化テーブルはファイルに入れて送るため、復号器は同じ値を掛けて係数を戻せます。`,
+  `量子化した係数は、低い周波数から高い周波数へジグザグに並べます。DC 係数は、走査の順で 1 つ前の同じ成分のブロックとの差分を、大きさの区分 ${SS} の符号と、${SS} ビットの付加ビットで表します（負の値は 1 を引いた値の下位ビット）。AC 係数は、0 の続く数 ${RR} と次の 0 でない係数の ${SS} を 1 バイトの記号 ${RS} にまとめ、付加ビットを続けます。16 個以上続く 0 は ZRL（F/0）で 16 個ずつ送り、最後の 0 でない係数の後は EOB（0/0）で打ち切ります。`,
+  `記号はハフマン符号にします。標準の表は Annex K の K.3〜K.6 で、輝度と色差に別の表を使います。最適化では、この画像の記号の出現回数から、長さ 16 ビット以下という制限つきでハフマン木を作ります（K.2 の手順）。符号化したデータの中に 0xFF のバイトが現れたら、マーカーと区別するため後に 0x00 を挟み、最後のバイトの余りは 1 で埋めます。`,
+  `ファイルは SOI で始まり、JFIF の APP0、量子化テーブル（DQT、ジグザグ順）、画像の大きさと成分（SOF0）、ハフマン表（DHT）、スキャンの開始（SOS）の後に符号化したデータが続き、EOI で終わります。このツールはこの並びのファイルを自前の符号器で作り、自前の復号器で画素に戻して表示します。復号では、色差を最近傍か線形の補間で画素の数に戻します。PSNR は元の画像と復号した画像の平均二乗誤差 ${MSE} から求め、${Y} は両方の画像の RGB から JFIF の式で求めた輝度で比べます。`,
+];
+---
+{P.map((p) => <p set:html={p} />)}
+<div class="eqs">
+  <Fragment set:html={EQS} />
+  <div class="subst" id="subst" role="group" aria-label="現在の値を代入した式"></div>
+</div>
+<p class="cite">出典: 色の変換は E. Hamilton, <a href="https://www.w3.org/Graphics/JPEG/jfif3.pdf" target="_blank" rel="noopener">JPEG File Interchange Format, Version 1.02</a>, C-Cube Microsystems, 1992（色差の標本の位置、APP0 も同じ）。DCT・逆 DCT・量子化・ジグザグ順・DC の差分と AC のランレングス・ハフマン符号・マーカーは ITU-T Recommendation T.81 | ISO/IEC 10918-1, <a href="https://www.w3.org/Graphics/JPEG/itu-t81.pdf" target="_blank" rel="noopener">Digital compression and coding of continuous-tone still images – Requirements and guidelines</a>, 1992（A.3.3・A.3.4・図 A.6・F.1.2・Annex B・Annex C）。量子化テーブルとハフマン表の標準は同じ Annex K の表 K.1〜K.6、最適なハフマン表の作り方は K.2。品質の式は Independent JPEG Group, <a href="https://ijg.org/" target="_blank" rel="noopener">libjpeg</a>（jcparam.c の jpeg_quality_scaling と jpeg_add_quant_table）、色差の線形補間は同じ jdsample.c の fancy upsampling、最適なハフマン表は jchuff.c の jpeg_gen_optimal_table。PSNR は Q. Huynh-Thu, M. Ghanbari, Scope of validity of PSNR in image/video quality assessment, Electronics Letters, vol. 44, no. 13, pp. 800–801, 2008。浮動小数点で行列の積として計算する DCT、色差の間引きの丸め、ビット数の地図の配分は、このツールの実装による。</p>
