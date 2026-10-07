@@ -47,16 +47,16 @@ const COUPLERS = [
         <span class="stag pp-note" id="pp-note"></span>
       </div>
       <div class="ppw" id="ppw">
-        <svg class="ppd" id="ppd" tabindex="0" role="group" aria-roledescription="鍵盤" aria-label="上から第 2 手鍵盤・第 1 手鍵盤・ペダルの 3 つの鍵盤と、図に描くストップの管。鍵か管を押すと、その鍵盤の入っているストップの管が鳴る。左右の矢印キーで半音、上下の矢印キーで鍵盤、Page Up と Page Down でオクターブを選び、Enter で弾く"></svg>
+        <svg class="ppd" id="ppd" tabindex="0" role="group" aria-roledescription="鍵盤" aria-label="上から第 2 手鍵盤・第 1 手鍵盤・ペダルの 3 つの鍵盤と、図に表示するストップの管。鍵か管を押すと、その鍵盤の入っているストップの管が鳴る。左右の矢印キーで半音、上下の矢印キーで鍵盤、Page Up と Page Down でオクターブを選び、Enter で弾く"></svg>
       </div>
       <p class="sr" id="pp-live" aria-live="polite"></p>
       <div class="cons" id="stops">
         <div class="cons-h">
           <h3 class="cons-t">ストップ</h3>
           <span class="aux s-key"><span class="led on" aria-hidden="true"></span>鳴っている</span>
-          <span class="aux s-key"><svg class="ic-p" viewBox="0 0 12 18" aria-hidden="true"><path d="M3.5 1.5h5v10h-5zM3.5 11.5 6 16.5l2.5-5"/></svg>図に描く</span>
+          <span class="aux s-key"><span class="s-v" aria-hidden="true"><svg class="ic-v" viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="2.5" width="13" height="11" rx="2"/><path d="M3.5 8c1.2-3.6 2.8-3.6 4 0s2.8 3.6 4 0"/></svg></span>図に表示</span>
         </div>
-        <div class="cdivs" id="p-view" role="group" aria-label="ストップ。名前のボタンで入・切、右の小さなボタンで図に描くストップを選ぶ">
+        <div class="cdivs" id="p-view" role="group" aria-label="ストップ。名前のボタンで入・切、右の小さなボタンで図に表示するストップを選ぶ">
           {CONSOLE.map((d) => (
             <div class="cdiv" data-div={d.v}>
               <div class="cdh">
@@ -73,7 +73,7 @@ const COUPLERS = [
                 {STOPS.filter((s) => s.div === d.v).map((s) => (
                   <span class="st">
                     <button type="button" class="chip stop" data-stop={s.id} aria-pressed="false" title={`${s.note}。管が鳴っている間は印が点く`}><span class="led" aria-hidden="true"></span>{s.name}</button>
-                    <button type="button" class="drw" data-v={s.id} aria-pressed={s.id === 'p8' ? 'true' : 'false'} aria-label={`${s.name}（${d.name}）を図に描く`} title="図に描く"><svg class="ic-p" viewBox="0 0 12 18" aria-hidden="true"><path d="M3.5 1.5h5v10h-5zM3.5 11.5 6 16.5l2.5-5"/></svg></button>
+                    <button type="button" class="drw" data-v={s.id} aria-pressed={s.id === 'p8' ? 'true' : 'false'} aria-label={`${s.name}（${d.name}）を図に表示`} title="図に表示（管と管の中の音圧を、鍵盤の図の上に表示する）"><svg class="ic-v" viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="2.5" width="13" height="11" rx="2"/><path d="M3.5 8c1.2-3.6 2.8-3.6 4 0s2.8 3.6 4 0"/></svg></button>
                   </span>
                 ))}
               </div>

@@ -37,7 +37,7 @@ export const pipeMsg = (t: Tuned, pan: number): PipeMsg => ({
   pan,
 });
 
-/** 管の形（図に描く） */
+/** 管の形（図に表示する） */
 export function geoOf(t: Tuned): PipeGeo {
   if (t.kind === 'flue') {
     const s = t.spec as FlueSpec;

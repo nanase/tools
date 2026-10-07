@@ -158,7 +158,7 @@ function setStop(id: string, v: boolean, at = 0): void {
     if (v) openStop(h, id, t);
     else closeStop(h, id, t);
   }
-  /* 描く管のストップなら、押している鍵の管の振動も出す・止める */
+  /* 図に表示しているストップなら、押している鍵の管の振動も出す・止める */
   if (id === view.value)
     for (const k of vis.keys()) {
       const [d, key] = splitKey(k);
@@ -307,7 +307,7 @@ function keyOff(d: Div, k: number, at: number): void {
   closePipes([...h.ids.values()].flat(), Math.max(at, h.at));
 }
 
-/** 押している鍵の見た目（赤い鍵と、描く管の振動）。手と曲の音で同じ鍵を押していれば数える */
+/** 押している鍵の見た目（赤い鍵と、表示している管の振動）。手と曲の音で同じ鍵を押していれば数える */
 const vis = new Map<string, number>();
 function show(d: Div, k: number, down: boolean, t: number): void {
   const key = keyOf(d, k),
@@ -330,7 +330,7 @@ function clearShow(): void {
 
 /* ---------- 管の設定と調律（Worker） ---------- */
 const S = {
-  /** 計算結果に出す管（最後に弾いた鍵と、その鍵盤の描くストップ） */
+  /** 計算結果に出す管（最後に弾いた鍵と、その鍵盤の表示しているストップ） */
   last: { stop: 'p8', key: 60 },
 };
 /** 調律した管（ストップ → 鍵 → 列） */
@@ -358,7 +358,7 @@ function retune(): void {
     txt('#pp-tune', '');
     return;
   }
-  /* 描くストップと入っているストップを先に調律する */
+  /* 表示しているストップと入っているストップを先に調律する */
   const order = [view.value, ...on, ...STOPS.map((s) => s.id)].filter((v, i, a) => a.indexOf(v) === i);
   tuner.onmessage = (e: MessageEvent<TuneOut>) => {
     if (gen !== specGen) return;
@@ -404,7 +404,7 @@ function ppBar(): void {
   txt('#pp-ex', `×${ex.value}`);
   txt('#pp-tm', nv.value === 'slow' ? `スロー 1/${sl.value}` : '実時間（残像）');
 }
-/** 描く管を並べる（ストップ id の管を、そのストップの鍵盤の鍵の上に）。押している鍵の管は振動も出す */
+/** 表示する管を並べる（ストップ id の管を、そのストップの鍵盤の鍵の上に）。押している鍵の管は振動も出す */
 function showRank(id: string): void {
   const s = stopOf(id),
     d = divOf(s.div),
@@ -418,12 +418,12 @@ function showRank(id: string): void {
       if (dv === s.div) keys.set(key, soundingOf(key, nowS()));
     }
 }
-/** 図の上に、描いている管のストップと鍵盤（ストップが切ってあればそれも）を書く */
+/** 図の上に、表示している管のストップと鍵盤（ストップが切ってあればそれも）を書く */
 function rankTitle(): void {
   const s = stopOf(view.value);
   keys.setTitle(`${s.name}・${divOf(s.div).name}${on.has(s.id) ? '' : '（ストップは切）'}`);
 }
-/** 鍵 k を押したときの、描く管の振動 */
+/** 鍵 k を押したときの、表示している管の振動 */
 function soundingOf(k: number, t0: number): Sounding[] {
   return (pipesOf(view.value, k) ?? []).map((t, i) => ({
     slot: i,
@@ -456,7 +456,7 @@ const P1 = new ParamGroup<string>([WIND, SCALE, CUT, DIST], (v, k) => {
     retune();
   }
 });
-/** 整音の行を、描くストップの値に合わせる */
+/** 整音の行を、表示しているストップの値に合わせる */
 function syncVoice(): void {
   const s = stopOf(view.value),
     o = voicing[s.id] ?? {},

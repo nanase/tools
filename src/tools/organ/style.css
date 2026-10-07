@@ -54,7 +54,7 @@
 .kk.w{fill:var(--kb-w)}
 .kk.b{fill:var(--kb-b)}
 .kk.on{fill:var(--key-on)}
-/* 鍵盤の札（II・I・P）。管を描いている鍵盤の札は塗り、風箱から線でつなぐ */
+/* 鍵盤の札（II・I・P）。管を表示している鍵盤の札は塗り、風箱から線でつなぐ */
 .kb-l{fill:none;stroke:var(--line-2);stroke-width:1}
 .kb-l.on{fill:var(--ink);stroke:var(--ink)}
 .kb-lt{fill:var(--ink-2);font:700 12px var(--mono);pointer-events:none}
@@ -72,13 +72,15 @@
 
 /*
  * ストップ（鍵盤の図のすぐ下）: 鍵盤ごと（上から第 2 手鍵盤・第 1 手鍵盤・ペダル）に、入・切のボタン（管が鳴っている間は LED）と、
- * 図に描くストップを選ぶ小さなボタンを並べる。広い画面では鍵盤の名前を左の列に、狭い画面では上に置く
+ * 図に表示するストップを選ぶ小さなボタンを並べる。広い画面では鍵盤の名前を左の列に、狭い画面では上に置く
  */
 .cons{margin-top:12px}
 .cons-h{display:flex;flex-wrap:wrap;align-items:center;gap:4px 14px;padding:0 8px 6px}
 .cons-t{margin:0 auto 0 0;font:700 13.5px/1.3 var(--sans);color:var(--ink)}
 .s-key{display:inline-flex;align-items:center;gap:6px}
-.s-key .ic-p{width:10px;height:15px;color:var(--ch1)}
+/* 凡例の「図に表示」は、表示中のボタンと同じ見た目の小さな印 */
+.s-v{display:inline-grid;place-items:center;width:20px;height:18px;border-radius:3px;background:var(--ch1);color:var(--surface)}
+.s-v .ic-v{width:14px;height:14px}
 .cdivs{border-top:1px solid var(--line)}
 .cdiv{display:grid;grid-template-columns:10.5rem minmax(0,1fr);align-items:start;gap:6px 12px;padding:10px 8px;border-bottom:1px solid var(--line)}
 .cdiv:last-child{border-bottom:0}
@@ -88,13 +90,13 @@
 .st{display:inline-flex}
 .chip.stop{display:inline-flex;align-items:center;gap:7px;border-radius:4px 0 0 4px;font-family:var(--mono)}
 .chip.cpl{font-family:var(--mono)}
-.drw{display:inline-grid;place-items:center;min-width:28px;min-height:30px;padding:0 6px;border:1px solid var(--line);border-left:0;border-radius:0 4px 4px 0;background:none;color:var(--ink-3);cursor:pointer}
+/* 図に表示するボタン: 枠の中の波形の印。表示していないものは線だけの控えめな印 */
+.drw{display:inline-grid;place-items:center;min-width:30px;min-height:30px;padding:0 6px;border:1px solid var(--line);border-left:0;border-radius:0 4px 4px 0;background:none;color:var(--ink-3);cursor:pointer}
 .drw:hover{border-color:var(--line-2);color:var(--ink)}
-/* 図に描いているストップ: 図の管の中の音圧と同じ色の管の印 */
-.drw[aria-pressed="true"]{background:var(--inset);border-color:var(--line-2);color:var(--ch1)}
+/* 表示中: 図の管の中の音圧と同じ色で塗り、印を地の色で抜く（ストップの「入」のインク色とも、LED のオレンジとも違う色） */
+.drw[aria-pressed="true"]{background:var(--ch1);border-color:var(--ch1);color:var(--surface)}
 .drw:focus-visible{outline-offset:-2px}
-.ic-p{width:11px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linejoin:round}
-.drw[aria-pressed="true"] .ic-p{fill:currentColor;fill-opacity:.35}
+.ic-v{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 /* スウェル: 第 2 手鍵盤の名前の下に、スライダーと値 */
 .swl{display:grid;grid-template-columns:auto minmax(0,1fr) 2.6rem;align-items:center;gap:6px;margin-top:2px}
 .swl .vl{font-size:12.5px;font-weight:500;color:var(--ink-2)}

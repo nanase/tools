@@ -1,7 +1,7 @@
 /**
  * 管と鍵盤の図。実際のコンソールと同じく、第 2 手鍵盤・第 1 手鍵盤を上下に重ね、ペダルを一番下に置いて、3 つの鍵盤を
- * 同時に描く（押している鍵は赤）。その上に、選んだストップの管を、そのストップの鍵盤の鍵に合わせて正面から描く
- * （管の長さと太さは実際に比例させ、図に収まるように縮める）。管を描いている鍵盤は、左の札と線で示す。
+ * 同時に描く（押している鍵は赤）。その上に、表示に選んだストップの管を、そのストップの鍵盤の鍵に合わせて正面から描く
+ * （管の長さと太さは実際に比例させ、図に収まるように縮める）。管を表示している鍵盤は、左の札と線で示す。
  * 鳴っている管には、管の中の音圧の分布（定在波）を描く。残像は振れる範囲、スローは瞬間の分布。
  * 鍵を押したまま動かすとグリッサンドになる（押し始めた鍵盤の中で。ポインタごとに別々に動く）
  */
@@ -91,7 +91,7 @@ function keyRect(d: Div, key: number): [number, number, number, number] {
 }
 
 export class Keys {
-  /** 管を描く鍵盤と、その範囲（MIDI の番号） */
+  /** 管を表示している鍵盤と、その範囲（MIDI の番号） */
   private div: Div = 'I';
   private lo = 36;
   private hi = 96;
@@ -140,7 +140,7 @@ export class Keys {
   }
 
   /* ---------- 座標 ---------- */
-  /** 鍵の管の中心の x（管を描く鍵盤の範囲で、半音ごとに等しい間隔） */
+  /** 鍵の管の中心の x（管を表示している鍵盤の範囲で、半音ごとに等しい間隔） */
   private px(key: number, slot = 0, n = 1): number {
     const sp = (KX1 - KX0) / (this.hi - this.lo + 1),
       x = KX0 + (key - this.lo + 0.5) * sp;
@@ -152,7 +152,7 @@ export class Keys {
   }
 
   /* ---------- 設定 ---------- */
-  /** 管を描く鍵盤と、その鍵盤の範囲の鍵ごとの管 */
+  /** 管を表示する鍵盤と、その鍵盤の範囲の鍵ごとの管 */
   setRank(div: Div, pipes: PipeGeo[][]): void {
     const { lo, hi } = divOf(div);
     this.div = div;
@@ -170,7 +170,7 @@ export class Keys {
     this.drawLabels();
     this.kick();
   }
-  /** 図の上に書く、描いている管の名前 */
+  /** 図の上に書く、表示している管の名前 */
   setTitle(s: string): void {
     if (this.title.textContent !== s) this.title.textContent = s;
   }
@@ -193,14 +193,14 @@ export class Keys {
     else this.down.delete(k);
     this.keyEls.get(k)?.classList.toggle('on', on);
   }
-  /** 管を描く鍵盤の鍵 key の管を鳴らす（同じ鍵の前の音は置きかえる） */
+  /** 管を表示している鍵盤の鍵 key の管を鳴らす（同じ鍵の前の音は置きかえる） */
   set(key: number, s: Sounding[]): void {
     if (!s.length) return;
     this.snd.set(key, s);
     if (this.pipes[key - this.lo]?.[0]) this.rips.push({ x: this.px(key), y: BASE - FOOT, t0: s[0].t0 });
     this.kick();
   }
-  /** 管を描く鍵盤の鍵 key の弁を時刻 t に閉じる */
+  /** 管を表示している鍵盤の鍵 key の弁を時刻 t に閉じる */
   release(key: number, t: number): void {
     for (const s of this.snd.get(key) ?? []) if (s.t1 > t) s.t1 = t;
     this.kick();
@@ -243,7 +243,7 @@ export class Keys {
     this.gStatic.innerHTML = h;
   }
 
-  /** 鍵盤の札（II・I・P）。管を描いている鍵盤の札を塗り、風箱から線でつなぐ */
+  /** 鍵盤の札（II・I・P）。管を表示している鍵盤の札を塗り、風箱から線でつなぐ */
   private drawLabels(): void {
     let h = '';
     for (const r of ROWS) {
@@ -385,7 +385,7 @@ export class Keys {
   }
 
   /* ---------- 操作 ---------- */
-  /** 点 (x, y) の鍵（鍵盤の鍵か、管を描いている鍵盤の管） */
+  /** 点 (x, y) の鍵（鍵盤の鍵か、管を表示している鍵盤の管） */
   private hit(x: number, y: number): { div: Div; key: number } | null {
     if (x < KX0 || x > KX1) return null;
     for (const r of ROWS) {
