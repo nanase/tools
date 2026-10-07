@@ -137,7 +137,7 @@ const related = [
         <div class="sbar rdbar"><span class="stag rd" id="b-rd"></span></div>
       </Panel>
 
-      <Panel hid="hd-room" title="部屋" class="a-room">
+      <Panel hid="hd-room" title="残響" class="a-room">
         <div class="ptab">
           <ChoiceRow k="room" name="部屋" sub="響きを付ける部屋。寸法と吸音率から残響時間を求める（再生の音だけに付け、音の波形と計算結果には含めない）" choices={ROOMS.map((r) => [r.v, r.name, r.v === 'off' ? '残響なし' : `${r.dim.join(' × ')} m、平均吸音率 ${r.a}`] as const)} value="small" layout="chips" wide />
           <ParamRow d={DIST} />

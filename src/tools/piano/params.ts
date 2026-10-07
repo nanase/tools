@@ -127,7 +127,7 @@ export const THICK: ParamDef = lin({
   ],
 });
 
-/* ---------- 部屋 ---------- */
+/* ---------- 残響（部屋） ---------- */
 export const DIST: ParamDef = lin({
   k: 'dist',
   nm: 'r',

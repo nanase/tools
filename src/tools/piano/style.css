@@ -5,8 +5,8 @@
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--key-on:#ff5a4f}}
 :root[data-theme="dark"]{--key-on:#ff5a4f}
 
-/* 枠の並び。スマホは 鍵盤と弦 → 演奏 → 打鍵 → 弦 → 響板 → 部屋 → 音の波形 → 計算結果 → 式 → 楽譜の出典。
-   PC は上に 鍵盤と弦（全幅）、左の列に 演奏・打鍵・弦、右の列に 響板・部屋・音の波形・計算結果、その下に 式・出典（全幅） */
+/* 枠の並び。スマホは 鍵盤と弦 → 演奏 → 打鍵 → 弦 → 響板 → 残響 → 音の波形 → 計算結果 → 式 → 楽譜の出典。
+   PC は上に 鍵盤と弦（全幅）、左の列に 演奏・打鍵・弦、右の列に 響板・残響・音の波形・計算結果、その下に 式・出典（全幅） */
 .a-kb{order:1}.a-play{order:2}.a-hit{order:3}.a-str{order:4}.a-board{order:5}.a-room{order:6}.a-wave{order:7}.a-out{order:8}.a-thy{order:9}.a-src{order:10}
 @media (min-width:1000px){
   .tgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr);grid-template-areas:"kb kb" "c1 c2" "thy thy" "src src";align-items:start}
@@ -25,6 +25,7 @@
 .vl{font-size:14px;font-weight:700}
 .vgrid .sl{padding-bottom:0}
 .vgrid output{text-align:right;font:500 13.5px/1 var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.vgrid .tg{justify-content:center}
 .snd-msg{margin:6px 8px 0}
 .snd-msg:empty{display:none}
 .pl-bar{margin:8px 8px 0;font:500 12.5px/1.5 var(--mono);color:var(--ink-2);text-align:right}
