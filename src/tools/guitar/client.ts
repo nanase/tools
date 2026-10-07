@@ -703,14 +703,23 @@ tempoIn.addEventListener('input', () => {
   store('tempo', V.tempo);
 });
 
-$('#muteBtn').addEventListener('click', () => {
-  if (P) stopPiece();
-  audio.stop(0.06);
+/** 指板の図の、鳴っている弦を今止める（予定した撥弦はそのまま） */
+function dampNeck(): void {
   const t = nowS();
   for (let si = 0; si < 6; si++) {
     const s = neck.get(si);
     if (s && s.damp > t) neck.set(si, { ...s, damp: t });
   }
+}
+/* リリース: 鳴っている弦をすべて止めるが、演奏は続ける */
+$('#relBtn').addEventListener('click', () => {
+  for (let si = 0; si < 6; si++) audio.damp(si, 0, 0, 0.06);
+  dampNeck();
+});
+$('#muteBtn').addEventListener('click', () => {
+  if (P) stopPiece();
+  audio.stop(0.06);
+  dampNeck();
 });
 
 /* ---------- 演奏 ---------- */
