@@ -12,6 +12,8 @@
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "test": "bun scripts/node.ts vitest run",
+    "organ-scores": "bun scripts/organ-scores.ts",
+    "organ-tune": "bun scripts/organ-tune.ts",
     "redirects": "bun scripts/redirects-csv.ts",
     "chaconne": "bun scripts/chaconne.ts",
     "piano-scores": "bun scripts/piano-scores.ts"

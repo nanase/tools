@@ -31,6 +31,8 @@ export interface Midi {
   names: string[];
   /** コントロールチェンジの番号ごとの数 */
   cc: Map<number, number>;
+  /** プログラムチェンジ。時刻は tick */
+  programs: { t: number; tr: number; prog: number }[];
 }
 
 /** SMF を読み、すべてのトラックの音（時刻は tick）とテンポ・拍子を返す */
@@ -56,7 +58,7 @@ export function readMidi(buf: Uint8Array): Midi {
     ppq = u16();
   if (ppq & 0x8000) throw new Error('SMPTE の時間単位には対応していません');
   p = h0 + hl;
-  const m: Midi = { ppq, notes: [], tempo: [], meter: [], names: [], cc: new Map() };
+  const m: Midi = { ppq, notes: [], tempo: [], meter: [], names: [], cc: new Map(), programs: [] };
   for (let k = 0; k < ntr; k++) {
     if (tag() !== 'MTrk') throw new Error(`トラック ${k} が壊れています`);
     const end = u32() + p;
@@ -98,6 +100,7 @@ export function readMidi(buf: Uint8Array): Midi {
         const t0 = on.get(key)?.shift();
         if (t0 !== undefined) m.notes.push({ tr: k, n: a, t0, t1: t });
       } else if (ty === 0xb0) m.cc.set(a, (m.cc.get(a) ?? 0) + 1);
+      else if (ty === 0xc0) m.programs.push({ t, tr: k, prog: a });
     }
     p = end;
   }
@@ -116,11 +119,17 @@ export interface Piece {
   source: string[];
   /** 加工の段落（行に分けたもの） */
   changes: string[];
-  license: 'pd' | 'cc-by-sa-2.5' | 'cc-by-sa-4.0';
+  license: 'pd' | 'cc-by-sa-2.5' | 'cc-by-sa-4.0' | 'cc0';
   /** 使うトラックと、その譜表・鍵盤（h）: [トラックの番号, h] */
   tracks: [number, number][];
-  /** 拍子 [分子, 分母]。曲の途中で変わらないこと */
+  /** 拍子 [分子, 分母]。曲の途中で変わらないこと（meters のときは最初の拍子） */
   meter: [number, number];
+  /** 曲の途中の拍子の変化を許し、METER（[拍, 1 小節の拍の数]）に書く */
+  meters?: boolean;
+  /** 時刻と長さを寄せずに、tick のまま 1/DIV 拍に直す（演奏を記録した MIDI の表情を崩さない） */
+  exact?: boolean;
+  /** このトラックのプログラムチェンジを REG（[拍, 番号]）に書く（レジストレーションの切り替え） */
+  programs?: number;
   /** 弱起の拍（4 分音符を 1 とする） */
   pickup: number;
   /**
@@ -136,6 +145,11 @@ export interface Piece {
   tempo?: boolean;
   /** 曲ごとの手直し。readMidi の結果を受け取り、使う音（時刻は tick）を返す */
   fix?: (m: Midi, log: (s: string) => void) => RawNote[];
+  /**
+   * 時刻と長さを寄せて前打音を切ったあと（同じ音をまとめ、反復を展開する前）の音符の手直し（装飾の展開など）。
+   * 時刻は 1/DIV 拍で、反復を展開する前の時刻
+   */
+  edit?: (ns: Note[], log: (s: string) => void) => Note[];
 }
 
 /** 楽器ごとの設定 */
@@ -153,7 +167,7 @@ export interface Kind {
 }
 
 /** 音符。時刻と長さは 1/DIV 拍 */
-interface Note {
+export interface Note {
   t: number;
   d: number;
   n: number;
@@ -208,6 +222,11 @@ const enc = (v: number, w: number) => {
 };
 
 const LICENSE = {
+  cc0: {
+    name: 'CC0 1.0 Universal',
+    url: 'https://creativecommons.org/publicdomain/zero/1.0/',
+    spdx: 'CC0-1.0',
+  },
   'cc-by-sa-2.5': {
     name: 'Creative Commons Attribution-ShareAlike 2.5 Generic',
     url: 'https://creativecommons.org/licenses/by-sa/2.5/',
@@ -232,24 +251,51 @@ export function build(p: Piece, k: Kind): void {
     msgs: string[] = [],
     log = (s: string) => msgs.push(s);
   const bar = (p.meter[0] * 4) / p.meter[1];
-  /* 拍子は曲の途中で変わらず、設定と同じであること */
-  for (const x of m.meter)
+  /* 拍子は曲の途中で変わらず、設定と同じであること（meters なら変化を [拍, 1 小節の拍の数] の列にする） */
+  const meters: [number, number][] = [[0, bar]];
+  for (const x of m.meter) {
+    if (p.meters) {
+      const b = x.t / m.ppq,
+        len = (x.num * 4) / x.den,
+        last = meters[meters.length - 1];
+      if (b === last[0]) last[1] = len;
+      else if (len !== last[1]) meters.push([b, len]);
+      continue;
+    }
     if (x.num !== p.meter[0] || x.den !== p.meter[1])
       throw new Error(`${p.name}: MIDI の拍子 ${x.num}/${x.den}（${x.t / m.ppq} 拍）が設定と違います`);
+  }
   if (m.cc.get(64)) log(`CC64（ペダル）が ${m.cc.get(64)} 個あるが使わない`);
 
-  /* 拍の位置を小節と拍で表す（展開前・展開後のどちらの時刻にも使う） */
+  /* 拍の位置を小節と拍で表す（展開前・展開後のどちらの時刻にも使う）。拍子が変わるときは、変わった拍から数え直す */
+  const barAt = (beat: number): [number, number] => {
+    let k1 = 0,
+      b = beat - p.pickup;
+    for (let i = 0; i < meters.length; i++) {
+      const [s0, len] = meters[i],
+        e0 = i + 1 < meters.length ? meters[i + 1][0] : Infinity,
+        span = Math.max(0, Math.min(beat, e0) - Math.max(s0, p.pickup));
+      if (beat < e0) {
+        b = beat - Math.max(s0, p.pickup);
+        k1 += Math.floor(b / len);
+        return [k1 + 1, b - Math.floor(b / len) * len];
+      }
+      k1 += Math.round(span / len);
+    }
+    return [k1 + 1, b];
+  };
   const where = (beat: number) => {
-    const b = beat - p.pickup,
-      k1 = Math.floor(b / bar) + 1;
-    return `${k1} 小節 ${+(b - (k1 - 1) * bar + 1).toFixed(3)} 拍目`;
+    const [k1, b] = barAt(beat);
+    return `${k1} 小節 ${+(b + 1).toFixed(3)} 拍目`;
   };
 
   const raw = p.fix ? p.fix(m, log) : m.notes,
     hOf = new Map(p.tracks);
   for (const [tr] of p.tracks)
     if (tr >= m.names.length) throw new Error(`${p.name}: トラック ${tr} がありません（${m.names.length} 個）`);
-  const { snap, count } = snapper(m.ppq),
+  const sn = snapper(m.ppq),
+    snap = p.exact ? (tick: number) => Math.round((tick * DIV) / m.ppq) : sn.snap,
+    count = sn.count,
     g96 = m.ppq / 96;
   let ns: Note[] = [];
   for (const x of raw) {
@@ -272,6 +318,8 @@ export function build(p: Piece, k: Kind): void {
     }
     if (cut.length) log(`前打音を本音符の開始で切った ${cut.length} 音: ${cut.join('、')}`);
   }
+
+  if (p.edit) ns = p.edit(ns, log).sort((a, b) => a.t - b.t || a.h - b.h || a.n - b.n);
 
   /* 同じ時刻・同じ高さの音を 1 つにまとめる（長いほうを残し、同じなら h の小さいほう） */
   const merged = new Map<string, Note>();
@@ -366,6 +414,14 @@ export function build(p: Piece, k: Kind): void {
     log(`基本のテンポ ♩ = ${+(60e6 / base.us).toFixed(2)}（MIDI の最初の値）`);
   }
 
+  /* レジストレーションの切り替え（プログラムチェンジ） */
+  const reg =
+    p.programs === undefined ? [] : m.programs.filter((x) => x.tr === p.programs).map((x) => [snap(x.t) / DIV, x.prog]);
+  if (reg.length)
+    log(
+      `プログラムチェンジ ${reg.length} 個（番号 ${[...new Set(reg.map((x) => x[1]))].sort((a, b) => a - b).join('・')}）`,
+    );
+
   /* 符号にする: 前の音からの間（3）、長さ（3）、音の高さ（2）、h（1） */
   let data = '',
     prev = 0;
@@ -375,10 +431,11 @@ export function build(p: Piece, k: Kind): void {
   }
   const lines = data.match(/.{1,108}/g) ?? [],
     end = Math.max(...ns.map((x) => x.t + x.d)) / DIV,
-    full = Math.floor((length / DIV - p.pickup) / bar),
-    rest = +(length / DIV - p.pickup - full * bar).toFixed(3),
+    [endBar, endRest] = barAt(length / DIV),
+    full = endBar - 1,
+    rest = +endRest.toFixed(3),
     counts = k.staves.map((_, h) => ns.filter((x) => x.h === h).length);
-  const meter = `${p.meter[0]}/${p.meter[1]} 拍子${p.pickup ? `、最初の ${p.pickup} 拍は弱起` : ''}`,
+  const meter = `${p.meter[0]}/${p.meter[1]} 拍子${meters.length > 1 ? '（途中で変わる）' : ''}${p.pickup ? `、最初の ${p.pickup} 拍は弱起` : ''}`,
     size = `${full} 小節${rest ? `と ${rest} 拍` : ''}`;
 
   const lic = p.license === 'pd' ? undefined : LICENSE[p.license],
@@ -402,7 +459,20 @@ export function build(p: Piece, k: Kind): void {
     '',
     ...license,
   ];
-  const tempoSrc = tempo.length ? `[\n${tempo.map(([t, r]) => `  [${t}, ${r}],`).join('\n')}\n]` : '[]';
+  const tempoSrc = tempo.length ? `[\n${tempo.map(([t, r]) => `  [${t}, ${r}],`).join('\n')}\n]` : '[]',
+    list = (xs: number[][]) => `[\n${xs.map((x) => `  [${x.join(', ')}],`).join('\n')}\n]`,
+    extra = [
+      ...(p.meters
+        ? [
+            `\n/** 拍子: [拍, 1 小節の拍（4 分音符）の数]（その拍から） */\nexport const METER: readonly [number, number][] = ${list(meters)};`,
+          ]
+        : []),
+      ...(reg.length
+        ? [
+            `\n/** レジストレーションの切り替え: [拍, 番号]（MIDI のプログラムチェンジ） */\nexport const REG: readonly [number, number][] = ${list(reg)};`,
+          ]
+        : []),
+    ].join('\n');
 
   const text = `/**
 ${head.map((l) => (l ? ` * ${l}` : ' *')).join('\n')}
@@ -418,7 +488,7 @@ const v = (s: string) => [...s].reduce((x, c) => x * 64 + A.indexOf(c), 0);
 
 /** テンポの変化: [拍, 基本のテンポに対する比]。最初の項より前の比は 1 */
 export const TEMPO: readonly [number, number][] = ${tempoSrc};
-
+${extra}
 /** 音符（${ns.length} 音、${size}。${meter}） */
 export function notes(): ScoreNote[] {
   const out: ScoreNote[] = [];
