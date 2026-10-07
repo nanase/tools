@@ -1,0 +1,61 @@
+/* FIR フィルタのページだけのスタイル（共通は src/styles/site.css） */
+
+/* 並び: スマホは 1 列（仕様→設計→周波数特性→計算結果→インパルス応答→零点→係数→試聴）。
+   PC は上段の左に仕様・設計・試聴、右に周波数特性・インパルス応答・計算結果。下段の左に零点、右に係数 */
+.a-in{order:1}.a-dsg{order:2}.a-fr{order:3}.a-out{order:4}.a-imp{order:5}.a-z{order:6}.a-coef{order:7}.a-snd{order:8}.a-thy{order:9}
+@media (min-width:1000px){
+  .tgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr);grid-template-areas:"ca cb" "z coef" "thy thy";align-items:start}
+  .c-a{grid-area:ca}.c-b{grid-area:cb}.a-z{grid-area:z}.a-coef{grid-area:coef}.a-thy{grid-area:thy}
+  /* 列の中は書いた順（スマホの並び替えを持ち込まない） */
+  .col>*{order:0}
+}
+
+/* 枠の右上のボタン（再生の LED・コピー） */
+.seg button{display:inline-flex;align-items:center;gap:7px}
+.seg button:disabled{opacity:.45;cursor:default;color:var(--ink-3)}
+@media (max-width:479px){.ptype button,#p-method button{padding:0 6px}}
+
+/* 表示窓: CH の切替、カーソル、仕様の枠、インパルス応答の棒、窓 */
+.tg[aria-pressed="false"] .sw{box-shadow:inset 0 0 0 1px var(--ch1)}
+.tg[aria-pressed="false"] .sw.c2{box-shadow:inset 0 0 0 1px var(--ch2)}
+.sw.sp{height:0;background:none;border-top:2px dashed var(--screen-ink);border-radius:0}
+.tg[aria-pressed="false"] .sw.sp{box-shadow:none;opacity:.5}
+.scope svg{touch-action:pan-y}
+.spec{fill:none;stroke:var(--screen-ink);stroke-width:1.3;stroke-dasharray:6 3;opacity:.9}
+.stm{fill:none;stroke:var(--ch1)}
+.stz{fill:none;stroke:var(--ch1);stroke-width:1;opacity:.5}
+.dt1{fill:var(--ch1)}
+.mkl{stroke:var(--screen-ink);stroke-width:1;stroke-dasharray:5 4;opacity:.75}
+.cur{stroke:var(--screen-ink);stroke-width:1}
+.scope text.p2{fill:var(--ch2)}
+.hide1 .c1x,.hidew .wx{display:none}
+#im-i{stroke-width:1.3;opacity:.9}
+.wl{fill:none;stroke:var(--screen-ink);stroke-width:1.3;stroke-dasharray:5 3}
+/* 零点 */
+.zs{max-width:520px}
+.zz{fill:none;stroke:var(--ch1);stroke-width:1.7}
+.zu{fill:none;stroke:var(--screen-ink);stroke-width:1.2}
+.zp{fill:none;stroke:var(--ch2);stroke-width:2}
+.scope text.zpt{fill:var(--ch2)}
+.zsel{fill:none;stroke:var(--screen-ink);stroke-width:1.2}
+.zsw{display:inline-block;width:9px;height:9px;border:2px solid var(--ch1);border-radius:50%}
+/* レベルメーター（表示窓の横長版） */
+.lv-hot{fill:var(--warn)}
+
+/* 計算結果 */
+.m-sub{display:block;margin-top:2px;font:500 12px/1.5 var(--mono);color:var(--ink-3)}
+.m-sub.ng{font-family:var(--sans);color:var(--warn)}
+
+/* 係数の書き出し */
+.cbar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}
+.coefs{margin:0;max-height:340px;overflow:auto;padding:10px 12px;background:var(--inset);border-radius:var(--r);font:500 12.5px/1.6 var(--mono);color:var(--ink);white-space:pre;tab-size:4}
+/* PC では隣の零点の枠の高さに合わせる */
+@media (min-width:1000px){.coefs{max-height:452px}}
+
+/* 動作原理と式 */
+.eqs mtd{text-align:left;padding:2px 10px 2px 0}
+
+/* 知らせ（コピーした、音を鳴らせない、設計できない） */
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:40;transform:translateX(-50%);max-width:calc(100vw - 32px);padding:9px 14px;border-radius:var(--r);background:var(--ink);color:var(--surface);font-size:13.5px;transition:opacity .2s}
+.toast[data-off]{opacity:0;pointer-events:none}
+@media (min-width:1000px){html.mini-on .toast{bottom:calc(var(--mini-h) + 20px)}}
