@@ -542,8 +542,8 @@ async function press(k: number): Promise<void> {
   const ok = await audio.ready();
   sndMsg(ok ? '' : NO_SOUND);
   if (!ok) return;
-  /* AudioWorklet を作った直後でも、ペダルの状態をそろえる */
-  audio.pedal(livePedal());
+  /* AudioWorklet を作った直後や、リリースでペダルを離したあとでも、ペダルの状態をそろえる */
+  syncPedal();
   const t = nowS(),
     v = qv(V.vel),
     view = audio.strike(k, v, soft.value === 'on', Number(thump.value), freeOf(S.held, livePedal()));
@@ -601,6 +601,24 @@ tempoIn.addEventListener('input', () => {
   store('tempo', V.tempo);
 });
 
+/* リリース: 押しているすべての鍵（手でも曲でも）から手を離し、ペダルで上がっているダンパーも下ろす。
+   演奏は続け、曲なら次の打鍵・ペダルからまた効く。曲があとで離す鍵は、もう離れていても問題ない */
+$('#relBtn').addEventListener('click', () => {
+  const an = audio.now() ?? 0,
+    t = nowS();
+  S.held.clear();
+  audio.releaseAll(an);
+  keys.upAll();
+  keys.setPedal(false);
+  $('#pedLed').classList.remove('on');
+  for (const k of keys.sounding()) keys.dampAt(k, t, sdOf(k));
+  const p = PL;
+  if (!p) return;
+  /* 予約済みの出来事のうち、今より前に打った鍵とペダルを離したことにする（今より後の予約はそのまま） */
+  for (const k of [...p.held.keys()]) if ((p.lastOn.get(k) ?? 0) <= an) p.held.delete(k);
+  if (p.pedalAt <= an) p.pedal = false;
+});
+
 $('#muteBtn').addEventListener('click', () => {
   if (PL) stopPiece();
   audio.stop(0.06);
@@ -629,6 +647,9 @@ interface Play {
   /** 予約した時点での、押している鍵とペダル（共鳴する弦を決める） */
   held: Map<number, number>;
   pedal: boolean;
+  /** 鍵ごとの最後に打った時刻と、最後のペダルの出来事の時刻（AudioContext の時刻。リリースで使う） */
+  lastOn: Map<number, number>;
+  pedalAt: number;
 }
 let PL: Play | null = null;
 const noteCache = new Map<string, ScoreNote[]>();
@@ -702,6 +723,8 @@ async function startPiece(): Promise<void> {
     piece: pc,
     held: new Map(),
     pedal: false,
+    lastOn: new Map(),
+    pedalAt: 0,
   };
   txt('#pl-bar', '');
   syncPlay();
@@ -713,15 +736,16 @@ function stopPiece(): void {
   PL = null;
   audio.stop(0.08);
   keys.clear();
-  for (let k = KEY_LO; k <= KEY_HI; k++) keys.setDown(k, false);
+  keys.upAll();
   keys.setPedal(false);
   $('#pedLed').classList.remove('on');
   txt('#pl-bar', '');
   syncPlay();
   syncPedal();
 }
-/** 時刻 t（performance の秒）に表示を変える */
-const later = (t: number, fn: () => void) => setTimeout(fn, Math.max(0, (t - nowS()) * 1000));
+/** 時刻 t（performance の秒）に表示を変える（止めたあとの、予約済みの表示は捨てる） */
+const later = (p: Play, t: number, fn: () => void) =>
+  setTimeout(() => PL === p && fn(), Math.max(0, (t - nowS()) * 1000));
 /** 先に予約する時間 [s] */
 const AHEAD = 0.5;
 function tick(): void {
@@ -743,29 +767,31 @@ function tick(): void {
       tp = toPerf(at);
     if (e.type === 'pedal') {
       p.pedal = e.on;
+      p.pedalAt = at;
       audio.pedal(e.on, at);
-      later(tp, () => {
+      later(p, tp, () => {
         keys.setPedal(e.on);
         $('#pedLed').classList.toggle('on', e.on);
       });
-      if (!e.on) for (const k of keys.sounding()) if (!p.held.has(k)) later(tp, () => keys.dampAt(k, tp, sdOf(k)));
+      if (!e.on) for (const k of keys.sounding()) if (!p.held.has(k)) later(p, tp, () => keys.dampAt(k, tp, sdOf(k)));
     } else if (e.type === 'off') {
       const n = (p.held.get(e.key) ?? 1) - 1;
       if (n > 0) p.held.set(e.key, n);
       else p.held.delete(e.key);
       if (n > 0) continue;
       audio.release(e.key, at);
-      later(tp, () => keys.setDown(e.key, false));
-      if (!p.pedal) later(tp, () => keys.dampAt(e.key, tp, sdOf(e.key)));
+      later(p, tp, () => keys.setDown(e.key, false));
+      if (!p.pedal) later(p, tp, () => keys.dampAt(e.key, tp, sdOf(e.key)));
     } else {
       p.held.set(e.key, (p.held.get(e.key) ?? 0) + 1);
+      p.lastOn.set(e.key, at);
       const free = freeOf(new Set(p.held.keys()), p.pedal),
         key = e.key;
       void audio.strike(key, qv(e.v), soft.value === 'on', Number(thump.value), free, at).then((view) => {
         if (PL !== p) return;
         keys.set(key, { view, t0: tp, damp: Infinity, sd: sdOf(key) });
       });
-      later(tp, () => keys.setDown(key, true));
+      later(p, tp, () => keys.setDown(key, true));
     }
   }
   const pc = p.piece,

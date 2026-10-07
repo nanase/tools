@@ -23,6 +23,7 @@ export type PnMsg =
   | { type: 'port'; port: MessagePort }
   | { type: 'strike'; at: number; p: StrikeMsg; gen: number }
   | { type: 'release'; at: number; key: number }
+  | { type: 'releaseAll'; at: number }
   | { type: 'pedal'; at: number; on: boolean }
   | { type: 'stop'; tau: number; gen: number };
 
@@ -59,6 +60,7 @@ registerProcessor(
     private fire(m: Ev): void {
       if (m.type === 'strike') this.e.strike(m.p);
       else if (m.type === 'release') this.e.release(m.key);
+      else if (m.type === 'releaseAll') this.e.releaseAll();
       else this.e.setPedal(m.on);
     }
     process(_in: Float32Array[][], outputs: Float32Array[][]): boolean {

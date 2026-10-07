@@ -342,6 +342,13 @@ export class Engine {
     this.applyDamp(key);
   }
 
+  /** 押しているすべての鍵とペダルを離す（ダンパーが下り、鳴っている音は自然に減衰する） */
+  releaseAll(): void {
+    this.held.fill(0);
+    this.pedal = false;
+    for (let k = KEY_LO; k <= KEY_HI; k++) this.applyDamp(k);
+  }
+
   /** ペダルを踏む・離す */
   setPedal(on: boolean): void {
     if (on === this.pedal) return;

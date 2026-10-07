@@ -169,6 +169,12 @@ export class Keys {
     this.keyEls[key - KEY_LO]?.classList.toggle('on', on);
     this.drawDampers();
   }
+  /** すべての鍵を離した表示にする */
+  upAll(): void {
+    for (const k of this.down) this.keyEls[k - KEY_LO]?.classList.remove('on');
+    this.down.clear();
+    this.drawDampers();
+  }
   setPedal(on: boolean): void {
     this.pedal = on;
     this.drawDampers();

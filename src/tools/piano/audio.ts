@@ -164,6 +164,11 @@ export class PianoAudio {
     this.post({ type: 'release', at, key });
   }
 
+  /** 押しているすべての鍵とペダルを離す（予約した打鍵はそのまま） */
+  releaseAll(at = 0): void {
+    this.post({ type: 'releaseAll', at });
+  }
+
   pedal(on: boolean, at = 0): void {
     this.post({ type: 'pedal', at, on });
   }

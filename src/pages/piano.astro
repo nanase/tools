@@ -67,7 +67,7 @@ const related = [
           <label class="vl" for="tempo">テンポ</label>
           <div class="sl"><input type="range" id="tempo" min="25" max="150" step="5" aria-describedby="tempov" title="曲の標準の速さに対する割合。演奏中も変えられる"></div>
           <output id="tempov" for="tempo"></output>
-          <span></span>
+          <button type="button" class="tg" id="relBtn" title="押しているすべての鍵から手を離す（演奏は続ける）">リリース</button>
           <label class="vl" for="vol">音量</label>
           <div class="sl"><input type="range" id="vol" min="-60" max="0" step="1" aria-describedby="volv" title="スピーカーへ出す大きさ（0 dB で、1 m 先の音圧 1 Pa をフルスケールにする）"></div>
           <output id="volv" for="vol"></output>

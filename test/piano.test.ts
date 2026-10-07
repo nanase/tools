@@ -331,6 +331,47 @@ describe('音', () => {
       rel = play(k, 3, 1.5, 0.2);
     expect(rms(rel, 1, 1.5)).toBeCloseTo(rms(held, 1, 1.5), 6);
   });
+  it('リリースは押している鍵もペダルも離して音を減衰させ、あとで同じ鍵を離しても、次のペダルからまた効く', () => {
+    const run = (rel: boolean) => {
+      const e = new Engine(FS),
+        y = new Float32Array(3 * FS);
+      e.setBoard(boardDesc(P.board));
+      e.setPedal(true);
+      for (const k of [48, 55]) e.strike(strikeKey(P, { key: k, v: 3, soft: false, free: () => true }, FS).msg);
+      for (let i = 0; i < y.length; i += 128) {
+        if (rel && i === 128 * 100) e.releaseAll();
+        /* 曲があとで離す鍵（もう離れている） */
+        if (rel && i === 128 * 200) e.release(48);
+        e.render(y, i, 128);
+      }
+      return { e, y };
+    };
+    const held = run(false).y,
+      { e, y } = run(true);
+    expect(y.every(Number.isFinite)).toBe(true);
+    expect(rms(y, 2.5, 3)).toBeLessThan(rms(held, 2.5, 3) / 30);
+    /* 次のペダルの出来事から、また離した鍵の音が響き続ける */
+    e.setPedal(true);
+    e.strike(strikeKey(P, { key: 60, v: 3, soft: false, free: () => true }, FS).msg);
+    e.release(60);
+    const z = new Float32Array(FS);
+    for (let i = 0; i < z.length; i += 128) e.render(z, i, 128);
+    expect(rms(z, 0.8, 1)).toBeGreaterThan(rms(z, 0, 0.2) / 10);
+  });
+  it('鳴っている間に響板を変えても、鍵を離せば音は消える', () => {
+    const e = new Engine(FS),
+      y = new Float32Array(3 * FS),
+      Q = piano('upright');
+    e.setBoard(boardDesc(P.board));
+    e.strike(strikeKey(P, { key: 50, v: 3, soft: false, free: () => false }, FS).msg);
+    for (let i = 0; i < y.length; i += 128) {
+      if (i === 128 * 50) e.setBoard(boardDesc(Q.board));
+      if (i === 128 * 100) e.release(50);
+      e.render(y, i, 128);
+    }
+    expect(y.every(Number.isFinite)).toBe(true);
+    expect(rms(y, 2.5, 3)).toBeLessThan(rms(y, 0, 0.1) / 300);
+  });
   it('何も打たなければ無音、すべて止めると消える', () => {
     const e = new Engine(FS),
       y = new Float32Array(FS);
