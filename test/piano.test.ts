@@ -126,6 +126,45 @@ describe('ハンマー', () => {
     expect(hammerOf(96).m).toBeLessThan(hammerOf(36).m);
     expect(strike(sh, { ...hammerOf(96), v: 3 }, FS).tc).toBeLessThan(strike(st, { ...hammerOf(60), v: 3 }, FS).tc);
   });
+  it('2 m/s で打ったフェルトの最大の圧縮と接触時間は、柳沢・中村 (1984) の測定に近い', () => {
+    for (const [key, d, tc] of [
+      [57, 0.62, 2.6],
+      [69, 0.75, 1.9],
+      [81, 0.7, 1.6],
+    ]) {
+      const k = P.keys[key - KEY_LO],
+        c = strike(
+          { L: k.s.L, mu: k.s.mu, T: k.s.T, ns: k.s.ns, x0: k.x0, w: k.w[0], s: k.sg[0] },
+          { ...hammerOf(key), v: 2 },
+          FS,
+        );
+      expect(c.dmax * 1000).toBeGreaterThan(d - 0.08);
+      expect(c.dmax * 1000).toBeLessThan(d + 0.08);
+      expect(c.tc * 1000).toBeGreaterThan(0.75 * tc);
+      expect(c.tc * 1000).toBeLessThan(1.25 * tc);
+    }
+  });
+  it('強く打つほど高い部分音が強まる（中音の 4〜10 kHz の、0.15〜1 kHz に対する比が mf から ff で 10 dB 以上）', () => {
+    const k = P.keys[60 - KEY_LO],
+      ratio = (v: number) => {
+        const c = strike(
+          { L: k.s.L, mu: k.s.mu, T: k.s.T, ns: k.s.ns, x0: k.x0, w: k.w[0], s: k.sg[0] },
+          { ...hammerOf(60), v },
+          FS,
+        );
+        let lo = 0,
+          hi = 0;
+        for (let i = 0; i < k.N; i++) {
+          const f = k.w[0][i] / (2 * Math.PI),
+            a = (i + 1) ** 2 * (c.q[i] ** 2 + (c.dq[i] / k.w[0][i]) ** 2);
+          if (f >= 150 && f < 1000) lo += a;
+          else if (f >= 4000 && f < 10000) hi += a;
+        }
+        return 10 * Math.log10(hi / lo);
+      };
+    expect(ratio(6) - ratio(2.5)).toBeGreaterThan(10);
+    expect(ratio(2.5) - ratio(0.8)).toBeGreaterThan(10);
+  });
   it('力積はハンマーの運動量の変化に等しい', () => {
     const h = { ...hammerOf(60), v: 3 },
       c = strike(st, h, FS);

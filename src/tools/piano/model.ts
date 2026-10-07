@@ -174,9 +174,40 @@ export function makePiano(spec: PianoSpec, fs: number): Piano {
 
 /* ---------- ハンマー ---------- */
 /**
+ * 弦に当たるフェルトの硬さの補正（log10 の倍率、[鍵, 値]）。Stulov の近似式は平らな面や 1 本の弦を打って求めた
+ * ハンマー全体の硬さで、2〜3 本の弦を打つ中音・高音では、1 本あたりのフェルトが硬すぎる（2 m/s で打ったときの
+ * フェルトの最大の圧縮が 0.31 mm になる）。柳沢・中村 (1984) が実際に弦を打って測った圧縮（2 m/s で A0 0.55 mm、
+ * A3 0.62 mm、A4 0.75 mm、A5 0.7 mm）になるように、コンサートグランドの弦で鍵ごとに求めた倍率（アップライトでも
+ * ほぼ同じ）。合わせたあとの接触時間（A3 2.7 ms、A4 2.2 ms、A5 1.6 ms）も、同じ測定（2.6・1.9・1.6 ms）に合う。
+ * A5 より上は測定がないので A5 の値のまま
+ */
+const FELT_LOG: readonly [number, number][] = [
+  [21, 0.04],
+  [27, -0.21],
+  [33, -0.59],
+  [39, -0.82],
+  [45, -1.01],
+  [51, -1.22],
+  [57, -1.3],
+  [63, -1.54],
+  [69, -1.76],
+  [75, -1.72],
+  [81, -1.68],
+];
+const feltScale = (key: number): number => {
+  let i = 0;
+  while (i < FELT_LOG.length - 2 && key > FELT_LOG[i + 1][0]) i++;
+  const [k0, a0] = FELT_LOG[i],
+    [k1, a1] = FELT_LOG[i + 1],
+    u = Math.min(1, Math.max(0, (key - k0) / (k1 - k0)));
+  return 10 ** (a0 + (a1 - a0) * u);
+};
+
+/**
  * 鍵ごとのハンマー（Stulov の鍵盤全体の近似式。n は鍵の番号 1〜88）: 質量 m = 11.074 − 0.074n + 0.0001n² [g]、
- * 指数 p = 3.7 + 0.015n、硬さ Q₀ = 183 e^{0.045n} [N/mm^p]、ヒステリシス α = 248 + 1.83n − 0.055n² [µs]
- * （高音で負になるので 30 µs を下限とする）。hard は硬さに掛ける倍率（整音）。幅は概数
+ * 指数 p = 3.7 + 0.015n、硬さ Q₀ = 183 e^{0.045n} [N/mm^p]（弦に当たるときの補正 FELT_LOG を掛ける）、
+ * ヒステリシス α = 248 + 1.83n − 0.055n² [µs]（高音で負になるので 30 µs を下限とする）。hard は硬さに掛ける
+ * 倍率（整音）。幅は概数
  */
 export function hammerOf(key: number, hard = 1): Omit<HammerSpec, 'v'> {
   const n = key - KEY_LO + 1,
@@ -184,7 +215,7 @@ export function hammerOf(key: number, hard = 1): Omit<HammerSpec, 'v'> {
   return {
     m: (11.074 - 0.074 * n + 0.0001 * n * n) * 1e-3,
     p,
-    K: 183 * Math.exp(0.045 * n) * hard * 1000 ** p,
+    K: 183 * Math.exp(0.045 * n) * feltScale(key) * hard * 1000 ** p,
     alpha: Math.max(30, 248 + 1.83 * n - 0.055 * n * n) * 1e-6,
     w: (10 - (6 * (n - 1)) / 87) * 1e-3,
   };
