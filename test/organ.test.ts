@@ -78,6 +78,36 @@ describe('管', () => {
     const r = pipesOf(stopOf('tr8'), 60, OPT0)[0].spec as ReedSpec;
     expect(new ReedPipe({ ...r, fit: new ReedPipe(r, FS).fit }, FS).fit).toEqual(new ReedPipe(r, FS).fit);
   });
+  it('立ち上がりの増幅は高いモードを鳴らさない（オクターブバスの C で、高い帯域が定常の全体より 10 dB 以上小さい）', () => {
+    const t = tuneStop('ob8', { temp: 'equal', a4: 440, voicing: {} }, FS, TUNED)[0][0],
+      x = sound(new FluePipe(t.spec as FlueSpec, FS), FS, 0.6, 920);
+    /* 1.5 kHz の 2 次の Butterworth 高域通過を 2 段 */
+    let y = x;
+    for (let k = 0; k < 2; k++) {
+      const w0 = (2 * Math.PI * 1500) / FS,
+        c = Math.cos(w0),
+        al = Math.sin(w0) / Math.SQRT2,
+        a0 = 1 + al,
+        o = new Float64Array(y.length);
+      let x1 = 0,
+        x2 = 0,
+        y1 = 0,
+        y2 = 0;
+      for (let i = 0; i < y.length; i++) {
+        const v = (((1 + c) / 2) * (y[i] - 2 * x1 + x2) + 2 * c * y1 - (1 - al) * y2) / a0;
+        x2 = x1;
+        x1 = y[i];
+        y2 = y1;
+        y1 = v;
+        o[i] = v;
+      }
+      y = o;
+    }
+    const ss = rms(x, 0.5, 0.6);
+    let hi = 0;
+    for (let t0 = 0; t0 < 0.48; t0 += 0.01) hi = Math.max(hi, rms(y, t0, t0 + 0.02));
+    expect(20 * Math.log10(hi / ss)).toBeLessThan(-10);
+  });
   it('プリンシパルの C5 は 60 ms で定常の −3 dB に届き、立ち上がりの増幅は定常の音を変えない', () => {
     const t = tuneStop('p8', { temp: 'equal', a4: 440, voicing: {} }, FS, TUNED)[36][0],
       s = t.spec as FlueSpec,
