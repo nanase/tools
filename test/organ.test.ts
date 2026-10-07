@@ -222,6 +222,23 @@ describe('曲', () => {
       for (const id of p.stops) expect(STOPS.some((s) => s.id === id)).toBe(true);
     }
   });
+  it('装飾を展開してある: BWV 565 の冒頭はモルデント（A–G–A）、BWV 645 と 582 にはトリル', async () => {
+    const load = (v: string) => (PIECES.find((p) => p.v === v) as (typeof PIECES)[number]).load(),
+      at = (ns: { t: number; n: number; h: number }[], h: number, a: number, b: number) =>
+        ns.filter((x) => x.h === h && x.t >= a - 1e-9 && x.t < b).map((x) => x.n);
+    const n565 = (await load('bwv565')).notes;
+    expect(at(n565, 0, 0, 0.5).filter((n) => n > 75)).toEqual([81, 79, 81]);
+    expect(at(n565, 0, 0, 0.5).filter((n) => n < 75)).toEqual([69, 67, 69]);
+    /* BWV 645 の拍 33.5 の B♭ の 16 分音符のトリル（上の C から） */
+    expect(at((await load('bwv645')).notes, 0, 33.5, 33.75)).toEqual([72, 70]);
+    /* BWV 582 の拍 68 の H の付点 4 分音符のトリル: 上の C から交互に、1 秒に 8〜12 音 */
+    const tr = (await load('bwv582')).notes.filter((x) => x.h === 0 && x.t >= 68 && x.t < 69.5);
+    expect(tr[0].n).toBe(60);
+    expect(tr[tr.length - 1].n).toBe(59);
+    const sec = (tr[1].d * 60) / 66;
+    expect(sec).toBeGreaterThanOrEqual(1 / 12 - 1e-3);
+    expect(sec).toBeLessThanOrEqual(1 / 8 + 1e-3);
+  });
   it('BWV 578 は、ペダルの 1 オクターブ下の重ねと両手のトラックのペダルの写しを除いてある', async () => {
     const { notes, tempo } = await (PIECES.find((p) => p.v === 'bwv578') as (typeof PIECES)[number]).load(),
       ped = notes.filter((x) => x.h === 2),

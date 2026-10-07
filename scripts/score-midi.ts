@@ -136,6 +136,11 @@ export interface Piece {
   tempo?: boolean;
   /** 曲ごとの手直し。readMidi の結果を受け取り、使う音（時刻は tick）を返す */
   fix?: (m: Midi, log: (s: string) => void) => RawNote[];
+  /**
+   * 時刻と長さを寄せて前打音を切ったあと（同じ音をまとめ、反復を展開する前）の音符の手直し（装飾の展開など）。
+   * 時刻は 1/DIV 拍で、反復を展開する前の時刻
+   */
+  edit?: (ns: Note[], log: (s: string) => void) => Note[];
 }
 
 /** 楽器ごとの設定 */
@@ -153,7 +158,7 @@ export interface Kind {
 }
 
 /** 音符。時刻と長さは 1/DIV 拍 */
-interface Note {
+export interface Note {
   t: number;
   d: number;
   n: number;
@@ -272,6 +277,8 @@ export function build(p: Piece, k: Kind): void {
     }
     if (cut.length) log(`前打音を本音符の開始で切った ${cut.length} 音: ${cut.join('、')}`);
   }
+
+  if (p.edit) ns = p.edit(ns, log).sort((a, b) => a.t - b.t || a.h - b.h || a.n - b.n);
 
   /* 同じ時刻・同じ高さの音を 1 つにまとめる（長いほうを残し、同じなら h の小さいほう） */
   const merged = new Map<string, Note>();

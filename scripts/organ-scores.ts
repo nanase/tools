@@ -6,7 +6,8 @@
  * 実際には両手とも同じ手鍵盤で弾くことが多い曲でも、データは譜表で分けておく。
  * 同じ時刻・同じ高さの音は同じ鍵盤の中でだけ 1 つにまとめ、2 つの手鍵盤で同時に鳴る同じ音は両方残す
  */
-import { build, type Kind, type Midi, noteName, type Piece, type RawNote } from './score-midi';
+import { PIECES } from '../src/tools/organ/score';
+import { build, DIV, type Kind, type Midi, type Note, noteName, type Piece, type RawNote } from './score-midi';
 
 const kind: Kind = {
   dir: new URL('../src/tools/organ/scores/', import.meta.url),
@@ -161,9 +162,147 @@ function gouin(m: Midi, log: (s: string) => void): RawNote[] {
   return [...M.filter((x) => !copy(x)), ...hi];
 }
 
+/**
+ * 装飾。LilyPond の MIDI には \trill・\prall・\mordent などの装飾が展開されないので、Mutopia で MIDI と並んで公開されている
+ * .ly の原本（ToccataFugue.ly・bwv645.ly・bwv582.ly）で、装飾の付いた音の位置と種類を調べてここに書き、
+ * 音符に展開する。[拍（反復を展開する前、4 分音符を 1 とする）, h, 主音, 種類, 補助音, 下の補助音（turn だけ）]。
+ * 補助音は調号と、同じ小節の同じ声部の臨時記号に従う隣の音。
+ * - trill: 上の補助音から始めて主音と交互に弾き、主音で終える（J. S. バッハ「W. F. バッハのためのクラヴィーア小曲集」の
+ *   装飾の表の Trillo、C. P. E. バッハ『正しいクラヴィーア奏法』）。\trill のほか、バッハの記譜で Trillo にあたる
+ *   \prall・\prallprall もこれ
+ * - turn: trill の終わりを、下の補助音と主音（後打音）にする（\prallup）
+ * - mordent: 主音・下の補助音・主音（Mordant）
+ * 1 音の長さは、その位置のテンポで 1/12〜1/8 秒（1 秒に 8〜12 音）に入るように、元の音の長さを偶数に等分して決める
+ */
+type Orn = readonly [beat: number, h: number, n: number, kind: 'trill' | 'turn' | 'mordent', aux: number, low?: number];
+/** 装飾の 1 音の長さの目安 [s] と範囲 */
+const ORN_S = 0.1,
+  ORN_MIN = 1 / 12,
+  ORN_MAX = 1 / 8;
+
+/** 曲 v の拍 b での 1 拍の長さ [s]（曲の標準のテンポと、区間ごとのテンポの比から） */
+function spbOf(v: string, b: number): number {
+  const pc = PIECES.find((x) => x.v === v);
+  if (!pc) throw new Error(`${v}: 曲の設定がありません`);
+  let r = 1;
+  for (const [at, k] of pc.tempoMap) if (at <= b) r = k;
+  return 60 / (pc.bpm * r);
+}
+
+/** 装飾 list を音符に展開する手直し。主音は、その時刻に始まるか、その時刻に鳴っている（タイの続き）音 */
+function ornaments(v: string, list: readonly Orn[]) {
+  return (ns: Note[], log: (s: string) => void): Note[] => {
+    const out = [...ns],
+      count = { trill: 0, turn: 0, mordent: 0 };
+    for (const [beat, h, n, kind, aux, low] of list) {
+      const T = Math.round(beat * DIV),
+        x = out.find((y) => y.h === h && y.n === n && y.t <= T + 1 && y.t + y.d > T + 1);
+      if (!x) throw new Error(`${v}: ${beat} 拍の ${noteName(n)}（h = ${h}）がありません`);
+      const end = x.t + x.d,
+        D = end - Math.max(T, x.t),
+        t0 = end - D,
+        sec = (D / DIV) * spbOf(v, beat),
+        seq: [number, number][] = [];
+      if (kind === 'mordent') {
+        /* 主音と下の補助音を 1 音ぶんずつ、残りを主音で */
+        const l = Math.min(Math.round(D / 3), Math.round((ORN_S * DIV) / spbOf(v, beat)));
+        seq.push([n, l], [aux, l], [n, D - 2 * l]);
+      } else {
+        let N = Math.max(2, 2 * Math.round(sec / ORN_S / 2));
+        while (sec / N > ORN_MAX) N += 2;
+        while (N > 2 && sec / N < ORN_MIN) N -= 2;
+        if (kind === 'turn') N = Math.max(4, N);
+        const pitch = (k: number) => (kind === 'turn' && k === N - 2 ? (low as number) : k % 2 ? n : aux);
+        for (let k = 0; k < N; k++) seq.push([pitch(k), Math.round(((k + 1) * D) / N) - Math.round((k * D) / N)]);
+      }
+      /* タイの続きに付いた装飾は、元の音を装飾の前で切る */
+      if (t0 > x.t) x.d = t0 - x.t;
+      else out.splice(out.indexOf(x), 1);
+      let t = t0;
+      for (const [p, d] of seq) {
+        out.push({ t, d, n: p, h, odd: false });
+        t += d;
+      }
+      count[kind]++;
+    }
+    log(`装飾 ${list.length} 個を展開した（trill ${count.trill}・turn ${count.turn}・mordent ${count.mordent}）`);
+    return out;
+  };
+}
+
+/**
+ * BWV 565 の装飾（ToccataFugue.ly）。冒頭の 3 回の A（オクターブで重ねた 6 音）は .ly では \prall だが、この曲の冒頭は
+ * モルデント（A–G–A）として知られ、そう弾くのが通例なので mordent にする。小節 11 の右手の内声の F に \trill
+ */
+const ORN565: readonly Orn[] = [
+  [0, 0, 81, 'mordent', 79],
+  [0, 0, 69, 'mordent', 67],
+  [2, 0, 69, 'mordent', 67],
+  [2, 1, 57, 'mordent', 55],
+  [4, 1, 57, 'mordent', 55],
+  [4, 1, 45, 'mordent', 43],
+  [43, 0, 65, 'trill', 67],
+];
+/**
+ * BWV 645 の装飾（bwv645.ly）。上の譜表（h = 0）は \trill 11・\prallprall 2・\prallup 1、下の譜表（コラールの旋律、
+ * h = 1）は \trill 5・\prallprall 1。タイの続きに付いた \trill（拍 163.5・167.5・203.5・207.5）は、タイの後ろの 16 分音符で弾く。
+ * 拍 163.5 の G の上の補助音は、同じ小節の A（ナチュラル）
+ */
+const ORN645: readonly Orn[] = [
+  [32, 0, 75, 'turn', 77, 74],
+  [33.5, 0, 70, 'trill', 72],
+  [41.5, 0, 62, 'trill', 63],
+  [45.5, 0, 57, 'trill', 58],
+  [71.5, 1, 60, 'trill', 62],
+  [109.5, 0, 70, 'trill', 72],
+  [117.5, 0, 62, 'trill', 63],
+  [121.5, 0, 57, 'trill', 58],
+  [126.5, 0, 58, 'trill', 60],
+  [127.5, 1, 53, 'trill', 55],
+  [137.5, 1, 53, 'trill', 55],
+  [146.5, 1, 56, 'trill', 58],
+  [163.5, 0, 67, 'trill', 69],
+  [167.5, 0, 60, 'trill', 62],
+  [171.5, 0, 58, 'trill', 60],
+  [185.5, 1, 65, 'trill', 67],
+  [196.5, 0, 68, 'trill', 70],
+  [199.5, 1, 53, 'trill', 55],
+  [203.5, 0, 63, 'trill', 65],
+  [207.5, 0, 68, 'trill', 70],
+];
+/**
+ * BWV 582 の装飾（bwv582.ly）。\prall 16（Trillo）と \mordent 3。拍 756 の A の上の補助音は、同じ小節の H（ナチュラル）
+ */
+const ORN582: readonly Orn[] = [
+  [59, 0, 67, 'mordent', 65],
+  [68, 0, 59, 'trill', 60],
+  [117, 0, 62, 'trill', 63],
+  [129, 0, 80, 'trill', 82],
+  [132, 0, 71, 'trill', 72],
+  [141, 0, 74, 'trill', 75],
+  [189, 0, 62, 'trill', 63],
+  [216, 0, 63, 'trill', 65],
+  [216, 1, 60, 'mordent', 59],
+  [324, 1, 47, 'trill', 48],
+  [355, 0, 63, 'mordent', 62],
+  [414, 0, 71, 'trill', 72],
+  [429, 0, 71, 'trill', 72],
+  [570, 0, 69, 'trill', 70],
+  [588, 0, 74, 'trill', 75],
+  [756, 0, 69, 'trill', 71],
+  [764.5, 0, 82, 'trill', 84],
+  [841, 0, 71, 'trill', 72],
+  [858, 0, 74, 'trill', 75],
+];
+
 const mutopia = (id: number) => `https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=${id}`;
 const common =
   '時刻と長さを 4 分音符の 1/480 に寄せ、同じ鍵盤で同じ時刻の同じ高さの音を 1 つにまとめた。強弱とテンポは使わない。';
+/** 装飾の展開の説明（「変更」の段落に足す行） */
+const ornNote = (src: string) => [
+  `MIDI に展開されていない装飾を、.ly の原本（${src}）の位置と種類で音符に展開した（トリルは上の補助音から`,
+  '主音と交互に 1 秒に 8〜12 音で弾いて主音で終え、モルデントは主音・下の補助音・主音）。',
+];
 
 const pieces: Piece[] = [
   {
@@ -173,7 +312,12 @@ const pieces: Piece[] = [
       '音符は Mutopia Project の楽譜（Anonymous 作成、底本 Bach-Gesellschaft Ausgabe, 1867、Mutopia-2011/09/11-1780、',
       `${mutopia(1780)}）の MIDI から変換した。`,
     ],
-    changes: [`変更: ${common}`],
+    changes: [
+      `変更: ${ornNote('ToccataFugue.ly')[0]}`,
+      ornNote('ToccataFugue.ly')[1],
+      '冒頭の A の \\prall は、この曲の冒頭として知られるモルデント（A–G–A）にした。',
+      common,
+    ],
     license: 'pd',
     tracks: [
       [1, 0],
@@ -182,6 +326,7 @@ const pieces: Piece[] = [
     ],
     meter: [4, 4],
     pickup: 0,
+    edit: ornaments('bwv565', ORN565),
   },
   {
     name: 'bwv645',
@@ -194,6 +339,7 @@ const pieces: Piece[] = [
       '変更: 反復と第 1・第 2 括弧を演奏順に展開した（弱起と小節 1〜22、2〜20、23〜55。第 1 括弧の 2 小節目（小節 22）は',
       '小節 1 と同じ形で、反復は小節 2 に戻る）。上の譜表（upper）を h = 0、下の譜表（lower、コラールの旋律）を h = 1、',
       'ペダルを h = 2 にした。前打音は MIDI では本音符の少し前から元の長さで鳴り、本音符と重なるので、本音符の開始で切った。',
+      ...ornNote('bwv645.ly'),
       common,
     ],
     license: 'cc-by-sa-2.5',
@@ -210,6 +356,7 @@ const pieces: Piece[] = [
       [23, 55],
     ],
     grace: true,
+    edit: ornaments('bwv645', ORN645),
   },
   {
     name: 'bwv582',
@@ -223,6 +370,7 @@ const pieces: Piece[] = [
       'トラックには、譜表を移った複製の声部の音（1 オクターブ上）が混じるので除いた。前打音は MIDI では本音符の少し前から',
       '元の長さで鳴り本音符と重なるので、本音符の開始で切った。テンポは MIDI の変化（♩ = 72 が基本）を、基本に対する比として',
       'TEMPO に入れた。時刻と長さを 4 分音符の 1/480 に寄せ、同じ鍵盤で同じ時刻の同じ高さの音を 1 つにまとめた。強弱は使わない。',
+      ...ornNote('bwv582.ly'),
     ],
     license: 'pd',
     tracks: [
@@ -235,6 +383,7 @@ const pieces: Piece[] = [
     grace: true,
     tempo: true,
     fix: octaves,
+    edit: ornaments('bwv582', ORN582),
   },
   {
     name: 'bwv578',
