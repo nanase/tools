@@ -83,7 +83,8 @@
 .stab tbody tr[aria-selected="true"] td:first-child{box-shadow:inset 3px 0 var(--accent);font-weight:700}
 .stab .off{color:var(--warn)}
 
-/* 計算結果 */
+/* 計算結果（開閉できる枠。補足は本文の先頭の右端に置く） */
+.res-aux{margin:0 0 10px;text-align:right}
 .m-sub{display:block;margin-top:2px;font:12px/1.5 var(--sans);color:var(--ink-3)}
 .m-main .m-sub{margin-top:4px}
 .bmet{margin-top:12px}
