@@ -15,11 +15,12 @@
 .wv-sw{margin:4px 0 12px}
 /* 枠の右上のボタン */
 #playBtn{display:inline-flex;align-items:center;gap:7px}
-/* テンポと音量: スライダーと値（音量の行の右端に、すべて止めるボタン） */
+/* テンポと音量: スライダーと値（右端に、リリースとすべて止めるのボタン。文字は中央に寄せる） */
 .vgrid{display:grid;grid-template-columns:4rem minmax(0,1fr) 4.2rem auto;align-items:center;gap:6px 12px;margin:12px 8px 0;padding-top:12px;border-top:1px solid var(--line)}
 .vl{font-size:14px;font-weight:700}
 .vgrid .sl{padding-bottom:0}
 .vgrid output{text-align:right;font:500 13.5px/1 var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.vgrid .tg{justify-content:center}
 .snd-msg{margin:6px 8px 0}
 .snd-msg:empty{display:none}
 .pl-bar{margin:8px 8px 0;font:500 12.5px/1.5 var(--mono);color:var(--ink-2);text-align:right}
