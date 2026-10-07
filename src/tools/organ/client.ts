@@ -20,7 +20,17 @@ import { Keys, type Sounding } from './keys';
 import { flueView, geoOf, type OrganSpec, panOf, pipeMsg, reedView, type Tuned } from './model';
 import { CUT, DIST, SCALE, VOL0, WIND } from './params';
 import type { FlueSpec } from './pipes';
-import { type Div, PIECES, type Piece, pieceOf, type ScoreNote, TempoMap } from './score';
+import {
+  barOf,
+  type Div,
+  PIECES,
+  type Piece,
+  type PieceData,
+  pieceOf,
+  type Registration,
+  type ScoreNote,
+  TempoMap,
+} from './score';
 import { divOf, STOPS, type Stop, stopOf } from './stops';
 import type { TuneIn, TuneOut } from './tuner';
 import { noteName } from './tuning';
@@ -111,7 +121,7 @@ $('#stops').addEventListener('click', (e) => {
   }
 });
 /** カプラー: 第 2 手鍵盤を第 1 手鍵盤で、第 1・第 2 手鍵盤をペダルで鳴らす（同じ高さ） */
-type Coupler = 'II/I' | 'I/P' | 'II/P';
+type Coupler = Registration['couplers'][number];
 const COUPLERS: readonly Coupler[] = ['II/I', 'I/P', 'II/P'];
 const couplers = new Set<Coupler>(
   (() => {
@@ -132,9 +142,10 @@ function sourcesOf(d: Div): Div[] {
 }
 /**
  * ストップを入れる・切る。鍵を押している間なら、実際のオルガンのスライダーと同じく、その鍵の管の弁も開く・閉じる
- * （カプラーでつないだ鍵盤の鍵も）。曲の先の音で、弁を開くのがまだ先の鍵は、その時刻に合わせる
+ * （カプラーでつないだ鍵盤の鍵も）。曲の先の音で、弁を開くのがまだ先の鍵は、その時刻に合わせる。
+ * at（AudioContext の時刻）を渡すと、その時刻に切り替える（曲の中のレジストレーションの切り替え）
  */
-function setStop(id: string, v: boolean): void {
+function setStop(id: string, v: boolean, at = 0): void {
   if (v === on.has(id)) return;
   if (v) on.add(id);
   else on.delete(id);
@@ -143,9 +154,9 @@ function setStop(id: string, v: boolean): void {
     now = audio.now() ?? 0;
   for (const h of held.values()) {
     if (!sourcesOf(h.div).includes(s.div)) continue;
-    const at = h.at > now ? h.at : 0;
-    if (v) openStop(h, id, at);
-    else closeStop(h, id, at);
+    const t = Math.max(at, h.at > now ? h.at : 0);
+    if (v) openStop(h, id, t);
+    else closeStop(h, id, t);
   }
   /* 描く管のストップなら、押している鍵の管の振動も出す・止める */
   if (id === view.value)
@@ -156,8 +167,8 @@ function setStop(id: string, v: boolean): void {
       else keys.release(key, nowS());
     }
 }
-/** カプラーを入れる・切る。鍵を押している間なら、つないだ鍵盤の入っているストップの弁も開く・閉じる */
-function setCoupler(c: Coupler, v: boolean): void {
+/** カプラーを入れる・切る。鍵を押している間なら、つないだ鍵盤の入っているストップの弁も開く・閉じる（at は setStop と同じ） */
+function setCoupler(c: Coupler, v: boolean, at = 0): void {
   if (v === couplers.has(c)) return;
   const before = new Map([...held.values()].map((h) => [h, sourcesOf(h.div)] as const));
   if (v) couplers.add(c);
@@ -165,16 +176,23 @@ function setCoupler(c: Coupler, v: boolean): void {
   syncCouplers();
   const now = audio.now() ?? 0;
   for (const [h, was] of before) {
-    const at = h.at > now ? h.at : 0,
+    const t = Math.max(at, h.at > now ? h.at : 0),
       now2 = sourcesOf(h.div);
     for (const st of STOPS) {
       if (!on.has(st.id)) continue;
       const a = was.includes(st.div),
         b = now2.includes(st.div);
-      if (!a && b) openStop(h, st.id, at);
-      else if (a && !b) closeStop(h, st.id, at);
+      if (!a && b) openStop(h, st.id, t);
+      else if (a && !b) closeStop(h, st.id, t);
     }
   }
+}
+/** レジストレーションに切り替える（at は setStop と同じ） */
+function setRegistration(r: Registration, at = 0): void {
+  for (const s of STOPS) setStop(s.id, r.stops.includes(s.id), at);
+  for (const c of COUPLERS) setCoupler(c, r.couplers.includes(c), at);
+  store('stops', [...on]);
+  store('couplers', [...couplers]);
 }
 /** 計算が間に合わないときの、同時に鳴らす管の数の上限（AudioWorklet が知らせる） */
 audio.onBudget = (n) => txt('#pp-load', n ? `計算が重いので管を ${n} 本までに` : '');
@@ -797,7 +815,7 @@ interface Note {
   st: 0 | 1 | 2;
   vis: 0 | 1 | 2;
 }
-type Ev = { b: number; type: 'on' | 'off'; n: Note };
+type Ev = { b: number; type: 'on' | 'off'; n: Note } | { b: number; type: 'reg'; reg: number };
 interface Play {
   ev: Ev[];
   i: number;
@@ -807,23 +825,28 @@ interface Play {
   spb: number;
   last: number;
   bars: number;
+  /** 拍子の変化 [拍, 1 小節の拍の数] */
+  meter: readonly (readonly [number, number])[];
   timer: ReturnType<typeof setInterval>;
   piece: Piece;
   /** 予約した時点で押している曲の音 */
   down: Set<Note>;
 }
 let PL: Play | null = null;
-const cache = new Map<string, { notes: ScoreNote[]; tempo: readonly (readonly [number, number])[] }>();
+const cache = new Map<string, PieceData>();
 const spbOf = (pc: Piece) => 60 / (pc.bpm * (V.tempo / 100));
-function eventsOf(pc: Piece, notes: ScoreNote[]): Ev[] {
+/** 曲の出来事（音の始まりと終わり、レジストレーションの切り替え）。同じ拍では 終わり → 切り替え → 始まり の順 */
+function eventsOf(pc: Piece, notes: ScoreNote[], reg: readonly (readonly [number, number])[] = []): Ev[] {
   const ev: Ev[] = [];
+  if (pc.regs) for (const [b, r] of reg) if (pc.regs[r]) ev.push({ b, type: 'reg', reg: r });
   for (const x of notes) {
     const n: Note = { key: x.n, div: pc.hands[x.h] ?? 'I', at: 0, st: 0, vis: 0 };
     ev.push({ b: x.t, type: 'on', n });
     /* 同じ鍵を続けて弾くときに弁が閉じる間をあける */
     ev.push({ b: x.t + Math.max(x.d * 0.95, x.d - 0.06), type: 'off', n });
   }
-  return ev.sort((a, b) => a.b - b.b || (a.type === 'off' ? -1 : 1) - (b.type === 'off' ? -1 : 1));
+  const rank = { off: 0, reg: 1, on: 2 };
+  return ev.sort((a, b) => a.b - b.b || rank[a.type] - rank[b.type]);
 }
 function syncPlay(): void {
   $('#playBtn').setAttribute('aria-pressed', String(!!PL));
@@ -851,23 +874,25 @@ async function startPiece(): Promise<void> {
   }
   if (PL || piece.value !== pc.v) return;
   /* 曲のレジストレーション */
-  for (const s of STOPS) setStop(s.id, pc.stops.includes(s.id));
-  for (const c of COUPLERS) setCoupler(c, pc.couplers.includes(c));
-  store('stops', [...on]);
-  store('couplers', [...couplers]);
+  setRegistration(pc);
   audio.setWind(windDesc());
   const notes = data.notes,
     end = Math.max(...notes.map((x) => x.t + x.d)),
-    now = audio.now() ?? 0;
+    first = Math.min(...notes.map((x) => x.t)),
+    now = audio.now() ?? 0,
+    tm = new TempoMap(pc.tempoMap.length ? pc.tempoMap : data.tempo),
+    meter = data.meter ?? [[0, pc.bar]];
   PL = {
-    ev: eventsOf(pc, notes),
+    ev: eventsOf(pc, notes, data.reg),
     i: 0,
-    tm: new TempoMap(pc.tempoMap.length ? pc.tempoMap : data.tempo),
+    tm,
     at0: now + 0.3,
-    tau0: 0,
+    /* 最初の音の前の無音は飛ばす（演奏の記録は、始めに数秒の間があることがある） */
+    tau0: tm.tau(first),
     spb: spbOf(pc),
     last: end,
-    bars: Math.ceil((end - pc.pickup) / pc.bar),
+    bars: barOf(meter, pc.pickup, end - 1e-6),
+    meter,
     timer: setInterval(tick, 40),
     piece: pc,
     down: new Set(),
@@ -905,9 +930,15 @@ function tick(): void {
     toPerf = (a: number) => nowS() + (a - an);
   while (p.i < p.ev.length && atOf(p.ev[p.i].b) < an + AHEAD) {
     const e = p.ev[p.i++],
-      x = e.n,
       at = Math.max(an, atOf(e.b)),
       tp = toPerf(at);
+    /* レジストレーションの切り替え: 押している鍵の管も、その時刻に開け閉めする */
+    if (e.type === 'reg') {
+      const r = p.piece.regs?.[e.reg];
+      if (r) setRegistration(r, at);
+      continue;
+    }
+    const x = e.n;
     if (e.type === 'on') {
       x.st = 1;
       x.at = at;
@@ -933,7 +964,7 @@ function tick(): void {
   }
   const pc = p.piece,
     beat = p.tm.beat(p.tau0 + (an - p.at0) / p.spb),
-    bar = Math.max(0, Math.floor((beat - pc.pickup) / pc.bar) + 1);
+    bar = barOf(p.meter, pc.pickup, Math.max(0, beat));
   txt('#pl-bar', `${Math.min(bar, p.bars)} / ${p.bars} 小節`);
   if (p.i >= p.ev.length && beat > p.last + 3) {
     clearInterval(p.timer);

@@ -164,7 +164,7 @@ function gouin(m: Midi, log: (s: string) => void): RawNote[] {
 
 /**
  * 装飾。LilyPond の MIDI には \trill・\prall・\mordent などの装飾が展開されないので、Mutopia で MIDI と並んで公開されている
- * .ly の原本（ToccataFugue.ly・bwv645.ly・bwv582.ly）で、装飾の付いた音の位置と種類を調べてここに書き、
+ * .ly の原本（bwv645.ly・bwv582.ly）で、装飾の付いた音の位置と種類を調べてここに書き、
  * 音符に展開する。[拍（反復を展開する前、4 分音符を 1 とする）, h, 主音, 種類, 補助音, 下の補助音（turn だけ）]。
  * 補助音は調号と、同じ小節の同じ声部の臨時記号に従う隣の音。
  * - trill: 上の補助音から始めて主音と交互に弾き、主音で終える（J. S. バッハ「W. F. バッハのためのクラヴィーア小曲集」の
@@ -231,19 +231,6 @@ function ornaments(v: string, list: readonly Orn[]) {
 }
 
 /**
- * BWV 565 の装飾（ToccataFugue.ly）。冒頭の 3 回の A（オクターブで重ねた 6 音）は .ly では \prall だが、この曲の冒頭は
- * モルデント（A–G–A）として知られ、そう弾くのが通例なので mordent にする。小節 11 の右手の内声の F に \trill
- */
-const ORN565: readonly Orn[] = [
-  [0, 0, 81, 'mordent', 79],
-  [0, 0, 69, 'mordent', 67],
-  [2, 0, 69, 'mordent', 67],
-  [2, 1, 57, 'mordent', 55],
-  [4, 1, 57, 'mordent', 55],
-  [4, 1, 45, 'mordent', 43],
-  [43, 0, 65, 'trill', 67],
-];
-/**
  * BWV 645 の装飾（bwv645.ly）。上の譜表（h = 0）は \trill 11・\prallprall 2・\prallup 1、下の譜表（コラールの旋律、
  * h = 1）は \trill 5・\prallprall 1。タイの続きに付いた \trill（拍 163.5・167.5・203.5・207.5）は、タイの後ろの 16 分音符で弾く。
  * 拍 163.5 の G の上の補助音は、同じ小節の A（ナチュラル）
@@ -295,6 +282,22 @@ const ORN582: readonly Orn[] = [
   [858, 0, 74, 'trill', 75],
 ];
 
+/**
+ * BWV 565 は、OpenGameArt で CC0 として公開された手弾きの演奏の MIDI（TheOuterLinux の投稿「NES - Bach - BWV 565」の
+ * zip の中の Bach - BWV 565.mid）を使う。トラックは 0 がテンポ、1 が Swell（第 2 手鍵盤）、2 が Great（第 1 手鍵盤）、
+ * 3 が Pedal、4 が Main Piston（チャンネル 8 のプログラムチェンジ 10 個。レジストレーションの切り替え）。
+ * 時刻は寄せずに MIDI のまま使い、テンポの変化も使う。拍子は途中で 3/4・8/4 に変わる。
+ * Mutopia の楽譜と照らして、明らかに楽譜にない弾き損じだけを除く: 48.3 秒の E5（Great、tick 4397、長さ 9 tick、
+ * ベロシティ 35）は、すぐ後（10 tick 後）の E5 の直前に触れた二重の打鍵で、楽譜の 1 つの E5 にあたる。
+ * ほかの弱い音（ベロシティ 50 未満）は、オクターブの組の片方、和音の分散、トリルの音で、楽譜にある
+ */
+function oga565(m: Midi, log: (s: string) => void): RawNote[] {
+  const bad = m.notes.filter((x) => x.tr === 2 && x.n === 76 && x.t0 === 4397 && x.t1 === 4406);
+  if (bad.length !== 1) throw new Error('bwv565: 除く E5 が見つかりません');
+  log(`弾き損じの音を除いた: ${noteName(76)}（tick 4397）`);
+  return m.notes.filter((x) => !bad.includes(x));
+}
+
 const mutopia = (id: number) => `https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=${id}`;
 const common =
   '時刻と長さを 4 分音符の 1/480 に寄せ、同じ鍵盤で同じ時刻の同じ高さの音を 1 つにまとめた。強弱とテンポは使わない。';
@@ -309,24 +312,29 @@ const pieces: Piece[] = [
     name: 'bwv565',
     title: 'J. S. バッハ「トッカータとフーガ ニ短調 BWV 565」',
     source: [
-      '音符は Mutopia Project の楽譜（Anonymous 作成、底本 Bach-Gesellschaft Ausgabe, 1867、Mutopia-2011/09/11-1780、',
-      `${mutopia(1780)}）の MIDI から変換した。`,
+      '音符は OpenGameArt で CC0 として公開された、人の演奏を記録した MIDI（TheOuterLinux の投稿「NES - Bach - BWV 565」、',
+      '2019、https://opengameart.org/content/nes-bach-bwv-565 の zip の中の Bach - BWV 565.mid）から変換した。',
+      '同じデータは 2018 年から作成者の名前なしで出回っており、元の演奏・作成者は分かっていない。',
     ],
     changes: [
-      `変更: ${ornNote('ToccataFugue.ly')[0]}`,
-      ornNote('ToccataFugue.ly')[1],
-      '冒頭の A の \\prall は、この曲の冒頭として知られるモルデント（A–G–A）にした。',
-      common,
+      '変更: Great のトラックを h = 0（第 1 手鍵盤）、Swell を h = 1（第 2 手鍵盤）、Pedal を h = 2 にした。',
+      '時刻と長さは寄せずに MIDI のまま使い（4 分音符の 1/480 で表す）、テンポの変化（♩ = 50 が基本）を、基本に対する比として',
+      'TEMPO に、拍子の変化を METER に、Main Piston のプログラムチェンジ（レジストレーションの切り替え）を REG に入れた。',
+      '弾き損じの音 1 つ（48.3 秒の Great の E5。直後の E5 の前に触れた二重の打鍵）を除いた。強弱は使わない。',
     ],
-    license: 'pd',
+    license: 'cc0',
     tracks: [
-      [1, 0],
-      [2, 1],
+      [2, 0],
+      [1, 1],
       [3, 2],
     ],
     meter: [4, 4],
+    meters: true,
     pickup: 0,
-    edit: ornaments('bwv565', ORN565),
+    exact: true,
+    tempo: true,
+    programs: 4,
+    fix: oga565,
   },
   {
     name: 'bwv645',

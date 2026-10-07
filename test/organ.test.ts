@@ -3,7 +3,7 @@ import { parse } from '../src/lib/parse';
 import { Engine, type PipeMsg, type WindDesc } from '../src/tools/organ/engine';
 import { pipeId } from '../src/tools/organ/model';
 import { FluePipe, type FlueSpec, ReedPipe, type ReedSpec, tanhP } from '../src/tools/organ/pipes';
-import { PIECES, TempoMap } from '../src/tools/organ/score';
+import { barOf, PIECES, pieceOf, TempoMap } from '../src/tools/organ/score';
 import { divOf, OPT0, pipesOf, STOPS, stopOf, topfer } from '../src/tools/organ/stops';
 import { measSec, measureF0, sound } from '../src/tools/organ/tune';
 import { TUNED } from '../src/tools/organ/tuned';
@@ -285,13 +285,44 @@ describe('曲', () => {
       expect(p.couplers.every((c) => ['II/I', 'I/P', 'II/P'].includes(c))).toBe(true);
     }
   });
-  it('装飾を展開してある: BWV 565 の冒頭はモルデント（A–G–A）、BWV 645 と 582 にはトリル', async () => {
+  it('BWV 565 は演奏の MIDI: 冒頭は A–G–A のモルデント（オクターブ）、テンポと拍子とレジストレーションが変わる', async () => {
+    const pc = pieceOf('bwv565'),
+      d = await pc.load(),
+      at = (h: number, a: number, b: number) =>
+        d.notes
+          .filter((x) => x.h === h && x.t >= a && x.t < b)
+          .sort((x, y) => x.t - y.t)
+          .map((x) => x.n);
+    expect(at(0, 3.9, 4.5).filter((n) => n > 75)).toEqual([81, 79, 81]);
+    expect(at(0, 3.9, 4.5).filter((n) => n < 75)).toEqual([69, 67, 69]);
+    expect(d.notes.length).toBe(3777);
+    expect(d.notes.filter((x) => x.h === 1).length).toBe(543);
+    /* 除いた弾き損じ（48 秒付近の二重の打鍵の E5）はなく、すぐ後の E5 は残る */
+    expect(d.notes.some((x) => x.h === 0 && x.n === 76 && Math.abs(x.t - 4397 / 120) < 1e-6)).toBe(false);
+    expect(d.notes.some((x) => x.h === 0 && x.n === 76 && Math.abs(x.t - 4407 / 120) < 1e-6)).toBe(true);
+    expect(pc.tempoMap.length).toBe(0);
+    expect(Math.min(...d.tempo.map((x) => x[1]))).toBeCloseTo(18 / 50, 3);
+    expect(Math.max(...d.tempo.map((x) => x[1]))).toBeCloseTo(115 / 50, 3);
+    /* プログラムチェンジ 10 回は、どれもレジストレーションに当ててある */
+    expect(d.reg?.length).toBe(10);
+    for (const [, r] of d.reg ?? []) {
+      const reg = pc.regs?.[r];
+      expect(reg).toBeDefined();
+      for (const id of reg?.stops ?? []) expect(STOPS.some((s) => s.id === id)).toBe(true);
+    }
+    expect(d.reg?.[0]).toEqual([0, 6]);
+    expect(d.reg?.[9][1]).toBe(9);
+    /* 拍子: 140 拍から 3/4、143 拍から 4/4、567 拍から 8/4、599 拍から 4/4。最後の音は 154 小節の頭で終わる */
+    const meter = d.meter ?? [];
+    expect(barOf(meter, 0, 139.9)).toBe(35);
+    expect(barOf(meter, 0, 140)).toBe(36);
+    expect(barOf(meter, 0, 143)).toBe(37);
+    expect(barOf(meter, 0, 627 - 1e-6)).toBe(153);
+  });
+  it('装飾を展開してある: BWV 645 と 582 にはトリル', async () => {
     const load = (v: string) => (PIECES.find((p) => p.v === v) as (typeof PIECES)[number]).load(),
       at = (ns: { t: number; n: number; h: number }[], h: number, a: number, b: number) =>
         ns.filter((x) => x.h === h && x.t >= a - 1e-9 && x.t < b).map((x) => x.n);
-    const n565 = (await load('bwv565')).notes;
-    expect(at(n565, 0, 0, 0.5).filter((n) => n > 75)).toEqual([81, 79, 81]);
-    expect(at(n565, 0, 0, 0.5).filter((n) => n < 75)).toEqual([69, 67, 69]);
     /* BWV 645 の拍 33.5 の B♭ の 16 分音符のトリル（上の C から） */
     expect(at((await load('bwv645')).notes, 0, 33.5, 33.75)).toEqual([72, 70]);
     /* BWV 582 の拍 68 の H の付点 4 分音符のトリル: 上の C から交互に、1 秒に 8〜12 音 */
