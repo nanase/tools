@@ -1,0 +1,201 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import { order, TOOLS } from '../data/tools';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import { gridSvg } from '../lib/scope';
+import '../tools/audio/style.css';
+import '../tools/noise/style.css';
+import { VOL } from '../tools/fm-synth/params';
+import { DH, DW } from '../tools/noise/diagram';
+import { KINDS } from '../tools/noise/gen';
+import { PRESETS } from '../tools/noise/lfsr';
+import { AVGS, P, RANGES, SPANS, SPEEDS } from '../tools/noise/params';
+import Theory from '../tools/noise/Theory.astro';
+
+const name = 'ノイズジェネレータ';
+/* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
+const CAT = '音響';
+const related = [
+  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'noise')),
+  ...TOOLS.filter((t) => t.c !== CAT && !t.s),
+];
+---
+<SiteLayout title={name} tool={{ id: 'noise', name }} description="ホワイト・ピンク・ブラウンなどの色のノイズと、線形帰還シフトレジスタ（LFSR）によるノイズを作り、波形・スペクトラム・スペクトログラムで表示して音でも鳴らします。" note="実在の音源のプリセットはシフトレジスタの動きだけをまねたもので、音量の包絡や出力の回路は含みません。">
+  <PageTitle title={name}>ホワイト・ピンク・ブラウン・ブルー・バイオレット・グレー・ベルベットの各ノイズと、線形帰還シフトレジスタ（LFSR）によるノイズを作ります。波形・振幅の分布・平均したスペクトラム・スペクトログラムで表示し、スペクトラムの傾きを測ります。どのノイズも実効値を −20 dBFS にそろえるので、切り替えても大きさは変わりません。</PageTitle>
+  <div class="mini" aria-hidden="true"><span>SLOPE<b id="mS">—</b></span><span>RMS<b id="mR">—</b></span><span>CREST<b id="mC">—</b></span></div>
+
+  <div class="tgrid">
+    <div class="col c1">
+      <Panel hid="hd-gen" title="ノイズ" class="a-gen">
+        <div class="ptab">
+          <ChoiceRow k="kind" name="種類" sub="色の名前は、パワースペクトル密度の傾き（周波数が 2 倍になるごとの dB）で決まる" choices={KINDS.map(([v, l, t]) => [v, l, t] as const)} value="pink" layout="chips" wide />
+          <ChoiceRow k="pm" name="ピンクの作り方" sub="フィルタ: 6 つの 1 次の低域通過の和（Kellett）。1/f からのずれは ±0.03 dB。Voss–McCartney: 間隔を倍々にして引き直す乱数の和。ずれは ±0.9 dB" choices={[['kellett', 'Kellett のフィルタ'], ['voss', 'Voss–McCartney']]} value="kellett" layout="chips" wide />
+          <ParamRow d={P.den} />
+        </div>
+      </Panel>
+
+      <Panel hid="hd-snd" title="音" class="a-snd">
+        <div slot="aux" class="seg"><button type="button" id="playBtn" aria-pressed="false" title="ノイズをスピーカーで鳴らす・止める"><span class="led" id="sndLed" aria-hidden="true"></span><span id="playT">再生</span></button></div>
+        <p class="msg er snd-msg" id="snd-msg" aria-live="polite"></p>
+        <div class="ptab">
+          <ParamRow d={VOL} />
+        </div>
+      </Panel>
+
+      <Panel hid="hd-lfsr" title="LFSR" class="a-lfsr">
+        <div slot="aux" class="seg" id="p-form" role="group" aria-label="帰還の形"><button type="button" data-v="fib" aria-pressed="true" title="フィボナッチ形: タップのビットを外で排他的論理和し、左端（ビット n−1）に入れる">フィボナッチ</button><button type="button" data-v="gal" aria-pressed="false" title="ガロア形: 右端（ビット 0）の出力を、途中のタップのビットへ排他的論理和で足す">ガロア</button></div>
+        <div class="ptab">
+          <ChoiceRow k="pre" name="実在の音源" sub="ゲーム機などの音源 IC のノイズのシフトレジスタ。ビット長・タップ・帰還・初期値・クロックをまとめて変える" choices={PRESETS.map((p) => [p.v, p.l, p.t] as const)} value="" layout="chips" wide />
+          <ParamRow d={P.n} />
+          <ChoiceRow k="tapm" name="タップ" sub="最大周期の表: ビット長ごとの原始多項式（Xilinx XAPP052）。任意: 図のビットを押してタップを入れ切りする" choices={[['table', '最大周期の表'], ['custom', '任意']]} value="table" />
+          <ChoiceRow k="fb" name="帰還" sub="XNOR は XOR の否定。すべて 0 の状態から動くかわりに、すべて 1 の状態から動かない" choices={[['xor', 'XOR'], ['xnor', 'XNOR']]} value="xor" />
+          <ParamRow d={P.init} />
+          <ParamRow d={P.clk} />
+        </div>
+        <div class="sbar lf-bar">
+          <span class="stag lf-poly" id="lf-poly"></span>
+          <span class="stag">STEP <b id="lf-step">0</b></span>
+          <button type="button" class="tg" id="lf-one" title="1 クロック進める">1 ステップ</button>
+          <button type="button" class="tg" id="lf-rst" title="初期値に戻す">初期値へ</button>
+        </div>
+        <svg class="reg" id="lf-svg" viewBox={`0 0 ${DW} ${DH}`} role="group" aria-label="シフトレジスタの図"></svg>
+        <div class="ptab ana">
+          <ChoiceRow k="spd" name="図の速さ" sub="図のレジスタを 1 秒に何ステップ進めるか（音のクロックとは別に、ゆっくり動かす）" choices={SPEEDS.map((v) => [v, v ? `${v} /s` : '止める'] as const)} value={4} fold />
+        </div>
+      </Panel>
+
+      <Panel hid="hd-out" title="測定" class="a-out">
+        <span slot="aux" class="aux" id="o-aux">—</span>
+        <dl class="metrics">
+          <div class="m m-main"><dt>傾き（当てはめ）</dt><dd><span id="o-sl">—</span><span class="m-sub" id="o-slt"></span></dd></div>
+          <div class="m"><dt>実効値</dt><dd><span id="o-rms">—</span><span class="m-sub" id="o-rmsn"></span></dd></div>
+          <div class="m"><dt>ピーク</dt><dd id="o-pk">—</dd></div>
+          <div class="m"><dt>波高率</dt><dd><span id="o-cf">—</span><span class="m-sub" id="o-cfx"></span></dd></div>
+          <div class="m"><dt>尖度</dt><dd><span id="o-ku">—</span><span class="m-sub" id="o-kut"></span></dd></div>
+          <div class="m lf"><dt>周期</dt><dd><span id="o-per">—</span><span class="m-sub" id="o-pern"></span></dd></div>
+          <div class="m lf"><dt>周期の長さ</dt><dd id="o-pt">—</dd></div>
+          <div class="m lf"><dt>繰り返しの基本周波数</dt><dd id="o-pf">—</dd></div>
+        </dl>
+      </Panel>
+    </div>
+
+    <div class="col c2">
+      <Panel hid="hd-wave" title="波形" class="a-wave">
+        <div slot="aux" class="pbar">
+          <div class="seg" id="p-wv" role="group" aria-label="表示"><button type="button" data-v="yt" aria-pressed="true" title="時間に対する波形">波形</button><button type="button" data-v="hist" aria-pressed="false" title="振幅の分布（ヒストグラム）">分布</button></div>
+          <div class="seg"><button type="button" id="runBtn" aria-pressed="true" title="表示を止める・再び動かす（音は止めない）"><span class="led on" id="runLed" aria-hidden="true"></span><span id="runT">RUN</span></button></div>
+        </div>
+
+        <div id="v-yt">
+          <div class="sbar">
+            <span class="stag"><i class="sw" aria-hidden="true"></i>CH1 OUT <b id="w-vd"></b>/div</span>
+            <span class="stag">H <b id="w-hd"></b>/div</span>
+            <span class="stag"><b id="w-src"></b></span>
+          </div>
+          <div class="scope">
+            <svg viewBox="-50 -14 462 194" id="w-svg" role="img" aria-label="波形">
+              <defs><clipPath id="w-clip"><rect x="0" y="0" width="400" height="160"/></clipPath></defs>
+              <g set:html={gridSvg(4)} />
+              <g clip-path="url(#w-clip)"><path class="t1 wv" id="w-t1"/></g>
+              <path class="cur" id="w-cur"/>
+              <g id="w-axes"></g>
+            </svg>
+          </div>
+          <div class="sbar rdbar"><span class="stag rd" id="w-rd"></span></div>
+        </div>
+
+        <div id="v-hist" hidden>
+          <div class="sbar">
+            <span class="stag"><i class="sw" aria-hidden="true"></i>分布 <b id="h-n"></b></span>
+            <span class="stag"><i class="sw ref" aria-hidden="true"></i>REF <b id="h-ref"></b></span>
+          </div>
+          <div class="scope">
+            <svg viewBox="-50 -14 462 194" id="h-svg" role="img" aria-label="振幅の分布">
+              <defs><clipPath id="h-clip"><rect x="0" y="-1" width="400" height="162"/></clipPath></defs>
+              <g id="h-grid"></g>
+              <g clip-path="url(#h-clip)"><path class="hbar" id="h-t1"/><path class="t2 ref" id="h-ref-p"/></g>
+              <path class="cur" id="h-cur"/>
+            </svg>
+          </div>
+          <div class="sbar rdbar"><span class="stag rd" id="h-rd"></span></div>
+        </div>
+
+        <div class="ana2">
+          <div class="ptab">
+            <ParamRow d={P.hd} fold />
+            <ChoiceRow k="hy" name="縦軸" sub="対数にすると、分布の裾（まれな大きな値）の違いが見える" choices={[['lin', 'リニア'], ['log', '対数']]} value="lin" fold />
+          </div>
+          <div class="ptab">
+            <ChoiceRow k="rng" name="表示範囲" sub="中心から端までの振幅（フルスケールを 1 とする）" choices={RANGES.map((v) => [v, `±${v}`] as const)} value={0.5} fold />
+          </div>
+        </div>
+      </Panel>
+
+      <Panel hid="hd-sp" title="スペクトラム" class="a-sp">
+        <div slot="aux" class="seg" id="p-sv" role="group" aria-label="表示"><button type="button" data-v="sp" aria-pressed="true" title="平均したパワースペクトル密度">スペクトラム</button><button type="button" data-v="sg" aria-pressed="false" title="パワースペクトル密度の時間の変化">スペクトログラム</button></div>
+
+        <div id="v-sp">
+          <div class="sbar">
+            <span class="stag"><i class="sw" aria-hidden="true"></i>PSD <b id="s-y">20 dB</b>/div</span>
+            <span class="stag"><i class="sw ref" aria-hidden="true"></i>REF <b id="s-ref"></b></span>
+            <span class="stag">FIT <b id="s-fit">—</b></span>
+            <span class="stag">X <b id="s-x"></b></span>
+            <span class="stag"><b id="s-n"></b></span>
+          </div>
+          <div class="scope">
+            <svg viewBox="-50 -14 462 282" id="sp-svg" role="img" aria-label="スペクトラム">
+              <defs><clipPath id="sp-clip"><rect x="0" y="-1" width="400" height="242"/></clipPath></defs>
+              <g id="sp-grid"></g>
+              <g clip-path="url(#sp-clip)"><path class="t1 sp" id="sp-t1"/><path class="t2 ref" id="sp-ref"/><path class="fit" id="sp-fit"/></g>
+              <path class="cur" id="sp-cur"/>
+            </svg>
+          </div>
+          <div class="sbar rdbar"><span class="stag rd" id="sp-rd"></span></div>
+        </div>
+
+        <div id="v-sg" class="a-sg" hidden>
+          <div class="sbar">
+            <span class="stag"><b id="cb-lo">−130</b><i class="cbar" aria-hidden="true"></i><b id="cb-hi">−30</b> dBFS/Hz</span>
+            <span class="stag">H <b id="sg-h">2 s</b>/div</span>
+            <span class="stag"><b id="sg-n"></b></span>
+          </div>
+          <div class="scope">
+            <div class="cv cv-sg">
+              <canvas id="sg-cv" width="600" height="240"></canvas>
+              <svg viewBox="-50 -14 462 282" id="sg-svg" role="img" aria-label="スペクトログラム"><g id="sg-grid"></g><path class="cur" id="sg-cur"/></svg>
+            </div>
+          </div>
+          <div class="sbar rdbar"><span class="stag rd" id="sg-rd"></span></div>
+        </div>
+
+        <!-- 周波数軸・FFT の長さ・強度の範囲はどちらの表示にも使う。平均はスペクトラム、時間の幅はスペクトログラムだけ -->
+        <div class="ana2">
+          <div class="ptab">
+            <ChoiceRow k="ax" name="周波数軸" sub="対数: 1 オクターブを同じ幅に並べ、傾きが直線になる。リニア: LFSR のクロックの整数倍の零が等間隔に並ぶ" choices={[['log', '対数'], ['lin', 'リニア']]} value="log" fold />
+            <ParamRow d={P.fft} fold />
+            <ChoiceRow k="avg" name="平均の回数" sub="スペクトラムで平均する区間（半分ずつ重ねる）の数。超えた後は、同じ重みの指数移動平均" choices={AVGS.map((v) => [v, `${v} 回`] as const)} value={32} fold />
+            <ChoiceRow k="span" name="時間の幅" sub="スペクトログラムの横幅に入れる時間" choices={SPANS.map((v) => [v, `${v} s`] as const)} value={10} layout="chips" wide fold />
+          </div>
+          <div class="ptab">
+            <ParamRow d={P.top} fold />
+            <ParamRow d={P.bot} fold />
+          </div>
+        </div>
+      </Panel>
+    </div>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools list={related} />
+  <script>
+    import '../tools/noise/client';
+  </script>
+</SiteLayout>
