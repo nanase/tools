@@ -118,11 +118,13 @@ export const f0Of = (s: KeyString): number => Math.sqrt(s.T / s.mu) / (2 * s.L);
 export const partialHz = (s: KeyString, n: number): number => n * f0Of(s) * Math.sqrt(1 + inharm(s) * n * n);
 
 /**
- * 鋼の弦の損失係数: 張力の側（熱弾性 Q⁻¹ = 2.03 × 10⁻⁴）・曲げの側（粘弾性 δ = 0.0045）は、Issanchou ら (2016) が
- * Valette の損失の形で使った鋼弦の値。低い周波数で増える分 [1/s]（巻弦の巻線の摩擦）は概数
+ * ピアノ線の損失係数: 張力の側（熱弾性 Q⁻¹）・曲げの側（粘弾性 δ）は、Ege・Chaigne（arXiv:1101.4511）が両端を固定して測った
+ * ピアノ線（L = 28.1 cm、f₁ = 810 Hz）の第 1〜6 部分音の減衰率（第 3 部分音を除く）に、Valette の損失の形で
+ * 合わせた値（外径 0.95 mm とした。ギターの鋼弦の値 2.03 × 10⁻⁴・0.0045 では 3〜4 kHz の減衰が 2 倍ほど速い）。
+ * 低い周波数で増える分 [1/s]（巻弦の巻線の摩擦）は概数
  */
-const ETA_F = 2.03e-4,
-  ETA_B = 4.5e-3,
+const ETA_F = 1.25e-4,
+  ETA_B = 2.6e-3,
   ETA_X_WOUND = 0.6;
 
 /** 弦だけの損失係数 η（モードの減衰率は η ω / 2） */

@@ -2,12 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { parse } from '../src/lib/parse';
 import { C } from '../src/tools/guitar/body';
 import { coupled, cvec, project } from '../src/tools/piano/eig';
-import { boardDesc, Engine } from '../src/tools/piano/engine';
+import { boardDesc, Engine, minPhaseFir } from '../src/tools/piano/engine';
 import { type StruckString, strike } from '../src/tools/piano/hammer';
 import { hammerOf, makePiano, NO_DAMPER, type Piano, strikeKey } from '../src/tools/piano/model';
 import { PIECES, pedalPoints, TempoMap, voicing } from '../src/tools/piano/score';
-import { admittance, makeBoard } from '../src/tools/piano/soundboard';
+import { admittance, hfPressure, makeBoard, pressure, sigma } from '../src/tools/piano/soundboard';
 import {
+  etaOf,
   f0Of,
   inharm,
   KEY_HI,
@@ -187,6 +188,126 @@ describe('駒での結合', () => {
     const b = makeBoard({ wood: 'spruce', area: 2, h: 9e-3, f1: 70 });
     for (const f of [30, 80, 200, 500, 1000, 3000, 8000])
       expect(admittance(b, C.cx(2 * Math.PI * f)).re).toBeGreaterThan(0);
+  });
+});
+
+describe('響板の放射', () => {
+  const b = makeBoard({ wood: 'spruce', area: 1.9, h: 8e-3, f1: 75 });
+  it('響棒の間の導波路は約 1.1 kHz で通り始め、数 kHz まで亜音速のまま（Boutillon・Ege 2013 の値の範囲）', () => {
+    expect(b.fgs).toBeGreaterThan(1000);
+    expect(b.fgs).toBeLessThan(1400);
+    expect(b.fsup).toBeGreaterThan(5000);
+    expect(b.fsup).toBeLessThan(9000);
+    /* 一様な板の一致周波数（約 2 kHz）よりずっと上 */
+    expect(b.fsup).toBeGreaterThan(2.5 * b.fc);
+  });
+  it('放射効率は 1〜2 kHz の境目で強まり、2〜4 kHz の導波路の領域で下がり、f_sup の上で 1 に近づく', () => {
+    const g = makeBoard({ wood: 'spruce', area: 1.9, h: 9e-3, f1: 75 }),
+      peak = Math.max(...[1200, 1400, 1600, 1800].map((f) => sigma(g, f)));
+    expect(peak).toBeGreaterThan(1.5 * sigma(g, 2500));
+    expect(sigma(g, 500)).toBeLessThan(peak);
+    /* 一様な板なら一致周波数より上で 1 になる 2.5〜4 kHz で、0.25 より小さい */
+    for (const f of [2500, 3000, 4000]) expect(sigma(g, f)).toBeLessThan(0.25);
+    expect(sigma(g, 1.3 * g.fsup)).toBeGreaterThan(0.9);
+  });
+  it('モードの和の帯域の平均は、エネルギーの釣り合いから求めた滑らかな特性と同じ大きさ', () => {
+    /* 1〜1.4 kHz で、モードの音圧の 2 乗の平均と、滑らかな特性（境目の重みを除いた値）の 2 乗を比べる */
+    const c = makeBoard({ wood: 'spruce', area: 2.4, h: 9e-3, f1: 62 });
+    let pm = 0,
+      ph = 0;
+    for (let f = 1000; f <= 1400; f += 0.5) {
+      let r = 0,
+        i = 0;
+      for (const m of c.modes) {
+        const wk = 2 * Math.PI * m.f,
+          w = 2 * Math.PI * f,
+          dr = wk * wk - w * w,
+          di = w * wk * m.eta,
+          d = dr * dr + di * di;
+        /* G iω / (m (dr + i di)) */
+        r += (m.G * w * di) / (m.m * d);
+        i += (m.G * w * dr) / (m.m * d);
+      }
+      pm += r * r + i * i;
+      const x = (f / 1600) ** 4;
+      ph += (hfPressure(c, f) / (x / (1 + x))) ** 2;
+    }
+    expect(Math.abs(10 * Math.log10(pm / ph))).toBeLessThan(4);
+  });
+  it('高い周波数の経路の最小位相の FIR は、表の大きさをなぞる', () => {
+    const d = boardDesc(b),
+      h = minPhaseFir(d.hf, FS, 128);
+    for (const f of [2000, 3000, 5000, 8000]) {
+      let r = 0,
+        i = 0;
+      for (let k = 0; k < h.length; k++) {
+        r += h[k] * Math.cos((2 * Math.PI * f * k) / FS);
+        i -= h[k] * Math.sin((2 * Math.PI * f * k) / FS);
+      }
+      expect(Math.abs(20 * Math.log10(Math.hypot(r, i) / hfPressure(b, f)))).toBeLessThan(0.5);
+    }
+  });
+  it('音を作る部分の響板の応答は、2 つの経路の境目でも表示の値と大きく違わない（打ち消し合わない）', () => {
+    const e = new Engine(FS),
+      n = 1 << 15,
+      y = new Float32Array(n),
+      att = new Float32Array([1]);
+    e.setBoard(boardDesc(P.board));
+    e.strike({
+      key: 60,
+      N: 0,
+      w: new Float64Array(0),
+      s: new Float64Array(0),
+      fr: new Float64Array(0),
+      fi: new Float64Array(0),
+      own: new Int16Array(0),
+      sd: new Float64Array(0),
+      att,
+    });
+    for (let i = 0; i < n; i += 128) e.render(y, i, 128);
+    for (const f0 of [1800, 2500, 3500]) {
+      let pe = 0,
+        pd = 0;
+      for (let f = f0 / 1.1; f <= f0 * 1.1; f += 4) {
+        let r = 0,
+          i = 0;
+        for (let t = 0; t < n; t++) {
+          r += y[t] * Math.cos((2 * Math.PI * f * t) / FS);
+          i -= y[t] * Math.sin((2 * Math.PI * f * t) / FS);
+        }
+        const p = pressure(P.board, f);
+        pe += r * r + i * i;
+        pd += p.re * p.re + p.im * p.im;
+      }
+      expect(Math.abs(10 * Math.log10(pe / pd))).toBeLessThan(3);
+    }
+  });
+});
+
+describe('ピアノ線の損失', () => {
+  it('Ege・Chaigne の測ったピアノ線（f₁ = 810 Hz）の 3〜4 kHz の減衰率と、2 倍以内で合う', () => {
+    /* 外径 0.95 mm、L = 28.1 cm の鋼線を、f₁ = 810 Hz に張る */
+    const d = 0.95e-3,
+      L = 0.281,
+      mu = (7850 * Math.PI * d * d) / 4,
+      B = (2e11 * Math.PI * d ** 4) / 64,
+      T = 4 * L * L * mu * 810 ** 2 - (Math.PI ** 2 * B) / (L * L),
+      s = { key: 78, ns: 1, L, d, dc: d, wound: false, mu, B, T },
+      rate = (n: number) => {
+        const f =
+          n *
+          810 *
+          Math.sqrt((1 + ((Math.PI ** 2 * B) / (T * L * L)) * n * n) / (1 + (Math.PI ** 2 * B) / (T * L * L)));
+        return etaOf(s, n, f) * Math.PI * f;
+      };
+    for (const [n, a] of [
+      [1, 0.43],
+      [4, 1.12],
+      [5, 1.97],
+    ] as const) {
+      expect(rate(n)).toBeLessThan(2 * a);
+      expect(rate(n)).toBeGreaterThan(a / 2);
+    }
   });
 });
 

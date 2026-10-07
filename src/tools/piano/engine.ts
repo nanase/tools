@@ -10,17 +10,21 @@
 import { rng } from '../guitar/body';
 import { panGains } from '../guitar/engine';
 import type { StrikeMsg } from './model';
-import { type Board, F_TOP, yMeanOf } from './soundboard';
+import { type Board, F_TOP, hfPressure } from './soundboard';
 import { KEY_HI, KEY_LO, KEYS } from './strings';
 
 /** 響板（AudioWorklet へ送れる形） */
 export interface BoardDesc {
   /** モード: 極（実部・虚部）、速度 ÷ 力の留数（実部・虚部）、音圧の重み */
   st: number[];
-  /** 高い周波数の滑らかな特性: 大きさ（音圧 ÷ 力 [Pa/N]）、境目 [Hz]、下がり始める周波数 [Hz] */
-  hf: [number, number, number];
+  /** 高い周波数の滑らかな特性の大きさ（音圧 ÷ 力 [Pa/N]。HF_F0 から 1/HF_OCT オクターブごと） */
+  hf: number[];
 }
 const ST = 5;
+/** 高い周波数の滑らかな特性の表: 最初の周波数 [Hz]、1 オクターブあたりの点の数、点の数（25 Hz〜約 24 kHz） */
+const HF_F0 = 25,
+  HF_OCT = 12,
+  HF_N = 120;
 
 /** 響板の模型を、音を作る部分へ渡す形にする */
 export function boardDesc(b: Board): BoardDesc {
@@ -32,8 +36,89 @@ export function boardDesc(b: Board): BoardDesc {
       d = 2 * li * m.m;
     st.push(lr, li, li / d, -lr / d, m.G);
   }
-  /* 高い周波数: 平均のアドミタンス（境目での値）× 放射の重み */
-  return { st, hf: [yMeanOf(b, 0) * b.gHf, F_TOP, b.fb] };
+  /* 高い周波数: 平均のアドミタンス × 放射の重み（周波数ごとの大きさ。位相は AudioWorklet で最小位相にする） */
+  return { st, hf: Array.from({ length: HF_N }, (_, i) => hfPressure(b, HF_F0 * 2 ** (i / HF_OCT))) };
+}
+
+/** その場で変換する複素 FFT（基数 2。inv なら逆変換で 1/N を掛ける） */
+function fft(re: Float64Array, im: Float64Array, inv = false): void {
+  const n = re.length,
+    cs = new Float64Array(n / 2),
+    sn = new Float64Array(n / 2);
+  for (let k = 0; k < n / 2; k++) {
+    cs[k] = Math.cos((2 * Math.PI * k) / n);
+    sn[k] = (inv ? 1 : -1) * Math.sin((2 * Math.PI * k) / n);
+  }
+  for (let i = 1, j = 0; i < n; i++) {
+    let bit = n >> 1;
+    for (; j & bit; bit >>= 1) j ^= bit;
+    j ^= bit;
+    if (i < j) {
+      [re[i], re[j]] = [re[j], re[i]];
+      [im[i], im[j]] = [im[j], im[i]];
+    }
+  }
+  for (let len = 2; len <= n; len <<= 1) {
+    const h = len >> 1,
+      step = n / len;
+    for (let i = 0; i < n; i += len)
+      for (let k = 0; k < h; k++) {
+        const wr = cs[k * step],
+          wi = sn[k * step],
+          p = i + k,
+          q = p + h,
+          tr = re[q] * wr - im[q] * wi,
+          ti = re[q] * wi + im[q] * wr;
+        re[q] = re[p] - tr;
+        im[q] = im[p] - ti;
+        re[p] += tr;
+        im[p] += ti;
+      }
+  }
+  if (inv)
+    for (let i = 0; i < n; i++) {
+      re[i] /= n;
+      im[i] /= n;
+    }
+}
+
+/**
+ * 大きさの表（BoardDesc.hf）から、長さ L の最小位相の FIR を作る（実ケプストラムを折り返す方法。
+ * Oppenheim・Schafer）。響板のモードの経路と同じく、遅れの少ない因果的な応答になる
+ */
+export function minPhaseFir(tab: readonly number[], fs: number, L: number): Float64Array<ArrayBuffer> {
+  const N = 4096,
+    re = new Float64Array(N),
+    im = new Float64Array(N),
+    top = Math.max(...tab),
+    floor = top * 1e-6,
+    at = (f: number) => {
+      const x = Math.min(HF_N - 1, Math.max(0, HF_OCT * Math.log2(Math.max(f, 1) / HF_F0))),
+        i = Math.min(HF_N - 2, Math.floor(x)),
+        u = x - i;
+      return Math.log(Math.max(floor, tab[i])) * (1 - u) + Math.log(Math.max(floor, tab[i + 1])) * u;
+    };
+  for (let k = 0; k <= N / 2; k++) {
+    re[k] = at((k * fs) / N);
+    if (k > 0 && k < N / 2) re[N - k] = re[k];
+  }
+  fft(re, im, true);
+  /* 実ケプストラムを正の時間へ折り返す */
+  for (let k = 1; k < N / 2; k++) re[k] *= 2;
+  for (let k = N / 2 + 1; k < N; k++) re[k] = 0;
+  im.fill(0);
+  fft(re, im);
+  for (let k = 0; k < N; k++) {
+    const e = Math.exp(re[k]);
+    re[k] = e * Math.cos(im[k]);
+    im[k] = e * Math.sin(im[k]);
+  }
+  fft(re, im, true);
+  /* 末尾の 1/4 を半分のハン窓で 0 へ下ろす */
+  const h = new Float64Array(L),
+    t0 = Math.floor(L * 0.75);
+  for (let i = 0; i < L; i++) h[i] = re[i] * (i < t0 ? 1 : 0.5 + 0.5 * Math.cos((Math.PI * (i - t0)) / (L - t0)));
+  return h;
 }
 
 /** 1 Pa を出力の 1 とする */
@@ -147,17 +232,11 @@ class Biquad {
     return y;
   }
 }
-/** 2 次のバターワースの高域通過（Q を指定） */
-function hp2(f: number, fs: number, q: number): number[] {
+/** 2 次のバターワースの低域通過（双 1 次変換） */
+function lp2(f: number, fs: number): number[] {
   const K = Math.tan((Math.PI * f) / fs),
-    n = 1 / (1 + K / q + K * K);
-  return [n, -2 * n, n, 2 * (K * K - 1) * n, (1 - K / q + K * K) * n];
-}
-/** 1 次の低域通過（双 1 次変換、2 次の形で持つ） */
-function lp1(f: number, fs: number): number[] {
-  const K = Math.tan((Math.PI * f) / fs),
-    n = 1 / (1 + K);
-  return [K * n, K * n, 0, (K - 1) * n, 0];
+    n = 1 / (1 + Math.SQRT2 * K + K * K);
+  return [K * K * n, 2 * K * K * n, K * K * n, 2 * (K * K - 1) * n, (1 - Math.SQRT2 * K + K * K) * n];
 }
 
 /** 出力の 1 チャンネルぶんの、駒の力と響板の状態 */
@@ -165,9 +244,15 @@ class Chan {
   sQr = new Float64Array(0);
   sQi = new Float64Array(0);
   sW = new Float64Array(0);
-  hf: Biquad[] = [];
+  /** 高い周波数の経路の FIR へ入れた力（前の L − 1 標本と、今のブロック） */
+  hx = new Float64Array(0);
+  /** モードの経路の 4 次の Linkwitz–Riley の低域通過（2 次のバターワースを 2 段） */
+  lp: Biquad[] = [];
   readonly f = new Float64Array(128);
 }
+
+/** 高い周波数の経路の FIR の長さ（48 kHz で） */
+const HF_L = 128;
 
 export class Engine {
   private voices: Voice[] = [];
@@ -180,7 +265,7 @@ export class Engine {
   private sRr = new Float64Array(0);
   private sRi = new Float64Array(0);
   private sG = new Float64Array(0);
-  private hfK = 0;
+  private hfH = new Float64Array(0);
   private readonly ch: Chan[];
   private readonly vf = new Float64Array(128);
   /** 鍵を押しているか・ペダル */
@@ -231,14 +316,14 @@ export class Engine {
     }
     const r = rng(23),
       pan = Array.from({ length: m }, (_, k) => panSpread(d.st[k * ST + 1] / (2 * Math.PI)) * (2 * r() - 1));
-    const [K, ft, fb] = d.hf;
-    this.hfK = K;
+    const L = 8 * Math.round((HF_L * this.fs) / 48000 / 8);
+    this.hfH = minPhaseFir(d.hf, this.fs, L);
     this.ch.forEach((c, n) => {
       c.sQr = new Float64Array(m);
       c.sQi = new Float64Array(m);
       c.sW = Float64Array.from(pan, (q) => (this.stereo ? panGains(q)[n] : 1));
-      /* 4 次のバターワースの高域通過（Q 0.541・1.307）と 1 次の低域通過 */
-      c.hf = [new Biquad(hp2(ft, this.fs, 0.5412)), new Biquad(hp2(ft, this.fs, 1.3066)), new Biquad(lp1(fb, this.fs))];
+      c.hx = new Float64Array(L - 1 + 128);
+      c.lp = [new Biquad(lp2(F_TOP, this.fs)), new Biquad(lp2(F_TOP, this.fs))];
     });
   }
 
@@ -381,11 +466,17 @@ export class Engine {
     const { f } = c,
       { sEr, sEi, sBr, sBi, sRr, sRi, sG } = this,
       { sQr, sQi, sW } = c;
+    /* 高い周波数の経路（FIR）。hx の先頭 L − 1 標本は前のブロックの終わり */
+    const h = this.hfH,
+      L = h.length,
+      hx = c.hx;
+    for (let i = 0; i < len; i++) hx[L - 1 + i] = f[i];
     for (let i = 0; i < len; i++) {
-      let x = this.hfK * f[i];
-      for (const b of c.hf) x = b.step(x);
+      let x = 0;
+      for (let j = 0, k = L - 1 + i; j < L; j++, k--) x += h[j] * hx[k];
       out[off + i] = x;
     }
+    hx.copyWithin(0, len, len + L - 1);
     const y = this.vf;
     y.fill(0, 0, len);
     let k = 0;
@@ -441,7 +532,8 @@ export class Engine {
       sQr[k] = qr;
       sQi[k] = qi;
     }
-    for (let i = 0; i < len; i++) out[off + i] += y[i];
+    const [l1, l2] = c.lp;
+    for (let i = 0; i < len; i++) out[off + i] += l2.step(l1.step(y[i]));
     if (P_REF !== 1) for (let i = 0; i < len; i++) out[off + i] /= P_REF;
   }
 }
