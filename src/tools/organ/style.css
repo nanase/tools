@@ -84,7 +84,8 @@
 @media (max-width:559px){.vdiv{grid-template-columns:minmax(0,1fr)}}
 .s-key{display:inline-flex;align-items:center;gap:6px}
 
-/* 計算結果 */
+/* 計算結果（開閉できる枠。最後に弾いた管の補足を本文の先頭に右寄せで） */
+.res-aux{margin:0 0 10px;text-align:right}
 .m-sub{display:block;margin-top:2px;font:12px/1.5 var(--sans);color:var(--ink-3)}
 .m-main .m-sub{margin-top:4px}
 .vmet,.rmet{margin-top:12px}
