@@ -1,0 +1,148 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import { order, TOOLS } from '../data/tools';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/lens/style.css';
+import { LENSES } from '../tools/lens/lenses';
+import { BLADES, COC, FNUM, FOCAL, FOCUS, PAN, TILT, ZOOMS } from '../tools/lens/params';
+import { ABR, MAP, mapStatic, SEC } from '../tools/lens/plot';
+import Theory from '../tools/lens/Theory.astro';
+
+const name = 'カメラレンズ';
+/* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
+const CAT = '画像・光学';
+const related = [
+  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'lens')),
+  ...TOOLS.filter((t) => t.c !== CAT && !t.s),
+];
+---
+<SiteLayout title={name} tool={{ id: 'lens', name }} description="実在の設計のカメラレンズを、面の曲率・間隔・硝材のとおりに光線を追跡してシミュレートします。絞り・焦点距離・ピントと、ボケ・被写界深度・収差を、3D の被写体を写した映像で確かめられます。" note="映像は、公開された処方のレンズで光線を幾何光学で追跡したものです（回折は近似）。">
+  <PageTitle title={name}>写真用のレンズの断面の形（面の曲率・間隔・ガラスの種類）のとおりに、センサーの各点から光線をレンズへ逆にたどって 3D の被写体に当て、レンズ越しの映像を作ります。ボケ、被写界深度、球面収差やコマ、像面の湾曲、歪曲、色のにじみ、周辺の暗さが、実際のレンズと同じしくみで現れます。収差のない理想のレンズとも比べられます。</PageTitle>
+  <div class="mini" aria-hidden="true"><span>画角<b id="mA"></b></span><span>被写界深度<b id="mD"></b></span><span>実効 F<b id="mN"></b></span></div>
+
+  <div class="tgrid">
+
+    <div class="col c1">
+      <Panel hid="hd-view" title="レンズ越しの映像" class="a-view">
+        <div slot="aux" class="seg" id="p-cmp" role="group" aria-label="レンズ"><button type="button" data-v="rx" aria-pressed="true" title="処方どおりのレンズで光線を追跡する">処方どおり</button><button type="button" data-v="ideal" aria-pressed="false" title="同じ焦点距離・F 値・ピントの、収差のない薄いレンズ">収差なし</button></div>
+        <div class="sbar">
+          <span class="stag">LENS <b id="v-lens"></b></span>
+          <span class="stag">f <b id="v-f"></b></span>
+          <span class="stag"><b id="v-N"></b></span>
+          <span class="stag">FOCUS <b id="v-fd"></b></span>
+          <span class="stag v-spp">SAMPLES <b id="v-spp">—</b></span>
+          <span class="stag">PIXELS <b id="v-px">—</b></span>
+        </div>
+        <div class="lv" id="lv">
+          <canvas id="lvc" tabindex="0" role="img" aria-label="レンズ越しの映像"></canvas>
+          <div class="af" id="af" aria-hidden="true"></div>
+          <p class="lv-msg" id="lv-msg" hidden></p>
+        </div>
+        <div class="ana2">
+          <div class="ptab">
+            <ChoiceRow k="zm" name="拡大" sub="ピントを合わせた点（枠）を中心に、センサーの一部を拡大して描く" choices={ZOOMS.map((z) => [z, `×${z}`] as const)} value={1} fold />
+          </div>
+          <div class="ptab">
+            <ChoiceRow k="ch" name="色収差" sub="含めないと、すべての波長に d 線（587.6 nm）の屈折率を使う" choices={[['on', '含める'], ['off', '含めない']]} value="on" fold />
+            <ChoiceRow k="df" name="回折" sub="実効 F 値で決まるエアリー円盤の広がりを、像の点をずらして近似的に足す" choices={[['on', '含める'], ['off', '含めない']]} value="on" fold />
+          </div>
+        </div>
+      </Panel>
+
+      <Panel hid="hd-sec" title="レンズの断面と光線" class="a-sec">
+        <div class="sbar">
+          <span class="stag"><i class="sw" aria-hidden="true"></i>CH1 軸上の光束</span>
+          <span class="stag"><i class="sw c2" aria-hidden="true"></i>CH2 隅への光束</span>
+          <span class="stag">λ <b>587.6 nm</b></span>
+          <span class="stag" id="sec-st"></span>
+        </div>
+        <div class="scope">
+          <svg viewBox={`0 0 ${SEC.w} ${SEC.h}`} id="sec" role="img" aria-label="レンズの断面図"></svg>
+        </div>
+      </Panel>
+
+      <Panel hid="hd-abr" title="収差" class="a-abr">
+        <div slot="aux" class="seg" id="p-av" role="group" aria-label="収差の図"><button type="button" data-v="spot" aria-pressed="true" title="中心・0.7・隅の点の像の広がり（ピントの面の点）">スポット</button><button type="button" data-v="curve" aria-pressed="false" title="球面収差・非点収差・歪曲の曲線">曲線</button></div>
+        <div class="sbar">
+          <span class="stag"><i class="sw wl-f" aria-hidden="true"></i>F 486 nm</span>
+          <span class="stag"><i class="sw wl-d" aria-hidden="true"></i>d 588 nm</span>
+          <span class="stag"><i class="sw wl-c" aria-hidden="true"></i>C 656 nm</span>
+          <span class="stag" id="ab-sc"></span>
+        </div>
+        <div class="scope">
+          <svg viewBox={`0 0 ${ABR.w} ${ABR.h}`} id="abr" role="img" aria-label="収差の図"></svg>
+        </div>
+        <dl class="metrics seid">
+          <div class="m"><dt>球面収差 <i>S</i><sub>I</sub></dt><dd><span id="s1"></span><span class="m-sub" id="s1s"></span></dd></div>
+          <div class="m"><dt>コマ収差 <i>S</i><sub>II</sub></dt><dd><span id="s2"></span><span class="m-sub" id="s2s"></span></dd></div>
+          <div class="m"><dt>非点収差 <i>S</i><sub>III</sub></dt><dd><span id="s3"></span><span class="m-sub" id="s3s"></span></dd></div>
+          <div class="m"><dt>像面湾曲 <i>S</i><sub>IV</sub></dt><dd><span id="s4"></span><span class="m-sub" id="s4s"></span></dd></div>
+          <div class="m"><dt>歪曲 <i>S</i><sub>V</sub></dt><dd><span id="s5"></span><span class="m-sub" id="s5s"></span></dd></div>
+          <div class="m"><dt>軸上色収差 <i>C</i><sub>I</sub></dt><dd><span id="c1"></span><span class="m-sub" id="c1s"></span></dd></div>
+          <div class="m"><dt>倍率色収差 <i>C</i><sub>II</sub></dt><dd><span id="c2"></span><span class="m-sub" id="c2s"></span></dd></div>
+          <div class="m"><dt>ラグランジュ不変量 <i>H</i></dt><dd><span id="lh"></span><span class="m-sub" id="lhs"></span></dd></div>
+        </dl>
+      </Panel>
+    </div>
+
+    <div class="col c2">
+      <Panel hid="hd-lens" title="レンズ" class="a-lens">
+        <div class="ptab">
+          <ChoiceRow k="lens" name="レンズの種類" sub="公開された処方。出典はレンズの処方の枠にある。選ぶと焦点距離を、35 mm 判で設計の画角になる値にする" choices={LENSES.map((l) => [l.v, l.ab, l.sub] as const)} value="dgauss" layout="chips" wide msg />
+          <ParamRow d={FOCAL} />
+          <ParamRow d={FNUM} />
+          <ChoiceRow k="bl" name="絞り羽根" sub="絞りの形（正多角形）。開放では羽根が引っ込んで円になる" choices={BLADES.map((b) => [b, b ? `${b} 枚` : '円'] as const)} value={7} msg />
+          <ParamRow d={FOCUS} />
+          <ParamRow d={COC} fold />
+        </div>
+      </Panel>
+
+      <Panel hid="hd-map" title="見取り図" class="a-map">
+        <span slot="aux" class="aux">上から、距離は対数</span>
+        <div class="scope mapw">
+          <svg viewBox={`0 0 ${MAP.w} ${MAP.h}`} id="map" role="img" aria-label="見取り図"><g set:html={mapStatic()} /><g id="map-d"></g></svg>
+        </div>
+        <div class="ptab ana"><ParamRow d={PAN} /><ParamRow d={TILT} /></div>
+      </Panel>
+
+      <Panel hid="hd-out" title="計算結果" class="a-out">
+        <dl class="metrics c3">
+          <div class="m m-main"><dt>被写界深度</dt><dd><span id="o-dof"></span><span class="m-sub" id="o-dofs"></span></dd></div>
+          <div class="m"><dt>画角（対角）</dt><dd><span id="o-fov"></span><span class="m-sub" id="o-fovs"></span></dd></div>
+          <div class="m"><dt>過焦点距離 <i>H</i></dt><dd><span id="o-hyp"></span><span class="m-sub" id="o-hyps"></span></dd></div>
+          <div class="m"><dt>撮影倍率 <i>m</i></dt><dd><span id="o-mag"></span><span class="m-sub" id="o-mags"></span></dd></div>
+          <div class="m"><dt>実効 F 値 <i>N</i><sub>w</sub></dt><dd><span id="o-nw"></span><span class="m-sub" id="o-nws"></span></dd></div>
+          <div class="m"><dt>入射瞳の径 <i>D</i></dt><dd><span id="o-ep"></span><span class="m-sub" id="o-eps"></span></dd></div>
+          <div class="m"><dt>周辺光量（隅）</dt><dd><span id="o-ill"></span><span class="m-sub" id="o-ills"></span></dd></div>
+          <div class="m"><dt>歪曲（隅）</dt><dd><span id="o-dis"></span><span class="m-sub" id="o-diss"></span></dd></div>
+          <div class="m"><dt>エアリー円盤の径</dt><dd><span id="o-airy"></span><span class="m-sub" id="o-airys"></span></dd></div>
+          <div class="m"><dt>レンズの全長</dt><dd><span id="o-len"></span><span class="m-sub" id="o-lens"></span></dd></div>
+        </dl>
+      </Panel>
+    </div>
+
+    <Collapsible hid="hd-rx" title="レンズの処方" class="a-rx">
+      <p class="rx-src" id="rx-src"></p>
+      <div class="rxw">
+        <table class="rxt" id="rxt">
+          <thead><tr><th scope="col">面</th><th scope="col">曲率半径 <i>R</i></th><th scope="col">間隔 <i>t</i></th><th scope="col">硝材</th><th scope="col"><i>n</i><sub>d</sub></th><th scope="col"><i>ν</i><sub>d</sub></th><th scope="col">有効径</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </Collapsible>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools list={related} />
+  <script>
+    import '../tools/lens/client';
+  </script>
+</SiteLayout>

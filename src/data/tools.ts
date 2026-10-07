@@ -151,6 +151,14 @@ export const TOOLS: Tool[] = [
     ic: 'og',
     k: 'organ pipe organ パイプオルガン acoustic physical model 物理モデル フルー管 flue リード管 reed ジェット jet エッジトーン 共鳴管 resonator ストップ stop レジストレーション registration プリンシパル ゲダクト トランペット 風箱 wind トレモラント tremulant 調律 temperament 教会 残響 reverb 演奏 バッハ bach オーディオ audio',
   },
+  {
+    id: 'lens',
+    c: '画像・光学',
+    t: 'カメラレンズ',
+    d: '実在のレンズの処方（面の曲率・間隔・硝材）のとおりに光線を追跡し、絞り・焦点距離・ピントで変わるボケや被写界深度、収差を 3D の被写体の映像で再現します。',
+    ic: 'ln',
+    k: 'lens camera optics レンズ カメラ 光学 光線追跡 ray tracing 絞り aperture f値 焦点距離 focal length ピント focus 被写界深度 depth of field ボケ bokeh 玉ボケ 収差 aberration ザイデル seidel 球面収差 コマ 非点収差 像面湾曲 歪曲 distortion 色収差 chromatic 周辺減光 vignetting ダブルガウス double gauss テッサー tessar トリプレット triplet アクロマート achromat 望遠 広角 webgl',
+  },
 ];
 export const IC: Record<string, string> = {
   sq: '<path class="a" d="M4 38H16V10H40V38H52V10H76V38H88V10H112V38H116"/><path class="b" d="M16 31C24 22 32 18 40 17C44 24 48 29 52 31C60 22 68 18 76 17C80 24 84 29 88 31C96 22 104 18 112 17"/>',
@@ -170,6 +178,7 @@ export const IC: Record<string, string> = {
   pc: '<path class="c" d="M4 6H42"/><path class="a" d="M42 6H78V42H42V10H74V38H46V14H70V34H50V18H66V30H54V22H62"/><path class="c d" d="M62 22H116"/>',
   jp: '<path class="c" d="M4 4H44V44H4Z"/><path class="a" d="M9 9H19L9 19V29L29 9H39L9 39H19L39 19V29L29 39H39"/><path class="c d" d="M52 44H116"/><path class="b" d="M56 44V6M64 44V18M72 44V27M80 44V33M88 44V37M96 44V40M104 44V41.5M112 44V42.5"/>',
   og: '<path class="c" d="M4 44H116"/><path class="a" d="M14 44V8M26 44V14M38 44V19M50 44V23M62 44V26M74 44V29M86 44V31M98 44V33M110 44V35"/><path class="b" d="M11 38H17M23 39H29M35 40H41M47 40H53M59 41H65M71 41H77M83 42H89M95 42H101M107 42H113"/>',
+  ln: '<path class="c d" d="M4 24H116"/><path class="c" d="M40 5C49 14 49 34 40 43C31 34 31 14 40 5ZM100 6V42"/><path class="a" d="M4 13H40L100 24M4 35H40L100 24"/><path class="b" d="M4 12L40 16L100 30M4 26L40 30L100 30"/>',
 };
 
 /** 準備中を後ろへ */

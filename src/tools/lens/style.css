@@ -1,0 +1,90 @@
+/* カメラレンズのページだけのスタイル（共通は src/styles/site.css） */
+
+/* 波長の色（F・d・C 線）。測定の図の中だけで使う */
+:root{--wl-f:#2758c8;--wl-d:#23803a;--wl-c:#c3332b}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--wl-f:#7ea2ff;--wl-d:#6cd085;--wl-c:#ff7d70}}
+:root[data-theme="dark"]{--wl-f:#7ea2ff;--wl-d:#6cd085;--wl-c:#ff7d70}
+
+/* 並び: スマホは 映像 → レンズ → 見取り図 → 計算結果 → 断面 → 収差 → 処方 → 式。
+   PC は左の広い列に 映像・断面・収差、右の列に レンズ・見取り図・計算結果、下に全幅で 処方・式 */
+.a-view{order:1}.a-lens{order:2}.a-map{order:3}.a-out{order:4}.a-sec{order:5}.a-abr{order:6}.a-rx{order:7}.a-thy{order:8}
+@media (min-width:1000px){
+  .tgrid{grid-template-columns:minmax(0,8fr) minmax(0,4fr);grid-template-areas:"c1 c2" "rx rx" "thy thy";align-items:start}
+  .c1{grid-area:c1}.c2{grid-area:c2}.a-rx{grid-area:rx}.a-thy{grid-area:thy}
+}
+
+/* レンズ越しの映像（映像そのものはテーマに依らない） */
+.lv{position:relative;aspect-ratio:3/2;border:1px solid var(--line);border-radius:var(--r);background:#000;overflow:hidden}
+.lv canvas{display:block;width:100%;height:100%;cursor:crosshair;touch-action:none;user-select:none;-webkit-user-select:none}
+.lv canvas:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+.lv.nogl canvas,.lv.nogl .af{visibility:hidden}
+.lv-msg{position:absolute;inset:0;display:grid;place-items:center;padding:20px;color:#e6e8e4;font-size:14px;line-height:1.8;text-align:center}
+/* AF の枠（ピントを合わせた点）: 角だけの四角 */
+.af{position:absolute;width:34px;height:24px;transform:translate(-50%,-50%);pointer-events:none;
+  background:linear-gradient(#fff,#fff) 0 0/9px 2px,linear-gradient(#fff,#fff) 0 0/2px 7px,linear-gradient(#fff,#fff) 100% 0/9px 2px,linear-gradient(#fff,#fff) 100% 0/2px 7px,
+    linear-gradient(#fff,#fff) 0 100%/9px 2px,linear-gradient(#fff,#fff) 0 100%/2px 7px,linear-gradient(#fff,#fff) 100% 100%/9px 2px,linear-gradient(#fff,#fff) 100% 100%/2px 7px;
+  background-repeat:no-repeat;filter:drop-shadow(0 0 1px #000)}
+.v-spp{margin-left:auto}
+@media (max-width:559px){.v-spp{margin-left:0}}
+.a-view .ana2{border-top:0}
+
+/* 見取り図 */
+.mapw svg{display:block;width:100%;height:auto}
+.mp-ring{fill:none;stroke:var(--grid-2);stroke-width:1;stroke-dasharray:2 3}
+.mp-ring.far{stroke-dasharray:none}
+.scope text.mp-t{fill:var(--screen-ink);font-size:10px}
+.mp-wall{fill:none;stroke:var(--screen-ink);stroke-width:2.5;opacity:.7}
+.mp-obj{fill:none;stroke:var(--screen-ink);stroke-width:1.4}
+.mp-brd{stroke:var(--screen-ink);stroke-width:2.6;stroke-linecap:round}
+.mp-brdc{fill:var(--screen);stroke:var(--screen-ink);stroke-width:1.2}
+.mp-bulb{fill:var(--screen-ink);opacity:.8}
+.mp-dof{fill:var(--ch1);fill-opacity:.2;stroke:none}
+.mp-fov{fill:none;stroke:var(--screen-ink);stroke-width:1;stroke-dasharray:5 3}
+.mp-fp{fill:none;stroke:var(--ch1);stroke-width:2}
+.mp-cam{fill:var(--ink);stroke:var(--screen);stroke-width:1}
+
+/* レンズの断面 */
+.a-sec .scope svg,.a-abr .scope svg{overflow:hidden}
+.ls-ax{stroke:var(--grid-2);stroke-width:1;stroke-dasharray:6 3 1 3}
+.ls-g{stroke:var(--screen-ink);stroke-width:1;stroke-linejoin:round}
+.ls-g.cr{fill:var(--ch2);fill-opacity:.1}
+.ls-g.fl{fill:var(--ch2);fill-opacity:.24}
+.ls-stop{stroke:var(--ink);stroke-width:2.6}
+.ls-ideal{stroke:var(--screen-ink);stroke-width:1.6}
+.ls-ideal-h{fill:var(--screen-ink)}
+.ls-sen{stroke:var(--ink);stroke-width:3}
+.ls-r1,.ls-r2{fill:none;stroke-width:1;stroke-linejoin:round}
+.ls-r1{stroke:var(--ch1)}
+.ls-r2{stroke:var(--ch2)}
+
+/* 収差の図 */
+.sw.wl-f{background:var(--wl-f)}.sw.wl-d{background:var(--wl-d)}.sw.wl-c{background:var(--wl-c)}
+.sp-f{fill:var(--wl-f)}.sp-d{fill:var(--wl-d)}.sp-c{fill:var(--wl-c)}
+.cv{fill:none;stroke-width:1.6;stroke-linejoin:round}
+.cv.sp-f{stroke:var(--wl-f)}.cv.sp-d{stroke:var(--wl-d)}.cv.sp-c{stroke:var(--wl-c)}
+.cv.dash{stroke-dasharray:4 3}
+.gl0{stroke:var(--grid-2);stroke-width:1}
+.sp-airy{fill:none;stroke:var(--screen-ink);stroke-width:1;stroke-dasharray:2 2}
+.scope text.ab-t{fill:var(--screen-ink);font-size:9px}
+.scope text.ab-t2{fill:var(--screen-ink);font-size:8.5px;opacity:.85}
+@media (max-width:559px){.scope text.ab-t{font-size:12.5px}.scope text.ab-t2{font-size:11.5px}.scope text.mp-t{font-size:11px}}
+.seid{margin-top:12px}
+.seid .m dd{font-size:16px}
+.a-abr{container-type:inline-size}
+
+/* 計算結果 */
+.m-sub{display:block;margin-top:2px;font:12px/1.5 var(--sans);color:var(--ink-3)}
+.m-main .m-sub{margin-top:4px}
+
+/* レンズの処方 */
+.a-rx{font-size:14.5px}
+.thy-body>p.rx-src{max-width:none;margin-bottom:10px;font-size:13px;line-height:1.8}
+.rx-src i{font-style:italic}
+.rxw{overflow-x:auto}
+.rxt{width:100%;border-collapse:collapse;font:500 13px/1.4 var(--mono);font-variant-numeric:tabular-nums}
+.rxt th{padding:8px 8px 5px;font:700 12px/1.3 var(--sans);color:var(--ink-3);text-align:right;white-space:nowrap}
+.rxt td{padding:5px 8px;border-top:1px solid var(--line);text-align:right;white-space:nowrap}
+.rxt th:nth-child(4),.rxt td:nth-child(4){text-align:left}
+.rxt td:nth-child(4){font-family:var(--sans);color:var(--ink-2)}
+.rxt tr.stop td{color:var(--ink-3)}
+.cite i{font-style:italic}
