@@ -26,10 +26,10 @@ export const FOCAL: ParamDef = {
   nm: 'f',
   sym: '<i>f</i>',
   name: '焦点距離',
-  sub: 'レンズの処方を相似に拡大・縮小して合わせる。長いほど画角が狭く、ボケが大きい',
+  sub: 'レンズデータを相似に拡大・縮小して合わせる。長いほど画角が狭く、ボケが大きい。月や惑星は長い焦点距離で大きく写る',
   unit: 'mm',
   min: 8,
-  max: 800,
+  max: 3000,
   v: 50,
   ph: '例 50',
   pre: [
@@ -39,9 +39,12 @@ export const FOCAL: ParamDef = {
     [85, '85'],
     [135, '135'],
     [200, '200'],
+    [800, '800'],
+    [3000, '3000'],
   ],
   list: [
     8, 10, 12, 14, 16, 18, 20, 21, 24, 28, 35, 40, 50, 55, 58, 70, 85, 100, 105, 135, 180, 200, 300, 400, 500, 600, 800,
+    1000, 1200, 1600, 2000, 2500, 3000,
   ],
   log: true,
   notation: 'plain',
@@ -160,6 +163,11 @@ export const COC: ParamDef = {
   format: plainF('mm', 3),
 };
 
+/** 向きの角度の刻み [°]。長い焦点距離で拡大しても狙えるよう 0.001° */
+export const ANG_STEP = 0.001;
+export const angR = (v: number): number => Math.round(v / ANG_STEP) * ANG_STEP;
+const angS = (v: number): string => minus(String(Number(angR(v).toFixed(3))));
+
 const angle = (k: 'pan' | 'tilt', name: string, sub: string, lim: number): ParamDef => ({
   k,
   nm: k === 'pan' ? 'φ' : 'θ',
@@ -176,12 +184,12 @@ const angle = (k: 'pan' | 'tilt', name: string, sub: string, lim: number): Param
   sign: 'any',
   notation: 'plain',
   format: {
-    input: (v) => sig(v, 3),
-    step: (v) => sig(v, 3),
-    text: (v) => `${sig(v, 3)}°`,
+    input: angS,
+    step: angS,
+    text: (v) => `${angS(v)}°`,
   },
   fix: (v) => {
-    const w = Math.round(v * 10) / 10;
+    const w = angR(v);
     if (w < -lim) return [-lim, `下限 ${minus(String(-lim))}° にしました`];
     if (w > lim) return [lim, `上限 ${lim}° にしました`];
     return [w, ''];

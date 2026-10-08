@@ -1,5 +1,5 @@
 /**
- * カメラレンズのページの入口: レンズの処方 → 近軸と実光線の計算 → 映像（WebGL2）・図・計算結果
+ * カメラレンズのページの入口: レンズデータ → 近軸と実光線の計算 → 映像（WebGL2）・図・計算結果
  */
 import { Choice } from '../../lib/choice';
 import { $, esc } from '../../lib/dom';
@@ -25,7 +25,7 @@ import {
   thinLens,
   traceRev,
 } from './optics';
-import { FNUM, FOCUS, FSTOPS, INF, type Key, mT, PARAMS, sig } from './params';
+import { angR, FNUM, FOCUS, FSTOPS, INF, type Key, mT, PARAMS, sig } from './params';
 import { curveSvg, mapDynamic, mapLabel, sectionSvg, spotSvg } from './plot';
 import { type LensU, Renderer, type ViewU } from './render';
 import { basis, EYE, intersect, type V3 } from './scene';
@@ -59,6 +59,12 @@ const zoom$ = new Choice($('#p-zm'), () => later());
 const ch$ = new Choice($('#p-ch'), () => later());
 const df$ = new Choice($('#p-df'), () => later());
 const av$ = new Choice($('#p-av'), () => drawAbr());
+const sw$ = new Choice($('#p-sw'), () => later());
+/** ピント合わせ: AF は向き・焦点距離・レンズが変わるたびに枠の点に合わせ直す。MF は撮影距離のまま */
+const fm$ = new Choice($('#p-fm'), () => {
+  afKey = '';
+  later();
+});
 
 /* ---------- 状態 ---------- */
 let sys: Sys | null = null,
@@ -67,6 +73,8 @@ let st: State | null = null,
   stKey = '';
 let tb: PupilTable | null = null;
 let secKey = '';
+/** AF で最後に合わせたときの条件（変わったら合わせ直す） */
+let afKey = '';
 /** ピントを合わせた点（AF の枠）。センサーの上の表示の向きの位置 [mm]。拡大の中心にもなるので保存する。初めは 50 mm で 2 m のチャートに重なる位置 */
 let afPt: [number, number] = [-2.6, -3.3];
 {
@@ -175,6 +183,13 @@ function update(): void {
     const mf = Math.max(0.2, Math.ceil(minFocus(sys) / 10) / 100);
     G.update('fd', { min: mf, v: Math.max(FOCUS.v, mf) });
   }
+  if (fm$.value === 'af') {
+    const ak = JSON.stringify([k1, v.pan, v.tilt, cmp$.value, afPt]);
+    if (ak !== afKey) {
+      afKey = ak;
+      v.fd = applyFd(afDistance(sys, v.fd, v.N), true);
+    }
+  }
   const fdMin = G.def('fd').min;
   if (v.fd < fdMin * (1 - 1e-9)) {
     G.set('fd', fdMin, { silent: true });
@@ -193,8 +208,9 @@ function update(): void {
   }
   if (optChanged) results(v.coc);
   else coc(v.coc);
+  afState();
   drawMap();
-  const k3 = `${stKey}|${cmp$.value}`;
+  const k3 = `${stKey}|${cmp$.value}|${sw$.value}`;
   if (k3 !== secKey) {
     secKey = k3;
     drawSection();
@@ -298,10 +314,15 @@ function drawSection(): void {
   const v = G.values(),
     id = thinLens(v.f, st.D, v.N);
   const ideal = cmp$.value === 'ideal';
-  const p = sectionSvg({ st, ideal, si: id.si, so: id.so, a: id.a });
+  const spec = sw$.value === 'spec';
+  const p = sectionSvg({ st, ideal, spec, si: id.si, so: id.so, a: id.a });
   html('#sec', p.svg);
   $('#sec').setAttribute('aria-label', p.label);
   txt('#sec-st', ideal ? '収差なし' : `${st.sys.rx.name}`);
+  /* 凡例: 7 波長のときは波長の帯、d 線だけのときは光束の色 */
+  const many = spec && !ideal;
+  for (const e of document.querySelectorAll<HTMLElement>('.sec-d')) e.hidden = many;
+  for (const e of document.querySelectorAll<HTMLElement>('.sec-s')) e.hidden = !many;
 }
 
 function drawAbr(): void {
@@ -320,7 +341,7 @@ function drawAbr(): void {
   }
 }
 
-/** レンズの処方の表（今の焦点距離に拡大した値） */
+/** レンズデータの表（今の焦点距離に拡大した値） */
 function prescription(): void {
   if (!st) return;
   const s = st.sys,
@@ -348,7 +369,7 @@ function status(): void {
   txt('#v-lens', cmp$.value === 'ideal' ? '収差なし' : st.sys.rx.ab);
   txt('#v-f', `${sig(v.f, 4)} mm`);
   txt('#v-N', `F${sig(v.N, 3)}`);
-  txt('#v-fd', mT(v.fd));
+  txt('#v-fd', `${fm$.value === 'af' ? 'AF' : 'MF'} ${mT(v.fd)}`);
   canvas.setAttribute(
     'aria-label',
     `レンズ越しの映像（${cmp$.value === 'ideal' ? '収差なし' : st.sys.rx.name}、焦点距離 ${sig(v.f, 4)} mm、F${sig(v.N, 3)}、ピント ${mT(v.fd)}）`,
@@ -412,27 +433,29 @@ function placeAf(): void {
   afEl.style.top = `${(y * 100).toFixed(3)}%`;
 }
 
-/** 表示の点（センサーの上、mm）に写る物体までの、撮影者の前方向の距離 [mm]（空は Infinity） */
-function depthAt(x: number, y: number): number {
-  if (!st) return Infinity;
+/**
+ * 表示の点（センサーの上、mm）に写る物体までの、撮影者の前方向の距離 [mm]（空は Infinity）。
+ * 光線はピントの状態 s のレンズ（収差なしなら薄いレンズ）を逆にたどる
+ */
+function depthAt(s: State, x: number, y: number): number {
   const v = G.values(),
     b = basis(v.pan, v.tilt);
   let o: V3, d: V3;
-  const r: Ray = { x: -x, y: -y, z: st.zs, dx: 0, dy: 0, dz: 0 };
+  const r: Ray = { x: -x, y: -y, z: s.zs, dx: 0, dy: 0, dz: 0 };
   {
     const dx = x,
       dy = y,
-      dz = st.zxp - st.zs,
+      dz = s.zxp - s.zs,
       L = Math.hypot(dx, dy, dz);
     r.dx = dx / L;
     r.dy = dy / L;
     r.dz = dz / L;
   }
-  if (cmp$.value !== 'ideal' && traceRev(st, r, LD)) {
-    o = [r.x, r.y, st.zs - r.z];
+  if (cmp$.value !== 'ideal' && traceRev(s, r, LD)) {
+    o = [r.x, r.y, s.zs - r.z];
     d = [r.dx, r.dy, -r.dz];
   } else {
-    const id = thinLens(v.f, st.D, v.N);
+    const id = thinLens(s.sys.f, s.D, s.N);
     o = [0, 0, id.si];
     const L = Math.hypot(x / id.si, y / id.si, 1);
     d = [x / id.si / L, y / id.si / L, 1 / L];
@@ -451,18 +474,46 @@ function depthAt(x: number, y: number): number {
   return (p[0] * b.f[0] + p[1] * b.f[1] + p[2] * b.f[2]) * 1000;
 }
 
+/**
+ * AF の枠の点に合わせる撮影距離 [m]（1 km より遠ければ無限遠）。繰り出すと写る向きが少し変わるので、
+ * 今の撮影距離で求めた距離に合わせてから、もう 1 度求める
+ */
+function afDistance(s: Sys, fd: number, N: number): number {
+  let D = fd >= INF * 0.999 ? Infinity : fd * 1000;
+  for (let i = 0; i < 2; i++) {
+    const d = depthAt(solveFocus(s, D, N, 0), afPt[0], afPt[1]);
+    if (!Number.isFinite(d) || d > 1e6) return INF;
+    D = Math.max(d, 1);
+  }
+  return Number((D / 1000).toPrecision(6));
+}
+
+/** 撮影距離を合わせる（最短撮影距離より近ければ最短に）。合わせた値を返す */
+function applyFd(fd: number, silent = false): number {
+  const min = G.def('fd').min,
+    v = Math.max(min, fd);
+  if (v !== G.get('fd')) G.set('fd', v, { silent });
+  if (fd < min) G.note('fd', `${mT(fd)} は最短撮影距離より近いため ${mT(min)} にしました`, 'er');
+  return v;
+}
+
+/** 押した点（または今の枠の点）にピントを合わせる。AF なら次の更新で合わせ直す */
 function autofocus(x: number, y: number): void {
   afPt = [Math.max(-SENSOR.w / 2, Math.min(SENSOR.w / 2, x)), Math.max(-SENSOR.h / 2, Math.min(SENSOR.h / 2, y))];
   store('af', afPt);
-  const D = depthAt(afPt[0], afPt[1]);
-  const min = G.def('fd').min;
-  if (!Number.isFinite(D) || D / 1000 > 1000) G.set('fd', INF);
-  else {
-    const m = Number((D / 1000).toPrecision(3));
-    G.set('fd', Math.max(min, m));
-    if (m < min) G.note('fd', `${mT(m)} は最短撮影距離より近いため ${mT(min)} にしました`, 'er');
-  }
+  afKey = '';
+  if (fm$.value === 'mf' && sys) applyFd(afDistance(sys, G.get('fd'), G.get('N')));
   later();
+}
+
+/** 枠の点に写る物体が被写界深度に入っていれば、枠を緑にする */
+function afState(): void {
+  if (!st) return;
+  const d = depthAt(st, afPt[0], afPt[1]);
+  const ok = Number.isFinite(d)
+    ? d >= lastDof.near * (1 - 1e-6) && d <= lastDof.far * (1 + 1e-6)
+    : !Number.isFinite(lastDof.far);
+  afEl.classList.toggle('ok', ok);
 }
 
 {
@@ -488,7 +539,7 @@ function autofocus(x: number, y: number): void {
       dy = e.clientY - down.ly;
     down.lx = e.clientX;
     down.ly = e.clientY;
-    const cl = (v: number, m: number) => Math.round(Math.max(-m, Math.min(m, v)) * 10) / 10;
+    const cl = (v: number, m: number) => angR(Math.max(-m, Math.min(m, v)));
     G.set('pan', cl(G.get('pan') - dx * k, 60));
     G.set('tilt', cl(G.get('tilt') + dy * k, 30));
   });
@@ -501,7 +552,9 @@ function autofocus(x: number, y: number): void {
   canvas.addEventListener('pointerup', end);
   canvas.addEventListener('pointercancel', end);
   canvas.addEventListener('keydown', (e) => {
-    const step = e.shiftKey ? 5 : 1;
+    /* 1 回の向きの変化は画面の幅の 1/40（Shift は 1/8）。長い焦点距離や拡大でも同じ見え方で動く */
+    const fov = st ? ((view().w / (st.zs - st.card.zH1)) * 180) / Math.PI : 40,
+      step = Math.max(0.001, angR((fov / 40) * (e.shiftKey ? 5 : 1)));
     const mv: Record<string, [number, number]> = {
       ArrowLeft: [-step, 0],
       ArrowRight: [step, 0],
@@ -511,8 +564,8 @@ function autofocus(x: number, y: number): void {
     if (e.key in mv) {
       e.preventDefault();
       const [a, b] = mv[e.key];
-      G.set('pan', Math.max(-60, Math.min(60, G.get('pan') + a)));
-      G.set('tilt', Math.max(-30, Math.min(30, G.get('tilt') + b)));
+      G.set('pan', angR(Math.max(-60, Math.min(60, G.get('pan') + a))));
+      G.set('tilt', angR(Math.max(-30, Math.min(30, G.get('tilt') + b))));
     } else if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       autofocus(afPt[0], afPt[1]);

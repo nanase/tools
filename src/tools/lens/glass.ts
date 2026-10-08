@@ -9,6 +9,17 @@ export const LD = 0.5875618,
   LF = 0.4861327,
   LC = 0.6562725;
 
+/** 断面図で描く可視光の 7 本の輝線（記号・波長 [µm]）。短い順 */
+export const SPECTRAL = [
+  ['h', 0.4046561],
+  ['g', 0.4358343],
+  ['F', LF],
+  ['e', 0.546074],
+  ['d', LD],
+  ['C', LC],
+  ['r', 0.7065188],
+] as const;
+
 export interface Sellmeier {
   name: string;
   nd: number;

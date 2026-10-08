@@ -2,9 +2,9 @@
  * 図の SVG（DOM に依存しない文字列）: 上から見た見取り図、レンズの断面と光線、スポットダイアグラムと収差の曲線
  */
 import { distCurve, fieldCurve, type Spot, sphCurve } from './analysis';
-import { LD } from './glass';
+import { LD, SPECTRAL } from './glass';
 import { aimChief, fieldU, HALF_DIAG, objRay, type State, traceFwd } from './optics';
-import { BOARDS, CYLS, STRINGS, WALL } from './scene';
+import { BOARDS, CYLS, SKY, STRINGS, WALL } from './scene';
 
 const n1 = (x: number) => x.toFixed(1);
 /** 1・2・5 の切りのよい値に切り上げる */
@@ -83,6 +83,14 @@ export function mapStatic(): string {
       s += `<circle class="mp-bulb" cx="${n1(x)}" cy="${n1(y)}" r="1.3"/>`;
     }
   s += `<text class="mp-t" x="${MAP.cx}" y="10" text-anchor="middle">遠景（山並み・∞）</text>`;
+  /* 空の天体（無限遠）: 遠景の環の上に方位と名前 */
+  for (const b of SKY) {
+    const a = (b.az * Math.PI) / 180,
+      [x, y] = mp(a, MAP.rmax),
+      l = b.az < 0;
+    s += `<circle class="mp-sky" cx="${n1(x)}" cy="${n1(y)}" r="2.6"/>`;
+    s += `<text class="mp-t" x="${n1(x + (l ? -6 : 6))}" y="${n1(y + 4)}"${l ? ' text-anchor="end"' : ''}>${b.name}</text>`;
+  }
   return s;
 }
 
@@ -107,10 +115,14 @@ export function mapDynamic(m: MapIn): string {
 /** 見取り図の読み上げ */
 export const mapLabel = (m: MapIn): string =>
   `上から見た見取り図。撮影者は手前の中央で、方位 ${num(m.pan)}°、水平の画角 ${num(2 * m.hfov)}°。` +
-  `ピントは ${Number.isFinite(m.fd) ? `${num(m.fd)} m` : '無限遠'}、被写界深度は ${num(m.near)} m から ${Number.isFinite(m.far) ? `${num(m.far)} m` : '無限遠'} まで`;
+  `ピントは ${Number.isFinite(m.fd) ? `${num(m.fd)} m` : '無限遠'}、被写界深度は ${num(m.near)} m から ${Number.isFinite(m.far) ? `${num(m.far)} m` : '無限遠'} まで。` +
+  `空に ${SKY.map((b) => `${b.name}（方位 ${num(b.az)}°・仰角 ${b.el}°）`).join('、')}`;
 
 /* ---------- レンズの断面と光線 ---------- */
-export const SEC = { w: 400, h: 200 } as const;
+/** 断面図の全体（上の top までがレンズ、その下にセンサーの付近の拡大図を 2 つ） */
+export const SEC = { w: 400, h: 296, top: 200 } as const;
+/** 拡大図の位置と大きさ */
+const INS = { y: 212, w: 192, h: 64, gap: 8 } as const;
 
 const sag = (c: number, y: number) => {
   const cy = Math.min(Math.abs(c * y), 0.999);
@@ -120,11 +132,37 @@ const sag = (c: number, y: number) => {
 export interface SecIn {
   st: State;
   ideal: boolean;
+  /** 可視光の 7 波長で描く（false は d 線だけ） */
+  spec: boolean;
   /** 収差なしの薄いレンズの像距離・物体距離（0 は無限遠）・半径 */
   si: number;
   so: number;
   a: number;
 }
+
+/**
+ * センサーの付近の光線（子午面の直線）: センサーの面での高さ y と傾き dy/dz、波長の番号（SPECTRAL の順、
+ * d 線だけなら -1）、瞳の中心を通る光線か
+ */
+interface Line {
+  y: number;
+  s: number;
+  w: number;
+  c: boolean;
+}
+/** 拡大図の 1 つ: 光線、波長ごとの印（中心はピントの位置 z、隅はセンサーの上の高さ y）、縦の中心 */
+interface Inset {
+  lines: Line[];
+  marks: { w: number; v: number }[];
+  yc: number;
+}
+
+/** 描く波長: [記号, 波長, 番号] */
+const waves = (spec: boolean): [string, number, number][] =>
+  spec ? SPECTRAL.map(([n, l], i) => [n, l, i]) : [['d', LD, -1]];
+const wcls = (w: number) => (w < 0 ? '' : ` s-${SPECTRAL[w][0]}`);
+/** 拡大図の光線の、入射瞳の高さの割合（中心・隅） */
+const FAN = { ax: [-1, -0.7, -0.4, 0.4, 0.7, 1], cn: [-1, -0.5, 0, 0.5, 1] } as const;
 
 export function sectionSvg(p: SecIn): { svg: string; label: string } {
   const { st } = p,
@@ -134,9 +172,9 @@ export function sectionSvg(p: SecIn): { svg: string; label: string } {
   const ymax = Math.max(...s.map((x) => x.sd), HALF_DIAG) * 1.08;
   const z0 = -0.28 * zLen,
     z1 = zEnd + 0.03 * zLen;
-  const k = Math.min((SEC.w - 16) / (z1 - z0), (SEC.h - 16) / (2 * ymax));
+  const k = Math.min((SEC.w - 16) / (z1 - z0), (SEC.top - 16) / (2 * ymax));
   const ox = (SEC.w - (z1 - z0) * k) / 2 - z0 * k,
-    oy = SEC.h / 2;
+    oy = SEC.top / 2;
   const X = (z: number) => n1(ox + z * k),
     Y = (y: number) => n1(oy - y * k);
   let g = `<path class="ls-ax" d="M4 ${oy}H${SEC.w - 4}"/>`;
@@ -170,17 +208,22 @@ export function sectionSvg(p: SecIn): { svg: string; label: string } {
   }
   /* センサー（対角の長さ） */
   g += `<path class="ls-sen" d="M${X(st.zs)} ${Y(HALF_DIAG)}V${Y(-HALF_DIAG)}"/>`;
-  /* 光線: 軸上の光束（ピントの面の中心から）と、隅（対角の端）へ向かう光束。d 線 */
+  /* 光線: 軸上の光束（ピントの面の中心から）と、隅（対角の端）へ向かう光束。物体側の光線はどの波長も
+     同じ（d 線の主光線に合わせる）で、レンズの中で波長ごとに分かれる */
   const bundles: [string, number][] = [
     ['ls-r1', 0],
     ['ls-r2', HALF_DIAG],
   ];
+  const ws = waves(p.spec && !p.ideal);
   for (const [cls, h] of bundles) {
-    let d = '';
-    if (p.ideal) d = idealRays(p, h, X, Y, z0);
-    else {
-      const u = fieldU(st, h),
-        yc = h ? aimChief(st, u, LD) : 0;
+    if (p.ideal) {
+      g += `<path class="${cls}" d="${idealRays(p, h, X, Y, z0)}"/>`;
+      continue;
+    }
+    const u = fieldU(st, h),
+      yc = h ? aimChief(st, u, LD) : 0;
+    for (const [, l, w] of ws) {
+      let d = '';
       for (let j = 0; j < 7; j++) {
         const py = ((2 * j) / 6 - 1) * st.rep;
         const r = objRay(st, u, 0, py, yc);
@@ -192,16 +235,123 @@ export function sectionSvg(p: SecIn): { svg: string; label: string } {
           r.z = z0;
         }
         const pts: string[] = [`${X(r.z)} ${Y(r.y)}`];
-        const at = traceFwd(st, r, LD, (_i, _x, y, z) => pts.push(`${X(z)} ${Y(y)}`));
+        const at = traceFwd(st, r, l, (_i, _x, y, z) => pts.push(`${X(z)} ${Y(y)}`));
         if (at < 0) pts.push(`${X(r.z)} ${Y(r.y)}`);
         d += `M${pts.join('L')}`;
       }
+      g += `<path class="${w < 0 ? cls : `ls-w${wcls(w)}`}" d="${d}"/>`;
     }
-    g += `<path class="${cls}" d="${d}"/>`;
   }
-  const label = p.ideal
-    ? '収差なしの薄いレンズと光線の断面図'
-    : `${st.sys.rx.name}の断面図。軸上の光束と、像の隅へ向かう光束を描く。レンズは ${s.filter((x, i) => !x.stop && x.m.nd !== 1 && i < s.length - 1).length} 枚`;
+  /* センサーの付近の拡大図（中心・隅） */
+  const cap: string[] = [];
+  [0, HALF_DIAG].forEach((h, i) => {
+    const r = insetSvg(p, insetOf(p, h, ws), i, i ? '隅の像の付近' : '中心の像の付近');
+    g += r.svg;
+    cap.push(r.label);
+  });
+  const nl = s.filter((x, i) => !x.stop && x.m.nd !== 1 && i < s.length - 1).length;
+  const how = p.ideal ? '' : p.spec ? '可視光の 7 波長（405〜707 nm）で' : 'd 線で';
+  const label = `${p.ideal ? '収差なしの薄いレンズ' : `${st.sys.rx.name}（レンズは ${nl} 枚）`}と光線の断面図。軸上の光束と、像の隅へ向かう光束を${how}描く。下はセンサーの付近の拡大図: ${cap.join('。')}`;
+  return { svg: g, label };
+}
+
+/** 拡大図の光線（センサーの面での直線）と、波長ごとの印 */
+function insetOf(p: SecIn, h: number, ws: [string, number, number][]): Inset {
+  const { st } = p;
+  const lines: Line[] = [],
+    marks: Inset['marks'] = [];
+  const fan = h ? FAN.cn : FAN.ax;
+  if (p.ideal) {
+    for (const f of fan) lines.push({ y: h, s: (h - f * p.a) / p.si, w: -1, c: f === 0 });
+    return { lines, marks, yc: h };
+  }
+  const u = fieldU(st, h),
+    yc0 = h ? aimChief(st, u, LD) : 0;
+  const ray = (py: number, l: number): Omit<Line, 'w' | 'c'> | null => {
+    const r = objRay(st, u, 0, py * st.rep, yc0);
+    return traceFwd(st, r, l) < 0 && r.dz > 0 ? { y: r.y, s: r.dy / r.dz } : null;
+  };
+  let yc = h;
+  for (const [, l, w] of ws) {
+    for (const f of fan) {
+      const ln = ray(f, l);
+      if (ln) lines.push({ ...ln, w, c: f === 0 });
+    }
+    if (h) {
+      /* 隅: 波長ごとの主光線がセンサーに当たる高さ（倍率色収差） */
+      const c = ray(0, l);
+      if (c) {
+        marks.push({ w, v: c.y });
+        if (l === LD) yc = c.y;
+      }
+    } else {
+      /* 中心: 瞳の中心の近くの光線が光軸を横切る位置（波長ごとの近軸のピント） */
+      const c = ray(0.05, l);
+      if (c && c.s !== 0) marks.push({ w, v: st.zs - c.y / c.s });
+    }
+  }
+  return { lines, marks, yc };
+}
+
+function insetSvg(p: SecIn, t: Inset, i: number, title: string): { svg: string; label: string } {
+  const { st } = p;
+  const x0 = 4 + i * (INS.w + INS.gap),
+    y0 = INS.y,
+    f = st.sys.f;
+  /* 横（z）の範囲: 光線が光軸（隅は同じ波長の主光線）と交わる位置と、波長ごとのピントが収まる幅 */
+  let mz = 0;
+  for (const l of t.lines) {
+    const ref = i ? t.lines.find((m) => m.c && m.w === l.w) : { y: 0, s: 0 };
+    if (ref && l.s !== ref.s) mz = Math.max(mz, Math.min(Math.abs((l.y - ref.y) / (l.s - ref.s)), 0.2 * f));
+  }
+  if (!i) for (const m of t.marks) mz = Math.max(mz, Math.abs(m.v - st.zs));
+  const Lz = nice(Math.max(mz * 1.25, 4e-4 * f, 1e-3));
+  /* 縦（y）の範囲: 窓の両端での光線の広がり */
+  let my = 0;
+  for (const l of t.lines) for (const dz of [-Lz, Lz]) my = Math.max(my, Math.abs(l.y + l.s * dz - t.yc));
+  if (i) for (const m of t.marks) my = Math.max(my, Math.abs(m.v - t.yc) * 1.3);
+  const Ly = nice(Math.max(my * 1.05, 1e-4));
+  const X = (z: number) => x0 + ((z - st.zs + Lz) / (2 * Lz)) * INS.w,
+    Y = (y: number) => y0 + INS.h / 2 - ((y - t.yc) / Ly) * (INS.h / 2);
+  const cx = x0 + INS.w / 2;
+  let g = `<text class="ab-t" x="${x0}" y="${y0 - 4}">${title}</text>`;
+  g += `<rect class="gb" x="${x0}" y="${y0}" width="${INS.w}" height="${INS.h}"/>`;
+  g += `<clipPath id="ls-clip${i}"><rect x="${x0}" y="${y0}" width="${INS.w}" height="${INS.h}"/></clipPath><g clip-path="url(#ls-clip${i})">`;
+  if (!i) g += `<path class="ls-ax" d="M${x0} ${n1(Y(0))}H${x0 + INS.w}"/>`;
+  g += `<path class="ls-sen-i" d="M${n1(cx)} ${y0}V${y0 + INS.h}"/>`;
+  /* 光線は波長ごとに 1 本の path */
+  const by = new Map<number, string>();
+  for (const l of t.lines)
+    by.set(l.w, `${by.get(l.w) ?? ''}M${x0} ${n1(Y(l.y - l.s * Lz))}L${x0 + INS.w} ${n1(Y(l.y + l.s * Lz))}`);
+  for (const [w, d] of by) g += `<path class="${w < 0 ? (i ? 'ls-r2' : 'ls-r1') : `ls-w${wcls(w)}`}" d="${d}"/>`;
+  /* 波長ごとの印（中心は光軸の上のピントの位置、隅はセンサーの上の高さ）と、重ならない所に波長 [nm]（間隔はスマホの大きい字で決める） */
+  const at = (v: number) => (i ? Y(v) : X(v));
+  const ms = [...t.marks].sort((a, b) => at(a.v) - at(b.v));
+  let lab = '',
+    last = -1e9;
+  for (const m of ms) {
+    const q = at(m.v);
+    g += i
+      ? `<path class="ls-tk${wcls(m.w)}" d="M${n1(cx - 5)} ${n1(q)}H${n1(cx + 5)}"/>`
+      : `<path class="ls-tk${wcls(m.w)}" d="M${n1(q)} ${n1(Y(0) - 5)}V${n1(Y(0) + 5)}"/>`;
+    const lo = i ? y0 + 6 : x0 + 8,
+      hi = i ? y0 + INS.h - 1 : x0 + INS.w - 8;
+    if (m.w >= 0 && q - last >= (i ? 13 : 26) && q > lo && q < hi) {
+      const nm = Math.round(SPECTRAL[m.w][1] * 1000);
+      lab += i
+        ? `<text class="ab-t2 ls-lab" x="${n1(cx + 8)}" y="${n1(q + 3)}">${nm}</text>`
+        : `<text class="ab-t2 ls-lab" x="${n1(q)}" y="${n1(Y(0) + 14)}" text-anchor="middle">${nm}</text>`;
+      last = q;
+    }
+  }
+  g += `${lab}</g>`;
+  g += `<text class="ab-t2" x="${x0 + INS.w}" y="${y0 + INS.h + 12}" text-anchor="end">横 ±${num(Lz)} mm・縦 ±${num(Ly * 1000)} µm</text>`;
+  let label = `${title}（横 ±${num(Lz)} mm、縦 ±${num(Ly * 1000)} µm）`;
+  const mv = t.marks.filter((m) => m.w >= 0).map((m) => m.v);
+  if (mv.length > 1) {
+    const d = Math.max(...mv) - Math.min(...mv);
+    label += i ? `、波長による高さの差 ${num(d * 1000)} µm` : `、波長によるピントの差 ${num(d)} mm`;
+  }
   return { svg: g, label };
 }
 
