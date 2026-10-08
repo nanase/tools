@@ -9,6 +9,7 @@ import RelatedTools from '../components/RelatedTools.astro';
 import { order, TOOLS } from '../data/tools';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import { outVol, TEMPO } from '../lib/play';
+import { ROOMS } from '../lib/reverb';
 import { gridSvg } from '../lib/scope';
 import '../tools/guitar/style.css';
 import { BODY_TYPES, WOODS } from '../tools/guitar/body';
@@ -18,6 +19,7 @@ import {
   AMP,
   ANGLE,
   DIA,
+  DIST,
   EXAG,
   FMAX,
   HOLE,
@@ -52,8 +54,8 @@ const tunName = (n: readonly number[]) => {
     .join(' ');
 };
 ---
-<SiteLayout title={name} tool={{ id: 'guitar', name }} description="アコースティックギターを物理モデルで鳴らします。弦の材質・太さ・張力、押さえるフレット、弾く位置、表板と胴から、弦の振動と音を計算します。" note="音と計算結果は、論文の模型を簡略化した物理モデルによるものです。">
-  <PageTitle title={name}>弦の振動（曲げ剛性と周波数で変わる損失を含む硬い弦）と、駒でつながった胴（表板とサウンドホールの空気の共振、高い周波数の多数のモード）を計算して、ギターの音を作ります。弦を押すと、そのフレットを押さえて弾きます。弦の材質・太さ・張力、弾く位置や向き、表板の厚さや胴の容積を変えると、音と振動がすぐに変わります。曲の演奏もできます。</PageTitle>
+<SiteLayout title={name} tool={{ id: 'guitar', name }} description="アコースティックギターを物理モデルで鳴らします。弦の材質・太さ・張力、押さえるフレット、弾く位置、表板と胴、部屋の残響から、弦の振動と音を計算します。" note="音と計算結果は、論文の模型を簡略化した物理モデルによるものです。">
+  <PageTitle title={name}>弦の振動（曲げ剛性と周波数で変わる損失を含む硬い弦）と、駒でつながった胴（表板とサウンドホールの空気の共振、高い周波数の多数のモード）を計算して、ギターの音を作ります。弦を押すと、そのフレットを押さえて弾きます。弦の材質・太さ・張力、弾く位置や向き、表板の厚さや胴の容積を変えると、音と振動がすぐに変わります。部屋の残響を付けて、曲の演奏もできます。</PageTitle>
   <div class="mini" aria-hidden="true"><span><i>f</i><sub>1</sub><b id="mF"></b></span><span><i>T</i><sub>60</sub><b id="mT"></b></span><span><i>β</i><b id="mB"></b></span></div>
 
   <div class="tgrid">
@@ -167,6 +169,19 @@ const tunName = (n: readonly number[]) => {
           </svg>
         </div>
         <div class="sbar rdbar"><span class="stag rd" id="b-rd"></span></div>
+      </Panel>
+
+      <Panel hid="hd-room" title="残響" class="a-room">
+        <div class="ptab">
+          <ChoiceRow k="room" name="部屋" sub="響きを付ける部屋。寸法と吸音率から残響時間を求める（再生の音だけに付け、音の波形と計算結果には含めない）" choices={ROOMS.map((r) => [r.v, r.name, r.v === 'off' ? '残響なし' : `${r.dim.join(' × ')} m、平均吸音率 ${r.a}`] as const)} value="small" layout="chips" wide />
+          <ParamRow d={DIST} />
+        </div>
+        <dl class="metrics rmet">
+          <div class="m"><dt>残響時間 <i>T</i><sub>60</sub>（500 Hz）</dt><dd id="r-t"></dd></div>
+          <div class="m"><dt>残響時間 <i>T</i><sub>60</sub>（4 kHz）</dt><dd id="r-th"></dd></div>
+          <div class="m"><dt>臨界距離 <i>r</i><sub>c</sub></dt><dd id="r-rc"></dd></div>
+          <div class="m"><dt>残響音 ÷ 直接音</dt><dd id="r-dr"></dd></div>
+        </dl>
       </Panel>
 
       <Collapsible hid="hd-wave" title="音の波形" class="a-wave">

@@ -18,10 +18,10 @@ export const TOOLS: Tool[] = [
   {
     id: 'timer555',
     c: '電子回路',
-    t: 'タイマIC 555 シミュレータ',
+    t: 'タイマIC 555',
     d: '抵抗器とコンデンサによってタイマICの出力の変化をシミュレートします。',
     ic: 'sq',
-    k: 'ne555 発振 非安定 マルチバイブレータ timer',
+    k: 'ne555 発振 非安定 マルチバイブレータ timer シミュレータ simulator',
   },
   {
     id: 'passive-combination',
@@ -91,9 +91,9 @@ export const TOOLS: Tool[] = [
     id: 'guitar',
     c: '音響',
     t: 'ギター音響モデル',
-    d: '弦の材質・太さ・張力、押さえるフレット、弾き方、表板と胴から、アコースティックギターの振動と音を物理モデルで計算して鳴らします。',
+    d: '弦の材質・太さ・張力、押さえるフレット、弾き方、表板と胴、部屋の残響から、アコースティックギターの振動と音を物理モデルで計算して鳴らします。',
     ic: 'gt',
-    k: 'guitar acoustic physical model 物理モデル 弦 string 張力 tension フレット fret 響板 表板 soundboard ヘルムホルツ helmholtz 撥弦 pluck 非調和性 inharmonicity モード合成 modal synthesis 演奏 バッハ bach クラシック ナイロン スチール オーディオ audio',
+    k: 'guitar acoustic physical model 物理モデル 弦 string 張力 tension フレット fret 響板 表板 soundboard ヘルムホルツ helmholtz 撥弦 pluck 非調和性 inharmonicity 残響 reverb モード合成 modal synthesis 演奏 バッハ bach クラシック ナイロン スチール オーディオ audio',
   },
   {
     id: 'piano',
