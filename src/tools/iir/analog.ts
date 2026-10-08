@@ -75,7 +75,7 @@ export const cheby2Pass = (N: number, Ap: number, As: number): number =>
   1 / Math.cosh(Math.acosh(epsOf(As) / epsOf(Ap)) / N);
 
 /**
- * 楕円（Orfanidis の ellipap）: 通過域 0 ≤ Ω ≤ 1 にリップル Ap、阻止域 Ω ≥ 1/k に減衰 As。
+ * 楕円（Orfanidis の ellipap2）:通過域 0 ≤ Ω ≤ 1 にリップル Ap、阻止域 Ω ≥ 1/k に減衰 As。
  * k（選択度）は次数の式から決まる。戻り値の ks は k
  */
 export function ellip(N: number, Ap: number, As: number): ZPK & { ks: number } {

@@ -162,7 +162,7 @@ const pzSvg = (id: string, label: string) =>
           <tbody id="sos-b"></tbody>
         </table></div>
         <div class="ptab ana">
-          <ChoiceRow k="sord" name="並べ方" sub="段の順。単位円に近い極（鋭い山）の段を後ろに置くと、前の段で雑音が強められにくい" choices={[['up', '単位円に近い極を後ろに'], ['down', '単位円に近い極を前に']]} value="up" layout="chips" wide />
+          <ChoiceRow k="sord" name="並べ方" sub="段の順。単位円に近い極（鋭い山）の段を後ろに置くと、前の段で信号が小さくなりすぎない" choices={[['up', '単位円に近い極を後ろに'], ['down', '単位円に近い極を前に']]} value="up" layout="chips" wide />
           <ChoiceRow k="sgain" name="段のゲイン" sub="全体のゲインを段に配る方法。各段の出力の最大を 0 dB にそろえると、固定小数点でも途中であふれにくい" choices={[['linf', '各段の出力の最大を 0 dB に'], ['first', '先頭の段にまとめる']]} value="linf" layout="chips" wide />
         </div>
       </div>

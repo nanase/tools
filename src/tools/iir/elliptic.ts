@@ -11,7 +11,7 @@ export const comp = (k: number): number => Math.sqrt((1 - k) * (1 + k));
 
 /**
  * 降下 Landen 変換の母数の列 k₁, k₂, …（kₙ = (kₙ₋₁ / (1 + k′ₙ₋₁))²）。
- * kₙ が 1e-17 を下回るか 12 項で止める（Orfanidis は 7 項）
+ * kₙ が 1e-17 を下回るか 12 項で止める（Orfanidis は機械イプシロンを下回るまで。0 ≤ k ≤ 0.999 なら 5 項で足りるとする）
  */
 export function landen(k: number, kp = comp(k)): number[] {
   const v: number[] = [];
@@ -38,7 +38,7 @@ export function ellipK(k: number, kp = comp(k)): number {
 /** K′(k) = K(k′) */
 export const ellipKp = (k: number, kp = comp(k)): number => ellipK(kp, k);
 
-/** 昇り Landen 変換で w を戻す */
+/** 降下 Landen 変換の式（Gauss 変換）を、小さい母数の側から逆にたどって w を戻す */
 function ascend(w: C, v: readonly number[]): C {
   let x = w;
   for (let n = v.length - 1; n >= 0; n--) {
