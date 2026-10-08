@@ -58,6 +58,7 @@ const cmp$ = new Choice($('#p-cmp'), () => later());
 const zoom$ = new Choice($('#p-zm'), () => later());
 const ch$ = new Choice($('#p-ch'), () => later());
 const df$ = new Choice($('#p-df'), () => later());
+const tod$ = new Choice<'day' | 'dusk' | 'night'>($('#p-tod'), () => later());
 const av$ = new Choice($('#p-av'), () => drawAbr());
 const sw$ = new Choice($('#p-sw'), () => later());
 /** ピント合わせ: AF は向き・焦点距離・レンズが変わるたびに枠の点に合わせ直す。MF は撮影距離のまま */
@@ -414,9 +415,16 @@ function render(): void {
   };
   const vw = view(),
     b = basis(v.pan, v.tilt);
-  const V: ViewU = { view: [vw.x0, vw.y0, vw.w, vw.h], right: b.r, up: b.u, fwd: b.f, eye: [0, EYE, 0] };
+  const V: ViewU = {
+    view: [vw.x0, vw.y0, vw.w, vw.h],
+    right: b.r,
+    up: b.u,
+    fwd: b.f,
+    eye: [0, EYE, 0],
+    tod: ['day', 'dusk', 'night'].indexOf(tod$.value),
+  };
   /* 映像に関わる値が同じなら、ためた分を捨てない（許容錯乱円だけを変えたときなど） */
-  const key = JSON.stringify([stKey, L.mode, L.chrom, L.opt[3], V.view, v.pan, v.tilt]);
+  const key = JSON.stringify([stKey, L.mode, L.chrom, L.opt[3], V.view, v.pan, v.tilt, V.tod]);
   if (key === lastKey) return;
   lastKey = key;
   R.set(L, V);

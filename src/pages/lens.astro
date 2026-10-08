@@ -47,6 +47,7 @@ const related = [
         <More id="g-view" title="表示の設定"><div class="ana2">
           <div class="ptab">
             <ChoiceRow k="zm" name="拡大" sub="ピントを合わせた点（枠）を中心に、センサーの一部を拡大して描く" choices={ZOOMS.map((z) => [z, `×${z}`] as const)} value={1} />
+            <ChoiceRow k="tod" name="時間帯" sub="空と地上の明るさを変え、露出も景色に合わせる。天体そのものの明るさは変わらないので、暗いほど空の天体が目立つ。太陽と影は描かない" choices={[['day', '昼'], ['dusk', '夕暮れ'], ['night', '夜']]} value="dusk" />
           </div>
           <div class="ptab">
             <ChoiceRow k="ch" name="色収差" sub="含めないと、すべての波長に d 線（587.6 nm）の屈折率を使う" choices={[['on', '含める'], ['off', '含めない']]} value="on" />

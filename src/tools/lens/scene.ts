@@ -167,6 +167,54 @@ const SAT_RINGS = [
   [117507, 122340, 0.08, 0.14],
   [122340, 136780, 0.83, 0.83],
 ] as const;
+/**
+ * 天体の円盤の平均の明るさ: 幾何アルベド p を太陽からの距離 r [AU]（軌道長半径）の 2 乗で割った値。
+ * 昼の、日光に正面から照らされた反射率 1 の面を 1 とする。模様と周縁減光の平均（およそ）で割って、面の明るさの倍率にする
+ */
+const DISK = {
+  moon: 0.12 / 0.83,
+  jupiter: 0.538 / 5.2034 ** 2 / 0.74,
+  saturn: 0.499 / 9.5726 ** 2 / 0.7,
+  uranus: 0.488 / 19.165 ** 2 / 0.66,
+} as const;
+
+/**
+ * 時間帯（昼・夕暮れ・夜）: 地上の物体の明るさ、天体の倍率（景色に合わせて上げた露出）、電飾、町の灯。
+ * 空は地平・中ほど・天頂の色、山並みの色
+ */
+export const TOD = [
+  {
+    obj: 1.5,
+    sky: 1.5,
+    lamp: 0.15,
+    town: 0,
+    hor: [0.62, 0.68, 0.78],
+    mid: [0.36, 0.5, 0.78],
+    top: [0.2, 0.34, 0.7],
+    mnt: [0.3, 0.35, 0.45],
+  },
+  {
+    obj: 1,
+    sky: 5,
+    lamp: 1,
+    town: 1,
+    hor: [0.26, 0.17, 0.2],
+    mid: [0.07, 0.08, 0.17],
+    top: [0.012, 0.022, 0.06],
+    mnt: [0.022, 0.026, 0.04],
+  },
+  {
+    obj: 0.06,
+    sky: 20,
+    lamp: 1,
+    town: 1,
+    hor: [0.012, 0.011, 0.016],
+    mid: [0.004, 0.005, 0.01],
+    top: [0.0015, 0.002, 0.0045],
+    mnt: [0.002, 0.002, 0.003],
+  },
+] as const;
+
 /** 天王星の扁平率と ε 環（半径 51,149 km、幅 20〜96 km の平均、アルベド 0.018 を本体の 0.488 と比べる） */
 const URA = { flat: 0.02293, ring: 51149, width: 58, albedo: 0.018 / 0.488, op: 0.9 } as const;
 
@@ -273,7 +321,16 @@ export function sceneGlsl(): string {
     Math.sqrt(Math.sin(tilt * deg) ** 2 + ((1 - flat) * Math.cos(tilt * deg)) ** 2);
   const sat = SKY[byId('saturn')],
     ura = SKY[byId('uranus')];
+  const arr = (k: 'hor' | 'mid' | 'top' | 'mnt') => `vec3[3](${TOD.map((t) => v3([...t[k]] as V3)).join(',')})`;
   return `
+/* 時間帯（0 昼・1 夕暮れ・2 夜）: 地上の物体・天体・電飾・町の灯の倍率と、空・山並みの色 */
+uniform int uTod;
+const vec4 TODK[3] = vec4[3](${TOD.map((t) => v4([t.obj, t.sky, t.lamp, t.town])).join(',')});
+const vec3 SKH[3] = ${arr('hor')};
+const vec3 SKM[3] = ${arr('mid')};
+const vec3 SKT[3] = ${arr('top')};
+const vec3 MNT[3] = ${arr('mnt')};
+
 float hash12(vec2 p) {
   vec3 p3 = fract(vec3(p.xyx) * 0.1031);
   p3 += dot(p3, p3.yzx + 33.33);
@@ -314,7 +371,7 @@ vec3 moonAt(vec2 p) {
   a *= 0.93 + 0.07 * hash12(floor(p * 90.0));
   a += 0.5 * (1.0 - smoothstep(0.02, 0.035, length(p - vec2(-0.13, -0.72))));
   a += 0.3 * (1.0 - smoothstep(0.015, 0.028, length(p - vec2(-0.3, 0.16))));
-  return vec3(0.62, 0.6, 0.56) * a * (0.88 + 0.12 * mu);
+  return vec3(1.03, 1.0, 0.93) * ${f(DISK.moon)} * a * (0.88 + 0.12 * mu);
 }
 
 /* 木星: 帯と縞（緯度で決める）、大赤斑、周縁減光。周りにガリレオ衛星 */
@@ -323,7 +380,7 @@ vec3 jupiterAt(vec2 p, vec3 bg) {
     vec4 g = GAL[i];
     vec2 q = (p - g.xy) / g.z;
     float r2 = dot(q, q);
-    if (r2 < 1.0) return GALC[i] * g.w * 0.5 * (0.6 + 0.4 * sqrt(1.0 - r2));
+    if (r2 < 1.0) return GALC[i] * g.w * ${f(DISK.jupiter)} * (0.6 + 0.4 * sqrt(1.0 - r2));
   }
   vec2 q = vec2(p.x, p.y / ${f(1 - JUP.flat)});
   float r2 = dot(q, q);
@@ -336,7 +393,7 @@ vec3 jupiterAt(vec2 p, vec3 bg) {
   c = mix(c, vec3(0.62, 0.6, 0.58), smoothstep(45.0, 62.0, al));
   vec2 gr = (q - vec2(0.35, -0.375)) / vec2(0.11, 0.075);
   if (dot(gr, gr) < 1.0) c = vec3(0.86, 0.5, 0.36);
-  return c * 0.5 * (0.35 + 0.65 * pow(mu, 0.5));
+  return c * ${f(DISK.jupiter)} * (0.35 + 0.65 * pow(mu, 0.5));
 }
 
 /* 土星: 本体（扁平）と環（C・B・カッシーニの間隙・A）。手前の環は本体の前、奥の環は本体の後ろ */
@@ -351,14 +408,14 @@ vec3 saturnAt(vec2 p, vec3 bg) {
     if (abs(y + 0.05) < 0.12) c *= 1.05;
     else if (abs(y - 0.22) < 0.08 || abs(y + 0.3) < 0.07) c *= 0.88;
     c = mix(c, vec3(0.72, 0.7, 0.62), smoothstep(0.7, 0.9, y));
-    behind = c * 0.42 * (0.4 + 0.6 * pow(mu, 0.6));
+    behind = c * ${f(DISK.saturn)} * (0.4 + 0.6 * pow(mu, 0.6));
   }
   float rr = length(vec2(p.x, p.y / sb));
   for (int i = 0; i < 4; i++) {
     vec4 s = SRING[i];
     if (rr >= s.x && rr < s.y) {
       if (inG && p.y > 0.0) return behind;
-      return vec3(0.93, 0.87, 0.75) * 0.42 * s.z + (1.0 - s.w) * behind;
+      return vec3(0.93, 0.87, 0.75) * ${f(DISK.saturn)} * s.z + (1.0 - s.w) * behind;
     }
   }
   return behind;
@@ -370,16 +427,18 @@ vec3 uranusAt(vec2 p, vec3 bg) {
   float r2 = p.x * p.x + (p.y / b) * (p.y / b);
   vec3 behind = bg;
   bool inG = r2 < 1.0;
-  if (inG) behind = vec3(0.63, 0.86, 0.9) * 0.36 * (0.5 + 0.5 * sqrt(1.0 - r2));
+  if (inG) behind = vec3(0.63, 0.86, 0.9) * ${f(DISK.uranus)} * (0.5 + 0.5 * sqrt(1.0 - r2));
   float rr = length(vec2(p.x, p.y / sb)), we = 0.02;
   if (abs(rr - ${f(URA.ring / ura.r)}) < we && !(inG && p.y > 0.0)) {
     float k = ${f(URA.width / 2 / ura.r)} / we;
-    return vec3(0.6, 0.6, 0.6) * 0.36 * ${f(URA.albedo)} * k + (1.0 - ${f(URA.op)} * k) * behind;
+    return vec3(0.6, 0.6, 0.6) * ${f(DISK.uranus * URA.albedo)} * k + (1.0 - ${f(URA.op)} * k) * behind;
   }
   return behind;
 }
 
-vec3 celestial(vec3 d, vec3 bg) {
+/* 天体の放射輝度（宇宙の背景は 0）。空の光は天体の手前の大気から来るので、呼ぶ側で足す */
+vec3 celestial(vec3 d) {
+  vec3 bg = vec3(0.0);
   vec2 p = bodyUV(d, ${byId('moon')});
   if (dot(p, p) < 1.0) return moonAt(p);
   p = bodyUV(d, ${byId('jupiter')});
@@ -410,25 +469,25 @@ float ridge(float az) {
   return 0.018 + 0.012 * sin(2.3 * az + 0.7) + 0.007 * sin(5.9 * az + 2.1) + 0.003 * sin(13.0 * az);
 }
 
-/* 空（夕暮れ）と天体、遠景の山並みと町の灯（無限遠） */
+/* 空（時間帯の色）と天体、遠景の山並みと町の灯（無限遠） */
 vec3 sky(vec3 d) {
   float el = asin(clamp(d.y, -1.0, 1.0)), az = atan(d.x, d.z);
   float rg = ridge(az);
   if (el < rg) {
-    vec3 c = vec3(0.022, 0.026, 0.04);
+    vec3 c = MNT[uTod];
     vec2 g = vec2(az, el) / 0.004;
     vec2 cell = floor(g);
     float hs = hash12(cell + 17.0);
     if (hs < 0.32 && el < rg - 0.002) {
       vec2 pc = (cell + 0.2 + 0.6 * vec2(hash12(cell + 3.1), hash12(cell + 7.7))) * 0.004;
       vec2 dd = vec2((az - pc.x) * cos(el), el - pc.y);
-      if (dot(dd, dd) < 0.0006 * 0.0006) c += mix(vec3(9.0, 6.0, 2.6), vec3(6.0, 7.0, 8.0), step(0.24, hs));
+      if (dot(dd, dd) < 0.0006 * 0.0006) c += mix(vec3(9.0, 6.0, 2.6), vec3(6.0, 7.0, 8.0), step(0.24, hs)) * TODK[uTod].w;
     }
     return c;
   }
   float s = clamp(el / 0.6, 0.0, 1.0);
-  vec3 hor = vec3(0.26, 0.17, 0.2), mid = vec3(0.07, 0.08, 0.17), top = vec3(0.012, 0.022, 0.06);
-  return celestial(d, s < 0.25 ? mix(hor, mid, s / 0.25) : mix(mid, top, (s - 0.25) / 0.75));
+  vec3 hor = SKH[uTod], mid = SKM[uTod], top = SKT[uTod];
+  return celestial(d) * TODK[uTod].y + (s < 0.25 ? mix(hor, mid, s / 0.25) : mix(mid, top, (s - 0.25) / 0.75));
 }
 
 float seg7(vec2 p, int m) {
@@ -526,7 +585,7 @@ vec3 radiance(vec3 ro, vec3 rd) {
     }
   }
   if (id == 0) return sky(rd);
-  if (id >= 100) return BLE[id - 100];
+  if (id >= 100) return BLE[id - 100] * TODK[uTod].z;
   vec3 p = ro + rd * t, alb;
   if (id == 1) {
     vec2 q = floor(p.xz / 0.5);
@@ -545,7 +604,7 @@ vec3 radiance(vec3 ro, vec3 rd) {
     alb = c.rgb;
     if (c.w > 0.5 && fract(p.y / 0.4) < 0.1) alb = vec3(0.8);
   }
-  return alb * (0.4 + 0.6 * max(dot(nrm, LDIR), 0.0));
+  return alb * (0.4 + 0.6 * max(dot(nrm, LDIR), 0.0)) * TODK[uTod].x;
 }
 `;
 }
