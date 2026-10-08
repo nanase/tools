@@ -8,7 +8,7 @@ export const sig = (v: number, s = 4, keep = false): string => {
   return minus(keep && !t.includes('e') ? t : String(Number(t)));
 };
 
-/** ピントの距離の無限遠（入力の値。これ以上は無限遠として扱う） */
+/** 撮影距離の無限遠（入力の値。これ以上は無限遠として扱う） */
 export const INF = 1e5;
 const isInf = (v: number) => v >= INF * 0.999;
 export const mT = (v: number): string => (isInf(v) ? '∞' : `${sig(v, 3)} m`);
@@ -83,7 +83,7 @@ export const FOCUS: ParamDef = {
   k: 'fd',
   nm: 's',
   sym: '<i>s</i>',
-  name: 'ピントの距離',
+  name: '撮影距離',
   sub: 'センサーの面から、ピントを合わせる面まで。映像を押すと、その点に合わせる',
   unit: 'm',
   min: 0.2,
