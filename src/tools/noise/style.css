@@ -1,0 +1,61 @@
+/* ノイズジェネレータのページだけのスタイル（共通は src/styles/site.css、枠の右上のボタンと表示窓のキャンバスは ../audio/style.css） */
+
+/* 枠の並び。スマホは ノイズ → 音 → 波形 → スペクトラム → LFSR → 測定 → 式。
+   PC は左の列に ノイズ・音・LFSR・測定、右の列に 波形・スペクトラム */
+.a-gen{order:1}.a-snd{order:2}.a-wave{order:3}.a-sp{order:4}.a-lfsr{order:5}.a-out{order:6}.a-thy{order:7}
+@media (min-width:1000px){
+  .tgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr);grid-template-areas:"c1 c2" "thy thy";align-items:start}
+  .c1{grid-area:c1}.c2{grid-area:c2}.a-thy{grid-area:thy}
+}
+
+/* 隠した行の後ろに残った行（見えている最後の行）は、下の線をなくす */
+.ptab>.prow:not(:has(~ .prow:not([hidden]))){border-bottom:0}
+
+/* 音の枠の知らせ */
+.snd-msg{margin:0 8px 6px}
+.snd-msg:empty{display:none}
+
+/* 計算結果の補足 */
+.a-out .m-sub{display:block;margin-top:2px;font:500 12px/1.5 var(--mono);color:var(--ink-3);letter-spacing:0}
+.a-out .m-sub:empty{display:none}
+.m-main .m-sub{margin-top:4px}
+.a-out .m-sub math{font-size:1.05em}
+
+/* 表示窓 */
+.t1.wv{stroke-width:1.2}
+.t1.sp{stroke-width:1.6}
+/* 参照線（理想の形）は CH2 の色の破線 */
+.t2.ref{stroke-width:1.4;stroke-dasharray:5 4;opacity:.9}
+.sw.ref{background:none;background-image:linear-gradient(90deg,var(--ch2) 60%,transparent 0);background-size:6px 3px}
+.hbar{fill:var(--ch1);fill-opacity:.28;stroke:var(--ch1);stroke-width:1.2;stroke-linejoin:round}
+
+/* スペクトログラム: テーマに依らず黒い地。色は強度の弱い順に 黒 → 紫 → 青 → 緑 → 赤 → 白（スペクトラムアナライザと同じ） */
+.a-sg{--sg0:#000000;--sg1:#5b1a8f;--sg2:#2050e0;--sg3:#1fb04a;--sg4:#e3261f;--sg5:#ffffff}
+.a-sg .scope{--screen:#000000;--grid-2:#3b474e;--screen-ink:#aab3b8;border-color:#2b3237}
+.cv-sg canvas{left:calc(100% * 50 / 462);top:calc(100% * 14 / 282);width:calc(100% * 400 / 462);height:calc(100% * 240 / 282)}
+.cbar{display:inline-block;width:72px;height:8px;border:1px solid var(--line);border-radius:2px;background:linear-gradient(90deg,var(--sg0),var(--sg1),var(--sg2),var(--sg3),var(--sg4),var(--sg5))}
+
+/* シフトレジスタの図 */
+.lf-bar{margin-top:14px}
+.lf-poly math{font-family:var(--math);font-size:15px;color:var(--ink)}
+.reg{display:block;width:100%;height:auto;margin:2px 0 0;overflow:visible}
+.reg text{font:10.5px var(--mono)}
+.d-c{fill:var(--inset);stroke:var(--ink-2);stroke-width:1}
+.d-c.tap{stroke:var(--ch2);stroke-width:1.6}
+.d-1{fill:var(--ch1);fill-opacity:.35}
+.d-v{fill:var(--ink-3);font-weight:500}
+.d-v.on{fill:var(--ink);font-weight:700}
+.d-new{fill:none;stroke:var(--ch1);stroke-width:2}
+.d-n{fill:var(--ink-3)}
+.d-g{fill:var(--ink-2);font-weight:700}
+.d-fb{fill:none;stroke:var(--ch2);stroke-width:1.4;stroke-linejoin:round}
+.d-x{fill:var(--surface);stroke:var(--ch2);stroke-width:1.4}
+.d-ah{fill:var(--ch2)}
+.d-ah.n1{fill:var(--ch1)}
+.d-o{stroke:var(--ch1);stroke-width:1.6}
+.d-gl{stroke:var(--line);stroke-width:1;stroke-dasharray:2 3}
+.d-h{fill:none;stroke:var(--ch1);stroke-width:1.6;stroke-linejoin:round}
+.d-hit{fill:transparent;cursor:pointer}
+.d-hit:hover{fill:var(--ink);fill-opacity:.06}
+.d-hit:focus-visible{outline:none;stroke:var(--focus);stroke-width:2}
+#lf-bits{will-change:transform}
