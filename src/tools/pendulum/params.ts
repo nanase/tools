@@ -670,7 +670,10 @@ export interface Preset {
   drive: 'motor' | 'force';
   vals: Partial<Record<PlantKey | DriveKey, number>>;
 }
-/** Quanser IP02（台車・モータ）の値（config_ip02.m）。おもりなしは台車 0.57 kg・粘性摩擦 4.3 N·s/m */
+/**
+ * Quanser IP02（台車・モータ）の値（config_ip02.m）。おもりなしは台車 0.57 kg・粘性摩擦 4.3 N·s/m。
+ * おもりありの台車・粘性摩擦・モータと長い振子の値は Bates 2021（arXiv:2102.08362）の付録の表 1 にもある（振子の慣性モーメントを除く）
+ */
 const IP02 = { rail: 0.814, vmax: 10, kt: 7.67, rm: 2.6, kg: 3.71, rp: 6.35, jm: 3.9 };
 /** Quanser SIP の振子（config_sp.m）。慣性モーメントは長さ Lp の一様な棒の近似 Mp·Lp²/12 */
 const LONG = { m: 0.23, l: 330.2, J: 78.838, bp: 0.0024 },
