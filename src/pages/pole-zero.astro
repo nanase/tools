@@ -1,6 +1,7 @@
 ---
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import More from '../components/More.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
@@ -53,11 +54,11 @@ const related = [...pub.filter((t) => t.c === 'デジタルフィルタ'), ...pu
         <div class="sbar rdbar" id="z-rd"></div>
         <p class="msg er z-msg" id="z-msg" aria-live="polite"></p>
         <div class="ptab">
-          <ChoiceRow k="pre" name="プリセット" sub="よく使う配置" choices={PRESETS.map((p) => [p.v, p.name, p.t] as const)} value={PRESET0} layout="chips" wide />
+          <ChoiceRow k="pre" name="プリセット" sub="よく使う配置" choices={PRESETS.map((p) => [p.v, p.name, p.t] as const)} value={PRESET0} layout="chips" />
           {SEL.map((d) => <ParamRow d={d} />)}
           <ChoiceRow k="km" sym="<i>k</i>" nm="k" name="利得" sub="H(z) に掛ける定数。1 なら振幅は線の長さの積の比そのもの" choices={GAINS} value={GAIN0} />
-          <ParamRow d={prm('fs')} />
         </div>
+        <More id="g-z"><div class="ptab"><ParamRow d={prm('fs')} /></div></More>
       </Panel>
 
       <Panel hid="hd-snd" title="試聴" class="a-snd">
@@ -85,6 +86,26 @@ const related = [...pub.filter((t) => t.c === 'デジタルフィルタ'), ...pu
           <ParamRow d={prm('sf')} />
         </div>
       </Panel>
+
+      <Panel hid="hd-out" title="計算結果" class="a-out">
+        <dl class="metrics">
+          <div class="m m-main"><dt>最大の利得 max |<i>H</i>|</dt><dd id="o-max"></dd></div>
+          <div class="m"><dt>最大の周波数</dt><dd><span id="o-maxf"></span><span class="m-sub" id="o-maxw"></span></dd></div>
+          <div class="m"><dt>安定性</dt><dd><span id="o-st"></span><span class="m-note" id="o-stn"></span></dd></div>
+          <div class="m"><dt>次数</dt><dd><span id="o-ord"></span><span class="m-sub" id="o-ordn"></span></dd></div>
+          <div class="m"><dt>直流の利得 |<i>H</i>(1)|</dt><dd id="o-dc"></dd></div>
+          <div class="m"><dt><i>f</i><sub>s</sub>/2 の利得 |<i>H</i>(−1)|</dt><dd id="o-ny"></dd></div>
+          <div class="m"><dt>極の最大の半径</dt><dd id="o-rmax"></dd></div>
+          <div class="m"><dt>利得 <i>k</i></dt><dd><span id="o-k"></span><span class="m-note" id="o-kn"></span></dd></div>
+        </dl>
+        <div class="stw ptw">
+          <table class="stab ptab2" id="pt-tab">
+            <caption class="sr">極と零点の位置と、極の共振の周波数・Q・時定数</caption>
+            <thead><tr><th scope="col">点</th><th scope="col">半径 <i>r</i></th><th scope="col">角度 <i>θ</i></th><th scope="col">周波数 <i>f</i></th><th scope="col"><i>Q</i></th><th scope="col">時定数 <i>τ</i></th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </Panel>
     </div>
 
     <div class="col c-b">
@@ -107,10 +128,10 @@ const related = [...pub.filter((t) => t.c === 'デジタルフィルタ'), ...pu
           </svg>
         </div>
         <div class="sbar rdbar" id="fr-rd"></div>
-        <div class="ana2">
+        <More id="g-fr" title="表示の設定"><div class="ana2">
           <div class="ptab"><ChoiceRow k="fx" name="横軸" sub="線形なら単位円の角度と同じ並び" choices={[['lin', '線形'], ['log', '対数']]} value="lin" /></div>
           <div class="ptab"><ParamRow d={prm('bot')} /></div>
-        </div>
+        </div></More>
       </Panel>
 
       <Panel hid="hd-geo" title="距離と角度" class="a-geo">
@@ -142,54 +163,34 @@ const related = [...pub.filter((t) => t.c === 'デジタルフィルタ'), ...pu
           </svg>
         </div>
         <div class="sbar rdbar"><span class="stag rd" id="im-rd"></span></div>
-        <div class="ptab ana">
-          <ChoiceRow k="len" sym="<i>L</i>" nm="L" name="表示長" sub="インパルス応答のグラフの 8 div に入れるサンプル数" choices={LENS.map((v) => [v, String(v)] as const)} value={L0} layout="chips" wide />
+        <More id="g-imp" title="表示の設定"><div class="ptab">
+          <ChoiceRow k="len" sym="<i>L</i>" nm="L" name="表示長" sub="インパルス応答のグラフの 8 div に入れるサンプル数" choices={LENS.map((v) => [v, String(v)] as const)} value={L0} layout="chips" />
+        </div></More>
+      </Panel>
+
+      <Panel hid="hd-coef" title="係数" class="a-coef">
+        <div slot="aux" class="seg" id="cview" role="group" aria-label="表し方">
+          <button type="button" data-v="tf" aria-pressed="true" title="伝達関数の分子と分母の係数（直接形）">伝達関数</button><button type="button" data-v="sos" aria-pressed="false" title="双2次の段に分けた係数">双2次の縦続</button>
+        </div>
+        <div id="v-tf">
+          <div class="hz" id="tf-hz"></div>
+          <div class="stw"><table class="stab ctab" id="tf-tab">
+            <caption class="sr">伝達関数の分子 b と分母 a の係数</caption>
+            <thead><tr><th scope="col"><i>i</i></th><th scope="col"><i>b</i><sub><i>i</i></sub></th><th scope="col"><i>a</i><sub><i>i</i></sub></th></tr></thead>
+            <tbody></tbody>
+          </table></div>
+        </div>
+        <div id="v-sos" hidden>
+          <div class="hz" id="sos-hz"></div>
+          <p class="cap">極が単位円から遠い段から順に並べる。利得 <i>k</i> は 1 段目の分子に掛けた</p>
+          <div class="stw"><table class="stab ctab" id="sos-tab">
+            <caption class="sr">双2次の段ごとの係数</caption>
+            <thead><tr><th scope="col"><i>i</i></th><th scope="col"><i>b</i><sub>0<i>i</i></sub></th><th scope="col"><i>b</i><sub>1<i>i</i></sub></th><th scope="col"><i>b</i><sub>2<i>i</i></sub></th><th scope="col"><i>a</i><sub>1<i>i</i></sub></th><th scope="col"><i>a</i><sub>2<i>i</i></sub></th></tr></thead>
+            <tbody></tbody>
+          </table></div>
         </div>
       </Panel>
     </div>
-
-    <Panel hid="hd-out" title="計算結果" class="a-out">
-      <dl class="metrics">
-        <div class="m m-main"><dt>最大の利得 max |<i>H</i>|</dt><dd id="o-max"></dd></div>
-        <div class="m"><dt>最大の周波数</dt><dd><span id="o-maxf"></span><span class="m-sub" id="o-maxw"></span></dd></div>
-        <div class="m"><dt>安定性</dt><dd><span id="o-st"></span><span class="m-note" id="o-stn"></span></dd></div>
-        <div class="m"><dt>次数</dt><dd><span id="o-ord"></span><span class="m-sub" id="o-ordn"></span></dd></div>
-        <div class="m"><dt>直流の利得 |<i>H</i>(1)|</dt><dd id="o-dc"></dd></div>
-        <div class="m"><dt><i>f</i><sub>s</sub>/2 の利得 |<i>H</i>(−1)|</dt><dd id="o-ny"></dd></div>
-        <div class="m"><dt>極の最大の半径</dt><dd id="o-rmax"></dd></div>
-        <div class="m"><dt>利得 <i>k</i></dt><dd><span id="o-k"></span><span class="m-note" id="o-kn"></span></dd></div>
-      </dl>
-      <div class="stw ptw">
-        <table class="stab ptab2" id="pt-tab">
-          <caption class="sr">極と零点の位置と、極の共振の周波数・Q・時定数</caption>
-          <thead><tr><th scope="col">点</th><th scope="col">半径 <i>r</i></th><th scope="col">角度 <i>θ</i></th><th scope="col">周波数 <i>f</i></th><th scope="col"><i>Q</i></th><th scope="col">時定数 <i>τ</i></th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </Panel>
-
-    <Panel hid="hd-coef" title="係数" class="a-coef">
-      <div slot="aux" class="seg" id="cview" role="group" aria-label="表し方">
-        <button type="button" data-v="tf" aria-pressed="true" title="伝達関数の分子と分母の係数（直接形）">伝達関数</button><button type="button" data-v="sos" aria-pressed="false" title="双2次の段に分けた係数">双2次の縦続</button>
-      </div>
-      <div id="v-tf">
-        <div class="hz" id="tf-hz"></div>
-        <div class="stw"><table class="stab ctab" id="tf-tab">
-          <caption class="sr">伝達関数の分子 b と分母 a の係数</caption>
-          <thead><tr><th scope="col"><i>i</i></th><th scope="col"><i>b</i><sub><i>i</i></sub></th><th scope="col"><i>a</i><sub><i>i</i></sub></th></tr></thead>
-          <tbody></tbody>
-        </table></div>
-      </div>
-      <div id="v-sos" hidden>
-        <div class="hz" id="sos-hz"></div>
-        <p class="cap">極が単位円から遠い段から順に並べる。利得 <i>k</i> は 1 段目の分子に掛けた</p>
-        <div class="stw"><table class="stab ctab" id="sos-tab">
-          <caption class="sr">双2次の段ごとの係数</caption>
-          <thead><tr><th scope="col"><i>i</i></th><th scope="col"><i>b</i><sub>0<i>i</i></sub></th><th scope="col"><i>b</i><sub>1<i>i</i></sub></th><th scope="col"><i>b</i><sub>2<i>i</i></sub></th><th scope="col"><i>a</i><sub>1<i>i</i></sub></th><th scope="col"><i>a</i><sub>2<i>i</i></sub></th></tr></thead>
-          <tbody></tbody>
-        </table></div>
-      </div>
-    </Panel>
 
     <Collapsible hid="hd-thy" title="動作原理と式">
       <Theory />

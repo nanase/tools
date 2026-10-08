@@ -421,6 +421,13 @@ for (const id of ['#geo-tab', '#pt-tab'])
   });
 
 /* ---------- 選んだ点の数値 ---------- */
+/**
+ * 点の位置には既定値がないので、行の既定値をいつも今の値にして、既定値と違う行の印と ↺ を出さない
+ * （吹き出しの「既定値」のボタンは style.css で隠す）
+ */
+function keepDefault(k: SelKey, v: number): void {
+  if (S.def(k).v !== v) S.update(k, { v });
+}
 const S = new ParamGroup<SelKey>(
   SEL,
   (v, k) => {
@@ -432,6 +439,7 @@ const S = new ParamGroup<SelKey>(
       S.note(k, `${KIND[p.k]}は ${MAXO} 個までのため、実軸から動かせません`, 'er');
       return;
     }
+    keepDefault(k, v[k]);
     p.re = s.re;
     p.im = s.im;
     changed();
@@ -453,6 +461,8 @@ function syncSel(): void {
       t = ang(p) / D;
     if (!near(S.get('r'), r)) S.set('r', r, { silent: true });
     if (!near(S.get('th'), t)) S.set('th', t, { silent: true });
+    keepDefault('r', S.get('r'));
+    keepDefault('th', S.get('th'));
   }
   if (!p) {
     html('#z-rd', '');

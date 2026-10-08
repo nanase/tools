@@ -73,14 +73,6 @@ export const SEL: (ParamDef & { k: SelKey })[] = [
       [0.99, '0.99'],
       [1, '1'],
     ],
-    tk: [
-      [0, '0'],
-      [0.5, '0.5'],
-      [0.9, '0.9'],
-      [1, '1'],
-      [2, '2'],
-      [RMAX, String(RMAX)],
-    ],
   },
   {
     k: 'th',
@@ -93,7 +85,7 @@ export const SEL: (ParamDef & { k: SelKey })[] = [
     max: 180,
     v: 45,
     ph: '例 30',
-    lin: { step: 1, big: 15, major: 45, minor: 15 },
+    lin: { step: 1, big: 15 },
     sign: 'nonneg',
     notation: 'plain',
     sig: 6,
@@ -101,13 +93,6 @@ export const SEL: (ParamDef & { k: SelKey })[] = [
     fix: clamp(0, 180, degT),
     inputmode: 'decimal',
     pre: [
-      [0, '0'],
-      [45, '45'],
-      [90, '90'],
-      [135, '135'],
-      [180, '180'],
-    ],
-    tk: [
       [0, '0'],
       [45, '45'],
       [90, '90'],
@@ -153,14 +138,6 @@ export const PARAMS: (ParamDef & { k: Key })[] = [
       [48e3, '48k'],
       [96e3, '96k'],
     ],
-    tk: [
-      [10, '10'],
-      [100, '100'],
-      [1e3, '1k'],
-      [22050, '22.05k'],
-      [48e3, '48k'],
-      [192e3, '192k'],
-    ],
   },
   {
     k: 'bot',
@@ -180,12 +157,6 @@ export const PARAMS: (ParamDef & { k: Key })[] = [
     fix: clamp(-150, 0, dbT),
     stepLabel: ' ',
     pre: [],
-    tk: [
-      [-150, '−150'],
-      [-100, '−100'],
-      [-50, '−50'],
-      [0, '0'],
-    ],
   },
   {
     k: 'vol',
@@ -205,12 +176,6 @@ export const PARAMS: (ParamDef & { k: Key })[] = [
     fix: clamp(-80, 30, dbT),
     stepLabel: ' ',
     pre: [],
-    tk: [
-      [-80, '−80'],
-      [-40, '−40'],
-      [0, '0'],
-      [30, '+30'],
-    ],
   },
   {
     k: 'sf',
@@ -235,12 +200,6 @@ export const PARAMS: (ParamDef & { k: Key })[] = [
       [110, '110'],
       [220, '220'],
       [440, '440'],
-    ],
-    tk: [
-      [20, '20'],
-      [100, '100'],
-      [1e3, '1k'],
-      [2e3, '2k'],
     ],
   },
 ];

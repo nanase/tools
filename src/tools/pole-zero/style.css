@@ -1,21 +1,26 @@
 /* 極と零点のページだけのスタイル（共通は src/styles/site.css） */
 
 /* 並び: スマホは 1 列（z 平面→周波数特性→距離と角度→インパルス応答→結果→係数→試聴）。
-   PC は左に z 平面・試聴、右に周波数特性・距離と角度・インパルス応答。下段は左に結果、右に係数 */
+   PC は左の列に z 平面・試聴・結果、右の列に周波数特性・距離と角度・インパルス応答・係数（左右の高さをそろえる） */
 .a-z{order:1}.a-fr{order:2}.a-geo{order:3}.a-imp{order:4}.a-out{order:5}.a-coef{order:6}.a-snd{order:7}.a-thy{order:8}
 @media (min-width:1000px){
-  .tgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr);grid-template-areas:"ca cb" "out coef" "thy thy";align-items:start}
-  .c-a{grid-area:ca}.c-b{grid-area:cb}.a-out{grid-area:out}.a-coef{grid-area:coef}.a-thy{grid-area:thy}
+  .tgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr);grid-template-areas:"ca cb" "thy thy";align-items:start}
+  .c-a{grid-area:ca}.c-b{grid-area:cb}.a-thy{grid-area:thy}
+  .a-snd{order:2}
 }
 
 /* 枠の右上のボタン（再生の LED・使えないとき） */
-.seg button{display:inline-flex;align-items:center;gap:7px}
+.pha .seg button{display:inline-flex;align-items:center;gap:7px}
 .seg button:disabled{opacity:.45;cursor:default;color:var(--ink-3)}
 /* 試聴: 入力の音と再生を枠の右上に並べる */
-.ph>.srcbar{position:absolute;top:0;right:10px;transform:translateY(-50%);display:flex;align-items:center;gap:8px;padding-left:6px;background:var(--bg)}
+.srcbar{display:flex;align-items:center;gap:8px}
 @media (max-width:479px){.srcbar{gap:6px}.srcbar .seg button,.zbar button{padding:0 6px}}
 .z-msg,.snd-msg{margin:8px 8px 0}
-.a-z .ptab{margin-top:10px}
+.a-z>.ptab{margin-top:10px}
+/* 記号の列（A_min が入る幅） */
+.a-fr .prow{--sw:2.2rem}
+/* 選んだ点の半径・角度には既定値がない（client.ts）ので、吹き出しの「既定値」のボタンを出さない */
+#p-r .sc-df,#p-th .sc-df{display:none}
 /* 読み値は項目ごとに折り返す */
 .rdbar .rd{display:inline-block;white-space:nowrap}
 .z-msg:empty,.snd-msg:empty{display:none}
