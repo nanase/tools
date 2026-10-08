@@ -6,6 +6,7 @@ import { Choice } from '../../lib/choice';
 import { $, esc } from '../../lib/dom';
 import { fmt, fmtR, minus, plain, ro } from '../../lib/format';
 import { ParamGroup } from '../../lib/param';
+import { movePlayStore, outVol, type PlayKey, TEMPO } from '../../lib/play';
 import { SW } from '../../lib/scope';
 import { store, stored } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
@@ -689,38 +690,11 @@ async function pluck(si: number, fret: number | null): Promise<void> {
   renderOut();
 }
 
-/* 音量（スライダーだけ） */
-const volIn = $<HTMLInputElement>('#vol'),
-  volNum = (v: unknown) => (typeof v === 'number' && v >= -60 && v <= 0 ? Math.round(v) : VOL0);
-function setVol(db: number): void {
-  volIn.value = String(db);
-  volIn.style.setProperty('--p', ((db + 60) / 60).toFixed(4));
-  volIn.setAttribute('aria-valuetext', `${minus(String(db))} dB`);
-  txt('#volv', `${minus(String(db))} dB`);
-  audio.vol(db);
-}
-setVol(volNum(stored('vol')));
-volIn.addEventListener('input', () => {
-  const db = Number(volIn.value);
-  setVol(db);
-  store('vol', db);
-});
-/* テンポ（スライダーだけ。演奏中も効く） */
-const tempoIn = $<HTMLInputElement>('#tempo');
-function setTempo(v: number): void {
-  V.tempo = v;
-  tempoIn.value = String(v);
-  tempoIn.style.setProperty('--p', ((v - 25) / 125).toFixed(4));
-  tempoIn.setAttribute('aria-valuetext', `${v} %`);
-  txt('#tempov', `${v} %`);
-}
-{
-  const v = stored('tempo');
-  setTempo(typeof v === 'number' && v >= 25 && v <= 150 ? Math.round(v / 5) * 5 : 100);
-}
-tempoIn.addEventListener('input', () => {
-  setTempo(Number(tempoIn.value));
-  store('tempo', V.tempo);
+/* テンポと音量（演奏中も効く） */
+movePlayStore();
+new ParamGroup<PlayKey>([TEMPO, outVol(VOL0)], (v) => {
+  V.tempo = v.tempo;
+  audio.vol(v.vol);
 });
 
 /** 指板の図の、鳴っている弦を今止める（予定した撥弦はそのまま） */

@@ -1,9 +1,10 @@
 ---
 /**
  * オペレータの枠の中身: 1 行に 1 つのオペレータの 波形 | 周波数比 | 変調指数（キャリアなら出力レベル）。
- * 数値の入力欄は置かず、波形はボタン、周波数比は ▼▲、強さはスライダーで変える。動作は client.ts
+ * 波形はボタン、周波数比と強さは数値の行（ParamRow。項目名は読み上げだけ）。動作は client.ts
  */
-import { ALG0, I0, L0, OPS, R0, W0 } from './params';
+import ParamRow from '../../components/ParamRow.astro';
+import { ALG0, ampDef, OPS, ratioDef, W0 } from './params';
 import { isCarrier, WAVES, waveAt } from './synth';
 
 /** 波形のボタンの図柄（20 × 12 に 1 周期） */
@@ -24,13 +25,8 @@ const icon = (w: number) => {
           {WAVES.map(([v, l], i) => <button type="button" data-v={v} aria-pressed={v === W0[n - 1] ? 'true' : 'false'} title={l} aria-label={l}><svg viewBox="0 0 20 12" aria-hidden="true"><path d={icon(i)} /></svg></button>)}
         </div>
         <div class="op-c">
-        <div class="op-r" title="周波数比（基本周波数に掛ける倍率）">
-          <button type="button" class="ostp" data-d="-1" aria-label={`OP${n} の周波数比を下げる`}><svg viewBox="0 0 12 8" aria-hidden="true"><path d="M6 7L1 1H11Z" /></svg></button>
-          <output id={`op${n}-r`}>×{R0[n - 1]}</output>
-          <button type="button" class="ostp" data-d="1" aria-label={`OP${n} の周波数比を上げる`}><svg viewBox="0 0 12 8" aria-hidden="true"><path d="M6 1L11 7H1Z" /></svg></button>
-        </div>
-        <div class="sl op-a"><input type="range" id={`op${n}-a`} aria-label={`OP${n} の${car ? '出力レベル' : '変調指数'}`}></div>
-        <output class="op-v" id={`op${n}-v`}>{car ? `${L0[n - 1]} dB` : `I ${I0[n - 1]}`}</output>
+          <div class="ptab"><ParamRow d={ratioDef(n)} /></div>
+          <div class="ptab"><ParamRow d={ampDef(n, car)} /></div>
         </div>
       </div>
     );

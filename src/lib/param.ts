@@ -174,7 +174,7 @@ class Param {
     }
     sc.removeAttribute('aria-disabled');
     sc.tabIndex = 0;
-    this.valEl.textContent = f.input(this.v);
+    this.valEl.textContent = f.view(this.v);
     const p = fillOf(d, this.list, this.v);
     this.fillEl.style.left = pct(p.from);
     this.fillEl.style.width = pct(p.to - p.from);

@@ -1,4 +1,5 @@
 /** オルガン音響モデルの入力の定義（数値の行・選択肢・表示の設定） */
+import { linList } from '../../lib/eseries';
 import { minus } from '../../lib/format';
 import type { ParamDef, ParamFormat } from '../../lib/param-def';
 
@@ -109,6 +110,39 @@ export const DIST: ParamDef = lin({
   step: 0.5,
   big: 2,
 });
+
+/** スウェル（第 2 手鍵盤の箱の扉の開き）[%]。0 は閉じている */
+export const SWELL: ParamDef = {
+  k: 'swell',
+  nm: 'スウェル',
+  sym: '',
+  name: 'スウェル',
+  sub: '第 2 手鍵盤の箱の扉の開き。閉じると音が小さく、高い音ほど弱まる',
+  unit: '%',
+  min: 0,
+  max: 100,
+  v: 100,
+  ph: '例 50',
+  list: linList(0, 100, 5),
+  jump: 4,
+  sign: 'nonneg',
+  notation: 'plain',
+  format: {
+    input: (v) => String(Math.round(v)),
+    view: (v) => (v ? String(Math.round(v)) : '閉'),
+    text: (v) => `${Math.round(v)} %`,
+  },
+  fix: (v) => {
+    const w = Math.round(Math.min(100, Math.max(0, v)));
+    return [w, w !== Math.round(v) ? `${Math.round(v)} % は範囲外のため${w ? '上限' : '下限'} ${w} % にしました` : ''];
+  },
+  bad: '読めない値です（例 50）',
+  pre: [
+    [0, '閉'],
+    [50, '50'],
+    [100, '100'],
+  ],
+};
 
 /* ---------- 演奏と音 ---------- */
 /** 音量の初期値 [dB]（0 dB で、1 m 先の音圧 1 Pa をフルスケールにする）。プレヌムの和音は 1 m 先で数 Pa になる */

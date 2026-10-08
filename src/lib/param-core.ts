@@ -58,8 +58,10 @@ export function nearest(L: readonly number[], key: (x: number) => number, v: num
 
 /* ---------- 表記 ---------- */
 export interface Fmt {
-  /** 欄と入力欄 */
+  /** 入力欄 */
   input: (v: number) => string;
+  /** 数値欄 */
+  view: (v: number) => string;
   /** 短い値（単位なし） */
   step: (v: number) => string;
   /** メッセージ・読み上げ（単位つき） */
@@ -71,7 +73,7 @@ export interface Fmt {
 export function formatter(d: ParamDef): Fmt {
   const f = d.format ?? {},
     u = d.unit ? ` ${d.unit}` : '';
-  let base: Fmt;
+  let base: Omit<Fmt, 'view'>;
   if (d.notation === 'plain') {
     const text = (v: number) => plain(v, d.sig ?? 6) + u;
     base = { input: (v) => plain(v, d.sig ?? 6), step: (v) => plain(v, 3), text, preview: text };
@@ -94,6 +96,7 @@ export function formatter(d: ParamDef): Fmt {
     };
   return {
     input: f.input ?? base.input,
+    view: f.view ?? f.input ?? base.input,
     step: f.step ?? base.step,
     text: f.text ?? base.text,
     preview: f.text ?? base.preview,

@@ -34,7 +34,7 @@
 .kk.b[aria-pressed="true"]::after{bottom:8px}
 .kk:focus-visible{z-index:2;outline-offset:-3px}
 
-/* オペレータ: 1 行に 波形 | 周波数比 | 強さのスライダーと値。狭い枠では 2 段にする */
+/* オペレータ: 1 行に 波形 | 周波数比 | 強さ。狭い枠では 2 段にする */
 .ops{container-type:inline-size}
 .op{display:grid;grid-template-columns:5.6rem auto minmax(0,1fr);grid-template-areas:"h w c";align-items:center;column-gap:14px;row-gap:8px;padding:9px 4px;border-bottom:1px solid var(--line)}
 .op:first-child{padding-top:2px}
@@ -45,24 +45,19 @@
 .op-w{grid-area:w}
 .op-w button{display:inline-grid;place-items:center;padding:0 5px}
 .op-w svg{display:block;width:20px;height:12px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linejoin:round}
-.op-c{grid-area:c;display:grid;grid-template-columns:6.4rem minmax(0,1fr) 4.2rem;align-items:center;column-gap:12px;min-width:0}
-.op-r{display:grid;grid-template-columns:28px minmax(0,1fr) 28px;height:32px;border:1px solid var(--line-2);border-radius:var(--r);background:var(--inset);overflow:hidden}
-.op-r output{display:grid;place-items:center;font:700 14px/1 var(--mono);font-variant-numeric:tabular-nums}
-.ostp{display:grid;place-items:center;padding:0;border:0;background:none;color:var(--ink-2);cursor:pointer;touch-action:manipulation}
-.ostp:first-child{border-right:1px solid var(--line)}
-.ostp:last-child{border-left:1px solid var(--line)}
-.ostp svg{width:10px;height:7px;fill:currentColor}
-.ostp:hover{background:var(--surface);color:var(--ink)}
-.ostp[aria-disabled="true"]{opacity:.35;cursor:default;background:none}
-.ostp:focus-visible{outline-offset:-3px}
-.sl.op-a{padding-bottom:0}
-.op-v{text-align:right;font:500 13.5px/1 var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.op-c{grid-area:c;display:grid;grid-template-columns:8.5rem minmax(0,1fr);align-items:center;column-gap:10px;min-width:0}
+/* 周波数比と強さは数値の行（ParamRow）を欄だけにして並べる。項目名は読み上げだけ、行末に ↺ */
+.op-c .prow{grid-template-columns:minmax(0,1fr) 24px;grid-template-areas:"val rst" "sub sub";column-gap:4px;min-height:0;padding:0;border:0}
+.op-c .c-sym,.op-c .c-unit{display:none}
+.op-c .c-name{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.op-c .ptab:first-child .sc-pop{right:auto;left:0}
+.op-c .sc-pop{right:-28px}
+.op-c .prow.mod::before{display:none}
 @container (max-width:620px){
   .op{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"h w" "c c"}
   .op-h{flex-direction:row;align-items:baseline;gap:8px}
 }
 @container (max-width:340px){.op-w button{padding:0 3px}}
-@media (pointer:coarse){.op-r{height:40px}.op-r{grid-template-columns:36px minmax(0,1fr) 36px}}
 
 /* アルゴリズムの結線図 */
 .sch.alg{max-width:440px;margin-top:14px}

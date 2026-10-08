@@ -15,6 +15,8 @@ export interface Lin {
 export interface ParamFormat {
   /** 欄と入力欄に出す値（単位なし） */
   input?: (v: number) => string;
+  /** 欄（ドラッグする数値欄）にだけ出す値。省略時は input（例 ×2・I 1.5 のように記号を添える） */
+  view?: (v: number) => string;
   /** 短い値（単位なし） */
   step?: (v: number) => string;
   /** メッセージ・読み上げ・範囲の表記（単位つき） */

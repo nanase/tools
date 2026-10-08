@@ -8,6 +8,7 @@ import ParamRow from '../components/ParamRow.astro';
 import RelatedTools from '../components/RelatedTools.astro';
 import { order, TOOLS } from '../data/tools';
 import SiteLayout from '../layouts/SiteLayout.astro';
+import { outVol, TEMPO } from '../lib/play';
 import { gridSvg } from '../lib/scope';
 import '../tools/guitar/style.css';
 import { BODY_TYPES, WOODS } from '../tools/guitar/body';
@@ -28,6 +29,7 @@ import {
   SPANS,
   TEN,
   THICK,
+  VOL0,
   VOLUME,
 } from '../tools/guitar/params';
 import { bodyGrid } from '../tools/guitar/plot';
@@ -85,18 +87,14 @@ const tunName = (n: readonly number[]) => {
             <div class="c-name"><label class="pn" id="n-piece" for="piece">曲</label><p class="desc tip" id="t-piece" role="tooltip" hidden>著作権の切れた曲を、このツールでギター用に編曲したもの。運指（弦とフレット）は自動で決める</p></div>
             <div class="c-val sel"><select id="piece" autocomplete="off" aria-describedby="t-piece">{PIECES.map((p) => <option value={p.v} title={p.by}>{p.name}</option>)}</select></div>
           </div>
+          <ParamRow d={TEMPO} />
+          <ParamRow d={outVol(VOL0)} />
         </div>
-        <div class="vgrid">
-          <label class="vl" for="tempo">テンポ</label>
-          <div class="sl"><input type="range" id="tempo" min="25" max="150" step="5" aria-describedby="tempov" title="曲の標準の速さに対する割合。演奏中も変えられる"></div>
-          <output id="tempov" for="tempo"></output>
+        <div class="pbtns">
+          <p class="pl-bar" id="pl-bar" aria-live="off"></p>
           <button type="button" class="tg" id="relBtn" title="鳴っている弦をすべて止める（演奏は続ける）">リリース</button>
-          <label class="vl" for="vol">音量</label>
-          <div class="sl"><input type="range" id="vol" min="-60" max="0" step="1" aria-describedby="volv" title="スピーカーへ出す大きさ（0 dB で、1 m 先の音圧 1 Pa をフルスケールにする）"></div>
-          <output id="volv" for="vol"></output>
           <button type="button" class="tg" id="muteBtn" title="鳴っている弦をすべて止める（手のひらで弦に触れる）">すべて止める</button>
         </div>
-        <p class="pl-bar" id="pl-bar" aria-live="off"></p>
         <p class="msg er snd-msg" id="snd-msg" aria-live="polite"></p>
       </Panel>
 
