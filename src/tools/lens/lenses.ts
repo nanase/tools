@@ -72,7 +72,7 @@ export const LENSES: readonly Rx[] = [
       [R1, 4, BK7],
       [R2, 96, null],
     ],
-    src: '形はこのツールで決めた（N-BK7、無限遠の物体に対して球面収差が最小になる形状係数 <math><mi>q</mi><mo>=</mo><mn>2</mn><mo stretchy="false">(</mo><msup><mi>n</mi><mn>2</mn></msup><mo>−</mo><mn>1</mn><mo stretchy="false">)</mo><mo>/</mo><mo stretchy="false">(</mo><mi>n</mi><mo>+</mo><mn>2</mn><mo stretchy="false">)</mo></math>。W. T. Welford, <i>Aberrations of Optical Systems</i>, Adam Hilger, 1986, 7.5 節）',
+    src: '形はこのツールで決めた（N-BK7、無限遠の物体に対して球面収差が最小になる形状係数 <math><mi>q</mi><mo>=</mo><mn>2</mn><mo stretchy="false">(</mo><msup><mi>n</mi><mn>2</mn></msup><mo>−</mo><mn>1</mn><mo stretchy="false">)</mo><mo>/</mo><mo stretchy="false">(</mo><mi>n</mi><mo>+</mo><mn>2</mn><mo stretchy="false">)</mo></math>。W. T. Welford, <i>Aberrations of Optical Systems</i>, Adam Hilger, 1986, 12.2 節）',
   },
   {
     v: 'achro',
@@ -108,7 +108,7 @@ export const LENSES: readonly Rx[] = [
       [79.6836, 2.95208, SK16],
       [-18.39533, 42.20778, null],
     ],
-    src: 'Zemax（OpticStudio）の設計例の Cooke トリプレット（f = 50 mm、F/5、半画角 20°）。値はオープンソースの光学設計ライブラリ Optiland のサンプル CookeTriplet による',
+    src: 'Zemax（OpticStudio）の設計例の Cooke トリプレット（f = 50 mm、F/5、半画角 20°）。値はオープンソースの光学設計ライブラリ Optiland のサンプル CookeTriplet による（硝材の SK16 は SCHOTT の N-SK16 にした）',
   },
   {
     v: 'tessar',
