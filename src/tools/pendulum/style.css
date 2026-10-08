@@ -1,0 +1,77 @@
+/* 倒立振子のページだけのスタイル（共通は src/styles/site.css） */
+
+/* 枠の並び。スマホは 台車と振子 → 応答 → 制御 → 計算結果 → 極 → 振子と台車 → 駆動 → 計測と制御周期 → 式。
+   PC は左の列に 台車と振子・制御・振子と台車、右の列に 応答・計算結果・極・駆動・計測、その下に式（全幅） */
+.a-fig{order:1}.a-sc{order:2}.a-ctl{order:3}.a-out{order:4}.a-pole{order:5}.a-pl{order:6}.a-dr{order:7}.a-se{order:8}.a-thy{order:9}
+@media (min-width:1000px){
+  .tgrid{grid-template-columns:minmax(0,7fr) minmax(0,5fr);grid-template-areas:"c1 c2" "thy thy";align-items:start}
+  .c1{grid-area:c1}.c2{grid-area:c2}.a-thy{grid-area:thy}
+}
+
+/* 枠の右上のボタン（LED と文字） */
+#runBtn{display:inline-flex;align-items:center;gap:7px}
+
+/* パラメータ表: 単位の列を広く（N·s/m・V/(rad·s) など） */
+.prow{grid-template-columns:2.2rem minmax(0,1fr) 11rem 4.6rem}
+.c-unit{white-space:nowrap;font-size:13px}
+@container (max-width:400px){
+  .prow{grid-template-columns:1.9rem minmax(0,1fr) 4.6rem}
+}
+/* 制御の枠: 表示を切り替える行のまとまりの間に線 */
+.a-ctl .ptab+.ptab,.a-pl .ptab+.ptab{margin-top:10px;border-top:1px solid var(--line)}
+.a-ctl .ptab+.ptab .prow:first-child{padding-top:12px}
+
+/* 図の下の設定（図の枠が区切りになるので、上の線は引かない） */
+.a-fig .ana2{border-top:0;margin-top:6px}
+
+/* 状態の表示 */
+.sbar i.v{font-family:var(--math);font-style:italic;font-size:1.1em}
+.sbar .wn{color:var(--warn);font-weight:700}
+#st-th,#st-x,#st-t{font-variant-numeric:tabular-nums}
+
+/* 台車と振子の図 */
+.pfw{border:1px solid var(--line);border-radius:var(--r);background:var(--screen);box-shadow:inset 0 1px 3px rgb(0 0 0 / .12);overflow:hidden}
+.pfig{display:block;width:100%;height:auto;max-height:62vh;cursor:pointer;touch-action:manipulation;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
+.pfig:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+.pf-grid{fill:none;stroke:var(--grid);stroke-width:1}
+.pf-rail{fill:var(--ink-3)}
+.pf-stop{fill:var(--ink-2)}
+.pf-tgt{stroke:var(--ink-3);stroke-width:2}
+.pf-cart{fill:var(--inset);stroke:var(--ink);stroke-width:1.6px;vector-effect:non-scaling-stroke}
+.pf-wh{fill:var(--ink-2)}
+.pf-rod{fill:none;stroke:var(--ink);stroke-width:4px;stroke-linecap:round;vector-effect:non-scaling-stroke}
+.pf-cog{fill:var(--screen);stroke:var(--ink);stroke-width:1.2;fill-rule:evenodd}
+.pf-cog{paint-order:stroke}
+.pf-piv{fill:var(--surface);stroke:var(--ink);stroke-width:1.6}
+/* 駆動の力（波形の CH1 と同じ色） */
+.pf-f{fill:var(--ch1);stroke:var(--ch1);stroke-width:3;stroke-linejoin:round}
+.pf-ft{fill:var(--ch1);font:600 12px var(--mono)}
+.pf-push{fill:none;stroke:var(--ink-2);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+
+/* 押すボタン */
+.pushbar{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.pushbar .tg{justify-content:center;min-width:5.2rem;font-family:var(--sans);font-size:13px}
+.pushbar .rst-sim{margin-left:auto}
+@media (max-width:559px){.pushbar .tg{flex:1 1 40%}.pushbar .rst-sim{margin-left:0;flex-basis:100%}}
+
+/* 応答: 2 つの表示窓 */
+.sc2w{margin-top:14px}
+.scope text.l1{fill:var(--ch1)}
+.scope text.l2{fill:var(--ch2)}
+.c2x.off{display:none}
+
+/* 計算結果 */
+.m-sub{display:block;margin-top:2px;font:12px/1.5 var(--sans);color:var(--ink-3)}
+.m-main .m-sub{margin-top:4px}
+.m-wide dd{font-size:16px}
+.kv{display:inline-block;margin-right:1em;white-space:nowrap}
+.sep{color:var(--ink-3)}
+
+/* 極の配置図 */
+.pm{display:inline-block;width:1em;font-style:normal;font-weight:700;text-align:center}
+.pm.ol{color:var(--ch2)}
+.pm.cl{color:var(--ch1)}
+.sp-ax{stroke:var(--grid-2);stroke-width:1.4;fill:none}
+.sp-ol{fill:none;stroke:var(--ch2);stroke-width:2;stroke-linecap:round}
+.sp-cl{fill:none;stroke:var(--ch1);stroke-width:2}
+.scope text.sp-un{fill:var(--screen-ink);opacity:.7}

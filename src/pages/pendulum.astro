@@ -1,0 +1,156 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import Scope from '../components/Scope.astro';
+import { order, TOOLS } from '../data/tools';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import { gridSvg } from '../lib/scope';
+import '../tools/pendulum/style.css';
+import {
+  CPRS,
+  DRIVE,
+  LQR,
+  PID,
+  PLACE,
+  PLANT,
+  PRESETS,
+  PUSH,
+  SENSE,
+  SPEEDS,
+  SWING,
+  TS_MS,
+} from '../tools/pendulum/params';
+import Theory from '../tools/pendulum/Theory.astro';
+
+const name = '倒立振子';
+/* 同じカテゴリの後ろに、ほかのカテゴリの公開中のツールを並べる */
+const CAT = '制御';
+const related = [
+  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'pendulum')),
+  ...TOOLS.filter((t) => t.c !== CAT && !t.s),
+];
+const row = (k: string) => {
+  const d = [...SWING].find((x) => x.k === k);
+  if (!d) throw new Error(k);
+  return d;
+};
+---
+<SiteLayout title={name} tool={{ id: 'pendulum', name }} description="レールの上を動く台車に立てた振子を、PID・極配置・LQR の制御で倒れないように支えます。エネルギー法の振り上げ、制御周期・エンコーダの分解能・速度の推定・入力の飽和も再現します。" note="振子と台車を剛体とし、モータの巻線のインダクタンスと歯車のがたを無視した模型による参考値です。">
+  <PageTitle title={name}>レールの上を動く台車に立てた振子（倒立振子）を、PID・極配置・LQR のいずれかの制御で倒れないように支えるシミュレーションです。真下に垂れた振子はエネルギー法で振り上げてから立てます。制御周期、エンコーダの分解能、差分からの速度の推定、モータの電圧の上限といった実機の制約も入れてあり、ゲインや装置の値を変えると、立ち方や倒れ方、開ループと閉ループの極がすぐに変わります。振子や台車を押すこともできます。</PageTitle>
+  <div class="mini" aria-hidden="true"><span><i>t</i><sub>s</sub><b id="mts"></b></span><span><i>t</i><sub>up</sub><b id="mtu"></b></span><span>|<i>F</i>|<sub>max</sub><b id="mfm"></b></span></div>
+
+  <div class="tgrid">
+    <div class="col c1">
+      <Panel hid="hd-fig" title="台車と振子" class="a-fig">
+        <div slot="aux" class="seg"><button type="button" id="runBtn" aria-pressed="false" title="シミュレーションを動かす・止める"><span class="led" id="runLed" aria-hidden="true"></span><span id="runT">開始</span></button></div>
+        <div class="sbar">
+          <span class="stag"><b id="st-mode"></b></span>
+          <span class="stag">t <b id="st-t"></b></span>
+          <span class="stag"><i class="sw" aria-hidden="true"></i><i class="v">θ</i> <b id="st-th"></b></span>
+          <span class="stag"><i class="sw c2" aria-hidden="true"></i><i class="v">x</i> <b id="st-x"></b></span>
+          <span class="stag wn" id="st-hit" hidden>レールの端</span>
+        </div>
+        <div class="pfw">
+          <svg class="pfig" id="pfig" tabindex="0" role="img" aria-roledescription="倒立振子の図" aria-label="レールの上の台車と振子。振子か台車の近くを押すと、押した側からその向きへ押す。左右の矢印キーで振子を、Shift と矢印キーで台車を押す"></svg>
+        </div>
+        <p class="sr" id="pf-live" aria-live="polite"></p>
+        <div class="pushbar" role="group" aria-label="押す">
+          <button type="button" class="tg" data-push="rod" data-dir="-1" title="振子の先を右から押して、左へ倒す"><span aria-hidden="true">←</span> 振子</button>
+          <button type="button" class="tg" data-push="rod" data-dir="1" title="振子の先を左から押して、右へ倒す">振子 <span aria-hidden="true">→</span></button>
+          <button type="button" class="tg" data-push="cart" data-dir="-1" title="台車を右から押して、左へ動かす"><span aria-hidden="true">←</span> 台車</button>
+          <button type="button" class="tg" data-push="cart" data-dir="1" title="台車を左から押して、右へ動かす">台車 <span aria-hidden="true">→</span></button>
+          <button type="button" class="tg rst-sim" id="resetSim" title="初めの状態（振り上げるなら真下、振り上げないなら初めの傾き）から始め直す">最初から</button>
+        </div>
+        <div class="ana2">
+          <div class="ptab"><ChoiceRow k="spd" name="再生の速さ" sub="図と波形を何分の 1 の速さで動かすか。計算の刻みは変わらない" choices={SPEEDS.map((v) => [v, v === 1 ? '実時間' : `1/${Math.round(1 / v)}`] as const)} value={1} /></div>
+          <div class="ptab"><ParamRow d={PUSH} /></div>
+        </div>
+      </Panel>
+
+      <Panel hid="hd-ctl" title="制御" class="a-ctl">
+        <div slot="aux" class="seg" id="p-kind" role="group" aria-label="安定化の制御"><button type="button" data-v="pid" aria-pressed="false" title="角度と位置の 2 つのループの PID">PID</button><button type="button" data-v="place" aria-pressed="false" title="状態フィードバック（アッカーマンの式で極を置く）">極配置</button><button type="button" data-v="lqr" aria-pressed="true" title="状態フィードバック（リカッチ方程式で重み付きの 2 乗の和を最小にする）">LQR</button></div>
+        <div class="ptab"><ChoiceRow k="swing" name="振り上げ" sub="振り上げるなら真下から始め、エネルギー法で振り上げてから安定化の制御へ切り替える（倒れたらまた振り上げる）。振り上げないなら、真上の近くで手を離したところから始め、倒れたら制御を止める" choices={[['on', '振り上げる'], ['off', '振り上げない']]} value="on" /></div>
+        <div class="ptab" id="g-lqr">{LQR.map((d) => <ParamRow d={d} />)}</div>
+        <div class="ptab" id="g-place" hidden>{PLACE.map((d) => <ParamRow d={d} />)}</div>
+        <div class="ptab" id="g-pid" hidden>{PID.map((d) => <ParamRow d={d} />)}</div>
+        <div class="ptab" id="g-swing">{['ke', 'amax', 'thsw'].map((k) => <ParamRow d={row(k)} />)}</div>
+        <div class="ptab" id="g-th0" hidden><ParamRow d={row('th0')} /></div>
+      </Panel>
+
+      <Panel hid="hd-pl" title="振子と台車" class="a-pl">
+        <div class="ptab">
+          <ChoiceRow k="pre" name="教材" sub="公開された資料にある教材の値を入れる（振子・台車・摩擦・駆動）。クーロン摩擦と計測の値は変えない" choices={PRESETS.map((p) => [p.v, p.name, p.title] as const)} value="ip02w" layout="chips" wide />
+          {PLANT.map((d) => <ParamRow d={d} />)}
+        </div>
+      </Panel>
+
+    </div>
+
+    <div class="col c2">
+      <Panel hid="hd-sc" title="応答" class="a-sc">
+        <span slot="aux" class="aux">直近 10 s</span>
+        <Scope id="sc1" label="角度と位置の時間波形" ch1="θ" ch1Title="振子の角度（真上が 0、右へ傾くと正）" ch2="x <b class='s-vd2'></b>/div" ch2Title="台車の位置（中央が 0、右が正）" trig="AUTO" />
+        <div class="sc2w">
+          <Scope id="sc2" label="力と電圧の時間波形" ch1="F" ch1Title="駆動が台車を押す力" ch2="V <b class='s-vd2'></b>/div" ch2Title="モータの電圧（上限で切った値）" trig="AUTO" />
+        </div>
+      </Panel>
+
+      <Panel hid="hd-out" title="計算結果" class="a-out">
+        <dl class="metrics c3">
+          <div class="m m-main"><dt>整定時間 <i>t</i><sub>s</sub></dt><dd><span id="o-ts"></span><span class="m-sub" id="o-tss"></span></dd></div>
+          <div class="m"><dt>振り上げの時間 <i>t</i><sub>up</sub></dt><dd><span id="o-tu"></span><span class="m-sub" id="o-tus"></span></dd></div>
+          <div class="m"><dt>最大の力 |<i>F</i>|<sub>max</sub></dt><dd><span id="o-fm"></span><span class="m-sub" id="o-fms"></span></dd></div>
+          <div class="m"><dt>台車の最大の変位</dt><dd><span id="o-xm"></span><span class="m-sub" id="o-xms"></span></dd></div>
+          <div class="m m-wide"><dt>開ループの不安定な極 <i>p</i><sub>+</sub></dt><dd><span id="o-p"></span><span class="m-sub" id="o-ps"></span></dd></div>
+          <div class="m m-wide"><dt>閉ループの極</dt><dd><span id="o-cl"></span><span class="m-sub" id="o-cls"></span></dd></div>
+          <div class="m m-wide"><dt>状態フィードバックのゲイン <i>K</i></dt><dd><span id="o-k"></span><span class="m-sub" id="o-ks"></span></dd></div>
+        </dl>
+      </Panel>
+
+      <Panel hid="hd-pole" title="極" class="a-pole">
+        <span slot="aux" class="aux">s 平面</span>
+        <div class="sbar">
+          <span class="stag"><i class="pm ol" aria-hidden="true">×</i>開ループ</span>
+          <span class="stag"><i class="pm cl" aria-hidden="true">○</i>閉ループ</span>
+          <span class="stag"><b id="sp-d"></b>/div</span>
+          <span class="stag wn" id="sp-out" hidden></span>
+        </div>
+        <div class="scope">
+          <svg viewBox="-46 -14 458 280" id="sp-svg" role="img" aria-label="開ループと閉ループの極">
+            <g set:html={gridSvg(6)} />
+            <text class="sp-un" x="396" y="14" text-anchor="end">不安定</text>
+            <g id="sp-ax"></g>
+            <path class="sp-ol" id="sp-ol"/>
+            <path class="sp-cl" id="sp-cl"/>
+          </svg>
+        </div>
+      </Panel>
+
+      <Panel hid="hd-dr" title="駆動" class="a-dr">
+        <div slot="aux" class="seg" id="p-drive" role="group" aria-label="台車の駆動"><button type="button" data-v="motor" aria-pressed="true" title="DC モータの電圧で動かす（逆起電力が制動として働く）">DC モータ</button><button type="button" data-v="force" aria-pressed="false" title="上限までの力をそのまま出す駆動">力</button></div>
+        <div class="ptab">{DRIVE.map((d) => <ParamRow d={d} />)}</div>
+      </Panel>
+
+      <Panel hid="hd-se" title="計測と制御周期" class="a-se">
+        <div class="ptab">
+          <ChoiceRow k="ts" name="制御周期" sub="計測して入力を決める間隔。入力は次の周期まで同じ値に保つ" choices={TS_MS.map((v) => [v, `${v} ms`] as const)} value={1} layout="chips" wide />
+          <ChoiceRow k="cpr" name="角度の分解能" sub="振子の角度のエンコーダの 1 回転のカウント数（4 逓倍の後）。4096 で 1 カウント 0.088°" choices={CPRS.map((v) => [v, String(v), `1 カウント ${(360 / v).toPrecision(2)}°`] as const)} value={4096} layout="chips" wide />
+          {SENSE.map((d) => <ParamRow d={d} />)}
+        </div>
+      </Panel>
+    </div>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools list={related} />
+  <script>
+    import '../tools/pendulum/client';
+  </script>
+</SiteLayout>

@@ -40,6 +40,14 @@ export const TOOLS: Tool[] = [
     k: 'フィードバック 比例 積分 微分 control',
   },
   {
+    id: 'pendulum',
+    c: '制御',
+    t: '倒立振子',
+    d: '台車に立てた振子を PID・極配置・LQR で支え、エネルギー法で振り上げます。制御周期やエンコーダの分解能など実機の制約も再現します。',
+    ic: 'ip',
+    k: 'inverted pendulum cart pole 倒立振り子 台車 振り上げ swing up エネルギー法 lqr リカッチ riccati 極配置 pole placement アッカーマン ackermann 状態フィードバック state feedback 可制御 controllability pid エンコーダ encoder quanser ip02 control',
+  },
+  {
     id: 'biquad',
     c: 'デジタルフィルタ',
     t: '双2次フィルタ',
@@ -188,6 +196,7 @@ export const IC: Record<string, string> = {
   sq: '<path class="a" d="M4 38H16V10H40V38H52V10H76V38H88V10H112V38H116"/><path class="b" d="M16 31C24 22 32 18 40 17C44 24 48 29 52 31C60 22 68 18 76 17C80 24 84 29 88 31C96 22 104 18 112 17"/>',
   rr: '<path class="c" d="M4 24H22M46 24H60M60 12V36M60 12H70M94 12H106M60 36H70M94 36H106M106 12V36M106 24H116"/><rect class="a" x="22" y="18" width="24" height="12"/><rect class="a" x="70" y="6" width="24" height="12"/><rect class="b" x="70" y="30" width="24" height="12"/>',
   pid: '<path class="c d" d="M4 17H116"/><path class="a" d="M4 40H18C26 40 28 6 40 8S54 22 64 18S84 16 116 17"/>',
+  ip: '<path class="c" d="M4 42H116"/><path class="c" d="M46 30H74V38H46Z"/><path class="c d" d="M60 30V4"/><path class="a" d="M60 30L71 7"/><path class="b" d="M82 18C85 9 88 9 91 18S97 25 100 18S105 14 108 18S113 20 116 18"/>',
   bq: '<path class="c d" d="M4 24H116"/><path class="a" d="M4 12H46C60 12 66 12 72 20S92 40 116 44"/><path class="b" d="M4 30H36C54 30 62 36 70 40S100 44 116 44"/>',
   iir: '<path class="c d" d="M4 16H58V44M66 4V34H116"/><path class="a" d="M4 11C9 11 11 14 16 14S24 10 30 10S38 14 44 14S52 10 56 11C59 12 60 26 64 44C66 38 68 35 72 35S78 40 80 44C82 39 85 35 92 35S104 37 116 38"/>',
   jjy: '<path class="a" d="M4 38V10H7V38H16V10H26V38H28V10H34V38H40V10H50V38H52V10H58V38H64V10H74V38H76V10H79V38H88V10H91V38H100V10H110V38H116"/>',
