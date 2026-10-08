@@ -325,6 +325,8 @@ function syncLayers(): void {
   const n = stack.n;
   for (const b of $$<HTMLElement>('#p-stack .chip')) b.hidden = stackOf(b.dataset.v ?? '').n !== n;
   for (const r of $$('.prow.multi')) r.hidden = n <= 1;
+  /* 構成の既定値は、層数ごとの標準の構成 */
+  stack$.setDefault(stackFor(n).v);
   stack$.set(stack.v);
   stack$.note(n > 1 ? `層の間 ${gapsText(stack)}` : '');
   conn$.set(conn);

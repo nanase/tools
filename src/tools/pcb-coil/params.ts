@@ -70,19 +70,6 @@ const FSS = [...eList(12, 1e3, 1e8), ...FPRE.map(([v]) => v)]
 
 /* ---------- 依存: 外径・幅・間隔 → 幅の上限・外径の下限・巻数の上限 ---------- */
 const EPS = 1e-9;
-/** 目盛りのラベルは並びの範囲の中だけ（範囲の端 min・max と並びの端は一致しないことがある） */
-const tkIn = (tk: [number, string][], L: readonly number[]): [number, string][] =>
-  tk.filter(([v]) => v >= L[0] * (1 - 1e-6) && v <= L[L.length - 1] * (1 + 1e-6));
-const DOTK: [number, string][] = [
-  [1, '1'],
-  [10, '10'],
-  [100, '100'],
-];
-const MMTK: [number, string][] = [
-  [0.1, '0.1'],
-  [1, '1'],
-  [10, '10'],
-];
 
 /** 巻数: 上限は内径が正で残る巻数（60 まで） */
 export function nPatch(dout: number, w: number, s: number): ParamPatch {
@@ -104,11 +91,10 @@ export function nPatch(dout: number, w: number, s: number): ParamPatch {
 
 /** 外径の並びの下限: 配線の幅の 2 倍より大きい */
 const doutList = (w: number) => DOS.filter((x) => x > 2 * w * (1 + EPS));
-export function doutPatch(w: number): ParamPatch & Pick<ParamDef, 'tk'> {
+export function doutPatch(w: number): ParamPatch {
   const list = doutList(w);
   return {
     list,
-    tk: tkIn(DOTK, list),
     fix: (v) => {
       if (v > 200) return [200, `${mmT(v)} は範囲外のため上限 200 mm にしました`];
       if (v <= 2 * w * (1 + EPS)) {
@@ -123,14 +109,13 @@ export function doutPatch(w: number): ParamPatch & Pick<ParamDef, 'tk'> {
 
 /** 幅の上限: 外径の 1/2 未満 */
 export const wLimit = (dout: number): number => prevOf(MMS, dout / 2) ?? MMS[0];
-export function wPatch(dout: number): ParamPatch & Pick<ParamDef, 'tk'> {
+export function wPatch(dout: number): ParamPatch {
   const h = dout / 2,
     c = clamp(0.05, 10, mmT),
     list = MMS.filter((x) => x < h * (1 - EPS));
   return {
     max: Math.min(10, h),
     list,
-    tk: tkIn(MMTK, list),
     fix: (v) => {
       if (v >= h * (1 - EPS) && h <= 10) {
         const x = wLimit(dout);
@@ -178,7 +163,6 @@ const DEFS: Def[] = [
     jump: 5,
     format: TURNS,
     pre: [],
-    tk: [1, 10, 20, 30, 40, 50, 60].map((v) => [v, String(v)]),
     ...nPatch(D0, W0, S0),
   },
   {
@@ -238,7 +222,6 @@ const DEFS: Def[] = [
     format: MM,
     fix: clamp(0.05, 10, mmT),
     pre: MMPRE,
-    tk: MMTK,
   },
   {
     k: 't',
@@ -263,13 +246,6 @@ const DEFS: Def[] = [
       [70, '2 oz', '70 µm'],
       [105, '3 oz', '105 µm'],
     ],
-    tk: [
-      [5, '5'],
-      [18, '18'],
-      [35, '35'],
-      [70, '70'],
-      [210, '210'],
-    ],
   },
   {
     k: 'f',
@@ -288,20 +264,12 @@ const DEFS: Def[] = [
     format: HZ,
     fix: clamp(1e3, 1e8, hzT),
     pre: FPRE,
-    tk: [
-      [1e3, '1k'],
-      [1e4, '10k'],
-      [1e5, '100k'],
-      [1e6, '1M'],
-      [1e7, '10M'],
-      [1e8, '100M'],
-    ],
   },
 ];
 
 /**
  * 入力欄は数字だけなので decimal（周波数は接頭辞を打つので text）。
- * ▲▼ の読み上げは「n を 1 つ上の …」（並びの行の既定「n を1 つ上の」に空白を足す）
+ * ‹ › の読み上げは「n を 1 つ上の …」（並びの行の既定「n を1 つ上の」に空白を足す）
  */
 export const PARAMS: Def[] = DEFS.map((d) => ({
   stepLabel: ' ',
@@ -331,7 +299,6 @@ const FDEFS: (ParamDef & { k: FKey })[] = [
     format: MM,
     fix: clamp(1, 200, mmT),
     pre: [],
-    tk: DOTK,
   },
   {
     k: 'wmin',
@@ -350,7 +317,6 @@ const FDEFS: (ParamDef & { k: FKey })[] = [
     format: MM,
     fix: clamp(0.05, 10, mmT),
     pre: [],
-    tk: MMTK,
   },
   {
     k: 'smin',
@@ -369,7 +335,6 @@ const FDEFS: (ParamDef & { k: FKey })[] = [
     format: MM,
     fix: clamp(0.05, 10, mmT),
     pre: [],
-    tk: MMTK,
   },
   {
     k: 'band',
@@ -382,21 +347,13 @@ const FDEFS: (ParamDef & { k: FKey })[] = [
     max: 50,
     v: 0,
     ph: '例 20',
-    lin: { step: 1, big: 5, major: 10 },
+    lin: { step: 1, big: 5 },
     sign: 'nonneg',
     notation: 'plain',
     pre: [
       [0, 'なし'],
       [10, '±10'],
       [20, '±20'],
-    ],
-    tk: [
-      [0, '0'],
-      [10, '10'],
-      [20, '20'],
-      [30, '30'],
-      [40, '40'],
-      [50, '50'],
     ],
   },
   {
@@ -420,12 +377,6 @@ const FDEFS: (ParamDef & { k: FKey })[] = [
       [32, '32'],
       [50, '50'],
     ],
-    tk: [
-      [1, '1'],
-      [10, '10'],
-      [100, '100'],
-      [1000, '1k'],
-    ],
   },
   {
     k: 'rmax',
@@ -446,13 +397,6 @@ const FDEFS: (ParamDef & { k: FKey })[] = [
       [50, '50'],
       [100, '100'],
       [1000, '1k'],
-    ],
-    tk: [
-      [1, '1'],
-      [10, '10'],
-      [100, '100'],
-      [1000, '1k'],
-      [10000, '10k'],
     ],
   },
 ];

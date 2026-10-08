@@ -1,11 +1,11 @@
 /**
- * ツールのページに共通の動き: 「?」の吹き出し、項目名の吹き出し、畳める行、開閉できる枠、関連ツールの件数。
+ * ツールのページに共通の動き: 「?」の吹き出し、項目名の吹き出し、「その他」のまとまり、開閉できる枠、関連ツールの件数。
  * 各ツールの入口スクリプトから initToolPage() を 1 度だけ呼ぶ。見出し以外の「?」は addTip で足す
  */
 import { $, $$ } from './dom';
 import { FADE_IN, fx, POP_IN, POP_OUT, RM } from './motion';
 import { initSite } from './site';
-import { resetAll } from './store';
+import { forget, resetAll, store, stored } from './store';
 
 /* ---------- 吹き出し（「?」ボタンと項目名） ---------- */
 interface Tip {
@@ -83,7 +83,7 @@ export function addTip(btn: HTMLElement, el: HTMLElement, box: HTMLElement, belo
 
 /**
  * 項目名（.pn）の吹き出し（.tip）: マウスは指している間、タッチは押すたびに開閉する。
- * マウスで押したときはラベルの既定の動き（入力欄へ移る）を残す。補足が空の行では開かない
+ * マウスで押したときはラベルの既定の動き（選択肢へ移る）を残す。補足が空の行では開かない
  */
 function initHints(): void {
   let touch = false;
@@ -117,42 +117,54 @@ function initHints(): void {
   bindTips();
 }
 
-/* ---------- 畳める行（FoldSwitch.astro） ---------- */
+/* ---------- 「その他」のまとまり（More.astro） ---------- */
 /** 数値に SI 接頭辞が付いていれば単位と詰める（10 k + Ω → 10 kΩ、5 + V → 5 V） */
 const withUnit = (v: string, u: string) => (!u ? v : /[a-zµμ]$/i.test(v) ? `${v}${u}` : `${v} ${u}`);
-/** 畳んだ行に添える今の値 */
-function foldSummary(row: HTMLElement): string {
-  if (row.classList.contains('off')) return row.querySelector('.msg')?.textContent?.trim() || '使いません';
-  const inp = row.querySelector<HTMLInputElement>('.fld:not(.add) input');
-  if (inp) return withUnit(inp.value.trim() || '—', row.querySelector('.c-unit')?.textContent?.trim() ?? '');
-  const on = row.querySelector('.fbody [aria-pressed="true"]');
-  if (on) return on.textContent?.trim() ?? '';
-  const n = row.querySelectorAll('.fbody .chips .chip').length;
-  return n ? `${n} 個` : 'なし';
+/** 行の今の値（要約に使う。行の data-sum があればそれを使う）。出していない行は null */
+function rowSummary(row: HTMLElement, body: HTMLElement): string | null {
+  if (row.hidden || getComputedStyle(row).display === 'none') return null;
+  for (let e = row.parentElement; e && e !== body; e = e.parentElement) if (e.hidden) return null;
+  const nm = row.dataset.nm ?? row.querySelector('.c-name .pn')?.textContent?.trim() ?? '';
+  let v: string;
+  const sc = row.querySelector('.sc-v');
+  if (row.dataset.sum != null) v = row.dataset.sum;
+  else if (sc)
+    v = row.classList.contains('off')
+      ? (sc.textContent ?? '')
+      : withUnit(sc.textContent?.trim() || '—', row.querySelector('.c-unit')?.textContent?.trim() ?? '');
+  else if (row.classList.contains('off')) v = '使いません';
+  else {
+    const on = row.querySelector('[aria-pressed="true"]');
+    if (on) v = on.textContent?.trim() ?? '';
+    else {
+      const n = row.querySelectorAll('.c-sub .chips .chip').length;
+      v = n ? `${n} 個` : 'なし';
+    }
+  }
+  return `${nm} ${v}`.trim();
 }
-/** 行を開く・畳む */
-function setFold(row: HTMLElement, open: boolean): void {
-  row.classList.toggle('shut', !open);
-  $('.fsw', row).setAttribute('aria-expanded', String(open));
-  if (open) for (const c of $$(':scope > .fbody > *', row)) fx(c, FADE_IN, 200);
+function setMore(box: HTMLElement, open: boolean, anim: boolean): void {
+  const h = $('.more-h', box),
+    body = $('.more-b', box);
+  h.setAttribute('aria-expanded', String(open));
+  if (open) {
+    body.hidden = false;
+    if (anim) fx(body, FADE_IN, 200);
+  } else body.hidden = true;
 }
-/**
- * 畳める行を使うかどうかを切り替える（例: 双2次フィルタの増幅量は LSF・HSF・PEQ だけ）。
- * 使わない間は畳んで、開けないようにする
- */
-export function setFoldable(row: HTMLElement, on: boolean): void {
-  const b = $<HTMLButtonElement>('.fsw', row);
-  b.disabled = !on;
-  if (!on) setFold(row, false);
-}
-function initFolds(): void {
-  for (const row of $$('.prow.fold')) {
-    const b = $<HTMLButtonElement>('.fsw', row),
-      sum = $('.fsum', b);
+function initMore(): void {
+  for (const box of $$('.more')) {
+    const h = $('.more-h', box),
+      sum = $('.more-s', box),
+      body = $('.more-b', box),
+      key = `m:${box.id}`;
     let queued = false;
     const upd = () => {
       queued = false;
-      const s = foldSummary(row);
+      const s = $$('.prow', body)
+        .map((r) => rowSummary(r, body))
+        .filter((x): x is string => !!x)
+        .join(' · ');
       if (sum.textContent !== s) sum.textContent = s;
     };
     const later = () => {
@@ -160,10 +172,23 @@ function initFolds(): void {
       queued = true;
       requestAnimationFrame(upd);
     };
-    b.addEventListener('click', () => setFold(row, row.classList.contains('shut')));
-    /* 値は入口スクリプトが入れる。入れた後と、行の中が変わるたびに要約を作り直す */
-    new MutationObserver(later).observe(row, { subtree: true, childList: true, characterData: true, attributes: true });
-    row.addEventListener('focusout', later);
+    if (stored(key) === true) setMore(box, true, false);
+    h.addEventListener('click', () => {
+      const open = !!body.hidden;
+      setMore(box, open, true);
+      if (open) store(key, true);
+      else forget(key);
+    });
+    /* 値は入口スクリプトが入れる。入れた後と、中が変わるたびに要約を作り直す */
+    new MutationObserver(later).observe(body, {
+      subtree: true,
+      childList: true,
+      characterData: true,
+      attributes: true,
+    });
+    /* 枠の表示の切り替え（.sg-only など、外のクラスで隠す行）にも合わせる */
+    const pnl = box.closest('.pnl');
+    if (pnl) new MutationObserver(later).observe(pnl, { attributes: true, attributeFilter: ['class'] });
     setTimeout(upd);
   }
 }
@@ -225,7 +250,7 @@ export function initToolPage(): void {
   document.getElementById('resetBtn')?.addEventListener('click', resetAll);
   addTip($('#descBtn'), $('#desc'), $('.ttl'));
   initHints();
-  initFolds();
+  initMore();
   initCollapsible();
   initRelated();
   initMini();

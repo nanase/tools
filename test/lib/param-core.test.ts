@@ -4,17 +4,22 @@ import { plain } from '../../src/lib/format';
 import {
   accept,
   badText,
+  DRAG_START,
+  dragIndex,
+  dragPx,
+  fillOf,
   followsGroup,
   formatter,
   keyOf,
   kindOf,
   nearest,
+  posOf,
+  presetPos,
   previewText,
   resolve,
   shiftIsBig,
   stepLabel,
   stepValue,
-  ticksHtml,
   titleText,
   valueList,
 } from '../../src/lib/param-core';
@@ -28,8 +33,6 @@ const byK = (k: string) => {
 };
 const R1 = byK('r1'),
   VCC = byK('vcc');
-const majors = (h: string) => (h.match(/class="M"/g) ?? []).length;
-const labels = (h: string) => [...h.matchAll(/<span[^>]*>([^<]*)<\/span>/g)].map((m) => m[1]);
 
 describe('555 の行（E 系列はグループに従う・一様な刻み）', () => {
   it('種類と並び', () => {
@@ -56,16 +59,32 @@ describe('555 の行（E 系列はグループに従う・一様な刻み）', (
     expect(g.text(5)).toBe('5 V');
   });
 
-  it('目盛り: 10 の累乗と 5 V ごとに大目盛り、ラベルは tk', () => {
-    const h = ticksHtml(R1, valueList(R1, 12));
-    expect(majors(h)).toBe(5);
-    expect(labels(h)).toEqual(['100', '1k', '10k', '100k', '1M']);
-    const v = ticksHtml(VCC, valueList(VCC, 12));
-    expect(majors(v)).toBe(3);
-    expect((v.match(/<i /g) ?? []).length).toBe(18);
+  it('欄の地: 並びの番号に比例した位置、並びの間の値は対数で比例、外は端', () => {
+    const L = valueList(R1, 12),
+      key = keyOf(R1, L),
+      at = (v: number) => posOf(L, key, v);
+    expect(at(100)).toBe(0);
+    expect(at(1e6)).toBe(1);
+    expect(at(1e4)).toBeCloseTo(L.indexOf(1e4) / (L.length - 1), 12);
+    /* 10k と 12k の間（対数で中ほど） */
+    const mid = Math.sqrt(1e4 * 1.2e4);
+    expect(at(mid)).toBeCloseTo((L.indexOf(1e4) + 0.5) / (L.length - 1), 12);
+    expect(at(10)).toBe(0);
+    expect(at(1e7)).toBe(1);
+    /* 正の量は左端から塗る */
+    expect(fillOf(R1, L, 1e4)).toEqual({ from: 0, to: at(1e4), at: at(1e4) });
   });
 
-  it('title と ▲▼ の読み上げ', () => {
+  it('欄の下端の刻み: プリセットの位置', () => {
+    const L = valueList(VCC, 12),
+      p = presetPos(VCC, L);
+    expect(p).toHaveLength(5);
+    expect(p[0]).toBeCloseTo((1.8 - 1) / 17, 12);
+    expect(p[4]).toBe(1);
+    expect(presetPos({ ...VCC, max: 10 }, valueList({ ...VCC, max: 10 }, 12))).toHaveLength(4);
+  });
+
+  it('title と ‹ › の読み上げ', () => {
     expect(titleText(R1, 12, formatter(R1))).toBe(
       '100 Ω – 1 MΩ　↑↓: E12 の隣の値　PgUp/PgDn: 10 倍・1/10　Enter: 確定　Esc: 戻す',
     );
@@ -86,7 +105,7 @@ describe('555 の行（E 系列はグループに従う・一様な刻み）', (
     expect(badText(R1)).toBe('読めない値です（例 4.7k・4k7・100n・1e3）');
   });
 
-  it('▲▼: 隣の値、PgUp/PgDn は 10 倍か big ずつ、端で止まる', () => {
+  it('‹ ›・矢印キー: 隣の値、PgUp/PgDn は 10 倍か big ずつ、端で止まる', () => {
     const L = valueList(R1, 12);
     expect(stepValue(R1, L, 10_000, 1, false)).toBe(12_000);
     expect(stepValue(R1, L, 10_000, -1, true)).toBe(1000);
@@ -114,12 +133,6 @@ const GAIN: ParamDef = {
   v: 0.0047,
   ph: '',
   pre: [],
-  tk: [
-    [0, '0'],
-    [0.01, '0.01'],
-    [1, '1'],
-    [10, '10'],
-  ],
   series: 12,
   floor: 1e-4,
   ends: true,
@@ -136,7 +149,7 @@ describe('0 を含む E 系列の行（PID のゲイン）', () => {
     expect(L.slice(-3)).toEqual([15, 18, 20]);
   });
 
-  it('0 はスライダーで正の最小値の左に置く', () => {
+  it('0 は欄の地で正の最小値の左に置く', () => {
     const key = keyOf(GAIN, L);
     expect(key(0)).toBeLessThan(key(1e-4));
     expect(nearest(L, key, 0)).toBe(0);
@@ -149,10 +162,6 @@ describe('0 を含む E 系列の行（PID のゲイン）', () => {
     expect(stepValue(GAIN, L, 5e-4, -1, true)).toBe(0);
     expect(stepValue(GAIN, L, 0.0047, 1, true)).toBe(0.047);
     expect(stepValue(GAIN, L, 18, 1, false)).toBe(20);
-  });
-
-  it('大目盛りは 0 と、1e-4 より大きい 10 の累乗', () => {
-    expect(majors(ticksHtml(GAIN, L))).toBe(1 + 5);
   });
 
   it('接頭辞なしの表記と 0 以上の条件', () => {
@@ -173,23 +182,25 @@ describe('負の値を含む一様な刻み（PID の流速）', () => {
     min: -100,
     max: 100,
     v: -1,
-    lin: { step: 0.1, big: 1, major: 50, minor: 10 },
+    lin: { step: 0.1, big: 1 },
     sign: 'any',
     series: undefined,
     floor: undefined,
-    tk: [
-      [-100, '−100'],
-      [0, '0'],
-      [100, '100'],
-    ],
   };
   const L = valueList(W, 12);
 
-  it('刻みと目盛り', () => {
+  it('刻みと、± の量は 0 から塗る', () => {
     expect(L).toHaveLength(2001);
-    const h = ticksHtml(W, L);
-    expect((h.match(/<i /g) ?? []).length).toBe(21);
-    expect(majors(h)).toBe(5);
+    const near = (v: number, e: { from: number; to: number; at: number }) => {
+      const f = fillOf(W, L, v);
+      expect(f.from).toBeCloseTo(e.from, 9);
+      expect(f.to).toBeCloseTo(e.to, 9);
+      expect(f.at).toBeCloseTo(e.at, 9);
+    };
+    near(50, { from: 0.5, to: 0.75, at: 0.75 });
+    near(-100, { from: 0, to: 0.5, at: 0 });
+    near(-25.05, { from: 0.374_75, to: 0.5, at: 0.374_75 });
+    near(0, { from: 0.5, to: 0.5, at: 0.5 });
   });
 
   it('表記と範囲', () => {
@@ -215,8 +226,7 @@ describe('並びを与える行（双2次フィルタ）', () => {
     max: 32768,
     v: 1024,
     ph: '',
-    pre: [],
-    tk: [
+    pre: [
       [256, '256'],
       [4096, '4096'],
       [65536, '65536'],
@@ -246,8 +256,8 @@ describe('並びを与える行（双2次フィルタ）', () => {
     expect(valueList({ ...N, max: 3000 }, 12)).toEqual([256, 512, 1024, 2048]);
   });
 
-  it('範囲外の tk は目盛りに出さない', () => {
-    expect(labels(ticksHtml(N, L))).toEqual(['256', '4096']);
+  it('範囲外のプリセットは刻みを置かない。刻みは並びの番号の位置', () => {
+    expect(presetPos(N, L)).toEqual([0, 4 / 7]);
   });
 
   it('fix で確定する値を差し替える（fc < fs/2）', () => {
@@ -289,4 +299,30 @@ describe('受動素子の行（固定の E192・E1）', () => {
 
 it('plain は有効桁を落として末尾の 0 を付けない', () => {
   expect(plain(0.1 + 0.2)).toBe('0.3');
+});
+
+describe('ドラッグの刻み', () => {
+  it('1 つ動かす距離は並びの長さで決め、2〜14 px に収める', () => {
+    expect(dragPx(8)).toBe(14);
+    expect(dragPx(24)).toBe(10);
+    expect(dragPx(60)).toBe(4);
+    expect(dragPx(2001)).toBe(2);
+    expect(dragPx(0)).toBe(14);
+  });
+
+  it('動かした距離で番号を進め、並びの端で止める', () => {
+    expect(dragIndex(5, 0, 24)).toBe(5);
+    expect(dragIndex(5, 10, 24)).toBe(6);
+    expect(dragIndex(5, 14, 24)).toBe(6);
+    expect(dragIndex(5, 15, 24)).toBe(7);
+    expect(dragIndex(5, -26, 24)).toBe(2);
+    expect(dragIndex(5, -1000, 24)).toBe(0);
+    expect(dragIndex(5, 1000, 24)).toBe(23);
+    /* 長い並び（2001 個）は 2 px で 1 つ */
+    expect(dragIndex(1000, 100, 2001)).toBe(1050);
+  });
+
+  it('ドラッグとみなすのは 4 px を超えてから', () => {
+    expect(DRAG_START).toBe(4);
+  });
 });

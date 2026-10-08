@@ -1,0 +1,10 @@
+---
+/** 行末の ↺: その行を既定値に戻す。既定値と違う行（.mod）だけ見える。動作は lib/reset.ts の addRow */
+interface Props {
+  /** 読み上げ（例「抵抗値を既定値に戻す」）。ParamRow は値に合わせてブラウザ側で入れ直す */
+  label?: string;
+  title?: string;
+}
+const { label = '既定値に戻す', title = '既定値に戻す' } = Astro.props;
+---
+<div class="c-rst"><button type="button" class="rrst" title={title} aria-label={label}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4.5V9h4.5"/></svg></button></div>

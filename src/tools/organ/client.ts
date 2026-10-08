@@ -8,9 +8,10 @@ import { Choice } from '../../lib/choice';
 import { $, $$ } from '../../lib/dom';
 import { fmt, fmtR, minus, plain, ro } from '../../lib/format';
 import { ParamGroup } from '../../lib/param';
+import { movePlayStore, outVol, type PlayKey, TEMPO } from '../../lib/play';
 import { acoustics, reverbSpec, roomOf } from '../../lib/reverb';
 import { SW } from '../../lib/scope';
-import { store, stored } from '../../lib/store';
+import { forget, store, stored } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
 import { OH, specPlot, wavePlot } from '../guitar/plot';
 import { spectra, toDb } from '../spectrum/fft';
@@ -18,7 +19,7 @@ import { OrganAudio } from './audio';
 import type { PipeMsg, WindDesc } from './engine';
 import { Keys, type Sounding } from './keys';
 import { flueView, geoOf, type OrganSpec, panOf, pipeMsg, reedView, type Tuned } from './model';
-import { CUT, DIST, SCALE, VOL0, WIND } from './params';
+import { CUT, DIST, SCALE, SWELL, VOL0, WIND } from './params';
 import type { FlueSpec } from './pipes';
 import {
   barOf,
@@ -202,22 +203,13 @@ audio.onStops = (ids) => {
 };
 
 /* ---------- スウェル ---------- */
-const swellIn = $<HTMLInputElement>('#swell');
-function setSwell(v: number): void {
-  swellIn.value = String(v);
-  swellIn.style.setProperty('--p', (v / 100).toFixed(4));
-  swellIn.setAttribute('aria-valuetext', v ? `開き ${v} %` : '閉じている');
-  txt('#swellv', v ? `${v} %` : '閉');
-  audio.setSwell(v / 100);
-}
+/* 以前の保存（スライダーの swell）は行の保存（p:swell）へ移す */
 {
   const v = stored('swell');
-  setSwell(typeof v === 'number' && v >= 0 && v <= 100 ? Math.round(v / 5) * 5 : 100);
+  if (typeof v === 'number' && stored('p:swell') === undefined) store('p:swell', v);
+  forget('swell');
 }
-swellIn.addEventListener('input', () => {
-  setSwell(Number(swellIn.value));
-  store('swell', Number(swellIn.value));
-});
+new ParamGroup<'swell'>([SWELL], (v) => audio.setSwell(v.swell / 100));
 
 /* ---------- 押している鍵と弁 ---------- */
 /** 押している鍵 1 つ（鍵盤と鍵ごと） */
@@ -462,8 +454,13 @@ function syncVoice(): void {
     o = voicing[s.id] ?? {},
     reed = s.kind === 'reed';
   txt('#vo-aux', s.name);
-  P1.set('scale', o.scale ?? (s.kind === 'flue' ? s.scale : 0), { silent: true });
-  P1.set('cut', o.cut ?? (s.kind === 'flue' ? s.beta : 0.25), { silent: true });
+  /* 既定値（行末の ↺ で戻す値）はストップの標準の整音 */
+  const sd = s.kind === 'flue' ? s.scale : 0,
+    cd = s.kind === 'flue' ? s.beta : 0.25;
+  P1.update('scale', { v: sd });
+  P1.update('cut', { v: cd });
+  P1.set('scale', o.scale ?? sd, { silent: true });
+  P1.set('cut', o.cut ?? cd, { silent: true });
   P1.setOff('scale', reed, 'リード管には使わない');
   P1.setOff('cut', reed, 'リード管には使わない');
   html('#v-al', s.kind === 'flue' ? plain(s.alpha, 3, true) : '—');
@@ -727,37 +724,11 @@ function lift(d: Div, k: number): void {
   keyOff(d, k, 0);
 }
 
-/* 音量（スライダーだけ） */
-const volIn = $<HTMLInputElement>('#vol'),
-  volNum = (v: unknown) => (typeof v === 'number' && v >= -60 && v <= 0 ? Math.round(v) : VOL0);
-function setVol(db: number): void {
-  volIn.value = String(db);
-  volIn.style.setProperty('--p', ((db + 60) / 60).toFixed(4));
-  volIn.setAttribute('aria-valuetext', `${minus(String(db))} dB`);
-  txt('#volv', `${minus(String(db))} dB`);
-  audio.vol(db);
-}
-setVol(volNum(stored('vol')));
-volIn.addEventListener('input', () => {
-  const db = Number(volIn.value);
-  setVol(db);
-  store('vol', db);
-});
-const tempoIn = $<HTMLInputElement>('#tempo');
-function setTempo(v: number): void {
-  V.tempo = v;
-  tempoIn.value = String(v);
-  tempoIn.style.setProperty('--p', ((v - 25) / 125).toFixed(4));
-  tempoIn.setAttribute('aria-valuetext', `${v} %`);
-  txt('#tempov', `${v} %`);
-}
-{
-  const v = stored('tempo');
-  setTempo(typeof v === 'number' && v >= 25 && v <= 150 ? Math.round(v / 5) * 5 : 100);
-}
-tempoIn.addEventListener('input', () => {
-  setTempo(Number(tempoIn.value));
-  store('tempo', V.tempo);
+/* テンポと音量（演奏中も効く） */
+movePlayStore();
+new ParamGroup<PlayKey>([TEMPO, outVol(VOL0)], (v) => {
+  V.tempo = v.tempo;
+  audio.vol(v.vol);
 });
 $('#muteBtn').addEventListener('click', () => {
   if (PL) stopPiece();

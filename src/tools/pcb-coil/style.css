@@ -8,6 +8,9 @@
   .a-find,.a-thy{grid-column:1/-1}
 }
 
+/* 記号の列（d_out が入る幅） */
+.a-dim .prow{--sw:2rem}
+
 /* 計算結果 */
 .m-sub{display:block;margin-top:2px;font:500 12px/1.5 var(--mono);color:var(--ink-3)}
 .m-main .m-note{font-size:12.5px;letter-spacing:0}

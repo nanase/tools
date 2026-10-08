@@ -21,23 +21,20 @@ const clamp =
   };
 /** 一様な刻みの数値の行 */
 function lin(
-  d: Omit<ParamDef, 'list' | 'lin' | 'format' | 'fix' | 'pre' | 'tk'> & {
+  d: Omit<ParamDef, 'list' | 'lin' | 'format' | 'fix' | 'pre'> & {
     step: number;
     big: number;
-    major: number;
     s?: number;
     pre?: ParamDef['pre'];
-    tk?: ParamDef['tk'];
   },
 ): ParamDef {
   const f = fmtU(d.unit, d.s);
   return {
     ...d,
-    lin: { step: d.step, big: d.big, major: d.major },
+    lin: { step: d.step, big: d.big },
     format: f,
     fix: clamp(d.min, d.max, f.text as (v: number) => string, d.step),
     pre: d.pre ?? [],
-    tk: d.tk ?? [],
   };
 }
 
@@ -58,14 +55,7 @@ export const DIA: ParamDef = {
     ph: '例 0.65',
     step: 0.001,
     big: 0.05,
-    major: 0.2,
     s: 4,
-    tk: [
-      [0.2, '0.2'],
-      [0.6, '0.6'],
-      [1, '1'],
-      [1.4, '1.4'],
-    ],
   }),
   list: linList(0.2, 1.6, 0.01),
   lin: undefined,
@@ -85,14 +75,7 @@ export const TEN: ParamDef = {
     ph: '例 70',
     step: 0.1,
     big: 5,
-    major: 50,
     s: 4,
-    tk: [
-      [50, '50'],
-      [100, '100'],
-      [150, '150'],
-      [200, '200'],
-    ],
   }),
   list: linList(10, 250, 0.5),
   lin: undefined,
@@ -111,17 +94,11 @@ export const SCALE: ParamDef = lin({
   ph: '例 650',
   step: 1,
   big: 10,
-  major: 50,
   pre: [
     [630, '630'],
     [645, '645'],
     [650, '650'],
     [660, '660'],
-  ],
-  tk: [
-    [500, '500'],
-    [600, '600'],
-    [700, '700'],
   ],
 });
 
@@ -139,18 +116,12 @@ export const POS: ParamDef = lin({
   ph: '例 130',
   step: 1,
   big: 10,
-  major: 50,
   pre: [
     [40, '40', '駒のすぐ近く（スル・ポンティチェロ）'],
     [80, '80'],
     [130, '130', 'サウンドホールの駒側の端あたり'],
     [200, '200'],
     [300, '300', '指板の上（スル・タスト）'],
-  ],
-  tk: [
-    [50, '50'],
-    [150, '150'],
-    [250, '250'],
   ],
 });
 export const SLANT: ParamDef = lin({
@@ -166,17 +137,11 @@ export const SLANT: ParamDef = lin({
   ph: '例 20',
   step: 5,
   big: 15,
-  major: 15,
   sign: 'any',
   pre: [
     [0, '0'],
     [15, '15'],
     [30, '30'],
-  ],
-  tk: [
-    [-45, '−45'],
-    [0, '0'],
-    [45, '45'],
   ],
 });
 export const AMP: ParamDef = lin({
@@ -192,19 +157,12 @@ export const AMP: ParamDef = lin({
   ph: '例 1.2',
   step: 0.1,
   big: 0.5,
-  major: 1,
   pre: [
     [0.3, 'pp'],
     [0.7, 'p'],
     [1.2, 'mf'],
     [2, 'f'],
     [3, 'ff'],
-  ],
-  tk: [
-    [1, '1'],
-    [2, '2'],
-    [3, '3'],
-    [4, '4'],
   ],
 });
 export const ANGLE: ParamDef = lin({
@@ -220,13 +178,6 @@ export const ANGLE: ParamDef = lin({
   ph: '例 45',
   step: 5,
   big: 15,
-  major: 30,
-  tk: [
-    [0, '0'],
-    [30, '30'],
-    [60, '60'],
-    [90, '90'],
-  ],
 });
 
 /* ---------- 胴 ---------- */
@@ -244,12 +195,6 @@ export const THICK: ParamDef = {
     ph: '例 2.5',
     step: 0.1,
     big: 0.5,
-    major: 0.5,
-    tk: [
-      [2, '2'],
-      [3, '3'],
-      [4, '4'],
-    ],
   }),
 };
 export const VOLUME: ParamDef = {
@@ -266,12 +211,6 @@ export const VOLUME: ParamDef = {
     ph: '例 13',
     step: 0.5,
     big: 2,
-    major: 5,
-    tk: [
-      [10, '10'],
-      [20, '20'],
-      [30, '30'],
-    ],
   }),
 };
 export const HOLE: ParamDef = {
@@ -288,12 +227,6 @@ export const HOLE: ParamDef = {
     ph: '例 85',
     step: 1,
     big: 5,
-    major: 20,
-    tk: [
-      [60, '60'],
-      [90, '90'],
-      [120, '120'],
-    ],
   }),
 };
 
@@ -311,13 +244,6 @@ export const DIST: ParamDef = lin({
   ph: '例 1',
   step: 0.5,
   big: 2,
-  major: 5,
-  tk: [
-    [1, '1'],
-    [10, '10'],
-    [20, '20'],
-    [30, '30'],
-  ],
 });
 
 /* ---------- 演奏と音 ---------- */

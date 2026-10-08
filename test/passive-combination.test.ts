@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { eList } from '../src/lib/eseries';
 import { circuitSvg } from '../src/tools/passive-combination/circuit';
 import { bands, cand, codeOf, errTxt, expr, flat, GOLD, SILVER, usable } from '../src/tools/passive-combination/model';
-import { numDef, TY } from '../src/tools/passive-combination/params';
+import { numDef } from '../src/tools/passive-combination/params';
 import { createSearch, type Found, type Tree } from '../src/tools/passive-combination/search';
 
 const P = (a: number, b: number) => (a * b) / (a + b);
@@ -174,8 +174,8 @@ describe('回路図', () => {
 
 describe('入力の行', () => {
   it('種類ごとの範囲と単位', () => {
-    expect(numDef('t', 'C')).toMatchObject({ unit: 'F', min: 1e-12, max: 1, v: 1.234e-6, series: 192, slider: false });
-    expect(numDef('max', 'L')).toMatchObject({ unit: 'H', min: 1e-9, max: 1, v: 1, series: 1, tk: TY.L.tk });
+    expect(numDef('t', 'C')).toMatchObject({ unit: 'F', min: 1e-12, max: 1, v: 1.234e-6, series: 192 });
+    expect(numDef('max', 'L')).toMatchObject({ unit: 'H', min: 1e-9, max: 1, v: 1, series: 1 });
     expect(numDef('min', 'R').name).toBe('使う最小の抵抗値');
   });
 });

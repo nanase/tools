@@ -1,5 +1,6 @@
 ---
 import Collapsible from '../components/Collapsible.astro';
+import More from '../components/More.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
@@ -22,7 +23,8 @@ const name = 'タイマIC 555';
     <div class="col">
       <Panel hid="hd-in" title="入力" class="a-in">
         <SeriesSwitch slot="aux" id="eser" />
-        <div class="ptab">{PARAMS.map((d) => <ParamRow d={d} fold={d.k === 'vcc'} />)}</div>
+        <div class="ptab">{PARAMS.filter((d) => d.k !== 'vcc').map((d) => <ParamRow d={d} />)}</div>
+        <More id="g-in"><div class="ptab">{PARAMS.filter((d) => d.k === 'vcc').map((d) => <ParamRow d={d} />)}</div></More>
       </Panel>
 
       <Panel hid="hd-out" title="計算結果" class="a-out">

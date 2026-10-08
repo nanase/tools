@@ -4,6 +4,7 @@ import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
 import RelatedTools from '../components/RelatedTools.astro';
+import RowReset from '../components/RowReset.astro';
 import SeriesSwitch from '../components/SeriesSwitch.astro';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import '../tools/colorcode/style.css';
@@ -23,17 +24,19 @@ const name = '抵抗カラーコード';
   <div class="tgrid">
     <div class="col">
       <Panel hid="hd-in" title="値" class="a-in">
-        <SeriesSwitch slot="aux" id="esel" value={STEP_SERIES_INIT} series={STEP_SERIES} label="▲▼ とスライダーの刻み" />
+        <SeriesSwitch slot="aux" id="esel" value={STEP_SERIES_INIT} series={STEP_SERIES} label="ドラッグと ‹ › の刻み" />
         <div class="ptab">
           <ParamRow d={R_DEF} />
           <div class="prow wide" id="p-tol">
             <div class="c-sym" aria-hidden="true"><i>t</i></div>
             <div class="c-name"><span class="pn" id="n-tol">許容差</span><p class="desc tip" id="t-tol" role="tooltip" hidden>許容差の帯の色。4 本帯の「なし」は帯が 3 本の抵抗器</p></div>
+            <RowReset label="許容差を既定値に戻す" />
             <div class="c-sub"><div class="chips" id="tolC" role="group" aria-labelledby="n-tol" aria-describedby="t-tol" set:html={TOL_KEYS.map((k) => ccChip('t', k, k === INIT.tol)).join('')} /></div>
           </div>
           <div class="prow wide off" id="p-tc">
             <div class="c-sym" aria-hidden="true"><i>α</i></div>
             <div class="c-name"><span class="pn" id="n-tc">温度係数</span><p class="desc tip" id="t-tc" role="tooltip" hidden>温度係数の帯（6 本目）の色（ppm/K）</p></div>
+            <RowReset label="温度係数を既定値に戻す" />
             <div class="c-sub"><p class="msg" id="s-tc">6 本帯のときに使います</p><div class="chips" id="tcC" role="group" aria-labelledby="n-tc" aria-describedby="t-tc" hidden set:html={TC_KEYS.map((k) => ccChip('tc', k, false)).join('')} /></div>
           </div>
         </div>

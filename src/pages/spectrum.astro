@@ -1,6 +1,7 @@
 ---
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import More from '../components/More.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
@@ -95,20 +96,20 @@ const related = [
         </div>
 
         <!-- 周波数軸と強度の範囲はどちらの表示にも使う。時間の幅とチャンネルはスペクトログラムだけ -->
-        <div class="ana2">
+        <More id="g-sp" title="表示の設定"><div class="ana2">
           <div class="ptab">
-            <ChoiceRow k="ax" name="周波数軸" sub="対数: 1 オクターブを同じ幅に。メル: 人が感じる音の高さに近い目盛り" choices={[['lin', 'リニア'], ['log', '対数'], ['mel', 'メル']]} value="log" fold />
-            <ParamRow d={P.fl} fold />
-            <ParamRow d={P.fh} fold />
-            <ChoiceRow k="span" name="時間の幅" sub="スペクトログラムの横幅に入れる時間" choices={SPANS.map((v) => [v, `${v} s`] as const)} value={10} layout="chips" wide fold class="sg-only" />
+            <ChoiceRow k="ax" name="周波数軸" sub="対数: 1 オクターブを同じ幅に。メル: 人が感じる音の高さに近い目盛り" choices={[['lin', 'リニア'], ['log', '対数'], ['mel', 'メル']]} value="log" />
+            <ParamRow d={P.fl} />
+            <ParamRow d={P.fh} />
+            <ChoiceRow k="span" name="時間の幅" sub="スペクトログラムの横幅に入れる時間" choices={SPANS.map((v) => [v, `${v} s`] as const)} value={10} layout="chips" class="sg-only" />
           </div>
           <div class="ptab">
-            <ChoiceRow k="ym" name="縦軸" sub="dB: 対数の目盛り。リニア: 振幅そのまま（最高強度を上端にする）" choices={[['db', 'dB'], ['lin', 'リニア']]} value="db" fold />
-            <ParamRow d={P.top} fold />
-            <ParamRow d={P.bot} fold />
-            <ChoiceRow k="sgc" name="チャンネル" sub="スペクトログラムに描くチャンネル" choices={[['1', 'CH1'], ['2', 'CH2'], ['mix', '平均']]} value="mix" fold class="sg-only" />
+            <ChoiceRow k="ym" name="縦軸" sub="dB: 対数の目盛り。リニア: 振幅そのまま（最高強度を上端にする）" choices={[['db', 'dB'], ['lin', 'リニア']]} value="db" />
+            <ParamRow d={P.top} />
+            <ParamRow d={P.bot} />
+            <ChoiceRow k="sgc" name="チャンネル" sub="スペクトログラムに描くチャンネル" choices={[['1', 'CH1'], ['2', 'CH2'], ['mix', '平均']]} value="mix" class="sg-only" />
           </div>
-        </div>
+        </div></More>
       </Panel>
     </div>
 

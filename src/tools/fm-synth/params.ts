@@ -1,7 +1,7 @@
 /** FM 音源の入力の定義: オペレータの値の範囲と初期値、鍵盤、音量、表示の設定 */
 import { linList } from '../../lib/eseries';
-import { minus } from '../../lib/format';
-import type { ParamDef, ParamFormat } from '../../lib/param-def';
+import { minus, plain } from '../../lib/format';
+import type { ParamDef, ParamFormat, ParamPatch } from '../../lib/param-def';
 
 export type Op = 1 | 2 | 3 | 4;
 export const OPS: readonly Op[] = [1, 2, 3, 4];
@@ -18,6 +18,73 @@ export const W0 = ['sin', 'sin', 'sin', 'sin'],
   R0 = [1, 1, 1, 2],
   I0 = [1.5, 1, 2, 1],
   L0 = [0, -3, 0, -12];
+
+/* ---------- オペレータの数値の行（周波数比と、変調指数か出力レベル） ---------- */
+const p3 = (v: number) => plain(v, 3);
+/** 周波数比の行（キー r1〜r4。ブラウザに p:r1〜p:r4 として保存する） */
+export const ratioDef = (n: Op): ParamDef => ({
+  k: `r${n}`,
+  nm: `OP${n}`,
+  sym: '',
+  name: `OP${n} の周波数比`,
+  sub: '基本周波数に掛ける倍率',
+  unit: '',
+  min: 0.5,
+  max: 15,
+  v: R0[n - 1],
+  ph: '例 2',
+  list: RATIOS,
+  snap: true,
+  notation: 'plain',
+  format: { input: p3, view: (v) => `×${p3(v)}`, step: p3, text: (v) => `×${p3(v)}` },
+  bad: '読めない値です（例 0.5・2）',
+  pre: [],
+});
+/** 範囲外を丸め、刻みに合わせる */
+const fixTo =
+  (min: number, max: number, step: number, text: (v: number) => string) =>
+  (v: number): readonly [number, string] => {
+    const c = Math.min(max, Math.max(min, v)),
+      w = Number((Math.round(c / step) * step).toFixed(6));
+    return [w, c !== v ? `${text(v)} は範囲外のため${w === max ? '上限' : '下限'} ${text(w)} にしました` : ''];
+  };
+const dbT = (v: number) => `${minus(String(Math.round(v)))} dB`;
+/** 強さの行（キー a1〜a4）の、キャリア（出力レベル）とモジュレータ（変調指数）で変わる項目 */
+export const ampPatch = (n: Op, car: boolean): ParamPatch =>
+  car
+    ? {
+        nm: `OP${n}`,
+        name: `OP${n} の出力レベル`,
+        sub: 'キャリアの振幅（0 dB = フルスケール）',
+        unit: 'dB',
+        min: LVL.min,
+        max: LVL.max,
+        v: L0[n - 1],
+        list: linList(LVL.min, LVL.max, LVL.step),
+        jump: 6,
+        sign: 'any',
+        format: { input: (v) => minus(String(Math.round(v))), view: dbT, text: dbT },
+        fix: fixTo(LVL.min, LVL.max, LVL.step, dbT),
+        bad: '読めない値です（例 −6・−20）',
+      }
+    : {
+        nm: `OP${n}`,
+        name: `OP${n} の変調指数`,
+        sub: 'モジュレータの振幅（変調先の位相をずらす最大の量 [rad]）',
+        unit: '',
+        min: IDX.min,
+        max: IDX.max,
+        v: I0[n - 1],
+        list: linList(IDX.min, IDX.max, IDX.step),
+        jump: 10,
+        sign: 'nonneg',
+        format: { input: p3, view: (v) => `I ${p3(v)}`, text: (v) => `I ${p3(v)}` },
+        fix: fixTo(IDX.min, IDX.max, IDX.step, (v) => `I ${p3(v)}`),
+        bad: '読めない値です（例 1.5）',
+      };
+/** 強さの行（キー a1〜a4）。保存はページ側（キャリアは p:l1〜、モジュレータは p:i1〜） */
+export const ampDef = (n: Op, car: boolean): ParamDef =>
+  ({ k: `a${n}`, sym: '', ph: '', notation: 'plain', pre: [], ...ampPatch(n, car) }) as ParamDef;
 
 /** 初期のアルゴリズムと帰還量、音量の調整 */
 export const ALG0 = 4,
@@ -65,12 +132,6 @@ export const VOL: ParamDef & { k: Key } = {
   },
   bad: '読めない値です（例 −6・−20）',
   pre: [],
-  tk: [
-    [-60, '−60'],
-    [-40, '−40'],
-    [-20, '−20'],
-    [0, '0'],
-  ],
 };
 
 /* ---------- 表示 ---------- */

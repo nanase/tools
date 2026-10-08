@@ -4,15 +4,36 @@
  */
 import { Choice } from '../../lib/choice';
 import { $, $$ } from '../../lib/dom';
+import { same } from '../../lib/eseries';
 import { fmt, fmtR, minus, plain } from '../../lib/format';
 import { ParamGroup } from '../../lib/param';
 import { DV } from '../../lib/scope';
-import { store, stored } from '../../lib/store';
+import { forget, store, stored } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
 import { spectra, toDb } from '../spectrum/fft';
 import { FmAudio } from './audio';
 import { algH, algSvg, algText, DW } from './diagram';
-import { I0, IDX, KEYS, type Key, L0, LVL, NOTE0, noteHz, noteName, OCT, OPS, R0, RATIOS, VOL } from './params';
+import {
+  ALG0,
+  ampDef,
+  ampPatch,
+  I0,
+  IDX,
+  KEYS,
+  type Key,
+  L0,
+  LVL,
+  NOTE0,
+  noteHz,
+  noteName,
+  OCT,
+  OPS,
+  type Op,
+  R0,
+  RATIOS,
+  ratioDef,
+  VOL,
+} from './params';
 import { ALGS, FB_LABEL, isCarrier, normGain, type Patch, PTS, WAVES, waveIndex, waveOf } from './synth';
 
 initToolPage();
@@ -113,26 +134,42 @@ function patch(): Patch {
 /* ---------- オペレータ ---------- */
 const fmtI = (v: number) => `I ${plain(v, 3)}`;
 const fmtL = (v: number) => `${minus(String(v))} dB`;
-/** キャリアかモジュレータかで、スライダーを出力レベルか変調指数にする */
+/* 周波数比（ブラウザに p:r1〜p:r4 として保存する） */
+new ParamGroup<string>(OPS.map(ratioDef), (v, k) => {
+  if (!k) return;
+  OV.r[Number(k.slice(1)) - 1] = v[k];
+  update();
+});
+/* 強さ: キャリアは出力レベル（p:l1〜p:l4 に保存）、モジュレータは変調指数（p:i1〜p:i4）。役割はアルゴリズムで変わる */
+const role = OPS.map((n) => isCarrier(ALG0, n - 1));
+const AG = new ParamGroup<string>(
+  OPS.map((n) => ampDef(n, role[n - 1])),
+  (v, k) => {
+    if (!k) return;
+    const i = Number(k.slice(1)) - 1,
+      car = isCarrier(O.alg, i),
+      x = v[k],
+      key = `p:${car ? 'l' : 'i'}${i + 1}`;
+    if (car) OV.l[i] = x;
+    else OV.i[i] = x;
+    if (same(x, car ? L0[i] : I0[i])) forget(key);
+    else store(key, x);
+    update();
+  },
+  null,
+  { save: false },
+);
+/** キャリアかモジュレータかで、強さの行を出力レベルか変調指数にする */
 function syncOp(k: number): void {
-  const n = k + 1,
+  const n = (k + 1) as Op,
     car = isCarrier(O.alg, k),
-    sl = $<HTMLInputElement>(`#op${n}-a`),
-    R = car ? LVL : IDX,
     v = car ? OV.l[k] : OV.i[k];
   txt(`#op${n}-role`, car ? 'キャリア' : 'モジュレータ');
-  sl.min = String(R.min);
-  sl.max = String(R.max);
-  sl.step = String(R.step);
-  sl.value = String(v);
-  sl.style.setProperty('--p', ((v - R.min) / (R.max - R.min)).toFixed(4));
-  sl.setAttribute('aria-label', `OP${n} の${car ? '出力レベル' : '変調指数'}`);
-  sl.setAttribute('aria-valuetext', car ? fmtL(v) : `変調指数 ${plain(v, 3)}`);
-  txt(`#op${n}-v`, car ? fmtL(v) : fmtI(v));
-  const ri = RATIOS.indexOf(OV.r[k]);
-  txt(`#op${n}-r`, `×${plain(OV.r[k], 3)}`);
-  for (const b of $$<HTMLButtonElement>(`#op${n} .ostp`))
-    b.setAttribute('aria-disabled', String(b.dataset.d === '1' ? ri >= RATIOS.length - 1 : ri <= 0));
+  if (role[k] !== car) {
+    role[k] = car;
+    AG.update(`a${n}`, ampPatch(n, car));
+  }
+  if (!same(AG.get(`a${n}`), v)) AG.set(`a${n}`, v, { silent: true });
 }
 OPS.forEach((n, k) => {
   const wc = new Choice<string>($(`#p-w${n}`), (v) => {
@@ -140,22 +177,6 @@ OPS.forEach((n, k) => {
     update();
   });
   OV.w[k] = waveIndex(wc.value);
-  $<HTMLInputElement>(`#op${n}-a`).addEventListener('input', (e) => {
-    const v = Number((e.currentTarget as HTMLInputElement).value),
-      car = isCarrier(O.alg, k);
-    if (car) OV.l[k] = v;
-    else OV.i[k] = Number(v.toFixed(1));
-    store(`p:${car ? 'l' : 'i'}${n}`, car ? OV.l[k] : OV.i[k]);
-    update();
-  });
-  for (const b of $$<HTMLButtonElement>(`#op${n} .ostp`))
-    b.addEventListener('click', () => {
-      const ri = RATIOS.indexOf(OV.r[k]) + Number(b.dataset.d);
-      if (ri < 0 || ri >= RATIOS.length) return;
-      OV.r[k] = RATIOS[ri];
-      store(`p:r${n}`, OV.r[k]);
-      update();
-    });
 });
 
 /** 結線図の箱の下に添える値 */

@@ -1,6 +1,7 @@
 ---
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import More from '../components/More.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
@@ -73,10 +74,10 @@ const chain = (a: number) =>
             </svg>
           </div>
           <div class="sbar rdbar"><span class="stag rd" id="w-rd"></span></div>
-          <div class="ana2">
-            <div class="ptab"><ChoiceRow k="per" name="表示する周期" sub="基本周波数の何周期ぶんを表示窓の幅に入れるか" choices={PERIODS.map((v) => [v, String(v)] as const)} value={2} fold /></div>
-            <div class="ptab"><ChoiceRow k="rng" name="表示範囲" sub="中心から端までの振幅（フルスケールを 1 とする）" choices={RANGES.map((v) => [v, `±${v}`] as const)} value={1} fold /></div>
-          </div>
+          <More id="g-yt" title="表示の設定"><div class="ana2">
+            <div class="ptab"><ChoiceRow k="per" name="表示する周期" sub="基本周波数の何周期ぶんを表示窓の幅に入れるか" choices={PERIODS.map((v) => [v, String(v)] as const)} value={2} /></div>
+            <div class="ptab"><ChoiceRow k="rng" name="表示範囲" sub="中心から端までの振幅（フルスケールを 1 とする）" choices={RANGES.map((v) => [v, `±${v}`] as const)} value={1} /></div>
+          </div></More>
         </div>
 
         <div id="v-sp" hidden>
@@ -95,9 +96,9 @@ const chain = (a: number) =>
             </svg>
           </div>
           <div class="sbar rdbar"><span class="stag rd" id="s-rd"></span></div>
-          <div class="ptab ana">
-            <ChoiceRow k="hm" name="横軸の範囲" sub="基本周波数の何倍までを表示窓の幅に入れるか" choices={HMAX.map((v) => [v, `${v} 倍`] as const)} value={16} fold />
-          </div>
+          <More id="g-sp" title="表示の設定"><div class="ptab">
+            <ChoiceRow k="hm" name="横軸の範囲" sub="基本周波数の何倍までを表示窓の幅に入れるか" choices={HMAX.map((v) => [v, `${v} 倍`] as const)} value={16} />
+          </div></More>
         </div>
       </Panel>
 

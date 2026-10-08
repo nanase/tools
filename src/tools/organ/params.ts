@@ -1,4 +1,5 @@
 /** オルガン音響モデルの入力の定義（数値の行・選択肢・表示の設定） */
+import { linList } from '../../lib/eseries';
 import { minus } from '../../lib/format';
 import type { ParamDef, ParamFormat } from '../../lib/param-def';
 
@@ -20,23 +21,20 @@ const clamp =
   };
 /** 一様な刻みの数値の行 */
 function lin(
-  d: Omit<ParamDef, 'list' | 'lin' | 'format' | 'fix' | 'pre' | 'tk'> & {
+  d: Omit<ParamDef, 'list' | 'lin' | 'format' | 'fix' | 'pre'> & {
     step: number;
     big: number;
-    major: number;
     s?: number;
     pre?: ParamDef['pre'];
-    tk?: ParamDef['tk'];
   },
 ): ParamDef {
   const f = fmtU(d.unit, d.s);
   return {
     ...d,
-    lin: { step: d.step, big: d.big, major: d.major },
+    lin: { step: d.step, big: d.big },
     format: f,
     fix: clamp(d.min, d.max, f.text as (v: number) => string, d.step),
     pre: d.pre ?? [],
-    tk: d.tk ?? [],
   };
 }
 
@@ -55,16 +53,10 @@ export const WIND: ParamDef = lin({
   ph: '例 800',
   step: 10,
   big: 50,
-  major: 200,
   pre: [
     [600, '600', '約 60 mm 水柱（バロック時代の楽器に多い）'],
     [800, '800'],
     [1000, '1000'],
-  ],
-  tk: [
-    [400, '400'],
-    [800, '800'],
-    [1200, '1200'],
   ],
 });
 
@@ -83,14 +75,8 @@ export const SCALE: ParamDef = lin({
   ph: '例 0',
   step: 1,
   big: 2,
-  major: 4,
   sign: 'any',
   s: 3,
-  tk: [
-    [-8, '−8'],
-    [0, '0'],
-    [8, '8'],
-  ],
 });
 /** カットアップ ÷ 口の幅 */
 export const CUT: ParamDef = lin({
@@ -106,13 +92,7 @@ export const CUT: ParamDef = lin({
   ph: '例 0.25',
   step: 0.01,
   big: 0.05,
-  major: 0.1,
   s: 3,
-  tk: [
-    [0.2, '0.2'],
-    [0.3, '0.3'],
-    [0.4, '0.4'],
-  ],
 });
 
 /* ---------- 部屋 ---------- */
@@ -129,14 +109,40 @@ export const DIST: ParamDef = lin({
   ph: '例 15',
   step: 0.5,
   big: 2,
-  major: 5,
-  tk: [
-    [1, '1'],
-    [10, '10'],
-    [20, '20'],
-    [30, '30'],
-  ],
 });
+
+/** スウェル（第 2 手鍵盤の箱の扉の開き）[%]。0 は閉じている */
+export const SWELL: ParamDef = {
+  k: 'swell',
+  nm: 'スウェル',
+  sym: '',
+  name: 'スウェル',
+  sub: '第 2 手鍵盤の箱の扉の開き。閉じると音が小さく、高い音ほど弱まる',
+  unit: '%',
+  min: 0,
+  max: 100,
+  v: 100,
+  ph: '例 50',
+  list: linList(0, 100, 5),
+  jump: 4,
+  sign: 'nonneg',
+  notation: 'plain',
+  format: {
+    input: (v) => String(Math.round(v)),
+    view: (v) => (v ? String(Math.round(v)) : '閉'),
+    text: (v) => `${Math.round(v)} %`,
+  },
+  fix: (v) => {
+    const w = Math.round(Math.min(100, Math.max(0, v)));
+    return [w, w !== Math.round(v) ? `${Math.round(v)} % は範囲外のため${w ? '上限' : '下限'} ${w} % にしました` : ''];
+  },
+  bad: '読めない値です（例 50）',
+  pre: [
+    [0, '閉'],
+    [50, '50'],
+    [100, '100'],
+  ],
+};
 
 /* ---------- 演奏と音 ---------- */
 /** 音量の初期値 [dB]（0 dB で、1 m 先の音圧 1 Pa をフルスケールにする）。プレヌムの和音は 1 m 先で数 Pa になる */

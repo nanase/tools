@@ -123,8 +123,18 @@ a.mi[aria-current="page"]{background:var(--inset);font-weight:700;box-shadow:ins
 /* 枠（C 案の計測器パネルの枠: 細い線、見出しは枠線の上に載せる） */
 .pnl{position:relative;border:1px solid var(--line-2);border-radius:3px;padding:22px 14px 14px;min-width:0}
 .ph{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:6px 12px;min-height:0}
-.ph>.seg{position:absolute;top:0;right:10px;transform:translateY(-50%);background:var(--bg)}
-.ph>.aux{position:absolute;top:0;right:10px;transform:translateY(-50%);padding:0 6px;background:var(--bg);line-height:1.3}
+/* 枠線の上の右端（Panel.astro の .pha に aux と「↺ n 件」を並べる。.ph に直接置いた .seg・.aux も同じ所に載る） */
+.ph>.pha,.clps>.pha,.ph>.seg,.ph>.aux{position:absolute;top:0;right:10px;transform:translateY(-50%);background:var(--bg);line-height:1.3}
+.pha{display:flex;align-items:center;gap:6px;padding-left:6px}
+.pha:not(:has(> :not([hidden],.gone))){display:none}
+.ph>.aux,.pha>.aux:last-child{padding-right:6px}
+.ph>.aux{padding-left:6px}
+.prst{display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 8px;border:1px solid var(--line);border-radius:4px;background:var(--bg);color:var(--ink-2);font:500 12px/1 var(--mono);white-space:nowrap;cursor:pointer}
+.prst:hover{border-color:var(--line-2);color:var(--ink)}
+.prst svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+/* 見出しと重なるときは「↺ n」に詰め、それでも重なれば出さない（lib/reset.ts） */
+.prst.cmp .u{display:none}
+.prst.gone{display:none}
 .ph h2,.clps>summary{position:absolute;top:0;left:10px;transform:translateY(-50%);padding:0 6px;background:var(--bg);font-size:13.5px;font-weight:700;line-height:1.3;color:var(--ink)}
 .aux{font-size:12.5px;color:var(--ink-3)}
 a.aux{color:var(--ink-2)}
@@ -201,77 +211,97 @@ a.unit:hover h3{text-decoration:underline;text-decoration-color:var(--ink-3);tex
 }
 .rel{margin-top:26px}
 
-/* parameters (記号 | 項目 | 値 | 単位)。広い表では 1 行に並べ、狭い表では値を項目名の下に置く。
-   補足は項目名の吹き出し（.tip）に出す */
-.prow{position:relative;display:grid;grid-template-columns:2.2rem minmax(0,1fr) 12rem 1.7rem;grid-template-areas:"sym name val unit" "sym sub sub sub";column-gap:10px;row-gap:4px;padding:10px 8px;border-bottom:1px solid var(--line);align-items:center;min-width:0}
-.prow:first-child{padding-top:4px}
-.prow:last-child{border-bottom:0;padding-bottom:0}
-.c-sym{grid-area:sym;align-self:start;padding-top:9px;font-size:17px;line-height:1.7}
-.c-name{grid-area:name;display:flex;flex-wrap:wrap;align-items:center;column-gap:6px;min-width:0;font-size:14px;font-weight:700;line-height:1.35}
+/* parameters（記号 | 項目名 | 値 | 単位 | ↺）。1 行に並べ、メッセージとチップは下の段に出す。補足は項目名の吹き出し（.tip）に出す。
+   既定値と違う行（.mod）は左端に線を引き、行末の ↺ を出す（lib/reset.ts。↺ の場所は空けておき、行がずれない） */
+.ptab{container-type:inline-size}
+.prow{--sw:26px;--fw:176px;--uw:30px;position:relative;display:grid;grid-template-columns:var(--sw) minmax(0,1fr) var(--fw) var(--uw) 24px;grid-template-areas:"sym name val unit rst" ". sub sub sub sub";column-gap:8px;align-items:center;min-height:38px;padding:4px 8px;border-bottom:1px solid var(--line);min-width:0}
+.prow:last-child{border-bottom:0}
+.c-sym{grid-area:sym;font-size:16px;line-height:1.35;white-space:nowrap}
+.c-name{grid-area:name;display:flex;flex-wrap:wrap;align-items:center;column-gap:6px;min-width:0;font-size:13.5px;font-weight:700;line-height:1.3}
 .c-name small{flex-basis:100%;margin-top:1px;font-size:12px;font-weight:400;color:var(--ink-3)}
 .c-name .pn{min-width:0}
 .c-name:has(.tip:not(:empty)) .pn{cursor:help;text-decoration:underline dotted var(--ink-3);text-underline-offset:4px;text-decoration-thickness:1px}
 .c-name .tip{width:max-content;max-width:min(340px,100%);font-size:13px;font-weight:400}
-.c-val{grid-area:val;min-width:0}
-.c-unit{grid-area:unit;font:500 15px/1 var(--mono);color:var(--ink-2)}
-.c-sub{grid-area:sub;min-width:0}
-.c-sub:has(> .msg:only-child:empty){display:none}
-.fbody{display:contents}
-/* 選択肢だけの行（ChoiceRow） */
-.prow.wide{grid-template-areas:"sym name name name" "sym sub sub sub"}
-/* 畳める行（FoldSwitch）: 畳んでいる間は項目名と今の値だけ */
-.prow.shut{grid-template-areas:"sym name name name"}
-.prow.shut .fbody{display:none}
-.prow.shut .c-sym{padding-top:0;align-self:center}
-.fsw{display:inline-flex;align-items:center;gap:8px;min-height:30px;margin-left:auto;padding:0 8px;border:1px solid var(--line);border-radius:4px;background:none;color:var(--ink-3);font:500 13px/1.2 var(--mono);cursor:pointer}
-.fsw:hover{border-color:var(--line-2);color:var(--ink)}
-.fsw svg{flex:none;width:10px;height:6px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
-.fsw[aria-expanded="true"]{border-color:transparent}
-.fsw[aria-expanded="true"] svg{transform:rotate(180deg)}
-.fsw:disabled{opacity:.5;cursor:default}
-.fsw:disabled:hover{border-color:var(--line);color:var(--ink-3)}
-.prow:not(.shut) .fsum{display:none}
-.fsum{max-width:18em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink)}
-.fsw:disabled .fsum{color:var(--ink-3);font-family:var(--sans);font-size:12px}
-@media (prefers-reduced-motion:no-preference){.fsw svg{transition:transform .2s ease}}
-.ptab{container-type:inline-size}
-@container (max-width:400px){
-  .prow{grid-template-columns:1.9rem minmax(0,1fr) 1.5rem;grid-template-areas:"sym name name" "sym val unit" "sym sub sub";row-gap:6px}
-  .prow.wide{grid-template-areas:"sym name name" "sym sub sub"}
-  .prow.shut{grid-template-areas:"sym name name"}
-  .c-sym{padding-top:0;line-height:1.35}
-}
 .c-name .qbtn{display:inline-grid}
+.c-val{grid-area:val;position:relative;min-width:0}
+.c-unit{grid-area:unit;font:500 13.5px/1 var(--mono);color:var(--ink-2);white-space:nowrap}
+.c-rst{grid-area:rst;display:flex;justify-content:center}
+.c-sub{grid-area:sub;min-width:0;padding:2px 0}
+.c-sub:has(> .msg:only-child:empty){display:none}
+.c-sub>.msg:empty{min-height:0}
+@container (max-width:400px){.prow{--sw:22px;--fw:150px;--uw:28px;column-gap:6px;padding:4px 6px}}
+/* 選択肢の行（ChoiceRow）: 区切りボタンは項目名の右（値と単位の幅。長い選択肢は広げる）、チップは下の段 */
+.prow.segr{grid-template-columns:var(--sw) minmax(4.5em,1fr) minmax(calc(var(--fw) + var(--uw) + 8px),max-content) 24px;grid-template-areas:"sym name val rst" ". sub sub sub"}
+.prow.wide{grid-template-columns:var(--sw) minmax(0,1fr) 24px;grid-template-areas:"sym name rst" ". sub sub"}
 .c-val .seg{display:flex;width:100%}
-.c-val .seg button{flex:1 1 auto;min-width:0;white-space:nowrap;height:40px;padding:0 6px;font:500 13px/1.2 var(--sans)}
-/* 図の表示と計算の設定（図や計算結果の枠の下、.ptab.ana）。広い枠では 2 列に並べる（.ana2 の中に .ptab を 2 つ） */
-.ptab.ana,.ana2{margin-top:14px;border-top:1px solid var(--line)}
-.ptab.ana .prow:first-child,.ana2 .prow:first-child{padding-top:12px}
-.ana2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:24px;align-items:start}
-@media (max-width:559px){.ana2{grid-template-columns:minmax(0,1fr)}.ana2 .ptab+.ptab{border-top:1px solid var(--line)}}
-/* 無効にした行（ParamGroup.setOff・Choice.setOff） */
-.prow.off .c-val,.prow.off .c-unit,.prow.off .sl,.prow.off .chip{opacity:.4}
-.prow.off .c-val,.prow.off .sl,.prow.off .chips{pointer-events:none}
-.fld{display:grid;grid-template-columns:48px minmax(0,1fr) 48px;height:48px;border:1px solid var(--line-2);border-radius:var(--r);background:var(--inset);overflow:hidden}
-.fld:focus-within{border-color:var(--focus);box-shadow:0 0 0 1px var(--focus)}
-.fld input{min-width:0;width:100%;border:0;background:transparent;color:var(--ink);font:700 18px/1 var(--mono);text-align:center;padding:0 4px;font-variant-numeric:tabular-nums}
-.fld input:focus{outline:none}
-.fld input::placeholder{color:var(--ink-3);font-weight:500;font-size:15px}
-.stp{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:0;border:0;background:transparent;color:var(--ink-2);cursor:pointer;touch-action:manipulation;user-select:none;-webkit-user-select:none}
-.stp:first-child{border-right:1px solid var(--line)}
-.stp:last-child{border-left:1px solid var(--line)}
-.stp svg{width:12px;height:8px;fill:currentColor}
-.stp small{font:500 10.5px/1 var(--mono);color:var(--ink-3);white-space:nowrap}
-.stp:hover{background:var(--surface);color:var(--ink)}
-.stp:active{background:var(--line)}
-.stp:focus-visible{outline-offset:-3px}
-.stp[aria-disabled="true"]{opacity:.35;cursor:default;background:transparent}
-.prow.dirty .fld{border-style:dashed}
-.prow.bad .fld{border-color:var(--warn);box-shadow:0 0 0 1px var(--warn)}
+.c-val .seg button{flex:1 1 auto;min-width:0;white-space:nowrap;height:30px;padding:0 8px;font:500 12.5px/1.2 var(--sans)}
+/* 既定値と違う行の印と、行末の ↺ */
+.prow.mod::before{content:"";position:absolute;left:0;top:9px;bottom:9px;width:2px;border-radius:1px;background:var(--ink-2)}
+.rrst{display:inline-grid;place-items:center;width:24px;height:24px;padding:0;border:0;border-radius:4px;background:none;color:var(--ink-3);cursor:pointer;visibility:hidden}
+.prow.mod .rrst{visibility:visible}
+.rrst:hover{color:var(--ink);background:var(--inset)}
+.rrst svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+/* 数値欄（ParamRow）: 欄そのものがスライダー。地の濃い部分が範囲の中の位置（± の量は 0 から）、縦線が今の値、
+   （値の文字に重ならないよう上下の端だけ）、下端の刻みがプリセット。左右にドラッグして値を変え、押すと入力欄（.sc-in）と吹き出し（.sc-pop）に変わる */
+.sc{position:relative;display:grid;grid-template-columns:20px minmax(0,1fr) 20px;align-items:center;height:30px;border:1px solid var(--line-2);border-radius:4px;background:var(--inset);overflow:hidden;cursor:ew-resize;touch-action:pan-y;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
+.sc:hover,.prow.drag .sc{border-color:var(--ink-3)}
+.sc:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+.sc-f{position:absolute;top:0;bottom:0;background:color-mix(in srgb,var(--ink-2) 22%,transparent);pointer-events:none}
+.sc-c{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:linear-gradient(var(--ink-2) 0 7px,transparent 7px calc(100% - 7px),var(--ink-2) calc(100% - 7px));pointer-events:none}
+.sc-p{position:absolute;inset:0;pointer-events:none}
+.sc-p i{position:absolute;bottom:0;width:1px;height:5px;background:var(--ink-3);pointer-events:none}
+.sc-v{position:relative;min-width:0;overflow:hidden;text-overflow:ellipsis;text-align:center;font:700 14px/1 var(--mono);font-variant-numeric:tabular-nums;color:var(--ink);white-space:nowrap;pointer-events:none}
+.sc-a{position:relative;z-index:1;display:grid;place-items:center;height:100%;padding:0;border:0;background:none;color:var(--ink-3);cursor:pointer;touch-action:manipulation}
+.sc-a:hover{color:var(--ink);background:color-mix(in srgb,var(--surface) 70%,transparent)}
+.sc-a svg{width:6px;height:10px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.sc-a[aria-disabled="true"]{opacity:.3;cursor:default;background:none}
+.sc-in{display:none;width:100%;height:30px;padding:0 6px;border:1px solid var(--focus);border-radius:4px;box-shadow:0 0 0 1px var(--focus);background:var(--inset);color:var(--ink);font:700 14px/1 var(--mono);font-variant-numeric:tabular-nums;text-align:center;outline:none}
+.sc-in::placeholder{color:var(--ink-3);font-weight:500;font-size:13px}
+.prow.ed{z-index:24}
+.prow.ed .sc{display:none}
+.prow.ed .sc-in{display:block}
+.prow.dirty .sc-in{border-style:dashed}
+.prow.bad .sc-in{border-color:var(--warn);box-shadow:0 0 0 1px var(--warn)}
+.sc-pop{position:absolute;z-index:20;top:calc(100% + 6px);right:calc(-1 * (var(--uw) + 40px));display:grid;gap:8px;width:262px;max-width:calc(100vw - 32px);padding:10px 12px 12px;border:1px solid var(--line-2);border-radius:6px;background:var(--surface);box-shadow:0 10px 28px rgb(0 0 0 / .3)}
+.prow:not(.ed) .sc-pop{display:none}
+.sc-rg{font:500 11.5px/1.4 var(--mono);color:var(--ink-3)}
+.sc-m:empty{display:none}
+.sc-pop .chips{margin:0}
+.sc-df{justify-self:start;display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 8px;border:1px dashed var(--line-2);border-radius:4px;background:none;color:var(--ink-2);font:500 12px/1 var(--mono);cursor:pointer}
+.sc-df:hover{color:var(--ink);border-color:var(--ink-3)}
+.sc-df svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+/* 無効にした行（ParamGroup.setOff・Choice.setOff）: 数値欄は破線にして理由を出す */
+.prow.off .c-unit,.prow.off .seg,.prow.off .chip{opacity:.4}
+.prow.off .seg,.prow.off .chips{pointer-events:none}
+.prow.off .sc{grid-template-columns:minmax(0,1fr);height:auto;min-height:30px;padding:3px 6px;border-style:dashed;border-color:var(--line-2);background:none;cursor:default}
+.prow.off .sc-a,.prow.off .sc-f,.prow.off .sc-c,.prow.off .sc-p{display:none}
+.prow.off .sc-v{font:12px/1.3 var(--sans);color:var(--ink-3);white-space:normal}
 .msg{min-height:18px;margin:0;font:500 12px/18px var(--mono);color:var(--ink-3);overflow-wrap:anywhere}
 .msg.pv{color:var(--ink)}
 .msg.er{color:var(--warn)}
-.sl{position:relative;padding-bottom:18px}
+.chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:2px}
+.chip{min-height:28px;min-width:38px;padding:0 7px;border:1px solid var(--line);border-radius:4px;background:none;color:var(--ink-2);font:500 12.5px/1 var(--mono);cursor:pointer}
+.chip:hover{border-color:var(--line-2);color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--surface)}
+.chip:disabled{opacity:.35;cursor:default}
+.chip:disabled:hover{border-color:var(--line);color:var(--ink-2)}
+/* 「その他」のまとまり（More.astro）と、図の下の表示の設定。見出しと開閉の印を左、要約を右端に置き、開閉で見出しは動かない。
+   中が 700 px 以上の広い枠では 2 列に並べる（.ana2 の中に .ptab を 2 つ。狭い列では項目名が詰まるので 1 列） */
+.more{margin-top:10px;border-top:1px solid var(--line)}
+.ptab+.more{margin-top:0}
+.more-h{display:flex;align-items:center;gap:8px;width:100%;min-height:38px;padding:0 8px;border:0;background:none;color:var(--ink);font-size:13.5px;font-weight:700;line-height:1.3;text-align:left;cursor:pointer}
+.more-h:focus-visible{outline-offset:-2px}
+.more-t{flex:none;white-space:nowrap}
+.more-h svg{flex:none;width:10px;height:6px;fill:none;stroke:var(--ink-2);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.more-h[aria-expanded="true"] svg{transform:rotate(180deg)}
+.more-s{min-width:0;margin-left:auto;padding-left:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:500 12.5px/1.2 var(--mono);color:var(--ink-3)}
+.more-b{border-top:1px solid var(--line);container-type:inline-size}
+@media (prefers-reduced-motion:no-preference){.more-h svg{transition:transform .2s ease}}
+.ana2{display:grid;grid-template-columns:minmax(0,1fr);column-gap:24px;align-items:start}
+.ana2 .ptab+.ptab{border-top:1px solid var(--line)}
+@container (min-width:700px){.ana2{grid-template-columns:repeat(2,minmax(0,1fr))}.ana2 .ptab+.ptab{border-top:0}}
+/* 数値欄の外に置くスライダー（ファイルの再生位置など） */
+.sl{position:relative}
 .sl input{-webkit-appearance:none;appearance:none;display:block;width:100%;height:28px;margin:0;background:transparent;cursor:pointer;--p:.5}
 .sl input::-webkit-slider-runnable-track{height:3px;border-radius:2px;background:linear-gradient(90deg,var(--ink-2) calc(7px + (100% - 14px) * var(--p)),var(--line-2) 0)}
 .sl input::-moz-range-track{height:3px;border-radius:2px;background:var(--line-2)}
@@ -280,17 +310,16 @@ a.unit:hover h3{text-decoration:underline;text-decoration-color:var(--ink-3);tex
 .sl input::-moz-range-thumb{width:10px;height:18px;border:2px solid var(--ink);border-radius:4px;background:var(--surface)}
 .sl input:focus-visible{outline-offset:0}
 .sl input:disabled{cursor:default}
-.tk{position:absolute;left:7px;right:7px;top:24px;height:18px;pointer-events:none}
-.tk i{position:absolute;top:0;width:1px;height:4px;background:var(--line-2)}
-.tk i.M{height:7px;background:var(--ink-3)}
-.tk span{position:absolute;top:7px;transform:translateX(-50%);font:500 10.5px/1.3 var(--mono);color:var(--ink-3);white-space:nowrap}
-.chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}
-.chip{min-height:30px;min-width:42px;padding:0 8px;border:1px solid var(--line);border-radius:4px;background:none;color:var(--ink-2);font:500 13px/1 var(--mono);cursor:pointer}
-.chip:hover{border-color:var(--line-2);color:var(--ink)}
-.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--surface)}
-.chip:disabled{opacity:.35;cursor:default}
-.chip:disabled:hover{border-color:var(--line);color:var(--ink-2)}
-@media (pointer:coarse){.chip{min-height:40px}.sl input{height:40px}.tk{top:30px}.seg button{height:36px}.c-val .seg button{height:44px}}
+@media (pointer:coarse){
+  .prow{min-height:44px}
+  .sc,.sc-in{height:36px}
+  .sc{grid-template-columns:28px minmax(0,1fr) 28px}
+  .prow.off .sc{grid-template-columns:minmax(0,1fr)}
+  .chip{min-height:36px}
+  .seg button{height:36px}
+  .c-val .seg button{height:36px}
+  .sl input{height:40px}
+}
 
 /* results */
 .a-out{container-type:inline-size}

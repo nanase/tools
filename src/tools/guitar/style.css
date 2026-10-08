@@ -8,22 +8,16 @@
   .a-neck{grid-area:neck}.c1{grid-area:c1}.c2{grid-area:c2}.a-thy{grid-area:thy}.a-src{grid-area:src}
 }
 
-/* 指板の図の下の設定（図の枠が区切りになるので、上の線は引かない） */
-.a-neck .ana2{border-top:0}
-
 /* 音の波形（開閉できる枠）の表示の切り替え */
 .wv-sw{margin:4px 0 12px}
 /* 枠の右上のボタン */
 #playBtn{display:inline-flex;align-items:center;gap:7px}
-/* テンポと音量: スライダーと値（右端に、リリースとすべて止めるのボタン。文字は中央に寄せる） */
-.vgrid{display:grid;grid-template-columns:4rem minmax(0,1fr) 4.2rem auto;align-items:center;gap:6px 12px;margin:12px 8px 0;padding-top:12px;border-top:1px solid var(--line)}
-.vl{font-size:14px;font-weight:700}
-.vgrid .sl{padding-bottom:0}
-.vgrid output{text-align:right;font:500 13.5px/1 var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
-.vgrid .tg{justify-content:center}
+/* テンポと音量は数値の行（ParamRow）。その下に、演奏の位置とリリース・すべて止めるのボタンを並べる */
+.pbtns{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:6px;margin:6px 8px 0;padding-top:8px;border-top:1px solid var(--line)}
+.pbtns .tg{justify-content:center}
 .snd-msg{margin:6px 8px 0}
 .snd-msg:empty{display:none}
-.pl-bar{margin:8px 8px 0;font:500 12.5px/1.5 var(--mono);color:var(--ink-2);text-align:right}
+.pl-bar{margin:0 auto 0 0;font:500 12.5px/1.5 var(--mono);color:var(--ink-2)}
 .pl-bar:empty{display:none}
 
 /* 指板と弦。狭い画面では横にスクロールする */
@@ -113,9 +107,10 @@
 .srcs a{color:var(--ink-2)}
 
 /* 曲の選択（ドロップダウン）: 項目名の右に、残りの幅いっぱいに置く */
-.prow.pick{grid-template-columns:2.2rem auto minmax(0,1fr);grid-template-areas:"sym name val"}
+.prow.pick{grid-template-columns:var(--sw) auto minmax(0,1fr);grid-template-areas:"sym name val"}
 .sel{position:relative}
-.sel select{appearance:none;width:100%;height:40px;padding:0 34px 0 12px;border:1px solid var(--line-2);border-radius:var(--r);background:var(--inset);color:var(--ink);font:500 13.5px/1.2 var(--mono);text-overflow:ellipsis;cursor:pointer}
+.sel select{appearance:none;width:100%;height:30px;padding:0 30px 0 10px;border:1px solid var(--line-2);border-radius:4px;background:var(--inset);color:var(--ink);font:500 13px/1.2 var(--mono);text-overflow:ellipsis;cursor:pointer}
+@media (pointer:coarse){.sel select{height:36px}}
 .sel select:hover{border-color:var(--ink-3)}
 .sel select option{background:var(--surface);color:var(--ink)}
-.sel::after{content:"";position:absolute;top:50%;right:14px;width:7px;height:7px;border-right:1.6px solid var(--ink-2);border-bottom:1.6px solid var(--ink-2);transform:translateY(-70%) rotate(45deg);pointer-events:none}
+.sel::after{content:"";position:absolute;top:50%;right:12px;width:7px;height:7px;border-right:1.6px solid var(--ink-2);border-bottom:1.6px solid var(--ink-2);transform:translateY(-70%) rotate(45deg);pointer-events:none}

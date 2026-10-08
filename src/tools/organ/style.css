@@ -15,22 +15,16 @@
   .a-pp{grid-area:pp}.c1{grid-area:c1}.c2{grid-area:c2}.a-thy{grid-area:thy}.a-src{grid-area:src}
 }
 
-/* 図の下の設定 */
-.a-pp .ptab{margin-top:6px}
-
 /* 音の波形（開閉できる枠）の表示の切り替え */
 .wv-sw{margin:4px 0 12px}
 /* 枠の右上のボタン */
 #playBtn{display:inline-flex;align-items:center;gap:7px}
-/* テンポと音量: スライダーと値（音量の行の右端に、すべて止めるボタン） */
-.vgrid{display:grid;grid-template-columns:4rem minmax(0,1fr) 4.2rem auto;align-items:center;gap:6px 12px;margin:12px 8px 0;padding-top:12px;border-top:1px solid var(--line)}
-.vl{font-size:14px;font-weight:700}
-.vgrid .sl{padding-bottom:0}
-.vgrid output{text-align:right;font:500 13.5px/1 var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
-.vgrid .tg{justify-content:center}
+/* テンポと音量は数値の行（ParamRow）。その下に、演奏の位置とリリース・すべて止めるのボタンを並べる */
+.pbtns{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:6px;margin:6px 8px 0;padding-top:8px;border-top:1px solid var(--line)}
+.pbtns .tg{justify-content:center}
 .snd-msg{margin:6px 8px 0}
 .snd-msg:empty{display:none}
-.pl-bar{margin:8px 8px 0;font:500 12.5px/1.5 var(--mono);color:var(--ink-2);text-align:right}
+.pl-bar{margin:0 auto 0 0;font:500 12.5px/1.5 var(--mono);color:var(--ink-2)}
 .pl-bar:empty{display:none}
 
 /* 管と鍵盤。狭い画面では横にスクロールする */
@@ -97,14 +91,16 @@
 .drw[aria-pressed="true"]{background:var(--ch1);border-color:var(--ch1);color:var(--surface)}
 .drw:focus-visible{outline-offset:-2px}
 .ic-v{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
-/* スウェル: 第 2 手鍵盤の名前の下に、スライダーと値 */
-.swl{display:grid;grid-template-columns:auto minmax(0,1fr) 2.6rem;align-items:center;gap:6px;margin-top:2px}
-.swl .vl{font-size:12.5px;font-weight:500;color:var(--ink-2)}
-.swl .sl{padding-bottom:0}
-.swl output{text-align:right;font:500 12.5px/1 var(--mono);white-space:nowrap}
+/* スウェル: 第 2 手鍵盤の名前の下に、数値の行（ParamRow）を項目名・欄の 2 段で（狭い画面では 1 段） */
+.swl{margin-top:2px}
+.swl .prow{--uw:14px;grid-template-columns:minmax(0,1fr) var(--uw) 24px;grid-template-areas:"name name name" "val unit rst" "sub sub sub";column-gap:4px;row-gap:2px;min-height:0;padding:0;border:0}
+.swl .c-sym{display:none}
+.swl .c-name{font-size:12.5px;font-weight:500;color:var(--ink-2)}
+.swl .prow.mod::before{display:none}
 @media (max-width:559px){
   .cdiv{grid-template-columns:minmax(0,1fr)}
   .swl{max-width:20rem}
+  .swl .prow{grid-template-columns:auto minmax(0,1fr) var(--uw) 24px;grid-template-areas:"name val unit rst" ". sub sub sub";column-gap:8px}
 }
 @media (pointer:coarse){.drw{min-height:40px;min-width:36px}}
 
@@ -135,9 +131,10 @@
 .srcs a{color:var(--ink-2)}
 
 /* 曲の選択（ドロップダウン）: 項目名の右に、残りの幅いっぱいに置く */
-.prow.pick{grid-template-columns:2.2rem auto minmax(0,1fr);grid-template-areas:"sym name val"}
+.prow.pick{grid-template-columns:var(--sw) auto minmax(0,1fr);grid-template-areas:"sym name val"}
 .sel{position:relative}
-.sel select{appearance:none;width:100%;height:40px;padding:0 34px 0 12px;border:1px solid var(--line-2);border-radius:var(--r);background:var(--inset);color:var(--ink);font:500 13.5px/1.2 var(--mono);text-overflow:ellipsis;cursor:pointer}
+.sel select{appearance:none;width:100%;height:30px;padding:0 30px 0 10px;border:1px solid var(--line-2);border-radius:4px;background:var(--inset);color:var(--ink);font:500 13px/1.2 var(--mono);text-overflow:ellipsis;cursor:pointer}
+@media (pointer:coarse){.sel select{height:36px}}
 .sel select:hover{border-color:var(--ink-3)}
 .sel select option{background:var(--surface);color:var(--ink)}
-.sel::after{content:"";position:absolute;top:50%;right:14px;width:7px;height:7px;border-right:1.6px solid var(--ink-2);border-bottom:1.6px solid var(--ink-2);transform:translateY(-70%) rotate(45deg);pointer-events:none}
+.sel::after{content:"";position:absolute;top:50%;right:12px;width:7px;height:7px;border-right:1.6px solid var(--ink-2);border-bottom:1.6px solid var(--ink-2);transform:translateY(-70%) rotate(45deg);pointer-events:none}

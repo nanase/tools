@@ -5,6 +5,7 @@ import { eList, inSeries, type Series, same } from '../../lib/eseries';
 import { fmt, fmtR, parts, ro } from '../../lib/format';
 import { ParamGroup } from '../../lib/param';
 import { parse } from '../../lib/parse';
+import { addRow, mark } from '../../lib/reset';
 import { store, stored } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
 import { circuitSvg } from './circuit';
@@ -109,7 +110,20 @@ function renderEx(): void {
       (v) =>
         `<button type="button" class="chip xc" data-v="${v}" aria-label="${esc(fmt(v, T.u))} を除外から外す">${esc(fmt(v, T.u, 3))}${XMARK}</button>`,
     ).join('') + (L.length > 1 ? '<button type="button" class="chip clr" data-all="1">すべて外す</button>' : '');
+  exRow.dataset.sum = L.length ? `${L.length} 個` : 'なし';
+  mark();
 }
+/* 既定値は除外なし。行末の ↺ ですべて外す */
+addRow(exRow, {
+  isMod: () => ST[ty].ex.length > 0,
+  reset: () => {
+    ST[ty].ex = [];
+    exSet('', '');
+    renderEx();
+    renderEs();
+    schedule();
+  },
+});
 function addEx(onBlur: boolean): void {
   const raw = exIn.value.trim(),
     T = TY[ty],

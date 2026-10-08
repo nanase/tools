@@ -30,12 +30,6 @@ export const PARAMS: (ParamDef & { k: Key })[] = [
     ph: '例 1m',
     bad: '読めない値です（例 200u・1m・5ms）',
     pre: [],
-    tk: [
-      [10e-6, '10μ'],
-      [100e-6, '100μ'],
-      [1e-3, '1m'],
-      [10e-3, '10m'],
-    ],
     format: { text: (v) => `${fmt(v, 's', 3)}/div` },
   },
   {
@@ -55,11 +49,6 @@ export const PARAMS: (ParamDef & { k: Key })[] = [
     ph: '例 0.1',
     bad: '読めない値です（例 0.1・0.05）',
     pre: [],
-    tk: [
-      [0.005, '.005'],
-      [0.05, '.05'],
-      [0.5, '.5'],
-    ],
     format: { text: (v) => `${plain(v)} FS/div` },
   },
   {
@@ -72,18 +61,11 @@ export const PARAMS: (ParamDef & { k: Key })[] = [
     min: -1,
     max: 1,
     v: 0,
-    lin: { step: 0.01, big: 0.1, major: 0.5, minor: 0.1 },
+    lin: { step: 0.01, big: 0.1 },
     sign: 'any',
     ph: '例 0.1',
     bad: '読めない値です（例 0.1・−0.25）',
     pre: [],
-    tk: [
-      [-1, '−1'],
-      [-0.5, '−0.5'],
-      [0, '0'],
-      [0.5, '+0.5'],
-      [1, '+1'],
-    ],
     format: LV,
   },
 ];

@@ -20,8 +20,6 @@ export interface TyDef {
   /** 初期値: 目標・使う最小・最大 */
   v: { t: number; min: number; max: number };
   ph: string;
-  /** スライダーの目盛りラベル */
-  tk: [number, string][];
 }
 
 export const TY: Record<Ty, TyDef> = {
@@ -35,13 +33,6 @@ export const TY: Record<Ty, TyDef> = {
     hi: 1e9,
     v: { t: 1234, min: 10, max: 1e6 },
     ph: '例 1.5k',
-    tk: [
-      [1e-3, '1m'],
-      [1, '1'],
-      [1e3, '1k'],
-      [1e6, '1M'],
-      [1e9, '1G'],
-    ],
   },
   C: {
     nm: 'コンデンサ',
@@ -53,13 +44,6 @@ export const TY: Record<Ty, TyDef> = {
     hi: 1,
     v: { t: 1.234e-6, min: 1e-12, max: 1 },
     ph: '例 100n',
-    tk: [
-      [1e-12, '1p'],
-      [1e-9, '1n'],
-      [1e-6, '1μ'],
-      [1e-3, '1m'],
-      [1, '1'],
-    ],
   },
   L: {
     nm: 'インダクタ',
@@ -71,12 +55,6 @@ export const TY: Record<Ty, TyDef> = {
     hi: 1,
     v: { t: 123.4e-6, min: 1e-9, max: 1 },
     ph: '例 10μ',
-    tk: [
-      [1e-9, '1n'],
-      [1e-6, '1μ'],
-      [1e-3, '1m'],
-      [1, '1'],
-    ],
   },
 };
 
@@ -88,7 +66,6 @@ export const NUM_KEYS: readonly NumKey[] = ['t', 'min', 'max'];
 
 interface Row {
   series: Series;
-  slider: boolean;
   sig: number;
   name: (q: string) => string;
   sub: string;
@@ -99,7 +76,6 @@ interface Row {
 const ROW: Record<NumKey, Row> = {
   t: {
     series: 192,
-    slider: false,
     sig: 6,
     name: (q) => `求める${q}`,
     sub: '近似の目標',
@@ -108,7 +84,6 @@ const ROW: Record<NumKey, Row> = {
   },
   min: {
     series: 1,
-    slider: true,
     sig: 4,
     name: (q) => `使う最小の${q}`,
     sub: 'これ以上の値を使う',
@@ -118,7 +93,6 @@ const ROW: Record<NumKey, Row> = {
   },
   max: {
     series: 1,
-    slider: true,
     sig: 4,
     name: (q) => `使う最大の${q}`,
     sub: 'これ以下の値を使う',
@@ -143,19 +117,17 @@ export function numDef(k: NumKey, ty: Ty): ParamDef & { k: NumKey } {
     v: T.v[k],
     ph: T.ph,
     pre: [],
-    tk: r.slider ? T.tk : [],
     series: r.series,
     sig: r.sig,
     stepLabel: r.stepLabel,
-    slider: r.slider,
     ...(r.hint ? { hint: r.hint } : {}),
   };
 }
 
-/** 種類ごとに変わる項目（素子の種類を切り替えたときに ParamGroup.update へ渡す） */
+/** 種類ごとに変わる項目（素子の種類を切り替えたときに ParamGroup.update へ渡す。既定値 v も種類ごと） */
 export function numPatch(k: NumKey, ty: Ty): ParamPatch {
-  const { nm, sym, name, unit, min, max, ph, tk } = numDef(k, ty);
-  return { nm, sym, name, unit, min, max, ph, tk };
+  const { nm, sym, name, unit, min, max, v, ph } = numDef(k, ty);
+  return { nm, sym, name, unit, min, max, v, ph };
 }
 
 /** 組み合わせに使う E 系列 */

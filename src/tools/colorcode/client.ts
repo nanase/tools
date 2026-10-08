@@ -4,6 +4,7 @@ import { $, $$, esc } from '../../lib/dom';
 import type { Series } from '../../lib/eseries';
 import { fmt, fmtR, ro } from '../../lib/format';
 import { ParamGroup } from '../../lib/param';
+import { addRow } from '../../lib/reset';
 import { store, stored } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
 import {
@@ -62,7 +63,7 @@ const g = new ParamGroup<'R'>(
 /** 色帯から決まった値を行に出す（コールバックは呼ばない） */
 const syncR = () => g.set('R', ohmsOf(code), { silent: true });
 
-/* ▲▼ とスライダーの刻み */
+/* ドラッグと ‹ › の刻み */
 const esel = $('#esel');
 esel.addEventListener('click', (e) => {
   const b = (e.target as Element).closest<HTMLElement>('[data-s]');
@@ -97,6 +98,9 @@ $('#tcC').addEventListener('click', (e) => {
   const b = (e.target as Element).closest<HTMLElement>('[data-k]');
   if (b && code.n === 6) setColor('tc', b.dataset.k as ColorKey);
 });
+/* 既定値（初めの色帯の色）と違えば行末の ↺ を出す。温度係数は 6 本帯のときだけ */
+addRow($('#p-tol'), { isMod: () => code.tol !== INIT.tol, reset: () => setColor('t', INIT.tol) });
+addRow($('#p-tc'), { isMod: () => code.n === 6 && code.tc !== INIT.tc, reset: () => setColor('tc', INIT.tc) });
 
 /* ---------- 色帯の図と色の選択肢 ---------- */
 const msgPal = (text: string) => txt('#m-pal', text);

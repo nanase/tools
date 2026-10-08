@@ -1,0 +1,18 @@
+---
+/**
+ * 「その他」のまとまり: 使う機会の少ない入力を、枠の下にまとめて畳む。図の下の表示の設定にも使う（title="表示の設定"）。
+ * 見出しと開閉の印を左、今の値の要約を右端に置き、開閉で見出しの位置は動かない。初めは閉じ、開閉はブラウザに保存する。
+ * 中には .ptab（広い枠で 2 列にするなら .ana2 の中に .ptab を 2 つ）を置く。動作は lib/tool-page.ts
+ */
+interface Props {
+  /** 要素の id（開閉の保存に使う） */
+  id: string;
+  title?: string;
+  class?: string;
+}
+const { id, title = 'その他', class: cls } = Astro.props;
+---
+<div class:list={['more', cls]} id={id}>
+  <button type="button" class="more-h" aria-expanded="false" aria-controls={`${id}-b`}><span class="more-t">{title}</span><svg viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1L5 5L9 1"/></svg><span class="more-s" aria-hidden="true"></span></button>
+  <div class="more-b" id={`${id}-b`} hidden><slot /></div>
+</div>

@@ -5,7 +5,7 @@
 .a-in{order:1}.a-snd{order:2}.a-sp{order:3}.a-fft{order:4}.a-out{order:5}.a-thy{order:6}
 /* スペクトログラムだけの設定（時間の幅・チャンネル）は、スペクトログラムを出している間だけ */
 .a-sp:not(.sg) .sg-only{display:none}
-.a-sp:not(.sg) .ptab .prow:nth-last-child(2){border-bottom:0;padding-bottom:0}
+.a-sp:not(.sg) .ptab .prow:nth-last-child(2){border-bottom:0}
 @media (min-width:1000px){
   .tgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr);grid-template-areas:"c1 c2" "thy thy";align-items:start}
   .c1{grid-area:c1}.c2{grid-area:c2}.a-thy{grid-area:thy}

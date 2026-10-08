@@ -7,24 +7,16 @@
   .tgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr);grid-template-areas:"c1 c2" "in2 in2" "thy thy";align-items:start}
   .c1{grid-area:c1}.c2{grid-area:c2}
   .a-in2 .ptab{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:32px;align-items:start}
-  .a-in2 .prow:nth-child(2){padding-top:4px}
-  .a-in2 .prow:nth-last-child(2){border-bottom:0;padding-bottom:0}
+  .a-in2 .prow:nth-last-child(2){border-bottom:0}
   .a-in2{grid-area:in2}.a-thy{grid-area:thy}
 }
 .desc{font-weight:400}
 
 /* 選択肢だけの行（ビット名を記号の列に置く） */
-.prow.opt{grid-template-columns:3.3rem minmax(0,1fr) 12rem;grid-template-areas:"sym name val" "sym sub sub"}
-.prow.opt.wide{grid-template-areas:"sym name name" "sym sub sub"}
-.c-sym.bit{padding-top:11px;font:700 12px/1.6 var(--mono);color:var(--ink-2);white-space:nowrap}
-.prow.opt.wide .c-sym.bit{padding-top:1px}
-.prow.opt .msg{min-height:0}
+.prow.opt{--sw:3.3rem}
+.c-sym.bit{font:700 12px/1.6 var(--mono);color:var(--ink-2)}
 .prow.opt .msg:empty{display:none}
-@container (max-width:400px){
-  .prow.opt{grid-template-columns:2.9rem minmax(0,1fr);grid-template-areas:"sym name" "sym val" "sym sub"}
-  .prow.opt.wide{grid-template-areas:"sym name" "sym sub"}
-  .c-sym.bit{padding-top:1px}
-}
+@container (max-width:400px){.prow.opt{--sw:2.9rem}}
 
 /* 枠の右上の再生ボタン（双2次フィルタと同じ。鳴らしている間は LED が点く） */
 #playBtn{display:inline-flex;align-items:center;gap:7px}

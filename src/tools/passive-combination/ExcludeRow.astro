@@ -1,22 +1,24 @@
 ---
-/** 除外する値の行: 入力欄 | ＋追加。追加した値は押すと外れるチップで並べる。畳んで出す。動作は client.ts */
-import FoldSwitch from '../../components/FoldSwitch.astro';
+/**
+ * 除外する値の行: 入力欄 | ＋追加。追加した値は押すと外れるチップで並べる。
+ * 「その他」のまとまりに置く。行末の ↺ ですべて外す。動作は client.ts
+ */
+import RowReset from '../../components/RowReset.astro';
 import { TY } from './params';
 
 const T = TY.R;
 ---
-<div class="prow fold shut" id="p-ex">
+<div class="prow num" id="p-ex" data-nm="使わない値">
   <div class="c-sym" aria-hidden="true"><i>{T.s}</i><sub>ex</sub></div>
-  <div class="c-name"><label class="pn" for="in-ex"><span class="nm">使わない{T.q}</span></label><p class="desc tip" id="t-ex" role="tooltip" hidden>組み合わせに使わない値。目標と同じ値は常に除きます</p><FoldSwitch k="ex" name="使わない値" /></div>
-  <div class="fbody" id="fb-ex">
-    <div class="c-val"><div class="fld add">
-      <input id="in-ex" type="text" inputmode="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done" placeholder={T.ph} aria-describedby="t-ex u-ex m-ex">
-      <button type="button" class="stp" id="exAdd" aria-label="除外に追加"><svg class="pl" viewBox="0 0 10 10" aria-hidden="true"><path d="M5 1V9M1 5H9"/></svg><small>追加</small></button>
-    </div></div>
-    <div class="c-unit" id="u-ex">{T.u}</div>
-    <div class="c-sub">
-      <p class="msg" id="m-ex" aria-live="polite"></p>
-      <div class="chips" id="exChips" role="group" aria-label="除外している値"></div>
-    </div>
+  <div class="c-name"><label class="pn" for="in-ex"><span class="nm">使わない{T.q}</span></label><p class="desc tip" id="t-ex" role="tooltip" hidden>組み合わせに使わない値。目標と同じ値は常に除きます</p></div>
+  <div class="c-val"><div class="exf">
+    <input id="in-ex" type="text" inputmode="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done" placeholder={T.ph} aria-describedby="t-ex u-ex m-ex">
+    <button type="button" class="exa" id="exAdd" aria-label="除外に追加"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M5 1V9M1 5H9"/></svg>追加</button>
+  </div></div>
+  <div class="c-unit" id="u-ex">{T.u}</div>
+  <RowReset label="使わない値をすべて外す" title="すべて外す（既定値に戻す）" />
+  <div class="c-sub">
+    <p class="msg" id="m-ex" aria-live="polite"></p>
+    <div class="chips" id="exChips" role="group" aria-label="除外している値"></div>
   </div>
 </div>

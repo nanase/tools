@@ -3,7 +3,7 @@ import { fmt } from '../../lib/format';
 import type { ParamDef, ParamPatch } from '../../lib/param-def';
 import { HI, INIT, LO, ohmsOf, short } from './model';
 
-/** ▲▼ とスライダーの刻みに選べる E 系列 */
+/** ドラッグと ‹ › の刻みに選べる E 系列 */
 export const STEP_SERIES: readonly Series[] = [6, 12, 24, 48, 96, 192];
 export const STEP_SERIES_INIT: Series = 24;
 
@@ -33,12 +33,6 @@ export const R_DEF: ParamDef = {
   v: ohmsOf(INIT),
   ph: '例 4.7k',
   pre: PRE.map((v) => [v, short(v)]),
-  tk: [
-    [1, '1'],
-    [1e3, '1k'],
-    [1e6, '1M'],
-    [1e9, '1G'],
-  ],
   sig: 6,
   format: { text: (v) => fmt(v, 'Ω', 6) },
   fix: (v) => [v, ''],

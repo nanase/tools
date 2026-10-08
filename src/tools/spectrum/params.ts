@@ -33,18 +33,11 @@ const db = (
   min,
   max,
   v,
-  lin: { step: 5, big: 20, major: 20, minor: 10 },
+  lin: { step: 5, big: 20 },
   sign: 'any',
   ph: '例 −20',
   bad: '読めない値です（例 0・−20・−100）',
   pre: [],
-  tk: [
-    [-140, '−140'],
-    [-120, '−120'],
-    [-80, '−80'],
-    [-40, '−40'],
-    [0, '0'],
-  ],
   format: DB,
 });
 
@@ -66,11 +59,6 @@ export const PARAMS: (ParamDef & { k: Key })[] = [
     ph: '例 4096',
     bad: '読めない値です（例 4096・8k）',
     pre: [],
-    tk: [
-      [256, '256'],
-      [2048, '2048'],
-      [32768, '32768'],
-    ],
     format: { input: String, step: (v) => (v >= 1024 ? `${v / 1024}k` : String(v)), text: (v) => `${v} 点` },
   },
   {
@@ -89,12 +77,6 @@ export const PARAMS: (ParamDef & { k: Key })[] = [
     ph: '例 20',
     bad: '読めない値です（例 20・100）',
     pre: [],
-    tk: [
-      [0, '0'],
-      [100, '100'],
-      [1000, '1k'],
-      [5000, '5k'],
-    ],
     format: HZ,
   },
   {
@@ -113,11 +95,6 @@ export const PARAMS: (ParamDef & { k: Key })[] = [
     ph: '例 20k',
     bad: '読めない値です（例 5k・20k）',
     pre: [],
-    tk: [
-      [500, '500'],
-      [5000, '5k'],
-      [24000, '24k'],
-    ],
     format: HZ,
   },
   db('top', '最高強度', 'スペクトラムの上端と、スペクトログラムの最も明るい色（dBFS）', 0, -130, 20),

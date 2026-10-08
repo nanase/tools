@@ -1,19 +1,23 @@
 import type { Series } from './eseries';
 import type { Unit } from './parse';
 
-/** 一様な刻み。Shift・PgUp/PgDn で big ずつ。目盛りは minor（省略時 big）ごと、major ごとに大目盛り */
+/** 一様な刻み。Shift・PgUp/PgDn で big ずつ */
 export interface Lin {
   step: number;
   big: number;
-  major: number;
+  /** 使わない（目盛りをなくした。2026-10-07） */
+  major?: number;
+  /** 使わない（目盛りをなくした。2026-10-07） */
   minor?: number;
 }
 
 /** 表記の差し替え。省略した項目は notation に従う */
 export interface ParamFormat {
-  /** 入力欄に出す値（単位なし） */
+  /** 欄と入力欄に出す値（単位なし） */
   input?: (v: number) => string;
-  /** ▲▼ の下に出す短い値（単位なし） */
+  /** 欄（ドラッグする数値欄）にだけ出す値。省略時は input（例 ×2・I 1.5 のように記号を添える） */
+  view?: (v: number) => string;
+  /** 短い値（単位なし） */
   step?: (v: number) => string;
   /** メッセージ・読み上げ・範囲の表記（単位つき） */
   text?: (v: number) => string;
@@ -22,7 +26,7 @@ export interface ParamFormat {
 /**
  * 数値入力 1 項目の定義。.astro での描画とブラウザでの動作の両方で使う。
  *
- * 値の並び（スライダーと ▲▼ の行き先）は次のどれか 1 つ:
+ * 値の並び（ドラッグ・‹ ›・矢印キーで移る値）は次のどれか 1 つ:
  * - lin: 一様な刻み
  * - list: 並びを直接与える（2 の累乗など）
  * - どちらもなければ E 系列。series を省略するとグループの E 系列の切替（SeriesSwitch）に従う
@@ -38,19 +42,19 @@ export interface ParamDef {
   unit: Unit;
   min: number;
   max: number;
-  /** 初期値 */
+  /** 初期値で、既定値（行末の ↺ で戻す値）。ParamGroup.update で変えられる */
   v: number;
   ph: string;
-  /** プリセット [値, 表示, title]（小さい順）。空ならプリセットの列を出さない */
+  /** プリセット [値, 表示, title]（小さい順）。欄の下端に刻みを置き、押して入力するときの吹き出しに並べる */
   pre: [number, string, string?][];
-  /** スライダーの目盛りラベル [値, 表示]。範囲外のものは出さない */
-  tk: [number, string][];
+  /** 使わない（目盛りの数字をなくした。2026-10-07） */
+  tk?: [number, string][];
 
   /* ---------- 値の並び ---------- */
   lin?: Lin;
   /** 並びを直接与える（小さい順）。min〜max の外の値は使わない。関数なら並びを作り直すたびに呼ぶ */
   list?: readonly number[] | (() => readonly number[]);
-  /** list の近さ・スライダー位置を対数で見るか */
+  /** list の近さ・欄の地の位置を対数で見るか */
   log?: boolean;
   /** list で Shift・PgUp/PgDn のとき動く個数（省略時 1） */
   jump?: number;
@@ -60,7 +64,7 @@ export interface ParamDef {
   series?: Series;
   /** E 系列の行で min を 0 にするとき、0 の次に来る最小の値（並びは 0, floor 以上の E 系列） */
   floor?: number;
-  /** E 系列の行で、並びの端に min・max がなければ足す（スライダーと ▲▼ で min・max まで届く） */
+  /** E 系列の行で、並びの端に min・max がなければ足す（ドラッグと ‹ › で min・max まで届く） */
   ends?: boolean;
 
   /* ---------- 受け付ける値と表記 ---------- */
@@ -80,11 +84,11 @@ export interface ParamDef {
   bad?: string;
   /** 入力欄の title のうち、範囲より後ろ（操作の説明）を差し替える */
   hint?: string;
-  /** ▲▼ の読み上げ「R1 を{stepLabel}1 つ上の …」。既定は E 系列「E12 で」、一様「0.1 V」、list なし */
+  /** ‹ › の読み上げ「R1 を{stepLabel}1 つ上の …」。既定は E 系列「E12 で」、一様「0.1 V」、list なし */
   stepLabel?: string;
 
   /* ---------- 描画 ---------- */
-  /** スライダーを出すか（既定 true） */
+  /** 使わない（欄そのものがスライダーになった。2026-10-07） */
   slider?: boolean;
   /** 入力欄の inputmode（既定 text） */
   inputmode?: 'text' | 'decimal';

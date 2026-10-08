@@ -1,6 +1,7 @@
 /**
  * 設定の保存（localStorage）。ページごとに 1 つのキー（settings:<パス>）へ、項目の値をまとめて JSON で持ち、
- * 開き直したときに同じ設定にする。ParamGroup（p:<項目>・series）と Choice（c:<要素の id>）は自分で読み書きする。
+ * 開き直したときに同じ設定にする。ParamGroup（p:<項目>・series）と Choice（c:<要素の id>）は自分で読み書きし、
+ * 既定値に戻した項目は消す。「その他」のまとまり（More.astro）の開閉は m:<要素の id>。
  * ページ見出しの「もとに戻す」ボタン（PageTitle.astro）で消して読み込み直す。
  * localStorage を使えない環境（プライベートブラウズなど）では、保存せずに既定値で動く
  */
@@ -43,6 +44,17 @@ export const stored = (k: string): unknown => data[k];
 export function store(k: string, v: unknown): void {
   if (!KEY) return;
   data[k] = v;
+  later();
+}
+
+/** 保存した値を消す（既定値に戻したとき。開き直すと既定値になる） */
+export function forget(k: string): void {
+  if (!KEY || !(k in data)) return;
+  delete data[k];
+  later();
+}
+
+function later(): void {
   clearTimeout(timer);
   timer = setTimeout(write, 300);
 }
