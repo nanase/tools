@@ -1,7 +1,8 @@
 /**
- * ギターの音を Web Audio API で鳴らす: AudioWorklet（worklet.ts、ステレオ）→ 音量 → 出力。
+ * ギターの音を Web Audio API で鳴らす: AudioWorklet（worklet.ts、ステレオと残響）→ 音量 → 出力。
  * AudioContext は弦を弾いた操作の中で作る（自動再生の制限）。鳴らしていない間は止めて CPU を休ませる
  */
+import type { ReverbSpec } from '../../lib/reverb';
 import type { BodyDesc, PluckMsg } from './engine';
 import type { GtMsg } from './worklet';
 import workletUrl from './worklet.ts?worker&url';
@@ -19,6 +20,7 @@ export class GuitarAudio {
   private master: GainNode | null = null;
   private loading: Promise<boolean> | null = null;
   private body: BodyDesc | null = null;
+  private room: ReverbSpec | null = null;
   private db = -30;
   private idle: ReturnType<typeof setTimeout> | undefined;
   /** 撥弦の番号 */
@@ -49,6 +51,7 @@ export class GuitarAudio {
         this.node = node;
         this.master = master;
         if (this.body) this.post({ type: 'body', d: this.body });
+        if (this.room) this.post({ type: 'room', r: this.room });
         return true;
       })
       .catch(() => false);
@@ -76,6 +79,12 @@ export class GuitarAudio {
   setBody(d: BodyDesc): void {
     this.body = d;
     this.post({ type: 'body', d });
+  }
+
+  /** 部屋の残響を入れ替える */
+  setRoom(r: ReverbSpec): void {
+    this.room = r;
+    this.post({ type: 'room', r });
   }
 
   /** 弦を弾く（at は AudioContext の時刻。0 ならすぐ。pan は定位で、−1 が左、1 が右）。撥弦の番号を返す */

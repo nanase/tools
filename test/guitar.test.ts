@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { parse } from '../src/lib/parse';
+import { Reverb, reverbSpec, roomOf } from '../src/lib/reverb';
 import { admittance, BODY_TYPES, C, makeBody } from '../src/tools/guitar/body';
 import { bodyDesc, Engine } from '../src/tools/guitar/engine';
 import { coefAt, type Guitar, modesOf, pluckOf, shapeOf, t60, tuneCoupled } from '../src/tools/guitar/model';
 import { slideNoise } from '../src/tools/guitar/noise';
+import { DIST } from '../src/tools/guitar/params';
 import { finger, midiOf, PIECES, seq } from '../src/tools/guitar/score';
 import {
   betaOf,
@@ -258,6 +260,46 @@ describe('音', () => {
       z = slideNoise({ ...sp, dist: 0 }, FS);
     expect(rms(b)).toBeGreaterThan(rms(a));
     expect(rms(z)).toBe(0);
+  });
+  it('残響は再生の音に足すだけで、なしなら変えない。部屋を選ぶと指を離したあとも響き、ピークは増えない', () => {
+    const g = guitar('nylon'),
+      /* E の和音（1 弦から 6 弦のフレット）を、6 弦から 20 ms ずつずらして弾き、1 秒で指を離す */
+      msgs = [0, 0, 1, 2, 2, 0].map((f, si) => {
+        const m = modesOf(g, si, f, FS),
+          pl = pluckOf(g, si, m, { pos: 0.13, amp: 1.2e-3, width: 12e-3, rel: 8e-5, angle: Math.PI / 4 });
+        return { si, N: m.N, w: m.w, s: m.s, f: pl.f };
+      }),
+      run = (room: string | null) => {
+        const e = new Engine(FS, true),
+          rv = new Reverb(FS),
+          n = 2 * FS,
+          L = new Float32Array(n),
+          R = new Float32Array(n);
+        e.setBody(bodyDesc(g.body));
+        if (room) rv.set(reverbSpec(roomOf(room), DIST.v));
+        for (let i = 0; i < n; i += 128) {
+          for (let k = 0; k < 6; k++) {
+            const at = Math.round(k * 0.02 * FS);
+            if (at >= i && at < i + 128) e.pluck(msgs[5 - k], 0, k + 1);
+          }
+          if (i === 375 * 128) e.dampAll(0.01);
+          e.render(L, i, 128, R);
+          if (room) rv.process(L, R, i, 128);
+        }
+        return [L, R];
+      },
+      peak = (a: Float32Array) => a.reduce((m, v) => Math.max(m, Math.abs(v)), 0),
+      tail = (a: Float32Array) => Math.sqrt(a.subarray(1.5 * FS).reduce((s, v) => s + v * v, 0) / (0.5 * FS));
+    const [l, r] = run(null),
+      [l0, r0] = run('off'),
+      [l1, r1] = run('small');
+    expect(l0).toEqual(l);
+    expect(r0).toEqual(r);
+    expect(l1.every(Number.isFinite) && r1.every(Number.isFinite)).toBe(true);
+    expect(tail(l)).toBeLessThan(1e-5);
+    expect(tail(l1)).toBeGreaterThan(1e-4);
+    expect(tail(r1)).toBeGreaterThan(1e-4);
+    expect(Math.max(peak(l1), peak(r1))).toBeLessThan(1.1 * Math.max(peak(l), peak(r)));
   });
 });
 
