@@ -44,7 +44,7 @@
 .pf-tgt{stroke:var(--ink-3);stroke-width:2}
 .pf-cart{fill:var(--inset);stroke:var(--ink);stroke-width:1.6px;vector-effect:non-scaling-stroke}
 .pf-wh{fill:var(--ink-2)}
-.pf-rod{fill:none;stroke:var(--ink);stroke-width:4px;stroke-linecap:round;vector-effect:non-scaling-stroke}
+.pf-rod{fill:none;stroke:var(--ink);stroke-width:5px;stroke-linecap:round;vector-effect:non-scaling-stroke}
 .pf-cog{fill:var(--screen);stroke:var(--ink);stroke-width:1.2;fill-rule:evenodd}
 .pf-cog{paint-order:stroke}
 .pf-piv{fill:var(--surface);stroke:var(--ink);stroke-width:1.6}

@@ -71,10 +71,14 @@ export class Figure {
     this.g = g;
     const span = Math.max(g.rail, 2 * g.rod);
     this.k = Math.min(3, Math.max(0.6, span / 1.4));
-    const half = g.rail / 2 + this.cw / 2 + 0.02 * this.k,
-      wx = half + Math.max(g.rod, 0.1) + 0.06 * this.k,
-      up = Math.max(g.rod, 0.1) + 0.06 * this.k,
-      down = Math.max(g.rod, this.ch / 2 + 0.06 * this.k) + 0.06 * this.k,
+    /* 横はレールの端の止めと、台車がレールの端にいるときの振子の先（rail/2 + rod）の外側まで、縦は振子の長さまで。
+       振子がどの向きでも図に収まる最小の範囲にして、振子をできるだけ大きく描く */
+    const rod = Math.max(g.rod, 0.1),
+      half = g.rail / 2 + this.cw / 2 + 0.02 * this.k,
+      pad = 0.03 * this.k,
+      wx = Math.max(half + 0.018 * this.k, g.rail / 2 + rod) + pad,
+      up = rod + pad,
+      down = Math.max(rod, this.ch / 2 + 0.03 * this.k) + pad,
       W = 800,
       s = W / (2 * wx),
       H = Math.max((up + down) * s, W / 3);
@@ -111,7 +115,7 @@ export class Figure {
     this.el.cart.innerHTML =
       `<rect class="pf-cart" x="${f1(-cw / 2)}" y="${f1(-ch / 2)}" width="${f1(cw)}" height="${f1(ch)}" rx="3"/>` +
       `<circle class="pf-wh" cx="${f1(-cw / 3)}" cy="${f1(ch / 2 + w)}" r="${f1(w)}"/><circle class="pf-wh" cx="${f1(cw / 3)}" cy="${f1(ch / 2 + w)}" r="${f1(w)}"/>`;
-    this.el.piv.setAttribute('r', f1(Math.max(3, 0.012 * this.k * s)));
+    this.el.piv.setAttribute('r', f1(Math.max(3.5, 0.014 * this.k * s)));
     this.el.ft.setAttribute('text-anchor', 'middle');
     for (const k of ['cart', 'fa', 'ft', 'rod', 'cog', 'piv', 'push'] as const) this.svg.appendChild(this.el[k]);
   }
@@ -163,7 +167,7 @@ export class Figure {
       ty = py - Math.cos(th) * this.g.rod * s,
       gx = px + Math.sin(th) * this.g.l * s,
       gy = py - Math.cos(th) * this.g.l * s,
-      r = Math.max(3.5, 0.016 * this.k * s);
+      r = Math.max(4.5, 0.02 * this.k * s);
     el.cart.setAttribute('transform', `translate(${f1(px)} ${f1(py)})`);
     el.rod.setAttribute('d', `M${f1(px)} ${f1(py)}L${f1(tx)} ${f1(ty)}`);
     /* 重心の印（円を 4 つに分けて交互に塗る） */
