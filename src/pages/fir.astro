@@ -1,0 +1,173 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import More from '../components/More.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import { order, TOOLS } from '../data/tools';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/fir/style.css';
+import { gridSvg } from '../lib/scope';
+import { lvGrid } from '../tools/biquad/plot';
+import { METHODS, PARAMS, TYPES, WINS } from '../tools/fir/params';
+import { IH, IR } from '../tools/fir/plot';
+import Theory from '../tools/fir/Theory.astro';
+
+const name = 'FIR フィルタ';
+const row = (ks: string[]) => PARAMS.filter((d) => ks.includes(d.k));
+const t0 = TYPES[0],
+  m0 = METHODS[0];
+/* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
+const CAT = 'デジタルフィルタ';
+const related = [
+  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'fir')),
+  ...TOOLS.filter((t) => t.c !== CAT && !t.s),
+];
+---
+<SiteLayout title={name} tool={{ id: 'fir', name }} note="係数は倍精度の数値計算で求めた値です。実際のリップル・減衰と IIR フィルタの次数は参考値です。" description="直線位相の FIR フィルタを、窓関数法・等リップル（Parks–McClellan 法）・最小二乗法で設計し、周波数特性・零点・係数を求めます。">
+  <PageTitle title={name}>直線位相の FIR フィルタの係数を、窓関数法（カイザー窓など）・等リップル（Parks–McClellan 法）・最小二乗法で求めます。通過域と阻止域の仕様からタップ数を決め、振幅・位相・群遅延の周波数特性、インパルス応答、z 平面の零点を描きます。係数は C の配列で書き出せ、ホワイトノイズに掛けた音も聞けます。</PageTitle>
+  <div class="mini" aria-hidden="true"><span id="mt"></span><span><i>N</i><b id="mn"></b></span><span>遅延<b id="md"></b></span><span><i>A</i><sub>s</sub><b id="ma"></b></span></div>
+
+  <div class="tgrid">
+    <div class="col c-a">
+      <Panel hid="hd-in" title="仕様" class="a-in">
+        <div slot="aux" class="seg ptype" id="p-type" role="group" aria-label="応答の種類">
+          {TYPES.map((t) => <button type="button" data-v={t.v} aria-pressed={t.v === t0.v ? 'true' : 'false'} title={t.t}>{t.ab}</button>)}
+        </div>
+        <div class="ptab">{row(['f1', 'f2', 'df', 'ap', 'as']).map((d) => <ParamRow d={d} />)}</div>
+        <More id="g-in"><div class="ptab">{row(['fs']).map((d) => <ParamRow d={d} />)}</div></More>
+      </Panel>
+
+      <Panel hid="hd-dsg" title="設計" class="a-dsg">
+        <div slot="aux" class="seg" id="p-method" role="group" aria-label="設計法">
+          {METHODS.map((m) => <button type="button" data-v={m.v} aria-pressed={m.v === m0.v ? 'true' : 'false'} title={m.t}>{m.ab}</button>)}
+        </div>
+        <div class="ptab">
+          <ChoiceRow k="win" sym="<i>w</i>" nm="w" name="窓" sub="理想の応答に掛ける窓。阻止域の深さと遷移帯域の幅が決まる" choices={WINS.map((w) => [w.v, w.ab] as const)} value="kaiser" layout="chips" />
+          <ChoiceRow k="auto" sym="<i>N</i>" nm="N" name="タップ数の決め方" sub="仕様から: 仕様を満たすタップ数・β・重みを求める。指定: 自分で決める" choices={[['1', '仕様から'], ['0', '指定']]} value="1" msg />
+          {row(['n', 'beta', 'wp', 'ws']).map((d) => <ParamRow d={d} />)}
+        </div>
+      </Panel>
+
+      <Panel hid="hd-snd" title="試聴" class="a-snd">
+        <div slot="aux" class="seg"><button type="button" id="playBtn" aria-pressed="false" title="ホワイトノイズにこのフィルタを掛けて鳴らす"><span class="led" aria-hidden="true"></span><span id="playT">再生</span></button></div>
+        <div class="sbar">
+          <span class="stag">IN <b>WHITE NOISE</b></span>
+          <span class="stag"><i class="sw" aria-hidden="true"></i>OUT <b id="lv-t">---</b> dBFS</span>
+          <span class="stag">FS <b id="lv-fs">---</b></span>
+        </div>
+        <div class="scope lvl">
+          <svg viewBox="-12 -4 424 42" role="img" aria-label="出力レベル">
+            <g set:html={lvGrid()} />
+            <rect class="dt1" id="lv-bar" x="0" y="5" width="0" height="12"/>
+            <rect class="lv-hot" id="lv-hot" x="0" y="5" width="0" height="12"/>
+          </svg>
+        </div>
+        <div class="ptab">{row(['vol']).map((d) => <ParamRow d={d} />)}</div>
+      </Panel>
+    </div>
+
+    <div class="col c-b">
+      <Panel hid="hd-fr" title="周波数特性" class="a-fr">
+        <span slot="aux" class="aux" id="fr-aux"></span>
+        <div class="sbar">
+          <button type="button" class="tg" id="ch1f" aria-pressed="true" title="振幅"><i class="sw" aria-hidden="true"></i>CH1 MAG <b id="fr-vd"></b>/div</button>
+          <button type="button" class="tg" id="ch2f" aria-pressed="true" title="位相・群遅延"><i class="sw c2" aria-hidden="true"></i>CH2 <span id="fr-c2"></span> <b id="fr-vd2"></b>/div</button>
+          <span class="stag"><i class="sw sp" aria-hidden="true"></i>SPEC</span>
+          <span class="stag">X LIN <b id="fr-x"></b>/div</span>
+        </div>
+        <div class="scope" id="fr-scope">
+          <svg viewBox="-50 -16 494 282" id="fr-svg" role="img" aria-label="周波数特性">
+            <defs><clipPath id="fr-clip"><rect x="0" y="0" width="400" height="240"/></clipPath></defs>
+            <g set:html={gridSvg()} />
+            <g clip-path="url(#fr-clip)"><path class="spec" id="fr-mask"/><path class="t2 c2x" id="fr-t2"/><path class="t1 c1x" id="fr-t1"/></g>
+            <path class="cur" id="fr-cur"/>
+            <g id="fr-axes"></g>
+          </svg>
+        </div>
+        <div class="sbar rdbar"><span class="stag rd" id="fr-rd"></span></div>
+        <More id="g-fr" title="表示の設定"><div class="ana2">
+          <div class="ptab"><ChoiceRow k="ys" sym="<i>A</i>" nm="A" name="振幅の縦軸" sub="通過域: 0 dB のまわりを拡大してリップルを見る" choices={[['db', 'dB'], ['lin', '線形'], ['pass', '通過域']]} value="db" /></div>
+          <div class="ptab"><ChoiceRow k="c2" sym="" nm="CH2" name="CH2 の表示" sub="直線位相なので、群遅延はどの周波数でも (N − 1)/2 サンプル" choices={[['ph', '位相'], ['gd', '群遅延']]} value="ph" /></div>
+        </div></More>
+      </Panel>
+
+      <Panel hid="hd-imp" title="インパルス応答" class="a-imp">
+        <span slot="aux" class="aux">係数 <i>h</i>[<i>n</i>]</span>
+        <div class="sbar">
+          <span class="stag"><i class="sw" aria-hidden="true"></i>CH1 <i>h</i>[<i>n</i>] <b id="im-vd"></b>/div</span>
+          <button type="button" class="tg wonly" id="ch2i" aria-pressed="true" title="理想の応答（窓を掛ける前）"><i class="sw c2" aria-hidden="true"></i>CH2 <i>h</i><sub>d</sub>[<i>n</i>]</button>
+          <button type="button" class="tg wonly" id="wini" aria-pressed="true" title="窓の形（理想の応答の最大に合わせた大きさ）"><i class="sw sp" aria-hidden="true"></i>WINDOW <i>w</i>[<i>n</i>]</button>
+          <span class="stag">H <b id="im-hd"></b> S/div</span>
+        </div>
+        <div class="scope" id="im-scope">
+          <svg viewBox={`-56 -16 468 ${IH + 42}`} id="im-svg" role="img" aria-label="インパルス応答">
+            <defs><clipPath id="im-clip"><rect x="0" y="0" width="400" height={IH}/></clipPath></defs>
+            <g set:html={gridSvg(IR)} />
+            <g clip-path="url(#im-clip)"><path class="mkl" id="im-c"/><path class="stz" id="im-z"/><path class="wl wx" id="im-w"/><path class="t2 c2x" id="im-i"/><path class="stm" id="im-st"/><g id="im-dots"></g></g>
+            <path class="cur" id="im-cur"/>
+            <g id="im-axes"></g>
+          </svg>
+        </div>
+        <div class="sbar rdbar"><span class="stag rd" id="im-rd"></span></div>
+      </Panel>
+
+      <Panel hid="hd-out" title="計算結果" class="a-out">
+        <span slot="aux" class="aux" id="o-aux" aria-live="polite"></span>
+        <dl class="metrics c3">
+          <div class="m m-main"><dt>タップ数 <i>N</i></dt><dd><span id="o-n"></span><span class="m-sub" id="o-ns"></span></dd></div>
+          <div class="m"><dt>遅延 (<i>N</i> − 1)/2</dt><dd><span id="o-d"></span><span class="m-sub" id="o-ds"></span></dd></div>
+          <div class="m"><dt>通過域リップル</dt><dd><span id="o-ap"></span><span class="m-sub" id="o-aps"></span></dd></div>
+          <div class="m"><dt>阻止域減衰</dt><dd><span id="o-as"></span><span class="m-sub" id="o-ass"></span></dd></div>
+          <div class="m"><dt>遷移帯域幅</dt><dd><span id="o-tw"></span><span class="m-sub" id="o-tws"></span></dd></div>
+          <div class="m"><dt>1 サンプルあたりの乗算</dt><dd><span id="o-mul"></span><span class="m-sub" id="o-muls"></span></dd></div>
+          <div class="m"><dt>同じ仕様の IIR フィルタ</dt><dd><span id="o-iir"></span><span class="m-sub" id="o-iirs"></span></dd></div>
+        </dl>
+      </Panel>
+    </div>
+
+    <Panel hid="hd-z" title="零点" class="a-z">
+      <span slot="aux" class="aux">z 平面</span>
+      <div class="sbar">
+        <span class="stag"><i class="zsw" aria-hidden="true"></i>ZERO <b id="z-n"></b></span>
+        <span class="stag">ON |<i>z</i>| = 1 <b id="z-on"></b></span>
+        <span class="stag">POLE <i>z</i> = 0 <b id="z-p"></b></span>
+        <span class="stag">DIV <b id="z-dv"></b></span>
+      </div>
+      <div class="scope zs">
+        <svg viewBox="-46 -10 460 440" id="z-svg" role="img" aria-label="z 平面の零点">
+          <defs><clipPath id="z-clip"><rect x="0" y="0" width="400" height="400"/></clipPath></defs>
+          <g set:html={gridSvg(10)} />
+          <g clip-path="url(#z-clip)"><g id="z-ring"></g><g id="z-dots"></g><g id="z-pole"></g><circle class="zsel" id="z-sel" r="7" cx="-100" cy="-100"/></g>
+          <g id="z-axes"></g>
+        </svg>
+      </div>
+      <div class="sbar rdbar"><span class="stag rd" id="z-rd"></span></div>
+    </Panel>
+
+    <Panel hid="hd-coef" title="係数" class="a-coef">
+      <div slot="aux" class="seg" id="p-cf" role="group" aria-label="書き出しの形式">
+        <button type="button" data-v="txt" aria-pressed="true" title="1 行に 1 つの係数">テキスト</button><button type="button" data-v="c" aria-pressed="false" title="C 言語の配列の宣言">C の配列</button>
+      </div>
+      <div class="cbar">
+        <div class="seg" id="p-ct" role="group" aria-label="数値の型">
+          <button type="button" data-v="f64" aria-pressed="true" title="倍精度（有効数字 17 桁）">double</button><button type="button" data-v="f32" aria-pressed="false" title="単精度に丸める（有効数字 9 桁）">float</button>
+        </div>
+        <div class="seg"><button type="button" id="copyBtn" title="係数をクリップボードへ写す">コピー</button></div>
+      </div>
+      <pre class="coefs" id="coefs" tabindex="0" aria-label="係数"></pre>
+    </Panel>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools list={related} />
+  <div class="toast" id="toast" role="status" aria-live="polite" data-off></div>
+  <script>
+    import '../tools/fir/client';
+  </script>
+</SiteLayout>
