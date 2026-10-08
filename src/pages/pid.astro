@@ -4,7 +4,7 @@ import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
 import RelatedTools from '../components/RelatedTools.astro';
-import { TOOLS } from '../data/tools';
+import { order, TOOLS } from '../data/tools';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import '../tools/pid/style.css';
 import BlockDiagram from '../tools/pid/BlockDiagram.astro';
@@ -13,8 +13,12 @@ import Theory from '../tools/pid/Theory.astro';
 import Trace from '../tools/pid/Trace.astro';
 
 const name = 'PID制御';
-/* 制御のカテゴリはこのツールだけなので、関連ツールには公開中のほかのツールを並べる */
-const related = TOOLS.filter((t) => !t.s && t.id !== 'pid');
+/* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
+const CAT = '制御';
+const related = [
+  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'pid')),
+  ...TOOLS.filter((t) => t.c !== CAT && !t.s),
+];
 ---
 <SiteLayout title={name} tool={{ id: 'pid', name }} description="フィードバック制御の一種であるPID制御を各項を調整しながらシミュレートします。" note="シミュレーション結果は簡略化したモデルによる参考値です。">
   <PageTitle title={name}>流れのある水の中で、物体を目標の位置へ動かして留める PID 制御を 100 秒間シミュレートします。比例・積分・微分の各ゲインや流速を変えると、位置と速度の応答、整定時間などの指標がすぐに変わります。</PageTitle>
