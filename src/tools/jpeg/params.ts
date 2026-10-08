@@ -13,7 +13,7 @@ export const QUALITY: ParamDef = {
   max: 100,
   v: 50,
   ph: '例 75',
-  lin: { step: 1, big: 10, major: 25, minor: 5 },
+  lin: { step: 1, big: 10 },
   notation: 'plain',
   sig: 3,
   inputmode: 'decimal',
@@ -29,13 +29,6 @@ export const QUALITY: ParamDef = {
     [75, '75'],
     [90, '90'],
     [95, '95'],
-    [100, '100'],
-  ],
-  tk: [
-    [1, '1'],
-    [25, '25'],
-    [50, '50'],
-    [75, '75'],
     [100, '100'],
   ],
 };

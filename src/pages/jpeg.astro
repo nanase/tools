@@ -1,6 +1,7 @@
 ---
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import More from '../components/More.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
@@ -51,9 +52,11 @@ const MX = {
           <ParamRow d={QUALITY} />
           <ChoiceRow k="sub" name="色差の間引き" sub="Cb・Cr の標本を減らす割合。人の目は色の細かさに鈍いので、色差を間引いても見た目は変わりにくい" choices={SUBS} value="420" />
           <ChoiceRow k="qt" name="量子化テーブル" sub="周波数ごとの量子化の粗さの基準。品質で拡大縮小して使う" choices={QTABS} value="k" />
-          <ChoiceRow k="huff" name="ハフマン表" sub="記号に割り当てる符号の表。画質は変わらず、大きさだけが変わる" choices={HUFFS} value="std" />
-          <ChoiceRow k="up" name="色差の補間" sub="復号するときに、間引いた色差を画素の数に戻す方法。符号化したファイルは変わらない" choices={UPS} value="lin" fold />
         </div>
+        <More id="g-in"><div class="ptab">
+          <ChoiceRow k="huff" name="ハフマン表" sub="記号に割り当てる符号の表。画質は変わらず、大きさだけが変わる" choices={HUFFS} value="std" />
+          <ChoiceRow k="up" name="色差の補間" sub="復号するときに、間引いた色差を画素の数に戻す方法。符号化したファイルは変わらない" choices={UPS} value="lin" />
+        </div></More>
       </Panel>
 
       <Panel hid="hd-out" title="計算結果" class="a-out">
@@ -93,10 +96,10 @@ const MX = {
           <figure><figcaption>元</figcaption><div class="zw" data-z="0"><canvas id="cv-z0" width="32" height="32"></canvas><svg class="ov zg" id="ov-z0" viewBox="0 0 32 32" aria-hidden="true"></svg></div></figure>
           <figure><figcaption id="zc1">復号</figcaption><div class="zw" data-z="1"><canvas id="cv-z1" width="32" height="32"></canvas><svg class="ov zg" id="ov-z1" viewBox="0 0 32 32" aria-hidden="true"></svg></div></figure>
         </div>
-        <div class="ana2">
-          <div class="ptab"><ChoiceRow k="zoom" name="拡大する範囲" sub="選んだブロックのまわりを最近傍で拡大する。格子は 8×8 のブロックの境目" choices={ZOOMS.map((v) => [v, `${v} 画素`] as const)} value={32} fold /></div>
-          <div class="ptab"><ChoiceRow k="gain" name="差の強調" sub="差の表示で、元との差を何倍にして描くか" choices={GAINS.map((v) => [v, `×${v}`] as const)} value={4} fold /></div>
-        </div>
+        <More id="g-img" title="表示の設定"><div class="ana2">
+          <div class="ptab"><ChoiceRow k="zoom" name="拡大する範囲" sub="選んだブロックのまわりを最近傍で拡大する。格子は 8×8 のブロックの境目" choices={ZOOMS.map((v) => [v, `${v} 画素`] as const)} value={32} /></div>
+          <div class="ptab"><ChoiceRow k="gain" name="差の強調" sub="差の表示で、元との差を何倍にして描くか" choices={GAINS.map((v) => [v, `×${v}`] as const)} value={4} /></div>
+        </div></More>
       </Panel>
     </div>
 
