@@ -1,4 +1,4 @@
-/** 数値の解釈: 4.7k 4k7 4R7 0.1u 100n 1e3 4.7 kΩ 3V3 1meg 1.5kHz −6dB 50% 0.5mm 8mil 35µm 全角 */
+/** 数値の解釈: 4.7k 4k7 4R7 0.1u 100n 1e3 4.7 kΩ 3V3 1meg 1.5kHz −6dB 50% 0.5mm 8mil 35µm 0.23kg 5.4 N·s/m 全角 */
 const MUL: Record<string, number> = {
   p: 1e-12,
   n: 1e-9,
@@ -35,7 +35,48 @@ export type Unit =
   | 'N'
   | 'L'
   | '°'
-  | 'セント';
+  | 'セント'
+  | (typeof COMPOUND)[number];
+
+/**
+ * 質量・組立単位・回転の単位。末尾に書かれていれば外す。表記ゆれを受け付ける: 積の · は ⋅ ∙ ・ * でも、
+ * 省いてもよい（空白は先に除く）。² は ^2 と 2、括弧は省いてもよい。大文字と小文字は区別する（N と n）
+ */
+const COMPOUND = [
+  'kg',
+  'g',
+  'kg·cm²',
+  'g·cm²',
+  'N·s',
+  'N·m',
+  'N·s/m',
+  'N·m·s',
+  'N·m/A',
+  'mN·m/A',
+  'm/s²',
+  'rad/s',
+  'rad/m',
+  'rad·s/m',
+  'rad/(m·s)',
+  'V/rad',
+  'V·s/rad',
+  'V/(rad·s)',
+  'N/rad',
+  'N·s/rad',
+  'N/(rad·s)',
+  'rpm',
+  'rev',
+  'P/R',
+] as const;
+const unitRe = (u: string) =>
+  new RegExp(
+    `${u
+      .replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')
+      .replace(/·/g, '[·⋅∙・*]?')
+      .replace(/²/g, '\\^?2')
+      .replace(/\\([()])/g, '\\$1?')}$`,
+  );
+const COMPOUND_RE = new Map<Unit, RegExp>(COMPOUND.map((u) => [u, unitRe(u)]));
 
 /** 末尾に書かれた単位を外す。接頭辞と紛らわしいものは数字の直後だけ外す */
 const STRIP: Partial<Record<Unit, [RegExp, string]>> = {
@@ -67,8 +108,11 @@ const STRIP: Partial<Record<Unit, [RegExp, string]>> = {
   セント: [/(セント|cents?|¢)$/i, ''],
 };
 
-/** 接頭辞を読まない単位（0.5m を 0.5 mm と取り違えないように） */
-const NO_PREFIX = new Set<Unit>(['mm', 'µm', 'N', 'L', '°', 'セント']);
+/**
+ * 接頭辞を読まない単位（0.5m を 0.5 mm と取り違えないように）。接頭辞を含む単位（kg・mN·m/A など）も、
+ * 1m を 1 g と読まないように読まない
+ */
+const NO_PREFIX = new Set<Unit>(['mm', 'µm', 'N', 'L', '°', 'セント', 'kg', 'kg·cm²', 'g·cm²', 'mN·m/A']);
 
 /**
  * 文字列を数値に読む。読めなければ NaN。
@@ -98,8 +142,10 @@ export function parse(raw: string, unit: Unit, signed = false): number {
     k = 0.0254;
     s = s.replace(/mils?$/i, '');
   }
-  const st = STRIP[unit];
+  const st = STRIP[unit],
+    cu = COMPOUND_RE.get(unit);
   if (st) s = s.replace(st[0], st[1]);
+  else if (cu) s = s.replace(cu, '');
   if (NO_PREFIX.has(unit)) {
     const p = s.match(/^((?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?)$/);
     return p ? sg * Number((Number(p[1]) * k).toPrecision(12)) : NaN;
