@@ -58,7 +58,7 @@ export const REST = 0.2;
 export const forceOf = (d: Drive, u: number, v: number): number => d.alpha * u - d.beta * v;
 
 /**
- * 状態の時間微分。u は上限で切った入力（電圧か力）、f は外から台車に加える力 [N]
+ * 状態の時間微分。u は上限で切った入力（電圧か力）
  */
 export function deriv(p: Plant, d: Drive, s: readonly number[], u: number, out: number[]): void {
   const [, th, v, w] = s,
