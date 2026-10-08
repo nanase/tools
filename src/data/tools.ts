@@ -136,6 +136,14 @@ export const TOOLS: Tool[] = [
     k: 'dark light ダーク ライト テーマ',
   },
   {
+    id: 'pole-zero',
+    c: 'デジタルフィルタ',
+    t: '極と零点',
+    d: 'z 平面に極と零点を置いて動かし、周波数特性・インパルス応答・係数を求めます。',
+    ic: 'pz',
+    k: 'pole zero z平面 z-plane 伝達関数 transfer function 周波数特性 振幅 位相 群遅延 group delay 安定 stability 双2次 縦続 sos biquad iir fir 共振 resonator ノッチ notch オールパス allpass くし形 comb 移動平均',
+  },
+  {
     id: 'colorcode',
     c: '電子回路',
     t: '抵抗カラーコード',
@@ -186,6 +194,7 @@ export const IC: Record<string, string> = {
   jjyd: '<path class="b" d="M4 16L5 7L7 25L9 7L11 25L13 7L15 25L17 7L19 25L21 7L23 25L25 7L27 17.5L29 14.5L31 17.5L33 7L35 25L37 7L39 25L41 7L43 25L45 7L47 17.5L49 14.5L51 17.5L53 14.5L55 17.5L57 14.5L59 17.5L61 7L63 25L65 7L67 17.5L69 14.5L71 17.5L73 14.5L75 17.5L77 14.5L79 17.5L81 14.5L83 17.5L85 14.5L87 17.5L89 7L91 25L93 7L95 25L97 7L99 25L101 7L103 17.5L105 14.5L107 17.5L109 14.5L111 17.5L113 14.5L115 17.5"/><path class="a" d="M4 43V33H26V43H32V33H46V43H60V33H66V43H88V33H102V43H116"/>',
   fir: '<path class="c d" d="M4 34H116"/><path class="b" d="M8 34C28 34 40 6 60 6S92 34 112 34"/><path class="a" d="M12 34V32.7M28 34V37.4M36 34V37.4M44 34V28.5M52 34V14.8M60 34V8M68 34V14.8M76 34V28.5M84 34V37.4M92 34V37.4M108 34V32.7"/>',
   svg: '<circle class="a" cx="42" cy="24" r="12"/><path class="a" d="M42 4V7M42 41V44M22 24H25M59 24H62"/><path class="b" d="M80 10A15 15 0 1 0 96 36A12 12 0 0 1 80 10Z"/>',
+  pz: '<path class="c d" d="M32 24H88M60 2V46"/><circle class="c" cx="60" cy="24" r="18"/><path class="a" d="M66 12L72 18M66 18L72 12M66 30L72 36M66 36L72 30"/><circle class="b" cx="47.3" cy="11.3" r="3.5"/><circle class="b" cx="47.3" cy="36.7" r="3.5"/>',
   cc: '<path class="c" d="M4 24H30M90 24H116"/><rect class="c" x="30" y="14" width="60" height="20" rx="8"/><path class="a" d="M42 14V34M52 14V34M62 14V34"/><path class="b" d="M78 14V34"/>',
   os: '<path class="c d" d="M4 24H116"/><path class="a" d="M4 24C10 9 16 9 22 24S34 39 40 24S52 9 58 24S70 39 76 24S88 9 94 24S106 39 112 24"/><path class="b" d="M4 30C12 17 19 17 27 30S43 43 51 30S67 17 75 30S91 43 99 30S112 21 116 26"/>',
   sp: '<path class="c d" d="M4 44H116"/><path class="a" d="M4 41L12 40L18 33L22 9L26 34L34 38L40 37L44 22L48 37L58 39L64 38L67 30L70 39L82 41L88 40L91 35L94 41L116 43"/>',

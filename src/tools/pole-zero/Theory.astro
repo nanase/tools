@@ -1,0 +1,7 @@
+---
+// 動作原理と式
+import { EQS, THEORY } from './theory';
+---
+{THEORY.map((p) => <p set:html={p} />)}
+<div class="eqs" set:html={EQS} />
+<p class="cite">出典: 振幅・位相を極と零点までの線の長さと角度で求める方法、原点に足す根、群遅延は J. O. Smith III, Introduction to Digital Filters with Audio Applications（<a href="https://ccrma.stanford.edu/~jos/filters/Graphical_Amplitude_Response.html" target="_blank" rel="noopener">Graphical Computation of Amplitude Response from Poles and Zeros</a>・<a href="https://ccrma.stanford.edu/~jos/filters/Graphical_Phase_Response_Calculation.html" target="_blank" rel="noopener">Graphical Phase Response Calculation</a>・<a href="https://ccrma.stanford.edu/~jos/filters/Phase_Group_Delay.html" target="_blank" rel="noopener">Phase and Group Delay</a>）。有理伝達関数の周波数特性と縦続形は A. V. Oppenheim, R. W. Schafer, Discrete-Time Signal Processing, 3rd ed., Pearson, 2010（5.3 節・6.3 節）。双2次の段への極と零点の組み方は SciPy の <a href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.zpk2sos.html" target="_blank" rel="noopener">scipy.signal.zpk2sos</a>（pairing='nearest'）に倣う。Q と時定数（<math><mi>z</mi><mo>=</mo><msup><mi>e</mi><mrow><mi>s</mi><mi>T</mi></mrow></msup></math> でアナログの 2 次系の極に移す見方）、試聴の係数の切り替え方は、このツールの実装による。</p>
