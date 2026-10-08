@@ -1,10 +1,11 @@
 /** FIR フィルタのページの入口: 入力 → 設計と解析（Worker）→ 結果・グラフ・零点・係数・代入式、試聴（Web Audio） */
 import { Choice } from '../../lib/choice';
 import { $ } from '../../lib/dom';
+import { same } from '../../lib/eseries';
 import { fmt, fmtR, plain, ro } from '../../lib/format';
 import { ParamGroup } from '../../lib/param';
 import { SW } from '../../lib/scope';
-import { storeToggle } from '../../lib/store';
+import { forget, store, stored, storeToggle } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
 import { fcList, hzT } from '../biquad/params';
 import { fixed, LV_HOT, lvX, sig } from '../biquad/plot';
@@ -623,11 +624,47 @@ function applyType(): void {
   fitFreqs(`${type.ab} の帯域を作れるように `);
   const odd = needsOdd(type.v);
   G.update('n', { list: nList(odd) });
+  /* 奇数にする応答では、既定値も奇数にする */
+  const n0 = G.def('n').v;
+  if (odd && n0 % 2 === 0) manDefaults({ n: n0 + 1 });
   const n = val('n');
   if (odd && n % 2 === 0) {
     G.set('n', n + 1, { silent: true });
     G.note('n', `${type.ab} は奇数にするため ${n + 1} にしました`, 'er');
   }
+}
+
+/*
+ * 指定のときの行（タップ数・β・重み）の既定値（行末の ↺ で戻す値）は、指定へ切り替えたときに仕様から求めた値。
+ * 値の保存は既定値との差で持つので、既定値も保存して、開き直したときに同じ既定値から始める
+ */
+const MAN = ['n', 'beta', 'wp', 'ws'] as const;
+type ManKey = (typeof MAN)[number];
+const isMan = (k: string): k is ManKey => (MAN as readonly string[]).includes(k);
+/** 保存した既定値 */
+function storedMan(): Partial<Record<ManKey, number>> {
+  const v = stored('man');
+  if (!v || typeof v !== 'object') return {};
+  const o: Partial<Record<ManKey, number>> = {};
+  for (const k of MAN) {
+    const x = (v as Record<string, unknown>)[k];
+    if (typeof x === 'number' && Number.isFinite(x)) o[k] = x;
+  }
+  return o;
+}
+/** 既定値を変えて保存する。既定値を変えた行は、値の保存も合わせ直す */
+function manDefaults(x: Partial<Record<ManKey, number>>): void {
+  const G = g;
+  if (!G) return;
+  for (const k of MAN) {
+    const v = x[k];
+    if (v == null || same(G.def(k).v, v)) continue;
+    G.update(k, { v });
+    G.set(k, G.get(k), { silent: true });
+  }
+  const o = Object.fromEntries(MAN.map((k) => [k, G.def(k).v]));
+  if (PARAMS.every((d) => !isMan(d.k) || same(d.v, o[d.k]))) forget('man');
+  else store('man', o);
 }
 
 /** 設計法・決め方・窓に合わせて行を出し入れする */
@@ -654,25 +691,36 @@ new Choice($('#p-win'), (v) => {
   request();
 });
 const auto$ = new Choice($('#p-auto'), (v) => {
+  const was = auto;
   auto = v === '1';
-  /* 指定へ切り替えたら、仕様から求めた値から始める */
-  if (!auto && S && g) {
-    const d = S.r.d;
-    g.set('n', d.N, { silent: true });
-    g.set('beta', Number(d.beta.toFixed(2)), { silent: true });
-    g.set('wp', Number(d.wp.toPrecision(4)), { silent: true });
-    g.set('ws', Number(d.ws.toPrecision(4)), { silent: true });
+  /* 仕様から指定へ切り替えたら、仕様から求めた値から始める（既定値もその値にする）。保存から戻したときは戻した値のまま */
+  if (was && !auto && S && g) {
+    const d = S.r.d,
+      x: Record<ManKey, number> = {
+        n: d.N,
+        beta: Number(d.beta.toFixed(2)),
+        wp: Number(d.wp.toPrecision(4)),
+        ws: Number(d.ws.toPrecision(4)),
+      };
+    manDefaults(x);
+    for (const k of MAN) g.set(k, x[k], { silent: true });
   }
   applyMode();
   request();
 });
+/* 保存から戻した決め方（戻したときの onChange は、切り替えとみなさない） */
+auto = auto$.value === '1';
 
 /* 値の確定。音量だけのものは設計し直さない */
-g = new ParamGroup<Key>(PARAMS, (_, k) => {
-  if (!k) return;
-  if (k === 'vol') setVol();
-  else request();
-});
+const M0 = storedMan();
+g = new ParamGroup<Key>(
+  PARAMS.map((d) => (isMan(d.k) && M0[d.k] != null ? { ...d, v: M0[d.k] as number } : d)),
+  (_, k) => {
+    if (!k) return;
+    if (k === 'vol') setVol();
+    else request();
+  },
+);
 const G = g;
 for (const k of FK) G.on(k, syncRanges);
 G.on('fs', () => {

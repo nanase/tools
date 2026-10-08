@@ -1,6 +1,7 @@
 ---
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import More from '../components/More.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
@@ -35,7 +36,8 @@ const related = [
         <div slot="aux" class="seg ptype" id="p-type" role="group" aria-label="応答の種類">
           {TYPES.map((t) => <button type="button" data-v={t.v} aria-pressed={t.v === t0.v ? 'true' : 'false'} title={t.t}>{t.ab}</button>)}
         </div>
-        <div class="ptab">{row(['f1', 'f2', 'df', 'ap', 'as', 'fs']).map((d) => <ParamRow d={d} />)}</div>
+        <div class="ptab">{row(['f1', 'f2', 'df', 'ap', 'as']).map((d) => <ParamRow d={d} />)}</div>
+        <More id="g-in"><div class="ptab">{row(['fs']).map((d) => <ParamRow d={d} />)}</div></More>
       </Panel>
 
       <Panel hid="hd-dsg" title="設計" class="a-dsg">
@@ -43,7 +45,7 @@ const related = [
           {METHODS.map((m) => <button type="button" data-v={m.v} aria-pressed={m.v === m0.v ? 'true' : 'false'} title={m.t}>{m.ab}</button>)}
         </div>
         <div class="ptab">
-          <ChoiceRow k="win" sym="<i>w</i>" nm="w" name="窓" sub="理想の応答に掛ける窓。阻止域の深さと遷移帯域の幅が決まる" choices={WINS.map((w) => [w.v, w.ab] as const)} value="kaiser" layout="chips" wide />
+          <ChoiceRow k="win" sym="<i>w</i>" nm="w" name="窓" sub="理想の応答に掛ける窓。阻止域の深さと遷移帯域の幅が決まる" choices={WINS.map((w) => [w.v, w.ab] as const)} value="kaiser" layout="chips" />
           <ChoiceRow k="auto" sym="<i>N</i>" nm="N" name="タップ数の決め方" sub="仕様から: 仕様を満たすタップ数・β・重みを求める。指定: 自分で決める" choices={[['1', '仕様から'], ['0', '指定']]} value="1" msg />
           {row(['n', 'beta', 'wp', 'ws']).map((d) => <ParamRow d={d} />)}
         </div>
@@ -86,10 +88,10 @@ const related = [
           </svg>
         </div>
         <div class="sbar rdbar"><span class="stag rd" id="fr-rd"></span></div>
-        <div class="ana2">
+        <More id="g-fr" title="表示の設定"><div class="ana2">
           <div class="ptab"><ChoiceRow k="ys" sym="<i>A</i>" nm="A" name="振幅の縦軸" sub="通過域: 0 dB のまわりを拡大してリップルを見る" choices={[['db', 'dB'], ['lin', '線形'], ['pass', '通過域']]} value="db" /></div>
           <div class="ptab"><ChoiceRow k="c2" sym="" nm="CH2" name="CH2 の表示" sub="直線位相なので、群遅延はどの周波数でも (N − 1)/2 サンプル" choices={[['ph', '位相'], ['gd', '群遅延']]} value="ph" /></div>
-        </div>
+        </div></More>
       </Panel>
 
       <Panel hid="hd-imp" title="インパルス応答" class="a-imp">

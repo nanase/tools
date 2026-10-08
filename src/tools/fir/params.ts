@@ -91,13 +91,6 @@ const freq = (k: 'f1' | 'f2' | 'df', name: string, sym: string, sub: string, v: 
   sig: 5,
   format: HZ,
   pre: [],
-  tk: [
-    [1, '1'],
-    [10, '10'],
-    [100, '100'],
-    [1e3, '1k'],
-    [1e4, '10k'],
-  ],
 });
 
 const DEFS: Def[] = [
@@ -126,12 +119,6 @@ const DEFS: Def[] = [
       [0.5, '0.5'],
       [1, '1'],
     ],
-    tk: [
-      [0.001, '0.001'],
-      [0.01, '0.01'],
-      [0.1, '0.1'],
-      [1, '1'],
-    ],
   },
   {
     k: 'as',
@@ -153,12 +140,6 @@ const DEFS: Def[] = [
       [60, '60'],
       [80, '80'],
       [100, '100'],
-    ],
-    tk: [
-      [10, '10'],
-      [50, '50'],
-      [100, '100'],
-      [150, '150'],
     ],
   },
   {
@@ -185,12 +166,6 @@ const DEFS: Def[] = [
       [48e3, '48k'],
       [96e3, '96k'],
     ],
-    tk: [
-      [1e3, '1k'],
-      [8e3, '8k'],
-      [48e3, '48k'],
-      [192e3, '192k'],
-    ],
   },
   {
     k: 'n',
@@ -209,13 +184,6 @@ const DEFS: Def[] = [
     notation: 'plain',
     format: { input: String, step: String, text: String },
     pre: [],
-    tk: [
-      [3, '3'],
-      [255, '255'],
-      [511, '511'],
-      [767, '767'],
-      [1023, '1023'],
-    ],
   },
   {
     k: 'beta',
@@ -228,18 +196,11 @@ const DEFS: Def[] = [
     max: 20,
     v: 5.65326,
     ph: '例 5.65',
-    lin: { step: 0.01, big: 0.5, major: 5, minor: 1 },
+    lin: { step: 0.01, big: 0.5 },
     sign: 'nonneg',
     notation: 'plain',
     format: PLAIN,
     pre: [],
-    tk: [
-      [0, '0'],
-      [5, '5'],
-      [10, '10'],
-      [15, '15'],
-      [20, '20'],
-    ],
   },
   {
     k: 'wp',
@@ -258,11 +219,6 @@ const DEFS: Def[] = [
     notation: 'plain',
     format: PLAIN,
     pre: [],
-    tk: [
-      [0.001, '0.001'],
-      [1, '1'],
-      [1000, '1000'],
-    ],
   },
   {
     k: 'ws',
@@ -281,11 +237,6 @@ const DEFS: Def[] = [
     notation: 'plain',
     format: PLAIN,
     pre: [],
-    tk: [
-      [0.001, '0.001'],
-      [1, '1'],
-      [1000, '1000'],
-    ],
   },
   {
     k: 'vol',
@@ -304,14 +255,8 @@ const DEFS: Def[] = [
     format: { input: (v) => minus(String(v)), step: (v) => (v > 0 ? '+' : '') + minus(String(v)), text: dbT },
     fix: clamp(-80, 30, dbT),
     pre: [],
-    tk: [
-      [-80, '−80'],
-      [-40, '−40'],
-      [0, '0'],
-      [30, '+30'],
-    ],
   },
 ];
 
-/** ▲▼ の読み上げは「fc を 1 つ上の …」 */
+/** ‹ › の読み上げは「fc を 1 つ上の …」 */
 export const PARAMS: Def[] = DEFS.map((d) => ({ stepLabel: ' ', ...d }));
