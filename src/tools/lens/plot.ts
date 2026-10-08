@@ -83,14 +83,15 @@ export function mapStatic(): string {
       s += `<circle class="mp-bulb" cx="${n1(x)}" cy="${n1(y)}" r="1.3"/>`;
     }
   s += `<text class="mp-t" x="${MAP.cx}" y="10" text-anchor="middle">遠景（山並み・∞）</text>`;
-  /* 空の天体（無限遠）: 遠景の環の上に方位と名前 */
+  /* 空の天体（無限遠）: 遠景の環の上に方位の点。寄り集まっているので名前は 1 つにまとめる */
+  let ax = -Infinity,
+    ay = 0;
   for (const b of SKY) {
-    const a = (b.az * Math.PI) / 180,
-      [x, y] = mp(a, MAP.rmax),
-      l = b.az < 0;
+    const [x, y] = mp((b.az * Math.PI) / 180, MAP.rmax);
     s += `<circle class="mp-sky" cx="${n1(x)}" cy="${n1(y)}" r="2.6"/>`;
-    s += `<text class="mp-t" x="${n1(x + (l ? -6 : 6))}" y="${n1(y + 4)}"${l ? ' text-anchor="end"' : ''}>${b.name}</text>`;
+    if (x > ax) [ax, ay] = [x, y];
   }
+  s += `<text class="mp-t" x="${n1(ax + 6)}" y="${n1(ay + 4)}">月・惑星</text>`;
   return s;
 }
 

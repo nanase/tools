@@ -103,7 +103,7 @@ export const ridge = (az: number): number =>
 
 /* ---------- 空の天体（無限遠） ---------- */
 /**
- * 空に置く天体: 方位・仰角 [°]（配置はこのツールで決めた）、赤道半径 [km] と地球からの距離 [km] で決まる
+ * 空に置く天体: 方位・仰角 [°]（配置はこのツールで決めた。月は緑の柱の上、惑星はその右上に寄せる）、赤道半径 [km] と地球からの距離 [km] で決まる
  * 角半径、極の向きの回し [°]（北が上で 0、左回りが正）と、こちらから見た極の傾き（環の開き）[°]
  */
 export interface SkyBody {
@@ -122,10 +122,10 @@ export interface SkyBody {
  * 全体を同じ向き（衝のころ、太陽を背にして満ちて見える）として、影は描かない
  */
 export const SKY: SkyBody[] = [
-  { id: 'moon', name: '月', az: -40, el: 20, r: 1737.4, dist: 384400, rot: 0, tilt: 0 },
-  { id: 'uranus', name: '天王星', az: -15, el: 27, r: 25559, dist: 2580.6e6, rot: 30, tilt: 55 },
-  { id: 'jupiter', name: '木星', az: 18, el: 22, r: 71492, dist: 588.5e6, rot: 0, tilt: 0 },
-  { id: 'saturn', name: '土星', az: 42, el: 16, r: 60268, dist: 1205.5e6, rot: -6, tilt: 20 },
+  { id: 'moon', name: '月', az: 21, el: 8, r: 1737.4, dist: 384400, rot: 0, tilt: 0 },
+  { id: 'uranus', name: '天王星', az: 23.5, el: 13, r: 25559, dist: 2580.6e6, rot: 30, tilt: 55 },
+  { id: 'jupiter', name: '木星', az: 25.5, el: 10.5, r: 71492, dist: 588.5e6, rot: 0, tilt: 0 },
+  { id: 'saturn', name: '土星', az: 29, el: 8.2, r: 60268, dist: 1205.5e6, rot: -6, tilt: 20 },
 ];
 /** 天体の角半径 [rad] */
 export const angRadius = (b: SkyBody): number => Math.asin(b.r / b.dist);
