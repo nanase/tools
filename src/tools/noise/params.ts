@@ -29,7 +29,7 @@ const intFix =
     return [w, `整数の ${show(w)} にしました`];
   };
 
-/** 初期値の ▲▼ の並び: 0、2 の累乗とその 1 つ前（すべて 1）、上限 */
+/** 初期値の欄でドラッグ・‹ › が移る値: 0、2 の累乗とその 1 つ前（すべて 1）、上限 */
 export function initList(n: number): number[] {
   const s = new Set<number>([0, full(n)]);
   for (let k = 0; k < n; k++) {
@@ -73,18 +73,11 @@ const dbRange = (
   min,
   max,
   v,
-  lin: { step: 5, big: 20, major: 20, minor: 10 },
+  lin: { step: 5, big: 20 },
   sign: 'any',
   ph: '例 −40',
   bad: '読めない値です（例 −40・−120）',
   pre: [],
-  tk: [
-    [-160, '−160'],
-    [-120, '−120'],
-    [-80, '−80'],
-    [-40, '−40'],
-    [0, '0'],
-  ],
   format: DBHZ,
 });
 
@@ -105,11 +98,6 @@ export const PARAMS: (ParamDef & { k: Key })[] = [
     ph: '例 2000',
     bad: '読めない値です（例 2000・5k）',
     pre: [],
-    tk: [
-      [100, '100'],
-      [1000, '1k'],
-      [10000, '10k'],
-    ],
     format: { step: HZ.step, text: (v) => `${plain(v, 6)} 個/s` },
     fix: intFix(
       () => 100,
@@ -127,18 +115,11 @@ export const PARAMS: (ParamDef & { k: Key })[] = [
     min: NMIN,
     max: NMAX,
     v: 15,
-    lin: { step: 1, big: 4, major: 8, minor: 1 },
+    lin: { step: 1, big: 4 },
     notation: 'plain',
     ph: '例 15',
     bad: '読めない値です（例 15）',
     pre: [],
-    tk: [
-      [2, '2'],
-      [8, '8'],
-      [16, '16'],
-      [24, '24'],
-      [32, '32'],
-    ],
     format: { text: (v) => `${v} ビット` },
     fix: intFix(
       () => NMIN,
@@ -161,11 +142,9 @@ export const PARAMS: (ParamDef & { k: Key })[] = [
     sign: 'nonneg',
     notation: 'plain',
     sig: 10,
-    slider: false,
     ph: '例 1',
     bad: '読めない値です（例 1・16384）',
     pre: [],
-    tk: [],
     format: {
       input: (v) => String(v),
       step: (v) => (v < 1e5 ? String(v) : hex(v, cur.n)),
@@ -198,11 +177,6 @@ export const PARAMS: (ParamDef & { k: Key })[] = [
       [16e3, '16k'],
       [48e3, '48k'],
     ],
-    tk: [
-      [10, '10'],
-      [1e3, '1k'],
-      [1e5, '100k'],
-    ],
     format: { step: HZ.step },
   },
   {
@@ -221,11 +195,6 @@ export const PARAMS: (ParamDef & { k: Key })[] = [
     ph: '例 1m',
     bad: '読めない値です（例 200u・1m・5ms）',
     pre: [],
-    tk: [
-      [10e-6, '10μ'],
-      [1e-3, '1m'],
-      [0.1, '100m'],
-    ],
     format: { text: (v) => `${fmt(v, 's', 3)}/div` },
   },
   {
@@ -245,11 +214,6 @@ export const PARAMS: (ParamDef & { k: Key })[] = [
     ph: '例 8192',
     bad: '読めない値です（例 8192・16k）',
     pre: [],
-    tk: [
-      [1024, '1024'],
-      [8192, '8192'],
-      [32768, '32768'],
-    ],
     format: { input: String, step: (v) => `${v / 1024}k`, text: (v) => `${v} 点` },
   },
   dbRange('top', '最高強度', 'スペクトラムの上端と、スペクトログラムの最も明るい色（dBFS/Hz）', -30, -120, 0),

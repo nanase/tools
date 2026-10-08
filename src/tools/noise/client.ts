@@ -271,9 +271,9 @@ function applyPreset(v: string): void {
 }
 
 /* ---------- 表示の切り替え ---------- */
-/** 種類で出す行と枠 */
+/** 種類で出す行と枠（ピンクの作り方は「その他」ごと出し入れする） */
 function rows(): void {
-  $('#p-pm').hidden = S.kind !== 'pink';
+  $('#g-gen').hidden = S.kind !== 'pink';
   $('#p-den').hidden = S.kind !== 'velvet';
   $('.a-lfsr').hidden = S.kind !== 'lfsr';
   for (const el of $$('.m.lf')) el.hidden = S.kind !== 'lfsr';

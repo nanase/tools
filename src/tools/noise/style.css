@@ -8,8 +8,8 @@
   .c1{grid-area:c1}.c2{grid-area:c2}.a-thy{grid-area:thy}
 }
 
-/* 隠した行の後ろに残った行（見えている最後の行）は、下の線と余白をなくす */
-.ptab>.prow:not(:has(~ .prow:not([hidden]))){border-bottom:0;padding-bottom:0}
+/* 隠した行の後ろに残った行（見えている最後の行）は、下の線をなくす */
+.ptab>.prow:not(:has(~ .prow:not([hidden]))){border-bottom:0}
 
 /* 音の枠の知らせ */
 .snd-msg{margin:0 8px 6px}

@@ -1,6 +1,7 @@
 ---
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import More from '../components/More.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
@@ -33,10 +34,13 @@ const related = [
     <div class="col c1">
       <Panel hid="hd-gen" title="ノイズ" class="a-gen">
         <div class="ptab">
-          <ChoiceRow k="kind" name="種類" sub="色の名前は、パワースペクトル密度の傾き（周波数が 2 倍になるごとの dB）で決まる" choices={KINDS.map(([v, l, t]) => [v, l, t] as const)} value="pink" layout="chips" wide />
-          <ChoiceRow k="pm" name="ピンクの作り方" sub="フィルタ: 6 つの 1 次のフィルタの和（Kellett）。1/f からのずれは ±0.03 dB。Voss–McCartney: 間隔を倍々にして引き直す乱数の和。ずれは ±0.9 dB" choices={[['kellett', 'Kellett のフィルタ'], ['voss', 'Voss–McCartney']]} value="kellett" layout="chips" wide />
+          <ChoiceRow k="kind" name="種類" sub="色の名前は、パワースペクトル密度の傾き（周波数が 2 倍になるごとの dB）で決まる" choices={KINDS.map(([v, l, t]) => [v, l, t] as const)} value="pink" layout="chips" />
           <ParamRow d={P.den} />
         </div>
+        <!-- ピンクのときだけ -->
+        <More id="g-gen"><div class="ptab">
+          <ChoiceRow k="pm" name="ピンクの作り方" sub="フィルタ: 6 つの 1 次のフィルタの和（Kellett）。1/f からのずれは ±0.03 dB。Voss–McCartney: 間隔を倍々にして引き直す乱数の和。ずれは ±0.9 dB" choices={[['kellett', 'Kellett のフィルタ'], ['voss', 'Voss–McCartney']]} value="kellett" layout="chips" />
+        </div></More>
       </Panel>
 
       <Panel hid="hd-snd" title="音" class="a-snd">
@@ -50,13 +54,15 @@ const related = [
       <Panel hid="hd-lfsr" title="LFSR" class="a-lfsr">
         <div slot="aux" class="seg" id="p-form" role="group" aria-label="帰還の形"><button type="button" data-v="fib" aria-pressed="true" title="フィボナッチ形: タップのビットを外で排他的論理和し、左端（ビット n−1）に入れる">フィボナッチ</button><button type="button" data-v="gal" aria-pressed="false" title="ガロア形: 右端（ビット 0）の出力を、途中のタップのビットへ排他的論理和で足す">ガロア</button></div>
         <div class="ptab">
-          <ChoiceRow k="pre" name="実在の音源" sub="ゲーム機などの音源 IC のノイズのシフトレジスタ。ビット長・タップ・帰還・初期値・クロックをまとめて変える" choices={PRESETS.map((p) => [p.v, p.l, p.t] as const)} value="" layout="chips" wide />
+          <ChoiceRow k="pre" name="実在の音源" sub="ゲーム機などの音源 IC のノイズのシフトレジスタ。ビット長・タップ・帰還・初期値・クロックをまとめて変える" choices={PRESETS.map((p) => [p.v, p.l, p.t] as const)} value="" layout="chips" />
           <ParamRow d={P.n} />
           <ChoiceRow k="tapm" name="タップ" sub="最大周期の表: ビット長ごとの原始多項式（Xilinx XAPP052）。任意: 図のビットを押してタップを入れ切りする" choices={[['table', '最大周期の表'], ['custom', '任意']]} value="table" />
-          <ChoiceRow k="fb" name="帰還" sub="XNOR は XOR の否定。すべて 0 の状態から動くかわりに、すべて 1 の状態から動かない" choices={[['xor', 'XOR'], ['xnor', 'XNOR']]} value="xor" />
-          <ParamRow d={P.init} />
           <ParamRow d={P.clk} />
         </div>
+        <More id="g-lf"><div class="ptab">
+          <ChoiceRow k="fb" name="帰還" sub="XNOR は XOR の否定。すべて 0 の状態から動くかわりに、すべて 1 の状態から動かない" choices={[['xor', 'XOR'], ['xnor', 'XNOR']]} value="xor" />
+          <ParamRow d={P.init} />
+        </div></More>
         <div class="sbar lf-bar">
           <span class="stag lf-poly" id="lf-poly"></span>
           <span class="stag">STEP <b id="lf-step">0</b></span>
@@ -64,9 +70,9 @@ const related = [
           <button type="button" class="tg" id="lf-rst" title="初期値に戻す">初期値へ</button>
         </div>
         <svg class="reg" id="lf-svg" viewBox={`0 0 ${DW} ${DH}`} role="group" aria-label="シフトレジスタの図"></svg>
-        <div class="ptab ana">
-          <ChoiceRow k="spd" name="図の速さ" sub="図のレジスタを 1 秒に何ステップ進めるか（音のクロックとは別に、ゆっくり動かす）" choices={SPEEDS.map((v) => [v, v ? `${v} /s` : '止める'] as const)} value={4} fold />
-        </div>
+        <More id="g-reg" title="表示の設定"><div class="ptab">
+          <ChoiceRow k="spd" name="図の速さ" sub="図のレジスタを 1 秒に何ステップ進めるか（音のクロックとは別に、ゆっくり動かす）" choices={SPEEDS.map((v) => [v, v ? `${v} /s` : '止める'] as const)} value={4} />
+        </div></More>
       </Panel>
 
       <Panel hid="hd-out" title="測定" class="a-out">
@@ -125,15 +131,15 @@ const related = [
           <div class="sbar rdbar"><span class="stag rd" id="h-rd"></span></div>
         </div>
 
-        <div class="ana2">
+        <More id="g-wv" title="表示の設定"><div class="ana2">
           <div class="ptab">
-            <ParamRow d={P.hd} fold />
-            <ChoiceRow k="hy" name="縦軸" sub="対数にすると、分布の裾（まれな大きな値）の違いが見える" choices={[['lin', 'リニア'], ['log', '対数']]} value="lin" fold />
+            <ParamRow d={P.hd} />
+            <ChoiceRow k="hy" name="縦軸" sub="対数にすると、分布の裾（まれな大きな値）の違いが見える" choices={[['lin', 'リニア'], ['log', '対数']]} value="lin" />
           </div>
           <div class="ptab">
-            <ChoiceRow k="rng" name="表示範囲" sub="中心から端までの振幅（フルスケールを 1 とする）" choices={RANGES.map((v) => [v, `±${v}`] as const)} value={0.5} fold />
+            <ChoiceRow k="rng" name="表示範囲" sub="中心から端までの振幅（フルスケールを 1 とする）" choices={RANGES.map((v) => [v, `±${v}`] as const)} value={0.5} />
           </div>
-        </div>
+        </div></More>
       </Panel>
 
       <Panel hid="hd-sp" title="スペクトラム" class="a-sp">
@@ -174,18 +180,18 @@ const related = [
         </div>
 
         <!-- 周波数軸・FFT の長さ・強度の範囲はどちらの表示にも使う。平均はスペクトラム、時間の幅はスペクトログラムだけ -->
-        <div class="ana2">
+        <More id="g-sp" title="表示と解析の設定"><div class="ana2">
           <div class="ptab">
-            <ChoiceRow k="ax" name="周波数軸" sub="対数: 1 オクターブを同じ幅に並べ、傾きが直線になる。リニア: LFSR のクロックの整数倍の零が等間隔に並ぶ" choices={[['log', '対数'], ['lin', 'リニア']]} value="log" fold />
-            <ParamRow d={P.fft} fold />
-            <ChoiceRow k="avg" name="平均の回数" sub="スペクトラムで平均する区間（半分ずつ重ねる）の数。超えた後は、同じ重みの指数移動平均" choices={AVGS.map((v) => [v, `${v} 回`] as const)} value={32} fold />
-            <ChoiceRow k="span" name="時間の幅" sub="スペクトログラムの横幅に入れる時間" choices={SPANS.map((v) => [v, `${v} s`] as const)} value={10} layout="chips" wide fold />
+            <ChoiceRow k="ax" name="周波数軸" sub="対数: 1 オクターブを同じ幅に並べ、傾きが直線になる。リニア: LFSR のクロックの整数倍の零が等間隔に並ぶ" choices={[['log', '対数'], ['lin', 'リニア']]} value="log" />
+            <ParamRow d={P.fft} />
+            <ChoiceRow k="avg" name="平均の回数" sub="スペクトラムで平均する区間（半分ずつ重ねる）の数。超えた後は、同じ重みの指数移動平均" choices={AVGS.map((v) => [v, `${v} 回`] as const)} value={32} />
+            <ChoiceRow k="span" name="時間の幅" sub="スペクトログラムの横幅に入れる時間" choices={SPANS.map((v) => [v, `${v} s`] as const)} value={10} layout="chips" />
           </div>
           <div class="ptab">
-            <ParamRow d={P.top} fold />
-            <ParamRow d={P.bot} fold />
+            <ParamRow d={P.top} />
+            <ParamRow d={P.bot} />
           </div>
-        </div>
+        </div></More>
       </Panel>
     </div>
 
