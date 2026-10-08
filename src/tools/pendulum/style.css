@@ -29,9 +29,11 @@
 .sbar .wn{color:var(--warn);font-weight:700}
 #st-th,#st-x,#st-t{font-variant-numeric:tabular-nums}
 
-/* 台車と振子の図 */
+/* 台車と振子の図。図の中はスクロールの位置合わせ（scroll anchoring）の基準にしない。力の数値（.pf-ft）が基準に
+   選ばれると、力が小さくて数値を消すたびに文字の位置が図の左上へ飛び、ブラウザがその分だけ画面をスクロールし直して、
+   操作していないのに画面が上下に揺れる */
 .pfw{border:1px solid var(--line);border-radius:var(--r);background:var(--screen);box-shadow:inset 0 1px 3px rgb(0 0 0 / .12);overflow:hidden}
-.pfig{display:block;width:100%;height:auto;max-height:62vh;cursor:pointer;touch-action:manipulation;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
+.pfig{display:block;width:100%;height:auto;max-height:62vh;overflow-anchor:none;cursor:pointer;touch-action:manipulation;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
 .pfig:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
 .pf-grid{fill:none;stroke:var(--grid);stroke-width:1}
 .pf-rail{fill:var(--ink-3)}
