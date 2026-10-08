@@ -1,0 +1,198 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import More from '../components/More.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import { TOOLS } from '../data/tools';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/iir/style.css';
+import { gridSvg } from '../lib/scope';
+import { lvGrid } from '../tools/biquad/plot';
+import { CMPS, EDGES, edgeLabel, KINDS, L0, LENS, MODES, PARAMS, QUANTS, RESPS } from '../tools/iir/params';
+import { PZ, TH, TR } from '../tools/iir/plot';
+import Theory from '../tools/iir/Theory.astro';
+import { EQ_SOS } from '../tools/iir/theory';
+
+const name = 'IIR フィルタ';
+const def = (k: string) => {
+  const d = PARAMS.find((x) => x.k === k);
+  if (!d) throw new Error(k);
+  return (EDGES as readonly string[]).includes(k)
+    ? { ...d, ...edgeLabel(k as (typeof EDGES)[number], 'butter', 'lp', 'order') }
+    : d;
+};
+/* 同じカテゴリのツールを先に、続けて公開中のほかのツールを並べる */
+const same = TOOLS.filter((t) => !t.s && t.id !== 'iir' && t.c === 'デジタルフィルタ'),
+  related = [...same, ...TOOLS.filter((t) => !t.s && t.c !== 'デジタルフィルタ')];
+const pzSvg = (id: string, label: string) =>
+  `<svg viewBox="-46 -16 ${PZ + 76} ${PZ + 40}" id="${id}-svg" role="img" aria-label="${label}"><defs><clipPath id="${id}-clip"><rect x="-8" y="-8" width="${PZ + 16}" height="${PZ + 16}"/></clipPath></defs><g id="${id}-g"></g><g id="${id}-m" clip-path="url(#${id}-clip)"></g></svg>`;
+---
+<SiteLayout title={name} tool={{ id: 'iir', name }} note="係数と特性は倍精度の数値計算による参考値で、試聴の音は再生装置のサンプリング周波数で設計し直したものです。" description="バターワース・チェビシェフ・楕円・ベッセルのアナログ原型から、周波数変換と双一次変換で IIR フィルタを設計します。">
+  <PageTitle title={name}>バターワース・チェビシェフ I・チェビシェフ II・楕円・ベッセルのアナログ原型から、周波数変換と双一次変換で IIR フィルタ（LPF・HPF・BPF・BSF）を設計します。次数を指定するか、通過域と阻止域の仕様を満たす最小の次数を求め、周波数特性・極と零点・時間応答と、双2次の縦続（SOS）と直接形の係数を出します。ホワイトノイズに掛けた音も聞けます。</PageTitle>
+  <div class="mini" aria-hidden="true"><span id="mt"></span><span><i>N</i><b id="mN"></b></span><span><i>f</i><sub>−3dB</sub><b id="mf3"></b></span><span id="mxs"><i>A</i><sub>s</sub><b id="mas"></b></span></div>
+
+  <div class="tgrid">
+    <div class="col c-a">
+      <Panel hid="hd-in" title="入力" class="a-in">
+        <div slot="aux" class="seg presp" id="p-resp" role="group" aria-label="応答">
+          {RESPS.map((r) => <button type="button" data-v={r.v} aria-pressed={r.v === 'lp' ? 'true' : 'false'} title={r.t}>{r.ab}</button>)}
+        </div>
+        <div class="ptab iin" id="iin" data-mode="order" data-kind="butter">
+          <ChoiceRow k="kind" name="近似" sub="振幅の形を決めるアナログの原型" choices={KINDS.map((k) => [k.v, k.name, k.t] as const)} value="butter" layout="chips" />
+          <ChoiceRow k="mode" name="次数の決め方" sub="次数と基準の周波数から設計するか、通過域・阻止域の端と減衰量を満たす最小の次数を求める" choices={MODES} value="order" />
+          {['n', 'f1', 'f2', 's1', 's2', 'ap', 'as'].map((k) => <ParamRow d={def(k)} />)}
+        </div>
+        <More id="g-in"><div class="ptab"><ParamRow d={def('fs')} /></div></More>
+      </Panel>
+
+      <Panel hid="hd-out" title="計算結果" class="a-out">
+        <dl class="metrics c3">
+          <div class="m m-main"><dt>次数 <i>N</i></dt><dd><span id="o-n"></span><span class="m-sub" id="o-ns"></span><span class="m-note" id="o-nw"></span></dd></div>
+          <div class="m"><dt><i>f</i><sub>−3dB</sub>（振幅 −3 dB）</dt><dd class="rng" id="o-f3"></dd></div>
+          <div class="m"><dt>通過域の振幅の変動</dt><dd id="o-rip"></dd></div>
+          <div class="m"><dt>阻止域の減衰量</dt><dd id="o-att"></dd></div>
+          <div class="m"><dt>実際の阻止域端</dt><dd class="rng" id="o-fst"></dd></div>
+          <div class="m"><dt>通過域の群遅延</dt><dd class="rng"><span id="o-gd"></span><span class="m-sub" id="o-gds"></span></dd></div>
+          <div class="m"><dt>直接形の係数（<span id="o-qn"></span>）</dt><dd id="o-dq"></dd></div>
+        </dl>
+      </Panel>
+
+      <Panel hid="hd-snd" title="試聴" class="a-snd">
+        <div slot="aux" class="seg"><button type="button" id="playBtn" aria-pressed="false" title="ホワイトノイズにこのフィルタを掛けて鳴らす"><span class="led" aria-hidden="true"></span><span id="playT">再生</span></button></div>
+        <div class="sbar">
+          <span class="stag">IN <b>WHITE NOISE</b></span>
+          <span class="stag"><i class="sw" aria-hidden="true"></i>OUT <b id="lv-t">---</b> dBFS</span>
+          <span class="stag">FS <b id="lv-fs">---</b></span>
+        </div>
+        <div class="scope lvl">
+          <svg viewBox="-12 -4 424 42" role="img" aria-label="出力レベル">
+            <g set:html={lvGrid()} />
+            <rect class="dt1" id="lv-bar" x="0" y="5" width="0" height="12"/>
+            <rect class="lv-hot" id="lv-hot" x="0" y="5" width="0" height="12"/>
+          </svg>
+        </div>
+        <div class="ptab"><ParamRow d={def('vol')} /></div>
+      </Panel>
+    </div>
+
+    <div class="col c-b">
+      <Panel hid="hd-fr" title="周波数特性" class="a-fr">
+        <div slot="aux" class="seg" id="fview" role="group" aria-label="表示">
+          <button type="button" data-v="mag" aria-pressed="true" title="振幅 [dB] と仕様の枠">振幅</button><button type="button" data-v="ph" aria-pressed="false" title="位相 [°]">位相</button><button type="button" data-v="gd" aria-pressed="false" title="群遅延 [サンプル]">群遅延</button>
+        </div>
+        <div class="sbar">
+          <button type="button" class="tg" id="fr-c1" aria-pressed="true" title="設計したフィルタ（双一次変換）"><i class="sw" aria-hidden="true"></i>CH1 <span id="fr-n1">MAG</span> <b id="fr-vd"></b>/div</button>
+          <button type="button" class="tg" id="fr-c2" aria-pressed="true" title="比べるもの"><i class="sw c2" aria-hidden="true"></i>CH2 <span id="fr-n2"></span></button>
+          <span class="stag">X <span id="fr-xm"></span> <b id="fr-x"></b></span>
+        </div>
+        <div class="scope" id="fr-scope">
+          <svg viewBox="-50 -16 462 282" id="fr-svg" role="img" aria-label="周波数特性">
+            <defs><clipPath id="fr-clip"><rect x="0" y="0" width="400" height="240"/></clipPath></defs>
+            <g id="fr-grid"></g>
+            <path class="msk" id="fr-msk"/>
+            <g clip-path="url(#fr-clip)"><path class="t2 c2x" id="fr-t2"/><path class="t1 c1x" id="fr-t1"/></g>
+            <path class="mskl" id="fr-mskl"/>
+            <path class="cur" id="fr-cur"/>
+            <g id="fr-axes"></g>
+          </svg>
+        </div>
+        <div class="sbar rdbar"><span class="stag rd" id="fr-rd"></span></div>
+        <More id="g-fr" title="表示の設定"><div class="ana2">
+          <div class="ptab">
+            <ChoiceRow k="cmp" name="比べるもの" sub="CH2 に重ねるもの（極と零点・時間応答にも出す）" choices={CMPS} value="ana" layout="chips" msg />
+            <ChoiceRow k="qz" name="係数の丸め" sub="直接形の丸めを比べるときの係数の精度" choices={QUANTS} value="f32" layout="chips" />
+          </div>
+          <div class="ptab">
+            <ChoiceRow k="xs" name="横軸" sub="周波数の目盛り" choices={[['log', '対数'], ['lin', '線形']]} value="log" />
+            <ParamRow d={def('bot')} />
+          </div>
+        </div></More>
+      </Panel>
+
+      <Panel hid="hd-tm" title="時間応答" class="a-tm">
+        <div slot="aux" class="seg" id="tview" role="group" aria-label="表示">
+          <button type="button" data-v="imp" aria-pressed="true" title="単位インパルスを入れたときの出力">インパルス</button><button type="button" data-v="step" aria-pressed="false" title="単位ステップを入れたときの出力">ステップ</button>
+        </div>
+        <div class="sbar">
+          <button type="button" class="tg" id="tm-c1" aria-pressed="true" title="設計したフィルタ（双一次変換）"><i class="sw" aria-hidden="true"></i>CH1 <span id="tm-n1"></span> <b id="tm-vd"></b>/div</button>
+          <button type="button" class="tg" id="tm-c2" aria-pressed="true" title="比べるもの"><i class="sw c2" aria-hidden="true"></i>CH2 <span id="tm-n2"></span></button>
+          <span class="stag">H <b id="tm-hd"></b> S/div</span>
+        </div>
+        <div class="scope" id="tm-scope">
+          <svg viewBox={`-56 -16 468 ${TH + 42}`} id="tm-svg" role="img" aria-label="時間応答">
+            <defs><clipPath id="tm-clip"><rect x="0" y="-2" width="400" height={TH + 4}/></clipPath></defs>
+            <g set:html={gridSvg(TR)} />
+            <g clip-path="url(#tm-clip)"><path class="stz" id="tm-z"/><path class="t2 c2x" id="tm-t2"/><path class="stm c1x" id="tm-t1"/><g class="c1x" id="tm-dots"></g></g>
+            <path class="cur" id="tm-cur"/>
+            <g id="tm-axes"></g>
+          </svg>
+        </div>
+        <div class="sbar rdbar"><span class="stag rd" id="tm-rd"></span></div>
+        <More id="g-tm" title="表示の設定"><div class="ptab">
+          <ChoiceRow k="len" sym="<i>L</i>" nm="L" name="表示長" sub="時間応答のグラフの 8 div に入れるサンプル数" choices={LENS.map((v) => [v, String(v)] as const)} value={L0} layout="chips" />
+        </div></More>
+      </Panel>
+    </div>
+
+    <Panel hid="hd-pz" title="極と零点" class="a-pz">
+      <span slot="aux" class="aux">× 極　○ 零点</span>
+      <div class="sbar">
+        <span class="stag"><i class="sw" aria-hidden="true"></i>CH1 <span id="pz-n1"></span></span>
+        <button type="button" class="tg" id="pz-c2" aria-pressed="true" title="比べるもの"><i class="sw c2" aria-hidden="true"></i>CH2 <span id="pz-n2"></span></button>
+      </div>
+      <div class="pzw" id="pzw">
+        <figure class="pzf"><figcaption id="ps-cap">s 平面</figcaption><div class="scope" set:html={pzSvg('ps', 's 平面の極と零点')} /></figure>
+        <figure class="pzf"><figcaption>z 平面（双一次変換）</figcaption><div class="scope" set:html={pzSvg('pz', 'z 平面の極と零点')} /></figure>
+      </div>
+      <More id="g-pz" title="表示の設定"><div class="ptab">
+        <ChoiceRow k="sv" name="s 平面に描くもの" sub="原型は基準の端を 1 rad/s にした LPF。周波数変換後はプリワーピングした周波数で、目盛りは Hz（σ/2π、Ω/2π）" choices={[['proto', '原型'], ['ana', '周波数変換後']]} value="proto" />
+      </div></More>
+    </Panel>
+
+    <Panel hid="hd-coef" title="係数" class="a-coef">
+      <div slot="aux" class="seg" id="cview" role="group" aria-label="表示">
+        <button type="button" data-v="sos" aria-pressed="true" title="双2次の縦続（a0 = 1）">縦続（SOS）</button><button type="button" data-v="ba" aria-pressed="false" title="伝達関数の分子と分母を 1 つの多項式にしたもの">直接形</button>
+      </div>
+      <div id="v-sos">
+        <div class="hz" set:html={EQ_SOS} />
+        <div class="tblw"><table class="ctab" id="sos-t">
+          <caption class="sr">双2次の段ごとの極・零点・係数</caption>
+          <thead><tr><th scope="col">段</th><th scope="col">極 |<i>p</i>|∠<i>f</i></th><th scope="col">零点 |<i>z</i>|∠<i>f</i></th><th scope="col"><i>b</i><sub>0</sub></th><th scope="col"><i>b</i><sub>1</sub></th><th scope="col"><i>b</i><sub>2</sub></th><th scope="col"><i>a</i><sub>1</sub></th><th scope="col"><i>a</i><sub>2</sub></th><th scope="col" title="入力からこの段の出力までの振幅の最大">最大</th></tr></thead>
+          <tbody id="sos-b"></tbody>
+        </table></div>
+        <More id="g-sos" title="縦続の設定"><div class="ptab">
+          <ChoiceRow k="sord" name="並べ方" sub="段の順。単位円に近い極（鋭い山）の段を後ろに置くと、前の段で信号が小さくなりすぎない" choices={[['up', '単位円に近い極を後ろに'], ['down', '単位円に近い極を前に']]} value="up" layout="chips" />
+          <ChoiceRow k="sgain" name="段のゲイン" sub="全体のゲインを段に配る方法。各段の出力の最大を 0 dB にそろえると、固定小数点でも途中であふれにくい" choices={[['linf', '各段の出力の最大を 0 dB に'], ['first', '先頭の段にまとめる']]} value="linf" layout="chips" />
+        </div></More>
+      </div>
+      <div id="v-ba" hidden>
+        <div class="hz" id="ba-h"></div>
+        <div class="bagrid">
+          <div class="tblw"><table class="ctab qtab">
+            <caption class="sr">係数を丸めたときの極</caption>
+            <thead><tr><th scope="col">係数の丸め</th><th scope="col">極の最大 |<i>p</i>|</th><th scope="col">安定</th></tr></thead>
+            <tbody id="dq-b"></tbody>
+          </table></div>
+          <div class="tblw"><table class="ctab batab">
+            <caption class="sr">直接形の係数</caption>
+            <thead><tr><th scope="col"><i>k</i></th><th scope="col"><i>b</i><sub><i>k</i></sub></th><th scope="col"><i>a</i><sub><i>k</i></sub></th></tr></thead>
+            <tbody id="ba-b"></tbody>
+          </table></div>
+        </div>
+      </div>
+    </Panel>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools list={related} />
+  <div class="toast" id="toast" role="status" aria-live="polite" data-off></div>
+  <script>
+    import '../tools/iir/client';
+  </script>
+</SiteLayout>
