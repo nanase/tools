@@ -1,0 +1,196 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import More from '../components/More.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import { order, TOOLS, type Tool } from '../data/tools';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/jpeg/style.css';
+import { GAINS, HUFFS, MAX_SIDE, QTABS, QUALITY, SUBS, UPS, VIEWS, ZOOMS } from '../tools/jpeg/params';
+import Theory from '../tools/jpeg/Theory.astro';
+
+const name = 'JPEG';
+/* 同じカテゴリ（準備中を含む）の後ろに、信号処理に近いもの、ほかの公開中のツールを並べる */
+const CAT = '画像・光学';
+const NEAR = ['spectrum', 'biquad', 'fm-synth'];
+const related = [
+  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'jpeg')),
+  ...NEAR.map((id) => TOOLS.find((t) => t.id === id)).filter((t): t is Tool => !!t && !t.s),
+  ...TOOLS.filter((t) => t.c !== CAT && !t.s && !NEAR.includes(t.id)),
+];
+const C64 = Array.from({ length: 64 }, (_, i) => i);
+/** 8×8 の数値の表（中身は client.ts が入れる） */
+const mx = (id: string, label: string) => ({ id, label });
+const MX = {
+  px: mx('mx-px', '8×8 の標本'),
+  dct: mx('mx-dct', 'DCT 係数'),
+  q: mx('mx-q', '量子化テーブル'),
+  s: mx('mx-s', '量子化した係数'),
+  rec: mx('mx-rec', '復号した画素'),
+};
+---
+<SiteLayout title={name} tool={{ id: 'jpeg', name }} description="画像を JPEG に符号化する過程を、色の変換・DCT・量子化・ハフマン符号まで順に見せ、圧縮の結果と画質を比べます。" note="画像はこの端末の中だけで処理し、送信しません。符号化と復号は、このツールの実装によるものです。">
+  <PageTitle title={name}>画像を JPEG（ベースライン）に符号化する過程を、色の変換と色差の間引き、8×8 のブロックの DCT と量子化、ジグザグ走査とランレングス、ハフマン符号のビット列まで順に見せます。画像の上でブロックを選ぶと、そのブロックの途中の値が並びます。符号化した画像の画質と大きさを比べ、JPEG ファイルとして保存もできます。</PageTitle>
+  <div class="mini" aria-hidden="true"><span>SIZE<b id="mS">—</b></span><span>BPP<b id="mB">—</b></span><span>PSNR<b id="mP">—</b></span></div>
+
+  <div class="tgrid">
+    <div class="col c1">
+      <Panel hid="hd-in" title="入力" class="a-in">
+        <div slot="aux" class="seg" id="p-src" role="group" aria-label="画像" data-nosave>
+          <button type="button" data-v="sample" aria-pressed="true" title="このツールで描いた試験図">見本</button><button type="button" data-v="file" aria-pressed="false" title="この端末の画像ファイル">ファイル</button>
+        </div>
+        <div class="ptab" id="in-tab" data-src="sample">
+          <div class="prow" id="p-file">
+            <div class="c-sym" aria-hidden="true"></div>
+            <div class="c-name"><span class="pn">ファイル</span><p class="desc tip" role="tooltip" hidden>{`PNG・JPEG・WebP など。この枠か画像の枠へ落としても読み込める。長い辺が ${MAX_SIDE} 画素を超える画像は縮小し、透明な所は白にする`}</p></div>
+            <div class="c-val"><div class="seg"><button type="button" id="fileBtn">ファイルを選ぶ</button></div><input type="file" id="fileIn" accept="image/*" hidden></div>
+            <div class="c-sub"><p class="msg" id="m-file" aria-live="polite">まだ選んでいません</p></div>
+          </div>
+          <ParamRow d={QUALITY} />
+          <ChoiceRow k="sub" name="色差の間引き" sub="Cb・Cr の標本を減らす割合。人の目は色の細かさに鈍いので、色差を間引いても見た目は変わりにくい" choices={SUBS} value="420" />
+          <ChoiceRow k="qt" name="量子化テーブル" sub="周波数ごとの量子化の粗さの基準。品質で拡大縮小して使う" choices={QTABS} value="k" />
+        </div>
+        <More id="g-in"><div class="ptab">
+          <ChoiceRow k="huff" name="ハフマン表" sub="記号に割り当てる符号の表。画質は変わらず、大きさだけが変わる" choices={HUFFS} value="std" />
+          <ChoiceRow k="up" name="色差の補間" sub="復号するときに、間引いた色差を画素の数に戻す方法。符号化したファイルは変わらない" choices={UPS} value="lin" />
+        </div></More>
+      </Panel>
+
+      <Panel hid="hd-out" title="計算結果" class="a-out">
+        <div slot="aux" class="seg"><button type="button" id="saveBtn" title="符号化した JPEG ファイルを保存する" disabled>保存</button></div>
+        <dl class="metrics c3">
+          <div class="m m-main"><dt>ファイルの大きさ</dt><dd><span id="o-size">—</span><span class="m-sub" id="o-sizes"></span></dd></div>
+          <div class="m"><dt>1 画素あたり</dt><dd><span id="o-bpp">—</span><span class="m-sub" id="o-bpps"></span></dd></div>
+          <div class="m"><dt>圧縮率</dt><dd><span id="o-ratio">—</span><span class="m-sub" id="o-ratios"></span></dd></div>
+          <div class="m"><dt>PSNR（Y）</dt><dd id="o-py">—</dd></div>
+          <div class="m"><dt>PSNR（RGB）</dt><dd id="o-prgb">—</dd></div>
+          <div class="m"><dt>0 になった係数</dt><dd><span id="o-zero">—</span><span class="m-sub" id="o-zeros"></span></dd></div>
+          <div class="m"><dt>DC の符号</dt><dd><span id="o-dc">—</span><span class="m-sub" id="o-dcs"></span></dd></div>
+          <div class="m"><dt>AC の符号</dt><dd><span id="o-ac">—</span><span class="m-sub" id="o-acs"></span></dd></div>
+          <div class="m"><dt>ヘッダ</dt><dd><span id="o-hd">—</span><span class="m-sub" id="o-hds"></span></dd></div>
+          <div class="m"><dt>MCU</dt><dd><span id="o-mcu">—</span><span class="m-sub" id="o-mcus"></span></dd></div>
+        </dl>
+      </Panel>
+    </div>
+
+    <div class="col c2">
+      <Panel hid="hd-img" title="画像" class="a-img">
+        <div slot="aux" class="seg" id="p-view" role="group" aria-label="表示">
+          {VIEWS.map(([v, l, t]) => <button type="button" data-v={v} aria-pressed={v === 'dec' ? 'true' : 'false'} title={t}>{l}</button>)}
+        </div>
+        <div class="sbar">
+          <span class="stag">SIZE <b id="iv-sz">—</b></span>
+          <span class="stag">MCU <b id="iv-mcu">—</b></span>
+          <span class="stag" id="iv-lg"></span>
+          <span class="stag iv-st" id="iv-st" aria-live="polite"></span>
+        </div>
+        <div class="iv" id="iv" tabindex="0" role="group" aria-roledescription="画像" aria-label="画像。押した所の 8×8 のブロックを選ぶ。矢印キーで選んだブロックを動かす">
+          <canvas id="cv-img" width={512} height={384}></canvas>
+          <svg class="ov" id="ov-img" viewBox="0 0 512 384" preserveAspectRatio="none" aria-hidden="true"><rect class="zr" id="ov-zr"/><rect class="sel o" id="ov-so"/><rect class="sel i" id="ov-si"/></svg>
+        </div>
+        <div class="sbar rdbar"><span class="stag rd" id="iv-rd"></span></div>
+        <div class="zm">
+          <figure><figcaption>元</figcaption><div class="zw" data-z="0"><canvas id="cv-z0" width="32" height="32"></canvas><svg class="ov zg" id="ov-z0" viewBox="0 0 32 32" aria-hidden="true"></svg></div></figure>
+          <figure><figcaption id="zc1">復号</figcaption><div class="zw" data-z="1"><canvas id="cv-z1" width="32" height="32"></canvas><svg class="ov zg" id="ov-z1" viewBox="0 0 32 32" aria-hidden="true"></svg></div></figure>
+        </div>
+        <More id="g-img" title="表示の設定"><div class="ana2">
+          <div class="ptab"><ChoiceRow k="zoom" name="拡大する範囲" sub="選んだブロックのまわりを最近傍で拡大する。格子は 8×8 のブロックの境目" choices={ZOOMS.map((v) => [v, `${v} 画素`] as const)} value={32} /></div>
+          <div class="ptab"><ChoiceRow k="gain" name="差の強調" sub="差の表示で、元との差を何倍にして描くか" choices={GAINS.map((v) => [v, `×${v}`] as const)} value={4} /></div>
+        </div></More>
+      </Panel>
+    </div>
+
+    <Panel hid="hd-blk" title="ブロックの符号化" class="a-blk">
+      <div slot="aux" class="seg" id="p-comp" role="group" aria-label="成分">
+        <button type="button" data-v="0" aria-pressed="true" title="輝度">Y</button><button type="button" data-v="1" aria-pressed="false" title="青の色差">Cb</button><button type="button" data-v="2" aria-pressed="false" title="赤の色差">Cr</button>
+      </div>
+      <div class="sbar">
+        <span class="stag">BLOCK <b id="bk-pos">—</b></span>
+        <span class="stag">MCU <b id="bk-mcu">—</b></span>
+        <span class="stag">Q <b id="bk-q">—</b></span>
+        <span class="stag">BITS <b id="bk-bits">—</b></span>
+      </div>
+      <div class="steps">
+        <section class="jc" aria-labelledby="st1">
+          <h3 id="st1"><span class="no">1</span>画素（RGB）</h3>
+          <p class="cap" id="cap1"></p>
+          <div class="pic mcu"><canvas id="cv-mcu" width="16" height="16"></canvas><svg class="ov" id="ov-mcu" viewBox="0 0 16 16" preserveAspectRatio="none" aria-hidden="true"></svg></div>
+          <p class="rd" id="rd1"></p>
+        </section>
+        <section class="jc" aria-labelledby="st2">
+          <h3 id="st2"><span class="no">2</span>YCbCr と色差の間引き</h3>
+          <p class="cap" id="cap2"></p>
+          <div class="ycc">
+            {['Y', 'Cb', 'Cr'].map((n, i) => <button type="button" class="pic yc" data-c={i} aria-pressed={i === 0 ? 'true' : 'false'} title={`${n} の成分を選ぶ`}><span class="pv"><canvas id={`cv-c${i}`} width="16" height="16"></canvas><svg class="ov" id={`ov-c${i}`} viewBox="0 0 16 16" preserveAspectRatio="none" aria-hidden="true"></svg></span><span class="lb">{n}</span></button>)}
+          </div>
+          <p class="rd" id="rd2"></p>
+        </section>
+        {[
+          ['3', '8×8 のブロック', MX.px, 'gray'],
+          ['4', 'DCT 係数', MX.dct, 'div'],
+          ['5', '量子化テーブル', MX.q, 'q'],
+          ['6', '量子化した係数', MX.s, 'div'],
+          ['7', '復号した画素', MX.rec, 'gray'],
+        ].map(([no, t, m, kind]) => (
+          <section class="jc" aria-labelledby={`st${no}`}>
+            <h3 id={`st${no}`}><span class="no">{no}</span>{t}</h3>
+            <p class="cap" id={`cap${no}`}></p>
+            <div class="mxw">
+              <div class="mx" id={(m as { id: string }).id} data-kind={kind} role="img" aria-label={(m as { label: string }).label}>{C64.map(() => <span></span>)}</div>
+            </div>
+            <p class="rd" id={`rd${no}`}></p>
+          </section>
+        ))}
+        <section class="jc" aria-labelledby="st8">
+          <h3 id="st8"><span class="no">8</span>DCT の基底</h3>
+          <p class="cap">64 個の模様の重みが DCT 係数。左上が直流、右・下ほど細かい</p>
+          <div class="pic bas"><canvas id="cv-bas" width="274" height="274"></canvas><svg class="ov" viewBox="0 0 274 274" aria-hidden="true"><rect class="bh" id="bas-h"/></svg></div>
+          <p class="rd" id="rd8"></p>
+        </section>
+        <section class="jc wide" aria-labelledby="st9">
+          <h3 id="st9"><span class="no">9</span>ジグザグ走査</h3>
+          <p class="cap" id="cap9"></p>
+          <div class="zzw">
+            <svg class="zzm" id="zzm" viewBox="-0.1 -0.1 8.2 8.2" role="img" aria-label="ジグザグの順路（0 でない最後の係数まで実線）"><g id="zzm-c">{C64.map((i) => <rect x={i % 8} y={i >> 3} width="1" height="1"/>)}</g><path class="pb" id="zz-b"/><path class="pa" id="zz-a"/><circle class="p0" cx="0.5" cy="0.5" r="0.14"/></svg>
+            <div class="zzs" id="zzs" role="img" aria-label="ジグザグ順の係数">{C64.map((k) => <span><small>{k}</small><b></b></span>)}</div>
+          </div>
+          <p class="rd" id="rd9"></p>
+        </section>
+        <section class="jc wide" aria-labelledby="st10">
+          <h3 id="st10"><span class="no">10</span>記号とハフマン符号</h3>
+          <p class="cap" id="cap10"></p>
+          <div class="symw">
+            <table class="sym" id="sym">
+              <thead><tr><th scope="col">位置</th><th scope="col">種類</th><th scope="col">値</th><th scope="col">ラン/大きさ</th><th scope="col">符号</th><th scope="col">ビット</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <p class="bs" id="bs"></p>
+        </section>
+      </div>
+    </Panel>
+
+    <Collapsible hid="hd-file" title="ファイルの構成" class="a-file">
+      <div class="segw">
+        <table class="segs" id="segs">
+          <thead><tr><th scope="col">マーカー</th><th scope="col">位置</th><th scope="col">長さ</th><th scope="col">内容</th><th scope="col">先頭のバイト</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="hts" id="hts"></div>
+    </Collapsible>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools list={related} />
+  <div class="toast" id="toast" role="status" aria-live="polite" data-off></div>
+  <script>
+    import '../tools/jpeg/client';
+  </script>
+</SiteLayout>

@@ -1,0 +1,128 @@
+/* JPEG のページだけのスタイル（共通は src/styles/site.css） */
+
+/* 枠の並び。スマホは 入力 → 画像 → 計算結果 → ブロックの符号化 → ファイルの構成 → 式。
+   PC は左の列に 入力・計算結果、右の列に 画像、その下に全幅で ブロックの符号化・ファイルの構成・式 */
+.a-in{order:1}.a-img{order:2}.a-out{order:3}.a-blk{order:4}.a-file{order:5}.a-thy{order:6}
+@media (min-width:1000px){
+  .tgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr);grid-template-areas:"c1 c2" "blk blk" "file file" "thy thy";align-items:start}
+  .c1{grid-area:c1}.c2{grid-area:c2}.a-blk{grid-area:blk}.a-file{grid-area:file}.a-thy{grid-area:thy}
+}
+
+/* 枠の右上のボタン */
+.seg button:disabled{opacity:.45;cursor:default;color:var(--ink-3)}
+
+/* 入力: ファイルの行はファイルのときだけ。ファイルを落としているときの枠 */
+#in-tab:not([data-src="file"]) #p-file{display:none}
+.a-in.drop,.a-img.drop{border-color:var(--focus);box-shadow:inset 0 0 0 1px var(--focus)}
+
+/* 計算結果 */
+.m-sub{display:block;margin-top:2px;font:500 12px/1.5 var(--mono);color:var(--ink-3);letter-spacing:0}
+
+/* ---------- 画像 ---------- */
+/* 画像そのものの上に描く印（選んだブロック・拡大の範囲）は、どの色の画像でも見えるよう黒と白を重ねる */
+.iv{position:relative;width:100%;max-width:min(100%,calc(var(--ivh,720px) * var(--ar,1.333)));margin:0 auto;border:1px solid var(--line);background:var(--inset);line-height:0;cursor:crosshair;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.iv:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.iv canvas{display:block;width:100%;height:auto;image-rendering:pixelated}
+.iv.smooth canvas{image-rendering:auto}
+.iv.busy canvas{opacity:.75;transition:opacity .2s .15s}
+.ov{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+.ov rect,.ov path{fill:none;vector-effect:non-scaling-stroke}
+.ov .sel.o,.ov .o{stroke:#000;stroke-width:3.5}
+.ov .sel.i,.ov .i{stroke:#fff;stroke-width:1.5}
+.ov .zr{stroke:#fff;stroke-width:1.2;stroke-dasharray:4 3;filter:drop-shadow(0 0 1px #000)}
+.iv-st{margin-left:auto;color:var(--ink-3)}
+.cbar{display:inline-block;width:72px;height:8px;border:1px solid var(--line);border-radius:2px;vertical-align:-1px}
+/* 拡大（元と復号を並べる） */
+.zm{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px}
+.zm figure{margin:0;min-width:0}
+.zm figcaption{margin-bottom:4px;font:500 12px/1.3 var(--mono);color:var(--ink-2)}
+.zw{position:relative;border:1px solid var(--line);background:var(--inset);line-height:0}
+.zw canvas{display:block;width:100%;height:auto;image-rendering:pixelated}
+.zg .g{stroke:rgb(128 128 128 / .75);stroke-width:1}
+
+/* ---------- ブロックの符号化 ---------- */
+/* 係数の濃淡: 正は赤、負は青、0 は枠の地の色（この図だけの色。信号色・LED の色とは別） */
+.a-blk{--jp-pos:#d6604d;--jp-neg:#4393c3;container-type:inline-size}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .a-blk{--jp-pos:#b2333a;--jp-neg:#2f6aa8}}
+:root[data-theme="dark"] .a-blk{--jp-pos:#b2333a;--jp-neg:#2f6aa8}
+.steps{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(240px,100%),1fr));gap:22px 18px}
+.jc{display:flex;flex-direction:column;gap:6px;min-width:0}
+.jc.wide{grid-column:1/-1}
+.jc h3{display:flex;align-items:baseline;gap:8px;font-size:14px;line-height:1.35}
+.jc .no{flex:none;display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 4px;border:1px solid var(--line-2);border-radius:3px;font:700 11.5px/1 var(--mono);color:var(--ink-2)}
+.cap{min-height:1.5em;font-size:12.5px;line-height:1.5;color:var(--ink-3)}
+.cap i,.rd i{font-family:var(--math);font-style:italic;font-size:1.08em}
+.rd{min-height:1.5em;font:500 12px/1.5 var(--mono);color:var(--ink-2);text-align:right;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.rd b{color:var(--ink);font-weight:700}
+/* 画素の図（MCU、YCbCr の 3 面、基底） */
+.pic{position:relative;display:block;width:100%;padding:0;border:1px solid var(--line);background:var(--inset);line-height:0}
+.pic canvas{display:block;width:100%;height:auto;image-rendering:pixelated}
+.ycc{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.pv{position:relative;display:block;line-height:0}
+.yc{cursor:pointer;color:inherit;font:inherit}
+.yc .lb{display:block;padding:5px 0;border-top:1px solid var(--line);background:var(--surface);font:700 12px/1.2 var(--mono);color:var(--ink-2)}
+.yc:hover .lb{color:var(--ink)}
+.yc[aria-pressed="true"]{border-color:var(--ink)}
+.yc[aria-pressed="true"] .lb{background:var(--ink);border-color:var(--ink);color:var(--surface)}
+.mcu,.zw,.pv{cursor:crosshair}
+.yc:focus-visible{outline-offset:2px}
+.bas canvas{image-rendering:auto}
+.bas .bh{stroke:var(--ink);stroke-width:2.5;vector-effect:non-scaling-stroke}
+.bas .bh.off{display:none}
+/* 8×8 の数値の表。濃淡（地の色）は client.ts が入れる */
+.mxw{position:relative;container-type:inline-size}
+.mx{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:1px;border:1px solid var(--line);background:var(--line);touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.mx span{display:grid;place-items:center;aspect-ratio:1;min-width:0;overflow:hidden;background:var(--surface);color:var(--ink);font:500 min(13px,4.1cqi)/1 var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.02em;cursor:default;user-select:none;-webkit-user-select:none}
+.mx span.z{color:var(--ink-3)}
+.mx span.hv,.zzs span.hv{position:relative;z-index:1;box-shadow:0 0 0 2px var(--ink),0 0 0 3px var(--surface)}
+/* ジグザグの順路（0 でない係数を塗り、最後の 0 でない係数まで実線）と、ジグザグ順の 64 個
+   （狭い枠では順路の下に 8 個ずつ、広い枠では順路の右に 16・32 個ずつ並べる） */
+.zzw{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;align-items:start}
+@container (min-width:560px){.zzw{grid-template-columns:132px minmax(0,1fr)}}
+.zzm{display:block;width:min(100%,200px);height:auto;touch-action:manipulation}
+@container (min-width:560px){.zzm{width:100%}}
+.zzm rect{fill:var(--surface);stroke:var(--line);stroke-width:1;vector-effect:non-scaling-stroke}
+.zzm rect.hv{stroke:var(--ink);stroke-width:2.5}
+.zzm path{fill:none;stroke:var(--ink);stroke-width:1.5;stroke-linejoin:round;vector-effect:non-scaling-stroke;pointer-events:none}
+.zzm .pb{stroke:var(--ink-3);stroke-dasharray:2 3}
+.zzm .p0{fill:var(--ink);pointer-events:none}
+.zzs{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:1px;border:1px solid var(--line);background:var(--line);touch-action:manipulation}
+@container (min-width:560px){.zzs{grid-template-columns:repeat(16,minmax(0,1fr))}}
+@container (min-width:1000px){.zzs{grid-template-columns:repeat(32,minmax(0,1fr))}}
+.zzs span{display:flex;flex-direction:column;align-items:center;gap:1px;min-width:0;padding:3px 0 5px;background:var(--surface);cursor:default;user-select:none;-webkit-user-select:none}
+.zzs small{font:500 9.5px/1.2 var(--mono);color:var(--ink-3)}
+.zzs b{font:500 12px/1.3 var(--mono);font-variant-numeric:tabular-nums}
+.zzs span.z b{color:var(--ink-3);font-weight:400}
+.zzs span.eob{background:var(--inset)}
+/* 記号の表とビット列。ハフマン符号は太字、付加ビットは細字 */
+.symw{max-height:28em;overflow-y:auto;border-top:1px solid var(--line-2)}
+@container (max-width:479px){.sym th,.sym td{padding-left:4px;padding-right:4px}.sym td small{display:block}.sym th:nth-child(6),.sym td:nth-child(6){display:none}}
+.sym,.segs{width:100%;border-collapse:collapse;font:500 12.5px/1.4 var(--mono);font-variant-numeric:tabular-nums}
+.sym th,.segs th{position:sticky;top:0;padding:7px 8px 5px;background:var(--bg);font:700 11.5px/1.3 var(--sans);color:var(--ink-3);text-align:right;white-space:nowrap}
+.sym td,.segs td{padding:4px 8px;border-top:1px solid var(--line);text-align:right;white-space:nowrap}
+.sym th:nth-child(2),.sym td:nth-child(2){text-align:left;font-family:var(--sans)}
+.sym td.cd{white-space:normal;word-break:break-all;text-align:left;min-width:7em;color:var(--ink-2)}
+.sym td.cd b{color:var(--ink)}
+.sym th:nth-child(5){text-align:left}
+.sym td small{color:var(--ink-3);font-size:11.5px}
+.sym tr.hv td{background:var(--inset)}
+.bs{margin-top:4px;font:400 13px/1.9 var(--mono);color:var(--ink-2);word-break:break-all}
+.bs span{padding:1px 0;border-radius:2px}
+.bs span+span{margin-left:.5em}
+.bs b{font-weight:700;color:var(--ink)}
+.bs span.hv{background:var(--inset);box-shadow:0 0 0 2px var(--inset)}
+
+/* ---------- ファイルの構成 ---------- */
+.segw{overflow-x:auto}
+.segs th:nth-child(1),.segs td:nth-child(1),.segs th:nth-child(4),.segs td:nth-child(4),.segs th:nth-child(5),.segs td:nth-child(5){text-align:left}
+.segs td:nth-child(1){font-weight:700}
+.segs td:nth-child(4){font-family:var(--sans);white-space:normal;min-width:16em;color:var(--ink-2)}
+.segs td:nth-child(5){color:var(--ink-3)}
+.hts{display:grid;gap:4px;margin-top:14px;padding-top:12px;border-top:1px solid var(--line);font:500 12px/1.5 var(--mono);color:var(--ink-2)}
+.hts p{margin:0;overflow-wrap:anywhere}
+.hts b{color:var(--ink)}
+
+/* 知らせ（ファイルを読めない、保存できない） */
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:40;transform:translateX(-50%);max-width:calc(100vw - 32px);padding:9px 14px;border-radius:var(--r);background:var(--ink);color:var(--surface);font-size:13.5px;transition:opacity .2s}
+.toast[data-off]{opacity:0;pointer-events:none}
+@media (min-width:1000px){html.mini-on .toast{bottom:calc(var(--mini-h) + 20px)}}
