@@ -40,14 +40,6 @@ export const FOCAL: ParamDef = {
     [135, '135'],
     [200, '200'],
   ],
-  tk: [
-    [10, '10'],
-    [20, '20'],
-    [50, '50'],
-    [100, '100'],
-    [200, '200'],
-    [500, '500'],
-  ],
   list: [
     8, 10, 12, 14, 16, 18, 20, 21, 24, 28, 35, 40, 50, 55, 58, 70, 85, 100, 105, 135, 180, 200, 300, 400, 500, 600, 800,
   ],
@@ -65,7 +57,7 @@ export const FNUM: ParamDef = {
   k: 'N',
   nm: 'N',
   sym: '<i>N</i>',
-  name: '絞り（F 値）',
+  name: '絞り',
   sub: '焦点距離 ÷ 入射瞳の径。大きいほど絞りが小さく、被写界深度が深い。下限はレンズの開放 F 値',
   unit: '',
   min: 2,
@@ -81,17 +73,10 @@ export const FNUM: ParamDef = {
     [11, '11'],
     [16, '16'],
   ],
-  tk: [
-    [2, '2'],
-    [4, '4'],
-    [8, '8'],
-    [16, '16'],
-    [32, '32'],
-  ],
   list: FSTOPS,
   log: true,
   notation: 'plain',
-  format: { ...plainF('', 3), text: (v) => `F${sig(v, 3)}` },
+  format: { ...plainF('', 3), view: (v) => `F${sig(v, 3)}`, text: (v) => `F${sig(v, 3)}` },
 };
 
 export const FOCUS: ParamDef = {
@@ -113,15 +98,6 @@ export const FOCUS: ParamDef = {
     [8, '8'],
     [16, '16'],
     [INF, '∞', '無限遠'],
-  ],
-  tk: [
-    [0.5, '0.5'],
-    [1, '1'],
-    [2, '2'],
-    [5, '5'],
-    [10, '10'],
-    [50, '50'],
-    [INF, '∞'],
   ],
   list: [
     0.2,
@@ -157,6 +133,8 @@ export const FOCUS: ParamDef = {
   log: true,
   notation: 'plain',
   format: { input: (v) => (isInf(v) ? '∞' : sig(v, 4)), step: (v) => (isInf(v) ? '∞' : sig(v, 3)), text: mT },
+  /* 無限遠より遠い値（1e6 など）は、範囲外の知らせを出さずに無限遠にする */
+  fix: (v) => (isInf(v) ? [INF, ''] : null),
   bad: '読めない値です（例 1.5・3m。無限遠は ∞ のボタン）',
 };
 
@@ -176,12 +154,10 @@ export const COC: ParamDef = {
     [0.03, '0.03'],
     [0.05, '0.05'],
   ],
-  tk: [],
   list: [0.005, 0.01, 0.015, 0.019, 0.02, 0.025, 0.03, 0.033, 0.035, 0.04, 0.05, 0.06, 0.08, 0.1],
   log: true,
   notation: 'plain',
   format: plainF('mm', 3),
-  slider: false,
 };
 
 const angle = (k: 'pan' | 'tilt', name: string, sub: string, lim: number): ParamDef => ({
@@ -196,12 +172,7 @@ const angle = (k: 'pan' | 'tilt', name: string, sub: string, lim: number): Param
   v: 0,
   ph: '例 0',
   pre: [],
-  tk: [
-    [-lim, minus(String(-lim))],
-    [0, '0'],
-    [lim, String(lim)],
-  ],
-  lin: { step: 0.5, big: 5, major: lim, minor: lim / 6 },
+  lin: { step: 0.5, big: 5 },
   sign: 'any',
   notation: 'plain',
   format: {

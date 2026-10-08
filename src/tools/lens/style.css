@@ -6,11 +6,13 @@
 :root[data-theme="dark"]{--wl-f:#7ea2ff;--wl-d:#6cd085;--wl-c:#ff7d70}
 
 /* 並び: スマホは 映像 → レンズ → 見取り図 → 計算結果 → 断面 → 収差 → 処方 → 式。
-   PC は左の広い列に 映像・断面・収差、右の列に レンズ・見取り図・計算結果、下に全幅で 処方・式 */
+   PC は左の広い列に 映像・断面・収差、右の列に レンズ・見取り図・計算結果、下に全幅で 処方・式。
+   左右の列の高さがそろう幅の比にし、計算結果は補足が長いので右の列でも 2 列に並べる */
 .a-view{order:1}.a-lens{order:2}.a-map{order:3}.a-out{order:4}.a-sec{order:5}.a-abr{order:6}.a-rx{order:7}.a-thy{order:8}
 @media (min-width:1000px){
-  .tgrid{grid-template-columns:minmax(0,8fr) minmax(0,4fr);grid-template-areas:"c1 c2" "rx rx" "thy thy";align-items:start}
+  .tgrid{grid-template-columns:minmax(0,7fr) minmax(0,5fr);grid-template-areas:"c1 c2" "rx rx" "thy thy";align-items:start}
   .c1{grid-area:c1}.c2{grid-area:c2}.a-rx{grid-area:rx}.a-thy{grid-area:thy}
+  .a-out .metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 
 /* レンズ越しの映像（映像そのものはテーマに依らない） */
@@ -26,7 +28,6 @@
   background-repeat:no-repeat;filter:drop-shadow(0 0 1px #000)}
 .v-spp{margin-left:auto}
 @media (max-width:559px){.v-spp{margin-left:0}}
-.a-view .ana2{border-top:0}
 
 /* 見取り図 */
 .mapw svg{display:block;width:100%;height:auto}

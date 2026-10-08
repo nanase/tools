@@ -1,6 +1,7 @@
 ---
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import More from '../components/More.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
@@ -43,15 +44,15 @@ const related = [
           <div class="af" id="af" aria-hidden="true"></div>
           <p class="lv-msg" id="lv-msg" hidden></p>
         </div>
-        <div class="ana2">
+        <More id="g-view" title="表示の設定"><div class="ana2">
           <div class="ptab">
-            <ChoiceRow k="zm" name="拡大" sub="ピントを合わせた点（枠）を中心に、センサーの一部を拡大して描く" choices={ZOOMS.map((z) => [z, `×${z}`] as const)} value={1} fold />
+            <ChoiceRow k="zm" name="拡大" sub="ピントを合わせた点（枠）を中心に、センサーの一部を拡大して描く" choices={ZOOMS.map((z) => [z, `×${z}`] as const)} value={1} />
           </div>
           <div class="ptab">
-            <ChoiceRow k="ch" name="色収差" sub="含めないと、すべての波長に d 線（587.6 nm）の屈折率を使う" choices={[['on', '含める'], ['off', '含めない']]} value="on" fold />
-            <ChoiceRow k="df" name="回折" sub="実効 F 値で決まるエアリー円盤の広がりを、像の点をずらして近似的に足す" choices={[['on', '含める'], ['off', '含めない']]} value="on" fold />
+            <ChoiceRow k="ch" name="色収差" sub="含めないと、すべての波長に d 線（587.6 nm）の屈折率を使う" choices={[['on', '含める'], ['off', '含めない']]} value="on" />
+            <ChoiceRow k="df" name="回折" sub="実効 F 値で決まるエアリー円盤の広がりを、像の点をずらして近似的に足す" choices={[['on', '含める'], ['off', '含めない']]} value="on" />
           </div>
-        </div>
+        </div></More>
       </Panel>
 
       <Panel hid="hd-sec" title="レンズの断面と光線" class="a-sec">
@@ -93,13 +94,13 @@ const related = [
     <div class="col c2">
       <Panel hid="hd-lens" title="レンズ" class="a-lens">
         <div class="ptab">
-          <ChoiceRow k="lens" name="レンズの種類" sub="公開された処方。出典はレンズの処方の枠にある。選ぶと焦点距離を、35 mm 判で設計の画角になる値にする" choices={LENSES.map((l) => [l.v, l.ab, l.sub] as const)} value="dgauss" layout="chips" wide msg />
+          <ChoiceRow k="lens" name="レンズの種類" sub="公開された処方。出典はレンズの処方の枠にある。選ぶと焦点距離を、35 mm 判で設計の画角になる値にする" choices={LENSES.map((l) => [l.v, l.ab, l.sub] as const)} value="dgauss" layout="chips" msg />
           <ParamRow d={FOCAL} />
           <ParamRow d={FNUM} />
-          <ChoiceRow k="bl" name="絞り羽根" sub="絞りの形（正多角形）。開放では羽根が引っ込んで円になる" choices={BLADES.map((b) => [b, b ? `${b} 枚` : '円'] as const)} value={7} msg />
           <ParamRow d={FOCUS} />
-          <ParamRow d={COC} fold />
+          <ChoiceRow k="bl" name="絞り羽根" sub="絞りの形（正多角形）。開放では羽根が引っ込んで円になる" choices={BLADES.map((b) => [b, b ? `${b} 枚` : '円'] as const)} value={7} layout="chips" msg />
         </div>
+        <More id="g-lens"><div class="ptab"><ParamRow d={COC} /></div></More>
       </Panel>
 
       <Panel hid="hd-map" title="見取り図" class="a-map">
@@ -107,7 +108,7 @@ const related = [
         <div class="scope mapw">
           <svg viewBox={`0 0 ${MAP.w} ${MAP.h}`} id="map" role="img" aria-label="見取り図"><g set:html={mapStatic()} /><g id="map-d"></g></svg>
         </div>
-        <div class="ptab ana"><ParamRow d={PAN} /><ParamRow d={TILT} /></div>
+        <div class="ptab"><ParamRow d={PAN} /><ParamRow d={TILT} /></div>
       </Panel>
 
       <Panel hid="hd-out" title="計算結果" class="a-out">

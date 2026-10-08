@@ -5,11 +5,12 @@ import { Choice } from '../../lib/choice';
 import { $, esc } from '../../lib/dom';
 import { fmtR } from '../../lib/format';
 import { ParamGroup } from '../../lib/param';
+import type { ParamPatch } from '../../lib/param-def';
 import { store, stored } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
 import { distortion, dof, halfAngle, illum, type PupilTable, pupilTable, spot } from './analysis';
 import { LD } from './glass';
-import { type LensId, lensOf } from './lenses';
+import { type LensId, lensOf, type Rx } from './lenses';
 import {
   build,
   HALF_DIAG,
@@ -24,7 +25,7 @@ import {
   thinLens,
   traceRev,
 } from './optics';
-import { FSTOPS, INF, type Key, mT, PARAMS, sig } from './params';
+import { FNUM, FOCUS, FSTOPS, INF, type Key, mT, PARAMS, sig } from './params';
 import { curveSvg, mapDynamic, mapLabel, sectionSvg, spotSvg } from './plot';
 import { type LensU, Renderer, type ViewU } from './render';
 import { basis, EYE, intersect, type V3 } from './scene';
@@ -74,22 +75,31 @@ let afPt: [number, number] = [-2.6, -3.3];
     afPt = [a[0], a[1]];
 }
 
-const G = new ParamGroup<Key>(PARAMS, () => later());
+/**
+ * レンズで決まる定義: 焦点距離の既定値は設計の画角になる値。F 値は下限を開放 F 値にして並びに足し、
+ * 既定値は F2.8 か、それより暗いレンズでは開放
+ */
+const lensPatch = (k: 'f' | 'N', rx: Rx): ParamPatch =>
+  k === 'f'
+    ? { v: rx.f0 }
+    : { min: rx.fno, v: Math.max(FNUM.v, rx.fno), list: [...new Set([rx.fno, ...FSTOPS])].sort((a, b) => a - b) };
 
-/** F 値の並びと下限を、レンズの開放 F 値に合わせる */
-function fnoLimit(fno: number): void {
-  G.update('N', { min: fno, list: [...new Set([fno, ...FSTOPS])].sort((a, b) => a - b) });
-}
+/* 既定値と同じ値は保存しないので、選んでいるレンズの既定値で始める */
+const rx0 = lensOf(lens$.value);
+const G = new ParamGroup<Key>(
+  PARAMS.map((d) => (d.k === 'f' || d.k === 'N' ? { ...d, ...lensPatch(d.k, rx0) } : d)),
+  () => later(),
+);
 
 /** レンズを選んだとき: 焦点距離を設計の画角に合わせ、F 値の下限を開放 F 値にする */
 function setLens(v: LensId): void {
   const rx = lensOf(v);
-  fnoLimit(rx.fno);
+  G.update('f', lensPatch('f', rx));
+  G.update('N', lensPatch('N', rx));
   if (G.get('N') < rx.fno) G.set('N', rx.fno, { silent: true });
   if (ready) G.set('f', rx.f0);
   else later();
 }
-fnoLimit(lensOf(lens$.value).fno);
 queueMicrotask(() => {
   ready = true;
 });
@@ -161,8 +171,9 @@ function update(): void {
     sys = build(rx, v.f);
     sysKey = k1;
     stKey = '';
-    const mf = Math.ceil(minFocus(sys) / 10) / 100;
-    G.update('fd', { min: Math.max(0.2, mf) });
+    /* 下限は最短撮影距離（撮影倍率 1/2）。既定値（2 m）より遠ければ、下限を既定値にする */
+    const mf = Math.max(0.2, Math.ceil(minFocus(sys) / 10) / 100);
+    G.update('fd', { min: mf, v: Math.max(FOCUS.v, mf) });
   }
   const fdMin = G.def('fd').min;
   if (v.fd < fdMin * (1 - 1e-9)) {
