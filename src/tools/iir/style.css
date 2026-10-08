@@ -1,0 +1,89 @@
+/* IIR フィルタのページだけのスタイル（共通は src/styles/site.css） */
+
+/* 並び: スマホは 1 列（入力→周波数特性→計算結果→極と零点→時間応答→係数→試聴）、
+   PC は上段の左に入力・計算結果・試聴、右に周波数特性・時間応答。極と零点・係数・動作原理は全幅 */
+.a-in{order:1}.a-fr{order:2}.a-out{order:3}.a-pz{order:4}.a-tm{order:5}.a-coef{order:6}.a-snd{order:7}.a-thy{order:8}
+@media (min-width:1000px){
+  .tgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr);grid-template-areas:"ca cb" "pz pz" "coef coef" "thy thy";align-items:start}
+  .c-a{grid-area:ca}.c-b{grid-area:cb}.a-pz{grid-area:pz}.a-coef{grid-area:coef}.a-thy{grid-area:thy}
+}
+
+/* 入力: 設計の方法・近似・応答で使わない行を隠す（client.ts が data-* を合わせる） */
+.iin[data-mode="spec"] #p-n,
+.iin[data-mode="order"] #p-s1,.iin[data-mode="order"] #p-s2,
+.iin:not([data-band]) #p-f2,.iin:not([data-band]) #p-s2,
+.iin[data-mode="order"][data-kind="butter"] #p-ap,.iin[data-mode="order"][data-kind="bessel"] #p-ap,.iin[data-mode="order"][data-kind="cheby2"] #p-ap,
+.iin[data-mode="order"][data-kind="butter"] #p-as,.iin[data-mode="order"][data-kind="bessel"] #p-as,.iin[data-mode="order"][data-kind="cheby1"] #p-as{display:none}
+
+/* 枠の右上のボタン（再生の LED） */
+.seg button{display:inline-flex;align-items:center;gap:7px}
+@media (max-width:479px){.presp button{padding:0 6px}}
+
+/* 計算結果 */
+.m-sub{display:block;margin-top:2px;font:500 12px/1.5 var(--mono);color:var(--ink-3)}
+.m-main .m-sub{font-family:var(--sans);font-size:12.5px;letter-spacing:0;font-weight:400}
+.m-main .m-note{font-size:12.5px;letter-spacing:0;font-weight:400}
+.m dd.rng{font-size:16px}
+.m dd.rng .u{white-space:nowrap}
+.m .ok{color:var(--ink)}
+.m .ng{color:var(--warn)}
+
+/* 表示窓: CH1・CH2 とも消せる、カーソル、仕様の枠、時間応答の棒 */
+.tg[aria-pressed="false"] .sw{box-shadow:inset 0 0 0 1px var(--ch1)}
+.tg[aria-pressed="false"] .sw.c2{box-shadow:inset 0 0 0 1px var(--ch2)}
+.scope svg{touch-action:pan-y}
+.gl2{stroke:var(--grid);stroke-width:1;stroke-dasharray:2 3}
+.stm{fill:none;stroke:var(--ch1)}
+.stz{fill:none;stroke:var(--screen-ink);stroke-width:1;opacity:.5}
+.dt1{fill:var(--ch1)}
+.cur{stroke:var(--screen-ink);stroke-width:1}
+.mk0{fill:var(--screen-ink)}
+.msk{fill:var(--screen-ink);opacity:.09}
+.mskl{fill:none;stroke:var(--screen-ink);stroke-width:1;stroke-dasharray:4 3;opacity:.8}
+.hide1 .c1x{display:none}
+.t2{stroke-width:1.6}
+/* レベルメーター（表示窓の横長版） */
+.lv-hot{fill:var(--warn)}
+
+/* 極と零点: s 平面と z 平面を並べる（狭い枠では縦に） */
+.pzw{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+@media (max-width:559px){.pzw{grid-template-columns:minmax(0,1fr)}}
+.pzf{margin:0 auto;min-width:0;width:100%;max-width:440px}
+.pzf figcaption{margin:0 0 6px;font:500 12px/1.3 var(--mono);color:var(--ink-2)}
+.pm{fill:none;stroke-width:1.8;stroke-linecap:round}
+.zm{fill:none;stroke-width:1.6}
+.m1{stroke:var(--ch1)}
+.m2{stroke:var(--ch2)}
+.oob{opacity:.45}
+.scope text.mul{font-size:10px;stroke:none}
+.scope text.mul.m1{fill:var(--ch1)}
+.scope text.mul.m2{fill:var(--ch2)}
+.scope text.axl{font-style:italic;font-family:var(--math)}
+.uc{fill:none;stroke:var(--grid-2);stroke-width:1.2}
+.uc.d{stroke-dasharray:4 4}
+
+/* 動作原理と式: 式の枠の後の段落 */
+.thy-body>.eqs+p{margin-top:16px}
+
+/* 係数 */
+.a-coef{container-type:inline-size}
+.hz{margin:0 0 12px;padding:12px 12px;background:var(--inset);border-radius:var(--r);overflow-x:auto}
+.hz math{font-family:var(--math);font-size:1.12em;color:var(--ink)}
+.tblw{overflow-x:auto;margin:0 0 4px}
+.ctab{width:100%;border-collapse:collapse;font:500 13px/1.45 var(--mono);font-variant-numeric:tabular-nums}
+.ctab th{padding:4px 8px 6px;border-bottom:1px solid var(--line-2);color:var(--ink-2);font:500 12px/1.3 var(--sans);text-align:right;white-space:nowrap}
+.ctab th i{font-family:var(--math);font-size:1.12em}
+.ctab td{padding:5px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+.ctab tr:last-child td{border-bottom:0}
+.ctab th:first-child,.ctab td:first-child{text-align:left;padding-left:2px}
+.ctab td.pz{color:var(--ink-2)}
+.ctab .ng{color:var(--warn)}
+.qtab{width:auto;min-width:min(100%,420px);margin-bottom:14px}
+.batab{width:auto;min-width:min(100%,420px)}
+/* 直接形: 広い枠では丸めの表と係数の表を並べる */
+@container (min-width:760px){.bagrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 28px;align-items:start}.bagrid .qtab,.bagrid .batab{width:100%}}
+
+/* 知らせ（音を鳴らせない） */
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:40;transform:translateX(-50%);max-width:calc(100vw - 32px);padding:9px 14px;border-radius:var(--r);background:var(--ink);color:var(--surface);font-size:13.5px;transition:opacity .2s}
+.toast[data-off]{opacity:0;pointer-events:none}
+@media (min-width:1000px){html.mini-on .toast{bottom:calc(var(--mini-h) + 20px)}}

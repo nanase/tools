@@ -48,6 +48,14 @@ export const TOOLS: Tool[] = [
     k: 'biquad iir lpf hpf ローパス ハイパス',
   },
   {
+    id: 'iir',
+    c: 'デジタルフィルタ',
+    t: 'IIR フィルタ',
+    d: 'バターワース・チェビシェフ・楕円・ベッセルのアナログ原型から、双一次変換で IIR フィルタを設計します。',
+    ic: 'iir',
+    k: 'iir butterworth chebyshev elliptic cauer bessel 楕円 チェビシェフ バターワース ベッセル 双一次変換 bilinear プリワーピング インパルス不変 sos 縦続 双2次 極 零点 群遅延 lpf hpf bpf bsf ローパス ハイパス バンドパス',
+  },
+  {
     id: 'jjy',
     c: '信号・通信',
     t: 'JJY シミュレータ',
@@ -157,6 +165,7 @@ export const IC: Record<string, string> = {
   rr: '<path class="c" d="M4 24H22M46 24H60M60 12V36M60 12H70M94 12H106M60 36H70M94 36H106M106 12V36M106 24H116"/><rect class="a" x="22" y="18" width="24" height="12"/><rect class="a" x="70" y="6" width="24" height="12"/><rect class="b" x="70" y="30" width="24" height="12"/>',
   pid: '<path class="c d" d="M4 17H116"/><path class="a" d="M4 40H18C26 40 28 6 40 8S54 22 64 18S84 16 116 17"/>',
   bq: '<path class="c d" d="M4 24H116"/><path class="a" d="M4 12H46C60 12 66 12 72 20S92 40 116 44"/><path class="b" d="M4 30H36C54 30 62 36 70 40S100 44 116 44"/>',
+  iir: '<path class="c d" d="M4 16H58V44M66 4V34H116"/><path class="a" d="M4 11C9 11 11 14 16 14S24 10 30 10S38 14 44 14S52 10 56 11C59 12 60 26 64 44C66 38 68 35 72 35S78 40 80 44C82 39 85 35 92 35S104 37 116 38"/>',
   jjy: '<path class="a" d="M4 38V10H7V38H16V10H26V38H28V10H34V38H40V10H50V38H52V10H58V38H64V10H74V38H76V10H79V38H88V10H91V38H100V10H110V38H116"/>',
   jjyd: '<path class="b" d="M4 16L5 7L7 25L9 7L11 25L13 7L15 25L17 7L19 25L21 7L23 25L25 7L27 17.5L29 14.5L31 17.5L33 7L35 25L37 7L39 25L41 7L43 25L45 7L47 17.5L49 14.5L51 17.5L53 14.5L55 17.5L57 14.5L59 17.5L61 7L63 25L65 7L67 17.5L69 14.5L71 17.5L73 14.5L75 17.5L77 14.5L79 17.5L81 14.5L83 17.5L85 14.5L87 17.5L89 7L91 25L93 7L95 25L97 7L99 25L101 7L103 17.5L105 14.5L107 17.5L109 14.5L111 17.5L113 14.5L115 17.5"/><path class="a" d="M4 43V33H26V43H32V33H46V43H60V33H66V43H88V33H102V43H116"/>',
   svg: '<circle class="a" cx="42" cy="24" r="12"/><path class="a" d="M42 4V7M42 41V44M22 24H25M59 24H62"/><path class="b" d="M80 10A15 15 0 1 0 96 36A12 12 0 0 1 80 10Z"/>',

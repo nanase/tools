@@ -1,0 +1,29 @@
+---
+// 動作原理と式。今の値を代入した式（#subst）は client.ts が入れる
+import {
+  EQ_IMP,
+  EQ_ORDER,
+  EQ_PROTO,
+  EQ_SOS,
+  EQ_XFORM,
+  THEORY_P1,
+  THEORY_P2,
+  THEORY_P3,
+  THEORY_P4,
+  THEORY_P5,
+} from './theory';
+---
+<p set:html={THEORY_P1} />
+<div class="eqs" role="group" aria-label="原型の振幅（上からバターワース・チェビシェフ I・チェビシェフ II・楕円）とベッセルの伝達関数" set:html={EQ_PROTO} />
+<p set:html={THEORY_P2} />
+<div class="eqs" role="group" aria-label="最小の次数（上からバターワース・チェビシェフ・楕円）と完全楕円積分" set:html={EQ_ORDER} />
+<p set:html={THEORY_P3} />
+<div class="eqs">
+  <Fragment set:html={EQ_XFORM} />
+  <div class="subst" id="subst" role="group" aria-label="現在の値を代入した式"></div>
+</div>
+<p set:html={THEORY_P4} />
+<div class="eqs" set:html={EQ_IMP} />
+<p set:html={THEORY_P5} />
+<div class="eqs" set:html={EQ_SOS} />
+<p class="cite">出典: S. J. Orfanidis, "Lecture Notes on Elliptic Filter Design," Rutgers University, 2006（楕円関数・楕円フィルタの原型）、A. V. Oppenheim, R. W. Schafer, <i>Discrete-Time Signal Processing</i>, 3rd ed., Pearson, 2010, ch. 7（インパルス不変法・双一次変換）、W. E. Thomson, "Delay networks having maximally flat frequency characteristics," <i>Proc. IEE</i>, Part III, vol. 96, pp. 487–490, 1949（ベッセルフィルタ）、L. B. Jackson, <i>Digital Filters and Signal Processing</i>, 3rd ed., Kluwer, 1996（双2次の組み方・並べ方とスケーリング）、<a href="https://docs.scipy.org/doc/scipy/reference/signal.html" target="_blank" rel="noopener">SciPy の scipy.signal</a>（周波数変換・双一次変換・SOS の式）</p>
