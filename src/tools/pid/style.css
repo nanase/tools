@@ -6,13 +6,6 @@
   .a-in{grid-area:in}.a-out{grid-area:out}.a-pos{grid-area:pos}.a-vel{grid-area:vel}.a-sch{grid-area:sch}.a-thy{grid-area:thy}
 }
 
-/* 単位の列（m/s が入る幅） */
-.prow{grid-template-columns:2.2rem minmax(0,1fr) 12rem 2.6rem}
-.c-unit{white-space:nowrap}
-@container (max-width:400px){
-  .prow{grid-template-columns:1.9rem minmax(0,1fr) 2.4rem}
-}
-
 .m-main .m-note{font-size:12.5px;letter-spacing:0}
 
 /* 表示窓: 発散の表示、位置（CH1）の基準線 */

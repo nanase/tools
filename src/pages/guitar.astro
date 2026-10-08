@@ -1,6 +1,7 @@
 ---
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import More from '../components/More.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
@@ -65,14 +66,14 @@ const tunName = (n: readonly number[]) => {
         <svg class="neck" id="neck" tabindex="0" role="group" aria-roledescription="指板" aria-label="指板と弦。弦を押すと、そのフレットを押さえて弾く。駒の側の胴の上を押すと、押さえたままのフレットで弾く。矢印キーで弦とフレットを選び、Enter で弾く"></svg>
       </div>
       <p class="sr" id="nk-live" aria-live="polite"></p>
-      <div class="ana2">
+      <More id="g-neck" title="表示の設定"><div class="ana2">
         <div class="ptab">
-          <ChoiceRow k="ex" name="振幅の強調" sub="弦の変位を何倍にして描くか。×1 は弦の間隔に対して実際の大きさ（弦の間隔は実際より広げて描く）" choices={EXAG.map((v) => [v, `×${v}`] as const)} value={3} fold />
+          <ChoiceRow k="ex" name="振幅の強調" sub="弦の変位を何倍にして描くか。×1 は弦の間隔に対して実際の大きさ（弦の間隔は実際より広げて描く）" choices={EXAG.map((v) => [v, `×${v}`] as const)} value={3} />
         </div>
         <div class="ptab" id="sl-row" hidden>
-          <ChoiceRow k="sl" name="スローの速さ" sub="振動を何分の 1 の速さで描くか" choices={SLOW.map((v) => [v, `1/${v}`] as const)} value={50} fold />
+          <ChoiceRow k="sl" name="スローの速さ" sub="振動を何分の 1 の速さで描くか" choices={SLOW.map((v) => [v, `1/${v}`] as const)} value={50} />
         </div>
-      </div>
+      </div></More>
     </Panel>
 
     <div class="col c1">
@@ -115,14 +116,14 @@ const tunName = (n: readonly number[]) => {
           {SETS.map((s, i) => <button type="button" data-v={s.v} aria-pressed={i === 0 ? 'true' : 'false'} title={s.name}>{s.v === 'nylon' ? 'ナイロン' : 'スチール'}</button>)}
         </div>
         <div class="ptab">
-          <ChoiceRow k="tun" name="調弦" sub="開放弦の音（6 弦から）。演奏する曲によっては自動で変える" choices={TUNINGS.map((t) => [t.v, t.name, tunName(t.notes)] as const)} value="std" layout="chips" wide />
-          <ParamRow d={SCALE} fold />
+          <ChoiceRow k="tun" name="調弦" sub="開放弦の音（6 弦から）。演奏する曲によっては自動で変える" choices={TUNINGS.map((t) => [t.v, t.name, tunName(t.notes)] as const)} value="std" layout="chips" />
           <ChoiceRow k="tm" name="張力の決め方" sub="調弦に合わせるなら、材質と太さから音程が合う張力を求める。手で決めるなら、張力に応じて音程がずれる" choices={[['auto', '調弦に合わせる'], ['man', '手で決める']]} value="auto" />
-          <ChoiceRow k="sel" name="設定する弦" sub="材質・外径・張力を変える弦" choices={[0, 1, 2, 3, 4, 5].map((i) => [i, `${i + 1} 弦`] as const)} value={0} layout="chips" wide />
-          <ChoiceRow k="mat" name="材質" sub="プレーン弦（ナイロン・スチール）と、芯線に金属の線を巻いた巻弦。巻弦は重くて柔らかく、低い弦に使う" choices={MATERIALS.map((m) => [m.v, m.name] as const)} value="nylon" layout="chips" wide />
+          <ChoiceRow k="sel" name="設定する弦" sub="材質・外径・張力を変える弦" choices={[0, 1, 2, 3, 4, 5].map((i) => [i, `${i + 1} 弦`] as const)} value={0} layout="chips" />
+          <ChoiceRow k="mat" name="材質" sub="プレーン弦（ナイロン・スチール）と、芯線に金属の線を巻いた巻弦。巻弦は重くて柔らかく、低い弦に使う" choices={MATERIALS.map((m) => [m.v, m.name] as const)} value="nylon" layout="chips" />
           <ParamRow d={DIA} />
           <ParamRow d={TEN} />
         </div>
+        <More id="g-str"><div class="ptab"><ParamRow d={SCALE} /></div></More>
         <div class="stw">
           <table class="stab" id="stab">
             <thead><tr><th scope="col">弦</th><th scope="col">開放</th><th scope="col">材質</th><th scope="col">外径</th><th scope="col">張力</th><th scope="col"><i>f</i><sub>1</sub></th><th scope="col">ずれ</th></tr></thead>
@@ -188,7 +189,7 @@ const tunName = (n: readonly number[]) => {
             </svg>
           </div>
           <div class="sbar rdbar"><span class="stag rd" id="w-rd"></span></div>
-          <div class="ptab ana"><ChoiceRow k="span" name="表示する長さ" sub="弾いてからの時間" choices={SPANS.map((v) => [v, v < 1 ? `${v * 1000} ms` : `${v} s`] as const)} value={0.2} fold /></div>
+          <More id="g-yt" title="表示の設定"><div class="ptab"><ChoiceRow k="span" name="表示する長さ" sub="弾いてからの時間" choices={SPANS.map((v) => [v, v < 1 ? `${v * 1000} ms` : `${v} s`] as const)} value={0.2} /></div></More>
         </div>
         <div id="v-sp" hidden>
           <div class="sbar">
@@ -206,7 +207,7 @@ const tunName = (n: readonly number[]) => {
             </svg>
           </div>
           <div class="sbar rdbar"><span class="stag rd" id="s-rd"></span></div>
-          <div class="ptab ana"><ChoiceRow k="fmax" name="横軸の範囲" sub="スペクトラムの右端の周波数" choices={FMAX.map((v) => [v, `${v / 1000} kHz`] as const)} value={5000} fold /></div>
+          <More id="g-sp" title="表示の設定"><div class="ptab"><ChoiceRow k="fmax" name="横軸の範囲" sub="スペクトラムの右端の周波数" choices={FMAX.map((v) => [v, `${v / 1000} kHz`] as const)} value={5000} /></div></More>
         </div>
       </Collapsible>
 

@@ -1,6 +1,7 @@
 ---
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import More from '../components/More.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
@@ -26,9 +27,11 @@ const name = '受動素子組み合わせ計算機';
       <div class="ptab">
         {NUM_KEYS.map((k) => <ParamRow d={numDef(k, 'R')} />)}
         <ChoiceRow k="es" sym="E" name="E 系列" sub="組み合わせに使う値の刻み" layout="chips" msg choices={SERIES_CHOICES.map((s) => [s, `E${s}`] as const)} value={12} />
-        <ExcludeRow />
-        <ChoiceRow k="stop" sym="<i>ε</i>" name="探索を終える誤差" sub="この誤差以内が見つかった本数は、そこで探索を終えます" layout="chips" choices={STOPS.map(([, l], i) => [i, l] as const)} value={2} fold />
       </div>
+      <More id="g-in"><div class="ptab">
+        <ExcludeRow />
+        <ChoiceRow k="stop" sym="<i>ε</i>" nm="ε" name="探索を終える誤差" sub="この誤差以内が見つかった本数は、そこで探索を終えます" layout="chips" choices={STOPS.map(([, l], i) => [i, l] as const)} value={2} />
+      </div></More>
     </Panel>
 
     <Panel hid="hd-out" title="計算結果" class="a-out">

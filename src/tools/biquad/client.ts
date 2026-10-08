@@ -6,7 +6,7 @@ import { fmt, fmtR, ro } from '../../lib/format';
 import { ParamGroup } from '../../lib/param';
 import { DV, SH, SW } from '../../lib/scope';
 import { storeToggle } from '../../lib/store';
-import { initToolPage, setFoldable } from '../../lib/tool-page';
+import { initToolPage } from '../../lib/tool-page';
 import { type Analysis, analyze, coef, type FilterParams, type Summary } from './filter';
 import { hzMath, substHtml } from './math';
 import { fcPatch, hzT, type Key, L0, LENS, PARAMS, sup, type TypeDef, typeOf } from './params';
@@ -395,10 +395,9 @@ $('#playBtn').addEventListener('click', () => {
 });
 
 /* ---------- 入力 ---------- */
-/** 増幅量 G は LSF・HSF・PEQ だけで使う。使わない間は畳んで開けなくする */
+/** 増幅量 G は LSF・HSF・PEQ だけで使う。使わない間は欄を破線にして理由を出す */
 function useGain(): void {
   g?.setOff('g', !type.g, `${type.ab} では使いません`);
-  setFoldable($('#p-g'), !!type.g);
 }
 new Choice($('#p-type'), (v) => {
   type = typeOf(v);

@@ -13,9 +13,6 @@
   .a-kb{grid-area:kb}.c1{grid-area:c1}.c2{grid-area:c2}.a-thy{grid-area:thy}.a-src{grid-area:src}
 }
 
-/* 図の下の設定（図の枠が区切りになるので、上の線は引かない） */
-.a-kb .ana2{border-top:0}
-
 /* 音の波形（開閉できる枠）の表示の切り替え */
 .wv-sw{margin:4px 0 12px}
 /* 枠の右上のボタン */
@@ -63,7 +60,8 @@
 .kb-note{margin-left:auto}
 @media (max-width:559px){.kb-note{margin-left:0}}
 
-/* 弦の一覧 */
+/* 弦の枠: 単位の列はセントが入る幅。下に弦の一覧 */
+.a-str .prow{--uw:2.6rem}
 .stw{margin-top:14px;overflow-x:auto;border-top:1px solid var(--line)}
 .stab{width:100%;border-collapse:collapse;font:500 12.5px/1.4 var(--mono);font-variant-numeric:tabular-nums}
 .stab th{padding:9px 6px 5px;font:700 11.5px/1.3 var(--sans);color:var(--ink-3);text-align:right;white-space:nowrap}
@@ -102,9 +100,10 @@
 .srcs a{color:var(--ink-2)}
 
 /* 曲の選択（ドロップダウン）: 項目名の右に、残りの幅いっぱいに置く */
-.prow.pick{grid-template-columns:2.2rem auto minmax(0,1fr);grid-template-areas:"sym name val"}
+.prow.pick{grid-template-columns:var(--sw) auto minmax(0,1fr);grid-template-areas:"sym name val"}
 .sel{position:relative}
-.sel select{appearance:none;width:100%;height:40px;padding:0 34px 0 12px;border:1px solid var(--line-2);border-radius:var(--r);background:var(--inset);color:var(--ink);font:500 13.5px/1.2 var(--mono);text-overflow:ellipsis;cursor:pointer}
+.sel select{appearance:none;width:100%;height:30px;padding:0 30px 0 10px;border:1px solid var(--line-2);border-radius:4px;background:var(--inset);color:var(--ink);font:500 13px/1.2 var(--mono);text-overflow:ellipsis;cursor:pointer}
+@media (pointer:coarse){.sel select{height:36px}}
 .sel select:hover{border-color:var(--ink-3)}
 .sel select option{background:var(--surface);color:var(--ink)}
-.sel::after{content:"";position:absolute;top:50%;right:14px;width:7px;height:7px;border-right:1.6px solid var(--ink-2);border-bottom:1.6px solid var(--ink-2);transform:translateY(-70%) rotate(45deg);pointer-events:none}
+.sel::after{content:"";position:absolute;top:50%;right:12px;width:7px;height:7px;border-right:1.6px solid var(--ink-2);border-bottom:1.6px solid var(--ink-2);transform:translateY(-70%) rotate(45deg);pointer-events:none}

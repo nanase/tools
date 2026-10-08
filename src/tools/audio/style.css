@@ -4,7 +4,7 @@
 .ph .seg button{display:inline-flex;align-items:center;justify-content:center;gap:7px}
 .seg button:disabled{opacity:.45;cursor:default;color:var(--ink-3)}
 /* 入力元と開始・停止を枠の右上に並べる */
-.ph>.srcbar{position:absolute;top:0;right:10px;transform:translateY(-50%);display:flex;align-items:center;gap:8px;padding-left:6px;background:var(--bg)}
+.srcbar{display:flex;align-items:center;gap:8px}
 @media (max-width:479px){.srcbar{gap:6px}.srcbar .seg button{padding:0 6px}}
 /* ファイルを枠へ落としているとき */
 .a-in.drop{border-color:var(--focus);box-shadow:inset 0 0 0 1px var(--focus)}
@@ -23,7 +23,6 @@
 
 /* ファイルの再生位置 */
 .seek{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;margin-top:4px}
-.seek .sl{padding-bottom:0}
 .seek .msg{white-space:nowrap;font-variant-numeric:tabular-nums}
 
 /* 入力レベル（メーターの標準の緑。−3 dBFS を超えると警告色。−3 dBFS の位置に線） */
@@ -44,7 +43,7 @@
 .cv svg{position:relative}
 
 /* 枠の右上に 2 つのボタンの組を並べる（表示の切り替えと RUN） */
-.ph>.pbar{position:absolute;top:0;right:10px;transform:translateY(-50%);display:flex;align-items:center;gap:8px;padding-left:6px;background:var(--bg)}
+.pbar{display:flex;align-items:center;gap:8px}
 .scope svg{touch-action:pan-y}
 .cur{stroke:var(--screen-ink);stroke-width:1}
 .rdbar .rd{white-space:pre}

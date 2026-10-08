@@ -8,13 +8,6 @@ const RP: [number, string][] = [
   [47e3, '47k'],
   [100e3, '100k'],
 ];
-const RT: [number, string][] = [
-  [100, '100'],
-  [1e3, '1k'],
-  [1e4, '10k'],
-  [1e5, '100k'],
-  [1e6, '1M'],
-];
 
 export type Key = 'r1' | 'r2' | 'c1' | 'vcc';
 
@@ -31,7 +24,6 @@ export const PARAMS: (ParamDef & { k: Key })[] = [
     v: 1e4,
     ph: '例 4.7k',
     pre: RP,
-    tk: RT,
   },
   {
     k: 'r2',
@@ -45,7 +37,6 @@ export const PARAMS: (ParamDef & { k: Key })[] = [
     v: 1e4,
     ph: '例 4k7',
     pre: RP,
-    tk: RT,
   },
   {
     k: 'c1',
@@ -66,12 +57,6 @@ export const PARAMS: (ParamDef & { k: Key })[] = [
       [1e-5, '10μ'],
       [1e-4, '100μ'],
     ],
-    tk: [
-      [1e-12, '1p'],
-      [1e-9, '1n'],
-      [1e-6, '1μ'],
-      [1e-3, '1m'],
-    ],
   },
   {
     k: 'vcc',
@@ -83,20 +68,13 @@ export const PARAMS: (ParamDef & { k: Key })[] = [
     min: 1,
     max: 18,
     v: 5,
-    lin: { step: 0.1, big: 1, major: 5 },
+    lin: { step: 0.1, big: 1 },
     ph: '例 3.3',
     pre: [
       [1.8, '1.8'],
       [3.3, '3.3'],
       [5, '5'],
       [9, '9'],
-      [18, '18'],
-    ],
-    tk: [
-      [1, '1'],
-      [5, '5'],
-      [9, '9'],
-      [12, '12'],
       [18, '18'],
     ],
   },

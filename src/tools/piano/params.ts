@@ -20,23 +20,20 @@ const clamp =
   };
 /** 一様な刻みの数値の行 */
 function lin(
-  d: Omit<ParamDef, 'list' | 'lin' | 'format' | 'fix' | 'pre' | 'tk'> & {
+  d: Omit<ParamDef, 'list' | 'lin' | 'format' | 'fix' | 'pre'> & {
     step: number;
     big: number;
-    major: number;
     s?: number;
     pre?: ParamDef['pre'];
-    tk?: ParamDef['tk'];
   },
 ): ParamDef {
   const f = fmtU(d.unit, d.s);
   return {
     ...d,
-    lin: { step: d.step, big: d.big, major: d.major },
+    lin: { step: d.step, big: d.big },
     format: f,
     fix: clamp(d.min, d.max, f.text as (v: number) => string, d.step),
     pre: d.pre ?? [],
-    tk: d.tk ?? [],
   };
 }
 
@@ -55,19 +52,12 @@ export const VEL: ParamDef = lin({
   ph: '例 2.5',
   step: 0.1,
   big: 0.5,
-  major: 1,
   pre: [
     [0.8, 'pp'],
     [1.5, 'p'],
     [2.5, 'mf'],
     [4, 'f'],
     [6, 'ff'],
-  ],
-  tk: [
-    [1, '1'],
-    [3, '3'],
-    [5, '5'],
-    [7, '7'],
   ],
 });
 
@@ -87,7 +77,6 @@ export const UNI: ParamDef = lin({
   ph: '例 1',
   step: 0.1,
   big: 0.5,
-  major: 1,
   s: 3,
   pre: [
     [0, '0'],
@@ -95,12 +84,6 @@ export const UNI: ParamDef = lin({
     [1, '1'],
     [2, '2'],
     [4, '4'],
-  ],
-  tk: [
-    [0, '0'],
-    [2, '2'],
-    [4, '4'],
-    [6, '6'],
   ],
 });
 
@@ -118,13 +101,6 @@ export const THICK: ParamDef = lin({
   ph: '例 9',
   step: 0.1,
   big: 0.5,
-  major: 1,
-  tk: [
-    [6, '6'],
-    [8, '8'],
-    [10, '10'],
-    [12, '12'],
-  ],
 });
 
 /* ---------- 残響（部屋） ---------- */
@@ -141,13 +117,6 @@ export const DIST: ParamDef = lin({
   ph: '例 8',
   step: 0.5,
   big: 2,
-  major: 5,
-  tk: [
-    [1, '1'],
-    [10, '10'],
-    [20, '20'],
-    [30, '30'],
-  ],
 });
 
 /* ---------- 演奏と音 ---------- */

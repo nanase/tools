@@ -5,13 +5,6 @@ type Def = ParamDef & { k: Key };
 
 const LOG_HINT = '↑↓: E12 刻みで隣の値　PgUp/PgDn: 10 倍・1/10　Enter: 確定　Esc: 戻す';
 const BAD_SIGNED = '読めない値です（例 −20・12.5）';
-const LT: [number, string][] = [
-  [-100, '−100'],
-  [-50, '−50'],
-  [0, '0'],
-  [50, '50'],
-  [100, '100'],
-];
 
 /** ゲイン: 0 と E12（0.0001〜20） */
 const gain = (k: Key, nm: string, s: string, name: string, sub: string, v: number): Def => ({
@@ -39,17 +32,10 @@ const gain = (k: Key, nm: string, s: string, name: string, sub: string, v: numbe
     [0.1, '0.1'],
     [1, '1'],
   ],
-  tk: [
-    [0, '0'],
-    [0.01, '0.01'],
-    [0.1, '0.1'],
-    [1, '1'],
-    [10, '10'],
-  ],
 });
 
 /** 位置・速度: −100〜100 の一様な刻み */
-const signed = (d: Omit<Def, 'min' | 'max' | 'sign' | 'notation' | 'stepLabel' | 'bad' | 'tk'>): Def => ({
+const signed = (d: Omit<Def, 'min' | 'max' | 'sign' | 'notation' | 'stepLabel' | 'bad'>): Def => ({
   ...d,
   min: -100,
   max: 100,
@@ -57,12 +43,17 @@ const signed = (d: Omit<Def, 'min' | 'max' | 'sign' | 'notation' | 'stepLabel' |
   notation: 'plain',
   stepLabel: '',
   bad: BAD_SIGNED,
-  tk: LT,
 });
 
-const POS = { step: 1, big: 10, major: 50, minor: 10 },
-  VEL = { step: 0.1, big: 1, major: 50, minor: 10 };
-const POS_PRE: [number, string][] = LT,
+const POS = { step: 1, big: 10 },
+  VEL = { step: 0.1, big: 1 };
+const POS_PRE: [number, string][] = [
+    [-100, '−100'],
+    [-50, '−50'],
+    [0, '0'],
+    [50, '50'],
+    [100, '100'],
+  ],
   VEL_PRE: [number, string][] = [
     [-10, '−10'],
     [-1, '−1'],
@@ -145,13 +136,6 @@ export const PLANT: Def[] = [
     pre: [
       [0.01, '0.01'],
       [0.05, '0.05'],
-      [0.1, '0.1'],
-      [1, '1'],
-    ],
-    tk: [
-      [1e-4, '0.0001'],
-      [1e-3, '0.001'],
-      [0.01, '0.01'],
       [0.1, '0.1'],
       [1, '1'],
     ],

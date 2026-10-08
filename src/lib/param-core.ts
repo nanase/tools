@@ -1,6 +1,6 @@
 /**
- * 数値入力の行の計算部分（DOM に依存しない）: 値の並び、目盛り、表記、確定する値、▲▼ の行き先。
- * 動作は lib/param.ts が受け持つ
+ * 数値入力の行の計算部分（DOM に依存しない）: 値の並び、欄の地の位置とドラッグの刻み、表記、確定する値、
+ * ‹ ›・矢印キーの行き先。動作は lib/param.ts が受け持つ
  */
 import { eList, linList, nextOf, prevOf, type Series, same } from './eseries';
 import { fmt, minus, parts, plain } from './format';
@@ -12,7 +12,7 @@ export const kindOf = (d: ParamDef): Kind => (d.lin ? 'lin' : d.list ? 'list' : 
 /** グループの E 系列の切替に従う行か */
 export const followsGroup = (d: ParamDef): boolean => kindOf(d) === 'e' && !d.series;
 
-/** 近さ・スライダー位置を対数で見るか */
+/** 近さ・欄の地の位置を対数で見るか */
 export const isLog = (d: ParamDef): boolean => kindOf(d) === 'e' || (kindOf(d) === 'list' && !!d.log);
 
 /** 値の並び（小さい順）。g はグループの E 系列 */
@@ -58,9 +58,9 @@ export function nearest(L: readonly number[], key: (x: number) => number, v: num
 
 /* ---------- 表記 ---------- */
 export interface Fmt {
-  /** 入力欄 */
+  /** 欄と入力欄 */
   input: (v: number) => string;
-  /** ▲▼ の下 */
+  /** 短い値（単位なし） */
   step: (v: number) => string;
   /** メッセージ・読み上げ（単位つき） */
   text: (v: number) => string;
@@ -100,45 +100,52 @@ export function formatter(d: ParamDef): Fmt {
   };
 }
 
-/* ---------- 目盛り ---------- */
-/** スライダーの目盛りの HTML（.tk の中身） */
-export function ticksHtml(d: ParamDef, L: readonly number[]): string {
-  const n = Math.max(1, L.length - 1),
-    key = keyOf(d, L),
-    pos = (v: number) => `${((nearest(L, key, v) / n) * 100).toFixed(3)}%`,
-    at = (i: number) => `${((i / n) * 100).toFixed(3)}%`;
-  let h = '';
-  if (d.lin) {
-    const mi = d.lin.minor ?? d.lin.big,
-      per = Math.round(d.lin.major / mi);
-    for (let i = Math.ceil(d.min / mi); i * mi <= d.max + 1e-9; i++)
-      h += `<i class="${i % per ? '' : 'M'}" style="left:${pos(i * mi)}"></i>`;
-  } else if (d.list) {
-    if (L.length <= 60) h += L.map((_, i) => `<i style="left:${at(i)}"></i>`).join('');
-    h += inRange(d)
-      .map(([v]) => `<i class="M" style="left:${pos(v)}"></i>`)
-      .join('');
-  } else {
-    const zero = L[0] === 0,
-      lo = L.find((x) => x > 0) ?? d.max;
-    if (n <= 55) h += L.map((_, i) => `<i style="left:${at(i)}"></i>`).join('');
-    if (zero) h += `<i class="M" style="left:${at(0)}"></i>`;
-    /* 範囲内の 10 の累乗に大目盛り。0 を置く行では正の最小値の桁を飛ばす */
-    const e0 = zero ? Math.floor(Math.log10(lo) + 1e-9) + 1 : Math.ceil(Math.log10(lo) - 1e-9);
-    for (let e = e0; e <= Math.floor(Math.log10(d.max) + 1e-9); e++)
-      h += `<i class="M" style="left:${pos(10 ** e)}"></i>`;
-  }
-  h += inRange(d)
-    .map(([v, l]) => `<span style="left:${pos(v)}">${l}</span>`)
-    .join('');
-  return h;
+/* ---------- 欄の地（範囲の中の位置）とドラッグ ---------- */
+const lt = (a: number, b: number) => a < b - Math.abs(b) * 1e-9;
+
+/**
+ * v の並びの上の位置（0〜1）。並びの番号に比例させ（ドラッグの刻みと合わせる）、
+ * 並びの間の値は隣の 2 つの間に key（対数の行は対数）で比例して置く。並びの外は端
+ */
+export function posOf(L: readonly number[], key: (x: number) => number, v: number): number {
+  const n = L.length;
+  if (n < 2) return 0;
+  const kv = key(v);
+  if (kv <= key(L[0])) return 0;
+  if (kv >= key(L[n - 1])) return 1;
+  let j = 0;
+  while (j < n - 2 && key(L[j + 1]) < kv) j++;
+  const a = key(L[j]),
+    b = key(L[j + 1]);
+  return (j + (b > a ? (kv - a) / (b - a) : 0)) / (n - 1);
 }
 
-const lt = (a: number, b: number) => a < b - Math.abs(b) * 1e-9;
-const inRange = (d: ParamDef) => d.tk.filter(([v]) => !lt(v, d.min) && !lt(d.max, v));
+/** 欄の地に塗る範囲（0〜1）。± の量（min < 0 < max）は 0 から、ほかは左端から塗る。at は今の値の位置 */
+export function fillOf(d: ParamDef, L: readonly number[], v: number): { from: number; to: number; at: number } {
+  const key = keyOf(d, L),
+    at = posOf(L, key, v),
+    z = d.min < 0 && d.max > 0 ? posOf(L, key, 0) : 0;
+  return { from: Math.min(at, z), to: Math.max(at, z), at };
+}
+
+/** 欄の下端の刻みを置くプリセットの位置（0〜1）。範囲の外のプリセットは除く */
+export function presetPos(d: ParamDef, L: readonly number[]): number[] {
+  const key = keyOf(d, L);
+  return d.pre.filter(([v]) => !lt(v, d.min) && !lt(d.max, v)).map(([v]) => posOf(L, key, v));
+}
+
+/** ドラッグとみなすまでの横の距離（px）。これ以内で離したら押した（入力欄を開く）とみなす */
+export const DRAG_START = 4;
+
+/** ドラッグで並びを 1 つ動かす距離（px）。並びが長いほど細かくし、2〜14 px に収める */
+export const dragPx = (n: number): number => Math.max(2, Math.min(14, 240 / Math.max(1, n)));
+
+/** 番号 i0 から横に dx px ドラッグしたときの並びの番号（n 個の並びの端で止める） */
+export const dragIndex = (i0: number, dx: number, n: number): number =>
+  Math.max(0, Math.min(n - 1, i0 + Math.round(dx / dragPx(n))));
 
 /* ---------- 入力の説明 ---------- */
-/** 入力欄の title: 範囲と操作 */
+/** 入力欄の title: 範囲と操作（入力欄の中の ↑↓ も ‹ › と同じに動く） */
 export function titleText(d: ParamDef, g: Series, f: Fmt): string {
   return `${f.text(d.min)} – ${f.text(d.max)}　${d.hint ?? hintText(d, g)}`;
 }
@@ -153,7 +160,7 @@ function hintText(d: ParamDef, g: Series): string {
   return `↑↓: E${d.series ?? g} の隣の値　PgUp/PgDn: 10 倍・1/10　Enter: 確定　Esc: 戻す`;
 }
 
-/** ▲▼ の読み上げの「{ラベル}1 つ上の」 */
+/** ‹ › の読み上げの「{ラベル}1 つ上の」 */
 export function stepLabel(d: ParamDef, g: Series): string {
   if (d.stepLabel != null) return d.stepLabel;
   if (d.lin) return `${d.lin.step}${d.unit ? ` ${d.unit}` : ''}`;
@@ -206,11 +213,11 @@ export function previewText(r: Resolved, v: number, f: Fmt): string {
   return `→ ${f.preview(v)}`;
 }
 
-/* ---------- ▲▼ ---------- */
+/* ---------- ‹ ›・矢印キー ---------- */
 /** Shift で大きく動かす行か（E 系列の行は PgUp/PgDn だけ） */
 export const shiftIsBig = (d: ParamDef): boolean => kindOf(d) !== 'e';
 
-/** ▲▼・キーで動かした先。動けなければ undefined */
+/** ‹ ›・矢印キーで動かした先。動けなければ undefined */
 export function stepValue(d: ParamDef, L: readonly number[], v: number, dir: 1 | -1, big: boolean): number | undefined {
   const clamp = (x: number) => Math.min(d.max, Math.max(d.min, x));
   const near = () => (dir > 0 ? nextOf(L, v) : prevOf(L, v));

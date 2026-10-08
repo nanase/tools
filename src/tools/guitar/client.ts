@@ -271,6 +271,7 @@ function changeSet(v: SetV): void {
   S.set = v;
   store('set', v);
   /* 弦長は弦のセットの標準。胴もセットに合う形にする */
+  P1.update('L', { v: setOf(v).L * 1000 });
   P1.set('L', setOf(v).L * 1000, { silent: true });
   V.L = setOf(v).L * 1000;
   const b = v === 'nylon' ? 'classical' : 'dread';
@@ -286,19 +287,38 @@ function applyBody(b: 'classical' | 'dread'): void {
   V.h = t.h * 1000;
   V.V = t.V * 1000;
   V.dh = t.dh * 1000;
-  P1.set('h', V.h, { silent: true });
-  P1.set('V', V.V, { silent: true });
-  P1.set('dh', V.dh, { silent: true });
+  for (const k of ['h', 'V', 'dh'] as const) {
+    P1.update(k, { v: V[k] });
+    P1.set(k, V[k], { silent: true });
+  }
+}
+/** 既定値（行末の ↺ で戻す値）を弦のセットと胴の形に合わせる。弦長はセットの標準、表板の厚さ・容積・穴は胴の形の値 */
+function bodyDefaults(): void {
+  const t = bodyTypeOf(S.body);
+  P1.update('L', { v: setOf(S.set).L * 1000 });
+  P1.update('h', { v: t.h * 1000 });
+  P1.update('V', { v: t.V * 1000 });
+  P1.update('dh', { v: t.dh * 1000 });
 }
 function changeBody(b: 'classical' | 'dread'): void {
   applyBody(b);
   rebuild();
 }
 
-/** 選んだ弦の材質・外径・張力の行を合わせる */
+/**
+ * 選んだ弦の材質・外径・張力の行を合わせる。既定値は、外径が弦のセットの値、張力が調弦に合う値
+ * （調弦に合わせる間は今の値、手で決める間は胴との結合まで含めて合う値を求める）
+ */
 function syncStrRows(): void {
-  const sp = specs()[selI()];
+  const i = selI(),
+    sp = specs()[i];
   mat.set(sp.m);
+  P2.update('d', { v: Number((setOf(S.set).strings[i].d * 1000).toFixed(3)) });
+  const Ta =
+    tm.value === 'auto' || !G
+      ? sp.T
+      : Math.min(TEN.max, Math.max(TEN.min, tuneCoupled(G, i, noteHz(tuningOf(tun.value).notes[i]))));
+  P2.update('T', { v: Number(Ta.toFixed(1)) });
   P2.set('d', Number((sp.d * 1000).toFixed(3)), { silent: true });
   P2.set('T', Number(sp.T.toFixed(1)), { silent: true });
   P2.note('T', tm.value === 'auto' ? `${tuningOf(tun.value).name}の調弦に合わせた値` : '');
@@ -905,6 +925,7 @@ $('#playBtn').addEventListener('click', () => {
 });
 
 /* ---------- 起動 ---------- */
+bodyDefaults();
 retune();
 rebuild();
 neck.setPos(posAll());

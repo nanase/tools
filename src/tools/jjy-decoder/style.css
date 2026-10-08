@@ -10,7 +10,7 @@
 }
 .desc{font-weight:400}
 /* 入力元（枠の右上）と「?」 */
-.ph>.srcbar{position:absolute;top:0;right:10px;transform:translateY(-50%);display:flex;align-items:center;gap:8px;padding-left:6px;background:var(--bg)}
+.srcbar{display:flex;align-items:center;gap:8px}
 @media (max-width:479px){.srcbar .seg button{padding:0 6px}}
 /* 受信の開始・停止（LED は信号の有無） */
 #runSeg button{display:inline-flex;align-items:center;justify-content:center;gap:8px}

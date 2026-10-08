@@ -20,23 +20,20 @@ const clamp =
   };
 /** 一様な刻みの数値の行 */
 function lin(
-  d: Omit<ParamDef, 'list' | 'lin' | 'format' | 'fix' | 'pre' | 'tk'> & {
+  d: Omit<ParamDef, 'list' | 'lin' | 'format' | 'fix' | 'pre'> & {
     step: number;
     big: number;
-    major: number;
     s?: number;
     pre?: ParamDef['pre'];
-    tk?: ParamDef['tk'];
   },
 ): ParamDef {
   const f = fmtU(d.unit, d.s);
   return {
     ...d,
-    lin: { step: d.step, big: d.big, major: d.major },
+    lin: { step: d.step, big: d.big },
     format: f,
     fix: clamp(d.min, d.max, f.text as (v: number) => string, d.step),
     pre: d.pre ?? [],
-    tk: d.tk ?? [],
   };
 }
 
@@ -55,16 +52,10 @@ export const WIND: ParamDef = lin({
   ph: '例 800',
   step: 10,
   big: 50,
-  major: 200,
   pre: [
     [600, '600', '約 60 mm 水柱（バロック時代の楽器に多い）'],
     [800, '800'],
     [1000, '1000'],
-  ],
-  tk: [
-    [400, '400'],
-    [800, '800'],
-    [1200, '1200'],
   ],
 });
 
@@ -83,14 +74,8 @@ export const SCALE: ParamDef = lin({
   ph: '例 0',
   step: 1,
   big: 2,
-  major: 4,
   sign: 'any',
   s: 3,
-  tk: [
-    [-8, '−8'],
-    [0, '0'],
-    [8, '8'],
-  ],
 });
 /** カットアップ ÷ 口の幅 */
 export const CUT: ParamDef = lin({
@@ -106,13 +91,7 @@ export const CUT: ParamDef = lin({
   ph: '例 0.25',
   step: 0.01,
   big: 0.05,
-  major: 0.1,
   s: 3,
-  tk: [
-    [0.2, '0.2'],
-    [0.3, '0.3'],
-    [0.4, '0.4'],
-  ],
 });
 
 /* ---------- 部屋 ---------- */
@@ -129,13 +108,6 @@ export const DIST: ParamDef = lin({
   ph: '例 15',
   step: 0.5,
   big: 2,
-  major: 5,
-  tk: [
-    [1, '1'],
-    [10, '10'],
-    [20, '20'],
-    [30, '30'],
-  ],
 });
 
 /* ---------- 演奏と音 ---------- */

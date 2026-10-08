@@ -11,6 +11,6 @@ interface Props {
 }
 const { id, value = 12, series = [6, 12, 24], label = '抵抗とコンデンサの刻み' } = Astro.props;
 ---
-<div class="seg" id={id} role="group" aria-label={label} title="スライダーと ▲▼ の刻み">
+<div class="seg" id={id} role="group" aria-label={label} title="ドラッグと ‹ › の刻み">
   {series.map(s => <button type="button" data-s={s} aria-pressed={s === value ? 'true' : 'false'}>E{s}</button>)}
 </div>

@@ -1,6 +1,7 @@
 ---
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import More from '../components/More.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
@@ -72,21 +73,21 @@ const pct = (v: number) => `${v * 100} %`;
             </svg>
           </div>
           <div class="sbar rdbar"><span class="stag rd" id="w-rd"></span></div>
-          <div class="ana2">
+          <More id="g-yt" title="表示とトリガの設定"><div class="ana2">
             <div class="ptab">
-              <ParamRow d={P.hd} fold />
-              <ParamRow d={P.vd} fold />
-              <ChoiceRow k="lay" name="CH1 と CH2" sub="分けると CH1 を上に、CH2 を下に 2 div ずつずらします" choices={[['ov', '重ねる'], ['sp', '分ける']]} value="ov" fold />
-              <ChoiceRow k="tp" name="トリガの位置" sub="トリガの時刻（▼）を表示窓の左から何 % に置くか" choices={POS.map((v) => [v, pct(v)] as const)} value={0.1} layout="chips" wide fold />
+              <ParamRow d={P.hd} />
+              <ParamRow d={P.vd} />
+              <ChoiceRow k="lay" name="CH1 と CH2" sub="分けると CH1 を上に、CH2 を下に 2 div ずつずらします" choices={[['ov', '重ねる'], ['sp', '分ける']]} value="ov" />
+              <ChoiceRow k="tp" name="トリガの位置" sub="トリガの時刻（▼）を表示窓の左から何 % に置くか" choices={POS.map((v) => [v, pct(v)] as const)} value={0.1} layout="chips" />
             </div>
             <div class="ptab">
-              <ChoiceRow k="tm" name="トリガのモード" sub="AUTO: トリガがなければそのまま流す。NORMAL: トリガが来るまで前の波形を残す。SINGLE: 1 回だけ取り込んで止める" choices={MODES} value="auto" fold />
-              <ChoiceRow k="ts" name="トリガのソース" choices={[['1', 'CH1（L）'], ['2', 'CH2（R）']]} value="1" fold />
-              <ChoiceRow k="tsl" name="トリガのスロープ" sub="両方向: 立ち上がり・立ち下がりのどちらでも、レベルを横切ればトリガする。レベルが 0 ならゼロ点交差" choices={[['up', '↑ 立ち上がり'], ['down', '↓ 立ち下がり'], ['both', '↕ 両方向']]} value="up" layout="chips" wide fold />
-              <ParamRow d={P.tl} fold />
-              <ChoiceRow k="tn" name="ノイズ除去" sub="波形がレベルからこの幅だけ離れるまで、次のトリガを受け付けない" choices={(Object.keys(HY) as (keyof typeof HY)[]).map((k) => [k, k === 'off' ? 'なし' : `${k === 'lo' ? '弱' : '強'} ${HY[k]}`] as const)} value="lo" fold />
+              <ChoiceRow k="tm" name="トリガのモード" sub="AUTO: トリガがなければそのまま流す。NORMAL: トリガが来るまで前の波形を残す。SINGLE: 1 回だけ取り込んで止める" choices={MODES} value="auto" />
+              <ChoiceRow k="ts" name="トリガのソース" choices={[['1', 'CH1（L）'], ['2', 'CH2（R）']]} value="1" />
+              <ChoiceRow k="tsl" name="トリガのスロープ" sub="両方向: 立ち上がり・立ち下がりのどちらでも、レベルを横切ればトリガする。レベルが 0 ならゼロ点交差" choices={[['up', '↑ 立ち上がり'], ['down', '↓ 立ち下がり'], ['both', '↕ 両方向']]} value="up" layout="chips" />
+              <ParamRow d={P.tl} />
+              <ChoiceRow k="tn" name="ノイズ除去" sub="波形がレベルからこの幅だけ離れるまで、次のトリガを受け付けない" choices={(Object.keys(HY) as (keyof typeof HY)[]).map((k) => [k, k === 'off' ? 'なし' : `${k === 'lo' ? '弱' : '強'} ${HY[k]}`] as const)} value="lo" />
             </div>
-          </div>
+          </div></More>
         </div>
 
         <div id="v-xy" hidden>
@@ -101,12 +102,12 @@ const pct = (v: number) => `${v * 100} %`;
               <svg viewBox="-16 -16 352 352" id="x-svg" role="img" aria-label="リサジュー図形"></svg>
             </div>
           </div>
-          <div class="ptab ana">
-            <ChoiceRow k="xm" name="軸" sub="X-Y: 横に CH1、縦に CH2。M-S: 45° 回し、L だけの音を左上、R だけの音を右上、モノラルの音を縦の線に描く" choices={[['xy', 'X-Y'], ['ms', 'M-S']]} value="xy" fold />
-            <ChoiceRow k="xr" name="表示範囲" sub="中心から端までの振幅（フルスケールを 1 とする）" choices={XR.map((v) => [v, `±${v}`] as const)} value={1} layout="chips" wide fold />
-            <ChoiceRow k="xl" name="描く長さ" sub="直近のこの時間の音を線でつなぐ" choices={XL.map((v) => [v, `${v * 1000} ms`] as const)} value={0.02} layout="chips" wide fold />
-            <ChoiceRow k="xp" name="残光" sub="前に描いた線を薄くしながら残す" choices={[['off', 'なし'], ['short', '短い'], ['long', '長い']]} value="short" fold />
-          </div>
+          <More id="g-xy" title="表示の設定"><div class="ptab">
+            <ChoiceRow k="xm" name="軸" sub="X-Y: 横に CH1、縦に CH2。M-S: 45° 回し、L だけの音を左上、R だけの音を右上、モノラルの音を縦の線に描く" choices={[['xy', 'X-Y'], ['ms', 'M-S']]} value="xy" />
+            <ChoiceRow k="xr" name="表示範囲" sub="中心から端までの振幅（フルスケールを 1 とする）" choices={XR.map((v) => [v, `±${v}`] as const)} value={1} layout="chips" />
+            <ChoiceRow k="xl" name="描く長さ" sub="直近のこの時間の音を線でつなぐ" choices={XL.map((v) => [v, `${v * 1000} ms`] as const)} value={0.02} layout="chips" />
+            <ChoiceRow k="xp" name="残光" sub="前に描いた線を薄くしながら残す" choices={[['off', 'なし'], ['short', '短い'], ['long', '長い']]} value="short" />
+          </div></More>
         </div>
       </Panel>
     </div>

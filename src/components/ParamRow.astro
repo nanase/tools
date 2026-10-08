@@ -1,35 +1,41 @@
 ---
 /**
- * 数値入力の 1 行。値・目盛り・▲▼ の行き先はブラウザ側（lib/param.ts の ParamGroup）が入れる。
- * 補足（d.sub）は項目名の吹き出しに出す。fold なら入力欄を畳んで出す（FoldSwitch）
+ * 数値入力の 1 行: 記号 | 項目名 | 数値欄 | 単位 | ↺。数値欄そのものがスライダーで、左右にドラッグすると値の並びを移り、
+ * 押すと入力欄に変わる（下に範囲・プリセット・既定値の吹き出し）。値・地の位置・‹ › の行き先はブラウザ側
+ * （lib/param.ts の ParamGroup）が入れる。補足（d.sub）は項目名の吹き出しに出す
  */
 import type { ParamDef } from '../lib/param-def';
-import FoldSwitch from './FoldSwitch.astro';
+import RowReset from './RowReset.astro';
 
 interface Props {
   d: ParamDef;
-  fold?: boolean;
 }
-const { d, fold } = Astro.props;
+const { d } = Astro.props;
+const k = d.k;
 ---
-<div class:list={['prow', { fold, shut: fold }]} id={`p-${d.k}`}>
+<div class="prow num" id={`p-${k}`} data-nm={d.nm}>
   <div class="c-sym" aria-hidden="true" set:html={d.sym} />
-  <div class="c-name"><label class="pn" for={`in-${d.k}`}><span class="sr">{d.nm} </span>{d.name}</label><p class="desc tip" id={`t-${d.k}`} role="tooltip" hidden>{d.sub}</p>{fold && <FoldSwitch k={d.k} name={d.name} />}</div>
-  <div class="fbody" id={`fb-${d.k}`}>
-    <div class="c-val"><div class="fld">
-      <button type="button" class="stp" data-d="-1"><svg viewBox="0 0 12 8" aria-hidden="true"><path d="M6 7L1 1H11Z"/></svg><small></small></button>
-      <input id={`in-${d.k}`} type="text" inputmode={d.inputmode ?? 'text'} autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done" placeholder={d.ph} aria-describedby={`t-${d.k} u-${d.k} m-${d.k}`}>
-      <button type="button" class="stp" data-d="1"><svg viewBox="0 0 12 8" aria-hidden="true"><path d="M6 1L11 7H1Z"/></svg><small></small></button>
-    </div></div>
-    <div class="c-unit" id={`u-${d.k}`}>{d.unit}</div>
-    <div class="c-sub">
-      <p class="msg" id={`m-${d.k}`} aria-live="polite"></p>
-      {d.slider !== false && <div class="sl"><input type="range" min="0" step="1" aria-label={`${d.nm} ${d.name}`}><div class="tk" aria-hidden="true"></div></div>}
+  <div class="c-name"><span class="pn" id={`n-${k}`}><span class="sr">{d.nm} </span>{d.name}</span><p class="desc tip" id={`t-${k}`} role="tooltip" hidden>{d.sub}</p></div>
+  <div class="c-val">
+    <div class="sc" tabindex="0" role="slider" aria-labelledby={`n-${k}`} aria-describedby={`t-${k} u-${k} m-${k}`}>
+      <span class="sc-f" aria-hidden="true"></span><span class="sc-c" aria-hidden="true"></span><span class="sc-p" aria-hidden="true"></span>
+      <button type="button" class="sc-a" data-d="-1" tabindex="-1"><svg viewBox="0 0 6 10" aria-hidden="true"><path d="M5 1L1 5L5 9"/></svg></button>
+      <span class="sc-v"></span>
+      <button type="button" class="sc-a" data-d="1" tabindex="-1"><svg viewBox="0 0 6 10" aria-hidden="true"><path d="M1 1L5 5L1 9"/></svg></button>
+    </div>
+    <input class="sc-in" id={`in-${k}`} type="text" inputmode={d.inputmode ?? 'text'} autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done" placeholder={d.ph} aria-labelledby={`n-${k}`} aria-describedby={`t-${k} u-${k} r-${k}`}>
+    <div class="sc-pop" role="group" aria-labelledby={`n-${k}`}>
+      <p class="sc-rg" id={`r-${k}`}></p>
+      <p class="msg sc-m" aria-live="polite"></p>
       {d.pre.length > 0 && (
         <div class="chips" role="group" aria-label={`${d.nm} のよく使う値`}>
           {d.pre.map(([v, l, t]) => <button type="button" class="chip" data-v={v} aria-pressed="false" title={t}>{l}</button>)}
         </div>
       )}
+      <button type="button" class="sc-df"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4.5V9h4.5"/></svg><span></span></button>
     </div>
   </div>
+  <div class="c-unit" id={`u-${k}`}>{d.unit}</div>
+  <RowReset label={`${d.nm} を既定値に戻す`} />
+  <div class="c-sub"><p class="msg" id={`m-${k}`} aria-live="polite"></p></div>
 </div>

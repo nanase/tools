@@ -4,9 +4,20 @@
   .a-in{grid-area:in}.a-out{grid-area:out}.a-sch{grid-area:sch}.a-thy{grid-area:thy}
 }
 
-/* 追加欄: 入力欄 | ＋追加（数値欄の片側だけ版） */
-.fld.add{grid-template-columns:minmax(0,1fr) 48px}
-.stp svg.pl{width:10px;height:10px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
+/* 記号の列（R_min が入る幅） */
+.a-in .prow{--sw:2.2rem}
+/* 追加欄: 入力欄 | ＋追加（数値欄と同じ高さ） */
+.exf{display:grid;grid-template-columns:minmax(0,1fr) auto;height:30px;border:1px solid var(--line-2);border-radius:4px;background:var(--inset);overflow:hidden}
+.exf:focus-within{border-color:var(--focus);box-shadow:0 0 0 1px var(--focus)}
+.exf input{min-width:0;width:100%;padding:0 6px;border:0;background:none;color:var(--ink);font:700 14px/1 var(--mono);text-align:center;outline:none}
+.exf input::placeholder{color:var(--ink-3);font-weight:500;font-size:13px}
+.exa{display:inline-flex;align-items:center;gap:4px;padding:0 8px;border:0;border-left:1px solid var(--line);background:none;color:var(--ink-2);font:500 12px/1 var(--sans);cursor:pointer}
+.exa:hover{background:var(--surface);color:var(--ink)}
+.exa:focus-visible{outline-offset:-3px}
+.exa svg{width:10px;height:10px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
+.prow.dirty .exf{border-style:dashed}
+.prow.bad .exf{border-color:var(--warn);box-shadow:0 0 0 1px var(--warn)}
+@media (pointer:coarse){.exf{height:36px}}
 /* 除外した値: 押すと外れるチップ */
 .chip.xc{display:inline-flex;align-items:center;gap:6px;border-color:var(--line-2);color:var(--ink)}
 .chip.xc svg{width:9px;height:9px;fill:none;stroke:var(--ink-3);stroke-width:1.8;stroke-linecap:round}

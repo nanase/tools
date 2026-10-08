@@ -462,8 +462,13 @@ function syncVoice(): void {
     o = voicing[s.id] ?? {},
     reed = s.kind === 'reed';
   txt('#vo-aux', s.name);
-  P1.set('scale', o.scale ?? (s.kind === 'flue' ? s.scale : 0), { silent: true });
-  P1.set('cut', o.cut ?? (s.kind === 'flue' ? s.beta : 0.25), { silent: true });
+  /* 既定値（行末の ↺ で戻す値）はストップの標準の整音 */
+  const sd = s.kind === 'flue' ? s.scale : 0,
+    cd = s.kind === 'flue' ? s.beta : 0.25;
+  P1.update('scale', { v: sd });
+  P1.update('cut', { v: cd });
+  P1.set('scale', o.scale ?? sd, { silent: true });
+  P1.set('cut', o.cut ?? cd, { silent: true });
   P1.setOff('scale', reed, 'リード管には使わない');
   P1.setOff('cut', reed, 'リード管には使わない');
   html('#v-al', s.kind === 'flue' ? plain(s.alpha, 3, true) : '—');

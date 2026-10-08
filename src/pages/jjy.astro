@@ -1,6 +1,7 @@
 ---
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import More from '../components/More.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
@@ -48,8 +49,9 @@ const related = [
           <ChoiceRow k="mode" sym="<i>~</i>" name="音の種類" sub="時刻合わせは 13.333 kHz の矩形波" choices={[['tone', '可聴音'], ['sync', '時刻合わせ']]} value="tone" msg>
             <button slot="help" type="button" class="qbtn" id="syncBtn" aria-expanded="false" aria-controls="syncTip" aria-label="時刻合わせのやりかた" title="時刻合わせのやりかた">?</button>
           </ChoiceRow>
-          {PARAMS.map((d) => <ParamRow d={d} fold={d.k === 'f'} />)}
+          {PARAMS.filter((d) => d.k !== 'f').map((d) => <ParamRow d={d} />)}
         </div>
+        <More id="g-snd"><div class="ptab">{PARAMS.filter((d) => d.k === 'f').map((d) => <ParamRow d={d} />)}</div></More>
         <p class="desc" id="syncTip" role="tooltip" hidden>スピーカーかイヤホンをつなぎ、「時刻合わせ」を選んで再生します。配線の近くに電波時計を置くと受信が始まります。13.333 kHz の矩形波の第 3 高調波（40 kHz）を使うため、サウンドデバイスのローパスフィルタで 40 kHz が出ず、合わせられない場合があります。時刻合わせによって生じた問題について責任は負いかねます。</p>
       </Panel>
     </div>

@@ -1,6 +1,7 @@
 ---
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import More from '../components/More.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
@@ -30,7 +31,8 @@ const related = TOOLS.filter((t) => !t.s && t.id !== 'biquad');
         <div slot="aux" class="seg ptype" id="p-type" role="group" aria-label="フィルタの種類">
           {TYPES.map((t) => <button type="button" data-v={t.v} aria-pressed={t.v === t0.v ? 'true' : 'false'} title={t.t}>{t.ab}</button>)}
         </div>
-        <div class="ptab">{row(['fc', 'q', 'g', 'fs']).map((d) => <ParamRow d={d} fold={d.k === 'g' || d.k === 'fs'} />)}</div>
+        <div class="ptab">{row(['fc', 'q']).map((d) => <ParamRow d={d} />)}</div>
+        <More id="g-in"><div class="ptab">{row(['g', 'fs']).map((d) => <ParamRow d={d} />)}</div></More>
       </Panel>
 
       <Panel hid="hd-snd" title="試聴" class="a-snd">
@@ -70,7 +72,7 @@ const related = TOOLS.filter((t) => !t.s && t.id !== 'biquad');
           </svg>
         </div>
         <div class="sbar rdbar"><span class="stag rd" id="fr-rd"></span></div>
-        <div class="ana2">{row(['n', 'bot']).map((d) => <div class="ptab"><ParamRow d={d} fold /></div>)}</div>
+        <More id="g-fr" title="表示の設定"><div class="ana2">{row(['n', 'bot']).map((d) => <div class="ptab"><ParamRow d={d} /></div>)}</div></More>
       </Panel>
 
       <Panel hid="hd-imp" title="インパルス応答" class="a-imp">
@@ -90,9 +92,9 @@ const related = TOOLS.filter((t) => !t.s && t.id !== 'biquad');
           </svg>
         </div>
         <div class="sbar rdbar"><span class="stag rd" id="im-rd"></span></div>
-        <div class="ptab ana">
-          <ChoiceRow k="len" sym="<i>L</i>" nm="L" name="表示長" sub="インパルス応答のグラフの 8 div に入れるサンプル数（解析長 N まで）" choices={LENS.map((v) => [v, String(v)] as const)} value={L0} layout="chips" wide msg fold />
-        </div>
+        <More id="g-imp" title="表示の設定"><div class="ptab">
+          <ChoiceRow k="len" sym="<i>L</i>" nm="L" name="表示長" sub="インパルス応答のグラフの 8 div に入れるサンプル数（解析長 N まで）" choices={LENS.map((v) => [v, String(v)] as const)} value={L0} layout="chips" msg />
+        </div></More>
       </Panel>
     </div>
 
@@ -107,7 +109,7 @@ const related = TOOLS.filter((t) => !t.s && t.id !== 'biquad');
         <div class="m"><dt>最小振幅の周波数</dt><dd id="o-minf"></dd></div>
         <div class="m o2"><dt>解析長 <i>N</i></dt><dd><span id="o-n"></span><span class="m-sub" id="o-df"></span></dd></div>
       </dl>
-      <div class="ptab ana">{row(['np']).map((d) => <ParamRow d={d} fold />)}</div>
+      <More id="g-out" title="精密計算の設定"><div class="ptab">{row(['np']).map((d) => <ParamRow d={d} />)}</div></More>
     </Panel>
 
     <Panel hid="hd-coef" title="ブロック図と係数" class="a-coef">

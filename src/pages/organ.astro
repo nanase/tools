@@ -1,6 +1,7 @@
 ---
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import More from '../components/More.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
@@ -87,14 +88,14 @@ const COUPLERS = [
           </div>
         </div>
       </div>
-      <div class="ana2">
+      <More id="g-pp" title="表示の設定"><div class="ana2">
         <div class="ptab">
-          <ChoiceRow k="ex" name="振幅の強調" sub="管の中の音圧の分布を描く幅の倍率" choices={EXAG.map((v) => [v, `×${v}`] as const)} value={1} fold />
+          <ChoiceRow k="ex" name="振幅の強調" sub="管の中の音圧の分布を描く幅の倍率" choices={EXAG.map((v) => [v, `×${v}`] as const)} value={1} />
         </div>
         <div class="ptab" id="sl-row" hidden>
-          <ChoiceRow k="sl" name="スローの速さ" sub="振動を何分の 1 の速さで描くか" choices={SLOW.map((v) => [v, `1/${v}`] as const)} value={50} fold />
+          <ChoiceRow k="sl" name="スローの速さ" sub="振動を何分の 1 の速さで描くか" choices={SLOW.map((v) => [v, `1/${v}`] as const)} value={50} />
         </div>
-      </div>
+      </div></More>
     </Panel>
 
     <div class="col c1">
@@ -127,7 +128,7 @@ const COUPLERS = [
           <ParamRow d={WIND} />
           <ChoiceRow k="trem" name="トレモラント" sub="風箱の圧力を周期的に揺らして、音に揺れを付ける装置" choices={[['off', 'なし'], ['on', 'あり']]} value="off" />
           <ChoiceRow k="sag" name="風の揺れ" sub="多くの管が鳴ると、送風が追いつかずに風箱の圧力が少し下がる。安定なら下がらない" choices={[['0', '安定'], ['1', '柔らかい']]} value="1" />
-          <ChoiceRow k="temp" name="調律法" sub="平均律と、バロック時代の不等分の調律。管の長さを変えて合わせる" choices={TEMPERAMENTS.map((t) => [t.v, t.name] as const)} value="equal" layout="chips" wide />
+          <ChoiceRow k="temp" name="調律法" sub="平均律と、バロック時代の不等分の調律。管の長さを変えて合わせる" choices={TEMPERAMENTS.map((t) => [t.v, t.name] as const)} value="equal" layout="chips" />
           <ChoiceRow k="a4" name="基準の高さ" sub="A4 の周波数" choices={A4S.map((v) => [v, `${v} Hz`] as const)} value={440} />
         </div>
       </Panel>
@@ -150,7 +151,7 @@ const COUPLERS = [
 
       <Panel hid="hd-room" title="残響" class="a-room">
         <div class="ptab">
-          <ChoiceRow k="room" name="部屋" sub="響きを付ける部屋。寸法と吸音率から残響時間を求める（再生の音だけに付け、音の波形と計算結果には含めない）" choices={ROOMS.map((r) => [r.v, r.name, r.v === 'off' ? '残響なし' : `${r.dim.join(' × ')} m、平均吸音率 ${r.a}`] as const)} value="church" layout="chips" wide />
+          <ChoiceRow k="room" name="部屋" sub="響きを付ける部屋。寸法と吸音率から残響時間を求める（再生の音だけに付け、音の波形と計算結果には含めない）" choices={ROOMS.map((r) => [r.v, r.name, r.v === 'off' ? '残響なし' : `${r.dim.join(' × ')} m、平均吸音率 ${r.a}`] as const)} value="church" layout="chips" />
           <ParamRow d={DIST} />
         </div>
         <dl class="metrics rmet">
@@ -179,7 +180,7 @@ const COUPLERS = [
             </svg>
           </div>
           <div class="sbar rdbar"><span class="stag rd" id="w-rd"></span></div>
-          <div class="ptab ana"><ChoiceRow k="span" name="表示する長さ" sub="弁を開いてからの時間" choices={SPANS.map((v) => [v, v < 1 ? `${v * 1000} ms` : `${v} s`] as const)} value={0.2} fold /></div>
+          <More id="g-yt" title="表示の設定"><div class="ptab"><ChoiceRow k="span" name="表示する長さ" sub="弁を開いてからの時間" choices={SPANS.map((v) => [v, v < 1 ? `${v * 1000} ms` : `${v} s`] as const)} value={0.2} /></div></More>
         </div>
         <div id="v-sp" hidden>
           <div class="sbar">
@@ -197,7 +198,7 @@ const COUPLERS = [
             </svg>
           </div>
           <div class="sbar rdbar"><span class="stag rd" id="s-rd"></span></div>
-          <div class="ptab ana"><ChoiceRow k="fmax" name="横軸の範囲" sub="スペクトラムの右端の周波数" choices={FMAX.map((v) => [v, `${v / 1000} kHz`] as const)} value={5000} fold /></div>
+          <More id="g-sp" title="表示の設定"><div class="ptab"><ChoiceRow k="fmax" name="横軸の範囲" sub="スペクトラムの右端の周波数" choices={FMAX.map((v) => [v, `${v / 1000} kHz`] as const)} value={5000} /></div></More>
         </div>
       </Collapsible>
 
