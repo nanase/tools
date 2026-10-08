@@ -1,6 +1,7 @@
 ---
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import More from '../components/More.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
@@ -8,6 +9,7 @@ import RelatedTools from '../components/RelatedTools.astro';
 import Scope from '../components/Scope.astro';
 import { order, TOOLS } from '../data/tools';
 import SiteLayout from '../layouts/SiteLayout.astro';
+import type { ParamDef } from '../lib/param-def';
 import { gridSvg } from '../lib/scope';
 import '../tools/pendulum/style.css';
 import {
@@ -27,17 +29,19 @@ import {
 import Theory from '../tools/pendulum/Theory.astro';
 
 const name = '倒立振子';
-/* 同じカテゴリの後ろに、ほかのカテゴリの公開中のツールを並べる */
+/* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
 const CAT = '制御';
 const related = [
   ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'pendulum')),
   ...TOOLS.filter((t) => t.c !== CAT && !t.s),
 ];
-const row = (k: string) => {
-  const d = [...SWING].find((x) => x.k === k);
-  if (!d) throw new Error(k);
-  return d;
-};
+/** 定義の一覧から、キーの順に行を取り出す */
+const pick = (L: readonly ParamDef[], ks: readonly string[]) =>
+  ks.map((k) => {
+    const d = L.find((x) => x.k === k);
+    if (!d) throw new Error(k);
+    return d;
+  });
 ---
 <SiteLayout title={name} tool={{ id: 'pendulum', name }} description="レールの上を動く台車に立てた振子を、PID・極配置・LQR の制御で倒れないように支えます。エネルギー法の振り上げ、制御周期・エンコーダの分解能・速度の推定・入力の飽和も再現します。" note="振子と台車を剛体とし、モータの巻線のインダクタンスと歯車のがたを無視した模型による参考値です。">
   <PageTitle title={name}>レールの上を動く台車に立てた振子（倒立振子）を、PID・極配置・LQR のいずれかの制御で倒れないように支えるシミュレーションです。真下に垂れた振子はエネルギー法で振り上げてから立てます。制御周期、エンコーダの分解能、差分からの速度の推定、モータの電圧の上限といった実機の制約も入れてあり、ゲインや装置の値を変えると、立ち方や倒れ方、開ループと閉ループの極がすぐに変わります。振子や台車を押すこともできます。</PageTitle>
@@ -65,29 +69,51 @@ const row = (k: string) => {
           <button type="button" class="tg" data-push="cart" data-dir="1" title="台車を左から押して、右へ動かす">台車 <span aria-hidden="true">→</span></button>
           <button type="button" class="tg rst-sim" id="resetSim" title="初めの状態（振り上げるなら真下、振り上げないなら初めの傾き）から始め直す">最初から</button>
         </div>
-        <div class="ana2">
-          <div class="ptab"><ChoiceRow k="spd" name="再生の速さ" sub="図と波形を何分の 1 の速さで動かすか。計算の刻みは変わらない" choices={SPEEDS.map((v) => [v, v === 1 ? '実時間' : `1/${Math.round(1 / v)}`] as const)} value={1} /></div>
-          <div class="ptab"><ParamRow d={PUSH} /></div>
-        </div>
+        <More id="g-fig" title="表示と押す強さの設定"><div class="ptab">
+          <ChoiceRow k="spd" name="再生の速さ" sub="図と波形を何分の 1 の速さで動かすか。計算の刻みは変わらない" choices={SPEEDS.map((v) => [v, v === 1 ? '実時間' : `1/${Math.round(1 / v)}`] as const)} value={1} />
+          <ParamRow d={PUSH} />
+        </div></More>
       </Panel>
 
       <Panel hid="hd-ctl" title="制御" class="a-ctl">
         <div slot="aux" class="seg" id="p-kind" role="group" aria-label="安定化の制御"><button type="button" data-v="pid" aria-pressed="false" title="角度と位置の 2 つのループの PID">PID</button><button type="button" data-v="place" aria-pressed="false" title="状態フィードバック（アッカーマンの式で極を置く）">極配置</button><button type="button" data-v="lqr" aria-pressed="true" title="状態フィードバック（リカッチ方程式で重み付きの 2 乗の和を最小にする）">LQR</button></div>
         <div class="ptab"><ChoiceRow k="swing" name="振り上げ" sub="振り上げるなら真下から始め、エネルギー法で振り上げてから安定化の制御へ切り替える（倒れたらまた振り上げる）。振り上げないなら、真上の近くで手を離したところから始め、倒れたら制御を止める" choices={[['on', '振り上げる'], ['off', '振り上げない']]} value="on" /></div>
-        <div class="ptab" id="g-lqr">{LQR.map((d) => <ParamRow d={d} />)}</div>
-        <div class="ptab" id="g-place" hidden>{PLACE.map((d) => <ParamRow d={d} />)}</div>
-        <div class="ptab" id="g-pid" hidden>{PID.map((d) => <ParamRow d={d} />)}</div>
-        <div class="ptab" id="g-swing">{['ke', 'amax', 'thsw'].map((k) => <ParamRow d={row(k)} />)}</div>
-        <div class="ptab" id="g-th0" hidden><ParamRow d={row('th0')} /></div>
+        <!-- 選んだ制御の行と、振り上げるかどうかで使う行だけを出す（client.ts の showGroups） -->
+        <div class="ptab" data-kind="lqr">{pick(LQR, ['qx', 'qt', 'r']).map((d) => <ParamRow d={d} />)}</div>
+        <div class="ptab" data-kind="place" hidden>{PLACE.map((d) => <ParamRow d={d} />)}</div>
+        <div class="ptab" data-kind="pid" hidden>{pick(PID, ['kpa', 'kda', 'kpx', 'kdx']).map((d) => <ParamRow d={d} />)}</div>
+        <div class="ptab" data-swing="off" hidden>{pick(SWING, ['th0']).map((d) => <ParamRow d={d} />)}</div>
+        <More id="g-ctl">
+          <div class="ptab" data-kind="lqr">{pick(LQR, ['qv', 'qw']).map((d) => <ParamRow d={d} />)}</div>
+          <div class="ptab" data-kind="pid" hidden>{pick(PID, ['kia', 'kix']).map((d) => <ParamRow d={d} />)}</div>
+          <div class="ptab" data-swing="on">{pick(SWING, ['ke', 'amax', 'thsw']).map((d) => <ParamRow d={d} />)}</div>
+        </More>
       </Panel>
 
       <Panel hid="hd-pl" title="振子と台車" class="a-pl">
         <div class="ptab">
-          <ChoiceRow k="pre" name="教材" sub="公開された資料にある教材の値を入れる（振子・台車・摩擦・駆動）。クーロン摩擦と計測の値は変えない" choices={PRESETS.map((p) => [p.v, p.name, p.title] as const)} value="ip02w" layout="chips" wide />
-          {PLANT.map((d) => <ParamRow d={d} />)}
+          <ChoiceRow k="pre" name="教材" sub="公開された資料にある教材の値を入れる（振子・台車・摩擦・駆動）。クーロン摩擦と計測の値は変えない" choices={PRESETS.map((p) => [p.v, p.name, p.title] as const)} value="ip02w" layout="chips" />
+          {pick(PLANT, ['m', 'l', 'M', 'rail']).map((d) => <ParamRow d={d} />)}
         </div>
+        <More id="g-pl"><div class="ptab">{pick(PLANT, ['J', 'bc', 'fc', 'bp']).map((d) => <ParamRow d={d} />)}</div></More>
       </Panel>
 
+      <Panel hid="hd-dr" title="駆動" class="a-dr">
+        <div slot="aux" class="seg" id="p-drive" role="group" aria-label="台車の駆動"><button type="button" data-v="motor" aria-pressed="true" title="DC モータの電圧で動かす（逆起電力が制動として働く）">DC モータ</button><button type="button" data-v="force" aria-pressed="false" title="上限までの力をそのまま出す駆動">力</button></div>
+        <div class="ptab">{pick(DRIVE, ['vmax', 'fmax']).map((d) => <ParamRow d={d} />)}</div>
+        <More id="g-dr"><div class="ptab">{pick(DRIVE, ['kt', 'rm', 'kg', 'rp', 'jm']).map((d) => <ParamRow d={d} />)}</div></More>
+      </Panel>
+
+      <Panel hid="hd-se" title="計測と制御周期" class="a-se">
+        <div class="ptab">
+          <ChoiceRow k="ts" name="制御周期" sub="計測して入力を決める間隔。入力は次の周期まで同じ値に保つ" choices={TS_MS.map((v) => [v, `${v} ms`] as const)} value={1} layout="chips" />
+          {pick(SENSE, ['fv']).map((d) => <ParamRow d={d} />)}
+        </div>
+        <More id="g-se"><div class="ptab">
+          <ChoiceRow k="cpr" name="角度の分解能" sub="振子の角度のエンコーダの 1 回転のカウント数（4 逓倍の後）。4096 で 1 カウント 0.088°" choices={CPRS.map((v) => [v, String(v), `1 カウント ${(360 / v).toPrecision(2)}°`] as const)} value={4096} layout="chips" />
+          {pick(SENSE, ['xres', 'nth', 'nx']).map((d) => <ParamRow d={d} />)}
+        </div></More>
+      </Panel>
     </div>
 
     <div class="col c2">
@@ -127,19 +153,6 @@ const row = (k: string) => {
             <path class="sp-ol" id="sp-ol"/>
             <path class="sp-cl" id="sp-cl"/>
           </svg>
-        </div>
-      </Panel>
-
-      <Panel hid="hd-dr" title="駆動" class="a-dr">
-        <div slot="aux" class="seg" id="p-drive" role="group" aria-label="台車の駆動"><button type="button" data-v="motor" aria-pressed="true" title="DC モータの電圧で動かす（逆起電力が制動として働く）">DC モータ</button><button type="button" data-v="force" aria-pressed="false" title="上限までの力をそのまま出す駆動">力</button></div>
-        <div class="ptab">{DRIVE.map((d) => <ParamRow d={d} />)}</div>
-      </Panel>
-
-      <Panel hid="hd-se" title="計測と制御周期" class="a-se">
-        <div class="ptab">
-          <ChoiceRow k="ts" name="制御周期" sub="計測して入力を決める間隔。入力は次の周期まで同じ値に保つ" choices={TS_MS.map((v) => [v, `${v} ms`] as const)} value={1} layout="chips" wide />
-          <ChoiceRow k="cpr" name="角度の分解能" sub="振子の角度のエンコーダの 1 回転のカウント数（4 逓倍の後）。4096 で 1 カウント 0.088°" choices={CPRS.map((v) => [v, String(v), `1 カウント ${(360 / v).toPrecision(2)}°`] as const)} value={4096} layout="chips" wide />
-          {SENSE.map((d) => <ParamRow d={d} />)}
         </div>
       </Panel>
     </div>

@@ -1,7 +1,7 @@
 /* 倒立振子のページだけのスタイル（共通は src/styles/site.css） */
 
 /* 枠の並び。スマホは 台車と振子 → 応答 → 制御 → 計算結果 → 極 → 振子と台車 → 駆動 → 計測と制御周期 → 式。
-   PC は左の列に 台車と振子・制御・振子と台車、右の列に 応答・計算結果・極・駆動・計測、その下に式（全幅） */
+   PC は左の列に 台車と振子と入力の枠（制御・振子と台車・駆動・計測）、右の列に 応答・計算結果・極、その下に式（全幅） */
 .a-fig{order:1}.a-sc{order:2}.a-ctl{order:3}.a-out{order:4}.a-pole{order:5}.a-pl{order:6}.a-dr{order:7}.a-se{order:8}.a-thy{order:9}
 @media (min-width:1000px){
   .tgrid{grid-template-columns:minmax(0,7fr) minmax(0,5fr);grid-template-areas:"c1 c2" "thy thy";align-items:start}
@@ -11,18 +11,21 @@
 /* 枠の右上のボタン（LED と文字） */
 #runBtn{display:inline-flex;align-items:center;gap:7px}
 
-/* パラメータ表: 単位の列を広く（N·s/m・V/(rad·s) など） */
-.prow{grid-template-columns:2.2rem minmax(0,1fr) 11rem 4.6rem}
-.c-unit{white-space:nowrap;font-size:13px}
+/* 記号と単位の列の幅: 枠の中でそろえ、長い記号（Vmax・amax・KPθ など）と長い単位（V/(rad·s)・kg·cm² など）が入る幅にする。
+   制御の枠は選んだ制御で変わる（client.ts の showGroups が枠に data-ctl を付ける）。狭い枠では、そのぶん数値欄を詰めて
+   項目名の幅を残す */
+.a-ctl .prow{--sw:2rem;--uw:2.6rem}
+.a-ctl[data-ctl="pid"] .prow{--uw:4.6rem}
+.a-pl .prow{--uw:3.2rem}
+.a-dr .prow{--sw:2.1rem;--uw:3.2rem}
 @container (max-width:400px){
-  .prow{grid-template-columns:1.9rem minmax(0,1fr) 4.6rem}
+  .a-ctl .prow{--fw:124px}
+  .a-ctl[data-ctl="pid"] .prow{--fw:92px}
+  .a-pl .prow{--fw:124px}
+  .a-dr .prow{--fw:112px}
 }
-/* 制御の枠: 表示を切り替える行のまとまりの間に線 */
-.a-ctl .ptab+.ptab,.a-pl .ptab+.ptab{margin-top:10px;border-top:1px solid var(--line)}
-.a-ctl .ptab+.ptab .prow:first-child{padding-top:12px}
-
-/* 図の下の設定（図の枠が区切りになるので、上の線は引かない） */
-.a-fig .ana2{border-top:0;margin-top:6px}
+/* 制御の枠: 出している行のまとまりの間に線 */
+.a-ctl .ptab:not([hidden])~.ptab:not([hidden]){border-top:1px solid var(--line)}
 
 /* 状態の表示 */
 .sbar i.v{font-family:var(--math);font-style:italic;font-size:1.1em}

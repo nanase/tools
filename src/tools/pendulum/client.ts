@@ -7,9 +7,8 @@ import { $, $$ } from '../../lib/dom';
 import { fmt, fmtR, minus, plain, ro } from '../../lib/format';
 import { RM } from '../../lib/motion';
 import { ParamGroup } from '../../lib/param';
-import type { Unit } from '../../lib/parse';
 import { DV, ScopeView, SH, SW } from '../../lib/scope';
-import { store } from '../../lib/store';
+import { forget, store } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
 import { BAND_HOLD, BAND_TH, BAND_X, type Ctrl, type EvKind, type Kind, REC_N, type Sense, Sim } from './control';
 import { Figure, type Target } from './fig';
@@ -130,14 +129,16 @@ const isMotor = () => driveCh.value === 'motor';
 /** 入力の単位（電圧か力） */
 const uU = () => (isMotor() ? 'V' : 'N');
 
+/** 選んだ制御の行と、振り上げるかどうかで使う行だけを出す。「その他」は中に出す行がなければ隠す */
 function showGroups(): void {
   const k = kindCh.value,
-    sw = swingCh.value === 'on';
-  $('#g-lqr').hidden = k !== 'lqr';
-  $('#g-place').hidden = k !== 'place';
-  $('#g-pid').hidden = k !== 'pid';
-  $('#g-swing').hidden = !sw;
-  $('#g-th0').hidden = sw;
+    sw = swingCh.value;
+  /* 単位の列の幅を、選んだ制御の単位に合わせる（style.css） */
+  $('.a-ctl').dataset.ctl = k;
+  for (const el of $$('.a-ctl [data-kind]')) el.hidden = el.dataset.kind !== k;
+  for (const el of $$('.a-ctl [data-swing]')) el.hidden = el.dataset.swing !== sw;
+  const more = $('#g-ctl');
+  more.hidden = $$('.ptab', more).every((el) => el.hidden);
 }
 
 /* ---------- 図 ---------- */
@@ -177,12 +178,13 @@ function applySense(): void {
   sim?.setSense(sense());
 }
 function applyDrive(): void {
-  const motor = isMotor(),
-    u = uU();
+  const motor = isMotor();
   for (const k of ['vmax', 'kt', 'rm', 'kg', 'rp', 'jm'] as DriveKey[])
     P.setOff(k, !motor, motor ? '' : '力で駆動するときは使いません');
   P.setOff('fmax', motor, motor ? 'DC モータで駆動するときは使いません' : '');
-  for (const k of Object.keys(PID_UNITS) as PidKey[]) P.update(k, { unit: PID_UNITS[k].replace('{u}', u) as Unit });
+  /* 「その他」はモータと歯車の行だけなので、力で駆動する間は隠す */
+  $('#g-dr').hidden = !motor;
+  for (const k of Object.keys(PID_UNITS) as PidKey[]) P.update(k, { unit: PID_UNITS[k][driveCh.value] });
   $('#sc2-ch2').hidden = !motor;
   $('#sc2 .t2').setAttribute('d', '');
   applyPlant();
@@ -193,7 +195,9 @@ function applyPreset(v: string): void {
   for (const [k, x] of Object.entries(p.vals)) P.set(k, x, { silent: true });
   V = P.values();
   driveCh.set(p.drive);
-  store('c:p-drive', p.drive);
+  /* 押して選んだときと同じく、既定の駆動なら保存から消す */
+  if (driveCh.isMod()) store('c:p-drive', p.drive);
+  else forget('c:p-drive');
   applyDrive();
   reset();
 }
