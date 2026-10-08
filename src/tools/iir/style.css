@@ -15,6 +15,9 @@
 .iin[data-mode="order"][data-kind="butter"] #p-ap,.iin[data-mode="order"][data-kind="bessel"] #p-ap,.iin[data-mode="order"][data-kind="cheby2"] #p-ap,
 .iin[data-mode="order"][data-kind="butter"] #p-as,.iin[data-mode="order"][data-kind="bessel"] #p-as,.iin[data-mode="order"][data-kind="cheby1"] #p-as{display:none}
 
+/* 周波数特性の表示の設定: 記号の列（A_min が入る幅） */
+.a-fr .prow{--sw:2rem}
+
 /* 枠の右上のボタン（再生の LED） */
 .seg button{display:inline-flex;align-items:center;gap:7px}
 @media (max-width:479px){.presp button{padding:0 6px}}

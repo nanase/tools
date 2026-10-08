@@ -126,6 +126,44 @@ export type Key = 'n' | 'f1' | 'f2' | 's1' | 's2' | 'ap' | 'as' | 'fs' | 'vol' |
 export type EdgeKey = 'f1' | 'f2' | 's1' | 's2';
 export const EDGES: readonly EdgeKey[] = ['f1', 'f2', 's1', 's2'];
 
+/** 仕様から次数を求めるときの端の並び（小さい順）と、f1 に対する比 */
+const SPEC_CHAIN: Readonly<Record<Resp, readonly EdgeKey[]>> = {
+  lp: ['f1', 's1'],
+  hp: ['s1', 'f1'],
+  bp: ['s1', 'f1', 'f2', 's2'],
+  bs: ['f1', 's1', 's2', 'f2'],
+};
+const SPEC_RATIO: Readonly<Record<Resp, readonly number[]>> = {
+  lp: [1, 2],
+  hp: [0.5, 1],
+  bp: [0.5, 1, 2, 4],
+  bs: [1, 1.6, 2.5, 4],
+};
+/** 端の周波数の行の並び（小さい順）。次数を指定するときは基準の端だけ */
+export function edgeChain(resp: Resp, mode: Mode): readonly EdgeKey[] {
+  if (mode === 'order') return resp === 'bp' || resp === 'bs' ? ['f1', 'f2'] : ['f1'];
+  return SPEC_CHAIN[resp];
+}
+/** 並び（edgeChain）の端の、f1 に対する比。並びが崩れたときに作り直す値と、既定値に使う */
+export function edgeRatios(resp: Resp, mode: Mode): readonly number[] {
+  if (mode === 'order') return resp === 'bp' || resp === 'bs' ? [1, 2] : [1];
+  return SPEC_RATIO[resp];
+}
+/** LPF・次数を指定のときの端の周波数 [Hz] */
+const EDGE0: Readonly<Record<EdgeKey, number>> = { f1: 1000, f2: 2000, s1: 2000, s2: 4000 };
+/**
+ * 端の周波数の行の既定値（行末の ↺ で戻す値）。応答と設計の方法で並びが変わるので、f1 の既定値と比（edgeRatios）で決める。
+ * 並びにない端は LPF・次数を指定のときの値
+ */
+export function edgeDefaults(resp: Resp, mode: Mode): Record<EdgeKey, number> {
+  const d = { ...EDGE0 },
+    r = edgeRatios(resp, mode);
+  edgeChain(resp, mode).forEach((k, i) => {
+    d[k] = EDGE0.f1 * r[i];
+  });
+  return d;
+}
+
 /** 時間応答の表示長 L の選択肢（グラフの 8 div に入れるサンプル数） */
 export const LENS = pow2List(3, 12);
 export const L0 = 128;
@@ -153,13 +191,6 @@ const freqDef = (k: EdgeKey, v: number): Def => ({
   sig: 5,
   format: HZ,
   pre: [],
-  tk: [
-    [1, '1'],
-    [10, '10'],
-    [100, '100'],
-    [1e3, '1k'],
-    [1e4, '10k'],
-  ],
 });
 
 /* ---------- 項目名（近似・応答・設計の方法で変わる） ---------- */
@@ -218,7 +249,7 @@ const DEFS: Def[] = [
     max: NMAX_UI,
     v: 4,
     ph: '例 6',
-    lin: { step: 1, big: 5, major: 5, minor: 1 },
+    lin: { step: 1, big: 5 },
     notation: 'plain',
     fix: (v) => {
       const r = Math.round(v),
@@ -233,19 +264,12 @@ const DEFS: Def[] = [
       [8, '8'],
       [10, '10'],
     ],
-    tk: [
-      [1, '1'],
-      [5, '5'],
-      [10, '10'],
-      [15, '15'],
-      [20, '20'],
-    ],
     inputmode: 'decimal',
   },
-  freqDef('f1', 1000),
-  freqDef('f2', 2000),
-  freqDef('s1', 2000),
-  freqDef('s2', 4000),
+  freqDef('f1', EDGE0.f1),
+  freqDef('f2', EDGE0.f2),
+  freqDef('s1', EDGE0.s1),
+  freqDef('s2', EDGE0.s2),
   {
     k: 'ap',
     nm: 'Ap',
@@ -267,13 +291,6 @@ const DEFS: Def[] = [
       [0.5, '0.5'],
       [1, '1'],
       [3, '3'],
-    ],
-    tk: [
-      [0.001, '0.001'],
-      [0.01, '0.01'],
-      [0.1, '0.1'],
-      [1, '1'],
-      [10, '10'],
     ],
   },
   {
@@ -297,12 +314,6 @@ const DEFS: Def[] = [
       [60, '60'],
       [80, '80'],
       [100, '100'],
-    ],
-    tk: [
-      [20, '20'],
-      [50, '50'],
-      [100, '100'],
-      [150, '150'],
     ],
   },
   {
@@ -328,12 +339,6 @@ const DEFS: Def[] = [
       [48e3, '48k'],
       [96e3, '96k'],
     ],
-    tk: [
-      [1e3, '1k'],
-      [1e4, '10k'],
-      [48e3, '48k'],
-      [192e3, '192k'],
-    ],
   },
   {
     k: 'vol',
@@ -352,12 +357,6 @@ const DEFS: Def[] = [
     format: DB,
     fix: clamp(-80, 30, dbT),
     pre: [],
-    tk: [
-      [-80, '−80'],
-      [-40, '−40'],
-      [0, '0'],
-      [30, '+30'],
-    ],
   },
   {
     k: 'bot',
@@ -376,14 +375,8 @@ const DEFS: Def[] = [
     format: DB,
     fix: clamp(-200, -10, dbT),
     pre: [],
-    tk: [
-      [-200, '−200'],
-      [-150, '−150'],
-      [-100, '−100'],
-      [-50, '−50'],
-    ],
   },
 ];
 
-/** ▲▼ の読み上げは「N を 1 つ上の …」（並びの行の既定に空白を足す） */
+/** ‹ › の読み上げは「N を 1 つ上の …」（並びの行の既定に空白を足す） */
 export const PARAMS: Def[] = DEFS.map((d) => ({ stepLabel: ' ', ...d }));

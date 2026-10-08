@@ -43,8 +43,11 @@ import {
   type Cmp,
   EDGES,
   type EdgeKey,
+  edgeChain,
+  edgeDefaults,
   edgeLabel,
   edgePatch,
+  edgeRatios,
   FMIN,
   hzT,
   type Key,
@@ -169,24 +172,7 @@ let g: ParamGroup<Key> | null = null;
 const val = (k: Key): number => g?.get(k) ?? NaN;
 
 /** 端の周波数の並び（小さい順）。次数を指定するときは基準の端だけ */
-function chain(): EdgeKey[] {
-  if (mode === 'order') return isBand(resp) ? ['f1', 'f2'] : ['f1'];
-  switch (resp) {
-    case 'lp':
-      return ['f1', 's1'];
-    case 'hp':
-      return ['s1', 'f1'];
-    case 'bp':
-      return ['s1', 'f1', 'f2', 's2'];
-    case 'bs':
-      return ['f1', 's1', 's2', 'f2'];
-  }
-}
-/** 並びが崩れたときに使う、f1 に対する比 */
-function template(): number[] {
-  if (mode === 'order') return isBand(resp) ? [1, 2] : [1];
-  return { lp: [1, 2], hp: [0.5, 1], bp: [0.5, 1, 2, 4], bs: [1, 1.6, 2.5, 4] }[resp];
-}
+const chain = () => edgeChain(resp, mode);
 function chainValid(ks: readonly EdgeKey[], fs: number): boolean {
   let prev = 0;
   for (const k of ks) {
@@ -204,7 +190,7 @@ function reconcile(): void {
   const ks = chain(),
     fs = val('fs');
   if (chainValid(ks, fs)) return;
-  const t = template(),
+  const t = edgeRatios(resp, mode),
     base = val('f1') / t[ks.indexOf('f1')];
   let vs = t.map((r) => base * r);
   const top = vs[vs.length - 1];
@@ -218,6 +204,21 @@ function reconcile(): void {
     first ??= k;
   });
   if (first) G.note(first, '端の並びに合わせて、周波数を直しました', 'er');
+}
+
+/**
+ * 端の行の既定値（行末の ↺ で戻す値）を、応答・設計の方法の並びに合わせる。保存は既定値との差で持つので、
+ * 既定値を変えた行は保存も合わせ直す（開き直したときは、戻した選択肢の並びの既定値から始める）
+ */
+function edgeDefaultsSync(): void {
+  const G = g;
+  if (!G) return;
+  const d0 = edgeDefaults(resp, mode);
+  for (const k of EDGES) {
+    if (same(G.def(k).v, d0[k])) continue;
+    G.update(k, { v: d0[k] });
+    G.set(k, G.get(k), { silent: true });
+  }
 }
 
 /** 項目名の短い記号（メッセージ用） */
@@ -251,6 +252,7 @@ function applyState(): void {
   box.dataset.kind = kind;
   box.toggleAttribute('data-band', isBand(resp));
   g?.update('ap', apLabel(kind));
+  edgeDefaultsSync();
   reconcile();
   patchEdges();
   /* インパルス不変法は高域で減衰しない HPF・BSF には使えない */
@@ -817,15 +819,21 @@ $('#playBtn').addEventListener('click', () => {
 });
 
 /* ---------- 入力 ---------- */
-g = new ParamGroup<Key>(PARAMS, (_, k) => {
-  if (!k) return;
-  if (k === 'vol') setVol();
-  else if (k === 'bot') drawFr();
-  else {
-    if ((EDGES as readonly string[]).includes(k)) patchEdges();
-    schedule();
-  }
-});
+/* 端の行の既定値は、保存から戻した応答・設計の方法のもの（保存は既定値との差で持つ） */
+const isEdge = (k: string): k is EdgeKey => (EDGES as readonly string[]).includes(k);
+const D0 = edgeDefaults(resp, mode);
+g = new ParamGroup<Key>(
+  PARAMS.map((d) => (isEdge(d.k) ? { ...d, v: D0[d.k] } : d)),
+  (_, k) => {
+    if (!k) return;
+    if (k === 'vol') setVol();
+    else if (k === 'bot') drawFr();
+    else {
+      if (isEdge(k)) patchEdges();
+      schedule();
+    }
+  },
+);
 const G = g;
 let lastFs = G.get('fs');
 /* fs を下げて端が fs/2 を越えたら、端を fs に比例させて下げる */

@@ -35,7 +35,7 @@ import {
   zRoots,
 } from '../src/tools/iir/digital';
 import { acdeR, asneR, cdeR, comp, ellipdeg, ellipK, ellipKp, sneR } from '../src/tools/iir/elliptic';
-import { edgeLabel, edgePatch, PARAMS } from '../src/tools/iir/params';
+import { edgeChain, edgeDefaults, edgeLabel, edgePatch, PARAMS, RESPS } from '../src/tools/iir/params';
 import { freqAxis, pzPlot, sRange, timePlot } from '../src/tools/iir/plot';
 import { fromRoots, isStable, roots } from '../src/tools/iir/poly';
 
@@ -460,6 +460,17 @@ describe('入力の定義', () => {
     expect(edgeLabel('f1', 'butter', 'lp', 'order').name).toBe('カットオフ周波数');
     expect(edgeLabel('f1', 'cheby2', 'lp', 'order').nm).toBe('fst');
     expect(edgeLabel('f2', 'ellip', 'bp', 'spec')).toMatchObject({ nm: 'fp2', name: '通過域端（上）' });
+  });
+
+  it('端の既定値: 応答・設計の方法ごとの並びの順になる', () => {
+    expect(edgeDefaults('hp', 'spec')).toMatchObject({ s1: 500, f1: 1000 });
+    expect(edgeDefaults('bs', 'spec')).toEqual({ f1: 1000, s1: 1600, s2: 2500, f2: 4000 });
+    for (const { v } of RESPS)
+      for (const m of ['order', 'spec'] as const) {
+        const d = edgeDefaults(v, m),
+          vs = edgeChain(v, m).map((k) => d[k]);
+        for (let i = 1; i < vs.length; i++) expect(vs[i]).toBeGreaterThan(vs[i - 1]);
+      }
   });
 
   it('次数は整数に丸める', () => {
