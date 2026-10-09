@@ -506,7 +506,15 @@ export class FluePipe {
         qy1 = ab;
         env += kE * (a * a - env);
         Qn = bH * Uj * (1 + (fast ? tanhP(x) : Math.tanh(x)));
-      } else env -= kE * env;
+      } else {
+        env -= kE * env;
+        /*
+         * ジェットがなければ変位もないので、立ち上がりの帯域通過の状態を消す。弁を閉じて U_j が 0 に近づく間は
+         * 変位が 1/U_j で大きくなり、その値のまま残すと、鳴り終わる前の管を開き直したときに帯域通過が大きく振れて、
+         * 流量が 0 と最大の間を一瞬で切り替わり、破裂音になる（ペダルの太い低音で目立った）
+         */
+        qx1 = qx2 = qy1 = qy2 = 0;
+      }
       const dps = kSf * (Qn - Q);
       Q = Qn;
       /*
