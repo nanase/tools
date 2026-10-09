@@ -103,11 +103,11 @@ export const ridge = (az: number): number =>
 
 /* ---------- 空の天体（無限遠） ---------- */
 /**
- * 空に置く天体: 方位・仰角 [°]（配置はこのツールで決めた。月は緑の柱の上、惑星はその右上に寄せる）、赤道半径 [km] と地球からの距離 [km] で決まる
+ * 空に置く天体: 方位・仰角 [°]（配置はこのツールで決めた。月は緑の柱の上、惑星は互いに離して低い空に並べる）、赤道半径 [km] と地球からの距離 [km] で決まる
  * 角半径、極の向きの回し [°]（北が上で 0、左回りが正）と、こちらから見た極の傾き（環の開き）[°]
  */
 export interface SkyBody {
-  id: 'moon' | 'jupiter' | 'saturn' | 'uranus';
+  id: 'moon' | 'venus' | 'mars' | 'jupiter' | 'saturn' | 'uranus';
   name: string;
   az: number;
   el: number;
@@ -118,14 +118,17 @@ export interface SkyBody {
   tilt: number;
 }
 /**
- * 大きさは NASA の Planetary Fact Sheet の値: 月は平均距離、惑星は地球に最も近づくとき（衝）の距離。
- * 全体を同じ向き（衝のころ、太陽を背にして満ちて見える）として、影は描かない
+ * 大きさは NASA の Planetary Fact Sheet の値: 月は平均距離、外惑星は地球に最も近づくとき（衝）の距離、
+ * 金星は最大離角のころの距離 √(1² − 0.72333²) AU = 1.0330 億 km。
+ * 全体を同じ向き（衝のころ、太陽を背にして満ちて見える）として、影と満ち欠けは描かない
  */
 export const SKY: SkyBody[] = [
+  { id: 'venus', name: '金星', az: -30, el: 12, r: 6051.8, dist: 103.3e6, rot: 0, tilt: 0 },
+  { id: 'mars', name: '火星', az: -8, el: 20, r: 3396.2, dist: 54.6e6, rot: 0, tilt: 15 },
+  { id: 'uranus', name: '天王星', az: 8, el: 17, r: 25559, dist: 2580.6e6, rot: 30, tilt: 55 },
   { id: 'moon', name: '月', az: 21, el: 8, r: 1737.4, dist: 384400, rot: 0, tilt: 0 },
-  { id: 'uranus', name: '天王星', az: 23.5, el: 13, r: 25559, dist: 2580.6e6, rot: 30, tilt: 55 },
-  { id: 'jupiter', name: '木星', az: 25.5, el: 10.5, r: 71492, dist: 588.5e6, rot: 0, tilt: 0 },
-  { id: 'saturn', name: '土星', az: 29, el: 8.2, r: 60268, dist: 1205.5e6, rot: -6, tilt: 20 },
+  { id: 'jupiter', name: '木星', az: 40, el: 14, r: 71492, dist: 588.5e6, rot: 0, tilt: 0 },
+  { id: 'saturn', name: '土星', az: 55, el: 9, r: 60268, dist: 1205.5e6, rot: -6, tilt: 20 },
 ];
 /** 天体の角半径 [rad] */
 export const angRadius = (b: SkyBody): number => Math.asin(b.r / b.dist);
@@ -161,6 +164,8 @@ const GALILEAN = [
  * 明るさは反射率（C 0.12〜0.30、B・A 0.4〜0.6、間隙 0.2〜0.4）と、環の開き 20° での光学的厚さから
  */
 const SAT = { flat: 0.09796 } as const;
+/** 火星の扁平率 */
+const MARS = { flat: 0.00589 } as const;
 const SAT_RINGS = [
   [74658, 91975, 0.14, 0.36],
   [91975, 117507, 0.99, 0.99],
@@ -173,6 +178,8 @@ const SAT_RINGS = [
  */
 const DISK = {
   moon: 0.12 / 0.83,
+  venus: 0.689 / 0.72333 ** 2 / 0.88,
+  mars: 0.17 / 1.52366 ** 2 / 0.45,
   jupiter: 0.538 / 5.2034 ** 2 / 0.74,
   saturn: 0.499 / 9.5726 ** 2 / 0.7,
   uranus: 0.488 / 19.165 ** 2 / 0.66,
@@ -436,6 +443,26 @@ vec3 uranusAt(vec2 p, vec3 bg) {
   return behind;
 }
 
+/* 金星: 模様のない淡い黄白色の雲 */
+vec3 venusAt(vec2 p) {
+  float mu = sqrt(max(1.0 - dot(p, p), 0.0));
+  return vec3(1.0, 0.97, 0.86) * ${f(DISK.venus)} * (0.8 + 0.2 * mu);
+}
+
+/* 火星: 赤茶色の地に暗い模様（大シルチスなど、見た目の近似）と北極冠。扁平率 ${MARS.flat} */
+vec3 marsAt(vec2 p) {
+  vec2 q = vec2(p.x, p.y / ${f(1 - MARS.flat)});
+  float mu = sqrt(max(1.0 - dot(q, q), 0.0));
+  vec3 c = vec3(0.86, 0.5, 0.3);
+  float dark = 0.0;
+  dark = max(dark, 1.0 - smoothstep(0.7, 1.1, length((q - vec2(0.25, 0.12)) / vec2(0.16, 0.3))));
+  dark = max(dark, 1.0 - smoothstep(0.7, 1.1, length((q - vec2(-0.2, -0.22)) / vec2(0.45, 0.12))));
+  dark = max(dark, 1.0 - smoothstep(0.7, 1.1, length((q - vec2(-0.5, 0.25)) / vec2(0.18, 0.14))));
+  c *= mix(1.0, 0.62, dark);
+  if (q.y > 0.82) c = vec3(0.95, 0.94, 0.92) * 1.6;
+  return c * ${f(DISK.mars)} * (0.75 + 0.25 * mu);
+}
+
 /* 天体の放射輝度（宇宙の背景は 0）。空の光は天体の手前の大気から来るので、呼ぶ側で足す */
 vec3 celestial(vec3 d) {
   vec3 bg = vec3(0.0);
@@ -447,6 +474,10 @@ vec3 celestial(vec3 d) {
   if (dot(p, p) < 6.0) return saturnAt(p, bg);
   p = bodyUV(d, ${byId('uranus')});
   if (dot(p, p) < 4.5) return uranusAt(p, bg);
+  p = bodyUV(d, ${byId('venus')});
+  if (dot(p, p) < 1.0) return venusAt(p);
+  p = bodyUV(d, ${byId('mars')});
+  if (dot(p, p) < 1.0) return marsAt(p);
   return bg;
 }
 

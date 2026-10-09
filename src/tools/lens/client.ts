@@ -155,15 +155,21 @@ function fit(): void {
     canvas.width = w;
     canvas.height = h;
     R?.redraw();
+    /* 縦横の比が変わると描く範囲も変わる（全画面） */
+    later();
   }
 }
 new ResizeObserver(fit).observe(lv);
 
 /** 描く範囲（センサーの上、表示の向き、mm）: 拡大したら AF の枠を中心にする */
 function view(): { x0: number; y0: number; w: number; h: number } {
-  const z = Number(zoom$.value) || 1,
-    w = SENSOR.w / z,
+  const z = Number(zoom$.value) || 1;
+  let w = SENSOR.w / z,
     h = SENSOR.h / z;
+  /* 全画面で表示の枠が 3:2 でなければ、枠を埋めるようにセンサーの端を切る */
+  const a = canvas.clientHeight ? canvas.clientWidth / canvas.clientHeight : SENSOR.w / SENSOR.h;
+  if (a < (w / h) * 0.999) w = h * a;
+  else if (a > (w / h) * 1.001) h = w / a;
   const cx = Math.max(-SENSOR.w / 2 + w / 2, Math.min(SENSOR.w / 2 - w / 2, afPt[0])),
     cy = Math.max(-SENSOR.h / 2 + h / 2, Math.min(SENSOR.h / 2 - h / 2, afPt[1]));
   return { x0: cx - w / 2, y0: cy - h / 2, w, h };
@@ -638,7 +644,7 @@ function afState(): void {
   const fs = $('#fs'),
     btn = $<HTMLButtonElement>('#lv-fs');
   /** 全画面へ移す要素: 映像、右の入力の行、左下の見取り図 */
-  const ROWS = ['#p-lens', '#p-f', '#p-N', '#p-fd', '#p-fm', '#p-bl', '#p-zm', '#p-tod', '#p-ch', '#p-df'];
+  const ROWS = ['#p-lens', '#p-f', '#p-N', '#p-fd', '#p-fm', '#p-bl', '#p-zm', '#p-tod', '#p-ch', '#p-df', '#p-gd'];
   let back: [Comment, HTMLElement][] = [],
     sy = 0;
   const move = (el: HTMLElement, to: HTMLElement) => {

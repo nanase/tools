@@ -274,6 +274,8 @@ describe('被写体', () => {
     expect(as('jupiter')).toBeCloseTo(50.1, 1);
     expect(as('saturn')).toBeCloseTo(20.6, 1);
     expect(as('uranus')).toBeCloseTo(4.09, 2);
+    expect(as('venus')).toBeCloseTo(24.2, 1);
+    expect(as('mars')).toBeCloseTo(25.7, 1);
   });
   it('天体は空にあり、どの物体にも隠れない', () => {
     for (const b of SKY) {
