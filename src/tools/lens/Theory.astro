@@ -1,37 +1,273 @@
 ---
 // 動作原理と式
+/* 本文の出典番号 */
+const rf = (...ns: number[]) => ns.map((n) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`).join('');
+/* 天体の明るさ: 幾何アルベド ÷ 太陽からの距離（au）の 2 乗 */
+const alb = (a: string, r: string) => `<math><mn>${a}</mn><mo>÷</mo><msup><mn>${r}</mn><mn>2</mn></msup></math>`;
 ---
-<p>映像は、センサーの各画素の点から、レンズの射出瞳（絞りを後ろのレンズ越しに見た像）の面の多数の点へ向けて光線を出し、レンズの面を後ろから 1 面ずつたどって物体の側へ出し、3D の被写体に当てて、当たった所の明るさを足し合わせて作ります。各面では、頂点の位置 <math><mi>z</mi></math>・曲率 <math><mi>c</mi><mo>=</mo><mn>1</mn><mo>/</mo><mi>R</mi></math> の球面との交点を求め、有効径の外や絞りの羽根の外に当たった光線は捨てます（けられ）。交点ではスネルの法則で屈折させます。光線の向き <math><mi mathvariant="bold">s</mi></math> と面の法線 <math><mi mathvariant="bold">N</mi></math> は単位ベクトルです。ピントのずれ（ボケ）、絞りの形、球面収差・コマ・非点収差・像面湾曲・歪曲・色収差・周辺光量の低下は、どれも別々に足したものではなく、この追跡の結果として現れます。</p>
+<h3>光線追跡</h3>
+<p>映像は、センサーの各画素から光線をレンズに通して 3D の被写体に当て、当たった所の明るさを足し合わせて作ります<Fragment set:html={rf(1)} />。</p>
+<ol class="flow" aria-label="映像を作る光線の流れ">
+  <li><b>センサーの画素</b><span>各画素の点から光線を出す</span></li>
+  <li><b>射出瞳の面</b><span>多数の点へ向ける</span></li>
+  <li><b>レンズの面</b><span>後ろから 1 面ずつたどる</span></li>
+  <li><b>物体の側へ出る</b></li>
+  <li><b>3D の被写体</b><span>当たった所の明るさを足し合わせる</span></li>
+</ol>
+<p>射出瞳は、絞りを後ろのレンズ越しに見た像です。</p>
+<h4>各面での計算</h4>
+<p>各面では、球面との交点を求め、交点でスネルの法則に従って屈折させます<Fragment set:html={rf(2)} />。有効径の外や絞りの羽根の外に当たった光線は捨てます（けられ）。</p>
+<dl class="syms">
+  <dt><math><mi>z</mi></math></dt><dd>面の頂点の位置</dd>
+  <dt><math><mi>c</mi><mo>=</mo><mn>1</mn><mo>/</mo><mi>R</mi></math></dt><dd>面の曲率</dd>
+  <dt><math><mi mathvariant="bold">s</mi></math></dt><dd>光線の向き。単位ベクトル</dd>
+  <dt><math><mi mathvariant="bold">N</mi></math></dt><dd>面の法線。単位ベクトル</dd>
+</dl>
 <div class="eqs">
-  <math display="block"><mi>c</mi><mrow><mo>(</mo><msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><msup><mi>y</mi><mn>2</mn></msup><mo>+</mo><msup><mi>z</mi><mn>2</mn></msup><mo>)</mo></mrow><mo>−</mo><mn>2</mn><mi>z</mi><mo>=</mo><mn>0</mn><mo>,</mo><mspace width="1em"/><msup><mi>n</mi><mo>′</mo></msup><msup><mi mathvariant="bold">s</mi><mo>′</mo></msup><mo>=</mo><mi>n</mi><mi mathvariant="bold">s</mi><mo>+</mo><mrow><mo>(</mo><msup><mi>n</mi><mo>′</mo></msup><mi>cos</mi><mo>⁡</mo><msup><mi>θ</mi><mo>′</mo></msup><mo>−</mo><mi>n</mi><mi>cos</mi><mo>⁡</mo><mi>θ</mi><mo>)</mo></mrow><mi mathvariant="bold">N</mi><mo>,</mo><mspace width="1em"/><msup><mi>n</mi><mo>′</mo></msup><mi>sin</mi><mo>⁡</mo><msup><mi>θ</mi><mo>′</mo></msup><mo>=</mo><mi>n</mi><mi>sin</mi><mo>⁡</mo><mi>θ</mi></math>
+  <math display="block"><mi>c</mi><mrow><mo>(</mo><msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><msup><mi>y</mi><mn>2</mn></msup><mo>+</mo><msup><mi>z</mi><mn>2</mn></msup><mo>)</mo></mrow><mo>−</mo><mn>2</mn><mi>z</mi><mo>=</mo><mn>0</mn></math>
+  <math display="block"><msup><mi>n</mi><mo>′</mo></msup><msup><mi mathvariant="bold">s</mi><mo>′</mo></msup><mo>=</mo><mi>n</mi><mi mathvariant="bold">s</mi><mo>+</mo><mrow><mo>(</mo><msup><mi>n</mi><mo>′</mo></msup><mi>cos</mi><mo>⁡</mo><msup><mi>θ</mi><mo>′</mo></msup><mo>−</mo><mi>n</mi><mi>cos</mi><mo>⁡</mo><mi>θ</mi><mo>)</mo></mrow><mi mathvariant="bold">N</mi></math>
+  <math display="block"><msup><mi>n</mi><mo>′</mo></msup><mi>sin</mi><mo>⁡</mo><msup><mi>θ</mi><mo>′</mo></msup><mo>=</mo><mi>n</mi><mi>sin</mi><mo>⁡</mo><mi>θ</mi></math>
 </div>
-<p>ガラスの屈折率は波長 <math><mi>λ</mi></math> で変わります。カタログの硝材は SCHOTT の Sellmeier の分散式の係数で求め、出典が屈折率 <math><msub><mi>n</mi><mi mathvariant="normal">d</mi></msub></math> とアッベ数 <math><msub><mi>ν</mi><mi mathvariant="normal">d</mi></msub></math> だけを示す硝材は、値の近いカタログの硝材 <math><msub><mi>n</mi><mtext>ref</mtext></msub></math> の分散の形を借りて <math><msub><mi>n</mi><mi mathvariant="normal">d</mi></msub></math> と <math><msub><mi>ν</mi><mi mathvariant="normal">d</mi></msub></math> を合わせた模型の硝材にします。光線ごとに 400〜700 nm の波長を 1 つ選び、その波長の屈折率で追跡して、波長に応じた重みで赤・緑・青に分けて足します。これで白と黒の境目に色のにじみ（軸上色収差と倍率色収差）が出ます。</p>
+<h4>追跡の結果として現れるもの</h4>
+<p>次のものは、どれも別々に足したものではなく、この追跡の結果として現れます。</p>
+<ul class="tl">
+  <li>ピントのずれ（ボケ）</li>
+  <li>絞りの形</li>
+  <li>球面収差・コマ・非点収差・像面湾曲・歪曲・色収差</li>
+  <li>周辺光量の低下</li>
+</ul>
+
+<h3>ガラスの分散と色</h3>
+<p>ガラスの屈折率は波長 <math><mi>λ</mi></math> で変わります。硝材によって、次のように求めます。</p>
+<ul class="tl">
+  <li><b>カタログの硝材</b>: SCHOTT の Sellmeier の分散式の係数で求める<Fragment set:html={rf(3)} /></li>
+  <li><b>出典が屈折率 <math><msub><mi>n</mi><mi mathvariant="normal">d</mi></msub></math> とアッベ数 <math><msub><mi>ν</mi><mi mathvariant="normal">d</mi></msub></math> だけを示す硝材</b>: 値の近いカタログの硝材 <math><msub><mi>n</mi><mtext>ref</mtext></msub></math> の分散の形を借り、<math><msub><mi>n</mi><mi mathvariant="normal">d</mi></msub></math> と <math><msub><mi>ν</mi><mi mathvariant="normal">d</mi></msub></math> を合わせた模型の硝材にする</li>
+</ul>
 <div class="eqs">
-  <math display="block"><msup><mi>n</mi><mn>2</mn></msup><mo stretchy="false">(</mo><mi>λ</mi><mo stretchy="false">)</mo><mo>−</mo><mn>1</mn><mo>=</mo><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mn>3</mn></munderover><mfrac><mrow><msub><mi>B</mi><mi>i</mi></msub><msup><mi>λ</mi><mn>2</mn></msup></mrow><mrow><msup><mi>λ</mi><mn>2</mn></msup><mo>−</mo><msub><mi>C</mi><mi>i</mi></msub></mrow></mfrac><mo>,</mo><mspace width="1em"/><msub><mi>ν</mi><mi mathvariant="normal">d</mi></msub><mo>=</mo><mfrac><mrow><msub><mi>n</mi><mi mathvariant="normal">d</mi></msub><mo>−</mo><mn>1</mn></mrow><mrow><msub><mi>n</mi><mi mathvariant="normal">F</mi></msub><mo>−</mo><msub><mi>n</mi><mi mathvariant="normal">C</mi></msub></mrow></mfrac><mo>,</mo><mspace width="1em"/><mi>n</mi><mo stretchy="false">(</mo><mi>λ</mi><mo stretchy="false">)</mo><mo>=</mo><msub><mi>n</mi><mi mathvariant="normal">d</mi></msub><mo>+</mo><mi>k</mi><mrow><mo>(</mo><msub><mi>n</mi><mtext>ref</mtext></msub><mo stretchy="false">(</mo><mi>λ</mi><mo stretchy="false">)</mo><mo>−</mo><msub><mi>n</mi><mrow><mtext>ref</mtext><mo>,</mo><mi mathvariant="normal">d</mi></mrow></msub><mo>)</mo></mrow></math>
+  <math display="block"><msup><mi>n</mi><mn>2</mn></msup><mo stretchy="false">(</mo><mi>λ</mi><mo stretchy="false">)</mo><mo>−</mo><mn>1</mn><mo>=</mo><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mn>3</mn></munderover><mfrac><mrow><msub><mi>B</mi><mi>i</mi></msub><msup><mi>λ</mi><mn>2</mn></msup></mrow><mrow><msup><mi>λ</mi><mn>2</mn></msup><mo>−</mo><msub><mi>C</mi><mi>i</mi></msub></mrow></mfrac></math>
+  <math display="block"><msub><mi>ν</mi><mi mathvariant="normal">d</mi></msub><mo>=</mo><mfrac><mrow><msub><mi>n</mi><mi mathvariant="normal">d</mi></msub><mo>−</mo><mn>1</mn></mrow><mrow><msub><mi>n</mi><mi mathvariant="normal">F</mi></msub><mo>−</mo><msub><mi>n</mi><mi mathvariant="normal">C</mi></msub></mrow></mfrac></math>
+  <math display="block"><mi>n</mi><mo stretchy="false">(</mo><mi>λ</mi><mo stretchy="false">)</mo><mo>=</mo><msub><mi>n</mi><mi mathvariant="normal">d</mi></msub><mo>+</mo><mi>k</mi><mrow><mo>(</mo><msub><mi>n</mi><mtext>ref</mtext></msub><mo stretchy="false">(</mo><mi>λ</mi><mo stretchy="false">)</mo><mo>−</mo><msub><mi>n</mi><mrow><mtext>ref</mtext><mo>,</mo><mi mathvariant="normal">d</mi></mrow></msub><mo>)</mo></mrow></math>
 </div>
-<p>画素の明るさ（照度 <math><mi>E</mi></math>）は、光線が来る向きの立体角について放射輝度 <math><mi>L</mi></math> を積分したものです。射出瞳の面（センサーから距離 <math><mi>d</mi></math>）の上に一様に点を置くと、立体角の重みは <math><msup><mi>cos</mi><mn>3</mn></msup><mi>θ</mi><mo>/</mo><msup><mi>d</mi><mn>2</mn></msup></math> になり、受ける面の傾きを掛けて <math><msup><mi>cos</mi><mn>4</mn></msup><mi>θ</mi></math> の重みで足すことになります（コサイン 4 乗則）。どの光線が通るかは、センサーの点ごとに瞳の面のどこまでを調べればよいかの範囲を前もって実光線で求めておき、その長方形の中に点を置いて決めます。明るさは、中心の点が近軸の射出瞳の径 <math><mn>2</mn><msup><mi>r</mi><mo>′</mo></msup></math> で受ける照度で割り、F 値を変えても中心の明るさがそろう（カメラの自動露出と同じ）ようにしています。周辺が暗くなるのは、この重みと、斜めの光束が前後のレンズの縁でけられるためです。</p>
+<p>光線ごとに 400〜700 nm の波長を 1 つ選び、その波長の屈折率で追跡します。結果は、波長に応じた重みで赤・緑・青に分けて足します。これで、白と黒の境目に色のにじみが出ます。軸上色収差と倍率色収差です。</p>
+
+<h3>明るさと周辺光量</h3>
+<p>画素の明るさ、つまり照度 <math><mi>E</mi></math> は、光線が来る向きの立体角について放射輝度 <math><mi>L</mi></math> を積分したものです。</p>
+<ul class="tl">
+  <li>射出瞳の面に一様に点を置くと、立体角の重みは <math><msup><mi>cos</mi><mn>3</mn></msup><mi>θ</mi><mo>/</mo><msup><mi>d</mi><mn>2</mn></msup></math> になる。<math><mi>d</mi></math> はセンサーから射出瞳の面までの距離</li>
+  <li>受ける面の傾きを掛けると、<math><msup><mi>cos</mi><mn>4</mn></msup><mi>θ</mi></math> の重みで足すことになる（コサイン 4 乗則）<Fragment set:html={rf(1, 4)} /></li>
+</ul>
 <div class="eqs">
-  <math display="block"><mi>E</mi><mo>=</mo><mo>∫</mo><mi>L</mi><mi>cos</mi><mo>⁡</mo><mi>θ</mi><mspace width="0.17em"/><mi>d</mi><mi>ω</mi><mo>=</mo><mfrac><mn>1</mn><msup><mi>d</mi><mn>2</mn></msup></mfrac><mo>∫</mo><mi>L</mi><msup><mi>cos</mi><mn>4</mn></msup><mi>θ</mi><mspace width="0.17em"/><mi>d</mi><mi>A</mi><mo>,</mo><mspace width="1em"/><mfrac><mi>E</mi><msub><mi>E</mi><mn>0</mn></msub></mfrac><mo>=</mo><mfrac><mn>1</mn><mrow><mi>π</mi><msup><msup><mi>r</mi><mo>′</mo></msup><mn>2</mn></msup></mrow></mfrac><mo>∫</mo><mfrac><mi>L</mi><msub><mi>L</mi><mn>0</mn></msub></mfrac><msup><mi>cos</mi><mn>4</mn></msup><mi>θ</mi><mspace width="0.17em"/><mi>d</mi><mi>A</mi></math>
+  <math display="block"><mi>E</mi><mo>=</mo><mo>∫</mo><mi>L</mi><mi>cos</mi><mo>⁡</mo><mi>θ</mi><mspace width="0.17em"/><mi>d</mi><mi>ω</mi><mo>=</mo><mfrac><mn>1</mn><msup><mi>d</mi><mn>2</mn></msup></mfrac><mo>∫</mo><mi>L</mi><msup><mi>cos</mi><mn>4</mn></msup><mi>θ</mi><mspace width="0.17em"/><mi>d</mi><mi>A</mi></math>
+  <math display="block"><mfrac><mi>E</mi><msub><mi>E</mi><mn>0</mn></msub></mfrac><mo>=</mo><mfrac><mn>1</mn><mrow><mi>π</mi><msup><msup><mi>r</mi><mo>′</mo></msup><mn>2</mn></msup></mrow></mfrac><mo>∫</mo><mfrac><mi>L</mi><msub><mi>L</mi><mn>0</mn></msub></mfrac><msup><mi>cos</mi><mn>4</mn></msup><mi>θ</mi><mspace width="0.17em"/><mi>d</mi><mi>A</mi></math>
 </div>
-<p>焦点距離は、レンズデータのすべての長さを同じ倍率で拡大・縮小して合わせます（形は相似で、収差の量も同じ倍率で変わります）。ピントは、レンズ全体をセンサーから前後に動かして合わせます（全群繰り出し）。焦点距離 <math><mi>f</mi></math>、前側・後側の主点の間隔 <math><mover><mrow><mi>H</mi><msup><mi>H</mi><mo>′</mo></msup></mrow><mo accent="true">¯</mo></mover></math> から、センサーから物体の面までの距離（撮影距離）<math><mi>s</mi></math> にピントが合う物体距離 <math><msub><mi>s</mi><mi mathvariant="normal">o</mi></msub></math> と像距離 <math><msub><mi>s</mi><mi mathvariant="normal">i</mi></msub></math> を求めます。F 値は無限遠のときの入射瞳の径 <math><mi>D</mi></math> で決め、近づくほど実際の明るさ（実効 F 値 <math><msub><mi>N</mi><mi mathvariant="normal">w</mi></msub></math>、軸上の周辺光線の像側の傾き <math><msup><mi>u</mi><mo>′</mo></msup></math> から求める）が暗くなります。絞り羽根 <math><mi>n</mi></math> 枚の正多角形は、面積が同じ円と等しくなる外接円の半径 <math><msub><mi>R</mi><mi>n</mi></msub></math> にします。開放では羽根が引っ込んで円になるとしています。ピント合わせでは、映像の枠の点から光線をレンズへ逆にたどって被写体に当て、その距離を撮影距離にします（繰り出すと写る向きが少し変わるので、合わせてからもう 1 度求めます）。AF は向き・焦点距離・レンズを変えるたびに合わせ直し、MF は映像を押したときだけ合わせます。枠の点に写る物体が被写界深度に入っていると、枠を緑にします。</p>
+<p>どの光線が通るかを決めるため、センサーの点ごとに、瞳の面のどこまでを調べればよいかの範囲を前もって実光線で求めておきます。点は、その長方形の中に置きます。</p>
+<p>明るさは、中心の点が近軸の射出瞳の径 <math><mn>2</mn><msup><mi>r</mi><mo>′</mo></msup></math> で受ける照度で割ります。これで、F 値を変えても中心の明るさがそろいます。カメラの自動露出と同じです。</p>
+<p>周辺が暗くなるのは、この重みと、斜めの光束が前後のレンズの縁でけられるためです。</p>
+
+<h3>焦点距離とピント</h3>
+<h4>焦点距離</h4>
+<p>レンズデータのすべての長さを同じ倍率で拡大・縮小して合わせます。形は相似で、収差の量も同じ倍率で変わります。</p>
+<h4>ピント</h4>
+<p>レンズ全体をセンサーから前後に動かして合わせます（全群繰り出し）。焦点距離と主点の間隔から、撮影距離にピントが合う物体距離と像距離を求めます。</p>
+<dl class="syms">
+  <dt><math><mi>f</mi></math></dt><dd>焦点距離</dd>
+  <dt><math><mover><mrow><mi>H</mi><msup><mi>H</mi><mo>′</mo></msup></mrow><mo accent="true">¯</mo></mover></math></dt><dd>前側・後側の主点の間隔</dd>
+  <dt><math><mi>s</mi></math></dt><dd>撮影距離。センサーから物体の面までの距離</dd>
+  <dt><math><msub><mi>s</mi><mi mathvariant="normal">o</mi></msub><mo>,</mo><mspace width="0.3em"/><msub><mi>s</mi><mi mathvariant="normal">i</mi></msub></math></dt><dd>ピントが合う物体距離と像距離</dd>
+</dl>
 <div class="eqs">
-  <math display="block"><mfrac><mn>1</mn><msub><mi>s</mi><mi mathvariant="normal">o</mi></msub></mfrac><mo>+</mo><mfrac><mn>1</mn><msub><mi>s</mi><mi mathvariant="normal">i</mi></msub></mfrac><mo>=</mo><mfrac><mn>1</mn><mi>f</mi></mfrac><mo>,</mo><mspace width="1em"/><mi>s</mi><mo>=</mo><msub><mi>s</mi><mi mathvariant="normal">o</mi></msub><mo>+</mo><mover><mrow><mi>H</mi><msup><mi>H</mi><mo>′</mo></msup></mrow><mo accent="true">¯</mo></mover><mo>+</mo><msub><mi>s</mi><mi mathvariant="normal">i</mi></msub><mo>,</mo><mspace width="1em"/><mi>m</mi><mo>=</mo><mo>−</mo><mfrac><msub><mi>s</mi><mi mathvariant="normal">i</mi></msub><msub><mi>s</mi><mi mathvariant="normal">o</mi></msub></mfrac><mo>,</mo><mspace width="1em"/><mi>N</mi><mo>=</mo><mfrac><mi>f</mi><mi>D</mi></mfrac><mo>,</mo><mspace width="1em"/><msub><mi>N</mi><mi mathvariant="normal">w</mi></msub><mo>=</mo><mfrac><mn>1</mn><mrow><mn>2</mn><mo stretchy="false">|</mo><msup><mi>u</mi><mo>′</mo></msup><mo stretchy="false">|</mo></mrow></mfrac><mo>,</mo><mspace width="1em"/><msub><mi>R</mi><mi>n</mi></msub><mo>=</mo><mi>r</mi><msqrt><mfrac><mrow><mn>2</mn><mi>π</mi></mrow><mrow><mi>n</mi><mi>sin</mi><mo>⁡</mo><mo stretchy="false">(</mo><mn>2</mn><mi>π</mi><mo>/</mo><mi>n</mi><mo stretchy="false">)</mo></mrow></mfrac></msqrt></math>
+  <math display="block"><mfrac><mn>1</mn><msub><mi>s</mi><mi mathvariant="normal">o</mi></msub></mfrac><mo>+</mo><mfrac><mn>1</mn><msub><mi>s</mi><mi mathvariant="normal">i</mi></msub></mfrac><mo>=</mo><mfrac><mn>1</mn><mi>f</mi></mfrac></math>
+  <math display="block"><mi>s</mi><mo>=</mo><msub><mi>s</mi><mi mathvariant="normal">o</mi></msub><mo>+</mo><mover><mrow><mi>H</mi><msup><mi>H</mi><mo>′</mo></msup></mrow><mo accent="true">¯</mo></mover><mo>+</mo><msub><mi>s</mi><mi mathvariant="normal">i</mi></msub></math>
+  <math display="block"><mi>m</mi><mo>=</mo><mo>−</mo><mfrac><msub><mi>s</mi><mi mathvariant="normal">i</mi></msub><msub><mi>s</mi><mi mathvariant="normal">o</mi></msub></mfrac></math>
 </div>
-<p>被写界深度は、センサーの位置をそのままにして物体の面を前後に動かしたとき、点の像のボケの径 <math><mi>b</mi></math>（射出瞳の径を、像の位置 <math><msup><mi>z</mi><mo>′</mo></msup></math> からセンサー <math><msub><mi>z</mi><mi mathvariant="normal">s</mi></msub></math> までの距離の比で縮めたもの）が許容錯乱円 <math><mi>c</mi></math> に収まる範囲として、近軸の結像で求めます。瞳の倍率を含むので、近い距離や非対称な形のレンズでも使えます。過焦点距離は、無限遠のボケがちょうど <math><mi>c</mi></math> になる撮影距離です。</p>
+<h4>F 値と絞り</h4>
+<p>F 値は、無限遠のときの入射瞳の径 <math><mi>D</mi></math> で決めます。近づくほど、実際の明るさを表す実効 F 値 <math><msub><mi>N</mi><mi mathvariant="normal">w</mi></msub></math> が暗くなります<Fragment set:html={rf(4)} />。<math><msub><mi>N</mi><mi mathvariant="normal">w</mi></msub></math> は、軸上の周辺光線の像側の傾き <math><msup><mi>u</mi><mo>′</mo></msup></math> から求めます。</p>
+<p>絞り羽根 <math><mi>n</mi></math> 枚の正多角形は、面積が同じ円と等しくなる外接円の半径 <math><msub><mi>R</mi><mi>n</mi></msub></math> にします。開放では、羽根が引っ込んで円になるとしています。</p>
+<div class="eqs">
+  <math display="block"><mi>N</mi><mo>=</mo><mfrac><mi>f</mi><mi>D</mi></mfrac></math>
+  <math display="block"><msub><mi>N</mi><mi mathvariant="normal">w</mi></msub><mo>=</mo><mfrac><mn>1</mn><mrow><mn>2</mn><mo stretchy="false">|</mo><msup><mi>u</mi><mo>′</mo></msup><mo stretchy="false">|</mo></mrow></mfrac></math>
+  <math display="block"><msub><mi>R</mi><mi>n</mi></msub><mo>=</mo><mi>r</mi><msqrt><mfrac><mrow><mn>2</mn><mi>π</mi></mrow><mrow><mi>n</mi><mi>sin</mi><mo>⁡</mo><mo stretchy="false">(</mo><mn>2</mn><mi>π</mi><mo>/</mo><mi>n</mi><mo stretchy="false">)</mo></mrow></mfrac></msqrt></math>
+</div>
+<h4>AF と MF</h4>
+<p>ピント合わせでは、映像の枠の点から光線をレンズへ逆にたどって被写体に当て、その距離を撮影距離にします。繰り出すと写る向きが少し変わるので、合わせてからもう 1 度求めます。</p>
+<ul class="tl">
+  <li><b>AF</b>: 向き・焦点距離・レンズを変えるたびに合わせ直す</li>
+  <li><b>MF</b>: 映像を押したときだけ合わせる</li>
+</ul>
+<p>枠の点に写る物体が被写界深度に入っていると、枠を緑にします。</p>
+
+<h3>被写界深度</h3>
+<p>センサーの位置をそのままにして物体の面を前後に動かしたとき、点の像のボケの径 <math><mi>b</mi></math> が許容錯乱円 <math><mi>c</mi></math> に収まる範囲です。近軸の結像で求めます<Fragment set:html={rf(4)} />。</p>
+<p><math><mi>b</mi></math> は、射出瞳の径を、像の位置 <math><msup><mi>z</mi><mo>′</mo></msup></math> からセンサー <math><msub><mi>z</mi><mi mathvariant="normal">s</mi></msub></math> までの距離の比で縮めたものです。瞳の倍率を含むので、近い距離や非対称な形のレンズでも使えます。</p>
 <div class="eqs">
   <math display="block"><mi>b</mi><mo>=</mo><mn>2</mn><msup><mi>r</mi><mo>′</mo></msup><mfrac><mrow><mo stretchy="false">|</mo><msub><mi>z</mi><mi mathvariant="normal">s</mi></msub><mo>−</mo><msup><mi>z</mi><mo>′</mo></msup><mo stretchy="false">|</mo></mrow><mrow><mo stretchy="false">|</mo><msup><mi>z</mi><mo>′</mo></msup><mo>−</mo><msub><mi>z</mi><mtext>XP</mtext></msub><mo stretchy="false">|</mo></mrow></mfrac><mo>≤</mo><mi>c</mi></math>
 </div>
-<p>収差の係数は、近軸の周辺光線（軸上の物点から入射瞳の縁、高さ <math><mi>y</mi></math>・傾き <math><mi>u</mi></math>）と主光線（センサーの隅に写る物点から入射瞳の中心、<math><mover><mi>y</mi><mo>¯</mo></mover></math>・<math><mover><mi>u</mi><mo>¯</mo></mover></math>）を各面で追跡し、Welford の式でザイデルの和を求めます。<math><mi mathvariant="normal">Δ</mi></math> は屈折の後と前の差、<math><mi>δ</mi><mi>n</mi><mo>=</mo><msub><mi>n</mi><mi mathvariant="normal">F</mi></msub><mo>−</mo><msub><mi>n</mi><mi mathvariant="normal">C</mi></msub></math> です。波面収差の係数は <math><msub><mi>W</mi><mn>040</mn></msub><mo>=</mo><msub><mi>S</mi><mi mathvariant="normal">I</mi></msub><mo>/</mo><mn>8</mn></math>、<math><msub><mi>W</mi><mn>131</mn></msub><mo>=</mo><msub><mi>S</mi><mi mathvariant="normal">II</mi></msub><mo>/</mo><mn>2</mn></math>、<math><msub><mi>W</mi><mn>222</mn></msub><mo>=</mo><msub><mi>S</mi><mi mathvariant="normal">III</mi></msub><mo>/</mo><mn>2</mn></math>、<math><msub><mi>W</mi><mn>220</mn></msub><mo>=</mo><mo stretchy="false">(</mo><msub><mi>S</mi><mi mathvariant="normal">III</mi></msub><mo>+</mo><msub><mi>S</mi><mi mathvariant="normal">IV</mi></msub><mo stretchy="false">)</mo><mo>/</mo><mn>4</mn></math>、<math><msub><mi>W</mi><mn>311</mn></msub><mo>=</mo><msub><mi>S</mi><mi mathvariant="normal">V</mi></msub><mo>/</mo><mn>2</mn></math> で、計算結果には d 線の波長を単位にした値を添えています。係数は 3 次の近似なので、広い画角や明るい F 値では、図の実光線の曲線とずれます。</p>
+<p>過焦点距離は、無限遠のボケがちょうど <math><mi>c</mi></math> になる撮影距離です<Fragment set:html={rf(4)} />。</p>
+
+<h3>収差の係数</h3>
+<p>2 本の近軸光線を各面で追跡し、Welford の式でザイデルの和を求めます<Fragment set:html={rf(5)} />。</p>
+<ul class="tl">
+  <li><b>周辺光線</b>: 軸上の物点から入射瞳の縁へ。高さ <math><mi>y</mi></math>・傾き <math><mi>u</mi></math></li>
+  <li><b>主光線</b>: センサーの隅に写る物点から入射瞳の中心へ。高さ <math><mover><mi>y</mi><mo>¯</mo></mover></math>・傾き <math><mover><mi>u</mi><mo>¯</mo></mover></math></li>
+</ul>
+<dl class="syms">
+  <dt><math><mi mathvariant="normal">Δ</mi></math></dt><dd>屈折の後と前の差</dd>
+  <dt><math><mi>δ</mi><mi>n</mi></math></dt><dd><math><msub><mi>n</mi><mi mathvariant="normal">F</mi></msub><mo>−</mo><msub><mi>n</mi><mi mathvariant="normal">C</mi></msub></math></dd>
+</dl>
 <div class="eqs">
-  <math display="block"><mi>A</mi><mo>=</mo><mi>n</mi><mo stretchy="false">(</mo><mi>u</mi><mo>+</mo><mi>y</mi><mi>c</mi><mo stretchy="false">)</mo><mo>,</mo><mspace width="1em"/><mover><mi>A</mi><mo>¯</mo></mover><mo>=</mo><mi>n</mi><mo stretchy="false">(</mo><mover><mi>u</mi><mo>¯</mo></mover><mo>+</mo><mover><mi>y</mi><mo>¯</mo></mover><mi>c</mi><mo stretchy="false">)</mo><mo>,</mo><mspace width="1em"/><mi>H</mi><mo>=</mo><mi>n</mi><mo stretchy="false">(</mo><mover><mi>u</mi><mo>¯</mo></mover><mi>y</mi><mo>−</mo><mi>u</mi><mover><mi>y</mi><mo>¯</mo></mover><mo stretchy="false">)</mo></math>
-  <math display="block"><msub><mi>S</mi><mi mathvariant="normal">I</mi></msub><mo>=</mo><mo>−</mo><mo>∑</mo><msup><mi>A</mi><mn>2</mn></msup><mi>y</mi><mi mathvariant="normal">Δ</mi><mrow><mo>(</mo><mfrac><mi>u</mi><mi>n</mi></mfrac><mo>)</mo></mrow><mo>,</mo><mspace width="1em"/><msub><mi>S</mi><mi mathvariant="normal">II</mi></msub><mo>=</mo><mo>−</mo><mo>∑</mo><mi>A</mi><mover><mi>A</mi><mo>¯</mo></mover><mi>y</mi><mi mathvariant="normal">Δ</mi><mrow><mo>(</mo><mfrac><mi>u</mi><mi>n</mi></mfrac><mo>)</mo></mrow><mo>,</mo><mspace width="1em"/><msub><mi>S</mi><mi mathvariant="normal">III</mi></msub><mo>=</mo><mo>−</mo><mo>∑</mo><msup><mover><mi>A</mi><mo>¯</mo></mover><mn>2</mn></msup><mi>y</mi><mi mathvariant="normal">Δ</mi><mrow><mo>(</mo><mfrac><mi>u</mi><mi>n</mi></mfrac><mo>)</mo></mrow></math>
-  <math display="block"><msub><mi>S</mi><mi mathvariant="normal">IV</mi></msub><mo>=</mo><mo>−</mo><mo>∑</mo><msup><mi>H</mi><mn>2</mn></msup><mi>c</mi><mi mathvariant="normal">Δ</mi><mrow><mo>(</mo><mfrac><mn>1</mn><mi>n</mi></mfrac><mo>)</mo></mrow><mo>,</mo><mspace width="1em"/><msub><mi>S</mi><mi mathvariant="normal">V</mi></msub><mo>=</mo><mo>∑</mo><mfrac><mover><mi>A</mi><mo>¯</mo></mover><mi>A</mi></mfrac><mrow><mo>(</mo><msub><mi>S</mi><mrow><mi mathvariant="normal">III</mi><mo>,</mo><mi>i</mi></mrow></msub><mo>+</mo><msub><mi>S</mi><mrow><mi mathvariant="normal">IV</mi><mo>,</mo><mi>i</mi></mrow></msub><mo>)</mo></mrow><mo>,</mo><mspace width="1em"/><msub><mi>C</mi><mi mathvariant="normal">I</mi></msub><mo>=</mo><mo>∑</mo><mi>A</mi><mi>y</mi><mi mathvariant="normal">Δ</mi><mrow><mo>(</mo><mfrac><mrow><mi>δ</mi><mi>n</mi></mrow><mi>n</mi></mfrac><mo>)</mo></mrow><mo>,</mo><mspace width="1em"/><msub><mi>C</mi><mi mathvariant="normal">II</mi></msub><mo>=</mo><mo>∑</mo><mover><mi>A</mi><mo>¯</mo></mover><mi>y</mi><mi mathvariant="normal">Δ</mi><mrow><mo>(</mo><mfrac><mrow><mi>δ</mi><mi>n</mi></mrow><mi>n</mi></mfrac><mo>)</mo></mrow></math>
+  <math display="block"><mi>A</mi><mo>=</mo><mi>n</mi><mo stretchy="false">(</mo><mi>u</mi><mo>+</mo><mi>y</mi><mi>c</mi><mo stretchy="false">)</mo></math>
+  <math display="block"><mover><mi>A</mi><mo>¯</mo></mover><mo>=</mo><mi>n</mi><mo stretchy="false">(</mo><mover><mi>u</mi><mo>¯</mo></mover><mo>+</mo><mover><mi>y</mi><mo>¯</mo></mover><mi>c</mi><mo stretchy="false">)</mo></math>
+  <math display="block"><mi>H</mi><mo>=</mo><mi>n</mi><mo stretchy="false">(</mo><mover><mi>u</mi><mo>¯</mo></mover><mi>y</mi><mo>−</mo><mi>u</mi><mover><mi>y</mi><mo>¯</mo></mover><mo stretchy="false">)</mo></math>
+  <math display="block"><msub><mi>S</mi><mi mathvariant="normal">I</mi></msub><mo>=</mo><mo>−</mo><mo>∑</mo><msup><mi>A</mi><mn>2</mn></msup><mi>y</mi><mi mathvariant="normal">Δ</mi><mrow><mo>(</mo><mfrac><mi>u</mi><mi>n</mi></mfrac><mo>)</mo></mrow></math>
+  <math display="block"><msub><mi>S</mi><mi mathvariant="normal">II</mi></msub><mo>=</mo><mo>−</mo><mo>∑</mo><mi>A</mi><mover><mi>A</mi><mo>¯</mo></mover><mi>y</mi><mi mathvariant="normal">Δ</mi><mrow><mo>(</mo><mfrac><mi>u</mi><mi>n</mi></mfrac><mo>)</mo></mrow></math>
+  <math display="block"><msub><mi>S</mi><mi mathvariant="normal">III</mi></msub><mo>=</mo><mo>−</mo><mo>∑</mo><msup><mover><mi>A</mi><mo>¯</mo></mover><mn>2</mn></msup><mi>y</mi><mi mathvariant="normal">Δ</mi><mrow><mo>(</mo><mfrac><mi>u</mi><mi>n</mi></mfrac><mo>)</mo></mrow></math>
+  <math display="block"><msub><mi>S</mi><mi mathvariant="normal">IV</mi></msub><mo>=</mo><mo>−</mo><mo>∑</mo><msup><mi>H</mi><mn>2</mn></msup><mi>c</mi><mi mathvariant="normal">Δ</mi><mrow><mo>(</mo><mfrac><mn>1</mn><mi>n</mi></mfrac><mo>)</mo></mrow></math>
+  <math display="block"><msub><mi>S</mi><mi mathvariant="normal">V</mi></msub><mo>=</mo><mo>∑</mo><mfrac><mover><mi>A</mi><mo>¯</mo></mover><mi>A</mi></mfrac><mrow><mo>(</mo><msub><mi>S</mi><mrow><mi mathvariant="normal">III</mi><mo>,</mo><mi>i</mi></mrow></msub><mo>+</mo><msub><mi>S</mi><mrow><mi mathvariant="normal">IV</mi><mo>,</mo><mi>i</mi></mrow></msub><mo>)</mo></mrow></math>
+  <math display="block"><msub><mi>C</mi><mi mathvariant="normal">I</mi></msub><mo>=</mo><mo>∑</mo><mi>A</mi><mi>y</mi><mi mathvariant="normal">Δ</mi><mrow><mo>(</mo><mfrac><mrow><mi>δ</mi><mi>n</mi></mrow><mi>n</mi></mfrac><mo>)</mo></mrow></math>
+  <math display="block"><msub><mi>C</mi><mi mathvariant="normal">II</mi></msub><mo>=</mo><mo>∑</mo><mover><mi>A</mi><mo>¯</mo></mover><mi>y</mi><mi mathvariant="normal">Δ</mi><mrow><mo>(</mo><mfrac><mrow><mi>δ</mi><mi>n</mi></mrow><mi>n</mi></mfrac><mo>)</mo></mrow></math>
 </div>
-<p>幾何光学の追跡には回折が入らないので、像の点を、エアリー円盤（第 1 暗環の径 <math><mn>2.44</mn><mi>λ</mi><msub><mi>N</mi><mi mathvariant="normal">w</mi></msub></math>）に近いガウス分布でずらして近似的に足しています。絞り込むほど細部が甘くなるのはこのためです。スポットダイアグラムは、ピントの面の 3 つの点（中心、対角の 0.7、隅）から入射瞳の格子を通る光線を F・d・C 線で追跡したセンサーの上の点で、d 線の重心を中心に描きます。球面収差の曲線は軸上の光線が光軸を横切る位置の、非点収差の曲線は主光線のそばの子午・球欠の光線が集まる位置の、センサーからのずれです。</p>
-<p>断面図の光線は、可視光の 7 本の輝線（h 404.7・g 435.8・F 486.1・e 546.1・d 587.6・C 656.3・r 706.5 nm）で追跡します。物体の側ではどの波長も同じ光線で、面で屈折するたびに、波長で違う屈折率のために分かれます。レンズ全体の図ではこの差が 1 画素に満たないことが多いので、下にセンサーの付近を縦と横で別々の倍率に拡大した図を置きます。中心の図の印は波長ごとの近軸のピントの位置（軸上色収差）、隅の図の印は波長ごとの主光線がセンサーに当たる高さ（倍率色収差）です。</p>
+<p>波面収差の係数は次のとおりです。計算結果には、d 線の波長を単位にした値を添えています。</p>
 <div class="eqs">
-  <math display="block"><msub><mi>d</mi><mtext>Airy</mtext></msub><mo>=</mo><mn>2.44</mn><mi>λ</mi><msub><mi>N</mi><mi mathvariant="normal">w</mi></msub><mo>,</mo><mspace width="1em"/><mi>σ</mi><mo>≈</mo><mn>0.42</mn><mi>λ</mi><msub><mi>N</mi><mi mathvariant="normal">w</mi></msub></math>
+  <math display="block"><msub><mi>W</mi><mn>040</mn></msub><mo>=</mo><msub><mi>S</mi><mi mathvariant="normal">I</mi></msub><mo>/</mo><mn>8</mn></math>
+  <math display="block"><msub><mi>W</mi><mn>131</mn></msub><mo>=</mo><msub><mi>S</mi><mi mathvariant="normal">II</mi></msub><mo>/</mo><mn>2</mn></math>
+  <math display="block"><msub><mi>W</mi><mn>222</mn></msub><mo>=</mo><msub><mi>S</mi><mi mathvariant="normal">III</mi></msub><mo>/</mo><mn>2</mn></math>
+  <math display="block"><msub><mi>W</mi><mn>220</mn></msub><mo>=</mo><mo stretchy="false">(</mo><msub><mi>S</mi><mi mathvariant="normal">III</mi></msub><mo>+</mo><msub><mi>S</mi><mi mathvariant="normal">IV</mi></msub><mo stretchy="false">)</mo><mo>/</mo><mn>4</mn></math>
+  <math display="block"><msub><mi>W</mi><mn>311</mn></msub><mo>=</mo><msub><mi>S</mi><mi mathvariant="normal">V</mi></msub><mo>/</mo><mn>2</mn></math>
 </div>
-<p>被写体は、撮影者のセンサーから前へ 0.5・1・2・4・8・16 m の面に置いたジーメンススターの板（下の数字が距離）、奥 30 m の格子の壁、色の付いた柱、地面の 0.5 m の市松模様、遠・中・手前の 3 本の電飾、無限遠の山並みと町の灯、空の月と惑星です。時間帯は昼・夕暮れ・夜から選べ、空の色と地上の明るさ（昼 1.5・夕暮れ 1・夜 0.06 倍）を変えます。物体は一様な明るさと 1 つの向きからの光で照らされているとし、太陽と影は描きません。面での反射（フレア・ゴースト）、コーティング、ガラスの吸収、鏡筒による内面反射、センサーのカバーガラスは考えていません。</p>
-<p>空には、満月・金星・火星・木星とガリレオ衛星・環のある土星・天王星と ε 環を、無限遠に置いています。見かけの大きさは赤道半径と地球からの距離で決め、月は平均の距離 384,400 km、外側の惑星は地球に最も近づくとき（火星 5,460 万 km・木星 5.885 億 km・土星 12.055 億 km・天王星 25.806 億 km）、金星は太陽から最も離れて見えるころ（最大離角、1.033 億 km）としました。見かけの直径は月 31.1′、金星 24.2″、火星 25.7″、木星 50.1″、土星 20.6″（環を含めて 46.8″）、天王星 4.09″ です。惑星は扁平率のぶん縦に縮めています。置き場所は実際の空と関係なく、月を緑の柱の上に置き、惑星は互いに離して低い空に並べています。方位・仰角は金星 −30°・12°、火星 −8°・20°、天王星 8°・17°、月 21°・8°、木星 40°・14°、土星 55°・9° です。焦点距離を 3000 mm にすると、木星と 4 つの衛星が画面に収まり、月ははみ出します。どれも太陽を背にした衝のころの見え方として、影と満ち欠けは描いていません（金星は実際には半月の形に見えるころです）。天体の円盤の平均の明るさは、幾何アルベドを太陽からの距離の 2 乗で割った値（月 0.12、金星 0.689 ÷ 0.723²、火星 0.170 ÷ 1.52²、木星 0.538 ÷ 5.20²、土星 0.499 ÷ 9.57²、天王星 0.488 ÷ 19.2²）とし、昼は日光に照らされた地上の物体と同じ尺度にしています。夕暮れと夜は、暗い景色に合わせて露出を上げたものとして、天体を地上の物体に比べて 5 倍・約 330 倍に明るくしています。空の光は天体の手前の大気から来るので、天体の明るさに足します。このため昼は月と金星が見え、木星がうっすら見える程度で、夜は惑星がはっきり見え、月は白く飛びます。環と衛星は本体との反射率の比にしています。天王星の ε 環は、実際どおり細く（幅 20〜96 km）暗い（反射率 0.018）ため、ほとんど写りません。月の海と火星の模様は見た目の近似です。表示の設定の「天体のガイド」では、金星・火星・木星・土星・天王星の位置に、月と同じ角半径のオレンジ色の円を重ねます。位置は、その向きから来る主光線をレンズに通して求めるので、歪曲のあるレンズでも像に重なります。</p>
-<p class="cite">出典: 光線追跡の手順は G. H. Spencer and M. V. R. K. Murty, “General ray-tracing procedure,” <i>J. Opt. Soc. Am.</i>, vol. 52, no. 6, pp. 672–678, 1962。レンズデータのとおりに光線を追跡して映像を作る方法と射出瞳での光線の置き方、照度の重みは C. Kolb, D. Mitchell and P. Hanrahan, “A Realistic Camera Model for Computer Graphics,” <i>Proc. SIGGRAPH ’95</i>, pp. 317–324, 1995。ザイデルの和と波面収差の係数、色収差の和は W. T. Welford, <i>Aberrations of Optical Systems</i>, Adam Hilger, 1986（8 章・10.5 節）。被写界深度・過焦点距離・実効 F 値・コサイン 4 乗則は S. F. Ray, <i>Applied Photographic Optics</i>, 3rd ed., Focal Press, 2002。エアリー円盤のガウス近似は B. Zhang, J. Zerubia and J.-C. Olivo-Marin, “Gaussian approximations of fluorescence microscope point-spread function models,” <i>Appl. Opt.</i>, vol. 46, no. 10, pp. 1819–1829, 2007。硝材の係数は SCHOTT Zemax catalog 2017-01-20b（refractiveindex.info のデータベースによる）。天体の半径・距離・扁平率・反射率と、衛星の軌道・土星と天王星の環の半径・幅は NASA Space Science Data Coordinated Archive, <i>Planetary Fact Sheets</i>（Moon・Venus・Mars・Jupiter・Saturn・Uranus・Jovian Satellite・Saturnian Rings・Uranian Rings）。各レンズのデータの出典はレンズデータの枠に示す。被写体と天体の配置と色、明るさ、照明、波長から RGB への重み（3 つのガウス関数）は、このツールで決めた値です。</p>
+<p>係数は 3 次の近似なので、広い画角や明るい F 値では、図の実光線の曲線とずれます。</p>
+
+<h3>回折</h3>
+<p>幾何光学の追跡には回折が入りません。そこで、像の点をエアリー円盤に近いガウス分布でずらして、近似的に足しています<Fragment set:html={rf(6)} />。エアリー円盤の第 1 暗環の径は <math><mn>2.44</mn><mi>λ</mi><msub><mi>N</mi><mi mathvariant="normal">w</mi></msub></math> です。絞り込むほど細部が甘くなるのはこのためです。</p>
+<div class="eqs">
+  <math display="block"><msub><mi>d</mi><mtext>Airy</mtext></msub><mo>=</mo><mn>2.44</mn><mi>λ</mi><msub><mi>N</mi><mi mathvariant="normal">w</mi></msub></math>
+  <math display="block"><mi>σ</mi><mo>≈</mo><mn>0.42</mn><mi>λ</mi><msub><mi>N</mi><mi mathvariant="normal">w</mi></msub></math>
+</div>
+
+<h3>収差の図</h3>
+<ul class="tl">
+  <li><b>スポットダイアグラム</b>: ピントの面の 3 つの点から入射瞳の格子を通る光線を、F・d・C 線で追跡したセンサーの上の点。3 つの点は中心、対角の 0.7、隅。d 線の重心を中心に描く</li>
+  <li><b>球面収差の曲線</b>: 軸上の光線が光軸を横切る位置の、センサーからのずれ</li>
+  <li><b>非点収差の曲線</b>: 主光線のそばの子午・球欠の光線が集まる位置の、センサーからのずれ</li>
+</ul>
+
+<h3>断面図の 7 波長</h3>
+<p>断面図の光線は、可視光の 7 本の輝線で追跡します。</p>
+<div class="tt-w">
+  <table class="tt">
+    <thead><tr><th scope="col">輝線</th><th scope="col" class="num">波長 (nm)</th></tr></thead>
+    <tbody>
+      <tr><th scope="row">h</th><td class="num">404.7</td></tr>
+      <tr><th scope="row">g</th><td class="num">435.8</td></tr>
+      <tr><th scope="row">F</th><td class="num">486.1</td></tr>
+      <tr><th scope="row">e</th><td class="num">546.1</td></tr>
+      <tr><th scope="row">d</th><td class="num">587.6</td></tr>
+      <tr><th scope="row">C</th><td class="num">656.3</td></tr>
+      <tr><th scope="row">r</th><td class="num">706.5</td></tr>
+    </tbody>
+  </table>
+</div>
+<p>物体の側ではどの波長も同じ光線で、面で屈折するたびに、波長で違う屈折率のために分かれます。レンズ全体の図ではこの差が 1 画素に満たないことが多いので、下にセンサーの付近を拡大した図を置きます。拡大の倍率は縦と横で別々です。</p>
+<ul class="tl">
+  <li><b>中心の図の印</b>: 波長ごとの近軸のピントの位置（軸上色収差）</li>
+  <li><b>隅の図の印</b>: 波長ごとの主光線がセンサーに当たる高さ（倍率色収差）</li>
+</ul>
+
+<h3>被写体</h3>
+<ul class="tl">
+  <li><b>ジーメンススターの板</b>: 撮影者のセンサーから前へ 0.5・1・2・4・8・16 m の面。板の下の数字が距離</li>
+  <li><b>格子の壁</b>: 奥 30 m</li>
+  <li><b>色の付いた柱</b></li>
+  <li><b>地面</b>: 0.5 m の市松模様</li>
+  <li><b>電飾</b>: 遠・中・手前の 3 本</li>
+  <li><b>山並みと町の灯</b>: 無限遠</li>
+  <li><b>空の月と惑星</b>: 次の節</li>
+</ul>
+<p>物体は一様な明るさと 1 つの向きからの光で照らされているとし、太陽と影は描きません。</p>
+
+<h3>空の天体</h3>
+<p>空には、満月・金星・火星・木星とガリレオ衛星・環のある土星・天王星と ε 環を、無限遠に置いています。見かけの大きさは、赤道半径と地球からの距離で決めます<Fragment set:html={rf(7)} />。惑星は、扁平率のぶん縦に縮めています。</p>
+<p>地球からの距離は、月は平均の距離です。外側の惑星は地球に最も近づくとき、金星は太陽から最も離れて見えるころ（最大離角）の距離です。</p>
+<div class="tt-w">
+  <table class="tt">
+    <thead><tr><th scope="col">天体</th><th scope="col" class="num">距離 (km)</th><th scope="col" class="num">見かけの直径</th><th scope="col" class="num">方位</th><th scope="col" class="num">仰角</th></tr></thead>
+    <tbody>
+      <tr><th scope="row">月</th><td class="num">384,400</td><td class="num">31.1′</td><td class="num">21°</td><td class="num">8°</td></tr>
+      <tr><th scope="row">金星</th><td class="num">1.033 億</td><td class="num">24.2″</td><td class="num">−30°</td><td class="num">12°</td></tr>
+      <tr><th scope="row">火星</th><td class="num">5,460 万</td><td class="num">25.7″</td><td class="num">−8°</td><td class="num">20°</td></tr>
+      <tr><th scope="row">木星</th><td class="num">5.885 億</td><td class="num">50.1″</td><td class="num">40°</td><td class="num">14°</td></tr>
+      <tr><th scope="row">土星</th><td class="num">12.055 億</td><td class="num">20.6″</td><td class="num">55°</td><td class="num">9°</td></tr>
+      <tr><th scope="row">天王星</th><td class="num">25.806 億</td><td class="num">4.09″</td><td class="num">8°</td><td class="num">17°</td></tr>
+    </tbody>
+  </table>
+</div>
+<p>土星の見かけの直径は、環を含めると 46.8″ です。</p>
+<h4>置き場所と見え方</h4>
+<ul class="tl">
+  <li>置き場所は実際の空と関係ない。月を緑の柱の上に置き、惑星は互いに離して低い空に並べる</li>
+  <li>焦点距離を 3000 mm にすると、木星と 4 つの衛星が画面に収まり、月ははみ出す</li>
+  <li>どれも太陽を背にした衝のころの見え方として、影と満ち欠けは描かない。金星は、実際には半月の形に見えるころ</li>
+  <li>環と衛星は、本体との反射率の比にする<Fragment set:html={rf(7)} /></li>
+  <li>天王星の ε 環は、実際どおり細く（幅 20〜96 km）暗い（反射率 0.018）ため、ほとんど写らない</li>
+  <li>月の海と火星の模様は、見た目の近似</li>
+</ul>
+<h4>天体のガイド</h4>
+<p>表示の設定の「天体のガイド」では、金星・火星・木星・土星・天王星の位置に、月と同じ角半径のオレンジ色の円を重ねます。位置は、その向きから来る主光線をレンズに通して求めます。そのため、歪曲のあるレンズでも像に重なります。</p>
+
+<h3>時間帯と天体の明るさ</h3>
+<p>時間帯は昼・夕暮れ・夜から選べ、空の色と地上の明るさを変えます。</p>
+<p>天体の円盤の平均の明るさは、幾何アルベドを太陽からの距離の 2 乗で割った値とします<Fragment set:html={rf(7)} />。昼は、日光に照らされた地上の物体と同じ尺度です。夕暮れと夜は、暗い景色に合わせて露出を上げたものとして、天体を地上の物体に比べて明るくしています。</p>
+<div class="tt-w">
+  <table class="tt">
+    <thead><tr><th scope="col">時間帯</th><th scope="col" class="num">地上の明るさ</th><th scope="col">天体の明るさ（地上の物体に比べて）</th></tr></thead>
+    <tbody>
+      <tr><th scope="row">昼</th><td class="num">1.5 倍</td><td>同じ尺度</td></tr>
+      <tr><th scope="row">夕暮れ</th><td class="num">1 倍</td><td>5 倍</td></tr>
+      <tr><th scope="row">夜</th><td class="num">0.06 倍</td><td>約 330 倍</td></tr>
+    </tbody>
+  </table>
+</div>
+<div class="tt-w">
+  <table class="tt">
+    <thead><tr><th scope="col">天体</th><th scope="col">幾何アルベド ÷ 太陽からの距離の 2 乗</th></tr></thead>
+    <tbody>
+      <tr><th scope="row">月</th><td><math><mn>0.12</mn></math></td></tr>
+      <tr><th scope="row">金星</th><td set:html={alb('0.689', '0.723')} /></tr>
+      <tr><th scope="row">火星</th><td set:html={alb('0.170', '1.52')} /></tr>
+      <tr><th scope="row">木星</th><td set:html={alb('0.538', '5.20')} /></tr>
+      <tr><th scope="row">土星</th><td set:html={alb('0.499', '9.57')} /></tr>
+      <tr><th scope="row">天王星</th><td set:html={alb('0.488', '19.2')} /></tr>
+    </tbody>
+  </table>
+</div>
+<p>空の光は天体の手前の大気から来るので、天体の明るさに足します。このため、次のように見えます。</p>
+<ul class="tl">
+  <li><b>昼</b>: 月と金星が見え、木星がうっすら見える程度</li>
+  <li><b>夜</b>: 惑星がはっきり見え、月は白く飛ぶ</li>
+</ul>
+
+<h3>考えていないもの</h3>
+<ul class="tl">
+  <li>面での反射（フレア・ゴースト）</li>
+  <li>コーティング</li>
+  <li>ガラスの吸収</li>
+  <li>鏡筒による内面反射</li>
+  <li>センサーのカバーガラス</li>
+</ul>
+
+<h3>このツールで決めたこと</h3>
+<ul class="tl">
+  <li>被写体と天体の配置と色、明るさ、照明</li>
+  <li>波長から RGB への重み。3 つのガウス関数</li>
+</ul>
+
+<h3>出典</h3>
+<p>各レンズのデータの出典は、レンズデータの枠に示しています。</p>
+<ol class="refs">
+  <li id="thy-r1"><span class="rf-for">レンズデータのとおりに光線を追跡して映像を作る方法、射出瞳での光線の置き方、照度の重み</span><span class="rf-src">C. Kolb, D. Mitchell and P. Hanrahan, “A Realistic Camera Model for Computer Graphics,” <i>Proc. SIGGRAPH ’95</i>, pp. 317–324, 1995</span></li>
+  <li id="thy-r2"><span class="rf-for">光線追跡の手順</span><span class="rf-src">G. H. Spencer and M. V. R. K. Murty, “General ray-tracing procedure,” <i>J. Opt. Soc. Am.</i>, vol. 52, no. 6, pp. 672–678, 1962</span></li>
+  <li id="thy-r3"><span class="rf-for">硝材の係数</span><span class="rf-src">SCHOTT Zemax catalog 2017-01-20b（refractiveindex.info のデータベースによる）</span></li>
+  <li id="thy-r4"><span class="rf-for">被写界深度・過焦点距離・実効 F 値・コサイン 4 乗則</span><span class="rf-src">S. F. Ray, <i>Applied Photographic Optics</i>, 3rd ed., Focal Press, 2002</span></li>
+  <li id="thy-r5"><span class="rf-for">ザイデルの和と波面収差の係数、色収差の和</span><span class="rf-src">W. T. Welford, <i>Aberrations of Optical Systems</i>, Adam Hilger, 1986, 8 章・10.5 節</span></li>
+  <li id="thy-r6"><span class="rf-for">エアリー円盤のガウス近似</span><span class="rf-src">B. Zhang, J. Zerubia and J.-C. Olivo-Marin, “Gaussian approximations of fluorescence microscope point-spread function models,” <i>Appl. Opt.</i>, vol. 46, no. 10, pp. 1819–1829, 2007</span></li>
+  <li id="thy-r7"><span class="rf-for">天体の半径・距離・扁平率・反射率、衛星の軌道、土星と天王星の環の半径・幅</span><span class="rf-src">NASA Space Science Data Coordinated Archive, <i>Planetary Fact Sheets</i>（Moon・Venus・Mars・Jupiter・Saturn・Uranus・Jovian Satellite・Saturnian Rings・Uranian Rings）</span></li>
+</ol>

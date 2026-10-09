@@ -26,19 +26,27 @@ export function wsum(f: Field, v?: readonly (number | null)[]): string {
 export const xsum = (L: readonly number[], v?: readonly (number | null)[]) =>
   L.map((n, i) => (i ? XOR : '') + (v ? mnv(v[n]) : bN(n))).join('');
 
-export const EQS = [
-  `<math display="block"><mi>τ</mi><mo>=</mo><mrow><mo>{</mo><mtable columnalign="left left">` +
-    `<mtr><mtd><mn>0.2</mn>${sec}</mtd><mtd><mtext>マーカ（M・P0〜P5）</mtext></mtd></mtr>` +
-    `<mtr><mtd><mn>0.5</mn>${sec}</mtd><mtd><mtext>ビット 1</mtext></mtd></mtr>` +
-    `<mtr><mtd><mn>0.8</mn>${sec}</mtd><mtd><mtext>ビット 0</mtext></mtd></mtr></mtable></mrow></math>`,
-  `<math display="block">${sub('A', 'L')}<mo>=</mo><mn>0.1</mn>${IT}${sub('A', 'H')}</math>`,
-  `<math display="block"><mi>m</mi><mo>=</mo>${wsum(FIELDS.m)}</math>`,
-  `<math display="block"><mi>h</mi><mo>=</mo>${wsum(FIELDS.h)}</math>`,
-  `<math display="block"><mi>d</mi><mo>=</mo>${wsum(FIELDS.d)}</math>`,
-  `<math display="block"><mi>y</mi><mo>=</mo>${wsum(FIELDS.y)}<mo>,</mo><mspace width="1em"/><mi>w</mi><mo>=</mo>${wsum(FIELDS.w)}</math>`,
-  `<math display="block">${pa(1)}<mo>=</mo>${xsum(PA1)}</math>`,
-  `<math display="block">${pa(2)}<mo>=</mo>${xsum(PA2)}</math>`,
-].join('');
+/** 一般の式。節ごとに分ける */
+export const EQG = {
+  /** 1 秒の符号 */
+  sec: [
+    `<math display="block"><mi>τ</mi><mo>=</mo><mrow><mo>{</mo><mtable columnalign="left left">` +
+      `<mtr><mtd><mn>0.2</mn>${sec}</mtd><mtd><mtext>マーカ（M・P0〜P5）</mtext></mtd></mtr>` +
+      `<mtr><mtd><mn>0.5</mn>${sec}</mtd><mtd><mtext>ビット 1</mtext></mtd></mtr>` +
+      `<mtr><mtd><mn>0.8</mn>${sec}</mtd><mtd><mtext>ビット 0</mtext></mtd></mtr></mtable></mrow></math>`,
+    `<math display="block">${sub('A', 'L')}<mo>=</mo><mn>0.1</mn>${IT}${sub('A', 'H')}</math>`,
+  ].join(''),
+  /** 1 分の符号 */
+  min: [
+    `<math display="block"><mi>m</mi><mo>=</mo>${wsum(FIELDS.m)}</math>`,
+    `<math display="block"><mi>h</mi><mo>=</mo>${wsum(FIELDS.h)}</math>`,
+    `<math display="block"><mi>d</mi><mo>=</mo>${wsum(FIELDS.d)}</math>`,
+    `<math display="block"><mi>y</mi><mo>=</mo>${wsum(FIELDS.y)}<mo>,</mo><mspace width="1em"/><mi>w</mi><mo>=</mo>${wsum(FIELDS.w)}</math>`,
+    `<math display="block">${pa(1)}<mo>=</mo>${xsum(PA1)}</math>`,
+    `<math display="block">${pa(2)}<mo>=</mo>${xsum(PA2)}</math>`,
+  ].join(''),
+};
+export const EQS = EQG.sec + EQG.min;
 
 /** この分の符号を代入した式（分・時・通算日・パリティ） */
 export function substHtml(codes: readonly Code[]): string {

@@ -1,13 +1,60 @@
 ---
 // 動作原理と式。この分の符号を代入した式（#subst）は client.ts が入れる
-import { EQS } from './math';
+import { EQG } from './math';
 ---
-<p>JJY は搬送波の振幅を毎秒の正秒で高出力（100 %）に上げ、符号ごとに決まった時間 <math><mi>τ</mi></math> のあと低出力（10 %）に下げます。受信側では、音から振幅の変化（包絡線）だけを取り出し、しきい値で高出力と低出力に分け、高出力が続いた時間 <math><mi>τ</mi></math> から 1 秒ぶんの符号を決めます。</p>
-<p>包絡線は直交検波で求めます。入力に搬送波と同じ周波数の余弦と正弦を掛け、搬送波の整数周期（5 ms 以上）で平均すると、搬送波の成分が消えて振幅だけが残ります。搬送波の周波数を「自動」にすると、FFT で最も振幅の大きい周波数を探し、隣り合う 3 点に放物線を当てはめて求めます。</p>
-<p>しきい値 <math><mi>θ</mi></math> は、直近 3 秒の包絡線の上位 10 % と下位 10 % の点の中間に置きます。上下に 1/10 幅のヒステリシスを付け、20 ms 未満の変化は雑音として捨てます。<math><mi>τ</mi></math> は規定の 0.2・0.5・0.8 秒の中間で区切って符号に分けます。</p>
-<p>1 秒おきに立ち上がるパルスのうち、マーカが 2 回続いた 2 回目（M）を 0 秒として分に同期します。以降は 1 秒ごとの枠で符号を読み、立ち上がりのずれの 1/10 ずつ枠を合わせ直します。枠の中の立ち上がりが 1 つでない秒や、<math><mi>τ</mi></math> が範囲を外れた秒は「読めない」とします。40〜48 秒の 9 秒のうち 5 秒以上が読めなければ、モールス符号のコールサインとみなします。P1〜P5 のうち 2 つがマーカでなければ同期を外して探し直します。パリティ、値の範囲、年と通算日から求めた曜日がすべて合った分だけで時計を合わせ、最初の分がそろうまでは受信中の分の時と分から仮に表示します。コールサインの分は年を送らないため、前の分の年を引き継ぎます。</p>
+<h3>受信の処理</h3>
+<p>JJY は搬送波の振幅を毎秒の正秒で高出力（100 %）に上げ、符号ごとに決まった時間 <math><mi>τ</mi></math> のあと低出力（10 %）に下げます<a class="rf" href="#thy-r1">[1]</a>。受信側では、次の順に処理します。</p>
+<ol class="flow" aria-label="受信の処理">
+  <li><b>直交検波</b><span>音から振幅の変化（包絡線）だけを取り出す</span></li>
+  <li><b>しきい値</b><span>高出力と低出力に分ける</span></li>
+  <li><b>符号</b><span>高出力が続いた時間 <math><mi>τ</mi></math> から 1 秒ぶんを決める</span></li>
+  <li><b>分への同期</b><span>M を 0 秒とする</span></li>
+  <li><b>時計</b><span>すべて合った分だけで合わせる</span></li>
+</ol>
+
+<h3>包絡線</h3>
+<p>包絡線は直交検波で求めます。入力に搬送波と同じ周波数の余弦と正弦を掛け、搬送波の整数周期で平均すると、搬送波の成分が消えて振幅だけが残ります。平均する長さは 5 ms 以上です。</p>
+<p>搬送波の周波数を「自動」にすると、FFT で最も振幅の大きい周波数を探し、隣り合う 3 点に放物線を当てはめて求めます<a class="rf" href="#thy-r2">[2]</a>。</p>
+<div class="eqs"><Fragment set:html={EQG.env} /></div>
+
+<h3>しきい値と符号</h3>
+<p>しきい値 <math><mi>θ</mi></math> は、直近 3 秒の包絡線の上位 10 % と下位 10 % の点の中間に置きます。</p>
+<ul class="tl">
+  <li>上下に 1/10 幅のヒステリシスを付ける</li>
+  <li>20 ms 未満の変化は雑音として捨てる</li>
+</ul>
+<p><math><mi>τ</mi></math> は、規定の 0.2・0.5・0.8 秒<a class="rf" href="#thy-r1">[1]</a>の中間で区切って符号に分けます。</p>
+<div class="eqs"><Fragment set:html={EQG.code} /></div>
+
+<h3>分への同期</h3>
+<p>1 秒おきに立ち上がるパルスのうち、マーカが 2 回続いた 2 回目（M）を 0 秒として分に同期します<a class="rf" href="#thy-r1">[1]</a>。以降は 1 秒ごとの枠で符号を読み、立ち上がりのずれの 1/10 ずつ枠を合わせ直します。</p>
+<div class="eqs"><Fragment set:html={EQG.sync} /></div>
+<p>読めない秒や同期の外れは、次のように扱います。</p>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th scope="col">状況</th><th scope="col">扱い</th></tr></thead>
+  <tbody>
+    <tr><td>枠の中の立ち上がりが 1 つでない秒、<math><mi>τ</mi></math> が範囲を外れた秒</td><td>「読めない」とする</td></tr>
+    <tr><td>40〜48 秒の 9 秒のうち 5 秒以上が読めない</td><td>モールス符号のコールサインとみなす</td></tr>
+    <tr><td>P1〜P5 のうち 2 つがマーカでない</td><td>同期を外して探し直す</td></tr>
+  </tbody>
+</table></div>
+
+<h3>時刻の確定</h3>
+<p>パリティ、値の範囲、年と通算日から求めた曜日がすべて合った分だけで、時計を合わせます。最初の分がそろうまでは、受信中の分の時と分から仮に表示します。</p>
+<p>コールサインの分は年を送らないため、前の分の年を引き継ぎます。</p>
 <div class="eqs">
-  <Fragment set:html={EQS} />
+  <Fragment set:html={EQG.time} />
   <div class="subst" id="subst" role="group" aria-label="この分の符号を代入した式"></div>
 </div>
-<p class="cite">出典: 情報通信研究機構 日本標準時グループ「<a href="https://jjy.nict.go.jp/jjy/trans/index.html" target="_blank" rel="noopener">標準電波の出し方</a>」、J. O. Smith III「<a href="https://ccrma.stanford.edu/~jos/sasp/Quadratic_Interpolation_Spectral_Peaks.html" target="_blank" rel="noopener">Quadratic Interpolation of Spectral Peaks</a>」（Spectral Audio Signal Processing）。参考: <a href="https://en.wikipedia.org/wiki/In-phase_and_quadrature_components" target="_blank" rel="noopener">In-phase and quadrature components</a>（Wikipedia）、<a href="https://ja.wikipedia.org/wiki/JJY" target="_blank" rel="noopener">JJY</a>（Wikipedia）</p>
+
+<h3>出典</h3>
+<ol class="refs">
+  <li id="thy-r1"><span class="rf-for">JJY の符号</span><span class="rf-src">情報通信研究機構 日本標準時グループ「<a href="https://jjy.nict.go.jp/jjy/trans/index.html" target="_blank" rel="noopener">標準電波の出し方</a>」</span></li>
+  <li id="thy-r2"><span class="rf-for">放物線で周波数を求める</span><span class="rf-src">J. O. Smith III「<a href="https://ccrma.stanford.edu/~jos/sasp/Quadratic_Interpolation_Spectral_Peaks.html" target="_blank" rel="noopener">Quadratic Interpolation of Spectral Peaks</a>」（Spectral Audio Signal Processing）</span></li>
+</ol>
+
+<h3>参考</h3>
+<ul class="refs">
+  <li><span class="rf-for">直交検波（Wikipedia）</span><span class="rf-src"><a href="https://en.wikipedia.org/wiki/In-phase_and_quadrature_components" target="_blank" rel="noopener">In-phase and quadrature components</a></span></li>
+  <li><span class="rf-for">JJY の解説（Wikipedia）</span><span class="rf-src"><a href="https://ja.wikipedia.org/wiki/JJY" target="_blank" rel="noopener">JJY</a></span></li>
+</ul>

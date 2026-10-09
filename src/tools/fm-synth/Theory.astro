@@ -1,13 +1,80 @@
 ---
 // 動作原理と式。代入した式（#subst）は client.ts が入れる
 ---
-<p>FM（周波数変調）音源は、正弦波の位相を別の正弦波でずらして倍音を作ります。変調する側をモジュレータ、変調される側をキャリアと呼びます。キャリアの周波数 <math><msub><mi>f</mi><mi>c</mi></msub></math> の両側に、モジュレータの周波数 <math><msub><mi>f</mi><mi>m</mi></msub></math> の間隔で側帯波が並び、その大きさは変調指数 <math><mi>I</mi></math> を引数とするベッセル関数 <math><msub><mi>J</mi><mi>n</mi></msub></math> で決まります。<math><mi>I</mi></math> が大きいほど、遠くの側帯波まで大きくなり、音が明るくなります。周波数比が整数なら、側帯波は基本周波数の整数倍に重なり、音程のはっきりした音になります。</p>
-<p>このツールは 4 つのオペレータ（発振器）を持ちます。オペレータ <math><mi>k</mi></math> は波形 <math><msub><mi>W</mi><mi>k</mi></msub></math> で、基本周波数 <math><msub><mi>f</mi><mn>0</mn></msub></math>（鍵盤で選ぶ平均律の音。A4 = 440 Hz）の <math><msub><mi>r</mi><mi>k</mi></msub></math> 倍で発振し、アルゴリズムで決まったモジュレータの出力に変調指数を掛けて位相に足します。キャリアの出力に振幅 <math><msub><mi>A</mi><mi>k</mi></msub></math>（出力レベル <math><msub><mi>L</mi><mi>k</mi></msub></math> を dB から直したもの）を掛けて足したものが出力です。キャリアが 2 つ以上あると、足した分だけ出力が大きくなります。音量の調整を「する」にすると、振幅の合計が 1 を超えたときに出力を合計で割り、ピークをフルスケール（1）以内に収めます。キャリアどうしの大きさの比は変わりません。OP1 は自身の直近 2 標本の平均を、帰還量 <math><mi>β</mi></math> を掛けて自身の位相に戻せます。<math><mi>β</mi></math> を大きくすると、のこぎり波に近づき、さらに大きくすると雑音になります。波形は正弦波のほか、三角波（tri）・のこぎり波（saw）・矩形波（sq）・半波整流（hsin、正弦波の負の半分を 0 にしたもの）・全波整流（asin、正弦波の絶対値）・四分波（qsin、全波整流の各半周期の後ろ半分を 0 にしたもの）を選べ、どれも位相 0 で 0 から始まります。正弦波でない波形はもとから倍音を含むため、変調指数が小さくても音が明るくなります。時刻 0 ですべてのオペレータの位相を 0 にして計算し、波形とスペクトラムは 1 周期を 512 点に分けて、音は出力のサンプリング周波数で計算します。スペクトラムは 32 周期ぶんにブラックマン-ハリス窓を掛けて求め、振幅 1 の正弦波を 0 dBFS とします。</p>
+<h3>FM の原理</h3>
+<p>FM（周波数変調）音源は、正弦波の位相を別の正弦波でずらして倍音を作ります。変調する側をモジュレータ、変調される側をキャリアと呼びます<a class="rf" href="#thy-r1">[1]</a>。</p>
+<p>キャリアの周波数 <math><msub><mi>f</mi><mi>c</mi></msub></math> の両側に、モジュレータの周波数 <math><msub><mi>f</mi><mi>m</mi></msub></math> の間隔で側帯波が並びます。その大きさは、変調指数 <math><mi>I</mi></math> を引数とするベッセル関数 <math><msub><mi>J</mi><mi>n</mi></msub></math> で決まります<a class="rf" href="#thy-r1">[1]</a>。</p>
+<ul class="tl">
+  <li><math><mi>I</mi></math> が大きいほど、遠くの側帯波まで大きくなり、音が明るくなる</li>
+  <li>周波数比が整数なら、側帯波は基本周波数の整数倍に重なり、音程のはっきりした音になる</li>
+</ul>
 <div class="eqs">
   <math display="block"><mi>y</mi><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mo>=</mo><mi>A</mi><mi>sin</mi><mo>&#x2061;</mo><mrow><mo>(</mo><mn>2</mn><mi>π</mi><msub><mi>f</mi><mi>c</mi></msub><mi>t</mi><mo>+</mo><mi>I</mi><mi>sin</mi><mo>&#x2061;</mo><mn>2</mn><mi>π</mi><msub><mi>f</mi><mi>m</mi></msub><mi>t</mi><mo>)</mo></mrow><mo>=</mo><mi>A</mi><munderover><mo>∑</mo><mrow><mi>n</mi><mo>=</mo><mo>−</mo><mi>∞</mi></mrow><mi>∞</mi></munderover><msub><mi>J</mi><mi>n</mi></msub><mo stretchy="false">(</mo><mi>I</mi><mo stretchy="false">)</mo><mi>sin</mi><mo>&#x2061;</mo><mn>2</mn><mi>π</mi><mrow><mo>(</mo><msub><mi>f</mi><mi>c</mi></msub><mo>+</mo><mi>n</mi><msub><mi>f</mi><mi>m</mi></msub><mo>)</mo></mrow><mi>t</mi></math>
-  <math display="block"><msub><mi>s</mi><mi>k</mi></msub><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mo>=</mo><msub><mi>W</mi><mi>k</mi></msub><mrow><mo>(</mo><mn>2</mn><mi>π</mi><msub><mi>r</mi><mi>k</mi></msub><msub><mi>f</mi><mn>0</mn></msub><mi>t</mi><mo>+</mo><munder><mo>∑</mo><mrow><mi>j</mi><mo>→</mo><mi>k</mi></mrow></munder><msub><mi>I</mi><mi>j</mi></msub><msub><mi>s</mi><mi>j</mi></msub><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mo>)</mo></mrow><mo>,</mo><mspace width="1em"/><mi>y</mi><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mo>=</mo><munder><mo>∑</mo><mrow><mi>k</mi><mo>∈</mo><mtext>キャリア</mtext></mrow></munder><msub><mi>A</mi><mi>k</mi></msub><msub><mi>s</mi><mi>k</mi></msub><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo></math>
-  <math display="block"><msub><mi>A</mi><mi>k</mi></msub><mo>=</mo><msup><mn>10</mn><mrow><msub><mi>L</mi><mi>k</mi></msub><mo>/</mo><mn>20</mn></mrow></msup><mo>,</mo><mspace width="1em"/><msub><mi>y</mi><mtext>調整</mtext></msub><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mo>=</mo><mfrac><mrow><mi>y</mi><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo></mrow><mrow><mi>max</mi><mo>&#x2061;</mo><mrow><mo>(</mo><mn>1</mn><mo>,</mo><munder><mo>∑</mo><mrow><mi>k</mi><mo>∈</mo><mtext>キャリア</mtext></mrow></munder><msub><mi>A</mi><mi>k</mi></msub><mo>)</mo></mrow></mrow></mfrac></math>
+</div>
+
+<h3>オペレータ</h3>
+<p>このツールは、4 つのオペレータ（発振器）を持ちます。</p>
+<dl class="syms">
+  <dt><math><msub><mi>W</mi><mi>k</mi></msub></math></dt><dd>オペレータ <math><mi>k</mi></math> の波形</dd>
+  <dt><math><msub><mi>f</mi><mn>0</mn></msub></math></dt><dd>基本周波数。鍵盤で選ぶ平均律の音で、A4 = 440 Hz</dd>
+  <dt><math><msub><mi>r</mi><mi>k</mi></msub></math></dt><dd>周波数の倍率。オペレータ <math><mi>k</mi></math> は <math><msub><mi>f</mi><mn>0</mn></msub></math> の <math><msub><mi>r</mi><mi>k</mi></msub></math> 倍で発振する</dd>
+  <dt><math><msub><mi>L</mi><mi>k</mi></msub></math></dt><dd>出力レベル（dB）</dd>
+  <dt><math><msub><mi>A</mi><mi>k</mi></msub></math></dt><dd>振幅。<math><msub><mi>L</mi><mi>k</mi></msub></math> を dB から直したもの</dd>
+</dl>
+<p>アルゴリズムは 8 通りです<a class="rf" href="#thy-r2">[2]</a>。アルゴリズムで決まったモジュレータの出力に変調指数を掛けて、キャリアの位相に足します。キャリアの出力に振幅 <math><msub><mi>A</mi><mi>k</mi></msub></math> を掛けて足したものが、出力です。</p>
+<ol class="flow" aria-label="オペレータの信号の流れ">
+  <li><b>モジュレータ</b><span>出力に変調指数を掛ける</span></li>
+  <li><b>キャリア</b><span>位相に足して発振する</span></li>
+  <li><b>足し合わせ</b><span>振幅 <math><msub><mi>A</mi><mi>k</mi></msub></math> を掛けて足す</span></li>
+  <li><b>音量の調整</b><span>「する」のときだけ</span></li>
+</ol>
+<h4>音量の調整</h4>
+<p>キャリアが 2 つ以上あると、足した分だけ出力が大きくなります。音量の調整を「する」にすると、振幅の合計が 1 を超えたときに出力を合計で割り、ピークをフルスケール（1）以内に収めます。キャリアどうしの大きさの比は変わりません。</p>
+<h4>帰還</h4>
+<p>OP1 は、自身の直近 2 標本の平均に帰還量 <math><mi>β</mi></math> を掛けて、自身の位相に戻せます<a class="rf" href="#thy-r2">[2]</a>。<math><mi>β</mi></math> を大きくするとのこぎり波に近づき、さらに大きくすると雑音になります。</p>
+<div class="eqs">
+  <math display="block"><msub><mi>s</mi><mi>k</mi></msub><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mo>=</mo><msub><mi>W</mi><mi>k</mi></msub><mrow><mo>(</mo><mn>2</mn><mi>π</mi><msub><mi>r</mi><mi>k</mi></msub><msub><mi>f</mi><mn>0</mn></msub><mi>t</mi><mo>+</mo><munder><mo>∑</mo><mrow><mi>j</mi><mo>→</mo><mi>k</mi></mrow></munder><msub><mi>I</mi><mi>j</mi></msub><msub><mi>s</mi><mi>j</mi></msub><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mo>)</mo></mrow></math>
+  <math display="block"><mi>y</mi><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mo>=</mo><munder><mo>∑</mo><mrow><mi>k</mi><mo>∈</mo><mtext>キャリア</mtext></mrow></munder><msub><mi>A</mi><mi>k</mi></msub><msub><mi>s</mi><mi>k</mi></msub><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo></math>
+  <math display="block"><msub><mi>A</mi><mi>k</mi></msub><mo>=</mo><msup><mn>10</mn><mrow><msub><mi>L</mi><mi>k</mi></msub><mo>/</mo><mn>20</mn></mrow></msup></math>
+  <math display="block"><msub><mi>y</mi><mtext>調整</mtext></msub><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mo>=</mo><mfrac><mrow><mi>y</mi><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo></mrow><mrow><mi>max</mi><mo>&#x2061;</mo><mrow><mo>(</mo><mn>1</mn><mo>,</mo><munder><mo>∑</mo><mrow><mi>k</mi><mo>∈</mo><mtext>キャリア</mtext></mrow></munder><msub><mi>A</mi><mi>k</mi></msub><mo>)</mo></mrow></mrow></mfrac></math>
   <math display="block"><msub><mi>s</mi><mn>1</mn></msub><mo stretchy="false">[</mo><mi>n</mi><mo stretchy="false">]</mo><mo>=</mo><msub><mi>W</mi><mn>1</mn></msub><mrow><mo>(</mo><mn>2</mn><mi>π</mi><msub><mi>r</mi><mn>1</mn></msub><msub><mi>f</mi><mn>0</mn></msub><mfrac><mi>n</mi><msub><mi>f</mi><mi mathvariant="normal">s</mi></msub></mfrac><mo>+</mo><mi>β</mi><mfrac><mrow><msub><mi>s</mi><mn>1</mn></msub><mo stretchy="false">[</mo><mi>n</mi><mo>−</mo><mn>1</mn><mo stretchy="false">]</mo><mo>+</mo><msub><mi>s</mi><mn>1</mn></msub><mo stretchy="false">[</mo><mi>n</mi><mo>−</mo><mn>2</mn><mo stretchy="false">]</mo></mrow><mn>2</mn></mfrac><mo>)</mo></mrow></math>
   <div class="subst" id="subst" role="group" aria-label="現在の値を代入した式"></div>
 </div>
-<p class="cite">出典: J. M. Chowning, “The Synthesis of Complex Audio Spectra by Means of Frequency Modulation,” <i>Journal of the Audio Engineering Society</i>, vol. 21, no. 7, pp. 526–534, 1973（FM による音の合成と側帯波）。8 通りのアルゴリズムと帰還量 FB 0〜7（0・π/16〜4π）は、ヤマハの OPN 系 FM 音源 IC（YM2203・YM2608・YM2612）の仕様にならう。半波整流・全波整流・四分波は、ヤマハの OPL2（YM3812）の波形選択にならう。オペレータの出力の大きさの決め方と帰還の大きさは、このツールの実装による。</p>
+
+<h3>波形</h3>
+<p>波形は、次の 7 つから選べます。どれも位相 0 で 0 から始まります。</p>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th>波形</th><th>略号</th><th>形</th></tr></thead>
+  <tbody>
+    <tr><th>正弦波</th><td>sin</td><td></td></tr>
+    <tr><th>三角波</th><td>tri</td><td></td></tr>
+    <tr><th>のこぎり波</th><td>saw</td><td></td></tr>
+    <tr><th>矩形波</th><td>sq</td><td></td></tr>
+    <tr><th>半波整流</th><td>hsin</td><td>正弦波の負の半分を 0 にしたもの</td></tr>
+    <tr><th>全波整流</th><td>asin</td><td>正弦波の絶対値</td></tr>
+    <tr><th>四分波</th><td>qsin</td><td>全波整流の各半周期の後ろ半分を 0 にしたもの</td></tr>
+  </tbody>
+</table></div>
+<p>半波整流・全波整流・四分波は、ヤマハの OPL2 の波形選択にならいます<a class="rf" href="#thy-r3">[3]</a>。正弦波でない波形はもとから倍音を含むため、変調指数が小さくても音が明るくなります。</p>
+
+<h3>計算と表示</h3>
+<p>時刻 0 ですべてのオペレータの位相を 0 にして計算します。</p>
+<ul class="tl">
+  <li><b>波形:</b> 1 周期を 512 点に分けて計算する</li>
+  <li><b>スペクトラム:</b> 1 周期を 512 点に分け、32 周期ぶんにブラックマン-ハリス窓を掛けて求める。振幅 1 の正弦波を 0 dBFS とする</li>
+  <li><b>音:</b> 出力のサンプリング周波数で計算する</li>
+</ul>
+
+<h3>出典</h3>
+<ol class="refs">
+  <li id="thy-r1"><span class="rf-for">FM による音の合成と側帯波</span><span class="rf-src">J. M. Chowning, “The Synthesis of Complex Audio Spectra by Means of Frequency Modulation,” <i>Journal of the Audio Engineering Society</i>, vol. 21, no. 7, pp. 526–534, 1973</span></li>
+  <li id="thy-r2"><span class="rf-for">8 通りのアルゴリズムと帰還量 FB 0〜7（<math><mn>0</mn></math>・<math><mi>π</mi><mo lspace="0" rspace="0">/</mo><mn>16</mn></math>〜<math><mn>4</mn><mi>π</mi></math>）</span><span class="rf-src">ヤマハの OPN 系 FM 音源 IC（YM2203・YM2608・YM2612）の仕様</span></li>
+  <li id="thy-r3"><span class="rf-for">半波整流・全波整流・四分波</span><span class="rf-src">ヤマハの OPL2（YM3812）の波形選択</span></li>
+</ol>
+
+<h3>このツールで決めたこと</h3>
+<p>次の点は、このツールの実装によります。</p>
+<ul class="tl">
+  <li>オペレータの出力の大きさの決め方</li>
+  <li>帰還の大きさ</li>
+</ul>

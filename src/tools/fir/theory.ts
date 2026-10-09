@@ -51,21 +51,74 @@ const tx = (s: string) => `<mtext>${s}</mtext>`,
   /** 式の後ろの注記（「（ハン）」） */
   mtext = (s: string) => tx(`（${s}）`);
 
-/* ---------- 動作原理 ---------- */
-export const THEORY_P = [
-  `FIR フィルタは、入力 ${inl(idx(mi('x'), n))} の今と過去 ${inl(Nm1)} サンプルの値に係数 ${inl(hS(k))} を掛けて足し、出力を求めるフィルタです。` +
-    `出力を戻さないので常に安定で、係数を中央で左右対称にすると、すべての周波数が ${inl(row(M, EQ, par(Nm1), SLASH, two))} サンプルだけ遅れる直線位相になります。` +
-    `${inl(N)} が偶数のフィルタは ${inl(row(mi('z'), EQ, MI, one))}（${inl(row(fsS, SLASH, two))}）に零点を持つので、HPF と BSF は ${inl(N)} を奇数にします。`,
-  `窓関数法は、理想のフィルタのインパルス応答 ${inl(hdS(n))}（無限に続く sinc 関数）を ${inl(N)} 点で切り出し、窓 ${inl(wS(n))} を掛けて両端をなだらかにします。` +
-    `窓の形で阻止域の深さと遷移帯域の幅が決まります。カイザー窓は ${inl(mi('β'))} で形を変えられ、Kaiser の式で仕様から ${inl(mi('β'))} と ${inl(N)} を求めます。` +
-    'ほかの窓の阻止域の減衰は窓ごとにほぼ決まっていて（矩形 21 dB・ハン 44 dB・ハミング 53 dB・ブラックマン 75 dB）、タップ数は遷移帯域幅から求めます。' +
-    'ハン窓とブラックマン窓は両端が 0 になるので、N + 2 点の窓の両端を除いた N 点を使います。',
-  `等リップル（Parks–McClellan 法）は、重み付き誤差 ${inl(row(mi('E'), par(w)))} の最大値を最小にします。最適な解では、誤差の大きさが ${inl(row(mi('r'), PL, one))} 個以上の周波数で等しく、符号が交互に変わります（交代定理。${inl(mi('r'))} は余弦の項の数）。` +
-    'Remez の交換法は、その周波数の組を、誤差が最大になる周波数へ入れ替えながら求めます。' +
-    `最小二乗法は、誤差の二乗を帯域で積分した値を最小にします。どちらも遷移帯域は誤差に数えません。仕様から求めるときは、仕様を満たす最小の ${inl(N)} を探します。`,
-  '実際のリップル・減衰・遷移帯域幅は、係数に 0 を足して FFT した振幅から求めます。遷移帯域幅は、通過域の許容（仕様と実際の大きい方）を外れる周波数から、阻止域の許容を下回る周波数までの幅です。' +
-    '同じ仕様の IIR フィルタの次数は、帯域の端を双一次変換で写したアナログの楕円フィルタとバタワースフィルタの次数の式で求めます。',
-];
+/* ---------- 動作原理（節ごとの本文。見出しと式の箱は Theory.astro） ---------- */
+/** 本文の出典番号 */
+const rf = (i: number) => `<a class="rf" href="#thy-r${i}">[${i}]</a>`;
+const Np2 = row(N, PL, two);
+
+/** FIR フィルタと直線位相 */
+export const THY_FIR =
+  `<p>FIR フィルタは、入力 ${inl(idx(mi('x'), n))} の今と過去 ${inl(Nm1)} サンプルの値に係数 ${inl(hS(k))} を掛けて足し、出力を求めるフィルタです。出力を戻さないので常に安定です${rf(1)}。</p>` +
+  `<p>係数を中央で左右対称にすると、すべての周波数が ${inl(row(M, EQ, par(Nm1), SLASH, two))} サンプルだけ遅れる直線位相になります。</p>` +
+  `<p>${inl(N)} が偶数のフィルタは ${inl(row(mi('z'), EQ, MI, one))} に零点を持ちます。${inl(row(mi('z'), EQ, MI, one))} は ${inl(row(fsS, SLASH, two))} に当たるので、HPF と BSF は ${inl(N)} を奇数にします。</p>`;
+
+/** 仕様 */
+export const THY_SPEC =
+  '<p>仕様の 2 つの量を、振幅の許容値に直して使います。</p>' +
+  '<dl class="syms">' +
+  `<dt>${inl(Ap)}</dt><dd>通過域リップル</dd>` +
+  `<dt>${inl(As)}</dt><dd>阻止域減衰</dd>` +
+  `<dt>${inl(dp)}</dt><dd>通過域の許容</dd>` +
+  `<dt>${inl(ds)}</dt><dd>阻止域の許容</dd>` +
+  '</dl>';
+
+/** 窓関数法 */
+export const THY_WIN =
+  `<p>窓関数法は、理想のフィルタのインパルス応答 ${inl(hdS(n))} を ${inl(N)} 点で切り出し、窓 ${inl(wS(n))} を掛けて両端をなだらかにします${rf(1)}。${inl(hdS(n))} は無限に続く sinc 関数です。</p>` +
+  '<ol class="flow" aria-label="窓関数法の手順">' +
+  `<li><b>理想の応答 ${inl(hdS(n))}</b><span>無限に続く sinc 関数</span></li>` +
+  `<li><b>${inl(N)} 点で切り出す</b></li>` +
+  `<li><b>窓 ${inl(wS(n))} を掛ける</b><span>両端をなだらかに</span></li>` +
+  '</ol>' +
+  '<p>窓の形で阻止域の深さと遷移帯域の幅が決まります。</p>';
+
+/** カイザー窓 */
+export const THY_KAISER = `<p>カイザー窓は ${inl(mi('β'))} で形を変えられます。Kaiser の式で、仕様から ${inl(mi('β'))} と ${inl(N)} を求めます${rf(2)}。</p>`;
+
+/** ほかの窓 */
+export const THY_WINS =
+  `<p>ほかの窓の阻止域の減衰は、窓ごとにほぼ決まっています${rf(3)}。タップ数は遷移帯域幅から求めます。</p>` +
+  '<div class="tt-w"><table class="tt">' +
+  `<thead><tr><th>窓</th><th class="num">阻止域の減衰</th><th class="num">${inl(k)}</th></tr></thead><tbody>` +
+  [
+    ['矩形', 21, 0.9],
+    ['ハン', 44, 3.1],
+    ['ハミング', 53, 3.3],
+    ['ブラックマン', 75, 5.5],
+  ]
+    .map(([t, a, c]) => `<tr><th>${t}</th><td class="num">${a} dB</td><td class="num">${c}</td></tr>`)
+    .join('') +
+  '</tbody></table></div>' +
+  `<p>ハン窓とブラックマン窓は両端が 0 になります。そこで、${inl(Np2)} 点の窓の両端を除いた ${inl(N)} 点を使います。</p>`;
+
+/** 等リップルと最小二乗 */
+export const THY_OPT =
+  `<p>等リップル（Parks–McClellan 法）は、重み付き誤差 ${inl(row(mi('E'), par(w)))} の最大値を最小にします${rf(4)}。</p>` +
+  `<p>最適な解では、誤差の大きさが ${inl(row(mi('r'), PL, one))} 個以上の周波数で等しく、符号が交互に変わります。これを交代定理といいます。${inl(mi('r'))} は余弦の項の数です。</p>` +
+  `<p>Remez の交換法は、その周波数の組を、誤差が最大になる周波数へ入れ替えながら求めます${rf(5)}。</p>` +
+  `<p>最小二乗法は、誤差の二乗を帯域で積分した値を最小にします${rf(6)}。</p>` +
+  '<ul class="tl">' +
+  '<li>どちらも遷移帯域は誤差に数えない</li>' +
+  `<li>仕様から求めるときは、仕様を満たす最小の ${inl(N)} を探す</li>` +
+  '</ul>';
+
+/** 実際の特性 */
+export const THY_REAL =
+  '<p>実際のリップル・減衰・遷移帯域幅は、係数に 0 を足して FFT した振幅から求めます。</p>' +
+  '<p>遷移帯域幅は、通過域の許容を外れる周波数から、阻止域の許容を下回る周波数までの幅です。通過域の許容には、仕様と実際の大きい方を使います。</p>';
+
+/** 同じ仕様の IIR フィルタ */
+export const THY_IIR = `<p>同じ仕様の IIR フィルタの次数は、帯域の端を双一次変換で写したアナログの楕円フィルタとバタワースフィルタの次数の式で求めます${rf(7)}。</p>`;
 
 /* ---------- 式 ---------- */
 /** 畳み込み */
@@ -288,5 +341,11 @@ const EQ_IIR =
     ),
   );
 
-/** 式の固定部分（代入した式は client.ts が #subst に入れる） */
-export const EQS = [EQ_CONV, EQ_LIN, EQ_WIN, EQ_WINS, EQ_TOL, EQ_KAISER, EQ_WINN, EQ_OPT, EQ_IIR].join('');
+/** 節ごとの式の固定部分（代入した式は client.ts が #subst に入れる） */
+export const EQS_FIR = EQ_CONV + EQ_LIN;
+export const EQS_SPEC = EQ_TOL;
+export const EQS_WIN = EQ_WIN + EQ_WINS;
+export const EQS_KAISER = EQ_KAISER;
+export const EQS_WINN = EQ_WINN;
+export const EQS_OPT = EQ_OPT;
+export const EQS_IIR = EQ_IIR;

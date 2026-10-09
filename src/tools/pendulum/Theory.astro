@@ -13,53 +13,232 @@ const fr = (a: string, b: string) => `<mfrac><mrow>${a}</mrow><mrow>${b}</mrow><
 const Jl =
   '<mrow><mo stretchy="false">(</mo><mi>J</mi><mo>+</mo><mi>m</mi><msup><mi>l</mi><mn>2</mn></msup><mo stretchy="false">)</mo></mrow>';
 const Mm = `<mrow><mo stretchy="false">(</mo>${Me}<mo>+</mo><mi>m</mi><mo stretchy="false">)</mo></mrow>`;
+/* 本文の出典番号 */
+const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
 ---
-<p>レールの上を動く台車（質量 <math><mi>M</mi></math>）に軸を付け、振子（質量 <math><mi>m</mi></math>、軸から重心まで <math><mi>l</mi></math>、重心まわりの慣性モーメント <math><mi>J</mi></math>）を下げます。台車の位置を <math><mi>x</mi></math>（右が正）、振子の角度を真上から <math><mi>θ</mi></math>（先端が右へ傾くと正）とすると、ラグランジュの方程式から次の運動方程式が出ます。<math><msub><mi>b</mi><mi mathvariant="normal">c</mi></msub></math>・<math><msub><mi>F</mi><mi mathvariant="normal">c</mi></msub></math> は台車の粘性摩擦とクーロン摩擦、<math><msub><mi>b</mi><mi mathvariant="normal">p</mi></msub></math> は軸の粘性摩擦です。</p>
+<h3>台車と振子</h3>
+<p>レールの上を動く台車に軸を付け、振子を下げます。ラグランジュの方程式から、次の運動方程式が出ます<Fragment set:html={rf(1)} />。</p>
+<dl class="syms">
+  <dt><math><mi>M</mi></math></dt><dd>台車の質量</dd>
+  <dt><math><mi>m</mi></math></dt><dd>振子の質量</dd>
+  <dt><math><mi>l</mi></math></dt><dd>軸から振子の重心まで</dd>
+  <dt><math><mi>J</mi></math></dt><dd>振子の重心まわりの慣性モーメント</dd>
+  <dt><math><mi>x</mi></math></dt><dd>台車の位置。右が正</dd>
+  <dt><math><mi>θ</mi></math></dt><dd>振子の角度。真上から測り、先端が右へ傾くと正</dd>
+  <dt><math><mi>F</mi></math></dt><dd>台車を押す力</dd>
+  <dt><math><msub><mi>b</mi><mi mathvariant="normal">c</mi></msub><mo>,</mo><mspace width="0.3em"/><msub><mi>F</mi><mi mathvariant="normal">c</mi></msub></math></dt><dd>台車の粘性摩擦とクーロン摩擦</dd>
+  <dt><math><msub><mi>b</mi><mi mathvariant="normal">p</mi></msub></math></dt><dd>軸の粘性摩擦</dd>
+</dl>
 <div class="eqs">
   <math display="block" set:html={`${Mm}${dd('x')}<mo>+</mo><mi>m</mi><mi>l</mi><mi>cos</mi><mo>⁡</mo><mi>θ</mi>${dd('θ')}<mo>−</mo><mi>m</mi><mi>l</mi><msup>${d('θ')}<mn>2</mn></msup><mi>sin</mi><mo>⁡</mo><mi>θ</mi><mo>=</mo><mi>F</mi><mo>−</mo>${sub('b', 'c')}${d('x')}<mo>−</mo>${sub('F', 'c')}<mi>sgn</mi><mo>⁡</mo>${d('x')}`} />
   <math display="block" set:html={`<mi>m</mi><mi>l</mi><mi>cos</mi><mo>⁡</mo><mi>θ</mi>${dd('x')}<mo>+</mo>${Jl}${dd('θ')}<mo>−</mo><mi>m</mi><mi>g</mi><mi>l</mi><mi>sin</mi><mo>⁡</mo><mi>θ</mi><mo>=</mo><mo>−</mo>${sub('b', 'p')}${d('θ')}`} />
 </div>
-<p>台車は DC モータが減速の歯車とピニオンで動かします。巻線のインダクタンスを無視すると、電圧 <math><mi>V</mi></math> から台車を押す力 <math><mi>F</mi></math> は下の式になり、逆起電力が速さに比例する制動として働きます。回転子の慣性は、台車の質量に足した等価質量 <math><msub><mi>M</mi><mi mathvariant="normal">e</mi></msub></math> として入ります。力で駆動するときは <math><mi>F</mi><mo>=</mo><mi>u</mi></math> です。どちらも、入力 <math><mi>u</mi></math>（電圧か力）は上限で切ります。</p>
+
+<h3>駆動</h3>
+<p>台車は DC モータが減速の歯車とピニオンで動かします。巻線のインダクタンスを無視すると、電圧 <math><mi>V</mi></math> から力 <math><mi>F</mi></math> は下の式になります。</p>
+<ul class="tl">
+  <li>逆起電力は、速さに比例する制動として働く</li>
+  <li>回転子の慣性は、台車の質量に足した等価質量 <math><msub><mi>M</mi><mi mathvariant="normal">e</mi></msub></math> として入る</li>
+</ul>
 <div class="eqs">
-  <math display="block" set:html={`<mi>F</mi><mo>=</mo><mi>α</mi><mi>V</mi><mo>−</mo><mi>β</mi>${d('x')}<mo>,</mo><mspace width="1em"/><mi>α</mi><mo>=</mo>${fr(`${sub('K', 'g')}${sub('k', 't')}`, `${sub('R', 'm')}<mi>r</mi>`)}<mo>,</mo><mspace width="1em"/><mi>β</mi><mo>=</mo>${fr(`<msubsup><mi>K</mi><mi mathvariant="normal">g</mi><mn>2</mn></msubsup><msubsup><mi>k</mi><mi mathvariant="normal">t</mi><mn>2</mn></msubsup>`, `${sub('R', 'm')}<msup><mi>r</mi><mn>2</mn></msup>`)}<mo>,</mo><mspace width="1em"/>${Me}<mo>=</mo><mi>M</mi><mo>+</mo>${fr(`<msubsup><mi>K</mi><mi mathvariant="normal">g</mi><mn>2</mn></msubsup>${sub('J', 'm')}`, '<msup><mi>r</mi><mn>2</mn></msup>')}`} />
+  <math display="block" set:html={`<mi>F</mi><mo>=</mo><mi>α</mi><mi>V</mi><mo>−</mo><mi>β</mi>${d('x')}`} />
+  <math display="block" set:html={`<mi>α</mi><mo>=</mo>${fr(`${sub('K', 'g')}${sub('k', 't')}`, `${sub('R', 'm')}<mi>r</mi>`)}`} />
+  <math display="block" set:html={`<mi>β</mi><mo>=</mo>${fr(`<msubsup><mi>K</mi><mi mathvariant="normal">g</mi><mn>2</mn></msubsup><msubsup><mi>k</mi><mi mathvariant="normal">t</mi><mn>2</mn></msubsup>`, `${sub('R', 'm')}<msup><mi>r</mi><mn>2</mn></msup>`)}`} />
+  <math display="block" set:html={`${Me}<mo>=</mo><mi>M</mi><mo>+</mo>${fr(`<msubsup><mi>K</mi><mi mathvariant="normal">g</mi><mn>2</mn></msubsup>${sub('J', 'm')}`, '<msup><mi>r</mi><mn>2</mn></msup>')}`} />
 </div>
-<p>真上（<math><mi>θ</mi><mo>=</mo><mn>0</mn></math>）の近くで <math><mi>sin</mi><mo>⁡</mo><mi>θ</mi><mo>≈</mo><mi>θ</mi></math>、<math><mi>cos</mi><mo>⁡</mo><mi>θ</mi><mo>≈</mo><mn>1</mn></math> とし、<math><msup><mover><mi>θ</mi><mo>˙</mo></mover><mn>2</mn></msup></math> とクーロン摩擦を落とすと、状態 <math><mi mathvariant="bold">x</mi><mo>=</mo><msup><mrow><mo stretchy="false">[</mo><mi>x</mi><mspace width="0.3em"/><mi>θ</mi><mspace width="0.3em"/><mover><mi>x</mi><mo>˙</mo></mover><mspace width="0.3em"/><mover><mi>θ</mi><mo>˙</mo></mover><mo stretchy="false">]</mo></mrow><mi mathvariant="normal">T</mi></msup></math> の線形の模型になります。<math><mi>A</mi></math> の固有値のうち正の 1 つが、振子が倒れていく速さ（開ループの不安定な極）です。台車が振子よりずっと重く <math><mi>J</mi><mo>=</mo><mn>0</mn></math> なら <math><msqrt><mrow><mi>g</mi><mo>/</mo><mi>l</mi></mrow></msqrt></math> に近づきます。</p>
+<p>入力 <math><mi>u</mi></math> は電圧か力です。力で駆動するときは <math><mi>F</mi><mo>=</mo><mi>u</mi></math> です。どちらも、入力は上限で切ります。</p>
+
+<h3>線形の模型</h3>
+<p>真上（<math><mi>θ</mi><mo>=</mo><mn>0</mn></math>）の近くで <math><mi>sin</mi><mo>⁡</mo><mi>θ</mi><mo>≈</mo><mi>θ</mi></math>、<math><mi>cos</mi><mo>⁡</mo><mi>θ</mi><mo>≈</mo><mn>1</mn></math> とし、<math><msup><mover><mi>θ</mi><mo>˙</mo></mover><mn>2</mn></msup></math> とクーロン摩擦を落とします。すると、状態 <math><mi mathvariant="bold">x</mi><mo>=</mo><msup><mrow><mo stretchy="false">[</mo><mi>x</mi><mspace width="0.3em"/><mi>θ</mi><mspace width="0.3em"/><mover><mi>x</mi><mo>˙</mo></mover><mspace width="0.3em"/><mover><mi>θ</mi><mo>˙</mo></mover><mo stretchy="false">]</mo></mrow><mi mathvariant="normal">T</mi></msup></math> の線形の模型になります<Fragment set:html={rf(1)} />。</p>
 <div class="eqs">
-  <math display="block" set:html={`<mover><mi mathvariant="bold">x</mi><mo>˙</mo></mover><mo>=</mo><mi>A</mi><mi mathvariant="bold">x</mi><mo>+</mo><mi>B</mi><mi>u</mi><mo>,</mo><mspace width="1em"/><mi>A</mi><mo>=</mo>${mat([
+  <math display="block"><mover><mi mathvariant="bold">x</mi><mo>˙</mo></mover><mo>=</mo><mi>A</mi><mi mathvariant="bold">x</mi><mo>+</mo><mi>B</mi><mi>u</mi></math>
+  <math display="block" set:html={`<mi>A</mi><mo>=</mo>${mat([
     ['<mn>0</mn>', '<mn>0</mn>', '<mn>1</mn>', '<mn>0</mn>'],
     ['<mn>0</mn>', '<mn>0</mn>', '<mn>0</mn>', '<mn>1</mn>'],
     ['<mn>0</mn>', `<mo>−</mo>${fr('<msup><mi>m</mi><mn>2</mn></msup><msup><mi>l</mi><mn>2</mn></msup><mi>g</mi>', '<mi>D</mi>')}`, `<mo>−</mo>${fr(`${Jl}<mi>b</mi>`, '<mi>D</mi>')}`, fr(`<mi>m</mi><mi>l</mi>${sub('b', 'p')}`, '<mi>D</mi>')],
     ['<mn>0</mn>', fr(`${Mm}<mi>m</mi><mi>g</mi><mi>l</mi>`, '<mi>D</mi>'), fr('<mi>m</mi><mi>l</mi><mi>b</mi>', '<mi>D</mi>'), `<mo>−</mo>${fr(`${Mm}${sub('b', 'p')}`, '<mi>D</mi>')}`],
-  ])}<mo>,</mo><mspace width="1em"/><mi>B</mi><mo>=</mo>${mat([['<mn>0</mn>'], ['<mn>0</mn>'], [fr(`${Jl}<mi>α</mi>`, '<mi>D</mi>')], [`<mo>−</mo>${fr('<mi>m</mi><mi>l</mi><mi>α</mi>', '<mi>D</mi>')}`]])}`} />
-  <math display="block" set:html={`<mi>D</mi><mo>=</mo>${Mm}${Jl}<mo>−</mo><msup><mi>m</mi><mn>2</mn></msup><msup><mi>l</mi><mn>2</mn></msup><mo>,</mo><mspace width="1em"/><mi>b</mi><mo>=</mo><mi>β</mi><mo>+</mo>${sub('b', 'c')}<mo>,</mo><mspace width="1em"/>${subi('p', '+')}<mo>≈</mo><msqrt><mfrac><mrow>${Mm}<mi>m</mi><mi>g</mi><mi>l</mi></mrow><mi>D</mi></mfrac></msqrt>`} />
+  ])}`} />
+  <math display="block" set:html={`<mi>B</mi><mo>=</mo>${mat([['<mn>0</mn>'], ['<mn>0</mn>'], [fr(`${Jl}<mi>α</mi>`, '<mi>D</mi>')], [`<mo>−</mo>${fr('<mi>m</mi><mi>l</mi><mi>α</mi>', '<mi>D</mi>')}`]])}`} />
+  <math display="block" set:html={`<mi>D</mi><mo>=</mo>${Mm}${Jl}<mo>−</mo><msup><mi>m</mi><mn>2</mn></msup><msup><mi>l</mi><mn>2</mn></msup>`} />
+  <math display="block" set:html={`<mi>b</mi><mo>=</mo><mi>β</mi><mo>+</mo>${sub('b', 'c')}`} />
+  <math display="block" set:html={`${subi('p', '+')}<mo>≈</mo><msqrt><mfrac><mrow>${Mm}<mi>m</mi><mi>g</mi><mi>l</mi></mrow><mi>D</mi></mfrac></msqrt>`} />
 </div>
-<p>入力 1 つで 4 つの状態をすべて動かせる（可制御）のは、可制御性行列 <math><mi mathvariant="script">C</mi></math> の階数が 4 のときです。振子と台車ではいつも可制御で、状態フィードバック <math><mi>u</mi><mo>=</mo><mo>−</mo><mi>K</mi><mi mathvariant="bold">x</mi></math> によって閉ループの極 <math><mi>A</mi><mo>−</mo><mi>B</mi><mi>K</mi></math> の固有値をどこへでも置けます。極配置では、固有角周波数 <math><msub><mi>ω</mi><mi>i</mi></msub></math> と減衰比 <math><msub><mi>ζ</mi><mi>i</mi></msub></math> の 2 組で 4 つの極を決め、その特性多項式 <math><mi>φ</mi><mo stretchy="false">(</mo><mi>s</mi><mo stretchy="false">)</mo></math> からアッカーマンの式でゲインを求めます。</p>
+<p><math><mi>A</mi></math> の固有値のうち正の 1 つ <math><msub><mi>p</mi><mi>+</mi></msub></math> が、振子が倒れていく速さです。これが開ループの不安定な極です。台車が振子よりずっと重く <math><mi>J</mi><mo>=</mo><mn>0</mn></math> なら、<math><msqrt><mrow><mi>g</mi><mo>/</mo><mi>l</mi></mrow></msqrt></math> に近づきます。固有値は、ヘッセンベルク化と QR 法で求めます<Fragment set:html={rf(2)} />。</p>
+
+<h3>状態フィードバック</h3>
+<p>入力 1 つで 4 つの状態をすべて動かせる（可制御）のは、可制御性行列 <math><mi mathvariant="script">C</mi></math> の階数が 4 のときです<Fragment set:html={rf(1)} />。振子と台車ではいつも可制御です。そのため、状態フィードバック <math><mi>u</mi><mo>=</mo><mo>−</mo><mi>K</mi><mi mathvariant="bold">x</mi></math> によって閉ループの極、つまり <math><mi>A</mi><mo>−</mo><mi>B</mi><mi>K</mi></math> の固有値をどこへでも置けます。</p>
+<figure class="fig">
+  <svg viewBox="0 0 360 122" width="360" role="img" aria-label="状態フィードバックのブロック線図。入力 u が台車と振子に入り、出てきた状態 x に −K を掛けて入力 u に戻す">
+    <rect class="b" x="120" y="10" width="140" height="54" rx="3" />
+    <text class="t" x="190" y="32" text-anchor="middle">台車と振子</text>
+    <text class="tm" x="190" y="54" text-anchor="middle"><tspan style="font-weight:700;font-style:normal">ẋ</tspan> = <tspan>A</tspan><tspan style="font-weight:700;font-style:normal">x</tspan> + <tspan>Bu</tspan></text>
+    <rect class="b" x="150" y="80" width="80" height="34" rx="3" />
+    <text class="tm" x="190" y="102" text-anchor="middle">−K</text>
+    <path class="w" d="M260 37H332M305 37V97H238M150 97H40V37H112" />
+    <circle class="ah" cx="305" cy="37" r="2.6" />
+    <path class="ah" d="M120 37l-9-4.5v9zM230 97l9-4.5v9zM340 37l-9-4.5v9z" />
+    <text class="tm" x="64" y="30" text-anchor="middle">u</text>
+    <text class="tm" x="284" y="30" text-anchor="middle" style="font-weight:700;font-style:normal">x</text>
+  </svg>
+  <figcaption>状態フィードバック <math><mi>u</mi><mo>=</mo><mo>−</mo><mi>K</mi><mi mathvariant="bold">x</mi></math></figcaption>
+</figure>
 <div class="eqs">
-  <math display="block"><mi mathvariant="script">C</mi><mo>=</mo><mrow><mo>[</mo><mi>B</mi><mspace width="0.4em"/><mi>A</mi><mi>B</mi><mspace width="0.4em"/><msup><mi>A</mi><mn>2</mn></msup><mi>B</mi><mspace width="0.4em"/><msup><mi>A</mi><mn>3</mn></msup><mi>B</mi><mo>]</mo></mrow><mo>,</mo><mspace width="1em"/><mi>K</mi><mo>=</mo><mrow><mo>[</mo><mn>0</mn><mspace width="0.4em"/><mn>0</mn><mspace width="0.4em"/><mn>0</mn><mspace width="0.4em"/><mn>1</mn><mo>]</mo></mrow><msup><mi mathvariant="script">C</mi><mrow><mo>−</mo><mn>1</mn></mrow></msup><mi>φ</mi><mo stretchy="false">(</mo><mi>A</mi><mo stretchy="false">)</mo></math>
+  <math display="block"><mi mathvariant="script">C</mi><mo>=</mo><mrow><mo>[</mo><mi>B</mi><mspace width="0.4em"/><mi>A</mi><mi>B</mi><mspace width="0.4em"/><msup><mi>A</mi><mn>2</mn></msup><mi>B</mi><mspace width="0.4em"/><msup><mi>A</mi><mn>3</mn></msup><mi>B</mi><mo>]</mo></mrow></math>
+</div>
+
+<h3>極配置</h3>
+<p>固有角周波数 <math><msub><mi>ω</mi><mi>i</mi></msub></math> と減衰比 <math><msub><mi>ζ</mi><mi>i</mi></msub></math> の 2 組で、4 つの極を決めます。その特性多項式 <math><mi>φ</mi><mo stretchy="false">(</mo><mi>s</mi><mo stretchy="false">)</mo></math> から、アッカーマンの式でゲインを求めます<Fragment set:html={rf(3)} />。</p>
+<div class="eqs">
   <math display="block"><mi>φ</mi><mo stretchy="false">(</mo><mi>s</mi><mo stretchy="false">)</mo><mo>=</mo><munderover><mo>∏</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mn>2</mn></munderover><mrow><mo>(</mo><msup><mi>s</mi><mn>2</mn></msup><mo>+</mo><mn>2</mn><msub><mi>ζ</mi><mi>i</mi></msub><msub><mi>ω</mi><mi>i</mi></msub><mi>s</mi><mo>+</mo><msubsup><mi>ω</mi><mi>i</mi><mn>2</mn></msubsup><mo>)</mo></mrow></math>
+  <math display="block"><mi>K</mi><mo>=</mo><mrow><mo>[</mo><mn>0</mn><mspace width="0.4em"/><mn>0</mn><mspace width="0.4em"/><mn>0</mn><mspace width="0.4em"/><mn>1</mn><mo>]</mo></mrow><msup><mi mathvariant="script">C</mi><mrow><mo>−</mo><mn>1</mn></mrow></msup><mi>φ</mi><mo stretchy="false">(</mo><mi>A</mi><mo stretchy="false">)</mo></math>
 </div>
-<p>LQR は、状態のずれと入力の大きさの重み付きの和 <math><mi>𝒥</mi></math> を最小にするゲインです。重み <math><mi>Q</mi><mo>=</mo><mi>diag</mi><mo stretchy="false">(</mo><msub><mi>q</mi><mi>x</mi></msub><mo>,</mo><msub><mi>q</mi><mi>θ</mi></msub><mo>,</mo><msub><mi>q</mi><mover><mi>x</mi><mo>˙</mo></mover></msub><mo>,</mo><msub><mi>q</mi><mover><mi>θ</mi><mo>˙</mo></mover></msub><mo stretchy="false">)</mo></math> と <math><mi>R</mi></math> から、代数リカッチ方程式の解 <math><mi>P</mi></math> を求めます。リカッチ方程式は、ハミルトン行列 <math><mi>H</mi></math> の符号関数 <math><mi>W</mi></math> を行列式で尺度を合わせたニュートン法で求め、<math><mi>W</mi></math> を 4 行ずつに分けた区画 <math><msub><mi>W</mi><mi>ij</mi></msub></math> の連立方程式を最小二乗で解いて求めます（Roberts・Byers）。</p>
+
+<h3>LQR</h3>
+<p>LQR は、状態のずれと入力の大きさの重み付きの和 <math><mi>𝒥</mi></math> を最小にするゲインです<Fragment set:html={rf(1) + rf(4)} />。重み <math><mi>Q</mi><mo>=</mo><mi>diag</mi><mo stretchy="false">(</mo><msub><mi>q</mi><mi>x</mi></msub><mo>,</mo><msub><mi>q</mi><mi>θ</mi></msub><mo>,</mo><msub><mi>q</mi><mover><mi>x</mi><mo>˙</mo></mover></msub><mo>,</mo><msub><mi>q</mi><mover><mi>θ</mi><mo>˙</mo></mover></msub><mo stretchy="false">)</mo></math> と <math><mi>R</mi></math> から、代数リカッチ方程式の解 <math><mi>P</mi></math> を求めます。</p>
 <div class="eqs">
-  <math display="block"><mi>𝒥</mi><mo>=</mo><msubsup><mo>∫</mo><mn>0</mn><mi>∞</mi></msubsup><mrow><mo>(</mo><msup><mi mathvariant="bold">x</mi><mi mathvariant="normal">T</mi></msup><mi>Q</mi><mi mathvariant="bold">x</mi><mo>+</mo><mi>R</mi><msup><mi>u</mi><mn>2</mn></msup><mo>)</mo></mrow><mspace width="0.17em"/><mi>d</mi><mi>t</mi><mo>,</mo><mspace width="1em"/><msup><mi>A</mi><mi mathvariant="normal">T</mi></msup><mi>P</mi><mo>+</mo><mi>P</mi><mi>A</mi><mo>−</mo><mi>P</mi><mi>B</mi><msup><mi>R</mi><mrow><mo>−</mo><mn>1</mn></mrow></msup><msup><mi>B</mi><mi mathvariant="normal">T</mi></msup><mi>P</mi><mo>+</mo><mi>Q</mi><mo>=</mo><mn>0</mn><mo>,</mo><mspace width="1em"/><mi>K</mi><mo>=</mo><msup><mi>R</mi><mrow><mo>−</mo><mn>1</mn></mrow></msup><msup><mi>B</mi><mi mathvariant="normal">T</mi></msup><mi>P</mi></math>
-  <math display="block" set:html={`<mi>H</mi><mo>=</mo>${mat([['<mi>A</mi>', '<mo>−</mo><mi>B</mi><msup><mi>R</mi><mrow><mo>−</mo><mn>1</mn></mrow></msup><msup><mi>B</mi><mi mathvariant="normal">T</mi></msup>'], ['<mo>−</mo><mi>Q</mi>', '<mo>−</mo><msup><mi>A</mi><mi mathvariant="normal">T</mi></msup>']])}<mo>,</mo><mspace width="1em"/><msub><mi>Z</mi><mrow><mi>k</mi><mo>+</mo><mn>1</mn></mrow></msub><mo>=</mo>${fr('<mn>1</mn>', '<mn>2</mn>')}<mrow><mo>(</mo>${fr('<msub><mi>Z</mi><mi>k</mi></msub>', '<msub><mi>c</mi><mi>k</mi></msub>')}<mo>+</mo><msub><mi>c</mi><mi>k</mi></msub><msubsup><mi>Z</mi><mi>k</mi><mrow><mo>−</mo><mn>1</mn></mrow></msubsup><mo>)</mo></mrow><mo>,</mo><mspace width="1em"/><msub><mi>c</mi><mi>k</mi></msub><mo>=</mo><msup><mrow><mo>|</mo><mi>det</mi><mo>⁡</mo><msub><mi>Z</mi><mi>k</mi></msub><mo>|</mo></mrow><mrow><mn>1</mn><mo>/</mo><mn>8</mn></mrow></msup><mo>,</mo><mspace width="1em"/>${mat([['<msub><mi>W</mi><mn>12</mn></msub>'], ['<msub><mi>W</mi><mn>22</mn></msub><mo>+</mo><mi>I</mi>']])}<mi>P</mi><mo>=</mo><mo>−</mo>${mat([['<msub><mi>W</mi><mn>11</mn></msub><mo>+</mo><mi>I</mi>'], ['<msub><mi>W</mi><mn>21</mn></msub>']])}`} />
+  <math display="block"><mi>𝒥</mi><mo>=</mo><msubsup><mo>∫</mo><mn>0</mn><mi>∞</mi></msubsup><mrow><mo>(</mo><msup><mi mathvariant="bold">x</mi><mi mathvariant="normal">T</mi></msup><mi>Q</mi><mi mathvariant="bold">x</mi><mo>+</mo><mi>R</mi><msup><mi>u</mi><mn>2</mn></msup><mo>)</mo></mrow><mspace width="0.17em"/><mi>d</mi><mi>t</mi></math>
+  <math display="block"><msup><mi>A</mi><mi mathvariant="normal">T</mi></msup><mi>P</mi><mo>+</mo><mi>P</mi><mi>A</mi><mo>−</mo><mi>P</mi><mi>B</mi><msup><mi>R</mi><mrow><mo>−</mo><mn>1</mn></mrow></msup><msup><mi>B</mi><mi mathvariant="normal">T</mi></msup><mi>P</mi><mo>+</mo><mi>Q</mi><mo>=</mo><mn>0</mn></math>
+  <math display="block"><mi>K</mi><mo>=</mo><msup><mi>R</mi><mrow><mo>−</mo><mn>1</mn></mrow></msup><msup><mi>B</mi><mi mathvariant="normal">T</mi></msup><mi>P</mi></math>
 </div>
-<p>PID は 2 つのループを重ねます。外の位置のループは、台車の位置のずれから振子の角度の目標 <math><msub><mi>θ</mi><mi mathvariant="normal">r</mi></msub></math>（±10° で切る）を作り、内の角度のループは振子をその角度に保つ入力を出します。台車を右へ運ぶには、まず振子を右へ傾ける必要があるからです（初めに台車が逆へ動く、不安定な零点の性質）。積分がなければ、これは状態フィードバックと同じ形です。</p>
+<h4>リカッチ方程式の解き方</h4>
+<p>ハミルトン行列 <math><mi>H</mi></math> の符号関数 <math><mi>W</mi></math> を使って解きます<Fragment set:html={rf(5) + rf(6)} />。</p>
+<ol class="flow" aria-label="リカッチ方程式の解き方">
+  <li><b>ハミルトン行列 <math><mi>H</mi></math></b></li>
+  <li><b>符号関数 <math><mi>W</mi></math></b><span>行列式で尺度を合わせたニュートン法</span></li>
+  <li><b>解 <math><mi>P</mi></math></b><span><math><mi>W</mi></math> を 4 行ずつに分けた区画 <math><msub><mi>W</mi><mi>ij</mi></msub></math> の連立方程式を最小二乗で解く</span></li>
+</ol>
 <div class="eqs">
-  <math display="block" set:html={`<msub><mi>θ</mi><mi mathvariant="normal">r</mi></msub><mo>=</mo>${sub('K', 'Px')}<msub><mi>e</mi><mi>x</mi></msub><mo>+</mo>${sub('K', 'Ix')}<mo>∫</mo><msub><mi>e</mi><mi>x</mi></msub><mspace width="0.17em"/><mi>d</mi><mi>t</mi><mo>−</mo>${sub('K', 'Dx')}${hatm(d('x'))}<mo>,</mo><mspace width="1em"/><msub><mi>e</mi><mi>x</mi></msub><mo>=</mo><mo>−</mo>${hat('x')}<mo>,</mo><mspace width="1em"/><mi>u</mi><mo>=</mo><msub><mi>K</mi><mrow><mi mathvariant="normal">P</mi><mi>θ</mi></mrow></msub><mo stretchy="false">(</mo>${hat('θ')}<mo>−</mo><msub><mi>θ</mi><mi mathvariant="normal">r</mi></msub><mo stretchy="false">)</mo><mo>+</mo><msub><mi>K</mi><mrow><mi mathvariant="normal">I</mi><mi>θ</mi></mrow></msub><mo>∫</mo><mo stretchy="false">(</mo>${hat('θ')}<mo>−</mo><msub><mi>θ</mi><mi mathvariant="normal">r</mi></msub><mo stretchy="false">)</mo><mspace width="0.17em"/><mi>d</mi><mi>t</mi><mo>+</mo><msub><mi>K</mi><mrow><mi mathvariant="normal">D</mi><mi>θ</mi></mrow></msub>${hatm(d('θ'))}`} />
+  <math display="block" set:html={`<mi>H</mi><mo>=</mo>${mat([['<mi>A</mi>', '<mo>−</mo><mi>B</mi><msup><mi>R</mi><mrow><mo>−</mo><mn>1</mn></mrow></msup><msup><mi>B</mi><mi mathvariant="normal">T</mi></msup>'], ['<mo>−</mo><mi>Q</mi>', '<mo>−</mo><msup><mi>A</mi><mi mathvariant="normal">T</mi></msup>']])}`} />
+  <math display="block" set:html={`<msub><mi>Z</mi><mrow><mi>k</mi><mo>+</mo><mn>1</mn></mrow></msub><mo>=</mo>${fr('<mn>1</mn>', '<mn>2</mn>')}<mrow><mo>(</mo>${fr('<msub><mi>Z</mi><mi>k</mi></msub>', '<msub><mi>c</mi><mi>k</mi></msub>')}<mo>+</mo><msub><mi>c</mi><mi>k</mi></msub><msubsup><mi>Z</mi><mi>k</mi><mrow><mo>−</mo><mn>1</mn></mrow></msubsup><mo>)</mo></mrow>`} />
+  <math display="block"><msub><mi>c</mi><mi>k</mi></msub><mo>=</mo><msup><mrow><mo>|</mo><mi>det</mi><mo>⁡</mo><msub><mi>Z</mi><mi>k</mi></msub><mo>|</mo></mrow><mrow><mn>1</mn><mo>/</mo><mn>8</mn></mrow></msup></math>
+  <math display="block" set:html={`${mat([['<msub><mi>W</mi><mn>12</mn></msub>'], ['<msub><mi>W</mi><mn>22</mn></msub><mo>+</mo><mi>I</mi>']])}<mi>P</mi><mo>=</mo><mo>−</mo>${mat([['<msub><mi>W</mi><mn>11</mn></msub><mo>+</mo><mi>I</mi>'], ['<msub><mi>W</mi><mn>21</mn></msub>']])}`} />
+</div>
+
+<h3>PID</h3>
+<p>PID は 2 つのループを重ねます。</p>
+<ul class="tl">
+  <li><b>外の位置のループ</b>: 台車の位置のずれから、振子の角度の目標 <math><msub><mi>θ</mi><mi mathvariant="normal">r</mi></msub></math> を作る。<math><msub><mi>θ</mi><mi mathvariant="normal">r</mi></msub></math> は ±10° で切る</li>
+  <li><b>内の角度のループ</b>: 振子をその角度に保つ入力を出す</li>
+</ul>
+<p>台車を右へ運ぶには、まず振子を右へ傾ける必要があるからです。初めに台車が逆へ動く、不安定な零点の性質です。積分がなければ、これは状態フィードバックと同じ形です。</p>
+<figure class="fig">
+  <svg viewBox="0 0 380 132" width="380" role="img" aria-label="PID の 2 つのループのブロック線図。位置のループが角度の目標 θr を作り、角度のループが入力 u を台車と振子に出す。計測した位置 x̂ は位置のループへ、角度 θ̂ は角度のループへ戻る">
+    <rect class="b" x="6" y="12" width="96" height="44" rx="3" />
+    <text class="t" x="54" y="39" text-anchor="middle">位置のループ</text>
+    <rect class="b" x="142" y="12" width="96" height="44" rx="3" />
+    <text class="t" x="190" y="39" text-anchor="middle">角度のループ</text>
+    <rect class="b" x="278" y="12" width="96" height="44" rx="3" />
+    <text class="t" x="326" y="39" text-anchor="middle">台車と振子</text>
+    <rect class="b" x="278" y="84" width="96" height="40" rx="3" />
+    <text class="t" x="326" y="109" text-anchor="middle">計測</text>
+    <path class="w" d="M102 34H134M238 34H270M326 56V76M278 96H190V64M278 112H54V64" />
+    <path class="ah" d="M142 34l-9-4.5v9zM278 34l-9-4.5v9zM326 84l-4.5-9h9zM190 56l-4.5 9h9zM54 56l-4.5 9h9z" />
+    <text class="tm" x="116" y="27" text-anchor="middle">θ<tspan dy="4" style="font-size:10px;font-style:normal">r</tspan></text>
+    <text class="tm" x="254" y="27" text-anchor="middle">u</text>
+    <text class="tm" x="334" y="72">θ, x</text>
+    <text class="tm" x="206" y="90" text-anchor="middle">θ̂</text>
+    <text class="tm" x="72" y="106" text-anchor="middle">x̂</text>
+  </svg>
+  <figcaption>PID の 2 つのループ。外の位置のループが角度の目標 <math><msub><mi>θ</mi><mi mathvariant="normal">r</mi></msub></math> を作り、内の角度のループが入力 <math><mi>u</mi></math> を出す</figcaption>
+</figure>
+<div class="eqs">
+  <math display="block" set:html={`<msub><mi>θ</mi><mi mathvariant="normal">r</mi></msub><mo>=</mo>${sub('K', 'Px')}<msub><mi>e</mi><mi>x</mi></msub><mo>+</mo>${sub('K', 'Ix')}<mo>∫</mo><msub><mi>e</mi><mi>x</mi></msub><mspace width="0.17em"/><mi>d</mi><mi>t</mi><mo>−</mo>${sub('K', 'Dx')}${hatm(d('x'))}`} />
+  <math display="block" set:html={`<msub><mi>e</mi><mi>x</mi></msub><mo>=</mo><mo>−</mo>${hat('x')}`} />
+  <math display="block" set:html={`<mi>u</mi><mo>=</mo><msub><mi>K</mi><mrow><mi mathvariant="normal">P</mi><mi>θ</mi></mrow></msub><mo stretchy="false">(</mo>${hat('θ')}<mo>−</mo><msub><mi>θ</mi><mi mathvariant="normal">r</mi></msub><mo stretchy="false">)</mo><mo>+</mo><msub><mi>K</mi><mrow><mi mathvariant="normal">I</mi><mi>θ</mi></mrow></msub><mo>∫</mo><mo stretchy="false">(</mo>${hat('θ')}<mo>−</mo><msub><mi>θ</mi><mi mathvariant="normal">r</mi></msub><mo stretchy="false">)</mo><mspace width="0.17em"/><mi>d</mi><mi>t</mi><mo>+</mo><msub><mi>K</mi><mrow><mi mathvariant="normal">D</mi><mi>θ</mi></mrow></msub>${hatm(d('θ'))}`} />
   <math display="block" set:html={`<mi>K</mi><mo>=</mo><mo>−</mo><mrow><mo>[</mo><msub><mi>K</mi><mrow><mi mathvariant="normal">P</mi><mi>θ</mi></mrow></msub>${sub('K', 'Px')}<mspace width="0.6em"/><msub><mi>K</mi><mrow><mi mathvariant="normal">P</mi><mi>θ</mi></mrow></msub><mspace width="0.6em"/><msub><mi>K</mi><mrow><mi mathvariant="normal">P</mi><mi>θ</mi></mrow></msub>${sub('K', 'Dx')}<mspace width="0.6em"/><msub><mi>K</mi><mrow><mi mathvariant="normal">D</mi><mi>θ</mi></mrow></msub><mo>]</mo></mrow><mspace width="1em"/><mtext>（積分なし）</mtext>`} />
 </div>
-<p>振り上げは Åström・Furuta のエネルギー法です。振子のエネルギー <math><mi>E</mi></math>（直立して止まっていると 0、真下で止まっていると <math><mo>−</mo><mn>2</mn><mi>m</mi><mi>g</mi><mi>l</mi></math>）は、台車の加速度 <math><mover><mi>x</mi><mo>¨</mo></mover></math> を通してだけ変わります。<math><mover><mi>θ</mi><mo>˙</mo></mover><mi>cos</mi><mo>⁡</mo><mi>θ</mi></math> と逆の向きに加速すればエネルギーが増え、目標に近づくと加速をやめます。この式に、このツールで次の 4 つを足しています。目標を直立より少し上（<math><msub><mi>E</mi><mn>0</mn></msub><mo>=</mo><mn>0.05</mn><mi>m</mi><mi>g</mi><mi>l</mi></math>）にする。<math><mi>s</mi><mo>=</mo><mo stretchy="false">(</mo><mover><mi>θ</mi><mo>˙</mo></mover><mo>/</mo><msub><mi>ω</mi><mn>0</mn></msub><mo stretchy="false">)</mo><mi>cos</mi><mo>⁡</mo><mi>θ</mi></math> が小さい間（直立の近く）は加速を <math><mo stretchy="false">|</mo><mi>s</mi><mo stretchy="false">|</mo></math> に比例して弱める（下限 0.2）。台車をレールの中央へ寄せる項（固有角周波数 1.5 rad/s）を足す。加速度から入力へ直すときに、逆起電力と台車の摩擦を補う。振子が真上から <math><msub><mi>θ</mi><mi>sw</mi></msub></math> の内側に入ったら安定化の制御へ切り替え、<math><mi>max</mi><mo>⁡</mo><mo stretchy="false">(</mo><msub><mi>θ</mi><mi>sw</mi></msub><mo>+</mo><mn>10</mn><mo>°</mo><mo>,</mo><mn>30</mn><mo>°</mo><mo stretchy="false">)</mo></math> の外へ出たら倒れたとみなして振り上げに戻ります（振り上げないときは入力を 0 にします）。</p>
+
+<h3>今の値を代入した式</h3>
 <div class="eqs">
-  <math display="block" set:html={`<mi>E</mi><mo>=</mo>${fr('<mn>1</mn>', '<mn>2</mn>')}${Jl}<msup>${d('θ')}<mn>2</mn></msup><mo>+</mo><mi>m</mi><mi>g</mi><mi>l</mi><mo stretchy="false">(</mo><mi>cos</mi><mo>⁡</mo><mi>θ</mi><mo>−</mo><mn>1</mn><mo stretchy="false">)</mo><mo>,</mo><mspace width="1em"/>${fr('<mi>d</mi><mi>E</mi>', '<mi>d</mi><mi>t</mi>')}<mo>=</mo><mo>−</mo><mi>m</mi><mi>l</mi>${d('θ')}<mi>cos</mi><mo>⁡</mo><mi>θ</mi>${dd('x')}<mo>−</mo>${sub('b', 'p')}<msup>${d('θ')}<mn>2</mn></msup>`} />
-  <math display="block" set:html={`${dd('x')}<mo>=</mo><msub><mi>sat</mi><msub><mi>a</mi><mi>max</mi></msub></msub><mo>⁡</mo><mrow><mo>(</mo><mi>k</mi><mi>g</mi><mrow><mo>(</mo>${fr('<mi>E</mi>', '<mi>m</mi><mi>g</mi><mi>l</mi>')}<mo>−</mo><mn>0.05</mn><mo>)</mo></mrow><mi>sgn</mi><mo>⁡</mo><mi>s</mi><mspace width="0.2em"/><mi>min</mi><mo>⁡</mo><mo stretchy="false">(</mo><mi>max</mi><mo>⁡</mo><mo stretchy="false">(</mo><mo stretchy="false">|</mo><mi>s</mi><mo stretchy="false">|</mo><mo>,</mo><mn>0.2</mn><mo stretchy="false">)</mo><mo>,</mo><mn>1</mn><mo stretchy="false">)</mo><mo>−</mo><msubsup><mi>ω</mi><mi mathvariant="normal">c</mi><mn>2</mn></msubsup>${hat('x')}<mo>−</mo><mn>2</mn><msub><mi>ω</mi><mi mathvariant="normal">c</mi></msub>${hatm(d('x'))}<mo>)</mo></mrow>`} />
-</div>
-<p>制御は実機と同じく離散時間で動きます。制御周期 <math><msub><mi>T</mi><mi mathvariant="normal">s</mi></msub></math> ごとに角度と位置をエンコーダで読み（1 カウントの刻みに丸め、雑音を足す）、差分から速度を推定し、入力を決めて次の周期まで保ちます。速度の推定は、微分に 2 次の低域通過フィルタ（減衰比 0.9）を掛けたものを、双一次変換で離散化しています（一定の速さを正しく読むよう、周波数を合わせる補正はしません）。制御器は連続時間の線形の模型で設計するので、制御周期が長いほど、またフィルタの遅れが大きいほど、設計した閉ループの極からずれて、ついには倒れます。</p>
-<div class="eqs">
-  <math display="block" set:html={`${hat('θ')}<mo>=</mo><mi>Δ</mi><mi>θ</mi><mspace width="0.17em"/><mi>round</mi><mo>⁡</mo>${fr('<mi>θ</mi><mo>+</mo><mi>π</mi><mo>+</mo><msub><mi>n</mi><mi>θ</mi></msub>', '<mi>Δ</mi><mi>θ</mi>')}<mo>−</mo><mi>π</mi><mo>,</mo><mspace width="1em"/><mi>H</mi><mo stretchy="false">(</mo><mi>s</mi><mo stretchy="false">)</mo><mo>=</mo>${fr('<msubsup><mi>ω</mi><mi mathvariant="normal">f</mi><mn>2</mn></msubsup><mi>s</mi>', '<msup><mi>s</mi><mn>2</mn></msup><mo>+</mo><mn>2</mn><mi>ζ</mi><msub><mi>ω</mi><mi mathvariant="normal">f</mi></msub><mi>s</mi><mo>+</mo><msubsup><mi>ω</mi><mi mathvariant="normal">f</mi><mn>2</mn></msubsup>')}<mo>,</mo><mspace width="1em"/><mi>s</mi><mo>←</mo>${fr('<mn>2</mn>', '<msub><mi>T</mi><mi mathvariant="normal">s</mi></msub>')}${fr('<mn>1</mn><mo>−</mo><msup><mi>z</mi><mrow><mo>−</mo><mn>1</mn></mrow></msup>', '<mn>1</mn><mo>+</mo><msup><mi>z</mi><mrow><mo>−</mo><mn>1</mn></mrow></msup>')}`} />
-</div>
-<p>運動方程式は 0.25 ms 刻みの 4 次のルンゲ・クッタ法で解きます。クーロン摩擦は <math><mi>tanh</mi><mo>⁡</mo><mo stretchy="false">(</mo><mover><mi>x</mi><mo>˙</mo></mover><mo>/</mo><mn>0.2</mn><mspace width="0.17em"/><mi>mm/s</mi><mo stretchy="false">)</mo></math> で滑らかにします。台車がレールの端に当たると、反発係数 0.2 で跳ね返り、そのとき台車が受ける撃力で振子の角速度も変わります。図やボタンで押したときは、押した点にかかる水平の力積 <math><mi>P</mi></math> から、質量行列 <math><mi mathvariant="bold">M</mi><mo stretchy="false">(</mo><mi>θ</mi><mo stretchy="false">)</mo></math> を通して速度の変化を求めます（<math><mi>r</mi></math> は軸から押した点まで、台車なら第 2 成分が 0）。整定時間は、出来事（振り上げて切り替えた、押した、初めの状態から離した）から、角度 ±1° と位置 ±10 mm の範囲に入って 1 s 留まるまでの時間です。</p>
-<div class="eqs">
-  <math display="block" set:html={`<mi mathvariant="bold">M</mi><mo stretchy="false">(</mo><mi>θ</mi><mo stretchy="false">)</mo><mi>Δ</mi>${mat([[d('x')], [d('θ')]])}<mo>=</mo>${mat([['<mi>P</mi>'], ['<mi>P</mi><mi>r</mi><mi>cos</mi><mo>⁡</mo><mi>θ</mi>']])}<mo>,</mo><mspace width="1em"/><mi mathvariant="bold">M</mi><mo stretchy="false">(</mo><mi>θ</mi><mo stretchy="false">)</mo><mo>=</mo>${mat([[`${Me}<mo>+</mo><mi>m</mi>`, '<mi>m</mi><mi>l</mi><mi>cos</mi><mo>⁡</mo><mi>θ</mi>'], ['<mi>m</mi><mi>l</mi><mi>cos</mi><mo>⁡</mo><mi>θ</mi>', '<mi>J</mi><mo>+</mo><mi>m</mi><msup><mi>l</mi><mn>2</mn></msup>']])}`} />
   <div class="subst" id="subst" role="group" aria-label="今の値を代入した線形の模型とゲイン"></div>
 </div>
-<p class="cite">出典: K. J. Åström and K. Furuta, “Swinging up a pendulum by energy control,” <i>Automatica</i>, vol. 36, no. 2, pp. 287–295, 2000（振り上げのエネルギー法）。K. J. Åström and R. M. Murray, <a href="https://fbswiki.org/wiki/index.php/Feedback_Systems:_An_Introduction_for_Scientists_and_Engineers" target="_blank" rel="noopener">Feedback Systems: An Introduction for Scientists and Engineers</a>, 2nd ed., Princeton University Press, 2021（台車と振子の模型、可制御性、状態フィードバック、LQR）。K. Ogata, <i>Modern Control Engineering</i>, 5th ed., Prentice Hall, 2010（アッカーマンの式、極配置）。R. E. Kalman, “Contributions to the theory of optimal control,” <i>Boletín de la Sociedad Matemática Mexicana</i>, vol. 5, pp. 102–119, 1960（LQR）。J. D. Roberts, “Linear model reduction and solution of the algebraic Riccati equation by use of the sign function,” <i>Int. J. Control</i>, vol. 32, no. 4, pp. 677–687, 1980、R. Byers, “Solving the algebraic Riccati equation with the matrix sign function,” <i>Linear Algebra Appl.</i>, vol. 85, pp. 267–279, 1987（符号関数によるリカッチ方程式の解法）。W. H. Press et al., <i>Numerical Recipes in C</i>, 2nd ed., Cambridge University Press, 1992（11.5・11.6 節、固有値を求めるヘッセンベルク化と QR 法）。教材の値は、Quanser の IP02 と SIP の設定ファイル（config_ip02.m・config_sp.m・setup_ip02_sip.m、Quanser Consulting）の値（台車・おもり・粘性摩擦・モータ・歯車・ピニオン・台車が動ける範囲 814 mm・エンコーダの分解能・D/A の上限 10 V・振子・LQR の重みの初期値）と、Control Tutorials for MATLAB and Simulink の <a href="https://ctms.engin.umich.edu/CTMS/index.php?example=InvertedPendulum&amp;section=SystemModeling" target="_blank" rel="noopener">Inverted Pendulum: System Modeling</a>（University of Michigan ほか）の値です。おもりを載せた台車・粘性摩擦・モータ・歯車・ピニオン・長い振子の値は、D. Bates, “A Hybrid Approach for Reinforcement Learning Using Virtual Policy Gradient for Balancing an Inverted Pendulum,” <a href="https://arxiv.org/abs/2102.08362" target="_blank" rel="noopener">arXiv:2102.08362</a>, 2021 の付録の表 1 にもあります（振子の慣性モーメントだけは表 1 と異なります）。振り上げに足した 4 つの工夫とその値、クーロン摩擦の初期値、速度のフィルタの遮断周波数の初期値（Quanser の SIP の設定は 10 Hz）、PID と極配置の初期値、レールの端の反発係数、押す強さは、このツールで選んだ値です。</p>
+
+<h3>振り上げ</h3>
+<p>振り上げは Åström・Furuta のエネルギー法です<Fragment set:html={rf(7)} />。振子のエネルギー <math><mi>E</mi></math> は、台車の加速度 <math><mover><mi>x</mi><mo>¨</mo></mover></math> を通してだけ変わります。<math><mover><mi>θ</mi><mo>˙</mo></mover><mi>cos</mi><mo>⁡</mo><mi>θ</mi></math> と逆の向きに加速すればエネルギーが増え、目標に近づくと加速をやめます。</p>
+<p><math><mi>E</mi></math> は、直立して止まっていると 0、真下で止まっていると <math><mo>−</mo><mn>2</mn><mi>m</mi><mi>g</mi><mi>l</mi></math> です。</p>
+<div class="eqs">
+  <math display="block" set:html={`<mi>E</mi><mo>=</mo>${fr('<mn>1</mn>', '<mn>2</mn>')}${Jl}<msup>${d('θ')}<mn>2</mn></msup><mo>+</mo><mi>m</mi><mi>g</mi><mi>l</mi><mo stretchy="false">(</mo><mi>cos</mi><mo>⁡</mo><mi>θ</mi><mo>−</mo><mn>1</mn><mo stretchy="false">)</mo>`} />
+  <math display="block" set:html={`${fr('<mi>d</mi><mi>E</mi>', '<mi>d</mi><mi>t</mi>')}<mo>=</mo><mo>−</mo><mi>m</mi><mi>l</mi>${d('θ')}<mi>cos</mi><mo>⁡</mo><mi>θ</mi>${dd('x')}<mo>−</mo>${sub('b', 'p')}<msup>${d('θ')}<mn>2</mn></msup>`} />
+</div>
+<h4>このツールで足したこと</h4>
+<p>この式に、このツールで次の 4 つを足しています。</p>
+<ol class="tl">
+  <li>目標を直立より少し上の <math><msub><mi>E</mi><mn>0</mn></msub><mo>=</mo><mn>0.05</mn><mi>m</mi><mi>g</mi><mi>l</mi></math> にする</li>
+  <li><math><mi>s</mi><mo>=</mo><mo stretchy="false">(</mo><mover><mi>θ</mi><mo>˙</mo></mover><mo>/</mo><msub><mi>ω</mi><mn>0</mn></msub><mo stretchy="false">)</mo><mi>cos</mi><mo>⁡</mo><mi>θ</mi></math> が小さい間、つまり直立の近くでは、加速を <math><mo stretchy="false">|</mo><mi>s</mi><mo stretchy="false">|</mo></math> に比例して弱める。下限は 0.2</li>
+  <li>台車をレールの中央へ寄せる項を足す。固有角周波数は 1.5 rad/s</li>
+  <li>加速度から入力へ直すときに、逆起電力と台車の摩擦を補う</li>
+</ol>
+<div class="eqs">
+  <math display="block" set:html={`${dd('x')}<mo>=</mo><msub><mi>sat</mi><msub><mi>a</mi><mi>max</mi></msub></msub><mo>⁡</mo><mrow><mo>(</mo><mi>k</mi><mi>g</mi><mrow><mo>(</mo>${fr('<mi>E</mi>', '<mi>m</mi><mi>g</mi><mi>l</mi>')}<mo>−</mo><mn>0.05</mn><mo>)</mo></mrow><mi>sgn</mi><mo>⁡</mo><mi>s</mi><mspace width="0.2em"/><mi>min</mi><mo>⁡</mo><mo stretchy="false">(</mo><mi>max</mi><mo>⁡</mo><mo stretchy="false">(</mo><mo stretchy="false">|</mo><mi>s</mi><mo stretchy="false">|</mo><mo>,</mo><mn>0.2</mn><mo stretchy="false">)</mo><mo>,</mo><mn>1</mn><mo stretchy="false">)</mo><mo>−</mo><msubsup><mi>ω</mi><mi mathvariant="normal">c</mi><mn>2</mn></msubsup>${hat('x')}<mo>−</mo><mn>2</mn><msub><mi>ω</mi><mi mathvariant="normal">c</mi></msub>${hatm(d('x'))}<mo>)</mo></mrow>`} />
+</div>
+<h4>安定化との切り替え</h4>
+<ol class="flow" aria-label="振り上げと安定化の切り替え">
+  <li><b>振り上げ</b></li>
+  <li><b>真上から <math><msub><mi>θ</mi><mi>sw</mi></msub></math> の内側に入る</b><span>安定化の制御へ切り替える</span></li>
+  <li><b>安定化</b></li>
+  <li><b><math><mi>max</mi><mo>⁡</mo><mo stretchy="false">(</mo><msub><mi>θ</mi><mi>sw</mi></msub><mo>+</mo><mn>10</mn><mo>°</mo><mo>,</mo><mn>30</mn><mo>°</mo><mo stretchy="false">)</mo></math> の外へ出る</b><span>倒れたとみなし、振り上げに戻る</span></li>
+</ol>
+<p>振り上げないときは、入力を 0 にします。</p>
+
+<h3>計測と制御周期</h3>
+<p>制御は実機と同じく離散時間で動きます。制御周期 <math><msub><mi>T</mi><mi mathvariant="normal">s</mi></msub></math> ごとに、次の順に処理します。</p>
+<ol class="flow" aria-label="1 周期の処理">
+  <li><b>角度と位置を読む</b><span>エンコーダの 1 カウントの刻みに丸め、雑音を足す</span></li>
+  <li><b>速度を推定する</b><span>差分から</span></li>
+  <li><b>入力を決める</b></li>
+  <li><b>入力を保つ</b><span>次の周期まで</span></li>
+</ol>
+<p>速度の推定は、微分に 2 次の低域通過フィルタを掛けたもの <math><mi>H</mi><mo stretchy="false">(</mo><mi>s</mi><mo stretchy="false">)</mo></math> を、双一次変換で離散化しています。減衰比 <math><mi>ζ</mi></math> は 0.9 です。一定の速さを正しく読むよう、周波数を合わせる補正はしません。</p>
+<div class="eqs">
+  <math display="block" set:html={`${hat('θ')}<mo>=</mo><mi>Δ</mi><mi>θ</mi><mspace width="0.17em"/><mi>round</mi><mo>⁡</mo>${fr('<mi>θ</mi><mo>+</mo><mi>π</mi><mo>+</mo><msub><mi>n</mi><mi>θ</mi></msub>', '<mi>Δ</mi><mi>θ</mi>')}<mo>−</mo><mi>π</mi>`} />
+  <math display="block" set:html={`<mi>H</mi><mo stretchy="false">(</mo><mi>s</mi><mo stretchy="false">)</mo><mo>=</mo>${fr('<msubsup><mi>ω</mi><mi mathvariant="normal">f</mi><mn>2</mn></msubsup><mi>s</mi>', '<msup><mi>s</mi><mn>2</mn></msup><mo>+</mo><mn>2</mn><mi>ζ</mi><msub><mi>ω</mi><mi mathvariant="normal">f</mi></msub><mi>s</mi><mo>+</mo><msubsup><mi>ω</mi><mi mathvariant="normal">f</mi><mn>2</mn></msubsup>')}`} />
+  <math display="block" set:html={`<mi>s</mi><mo>←</mo>${fr('<mn>2</mn>', '<msub><mi>T</mi><mi mathvariant="normal">s</mi></msub>')}${fr('<mn>1</mn><mo>−</mo><msup><mi>z</mi><mrow><mo>−</mo><mn>1</mn></mrow></msup>', '<mn>1</mn><mo>+</mo><msup><mi>z</mi><mrow><mo>−</mo><mn>1</mn></mrow></msup>')}`} />
+</div>
+<p>制御器は連続時間の線形の模型で設計します。そのため、制御周期が長いほど、またフィルタの遅れが大きいほど、設計した閉ループの極からずれて、ついには倒れます。</p>
+
+<h3>運動の計算</h3>
+<ul class="tl">
+  <li><b>解き方</b>: 0.25 ms 刻みの 4 次のルンゲ・クッタ法</li>
+  <li><b>クーロン摩擦</b>: <math><mi>tanh</mi><mo>⁡</mo><mo stretchy="false">(</mo><mover><mi>x</mi><mo>˙</mo></mover><mo>/</mo><mn>0.2</mn><mspace width="0.17em"/><mi>mm/s</mi><mo stretchy="false">)</mo></math> で滑らかにする</li>
+  <li><b>レールの端</b>: 台車が当たると、反発係数 0.2 で跳ね返る。そのとき台車が受ける撃力で、振子の角速度も変わる</li>
+</ul>
+<h4>押したとき</h4>
+<p>図やボタンで押したときは、押した点にかかる水平の力積 <math><mi>P</mi></math> から、質量行列 <math><mi mathvariant="bold">M</mi><mo stretchy="false">(</mo><mi>θ</mi><mo stretchy="false">)</mo></math> を通して速度の変化を求めます。<math><mi>r</mi></math> は軸から押した点までです。台車を押したときは、右辺の第 2 成分が 0 です。</p>
+<div class="eqs">
+  <math display="block" set:html={`<mi mathvariant="bold">M</mi><mo stretchy="false">(</mo><mi>θ</mi><mo stretchy="false">)</mo><mi>Δ</mi>${mat([[d('x')], [d('θ')]])}<mo>=</mo>${mat([['<mi>P</mi>'], ['<mi>P</mi><mi>r</mi><mi>cos</mi><mo>⁡</mo><mi>θ</mi>']])}`} />
+  <math display="block" set:html={`<mi mathvariant="bold">M</mi><mo stretchy="false">(</mo><mi>θ</mi><mo stretchy="false">)</mo><mo>=</mo>${mat([[`${Me}<mo>+</mo><mi>m</mi>`, '<mi>m</mi><mi>l</mi><mi>cos</mi><mo>⁡</mo><mi>θ</mi>'], ['<mi>m</mi><mi>l</mi><mi>cos</mi><mo>⁡</mo><mi>θ</mi>', '<mi>J</mi><mo>+</mo><mi>m</mi><msup><mi>l</mi><mn>2</mn></msup>']])}`} />
+</div>
+<h4>整定時間</h4>
+<p>出来事から、角度 ±1° と位置 ±10 mm の範囲に入って 1 s 留まるまでの時間です。出来事は、振り上げて切り替えた、押した、初めの状態から離した、のどれかです。</p>
+
+<h3>教材の値</h3>
+<p>教材の値は、次の 2 つから取りました。</p>
+<ul class="tl">
+  <li><b>Quanser の IP02 と SIP の設定ファイル</b><Fragment set:html={rf(8)} />: 台車・おもり・粘性摩擦・モータ・歯車・ピニオン・台車が動ける範囲 814 mm・エンコーダの分解能・D/A の上限 10 V・振子・LQR の重みの初期値</li>
+  <li><b>Control Tutorials for MATLAB and Simulink の Inverted Pendulum: System Modeling</b><Fragment set:html={rf(9)} /></li>
+</ul>
+<p>おもりを載せた台車・粘性摩擦・モータ・歯車・ピニオン・長い振子の値は、Bates の論文の付録の表 1 にもあります<Fragment set:html={rf(10)} />。ただし、振子の慣性モーメントだけは表 1 と異なります。</p>
+
+<h3>このツールで決めたこと</h3>
+<ul class="tl">
+  <li>振り上げに足した 4 つの工夫とその値</li>
+  <li>クーロン摩擦の初期値</li>
+  <li>速度のフィルタの遮断周波数の初期値。Quanser の SIP の設定は 10 Hz</li>
+  <li>PID と極配置の初期値</li>
+  <li>レールの端の反発係数</li>
+  <li>押す強さ</li>
+</ul>
+
+<h3>出典</h3>
+<ol class="refs">
+  <li id="thy-r1"><span class="rf-for">台車と振子の模型、可制御性、状態フィードバック、LQR</span><span class="rf-src">K. J. Åström and R. M. Murray, <a href="https://fbswiki.org/wiki/index.php/Feedback_Systems:_An_Introduction_for_Scientists_and_Engineers" target="_blank" rel="noopener">Feedback Systems: An Introduction for Scientists and Engineers</a>, 2nd ed., Princeton University Press, 2021</span></li>
+  <li id="thy-r2"><span class="rf-for">固有値を求めるヘッセンベルク化と QR 法</span><span class="rf-src">W. H. Press et al., <i>Numerical Recipes in C</i>, 2nd ed., Cambridge University Press, 1992, 11.5・11.6 節</span></li>
+  <li id="thy-r3"><span class="rf-for">アッカーマンの式、極配置</span><span class="rf-src">K. Ogata, <i>Modern Control Engineering</i>, 5th ed., Prentice Hall, 2010</span></li>
+  <li id="thy-r4"><span class="rf-for">LQR</span><span class="rf-src">R. E. Kalman, “Contributions to the theory of optimal control,” <i>Boletín de la Sociedad Matemática Mexicana</i>, vol. 5, pp. 102–119, 1960</span></li>
+  <li id="thy-r5"><span class="rf-for">符号関数によるリカッチ方程式の解法</span><span class="rf-src">J. D. Roberts, “Linear model reduction and solution of the algebraic Riccati equation by use of the sign function,” <i>Int. J. Control</i>, vol. 32, no. 4, pp. 677–687, 1980</span></li>
+  <li id="thy-r6"><span class="rf-for">符号関数によるリカッチ方程式の解法</span><span class="rf-src">R. Byers, “Solving the algebraic Riccati equation with the matrix sign function,” <i>Linear Algebra Appl.</i>, vol. 85, pp. 267–279, 1987</span></li>
+  <li id="thy-r7"><span class="rf-for">振り上げのエネルギー法</span><span class="rf-src">K. J. Åström and K. Furuta, “Swinging up a pendulum by energy control,” <i>Automatica</i>, vol. 36, no. 2, pp. 287–295, 2000</span></li>
+  <li id="thy-r8"><span class="rf-for">教材の値</span><span class="rf-src">Quanser Consulting, IP02 と SIP の設定ファイル（config_ip02.m・config_sp.m・setup_ip02_sip.m）</span></li>
+  <li id="thy-r9"><span class="rf-for">教材の値</span><span class="rf-src">Control Tutorials for MATLAB and Simulink, <a href="https://ctms.engin.umich.edu/CTMS/index.php?example=InvertedPendulum&amp;section=SystemModeling" target="_blank" rel="noopener">Inverted Pendulum: System Modeling</a>, University of Michigan ほか</span></li>
+  <li id="thy-r10"><span class="rf-for">教材の値と同じ値（付録の表 1）</span><span class="rf-src">D. Bates, “A Hybrid Approach for Reinforcement Learning Using Virtual Policy Gradient for Balancing an Inverted Pendulum,” <a href="https://arxiv.org/abs/2102.08362" target="_blank" rel="noopener">arXiv:2102.08362</a>, 2021</span></li>
+</ol>

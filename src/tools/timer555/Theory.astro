@@ -1,7 +1,21 @@
 ---
 // 動作原理と式。代入した式（#subst）は client.ts が入れる
 ---
-<p><math><msub><mi>C</mi><mn>1</mn></msub></math> は <math><msub><mi>R</mi><mn>1</mn></msub><mo>+</mo><msub><mi>R</mi><mn>2</mn></msub></math> を通って <math><mn>1</mn><mo lspace="0" rspace="0">/</mo><mn>3</mn><mspace width="0.15em"/><msub><mi>V</mi><mi>CC</mi></msub></math> から <math><mn>2</mn><mo lspace="0" rspace="0">/</mo><mn>3</mn><mspace width="0.15em"/><msub><mi>V</mi><mi>CC</mi></msub></math> まで充電され、この <math><msub><mi>t</mi><mi mathvariant="normal">H</mi></msub></math> の間は出力が H。<math><mn>2</mn><mo lspace="0" rspace="0">/</mo><mn>3</mn><mspace width="0.15em"/><msub><mi>V</mi><mi>CC</mi></msub></math> に達すると 7 番ピンが導通し、<math><msub><mi>C</mi><mn>1</mn></msub></math> は <math><msub><mi>R</mi><mn>2</mn></msub></math> だけを通って <math><mn>1</mn><mo lspace="0" rspace="0">/</mo><mn>3</mn><mspace width="0.15em"/><msub><mi>V</mi><mi>CC</mi></msub></math> まで放電し、この <math><msub><mi>t</mi><mi mathvariant="normal">L</mi></msub></math> の間は出力が L になります。充電の経路が長いぶん、デューティ比 <math><mi>D</mi></math> は常に 50 % を超えます。</p>
+<h3>非安定動作のしくみ</h3>
+<p><math><msub><mi>C</mi><mn>1</mn></msub></math> の電圧が <math><mn>1</mn><mo lspace="0" rspace="0">/</mo><mn>3</mn><mspace width="0.15em"/><msub><mi>V</mi><mi>CC</mi></msub></math> と <math><mn>2</mn><mo lspace="0" rspace="0">/</mo><mn>3</mn><mspace width="0.15em"/><msub><mi>V</mi><mi>CC</mi></msub></math> の間を往復し、そのたびに出力が切り替わります。</p>
+<ol class="flow" aria-label="1 周期の流れ">
+  <li><b>充電</b><span><math><msub><mi>R</mi><mn>1</mn></msub><mo>+</mo><msub><mi>R</mi><mn>2</mn></msub></math> を通る</span></li>
+  <li><b><math><mn>2</mn><mo lspace="0" rspace="0">/</mo><mn>3</mn><mspace width="0.15em"/><msub><mi>V</mi><mi>CC</mi></msub></math> に達する</b><span>7 番ピンが導通</span></li>
+  <li><b>放電</b><span><math><msub><mi>R</mi><mn>2</mn></msub></math> だけを通る</span></li>
+  <li><b><math><mn>1</mn><mo lspace="0" rspace="0">/</mo><mn>3</mn><mspace width="0.15em"/><msub><mi>V</mi><mi>CC</mi></msub></math> に下がる</b><span>充電に戻る</span></li>
+</ol>
+<dl class="syms">
+  <dt><math><msub><mi>t</mi><mi mathvariant="normal">H</mi></msub></math></dt><dd>充電の時間。出力は H</dd>
+  <dt><math><msub><mi>t</mi><mi mathvariant="normal">L</mi></msub></math></dt><dd>放電の時間。出力は L</dd>
+</dl>
+<p>充電の経路のほうが <math><msub><mi>R</mi><mn>1</mn></msub></math> のぶん長いので、デューティ比 <math><mi>D</mi></math> は常に 50 % を超えます。</p>
+<h3>式</h3>
+<p>式は LM555 のデータシートの非安定動作の項によります<a class="rf" href="#thy-r1">[1]</a>。</p>
 <div class="eqs">
   <math display="block"><msub><mi>t</mi><mi mathvariant="normal">H</mi></msub><mo>=</mo><mi>ln</mi><mo>&#x2061;</mo><mn>2</mn><mo>&#x22C5;</mo><mrow><mo>(</mo><msub><mi>R</mi><mn>1</mn></msub><mo>+</mo><msub><mi>R</mi><mn>2</mn></msub><mo>)</mo></mrow><mo>&#x22C5;</mo><msub><mi>C</mi><mn>1</mn></msub></math>
   <math display="block"><msub><mi>t</mi><mi mathvariant="normal">L</mi></msub><mo>=</mo><mi>ln</mi><mo>&#x2061;</mo><mn>2</mn><mo>&#x22C5;</mo><msub><mi>R</mi><mn>2</mn></msub><mo>&#x22C5;</mo><msub><mi>C</mi><mn>1</mn></msub></math>
@@ -10,4 +24,7 @@
   <math display="block"><msub><mi>I</mi><mrow><msub><mi>R</mi><mn>1</mn></msub></mrow></msub><mo>=</mo><mfrac><msub><mi>V</mi><mi>CC</mi></msub><msub><mi>R</mi><mn>1</mn></msub></mfrac><mo>,</mo><mspace width="1em"/><msub><mi>P</mi><mrow><msub><mi>R</mi><mn>1</mn></msub></mrow></msub><mo>=</mo><mfrac><msubsup><mi>V</mi><mi>CC</mi><mn>2</mn></msubsup><msub><mi>R</mi><mn>1</mn></msub></mfrac></math>
   <div class="subst" id="subst" role="group" aria-label="現在の値を代入した式"></div>
 </div>
-<p class="cite">出典: Texas Instruments, <a href="https://www.ti.com/lit/ds/symlink/lm555.pdf" target="_blank" rel="noopener">LM555 Timer データシート</a>（非安定動作の項）</p>
+<h3>出典</h3>
+<ol class="refs">
+  <li id="thy-r1"><span class="rf-for">非安定動作の式</span><span class="rf-src">Texas Instruments, <a href="https://www.ti.com/lit/ds/symlink/lm555.pdf" target="_blank" rel="noopener">LM555 Timer データシート</a>（非安定動作の項）</span></li>
+</ol>

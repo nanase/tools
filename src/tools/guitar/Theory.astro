@@ -1,34 +1,166 @@
 ---
 // 動作原理と式。代入した式（#subst）は client.ts が入れる
 ---
-<p>弦は両端（押さえたフレットと駒のサドル）で支えた、曲げ剛性のある弦として扱います。張力 <math><mi>T</mi></math>・線密度 <math><mi>μ</mi></math>・振動する長さ <math><mi>L</mi></math> から、第 <math><mi>n</mi></math> モードの周波数 <math><msub><mi>f</mi><mi>n</mi></msub></math> が決まります。曲げ剛性 <math><mi>E</mi><mi>I</mi></math> があると、高いモードほど整数倍より少し高くなります（非調和性）。巻弦の線密度は芯線と巻線の質量の和で、曲げ剛性は芯線で決まるとします。押さえたフレットからナット側は指で止まり、振動しません。</p>
+<h3>音の流れ</h3>
+<p>弾いた弦の振動が駒を通じて胴を揺らし、胴が空気へ音を出します。</p>
+<ol class="flow" aria-label="音の流れ">
+  <li><b>撥弦</b><span>三角形に引いて離す</span></li>
+  <li><b>弦</b><span>曲げ剛性のある弦のモード</span></li>
+  <li><b>駒</b><span>弦の力を胴へ伝える</span></li>
+  <li><b>胴</b><span>表板・サウンドホール・多数のモード</span></li>
+  <li><b>放射</b><span>1 m 先の音圧</span></li>
+  <li><b>残響</b><span>部屋の響き</span></li>
+</ol>
+
+<h3>弦</h3>
+<p>弦は両端で支えた、曲げ剛性のある弦として扱います<a class="rf" href="#thy-r1">[1]</a>。両端は、押さえたフレットと駒のサドルです。押さえたフレットからナット側は指で止まり、振動しません。</p>
+<dl class="syms">
+  <dt><math><mi>T</mi></math></dt><dd>張力</dd>
+  <dt><math><mi>μ</mi></math></dt><dd>線密度</dd>
+  <dt><math><mi>L</mi></math></dt><dd>振動する長さ</dd>
+  <dt><math><mi>E</mi><mi>I</mi></math></dt><dd>曲げ剛性</dd>
+  <dt><math><msub><mi>f</mi><mi>n</mi></msub></math></dt><dd>第 <math><mi>n</mi></math> モードの周波数</dd>
+</dl>
+<p>曲げ剛性 <math><mi>E</mi><mi>I</mi></math> があると、高いモードほど周波数が整数倍より少し高くなります。これが非調和性です。</p>
+<p>巻弦の線密度は芯線と巻線の質量の和で、曲げ剛性は芯線で決まるとします。ナイロン弦の線密度と張力は Woodhouse の論文<a class="rf" href="#thy-r2">[2]</a><a class="rf" href="#thy-r3">[3]</a>、スチール弦の線密度と張力は D'Addario の張力表（EJ16）<a class="rf" href="#thy-r4">[4]</a>によります。</p>
 <div class="eqs">
-  <math display="block"><msub><mi>f</mi><mi>n</mi></msub><mo>=</mo><mfrac><mi>n</mi><mrow><mn>2</mn><mi>L</mi></mrow></mfrac><msqrt><mfrac><mi>T</mi><mi>μ</mi></mfrac></msqrt><msqrt><mrow><mn>1</mn><mo>+</mo><mi>β</mi><msup><mi>n</mi><mn>2</mn></msup></mrow></msqrt><mo>,</mo><mspace width="1em"/><mi>β</mi><mo>=</mo><mfrac><mrow><msup><mi>π</mi><mn>2</mn></msup><mi>E</mi><mi>I</mi></mrow><mrow><mi>T</mi><msup><mi>L</mi><mn>2</mn></msup></mrow></mfrac><mo>,</mo><mspace width="1em"/><mi>I</mi><mo>=</mo><mfrac><mrow><mi>π</mi><msubsup><mi>d</mi><mi mathvariant="normal">c</mi><mn>4</mn></msubsup></mrow><mn>64</mn></mfrac></math>
+  <math display="block"><msub><mi>f</mi><mi>n</mi></msub><mo>=</mo><mfrac><mi>n</mi><mrow><mn>2</mn><mi>L</mi></mrow></mfrac><msqrt><mfrac><mi>T</mi><mi>μ</mi></mfrac></msqrt><msqrt><mrow><mn>1</mn><mo>+</mo><mi>β</mi><msup><mi>n</mi><mn>2</mn></msup></mrow></msqrt></math>
+  <math display="block"><mi>β</mi><mo>=</mo><mfrac><mrow><msup><mi>π</mi><mn>2</mn></msup><mi>E</mi><mi>I</mi></mrow><mrow><mi>T</mi><msup><mi>L</mi><mn>2</mn></msup></mrow></mfrac></math>
+  <math display="block"><mi>I</mi><mo>=</mo><mfrac><mrow><mi>π</mi><msubsup><mi>d</mi><mi mathvariant="normal">c</mi><mn>4</mn></msubsup></mrow><mn>64</mn></mfrac></math>
   <math display="block"><mi>μ</mi><mo>=</mo><mfrac><mi>π</mi><mn>4</mn></mfrac><mrow><mo>(</mo><msub><mi>ρ</mi><mi mathvariant="normal">c</mi></msub><msubsup><mi>d</mi><mi mathvariant="normal">c</mi><mn>2</mn></msubsup><mo>+</mo><mi>φ</mi><msub><mi>ρ</mi><mi mathvariant="normal">w</mi></msub><mrow><mo>(</mo><msup><mi>d</mi><mn>2</mn></msup><mo>−</mo><msubsup><mi>d</mi><mi mathvariant="normal">c</mi><mn>2</mn></msubsup><mo>)</mo></mrow><mo>)</mo></mrow></math>
 </div>
-<p>弦が自分で失うエネルギーは、損失係数 <math><msub><mi>η</mi><mi>n</mi></msub></math>（振幅は <math><msup><mi>e</mi><mrow><mo>−</mo><msub><mi>η</mi><mi>n</mi></msub><msub><mi>ω</mi><mi>n</mi></msub><mi>t</mi><mo>/</mo><mn>2</mn></mrow></msup></math> で減る）で表します。空気の粘性による損失（Valette）、低い周波数で増える損失、張力の側の内部摩擦 <math><msub><mi>η</mi><mi mathvariant="normal">F</mi></msub></math>、曲げの側の粘弾性 <math><msub><mi>η</mi><mi mathvariant="normal">B</mi></msub></math> の和で、ナイロン弦とナイロン芯の巻弦の係数は Woodhouse の測定に合わせました。高い倍音ほど曲げの損失で早く消えます。</p>
+
+<h3>弦の損失</h3>
+<p>弦が自分で失うエネルギーは、損失係数 <math><msub><mi>η</mi><mi>n</mi></msub></math> で表します。振幅は <math><msup><mi>e</mi><mrow><mo>−</mo><msub><mi>η</mi><mi>n</mi></msub><msub><mi>ω</mi><mi>n</mi></msub><mi>t</mi><mo>/</mo><mn>2</mn></mrow></msup></math> で減ります。<math><msub><mi>η</mi><mi>n</mi></msub></math> は次の 4 つの和です。</p>
+<ul class="tl">
+  <li>空気の粘性による損失（Valette）<a class="rf" href="#thy-r5">[5]</a></li>
+  <li>低い周波数で増える損失</li>
+  <li>張力の側の内部摩擦 <math><msub><mi>η</mi><mi mathvariant="normal">F</mi></msub></math></li>
+  <li>曲げの側の粘弾性 <math><msub><mi>η</mi><mi mathvariant="normal">B</mi></msub></math></li>
+</ul>
+<p>ナイロン弦とナイロン芯の巻弦の係数は、Woodhouse の測定に合わせました<a class="rf" href="#thy-r2">[2]</a><a class="rf" href="#thy-r3">[3]</a>。高い倍音ほど曲げの損失で早く消えます。</p>
 <div class="eqs">
-  <math display="block"><msub><mi>η</mi><mi>n</mi></msub><mo>=</mo><mfrac><mrow><msub><mi>η</mi><mi mathvariant="normal">a</mi></msub><mo>+</mo><mi>d</mi><msqrt><mrow><mi>π</mi><msub><mi>η</mi><mi mathvariant="normal">a</mi></msub><msub><mi>ρ</mi><mi mathvariant="normal">a</mi></msub><msub><mi>f</mi><mi>n</mi></msub></mrow></msqrt></mrow><mrow><mi>μ</mi><msub><mi>f</mi><mi>n</mi></msub></mrow></mfrac><mo>+</mo><mfrac><msub><mi>η</mi><mi mathvariant="normal">X</mi></msub><msub><mi>ω</mi><mi>n</mi></msub></mfrac><mo>+</mo><mfrac><mrow><mi>T</mi><msub><mi>η</mi><mi mathvariant="normal">F</mi></msub><mo>+</mo><mi>E</mi><mi>I</mi><msubsup><mi>k</mi><mi>n</mi><mn>2</mn></msubsup><msub><mi>η</mi><mi mathvariant="normal">B</mi></msub></mrow><mrow><mi>T</mi><mo>+</mo><mi>E</mi><mi>I</mi><msubsup><mi>k</mi><mi>n</mi><mn>2</mn></msubsup></mrow></mfrac><mo>,</mo><mspace width="1em"/><msub><mi>k</mi><mi>n</mi></msub><mo>=</mo><mfrac><mrow><mi>n</mi><mi>π</mi></mrow><mi>L</mi></mfrac></math>
+  <math display="block"><msub><mi>η</mi><mi>n</mi></msub><mo>=</mo><mfrac><mrow><msub><mi>η</mi><mi mathvariant="normal">a</mi></msub><mo>+</mo><mi>d</mi><msqrt><mrow><mi>π</mi><msub><mi>η</mi><mi mathvariant="normal">a</mi></msub><msub><mi>ρ</mi><mi mathvariant="normal">a</mi></msub><msub><mi>f</mi><mi>n</mi></msub></mrow></msqrt></mrow><mrow><mi>μ</mi><msub><mi>f</mi><mi>n</mi></msub></mrow></mfrac><mo>+</mo><mfrac><msub><mi>η</mi><mi mathvariant="normal">X</mi></msub><msub><mi>ω</mi><mi>n</mi></msub></mfrac><mo>+</mo><mfrac><mrow><mi>T</mi><msub><mi>η</mi><mi mathvariant="normal">F</mi></msub><mo>+</mo><mi>E</mi><mi>I</mi><msubsup><mi>k</mi><mi>n</mi><mn>2</mn></msubsup><msub><mi>η</mi><mi mathvariant="normal">B</mi></msub></mrow><mrow><mi>T</mi><mo>+</mo><mi>E</mi><mi>I</mi><msubsup><mi>k</mi><mi>n</mi><mn>2</mn></msubsup></mrow></mfrac></math>
+  <math display="block"><msub><mi>k</mi><mi>n</mi></msub><mo>=</mo><mfrac><mrow><mi>n</mi><mi>π</mi></mrow><mi>L</mi></mfrac></math>
 </div>
-<p>弦は駒で胴につながっています。駒のアドミタンス <math><mi>Y</mi><mo stretchy="false">(</mo><mi>ω</mi><mo stretchy="false">)</mo></math>（力に対する速度）があると、弦のモードの複素角周波数が下の式の根に移り、実部が多いほど（胴が動きやすい周波数ほど）エネルギーが胴へ逃げて早く減衰し、そのぶん大きな音を出します。表板に垂直な振動と平行な振動で <math><mi>Y</mi></math> が違うため、2 つの偏波は別の速さで減衰します。弦を弾く点で三角形に引いて離すとし、指や爪の触れる幅 <math><mi>w</mi></math> で角を丸めます。駒にかかる力 <math><mi>F</mi><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo></math> は各モードの傾きの和です。</p>
+
+<h3>駒</h3>
+<p>弦は駒で胴につながっています。駒のアドミタンス <math><mi>Y</mi><mo stretchy="false">(</mo><mi>ω</mi><mo stretchy="false">)</mo></math> は、力に対する速度です。</p>
+<p><math><mi>Y</mi></math> があると、弦のモードの複素角周波数が下の式の根に移ります<a class="rf" href="#thy-r6">[6]</a>。実部が多い周波数、つまり胴が動きやすい周波数ほど、エネルギーが胴へ逃げて早く減衰し、そのぶん大きな音を出します。</p>
+<p>表板に垂直な振動と平行な振動で <math><mi>Y</mi></math> が違うため、2 つの偏波は別の速さで減衰します。</p>
 <div class="eqs">
-  <math display="block"><mi>ω</mi><mo>=</mo><msub><mi>ω</mi><mi>n</mi></msub><mo>+</mo><mi>i</mi><mfrac><mrow><msub><mi>η</mi><mi>n</mi></msub><msub><mi>ω</mi><mi>n</mi></msub></mrow><mn>2</mn></mfrac><mo>+</mo><mi>i</mi><mfrac><mi>T</mi><mi>L</mi></mfrac><mi>Y</mi><mo stretchy="false">(</mo><mi>ω</mi><mo stretchy="false">)</mo><mo>,</mo><mspace width="1em"/><msub><mi>η</mi><mtext>胴</mtext></msub><mo>≈</mo><mfrac><mrow><mn>2</mn><mi>T</mi><mi>Re</mi><mo>⁡</mo><mi>Y</mi></mrow><mrow><msub><mi>ω</mi><mi>n</mi></msub><mi>L</mi></mrow></mfrac></math>
-  <math display="block"><msub><mi>a</mi><mi>n</mi></msub><mo>=</mo><mfrac><mrow><mn>2</mn><mi>A</mi><msup><mi>L</mi><mn>2</mn></msup></mrow><mrow><msup><mi>n</mi><mn>2</mn></msup><msup><mi>π</mi><mn>2</mn></msup><msub><mi>x</mi><mi mathvariant="normal">p</mi></msub><mo stretchy="false">(</mo><mi>L</mi><mo>−</mo><msub><mi>x</mi><mi mathvariant="normal">p</mi></msub><mo stretchy="false">)</mo></mrow></mfrac><mi>sin</mi><mo>⁡</mo><mfrac><mrow><mi>n</mi><mi>π</mi><msub><mi>x</mi><mi mathvariant="normal">p</mi></msub></mrow><mi>L</mi></mfrac><mi>sinc</mi><mo>⁡</mo><mfrac><mrow><mi>n</mi><mi>π</mi><mi>w</mi></mrow><mrow><mn>2</mn><mi>L</mi></mrow></mfrac><mo>,</mo><mspace width="1em"/><mi>F</mi><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mo>=</mo><munder><mo>∑</mo><mi>n</mi></munder><mi>T</mi><mfrac><mrow><mi>n</mi><mi>π</mi></mrow><mi>L</mi></mfrac><msup><mrow><mo stretchy="false">(</mo><mo>−</mo><mn>1</mn><mo stretchy="false">)</mo></mrow><mrow><mi>n</mi><mo>+</mo><mn>1</mn></mrow></msup><msub><mi>a</mi><mi>n</mi></msub><msup><mi>e</mi><mrow><mo>−</mo><msub><mi>σ</mi><mi>n</mi></msub><mi>t</mi></mrow></msup><mi>cos</mi><mo>⁡</mo><msub><mi>ω</mi><mi>n</mi></msub><mi>t</mi></math>
+  <math display="block"><mi>ω</mi><mo>=</mo><msub><mi>ω</mi><mi>n</mi></msub><mo>+</mo><mi>i</mi><mfrac><mrow><msub><mi>η</mi><mi>n</mi></msub><msub><mi>ω</mi><mi>n</mi></msub></mrow><mn>2</mn></mfrac><mo>+</mo><mi>i</mi><mfrac><mi>T</mi><mi>L</mi></mfrac><mi>Y</mi><mo stretchy="false">(</mo><mi>ω</mi><mo stretchy="false">)</mo></math>
+  <math display="block"><msub><mi>η</mi><mtext>胴</mtext></msub><mo>≈</mo><mfrac><mrow><mn>2</mn><mi>T</mi><mi>Re</mi><mo>⁡</mo><mi>Y</mi></mrow><mrow><msub><mi>ω</mi><mi>n</mi></msub><mi>L</mi></mrow></mfrac></math>
 </div>
-<p>胴の低い周波数は、表板の第 1 モード（等価質量 <math><msub><mi>m</mi><mi mathvariant="normal">p</mi></msub></math>・面積 <math><mi>A</mi></math> のピストン）と、サウンドホールの空気（面積 <math><mi>S</mi></math>）が、胴の空気（容積 <math><mi>V</mi></math>）のばねでつながった 2 自由度の振動系です（Christensen・Vistisen）。2 つが結合して、ヘルムホルツ共振 <math><msub><mi>f</mi><mi mathvariant="normal">h</mi></msub></math> の下と上に 2 つの共振 <math><msub><mi>f</mi><mo>−</mo></msub></math>・<math><msub><mi>f</mi><mo>+</mo></msub></math> ができ、音圧は表板とサウンドホールの体積速度の和で決まります。それより高い周波数は、表板の曲げ剛性 <math><mi>D</mi></math> と面密度 <math><mi>ρ</mi><mi>h</mi></math> から求めたモードの間隔と平均のアドミタンスに合うように、乱数で多数のモードを置きます（Woodhouse の「統計的なギター」）。モードの有効質量は χ² 分布、振動の向きと放射の強さも乱数で、放射は表板の一致周波数に近づくほど効率が上がります。乱数の種は決まっているので、同じ設定なら同じ胴になります。</p>
+
+<h3>撥弦</h3>
+<p>弦を弾く点で三角形に引いて離すとし、指や爪の触れる幅 <math><mi>w</mi></math> で角を丸めます。駒にかかる力 <math><mi>F</mi><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo></math> は、各モードの傾きの和です<a class="rf" href="#thy-r2">[2]</a><a class="rf" href="#thy-r3">[3]</a>。</p>
+<div class="eqs">
+  <math display="block"><msub><mi>a</mi><mi>n</mi></msub><mo>=</mo><mfrac><mrow><mn>2</mn><mi>A</mi><msup><mi>L</mi><mn>2</mn></msup></mrow><mrow><msup><mi>n</mi><mn>2</mn></msup><msup><mi>π</mi><mn>2</mn></msup><msub><mi>x</mi><mi mathvariant="normal">p</mi></msub><mo stretchy="false">(</mo><mi>L</mi><mo>−</mo><msub><mi>x</mi><mi mathvariant="normal">p</mi></msub><mo stretchy="false">)</mo></mrow></mfrac><mi>sin</mi><mo>⁡</mo><mfrac><mrow><mi>n</mi><mi>π</mi><msub><mi>x</mi><mi mathvariant="normal">p</mi></msub></mrow><mi>L</mi></mfrac><mi>sinc</mi><mo>⁡</mo><mfrac><mrow><mi>n</mi><mi>π</mi><mi>w</mi></mrow><mrow><mn>2</mn><mi>L</mi></mrow></mfrac></math>
+  <math display="block"><mi>F</mi><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mo>=</mo><munder><mo>∑</mo><mi>n</mi></munder><mi>T</mi><mfrac><mrow><mi>n</mi><mi>π</mi></mrow><mi>L</mi></mfrac><msup><mrow><mo stretchy="false">(</mo><mo>−</mo><mn>1</mn><mo stretchy="false">)</mo></mrow><mrow><mi>n</mi><mo>+</mo><mn>1</mn></mrow></msup><msub><mi>a</mi><mi>n</mi></msub><msup><mi>e</mi><mrow><mo>−</mo><msub><mi>σ</mi><mi>n</mi></msub><mi>t</mi></mrow></msup><mi>cos</mi><mo>⁡</mo><msub><mi>ω</mi><mi>n</mi></msub><mi>t</mi></math>
+</div>
+
+<h3>胴の低い周波数</h3>
+<p>胴の低い周波数は、表板の第 1 モードとサウンドホールの空気が、胴の空気のばねでつながった 2 自由度の振動系です（Christensen・Vistisen）<a class="rf" href="#thy-r7">[7]</a>。表板の第 1 モードは、ピストンとして扱います。</p>
+<dl class="syms">
+  <dt><math><msub><mi>m</mi><mi mathvariant="normal">p</mi></msub></math></dt><dd>表板の第 1 モードの等価質量</dd>
+  <dt><math><mi>A</mi></math></dt><dd>ピストンの面積</dd>
+  <dt><math><mi>S</mi></math></dt><dd>サウンドホールの面積</dd>
+  <dt><math><mi>V</mi></math></dt><dd>胴の空気の容積</dd>
+</dl>
+<p>2 つが結合して、ヘルムホルツ共振 <math><msub><mi>f</mi><mi mathvariant="normal">h</mi></msub></math> の下と上に 2 つの共振 <math><msub><mi>f</mi><mo>−</mo></msub></math>・<math><msub><mi>f</mi><mo>+</mo></msub></math> ができます。音圧は、表板とサウンドホールの体積速度の和で決まります。</p>
 <div class="eqs">
   <math display="block"><msub><mi>m</mi><mi mathvariant="normal">p</mi></msub><msub><mover><mi>x</mi><mo>¨</mo></mover><mi mathvariant="normal">p</mi></msub><mo>+</mo><msub><mi>R</mi><mi mathvariant="normal">p</mi></msub><msub><mover><mi>x</mi><mo>˙</mo></mover><mi mathvariant="normal">p</mi></msub><mo>+</mo><mrow><mo>(</mo><msub><mi>k</mi><mi mathvariant="normal">p</mi></msub><mo>+</mo><mfrac><mrow><mi>ρ</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><mi>V</mi></mfrac><msup><mi>A</mi><mn>2</mn></msup><mo>)</mo></mrow><msub><mi>x</mi><mi mathvariant="normal">p</mi></msub><mo>+</mo><mfrac><mrow><mi>ρ</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><mi>V</mi></mfrac><mi>A</mi><mi>S</mi><msub><mi>x</mi><mi mathvariant="normal">h</mi></msub><mo>=</mo><mi>F</mi></math>
-  <math display="block"><msub><mi>m</mi><mi mathvariant="normal">h</mi></msub><msub><mover><mi>x</mi><mo>¨</mo></mover><mi mathvariant="normal">h</mi></msub><mo>+</mo><msub><mi>R</mi><mi mathvariant="normal">h</mi></msub><msub><mover><mi>x</mi><mo>˙</mo></mover><mi mathvariant="normal">h</mi></msub><mo>+</mo><mfrac><mrow><mi>ρ</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><mi>V</mi></mfrac><mrow><mo>(</mo><msup><mi>S</mi><mn>2</mn></msup><msub><mi>x</mi><mi mathvariant="normal">h</mi></msub><mo>+</mo><mi>A</mi><mi>S</mi><msub><mi>x</mi><mi mathvariant="normal">p</mi></msub><mo>)</mo></mrow><mo>=</mo><mn>0</mn><mo>,</mo><mspace width="1em"/><msub><mi>f</mi><mi mathvariant="normal">h</mi></msub><mo>=</mo><mfrac><mi>c</mi><mrow><mn>2</mn><mi>π</mi></mrow></mfrac><msqrt><mfrac><mi>S</mi><mrow><mi>V</mi><msub><mi>ℓ</mi><mtext>eff</mtext></msub></mrow></mfrac></msqrt></math>
-  <math display="block"><mi>p</mi><mo>=</mo><mfrac><mrow><mi>ρ</mi></mrow><mrow><mn>4</mn><mi>π</mi><mi>R</mi></mrow></mfrac><mfrac><mi>d</mi><mrow><mi>d</mi><mi>t</mi></mrow></mfrac><mrow><mo>(</mo><mi>A</mi><msub><mover><mi>x</mi><mo>˙</mo></mover><mi mathvariant="normal">p</mi></msub><mo>+</mo><mi>S</mi><msub><mover><mi>x</mi><mo>˙</mo></mover><mi mathvariant="normal">h</mi></msub><mo>)</mo></mrow><mo>,</mo><mspace width="1em"/><mi>Δ</mi><mi>f</mi><mo>=</mo><mfrac><mn>2</mn><mrow><msub><mi>A</mi><mtext>表板</mtext></msub><msqrt><mrow><mi>ρ</mi><mi>h</mi><mo>/</mo><mi>D</mi></mrow></msqrt></mrow></mfrac><mo>,</mo><mspace width="1em"/><mo>⟨</mo><mi>Re</mi><mo>⁡</mo><mi>Y</mi><mo>⟩</mo><mo>∝</mo><mfrac><mn>1</mn><mrow><mn>8</mn><msqrt><mrow><mi>D</mi><mi>ρ</mi><mi>h</mi></mrow></msqrt></mrow></mfrac></math>
+  <math display="block"><msub><mi>m</mi><mi mathvariant="normal">h</mi></msub><msub><mover><mi>x</mi><mo>¨</mo></mover><mi mathvariant="normal">h</mi></msub><mo>+</mo><msub><mi>R</mi><mi mathvariant="normal">h</mi></msub><msub><mover><mi>x</mi><mo>˙</mo></mover><mi mathvariant="normal">h</mi></msub><mo>+</mo><mfrac><mrow><mi>ρ</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><mi>V</mi></mfrac><mrow><mo>(</mo><msup><mi>S</mi><mn>2</mn></msup><msub><mi>x</mi><mi mathvariant="normal">h</mi></msub><mo>+</mo><mi>A</mi><mi>S</mi><msub><mi>x</mi><mi mathvariant="normal">p</mi></msub><mo>)</mo></mrow><mo>=</mo><mn>0</mn></math>
+  <math display="block"><msub><mi>f</mi><mi mathvariant="normal">h</mi></msub><mo>=</mo><mfrac><mi>c</mi><mrow><mn>2</mn><mi>π</mi></mrow></mfrac><msqrt><mfrac><mi>S</mi><mrow><mi>V</mi><msub><mi>ℓ</mi><mtext>eff</mtext></msub></mrow></mfrac></msqrt></math>
+  <math display="block"><mi>p</mi><mo>=</mo><mfrac><mrow><mi>ρ</mi></mrow><mrow><mn>4</mn><mi>π</mi><mi>R</mi></mrow></mfrac><mfrac><mi>d</mi><mrow><mi>d</mi><mi>t</mi></mrow></mfrac><mrow><mo>(</mo><mi>A</mi><msub><mover><mi>x</mi><mo>˙</mo></mover><mi mathvariant="normal">p</mi></msub><mo>+</mo><mi>S</mi><msub><mover><mi>x</mi><mo>˙</mo></mover><mi mathvariant="normal">h</mi></msub><mo>)</mo></mrow></math>
 </div>
-<p>フレットノイズは、押さえる位置を変えるときに指が巻弦の上をすべる音です。巻線を 1 本越えるたびに短い雑音が出るとし、その頻度 <math><msub><mi>f</mi><mi mathvariant="normal">c</mi></msub></math>（すべる速さ <math><mi>v</mi></math> ÷ 巻線の太さ <math><msub><mi>p</mi><mi mathvariant="normal">w</mi></msub></math>）の共振器と飽和で倍音を作り、弦の縦振動の共振を足して駒の力に加えます（Pakarinen ら）。音は 1 m 先の音圧で、1 Pa を出力のフルスケールとします。弦のモードは 16 kHz（またはサンプリング周波数の 0.45 倍）まで、胴のモードは 6 kHz まで計算します。</p>
+
+<h3>胴の高い周波数</h3>
+<p>それより高い周波数には、乱数で多数のモードを置きます。Woodhouse の「統計的なギター」にならい<a class="rf" href="#thy-r2">[2]</a><a class="rf" href="#thy-r3">[3]</a>、表板の曲げ剛性 <math><mi>D</mi></math> と面密度 <math><mi>ρ</mi><mi>h</mi></math> から求めたモードの間隔と平均のアドミタンスに合わせます。</p>
+<ul class="tl">
+  <li>モードの有効質量: <math><msup><mi>χ</mi><mn>2</mn></msup></math> 分布の乱数</li>
+  <li>振動の向きと放射の強さ: 乱数</li>
+  <li>放射の効率: 表板の一致周波数に近づくほど上がる</li>
+</ul>
+<p>乱数の種は決まっているので、同じ設定なら同じ胴になります。</p>
+<div class="eqs">
+  <math display="block"><mi>Δ</mi><mi>f</mi><mo>=</mo><mfrac><mn>2</mn><mrow><msub><mi>A</mi><mtext>表板</mtext></msub><msqrt><mrow><mi>ρ</mi><mi>h</mi><mo>/</mo><mi>D</mi></mrow></msqrt></mrow></mfrac></math>
+  <math display="block"><mo>⟨</mo><mi>Re</mi><mo>⁡</mo><mi>Y</mi><mo>⟩</mo><mo>∝</mo><mfrac><mn>1</mn><mrow><mn>8</mn><msqrt><mrow><mi>D</mi><mi>ρ</mi><mi>h</mi></mrow></msqrt></mrow></mfrac></math>
+</div>
+
+<h3>フレットノイズ</h3>
+<p>フレットノイズは、押さえる位置を変えるときに指が巻弦の上をすべる音です（Pakarinen ら）<a class="rf" href="#thy-r8">[8]</a>。巻線を 1 本越えるたびに短い雑音が出るとします。</p>
+<ol class="flow" aria-label="フレットノイズの作り方">
+  <li><b>巻線を越える頻度 <math><msub><mi>f</mi><mi mathvariant="normal">c</mi></msub></math></b><span>すべる速さ <math><mi>v</mi></math> ÷ 巻線の太さ <math><msub><mi>p</mi><mi mathvariant="normal">w</mi></msub></math></span></li>
+  <li><b>共振器と飽和</b><span>倍音を作る</span></li>
+  <li><b>弦の縦振動の共振</b><span>を足す</span></li>
+  <li><b>駒の力</b><span>に加える</span></li>
+</ol>
 <div class="eqs">
   <math display="block"><msub><mi>f</mi><mi mathvariant="normal">c</mi></msub><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mo>=</mo><mfrac><mrow><mi>v</mi><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo></mrow><msub><mi>p</mi><mi mathvariant="normal">w</mi></msub></mfrac></math>
 </div>
-<p>部屋の残響は、部屋の容積 <math><mi>V</mi></math>・表面積 <math><mi>S</mi></math>・平均吸音率 <math><mover><mi>α</mi><mo>¯</mo></mover></math> と空気の吸収 <math><mi>m</mi></math> から残響時間を求め（Eyring の式）、16 本の遅延線のフィードバック遅延網で作ります。1 m 先の直接音に対する残響音の大きさは、臨界距離 <math><msub><mi>r</mi><mi mathvariant="normal">c</mi></msub></math>（等価吸音面積 <math><mi>A</mi></math> から求める）で決まり、聴く位置 <math><mi>r</mi></math> での比は <math><mi>r</mi><mo>/</mo><msub><mi>r</mi><mi mathvariant="normal">c</mi></msub></math> です。全体の大きさは、直接音と残響音のエネルギーの和が 1 m 先の直接音と同じになるようにそろえます。</p>
+
+<h3>残響</h3>
+<p>部屋の残響時間は Eyring の式で求め<a class="rf" href="#thy-r9">[9]</a>、残響音は 16 本の遅延線のフィードバック遅延網で作ります<a class="rf" href="#thy-r10">[10]</a>。</p>
+<dl class="syms">
+  <dt><math><mi>V</mi></math></dt><dd>部屋の容積</dd>
+  <dt><math><mi>S</mi></math></dt><dd>部屋の表面積</dd>
+  <dt><math><mover><mi>α</mi><mo>¯</mo></mover></math></dt><dd>平均吸音率</dd>
+  <dt><math><mi>m</mi></math></dt><dd>空気の吸収。ISO 9613-1 の値<a class="rf" href="#thy-r11">[11]</a></dd>
+  <dt><math><mi>A</mi></math></dt><dd>等価吸音面積</dd>
+  <dt><math><msub><mi>r</mi><mi mathvariant="normal">c</mi></msub></math></dt><dd>臨界距離。<math><mi>A</mi></math> から求める</dd>
+  <dt><math><mi>r</mi></math></dt><dd>聴く位置</dd>
+</dl>
+<p>1 m 先の直接音に対する残響音の大きさは、臨界距離 <math><msub><mi>r</mi><mi mathvariant="normal">c</mi></msub></math> で決まり、聴く位置 <math><mi>r</mi></math> での比は <math><mi>r</mi><mo>/</mo><msub><mi>r</mi><mi mathvariant="normal">c</mi></msub></math> です。全体の大きさは、直接音と残響音のエネルギーの和が 1 m 先の直接音と同じになるようにそろえます。</p>
 <div class="eqs">
-  <math display="block"><msub><mi>T</mi><mn>60</mn></msub><mo>=</mo><mfrac><mrow><mn>0.161</mn><mi>V</mi></mrow><mrow><mo>−</mo><mi>S</mi><mi>ln</mi><mo>⁡</mo><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><mover><mi>α</mi><mo>¯</mo></mover><mo stretchy="false">)</mo><mo>+</mo><mn>4</mn><mi>m</mi><mi>V</mi></mrow></mfrac><mo>,</mo><mspace width="1em"/><msub><mi>r</mi><mi mathvariant="normal">c</mi></msub><mo>=</mo><msqrt><mfrac><mi>A</mi><mrow><mn>16</mn><mi>π</mi></mrow></mfrac></msqrt><mo>,</mo><mspace width="1em"/><mi>A</mi><mo>=</mo><mo>−</mo><mi>S</mi><mi>ln</mi><mo>⁡</mo><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><mover><mi>α</mi><mo>¯</mo></mover><mo stretchy="false">)</mo></math>
+  <math display="block"><msub><mi>T</mi><mn>60</mn></msub><mo>=</mo><mfrac><mrow><mn>0.161</mn><mi>V</mi></mrow><mrow><mo>−</mo><mi>S</mi><mi>ln</mi><mo>⁡</mo><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><mover><mi>α</mi><mo>¯</mo></mover><mo stretchy="false">)</mo><mo>+</mo><mn>4</mn><mi>m</mi><mi>V</mi></mrow></mfrac></math>
+  <math display="block"><msub><mi>r</mi><mi mathvariant="normal">c</mi></msub><mo>=</mo><msqrt><mfrac><mi>A</mi><mrow><mn>16</mn><mi>π</mi></mrow></mfrac></msqrt></math>
+  <math display="block"><mi>A</mi><mo>=</mo><mo>−</mo><mi>S</mi><mi>ln</mi><mo>⁡</mo><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><mover><mi>α</mi><mo>¯</mo></mover><mo stretchy="false">)</mo></math>
+</div>
+
+<h3>計算の範囲と出力</h3>
+<ul class="tl">
+  <li>音: 1 m 先の音圧。1 Pa を出力のフルスケールとする</li>
+  <li>弦のモード: 16 kHz（またはサンプリング周波数の 0.45 倍）まで計算</li>
+  <li>胴のモード: 6 kHz まで計算</li>
+</ul>
+<p>スピーカーから出す音だけはステレオにして、定位を少しずらしています。図の向きは左がヘッド、右が駒で、これに合わせて寄せます。</p>
+<ul class="tl">
+  <li>右へ寄せる: 高い弦、駒に近い弾く位置、高いフレット</li>
+  <li>左へ寄せる: フレットノイズ。左手のある側</li>
+  <li>左右へ散らす: 胴の高いモード。表板のあちこちから鳴るように</li>
+</ul>
+<p>この定位は聞こえ方の目安で、模型には基づきません。残響も再生の音だけに付けます。計算結果と音の波形は、ステレオにする前の 1 m 先の音圧で、残響を含みません。</p>
+
+<h3>最後に弾いた音の値</h3>
+<div class="eqs">
   <div class="subst" id="subst" role="group" aria-label="最後に弾いた音の値を代入した式"></div>
 </div>
-<p>スピーカーから出す音だけはステレオにして、定位を少しずらしています。図の向き（左がヘッド、右が駒）に合わせて、高い弦・駒に近い弾く位置・高いフレットほど右へ、フレットノイズは左手のある左へ寄せ、胴の高いモードは表板のあちこちから鳴るように左右へ散らします。この定位は聞こえ方の目安で、模型には基づきません。残響も再生の音だけに付けます。計算結果と音の波形は、ステレオにする前の 1 m 先の音圧（残響なし）です。</p>
-<p class="cite">出典: N. H. Fletcher, “Normal vibration frequencies of a stiff piano string,” <i>J. Acoust. Soc. Am.</i>, vol. 36, no. 1, pp. 203–209, 1964（硬い弦の周波数）。C. Valette, “The mechanics of vibrating strings,” in <i>Mechanics of Musical Instruments</i>, Springer, 1995, pp. 115–183（弦の損失、空気の粘性）。C. E. Gough, “The theory of string resonances on musical instruments,” <i>Acustica</i>, vol. 49, pp. 124–141, 1981（駒での結合）。J. Woodhouse, “On the synthesis of guitar plucks,” <i>Acta Acustica united with Acustica</i>, vol. 90, pp. 928–944, 2004、同 “Plucked guitar transients: comparison of measurements and synthesis,” 同誌 pp. 945–965（撥弦の合成、損失の式と係数、統計的なギター、ナイロン弦の線密度と張力）。O. Christensen and B. B. Vistisen, “Simple model for low-frequency guitar function,” <i>J. Acoust. Soc. Am.</i>, vol. 68, no. 3, pp. 758–766, 1980（表板とヘルムホルツ共振の 2 自由度の模型）。J. Pakarinen, T. Puputti and V. Välimäki, “Virtual slide guitar,” <i>Computer Music Journal</i>, vol. 32, no. 3, pp. 42–54, 2008（巻弦の接触音）。C. F. Eyring, “Reverberation time in ‘dead’ rooms,” <i>J. Acoust. Soc. Am.</i>, vol. 1, no. 2A, pp. 217–241, 1930（残響時間）。J.-M. Jot and A. Chaigne, “Digital delay networks for designing artificial reverberators,” AES 90th Convention, Preprint 3030, 1991（残響）。空気の吸収は ISO 9613-1 の値。スチール弦の線密度と張力は D'Addario の張力表（EJ16）による。木材の値、胴の面積と力木の倍率、平均のアドミタンスを下げる割合、放射の強さ、スチール弦の損失係数、こすれる音の大きさ、部屋の寸法と吸音率は、このツールで選んだ概数です。</p>
+
+<h3>出典</h3>
+<ol class="refs">
+  <li id="thy-r1"><span class="rf-for">硬い弦の周波数</span><span class="rf-src">N. H. Fletcher, “Normal vibration frequencies of a stiff piano string,” <i>J. Acoust. Soc. Am.</i>, vol. 36, no. 1, pp. 203–209, 1964</span></li>
+  <li id="thy-r2"><span class="rf-for">撥弦の合成、損失の式と係数、統計的なギター、ナイロン弦の線密度と張力（[3] と合わせて）</span><span class="rf-src">J. Woodhouse, “On the synthesis of guitar plucks,” <i>Acta Acustica united with Acustica</i>, vol. 90, pp. 928–944, 2004</span></li>
+  <li id="thy-r3"><span class="rf-for">[2] と同じ</span><span class="rf-src">J. Woodhouse, “Plucked guitar transients: comparison of measurements and synthesis,” <i>Acta Acustica united with Acustica</i>, vol. 90, pp. 945–965, 2004</span></li>
+  <li id="thy-r4"><span class="rf-for">スチール弦の線密度と張力</span><span class="rf-src">D'Addario の張力表（EJ16）</span></li>
+  <li id="thy-r5"><span class="rf-for">弦の損失、空気の粘性</span><span class="rf-src">C. Valette, “The mechanics of vibrating strings,” in <i>Mechanics of Musical Instruments</i>, Springer, 1995, pp. 115–183</span></li>
+  <li id="thy-r6"><span class="rf-for">駒での結合</span><span class="rf-src">C. E. Gough, “The theory of string resonances on musical instruments,” <i>Acustica</i>, vol. 49, pp. 124–141, 1981</span></li>
+  <li id="thy-r7"><span class="rf-for">表板とヘルムホルツ共振の 2 自由度の模型</span><span class="rf-src">O. Christensen and B. B. Vistisen, “Simple model for low-frequency guitar function,” <i>J. Acoust. Soc. Am.</i>, vol. 68, no. 3, pp. 758–766, 1980</span></li>
+  <li id="thy-r8"><span class="rf-for">巻弦の接触音</span><span class="rf-src">J. Pakarinen, T. Puputti and V. Välimäki, “Virtual slide guitar,” <i>Computer Music Journal</i>, vol. 32, no. 3, pp. 42–54, 2008</span></li>
+  <li id="thy-r9"><span class="rf-for">残響時間</span><span class="rf-src">C. F. Eyring, “Reverberation time in ‘dead’ rooms,” <i>J. Acoust. Soc. Am.</i>, vol. 1, no. 2A, pp. 217–241, 1930</span></li>
+  <li id="thy-r10"><span class="rf-for">残響</span><span class="rf-src">J.-M. Jot and A. Chaigne, “Digital delay networks for designing artificial reverberators,” AES 90th Convention, Preprint 3030, 1991</span></li>
+  <li id="thy-r11"><span class="rf-for">空気の吸収</span><span class="rf-src">ISO 9613-1</span></li>
+</ol>
+
+<h3>このツールで決めたこと</h3>
+<p>次の値は、このツールで選んだ概数です。</p>
+<ul class="tl">
+  <li>木材の値</li>
+  <li>胴の面積と力木の倍率</li>
+  <li>平均のアドミタンスを下げる割合</li>
+  <li>放射の強さ</li>
+  <li>スチール弦の損失係数</li>
+  <li>こすれる音の大きさ</li>
+  <li>部屋の寸法と吸音率</li>
+</ul>

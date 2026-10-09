@@ -123,7 +123,7 @@ a.mi[aria-current="page"]{background:var(--inset);font-weight:700;box-shadow:ins
 /* 枠（C 案の計測器パネルの枠: 細い線、見出しは枠線の上に載せる） */
 .pnl{position:relative;border:1px solid var(--line-2);border-radius:3px;padding:22px 14px 14px;min-width:0}
 .ph{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:6px 12px;min-height:0}
-/* 枠線の上の右端（Panel.astro の .pha に aux と「↺ n 件」を並べる。.ph に直接置いた .seg・.aux も同じ所に載る） */
+/* 枠線の上の右端（Panel.astro の .pha に aux と「↺ n」を並べる。.ph に直接置いた .seg・.aux も同じ所に載る） */
 .ph>.pha,.clps>.pha,.ph>.seg,.ph>.aux{position:absolute;top:0;right:10px;transform:translateY(-50%);background:var(--bg);line-height:1.3}
 .pha{display:flex;align-items:center;gap:6px;padding-left:6px}
 .pha:not(:has(> :not([hidden],.gone))){display:none}
@@ -133,7 +133,6 @@ a.mi[aria-current="page"]{background:var(--inset);font-weight:700;box-shadow:ins
 .prst:hover{border-color:var(--line-2);color:var(--ink)}
 .prst svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 /* 見出しと重なるときは「↺ n」に詰め、それでも重なれば出さない（lib/reset.ts） */
-.prst.cmp .u{display:none}
 .prst.gone{display:none}
 .ph h2,.clps>summary{position:absolute;top:0;left:10px;transform:translateY(-50%);padding:0 6px;background:var(--bg);font-size:13.5px;font-weight:700;line-height:1.3;color:var(--ink)}
 .aux{font-size:12.5px;color:var(--ink-3)}
@@ -397,15 +396,91 @@ a.unit:hover h3{text-decoration:underline;text-decoration-color:var(--ink-3);tex
   .clps{transition:border-color .25s ease,border-radius .25s ease}
   html.theming,html.theming *,html.theming *::before,html.theming *::after{transition:background-color .3s ease,color .3s ease,border-color .3s ease,fill .3s ease,stroke .3s ease,box-shadow .3s ease!important}
 }
-.thy-body>p:not(.cite){color:var(--ink-2);line-height:1.9;max-width:62ch}
+.thy-body>p:not(.cite){color:var(--ink-2);line-height:1.9}
 .thy-body>p+p:not(.cite){margin-top:10px}
-.eqs{display:grid;gap:20px;margin:14px 0 0;padding:18px 16px;background:var(--inset);border-radius:var(--r);overflow-x:auto}
-.eqs math{margin:0;justify-self:start}
+.eqs{display:flex;flex-wrap:wrap;align-items:center;gap:20px 56px;margin:14px 0 0;padding:18px 16px;background:var(--inset);border-radius:var(--r);overflow-x:auto}
+.eqs math{margin:0}
+/* 短い式は横に並べて枠の幅を使う。式でない子（代入した式・式のまとまり・表）は 1 行を占める */
+.eqs>:not(math){flex:1 0 100%;min-width:0}
 .subst{display:grid;gap:10px 0;justify-items:start;margin-top:2px;padding-top:18px;border-top:1px dashed var(--line-2)}
 .cite{margin-top:12px;font-size:12.5px;color:var(--ink-3)}
 .cite a{color:var(--ink-2)}
 .subst math{color:var(--ink-2)}
+/* 代入した式だけの箱は、上の区切り線を引かない */
+.eqs>.subst:first-child{margin-top:0;padding-top:0;border-top:0}
 @media (max-width:479px){.eqs{padding:12px 10px}}
+/*
+ * 動作原理と式の本文の部品。段落・式の箱（.eqs）のほかに、節の見出し（h3）、箇条書き（.tl）、記号の説明（.syms）、
+ * 表（.tt）、処理の流れ（.flow）、図（.fig）、本文の出典番号（.rf）と出典の一覧（.refs）を使う
+ */
+.thy-body>h3{margin:30px 0 8px;font-size:15.5px;font-weight:700;line-height:1.5;color:var(--ink)}
+.thy-body>h3:first-child{margin-top:6px}
+.thy-body>h4{margin:18px 0 4px;font-size:14.5px;font-weight:700;line-height:1.5;color:var(--ink)}
+.thy-body>:is(h3,h4)+:is(p,.tl,.syms,.flow){margin-top:0}
+.thy-body>:is(.eqs,.tl,.syms,.flow,.fig,.tt-w)+p{margin-top:14px}
+.thy-body>p+:is(.tl,.syms){margin-top:6px}
+.tl{margin:10px 0 0;padding-left:1.4em;color:var(--ink-2);line-height:1.8}
+.tl li+li{margin-top:3px}
+.tl li::marker{color:var(--ink-3)}
+.tl .tl{margin-top:3px}
+.tl b,.syms dt{font-weight:600;color:var(--ink)}
+.syms{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:4px 18px;margin:10px 0 0;line-height:1.7}
+.syms dt{white-space:nowrap}
+.syms dd{margin:0;color:var(--ink-2)}
+.tt-w{margin-top:12px;overflow-x:auto}
+.tt{border-collapse:collapse;font-size:13.5px;line-height:1.5}
+.tt th,.tt td{padding:6px 18px 6px 0;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.tt thead th{font-weight:600;color:var(--ink-3);border-bottom-color:var(--line-2)}
+.tt tbody th{font-weight:600;color:var(--ink);white-space:nowrap}
+.tt td{color:var(--ink-2)}
+.tt .num{font-family:var(--mono);text-align:right}
+.flow{display:flex;flex-wrap:wrap;align-items:stretch;gap:10px 30px;margin:14px 0 0;padding:0 0 0 30px;list-style:none}
+.flow>li{position:relative;display:grid;align-content:center;min-height:44px;padding:6px 12px;border:1px solid var(--line-2);border-radius:4px;background:var(--surface);line-height:1.45}
+.flow>li:first-child{margin-left:-30px}
+.flow>li::before{content:"";position:absolute;top:50%;left:-24px;width:16px;border-top:1.5px solid var(--ink-3)}
+.flow>li::after{content:"";position:absolute;top:50%;left:-13px;width:6px;height:6px;border-top:1.5px solid var(--ink-3);border-right:1.5px solid var(--ink-3);transform:translateY(-50%) rotate(45deg)}
+.flow>li:first-child::before,.flow>li:first-child::after{content:none}
+.flow b{font-size:14px;font-weight:600;color:var(--ink)}
+.flow span{font-size:12.5px;color:var(--ink-3)}
+.fig{margin:14px 0 0;overflow-x:auto}
+.fig svg{display:block;max-width:100%;height:auto}
+.fig figcaption{margin-top:6px;font-size:12.5px;color:var(--ink-3)}
+.fig .b{fill:var(--surface);stroke:var(--line-2);stroke-width:1.2}
+.fig .w{fill:none;stroke:var(--ink-3);stroke-width:1.4}
+.fig .ah{fill:var(--ink-3)}
+.fig .t{fill:var(--ink);font:13px var(--sans)}
+.fig .tm{fill:var(--ink);font:italic 14px var(--math)}
+.fig .n{fill:var(--ink-3);font:11.5px var(--sans)}
+.rf{margin-left:1px;font:11px var(--mono);vertical-align:super;line-height:0;color:var(--ink-3);text-decoration:none;white-space:nowrap}
+.rf:hover{color:var(--ink);text-decoration:underline}
+.refs{display:grid;margin:4px 0 0;padding:0;list-style:none;font-size:13px;line-height:1.7}
+.refs>li{display:grid;grid-template-columns:2.6em minmax(10em,16em) minmax(0,1fr);gap:2px 18px;padding:9px 0;border-top:1px solid var(--line);scroll-margin-top:calc(var(--rail-h) + 16px)}
+.refs>li:last-child{border-bottom:1px solid var(--line)}
+ul.refs>li{grid-template-columns:minmax(10em,16em) minmax(0,1fr)}
+ol.refs{counter-reset:rf}
+ol.refs>li{counter-increment:rf}
+ol.refs>li::before{content:"[" counter(rf) "]";font:12px/1.95 var(--mono);color:var(--ink-3)}
+.refs>li:target{background:var(--inset)}
+.rf-for{color:var(--ink)}
+.rf-src{color:var(--ink-2);overflow-wrap:anywhere}
+.rf-src a{color:var(--ink-2)}
+@media (max-width:639px){
+  .refs>li{grid-template-columns:2.6em minmax(0,1fr)}
+  ul.refs>li{grid-template-columns:minmax(0,1fr)}
+  ol.refs>li>.rf-src{grid-column:2}
+}
+/* 楽器のページの「楽譜の出典」 */
+.srcs{display:grid;margin:0;padding:0;list-style:none}
+.srcs>li{padding:12px 0;border-top:1px solid var(--line);color:var(--ink-2);line-height:1.8}
+.srcs>li:first-child{padding-top:4px;border-top:0}
+.srcs h3{font-size:14.5px;font-weight:600;line-height:1.6;color:var(--ink)}
+.srcs h3 small{margin-left:8px;font-size:12.5px;font-weight:400;color:var(--ink-3)}
+.srcs p{margin-top:4px}
+.srcs a{color:var(--ink-2)}
+/* 曲の枠（li）の中の箇条書きも、1 段目を黒丸にする */
+.srcs>li>.tl{list-style:disc}
+.srcs .tl .tl{list-style:circle}
+.srcs .tl+p{margin-top:10px}
 
 /* footer */
 .foot{margin-top:40px;background:var(--rail);color:var(--rail-ink-2)}

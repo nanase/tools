@@ -384,7 +384,7 @@ function render(): void {
     '#subst',
     c
       ? `<math display="block"><mi>${T.s}</mi><mo>=</mo><mtext>${esc(c.x)}</mtext><mo>&#x2248;</mo>${qty(c.v, u, 6, true)}</math>` +
-          `<math display="block"><mi>ε</mi><mo>=</mo><mfrac><mrow>${qty(c.v, u, 6, true)}<mo>&#x2212;</mo>${qty(t, u)}</mrow>${qty(t, u)}</mfrac><mo>&#xD7;</mo><mn>100</mn><mspace width="0.2em"/><mi mathvariant="normal">%</mi><mo>&#x2248;</mo><mn>${esc(errTxt(c.e).replace(/ %$/, ''))}</mn><mspace width="0.2em"/><mi mathvariant="normal">%</mi></math>` +
+          `<math display="block"><mi>ε</mi><mo>=</mo><mfrac><mrow>${qty(c.v, u, 6, true)}<mo>&#x2212;</mo>${qty(t, u)}</mrow><mrow>${qty(t, u)}</mrow></mfrac><mo>&#xD7;</mo><mn>100</mn><mspace width="0.2em"/><mi mathvariant="normal">%</mi><mo>&#x2248;</mo><mn>${esc(errTxt(c.e).replace(/ %$/, ''))}</mn><mspace width="0.2em"/><mi mathvariant="normal">%</mi></math>` +
           `<math display="block"><mphantom><mi>ε</mi></mphantom><mspace width="0.2em"/><mtext>（</mtext>${X}<mo>=</mo>${qty(t, u)}<mtext>、組み合わせの + は直列、∥ は並列）</mtext></math>`
       : '<math display="block"><mtext>候補が見つかると、ここに値を代入した式を出します</mtext></math>',
   );

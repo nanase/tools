@@ -1,10 +1,57 @@
 ---
 // 動作原理と式。代入した式（#subst）は client.ts が入れる
-import { EQS, THEORY_P } from './theory';
+import {
+  EQS_FIR,
+  EQS_IIR,
+  EQS_KAISER,
+  EQS_OPT,
+  EQS_SPEC,
+  EQS_WIN,
+  EQS_WINN,
+  THY_FIR,
+  THY_IIR,
+  THY_KAISER,
+  THY_OPT,
+  THY_REAL,
+  THY_SPEC,
+  THY_WIN,
+  THY_WINS,
+} from './theory';
 ---
-{THEORY_P.map((p) => <p set:html={p} />)}
+<h3>FIR フィルタと直線位相</h3>
+<Fragment set:html={THY_FIR} />
+<div class="eqs"><Fragment set:html={EQS_FIR} /></div>
+<h3>仕様の許容値</h3>
+<Fragment set:html={THY_SPEC} />
+<div class="eqs"><Fragment set:html={EQS_SPEC} /></div>
+<h3>窓関数法</h3>
+<Fragment set:html={THY_WIN} />
+<div class="eqs"><Fragment set:html={EQS_WIN} /></div>
+<h4>カイザー窓</h4>
+<Fragment set:html={THY_KAISER} />
+<div class="eqs"><Fragment set:html={EQS_KAISER} /></div>
+<h4>ほかの窓</h4>
+<Fragment set:html={THY_WINS} />
+<div class="eqs"><Fragment set:html={EQS_WINN} /></div>
+<h3>等リップルと最小二乗</h3>
+<Fragment set:html={THY_OPT} />
+<div class="eqs"><Fragment set:html={EQS_OPT} /></div>
+<h3>実際の特性</h3>
+<Fragment set:html={THY_REAL} />
+<h3>同じ仕様の IIR フィルタ</h3>
+<Fragment set:html={THY_IIR} />
+<div class="eqs"><Fragment set:html={EQS_IIR} /></div>
+<h3>今の値を代入した式</h3>
 <div class="eqs">
-  <Fragment set:html={EQS} />
   <div class="subst" id="subst" role="group" aria-label="現在の値を代入した式"></div>
 </div>
-<p class="cite">出典: A. V. Oppenheim, R. W. Schafer『Discrete-Time Signal Processing』3rd ed., Pearson, 2010（7 章 FIR フィルタの設計）、J. F. Kaiser, "Nonrecursive Digital Filter Design Using the I<sub>0</sub>-sinh Window Function", Proc. IEEE ISCAS, 1974、E. C. Ifeachor, B. W. Jervis『Digital Signal Processing: A Practical Approach』2nd ed., Prentice Hall, 2002（窓の遷移帯域幅と阻止域の減衰）、T. W. Parks, J. H. McClellan, "Chebyshev Approximation for Nonrecursive Digital Filters with Linear Phase", IEEE Trans. Circuit Theory, CT-19(2), 1972、J. H. McClellan, T. W. Parks, L. R. Rabiner, "A Computer Program for Designing Optimum FIR Linear Phase Digital Filters", IEEE Trans. Audio Electroacoust., AU-21(6), 1973、C. S. Burrus, A. W. Soewito, R. A. Gopinath, "Least Squared Error FIR Filter Design with Transition Bands", IEEE Trans. Signal Processing, 40(6), 1992、S. J. Orfanidis, "<a href="https://web.archive.org/web/20220626012950/https://www.ece.rutgers.edu/~orfanidi/ece521/notes.pdf" target="_blank" rel="noopener">Lecture Notes on Elliptic Filter Design</a>", Rutgers University, 2006（IIR フィルタの次数）</p>
+<h3>出典</h3>
+<ol class="refs">
+  <li id="thy-r1"><span class="rf-for">FIR フィルタの設計</span><span class="rf-src">A. V. Oppenheim, R. W. Schafer, <i>Discrete-Time Signal Processing</i>, 3rd ed., Pearson, 2010, 7 章</span></li>
+  <li id="thy-r2"><span class="rf-for">カイザー窓と Kaiser の式</span><span class="rf-src">J. F. Kaiser, “Nonrecursive Digital Filter Design Using the I<sub>0</sub>-sinh Window Function,” <i>Proc. IEEE ISCAS</i>, 1974</span></li>
+  <li id="thy-r3"><span class="rf-for">窓の遷移帯域幅と阻止域の減衰</span><span class="rf-src">E. C. Ifeachor, B. W. Jervis, <i>Digital Signal Processing: A Practical Approach</i>, 2nd ed., Prentice Hall, 2002</span></li>
+  <li id="thy-r4"><span class="rf-for">等リップル（Parks–McClellan 法）</span><span class="rf-src">T. W. Parks, J. H. McClellan, “Chebyshev Approximation for Nonrecursive Digital Filters with Linear Phase,” <i>IEEE Trans. Circuit Theory</i>, CT-19(2), 1972</span></li>
+  <li id="thy-r5"><span class="rf-for">Remez の交換法</span><span class="rf-src">J. H. McClellan, T. W. Parks, L. R. Rabiner, “A Computer Program for Designing Optimum FIR Linear Phase Digital Filters,” <i>IEEE Trans. Audio Electroacoust.</i>, AU-21(6), 1973</span></li>
+  <li id="thy-r6"><span class="rf-for">最小二乗法</span><span class="rf-src">C. S. Burrus, A. W. Soewito, R. A. Gopinath, “Least Squared Error FIR Filter Design with Transition Bands,” <i>IEEE Trans. Signal Processing</i>, 40(6), 1992</span></li>
+  <li id="thy-r7"><span class="rf-for">IIR フィルタの次数</span><span class="rf-src">S. J. Orfanidis, “<a href="https://web.archive.org/web/20220626012950/https://www.ece.rutgers.edu/~orfanidi/ece521/notes.pdf" target="_blank" rel="noopener">Lecture Notes on Elliptic Filter Design</a>,” Rutgers University, 2006</span></li>
+</ol>
