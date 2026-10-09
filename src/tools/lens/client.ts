@@ -12,9 +12,11 @@ import { distortion, dof, halfAngle, illum, type PupilTable, pupilTable, spot } 
 import { LD } from './glass';
 import { type LensId, lensOf, type Rx } from './lenses';
 import {
+  aimChief,
   build,
   HALF_DIAG,
   minFocus,
+  objRay,
   polyR,
   type Ray,
   SENSOR,
@@ -23,12 +25,13 @@ import {
   seidel,
   focus as solveFocus,
   thinLens,
+  traceFwd,
   traceRev,
 } from './optics';
 import { angR, FNUM, FOCUS, FSTOPS, INF, type Key, mT, PARAMS, sig } from './params';
 import { curveSvg, mapDynamic, mapLabel, sectionSvg, spotSvg } from './plot';
 import { type LensU, Renderer, type ViewU } from './render';
-import { basis, EYE, intersect, type V3 } from './scene';
+import { angRadius, basis, bodyFrame, EYE, intersect, SKY, type V3 } from './scene';
 
 const txt = (id: string, s: string) => {
   const e = $(id);
@@ -59,6 +62,7 @@ const zoom$ = new Choice($('#p-zm'), () => later());
 const ch$ = new Choice($('#p-ch'), () => later());
 const df$ = new Choice($('#p-df'), () => later());
 const tod$ = new Choice<'day' | 'dusk' | 'night'>($('#p-tod'), () => later());
+const gd$ = new Choice($('#p-gd'), () => later());
 const av$ = new Choice($('#p-av'), () => drawAbr());
 const sw$ = new Choice($('#p-sw'), () => later());
 /** ピント合わせ: AF は向き・焦点距離・レンズが変わるたびに枠の点に合わせ直す。MF は撮影距離のまま */
@@ -377,10 +381,58 @@ function status(): void {
   );
 }
 
+/* ---------- 天体のガイド ---------- */
+const gdEl = $('#gd');
+const MOON_R = angRadius(SKY.find((b) => b.id === 'moon') ?? SKY[0]);
+let gdKey = '';
+/** 月のほかの天体の位置（表示の向き、センサーの上の mm）に、月と同じ角半径の円を描く */
+function guides(): void {
+  const vw = view();
+  gdEl.setAttribute('viewBox', `${vw.x0} ${-(vw.y0 + vw.h)} ${vw.w} ${vw.h}`);
+  const on = gd$.value === 'on' && !!st;
+  const v = G.values();
+  const key = JSON.stringify([on, stKey, cmp$.value, v.pan, v.tilt]);
+  if (key === gdKey) return;
+  gdKey = key;
+  if (!on || !st) {
+    gdEl.innerHTML = '';
+    return;
+  }
+  const s = st,
+    b = basis(v.pan, v.tilt),
+    ideal = cmp$.value === 'ideal';
+  const si = ideal ? thinLens(s.sys.f, s.D, s.N).si : s.zs - s.card.zH1;
+  const dot = (a: V3, c: V3) => a[0] * c[0] + a[1] * c[1] + a[2] * c[2];
+  let out = '';
+  for (const k of SKY) {
+    if (k.id === 'moon') continue;
+    const { c } = bodyFrame(k);
+    const dx = dot(c, b.r),
+      dy = dot(c, b.u),
+      dz = dot(c, b.f),
+      rho = Math.hypot(dx, dy);
+    if (dz <= 0 || rho > dz * 4) continue;
+    const t = rho / dz;
+    /* 像の高さ: 主光線を追跡する（収差なしは薄いレンズ）。追跡できなければ近軸 */
+    let h = si * t;
+    if (!ideal && t > 0) {
+      const u = Number.isFinite(s.zo) ? t * (s.zep - s.zo) : t,
+        r = objRay(s, u, 0, 0, aimChief(s, u, LD));
+      /* 無限遠の u は光線の傾き（正は光軸の下の物点）、有限の u は物体の面での高さ（正は上）。像は倒立 */
+      if (traceFwd(s, r, LD, undefined, { noClip: true }) < 0) h = Number.isFinite(s.zo) ? -r.y : r.y;
+    }
+    const x = rho > 0 ? (h * dx) / rho : 0,
+      y = rho > 0 ? (h * dy) / rho : 0;
+    out += `<circle cx="${x.toFixed(4)}" cy="${(-y).toFixed(4)}" r="${(MOON_R * si).toFixed(4)}"/>`;
+  }
+  gdEl.innerHTML = out;
+}
+
 /* ---------- 描画への受け渡し ---------- */
 let lastKey = '';
 function render(): void {
   placeAf();
+  guides();
   if (!R || !st || !tb) return;
   const s = st.sys.s,
     ns = s.length;
@@ -578,6 +630,56 @@ function afState(): void {
       e.preventDefault();
       autofocus(afPt[0], afPt[1]);
     }
+  });
+}
+
+/* ---------- 全画面 ---------- */
+{
+  const fs = $('#fs'),
+    btn = $<HTMLButtonElement>('#lv-fs');
+  /** 全画面へ移す要素: 映像、右の入力の行、左下の見取り図 */
+  const ROWS = ['#p-lens', '#p-f', '#p-N', '#p-fd', '#p-fm', '#p-bl', '#p-zm', '#p-tod', '#p-ch', '#p-df'];
+  let back: [Comment, HTMLElement][] = [],
+    sy = 0;
+  const move = (el: HTMLElement, to: HTMLElement) => {
+    const ph = document.createComment('fs');
+    el.before(ph);
+    back.push([ph, el]);
+    to.append(el);
+  };
+  const open = () => {
+    if (!fs.hidden) return;
+    sy = scrollY;
+    move(lv, $('#fs-v'));
+    for (const id of ROWS) move($(id), $('#fs-t'));
+    move($('#mapw'), $('#fs-map'));
+    fs.hidden = false;
+    document.documentElement.style.overflow = 'hidden';
+    btn.setAttribute('aria-label', '全画面を閉じる');
+    btn.title = '全画面を閉じる';
+    fs.requestFullscreen?.().catch(() => {});
+    canvas.focus();
+  };
+  const close = () => {
+    if (fs.hidden) return;
+    for (const [ph, el] of back) ph.replaceWith(el);
+    back = [];
+    fs.hidden = true;
+    document.documentElement.style.overflow = '';
+    btn.setAttribute('aria-label', '全画面で表示');
+    btn.title = '全画面で表示';
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+    scrollTo(0, sy);
+    btn.focus();
+  };
+  btn.addEventListener('click', () => (fs.hidden ? open() : close()));
+  /* ブラウザの全画面を Esc などで抜けたら、こちらも閉じる */
+  document.addEventListener('fullscreenchange', () => {
+    if (!document.fullscreenElement) close();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !fs.hidden && !document.fullscreenElement && !(e.target instanceof HTMLInputElement))
+      close();
   });
 }
 

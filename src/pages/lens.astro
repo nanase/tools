@@ -41,7 +41,9 @@ const related = [
         </div>
         <div class="lv" id="lv">
           <canvas id="lvc" tabindex="0" role="img" aria-label="レンズ越しの映像"></canvas>
+          <svg class="gd" id="gd" aria-hidden="true" preserveAspectRatio="none"></svg>
           <div class="af" id="af" aria-hidden="true"></div>
+          <button type="button" class="lv-fs" id="lv-fs" aria-label="全画面で表示" title="全画面で表示"><svg class="i-open" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/></svg><svg class="i-close" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 2v4H2M14 6h-4V2M10 14v-4h4M2 10h4v4"/></svg></button>
           <p class="lv-msg" id="lv-msg" hidden></p>
         </div>
         <More id="g-view" title="表示の設定"><div class="ana2">
@@ -52,6 +54,7 @@ const related = [
           <div class="ptab">
             <ChoiceRow k="ch" name="色収差" sub="含めないと、すべての波長に d 線（587.6 nm）の屈折率を使う" choices={[['on', '含める'], ['off', '含めない']]} value="on" />
             <ChoiceRow k="df" name="回折" sub="実効 F 値で決まるエアリー円盤の広がりを、像の点をずらして近似的に足す" choices={[['on', '含める'], ['off', '含めない']]} value="on" />
+            <ChoiceRow k="gd" name="天体のガイド" sub="月のほかの天体（木星・土星・天王星）の位置に、月と同じ大きさのオレンジ色の円を描く" choices={[['on', '表示'], ['off', 'なし']]} value="on" />
           </div>
         </div></More>
       </Panel>
@@ -109,7 +112,7 @@ const related = [
 
       <Panel hid="hd-map" title="見取り図" class="a-map">
         <span slot="aux" class="aux">上から、距離は対数</span>
-        <div class="scope mapw">
+        <div class="scope mapw" id="mapw">
           <svg viewBox={`0 0 ${MAP.w} ${MAP.h}`} id="map" role="img" aria-label="見取り図"><g set:html={mapStatic()} /><g id="map-d"></g></svg>
         </div>
         <div class="ptab"><ParamRow d={PAN} /><ParamRow d={TILT} /></div>
@@ -144,6 +147,12 @@ const related = [
     <Collapsible hid="hd-thy" title="動作原理と式">
       <Theory />
     </Collapsible>
+  </div>
+
+  <!-- 全画面: 開いている間だけ、映像・入力の行・見取り図をここへ移す（client.ts） -->
+  <div class="fs" id="fs" role="dialog" aria-modal="true" aria-label="レンズ越しの映像（全画面）" hidden>
+    <div class="fs-v" id="fs-v"><div class="fs-map" id="fs-map"></div></div>
+    <div class="fs-p"><div class="ptab" id="fs-t"></div></div>
   </div>
 
   <RelatedTools list={related} />
