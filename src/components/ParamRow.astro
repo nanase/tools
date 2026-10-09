@@ -23,9 +23,9 @@ const k = d.k;
       <span class="sc-v"></span>
       <button type="button" class="sc-a" data-d="1" tabindex="-1"><svg viewBox="0 0 6 10" aria-hidden="true"><path d="M1 1L5 5L1 9"/></svg></button>
     </div>
-    <input class="sc-in" id={`in-${k}`} type="text" inputmode={d.inputmode ?? 'text'} autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done" placeholder={d.ph} aria-labelledby={`n-${k}`} aria-describedby={`t-${k} u-${k} r-${k}`}>
+    <input class="sc-in" id={`in-${k}`} type="text" inputmode={d.inputmode ?? 'text'} autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done" placeholder={d.ph} aria-labelledby={`n-${k}`} aria-describedby={`t-${k} u-${k} rg-${k}`}>
     <div class="sc-pop" role="group" aria-labelledby={`n-${k}`}>
-      <p class="sc-rg" id={`r-${k}`}></p>
+      <p class="sc-rg" id={`rg-${k}`}></p>
       <p class="msg sc-m" aria-live="polite"></p>
       {d.pre.length > 0 && (
         <div class="chips" role="group" aria-label={`${d.nm} のよく使う値`}>
