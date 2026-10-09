@@ -187,7 +187,7 @@ export const TOOLS: Tool[] = [
     id: 'lens',
     c: '画像・光学',
     t: 'カメラレンズ',
-    d: '実在のレンズの処方（面の曲率・間隔・硝材）のとおりに光線を追跡し、絞り・焦点距離・ピントで変わるボケや被写界深度、収差を 3D の被写体の映像で再現します。',
+    d: '実在のレンズのレンズデータ（面の曲率・間隔・硝材）のとおりに光線を追跡し、絞り・焦点距離・ピントで変わるボケや被写界深度、収差を 3D の被写体や月・惑星の映像で再現します。',
     ic: 'ln',
     k: 'lens camera optics レンズ カメラ 光学 光線追跡 ray tracing 絞り aperture f値 焦点距離 focal length ピント focus 被写界深度 depth of field ボケ bokeh 玉ボケ 収差 aberration ザイデル seidel 球面収差 コマ 非点収差 像面湾曲 歪曲 distortion 色収差 chromatic 周辺減光 vignetting ダブルガウス double gauss テッサー tessar トリプレット triplet アクロマート achromat 望遠 広角 webgl',
   },

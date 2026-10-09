@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { distortion, dof, halfAngle, illum, pupilTable, spot } from '../src/tools/lens/analysis';
-import { CATALOG, LC, LD, LF, model, nAt, sellmeier } from '../src/tools/lens/glass';
+import { CATALOG, LC, LD, LF, model, nAt, SPECTRAL, sellmeier } from '../src/tools/lens/glass';
 import { LENSES, lensOf } from '../src/tools/lens/lenses';
 import {
   build,
@@ -19,7 +19,7 @@ import {
   traceFwd,
 } from '../src/tools/lens/optics';
 import { curveSvg, mapDynamic, sectionSvg, spotSvg } from '../src/tools/lens/plot';
-import { BOARDS, basis, EYE, intersect, sceneGlsl } from '../src/tools/lens/scene';
+import { angRadius, BOARDS, basis, bodyFrame, EYE, intersect, SKY, sceneGlsl } from '../src/tools/lens/scene';
 import { traceFrag } from '../src/tools/lens/shader';
 
 const rel = (a: number, b: number) => Math.abs(a - b) / Math.abs(b);
@@ -42,7 +42,7 @@ describe('硝材', () => {
   });
 });
 
-describe('近軸の焦点距離（処方の公称値）', () => {
+describe('近軸の焦点距離（レンズデータの公称値）', () => {
   /* 出典の単位での焦点距離: Laikin の例は 20・4・5、Zemax のトリプレットは 50、Smith のダブルガウスは約 100 */
   const NOMINAL: Record<string, [number, number]> = {
     single: [100, 0.005],
@@ -268,6 +268,28 @@ describe('被写体', () => {
   it('上を向けば空（無限遠）', () => {
     expect(intersect([0, EYE, 0], [0, 1, 0])).toBe(Infinity);
   });
+  it('天体の見かけの直径は地球から見た値（月 31.1′・木星 50.1″・土星 20.6″・天王星 4.09″）', () => {
+    const as = (id: string) => (2 * angRadius(SKY.find((b) => b.id === id) ?? SKY[0]) * 180 * 3600) / Math.PI;
+    expect(as('moon') / 60).toBeCloseTo(31.08, 1);
+    expect(as('jupiter')).toBeCloseTo(50.1, 1);
+    expect(as('saturn')).toBeCloseTo(20.6, 1);
+    expect(as('uranus')).toBeCloseTo(4.09, 2);
+    expect(as('venus')).toBeCloseTo(24.2, 1);
+    expect(as('mars')).toBeCloseTo(25.7, 1);
+  });
+  it('天体は空にあり、どの物体にも隠れない', () => {
+    for (const b of SKY) {
+      const { c, e1, e2 } = bodyFrame(b);
+      const dot = (a: number[], d: number[]) => a[0] * d[0] + a[1] * d[1] + a[2] * d[2];
+      expect(dot(c, e1)).toBeCloseTo(0, 12);
+      expect(dot(c, e2)).toBeCloseTo(0, 12);
+      expect(dot(e1, e2)).toBeCloseTo(0, 12);
+      expect(intersect([0, EYE, 0], c), b.id).toBe(Infinity);
+      /* 仰角の上限 30° と方位の範囲 ±60° で向けられる */
+      expect(b.el).toBeLessThan(30);
+      expect(Math.abs(b.az)).toBeLessThan(60);
+    }
+  });
 });
 
 describe('図とシェーダ', () => {
@@ -275,8 +297,9 @@ describe('図とシェーダ', () => {
   it('SVG に数でない値が入らない', () => {
     const t = thinLens(50, 2000, 4.5);
     for (const s of [
-      sectionSvg({ st, ideal: false, si: t.si, so: t.so, a: t.a }).svg,
-      sectionSvg({ st, ideal: true, si: t.si, so: t.so, a: t.a }).svg,
+      sectionSvg({ st, ideal: false, spec: true, si: t.si, so: t.so, a: t.a }).svg,
+      sectionSvg({ st, ideal: false, spec: false, si: t.si, so: t.so, a: t.a }).svg,
+      sectionSvg({ st, ideal: true, spec: true, si: t.si, so: t.so, a: t.a }).svg,
       curveSvg(st).svg,
       spotSvg(
         [0, 0.7, 1].map((k) => spot(st, k * HALF_DIAG, 11)),
@@ -285,6 +308,24 @@ describe('図とシェーダ', () => {
       mapDynamic({ pan: 10, hfov: 20, fd: 2, near: 1.8, far: Infinity }),
     ])
       expect(s).not.toMatch(/NaN|Infinity|undefined/);
+  });
+  it('断面図は 7 波長で描き分け、d 線だけにもできる', () => {
+    const t = thinLens(50, 2000, 4.5);
+    const a = sectionSvg({ st, ideal: false, spec: true, si: t.si, so: t.so, a: t.a }).svg,
+      b = sectionSvg({ st, ideal: false, spec: false, si: t.si, so: t.so, a: t.a }).svg;
+    for (const [n] of SPECTRAL) expect(a).toContain(`ls-w s-${n}`);
+    expect(b).not.toContain('ls-w');
+    expect(b).toContain('ls-r1');
+  });
+  it('単レンズの軸上色収差（h 線と r 線のピントの差）は近軸の見積もりに近い', () => {
+    const s1 = focus(build(lensOf('single'), 50), Infinity, 4, 0);
+    const t = thinLens(50, Infinity, 4);
+    const lab = sectionSvg({ st: s1, ideal: false, spec: true, si: t.si, so: t.so, a: t.a }).label;
+    const m = lab.match(/波長によるピントの差 ([\d.]+) mm/);
+    /* N-BK7 の f 50 mm: h 線と r 線のピントの差はおよそ f·(n_h − n_r)/(n_d − 1) ≈ 1.3 mm */
+    expect(m).not.toBeNull();
+    expect(Number(m?.[1])).toBeGreaterThan(0.9);
+    expect(Number(m?.[1])).toBeLessThan(1.8);
   });
   it('シェーダは面の数と被写体の定数を含む', () => {
     const g = traceFrag(11);

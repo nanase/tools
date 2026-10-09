@@ -43,7 +43,7 @@ uniform vec2 uRes;
 uniform uint uBase;
 uniform int uSpp;
 uniform vec3 uRight, uUp, uFwd, uEye;
-/* 0: 処方どおり、1: 収差なしの薄いレンズ（像距離・物体距離（0 は無限遠）・半径・外接円の半径） */
+/* 0: 設計どおり、1: 収差なしの薄いレンズ（像距離・物体距離（0 は無限遠）・半径・外接円の半径） */
 uniform int uMode;
 uniform vec4 uIdeal;
 uniform float uChrom;

@@ -22,7 +22,7 @@ const related = [
   ...TOOLS.filter((t) => t.c !== CAT && !t.s),
 ];
 ---
-<SiteLayout title={name} tool={{ id: 'lens', name }} description="実在の設計のカメラレンズを、面の曲率・間隔・硝材のとおりに光線を追跡してシミュレートします。絞り・焦点距離・ピントと、ボケ・被写界深度・収差を、3D の被写体を写した映像で確かめられます。" note="映像は、公開された処方のレンズで光線を幾何光学で追跡したものです（回折は近似）。">
+<SiteLayout title={name} tool={{ id: 'lens', name }} description="実在の設計のカメラレンズを、面の曲率・間隔・硝材のとおりに光線を追跡してシミュレートします。絞り・焦点距離・ピントと、ボケ・被写界深度・収差を、3D の被写体や月・惑星を写した映像で確かめられます。" note="映像は、公開されたレンズデータのとおりに光線を幾何光学で追跡したものです（回折は近似）。">
   <PageTitle title={name}>写真用のレンズの断面の形（面の曲率・間隔・ガラスの種類）のとおりに、センサーの各点から光線をレンズへ逆にたどって 3D の被写体に当て、レンズ越しの映像を作ります。ボケ、被写界深度、球面収差やコマ、像面の湾曲、歪曲、色のにじみ、周辺の暗さが、実際のレンズと同じしくみで現れます。収差のない理想のレンズとも比べられます。</PageTitle>
   <div class="mini" aria-hidden="true"><span>画角<b id="mA"></b></span><span>被写界深度<b id="mD"></b></span><span>実効 F<b id="mN"></b></span></div>
 
@@ -30,7 +30,7 @@ const related = [
 
     <div class="col c1">
       <Panel hid="hd-view" title="レンズ越しの映像" class="a-view">
-        <div slot="aux" class="seg" id="p-cmp" role="group" aria-label="レンズ"><button type="button" data-v="rx" aria-pressed="true" title="処方どおりのレンズで光線を追跡する">処方どおり</button><button type="button" data-v="ideal" aria-pressed="false" title="同じ焦点距離・F 値・ピントの、収差のない薄いレンズ">収差なし</button></div>
+        <div slot="aux" class="seg" id="p-cmp" role="group" aria-label="レンズ"><button type="button" data-v="rx" aria-pressed="true" title="レンズデータのとおりに光線を追跡する">設計どおり</button><button type="button" data-v="ideal" aria-pressed="false" title="同じ焦点距離・F 値・ピントの、収差のない薄いレンズ">収差なし</button></div>
         <div class="sbar">
           <span class="stag">LENS <b id="v-lens"></b></span>
           <span class="stag">f <b id="v-f"></b></span>
@@ -41,25 +41,31 @@ const related = [
         </div>
         <div class="lv" id="lv">
           <canvas id="lvc" tabindex="0" role="img" aria-label="レンズ越しの映像"></canvas>
+          <svg class="gd" id="gd" aria-hidden="true" preserveAspectRatio="none"></svg>
           <div class="af" id="af" aria-hidden="true"></div>
+          <button type="button" class="lv-fs" id="lv-fs" aria-label="全画面で表示" title="全画面で表示"><svg class="i-open" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/></svg><svg class="i-close" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 2v4H2M14 6h-4V2M10 14v-4h4M2 10h4v4"/></svg></button>
           <p class="lv-msg" id="lv-msg" hidden></p>
         </div>
         <More id="g-view" title="表示の設定"><div class="ana2">
           <div class="ptab">
             <ChoiceRow k="zm" name="拡大" sub="ピントを合わせた点（枠）を中心に、センサーの一部を拡大して描く" choices={ZOOMS.map((z) => [z, `×${z}`] as const)} value={1} />
+            <ChoiceRow k="tod" name="時間帯" sub="空と地上の明るさを変え、露出も景色に合わせる。天体そのものの明るさは変わらないので、暗いほど空の天体が目立つ。太陽と影は描かない" choices={[['day', '昼'], ['dusk', '夕暮れ'], ['night', '夜']]} value="dusk" />
           </div>
           <div class="ptab">
             <ChoiceRow k="ch" name="色収差" sub="含めないと、すべての波長に d 線（587.6 nm）の屈折率を使う" choices={[['on', '含める'], ['off', '含めない']]} value="on" />
             <ChoiceRow k="df" name="回折" sub="実効 F 値で決まるエアリー円盤の広がりを、像の点をずらして近似的に足す" choices={[['on', '含める'], ['off', '含めない']]} value="on" />
+            <ChoiceRow k="gd" name="天体のガイド" sub="月のほかの天体（金星・火星・木星・土星・天王星）の位置に、月と同じ大きさのオレンジ色の円を描く" choices={[['on', '表示'], ['off', 'なし']]} value="on" />
           </div>
         </div></More>
       </Panel>
 
       <Panel hid="hd-sec" title="レンズの断面と光線" class="a-sec">
+        <div slot="aux" class="seg" id="p-sw" role="group" aria-label="光線の波長"><button type="button" data-v="spec" aria-pressed="true" title="h・g・F・e・d・C・r 線（405〜707 nm）の 7 波長で描く">可視光</button><button type="button" data-v="d" aria-pressed="false" title="d 線（587.6 nm）だけで描く">d 線</button></div>
         <div class="sbar">
-          <span class="stag"><i class="sw" aria-hidden="true"></i>CH1 軸上の光束</span>
-          <span class="stag"><i class="sw c2" aria-hidden="true"></i>CH2 隅への光束</span>
-          <span class="stag">λ <b>587.6 nm</b></span>
+          <span class="stag sec-d" hidden><i class="sw" aria-hidden="true"></i>CH1 軸上の光束</span>
+          <span class="stag sec-d" hidden><i class="sw c2" aria-hidden="true"></i>CH2 隅への光束</span>
+          <span class="stag sec-d" hidden>λ <b>587.6 nm</b></span>
+          <span class="stag sec-s"><i class="sw spec" aria-hidden="true"></i>λ <b>405〜707 nm</b>（h・g・F・e・d・C・r 線）</span>
           <span class="stag" id="sec-st"></span>
         </div>
         <div class="scope">
@@ -94,10 +100,11 @@ const related = [
     <div class="col c2">
       <Panel hid="hd-lens" title="レンズ" class="a-lens">
         <div class="ptab">
-          <ChoiceRow k="lens" name="レンズの種類" sub="公開された処方。出典はレンズの処方の枠にある。選ぶと焦点距離を、35 mm 判で設計の画角になる値にする" choices={LENSES.map((l) => [l.v, l.ab, l.sub] as const)} value="dgauss" layout="chips" msg />
+          <ChoiceRow k="lens" name="レンズの種類" sub="公開されたレンズデータ。出典はレンズデータの枠にある。選ぶと焦点距離を、35 mm 判で設計の画角になる値にする" choices={LENSES.map((l) => [l.v, l.ab, l.sub] as const)} value="dgauss" layout="chips" msg />
           <ParamRow d={FOCAL} />
           <ParamRow d={FNUM} />
           <ParamRow d={FOCUS} />
+          <ChoiceRow k="fm" name="ピント合わせ" sub="AF は、向き・焦点距離・レンズを変えるたびに、枠の点に写る物体へ合わせ直す。MF は撮影距離のまま（映像を押したときだけ、その点に合わせる）。枠の点が被写界深度に入っていると、枠が緑になる" choices={[['af', 'AF', 'オートフォーカス'], ['mf', 'MF', 'マニュアルフォーカス']]} value="af" />
           <ChoiceRow k="bl" name="絞り羽根" sub="絞りの形（正多角形）。開放では羽根が引っ込んで円になる" choices={BLADES.map((b) => [b, b ? `${b} 枚` : '円'] as const)} value={7} layout="chips" msg />
         </div>
         <More id="g-lens"><div class="ptab"><ParamRow d={COC} /></div></More>
@@ -105,7 +112,7 @@ const related = [
 
       <Panel hid="hd-map" title="見取り図" class="a-map">
         <span slot="aux" class="aux">上から、距離は対数</span>
-        <div class="scope mapw">
+        <div class="scope mapw" id="mapw">
           <svg viewBox={`0 0 ${MAP.w} ${MAP.h}`} id="map" role="img" aria-label="見取り図"><g set:html={mapStatic()} /><g id="map-d"></g></svg>
         </div>
         <div class="ptab"><ParamRow d={PAN} /><ParamRow d={TILT} /></div>
@@ -127,7 +134,7 @@ const related = [
       </Panel>
     </div>
 
-    <Collapsible hid="hd-rx" title="レンズの処方" class="a-rx">
+    <Collapsible hid="hd-rx" title="レンズデータ" class="a-rx">
       <p class="rx-src" id="rx-src"></p>
       <div class="rxw">
         <table class="rxt" id="rxt">
@@ -140,6 +147,12 @@ const related = [
     <Collapsible hid="hd-thy" title="動作原理と式">
       <Theory />
     </Collapsible>
+  </div>
+
+  <!-- 全画面: 開いている間だけ、映像・入力の行・見取り図をここへ移す（client.ts） -->
+  <div class="fs" id="fs" role="dialog" aria-modal="true" aria-label="レンズ越しの映像（全画面）" hidden>
+    <div class="fs-v" id="fs-v"><div class="fs-map" id="fs-map"></div></div>
+    <div class="fs-p"><div class="ptab" id="fs-t"></div></div>
   </div>
 
   <RelatedTools list={related} />

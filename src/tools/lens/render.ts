@@ -28,6 +28,8 @@ export interface ViewU {
   up: number[];
   fwd: number[];
   eye: number[];
+  /** 時間帯（0 昼・1 夕暮れ・2 夜） */
+  tod: number;
 }
 
 interface Target {
@@ -125,6 +127,7 @@ export class Renderer {
         'uMode',
         'uIdeal',
         'uChrom',
+        'uTod',
       ]);
       this.progs.set(ns, pr);
     }
@@ -239,6 +242,7 @@ export class Renderer {
     gl.uniform1i(u('uMode'), L.mode);
     gl.uniform4fv(u('uIdeal'), L.ideal);
     gl.uniform1f(u('uChrom'), L.chrom ? 1 : 0);
+    gl.uniform1i(u('uTod'), V.tod);
     gl.bindVertexArray(this.vao);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
     this.cur = 1 - this.cur;

@@ -101,6 +101,130 @@ export const STRINGS: Bulb[][] = [
 export const ridge = (az: number): number =>
   0.018 + 0.012 * Math.sin(2.3 * az + 0.7) + 0.007 * Math.sin(5.9 * az + 2.1) + 0.003 * Math.sin(13 * az);
 
+/* ---------- 空の天体（無限遠） ---------- */
+/**
+ * 空に置く天体: 方位・仰角 [°]（配置はこのツールで決めた。月は緑の柱の上、惑星は互いに離して低い空に並べる）、赤道半径 [km] と地球からの距離 [km] で決まる
+ * 角半径、極の向きの回し [°]（北が上で 0、左回りが正）と、こちらから見た極の傾き（環の開き）[°]
+ */
+export interface SkyBody {
+  id: 'moon' | 'venus' | 'mars' | 'jupiter' | 'saturn' | 'uranus';
+  name: string;
+  az: number;
+  el: number;
+  /** 赤道半径・距離 [km] */
+  r: number;
+  dist: number;
+  rot: number;
+  tilt: number;
+}
+/**
+ * 大きさは NASA の Planetary Fact Sheet の値: 月は平均距離、外惑星は地球に最も近づくとき（衝）の距離、
+ * 金星は最大離角のころの距離 √(1² − 0.72333²) AU = 1.0330 億 km。
+ * 全体を同じ向き（衝のころ、太陽を背にして満ちて見える）として、影と満ち欠けは描かない
+ */
+export const SKY: SkyBody[] = [
+  { id: 'venus', name: '金星', az: -30, el: 12, r: 6051.8, dist: 103.3e6, rot: 0, tilt: 0 },
+  { id: 'mars', name: '火星', az: -8, el: 20, r: 3396.2, dist: 54.6e6, rot: 0, tilt: 15 },
+  { id: 'uranus', name: '天王星', az: 8, el: 17, r: 25559, dist: 2580.6e6, rot: 30, tilt: 55 },
+  { id: 'moon', name: '月', az: 21, el: 8, r: 1737.4, dist: 384400, rot: 0, tilt: 0 },
+  { id: 'jupiter', name: '木星', az: 40, el: 14, r: 71492, dist: 588.5e6, rot: 0, tilt: 0 },
+  { id: 'saturn', name: '土星', az: 55, el: 9, r: 60268, dist: 1205.5e6, rot: -6, tilt: 20 },
+];
+/** 天体の角半径 [rad] */
+export const angRadius = (b: SkyBody): number => Math.asin(b.r / b.dist);
+
+/** 天体の中心の向きと、空の上の右・上の単位ベクトル（極の向きで回したもの） */
+export function bodyFrame(b: SkyBody): { c: V3; e1: V3; e2: V3 } {
+  const a = b.az * deg,
+    e = b.el * deg,
+    q = b.rot * deg;
+  const c: V3 = [Math.sin(a) * Math.cos(e), Math.sin(e), Math.cos(a) * Math.cos(e)];
+  const r: V3 = [Math.cos(a), 0, -Math.sin(a)],
+    u: V3 = [-Math.sin(a) * Math.sin(e), Math.cos(e), -Math.cos(a) * Math.sin(e)];
+  const mix = (x: V3, y: V3, s: number, t: number): V3 => [
+    x[0] * s + y[0] * t,
+    x[1] * s + y[1] * t,
+    x[2] * s + y[2] * t,
+  ];
+  return { c, e1: mix(r, u, Math.cos(q), Math.sin(q)), e2: mix(r, u, -Math.sin(q), Math.cos(q)) };
+}
+
+/** 木星の扁平率と、ガリレオ衛星（木星の赤道半径を単位にした空の上の位置・半径、幾何アルベド） */
+const JUP = { flat: 0.06487, albedo: 0.538 } as const;
+const GALILEAN = [
+  /* イオ・エウロパ・ガニメデ・カリスト。軌道長半径は 421.8・671.1・1070.4・1882.7 千 km で、その内側に置く */
+  { x: 4.4, y: 0.05, r: 1821.5, a: 0.62, col: [1, 0.92, 0.7] },
+  { x: -7.6, y: -0.1, r: 1560.8, a: 0.68, col: [1, 0.97, 0.92] },
+  { x: 12.3, y: 0.15, r: 2631.2, a: 0.44, col: [0.95, 0.93, 0.9] },
+  { x: -22.8, y: -0.3, r: 2410.3, a: 0.19, col: [0.86, 0.82, 0.78] },
+] as const;
+/**
+ * 土星の扁平率と環（土星の赤道半径を単位にした内・外の半径、土星の本体に対する明るさ、不透明度）。
+ * 半径は C 環 74,658〜91,975 km、B 環〜117,507 km、カッシーニの間隙〜122,340 km、A 環〜136,780 km。
+ * 明るさは反射率（C 0.12〜0.30、B・A 0.4〜0.6、間隙 0.2〜0.4）と、環の開き 20° での光学的厚さから
+ */
+const SAT = { flat: 0.09796 } as const;
+/** 火星の扁平率 */
+const MARS = { flat: 0.00589 } as const;
+const SAT_RINGS = [
+  [74658, 91975, 0.14, 0.36],
+  [91975, 117507, 0.99, 0.99],
+  [117507, 122340, 0.08, 0.14],
+  [122340, 136780, 0.83, 0.83],
+] as const;
+/**
+ * 天体の円盤の平均の明るさ: 幾何アルベド p を太陽からの距離 r [AU]（軌道長半径）の 2 乗で割った値。
+ * 昼の、日光に正面から照らされた反射率 1 の面を 1 とする。模様と周縁減光の平均（およそ）で割って、面の明るさの倍率にする
+ */
+const DISK = {
+  moon: 0.12 / 0.83,
+  venus: 0.689 / 0.72333 ** 2 / 0.88,
+  mars: 0.17 / 1.52366 ** 2 / 0.45,
+  jupiter: 0.538 / 5.2034 ** 2 / 0.74,
+  saturn: 0.499 / 9.5726 ** 2 / 0.7,
+  uranus: 0.488 / 19.165 ** 2 / 0.66,
+} as const;
+
+/**
+ * 時間帯（昼・夕暮れ・夜）: 地上の物体の明るさ、天体の倍率（景色に合わせて上げた露出）、電飾、町の灯。
+ * 空は地平・中ほど・天頂の色、山並みの色
+ */
+export const TOD = [
+  {
+    obj: 1.5,
+    sky: 1.5,
+    lamp: 0.15,
+    town: 0,
+    hor: [0.62, 0.68, 0.78],
+    mid: [0.36, 0.5, 0.78],
+    top: [0.2, 0.34, 0.7],
+    mnt: [0.3, 0.35, 0.45],
+  },
+  {
+    obj: 1,
+    sky: 5,
+    lamp: 1,
+    town: 1,
+    hor: [0.26, 0.17, 0.2],
+    mid: [0.07, 0.08, 0.17],
+    top: [0.012, 0.022, 0.06],
+    mnt: [0.022, 0.026, 0.04],
+  },
+  {
+    obj: 0.06,
+    sky: 20,
+    lamp: 1,
+    town: 1,
+    hor: [0.012, 0.011, 0.016],
+    mid: [0.004, 0.005, 0.01],
+    top: [0.0015, 0.002, 0.0045],
+    mnt: [0.002, 0.002, 0.003],
+  },
+] as const;
+
+/** 天王星の扁平率と ε 環（半径 51,149 km、幅 20〜96 km の平均、アルベド 0.018 を本体の 0.488 と比べる） */
+const URA = { flat: 0.02293, ring: 51149, width: 58, albedo: 0.018 / 0.488, op: 0.9 } as const;
+
 /* ---------- 交差判定（ピント合わせ用） ---------- */
 /** 光線（m）が最初に当たる物体までの距離。空（無限遠）なら Infinity */
 export function intersect(o: V3, d: V3): number {
@@ -196,7 +320,167 @@ export function sceneGlsl(): string {
     while (cs.length < 3) cs.push(-1);
     return cs;
   });
+  const fr = SKY.map(bodyFrame);
+  const byId = (id: SkyBody['id']) => SKY.findIndex((b) => b.id === id);
+  const rUnit = (id: SkyBody['id']) => SKY[byId(id)].r;
+  /** 環の開き B のときの、本体の楕円の縦の半軸（赤道半径を 1） */
+  const minor = (flat: number, tilt: number) =>
+    Math.sqrt(Math.sin(tilt * deg) ** 2 + ((1 - flat) * Math.cos(tilt * deg)) ** 2);
+  const sat = SKY[byId('saturn')],
+    ura = SKY[byId('uranus')];
+  const arr = (k: 'hor' | 'mid' | 'top' | 'mnt') => `vec3[3](${TOD.map((t) => v3([...t[k]] as V3)).join(',')})`;
   return `
+/* 時間帯（0 昼・1 夕暮れ・2 夜）: 地上の物体・天体・電飾・町の灯の倍率と、空・山並みの色 */
+uniform int uTod;
+const vec4 TODK[3] = vec4[3](${TOD.map((t) => v4([t.obj, t.sky, t.lamp, t.town])).join(',')});
+const vec3 SKH[3] = ${arr('hor')};
+const vec3 SKM[3] = ${arr('mid')};
+const vec3 SKT[3] = ${arr('top')};
+const vec3 MNT[3] = ${arr('mnt')};
+
+float hash12(vec2 p) {
+  vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+  p3 += dot(p3, p3.yzx + 33.33);
+  return fract((p3.x + p3.y) * p3.z);
+}
+
+/* 空の天体: 中心の向き・右・上（極で回したもの）・角半径 */
+const int NK = ${SKY.length};
+const vec3 KC[NK] = vec3[NK](${fr.map((x) => v3(x.c)).join(',')});
+const vec3 KE1[NK] = vec3[NK](${fr.map((x) => v3(x.e1)).join(',')});
+const vec3 KE2[NK] = vec3[NK](${fr.map((x) => v3(x.e2)).join(',')});
+const float KR[NK] = float[NK](${SKY.map((b) => f(angRadius(b))).join(',')});
+const vec4 MARE[12] = vec4[12](
+  vec4(-0.28, 0.48, 0.24, 0.2), vec4(0.18, 0.43, 0.14, 0.13), vec4(0.38, 0.18, 0.17, 0.14), vec4(0.72, 0.3, 0.09, 0.08),
+  vec4(0.62, -0.12, 0.1, 0.15), vec4(0.4, -0.26, 0.08, 0.08), vec4(-0.6, 0.1, 0.22, 0.38), vec4(-0.2, -0.35, 0.15, 0.12),
+  vec4(-0.55, -0.38, 0.09, 0.08), vec4(-0.05, 0.78, 0.45, 0.06), vec4(0.05, 0.22, 0.08, 0.07), vec4(-0.38, 0.1, 0.12, 0.1));
+const vec4 GAL[4] = vec4[4](${GALILEAN.map((g) => v4([g.x, g.y, g.r / rUnit('jupiter'), g.a / JUP.albedo])).join(',')});
+const vec3 GALC[4] = vec3[4](${GALILEAN.map((g) => v3([...g.col] as V3)).join(',')});
+const vec4 SRING[4] = vec4[4](${SAT_RINGS.map(([a, b, l, o]) => v4([a / sat.r, b / sat.r, l, o])).join(',')});
+
+/* 天体 i の面の座標（赤道半径を 1、右・上）。後ろ向きなら遠い値 */
+vec2 bodyUV(vec3 d, int i) {
+  float w = dot(d, KC[i]);
+  if (w <= 0.0) return vec2(1e9);
+  return vec2(dot(d, KE1[i]), dot(d, KE2[i])) / (w * KR[i]);
+}
+
+/* 満月: 明るい高地に、海（暗い楕円）と明るいクレーター（ティコ・コペルニクス）。模様は見た目の近似 */
+vec3 moonAt(vec2 p) {
+  float r2 = dot(p, p), mu = sqrt(max(1.0 - r2, 0.0));
+  float dark = 0.0;
+  for (int i = 0; i < 12; i++) {
+    vec4 m = MARE[i];
+    vec2 q = (p - m.xy) / m.zw;
+    dark = max(dark, 1.0 - smoothstep(0.75, 1.15, length(q)));
+  }
+  float a = mix(1.0, 0.56, dark);
+  a *= 0.93 + 0.07 * hash12(floor(p * 90.0));
+  a += 0.5 * (1.0 - smoothstep(0.02, 0.035, length(p - vec2(-0.13, -0.72))));
+  a += 0.3 * (1.0 - smoothstep(0.015, 0.028, length(p - vec2(-0.3, 0.16))));
+  return vec3(1.03, 1.0, 0.93) * ${f(DISK.moon)} * a * (0.88 + 0.12 * mu);
+}
+
+/* 木星: 帯と縞（緯度で決める）、大赤斑、周縁減光。周りにガリレオ衛星 */
+vec3 jupiterAt(vec2 p, vec3 bg) {
+  for (int i = 0; i < 4; i++) {
+    vec4 g = GAL[i];
+    vec2 q = (p - g.xy) / g.z;
+    float r2 = dot(q, q);
+    if (r2 < 1.0) return GALC[i] * g.w * ${f(DISK.jupiter)} * (0.6 + 0.4 * sqrt(1.0 - r2));
+  }
+  vec2 q = vec2(p.x, p.y / ${f(1 - JUP.flat)});
+  float r2 = dot(q, q);
+  if (r2 >= 1.0) return bg;
+  float mu = sqrt(1.0 - r2), lat = degrees(asin(clamp(q.y, -1.0, 1.0))), al = abs(lat);
+  vec3 zone = vec3(0.96, 0.9, 0.78), belt = vec3(0.7, 0.5, 0.37), c = zone;
+  if ((lat > 7.0 && lat < 18.0) || (lat < -7.0 && lat > -20.0)) c = belt;
+  else if (lat > 24.0 && lat < 30.0) c = mix(zone, belt, 0.6);
+  else if (lat < -26.0 && lat > -32.0) c = mix(zone, belt, 0.45);
+  c = mix(c, vec3(0.62, 0.6, 0.58), smoothstep(45.0, 62.0, al));
+  vec2 gr = (q - vec2(0.35, -0.375)) / vec2(0.11, 0.075);
+  if (dot(gr, gr) < 1.0) c = vec3(0.86, 0.5, 0.36);
+  return c * ${f(DISK.jupiter)} * (0.35 + 0.65 * pow(mu, 0.5));
+}
+
+/* 土星: 本体（扁平）と環（C・B・カッシーニの間隙・A）。手前の環は本体の前、奥の環は本体の後ろ */
+vec3 saturnAt(vec2 p, vec3 bg) {
+  float b = ${f(minor(SAT.flat, sat.tilt))}, sb = ${f(Math.sin(sat.tilt * deg))};
+  float r2 = p.x * p.x + (p.y / b) * (p.y / b);
+  vec3 behind = bg;
+  bool inG = r2 < 1.0;
+  if (inG) {
+    float mu = sqrt(1.0 - r2), y = p.y / b;
+    vec3 c = vec3(0.92, 0.82, 0.6);
+    if (abs(y + 0.05) < 0.12) c *= 1.05;
+    else if (abs(y - 0.22) < 0.08 || abs(y + 0.3) < 0.07) c *= 0.88;
+    c = mix(c, vec3(0.72, 0.7, 0.62), smoothstep(0.7, 0.9, y));
+    behind = c * ${f(DISK.saturn)} * (0.4 + 0.6 * pow(mu, 0.6));
+  }
+  float rr = length(vec2(p.x, p.y / sb));
+  for (int i = 0; i < 4; i++) {
+    vec4 s = SRING[i];
+    if (rr >= s.x && rr < s.y) {
+      if (inG && p.y > 0.0) return behind;
+      return vec3(0.93, 0.87, 0.75) * ${f(DISK.saturn)} * s.z + (1.0 - s.w) * behind;
+    }
+  }
+  return behind;
+}
+
+/* 天王星: 青緑の本体と ε 環。環は実際の幅（約 ${URA.width} km）と明るさのまま、画素より細い幅を広げた帯に光の量を保って薄める */
+vec3 uranusAt(vec2 p, vec3 bg) {
+  float b = ${f(minor(URA.flat, ura.tilt))}, sb = ${f(Math.sin(ura.tilt * deg))};
+  float r2 = p.x * p.x + (p.y / b) * (p.y / b);
+  vec3 behind = bg;
+  bool inG = r2 < 1.0;
+  if (inG) behind = vec3(0.63, 0.86, 0.9) * ${f(DISK.uranus)} * (0.5 + 0.5 * sqrt(1.0 - r2));
+  float rr = length(vec2(p.x, p.y / sb)), we = 0.02;
+  if (abs(rr - ${f(URA.ring / ura.r)}) < we && !(inG && p.y > 0.0)) {
+    float k = ${f(URA.width / 2 / ura.r)} / we;
+    return vec3(0.6, 0.6, 0.6) * ${f(DISK.uranus * URA.albedo)} * k + (1.0 - ${f(URA.op)} * k) * behind;
+  }
+  return behind;
+}
+
+/* 金星: 模様のない淡い黄白色の雲 */
+vec3 venusAt(vec2 p) {
+  float mu = sqrt(max(1.0 - dot(p, p), 0.0));
+  return vec3(1.0, 0.97, 0.86) * ${f(DISK.venus)} * (0.8 + 0.2 * mu);
+}
+
+/* 火星: 赤茶色の地に暗い模様（大シルチスなど、見た目の近似）と北極冠。扁平率 ${MARS.flat} */
+vec3 marsAt(vec2 p) {
+  vec2 q = vec2(p.x, p.y / ${f(1 - MARS.flat)});
+  float mu = sqrt(max(1.0 - dot(q, q), 0.0));
+  vec3 c = vec3(0.86, 0.5, 0.3);
+  float dark = 0.0;
+  dark = max(dark, 1.0 - smoothstep(0.7, 1.1, length((q - vec2(0.25, 0.12)) / vec2(0.16, 0.3))));
+  dark = max(dark, 1.0 - smoothstep(0.7, 1.1, length((q - vec2(-0.2, -0.22)) / vec2(0.45, 0.12))));
+  dark = max(dark, 1.0 - smoothstep(0.7, 1.1, length((q - vec2(-0.5, 0.25)) / vec2(0.18, 0.14))));
+  c *= mix(1.0, 0.62, dark);
+  if (q.y > 0.82) c = vec3(0.95, 0.94, 0.92) * 1.6;
+  return c * ${f(DISK.mars)} * (0.75 + 0.25 * mu);
+}
+
+/* 天体の放射輝度（宇宙の背景は 0）。空の光は天体の手前の大気から来るので、呼ぶ側で足す */
+vec3 celestial(vec3 d) {
+  vec3 bg = vec3(0.0);
+  vec2 p = bodyUV(d, ${byId('moon')});
+  if (dot(p, p) < 1.0) return moonAt(p);
+  p = bodyUV(d, ${byId('jupiter')});
+  if (dot(p, p) < 900.0) return jupiterAt(p, bg);
+  p = bodyUV(d, ${byId('saturn')});
+  if (dot(p, p) < 6.0) return saturnAt(p, bg);
+  p = bodyUV(d, ${byId('uranus')});
+  if (dot(p, p) < 4.5) return uranusAt(p, bg);
+  p = bodyUV(d, ${byId('venus')});
+  if (dot(p, p) < 1.0) return venusAt(p);
+  p = bodyUV(d, ${byId('mars')});
+  if (dot(p, p) < 1.0) return marsAt(p);
+  return bg;
+}
+
 const int NB = ${BOARDS.length};
 const vec4 BRD[NB] = vec4[NB](${BOARDS.map((b) => v4([...b.c, b.r])).join(',')});
 const int LBL[NB * 3] = int[NB * 3](${lbl.join(',')});
@@ -212,35 +496,29 @@ const vec3 SHI[3] = vec3[3](${boxes.map((b) => v3(b[1] as V3)).join(',')});
 const ivec2 SRG[3] = ivec2[3](${ranges.map(([a, b]) => `ivec2(${a},${b})`).join(',')});
 const vec3 LDIR = normalize(vec3(-0.4, 0.8, -0.45));
 
-float hash12(vec2 p) {
-  vec3 p3 = fract(vec3(p.xyx) * 0.1031);
-  p3 += dot(p3, p3.yzx + 33.33);
-  return fract((p3.x + p3.y) * p3.z);
-}
-
 float ridge(float az) {
   return 0.018 + 0.012 * sin(2.3 * az + 0.7) + 0.007 * sin(5.9 * az + 2.1) + 0.003 * sin(13.0 * az);
 }
 
-/* 空（夕暮れ）と、遠景の山並みと町の灯（無限遠） */
+/* 空（時間帯の色）と天体、遠景の山並みと町の灯（無限遠） */
 vec3 sky(vec3 d) {
   float el = asin(clamp(d.y, -1.0, 1.0)), az = atan(d.x, d.z);
   float rg = ridge(az);
   if (el < rg) {
-    vec3 c = vec3(0.022, 0.026, 0.04);
+    vec3 c = MNT[uTod];
     vec2 g = vec2(az, el) / 0.004;
     vec2 cell = floor(g);
     float hs = hash12(cell + 17.0);
     if (hs < 0.32 && el < rg - 0.002) {
       vec2 pc = (cell + 0.2 + 0.6 * vec2(hash12(cell + 3.1), hash12(cell + 7.7))) * 0.004;
       vec2 dd = vec2((az - pc.x) * cos(el), el - pc.y);
-      if (dot(dd, dd) < 0.0006 * 0.0006) c += mix(vec3(9.0, 6.0, 2.6), vec3(6.0, 7.0, 8.0), step(0.24, hs));
+      if (dot(dd, dd) < 0.0006 * 0.0006) c += mix(vec3(9.0, 6.0, 2.6), vec3(6.0, 7.0, 8.0), step(0.24, hs)) * TODK[uTod].w;
     }
     return c;
   }
   float s = clamp(el / 0.6, 0.0, 1.0);
-  vec3 hor = vec3(0.26, 0.17, 0.2), mid = vec3(0.07, 0.08, 0.17), top = vec3(0.012, 0.022, 0.06);
-  return s < 0.25 ? mix(hor, mid, s / 0.25) : mix(mid, top, (s - 0.25) / 0.75);
+  vec3 hor = SKH[uTod], mid = SKM[uTod], top = SKT[uTod];
+  return celestial(d) * TODK[uTod].y + (s < 0.25 ? mix(hor, mid, s / 0.25) : mix(mid, top, (s - 0.25) / 0.75));
 }
 
 float seg7(vec2 p, int m) {
@@ -338,7 +616,7 @@ vec3 radiance(vec3 ro, vec3 rd) {
     }
   }
   if (id == 0) return sky(rd);
-  if (id >= 100) return BLE[id - 100];
+  if (id >= 100) return BLE[id - 100] * TODK[uTod].z;
   vec3 p = ro + rd * t, alb;
   if (id == 1) {
     vec2 q = floor(p.xz / 0.5);
@@ -357,7 +635,7 @@ vec3 radiance(vec3 ro, vec3 rd) {
     alb = c.rgb;
     if (c.w > 0.5 && fract(p.y / 0.4) < 0.1) alb = vec3(0.8);
   }
-  return alb * (0.4 + 0.6 * max(dot(nrm, LDIR), 0.0));
+  return alb * (0.4 + 0.6 * max(dot(nrm, LDIR), 0.0)) * TODK[uTod].x;
 }
 `;
 }

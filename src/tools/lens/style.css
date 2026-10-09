@@ -4,9 +4,14 @@
 :root{--wl-f:#2758c8;--wl-d:#23803a;--wl-c:#c3332b}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--wl-f:#7ea2ff;--wl-d:#6cd085;--wl-c:#ff7d70}}
 :root[data-theme="dark"]{--wl-f:#7ea2ff;--wl-d:#6cd085;--wl-c:#ff7d70}
+/* 断面図の 7 波長（h・g・F・e・d・C・r 線）。光の色に近い色相を、地の色と見分けられる明るさにした。
+   重なった所は、暗い地では光のように足して白く、明るい地では掛けて暗くし、分かれた所だけ色が見えるようにする */
+:root{--sp-h:#a12aa6;--sp-g:#3448d4;--sp-F:#0889a8;--sp-e:#2f8c35;--sp-d:#9c7a00;--sp-C:#d4471c;--sp-r:#a3152f;--sp-blend:multiply}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--sp-h:#d77ce0;--sp-g:#8c94ff;--sp-F:#3fc0dc;--sp-e:#62c866;--sp-d:#d9b43a;--sp-C:#ff7a52;--sp-r:#f0607c;--sp-blend:screen}}
+:root[data-theme="dark"]{--sp-h:#d77ce0;--sp-g:#8c94ff;--sp-F:#3fc0dc;--sp-e:#62c866;--sp-d:#d9b43a;--sp-C:#ff7a52;--sp-r:#f0607c;--sp-blend:screen}
 
-/* 並び: スマホは 映像 → レンズ → 見取り図 → 計算結果 → 断面 → 収差 → 処方 → 式。
-   PC は左の広い列に 映像・断面・収差、右の列に レンズ・見取り図・計算結果、下に全幅で 処方・式。
+/* 並び: スマホは 映像 → レンズ → 見取り図 → 計算結果 → 断面 → 収差 → レンズデータ → 式。
+   PC は左の広い列に 映像・断面・収差、右の列に レンズ・見取り図・計算結果、下に全幅で レンズデータ・式。
    左右の列の高さがそろう幅の比にし、計算結果は補足が長いので右の列でも 2 列に並べる */
 .a-view{order:1}.a-lens{order:2}.a-map{order:3}.a-out{order:4}.a-sec{order:5}.a-abr{order:6}.a-rx{order:7}.a-thy{order:8}
 @media (min-width:1000px){
@@ -26,6 +31,33 @@
   background:linear-gradient(#fff,#fff) 0 0/9px 2px,linear-gradient(#fff,#fff) 0 0/2px 7px,linear-gradient(#fff,#fff) 100% 0/9px 2px,linear-gradient(#fff,#fff) 100% 0/2px 7px,
     linear-gradient(#fff,#fff) 0 100%/9px 2px,linear-gradient(#fff,#fff) 0 100%/2px 7px,linear-gradient(#fff,#fff) 100% 100%/9px 2px,linear-gradient(#fff,#fff) 100% 100%/2px 7px;
   background-repeat:no-repeat;filter:drop-shadow(0 0 1px #000)}
+/* 枠の点が被写界深度に入っているとき: 明るい緑 */
+.af.ok{--afc:#4cff5a;background-image:linear-gradient(var(--afc),var(--afc)),linear-gradient(var(--afc),var(--afc)),linear-gradient(var(--afc),var(--afc)),linear-gradient(var(--afc),var(--afc)),
+    linear-gradient(var(--afc),var(--afc)),linear-gradient(var(--afc),var(--afc)),linear-gradient(var(--afc),var(--afc)),linear-gradient(var(--afc),var(--afc))}
+/* 天体のガイド（月のほかの天体の位置に、月と同じ大きさの円） */
+.gd{position:absolute;inset:0;width:100%;height:100%;overflow:hidden;pointer-events:none;filter:drop-shadow(0 0 1px #000)}
+.gd circle{fill:none;stroke:#ff9a1f;stroke-width:1.5px;vector-effect:non-scaling-stroke}
+/* 全画面の切り替え（映像の右上） */
+.lv-fs{position:absolute;top:8px;right:8px;z-index:2;display:grid;place-items:center;width:32px;height:32px;padding:0;border:0;border-radius:6px;background:rgb(0 0 0 / .45);color:#fff;cursor:pointer}
+.lv-fs:hover{background:rgb(0 0 0 / .7)}
+.lv-fs:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+.lv-fs svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.lv-fs .i-close,.fs .lv-fs .i-open{display:none}
+.fs .lv-fs .i-close{display:block}
+
+/* 全画面: 左に映像（3:2 で収まる大きさ）と左下の見取り図、右に入力の行 */
+.fs{position:fixed;inset:0;z-index:40;display:grid;grid-template-columns:minmax(0,1fr) 360px;background:var(--bg)}
+.fs-v{position:relative;min-width:0;min-height:0;background:#000;container-type:size}
+.fs-v>.lv{width:100%;height:100%;aspect-ratio:auto;border:0;border-radius:0}
+.fs-map{position:absolute;left:12px;bottom:12px;z-index:3;width:min(240px,34cqw);padding:4px;border-radius:6px;background:var(--screen);opacity:.92}
+.fs-map .scope{margin:0}
+.fs-p{min-height:0;overflow:auto;overscroll-behavior:contain;padding:8px 16px 16px;border-left:1px solid var(--line);background:var(--surface)}
+.fs .sc-pop{right:0}
+@media (max-width:759px),(max-aspect-ratio:1/1){
+  .fs{grid-template-columns:none;grid-template-rows:auto minmax(0,1fr)}
+  .fs-v{height:min(66.667vw,62vh)}
+  .fs-p{border-left:0;border-top:1px solid var(--line)}
+}
 .v-spp{margin-left:auto}
 @media (max-width:559px){.v-spp{margin-left:0}}
 
@@ -43,6 +75,7 @@
 .mp-fov{fill:none;stroke:var(--screen-ink);stroke-width:1;stroke-dasharray:5 3}
 .mp-fp{fill:none;stroke:var(--ch1);stroke-width:2}
 .mp-cam{fill:var(--ink);stroke:var(--screen);stroke-width:1}
+.mp-sky{fill:var(--screen);stroke:var(--screen-ink);stroke-width:1.2}
 
 /* レンズの断面 */
 .a-sec .scope svg,.a-abr .scope svg{overflow:hidden}
@@ -57,6 +90,12 @@
 .ls-r1,.ls-r2{fill:none;stroke-width:1;stroke-linejoin:round}
 .ls-r1{stroke:var(--ch1)}
 .ls-r2{stroke:var(--ch2)}
+.ls-sen-i{stroke:var(--ink);stroke-width:2;opacity:.6}
+.ls-w{fill:none;stroke-width:1;stroke-linejoin:round;mix-blend-mode:var(--sp-blend)}
+.scope text.ls-lab{paint-order:stroke;stroke:var(--screen);stroke-width:3px;stroke-linejoin:round}
+.ls-tk{stroke:var(--screen-ink);stroke-width:2}
+.s-h{stroke:var(--sp-h)}.s-g{stroke:var(--sp-g)}.s-F{stroke:var(--sp-F)}.s-e{stroke:var(--sp-e)}.s-d{stroke:var(--sp-d)}.s-C{stroke:var(--sp-C)}.s-r{stroke:var(--sp-r)}
+.sw.spec{width:42px;background:linear-gradient(90deg,var(--sp-h) 0 14.3%,var(--sp-g) 0 28.6%,var(--sp-F) 0 42.9%,var(--sp-e) 0 57.1%,var(--sp-d) 0 71.4%,var(--sp-C) 0 85.7%,var(--sp-r) 0)}
 
 /* 収差の図 */
 .sw.wl-f{background:var(--wl-f)}.sw.wl-d{background:var(--wl-d)}.sw.wl-c{background:var(--wl-c)}
@@ -77,7 +116,7 @@
 .m-sub{display:block;margin-top:2px;font:12px/1.5 var(--sans);color:var(--ink-3)}
 .m-main .m-sub{margin-top:4px}
 
-/* レンズの処方 */
+/* レンズデータ */
 .a-rx{font-size:14.5px}
 .thy-body>p.rx-src{max-width:none;margin-bottom:10px;font-size:13px;line-height:1.8}
 .rx-src i{font-style:italic}
