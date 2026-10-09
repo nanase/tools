@@ -2,15 +2,29 @@
 // 動作原理と式。種類ごとの係数の式は全種類を出しておき、client.ts が今の種類のものだけを見せる。代入した式（#subst）も client.ts が入れる
 import { hzMath } from './math';
 import { TYPES } from './params';
-import { EQ_COM, EQ_DIFF, EQ_FFT, eqA, formHtml, THEORY_P } from './theory';
+import { EQ_COM, EQ_DIFF, EQ_FFT, eqA, formHtml, THY_COEF, THY_FREQ, THY_WHAT } from './theory';
 
 const t0 = TYPES[0];
 ---
-<p set:html={THEORY_P} />
+<h3>差分方程式と伝達関数</h3>
+<Fragment set:html={THY_WHAT} />
 <div class="eqs">
-  <Fragment set:html={EQ_DIFF + hzMath(false) + EQ_COM + eqA(t0.g ? ' id="eq-a"' : ' id="eq-a" hidden')} />
+  <Fragment set:html={EQ_DIFF + hzMath(false)} />
+</div>
+<h3>係数</h3>
+<Fragment set:html={THY_COEF} />
+<div class="eqs">
+  <Fragment set:html={EQ_COM + eqA(t0.g ? ' id="eq-a"' : ' id="eq-a" hidden')} />
   {TYPES.map((t) => <div class="egrp" role="group" aria-label={`${t.t}の係数`} data-t={t.v} hidden={t !== t0} set:html={formHtml(t.v)} />)}
-  <Fragment set:html={EQ_FFT} />
   <div class="subst" id="subst" role="group" aria-label="現在の値を代入した式"></div>
 </div>
-<p class="cite">出典: R. Bristow-Johnson, <a href="https://webaudio.github.io/Audio-EQ-Cookbook/audio-eq-cookbook.html" target="_blank" rel="noopener">Cookbook formulae for audio equalizer biquad filter coefficients</a>（W3C Audio EQ Cookbook）、MDN <a href="https://developer.mozilla.org/en-US/docs/Web/API/BiquadFilterNode/type" target="_blank" rel="noopener">BiquadFilterNode: type</a></p>
+<h3>周波数特性</h3>
+<Fragment set:html={THY_FREQ} />
+<div class="eqs">
+  <Fragment set:html={EQ_FFT} />
+</div>
+<h3>出典</h3>
+<ol class="refs">
+  <li id="thy-r1"><span class="rf-for">種類ごとの係数の式</span><span class="rf-src">R. Bristow-Johnson, “<a href="https://webaudio.github.io/Audio-EQ-Cookbook/audio-eq-cookbook.html" target="_blank" rel="noopener">Cookbook formulae for audio equalizer biquad filter coefficients</a>,” W3C Audio EQ Cookbook</span></li>
+  <li id="thy-r2"><span class="rf-for">フィルタの種類</span><span class="rf-src">MDN, <a href="https://developer.mozilla.org/en-US/docs/Web/API/BiquadFilterNode/type" target="_blank" rel="noopener">BiquadFilterNode: type</a></span></li>
+</ol>

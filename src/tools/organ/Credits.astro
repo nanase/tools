@@ -3,18 +3,82 @@
 import { pieceOf } from './score';
 import { stopName } from './stops';
 
-const meta = (v: string) => {
+/* 曲ごとの標準のテンポとレジストレーション。箇条書きの項目名と値の組 */
+const meta = (v: string): [string, string][] => {
   const p = pieceOf(v);
-  return `標準のテンポ ${p.tempo}。ストップ ${p.stops.map(stopName).join('・')}${p.couplers.length ? `、カプラー ${p.couplers.join('・')}` : ''}。`;
+  return [
+    ['標準のテンポ', p.tempo],
+    ['ストップ', p.stops.map(stopName).join('・')],
+    ...(p.couplers.length ? [['カプラー', p.couplers.join('・')] as [string, string]] : []),
+  ];
 };
 const MU = 'https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=';
+const SCORES = 'https://github.com/nanase/tools/tree/main/src/tools/organ/scores';
 /* Mutopia の MIDI には装飾が入っていないので、.ly の原本から展開したことを書く */
 const ORN =
-  'MIDI に入っていない装飾（トリル・モルデント）は、Mutopia の .ly の原本で位置と種類を調べ、バロックの奏法に従って音符にしています（トリルは上の補助音から主音と交互に 1 秒に 8〜12 音で弾いて主音で終え、モルデントは主音・下の補助音・主音）。';
+  'MIDI に入っていない装飾（トリル・モルデント）は、Mutopia の .ly の原本で位置と種類を調べ、バロックの奏法に従って音符にしています。';
+const ORN_WAYS: [string, string][] = [
+  ['トリル', '上の補助音から主音と交互に 1 秒に 8〜12 音で弾いて主音で終える'],
+  ['モルデント', '主音・下の補助音・主音'],
+];
 ---
 <ul class="srcs">
-  <li><b>トッカータとフーガ ニ短調 BWV 565</b>（J. S. バッハの作とされる）: 楽譜ではなく、人の演奏を記録した MIDI を使っています。<a href="https://opengameart.org/content/nes-bach-bwv-565">OpenGameArt の「NES - Bach - BWV 565」</a>（投稿 TheOuterLinux、2019）の zip に入っている MIDI で、<a href="https://creativecommons.org/publicdomain/zero/1.0/deed.ja">CC0</a>（パブリックドメインへの献呈）として公開されています。帰属の表示は要りませんが、変換と編集への謝意として投稿者の名前を書いています。同じデータは 2018 年から作成者の名前なしで出回っており、元の演奏・作成者は分かっていません。演奏のテンポの変化とアルペジオ、モルデントやトリル、音の長さと時刻（演奏の表情）はそのまま使い、Great・Swell・Pedal のトラックを第 1 手鍵盤・第 2 手鍵盤・ペダルで弾きます。MIDI の Main Piston（ジェネラル・ピストン）の切り替え 10 回を、このオルガンのストップのレジストレーションの切り替えに当てて、演奏中に切り替えます（番号に当てたストップは、区間の音楽からこのツールで選んだものです）。Mutopia の楽譜と照らして、明らかな弾き損じ 1 音（MIDI の 48 秒付近の二重の打鍵）だけを除きました。変換した音符のデータ（<a href="https://github.com/nanase/tools/tree/main/src/tools/organ/scores">src/tools/organ/scores</a> の bwv565）も CC0 で公開します。{meta('bwv565')}</li>
-  <li><b>コラール前奏曲「目覚めよと呼ぶ声あり」BWV 645</b>（J. S. バッハ「シューブラー・コラール集」より）: 音符は <a href={`${MU}601`}>Mutopia Project の楽譜</a>（入力 Bart Golsteijn、底本 Bach-Gesellschaft, Leipzig、Mutopia-2006/06/29-601）の MIDI から変換し、反復を展開しました。{ORN}右手（ritornello）は第 2 手鍵盤、左手（コラールの旋律）は第 1 手鍵盤で弾きます。原作のライセンスは <a href="https://creativecommons.org/licenses/by-sa/2.5/deed.ja">クリエイティブ・コモンズ 表示 - 継承 2.5（CC BY-SA 2.5）</a>で、元の MIDI と、そこから作った音符のデータ（<a href="https://github.com/nanase/tools/tree/main/src/tools/organ/scores">src/tools/organ/scores</a> の bwv645）も同じライセンスで公開します。{meta('bwv645')}</li>
-  <li><b>パッサカリアとフーガ ハ短調 BWV 582</b>（J. S. バッハ）: 音符は <a href={`${MU}741`}>Mutopia Project の楽譜</a>（入力 Urs Metzger、底本 C. F. Peters, Leipzig (8656)、Mutopia-2006/04/21-741、パブリックドメイン）の MIDI から変換しました。MIDI に含まれていた、ストップの代わりに 1 オクターブ上下へ写した声部（4'・16' の複製）は除いています。テンポの変化は MIDI の値を使っています。{ORN}{meta('bwv582')}</li>
-  <li><b>フーガ ト短調 BWV 578（小フーガ）</b>（J. S. バッハ）: 音符は <a href="https://imslp.org/wiki/File:PMLP153148-Bach_578_Fugue_Gm.mid">IMSLP の MIDI</a>（作成 Pierre Gouin、Les Éditions Outremontaises、2017）から変換しました。MIDI でペダルに重ねてあった 1 オクターブ下の音（16' の代わり）は除き、テンポの変化と、音の長さや時刻の細かなずれ（演奏の表情）は MIDI のものを使っています。トリルなどの装飾は、MIDI に演奏として入っています。両手とも第 1 手鍵盤で弾きます。原作のライセンスは <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.ja">クリエイティブ・コモンズ 表示 - 継承 4.0 国際（CC BY-SA 4.0）</a>で、元の MIDI と、そこから作った音符のデータ（<a href="https://github.com/nanase/tools/tree/main/src/tools/organ/scores">src/tools/organ/scores</a> の bwv578）も同じライセンスで公開します。{meta('bwv578')}</li>
+  <li>
+    <h3>トッカータとフーガ ニ短調 BWV 565 <small>J. S. バッハの作とされる</small></h3>
+    <p>楽譜ではなく、人の演奏を記録した MIDI を使っています。<a href="https://opengameart.org/content/nes-bach-bwv-565">OpenGameArt の「NES - Bach - BWV 565」</a>（投稿 TheOuterLinux、2019）の zip に入っている MIDI で、<a href="https://creativecommons.org/publicdomain/zero/1.0/deed.ja">CC0</a>（パブリックドメインへの献呈）として公開されています。</p>
+    <p>帰属の表示は要りませんが、変換と編集への謝意として投稿者の名前を書いています。同じデータは 2018 年から作成者の名前なしで出回っており、元の演奏・作成者は分かっていません。</p>
+    <p>変換した音符のデータ（<a href={SCORES}>src/tools/organ/scores</a> の bwv565）も CC0 で公開します。</p>
+    <ul class="tl">
+      {meta('bwv565').map(([k, v]) => <li><b>{k}:</b> {v}</li>)}
+    </ul>
+    <p>MIDI は、次のように使っています。</p>
+    <ul class="tl">
+      <li><b>演奏の表情:</b> 演奏のテンポの変化とアルペジオ、モルデントやトリル、音の長さと時刻を、そのまま使う</li>
+      <li><b>鍵盤:</b> Great・Swell・Pedal のトラックを、第 1 手鍵盤・第 2 手鍵盤・ペダルで弾く</li>
+      <li><b>レジストレーション:</b> MIDI の Main Piston（ジェネラル・ピストン）の切り替え 10 回を、このオルガンのストップのレジストレーションの切り替えに当てて、演奏中に切り替える。番号に当てたストップは、区間の音楽からこのツールで選んだもの</li>
+      <li><b>除いた音:</b> Mutopia の楽譜と照らして、明らかな弾き損じ 1 音だけを除いた。MIDI の 48 秒付近の二重の打鍵</li>
+    </ul>
+  </li>
+  <li>
+    <h3>コラール前奏曲「目覚めよと呼ぶ声あり」BWV 645 <small>J. S. バッハ「シューブラー・コラール集」より</small></h3>
+    <p>音符は、<a href={`${MU}601`}>Mutopia Project の楽譜</a>の MIDI から変換し、反復を展開しました。</p>
+    <ul class="tl">
+      <li><b>入力:</b> Bart Golsteijn</li>
+      <li><b>底本:</b> Bach-Gesellschaft, Leipzig</li>
+      <li><b>楽譜の番号:</b> Mutopia-2006/06/29-601</li>
+      {meta('bwv645').map(([k, v]) => <li><b>{k}:</b> {v}</li>)}
+    </ul>
+    <p>原作のライセンスは <a href="https://creativecommons.org/licenses/by-sa/2.5/deed.ja">クリエイティブ・コモンズ 表示 - 継承 2.5（CC BY-SA 2.5）</a>で、元の MIDI と、そこから作った音符のデータ（<a href={SCORES}>src/tools/organ/scores</a> の bwv645）も同じライセンスで公開します。</p>
+    <p>{ORN}</p>
+    <ul class="tl">
+      {ORN_WAYS.map(([k, v]) => <li><b>{k}:</b> {v}</li>)}
+    </ul>
+    <p>右手（ritornello）は第 2 手鍵盤、左手（コラールの旋律）は第 1 手鍵盤で弾きます。</p>
+  </li>
+  <li>
+    <h3>パッサカリアとフーガ ハ短調 BWV 582 <small>J. S. バッハ</small></h3>
+    <p>音符は、<a href={`${MU}741`}>Mutopia Project の楽譜</a>の MIDI から変換しました。</p>
+    <ul class="tl">
+      <li><b>入力:</b> Urs Metzger</li>
+      <li><b>底本:</b> C. F. Peters, Leipzig (8656)</li>
+      <li><b>楽譜の番号:</b> Mutopia-2006/04/21-741</li>
+      <li><b>ライセンス:</b> パブリックドメイン</li>
+      {meta('bwv582').map(([k, v]) => <li><b>{k}:</b> {v}</li>)}
+    </ul>
+    <p>MIDI に含まれていた、ストップの代わりに 1 オクターブ上下へ写した声部（4'・16' の複製）は除いています。テンポの変化は MIDI の値を使っています。</p>
+    <p>{ORN}</p>
+    <ul class="tl">
+      {ORN_WAYS.map(([k, v]) => <li><b>{k}:</b> {v}</li>)}
+    </ul>
+  </li>
+  <li>
+    <h3>フーガ ト短調 BWV 578（小フーガ） <small>J. S. バッハ</small></h3>
+    <p>音符は、<a href="https://imslp.org/wiki/File:PMLP153148-Bach_578_Fugue_Gm.mid">IMSLP の MIDI</a>から変換しました。</p>
+    <ul class="tl">
+      <li><b>作成:</b> Pierre Gouin、Les Éditions Outremontaises、2017</li>
+      {meta('bwv578').map(([k, v]) => <li><b>{k}:</b> {v}</li>)}
+    </ul>
+    <p>原作のライセンスは <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.ja">クリエイティブ・コモンズ 表示 - 継承 4.0 国際（CC BY-SA 4.0）</a>で、元の MIDI と、そこから作った音符のデータ（<a href={SCORES}>src/tools/organ/scores</a> の bwv578）も同じライセンスで公開します。</p>
+    <p>MIDI でペダルに重ねてあった 1 オクターブ下の音（16' の代わり）は除き、テンポの変化と、音の長さや時刻の細かなずれ（演奏の表情）は MIDI のものを使っています。トリルなどの装飾は、MIDI に演奏として入っています。両手とも第 1 手鍵盤で弾きます。</p>
+  </li>
 </ul>

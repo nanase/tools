@@ -9,8 +9,32 @@ const meta = (v: string) => {
 };
 ---
 <ul class="srcs">
-  <li><b>シャコンヌ ニ短調 BWV 1004</b>（J. S. バッハ「無伴奏ヴァイオリンのためのパルティータ第 2 番」より）: 音符は <a href="https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=1426">Mutopia Project の楽譜</a>（入力 Hajo Dezelski、底本 Bach-Gesellschaft Edition 1879 Band 27.1、Mutopia-2019/05/30-1426）の MIDI から変換しました。実音を 1 オクターブ下げてギターの音域に移し、同じ時刻の同じ高さの音を 1 つにまとめています。和音だけが書かれ「arpeggio」と指示された小節（89〜120・201〜208）は、拍ごとに 32 分音符で「低・中・高・中」を 2 回往復する分散和音に展開しました。そのうえで、分散和音の弾き方、和音をずらして弾く時刻、音の長さなどを MIDI で手で編集しています。弦とフレットはこのツールの運指で付けています。原作のライセンスは <a href="https://creativecommons.org/licenses/by-sa/3.0/deed.ja">クリエイティブ・コモンズ 表示 - 継承 3.0 非移植（CC BY-SA 3.0）</a>で、編集した MIDI（<a href="https://github.com/nanase/tools/blob/main/src/tools/guitar/chaconne.mid">src/tools/guitar/chaconne.mid</a>）と、そこから作った音符と運指のデータ（<a href="https://github.com/nanase/tools/blob/main/src/tools/guitar/chaconne.ts">src/tools/guitar/chaconne.ts</a>）も同じライセンスで公開します。{meta('bwv1004')}</li>
-  <li><b>前奏曲 ハ長調 BWV 846</b>（J. S. バッハ「平均律クラヴィーア曲集 第 1 巻」より）: 原曲（パブリックドメイン）をこのツールで入力し、全音上げてニ長調にし、6 弦を D に下げた調弦で弾けるようにしました。{meta('bwv846')}</li>
-  <li><b>メヌエット ト長調 BWV Anh. 114</b>（「アンナ・マグダレーナ・バッハのための音楽帳」より。C. ペツォールト作とされる）: 旋律は原曲（パブリックドメイン）を 1 オクターブ下げたもので、低音はこのツールで付けた簡単な伴奏です。{meta('minuet')}</li>
-  <li><b>グリーンスリーブス</b>（16 世紀のイングランドの旋律、パブリックドメイン）: 旋律に、このツールで低音と内声を付けました。{meta('green')}</li>
+  <li>
+    <h3>シャコンヌ ニ短調 BWV 1004 <small>J. S. バッハ「無伴奏ヴァイオリンのためのパルティータ第 2 番」より</small></h3>
+    <p>音符は <a href="https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=1426">Mutopia Project の楽譜</a>の MIDI から変換しました。</p>
+    <ul class="tl">
+      <li>入力: Hajo Dezelski</li>
+      <li>底本: Bach-Gesellschaft Edition 1879 Band 27.1</li>
+      <li>Mutopia-2019/05/30-1426</li>
+    </ul>
+    <p>実音を 1 オクターブ下げてギターの音域に移し、同じ時刻の同じ高さの音を 1 つにまとめています。和音だけが書かれ「arpeggio」と指示された小節（89〜120・201〜208）は、拍ごとに 32 分音符で「低・中・高・中」を 2 回往復する分散和音に展開しました。</p>
+    <p>そのうえで、分散和音の弾き方、和音をずらして弾く時刻、音の長さなどを MIDI で手で編集しています。弦とフレットはこのツールの運指で付けています。</p>
+    <p>原作のライセンスは <a href="https://creativecommons.org/licenses/by-sa/3.0/deed.ja">クリエイティブ・コモンズ 表示 - 継承 3.0 非移植（CC BY-SA 3.0）</a>です。編集した MIDI（<a href="https://github.com/nanase/tools/blob/main/src/tools/guitar/chaconne.mid">src/tools/guitar/chaconne.mid</a>）と、そこから作った音符と運指のデータ（<a href="https://github.com/nanase/tools/blob/main/src/tools/guitar/chaconne.ts">src/tools/guitar/chaconne.ts</a>）も、同じライセンスで公開します。</p>
+    <p>{meta('bwv1004')}</p>
+  </li>
+  <li>
+    <h3>前奏曲 ハ長調 BWV 846 <small>J. S. バッハ「平均律クラヴィーア曲集 第 1 巻」より</small></h3>
+    <p>原曲（パブリックドメイン）をこのツールで入力し、全音上げてニ長調にし、6 弦を D に下げた調弦で弾けるようにしました。</p>
+    <p>{meta('bwv846')}</p>
+  </li>
+  <li>
+    <h3>メヌエット ト長調 BWV Anh. 114 <small>「アンナ・マグダレーナ・バッハのための音楽帳」より。C. ペツォールト作とされる</small></h3>
+    <p>旋律は原曲（パブリックドメイン）を 1 オクターブ下げたもので、低音はこのツールで付けた簡単な伴奏です。</p>
+    <p>{meta('minuet')}</p>
+  </li>
+  <li>
+    <h3>グリーンスリーブス <small>16 世紀のイングランドの旋律、パブリックドメイン</small></h3>
+    <p>旋律に、このツールで低音と内声を付けました。</p>
+    <p>{meta('green')}</p>
+  </li>
 </ul>

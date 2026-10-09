@@ -1,11 +1,44 @@
 ---
 // 動作原理と式。この分の符号を代入した式（#subst）は client.ts が入れる
-import { EQS } from './math';
+import { EQG } from './math';
 ---
-<p>JJY は情報通信研究機構が送信する標準電波で、おおたかどや山（福島県）から 40 kHz、はがね山（佐賀県・福岡県境）から 60 kHz で送られます。搬送波の振幅を毎秒の正秒で高出力（100 %）に上げ、一定の時間 <math><mi>τ</mi></math> のあと低出力（10 %）に下げます。この <math><mi>τ</mi></math> の長さが 1 秒ぶんの符号です。</p>
-<p>59 秒の P0 と 0 秒の M のマーカが続くところが分の始まりで、続く 60 個の符号がその分の時・分・通算日・年・曜日を表します。数値は 10 進の桁ごとの 2 進数（BCD）で、ビットに重みを掛けて足すと元の値に戻ります。PA1・PA2 は時と分のビットの偶数パリティです。毎時 15 分と 45 分は、40〜48 秒にモールス符号の「JJY」を 2 回送り、50〜55 秒で停波の予告を送ります。</p>
+<h3>標準電波 JJY</h3>
+<p>JJY は情報通信研究機構が送信する標準電波です<a class="rf" href="#thy-r1">[1]</a>。2 か所から送られます。</p>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th scope="col">送信所</th><th scope="col">場所</th><th scope="col" class="num">周波数</th></tr></thead>
+  <tbody>
+    <tr><th scope="row">おおたかどや山</th><td>福島県</td><td class="num">40 kHz</td></tr>
+    <tr><th scope="row">はがね山</th><td>佐賀県・福岡県境</td><td class="num">60 kHz</td></tr>
+  </tbody>
+</table></div>
+
+<h3>1 秒の符号</h3>
+<p>搬送波の振幅を毎秒の正秒で高出力（100 %）に上げ、一定の時間 <math><mi>τ</mi></math> のあと低出力（10 %）に下げます<a class="rf" href="#thy-r1">[1]</a>。この <math><mi>τ</mi></math> の長さが 1 秒ぶんの符号です。</p>
+<div class="eqs"><Fragment set:html={EQG.sec} /></div>
+
+<h3>1 分の符号</h3>
+<p>59 秒の P0 と 0 秒の M のマーカが続くところが、分の始まりです<a class="rf" href="#thy-r1">[1]</a>。続く 60 個の符号が、その分の時・分・通算日・年・曜日を表します。</p>
+<ul class="tl">
+  <li><b>数値</b>: 10 進の桁ごとの 2 進数（BCD）。ビットに重みを掛けて足すと元の値に戻る</li>
+  <li><b>PA1・PA2</b>: 時と分のビットの偶数パリティ</li>
+</ul>
+<p>毎時 15 分と 45 分は、次の符号を送ります。</p>
+<ul class="tl">
+  <li><b>40〜48 秒</b>: モールス符号の「JJY」を 2 回</li>
+  <li><b>50〜55 秒</b>: 停波の予告</li>
+</ul>
 <div class="eqs">
-  <Fragment set:html={EQS} />
+  <Fragment set:html={EQG.min} />
   <div class="subst" id="subst" role="group" aria-label="この分の符号を代入した式"></div>
 </div>
-<p class="cite">出典: 情報通信研究機構 日本標準時グループ「<a href="https://jjy.nict.go.jp/jjy/trans/index.html" target="_blank" rel="noopener">標準電波の出し方</a>」。参考: <a href="https://ja.wikipedia.org/wiki/JJY" target="_blank" rel="noopener">JJY</a>（Wikipedia）、<a href="https://shogo82148.github.io/web-jjy/" target="_blank" rel="noopener">JJYシミュレータWeb版</a></p>
+
+<h3>出典</h3>
+<ol class="refs">
+  <li id="thy-r1"><span class="rf-for">JJY の送信所と符号</span><span class="rf-src">情報通信研究機構 日本標準時グループ「<a href="https://jjy.nict.go.jp/jjy/trans/index.html" target="_blank" rel="noopener">標準電波の出し方</a>」</span></li>
+</ol>
+
+<h3>参考</h3>
+<ul class="refs">
+  <li><span class="rf-for">JJY の解説（Wikipedia）</span><span class="rf-src"><a href="https://ja.wikipedia.org/wiki/JJY" target="_blank" rel="noopener">JJY</a></span></li>
+  <li><span class="rf-for">JJY のシミュレータ</span><span class="rf-src"><a href="https://shogo82148.github.io/web-jjy/" target="_blank" rel="noopener">JJYシミュレータWeb版</a></span></li>
+</ul>

@@ -4,16 +4,26 @@ import { COLOR_KEYS, COLORS } from '../../lib/colorcode';
 import { mulTxt, pct } from './model';
 import { sw } from './view';
 ---
-<p>抵抗器の値は、数字・乗数・許容差を表す色の帯で示します。4 本帯は数字 2 桁、5 本帯は数字 3 桁で、続く乗数の帯が 10 の何乗を掛けるかを表します。6 本帯は、さらに温度係数の帯を加えます。許容差の帯はほかの帯との間を広くあけて端に置くので、その反対側から読みます。許容差の帯がない 3 本だけの抵抗器は ±20 % です。</p>
-<p>E 系列に載っているかは、有効数字 3 桁で比べます。E24 までの値は 2 桁で、E48 以上の 3 桁の値とは別の数列です。たとえば 2.2 は E6・E12・E24 に載っていますが、E48 以上にはありません（E96・E192 には 2.21 があります）。</p>
+<h3>色の帯の読み方</h3>
+<p>抵抗器の値は、数字・乗数・許容差を表す色の帯で示します<a class="rf" href="#thy-r1">[1]</a>。数字の帯の数は、帯の本数で決まります。</p>
+<ul class="tl">
+  <li><b>4 本帯</b>: 数字 2 桁</li>
+  <li><b>5 本帯</b>: 数字 3 桁</li>
+  <li><b>6 本帯</b>: 5 本帯に、さらに温度係数の帯を加える</li>
+  <li><b>3 本帯</b>: 許容差の帯がなく、許容差は ±20 %</li>
+</ul>
+<p>数字の帯に続く乗数の帯が、10 の何乗を掛けるかを表します。</p>
+<p>許容差の帯は、ほかの帯との間を広くあけて端に置きます。そのため、その反対側から読みます。</p>
 <div class="eqs">
   <math display="block"><mi>R</mi><mo>=</mo><mo stretchy="false">(</mo><mn>10</mn><msub><mi>d</mi><mn>1</mn></msub><mo>+</mo><msub><mi>d</mi><mn>2</mn></msub><mo stretchy="false">)</mo><mo>&#xD7;</mo><msup><mn>10</mn><mi>m</mi></msup><mspace width="1em"/><mtext>（4 本帯）</mtext></math>
   <math display="block"><mi>R</mi><mo>=</mo><mo stretchy="false">(</mo><mn>100</mn><msub><mi>d</mi><mn>1</mn></msub><mo>+</mo><mn>10</mn><msub><mi>d</mi><mn>2</mn></msub><mo>+</mo><msub><mi>d</mi><mn>3</mn></msub><mo stretchy="false">)</mo><mo>&#xD7;</mo><msup><mn>10</mn><mi>m</mi></msup><mspace width="1em"/><mtext>（5・6 本帯）</mtext></math>
   <math display="block"><msub><mi>R</mi><mi>min</mi></msub><mo>=</mo><mi>R</mi><mo stretchy="false">(</mo><mn>1</mn><mo>&#x2212;</mo><mi>t</mi><mo stretchy="false">)</mo><mo>,</mo><mspace width="1em"/><msub><mi>R</mi><mi>max</mi></msub><mo>=</mo><mi>R</mi><mo stretchy="false">(</mo><mn>1</mn><mo>+</mo><mi>t</mi><mo stretchy="false">)</mo><mspace width="1em"/><mtext>（</mtext><mi>t</mi><mtext>: 許容差）</mtext></math>
   <math display="block"><mi mathvariant="normal">&#x394;</mi><mi>R</mi><mo>=</mo><mi>R</mi><mi>&#x3B1;</mi><mi mathvariant="normal">&#x394;</mi><mi>T</mi><mspace width="1em"/><mtext>（</mtext><mi>&#x3B1;</mi><mtext>: 温度係数、</mtext><mi mathvariant="normal">&#x394;</mi><mi>T</mi><mtext>: 温度の変化）</mtext></math>
-  <math display="block"><msub><mi mathvariant="normal">E</mi><mi>m</mi></msub><mo>:</mo><mspace width="0.4em"/><msup><mn>10</mn><mrow><mi>i</mi><mo lspace="0" rspace="0">/</mo><mi>m</mi></mrow></msup><mspace width="0.6em"/><mo stretchy="false">(</mo><mi>i</mi><mo>=</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo>,</mo><mo>&#x2026;</mo><mo>,</mo><mi>m</mi><mo>&#x2212;</mo><mn>1</mn><mo stretchy="false">)</mo><mspace width="0.6em"/><mtext>を 2 桁（E48 以上は 3 桁）に丸めた値</mtext></math>
   <div class="subst" id="subst" role="group" aria-label="いまの色帯の値を代入した式"></div>
 </div>
+
+
+<h3>色と値の対応</h3>
 <div class="ctw"><table class="ctab"><caption class="sr">色と数字・乗数・許容差・温度係数の対応</caption>
   <thead><tr><th scope="col">色</th><th scope="col">数字</th><th scope="col">乗数</th><th scope="col">許容差</th><th scope="col">温度係数<br>ppm/K</th></tr></thead>
   <tbody>
@@ -31,4 +41,16 @@ import { sw } from './view';
     })}
   </tbody>
 </table></div>
-<p class="cite">出典: IEC 60062:2016 Marking codes for resistors and capacitors（色の符号）、IEC 60063:2015 Preferred number series for resistors and capacitors（E 系列の値）</p>
+
+<h3>E 系列</h3>
+<p>E 系列に載っているかは、有効数字 3 桁で比べます<a class="rf" href="#thy-r2">[2]</a>。E24 までの値は 2 桁で、E48 以上の 3 桁の値とは別の数列です。</p>
+<p>たとえば 2.2 は E6・E12・E24 に載っていますが、E48 以上にはありません。E96・E192 には 2.21 があります。</p>
+<div class="eqs">
+  <math display="block"><msub><mi mathvariant="normal">E</mi><mi>m</mi></msub><mo>:</mo><mspace width="0.4em"/><msup><mn>10</mn><mrow><mi>i</mi><mo lspace="0" rspace="0">/</mo><mi>m</mi></mrow></msup><mspace width="0.6em"/><mo stretchy="false">(</mo><mi>i</mi><mo>=</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo>,</mo><mo>&#x2026;</mo><mo>,</mo><mi>m</mi><mo>&#x2212;</mo><mn>1</mn><mo stretchy="false">)</mo><mspace width="0.6em"/><mtext>を 2 桁（E48 以上は 3 桁）に丸めた値</mtext></math>
+</div>
+
+<h3>出典</h3>
+<ol class="refs">
+  <li id="thy-r1"><span class="rf-for">色の符号</span><span class="rf-src">IEC 60062:2016 Marking codes for resistors and capacitors</span></li>
+  <li id="thy-r2"><span class="rf-for">E 系列の値</span><span class="rf-src">IEC 60063:2015 Preferred number series for resistors and capacitors</span></li>
+</ol>

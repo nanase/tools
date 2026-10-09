@@ -1,7 +1,7 @@
 /**
  * 既定値に戻す。入力の行（ParamGroup・Choice の行。ページ固有の行も addRow で足せる）を登録すると、
  * 既定値と違う行に印（.mod: 左端の線と、行末の ↺）を付け、枠の見出しの右（Panel.astro の .prst）に
- * 「↺ n 件」を出す。印は値が変わるたびに mark() で合わせる（同じタスクの中の変更はまとめて 1 回）
+ * 「↺ n」を出す。印は値が変わるたびに mark() で合わせる（同じタスクの中の変更はまとめて 1 回）
  */
 
 export interface Resettable {
@@ -52,7 +52,7 @@ const set = new ResetSet<HTMLElement | null>();
 const rows: { row: HTMLElement; r: Resettable }[] = [];
 const bound = new Set<HTMLElement>();
 let queued = false;
-/** 枠の幅が変わったら「↺ n 件」の詰め方を決め直す */
+/** 枠の幅が変わったら「↺ n」を出すかを決め直す */
 const fitter =
   typeof ResizeObserver === 'undefined'
     ? null
@@ -74,11 +74,11 @@ function shown(row: HTMLElement): boolean {
   return getComputedStyle(row).display !== 'none';
 }
 
-/** 枠の「↺ n 件」のボタン（Panel.astro・Collapsible.astro） */
+/** 枠の「↺ n」のボタン（Panel.astro・Collapsible.astro） */
 const panelBtn = (p: HTMLElement) => p.querySelector<HTMLButtonElement>(':scope > .ph .prst, :scope > .pha .prst');
 
 /**
- * 行を登録する。行末の ↺（.c-rst の button）を押すとその行を、枠の「↺ n 件」を押すと枠の行をまとめて戻す。
+ * 行を登録する。行末の ↺（.c-rst の button）を押すとその行を、枠の「↺ n」を押すと枠の行をまとめて戻す。
  * 行は .pnl の中に置く（外に置いた行は行末の ↺ だけ）。隠している行は数えない
  */
 export function addRow(row: HTMLElement, r0: Resettable): void {
@@ -128,7 +128,7 @@ function sync(): void {
     b.hidden = !n;
     if (n && b.dataset.n !== String(n)) {
       b.dataset.n = String(n);
-      b.innerHTML = `${ICON}<span>${n}</span><span class="u"> 件</span>`;
+      b.innerHTML = `${ICON}<span>${n}</span>`;
       b.title = `この枠の ${t}を既定値に戻す`;
       b.setAttribute('aria-label', `この枠の ${t}の入力を既定値に戻す`);
     }
@@ -138,17 +138,14 @@ function sync(): void {
 }
 
 /**
- * 枠の見出しと右端の補足・ボタンが重なるなら（狭い画面で選択肢が多い枠）、「↺ n 件」を「↺ n」に詰め、
- * それでも重なれば出さない（行末の ↺ とページ見出しの ↺ は残る）
+ * 枠の見出しと右端の補足・ボタンが重なるなら（狭い画面で選択肢が多い枠）、「↺ n」を出さない
+ * （行末の ↺ とページ見出しの ↺ は残る）
  */
 function fitBtn(p: HTMLElement): void {
   const b = panelBtn(p),
     h = p.querySelector(':scope > .ph > h2, :scope > summary > h2');
   if (!b || !h) return;
-  b.classList.remove('cmp', 'gone');
+  b.classList.remove('gone');
   if (b.hidden) return;
-  const over = () => b.getBoundingClientRect().left < h.getBoundingClientRect().right + 8;
-  if (!over()) return;
-  b.classList.add('cmp');
-  if (over()) b.classList.add('gone');
+  if (b.getBoundingClientRect().left < h.getBoundingClientRect().right + 8) b.classList.add('gone');
 }

@@ -2,12 +2,56 @@
 // 楽譜の出典と、各曲の標準のテンポ。月光の音符は CC BY-SA 2.5 の楽譜から変換したので、ここに帰属を表示する
 import { pieceOf } from './score';
 
-const meta = (v: string) => `標準のテンポ ${pieceOf(v).tempo}。`;
+const tempo = (v: string) => pieceOf(v).tempo;
 const MU = 'https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=';
 ---
 <ul class="srcs">
-  <li><b>前奏曲 ハ長調 BWV 846</b>（J. S. バッハ「平均律クラヴィーア曲集 第 1 巻」より）: 音符は <a href={`${MU}5`}>Mutopia Project の楽譜</a>（入力 Shay Rojansky、編集 Han-Wen Nienhuys・Tobias Erbsland、Mutopia-2011/09/12-5、パブリックドメイン）の MIDI から変換しました。{meta('bwv846')}</li>
-  <li><b>ジムノペディ 第 1 番</b>（E. サティ「3 つのジムノペディ」より）: 音符は <a href={`${MU}37`}>Mutopia Project の楽譜</a>（入力 Evin Robertson、底本 Dover Edition、Mutopia-2014/12/14-37、パブリックドメイン）の MIDI から変換し、反復を展開しました。{meta('gymno1')}</li>
-  <li><b>ピアノ・ソナタ第 14 番 嬰ハ短調 Op. 27 No. 2「月光」第 1〜3 楽章</b>（L. v. ベートーヴェン）: 音符は <a href={`${MU}276`}>Mutopia Project の楽譜</a>（入力 Stewart Holmes、第 3 楽章は Chris Sawer と Stewart Holmes、底本 Berners, 1908（A. Winterberger 編）、Mutopia-2007/02/11-276）の MIDI から変換し、反復を展開しました。第 1 楽章は、MIDI で落ちていた 3 連符の 2 音（小節 9 と 46 の E4。旋律の同じ高さの音と重なる）を楽譜のとおりに戻しています。第 3 楽章は、MIDI で崩れていた終わり近くのカデンツァを楽譜の音の並びで組み直し、それ以降の右手の遅れを直しています。原作のライセンスは <a href="https://creativecommons.org/licenses/by-sa/2.5/deed.ja">クリエイティブ・コモンズ 表示 - 継承 2.5（CC BY-SA 2.5）</a>で、元の MIDI と、そこから作った音符のデータ（<a href="https://github.com/nanase/tools/tree/main/src/tools/piano/scores">src/tools/piano/scores</a> の moonlight1〜3）も同じライセンスで公開します。第 1 楽章 {meta('moon1')}第 2 楽章 {meta('moon2')}第 3 楽章 {meta('moon3')}</li>
-  <li>強さ（声部ごとの強弱）、ダンパーペダルの踏みかえ、終わりや Adagio の部分のテンポの変化は、このツールで付けています。楽譜の MIDI の強さとテンポは使っていません。</li>
+  <li>
+    <h3>前奏曲 ハ長調 BWV 846 <small>J. S. バッハ「平均律クラヴィーア曲集 第 1 巻」より</small></h3>
+    <p>音符は、<a href={`${MU}5`}>Mutopia Project の楽譜</a>の MIDI から変換しました。</p>
+    <ul class="tl">
+      <li><b>入力:</b> Shay Rojansky</li>
+      <li><b>編集:</b> Han-Wen Nienhuys・Tobias Erbsland</li>
+      <li><b>楽譜の番号:</b> Mutopia-2011/09/12-5</li>
+      <li><b>ライセンス:</b> パブリックドメイン</li>
+      <li><b>標準のテンポ:</b> {tempo('bwv846')}</li>
+    </ul>
+  </li>
+  <li>
+    <h3>ジムノペディ 第 1 番 <small>E. サティ「3 つのジムノペディ」より</small></h3>
+    <p>音符は、<a href={`${MU}37`}>Mutopia Project の楽譜</a>の MIDI から変換し、反復を展開しました。</p>
+    <ul class="tl">
+      <li><b>入力:</b> Evin Robertson</li>
+      <li><b>底本:</b> Dover Edition</li>
+      <li><b>楽譜の番号:</b> Mutopia-2014/12/14-37</li>
+      <li><b>ライセンス:</b> パブリックドメイン</li>
+      <li><b>標準のテンポ:</b> {tempo('gymno1')}</li>
+    </ul>
+  </li>
+  <li>
+    <h3>ピアノ・ソナタ第 14 番 嬰ハ短調 Op. 27 No. 2「月光」第 1〜3 楽章 <small>L. v. ベートーヴェン</small></h3>
+    <p>音符は、<a href={`${MU}276`}>Mutopia Project の楽譜</a>の MIDI から変換し、反復を展開しました。</p>
+    <ul class="tl">
+      <li><b>入力:</b> Stewart Holmes。第 3 楽章は Chris Sawer と Stewart Holmes</li>
+      <li><b>底本:</b> Berners, 1908（A. Winterberger 編）</li>
+      <li><b>楽譜の番号:</b> Mutopia-2007/02/11-276</li>
+      <li><b>標準のテンポ:</b>
+        <ul class="tl">
+          <li>第 1 楽章: {tempo('moon1')}</li>
+          <li>第 2 楽章: {tempo('moon2')}</li>
+          <li>第 3 楽章: {tempo('moon3')}</li>
+        </ul>
+      </li>
+    </ul>
+    <p>原作のライセンスは <a href="https://creativecommons.org/licenses/by-sa/2.5/deed.ja">クリエイティブ・コモンズ 表示 - 継承 2.5（CC BY-SA 2.5）</a>で、元の MIDI と、そこから作った音符のデータ（<a href="https://github.com/nanase/tools/tree/main/src/tools/piano/scores">src/tools/piano/scores</a> の moonlight1〜3）も同じライセンスで公開します。</p>
+    <p>MIDI から変換したあと、次のところを楽譜に合わせて直しています。</p>
+    <ul class="tl">
+      <li><b>第 1 楽章:</b> MIDI で落ちていた 3 連符の 2 音を、楽譜のとおりに戻した。小節 9 と 46 の E4 で、旋律の同じ高さの音と重なる</li>
+      <li><b>第 3 楽章:</b> MIDI で崩れていた終わり近くのカデンツァを楽譜の音の並びで組み直し、それ以降の右手の遅れを直した</li>
+    </ul>
+  </li>
+  <li>
+    <h3>このツールで付けたもの</h3>
+    <p>強さ（声部ごとの強弱）、ダンパーペダルの踏みかえ、終わりや Adagio の部分のテンポの変化は、このツールで付けています。楽譜の MIDI の強さとテンポは使っていません。</p>
+  </li>
 </ul>

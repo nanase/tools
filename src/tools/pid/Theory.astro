@@ -1,14 +1,80 @@
 ---
 // 動作原理と式。代入した式（#subst）は client.ts が入れる
 ---
-<p>目標位置 <math><mi>r</mi></math> と現在の位置 <math><mi>x</mi></math> の差 <math><mi>e</mi><mo>=</mo><mi>r</mi><mo>−</mo><mi>x</mi></math> から操作量 <math><mi>u</mi></math> を決めます。比例項は今の誤差に、積分項はこれまでの誤差の蓄積に、微分項は誤差の変化の速さに応じて働きます。比例項を強めると速く近づく一方で行き過ぎやすく、積分項は残った偏差を消しますが振動を招きやすく、微分項は行き過ぎを抑えます。</p>
-<p>制御対象は流速 <math><mi>w</mi></math> の流れの中の物体です。操作量は応答性 <math><mi>α</mi></math> の 1 次遅れを経て速度 <math><mi>v</mi></math> を変え、位置は <math><mi>v</mi><mo>+</mo><mi>w</mi></math> で動きます。<math><mi mathvariant="normal">Δ</mi><mi>t</mi><mo>=</mo><mn>0.1</mn><mspace width="0.17em"/><mi mathvariant="normal">s</mi></math> 刻みで 1000 ステップ計算します。<math><msub><mi>e</mi><mrow><mo>−</mo><mn>1</mn></mrow></msub><mo>=</mo><mn>0</mn></math> として始めるため、最初の 1 ステップでは微分項が大きく出ます。立ち上がり時間は変化幅の 10 % から 90 % まで、整定時間は位置が目標の ±2 % の範囲に収まったままになるまでの時間です。</p>
+<h3>PID 制御</h3>
+<p>目標位置 <math><mi>r</mi></math> と現在の位置 <math><mi>x</mi></math> の差 <math><mi>e</mi><mo>=</mo><mi>r</mi><mo>−</mo><mi>x</mi></math> から、操作量 <math><mi>u</mi></math> を決めます<a class="rf" href="#thy-r1">[1]</a>。</p>
+<figure class="fig">
+  <svg viewBox="0 0 428 158" width="480" role="img" aria-label="フィードバック制御のブロック線図。目標位置 r から位置 x を引いた誤差 e を、比例・積分・微分の 3 つの項に分けて通し、その和が操作量 u になる。u は応答性 α の 1 次遅れを経て速度 v になり、v に流速 w を足して積分したものが位置 x になる。x を入力側へ戻す。">
+    <path class="w" d="M14 64H29M49 64H80M66 24V104M66 24H78M66 104H78M140 24H179V53M140 64H168M140 104H179V75M188 64H204M270 64H290M301 26V53M310 64H324M356 64H416M388 64V146H40V75"/>
+    <path class="ah" d="M25 60.5L31 64L25 67.5ZM74 20.5L80 24L74 27.5ZM74 60.5L80 64L74 67.5ZM74 100.5L80 104L74 107.5ZM175.5 49L179 55L182.5 49ZM164 60.5L170 64L164 67.5ZM175.5 79L179 73L182.5 79ZM200 60.5L206 64L200 67.5ZM286 60.5L292 64L286 67.5ZM297.5 49L301 55L304.5 49ZM320 60.5L326 64L320 67.5ZM412 60.5L418 64L412 67.5ZM36.5 79L40 73L43.5 79Z"/>
+    <circle class="b" cx="40" cy="64" r="9"/>
+    <circle class="b" cx="179" cy="64" r="9"/>
+    <circle class="b" cx="301" cy="64" r="9"/>
+    <circle class="ah" cx="66" cy="64" r="2.5"/>
+    <circle class="ah" cx="388" cy="64" r="2.5"/>
+    <rect class="b" x="80" y="11" width="60" height="26"/>
+    <rect class="b" x="80" y="51" width="60" height="26"/>
+    <rect class="b" x="80" y="91" width="60" height="26"/>
+    <rect class="b" x="206" y="44" width="64" height="40"/>
+    <rect class="b" x="326" y="46" width="30" height="36"/>
+    <text class="tm" x="110" y="29" text-anchor="middle">K<tspan dy="4" font-size="10" font-style="normal">P</tspan></text>
+    <text class="tm" x="110" y="69" text-anchor="middle">K<tspan dy="4" font-size="10" font-style="normal">I</tspan><tspan dy="-4"> ∫</tspan></text>
+    <text class="tm" x="110" y="109" text-anchor="middle">K<tspan dy="4" font-size="10" font-style="normal">D</tspan><tspan dy="-4"> d/dt</tspan></text>
+    <text class="t" x="238" y="61" text-anchor="middle">1 次遅れ</text>
+    <text class="tm" x="238" y="78" text-anchor="middle">α</text>
+    <text class="tm" x="341" y="69" text-anchor="middle">∫</text>
+    <text class="tm" x="6" y="68" text-anchor="middle">r</text>
+    <text class="tm" x="57" y="57" text-anchor="middle">e</text>
+    <text class="tm" x="196" y="57" text-anchor="middle">u</text>
+    <text class="tm" x="280" y="57" text-anchor="middle">v</text>
+    <text class="tm" x="310" y="32">w</text>
+    <text class="tm" x="402" y="57" text-anchor="middle">x</text>
+    <text class="n" x="27" y="56" text-anchor="middle">+</text>
+    <text class="n" x="52" y="86" text-anchor="middle">−</text>
+    <text class="n" x="110" y="134" text-anchor="middle">PID 制御器</text>
+    <text class="n" x="281" y="104" text-anchor="middle">制御対象</text>
+  </svg>
+  <figcaption>位置 <math><mi>x</mi></math> を入力側へ戻し、目標位置 <math><mi>r</mi></math> との差 <math><mi>e</mi></math> から操作量 <math><mi>u</mi></math> を決める</figcaption>
+</figure>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th scope="col">項</th><th scope="col">応じるもの</th><th scope="col">働き</th></tr></thead>
+  <tbody>
+    <tr><th scope="row">比例項</th><td>今の誤差</td><td>強めると速く近づく一方で、行き過ぎやすい</td></tr>
+    <tr><th scope="row">積分項</th><td>これまでの誤差の蓄積</td><td>残った偏差を消すが、振動を招きやすい</td></tr>
+    <tr><th scope="row">微分項</th><td>誤差の変化の速さ</td><td>行き過ぎを抑える</td></tr>
+  </tbody>
+</table></div>
 <div class="eqs">
   <math display="block"><mi>u</mi><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mo>=</mo><msub><mi>K</mi><mi mathvariant="normal">P</mi></msub><mi>e</mi><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mo>+</mo><msub><mi>K</mi><mi mathvariant="normal">I</mi></msub><msubsup><mo>∫</mo><mn>0</mn><mi>t</mi></msubsup><mi>e</mi><mo stretchy="false">(</mo><mi>τ</mi><mo stretchy="false">)</mo><mspace width="0.17em"/><mi>d</mi><mi>τ</mi><mo>+</mo><msub><mi>K</mi><mi mathvariant="normal">D</mi></msub><mfrac><mrow><mi>d</mi><mi>e</mi><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo></mrow><mrow><mi>d</mi><mi>t</mi></mrow></mfrac></math>
-  <math display="block"><msub><mi>u</mi><mi>k</mi></msub><mo>=</mo><msub><mi>K</mi><mi mathvariant="normal">P</mi></msub><msub><mi>e</mi><mi>k</mi></msub><mo>+</mo><msub><mi>K</mi><mi mathvariant="normal">I</mi></msub><munderover><mo>∑</mo><mrow><mi>j</mi><mo>=</mo><mn>0</mn></mrow><mi>k</mi></munderover><msub><mi>e</mi><mi>j</mi></msub><mi mathvariant="normal">Δ</mi><mi>t</mi><mo>+</mo><msub><mi>K</mi><mi mathvariant="normal">D</mi></msub><mfrac><mrow><msub><mi>e</mi><mi>k</mi></msub><mo>−</mo><msub><mi>e</mi><mrow><mi>k</mi><mo>−</mo><mn>1</mn></mrow></msub></mrow><mrow><mi mathvariant="normal">Δ</mi><mi>t</mi></mrow></mfrac><mo>,</mo><mspace width="1em"/><msub><mi>e</mi><mi>k</mi></msub><mo>=</mo><mi>r</mi><mo>−</mo><msub><mi>x</mi><mi>k</mi></msub></math>
+</div>
+
+<h3>制御対象</h3>
+<p>制御対象は、流速 <math><mi>w</mi></math> の流れの中の物体です。操作量は応答性 <math><mi>α</mi></math> の 1 次遅れを経て速度 <math><mi>v</mi></math> を変え、位置は <math><mi>v</mi><mo>+</mo><mi>w</mi></math> で動きます。</p>
+<div class="eqs">
   <math display="block"><msub><mi>a</mi><mrow><mi>k</mi><mo>+</mo><mn>1</mn></mrow></msub><mo>=</mo><msub><mi>a</mi><mi>k</mi></msub><mo>+</mo><mi>α</mi><mrow><mo>(</mo><msub><mi>u</mi><mi>k</mi></msub><mi mathvariant="normal">Δ</mi><mi>t</mi><mo>−</mo><msub><mi>a</mi><mi>k</mi></msub><mo>)</mo></mrow><mo>,</mo><mspace width="1em"/><msub><mi>a</mi><mn>0</mn></msub><mo>=</mo><mn>0</mn></math>
   <math display="block"><msub><mi>v</mi><mrow><mi>k</mi><mo>+</mo><mn>1</mn></mrow></msub><mo>=</mo><msub><mi>v</mi><mi>k</mi></msub><mo>+</mo><msub><mi>a</mi><mrow><mi>k</mi><mo>+</mo><mn>1</mn></mrow></msub></math>
   <math display="block"><msub><mi>x</mi><mrow><mi>k</mi><mo>+</mo><mn>1</mn></mrow></msub><mo>=</mo><msub><mi>x</mi><mi>k</mi></msub><mo>+</mo><mrow><mo>(</mo><msub><mi>v</mi><mrow><mi>k</mi><mo>+</mo><mn>1</mn></mrow></msub><mo>+</mo><mi>w</mi><mo>)</mo></mrow><mi mathvariant="normal">Δ</mi><mi>t</mi></math>
+</div>
+
+<h3>計算の進め方</h3>
+<p><math><mi mathvariant="normal">Δ</mi><mi>t</mi><mo>=</mo><mn>0.1</mn><mspace width="0.17em"/><mi mathvariant="normal">s</mi></math> 刻みで 1000 ステップ計算します。<math><msub><mi>e</mi><mrow><mo>−</mo><mn>1</mn></mrow></msub><mo>=</mo><mn>0</mn></math> として始めるため、最初の 1 ステップでは微分項が大きく出ます。</p>
+<div class="eqs">
+  <math display="block"><msub><mi>u</mi><mi>k</mi></msub><mo>=</mo><msub><mi>K</mi><mi mathvariant="normal">P</mi></msub><msub><mi>e</mi><mi>k</mi></msub><mo>+</mo><msub><mi>K</mi><mi mathvariant="normal">I</mi></msub><munderover><mo>∑</mo><mrow><mi>j</mi><mo>=</mo><mn>0</mn></mrow><mi>k</mi></munderover><msub><mi>e</mi><mi>j</mi></msub><mi mathvariant="normal">Δ</mi><mi>t</mi><mo>+</mo><msub><mi>K</mi><mi mathvariant="normal">D</mi></msub><mfrac><mrow><msub><mi>e</mi><mi>k</mi></msub><mo>−</mo><msub><mi>e</mi><mrow><mi>k</mi><mo>−</mo><mn>1</mn></mrow></msub></mrow><mrow><mi mathvariant="normal">Δ</mi><mi>t</mi></mrow></mfrac><mo>,</mo><mspace width="1em"/><msub><mi>e</mi><mi>k</mi></msub><mo>=</mo><mi>r</mi><mo>−</mo><msub><mi>x</mi><mi>k</mi></msub></math>
   <div class="subst" id="subst" role="group" aria-label="現在の値を代入した最初のステップ"></div>
 </div>
-<p class="cite">出典: K. J. Åström, R. M. Murray, <a href="https://fbswiki.org/wiki/index.php/Feedback_Systems:_An_Introduction_for_Scientists_and_Engineers" target="_blank" rel="noopener">Feedback Systems: An Introduction for Scientists and Engineers</a>, 2nd ed., Princeton University Press（11 章 PID Control）。離散化と制御対象のモデルはこのツールの実装による。</p>
+
+<h3>指標</h3>
+<ul class="tl">
+  <li><b>立ち上がり時間</b>: 変化幅の 10 % から 90 % までの時間</li>
+  <li><b>整定時間</b>: 位置が目標の ±2 % の範囲に収まったままになるまでの時間</li>
+</ul>
+
+<h3>出典</h3>
+<ol class="refs">
+  <li id="thy-r1"><span class="rf-for">PID 制御（11 章 PID Control）</span><span class="rf-src">K. J. Åström, R. M. Murray, <a href="https://fbswiki.org/wiki/index.php/Feedback_Systems:_An_Introduction_for_Scientists_and_Engineers" target="_blank" rel="noopener">Feedback Systems: An Introduction for Scientists and Engineers</a>, 2nd ed., Princeton University Press</span></li>
+</ol>
+
+<h3>このツールで決めたこと</h3>
+<ul class="tl">
+  <li>離散化と制御対象のモデルは、このツールの実装による</li>
+</ul>

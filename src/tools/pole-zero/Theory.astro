@@ -1,7 +1,63 @@
 ---
 // 動作原理と式
-import { EQS, THEORY } from './theory';
+import {
+  EQS_PZ,
+  EQS_RESP,
+  EQS_STAB,
+  EQS_TRI,
+  THY_ORIGIN,
+  THY_OWN,
+  THY_PZ,
+  THY_RESP,
+  THY_RESP2,
+  THY_SND,
+  THY_SOS,
+  THY_STAB,
+} from './theory';
 ---
-{THEORY.map((p) => <p set:html={p} />)}
-<div class="eqs" set:html={EQS} />
-<p class="cite">出典: 振幅・位相を極と零点までの線の長さと角度で求める方法、原点に足す根、群遅延は J. O. Smith III, Introduction to Digital Filters with Audio Applications（<a href="https://ccrma.stanford.edu/~jos/filters/Graphical_Amplitude_Response.html" target="_blank" rel="noopener">Graphical Computation of Amplitude Response from Poles and Zeros</a>・<a href="https://ccrma.stanford.edu/~jos/filters/Graphical_Phase_Response_Calculation.html" target="_blank" rel="noopener">Graphical Phase Response Calculation</a>・<a href="https://ccrma.stanford.edu/~jos/filters/Phase_Group_Delay.html" target="_blank" rel="noopener">Phase and Group Delay</a>）。有理伝達関数の周波数特性と縦続形は A. V. Oppenheim, R. W. Schafer, Discrete-Time Signal Processing, 3rd ed., Pearson, 2010（5.3 節・6.3 節）。双2次の段への極と零点の組み方は SciPy の <a href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.zpk2sos.html" target="_blank" rel="noopener">scipy.signal.zpk2sos</a>（pairing='nearest'）に倣う。Q と時定数（<math><mi>z</mi><mo>=</mo><msup><mi>e</mi><mrow><mi>s</mi><mi>T</mi></mrow></msup></math> でアナログの 2 次系の極に移す見方）、試聴の係数の切り替え方は、このツールの実装による。</p>
+<h3>極と零点</h3>
+<Fragment set:html={THY_PZ} />
+<div class="eqs" set:html={EQS_PZ} />
+<h3>振幅と位相</h3>
+<Fragment set:html={THY_RESP} />
+<figure class="fig">
+  <svg viewBox="0 0 300 215" width="300" role="img" aria-label="z 平面の単位円の上の点から、極と零点へ線を引き、極への線の長さを d、実軸の正の向きからの角度を φ とした図">
+    <path class="w" d="M30 110H250M130 205V15"/>
+    <circle class="w" cx="130" cy="110" r="85"/>
+    <path class="w" stroke-dasharray="3 3" d="M130 110L178.8 40.4M193.9 86.7H236"/>
+    <path class="w" d="M152 110A22 22 0 0 0 142.6 92M209.9 86.7A16 16 0 0 0 189 71.5"/>
+    <path class="w" d="M87.5 110L178.8 40.4M193.9 86.7L178.8 40.4"/>
+    <path class="w" d="M189.4 82.2L198.4 91.2M189.4 91.2L198.4 82.2"/>
+    <circle class="w" cx="87.5" cy="110" r="4.5"/>
+    <circle class="ah" cx="178.8" cy="40.4" r="3.5"/>
+    <text class="tm" x="184" y="34">e<tspan dy="-6" font-size="10">jω</tspan></text>
+    <text class="tm" x="156" y="102">ω</text>
+    <text class="tm" x="190" y="60">d</text>
+    <text class="tm" x="213" y="77">φ</text>
+    <text class="n" x="253" y="114">Re</text>
+    <text class="n" x="135" y="22">Im</text>
+    <text class="n" x="200" y="104">極</text>
+    <text class="n" x="74" y="128">零点</text>
+  </svg>
+  <figcaption>単位円の上の点 <math><msup><mi>e</mi><mrow><mi>j</mi><mi>ω</mi></mrow></msup></math> から、極 × と零点 ○ へ引いた線</figcaption>
+</figure>
+<Fragment set:html={THY_RESP2} />
+<div class="eqs" set:html={EQS_RESP} />
+<h3>原点の根</h3>
+<Fragment set:html={THY_ORIGIN} />
+<h3>安定と共振の Q</h3>
+<Fragment set:html={THY_STAB} />
+<div class="eqs" set:html={EQS_STAB} />
+<h3>双2次の縦続</h3>
+<Fragment set:html={THY_SOS} />
+<h3>試聴</h3>
+<Fragment set:html={THY_SND} />
+<div class="eqs" role="group" aria-label="安定な 2 次の分母の係数の範囲" set:html={EQS_TRI} />
+<h3>出典</h3>
+<ol class="refs">
+  <li id="thy-r1"><span class="rf-for">有理伝達関数の周波数特性と縦続形</span><span class="rf-src">A. V. Oppenheim, R. W. Schafer, <i>Discrete-Time Signal Processing</i>, 3rd ed., Pearson, 2010, 5.3 節・6.3 節</span></li>
+  <li id="thy-r2"><span class="rf-for">振幅・位相を極と零点までの線の長さと角度で求める方法、原点に足す根、群遅延</span><span class="rf-src">J. O. Smith III, <i>Introduction to Digital Filters with Audio Applications</i> の <a href="https://ccrma.stanford.edu/~jos/filters/Graphical_Amplitude_Response.html" target="_blank" rel="noopener">Graphical Computation of Amplitude Response from Poles and Zeros</a>・<a href="https://ccrma.stanford.edu/~jos/filters/Graphical_Phase_Response_Calculation.html" target="_blank" rel="noopener">Graphical Phase Response Calculation</a>・<a href="https://ccrma.stanford.edu/~jos/filters/Phase_Group_Delay.html" target="_blank" rel="noopener">Phase and Group Delay</a></span></li>
+  <li id="thy-r3"><span class="rf-for">双2次の段への極と零点の組み方（倣ったもの）</span><span class="rf-src">SciPy, <a href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.zpk2sos.html" target="_blank" rel="noopener">scipy.signal.zpk2sos</a>（pairing='nearest'）</span></li>
+</ol>
+<h3>このツールで決めたこと</h3>
+<Fragment set:html={THY_OWN} />

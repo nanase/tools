@@ -122,13 +122,8 @@
 .mkp{stroke:var(--ch2);stroke-width:1.4;fill:none}
 .scope text.r2{fill:var(--ch2)}
 
-/* 動作原理と式、楽譜の出典 */
-.cite i{font-style:italic}
+/* 楽譜の出典 */
 .a-src{font-size:14.5px}
-.srcs{display:grid;gap:14px;margin:0;padding:0;list-style:none}
-.srcs li{max-width:72ch;color:var(--ink-2);line-height:1.8}
-.srcs b{color:var(--ink)}
-.srcs a{color:var(--ink-2)}
 
 /* 曲の選択（ドロップダウン）: 項目名の右に、残りの幅いっぱいに置く */
 .prow.pick{grid-template-columns:var(--sw) auto minmax(0,1fr);grid-template-areas:"sym name val"}

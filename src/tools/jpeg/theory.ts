@@ -40,128 +40,145 @@ const uv = par(row(u, mo(','), v)),
 const cosT = (a: string, b: string) =>
   row('<mi>cos</mi><mo>&#x2061;</mo>', frac(row(par(row(mn(2), a, PL, mn(1))), b, pi), mn(16)));
 
-/** 固定の式 */
-export const EQS =
-  blk(row(mi('Y'), EQ, mn('0.299'), mi('R'), PL, mn('0.587'), mi('G'), PL, mn('0.114'), mi('B'))) +
-  blk(
-    row(
-      sub(mi('C'), mi('b')),
-      EQ,
-      MI,
-      mn('0.1687'),
-      mi('R'),
-      MI,
-      mn('0.3313'),
-      mi('G'),
-      PL,
-      mn('0.5'),
-      mi('B'),
-      PL,
-      mn(128),
-      CM,
-      sub(mi('C'), mi('r')),
-      EQ,
-      mn('0.5'),
-      mi('R'),
-      MI,
-      mn('0.4187'),
-      mi('G'),
-      MI,
-      mn('0.0813'),
-      mi('B'),
-      PL,
-      mn(128),
-    ),
-  ) +
-  blk(
-    row(
-      Fuv,
-      EQ,
-      frac(mn(1), mn(4)),
-      Cu,
-      Cv,
-      sum(x, mn(0), mn(7)),
-      sum(y, mn(0), mn(7)),
-      par(row(fxy, MI, mn(128))),
-      cosT(x, u),
-      cosT(y, v),
-    ),
-  ) +
-  blk(
-    row(
-      Cu,
-      EQ,
-      frac(mn(1), `<msqrt>${mn(2)}</msqrt>`),
-      mspace(),
-      par(row(u, EQ, mn(0))),
-      CM,
-      Cu,
-      EQ,
-      mn(1),
-      mspace(),
-      par(row(u, mo('&gt;'), mn(0))),
-    ),
-  ) +
-  blk(
-    row(
-      fxy,
-      EQ,
-      frac(mn(1), mn(4)),
-      sum(u, mn(0), mn(7)),
-      sum(v, mn(0), mn(7)),
-      Cu,
-      Cv,
-      Fuv,
-      cosT(x, u),
-      cosT(y, v),
-      PL,
-      mn(128),
-    ),
-  ) +
-  blk(
-    row(Sq, EQ, row('<mi>round</mi><mo>&#x2061;</mo>', par(frac(Fuv, Quv))), CM, row(mi('R'), uv), EQ, Sq, DOT, Quv),
-  ) +
-  blk(
-    row(
-      s,
-      EQ,
-      `<mrow><mo>{</mo><mtable columnalign="left"><mtr><mtd>${row(frac(mn(5000), q))}</mtd><mtd>${row(par(row(q, mo('&lt;'), mn(50))))}</mtd></mtr><mtr><mtd>${row(mn(200), MI, mn(2), q)}</mtd><mtd>${row(par(row(q, mo('≥'), mn(50))))}</mtd></mtr></mtable></mrow>`,
-      CM,
-      Quv,
-      EQ,
+/** 固定の式。節ごとに分ける */
+export const EQS = {
+  /** 色の変換 */
+  color:
+    blk(row(mi('Y'), EQ, mn('0.299'), mi('R'), PL, mn('0.587'), mi('G'), PL, mn('0.114'), mi('B'))) +
+    blk(
       row(
-        '<mi>min</mi><mo>&#x2061;</mo>',
-        par(
-          row(
-            mn(255),
-            mo(','),
-            '<mi>max</mi><mo>&#x2061;</mo>',
-            par(row(mn(1), mo(','), floor(frac(row(QK, DOT, s, PL, mn(50)), mn(100))))),
+        sub(mi('C'), mi('b')),
+        EQ,
+        MI,
+        mn('0.1687'),
+        mi('R'),
+        MI,
+        mn('0.3313'),
+        mi('G'),
+        PL,
+        mn('0.5'),
+        mi('B'),
+        PL,
+        mn(128),
+      ),
+    ) +
+    blk(
+      row(
+        sub(mi('C'), mi('r')),
+        EQ,
+        mn('0.5'),
+        mi('R'),
+        MI,
+        mn('0.4187'),
+        mi('G'),
+        MI,
+        mn('0.0813'),
+        mi('B'),
+        PL,
+        mn(128),
+      ),
+    ),
+  /** DCT と逆 DCT */
+  dct:
+    blk(
+      row(
+        Fuv,
+        EQ,
+        frac(mn(1), mn(4)),
+        Cu,
+        Cv,
+        sum(x, mn(0), mn(7)),
+        sum(y, mn(0), mn(7)),
+        par(row(fxy, MI, mn(128))),
+        cosT(x, u),
+        cosT(y, v),
+      ),
+    ) +
+    blk(
+      row(
+        Cu,
+        EQ,
+        frac(mn(1), `<msqrt>${mn(2)}</msqrt>`),
+        mspace(),
+        par(row(u, EQ, mn(0))),
+        CM,
+        Cu,
+        EQ,
+        mn(1),
+        mspace(),
+        par(row(u, mo('&gt;'), mn(0))),
+      ),
+    ) +
+    blk(
+      row(
+        fxy,
+        EQ,
+        frac(mn(1), mn(4)),
+        sum(u, mn(0), mn(7)),
+        sum(v, mn(0), mn(7)),
+        Cu,
+        Cv,
+        Fuv,
+        cosT(x, u),
+        cosT(y, v),
+        PL,
+        mn(128),
+      ),
+    ),
+  /** 量子化と品質 */
+  quant:
+    blk(row(Sq, EQ, row('<mi>round</mi><mo>&#x2061;</mo>', par(frac(Fuv, Quv))))) +
+    blk(row(row(mi('R'), uv), EQ, Sq, DOT, Quv)) +
+    blk(
+      row(
+        s,
+        EQ,
+        `<mrow><mo>{</mo><mtable columnalign="left"><mtr><mtd>${row(frac(mn(5000), q))}</mtd><mtd>${row(par(row(q, mo('&lt;'), mn(50))))}</mtd></mtr><mtr><mtd>${row(mn(200), MI, mn(2), q)}</mtd><mtd>${row(par(row(q, mo('≥'), mn(50))))}</mtd></mtr></mtable></mrow>`,
+      ),
+    ) +
+    blk(
+      row(
+        Quv,
+        EQ,
+        row(
+          '<mi>min</mi><mo>&#x2061;</mo>',
+          par(
+            row(
+              mn(255),
+              mo(','),
+              '<mi>max</mi><mo>&#x2061;</mo>',
+              par(row(mn(1), mo(','), floor(frac(row(QK, DOT, s, PL, mn(50)), mn(100))))),
+            ),
           ),
         ),
       ),
     ),
-  ) +
-  blk(
-    row(
-      sub(mi('DIFF', true), mi('i')),
-      EQ,
-      sub(mi('DC', true), mi('i')),
-      MI,
-      sub(mi('DC', true), row(mi('i'), MI, mn(1))),
-      CM,
-      mi('SSSS', true),
-      EQ,
+  /** DC の差分と大きさの区分 */
+  code:
+    blk(
       row(
-        '<mo>⌈</mo>',
-        sub('<mi>log</mi>', mn(2)),
-        '<mo>&#x2061;</mo>',
-        par(row(row(mo('|'), mi('DIFF', true), mo('|')), PL, mn(1))),
-        '<mo>⌉</mo>',
+        sub(mi('DIFF', true), mi('i')),
+        EQ,
+        sub(mi('DC', true), mi('i')),
+        MI,
+        sub(mi('DC', true), row(mi('i'), MI, mn(1))),
+      ),
+    ) +
+    blk(
+      row(
+        mi('SSSS', true),
+        EQ,
+        row(
+          '<mo>⌈</mo>',
+          sub('<mi>log</mi>', mn(2)),
+          '<mo>&#x2061;</mo>',
+          par(row(row(mo('|'), mi('DIFF', true), mo('|')), PL, mn(1))),
+          '<mo>⌉</mo>',
+        ),
       ),
     ),
-  ) +
-  blk(
+  /** PSNR */
+  psnr: blk(
     row(
       mi('PSNR', true),
       EQ,
@@ -172,7 +189,8 @@ export const EQS =
       mspace(),
       mi('dB', true),
     ),
-  );
+  ),
+};
 
 function mspace(): string {
   return '<mspace width="0.5em"/>';

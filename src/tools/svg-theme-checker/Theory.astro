@@ -1,7 +1,31 @@
 ---
 // 動作原理
 ---
+<h3>プレビュー</h3>
 <p>プレビューは、SVG を <code>&lt;img&gt;</code> で埋め込んだときと同じ扱いで描きます。README などに置いた画像と同じく、スクリプトは動かず、外部のファイルも読み込まれません。</p>
-<p>ライトとダークの違いは、SVG の中の <code>@media (prefers-color-scheme: …)</code> だけです。ライト側ではライトの条件を真・ダークの条件を偽に置き換え、ダーク側ではその逆にします。<code>color-scheme</code> もそれぞれのテーマに固定するので、<code>light-dark()</code> も切り替わります。</p>
-<p>コードは描く前に許可リストで組み立て直します。リストにない要素（<code>script</code>・<code>foreignObject</code> など）と属性（<code>onload</code> などのイベント属性）、<code>javascript:</code> の URL、ファイル内の <code>#</code> 以外を指す参照は取り除きます。</p>
-<p class="cite">参考: <a href="https://zenn.dev/nanase_t/articles/7c14092b24424c" target="_blank" rel="noopener">SVG テーマスキーマチェッカーの技術参考記事</a>（Zenn）</p>
+
+<h3>ライトとダーク</h3>
+<p>ライトとダークの違いは、SVG の中の <code>@media (prefers-color-scheme: …)</code> だけです。それぞれの側で、条件を次のように置き換えます。</p>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th scope="col"></th><th scope="col">ライト側</th><th scope="col">ダーク側</th></tr></thead>
+  <tbody>
+    <tr><th scope="row">ライトの条件</th><td>真</td><td>偽</td></tr>
+    <tr><th scope="row">ダークの条件</th><td>偽</td><td>真</td></tr>
+    <tr><th scope="row"><code>color-scheme</code></th><td>ライトに固定</td><td>ダークに固定</td></tr>
+  </tbody>
+</table></div>
+<p><code>color-scheme</code> もそれぞれのテーマに固定するので、<code>light-dark()</code> も切り替わります。</p>
+
+<h3>取り除くもの</h3>
+<p>コードは、描く前に許可リストで組み立て直します。次のものは取り除きます。</p>
+<ul class="tl">
+  <li><b>要素</b>: リストにないもの。<code>script</code>・<code>foreignObject</code> など</li>
+  <li><b>属性</b>: リストにないもの。<code>onload</code> などのイベント属性</li>
+  <li><b>URL</b>: <code>javascript:</code> の URL</li>
+  <li><b>参照</b>: ファイル内の <code>#</code> 以外を指すもの</li>
+</ul>
+
+<h3>参考</h3>
+<ul class="refs">
+  <li><span class="rf-for">技術参考記事（Zenn）</span><span class="rf-src"><a href="https://zenn.dev/nanase_t/articles/7c14092b24424c" target="_blank" rel="noopener">SVG テーマスキーマチェッカーの技術参考記事</a></span></li>
+</ul>

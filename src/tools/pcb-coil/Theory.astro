@@ -1,10 +1,59 @@
 ---
 // 動作原理と式。代入した式（#subst）は client.ts が入れる
-import { EQS, THEORY } from './theory';
+import {
+  EQS_CP,
+  EQS_FIND,
+  EQS_L,
+  EQS_R,
+  EQS_SER,
+  EQS_SHAPE,
+  RF_GROVER,
+  THY_CP,
+  THY_FIND,
+  THY_L,
+  THY_LIMIT,
+  THY_OWN,
+  THY_PAR,
+  THY_R,
+  THY_SER,
+  THY_SHAPE,
+} from './theory';
 ---
-{THEORY.map((p) => <p set:html={p} />)}
+<h3>うずまきの形</h3>
+<Fragment set:html={THY_SHAPE} />
+<div class="eqs" set:html={EQS_SHAPE} />
+<h3>インダクタンス</h3>
+<Fragment set:html={THY_L} />
+<div class="eqs" set:html={EQS_L} />
+<h3>抵抗と Q</h3>
+<Fragment set:html={THY_R} />
+<div class="eqs" set:html={EQS_R} />
+<h3>2 層以上</h3>
+<Fragment set:html={THY_SER} />
+<h4>並列</h4>
+<Fragment set:html={THY_PAR} />
+<div class="eqs" set:html={EQS_SER} />
+<h4>層の間の容量</h4>
+<Fragment set:html={THY_CP} />
+<div class="eqs" set:html={EQS_CP} />
+<h3>条件から探す</h3>
+<Fragment set:html={THY_FIND} />
+<div class="eqs" set:html={EQS_FIND} />
+<h3>計算に含めないもの</h3>
+<Fragment set:html={THY_LIMIT} />
+<h3>今の値を代入した式</h3>
 <div class="eqs">
-  <Fragment set:html={EQS} />
   <div class="subst" id="subst" role="group" aria-label="現在の値を代入した式"></div>
 </div>
-<p class="cite">出典: インダクタンスの 3 式と係数は S. S. Mohan, M. del Mar Hershenson, S. P. Boyd, T. H. Lee, <a href="https://web.stanford.edu/~boyd/papers/pdf/inductance_expressions.pdf" target="_blank" rel="noopener">Simple Accurate Expressions for Planar Spiral Inductances</a>, IEEE J. Solid-State Circuits, vol. 34, no. 10, pp. 1419–1424, 1999（式 (1)〜(3)、表 I〜III）。表皮の深さ・実効厚さ・交流抵抗は C. P. Yue, S. S. Wong, Physical Modeling of Spiral Inductors on Silicon, IEEE Trans. Electron Devices, vol. 47, no. 3, pp. 560–568, 2000（式 (6)・(13)・(14)）。Q・共振・帯域幅は D. M. Pozar, Microwave Engineering, 4th ed., Wiley, 2012（6.1 節 直列・並列共振回路）。同軸の円形ループの相互インダクタンス（Maxwell の式）と、平たい導体の幾何平均距離 0.2235(w + t) は F. W. Grover, Inductance Calculations, Dover, 2004（初版 1946）。2 層を直列につないだときの層の間の等価容量（1/3）は A. Zolfaghari, A. Chan, B. Razavi, Stacked Inductors and Transformers in CMOS Technology, IEEE J. Solid-State Circuits, vol. 36, no. 4, pp. 620–628, 2001。n 層への拡張、各巻きを同じ面積の円に置き換える近似、基板の構成の値は、このツールの実装による。磁気双極子の軸上の磁界は J. D. Jackson, Classical Electrodynamics, 3rd ed., Wiley, 1999（5.6 節）。条件から探すときの駆動と評価の方法は、このツールの実装による。FR-4 の比誘電率 4.4 は代表値。銅の抵抗率は IEC 60028（焼きなまし銅の標準、20 °C）。内径は論文の定義による。配線の長さはうずまきの中心線の幾何計算で、このツールの実装による。</p>
+<h3>出典</h3>
+<ol class="refs">
+  <li id="thy-r1"><span class="rf-for">インダクタンスの 3 式と係数、内径の定義</span><span class="rf-src">S. S. Mohan, M. del Mar Hershenson, S. P. Boyd, T. H. Lee, “<a href="https://web.stanford.edu/~boyd/papers/pdf/inductance_expressions.pdf" target="_blank" rel="noopener">Simple Accurate Expressions for Planar Spiral Inductances</a>,” <i>IEEE J. Solid-State Circuits</i>, vol. 34, no. 10, pp. 1419–1424, 1999. 式 (1)〜(3)、表 I〜III</span></li>
+  <li id="thy-r2"><span class="rf-for">銅の抵抗率（焼きなまし銅の標準、20 °C）</span><span class="rf-src">IEC 60028</span></li>
+  <li id="thy-r3"><span class="rf-for">表皮の深さ・実効厚さ・交流抵抗</span><span class="rf-src">C. P. Yue, S. S. Wong, “Physical Modeling of Spiral Inductors on Silicon,” <i>IEEE Trans. Electron Devices</i>, vol. 47, no. 3, pp. 560–568, 2000. 式 (6)・(13)・(14)</span></li>
+  <li id="thy-r4"><span class="rf-for">Q・共振・帯域幅</span><span class="rf-src">D. M. Pozar, <i>Microwave Engineering</i>, 4th ed., Wiley, 2012. 6.1 節 直列・並列共振回路</span></li>
+  <li id="thy-r5"><span class="rf-for" set:html={RF_GROVER} /><span class="rf-src">F. W. Grover, <i>Inductance Calculations</i>, Dover, 2004（初版 1946）</span></li>
+  <li id="thy-r6"><span class="rf-for">2 層を直列につないだときの層の間の等価容量</span><span class="rf-src">A. Zolfaghari, A. Chan, B. Razavi, “Stacked Inductors and Transformers in CMOS Technology,” <i>IEEE J. Solid-State Circuits</i>, vol. 36, no. 4, pp. 620–628, 2001</span></li>
+  <li id="thy-r7"><span class="rf-for">磁気双極子の軸上の磁界</span><span class="rf-src">J. D. Jackson, <i>Classical Electrodynamics</i>, 3rd ed., Wiley, 1999. 5.6 節</span></li>
+</ol>
+<h3>このツールで決めたこと</h3>
+<Fragment set:html={THY_OWN} />

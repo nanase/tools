@@ -38,11 +38,28 @@ const om = mi('Ω'),
   inv1 = (x: string) => frac(one, x),
   geq = mo('&#x2265;');
 
+/** 本文の出典番号 */
+const rf = (i: number) => `<a class="rf" href="#thy-r${i}">[${i}]</a>`;
+
+/* ---------- 設計の流れ ---------- */
+export const THY_FLOW =
+  '<p>古典的な IIR フィルタは、振幅の形が分かっているアナログフィルタから作ります。この元になるフィルタを原型といいます。</p>' +
+  '<ol class="flow" aria-label="設計の流れ">' +
+  `<li><b>原型</b><span>${inl(row(om, EQ, mn(1)))} rad/s の LPF</span></li>` +
+  '<li><b>周波数変換</b><span>目的の応答にする</span></li>' +
+  '<li><b>双一次変換</b><span>またはインパルス不変法</span></li>' +
+  '<li><b>双2次の縦続（SOS）</b><span>実装の形</span></li>' +
+  '</ol>';
+
 /* ---------- 原型 ---------- */
-export const THEORY_P1 =
-  `古典的な IIR フィルタは、振幅の形が分かっているアナログフィルタ（原型）から作ります。原型は基準の端を ${inl(row(om, EQ, mn(1)))} rad/s に置いた LPF で、近似ごとに振幅の 2 乗を次の形にします。` +
-  `${inl(sub(mi('T'), N))} はチェビシェフ多項式、${inl(sub(mi('R'), N))} はヤコビの楕円関数で表すチェビシェフ有理関数、${inl(sub(mi('θ'), N))} は逆 Bessel 多項式です。` +
-  `ベッセルフィルタだけは振幅でなく群遅延（位相の傾き）を平坦にしたもので、直流の近くで遅延がそろい、波形の形が崩れにくくなります。`;
+export const THY_PROTO =
+  `<p>原型は基準の端を ${inl(row(om, EQ, mn(1)))} rad/s に置いた LPF で、近似ごとに振幅の 2 乗を次の形にします。</p>` +
+  '<dl class="syms">' +
+  `<dt>${inl(sub(mi('T'), N))}</dt><dd>チェビシェフ多項式</dd>` +
+  `<dt>${inl(sub(mi('R'), N))}</dt><dd>ヤコビの楕円関数で表すチェビシェフ有理関数${rf(1)}</dd>` +
+  `<dt>${inl(sub(mi('θ'), N))}</dt><dd>逆 Bessel 多項式</dd>` +
+  '</dl>' +
+  `<p>ベッセルフィルタだけは、振幅でなく群遅延を平坦にしたものです${rf(2)}。群遅延は位相の傾きです。直流の近くで遅延がそろい、波形の形が崩れにくくなります。</p>`;
 
 export const EQ_PROTO = [
   blk(row(abs2(HjO), EQ, inv1(row(one, PL, sup(mi('ε'), two), sup(om, row(two, N)))))),
@@ -88,10 +105,12 @@ const kk = mi('k'),
   K = (x: string) => row(mi('K'), par(x)),
   Kp = (x: string) => row(sup(mi('K'), mo('′')), par(x));
 
-export const THEORY_P2 =
-  `仕様から設計するときは、阻止域端を原型の周波数にした選択度 ${inl(Os)} と、${inl(row(es, SLASH, ep))} から最小の次数を求めます。` +
-  `楕円フィルタの次数は第 1 種完全楕円積分 ${inl(K(kk))} の比で表されます。整数に切り上げた次数では、通過域と阻止域の減衰はそのままに、遷移域が仕様より狭くなるように選択度を求め直します（次数の式を ${inl(kk)} について解く）。` +
-  `楕円関数と完全楕円積分は、降下 Landen 変換の母数の列 ${inl(row(sub(kk, mi('n')), EQ, sup(par(row(sub(kk, row(mi('n'), MI, one)), SLASH, par(row(one, PL, `<msubsup>${kk}${row(mi('n'), MI, one)}<mo>′</mo></msubsup>`)))), two)))} で求めます。`;
+export const THY_ORDER =
+  `<p>仕様から設計するときは、選択度 ${inl(Os)} と ${inl(row(es, SLASH, ep))} から最小の次数を求めます。選択度 ${inl(Os)} は、阻止域端を原型の周波数にしたものです。</p>` +
+  `<p>楕円フィルタの次数は、第 1 種完全楕円積分 ${inl(K(kk))} の比で表されます${rf(1)}。</p>` +
+  '<p>次数を整数に切り上げたら、選択度を求め直します。通過域と阻止域の減衰はそのままにして、遷移域が仕様より狭くなるようにします。' +
+  `それには、次数の式を ${inl(kk)} について解きます。</p>` +
+  `<p>楕円関数と完全楕円積分は、降下 Landen 変換の母数の列 ${inl(row(sub(kk, mi('n')), EQ, sup(par(row(sub(kk, row(mi('n'), MI, one)), SLASH, par(row(one, PL, `<msubsup>${kk}${row(mi('n'), MI, one)}<mo>′</mo></msubsup>`)))), two)))} で求めます${rf(1)}。</p>`;
 
 export const EQ_ORDER = [
   blk(row(N, geq, frac(fn('log', par(row(es, SLASH, ep))), fn('log', Os)))),
@@ -132,9 +151,10 @@ export const EQ_ORDER = [
 /* ---------- 周波数変換と双一次変換 ---------- */
 const s = mi('s'),
   arrow = mo('&#x2192;');
-export const THEORY_P3 =
-  `原型を周波数変換で目的の応答にし、双一次変換でデジタルフィルタにします。双一次変換は周波数軸を ${inl('<mi>tan</mi>')} で縮めて ${inl(row(fsS, SLASH, two))} に収めるので、端の周波数をあらかじめ逆向きに伸ばしておきます（プリワーピング）。` +
-  `こうすると端の周波数と減衰は仕様どおりになりますが、その間の形は縮みに合わせて歪みます。ベッセルフィルタの平坦な群遅延は、この歪みで崩れます。`;
+export const THY_XFORM =
+  `<p>原型を周波数変換で目的の応答にし、双一次変換でデジタルフィルタにします${rf(3)}${rf(4)}。</p>` +
+  `<p>双一次変換は、周波数軸を ${inl('<mi>tan</mi>')} で縮めて ${inl(row(fsS, SLASH, two))} に収めます。そこで、端の周波数をあらかじめ逆向きに伸ばしておきます。これをプリワーピングといいます。</p>` +
+  '<p>こうすると端の周波数と減衰は仕様どおりになりますが、その間の形は縮みに合わせて歪みます。ベッセルフィルタの平坦な群遅延は、この歪みで崩れます。</p>';
 
 export const EQ_XFORM = [
   blk(
@@ -188,7 +208,9 @@ export const EQ_XFORM = [
 const T = mi('T'),
   pk = sub(mi('p'), mi('k')),
   rk = sub(mi('r'), mi('k'));
-export const THEORY_P4 = `インパルス不変法は、アナログのインパルス応答を標本化して ${inl(row(sq('h'), EQ, T, sub(mi('h'), mi('a')), par(row(mi('n'), T))))} とします（${inl(row(T, EQ, one, SLASH, fsS))}）。周波数軸は縮みませんが、${inl(row(fsS, SLASH, two))} を越える成分が折り返すので、高域で減衰しない HPF と BSF には使えません。`;
+export const THY_IMP =
+  `<p>インパルス不変法は、アナログのインパルス応答を標本化して ${inl(row(sq('h'), EQ, T, sub(mi('h'), mi('a')), par(row(mi('n'), T))))} とします${rf(3)}。${inl(row(T, EQ, one, SLASH, fsS))} です。</p>` +
+  `<p>周波数軸は縮みませんが、${inl(row(fsS, SLASH, two))} を越える成分が折り返します。そのため、高域で減衰しない HPF と BSF には使えません。</p>`;
 
 export const EQ_IMP = blk(
   row(
@@ -210,11 +232,14 @@ export const EQ_IMP = blk(
 /* ---------- 実装 ---------- */
 const bi = (j: number) => sub(mi('b'), row(mn(j), mi('i'))),
   ai = (j: number) => sub(mi('a'), row(mn(j), mi('i')));
-export const THEORY_P5 =
-  `実装では、極と零点を 2 つずつ組んだ双2次の縦続（SOS）にします。単位円に最も近い極から順に、それに最も近い零点と組みます。` +
-  `段のゲインは、各段の出力の振幅の最大が 1 になるように配ると、固定小数点でも途中であふれにくくなります。` +
-  `分母を 1 つの高次の多項式にした直接形は、極が近く集まる高い次数や狭い帯域で係数の丸めに弱く、わずかな誤差で極が大きく動き、単位円の外へ出ることもあります。` +
-  `群遅延 ${inl(row(mi('τ'), par(mi('ω')), EQ, MI, row('<mi>d</mi>', mi('φ')), SLASH, row('<mi>d</mi>', mi('ω'))))} は、極と零点ごとの寄与の和で求めます。`;
+export const THY_SOS =
+  `<p>実装では、極と零点を 2 つずつ組んだ双2次の縦続（SOS）にします${rf(4)}${rf(5)}。</p>` +
+  '<ul class="tl">' +
+  '<li><b>組み方:</b> 単位円に最も近い極から順に、それに最も近い零点と組む</li>' +
+  '<li><b>段のゲイン:</b> 各段の出力の振幅の最大が 1 になるように配る。こうすると、固定小数点でも途中であふれにくい</li>' +
+  '</ul>' +
+  '<p>分母を 1 つの高次の多項式にした直接形は、極が近く集まる高い次数や狭い帯域で、係数の丸めに弱くなります。わずかな誤差で極が大きく動き、単位円の外へ出ることもあります。</p>' +
+  `<p>群遅延 ${inl(row(mi('τ'), par(mi('ω')), EQ, MI, row('<mi>d</mi>', mi('φ')), SLASH, row('<mi>d</mi>', mi('ω'))))} は、極と零点ごとの寄与の和で求めます。</p>`;
 
 export const EQ_SOS = blk(
   row(

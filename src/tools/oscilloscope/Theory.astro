@@ -1,8 +1,31 @@
-<p>トリガは、選んだチャンネルの波形がレベルを決めた向き（両方向ならどちら向きでも）に横切った時刻を、表示窓の ▼ の位置に合わせます。AUTO はトリガが来なければ今の波形をそのまま出し、NORMAL は前の波形を残して待ち、SINGLE は 1 回だけ取り込んで止めます。ノイズ除去は、波形がレベルからいったん離れるまで次のトリガを受け付けない幅です。</p>
-<p>実効値とピークは、フルスケールの正弦波を 0 dBFS とする決め方で dB にしています。リサジューの M-S は、L だけの音が左上、R だけの音が右上、モノラルの音が縦の線になるように 45° 回しています。</p>
+<h3>トリガ</h3>
+<p>トリガは、選んだチャンネルの波形がレベルを決めた向きに横切った時刻を、表示窓の ▼ の位置に合わせます。向きが「両方向」なら、どちら向きに横切ってもかまいません。</p>
+<ul class="tl">
+  <li><b>AUTO</b>: トリガが来なければ、今の波形をそのまま出す</li>
+  <li><b>NORMAL</b>: 前の波形を残して待つ</li>
+  <li><b>SINGLE</b>: 1 回だけ取り込んで止める</li>
+</ul>
+<p>ノイズ除去は、波形がレベルからいったん離れるまで次のトリガを受け付けない幅です。</p>
+
+<h3>実効値とピーク</h3>
+<p>実効値とピークは、フルスケールの正弦波を 0 dBFS とする決め方で dB にしています<a class="rf" href="#thy-r1">[1]</a>。</p>
 <div class="eqs">
   <math display="block"><msub><mi>L</mi><mi>rms</mi></msub><mo>=</mo><mn>20</mn><mspace width="0.15em"/><msub><mi>log</mi><mn>10</mn></msub><mo>&#x2061;</mo><mrow><mo>(</mo><msqrt><mn>2</mn></msqrt><mspace width="0.15em"/><msqrt><mrow><mfrac><mn>1</mn><mi>N</mi></mfrac><munderover><mo>&#x2211;</mo><mrow><mi>n</mi><mo>=</mo><mn>0</mn></mrow><mrow><mi>N</mi><mo>&#x2212;</mo><mn>1</mn></mrow></munderover><msup><mi>x</mi><mn>2</mn></msup><mo stretchy="false">[</mo><mi>n</mi><mo stretchy="false">]</mo></mrow></msqrt><mo>)</mo></mrow><mspace width="0.3em"/><mtext>dBFS</mtext></math>
   <math display="block"><msub><mi>L</mi><mi>pk</mi></msub><mo>=</mo><mn>20</mn><mspace width="0.15em"/><msub><mi>log</mi><mn>10</mn></msub><mo>&#x2061;</mo><munder><mi>max</mi><mi>n</mi></munder><mo>&#x2061;</mo><mrow><mo>|</mo><mi>x</mi><mo stretchy="false">[</mo><mi>n</mi><mo stretchy="false">]</mo><mo>|</mo></mrow><mspace width="0.3em"/><mtext>dBFS</mtext></math>
+</div>
+
+<h3>リサジューの M-S</h3>
+<p>リサジューの M-S は、次のように描かれるよう 45° 回しています。</p>
+<ul class="tl">
+  <li>L だけの音は左上</li>
+  <li>R だけの音は右上</li>
+  <li>モノラルの音は縦の線</li>
+</ul>
+<div class="eqs">
   <math display="block"><mi>X</mi><mo>=</mo><mfrac><mrow><mi>R</mi><mo>&#x2212;</mo><mi>L</mi></mrow><msqrt><mn>2</mn></msqrt></mfrac><mo>,</mo><mspace width="1em"/><mi>Y</mi><mo>=</mo><mfrac><mrow><mi>L</mi><mo>+</mo><mi>R</mi></mrow><msqrt><mn>2</mn></msqrt></mfrac><mspace width="1em"/><mtext>（M-S）</mtext></math>
 </div>
-<p class="cite">出典: Audio Engineering Society, AES17-2020 <a href="https://www.aes.org/publications/standards/search.cfm?docID=21" target="_blank" rel="noopener">AES standard method for digital audio engineering — Measurement of digital audio equipment</a>（フルスケールの振幅の定義）</p>
+
+<h3>出典</h3>
+<ol class="refs">
+  <li id="thy-r1"><span class="rf-for">フルスケールの振幅の定義</span><span class="rf-src">Audio Engineering Society, AES17-2020 <a href="https://www.aes.org/publications/standards/search.cfm?docID=21" target="_blank" rel="noopener">AES standard method for digital audio engineering — Measurement of digital audio equipment</a></span></li>
+</ol>

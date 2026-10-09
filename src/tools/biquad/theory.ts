@@ -33,12 +33,34 @@ import {
   zi,
 } from './math';
 
-/* ---------- 動作原理 ---------- */
-export const THEORY_P =
-  `双2次フィルタは、入力 ${inl(sq('x'))} の今と 2 サンプル前までの値、出力 ${inl(sq('y'))} の 2 サンプル前までの値に係数を掛けて足し、次の出力を求める 2 次の IIR フィルタです。` +
-  `伝達関数 ${inl(mi('H') + par(mi('z')))} の分子と分母がどちらも ${inl(zi(1))} の 2 次式なので、この名で呼ばれます。` +
-  `係数は Audio EQ Cookbook の式で、種類ごとに ${inl(fcS)}・${inl(mi('Q'))}・${inl(mi('G'))}・${inl(fsS)} から求めます。` +
-  `周波数特性は、長さ ${inl(mi('N'))} のインパルス応答 ${inl(sq('h'))} を FFT して求めます。周波数の刻みは ${inl(row(fsS, SLASH, mi('N')))} なので、${inl(mi('Q'))} が大きく応答が長く続くときは、${inl(mi('N'))} を大きくしないとピークを取りこぼします。`;
+/* ---------- 動作原理（節ごとの本文。見出しと式の箱は Theory.astro） ---------- */
+/** 本文の出典番号 */
+const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
+
+/** 双2次フィルタとは */
+export const THY_WHAT =
+  `<p>双2次フィルタは、入力 ${inl(sq('x'))} の今と 2 サンプル前までの値、出力 ${inl(sq('y'))} の 2 サンプル前までの値に係数を掛けて足し、次の出力を求める 2 次の IIR フィルタです。</p>` +
+  `<p>伝達関数 ${inl(mi('H') + par(mi('z')))} の分子と分母がどちらも ${inl(zi(1))} の 2 次式なので、この名で呼ばれます。</p>`;
+
+/** 係数の求め方 */
+export const THY_COEF =
+  `<p>係数は Audio EQ Cookbook の式${rf(1)}で、フィルタの種類${rf(2)}ごとに次の 4 つの値から求めます。</p>` +
+  '<dl class="syms">' +
+  `<dt>${inl(fcS)}</dt><dd>カットオフ周波数</dd>` +
+  `<dt>${inl(mi('Q'))}</dt><dd>Q 値</dd>` +
+  `<dt>${inl(mi('G'))}</dt><dd>増幅量</dd>` +
+  `<dt>${inl(fsS)}</dt><dd>サンプリング周波数</dd>` +
+  '</dl>' +
+  '<ol class="flow" aria-label="係数を求める流れ">' +
+  `<li><b>${[fcS, mi('Q'), mi('G'), fsS].map(inl).join('・')}</b><span>入力した値</span></li>` +
+  `<li><b>${[w0, al, AA].map(inl).join('・')}</b><span>種類によらない中間の量</span></li>` +
+  `<li><b>${inl(row(bS(0), mo('…'), bS(2)))}・${inl(row(aS(0), mo('…'), aS(2)))}</b><span>種類ごとの式</span></li>` +
+  '</ol>';
+
+/** 周波数特性の求め方 */
+export const THY_FREQ =
+  `<p>周波数特性は、長さ ${inl(mi('N'))} のインパルス応答 ${inl(sq('h'))} を FFT して求めます。</p>` +
+  `<p>周波数の刻みは ${inl(row(fsS, SLASH, mi('N')))} です。${inl(mi('Q'))} が大きく応答が長く続くときは、${inl(mi('N'))} を大きくしないとピークを取りこぼします。</p>`;
 
 /** 差分方程式 */
 export const EQ_DIFF = blk(
@@ -65,29 +87,25 @@ export const EQ_DIFF = blk(
 export const EQ_COM = blk(w0 + EQ + frac(row(two, mi('π'), fcS), fsS)) + blk(al + EQ + frac(sinw, row(two, mi('Q'))));
 /** A（増幅量を使う種類だけ出す） */
 export const eqA = (attrs = ''): string => blk(AA + EQ + sup(mn(10), row(mi('G'), SLASH, mn(40))), attrs);
-/** FFT による振幅 */
-export const EQ_FFT = blk(
-  row(
-    mi('A'),
-    par(sub(mi('f'), mi('k'))),
-    EQ,
-    mn(20),
-    sub('<mi>log</mi>', mn(10)),
-    FN,
+/** FFT による振幅と、各点の周波数 */
+export const EQ_FFT =
+  blk(
     row(
-      '<mo>|</mo>',
-      `<munderover><mo>&#x2211;</mo>${row(mi('n'), EQ, mn(0))}${row(mi('N'), MI, one)}</munderover>`,
-      sq('h'),
-      sup(mi('e'), row(MI, mi('j'), frac(row(two, mi('π'), mi('k'), mi('n')), mi('N')))),
-      '<mo>|</mo>',
+      mi('A'),
+      par(sub(mi('f'), mi('k'))),
+      EQ,
+      mn(20),
+      sub('<mi>log</mi>', mn(10)),
+      FN,
+      row(
+        '<mo>|</mo>',
+        `<munderover><mo>&#x2211;</mo>${row(mi('n'), EQ, mn(0))}${row(mi('N'), MI, one)}</munderover>`,
+        sq('h'),
+        sup(mi('e'), row(MI, mi('j'), frac(row(two, mi('π'), mi('k'), mi('n')), mi('N')))),
+        '<mo>|</mo>',
+      ),
     ),
-    mo(','),
-    '<mspace width="1em"/>',
-    sub(mi('f'), mi('k')),
-    EQ,
-    frac(row(mi('k'), fsS), mi('N')),
-  ),
-);
+  ) + blk(row(sub(mi('f'), mi('k')), EQ, frac(row(mi('k'), fsS), mi('N'))));
 
 /* ---------- 種類ごとの係数（Cookbook） ---------- */
 const m2c = row(MI, two, cosw),

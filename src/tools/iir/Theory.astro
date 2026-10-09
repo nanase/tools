@@ -6,24 +6,39 @@ import {
   EQ_PROTO,
   EQ_SOS,
   EQ_XFORM,
-  THEORY_P1,
-  THEORY_P2,
-  THEORY_P3,
-  THEORY_P4,
-  THEORY_P5,
+  THY_FLOW,
+  THY_IMP,
+  THY_ORDER,
+  THY_PROTO,
+  THY_SOS,
+  THY_XFORM,
 } from './theory';
 ---
-<p set:html={THEORY_P1} />
-<div class="eqs" role="group" aria-label="原型の振幅（上からバターワース・チェビシェフ I・チェビシェフ II・楕円）とベッセルの伝達関数" set:html={EQ_PROTO} />
-<p set:html={THEORY_P2} />
-<div class="eqs" role="group" aria-label="最小の次数（上からバターワース・チェビシェフ・楕円）と完全楕円積分" set:html={EQ_ORDER} />
-<p set:html={THEORY_P3} />
+<h3>設計の流れ</h3>
+<Fragment set:html={THY_FLOW} />
+<h3>原型</h3>
+<Fragment set:html={THY_PROTO} />
+<div class="eqs" role="group" aria-label="原型の振幅（順にバターワース・チェビシェフ I・チェビシェフ II・楕円）とベッセルの伝達関数" set:html={EQ_PROTO} />
+<h3>次数</h3>
+<Fragment set:html={THY_ORDER} />
+<div class="eqs" role="group" aria-label="最小の次数（順にバターワース・チェビシェフ・楕円）と完全楕円積分" set:html={EQ_ORDER} />
+<h3>周波数変換と双一次変換</h3>
+<Fragment set:html={THY_XFORM} />
 <div class="eqs">
   <Fragment set:html={EQ_XFORM} />
   <div class="subst" id="subst" role="group" aria-label="現在の値を代入した式"></div>
 </div>
-<p set:html={THEORY_P4} />
+<h3>インパルス不変法</h3>
+<Fragment set:html={THY_IMP} />
 <div class="eqs" set:html={EQ_IMP} />
-<p set:html={THEORY_P5} />
+<h3>実装</h3>
+<Fragment set:html={THY_SOS} />
 <div class="eqs" set:html={EQ_SOS} />
-<p class="cite">出典: S. J. Orfanidis, "<a href="https://web.archive.org/web/20220626012950/https://www.ece.rutgers.edu/~orfanidi/ece521/notes.pdf" target="_blank" rel="noopener">Lecture Notes on Elliptic Filter Design</a>," Rutgers University, 2006（楕円関数・楕円フィルタの原型）、A. V. Oppenheim, R. W. Schafer, <i>Discrete-Time Signal Processing</i>, 3rd ed., Pearson, 2010, ch. 7（インパルス不変法・双一次変換）、W. E. Thomson, "Delay networks having maximally flat frequency characteristics," <i>Proc. IEE</i>, Part III, vol. 96, pp. 487–490, 1949（ベッセルフィルタ）、L. B. Jackson, <i>Digital Filters and Signal Processing</i>, 3rd ed., Kluwer, 1996（双2次の組み方・並べ方とスケーリング）、<a href="https://docs.scipy.org/doc/scipy/reference/signal.html" target="_blank" rel="noopener">SciPy の scipy.signal</a>（周波数変換・双一次変換・SOS の式）</p>
+<h3>出典</h3>
+<ol class="refs">
+  <li id="thy-r1"><span class="rf-for">楕円関数、楕円フィルタの原型</span><span class="rf-src">S. J. Orfanidis, “<a href="https://web.archive.org/web/20220626012950/https://www.ece.rutgers.edu/~orfanidi/ece521/notes.pdf" target="_blank" rel="noopener">Lecture Notes on Elliptic Filter Design</a>,” Rutgers University, 2006</span></li>
+  <li id="thy-r2"><span class="rf-for">ベッセルフィルタ</span><span class="rf-src">W. E. Thomson, “Delay networks having maximally flat frequency characteristics,” <i>Proc. IEE</i>, Part III, vol. 96, pp. 487–490, 1949</span></li>
+  <li id="thy-r3"><span class="rf-for">インパルス不変法、双一次変換</span><span class="rf-src">A. V. Oppenheim, R. W. Schafer, <i>Discrete-Time Signal Processing</i>, 3rd ed., Pearson, 2010, ch. 7</span></li>
+  <li id="thy-r4"><span class="rf-for">周波数変換・双一次変換・SOS の式</span><span class="rf-src"><a href="https://docs.scipy.org/doc/scipy/reference/signal.html" target="_blank" rel="noopener">SciPy の scipy.signal</a></span></li>
+  <li id="thy-r5"><span class="rf-for">双2次の組み方・並べ方とスケーリング</span><span class="rf-src">L. B. Jackson, <i>Digital Filters and Signal Processing</i>, 3rd ed., Kluwer, 1996</span></li>
+</ol>
