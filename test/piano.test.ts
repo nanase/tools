@@ -4,9 +4,9 @@ import { C } from '../src/tools/guitar/body';
 import { coupled, cvec, project } from '../src/tools/piano/eig';
 import { boardDesc, Engine, minPhaseFir } from '../src/tools/piano/engine';
 import { type StruckString, strike } from '../src/tools/piano/hammer';
-import { damperFade, Gliss } from '../src/tools/piano/keys';
+import { damperFade, Gliss, ripRadius, ripTime } from '../src/tools/piano/keys';
 import { damperRate, hammerOf, makePiano, NO_DAMPER, type Piano, strikeKey } from '../src/tools/piano/model';
-import { PIECES, pedalPoints, pieceOf, playEvents, TempoMap, voicing } from '../src/tools/piano/score';
+import { dynamics, PIECES, pedalPoints, pieceOf, playEvents, TempoMap, voicing } from '../src/tools/piano/score';
 import { admittance, hfPressure, makeBoard, pressure, sigma } from '../src/tools/piano/soundboard';
 import {
   etaOf,
@@ -127,11 +127,12 @@ describe('ハンマー', () => {
     expect(hammerOf(96).m).toBeLessThan(hammerOf(36).m);
     expect(strike(sh, { ...hammerOf(96), v: 3 }, FS).tc).toBeLessThan(strike(st, { ...hammerOf(60), v: 3 }, FS).tc);
   });
-  it('2 m/s で打ったフェルトの最大の圧縮と接触時間は、柳沢・中村 (1984) の測定に近い', () => {
-    for (const [key, d, tc] of [
-      [57, 0.62, 2.6],
-      [69, 0.75, 1.9],
-      [81, 0.7, 1.6],
+  it('2 m/s で打ったフェルトの圧縮と接触時間: 録音の音色に合わせて柔らかくした低音〜中音は柳沢・中村 (1984) の測定より大きく、高音ほど測定に近い', () => {
+    /* [鍵, 測定の圧縮 mm, 測定の接触時間 ms, 圧縮の比の範囲, 接触時間の比の範囲] */
+    for (const [key, d, tc, d0, d1, t0, t1] of [
+      [57, 0.62, 2.6, 1.45, 1.8, 1.15, 1.65],
+      [69, 0.75, 1.9, 1.45, 1.8, 1.15, 1.65],
+      [81, 0.7, 1.6, 1.15, 1.45, 1.0, 1.3],
     ]) {
       const k = P.keys[key - KEY_LO],
         c = strike(
@@ -139,10 +140,37 @@ describe('ハンマー', () => {
           { ...hammerOf(key), v: 2 },
           FS,
         );
-      expect(c.dmax * 1000).toBeGreaterThan(d - 0.08);
-      expect(c.dmax * 1000).toBeLessThan(d + 0.08);
-      expect(c.tc * 1000).toBeGreaterThan(0.75 * tc);
-      expect(c.tc * 1000).toBeLessThan(1.25 * tc);
+      expect(c.dmax * 1000).toBeGreaterThan(d0 * d);
+      expect(c.dmax * 1000).toBeLessThan(d1 * d);
+      expect(c.tc * 1000).toBeGreaterThan(t0 * tc);
+      expect(c.tc * 1000).toBeLessThan(t1 * tc);
+    }
+    /* C7 より上は柔らかくしない。接触時間は 1 ms 前後 */
+    const k = P.keys[96 - KEY_LO],
+      c = strike(
+        { L: k.s.L, mu: k.s.mu, T: k.s.T, ns: k.s.ns, x0: k.x0, w: k.w[0], s: k.sg[0] },
+        { ...hammerOf(96), v: 2 },
+        FS,
+      );
+    expect(c.tc * 1000).toBeLessThan(1.3);
+  });
+  it('mf（2.5 m/s）の 2〜4 kHz の部分音は、0.15〜1 kHz より 30 dB 以上弱い（録音に合わせる前は約 −22 dB）', () => {
+    for (const key of [36, 60]) {
+      const k = P.keys[key - KEY_LO],
+        c = strike(
+          { L: k.s.L, mu: k.s.mu, T: k.s.T, ns: k.s.ns, x0: k.x0, w: k.w[0], s: k.sg[0] },
+          { ...hammerOf(key), v: 2.5 },
+          FS,
+        );
+      let lo = 0,
+        hi = 0;
+      for (let i = 0; i < k.N; i++) {
+        const f = k.w[0][i] / (2 * Math.PI),
+          a = (i + 1) ** 2 * (c.q[i] ** 2 + (c.dq[i] / k.w[0][i]) ** 2);
+        if (f >= 150 && f < 1000) lo += a;
+        else if (f >= 2000 && f < 4000) hi += a;
+      }
+      expect(10 * Math.log10(hi / lo)).toBeLessThan(-30);
     }
   });
   it('強く打つほど高い部分音が強まる（中音の 4〜10 kHz の、0.15〜1 kHz に対する比が mf から ff で 10 dB 以上）', () => {
@@ -441,7 +469,7 @@ describe('音', () => {
   });
 });
 
-describe('曲の強さとペダル', () => {
+describe('曲のベロシティとペダル', () => {
   it('和音の最も高い右手の音を強く、間の音を弱くする', () => {
     const k = voicing([
       { t: 0, d: 1, n: 48, h: 1 },
@@ -451,6 +479,51 @@ describe('曲の強さとペダル', () => {
     ]);
     expect(k[3]).toBeGreaterThan(k[1]);
     expect(k[0]).toBeGreaterThan(k[2]);
+  });
+  it('楽譜のベロシティは、曲の中央の値を 1 として、比を縮めた倍率にする。ベロシティのない曲は null', () => {
+    const n = (v?: number) => ({ t: 0, d: 1, n: 60, h: 0, ...(v === undefined ? {} : { v }) });
+    expect(dynamics([n(), n()])).toBeNull();
+    const k = dynamics([n(62), n(62), n(62), n(95), n(123)]) as Float64Array;
+    expect(k[0]).toBe(1);
+    expect(k[3]).toBeGreaterThan(1.5);
+    expect(k[4]).toBeGreaterThan(k[3]);
+    /* pp（62）と f（95）の打鍵の速さの比は、強弱の目安（0.8 と 4 m/s）の 5 倍より小さい */
+    expect(k[3]).toBeLessThan(2.5);
+  });
+  it('ジムノペディにはすべての音にベロシティがあり、自動の打鍵の速さは旋律の f で大きく、範囲に収まる', async () => {
+    for (const p of PIECES) {
+      const notes = await p.load(),
+        has = notes.filter((x) => x.v !== undefined).length;
+      expect(has).toBe(p.v.startsWith('gymno') ? notes.length : 0);
+      const vs = playEvents(p, notes, 2.5, 'auto').flatMap((e) => (e.type === 'on' ? [e.v] : []));
+      expect(Math.min(...vs)).toBeGreaterThan(0.3);
+      expect(Math.max(...vs)).toBeLessThanOrEqual(7);
+      if (p.v === 'gymno2') expect(Math.max(...vs) / Math.min(...vs)).toBeGreaterThan(3);
+    }
+  });
+  it('輪の大きさはハンマーの速さとともに増え、pp は mf の半分より小さく、ff は mf の 1.4 倍より小さい', () => {
+    for (const [a, b] of [
+      [0.3, 0.8],
+      [0.8, 1.5],
+      [1.5, 2.5],
+      [2.5, 4],
+      [4, 7],
+    ])
+      expect(ripRadius(b)).toBeGreaterThan(ripRadius(a));
+    expect(ripRadius(0.8) / ripRadius(2.5)).toBeLessThan(0.5);
+    expect(ripRadius(6) / ripRadius(2.5)).toBeLessThan(1.4);
+  });
+  it('輪は強い音ほど長く続き、ff は mf の 1.5 倍より長い。最も弱い音でも 0.25 s は続く', () => {
+    for (const [a, b] of [
+      [0.8, 1.5],
+      [1.5, 2.5],
+      [2.5, 4],
+      [4, 7],
+    ])
+      expect(ripTime(b)).toBeGreaterThan(ripTime(a));
+    expect(ripTime(2.5)).toBeCloseTo(0.6, 12);
+    expect(ripTime(6) / ripTime(2.5)).toBeGreaterThan(1.5);
+    expect(ripTime(0.3)).toBe(0.25);
   });
   it('低音の音名が変わる拍で踏みかえる', () => {
     const pts = pedalPoints([
@@ -479,11 +552,11 @@ describe('曲の強さとペダル', () => {
     for (const b of [0, 3.5, 5, 7.25]) expect(tm.beat(tm.tau(b))).toBeCloseTo(b, 12);
   });
   it('どの曲も、鍵盤の音域に収まり、小節の長さがそろう', async () => {
-    const bars: Record<string, number> = { bwv846: 35, gymno1: 78, moon1: 69, moon3: 264 };
+    const bars: Record<string, number> = { bwv846: 35, gymno1: 78, gymno2: 65, gymno3: 60, moon1: 69, moon3: 264 };
     for (const p of PIECES) {
       const notes = await p.load(),
         end = Math.max(...notes.map((x) => x.t + x.d));
-      expect(notes.length).toBeGreaterThan(400);
+      expect(notes.length).toBeGreaterThan(300);
       for (const x of notes) {
         expect(x.n).toBeGreaterThanOrEqual(KEY_LO);
         expect(x.n).toBeLessThanOrEqual(KEY_HI);

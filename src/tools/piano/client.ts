@@ -65,6 +65,8 @@ const hard = choice<string>('hard', () => {
   rebuild();
 });
 const ped = choice<'auto' | 'on' | 'off'>('ped', () => syncPedal());
+/** 曲の打鍵のベロシティ: 自動（曲の強弱）か、固定（打鍵の枠のベロシティ） */
+const pv = choice<'auto' | 'fix'>('pv', () => {});
 const soft = choice<'off' | 'on'>('soft', () => renderOut());
 const thump = choice<string>('th', () => renderOut());
 const room = choice<string>('room', () => roomView());
@@ -549,7 +551,7 @@ async function press(k: number): Promise<void> {
     view = audio.strike(k, v, soft.value === 'on', Number(thump.value), freeOf(S.held, livePedal()));
   txt('#kb-live', noteName(k));
   /* ダンパーは図が鍵とペダルの状態から決める（表示が届く前に離していても、離した時刻から止める） */
-  view.then((vw) => keys.set(k, { view: vw, t0: t, damp: Infinity, sd: sdOf(k) }));
+  view.then((vw) => keys.set(k, { view: vw, t0: t, v, damp: Infinity, sd: sdOf(k) }));
   S.last = k;
   showLastSoon();
 }
@@ -657,7 +659,7 @@ async function startPiece(): Promise<void> {
   for (const k of S.held) lift(k);
   audio.pedal(false);
   keys.setPedal(false);
-  const ev = playEvents(pc, notes, V.vel, ped.value),
+  const ev = playEvents(pc, notes, VEL.v, ped.value),
     now = audio.now() ?? 0,
     end = Math.max(...notes.map((x) => x.t + x.d));
   PL = {
@@ -734,10 +736,11 @@ function tick(): void {
       p.held.set(e.key, (p.held.get(e.key) ?? 0) + 1);
       p.lastOn.set(e.key, at);
       const free = freeOf(new Set(p.held.keys()), p.pedal),
-        key = e.key;
-      void audio.strike(key, qv(e.v), soft.value === 'on', Number(thump.value), free, at).then((view) => {
+        key = e.key,
+        v = qv(pv.value === 'fix' ? V.vel : e.v);
+      void audio.strike(key, v, soft.value === 'on', Number(thump.value), free, at).then((view) => {
         if (PL !== p) return;
-        keys.set(key, { view, t0: tp, damp: Infinity, sd: sdOf(key) });
+        keys.set(key, { view, t0: tp, v, damp: Infinity, sd: sdOf(key) });
       });
       later(p, tp, () => keys.setDown(key, true));
     }

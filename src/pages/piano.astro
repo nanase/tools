@@ -61,9 +61,10 @@ const related = [
         <div class="ptab">
           <div class="prow pick" id="p-piece">
             <div class="c-sym" aria-hidden="true"></div>
-            <div class="c-name"><label class="pn" id="n-piece" for="piece">曲</label><p class="desc tip" id="t-piece" role="tooltip" hidden>著作権の切れた曲の電子楽譜から変換したもの。強さとペダルはこのツールで付ける</p></div>
+            <div class="c-name"><label class="pn" id="n-piece" for="piece">曲</label><p class="desc tip" id="t-piece" role="tooltip" hidden>著作権の切れた曲の電子楽譜から変換したもの。ペダルと声部ごとの強弱はこのツールで付ける</p></div>
             <div class="c-val sel"><select id="piece" autocomplete="off" aria-describedby="t-piece">{PIECES.map((p) => <option value={p.v} title={p.by}>{p.name}</option>)}</select></div>
           </div>
+          <ChoiceRow k="pv" name="ベロシティ" sub="自動は、曲の強弱（楽譜の強弱記号と、このツールで付ける声部ごとの強弱）に合わせて打つ。固定は、すべての音を「打鍵」のベロシティで打つ。演奏中も変えられる" choices={[['auto', '自動'], ['fix', '固定']]} value="auto" />
           <ParamRow d={TEMPO} />
           <ParamRow d={outVol(VOL0)} />
         </div>
@@ -90,7 +91,7 @@ const related = [
           {PIANO_TYPES.map((t, i) => <button type="button" data-v={t.v} aria-pressed={i === 0 ? 'true' : 'false'} title={`${t.name}（${t.size} cm、最も長い弦 ${t.Lmax} m 程度、響板 ${t.area} m²）`}>{t.v === 'concert' ? 'コンサート' : t.v === 'grand' ? 'グランド' : 'アップライト'}</button>)}
         </div>
         <div class="ptab">
-          <ChoiceRow k="tun" name="調律" sub="平均律は第 1 部分音を平均律の周波数にする。ストレッチは、弦の非調和性で高くなる部分音にオクターブを合わせ、高音を高く、低音を低くする" choices={[['stretch', 'ストレッチ'], ['equal', '平均律']]} value="stretch" />
+          <ChoiceRow k="tun" name="調律" sub="ストレッチは、12 平均律のまま、弦の非調和性で高くなる部分音にオクターブを合わせ、高音を少し高く、低音を少し低くする（調律師による実際の調律に近い）。平均律は、第 1 部分音を計算どおりの 12 平均律の周波数にする" choices={[['stretch', 'ストレッチ'], ['equal', '平均律']]} value="stretch" />
           <ChoiceRow k="a4" name="基準の高さ" sub="A4 の第 1 部分音の周波数" choices={A4S.map((v) => [v, `${v} Hz`] as const)} value={440} />
           <ParamRow d={UNI} />
         </div>

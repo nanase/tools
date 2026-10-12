@@ -194,18 +194,37 @@ const FELT_LOG: readonly [number, number][] = [
   [75, -1.72],
   [81, -1.68],
 ];
-const feltScale = (key: number): number => {
+/**
+ * 録音の音色に合わせる、フェルトの硬さの補正（log10 の倍率、[鍵, 値]）。上の補正だけでは、mf（2.5 m/s）の
+ * 1 kHz より上の部分音が、ピアノの録音（Iowa 大学の Musical Instrument Samples、Steinway & Sons model B の
+ * mf・ff）より平均で約 10 dB 強く、録音の mf に近いのは約 1.3 m/s だった。低音から中音は硬さを 1/10 にすると、
+ * 2.5 m/s が録音の mf、6 m/s が録音の ff にほぼ合う。代わりに、2 m/s の圧縮は 1.0〜1.2 mm と柳沢・中村の
+ * 実測の約 1.6 倍に、接触時間は 3〜5 割長くなる。
+ *
+ * 高音は、フェルトが柔らかいと接触時間が弦の周期より長くなり、第 1 部分音まで弱くなって音が小さくなる
+ * （1.5 m/s で C6 が約 7 dB、C7 が約 10 dB）。そこで A4 から C7 にかけて補正を 0 へ戻し、接触時間を実測
+ * （A5 で 1.6 ms、最も高い音域で 1 ms 未満）に近づける。鍵ごとに録音へ別々に合わせると、合う硬さが隣の
+ * 音で 30 倍も違う（録音の 1 音ごとの癖を拾う）ので、鍵盤の上で滑らかな補正にしている
+ */
+const SOFT_LOG: readonly [number, number][] = [
+  [21, -1],
+  [69, -1],
+  [96, 0],
+  [108, 0],
+];
+/** [鍵, log10 の倍率] の表を、鍵の間で直線でつないだ倍率 */
+const keyScale = (tab: readonly [number, number][], key: number): number => {
   let i = 0;
-  while (i < FELT_LOG.length - 2 && key > FELT_LOG[i + 1][0]) i++;
-  const [k0, a0] = FELT_LOG[i],
-    [k1, a1] = FELT_LOG[i + 1],
+  while (i < tab.length - 2 && key > tab[i + 1][0]) i++;
+  const [k0, a0] = tab[i],
+    [k1, a1] = tab[i + 1],
     u = Math.min(1, Math.max(0, (key - k0) / (k1 - k0)));
   return 10 ** (a0 + (a1 - a0) * u);
 };
 
 /**
  * 鍵ごとのハンマー（Stulov の鍵盤全体の近似式。n は鍵の番号 1〜88）: 質量 m = 11.074 − 0.074n + 0.0001n² [g]、
- * 指数 p = 3.7 + 0.015n、硬さ Q₀ = 183 e^{0.045n} [N/mm^p]（弦に当たるときの補正 FELT_LOG を掛ける）、
+ * 指数 p = 3.7 + 0.015n、硬さ Q₀ = 183 e^{0.045n} [N/mm^p]（弦に当たるときの補正 FELT_LOG と、録音に合わせる補正 SOFT_LOG を掛ける）、
  * ヒステリシス α = 248 + 1.83n − 0.055n² [µs]（高音で負になるので 30 µs を下限とする）。hard は硬さに掛ける
  * 倍率（整音）。幅は概数
  */
@@ -215,7 +234,7 @@ export function hammerOf(key: number, hard = 1): Omit<HammerSpec, 'v'> {
   return {
     m: (11.074 - 0.074 * n + 0.0001 * n * n) * 1e-3,
     p,
-    K: 183 * Math.exp(0.045 * n) * feltScale(key) * hard * 1000 ** p,
+    K: 183 * Math.exp(0.045 * n) * keyScale(FELT_LOG, key) * keyScale(SOFT_LOG, key) * hard * 1000 ** p,
     alpha: Math.max(30, 248 + 1.83 * n - 0.055 * n * n) * 1e-6,
     w: (10 - (6 * (n - 1)) / 87) * 1e-3,
   };

@@ -5,7 +5,10 @@
  * MIDI は Mutopia Project の楽譜を LilyPond で変換したもの。トラックは譜表ごとで、右手の譜表を h = 0、
  * 左手の譜表を h = 1 にする（\change Staff で譜表を移った音は、移った先の譜表に入っている）。
  * LilyPond の MIDI は反復を展開しないので、.ly の \repeat volta・\alternative・D.C. を読んで、
- * 演奏順の小節の範囲を曲ごとに書く。MIDI にペダル（CC64）はなく、データにも入れない
+ * 演奏順の小節の範囲を曲ごとに書く。MIDI にペダル（CC64）はなく、データにも入れない。
+ *
+ * ベロシティは、LilyPond が強弱記号から付けたものがある曲（ジムノペディ）だけ入れる。ほかの曲の MIDI は
+ * すべての音が同じ値（90 か 127）で、強弱の情報がない
  */
 import { build, type Kind, type Midi, noteName, type Piece, type RawNote } from './score-midi';
 
@@ -103,6 +106,48 @@ function restoreTriplets(m: Midi, log: (s: string) => void): RawNote[] {
 const mutopia = (id: number) => `https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=${id}`;
 const common =
   '時刻と長さを 4 分音符の 1/480 に寄せ、同じ時刻の同じ高さの音を 1 つにまとめた。強弱とテンポは使わない。';
+/** ベロシティを入れる曲の加工 */
+const commonVel = [
+  '時刻と長さを 4 分音符の 1/480 に寄せ、同じ時刻の同じ高さの音を 1 つにまとめた。',
+  'ベロシティは、LilyPond が強弱記号と松葉から付けた値を残し、強弱記号のない声部の既定の値（90）は、',
+  '同じ小節の最も弱い値にそろえた。テンポは使わない。',
+];
+/** LilyPond が、強弱記号のない声部の音に付けるベロシティ */
+const LILY_VEL = 90;
+const satie = (n: number, id: number, date: string): Piece => ({
+  name: `gymnopedie${n}`,
+  title: `E. サティ「ジムノペディ 第 ${n} 番」`,
+  source: [
+    `音符は Mutopia Project の楽譜（Evin Robertson 作成、底本 Dover Edition、Mutopia-${date}-${id}、`,
+    `${mutopia(id)}）の MIDI から変換した。`,
+  ],
+  changes: ['変更:', ...commonVel],
+  license: 'pd',
+  tracks: [
+    [1, 0],
+    [2, 1],
+  ],
+  meter: [3, 4],
+  pickup: 0,
+  vel: LILY_VEL,
+});
+/** グノシエンヌ。楽譜に小節線はなく、MIDI の拍子（.ly が音符を並べるのに使う拍子）で小節を数える */
+const gnossienne = (n: number, id: number, date: string, by: string, src: string, meter: [number, number]): Piece => ({
+  name: `gnossienne${n}`,
+  title: `E. サティ「グノシエンヌ 第 ${n} 番」`,
+  source: [
+    `音符は Mutopia Project の楽譜（${by} 作成、底本 ${src}、`,
+    `Mutopia-${date}-${id}、${mutopia(id)}）の MIDI から変換した。`,
+  ],
+  changes: [`変更: ${common}`],
+  license: 'cc-by-sa-4.0',
+  tracks: [
+    [1, 0],
+    [2, 1],
+  ],
+  meter,
+  pickup: 0,
+});
 
 const pieces: Piece[] = [
   {
@@ -132,7 +177,7 @@ const pieces: Piece[] = [
     ],
     changes: [
       '変更: 反復（\\repeat volta と 2 つの括弧）を演奏順に展開した（小節 1〜31、32〜39、1〜31、40〜47）。',
-      common,
+      ...commonVel,
     ],
     license: 'pd',
     tracks: [
@@ -141,6 +186,7 @@ const pieces: Piece[] = [
     ],
     meter: [3, 4],
     pickup: 0,
+    vel: LILY_VEL,
     /* 本体 31 小節、第 1 括弧 32〜39、第 2 括弧 40〜47 */
     order: [
       [1, 31],
@@ -149,6 +195,25 @@ const pieces: Piece[] = [
       [40, 47],
     ],
   },
+  satie(2, 38, '2012/12/23'),
+  satie(3, 39, '2012/12/23'),
+  gnossienne(1, 2035, '2015/07/23', 'Knute Snortum', 'Editions Salabert, Paris, 1913', [4, 4]),
+  gnossienne(
+    2,
+    2130,
+    '2016/08/17',
+    'Frédéric Duperray',
+    'Rouart, Lerolle & Cie., Paris, 1913（Plates R.L. 9884-9886）',
+    [12, 8],
+  ),
+  gnossienne(
+    3,
+    2131,
+    '2016/08/17',
+    'Frédéric Duperray',
+    'Rouart, Lerolle & Cie., Paris, 1913（Plates R.L. 9884-9886）',
+    [4, 4],
+  ),
   {
     name: 'moonlight1',
     title: 'L. v. ベートーヴェン「ピアノ・ソナタ 第 14 番 嬰ハ短調 作品 27-2（月光）」より 第 1 楽章',

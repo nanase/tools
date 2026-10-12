@@ -50,6 +50,10 @@
 </dl>
 <p>ただし、近似式の硬さはハンマー全体の値です。2〜3 本の弦を打つ中音・高音では、弦 1 本あたりのフェルトが硬くなりすぎます。ハンマーの硬さは、打つ弦の太さで大きく変わることも分かっています<a class="rf" href="#thy-r9">[9]</a>。</p>
 <p>そこで、柳沢・中村が実際のピアノで弦を打って測ったフェルトの圧縮に合うように、鍵ごとに硬さを補正します<a class="rf" href="#thy-r10">[10]</a>。測った圧縮は、2 m/s で 0.55〜0.75 mm です。補正の大きさは、中音で約 1/20〜1/60 です。補正したあとの接触時間も、同じ測定に合います。</p>
+<p>ところが、この硬さのままでは、実際のピアノの録音<a class="rf" href="#thy-r11">[11]</a>より高い部分音が強くなります。mf（2.5 m/s）では、1 kHz より上の部分音が録音より平均で約 10 dB 強く、録音の mf に近いのは約 1.3 m/s で打った音でした。</p>
+<p>そこで、低音から中音（A4 まで）は、硬さをさらに 1/10 にしています。こうすると、2.5 m/s の音が録音の mf に、6 m/s の音が録音の ff にほぼ合います。代わりに、圧縮と接触時間は実測から外れます。2 m/s の圧縮は 1.0〜1.2 mm で、実測の約 1.6 倍です。接触時間は実測より 3〜5 割長くなります。</p>
+<p>高音では、フェルトが柔らかいと接触時間が弦の周期より長くなり、第 1 部分音まで弱くなって音が小さくなります。そのため、A4 から C7 にかけて硬さを少しずつ元へ戻し、C7 より上は柔らかくしていません。</p>
+<p>硬さは鍵ごとに別々には合わせていません。録音に合う硬さを 1 音ずつ求めると、隣り合う音で 30 倍も違う値になり、録音の 1 音ごとの癖を拾ってしまうためです。</p>
 <h4>打ち方と音色</h4>
 <p>弦はハンマーが当たってからしばらくほとんど動かず、力はゆっくり立ち上がります。そのため、弱く打つと高い部分音はほとんど出ません。強く打つとフェルトが硬い領域まで押しつぶされ、高い部分音が急に増えます。</p>
 <p>速く打つほどフェルトが強くつぶれて硬くなり、接触が短くなって、高い倍音の強い明るい音になります。</p>
@@ -63,7 +67,7 @@
   <li>衝突の間に駒にかかる力は、そのまま響板へ入れる</li>
   <li>鍵が底に当たる衝撃（鍵盤の音）は、ハンマーの速さに比例する短い力のパルスとして響板へ入れる</li>
 </ul>
-<p>ハンマーと弦の値は、Chaigne・Askenfelt の数値計算で検算しています<a class="rf" href="#thy-r11">[11]</a>。</p>
+<p>ハンマーと弦の値は、Chaigne・Askenfelt の数値計算で検算しています<a class="rf" href="#thy-r12">[12]</a>。</p>
 <div class="eqs">
   <math display="block"><msub><mi>F</mi><mi mathvariant="normal">H</mi></msub><mo>=</mo><msub><mi>Q</mi><mn>0</mn></msub><mrow><mo>(</mo><msup><mi>δ</mi><mi>p</mi></msup><mo>+</mo><mi>α</mi><mfrac><mrow><mi>d</mi><msup><mi>δ</mi><mi>p</mi></msup></mrow><mrow><mi>d</mi><mi>t</mi></mrow></mfrac><mo>)</mo></mrow></math>
   <math display="block"><mi>δ</mi><mo>=</mo><msub><mi>x</mi><mi mathvariant="normal">H</mi></msub><mo>−</mo><mi>y</mi><mo stretchy="false">(</mo><msub><mi>x</mi><mn>0</mn></msub><mo stretchy="false">)</mo></math>
@@ -73,12 +77,12 @@
 </div>
 
 <h3>駒でつながる弦</h3>
-<p>同じ鍵の弦と、近い部分音を持つほかの弦は、同じ駒でつながっています<a class="rf" href="#thy-r12">[12]</a>。駒のアドミタンス <math><mi>Y</mi></math> は、力に対する速度です。弦 <math><mi>j</mi></math> の部分音の駒にかかる力 <math><msub><mi>F</mi><mi>j</mi></msub></math> は下の式を満たします。固有値 <math><mi>λ</mi></math> が、結合したモードの周波数と減衰率になります。減衰率は虚部です。</p>
+<p>同じ鍵の弦と、近い部分音を持つほかの弦は、同じ駒でつながっています<a class="rf" href="#thy-r13">[13]</a>。駒のアドミタンス <math><mi>Y</mi></math> は、力に対する速度です。弦 <math><mi>j</mi></math> の部分音の駒にかかる力 <math><msub><mi>F</mi><mi>j</mi></msub></math> は下の式を満たします。固有値 <math><mi>λ</mi></math> が、結合したモードの周波数と減衰率になります。減衰率は虚部です。</p>
 <ul class="tl">
   <li><b>3 本の弦がそろって揺れるモード:</b> 駒を強く揺らして速く減衰する</li>
   <li><b>互い違いに揺れるモード:</b> 駒を揺らさず長く残る</li>
 </ul>
-<p>この 2 つで、音は二段に減衰します<a class="rf" href="#thy-r13">[13]</a>。弦どうしの調律のわずかなずれ<a class="rf" href="#thy-r14">[14]</a>と、ハンマーの当たり方のむらが、後に残る音とうなりを生みます。</p>
+<p>この 2 つで、音は二段に減衰します<a class="rf" href="#thy-r14">[14]</a>。弦どうしの調律のわずかなずれ<a class="rf" href="#thy-r15">[15]</a>と、ハンマーの当たり方のむらが、後に残る音とうなりを生みます。</p>
 <p>表板に平行に揺れる水平の偏波は、駒が動きにくいので長く残ります。</p>
 <p>ダンパーが上がっている鍵の弦のうち、部分音が近いものは、共鳴する弦として結合に入れます。ほかの鍵の弦は駒の上の位置が違うので、結合を弱めます。</p>
 <div class="eqs">
@@ -88,16 +92,16 @@
 </div>
 
 <h3>響板</h3>
-<p>響板には、乱数で多数のモードを置きます。モードの間隔と平均のアドミタンスが、板の曲げ剛性 <math><mi>D</mi></math> と面密度 <math><mi>ρ</mi><mi>h</mi></math> から求めた値に合うようにします。<math><mi>D</mi></math> には、響棒で補強した分を含めます。Woodhouse の「統計的な胴」と同じ方法です<a class="rf" href="#thy-r15">[15]</a><a class="rf" href="#thy-r16">[16]</a>。</p>
-<p>響板の最も低いモードは、実測に基づきます<a class="rf" href="#thy-r17">[17]</a><a class="rf" href="#thy-r18">[18]</a><a class="rf" href="#thy-r19">[19]</a>。木材の値は、ピアノの響板に使うスプルースの実測（Berthaut）です<a class="rf" href="#thy-r19">[19]</a>。</p>
+<p>響板には、乱数で多数のモードを置きます。モードの間隔と平均のアドミタンスが、板の曲げ剛性 <math><mi>D</mi></math> と面密度 <math><mi>ρ</mi><mi>h</mi></math> から求めた値に合うようにします。<math><mi>D</mi></math> には、響棒で補強した分を含めます。Woodhouse の「統計的な胴」と同じ方法です<a class="rf" href="#thy-r16">[16]</a><a class="rf" href="#thy-r17">[17]</a>。</p>
+<p>響板の最も低いモードは、実測に基づきます<a class="rf" href="#thy-r18">[18]</a><a class="rf" href="#thy-r19">[19]</a><a class="rf" href="#thy-r20">[20]</a>。木材の値は、ピアノの響板に使うスプルースの実測（Berthaut）です<a class="rf" href="#thy-r20">[20]</a>。</p>
 <h4>音の大きさ</h4>
-<p>音の大きさは、エネルギーの釣り合いで決めます<a class="rf" href="#thy-r20">[20]</a>。</p>
+<p>音の大きさは、エネルギーの釣り合いで決めます<a class="rf" href="#thy-r21">[21]</a>。</p>
 <ol class="flow" aria-label="響板のエネルギーの釣り合い">
   <li><b>駒から板へ入るパワー</b><span>木が失うパワーと釣り合う</span></li>
   <li><b>板にたまるエネルギー</b><span>損失係数 <math><mi>η</mi></math> で決まる</span></li>
   <li><b>音</b><span>放射効率 <math><mi>σ</mi></math> の割合</span></li>
 </ol>
-<p>板の損失係数 <math><mi>η</mi></math> は、周波数によらず約 2 % です<a class="rf" href="#thy-r19">[19]</a>。そのため、高い音ほど板のエネルギーが速く失われ、板にたまるエネルギーが少なくなります。</p>
+<p>板の損失係数 <math><mi>η</mi></math> は、周波数によらず約 2 % です<a class="rf" href="#thy-r20">[20]</a>。そのため、高い音ほど板のエネルギーが速く失われ、板にたまるエネルギーが少なくなります。</p>
 <div class="eqs">
   <math display="block"><mi>Y</mi><mo stretchy="false">(</mo><mi>ω</mi><mo stretchy="false">)</mo><mo>=</mo><munder><mo>∑</mo><mi>k</mi></munder><mfrac><mrow><mi>i</mi><mi>ω</mi></mrow><mrow><msub><mi>m</mi><mi>k</mi></msub><mo stretchy="false">(</mo><msubsup><mi>ω</mi><mi>k</mi><mn>2</mn></msubsup><mo>−</mo><msup><mi>ω</mi><mn>2</mn></msup><mo>+</mo><mi>i</mi><mi>ω</mi><msub><mi>ω</mi><mi>k</mi></msub><msub><mi>η</mi><mi>k</mi></msub><mo stretchy="false">)</mo></mrow></mfrac></math>
   <math display="block"><mi>Δ</mi><mi>f</mi><mo>=</mo><mfrac><mn>2</mn><mrow><mi>A</mi><msqrt><mrow><mi>ρ</mi><mi>h</mi><mo>/</mo><mi>D</mi></mrow></msqrt></mrow></mfrac></math>
@@ -105,16 +109,16 @@
 </div>
 
 <h3>放射</h3>
-<p>放射効率は、響棒のある板の 2 つの領域で変わります<a class="rf" href="#thy-r16">[16]</a>。</p>
+<p>放射効率は、響棒のある板の 2 つの領域で変わります<a class="rf" href="#thy-r17">[17]</a>。</p>
 <h4>約 1.1〜1.3 kHz より下: 一様な板</h4>
-<p>板全体が一様な板として振動します。曲げ波は空気中の音より遅く、一致周波数 <math><msub><mi>f</mi><mi mathvariant="normal">c</mi></msub></math> より下にあります。そのため、正と負に揺れる部分の音が打ち消し合い、縁の近くの音だけが残ります。この放射効率は Maidanik の式で求めます<a class="rf" href="#thy-r21">[21]</a><a class="rf" href="#thy-r22">[22]</a>。</p>
+<p>板全体が一様な板として振動します。曲げ波は空気中の音より遅く、一致周波数 <math><msub><mi>f</mi><mi mathvariant="normal">c</mi></msub></math> より下にあります。そのため、正と負に揺れる部分の音が打ち消し合い、縁の近くの音だけが残ります。この放射効率は Maidanik の式で求めます<a class="rf" href="#thy-r22">[22]</a><a class="rf" href="#thy-r23">[23]</a>。</p>
 <h4>それより上: 響棒の間の導波路</h4>
-<p>曲げ波の波長が響棒の間隔 <math><mi>p</mi></math> に近づき、振動が響棒の間に閉じ込められて導波路になります<a class="rf" href="#thy-r23">[23]</a>。響棒の間隔は約 13 cm です。</p>
+<p>曲げ波の波長が響棒の間隔 <math><mi>p</mi></math> に近づき、振動が響棒の間に閉じ込められて導波路になります<a class="rf" href="#thy-r24">[24]</a>。響棒の間隔は約 13 cm です。</p>
 <p>導波路の曲げ波は、6〜7 kHz（<math><msub><mi>f</mi><mi>sup</mi></msub></math>）まで空気中の音より遅いままです。一様な板なら、一致周波数（約 2 kHz）より上の 2〜6 kHz の音は効率よく出るはずですが、この音が弱くなります。</p>
 <h4>2 つの領域の境目</h4>
-<p>境目の 1〜2 kHz では、放射が強まります<a class="rf" href="#thy-r24">[24]</a><a class="rf" href="#thy-r19">[19]</a>。響板の木と響棒が、高い音を和らげるフィルタになっています。</p>
+<p>境目の 1〜2 kHz では、放射が強まります<a class="rf" href="#thy-r25">[25]</a><a class="rf" href="#thy-r20">[20]</a>。響板の木と響棒が、高い音を和らげるフィルタになっています。</p>
 <h4>高い周波数の計算</h4>
-<p>モードが重なり合う 1.6 kHz より上は、エネルギーの釣り合いから求めた平均の特性を、最小位相の FIR で表します<a class="rf" href="#thy-r25">[25]</a>。モードの和とは、Linkwitz–Riley の分け方でつなぎます<a class="rf" href="#thy-r26">[26]</a>。</p>
+<p>モードが重なり合う 1.6 kHz より上は、エネルギーの釣り合いから求めた平均の特性を、最小位相の FIR で表します<a class="rf" href="#thy-r26">[26]</a>。モードの和とは、Linkwitz–Riley の分け方でつなぎます<a class="rf" href="#thy-r27">[27]</a>。</p>
 <div class="eqs">
   <math display="block"><msup><mi>p</mi><mn>2</mn></msup><mo>=</mo><mfrac><mrow><msup><mrow><mo stretchy="false">(</mo><msub><mi>ρ</mi><mn>0</mn></msub><mi>c</mi><mo stretchy="false">)</mo></mrow><mn>2</mn></msup><mi>σ</mi><mo>⁢</mo><mi>Re</mi><mo>⁡</mo><mi>Y</mi><mo>⁢</mo><msup><mrow><mo>|</mo><mi>F</mi><mo>|</mo></mrow><mn>2</mn></msup></mrow><mrow><mn>2</mn><mi>π</mi><msup><mi>r</mi><mn>2</mn></msup><mi>ω</mi><mi>η</mi><mi>ρ</mi><mi>h</mi></mrow></mfrac></math>
   <math display="block"><mi>σ</mi><mo>=</mo><mfrac><mrow><mi>P</mi><mi>c</mi></mrow><mrow><mn>4</mn><msup><mi>π</mi><mn>2</mn></msup><mi>A</mi><msub><mi>f</mi><mi mathvariant="normal">c</mi></msub></mrow></mfrac><mfrac><mrow><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><msup><mi>β</mi><mn>2</mn></msup><mo stretchy="false">)</mo><mi>ln</mi><mo>⁡</mo><mfrac><mrow><mn>1</mn><mo>+</mo><mi>β</mi></mrow><mrow><mn>1</mn><mo>−</mo><mi>β</mi></mrow></mfrac><mo>+</mo><mn>2</mn><mi>β</mi></mrow><msup><mrow><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><msup><mi>β</mi><mn>2</mn></msup><mo stretchy="false">)</mo></mrow><mrow><mn>3</mn><mo>/</mo><mn>2</mn></mrow></msup></mfrac></math>
@@ -123,7 +127,7 @@
 
 <h3>ダンパー</h3>
 <ul class="tl">
-  <li><b>鍵を離したとき:</b> ダンパーが弦に触れ、その鍵の弦のモードに減衰を足す。低音ほど弦が重く、止まるのに時間がかかる<a class="rf" href="#thy-r27">[27]</a></li>
+  <li><b>鍵を離したとき:</b> ダンパーが弦に触れ、その鍵の弦のモードに減衰を足す。低音ほど弦が重く、止まるのに時間がかかる<a class="rf" href="#thy-r28">[28]</a></li>
   <li><b>最も高い音域:</b> 弦にダンパーがない</li>
   <li><b>ダンパーペダル:</b> 踏むと、すべてのダンパーが上がる</li>
 </ul>
@@ -138,15 +142,15 @@
     </ul>
   </li>
 </ul>
-<p>ストレッチでは、非調和性で部分音が高くなるぶん、高音が高く、低音が低くなります。Railsback の曲線です<a class="rf" href="#thy-r28">[28]</a>。</p>
+<p>ストレッチでは、非調和性で部分音が高くなるぶん、高音が高く、低音が低くなります。Railsback の曲線です<a class="rf" href="#thy-r29">[29]</a>。</p>
 
 <h3>残響</h3>
-<p>部屋の残響時間を Eyring の式で求め<a class="rf" href="#thy-r29">[29]</a>、16 本の遅延線のフィードバック遅延網で残響を作ります<a class="rf" href="#thy-r30">[30]</a>。</p>
+<p>部屋の残響時間を Eyring の式で求め<a class="rf" href="#thy-r30">[30]</a>、16 本の遅延線のフィードバック遅延網で残響を作ります<a class="rf" href="#thy-r31">[31]</a>。</p>
 <dl class="syms">
   <dt><math><mi>V</mi></math></dt><dd>部屋の容積</dd>
   <dt><math><mi>S</mi></math></dt><dd>部屋の表面積</dd>
   <dt><math><mover><mi>α</mi><mo>¯</mo></mover></math></dt><dd>平均吸音率</dd>
-  <dt><math><mi>m</mi></math></dt><dd>空気の吸収<a class="rf" href="#thy-r31">[31]</a></dd>
+  <dt><math><mi>m</mi></math></dt><dd>空気の吸収<a class="rf" href="#thy-r32">[32]</a></dd>
   <dt><math><mi>A</mi></math></dt><dd>等価吸音面積</dd>
   <dt><math><msub><mi>r</mi><mi mathvariant="normal">c</mi></msub></math></dt><dd>臨界距離。<math><mi>A</mi></math> から求める</dd>
   <dt><math><mi>r</mi></math></dt><dd>聴く位置</dd>
@@ -185,27 +189,28 @@
   <li id="thy-r8"><span class="rf-for">ハンマーのフェルトと鍵盤全体の近似式の式</span><span class="rf-src">J. O. Smith, <i>Physical Audio Signal Processing</i>, W3K, 2010</span></li>
   <li id="thy-r9"><span class="rf-for">ハンマーの硬さが打つ弦の太さで変わること</span><span class="rf-src">A. Stulov and A. Mägi, “Piano hammer testing device,” <i>Proc. Estonian Acad. Sci. Eng.</i>, vol. 6, no. 4, pp. 259–267, 2000</span></li>
   <li id="thy-r10"><span class="rf-for">弦を打ったときのフェルトの圧縮と接触時間の実測。弦 1 本あたりの硬さの補正をこれに合わせた</span><span class="rf-src">柳沢猛・中村喜十郎「ピアノハンマのフェルトの動圧縮特性」『日本音響学会誌』40 巻 11 号、pp. 725–729、1984</span></li>
-  <li id="thy-r11"><span class="rf-for">ハンマーと弦の値の検算</span><span class="rf-src">A. Chaigne and A. Askenfelt, “Numerical simulations of piano strings. I/II,” <i>J. Acoust. Soc. Am.</i>, vol. 95, no. 2, pp. 1112–1118, no. 3, pp. 1631–1640, 1994</span></li>
-  <li id="thy-r12"><span class="rf-for">駒での結合</span><span class="rf-src">C. E. Gough, “The theory of string resonances on musical instruments,” <i>Acustica</i>, vol. 49, pp. 124–141, 1981</span></li>
-  <li id="thy-r13"><span class="rf-for">ユニゾンの弦の結合と二段減衰</span><span class="rf-src">G. Weinreich, “Coupled piano strings,” <i>J. Acoust. Soc. Am.</i>, vol. 62, no. 6, pp. 1474–1484, 1977</span></li>
-  <li id="thy-r14"><span class="rf-for">ユニゾンのずれ</span><span class="rf-src">R. E. Kirk, “Tuning preferences for piano unison groups,” <i>J. Acoust. Soc. Am.</i>, vol. 31, no. 12, pp. 1644–1648, 1959</span></li>
-  <li id="thy-r15"><span class="rf-for">統計的なモード</span><span class="rf-src">J. Woodhouse, “On the synthesis of guitar plucks,” <i>Acta Acustica united with Acustica</i>, vol. 90, pp. 928–944, 2004</span></li>
-  <li id="thy-r16"><span class="rf-for">統計的なモード、モード密度の縁の補正、響棒の間の導波路と、亜音速の放射が続く周波数</span><span class="rf-src">X. Boutillon and K. Ege, “Vibroacoustics of the piano soundboard: Reduced models, mobility synthesis, and acoustical radiation regime,” <i>J. Sound Vib.</i>, vol. 332, no. 18, pp. 4261–4279, 2013</span></li>
-  <li id="thy-r17"><span class="rf-for">響板の最も低いモードの実測</span><span class="rf-src">K. Wogram, <i>Das Musikinstrument</i>, 1980</span></li>
-  <li id="thy-r18"><span class="rf-for">響板の最も低いモードの実測</span><span class="rf-src">P. Miranda Valiente, G. Squicciarini and D. J. Thompson, <i>J. Acoust. Soc. Am.</i>, vol. 155, no. 5, pp. 3213–3232, 2024</span></li>
-  <li id="thy-r19"><span class="rf-for">響板の最も低いモードの実測、損失係数 2 %、ピアノの響板のスプルースの値（Berthaut の測定、同論文の表 1）、1.2〜1.5 kHz で放射が強まること</span><span class="rf-src">K. Ege, X. Boutillon and M. Rébillat, <i>J. Sound Vib.</i>, vol. 332, no. 5, pp. 1288–1305, 2013</span></li>
-  <li id="thy-r20"><span class="rf-for">エネルギーの釣り合い</span><span class="rf-src">R. H. Lyon and R. G. DeJong, <i>Theory and Application of Statistical Energy Analysis</i>, 2nd ed., Butterworth-Heinemann, 1995</span></li>
-  <li id="thy-r21"><span class="rf-for">一致周波数より下の平板の放射効率</span><span class="rf-src">G. Maidanik, “Response of ribbed panels to reverberant acoustic fields,” <i>J. Acoust. Soc. Am.</i>, vol. 34, no. 6, pp. 809–826, 1962</span></li>
-  <li id="thy-r22"><span class="rf-for">一致周波数より下の平板の放射効率</span><span class="rf-src">G. Squicciarini, D. J. Thompson and R. Corradi, “The effect of different combinations of boundary conditions on the average radiation efficiency of rectangular plates,” <i>J. Sound Vib.</i>, vol. 333, no. 17, pp. 3931–3948, 2014</span></li>
-  <li id="thy-r23"><span class="rf-for">放射効率の実測、高い周波数で振動が響棒の間に閉じ込められること</span><span class="rf-src">A. Chaigne, B. Cotté and R. Viggiano, “Dynamical properties of piano soundboards,” <i>J. Acoust. Soc. Am.</i>, vol. 133, no. 4, pp. 2456–2466, 2013</span></li>
-  <li id="thy-r24"><span class="rf-for">放射効率の実測</span><span class="rf-src">H. Suzuki, “Vibration and sound radiation of a piano soundboard,” <i>J. Acoust. Soc. Am.</i>, vol. 80, no. 6, pp. 1573–1582, 1986</span></li>
-  <li id="thy-r25"><span class="rf-for">ケプストラムによる最小位相の FIR</span><span class="rf-src">A. V. Oppenheim and R. W. Schafer, <i>Discrete-Time Signal Processing</i>, 3rd ed., Pearson, 2010</span></li>
-  <li id="thy-r26"><span class="rf-for">2 つの経路の分け方</span><span class="rf-src">S. H. Linkwitz, “Active crossover networks for noncoincident drivers,” <i>J. Audio Eng. Soc.</i>, vol. 24, no. 1, pp. 2–8, 1976</span></li>
-  <li id="thy-r27"><span class="rf-for">ダンパーで止まる時間</span><span class="rf-src">H.-M. Lehtonen, A. Askenfelt and V. Välimäki, “Analysis of the part-pedaling effect in the piano,” <i>J. Acoust. Soc. Am.</i>, vol. 126, no. 2, pp. EL49–EL54, 2009</span></li>
-  <li id="thy-r28"><span class="rf-for">ストレッチ調律</span><span class="rf-src">O. L. Railsback, “Scale temperament as applied to piano tuning,” <i>J. Acoust. Soc. Am.</i>, vol. 9, p. 274, 1938</span></li>
-  <li id="thy-r29"><span class="rf-for">残響時間</span><span class="rf-src">C. F. Eyring, “Reverberation time in ‘dead’ rooms,” <i>J. Acoust. Soc. Am.</i>, vol. 1, no. 2A, pp. 217–241, 1930</span></li>
-  <li id="thy-r30"><span class="rf-for">残響</span><span class="rf-src">J.-M. Jot and A. Chaigne, “Digital delay networks for designing artificial reverberators,” AES 90th Convention, Preprint 3030, 1991</span></li>
-  <li id="thy-r31"><span class="rf-for">空気の吸収の値</span><span class="rf-src">ISO 9613-1</span></li>
+  <li id="thy-r11"><span class="rf-for">フェルトの硬さを合わせたピアノの録音（Steinway &amp; Sons model B、mf と ff）</span><span class="rf-src">University of Iowa Electronic Music Studios, “Musical Instrument Samples: Piano,” 2001, <a href="https://theremin.music.uiowa.edu/MISpiano.html">theremin.music.uiowa.edu/MISpiano.html</a></span></li>
+  <li id="thy-r12"><span class="rf-for">ハンマーと弦の値の検算</span><span class="rf-src">A. Chaigne and A. Askenfelt, “Numerical simulations of piano strings. I/II,” <i>J. Acoust. Soc. Am.</i>, vol. 95, no. 2, pp. 1112–1118, no. 3, pp. 1631–1640, 1994</span></li>
+  <li id="thy-r13"><span class="rf-for">駒での結合</span><span class="rf-src">C. E. Gough, “The theory of string resonances on musical instruments,” <i>Acustica</i>, vol. 49, pp. 124–141, 1981</span></li>
+  <li id="thy-r14"><span class="rf-for">ユニゾンの弦の結合と二段減衰</span><span class="rf-src">G. Weinreich, “Coupled piano strings,” <i>J. Acoust. Soc. Am.</i>, vol. 62, no. 6, pp. 1474–1484, 1977</span></li>
+  <li id="thy-r15"><span class="rf-for">ユニゾンのずれ</span><span class="rf-src">R. E. Kirk, “Tuning preferences for piano unison groups,” <i>J. Acoust. Soc. Am.</i>, vol. 31, no. 12, pp. 1644–1648, 1959</span></li>
+  <li id="thy-r16"><span class="rf-for">統計的なモード</span><span class="rf-src">J. Woodhouse, “On the synthesis of guitar plucks,” <i>Acta Acustica united with Acustica</i>, vol. 90, pp. 928–944, 2004</span></li>
+  <li id="thy-r17"><span class="rf-for">統計的なモード、モード密度の縁の補正、響棒の間の導波路と、亜音速の放射が続く周波数</span><span class="rf-src">X. Boutillon and K. Ege, “Vibroacoustics of the piano soundboard: Reduced models, mobility synthesis, and acoustical radiation regime,” <i>J. Sound Vib.</i>, vol. 332, no. 18, pp. 4261–4279, 2013</span></li>
+  <li id="thy-r18"><span class="rf-for">響板の最も低いモードの実測</span><span class="rf-src">K. Wogram, <i>Das Musikinstrument</i>, 1980</span></li>
+  <li id="thy-r19"><span class="rf-for">響板の最も低いモードの実測</span><span class="rf-src">P. Miranda Valiente, G. Squicciarini and D. J. Thompson, <i>J. Acoust. Soc. Am.</i>, vol. 155, no. 5, pp. 3213–3232, 2024</span></li>
+  <li id="thy-r20"><span class="rf-for">響板の最も低いモードの実測、損失係数 2 %、ピアノの響板のスプルースの値（Berthaut の測定、同論文の表 1）、1.2〜1.5 kHz で放射が強まること</span><span class="rf-src">K. Ege, X. Boutillon and M. Rébillat, <i>J. Sound Vib.</i>, vol. 332, no. 5, pp. 1288–1305, 2013</span></li>
+  <li id="thy-r21"><span class="rf-for">エネルギーの釣り合い</span><span class="rf-src">R. H. Lyon and R. G. DeJong, <i>Theory and Application of Statistical Energy Analysis</i>, 2nd ed., Butterworth-Heinemann, 1995</span></li>
+  <li id="thy-r22"><span class="rf-for">一致周波数より下の平板の放射効率</span><span class="rf-src">G. Maidanik, “Response of ribbed panels to reverberant acoustic fields,” <i>J. Acoust. Soc. Am.</i>, vol. 34, no. 6, pp. 809–826, 1962</span></li>
+  <li id="thy-r23"><span class="rf-for">一致周波数より下の平板の放射効率</span><span class="rf-src">G. Squicciarini, D. J. Thompson and R. Corradi, “The effect of different combinations of boundary conditions on the average radiation efficiency of rectangular plates,” <i>J. Sound Vib.</i>, vol. 333, no. 17, pp. 3931–3948, 2014</span></li>
+  <li id="thy-r24"><span class="rf-for">放射効率の実測、高い周波数で振動が響棒の間に閉じ込められること</span><span class="rf-src">A. Chaigne, B. Cotté and R. Viggiano, “Dynamical properties of piano soundboards,” <i>J. Acoust. Soc. Am.</i>, vol. 133, no. 4, pp. 2456–2466, 2013</span></li>
+  <li id="thy-r25"><span class="rf-for">放射効率の実測</span><span class="rf-src">H. Suzuki, “Vibration and sound radiation of a piano soundboard,” <i>J. Acoust. Soc. Am.</i>, vol. 80, no. 6, pp. 1573–1582, 1986</span></li>
+  <li id="thy-r26"><span class="rf-for">ケプストラムによる最小位相の FIR</span><span class="rf-src">A. V. Oppenheim and R. W. Schafer, <i>Discrete-Time Signal Processing</i>, 3rd ed., Pearson, 2010</span></li>
+  <li id="thy-r27"><span class="rf-for">2 つの経路の分け方</span><span class="rf-src">S. H. Linkwitz, “Active crossover networks for noncoincident drivers,” <i>J. Audio Eng. Soc.</i>, vol. 24, no. 1, pp. 2–8, 1976</span></li>
+  <li id="thy-r28"><span class="rf-for">ダンパーで止まる時間</span><span class="rf-src">H.-M. Lehtonen, A. Askenfelt and V. Välimäki, “Analysis of the part-pedaling effect in the piano,” <i>J. Acoust. Soc. Am.</i>, vol. 126, no. 2, pp. EL49–EL54, 2009</span></li>
+  <li id="thy-r29"><span class="rf-for">ストレッチ調律</span><span class="rf-src">O. L. Railsback, “Scale temperament as applied to piano tuning,” <i>J. Acoust. Soc. Am.</i>, vol. 9, p. 274, 1938</span></li>
+  <li id="thy-r30"><span class="rf-for">残響時間</span><span class="rf-src">C. F. Eyring, “Reverberation time in ‘dead’ rooms,” <i>J. Acoust. Soc. Am.</i>, vol. 1, no. 2A, pp. 217–241, 1930</span></li>
+  <li id="thy-r31"><span class="rf-for">残響</span><span class="rf-src">J.-M. Jot and A. Chaigne, “Digital delay networks for designing artificial reverberators,” AES 90th Convention, Preprint 3030, 1991</span></li>
+  <li id="thy-r32"><span class="rf-for">空気の吸収の値</span><span class="rf-src">ISO 9613-1</span></li>
 </ol>
 
 <h3>このツールで決めたこと</h3>
