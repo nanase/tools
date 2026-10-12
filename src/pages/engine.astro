@@ -1,0 +1,209 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import More from '../components/More.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import { order, TOOLS } from '../data/tools';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import { gridSvg } from '../lib/scope';
+import '../tools/engine/style.css';
+import Credits from '../tools/engine/Credits.astro';
+import { CUT, IDLE, MASS, MECH, PRANGE, SLOPE, SLOW, SPEED, VOL } from '../tools/engine/params';
+import Theory from '../tools/engine/Theory.astro';
+
+const name = 'エンジン音響モデル';
+/* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
+const CAT = '音響';
+const related = [
+  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'engine')),
+  ...TOOLS.filter((t) => t.c !== CAT && !t.s),
+];
+---
+<SiteLayout title={name} tool={{ id: 'engine', name }} description="空冷 4 ストローク単気筒エンジン（Honda CT125 の公表諸元をもとにした模型）を物理モデルで回します。燃焼、吸気と排気の管、マフラーを計算して、排気音・トルク・出力を再現します。" note="音と計算結果は、公表諸元と録音に合わせた簡略な物理モデルによるものです。">
+  <PageTitle title={name}>シリンダの中の燃焼と、吸気・排気の管を行き来する圧力の波、マフラーの消音を計算して、空冷 4 ストローク単気筒エンジンの音を作ります。寸法は Honda CT125（JA65・JA55）の公表諸元をもとにし、公表されていない吸排気とマフラーの寸法は録音に合わせました。スロットルを開けると、回転・トルク・出力・排気音がすぐに変わります。4 段の変速で走らせ、坂やブレーキも試せます。</PageTitle>
+  <div class="mini" aria-hidden="true"><span><i>N</i><b id="mN"></b></span><span><i>T</i><b id="mT"></b></span><span><i>P</i><b id="mP"></b></span><span><i>V</i><b id="mV"></b></span></div>
+
+  <div class="tgrid">
+    <Panel hid="hd-eng" title="エンジン" class="a-eng">
+      <div slot="aux" class="seg" id="p-ev" role="group" aria-label="動きの見せ方"><button type="button" data-v="real" aria-pressed="false" title="実際の速さで回す（ピストンは残像になる）">実際の速さ</button><button type="button" data-v="slow" aria-pressed="true" title="ゆっくり回して、弁の開閉と管の中の圧力の波を見る。音は実際の速さのまま">スロー</button></div>
+      <div class="sbar">
+        <span class="stag"><i class="sw hi" aria-hidden="true"></i>大気より高い <i class="sw lo" aria-hidden="true"></i>低い <b id="e-pr"></b></span>
+        <span class="stag" id="e-st"></span>
+        <span class="stag"><span class="led" id="ignLed" aria-hidden="true"></span>点火</span>
+        <span class="stag" id="e-sl"></span>
+      </div>
+      <div class="engw">
+        <svg class="eng" id="eng" viewBox="0 0 960 320" role="img" aria-label="エンジンの断面と吸気・排気の管。管の中の色は圧力の大気との差"></svg>
+      </div>
+      <More id="g-eng" title="表示の設定"><div class="ana2">
+        <div class="ptab">
+          <ChoiceRow k="sl" name="スローの速さ" sub="クランク軸の回転を何分の 1 の速さで描くか。音は実際の速さのまま" choices={SLOW.map((v) => [v, `1/${v}`] as const)} value={50} />
+        </div>
+        <div class="ptab">
+          <ChoiceRow k="pr" name="圧力の色の範囲" sub="管の中の圧力の大気との差を、どこまでの大きさで最も濃い色にするか" choices={PRANGE.map((v) => [v, `±${v} kPa`] as const)} value={50} />
+        </div>
+      </div></More>
+    </Panel>
+
+    <div class="col c1">
+      <Panel hid="hd-run" title="運転" class="a-run">
+        <div slot="aux" class="seg"><button type="button" id="runBtn" aria-pressed="false" title="エンジンを掛ける・止める（音も鳴らす）"><span class="led" id="runLed" aria-hidden="true"></span><span id="runT">運転</span></button></div>
+        <div class="ptab">
+          <ChoiceRow k="load" name="走らせ方" sub="走行: 遠心クラッチと 4 段の変速機を通して車体を走らせる（N なら空ぶかし）。回転数固定: 台上の動力計のように、どのスロットルでも回転数を一定にする" choices={[['drive', '走行'], ['hold', '回転数固定']]} value="drive" />
+          <ParamRow d={SPEED} />
+          <ParamRow d={SLOPE} />
+          <ParamRow d={VOL} />
+        </div>
+        <div class="drv" id="drv">
+          <div class="drv-g"><span class="drv-l">ギア</span><b id="d-g">N</b></div>
+          <div class="drv-s"><button type="button" class="tg" id="dnBtn" title="シフトダウン（↓）。N → 1 → 2 → 3 → 4 のリターン式">▼</button><button type="button" class="tg" id="upBtn" title="シフトアップ（↑）。止まっているときだけ 4 速から N に戻る">▲</button></div>
+          <div class="drv-v"><span class="drv-l">速度</span><b id="d-v">0.0</b><span class="u">km/h</span></div>
+          <div class="drv-d"><span class="drv-l">走行距離</span><b id="d-d">0.00</b><span class="u">km</span></div>
+          <div class="drv-fu"><span class="drv-l">燃料</span><b id="d-fu">0.000</b><span class="u">L</span></div>
+          <div class="drv-fe"><span class="drv-l">燃費</span><b id="d-fe">—</b><span class="u">km/L</span></div>
+        </div>
+        <div class="thr-row">
+        <div class="thr" id="thr" tabindex="0" role="slider" aria-label="スロットルのパッド。押している間だけ、押した位置の開きまで開く" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-valuetext="閉じている">
+          <span class="thr-f" id="thr-f" aria-hidden="true"></span>
+          <span class="thr-c" id="thr-c" aria-hidden="true" hidden></span>
+          <span class="thr-k" aria-hidden="true"><i style="left:25%"></i><i style="left:50%"></i><i style="left:75%"></i></span>
+          <span class="thr-l" aria-hidden="true"><b>0</b><b>25</b><b>50</b><b>75</b><b>100 %</b></span>
+          <span class="thr-t" id="thr-t">スロットル</span>
+        </div>
+        <button type="button" class="tg thr-lk" id="lockBtn" aria-pressed="false" title="離してもスロットルの開きを保つ。もう一度押すと閉じる"><span class="led" id="lockLed" aria-hidden="true"></span>固定</button>
+        </div>
+        <div class="thr brk" id="brk" tabindex="0" role="slider" aria-label="ブレーキのパッド。押している間だけ、押した位置の強さで止める" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-valuetext="かけていない">
+          <span class="thr-f" id="brk-f" aria-hidden="true"></span>
+          <span class="thr-t" id="brk-t">ブレーキ</span>
+        </div>
+        <p class="thr-h"><kbd>Space</kbd> 全開　<kbd>1</kbd>〜<kbd>9</kbd> 10〜90 %　<kbd>0</kbd> 100 %<span id="h-drv">　<kbd>↑</kbd><kbd>↓</kbd> 変速　<kbd>B</kbd> ブレーキ</span>（どれも押している間）</p>
+        <More id="g-run"><div class="ptab"><ParamRow d={MASS} /></div></More>
+        <p class="msg er snd-msg" id="snd-msg" aria-live="polite"></p>
+      </Panel>
+
+      <Panel hid="hd-cfg" title="エンジンとマフラー" class="a-cfg">
+        <div class="ptab">
+          <ChoiceRow k="eng" name="エンジン" sub="JA65E は 2022 年 12 月からのロングストロークのエンジン、JA55E は 2020〜2022 年のもの。マフラーは同じものを付ける" choices={[['ja65', 'JA65E', '123 cm³、内径 50.0 mm × 行程 63.1 mm、圧縮比 10.0'], ['ja55', 'JA55E', '124 cm³、内径 52.4 mm × 行程 57.9 mm、圧縮比 9.3']]} value="ja65" />
+          <ChoiceRow k="muf" name="マフラー" sub="純正は 2 室の反射型、社外品はパンチングの芯とグラスウールのストレートの吸音型。どちらも内部の寸法は録音に合わせて決めた。純正は、スロットルを開けている間の低音を補正で足す" choices={[['stock', '純正'], ['delta', '社外品']]} value="stock" />
+        </div>
+        <More id="g-cfg"><div class="ptab">
+          <ParamRow d={IDLE} />
+          <ParamRow d={CUT} />
+          <ParamRow d={MECH} />
+        </div></More>
+        <dl class="metrics emet">
+          <div class="m"><dt>排気量 <i>V</i><sub>d</sub></dt><dd id="c-vd"></dd></div>
+          <div class="m"><dt>内径 × 行程</dt><dd id="c-bs"></dd></div>
+          <div class="m"><dt>圧縮比 <i>ε</i></dt><dd id="c-cr"></dd></div>
+          <div class="m"><dt>最大トルク（公表値）</dt><dd id="c-tq"></dd></div>
+          <div class="m"><dt>最高出力（公表値）</dt><dd id="c-pw"></dd></div>
+          <div class="m"><dt>排気の通り道の長さ</dt><dd id="c-ex"></dd></div>
+        </dl>
+      </Panel>
+    </div>
+
+    <div class="col c2">
+      <Panel hid="hd-tq" title="トルクと出力" class="a-tq">
+        <p slot="aux" class="aux">全開・回転数固定</p>
+        <div class="sbar">
+          <span class="stag"><i class="sw" aria-hidden="true"></i>CH1 トルク <b>2 N·m</b>/div</span>
+          <span class="stag"><i class="sw c2" aria-hidden="true"></i>CH2 出力 <b>1 kW</b>/div</span>
+          <span class="stag">X <b>1,000 rpm</b>/div</span>
+          <span class="stag">○ 公表値　● 現在</span>
+        </div>
+        <div class="scope">
+          <svg viewBox="-46 -14 494 362" id="tq-svg" role="img" aria-label="全開のトルクと出力の曲線">
+            <g set:html={gridSvg(8)} />
+            <g id="tq-g"></g>
+          </svg>
+        </div>
+        <div class="sbar rdbar"><span class="stag rd" id="tq-rd"></span></div>
+      </Panel>
+
+      <Panel hid="hd-pv" title="筒内の圧力" class="a-pv">
+        <div slot="aux" class="seg" id="p-pv" role="group" aria-label="図の形"><button type="button" data-v="pv" aria-pressed="true" title="圧力と容積（両対数）">p–V</button><button type="button" data-v="pt" aria-pressed="false" title="圧力とクランク角">p–θ</button></div>
+        <div class="sbar">
+          <span class="stag"><i class="sw" aria-hidden="true"></i>CH1 圧力 <b id="pv-ys">LOG</b></span>
+          <span class="stag">X <span id="pv-x">容積</span> <b id="pv-xs">LOG</b></span>
+          <span class="stag" id="pv-st"></span>
+        </div>
+        <div class="scope">
+          <svg viewBox="-46 -14 462 274" id="pv-svg" role="img" aria-label="シリンダの中の圧力と容積">
+            <g set:html={gridSvg(6)} />
+            <g id="pv-g"></g>
+          </svg>
+        </div>
+        <div class="sbar rdbar"><span class="stag rd" id="pv-rd"></span></div>
+      </Panel>
+
+      <Collapsible hid="hd-wave" title="音の波形" class="a-wave">
+        <div class="seg wv-sw" id="p-ov" role="group" aria-label="表示"><button type="button" data-v="yt" aria-pressed="true" title="排気口から 0.5 m の音圧の時間変化">波形</button><button type="button" data-v="sp" aria-pressed="false" title="周波数ごとの大きさ">スペクトラム</button></div>
+        <div id="v-yt">
+          <div class="sbar">
+            <span class="stag"><i class="sw" aria-hidden="true"></i>CH1 音圧 <b id="w-vd"></b>/div</span>
+            <span class="stag">H <b id="w-hd"></b>/div</span>
+            <span class="stag">トリガ <b>燃焼の上死点</b></span>
+          </div>
+          <div class="scope">
+            <svg viewBox="-50 -14 462 194" id="w-svg" role="img" aria-label="音の波形">
+              <g set:html={gridSvg(4)} />
+              <path class="opl" id="w-trg"/>
+              <text class="evt" id="w-evo" y="-4"></text>
+              <path class="t1" id="w-t1"/>
+              <g id="w-axes"></g>
+            </svg>
+          </div>
+        </div>
+        <div id="v-sp" hidden>
+          <div class="sbar">
+            <span class="stag"><i class="sw" aria-hidden="true"></i>CH1 音圧 <b>10 dB</b>/div</span>
+            <span class="stag">X <b>200 Hz</b>/div</span>
+          </div>
+          <div class="scope">
+            <svg viewBox="-56 -14 468 194" id="s-svg" role="img" aria-label="音のスペクトラム">
+              <g set:html={gridSvg(4)} />
+              <path class="t1" id="s-t1"/>
+              <g id="s-axes"></g>
+            </svg>
+          </div>
+        </div>
+      </Collapsible>
+
+      <Collapsible hid="hd-res" title="計算結果" class="a-out">
+        <p class="aux res-aux">直前の 1 サイクル（720°）の値</p>
+        <dl class="metrics">
+          <div class="m m-main"><dt>回転数 <i>N</i></dt><dd><span id="o-n"></span><span class="m-sub" id="o-ns"></span></dd></div>
+          <div class="m"><dt>トルク <i>T</i></dt><dd id="o-t"></dd></div>
+          <div class="m"><dt>出力 <i>P</i></dt><dd id="o-p"></dd></div>
+          <div class="m"><dt>図示平均有効圧 IMEP</dt><dd id="o-imep"></dd></div>
+          <div class="m"><dt>正味平均有効圧 BMEP</dt><dd id="o-bmep"></dd></div>
+          <div class="m"><dt>体積効率 <i>η</i><sub>v</sub></dt><dd id="o-ve"></dd></div>
+          <div class="m"><dt>最高圧力 <i>p</i><sub>max</sub></dt><dd><span id="o-pm"></span><span class="m-sub" id="o-pms"></span></dd></div>
+          <div class="m"><dt>排気の温度</dt><dd id="o-tx"></dd></div>
+          <div class="m"><dt>残留ガスの割合</dt><dd id="o-xr"></dd></div>
+          <div class="m"><dt>吸気管の圧力</dt><dd id="o-map"></dd></div>
+          <div class="m"><dt>燃料</dt><dd id="o-fu"></dd></div>
+          <div class="m"><dt>燃料の消費</dt><dd id="o-fr"></dd></div>
+          <div class="m"><dt>燃料消費率 BSFC</dt><dd id="o-bsfc"></dd></div>
+          <div class="m"><dt>音圧レベル（排気口から 0.5 m）</dt><dd id="o-spl"></dd></div>
+        </dl>
+      </Collapsible>
+    </div>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+
+    <Collapsible hid="hd-src" title="出典" class="a-src">
+      <Credits />
+    </Collapsible>
+  </div>
+
+  <RelatedTools list={related} />
+  <script>
+    import '../tools/engine/client';
+  </script>
+</SiteLayout>

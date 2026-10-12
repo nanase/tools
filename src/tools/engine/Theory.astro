@@ -1,0 +1,153 @@
+---
+// 動作原理と式
+---
+<h3>音の流れ</h3>
+<p>シリンダの中で燃えたガスが、排気弁が開いた瞬間に吹き出します。その圧力の脈が排気管とマフラーを往復しながら出口へ進み、出口から出る空気の動きが音になります。音と同じ計算から、ピストンを押す力でトルクも求めます。</p>
+<ol class="flow" aria-label="音の流れ">
+  <li><b>吸気</b><span>スロットルと吸気管</span></li>
+  <li><b>シリンダ</b><span>圧縮・燃焼・膨張</span></li>
+  <li><b>排気弁</b><span>吹き出しの脈</span></li>
+  <li><b>排気管・マフラー</b><span>圧力の波と消音</span></li>
+  <li><b>放射</b><span>出口から 0.5 m の音圧</span></li>
+</ol>
+<p>走行では、クランク軸の回転が遠心クラッチ・変速機・チェーンを通して後輪を回し、車体の速さがエンジンの負荷になります。</p>
+<p>計算は音の標本ごと（48 kHz なら 1 秒に 48,000 回）に進めます。音を出す模型と図を描く模型は別で、図の模型は音の模型と同じ回転数とスロットルで回転数を保ち、スローのときはゆっくり進めます。</p>
+
+<h3>シリンダ</h3>
+<p>シリンダの中のガスを一様とみなし、質量 <math><mi>m</mi></math> と内部エネルギーの式を解きます（0 次元の模型<a class="rf" href="#thy-r1">[1]</a>）。容積はクランクと連接棒の幾何で決まります。</p>
+<dl class="syms">
+  <dt><math><mi>θ</mi></math></dt><dd>クランク角（燃焼の上死点を 0）</dd>
+  <dt><math><mi>a</mi><mo>,</mo><mi>l</mi></math></dt><dd>クランクの半径（行程の半分）、連接棒の長さ</dd>
+  <dt><math><msub><mi>A</mi><mi mathvariant="normal">p</mi></msub><mo>,</mo><msub><mi>V</mi><mi mathvariant="normal">c</mi></msub></math></dt><dd>ピストンの面積、上死点の容積（圧縮比から）</dd>
+  <dt><math><msub><mover><mi>Q</mi><mo>˙</mo></mover><mi mathvariant="normal">c</mi></msub><mo>,</mo><msub><mover><mi>Q</mi><mo>˙</mo></mover><mi mathvariant="normal">w</mi></msub></math></dt><dd>燃焼の熱、壁へ逃げる熱</dd>
+  <dt><math><msub><mover><mi>m</mi><mo>˙</mo></mover><mi>i</mi></msub><mo>,</mo><msub><mi>h</mi><mi>i</mi></msub></math></dt><dd>弁を通る質量流量（入る向きを正）と、流れてくるガスのエンタルピー</dd>
+</dl>
+<div class="eqs">
+  <math display="block"><mi>V</mi><mo>=</mo><msub><mi>V</mi><mi mathvariant="normal">c</mi></msub><mo>+</mo><msub><mi>A</mi><mi mathvariant="normal">p</mi></msub><mrow><mo>(</mo><mi>l</mi><mo>+</mo><mi>a</mi><mo>−</mo><mi>a</mi><mi>cos</mi><mi>θ</mi><mo>−</mo><msqrt><mrow><msup><mi>l</mi><mn>2</mn></msup><mo>−</mo><msup><mi>a</mi><mn>2</mn></msup><msup><mi>sin</mi><mn>2</mn></msup><mi>θ</mi></mrow></msqrt><mo>)</mo></mrow></math>
+  <math display="block"><mfrac><mrow><mi>d</mi><mo>(</mo><mi>m</mi><mi>u</mi><mo>)</mo></mrow><mrow><mi>d</mi><mi>t</mi></mrow></mfrac><mo>=</mo><msub><mover><mi>Q</mi><mo>˙</mo></mover><mi mathvariant="normal">c</mi></msub><mo>−</mo><msub><mover><mi>Q</mi><mo>˙</mo></mover><mi mathvariant="normal">w</mi></msub><mo>−</mo><mi>p</mi><mfrac><mrow><mi>d</mi><mi>V</mi></mrow><mrow><mi>d</mi><mi>t</mi></mrow></mfrac><mo>+</mo><munder><mo>∑</mo><mi>i</mi></munder><msub><mover><mi>m</mi><mo>˙</mo></mover><mi>i</mi></msub><msub><mi>h</mi><mi>i</mi></msub></math>
+  <math display="block"><mi>p</mi><mo>=</mo><mfrac><mrow><mi>m</mi><mi>R</mi><mi>T</mi></mrow><mi>V</mi></mfrac></math>
+  <math display="block"><mi>γ</mi><mo>=</mo><mn>1.338</mn><mo>−</mo><mn>6.0</mn><mo>×</mo><msup><mn>10</mn><mrow><mo>−</mo><mn>5</mn></mrow></msup><mi>T</mi><mo>+</mo><mn>1.0</mn><mo>×</mo><msup><mn>10</mn><mrow><mo>−</mo><mn>8</mn></mrow></msup><msup><mi>T</mi><mn>2</mn></msup></math>
+</div>
+<p>比熱比 <math><mi>γ</mi></math> は温度で変え、Brunt らの式を使います<a class="rf" href="#thy-r2">[2]</a>。新気（混合気）と燃焼ガスの量を分けて追い、吸気弁が閉じた時点の新気の量から、そのサイクルで燃える熱を決めます。</p>
+
+<h3>燃焼</h3>
+<p>熱の出方は Wiebe 関数で表します<a class="rf" href="#thy-r1">[1]</a>。燃える熱の総量は、新気の質量に、ガソリンの低位発熱量 43.4 MJ/kg、理論空燃比 14.6、燃焼の効率を掛けたものです。</p>
+<div class="eqs">
+  <math display="block"><msub><mi>x</mi><mi mathvariant="normal">b</mi></msub><mo>=</mo><mn>1</mn><mo>−</mo><mi>exp</mi><mrow><mo>[</mo><mo>−</mo><mn>5</mn><msup><mrow><mo>(</mo><mfrac><mrow><mi>θ</mi><mo>−</mo><msub><mi>θ</mi><mi mathvariant="normal">s</mi></msub></mrow><mrow><mi>Δ</mi><mi>θ</mi></mrow></mfrac><mo>)</mo></mrow><mn>3</mn></msup><mo>]</mo></mrow></math>
+  <math display="block"><msub><mi>Q</mi><mi mathvariant="normal">c</mi></msub><mo>=</mo><msub><mi>η</mi><mi mathvariant="normal">c</mi></msub><mfrac><msub><mi>m</mi><mi mathvariant="normal">f</mi></msub><mrow><mn>1</mn><mo>+</mo><mi mathvariant="normal">AFR</mi></mrow></mfrac><msub><mi>Q</mi><mi mathvariant="normal">LHV</mi></msub></math>
+</div>
+<p>点火時期は回転数と負荷で決め、燃焼期間 <math><mi>Δ</mi><mi>θ</mi></math> は残留ガスが多いほど長くします。燃える量と燃焼期間はサイクルごとに少しずつ揺らします。残留ガスの多いアイドリングほど大きく揺れ、これが「トコトコ」という不規則さになります。</p>
+
+<h3>壁への熱</h3>
+<p>壁への熱伝達率は Woschni の相関で求めます<a class="rf" href="#thy-r3">[3]</a>（Heywood の単位の形<a class="rf" href="#thy-r1">[1]</a>。圧力は kPa）。燃焼の項は、吸気弁が閉じてから燃やさずに圧縮・膨張したときの圧力 <math><msub><mi>p</mi><mi mathvariant="normal">mot</mi></msub></math> との差です。空冷なので壁の温度は 450 K とします。</p>
+<div class="eqs">
+  <math display="block"><mi>h</mi><mo>=</mo><mn>3.26</mn><msup><mi>B</mi><mrow><mo>−</mo><mn>0.2</mn></mrow></msup><msup><mi>p</mi><mn>0.8</mn></msup><msup><mi>T</mi><mrow><mo>−</mo><mn>0.55</mn></mrow></msup><msup><mi>w</mi><mn>0.8</mn></msup></math>
+  <math display="block"><mi>w</mi><mo>=</mo><msub><mi>C</mi><mn>1</mn></msub><msub><mover><mi>S</mi><mo>‾</mo></mover><mi mathvariant="normal">p</mi></msub><mo>+</mo><msub><mi>C</mi><mn>2</mn></msub><mfrac><mrow><msub><mi>V</mi><mi mathvariant="normal">d</mi></msub><msub><mi>T</mi><mi mathvariant="normal">r</mi></msub></mrow><mrow><msub><mi>p</mi><mi mathvariant="normal">r</mi></msub><msub><mi>V</mi><mi mathvariant="normal">r</mi></msub></mrow></mfrac><mrow><mo>(</mo><mi>p</mi><mo>−</mo><msub><mi>p</mi><mi mathvariant="normal">mot</mi></msub><mo>)</mo></mrow></math>
+</div>
+
+<h3>弁とスロットル</h3>
+<p>弁とスロットルを通る流れは、圧縮性の絞りの流れとして求めます<a class="rf" href="#thy-r1">[1]</a>。下流の圧力が上流の約 0.53 倍より低いと、音速で詰まり（チョーク）、流量は下流によらなくなります。アイドリングのスロットルはこの状態です。</p>
+<div class="eqs">
+  <math display="block"><mover><mi>m</mi><mo>˙</mo></mover><mo>=</mo><mfrac><mrow><msub><mi>C</mi><mi mathvariant="normal">d</mi></msub><mi>A</mi><msub><mi>p</mi><mi mathvariant="normal">u</mi></msub></mrow><msqrt><mrow><mi>R</mi><msub><mi>T</mi><mi mathvariant="normal">u</mi></msub></mrow></msqrt></mfrac><mi>Φ</mi><mrow><mo>(</mo><mfrac><msub><mi>p</mi><mi mathvariant="normal">d</mi></msub><msub><mi>p</mi><mi mathvariant="normal">u</mi></msub></mfrac><mo>)</mo></mrow></math>
+  <math display="block"><mi>Φ</mi><mo>(</mo><mi>r</mi><mo>)</mo><mo>=</mo><msqrt><mrow><mfrac><mrow><mn>2</mn><mi>γ</mi></mrow><mrow><mi>γ</mi><mo>−</mo><mn>1</mn></mrow></mfrac><mrow><mo>(</mo><msup><mi>r</mi><mrow><mn>2</mn><mo>/</mo><mi>γ</mi></mrow></msup><mo>−</mo><msup><mi>r</mi><mrow><mo>(</mo><mi>γ</mi><mo>+</mo><mn>1</mn><mo>)</mo><mo>/</mo><mi>γ</mi></mrow></msup><mo>)</mo></mrow></mrow></msqrt></math>
+  <math display="block"><mi>L</mi><mo>=</mo><msub><mi>L</mi><mi>max</mi></msub><msup><mi>sin</mi><mn>2.5</mn></msup><mrow><mo>(</mo><mi>π</mi><mi>s</mi><mo>)</mo></mrow></math>
+</div>
+<p>弁の通り道の面積は、カーテン面積（傘の周 × リフト）とポートの喉の面積の小さいほうです。リフトの形は、開き始めと閉じ際が緩やかなカムのランプに近い形にしました（<math><mi>s</mi></math> は開いている間の位置 0〜1）。</p>
+
+<h3>管の中の圧力の波</h3>
+<p>吸気管・排気管・マフラーは、断面と温度が一定の区間を直列につなぎ、デジタル導波管で表します<a class="rf" href="#thy-r4">[4]</a>。区間の中を右へ進む波 <math><msup><mi>w</mi><mo>+</mo></msup></math> と左へ進む波 <math><msup><mi>w</mi><mo>−</mo></msup></math> を遅延線で運び、圧力と質量流量はその和と差で決まります。</p>
+<div class="eqs">
+  <math display="block"><mi>p</mi><mo>=</mo><msub><mi>p</mi><mi mathvariant="normal">m</mi></msub><mo>+</mo><msup><mi>w</mi><mo>+</mo></msup><mo>+</mo><msup><mi>w</mi><mo>−</mo></msup></math>
+  <math display="block"><mover><mi>m</mi><mo>˙</mo></mover><mo>=</mo><mfrac><mrow><msup><mi>w</mi><mo>+</mo></msup><mo>−</mo><msup><mi>w</mi><mo>−</mo></msup></mrow><msub><mi>z</mi><mi mathvariant="normal">c</mi></msub></mfrac><mo>,</mo><mspace width="1em"/><msub><mi>z</mi><mi mathvariant="normal">c</mi></msub><mo>=</mo><mfrac><mi>c</mi><mi>A</mi></mfrac></math>
+  <math display="block"><msub><mi>p</mi><mi mathvariant="normal">e</mi></msub><mo>=</mo><msub><mi>p</mi><mi mathvariant="normal">m</mi></msub><mo>+</mo><mn>2</mn><msup><mi>w</mi><mo>−</mo></msup><mo>+</mo><msub><mi>z</mi><mi mathvariant="normal">c</mi></msub><mover><mi>m</mi><mo>˙</mo></mover><mrow><mo>(</mo><msub><mi>p</mi><mi mathvariant="normal">e</mi></msub><mo>)</mo></mrow></math>
+</div>
+<ul class="tl">
+  <li>弁やスロットルとの境は、絞りの流れと管の波を同時に満たす管の端の圧力 <math><msub><mi>p</mi><mi mathvariant="normal">e</mi></msub></math> を、Newton 法で解きます（3 つ目の式）</li>
+  <li>区間の境目では質量流量が続きます。断面が急に広がるところは Borda–Carnot の損失、急に狭まるところは縮流の損失を入れます<a class="rf" href="#thy-r5">[5]</a></li>
+  <li>触媒とパンチングの穴は、流量に比例する抵抗で表します</li>
+  <li>壁の粘性と熱の損失は周波数の平方根に比例するので、1 次の低域通過で入れます<a class="rf" href="#thy-r6">[6]</a></li>
+  <li>音速は区間の温度から求めます。排気の温度は、サイクルごとに排気弁から出たガスの平均温度から決めます</li>
+  <li>出口は大気へ開いた端で、反射の大きさは Levine と Schwinger の解に合う近似式<a class="rf" href="#thy-r7">[7]</a><a class="rf" href="#thy-r8">[8]</a>で決めます</li>
+</ul>
+<p>線形の波だけでは、アイドリングのように流量の小さいとき、マフラーの低い共鳴が鳴り続けます。流れの損失と穴の抵抗は、この共鳴を抑えて、脈ごとに音が切れる形にするのに必要でした。</p>
+
+<h3>放射と、そのほかの音</h3>
+<p>出口から出る体積流量 <math><mi>q</mi></math> の時間微分が、小さな音源（単極子）として周りの空気を押し、0.5 m 先の音圧になります。</p>
+<div class="eqs">
+  <math display="block"><msub><mi>p</mi><mi>rad</mi></msub><mo>=</mo><mfrac><msub><mi>ρ</mi><mn>0</mn></msub><mrow><mn>4</mn><mi>π</mi><mi>r</mi></mrow></mfrac><mfrac><mrow><mi>d</mi><mi>q</mi></mrow><mrow><mi>d</mi><mi>t</mi></mrow></mfrac></math>
+  <math display="block"><mi>W</mi><mo>=</mo><mi>K</mi><mfrac><mrow><msub><mi>ρ</mi><mi mathvariant="normal">j</mi></msub><msup><mi>u</mi><mn>8</mn></msup><msup><mi>D</mi><mn>2</mn></msup></mrow><msup><mi>c</mi><mn>5</mn></msup></mfrac></math>
+</div>
+<ul class="tl">
+  <li>出口の噴流の乱れの音は、Lighthill の 8 乗則<a class="rf" href="#thy-r9">[9]</a>の大きさで雑音を加えます。脈動する高温の噴流なので、係数 <math><mi>K</mi></math> は定常の噴流の実測<a class="rf" href="#thy-r10">[10]</a>より小さくし、録音の高い音域に合わせました</li>
+  <li>排気弁のすき間の噴流の乱れも、管へ入る圧力の雑音として加えます</li>
+  <li>エンジン本体の機械音は、弁の打音と燃焼の圧力の立ち上がりで、本体の固有振動を鳴らして作ります。打音の大きさはアイドリングの録音（トコトコという音）に合わせてから、乗っている位置で聞く印象に近づけて 4 dB 上げ、回転が上がったときは角速度の平方根で強めます（比例させると、高い回転で打音が続けて鳴り、雑音のように目立つため）</li>
+  <li>吸気の音は、スロットルを通る流量をエアクリーナーの箱の共鳴に通して作ります</li>
+</ul>
+
+<h3>トルクと出力</h3>
+<p>ガスがピストンを押す力をクランクの回す力に直し、往復する部品の慣性と摩擦を引いて、クランク軸の回転を進めます。「回転数固定」のときは回転を進めず、台上の動力計のように回転数を一定にします。</p>
+<div class="eqs">
+  <math display="block"><mrow><mo>(</mo><mi>J</mi><mo>+</mo><msub><mi>m</mi><mi mathvariant="normal">r</mi></msub><msup><msup><mi>s</mi><mo>′</mo></msup><mn>2</mn></msup><mo>)</mo></mrow><mover><mi>ω</mi><mo>˙</mo></mover><mo>=</mo><mrow><mo>(</mo><mi>p</mi><mo>−</mo><msub><mi>p</mi><mi>atm</mi></msub><mo>)</mo></mrow><mfrac><mrow><mi>d</mi><mi>V</mi></mrow><mrow><mi>d</mi><mi>θ</mi></mrow></mfrac><mo>−</mo><msub><mi>m</mi><mi mathvariant="normal">r</mi></msub><msup><mi>s</mi><mo>′</mo></msup><msup><mi>s</mi><mo>″</mo></msup><msup><mi>ω</mi><mn>2</mn></msup><mo>−</mo><msub><mi>T</mi><mi mathvariant="normal">f</mi></msub></math>
+  <math display="block"><msub><mi>T</mi><mi mathvariant="normal">f</mi></msub><mo>=</mo><mfrac><mrow><mi>fmep</mi><mspace width="0.17em"/><msub><mi>V</mi><mi mathvariant="normal">d</mi></msub></mrow><mrow><mn>4</mn><mi>π</mi></mrow></mfrac><mo>,</mo><mspace width="1em"/><mi>P</mi><mo>=</mo><mi>T</mi><mi>ω</mi></math>
+</div>
+<p><math><mi>s</mi></math> はピストンの変位、<math><msub><mi>m</mi><mi mathvariant="normal">r</mi></msub></math> は往復する部品の質量です。摩擦の平均有効圧 fmep は平均ピストン速度の 2 次式で、発電機と油ポンプの負荷を含めます。「トルクと出力」の曲線は、全開の回転数固定で 24 サイクル回した最後の 8 サイクルの平均です。</p>
+
+<h3>走行</h3>
+<p>エンジンと車体は遠心クラッチでつながります。クラッチが伝えられるトルクは回転が上がるほど大きく、1,800 rpm でつながり始め、3,000 rpm で最大になります。滑りの速さに応じた摩擦（tanh）で、つながる・滑るを 1 つの式で表します。</p>
+<div class="eqs">
+  <math display="block"><msub><mi>T</mi><mi mathvariant="normal">c</mi></msub><mo>=</mo><msub><mi>T</mi><mi>max</mi></msub><msup><mi>e</mi><mn>2</mn></msup><mi>tanh</mi><mfrac><mrow><mi>ω</mi><mo>−</mo><msub><mi>ω</mi><mi>out</mi></msub></mrow><msub><mi>ω</mi><mi mathvariant="normal">s</mi></msub></mfrac><mo>,</mo><mspace width="1em"/><msub><mi>ω</mi><mi>out</mi></msub><mo>=</mo><mfrac><mrow><mi>v</mi><mspace width="0.17em"/><msub><mi>i</mi><mn>1</mn></msub><msub><mi>i</mi><mi mathvariant="normal">g</mi></msub><msub><mi>i</mi><mn>2</mn></msub></mrow><msub><mi>r</mi><mi mathvariant="normal">w</mi></msub></mfrac></math>
+  <math display="block"><mi>M</mi><mo>(</mo><mn>1</mn><mo>+</mo><mi>k</mi><mo>)</mo><mfrac><mrow><mi>d</mi><mi>v</mi></mrow><mrow><mi>d</mi><mi>t</mi></mrow></mfrac><mo>=</mo><mfrac><mrow><msub><mi>T</mi><mi mathvariant="normal">c</mi></msub><msub><mi>i</mi><mn>1</mn></msub><msub><mi>i</mi><mi mathvariant="normal">g</mi></msub><msub><mi>i</mi><mn>2</mn></msub><mi>η</mi></mrow><msub><mi>r</mi><mi mathvariant="normal">w</mi></msub></mfrac><mo>−</mo><mi>M</mi><mi>g</mi><mo>(</mo><mi>sin</mi><mi>α</mi><mo>+</mo><msub><mi>C</mi><mi>rr</mi></msub><mi>cos</mi><mi>α</mi><mo>)</mo><mo>−</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mi>ρ</mi><msub><mi>C</mi><mi mathvariant="normal">d</mi></msub><mi>A</mi><msup><mi>v</mi><mn>2</mn></msup><mo>−</mo><msub><mi>F</mi><mi mathvariant="normal">b</mi></msub></math>
+</div>
+<ul class="tl">
+  <li><math><msub><mi>i</mi><mn>1</mn></msub><mo>,</mo><msub><mi>i</mi><mi mathvariant="normal">g</mi></msub><mo>,</mo><msub><mi>i</mi><mn>2</mn></msub></math> は 1 次減速比・変速比・2 次減速比（Honda の公表値）。<math><msub><mi>r</mi><mi mathvariant="normal">w</mi></msub></math> はタイヤ（80/90-17）の半径、<math><mi>α</mi></math> は坂の角度、<math><msub><mi>F</mi><mi mathvariant="normal">b</mi></msub></math> はブレーキの力です</li>
+  <li>クランク軸には <math><msub><mi>T</mi><mi mathvariant="normal">c</mi></msub></math> が負荷としてかかります。スロットルを閉じて走ると、車体がエンジンを回して（燃料はカット）エンジンブレーキになります</li>
+  <li>遠心クラッチには、車輪の側がエンジンより速いときに働くワンウェイクラッチ（最大 120 N·m）を並べます。遠心クラッチがつながらない低い回転でも車輪がエンジンを回すので、低い速度でシフトダウンしてもエンジンブレーキが効き、回転が落ち込みません</li>
+  <li>変速は N → 1 → 2 → 3 → 4 のリターン式で、止まっているときだけ 4 速から N に戻ります。変速の 0.15 s はクラッチを切ります（チェンジペダルを踏むとクラッチが切れる仕組み）</li>
+  <li>変速の間は、乗る人の操作も模型が行います。シフトアップでは、ペダルを踏む 0.06 s 前からスロットルを戻し、切れている間も閉じたままにします。シフトダウンでは、切れている間に、変わった先のギアの回転数に届くまでスロットルを少し開けます（ブリッピング。足りない回転 2,000 rpm で全開の割合、最大 60 %）</li>
+  <li>車体は後ろへは進めません（坂で止まっているときは、ブレーキがなくてもその場にとどまります）</li>
+  <li>燃料は、吸気弁が閉じたときに閉じ込めた新気から空燃比 14.6 で求めた量を、サイクルごとに足していきます（減速の燃料カットの間は 0）。体積はガソリンの密度 0.74 kg/L で換算し、燃費は走行距離 ÷ 使った燃料です。燃焼の効率を公表のトルクに合わせた模型からの値なので目安で、4 速で 60 km/h の一定の速さではおよそ 49 km/L、30 km/h（3 速）では 74 km/L になります</li>
+</ul>
+
+<h3>ECU の制御</h3>
+<ul class="tl">
+  <li>アイドリング: スロットルを閉じている間、サイクルの平均の回転数と目標の差で、空気の通り道（比例と積分）と点火時期（比例）を動かします</li>
+  <li>減速の燃料カット: スロットルを閉じて 2,500 rpm を超えていると燃料を止め、1,700 rpm を下回ると戻します</li>
+  <li>回転の上限: 上限の 400 rpm 手前から点火を最大 35° 遅らせ、上限の近くでは燃料も絞ります。燃料を急に切らないので、レブリミッタのような断続の音を出さず、回転は上限のあたりで頭打ちになります（上限を 600 rpm 超えたときだけ、守りとして燃料を切ります）</li>
+</ul>
+
+<h3>録音への当てはめ</h3>
+<p>吸排気とマフラーの内部の寸法は公表されていないので、実車の録音（排気口の近く）に当てはめて決めました。</p>
+<ul class="tl">
+  <li>録音の回転数は、爆発の周波数（回転数 ÷ 120）の倍音の間隔から求めました</li>
+  <li>同じ回転数で模型を回し、倍音の大きさの並び（周波数ごとの響き方）が録音に近くなるよう、区間の長さ・内径・抵抗を探しました</li>
+  <li>アイドリングでは、脈のとがり具合（300 Hz 以下の波形の尖度）と、倍音でない鋭い山（笛のような音）がないことも合わせました</li>
+  <li>純正は、社外品との音量の差も合わせました。同じマイクの録音では、純正のほうがアイドリングで約 3 dB、4 速の定速で約 4 dB 大きく、40〜125 Hz は 7〜20 dB 強く出ています。低い音の差を重く見て当てはめ直しても、模型は、定速の 40〜125 Hz がまだ約 6 dB 足りませんでした</li>
+  <li>そこで純正には音色の補正を掛けます。スロットルを開けている間、排気の音の 94 Hz より下を最大 4.8 dB 強めます（低い棚のフィルタ。開き 15 % で全部掛かり、0.1 s でならします）。形と大きさも録音に当てはめ、定速の不足は約 3 dB に縮みました。アイドリングとエンジンブレーキは録音との差がない（アイドリングはむしろ約 3 dB 多い）ので掛けません。管の寸法では表せなかった分を、録音に近づけるために足す補正です</li>
+  <li>倍音の並びの差（二乗平均）は、純正で 5〜6 dB、社外品で 4〜6 dB です。社外品は、録音のきれいな響き（約 120 Hz）まではまだ再現できていません</li>
+</ul>
+
+<h3>このツールで決めたこと</h3>
+<ul class="tl">
+  <li>弁の径・リフト・開閉の角度・リフトの形、スロットルの口径、連接棒の長さ、慣性モーメント、往復する部品の質量</li>
+  <li>燃焼期間・点火時期・燃焼の効率（公表の最大トルクと最高出力に、それぞれ数 % で合うように）、サイクルごとの揺れの大きさ</li>
+  <li>純正の音色の補正（94 Hz より下を最大 4.8 dB、スロットルを開けている間）</li>
+  <li>吸排気とマフラーの区間の寸法と抵抗（録音への当てはめ）。区間の長さは管の中の音の通り道で、折り返したパイプの分だけ実物の外形より長い</li>
+  <li>回転の上限（8,000 rpm）と、その手前での点火と燃料の絞り方、減速の燃料カットの回転数、アイドリングの制御の強さ</li>
+  <li>走行: タイヤの半径 0.284 m、転がり抵抗係数 0.015、空気抵抗 <math><msub><mi>C</mi><mi mathvariant="normal">d</mi></msub><mi>A</mi></math> 0.55 m²（乗る人を含む）、伝達の効率 0.9、回る部品の分の質量の上乗せ 4 %、ブレーキの最大の減速 0.7 G、遠心クラッチのつながり方（1,800〜3,000 rpm、最大 120 N·m）、変速の時間とその間のスロットルの操作</li>
+  <li>エンジン本体の固有振動、機械音・吸気の音・噴流の音の大きさ</li>
+  <li>JA55E にも JA65E と同じマフラーを付けます（JA55 の純正のマフラーの録音はないため）</li>
+</ul>
+
+<h3>出典</h3>
+<ol class="refs">
+  <li id="thy-r1"><span class="rf-for">0 次元の模型、Wiebe 関数、絞りの流れ、Woschni の式の形</span><span class="rf-src">J. B. Heywood, <i>Internal Combustion Engine Fundamentals</i>, McGraw-Hill, 1988</span></li>
+  <li id="thy-r2"><span class="rf-for">比熱比の温度の式</span><span class="rf-src">M. F. J. Brunt, H. Rai and A. L. Emtage, “The calculation of heat release energy from engine cylinder pressure data,” SAE Technical Paper 981052, 1998</span></li>
+  <li id="thy-r3"><span class="rf-for">壁への熱伝達</span><span class="rf-src">G. Woschni, “A universally applicable equation for the instantaneous heat transfer coefficient in the internal combustion engine,” SAE Technical Paper 670931, 1967</span></li>
+  <li id="thy-r4"><span class="rf-for">デジタル導波管</span><span class="rf-src">J. O. Smith III, <i>Physical Audio Signal Processing</i>, W3K Publishing, 2010</span></li>
+  <li id="thy-r5"><span class="rf-for">急拡大・急縮小の損失</span><span class="rf-src">I. E. Idelchik, <i>Handbook of Hydraulic Resistance</i>, 3rd ed., Begell House, 1994</span></li>
+  <li id="thy-r6"><span class="rf-for">管壁の損失</span><span class="rf-src">D. H. Keefe, “Acoustical wave propagation in cylindrical ducts,” <i>J. Acoust. Soc. Am.</i>, vol. 75, no. 1, pp. 58–62, 1984</span></li>
+  <li id="thy-r7"><span class="rf-for">開口端の反射と端補正</span><span class="rf-src">H. Levine and J. Schwinger, “On the radiation of sound from an unflanged circular pipe,” <i>Phys. Rev.</i>, vol. 73, no. 4, pp. 383–406, 1948</span></li>
+  <li id="thy-r8"><span class="rf-for">反射の大きさの近似式</span><span class="rf-src">F. Silva, P. Guillemain, J. Kergomard, B. Mallaroni and A. N. Norris, “Approximation formulae for the acoustic radiation impedance of a cylindrical pipe,” <i>J. Sound Vib.</i>, vol. 322, no. 1–2, pp. 255–263, 2009</span></li>
+  <li id="thy-r9"><span class="rf-for">噴流の音の 8 乗則</span><span class="rf-src">M. J. Lighthill, “On sound generated aerodynamically. I. General theory,” <i>Proc. R. Soc. Lond. A</i>, vol. 211, pp. 564–587, 1952</span></li>
+  <li id="thy-r10"><span class="rf-for">亜音速の噴流の係数の実測</span><span class="rf-src">U. H. von Glahn, “Correlation of total sound power and peak sideline OASPL from jet exhausts,” NASA TM X-68059, 1972</span></li>
+</ol>

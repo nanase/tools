@@ -1,0 +1,110 @@
+/* エンジン音響モデルのページだけのスタイル（共通は src/styles/site.css） */
+
+/* 枠の並び。スマホは エンジン → 運転 → エンジンとマフラー → トルクと出力 → 筒内の圧力 → 音の波形 → 計算結果 → 式 → 出典。
+   PC は上に エンジン（全幅）、左の列に 運転・エンジンとマフラー、右の列に トルクと出力・筒内の圧力・音の波形・計算結果、その下に 式・出典（全幅） */
+.a-eng{order:1}.a-run{order:2}.a-cfg{order:3}.a-tq{order:4}.a-pv{order:5}.a-wave{order:6}.a-out{order:7}.a-thy{order:8}.a-src{order:9}
+@media (min-width:1000px){
+  .tgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr);grid-template-areas:"eng eng" "c1 c2" "thy thy" "src src";align-items:start}
+  .a-eng{grid-area:eng}.c1{grid-area:c1}.c2{grid-area:c2}.a-thy{grid-area:thy}.a-src{grid-area:src}
+}
+
+/* 枠の右上のボタン */
+#runBtn{display:inline-flex;align-items:center;gap:7px}
+/* 走行の表示: ギア・変速のボタン・速度・走行距離 */
+.drv{display:grid;grid-template-columns:auto auto 1fr 1fr;align-items:center;gap:6px 14px;margin:10px 8px 0;padding:8px 10px;border:1px solid var(--line);border-radius:6px}
+.drv-l{display:block;font-size:11.5px;color:var(--ink-3)}
+.drv b{font:700 24px/1.1 var(--mono);color:var(--ink)}
+.drv-g b{display:inline-block;min-width:1.4em;text-align:center}
+.drv-s{display:flex;gap:4px}
+.drv-s .tg{min-width:40px;justify-content:center}
+.drv .u{margin-left:4px;font:500 12px var(--mono);color:var(--ink-3)}
+.drv[hidden]{display:none}
+/* 燃料と燃費は、速度と走行距離の下にそろえる */
+.drv-fu{grid-column:3}.drv-fe{grid-column:4}
+/* スロットルのパッド: 押している間だけ、押した位置（右ほど大きく）まで開く。地と塗りは数値欄（.sc）と同じ。右に「固定」 */
+.thr-row{display:flex;align-items:stretch;gap:6px;margin:10px 8px 0}
+.thr-row .thr{flex:1;margin:0}
+.thr-lk{display:inline-flex;align-items:center;gap:6px}
+.thr.brk{height:44px}
+.thr.brk .thr-t{top:13px}
+.thr{position:relative;height:64px;margin:10px 8px 0;border:1px solid var(--line-2);border-radius:6px;background:var(--inset);overflow:hidden;cursor:pointer;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
+.thr:hover,.thr.on{border-color:var(--ink-3)}
+.thr:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.thr-f{position:absolute;top:0;bottom:0;left:0;width:0;background:color-mix(in srgb,var(--ink-2) 22%,transparent);pointer-events:none}
+.thr-c{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--ink-2);pointer-events:none}
+.thr-k i{position:absolute;bottom:0;width:1px;height:8px;background:var(--ink-3)}
+.thr-l{position:absolute;left:6px;right:6px;bottom:10px;display:flex;justify-content:space-between;font:500 10.5px var(--mono);color:var(--ink-3);pointer-events:none}
+.thr-l b{font-weight:500}
+.thr-t{position:absolute;left:0;right:0;top:12px;text-align:center;font:500 12.5px var(--mono);color:var(--ink-2);pointer-events:none}
+.thr.on .thr-t{color:var(--ink)}
+.thr-h{margin:6px 8px 0;font-size:12px;color:var(--ink-3)}
+.snd-msg{margin:6px 8px 0}
+.snd-msg:empty{display:none}
+kbd{font:500 11px var(--mono);padding:0 4px;border:1px solid var(--line-2);border-radius:3px}
+
+/* エンジンの図（断面と吸排気の管）。狭い画面は縦長の並べ方（.nar）にして、文字を大きくする */
+.engw{overflow-x:auto;overscroll-behavior-x:contain;border:1px solid var(--line);border-radius:var(--r);background:var(--screen);box-shadow:inset 0 1px 3px rgb(0 0 0 / .12)}
+.eng{display:block;width:100%;height:auto}
+.eng.nar{max-width:540px;margin:0 auto}
+.eng text{fill:var(--screen-ink);font:500 11px var(--mono)}
+.eng .lb2{fill:var(--ink-3);font-size:10px}
+.eng.nar text{font-size:13px}
+.eng.nar .lb2{font-size:12px}
+/* 金属（シリンダ・ヘッド・クランク）、ピストンと連接棒、弁まわり、ポート */
+.e-metal{fill:color-mix(in srgb,var(--screen-ink) 20%,var(--screen));stroke:var(--screen-ink);stroke-width:1}
+.e-fin{stroke:color-mix(in srgb,var(--screen-ink) 35%,var(--screen));stroke-width:3;stroke-linecap:round}
+.e-case{fill:color-mix(in srgb,var(--screen-ink) 10%,var(--screen));stroke:var(--screen-ink);stroke-width:1}
+.e-cav{fill:var(--screen);stroke:var(--screen-ink);stroke-width:1}
+.e-bore{fill:var(--screen)}
+.e-wall{fill:none;stroke:var(--screen-ink);stroke-width:1.4}
+.e-port{fill:var(--screen);stroke:var(--screen-ink);stroke-width:1.2}
+.e-pis{fill:var(--surface);stroke:var(--screen-ink);stroke-width:1.2}
+.e-ring{stroke:var(--screen-ink);stroke-width:1}
+.e-rod{fill:var(--surface);stroke:var(--screen-ink);stroke-width:1.2;stroke-linejoin:round}
+.e-web{fill:color-mix(in srgb,var(--screen-ink) 28%,var(--screen));stroke:var(--screen-ink);stroke-width:1.2}
+.e-cw{fill:var(--screen-ink);opacity:.35}
+.e-pivot{fill:var(--surface);stroke:var(--screen-ink);stroke-width:1}
+.e-valve{stroke:var(--screen-ink);stroke-width:2.4;stroke-linecap:round;fill:none}
+.e-spring{fill:none;stroke:var(--screen-ink);stroke-width:1;stroke-linejoin:round}
+.e-rock{fill:none;stroke:var(--screen-ink);stroke-width:3.5;stroke-linecap:round;stroke-linejoin:round}
+/* カムの山は、下の弁のリフトの図と同じ色（吸気 CH2・排気 CH1） */
+.e-cam{fill:none;stroke-width:1.6}.e-cam.ci{stroke:var(--ch2)}.e-cam.ce{stroke:var(--ch1)}
+.e-plug{fill:none;stroke:var(--screen-ink)}
+.e-spark{fill:var(--accent)}
+.e-glow{fill:var(--accent)}
+/* 管の中の圧力（大気より高いと CH1、低いと CH2 の色。濃さが差の大きさ） */
+.e-hi{fill:var(--ch1)}
+.e-lo{fill:var(--ch2)}
+.e-gas{fill:var(--ch1)}
+.e-pipe{fill:none;stroke:var(--screen-ink);stroke-width:1.2}
+.e-dim{stroke:var(--grid-2);stroke-width:1;stroke-dasharray:3 3}
+.eng .t1{fill:none;stroke:var(--ch1);stroke-width:1.6}
+.eng .t2{fill:none;stroke:var(--ch2);stroke-width:1.6}
+.eng .gl{stroke:var(--grid-2)}
+.eng .opl{stroke:var(--accent);stroke-width:1;stroke-dasharray:3 3}
+
+/* 色の凡例 */
+.sw.hi{background:var(--ch1)}.sw.lo{background:var(--ch2)}
+
+/* トルクと出力・筒内の圧力の図 */
+.a-tq .t1,.a-pv .t1{fill:none;stroke:var(--ch1);stroke-width:1.8;stroke-linejoin:round}
+.a-tq .t2,.a-pv .t2{fill:none;stroke:var(--ch2);stroke-width:1.8;stroke-linejoin:round}
+/* p–V の直前のサイクル（スローのときは、いまのサイクルを濃く重ねる） */
+.a-pv .t1.dim{opacity:.45}
+.pub{fill:var(--screen);stroke:var(--screen-ink);stroke-width:1.4}
+.opn{fill:var(--accent)}
+.opl{stroke:var(--accent);stroke-width:1;stroke-dasharray:3 3}
+.evm{fill:var(--screen-ink)}
+.evt{font-size:10px}
+
+/* 音の波形（開閉できる枠）の表示の切り替え */
+.wv-sw{margin:4px 0 12px}
+.a-wave .t1{fill:none;stroke:var(--ch1);stroke-width:1.4;stroke-linejoin:round}
+
+/* 計算結果の値の下の補足（回転数のギア、最高圧力の角度） */
+.m-sub{display:block;margin-top:2px;font:12px/1.5 var(--sans);color:var(--ink-3)}
+.m-main .m-sub{margin-top:4px;letter-spacing:0}
+
+/* 計算結果の補足（共通の .thy-body>p の幅の上限を打ち消す） */
+.a-out .thy-body>p.res-aux{max-width:none;margin:0 0 10px}
+.cut-tag{color:var(--warn)}
