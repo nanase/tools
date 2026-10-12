@@ -1,7 +1,8 @@
 /**
  * 鍵盤と弦の図（グランドピアノを上から見た向き。手前に鍵盤、奥へ弦が伸び、低音が左）。
  * 弦の長さは実際の長さに比例させ、弦の間隔と振動の幅は見やすいように広げて描く。
- * ハンマーが打つ点・ダンパー・駒を示し、鳴っている弦の振動（残像・スロー）を描く。鍵や弦を押して弾く操作を受ける
+ * ハンマーが打つ点・ダンパー・駒を示し、鳴っている弦の振動（残像・スロー）を描く。振動を描いている間は、
+ * その弦の止まった線を隠す。鍵や弦を押して弾く操作を受ける
  * （押したまま動かすと、ポインタの入った鍵を押し、前の鍵を離す。グリッサンド）。振動は音と同じく、ダンパーが
  * 下りると（鍵を離していてペダルも踏んでいない）止まる。画面で 0.5 px より小さい間は描かず、打ったときより
  * 60 dB 小さくなったら（聞こえなくなる目安）消す
@@ -28,9 +29,25 @@ const PTS = 24,
   PARTS = 24;
 /** ×1 のとき、変位 1 mm を何単位で描くか（弦の間隔 13.7 mm を SP とする） */
 const PX_MM = SP / 13.7;
-/** 弾いた点から広がる輪の時間 [s] と最大の半径 */
+/** mf で打ったときの、弾いた点から広がる輪の時間 [s] と最大の半径 */
 const RIP_S = 0.6,
   RIP_R = 26;
+/** 輪の時間の下限 [s]（弱い音でも輪が見えるように）と、速さの比を時間の比にする指数 */
+const RIP_S_MIN = 0.25,
+  RIP_S_EXP = 0.7;
+/** 輪の大きさの基準にするハンマーの速さ（mf） [m/s] と、速さの比を半径の比にする指数（mf より弱い・強い） */
+const RIP_V = 2.5,
+  RIP_WEAK = 0.7,
+  RIP_STRONG = 0.3;
+
+/**
+ * ハンマーの速さ v [m/s] で打ったときの輪の最大の半径。弱い音ははっきり小さくし（pp で約 0.45 倍）、
+ * 強い音は大きくなりすぎないようにする（ff で約 1.3 倍）
+ */
+export const ripRadius = (v: number): number => RIP_R * (v / RIP_V) ** (v < RIP_V ? RIP_WEAK : RIP_STRONG);
+
+/** ハンマーの速さ v [m/s] で打ったときに輪が続く時間 [s]。強い音ほど長い（pp で約 0.27 s、ff で約 1.1 s） */
+export const ripTime = (v: number): number => Math.max(RIP_S_MIN, RIP_S * (v / RIP_V) ** RIP_S_EXP);
 /** 描くのをやめる振れ: 画面での大きさ [px] と、打ったときの振れに対する比（−60 dB） */
 const MIN_PX = 0.5,
   MIN_REL = 1e-3;
@@ -83,8 +100,9 @@ export interface KeyGeo {
 /** 鳴っている弦 */
 export interface Sounding {
   view: StringView;
-  /** 打った時刻 [s] */
+  /** 打った時刻 [s] と、ハンマーの速さ [m/s]（輪の大きさと続く時間に使う） */
   t0: number;
+  v: number;
   /** ダンパーが下りた時刻 [s]（下りていなければ Infinity）と、ダンパーで増える減衰率 [1/s] */
   damp: number;
   sd: number;
@@ -137,12 +155,15 @@ export class Keys {
   private pedalOffAt = -Infinity;
   /** 画面の 1 px あたりの図の単位の逆数（図の単位あたりの px） */
   private pxPerUnit = 1;
-  private rips: { x: number; y: number; t0: number }[] = [];
+  private rips: { x: number; y: number; t0: number; r: number; s: number }[] = [];
   private readonly gStatic: SVGGElement;
   private readonly gDamp: SVGGElement;
   private readonly gVib: SVGPathElement;
   private readonly gRip: SVGGElement;
   private readonly keyEls: SVGRectElement[] = [];
+  /** 鍵ごとの止まった弦の線と、振動を描いているので隠している鍵 */
+  private strEls: SVGPathElement[] = [];
+  private readonly vib = new Set<number>();
   private readonly hover: SVGRectElement;
   private readonly cursor: SVGRectElement;
   private raf = 0;
@@ -298,7 +319,7 @@ export class Keys {
       s.damp = Math.min(s.damp, Math.max(up, this.pedalOffAt));
     this.snd.set(key, s);
     const g = this.geo[key - KEY_LO];
-    if (g) this.rips.push({ x: this.sx(key), y: this.sy(g.x0), t0: s.t0 });
+    if (g) this.rips.push({ x: this.sx(key), y: this.sy(g.x0), t0: s.t0, r: ripRadius(s.v), s: ripTime(s.v) });
   }
 
   /* ---------- 描画 ---------- */
@@ -342,6 +363,22 @@ export class Keys {
       h += `<text class="kb-n" x="${(x + w / 2).toFixed(1)}" y="${KY + WH - 6}" text-anchor="middle">C${k / 12 - 1}</text>`;
     }
     this.gStatic.innerHTML = h;
+    this.strEls = Array.from(this.gStatic.querySelectorAll<SVGPathElement>('.kb-s'));
+    this.vib.clear();
+  }
+
+  /** 振動を描いている鍵（keys）の止まった弦の線を隠し、ほかの弦は見せる */
+  private hideStrings(keys: Set<number>): void {
+    for (const k of this.vib)
+      if (!keys.has(k)) {
+        this.strEls[k - KEY_LO]?.classList.remove('vib');
+        this.vib.delete(k);
+      }
+    for (const k of keys)
+      if (!this.vib.has(k)) {
+        this.strEls[k - KEY_LO]?.classList.add('vib');
+        this.vib.add(k);
+      }
   }
 
   /** ダンパー（鍵を押しているか、ペダルを踏んでいれば上がる） */
@@ -373,12 +410,15 @@ export class Keys {
       this.start(p.key, p.s);
     }
     let d = '';
+    const drawn = new Set<number>();
     for (const [key, s] of this.snd) {
       const r = this.drawString(key, s, now);
       if (r === null) this.snd.delete(key);
       else d += r;
+      if (r) drawn.add(key);
     }
     this.gVib.setAttribute('d', d);
+    this.hideStrings(drawn);
     this.gVib.classList.toggle('band', this.mode !== 'slow');
     const rip = this.drawRips(now);
     if (this.snd.size || this.pend.length || rip) this.raf = requestAnimationFrame(() => this.frame());
@@ -386,11 +426,11 @@ export class Keys {
 
   /** 弾いた点から広がる輪。描くものが残っていれば true */
   private drawRips(now: number): boolean {
-    this.rips = this.rips.filter((r) => now - r.t0 < RIP_S);
+    this.rips = this.rips.filter((r) => now - r.t0 < r.s);
     let h = '';
     for (const r of this.rips) {
-      const u = Math.max(0, now - r.t0) / RIP_S;
-      h += `<circle class="kb-rip" cx="${r.x.toFixed(1)}" cy="${r.y.toFixed(1)}" r="${(2 + RIP_R * u ** 0.6).toFixed(1)}" opacity="${(1 - u).toFixed(3)}"/>`;
+      const u = Math.max(0, now - r.t0) / r.s;
+      h += `<circle class="kb-rip" cx="${r.x.toFixed(1)}" cy="${r.y.toFixed(1)}" r="${(2 + r.r * u ** 0.6).toFixed(1)}" opacity="${(1 - u).toFixed(3)}"/>`;
     }
     if (this.gRip.innerHTML !== h) this.gRip.innerHTML = h;
     return this.rips.length > 0;

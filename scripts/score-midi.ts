@@ -1,9 +1,9 @@
 /**
  * scripts/piano-scores.ts と scripts/organ-scores.ts で共通に使う、MIDI（SMF）から曲のデータ（.ts）を作る処理。
  *
- * 音の高さ・時刻・長さと、どのトラック（譜表・鍵盤）の音かだけを使う。ベロシティ、コントロールチェンジ、
- * テンポ（指定した曲の変化を除く）は使わない。時刻と長さは 4 分音符の 1/DIV に寄せ、反復を展開し、
- * 音符を 64 文字の符号で固定長に詰めて書く
+ * 音の高さ・時刻・長さと、どのトラック（譜表・鍵盤）の音かを使う。コントロールチェンジ、ベロシティ（vel を
+ * 指定した曲を除く）、テンポ（指定した曲の変化を除く）は使わない。時刻と長さは 4 分音符の 1/DIV に寄せ、
+ * 反復を展開し、音符を 64 文字の符号で固定長に詰めて書く
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 
@@ -17,6 +17,8 @@ export interface RawNote {
   n: number;
   t0: number;
   t1: number;
+  /** ノートオンのベロシティ（曲ごとの手直しで足した音にはない） */
+  v?: number;
 }
 
 export interface Midi {
@@ -64,7 +66,7 @@ export function readMidi(buf: Uint8Array): Midi {
     const end = u32() + p;
     let t = 0,
       run = 0;
-    const on = new Map<number, number[]>();
+    const on = new Map<number, [number, number][]>();
     m.names.push('');
     while (p < end) {
       t += vlq();
@@ -94,11 +96,11 @@ export function readMidi(buf: Uint8Array): Midi {
         key = ch * 128 + a;
       if (ty === 0x90 && b > 0) {
         const l = on.get(key) ?? [];
-        l.push(t);
+        l.push([t, b]);
         on.set(key, l);
       } else if (ty === 0x80 || ty === 0x90) {
-        const t0 = on.get(key)?.shift();
-        if (t0 !== undefined) m.notes.push({ tr: k, n: a, t0, t1: t });
+        const o = on.get(key)?.shift();
+        if (o) m.notes.push({ tr: k, n: a, t0: o[0], t1: t, v: o[1] });
       } else if (ty === 0xb0) m.cc.set(a, (m.cc.get(a) ?? 0) + 1);
       else if (ty === 0xc0) m.programs.push({ t, tr: k, prog: a });
     }
@@ -130,6 +132,12 @@ export interface Piece {
   exact?: boolean;
   /** このトラックのプログラムチェンジを REG（[拍, 番号]）に書く（レジストレーションの切り替え） */
   programs?: number;
+  /**
+   * MIDI のベロシティ（LilyPond が強弱記号から付けた値）を音符に入れる。値は、強弱記号のない声部に LilyPond が
+   * 付ける既定のベロシティ（90）。この値の音は、同じ小節で始まる音のうち、ほかの値で最も弱いものにそろえる
+   * （その小節になければ前の小節の値、曲の初めは最初に見つかる値）
+   */
+  vel?: number;
   /** 弱起の拍（4 分音符を 1 とする） */
   pickup: number;
   /**
@@ -174,6 +182,8 @@ export interface Note {
   h: number;
   /** 元の時刻か終わりが 1/96 拍の格子に乗らない（前打音） */
   odd: boolean;
+  /** ベロシティ（vel を指定した曲だけ） */
+  v?: number;
 }
 
 const NAMES = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
@@ -302,9 +312,37 @@ export function build(p: Piece, k: Kind): void {
     const h = hOf.get(x.tr);
     if (h === undefined) continue;
     const t = snap(x.t0);
-    ns.push({ t, d: Math.max(1, snap(x.t1 - x.t0)), n: x.n, h, odd: x.t0 % g96 !== 0 || x.t1 % g96 !== 0 });
+    ns.push({
+      t,
+      d: Math.max(1, snap(x.t1 - x.t0)),
+      n: x.n,
+      h,
+      odd: x.t0 % g96 !== 0 || x.t1 % g96 !== 0,
+      ...(p.vel === undefined ? {} : { v: x.v ?? p.vel }),
+    });
   }
   ns.sort((a, b) => a.t - b.t || a.h - b.h || a.n - b.n);
+
+  /* 強弱記号のない声部の音（既定のベロシティ）を、同じ小節の、強弱記号のある声部の最も弱い音にそろえる */
+  if (p.vel !== undefined) {
+    const barOf = (x: Note) => barAt(x.t / DIV)[0],
+      marked = ns.filter((x) => x.v !== p.vel),
+      weakest = new Map<number, number>();
+    if (!marked.length) throw new Error(`${p.name}: 強弱記号から付いたベロシティがありません`);
+    for (const x of marked) weakest.set(barOf(x), Math.min(weakest.get(barOf(x)) ?? 127, x.v as number));
+    let level = weakest.get(barOf(marked[0])) as number,
+      fixed = 0;
+    for (const x of ns) {
+      level = weakest.get(barOf(x)) ?? level;
+      if (x.v !== p.vel) continue;
+      x.v = level;
+      fixed++;
+    }
+    const vs = ns.map((x) => x.v as number);
+    log(
+      `ベロシティ ${Math.min(...vs)}〜${Math.max(...vs)}（既定の ${p.vel} だった ${fixed} 音を、同じ小節の最も弱い値にそろえた）`,
+    );
+  }
 
   /* 前打音は、同じ譜表・鍵盤でそのあとに始まる音の開始で切る */
   if (p.grace) {
@@ -422,14 +460,15 @@ export function build(p: Piece, k: Kind): void {
       `プログラムチェンジ ${reg.length} 個（番号 ${[...new Set(reg.map((x) => x[1]))].sort((a, b) => a - b).join('・')}）`,
     );
 
-  /* 符号にする: 前の音からの間（3）、長さ（3）、音の高さ（2）、h（1） */
+  /* 符号にする: 前の音からの間（3）、長さ（3）、音の高さ（2）、h（1）、ベロシティ（2。vel を指定した曲だけ） */
+  const width = p.vel === undefined ? 9 : 11;
   let data = '',
     prev = 0;
   for (const x of ns) {
-    data += enc(x.t - prev, 3) + enc(x.d, 3) + enc(x.n, 2) + enc(x.h, 1);
+    data += enc(x.t - prev, 3) + enc(x.d, 3) + enc(x.n, 2) + enc(x.h, 1) + (x.v === undefined ? '' : enc(x.v, 2));
     prev = x.t;
   }
-  const lines = data.match(/.{1,108}/g) ?? [],
+  const lines = data.match(new RegExp(`.{1,${width * 12}}`, 'g')) ?? [],
     end = Math.max(...ns.map((x) => x.t + x.d)) / DIV,
     [endBar, endRest] = barAt(length / DIV),
     full = endBar - 1,
@@ -459,7 +498,8 @@ export function build(p: Piece, k: Kind): void {
     '',
     ...license,
   ];
-  const tempoSrc = tempo.length ? `[\n${tempo.map(([t, r]) => `  [${t}, ${r}],`).join('\n')}\n]` : '[]',
+  const velSrc = p.vel === undefined ? '' : '\n      v: v(DATA.slice(i + 9, i + 11)),',
+    tempoSrc = tempo.length ? `[\n${tempo.map(([t, r]) => `  [${t}, ${r}],`).join('\n')}\n]` : '[]',
     list = (xs: number[][]) => `[\n${xs.map((x) => `  [${x.join(', ')}],`).join('\n')}\n]`,
     extra = [
       ...(p.meters
@@ -479,7 +519,7 @@ ${head.map((l) => (l ? ` * ${l}` : ' *')).join('\n')}
  */
 import type { ScoreNote } from './types';
 
-/** 1 拍（4 分音符）を ${DIV} に分けた時刻・長さ。1 音 9 文字: 前の音からの間（3）、長さ（3）、音の高さ（2）、${k.staves.length > 2 ? '鍵盤' : '譜表'}（1） */
+/** 1 拍（4 分音符）を ${DIV} に分けた時刻・長さ。1 音 ${width} 文字: 前の音からの間（3）、長さ（3）、音の高さ（2）、${k.staves.length > 2 ? '鍵盤' : '譜表'}（1）${p.vel === undefined ? '' : '、ベロシティ（2）'} */
 const DATA =
 ${lines.map((l) => `  '${l}'`).join(' +\n')};
 
@@ -493,13 +533,13 @@ ${extra}
 export function notes(): ScoreNote[] {
   const out: ScoreNote[] = [];
   let t = 0;
-  for (let i = 0; i < DATA.length; i += 9) {
+  for (let i = 0; i < DATA.length; i += ${width}) {
     t += v(DATA.slice(i, i + 3));
     out.push({
       t: t / ${DIV},
       d: v(DATA.slice(i + 3, i + 6)) / ${DIV},
       n: v(DATA.slice(i + 6, i + 8)),
-      h: v(DATA[i + 8]),
+      h: v(DATA[i + 8]),${velSrc}
     });
   }
   return out;

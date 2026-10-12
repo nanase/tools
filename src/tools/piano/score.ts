@@ -1,5 +1,5 @@
 /**
- * 演奏する曲（著作権の切れた曲の電子楽譜から変換したもの）と、強さとペダルの付け方（DOM に依存しない）。
+ * 演奏する曲（著作権の切れた曲の電子楽譜から変換したもの）と、ベロシティとペダルの付け方（DOM に依存しない）。
  * 音符のデータは scores/ にあり、曲を選んだときに読み込む
  */
 import { rng } from '../guitar/body';
@@ -19,7 +19,7 @@ export interface Piece {
   /** 1 小節の拍（4 分音符）の数・最初の小節の前の拍（弱起） */
   bar: number;
   pickup: number;
-  /** 強さの目安（打鍵の強さに掛ける。1 が mf） */
+  /** 強弱の目安（mf のハンマーの速さに掛ける。1 が mf） */
   lv: number;
   /** テンポの変化 [拍, 標準のテンポに対する比]（最初の項より前は 1） */
   tempoMap: readonly (readonly [number, number])[];
@@ -54,6 +54,67 @@ export const PIECES: readonly Piece[] = [
     lv: 0.55,
     tempoMap: [],
     load: () => import('./scores/gymnopedie1').then((m) => m.notes()),
+  },
+  {
+    v: 'gymno2',
+    name: 'ジムノペディ 第 2 番',
+    by: 'E. サティ（3 つのジムノペディ）',
+    bpm: 69,
+    tempo: 'Lent et triste（♩ = 69）',
+    bar: 3,
+    pickup: 0,
+    lv: 0.55,
+    tempoMap: [],
+    load: () => import('./scores/gymnopedie2').then((m) => m.notes()),
+  },
+  {
+    v: 'gymno3',
+    name: 'ジムノペディ 第 3 番',
+    by: 'E. サティ（3 つのジムノペディ）',
+    bpm: 66,
+    tempo: 'Lent et grave（♩ = 66）',
+    bar: 3,
+    pickup: 0,
+    lv: 0.55,
+    tempoMap: [],
+    load: () => import('./scores/gymnopedie3').then((m) => m.notes()),
+  },
+  /* グノシエンヌの楽譜に小節線はない。小節は、楽譜のデータが音符を並べるのに使う拍子（4/4・12/8）で数える */
+  {
+    v: 'gnoss1',
+    name: 'グノシエンヌ 第 1 番',
+    by: 'E. サティ（3 つのグノシエンヌ）',
+    bpm: 84,
+    tempo: 'Lent（♩ = 84）',
+    bar: 4,
+    pickup: 0,
+    lv: 0.65,
+    tempoMap: [],
+    load: () => import('./scores/gnossienne1').then((m) => m.notes()),
+  },
+  {
+    v: 'gnoss2',
+    name: 'グノシエンヌ 第 2 番',
+    by: 'E. サティ（3 つのグノシエンヌ）',
+    bpm: 80,
+    tempo: 'Avec étonnement（♩ = 80）',
+    bar: 6,
+    pickup: 0,
+    lv: 0.65,
+    tempoMap: [],
+    load: () => import('./scores/gnossienne2').then((m) => m.notes()),
+  },
+  {
+    v: 'gnoss3',
+    name: 'グノシエンヌ 第 3 番',
+    by: 'E. サティ（3 つのグノシエンヌ）',
+    bpm: 72,
+    tempo: 'Lent（♩ = 72）',
+    bar: 4,
+    pickup: 0,
+    lv: 0.65,
+    tempoMap: [],
+    load: () => import('./scores/gnossienne3').then((m) => m.notes()),
   },
   {
     v: 'moon1',
@@ -121,6 +182,21 @@ export function voicing(notes: readonly ScoreNote[]): Float64Array {
   return k;
 }
 
+/** 楽譜のベロシティの比を、ハンマーの速さの比にするときの指数 */
+const DYN_EXP = 1.5;
+
+/**
+ * 楽譜の強弱: 音符のベロシティ（LilyPond が強弱記号と松葉から付けた値）を、曲の中央の値に対する比にして、
+ * ハンマーの速さの倍率にする。LilyPond の松葉は幅が一律に大きい（pp から mf を超える）ので、強弱記号を
+ * そのまま pp〜ff の速さに当てはめず、比の DYN_EXP 乗に縮める。ベロシティのない曲は null
+ */
+export function dynamics(notes: readonly ScoreNote[]): Float64Array | null {
+  const vs = notes.map((x) => x.v ?? 0);
+  if (vs.some((v) => v <= 0)) return null;
+  const mid = [...vs].sort((a, b) => a - b)[vs.length >> 1];
+  return Float64Array.from(vs, (v) => (v / mid) ** DYN_EXP);
+}
+
 /**
  * 自動のペダル: 低音（その時刻に鳴っている最も低い音）の音名が変わる拍で踏みかえる。
  * 踏みかえは、新しい低音を打つ直前に離し、打った直後に踏む（後踏み）。返すのは踏みかえる拍の列
@@ -159,8 +235,9 @@ export type PlayEv =
   | { b: number; type: 'pedal'; on: boolean };
 
 /**
- * 曲の出来事: 音符の打鍵と離鍵（同じ鍵を続けて打つときは、離鍵を打鍵の少し前に）とペダル。vel は強さ mf の
- * ハンマーの速さ [m/s]、pedal はダンパーペダル（自動・踏む・踏まない）。同じ拍なら 離鍵・ペダル → 打鍵 の順
+ * 曲の出来事: 音符の打鍵と離鍵（同じ鍵を続けて打つときは、離鍵を打鍵の少し前に）とペダル。vel は mf の
+ * ハンマーの速さ [m/s]、pedal はダンパーペダル（自動・踏む・踏まない）。同じ拍なら 離鍵・ペダル → 打鍵 の順。
+ * 打鍵の v は自動のベロシティ（ハンマーの速さ [m/s]）: 曲の強弱の目安 × 楽譜の強弱 × 声部の強さ × 小さなばらつき
  */
 export function playEvents(
   pc: Piece,
@@ -170,9 +247,10 @@ export function playEvents(
 ): PlayEv[] {
   const r = rng(5),
     vo = voicing(notes),
+    dy = dynamics(notes),
     ev: PlayEv[] = [];
   notes.forEach((x, i) => {
-    const v = Math.min(7, vel * pc.lv * vo[i] * (0.92 + 0.16 * r())),
+    const v = Math.min(7, vel * pc.lv * (dy?.[i] ?? 1) * vo[i] * (0.92 + 0.16 * r())),
       jit = (r() - 0.5) * 0.008;
     ev.push({ b: x.t, type: 'on', key: x.n, v, jit, i });
     ev.push({ b: x.t + x.d * 0.97, type: 'off', key: x.n });

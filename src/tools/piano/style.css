@@ -27,11 +27,11 @@
 
 /* 鍵盤と弦。狭い画面では横にスクロールする */
 .kbw{overflow-x:auto;overscroll-behavior-x:contain;border:1px solid var(--line);border-radius:var(--r);background:var(--screen);box-shadow:inset 0 1px 3px rgb(0 0 0 / .12)}
-.kbw{--kb-rim:var(--inset);--kb-s:#4f5860;--kb-wd:#2d3338;--kb-w:#f4f5f1;--kb-b:#2a2f33}
+.kbw{--kb-rim:var(--inset);--kb-s:#9aa2a8;--kb-wd:#737c83;--kb-w:#f4f5f1;--kb-b:#2a2f33}
 @media (prefers-color-scheme:dark){
-  :root:not([data-theme="light"]) .kbw{--kb-rim:var(--surface);--kb-s:var(--ink-3);--kb-wd:var(--ink-2);--kb-w:#d9dcd6;--kb-b:#15181a}
+  :root:not([data-theme="light"]) .kbw{--kb-rim:var(--surface);--kb-s:#4a5258;--kb-wd:#6a737a;--kb-w:#d9dcd6;--kb-b:#15181a}
 }
-:root[data-theme="dark"] .kbw{--kb-rim:var(--surface);--kb-s:var(--ink-3);--kb-wd:var(--ink-2);--kb-w:#d9dcd6;--kb-b:#15181a}
+:root[data-theme="dark"] .kbw{--kb-rim:var(--surface);--kb-s:#4a5258;--kb-wd:#6a737a;--kb-w:#d9dcd6;--kb-b:#15181a}
 .kbd{display:block;width:100%;min-width:900px;height:auto;touch-action:pan-x pan-y;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
 .kbd:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
 .kb-rim{fill:var(--kb-rim);stroke:var(--line-2);stroke-width:1}
@@ -39,6 +39,7 @@
 .kb-ag{stroke:var(--line-2);stroke-width:2}
 .kb-s{fill:none;stroke:var(--kb-s)}
 .kb-s.wd{stroke:var(--kb-wd)}
+.kb-s.vib{visibility:hidden}
 .kb-hl{fill:none;stroke:var(--ink-3);stroke-width:1;stroke-dasharray:3 3;opacity:.7}
 .kb-d{fill:var(--ink-3);opacity:.85}
 .kb-d.up{opacity:.35}

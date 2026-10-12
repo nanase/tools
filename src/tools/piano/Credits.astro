@@ -1,5 +1,5 @@
 ---
-// 楽譜の出典と、各曲の標準のテンポ。月光の音符は CC BY-SA 2.5 の楽譜から変換したので、ここに帰属を表示する
+// 楽譜の出典と、各曲の標準のテンポ。グノシエンヌ（CC BY-SA 4.0）と月光（CC BY-SA 2.5）の音符は、ここに帰属を表示する
 import { pieceOf } from './score';
 
 const tempo = (v: string) => pieceOf(v).tempo;
@@ -18,15 +18,39 @@ const MU = 'https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=';
     </ul>
   </li>
   <li>
-    <h3>ジムノペディ 第 1 番 <small>E. サティ「3 つのジムノペディ」より</small></h3>
-    <p>音符は、<a href={`${MU}37`}>Mutopia Project の楽譜</a>の MIDI から変換し、反復を展開しました。</p>
+    <h3>ジムノペディ 第 1〜3 番 <small>E. サティ「3 つのジムノペディ」</small></h3>
+    <p>音符とベロシティは、Mutopia Project の楽譜（<a href={`${MU}37`}>第 1 番</a>・<a href={`${MU}38`}>第 2 番</a>・<a href={`${MU}39`}>第 3 番</a>）の MIDI から変換しました。第 1 番は反復を展開しています。</p>
     <ul class="tl">
       <li><b>入力:</b> Evin Robertson</li>
       <li><b>底本:</b> Dover Edition</li>
-      <li><b>楽譜の番号:</b> Mutopia-2014/12/14-37</li>
+      <li><b>楽譜の番号:</b> Mutopia-2014/12/14-37・Mutopia-2012/12/23-38・Mutopia-2012/12/23-39</li>
       <li><b>ライセンス:</b> パブリックドメイン</li>
-      <li><b>標準のテンポ:</b> {tempo('gymno1')}</li>
+      <li><b>標準のテンポ:</b>
+        <ul class="tl">
+          <li>第 1 番: {tempo('gymno1')}</li>
+          <li>第 2 番: {tempo('gymno2')}</li>
+          <li>第 3 番: {tempo('gymno3')}</li>
+        </ul>
+      </li>
     </ul>
+  </li>
+  <li>
+    <h3>グノシエンヌ 第 1〜3 番 <small>E. サティ</small></h3>
+    <p>音符は、Mutopia Project の楽譜（<a href={`${MU}2035`}>第 1 番</a>・<a href={`${MU}2130`}>第 2 番</a>・<a href={`${MU}2131`}>第 3 番</a>）の MIDI から変換しました。</p>
+    <ul class="tl">
+      <li><b>入力:</b> 第 1 番は Knute Snortum。第 2・3 番は Frédéric Duperray</li>
+      <li><b>底本:</b> 第 1 番は Editions Salabert, Paris, 1913。第 2・3 番は Rouart, Lerolle &amp; Cie., Paris, 1913</li>
+      <li><b>楽譜の番号:</b> Mutopia-2015/07/23-2035・Mutopia-2016/08/17-2130・Mutopia-2016/08/17-2131</li>
+      <li><b>標準のテンポ:</b>
+        <ul class="tl">
+          <li>第 1 番: {tempo('gnoss1')}</li>
+          <li>第 2 番: {tempo('gnoss2')}</li>
+          <li>第 3 番: {tempo('gnoss3')}</li>
+        </ul>
+      </li>
+    </ul>
+    <p>原作のライセンスは <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.ja">クリエイティブ・コモンズ 表示 - 継承 4.0（CC BY-SA 4.0）</a>で、元の MIDI と、そこから作った音符のデータ（<a href="https://github.com/nanase/tools/tree/main/src/tools/piano/scores">src/tools/piano/scores</a> の gnossienne1〜3）も同じライセンスで公開します。</p>
+    <p>楽譜に小節線はありません。演奏の枠の小節の数は、楽譜のデータが音符を並べるのに使う拍子（第 1・3 番は 4/4、第 2 番は 12/8）で数えたものです。</p>
   </li>
   <li>
     <h3>ピアノ・ソナタ第 14 番 嬰ハ短調 Op. 27 No. 2「月光」第 1〜3 楽章 <small>L. v. ベートーヴェン</small></h3>
@@ -52,6 +76,7 @@ const MU = 'https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=';
   </li>
   <li>
     <h3>このツールで付けたもの</h3>
-    <p>強さ（声部ごとの強弱）、ダンパーペダルの踏みかえ、終わりや Adagio の部分のテンポの変化は、このツールで付けています。楽譜の MIDI の強さとテンポは使っていません。</p>
+    <p>声部ごとの強弱、ダンパーペダルの踏みかえ、終わりや Adagio の部分のテンポの変化は、このツールで付けています。楽譜の MIDI のテンポは使っていません。</p>
+    <p>MIDI のベロシティは、ジムノペディだけ使っています。楽譜の強弱記号と松葉から機械的に付いた値で、強弱の幅を縮めて打鍵の速さにします。ほかの曲の MIDI は、すべての音が同じベロシティです。</p>
   </li>
 </ul>
