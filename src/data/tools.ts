@@ -184,6 +184,14 @@ export const TOOLS: Tool[] = [
     k: 'organ pipe organ パイプオルガン acoustic physical model 物理モデル フルー管 flue リード管 reed ジェット jet エッジトーン 共鳴管 resonator ストップ stop レジストレーション registration プリンシパル ゲダクト トランペット 風箱 wind トレモラント tremulant 調律 temperament 教会 残響 reverb 演奏 バッハ bach オーディオ audio',
   },
   {
+    id: 'engine',
+    c: '音響',
+    t: 'エンジン音響モデル',
+    d: '空冷 4 ストローク単気筒（Honda CT125 の公表諸元をもとにした模型）の燃焼・吸排気・マフラーを計算して、排気音・トルク・出力を再現します。',
+    ic: 'en',
+    k: 'engine エンジン 単気筒 single cylinder 4 stroke 4 ストローク ハンターカブ hunter cub ct125 スーパーカブ super cub ja65 ja55 排気音 exhaust マフラー muffler silencer 触媒 吸気 intake トルク torque 出力 power 回転数 rpm 空ぶかし アイドリング idle 燃焼 combustion wiebe 筒内圧 p-v 体積効率 導波管 waveguide 物理モデル physical model オーディオ audio',
+  },
+  {
     id: 'lens',
     c: '画像・光学',
     t: 'カメラレンズ',
@@ -214,6 +222,7 @@ export const IC: Record<string, string> = {
   pc: '<path class="c" d="M4 6H42"/><path class="a" d="M42 6H78V42H42V10H74V38H46V14H70V34H50V18H66V30H54V22H62"/><path class="c d" d="M62 22H116"/>',
   jp: '<path class="c" d="M4 4H44V44H4Z"/><path class="a" d="M9 9H19L9 19V29L29 9H39L9 39H19L39 19V29L29 39H39"/><path class="c d" d="M52 44H116"/><path class="b" d="M56 44V6M64 44V18M72 44V27M80 44V33M88 44V37M96 44V40M104 44V41.5M112 44V42.5"/>',
   og: '<path class="c" d="M4 44H116"/><path class="a" d="M14 44V8M26 44V14M38 44V19M50 44V23M62 44V26M74 44V29M86 44V31M98 44V33M110 44V35"/><path class="b" d="M11 38H17M23 39H29M35 40H41M47 40H53M59 41H65M71 41H77M83 42H89M95 42H101M107 42H113"/>',
+  en: '<path class="c d" d="M4 30H116"/><path class="a" d="M4 30H12C14 30 15 6 19 6S23 42 27 42S31 22 35 30H50C52 30 53 6 57 6S61 42 65 42S69 22 73 30H88C90 30 91 6 95 6S99 42 103 42S107 22 111 30H116"/>',
   ln: '<path class="c d" d="M4 24H116"/><path class="c" d="M40 5C49 14 49 34 40 43C31 34 31 14 40 5ZM100 6V42"/><path class="a" d="M4 13H40L100 24M4 35H40L100 24"/><path class="b" d="M4 12L40 16L100 30M4 26L40 30L100 30"/>',
 };
 
