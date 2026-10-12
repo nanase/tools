@@ -5,7 +5,8 @@
  * 放射効率は、響棒（リブ）のある響板の 2 つの領域（Boutillon・Ege 2013）で変える: 低い周波数では板全体が
  * 一様な直交異方性の板として振動し、響棒の間隔が曲げ波の波長に近づく周波数より上では、振動が響棒の間に
  * 閉じ込められて導波路になる。導波路の曲げ波は空気中の音より遅い（亜音速の）まま数 kHz まで続くので、
- * 一様な板なら一致周波数（約 2 kHz）より上で効率よく放射するはずの音が、縁の近くからしか出ない
+ * 一様な板なら一致周波数（約 2 kHz）より上で効率よく放射するはずの音が、縁の近くからしか出ない。
+ * モードの和には、駒の近くの板が共鳴によらずに直接放射する音（directPressure）を足す
  */
 import { C, type Cx, rng } from '../guitar/body';
 import { AIR } from './strings';
@@ -238,6 +239,25 @@ export const hfPressure = (b: Board, f: number): number =>
     Math.sqrt((sigma(b, f) * yMeanOf(b, f)) / (2 * Math.PI * (2 * Math.PI * f) * ETA * b.rhoh))) /
   R_MIC;
 
+/**
+ * 駒の近くから直接放射する音の、音圧 ÷ 駒の力 [Pa/N]。点で押された板は、モードの共鳴（板じゅうに広がった振動が
+ * 縁から出す音）とは別に、押した点の周りが力に比例する加速度で動いて音を出す。一致周波数より下の無限板では
+ * p = ρ0 F / (2π r ρh) で、周波数によらない（放射のパワー ρ0 F² / (2π c (ρh)²) と同じ内容。Cremer・Heckl）。
+ * 駒と響棒で動きにくい分として、平均のアドミタンスと同じ KAPPA を掛ける。
+ *
+ * モードの和だけだと、隣り合うモードの音が打ち消し合う周波数に深い谷（平均より 10〜20 dB 下）ができ、
+ * 基音がそこへ落ちた鍵だけ音が小さくなる。この項は谷の底を埋める（共鳴の山より約 10 dB 小さい）
+ */
+export const directPressure = (b: Board): number => (KAPPA * AIR.rho) / (2 * Math.PI * R_MIC * b.rhoh);
+/**
+ * 直接の放射に掛ける 2 次のバターワースの高域通過（境目は最も低いモード b.f1）の応答。無限板の式は、板の
+ * 最も低いモードより下では成り立たない
+ */
+const directWeight = (b: Board, f: number): Cx => {
+  const x = f / b.f1;
+  return C.div(C.cx(-x * x), C.cx(1 - x * x, Math.SQRT2 * x));
+};
+
 /** モード 1 つのアドミタンス iω / (m (ω_k² − ω² + iω ω_k η)) */
 function yMode(m: BoardMode, w: Cx): Cx {
   const wk = 2 * Math.PI * m.f,
@@ -262,5 +282,6 @@ export function pressure(b: Board, f: number): Cx {
   const w = C.cx(2 * Math.PI * f);
   let p = C.cx(0);
   for (const m of b.modes) p = C.add(p, C.scl(yMode(m, w), m.G));
+  p = C.add(p, C.scl(directWeight(b, f), directPressure(b)));
   return C.add(C.scl(p, lrLow(f)), C.cx(hfPressure(b, f)));
 }

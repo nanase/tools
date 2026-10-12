@@ -1,7 +1,7 @@
 /**
  * ピアノの音を作る部分（DOM に依存しない）。AudioWorklet（worklet.ts）と、表示用の計算（worker.ts）で同じものを使う。
- * 打鍵ごとの結合したモードを減衰する複素指数で回し、駒にかかる力を響板のモードと高い周波数の滑らかな特性へ入れて、
- * 1 m 先の音圧を出す。出力は 1 Pa を 1（フルスケール）とする。
+ * 打鍵ごとの結合したモードを減衰する複素指数で回し、駒にかかる力を響板のモード・駒の近くの直接の放射・
+ * 高い周波数の滑らかな特性へ入れて、1 m 先の音圧を出す。出力は 1 Pa を 1（フルスケール）とする。
  * ダンパーは鍵ごとに持ち、鍵を離していてペダルも踏んでいなければ、その鍵の弦のモードに減衰を足す。
  * ステレオ（再生だけ）では、鍵の位置で定位を変え（低音が左）、響板のモードごとにも少し散らす。
  * 定位は聞こえ方の目安で、模型には基づかない。モノラル（表示用の計算）は重みがすべて 1
@@ -10,7 +10,7 @@
 import { rng } from '../guitar/body';
 import { panGains } from '../guitar/engine';
 import type { StrikeMsg } from './model';
-import { type Board, F_TOP, hfPressure } from './soundboard';
+import { type Board, directPressure, F_TOP, hfPressure } from './soundboard';
 import { KEY_HI, KEY_LO, KEYS } from './strings';
 
 /** 響板（AudioWorklet へ送れる形） */
@@ -19,6 +19,8 @@ export interface BoardDesc {
   st: number[];
   /** 高い周波数の滑らかな特性の大きさ（音圧 ÷ 力 [Pa/N]。HF_F0 から 1/HF_OCT オクターブごと） */
   hf: number[];
+  /** 駒の近くの直接の放射: 音圧 ÷ 力 [Pa/N] と、高域通過の境目の周波数 [Hz] */
+  dir: [number, number];
 }
 const ST = 5;
 /** 高い周波数の滑らかな特性の表: 最初の周波数 [Hz]、1 オクターブあたりの点の数、点の数（25 Hz〜約 24 kHz） */
@@ -37,7 +39,11 @@ export function boardDesc(b: Board): BoardDesc {
     st.push(lr, li, li / d, -lr / d, m.G);
   }
   /* 高い周波数: 平均のアドミタンス × 放射の重み（周波数ごとの大きさ。位相は AudioWorklet で最小位相にする） */
-  return { st, hf: Array.from({ length: HF_N }, (_, i) => hfPressure(b, HF_F0 * 2 ** (i / HF_OCT))) };
+  return {
+    st,
+    hf: Array.from({ length: HF_N }, (_, i) => hfPressure(b, HF_F0 * 2 ** (i / HF_OCT))),
+    dir: [directPressure(b), b.f1],
+  };
 }
 
 /** その場で変換する複素 FFT（基数 2。inv なら逆変換で 1/N を掛ける） */
@@ -239,6 +245,13 @@ function lp2(f: number, fs: number): number[] {
   return [K * K * n, 2 * K * K * n, K * K * n, 2 * (K * K - 1) * n, (1 - Math.SQRT2 * K + K * K) * n];
 }
 
+/** 2 次のバターワースの高域通過（双 1 次変換） */
+function hp2(f: number, fs: number): number[] {
+  const K = Math.tan((Math.PI * f) / fs),
+    n = 1 / (1 + Math.SQRT2 * K + K * K);
+  return [n, -2 * n, n, 2 * (K * K - 1) * n, (1 - Math.SQRT2 * K + K * K) * n];
+}
+
 /** 出力の 1 チャンネルぶんの、駒の力と響板の状態 */
 class Chan {
   sQr = new Float64Array(0);
@@ -248,6 +261,8 @@ class Chan {
   hx = new Float64Array(0);
   /** モードの経路の 4 次の Linkwitz–Riley の低域通過（2 次のバターワースを 2 段） */
   lp: Biquad[] = [];
+  /** 直接の放射の経路の高域通過 */
+  hp = new Biquad([0, 0, 0, 0, 0]);
   readonly f = new Float64Array(128);
 }
 
@@ -266,6 +281,8 @@ export class Engine {
   private sRi = new Float64Array(0);
   private sG = new Float64Array(0);
   private hfH = new Float64Array(0);
+  /** 直接の放射の大きさ（音圧 ÷ 力） */
+  private dirG = 0;
   private readonly ch: Chan[];
   private readonly vf = new Float64Array(128);
   /** 鍵を押しているか・ペダル */
@@ -318,12 +335,14 @@ export class Engine {
       pan = Array.from({ length: m }, (_, k) => panSpread(d.st[k * ST + 1] / (2 * Math.PI)) * (2 * r() - 1));
     const L = 8 * Math.round((HF_L * this.fs) / 48000 / 8);
     this.hfH = minPhaseFir(d.hf, this.fs, L);
+    this.dirG = d.dir[0];
     this.ch.forEach((c, n) => {
       c.sQr = new Float64Array(m);
       c.sQi = new Float64Array(m);
       c.sW = Float64Array.from(pan, (q) => (this.stereo ? panGains(q)[n] : 1));
       c.hx = new Float64Array(L - 1 + 128);
       c.lp = [new Biquad(lp2(F_TOP, this.fs)), new Biquad(lp2(F_TOP, this.fs))];
+      c.hp = new Biquad(hp2(d.dir[1], this.fs));
     });
   }
 
@@ -539,6 +558,10 @@ export class Engine {
       sQr[k] = qr;
       sQi[k] = qi;
     }
+    /* 駒の近くの直接の放射（力に比例する）。モードの経路と同じ低域通過を通す */
+    const { hp } = c,
+      dg = this.dirG;
+    for (let i = 0; i < len; i++) y[i] += dg * hp.step(f[i]);
     const [l1, l2] = c.lp;
     for (let i = 0; i < len; i++) out[off + i] += l2.step(l1.step(y[i]));
     if (P_REF !== 1) for (let i = 0; i < len; i++) out[off + i] /= P_REF;

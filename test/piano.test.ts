@@ -315,6 +315,45 @@ describe('響板の放射', () => {
       expect(Math.abs(20 * Math.log10(Math.hypot(r, i) / hfPressure(b, f)))).toBeLessThan(0.5);
     }
   });
+  it('基音の周波数での響板の応答（音圧 ÷ 力）は、隣の鍵の中央値より 6 dB 以上小さい鍵が少ない（駒の近くの直接の放射が谷を埋める）', () => {
+    const keys = Array.from({ length: 96 - 33 + 1 }, (_, i) => 33 + i),
+      lv = keys.map((k) => {
+        const p = pressure(P.board, P.keys[k - KEY_LO].w[0][0] / (2 * Math.PI));
+        return 10 * Math.log10(p.re * p.re + p.im * p.im);
+      }),
+      dev = lv.map((x, i) => x - [...lv.slice(Math.max(0, i - 2), i + 3)].sort((a, b) => a - b)[2]);
+    /* 直接の放射を足す前は 9 鍵、最小 −15 dB */
+    expect(dev.filter((d) => d < -6).length).toBeLessThanOrEqual(3);
+    expect(Math.min(...dev)).toBeGreaterThan(-11);
+  });
+  it('音を作る部分の響板の応答は、モードの帯域で表示の値と合う（モードの和と直接の放射）', () => {
+    const e = new Engine(FS),
+      n = 1 << 16,
+      y = new Float32Array(n);
+    e.setBoard(boardDesc(P.board));
+    e.strike({
+      key: 60,
+      N: 0,
+      w: new Float64Array(0),
+      s: new Float64Array(0),
+      fr: new Float64Array(0),
+      fi: new Float64Array(0),
+      own: new Int16Array(0),
+      sd: new Float64Array(0),
+      att: new Float32Array([1]),
+    });
+    for (let i = 0; i < n; i += 128) e.render(y, i, 128);
+    for (const f of [62, 110, 220, 440, 880, 1200]) {
+      let r = 0,
+        i = 0;
+      for (let t = 0; t < n; t++) {
+        r += y[t] * Math.cos((2 * Math.PI * f * t) / FS);
+        i -= y[t] * Math.sin((2 * Math.PI * f * t) / FS);
+      }
+      const p = pressure(P.board, f);
+      expect(Math.abs(20 * Math.log10(Math.hypot(r, i) / Math.hypot(p.re, p.im)))).toBeLessThan(1);
+    }
+  });
   it('音を作る部分の響板の応答は、2 つの経路の境目でも表示の値と大きく違わない（打ち消し合わない）', () => {
     const e = new Engine(FS),
       n = 1 << 15,

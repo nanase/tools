@@ -117,8 +117,14 @@
 <p>導波路の曲げ波は、6〜7 kHz（<math><msub><mi>f</mi><mi>sup</mi></msub></math>）まで空気中の音より遅いままです。一様な板なら、一致周波数（約 2 kHz）より上の 2〜6 kHz の音は効率よく出るはずですが、この音が弱くなります。</p>
 <h4>2 つの領域の境目</h4>
 <p>境目の 1〜2 kHz では、放射が強まります<a class="rf" href="#thy-r25">[25]</a><a class="rf" href="#thy-r20">[20]</a>。響板の木と響棒が、高い音を和らげるフィルタになっています。</p>
+<h4>駒の近くからの直接の放射</h4>
+<p>板じゅうに広がった振動とは別に、駒の近くの板は、押された力に比例する加速度で動いて直接音を出します。一致周波数より下の無限板では、この音圧は周波数によらず、力と面密度で決まります<a class="rf" href="#thy-r26">[26]</a>。駒と響棒で動きにくい分は、平均のアドミタンスと同じ割合 <math><mi>κ</mi></math> で小さくします。</p>
+<p>モードの和だけでは、隣り合うモードの音が打ち消し合う周波数に深い谷ができ、基音がそこへ落ちた鍵だけ音が小さくなります。直接の放射は共鳴の山より約 10 dB 小さい音ですが、谷の底を埋めて、鍵ごとの音量のむらを減らします。</p>
+<div class="eqs">
+  <math display="block"><msub><mi>p</mi><mi mathvariant="normal">d</mi></msub><mo>=</mo><mfrac><mrow><mi>κ</mi><msub><mi>ρ</mi><mn>0</mn></msub><mi>F</mi></mrow><mrow><mn>2</mn><mi>π</mi><mi>r</mi><mi>ρ</mi><mi>h</mi></mrow></mfrac></math>
+</div>
 <h4>高い周波数の計算</h4>
-<p>モードが重なり合う 1.6 kHz より上は、エネルギーの釣り合いから求めた平均の特性を、最小位相の FIR で表します<a class="rf" href="#thy-r26">[26]</a>。モードの和とは、Linkwitz–Riley の分け方でつなぎます<a class="rf" href="#thy-r27">[27]</a>。</p>
+<p>モードが重なり合う 1.6 kHz より上は、エネルギーの釣り合いから求めた平均の特性を、最小位相の FIR で表します<a class="rf" href="#thy-r27">[27]</a>。モードの和とは、Linkwitz–Riley の分け方でつなぎます<a class="rf" href="#thy-r28">[28]</a>。</p>
 <div class="eqs">
   <math display="block"><msup><mi>p</mi><mn>2</mn></msup><mo>=</mo><mfrac><mrow><msup><mrow><mo stretchy="false">(</mo><msub><mi>ρ</mi><mn>0</mn></msub><mi>c</mi><mo stretchy="false">)</mo></mrow><mn>2</mn></msup><mi>σ</mi><mo>⁢</mo><mi>Re</mi><mo>⁡</mo><mi>Y</mi><mo>⁢</mo><msup><mrow><mo>|</mo><mi>F</mi><mo>|</mo></mrow><mn>2</mn></msup></mrow><mrow><mn>2</mn><mi>π</mi><msup><mi>r</mi><mn>2</mn></msup><mi>ω</mi><mi>η</mi><mi>ρ</mi><mi>h</mi></mrow></mfrac></math>
   <math display="block"><mi>σ</mi><mo>=</mo><mfrac><mrow><mi>P</mi><mi>c</mi></mrow><mrow><mn>4</mn><msup><mi>π</mi><mn>2</mn></msup><mi>A</mi><msub><mi>f</mi><mi mathvariant="normal">c</mi></msub></mrow></mfrac><mfrac><mrow><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><msup><mi>β</mi><mn>2</mn></msup><mo stretchy="false">)</mo><mi>ln</mi><mo>⁡</mo><mfrac><mrow><mn>1</mn><mo>+</mo><mi>β</mi></mrow><mrow><mn>1</mn><mo>−</mo><mi>β</mi></mrow></mfrac><mo>+</mo><mn>2</mn><mi>β</mi></mrow><msup><mrow><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><msup><mi>β</mi><mn>2</mn></msup><mo stretchy="false">)</mo></mrow><mrow><mn>3</mn><mo>/</mo><mn>2</mn></mrow></msup></mfrac></math>
@@ -127,7 +133,7 @@
 
 <h3>ダンパー</h3>
 <ul class="tl">
-  <li><b>鍵を離したとき:</b> ダンパーが弦に触れ、その鍵の弦のモードに減衰を足す。低音ほど弦が重く、止まるのに時間がかかる<a class="rf" href="#thy-r28">[28]</a></li>
+  <li><b>鍵を離したとき:</b> ダンパーが弦に触れ、その鍵の弦のモードに減衰を足す。低音ほど弦が重く、止まるのに時間がかかる<a class="rf" href="#thy-r29">[29]</a></li>
   <li><b>最も高い音域:</b> 弦にダンパーがない</li>
   <li><b>ダンパーペダル:</b> 踏むと、すべてのダンパーが上がる</li>
 </ul>
@@ -142,15 +148,15 @@
     </ul>
   </li>
 </ul>
-<p>ストレッチでは、非調和性で部分音が高くなるぶん、高音が高く、低音が低くなります。Railsback の曲線です<a class="rf" href="#thy-r29">[29]</a>。</p>
+<p>ストレッチでは、非調和性で部分音が高くなるぶん、高音が高く、低音が低くなります。Railsback の曲線です<a class="rf" href="#thy-r30">[30]</a>。</p>
 
 <h3>残響</h3>
-<p>部屋の残響時間を Eyring の式で求め<a class="rf" href="#thy-r30">[30]</a>、16 本の遅延線のフィードバック遅延網で残響を作ります<a class="rf" href="#thy-r31">[31]</a>。</p>
+<p>部屋の残響時間を Eyring の式で求め<a class="rf" href="#thy-r31">[31]</a>、16 本の遅延線のフィードバック遅延網で残響を作ります<a class="rf" href="#thy-r32">[32]</a>。</p>
 <dl class="syms">
   <dt><math><mi>V</mi></math></dt><dd>部屋の容積</dd>
   <dt><math><mi>S</mi></math></dt><dd>部屋の表面積</dd>
   <dt><math><mover><mi>α</mi><mo>¯</mo></mover></math></dt><dd>平均吸音率</dd>
-  <dt><math><mi>m</mi></math></dt><dd>空気の吸収<a class="rf" href="#thy-r32">[32]</a></dd>
+  <dt><math><mi>m</mi></math></dt><dd>空気の吸収<a class="rf" href="#thy-r33">[33]</a></dd>
   <dt><math><mi>A</mi></math></dt><dd>等価吸音面積</dd>
   <dt><math><msub><mi>r</mi><mi mathvariant="normal">c</mi></msub></math></dt><dd>臨界距離。<math><mi>A</mi></math> から求める</dd>
   <dt><math><mi>r</mi></math></dt><dd>聴く位置</dd>
@@ -204,13 +210,14 @@
   <li id="thy-r23"><span class="rf-for">一致周波数より下の平板の放射効率</span><span class="rf-src">G. Squicciarini, D. J. Thompson and R. Corradi, “The effect of different combinations of boundary conditions on the average radiation efficiency of rectangular plates,” <i>J. Sound Vib.</i>, vol. 333, no. 17, pp. 3931–3948, 2014</span></li>
   <li id="thy-r24"><span class="rf-for">放射効率の実測、高い周波数で振動が響棒の間に閉じ込められること</span><span class="rf-src">A. Chaigne, B. Cotté and R. Viggiano, “Dynamical properties of piano soundboards,” <i>J. Acoust. Soc. Am.</i>, vol. 133, no. 4, pp. 2456–2466, 2013</span></li>
   <li id="thy-r25"><span class="rf-for">放射効率の実測</span><span class="rf-src">H. Suzuki, “Vibration and sound radiation of a piano soundboard,” <i>J. Acoust. Soc. Am.</i>, vol. 80, no. 6, pp. 1573–1582, 1986</span></li>
-  <li id="thy-r26"><span class="rf-for">ケプストラムによる最小位相の FIR</span><span class="rf-src">A. V. Oppenheim and R. W. Schafer, <i>Discrete-Time Signal Processing</i>, 3rd ed., Pearson, 2010</span></li>
-  <li id="thy-r27"><span class="rf-for">2 つの経路の分け方</span><span class="rf-src">S. H. Linkwitz, “Active crossover networks for noncoincident drivers,” <i>J. Audio Eng. Soc.</i>, vol. 24, no. 1, pp. 2–8, 1976</span></li>
-  <li id="thy-r28"><span class="rf-for">ダンパーで止まる時間</span><span class="rf-src">H.-M. Lehtonen, A. Askenfelt and V. Välimäki, “Analysis of the part-pedaling effect in the piano,” <i>J. Acoust. Soc. Am.</i>, vol. 126, no. 2, pp. EL49–EL54, 2009</span></li>
-  <li id="thy-r29"><span class="rf-for">ストレッチ調律</span><span class="rf-src">O. L. Railsback, “Scale temperament as applied to piano tuning,” <i>J. Acoust. Soc. Am.</i>, vol. 9, p. 274, 1938</span></li>
-  <li id="thy-r30"><span class="rf-for">残響時間</span><span class="rf-src">C. F. Eyring, “Reverberation time in ‘dead’ rooms,” <i>J. Acoust. Soc. Am.</i>, vol. 1, no. 2A, pp. 217–241, 1930</span></li>
-  <li id="thy-r31"><span class="rf-for">残響</span><span class="rf-src">J.-M. Jot and A. Chaigne, “Digital delay networks for designing artificial reverberators,” AES 90th Convention, Preprint 3030, 1991</span></li>
-  <li id="thy-r32"><span class="rf-for">空気の吸収の値</span><span class="rf-src">ISO 9613-1</span></li>
+  <li id="thy-r26"><span class="rf-for">点で押された板が、押した点の近くから放射する音</span><span class="rf-src">L. Cremer, M. Heckl, and B. A. T. Petersson, <i>Structure-Borne Sound</i>, 3rd ed., Springer, 2005</span></li>
+  <li id="thy-r27"><span class="rf-for">ケプストラムによる最小位相の FIR</span><span class="rf-src">A. V. Oppenheim and R. W. Schafer, <i>Discrete-Time Signal Processing</i>, 3rd ed., Pearson, 2010</span></li>
+  <li id="thy-r28"><span class="rf-for">2 つの経路の分け方</span><span class="rf-src">S. H. Linkwitz, “Active crossover networks for noncoincident drivers,” <i>J. Audio Eng. Soc.</i>, vol. 24, no. 1, pp. 2–8, 1976</span></li>
+  <li id="thy-r29"><span class="rf-for">ダンパーで止まる時間</span><span class="rf-src">H.-M. Lehtonen, A. Askenfelt and V. Välimäki, “Analysis of the part-pedaling effect in the piano,” <i>J. Acoust. Soc. Am.</i>, vol. 126, no. 2, pp. EL49–EL54, 2009</span></li>
+  <li id="thy-r30"><span class="rf-for">ストレッチ調律</span><span class="rf-src">O. L. Railsback, “Scale temperament as applied to piano tuning,” <i>J. Acoust. Soc. Am.</i>, vol. 9, p. 274, 1938</span></li>
+  <li id="thy-r31"><span class="rf-for">残響時間</span><span class="rf-src">C. F. Eyring, “Reverberation time in ‘dead’ rooms,” <i>J. Acoust. Soc. Am.</i>, vol. 1, no. 2A, pp. 217–241, 1930</span></li>
+  <li id="thy-r32"><span class="rf-for">残響</span><span class="rf-src">J.-M. Jot and A. Chaigne, “Digital delay networks for designing artificial reverberators,” AES 90th Convention, Preprint 3030, 1991</span></li>
+  <li id="thy-r33"><span class="rf-for">空気の吸収の値</span><span class="rf-src">ISO 9613-1</span></li>
 </ol>
 
 <h3>このツールで決めたこと</h3>
