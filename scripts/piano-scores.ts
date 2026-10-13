@@ -7,8 +7,10 @@
  * LilyPond の MIDI は反復を展開しないので、.ly の \repeat volta・\alternative・D.C. を読んで、
  * 演奏順の小節の範囲を曲ごとに書く。MIDI にペダル（CC64）はなく、データにも入れない。
  *
- * ベロシティは、LilyPond が強弱記号から付けたものがある曲（ジムノペディ）だけ入れる。ほかの曲の MIDI は
- * すべての音が同じ値（90 か 127）で、強弱の情報がない
+ * ベロシティは、LilyPond が強弱記号から付けたものがある曲（ジムノペディ）と、MIDI を編集して 2 つ以上の値にした曲で入れる。
+ * Mutopia のままの MIDI は、ジムノペディのほかはすべての音が同じ値（90 か 127）で、強弱の情報がない。
+ * テンポも、MIDI に変化を入れた曲だけ入れる（Mutopia のままの MIDI は最初の値だけ）。入れた曲では、score.ts の tempoMap
+ * （このツールで付けた終わりの rit. など）の代わりに、MIDI の変化で演奏する
  */
 import { build, type Kind, type Midi, noteName, type Piece, type RawNote } from './score-midi';
 
@@ -21,6 +23,7 @@ const kind: Kind = {
     { name: '左手の譜表', lo: 21, hi: 108 },
   ],
   mergeAcross: true,
+  dynamics: true,
 };
 
 /**
@@ -104,13 +107,13 @@ function restoreTriplets(m: Midi, log: (s: string) => void): RawNote[] {
 }
 
 const mutopia = (id: number) => `https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=${id}`;
-const common =
-  '時刻と長さを 4 分音符の 1/480 に寄せ、同じ時刻の同じ高さの音を 1 つにまとめた。強弱とテンポは使わない。';
+/** 加工の段落の終わり。テンポと強弱の扱いは、MIDI の中身に合わせて score-midi.ts が書き足す */
+const common = '時刻と長さを 4 分音符の 1/480 に寄せ、同じ時刻の同じ高さの音を 1 つにまとめた。';
 /** ベロシティを入れる曲の加工 */
 const commonVel = [
   '時刻と長さを 4 分音符の 1/480 に寄せ、同じ時刻の同じ高さの音を 1 つにまとめた。',
   'ベロシティは、LilyPond が強弱記号と松葉から付けた値を残し、強弱記号のない声部の既定の値（90）は、',
-  '同じ小節の最も弱い値にそろえた。テンポは使わない。',
+  '同じ小節の最も弱い値にそろえた。',
 ];
 /** LilyPond が、強弱記号のない声部の音に付けるベロシティ */
 const LILY_VEL = 90;

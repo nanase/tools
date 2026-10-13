@@ -20,7 +20,7 @@ import { Keys } from './keys';
 import { damperRate, makePiano, NO_DAMPER, type Piano, type PianoSpec, type Strike, strikeKey } from './model';
 import { DIST, THICK, UNI, VEL, VOL0 } from './params';
 import { BH, boardPlot, fAtX, forcePlot, OH, specPlot, wavePlot, Y1_TOP, Y2_TOP } from './plot';
-import { PIECES, type Piece, type PlayEv, pieceOf, playEvents, type ScoreNote, TempoMap } from './score';
+import { PIECES, type Piece, type PieceData, type PlayEv, pieceOf, playEvents, TempoMap, tempoOf } from './score';
 import { admittance, pressure, yMeanOf } from './soundboard';
 import { inharm, KEY_HI, KEY_LO, KEYS, noteHz, noteName, PIANO_TYPES, pianoTypeOf } from './strings';
 import type { Job, Reply } from './worker';
@@ -638,7 +638,7 @@ interface Play {
   pedalAt: number;
 }
 let PL: Play | null = null;
-const noteCache = new Map<string, ScoreNote[]>();
+const noteCache = new Map<string, PieceData>();
 const spbOf = (pc: Piece) => 60 / (pc.bpm * (V.tempo / 100));
 /** 演奏の位置を書く（一時停止の間は、そのことも添える） */
 let plBar = '';
@@ -662,28 +662,29 @@ async function startPiece(): Promise<void> {
   }
   sndMsg('');
   const pc = pieceOf(piece.value);
-  let notes = noteCache.get(pc.v);
-  if (!notes) {
+  let data = noteCache.get(pc.v);
+  if (!data) {
     try {
-      notes = await pc.load();
+      data = await pc.load();
     } catch {
       sndMsg('曲を読み込めませんでした');
       return;
     }
-    noteCache.set(pc.v, notes);
+    noteCache.set(pc.v, data);
   }
   if (PL || piece.value !== pc.v) return;
   /* 鍵盤で押している鍵とペダルを離す */
   for (const k of S.held) lift(k);
   audio.pedal(false);
   keys.setPedal(false);
-  const ev = playEvents(pc, notes, VEL.v, ped.value),
+  const notes = data.notes,
+    ev = playEvents(pc, notes, VEL.v, ped.value),
     now = audio.now() ?? 0,
     end = Math.max(...notes.map((x) => x.t + x.d));
   PL = {
     ev,
     i: 0,
-    tm: new TempoMap(pc.tempoMap),
+    tm: new TempoMap(tempoOf(pc, data)),
     at0: now + 0.25,
     tau0: 0,
     spb: spbOf(pc),

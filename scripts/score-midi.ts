@@ -1,8 +1,9 @@
 /**
  * scripts/piano-scores.ts と scripts/organ-scores.ts で共通に使う、MIDI（SMF）から曲のデータ（.ts）を作る処理。
  *
- * 音の高さ・時刻・長さと、どのトラック（譜表・鍵盤）の音かを使う。コントロールチェンジ、ベロシティ（vel を
- * 指定した曲を除く）、テンポ（指定した曲の変化を除く）は使わない。時刻と長さは 4 分音符の 1/DIV に寄せ、
+ * 音の高さ・時刻・長さと、どのトラック（譜表・鍵盤）の音かを使う。テンポは、MIDI に変化があれば、最初の値に対する比として
+ * 入れる。ベロシティは、強弱を付けられる楽器（Kind.dynamics）で、MIDI に 2 つ以上の値があれば入れる（MIDI を編集して
+ * テンポや強弱を付ければ、作り直すだけで演奏に出る）。コントロールチェンジは使わない。時刻と長さは 4 分音符の 1/DIV に寄せ、
  * 反復を展開し、音符を 64 文字の符号で固定長に詰めて書く
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
@@ -133,7 +134,8 @@ export interface Piece {
   /** このトラックのプログラムチェンジを REG（[拍, 番号]）に書く（レジストレーションの切り替え） */
   programs?: number;
   /**
-   * MIDI のベロシティ（LilyPond が強弱記号から付けた値）を音符に入れる。値は、強弱記号のない声部に LilyPond が
+   * MIDI のベロシティ（LilyPond が強弱記号から付けた値）を音符に入れる。指定しない曲でも、強弱を付けられる楽器で、
+   * MIDI のベロシティに 2 つ以上の値があれば、そのまま入れる。値は、強弱記号のない声部に LilyPond が
    * 付ける既定のベロシティ（90）。この値の音は、同じ小節で始まる音のうち、ほかの値で最も弱いものにそろえる
    * （その小節になければ前の小節の値、曲の初めは最初に見つかる値）
    */
@@ -149,7 +151,10 @@ export interface Piece {
   shift?: number;
   /** 前打音を本音符の開始で切る（LilyPond 2.8 の MIDI は、前打音を本音符の少し前から元の長さで鳴らす） */
   grace?: boolean;
-  /** MIDI のテンポの変化を、最初のテンポに対する比として TEMPO に入れる */
+  /**
+   * MIDI のテンポの変化を、最初のテンポに対する比として TEMPO に入れる。true の曲は、テンポと強弱の扱いを加工の段落
+   * （changes）に書いておく。指定しない曲は、変化があれば入れ、テンポと強弱の扱いを加工の段落の終わりに自動で書き足す
+   */
   tempo?: boolean;
   /** 曲ごとの手直し。readMidi の結果を受け取り、使う音（時刻は tick）を返す */
   fix?: (m: Midi, log: (s: string) => void) => RawNote[];
@@ -172,6 +177,8 @@ export interface Kind {
   staves: { name: string; lo: number; hi: number }[];
   /** 同じ時刻・同じ高さの音を、h が違っても 1 つにまとめる（ピアノは鍵盤が 1 つなので） */
   mergeAcross: boolean;
+  /** ベロシティで強弱を付けられる楽器（ピアノ）。オルガンは鍵を押す強さで音が変わらないので、ベロシティを使わない */
+  dynamics: boolean;
 }
 
 /** 音符。時刻と長さは 1/DIV 拍 */
@@ -182,8 +189,40 @@ export interface Note {
   h: number;
   /** 元の時刻か終わりが 1/96 拍の格子に乗らない（前打音） */
   odd: boolean;
-  /** ベロシティ（vel を指定した曲だけ） */
+  /** ベロシティ（入れる曲だけ） */
   v?: number;
+}
+
+/**
+ * テンポの変化 steps（[時刻, 比] を時刻の順に並べたもの。反復を展開する前の時刻）を、演奏順の時刻の列にする。
+ * segs は展開する範囲 [始まり, 終わり) の列（展開しないなら null）で、範囲の始まりには、その時刻に効いている比を置く。
+ * 前と同じ比の項（初めは比 1）は除き、同じ時刻の項は後ろのものを残す
+ */
+export function tempoSteps(
+  steps: readonly (readonly [number, number])[],
+  segs: readonly (readonly [number, number])[] | null,
+): [number, number][] {
+  const at = (t: number) => steps.reduce((r, [s, v]) => (s <= t ? v : r), 1),
+    all: (readonly [number, number])[] = [];
+  if (!segs) all.push(...steps);
+  else {
+    let off = 0;
+    for (const [s, e] of segs) {
+      all.push([off, at(s)]);
+      for (const [t, r] of steps) if (t > s && t < e) all.push([off + t - s, r]);
+      off += e - s;
+    }
+  }
+  const out: [number, number][] = [];
+  let prev = 1;
+  for (const [t, r] of all) {
+    if (r === prev) continue;
+    const last = out[out.length - 1];
+    if (last && last[0] === t) last[1] = r;
+    else out.push([t, r]);
+    prev = r;
+  }
+  return out;
 }
 
 const NAMES = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
@@ -307,6 +346,16 @@ export function build(p: Piece, k: Kind): void {
     snap = p.exact ? (tick: number) => Math.round((tick * DIV) / m.ppq) : sn.snap,
     count = sn.count,
     g96 = m.ppq / 96;
+  /* ベロシティを入れる曲: 強弱記号から付いた値を使う曲（vel）と、MIDI に 2 つ以上の値がある曲（編集して強弱を付けた曲） */
+  const vs0 = raw.flatMap((x) => (hOf.has(x.tr) && x.v !== undefined ? [x.v] : [])),
+    rawVel = p.vel === undefined && k.dynamics && new Set(vs0).size > 1,
+    hasVel = p.vel !== undefined || rawVel,
+    /* 曲ごとの手直しで足した音（ベロシティがない）には、最も多い値を付ける */
+    usual = [...new Set(vs0)].reduce(
+      (a, b) => (vs0.filter((v) => v === b).length > vs0.filter((v) => v === a).length ? b : a),
+      64,
+    );
+  if (rawVel) log(`ベロシティ ${Math.min(...vs0)}〜${Math.max(...vs0)}（MIDI の値をそのまま入れた）`);
   let ns: Note[] = [];
   for (const x of raw) {
     const h = hOf.get(x.tr);
@@ -318,7 +367,7 @@ export function build(p: Piece, k: Kind): void {
       n: x.n,
       h,
       odd: x.t0 % g96 !== 0 || x.t1 % g96 !== 0,
-      ...(p.vel === undefined ? {} : { v: x.v ?? p.vel }),
+      ...(hasVel ? { v: x.v ?? p.vel ?? usual } : {}),
     });
   }
   ns.sort((a, b) => a.t - b.t || a.h - b.h || a.n - b.n);
@@ -378,7 +427,8 @@ export function build(p: Piece, k: Kind): void {
   if (dup) log(`同じ時刻・同じ高さの音 ${dup} 個をまとめた${across ? `（うち譜表の違う音 ${across}）` : ''}`);
 
   /* 反復を展開する */
-  let length = Math.max(...ns.map((x) => x.t + x.d));
+  let length = Math.max(...ns.map((x) => x.t + x.d)),
+    played: [number, number][] | null = null;
   if (p.order) {
     const shift = Math.round((p.shift ?? 0) * DIV),
       start = (k1: number) => (k1 === 0 ? 0 : Math.round((p.pickup + (k1 - 1) * bar) * DIV)) - shift;
@@ -413,6 +463,7 @@ export function build(p: Piece, k: Kind): void {
     if (lost) log(`範囲の前から鳴り続く音 ${lost} 個（展開後は鳴らない）`);
     ns = out;
     length = off;
+    played = segs;
   }
   ns.sort((a, b) => a.t - b.t || a.h - b.h || a.n - b.n);
 
@@ -433,23 +484,24 @@ export function build(p: Piece, k: Kind): void {
   }
   if (overlap) log(`同じ鍵で前の音が鳴っているうちに始まる音 ${overlap} 個（そのまま残す）`);
 
-  /* テンポの変化（最初のテンポに対する比） */
-  const tempo: [number, number][] = [];
-  if (p.tempo) {
-    if (p.order) throw new Error(`${p.name}: テンポの変化と反復の展開は同時に使えません`);
-    const base = m.tempo[0];
-    if (base?.t !== 0) throw new Error(`${p.name}: 最初のテンポがありません`);
-    let prev = 1;
-    for (const x of m.tempo) {
-      const r = Math.round((base.us / x.us) * 10000) / 10000,
-        t = snap(x.t) / DIV;
-      if (r === prev) continue;
-      const last = tempo[tempo.length - 1];
-      if (last && last[0] === t) last[1] = r;
-      else tempo.push([t, r]);
-      prev = r;
-    }
-    log(`基本のテンポ ♩ = ${+(60e6 / base.us).toFixed(2)}（MIDI の最初の値）`);
+  /* テンポの変化（最初のテンポに対する比。反復を展開した曲は、演奏順の拍に直す）。最初のテンポがなければ MIDI の既定の ♩ = 120 */
+  if (p.tempo && m.tempo[0]?.t !== 0) throw new Error(`${p.name}: 最初のテンポがありません`);
+  const base = m.tempo[0]?.t === 0 ? m.tempo[0].us : 500000,
+    baseBpm = +(60e6 / base).toFixed(2),
+    tempo = tempoSteps(
+      m.tempo.map((x) => [snap(x.t), Math.round((base / x.us) * 10000) / 10000]),
+      played,
+    ).map(([t, r]): [number, number] => [t / DIV, r]);
+  if (p.tempo || tempo.length)
+    log(`基本のテンポ ♩ = ${baseBpm}（MIDI の最初の値）${tempo.length ? `、変化 ${tempo.length} 個` : ''}`);
+
+  /* テンポと強弱の扱い（tempo を指定しない曲は、加工の段落の終わりに書き足す。短ければ最後の行に続ける） */
+  const changes = [...p.changes];
+  if (p.tempo === undefined) {
+    const tempoNote = `テンポは、MIDI の変化（♩ = ${baseBpm} が基本）を、基本に対する比として TEMPO に入れた。`,
+      velNote = rawVel ? 'ベロシティは MIDI の値をそのまま入れた。' : hasVel ? '' : '強弱は使わない。';
+    if (tempo.length || rawVel) changes.push(velNote + (tempo.length ? tempoNote : 'テンポは使わない。'));
+    else changes[changes.length - 1] += hasVel ? 'テンポは使わない。' : '強弱とテンポは使わない。';
   }
 
   /* レジストレーションの切り替え（プログラムチェンジ） */
@@ -460,8 +512,8 @@ export function build(p: Piece, k: Kind): void {
       `プログラムチェンジ ${reg.length} 個（番号 ${[...new Set(reg.map((x) => x[1]))].sort((a, b) => a - b).join('・')}）`,
     );
 
-  /* 符号にする: 前の音からの間（3）、長さ（3）、音の高さ（2）、h（1）、ベロシティ（2。vel を指定した曲だけ） */
-  const width = p.vel === undefined ? 9 : 11;
+  /* 符号にする: 前の音からの間（3）、長さ（3）、音の高さ（2）、h（1）、ベロシティ（2。入れる曲だけ） */
+  const width = hasVel ? 11 : 9;
   let data = '',
     prev = 0;
   for (const x of ns) {
@@ -494,11 +546,11 @@ export function build(p: Piece, k: Kind): void {
     `${k.script} で ${p.name}.mid から作る（直接編集しない）。`,
     '',
     ...p.source,
-    ...p.changes,
+    ...changes,
     '',
     ...license,
   ];
-  const velSrc = p.vel === undefined ? '' : '\n      v: v(DATA.slice(i + 9, i + 11)),',
+  const velSrc = hasVel ? '\n      v: v(DATA.slice(i + 9, i + 11)),' : '',
     tempoSrc = tempo.length ? `[\n${tempo.map(([t, r]) => `  [${t}, ${r}],`).join('\n')}\n]` : '[]',
     list = (xs: number[][]) => `[\n${xs.map((x) => `  [${x.join(', ')}],`).join('\n')}\n]`,
     extra = [
@@ -519,7 +571,7 @@ ${head.map((l) => (l ? ` * ${l}` : ' *')).join('\n')}
  */
 import type { ScoreNote } from './types';
 
-/** 1 拍（4 分音符）を ${DIV} に分けた時刻・長さ。1 音 ${width} 文字: 前の音からの間（3）、長さ（3）、音の高さ（2）、${k.staves.length > 2 ? '鍵盤' : '譜表'}（1）${p.vel === undefined ? '' : '、ベロシティ（2）'} */
+/** 1 拍（4 分音符）を ${DIV} に分けた時刻・長さ。1 音 ${width} 文字: 前の音からの間（3）、長さ（3）、音の高さ（2）、${k.staves.length > 2 ? '鍵盤' : '譜表'}（1）${hasVel ? '、ベロシティ（2）' : ''} */
 const DATA =
 ${lines.map((l) => `  '${l}'`).join(' +\n')};
 

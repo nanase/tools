@@ -6,7 +6,16 @@ import { boardDesc, Engine, minPhaseFir } from '../src/tools/piano/engine';
 import { type StruckString, strike } from '../src/tools/piano/hammer';
 import { damperFade, Gliss, ripRadius, ripTime } from '../src/tools/piano/keys';
 import { damperRate, hammerOf, makePiano, NO_DAMPER, type Piano, strikeKey } from '../src/tools/piano/model';
-import { dynamics, PIECES, pedalPoints, pieceOf, playEvents, TempoMap, voicing } from '../src/tools/piano/score';
+import {
+  dynamics,
+  PIECES,
+  pedalPoints,
+  pieceOf,
+  playEvents,
+  TempoMap,
+  tempoOf,
+  voicing,
+} from '../src/tools/piano/score';
 import { admittance, hfPressure, makeBoard, pressure, sigma } from '../src/tools/piano/soundboard';
 import {
   etaOf,
@@ -531,9 +540,11 @@ describe('曲のベロシティとペダル', () => {
   });
   it('ジムノペディにはすべての音にベロシティがあり、自動の打鍵の速さは旋律の f で大きく、範囲に収まる', async () => {
     for (const p of PIECES) {
-      const notes = await p.load(),
+      const { notes } = await p.load(),
         has = notes.filter((x) => x.v !== undefined).length;
-      expect(has).toBe(p.v.startsWith('gymno') ? notes.length : 0);
+      /* ベロシティは、ある曲ではすべての音にある（ジムノペディのほか、MIDI を編集して強弱を付けた曲） */
+      expect([0, notes.length]).toContain(has);
+      if (p.v.startsWith('gymno')) expect(has).toBe(notes.length);
       const vs = playEvents(p, notes, 2.5, 'auto').flatMap((e) => (e.type === 'on' ? [e.v] : []));
       expect(Math.min(...vs)).toBeGreaterThan(0.3);
       expect(Math.max(...vs)).toBeLessThanOrEqual(7);
@@ -593,7 +604,7 @@ describe('曲のベロシティとペダル', () => {
   it('どの曲も、鍵盤の音域に収まり、小節の長さがそろう', async () => {
     const bars: Record<string, number> = { bwv846: 35, gymno1: 78, gymno2: 65, gymno3: 60, moon1: 69, moon3: 264 };
     for (const p of PIECES) {
-      const notes = await p.load(),
+      const { notes } = await p.load(),
         end = Math.max(...notes.map((x) => x.t + x.d));
       expect(notes.length).toBeGreaterThan(300);
       for (const x of notes) {
@@ -609,7 +620,7 @@ describe('曲のベロシティとペダル', () => {
 
 describe('曲の音符がすべて鳴る', () => {
   it('月光 第 1 楽章の 3 連符は途切れない（LilyPond の MIDI で落ちていた小節 9・46 の E4 を戻した）', async () => {
-    const notes = await pieceOf('moon1').load(),
+    const { notes } = await pieceOf('moon1').load(),
       on = new Set(notes.map((x) => Math.round(x.t * 3)));
     for (const b of [9, 46])
       expect(notes.some((x) => x.n === 64 && Math.abs(x.t - ((b - 1) * 4 + 2 / 3)) < 1e-6)).toBe(true);
@@ -618,7 +629,7 @@ describe('曲の音符がすべて鳴る', () => {
   });
   it('どの曲も、すべての音符に打鍵の出来事がちょうど 1 つあり、同じ鍵の離鍵は打鍵の数だけある', async () => {
     for (const p of PIECES) {
-      const notes = await p.load(),
+      const { notes } = await p.load(),
         ev = playEvents(p, notes, 2.5, 'auto'),
         ons = ev.filter((e) => e.type === 'on');
       expect(ons.length).toBe(notes.length);
@@ -629,9 +640,10 @@ describe('曲の音符がすべて鳴る', () => {
   /** 曲の範囲 [b0, b1) 拍を演奏のとおりに予約して鳴らし、打った鍵のモードが 40 ms 後も鳴っていない音符を返す */
   async function silent(v: string, b0: number, b1: number): Promise<number[]> {
     const pc = pieceOf(v),
-      notes = await pc.load(),
+      data = await pc.load(),
+      notes = data.notes,
       ev = playEvents(pc, notes, 2.5, 'auto').filter((e) => e.b >= b0 && e.b < b1),
-      tm = new TempoMap(pc.tempoMap),
+      tm = new TempoMap(tempoOf(pc, data)),
       spb = 60 / pc.bpm,
       t0 = tm.tau(b0) * spb,
       e = new Engine(FS),

@@ -337,6 +337,9 @@ const DATA =
 const A = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
 const v = (s: string) => [...s].reduce((x, c) => x * 64 + A.indexOf(c), 0);
 
+/** テンポの変化: [拍, 基本のテンポに対する比]。最初の項より前の比は 1 */
+export const TEMPO: readonly [number, number][] = [];
+
 /** 音符と運指（3778 音、256 小節あまり。最初の 2 拍は弱起） */
 export function chaconne(): Placed[] {
   const out: Placed[] = [];
