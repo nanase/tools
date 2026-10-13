@@ -6,6 +6,7 @@ import { Choice } from '../../lib/choice';
 import { $, esc } from '../../lib/dom';
 import { fmt, fmtR, minus, plain, ro } from '../../lib/format';
 import { ParamGroup } from '../../lib/param';
+import { Pauser } from '../../lib/pause';
 import { movePlayStore, outVol, type PlayKey, TEMPO } from '../../lib/play';
 import { acoustics, reverbSpec, roomOf } from '../../lib/reverb';
 import { SW } from '../../lib/scope';
@@ -48,7 +49,6 @@ const html = (id: string, s: string) => {
   const el = $(id);
   if (el.innerHTML !== s) el.innerHTML = s;
 };
-const nowS = () => performance.now() / 1000;
 
 /* ---------- 状態 ---------- */
 type SetV = 'nylon' | 'steel';
@@ -155,6 +155,13 @@ const V = {
   tempo: 100,
 };
 const audio = new GuitarAudio();
+/* 一時停止。図の振動と予約した表示は、一時停止の間は進まない時計に合わせる */
+const pauser = new Pauser(audio, {
+  playing: () => !!P,
+  changed: syncPlay,
+  failed: () => sndMsg(NO_SOUND),
+});
+const nowS = pauser.clock.now;
 
 /* ---------- 指板 ---------- */
 const neck = new Neck($<SVGSVGElement>('#neck'), {
@@ -674,7 +681,14 @@ function slideOf(si: number, a: number, b: number, dur: number, seed: number): F
 }
 
 let seedN = 1;
+/** 一時停止の間に弾こうとしたときの知らせ（再開・停止で消す） */
+const PAUSED = '一時停止の間は弾けません';
+/** 弦を弾く（曲の演奏中も弾ける。一時停止の間は AudioContext が止まっているので弾けない） */
 async function pluck(si: number, fret: number | null): Promise<void> {
+  if (pauser.paused) {
+    sndMsg(PAUSED);
+    return;
+  }
   const f = fret ?? S.left[si],
     prev = S.left[si],
     held = neck.get(si);
@@ -755,6 +769,8 @@ interface Play {
   at0: number;
   b0: number;
   spb: number;
+  /** 前に予約を進めたときの AudioContext の時刻 */
+  seen: number;
   /** 最後の音の拍と、小節の数 */
   last: number;
   bars: number;
@@ -801,10 +817,20 @@ function eventsOf(pl: Placed[]): Ev[] {
   });
   return ev;
 }
+/** 演奏の位置を書く（一時停止の間は、そのことも添える） */
+let plBar = '';
+function showBar(s = plBar): void {
+  plBar = s;
+  txt('#pl-bar', pauser.paused ? `${s}（一時停止中）` : s);
+}
 function syncPlay(): void {
   $('#playBtn').setAttribute('aria-pressed', String(!!P));
   $('#playLed').classList.toggle('on', !!P);
   txt('#playT', P ? '停止' : '演奏');
+  $<HTMLButtonElement>('#pauseBtn').disabled = !P;
+  txt('#pauseBtn', pauser.paused ? '再開' : '一時停止');
+  showBar();
+  if (!pauser.paused && $('#snd-msg').textContent === PAUSED) sndMsg('');
 }
 async function startPiece(): Promise<void> {
   const ok = await audio.ready();
@@ -839,12 +865,13 @@ async function startPiece(): Promise<void> {
     at0: now + 0.15,
     b0: 0,
     spb: spbOf(pc),
+    seen: now,
     last: Math.max(...ev.map((e) => e.b)),
     bars: Math.ceil((Math.max(...pl.map((n) => n.t + n.d)) - pc.pickup) / pc.bar),
     timer: setInterval(tick, 40),
     piece: pc,
   };
-  txt('#pl-bar', '');
+  plBar = '';
   syncPlay();
   tick();
 }
@@ -852,6 +879,7 @@ function stopPiece(): void {
   if (!P) return;
   clearInterval(P.timer);
   P = null;
+  pauser.clear();
   audio.stop(0.08);
   neck.clearPending();
   const t = nowS();
@@ -859,14 +887,19 @@ function stopPiece(): void {
     const s = neck.get(si);
     if (s && s.damp > t) neck.set(si, { ...s, damp: t });
   }
-  txt('#pl-bar', '');
+  plBar = '';
   syncPlay();
 }
+/** 先に予約する時間 [s] */
+const AHEAD = 0.3;
 function tick(): void {
   const p = P;
-  if (!p) return;
+  if (!p || pauser.paused) return;
   const an = audio.now();
   if (an === null) return;
+  /* タイマーが止まっていた間（スリープ、重い処理）に過ぎた分は、後ろへずらして続きから弾く（遅れた音をまとめて鳴らさない） */
+  if (an - p.seen > AHEAD) p.at0 += an - p.seen - AHEAD;
+  p.seen = an;
   /* テンポが変わったら、今の拍を基準に付け直す */
   const spb = spbOf(p.piece);
   if (spb !== p.spb) {
@@ -876,7 +909,7 @@ function tick(): void {
   }
   const atOf = (b: number) => p.at0 + (b - p.b0) * p.spb,
     toPerf = (a: number) => nowS() + (a - an);
-  while (p.i < p.ev.length && atOf(p.ev[p.i].b) + p.ev[p.i].jit < an + 0.3) {
+  while (p.i < p.ev.length && atOf(p.ev[p.i].b) + p.ev[p.i].jit < an + AHEAD) {
     const e = p.ev[p.i++],
       at = Math.max(an, atOf(e.b) + e.jit),
       m = modes(e.si, e.f),
@@ -903,7 +936,7 @@ function tick(): void {
     beat = p.b0 + (an - p.at0) / p.spb,
     bar = Math.max(0, Math.floor((beat - pc.pickup) / pc.bar) + 1),
     bars = p.bars;
-  txt('#pl-bar', `${Math.min(bar, bars)} / ${bars} 小節`);
+  showBar(`${Math.min(bar, bars)} / ${bars} 小節`);
   if (p.i >= p.ev.length && beat > p.last + 2) {
     clearInterval(p.timer);
     P = null;
@@ -914,6 +947,7 @@ $('#playBtn').addEventListener('click', () => {
   if (P) stopPiece();
   else void startPiece();
 });
+$('#pauseBtn').addEventListener('click', () => void (pauser.paused ? pauser.resume() : pauser.pause()));
 
 /* ---------- 起動 ---------- */
 bodyDefaults();
