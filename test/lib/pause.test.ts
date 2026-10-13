@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { AudioPause, type PauseAudio, PauseClock, Pauser } from '../../src/lib/pause';
+import { AudioPause, lookahead, type PauseAudio, PauseClock, Pauser } from '../../src/lib/pause';
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'performance'] });
@@ -127,15 +127,16 @@ describe('AudioContext の一時停止', () => {
   });
 });
 
-/** 画面と音の出口の代わり */
-function page(ok = true) {
+/** 画面と音の出口の代わり。coarse はおもな入力が指か（スマートフォンとタブレット） */
+function page(ok = true, coarse = true) {
   const doc = { hidden: false, on: () => {} },
     audio = {
       ready: vi.fn(async () => ok),
       pause: vi.fn(async () => {}),
       onLost: null,
     } satisfies PauseAudio as PauseAudio & { ready: ReturnType<typeof vi.fn>; pause: ReturnType<typeof vi.fn> },
-    st = { playing: true, changed: vi.fn(), failed: vi.fn() };
+    st = { playing: true, changed: vi.fn(), failed: vi.fn(), hidden: vi.fn() };
+  vi.stubGlobal('matchMedia', (q: string) => ({ matches: q === '(pointer: coarse)' && coarse }));
   vi.stubGlobal('document', {
     get hidden() {
       return doc.hidden;
@@ -144,7 +145,7 @@ function page(ok = true) {
       doc.on = f;
     },
   });
-  const p = new Pauser(audio, { playing: () => st.playing, changed: st.changed, failed: st.failed });
+  const p = new Pauser(audio, { playing: () => st.playing, changed: st.changed, failed: st.failed, hidden: st.hidden });
   return {
     p,
     audio,
@@ -157,7 +158,7 @@ function page(ok = true) {
 }
 
 describe('演奏の一時停止の進行', () => {
-  it('画面が隠れたら、演奏中だけ、すぐ一時停止する（戻っても自動では再開しない）', async () => {
+  it('スマートフォンでは、画面が隠れたら、演奏中だけ、すぐ一時停止する（戻っても自動では再開しない）', async () => {
     const x = page();
     x.st.playing = false;
     x.hide(true);
@@ -174,6 +175,33 @@ describe('演奏の一時停止の進行', () => {
     expect(x.p.paused).toBe(true);
     expect(x.p.clock.now()).toBe(t0);
     expect(x.audio.ready).not.toHaveBeenCalled();
+    expect(x.st.hidden).not.toHaveBeenCalled();
+  });
+  it('PC では、画面が隠れても一時停止せず、先の分まで予約させる', async () => {
+    const x = page(true, false);
+    x.hide(true);
+    expect(x.p.paused).toBe(false);
+    expect(x.audio.pause).not.toHaveBeenCalled();
+    expect(x.st.hidden).toHaveBeenCalledTimes(1);
+    expect(lookahead(0.3)).toBe(2);
+    expect(lookahead(3)).toBe(3);
+    /* 隠れたまま再開できる */
+    await x.p.pause();
+    await x.p.resume();
+    expect(x.p.paused).toBe(false);
+    x.hide(false);
+    expect(x.st.hidden).toHaveBeenCalledTimes(1);
+    expect(lookahead(0.3)).toBe(0.3);
+  });
+  it('スマートフォンでは、再開を待つ間に画面が隠れたら、一時停止のままにする', async () => {
+    const x = page();
+    await x.p.pause();
+    const r = x.p.resume();
+    x.hide(true);
+    await r;
+    expect(x.p.paused).toBe(true);
+    expect(x.audio.pause).toHaveBeenLastCalledWith(true);
+    expect(x.st.failed).not.toHaveBeenCalled();
   });
   it('再開すると時計が続きから進む', async () => {
     const x = page();

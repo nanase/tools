@@ -6,7 +6,7 @@ import { Choice } from '../../lib/choice';
 import { $ } from '../../lib/dom';
 import { fmt, fmtR, minus, plain, ro } from '../../lib/format';
 import { ParamGroup } from '../../lib/param';
-import { Pauser } from '../../lib/pause';
+import { lookahead, Pauser } from '../../lib/pause';
 import { movePlayStore, outVol, type PlayKey, TEMPO } from '../../lib/play';
 import { acoustics, reverbSpec, roomOf } from '../../lib/reverb';
 import { SW } from '../../lib/scope';
@@ -104,6 +104,7 @@ const pauser = new Pauser(audio, {
   playing: () => !!PL,
   changed: syncPlay,
   failed: () => sndMsg(NO_SOUND),
+  hidden: tick,
 });
 const nowS = pauser.clock.now;
 
@@ -624,8 +625,8 @@ interface Play {
   at0: number;
   tau0: number;
   spb: number;
-  /** 前に予約を進めたときの AudioContext の時刻 */
-  seen: number;
+  /** 予約を済ませた先の AudioContext の時刻 */
+  until: number;
   last: number;
   bars: number;
   timer: ReturnType<typeof setInterval>;
@@ -688,7 +689,7 @@ async function startPiece(): Promise<void> {
     at0: now + 0.25,
     tau0: 0,
     spb: spbOf(pc),
-    seen: now,
+    until: now + AHEAD,
     last: end,
     bars: Math.ceil((end - pc.pickup) / pc.bar),
     timer: setInterval(tick, 40),
@@ -725,9 +726,11 @@ function tick(): void {
   if (!p || pauser.paused) return;
   const an = audio.now();
   if (an === null) return;
+  /* 画面が隠れている間は、タイマーが間引かれるぶん先まで予約する */
+  const ahead = lookahead(AHEAD);
   /* タイマーが止まっていた間（スリープ、重い処理）に過ぎた分は、後ろへずらして続きから弾く（遅れた音をまとめて鳴らさない） */
-  if (an - p.seen > AHEAD) p.at0 += an - p.seen - AHEAD;
-  p.seen = an;
+  if (an > p.until) p.at0 += an - p.until;
+  p.until = Math.max(p.until, an + ahead);
   const spb = spbOf(p.piece);
   if (spb !== p.spb) {
     p.tau0 += Math.max(0, an - p.at0) / p.spb;
@@ -736,7 +739,7 @@ function tick(): void {
   }
   const atOf = (b: number) => p.at0 + (p.tm.tau(b) - p.tau0) * p.spb,
     toPerf = (a: number) => nowS() + (a - an);
-  while (p.i < p.ev.length && atOf(p.ev[p.i].b) < an + AHEAD) {
+  while (p.i < p.ev.length && atOf(p.ev[p.i].b) < an + ahead) {
     const e = p.ev[p.i++],
       at = Math.max(an, atOf(e.b) + (e.type === 'on' ? e.jit : 0)),
       tp = toPerf(at);

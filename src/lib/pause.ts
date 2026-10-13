@@ -111,9 +111,23 @@ export interface PauseAudio {
 }
 
 /**
- * 演奏の一時停止と再開の進行。画面が隠れたとき（スリープ、ほかのタブやアプリへの切り替え）と、
- * ブラウザが AudioContext を止めたときは、自動で一時停止する（再開は自動ではしない）。
- * playing は曲を演奏しているか、changed は一時停止の状態が変わったとき、failed は再開で音を出せなかったときに呼ぶ
+ * 画面が隠れると、ブラウザごとすぐ止められる機器か（スマートフォンとタブレット。おもな入力が指であることで見分ける）。
+ * PC は、隠れたタブでも音が鳴り続け、タイマーが間引かれるだけなので当たらない
+ */
+const sleeps = (): boolean => matchMedia('(pointer: coarse)').matches;
+
+/** 画面が隠れている間に、先に予約する時間 [s]。隠れたタブのタイマーは、1 秒に 1 回までに間引かれる */
+const HIDDEN_AHEAD = 2;
+
+/** 演奏で先に予約する時間 [s]。s は画面が見えている間の値 */
+export const lookahead = (s: number): number => (document.hidden ? Math.max(s, HIDDEN_AHEAD) : s);
+
+/**
+ * 演奏の一時停止と再開の進行。ブラウザが AudioContext を止めたときと、スマートフォンやタブレットで画面が隠れたとき
+ * （スリープ、ほかのタブやアプリへの切り替え）は、自動で一時停止する（再開は自動ではしない）。
+ * PC では、画面が隠れても（ほかのタブへの切り替え、ウィンドウの最小化）演奏を続ける。
+ * playing は曲を演奏しているか、changed は一時停止の状態が変わったとき、failed は再開で音を出せなかったとき、
+ * hidden は一時停止しないまま画面が隠れたとき（タイマーが間引かれる前に、先の分まで予約する）に呼ぶ
  */
 export class Pauser {
   readonly clock = new PauseClock();
@@ -121,10 +135,12 @@ export class Pauser {
 
   constructor(
     private readonly audio: PauseAudio,
-    private readonly opt: { playing: () => boolean; changed: () => void; failed: () => void },
+    private readonly opt: { playing: () => boolean; changed: () => void; failed: () => void; hidden: () => void },
   ) {
     document.addEventListener('visibilitychange', () => {
-      if (document.hidden) void this.pause(true);
+      if (!document.hidden) return;
+      if (sleeps()) void this.pause(true);
+      else this.opt.hidden();
     });
     audio.onLost = () => void this.pause(true);
   }
@@ -148,8 +164,8 @@ export class Pauser {
     const ok = await this.audio.ready();
     /* 待つ間に停止した */
     if (!this.on) return;
-    /* 音を出せなかったか、待つ間に画面が隠れた: 止めたままにする */
-    if (!ok || document.hidden) {
+    /* 音を出せなかったか、待つ間に画面が隠れて止められる: 止めたままにする */
+    if (!ok || (document.hidden && sleeps())) {
       void this.audio.pause(true);
       if (!ok) this.opt.failed();
       return;
