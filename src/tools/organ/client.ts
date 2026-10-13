@@ -8,6 +8,7 @@ import { Choice } from '../../lib/choice';
 import { $, $$ } from '../../lib/dom';
 import { fmt, fmtR, minus, plain, ro } from '../../lib/format';
 import { ParamGroup } from '../../lib/param';
+import { Pauser } from '../../lib/pause';
 import { movePlayStore, outVol, type PlayKey, TEMPO } from '../../lib/play';
 import { acoustics, reverbSpec, roomOf } from '../../lib/reverb';
 import { SW } from '../../lib/scope';
@@ -47,7 +48,6 @@ const html = (id: string, s: string) => {
   const el = $(id);
   if (el.innerHTML !== s) el.innerHTML = s;
 };
-const nowS = () => performance.now() / 1000;
 
 /* ---------- 状態 ---------- */
 const choice = <V extends string>(k: string, fn: (v: V) => void) => new Choice<V>($(`#p-${k}`), fn);
@@ -102,6 +102,13 @@ piece.addEventListener('change', () => {
 
 const V = { wind: WIND.v, dist: DIST.v, tempo: 100 };
 const audio = new OrganAudio();
+/* 一時停止。図の振動と予約した表示は、一時停止の間は進まない時計に合わせる */
+const pauser = new Pauser(audio, {
+  playing: () => !!PL,
+  changed: syncPlay,
+  failed: () => sndMsg(NO_SOUND),
+});
+const nowS = pauser.clock.now;
 
 /* ---------- ストップとカプラー ---------- */
 const stopBtns = $$<HTMLButtonElement>('button.stop');
@@ -694,8 +701,14 @@ for (const id of ['#w-svg', '#s-svg'])
 /* ---------- 鍵盤 ---------- */
 const NO_SOUND = '音を出せませんでした';
 const sndMsg = (s: string) => txt('#snd-msg', s);
-/** 鍵盤 d の鍵 k を手で押す（曲の演奏中も弾ける） */
+/** 一時停止の間に弾こうとしたときの知らせ（再開・停止で消す） */
+const PAUSED = '一時停止の間は弾けません';
+/** 鍵盤 d の鍵 k を手で押す（曲の演奏中も弾ける。一時停止の間は AudioContext が止まっているので弾けない） */
 async function press(d: Div, k: number): Promise<void> {
+  if (pauser.paused) {
+    sndMsg(PAUSED);
+    return;
+  }
   const key = keyOf(d, k);
   if (hand.has(key)) return;
   hand.add(key);
@@ -794,6 +807,8 @@ interface Play {
   at0: number;
   tau0: number;
   spb: number;
+  /** 前に予約を進めたときの AudioContext の時刻 */
+  seen: number;
   last: number;
   bars: number;
   /** 拍子の変化 [拍, 1 小節の拍の数] */
@@ -819,10 +834,20 @@ function eventsOf(pc: Piece, notes: ScoreNote[], reg: readonly (readonly [number
   const rank = { off: 0, reg: 1, on: 2 };
   return ev.sort((a, b) => a.b - b.b || rank[a.type] - rank[b.type]);
 }
+/** 演奏の位置を書く（一時停止の間は、そのことも添える） */
+let plBar = '';
+function showBar(s = plBar): void {
+  plBar = s;
+  txt('#pl-bar', pauser.paused ? `${s}（一時停止中）` : s);
+}
 function syncPlay(): void {
   $('#playBtn').setAttribute('aria-pressed', String(!!PL));
   $('#playLed').classList.toggle('on', !!PL);
   txt('#playT', PL ? '停止' : '演奏');
+  $<HTMLButtonElement>('#pauseBtn').disabled = !PL;
+  txt('#pauseBtn', pauser.paused ? '再開' : '一時停止');
+  showBar();
+  if (!pauser.paused && $('#snd-msg').textContent === PAUSED) sndMsg('');
 }
 async function startPiece(): Promise<void> {
   const ok = await audio.ready();
@@ -861,6 +886,7 @@ async function startPiece(): Promise<void> {
     /* 最初の音の前の無音は飛ばす（演奏の記録は、始めに数秒の間があることがある） */
     tau0: tm.tau(first),
     spb: spbOf(pc),
+    seen: now,
     last: end,
     bars: barOf(meter, pc.pickup, end - 1e-6),
     meter,
@@ -868,7 +894,7 @@ async function startPiece(): Promise<void> {
     piece: pc,
     down: new Set(),
   };
-  txt('#pl-bar', '');
+  plBar = '';
   syncPlay();
   tick();
 }
@@ -876,21 +902,25 @@ function stopPiece(): void {
   if (!PL) return;
   clearInterval(PL.timer);
   PL = null;
+  pauser.clear();
   audio.stop();
   held.clear();
   pipes.clear();
   hand.clear();
   clearShow();
-  txt('#pl-bar', '');
+  plBar = '';
   syncPlay();
 }
-const later = (t: number, fn: () => void) => setTimeout(fn, Math.max(0, (t - nowS()) * 1000));
+const later = (t: number, fn: () => void) => pauser.clock.at(t, fn);
 const AHEAD = 0.4;
 function tick(): void {
   const p = PL;
-  if (!p) return;
+  if (!p || pauser.paused) return;
   const an = audio.now();
   if (an === null) return;
+  /* タイマーが止まっていた間（スリープ、重い処理）に過ぎた分は、後ろへずらして続きから弾く（遅れた音をまとめて鳴らさない） */
+  if (an - p.seen > AHEAD) p.at0 += an - p.seen - AHEAD;
+  p.seen = an;
   const spb = spbOf(p.piece);
   if (spb !== p.spb) {
     p.tau0 += Math.max(0, an - p.at0) / p.spb;
@@ -936,7 +966,7 @@ function tick(): void {
   const pc = p.piece,
     beat = p.tm.beat(p.tau0 + (an - p.at0) / p.spb),
     bar = barOf(p.meter, pc.pickup, Math.max(0, beat));
-  txt('#pl-bar', `${Math.min(bar, p.bars)} / ${p.bars} 小節`);
+  showBar(`${Math.min(bar, p.bars)} / ${p.bars} 小節`);
   if (p.i >= p.ev.length && beat > p.last + 3) {
     clearInterval(p.timer);
     PL = null;
@@ -947,6 +977,7 @@ $('#playBtn').addEventListener('click', () => {
   if (PL) stopPiece();
   else void startPiece();
 });
+$('#pauseBtn').addEventListener('click', () => void (pauser.paused ? pauser.resume() : pauser.pause()));
 
 /* ---------- 起動 ---------- */
 syncStops();

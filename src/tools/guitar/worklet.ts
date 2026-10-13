@@ -21,14 +21,17 @@ export type GtMsg =
   | { type: 'pluck'; at: number; p: PluckMsg; pan: number; id: number }
   | { type: 'damp'; at: number; si: number; tau: number; id: number }
   | { type: 'noise'; at: number; si: number; buf: Float32Array; pan: number }
-  | { type: 'stop'; tau: number };
+  | { type: 'stop'; tau: number }
+  /* 予定も、鳴っている音も、残響もすぐ消す（一時停止の間に止めたとき） */
+  | { type: 'reset' };
 
-type Ev = Exclude<GtMsg, { type: 'body' } | { type: 'room' } | { type: 'stop' }>;
+type Ev = Exclude<GtMsg, { type: 'body' } | { type: 'room' } | { type: 'stop' } | { type: 'reset' }>;
 
 registerProcessor(
   'guitar-model',
   class extends AudioWorkletProcessor {
-    private readonly e = new Engine(sampleRate, true);
+    private e = new Engine(sampleRate, true);
+    private body: BodyDesc | null = null;
     private readonly rv = new Reverb(sampleRate);
     private q: Ev[] = [];
     /** 右の出力がないときに捨てる先 */
@@ -37,11 +40,18 @@ registerProcessor(
       super();
       this.port.onmessage = (ev: MessageEvent<GtMsg>) => {
         const m = ev.data;
-        if (m.type === 'body') this.e.setBody(m.d);
-        else if (m.type === 'room') this.rv.set(m.r);
+        if (m.type === 'body') {
+          this.body = m.d;
+          this.e.setBody(m.d);
+        } else if (m.type === 'room') this.rv.set(m.r);
         else if (m.type === 'stop') {
           this.q = [];
           this.e.dampAll(m.tau);
+        } else if (m.type === 'reset') {
+          this.q = [];
+          this.e = new Engine(sampleRate, true);
+          if (this.body) this.e.setBody(this.body);
+          this.rv.clear();
         } else {
           this.q.push(m);
           this.q.sort((a, b) => a.at - b.at);

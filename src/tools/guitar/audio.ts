@@ -2,6 +2,7 @@
  * ギターの音を Web Audio API で鳴らす: AudioWorklet（worklet.ts、ステレオと残響）→ 音量 → 出力。
  * AudioContext は弦を弾いた操作の中で作る（自動再生の制限）。鳴らしていない間は止めて CPU を休ませる
  */
+import { AudioPause } from '../../lib/pause';
 import type { ReverbSpec } from '../../lib/reverb';
 import type { BodyDesc, PluckMsg } from './engine';
 import type { GtMsg } from './worklet';
@@ -23,6 +24,9 @@ export class GuitarAudio {
   private room: ReverbSpec | null = null;
   private db = -30;
   private idle: ReturnType<typeof setTimeout> | undefined;
+  private hold: AudioPause | null = null;
+  /** 止めていないのに、ブラウザや OS が AudioContext を止めたときに呼ぶ */
+  onLost: (() => void) | null = null;
   /** 撥弦の番号 */
   private seq = 0;
 
@@ -31,9 +35,9 @@ export class GuitarAudio {
     return this.ac?.sampleRate ?? 48000;
   }
 
-  /** AudioContext の時刻 [s]（作る前は null） */
+  /** AudioContext の時刻 [s]（作る前・止めている間は null。一時停止の間は、止めた時刻のまま） */
   now(): number | null {
-    return this.ac && this.ac.state === 'running' ? this.ac.currentTime : null;
+    return this.ac && (this.ac.state === 'running' || this.hold?.paused) ? this.ac.currentTime : null;
   }
 
   /** 使える状態にする。鳴らせなければ false */
@@ -50,12 +54,15 @@ export class GuitarAudio {
         node.connect(master).connect(ac.destination);
         this.node = node;
         this.master = master;
+        this.hold = new AudioPause(ac, master, () => 10 ** (this.db / 20));
+        this.hold.onLost = () => this.onLost?.();
         if (this.body) this.post({ type: 'body', d: this.body });
         if (this.room) this.post({ type: 'room', r: this.room });
         return true;
       })
       .catch(() => false);
     if (!(await this.loading)) return false;
+    this.hold?.release();
     try {
       await ac.resume();
     } catch {
@@ -104,9 +111,20 @@ export class GuitarAudio {
     this.post({ type: 'noise', at, si, buf, pan }, [buf.buffer]);
   }
 
-  /** 予定を消して、すべての弦を止める */
+  /** 一時停止: AudioContext を止める（時刻も、鳴っている音も、予約もそのまま残る）。ready で再開する */
+  async pause(fast = false): Promise<void> {
+    clearTimeout(this.idle);
+    await this.hold?.pause(fast);
+  }
+
+  /** 予定を消して、すべての弦を止める。一時停止の間なら、残した音と残響をすぐ消して、AudioContext を動かしておく */
   stop(tau = 0.08): void {
-    this.post({ type: 'stop', tau });
+    if (!this.hold?.paused) {
+      this.post({ type: 'stop', tau });
+      return;
+    }
+    this.post({ type: 'reset' });
+    void this.ready();
   }
 
   vol(db: number): void {

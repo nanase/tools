@@ -25,14 +25,17 @@ export type PnMsg =
   | { type: 'release'; at: number; key: number }
   | { type: 'releaseAll'; at: number }
   | { type: 'pedal'; at: number; on: boolean }
-  | { type: 'stop'; tau: number; gen: number };
+  | { type: 'stop'; tau: number; gen: number }
+  /* 予定も、鳴っている音も、残響もすぐ消す（一時停止の間に止めたとき） */
+  | { type: 'reset'; gen: number };
 
 type Ev = Extract<PnMsg, { at: number }>;
 
 registerProcessor(
   'piano-model',
   class extends AudioWorkletProcessor {
-    private readonly e = new Engine(sampleRate, true);
+    private e = new Engine(sampleRate, true);
+    private board: BoardDesc | null = null;
     private readonly rv = new Reverb(sampleRate);
     private q: Ev[] = [];
     private readonly spare = new Float32Array(128);
@@ -43,13 +46,21 @@ registerProcessor(
       this.port.onmessage = (ev: MessageEvent<PnMsg>) => this.recv(ev.data);
     }
     private recv(m: PnMsg): void {
-      if (m.type === 'board') this.e.setBoard(m.d);
-      else if (m.type === 'room') this.rv.set(m.r);
+      if (m.type === 'board') {
+        this.board = m.d;
+        this.e.setBoard(m.d);
+      } else if (m.type === 'room') this.rv.set(m.r);
       else if (m.type === 'port') m.port.onmessage = (ev: MessageEvent<PnMsg>) => this.recv(ev.data);
       else if (m.type === 'stop') {
         this.q = [];
         this.gen = m.gen;
         this.e.stopAll(m.tau);
+      } else if (m.type === 'reset') {
+        this.q = [];
+        this.gen = m.gen;
+        this.e = new Engine(sampleRate, true);
+        if (this.board) this.e.setBoard(this.board);
+        this.rv.clear();
       } else if (m.type !== 'strike' || m.gen >= this.gen) {
         /* 同じ時刻なら、届いた順（鍵を離す・ペダル → 打鍵の順を崩さない） */
         let i = this.q.length;

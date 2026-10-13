@@ -6,6 +6,7 @@ import { Choice } from '../../lib/choice';
 import { $ } from '../../lib/dom';
 import { fmt, fmtR, minus, plain, ro } from '../../lib/format';
 import { ParamGroup } from '../../lib/param';
+import { Pauser } from '../../lib/pause';
 import { movePlayStore, outVol, type PlayKey, TEMPO } from '../../lib/play';
 import { acoustics, reverbSpec, roomOf } from '../../lib/reverb';
 import { SW } from '../../lib/scope';
@@ -35,7 +36,6 @@ const html = (id: string, s: string) => {
   const el = $(id);
   if (el.innerHTML !== s) el.innerHTML = s;
 };
-const nowS = () => performance.now() / 1000;
 /** ハンマーの速さの刻み [m/s]（衝突を覚えておく単位） */
 const V_STEP = 0.05;
 const qv = (v: number) => Math.max(V_STEP, Math.round(v / V_STEP) * V_STEP);
@@ -99,6 +99,13 @@ piece.addEventListener('change', () => {
 /** 数値の入力（保存する） */
 const V = { vel: VEL.v, uni: UNI.v, h: THICK.v, dist: DIST.v, tempo: 100 };
 const audio = new PianoAudio();
+/* 一時停止。図の振動と予約した表示は、一時停止の間は進まない時計に合わせる */
+const pauser = new Pauser(audio, {
+  playing: () => !!PL,
+  changed: syncPlay,
+  failed: () => sndMsg(NO_SOUND),
+});
+const nowS = pauser.clock.now;
 
 /* ---------- 鍵盤と弦 ---------- */
 const keys = new Keys($<SVGSVGElement>('#kbd'), {
@@ -617,6 +624,8 @@ interface Play {
   at0: number;
   tau0: number;
   spb: number;
+  /** 前に予約を進めたときの AudioContext の時刻 */
+  seen: number;
   last: number;
   bars: number;
   timer: ReturnType<typeof setInterval>;
@@ -631,10 +640,19 @@ interface Play {
 let PL: Play | null = null;
 const noteCache = new Map<string, ScoreNote[]>();
 const spbOf = (pc: Piece) => 60 / (pc.bpm * (V.tempo / 100));
+/** 演奏の位置を書く（一時停止の間は、そのことも添える） */
+let plBar = '';
+function showBar(s = plBar): void {
+  plBar = s;
+  txt('#pl-bar', pauser.paused ? `${s}（一時停止中）` : s);
+}
 function syncPlay(): void {
   $('#playBtn').setAttribute('aria-pressed', String(!!PL));
   $('#playLed').classList.toggle('on', !!PL);
   txt('#playT', PL ? '停止' : '演奏');
+  $<HTMLButtonElement>('#pauseBtn').disabled = !PL;
+  txt('#pauseBtn', pauser.paused ? '再開' : '一時停止');
+  showBar();
 }
 async function startPiece(): Promise<void> {
   const ok = await audio.ready();
@@ -669,6 +687,7 @@ async function startPiece(): Promise<void> {
     at0: now + 0.25,
     tau0: 0,
     spb: spbOf(pc),
+    seen: now,
     last: end,
     bars: Math.ceil((end - pc.pickup) / pc.bar),
     timer: setInterval(tick, 40),
@@ -678,7 +697,7 @@ async function startPiece(): Promise<void> {
     lastOn: new Map(),
     pedalAt: 0,
   };
-  txt('#pl-bar', '');
+  plBar = '';
   syncPlay();
   tick();
 }
@@ -686,25 +705,28 @@ function stopPiece(): void {
   if (!PL) return;
   clearInterval(PL.timer);
   PL = null;
+  pauser.clear();
   audio.stop(0.08);
   keys.clear();
   keys.upAll();
   keys.setPedal(false);
   $('#pedLed').classList.remove('on');
-  txt('#pl-bar', '');
+  plBar = '';
   syncPlay();
   syncPedal();
 }
-/** 時刻 t（performance の秒）に表示を変える（止めたあとの、予約済みの表示は捨てる） */
-const later = (p: Play, t: number, fn: () => void) =>
-  setTimeout(() => PL === p && fn(), Math.max(0, (t - nowS()) * 1000));
+/** 時刻 t（表示の時計の秒）に表示を変える（止めたあとの、予約済みの表示は捨てる） */
+const later = (p: Play, t: number, fn: () => void) => pauser.clock.at(t, () => PL === p && fn());
 /** 先に予約する時間 [s] */
 const AHEAD = 0.5;
 function tick(): void {
   const p = PL;
-  if (!p) return;
+  if (!p || pauser.paused) return;
   const an = audio.now();
   if (an === null) return;
+  /* タイマーが止まっていた間（スリープ、重い処理）に過ぎた分は、後ろへずらして続きから弾く（遅れた音をまとめて鳴らさない） */
+  if (an - p.seen > AHEAD) p.at0 += an - p.seen - AHEAD;
+  p.seen = an;
   const spb = spbOf(p.piece);
   if (spb !== p.spb) {
     p.tau0 += Math.max(0, an - p.at0) / p.spb;
@@ -748,7 +770,7 @@ function tick(): void {
   const pc = p.piece,
     beat = p.tm.beat(p.tau0 + (an - p.at0) / p.spb),
     bar = Math.max(0, Math.floor((beat - pc.pickup) / pc.bar) + 1);
-  txt('#pl-bar', `${Math.min(bar, p.bars)} / ${p.bars} 小節`);
+  showBar(`${Math.min(bar, p.bars)} / ${p.bars} 小節`);
   if (p.i >= p.ev.length && beat > p.last + 3) {
     clearInterval(p.timer);
     PL = null;
@@ -760,6 +782,7 @@ $('#playBtn').addEventListener('click', () => {
   if (PL) stopPiece();
   else void startPiece();
 });
+$('#pauseBtn').addEventListener('click', () => void (pauser.paused ? pauser.resume() : pauser.pause()));
 
 /* ---------- 起動 ---------- */
 rebuildNow();

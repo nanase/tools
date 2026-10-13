@@ -19,7 +19,8 @@ declare function registerProcessor(name: string, ctor: new () => AudioWorkletPro
 
 /**
  * 主スレッドから送るもの。at は AudioContext の時刻 [s]（過ぎていればすぐ）。
- * release はその時刻にすべての弁を閉じ（予定は残す）、stop は予定を消してすぐにすべての弁を閉じる
+ * release はその時刻にすべての弁を閉じ（予定は残す）、stop は予定を消してすぐにすべての弁を閉じる。
+ * reset は予定も、鳴っている音も、残響もすぐ消す（一時停止の間に止めたとき）
  */
 export type OgMsg =
   | { type: 'wind'; w: WindDesc }
@@ -28,7 +29,8 @@ export type OgMsg =
   | { type: 'on'; at: number; p: PipeMsg[] }
   | { type: 'off'; at: number; ids: string[] }
   | { type: 'release'; at: number }
-  | { type: 'stop' };
+  | { type: 'stop' }
+  | { type: 'reset' };
 /**
  * 主スレッドへ送るもの: 弁の開いている管のストップ（前に送ってから開いて閉じたものも含める）と、
  * 同時に鳴らす管の数の上限（上限がなければ 0）
@@ -47,7 +49,9 @@ type Ev = Extract<OgMsg, { at: number }>;
 registerProcessor(
   'organ-model',
   class extends AudioWorkletProcessor {
-    private readonly e = new Engine(sampleRate, true);
+    private e = new Engine(sampleRate, true);
+    private wind: WindDesc | null = null;
+    private swell = 1;
     private readonly rv = new Reverb(sampleRate);
     private q: Ev[] = [];
     private readonly spare = new Float32Array(128);
@@ -62,12 +66,23 @@ registerProcessor(
       super();
       this.port.onmessage = (ev: MessageEvent<OgMsg>) => {
         const m = ev.data;
-        if (m.type === 'wind') this.e.setWind(m.w);
-        else if (m.type === 'room') this.rv.set(m.r);
-        else if (m.type === 'swell') this.e.setSwell(m.s);
-        else if (m.type === 'stop') {
+        if (m.type === 'wind') {
+          this.wind = m.w;
+          this.e.setWind(m.w);
+        } else if (m.type === 'room') this.rv.set(m.r);
+        else if (m.type === 'swell') {
+          this.swell = m.s;
+          this.e.setSwell(m.s);
+        } else if (m.type === 'stop') {
           this.q = [];
           this.e.allOff();
+        } else if (m.type === 'reset') {
+          this.q = [];
+          this.e = new Engine(sampleRate, true);
+          if (this.wind) this.e.setWind(this.wind);
+          this.e.setSwell(this.swell);
+          this.rv.clear();
+          this.port.postMessage({ type: 'budget', n: 0 } satisfies OgOut);
         } else {
           /* 同じ時刻なら届いた順（閉じる → 開くの順を崩さない） */
           let i = this.q.length;

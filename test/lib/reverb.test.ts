@@ -56,6 +56,25 @@ describe('部屋の残響', () => {
     expect(mag(0.07)).toBeCloseTo(0.9, 9);
     expect(mag(0.5)).toBeCloseTo(0.6, 9);
   });
+  it('clear は残っている残響音を消し、設定は残す', () => {
+    const rv = new Reverb(FS),
+      n = 4800,
+      run = (first: number) => {
+        const L = new Float32Array(n),
+          R = new Float32Array(n);
+        L[0] = first;
+        R[0] = first;
+        for (let i = 0; i < n; i += 128) rv.process(L, R, i, Math.min(128, n - i));
+        return L;
+      };
+    rv.set(reverbSpec(roomOf('church'), 15));
+    const wet = run(1);
+    rv.clear();
+    expect(run(0).every((v) => v === 0)).toBe(true);
+    /* 消したあとも、同じ入力に同じ残響音を返す */
+    rv.clear();
+    expect([...run(1)]).toEqual([...wet]);
+  });
   it('聴く位置が臨界距離なら、500 Hz の残響音のエネルギーは直接音（1）と同じ（±2 dB）', () => {
     const a = acoustics(roomOf('small')),
       [L] = ir('small', a.rc, 2.2);
