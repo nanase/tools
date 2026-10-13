@@ -11,6 +11,7 @@ import { movePlayStore, outVol, type PlayKey, TEMPO } from '../../lib/play';
 import { acoustics, reverbSpec, roomOf } from '../../lib/reverb';
 import { SW } from '../../lib/scope';
 import { store, stored } from '../../lib/store';
+import { TempoMap } from '../../lib/tempo';
 import { initToolPage } from '../../lib/tool-page';
 import { spectra, toDb } from '../spectrum/fft';
 import { GuitarAudio } from './audio';
@@ -21,7 +22,7 @@ import { Neck } from './neck';
 import { slideNoise } from './noise';
 import { AMP, ANGLE, DIA, DIST, HOLE, POS, SCALE, SLANT, type StrKey, TEN, THICK, VOL0, VOLUME } from './params';
 import { BH, bodyPlot, fAtX, OH, specPlot, wavePlot, Y1_TOP, Y2_TOP } from './plot';
-import { finger, PIECES, type Piece, type Placed, pieceOf } from './score';
+import { dynamics, finger, PIECES, type Piece, type PieceData, pieceOf } from './score';
 import {
   betaOf,
   f1Of,
@@ -748,7 +749,10 @@ $('#muteBtn').addEventListener('click', () => {
 });
 
 /* ---------- 演奏 ---------- */
-/** 演奏の出来事。時刻は拍で持ち、予約するときに今のテンポで秒に直す（演奏中にテンポを変えられる） */
+/**
+ * 演奏の出来事。時刻は拍で持ち、予約するときに今のテンポで秒に直す（演奏中にテンポを変えられる）。
+ * 拍は、曲の途中のテンポの変化を織り込んで、標準のテンポでの拍の長さに直したもの（TempoMap の τ）
+ */
 interface Ev {
   /** 曲の初めからの拍 */
   b: number;
@@ -776,24 +780,28 @@ interface Play {
   bars: number;
   timer: ReturnType<typeof setInterval>;
   piece: Piece;
+  /** 曲の途中のテンポの変化（小節の表示で、拍へ戻すのに使う） */
+  tm: TempoMap;
 }
 let P: Play | null = null;
-const fingerCache = new Map<string, Placed[]>();
+const fingerCache = new Map<string, PieceData>();
 const spbOf = (pc: Piece) => 60 / (pc.bpm * (V.tempo / 100));
-/** 曲の音符と運指（読み込む曲は読み込み、ほかは運指を求める） */
-async function placedOf(pc: Piece): Promise<Placed[]> {
+/** 曲の音符と運指（読み込む曲は読み込み、ほかは運指を求める）と、テンポの変化 */
+async function placedOf(pc: Piece): Promise<PieceData> {
   const open = tuningOf(pc.tuning).notes,
     key = `${pc.v}|${open.join(',')}|${G.frets}`;
   let pl = fingerCache.get(key);
   if (!pl) {
-    pl = pc.load ? await pc.load() : finger(pc.notes, open, G.frets);
+    pl = pc.load ? await pc.load() : { notes: finger(pc.notes, open, G.frets), tempo: [] };
     fingerCache.set(key, pl);
   }
   return pl;
 }
-function eventsOf(pl: Placed[]): Ev[] {
+function eventsOf(data: PieceData, tmap: TempoMap): Ev[] {
   const r = rng(7),
-    notes = pl.filter((x) => x.s >= 0).sort((a, b) => a.t - b.t || a.s - b.s),
+    notes = data.notes.filter((x) => x.s >= 0).sort((a, b) => a.t - b.t || a.s - b.s),
+    /* MIDI のベロシティがある曲は、弾く強さに掛ける（強さの入力の範囲に収める） */
+    dy = dynamics(notes),
     last = Math.max(...notes.map((x) => x.t + x.d)),
     ev: Ev[] = [];
   let rollJit = 0;
@@ -806,14 +814,14 @@ function eventsOf(pl: Placed[]): Ev[] {
       dt = i ? x.t - notes[i - 1].t : 1,
       rj = (r() - 0.5) * 0.012,
       jit = dt > 1e-6 && dt < 0.1 ? rollJit : rj,
-      amp = V.amp * (0.9 + 0.2 * r()) * (x.s >= 3 ? 1.1 : 1),
+      amp = Math.min(AMP.max, V.amp * (dy?.[i] ?? 1) * (0.9 + 0.2 * r()) * (x.s >= 3 ? 1.1 : 1)),
       /* 最後の和音は響かせたままにする */
-      off = x.f > 0 && end < last - 1e-6 && (!next || next.t > end + 1e-6) ? end : null;
+      off = x.f > 0 && end < last - 1e-6 && (!next || next.t > end + 1e-6) ? tmap.tau(end) : null;
     let slide: Ev['slide'] = null;
     if (prev && prev.f > 0 && x.f > 0 && prev.f !== x.f && x.t - (prev.t + prev.d) < 0.6 && r() < 0.7)
-      slide = { from: prev.f, gap: x.t - prev.t };
+      slide = { from: prev.f, gap: tmap.tau(x.t) - tmap.tau(prev.t) };
     rollJit = jit;
-    ev.push({ b: x.t, jit, si: x.s, f: x.f, amp, off, slide });
+    ev.push({ b: tmap.tau(x.t), jit, si: x.s, f: x.f, amp, off, slide });
   });
   return ev;
 }
@@ -847,7 +855,7 @@ async function startPiece(): Promise<void> {
     rebuild();
   }
   if (tm.value === 'man') sndMsg('張力を手で決めているため、音程がずれることがあります');
-  let pl: Placed[];
+  let pl: PieceData;
   try {
     pl = await placedOf(pc);
   } catch {
@@ -855,7 +863,8 @@ async function startPiece(): Promise<void> {
     return;
   }
   if (P || piece.value !== pc.v) return;
-  const ev = eventsOf(pl);
+  const tmap = new TempoMap(pl.tempo),
+    ev = eventsOf(pl, tmap);
   /* 使うモードを先に求める */
   for (const e of ev) modes(e.si, e.f);
   const now = audio.now() ?? 0;
@@ -867,9 +876,10 @@ async function startPiece(): Promise<void> {
     spb: spbOf(pc),
     seen: now,
     last: Math.max(...ev.map((e) => e.b)),
-    bars: Math.ceil((Math.max(...pl.map((n) => n.t + n.d)) - pc.pickup) / pc.bar),
+    bars: Math.ceil((Math.max(...pl.notes.map((n) => n.t + n.d)) - pc.pickup) / pc.bar),
     timer: setInterval(tick, 40),
     piece: pc,
+    tm: tmap,
   };
   plBar = '';
   syncPlay();
@@ -934,7 +944,7 @@ function tick(): void {
   }
   const pc = p.piece,
     beat = p.b0 + (an - p.at0) / p.spb,
-    bar = Math.max(0, Math.floor((beat - pc.pickup) / pc.bar) + 1),
+    bar = Math.max(0, Math.floor((p.tm.beat(beat) - pc.pickup) / pc.bar) + 1),
     bars = p.bars;
   showBar(`${Math.min(bar, bars)} / ${bars} 小節`);
   if (p.i >= p.ev.length && beat > p.last + 2) {

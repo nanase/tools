@@ -26,7 +26,14 @@ export interface Piece {
   pickup: number;
   notes: Note[];
   /** 音符と運指を別のファイルから読む曲（notes は空）。長い曲を、選んだときだけ読み込む */
-  load?: () => Promise<Placed[]>;
+  load?: () => Promise<PieceData>;
+}
+
+/** 読み込む曲のデータ */
+export interface PieceData {
+  notes: Placed[];
+  /** MIDI のテンポの変化 [拍, 最初のテンポに対する比]（変化のない MIDI では空） */
+  tempo: readonly (readonly [number, number])[];
 }
 
 const SEMI: Record<string, number> = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
@@ -170,7 +177,7 @@ export const PIECES: readonly Piece[] = [
     bar: 3,
     pickup: 2,
     notes: [],
-    load: () => import('./chaconne').then((m) => m.chaconne()),
+    load: () => import('./chaconne').then((m) => ({ notes: m.chaconne(), tempo: m.TEMPO })),
   },
   {
     v: 'minuet',
@@ -202,6 +209,21 @@ export const pieceOf = (v: string): Piece => PIECES.find((p) => p.v === v) ?? PI
 export interface Placed extends Note {
   s: number;
   f: number;
+  /** MIDI のベロシティ（MIDI を編集して強弱を付けた曲だけ） */
+  v?: number;
+}
+
+/** ベロシティの比を、弦を引く量の比にするときの指数 */
+const DYN_EXP = 1.5;
+/**
+ * 曲の強弱: 音符のベロシティを、曲の中央の値に対する比にして、弦を引く量（強さ）の倍率にする。
+ * ベロシティのない曲は null
+ */
+export function dynamics(notes: readonly Placed[]): Float64Array | null {
+  const vs = notes.map((x) => x.v ?? 0);
+  if (vs.some((v) => v <= 0)) return null;
+  const mid = [...vs].sort((a, b) => a - b)[vs.length >> 1];
+  return Float64Array.from(vs, (v) => (v / mid) ** DYN_EXP);
 }
 
 interface Beam {

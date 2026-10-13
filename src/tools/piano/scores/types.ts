@@ -5,6 +5,6 @@ export interface ScoreNote {
   n: number;
   /** 0 = 右手の譜表（上）、1 = 左手の譜表（下） */
   h: number;
-  /** MIDI のベロシティ（楽譜の強弱記号から付いた値。ある曲だけ） */
+  /** MIDI のベロシティ（楽譜の強弱記号から付いた値か、MIDI を編集して付けた値。ある曲だけ） */
   v?: number;
 }

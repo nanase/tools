@@ -19,6 +19,7 @@ const kind: Kind = {
     { name: 'ペダル', lo: 36, hi: 67 },
   ],
   mergeAcross: false,
+  dynamics: false,
 };
 
 interface Span {
@@ -299,8 +300,8 @@ function oga565(m: Midi, log: (s: string) => void): RawNote[] {
 }
 
 const mutopia = (id: number) => `https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=${id}`;
-const common =
-  '時刻と長さを 4 分音符の 1/480 に寄せ、同じ鍵盤で同じ時刻の同じ高さの音を 1 つにまとめた。強弱とテンポは使わない。';
+/** 加工の段落の終わり。テンポの扱いは、MIDI の中身に合わせて score-midi.ts が書き足す（tempo を指定しない曲） */
+const common = '時刻と長さを 4 分音符の 1/480 に寄せ、同じ鍵盤で同じ時刻の同じ高さの音を 1 つにまとめた。';
 /** 装飾の展開の説明（「変更」の段落に足す行） */
 const ornNote = (src: string) => [
   `MIDI に展開されていない装飾を、.ly の原本（${src}）の位置と種類で音符に展開した（トリルは上の補助音から`,

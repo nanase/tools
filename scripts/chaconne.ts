@@ -2,12 +2,15 @@
  * src/tools/guitar/chaconne.ts（ギター音響モデルで演奏するシャコンヌの音符と運指）を、
  * src/tools/guitar/chaconne.mid から作る。bun run chaconne で実行する。
  *
- * chaconne.mid の音（どのトラック・チャンネルでもよい）の高さ・時刻・長さだけを使い、弦とフレットは
- * このツールの運指（score.ts の finger、標準の調弦）で付ける。時刻と長さは 4 分音符の 1/480 に丸める（和音をずらして弾く細かい時刻も残す）。ベロシティは使わない
+ * chaconne.mid の音（どのトラック・チャンネルでもよい）の高さ・時刻・長さを使い、弦とフレットは
+ * このツールの運指（score.ts の finger、標準の調弦）で付ける。時刻と長さは 4 分音符の 1/480 に丸める（和音をずらして弾く細かい時刻も残す）。
+ * テンポは、MIDI に変化があれば、最初の値に対する比として TEMPO に入れる。ベロシティは、MIDI に 2 つ以上の値があれば
+ * 音符に入れる（弾く強さになる）。どちらも、Mutopia から作ったままの MIDI にはない（MIDI を編集して付ける）
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { finger } from '../src/tools/guitar/score';
 import { noteName, setOf, tuningOf } from '../src/tools/guitar/strings';
+import { readMidi, tempoSteps } from './score-midi';
 
 const SRC = new URL('../src/tools/guitar/chaconne.mid', import.meta.url),
   OUT = new URL('../src/tools/guitar/chaconne.ts', import.meta.url);
@@ -18,81 +21,14 @@ const DIV = 480,
 const open = tuningOf('std').notes,
   frets = setOf('nylon').frets;
 
-interface Raw {
-  n: number;
-  t0: number;
-  t1: number;
-}
-
-/** SMF を読み、すべてのトラックの音（時刻は tick）と、4 分音符の tick 数を返す */
-function readMidi(buf: Uint8Array): { ppq: number; notes: Raw[] } {
-  let p = 0;
-  const u32 = () => ((buf[p++] << 24) | (buf[p++] << 16) | (buf[p++] << 8) | buf[p++]) >>> 0,
-    u16 = () => (buf[p++] << 8) | buf[p++],
-    tag = () => String.fromCharCode(buf[p++], buf[p++], buf[p++], buf[p++]),
-    vlq = () => {
-      let v = 0,
-        b: number;
-      do {
-        b = buf[p++];
-        v = v * 128 + (b & 0x7f);
-      } while (b & 0x80);
-      return v;
-    };
-  if (tag() !== 'MThd') throw new Error('SMF ではありません');
-  const hl = u32(),
-    h0 = p;
-  u16();
-  const ntr = u16(),
-    ppq = u16();
-  if (ppq & 0x8000) throw new Error('SMPTE の時間単位には対応していません');
-  p = h0 + hl;
-  const notes: Raw[] = [];
-  for (let k = 0; k < ntr; k++) {
-    if (tag() !== 'MTrk') throw new Error(`トラック ${k + 1} が壊れています`);
-    const end = u32() + p;
-    let t = 0,
-      run = 0;
-    const on = new Map<number, number[]>();
-    while (p < end) {
-      t += vlq();
-      let st = buf[p];
-      if (st & 0x80) p++;
-      else st = run;
-      /* メタイベント（種類の 1 バイトを飛ばす）とシステムエクスクルーシブは読み飛ばす */
-      if (st === 0xff || st === 0xf0 || st === 0xf7) {
-        if (st === 0xff) p++;
-        const len = vlq();
-        p += len;
-        continue;
-      }
-      run = st;
-      const ty = st & 0xf0,
-        ch = st & 0x0f,
-        a = buf[p++],
-        b = ty === 0xc0 || ty === 0xd0 ? 0 : buf[p++],
-        key = ch * 128 + a;
-      if (ty === 0x90 && b > 0) {
-        const l = on.get(key) ?? [];
-        l.push(t);
-        on.set(key, l);
-      } else if (ty === 0x80 || ty === 0x90) {
-        const t0 = on.get(key)?.shift();
-        if (t0 !== undefined) notes.push({ n: a, t0, t1: t });
-      }
-    }
-    p = end;
-  }
-  return { ppq, notes };
-}
-
 const where = (t: number) => {
   const b = t / DIV - PICKUP,
     bar = Math.floor(b / BAR) + 1;
   return `${bar} 小節 ${(b - (bar - 1) * BAR + 1).toFixed(2)} 拍目`;
 };
 
-const { ppq, notes: raw } = readMidi(readFileSync(SRC));
+const midi = readMidi(readFileSync(SRC)),
+  { ppq, notes: raw } = midi;
 const errs: string[] = [];
 let rounded = 0;
 const q = (tick: number) => {
@@ -103,7 +39,7 @@ const q = (tick: number) => {
 const ns = raw
   .map((x) => {
     const t = q(x.t0);
-    return { t, d: Math.max(1, q(x.t1) - t), n: x.n };
+    return { t, d: Math.max(1, q(x.t1) - t), n: x.n, v: x.v ?? 64 };
   })
   .sort((a, b) => a.t - b.t || a.n - b.n);
 /*
@@ -125,7 +61,7 @@ const notes = finger(
   open,
   frets,
 )
-  .map((x, i) => ({ ...x, t: ns[i].t, d: ns[i].d }))
+  .map((x, i) => ({ ...x, t: ns[i].t, d: ns[i].d, v: ns[i].v }))
   .sort((a, b) => a.t - b.t || a.s - b.s);
 for (const x of notes) if (x.s < 0) errs.push(`${where(x.t)}: ${noteName(x.n)} はどの弦でも押さえられません`);
 if (errs.length) {
@@ -140,14 +76,35 @@ const enc = (v: number, w: number) => {
   for (let k = 0; k < w; k++, v = Math.floor(v / 64)) s = A[v % 64] + s;
   return s;
 };
+/* ベロシティは、2 つ以上の値があるときだけ入れる */
+const vels = notes.map((x) => x.v),
+  hasVel = new Set(vels).size > 1,
+  width = hasVel ? 11 : 9;
 let data = '',
   prev = 0;
 for (const x of notes) {
   if (x.n < 40) throw new Error(`${where(x.t)}: 低すぎる音 ${noteName(x.n)}`);
-  data += enc(x.t - prev, 3) + enc(x.d, 3) + enc(x.n - 40, 1) + enc(x.s * 24 + x.f, 2);
+  data += enc(x.t - prev, 3) + enc(x.d, 3) + enc(x.n - 40, 1) + enc(x.s * 24 + x.f, 2) + (hasVel ? enc(x.v, 2) : '');
   prev = x.t;
 }
-const lines = data.match(/.{1,108}/g) ?? [],
+/* テンポの変化（最初のテンポに対する比。最初のテンポがなければ MIDI の既定の ♩ = 120） */
+const base = midi.tempo[0]?.t === 0 ? midi.tempo[0].us : 500000,
+  tempo = tempoSteps(
+    midi.tempo.map((x) => [q(x.t), Math.round((base / x.us) * 10000) / 10000]),
+    null,
+  ).map(([t, r]) => [t / DIV, r]);
+/* 書き出す .ts の、テンポと強弱の説明（入れたときだけ）、テンポの表、ベロシティを読む行 */
+const edits = [
+    ...(tempo.length
+      ? [
+          `\n * テンポは、chaconne.mid の変化（♩ = ${+(60e6 / base).toFixed(2)} が基本）を、基本に対する比として TEMPO に入れた。`,
+        ]
+      : []),
+    ...(hasVel ? ['\n * ベロシティは chaconne.mid の値をそのまま入れた（弾く強さになる）。'] : []),
+  ].join(''),
+  tempoSrc = tempo.length ? `[\n${tempo.map(([t, r]) => `  [${t}, ${r}],`).join('\n')}\n]` : '[]',
+  velSrc = hasVel ? '\n      v: v(DATA.slice(i + 9, i + 11)),' : '';
+const lines = data.match(new RegExp(`.{1,${width * 12}}`, 'g')) ?? [],
   last = Math.max(...notes.map((x) => x.t + x.d)) / DIV,
   bars = Math.floor((last - PICKUP) / BAR);
 
@@ -160,7 +117,7 @@ const src = `/**
  * 変更: 実音を 1 オクターブ下げてギターの音域に移し、同じ時刻の同じ高さの音を 1 つにまとめ、
  * arpeggio の指示のある和音（小節 89〜120・201〜208）を分散和音に展開した。そのうえで chaconne.mid を手で編集した
  * （分散和音の弾き方、和音をずらして弾く時刻、音の長さなど）。
- * 弦とフレットは、このツールの運指（score.ts の finger、標準の調弦・${frets} フレット）で付けた。
+ * 弦とフレットは、このツールの運指（score.ts の finger、標準の調弦・${frets} フレット）で付けた。${edits}
  *
  * このファイルと chaconne.mid は原作と同じ Creative Commons Attribution-ShareAlike 3.0 Unported
  * （https://creativecommons.org/licenses/by-sa/3.0/）で公開する。リポジトリのほかのファイルの MIT ライセンスは適用しない。
@@ -169,18 +126,21 @@ const src = `/**
  */
 import type { Placed } from './score';
 
-/** 1 拍（4 分音符）を ${DIV} に分けた時刻・長さ。1 音 9 文字: 前の音からの間（3）、長さ（3）、音の高さ − 40（1）、弦 × 24 + フレット（2） */
+/** 1 拍（4 分音符）を ${DIV} に分けた時刻・長さ。1 音 ${width} 文字: 前の音からの間（3）、長さ（3）、音の高さ − 40（1）、弦 × 24 + フレット（2）${hasVel ? '、ベロシティ（2）' : ''} */
 const DATA =
 ${lines.map((l) => `  '${l}'`).join(' +\n')};
 
 const A = '${A}';
 const v = (s: string) => [...s].reduce((x, c) => x * 64 + A.indexOf(c), 0);
 
+/** テンポの変化: [拍, 基本のテンポに対する比]。最初の項より前の比は 1 */
+export const TEMPO: readonly [number, number][] = ${tempoSrc};
+
 /** 音符と運指（${notes.length} 音、${bars} 小節あまり。最初の ${PICKUP} 拍は弱起） */
 export function chaconne(): Placed[] {
   const out: Placed[] = [];
   let t = 0;
-  for (let i = 0; i < DATA.length; i += 9) {
+  for (let i = 0; i < DATA.length; i += ${width}) {
     t += v(DATA.slice(i, i + 3));
     const sf = v(DATA.slice(i + 7, i + 9));
     out.push({
@@ -188,7 +148,7 @@ export function chaconne(): Placed[] {
       d: v(DATA.slice(i + 3, i + 6)) / ${DIV},
       n: v(DATA[i + 6]) + 40,
       s: Math.floor(sf / 24),
-      f: sf % 24,
+      f: sf % 24,${velSrc}
     });
   }
   return out;
@@ -196,5 +156,6 @@ export function chaconne(): Placed[] {
 `;
 writeFileSync(OUT, src);
 console.log(
-  `wrote src/tools/guitar/chaconne.ts（${notes.length} 音${rounded ? `、時刻・長さを 1/${DIV} 拍に丸めた箇所 ${rounded}` : ''}）`,
+  `wrote src/tools/guitar/chaconne.ts（${notes.length} 音${rounded ? `、時刻・長さを 1/${DIV} 拍に丸めた箇所 ${rounded}` : ''}` +
+    `${tempo.length ? `、テンポの変化 ${tempo.length} 個` : ''}${hasVel ? `、ベロシティ ${Math.min(...vels)}〜${Math.max(...vels)}` : ''}）`,
 );

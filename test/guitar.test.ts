@@ -6,7 +6,7 @@ import { bodyDesc, Engine } from '../src/tools/guitar/engine';
 import { coefAt, type Guitar, modesOf, pluckOf, shapeOf, t60, tuneCoupled } from '../src/tools/guitar/model';
 import { slideNoise } from '../src/tools/guitar/noise';
 import { DIST } from '../src/tools/guitar/params';
-import { finger, midiOf, PIECES, seq } from '../src/tools/guitar/score';
+import { dynamics, finger, midiOf, PIECES, seq } from '../src/tools/guitar/score';
 import {
   betaOf,
   etaAir,
@@ -317,7 +317,7 @@ describe('曲と運指', () => {
   it('どの曲も全部の音を、その曲の調弦のギターの弦とフレットに置ける', async () => {
     for (const p of PIECES) {
       const open = tuningOf(p.tuning).notes,
-        pl = p.load ? await p.load() : finger(p.notes, open, 19);
+        pl = p.load ? (await p.load()).notes : finger(p.notes, open, 19);
       expect(pl.length).toBeGreaterThan(50);
       for (const x of pl) {
         expect(x.s).toBeGreaterThanOrEqual(0);
@@ -337,15 +337,23 @@ describe('曲と運指', () => {
   });
   it('小節の長さがそろう（弱起の後は小節の拍の数の倍数で終わる）', async () => {
     for (const p of PIECES) {
-      const notes = p.load ? await p.load() : p.notes,
+      const notes = p.load ? (await p.load()).notes : p.notes,
         end = Math.max(...notes.map((n) => n.t + n.d));
       expect(((end - p.pickup) / p.bar) % 1).toBeCloseTo(0, 9);
     }
   });
+  it('MIDI のベロシティは、曲の中央の値を 1 として、弦を引く量の倍率にする。ベロシティのない曲は null', () => {
+    const n = (v?: number) => ({ t: 0, d: 1, n: 60, s: 2, f: 5, ...(v === undefined ? {} : { v }) });
+    expect(dynamics([n(), n(80)])).toBeNull();
+    const k = dynamics([n(50), n(80), n(80), n(80), n(110)]) as Float64Array;
+    expect(k[1]).toBe(1);
+    expect(k[0]).toBeLessThan(0.6);
+    expect(k[4]).toBeGreaterThan(1.5);
+  });
   it('シャコンヌ BWV 1004 は弱起 2 拍と 256 小節、原曲（G3〜G6）の 1 オクターブ下で、すべての音を標準の調弦の弦に置く', async () => {
     const p = PIECES.find((x) => x.v === 'bwv1004');
     if (!p?.load) throw new Error('bwv1004');
-    const pl = await p.load(),
+    const pl = (await p.load()).notes,
       open = tuningOf(p.tuning).notes;
     expect(pl.length).toBeGreaterThan(3000);
     expect(pl.every((n) => n.s >= 0 && n.f >= 0 && n.f <= 19 && n.n === open[n.s] + n.f)).toBe(true);
