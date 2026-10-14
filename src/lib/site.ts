@@ -3,6 +3,7 @@
  * 各ページの入口スクリプトから initSite() を 1 度だけ呼ぶ
  */
 import { $, $$, norm } from './dom';
+import { wavePath } from './logo';
 import { FADE_IN, FADE_OUT, fx, POP_IN, POP_OUT, RM } from './motion';
 
 const root = document.documentElement;
@@ -163,8 +164,51 @@ function initBrand(): void {
   });
 }
 
+/* ---------- 上部バーのアイコン: マウスを乗せている間、矩形波の周期を伸び縮みさせる ---------- */
+/** 周期の倍率は exp(-A sin θ)（1/2 〜 2 倍）。θ は W [rad/s] で進む。離すと時定数 TAU [s] で 1 倍へ戻る */
+const A = Math.LN2,
+  W = (2 * Math.PI) / 2.4,
+  TAU = 0.12;
+
+function initLogo(): void {
+  const brand = $('.brand'),
+    wave = $<SVGPathElement>('.brand path');
+  /* u は倍率の対数 */
+  let on = false,
+    th = 0,
+    u = 0,
+    raf = 0,
+    last = 0;
+  const step = (t: number) => {
+    const dt = Math.min((t - last) / 1000, 0.1);
+    last = t;
+    if (on) {
+      th += W * dt;
+      u = -A * Math.sin(th);
+    } else {
+      u *= Math.exp(-dt / TAU);
+      if (Math.abs(u) < 1e-3) u = 0;
+    }
+    wave.setAttribute('d', wavePath(Math.exp(u)));
+    raf = on || u ? requestAnimationFrame(step) : 0;
+  };
+  const hover = (v: boolean) => (e: PointerEvent) => {
+    if (e.pointerType !== 'mouse' || RM.matches) return;
+    on = v;
+    /* 戻る途中で乗せ直したら、その倍率から続ける */
+    if (on) th = Math.asin(-u / A);
+    if (!raf) {
+      last = performance.now();
+      raf = requestAnimationFrame(step);
+    }
+  };
+  brand.addEventListener('pointerenter', hover(true));
+  brand.addEventListener('pointerleave', hover(false));
+}
+
 export function initSite(): void {
   initTheme();
   initMenu();
   initBrand();
+  initLogo();
 }
