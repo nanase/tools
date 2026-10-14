@@ -136,6 +136,14 @@ export const TOOLS: Tool[] = [
     k: 'piano grand acoustic physical model 物理モデル 弦 string ハンマー hammer フェルト felt 響板 soundboard 非調和性 inharmonicity ユニゾン unison 二段減衰 double decay ダンパー damper ペダル pedal 共鳴 sympathetic 残響 reverb モード合成 modal synthesis 演奏 バッハ ベートーヴェン 月光 サティ オーディオ audio',
   },
   {
+    id: 'violin',
+    c: '音響',
+    t: 'ヴァイオリン音響モデル',
+    d: '弓の速さ・弓圧・駒からの距離と弓の傾き、弦と駒と胴、部屋の残響から、ヴァイオリンの弦の振動と音を物理モデルで計算して鳴らします。',
+    ic: 'vn',
+    k: 'violin bowed string acoustic physical model 物理モデル 弓 bow 擦弦 弓圧 bow force 弓速 bow speed 駒 bridge ヘルムホルツ運動 helmholtz motion シェレンゲ schelleng 摩擦 friction 松脂 rosin 重音 double stop ビブラート vibrato 胴 body 弱音器 mute 残響 reverb モード合成 modal synthesis 演奏 バッハ bach シャコンヌ chaconne パルティータ partita エクルズ eccles オーディオ audio',
+  },
+  {
     id: 'svg-theme-checker',
     c: 'SVG',
     t: 'SVG テーマスキーマチェッカー',

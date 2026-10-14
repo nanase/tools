@@ -1,0 +1,65 @@
+---
+// 楽譜の出典と、各曲の標準のテンポ。バッハの曲（CC BY-SA 3.0）の音符は、ここに帰属を表示する
+import { pieceOf } from './score';
+
+const tempo = (v: string) => pieceOf(v).tempo;
+const MU = 'https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=';
+---
+<ul class="srcs">
+  <li>
+    <h3>パルティータ 第 2 番 ニ短調 BWV 1004 より 5 楽章 <small>J. S. バッハ「無伴奏ヴァイオリンのためのソナタとパルティータ」</small></h3>
+    <p>音符は、Mutopia Project の楽譜（<a href={`${MU}1423`}>アルマンド</a>・<a href={`${MU}1424`}>クーラント</a>・<a href={`${MU}1427`}>サラバンド</a>・<a href={`${MU}1428`}>ジーグ</a>・<a href={`${MU}1426`}>シャコンヌ</a>）の LilyPond のファイルから読みました。反復は演奏順に展開し、装飾音は除いています。</p>
+    <ul class="tl">
+      <li><b>入力:</b> アルマンド・クーラント・シャコンヌは Hajo Dezelski。サラバンド・ジーグは Benjamin D. Esham</li>
+      <li><b>底本:</b> Bach-Gesellschaft Edition 1879 Band 27.1</li>
+      <li><b>楽譜の番号:</b> Mutopia-2010/02/03-1423・Mutopia-2008/05/18-1424・Mutopia-2008/10/29-1427・Mutopia-2008/05/28-1428・Mutopia-2019/05/30-1426</li>
+      <li><b>標準のテンポ:</b>
+        <ul class="tl">
+          <li>アルマンド: {tempo('allemanda')}</li>
+          <li>クーラント: {tempo('corrente')}</li>
+          <li>サラバンド: {tempo('sarabanda')}</li>
+          <li>ジーグ: {tempo('giga')}</li>
+          <li>シャコンヌ: {tempo('chaconne')}</li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li>
+    <h3>パルティータ 第 3 番 ホ長調 BWV 1006 より 前奏曲 <small>J. S. バッハ</small></h3>
+    <p>音符は、<a href={`${MU}1469`}>Mutopia Project の楽譜</a>の LilyPond のファイルから読みました。</p>
+    <ul class="tl">
+      <li><b>入力:</b> Hajo Dezelski</li>
+      <li><b>底本:</b> Bach-Gesellschaft Edition 1879 Band 27.1</li>
+      <li><b>楽譜の番号:</b> Mutopia-2008/07/13-1469</li>
+      <li><b>標準のテンポ:</b> {tempo('preludio')}</li>
+    </ul>
+  </li>
+  <li>
+    <h3>ソナタ 第 1 番 ト短調 BWV 1001 より アダージョ <small>J. S. バッハ</small></h3>
+    <p>音符は、<a href={`${MU}1429`}>Mutopia Project の楽譜</a>の LilyPond のファイルから読みました。</p>
+    <ul class="tl">
+      <li><b>入力:</b> Hajo Dezelski</li>
+      <li><b>底本:</b> Bach-Gesellschaft Edition 1879 Band 27.1</li>
+      <li><b>楽譜の番号:</b> Mutopia-2008/06/01-1429</li>
+      <li><b>標準のテンポ:</b> {tempo('adagio')}</li>
+    </ul>
+    <p>バッハの 7 曲の楽譜のライセンスは <a href="https://creativecommons.org/licenses/by-sa/3.0/deed.ja">クリエイティブ・コモンズ 表示 - 継承 3.0（CC BY-SA 3.0）</a>で、元の LilyPond のファイルと、そこから作った音符のデータ（<a href="https://github.com/nanase/tools/tree/main/src/tools/violin/scores">src/tools/violin/scores</a> の bwv1001-1・bwv1004-1〜5・bwv1006-1）も同じライセンスで公開します。</p>
+    <p>原典に強弱の記号はありません。強弱の目安（シャコンヌは節ごとの強弱の予定）とテンポは、このツールで決めた仮定です。</p>
+  </li>
+  <li>
+    <h3>ソナタ ト短調 より グラーヴェ・アダージョ <small>H. エクルズ（J. Salmon によるヴァイオリンとピアノの編曲、1914 年）</small></h3>
+    <p>音符は、<a href={`${MU}540`}>Mutopia Project の楽譜</a>の LilyPond のファイルから、ヴァイオリンの声部だけを読みました（ピアノの伴奏は鳴らしません）。強弱の記号と松葉は楽譜のものを使います。</p>
+    <ul class="tl">
+      <li><b>入力:</b> Benjamin Crowell</li>
+      <li><b>楽譜の番号:</b> Mutopia-2015/09/01-540</li>
+      <li><b>ライセンス:</b> パブリックドメイン</li>
+      <li><b>標準のテンポ:</b>
+        <ul class="tl">
+          <li>グラーヴェ: {tempo('eccles-grave')}</li>
+          <li>アダージョ: {tempo('eccles-adagio')}</li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+</ul>
+<p>弾く弦、弓の向き、重音と和音の弾き方（3 音以上は下の 2 音から上の 2 音へ分けて弾く）、トリルの形は、このツールが楽譜から決めています。</p>

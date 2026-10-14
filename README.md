@@ -42,4 +42,4 @@ GitHub Actions（[.github/workflows/ci.yml](.github/workflows/ci.yml)）が、PR
 
 MIT
 
-ただし、楽器の音響モデルで演奏する曲のデータ（MIDI と、そこから作る音符）には、曲ごとに原作と同じライセンスが付きます。曲ごとの出典とライセンスは [SCORES.md](SCORES.md) にあります。
+ただし、楽器の音響モデルで演奏する曲のデータ（MIDI や LilyPond の楽譜と、そこから作る音符）には、曲ごとに原作と同じライセンスが付きます。曲ごとの出典とライセンスは [SCORES.md](SCORES.md) にあります。
