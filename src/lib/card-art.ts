@@ -6,6 +6,21 @@
  * w = 黒鍵の太線、fa・fb・fc = 塗り、pl・pd・il・ih・al・ad = SVG テーマの図柄の明るい地と暗い地
  */
 import { fanPath } from '../tools/jjy/fan';
+import {
+  BODY_LEN,
+  BRIDGE_M,
+  CHINREST,
+  crPts,
+  FHOLE,
+  OUTLINE,
+  PEG,
+  PEGBOX,
+  PEGS,
+  SCROLL,
+  STR_NUT,
+  STR_TAIL,
+  STR_U,
+} from '../tools/violin/shapes';
 
 export type Art = (t: number) => string;
 
@@ -92,6 +107,103 @@ const exhP = (deg: number): number => {
   const ph = mod(deg - 140, 720),
     q = mod(ph - 200, 720);
   return Math.exp(-ph / 90) * Math.sin(ph / 14) + 0.25 * Math.exp(-q / 60) * Math.sin(q / 10);
+};
+
+/*
+ * ---------- ヴァイオリン: ページの「上から」の図と同じ形（渦巻きの先を左、E 線を上）を縮めたもの ----------
+ * 長さは渦巻きの先からの mm。弓は A 線を駒から 0.1 の位置で擦る
+ */
+const VN = (() => {
+  const scr = Math.max(...SCROLL.map((q) => q[0])),
+    nut = scr + PEGBOX.len,
+    top = nut + 130,
+    k = 112 / (top + BODY_LEN),
+    X = (mm: number): number => 4 + mm * k,
+    Y = (w: number): number => 24 - w * k,
+    /** 胴の上端からの m・中心からの h */
+    B = (m: number, h: number): [number, number] => [X(top + m), Y(h)],
+    loop = (pts: [number, number][]): string => `${pl(pts)}Z`,
+    /** n 点ごとに間引く（カードは小さいので、細かい点は要らない） */
+    every = <T>(pts: T[], n: number): T[] => pts.filter((_, i) => i % n === 0),
+    half = (o: number[][]): [number, number][] => {
+      const p = crPts(o, 2);
+      return p
+        .map(([m, h]) => B(m, h))
+        .concat(
+          p
+            .slice(0, -1)
+            .reverse()
+            .map(([m, h]) => B(m, -h)),
+        );
+    },
+    /* 弦の間は上駒のあたりを少し広げる（細い線が重ならないように） */
+    sNut = (i: number): [number, number] => [X(nut), Y(STR_NUT[i] * 1.3)],
+    sBr = (i: number): [number, number] => B(BRIDGE_M, STR_U[i]),
+    sTail = (i: number): [number, number] => B(244, STR_TAIL[i]),
+    wall = (d: number): number => PEGBOX.w0 - ((PEGBOX.w0 - PEGBOX.w1) * d) / PEGBOX.len;
+  let pegs = '';
+  for (const g of PEGS) {
+    const sg = g.s <= 1 ? 1 : -1,
+      x = X(nut - g.d),
+      w = wall(g.d);
+    pegs += loop(every(PEG, 2).map(([a, c]): [number, number] => [x + c * k, Y(sg * (w + a))]));
+  }
+  const fh = [1, -1].map((sg) => loop(every(FHOLE, 3).map(([m, h]) => B(m, sg * h)))).join(''),
+    board = `M${r1(X(nut))} ${r1(Y(12))}L${r1(X(nut + 270))} ${r1(Y(21))}Q${r1(X(nut + 273.5))} 24 ${r1(X(nut + 270))} ${r1(Y(-21))}L${r1(X(nut))} ${r1(Y(-12))}Z`,
+    box = `M${r1(X(nut))} ${r1(Y(PEGBOX.w0))}L${r1(X(scr))} ${r1(Y(PEGBOX.w1))}V${r1(Y(-PEGBOX.w1))}L${r1(X(nut))} ${r1(Y(-PEGBOX.w0))}Z`,
+    [tx0] = B(244, 0),
+    [tx1] = B(343, 0),
+    tail = `M${r1(tx0 + 0.7)} ${r1(Y(20))}L${r1(tx1 - 1)} ${r1(Y(11))}Q${r1(tx1 + 0.6)} 24 ${r1(tx1 - 1)} ${r1(Y(-11))}L${r1(tx0 + 0.7)} ${r1(Y(-20))}Q${r1(tx0 - 0.5)} 24 ${r1(tx0 + 0.7)} ${r1(Y(20))}Z`,
+    [bx] = B(BRIDGE_M, 0),
+    other = [0, 2, 3].map((i) => pl([sNut(i), sBr(i), sTail(i)])).join(''),
+    still =
+      P('c', loop(half(OUTLINE))) +
+      P('c t', fh + loop(every(CHINREST, 2).map(([m, h]) => B(m, -h)))) +
+      P('c', box + loop(every(SCROLL, 3).map(([d, w]): [number, number] => [X(scr - d), Y(w)]))) +
+      P('c t', pegs) +
+      P('c', `${board}${tail}M${r1(bx)} ${r1(Y(22.5))}V${r1(Y(-22.5))}`) +
+      P('c t', other + pl([sBr(1), sTail(1)]));
+  return {
+    still,
+    k,
+    /** 弓の毛の位置（駒から A 線の長さ 328 mm の 0.1） */
+    bow: X(top + BRIDGE_M - 32.8),
+    a0: sNut(1),
+    a1: sBr(1),
+  };
+})();
+/**
+ * 弓（上から見た形。lat は毛からの横のずれ [カードの単位]、s は毛の元から先へ [mm]）: 棹・毛箱・ねじ・頭。
+ * 横のずれは見えるように実物より広げてある
+ */
+const BOW_STICK = -2.4,
+  BOW_FROG: [number, number][] = [
+    [1.4, 0],
+    [1.4, -47],
+    [0.6, -50],
+    [-4, -50],
+    [-4, 0],
+  ],
+  BOW_BUTTON: [number, number][] = [
+    [-1.2, -66],
+    [-1.2, -83],
+    [-3.6, -83],
+    [-3.6, -66],
+  ],
+  BOW_HEAD: [number, number][] = [
+    [1.4, 650],
+    [-3.6, 644],
+    [-4, 662],
+    [-2.6, 676],
+    [0.4, 674],
+    [1.4, 662],
+  ];
+/** 弓の 1 往復のうち、片道の位置（0〜1）と速さ（0〜1）。返すところは片道の 8 % で速さを上げ下げする */
+const bowStroke = (u: number): { pos: number; v: number } => {
+  const r = 0.08,
+    v = Math.min(1, u / r, (1 - u) / r),
+    p = u < r ? (u * u) / (2 * r) : u > 1 - r ? 1 - r - ((1 - u) * (1 - u)) / (2 * r) : u - r / 2;
+  return { pos: p / (1 - r), v };
 };
 
 export const ART: Record<string, Art> = {
@@ -438,6 +550,50 @@ export const ART: Record<string, Art> = {
         s += `<circle class="a t" cx="${x}" cy="33" r="${r1(1.5 + 16 * tau)}" opacity="${r1(1 - tau / 0.7)}"/>`;
     });
     return s;
+  },
+  /*
+   * ヴァイオリン音響モデル: 上から見たヴァイオリンと弓（実物の長さ）。弓は A 線を擦りながら、元から先まで弓をいっぱいに
+   * 使って往復するので、元の毛箱と先の頭が交互に見える。弦は Helmholtz の運動の折れ目が回り、弓を返すと回る向きが変わる。
+   * 止まっているときは下げ弓を始めるところ（毛箱が見える）で、弦の振れる範囲を描く
+   */
+  vn(t) {
+    const [x0, y0] = VN.a0,
+      [x1, y1] = VN.a1,
+      env = (u: number): number => 4 * u * (1 - u),
+      /* 弓の 1 往復は 3.2 s。弓の毛の元から 0.04〜0.62 m のところで弦を擦る */
+      cyc = mod(t, 3.2) / 1.6,
+      down = cyc < 1,
+      st = bowStroke(down ? cyc : cyc - 1),
+      pos = 40 + 580 * (down ? st.pos : 1 - st.pos),
+      A = 1.8 * (t ? 0.55 + 0.45 * st.v : 1),
+      at = (u: number, dy: number): [number, number] => [x0 + (x1 - x0) * u, y0 + (y1 - y0) * u - dy],
+      band = (sg: number): string => {
+        const p: [number, number][] = [];
+        for (let i = 0; i <= 24; i++) p.push(at(i / 24, sg * A * env(i / 24)));
+        return pl(p);
+      };
+    let s = VN.still;
+    if (!t) s += P('a', band(1) + band(-1));
+    else {
+      /* 折れ目は前半で駒から上駒へ（上の枝）、後半で上駒から駒へ（下の枝）。上げ弓では上下が逆 */
+      const ph = mod(t * 1.7, 1),
+        u = ph < 0.5 ? 1 - 2 * ph : 2 * ph - 1,
+        side = (ph < 0.5 ? 1 : -1) * (down ? 1 : -1);
+      s += P('a g', band(1) + band(-1)) + P('a', pl([at(0, 0), at(u, side * A * env(u)), at(1, 0)]));
+    }
+    /*
+     * 弓: 毛・棹（渦巻きの側へ傾けて持つ）・毛箱・ねじ・頭。元が上（E 線の側）で、下げ弓では弓が上へ動く。
+     * 弦に触れる点（y = 24）が、毛の元から pos [mm] のところ
+     */
+    const bx = VN.bow,
+      Yb = (s2: number): number => 24 + (s2 - pos) * VN.k,
+      Q = (pts: [number, number][]): string => `${pl(pts.map(([l, s2]): [number, number] => [bx + l, Yb(s2)]))}Z`;
+    return (
+      s +
+      P('b', `M${r1(bx)} ${r1(Yb(0))}V${r1(Yb(650))}`) +
+      P('c', `M${r1(bx + BOW_STICK)} ${r1(Yb(-66))}V${r1(Yb(648))}`) +
+      P('fc', Q(BOW_FROG) + Q(BOW_BUTTON) + Q(BOW_HEAD))
+    );
   },
   /* PCB コイル: うずまきを電流が流れる */
   pc(t) {

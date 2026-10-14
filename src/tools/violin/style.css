@@ -1,0 +1,134 @@
+/* ヴァイオリン音響モデル: 枠の並び・図の窓と楽器の色・弓の状態の表示 */
+
+/* 枠の並び。PC は上に図（全幅）、左の列に 演奏・弓・左手、右の列に 胴・残響・音の波形・計算結果、その下に 式・出典 */
+/* スマホは 図 → 演奏 → 弓 → 左手 → 胴 → 残響 → 音の波形 → 計算結果 → 式 → 楽譜の出典（列は display: contents で解ける） */
+.a-fig{order:1}.a-play{order:2}.a-bow{order:3}.a-lh{order:4}.a-body{order:5}.a-room{order:6}.a-wave{order:7}.a-out{order:8}.a-thy{order:9}.a-src{order:10}
+@media (min-width:1000px){
+  .tgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr);grid-template-areas:"fig fig" "c1 c2" "thy thy" "src src";align-items:start}
+  .a-fig{grid-area:fig}.c1{grid-area:c1}.c2{grid-area:c2}.a-thy{grid-area:thy}.a-src{grid-area:src}
+}
+.wv-sw{margin:4px 0 12px}
+#playBtn{display:inline-flex;align-items:center;gap:7px}
+/* 「一時停止」と「再開」で幅を変えない */
+#pauseBtn{min-width:70px}
+.pbtns{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:6px;margin:6px 8px 0;padding-top:8px;border-top:1px solid var(--line)}
+.pbtns .tg{justify-content:center}
+.pbtns .tg:disabled{border-color:var(--line);background:none;color:var(--ink-3);opacity:.6;cursor:default}
+.pl-bar{margin:0 auto 0 0;font:500 12.5px/1.5 var(--mono);color:var(--ink-2)}
+.res-aux{margin:0 0 10px;text-align:right}
+.m-sub{display:block;margin-top:2px;font:12px/1.5 var(--sans);color:var(--ink-3)}
+.bmet,.rmet{margin-top:12px}
+.bmet .m dd,.rmet .m dd{font-size:16px}
+.a-body,.a-room,.a-bow{container-type:inline-size}
+.bsbar{margin-top:14px}
+.scope svg{touch-action:pan-y}
+.cur{stroke:var(--screen-ink);stroke-width:1}
+.gl2{stroke:var(--grid);stroke-width:1;opacity:.55}
+.mkl{stroke:var(--screen-ink);stroke-width:1;stroke-dasharray:4 4;opacity:.55}
+.mkp{stroke:var(--ch1);stroke-width:1.5}
+.scope text.mkt{fill:var(--screen-ink);font-size:10.5px}
+.scope text.r2{fill:var(--ch2)}
+.a-src{font-size:14.5px}
+.prow.pick{grid-template-columns:var(--sw) auto minmax(0,1fr);grid-template-areas:"sym name val"}
+.sel{position:relative}
+.sel select{appearance:none;width:100%;height:30px;padding:0 30px 0 10px;border:1px solid var(--line-2);border-radius:4px;background:var(--inset);color:var(--ink);font:500 13px/1.2 var(--mono);text-overflow:ellipsis;cursor:pointer}
+.sel::after{content:"";position:absolute;top:50%;right:12px;width:7px;height:7px;border-right:1.6px solid var(--ink-2);border-bottom:1.6px solid var(--ink-2);transform:translateY(-70%) rotate(45deg);pointer-events:none}
+.stag.right{margin-left:auto}
+
+/* 図の左下の「弓を離す」（図が横に送れるときも、見えている枠の左下に置く） */
+.vwrap{position:relative}
+.vstop{position:absolute;left:10px;bottom:10px;z-index:2;box-shadow:0 1px 4px rgb(0 0 0 / .22)}
+.vstop[hidden]{display:none}
+.vstop .sq{display:inline-block;width:8px;height:8px;border-radius:1px;background:currentColor}
+
+/* 図の窓（ギターの指板・エンジンの図と同じ地） */
+.vw{position:relative;overflow-x:auto;overscroll-behavior-x:contain;border:1px solid var(--line);border-radius:var(--r);background:var(--screen);box-shadow:inset 0 1px 3px rgb(0 0 0 / .12)}
+.vw:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.vf{display:block;width:100%;min-width:600px;height:auto;user-select:none;-webkit-user-select:none;touch-action:manipulation;cursor:pointer}
+.vf text{fill:var(--screen-ink);font:500 11px var(--mono)}
+.vf .lb2{fill:var(--ink-3);font-size:10px}
+.vf .lb3{fill:var(--ink-2);font:700 11px var(--mono)}
+.vf .lbbig{fill:var(--ink);font:700 15px var(--mono)}
+
+/*
+ * 楽器の色。木は表示窓の地に表示窓の文字色を少し混ぜた灰色、黒檀（指板・テールピース・糸巻き・あご当て・毛箱）は濃い灰色。
+ * 明るい配色では弦を暗くし、白い縁取りで黒檀の上でも見えるようにする
+ */
+.vw{--v-top:color-mix(in srgb,var(--screen-ink) 9%,var(--screen));--v-wood:color-mix(in srgb,var(--screen-ink) 22%,var(--screen));--v-ebony:var(--rail-2);--v-str:#4d555c;--v-str-w:#262c31;--v-str-h:rgb(255 255 255 / .78);--v-hair:#fbfaf6;--v-stick:color-mix(in srgb,var(--screen-ink) 75%,var(--screen));--v-hole:var(--rail);--v-metal:#c9ced2;--v-leather:#4a5055;--v-pearl:#f4f5f1}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]) .vw{--v-top:var(--surface);--v-wood:color-mix(in srgb,var(--screen-ink) 18%,var(--surface));--v-ebony:#2c3338;--v-str:#a7afb5;--v-str-w:#c3c9cd;--v-str-h:rgb(0 0 0 / .35);--v-hair:#d9dcd6;--v-stick:#7b858c;--v-hole:#000;--v-metal:#9aa3a9;--v-leather:#3a4045;--v-pearl:#d9dcd6}
+}
+:root[data-theme="dark"] .vw{--v-top:var(--surface);--v-wood:color-mix(in srgb,var(--screen-ink) 18%,var(--surface));--v-ebony:#2c3338;--v-str:#a7afb5;--v-str-w:#c3c9cd;--v-str-h:rgb(0 0 0 / .35);--v-hair:#d9dcd6;--v-stick:#7b858c;--v-hole:#000;--v-metal:#9aa3a9;--v-leather:#3a4045;--v-pearl:#d9dcd6}
+.v-top{fill:var(--v-top);stroke:var(--screen-ink);stroke-width:1.1}
+.v-purf{fill:none;stroke:var(--screen-ink);stroke-width:.7;opacity:.45}
+.v-wood{fill:var(--v-wood);stroke:var(--screen-ink);stroke-width:1}
+.v-ebony{fill:var(--v-ebony);stroke:var(--screen-ink);stroke-width:.8}
+.v-hole{fill:var(--v-hole)}
+.v-maple{fill:var(--surface);stroke:var(--screen-ink);stroke-width:1}
+.v-nut{stroke:var(--surface);stroke-width:4;stroke-linecap:round}
+.v-str{fill:none;stroke:var(--v-str);stroke-linecap:round}
+.v-str.w{stroke:var(--v-str-w);stroke-dasharray:1.2 .8}
+.v-sth{fill:none;stroke:var(--v-str-h);stroke-linecap:round}
+.v-strc{fill:var(--v-str);stroke:var(--screen);stroke-width:1}
+.v-hair{fill:var(--v-hair);stroke:var(--screen-ink);stroke-width:.8;opacity:.92}
+.v-hair-l{stroke:var(--v-hair);stroke-width:3.2;stroke-linecap:round}
+.v-hair-o{stroke:var(--screen-ink);stroke-width:5.4;stroke-linecap:round}
+.v-stick{fill:var(--v-stick);stroke:var(--screen-ink);stroke-width:.8}
+/* 弓の部品: 毛の目盛り・巻き線・握りの革・毛箱・毛箱の目（貝）・金具・頭の先の板・弓の中ほどの印 */
+.v-tick{fill:none;stroke:var(--screen-ink);stroke-width:1;opacity:.3}
+.v-wind,.v-ferrule{fill:var(--v-metal);stroke:var(--screen-ink);stroke-width:.6}
+.v-grip{fill:var(--v-leather);stroke:var(--screen-ink);stroke-width:.6}
+.v-frog{fill:var(--v-ebony);stroke:var(--screen-ink);stroke-width:.8}
+.v-eye{fill:var(--v-pearl);stroke:var(--screen-ink);stroke-width:.5}
+.v-plate{fill:none;stroke:var(--v-pearl);stroke-width:1.6}
+.v-mk{fill:var(--ch2);stroke:var(--surface);stroke-width:1}
+.v-stick-l{fill:none;stroke:var(--v-stick);stroke-width:5;stroke-linecap:round}
+.v-dim{stroke:var(--grid-2);stroke-width:1;stroke-dasharray:3 3}
+.v-dima{fill:none;stroke:var(--ink-3);stroke-width:1}
+.v-ar{fill:none;stroke:var(--ink);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.v-ghost{fill:none;stroke:var(--grid-2);stroke-width:1;stroke-dasharray:2 3}
+/* 振動（信号色）: 残像は帯、スローは線。包絡は点線 */
+.v-band{fill:var(--ch1);fill-opacity:.32;stroke:var(--ch1);stroke-width:1;stroke-opacity:.8}
+.v-shape{fill:none;stroke:var(--ch1);stroke-width:2;stroke-linejoin:round}
+.v-env{fill:none;stroke:var(--ch1);stroke-width:1;stroke-dasharray:3 3;opacity:.7}
+/* 押さえている指・弓が触れている弦（LED と同じ色） */
+.v-f{fill:var(--accent);stroke:var(--surface);stroke-width:1.5;filter:drop-shadow(0 0 3px var(--accent))}
+.v-on{stroke:var(--accent);stroke-width:2;fill:none;filter:drop-shadow(0 0 2px var(--accent))}
+
+/* 駒の側から見た図と弓の状態を横に並べ、図の高さを弓の状態（1 行 36 px × 4 と枠）にそろえる。図の縦横比は 440 : 272 */
+.vcap{display:flex;align-items:baseline;gap:8px;margin:0 0 5px;font:700 12px var(--sans);color:var(--ink-2)}
+.vcap span{font:500 11.5px var(--sans);color:var(--ink-3)}
+.vrow{--bsh:36px;display:grid;grid-template-columns:calc(var(--bsh) * 4 * 440 / 272 + 2px) minmax(0,1fr);gap:12px;margin-top:12px;align-items:start}
+/* 狭い画面では縦に並べ、駒の側から見た図は PC と同じ大きさのまま中央に置く（幅いっぱいに広げると大きすぎる） */
+@media (max-width:640px){
+  .vrow{grid-template-columns:minmax(0,1fr)}
+  .vrow>:first-child{justify-self:center;width:min(100%,calc(var(--bsh) * 4 * 440 / 272 + 2px))}
+}
+.vf.vbr{min-width:0;cursor:default}
+.vf.vbr text,.vf.vbr .lb3{font-size:18px}
+.vf.vbr .lbbig{font-size:22px}
+.vbr .v-maple{stroke-width:1.6}
+.vbr .v-top{stroke-width:1.8}
+.vbr .v-ar{stroke-width:3}
+.vbr .v-on{stroke-width:3}
+.vbr .v-ghost{stroke-width:1.8;stroke-dasharray:4 5}
+.vbr .v-hair-o{stroke-width:9}
+.vbr .v-hair-l{stroke-width:5.5}
+.vbr .v-stick-l{stroke-width:8}
+.bstat{border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
+.bs-r{display:grid;grid-template-columns:8.4em minmax(0,1fr) 6.2em;align-items:center;gap:10px;height:var(--bsh);box-sizing:border-box;padding:0 10px}
+.bs-r+.bs-r{border-top:1px solid var(--line)}
+.bs-n{font:700 12px var(--sans);color:var(--ink-2);white-space:nowrap}
+.bs-n i{font:italic 500 13px var(--math);color:var(--ink-3)}
+.bs-n sub{font-size:9px;color:var(--ink-3)}
+.bs-v{font:700 14px var(--mono);color:var(--ink);text-align:right;white-space:nowrap}
+.bs-v small{margin-left:3px;font:500 10.5px var(--mono);color:var(--ink-3)}
+.bs-m svg{display:block;width:100%;height:11px}
+.bs-t{display:flex;justify-content:space-between;height:11px;margin-top:2px;font:500 9.5px/11px var(--mono);color:var(--ink-3)}
+.bs-m .track{fill:var(--inset);stroke:var(--line-2);stroke-width:1;vector-effect:non-scaling-stroke}
+.bs-m .ok{fill:var(--ch1);fill-opacity:.2}
+.bs-m .bar{fill:var(--ink-2)}
+.bs-m .nd{fill:none;stroke:var(--accent);stroke-width:2.5;vector-effect:non-scaling-stroke}
+.bw-st{fill:none;stroke:var(--ink-2);stroke-width:2;stroke-linecap:round;vector-effect:non-scaling-stroke}
+.bw-hr{fill:none;stroke:var(--ink-3);stroke-width:1.3;vector-effect:non-scaling-stroke}
+.bw-fr{fill:var(--ink-2)}

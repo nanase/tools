@@ -1,0 +1,287 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import More from '../components/More.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import { order, TOOLS } from '../data/tools';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import { outVol, TEMPO } from '../lib/play';
+import { ROOMS } from '../lib/reverb';
+import { gridSvg } from '../lib/scope';
+import '../tools/violin/style.css';
+import Credits from '../tools/violin/Credits.astro';
+import {
+  BETA,
+  BOW_F,
+  BOW_V,
+  DIST,
+  EXAG,
+  FMAX,
+  LEVELS,
+  MUTES,
+  SEEDS,
+  SLOW,
+  SPANS,
+  VIB_HZ,
+  VIB_W,
+  VOL0,
+} from '../tools/violin/params';
+import { bodyGrid } from '../tools/violin/plot';
+import { PIECES } from '../tools/violin/score';
+import Theory from '../tools/violin/Theory.astro';
+
+const name = 'ヴァイオリン音響モデル';
+/* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
+const CAT = '音響';
+const related = [
+  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'violin')),
+  ...TOOLS.filter((t) => t.c !== CAT && !t.s),
+];
+/** 弓の状態の行（表示だけ）。帯はよく鳴る範囲、目盛りは左・中・右 */
+const METERS = [
+  {
+    k: 'v',
+    name: '<i>v</i><sub>b</sub> 弓の速さ',
+    unit: 'm/s',
+    ticks: ['0', '0.5', '1'],
+    title: '弓の速さ。帯はよく鳴る範囲（曲で使う 0.22〜0.5 m/s）',
+  },
+  {
+    k: 'f',
+    name: '<i>F</i> 弓圧',
+    unit: 'N',
+    ticks: ['0', '2', '4'],
+    title: '弓圧（触れている弦の和）。帯はよく鳴る範囲（Schelleng の上限と、測定で求めた下限の間）',
+  },
+  {
+    k: 'b',
+    name: '<i>β</i> 駒からの距離',
+    unit: '× L',
+    ticks: ['駒', '0.125', '0.25'],
+    title: '駒から弓までの距離を、振動する長さ L で割ったもの。帯は曲で使う範囲',
+  },
+];
+---
+<SiteLayout title={name} tool={{ id: 'violin', name }} description="ヴァイオリンを物理モデルで鳴らします。弓の速さ・弓圧・駒からの距離と弓の傾き、弦と駒と胴、部屋の残響から、弦の振動と音を計算します。" note="音と計算結果は、論文の模型を簡略化した物理モデルによるものです。">
+  <PageTitle title={name}>弓と弦の摩擦（接触の温度で変わる松脂の摩擦）、ねじれも含む弦の振動、駒とつながった胴（シグネチャモードと多数の高いモード）を計算して、ヴァイオリンの音を作ります。弦を押すと、その位置を押さえて弓で弾き続けます。弓の速さ・弓圧・駒からの距離を変えると、弦の振れ方と音がすぐに変わります。弓の傾きで弾く弦（重音を含む 7 段）を選び、曲の演奏もできます。</PageTitle>
+
+  <div class="tgrid">
+    <Panel hid="hd-fig" title="ヴァイオリン" class="a-fig">
+      <Fragment slot="aux">
+        <div class="seg" id="p-view" role="group" aria-label="見る位置"><button type="button" data-v="top" aria-pressed="true" title="楽器を真上から見る（指板・弦・弓の位置が正確に分かる）">上から</button><button type="button" data-v="player" aria-pressed="false" title="構えたときの演奏者の目の位置から見る">演奏者の目線</button></div>
+        <div class="seg" id="p-nv" role="group" aria-label="振動の見せ方"><button type="button" data-v="blur" aria-pressed="true" title="実際の速さで、目に見える残像（振れる範囲）を描く">残像</button><button type="button" data-v="slow" aria-pressed="false" title="振動をゆっくりにして、弦の形（折れ目が往復する様子）を描く">スロー</button></div>
+      </Fragment>
+      <div class="sbar">
+        <span class="stag"><i class="sw" aria-hidden="true"></i>弦の変位 <b id="vf-ex"></b></span>
+        <span class="stag" id="vf-tm"></span>
+        <span class="stag right" id="vf-note"></span>
+      </div>
+      <div class="vwrap">
+        <div class="vw" id="vw-top" tabindex="0" role="group" aria-roledescription="ヴァイオリンの図" aria-label="上から見たヴァイオリンと弓。弦を押すと、その位置を押さえて弓で弾き続ける。上下の矢印キーで弦、左右の矢印キーで押さえる位置を選び、スペースキーで弓を当てる・離す">
+          <svg class="vf" id="vtop" viewBox="0 0 1000 320" aria-hidden="true"></svg>
+        </div>
+        <div class="vw" id="vw-pl" tabindex="0" role="group" aria-roledescription="ヴァイオリンの図" aria-label="構えたヴァイオリンを演奏者の目の位置から見た図。弦を押すと、その位置を押さえて弓で弾き続ける。上下の矢印キーで弦、左右の矢印キーで押さえる位置を選び、スペースキーで弓を当てる・離す" hidden>
+          <svg class="vf" id="vpl" viewBox="0 0 1000 360" aria-hidden="true"></svg>
+        </div>
+        <button type="button" class="tg vstop" id="vf-stop" title="弓を弦から離して、音を止める（弦は少し鳴り残る）" hidden><i class="sq" aria-hidden="true"></i><span id="vf-stopT">弓を離す</span></button>
+      </div>
+      <p class="sr" id="vf-live" aria-live="polite"></p>
+      <div class="vrow">
+        <div>
+          <p class="vcap">駒の側から<span>弓の傾き（7 段）</span></p>
+          <div class="vw"><svg class="vf vbr" id="vbr" viewBox="0 0 440 272" role="img" aria-label="駒の側から見た弦と弓。弓の傾きと、触れている弦"></svg></div>
+        </div>
+        <div>
+          <p class="vcap">弓の状態<span>帯はよく鳴る範囲</span></p>
+          <div class="bstat">
+            {METERS.map((m) => (
+              <div class="bs-r" title={m.title}>
+                <span class="bs-n" set:html={m.name} />
+                <div class="bs-m"><svg viewBox="0 0 300 10" preserveAspectRatio="none" aria-hidden="true"><rect class="track" x="0" y="0" width="300" height="10"/><rect class="ok" id={`bm-${m.k}-ok`} x="0" y="0" width="0" height="10"/><rect class="bar" id={`bm-${m.k}-bar`} x="0" y="3" width="0" height="4"/><path class="nd" id={`bm-${m.k}-nd`}/></svg><div class="bs-t">{m.ticks.map((t) => <span>{t}</span>)}</div></div>
+                <span class="bs-v"><span id={`bm-${m.k}-v`}></span><small>{m.unit}</small></span>
+              </div>
+            ))}
+            <div class="bs-r" title="弓の毛の元（毛箱の側）から、弦に触れている点までの長さ。演奏者から見た向きで、元が右">
+              <span class="bs-n">弓の位置</span>
+              <div class="bs-m"><svg viewBox="0 0 300 10" preserveAspectRatio="none" aria-hidden="true"><path class="bw-st" d="M288 1.5Q150 4.5 8 2"/><path class="bw-hr" d="M288 8H10"/><rect class="bw-fr" x="287" y="0" width="13" height="10"/><path class="bw-fr" d="M12 0L0 3L2 10L11 10Z"/><path class="nd" id="bm-p-nd"/></svg><div class="bs-t"><span>先 0.65</span><span>元</span></div></div>
+              <span class="bs-v"><span id="bm-p-v"></span><small>m</small></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <More id="g-fig" title="表示の設定"><div class="ana2">
+        <div class="ptab">
+          <ChoiceRow k="ex" name="振幅の強調" sub="弦の変位を何倍にして描くか。×1 は実際の大きさ（弦の間隔は実際の大きさで描く）" choices={EXAG.map((v) => [v, `×${v}`] as const)} value={1} />
+        </div>
+        <div class="ptab" id="sl-row" hidden>
+          <ChoiceRow k="sl" name="スローの速さ" sub="振動を何分の 1 の速さで描くか" choices={SLOW.map((v) => [v, `1/${v}`] as const)} value={50} />
+        </div>
+      </div></More>
+    </Panel>
+
+    <div class="col c1">
+      <Panel hid="hd-play" title="演奏" class="a-play">
+        <div slot="aux" class="seg"><button type="button" id="playBtn" aria-pressed="false" title="選んだ曲を演奏する・止める"><span class="led" id="playLed" aria-hidden="true"></span><span id="playT">演奏</span></button></div>
+        <div class="ptab">
+          <div class="prow pick" id="p-piece">
+            <div class="c-sym" aria-hidden="true"></div>
+            <div class="c-name"><label class="pn" id="n-piece" for="piece">曲</label><p class="desc tip" id="t-piece" role="tooltip" hidden>著作権の切れた無伴奏の曲。弦・弓の向き・重音や和音の弾き方は、このツールが楽譜から決める</p></div>
+            <div class="c-val sel"><select id="piece" autocomplete="off" aria-describedby="t-piece">{PIECES.map((p) => <option value={p.v} title={p.by}>{p.name}</option>)}</select></div>
+          </div>
+          <ChoiceRow k="expr" name="表情" sub="楽譜どおり: 決めたテンポと強弱の目安だけで弾く。楽句の弧と揺らぎ: 楽句の中ほどで少し速く大きく、終わりで延ばし、長い音をふくらませ、弓の出だしを少しばらつかせる" choices={[['plain', '楽譜どおり'], ['phrase', '楽句の弧と揺らぎ']]} value="phrase" />
+          <ParamRow d={TEMPO} />
+          <ParamRow d={outVol(VOL0)} />
+        </div>
+        <div class="pbtns">
+          <p class="pl-bar" id="pl-bar" aria-live="off"></p>
+          <button type="button" class="tg" id="pauseBtn" title="演奏を一時停止する・続きから再開する（スマートフォンとタブレットでは、画面が隠れると自動で一時停止する）" disabled>一時停止</button>
+          <button type="button" class="tg" id="liftBtn" title="弓を弦から離す（弦は鳴り残る）" disabled>弓を離す</button>
+          <button type="button" class="tg" id="muteBtn" title="鳴っている弦をすべて止める（演奏も止める）">すべて止める</button>
+        </div>
+        <p class="msg er snd-msg" id="snd-msg" aria-live="polite"></p>
+      </Panel>
+
+      <Panel hid="hd-bow" title="弓" class="a-bow">
+        <div slot="aux" class="seg" id="p-dir" role="group" aria-label="弓の向き" data-nosave><button type="button" data-v="1" aria-pressed="true" title="毛箱の側（元）から先の側へ弓を動かす">下げ弓</button><button type="button" data-v="-1" aria-pressed="false" title="先の側から毛箱の側（元）へ弓を動かす">上げ弓</button></div>
+        <div class="ptab">
+          <ChoiceRow k="lv" name="弾く弦" sub="弓の傾きで、触れる弦が決まる。隣の 2 本に同時に触れると重音になる" choices={LEVELS.map((l, i) => [i, l.n, l.s.length > 1 ? '2 本を同時に（重音）' : `${l.n} 線だけ`] as const)} value={4} layout="chips" />
+          <ParamRow d={BOW_V} />
+          <ParamRow d={BOW_F} />
+          <ParamRow d={BETA} />
+        </div>
+        <dl class="metrics bmet">
+          <div class="m"><dt>弓圧の上限 <i>F</i><sub>max</sub></dt><dd id="m-fmax"></dd></div>
+          <div class="m"><dt>弓圧の下限 <i>F</i><sub>min</sub></dt><dd id="m-fmin"></dd></div>
+          <div class="m"><dt>駒から弓まで <i>x</i><sub>b</sub></dt><dd id="m-xb"></dd></div>
+          <div class="m"><dt>1 周期の滑りの割合</dt><dd id="m-slip"></dd></div>
+        </dl>
+        <More id="g-bow"><div class="ptab">
+          <ChoiceRow k="fl" name="揺らぎ" sub="弓の速さ・弓圧・駒からの距離に足す、ゆっくりした揺らぎの大きさ（人の手の揺れ）" choices={[['0', 'なし'], ['1', '標準'], ['2', '大きい']]} value="1" />
+          <ChoiceRow k="rs" name="松脂のむら" sub="弓の毛の上の、摩擦係数のむら（標準偏差）。音の細かなざらつきになる" choices={[['0', '0 %'], ['0.03', '3 %'], ['0.1', '10 %']]} value="0.03" />
+        </div></More>
+      </Panel>
+
+      <Panel hid="hd-lh" title="左手" class="a-lh">
+        <div class="ptab">
+          <ChoiceRow k="vib" name="ビブラート" sub="押さえた弦の音の高さを揺らす。開放弦には掛からない" choices={[['0', 'なし'], ['1', 'あり']]} value="1" />
+          <ParamRow d={VIB_W} />
+          <ParamRow d={VIB_HZ} />
+        </div>
+      </Panel>
+    </div>
+
+    <div class="col c2">
+      <Panel hid="hd-body" title="胴" class="a-body">
+        <div slot="aux" class="seg" id="p-hold" role="group" aria-label="支え方"><button type="button" data-v="0" aria-pressed="false" title="糸で吊るして測ったときの減衰">支えなし</button><button type="button" data-v="1" aria-pressed="true" title="あごと肩、左手で支えたときの減衰（低いモードの減衰が増える）">構えたとき</button></div>
+        <div class="ptab">
+          <ChoiceRow k="mute" name="弱音器" sub="駒の上端に載せる重り。駒の揺れの共振を下げ、高い音を弱める（ゴムは約 1 g、金属は 5 g とした）" choices={MUTES.map(([v, l, m]) => [v, l, m ? `${m * 1000} g` : '弱音器なし'] as const)} value="0" />
+          <ChoiceRow k="inst" name="個体" sub="760 Hz より上の胴の多数のモード（周波数と大きさがばらつく）を作る乱数を変える。それより下のシグネチャモードはどの個体も同じ" choices={SEEDS.map((s, i) => [String(s), String(i + 1)] as const)} value="40" />
+        </div>
+        <dl class="metrics bmet">
+          <div class="m"><dt>空気の共振 A0</dt><dd id="b-a0"></dd></div>
+          <div class="m"><dt>胴の曲げ CBR</dt><dd id="b-cbr"></dd></div>
+          <div class="m"><dt>板の共振 B1<sup>−</sup></dt><dd id="b-b1m"></dd></div>
+          <div class="m"><dt>板の共振 B1<sup>+</sup></dt><dd id="b-b1p"></dd></div>
+          <div class="m"><dt>駒の揺れ</dt><dd id="b-rock"></dd></div>
+          <div class="m"><dt>駒の上下</dt><dd id="b-bnc"></dd></div>
+        </dl>
+        <div class="sbar bsbar">
+          <span class="stag"><i class="sw" aria-hidden="true"></i>CH1 駒のアドミタンス <b>10 dB</b>/div</span>
+          <span class="stag"><i class="sw c2" aria-hidden="true"></i>CH2 音圧 ÷ 力 <b>10 dB</b>/div</span>
+          <span class="stag">X LOG <b>100 Hz – 10 kHz</b></span>
+        </div>
+        <div class="scope">
+          <svg viewBox="-46 -16 492 282" id="b-svg" role="img" aria-label="胴の応答。駒のアドミタンスと、1.2 m 先の音圧 ÷ 力">
+            <defs><clipPath id="b-clip"><rect x="0" y="-2" width="400" height="244"/></clipPath></defs>
+            <g set:html={bodyGrid()} />
+            <g id="b-mk"></g>
+            <g clip-path="url(#b-clip)"><path class="t2" id="b-t2"/><path class="t1" id="b-t1"/></g>
+            <g id="b-pt"></g>
+            <path class="cur" id="b-cur"/>
+            <g id="b-axes"></g>
+          </svg>
+        </div>
+        <div class="sbar rdbar"><span class="stag rd" id="b-rd"></span></div>
+      </Panel>
+
+      <Panel hid="hd-room" title="残響" class="a-room">
+        <div class="ptab">
+          <ChoiceRow k="room" name="部屋" sub="響きを付ける部屋。寸法と吸音率から残響時間を求める（再生の音だけに付け、音の波形と計算結果には含めない）" choices={ROOMS.map((r) => [r.v, r.name, r.v === 'off' ? '残響なし' : `${r.dim.join(' × ')} m、平均吸音率 ${r.a}`] as const)} value="small" layout="chips" wide />
+          <ParamRow d={DIST} />
+        </div>
+        <dl class="metrics rmet">
+          <div class="m"><dt>残響時間 <i>T</i><sub>60</sub>（500 Hz）</dt><dd id="r-t"></dd></div>
+          <div class="m"><dt>残響時間 <i>T</i><sub>60</sub>（4 kHz）</dt><dd id="r-th"></dd></div>
+          <div class="m"><dt>臨界距離 <i>r</i><sub>c</sub></dt><dd id="r-rc"></dd></div>
+          <div class="m"><dt>残響音 ÷ 直接音</dt><dd id="r-dr"></dd></div>
+        </dl>
+      </Panel>
+
+      <Collapsible hid="hd-wave" title="音の波形" class="a-wave">
+        <div class="seg wv-sw" id="p-ov" role="group" aria-label="表示"><button type="button" data-v="yt" aria-pressed="true" title="1 m 先の音圧の時間変化（残響を除く）">波形</button><button type="button" data-v="sp" aria-pressed="false" title="周波数ごとの大きさ（直前の 0.17 秒）">スペクトラム</button></div>
+        <div id="v-yt">
+          <div class="sbar">
+            <span class="stag"><i class="sw" aria-hidden="true"></i>CH1 音圧 <b id="w-vd"></b>/div</span>
+            <span class="stag">H <b id="w-hd"></b>/div</span>
+            <span class="stag" id="w-st"></span>
+          </div>
+          <div class="scope">
+            <svg viewBox="-50 -14 462 194" id="w-svg" role="img" aria-label="音の波形">
+              <defs><clipPath id="w-clip"><rect x="0" y="0" width="400" height="160"/></clipPath></defs>
+              <g set:html={gridSvg(4)} />
+              <g clip-path="url(#w-clip)"><path class="t1" id="w-t1"/></g>
+              <g id="w-axes"></g>
+            </svg>
+          </div>
+          <More id="g-yt" title="表示の設定"><div class="ptab"><ChoiceRow k="span" name="表示する長さ" sub="直前の音の長さ" choices={SPANS.map((v) => [v, `${v * 1000} ms`] as const)} value={0.02} /></div></More>
+        </div>
+        <div id="v-sp" hidden>
+          <div class="sbar">
+            <span class="stag"><i class="sw" aria-hidden="true"></i>CH1 音圧 <b>30 dB</b>/div</span>
+            <span class="stag">X <b id="s-x"></b></span>
+            <span class="stag">WIN <b>B-HARRIS</b></span>
+          </div>
+          <div class="scope">
+            <svg viewBox="-56 -14 468 194" id="s-svg" role="img" aria-label="音のスペクトラム">
+              <defs><clipPath id="s-clip"><rect x="0" y="0" width="400" height="160"/></clipPath></defs>
+              <g set:html={gridSvg(4)} />
+              <g clip-path="url(#s-clip)"><path class="t1 sp" id="s-t1"/></g>
+              <g id="s-axes"></g>
+            </svg>
+          </div>
+          <More id="g-sp" title="表示の設定"><div class="ptab"><ChoiceRow k="fmax" name="横軸の範囲" sub="スペクトラムの右端の周波数" choices={FMAX.map((v) => [v, `${v / 1000} kHz`] as const)} value={5000} /></div></More>
+        </div>
+      </Collapsible>
+
+      <Collapsible hid="hd-res" title="計算結果" class="a-out">
+        <p class="aux res-aux" id="res-aux">弓が触れている弦（いちばん高い弦）</p>
+        <dl class="metrics">
+          <div class="m m-main"><dt>第 1 部分音 <i>f</i><sub>1</sub></dt><dd><span id="o-f1"></span><span class="m-sub" id="o-f1s"></span></dd></div>
+          <div class="m"><dt>振動する長さ <i>L</i></dt><dd id="o-l"></dd></div>
+          <div class="m"><dt>張力 <i>T</i></dt><dd id="o-t"></dd></div>
+          <div class="m"><dt>線密度 <i>μ</i></dt><dd id="o-mu"></dd></div>
+          <div class="m"><dt>波の速さ <i>c</i></dt><dd id="o-c"></dd></div>
+          <div class="m"><dt>特性インピーダンス <i>Z</i><sub>0</sub></dt><dd id="o-z0"></dd></div>
+          <div class="m"><dt>駒の力の振幅 <i>Z</i><sub>0</sub><i>v</i><sub>b</sub>/<i>β</i></dt><dd id="o-fb"></dd></div>
+          <div class="m"><dt>弦の中ほどの全振幅</dt><dd><span id="o-amp"></span><span class="m-sub" id="o-amps"></span></dd></div>
+        </dl>
+      </Collapsible>
+    </div>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+
+    <Collapsible hid="hd-src" title="楽譜の出典" class="a-src">
+      <Credits />
+    </Collapsible>
+  </div>
+
+  <RelatedTools list={related} />
+  <script>
+    import '../tools/violin/client';
+  </script>
+</SiteLayout>
