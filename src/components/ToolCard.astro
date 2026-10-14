@@ -1,5 +1,6 @@
 ---
-import { href, IC, keys, type Tool } from '../data/tools';
+import { href, keys, type Tool } from '../data/tools';
+import { artAt } from '../lib/card-art';
 
 interface Props {
   t: Tool;
@@ -11,7 +12,10 @@ const soon = !!t.s;
 const Tag = soon ? 'div' : 'a';
 ---
 <Tag class:list={['unit', { soon }]} href={soon ? undefined : href(t)} data-k={filterable ? keys(t) : undefined}>
-  <div class="scr"><svg class="ic" viewBox="0 0 120 48" aria-hidden="true" set:html={IC[t.ic]} /></div>
+  <div class="scr"><svg class="ic" viewBox="0 0 120 48" aria-hidden="true" data-art={soon ? undefined : t.ic} set:html={artAt(t.ic)} /></div>
   {soon && <div class="u-meta">準備中</div>}
   <h3>{t.t}</h3><p>{t.d}</p>
 </Tag>
+<script>
+  import '../scripts/card-motion';
+</script>

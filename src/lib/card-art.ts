@@ -1,0 +1,578 @@
+/**
+ * カードの図柄（ToolCard の svg の中身。viewBox は 0 0 120 48）。
+ * 図柄は時刻 t [s] の関数で、t = 0 が止まっているときの絵である。ビルド時に t = 0 を HTML に出し、
+ * マウスを乗せている間だけブラウザで t を進めて描き直す（scripts/card-motion.ts）。
+ * 線の class は site.css の .ic にある: a = ch1、b = ch2、c = 画面の線、d = 破線、t = 細線、g = 残像、
+ * w = 黒鍵の太線、fa・fb・fc = 塗り、pl・pd・il・ih・al・ad = SVG テーマの図柄の明るい地と暗い地
+ */
+import { fanPath } from '../tools/jjy/fan';
+
+export type Art = (t: number) => string;
+
+const TAU = 2 * Math.PI;
+const r1 = (v: number): number => Math.round(v * 10) / 10;
+const mod = (a: number, n: number): number => ((a % n) + n) % n;
+const clamp = (v: number, a: number, b: number): number => Math.min(b, Math.max(a, v));
+const pl = (pts: [number, number][]): string => `M${pts.map(([x, y]) => `${r1(x)} ${r1(y)}`).join('L')}`;
+/** y = g(x) を x0〜x1 の n 区間で折れ線にする */
+const fx = (g: (x: number) => number, x0: number, x1: number, n: number): string => {
+  const a: [number, number][] = [];
+  for (let i = 0; i <= n; i++) {
+    const x = x0 + ((x1 - x0) * i) / n;
+    a.push([x, g(x)]);
+  }
+  return pl(a);
+};
+const P = (c: string, d: string, ex = ''): string => `<path class="${c}" d="${d}"${ex}/>`;
+/** 整数ごとに決まる 0〜1 の擬似乱数（ノイズの図柄を毎回同じ形にする） */
+const hn = (i: number): number => {
+  const x = Math.sin(i * 127.1 + 311.7) * 43758.5453;
+  return x - Math.floor(x);
+};
+/** 折れ線を先頭から割合 r だけ描く */
+function partial(pts: [number, number][], r: number): string {
+  const out: [number, number][] = [pts[0]];
+  let rest = 0;
+  for (let i = 1; i < pts.length; i++) rest += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
+  rest *= clamp(r, 0, 1);
+  for (let i = 1; i < pts.length && rest > 0; i++) {
+    const [x0, y0] = pts[i - 1],
+      [x1, y1] = pts[i],
+      l = Math.hypot(x1 - x0, y1 - y0);
+    out.push(rest >= l ? pts[i] : [x0 + ((x1 - x0) * rest) / l, y0 + ((y1 - y0) * rest) / l]);
+    rest -= l;
+  }
+  return out.length > 1 ? pl(out) : '';
+}
+
+/* ---------- JJY: 1・0・マーカの秒（高出力の長さ 0.5・0.8・0.2 秒） ---------- */
+const hiLen = (c: string): number => (c === 'P' ? 0.2 : c === '1' ? 0.5 : 0.8);
+/** 符号の列 code を 1 秒 = S で並べたとき、位置 u が高出力か */
+const jjyHi = (code: string, S: number, u: number): boolean => {
+  const k = Math.floor(u / S);
+  return (u - k * S) / S < hiLen(code[mod(k, code.length)]);
+};
+
+/** 符号の列を、高出力 yh・低出力 yl の矩形波にする（off だけ左へずらす） */
+const jjySteps = (code: string, S: number, off: number, yh: number, yl: number): string => {
+  const lv = (u: number): number => (jjyHi(code, S, u) ? yh : yl);
+  let d = `M4 ${lv(4 + off)}`;
+  for (let k = Math.floor((4 + off) / S); k * S - off < 116; k++)
+    for (const e of [k * S, k * S + hiLen(code[mod(k, code.length)]) * S]) {
+      const x = e - off;
+      if (x > 4 && x < 116) d += `H${r1(x)}V${lv(e + 1e-6)}`;
+    }
+  return `${d}H116`;
+};
+
+/* ---------- ノイズ: 7 ビットの LFSR（帰還は b6 ⊕ b5、最大周期 127） ---------- */
+const LFSR = (() => {
+  let s = [1, 0, 0, 1, 0, 1, 1];
+  const st: number[][] = [],
+    out: number[] = [];
+  for (let i = 0; i < 127; i++) {
+    st.push(s);
+    out.push(s[6]);
+    s = [s[6] ^ s[5], ...s.slice(0, 6)];
+  }
+  return { st, out };
+})();
+
+/* ---------- ギター: 弦長 87 のフレット（12 平均律） ---------- */
+const fret = (n: number): number => 14 + 87 * (1 - 2 ** (-n / 12));
+
+/* ---------- ピアノ: 上から見たグランドの、弦の奥の端 ---------- */
+const ptop = (x: number): number => 4 + 26 * ((x - 4) / 112) ** 1.5;
+
+/* ---------- エンジン: 内径 50・行程 63.1・連接棒 100 mm の比の単気筒 ---------- */
+const EN = { cx: 22, cy: 35, r: 4, l: 12.7 };
+const pinY = (th: number): number => EN.cy - (EN.r * Math.cos(th) + Math.sqrt(EN.l ** 2 - (EN.r * Math.sin(th)) ** 2));
+/** 排気の圧力。deg はクランク角 [°]（0 = 燃焼の上死点）。排気弁は 140° で開く */
+const exhP = (deg: number): number => {
+  const ph = mod(deg - 140, 720),
+    q = mod(ph - 200, 720);
+  return Math.exp(-ph / 90) * Math.sin(ph / 14) + 0.25 * Math.exp(-q / 60) * Math.sin(q / 10);
+};
+
+export const ART: Record<string, Art> = {
+  /* タイマIC 555: 出力（周期 36、High 24）と C1 の電圧。時間が流れる */
+  sq(t) {
+    const s = t * 30,
+      p4 = mod(4 - 16 + s, 36);
+    let hi = p4 < 24,
+      x = 4 + (hi ? 24 - p4 : 36 - p4),
+      d = `M4 ${hi ? 10 : 38}`;
+    for (; x < 116; x += hi ? 24 : 12) {
+      hi = !hi;
+      d += `H${r1(x)}V${hi ? 10 : 38}`;
+    }
+    d += 'H116';
+    const v = (x: number): number => {
+      const p = mod(x - 16 + s, 36);
+      return p < 24 ? 1 - (2 / 3) * 2 ** (-p / 24) : (2 / 3) * 2 ** (-(p - 24) / 12);
+    };
+    return (
+      P('a', d) +
+      P(
+        'b',
+        fx((x) => 31 - 42 * (v(x) - 1 / 3), t ? 4 : 16, 116, t ? 112 : 100),
+      )
+    );
+  },
+  /* 受動素子組み合わせ: 配線を電流が流れる */
+  rr(t) {
+    return (
+      P(
+        'c',
+        'M4 24H22M46 24H60M60 12V36M60 12H70M94 12H106M60 36H70M94 36H106M106 12V36M106 24H116',
+        t ? ` stroke-dasharray="4 3" stroke-dashoffset="${r1(-t * 14)}"` : '',
+      ) +
+      '<rect class="a" x="22" y="18" width="24" height="12"/><rect class="a" x="70" y="6" width="24" height="12"/><rect class="b" x="70" y="30" width="24" height="12"/>'
+    );
+  },
+  /* PID 制御: 減衰比が変わり、行き過ぎが増減する */
+  pid(t) {
+    const z = 0.32 + 0.22 * Math.sin(t * 1.6),
+      w = 0.17,
+      q = Math.sqrt(1 - z * z);
+    const y = (x: number): number => {
+      const u = x - 18;
+      return u < 0 ? 40 : 40 - 23 * (1 - Math.exp(-z * w * u) * (Math.cos(w * q * u) + (z / q) * Math.sin(w * q * u)));
+    };
+    return P('c d', 'M4 17H116') + P('a', fx(y, 4, 116, 112));
+  },
+  /* 倒立振子: 振子が揺れ、台車が支える。右は角度の履歴 */
+  ip(t) {
+    const th = (s: number): number => 0.3 * Math.sin((t - s) * 2.4),
+      a = th(0) + 0.43,
+      px = 60 + 5 * (Math.sin(t * 2.4 + 0.6) - Math.sin(0.6));
+    return (
+      P('c', 'M4 42H116') +
+      P('c', `M${r1(px - 14)} 30H${r1(px + 14)}V38H${r1(px - 14)}Z`) +
+      P('c d', `M${r1(px)} 30V4`) +
+      P('a', `M${r1(px)} 30L${r1(px + 26 * Math.sin(a))} ${r1(30 - 26 * Math.cos(a))}`) +
+      P(
+        'b',
+        fx((x) => 18 - 14 * th((116 - x) * 0.04), 84, 116, 32),
+      )
+    );
+  },
+  /* 双2次フィルタ: 遮断周波数が動く */
+  bq(t) {
+    const lp = (r: number, Q: number): number => -10 * Math.log10((1 - r * r) ** 2 + (r / Q) ** 2);
+    const c = 10 ** (0.35 * Math.sin(t * 1.3)),
+      F = (x: number): number => 10 ** (((x - 4) / 112) * 3 - 1.4) / c;
+    return (
+      P('c d', 'M4 24H116') +
+      P(
+        'a',
+        fx((x) => Math.min(44, 12 - 0.55 * lp(F(x), 1.5)), 4, 116, 56),
+      ) +
+      P(
+        'b',
+        fx((x) => Math.min(44, 30 - 0.42 * lp(F(x) * 1.6, 0.5)), 4, 116, 56),
+      )
+    );
+  },
+  /* IIR フィルタ: 通過域の端が規格の中で動く */
+  iir(t) {
+    return (
+      P('c d', 'M4 16H58V44M66 4V34H116') +
+      `<g${t ? ` transform="translate(${r1(3 * Math.sin(t * 1.5))} 0)"` : ''}>` +
+      P(
+        'a',
+        'M4 11C9 11 11 14 16 14S24 10 30 10S38 14 44 14S52 10 56 11C59 12 60 26 64 44C66 38 68 35 72 35S78 40 80 44C82 39 85 35 92 35S104 37 116 38',
+      ) +
+      '</g>'
+    );
+  },
+  /* JJY シミュレータ: 秒の扇と、1・0・マーカで塗り分けたタイムコード。扇はページと同じく、
+     偶数の秒で 12 時から時計回りに開き、奇数の秒で同じ向きに閉じる。今の秒の枠が進む */
+  jjy(t) {
+    const u = t + 0.55,
+      sec = Math.floor(u),
+      fan = fanPath(u * 1000);
+    let s = `<g transform="translate(16 24) scale(1.1)"><circle class="c" r="9"/>${fan ? `<path class="fa" d="${fan}"/>` : ''}</g>`;
+    const C = 'P0110100M01001';
+    for (let i = 0; i < C.length; i++) {
+      const x = 33 + i * 6,
+        c = C[i];
+      if (c === 'P' || c === 'M')
+        s +=
+          `<rect class="c t" x="${x + 0.5}" y="11.5" width="3" height="25"/>` +
+          P('c t', `M${x} 19L${x + 4} 15M${x} 27L${x + 4} 23M${x} 35L${x + 4} 31`);
+      else s += `<rect class="${c === '1' ? 'fa' : 'fb'}" x="${x}" y="11" width="4" height="26"/>`;
+      if (i === sec % C.length) s += `<rect class="c" x="${r1(x - 1.6)}" y="8" width="7.2" height="32" rx="1"/>`;
+    }
+    return s;
+  },
+  /* JJY デコーダ: 受けた信号と復号したビットが流れる */
+  jjyd(t) {
+    const S = 14,
+      off = t * 21,
+      CODE = 'P1001011010P0110100100';
+    const b: [number, number][] = [];
+    for (let x = 4; x <= 116; x++) {
+      const u = x + off,
+        z = mod(Math.floor(u), 2) ? 1 : -1;
+      b.push([x, 16 + (jjyHi(CODE, S, u) ? 9 : 1.5) * z]);
+    }
+    return P('b', pl(b)) + P('a', jjySteps(CODE, S, off - 3, 33, 43));
+  },
+  /* FIR フィルタ: 遮断周波数が変わり、係数（窓をかけた sinc）と特性の幅が変わる */
+  fir(t) {
+    const fc = 0.2 + 0.08 * Math.sin(t * 1.8);
+    let d = '';
+    for (let k = 0; k < 13; k++) {
+      const n = k - 6,
+        h = n === 0 ? 2 * fc : Math.sin(TAU * fc * n) / (Math.PI * n),
+        w = 0.54 + 0.46 * Math.cos((Math.PI * n) / 6.5);
+      d += `M${12 + 8 * k} 34V${r1(34 - (26 * h * w) / 0.4)}`;
+    }
+    const sg = 4.4 / fc,
+      top = 34 - (26 * 2 * fc) / 0.4;
+    return (
+      P('c d', 'M4 34H116') +
+      P(
+        'b',
+        fx((x) => 34 - (34 - top) * Math.exp(-(((x - 60) / sg) ** 2)), 4, 116, 56),
+      ) +
+      P('a', d)
+    );
+  },
+  /* 極と零点: 極の対が単位円の近くを動く */
+  pz(t) {
+    const ang = (3 * Math.PI) / 4 + 0.32 * Math.sin(t * 1.4),
+      r = 18 - 2 * (1 - Math.cos(t * 2.1)),
+      x = r1(60 + r * Math.cos(ang)),
+      y = r * Math.sin(ang);
+    return (
+      P('c d', 'M32 24H88M60 2V46') +
+      '<circle class="c" cx="60" cy="24" r="18"/>' +
+      P('a', 'M66 12L72 18M66 18L72 12M66 30L72 36M66 36L72 30') +
+      `<circle class="b" cx="${x}" cy="${r1(24 - y)}" r="3.5"/><circle class="b" cx="${x}" cy="${r1(24 + y)}" r="3.5"/>`
+    );
+  },
+  /* 抵抗カラーコード: 色帯を 1 本ずつ読む */
+  cc(t) {
+    const k = t ? Math.floor(t * 2.5) % 5 : -1;
+    return (
+      P('c', 'M4 24H30M90 24H116') +
+      '<rect class="c" x="30" y="14" width="60" height="20" rx="8"/>' +
+      [42, 52, 62, 78]
+        .map((x, i) =>
+          P(i === 3 ? 'b' : 'a', i === k ? `M${x} 11V37` : `M${x} 14V34`, i === k ? ' style="stroke-width:4"' : ''),
+        )
+        .join('')
+    );
+  },
+  /* オシロスコープ: CH1 はトリガがかかって止まり、CH2 は流れる */
+  os(t) {
+    return (
+      P('c d', 'M4 24H116') +
+      P(
+        'a',
+        fx((x) => 24 - 12.6 * Math.sin((TAU * (x - 4)) / 36), 4, 112, 54),
+      ) +
+      P(
+        'b',
+        fx((x) => 30 - 9.7 * Math.sin((TAU * (x - 4 + t * 17)) / 48), 4, 116, 56),
+      )
+    );
+  },
+  /* スペクトラムアナライザ: 測るたびにピークと雑音の床がゆらぐ */
+  sp(t) {
+    const T = Math.floor(t * 12),
+      pk = [
+        [22, 32],
+        [44, 15],
+        [67, 9],
+        [91, 6],
+      ];
+    return (
+      P('c d', 'M4 44H116') +
+      P(
+        'a',
+        fx(
+          (x) => {
+            let y = 41 + (x - 4) * 0.018 + (t ? 1.6 * (hn(x * 3.1 + T * 17) - 0.5) : 0);
+            pk.forEach(([px, h], j) => {
+              y -= h * (t ? 0.75 + 0.5 * hn(T * 7 + j) : 1) * Math.exp(-(((x - px) / 1.8) ** 2));
+            });
+            return Math.min(44, y);
+          },
+          4,
+          116,
+          112,
+        ),
+      )
+    );
+  },
+  /* FM 音源: 変調指数が変わり、波形が変わる */
+  fm(t) {
+    const I = 2.2 + 1.2 * Math.sin(t * 1.5);
+    return (
+      P('c d', 'M4 24H116') +
+      P(
+        'a',
+        fx(
+          (x) => {
+            const p = (TAU * (x - 4)) / 56;
+            return 24 - 15 * Math.sin(p + I * Math.sin(p));
+          },
+          4,
+          116,
+          112,
+        ),
+      )
+    );
+  },
+  /* ノイズジェネレータ: ホワイトノイズの波形と、LFSR のセル・⊕ の帰還・出力のビット列。ビットが 1 つずつ送られる */
+  nz(t) {
+    const k = Math.floor(t / 0.2),
+      wave: [number, number][] = [];
+    for (let i = 0; i <= 56; i++) wave.push([4 + i * 2, 14 + 18 * (hn(i + k * 3) - 0.5)]);
+    let s = P('a', pl(wave));
+    LFSR.st[k % 127].forEach((b, i) => {
+      const x = 9 + i * 8;
+      if (b) s += `<rect class="fc" x="${x + 1}" y="34" width="5" height="6"/>`;
+      s += `<rect class="c t" x="${x}" y="33" width="7" height="8"/>`;
+    });
+    s +=
+      P('c t', 'M60.5 33V28.5H55M52.5 33V31M50 28.5H4V37H9M65 37H70M52.5 26V31M50 28.5H55') +
+      '<circle class="c t" cx="52.5" cy="28.5" r="2.5"/>';
+    const bits: [number, number][] = [];
+    for (let j = 0; j < 12; j++) {
+      const y = LFSR.out[mod(k - 1 - j, 127)] ? 33 : 41,
+        x = 71 + j * 3.8;
+      bits.push([x, y], [x + 3.8, y]);
+    }
+    return s + P('b', pl(bits));
+  },
+  /* ギター音響モデル: 横に倒したギター。5 フレットを押さえた 1 本を弾き、振れて減衰する */
+  gt(t) {
+    let s = P(
+      'c',
+      'M60 24C60 13 64 9 72 9C79 9 81 12 86 12C91 12 93 4 102 4C112 4 116 13 116 24C116 35 112 44 102 44C93 44 91 36 86 36C81 36 79 39 72 39C64 39 60 35 60 24Z',
+    );
+    s += '<circle class="c" cx="78" cy="24" r="6.5"/><circle class="b t" cx="78" cy="24" r="8.2"/>';
+    s += P('c', 'M14 19.5L5 18.2V29.8L14 28.5ZM14 19.5L70 17.5V30.5L14 28.5');
+    let fr = '',
+      st = '';
+    for (let n = 1; n <= 14; n++) {
+      const x = fret(n),
+        h = 4.5 + ((x - 14) / 56) * 2;
+      fr += `M${r1(x)} ${r1(24 - h)}V${r1(24 + h)}`;
+    }
+    for (let i = 0; i < 6; i++) if (i !== 3) st += `M14 ${r1(24 + (i - 2.5) * 1.6)}L101 ${r1(24 + (i - 2.5) * 2)}`;
+    s += `${P('c t', fr)}<rect class="c" x="99.5" y="18" width="3.5" height="12"/>${P('c t', st)}`;
+    /* 弾く弦: ナットで 24.8、駒で 25 */
+    const x5 = fret(5),
+      len = 101 - x5,
+      y0 = (x: number): number => 24.8 + (0.2 * (x - 14)) / 87;
+    s += P('c t', `M14 24.8L${r1(x5)} ${r1(y0(x5))}`);
+    if (!t) {
+      const env = (sg: number): string =>
+        fx((x) => y0(x) + sg * 3.2 * Math.sin((Math.PI * (x - x5)) / len), x5, 101, 24);
+      return s + P('a', env(1)) + P('a', env(-1));
+    }
+    /* 駒から 0.35 の位置を弾いた弦のモードの和（基本の周期はゆっくり見せるため 0.6 s） */
+    const u0 = 0.65,
+      tt = mod(t, 3),
+      A = 3.4 * Math.exp(-0.9 * tt);
+    const disp = (u: number): number => {
+      let v = 0;
+      for (let n = 1; n <= 10; n++)
+        v +=
+          (2 / (n * n * Math.PI * Math.PI * u0 * (1 - u0))) *
+          Math.sin(n * Math.PI * u0) *
+          Math.sin(n * Math.PI * u) *
+          Math.cos(n * TAU * 1.6 * tt);
+      return v;
+    };
+    return (
+      s +
+      P(
+        'a',
+        fx((x) => y0(x) - A * disp((x - x5) / len), x5, 101, 60),
+      )
+    );
+  },
+  /* ピアノ音響モデル: 上から見たグランド。分散和音を弾き、打った弦が振れて輪が広がる */
+  pn(t) {
+    const out: [number, number][] = [
+      [4, 38],
+      [4, 2],
+    ];
+    for (let x = 8; x <= 116; x += 4) out.push([x, ptop(x) - 2]);
+    out.push([116, 38]);
+    let st = '',
+      wk = '',
+      bk = '';
+    for (let x = 7; x <= 113; x += 3.5) st += `M${x} 37V${r1(ptop(x) + 0.5)}`;
+    for (let k = 1; k < 28; k++) {
+      wk += `M${4 + 4 * k} 38V46`;
+      if ([1, 2, 4, 5, 6].includes(k % 7)) bk += `M${4 + 4 * k} 38V43`;
+    }
+    let s =
+      P('c', pl(out)) +
+      P('c t', st) +
+      P(
+        'b',
+        fx((x) => ptop(x) + 4.5, 8, 112, 26),
+      ) +
+      `<rect class="c" x="4" y="38" width="112" height="8"/>${P('c t', wk)}${P('c w', bk)}`;
+    /* ド・ミ・ソ… の白鍵。止まっているときは 4 つ目を打った直後 */
+    const NOTES = [7, 9, 11, 14, 16, 18, 21],
+      per = 0.32,
+      tt = mod(t, per * NOTES.length + 1.2);
+    NOTES.forEach((k, i) => {
+      const tau = t ? tt - i * per : i === 3 ? 0.12 : -1;
+      if (tau < 0) return;
+      const x = 6 + 4 * k,
+        top = r1(ptop(x) + 0.5),
+        m = r1((37 + top) / 2),
+        d = 1.6 * Math.exp(-1.2 * tau) * (0.4 + 0.6 * Math.abs(Math.cos(TAU * 3 * tau)));
+      if (d > 0.15) s += P('a', `M${x} 37Q${r1(x + 2 * d)} ${m} ${x} ${top}Q${r1(x - 2 * d)} ${m} ${x} 37Z`);
+      if (tau < 0.7)
+        s += `<circle class="a t" cx="${x}" cy="33" r="${r1(1.5 + 16 * tau)}" opacity="${r1(1 - tau / 0.7)}"/>`;
+    });
+    return s;
+  },
+  /* PCB コイル: うずまきを電流が流れる */
+  pc(t) {
+    const d = 'M42 6H78V42H42V10H74V38H46V14H70V34H50V18H66V30H54V22H62';
+    return (
+      P('c', 'M4 6H42') +
+      P('a', d) +
+      (t ? P('b', d, ` stroke-dasharray="2 14" stroke-dashoffset="${r1(-t * 30)}" style="stroke-width:3"`) : '') +
+      P('c d', 'M62 22H116')
+    );
+  },
+  /* JPEG: ジグザグに走査し、係数の棒が順に立つ */
+  jp(t) {
+    const Z: [number, number][] = [
+      [9, 9],
+      [19, 9],
+      [9, 19],
+      [9, 29],
+      [29, 9],
+      [39, 9],
+      [9, 39],
+      [19, 39],
+      [39, 19],
+      [39, 29],
+      [29, 39],
+      [39, 39],
+    ];
+    const r = t ? mod(t, 3) / 2 : 1;
+    let bars = '';
+    [6, 18, 27, 33, 37, 40, 41.5, 42.5].forEach((h, i) => {
+      const s = clamp(r * 9 - i, 0, 1);
+      if (s > 0) bars += `M${56 + 8 * i} 44V${r1(44 - (44 - h) * s)}`;
+    });
+    return (
+      P('c', 'M4 4H44V44H4Z') +
+      (t ? P('c g', pl(Z)) : '') +
+      P('a', partial(Z, r * 1.15)) +
+      P('c d', 'M52 44H116') +
+      (bars ? P('b', bars) : '')
+    );
+  },
+  /* オルガン音響モデル: 口と円錐の足があるパイプの正面。和音を鳴らし、鳴っている管に定在波を描く */
+  og(t) {
+    let body = '',
+      lip = '',
+      foot = '';
+    const top = (i: number): number => 4 + Math.abs(i - 5) * 3.4;
+    for (let i = 0; i < 11; i++) {
+      const x = 10 + i * 10;
+      body += `M${x - 3} 34V${r1(top(i))}H${x + 3}V34H${x - 3}`;
+      lip += `M${x - 2.2} 34Q${x} 29.6 ${x + 2.2} 34`;
+      foot += `M${x - 3} 34L${x - 0.8} 43M${x + 3} 34L${x + 0.8} 43`;
+    }
+    let s = P('c', body) + P('c', foot) + P('c', 'M4 44H116') + P('a', lip);
+    const CH = [
+        [5, 2, 8],
+        [3, 6, 9],
+        [1, 5, 7],
+        [4, 2, 8],
+      ],
+      per = 0.75,
+      tau = mod(t, per);
+    for (const i of t ? CH[Math.floor(t / per) % CH.length] : [5]) {
+      /* 両端が開いた管の音圧の分布（両端が節） */
+      const x = 10 + i * 10,
+        y0 = top(i),
+        len = 34 - y0,
+        a = 2.2 * Math.cos(TAU * 2.2 * t) * (t ? Math.min(1, tau * 8) : 1);
+      const side = (sg: number): string => {
+        const p: [number, number][] = [];
+        for (let k = 0; k <= 12; k++) p.push([x + sg * a * Math.sin((Math.PI * k) / 12), y0 + (len * k) / 12]);
+        return pl(p);
+      };
+      s += P('b', side(1)) + P('b', side(-1));
+      if (t && tau < 0.5)
+        s += `<path class="a t" d="M${r1(x - 4 - tau * 10)} ${r1(31 + tau * 4)}Q${x} ${r1(27 - tau * 10)} ${r1(x + 4 + tau * 10)} ${r1(31 + tau * 4)}" opacity="${r1(1 - tau / 0.5)}"/>`;
+    }
+    return s;
+  },
+  /* エンジン音響モデル: シリンダ・ピストン・クランクと、マフラーへの排気管、排気の圧力。
+     クランクが回り、圧縮上死点で点火し、2 回転に 1 回の排気の脈動が流れる */
+  en(t) {
+    const deg = (t + 0.04) * 400,
+      th = (deg * Math.PI) / 180,
+      py = pinY(th),
+      cpx = r1(EN.cx + EN.r * Math.sin(th)),
+      cpy = r1(EN.cy - EN.r * Math.cos(th)),
+      cd = mod(deg + 360, 720) - 360,
+      ph = mod(cd - 140, 720);
+    let s =
+      P('c t', 'M9 2.5H35M9 5H35M9 7.5H35') +
+      P('c', 'M14 9V27M30 9V27M14 27C11 47 33 47 30 27') +
+      `<rect class="c" x="15" y="${r1(py - 3)}" width="14" height="6" rx="0.6"/><circle class="c" cx="${EN.cx}" cy="${EN.cy}" r="5.2"/>` +
+      P('a', `M${cpx} ${cpy}L${EN.cx} ${r1(py)}`) +
+      `<circle class="a" cx="${cpx}" cy="${cpy}" r="1.1"/>`;
+    if (cd > -12 && cd < 30) s += P('a', 'M22 9.5V12M19.5 11L21 12M24.5 11L23 12');
+    s += `${P('c', 'M30 10.5H92M30 14.5H92M117 12.5H112')}<rect class="c" x="92" y="6" width="20" height="13" rx="4"/>`;
+    const xp = 32 + ph * 0.22;
+    if (xp < 92) s += P('b', `M${r1(Math.max(31, xp - 7))} 12.5H${r1(xp)}`, ' style="stroke-width:3"');
+    return (
+      s +
+      P('c d', 'M40 34H116') +
+      P(
+        'b',
+        fx((x) => 34 - 9 * exhP(deg - (116 - x) * 19), 40, 116, 152),
+      )
+    );
+  },
+  /* カメラレンズ: ピントの位置が前後し、像面で光線が広がる */
+  ln(t) {
+    const fp = 100 - 9 * Math.sin(t * 1.4),
+      y1 = 13 + (11 * 60) / (fp - 40),
+      y2 = 35 - (11 * 60) / (fp - 40),
+      yb = 16 + (14 * 60) / (fp - 40);
+    return (
+      P('c d', 'M4 24H116') +
+      P('c', 'M40 5C49 14 49 34 40 43C31 34 31 14 40 5ZM100 6V42') +
+      P('a', `M4 13H40L100 ${r1(y1)}M4 35H40L100 ${r1(y2)}`) +
+      P('b', `M4 12L40 16L100 ${r1(yb)}M4 26L40 30L100 30`)
+    );
+  },
+  /* SVG テーマスキーマチェッカー: 明るい地と暗い地に同じ SVG を並べる。暗い地では黒い線が見えにくい。
+     2 枚が同じ倍率で拡大する */
+  svg(t) {
+    const z = r1(100 + 45 * (0.5 - 0.5 * Math.cos(t * 1.8))) / 100;
+    const fig = (cx: number, ink: string, ac: string): string =>
+      `<g${z !== 1 ? ` transform="translate(${cx} 24) scale(${z}) translate(${-cx} -24)"` : ''}>` +
+      `<circle class="${ac}" cx="${cx - 8}" cy="21" r="6"/>${P(ink, `M${cx - 3} 33L${cx + 5} 16L${cx + 13} 33Z`)}${P(ac, `M${cx - 17} 33H${cx + 17}`)}</g>`;
+    return (
+      '<clipPath id="ca-svg-l"><rect x="6" y="7" width="51" height="34"/></clipPath><clipPath id="ca-svg-r"><rect x="63" y="7" width="51" height="34"/></clipPath>' +
+      '<rect class="pl c" x="6" y="7" width="51" height="34" rx="1.5"/><rect class="pd c" x="63" y="7" width="51" height="34" rx="1.5"/>' +
+      `<g clip-path="url(#ca-svg-l)">${fig(31.5, 'il', 'al')}</g><g clip-path="url(#ca-svg-r)">${fig(88.5, 'ih', 'ad')}</g>`
+    );
+  },
+};
+
+/** 止まっているときの図柄（ビルド時に HTML へ出す） */
+export const artAt = (key: string): string => ART[key]?.(0) ?? '';
