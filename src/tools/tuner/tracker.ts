@@ -38,6 +38,8 @@ export interface Est {
  * （オクターブ・オクターブ＋5 度・2 オクターブ。低い弦の基音が減衰すると、上のオクターブに読みやすい）
  */
 const JUMPS = [12, -12, 19, -19, 24, -24];
+/** 1 オクターブ下の奇数倍の部分音が、偶数倍（MPM の周期の倍音）のこの比以上あれば、1 オクターブ下を基音とする */
+const SUB = 0.2;
 /** 半音数 d だけずれた周波数 f を、ref の近くへ折り返す（JUMPS のどれかに当たるとき） */
 function fold(f: number, ref: number): number {
   const d = 12 * Math.log2(f / ref);
@@ -62,12 +64,67 @@ export function estimate(
   if (end - since < Wm) return null;
   const r = mpm(x.subarray(end - Wm, end), o);
   if (!r) return null;
-  const f = hint ? fold(r.f, hint) : r.f,
-    Wr = refWin(o.fs, f);
+  let f = hint ? fold(r.f, hint) : r.f;
+  /*
+   * 追っている音がないときは、1 オクターブ下を確かめる: f/2 の奇数倍（f/2・3f/2）に部分音があれば、
+   * MPM は基音の弱い音の第 2 倍音を周期に選んでいる（減衰した低い弦や、基音の弱いマイク）
+   */
+  if (!hint && f / 2 >= o.fmin) {
+    const W2 = refWin(o.fs, f / 2);
+    if (W2 <= o.maxW) {
+      /* 確かめられる長さが経つまでは出さない（先に上のオクターブで出し始めないように） */
+      if (W2 > end - since) return { f, clarity: r.clarity, ps: null, ready: false };
+      const x2 = x.subarray(end - W2, end),
+        odd = Math.max(partial(x2, f / 2, 1, o.fs).a, partial(x2, f / 2, 3, o.fs).a),
+        even = Math.max(partial(x2, f / 2, 2, o.fs).a, partial(x2, f / 2, 4, o.fs).a);
+      if (odd >= SUB * even) f /= 2;
+    }
+  }
+  const Wr = refWin(o.fs, f);
   if (Wr > o.maxW) return { f, clarity: r.clarity, ps: null, ready: true };
   if (Wr > end - since) return { f, clarity: r.clarity, ps: null, ready: false };
   const xr = x.subarray(end - Wr, end);
   return { f, clarity: r.clarity, ps: [1, 2, 3].map((h) => partial(xr, f, h, o.fs)), ready: true };
+}
+
+/**
+ * 2 次の Butterworth の高域通過（RBJ の式）。直流と、マイクや録音の低い揺れを除く
+ * （直流が残ると NSDF が負にならず、MPM が周期の山を探し始められない）
+ */
+export class HighPass {
+  private b0: number;
+  private b1: number;
+  private a1: number;
+  private a2: number;
+  private x1 = 0;
+  private x2 = 0;
+  private y1 = 0;
+  private y2 = 0;
+  constructor(fs: number, fc = 20) {
+    const w = (2 * Math.PI * fc) / fs,
+      al = Math.sin(w) / Math.SQRT2,
+      c = Math.cos(w),
+      a0 = 1 + al;
+    this.b0 = (1 + c) / 2 / a0;
+    this.b1 = -(1 + c) / a0;
+    this.a1 = (-2 * c) / a0;
+    this.a2 = (1 - al) / a0;
+  }
+  /** x[off, off + len) をその場で通す */
+  process(x: Float32Array | Float64Array, off = 0, len = x.length - off): void {
+    const { b0, b1, a1, a2 } = this;
+    let { x1, x2, y1, y2 } = this;
+    for (let i = off; i < off + len; i++) {
+      const v = x[i],
+        y = b0 * (v + x2) + b1 * x1 - a1 * y1 - a2 * y2;
+      x2 = x1;
+      x1 = v;
+      y2 = y1;
+      y1 = y;
+      x[i] = y;
+    }
+    Object.assign(this, { x1, x2, y1, y2 });
+  }
 }
 
 /**
@@ -157,15 +214,26 @@ export class Tracker {
   private miss = 0;
   /** 詰める部分音の番号（0 は未定、または MPM の値を使う） */
   private h = 0;
+  /** 途切れる前の音（音番号、小数）。次の出だしで消す */
+  private prev: number | null = null;
   private tgt: number | null = null;
   private si = -1;
   constructor(public o: TrackOpts) {}
 
-  /** 音が途切れた（無音・明瞭度が低い） */
-  reset(): void {
+  /**
+   * 音が途切れた（無音・明瞭度が低い）。新しい音の出だし（Onset）では、前の音の名残（最も近い音・弦のヒステリシス）も消す
+   * （前の音を鳴らしたまま次の音を弾いたとき、境目のヒステリシスで前の音に引き留めない）
+   */
+  reset(onset = false): void {
+    if (this.on) this.prev = this.med();
     this.ns = [];
     this.on = false;
     this.h = 0;
+    if (onset) {
+      this.tgt = null;
+      this.si = -1;
+      this.prev = null;
+    }
   }
 
   private med(): number {
@@ -173,9 +241,13 @@ export class Tracker {
     return s[s.length >> 1];
   }
 
-  /** 追っている音の周波数 [Hz]（音が続いている間だけ。estimate に渡す） */
+  /**
+   * 追っている音の周波数 [Hz]（estimate に渡す）。音が途切れても、次の出だしまでは途切れる前の音を返す
+   * （減衰の終わりに一度途切れたあと、上のオクターブで読み直さないように）
+   */
   hint(): number | null {
-    return this.on ? this.o.a4 * 2 ** ((this.med() - 69) / 12) : null;
+    const n = this.on ? this.med() : this.prev;
+    return n == null ? null : this.o.a4 * 2 ** ((n - 69) / 12);
   }
 
   /** 1 フレーム進める。表示する値がなければ null */

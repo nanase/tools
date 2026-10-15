@@ -15,7 +15,7 @@ import {
   noteLabel,
   noteText,
 } from '../src/tools/tuner/notes';
-import { type Est, estimate, mpmWin, Onset, refWin, Tracker } from '../src/tools/tuner/tracker';
+import { type Est, estimate, HighPass, mpmWin, Onset, refWin, Tracker } from '../src/tools/tuner/tracker';
 
 const FS = 48000;
 let seed = 1;
@@ -149,13 +149,21 @@ describe('音名と調弦', () => {
   });
 });
 
-/** 窓の末尾を hop ずつ進め、出だしを見ながら追う */
-function track(y: Float32Array | Float64Array, tr: Tracker, fmin: number, hop = 480) {
-  const on = new Onset(FS),
+/** ページと同じ流れ（高域通過 → 出だし → 推定 → 追跡）で、窓の末尾を hop ずつ進める */
+function track(y0: Float32Array | Float64Array, tr: Tracker, fmin: number, hop = 960) {
+  const y = Float64Array.from(y0),
+    hp = new HighPass(FS),
+    on = new Onset(FS),
     out: { t: number; cents: number; f: number; tgt: number }[] = [];
+  let since = 0;
   for (let end = hop; end <= y.length; end += hop) {
+    hp.process(y, end - hop, hop);
     on.push(y, end - hop, hop);
-    const r = tr.push(estimate(y, end, { fs: FS, fmin, fmax: 2000, maxW: 16384 }, on.since, tr.hint()));
+    if (on.since !== since) {
+      since = on.since;
+      tr.reset(true);
+    }
+    const r = tr.push(estimate(y, end, { fs: FS, fmin, fmax: 2000, maxW: 16384 }, since, tr.hint()));
     if (r) out.push({ t: end / FS, cents: r.cents, f: r.f, tgt: r.tgt });
   }
   return out;
@@ -163,7 +171,7 @@ function track(y: Float32Array | Float64Array, tr: Tracker, fmin: number, hop = 
 const opts = (strs: readonly number[] | null = null) => ({ a4: 440, strs, fix: -1, dev: null, minClarity: 0.9 });
 
 describe('追跡', () => {
-  it('撥弦（出だしで 3 セント高く、減衰する）を、出だしの 0.3 秒後から ±0.5 セント以内で追う', () => {
+  it('撥弦（出だしで 3 セント高く、時定数 0.3 秒で戻る）を追い、戻ったあとは ±0.5 セント以内', () => {
     const f = 110,
       y = new Float64Array(FS * 2);
     let ph = 0;
@@ -174,11 +182,12 @@ describe('追跡', () => {
       for (let k = 1; k <= 8; k++) y[i] += (RICH[k - 1] * Math.exp(-t * (0.8 + 0.4 * k)) * Math.sin(k * ph)) / 2;
     }
     const r = track(y, new Tracker(opts([40, 45, 50, 55, 59, 64])), 70);
-    expect(r.length).toBeGreaterThan(100);
+    expect(r.length).toBeGreaterThan(60);
     expect(r[0].t).toBeLessThan(0.45);
     for (const q of r) {
       expect(q.tgt).toBe(45);
-      if (q.t > 1.6) expect(Math.abs(q.cents), `${q.t}`).toBeLessThan(0.5);
+      /* 出だし（0.1 秒）から 0.8 秒で、戻りの残りは 0.2 セント */
+      if (q.t > 0.9) expect(Math.abs(q.cents), `${q.t}`).toBeLessThan(0.5);
     }
   });
   it('音が続いている間にオクターブ上へ跳んだ推定は、もとの音へ折り返す', () => {
@@ -188,10 +197,31 @@ describe('追跡', () => {
     const r = tr.push(e(220.2));
     expect(r?.tgt).toBe(45);
     expect(Math.abs(r?.cents ?? 99)).toBeLessThan(0.1);
-    /* 途切れたあとは、新しい音として受け付ける */
+    /* 一度途切れても、次の出だしまでは前の音へ折り返す（減衰の終わりに上のオクターブで読み直さない） */
     for (let i = 0; i < 4; i++) tr.push(null);
     for (let i = 0; i < 3; i++) tr.push(e(220));
+    expect(tr.push(e(220))?.tgt).toBe(45);
+    /* 新しい出だしのあとは、新しい音として受け付ける */
+    tr.reset(true);
+    for (let i = 0; i < 3; i++) tr.push(e(220));
     expect(tr.push(e(220))?.tgt).toBe(57);
+  });
+  it('直流と低い揺れが乗っていても読める（高域通過）', () => {
+    const f = midiHz(52),
+      y = new Float64Array(FS);
+    y.set(tone(f, FS - 4800, RICH), 4800);
+    for (let i = 0; i < y.length; i++) y[i] = 0.3 * y[i] + 0.5 + 0.3 * Math.sin((2 * Math.PI * 3 * i) / FS);
+    const r = track(y, new Tracker(opts()), 60).filter((q) => q.t > 0.5);
+    expect(r.length).toBeGreaterThan(10);
+    for (const q of r) expect(Math.abs(centsOf(q.f, f))).toBeLessThan(0.5);
+  });
+  it('基音の弱い音でも、1 オクターブ上で読み始めない（1 オクターブ下の奇数倍の部分音を確かめる）', () => {
+    const f = midiHz(40),
+      y = new Float64Array(FS);
+    y.set(tone(f, FS - 4800, [0.02, 1, 0.3, 0.8, 0.2, 0.5]), 4800);
+    const r = track(y, new Tracker(opts()), 60);
+    expect(r.length).toBeGreaterThan(10);
+    for (const q of r) expect(q.tgt).toBe(40);
   });
   it('出し始めは 3 フレームそろうまで出さない（出だしの外れ値を出さない）', () => {
     const tr = new Tracker(opts()),
