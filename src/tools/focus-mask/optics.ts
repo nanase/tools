@@ -172,6 +172,15 @@ function smearAdd(
   b: Float64Array,
 ): void {
   const h = M / 2;
+  if (k <= 1 || d <= 0) {
+    /* 引き伸ばさない（単色など）: そのまま足す */
+    for (let i = 0; i < M * M; i++) {
+      r[i] += rgb[0] * mono[i];
+      g[i] += rgb[1] * mono[i];
+      b[i] += rgb[2] * mono[i];
+    }
+    return;
+  }
   for (let q = 0; q < k; q++) {
     const s = 1 + d * ((2 * (q + 0.5)) / k - 1),
       is = 1 / s,

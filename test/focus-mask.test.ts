@@ -111,7 +111,7 @@ describe('マスク', () => {
       N = 512,
       M = 256,
       th = (20 * Math.PI) / 180,
-      m: Mask = { ...NONE, kind: 'bahtinov', p: (2 * f) / 150 / (D / 2), th },
+      m: Mask = { ...NONE, kind: 'bahtinov', p: f / 150 / (D / 2), th },
       alpha = alphaFor(D, 400),
       opt = { N, M, alpha },
       P = pupil(OPEN, m, opt, D, 400),
@@ -126,6 +126,46 @@ describe('マスク', () => {
     /* 幾何光学の式 Δz (D/f) (2/3π) (2 + tan θ) と 10 % 以内で合う */
     const geo = 100 * (D / f) * (2 / (3 * Math.PI)) * (2 + Math.tan(th));
     expect(Math.abs((c * pxum) / geo - 1)).toBeLessThan(0.1);
+  });
+  it('ピントのずれの符号を変えた像は、元の像を 180° 回したもの', () => {
+    const D = 100,
+      f = 700,
+      N = 256,
+      M = 128,
+      m: Mask = { ...NONE, kind: 'bahtinov', p: f / 150 / (D / 2), th: (20 * Math.PI) / 180, bar: 0.06 },
+      alpha = alphaFor(D, 550, 1.6),
+      opt = { N, M, alpha },
+      P = pupil(OPEN, m, opt, D, 550),
+      a = psf({ D, f, dz: 150 }, P, mono(550), opt, 1).g,
+      b = psf({ D, f, dz: -150 }, P, mono(550), opt, 1).g,
+      pk = peak(a);
+    let worst = 0;
+    for (let y = 1; y < M; y++)
+      for (let x = 1; x < M; x++) worst = Math.max(worst, Math.abs(a[y * M + x] - b[(M - y) * M + (M - x)]));
+    expect(worst / pk).toBeLessThan(1e-9);
+  });
+
+  it('格子の 1 次の回折は、センサーの上で λB（B = f/周期）の位置に出る', () => {
+    const D = 100,
+      f = 700,
+      N = 512,
+      M = 256,
+      m: Mask = { ...NONE, kind: 'bahtinov', p: f / 150 / (D / 2), th: (20 * Math.PI) / 180 },
+      alpha = alphaFor(D, 550, 1.1),
+      opt = { N, M, alpha },
+      P = pupil(OPEN, m, opt, D, 550),
+      g = psf({ D, f, dz: 0 }, P, mono(550), opt, 1).g,
+      um = alpha * f * 1e3,
+      /* 中央の光条（横）の上で、中心から 50〜120 µm の間の最も明るい画素 */
+      row = g.subarray((M / 2) * M, (M / 2 + 1) * M);
+    let best = 0,
+      at = 0;
+    for (let x = M / 2 + Math.ceil(50 / um); x < M / 2 + 120 / um; x++)
+      if (row[x] > best) {
+        best = row[x];
+        at = x;
+      }
+    expect(Math.abs((at - M / 2) * um - 0.55 * 150)).toBeLessThan(um);
   });
 });
 
