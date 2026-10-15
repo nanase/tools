@@ -132,7 +132,6 @@ export function transmit(x: number, y: number, sc: Scope, m: Mask, px: number): 
       return t * o;
     }
   }
-  return t;
 }
 
 /**

@@ -82,10 +82,11 @@ const rf = (...ns: number[]) => ns.map((n) => `<a class="rf" href="#thy-r${n}">[
 <div class="eqs">
   <math display="block"><mo>|</mo><mi>Δ</mi><mi>z</mi><mo>|</mo><mo>≤</mo><mn>2</mn><mi>λ</mi><msup><mi>N</mi><mn>2</mn></msup></math>
 </div>
+<p>解析ソフトの Bahtinov Grabber は、もっと狭い <math><mo>|</mo><mi>Δ</mi><mi>z</mi><mo>|</mo><mo>&lt;</mo><mn>0.9</mn><mspace width="0.17em"/><mtext>µm</mtext><mo>·</mo><msup><mi>N</mi><mn>2</mn></msup></math> を合焦の判定に使います<Fragment set:html={rf(11)} />。</p>
 <p>この範囲の端での光条のずれは、上の式で約 λ<i>N</i> です。f/5 では 2.8 µm で、3.76 µm の画素の 1 画素に足りません。目では見分けにくいので、解析ソフトは光条全体に直線を当てはめて、画素より細かく読みます。</p>
 
 <h3>大気のゆらぎとカメラ</h3>
-<p>長い露出の星像の広がり（シーイング）は、モファット分布で畳み込みます。β = 4.765 で、大気の乱れ（コルモゴロフの模型）の長時間露出の像に近くなります<Fragment set:html={rf(12)} />。</p>
+<p>長い露出の星像の広がり（シーイング）は、モファット分布で畳み込みます。β = 4.765 で、大気の乱れの理論から求まる長時間露出の像に近くなります<Fragment set:html={rf(12, 13)} />。</p>
 <div class="eqs">
   <math display="block"><mi>I</mi><mo stretchy="false">(</mo><mi>r</mi><mo stretchy="false">)</mo><mo>∝</mo><msup><mrow><mo>(</mo><mn>1</mn><mo>+</mo><msup><mrow><mo>(</mo><mi>r</mi><mo>/</mo><mi>a</mi><mo>)</mo></mrow><mn>2</mn></msup><mo>)</mo></mrow><mrow><mo>−</mo><mi>β</mi></mrow></msup><mo>,</mo><mspace width="1em"/><mtext>半値幅</mtext><mo>=</mo><mn>2</mn><mi>a</mi><msqrt><mrow><msup><mn>2</mn><mrow><mn>1</mn><mo>/</mo><mi>β</mi></mrow></msup><mo>−</mo><mn>1</mn></mrow></msqrt></math>
 </div>
@@ -121,15 +122,16 @@ const rf = (...ns: number[]) => ns.map((n) => `<a class="rf" href="#thy-r${n}">[
 <h3>出典</h3>
 <ol class="refs">
   <li id="thy-r1"><span class="rf-for">フラウンホーファー回折、点像の強度</span><span class="rf-src">J. W. Goodman, <i>Introduction to Fourier Optics</i>, 3rd ed., Roberts &amp; Company, 2005</span></li>
-  <li id="thy-r2"><span class="rf-for">バーティノフマスクを付けた望遠鏡の像のフーリエ光学による計算、波長ごとの像の和</span><span class="rf-src">J. A. van den Born, W. Jellema and E. Dijkstra, <i>Mon. Not. R. Astron. Soc.</i>, vol. 512, pp. 5812–5822, 2022, doi:10.1093/mnras/stac845</span></li>
-  <li id="thy-r3"><span class="rf-for">ピントのずれの波面 <math><msub><mi>W</mi><mn>020</mn></msub></math>、レイリーの基準による焦点深度</span><span class="rf-src">J. Sasián, <i>Introduction to Aberrations in Optical Imaging Systems</i>, Cambridge University Press, 2013</span></li>
-  <li id="thy-r4"><span class="rf-for">等色関数の近似</span><span class="rf-src">C. Wyman, P.-P. Sloan and P. Shirley, “Simple Analytic Approximations to the CIE XYZ Color Matching Functions,” <i>J. Comput. Graph. Tech.</i>, vol. 2, no. 2, pp. 1–11, 2013</span></li>
-  <li id="thy-r5"><span class="rf-for">バーティノフマスクの考案、斜めのスリットの角度</span><span class="rf-src">П. Бахтинов, astronomy.ru フォーラム topic 10421, 2005-09-22</span></li>
-  <li id="thy-r6"><span class="rf-for">周期の目安 f/s = 150〜200</span><span class="rf-src">D. Sakva, “Revolutionary new way of focusing, no less,” Cloudy Nights, 2008-07-27</span></li>
-  <li id="thy-r7"><span class="rf-for">トライ・バーティノフマスクの形と角度</span><span class="rf-src">C. Y. Tan, “Tri-Bahtinov mask,” GitHub cytan299/tribahtinov, 2016</span></li>
-  <li id="thy-r8"><span class="rf-for">キャリー・マスクの形と角度</span><span class="rf-src">G. Carey, “Carey Mask,” geoastro.co.uk, 2009</span></li>
-  <li id="thy-r9"><span class="rf-for">ハルトマンの方法</span><span class="rf-src">J. Hartmann, “Objektivuntersuchungen,” <i>Zeitschrift für Instrumentenkunde</i>, vol. 24, 1904</span></li>
-  <li id="thy-r10"><span class="rf-for">シャイナーの円板</span><span class="rf-src">C. Scheiner, <i>Oculus, hoc est: Fundamentum opticum</i>, 1619</span></li>
-  <li id="thy-r11"><span class="rf-for">解析ソフトの光条のずれの式</span><span class="rf-src">N. Noordhoek, Bahtinov Grabber（ソースは GitHub wytsep/bahtinov-grabber に保存されたもの）</span></li>
-  <li id="thy-r12"><span class="rf-for">モファット分布の β = 4.765</span><span class="rf-src">I. Trujillo, J. A. L. Aguerri, J. Cepa and C. M. Gutiérrez, “The effects of seeing on Sérsic profiles – II. The Moffat PSF,” <i>Mon. Not. R. Astron. Soc.</i>, vol. 328, pp. 977–985, 2001</span></li>
+  <li id="thy-r2"><span class="rf-for">バーティノフマスクを付けた望遠鏡の像のフーリエ光学による計算、波長ごとの像の和</span><span class="rf-src">J. A. van den Born, W. Jellema and E. Dijkstra, “Demonstration of an imaging technique for the measurement of PSF elongation caused by Atmospheric Dispersion,” <i>Mon. Not. R. Astron. Soc.</i>, vol. 512, no. 4, pp. 5812–5822, 2022, doi:10.1093/mnras/stac845</span></li>
+  <li id="thy-r3"><span class="rf-for">ピントのずれの波面 <math><msub><mi>W</mi><mn>020</mn></msub></math>、レイリーの基準による焦点深度</span><span class="rf-src">J. C. Wyant and K. Creath, “Basic Wavefront Aberration Theory for Optical Metrology,” in <i>Applied Optics and Optical Engineering</i>, vol. XI, Academic Press, 1992, pp. 1–53</span></li>
+  <li id="thy-r4"><span class="rf-for">等色関数の近似（多峰の区分ガウス）</span><span class="rf-src">C. Wyman, P.-P. Sloan and P. Shirley, “Simple Analytic Approximations to the CIE XYZ Color Matching Functions,” <i>J. Comput. Graph. Tech.</i>, vol. 2, no. 2, pp. 1–11, 2013</span></li>
+  <li id="thy-r5"><span class="rf-for">バーティノフマスクの考案、斜めのスリットの角度</span><span class="rf-src">П. Бахтинов, «Вариант фокусировочной маски», astronomy.ru フォーラム topic 10421, 2005-09-22</span></li>
+  <li id="thy-r6"><span class="rf-for">周期の目安 f/s = 150〜200</span><span class="rf-src">D. Sakva, “Revolutionary new way of focusing! No less!,” Cloudy Nights, 2008-07-27</span></li>
+  <li id="thy-r7"><span class="rf-for">トライ・バーティノフマスクの形と角度</span><span class="rf-src">C. Y. Tan, “A Tri-Bahtinov mask for SCT collimation and focusing,” Cloudy Nights, 2016-05-07、生成プログラムは GitHub cytan299/tribahtinov</span></li>
+  <li id="thy-r8"><span class="rf-for">キャリー・マスクの形と角度</span><span class="rf-src">“Carey Mask,” geoastro.co.uk, 2009-03-26</span></li>
+  <li id="thy-r9"><span class="rf-for">ハルトマンの方法</span><span class="rf-src">J. Hartmann, “Objektivuntersuchungen,” <i>Zeitschrift für Instrumentenkunde</i>, vol. 24, pp. 1–21, 33–47, 97–117, 1904</span></li>
+  <li id="thy-r10"><span class="rf-for">シャイナーの円板</span><span class="rf-src">C. Scheiner, <i>Oculus, hoc est: Fundamentum opticum</i>, 1619, Lib. I, Pars II, Cap. V</span></li>
+  <li id="thy-r11"><span class="rf-for">解析ソフトの光条のずれの式と合焦の判定</span><span class="rf-src">N. Noordhoek, Bahtinov Grabber V17.0, 2011（ソースは GitHub wytsep/bahtinov-grabber に保存されたもの）</span></li>
+  <li id="thy-r12"><span class="rf-for">モファット分布の β = 4.765</span><span class="rf-src">I. Trujillo, J. A. L. Aguerri, J. Cepa and C. M. Gutiérrez, “The effects of seeing on Sérsic profiles – II. The Moffat PSF,” <i>Mon. Not. R. Astron. Soc.</i>, vol. 328, no. 3, pp. 977–985, 2001</span></li>
+  <li id="thy-r13"><span class="rf-for">大気の乱れによる長時間露出の像の広がり</span><span class="rf-src">D. L. Fried, “Optical resolution through a randomly inhomogeneous medium for very long and very short exposures,” <i>J. Opt. Soc. Am.</i>, vol. 56, no. 10, pp. 1372–1379, 1966, doi:10.1364/JOSA.56.001372</span></li>
 </ol>
