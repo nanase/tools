@@ -2,7 +2,6 @@
  * 光条の位置を像から測る（DOM に依存しない）。向きの分かった光条ごとに、光条に直交する断面の
  * 明るさの重心を、中心から離れた区間で求めて、光条の中心線の位置（像の中心からの符号付きの距離）にする
  */
-import { type Mask, type Scope, transmit } from './mask';
 
 /**
  * 像 I（n×n）の、向き a（rad、x 軸から反時計回り、y は上）の光条の中心線の位置（画素）。
@@ -125,45 +124,4 @@ export function hfd(I: ArrayLike<number>, n: number): number {
     acc += bins[i];
   }
   return n;
-}
-
-/**
- * バーティノフの光条のずれの幾何の予測: e = g·Δz（g は無次元）。区画ごとの開いた面の重心 c_j を
- * 開口を描いて求め（桟・中央遮蔽・スパイダーを含む）、点 (Δz/f)·c_j を通り格子の向きに伸びる 3 本の直線から、
- * 中央の光条と X の交点の距離を出す。マスクの回転は結果に効かない
- */
-export function bahtinovGain(sc: Scope, m: Mask, D: number, f: number, n = 600): number {
-  const mm: Mask = { ...m, rot: 0 },
-    px = 2 / n,
-    S = [
-      [0, 0, 0],
-      [0, 0, 0],
-      [0, 0, 0],
-    ];
-  for (let j = 0; j < n; j++)
-    for (let i = 0; i < n; i++) {
-      const x = -1 + (i + 0.5) * px,
-        y = -1 + (j + 0.5) * px,
-        t = transmit(x, y, sc, mm, px);
-      if (t <= 0) continue;
-      const k = y < 0 ? 0 : x < 0 ? 1 : 2;
-      S[k][0] += t;
-      S[k][1] += t * x;
-      S[k][2] += t * y;
-    }
-  const c = S.map(([w, sx, sy]) => (w > 0 ? [sx / w, sy / w] : [0, 0])),
-    th = m.th,
-    /* 光条の向き（格子の法線）と、それに直交する向きの位置 q = c·n⊥ */
-    dirs = [
-      [1, 0],
-      [Math.cos(th), Math.sin(th)],
-      [Math.cos(th), -Math.sin(th)],
-    ],
-    q = dirs.map(([dx, dy], k) => c[k][0] * -dy + c[k][1] * dx),
-    /* 斜めの 2 本の交点の y（中央の光条の法線の向き） */
-    n1 = [-Math.sin(th), Math.cos(th)],
-    n2 = [Math.sin(th), Math.cos(th)],
-    cy = (n1[0] * q[2] - q[1] * n2[0]) / (n1[0] * n2[1] - n1[1] * n2[0]);
-  /* 半径を 1 とした長さ → 口径の半径 D/2 を掛け、Δz/f で割った量 */
-  return (Math.abs(q[0] - cy) * D) / 2 / f;
 }

@@ -2,8 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { bin, seeing } from '../src/tools/focusing-mask/camera';
 import { starBands } from '../src/tools/focusing-mask/color';
 import { fft2d } from '../src/tools/focusing-mask/fft2';
+import { reading, sections } from '../src/tools/focusing-mask/geometry';
 import { type Mask, type Scope, transmit } from '../src/tools/focusing-mask/mask';
-import { bahtinovGain, fitBahtinov } from '../src/tools/focusing-mask/measure';
+import { fitBahtinov } from '../src/tools/focusing-mask/measure';
 import { alphaFor, type Band, type Img, psf, pupil } from '../src/tools/focusing-mask/optics';
 
 const OPEN: Scope = { obs: 0, vanes: 0, vw: 0 };
@@ -167,12 +168,49 @@ describe('マスク', () => {
       }
     expect(Math.abs((at - M / 2) * um - 0.55 * 150)).toBeLessThan(um);
   });
-  it('区画の重心から求めた光条のずれは、桟のないとき式 (2/3π)(2 + tan θ)/N と一致し、桟で大きくなる', () => {
+  it('区画の重心から求めた光条のずれは、桟のないとき式 (2/3π)(2 + tan θ)Δz/N と一致し、桟で大きくなる', () => {
     const th = (20 * Math.PI) / 180,
       m: Mask = { ...NONE, kind: 'bahtinov', p: 700 / 150 / 50, th },
-      simple = ((2 / (3 * Math.PI)) * (2 + Math.tan(th))) / 7;
-    expect(bahtinovGain(OPEN, m, 100, 700) / simple).toBeCloseTo(1, 2);
-    expect(bahtinovGain(OPEN, { ...m, bar: 0.06 }, 100, 700)).toBeGreaterThan(simple * 1.02);
+      simple = ((2 / (3 * Math.PI)) * (2 + Math.tan(th)) * 100) / 7,
+      e = (mm: Mask) => reading('bahtinov', sections(OPEN, mm), 100, 700, 100).v[0];
+    expect(e(m) / simple).toBeCloseTo(1, 2);
+    expect(e({ ...m, bar: 0.06 })).toBeGreaterThan(simple * 1.02);
+  });
+
+  it('単色の像から測った光条のずれは、区画の重心の予測と 2 % 以内で合う', () => {
+    const D = 100,
+      f = 700,
+      N = 1024,
+      M = 512,
+      th = (20 * Math.PI) / 180,
+      m: Mask = { ...NONE, kind: 'bahtinov', p: f / 150 / (D / 2), th, bar: 0.06 },
+      alpha = alphaFor(D, 550),
+      opt = { N, M, alpha },
+      g = psf({ D, f, dz: 200 }, pupil(OPEN, m, opt, D, 550), mono(550), opt, 1).g,
+      meas = fitBahtinov(g, M, 0, th, 60, 220, 10).off * alpha * f * 1e3,
+      geo = reading('bahtinov', sections(OPEN, m), D, f, 200).v[0];
+    expect(Math.abs(meas / geo - 1)).toBeLessThan(0.02);
+  });
+
+  it('穴の像は −(Δz/f)·c にずれる（焦点の奥では上の穴の像が下に来る）', () => {
+    const D = 100,
+      f = 700,
+      N = 512,
+      M = 256,
+      h: Mask = { ...NONE, kind: 'hartmann', holes: 1, hd: 0.3, hr: 0.6 },
+      alpha = alphaFor(D, 550),
+      opt = { N, M, alpha },
+      g = psf({ D, f, dz: 400 }, pupil(OPEN, h, opt, D, 550), mono(550), opt, 1).g;
+    let s = 0,
+      sy = 0;
+    for (let j = 0; j < M; j++)
+      for (let i = 0; i < M; i++) {
+        s += g[j * M + i];
+        sy += g[j * M + i] * (M / 2 - j);
+      }
+    const y = (sy / s) * alpha * f * 1e3,
+      geo = (-400 / f) * sections(OPEN, h)[0].c[1] * (D / 2);
+    expect(Math.abs(y / geo - 1)).toBeLessThan(0.02);
   });
 });
 
