@@ -22,6 +22,7 @@ import {
   FMAX,
   LEVELS,
   MUTES,
+  PRESS,
   SEEDS,
   SLOW,
   SPANS,
@@ -54,7 +55,8 @@ const METERS = [
     name: '<i>F</i> 弓圧',
     unit: 'N',
     ticks: ['0', '2', '4'],
-    title: '弓圧（触れている弦の和）。帯はよく鳴る範囲（Schelleng の上限と、測定で求めた下限の間）',
+    title:
+      '弓圧（触れている弦の和）。帯はよく鳴る範囲（Schelleng の上限と、測定で求めた下限の間）。重音・和音では、触れている弦ごとの範囲の和',
   },
   {
     k: 'b',
@@ -77,7 +79,6 @@ const METERS = [
       <div class="sbar">
         <span class="stag"><i class="sw" aria-hidden="true"></i>弦の変位 <b id="vf-ex"></b></span>
         <span class="stag" id="vf-tm"></span>
-        <span class="stag right" id="vf-note"></span>
       </div>
       <div class="vwrap">
         <div class="vw" id="vw-top" tabindex="0" role="group" aria-roledescription="ヴァイオリンの図" aria-label="上から見たヴァイオリンと弓。弦を押すと、その位置を押さえて弓で弾き続ける。上下の矢印キーで弦、左右の矢印キーで押さえる位置を選び、スペースキーで弓を当てる・離す">
@@ -86,6 +87,7 @@ const METERS = [
         <div class="vw" id="vw-pl" tabindex="0" role="group" aria-roledescription="ヴァイオリンの図" aria-label="構えたヴァイオリンを演奏者の目の位置から見た図。弦を押すと、その位置を押さえて弓で弾き続ける。上下の矢印キーで弦、左右の矢印キーで押さえる位置を選び、スペースキーで弓を当てる・離す" hidden>
           <svg class="vf" id="vpl" viewBox="0 0 1000 360" aria-hidden="true"></svg>
         </div>
+        <div class="vnote" id="vf-note" aria-hidden="true"></div>
         <button type="button" class="tg vstop" id="vf-stop" title="弓を弦から離して、音を止める（弦は少し鳴り残る）" hidden><i class="sq" aria-hidden="true"></i><span id="vf-stopT">弓を離す</span></button>
       </div>
       <p class="sr" id="vf-live" aria-live="polite"></p>
@@ -133,6 +135,7 @@ const METERS = [
           </div>
           <ChoiceRow k="expr" name="表情" sub="楽譜どおり: 決めたテンポと強弱の目安だけで弾く。楽句の弧と揺らぎ: 楽句の中ほどで少し速く大きく、終わりで延ばし、長い音をふくらませ、弓の出だしを少しばらつかせる" choices={[['plain', '楽譜どおり'], ['phrase', '楽句の弧と揺らぎ']]} value="phrase" />
           <ParamRow d={TEMPO} />
+          <ParamRow d={PRESS} />
           <ParamRow d={outVol(VOL0)} />
         </div>
         <div class="pbtns">

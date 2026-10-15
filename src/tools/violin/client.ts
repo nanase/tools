@@ -28,6 +28,7 @@ import {
   type LhKey,
   levelOf,
   MUTES,
+  PRESS,
   VIB_HZ,
   VIB_W,
   VOL0,
@@ -113,6 +114,12 @@ new ParamGroup<PlayKey>([TEMPO, outVol(VOL0)], (v, k) => {
   audio.vol(v.vol);
   if (started && k === 'tempo') retempo();
 });
+/** 曲の弓圧の倍率 */
+let pressK = 1;
+new ParamGroup<'bowp'>([PRESS], (v) => {
+  pressK = v.bowp / 100;
+  if (started) sendFeel();
+});
 
 /* ---------- 図 ---------- */
 const fig = new ViolinFigure($<SVGSVGElement>('#vtop'), $<SVGSVGElement>('#vpl'), $<SVGSVGElement>('#vbr'), {
@@ -152,7 +159,7 @@ function sendManual(): void {
   if (M.bowing) audio.manual(manualMsg());
 }
 function sendFeel(): void {
-  audio.feel(Number(fl.value), Number(rs.value));
+  audio.feel(Number(fl.value), Number(rs.value), pressK);
 }
 function sendVib(): void {
   audio.setVib({ on: vib.value === '1', cent: PL.get('vw'), hz: PL.get('vh') });
@@ -541,12 +548,22 @@ const meter = (k: string, v: number, lo: number, hi: number, okLo: number, okHi:
   txt(`#bm-${k}-v`, text);
 };
 function meters(f: Frame | null, v: View): void {
-  const q = leadOf(f),
-    beta = v.beta,
-    speed = Math.abs(f && (P || M.bowing) ? f.vb : PB.get('vb')),
-    stopped = (P || M.bowing ? v.n[q] - OPEN[q] : M.stop[q]) > 0.05;
+  const beta = v.beta,
+    live = !!f && (!!P || M.bowing),
+    speed = Math.abs(f && live ? f.vb : PB.get('vb')),
+    /* 弓圧は触れている弦の和なので、よく鳴る範囲も触れている弦ごとの範囲の和にする（弦ごとに β と押さえ方が違う） */
+    on = f && live ? [0, 1, 2, 3].filter((q) => f.c[q] > 0.3) : [],
+    strs = on.length ? on : P ? [leadOf(f)] : levelStrings();
+  let lo = 0,
+    hi = 0;
+  for (const q of strs) {
+    const bq = f && live ? f.b[q] : beta,
+      stopped = (live ? v.n[q] - OPEN[q] : M.stop[q]) > 0.05;
+    lo += fMin(q, stopped, bq);
+    hi += fMax(q, Math.max(0.05, speed), bq);
+  }
   meter('v', speed, 0, 1, 0.1, 0.6, speed.toFixed(2));
-  meter('f', v.fb, 0, 4, fMin(q, stopped, beta), fMax(q, Math.max(0.05, speed), beta), v.fb.toFixed(2));
+  meter('f', v.fb, 0, 4, lo, hi, v.fb.toFixed(2));
   meter('b', beta, 0, 0.25, 0.05, 0.15, beta.toFixed(3));
   /* 演奏者から見た向き（元が右）。下げ弓では、弦に触れる点が先の側（左）へ動く */
   const pos = f ? f.pos : POS0,
@@ -554,20 +571,22 @@ function meters(f: Frame | null, v: View): void {
   $('#bm-p-nd').setAttribute('d', `M${x.toFixed(1)} 0V10`);
   txt('#bm-p-v', pos.toFixed(2));
 }
-/** 弾いている音の表示（図の上の帯） */
+/** 弾いている音の表示（図の左上。弦ごとに 1 行、高い弦から） */
 function noteBar(f: Frame | null): void {
   if (!f) {
-    txt('#vf-note', '');
+    html('#vf-note', '');
     return;
   }
-  const on = [0, 1, 2, 3].filter((q) => f.c[q] > 0.3),
-    s = on
+  html(
+    '#vf-note',
+    [0, 1, 2, 3]
+      .filter((q) => f.c[q] > 0.3)
       .map(
         (q) =>
-          `${NAMES[q]} 線 ${noteName(f.n[q])}${on.length === 1 ? ` ${noteHz(Math.round(f.n[q])).toFixed(2)} Hz` : ''}`,
+          `<span>${NAMES[q]} 線</span><span>${noteName(f.n[q])}</span><span>${noteHz(Math.round(f.n[q])).toFixed(2)} Hz</span>`,
       )
-      .join(' ＋ ');
-  txt('#vf-note', s);
+      .join(''),
+  );
 }
 /** 計算結果（いちばん高い弦） */
 let lastOut = 0;
