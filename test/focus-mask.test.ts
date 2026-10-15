@@ -117,7 +117,7 @@ describe('マスク', () => {
       P = pupil(OPEN, m, opt, D, 400),
       bands = starBands(5800, 8),
       pxum = alpha * f * 1e3,
-      off = (dz: number) => fitBahtinov(psf({ D, f, dz }, P, bands, opt, 4).g, M, 0, th, M * 0.12, M * 0.45, 12).off;
+      off = (dz: number) => fitBahtinov(psf({ D, f, dz }, P, bands, opt, 4).g, M, 0, th, M * 0.12, M * 0.45, 6).off;
     const a = off(50),
       b = off(-50),
       c = off(100);
