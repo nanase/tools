@@ -49,33 +49,42 @@ export function bin(p: Img, px: number, n: number): Img {
 /** 2 の累乗に切り上げる */
 const pow2 = (v: number) => 2 ** Math.ceil(Math.log2(v));
 
+/** 核の FFT（大きさと形ごとに使い回す） */
+let kcache: { key: string; k: Float64Array } | null = null;
+
 /**
  * 長時間露出のシーイングを、半値幅 fwhm（rad）のモファット分布 (1 + (r/a)²)^(−β) で畳み込む。
  * β = 4.765 でコルモゴロフの長時間露出の像に近い（Trujillo ほか 2001）。
- * 像の外は 0 として、回り込まないよう 2 倍以上の格子で畳み込む。核は実数で対称なので、その FFT も実数で、
+ * 核はピークの 10⁻⁷ 未満になる半径 rk で切り、像の外は 0 として、回り込まないよう n + 2rk 以上の格子で
+ * 畳み込む（n + 2rk が 2 の累乗に収まるように n を選ぶと速い）。核は実数で対称なので、その FFT も実数で、
  * r と g を 1 つの複素数の場にまとめて変換できる
  */
 export function seeing(p: Img, fwhm: number, beta = 4.765): Img {
   if (fwhm <= 0) return p;
   const n = p.n,
-    N = pow2(2 * n),
-    a = fwhm / (2 * Math.sqrt(2 ** (1 / beta) - 1)) / p.px;
-  const kr = new Float64Array(N * N),
-    ki = new Float64Array(N * N);
-  let s = 0;
-  for (let y = 0; y < N; y++) {
-    const dy = y < N / 2 ? y : y - N;
-    for (let x = 0; x < N; x++) {
-      const dx = x < N / 2 ? x : x - N,
-        v = (1 + (dx * dx + dy * dy) / (a * a)) ** -beta;
-      kr[y * N + x] = v;
-      s += v;
-    }
+    a = fwhm / (2 * Math.sqrt(2 ** (1 / beta) - 1)) / p.px,
+    rk = Math.min(n, Math.ceil(a * Math.sqrt(1e7 ** (1 / beta) - 1))),
+    N = pow2(n + 2 * rk),
+    key = `${N} ${a} ${beta} ${rk}`;
+  if (kcache?.key !== key) {
+    const kr = new Float64Array(N * N),
+      ki = new Float64Array(N * N);
+    let s = 0;
+    for (let dy = -rk; dy <= rk; dy++)
+      for (let dx = -rk; dx <= rk; dx++) {
+        const r2 = dx * dx + dy * dy;
+        if (r2 > rk * rk) continue;
+        const v = (1 + r2 / (a * a)) ** -beta;
+        kr[((dy + N) % N) * N + ((dx + N) % N)] = v;
+        s += v;
+      }
+    for (let i = 0; i < N * N; i++) kr[i] /= s;
+    fft2d(N, kr, ki);
+    kcache = { key, k: kr };
   }
-  for (let i = 0; i < N * N; i++) kr[i] /= s;
-  fft2d(N, kr, ki);
-  const out: Img = { n, px: p.px, r: new Float64Array(n * n), g: new Float64Array(n * n), b: new Float64Array(n * n) };
-  const re = new Float64Array(N * N),
+  const kr = kcache.k,
+    out: Img = { n, px: p.px, r: new Float64Array(n * n), g: new Float64Array(n * n), b: new Float64Array(n * n) },
+    re = new Float64Array(N * N),
     im = new Float64Array(N * N);
   const pass = (A: Float64Array, B: Float64Array | null, oa: Float64Array, ob: Float64Array | null) => {
     re.fill(0);

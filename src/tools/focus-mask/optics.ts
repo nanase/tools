@@ -209,16 +209,30 @@ function smearAdd(
   }
 }
 
-/** 波長ごとの点像を足し合わせる。帯の幅 = 隣の帯との間隔（smear は帯の中の分割数、1 で引き伸ばさない） */
-export function psf(o: Optics, P: Pupil, bands: readonly Band[], opt: PsfOpts, smear = 4): Img {
+/** 作業用の配列（大きさごとに使い回す） */
+const work = new Map<number, { re: Float64Array; im: Float64Array }>();
+const workOf = (N: number) => {
+  let w = work.get(N);
+  if (!w) {
+    w = { re: new Float64Array(N * N), im: new Float64Array(N * N) };
+    work.clear();
+    work.set(N, w);
+  }
+  return w;
+};
+
+/**
+ * 波長ごとの点像を足し合わせる。帯の幅 step（nm）は省略時は隣の帯との間隔（帯を分けて別々に計算するときは
+ * 渡す）。smear は帯の中の分割数（1 で引き伸ばさない）
+ */
+export function psf(o: Optics, P: Pupil, bands: readonly Band[], opt: PsfOpts, smear = 4, step?: number): Img {
   const { N, M } = opt,
-    re = new Float64Array(N * N),
-    im = new Float64Array(N * N),
+    { re, im } = workOf(N),
     mono = new Float64Array(M * M),
     r = new Float64Array(M * M),
     g = new Float64Array(M * M),
-    b = new Float64Array(M * M);
-  const step = bands.length > 1 ? Math.abs(bands[1].nm - bands[0].nm) : 0;
+    b = new Float64Array(M * M),
+    st = step ?? (bands.length > 1 ? Math.abs(bands[1].nm - bands[0].nm) : 0);
   for (const bd of bands) {
     mono.fill(0);
     const h = band(o, P, opt, bd.nm, re, im),
@@ -227,7 +241,7 @@ export function psf(o: Optics, P: Pupil, bands: readonly Band[], opt: PsfOpts, s
       open = Math.PI / (px * px);
     /* パーセバル: Σ|E|² = N² Σ|P|²。開口を全部開けたときの全光量で割る */
     psfAdd(N, re, im, h, M, mono, 1 / (N * N * open));
-    smearAdd(mono, M, step / 2 / bd.nm, step > 0 ? smear : 1, bd.rgb, r, g, b);
+    smearAdd(mono, M, st / 2 / bd.nm, st > 0 ? smear : 1, bd.rgb, r, g, b);
   }
   return { n: M, px: opt.alpha, r, g, b };
 }
