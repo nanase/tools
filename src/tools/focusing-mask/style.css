@@ -49,7 +49,6 @@
 .mf p b{color:var(--ink)}
 
 /* グラフ */
-.gp text{fill:var(--screen-ink);font:11px var(--mono)}
 .gp .cfzb{fill:var(--grid);opacity:.6}
 .gp .now{stroke:var(--screen-ink);stroke-width:1.2;stroke-dasharray:4 3}
 .gp .t1b{stroke-dasharray:7 4}.gp .t1c{stroke-dasharray:2 4}
@@ -57,7 +56,6 @@
 .gp.one .t2,.gp.one .dot2,.gp.one .ax2{display:none}
 
 /* 横から見た光の通り道 */
-.ray text{fill:var(--screen-ink);font:11px var(--mono)}
 .ray .ax{stroke:var(--grid-2);stroke-width:1;stroke-dasharray:4 4}
 .ray .lens{fill:var(--grid);stroke:var(--grid-2)}
 .ray .b1{fill:var(--ch1);opacity:.28}.ray .b2{fill:var(--ch2);opacity:.28}
