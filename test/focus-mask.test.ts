@@ -3,7 +3,7 @@ import { bin, seeing } from '../src/tools/focus-mask/camera';
 import { starBands } from '../src/tools/focus-mask/color';
 import { fft2d } from '../src/tools/focus-mask/fft2';
 import { type Mask, type Scope, transmit } from '../src/tools/focus-mask/mask';
-import { fitBahtinov } from '../src/tools/focus-mask/measure';
+import { bahtinovGain, fitBahtinov } from '../src/tools/focus-mask/measure';
 import { alphaFor, type Band, type Img, psf, pupil } from '../src/tools/focus-mask/optics';
 
 const OPEN: Scope = { obs: 0, vanes: 0, vw: 0 };
@@ -166,6 +166,13 @@ describe('マスク', () => {
         at = x;
       }
     expect(Math.abs((at - M / 2) * um - 0.55 * 150)).toBeLessThan(um);
+  });
+  it('区画の重心から求めた光条のずれは、桟のないとき式 (2/3π)(2 + tan θ)/N と一致し、桟で大きくなる', () => {
+    const th = (20 * Math.PI) / 180,
+      m: Mask = { ...NONE, kind: 'bahtinov', p: 700 / 150 / 50, th },
+      simple = ((2 / (3 * Math.PI)) * (2 + Math.tan(th))) / 7;
+    expect(bahtinovGain(OPEN, m, 100, 700) / simple).toBeCloseTo(1, 2);
+    expect(bahtinovGain(OPEN, { ...m, bar: 0.06 }, 100, 700)).toBeGreaterThan(simple * 1.02);
   });
 });
 
