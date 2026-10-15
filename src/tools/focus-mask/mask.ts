@@ -18,8 +18,10 @@ export interface Mask {
   kind: MaskKind;
   /** 格子の周期（半径に対する比） */
   p: number;
-  /** 斜めの格子の角度（rad）。バーティノフは平行な格子と斜めの格子のなす角 */
+  /** 斜めの格子の角度（rad）。バーティノフは平行な格子と斜めの格子のなす角、キャリーは左の 2 区画の開き */
   th: number;
+  /** キャリーの右の 2 区画の開き（rad。省略時は th の 10/12） */
+  th2?: number;
   /** 開いている割合 */
   duty: number;
   /** 区画の間の桟の幅（半径に対する比） */
@@ -88,26 +90,36 @@ export function transmit(x: number, y: number, sc: Scope, m: Mask, px: number): 
     case 'bahtinov':
       return t * bahtinov(u, v, m, px);
     case 'tri': {
-      /* 120° ずつの 3 区画に、口の中心から外へ向けたバーティノフの模様を置く */
+      /*
+       * トライ・バーティノフ（C. Y. Tan、2016）: 120° の扇 3 つのそれぞれに、扇の中心線を境にした
+       * バーティノフの模様を置く。半分は扇の中心線に直交するスリット（法線が動径）、残りの半分は
+       * 外周寄りと中心寄りに分け、±θ だけ傾けたスリット
+       */
       const a = Math.atan2(v, u),
         k = Math.round((a - Math.PI / 2) / ((2 * Math.PI) / 3)),
         c0 = Math.PI / 2 + (k * 2 * Math.PI) / 3,
-        /* 区画の中心線を上に向けた座標 */
+        /* 扇の中心線を上（vv）に向けた座標 */
         cc = Math.cos(Math.PI / 2 - c0),
         ss = Math.sin(Math.PI / 2 - c0),
         uu = u * cc - v * ss,
         vv = u * ss + v * cc,
-        /* 区画の境（±60°）からの距離 */
-        da = Math.abs(Math.atan2(uu, vv)),
-        dEdge = Math.hypot(uu, vv) * Math.sin(Math.PI / 3 - da);
-      return t * edge(dEdge - m.bar / 2, px) * bahtinov(uu, vv - 0.5, m, px);
+        /* 扇の境（±60° の動径）からの距離 */
+        dEdge = Math.min(
+          Math.abs(uu * Math.cos(Math.PI / 3) - vv * Math.sin(Math.PI / 3)),
+          Math.abs(uu * Math.cos(Math.PI / 3) + vv * Math.sin(Math.PI / 3)),
+        ),
+        rmid = Math.max(0.55, (1 + sc.obs) / 2);
+      return t * edge(dEdge - m.bar / 2, px) * bahtinov(vv - rmid, uu, m, px);
     }
     case 'carey': {
-      /* 左右の半分に、縦から ±θ/2 傾けた格子 */
-      const h = m.th / 2,
+      /*
+       * キャリー・マスク（G. Carey、2009）: 4 つの四分円に、縦から傾けた格子。左の 2 つは互いに th、
+       * 右の 2 つは互いに th2 開く。角度の違う 2 つの X ができ、ピントが合うと重なる
+       */
+      const h = (u < 0 ? m.th : (m.th2 ?? (m.th * 10) / 12)) / 2,
         c = Math.cos(h),
-        s = Math.sin(h);
-      return t * edge(Math.abs(u) - m.bar / 2, px) * (u < 0 ? grating(u, v, c, s, m, px) : grating(u, v, c, -s, m, px));
+        s = Math.sin(h) * (v < 0 ? -1 : 1);
+      return t * edge(Math.abs(u) - m.bar / 2, px) * edge(Math.abs(v) - m.bar / 2, px) * grating(u, v, c, s, m, px);
     }
     case 'hartmann':
     case 'scheiner': {

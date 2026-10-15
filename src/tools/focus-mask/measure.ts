@@ -20,8 +20,6 @@ export function spikeOffset(
     s = Math.sin(a),
     h = n / 2;
   /* 中心線の法線 (−s, c) の向きの距離 q を、重心で求める */
-  let sw = 0,
-    sq = 0;
   const at = (x: number, y: number) => {
     /* 画素 (i, j) の中心を (i − h + c0, h − c0 − j) とし、双一次で補間する */
     const fx = x + h - c0,
@@ -34,20 +32,30 @@ export function spikeOffset(
       o = y0 * n + x0;
     return (1 - ty) * ((1 - tx) * I[o] + tx * I[o + 1]) + ty * ((1 - tx) * I[o + n] + tx * I[o + n + 1]);
   };
-  for (const sg of [-1, 1])
-    for (let t = r0; t <= r1; t += 0.5) {
-      /* 断面の地の明るさ（両端）を引く */
-      const bx = sg * t * c,
-        by = sg * t * s,
-        bg = (at(bx - s * half, by + c * half) + at(bx + s * half, by - c * half)) / 2;
-      for (let q = -half; q <= half; q += 0.5) {
-        const v = at(bx - s * q, by + c * q) - bg;
-        if (v <= 0) continue;
-        sw += v;
-        sq += v * q;
+  /* 窓の中心を今の推定に合わせ直して繰り返す（窓が 0 を中心にしたままだと、外れた光条の裾が切れて 0 に寄る） */
+  let q0 = 0;
+  for (let it = 0; it < 4; it++) {
+    let sw = 0,
+      sq = 0;
+    for (const sg of [-1, 1])
+      for (let t = r0; t <= r1; t += 0.5) {
+        /* 断面の地の明るさ（窓の両端）を引く */
+        const bx = sg * t * c - s * q0,
+          by = sg * t * s + c * q0,
+          bg = (at(bx - s * half, by + c * half) + at(bx + s * half, by - c * half)) / 2;
+        for (let q = -half; q <= half; q += 0.5) {
+          const v = at(bx - s * q, by + c * q) - bg;
+          if (v <= 0) continue;
+          sw += v;
+          sq += v * q;
+        }
       }
-    }
-  return sw > 0 ? sq / sw : 0;
+    if (sw <= 0) break;
+    const d = sq / sw;
+    q0 += d;
+    if (Math.abs(d) < 1e-3) break;
+  }
+  return q0;
 }
 
 export interface BahtinovFit {
@@ -83,4 +91,37 @@ export function fitBahtinov(
     v = (na[0] * qb - qa * nb[0]) / det;
   void u;
   return { mid, cross: v, off: mid - v };
+}
+
+/**
+ * 星像の大きさ: 光の半分が入る円の直径（HFD、画素）。中心は明るさの重心。
+ * オートフォーカスの V 字の曲線に使う量（地の明るさは 0 とする）
+ */
+export function hfd(I: ArrayLike<number>, n: number): number {
+  let s = 0,
+    sx = 0,
+    sy = 0;
+  for (let y = 0; y < n; y++)
+    for (let x = 0; x < n; x++) {
+      const v = I[y * n + x];
+      s += v;
+      sx += v * x;
+      sy += v * y;
+    }
+  if (s <= 0) return 0;
+  const cx = sx / s,
+    cy = sy / s,
+    /* 半径ごとの光の量（0.25 画素刻み） */
+    bins = new Float64Array(Math.ceil(n * 2) + 2);
+  for (let y = 0; y < n; y++)
+    for (let x = 0; x < n; x++) {
+      const r = Math.hypot(x - cx, y - cy);
+      bins[Math.min(bins.length - 1, Math.floor(r * 4))] += I[y * n + x];
+    }
+  let acc = 0;
+  for (let i = 0; i < bins.length; i++) {
+    if (acc + bins[i] >= s / 2) return (2 * (i + (s / 2 - acc) / bins[i])) / 4;
+    acc += bins[i];
+  }
+  return n;
 }

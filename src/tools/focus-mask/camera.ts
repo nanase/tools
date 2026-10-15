@@ -101,3 +101,26 @@ export function seeing(p: Img, fwhm: number, beta = 4.765): Img {
   pass(p.b, null, out.b, null);
   return out;
 }
+
+/** 線形の値 → sRGB の 8 bit */
+const enc = (c: number) =>
+  c <= 0 ? 0 : c >= 1 ? 255 : Math.round(255 * (c <= 0.0031308 ? 12.92 * c : 1.055 * c ** (1 / 2.4) - 0.055));
+
+/**
+ * 像を表示の画素（RGBA）にする。gain を掛けた値を、lin はそのまま 1 で飽和させ（カメラの撮って出し）、
+ * asinh は asinh(x/soft)/asinh(1/soft) で暗い所を持ち上げる（Lupton ほか 2004 の伸ばし方）。
+ * 色はそれぞれの成分を別に丸めるので、飽和した芯は白くなる
+ */
+export function toRgba(p: Img, gain: number, mode: 'lin' | 'asinh' = 'lin', soft = 0.02): Uint8ClampedArray {
+  const n = p.n * p.n,
+    o = new Uint8ClampedArray(n * 4),
+    k = 1 / Math.asinh(1 / soft),
+    f = mode === 'asinh' ? (v: number) => (v <= 0 ? 0 : Math.asinh(v / soft) * k) : (v: number) => v;
+  for (let i = 0; i < n; i++) {
+    o[i * 4] = enc(f(p.r[i] * gain));
+    o[i * 4 + 1] = enc(f(p.g[i] * gain));
+    o[i * 4 + 2] = enc(f(p.b[i] * gain));
+    o[i * 4 + 3] = 255;
+  }
+  return o;
+}
