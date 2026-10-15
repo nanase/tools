@@ -1,0 +1,135 @@
+---
+// 動作原理と式（下書き。画面の案が決まったら、画面の名前と合わせて直す）
+/* 本文の出典番号 */
+const rf = (...ns: number[]) => ns.map((n) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`).join('');
+---
+<h3>星の像</h3>
+<p>星は十分に遠いので、望遠鏡には平らな波面の光が入ります。焦点面の像は、開口を通った光の場のフーリエ変換の強度です（フラウンホーファー回折）<Fragment set:html={rf(1, 2)} />。マスクは、開口の光の場に掛ける透過率の模様として入ります。</p>
+<ol class="flow" aria-label="星の像を作る流れ">
+  <li><b>開口とマスク</b><span>透過率 <math><mi>t</mi></math>（0〜1）を格子に描く</span></li>
+  <li><b>ピントのずれの位相</b><span>波長ごとに掛ける</span></li>
+  <li><b>2 次元 FFT</b><span>焦点面の光の場</span></li>
+  <li><b>強度を足す</b><span>波長ごとの色の重みで</span></li>
+  <li><b>カメラの画素</b><span>面積で積分し、シーイングで広げる</span></li>
+</ol>
+<dl class="syms">
+  <dt><math><mi>t</mi><mo stretchy="false">(</mo><mi>x</mi><mo>,</mo><mi>y</mi><mo stretchy="false">)</mo></math></dt><dd>開口の透過率。鏡筒の口・副鏡の影・スパイダー・マスクを掛け合わせたもの</dd>
+  <dt><math><mi>W</mi></math></dt><dd>波面のずれ（長さ）</dd>
+  <dt><math><mi>ρ</mi></math></dt><dd>開口の中心からの距離。縁で 1</dd>
+  <dt><math><mi>Δ</mi><mi>z</mi></math></dt><dd>ピントのずれ。センサーが焦点より奥なら正</dd>
+  <dt><math><mi>N</mi><mo>=</mo><mi>f</mi><mo>/</mo><mi>D</mi></math></dt><dd>F 値。<math><mi>f</mi></math> は焦点距離、<math><mi>D</mi></math> は口径</dd>
+  <dt><math><mi mathvariant="script">F</mi></math></dt><dd>2 次元のフーリエ変換</dd>
+</dl>
+<div class="eqs">
+  <math display="block"><mi>P</mi><mo stretchy="false">(</mo><mi>x</mi><mo>,</mo><mi>y</mi><mo stretchy="false">)</mo><mo>=</mo><mi>t</mi><mo stretchy="false">(</mo><mi>x</mi><mo>,</mo><mi>y</mi><mo stretchy="false">)</mo><mspace width="0.17em"/><msup><mi>e</mi><mrow><mi>i</mi><mn>2</mn><mi>π</mi><mi>W</mi><mo>/</mo><mi>λ</mi></mrow></msup></math>
+  <math display="block"><mi>W</mi><mo>=</mo><msub><mi>W</mi><mn>020</mn></msub><msup><mi>ρ</mi><mn>2</mn></msup><mo>,</mo><mspace width="1em"/><msub><mi>W</mi><mn>020</mn></msub><mo>=</mo><mfrac><mrow><mi>Δ</mi><mi>z</mi></mrow><mrow><mn>8</mn><msup><mi>N</mi><mn>2</mn></msup></mrow></mfrac></math>
+  <math display="block"><mi>I</mi><mo stretchy="false">(</mo><mi>u</mi><mo>,</mo><mi>v</mi><mo stretchy="false">)</mo><mo>=</mo><msup><mrow><mo>|</mo><mi mathvariant="script">F</mi><mo stretchy="false">[</mo><mi>P</mi><mo stretchy="false">]</mo><mrow><mo>(</mo><mfrac><mi>u</mi><mrow><mi>λ</mi><mi>f</mi></mrow></mfrac><mo>,</mo><mfrac><mi>v</mi><mrow><mi>λ</mi><mi>f</mi></mrow></mfrac><mo>)</mo></mrow><mo>|</mo></mrow><mn>2</mn></msup></math>
+</div>
+<p>ピントのずれは、開口の縁で <math><msub><mi>W</mi><mn>020</mn></msub></math> になる放物面の波面のずれとして入れます<Fragment set:html={rf(3)} />。λ = 550 nm で 1 波長分のずれは、f/5 で 110 µm、f/10 で 440 µm に当たります。</p>
+
+<h3>波長と色</h3>
+<p>格子で曲がる光の角度は波長に比例します。そのため白い星の光条は、内側が青く外側が赤い虹色の筋になります。400〜700 nm を 16 の帯に分けて波長ごとに計算し、星の色の重みで足し合わせます<Fragment set:html={rf(2)} />。</p>
+<ul class="tl">
+  <li>星の光の強さ: 色温度 <math><mi>T</mi></math> の黒体放射（プランクの式）</li>
+  <li>色: CIE 1931 の等色関数の近似で XYZ に直し、sRGB にする<Fragment set:html={rf(4)} /></li>
+  <li>白の基準: 6500 K の星を白にする</li>
+</ul>
+<p>焦点面の画素の角度 <math><mi>α</mi></math> を全部の波長でそろえるため、開口の標本の幅 <math><mi>Δ</mi><mi>ξ</mi></math> を波長ごとに変えます。<math><mi>K</mi></math> は FFT の大きさです。</p>
+<div class="eqs">
+  <math display="block"><mi>Δ</mi><mi>ξ</mi><mo>=</mo><mfrac><mi>λ</mi><mrow><mi>K</mi><mi>α</mi></mrow></mfrac></math>
+  <math display="block"><msub><mi>s</mi><mi>m</mi></msub><mo>=</mo><mi>m</mi><mfrac><mrow><mi>λ</mi><mi>f</mi></mrow><mi>p</mi></mfrac><mo>=</mo><mi>m</mi><mi>λ</mi><mi>B</mi><mo>,</mo><mspace width="1em"/><mi>B</mi><mo>=</mo><mfrac><mi>f</mi><mi>p</mi></mfrac></math>
+</div>
+<p><math><msub><mi>s</mi><mi>m</mi></msub></math> は、周期 <math><mi>p</mi></math> の格子の <math><mi>m</mi></math> 次の回折光がセンサーの上で中心から離れる距離です。<math><mi>B</mi></math> を決めると、焦点距離にも口径にもよらず同じ距離に出ます。B = 150、λ = 550 nm なら 1 次の光は 82.5 µm です。スリットと桟の幅が同じなら、2 次・4 次の光は消えます。</p>
+
+<h3>マスクの形</h3>
+<div class="tt-w">
+  <table class="tt">
+    <thead><tr><th scope="col">マスク</th><th scope="col">開口の模様</th><th scope="col">既定値</th><th scope="col">ピントが合ったとき</th></tr></thead>
+    <tbody>
+      <tr><th scope="row">バーティノフ<Fragment set:html={rf(5, 6)} /></th><td>半円にスリット、残りの四分円 2 つに ±θ 傾けたスリット</td><td>θ = 20°、周期 f/150</td><td>中央の光条が X の交点を通る</td></tr>
+      <tr><th scope="row">トライ・バーティノフ<Fragment set:html={rf(7)} /></th><td>120° の扇 3 つに、それぞれバーティノフの模様</td><td>θ = 10°、周期 f/150</td><td>3 組がそろって合う（光軸が合っているとき）</td></tr>
+      <tr><th scope="row">キャリー<Fragment set:html={rf(8)} /></th><td>四分円 4 つに斜めのスリット。左右で開きが違う</td><td>開き 12° と 10°</td><td>2 つの X が対称に重なる</td></tr>
+      <tr><th scope="row">ハルトマン<Fragment set:html={rf(9)} /></th><td>穴 3 つ</td><td>穴の径 0.36 <i>R</i></td><td>3 つの像が 1 つになる</td></tr>
+      <tr><th scope="row">シャイナー<Fragment set:html={rf(10)} /></th><td>穴 2 つ</td><td>穴の径 0.36 <i>R</i></td><td>2 つの像が 1 つになる</td></tr>
+    </tbody>
+  </table>
+</div>
+<p>バーティノフマスクは P. Bahtinov が 2005 年に考えました。斜めのスリットの角度は、本人が「約 20°」と書いています<Fragment set:html={rf(5)} />。周期（スリットと桟を合わせた幅）を焦点距離の 1/150〜1/200 にする目安は、2008 年に英語圏へ紹介した D. Sakva によります<Fragment set:html={rf(6)} />。</p>
+
+<h3>光条のずれとピントのずれ</h3>
+<p>開口の一部 <math><msub><mi>S</mi><mi>j</mi></msub></math> を通った光の像は、ピントがずれると、その部分の重心 <math><msub><mi mathvariant="bold">c</mi><mi>j</mi></msub></math> に比例してずれます。格子の回折光は格子の向きに並ぶので、区画ごとの光条は「ずれた点を通り、格子の向きに伸びる直線」になります。</p>
+<div class="eqs">
+  <math display="block"><mi>Δ</mi><msub><mi mathvariant="bold">r</mi><mi>j</mi></msub><mo>=</mo><mfrac><mrow><mi>Δ</mi><mi>z</mi></mrow><mi>f</mi></mfrac><msub><mi mathvariant="bold">c</mi><mi>j</mi></msub></math>
+</div>
+<p>半円の重心は中心から 2<i>D</i>/(3π)、四分円の重心はその点を斜めに置いた所にあります。これから、中央の光条と X の交点の距離 <math><mi>e</mi></math> が求まります。</p>
+<div class="eqs">
+  <math display="block"><mi>e</mi><mo>=</mo><mfrac><mrow><mi>Δ</mi><mi>z</mi></mrow><mi>N</mi></mfrac><mo>·</mo><mfrac><mn>2</mn><mrow><mn>3</mn><mi>π</mi></mrow></mfrac><mrow><mo>(</mo><mn>2</mn><mo>+</mo><mi>tan</mi><mo>⁡</mo><mi>θ</mi><mo>)</mo></mrow></math>
+  <math display="block"><mi>Δ</mi><mi>z</mi><mo>=</mo><mfrac><mrow><mn>3</mn><mi>π</mi><mi>N</mi></mrow><mn>2</mn></mfrac><mo>·</mo><mfrac><mi>e</mi><mrow><mn>2</mn><mo>+</mo><mi>tan</mi><mo>⁡</mo><mi>θ</mi></mrow></mfrac></math>
+</div>
+<p>この式は、像を計算して光条の位置を測った値と 1 割以内で合います（このツールのテストで確かめています）。斜めのスリットを逆向き（「&gt;」の形）に傾けると、<math><mi>tan</mi><mo>⁡</mo><mi>θ</mi></math> の符号が変わり、感度が下がります。</p>
+<p>解析ソフトで広く使われている式は、N. Noordhoek の Bahtinov Grabber のものです<Fragment set:html={rf(11)} />。θ = 20° で、上の式より約 1 割大きい値になります。</p>
+<div class="eqs">
+  <math display="block"><mi>e</mi><mo>=</mo><mfrac><mn>9</mn><mn>32</mn></mfrac><mo>·</mo><mfrac><mi>D</mi><mi>f</mi></mfrac><mrow><mo>[</mo><mn>1</mn><mo>+</mo><mi>cos</mi><mo>⁡</mo><mn>45</mn><mo>°</mo><mrow><mo>(</mo><mn>1</mn><mo>+</mo><mi>tan</mi><mo>⁡</mo><mi>θ</mi><mo>)</mo></mrow><mo>]</mo></mrow><mi>Δ</mi><mi>z</mi></math>
+</div>
+<p>ハルトマンとシャイナーのマスクでは、穴の像の間隔が、穴の中心の間隔 <math><mi>d</mi></math> に比例します。</p>
+<div class="eqs">
+  <math display="block"><mi>s</mi><mo>=</mo><mfrac><mrow><mi>d</mi><mspace width="0.17em"/><mo>|</mo><mi>Δ</mi><mi>z</mi><mo>|</mo></mrow><mi>f</mi></mfrac></math>
+</div>
+<p>穴が 2 つでは、焦点の手前と奥で同じ並びになり、どちらへずれたか分かりません。穴が 3 つなら三角形の向きが逆になります。</p>
+
+<h3>ピントが合っているとみなす範囲</h3>
+<p>波面のずれが 1/4 波長（レイリーの基準）までなら、ピントが合っているとみなします<Fragment set:html={rf(3)} />。この範囲は臨界焦点範囲とも呼ばれます。出典によって定数が 2〜3 倍違うので、計算結果にはどの定数を使ったかを添えます。</p>
+<div class="eqs">
+  <math display="block"><mo>|</mo><mi>Δ</mi><mi>z</mi><mo>|</mo><mo>≤</mo><mn>2</mn><mi>λ</mi><msup><mi>N</mi><mn>2</mn></msup></math>
+</div>
+<p>この範囲の端での光条のずれは、上の式で約 λ<i>N</i> です。f/5 では 2.8 µm で、3.76 µm の画素の 1 画素に足りません。目では見分けにくいので、解析ソフトは光条全体に直線を当てはめて、画素より細かく読みます。</p>
+
+<h3>大気のゆらぎとカメラ</h3>
+<p>長い露出の星像の広がり（シーイング）は、モファット分布で畳み込みます。β = 4.765 で、大気の乱れ（コルモゴロフの模型）の長時間露出の像に近くなります<Fragment set:html={rf(12)} />。</p>
+<div class="eqs">
+  <math display="block"><mi>I</mi><mo stretchy="false">(</mo><mi>r</mi><mo stretchy="false">)</mo><mo>∝</mo><msup><mrow><mo>(</mo><mn>1</mn><mo>+</mo><msup><mrow><mo>(</mo><mi>r</mi><mo>/</mo><mi>a</mi><mo>)</mo></mrow><mn>2</mn></msup><mo>)</mo></mrow><mrow><mo>−</mo><mi>β</mi></mrow></msup><mo>,</mo><mspace width="1em"/><mtext>半値幅</mtext><mo>=</mo><mn>2</mn><mi>a</mi><msqrt><mrow><msup><mn>2</mn><mrow><mn>1</mn><mo>/</mo><mi>β</mi></mrow></msup><mo>−</mo><mn>1</mn></mrow></msqrt></math>
+</div>
+<p>計算した像は、カメラの画素の大きさに合わせて面積で積分します。明るい星の芯はすぐに飽和し、飽和させるほど暗い光条が見えてきます。</p>
+
+<h3>計算の方法</h3>
+<ul class="tl">
+  <li>開口の格子: 最短の波長で口径を約 930 標本、FFT は 1024 × 1024</li>
+  <li>焦点面の範囲: FFT の中央の半分。外へ伸びた光条が反対側から回り込まないようにする</li>
+  <li>開口の縁とスリット: 標本の広さでぼかし、ぎざぎざが偽の回折を生まないようにする</li>
+  <li>波長の帯: 帯の幅の分だけ像を半径方向に引き伸ばして足し、光条の色を連続にする</li>
+  <li>計算の分担: 波長の帯を複数の Worker に分ける</li>
+</ul>
+
+<h3>考えていないもの</h3>
+<ul class="tl">
+  <li>屈折望遠鏡の色収差（波長ごとの焦点の違い）</li>
+  <li>マスクの板の厚みと、スリットの縁での反射</li>
+  <li>短い露出での像の揺れ（スペックル）</li>
+  <li>星の光子の数による雑音と、カメラの読み出しの雑音</li>
+</ul>
+
+<h3>このツールで決めたこと</h3>
+<ul class="tl">
+  <li>既定の望遠鏡（口径 100 mm、焦点距離 700 mm の屈折）とカメラ（画素 3.76 µm）、シーイング 2″</li>
+  <li>区画の間の桟の幅 3 mm、スリットと桟の幅の比 1:1</li>
+  <li>斜めのスリットの向き: 「&lt;」の形（2005 年の原図による。現在の標準は確かめられなかった）</li>
+  <li>トライ・バーティノフの扇の中で、外寄りと中心寄りの区画を分ける半径: 0.55 <i>R</i></li>
+  <li>光条の位置の測り方: 光条に直交する断面の明るさの重心。窓の中心を推定した位置に合わせ直して繰り返す</li>
+  <li>星像の大きさ（HFD）: 光の半分が入る円の直径</li>
+</ul>
+
+<h3>出典</h3>
+<ol class="refs">
+  <li id="thy-r1"><span class="rf-for">フラウンホーファー回折、点像の強度</span><span class="rf-src">J. W. Goodman, <i>Introduction to Fourier Optics</i>, 3rd ed., Roberts &amp; Company, 2005</span></li>
+  <li id="thy-r2"><span class="rf-for">バーティノフマスクを付けた望遠鏡の像のフーリエ光学による計算、波長ごとの像の和</span><span class="rf-src">J. A. van den Born, W. Jellema and E. Dijkstra, <i>Mon. Not. R. Astron. Soc.</i>, vol. 512, pp. 5812–5822, 2022, doi:10.1093/mnras/stac845</span></li>
+  <li id="thy-r3"><span class="rf-for">ピントのずれの波面 <math><msub><mi>W</mi><mn>020</mn></msub></math>、レイリーの基準による焦点深度</span><span class="rf-src">J. Sasián, <i>Introduction to Aberrations in Optical Imaging Systems</i>, Cambridge University Press, 2013</span></li>
+  <li id="thy-r4"><span class="rf-for">等色関数の近似</span><span class="rf-src">C. Wyman, P.-P. Sloan and P. Shirley, “Simple Analytic Approximations to the CIE XYZ Color Matching Functions,” <i>J. Comput. Graph. Tech.</i>, vol. 2, no. 2, pp. 1–11, 2013</span></li>
+  <li id="thy-r5"><span class="rf-for">バーティノフマスクの考案、斜めのスリットの角度</span><span class="rf-src">П. Бахтинов, astronomy.ru フォーラム topic 10421, 2005-09-22</span></li>
+  <li id="thy-r6"><span class="rf-for">周期の目安 f/s = 150〜200</span><span class="rf-src">D. Sakva, “Revolutionary new way of focusing, no less,” Cloudy Nights, 2008-07-27</span></li>
+  <li id="thy-r7"><span class="rf-for">トライ・バーティノフマスクの形と角度</span><span class="rf-src">C. Y. Tan, “Tri-Bahtinov mask,” GitHub cytan299/tribahtinov, 2016</span></li>
+  <li id="thy-r8"><span class="rf-for">キャリー・マスクの形と角度</span><span class="rf-src">G. Carey, “Carey Mask,” geoastro.co.uk, 2009</span></li>
+  <li id="thy-r9"><span class="rf-for">ハルトマンの方法</span><span class="rf-src">J. Hartmann, “Objektivuntersuchungen,” <i>Zeitschrift für Instrumentenkunde</i>, vol. 24, 1904</span></li>
+  <li id="thy-r10"><span class="rf-for">シャイナーの円板</span><span class="rf-src">C. Scheiner, <i>Oculus, hoc est: Fundamentum opticum</i>, 1619</span></li>
+  <li id="thy-r11"><span class="rf-for">解析ソフトの光条のずれの式</span><span class="rf-src">N. Noordhoek, Bahtinov Grabber（ソースは GitHub wytsep/bahtinov-grabber に保存されたもの）</span></li>
+  <li id="thy-r12"><span class="rf-for">モファット分布の β = 4.765</span><span class="rf-src">I. Trujillo, J. A. L. Aguerri, J. Cepa and C. M. Gutiérrez, “The effects of seeing on Sérsic profiles – II. The Moffat PSF,” <i>Mon. Not. R. Astron. Soc.</i>, vol. 328, pp. 977–985, 2001</span></li>
+</ol>
