@@ -33,10 +33,12 @@
 .sel{position:relative}
 .sel select{appearance:none;width:100%;height:30px;padding:0 30px 0 10px;border:1px solid var(--line-2);border-radius:4px;background:var(--inset);color:var(--ink);font:500 13px/1.2 var(--mono);text-overflow:ellipsis;cursor:pointer}
 .sel::after{content:"";position:absolute;top:50%;right:12px;width:7px;height:7px;border-right:1.6px solid var(--ink-2);border-bottom:1.6px solid var(--ink-2);transform:translateY(-70%) rotate(45deg);pointer-events:none}
-.stag.right{margin-left:auto}
 
-/* 図の左下の「弓を離す」（図が横に送れるときも、見えている枠の左下に置く） */
+/* 図の左下の「弓を離す」と、左上の弾いている音（弦ごとに 1 行）。図が横に送れるときも、見えている枠の隅に置く */
 .vwrap{position:relative}
+.vnote{position:absolute;left:12px;top:9px;z-index:2;display:grid;grid-template-columns:repeat(3,auto);gap:2px 10px;justify-content:start;font:700 13px var(--mono);color:var(--ink);text-shadow:0 0 3px var(--screen),0 0 3px var(--screen);pointer-events:none}
+.vnote span:nth-child(3n){text-align:right;font-weight:500;color:var(--ink-2)}
+@media (max-width:640px){.vnote{left:8px;top:6px;gap:1px 8px;font-size:11px}}
 .vstop{position:absolute;left:10px;bottom:10px;z-index:2;box-shadow:0 1px 4px rgb(0 0 0 / .22)}
 .vstop[hidden]{display:none}
 .vstop .sq{display:inline-block;width:8px;height:8px;border-radius:1px;background:currentColor}

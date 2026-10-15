@@ -35,7 +35,7 @@ export class ViolinAudio {
   private pos: { at: number; t: number } | null = null;
   private bowing = false;
   private inPiece = false;
-  private feelV = { fluct: 1, rough: 0.03 };
+  private feelV = { fluct: 1, rough: 0.03, press: 1 };
   private scopeOn = false;
   /** 直前の音が届いたとき（音の波形の表示） */
   onWave: ((y: Float32Array, fs: number) => void) | null = null;
@@ -163,10 +163,10 @@ export class ViolinAudio {
     else this.send({ type: 'vib', vib: v });
   }
 
-  /** 揺らぎの倍率と松脂のむら */
-  feel(fluct: number, rough: number): void {
-    this.feelV = { fluct, rough };
-    this.send({ type: 'feel', fluct, rough });
+  /** 揺らぎの倍率・松脂のむら・曲の弓圧の倍率 */
+  feel(fluct: number, rough: number, press: number): void {
+    this.feelV = { fluct, rough, press };
+    this.send({ type: 'feel', fluct, rough, press });
   }
 
   /** 音の波形の表示に、直前の音を送ってもらうか */
