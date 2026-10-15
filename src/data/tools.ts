@@ -211,7 +211,7 @@ export const TOOLS: Tool[] = [
     id: 'focusing-mask',
     c: '画像・光学',
     t: 'フォーカシングマスク',
-    d: 'バーティノフマスクなどを付けた星の像を回折で計算し、ピント合わせを試します。',
+    d: 'バーティノフマスクなどを付けた星の像を、回折で計算します。',
     ic: 'fk',
     k: 'focusing mask フォーカスマスク ピント合わせ 合焦 focus bahtinov バーティノフ tri-bahtinov トライ・バーティノフ carey キャリー hartmann ハルトマン scheiner シャイナー 望遠鏡 telescope 天体写真 astrophotography 星 光条 回折 diffraction fraunhofer フラウンホーファー fft 点像 psf シーイング seeing 臨界焦点範囲 critical focus zone cfz 光軸 collimation コマ hfd',
   },
