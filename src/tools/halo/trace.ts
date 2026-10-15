@@ -21,6 +21,8 @@ export interface Population {
   w: number;
   /** 結晶の径 [µm]（回折の広がり）。0 は回折を入れない */
   d: number;
+  /** 錐の高さの割合（0 は錐面なし） */
+  pyr?: number;
 }
 
 /** 屈折率: Warren & Brandt (2008) の表に当てはめた 3 項の Cauchy の式（λ は nm） */
@@ -77,7 +79,7 @@ export interface Crystal {
   n: Float64Array;
   /** 原点からの距離 */
   h: Float64Array;
-  /** 面番号（1・2 が底面、3〜8 が側面） */
+  /** 面番号（1・2 が底面、3〜8 が側面、13〜18 が上の錐面、23〜28 が下の錐面） */
   id: Int8Array;
   /** 外接球の半径 */
   rb: number;
@@ -85,28 +87,71 @@ export interface Crystal {
   area: number;
 }
 
-/** 六角柱。頂点の半径を 1 にとり、長さを 2 × c/a、表面積を 1 にそろえる */
-export function prism(ca: number): Crystal {
-  const r = 1,
-    a = (r * Math.sqrt(3)) / 2,
-    hz = ca * r * 2 * 0.5,
-    area = 2 * ((3 * Math.sqrt(3)) / 2) * r * r + 6 * r * 2 * hz,
-    s = 1 / Math.sqrt(area),
-    n = new Float64Array(24),
-    h = new Float64Array(8),
-    id = new Int8Array(8);
+/** 錐面 {10-11} の法線と c 軸のなす角（面そのものは c 軸に 28° 傾く） */
+export const PYR_TILT = 62;
+
+/** 結晶の寸法（頂点の半径を 1 にとったとき）: 柱の半分の長さ、側面までの距離、錐面までの距離、底面までの距離、外接球の半径、表面積 */
+export function dims(
+  ca: number,
+  pyr = 0,
+): { hz: number; ap: number; dp: number; db: number; rb: number; area: number } {
+  const th = PYR_TILT * D2R,
+    ap = Math.sqrt(3) / 2,
+    hz = ca,
+    p = Math.max(0, Math.min(1, pyr)),
+    H = ap * Math.tan(th),
+    db = hz + p * H,
+    /* 底面の六角形（頂点の半径 1 − p）、側面 6 枚（幅 1、高さ 2hz）、錐面 12 枚（台形） */
+    area =
+      2 * (3 * Math.sqrt(3) * 0.5 * (1 - p) ** 2) +
+      12 * hz +
+      (p > 0 ? 12 * ((2 - p) / 2) * ((p * ap) / Math.cos(th)) : 0);
+  return {
+    hz,
+    ap,
+    dp: ap * Math.sin(th) + hz * Math.cos(th),
+    db,
+    rb: Math.max(Math.hypot(1, hz), Math.hypot(1 - p, db)),
+    area,
+  };
+}
+
+/**
+ * 六角柱（両端に錐面を付けられる）。頂点の半径を 1 にとり、柱の長さを 2 × c/a にしてから、表面積を 1 にそろえる。
+ * pyr は錐の高さの割合（0 は錐面なし、1 は尖るまで）
+ */
+export function crystal(ca: number, pyr = 0): Crystal {
+  const d = dims(ca, pyr),
+    s = 1 / Math.sqrt(d.area),
+    np = pyr > 0 ? 20 : 8,
+    n = new Float64Array(3 * np),
+    h = new Float64Array(np),
+    id = new Int8Array(np),
+    th = PYR_TILT * D2R;
   n.set([0, 0, 1, 0, 0, -1], 0);
-  h[0] = h[1] = hz * s;
+  h[0] = h[1] = d.db * s;
   id[0] = 1;
   id[1] = 2;
   for (let k = 0; k < 6; k++) {
     const t = (k * Math.PI) / 3;
     n.set([Math.cos(t), Math.sin(t), 0], 6 + 3 * k);
-    h[2 + k] = a * s;
+    h[2 + k] = d.ap * s;
     id[2 + k] = 3 + k;
+    if (np > 8)
+      for (const [j, sz] of [
+        [8, 1],
+        [14, -1],
+      ] as const) {
+        n.set([Math.sin(th) * Math.cos(t), Math.sin(th) * Math.sin(t), sz * Math.cos(th)], 3 * (j + k));
+        h[j + k] = d.dp * s;
+        id[j + k] = (sz > 0 ? 13 : 23) + k;
+      }
   }
-  return { n, h, id, rb: Math.hypot(r, hz) * s, area: 1 };
+  return { n, h, id, rb: d.rb * s, area: 1 };
 }
+
+/** 錐面のない六角柱 */
+export const prism = (ca: number): Crystal => crystal(ca, 0);
 
 /** 3×3 の回転行列（行優先）。結晶の座標 → 世界の座標 */
 export type Mat = Float64Array;
@@ -335,9 +380,10 @@ function out(M: Mat, x: number, y: number, z: number, path: number[]): Hit {
 }
 
 /** 光路の種類: 0 外での反射、1 60° のくさび（側面 → 1 つ置いた側面）、2 90° のくさび（底面と側面）、
- * 3 中で反射してから出た光、4 平行な面を素通り */
+ * 3 中で反射してから出た光、4 平行な面を素通り、5 錐面を通る光 */
 export function family(path: readonly number[]): number {
   if (path.length === 1) return 0;
+  if (path.some((f) => f >= 13)) return 5;
   if (path.length > 2) return 3;
   const a = path[0],
     b = path[1],

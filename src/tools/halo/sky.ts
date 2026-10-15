@@ -4,7 +4,7 @@
  * 方位は太陽を基準にとる（太陽は +x）
  */
 import { cmf, toRgb } from '../lens/light';
-import { type Crystal, family, nIce, orient, type Population, prism, Rng, sunRay, traceRay } from './trace';
+import { type Crystal, crystal, family, nIce, orient, type Population, Rng, sunRay, traceRay } from './trace';
 
 /** 空の向き (x, y, z) → 全天図の画素の番号 */
 export function mapIndex(N: number, x: number, y: number, z: number): number {
@@ -77,7 +77,7 @@ export function simulate(
     prep: Prep[] = [];
   let tot = 0;
   for (const p of act) {
-    const c = prism(p.ca);
+    const c = crystal(p.ca, p.pyr ?? 0);
     tot += p.w * Math.PI * c.rb * c.rb;
     prep.push({ p, c, cum: tot });
   }

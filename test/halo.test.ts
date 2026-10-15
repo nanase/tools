@@ -1,6 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { mapIndex, newMap, pixelSr, simulate, WL_RGB } from '../src/tools/halo/sky';
-import { family, fresnel, nIce, orient, type Population, prism, Rng, sunRay, traceRay } from '../src/tools/halo/trace';
+import {
+  crystal,
+  family,
+  fresnel,
+  nIce,
+  orient,
+  type Population,
+  prism,
+  Rng,
+  sunRay,
+  traceRay,
+} from '../src/tools/halo/trace';
 
 const D = Math.PI / 180;
 /** 頂角 A のくさびの最小偏角 */
@@ -10,7 +21,7 @@ const pop = (o: Partial<Population>): Population => ({ orient: 'random', ca: 1, 
 /** 結晶 1 種類に光線を通し、空の向き（光が来る向き）と光路を集める */
 function shoot(p: Population, elev: number, rays: number, nm = 550, seed = 3) {
   const g = new Rng(seed),
-    C = prism(p.ca),
+    C = crystal(p.ca, p.pyr ?? 0),
     M = new Float64Array(9),
     n = nIce(nm),
     out: { x: number; y: number; z: number; path: number[] }[] = [];
@@ -66,6 +77,24 @@ describe('重み', () => {
     const expected = C.area / 4 / (Math.PI * C.rb * C.rb);
     expect(Math.abs(hit / N - expected) / expected).toBeLessThan(0.02);
   });
+  for (const [ca, pyr] of [
+    [0.3, 0.5],
+    [1.5, 1],
+    [0.1, 0.2],
+  ])
+    it(`錐面のある結晶（c/a ${ca}、錐 ${pyr}）でも、当たる割合が表面積 ÷ 4 ÷ 円盤の面積（表面積と外接球の検算）`, () => {
+      const C = crystal(ca, pyr),
+        g = new Rng(5),
+        M = new Float64Array(9),
+        N = 200000;
+      let hit = 0;
+      for (let i = 0; i < N; i++) {
+        orient(pop({}), g, M);
+        if (traceRay(C, M, 0, 0, -1, 1.31, g)) hit++;
+      }
+      const expected = C.area / 4 / (Math.PI * C.rb * C.rb);
+      expect(Math.abs(hit / N - expected) / expected).toBeLessThan(0.025);
+    });
   it('板の傾きは球面の上の 2 次元のガウス分布（θ² の平均が 2σ²）', () => {
     const g = new Rng(4),
       M = new Float64Array(9),
@@ -126,6 +155,29 @@ describe('ハロの位置（解析の式と照らす）', () => {
     const n = nIce(550);
     expect(Math.abs(edge(180, 260) - minDev(n, 60))).toBeLessThan(0.3);
     expect(Math.abs(edge(420, 500) - minDev(n, 90))).toBeLessThan(0.4);
+  });
+  it('錐面のある結晶（ランダム）: 9°・35° の暈の内縁が 28°・80.2° のくさびの最小偏角', () => {
+    const e = 30,
+      s = [Math.cos(e * D), 0, Math.sin(e * D)],
+      hist = new Float64Array(600),
+      n = nIce(550);
+    for (const o of shoot(pop({ ca: 0.3, pyr: 0.6 }), e, 800000)) {
+      if (family(o.path) !== 5 || o.path.length !== 2) continue;
+      const a = Math.acos(Math.min(1, o.x * s[0] + o.y * s[1] + o.z * s[2])) / D;
+      if (a < 60) hist[Math.floor(a * 10)] += 1 / Math.sin(Math.max(a, 0.05) * D);
+    }
+    const edge = (lo: number, hi: number) => {
+      let best = 0,
+        at = 0;
+      for (let i = lo; i < hi; i++)
+        if (hist[i + 2] - hist[i - 2] > best) {
+          best = hist[i + 2] - hist[i - 2];
+          at = i / 10;
+        }
+      return at;
+    };
+    expect(Math.abs(edge(60, 120) - minDev(n, 28))).toBeLessThan(0.4);
+    expect(Math.abs(edge(320, 380) - minDev(n, 80.22))).toBeLessThan(0.5);
   });
   for (const e of [0, 20, 40])
     it(`水平な板: 幻日の内縁は Bravais の実効屈折率で決まる（太陽高度 ${e}°）`, () => {
