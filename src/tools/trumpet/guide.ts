@@ -202,7 +202,7 @@ class Tube {
   private rawF = 0;
   constructor(d: number, K: number, fs: number) {
     this.fwd = new Delay(Math.ceil(d) + 72, d);
-    this.bwd = new Delay(Math.ceil(d) + 4, d);
+    this.bwd = new Delay(Math.ceil(d) + 16, d);
     this.lf = lossFilter(K, fs);
     this.lb = lossFilter(K, fs);
   }
@@ -311,9 +311,18 @@ class Valve {
   /** 迂回管を回しているか（閉じたら中の空気を静止に戻す） */
   private live = false;
   private liveD = true;
+  /** 抜差しを出していないときの迂回管の遅延 [標本] */
+  private base: number;
   constructor(d0: number, dB: number, K0: number, KB: number, fs: number) {
     this.dflt = new Tube(d0, K0, fs);
     this.byp = new Tube(dB, KB, fs);
+    this.base = dB;
+  }
+  /** 抜差しを出した長さ（往復で足す管の長さ）[標本]。12 標本まで */
+  setSlide(extra: number) {
+    const d = this.base + Math.max(0, Math.min(12, extra));
+    this.byp.fwd.d = d;
+    this.byp.bwd.d = d;
   }
   get qd() {
     return Math.min(1, Math.max(0, 1 - this.press / 0.6));
@@ -470,6 +479,11 @@ export class Bore {
     this.rb0 = (g * (r - 1) - r) / D;
     this.rb1 = -(g * (r - 1) + r) / D;
     this.ra1 = -(g * (r + 1) - r) / D;
+  }
+
+  /** 第 i 弁の抜差しを出した長さ [m]（第 1・第 3 抜差しで弁の組み合わせの音程を直す） */
+  setSlide(i: number, m: number) {
+    this.valves[i].setSlide((m / this.air.c) * this.fs);
   }
 
   /** 非線形の伝搬の強さ（0 で線形、1 で物理の値） */
