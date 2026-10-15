@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { bin, seeing } from '../src/tools/focus-mask/camera';
-import { starBands } from '../src/tools/focus-mask/color';
-import { fft2d } from '../src/tools/focus-mask/fft2';
-import { type Mask, type Scope, transmit } from '../src/tools/focus-mask/mask';
-import { bahtinovGain, fitBahtinov } from '../src/tools/focus-mask/measure';
-import { alphaFor, type Band, type Img, psf, pupil } from '../src/tools/focus-mask/optics';
+import { bin, seeing } from '../src/tools/focusing-mask/camera';
+import { starBands } from '../src/tools/focusing-mask/color';
+import { fft2d } from '../src/tools/focusing-mask/fft2';
+import { type Mask, type Scope, transmit } from '../src/tools/focusing-mask/mask';
+import { bahtinovGain, fitBahtinov } from '../src/tools/focusing-mask/measure';
+import { alphaFor, type Band, type Img, psf, pupil } from '../src/tools/focusing-mask/optics';
 
 const OPEN: Scope = { obs: 0, vanes: 0, vw: 0 };
 const NONE: Mask = { kind: 'none', p: 0.1, th: 0, duty: 0.5, bar: 0, rot: 0, holes: 3, hd: 0.3, hr: 0.6 };
