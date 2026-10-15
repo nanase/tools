@@ -51,7 +51,7 @@ const related = [...pub.filter((t) => t.c === 'デジタルフィルタ'), ...pu
             <g id="z-cur"></g>
           </svg>
         </div>
-        <div class="sbar rdbar" id="z-rd"></div>
+        <div class="sbar rdbar" data-ph="極 p12 共役の対 r 0.9999 θ −123.45° f 12.34 kHz Q 1234"><span class="rd" id="z-rd"></span></div>
         <p class="msg er z-msg" id="z-msg" aria-live="polite"></p>
         <div class="ptab">
           <ChoiceRow k="pre" name="プリセット" sub="よく使う配置" choices={PRESETS.map((p) => [p.v, p.name, p.t] as const)} value={PRESET0} layout="chips" />
@@ -127,7 +127,7 @@ const related = [...pub.filter((t) => t.c === 'デジタルフィルタ'), ...pu
             <g id="fr-axes"></g>
           </svg>
         </div>
-        <div class="sbar rdbar" id="fr-rd"></div>
+        <div class="sbar rdbar" data-ph="CUR 12.34 kHz |H| −123.45 dB ∠H −180.0° τ −123.4 S"><span class="rd" id="fr-rd"></span></div>
         <More id="g-fr" title="表示の設定"><div class="ana2">
           <div class="ptab"><ChoiceRow k="fx" name="横軸" sub="線形なら単位円の角度と同じ並び" choices={[['lin', '線形'], ['log', '対数']]} value="lin" /></div>
           <div class="ptab"><ParamRow d={prm('bot')} /></div>
@@ -162,7 +162,7 @@ const related = [...pub.filter((t) => t.c === 'デジタルフィルタ'), ...pu
             <g id="im-axes"></g>
           </svg>
         </div>
-        <div class="sbar rdbar"><span class="stag rd" id="im-rd"></span></div>
+        <div class="sbar rdbar" data-ph="CUR n = 1023 h = −0.123456"><span class="rd" id="im-rd"></span></div>
         <More id="g-imp" title="表示の設定"><div class="ptab">
           <ChoiceRow k="len" sym="<i>L</i>" nm="L" name="表示長" sub="インパルス応答のグラフの 8 div に入れるサンプル数" choices={LENS.map((v) => [v, String(v)] as const)} value={L0} layout="chips" />
         </div></More>

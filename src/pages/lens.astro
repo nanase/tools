@@ -60,16 +60,16 @@ const related = [
       </Panel>
 
       <Panel hid="hd-sec" title="レンズの断面と光線" class="a-sec">
-        <div slot="aux" class="seg" id="p-sw" role="group" aria-label="光線の波長"><button type="button" data-v="spec" aria-pressed="true" title="h・g・F・e・d・C・r 線（405〜707 nm）の 7 波長で描く">可視光</button><button type="button" data-v="d" aria-pressed="false" title="d 線（587.6 nm）だけで描く">d 線</button></div>
+        <div slot="aux" class="seg" id="p-sw" role="group" aria-label="光線の波長"><button type="button" data-v="spec" aria-pressed="true" title="400〜700 nm の可視光（20 nm ごとの 16 波長）を、光として足し合わせて描く">可視光</button><button type="button" data-v="d" aria-pressed="false" title="d 線（587.6 nm）だけで描く">d 線</button></div>
         <div class="sbar">
           <span class="stag sec-d" hidden><i class="sw" aria-hidden="true"></i>CH1 軸上の光束</span>
           <span class="stag sec-d" hidden><i class="sw c2" aria-hidden="true"></i>CH2 隅への光束</span>
           <span class="stag sec-d" hidden>λ <b>587.6 nm</b></span>
-          <span class="stag sec-s"><i class="sw spec" aria-hidden="true"></i>λ <b>405〜707 nm</b>（h・g・F・e・d・C・r 線）</span>
+          <span class="stag sec-s"><i class="sw spec" aria-hidden="true"></i>λ <b>400〜700 nm</b>（印は h・g・F・e・d・C・r 線）</span>
           <span class="stag" id="sec-st"></span>
         </div>
-        <div class="scope">
-          <svg viewBox={`0 0 ${SEC.w} ${SEC.h}`} id="sec" role="img" aria-label="レンズの断面図"></svg>
+        <div class="scope lsk">
+          <div class="lsw"><canvas id="sec-c" aria-hidden="true"></canvas><svg viewBox={`0 0 ${SEC.w} ${SEC.h}`} id="sec" role="img" aria-label="レンズの断面図"></svg></div>
         </div>
       </Panel>
 
@@ -81,7 +81,7 @@ const related = [
           <span class="stag"><i class="sw wl-c" aria-hidden="true"></i>C 656 nm</span>
           <span class="stag" id="ab-sc"></span>
         </div>
-        <div class="scope">
+        <div class="scope lsk">
           <svg viewBox={`0 0 ${ABR.w} ${ABR.h}`} id="abr" role="img" aria-label="収差の図"></svg>
         </div>
         <dl class="metrics seid">

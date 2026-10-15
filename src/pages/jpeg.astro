@@ -22,6 +22,14 @@ const related = [
   ...TOOLS.filter((t) => t.c !== CAT && !t.s && !NEAR.includes(t.id)),
 ];
 const C64 = Array.from({ length: 64 }, (_, i) => i);
+/** 段 3〜7 の読み値の最も長い例（読み値が変わっても段の高さを保つ） */
+const RD_PH: Record<string, string> = {
+  '3': 'f(7, 7) = 255（−128 で −128）',
+  '4': 'DC −1024.00 = 8 × (−128.00 − 128)',
+  '5': 'Q(7, 7) = 255',
+  '6': '−1024.00 / 255 = −4.016 → −4',
+  '7': '(7, 7) = 255（差 −255）',
+};
 /** 8×8 の数値の表（中身は client.ts が入れる） */
 const mx = (id: string, label: string) => ({ id, label });
 const MX = {
@@ -91,7 +99,7 @@ const MX = {
           <canvas id="cv-img" width={512} height={384}></canvas>
           <svg class="ov" id="ov-img" viewBox="0 0 512 384" preserveAspectRatio="none" aria-hidden="true"><rect class="zr" id="ov-zr"/><rect class="sel o" id="ov-so"/><rect class="sel i" id="ov-si"/></svg>
         </div>
-        <div class="sbar rdbar"><span class="stag rd" id="iv-rd"></span></div>
+        <div class="sbar rdbar" data-ph="1023, 1023 · 元 255 255 255 · 復号 255 255 255 · 12 bit"><span class="rd" id="iv-rd"></span></div>
         <div class="zm">
           <figure><figcaption>元</figcaption><div class="zw" data-z="0"><canvas id="cv-z0" width="32" height="32"></canvas><svg class="ov zg" id="ov-z0" viewBox="0 0 32 32" aria-hidden="true"></svg></div></figure>
           <figure><figcaption id="zc1">復号</figcaption><div class="zw" data-z="1"><canvas id="cv-z1" width="32" height="32"></canvas><svg class="ov zg" id="ov-z1" viewBox="0 0 32 32" aria-hidden="true"></svg></div></figure>
@@ -118,7 +126,7 @@ const MX = {
           <h3 id="st1"><span class="no">1</span>画素（RGB）</h3>
           <p class="cap" id="cap1"></p>
           <div class="pic mcu"><canvas id="cv-mcu" width="16" height="16"></canvas><svg class="ov" id="ov-mcu" viewBox="0 0 16 16" preserveAspectRatio="none" aria-hidden="true"></svg></div>
-          <p class="rd" id="rd1"></p>
+          <p class="rd hh" id="rd1" data-ph="(1023, 1023) R 255 G 255 B 255"></p>
         </section>
         <section class="jc" aria-labelledby="st2">
           <h3 id="st2"><span class="no">2</span>YCbCr と色差の間引き</h3>
@@ -126,7 +134,7 @@ const MX = {
           <div class="ycc">
             {['Y', 'Cb', 'Cr'].map((n, i) => <button type="button" class="pic yc" data-c={i} aria-pressed={i === 0 ? 'true' : 'false'} title={`${n} の成分を選ぶ`}><span class="pv"><canvas id={`cv-c${i}`} width="16" height="16"></canvas><svg class="ov" id={`ov-c${i}`} viewBox="0 0 16 16" preserveAspectRatio="none" aria-hidden="true"></svg></span><span class="lb">{n}</span></button>)}
           </div>
-          <p class="rd" id="rd2"></p>
+          <p class="rd hh" id="rd2" data-ph="Y 255 Cb 255 Cr 255（間引く前 255.0・255.0）"></p>
         </section>
         {[
           ['3', '8×8 のブロック', MX.px, 'gray'],
@@ -141,14 +149,14 @@ const MX = {
             <div class="mxw">
               <div class="mx" id={(m as { id: string }).id} data-kind={kind} role="img" aria-label={(m as { label: string }).label}>{C64.map(() => <span></span>)}</div>
             </div>
-            <p class="rd" id={`rd${no}`}></p>
+            <p class="rd hh" id={`rd${no}`} data-ph={RD_PH[no as string]}></p>
           </section>
         ))}
         <section class="jc" aria-labelledby="st8">
           <h3 id="st8"><span class="no">8</span>DCT の基底</h3>
           <p class="cap">64 個の模様の重みが DCT 係数。左上が直流、右・下ほど細かい</p>
           <div class="pic bas"><canvas id="cv-bas" width="274" height="274"></canvas><svg class="ov" viewBox="0 0 274 274" aria-hidden="true"><rect class="bh" id="bas-h"/></svg></div>
-          <p class="rd" id="rd8"></p>
+          <p class="rd hh" id="rd8" data-ph="基底 (7, 7) · 重み −1024.00"></p>
         </section>
         <section class="jc wide" aria-labelledby="st9">
           <h3 id="st9"><span class="no">9</span>ジグザグ走査</h3>
@@ -157,7 +165,7 @@ const MX = {
             <svg class="zzm" id="zzm" viewBox="-0.1 -0.1 8.2 8.2" role="img" aria-label="ジグザグの順路（0 でない最後の係数まで実線）"><g id="zzm-c">{C64.map((i) => <rect x={i % 8} y={i >> 3} width="1" height="1"/>)}</g><path class="pb" id="zz-b"/><path class="pa" id="zz-a"/><circle class="p0" cx="0.5" cy="0.5" r="0.14"/></svg>
             <div class="zzs" id="zzs" role="img" aria-label="ジグザグ順の係数">{C64.map((k) => <span><small>{k}</small><b></b></span>)}</div>
           </div>
-          <p class="rd" id="rd9"></p>
+          <p class="rd hh" id="rd9" data-ph="ジグザグ 63 番 = (7, 7) · −1024"></p>
         </section>
         <section class="jc wide" aria-labelledby="st10">
           <h3 id="st10"><span class="no">10</span>記号とハフマン符号</h3>

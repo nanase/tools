@@ -87,7 +87,7 @@ const related = [
             <g id="fr-axes"></g>
           </svg>
         </div>
-        <div class="sbar rdbar"><span class="stag rd" id="fr-rd"></span></div>
+        <div class="sbar rdbar" data-ph="CUR 22.05 kHz −120.00 dB −1234.5°"><span class="rd" id="fr-rd"></span></div>
         <More id="g-fr" title="表示の設定"><div class="ana2">
           <div class="ptab"><ChoiceRow k="ys" sym="<i>A</i>" nm="A" name="振幅の縦軸" sub="通過域: 0 dB のまわりを拡大してリップルを見る" choices={[['db', 'dB'], ['lin', '線形'], ['pass', '通過域']]} value="db" /></div>
           <div class="ptab"><ChoiceRow k="c2" sym="" nm="CH2" name="CH2 の表示" sub="直線位相なので、群遅延はどの周波数でも (N − 1)/2 サンプル" choices={[['ph', '位相'], ['gd', '群遅延']]} value="ph" /></div>
@@ -111,7 +111,7 @@ const related = [
             <g id="im-axes"></g>
           </svg>
         </div>
-        <div class="sbar rdbar"><span class="stag rd" id="im-rd"></span></div>
+        <div class="sbar rdbar" data-ph="CUR n = 1023 h = −0.123456 hd = −0.123456 w = 0.123456"><span class="rd" id="im-rd"></span></div>
       </Panel>
 
       <Panel hid="hd-out" title="計算結果" class="a-out">
@@ -144,7 +144,7 @@ const related = [
           <g id="z-axes"></g>
         </svg>
       </div>
-      <div class="sbar rdbar"><span class="stag rd" id="z-rd"></span></div>
+      <div class="sbar rdbar" data-ph="ZERO z = −0.9999 − j0.99999 |z| = 1.000 ∠ −177.0° → 23.60 kHz"><span class="rd" id="z-rd"></span></div>
     </Panel>
 
     <Panel hid="hd-coef" title="係数" class="a-coef">

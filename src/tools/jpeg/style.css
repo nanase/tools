@@ -54,6 +54,8 @@
 .cap i,.rd i{font-family:var(--math);font-style:italic;font-size:1.08em}
 .rd{min-height:1.5em;font:500 12px/1.5 var(--mono);color:var(--ink-2);text-align:right;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
 .rd b{color:var(--ink);font-weight:700}
+/* 数式の字で行が高くならないようにする（読み値が変わっても段の高さを保つ） */
+.rd i{line-height:1}
 /* 画素の図（MCU、YCbCr の 3 面、基底） */
 .pic{position:relative;display:block;width:100%;padding:0;border:1px solid var(--line);background:var(--inset);line-height:0}
 .pic canvas{display:block;width:100%;height:auto;image-rendering:pixelated}

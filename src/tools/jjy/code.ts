@@ -181,6 +181,8 @@ const FIXED: Record<number, string> = {
 };
 const NAMES = { m: '分', h: '時', d: '年の通算日', y: '年（下 2 桁）', w: '曜日（日曜 = 0）' } as const;
 const UNUSED = '未使用（常にビット 0）';
+/** 意味の最も長い文（秒が進んで文が変わっても、欄の高さを保つ） */
+export const MEAN_PH = FIXED[59];
 
 /** s 秒の符号の意味。cs: コールサインの分、st: 停波の予告を送る分 */
 export function meaning(s: number, cs: boolean, st: boolean): string {

@@ -1,14 +1,12 @@
 /* カメラレンズのページだけのスタイル（共通は src/styles/site.css） */
 
-/* 波長の色（F・d・C 線）。測定の図の中だけで使う */
-:root{--wl-f:#2758c8;--wl-d:#23803a;--wl-c:#c3332b}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--wl-f:#7ea2ff;--wl-d:#6cd085;--wl-c:#ff7d70}}
-:root[data-theme="dark"]{--wl-f:#7ea2ff;--wl-d:#6cd085;--wl-c:#ff7d70}
-/* 断面図の 7 波長（h・g・F・e・d・C・r 線）。光の色に近い色相を、地の色と見分けられる明るさにした。
-   重なった所は、暗い地では光のように足して白く、明るい地では掛けて暗くし、分かれた所だけ色が見えるようにする */
-:root{--sp-h:#a12aa6;--sp-g:#3448d4;--sp-F:#0889a8;--sp-e:#2f8c35;--sp-d:#9c7a00;--sp-C:#d4471c;--sp-r:#a3152f;--sp-blend:multiply}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--sp-h:#d77ce0;--sp-g:#8c94ff;--sp-F:#3fc0dc;--sp-e:#62c866;--sp-d:#d9b43a;--sp-C:#ff7a52;--sp-r:#f0607c;--sp-blend:screen}}
-:root[data-theme="dark"]{--sp-h:#d77ce0;--sp-g:#8c94ff;--sp-F:#3fc0dc;--sp-e:#62c866;--sp-d:#d9b43a;--sp-C:#ff7a52;--sp-r:#f0607c;--sp-blend:screen}
+/* 断面と収差の図（.lsk）: 光を描くので、地はテーマによらず黒にし、図の中は暗いテーマの色で描く。
+   波長の色は F・d・C 線（収差の図）と、断面の拡大図の印の h・g・F・e・d・C・r 線 */
+.lsk{
+  --screen:#000;--grid:#1c2428;--grid-2:#3b474e;--screen-ink:#aab3b8;--ink:#e6e8e4;--ch1:#f2c230;--ch2:#52c4dd;
+  --wl-f:#7ea2ff;--wl-d:#6cd085;--wl-c:#ff7d70;
+  --sp-h:#d77ce0;--sp-g:#8c94ff;--sp-F:#3fc0dc;--sp-e:#62c866;--sp-d:#d9b43a;--sp-C:#ff7a52;--sp-r:#f0607c;
+}
 
 /* 並び: スマホは 映像 → レンズ → 見取り図 → 計算結果 → 断面 → 収差 → レンズデータ → 式。
    PC は左の広い列に 映像・断面・収差、右の列に レンズ・見取り図・計算結果、下に全幅で レンズデータ・式。
@@ -87,18 +85,18 @@
 .ls-ideal{stroke:var(--screen-ink);stroke-width:1.6}
 .ls-ideal-h{fill:var(--screen-ink)}
 .ls-sen{stroke:var(--ink);stroke-width:3}
-.ls-r1,.ls-r2{fill:none;stroke-width:1;stroke-linejoin:round}
-.ls-r1{stroke:var(--ch1)}
-.ls-r2{stroke:var(--ch2)}
 .ls-sen-i{stroke:var(--ink);stroke-width:2;opacity:.6}
-.ls-w{fill:none;stroke-width:1;stroke-linejoin:round;mix-blend-mode:var(--sp-blend)}
+/* 光（light.ts が canvas に描く）。SVG のレンズ・絞り・文字はその上に重ねる */
+.lsw{position:relative}
+.lsw canvas{position:absolute;inset:0;display:block;width:100%;height:100%}
+.lsw svg{position:relative}
 .scope text.ls-lab{paint-order:stroke;stroke:var(--screen);stroke-width:3px;stroke-linejoin:round}
 .ls-tk{stroke:var(--screen-ink);stroke-width:2}
 .s-h{stroke:var(--sp-h)}.s-g{stroke:var(--sp-g)}.s-F{stroke:var(--sp-F)}.s-e{stroke:var(--sp-e)}.s-d{stroke:var(--sp-d)}.s-C{stroke:var(--sp-C)}.s-r{stroke:var(--sp-r)}
-.sw.spec{width:42px;background:linear-gradient(90deg,var(--sp-h) 0 14.3%,var(--sp-g) 0 28.6%,var(--sp-F) 0 42.9%,var(--sp-e) 0 57.1%,var(--sp-d) 0 71.4%,var(--sp-C) 0 85.7%,var(--sp-r) 0)}
+.sw.spec{width:42px;background:linear-gradient(90deg,#6a00b8,#2438ff,#00a2ff,#00c86a,#c8d800,#ff8c00,#f01800,#900000)}
 
 /* 収差の図 */
-.sw.wl-f{background:var(--wl-f)}.sw.wl-d{background:var(--wl-d)}.sw.wl-c{background:var(--wl-c)}
+.sw.wl-f{background:#4f7fe8}.sw.wl-d{background:#3fa95a}.sw.wl-c{background:#e0544a}
 .sp-f{fill:var(--wl-f)}.sp-d{fill:var(--wl-d)}.sp-c{fill:var(--wl-c)}
 .cv{fill:none;stroke-width:1.6;stroke-linejoin:round}
 .cv.sp-f{stroke:var(--wl-f)}.cv.sp-d{stroke:var(--wl-d)}.cv.sp-c{stroke:var(--wl-c)}

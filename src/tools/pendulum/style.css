@@ -31,6 +31,7 @@
 .sbar i.v{font-family:var(--math);font-style:italic;font-size:1.1em}
 .sbar .wn{color:var(--warn);font-weight:700}
 #st-th,#st-x,#st-t{font-variant-numeric:tabular-nums}
+#st-mode{text-align:left}
 
 /* 台車と振子の図。図の中はスクロールの位置合わせ（scroll anchoring）の基準にしない。力の数値（.pf-ft）が基準に
    選ばれると、力が小さくて数値を消すたびに文字の位置が図の左上へ飛び、ブラウザがその分だけ画面をスクロールし直して、

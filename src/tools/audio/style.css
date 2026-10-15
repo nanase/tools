@@ -46,5 +46,4 @@
 .pbar{display:flex;align-items:center;gap:8px}
 .scope svg{touch-action:pan-y}
 .cur{stroke:var(--screen-ink);stroke-width:1}
-.rdbar .rd{white-space:pre}
 .stag.st b{display:inline-block;min-width:5.2em}

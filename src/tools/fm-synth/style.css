@@ -72,5 +72,4 @@
 /* 表示窓: カーソル */
 .scope svg{touch-action:pan-y}
 .cur{stroke:var(--screen-ink);stroke-width:1}
-.rdbar .rd{white-space:pre}
 .t1.sp{stroke-width:1.6}

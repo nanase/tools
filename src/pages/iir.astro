@@ -99,7 +99,7 @@ const pzSvg = (id: string, label: string) =>
             <g id="fr-axes"></g>
           </svg>
         </div>
-        <div class="sbar rdbar"><span class="stag rd" id="fr-rd"></span></div>
+        <div class="sbar rdbar" data-ph="CUR 22.05 kHz CH1 −123.45 dB CH2 −123.45 dB"><span class="rd" id="fr-rd"></span></div>
         <More id="g-fr" title="表示の設定"><div class="ana2">
           <div class="ptab">
             <ChoiceRow k="cmp" name="比べるもの" sub="CH2 に重ねるもの（極と零点・時間応答にも出す）" choices={CMPS} value="ana" layout="chips" msg />
@@ -130,7 +130,7 @@ const pzSvg = (id: string, label: string) =>
             <g id="tm-axes"></g>
           </svg>
         </div>
-        <div class="sbar rdbar"><span class="stag rd" id="tm-rd"></span></div>
+        <div class="sbar rdbar" data-ph="CUR n = 1023 CH1 −0.0456805 CH2 −0.0457254"><span class="rd" id="tm-rd"></span></div>
         <More id="g-tm" title="表示の設定"><div class="ptab">
           <ChoiceRow k="len" sym="<i>L</i>" nm="L" name="表示長" sub="時間応答のグラフの 8 div に入れるサンプル数" choices={LENS.map((v) => [v, String(v)] as const)} value={L0} layout="chips" />
         </div></More>

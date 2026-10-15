@@ -73,7 +73,7 @@ const chain = (a: number) =>
               <g id="w-axes"></g>
             </svg>
           </div>
-          <div class="sbar rdbar"><span class="stag rd" id="w-rd"></span></div>
+          <div class="sbar rdbar" data-ph="t 12.34 ms   CH1 −0.123"><span class="rd" id="w-rd"></span></div>
           <More id="g-yt" title="表示の設定"><div class="ana2">
             <div class="ptab"><ChoiceRow k="per" name="表示する周期" sub="基本周波数の何周期ぶんを表示窓の幅に入れるか" choices={PERIODS.map((v) => [v, String(v)] as const)} value={2} /></div>
             <div class="ptab"><ChoiceRow k="rng" name="表示範囲" sub="中心から端までの振幅（フルスケールを 1 とする）" choices={RANGES.map((v) => [v, `±${v}`] as const)} value={1} /></div>
@@ -95,7 +95,7 @@ const chain = (a: number) =>
               <g id="s-axes"></g>
             </svg>
           </div>
-          <div class="sbar rdbar"><span class="stag rd" id="s-rd"></span></div>
+          <div class="sbar rdbar" data-ph="f 12.34 kHz   CH1 −123.45 dBFS"><span class="rd" id="s-rd"></span></div>
           <More id="g-sp" title="表示の設定"><div class="ptab">
             <ChoiceRow k="hm" name="横軸の範囲" sub="基本周波数の何倍までを表示窓の幅に入れるか" choices={HMAX.map((v) => [v, `${v} 倍`] as const)} value={16} />
           </div></More>

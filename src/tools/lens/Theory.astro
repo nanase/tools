@@ -150,8 +150,13 @@ const alb = (a: string, r: string) => `<math><mn>${a}</mn><mo>÷</mo><msup><mn>$
   <li><b>非点収差の曲線</b>: 主光線のそばの子午・球欠の光線が集まる位置の、センサーからのずれ</li>
 </ul>
 
-<h3>断面図の 7 波長</h3>
-<p>断面図の光線は、可視光の 7 本の輝線で追跡します。</p>
+<h3>断面図の光</h3>
+<p>断面図の光線は、可視光の 400〜700 nm を 20 nm ごとに分けた 16 の波長で追跡し、光として描きます。図の地は、テーマによらず黒です。</p>
+<ul class="tl">
+  <li><b>色</b>: 波長ごとの色は、CIE 1931 の等色関数（多峰のガウス関数による近似<Fragment set:html={rf(8)} />）から求めた sRGB の色。どの波長も同じ強さの光（等エネルギーの白）を足すと白になるようにそろえる。sRGB に収まらない単色の色は、輝度を保って白へ寄せる</li>
+  <li><b>明るさ</b>: 光束 1 つを、瞳を等しい間隔に分けた 41 本の光線で追跡し、隣り合う 2 本の間を光で埋める。2 本の間を通る光の量は一定（エネルギーの保存）なので、光線が集まる所ほど明るい。画素ごとに足し合わせ、露出 <math><mn>1</mn><mo>−</mo><msup><mi>e</mi><mrow><mo>−</mo><mi>x</mi></mrow></msup></math> で表示する</li>
+</ul>
+<p>波長が重なる所は白く、分かれた所だけ色が見えます。拡大図の印は、次の 7 本の輝線の位置です。</p>
 <div class="tt-w">
   <table class="tt">
     <thead><tr><th scope="col">輝線</th><th scope="col" class="num">波長 (nm)</th></tr></thead>
@@ -166,7 +171,7 @@ const alb = (a: string, r: string) => `<math><mn>${a}</mn><mo>÷</mo><msup><mn>$
     </tbody>
   </table>
 </div>
-<p>物体の側ではどの波長も同じ光線で、面で屈折するたびに、波長で違う屈折率のために分かれます。レンズ全体の図ではこの差が 1 画素に満たないことが多いので、下にセンサーの付近を拡大した図を置きます。拡大の倍率は縦と横で別々です。</p>
+<p>物体の側ではどの波長も同じ光線で、面で屈折するたびに、波長で違う屈折率のために分かれます。レンズ全体の図ではこの差が 1 画素に満たないことが多いので、下にセンサーの付近を拡大した図を置きます。拡大の倍率は縦と横で別々です。「d 線」に切り替えると、d 線だけで追跡し、軸上の光束を CH1、隅への光束を CH2 の色で描きます。</p>
 <ul class="tl">
   <li><b>中心の図の印</b>: 波長ごとの近軸のピントの位置（軸上色収差）</li>
   <li><b>隅の図の印</b>: 波長ごとの主光線がセンサーに当たる高さ（倍率色収差）</li>
@@ -270,4 +275,5 @@ const alb = (a: string, r: string) => `<math><mn>${a}</mn><mo>÷</mo><msup><mn>$
   <li id="thy-r5"><span class="rf-for">ザイデルの和と波面収差の係数、色収差の和</span><span class="rf-src">W. T. Welford, <i>Aberrations of Optical Systems</i>, Adam Hilger, 1986, 8 章・10.5 節</span></li>
   <li id="thy-r6"><span class="rf-for">エアリー円盤のガウス近似</span><span class="rf-src">B. Zhang, J. Zerubia and J.-C. Olivo-Marin, “Gaussian approximations of fluorescence microscope point-spread function models,” <i>Appl. Opt.</i>, vol. 46, no. 10, pp. 1819–1829, 2007</span></li>
   <li id="thy-r7"><span class="rf-for">天体の半径・距離・扁平率・反射率、衛星の軌道、土星と天王星の環の半径・幅</span><span class="rf-src">NASA Space Science Data Coordinated Archive, <i>Planetary Fact Sheets</i>（Moon・Venus・Mars・Jupiter・Saturn・Uranus・Jovian Satellite・Saturnian Rings・Uranian Rings）</span></li>
+  <li id="thy-r8"><span class="rf-for">断面図の光の色（等色関数の近似）</span><span class="rf-src">C. Wyman, P.-P. Sloan and P. Shirley, “Simple Analytic Approximations to the CIE XYZ Color Matching Functions,” <i>J. Comput. Graph. Tech.</i>, vol. 2, no. 2, pp. 1–11, 2013</span></li>
 </ol>

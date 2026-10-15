@@ -545,7 +545,13 @@ const meter = (k: string, v: number, lo: number, hi: number, okLo: number, okHi:
   $(`#bm-${k}-ok`).setAttribute('width', Math.max(0, X(okHi) - X(okLo)).toFixed(1));
   $(`#bm-${k}-bar`).setAttribute('width', X(v).toFixed(1));
   $(`#bm-${k}-nd`).setAttribute('d', `M${X(v).toFixed(1)} 0V10`);
-  txt(`#bm-${k}-v`, text);
+  digits(k, text);
+};
+/** 弓の状態の値。小数点の位置を 4 つの行で揃えるため、整数部と小数部を別の欄に書く */
+const digits = (k: string, text: string) => {
+  const d = text.indexOf('.');
+  txt(`#bm-${k}-i`, text.slice(0, d));
+  txt(`#bm-${k}-f`, text.slice(d));
 };
 function meters(f: Frame | null, v: View): void {
   const beta = v.beta,
@@ -569,7 +575,7 @@ function meters(f: Frame | null, v: View): void {
   const pos = f ? f.pos : POS0,
     x = 287 - (287 - 11) * (pos / HAIR);
   $('#bm-p-nd').setAttribute('d', `M${x.toFixed(1)} 0V10`);
-  txt('#bm-p-v', pos.toFixed(2));
+  digits('p', pos.toFixed(2));
 }
 /** 弾いている音の表示（図の左上。弦ごとに 1 行、高い弦から） */
 function noteBar(f: Frame | null): void {

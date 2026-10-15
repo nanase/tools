@@ -108,3 +108,4 @@ kbd{font:500 11px var(--mono);padding:0 4px;border:1px solid var(--line-2);borde
 /* 計算結果の補足（共通の .thy-body>p の幅の上限を打ち消す） */
 .a-out .thy-body>p.res-aux{max-width:none;margin:0 0 10px}
 .cut-tag{color:var(--warn)}
+#pv-st{text-align:left}

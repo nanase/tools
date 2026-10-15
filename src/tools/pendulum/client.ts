@@ -370,7 +370,8 @@ function status(): void {
   txt('#st-th', `${signed(th / D2R, 1)}°`);
   txt('#st-x', `${signed(s[0] * 1000, 1)} mm`);
   if (sim.hit) lastHit = performance.now();
-  $('#st-hit').hidden = performance.now() - lastHit > 300;
+  /* 隠しても幅を残す（ほかの値の位置を動かさない） */
+  $('#st-hit').style.visibility = performance.now() - lastHit > 300 ? 'hidden' : '';
   if (sim.mode !== lastMode) {
     if (lastMode)
       txt(

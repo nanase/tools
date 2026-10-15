@@ -343,9 +343,21 @@ a.unit:hover h3{text-decoration:underline;text-decoration-color:var(--ink-3);tex
 .sbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin-bottom:8px;font:500 12px/1.3 var(--mono);color:var(--ink-2)}
 .sbar b{color:var(--ink);font-weight:700}
 .stag{display:inline-flex;align-items:center;gap:6px}
-/* カーソル位置の読み値: 表示窓の下に右寄せ（<div class="sbar rdbar"><span class="stag rd">） */
-.rdbar{justify-content:flex-end;margin:8px 0 0}
+/* カーソル位置の読み値: 表示窓の下に右寄せ（<div class="sbar rdbar" data-ph="…"><span class="rd">）。
+   data-ph に最も長い読み値の例を書き、見えない文字として同じ升に置いて、読み値が空でも高さを保つ */
+.rdbar{display:grid;justify-content:end;min-height:1.3em;margin:8px 0 0}
+.rdbar::before,.rdbar>.rd{grid-area:1/1;white-space:pre-wrap;text-align:right}
+.rdbar::before{content:attr(data-ph);visibility:hidden}
 .rdbar .rd{font-variant-numeric:tabular-nums}
+/* 動いている間に変わる文字の幅・高さを保つ。data-ph に最も長い文字の例を書き、見えない文字として重ねる。
+   .hw は幅（1 行の値。右寄せ）、.hh は高さ（折り返す文。重ねる文字を幅 0 の float にする） */
+.hw{display:inline-block;text-align:right}
+.hw::after{content:attr(data-ph);display:block;height:0;overflow:hidden;visibility:hidden}
+/* 空のときも 1 行の高さを持たせる（幅 0 の箱で行を作る。U+200B は字体によって幅を持つので使わない） */
+.hw::before{content:'';display:inline-block}
+/* .m-sub.hh: ページごとの .m-sub{display:block} より強くする */
+.hh,.m-sub.hh{display:flow-root}
+.hh::before{content:attr(data-ph);float:left;width:100%;margin-right:-100%;visibility:hidden}
 .sw{display:inline-block;width:14px;height:3px;border-radius:1px;background:var(--ch1)}
 .sw.c2{background:var(--ch2)}
 .tg{display:inline-flex;align-items:center;gap:6px;min-height:30px;padding:0 10px;border:1px solid var(--line-2);border-radius:4px;background:var(--surface);color:var(--ink);font:500 12px/1 var(--mono);cursor:pointer}
