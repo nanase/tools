@@ -22,7 +22,8 @@
 /* 選んだ点の半径・角度には既定値がない（client.ts）ので、吹き出しの「既定値」のボタンを出さない */
 #p-r .sc-df,#p-th .sc-df{display:none}
 /* 読み値は項目ごとに折り返す */
-.rdbar .rd{display:inline-block;white-space:nowrap}
+.rdbar .stag{white-space:nowrap}
+.rdbar .stag+.stag{margin-left:14px}
 .z-msg:empty,.snd-msg:empty{display:none}
 
 /* z 平面（正方形の表示窓）。点の上で始めたドラッグはスクロールさせない（client.ts） */

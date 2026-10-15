@@ -103,13 +103,13 @@ const METERS = [
               <div class="bs-r" title={m.title}>
                 <span class="bs-n" set:html={m.name} />
                 <div class="bs-m"><svg viewBox="0 0 300 10" preserveAspectRatio="none" aria-hidden="true"><rect class="track" x="0" y="0" width="300" height="10"/><rect class="ok" id={`bm-${m.k}-ok`} x="0" y="0" width="0" height="10"/><rect class="bar" id={`bm-${m.k}-bar`} x="0" y="3" width="0" height="4"/><path class="nd" id={`bm-${m.k}-nd`}/></svg><div class="bs-t">{m.ticks.map((t) => <span>{t}</span>)}</div></div>
-                <span class="bs-v"><span id={`bm-${m.k}-v`}></span><small>{m.unit}</small></span>
+                <span class="bs-v"><span id={`bm-${m.k}-i`}></span><span id={`bm-${m.k}-f`}></span><small>{m.unit}</small></span>
               </div>
             ))}
             <div class="bs-r" title="弓の毛の元（毛箱の側）から、弦に触れている点までの長さ。演奏者から見た向きで、元が右">
               <span class="bs-n">弓の位置</span>
               <div class="bs-m"><svg viewBox="0 0 300 10" preserveAspectRatio="none" aria-hidden="true"><path class="bw-st" d="M288 1.5Q150 4.5 8 2"/><path class="bw-hr" d="M288 8H10"/><rect class="bw-fr" x="287" y="0" width="13" height="10"/><path class="bw-fr" d="M12 0L0 3L2 10L11 10Z"/><path class="nd" id="bm-p-nd"/></svg><div class="bs-t"><span>先 0.65</span><span>元</span></div></div>
-              <span class="bs-v"><span id="bm-p-v"></span><small>m</small></span>
+              <span class="bs-v"><span id="bm-p-i"></span><span id="bm-p-f"></span><small>m</small></span>
             </div>
           </div>
         </div>
@@ -139,7 +139,7 @@ const METERS = [
           <ParamRow d={outVol(VOL0)} />
         </div>
         <div class="pbtns">
-          <p class="pl-bar" id="pl-bar" aria-live="off"></p>
+          <p class="pl-bar hw" id="pl-bar" data-ph="000 / 000 小節" aria-live="off"></p>
           <button type="button" class="tg" id="pauseBtn" title="演奏を一時停止する・続きから再開する（スマートフォンとタブレットでは、画面が隠れると自動で一時停止する）" disabled>一時停止</button>
           <button type="button" class="tg" id="liftBtn" title="弓を弦から離す（弦は鳴り残る）" disabled>弓を離す</button>
           <button type="button" class="tg" id="muteBtn" title="鳴っている弦をすべて止める（演奏も止める）">すべて止める</button>
@@ -207,7 +207,7 @@ const METERS = [
             <g id="b-axes"></g>
           </svg>
         </div>
-        <div class="sbar rdbar"><span class="stag rd" id="b-rd"></span></div>
+        <div class="sbar rdbar" data-ph="1.76 kHz  CH1 −33.4 dB  CH2 −20.6 dB"><span class="rd" id="b-rd"></span></div>
       </Panel>
 
       <Panel hid="hd-room" title="残響" class="a-room">
@@ -227,9 +227,9 @@ const METERS = [
         <div class="seg wv-sw" id="p-ov" role="group" aria-label="表示"><button type="button" data-v="yt" aria-pressed="true" title="1 m 先の音圧の時間変化（残響を除く）">波形</button><button type="button" data-v="sp" aria-pressed="false" title="周波数ごとの大きさ（直前の 0.17 秒）">スペクトラム</button></div>
         <div id="v-yt">
           <div class="sbar">
-            <span class="stag"><i class="sw" aria-hidden="true"></i>CH1 音圧 <b id="w-vd"></b>/div</span>
-            <span class="stag">H <b id="w-hd"></b>/div</span>
-            <span class="stag" id="w-st"></span>
+            <span class="stag"><i class="sw" aria-hidden="true"></i>CH1 音圧 <b class="hw" id="w-vd" data-ph="0.005 Pa"></b>/div</span>
+            <span class="stag">H <b class="hw" id="w-hd" data-ph="500 ms"></b>/div</span>
+            <span class="stag hw wst" id="w-st" data-ph="PEAK 999 mPa"></span>
           </div>
           <div class="scope">
             <svg viewBox="-50 -14 462 194" id="w-svg" role="img" aria-label="音の波形">

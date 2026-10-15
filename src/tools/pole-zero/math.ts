@@ -85,7 +85,10 @@ export function geoMath(g: GeoSum): string {
         EQ,
         mdeg(g.sz),
         MI,
-        g.sp < 0 ? par(mdeg(g.sp)) : mdeg(g.sp),
+        /* 括弧がないときも、幅 0 の見えない括弧で行の高さを同じにする（カーソルを動かしても下の表が上下しない） */
+        g.sp < 0
+          ? par(mdeg(g.sp))
+          : `${mdeg(g.sp)}<mpadded width="0"><mphantom>${par(mdeg(g.sp))}</mphantom></mpadded>`,
         EQ,
         mdeg(ph),
         Math.abs(wr - ph) > 1e-9 ? EQUIV + mdeg(wr) : '',

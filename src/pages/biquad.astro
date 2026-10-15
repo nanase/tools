@@ -75,7 +75,7 @@ const related = [
             <g id="fr-axes"></g>
           </svg>
         </div>
-        <div class="sbar rdbar"><span class="stag rd" id="fr-rd"></span></div>
+        <div class="sbar rdbar" data-ph="CUR 22.05 kHz −120.00 dB −180.0°"><span class="rd" id="fr-rd"></span></div>
         <More id="g-fr" title="表示の設定"><div class="ana2">{row(['n', 'bot']).map((d) => <div class="ptab"><ParamRow d={d} /></div>)}</div></More>
       </Panel>
 
@@ -95,7 +95,7 @@ const related = [
             <g id="im-axes"></g>
           </svg>
         </div>
-        <div class="sbar rdbar"><span class="stag rd" id="im-rd"></span></div>
+        <div class="sbar rdbar" data-ph="CUR n = 1023 h = −0.123456"><span class="rd" id="im-rd"></span></div>
         <More id="g-imp" title="表示の設定"><div class="ptab">
           <ChoiceRow k="len" sym="<i>L</i>" nm="L" name="表示長" sub="インパルス応答のグラフの 8 div に入れるサンプル数（解析長 N まで）" choices={LENS.map((v) => [v, String(v)] as const)} value={L0} layout="chips" msg />
         </div></More>

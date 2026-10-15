@@ -98,7 +98,7 @@ const cx = (re: number, im: number): string =>
     ? sig(re, 4, true)
     : `${re === 0 ? '' : `${sig(re, 4, true)} ${im < 0 ? '−' : '+'} `}${re === 0 && im < 0 ? '−' : ''}j${sig(Math.abs(im), 4, true)}`;
 /** 読み値の 1 項目（狭い画面では項目ごとに折り返す） */
-const rd = (s: string) => `<span class="stag rd">${s}</span>`;
+const rd = (s: string) => `<span class="stag">${s}</span>`;
 const stabText: Record<Stab, string> = { stable: '安定', marginal: '安定限界', unstable: '不安定' };
 
 /* ---------- 点の並び（保存する） ---------- */
@@ -281,7 +281,26 @@ function drawGeo(): void {
   }
   html('#geo-tab tbody', rows || '<tr><td colspan="4">極も零点もありません</td></tr>');
   html('#geo-eq', geoMath({ k: A.k, pz, pp, sz, sp }));
+  holdGeoEq();
   html('#geo-aux', `<i>ω</i> = ${wPi(w)}（${fmtR(fw(w), 'Hz', 4)}）`);
+}
+/* 式の高さは数値（負の数の括弧・分数の桁）で数 px 変わる。カーソルを動かしても下の表が上下しないよう、
+   これまでの最大の高さを保つ（幅が変わったら測り直す） */
+let geoH = 0,
+  geoW = 0;
+function holdGeoEq(): void {
+  const eq = $('#geo-eq'),
+    r = eq.getBoundingClientRect();
+  if (r.width !== geoW) {
+    geoW = r.width;
+    geoH = 0;
+    eq.style.minHeight = '';
+  }
+  const h = eq.getBoundingClientRect().height;
+  if (h > geoH) {
+    geoH = h;
+    eq.style.minHeight = `${h}px`;
+  }
 }
 
 /** カーソルを動かす（z 平面・周波数特性・距離と角度だけ描き直す） */

@@ -69,7 +69,7 @@ const related = [
           <ParamRow d={outVol(VOL0)} />
         </div>
         <div class="pbtns">
-          <p class="pl-bar" id="pl-bar" aria-live="off"></p>
+          <p class="pl-bar hw" id="pl-bar" data-ph="000 / 000 小節" aria-live="off"></p>
           <button type="button" class="tg" id="pauseBtn" title="演奏を一時停止する・続きから再開する（スマートフォンとタブレットでは、画面が隠れると自動で一時停止する）" disabled>一時停止</button>
           <button type="button" class="tg" id="relBtn" title="押しているすべての鍵から手を離す（演奏は続ける）">リリース</button>
           <button type="button" class="tg" id="muteBtn" title="鳴っている弦をすべて止める（ダンパーを下ろす）">すべて止める</button>
@@ -134,7 +134,7 @@ const related = [
             <g id="b-axes"></g>
           </svg>
         </div>
-        <div class="sbar rdbar"><span class="stag rd" id="b-rd"></span></div>
+        <div class="sbar rdbar" data-ph="f 1.234 kHz   CH1 −51.9 dB   CH2 −29.0 dB"><span class="rd" id="b-rd"></span></div>
       </Panel>
 
       <Panel hid="hd-room" title="残響" class="a-room">
@@ -154,9 +154,9 @@ const related = [
         <div class="seg wv-sw" id="p-ov" role="group" aria-label="表示"><button type="button" data-v="yt" aria-pressed="true" title="1 m 先の音圧の時間変化">波形</button><button type="button" data-v="sp" aria-pressed="false" title="周波数ごとの大きさ（初めの 1.37 秒）">スペクトラム</button><button type="button" data-v="hm" aria-pressed="false" title="ハンマーが弦を押す力の時間変化">ハンマーの力</button></div>
         <div id="v-yt">
           <div class="sbar">
-            <span class="stag"><i class="sw" aria-hidden="true"></i>CH1 音圧 <b id="w-vd"></b>/div</span>
-            <span class="stag">H <b id="w-hd"></b>/div</span>
-            <span class="stag" id="w-st"></span>
+            <span class="stag"><i class="sw" aria-hidden="true"></i>CH1 音圧 <b class="hw" id="w-vd" data-ph="0.005 Pa"></b>/div</span>
+            <span class="stag">H <b class="hw" id="w-hd" data-ph="500 ms"></b>/div</span>
+            <span class="stag hw wst" id="w-st" data-ph="PEAK 999 mPa"></span>
           </div>
           <div class="scope">
             <svg viewBox="-50 -14 462 194" id="w-svg" role="img" aria-label="音の波形">
@@ -167,7 +167,7 @@ const related = [
               <g id="w-axes"></g>
             </svg>
           </div>
-          <div class="sbar rdbar"><span class="stag rd" id="w-rd"></span></div>
+          <div class="sbar rdbar" data-ph="t 12.34 ms   CH1 −1.234 Pa"><span class="rd" id="w-rd"></span></div>
           <More id="g-yt" title="表示の設定"><div class="ptab"><ChoiceRow k="span" name="表示する長さ" sub="打ってからの時間" choices={SPANS.map((v) => [v, v < 1 ? `${v * 1000} ms` : `${v} s`] as const)} value={0.2} /></div></More>
         </div>
         <div id="v-sp" hidden>
@@ -185,7 +185,7 @@ const related = [
               <g id="s-axes"></g>
             </svg>
           </div>
-          <div class="sbar rdbar"><span class="stag rd" id="s-rd"></span></div>
+          <div class="sbar rdbar" data-ph="f 1.234 kHz（12.34 倍）   CH1 −123.4 dB"><span class="rd" id="s-rd"></span></div>
           <More id="g-sp" title="表示の設定"><div class="ptab"><ChoiceRow k="fmax" name="横軸の範囲" sub="スペクトラムの右端の周波数" choices={FMAX.map((v) => [v, `${v / 1000} kHz`] as const)} value={5000} /></div></More>
         </div>
         <div id="v-hm" hidden>
@@ -203,7 +203,7 @@ const related = [
               <g id="h-axes"></g>
             </svg>
           </div>
-          <div class="sbar rdbar"><span class="stag rd" id="h-rd"></span></div>
+          <div class="sbar rdbar" data-ph="t 12.34 ms   CH1 12.34 N"><span class="rd" id="h-rd"></span></div>
         </div>
       </Collapsible>
 

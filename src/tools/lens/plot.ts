@@ -3,6 +3,7 @@
  */
 import { distCurve, fieldCurve, type Spot, sphCurve } from './analysis';
 import { LD, SPECTRAL } from './glass';
+import { hexRgb, type Light, SPEC_NM, SPEC_RGB } from './light';
 import { aimChief, fieldU, HALF_DIAG, objRay, type State, traceFwd } from './optics';
 import { BOARDS, CYLS, SKY, STRINGS, WALL } from './scene';
 
@@ -131,7 +132,7 @@ const sag = (c: number, y: number) => {
 export interface SecIn {
   st: State;
   ideal: boolean;
-  /** 可視光の 7 波長で描く（false は d 線だけ） */
+  /** 可視光の連続スペクトルで描く（false は d 線だけ） */
   spec: boolean;
   /** 収差なしの薄いレンズの像距離・物体距離（0 は無限遠）・半径 */
   si: number;
@@ -140,8 +141,8 @@ export interface SecIn {
 }
 
 /**
- * センサーの付近の光線（子午面の直線）: センサーの面での高さ y と傾き dy/dz、波長の番号（SPECTRAL の順、
- * d 線だけなら -1）、瞳の中心を通る光線か
+ * センサーの付近の光線（子午面の直線）: センサーの面での高さ y と傾き dy/dz、光の波長の番号（lightWaves の順）、
+ * 瞳の中心を通る光線か
  */
 interface Line {
   y: number;
@@ -149,21 +150,32 @@ interface Line {
   w: number;
   c: boolean;
 }
-/** 拡大図の 1 つ: 光線、波長ごとの印（中心はピントの位置 z、隅はセンサーの上の高さ y）、縦の中心 */
+/** 拡大図の 1 つ: 光線、輝線ごとの印（中心はピントの位置 z、隅はセンサーの上の高さ y。w は SPECTRAL の番号、
+   d 線だけなら -1）、縦の中心 */
 interface Inset {
   lines: Line[];
   marks: { w: number; v: number }[];
   yc: number;
 }
 
-/** 描く波長: [記号, 波長, 番号] */
+/** 印を付ける波長: [記号, 波長, 番号] */
 const waves = (spec: boolean): [string, number, number][] =>
   spec ? SPECTRAL.map(([n, l], i) => [n, l, i]) : [['d', LD, -1]];
 const wcls = (w: number) => (w < 0 ? '' : ` s-${SPECTRAL[w][0]}`);
-/** 拡大図の光線の、入射瞳の高さの割合（中心・隅） */
-const FAN = { ax: [-1, -0.7, -0.4, 0.4, 0.7, 1], cn: [-1, -0.5, 0, 0.5, 1] } as const;
+/** 光として描く波長 [µm] と色。d 線だけのときの色は光束の色（null） */
+interface Wave {
+  l: number;
+  rgb: readonly [number, number, number] | null;
+}
+const lightWaves = (spec: boolean): Wave[] =>
+  spec ? SPEC_NM.map((nm, i) => ({ l: nm / 1000, rgb: SPEC_RGB[i] })) : [{ l: LD, rgb: null }];
+/** d 線だけのときの光束の色（軸上・隅）。図の地はテーマによらず黒なので、暗いテーマの CH1・CH2 の色 */
+const BEAM = [hexRgb('#f2c230'), hexRgb('#52c4dd')] as const;
+/** 光束 1 つの光線の数（瞳の端から端まで。奇数にして瞳の中心を通る光線を含める） */
+const NR = 41;
+const fanAt = (j: number) => (2 * j) / (NR - 1) - 1;
 
-export function sectionSvg(p: SecIn): { svg: string; label: string } {
+export function sectionSvg(p: SecIn): { svg: string; label: string; light: Light } {
   const { st } = p,
     s = st.sys.s;
   const zEnd = st.zs,
@@ -174,8 +186,11 @@ export function sectionSvg(p: SecIn): { svg: string; label: string } {
   const k = Math.min((SEC.w - 16) / (z1 - z0), (SEC.top - 16) / (2 * ymax));
   const ox = (SEC.w - (z1 - z0) * k) / 2 - z0 * k,
     oy = SEC.top / 2;
-  const X = (z: number) => n1(ox + z * k),
-    Y = (y: number) => n1(oy - y * k);
+  const Xn = (z: number) => ox + z * k,
+    Yn = (y: number) => oy - y * k,
+    X = (z: number) => n1(Xn(z)),
+    Y = (y: number) => n1(Yn(y));
+  const light: Light = { w: SEC.w, h: SEC.h, clips: [[0, 0, SEC.w, SEC.top]], fans: [] };
   let g = `<path class="ls-ax" d="M4 ${oy}H${SEC.w - 4}"/>`;
   if (!p.ideal) {
     /* レンズ（ガラスの区間ごと）。縁は 2 面の大きいほうの径にそろえる */
@@ -208,24 +223,20 @@ export function sectionSvg(p: SecIn): { svg: string; label: string } {
   /* センサー（対角の長さ） */
   g += `<path class="ls-sen" d="M${X(st.zs)} ${Y(HALF_DIAG)}V${Y(-HALF_DIAG)}"/>`;
   /* 光線: 軸上の光束（ピントの面の中心から）と、隅（対角の端）へ向かう光束。物体側の光線はどの波長も
-     同じ（d 線の主光線に合わせる）で、レンズの中で波長ごとに分かれる */
-  const bundles: [string, number][] = [
-    ['ls-r1', 0],
-    ['ls-r2', HALF_DIAG],
-  ];
-  const ws = waves(p.spec && !p.ideal);
-  for (const [cls, h] of bundles) {
+     同じ（d 線の主光線に合わせる）で、レンズの中で波長ごとに分かれる。光線は SVG ではなく光として描く（light.ts） */
+  const spec = p.spec && !p.ideal,
+    lw = lightWaves(spec);
+  [0, HALF_DIAG].forEach((h, b) => {
     if (p.ideal) {
-      g += `<path class="${cls}" d="${idealRays(p, h, X, Y, z0)}"/>`;
-      continue;
+      light.fans.push({ rays: idealRays(p, h, Xn, Yn, z0), rgb: BEAM[b], sp: (2 * p.a * k) / (NR - 1), clip: 0 });
+      return;
     }
     const u = fieldU(st, h),
       yc = h ? aimChief(st, u, LD) : 0;
-    for (const [, l, w] of ws) {
-      let d = '';
-      for (let j = 0; j < 7; j++) {
-        const py = ((2 * j) / 6 - 1) * st.rep;
-        const r = objRay(st, u, 0, py, yc);
+    for (const wv of lw) {
+      const rays: number[][] = [];
+      for (let j = 0; j < NR; j++) {
+        const r = objRay(st, u, 0, fanAt(j) * st.rep, yc);
         /* 描く範囲の左端（物体がそれより遠いとき）から始める */
         if (r.z < z0) {
           const t = (z0 - r.z) / r.dz;
@@ -233,35 +244,34 @@ export function sectionSvg(p: SecIn): { svg: string; label: string } {
           r.y += t * r.dy;
           r.z = z0;
         }
-        const pts: string[] = [`${X(r.z)} ${Y(r.y)}`];
-        const at = traceFwd(st, r, l, (_i, _x, y, z) => pts.push(`${X(z)} ${Y(y)}`));
-        if (at < 0) pts.push(`${X(r.z)} ${Y(r.y)}`);
-        d += `M${pts.join('L')}`;
+        const pts = [Xn(r.z), Yn(r.y)];
+        const at = traceFwd(st, r, wv.l, (_i, _x, y, z) => pts.push(Xn(z), Yn(y)));
+        if (at < 0) pts.push(Xn(r.z), Yn(r.y));
+        rays.push(pts);
       }
-      g += `<path class="${w < 0 ? cls : `ls-w${wcls(w)}`}" d="${d}"/>`;
+      light.fans.push({ rays, rgb: wv.rgb ?? BEAM[b], sp: (2 * st.rep * k) / (NR - 1), clip: 0 });
     }
-  }
+  });
   /* センサーの付近の拡大図（中心・隅） */
   const cap: string[] = [];
   [0, HALF_DIAG].forEach((h, i) => {
-    const r = insetSvg(p, insetOf(p, h, ws), i, i ? '隅の像の付近' : '中心の像の付近');
+    const r = insetSvg(p, insetOf(p, h, spec, lw), i, i ? '隅の像の付近' : '中心の像の付近', lw, light);
     g += r.svg;
     cap.push(r.label);
   });
   const nl = s.filter((x, i) => !x.stop && x.m.nd !== 1 && i < s.length - 1).length;
-  const how = p.ideal ? '' : p.spec ? '可視光の 7 波長（405〜707 nm）で' : 'd 線で';
+  const how = p.ideal ? '' : spec ? `可視光（${SPEC_NM[0]}〜${SPEC_NM.at(-1)} nm）の光として` : 'd 線で';
   const label = `${p.ideal ? '収差なしの薄いレンズ' : `${st.sys.rx.name}（レンズは ${nl} 枚）`}と光線の断面図。軸上の光束と、像の隅へ向かう光束を${how}描く。下はセンサーの付近の拡大図: ${cap.join('。')}`;
-  return { svg: g, label };
+  return { svg: g, label, light };
 }
 
 /** 拡大図の光線（センサーの面での直線）と、波長ごとの印 */
-function insetOf(p: SecIn, h: number, ws: [string, number, number][]): Inset {
+function insetOf(p: SecIn, h: number, spec: boolean, lw: Wave[]): Inset {
   const { st } = p;
   const lines: Line[] = [],
     marks: Inset['marks'] = [];
-  const fan = h ? FAN.cn : FAN.ax;
   if (p.ideal) {
-    for (const f of fan) lines.push({ y: h, s: (h - f * p.a) / p.si, w: -1, c: f === 0 });
+    for (let j = 0; j < NR; j++) lines.push({ y: h, s: (h - fanAt(j) * p.a) / p.si, w: 0, c: fanAt(j) === 0 });
     return { lines, marks, yc: h };
   }
   const u = fieldU(st, h),
@@ -271,11 +281,13 @@ function insetOf(p: SecIn, h: number, ws: [string, number, number][]): Inset {
     return traceFwd(st, r, l) < 0 && r.dz > 0 ? { y: r.y, s: r.dy / r.dz } : null;
   };
   let yc = h;
-  for (const [, l, w] of ws) {
-    for (const f of fan) {
-      const ln = ray(f, l);
-      if (ln) lines.push({ ...ln, w, c: f === 0 });
+  lw.forEach((wv, w) => {
+    for (let j = 0; j < NR; j++) {
+      const ln = ray(fanAt(j), wv.l);
+      if (ln) lines.push({ ...ln, w, c: fanAt(j) === 0 });
     }
+  });
+  for (const [, l, w] of waves(spec)) {
     if (h) {
       /* 隅: 波長ごとの主光線がセンサーに当たる高さ（倍率色収差） */
       const c = ray(0, l);
@@ -292,7 +304,14 @@ function insetOf(p: SecIn, h: number, ws: [string, number, number][]): Inset {
   return { lines, marks, yc };
 }
 
-function insetSvg(p: SecIn, t: Inset, i: number, title: string): { svg: string; label: string } {
+function insetSvg(
+  p: SecIn,
+  t: Inset,
+  i: number,
+  title: string,
+  lw: Wave[],
+  light: Light,
+): { svg: string; label: string } {
   const { st } = p;
   const x0 = 4 + i * (INS.w + INS.gap),
     y0 = INS.y,
@@ -318,11 +337,14 @@ function insetSvg(p: SecIn, t: Inset, i: number, title: string): { svg: string; 
   g += `<clipPath id="ls-clip${i}"><rect x="${x0}" y="${y0}" width="${INS.w}" height="${INS.h}"/></clipPath><g clip-path="url(#ls-clip${i})">`;
   if (!i) g += `<path class="ls-ax" d="M${x0} ${n1(Y(0))}H${x0 + INS.w}"/>`;
   g += `<path class="ls-sen-i" d="M${n1(cx)} ${y0}V${y0 + INS.h}"/>`;
-  /* 光線は波長ごとに 1 本の path */
-  const by = new Map<number, string>();
-  for (const l of t.lines)
-    by.set(l.w, `${by.get(l.w) ?? ''}M${x0} ${n1(Y(l.y - l.s * Lz))}L${x0 + INS.w} ${n1(Y(l.y + l.s * Lz))}`);
-  for (const [w, d] of by) g += `<path class="${w < 0 ? (i ? 'ls-r2' : 'ls-r1') : `ls-w${wcls(w)}`}" d="${d}"/>`;
+  /* 光線は光として描く。1 本の明るさは、窓の左端での光線の間隔で決める */
+  const ci = light.clips.push([x0, y0, x0 + INS.w, y0 + INS.h]) - 1,
+    left = t.lines.filter((l) => l.w === 0).map((l) => Y(l.y - l.s * Lz)),
+    sp = left.length > 1 ? Math.max(0.3, (Math.max(...left) - Math.min(...left)) / (NR - 1)) : 0.3;
+  lw.forEach((wv, w) => {
+    const rays = t.lines.filter((l) => l.w === w).map((l) => [x0, Y(l.y - l.s * Lz), x0 + INS.w, Y(l.y + l.s * Lz)]);
+    light.fans.push({ rays, rgb: wv.rgb ?? BEAM[i], sp, clip: ci });
+  });
   /* 波長ごとの印（中心は光軸の上のピントの位置、隅はセンサーの上の高さ）と、重ならない所に波長 [nm]（間隔はスマホの大きい字で決める） */
   const at = (v: number) => (i ? Y(v) : X(v));
   const ms = [...t.marks].sort((a, b) => at(a.v) - at(b.v));
@@ -354,15 +376,15 @@ function insetSvg(p: SecIn, t: Inset, i: number, title: string): { svg: string; 
   return { svg: g, label };
 }
 
-function idealRays(p: SecIn, h: number, X: (z: number) => string, Y: (y: number) => string, z0: number): string {
+function idealRays(p: SecIn, h: number, X: (z: number) => number, Y: (y: number) => number, z0: number): number[][] {
   const { st, si, so, a } = p;
   const zl = st.zs - si;
   /* 像の点（センサーの上）と、その共役の物点 */
   const yi = h,
     yo = so > 0 ? (-yi * so) / si : 0;
-  let d = '';
-  for (let j = 0; j < 7; j++) {
-    const ya = ((2 * j) / 6 - 1) * a;
+  const out: number[][] = [];
+  for (let j = 0; j < NR; j++) {
+    const ya = fanAt(j) * a;
     let zs0: number, ys0: number;
     if (so > 0) {
       const zo = zl - so;
@@ -379,9 +401,9 @@ function idealRays(p: SecIn, h: number, X: (z: number) => string, Y: (y: number)
       zs0 = z0;
       ys0 = ya - sl * (zl - z0);
     }
-    d += `M${X(zs0)} ${Y(ys0)}L${X(zl)} ${Y(ya)}L${X(st.zs)} ${Y(yi)}`;
+    out.push([X(zs0), Y(ys0), X(zl), Y(ya), X(st.zs), Y(yi)]);
   }
-  return d;
+  return out;
 }
 
 /* ---------- 収差の図 ---------- */

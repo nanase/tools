@@ -52,11 +52,11 @@ const pick = (L: readonly ParamDef[], ks: readonly string[]) =>
       <Panel hid="hd-fig" title="台車と振子" class="a-fig">
         <div slot="aux" class="seg"><button type="button" id="runBtn" aria-pressed="false" title="シミュレーションを動かす・止める"><span class="led" id="runLed" aria-hidden="true"></span><span id="runT">開始</span></button></div>
         <div class="sbar">
-          <span class="stag"><b id="st-mode"></b></span>
-          <span class="stag">t <b id="st-t"></b></span>
-          <span class="stag"><i class="sw" aria-hidden="true"></i><i class="v">θ</i> <b id="st-th"></b></span>
-          <span class="stag"><i class="sw c2" aria-hidden="true"></i><i class="v">x</i> <b id="st-x"></b></span>
-          <span class="stag wn" id="st-hit" hidden>レールの端</span>
+          <span class="stag"><b class="hw" id="st-mode" data-ph="倒れた（制御を止めた）"></b></span>
+          <span class="stag">t <b class="hw" id="st-t" data-ph="000.00 s"></b></span>
+          <span class="stag"><i class="sw" aria-hidden="true"></i><i class="v">θ</i> <b class="hw" id="st-th" data-ph="−000.0°"></b></span>
+          <span class="stag"><i class="sw c2" aria-hidden="true"></i><i class="v">x</i> <b class="hw" id="st-x" data-ph="−000.0 mm"></b></span>
+          <span class="stag wn" id="st-hit" style="visibility:hidden">レールの端</span>
         </div>
         <div class="pfw">
           <svg class="pfig" id="pfig" tabindex="0" role="img" aria-roledescription="倒立振子の図" aria-label="レールの上の台車と振子。振子か台車の近くを押すと、押した側からその向きへ押す。左右の矢印キーで振子を、Shift と矢印キーで台車を押す"></svg>
@@ -119,18 +119,18 @@ const pick = (L: readonly ParamDef[], ks: readonly string[]) =>
     <div class="col c2">
       <Panel hid="hd-sc" title="応答" class="a-sc">
         <span slot="aux" class="aux">直近 10 s</span>
-        <Scope id="sc1" label="角度と位置の時間波形" ch1="θ" ch1Title="振子の角度（真上が 0、右へ傾くと正）" ch2="x <b class='s-vd2'></b>/div" ch2Title="台車の位置（中央が 0、右が正）" trig="AUTO" />
+        <Scope id="sc1" label="角度と位置の時間波形" ch1="θ" vdPh="0.5°" ch1Title="振子の角度（真上が 0、右へ傾くと正）" ch2="x <b class='s-vd2 hw' data-ph='200 mm'></b>/div" ch2Title="台車の位置（中央が 0、右が正）" trig="AUTO" />
         <div class="sc2w">
-          <Scope id="sc2" label="力と電圧の時間波形" ch1="F" ch1Title="駆動が台車を押す力" ch2="V <b class='s-vd2'></b>/div" ch2Title="モータの電圧（上限で切った値）" trig="AUTO" />
+          <Scope id="sc2" label="力と電圧の時間波形" ch1="F" vdPh="0.5 N" ch1Title="駆動が台車を押す力" ch2="V <b class='s-vd2 hw' data-ph='0.5 V'></b>/div" ch2Title="モータの電圧（上限で切った値）" trig="AUTO" />
         </div>
       </Panel>
 
       <Panel hid="hd-out" title="計算結果" class="a-out">
         <dl class="metrics c3">
-          <div class="m m-main"><dt>整定時間 <i>t</i><sub>s</sub></dt><dd><span id="o-ts"></span><span class="m-sub" id="o-tss"></span></dd></div>
-          <div class="m"><dt>振り上げの時間 <i>t</i><sub>up</sub></dt><dd><span id="o-tu"></span><span class="m-sub" id="o-tus"></span></dd></div>
-          <div class="m"><dt>最大の力 |<i>F</i>|<sub>max</sub></dt><dd><span id="o-fm"></span><span class="m-sub" id="o-fms"></span></dd></div>
-          <div class="m"><dt>台車の最大の変位</dt><dd><span id="o-xm"></span><span class="m-sub" id="o-xms"></span></dd></div>
+          <div class="m m-main"><dt>整定時間 <i>t</i><sub>s</sub></dt><dd><span id="o-ts"></span><span class="m-sub hh" id="o-tss" data-ph="振り上げて切り替えてから、角度 ±2°・位置 ±10 mm に入って 0.5 s 留まるまで"></span></dd></div>
+          <div class="m"><dt>振り上げの時間 <i>t</i><sub>up</sub></dt><dd><span id="o-tu"></span><span class="m-sub hh" id="o-tus" data-ph="真下から切り替えるまで（最後の振り上げ）"></span></dd></div>
+          <div class="m"><dt>最大の力 |<i>F</i>|<sub>max</sub></dt><dd><span id="o-fm"></span><span class="m-sub hh" id="o-fms" data-ph="振り上げて切り替えてから。電圧の最大 100.0 V"></span></dd></div>
+          <div class="m"><dt>台車の最大の変位</dt><dd><span id="o-xm"></span><span class="m-sub hh" id="o-xms" data-ph="振り上げて切り替えてから。レールの端まで 1000 mm"></span></dd></div>
           <div class="m m-wide"><dt>開ループの不安定な極 <i>p</i><sub>+</sub></dt><dd><span id="o-p"></span><span class="m-sub" id="o-ps"></span></dd></div>
           <div class="m m-wide"><dt>閉ループの極</dt><dd><span id="o-cl"></span><span class="m-sub" id="o-cls"></span></dd></div>
           <div class="m m-wide"><dt>状態フィードバックのゲイン <i>K</i></dt><dd><span id="o-k"></span><span class="m-sub" id="o-ks"></span></dd></div>

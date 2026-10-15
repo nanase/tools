@@ -11,6 +11,7 @@ import { initToolPage } from '../../lib/tool-page';
 import { distortion, dof, halfAngle, illum, type PupilTable, pupilTable, spot } from './analysis';
 import { LD } from './glass';
 import { type LensId, lensOf, type Rx } from './lenses';
+import { drawLight, type Light } from './light';
 import {
   aimChief,
   build,
@@ -320,6 +321,12 @@ function halfAngleCached(): number {
   return haVal;
 }
 
+/* 断面図の光。図の幅が変わったら、画素の数を合わせて描き直す */
+let secLight: Light | null = null;
+new ResizeObserver(() => {
+  if (secLight) drawLight($('#sec-c'), secLight);
+}).observe($('#sec-c'));
+
 function drawSection(): void {
   if (!st) return;
   const v = G.values(),
@@ -328,9 +335,11 @@ function drawSection(): void {
   const spec = sw$.value === 'spec';
   const p = sectionSvg({ st, ideal, spec, si: id.si, so: id.so, a: id.a });
   html('#sec', p.svg);
+  secLight = p.light;
+  drawLight($('#sec-c'), p.light);
   $('#sec').setAttribute('aria-label', p.label);
   txt('#sec-st', ideal ? '収差なし' : `${st.sys.rx.name}`);
-  /* 凡例: 7 波長のときは波長の帯、d 線だけのときは光束の色 */
+  /* 凡例: 可視光のときは波長の帯、d 線だけのときは光束の色 */
   const many = spec && !ideal;
   for (const e of document.querySelectorAll<HTMLElement>('.sec-d')) e.hidden = many;
   for (const e of document.querySelectorAll<HTMLElement>('.sec-s')) e.hidden = !many;

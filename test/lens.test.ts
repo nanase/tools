@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { distortion, dof, halfAngle, illum, pupilTable, spot } from '../src/tools/lens/analysis';
 import { CATALOG, LC, LD, LF, model, nAt, SPECTRAL, sellmeier } from '../src/tools/lens/glass';
 import { LENSES, lensOf } from '../src/tools/lens/lenses';
+import { SPEC_NM, SPEC_RGB } from '../src/tools/lens/light';
 import {
   build,
   cardinal,
@@ -309,13 +310,26 @@ describe('図とシェーダ', () => {
     ])
       expect(s).not.toMatch(/NaN|Infinity|undefined/);
   });
-  it('断面図は 7 波長で描き分け、d 線だけにもできる', () => {
+  it('断面図は連続スペクトルの光で描き、拡大図に 7 本の輝線の印を付ける。d 線だけにもできる', () => {
     const t = thinLens(50, 2000, 4.5);
-    const a = sectionSvg({ st, ideal: false, spec: true, si: t.si, so: t.so, a: t.a }).svg,
-      b = sectionSvg({ st, ideal: false, spec: false, si: t.si, so: t.so, a: t.a }).svg;
-    for (const [n] of SPECTRAL) expect(a).toContain(`ls-w s-${n}`);
-    expect(b).not.toContain('ls-w');
-    expect(b).toContain('ls-r1');
+    const a = sectionSvg({ st, ideal: false, spec: true, si: t.si, so: t.so, a: t.a }),
+      b = sectionSvg({ st, ideal: false, spec: false, si: t.si, so: t.so, a: t.a });
+    /* 光束 2 つ（軸上・隅）と拡大図 2 つ、それぞれ波長の数だけ */
+    expect(a.light.fans).toHaveLength(4 * SPEC_NM.length);
+    expect(b.light.fans).toHaveLength(4);
+    for (const [n] of SPECTRAL) expect(a.svg).toContain(`ls-tk s-${n}`);
+    for (const L of [a.light, b.light])
+      for (const f of L.fans) {
+        expect(f.sp).toBeGreaterThan(0);
+        for (const r of f.rays) for (const v of r) expect(Number.isFinite(v)).toBe(true);
+      }
+  });
+  it('断面図の光の色: 全部の波長を足すと白、短い波長は青、長い波長は赤', () => {
+    for (let k = 0; k < 3; k++) expect(SPEC_RGB.reduce((s, c) => s + c[k], 0)).toBeCloseTo(1, 10);
+    const blue = SPEC_RGB[SPEC_NM.indexOf(460)],
+      red = SPEC_RGB[SPEC_NM.indexOf(640)];
+    expect(blue[2]).toBeGreaterThan(Math.max(blue[0], blue[1]));
+    expect(red[0]).toBeGreaterThan(Math.max(red[1], red[2]));
   });
   it('単レンズの軸上色収差（h 線と r 線のピントの差）は近軸の見積もりに近い', () => {
     const s1 = focus(build(lensOf('single'), 50), Infinity, 4, 0);

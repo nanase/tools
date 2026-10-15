@@ -120,7 +120,7 @@ const related = [
             <g id="tq-g"></g>
           </svg>
         </div>
-        <div class="sbar rdbar"><span class="stag rd" id="tq-rd"></span></div>
+        <div class="sbar rdbar" data-ph="● 12,000 rpm　−12.34 N·m　−12.34 kW"><span class="rd" id="tq-rd"></span></div>
       </Panel>
 
       <Panel hid="hd-pv" title="筒内の圧力" class="a-pv">
@@ -128,7 +128,7 @@ const related = [
         <div class="sbar">
           <span class="stag"><i class="sw" aria-hidden="true"></i>CH1 圧力 <b id="pv-ys">LOG</b></span>
           <span class="stag">X <span id="pv-x">容積</span> <b id="pv-xs">LOG</b></span>
-          <span class="stag" id="pv-st"></span>
+          <span class="stag hw" id="pv-st" data-ph="12,345 rpm、スロットル 100 %"></span>
         </div>
         <div class="scope">
           <svg viewBox="-46 -14 462 274" id="pv-svg" role="img" aria-label="シリンダの中の圧力と容積">
@@ -136,14 +136,14 @@ const related = [
             <g id="pv-g"></g>
           </svg>
         </div>
-        <div class="sbar rdbar"><span class="stag rd" id="pv-rd"></span></div>
+        <div class="sbar rdbar" data-ph="最高圧力 99.9 bar（燃焼の上死点の後 25°）　大きい輪が燃焼の仕事、小さい輪が吸排気のポンプの損失"><span class="rd" id="pv-rd"></span></div>
       </Panel>
 
       <Collapsible hid="hd-wave" title="音の波形" class="a-wave">
         <div class="seg wv-sw" id="p-ov" role="group" aria-label="表示"><button type="button" data-v="yt" aria-pressed="true" title="排気口から 0.5 m の音圧の時間変化">波形</button><button type="button" data-v="sp" aria-pressed="false" title="周波数ごとの大きさ">スペクトラム</button></div>
         <div id="v-yt">
           <div class="sbar">
-            <span class="stag"><i class="sw" aria-hidden="true"></i>CH1 音圧 <b id="w-vd"></b>/div</span>
+            <span class="stag"><i class="sw" aria-hidden="true"></i>CH1 音圧 <b class="hw" id="w-vd" data-ph="0.05 Pa"></b>/div</span>
             <span class="stag">H <b id="w-hd"></b>/div</span>
             <span class="stag">トリガ <b>燃焼の上死点</b></span>
           </div>
@@ -175,13 +175,13 @@ const related = [
       <Collapsible hid="hd-res" title="計算結果" class="a-out">
         <p class="aux res-aux">直前の 1 サイクル（720°）の値</p>
         <dl class="metrics">
-          <div class="m m-main"><dt>回転数 <i>N</i></dt><dd><span id="o-n"></span><span class="m-sub" id="o-ns"></span></dd></div>
+          <div class="m m-main"><dt>回転数 <i>N</i></dt><dd><span id="o-n"></span><span class="m-sub hh" id="o-ns" data-ph="回転数固定"></span></dd></div>
           <div class="m"><dt>トルク <i>T</i></dt><dd id="o-t"></dd></div>
           <div class="m"><dt>出力 <i>P</i></dt><dd id="o-p"></dd></div>
           <div class="m"><dt>図示平均有効圧 IMEP</dt><dd id="o-imep"></dd></div>
           <div class="m"><dt>正味平均有効圧 BMEP</dt><dd id="o-bmep"></dd></div>
           <div class="m"><dt>体積効率 <i>η</i><sub>v</sub></dt><dd id="o-ve"></dd></div>
-          <div class="m"><dt>最高圧力 <i>p</i><sub>max</sub></dt><dd><span id="o-pm"></span><span class="m-sub" id="o-pms"></span></dd></div>
+          <div class="m"><dt>最高圧力 <i>p</i><sub>max</sub></dt><dd><span id="o-pm"></span><span class="m-sub hh" id="o-pms" data-ph="上死点の後 000°"></span></dd></div>
           <div class="m"><dt>排気の温度</dt><dd id="o-tx"></dd></div>
           <div class="m"><dt>残留ガスの割合</dt><dd id="o-xr"></dd></div>
           <div class="m"><dt>吸気管の圧力</dt><dd id="o-map"></dd></div>
