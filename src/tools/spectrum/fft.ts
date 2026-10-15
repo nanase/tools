@@ -45,7 +45,8 @@ export function winData(name: Win, N: number): WinData {
   return r;
 }
 
-interface Plan {
+/** 長さ N の FFT の表と作業用の配列（re・im に入れて fft で変換する。長さごとに 1 つを使い回す） */
+export interface Plan {
   N: number;
   rev: Uint32Array;
   cs: Float64Array;
@@ -54,7 +55,7 @@ interface Plan {
   im: Float64Array;
 }
 const plans = new Map<number, Plan>();
-function plan(N: number): Plan {
+export function plan(N: number): Plan {
   const hit = plans.get(N);
   if (hit) return hit;
   const bits = Math.round(Math.log2(N));
@@ -76,7 +77,7 @@ function plan(N: number): Plan {
   return p;
 }
 /** その場で変換する（基数 2、時間間引き） */
-function fft(p: Plan): void {
+export function fft(p: Plan): void {
   const { N, rev, cs, sn, re, im } = p;
   for (let i = 0; i < N; i++) {
     const j = rev[i];
