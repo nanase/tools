@@ -66,7 +66,7 @@ const rf = (...ns: number[]) => ns.map((n) => `<a class="rf" href="#thy-r${n}">[
   <math display="block"><mi>e</mi><mo>=</mo><mfrac><mrow><mi>Δ</mi><mi>z</mi></mrow><mi>N</mi></mfrac><mo>·</mo><mfrac><mn>2</mn><mrow><mn>3</mn><mi>π</mi></mrow></mfrac><mrow><mo>(</mo><mn>2</mn><mo>+</mo><mi>tan</mi><mo>⁡</mo><mi>θ</mi><mo>)</mo></mrow></math>
   <math display="block"><mi>Δ</mi><mi>z</mi><mo>=</mo><mfrac><mrow><mn>3</mn><mi>π</mi><mi>N</mi></mrow><mn>2</mn></mfrac><mo>·</mo><mfrac><mi>e</mi><mrow><mn>2</mn><mo>+</mo><mi>tan</mi><mo>⁡</mo><mi>θ</mi></mrow></mfrac></math>
 </div>
-<p>桟のないマスクでは、この式は像を計算して光条の位置を測った値と 1 割以内で合います（このツールのテストで確かめています）。桟があると区画の重心が外へ寄るので、ずれは少し大きくなります。斜めのスリットを逆向き（「&gt;」の形）に傾けると、<math><mi>tan</mi><mo>⁡</mo><mi>θ</mi></math> の符号が変わり、感度が下がります。</p>
+<p>桟のないマスクでは、この式は像を計算して光条の位置を測った値と 1 割以内で合います（このツールのテストで確かめています）。桟があると区画の重心が外へ寄るので、ずれは少し大きくなります。中央遮蔽も同じで、遮蔽率 <math><mi>ε</mi></math> の円環の半分では重心が <math><mo stretchy="false">(</mo><mn>1</mn><mo>+</mo><mi>ε</mi><mo>+</mo><msup><mi>ε</mi><mn>2</mn></msup><mo stretchy="false">)</mo><mo>/</mo><mo stretchy="false">(</mo><mn>1</mn><mo>+</mo><mi>ε</mi><mo stretchy="false">)</mo></math> 倍の所に移り、ε = 0.35 でずれは約 9 % 大きくなります。斜めのスリットを逆向き（「&gt;」の形）に傾けると、<math><mi>tan</mi><mo>⁡</mo><mi>θ</mi></math> の符号が変わり、感度が下がります。</p>
 <p>解析ソフトで広く使われている式は、N. Noordhoek の Bahtinov Grabber のものです<Fragment set:html={rf(11)} />。θ = 20° で、上の式より約 1 割大きい値になります。</p>
 <div class="eqs">
   <math display="block"><mi>e</mi><mo>=</mo><mfrac><mn>9</mn><mn>32</mn></mfrac><mo>·</mo><mfrac><mi>D</mi><mi>f</mi></mfrac><mrow><mo>[</mo><mn>1</mn><mo>+</mo><mi>cos</mi><mo>⁡</mo><mn>45</mn><mo>°</mo><mrow><mo>(</mo><mn>1</mn><mo>+</mo><mi>tan</mi><mo>⁡</mo><mi>θ</mi><mo>)</mo></mrow><mo>]</mo></mrow><mi>Δ</mi><mi>z</mi></math>
