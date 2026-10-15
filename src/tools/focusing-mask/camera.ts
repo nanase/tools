@@ -120,7 +120,12 @@ const enc = (c: number) =>
  * asinh は asinh(x/soft)/asinh(1/soft) で暗い所を持ち上げる（Lupton ほか 2004 の伸ばし方）。
  * 色はそれぞれの成分を別に丸めるので、飽和した芯は白くなる
  */
-export function toRgba(p: Img, gain: number, mode: 'lin' | 'asinh' = 'lin', soft = 0.02): Uint8ClampedArray {
+export function toRgba(
+  p: Img,
+  gain: number,
+  mode: 'lin' | 'asinh' = 'lin',
+  soft = 0.02,
+): Uint8ClampedArray<ArrayBuffer> {
   const n = p.n * p.n,
     o = new Uint8ClampedArray(n * 4),
     k = 1 / Math.asinh(1 / soft),

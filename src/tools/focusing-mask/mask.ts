@@ -22,6 +22,8 @@ export interface Mask {
   th: number;
   /** キャリーの右の 2 区画の開き（rad。省略時は th の 10/12） */
   th2?: number;
+  /** バーティノフ・トライ・バーティノフの斜めのスリットを逆向きに傾ける（2005 年の原図の逆） */
+  flip?: boolean;
   /** 開いている割合 */
   duty: number;
   /** 区画の間の桟の幅（半径に対する比） */
@@ -60,7 +62,7 @@ function bahtinov(x: number, y: number, m: Mask, px: number): number {
   const b = m.bar / 2;
   if (y < 0) return grating(x, y, 1, 0, m, px) * edge(-y - b, px);
   const c = Math.cos(m.th),
-    s = Math.sin(m.th);
+    s = Math.sin(m.th) * (m.flip ? -1 : 1);
   const k = edge(y - b, px) * edge(Math.abs(x) - b, px);
   return k * (x < 0 ? grating(x, y, c, s, m, px) : grating(x, y, c, -s, m, px));
 }

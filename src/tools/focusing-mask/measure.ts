@@ -65,6 +65,9 @@ export interface BahtinovFit {
   cross: number;
   /** ずれ = mid − cross（画素） */
   off: number;
+  /** 斜めの 2 本（向き rot + th・rot − th）の、それぞれの法線の向きの位置（画素） */
+  qa: number;
+  qb: number;
 }
 
 /**
@@ -90,7 +93,7 @@ export function fitBahtinov(
     u = (qa * nb[1] - na[1] * qb) / det,
     v = (na[0] * qb - qa * nb[0]) / det;
   void u;
-  return { mid, cross: v, off: mid - v };
+  return { mid, cross: v, off: mid - v, qa, qb };
 }
 
 /**

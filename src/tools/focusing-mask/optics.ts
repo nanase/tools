@@ -80,6 +80,23 @@ export function wave(ab: Aberr, x: number, y: number): number {
   );
 }
 
+/** 波面の勾配（µm、半径を 1 とした座標での偏微分） */
+export function gradWave(ab: Aberr, x: number, y: number): [number, number] {
+  const r2 = x * x + y * y,
+    s6 = Math.sqrt(6),
+    s8 = Math.sqrt(8),
+    s5 = Math.sqrt(5),
+    lin = ab.cx * x + ab.cy * y;
+  return [
+    s6 * (2 * ab.a0 * x + 2 * ab.a45 * y) +
+      s8 * (6 * x * lin + (3 * r2 - 2) * ab.cx) +
+      s5 * ab.sph * (24 * r2 * x - 12 * x),
+    s6 * (-2 * ab.a0 * y + 2 * ab.a45 * x) +
+      s8 * (6 * y * lin + (3 * r2 - 2) * ab.cy) +
+      s5 * ab.sph * (24 * r2 * y - 12 * y),
+  ];
+}
+
 export function pupil(sc: Scope, m: Mask, opt: PsfOpts, D: number, nmMin: number, ab?: Aberr): Pupil {
   const dx = (nmMin * 1e-9) / (opt.N * opt.alpha),
     px = dx / ((D * 1e-3) / 2),

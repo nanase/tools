@@ -4,14 +4,21 @@
  * 格子の向き（法線）に伸びる直線になる。区画の重心は開口を描いて求めるので、桟・中央遮蔽・スパイダーも効く
  */
 import { type Mask, type Scope, transmit } from './mask';
+import { type Aberr, gradWave } from './optics';
 
 type V2 = [number, number];
 
-/** 区画: 重心（半径を 1 とした開口の座標）と、光条の向き（格子の法線。穴は null）、開いた面積の割合 */
+/**
+ * 区画: 重心（半径を 1 とした開口の座標）、光条の向き（格子の法線。穴は null）、開いた面積の割合、
+ * 収差の波面の勾配の平均（µm）、縦の範囲（半径を 1、横から見た光の通り道に使う）
+ */
 export interface Section {
   c: V2;
   dir: V2 | null;
   w: number;
+  g: V2;
+  y0: number;
+  y1: number;
 }
 
 /** バーティノフの区画の番号（y < 0 の半円 = 0、上の左 = 1、上の右 = 2）。マスクの座標 */
@@ -24,7 +31,7 @@ const bahtinovPart = (u: number, v: number): number => (v < 0 ? 0 : u < 0 ? 1 : 
  */
 function layout(sc: Scope, m: Mask): { part: (u: number, v: number) => number; dirs: (V2 | null)[] } {
   const c = Math.cos(m.th),
-    s = Math.sin(m.th);
+    s = Math.sin(m.th) * (m.flip ? -1 : 1);
   switch (m.kind) {
     case 'bahtinov':
       return {
@@ -96,10 +103,10 @@ function layout(sc: Scope, m: Mask): { part: (u: number, v: number) => number; d
   }
 }
 
-/** 区画の重心と光条の向き（開口の座標。マスクの回転を含む） */
-export function sections(sc: Scope, m: Mask, n = 400): Section[] {
+/** 区画の重心と光条の向き（開口の座標。マスクの回転を含む）。ab を渡すと収差の勾配の平均も求める */
+export function sections(sc: Scope, m: Mask, ab?: Aberr, n = 400): Section[] {
   const { part, dirs } = layout(sc, m),
-    acc = dirs.map(() => [0, 0, 0]),
+    acc = dirs.map(() => ({ w: 0, x: 0, y: 0, gx: 0, gy: 0, y0: 1, y1: -1 })),
     px = 2 / n,
     cr = Math.cos(m.rot),
     sr = Math.sin(m.rot);
@@ -113,26 +120,40 @@ export function sections(sc: Scope, m: Mask, n = 400): Section[] {
       if (t <= 0) continue;
       const u = x * cr + y * sr,
         v = -x * sr + y * cr,
-        k = part(u, v),
-        a = acc[k];
-      a[0] += t;
-      a[1] += t * x;
-      a[2] += t * y;
+        a = acc[part(u, v)];
+      a.w += t;
+      a.x += t * x;
+      a.y += t * y;
+      if (ab) {
+        const [gx, gy] = gradWave(ab, x, y);
+        a.gx += t * gx;
+        a.gy += t * gy;
+      }
+      if (t > 0.5) {
+        a.y0 = Math.min(a.y0, y);
+        a.y1 = Math.max(a.y1, y);
+      }
     }
   /* 向きはマスクの座標 → 開口の座標へ回す */
   const turn = ([u, v]: V2): V2 => [u * cr - v * sr, u * sr + v * cr];
-  return acc.map(([w, sx, sy], k) => ({
-    c: w > 0 ? [sx / w, sy / w] : [0, 0],
+  return acc.map((a, k) => ({
+    c: a.w > 0 ? [a.x / a.w, a.y / a.w] : [0, 0],
     dir: dirs[k] ? turn(dirs[k] as V2) : null,
-    w: w / all,
+    w: a.w / all,
+    g: a.w > 0 ? [a.gx / a.w, a.gy / a.w] : [0, 0],
+    y0: a.y0,
+    y1: a.y1,
   }));
 }
 
-/** 区画 k の像の位置（センサーの上、µm）。D・f は mm、dz は µm */
-const spot = (s: Section, D: number, f: number, dz: number): V2 => [
-  (-dz / f) * s.c[0] * (D / 2),
-  (-dz / f) * s.c[1] * (D / 2),
-];
+/**
+ * 区画の像の位置（センサーの上、µm）。D・f は mm、dz は µm。ピントのずれで −(Δz/f)·c·R、
+ * 収差で −(f/R)·⟨∇W⟩（光線収差は波面の勾配に比例する）だけずれる
+ */
+export const spot = (s: Section, D: number, f: number, dz: number): V2 => {
+  const R = D / 2;
+  return [(-dz / f) * s.c[0] * R - (f / R) * s.g[0], (-dz / f) * s.c[1] * R - (f / R) * s.g[1]];
+};
 
 /** 2 本の直線（点 p・向き d）の交点 */
 function cross(p1: V2, d1: V2, p2: V2, d2: V2): V2 {

@@ -36,12 +36,20 @@ const NM0 = 400,
 /** 焦点面の画素の角度。最短の波長でも瞳が格子に収まる */
 export const pixelOf = (s: Scene): number => alphaFor(s.D, NM0);
 
-let cache: { key: string; P: Pupil } | null = null;
+/** 描いた瞳（新しい順に 3 つまで。マスクなしの星像の計算と交互になっても描き直さない） */
+const cache: { key: string; P: Pupil }[] = [];
 function pupilOf(s: Scene): Pupil {
-  const key = JSON.stringify([s.D, s.N, s.sc, s.m, s.ab ?? null]);
-  if (cache?.key !== key)
-    cache = { key, P: pupil(s.sc, s.m, { N: s.N, M: s.N / 2, alpha: pixelOf(s) }, s.D, NM0, s.ab) };
-  return cache.P;
+  const key = JSON.stringify([s.D, s.N, s.sc, s.m, s.ab ?? null]),
+    i = cache.findIndex((c) => c.key === key);
+  if (i >= 0) {
+    const [c] = cache.splice(i, 1);
+    cache.unshift(c);
+    return c.P;
+  }
+  const P = pupil(s.sc, s.m, { N: s.N, M: s.N / 2, alpha: pixelOf(s) }, s.D, NM0, s.ab);
+  cache.unshift({ key, P });
+  cache.length = Math.min(cache.length, 3);
+  return P;
 }
 
 /** 帯 i0, i0 + di, … の点像の和 */

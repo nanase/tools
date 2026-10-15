@@ -715,6 +715,57 @@ export const ART: Record<string, Art> = {
       P('b', `M4 12L40 16L100 ${r1(yb)}M4 26L40 30L100 30`)
     );
   },
+  /* フォーカシングマスク: バーティノフマスクの正面と、星の 3 本の光条。ピントが前後し、中央の光条が X の交点の上下を通る */
+  fk(t) {
+    const cx = 24,
+      cy = 24,
+      r = 19,
+      th = (20 * Math.PI) / 180,
+      sp = 4.6;
+    /* 直線（点 p・向き d）を、円と条件 ok の範囲で切った線分 */
+    const seg = (px: number, py: number, dx: number, dy: number, ok: (x: number, y: number) => boolean): string => {
+      const b = dx * (px - cx) + dy * (py - cy),
+        c = (px - cx) ** 2 + (py - cy) ** 2 - r * r,
+        q = b * b - c;
+      if (q <= 0) return '';
+      const pts: [number, number][] = [];
+      const n = 24,
+        t0 = -b - Math.sqrt(q),
+        t1 = -b + Math.sqrt(q);
+      for (let i = 0; i <= n; i++) {
+        const s = t0 + ((t1 - t0) * i) / n,
+          x = px + dx * s,
+          y = py + dy * s;
+        if (ok(x, y)) pts.push([x, y]);
+      }
+      return pts.length > 1 ? pl([pts[0], pts[pts.length - 1]]) : '';
+    };
+    let slits = '';
+    /* 下半分: 縦のスリット。上半分の左右: ±θ 傾けたスリット */
+    for (let k = -6; k <= 6; k++) {
+      if (Math.abs(k) <= 4) slits += seg(cx + k * sp, cy, 0, 1, (_, y) => y > cy + 1);
+      slits += seg(cx + k * sp, cy, -Math.sin(th), -Math.cos(th), (x, y) => y < cy - 1 && x < cx - 1);
+      slits += seg(cx + k * sp, cy, Math.sin(th), -Math.cos(th), (x, y) => y < cy - 1 && x > cx + 1);
+    }
+    /* 星の光条: 中央はずれの 0.44、X の交点は 0.56 だけ反対へ */
+    const off = 5 * Math.sin(t * 2.1),
+      sx = 86,
+      ym = 24 - 0.44 * off,
+      yx = 24 + 0.56 * off,
+      L = 30,
+      tt = Math.tan(th);
+    return (
+      `<circle class="c" cx="${cx}" cy="${cy}" r="${r}"/>` +
+      P('c t', slits) +
+      P('c t', `M${cx - r} ${cy}H${cx + r}M${cx} ${cy - r}V${cy}`) +
+      P('a', `M${sx - L} ${r1(ym)}H${sx + L}`) +
+      P(
+        'b',
+        `M${sx - L} ${r1(yx + L * tt)}L${sx + L} ${r1(yx - L * tt)}M${sx - L} ${r1(yx - L * tt)}L${sx + L} ${r1(yx + L * tt)}`,
+      ) +
+      `<circle class="fc" cx="${sx}" cy="24" r="3"/>`
+    );
+  },
   /* SVG テーマスキーマチェッカー: 明るい地と暗い地に同じ SVG を並べる。暗い地では黒い線が見えにくい。
      2 枚が同じ倍率で拡大する */
   svg(t) {
