@@ -104,9 +104,11 @@ const fig = new TrumpetFigure();
 fig.mode = nv.value;
 fig.slow = Number(sl.value);
 function figBar(): void {
-  txt('#f-mode', nv.value === 'slow' ? `スロー 1/${sl.value}` : '振れ幅（マウスピースの圧力が最も高い瞬間）');
-  $('#ph-prev').hidden = nv.value === 'slow';
-  $('#ph-next').hidden = nv.value === 'slow';
+  const amp = nv.value === 'amp';
+  txt('#f-mode', amp ? '定在波の腹と節' : `スロー 1/${sl.value}`);
+  txt('#f-keyt', amp ? '気柱の圧力の振れ幅' : '気柱の圧力');
+  $('#f-key').classList.toggle('amp', amp);
+  txt('#mp-slow', `スロー 1/${sl.value}`);
 }
 const nm = (m: number) => nameOf(names.value === 'wri' ? m + 2 : m);
 const vName = (v: readonly boolean[]) => {
@@ -508,11 +510,11 @@ function tick(now: number): void {
     cyc: Cycle | null = f ? { h: f.h, p: f.p, u: f.u, air: f.air, f0: sounding ? f.f0 : 0, pm: f.pm } : null;
   curV = v;
   fig.keys(press);
-  const k = cyc ? (nv.value === 'slow' ? fig.phaseOf(cyc, now / 1000) : sounding ? fig.phase : 0) : 0;
-  fig.air(sounding ? cyc : null, nv.value === 'slow' || !cyc ? k : fig.phaseOf(cyc, 0), press);
+  /* 唇の断面と、スローの気柱は、受け取った 1 周期をスローの速さで繰り返す */
+  const k = cyc && sounding ? fig.phaseOf(cyc, now / 1000) : 0;
+  fig.air(sounding ? cyc : null, k, press);
   fig.lips(cyc, k);
-  txt('#ph-text', `${k + 1}/${cyc?.h.length ?? 24} 周期`);
-  txt('#f-amp', `±${(fig.scale / 1000).toFixed(1)} kPa`);
+  txt('#f-amp', `${nv.value === 'amp' ? '' : '±'}${(fig.scale / 1000).toFixed(1)} kPa`);
   const g = FINGERS.find((x) => x.v.every((y, i) => y === v[i])),
     vn = g ? g.name : vName(v);
   txt('#f-note', `${nameOf(m)}（記譜 ${nameOf(m + 2)}）· 第 ${n} 倍音 · ${vn}`);
@@ -603,8 +605,6 @@ function results(f: Frame | null, c: Cycle | null, sounding: boolean, m: number)
   html('#b-closed', sounding && c ? `${Math.round((100 * closed) / c.h.length)}<span class="u">%</span>` : '—');
   html('#b-flow', sounding ? ro(u * 1000, 'L/s', 3) : '—');
 }
-$('#ph-prev').addEventListener('click', () => (fig.phase = (fig.phase + 23) % 24));
-$('#ph-next').addEventListener('click', () => (fig.phase = (fig.phase + 1) % 24));
 void control;
 void DYNS;
 

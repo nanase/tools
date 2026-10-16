@@ -39,11 +39,11 @@ const ROWS = [...PARTIALS].reverse().filter((n) => n <= 8);
   <div class="tgrid">
     <Panel hid="hd-fig" title="トランペット" class="a-fig">
       <Fragment slot="aux">
-        <div class="seg" id="p-nv" role="group" aria-label="気柱の見せ方"><button type="button" data-v="amp" aria-pressed="true" title="実際の速さで、圧力の振れ幅（定在波の腹と節）を描く">振れ幅</button><button type="button" data-v="slow" aria-pressed="false" title="振動をゆっくりにして、圧力が管の中を行き来する様子を描く">スロー</button></div>
+        <div class="seg" id="p-nv" role="group" aria-label="気柱の見せ方"><button type="button" data-v="amp" aria-pressed="true" title="管の中の各点の圧力の振れ幅（定在波の腹と節）を描く">振れ幅</button><button type="button" data-v="slow" aria-pressed="false" title="振動をゆっくりにして、圧力が管の中を行き来する様子を描く">スロー</button></div>
         <div class="seg" id="p-names" role="group" aria-label="音名"><button type="button" data-v="con" aria-pressed="true" title="実際に鳴る音の名前（ピアノと同じ）">実音</button><button type="button" data-v="wri" aria-pressed="false" title="B♭ 管の楽譜に書く音の名前（実音より全音高い）">記譜</button></div>
       </Fragment>
       <div class="sbar">
-        <span class="stag pqk"><i aria-hidden="true"></i>気柱の圧力 <b class="hw" id="f-amp" data-ph="±99.9 kPa"></b></span>
+        <span class="stag pqk" id="f-key"><i aria-hidden="true"></i><span id="f-keyt">気柱の圧力の振れ幅</span> <b class="hw" id="f-amp" data-ph="±99.9 kPa"></b></span>
         <span class="stag" id="f-mode"></span>
         <span class="stag right hw" id="f-note" data-ph="C♯5（記譜 D♯5）· 第 10 倍音 · 1+2+3"></span>
       </div>
@@ -63,7 +63,7 @@ const ROWS = [...PARTIALS].reverse().filter((n) => n <= 8);
       <p class="sr" id="f-live" aria-live="polite"></p>
       <div class="trow">
         <div>
-          <p class="vcap">唇とマウスピース<span>縦の断面</span><span class="stp"><button type="button" class="tg" id="ph-prev" title="1/24 周期もどす" aria-label="1/24 周期もどす">◀</button><b class="hw" id="ph-text" data-ph="24/24 周期"></b><button type="button" class="tg" id="ph-next" title="1/24 周期すすめる" aria-label="1/24 周期すすめる">▶</button></span></p>
+          <p class="vcap">唇とマウスピース<span>縦の断面</span><span class="stp" id="mp-slow"></span></p>
           <div class="vw"><svg class="vf sm" id="tmp" viewBox={`0 0 ${MP_VIEW.w} ${MP_VIEW.h}`} role="img" aria-label="口とマウスピースの縦の断面。唇がカップの側へ開いて息が流れ込み、スロートとバックボアを通ってリードパイプへ続く">
             <path class="pq3" id="mp-mouth" d={MP_STATIC.mouth}></path>
             <path class="pq0" id="mp-cup" d={MP_STATIC.air}></path>
@@ -93,7 +93,7 @@ const ROWS = [...PARTIALS].reverse().filter((n) => n <= 8);
           </svg></div>
         </div>
         <div>
-          <p class="vcap">倍音のはしご<span>同じ指使いのまま、唇の張りで上下の段へ移る。小さな数字は管の共鳴の平均律からのずれ</span></p>
+          <p class="vcap">倍音のはしご<span>唇の張りで段が変わる。数字は平均律からのずれ</span></p>
           <div class="lad" id="ladder">
             <div class="lr lhd"><span class="rh">倍音</span>{FINGERS.map((g) => <span class="lh" title={g.semi ? `下げる半音 ${g.semi}` : '弁を押さない'}>{g.name}</span>)}</div>
             {ROWS.map((n) => (
@@ -111,7 +111,7 @@ const ROWS = [...PARTIALS].reverse().filter((n) => n <= 8);
         <button type="button" class="tg" id="blowBtn" title="押している間だけ吹く（キーボードはスペース。↑↓ で倍音）">吹く<kbd>Space</kbd></button>
       </div>
       <More id="g-fig" title="表示の設定"><div class="ptab">
-        <ChoiceRow k="sl" name="スローの速さ" sub="振動を何分の 1 の速さで描くか" choices={SLOW.map((v) => [v, `1/${v}`] as const)} value={400} />
+        <ChoiceRow k="sl" name="スローの速さ" sub="スローの見せ方と唇の断面で、振動を何分の 1 の速さで描くか" choices={SLOW.map((v) => [v, `1/${v}`] as const)} value={800} />
       </div></More>
     </Panel>
 

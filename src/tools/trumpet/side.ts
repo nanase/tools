@@ -472,7 +472,15 @@ const S = (() => {
   };
   return {
     /* 奥: ベル管の下の管（第 1 弁から曲がりまで）・ベルの曲がり・ベル管を 1 本の帯で（継ぎ目の線を出さない） */
-    bell: ribbon(join(seg(VX[0], Y_LOW, BOW.x, Y_LOW, 4), bellPts()), bellHw),
+    bell: (() => {
+      /* 縁の面で縦の線を出さないよう、終わりは縁の楕円の手前の半分の弧でつなぐ */
+      const pts = join(seg(VX[0], Y_LOW, BOW.x, Y_LOW, 4), bellPts()),
+        nm = normals(pts),
+        w = pts.map(bellHw),
+        L = pts.map((p, i) => P(p[0] + nm[i][0] * w[i], p[1] + nm[i][1] * w[i])),
+        R = pts.map((p, i) => P(p[0] - nm[i][0] * w[i], p[1] - nm[i][1] * w[i]));
+      return `M${L.join('L')}A${f1(MOUTH.rx)} ${f1(w[w.length - 1])} 0 0 0 ${R.reverse().join('L')}Z`;
+    })(),
     bellHl: sh.bell.hl,
     bellSh: sh.bell.sh,
     /* 胴の奥に見える縁の楕円全体（奥の半分の外の面）と縁の巻きの輪。胴より先に描き、まん中は胴に隠れる */
@@ -1029,8 +1037,11 @@ export function airQuads(v: readonly boolean[]): AirQuad[] {
       len.push(len[i - 1] + Math.hypot(pc.pts[i][0] - pc.pts[i - 1][0], pc.pts[i][1] - pc.pts[i - 1][1]));
     const L = len[len.length - 1] || 1;
     for (let i = 0; i + 1 < pc.pts.length; i++) {
+      /* 隣の四角と色が違うと継ぎ目に地が透けるので、先の端を 0.6 だけ伸ばして重ねる */
       const a = pc.pts[i],
-        b = pc.pts[i + 1],
+        q = pc.pts[i + 1],
+        sl = Math.hypot(q[0] - a[0], q[1] - a[1]) || 1,
+        b: Pt = [q[0] + ((q[0] - a[0]) / sl) * 0.6, q[1] + ((q[1] - a[1]) / sl) * 0.6],
         u = (len[i] + len[i + 1]) / 2 / L;
       out.push({
         d: `M${P(a[0] + nm[i][0] * w[i], a[1] + nm[i][1] * w[i])}L${P(b[0] + nm[i + 1][0] * w[i + 1], b[1] + nm[i + 1][1] * w[i + 1])}L${P(b[0] - nm[i + 1][0] * w[i + 1], b[1] - nm[i + 1][1] * w[i + 1])}L${P(a[0] - nm[i][0] * w[i], a[1] - nm[i][1] * w[i])}Z`,

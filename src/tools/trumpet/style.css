@@ -36,9 +36,7 @@
 .vf.sm{min-width:0}
 .vcap{display:flex;align-items:baseline;gap:8px;margin:0 0 5px;font:700 12px var(--sans);color:var(--ink-2)}
 .vcap span{font:500 11.5px var(--sans);color:var(--ink-3)}
-.vcap .stp{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font:500 11.5px var(--mono);color:var(--ink-2)}
-.vcap .stp .tg{min-width:30px;height:24px;padding:0 6px;justify-content:center}
-.vcap .stp b{font:700 11.5px var(--mono);color:var(--ink)}
+.vcap .stp{margin-left:auto;font:500 11.5px var(--mono);color:var(--ink-2)}
 .trow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;margin-top:12px;align-items:start}
 @media (max-width:760px){.trow{grid-template-columns:minmax(0,1fr)}}
 
@@ -82,6 +80,7 @@
 .pq1{fill:color-mix(in srgb,var(--accent) 26%,var(--t-air0))}.pq2{fill:color-mix(in srgb,var(--accent) 52%,var(--t-air0))}.pq3{fill:color-mix(in srgb,var(--accent) 76%,var(--t-air0))}.pq4{fill:var(--accent)}
 .pqk{display:inline-flex;align-items:center;gap:6px}
 .pqk i{display:inline-block;width:64px;height:8px;border-radius:2px;background:linear-gradient(90deg,var(--ch2),var(--screen) 50%,var(--accent));border:1px solid var(--line-2)}
+.pqk.amp i{background:linear-gradient(90deg,var(--screen),var(--accent))}
 
 /* 図の文字 */
 .vf text{font:500 11px var(--mono);fill:var(--ink-3)}

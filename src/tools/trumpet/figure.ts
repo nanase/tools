@@ -1,8 +1,8 @@
 /**
  * トランペットの図（DOM）: 横から見た楽器の気柱を圧力の色で塗り、弁のボタンを押し具合で下げる。
  * 唇とマウスピースの断面は、1 周期の位相ごとの唇の開き・マウスピースの圧力から描く。
- * 気柱の色は 9 段（負は青、正は朱）。振れ幅の表示では、マウスピースの圧力が最も高い位相の分布を描き、
- * スローでは受け取った 1 周期を遅くして繰り返す
+ * 振れ幅の表示では、管の中の各点の圧力の振れ幅（1 周期の最大と最小の差の半分）を 5 段（白から朱）で塗り、
+ * スローでは受け取った 1 周期を遅くして繰り返し、圧力を 9 段（負は青、正は朱）で塗る。唇の断面はどちらでもスローで動かす
  */
 import { $ } from '../../lib/dom';
 import { lipShapes } from './shapes';
@@ -32,9 +32,10 @@ export class TrumpetFigure {
   private qIdx: Int32Array = new Int32Array(0);
   private vKey = '';
   mode: FigMode = 'amp';
-  slow = 400;
-  /** 断面の図の位相（振れ幅の表示で ◀ ▶ が動かす。スローでは自動で進む） */
-  phase = 0;
+  slow = 800;
+  /** スローで進める 1 周期の中の位置（0〜1）と、前に進めた時刻 [s] */
+  private acc = 0;
+  private last = -1;
   /** 気柱の色の目盛り [Pa]（届いた周期の最大でゆっくり追う） */
   scale = 1000;
   constructor() {
@@ -68,23 +69,43 @@ export class TrumpetFigure {
     this.qIdx = Int32Array.from(this.quads.map((q) => airIndex(q.el, q.s)));
   }
 
-  /** 表示する位相: スローは時刻 now [s] から、振れ幅はマウスピースの圧力が最も高い位相 */
+  /**
+   * 表示する位相: 時刻 now [s] まで、鳴っている音の周波数のスローの速さで 1 周期の中を進める。
+   * 写し取りは周期ごとに始まりの位相が違うので、マウスピースの圧力が最も高い位相を始まりにそろえる
+   */
   phaseOf(c: Cycle, now: number): number {
-    if (this.mode === 'slow') {
-      const f = c.f0 > 0 ? c.f0 : 233;
-      return Math.floor(((now * f) / this.slow) * c.h.length) % c.h.length;
-    }
-    let k = 0;
-    for (let i = 1; i < c.p.length; i++) if (c.p[i] > c.p[k]) k = i;
-    return k;
+    const n = c.h.length,
+      f = c.f0 > 0 ? c.f0 : 233;
+    if (this.last >= 0) this.acc = (this.acc + (Math.min(0.1, Math.max(0, now - this.last)) * f) / this.slow) % 1;
+    this.last = now;
+    let k0 = 0;
+    for (let i = 1; i < c.p.length; i++) if (c.p[i] > c.p[k0]) k0 = i;
+    return (k0 + Math.floor(this.acc * n)) % n;
   }
 
-  /** 気柱を塗る（位相 k の分布）。弁は押し具合が半分を超えた側の通り道 */
+  /** 気柱を塗る（振れ幅、またはスローの位相 k の分布）。弁は押し具合が半分を超えた側の通り道 */
   air(c: Cycle | null, k: number, press: readonly number[]): void {
     this.route(press.map((x) => x > 0.5));
     const D = new Map(AIR_LAYERS.map((l) => [l, new Array<string>(QKEYS).fill('')]));
-    const np = c ? c.air.length / c.h.length : 0;
+    const n = c ? c.h.length : 0,
+      np = c && n ? c.air.length / n : 0,
+      amp = this.mode === 'amp';
+    /* 読む点ごとの値: 振れ幅は 1 周期の（最大 − 最小）/ 2、スローは位相 k の圧力 */
+    let val: Float32Array | null = null;
     if (c && np > 0) {
+      val = new Float32Array(np);
+      for (let j = 0; j < np; j++) {
+        if (amp) {
+          let lo = Infinity,
+            hi = -Infinity;
+          for (let i = 0; i < n; i++) {
+            const x = c.air[i * np + j];
+            lo = Math.min(lo, x);
+            hi = Math.max(hi, x);
+          }
+          val[j] = (hi - lo) / 2;
+        } else val[j] = c.air[k * np + j];
+      }
       let mx = 0;
       for (let i = 0; i < c.air.length; i++) mx = Math.max(mx, Math.abs(c.air[i]));
       /* 目盛りは大きくなるときはすぐ、小さくなるときはゆっくり */
@@ -92,8 +113,8 @@ export class TrumpetFigure {
     }
     for (let i = 0; i < this.quads.length; i++) {
       const q = this.quads[i],
-        v = c && np > 0 ? c.air[k * np + this.qIdx[i]] / this.scale : 0,
-        j = Math.max(-4, Math.min(4, Math.round(4 * v))) + 4;
+        v = val ? val[this.qIdx[i]] / this.scale : 0,
+        j = Math.max(amp ? 0 : -4, Math.min(4, Math.round(4 * v))) + 4;
       (D.get(q.layer) as string[])[j] += q.d;
     }
     for (const l of AIR_LAYERS) {
