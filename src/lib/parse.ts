@@ -37,6 +37,9 @@ export type Unit =
   | '°'
   | 'セント'
   | '× L'
+  | 'km'
+  | 'EV'
+  | '日'
   | (typeof COMPOUND)[number];
 
 /**
@@ -109,13 +112,34 @@ const STRIP: Partial<Record<Unit, [RegExp, string]>> = {
   セント: [/(セント|cents?|¢)$/i, ''],
   /* 弦の長さに対する割合（ヴァイオリンの弓の位置 β） */
   '× L': [/[×x*]?L$/i, ''],
+  /* 雲の高さ（ハロ） */
+  km: [/km$/i, ''],
+  /* 露出の補正（ハロ） */
+  EV: [/ev$/i, ''],
+  /* 月齢（ハロ） */
+  日: [/日$/, ''],
 };
 
 /**
  * 接頭辞を読まない単位（0.5m を 0.5 mm と取り違えないように）。接頭辞を含む単位（kg・mN·m/A など）も、
  * 1m を 1 g と読まないように読まない
  */
-const NO_PREFIX = new Set<Unit>(['mm', 'µm', 'N', 'L', '°', 'セント', '× L', 'kg', 'kg·cm²', 'g·cm²', 'mN·m/A']);
+const NO_PREFIX = new Set<Unit>([
+  'mm',
+  'µm',
+  'N',
+  'L',
+  '°',
+  'セント',
+  '× L',
+  'km',
+  'EV',
+  '日',
+  'kg',
+  'kg·cm²',
+  'g·cm²',
+  'mN·m/A',
+]);
 
 /**
  * 文字列を数値に読む。読めなければ NaN。

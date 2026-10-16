@@ -1,0 +1,98 @@
+/* ハロのページだけのスタイル（共通は src/styles/site.css） */
+
+/* 並び: スマホは 空 → 太陽 → 氷晶 → 雲 → 計算結果 → 光路 → 写真 → 式。
+   PC は左の広い列に 空・光路、右の列に 太陽・氷晶・雲・計算結果、下に全幅で 写真・式 */
+.a-view{order:1}.a-sun{order:2}.a-cry{order:3}.a-cloud{order:4}.a-out{order:5}.a-ray{order:6}.a-ph{order:7}.a-thy{order:8}
+@media (min-width:1000px){
+  .tgrid{grid-template-columns:minmax(0,7fr) minmax(0,5fr);grid-template-areas:"c1 c2" "ph ph" "thy thy";align-items:start}
+  .c1{grid-area:c1}.c2{grid-area:c2}.a-ph{grid-area:ph}.a-thy{grid-area:thy}
+}
+
+/* 空の映像（映像そのものはテーマに依らない） */
+.hv{position:relative;aspect-ratio:3/2;border:1px solid var(--line);border-radius:var(--r);background:#000;overflow:hidden}
+.hv canvas{display:block;width:100%;height:100%;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab}
+.hv canvas.drag{cursor:grabbing}
+.hv canvas:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+.hv.nogl canvas{visibility:hidden}
+.hv.round{aspect-ratio:1}
+.hv-msg{position:absolute;inset:0;display:grid;place-items:center;padding:20px;color:#e6e8e4;font-size:14px;line-height:1.8;text-align:center}
+/* 名前（押すと光路の図をそのハロにする） */
+.hls{position:absolute;inset:0;pointer-events:none}
+.hl{position:absolute;padding:1px 4px;border:0;border-radius:3px;background:transparent;color:#fff;font:700 12.5px/1.2 var(--sans);white-space:nowrap;text-shadow:0 0 3px #000,0 0 2px #000;pointer-events:auto;cursor:pointer}
+.hl.nofig{cursor:default}
+.hl:hover:not(.nofig){background:rgb(0 0 0 / .45)}
+.hl.sel{background:#fff;color:#15191c;text-shadow:none}
+.hl:focus-visible{outline:2px solid #fff;outline-offset:1px}
+.hl.a-s{transform:translate(0,-50%)}.hl.a-m{transform:translate(-50%,-50%)}.hl.a-e{transform:translate(-100%,-50%)}
+.hls svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.hls .ld{fill:none;stroke:#fff;stroke-width:1.6;opacity:.9}
+.hls .ld.sel{stroke-width:2.6}
+.hls .ln{stroke:#fff;stroke-width:1.2;opacity:.55}
+/* 全画面の切り替え（映像の右上） */
+.hv-fs{position:absolute;top:8px;right:8px;z-index:2;display:grid;place-items:center;width:32px;height:32px;padding:0;border:0;border-radius:6px;background:rgb(0 0 0 / .45);color:#fff;cursor:pointer}
+.hv-fs:hover{background:rgb(0 0 0 / .7)}
+.hv-fs:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+.hv-fs svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.hv-fs .i-close,.fs .hv-fs .i-open{display:none}
+.fs .hv-fs .i-close{display:block}
+.v-rate{margin-left:auto}
+@media (max-width:559px){.v-rate{margin-left:0}}
+
+/* 結晶の中の光路の図（地はテーマの scope の色） */
+.xs svg{display:block;width:100%;height:auto;overflow:visible}
+.xs .xe{fill:none;stroke:var(--screen-ink);stroke-width:1.4;stroke-linejoin:round}
+.xs .xh{fill:none;stroke:var(--screen-ink);stroke-width:1;stroke-dasharray:3 3;opacity:.55}
+.xs .xf{fill:var(--ch2);fill-opacity:.07;stroke:none}
+.xs .xfe{fill:var(--ch2);fill-opacity:.2;stroke:none}
+.xs .xin,.xs .xray{fill:none;stroke:var(--ch1);stroke-width:2.2;stroke-linecap:round}
+.xs .xray{stroke-dasharray:5 3}
+.xs .xout{fill:none;stroke:var(--ch2);stroke-width:2.2;stroke-linecap:round}
+.xs .xar{fill:var(--ch2)}.xs .xar1{fill:var(--ch1)}
+.xs .xhz{fill:none;stroke:var(--grid-2);stroke-width:1;stroke-dasharray:6 4}
+.scope.xs text{font-size:12px}
+.scope.xs text.xn{font-weight:700;fill:var(--ink)}
+.scope.xs text.xc{fill:var(--ch2);font-weight:700}
+@media (max-width:559px){.scope.xs text{font-size:19px}.xs .xin,.xs .xray,.xs .xout{stroke-width:3.2}}
+.xs .xnone{display:grid;place-items:center;min-height:200px;margin:0;padding:20px;color:var(--screen-ink);font-size:13.5px;line-height:1.8;text-align:center}
+.xcap{margin:8px 2px 0;color:var(--ink-2);font-size:13.5px;line-height:1.7}
+.a-ray .metrics{margin-top:8px}
+.m-sub{font:12px/1.5 var(--sans);color:var(--ink-3);margin-top:2px;display:block}
+.m-main .m-sub{margin-top:4px}
+.a-out .m-main{grid-column:1/-1}
+
+/* 母集団の行: 選んでいる母集団の値を出す */
+.popc .chip{min-width:0}
+.popc .chip.add{border-style:dashed}
+
+/* 写真と比べる */
+.phs{display:grid;gap:16px}
+.ph-pick{display:flex;flex-wrap:wrap;gap:4px}
+.ph-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (max-width:640px){.ph-pair{grid-template-columns:minmax(0,1fr)}}
+.ph-pair figure{margin:0;min-width:0}
+.ph-pair img,.ph-pair canvas{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:var(--r);background:#000}
+.ph-pair figcaption{margin-top:4px;color:var(--ink-3);font-size:12.5px;line-height:1.6}
+.ph-meta{margin:0;color:var(--ink-2);font-size:13px;line-height:1.7}
+
+/* 全画面: 左に空（枠を埋めるよう端を切る）、右に入力の行、左下に小さな光路の図 */
+.fs{position:fixed;inset:0;z-index:40;display:grid;grid-template-columns:minmax(0,1fr) 360px;background:var(--bg)}
+.fs-v{position:relative;min-width:0;min-height:0;background:#000;container-type:size}
+.fs-v>.hv{width:100%;height:100%;aspect-ratio:auto;border:0;border-radius:0}
+.fs-map{position:absolute;left:12px;bottom:12px;z-index:3;width:min(250px,34cqw);padding:4px 4px 3px;border-radius:6px;background:var(--screen);opacity:.94}
+.fs-map .scope{margin:0;padding:0;border:0;box-shadow:none;background:transparent}
+.fs-map .xe{stroke-width:3}.fs-map .xh{stroke-width:2;stroke-dasharray:6 6}
+.fs-map .xin,.fs-map .xray,.fs-map .xout{stroke-width:5}
+.fs-map .xhz{stroke-width:2;stroke-dasharray:12 8}
+.fs-map .scope.xs text.xn{font:700 30px var(--mono)}
+.fs-map .xnone{min-height:110px;padding:8px;font-size:11px}
+.fs-cap{display:block;padding:0 4px;color:var(--screen-ink);font:11px/1.4 var(--sans);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fs-p{min-height:0;overflow:auto;overscroll-behavior:contain;padding:8px 16px 16px;border-left:1px solid var(--line);background:var(--surface)}
+.fs-sec{margin:16px 8px 2px;color:var(--ink-3);font:700 12px/1.3 var(--sans)}
+.fs-sec:first-child{margin-top:6px}
+.fs .sc-pop{right:0}
+@media (max-width:759px),(max-aspect-ratio:1/1){
+  .fs{grid-template-columns:none;grid-template-rows:auto minmax(0,1fr)}
+  .fs-v{height:min(66.667vw,62vh)}
+  .fs-p{border-left:0;border-top:1px solid var(--line)}
+  .fs-map{width:min(150px,36cqw);left:8px;bottom:8px}
+}
