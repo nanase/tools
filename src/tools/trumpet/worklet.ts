@@ -105,18 +105,11 @@ registerProcessor(
       super();
       this.port.onmessage = (ev: MessageEvent<TpMsg>) => this.msg(ev.data);
     }
-    /** 楽器を作り直す（温度を変えたとき）。弁の位置を引き継ぎ、吹いている途中なら唇を閉じた位置から吹き直す */
+    /** 楽器を作る（唇の張りの表を作った 27 °C で。温度は時間の刻みの倍率で変える） */
     private build(): void {
-      const old = this.tr,
-        tr = new Trumpet(sampleRate, { temp: this.opts.temp, brass: this.opts.brass, onAxis: this.opts.onAxis });
+      const tr = new Trumpet(sampleRate, { temp: 27, brass: this.opts.brass, onAxis: this.opts.onAxis });
       tr.slides = this.opts.slides;
-      if (old) {
-        for (let i = 0; i < 3; i++) {
-          tr.target[i] = old.target[i];
-          tr.bore.valves[i].press = old.press(i);
-        }
-        if (this.pl.pm > 1) tr.lips.set(1);
-      }
+      tr.setTemp(this.opts.temp);
       this.tr = tr;
     }
     private msg(m: TpMsg): void {
@@ -128,15 +121,14 @@ registerProcessor(
         this.pl.noiseAmp = m.opts.noise;
         this.build();
       } else if (m.type === 'opts') {
-        const o = { ...this.opts, ...m.opts },
-          rebuild = o.temp !== this.opts.temp;
+        const o = { ...this.opts, ...m.opts };
         this.opts = o;
         this.pl.vib = o.vib;
         this.pl.noiseAmp = o.noise;
-        if (rebuild) this.build();
-        else if (this.tr) {
+        if (this.tr) {
+          this.tr.setTemp(o.temp);
           this.tr.setBrass(o.brass);
-          this.tr.setOnAxis(o.onAxis);
+          if (m.opts.onAxis !== undefined) this.tr.setOnAxis(o.onAxis);
           this.tr.slides = o.slides;
         }
       } else if (m.type === 'manual') this.pl.setManual(m.m);

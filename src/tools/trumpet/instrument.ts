@@ -2,7 +2,9 @@
  * トランペット 1 本（DOM に依存しない）: 唇（lips.ts）→ 管（guide.ts、弁と抜差し）→ ベルからの放射。
  * 放射は、ベルの開口の体積流量を単極子として 1 m 先の音圧にし、開口の放射抵抗で決まる放射のパワーに合わせて
  * 高い音を抑え（全方向の平均）、ベルの軸の方向に聴くときは指向係数を掛ける（RAD_SIDE・RAD_FRONT）。
- * 奏者が直す音程: 1+2 は第 1 抜差し、2+3・1+3・1+2+3 は第 3 抜差しを出す（弁の組み合わせが高くなる分）
+ * 奏者が直す音程: 1+2 は第 1 抜差し、2+3・1+3・1+2+3 は第 3 抜差しを出す（弁の組み合わせが高くなる分）。
+ * 温度を変えるときは作り直さず、作った温度の楽器の時間の刻みを音速の比で伸び縮みさせ、出力を 3 次の補間で
+ * 元の標本の時刻に戻す（setTemp。どの共鳴も音速の比で動く。密度と損失の変化は省く）
  */
 import { type Air, air, type BoreSpec, profile, SPEC } from './bore';
 import { Bore } from './guide';
@@ -98,6 +100,10 @@ export class Trumpet {
   readonly target = [0, 0, 0];
   /** 直近の出力（1 m 先の音圧 [Pa]） */
   out = 0;
+  /** 時間の刻みの倍率（音速の比）、次の出力までの端数、楽器の直近 4 標本の出力（古い順） */
+  private rate = 1;
+  private ph = 0;
+  private readonly hist = [0, 0, 0, 0];
 
   constructor(fs: number, o: TrumpetOpts = {}) {
     this.fs = fs;
@@ -139,8 +145,36 @@ export class Trumpet {
     return this.bore.valves[i].press;
   }
 
-  /** 1 標本: 口の圧力 pm [Pa]、唇の共振周波数 fl [Hz]。1 m 先の音圧 [Pa] を返す */
+  /** 管の中の温度 T [°C] にする（作り直さない。唇の張りは奏者が決めた Hz のまま） */
+  setTemp(T: number) {
+    this.rate = air(T).c / this.air.c;
+  }
+
+  /**
+   * 1 標本: 口の圧力 pm [Pa]、唇の共振周波数 fl [Hz]。1 m 先の音圧 [Pa] を返す。
+   * 楽器は 1 標本に rate 回（端数は持ち越す）進め、2 標本前の時刻を Catmull-Rom の 3 次で補間する
+   */
   step(pm: number, fl: number): number {
+    const h = this.hist;
+    this.ph += this.rate;
+    while (this.ph >= 1) {
+      this.ph -= 1;
+      h[0] = h[1];
+      h[1] = h[2];
+      h[2] = h[3];
+      h[3] = this.tick(pm, fl / this.rate);
+    }
+    const t = this.ph;
+    this.out =
+      h[1] +
+      0.5 * t * (h[2] - h[0]) +
+      t * t * (h[0] - 2.5 * h[1] + 2 * h[2] - 0.5 * h[3]) +
+      t * t * t * (1.5 * (h[1] - h[2]) + 0.5 * (h[3] - h[0]));
+    return this.out;
+  }
+
+  /** 楽器の 1 標本 */
+  private tick(pm: number, fl: number): number {
     const V = this.bore.valves,
       dv = 1 / (VALVE_TIME * this.fs);
     for (let i = 0; i < 3; i++) {
@@ -152,8 +186,7 @@ export class Trumpet {
     const u = this.bore.uEnd,
       m = ((this.air.rho / (4 * Math.PI)) * (u - this.prevU) * this.fs) as number;
     this.prevU = u;
-    this.out = this.onAxisOn ? this.front.run(m) : this.side.run(m);
-    return this.out;
+    return this.onAxisOn ? this.front.run(m) : this.side.run(m);
   }
 
   reset() {
@@ -161,6 +194,8 @@ export class Trumpet {
     this.lips.reset();
     this.prevU = 0;
     this.out = 0;
+    this.ph = 0;
+    this.hist.fill(0);
     this.front.reset();
     this.side.reset();
     for (let i = 0; i < 3; i++) this.target[i] = 0;

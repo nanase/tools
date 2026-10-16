@@ -224,6 +224,33 @@ describe('唇と奏者', () => {
     expect(pl.ctl.idx).toBe(-1);
   });
 
+  it('吹いている途中で温度を上げても音が途切れず、音が高くなる', () => {
+    const tr = new Trumpet(FS),
+      pl = new Player(FS),
+      N = Math.round(1.2 * FS),
+      y = new Float64Array(N),
+      p = new Float64Array(N);
+    pl.setManual({ v: [false, false, false], n: 4, blow: true, d: 0.55, auto: true, fl: 0, pm: 0, tongue: 'ta' });
+    for (let i = 0; i < N; i++) {
+      if (i === Math.round(0.5 * FS)) tr.setTemp(37);
+      y[i] = pl.step(tr);
+      p[i] = tr.lips.p;
+    }
+    const f0 = (a: number, b: number) => {
+      let mean = 0;
+      for (let i = a; i < b; i++) mean += p[i] / (b - a);
+      const cr: number[] = [];
+      for (let i = a + 1; i < b; i++) if (p[i - 1] - mean <= 0 && p[i] - mean > 0) cr.push(i);
+      return ((cr.length - 1) * FS) / (cr[cr.length - 1] - cr[0]);
+    };
+    for (let a = Math.round(0.45 * FS); a < 0.7 * FS; a += 960) {
+      let e = 0;
+      for (let i = a; i < a + 960; i++) e += y[i] ** 2;
+      expect(Math.sqrt(e / 960)).toBeGreaterThan(1);
+    }
+    expect(cents(f0(0.8 * FS, 1.2 * FS), f0(0.2 * FS, 0.5 * FS))).toBeGreaterThan(8);
+  });
+
   it('表は実音 E3〜D6 のどの音にもあり、強弱は口の圧力の範囲の中で単調', () => {
     for (let m = LOW; m <= HIGH; m++) {
       expect(CALIB[m]?.length, `MIDI ${m}`).toBeGreaterThan(0);
