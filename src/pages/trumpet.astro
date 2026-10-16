@@ -17,7 +17,8 @@ import { FINGERS, PARTIALS } from '../tools/trumpet/notes';
 import { DIST, DYNS, FLIP, FMAX, PM, SLOW, SPANS, TEMP, VOL0 } from '../tools/trumpet/params';
 import { zGrid } from '../tools/trumpet/plot';
 import { PIECES } from '../tools/trumpet/score';
-import { MP_STATIC, MP_VIEW, SIDE_STATIC, SIDE_VIEW, VX } from '../tools/trumpet/shapes';
+import { MP_STATIC, MP_VIEW } from '../tools/trumpet/shapes';
+import { SIDE_ITEMS, SIDE_TEXT, SIDE_VIEW } from '../tools/trumpet/side';
 import Theory from '../tools/trumpet/Theory.astro';
 
 const name = 'トランペット音響モデル';
@@ -48,64 +49,12 @@ const ROWS = [...PARTIALS].reverse().filter((n) => n <= 8);
       </div>
       <div class="vw" id="vw-side">
         <svg class="vf" id="tside" viewBox={SIDE_VIEW} role="img" aria-label="横から見たトランペット。管の中の空気を、圧力の色で描く。押した弁の抜差しを空気が通る">
-          <path class="t-tube" d={SIDE_STATIC.bell}></path>
-          <path class="t-tube" d={SIDE_STATIC.bellLow}></path>
-          <path class="t-tube2" d={SIDE_STATIC.bellMouth}></path>
-          {Q9.map((_, i) => <path class={QC[i]} id={`air-b-${i}`}></path>)}
-          <path class="t-line" d={SIDE_STATIC.bellMouth}></path>
-          <path class="t-line" d={SIDE_STATIC.bellRim}></path>
-          <path class="t-tube" d={SIDE_STATIC.knuck}></path>
-          {Q9.map((_, i) => <path class={QC[i]} id={`air-v-${i}`}></path>)}
-          <path class="t-tube2" d={SIDE_STATIC.spacers}></path>
-          <path class="t-tube" d={SIDE_STATIC.casings}></path>
-          <path class="t-tube2" d={SIDE_STATIC.bands}></path>
-          <path class="t-tube2" d={SIDE_STATIC.caps}></path>
-          <path class="t-thin" d={SIDE_STATIC.knurl}></path>
-          <path class="t-felt" d={SIDE_STATIC.felts}></path>
-          {VX.map((x, i) => <text class="lbb" x={x} y="162" text-anchor="middle">{i + 1}</text>)}
-          <path class="t-tube" d={SIDE_STATIC.third}></path>
-          <path class="t-tube2" d={SIDE_STATIC.thirdRings}></path>
-          <path class="t-tube2" d={SIDE_STATIC.stops}></path>
-          {Q9.map((_, i) => <path class={QC[i]} id={`air-m-${i}`}></path>)}
-          <path class="t-tube" d={SIDE_STATIC.first}></path>
-          <path class="t-tube2" d={SIDE_STATIC.firstRings}></path>
-          <path class="t-tube" d={SIDE_STATIC.second}></path>
-          <path class="t-tube2" d={SIDE_STATIC.secondRings}></path>
-          <path class="t-tube" d={SIDE_STATIC.mainLow}></path>
-          <path class="t-tube" d={SIDE_STATIC.crook}></path>
-          <path class="t-tube2" d={SIDE_STATIC.mainRings}></path>
-          <path class="t-tube" d={SIDE_STATIC.recv}></path>
-          <path class="t-tube" d={SIDE_STATIC.lead}></path>
-          <path class="t-tube" d={SIDE_STATIC.outer}></path>
-          <path class="t-silver" d={SIDE_STATIC.mouth}></path>
-          {Q9.map((_, i) => <path class={QC[i]} id={`air-f-${i}`}></path>)}
-          <path class="t-tube2" d={SIDE_STATIC.firstKnob}></path>
-          <path class="t-tube2" d={SIDE_STATIC.secondKnob}></path>
-          <path class="t-tube2" d={SIDE_STATIC.braces}></path>
-          <path class="t-silver" d={SIDE_STATIC.hookBase}></path>
-          <path class="t-wire" d={SIDE_STATIC.hook}></path>
-          <path class="t-wire-i" d={SIDE_STATIC.hook}></path>
-          <path class="t-wire" d={SIDE_STATIC.saddle}></path>
-          <path class="t-wire-i" d={SIDE_STATIC.saddle}></path>
-          <path class="t-wire" d={SIDE_STATIC.ring}></path>
-          <path class="t-wire-i" d={SIDE_STATIC.ring}></path>
-          <path class="t-silver" d={SIDE_STATIC.rod}></path>
-          <path class="t-tube2" d={SIDE_STATIC.wkCup}></path>
-          <path class="t-silver" d={SIDE_STATIC.wkLever}></path>
-          <path class="t-silver" d={SIDE_STATIC.wkPivot}></path>
+          {SIDE_ITEMS.map((it) => ('air' in it ? Q9.map((_, i) => <path class={QC[i]} id={`air-${it.air}-${i}`}></path>) : <path class={it.cls} d={it.d}></path>))}
           <path class="t-silver" id="k-stems"></path>
           {[0, 1, 2].map((i) => (
             <g class="t-key" id={`k-${i}`} data-i={i}><path class="t-tube2"></path><path class="t-pearl"></path><path class="t-press"></path></g>
           ))}
-          <text class="lbs" x="46" y="181" text-anchor="middle">マウスピース</text>
-          <text class="lbs" x="235" y="168" text-anchor="middle">リードパイプ</text>
-          <text class="lbs" x="757" y="168">主管抜差し</text>
-          <text class="lbs" x="742" y="276" text-anchor="middle">ウォーターキー</text>
-          <text class="lbs" x="600" y="190" text-anchor="middle">第 3 抜差し</text>
-          <text class="lbs" x="268" y="282" text-anchor="middle">第 1 抜差し</text>
-          <text class="lbs" x="338" y="300" text-anchor="end">第 2 抜差し</text>
-          <text class="lbs" x="880" y="235" text-anchor="middle">ベル</text>
-          <text class="lbs" x="700" y="300" text-anchor="middle" id="f-len"></text>
+          {SIDE_TEXT.map((t) => <text class={t.cls ?? 'lbs'} x={t.x} y={t.y} text-anchor={t.a ?? 'start'} id={t.id}>{t.t}</text>)}
           <text class="lbv" x="0" y="-20" id="f-big"></text>
           <text class="lbs" x="0" y="-4" id="f-sub"></text>
           <text class="lbs" x="0" y="11" id="f-sub2"></text>

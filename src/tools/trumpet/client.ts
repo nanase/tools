@@ -26,7 +26,7 @@ import { control, type Manual } from './player';
 import { fAtX, LX, mouthpieceResonance, zAxes, zCurve, zEffOf, zPath, zY } from './plot';
 import { type PieceData, pieceOf } from './score';
 import { loadScore } from './scores/load';
-import { airPoints } from './shapes';
+import { airPoints } from './side';
 
 initToolPage();
 

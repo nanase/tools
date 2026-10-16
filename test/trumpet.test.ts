@@ -10,7 +10,7 @@ import { mouthpieceResonance } from '../src/tools/trumpet/plot';
 import { PIECES, pieceOf } from '../src/tools/trumpet/score';
 import { loadScore } from '../src/tools/trumpet/scores/load';
 import type { ScoreNote } from '../src/tools/trumpet/scores/types';
-import { AIR_N, airPoints, airQuads } from '../src/tools/trumpet/shapes';
+import { AIR_N, airPoints, airQuads } from '../src/tools/trumpet/side';
 import { boreSteps, inputImpedance, peaksOf } from '../src/tools/trumpet/tmm';
 
 const FS = 48000;

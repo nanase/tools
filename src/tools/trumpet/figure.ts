@@ -5,7 +5,8 @@
  * スローでは受け取った 1 周期を遅くして繰り返す
  */
 import { $ } from '../../lib/dom';
-import { AIR_LAYERS, type AirLayer, type AirQuad, airIndex, airQuads, keyShapes, lipShapes } from './shapes';
+import { lipShapes } from './shapes';
+import { AIR_LAYERS, type AirLayer, type AirQuad, airIndex, airQuads, keyShapes } from './side';
 
 export type FigMode = 'amp' | 'slow';
 
