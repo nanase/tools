@@ -1,12 +1,13 @@
 /**
  * トランペットの図（DOM）: 横から見た楽器の気柱を圧力の色で塗り、弁のボタンを押し具合で下げる。
  * 唇とマウスピースの断面は、1 周期の位相ごとの唇の開き・マウスピースの圧力から描く。
- * 振れ幅の表示では、管の中の各点の圧力の振れ幅（1 周期の最大と最小の差の半分）を 5 段（白から朱）で塗り、
- * スローでは受け取った 1 周期を遅くして繰り返し、圧力を 9 段（負は青、正は朱）で塗る。唇の断面はどちらでもスローで動かす
+ * 振れ幅の表示では、管の中の各点の圧力の振れ幅（1 周期の最大と最小の差の半分）を 33 段（白から朱）で塗り、
+ * スローでは受け取った 1 周期を遅くして繰り返し、圧力を 65 段（負は青、正は朱）で塗る。管の中の値は読む点の間を
+ * 線形に補う。唇の断面はどちらでもスローで動かす
  */
 import { $ } from '../../lib/dom';
 import { lipShapes } from './shapes';
-import { AIR_LAYERS, type AirLayer, type AirQuad, airIndex, airQuads, keyShapes } from './side';
+import { AIR_LAYERS, AIR_STEPS, type AirLayer, type AirQuad, airQuads, airSpan, keyShapes } from './side';
 
 export type FigMode = 'amp' | 'slow';
 
@@ -21,15 +22,19 @@ export interface Cycle {
   pm: number;
 }
 
-const QKEYS = 9;
+/** 気柱の色の段の数（負・0・正） */
+const QKEYS = 2 * AIR_STEPS + 1;
 
 export class TrumpetFigure {
-  /** 層ごとの、9 段の色の気柱 */
+  /** 層ごとの、段ごとの色の気柱 */
   private airEls = new Map<AirLayer, SVGPathElement[]>();
   private keyEls: SVGPathElement[][] = [];
   private stems: SVGPathElement;
   private quads: AirQuad[] = [];
-  private qIdx: Int32Array = new Int32Array(0);
+  /** 四角ごとの、はさむ 2 つの読む点と、その間の割合 */
+  private qA: Int32Array = new Int32Array(0);
+  private qB: Int32Array = new Int32Array(0);
+  private qT: Float32Array = new Float32Array(0);
   private vKey = '';
   mode: FigMode = 'amp';
   slow = 800;
@@ -66,7 +71,10 @@ export class TrumpetFigure {
     if (key === this.vKey) return;
     this.vKey = key;
     this.quads = airQuads(v);
-    this.qIdx = Int32Array.from(this.quads.map((q) => airIndex(q.el, q.s)));
+    const sp = this.quads.map((q) => airSpan(q.el, q.s));
+    this.qA = Int32Array.from(sp.map((x) => x[0]));
+    this.qB = Int32Array.from(sp.map((x) => x[1]));
+    this.qT = Float32Array.from(sp.map((x) => x[2]));
   }
 
   /**
@@ -113,14 +121,18 @@ export class TrumpetFigure {
     }
     for (let i = 0; i < this.quads.length; i++) {
       const q = this.quads[i],
-        v = val ? val[this.qIdx[i]] / this.scale : 0,
-        j = Math.max(amp ? 0 : -4, Math.min(4, Math.round(4 * v))) + 4;
+        t = this.qT[i],
+        v = val ? (val[this.qA[i]] * (1 - t) + val[this.qB[i]] * t) / this.scale : 0,
+        j = Math.max(amp ? 0 : -AIR_STEPS, Math.min(AIR_STEPS, Math.round(AIR_STEPS * v))) + AIR_STEPS;
       (D.get(q.layer) as string[])[j] += q.d;
     }
     for (const l of AIR_LAYERS) {
       const ds = D.get(l) as string[],
         els = this.airEls.get(l) as SVGPathElement[];
-      for (let j = 0; j < QKEYS; j++) els[j].setAttribute('d', ds[j] || 'M0 0');
+      for (let j = 0; j < QKEYS; j++) {
+        const d = ds[j] || 'M0 0';
+        if (els[j].getAttribute('d') !== d) els[j].setAttribute('d', d);
+      }
     }
   }
 

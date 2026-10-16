@@ -1021,9 +1021,12 @@ export function airQuads(v: readonly boolean[]): AirQuad[] {
   chain(7, [[seg(c1 - CW, Y_LOW, BOW.x, Y_LOW, 4), AIR, 'b']]);
   chain(8, [[bellPts(), (p) => Math.max(AIR, bellHw(p) - 1.6), 'b']]);
   const out: AirQuad[] = [
-    /* ベルの縁の手前の半分の内側（縁の面より右へふくらむ半楕円）。気柱の終わり（要素 8 の端）の色で塗る */
+    /*
+     * ベルの縁の手前の半分の内側（縁の面より右へふくらむ半楕円）。気柱の終わり（要素 8 の端）の色で塗る。
+     * 同じ色の四角と 1 本の path にまとめるので、重なりが打ち消されないよう四角と同じ回り（画面で左回り）にする
+     */
     {
-      d: `M${P(MOUTH.x - 0.5, MOUTH.y - MOUTH.ry + 1.2)}A${f1(MOUTH.rx - MOUTH.w)} ${f1(MOUTH.ry - 1.2)} 0 0 1 ${P(MOUTH.x - 0.5, MOUTH.y + MOUTH.ry - 1.2)}Z`,
+      d: `M${P(MOUTH.x - 0.5, MOUTH.y - MOUTH.ry + 1.2)}L${P(MOUTH.x - 0.5, MOUTH.y + MOUTH.ry - 1.2)}A${f1(MOUTH.rx - MOUTH.w)} ${f1(MOUTH.ry - 1.2)} 0 0 0 ${P(MOUTH.x - 0.5, MOUTH.y - MOUTH.ry + 1.2)}Z`,
       layer: 'b',
       el: 8,
       s: 0.995,
@@ -1054,7 +1057,7 @@ export function airQuads(v: readonly boolean[]): AirQuad[] {
   return out;
 }
 
-/** 管の中の圧力を読む点（要素ごとの数）。図の四角は最も近い点の値を使う */
+/** 管の中の圧力を読む点（要素ごとの数）。図の四角は、はさむ 2 つの点の値を線形に補って使う */
 export const AIR_N = [80, 24, 12, 3, 8, 3, 12, 10, 80] as const;
 /** 読む点の列（要素, 位置）の対 */
 export function airPoints(): Float32Array {
@@ -1064,9 +1067,19 @@ export function airPoints(): Float32Array {
   });
   return Float32Array.from(out);
 }
-/** 要素 el の位置 s に最も近い読む点の番号 */
-export function airIndex(el: number, s: number): number {
+/** 要素 el の位置 s をはさむ 2 つの読む点の番号と、その間の割合（同じ要素の中で線形に補う） */
+export function airSpan(el: number, s: number): [number, number, number] {
   let k = 0;
   for (let i = 0; i < el; i++) k += AIR_N[i];
-  return k + Math.min(AIR_N[el] - 1, Math.max(0, Math.floor(s * AIR_N[el])));
+  const n = AIR_N[el],
+    x = Math.min(n - 1, Math.max(0, s * n - 0.5)),
+    i0 = Math.floor(x);
+  return [k + i0, k + Math.min(n - 1, i0 + 1), x - i0];
 }
+/** 気柱の色の段の数（負と正のそれぞれ）と、段ごとの塗り（負は CH2 の青、正は朱。0 は図の地） */
+export const AIR_STEPS = 32;
+export const AIR_FILLS: string[] = Array.from({ length: 2 * AIR_STEPS + 1 }, (_, i) => {
+  const j = i - AIR_STEPS,
+    pct = ((100 * Math.abs(j)) / AIR_STEPS).toFixed(1);
+  return j === 0 ? 'var(--t-air0)' : `color-mix(in srgb,var(${j < 0 ? '--ch2' : '--accent'}) ${pct}%,var(--t-air0))`;
+});

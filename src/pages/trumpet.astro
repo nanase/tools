@@ -18,7 +18,7 @@ import { DIST, DYNS, FLIP, FMAX, PM, SLOW, SPANS, TEMP, VOL0 } from '../tools/tr
 import { zGrid } from '../tools/trumpet/plot';
 import { PIECES } from '../tools/trumpet/score';
 import { MP_STATIC, MP_VIEW } from '../tools/trumpet/shapes';
-import { SIDE_ITEMS, SIDE_TEXT, SIDE_VIEW } from '../tools/trumpet/side';
+import { AIR_FILLS, SIDE_ITEMS, SIDE_TEXT, SIDE_VIEW } from '../tools/trumpet/side';
 import Theory from '../tools/trumpet/Theory.astro';
 
 const name = 'トランペット音響モデル';
@@ -28,8 +28,6 @@ const related = [
   ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'trumpet')),
   ...TOOLS.filter((t) => t.c !== CAT && !t.s),
 ];
-const Q9 = ['m4', 'm3', 'm2', 'm1', 'z', 'p1', 'p2', 'p3', 'p4'];
-const QC = ['pq-4', 'pq-3', 'pq-2', 'pq-1', 'pq0', 'pq1', 'pq2', 'pq3', 'pq4'];
 /** はしご の段（高い倍音から） */
 const ROWS = [...PARTIALS].reverse().filter((n) => n <= 8);
 ---
@@ -49,7 +47,7 @@ const ROWS = [...PARTIALS].reverse().filter((n) => n <= 8);
       </div>
       <div class="vw" id="vw-side">
         <svg class="vf" id="tside" viewBox={SIDE_VIEW} role="img" aria-label="横から見たトランペット。管の中の空気を、圧力の色で描く。押した弁の抜差しを空気が通る">
-          {SIDE_ITEMS.map((it) => ('air' in it ? Q9.map((_, i) => <path class={QC[i]} id={`air-${it.air}-${i}`}></path>) : <path class={it.cls} d={it.d}></path>))}
+          {SIDE_ITEMS.map((it) => ('air' in it ? AIR_FILLS.map((f, i) => <path style={`fill:${f}`} id={`air-${it.air}-${i}`}></path>) : <path class={it.cls} d={it.d}></path>))}
           <path class="t-silver" id="k-stems"></path>
           {[0, 1, 2].map((i) => (
             <g class="t-key" id={`k-${i}`} data-i={i}><path class="t-tube2"></path><path class="t-pearl"></path><path class="t-press"></path></g>
