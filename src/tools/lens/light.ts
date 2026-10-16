@@ -28,7 +28,7 @@ export interface Fan {
 export const SPEC_NM = Array.from({ length: 16 }, (_, i) => 400 + 20 * i);
 
 /** CIE 1931 の等色関数の多峰ガウスの近似（Wyman・Sloan・Shirley, 2013） */
-function cmf(nm: number): [number, number, number] {
+export function cmf(nm: number): [number, number, number] {
   const g = (m: number, s1: number, s2: number) => {
     const t = (nm - m) / (nm < m ? s1 : s2);
     return Math.exp(-0.5 * t * t);
@@ -40,7 +40,7 @@ function cmf(nm: number): [number, number, number] {
   ];
 }
 /** XYZ → 線形 sRGB */
-const toRgb = ([X, Y, Z]: [number, number, number]): [number, number, number] => [
+export const toRgb = ([X, Y, Z]: [number, number, number]): [number, number, number] => [
   3.2406 * X - 1.5372 * Y - 0.4986 * Z,
   -0.9689 * X + 1.8758 * Y + 0.0415 * Z,
   0.0557 * X - 0.204 * Y + 1.057 * Z,

@@ -1,0 +1,173 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import More from '../components/More.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import { order, TOOLS } from '../data/tools';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/focusing-mask/style.css';
+import {
+  AST,
+  BAR,
+  BF,
+  COMA,
+  DIA,
+  EXP,
+  FOC,
+  HD,
+  MASKS,
+  OBS,
+  PIX,
+  ROT,
+  SCOPES,
+  SEE,
+  TEMP,
+  TH,
+  THR,
+} from '../tools/focusing-mask/params';
+import { FSC, GP, RAY } from '../tools/focusing-mask/plot';
+import Theory from '../tools/focusing-mask/Theory.astro';
+
+const name = 'フォーカシングマスク';
+/* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
+const CAT = '画像・光学';
+const related = [
+  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'focusing-mask')),
+  ...TOOLS.filter((t) => t.c !== CAT && !t.s),
+];
+---
+<SiteLayout title={name} tool={{ id: 'focusing-mask', name }} description="望遠鏡にバーティノフマスクなどのピント合わせのマスクを付けたときの星の像を、波長ごとの回折で計算します。ピントのずれと光条のずれの関係を、像とグラフで確かめられます。" note="星の像は、フラウンホーファー回折を波長ごとに計算して足し合わせたものです（大気のゆらぎは近似）。">
+  <PageTitle title={name}>望遠鏡の前にピント合わせのマスク（バーティノフマスクなど）を付けたときの星の像を、開口とマスクの形のとおりに波長ごとの回折で計算します。ピントをずらすと、光条や穴の像がどれだけずれるかを、カメラの映像・グラフ・横から見た光の通り道で確かめられます。</PageTitle>
+  <div class="mini" aria-hidden="true"><span>Δz<b id="mZ"></b></span><span id="mEl">e<b id="mE"></b></span><span id="mXl">推定<b id="mX"></b></span></div>
+
+  <div class="tgrid">
+
+    <div class="col c1">
+      <Panel hid="hd-view" title="カメラの映像" class="a-view">
+        <div slot="aux" class="seg" id="p-ov" role="group" aria-label="重ねる線"><button type="button" data-v="on" aria-pressed="true" title="光条の位置を測って線を重ねる（穴のマスクは、像の位置の予測）">解析を重ねる</button><button type="button" data-v="off" aria-pressed="false" title="映像だけ">映像だけ</button></div>
+        <div class="sbar">
+          <span class="stag">MASK <b id="v-mask"></b></span>
+          <span class="stag">D <b id="v-D"></b></span>
+          <span class="stag">f <b id="v-f"></b></span>
+          <span class="stag"><b id="v-N"></b></span>
+          <span class="stag">Δz <b id="v-dz" class="hw" data-ph="−0000 µm"></b></span>
+          <span class="stag">SEEING <b id="v-see"></b></span>
+        </div>
+        <div class="sv" id="sv">
+          <canvas id="sv-c" tabindex="0" role="img" aria-label="カメラの映像" title="ホイール・＋ − キーで拡大と縮小、ドラッグ・矢印キーで移動、ダブルクリック・0 キーで ×1 に戻す"></canvas>
+          <svg class="ov" id="sv-ov" aria-hidden="true" preserveAspectRatio="none"></svg>
+          <div class="lab" id="sv-lab"></div>
+          <div class="sv-z" role="group" aria-label="拡大"><button type="button" id="zm-out" aria-label="縮小" title="縮小"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 8h8"/></svg></button><button type="button" id="zm-v" class="hw" data-ph="×16.0" title="×1 に戻す"></button><button type="button" id="zm-in" aria-label="拡大" title="拡大"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 8h8M8 4v8"/></svg></button></div>
+          <div class="zoom"><canvas id="zm-c" aria-hidden="true"></canvas><span>中心 ×4</span></div>
+          <p class="sv-msg" id="sv-msg" hidden></p>
+        </div>
+        <div class="foc">
+          <div class="foc-h"><span class="pn" id="n-dz">ピントの位置 <i>Δz</i></span><span class="v"><span id="dz-v" class="hw" data-ph="−0000"></span><small>µm</small></span></div>
+          <svg class="fsc" id="fsc" viewBox={`0 0 ${FSC.w} ${FSC.h}`} tabindex="0" role="slider" aria-labelledby="n-dz"></svg>
+          <div class="foc-b" id="foc-b" role="group" aria-label="ピントの位置のよく使う値"></div>
+        </div>
+        <More id="g-view" title="表示の設定"><div class="ptab">
+          <ParamRow d={EXP} />
+          <ChoiceRow k="st" name="明るさの伸ばし方" sub="リニアはカメラの撮って出し（芯が飽和する）。asinh は暗い所を持ち上げ、芯と光条を 1 枚で見せる（Lupton ほか 2004）" choices={[['lin', 'リニア'], ['asinh', 'asinh']]} value="lin" />
+          <ChoiceRow k="cm" name="カメラ" sub="カラーは星の色のまま、モノクロは明るさだけで描く" choices={[['color', 'カラー'], ['mono', 'モノクロ']]} value="color" />
+        </div></More>
+      </Panel>
+
+      <Panel hid="hd-gp" title="ピントの位置と像の変化" class="a-gp">
+        <div slot="aux" class="seg" id="p-gv" role="group" aria-label="グラフ"><button type="button" data-v="both" aria-pressed="true" title="CH1（マスクの読み値）と CH2（星像の大きさ）">CH1・CH2</button><button type="button" data-v="one" aria-pressed="false" title="CH1（マスクの読み値）だけ">CH1</button></div>
+        <div class="sbar">
+          <span class="stag" id="gp-l1"><i class="sw" aria-hidden="true"></i><span id="gp-t1"></span></span>
+          <span class="stag" id="gp-l2"><i class="sw c2" aria-hidden="true"></i>CH2 星像の大きさ HFD（マスクなし）</span>
+          <span class="stag">X <b id="gp-x"></b></span>
+        </div>
+        <div class="scope gp">
+          <svg viewBox={`0 0 ${GP.w} ${GP.h}`} id="gp" role="img" aria-label="ピントの位置に対する光条のずれと星像の大きさのグラフ"></svg>
+        </div>
+        <div class="sbar rdbar" data-ph="Δz −0000 µm · e −00.00 µm · HFD 000.0 µm"><span class="rd" id="gp-rd"></span></div>
+      </Panel>
+    </div>
+
+    <div class="col c2">
+      <Panel hid="hd-mask" title="マスク" class="a-mask">
+        <div class="mf" id="mf">
+          <div class="mf-w"><canvas id="mf-c" role="img" aria-label="マスクの正面"></canvas><p class="mf-drop" id="mf-drop" hidden>ここへ画像をドロップ</p></div>
+          <div class="mf-t">
+            <p id="mf-d" class="hh" data-ph="キャリー・マスク（2009）。四分円 4 つの斜めの格子が、開きの違う 2 つの X 字の光条を作ります。ピントが合うと 2 つの X が対称に重なります。"></p>
+            <div class="mf-f" id="mf-f" hidden><label class="tg" for="mf-in">画像を選ぶ…</label><input type="file" id="mf-in" accept="image/*"><span class="mf-n" id="mf-n"></span></div>
+            <p class="msg" id="mf-m" aria-live="polite"></p>
+          </div>
+        </div>
+        <div class="ptab">
+          <ChoiceRow k="mk" name="マスクの種類" choices={MASKS} value="bahtinov" layout="chips" msg />
+          <ParamRow d={THR} />
+          <ChoiceRow k="ic" name="光を通す色" sub="画像の白い所と黒い所の、どちらを穴（光を通す所）にするか" choices={[['white', '白'], ['black', '黒']]} value="white" />
+          <ChoiceRow k="im" name="開口" sub="円の中だけは、鏡筒の円い口の中に画像を重ねる。画像のままは、画像の正方形をそのまま開口にする（鏡筒の口・中央遮蔽・スパイダーを使わない）" choices={[['circle', '円の中だけ'], ['whole', '画像のまま']]} value="circle" />
+          <ParamRow d={TH} />
+          <ParamRow d={BF} />
+          <ParamRow d={ROT} />
+        </div>
+        <More id="g-mask"><div class="ptab">
+          <ParamRow d={BAR} />
+          <ChoiceRow k="or" name="斜めのスリットの向き" sub="バーティノフの斜めのスリットを、2005 年の原図の向きか、その逆に傾ける。逆向きにすると光条のずれが小さくなる" choices={[['std', '原図の向き'], ['rev', '逆向き']]} value="std" />
+          <ParamRow d={HD} />
+        </div></More>
+      </Panel>
+
+      <Panel hid="hd-ray" title="光の通り道（横から）" class="a-ray">
+        <div class="sbar">
+          <span class="stag"><i class="sw" aria-hidden="true"></i><span id="ray-t1"></span></span>
+          <span class="stag" id="ray-l2"><i class="sw c2" aria-hidden="true"></i><span id="ray-t2"></span></span>
+        </div>
+        <div class="scope ray">
+          <svg viewBox={`0 0 ${RAY.w} ${RAY.h}`} id="ray" role="img" aria-label="横から見た光の通り道"></svg>
+        </div>
+        <p class="note">横方向は、センサーの位置のずれを拡大しています。区画ごとの光は焦点で 1 点に集まり、センサーが焦点からずれると別々の所に当たります。この当たる所のずれが、光条や穴の像のずれになります。</p>
+      </Panel>
+
+      <Panel hid="hd-scope" title="望遠鏡" class="a-scope">
+        <div class="ptab">
+          <ChoiceRow k="tp" name="形式" choices={SCOPES} value="refr" />
+          <ParamRow d={DIA} />
+          <ParamRow d={FOC} />
+          <ParamRow d={OBS} />
+        </div>
+        <More id="g-scope"><div class="ptab">
+          <ParamRow d={COMA} />
+          <ParamRow d={AST} />
+        </div></More>
+      </Panel>
+
+      <Panel hid="hd-star" title="星と空とカメラ" class="a-star">
+        <div class="ptab">
+          <ParamRow d={TEMP} />
+          <ParamRow d={SEE} />
+          <ParamRow d={PIX} />
+        </div>
+      </Panel>
+    </div>
+
+    <Panel hid="hd-out" title="計算結果" class="a-out">
+      <dl class="metrics c3">
+        <div class="m m-main"><dt id="o-mt"></dt><dd><span id="o-mv"></span><span class="m-sub hh" id="o-ms" data-ph="臨界焦点範囲の外。センサーが焦点より奥にある。0000 µm 手前へ送る"></span></dd></div>
+        <div class="m"><dt id="o-et"></dt><dd><span id="o-ev"></span><span class="m-sub" id="o-es"></span></dd></div>
+        <div class="m"><dt>臨界焦点範囲</dt><dd><span id="o-cfz"></span><span class="m-sub">±2λN²（λ = 550 nm、レイリーの基準）</span></dd></div>
+        <div class="m"><dt id="o-st"></dt><dd><span id="o-sv"></span><span class="m-sub" id="o-ss"></span></dd></div>
+        <div class="m"><dt>星像の大きさ HFD</dt><dd><span id="o-hfd"></span><span class="m-sub">マスクなし、ピントのずれも含む</span></dd></div>
+        <div class="m"><dt>1 次の回折の間隔</dt><dd><span id="o-ord"></span><span class="m-sub" id="o-ords"></span></dd></div>
+        <div class="m"><dt>格子の周期</dt><dd><span id="o-per"></span><span class="m-sub" id="o-pers"></span></dd></div>
+      </dl>
+    </Panel>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools list={related} />
+  <script>
+    import '../tools/focusing-mask/client';
+  </script>
+</SiteLayout>
