@@ -5,6 +5,7 @@
  * 線の class は site.css の .ic にある: a = ch1、b = ch2、c = 画面の線、d = 破線、t = 細線、g = 残像、
  * w = 黒鍵の太線、fa・fb・fc = 塗り、pl・pd・il・ih・al・ad = SVG テーマの図柄の明るい地と暗い地
  */
+import { czaAlt, parDist, R22 } from '../tools/halo/labels';
 import { fanPath } from '../tools/jjy/fan';
 import {
   BODY_LEN,
@@ -714,6 +715,30 @@ export const ART: Record<string, Art> = {
       P('a', `M4 13H40L100 ${r1(y1)}M4 35H40L100 ${r1(y2)}`) +
       P('b', `M4 12L40 16L100 ${r1(yb)}M4 26L40 30L100 30`)
     );
+  },
+  /* ハロ（暈）: 太陽がゆっくり昇り沈みし、幻日は太陽が高いほど内暈から離れ、環天頂アークは天頂へ寄って
+     太陽高度 32° を超えると消える。1° を 0.5 にとり、地平線の下は切る */
+  hl(t) {
+    const k = 0.5,
+      e = 22 + 14 * Math.sin(t * 0.8),
+      sx = 60,
+      sy = 44 - e * k,
+      rr = r1(R22 * k);
+    let s = P('c d', `M6 ${r1(sy)}H114`);
+    s += `<circle class="b" cx="${sx}" cy="${r1(sy)}" r="${rr}"/>`;
+    const pd = parDist(e);
+    if (!Number.isNaN(pd))
+      for (const g of [-1, 1]) s += `<circle class="a" cx="${r1(sx + g * pd * k)}" cy="${r1(sy)}" r="1.4"/>`;
+    /* 上端接弧（内暈の上に接する V） */
+    const ty = sy - rr;
+    s += P('b', `M${sx - 9} ${r1(ty - 2.6)}Q${sx} ${r1(ty + 1.2)} ${sx + 9} ${r1(ty - 2.6)}`);
+    const cz = czaAlt(e);
+    if (!Number.isNaN(cz)) {
+      const cy = 44 - cz * k,
+        w = 10 + (32 - e) * 0.25;
+      s += P('a', `M${r1(sx - w)} ${r1(cy - 3)}Q${sx} ${r1(cy + 3)} ${r1(sx + w)} ${r1(cy - 3)}`);
+    }
+    return `<clipPath id="ca-hl"><rect x="0" y="0" width="120" height="44"/></clipPath><g clip-path="url(#ca-hl)">${s}<circle class="a" cx="${sx}" cy="${r1(sy)}" r="2.2"/></g>${P('c', 'M4 44H116')}`;
   },
   /* フォーカシングマスク: バーティノフマスクの正面と、星の 3 本の光条。ピントが前後し、中央の光条が X の交点の上下を通る */
   fk(t) {

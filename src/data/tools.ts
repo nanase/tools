@@ -208,6 +208,14 @@ export const TOOLS: Tool[] = [
     k: 'lens camera optics レンズ カメラ 光学 光線追跡 ray tracing 絞り aperture f値 焦点距離 focal length ピント focus 被写界深度 depth of field ボケ bokeh 玉ボケ 収差 aberration ザイデル seidel 球面収差 コマ 非点収差 像面湾曲 歪曲 distortion 色収差 chromatic 周辺減光 vignetting ダブルガウス double gauss テッサー tessar トリプレット triplet アクロマート achromat 望遠 広角 webgl',
   },
   {
+    id: 'halo',
+    c: '画像・光学',
+    t: 'ハロ（暈）',
+    d: '氷晶に通した光線を追い、日暈や幻日、環天頂アークの空を描きます。',
+    ic: 'hl',
+    k: 'halo ハロー 日暈 月暈 暈 かさ 内暈 22度 外暈 46度 幻日 幻月 sun dog parhelion 幻日環 parhelic circle 環天頂アーク circumzenithal 環水平アーク circumhorizontal 太陽柱 sun pillar タンジェントアーク 上端接弧 外接ハロ tangent arc パリーアーク parry ローウィッツアーク lowitz ラテラルアーク 120度幻日 錐面 pyramidal 9度 氷晶 ice crystal 六角柱 巻雲 cirrus ダイヤモンドダスト diamond dust 大気光学 atmospheric optics 大気光象 薄明 夕焼け 地球の影 光線追跡 ray tracing モンテカルロ monte carlo webgl',
+  },
+  {
     id: 'focusing-mask',
     c: '画像・光学',
     t: 'フォーカシングマスク',
