@@ -11,13 +11,23 @@
 
 /* カメラの映像（地はテーマによらず黒。重ねる線と文字は暗いテーマの色） */
 .sv{position:relative;aspect-ratio:1/1;border:1px solid var(--line);border-radius:var(--r);background:#000;overflow:hidden}
-.sv>canvas{display:block;width:100%;height:100%}
+.sv>canvas{display:block;width:100%;height:100%;cursor:zoom-in;touch-action:pan-y}
+.sv>canvas.pan{cursor:grab}.sv>canvas.pan:active{cursor:grabbing}
+.sv>canvas:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+/* 拡大の操作（映像の右上）。映像の地は黒なので、色はテーマに依らない */
+.sv-z{position:absolute;top:8px;right:8px;display:flex;border:1px solid #48525a;border-radius:4px;background:rgb(0 0 0 / .55);overflow:hidden}
+.sv-z button{display:grid;place-items:center;min-width:32px;height:30px;padding:0 6px;border:0;background:none;color:#e6e8e4;font:600 12px/1 var(--mono);font-variant-numeric:tabular-nums;cursor:pointer}
+.sv-z button+button{border-left:1px solid #48525a}
+.sv-z button:hover:not(:disabled){background:rgb(255 255 255 / .12)}
+.sv-z button:disabled{color:#5d676e;cursor:default}
+.sv-z button:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+.sv-z svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
 .sv .ov{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 .ov .ln{fill:none;stroke-width:1.2;stroke-dasharray:6 5;opacity:.9;vector-effect:non-scaling-stroke}
 .ov .l1{stroke:#f2c230}.ov .l2{stroke:#52c4dd}
 .ov .cx,.ov .sp{fill:none;stroke:#e6e8e4;stroke-width:1.2;vector-effect:non-scaling-stroke}
 .ov text{fill:#e6e8e4;font:600 12px var(--mono);paint-order:stroke;stroke:#000;stroke-width:3px;stroke-linejoin:round}
-.sv .lab{position:absolute;left:10px;top:8px;color:#aab3b8;font:500 11.5px/1.4 var(--mono)}
+.sv .lab{position:absolute;left:8px;bottom:8px;padding:2px 6px;border-radius:3px;background:rgb(0 0 0 / .55);color:#aab3b8;font:500 11.5px/1.4 var(--mono)}
 .sv .zoom{position:absolute;right:8px;bottom:8px;width:31%;aspect-ratio:1/1;border:1px solid #48525a;border-radius:3px;background:#000;overflow:hidden}
 .sv .zoom canvas{display:block;width:100%;height:100%;image-rendering:pixelated}
 .sv .zoom span{position:absolute;left:5px;top:3px;color:#aab3b8;font:500 10.5px var(--mono)}

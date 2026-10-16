@@ -286,6 +286,16 @@ let C = cond();
 let S: Section[] = [];
 let secKey = '';
 let frame: Img | null = null;
+/** 最後に計算した点像（拡大・縮小でカメラの像の大きさだけ変えるときに使う） */
+let lastPsf: { img: Img; c: Cond } | null = null;
+/** 映像の拡大（×1 で BASE 画素）と、表示の中心（光軸からの画素、下が正） */
+let zoom = 1,
+  vx = 0,
+  vy = 0;
+{
+  const z = stored('zoom');
+  if (typeof z === 'number' && Number.isFinite(z) && z > 0) zoom = z;
+}
 /** マスクなしで合焦した星像（露出の基準と HFD の基準） */
 let ref: { key: string; peak: number; hfd: number } | null = null;
 let busy = false,
@@ -305,12 +315,17 @@ const sceneOf = (c: Cond, nb: number, N = NFFT): Scene => ({
   nb,
   N,
 });
-/** カメラの像の 1 辺: 点像の範囲（N/2 の画素）に収まる数（224 まで） */
-const camOf = (c: Cond): Cam => {
+/** ×1 で映像の幅に出すカメラの画素の数 */
+const BASE = 224;
+/** カメラの像の 1 辺の上限: 点像の範囲（N/2 の画素）に収まる数 */
+const nFov = (c: Cond): number => {
   const alpha = 400e-9 / (1.1 * c.D * 1e-3),
     beta = (c.cam.pitch * 1e-6) / (c.f * 1e-3);
-  return { ...c.cam, n: Math.max(32, Math.min(224, 2 * Math.floor(((NFFT / 2) * alpha) / beta / 2))) };
+  return Math.max(32, Math.min(512, 2 * Math.floor(((NFFT / 2) * alpha) / beta / 2)));
 };
+/** 今の拡大で要るカメラの像の 1 辺（×1 より縮小すると広げる） */
+const needN = (c: Cond): number => Math.min(nFov(c), Math.max(BASE, 2 * Math.ceil(BASE / zoom / 2)));
+const camOf = (c: Cond, n = Math.min(BASE, nFov(c))): Cam => ({ ...c.cam, n });
 
 function schedule(): void {
   C = cond();
@@ -341,7 +356,8 @@ function run(): void {
   void pool.render(sceneOf(c, nb), 'main').then((img) => {
     busy = false;
     if (img && v === version) {
-      frame = expose(img, c.f, camOf(c));
+      lastPsf = { img, c };
+      frame = expose(img, c.f, camOf(c, needN(c)));
       draw();
       if (nb === NB_QUICK && !dirty) {
         full = true;
@@ -590,9 +606,7 @@ function draw(): void {
   const c = C,
     fr = frame;
   if (!fr) return;
-  const n = fr.n,
-    ctx = svc.getContext('2d');
-  if (!ctx) return;
+  const n = fr.n;
   /* 露出: マスクなしで合焦した星像の最も明るい画素を、リニアで 2500 倍飽和させる明るさを ×1 とする */
   const pk = ref?.peak || 1e-3,
     lin = st$.value === 'lin',
@@ -603,8 +617,8 @@ function draw(): void {
     img = { ...fr, r: Y, g: Y, b: Y };
   }
   const px = toRgba(img, gain, lin ? 'lin' : 'asinh');
-  if (svc.width !== n) svc.width = svc.height = n;
-  ctx.putImageData(new ImageData(px, n, n), 0, 0);
+  if (fc.width !== n) fc.width = fc.height = n;
+  fc.getContext('2d')?.putImageData(new ImageData(px, n, n), 0, 0);
   /* 中心の拡大（×4 の範囲を画素のまま） */
   const zn = Math.max(8, Math.round(n / 4 / 2) * 2),
     z0 = (n - zn) / 2,
@@ -628,9 +642,6 @@ function draw(): void {
     if (zmc.width !== zn) zmc.width = zmc.height = zn;
     zctx.putImageData(new ImageData(toRgba(sub, gain / 6, lin ? 'lin' : 'asinh'), zn, zn), 0, 0);
   }
-  const arcs = (fr.px * 206264.806).toPrecision(3);
-  txt('#sv-lab', `${n} × ${n} px（${sig(c.cam.pitch, 3)} µm）· ${arcs}″/px`);
-  svc.setAttribute('aria-label', `カメラの映像。ピントの位置 ${sgn(dz)} µm`);
 
   /* 光条の解析（バーティノフ）と、穴の像の位置の予測 */
   const Y = lum(fr),
@@ -639,8 +650,8 @@ function draw(): void {
     half = Math.max(3, 0.8 * blur + 2),
     r0 = Math.max(6, (1.6 * half) / Math.sin(th)),
     r1 = n * 0.45;
-  let meas: number | null = null,
-    ovs = '';
+  let meas: number | null = null;
+  ovl.length = 0;
   const ln = (a: number, q: number, cls: string) => {
     /* 向き a（y は上）、法線の向きの位置 q（画素）の直線を、像の端まで */
     const d = [Math.cos(a), Math.sin(a)],
@@ -649,15 +660,20 @@ function draw(): void {
       p = (t: number) => [n / 2 + nn[0] * q + d[0] * t, n / 2 - (nn[1] * q + d[1] * t)];
     const [x0, y0] = p(-L),
       [x1, y1] = p(L);
-    return `<path class="ln ${cls}" d="M${x0.toFixed(2)} ${y0.toFixed(2)}L${x1.toFixed(2)} ${y1.toFixed(2)}"/>`;
+    ovl.push({ k: 'l', cls, x0, y0, x1, y1 });
   };
   if (c.kind === 'bahtinov' && r1 > r0 + 4) {
     const fit = fitBahtinov(Y, n, c.m.rot, th, r0, r1, half, 0.5);
     meas = fit.off * c.cam.pitch;
-    ovs += ln(c.m.rot, fit.mid, 'l1') + ln(c.m.rot + th, fit.qa, 'l2') + ln(c.m.rot - th, fit.qb, 'l2');
-    const cx = n / 2 - Math.sin(c.m.rot) * fit.cross,
-      cy = n / 2 - Math.cos(c.m.rot) * fit.cross;
-    ovs += `<circle class="cx" cx="${cx.toFixed(2)}" cy="${cy.toFixed(2)}" r="${(n / 85).toFixed(2)}"/>`;
+    ln(c.m.rot, fit.mid, 'l1');
+    ln(c.m.rot + th, fit.qa, 'l2');
+    ln(c.m.rot - th, fit.qb, 'l2');
+    ovl.push({
+      k: 'c',
+      cls: 'cx',
+      x0: n / 2 - Math.sin(c.m.rot) * fit.cross,
+      y0: n / 2 - Math.cos(c.m.rot) * fit.cross,
+    });
   } else if (c.kind === 'hartmann' || c.kind === 'scheiner' || c.kind === 'tri' || c.kind === 'carey') {
     /* 幾何光学の予測: 区画の像の位置（穴）と光条（格子） */
     for (const s of S) {
@@ -665,15 +681,150 @@ function draw(): void {
       if (s.dir) {
         const a = Math.atan2(s.dir[1], s.dir[0]),
           q = -Math.sin(a) * x + Math.cos(a) * y;
-        ovs += ln(a, q, 'l2');
-      } else
-        ovs += `<circle class="sp" cx="${(n / 2 + x).toFixed(2)}" cy="${(n / 2 - y).toFixed(2)}" r="${(n / 60).toFixed(2)}"/>`;
+        ln(a, q, 'l2');
+      } else ovl.push({ k: 'c', cls: 'sp', x0: n / 2 + x, y0: n / 2 - y });
     }
   }
-  ov.setAttribute('viewBox', `0 0 ${n} ${n}`);
-  ov.innerHTML = ov$.value === 'on' ? ovs : '';
-
+  view();
   results(meas, Y, n);
+}
+
+/** 重ねる線と点（カメラの像の画素の座標） */
+const ovl: { k: 'l' | 'c'; cls: string; x0: number; y0: number; x1?: number; y1?: number }[] = [];
+/** トーンを掛けたカメラの像（拡大・移動ではこれを描き直すだけ） */
+const fc = document.createElement('canvas');
+
+/** 今の拡大と中心で、映像と重ねる線を描く */
+function view(): void {
+  const fr = frame,
+    ctx = svc.getContext('2d');
+  if (!fr || !ctx) return;
+  const n = fr.n,
+    zmin = BASE / nFov(C),
+    W = Math.max(1, Math.round(svc.clientWidth * Math.min(2, devicePixelRatio || 1)));
+  zoom = Math.max(zmin, Math.min(16, zoom));
+  const sw = Math.min(n, BASE / zoom),
+    sx = Math.max(0, Math.min(n - sw, n / 2 + vx - sw / 2)),
+    sy = Math.max(0, Math.min(n - sw, n / 2 + vy - sw / 2));
+  /* 中心を、像の外へ出ない範囲に戻す */
+  vx = sx + sw / 2 - n / 2;
+  vy = sy + sw / 2 - n / 2;
+  if (svc.width !== W) svc.width = svc.height = W;
+  /* カメラの 1 画素が 3 表示画素より大きいときは、画素のまま（ぼかさない） */
+  ctx.imageSmoothingEnabled = W / sw < 3;
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, W, W);
+  ctx.drawImage(fc, sx, sy, sw, sw, 0, 0, W, W);
+  ov.setAttribute('viewBox', `${sx.toFixed(3)} ${sy.toFixed(3)} ${sw.toFixed(3)} ${sw.toFixed(3)}`);
+  const r = (4 * sw) / Math.max(1, svc.clientWidth);
+  ov.innerHTML =
+    ov$.value === 'on'
+      ? ovl
+          .map((o) =>
+            o.k === 'l'
+              ? `<path class="ln ${o.cls}" d="M${o.x0.toFixed(2)} ${o.y0.toFixed(2)}L${o.x1?.toFixed(2)} ${o.y1?.toFixed(2)}"/>`
+              : `<circle class="${o.cls}" cx="${o.x0.toFixed(2)}" cy="${o.y0.toFixed(2)}" r="${r.toFixed(3)}"/>`,
+          )
+          .join('')
+      : '';
+  const arcs = (fr.px * 206264.806).toPrecision(3),
+    vis = Math.round(sw);
+  txt('#sv-lab', `${vis} × ${vis} px（${sig(C.cam.pitch, 3)} µm）· ${arcs}″/px`);
+  txt('#zm-v', `×${zoom < 10 ? zoom.toFixed(1) : zoom.toFixed(0)}`);
+  $<HTMLButtonElement>('#zm-in').disabled = zoom >= 16 - 1e-9;
+  $<HTMLButtonElement>('#zm-out').disabled = zoom <= zmin + 1e-9;
+  svc.classList.toggle('pan', sw < n - 0.5);
+  svc.setAttribute('aria-label', `カメラの映像。ピントの位置 ${sgn(dz)} µm、拡大 ×${zoom.toFixed(1)}`);
+}
+
+/**
+ * 拡大を z にする。(fx, fy) は映像の上の割合（0〜1）で、その点が動かないように中心をずらす。
+ * ×1 より縮小してカメラの像の大きさが変わるときは、最後の点像から像を作り直す
+ */
+function setZoom(z: number, fx = 0.5, fy = 0.5): void {
+  const fr = frame;
+  if (!fr) return;
+  const zmin = BASE / nFov(C),
+    z1 = Math.max(zmin, Math.min(16, z)),
+    sw0 = Math.min(fr.n, BASE / zoom),
+    sw1 = BASE / z1;
+  /* 指した点の、光軸からの位置（画素）を保つ */
+  const px = vx + (fx - 0.5) * sw0,
+    py = vy + (fy - 0.5) * sw0;
+  vx = px - (fx - 0.5) * sw1;
+  vy = py - (fy - 0.5) * sw1;
+  zoom = z1;
+  if (Math.abs(zoom - 1) < 1e-9) forget('zoom');
+  else store('zoom', zoom);
+  const n = needN(C);
+  if (lastPsf && n !== fr.n) {
+    frame = expose(lastPsf.img, lastPsf.c.f, camOf(lastPsf.c, n));
+    draw();
+  } else view();
+}
+
+/* 拡大・縮小と移動: ホイール（指した点を中心に）、ボタン、ドラッグ、キー、ダブルクリック */
+{
+  const at = (e: { clientX: number; clientY: number }) => {
+    const b = svc.getBoundingClientRect();
+    return [(e.clientX - b.left) / b.width, (e.clientY - b.top) / b.height] as const;
+  };
+  svc.addEventListener(
+    'wheel',
+    (e) => {
+      if (!frame) return;
+      e.preventDefault();
+      /* 行単位のスクロールは 1 行を 40 画素とみなす。1 刻み（100 画素）で約 1.2 倍 */
+      const d = e.deltaMode === 1 ? e.deltaY * 40 : e.deltaY,
+        [fx, fy] = at(e);
+      setZoom(zoom * Math.exp(-d * 0.0018), fx, fy);
+    },
+    { passive: false },
+  );
+  let drag: { x: number; y: number; vx: number; vy: number } | null = null;
+  svc.addEventListener('pointerdown', (e) => {
+    if (e.pointerType !== 'mouse' || e.button !== 0 || !frame) return;
+    drag = { x: e.clientX, y: e.clientY, vx, vy };
+    svc.setPointerCapture(e.pointerId);
+  });
+  svc.addEventListener('pointermove', (e) => {
+    if (!drag || !frame) return;
+    const k = Math.min(frame.n, BASE / zoom) / svc.getBoundingClientRect().width;
+    vx = drag.vx - (e.clientX - drag.x) * k;
+    vy = drag.vy - (e.clientY - drag.y) * k;
+    view();
+  });
+  for (const n of ['pointerup', 'pointercancel'] as const)
+    svc.addEventListener(n, () => {
+      drag = null;
+    });
+  svc.addEventListener('dblclick', () => {
+    vx = vy = 0;
+    setZoom(1);
+  });
+  svc.addEventListener('keydown', (e) => {
+    const step = Math.min(frame?.n ?? BASE, BASE / zoom) / 10;
+    if (e.key === '+' || e.key === '=') setZoom(zoom * 1.25);
+    else if (e.key === '-' || e.key === '_') setZoom(zoom / 1.25);
+    else if (e.key === '0') {
+      vx = vy = 0;
+      setZoom(1);
+    } else if (e.key.startsWith('Arrow')) {
+      if (e.key === 'ArrowLeft') vx -= step;
+      else if (e.key === 'ArrowRight') vx += step;
+      else if (e.key === 'ArrowUp') vy -= step;
+      else vy += step;
+      view();
+    } else return;
+    e.preventDefault();
+  });
+  $('#zm-in').addEventListener('click', () => setZoom(zoom * 1.5));
+  $('#zm-out').addEventListener('click', () => setZoom(zoom / 1.5));
+  $('#zm-v').addEventListener('click', () => {
+    vx = vy = 0;
+    setZoom(1);
+  });
+  if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => view()).observe(svc);
 }
 
 function results(meas: number | null, Y: Float64Array, n: number): void {

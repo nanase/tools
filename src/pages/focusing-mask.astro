@@ -57,9 +57,10 @@ const related = [
           <span class="stag">SEEING <b id="v-see"></b></span>
         </div>
         <div class="sv" id="sv">
-          <canvas id="sv-c" role="img" aria-label="カメラの映像"></canvas>
+          <canvas id="sv-c" tabindex="0" role="img" aria-label="カメラの映像" title="ホイール・＋ − キーで拡大と縮小、ドラッグ・矢印キーで移動、ダブルクリック・0 キーで ×1 に戻す"></canvas>
           <svg class="ov" id="sv-ov" aria-hidden="true" preserveAspectRatio="none"></svg>
           <div class="lab" id="sv-lab"></div>
+          <div class="sv-z" role="group" aria-label="拡大"><button type="button" id="zm-out" aria-label="縮小" title="縮小"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 8h8"/></svg></button><button type="button" id="zm-v" class="hw" data-ph="×16.0" title="×1 に戻す"></button><button type="button" id="zm-in" aria-label="拡大" title="拡大"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 8h8M8 4v8"/></svg></button></div>
           <div class="zoom"><canvas id="zm-c" aria-hidden="true"></canvas><span>中心 ×4</span></div>
           <p class="sv-msg" id="sv-msg" hidden></p>
         </div>
