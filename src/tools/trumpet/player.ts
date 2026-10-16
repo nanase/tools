@@ -2,7 +2,9 @@
  * 奏者（DOM に依存しない）: 口の圧力・唇の共振・弁を標本ごとに決めて、トランペットを吹く。
  * 強弱は、その音が鳴る口の圧力の範囲（calib.ts）の中で対数に割り振り、同じ表から音高が合う唇の比を引く。
  * 舌（タ・ダ）は口の圧力を止めて離す弁として、立ち上がりの速さと少しの行き過ぎで表す（Hruska ら 2015 の
- * 口圧の形）。スラーは口の圧力を続けたまま唇の共振を移す。弁は VALVE_TIME で押し切る
+ * 口圧の形）。舌を離す瞬間、唇はタでは閉じた位置、ダでは半ば閉じた位置から動き始める（開いた位置から
+ * 始めると、振動が育つのに 0.1〜0.2 秒かかり、短い音が鳴りきらない）。スラーは口の圧力を続けたまま唇の共振を移す。
+ * 弁は VALVE_TIME で押し切る
  */
 import { CALIB } from './calib';
 import type { Trumpet } from './instrument';
@@ -84,6 +86,9 @@ export interface Ctl {
   idx: number;
 }
 
+/** 舌を離す瞬間の唇の閉じ具合（1 = 閉じている。lips.ts の set） */
+const CLOSE = { ta: 1, da: 0.5 } as const;
+
 /** ビブラートの速さ [Hz] と深さ [セント]（唇の共振を揺らす。トランペット固有の実測はなく、このツールで決めた） */
 const VIB_HZ = 5.5,
   VIB_C = 14;
@@ -105,6 +110,8 @@ export class Player {
   /* 曲 */
   private notes: PNote[] = [];
   private k = 0;
+  /** 唇を閉じた位置から始めた音（曲の音の番号） */
+  private begun = -1;
   /** 曲の頭からの時刻 [s] */
   time = 0;
   playing = false;
@@ -136,6 +143,7 @@ export class Player {
     this.man = null;
     this.time = from;
     this.k = 0;
+    this.begun = -1;
     while (this.k < notes.length && notes[this.k].t + notes[this.k].span <= from) this.k++;
     this.playing = notes.length > 0;
   }
@@ -164,6 +172,7 @@ export class Player {
       if (g.blow) {
         const t = this.manT,
           tau = g.tongue === 'da' ? 0.012 : 0.005;
+        if (t === 0 && g.tongue !== 'slur') tr.lips.set(CLOSE[g.tongue]);
         want =
           t < 0.3 && g.tongue !== 'slur' ? c.pm * (1 - Math.exp(-t / tau)) * (1 + 0.12 * Math.exp(-t / 0.04)) : c.pm;
         fGoal = t < 0.1 && g.tongue !== 'slur' ? f * (1 + 0.03 * Math.exp(-t / 0.015)) : f;
@@ -194,6 +203,10 @@ export class Player {
           if (t < n.d) {
             const tau = n.tongue === 'da' ? 0.012 : 0.005,
               over = n.acc ? 0.3 : 0.12;
+            if (!legato && this.begun !== this.k) {
+              tr.lips.set(CLOSE[n.tongue]);
+              this.begun = this.k;
+            }
             want = legato ? c.pm : c.pm * (1 - Math.exp(-t / tau)) * (1 + over * Math.exp(-t / 0.04));
             /* 舌で止める音は終わりの 35 ms（短い音は 1/3）で口の圧力を抜く */
             const rel = n.slur ? 0 : Math.min(0.035, n.d / 3);

@@ -74,6 +74,11 @@ export class Lips {
     return this.p - pm1;
   }
 
+  /** 唇を止めて、開き h0·(1 − k) の位置に置く（k = 1 で閉じる。舌を離す瞬間の唇） */
+  set(k: number) {
+    this.y = this.yp = -this.prm.h0 * k;
+  }
+
   reset() {
     this.y = this.yp = this.dp = this.u = this.p = 0;
   }

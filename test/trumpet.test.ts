@@ -5,7 +5,7 @@ import { Bore } from '../src/tools/trumpet/guide';
 import { Trumpet } from '../src/tools/trumpet/instrument';
 import { FINGERS, fingering, HIGH, LOW, mtof } from '../src/tools/trumpet/notes';
 import { dynOfDb, levelOfMarks, performPiece } from '../src/tools/trumpet/perform';
-import { control } from '../src/tools/trumpet/player';
+import { control, Player } from '../src/tools/trumpet/player';
 import { mouthpieceResonance } from '../src/tools/trumpet/plot';
 import { PIECES, pieceOf } from '../src/tools/trumpet/score';
 import { loadScore } from '../src/tools/trumpet/scores/load';
@@ -127,6 +127,50 @@ describe('唇と奏者', () => {
     for (const m of [55, 58, 65, 70, 74, 77]) {
       const { f0 } = blow(m, 0.55);
       expect(Math.abs(cents(f0, mtof(m))), `MIDI ${m}`).toBeLessThan(15);
+    }
+  });
+
+  it('舌で区切って同じ音を続けても、どの音も鳴りきって音程が合う', () => {
+    for (const [m, d, tongue] of [
+      [67, 0.23, 'da'],
+      [70, 0.1, 'ta'],
+      [79, 0.4, 'da'],
+    ] as const) {
+      const notes = [0, 1, 2, 3].map((i) => ({
+          t: 0.2 + i * 0.45,
+          d: 0.25,
+          span: 0.45,
+          m,
+          d0: d,
+          d1: d,
+          slur: false,
+          acc: false,
+          tongue,
+        })),
+        tr = new Trumpet(FS),
+        pl = new Player(FS),
+        N = Math.round(2.2 * FS),
+        p = new Float64Array(N);
+      pl.start(notes, 0);
+      for (let i = 0; i < N; i++) {
+        pl.step(tr);
+        p[i] = tr.lips.p;
+      }
+      for (const n of notes) {
+        const a = Math.round((n.t + 0.06) * FS),
+          b = Math.round((n.t + n.d - 0.03) * FS),
+          seg = p.subarray(a, b),
+          mean = seg.reduce((s, v) => s + v, 0) / seg.length,
+          cr: number[] = [];
+        let e = 0;
+        for (let i = 1; i < seg.length; i++) {
+          if (seg[i - 1] - mean <= 0 && seg[i] - mean > 0) cr.push(i);
+          e += (seg[i] - mean) ** 2;
+        }
+        const f0 = ((cr.length - 1) * FS) / (cr[cr.length - 1] - cr[0]);
+        expect(Math.abs(cents(f0, mtof(m))), `MIDI ${m} ${n.t}`).toBeLessThan(15);
+        expect(Math.sqrt(e / seg.length)).toBeGreaterThan(1000);
+      }
     }
   });
 
