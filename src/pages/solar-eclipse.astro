@@ -1,0 +1,165 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import More from '../components/More.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import { order, TOOLS } from '../data/tools';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/solar-eclipse/style.css';
+import { ELEV, LAT, LON, SPEEDS, ZOOMS } from '../tools/solar-eclipse/params';
+import Theory from '../tools/solar-eclipse/Theory.astro';
+
+const name = '日食';
+/* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
+const CAT = '画像・光学';
+const related = [
+  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'solar-eclipse')),
+  ...TOOLS.filter((t) => t.c !== CAT && !t.s),
+];
+---
+<SiteLayout title={name} tool={{ id: 'solar-eclipse', name }} description="紀元前 2000 年から 3000 年までの日食を、選んだ観測地から見た空と太陽、宇宙から見た地球に落ちる月の影、サロス周期で並ぶ日食の経路で再現します。" note="日食の要素は NASA の五千年正典（Eclipse Predictions by Fred Espenak, NASA's GSFC）、地図は Natural Earth、地名は国土数値情報（国土交通省）と全国地方公共団体コード（総務省）を加工して作成。月の縁の凹凸と大気差は入れていません。">
+  <PageTitle title={name}>NASA の五千年正典（Espenak & Meeus 2006）のベッセル要素から、選んだ観測地での日食の始まり・最大・終わりの時刻と食分を計算し、空の暗さ、欠けていく太陽、皆既のコロナとダイヤモンドリングを描きます。宇宙から見た地球には月の影が落ち、サロス周期（18 年 11 日）で並ぶ同じ系列の日食の経路も世界地図で比べられます。</PageTitle>
+  <div class="mini" aria-hidden="true"><span>時刻<b id="mT"></b></span><span>面積比<b id="mO"></b></span><span id="mP"></span></div>
+
+  <div class="tgrid">
+
+    <Panel hid="hd-sky" title="空" class="a-sky">
+      <div slot="aux" class="seg" id="p-play" data-nosave><button type="button" id="play" aria-pressed="false" title="時刻を進める（表示の設定の速さで）"><span class="led" id="playLed" aria-hidden="true"></span><span id="playT">再生</span></button></div>
+      <div class="bigclock">
+        <span class="clk"><span id="clk">—</span><small id="clkz">JST</small></span>
+        <span class="st">様子<b id="o-ph">—</b></span>
+        <span class="st">面積比<b id="o-ob">—</b></span>
+        <span class="st">光の量 <i>F</i><b id="o-f">—</b></span>
+        <span class="st">空の明るさ（昼 = 1）<b id="o-sb">—</b></span>
+        <span class="st">太陽<b id="o-sun">—</b></span>
+      </div>
+      <div class="vw skyw">
+        <canvas id="sky" width="1160" height="440" role="img" aria-label="観測地から太陽の方角の空を見た広角の眺め"></canvas>
+        <div class="lab" id="sky-lab"></div>
+        <div class="inset"><canvas id="sun" width="360" height="360" role="img" aria-label="望遠で見た太陽と月"></canvas><span id="sun-lab"></span></div>
+      </div>
+      <svg class="tsv" id="curve" viewBox="0 0 1000 222" role="slider" tabindex="0" aria-label="時刻（光の量の時間変化の上を押して動かす）" aria-valuemin="0" aria-valuemax="1000" aria-valuenow="0">
+        <g id="c-ev"></g>
+        <path class="gl" d="M0 60H1000M0 115H1000M0 170H1000"></path>
+        <text x="4" y="57">F = 1</text><text x="4" y="167">0</text>
+        <path class="lin" id="c-lin"></path>
+        <path class="lg" id="c-lg"></path>
+        <path class="par" id="c-par"></path>
+        <path class="tot" id="c-tot"></path>
+        <g id="c-tk"></g>
+        <path class="cur" id="c-cur"></path>
+      </svg>
+      <div class="legend"><span><i></i>光の量 F（周辺減光を入れた太陽の残り）</span><span><i class="dash"></i>同じ量の対数（10⁻⁴·⁵〜1）</span><span><i class="band"></i><span id="lg-band">皆既</span></span><span id="lg-tz">横軸の時刻は日本時間</span></div>
+      <div class="tchips" id="keys" role="group" aria-label="主な時刻へ移る"></div>
+      <div class="tstep">
+        <span class="aux">時刻を少し動かす</span>
+        <div class="seg" id="tstep" role="group" aria-label="時刻を少し動かす"><button type="button" data-s="-60">−1 分</button><button type="button" data-s="-10">−10 秒</button><button type="button" data-s="-1">−1 秒</button><button type="button" data-s="1">+1 秒</button><button type="button" data-s="10">+10 秒</button><button type="button" data-s="60">+1 分</button></div>
+      </div>
+      <More id="g-sky" title="表示の設定"><div class="ana2">
+        <div class="ptab">
+          <ChoiceRow k="tz" name="時刻" sub="日本時間（UTC+9）か世界時（UT）。時刻は ΔT を引いた UT1 から出す" choices={[['jst', '日本時間'], ['ut', '世界時']]} value="jst" />
+          <ChoiceRow k="zm" name="望遠の視野" sub="小窓の短い辺が表す角度。太陽の見かけの直径は約 0.53°" choices={ZOOMS} value="0.75" />
+        </div>
+        <div class="ptab">
+          <ChoiceRow k="sp" name="再生の速さ" sub="実際の時間の何倍で進めるか" choices={SPEEDS} value="60" />
+        </div>
+      </div></More>
+    </Panel>
+
+    <div class="col c1">
+      <Panel hid="hd-site" title="観測地のまわり" class="a-site">
+        <span slot="aux" class="aux">押すと観測地が移る · ドラッグで動かす</span>
+        <div class="vw regw">
+          <canvas id="reg" width="560" height="460" role="img" aria-label="観測地のまわりの地図。皆既帯と、その時刻の月の影。押すと観測地が移り、ドラッグで地図が動く"></canvas>
+          <div class="lab" id="reg-lab"></div>
+          <button type="button" class="vbtn" id="reg-home" hidden>観測地を中心に</button>
+        </div>
+        <div class="legend"><span><i class="band"></i><span id="lg-reg">皆既帯</span></span><span><i></i>中心線</span><span><i class="dot"></i>観測地</span></div>
+      </Panel>
+
+      <Panel hid="hd-space" title="宇宙から" class="a-space">
+        <div slot="aux" class="seg" id="p-view" role="group" aria-label="視点"><button type="button" data-v="l1" aria-pressed="true" title="太陽と地球の間の L1（DSCOVR の位置）から">L1</button><button type="button" data-v="geo" aria-pressed="false" title="静止軌道 東経 140.7°（ひまわりの位置）から">ひまわり</button><button type="button" data-v="moon" aria-pressed="false" title="月から">月</button></div>
+        <div class="spw">
+          <div class="vw sq globew"><canvas id="globe" width="300" height="300" role="img" aria-label="宇宙から見た地球と月の影。ドラッグで地球が回る"></canvas><button type="button" class="vbtn" id="globe-home" hidden>視点に戻す</button></div>
+          <p class="vcap" id="globe-cap"></p>
+        </div>
+      </Panel>
+    </div>
+
+    <div class="col c2">
+      <Panel hid="hd-loc" title="観測地" class="a-loc">
+        <span slot="aux" class="aux">選んだ地点はブラウザに保存</span>
+        <div class="locbar">
+          <div class="lsearch">
+            <input type="search" id="q" aria-label="地名で探す" placeholder="地名で探す（日本の市・世界の主要都市）" autocomplete="off" aria-controls="sugg" aria-expanded="false">
+            <ul class="sugg" id="sugg" aria-label="候補" hidden></ul>
+          </div>
+          <button type="button" class="evbtn" id="here"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v4M12 18v4M2 12h4M18 12h4"></path></svg>現在地</button>
+          <a class="evbtn" href="#hd-site"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2z"></path><path d="M9 4v14M15 6v14"></path></svg>地図で選ぶ</a>
+        </div>
+        <p class="msg" id="loc-msg" aria-live="polite"></p>
+        <div class="locnow"><b id="loc-name"></b><span id="loc-coord"></span><em id="loc-note"></em></div>
+        <More id="g-loc" title="緯度・経度で指定"><div class="ptab"><ParamRow d={LAT} /><ParamRow d={LON} /><ParamRow d={ELEV} /></div></More>
+      </Panel>
+
+      <Panel hid="hd-out" title="予報" class="a-out">
+        <dl class="metrics c3">
+          <div class="m m-main"><dt id="o-mt">—</dt><dd><span id="o-mv">—</span><span class="m-sub" id="o-ms"></span></dd></div>
+          <div class="m"><dt>部分食の始め C1</dt><dd id="o-c1">—</dd></div>
+          <div class="m"><dt>食の最大</dt><dd id="o-mx">—</dd></div>
+          <div class="m"><dt>部分食の終わり C4</dt><dd id="o-c4">—</dd></div>
+          <div class="m"><dt>食分（最大）</dt><dd id="o-mg">—</dd></div>
+          <div class="m"><dt>面積比（最大）</dt><dd id="o-oc">—</dd></div>
+          <div class="m"><dt id="o-bdt">皆既帯から</dt><dd id="o-bd">—</dd></div>
+        </dl>
+      </Panel>
+
+      <Panel hid="hd-list" title="見える日食" class="a-list">
+        <span slot="aux" class="aux" id="list-span"></span>
+        <div class="lbox">
+          <table class="lst">
+            <thead><tr><th scope="col">日付</th><th scope="col">種類（世界）</th><th scope="col" id="list-here">ここで</th><th scope="col">食分</th><th scope="col">最大</th><th scope="col">高度</th></tr></thead>
+            <tbody id="list"></tbody>
+          </table>
+        </div>
+        <More id="g-find" title="ほかの日食を探す"><div class="find">
+          <div class="fbar">
+            <div class="seg" id="p-fk" role="group" aria-label="探し方" data-nosave><button type="button" data-v="y" aria-pressed="true">年</button><button type="button" data-v="s" aria-pressed="false">サロス番号</button></div>
+            <input type="number" id="fq" inputmode="numeric" aria-label="年かサロス番号" placeholder="例 2035">
+            <span class="aux" id="f-note">−1999〜3000 年</span>
+          </div>
+          <div class="lbox"><table class="lst"><thead><tr><th scope="col">日付</th><th scope="col">種類</th><th scope="col">サロス</th><th scope="col">γ</th><th scope="col">最長</th><th scope="col">最大食の地点</th></tr></thead><tbody id="find"></tbody></table></div>
+        </div></More>
+      </Panel>
+    </div>
+
+    <Panel hid="hd-saros" title="サロス" class="a-saros">
+      <div slot="aux" class="seg" id="p-sm" role="group" aria-label="描き方"><button type="button" data-v="all" aria-pressed="true">重ねる</button><button type="button" data-v="one" aria-pressed="false">1 回ずつ</button></div>
+      <div class="sbar"><span class="stag">投影 <b>Equal Earth</b></span><span class="stag">灰 <b>過去</b></span><span class="stag">茶 <b>未来</b></span><span class="stag">枠付きの年 <b id="s-here">観測地で欠けて見える回</b></span></div>
+      <div class="smap">
+        <canvas id="sbase" width="1160" height="565" aria-hidden="true"></canvas>
+        <svg viewBox="0 0 1160 565" preserveAspectRatio="none" aria-hidden="true"><path class="old" id="s-old"></path><path class="fut" id="s-fut"></path><path class="hb" id="s-band"></path><path class="hc" id="s-sel"></path><path class="hc2" id="s-sel2"></path></svg>
+        <div class="slabs" id="slabs"></div>
+      </div>
+      <div class="srange sl"><input type="range" id="s-rng" min="1" max="2" step="1" value="1" aria-label="系列の中の回"></div>
+      <div class="sinfo">
+        <div>選んだ回<b id="s-date">—</b></div><div>種類<b id="s-type">—</b></div><div>系列の中の番号<b id="s-pos">—</b></div><div>γ・食分<b id="s-gm">—</b></div><div>中心の継続時間<b id="s-dur">—</b></div><div>ΔT の不確かさ<b id="s-sig">—</b></div><div><span id="s-hn">観測地</span>から<b id="s-hv">—</b></div>
+      </div>
+      <div class="sgo"><button type="button" class="evbtn" id="s-go">この回を上に表示</button></div>
+      <div class="tiles" id="tiles" role="group" aria-label="系列の回"></div>
+      <p class="vcap" id="s-cap"></p>
+    </Panel>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools list={related} />
+  <script>
+    import '../tools/solar-eclipse/client';
+  </script>
+</SiteLayout>

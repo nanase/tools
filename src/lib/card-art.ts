@@ -791,6 +791,34 @@ export const ART: Record<string, Art> = {
       `<circle class="fc" cx="${sx}" cy="24" r="3"/>`
     );
   },
+  /* 日食: 月が太陽を横切り、右の光の量の曲線の上を今の点が進む */
+  se(t) {
+    const R = 14,
+      Rm = 14.6,
+      cx = 26,
+      cy = 24;
+    /** 中心の距離 d で、太陽の面積のうち見えている割合 */
+    const vis = (d: number): number => {
+      if (d >= R + Rm) return 1;
+      if (d <= Rm - R) return 0;
+      const a1 = Math.acos((d * d + R * R - Rm * Rm) / (2 * d * R)),
+        a2 = Math.acos((d * d + Rm * Rm - R * R) / (2 * d * Rm));
+      return 1 - (R * R * (a1 - Math.sin(2 * a1) / 2) + Rm * Rm * (a2 - Math.sin(2 * a2) / 2)) / (Math.PI * R * R);
+    };
+    const u = mod(0.3 + t * 0.12, 1) * 2 - 1,
+      span = 36,
+      mx = cx + u * span,
+      my = cy + u * 5,
+      cur = (x: number): number => 10 + 28 * (1 - vis(Math.abs((x - 86) / 30) * Math.hypot(span, 5))),
+      px = 86 + u * 30;
+    return (
+      `<clipPath id="ca-se"><rect x="4" y="4" width="46" height="40"/></clipPath><g clip-path="url(#ca-se)"><circle class="fa" cx="${cx}" cy="${cy}" r="${R}"/>` +
+      `<circle class="c" style="fill:var(--screen)" cx="${r1(mx)}" cy="${r1(my)}" r="${Rm}"/></g>` +
+      P('c d', 'M56 38H116') +
+      P('b', fx(cur, 56, 116, 90)) +
+      `<circle class="fb" cx="${r1(px)}" cy="${r1(cur(px))}" r="2.6"/>`
+    );
+  },
   /* SVG テーマスキーマチェッカー: 明るい地と暗い地に同じ SVG を並べる。暗い地では黒い線が見えにくい。
      2 枚が同じ倍率で拡大する */
   svg(t) {

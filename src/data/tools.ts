@@ -223,6 +223,14 @@ export const TOOLS: Tool[] = [
     ic: 'fk',
     k: 'focusing mask フォーカスマスク ピント合わせ 合焦 focus bahtinov バーティノフ tri-bahtinov トライ・バーティノフ carey キャリー hartmann ハルトマン scheiner シャイナー 望遠鏡 telescope 天体写真 astrophotography 星 光条 回折 diffraction fraunhofer フラウンホーファー fft 点像 psf シーイング seeing 臨界焦点範囲 critical focus zone cfz 光軸 collimation コマ hfd',
   },
+  {
+    id: 'solar-eclipse',
+    c: '画像・光学',
+    t: '日食',
+    d: '過去と未来の日食を、選んだ地点から見た空と、宇宙から見た月の影で再現します。',
+    ic: 'se',
+    k: 'solar eclipse 日食 皆既日食 金環日食 部分日食 total annular hybrid partial 食分 面積比 magnitude obscuration コロナ corona ダイヤモンドリング diamond ring ベイリー baily 月の影 本影 半影 umbra penumbra 皆既帯 中心線 central line サロス saros ベッセル要素 besselian elements nasa 五千年正典 five millennium canon espenak meeus deltat δt 地方食 local circumstances 天文 astronomy 太陽 月',
+  },
 ];
 /** 準備中を後ろへ */
 export const order = (L: Tool[]): Tool[] => L.slice().sort((a, b) => (a.s || 0) - (b.s || 0));

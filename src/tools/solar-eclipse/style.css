@@ -1,0 +1,135 @@
+/* 日食のページだけのスタイル（共通は src/styles/site.css） */
+
+/* 並び: スマホは 空 → 観測地のまわり → 宇宙 → 観測地 → 予報 → 一覧 → サロス → 式。
+   PC は上に全幅で空、左の列に 観測地のまわり・宇宙、右の列に 観測地・予報・一覧、下に全幅で サロス・式 */
+@media (min-width:1000px){
+  .tgrid{grid-template-columns:minmax(0,6fr) minmax(0,6fr);align-items:start;grid-template-areas:"sky sky" "c1 c2" "saros saros" "thy thy"}
+  .a-sky{grid-area:sky}.c1{grid-area:c1}.c2{grid-area:c2}.a-saros{grid-area:saros}.a-thy{grid-area:thy}
+}
+
+/* 時刻と、その時刻の様子を 1 行に */
+.bigclock{display:flex;flex-wrap:wrap;align-items:center;gap:10px 22px;margin-bottom:10px}
+.bigclock .clk{font:700 34px/1 var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.01em;min-width:5.2em}
+.bigclock .clk small{font-size:14px;font-weight:500;color:var(--ink-2);margin-left:.4em}
+.bigclock .st{display:grid;gap:2px;font-size:12.5px;color:var(--ink-2)}
+.bigclock .st b{font:700 15px/1.3 var(--mono);color:var(--ink);font-variant-numeric:tabular-nums}
+
+/* 画像の窓（空・地図・地球）。光の量そのものを描くので、テーマに依らない */
+.vw{position:relative;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:#000}
+.vw>canvas{display:block;width:100%;height:auto}
+.vw .lab{position:absolute;left:10px;top:8px;font:500 11.5px/1.45 var(--mono);color:#e6e8e4;text-shadow:0 0 3px #000,0 0 6px #000;pointer-events:none}
+.vw .lab.dk{color:#15191c;text-shadow:0 0 3px #fff,0 0 6px #fff}
+.vw.sq{aspect-ratio:1/1}
+.vw.sq>canvas{height:100%}
+.vw .inset{position:absolute;right:10px;bottom:10px;width:30%;aspect-ratio:1/1;border:1px solid #48525a;border-radius:3px;overflow:hidden;background:#000}
+.vw .inset canvas{display:block;width:100%;height:100%}
+.vw .inset span{position:absolute;left:6px;top:4px;color:#aab3b8;font:500 10.5px var(--mono);pointer-events:none}
+/* 狭い画面では、望遠の小窓を空の下に大きく出す（空に重ねると空がほとんど隠れる） */
+@media (max-width:640px){
+  .skyw .inset{position:relative;right:auto;bottom:auto;width:auto;margin:0;border:0;border-top:1px solid #48525a;border-radius:0}
+}
+.regw canvas,.globew canvas{touch-action:none;user-select:none;-webkit-user-select:none}
+.regw canvas{cursor:crosshair}
+.regw canvas.drag,.globew canvas{cursor:grab}
+.globew canvas.drag{cursor:grabbing}
+/* 地図・地球儀の上の小さなボタン（動かしたあとに戻す） */
+.vbtn{position:absolute;right:8px;top:8px;height:28px;padding:0 10px;border:1px solid #48525a;border-radius:4px;background:rgb(10 12 14 / .72);color:#e6e8e4;font:500 12px/1 var(--sans);cursor:pointer}
+.vbtn:hover{background:rgb(10 12 14 / .9)}
+.vbtn:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+.legend{display:flex;flex-wrap:wrap;gap:4px 16px;margin-top:8px;font:500 12px/1.4 var(--sans);color:var(--ink-2)}
+.legend i{display:inline-block;vertical-align:middle;width:18px;height:0;margin-right:6px;border-top:2px solid var(--ink)}
+.legend i.band{height:8px;border:1px solid var(--ink);background:color-mix(in srgb,var(--ink) 30%,transparent)}
+.legend i.dash{border-top:1.5px dashed var(--ink-2)}
+.legend i.dot{width:10px;height:10px;border:2px solid var(--ink);border-radius:50%}
+.vcap{margin:8px 2px 0;font-size:12.5px;line-height:1.6;color:var(--ink-2)}
+.vcap b{color:var(--ink)}
+.spw{display:grid;grid-template-columns:200px minmax(0,1fr);gap:14px;align-items:center}
+.spw .vcap{margin:0}
+@media (max-width:520px){.spw{grid-template-columns:minmax(0,1fr)}}
+
+/* 光の量の曲線と時刻: 押した所・ドラッグした所の時刻にする */
+.tsv{display:block;width:100%;height:auto;margin-top:12px;overflow:visible;touch-action:pan-y;cursor:ew-resize;user-select:none;-webkit-user-select:none}
+.tsv:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.tsv .gl{stroke:var(--grid);stroke-width:1}
+.tsv text{fill:var(--ink-3);font:10.5px var(--mono)}
+.tsv .cl{fill:var(--ink);font:700 10.5px var(--mono)}
+.tsv .lin{fill:none;stroke:var(--ink);stroke-width:1.6}
+.tsv .lg{fill:none;stroke:var(--ink-2);stroke-width:1.2;stroke-dasharray:4 3}
+.tsv .par{stroke:var(--ink-3);stroke-width:5;stroke-linecap:round;opacity:.45}
+.tsv .tot{stroke:var(--ink);stroke-width:9}
+.tsv .tk{stroke:var(--ink-2);stroke-width:1}
+.tsv .cur{stroke:var(--ink);stroke-width:2}
+.tchips{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.tchips .chip{display:inline-flex;align-items:baseline;gap:6px;min-width:64px}
+.tchips .chip small{font:500 11.5px var(--sans)}
+.tstep{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-top:8px}
+.tstep .seg button{min-width:52px}
+/* 時刻の帯の出来事（接触・最大・日の出入り）: 縦の破線と名前 */
+.tsv .ev{stroke:var(--ink-3);stroke-width:1;stroke-dasharray:3 3}
+.tsv .evt{fill:var(--ink);font:600 11px var(--sans)}
+
+/* 観測地: 地名の検索・現在地・地図で選ぶ。検索の候補には、選んでいる日食での見え方を添える */
+.evbtn{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 12px;border:1px solid var(--line-2);border-radius:4px;background:var(--surface);color:var(--ink);font:500 12.5px/1 var(--sans);text-decoration:none;cursor:pointer}
+.evbtn:hover{border-color:var(--ink-3);color:var(--ink)}
+.evbtn svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.evbtn:disabled{opacity:.4;cursor:default}
+.locbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px}
+.lsearch{position:relative;flex:1 1 320px;min-width:0}
+.lsearch input{box-sizing:border-box;width:100%;height:36px;padding:0 12px;border:1px solid var(--line-2);border-radius:4px;background:var(--inset);color:var(--ink);font:500 14px var(--sans)}
+.lsearch input:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+.sugg{position:absolute;z-index:30;left:0;right:0;top:calc(100% + 4px);margin:0;padding:4px;list-style:none;border:1px solid var(--line-2);border-radius:6px;background:var(--surface);box-shadow:0 10px 28px rgb(0 0 0 / .25);max-height:340px;overflow:auto}
+.sugg .sgh{padding:4px 8px 6px;font-size:12px;color:var(--ink-3);border-bottom:1px solid var(--line);margin-bottom:4px}
+.sg{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:1px 12px;width:100%;padding:6px 8px;border:0;border-radius:4px;background:none;color:var(--ink);text-align:left;cursor:pointer;font:inherit}
+.sg:hover,.sg[aria-selected="true"]{background:var(--inset)}
+.sg b{font-size:14px}
+.sg small{grid-column:1;font-size:12px;color:var(--ink-3)}
+.sg span{grid-row:1/3;grid-column:2;align-self:center;font:600 12.5px var(--mono);color:var(--ink-2)}
+.locnow{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px;margin-top:6px}
+.locnow b{font-size:18px}
+.locnow span{font:500 13px var(--mono);color:var(--ink-2)}
+.locnow em{font-style:normal;font-size:13px;color:var(--ink-2)}
+.a-loc .msg:empty{display:none}
+
+/* 予報 */
+.a-out .m-sub{display:block;font:500 15px/1.4 var(--sans);color:var(--ink-2)}
+@media (min-width:1000px){.a-out .metrics{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+/* 日食の一覧 */
+.lst{width:100%;border-collapse:collapse;font-size:13px}
+.lst th{position:sticky;top:0;background:var(--surface);font-size:12px;font-weight:700;color:var(--ink-2);text-align:left;padding:6px 8px;border-bottom:1px solid var(--line-2);white-space:nowrap}
+.lst td{padding:5px 8px;border-bottom:1px solid var(--line);font:500 12.5px/1.3 var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.lst td.t{font:700 12.5px/1.3 var(--sans)}
+.lst tbody tr{cursor:pointer}
+.lst tbody tr:hover td{background:var(--inset)}
+.lst tr.on td{background:var(--inset);font-weight:700}
+.lst td.none{color:var(--ink-3);cursor:default;font:13px var(--sans)}
+.lbox{max-height:300px;overflow:auto;border:1px solid var(--line);border-radius:4px}
+.find{padding:8px}
+.fbar{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin-bottom:8px}
+.fbar input{width:8em;height:30px;padding:0 8px;border:1px solid var(--line-2);border-radius:4px;background:var(--inset);color:var(--ink);font:500 13px var(--mono)}
+
+/* サロス系列の地図: 下地の陸地に、経路の線と年の札を重ねる（地図はテーマに依らない） */
+.smap{position:relative;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:#000}
+.smap canvas{display:block;width:100%;height:auto}
+.smap svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.smap .old{fill:none;stroke:#3a4a58;stroke-width:1.1;opacity:.55}
+.smap .fut{fill:none;stroke:#9a6c00;stroke-width:1.1;opacity:.6}
+.smap .hb{fill:rgb(16 20 24 / .45);stroke:#101418;stroke-width:.8}
+.smap .hc{fill:none;stroke:#fff;stroke-width:4.5;stroke-linejoin:round;opacity:.9}
+.smap .hc2{fill:none;stroke:#101418;stroke-width:2;stroke-linejoin:round}
+.slabs{position:absolute;inset:0;pointer-events:none}
+.slab{position:absolute;transform:translate(-50%,-50%);padding:0 3px;border-radius:2px;font:600 10.5px/1.3 var(--mono);color:#101418;background:rgb(255 255 255 / .72);white-space:nowrap}
+.slab.on{background:#101418;color:#fff;font-size:12px}
+.slab.vis{box-shadow:0 0 0 1.5px #101418;background:rgb(255 255 255 / .9)}
+.slab.vis.on{background:#101418;box-shadow:0 0 0 1.5px #fff}
+.srange{margin-top:10px}
+.sinfo{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:4px 18px;margin-top:10px}
+.sinfo div{font-size:12.5px;color:var(--ink-2)}
+.sinfo b{display:block;font:600 15px/1.4 var(--mono);color:var(--ink)}
+.sgo{margin-top:10px}
+.tiles{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:6px;margin-top:10px}
+.tile{display:flex;flex-direction:column;align-items:stretch;gap:3px;padding:3px 3px 5px;border:1px solid var(--line);border-radius:4px;background:none;color:var(--ink-2);font:500 11.5px/1.2 var(--mono);cursor:pointer;text-align:center;min-width:0}
+.tile canvas{display:block;width:100%;aspect-ratio:1/1;border-radius:50%;background:#000}
+.tile[aria-pressed="true"]{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink);color:var(--ink);font-weight:700}
+.tile small{font:500 10.5px var(--sans);color:var(--ink-3);min-height:1.3em}
+@media (max-width:999px){.tiles{grid-template-columns:repeat(6,minmax(0,1fr))}}
