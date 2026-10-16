@@ -26,6 +26,7 @@ import {
   SEEDS,
   SLOW,
   SPANS,
+  TUNES,
   VIB_HZ,
   VIB_W,
   VOL0,
@@ -173,6 +174,17 @@ const METERS = [
           <ParamRow d={VIB_W} />
           <ParamRow d={VIB_HZ} />
         </div>
+      </Panel>
+
+      <Panel hid="hd-tune" title="調弦" class="a-tune">
+        <div class="ptab">
+          {[...TUNES].reverse().map((d) => <ParamRow d={d} />)}
+        </div>
+        <dl class="metrics bmet">
+          {['G', 'D', 'A', 'E'].map((n) => (
+            <div class="m"><dt>{n} 線の開放 <i>f</i><sub>1</sub></dt><dd><span id={`tf-${n}`}></span><span class="m-sub" id={`tt-${n}`}></span></dd></div>
+          ))}
+        </dl>
       </Panel>
     </div>
 

@@ -6,7 +6,7 @@ import { BODY_DEFAULT, makeBody, radiation, yTop } from '../src/tools/violin/bod
 import { bowAngle, levelAngle } from '../src/tools/violin/figure';
 import { LEVELS, levelOf } from '../src/tools/violin/params';
 import { chordStrings, keyAlt, OPEN, planFromMarks, stringOf, upperNeighbor } from '../src/tools/violin/perform';
-import { HAIR, ViolinPlayer } from '../src/tools/violin/player';
+import { HAIR, type PNote, touchSpan, untangle, ViolinPlayer } from '../src/tools/violin/player';
 import { barOf, PIECES, performPiece, pieceOf } from '../src/tools/violin/score';
 import { loadScore } from '../src/tools/violin/scores/load';
 import { decodeVoice } from '../src/tools/violin/scores/types';
@@ -60,6 +60,25 @@ describe('演奏の規則', () => {
     expect(chordStrings([55, 62, 70])).toEqual([3, 2, 1]);
     /* 同じ弦にしか置けない 2 音は重音にできない */
     expect(chordStrings([55, 56])).toBeNull();
+    /* 間の弦をとばして弾けないので、G4 と E5 は D 線の開放でなく D 線と A 線で弾く */
+    expect(chordStrings([67, 76])).toEqual([2, 1]);
+    /* 隣り合う弦に置けない 2 音は重音にできない */
+    expect(chordStrings([66, 80])).toBeNull();
+  });
+  it('間の弦をとばした 2 本の弦には、同時に弓が触れない（どの曲も）', async () => {
+    for (const p of PIECES) {
+      const ns: PNote[] = performPiece(p, await loadScore(p.file), 'phrase', 1)
+        .notes.map((x) => ({ ...x, c0: x.t, c1: x.t + x.d }))
+        .sort((a, b) => a.t - b.t);
+      untangle(ns);
+      for (let j = 0; j < ns.length; j++)
+        for (let i = j - 1; i >= Math.max(0, j - 64); i--) {
+          if (Math.abs(ns[i].si - ns[j].si) < 2) continue;
+          const [a0, a1] = touchSpan(ns[i]),
+            [b0, b1] = touchSpan(ns[j]);
+          expect(Math.min(a1, b1) - Math.max(a0, b0)).toBeLessThanOrEqual(1e-9);
+        }
+    }
   });
   it('トリルの上の音は調号に合わせる', () => {
     expect(upperNeighbor(69, keyAlt(1))).toBe(70);
@@ -121,6 +140,61 @@ describe('音', () => {
     for (let i = 0; i < FS; i += 512) pl.render(L, R, i, Math.min(512, FS - i));
     expect(rms(L.subarray(FS / 2))).toBeLessThan(on / 10);
   });
+  it('7 秒までのロングトーンは、途中で弓を返さずに 1 回の弓で弾き切る（どの曲も）', async () => {
+    for (const p of PIECES) {
+      const perf = performPiece(p, await loadScore(p.file), 'phrase', 1),
+        pl = new ViolinPlayer(FS, BODY_DEFAULT);
+      pl.play(perf);
+      for (const x of perf.notes) {
+        if (x.d > 7) continue;
+        const inside = pl.strokes.filter((s) => s.t0 > x.t + 1e-3 && s.t0 < x.t + x.d - 0.1);
+        /* その間に始まる音がなければ、弓を返してはいけない */
+        const starts = perf.notes.some((y) => y.t > x.t + 1e-3 && y.t < x.t + x.d - 0.1);
+        if (!starts) expect(inside).toEqual([]);
+      }
+    }
+  });
+  it('手で弾く弦を D 線から E 線へ変えると、D 線から弓が離れてから E 線に触れる', () => {
+    const pl = new ViolinPlayer(FS, BODY_DEFAULT),
+      L = new Float32Array(32),
+      R = new Float32Array(32),
+      m = { strings: [2], stop: [0, 0, 0, 0], v: 0.3, F: 0.8, beta: 0.1, dir: 1 };
+    pl.setManual(m);
+    for (let i = 0; i < FS / 4; i += 32) pl.render(L, R, 0, 32);
+    pl.setManual({ ...m, strings: [0] });
+    let both = 0,
+      fr = pl.render(L, R, 0, 32);
+    for (let i = 0; i < FS / 4; i += 32, fr = pl.render(L, R, 0, 32)) if (fr.c[0] > 0 && fr.c[2] > 0) both++;
+    expect(both).toBe(0);
+    expect(fr.c[0]).toBeGreaterThan(0.99);
+    expect(fr.c[2]).toBe(0);
+  });
+  it('調弦で開放弦の音の高さが上がる（A 線を +20 セント）', () => {
+    const f0 = (cent: number) => {
+      const pl = new ViolinPlayer(FS, BODY_DEFAULT),
+        N = FS,
+        L = new Float32Array(N),
+        R = new Float32Array(N);
+      pl.setTune([0, cent, 0, 0]);
+      pl.setManual({ strings: [1], stop: [0, 0, 0, 0], v: 0.3, F: 0.5, beta: 0.1, dir: 1 });
+      for (let i = 0; i < N; i += 512) pl.render(L, R, i, Math.min(512, N - i));
+      /* 自己相関の山（440 Hz の前後）を放物線で補間した周期 */
+      const y = L.subarray(N / 2),
+        r = (l: number) => {
+          let s = 0;
+          for (let i = 0; i + l < y.length; i++) s += y[i] * y[i + l];
+          return s;
+        };
+      let bl = 90;
+      for (let l = 90; l <= 130; l++) if (r(l) > r(bl)) bl = l;
+      const a = r(bl - 1),
+        b = r(bl),
+        c = r(bl + 1);
+      return FS / (bl + (0.5 * (a - c)) / (a - 2 * b + c));
+    };
+    /* 弓で弾いたときの音の下がりがわずかに変わるので、1.5 セントまでのずれは許す */
+    expect(Math.abs(1200 * Math.log2(f0(20) / f0(0)) - 20)).toBeLessThan(1.5);
+  });
   it('弓の速さの向きは、弓の端で変わる', () => {
     const pl = new ViolinPlayer(FS, BODY_DEFAULT),
       L = new Float32Array(512),
@@ -158,7 +232,8 @@ describe('音', () => {
           expect(x).toBeLessThanOrEqual(HAIR - 0.03 + 1e-9);
         }
         expect(Math.sign(s.p1 - s.p0)).toBe(s.p1 === s.p0 ? 0 : s.dir);
-        expect(s.k).toBeGreaterThanOrEqual(0.7 - 1e-9);
+        /* 弓の長さに収まらないひと弾きは、弓速を落として 1 回の弓に収める（倍率の下限を外す） */
+        if (s.vmin >= 0.22) expect(s.k).toBeGreaterThanOrEqual(0.7 - 1e-9);
         expect(s.k).toBeLessThanOrEqual(1.15 + 1e-9);
         if (j > 0 && !s.lift) {
           expect(s.t0).toBeCloseTo(S[j - 1].t1, 9);

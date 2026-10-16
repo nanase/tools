@@ -64,6 +64,8 @@
 *,*::before,*::after{box-sizing:border-box}
 html{background:var(--bg);-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.7 var(--sans);overflow-x:hidden}
+/* 図はスクロールの位置の基準にしない。SVG の text は箱として扱われ、動く文字が基準に選ばれると、ブラウザが文字の動きに合わせてページを上下に送ってしまう */
+svg{overflow-anchor:none}
 a{color:var(--ink);text-decoration:underline;text-decoration-color:var(--line-2);text-underline-offset:3px}
 a:hover{text-decoration-color:currentColor}
 button{font:inherit;color:inherit}

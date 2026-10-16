@@ -133,6 +133,33 @@ export const VIB_HZ: ParamDef = lin({
   s: 2,
 });
 
+/* ---------- 調弦 ---------- */
+export type TuneKey = 'tnE' | 'tnA' | 'tnD' | 'tnG';
+/** 符号つきの整数（正は +、負はマイナス記号） */
+const cent = (v: number): string => (v > 0 ? `+${v}` : minus(String(v))),
+  centT = (v: number): string => `${cent(v)} セント`;
+/** 弦ごとの調弦のずれ [セント]（0 = E 線 … 3 = G 線）。開放弦の音の高さを、糸巻きで張力を変えてずらす */
+export const TUNES: readonly (ParamDef & { k: TuneKey })[] = (['E', 'A', 'D', 'G'] as const).map((n) => ({
+  ...lin({
+    k: `tn${n}`,
+    nm: `${n} 線`,
+    sym: '',
+    name: `${n} 線`,
+    sub: '開放弦の音の高さを、平均律（A4 = 440 Hz）からずらす（糸巻きで張力を変えるのと同じ）。押さえた音も同じだけずれる。弓で弾くと、弓圧が強いほど音は少し低くなる',
+    unit: 'セント',
+    min: -100,
+    max: 100,
+    v: 0,
+    ph: '例 +10',
+    step: 1,
+    big: 5,
+  }),
+  k: `tn${n}` as TuneKey,
+  sign: 'any' as const,
+  format: { input: cent, step: cent, text: centT },
+  fix: clamp(-100, 100, centT, 1),
+}));
+
 /* ---------- 部屋 ---------- */
 export const DIST: ParamDef = lin({
   k: 'dist',
