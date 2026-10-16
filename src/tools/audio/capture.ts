@@ -83,6 +83,11 @@ export class AudioIn {
     return !!this.mic;
   }
 
+  /** マイクの実際の設定（エコー除去・雑音抑圧・自動ゲインが効いているか）。マイクを使っていなければ null */
+  get micSettings(): MediaTrackSettings | null {
+    return this.mic?.st.getAudioTracks()[0]?.getSettings() ?? null;
+  }
+
   /** 新しい音があれば L・R を直近 NB 点に入れ替える */
   pull(now: number): boolean {
     if (!this.run) return false;

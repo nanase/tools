@@ -1,0 +1,197 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import More from '../components/More.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import { order, TOOLS } from '../data/tools';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/audio/style.css';
+import '../tools/tuner/style.css';
+import InputPanel from '../tools/audio/InputPanel.astro';
+import MonitorPanel from '../tools/audio/MonitorPanel.astro';
+import { INSTRUMENTS } from '../tools/tuner/notes';
+import { REF, TEMPERAMENTS, TOLS, TONICS, TRANSPOSE } from '../tools/tuner/params';
+import Theory from '../tools/tuner/Theory.astro';
+import { bandY, MR, meterTicks, zonePath } from '../tools/tuner/view';
+
+const name = 'チューナー';
+/* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
+const CAT = '音響';
+const related = [
+  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'tuner')),
+  ...TOOLS.filter((t) => t.c !== CAT && !t.s),
+];
+/* 目盛りの数字（−50・−14・0・+16・+50。±20 のときは −20・−14・0・+16・+20）と純正律の ▼ の位置。半径 265（数字）と MR + 2〜11（▼） */
+const at = (r: number, a: number) => [300 + r * Math.sin((a * Math.PI) / 180), 300 - r * Math.cos((a * Math.PI) / 180)];
+const JM = 1200 * Math.log2(5 / 4) - 400,
+  Jm = 1200 * Math.log2(6 / 5) - 300;
+const scaleMarks = (scale: number) => {
+  const k = 50 / scale,
+    lab = [
+      [-scale, `−${scale}`],
+      [-14, '−14'],
+      [0, '0'],
+      [16, '+16'],
+      [scale, `+${scale}`],
+    ] as const,
+    tri = (c: number) => {
+      const a = c * k,
+        d = (5 / (MR + 11)) * (180 / Math.PI),
+        [x0, y0] = at(MR + 2, a),
+        [x1, y1] = at(MR + 11, a - d),
+        [x2, y2] = at(MR + 11, a + d);
+      return `M${x1.toFixed(1)} ${y1.toFixed(1)}L${x2.toFixed(1)} ${y2.toFixed(1)}L${x0.toFixed(1)} ${y0.toFixed(1)}Z`;
+    };
+  return {
+    labels: lab.map(([c, t]) => {
+      const [x, y] = at(265, (c === -14 ? JM : c === 16 ? Jm : c) * k);
+      return { x: x.toFixed(1), y: (y + 5).toFixed(1), t };
+    }),
+    jt: tri(JM) + tri(Jm),
+  };
+};
+const S50 = scaleMarks(50),
+  S20 = scaleMarks(20),
+  tk = meterTicks(50),
+  zn = zonePath(2, 50);
+const INSTS = [['chr', 'クロマチック'] as const, ...INSTRUMENTS.map((i) => [i.v, i.name] as const)];
+const PCS = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
+---
+<SiteLayout title={name} tool={{ id: 'tuner', name }} description="楽器の音をマイクで聴き、音名と基準からのずれ（セント）を針か 12 音のストロボで示します。" note="音声はこの端末の中だけで処理し、送信しません。">
+  <PageTitle title={name}>楽器の音をマイクで聴き、いちばん近い音名と、そこからのずれ（セント）を針で示します。ストロボに切り替えると、12 の音名の窓のうち、鳴っている音の窓の縞が止まって見えます。</PageTitle>
+  <div class="mini" aria-hidden="true"><span>NOTE<b id="mn">—</b></span><span>CENT<b id="mc">—</b></span><span><i>f</i><b id="mf">—</b></span></div>
+
+  <div class="tgrid">
+    <Panel hid="hd-fig" title="メータ" class="a-fig">
+      <div slot="aux" class="pbar">
+        <div class="seg" id="p-view" role="group" aria-label="表示"><button type="button" data-v="meter" aria-pressed="true" title="ずれを針の位置で示す">メータ</button><button type="button" data-v="strobe" aria-pressed="false" title="12 の音名の窓に縞を出し、鳴っている音の窓の縞の動きでずれを示す">ストロボ</button></div>
+        <div class="seg"><button type="button" id="runBtn" aria-pressed="false" title="マイクから取り込む・止める"><span class="led" id="runLed" aria-hidden="true"></span><span id="runT">開始</span></button></div>
+      </div>
+      <div class="sbar">
+        <span class="stag"><i class="sw" aria-hidden="true"></i><span id="s-view">針</span></span>
+        <span class="stag">A4 <b id="s-ref">440.0</b> Hz</span>
+        <span class="stag mt-only" title="純正律の長 3 度（5:4）は平均律より 13.7 セント低く、短 3 度（6:5）は 15.6 セント高い">▼ 純正の長 3 度 <b>−13.7</b> · 短 3 度 <b>+15.6</b></span>
+        <span class="stag">合格 <b id="s-tol">±2</b> セント</span>
+        <span class="stag" id="s-tem">平均律</span>
+        <span class="stag right" id="s-inst">クロマチック</span>
+      </div>
+      <div class="tu">
+        <div class="st-only">
+          <div class="sb12" id="sb12" role="img" aria-label="12 音のストロボ">
+            {PCS.map((n, p) => (
+              <div class="swin" data-p={p}><span>{n}</span><svg viewBox="0 0 100 104" aria-hidden="true">
+                {[3, 2, 1, 0].map((o) => <path class="bgd" d={`M3 ${bandY(o)}H97V${bandY(o) + 23}H3Z`} opacity="0" />)}
+                {[3, 2, 1, 0].map(() => <path class="stp" d="" opacity="0" />)}
+                <path class="sep" d="M2 2H98V102H2ZM2 27H98M2 52H98M2 77H98" />
+              </svg></div>
+            ))}
+          </div>
+          <p class="sb12-k"><span>帯は下から 2・3・4・5 オクターブ</span><span>縞が止まれば合っている · 低いと左、高いと右へ流れる</span></p>
+        </div>
+        <div class="scope mt mt-only" id="mt">
+          <svg viewBox="0 0 600 236" role="img" aria-label="ずれを示す針" id="mt-svg">
+            <path class="zone" id="mt-zone" d={zn.zone} />
+            <path class="zl" id="mt-zl" d={zn.edge} />
+            <path class="arc" d={tk.arc} />
+            <path class="tk" id="mt-tk" d={tk.minor} />
+            <path class="tk2" id="mt-tk2" d={tk.major} />
+            <g class="s50">{S50.labels.map((l) => <text x={l.x} y={l.y}>{l.t}</text>)}<path class="jt" d={S50.jt} /></g>
+            <g class="s20">{S20.labels.map((l) => <text x={l.x} y={l.y}>{l.t}</text>)}<path class="jt" d={S20.jt} /></g>
+            <text class="fs" x="74" y="190">♭</text>
+            <text class="fs" x="526" y="190">♯</text>
+            <path class="ndl dim" id="mt-ndl" d="M300 196L300 47" />
+            <path class="dpan" d="M256 236A44 44 0 0 1 344 236Z" />
+          </svg>
+        </div>
+        <div class="rdo">
+          <div class="lmp" aria-hidden="true"><svg viewBox="0 0 26 26"><path class="lo" id="lp-lo" d="M5 4L22 13L5 22Z" /></svg><svg viewBox="0 0 26 26"><circle class="ok" id="lp-ok" cx="13" cy="13" r="8" /></svg><svg viewBox="0 0 26 26"><path class="hi" id="lp-hi" d="M21 4L4 13L21 22Z" /></svg></div>
+          <p class="nt dim" id="nt"><span class="pre" id="nt-pre"></span><span id="nt-n">—</span><small id="nt-o"></small></p>
+          <p class="cvl dim" id="cvl"><b id="cv">—</b><span class="u">セント</span></p>
+          <p class="fql" id="fq">—</p>
+          <p class="stt" id="stt"><i aria-hidden="true"></i><span id="stt-t">停止中</span></p>
+        </div>
+      </div>
+      <div class="strs" id="strs" role="group" aria-label="合わせる弦" hidden></div>
+      <p class="sr" id="live" aria-live="polite"></p>
+      <More id="g-fig" title="表示の設定"><div class="ana2">
+        <div class="ptab">
+          <ChoiceRow k="spd" name="縞の速さ" sub="周波数の差: 機械式のストロボと同じく、ずれ（Hz）に比例して流れ、高い音ほど速い。セント: 音域によらず、ずれ（セント）に比例して流れる" choices={[['hz', '周波数の差'], ['cent', 'セント']]} value="hz" class="st-only" />
+          <ChoiceRow k="scale" name="目盛り" sub="針の振れ幅いっぱいを何セントにするか。±20 にすると中央付近が広がります" choices={[['50', '±50'], ['20', '±20']]} value="50" class="mt-only" />
+          <ChoiceRow k="tol" name="合格の幅" sub="この幅に入ると中央の印が点き、左右の矢印が両方点きます（セント）" choices={TOLS.map((t) => [String(t), `±${t}`] as const)} value="2" />
+        </div>
+        <div class="ptab">
+          <ChoiceRow k="resp" name="針の動き" sub="測った値をならす強さ。ゆっくりにすると針が揺れにくくなり、速くすると弾いた直後の変化も追います" choices={[['fast', '速い'], ['std', '標準'], ['slow', 'ゆっくり']]} value="std" class="mt-only" />
+        </div>
+      </div></More>
+    </Panel>
+
+    <div class="col c1">
+      <Panel hid="hd-ins" title="楽器" class="a-ins">
+        <div class="ptab">
+          <ChoiceRow k="inst" name="楽器" sub="クロマチック: 12 音のうち最も近い音に合わせる。楽器を選ぶと、その楽器の弦の音だけを探します" choices={INSTS} value="chr" layout="chips" />
+          {INSTRUMENTS.filter((i) => i.tunings.length > 1).map((i) => (
+            <ChoiceRow k={`tun-${i.v}`} name="調弦" choices={i.tunings.map((t) => [t.v, t.name] as const)} value={i.tunings[0].v} layout="chips" class="tunr" />
+          ))}
+          <div class="prow wide" id="p-strl" hidden>
+            <div class="c-sym" aria-hidden="true"></div>
+            <div class="c-name"><span class="pn">弦の音</span><p class="desc tip" role="tooltip" hidden>基準ピッチと音律から求めた、各弦の目標の周波数</p></div>
+            <div class="c-sub"><p class="strl" id="strl"></p></div>
+          </div>
+        </div>
+      </Panel>
+      <InputPanel mono>
+        <div class="prow wide">
+          <div class="c-sym" aria-hidden="true"></div>
+          <div class="c-name"><span class="pn">明瞭度</span><p class="desc tip" role="tooltip" hidden>音の周期のはっきりさ（0〜1）。0.90（縦線）を下回る間は音高を出しません</p></div>
+          <div class="c-sub"><div class="lvs"><div class="lvr"><span>NSDF</span><span class="lvb cl" aria-hidden="true"><i id="cl-bar"></i></span><b id="cl-t">—</b></div></div></div>
+        </div>
+        <div class="prow wide">
+          <div class="c-sym" aria-hidden="true"></div>
+          <div class="c-name"><span class="pn">マイクの処理</span><p class="desc tip" role="tooltip" hidden>ブラウザに 3 つとも切るよう頼み、実際に効いた設定を出します。Safari は雑音抑圧と自動ゲインの指定に対応していません</p></div>
+          <div class="c-sub"><p class="flg" id="flg">—</p></div>
+        </div>
+      </InputPanel>
+      <MonitorPanel />
+    </div>
+
+    <div class="col c2">
+      <Panel hid="hd-set" title="基準と表記" class="a-set">
+        <div class="ptab">
+          <ParamRow d={REF} />
+          <ChoiceRow k="nm" name="音名" sub="英米式（C D E）、ドイツ式（B♭ を B、B を H と書く）、イタリア式（ドレミ）、日本式（ハニホ。オクターブは一点・二点…）" choices={[['en', 'C D E'], ['de', 'C D E … H'], ['do', 'ドレミ'], ['ja', 'ハニホ']]} value="en" layout="chips" />
+          <ChoiceRow k="oc" name="オクターブの番号" sub="国際式は中央のドを C4（A4 = 440 Hz）、ヤマハなどは C3 と書きます" choices={[['4', '中央ド C4'], ['3', '中央ド C3']]} value="4" msg />
+          <ChoiceRow k="acc" name="黒鍵の書き方" choices={[['s', '♯（C♯）'], ['f', '♭（D♭）']]} value="s" />
+        </div>
+        <More id="g-set"><div class="ptab">
+          <ChoiceRow k="tem" name="音律" sub="平均律以外は、音ごとに平均律からずらした高さを目標にします。A は基準ピッチのまま" choices={TEMPERAMENTS.map(([v, n]) => [v, n] as const)} value="et" layout="chips" />
+          <ChoiceRow k="ton" name="主音" sub="音律を当てはめる調の主音" choices={TONICS.map((n, i) => [String(i), n] as const)} value="0" layout="chips" msg />
+          <ChoiceRow k="trn" name="移調" sub="移調楽器では、鳴っている音（実音）ではなく楽譜の音名で出します" choices={TRANSPOSE.map(([v, n, t]) => [String(v), n, t] as const)} value="0" layout="chips" />
+        </div></More>
+      </Panel>
+
+      <Panel hid="hd-out" title="測定" class="a-out">
+        <dl class="metrics">
+          <div class="m m-main"><dt>周波数</dt><dd><span id="o-f">—</span><span class="m-sub hh" data-ph="一点嬰ハ +12.3 セント" id="o-fn"></span></dd></div>
+          <div class="m"><dt>目標の周波数</dt><dd id="o-ft">—</dd></div>
+          <div class="m"><dt>ずれ（周波数）</dt><dd id="o-df">—</dd></div>
+          <div class="m"><dt>明瞭度</dt><dd id="o-cl">—</dd></div>
+          <div class="m"><dt>入力レベル</dt><dd id="o-lv">—</dd></div>
+          <div class="m"><dt>窓の長さ</dt><dd><span id="o-w">—</span><span class="m-sub" id="o-wn"></span></dd></div>
+          <div class="m"><dt>標本化周波数 <i>f</i><sub>s</sub></dt><dd id="o-fs">—</dd></div>
+        </dl>
+      </Panel>
+    </div>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools list={related} />
+  <script>
+    import '../tools/tuner/client';
+  </script>
+</SiteLayout>

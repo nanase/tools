@@ -832,6 +832,24 @@ export const ART: Record<string, Art> = {
       `<g clip-path="url(#ca-svg-l)">${fig(31.5, 'il', 'al')}</g><g clip-path="url(#ca-svg-r)">${fig(88.5, 'ih', 'ad')}</g>`
     );
   },
+  /* チューナー: 針のメータ（±50 セント、合格の帯、純正律の ▼）。3 秒ごとに弾き直し、低めから振れて 0 に落ち着く */
+  tu(t) {
+    const R = 46,
+      pt = (r: number, a: number): string =>
+        `${r1(60 + r * Math.sin((a * Math.PI) / 180))} ${r1(59 - r * Math.cos((a * Math.PI) / 180))}`;
+    let tk = '';
+    for (let c = -50; c <= 50; c += 10) tk += `M${pt(c ? R - 4 : R - 7, c)}L${pt(R, c)}`;
+    const tri = (a: number): string => `M${pt(R + 5, a - 3)}L${pt(R + 5, a + 3)}L${pt(R + 1.5, a)}Z`,
+      u = mod(t, 3),
+      c = -20 * Math.exp(-u / 0.6) * Math.cos(TAU * 0.9 * u);
+    return (
+      P('c', `M${pt(R, -50)}A${R} ${R} 0 0 1 ${pt(R, 50)}`) +
+      P('c t', tk) +
+      P('b', `M${pt(R - 2, -3)}A${R - 2} ${R - 2} 0 0 1 ${pt(R - 2, 3)}`) +
+      P('fc', tri(-13.7) + tri(15.6)) +
+      P('a', `M${pt(14, c)}L${pt(R + 2, c)}`)
+    );
+  },
 };
 
 /** 止まっているときの図柄（ビルド時に HTML へ出す） */

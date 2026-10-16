@@ -1,0 +1,103 @@
+/* チューナーのページだけのスタイル（共通は src/styles/site.css、入力とモニターの枠は src/tools/audio/style.css） */
+
+/* 枠の並び。スマホは 図 → 楽器 → 入力 → モニター → 基準と表記 → 測定 → 式。
+   PC は上に図（全幅）、左の列に楽器・入力・モニター、右の列に基準と表記・測定、その下に式（全幅） */
+.a-fig{order:1}.a-ins{order:2}.a-in{order:3}.a-snd{order:4}.a-set{order:5}.a-out{order:6}.a-thy{order:7}
+@media (min-width:1000px){
+  .tgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr);grid-template-areas:"fig fig" "c1 c2" "thy thy";align-items:start}
+  .a-fig{grid-area:fig}.c1{grid-area:c1}.c2{grid-area:c2}.a-thy{grid-area:thy}
+}
+.a-fig{container-type:inline-size}
+.sbar .right{margin-left:auto}
+.a-fig:not(.st) .st-only,.a-fig.st .mt-only{display:none}
+
+/* 図と読み値。広い枠では図の右に読み値、狭い枠では図の下 */
+.tu{display:grid;gap:12px;align-items:center}
+@container (min-width:760px){.tu{grid-template-columns:minmax(0,1fr) 290px;gap:18px}}
+.tu .scope{padding:8px}
+.tu svg{display:block;width:100%;height:auto}
+.rdo{display:grid;justify-items:center;align-content:center;gap:4px;padding:4px 0}
+/* ♭・○・♯ の灯り。合っているかを離れた所からも読めるよう大きく。合うと 3 つとも点く */
+.lmp{display:flex;align-items:center;justify-content:center;gap:26px;height:58px;margin-bottom:4px}
+.lmp svg{width:52px;height:52px;display:block}
+.lmp .lo,.lmp .hi{fill:var(--led-off)}
+.lmp .lo.on,.lmp .hi.on{fill:var(--accent)}
+.lmp .ok{fill:none;stroke:var(--led-off);stroke-width:2.4}
+.lmp .ok.on{fill:var(--lv-ok);stroke:var(--lv-ok)}
+.nt{display:flex;align-items:baseline;justify-content:center;height:84px;margin:0;font:700 76px/84px var(--mono);letter-spacing:-.02em;color:var(--ink);white-space:nowrap}
+.nt small{font-size:.36em;font-weight:700;margin-left:.08em;color:var(--ink-2)}
+.nt .pre{align-self:center;margin-right:.2em;font:700 22px/1 var(--sans);color:var(--ink-2)}
+.nt .pre:empty,.nt small:empty{display:none}
+.nt .jp{font-family:var(--sans);font-size:64px}
+.nt.dim,.nt.dim small{color:var(--ink-3)}
+.cvl{display:flex;align-items:baseline;justify-content:center;gap:.3em;margin:0;font:700 30px/1.2 var(--mono);font-variant-numeric:tabular-nums;color:var(--ink)}
+.cvl b{display:inline-block;min-width:4.2em;text-align:right;font-weight:700}
+.cvl .u{font:500 14px var(--sans);color:var(--ink-2)}
+.cvl.dim b{color:var(--ink-3)}
+.fql{margin:0;font:500 13px/1.5 var(--mono);color:var(--ink-2);font-variant-numeric:tabular-nums;text-align:center}
+.stt{display:flex;align-items:center;gap:8px;height:26px;margin:0;padding:0 10px;border:1px solid var(--line);border-radius:13px;font-size:13px;font-weight:700;color:var(--ink-2)}
+.stt.ok{border-color:var(--lv-ok);color:var(--ink)}
+.stt i{width:8px;height:8px;border-radius:50%;background:var(--led-off)}
+.stt.ok i{background:var(--lv-ok)}
+.stt.go i{background:var(--accent)}
+
+/* 針のメータ */
+.mt .arc{fill:none;stroke:var(--screen-ink);stroke-width:1.4}
+.mt .tk{fill:none;stroke:var(--screen-ink);stroke-width:1.1}
+.mt .tk2{fill:none;stroke:var(--screen-ink);stroke-width:2}
+.mt .zone{fill:var(--lv-ok);opacity:.3}
+.mt .zl{fill:none;stroke:var(--lv-ok);stroke-width:2}
+.mt text{fill:var(--screen-ink);font:15px var(--mono);text-anchor:middle}
+.mt text.fs{font:700 28px var(--sans)}
+.mt .jt{fill:var(--screen-ink)}
+.mt .ndl{stroke:var(--ch1);stroke-width:3.4;stroke-linecap:round}
+.mt .ndl.dim{opacity:.3}
+.mt .dpan{fill:var(--inset);stroke:var(--grid-2);stroke-width:1}
+/* 目盛りの数字と ▼ は、±50 と ±20 の 2 組を用意して出し分ける */
+.mt:not(.s20) .s20,.mt.s20 .s50{display:none}
+
+/*
+ * 12 音のストロボ。窓ごとに 1 つの音名（ピッチクラス）、窓の中の帯は下から 2〜5 オクターブ。
+ * 窓は機械式のストロボのように、テーマによらず暗い地に明るい縞で描く。合っている音の窓は枠を太く、合格の幅に入ると緑
+ */
+.sb12{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;padding:10px;border:1px solid #2b3237;border-radius:var(--r);background:#08090a;box-shadow:inset 0 1px 4px rgb(0 0 0 / .5)}
+@container (max-width:560px){.sb12{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;padding:8px}}
+.swin{display:grid;gap:5px;padding:5px 5px 6px;border:1px solid #2b3237;border-radius:4px}
+.swin>span{min-height:13px;font:700 13px/1 var(--mono);color:#838c93;text-align:center;white-space:nowrap}
+.swin svg{display:block;width:100%;height:auto}
+.swin .stp,.swin .bgd{fill:#dfe3e6}
+.swin .sep{fill:none;stroke:#2b3237;stroke-width:1}
+.swin.on{border-color:#aab3b8;box-shadow:inset 0 0 0 1px #aab3b8}
+.swin.on>span{color:#eef0eb}
+.swin.ok{border-color:#46c464;box-shadow:inset 0 0 0 1px #46c464}
+.swin.ok>span{color:#46c464}
+.sb12-k{display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 12px;margin:6px 0 0;font:500 12px/1.3 var(--mono);color:var(--ink-3)}
+
+/* 弦の並び（楽器を選んだとき）。押すとその弦に固定、自動は最も近い弦 */
+.strs{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.sbtn{display:grid;justify-items:center;gap:3px;min-width:66px;padding:6px 8px 8px;border:1px solid var(--line);border-radius:4px;background:none;color:var(--ink-3);font:500 11.5px/1.2 var(--mono);cursor:pointer}
+.sbtn:hover{border-color:var(--line-2);color:var(--ink)}
+.sbtn b{font-size:16px;font-weight:700;color:var(--ink)}
+.sbtn .d{min-width:4.5em;text-align:center;font-variant-numeric:tabular-nums;color:var(--ink-2)}
+.sbtn .bar{position:relative;width:46px;height:4px;border-radius:2px;background:var(--inset);box-shadow:inset 0 0 0 1px var(--line)}
+.sbtn .bar::after{content:"";position:absolute;left:50%;top:-2px;width:1px;height:8px;background:var(--line-2)}
+.sbtn .bar i{position:absolute;top:-3px;left:50%;width:3px;height:10px;margin-left:-1.5px;border-radius:1px;background:var(--ink-2)}
+.sbtn .bar i.ok{background:var(--lv-ok)}
+.sbtn .bar i.none{display:none}
+.sbtn.cur{border-color:var(--ink-2);box-shadow:inset 0 0 0 1px var(--ink-2);color:var(--ink-2)}
+.sbtn[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--surface)}
+.sbtn[aria-pressed="true"] b,.sbtn[aria-pressed="true"] .d{color:var(--surface)}
+.sbtn[aria-pressed="true"] .bar{background:color-mix(in srgb,var(--surface) 25%,transparent);box-shadow:none}
+.sbtn[aria-pressed="true"] .bar i{background:var(--surface)}
+.sbtn.auto b{font-family:var(--sans);font-size:14px;line-height:19px}
+
+/* 入力の枠: レベルと明瞭度は 1 本ずつ（見出しの欄を広く）、マイクの処理、弦の音 */
+.a-in .lvr{grid-template-columns:3.4em minmax(0,1fr) 6.6em}
+.lvb i.low{background:var(--ink-3)}
+.lvb.cl::after{left:90%}
+.flg,.strl{margin:0;font:500 12px/1.7 var(--mono);color:var(--ink-2);font-variant-numeric:tabular-nums}
+.flg b{font-weight:700;color:var(--ink)}
+
+/* 測定の枠の補足 */
+.a-out .m-sub{display:block;margin-top:2px;font:500 12px/1.5 var(--mono);color:var(--ink-3);letter-spacing:0}
+.m-main .m-sub{margin-top:4px}
