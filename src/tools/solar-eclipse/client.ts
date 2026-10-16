@@ -72,6 +72,7 @@ const zm$ = new Choice($('#p-zm'), () => {
 });
 const sp$ = new Choice($('#p-sp'));
 const view$ = new Choice<'l1' | 'geo' | 'moon'>($('#p-view'), () => {
+  gOff = [0, 0];
   dirty.globe = true;
   later();
 });
@@ -216,6 +217,7 @@ function local(keepT = false): void {
 
 function setSite(p: Place, syncRows = true): void {
   site = p;
+  regCenter = null;
   store('site', p);
   if (syncRows) {
     G.set('lat', p.lat, { silent: true });
@@ -337,6 +339,13 @@ function drawSkyAndSun(g: Geom, dk: ReturnType<typeof disksOf>, flux: number, to
 
 /* 光の量の曲線と時刻の帯 */
 const X = (tt: number) => ((tt - span[0]) / (span[1] - span[0])) * 1000;
+/** 曲線の縦: F = 1 が 60、F = 0 が 170 */
+const FY = (f: number) => 170 - f * 110;
+/** 時刻の帯の出来事: 名前と時刻 */
+interface Ev {
+  name: string;
+  t: number;
+}
 function drawCurve(): void {
   if (!ecl || !L) return;
   const el = ecl.el;
@@ -345,21 +354,32 @@ function drawCurve(): void {
   let lin = '';
   let lg = '';
   const N = 240;
+  const sunEv: Ev[] = [];
+  let prevAlt = Number.NaN;
+  let prevT = 0;
   for (let k = 0; k <= N; k++) {
     const tt = span[0] + ((span[1] - span[0]) * k) / N;
     const gg = geomAt(el, P, S, tt, el.dt);
     const d = disksOf(gg);
     const f = d.sep >= d.sun + d.moon ? 1 : residualFlux(d.sun, d.moon, d.sep);
     const x = X(tt).toFixed(1);
-    lin += `${k ? 'L' : 'M'}${x} ${(120 - f * 110).toFixed(1)}`;
+    lin += `${k ? 'L' : 'M'}${x} ${FY(f).toFixed(1)}`;
     const l = Math.max(-4.5, Math.log10(Math.max(f, 1e-6)));
-    lg += `${k ? 'L' : 'M'}${x} ${(120 - ((l + 4.5) / 4.5) * 110).toFixed(1)}`;
+    lg += `${k ? 'L' : 'M'}${x} ${FY((l + 4.5) / 4.5).toFixed(1)}`;
+    // 日の出・日の入り（太陽の中心が −0.30° を通る時刻）
+    const a = gg.alt - HORIZON;
+    if (k && Math.sign(a) !== Math.sign(prevAlt)) {
+      const tc = prevT + ((tt - prevT) * prevAlt) / (prevAlt - a);
+      sunEv.push({ name: a > 0 ? '日の出' : '日の入り', t: tc });
+    }
+    prevAlt = a;
+    prevT = tt;
   }
   $('#c-lin').setAttribute('d', lin);
   $('#c-lg').setAttribute('d', lg);
   const vis = L.kind !== 'none' && L.visible;
-  $('#c-par').setAttribute('d', vis && L.c1 && L.c4 ? `M${X(L.c1.t)} 140H${X(L.c4.t)}` : '');
-  $('#c-tot').setAttribute('d', vis && L.c2 && L.c3 ? `M${X(L.c2.t)} 140H${X(L.c3.t)}` : '');
+  $('#c-par').setAttribute('d', vis && L.c1 && L.c4 ? `M${X(L.c1.t)} 190H${X(L.c4.t)}` : '');
+  $('#c-tot').setAttribute('d', vis && L.c2 && L.c3 ? `M${X(L.c2.t)} 190H${X(L.c3.t)}` : '');
   // 時刻の目盛り: 15 分ごと、数字は 30 分ごと
   const c0 = calOf(span[0]);
   const m0 = c0.hour * 60;
@@ -369,26 +389,38 @@ function drawCurve(): void {
     const tt = span[0] + (m - m0) / 60;
     if (tt > span[1]) break;
     const x = X(tt).toFixed(1);
-    tk += `M${x} 134V146`;
+    tk += `M${x} 184V196`;
     if (m % 30 === 0) {
       const hm = (((m / 60) % 24) + 24) % 24;
-      lab += `<text x="${x}" y="164" text-anchor="middle">${Math.floor(hm)}:${p2(Math.round((hm % 1) * 60))}</text>`;
+      lab += `<text x="${x}" y="214" text-anchor="middle">${Math.floor(hm)}:${p2(Math.round((hm % 1) * 60))}</text>`;
     }
   }
   $('#c-tk').innerHTML = `<path class="tk" d="${tk}"></path>${lab}`;
-  let mk = '';
-  const mark = (c: { t: number } | null, s: string, anchor = 'middle', dx = 0) => {
-    if (c) mk += `<text class="cl" x="${(X(c.t) + dx).toFixed(1)}" y="132" text-anchor="${anchor}">${s}</text>`;
-  };
-  if (vis) {
-    mark(L.c1, 'C1');
-    mark(L.c4, 'C4');
-    if (L.c2 && L.c3) {
-      mark(L.c2, 'C2', 'end', -6);
-      mark(L.c3, 'C3', 'start', 6);
-    } else mark(L.max, '最大');
+  // 出来事: 縦の破線と名前。名前は重ならないよう 3 段に分ける
+  const events: Ev[] = [];
+  if (vis && L.c1 && L.c4) {
+    events.push({ name: '第一接触', t: L.c1.t });
+    if (L.c2 && L.c3) events.push({ name: '第二接触', t: L.c2.t });
+    events.push({ name: '食の最大', t: L.max.t });
+    if (L.c2 && L.c3) events.push({ name: '第三接触', t: L.c3.t });
+    events.push({ name: '第四接触', t: L.c4.t });
+  } else events.push({ name: '最大食（地球全体）', t: (ecl.entry.jd - ecl.el.jd0) * 24 });
+  events.push(...sunEv);
+  events.sort((a, b) => a.t - b.t);
+  const ends: number[] = [Number.NEGATIVE_INFINITY, Number.NEGATIVE_INFINITY, Number.NEGATIVE_INFINITY];
+  let ev = '';
+  for (const e of events) {
+    const x = X(e.t);
+    const w = e.name.length * 11 + 8;
+    let row = ends.findIndex((end) => end < x - w / 2);
+    if (row < 0) row = ends.indexOf(Math.min(...ends));
+    const anchor = x - w / 2 < 0 ? 'start' : x + w / 2 > 1000 ? 'end' : 'middle';
+    const left = anchor === 'start' ? x : anchor === 'end' ? x - w : x - w / 2;
+    ends[row] = left + w;
+    const y = 14 + row * 15;
+    ev += `<path class="ev" d="M${x.toFixed(1)} ${y + 4}V182"></path><text class="evt" x="${x.toFixed(1)}" y="${y}" text-anchor="${anchor}">${e.name}</text>`;
   }
-  $('#c-mk').innerHTML = mk;
+  $('#c-ev').innerHTML = ev;
   txt(
     '#lg-band',
     !vis
@@ -397,27 +429,28 @@ function drawCurve(): void {
         ? `${L.kind === 'total' ? '皆既' : '金環'} ${durStr(L.duration)}`
         : `部分食 ${hms((L.c1 as { t: number }).t, false)}〜${hms((L.c4 as { t: number }).t, false)}`,
   );
-  // 主な時刻のチップ
-  const keys: [string, number][] = [];
+  txt('#lg-tz', `横軸の時刻は${tz$.value === 'ut' ? '世界時（UT）' : '日本時間（JST）'}`);
+  // 主な時刻のチップ: 出来事の名前と時刻
+  const keys: Ev[] = [];
   if (vis && L.c1 && L.c4) {
-    keys.push(['C1', L.c1.t]);
+    keys.push({ name: '第一接触', t: L.c1.t });
     if (L.c2 && L.c3) {
       keys.push(
-        ['C2 の 1 分前', L.c2.t - 1 / 60],
-        ['C2 の 5 秒前', L.c2.t - 5 / 3600],
-        ['最大', L.max.t],
-        ['C3 の 5 秒後', L.c3.t + 5 / 3600],
+        { name: L.kind === 'total' ? 'ダイヤモンドリング' : '第二接触の 5 秒前', t: L.c2.t - 5 / 3600 },
+        { name: '第二接触', t: L.c2.t },
+        { name: '食の最大', t: L.max.t },
+        { name: '第三接触', t: L.c3.t },
       );
-    } else keys.push(['最大の 10 分前', L.max.t - 1 / 6], ['最大', L.max.t]);
-    keys.push(['C4', L.c4.t]);
-  } else keys.push(['最大食', (ecl.entry.jd - ecl.el.jd0) * 24]);
+    } else keys.push({ name: '食の最大', t: L.max.t });
+    keys.push({ name: '第四接触', t: L.c4.t });
+  } else keys.push({ name: '最大食（地球全体）', t: (ecl.entry.jd - ecl.el.jd0) * 24 });
   $('#keys').innerHTML = keys
-    .map(([s, tt]) => `<button type="button" class="chip" data-t="${tt}" title="${esc(s)}">${hms(tt)}</button>`)
+    .map((k) => `<button type="button" class="chip" data-t="${k.t}"><small>${esc(k.name)}</small>${hms(k.t)}</button>`)
     .join('');
 }
 function moveCursor(): void {
   const x = X(t).toFixed(1);
-  $('#c-cur').setAttribute('d', `M${x} 4V148`);
+  $('#c-cur').setAttribute('d', `M${x} 52V198`);
   const c = $('#curve');
   c.setAttribute('aria-valuenow', x);
   c.setAttribute('aria-valuetext', `${hms(t)} ${tzName()}`);
@@ -427,7 +460,14 @@ function moveCursor(): void {
 $('#keys').addEventListener('click', (e) => {
   const b = (e.target as Element).closest<HTMLButtonElement>('button[data-t]');
   if (!b) return;
+  stop();
   setT(Number(b.dataset.t));
+});
+$('#tstep').addEventListener('click', (e) => {
+  const b = (e.target as Element).closest<HTMLButtonElement>('button[data-s]');
+  if (!b) return;
+  stop();
+  setT(t + Number(b.dataset.s) / 3600);
 });
 function setT(tt: number): void {
   t = Math.max(span[0], Math.min(span[1], tt));
@@ -448,10 +488,11 @@ function setT(tt: number): void {
     if (svg.hasPointerCapture(ev.pointerId)) at(ev);
   });
   svg.addEventListener('keydown', (ev) => {
-    const d = { ArrowLeft: -1, ArrowRight: 1, PageDown: -10, PageUp: 10 }[ev.key];
+    // ← → は 10 秒（Shift で 1 秒）、PageUp・PageDown は 1 分
+    const d = { ArrowLeft: -10, ArrowRight: 10, PageDown: -60, PageUp: 60 }[ev.key];
     if (d === undefined) return;
     ev.preventDefault();
-    setT(t + (d * 10) / 3600);
+    setT(t + (ev.shiftKey && Math.abs(d) === 10 ? d / 10 : d) / 3600);
   });
 }
 
@@ -487,14 +528,63 @@ $('#play').addEventListener('click', () => {
   requestAnimationFrame(tick);
 });
 
+/** キャンバスのドラッグ: 4 px 動くまではドラッグとみなさず、動かさずに離したら押したことにする */
+function dragOn(
+  c: HTMLCanvasElement,
+  move: (dx: number, dy: number) => void,
+  start: () => void,
+  click?: (ev: PointerEvent) => void,
+): void {
+  let x0 = 0;
+  let y0 = 0;
+  let moved = false;
+  let id: number | null = null;
+  c.addEventListener('pointerdown', (ev) => {
+    if (ev.button !== 0) return;
+    id = ev.pointerId;
+    try {
+      c.setPointerCapture(ev.pointerId);
+    } catch {
+      /* 捕まえられなくても、キャンバスの上の動きは追える */
+    }
+    x0 = ev.clientX;
+    y0 = ev.clientY;
+    moved = false;
+    start();
+  });
+  c.addEventListener('pointermove', (ev) => {
+    if (ev.pointerId !== id) return;
+    const dx = ev.clientX - x0;
+    const dy = ev.clientY - y0;
+    if (!moved && Math.hypot(dx, dy) < 4) return;
+    moved = true;
+    c.classList.add('drag');
+    // CSS の大きさから、キャンバスの画素へ
+    const k = c.width / c.getBoundingClientRect().width;
+    move(dx * k, dy * k);
+  });
+  const end = (ev: PointerEvent) => {
+    if (ev.pointerId !== id) return;
+    id = null;
+    c.classList.remove('drag');
+    if (ev.type === 'pointerup' && !moved) click?.(ev);
+  };
+  c.addEventListener('pointerup', end);
+  c.addEventListener('pointercancel', end);
+}
+
 /* 観測地のまわりの地図 */
 const regC = $<HTMLCanvasElement>('#reg');
 let regProj: Projection | null = null;
 const regCache = {};
+/** 地図の中心 [°]。null なら観測地 */
+let regCenter: [number, number] | null = null;
+let regRaf = 0;
 function drawRegion(): void {
   if (!ecl || !paths || !rings110) return;
   const k = (9.3 / regC.width) * D2R;
-  regProj = equirect(regC.width, regC.height, site.lat * D2R, site.lon * D2R, k);
+  const [clat, clon] = regCenter ?? [site.lat, site.lon];
+  regProj = equirect(regC.width, regC.height, clat * D2R, clon * D2R, k);
   const lut = fluxLUT(snapAt(ecl.el, t, ecl.el.dt));
   drawMap(regC.getContext('2d') as CanvasRenderingContext2D, {
     proj: regProj,
@@ -509,28 +599,64 @@ function drawRegion(): void {
   const band = ecl.entry.type === 'P' ? '皆既帯なし（部分日食）' : `${ecl.entry.type === 'A' ? '金環帯' : '皆既帯'}`;
   txt('#reg-lab', `${hms(t)} ${tzName()} の月の影`);
   txt('#lg-reg', band);
+  $('#reg-home').hidden = !regCenter;
 }
-regC.addEventListener('click', async (ev) => {
-  if (!regProj) return;
-  const r = regC.getBoundingClientRect();
-  const ll = regProj.inv(
-    ((ev.clientX - r.left) / r.width) * regC.width,
-    ((ev.clientY - r.top) / r.height) * regC.height,
+{
+  let c0: [number, number] = [0, 0];
+  dragOn(
+    regC,
+    (dx, dy) => {
+      const k = 9.3 / regC.width;
+      const lat = Math.max(-80, Math.min(80, c0[0] + dy * k));
+      let lon = c0[1] - dx * k;
+      lon = ((((lon + 180) % 360) + 360) % 360) - 180;
+      regCenter = [lat, lon];
+      if (!regRaf)
+        regRaf = requestAnimationFrame(() => {
+          regRaf = 0;
+          drawRegion();
+        });
+    },
+    () => {
+      c0 = regCenter ?? [site.lat, site.lon];
+    },
+    async (ev) => {
+      if (!regProj) return;
+      const r = regC.getBoundingClientRect();
+      const ll = regProj.inv(
+        ((ev.clientX - r.left) / r.width) * regC.width,
+        ((ev.clientY - r.top) / r.height) * regC.height,
+      );
+      if (!ll) return;
+      const lat = ll[0] * R2D;
+      let lon = ll[1] * R2D;
+      lon = ((((lon + 180) % 360) + 360) % 360) - 180;
+      const near = await nearestPlace(lat, lon, 15);
+      // 地図で選んだときは、地図の位置を動かさない
+      const keep = regCenter ?? [site.lat, site.lon];
+      setSite(near ?? { name: '地図で選んだ地点', sub: '', lat: +lat.toFixed(4), lon: +lon.toFixed(4), h: 0 });
+      regCenter = keep;
+      drawRegion();
+    },
   );
-  if (!ll) return;
-  const lat = ll[0] * R2D;
-  let lon = ll[1] * R2D;
-  lon = ((((lon + 180) % 360) + 360) % 360) - 180;
-  const near = await nearestPlace(lat, lon, 15);
-  setSite(near ?? { name: '地図で選んだ地点', sub: '', lat: +lat.toFixed(4), lon: +lon.toFixed(4), h: 0 });
+}
+$('#reg-home').addEventListener('click', () => {
+  regCenter = null;
+  drawRegion();
 });
 
 /* 宇宙から */
 const glC = $<HTMLCanvasElement>('#globe');
+/** ドラッグで回した分 [rad]（視点の向きの緯度・経度に足す） */
+let gOff: [number, number] = [0, 0];
+let glRaf = 0;
 function drawSpace(): void {
   if (!ecl || !paths || !mask) return;
   const v = view$.value;
   const s = snapAt(ecl.el, t, ecl.el.dt);
+  const d = viewDir(s, v);
+  const lat = Math.max(-1.55, Math.min(1.55, Math.asin(d[2]) + gOff[0]));
+  const lon = Math.atan2(d[1], d[0]) + gOff[1];
   drawGlobe(glC.getContext('2d') as CanvasRenderingContext2D, {
     w: glC.width,
     h: glC.height,
@@ -538,12 +664,13 @@ function drawSpace(): void {
     dt: ecl.el.dt,
     t,
     mask,
-    dir: viewDir(s, v),
+    dir: [Math.cos(lat) * Math.cos(lon), Math.cos(lat) * Math.sin(lon), Math.sin(lat)],
     dist: v === 'geo' ? 6.62 : v === 'l1' ? 235 : 60,
     fill: 0.88,
     central: paths.central,
     observer: { lat: site.lat * D2R, lon: site.lon * D2R },
   });
+  const turned = gOff[0] !== 0 || gOff[1] !== 0;
   const where =
     v === 'l1'
       ? '太陽と地球の間の L1 から見た地球。DSCOVR の位置に合わせ、太陽の向きから 8° ずらして見ている（月が地球に重ならないように）'
@@ -551,8 +678,32 @@ function drawSpace(): void {
         ? '静止軌道の東経 140.7°（ひまわりの位置）から見た地球'
         : '月から見た地球';
   $('#globe-cap').innerHTML =
-    `${esc(`${hms(t)} ${tzName()}`)}、${where}。濃い点が<b>本影</b>、周りの暗がりが<b>半影</b>。黄色の線は中心線、白い丸は観測地。`;
+    `${esc(`${hms(t)} ${tzName()}`)}、${turned ? 'ドラッグで回した向きから見た地球（同じ距離から）' : where}。濃い点が<b>本影</b>、周りの暗がりが<b>半影</b>。黄色の線は中心線、白い丸は観測地。`;
+  $('#globe-home').hidden = !turned;
 }
+{
+  let o0: [number, number] = [0, 0];
+  dragOn(
+    glC,
+    (dx, dy) => {
+      // 画面の端から端で約 180° 回す
+      const k = Math.PI / glC.width;
+      gOff = [Math.max(-Math.PI, Math.min(Math.PI, o0[0] + dy * k)), o0[1] - dx * k];
+      if (!glRaf)
+        glRaf = requestAnimationFrame(() => {
+          glRaf = 0;
+          drawSpace();
+        });
+    },
+    () => {
+      o0 = gOff;
+    },
+  );
+}
+$('#globe-home').addEventListener('click', () => {
+  gOff = [0, 0];
+  drawSpace();
+});
 
 /* 予報 */
 function contactStr(c: Local['c1']): string {

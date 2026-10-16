@@ -41,19 +41,23 @@ const related = [
         <div class="lab" id="sky-lab"></div>
         <div class="inset"><canvas id="sun" width="360" height="360" role="img" aria-label="望遠で見た太陽と月"></canvas><span id="sun-lab"></span></div>
       </div>
-      <svg class="tsv" id="curve" viewBox="0 0 1000 170" role="slider" tabindex="0" aria-label="時刻（光の量の時間変化の上を押して動かす）" aria-valuemin="0" aria-valuemax="1000" aria-valuenow="0">
-        <path class="gl" d="M0 10H1000M0 65H1000M0 120H1000"></path>
-        <text x="4" y="8">F = 1</text><text x="4" y="117">0</text>
+      <svg class="tsv" id="curve" viewBox="0 0 1000 222" role="slider" tabindex="0" aria-label="時刻（光の量の時間変化の上を押して動かす）" aria-valuemin="0" aria-valuemax="1000" aria-valuenow="0">
+        <g id="c-ev"></g>
+        <path class="gl" d="M0 60H1000M0 115H1000M0 170H1000"></path>
+        <text x="4" y="57">F = 1</text><text x="4" y="167">0</text>
         <path class="lin" id="c-lin"></path>
         <path class="lg" id="c-lg"></path>
         <path class="par" id="c-par"></path>
         <path class="tot" id="c-tot"></path>
         <g id="c-tk"></g>
-        <g id="c-mk"></g>
         <path class="cur" id="c-cur"></path>
       </svg>
-      <div class="legend"><span><i></i>光の量 F（周辺減光を入れた太陽の残り）</span><span><i class="dash"></i>同じ量の対数（10⁻⁴·⁵〜1）</span><span><i class="band"></i><span id="lg-band">皆既</span></span></div>
-      <div class="tchips" id="keys" role="group" aria-label="時刻"></div>
+      <div class="legend"><span><i></i>光の量 F（周辺減光を入れた太陽の残り）</span><span><i class="dash"></i>同じ量の対数（10⁻⁴·⁵〜1）</span><span><i class="band"></i><span id="lg-band">皆既</span></span><span id="lg-tz">横軸の時刻は日本時間</span></div>
+      <div class="tchips" id="keys" role="group" aria-label="主な時刻へ移る"></div>
+      <div class="tstep">
+        <span class="aux">時刻を少し動かす</span>
+        <div class="seg" id="tstep" role="group" aria-label="時刻を少し動かす"><button type="button" data-s="-60">−1 分</button><button type="button" data-s="-10">−10 秒</button><button type="button" data-s="-1">−1 秒</button><button type="button" data-s="1">+1 秒</button><button type="button" data-s="10">+10 秒</button><button type="button" data-s="60">+1 分</button></div>
+      </div>
       <More id="g-sky" title="表示の設定"><div class="ana2">
         <div class="ptab">
           <ChoiceRow k="tz" name="時刻" sub="日本時間（UTC+9）か世界時（UT）。時刻は ΔT を引いた UT1 から出す" choices={[['jst', '日本時間'], ['ut', '世界時']]} value="jst" />
@@ -67,10 +71,11 @@ const related = [
 
     <div class="col c1">
       <Panel hid="hd-site" title="観測地のまわり" class="a-site">
-        <span slot="aux" class="aux">地図を押すと観測地が移る</span>
+        <span slot="aux" class="aux">押すと観測地が移る · ドラッグで動かす</span>
         <div class="vw regw">
-          <canvas id="reg" width="560" height="460" role="img" aria-label="観測地のまわりの地図。皆既帯と、その時刻の月の影"></canvas>
+          <canvas id="reg" width="560" height="460" role="img" aria-label="観測地のまわりの地図。皆既帯と、その時刻の月の影。押すと観測地が移り、ドラッグで地図が動く"></canvas>
           <div class="lab" id="reg-lab"></div>
+          <button type="button" class="vbtn" id="reg-home" hidden>観測地を中心に</button>
         </div>
         <div class="legend"><span><i class="band"></i><span id="lg-reg">皆既帯</span></span><span><i></i>中心線</span><span><i class="dot"></i>観測地</span></div>
       </Panel>
@@ -78,7 +83,7 @@ const related = [
       <Panel hid="hd-space" title="宇宙から" class="a-space">
         <div slot="aux" class="seg" id="p-view" role="group" aria-label="視点"><button type="button" data-v="l1" aria-pressed="true" title="太陽と地球の間の L1（DSCOVR の位置）から">L1</button><button type="button" data-v="geo" aria-pressed="false" title="静止軌道 東経 140.7°（ひまわりの位置）から">ひまわり</button><button type="button" data-v="moon" aria-pressed="false" title="月から">月</button></div>
         <div class="spw">
-          <div class="vw sq"><canvas id="globe" width="300" height="300" role="img" aria-label="宇宙から見た地球と月の影"></canvas></div>
+          <div class="vw sq globew"><canvas id="globe" width="300" height="300" role="img" aria-label="宇宙から見た地球と月の影。ドラッグで地球が回る"></canvas><button type="button" class="vbtn" id="globe-home" hidden>視点に戻す</button></div>
           <p class="vcap" id="globe-cap"></p>
         </div>
       </Panel>
