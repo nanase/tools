@@ -586,6 +586,7 @@ function drawOut(): void {
   txt('#o-c4', vis ? contactStr(L.c4) : '—');
   txt('#o-mg', L.kind === 'none' ? '—' : mx.mag.toFixed(3));
   $('#o-oc').innerHTML = L.kind === 'none' ? '—' : `${pct(mx.obs)}<span class="u">%</span>`;
+  txt('#o-bdt', ecl.entry.type === 'A' ? '金環帯から' : '皆既帯から');
   txt('#o-bd', bandDistance());
   txt('#loc-note', bandDistance(true));
 }

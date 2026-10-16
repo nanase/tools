@@ -61,8 +61,10 @@ export async function saros(n: number): Promise<Eclipse[]> {
 
 /** 年-月-日で 1 件を探す */
 export async function find(id: string): Promise<Eclipse | null> {
-  const y = Number(id.split('-')[0]);
-  if (!Number.isFinite(y)) return null;
+  // 紀元前（天文学的な年の数え方で負）の年は先頭に − が付く
+  const m = /^(-?\d+)-\d+-\d+$/.exec(id);
+  if (!m) return null;
+  const y = Number(m[1]);
   return (await century(centuryOf(y))).find((e) => e.id === id) ?? null;
 }
 
