@@ -2,7 +2,7 @@
  * 結晶の中の光路の図: ハロごとに、そのハロへ向かう光線を 1 本探し（CPU の追跡）、結晶と光の通り道を斜めから描く
  */
 import { minus } from '../../lib/format';
-import { altaz, chaAlt, czaAlt, minDev, N550, parAz, R22, R46, type V3 } from './labels';
+import { altaz, CHA_MIN, CZA_MAX, chaAlt, czaAlt, minDev, N550, PAR_MAX, parAz, R22, R46, type V3 } from './labels';
 import { type Crystal, crystal, family, orient, type Population, Rng, sunRay, traceRay } from './trace';
 
 const D = Math.PI / 180;
@@ -54,7 +54,7 @@ export const FIG: FigHalo[] = [
     pop: PLATE,
     none: (e) =>
       Number.isNaN(parAz(e))
-        ? '光源の高度が 60.75° を超えると、側面から入った光が次の側面で全反射して出られないため、幻日は出ない。'
+        ? `光源の高度が ${PAR_MAX.toFixed(1)}° を超えると、側面から入った光が次の側面で全反射して出られないため、幻日は出ない。`
         : null,
     ok: (p, d, e) => p.length === 2 && family(p) === 1 && Math.abs(altOf(d) - e) < 0.6 && azOf(d) < -10,
   },
@@ -67,7 +67,7 @@ export const FIG: FigHalo[] = [
       Number.isNaN(czaAlt(e))
         ? e < 0
           ? '光源が地平線の下にあると、光が上の底面に入れないため、環天頂アークは出ない。'
-          : '光源の高度が 32.2° を超えると、上の底面から入った光が側面で全反射して出られないため、環天頂アークは出ない。'
+          : `光源の高度が ${CZA_MAX.toFixed(1)}° を超えると、上の底面から入った光が側面で全反射して出られないため、環天頂アークは出ない。`
         : null,
     ok: (p, d) => p.length === 2 && p[0] === 1 && family(p) === 2 && Math.abs(azOf(d)) < 8 && d[2] > 0,
   },
@@ -100,7 +100,7 @@ export const FIG: FigHalo[] = [
     pop: PLATE,
     none: (e) =>
       Number.isNaN(chaAlt(e))
-        ? '光源の高度が 57.8° より低いと、側面から入った光が下の底面で全反射して出られないため、環水平アークは出ない。'
+        ? `光源の高度が ${CHA_MIN.toFixed(1)}° より低いと、側面から入った光が下の底面で全反射して出られないため、環水平アークは出ない。`
         : null,
     ok: (p, d) => p.length === 2 && p[1] === 2 && family(p) === 2 && Math.abs(azOf(d)) < 8 && d[2] > 0,
   },

@@ -26,14 +26,21 @@ export function parDist(e: number): number {
   const a = parAz(e);
   return Number.isNaN(a) ? Number.NaN : Math.acos(Math.cos(e * D) ** 2 * Math.cos(a * D) + Math.sin(e * D) ** 2) / D;
 }
-/** 環天頂アークの高度 [°]（太陽高度 32.2° 以上では NaN） */
+/**
+ * 550 nm で環天頂アークが出る光源の高度の上限、環水平アークが出る下限、幻日が出る上限 [°]
+ * （32.0°・58.0°・60.7°。n = 1.31 とした文献の値は 32.2°・57.8°・60.75°）
+ */
+export const CZA_MAX = Math.acos(Math.sqrt(N550 * N550 - 1)) / D,
+  CHA_MIN = Math.asin(Math.sqrt(N550 * N550 - 1)) / D,
+  PAR_MAX = Math.asin(Math.sqrt((4 - N550 * N550) / 3)) / D;
+/** 環天頂アークの高度 [°]（光源の高度が CZA_MAX より上では NaN） */
 export const czaAlt = (e: number, n = N550): number =>
   n * n - Math.cos(e * D) ** 2 >= 1 || e > 90
     ? Number.NaN
     : e < 0
       ? Number.NaN
       : Math.asin(Math.sqrt(n * n - Math.cos(e * D) ** 2)) / D;
-/** 環水平アークの高度 [°]（太陽高度 57.8° 以下では NaN） */
+/** 環水平アークの高度 [°]（光源の高度が CHA_MIN より下では NaN） */
 export const chaAlt = (e: number, n = N550): number => {
   const x = 1 - n * n + Math.sin(e * D) ** 2;
   return x > 0 ? Math.asin(Math.sqrt(x)) / D : Number.NaN;

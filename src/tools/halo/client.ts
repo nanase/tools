@@ -11,11 +11,14 @@ import { initToolPage } from '../../lib/tool-page';
 import { initCompare } from './compare';
 import { caption, FIG, type FigHalo, type FigRay, figOf, figureSvg, findRay } from './figure';
 import {
+  CHA_MIN,
+  CZA_MAX,
   chaAlt,
   czaAlt,
   labelsFor,
   minDev,
   N550,
+  PAR_MAX,
   type Proj,
   parAz,
   parDist,
@@ -533,7 +536,7 @@ function updateResults(): void {
   txt('#o-pt', `幻${sp}の離角`);
   if (Number.isNaN(p)) {
     html('#o-p', '出ない');
-    txt('#o-ps', '高度 60.75° 以上では出ない（次の側面で全反射する）');
+    txt('#o-ps', `高度 ${fix(PAR_MAX, 1)}° 以上では出ない（次の側面で全反射する）`);
     txt('#mP', '—');
   } else {
     html('#o-p', deg(p));
@@ -547,14 +550,14 @@ function updateResults(): void {
     ch = chaAlt(e);
   if (Number.isNaN(cz)) {
     html('#o-cz', '出ない');
-    txt('#o-czs', e < 0 ? '光源が地平線の下' : '高度 32.2° 以上');
+    txt('#o-czs', e < 0 ? '光源が地平線の下' : `高度 ${fix(CZA_MAX, 1)}° 以上`);
   } else {
     html('#o-cz', deg(cz));
     txt('#o-czs', `光源の上 ${fix(cz - e)}°`);
   }
   if (Number.isNaN(ch)) {
     html('#o-ch', '出ない');
-    txt('#o-chs', '高度 57.8° 以下');
+    txt('#o-chs', `高度 ${fix(CHA_MIN, 1)}° 以下`);
   } else {
     html('#o-ch', deg(ch));
     txt('#o-chs', `光源の下 ${fix(e - ch)}°`);

@@ -1,5 +1,619 @@
 ---
-// 動作原理と式（あとで書く）
+// 動作原理と式
+/* 本文の出典番号 */
+const rf = (...ns: number[]) => ns.map((n) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`).join('');
+/* 10 の累乗を含む数（m × 10^e。m が空なら 10^e だけ） */
+const sci = (m: string, e: number) =>
+  `<math>${m ? `<mn>${m}</mn><mo>×</mo>` : ''}<msup><mn>10</mn>${e < 0 ? `<mrow><mo>−</mo><mn>${-e}</mn></mrow>` : `<mn>${e}</mn>`}</msup></math>`;
+/* よく使う記号 */
+const M = {
+  ca: '<math><mi>c</mi><mo>/</mo><mi>a</mi></math>',
+  h: '<math><mi>h</mi></math>',
+  n: '<math><mi>n</mi></math>',
+  np: '<math><msup><mi>n</mi><mo>′</mo></msup></math>',
+  lam: '<math><mi>λ</mi></math>',
+  D: '<math><mi>D</mi></math>',
+  Dm: '<math><msub><mi>D</mi><mi mathvariant="normal">m</mi></msub></math>',
+  A: '<math><mi>A</mi></math>',
+  sig: '<math><mi>σ</mi></math>',
+  sr: '<math><msub><mi>σ</mi><mi mathvariant="normal">r</mi></msub></math>',
+  tau: '<math><mi>τ</mi></math>',
+  mu: '<math><mi>μ</mi></math>',
+  fs: '<math><msub><mi>f</mi><mi mathvariant="normal">s</mi></msub></math>',
+  zc: '<math><msub><mi>z</mi><mi mathvariant="normal">c</mi></msub></math>',
+  p2: '<math><msub><mi>p</mi><mn>2</mn></msub></math>',
+  w: '<math><mi>w</mi></math>',
+  th: '<math><mi>θ</mi></math>',
+  dphi: '<math><mi mathvariant="normal">Δ</mi><mi>φ</mi></math>',
+  hcza: '<math><msub><mi>h</mi><mtext>CZA</mtext></msub></math>',
+  hcha: '<math><msub><mi>h</mi><mtext>CHA</mtext></msub></math>',
+  htir: '<math><msub><mi>h</mi><mtext>TIR</mtext></msub></math>',
+};
 ---
 <h3>光線追跡</h3>
-<p>準備中です。</p>
+<p>空の映像は、光源（太陽か月）から出た光線を上空の氷晶に 1 本ずつ通して作ります。光線ごとに結晶の向き・光源の円盤の中の点・波長を引き、結晶を出た向きを全天図に足していきます（モンテカルロ法）。</p>
+<ol class="flow" aria-label="光線 1 本の流れ">
+  <li><b>結晶の形</b><span>母集団を割合で選ぶ</span></li>
+  <li><b>姿勢</b><span>分布から向きを引く</span></li>
+  <li><b>光源の円盤と波長</b><span>円盤の中の点、380〜780 nm</span></li>
+  <li><b>入る面</b><span>外接球の断面の一様な点から</span></li>
+  <li><b>結晶の中</b><span>Fresnel・全反射、反射は 16 回まで</span></li>
+  <li><b>2 個目の結晶</b><span>確率で</span></li>
+  <li><b>回折のぼかし</b><span>結晶の径で</span></li>
+  <li><b>全天図に足す</b><span>等立体角の円盤 2 枚</span></li>
+</ol>
+<h4>光源から出す理由</h4>
+<p>光線は目からではなく、光源から出します。Greenler（1980）以来の方法です<Fragment set:html={rf(1, 2)} />。目から出すと、その向きへ光を送る結晶があるかを調べるために、結晶の向きをすべて試すことになります<Fragment set:html={rf(2)} />。光源から出せば、結晶を出た光線はどれも空のどこかに落ちるので、そのまま足せます。画素から光線を出すカメラレンズのページとは、逆の向きです。</p>
+<h4>結晶に当てる</h4>
+<p>光線は、結晶の中心を通って光線に垂直な円盤の上の一様な点から進めます。円盤の半径は、結晶の外接球の半径です<Fragment set:html={rf(2)} />。結晶に当たる確率は、光から見た結晶の投影の面積に比例します。正面を向いた板は、真横を向いた板よりも多くの光を受けます。当たらなかった光線は捨てます。</p>
+<p>光は、光源の円盤（視直径は太陽が 0.536°、月が 0.518°）の中の一様な点から来るとします。</p>
+<p>結晶は凸多面体なので、平面との交点だけで面が決まります。入る面は、光線が外から入る向きに横切る平面のうち最も遠いもの、出る面は、進む向きとの内積が正の平面のうち最も近いものです。</p>
+<h4>2 個目の結晶</h4>
+<p>確率 <Fragment set:html={M.p2} />（入力の「2 個目の結晶」）で、結晶を出た光をもう 1 つの結晶に通します。母集団と向きは引き直し、2 個目に当たらなかった光線は捨てます。雲の中で光が何度も散る多重散乱の主な効果は、ハロをぼかすことです<Fragment set:html={rf(3)} />。板を 2 枚続けて通る光は、44° 幻日のような珍しいハロも作ります<Fragment set:html={rf(4)} />。</p>
+<h4>光線の数</h4>
+<p>追跡は GPU（WebGL2）で行い、頂点 1 つを光線 1 本にします。1 回に約 14 ms で終わる本数（<math><msup><mn>2</mn><mn>14</mn></msup></math>〜<math><msup><mn>2</mn><mn>23</mn></msup></math> 本）を追って全天図に足し、そのたびに描き直します。ためる上限は 6 億本で、32 bit の浮動小数で足せない環境では 16 bit でためるので 2,500 万本です。</p>
+
+<h3>結晶の形</h3>
+<p>結晶は、六角柱の両端に錐面を付けられる凸多面体です。平面 8 枚（錐面があれば 20 枚）の内側として表します。</p>
+<dl class="syms">
+  <dt set:html={M.ca} /><dd>柱の長さ ÷ 六角形の頂点の間の径。1 より小さいと板、大きいと柱</dd>
+  <dt>錐面</dt><dd>錐の高さの割合。0 は錐面なし、100 % は尖るまで</dd>
+</dl>
+<p><Fragment set:html={M.ca} /> は、c 軸（六角柱の軸）の向きの長さ ÷ a 軸の向きの幅です<Fragment set:html={rf(5)} />。幅を頂点の間で測るか向かい合う面の間で測るかは出典で確かめられなかったので、このページでは頂点の間にしています。</p>
+<p>錐面は <math><mo>&#123;</mo><mn>1</mn><mn>0</mn><mover><mn>1</mn><mo>‾</mo></mover><mn>1</mn><mo>&#125;</mo></math> の面で、c 軸に対して 28° 傾きます<Fragment set:html={rf(6)} />。このため、2 つの面が作るくさびの角は、側面どうしの 60°、側面と底面の 90° のほかに、28°・52.4°・56°・62°・63.8°・80.2° になります<Fragment set:html={rf(6)} />。錐の高さの割合は、柱の端から錐が尖るまでの高さのどこで切るかを表し、切った所が底面になります。</p>
+<h4>面の番号</h4>
+<p>面の番号は atoptics の流儀に従います<Fragment set:html={rf(7)} />。光路は、入った面から出た面まで番号を並べて書きます（例 3-5、1-3-8-2）。</p>
+<div class="tt-w">
+  <table class="tt">
+    <thead><tr><th scope="col">面</th><th scope="col">番号</th></tr></thead>
+    <tbody>
+      <tr><th scope="row">底面（両端の六角形）</th><td>1（上）・2（下）</td></tr>
+      <tr><th scope="row">側面</th><td>3〜8（周に沿って順に）</td></tr>
+      <tr><th scope="row">錐面</th><td>13〜18（上）・23〜28（下）</td></tr>
+    </tbody>
+  </table>
+</div>
+<p>側面 3 と 5 は 1 つ置いた面で、60° のくさびになります。3 と 6 は平行です。</p>
+<h4>大きさと割合</h4>
+<p>結晶の表面積は、どの母集団も 1 にそろえます。割合 <Fragment set:html={M.w} /> は、表面積をそろえた結晶の数の比です<Fragment set:html={rf(8)} />。割合を光線の数の比とするプログラムもあり<Fragment set:html={rf(9)} />、同じ数字でも意味が違います。</p>
+<dl class="syms">
+  <dt><math><msub><mi>P</mi><mi>k</mi></msub></math></dt><dd>母集団 <math><mi>k</mi></math> を選ぶ確率</dd>
+  <dt><math><msub><mi>r</mi><mrow><mi mathvariant="normal">b</mi><mo>,</mo><mi>k</mi></mrow></msub></math></dt><dd>その結晶の外接球の半径（表面積 1 のとき）</dd>
+  <dt><math><msub><mi>S</mi><mi>k</mi></msub></math></dt><dd>光から見た結晶の投影の面積</dd>
+</dl>
+<div class="eqs">
+  <math display="block"><msub><mi>P</mi><mi>k</mi></msub><mo>=</mo><mfrac><mrow><msub><mi>w</mi><mi>k</mi></msub><mi>π</mi><msubsup><mi>r</mi><mrow><mi mathvariant="normal">b</mi><mo>,</mo><mi>k</mi></mrow><mn>2</mn></msubsup></mrow><mrow><munder><mo>∑</mo><mi>j</mi></munder><msub><mi>w</mi><mi>j</mi></msub><mi>π</mi><msubsup><mi>r</mi><mrow><mi mathvariant="normal">b</mi><mo>,</mo><mi>j</mi></mrow><mn>2</mn></msubsup></mrow></mfrac></math>
+  <math display="block"><msub><mi>N</mi><mrow><mtext>hit</mtext><mo>,</mo><mi>k</mi></mrow></msub><mo>∝</mo><msub><mi>w</mi><mi>k</mi></msub><msub><mi>S</mi><mi>k</mi></msub></math>
+</div>
+<p>円盤の点から結晶に当たる確率は、投影の面積 ÷ 円盤の面積です。そのため、当たる光線の数 <math><msub><mi>N</mi><mrow><mtext>hit</mtext><mo>,</mo><mi>k</mi></mrow></msub></math> は、割合と投影の面積の積に比例します。</p>
+<h4>プリセット</h4>
+<div class="tt-w">
+  <table class="tt">
+    <thead><tr><th scope="col">プリセット</th><th scope="col">母集団（姿勢 割合、<Fragment set:html={M.ca} />、傾き <Fragment set:html={M.sig} />）</th><th scope="col">出典</th></tr></thead>
+    <tbody>
+      <tr><th scope="row">巻雲</th><td>板 50 %（0.3、1°）、ランダム 25 %（1）、柱 25 %（2、1°）</td><td>割合と高度 23°<Fragment set:html={rf(10)} /></td></tr>
+      <tr><th scope="row">柱の多い空</th><td>柱 76 %（1.2、1°）、ランダム 10 %（2）、板 5 %（0.1、2°）、板 6 %（0.1、6°）、Parry 3 %（2、1°）</td><td>割合・<Fragment set:html={M.ca} />・傾き<Fragment set:html={rf(11)} /></td></tr>
+      <tr><th scope="row">板だけ</th><td>板 100 %（0.2、0.5°）</td><td>—</td></tr>
+      <tr><th scope="row">太陽柱</th><td>板 100 %（0.1、4°）</td><td>—</td></tr>
+      <tr><th scope="row">ダイヤモンドダスト</th><td>板 35 %（0.2、0.5°）、柱 30 %（2、0.5°）、Parry 10 %（2、0.5°）、Lowitz 10 %（0.25、0.5°、回転 20°）、ランダム 15 %（1）</td><td>—</td></tr>
+      <tr><th scope="row">珍しい半径の暈</th><td>ランダム 100 %（0.3、錐面 50 %）</td><td>—</td></tr>
+      <tr><th scope="row">ランダム</th><td>ランダム 100 %（1）</td><td>—</td></tr>
+    </tbody>
+  </table>
+</div>
+<p>巻雲は、橋詰ほか（2006）が岐阜で 2006 年 1 月 16 日に見られた表示を再現した割合です。この再現の板の縦横比は 0.5 で、傾きは書かれていません<Fragment set:html={rf(10)} />。柱の多い空は、atoptics が英国で 2001 年 2 月 9 日に見られた表示を再現した値です（太陽の高度は 22.5°）<Fragment set:html={rf(11)} />。</p>
+
+<h3>結晶の姿勢</h3>
+<p>母集団ごとに、結晶の向きの分布を 5 種類から選びます。座標は z を天頂とし、c 軸の向きと c 軸まわりの回転で向きを決めます。最後に方位を一様に回します。</p>
+<ul class="tl">
+  <li><b>ランダム</b>: 一様な回転。単位四元数を 4 次元の球面から一様に引く</li>
+  <li><b>板</b>: c 軸を鉛直から角 <Fragment set:html={M.th} /> だけ傾ける。傾く向きと c 軸まわりの回転は一様</li>
+  <li><b>柱</b>: c 軸を水平から高さ角 <math><mi>ε</mi></math> だけ傾ける。c 軸まわりの回転は一様</li>
+  <li><b>Parry</b>: 柱で、側面 2 枚が水平。c 軸まわりの回転のずれ <math><mi>ψ</mi></math> を標準偏差 <Fragment set:html={M.sr} />（入力の「回転」）のガウス分布で引く</li>
+  <li><b>Lowitz</b>: 板を、長い対角線（向かい合う頂点を結ぶ線）のまわりに角 <math><mi>α</mi></math> だけ回す。<math><mi>α</mi></math> は標準偏差 <Fragment set:html={M.sr} /> のガウス分布で、<Fragment set:html={M.sr} /> が 90° 以上なら一様な全回転。そのあと全体を、板と同じ分布で傾ける</li>
+</ul>
+<dl class="syms">
+  <dt set:html={M.sig} /><dd>傾きの標準偏差（入力の「傾き」）</dd>
+  <dt><math><mi>u</mi></math></dt><dd>0 以上 1 未満の一様な乱数</dd>
+  <dt><math><mi>ξ</mi></math></dt><dd>標準正規分布の乱数</dd>
+</dl>
+<div class="eqs">
+  <math display="block"><mi>θ</mi><mo>=</mo><mi>σ</mi><msqrt><mrow><mo>−</mo><mn>2</mn><mi>ln</mi><mo>⁡</mo><mi>u</mi></mrow></msqrt></math>
+  <math display="block"><mi>p</mi><mo stretchy="false">(</mo><mi>θ</mi><mo stretchy="false">)</mo><mo>=</mo><mfrac><mi>θ</mi><msup><mi>σ</mi><mn>2</mn></msup></mfrac><mi>exp</mi><mo>⁡</mo><mrow><mo>(</mo><mo>−</mo><mfrac><msup><mi>θ</mi><mn>2</mn></msup><mrow><mn>2</mn><msup><mi>σ</mi><mn>2</mn></msup></mrow></mfrac><mo>)</mo></mrow></math>
+  <math display="block"><mo>⟨</mo><msup><mi>θ</mi><mn>2</mn></msup><mo>⟩</mo><mo>=</mo><mn>2</mn><msup><mi>σ</mi><mn>2</mn></msup></math>
+  <math display="block"><mi>ε</mi><mo>=</mo><mi>σ</mi><mi>ξ</mi><mo>,</mo><mspace width="1em"/><mi>ψ</mi><mo>=</mo><msub><mi>σ</mi><mi mathvariant="normal">r</mi></msub><mi>ξ</mi></math>
+</div>
+<p>板の傾きは、c 軸の先が鉛直のまわりに 2 次元のガウス分布で散らばるように引きます。<Fragment set:html={M.th} /> が小さいとき、立体角あたりの密度が <math><mi>exp</mi><mo>⁡</mo><mo stretchy="false">(</mo><mo>−</mo><msup><mi>θ</mi><mn>2</mn></msup><mo>/</mo><mn>2</mn><msup><mi>σ</mi><mn>2</mn></msup><mo stretchy="false">)</mo></math> になり、<Fragment set:html={M.th} /> の密度には球面の面積要素 <math><mi>sin</mi><mo>⁡</mo><mi>θ</mi><mo>≈</mo><mi>θ</mi></math> が掛かります。</p>
+<p>傾きの角そのものを 1 次元のガウス分布から引くプログラムもあります<Fragment set:html={rf(9)} />。この引き方では <Fragment set:html={M.th} /> の密度に <math><mi>sin</mi><mo>⁡</mo><mi>θ</mi></math> が掛からず、平均の天頂角 10° で分布が 5.8 倍ゆがみ、0° では無限大になると報告されています<Fragment set:html={rf(8)} />。同じ <Fragment set:html={M.sig} /> でも定義で分布が違い、幻日の幅が変わります。</p>
+<h4>傾きの目安</h4>
+<ul class="tl">
+  <li><b>整った表示を写真に合わせるとき</b>: 十分の数度<Fragment set:html={rf(5)} /></li>
+  <li><b>雲の中の水平な板</b>: 大半が 1° 未満（衛星の観測からの推定）<Fragment set:html={rf(12)} /></li>
+  <li><b>目立つ太陽柱</b>: 数度<Fragment set:html={rf(13)} /></li>
+  <li><b>18°</b>: 縦に伸びた幻日が内暈とつながる<Fragment set:html={rf(13)} /></li>
+</ul>
+<p>文献の値は、それぞれのプログラムの定義による標準偏差です。</p>
+<h4>ローウィッツアーク</h4>
+<p>ローウィッツアークの古典的な説明は、ほぼ水平な長い対角線（Lowitz 軸）のまわりに回る板です<Fragment set:html={rf(14)} />。Lowitz 軸は、側面 4 と 5 の間の稜を通ります<Fragment set:html={rf(7)} />。</p>
+<ul class="tl">
+  <li>Riikonen ほか（2007）は、古典的な姿勢では一部の表示を説明できないとし、Lowitz 軸まわりの回転を標準偏差 15° に限った菱形寄りの板で Vaala の写真に合わせた。著者自身は、決定的ではなく示唆的としている<Fragment set:html={rf(15)} /></li>
+  <li>1790 年の St. Petersburg の表示の再現では、標準偏差 20° のガウス分布が使われた<Fragment set:html={rf(14)} /></li>
+  <li>発生の仕組みはまだ分かっていない<Fragment set:html={rf(14)} /></li>
+</ul>
+<p>このページは正六角形の板だけを扱い、<Fragment set:html={M.sr} /> で古典的な全回転（90°）と制限した回転を切り替えます。</p>
+
+<h3>屈折と反射</h3>
+<h4>面での向き</h4>
+<dl class="syms">
+  <dt><math><mi mathvariant="bold">d</mi></math></dt><dd>入ってくる光の進む向き。単位ベクトル</dd>
+  <dt><math><mi mathvariant="bold">N</mi></math></dt><dd>面の単位法線。光が来る側へ向ける</dd>
+  <dt><math><mi>η</mi></math></dt><dd>入る側の屈折率 ÷ 出る側の屈折率（外から入るとき <math><mn>1</mn><mo>/</mo><mi>n</mi></math>、中から出るとき <Fragment set:html={M.n} />）</dd>
+  <dt><math><msub><mi>θ</mi><mi mathvariant="normal">i</mi></msub><mo>,</mo><mspace width="0.3em"/><msub><mi>θ</mi><mi mathvariant="normal">t</mi></msub></math></dt><dd>入射角と屈折角</dd>
+</dl>
+<div class="eqs">
+  <math display="block"><mi>cos</mi><mo>⁡</mo><msub><mi>θ</mi><mi mathvariant="normal">i</mi></msub><mo>=</mo><mo>−</mo><mi mathvariant="bold">N</mi><mo>·</mo><mi mathvariant="bold">d</mi></math>
+  <math display="block"><mi>cos</mi><mo>⁡</mo><msub><mi>θ</mi><mi mathvariant="normal">t</mi></msub><mo>=</mo><msqrt><mrow><mn>1</mn><mo>−</mo><msup><mi>η</mi><mn>2</mn></msup><mrow><mo>(</mo><mn>1</mn><mo>−</mo><msup><mi>cos</mi><mn>2</mn></msup><msub><mi>θ</mi><mi mathvariant="normal">i</mi></msub><mo>)</mo></mrow></mrow></msqrt></math>
+  <math display="block"><mi mathvariant="bold">t</mi><mo>=</mo><mi>η</mi><mi mathvariant="bold">d</mi><mo>+</mo><mrow><mo>(</mo><mi>η</mi><mi>cos</mi><mo>⁡</mo><msub><mi>θ</mi><mi mathvariant="normal">i</mi></msub><mo>−</mo><mi>cos</mi><mo>⁡</mo><msub><mi>θ</mi><mi mathvariant="normal">t</mi></msub><mo>)</mo></mrow><mi mathvariant="bold">N</mi></math>
+  <math display="block"><mi mathvariant="bold">r</mi><mo>=</mo><mi mathvariant="bold">d</mi><mo>+</mo><mn>2</mn><mi>cos</mi><mo>⁡</mo><msub><mi>θ</mi><mi mathvariant="normal">i</mi></msub><mi mathvariant="bold">N</mi></math>
+</div>
+<p><math><mi mathvariant="bold">t</mi></math> は屈折した光、<math><mi mathvariant="bold">r</mi></math> は反射した光の向きです。<math><msup><mi>η</mi><mn>2</mn></msup><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><msup><mi>cos</mi><mn>2</mn></msup><msub><mi>θ</mi><mi mathvariant="normal">i</mi></msub><mo stretchy="false">)</mo><mo>≥</mo><mn>1</mn></math> なら全反射です。550 nm では、中から外へ出るときの臨界角は 49.7° です。</p>
+<h4>反射と屈折の選び方</h4>
+<div class="eqs">
+  <math display="block"><msub><mi>R</mi><mi mathvariant="normal">s</mi></msub><mo>=</mo><msup><mrow><mo>(</mo><mfrac><mrow><mi>η</mi><mi>cos</mi><mo>⁡</mo><msub><mi>θ</mi><mi mathvariant="normal">i</mi></msub><mo>−</mo><mi>cos</mi><mo>⁡</mo><msub><mi>θ</mi><mi mathvariant="normal">t</mi></msub></mrow><mrow><mi>η</mi><mi>cos</mi><mo>⁡</mo><msub><mi>θ</mi><mi mathvariant="normal">i</mi></msub><mo>+</mo><mi>cos</mi><mo>⁡</mo><msub><mi>θ</mi><mi mathvariant="normal">t</mi></msub></mrow></mfrac><mo>)</mo></mrow><mn>2</mn></msup></math>
+  <math display="block"><msub><mi>R</mi><mi mathvariant="normal">p</mi></msub><mo>=</mo><msup><mrow><mo>(</mo><mfrac><mrow><mi>η</mi><mi>cos</mi><mo>⁡</mo><msub><mi>θ</mi><mi mathvariant="normal">t</mi></msub><mo>−</mo><mi>cos</mi><mo>⁡</mo><msub><mi>θ</mi><mi mathvariant="normal">i</mi></msub></mrow><mrow><mi>η</mi><mi>cos</mi><mo>⁡</mo><msub><mi>θ</mi><mi mathvariant="normal">t</mi></msub><mo>+</mo><mi>cos</mi><mo>⁡</mo><msub><mi>θ</mi><mi mathvariant="normal">i</mi></msub></mrow></mfrac><mo>)</mo></mrow><mn>2</mn></msup></math>
+  <math display="block"><mi>R</mi><mo>=</mo><mfrac><mrow><msub><mi>R</mi><mi mathvariant="normal">s</mi></msub><mo>+</mo><msub><mi>R</mi><mi mathvariant="normal">p</mi></msub></mrow><mn>2</mn></mfrac></math>
+</div>
+<p>偏光は追わず、2 つの偏光の反射率の平均 <math><mi>R</mi></math> を使います<Fragment set:html={rf(8)} />。面に当たるたびに乱数 <math><mi>u</mi></math> を引き、<math><mi>u</mi><mo>&lt;</mo><mi>R</mi></math> なら反射、そうでなければ屈折させます。反射率を反射する確率とみなす方法で、Pattloch と Tränkle（1984）が始めました<Fragment set:html={rf(16, 2)} />。光線は分かれず 1 本のまま進むので（ロシアンルーレット）、画素に落ちた光線の数がそのまま明るさになります。</p>
+<ul class="tl">
+  <li>入る面での外の反射も、そのまま全天図に足す（幻日環など）</li>
+  <li>結晶の中の反射は 16 回まで。それでも出られない光線は捨てる</li>
+  <li>垂直に入る光の反射率は、550 nm で 1.8 %</li>
+</ul>
+<h4>屈折率</h4>
+<p>氷の屈折率は、Warren と Brandt（2008）の表<Fragment set:html={rf(17)} />の 390〜780 nm を、3 項の Cauchy の式に当てはめたものです。表との差は <Fragment set:html={sci('2.1', -4)} /> 以下です。表は 266 K（−7 °C）の値です<Fragment set:html={rf(17)} />。380〜390 nm は式を延ばして使います。</p>
+<div class="eqs">
+  <math display="block"><mi>n</mi><mo stretchy="false">(</mo><mi>λ</mi><mo stretchy="false">)</mo><mo>=</mo><mn>1.299589</mn><mo>+</mo><mfrac><mn>0.0037589</mn><msup><mi>λ</mi><mn>2</mn></msup></mfrac><mo>−</mo><mfrac><mn>0.00009708</mn><msup><mi>λ</mi><mn>4</mn></msup></mfrac></math>
+</div>
+<p><Fragment set:html={M.lam} /> は µm 単位です。</p>
+<div class="tt-w">
+  <table class="tt">
+    <thead><tr><th scope="col" class="num">波長 (nm)</th><th scope="col" class="num">380</th><th scope="col" class="num">400</th><th scope="col" class="num">550</th><th scope="col" class="num">700</th><th scope="col" class="num">780</th></tr></thead>
+    <tbody>
+      <tr><th scope="row">屈折率 <math><mi>n</mi></math></th><td class="num">1.3210</td><td class="num">1.3193</td><td class="num">1.3110</td><td class="num">1.3069</td><td class="num">1.3055</td></tr>
+    </tbody>
+  </table>
+</div>
+<h4>省いたもの</h4>
+<p>次のものは見た目にほとんど効かないので、省いています。</p>
+<ul class="tl">
+  <li><b>偏光</b>: 内暈の偏光度は、Fresnel の式だけでは 3.7 %<Fragment set:html={rf(18)} />。外暈は計算で約 16 %。どちらも偏光フィルタなしでは見えない。平均の反射率を使う誤差は、内暈の光路で −0.03 %、外暈の光路で −0.7 %（計算）</li>
+  <li><b>複屈折</b>: 550 nm・−25 °C で <math><msub><mi>n</mi><mi mathvariant="normal">o</mi></msub><mo>=</mo><mn>1.3112</mn></math>、<math><msub><mi>n</mi><mi mathvariant="normal">e</mi></msub><mo>=</mo><mn>1.3126</mn></math>。内暈の内縁は 21.930° と 22.037° に分かれる<Fragment set:html={rf(18)} />。差の 0.11° は、太陽の視直径 0.53° より小さい</li>
+  <li><b>吸収</b>: Warren と Brandt の値では、1 mm 通っても 99.8 % 以上が透過する（計算）<Fragment set:html={rf(17)} /></li>
+  <li><b>温度</b>: 出典や温度による屈折率の違いは <Fragment set:html={sci('7', -4)} /> 以下で、内暈は 0.05° ほどしか動かない（計算）<Fragment set:html={rf(17, 18)} /></li>
+</ul>
+
+<h3>ハロの位置の式</h3>
+<p>空の名前の位置と計算結果の値は、光線追跡ではなく解析の式で求めます。屈折率は 550 nm の <math><mi>n</mi><mo>=</mo><mn>1.3110</mn></math> です。</p>
+<h4>最小偏角</h4>
+<dl class="syms">
+  <dt set:html={M.A} /><dd>くさびの角。光が入る面と出る面のなす角</dd>
+  <dt set:html={M.Dm} /><dd>最小偏角</dd>
+</dl>
+<div class="eqs">
+  <math display="block"><msub><mi>D</mi><mi mathvariant="normal">m</mi></msub><mo>=</mo><mn>2</mn><mi>arcsin</mi><mo>⁡</mo><mrow><mo>(</mo><mi>n</mi><mi>sin</mi><mo>⁡</mo><mfrac><mi>A</mi><mn>2</mn></mfrac><mo>)</mo></mrow><mo>−</mo><mi>A</mi></math>
+</div>
+<p>くさびを通る光は、最小偏角の向きに集まります<Fragment set:html={rf(19)} />。向きのそろわない結晶では、光源から <Fragment set:html={M.Dm} /> の円になり、その内側には光が来ません。くさびの角とハロの対応は atoptics による値です<Fragment set:html={rf(6)} />。</p>
+<div class="tt-w">
+  <table class="tt">
+    <thead><tr><th scope="col" class="num">くさびの角</th><th scope="col">面の組</th><th scope="col" class="num">最小偏角（550 nm）</th><th scope="col" class="num">400 nm・700 nm</th><th scope="col">ハロ</th></tr></thead>
+    <tbody>
+      <tr><td class="num">28°</td><td>側面と、反対の端の錐面（3-26）</td><td class="num">8.98°</td><td class="num">9.22°・8.86°</td><td>9° の暈</td></tr>
+      <tr><td class="num">52.4°</td><td>錐面を含む組</td><td class="num">18.33°</td><td class="num">18.85°・18.08°</td><td>18° の暈</td></tr>
+      <tr><td class="num">56°</td><td>錐面を含む組</td><td class="num">19.97°</td><td class="num">20.54°・19.69°</td><td>20° の暈</td></tr>
+      <tr><td class="num">60°</td><td>1 つ置いた側面（3-5）</td><td class="num">21.91°</td><td class="num">22.55°・21.60°</td><td>内暈</td></tr>
+      <tr><td class="num">62°</td><td>錐面を含む組</td><td class="num">22.94°</td><td class="num">23.61°・22.61°</td><td>23° の暈</td></tr>
+      <tr><td class="num">63.8°</td><td>錐面を含む組</td><td class="num">23.90°</td><td class="num">24.60°・23.55°</td><td>24° の暈</td></tr>
+      <tr><td class="num">80.2°</td><td>錐面を含む組</td><td class="num">35.02°</td><td class="num">36.18°・34.46°</td><td>35° の暈</td></tr>
+      <tr><td class="num">90°</td><td>底面と側面（1-3）</td><td class="num">45.94°</td><td class="num">47.78°・45.06°</td><td>外暈</td></tr>
+    </tbody>
+  </table>
+</div>
+<p>9° の暈の光路 3-26 は atoptics による値です<Fragment set:html={rf(7)} />。</p>
+<h4>幻日と Bravais の実効屈折率</h4>
+<p>底面が水平な板の側面を、高度 <Fragment set:html={M.h} /> の光が斜めに通るとき、水平面に投影した向きは、屈折率を <Fragment set:html={M.np} /> にしたくさびと同じに曲がります<Fragment set:html={rf(19)} />。幻日の方位の差 <Fragment set:html={M.dphi} /> は、<Fragment set:html={M.np} /> を最小偏角の式に入れて求めます。</p>
+<dl class="syms">
+  <dt set:html={M.h} /><dd>光源の真の高度</dd>
+  <dt set:html={M.np} /><dd>Bravais の実効屈折率</dd>
+  <dt set:html={M.dphi} /><dd>光源と幻日の方位の差</dd>
+  <dt><math><msub><mi>Θ</mi><mi mathvariant="normal">p</mi></msub></math></dt><dd>光源と幻日の角距離（計算結果の「幻日の離角」）</dd>
+</dl>
+<div class="eqs">
+  <math display="block"><msup><mi>n</mi><mo>′</mo></msup><mo>=</mo><mfrac><msqrt><mrow><msup><mi>n</mi><mn>2</mn></msup><mo>−</mo><msup><mi>sin</mi><mn>2</mn></msup><mi>h</mi></mrow></msqrt><mrow><mi>cos</mi><mo>⁡</mo><mi>h</mi></mrow></mfrac></math>
+  <math display="block"><mi mathvariant="normal">Δ</mi><mi>φ</mi><mo>=</mo><mn>2</mn><mi>arcsin</mi><mo>⁡</mo><mrow><mo>(</mo><msup><mi>n</mi><mo>′</mo></msup><mi>sin</mi><mo>⁡</mo><mn>30</mn><mo>°</mo><mo>)</mo></mrow><mo>−</mo><mn>60</mn><mo>°</mo></math>
+  <math display="block"><mi>cos</mi><mo>⁡</mo><msub><mi>Θ</mi><mi mathvariant="normal">p</mi></msub><mo>=</mo><msup><mi>sin</mi><mn>2</mn></msup><mi>h</mi><mo>+</mo><msup><mi>cos</mi><mn>2</mn></msup><mi>h</mi><mi>cos</mi><mo>⁡</mo><mi mathvariant="normal">Δ</mi><mi>φ</mi></math>
+</div>
+<p>高度が上がるほど <Fragment set:html={M.np} /> は大きくなります。<math><msup><mi>n</mi><mo>′</mo></msup><mi>sin</mi><mo>⁡</mo><mn>30</mn><mo>°</mo><mo>≥</mo><mn>1</mn></math> になると、側面から入った光は次の側面で全反射して出られません。550 nm では <math><mi>h</mi><mo>=</mo><mi>arccos</mi><mo>⁡</mo><msqrt><mrow><mo stretchy="false">(</mo><msup><mi>n</mi><mn>2</mn></msup><mo>−</mo><mn>1</mn><mo stretchy="false">)</mo><mo>/</mo><mn>3</mn></mrow></msqrt><mo>=</mo><mn>60.70</mn><mo>°</mo></math> より高いと、幻日は出ません。計算は、AKM の観測の表と 1° 以内で合います<Fragment set:html={rf(20)} />。</p>
+<div class="tt-w">
+  <table class="tt">
+    <thead><tr><th scope="col" class="num">光源の高度</th><th scope="col" class="num" set:html={M.np} /><th scope="col" class="num" set:html={M.dphi} /><th scope="col" class="num"><math><msub><mi>Θ</mi><mi mathvariant="normal">p</mi></msub></math></th><th scope="col" class="num">AKM の表</th></tr></thead>
+    <tbody>
+      <tr><td class="num">0°</td><td class="num">1.3110</td><td class="num">21.91°</td><td class="num">21.91°</td><td class="num">22°</td></tr>
+      <tr><td class="num">10°</td><td class="num">1.3194</td><td class="num">22.56°</td><td class="num">22.21°</td><td class="num">22°</td></tr>
+      <tr><td class="num">20°</td><td class="num">1.3468</td><td class="num">24.66°</td><td class="num">23.15°</td><td class="num">23°</td></tr>
+      <tr><td class="num">30°</td><td class="num">1.3993</td><td class="num">28.80°</td><td class="num">24.88°</td><td class="num">25°</td></tr>
+      <tr><td class="num">40°</td><td class="num">1.4915</td><td class="num">36.45°</td><td class="num">27.72°</td><td class="num">28°</td></tr>
+      <tr><td class="num">50°</td><td class="num">1.6551</td><td class="num">51.69°</td><td class="num">32.55°</td><td class="num">32°</td></tr>
+      <tr><td class="num">60°</td><td class="num">1.9684</td><td class="num">99.59°</td><td class="num">44.90°</td><td class="num">45°</td></tr>
+    </tbody>
+  </table>
+</div>
+<h4>環天頂アークと環水平アーク</h4>
+<p>環天頂アークは、板の上の底面から入って側面から出る光（1-3）、環水平アークは、側面から入って下の底面から出る光（3-2）です<Fragment set:html={rf(7, 20)} />。</p>
+<div class="eqs">
+  <math display="block"><msub><mi>h</mi><mtext>CZA</mtext></msub><mo>=</mo><mi>arcsin</mi><mo>⁡</mo><msqrt><mrow><msup><mi>n</mi><mn>2</mn></msup><mo>−</mo><msup><mi>cos</mi><mn>2</mn></msup><mi>h</mi></mrow></msqrt></math>
+  <math display="block"><msub><mi>h</mi><mtext>CHA</mtext></msub><mo>=</mo><mi>arcsin</mi><mo>⁡</mo><msqrt><mrow><mn>1</mn><mo>−</mo><msup><mi>n</mi><mn>2</mn></msup><mo>+</mo><msup><mi>sin</mi><mn>2</mn></msup><mi>h</mi></mrow></msqrt></math>
+  <math display="block"><msub><mi>h</mi><mtext>TIR</mtext></msub><mo>=</mo><mi>arccos</mi><mo>⁡</mo><msqrt><mrow><msup><mi>n</mi><mn>2</mn></msup><mo>−</mo><mn>1</mn></mrow></msqrt></math>
+</div>
+<p>環天頂アークは <math><mi>h</mi><mo>&lt;</mo><msub><mi>h</mi><mtext>TIR</mtext></msub></math> のときだけ、環水平アークは <math><mi>h</mi><mo>&gt;</mo><mn>90</mn><mo>°</mo><mo>−</mo><msub><mi>h</mi><mtext>TIR</mtext></msub></math> のときだけ出ます。それ以外では、出る面で全反射します<Fragment set:html={rf(19)} />。<Fragment set:html={M.hcza} /> の式と出る条件は Selmke らの式で、<Fragment set:html={M.hcha} /> の式は同じ論文の実効屈折率から導いたものです。</p>
+<ul class="tl">
+  <li>550 nm では <math><msub><mi>h</mi><mtext>TIR</mtext></msub><mo>=</mo><mn>32.04</mn><mo>°</mo></math>。環水平アークは光源が 57.96° より高いときに出る。AKM は 32° と 57.8° を挙げている<Fragment set:html={rf(20)} /></li>
+  <li>環天頂アークの高度は、光源の高度 0° で 57.96°、22° で 67.94°、30° で 79.79°</li>
+  <li>光源の高度 22° の環天頂アークは光源から 45.94° で、90° のくさびの最小偏角と同じ。AKM は、環天頂アークが最も明るいのは高度 22.1°、環水平アークは 67.9° としている<Fragment set:html={rf(20)} /></li>
+  <li>環水平アークの高度は、光源の高度 58° で 1.39°、68° で 22.06°、90° で 32.04°</li>
+</ul>
+<h4>名前の位置</h4>
+<p>空の名前は、母集団の姿勢から出ているはずのハロを選んで置きます。位置は真の向きで求め、大気差で浮かせてから画面に写します。</p>
+<div class="tt-w">
+  <table class="tt">
+    <thead><tr><th scope="col">ハロ</th><th scope="col">結晶の姿勢</th><th scope="col">光路</th><th scope="col">名前を置く位置</th></tr></thead>
+    <tbody>
+      <tr><th scope="row">内暈</th><td>ランダム</td><td>3-5</td><td>光源から 21.91°</td></tr>
+      <tr><th scope="row">外暈</th><td>ランダム</td><td>1-3・3-1</td><td>光源から 45.94°</td></tr>
+      <tr><th scope="row">幻日（月なら幻月）</th><td>板</td><td>3-5</td><td>光源と同じ高度で、方位の差 <Fragment set:html={M.dphi} /></td></tr>
+      <tr><th scope="row">幻日環</th><td>板・柱</td><td>鉛直な面の外での反射</td><td>光源と同じ高度</td></tr>
+      <tr><th scope="row">120° 幻日</th><td>板</td><td>1-3-8-2</td><td>光源と同じ高度で、方位の差 120°</td></tr>
+      <tr><th scope="row">環天頂アーク</th><td>板</td><td>1-3</td><td>高度 <Fragment set:html={M.hcza} /></td></tr>
+      <tr><th scope="row">環水平アーク</th><td>板</td><td>3-2</td><td>高度 <Fragment set:html={M.hcha} /></td></tr>
+      <tr><th scope="row">上端接弧・下端接弧</th><td>柱</td><td>3-5</td><td>内暈の真上・真下。光源が 32° より高いと外接ハロと呼ぶ</td></tr>
+      <tr><th scope="row">太陽柱（月柱）</th><td>傾いた板</td><td>下の底面での反射</td><td>光源の上</td></tr>
+      <tr><th scope="row">9°・35° の暈</th><td>錐面のある結晶（ランダム）</td><td>3-26 など</td><td>光源から 8.98°・35.0°</td></tr>
+      <tr><th scope="row">パリーアーク</th><td>Parry</td><td>3-5</td><td>探した光線の向き</td></tr>
+      <tr><th scope="row">ローウィッツアーク</th><td>Lowitz</td><td>3-5</td><td>探した光線の向き</td></tr>
+    </tbody>
+  </table>
+</div>
+<p>光路は atoptics<Fragment set:html={rf(7, 14)} /> と AKM<Fragment set:html={rf(20)} /> によります（AKM は 3-5 と同じ組を 3-7 と書きます）。接弧と外接ハロの呼び分けの 32° は AKM の値です<Fragment set:html={rf(20)} />。パリーアークとローウィッツアークは式で位置が決まらないので、光路の図と同じ方法でそのハロへ向かう光線を探し、その向きに名前を置きます。</p>
+<h4>確かめたこと</h4>
+<p>GPU と同じ手順の CPU の追跡で、次のことを確かめています。</p>
+<ul class="tl">
+  <li>ランダムな向きの結晶の内暈・外暈の内縁が、60°・90° のくさびの最小偏角と 0.3°・0.4° 以内で合う</li>
+  <li>錐面のある結晶の 9°・35° の暈の内縁が、28°・80.2° のくさびの最小偏角と 0.4°・0.5° 以内で合う</li>
+  <li>水平な板の幻日の内縁が、Bravais の実効屈折率による方位の差と 0.45° 以内で合う（光源の高度 0°・20°・40°）</li>
+  <li>環天頂アークの高度が式と 0.5° 以内で合い、光源の高度 34° では出ない</li>
+  <li>ランダムな向きで結晶に当たる光線の割合が、平均の投影の面積（凸体では表面積の 1/4）÷ 円盤の面積と 2 % 以内で合う</li>
+  <li>板の傾きの <math><mo>⟨</mo><msup><mi>θ</mi><mn>2</mn></msup><mo>⟩</mo></math> が <math><mn>2</mn><msup><mi>σ</mi><mn>2</mn></msup></math> になる。一様な向きを全天図に足すと、画素ごとの数がそろう</li>
+</ul>
+
+<h3>色と回折</h3>
+<h4>波長と色</h4>
+<p>光線ごとに波長 <Fragment set:html={M.lam} /> を 380〜780 nm から一様に 1 つ引き、その波長の屈折率で追跡します。全天図には、その波長の色を足します。</p>
+<ul class="tl">
+  <li>色は、CIE 1931 の等色関数（多峰のガウス関数による近似<Fragment set:html={rf(21)} />）から求めた線形 sRGB</li>
+  <li>380〜780 nm を一様に平均すると白 (1, 1, 1) になるように、3 色をそれぞれ割ってそろえる。光源の光を、どの波長も同じ強さの白とみなし、白に写すことに当たる</li>
+</ul>
+<h4>回折</h4>
+<p>幾何光学の追跡には回折が入りません。結晶の径 <Fragment set:html={M.D} /> が小さいほど、ハロは回折で広がります。Flatau と Draine の波動光学の計算では、内暈の半値全幅は約 <math><mn>3.2</mn><mi>λ</mi><mo>/</mo><mi>D</mi></math> です<Fragment set:html={rf(18)} />。そこで、結晶を出た向きを、この半値全幅のガウス分布でずらします。</p>
+<div class="eqs">
+  <math display="block"><msub><mi mathvariant="normal">Δ</mi><mtext>FWHM</mtext></msub><mo>≈</mo><mn>3.2</mn><mfrac><mi>λ</mi><mi>D</mi></mfrac></math>
+  <math display="block"><mi>σ</mi><mo>=</mo><mfrac><msub><mi mathvariant="normal">Δ</mi><mtext>FWHM</mtext></msub><mrow><mn>2</mn><msqrt><mrow><mn>2</mn><mi>ln</mi><mo>⁡</mo><mn>2</mn></mrow></msqrt></mrow></mfrac></math>
+</div>
+<p>550 nm では、<math><mi>D</mi><mo>=</mo><mn>20</mn></math> µm で 5.0°、50 µm で 2.0°、100 µm で 1.0°、200 µm で 0.50° です。ハロがはっきり出るには、サイズパラメータ（結晶の周の長さ ÷ 波長）が 100 程度以上要ります<Fragment set:html={rf(22)} />。550 nm では径およそ 18 µm です。2 個目の結晶を通った光は、2 個目の結晶の径でずらします。</p>
+<h4>ハロの色が淡い理由</h4>
+<ul class="tl">
+  <li>内暈の最小偏角は、400 nm の 22.55° から 700 nm の 21.60° まで 0.95° しか動かない。太陽の視直径 0.53° の 2 倍に満たない</li>
+  <li>どの波長の光も最小偏角から外へ長い裾を引くので、赤い内縁より外では色が重なって白くなる<Fragment set:html={rf(23)} /></li>
+  <li>径 100 µm より小さい結晶では、回折の広がりが色の広がりより大きい<Fragment set:html={rf(18)} /></li>
+  <li>実際の巻雲の結晶の 6 割ほどは面が粗く、ハロを作らずに白い光を散らす<Fragment set:html={rf(24)} />。較正したカメラの測定では、内暈の山はすぐ内側の暗い所の 1.03 倍だった<Fragment set:html={rf(25)} /></li>
+</ul>
+<p>環天頂アークの色の広がりは内暈より大きく、光源の高度 22° で 2.74°、30° で 6.26° です（計算）。</p>
+
+<h3>全天図と投影</h3>
+<p>結晶を出た光線は、空の全天図に足します。全天図は、天頂を中心にした上の半球と天底を中心にした下の半球を、Lambert の正積方位図法で円盤 2 枚（各 1,024 × 1,024 画素）にしたものです。方位は光源を基準にとるので、視線や投影を変えても、足した光線を捨てずに済みます。</p>
+<dl class="syms">
+  <dt set:html={M.th} /><dd>天頂（下の半球では天底）からの角</dd>
+  <dt><math><mi>r</mi></math></dt><dd>円盤の中心からの距離。半球の縁が 1</dd>
+  <dt><math><mi>N</mi></math></dt><dd>円盤の径の画素数（1,024）</dd>
+</dl>
+<div class="eqs">
+  <math display="block"><mi>r</mi><mo>=</mo><msqrt><mn>2</mn></msqrt><mi>sin</mi><mo>⁡</mo><mfrac><mi>θ</mi><mn>2</mn></mfrac></math>
+  <math display="block"><mi mathvariant="normal">Δ</mi><mi mathvariant="normal">Ω</mi><mo>=</mo><mn>2</mn><msup><mrow><mo>(</mo><mfrac><mn>2</mn><mi>N</mi></mfrac><mo>)</mo></mrow><mn>2</mn></msup><mtext> sr</mtext></math>
+</div>
+<p>半球の 2π sr を面積 π の円盤に写すので、どの画素も同じ立体角 <math><mi mathvariant="normal">Δ</mi><mi mathvariant="normal">Ω</mi></math> を覆います<Fragment set:html={rf(26)} />。このため、画素に落ちた光線の数がそのまま放射輝度に比例します。等立体角でない写し方では画素ごとに立体角が違い、数を立体角で割り直す必要があります。</p>
+<h4>表示の投影</h4>
+<p>画面の画素ごとに向きを求め、全天図を双線形補間で引いて描きます。全天図は放射輝度なので、どの投影でも明るさは正しく写ります。</p>
+<ul class="tl">
+  <li><b>魚眼</b>: 等立体角の魚眼。<math><mi>r</mi><mo>=</mo><mn>2</mn><mi>f</mi><mi>sin</mi><mo>⁡</mo><mo stretchy="false">(</mo><mi>θ</mi><mo>/</mo><mn>2</mn><mo stretchy="false">)</mo></math>（<Fragment set:html={M.th} /> は視線からの角）<Fragment set:html={rf(26)} />。画面の横の端が画角の半分になるように <math><mi>f</mi></math> を決める</li>
+  <li><b>全天</b>: 天頂を中心にした等立体角の全天。地平線が円の縁で、円は画面の短い辺に収める</li>
+  <li><b>カメラ</b>: ふつうのレンズの透視。<math><mi>r</mi><mo>=</mo><mi>f</mi><mi>tan</mi><mo>⁡</mo><mi>θ</mi></math><Fragment set:html={rf(26)} />。画角は 130° まで</li>
+</ul>
+
+<h3>空と雲</h3>
+<p>写真風の映像は、晴れた空・巻雲の層・光源の円盤を足し合わせたものです。空の色と雲の照らされ方は、光源の高度と雲の高さ・厚さが変わったときだけ、方位 0〜180° × 高度 −10〜90° の表に計算し直します。ハロだけの映像は、雲の滑らかな結晶で曲がった光だけを黒い地に描きます。</p>
+<h4>晴れた空</h4>
+<p>大気は、Rayleigh 散乱（空気の分子）・Mie 散乱（エーロゾル）・オゾンの吸収で表します。視線に沿って、光源の光が 1 回散乱した光と、何度も散乱した光の近似を足します。定数は Bruneton（2017）の値を、Hillaire（2020）が 680・550・440 nm で赤・緑・青の 3 色にしたものです<Fragment set:html={rf(27, 28)} />。光源の放射照度は 1 とします<Fragment set:html={rf(28)} />。</p>
+<dl class="syms">
+  <dt><math><mi>s</mi><mo>,</mo><mspace width="0.3em"/><mi>ℓ</mi></math></dt><dd>視線に沿った距離と、地面か大気の上端までの長さ</dd>
+  <dt><math><mi>z</mi></math></dt><dd>地表からの高さ</dd>
+  <dt><math><mi>T</mi><mo stretchy="false">(</mo><mi mathvariant="normal">o</mi><mo>→</mo><mi mathvariant="normal">p</mi><mo stretchy="false">)</mo></math></dt><dd>目から点 p までの透過率</dd>
+  <dt><math><msub><mi>T</mi><mi>☉</mi></msub><mo stretchy="false">(</mo><mi mathvariant="normal">p</mi><mo stretchy="false">)</mo></math></dt><dd>点 p から光源の向きに大気の上端までの透過率。地球の影を含む</dd>
+  <dt><math><mi>ν</mi></math></dt><dd>光源の向きと視線のなす角の余弦</dd>
+  <dt><math><msub><mi>ρ</mi><mi mathvariant="normal">R</mi></msub><mo>,</mo><mspace width="0.3em"/><msub><mi>ρ</mi><mi mathvariant="normal">M</mi></msub><mo>,</mo><mspace width="0.3em"/><msub><mi>ρ</mi><mi mathvariant="normal">O</mi></msub></math></dt><dd>空気の分子・エーロゾル・オゾンの密度（地表または最大を 1）</dd>
+  <dt><math><msub><mi>β</mi><mi mathvariant="normal">s</mi></msub></math></dt><dd>散乱係数の和 <math><msub><mi>β</mi><mi mathvariant="normal">R</mi></msub><msub><mi>ρ</mi><mi mathvariant="normal">R</mi></msub><mo>+</mo><msubsup><mi>β</mi><mi mathvariant="normal">M</mi><mi mathvariant="normal">s</mi></msubsup><msub><mi>ρ</mi><mi mathvariant="normal">M</mi></msub></math></dd>
+  <dt><math><mi mathvariant="normal">Ψ</mi><mo stretchy="false">(</mo><mi mathvariant="normal">p</mi><mo stretchy="false">)</mo></math></dt><dd>点 p で何度も散乱した光の明るさ（向きによらないとする）</dd>
+</dl>
+<div class="eqs">
+  <math display="block"><mi>L</mi><mo>=</mo><msubsup><mo>∫</mo><mn>0</mn><mi>ℓ</mi></msubsup><mi>T</mi><mo stretchy="false">(</mo><mi mathvariant="normal">o</mi><mo>→</mo><mi mathvariant="normal">p</mi><mo stretchy="false">)</mo><mrow><mo>[</mo><msub><mi>T</mi><mi>☉</mi></msub><mo stretchy="false">(</mo><mi mathvariant="normal">p</mi><mo stretchy="false">)</mo><mrow><mo>(</mo><msub><mi>β</mi><mi mathvariant="normal">R</mi></msub><msub><mi>ρ</mi><mi mathvariant="normal">R</mi></msub><msub><mi>P</mi><mi mathvariant="normal">R</mi></msub><mo stretchy="false">(</mo><mi>ν</mi><mo stretchy="false">)</mo><mo>+</mo><msubsup><mi>β</mi><mi mathvariant="normal">M</mi><mi mathvariant="normal">s</mi></msubsup><msub><mi>ρ</mi><mi mathvariant="normal">M</mi></msub><msub><mi>P</mi><mi mathvariant="normal">M</mi></msub><mo stretchy="false">(</mo><mi>ν</mi><mo stretchy="false">)</mo><mo>)</mo></mrow><mo>+</mo><msub><mi>β</mi><mi mathvariant="normal">s</mi></msub><mi mathvariant="normal">Ψ</mi><mo stretchy="false">(</mo><mi mathvariant="normal">p</mi><mo stretchy="false">)</mo><mo>]</mo></mrow><mspace width="0.17em"/><mi>d</mi><mi>s</mi></math>
+  <math display="block"><mi>T</mi><mo>=</mo><mi>exp</mi><mo>⁡</mo><mrow><mo>(</mo><mo>−</mo><mo>∫</mo><mrow><mo>(</mo><msub><mi>β</mi><mi mathvariant="normal">R</mi></msub><msub><mi>ρ</mi><mi mathvariant="normal">R</mi></msub><mo>+</mo><msubsup><mi>β</mi><mi mathvariant="normal">M</mi><mi mathvariant="normal">e</mi></msubsup><msub><mi>ρ</mi><mi mathvariant="normal">M</mi></msub><mo>+</mo><msub><mi>β</mi><mi mathvariant="normal">O</mi></msub><msub><mi>ρ</mi><mi mathvariant="normal">O</mi></msub><mo>)</mo></mrow><mspace width="0.17em"/><mi>d</mi><mi>s</mi><mo>)</mo></mrow></math>
+  <math display="block"><msub><mi>ρ</mi><mi mathvariant="normal">R</mi></msub><mo>=</mo><msup><mi>e</mi><mrow><mo>−</mo><mi>z</mi><mo>/</mo><msub><mi>H</mi><mi mathvariant="normal">R</mi></msub></mrow></msup><mo>,</mo><mspace width="1em"/><msub><mi>ρ</mi><mi mathvariant="normal">M</mi></msub><mo>=</mo><msup><mi>e</mi><mrow><mo>−</mo><mi>z</mi><mo>/</mo><msub><mi>H</mi><mi mathvariant="normal">M</mi></msub></mrow></msup></math>
+  <math display="block"><msub><mi>ρ</mi><mi mathvariant="normal">O</mi></msub><mo>=</mo><mi>max</mi><mrow><mo>(</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo>−</mo><mfrac><mrow><mo stretchy="false">|</mo><mi>z</mi><mo>−</mo><mn>25</mn><mtext> km</mtext><mo stretchy="false">|</mo></mrow><mrow><mn>15</mn><mtext> km</mtext></mrow></mfrac><mo>)</mo></mrow></math>
+  <math display="block"><msub><mi>P</mi><mi mathvariant="normal">R</mi></msub><mo stretchy="false">(</mo><mi>ν</mi><mo stretchy="false">)</mo><mo>=</mo><mfrac><mn>3</mn><mrow><mn>16</mn><mi>π</mi></mrow></mfrac><mrow><mo>(</mo><mn>1</mn><mo>+</mo><msup><mi>ν</mi><mn>2</mn></msup><mo>)</mo></mrow></math>
+  <math display="block"><msub><mi>P</mi><mi mathvariant="normal">M</mi></msub><mo stretchy="false">(</mo><mi>ν</mi><mo stretchy="false">)</mo><mo>=</mo><mfrac><mn>3</mn><mrow><mn>8</mn><mi>π</mi></mrow></mfrac><mfrac><mrow><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><msup><mi>g</mi><mn>2</mn></msup><mo stretchy="false">)</mo><mo stretchy="false">(</mo><mn>1</mn><mo>+</mo><msup><mi>ν</mi><mn>2</mn></msup><mo stretchy="false">)</mo></mrow><mrow><mo stretchy="false">(</mo><mn>2</mn><mo>+</mo><msup><mi>g</mi><mn>2</mn></msup><mo stretchy="false">)</mo><msup><mrow><mo stretchy="false">(</mo><mn>1</mn><mo>+</mo><msup><mi>g</mi><mn>2</mn></msup><mo>−</mo><mn>2</mn><mi>g</mi><mi>ν</mi><mo stretchy="false">)</mo></mrow><mrow><mn>3</mn><mo>/</mo><mn>2</mn></mrow></msup></mrow></mfrac></math>
+</div>
+<p>Mie の位相関数は Cornette–Shanks の形です<Fragment set:html={rf(27, 28)} />。オゾンは 25 km を頂点に 10〜40 km にある三角形の分布です。</p>
+<div class="tt-w">
+  <table class="tt">
+    <thead><tr><th scope="col">量</th><th scope="col" class="num">値</th></tr></thead>
+    <tbody>
+      <tr><th scope="row">地表の半径</th><td class="num">6,360 km</td></tr>
+      <tr><th scope="row">大気の上端の半径</th><td class="num">6,420 km</td></tr>
+      <tr><th scope="row">Rayleigh の散乱係数 <math><msub><mi>β</mi><mi mathvariant="normal">R</mi></msub></math>（680・550・440 nm）</th><td class="num">5.802・13.558・33.1 <Fragment set:html={sci('', -3)} /> km⁻¹</td></tr>
+      <tr><th scope="row"><math><msub><mi>H</mi><mi mathvariant="normal">R</mi></msub></math></th><td class="num">8 km</td></tr>
+      <tr><th scope="row">Mie の散乱係数 <math><msubsup><mi>β</mi><mi mathvariant="normal">M</mi><mi mathvariant="normal">s</mi></msubsup></math></th><td class="num">3.996 <Fragment set:html={sci('', -3)} /> km⁻¹ × 5</td></tr>
+      <tr><th scope="row">Mie の消散係数 <math><msubsup><mi>β</mi><mi mathvariant="normal">M</mi><mi mathvariant="normal">e</mi></msubsup></math></th><td class="num">4.44 <Fragment set:html={sci('', -3)} /> km⁻¹ × 5</td></tr>
+      <tr><th scope="row"><math><msub><mi>H</mi><mi mathvariant="normal">M</mi></msub></math></th><td class="num">1.2 km</td></tr>
+      <tr><th scope="row">Mie の位相関数の <math><mi>g</mi></math></th><td class="num">0.8</td></tr>
+      <tr><th scope="row">オゾンの吸収係数 <math><msub><mi>β</mi><mi mathvariant="normal">O</mi></msub></math>（680・550・440 nm）</th><td class="num">0.650・1.881・0.085 <Fragment set:html={sci('', -3)} /> km⁻¹</td></tr>
+    </tbody>
+  </table>
+</div>
+<p>大気の上端は Bruneton の 60 km の厚さです（Hillaire は 100 km）<Fragment set:html={rf(27, 28)} />。元の定数のエーロゾルは、鉛直の光学的厚さが 0.0053 と極端に薄いので、Mie の係数を 5 倍にしています（鉛直で 0.027）。</p>
+<h4>何度も散乱した光</h4>
+<p>2 回より多く散乱した光は、Hillaire の近似で求めます<Fragment set:html={rf(28)} />。2 回目より先の散乱は向きによらないとみなし、点 p に 2 回散乱して届く光 <math><msub><mi>L</mi><mn>2</mn></msub></math> を、散乱した光がもう一度散乱する割合 <math><msub><mi>f</mi><mtext>ms</mtext></msub></math> の等比級数で増やします。</p>
+<dl class="syms">
+  <dt><math><mi>ω</mi></math></dt><dd>点 p から見た向き。全天の 4π sr にわたって平均する</dd>
+  <dt><math><mi mathvariant="normal">q</mi><mo>,</mo><mspace width="0.3em"/><mi mathvariant="normal">g</mi></math></dt><dd>向き <math><mi>ω</mi></math> に進んだ先の大気の点と、地面に当たる点</dd>
+  <dt><math><msub><mi>ρ</mi><mi mathvariant="normal">g</mi></msub></math></dt><dd>地面の反射率（0.3）<Fragment set:html={rf(28)} /></dd>
+  <dt><math><msub><mi>μ</mi><mi>☉</mi></msub></math></dt><dd>点 p での光源の天頂角の余弦</dd>
+</dl>
+<div class="eqs">
+  <math display="block"><msub><mi>L</mi><mn>2</mn></msub><mo>=</mo><mfrac><mn>1</mn><mrow><mn>4</mn><mi>π</mi></mrow></mfrac><msub><mo>∮</mo><mrow><mn>4</mn><mi>π</mi></mrow></msub><mrow><mo>[</mo><msubsup><mo>∫</mo><mn>0</mn><mi>ℓ</mi></msubsup><mi>T</mi><mo stretchy="false">(</mo><mi mathvariant="normal">p</mi><mo>→</mo><mi mathvariant="normal">q</mi><mo stretchy="false">)</mo><msub><mi>β</mi><mi mathvariant="normal">s</mi></msub><msub><mi>T</mi><mi>☉</mi></msub><mo stretchy="false">(</mo><mi mathvariant="normal">q</mi><mo stretchy="false">)</mo><mfrac><mn>1</mn><mrow><mn>4</mn><mi>π</mi></mrow></mfrac><mspace width="0.17em"/><mi>d</mi><mi>s</mi><mo>+</mo><mi>T</mi><mo stretchy="false">(</mo><mi mathvariant="normal">p</mi><mo>→</mo><mi mathvariant="normal">g</mi><mo stretchy="false">)</mo><msub><mi>T</mi><mi>☉</mi></msub><mo stretchy="false">(</mo><mi mathvariant="normal">g</mi><mo stretchy="false">)</mo><mfrac><msub><mi>ρ</mi><mi mathvariant="normal">g</mi></msub><mi>π</mi></mfrac><mi>max</mi><mo stretchy="false">(</mo><mi mathvariant="bold">n</mi><mo>·</mo><mi mathvariant="bold">L</mi><mo>,</mo><mn>0</mn><mo stretchy="false">)</mo><mo>]</mo></mrow><mspace width="0.17em"/><mi>d</mi><mi>ω</mi></math>
+  <math display="block"><msub><mi>f</mi><mtext>ms</mtext></msub><mo>=</mo><mfrac><mn>1</mn><mrow><mn>4</mn><mi>π</mi></mrow></mfrac><msub><mo>∮</mo><mrow><mn>4</mn><mi>π</mi></mrow></msub><msubsup><mo>∫</mo><mn>0</mn><mi>ℓ</mi></msubsup><mi>T</mi><mo stretchy="false">(</mo><mi mathvariant="normal">p</mi><mo>→</mo><mi mathvariant="normal">q</mi><mo stretchy="false">)</mo><msub><mi>β</mi><mi mathvariant="normal">s</mi></msub><mspace width="0.17em"/><mi>d</mi><mi>s</mi><mspace width="0.17em"/><mi>d</mi><mi>ω</mi></math>
+  <math display="block"><mi mathvariant="normal">Ψ</mi><mo>=</mo><msub><mi>L</mi><mn>2</mn></msub><mrow><mo>(</mo><mn>1</mn><mo>+</mo><msub><mi>f</mi><mtext>ms</mtext></msub><mo>+</mo><msubsup><mi>f</mi><mtext>ms</mtext><mn>2</mn></msubsup><mo>+</mo><mo>⋯</mo><mo>)</mo></mrow><mo>=</mo><mfrac><msub><mi>L</mi><mn>2</mn></msub><mrow><mn>1</mn><mo>−</mo><msub><mi>f</mi><mtext>ms</mtext></msub></mrow></mfrac></math>
+</div>
+<ul class="tl">
+  <li><math><mi mathvariant="bold">n</mi></math> は地面の法線、<math><mi mathvariant="bold">L</mi></math> は光源の向き</li>
+  <li>向きは球面の Fibonacci 格子の 64 方向で、Hillaire と同じ数<Fragment set:html={rf(28)} />。各方向を 24 段で積分する</li>
+  <li><math><mi mathvariant="normal">Ψ</mi></math> は大気が変わらないので、最初に 1 回だけ、<math><msub><mi>μ</mi><mi>☉</mi></msub></math> × 高さ 0〜60 km の 64 × 32 の表にする。横は <math><mi>x</mi><mo>=</mo><mi>sign</mi><mo>⁡</mo><mo stretchy="false">(</mo><msub><mi>μ</mi><mi>☉</mi></msub><mo stretchy="false">)</mo><msqrt><mrow><mo stretchy="false">|</mo><msub><mi>μ</mi><mi>☉</mi></msub><mo stretchy="false">|</mo></mrow></msqrt></math> にとり、薄明の近くを細かくする</li>
+</ul>
+<h4>巻雲の層</h4>
+<p>巻雲は、高さ <Fragment set:html={M.zc} /> にある厚さのない球面の層とします。視線が層を斜めに通るほど、多くの光を散らします。</p>
+<dl class="syms">
+  <dt set:html={M.tau} /><dd>雲の光学的厚さ（鉛直に通したとき）</dd>
+  <dt set:html={M.mu} /><dd>視線と、層を通る点の鉛直とのなす角の余弦（0.02 以上）</dd>
+  <dt><math><mi>a</mi></math></dt><dd>視線に沿って雲が散らす割合</dd>
+  <dt><math><mi>E</mi></math></dt><dd>光源の放射照度</dd>
+  <dt><math><msub><mi>T</mi><mi mathvariant="normal">c</mi></msub><mo>,</mo><mspace width="0.3em"/><msub><mi>T</mi><mi mathvariant="normal">v</mi></msub></math></dt><dd>光源から雲の点までと、雲の点から目までの透過率（RGB）</dd>
+  <dt set:html={M.fs} /><dd>滑らかな結晶の割合（1 − 入力の「粗い結晶」）</dd>
+  <dt><math><mi>Θ</mi></math></dt><dd>光源からの角</dd>
+  <dt><math><msub><mi>P</mi><mi mathvariant="normal">h</mi></msub></math></dt><dd>全天図から引いた、滑らかな結晶で曲がった光（1 sr あたり）</dd>
+  <dt><math><msub><mi>σ</mi><mi mathvariant="normal">d</mi></msub></math></dt><dd>回折の明るい輪の幅</dd>
+  <dt><math><msub><mi>L</mi><mi mathvariant="normal">z</mi></msub></math></dt><dd>雲の点から天頂を見た空の明るさ（1 回の散乱と何度もの散乱）</dd>
+</dl>
+<div class="eqs">
+  <math display="block"><mi>a</mi><mo>=</mo><mn>1</mn><mo>−</mo><msup><mi>e</mi><mrow><mo>−</mo><mi>τ</mi><mo>/</mo><mi>μ</mi></mrow></msup></math>
+  <math display="block"><msub><mi>L</mi><mi mathvariant="normal">c</mi></msub><mo>=</mo><mi>E</mi><msub><mi>T</mi><mi mathvariant="normal">c</mi></msub><msub><mi>T</mi><mi mathvariant="normal">v</mi></msub><mi>a</mi><mrow><mo>[</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mrow><mo>(</mo><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><msub><mi>f</mi><mi mathvariant="normal">s</mi></msub><mo stretchy="false">)</mo><msub><mi>P</mi><mtext>HG</mtext></msub><mo stretchy="false">(</mo><mi>Θ</mi><mo stretchy="false">)</mo><mo>+</mo><msub><mi>f</mi><mi mathvariant="normal">s</mi></msub><msub><mi>P</mi><mi mathvariant="normal">h</mi></msub><mo>)</mo></mrow><mo>+</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><msub><mi>P</mi><mi mathvariant="normal">d</mi></msub><mo stretchy="false">(</mo><mi>Θ</mi><mo stretchy="false">)</mo><mo>]</mo></mrow></math>
+  <math display="block"><msub><mi>P</mi><mtext>HG</mtext></msub><mo stretchy="false">(</mo><mi>Θ</mi><mo stretchy="false">)</mo><mo>=</mo><mfrac><mrow><mn>1</mn><mo>−</mo><msup><mi>g</mi><mn>2</mn></msup></mrow><mrow><mn>4</mn><mi>π</mi><msup><mrow><mo stretchy="false">(</mo><mn>1</mn><mo>+</mo><msup><mi>g</mi><mn>2</mn></msup><mo>−</mo><mn>2</mn><mi>g</mi><mi>cos</mi><mo>⁡</mo><mi>Θ</mi><mo stretchy="false">)</mo></mrow><mrow><mn>3</mn><mo>/</mo><mn>2</mn></mrow></msup></mrow></mfrac><mo>,</mo><mspace width="1em"/><mi>g</mi><mo>=</mo><mn>0.62</mn></math>
+  <math display="block"><msub><mi>P</mi><mi mathvariant="normal">d</mi></msub><mo stretchy="false">(</mo><mi>Θ</mi><mo stretchy="false">)</mo><mo>=</mo><mfrac><mrow><mi>exp</mi><mo>⁡</mo><mo stretchy="false">(</mo><mo>−</mo><msup><mi>Θ</mi><mn>2</mn></msup><mo>/</mo><mn>2</mn><msubsup><mi>σ</mi><mi mathvariant="normal">d</mi><mn>2</mn></msubsup><mo stretchy="false">)</mo></mrow><mrow><mn>2</mn><mi>π</mi><msubsup><mi>σ</mi><mi mathvariant="normal">d</mi><mn>2</mn></msubsup></mrow></mfrac></math>
+  <math display="block"><msub><mi>L</mi><mtext>c,sky</mtext></msub><mo>=</mo><mn>0.8</mn><msub><mi>T</mi><mi mathvariant="normal">v</mi></msub><mi>a</mi><msub><mi>L</mi><mi mathvariant="normal">z</mi></msub></math>
+</div>
+<ul class="tl">
+  <li>雲が散らす光の半分を、光源のまわりの回折の明るい輪にし、残りの半分を結晶の面での屈折と反射に回す</li>
+  <li>屈折と反射の光のうち、滑らかな結晶の分は全天図のハロにする。粗い結晶の分は、前に強く散る Henyey–Greenstein の位相関数にする</li>
+  <li>回折の輪の幅は、結晶の径の平均 <math><mover><mi>D</mi><mo>¯</mo></mover></math> から <math><msub><mi>σ</mi><mi mathvariant="normal">d</mi></msub><mo>=</mo><mn>1.2</mn><mi>λ</mi><mo>/</mo><mover><mi>D</mi><mo>¯</mo></mover></math>（550 nm、0.006〜0.05 rad）</li>
+  <li>雲より向こうの空の光と光源の円盤は、<math><msup><mi>e</mi><mrow><mo>−</mo><mi>τ</mi><mo>/</mo><mi>μ</mi></mrow></msup></math> に弱める</li>
+  <li>雲は、上の空の光も散らす（<math><msub><mi>L</mi><mtext>c,sky</mtext></msub></math>）。上の空を、雲の点から天頂を見た明るさ <math><msub><mi>L</mi><mi mathvariant="normal">z</mi></msub></math>（10 段で積分）で代表させ、前に強く散る雲がそれを下へ送る割合を 0.8 とする。夕方は、赤い直射の光に青い空の光が混ざり、雲が桃色になる</li>
+</ul>
+<p>粗い結晶の割合の初期値 63 % は、HaloCam の 4,400 枚の写真に最もよく合った混ぜ方（滑らかな結晶 37 %、粗い結晶 63 %）です<Fragment set:html={rf(24)} />。ハロのコントラストは、雲の光学的厚さが 1 前後で最も大きくなります<Fragment set:html={rf(29)} />。</p>
+<h4>地球の影と、雲に届く光の色</h4>
+<p>雲の層の点から光源の向きに大気の上端まで透過率を求め、雲に届く光の色と明るさにします。光源が低いと光は大気を長く通り、青い光ほど弱まって、雲は赤く照らされます。高さ 8 km の真上の雲では、光源の真の高度 0° のとき、680・550・440 nm の透過率が 0.47・0.16・0.031 です（計算）。</p>
+<p>日の入りの後も、上空の雲はしばらく日が当たります。大気差を除くと、高さ <math><mi>z</mi></math> の点に光が届くのは、その点の地平面から測った光源の伏角 <math><mi>δ</mi></math> が次の値より小さいときです<Fragment set:html={rf(30)} />。</p>
+<div class="eqs">
+  <math display="block"><mi>δ</mi><mo>&lt;</mo><mi>arccos</mi><mo>⁡</mo><mfrac><mi>R</mi><mrow><mi>R</mi><mo>+</mo><mi>z</mi></mrow></mfrac><mo>≈</mo><msqrt><mfrac><mrow><mn>2</mn><mi>z</mi></mrow><mi>R</mi></mfrac></msqrt></math>
+</div>
+<ul class="tl">
+  <li><math><mi>z</mi><mo>=</mo><mn>6</mn></math>・8・10 km で 2.49°・2.87°・3.21°（<math><mi>R</mi></math> は地球の半径）</li>
+  <li>地表をかすめる光は大気差で約 70′ 曲がる<Fragment set:html={rf(31)} />。このため影の縁は、8 km の雲で 0.9° ほど遅れて来る（簡単な模型での計算）</li>
+  <li>このページは、まっすぐな光線が地面の下 1〜6 km まで潜れるとして、これを近似する。8 km の雲は、伏角 3.05° で暗くなり始め、3.80° で影に入る</li>
+</ul>
+<p>計算結果の「雲に届く光」は、地上での直達光の透過率を目安として示します。光源が地平線の下では、真上の雲が影に入るかを上の式で示します。</p>
+<h4>大気差</h4>
+<p>光源は、大気差で浮いた見かけの高度に描きます。空の画素は、見かけの高度を真の高度に戻してから全天図を引きます。</p>
+<dl class="syms">
+  <dt set:html={M.h} /><dd>真の高度（°）</dd>
+  <dt><math><msub><mi>h</mi><mi mathvariant="normal">a</mi></msub></math></dt><dd>見かけの高度（°）</dd>
+  <dt><math><mi mathvariant="normal">Δ</mi><mi>h</mi></math></dt><dd>大気差（′）</dd>
+</dl>
+<div class="eqs">
+  <math display="block"><mi mathvariant="normal">Δ</mi><mi>h</mi><mo>=</mo><mi>cot</mi><mo>⁡</mo><mrow><mo>(</mo><msub><mi>h</mi><mi mathvariant="normal">a</mi></msub><mo>+</mo><mfrac><mn>7.31</mn><mrow><msub><mi>h</mi><mi mathvariant="normal">a</mi></msub><mo>+</mo><mn>4.4</mn></mrow></mfrac><mo>)</mo></mrow></math>
+  <math display="block"><mi mathvariant="normal">Δ</mi><mi>h</mi><mo>=</mo><mn>1.02</mn><mi>cot</mi><mo>⁡</mo><mrow><mo>(</mo><mi>h</mi><mo>+</mo><mfrac><mn>10.3</mn><mrow><mi>h</mi><mo>+</mo><mn>5.11</mn></mrow></mfrac><mo>)</mo></mrow></math>
+</div>
+<ul class="tl">
+  <li>見かけの高度から真の高度へは Bennett の式（1 つ目）<Fragment set:html={rf(32)} />、真の高度から見かけの高度へは Sæmundsson の式（2 つ目）<Fragment set:html={rf(33)} />。どちらも気圧 101.0 kPa、気温 10 °C の値</li>
+  <li>真の高度 0° の太陽は 29.0′ 浮く</li>
+  <li>式は −1.7〜−1.9° で極大を越え、それより下では物理的でない。そこで −1° より下は −1° の値を使い、−2° で 0 になるまで弱める</li>
+</ul>
+
+<h3>月</h3>
+<p>光源を月にすると、太陽と同じ追跡で月のハロを描きます。明るさは満ち欠けで変わります。</p>
+<dl class="syms">
+  <dt><math><mi>α</mi></math></dt><dd>位相角（°）。満月が 0、半月が 90</dd>
+  <dt><math><mi>m</mi><mo stretchy="false">(</mo><mi>α</mi><mo stretchy="false">)</mo></math></dt><dd>月の等級</dd>
+  <dt><math><mi>t</mi></math></dt><dd>月齢（日）</dd>
+</dl>
+<div class="eqs">
+  <math display="block"><mfrac><msub><mi>E</mi><mi>☾</mi></msub><msub><mi>E</mi><mi>☉</mi></msub></mfrac><mo>=</mo><msup><mn>10</mn><mrow><mo>−</mo><mn>0.4</mn><mo stretchy="false">(</mo><mi>m</mi><mo stretchy="false">(</mo><mi>α</mi><mo stretchy="false">)</mo><mo>+</mo><mn>26.74</mn><mo stretchy="false">)</mo></mrow></msup></math>
+  <math display="block"><mi>m</mi><mo stretchy="false">(</mo><mi>α</mi><mo stretchy="false">)</mo><mo>=</mo><mo>−</mo><mn>12.73</mn><mo>+</mo><mn>0.026</mn><mo stretchy="false">|</mo><mi>α</mi><mo stretchy="false">|</mo><mo>+</mo><mn>4</mn><mo>×</mo><msup><mn>10</mn><mrow><mo>−</mo><mn>9</mn></mrow></msup><msup><mi>α</mi><mn>4</mn></msup></math>
+  <math display="block"><mi>α</mi><mo>=</mo><mrow><mo>|</mo><mn>180</mn><mo>°</mo><mo>−</mo><mrow><mo>(</mo><mfrac><mrow><mn>360</mn><mo>°</mo><mi>t</mi></mrow><mrow><mn>29.530589</mn></mrow></mfrac><mo lspace="0.3em" rspace="0.3em">mod</mo><mn>360</mn><mo>°</mo><mo>)</mo></mrow><mo>|</mo></mrow></math>
+</div>
+<ul class="tl">
+  <li>太陽は −26.74 等、満月は −12.74 等<Fragment set:html={rf(34)} /></li>
+  <li>位相角による明るさは、Allen の係数による Krisciunas と Schaefer の式<Fragment set:html={rf(35)} />。満月で太陽の約 40 万分の 1、半月ではその 1 割ほど</li>
+  <li>月齢から位相角へは、月の軌道を円とみなす（29.530589 日は朔望月）</li>
+  <li>月面の反射率は長い波長ほど高い。Jensen ほかの反射率の傾き<Fragment set:html={rf(36)} />を 680・550・440 nm で読んだ比 1.20 : 1 : 0.83（計算）を、光の色に掛ける</li>
+  <li>月の円盤は、平均の距離での視直径 31.1′ で描く</li>
+</ul>
+<p>露出は光源の明るさで割って決めるので、月夜の映像は、長く露出した写真のように明るく写ります。月のハロは光が弱く、目には色がほとんど見えませんが、長く露出した写真には色が写ります<Fragment set:html={rf(37)} />。夜空には、大気光と星の光の目安として、満月の空の約 1/13 の明るさを足します。</p>
+
+<h3>露出と表示</h3>
+<p>太陽の円盤の放射輝度は、内暈の 10 万倍ほどあります（測定値<Fragment set:html={rf(25)} />からの概算）。そこで露出は空で決め、太陽の円盤は白く飛ばします。ハロを観測するカメラ HaloCam も、自動露出の測光をハロの付近に限っています<Fragment set:html={rf(29)} />。</p>
+<dl class="syms">
+  <dt><math><mover><mi>L</mi><mo>^</mo></mover></math></dt><dd>光源の放射照度を 1 としたときの放射輝度（RGB）</dd>
+  <dt><math><mi>k</mi></math></dt><dd>露出</dd>
+  <dt><math><msub><mi>k</mi><mn>4</mn></msub></math></dt><dd>光源の高度 4° のときの露出</dd>
+  <dt><math><mtext>EV</mtext></math></dt><dd>露出の補正（入力の「露出」）</dd>
+</dl>
+<div class="eqs">
+  <math display="block"><mi>k</mi><mo>=</mo><mfrac><mn>0.45</mn><mrow><mtext>中央値</mtext><mo stretchy="false">(</mo><mover><mi>L</mi><mo>^</mo></mover><mo stretchy="false">)</mo></mrow></mfrac></math>
+  <math display="block"><msup><mi>k</mi><mo>′</mo></msup><mo>=</mo><msub><mi>k</mi><mn>4</mn></msub><msup><mrow><mo>(</mo><mfrac><mi>k</mi><msub><mi>k</mi><mn>4</mn></msub></mfrac><mo>)</mo></mrow><mn>0.6</mn></msup></math>
+  <math display="block"><mi>x</mi><mo>=</mo><mi>k</mi><msup><mn>2</mn><mtext>EV</mtext></msup><mover><mi>L</mi><mo>^</mo></mover><mo>,</mo><mspace width="1em"/><mi>v</mi><mo>=</mo><mn>1</mn><mo>−</mo><msup><mi>e</mi><mrow><mo>−</mo><mi>x</mi></mrow></msup></math>
+</div>
+<ul class="tl">
+  <li><b>写真風</b>: 光源から 15〜50° の空（高度 3° 以上）の輝度の中央値を 0.45 に合わせる。雲の粗い結晶の白い光は含め、ハロと回折の輪は除く</li>
+  <li><b>光源が 4° より低いとき</b>: 4° のときの露出から実際の露出へ、対数で 6 割まで寄せる（<math><msup><mi>k</mi><mo>′</mo></msup></math>）。薄明の暗さを残すため</li>
+  <li><b>ハロだけ</b>: 天頂の雲の点に届く光で割り、1 sr あたり 1 の光が 0.5 に写るようにする</li>
+</ul>
+<p>線形の値 <math><mi>x</mi></math> を <math><mn>1</mn><mo>−</mo><msup><mi>e</mi><mrow><mo>−</mo><mi>x</mi></mrow></msup></math> で圧縮し、sRGB に符号化して表示します。sRGB に収まらない色（負の成分）は、輝度を保って白へ寄せます。地平線の下は地面で、空の明るさの一部で照らします。</p>
+
+<h3>結晶の中の光路の図</h3>
+<p>図は、選んだハロへ向かう光線を 1 本探して描きます。GPU と同じ手順の CPU の追跡で、550 nm の光線を、ハロごとに決めた結晶に最大 40 万本通し、条件に合った最初の 1 本を使います。乱数の種は決まっているので、同じ高度では同じ光線になります。解析の式で出ない高度では探さず、理由を示します。</p>
+<div class="tt-w">
+  <table class="tt">
+    <thead><tr><th scope="col">ハロ</th><th scope="col">結晶</th><th scope="col">光線の条件</th></tr></thead>
+    <tbody>
+      <tr><th scope="row">内暈</th><td>ランダム、<Fragment set:html={M.ca} /> 1</td><td>60° のくさびの 2 面を通り、光源から 21.91〜22.71°</td></tr>
+      <tr><th scope="row">幻日</th><td>板、<Fragment set:html={M.ca} /> 0.5、傾き 0°</td><td>60° のくさび、光源との高度の差 0.6° 以内</td></tr>
+      <tr><th scope="row">環天頂アーク</th><td>同上</td><td>上の底面から入る 90° のくさび、方位の差 8° 以内</td></tr>
+      <tr><th scope="row">上端接弧</th><td>柱、<Fragment set:html={M.ca} /> 2</td><td>60° のくさび、方位の差 3° 以内、光源より 15° 以上高い</td></tr>
+      <tr><th scope="row">幻日環</th><td>板、<Fragment set:html={M.ca} /> 0.5</td><td>側面の外での反射、方位の差 55〜85°</td></tr>
+      <tr><th scope="row">外暈</th><td>ランダム、<Fragment set:html={M.ca} /> 1</td><td>90° のくさび、光源から 45.94〜47.14°</td></tr>
+      <tr><th scope="row">環水平アーク</th><td>板、<Fragment set:html={M.ca} /> 0.5</td><td>下の底面から出る 90° のくさび、方位の差 8° 以内</td></tr>
+      <tr><th scope="row">太陽柱</th><td>板、<Fragment set:html={M.ca} /> 0.15、傾き 4°</td><td>方位の差 0.8° 以内、光源の 1.5〜10° 上。光源が 15° より高いと探さない</td></tr>
+      <tr><th scope="row">パリーアーク</th><td>Parry、<Fragment set:html={M.ca} /> 2</td><td>60° のくさび、方位の差 3°（光源が 35° より高ければ 20°）以内、光源より 22.71〜40° 高い</td></tr>
+      <tr><th scope="row">9° の暈</th><td>ランダム、<Fragment set:html={M.ca} /> 0.3、錐面 60 %</td><td>錐面を含む 2 面を通り、光源から 8.88〜9.68°</td></tr>
+    </tbody>
+  </table>
+</div>
+<p>空の名前のためのパリーアークとローウィッツアークは、15 万本まで探します。ローウィッツアークは、Lowitz の板（<Fragment set:html={M.ca} /> 0.25、傾き 0.5°、回転 20°）の 2 面を通り、光源から 20〜26°、光源の 2.5〜6° 上の光線です。</p>
+<h4>結晶の形と見る向き</h4>
+<ul class="tl">
+  <li>頂点は、面の平面を 3 枚ずつ組にして交点を求め、凸多面体の内側にあるものだけを残す。面ごとの頂点は、法線のまわりの角で並べる</li>
+  <li>結晶は、方位 −60°・高さ 20° の向きから平行投影で見る。裏の辺は破線、破線の円は水平面</li>
+  <li>くさびの角は、入った面と出た面の外向きの法線のなす角 <math><mi>ψ</mi></math> から <math><mi>A</mi><mo>=</mo><mn>180</mn><mo>°</mo><mo>−</mo><mi>ψ</mi></math></li>
+  <li>「この光線の曲がり」は、入る光と出る光のなす角。斜めに通る光では、最小偏角より大きい</li>
+</ul>
+<div class="eqs">
+  <math display="block"><msub><mi mathvariant="bold">N</mi><mi>i</mi></msub><mo>·</mo><mi mathvariant="bold">x</mi><mo>=</mo><msub><mi>d</mi><mi>i</mi></msub><mo>,</mo><mspace width="0.5em"/><msub><mi mathvariant="bold">N</mi><mi>j</mi></msub><mo>·</mo><mi mathvariant="bold">x</mi><mo>=</mo><msub><mi>d</mi><mi>j</mi></msub><mo>,</mo><mspace width="0.5em"/><msub><mi mathvariant="bold">N</mi><mi>k</mi></msub><mo>·</mo><mi mathvariant="bold">x</mi><mo>=</mo><msub><mi>d</mi><mi>k</mi></msub></math>
+</div>
+<p><math><msub><mi mathvariant="bold">N</mi><mi>i</mi></msub></math> は面 <math><mi>i</mi></math> の外向きの法線、<math><msub><mi>d</mi><mi>i</mi></msub></math> は中心から面までの距離、<math><mi mathvariant="bold">x</mi></math> は頂点です。</p>
+
+<h3>写真と比べる</h3>
+<p>写真は、Wikimedia Commons にある自由なライセンス（パブリックドメイン・CC0・CC BY）のものです。長い辺を 1,200 画素に縮め、撮影の情報（EXIF）を除いて載せています。隣の映像は、写真ごとに次の値を決めて計算します。</p>
+<ul class="tl">
+  <li><b>光源の高度</b>: 撮影の日時と場所から求めた真の高度。太陽は NOAA の Solar Calculator と同じ式<Fragment set:html={rf(38)} />、月は Meeus の月の位置の式の主な項<Fragment set:html={rf(39)} /></li>
+  <li><b>画角</b>: 撮影の情報の焦点距離を画素に直した <math><mi>f</mi></math> と、画面の幅 <math><mi>W</mi></math>（画素）から。ふつうのレンズは <math><mn>2</mn><mi>arctan</mi><mo>⁡</mo><mo stretchy="false">(</mo><mi>W</mi><mo>/</mo><mn>2</mn><mi>f</mi><mo stretchy="false">)</mo></math>、対角魚眼は等立体角とみて <math><mn>4</mn><mi>arcsin</mi><mo>⁡</mo><mo stretchy="false">(</mo><mi>W</mi><mo>/</mo><mn>4</mn><mi>f</mi><mo stretchy="false">)</mo></math></li>
+  <li><b>向き</b>: 写真の中の光源の位置に合うように、視線の方位と高度を解く</li>
+  <li><b>結晶と雲</b>: 写っているハロが出る組み合わせと、雲の厚さと高さを、写真の見た目から決めた例</li>
+  <li><b>露出</b>: 画面の上 6 割の明るさ（線形の値の平均）が写真とそろうように補正する</li>
+</ul>
+<p>写真はカメラのホワイトバランスと階調の処理を経ているので、色まではそろいません。雲も一様な層なので、すじ状の巻雲の濃淡は出ません。</p>
+
+<h3>考えていないもの</h3>
+<ul class="tl">
+  <li>偏光・複屈折・氷の吸収・屈折率の温度による変化（上の「省いたもの」）</li>
+  <li>光源の分光の形（どの波長も同じ強さとする）と、太陽の周辺減光</li>
+  <li>母集団の中での結晶の形のばらつき（<Fragment set:html={M.ca} /> は 1 つ）、6 枚の側面の距離の違い（菱形に寄った板など）、中空の柱、ロゼットや双晶のような凸でない結晶</li>
+  <li>ガウス分布以外の傾きの分布</li>
+  <li>3 個目より先の結晶を通る光、雲の層の厚さと 3 次元の形、雲の影</li>
+  <li>大気の中で何度も散乱した光の向きの偏り（2 回目より先は向きによらないとみなす）</li>
+  <li>遠くの雲では、地球が丸いため鉛直が傾くこと（結晶の向きは、どこでも観測者の鉛直を基準にする）</li>
+  <li>地面で照り返した光が結晶に当たって作るハロと、地平線の下に出るハロ（映日など）</li>
+  <li>大気差の気温と気圧による変化</li>
+  <li>星と、月の満ち欠けの形（月の円盤は丸く描く）</li>
+</ul>
+
+<h3>このツールで決めたこと</h3>
+<ul class="tl">
+  <li><Fragment set:html={M.ca} /> の径を頂点の間で測ること。錐の高さの割合の取り方（柱の端から尖るまで）</li>
+  <li>屈折率の式（Warren と Brandt の表への 3 項の Cauchy の式の当てはめ）</li>
+  <li>傾きの分布の形。板と Lowitz の揺れは 2 次元のガウス分布、柱と Parry の高さ角、Parry と Lowitz の回転は 1 次元のガウス分布。回転 90° 以上を一様な全回転とすること</li>
+  <li>文献の割合（橋詰ほか、atoptics）を、このページの割合（表面積をそろえた結晶の数の比）として使うこと</li>
+  <li>プリセットの値のうち、巻雲の板の <Fragment set:html={M.ca} /> 0.3 と傾き 1°、柱の傾き 1°、柱の多い空の Parry の回転 1° と光源の高度 22°。板だけ・太陽柱・ダイヤモンドダスト・珍しい半径の暈・ランダムのすべての値。各母集団の大きさ <Fragment set:html={M.D} /> と、プリセットを選んだときの光源の高度</li>
+  <li>結晶の中の反射の上限（16 回）、ためる光線の上限（6 億本、16 bit では 2,500 万本）、1 回に追う本数（約 14 ms で終わる本数）</li>
+  <li>回折のずらしの形（ガウス分布）と、2 個目の結晶を通った光を最後の結晶の径でずらすこと</li>
+  <li>全天図を 1 sr あたりの量に直すとき、結晶に当たる光線の割合を一律 0.6 とすること</li>
+  <li>エーロゾル: Mie の係数を Bruneton と Hillaire の値の 5 倍にすること</li>
+  <li>多重散乱の表の取り方（<math><msub><mi>μ</mi><mi>☉</mi></msub></math> × 高さの 64 × 32、横の <math><mi>sign</mi><mo>⁡</mo><mo stretchy="false">(</mo><msub><mi>μ</mi><mi>☉</mi></msub><mo stretchy="false">)</mo><msqrt><mrow><mo stretchy="false">|</mo><msub><mi>μ</mi><mi>☉</mi></msub><mo stretchy="false">|</mo></mrow></msqrt></math>、各方向 24 段）</li>
+  <li>雲: 厚さのない球面の層、散らす割合 <math><mn>1</mn><mo>−</mo><msup><mi>e</mi><mrow><mo>−</mo><mi>τ</mi><mo>/</mo><mi>μ</mi></mrow></msup></math>（<Fragment set:html={M.mu} /> は 0.02 以上）、回折と結晶の面で半分ずつに分けること、粗い結晶の位相関数（Henyey–Greenstein、<math><mi>g</mi><mo>=</mo><mn>0.62</mn></math>）、回折の輪の幅（<math><mn>1.2</mn><mi>λ</mi><mo>/</mo><mover><mi>D</mi><mo>¯</mo></mover></math>、0.006〜0.05 rad）、上の空の光を天頂の明るさで代表させてその 0.8 を下へ散らすこと</li>
+  <li>雲の厚さと高さの初期値（0.3、8 km）</li>
+  <li>地球の影の縁: まっすぐな光線が地面の下 1〜6 km まで潜れるとする近似</li>
+  <li>大気差を −1° より下で弱め、−2° で 0 にすること</li>
+  <li>露出: 光源から 15〜50° の空の中央値を 0.45 にすること、4° より低いときに対数で 6 割寄せること、ハロだけの露出、圧縮の曲線 <math><mn>1</mn><mo>−</mo><msup><mi>e</mi><mrow><mo>−</mo><mi>x</mi></mrow></msup></math></li>
+  <li>地面の明るさ（天頂の空の 3 % と、地平線の近くのかすみ）、夜空の明るさ（満月の空の約 1/13）</li>
+  <li>月: 月齢から位相角への円軌道の近似、色の比を 3 色に掛けること、月のハロを長い露出の写真のように描くこと</li>
+  <li>名前を置く位置（内暈・外暈は光源から位置角 −40° の所、幻日環は方位の差 75°、太陽柱は光源の 6° 上）と、出す条件（太陽柱は傾き 2° 以上の板で光源が 12° より低いとき、下端接弧は内暈の下端が地平線より 1° 以上高く光源が 32° より低いとき、9°・35° の暈は錐面のある結晶がランダムの母集団にあるとき）</li>
+  <li>光路の図: 探す本数（40 万本、名前のためには 15 万本）と乱数の種、ハロごとの結晶と条件（上の表）</li>
+  <li>写真と比べる: 写真ごとの結晶の組み合わせ・雲の厚さと高さ・露出の補正、魚眼を等立体角とみること</li>
+</ul>
+
+<h3>出典</h3>
+<ol class="refs">
+  <li id="thy-r1"><span class="rf-for">光源から光線を出して結晶に通す計算機シミュレーションの方法</span><span class="rf-src">R. Greenler, <i>Rainbows, Halos, and Glories</i>, Cambridge University Press, 1980（内容は [2] の要約による）</span></li>
+  <li id="thy-r2"><span class="rf-for">Greenler の方法と光源から出す理由の要約、結晶を覆う円盤から光線を出す方法、Pattloch と Tränkle・Tränkle と Greenler の方法の要約</span><span class="rf-src">S. M. Hong and G. Baranoski, “<a href="https://cs.uwaterloo.ca/research/tr/2003/26/report.pdf" target="_blank" rel="noopener">A Study on Atmospheric Halo Visualization</a>,” Technical Report CS-2003-26, School of Computer Science, University of Waterloo, 2003</span></li>
+  <li id="thy-r3"><span class="rf-for">多重散乱の主な効果がハロをぼかすこと</span><span class="rf-src">E. Tränkle and R. G. Greenler, “Multiple-scattering effects in halo phenomena,” <i>J. Opt. Soc. Am. A</i>, vol. 4, no. 3, pp. 591–599, 1987（内容は [2] の要約による）</span></li>
+  <li id="thy-r4"><span class="rf-for">板を 2 枚続けて通る光の 44° 幻日</span><span class="rf-src">L. Cowley, <i>Atmospheric Optics</i>, “<a href="https://www.atoptics.co.uk/halo/44pars.htm" target="_blank" rel="noopener">44° parhelia</a>”</span></li>
+  <li id="thy-r5"><span class="rf-for"><Fragment set:html={M.ca} /> の定義、整ったハロの傾きの目安</span><span class="rf-src">J. Ruoskanen, “<a href="https://psr.it.helsinki.fi/els/articles/64/article.pdf" target="_blank" rel="noopener">Ice crystal properties from halos</a>,” <i>Electromagnetic and Light Scattering XII</i>, pp. 254–257, 2010</span></li>
+  <li id="thy-r6"><span class="rf-for">錐面の傾き（c 軸に 28°）、くさびの角と珍しい半径の暈の対応</span><span class="rf-src">L. Cowley, <i>Atmospheric Optics</i>, “<a href="https://atoptics.co.uk/halo/crystpyr.htm" target="_blank" rel="noopener">Pyramidal crystals</a>”・“<a href="https://www.atoptics.co.uk/halo/pyrhalo.htm" target="_blank" rel="noopener">Pyramidal crystal halos</a>”</span></li>
+  <li id="thy-r7"><span class="rf-for">面の番号と光路の書き方、Lowitz 軸の位置</span><span class="rf-src">L. Cowley, <i>Atmospheric Optics</i>, “<a href="https://www.atoptics.co.uk/halo/fnum.htm" target="_blank" rel="noopener">Face numbers</a>”・“<a href="https://atoptics.co.uk/blog/pyramidal-crystal-face-numbers/" target="_blank" rel="noopener">Pyramidal crystal face numbers</a>”</span></li>
+  <li id="thy-r8"><span class="rf-for">割合の定義（表面積をそろえた結晶の数の比）、傾きの分布の球面の面積要素、偏光を平均した Fresnel の反射率</span><span class="rf-src">LoveDaisy, <a href="https://github.com/LoveDaisy/Lumice" target="_blank" rel="noopener">Lumice</a>（doc/crystal-orientation-sampling.md、src/core/shared/optics_shared.h）</span></li>
+  <li id="thy-r9"><span class="rf-for">割合を光線の数の比とする例、傾きの角をそのままガウス分布から引く例</span><span class="rf-src">S. Vuorinen, <a href="https://github.com/naavis/haloray" target="_blank" rel="noopener">HaloRay</a>（README.md、src/haloray-core/resources/shaders/raytrace.glsl）</span></li>
+  <li id="thy-r10"><span class="rf-for">プリセット「巻雲」の割合と光源の高度</span><span class="rf-src">橋詰雄司・東條文治・川上紳一「<a href="https://www.metsoc.jp/tenki/pdf/2006/2006_07_0004.pdf" target="_blank" rel="noopener">2006年1月16日に観察されたさまざまなハロとそのシミュレーション</a>」『天気』53 巻 7 号, pp. 533–534, 2006</span></li>
+  <li id="thy-r11"><span class="rf-for">プリセット「柱の多い空」の母集団</span><span class="rf-src">L. Cowley, <i>Atmospheric Optics</i>, “<a href="https://www.atoptics.co.uk/halo/mdisp5.htm" target="_blank" rel="noopener">England February 9, 2001</a>”</span></li>
+  <li id="thy-r12"><span class="rf-for">水平な板の傾きの推定（大半が 1° 未満）</span><span class="rf-src">F.-M. Bréon and B. Dubrulle, “<a href="https://arxiv.org/abs/1106.1227" target="_blank" rel="noopener">Horizontally oriented plates in clouds</a>,” <i>J. Atmos. Sci.</i>, vol. 61, pp. 2888–2898, 2004</span></li>
+  <li id="thy-r13"><span class="rf-for">太陽柱の傾き、傾き 18° の板の幻日</span><span class="rf-src">L. Cowley, <i>Atmospheric Optics</i>, “<a href="https://www.atoptics.co.uk/fz645.htm" target="_blank" rel="noopener">fz645</a>”・“<a href="https://www.atoptics.co.uk/blog/calgary-halos-from-wobbly-plate-crystals/" target="_blank" rel="noopener">Calgary halos from wobbly plate crystals</a>”</span></li>
+  <li id="thy-r14"><span class="rf-for">Lowitz 姿勢の古典的な説明、St. Petersburg の表示の再現、未解決であること、ローウィッツアークの光路</span><span class="rf-src">L. Cowley, <i>Atmospheric Optics</i>, “<a href="https://www.atoptics.co.uk/halo/lowitz.htm" target="_blank" rel="noopener">Lowitz arcs</a>”・“<a href="https://www.atoptics.co.uk/halo/lowpete.htm" target="_blank" rel="noopener">Lowitz's St Petersburg display</a>”</span></li>
+  <li id="thy-r15"><span class="rf-for">回転を制限した Lowitz 姿勢と菱形寄りの板</span><span class="rf-src">M. Riikonen, L. Cowley, M. Schroeder, M. Pekkola, T. Öhman and C. Hinz, “The Lowitz arcs,” <i>Weather</i>, vol. 62, no. 9, pp. 252–256, 2007（内容は atoptics の紹介 “<a href="https://atoptics.co.uk/halo/lowim4.htm" target="_blank" rel="noopener">Lowitz Arcs – Vaala</a>” による）</span></li>
+  <li id="thy-r16"><span class="rf-for">反射率を反射する確率とみなすモンテカルロ法</span><span class="rf-src">F. Pattloch and E. Tränkle, “Monte Carlo simulation and analysis of halo phenomena,” <i>J. Opt. Soc. Am. A</i>, vol. 1, no. 5, pp. 520–526, 1984（内容は [2] の要約による）</span></li>
+  <li id="thy-r17"><span class="rf-for">氷の屈折率と吸収</span><span class="rf-src">S. G. Warren and R. E. Brandt, “<a href="https://doi.org/10.1029/2007JD009744" target="_blank" rel="noopener">Optical constants of ice from the ultraviolet to the microwave: A revised compilation</a>,” <i>J. Geophys. Res.</i>, vol. 113, D14220, 2008</span></li>
+  <li id="thy-r18"><span class="rf-for">回折による内暈の半値全幅、偏光度、常光線と異常光線の屈折率と内暈の位置</span><span class="rf-src">P. J. Flatau and B. T. Draine, “<a href="https://doi.org/10.1364/OE.22.021834" target="_blank" rel="noopener">Light scattering by hexagonal columns in the discrete dipole approximation</a>,” <i>Opt. Express</i>, vol. 22, no. 18, p. 21834, 2014</span></li>
+  <li id="thy-r19"><span class="rf-for">最小偏角、Bravais の実効屈折率、環天頂アークの高度と環天頂アーク・環水平アークの出る条件</span><span class="rf-src">M. Selmke and S. Selmke, “<a href="https://doi.org/10.1119/1.4984802" target="_blank" rel="noopener">Artificial circumzenithal and circumhorizontal arcs</a>,” <i>Am. J. Phys.</i>, vol. 85, no. 8, pp. 575–581, 2017</span></li>
+  <li id="thy-r20"><span class="rf-for">幻日の離角の観測の表、各ハロの光路、接弧と外接ハロの呼び分け、環天頂アーク・環水平アークの限界と最も明るい高度</span><span class="rf-src">Arbeitskreis Meteore e.V.（AKM）, <a href="https://old.meteoros.de/haloe.htm" target="_blank" rel="noopener">ハロの種類ごとの解説</a>（EE01・EE02・EE05・EE08・EE11・EE12・EE13・EE14・EE18・EE23・EE27）</span></li>
+  <li id="thy-r21"><span class="rf-for">波長の色（等色関数の近似）</span><span class="rf-src">C. Wyman, P.-P. Sloan and P. Shirley, “<a href="https://jcgt.org/published/0002/02/01/" target="_blank" rel="noopener">Simple Analytic Approximations to the CIE XYZ Color Matching Functions</a>,” <i>J. Comput. Graph. Tech.</i>, vol. 2, no. 2, pp. 1–11, 2013</span></li>
+  <li id="thy-r22"><span class="rf-for">ハロが出る結晶の大きさ</span><span class="rf-src">M. I. Mishchenko and A. Macke, “<a href="https://doi.org/10.1364/AO.38.001626" target="_blank" rel="noopener">How big should hexagonal ice crystals be to produce halos?</a>,” <i>Appl. Opt.</i>, vol. 38, no. 9, pp. 1626–1629, 1999</span></li>
+  <li id="thy-r23"><span class="rf-for">内暈の赤い内縁と外への薄れ方</span><span class="rf-src">L. Cowley, <i>Atmospheric Optics</i>, “<a href="https://atoptics.co.uk/halo/circular.htm" target="_blank" rel="noopener">22° halo</a>”</span></li>
+  <li id="thy-r24"><span class="rf-for">巻雲の滑らかな結晶と粗い結晶の割合</span><span class="rf-src">L. Forster and B. Mayer, “<a href="https://doi.org/10.5194/acp-22-15179-2022" target="_blank" rel="noopener">Ice crystal characterization in cirrus clouds III: retrieval of ice crystal shape and roughness from observations of halo displays</a>,” <i>Atmos. Chem. Phys.</i>, vol. 22, pp. 15179–15205, 2022</span></li>
+  <li id="thy-r25"><span class="rf-for">較正したカメラで測った内暈の明るさの比</span><span class="rf-src">L. Forster, M. Seefeldner, A. Baumgartner, T. Kölling and B. Mayer, “<a href="https://doi.org/10.5194/amt-13-3977-2020" target="_blank" rel="noopener">Ice crystal characterization in cirrus clouds II: radiometric characterization of HaloCam for the quantitative analysis of halo displays</a>,” <i>Atmos. Meas. Tech.</i>, vol. 13, pp. 3977–3991, 2020</span></li>
+  <li id="thy-r26"><span class="rf-for">等立体角と透視の写し方の式、等立体角の画素が等しい立体角を覆うこと</span><span class="rf-src">Wikipedia, “<a href="https://en.wikipedia.org/wiki/Fisheye_lens" target="_blank" rel="noopener">Fisheye lens</a>”（英語版）</span></li>
+  <li id="thy-r27"><span class="rf-for">大気の定数と密度の分布、位相関数、大気の上端</span><span class="rf-src">E. Bruneton, <a href="https://github.com/ebruneton/precomputed_atmospheric_scattering" target="_blank" rel="noopener">precomputed_atmospheric_scattering</a>（Precomputed Atmospheric Scattering の新しい実装）, 2017</span></li>
+  <li id="thy-r28"><span class="rf-for">3 色に直した大気の定数、光源の放射照度の正規化、位相関数、多重散乱の近似（等比級数、64 方向、地面の反射率 0.3）</span><span class="rf-src">S. Hillaire, “<a href="https://doi.org/10.1111/cgf.14050" target="_blank" rel="noopener">A Scalable and Production Ready Sky and Atmosphere Rendering Technique</a>,” <i>Comput. Graph. Forum</i>, vol. 39, no. 4, pp. 13–22, 2020（コードは <a href="https://github.com/sebh/UnrealEngineSkyAtmosphere" target="_blank" rel="noopener">UnrealEngineSkyAtmosphere</a>）</span></li>
+  <li id="thy-r29"><span class="rf-for">ハロのコントラストが最も大きくなる雲の光学的厚さ、ハロの付近に限った測光</span><span class="rf-src">L. Forster, M. Seefeldner, M. Wiegner and B. Mayer, “<a href="https://doi.org/10.5194/amt-10-2499-2017" target="_blank" rel="noopener">Ice crystal characterization in cirrus clouds: a sun-tracking camera system and automated detection algorithm for halo displays</a>,” <i>Atmos. Meas. Tech.</i>, vol. 10, pp. 2499–2516, 2017</span></li>
+  <li id="thy-r30"><span class="rf-for">雲の層に日が当たる限界の幾何（地球の影）</span><span class="rf-src">F. Patat, O. S. Ugolnikov and O. V. Postylyakov, “<a href="https://arxiv.org/abs/astro-ph/0604128" target="_blank" rel="noopener">UBVRI twilight sky brightness at ESO-Paranal</a>,” <i>Astron. Astrophys.</i>, vol. 455, pp. 385–393, 2006</span></li>
+  <li id="thy-r31"><span class="rf-for">地表をかすめる光の大気差</span><span class="rf-src">A. Mallama, “<a href="https://arxiv.org/abs/2112.08966" target="_blank" rel="noopener">Lunar Eclipse Phenomena: Modeled and Explained</a>,” arXiv:2112.08966, 2022</span></li>
+  <li id="thy-r32"><span class="rf-for">見かけの高度からの大気差</span><span class="rf-src">G. G. Bennett, “<a href="https://doi.org/10.1017/S0373463300022037" target="_blank" rel="noopener">The Calculation of Astronomical Refraction in Marine Navigation</a>,” <i>J. Navig.</i>, vol. 35, no. 2, pp. 255–259, 1982（式と条件は英語版 Wikipedia “Atmospheric refraction” による）</span></li>
+  <li id="thy-r33"><span class="rf-for">真の高度からの大気差</span><span class="rf-src">Þ. Sæmundsson, “Astronomical Refraction,” <i>Sky and Telescope</i>, vol. 72, p. 70, 1986（式と条件は英語版 Wikipedia “Atmospheric refraction” による）</span></li>
+  <li id="thy-r34"><span class="rf-for">太陽と満月の等級</span><span class="rf-src">NASA Space Science Data Coordinated Archive, <i>Planetary Fact Sheets</i>（<a href="https://nssdc.gsfc.nasa.gov/planetary/factsheet/sunfact.html" target="_blank" rel="noopener">Sun</a>・<a href="https://nssdc.gsfc.nasa.gov/planetary/factsheet/moonfact.html" target="_blank" rel="noopener">Moon</a>）</span></li>
+  <li id="thy-r35"><span class="rf-for">月の明るさの位相角による変化（Allen の係数）</span><span class="rf-src">K. Krisciunas and B. E. Schaefer, “<a href="https://doi.org/10.1086/132921" target="_blank" rel="noopener">A Model of the Brightness of Moonlight</a>,” <i>Publ. Astron. Soc. Pac.</i>, vol. 103, pp. 1033–1039, 1991, 式 (9)</span></li>
+  <li id="thy-r36"><span class="rf-for">月の光の色（月面の反射率の波長による傾き）</span><span class="rf-src">H. W. Jensen, F. Durand, M. M. Stark, S. Premože, J. Dorsey and P. Shirley, “<a href="https://doi.org/10.1145/383259.383306" target="_blank" rel="noopener">A Physically-Based Night Sky Model</a>,” <i>Proc. SIGGRAPH 2001</i>, pp. 399–408, 2001</span></li>
+  <li id="thy-r37"><span class="rf-for">月のハロが目には色づいて見えにくく、長い露出の写真には色が写ること</span><span class="rf-src">L. Cowley, <i>Atmospheric Optics</i>, “<a href="https://atoptics.co.uk/halo/parmoon.htm" target="_blank" rel="noopener">Moon Dogs, Paraselenae, Parselenae</a>”</span></li>
+  <li id="thy-r38"><span class="rf-for">太陽の位置の式</span><span class="rf-src">NOAA Global Monitoring Laboratory, “<a href="https://gml.noaa.gov/grad/solcalc/" target="_blank" rel="noopener">NOAA Solar Calculator</a>”</span></li>
+  <li id="thy-r39"><span class="rf-for">月の位置の式</span><span class="rf-src">J. Meeus, <i>Astronomical Algorithms</i>, 2nd ed., Willmann-Bell, 1998, Chapter 47</span></li>
+</ol>

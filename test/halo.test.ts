@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { caption, figOf, findRay } from '../src/tools/halo/figure';
-import { chaAlt, czaAlt, parAz, parDist, R22 } from '../src/tools/halo/labels';
+import { CHA_MIN, CZA_MAX, chaAlt, czaAlt, PAR_MAX, parAz, parDist, R22 } from '../src/tools/halo/labels';
 import { apparent, groundT, MAX_POP, moonRatio, PRESETS, phaseAngle, SYNODIC } from '../src/tools/halo/scene';
 import { mapIndex, newMap, pixelSr, simulate, WL_RGB } from '../src/tools/halo/sky';
 import {
@@ -194,7 +194,7 @@ describe('ハロの位置（解析の式と照らす）', () => {
       /* 太陽の円盤（半径 0.265°）のぶんだけ内側へ広がる */
       expect(Math.abs(az[Math.floor(az.length * 0.002)] - dAz)).toBeLessThan(0.45);
     });
-  it('水平な板: 環天頂アークの高度と、太陽高度 32.2° を超えると消えること', () => {
+  it('水平な板: 環天頂アークの高度と、太陽高度 32° を超えると消えること', () => {
     const n = nIce(550),
       e = 20,
       h = Math.asin(Math.sqrt(n * n - Math.cos(e * D) ** 2)) / D;
@@ -226,17 +226,21 @@ describe('全天図', () => {
 });
 
 describe('名前の位置（解析の式）', () => {
-  it('環天頂アークは太陽高度 32.2° を超えると消え、地平線の下でも出ない', () => {
+  it('環天頂アークは太陽高度 32.0° を超えると消え、地平線の下でも出ない', () => {
+    /* n = 1.31 の文献の値 32.2° より少し低い（550 nm の屈折率 1.311 で決めるため） */
+    expect(CZA_MAX).toBeCloseTo(32.04, 2);
     expect(czaAlt(22)).toBeCloseTo(67.9, 0);
     expect(czaAlt(32.0)).not.toBeNaN();
     expect(czaAlt(32.5)).toBeNaN();
     expect(czaAlt(-2)).toBeNaN();
   });
-  it('環水平アークは太陽高度 57.8° より上だけ', () => {
+  it('環水平アークは太陽高度 58.0° より上だけ', () => {
+    expect(CHA_MIN).toBeCloseTo(57.96, 2);
     expect(chaAlt(57)).toBeNaN();
     expect(chaAlt(68)).toBeCloseTo(22.3, 0);
   });
-  it('幻日は太陽が地平線にあれば内暈の上、60.75° を超えると出ない', () => {
+  it('幻日は太陽が地平線にあれば内暈の上、60.7° を超えると出ない', () => {
+    expect(PAR_MAX).toBeCloseTo(60.7, 1);
     expect(parDist(0)).toBeCloseTo(R22, 6);
     expect(parAz(60.5)).not.toBeNaN();
     expect(parAz(61)).toBeNaN();
