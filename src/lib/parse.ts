@@ -40,6 +40,9 @@ export type Unit =
   | 'km'
   | 'EV'
   | '日'
+  | 'K'
+  | '″'
+  | 'λ'
   | (typeof COMPOUND)[number];
 
 /**
@@ -118,6 +121,12 @@ const STRIP: Partial<Record<Unit, [RegExp, string]>> = {
   EV: [/ev$/i, ''],
   /* 月齢（ハロ） */
   日: [/日$/, ''],
+  /* 温度（ケルビン）。数字の直後だけ外す（5.8k は 5800） */
+  K: [/([\d.])K$/, '$1'],
+  /* 角度の秒 */
+  '″': [/(″|′′|"|”|arcsec|秒)$/i, ''],
+  /* 波長を単位にした長さ（波面のずれ） */
+  λ: [/(λ|waves?)$/i, ''],
 };
 
 /**
@@ -135,6 +144,8 @@ const NO_PREFIX = new Set<Unit>([
   'km',
   'EV',
   '日',
+  '″',
+  'λ',
   'kg',
   'kg·cm²',
   'g·cm²',

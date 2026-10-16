@@ -1,0 +1,84 @@
+/* フォーカシングマスクのページだけのスタイル（共通は src/styles/site.css） */
+
+/* 並び: スマホは 映像 → マスク → 光の通り道 → グラフ → 望遠鏡 → 星とカメラ → 計算結果 → 式。
+   PC は左の広い列に 映像・グラフ、右の列に マスク・光の通り道・望遠鏡・星とカメラ、下に全幅で 計算結果・式 */
+.a-view{order:1}.a-mask{order:2}.a-ray{order:3}.a-gp{order:4}.a-scope{order:5}.a-star{order:6}.a-out{order:7}.a-thy{order:8}
+@media (min-width:1000px){
+  .tgrid{grid-template-columns:minmax(0,7fr) minmax(0,5fr);grid-template-areas:"c1 c2" "out out" "thy thy";align-items:start}
+  .c1{grid-area:c1}.c2{grid-area:c2}.a-out{grid-area:out}.a-thy{grid-area:thy}
+}
+.a-out .m-sub{display:block;font:12px/1.5 var(--sans);color:var(--ink-3)}
+
+/* カメラの映像（地はテーマによらず黒。重ねる線と文字は暗いテーマの色） */
+.sv{position:relative;aspect-ratio:1/1;border:1px solid var(--line);border-radius:var(--r);background:#000;overflow:hidden}
+.sv>canvas{display:block;width:100%;height:100%;cursor:zoom-in;touch-action:pan-y}
+.sv>canvas.pan{cursor:grab}.sv>canvas.pan:active{cursor:grabbing}
+.sv>canvas:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+/* 拡大の操作（映像の右上）。映像の地は黒なので、色はテーマに依らない */
+.sv-z{position:absolute;top:8px;right:8px;display:flex;border:1px solid #48525a;border-radius:4px;background:rgb(0 0 0 / .55);overflow:hidden}
+.sv-z button{display:grid;place-items:center;min-width:32px;height:30px;padding:0 6px;border:0;background:none;color:#e6e8e4;font:600 12px/1 var(--mono);font-variant-numeric:tabular-nums;cursor:pointer}
+.sv-z button+button{border-left:1px solid #48525a}
+.sv-z button:hover:not(:disabled){background:rgb(255 255 255 / .12)}
+.sv-z button:disabled{color:#5d676e;cursor:default}
+.sv-z button:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+.sv-z svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
+.sv .ov{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.ov .ln{fill:none;stroke-width:1.2;stroke-dasharray:6 5;opacity:.9;vector-effect:non-scaling-stroke}
+.ov .l1{stroke:#f2c230}.ov .l2{stroke:#52c4dd}
+.ov .cx,.ov .sp{fill:none;stroke:#e6e8e4;stroke-width:1.2;vector-effect:non-scaling-stroke}
+.ov text{fill:#e6e8e4;font:600 12px var(--mono);paint-order:stroke;stroke:#000;stroke-width:3px;stroke-linejoin:round}
+.sv .lab{position:absolute;left:8px;bottom:8px;padding:2px 6px;border-radius:3px;background:rgb(0 0 0 / .55);color:#aab3b8;font:500 11.5px/1.4 var(--mono)}
+.sv .zoom{position:absolute;right:8px;bottom:8px;width:31%;aspect-ratio:1/1;border:1px solid #48525a;border-radius:3px;background:#000;overflow:hidden}
+.sv .zoom canvas{display:block;width:100%;height:100%;image-rendering:pixelated}
+.sv .zoom span{position:absolute;left:5px;top:3px;color:#aab3b8;font:500 10.5px var(--mono)}
+.sv-msg{position:absolute;inset:0;display:grid;place-items:center;margin:0;padding:20px;color:#e6e8e4;font-size:14px;line-height:1.8;text-align:center}
+
+/* ピントの位置（目盛り・つまみ・よく使う値） */
+.foc{margin-top:12px}
+.foc-h{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:6px}
+.foc-h .pn{font-size:13.5px;font-weight:700}
+.foc-h .v{font:700 22px/1 var(--mono);font-variant-numeric:tabular-nums}
+.foc-h .v small{font-size:13px;font-weight:500;color:var(--ink-2);margin-left:.3em}
+.fsc{display:block;width:100%;height:auto;cursor:ew-resize;touch-action:pan-y;user-select:none;-webkit-user-select:none}
+.fsc:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:2px}
+.fsc .tk{stroke:var(--ink-3);stroke-width:1}
+.fsc .tk.mj{stroke:var(--ink-2)}
+.fsc text{fill:var(--ink-3);font:10.5px var(--mono)}
+.fsc .cfz{fill:var(--inset);stroke:var(--line-2);stroke-dasharray:3 3}
+.fsc .cfz-t{fill:var(--ink-2);font:600 10.5px var(--sans)}
+.fsc .knob{fill:var(--ink)}
+.fsc .knob-l{stroke:var(--ink);stroke-width:2}
+.fsc .trk{stroke:var(--line-2);stroke-width:1}
+.foc-b{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.foc-b .chip{min-width:52px}
+
+/* マスクの正面 */
+.mf{display:grid;grid-template-columns:132px minmax(0,1fr);gap:14px;align-items:center;margin-bottom:10px}
+.mf-w{position:relative;width:132px;height:132px;border-radius:4px}
+.mf canvas{display:block;width:132px;height:132px}
+.mf-t{min-width:0}
+.mf p{margin:0;font-size:13px;line-height:1.7;color:var(--ink-2)}
+.mf p b{color:var(--ink)}
+/* 画像のマスク: 選ぶボタンとファイル名、ドロップ先 */
+.mf-f{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-top:8px}
+.mf-f input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.mf-f .tg:has(+ input:focus-visible){outline:2px solid var(--focus);outline-offset:2px}
+.mf-n{min-width:0;font:500 12px/1.4 var(--mono);color:var(--ink-3);overflow-wrap:anywhere}
+.mf-drop{position:absolute;inset:0;display:grid;place-items:center;margin:0;padding:8px;border:1.5px dashed var(--line-2);border-radius:50%;background:var(--surface);color:var(--ink-2);font-size:12px;line-height:1.5;text-align:center;pointer-events:none}
+.mf.drag .mf-w{outline:2px solid var(--focus);outline-offset:3px}
+
+/* グラフ */
+.gp .cfzb{fill:var(--grid);opacity:.6}
+.gp .now{stroke:var(--screen-ink);stroke-width:1.2;stroke-dasharray:4 3}
+.gp .t1b{stroke-dasharray:7 4}.gp .t1c{stroke-dasharray:2 4}
+.gp .dot1{fill:var(--ch1)}.gp .dot2{fill:var(--ch2)}
+.gp.one .t2,.gp.one .dot2,.gp.one .ax2{display:none}
+
+/* 横から見た光の通り道 */
+.ray .ax{stroke:var(--grid-2);stroke-width:1;stroke-dasharray:4 4}
+.ray .lens{fill:var(--grid);stroke:var(--grid-2)}
+.ray .b1{fill:var(--ch1);opacity:.28}.ray .b2{fill:var(--ch2);opacity:.28}
+.ray .e1{stroke:var(--ch1);fill:none}.ray .e2{stroke:var(--ch2);fill:none}
+.ray .sen{stroke:var(--ink);stroke-width:2.2}
+.ray .fp{stroke:var(--screen-ink);stroke-width:1;stroke-dasharray:2 3}
+.note{margin:8px 0 0;font-size:12.5px;line-height:1.7;color:var(--ink-3)}

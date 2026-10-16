@@ -215,6 +215,14 @@ export const TOOLS: Tool[] = [
     ic: 'hl',
     k: 'halo ハロー 日暈 月暈 暈 かさ 内暈 22度 外暈 46度 幻日 幻月 sun dog parhelion 幻日環 parhelic circle 環天頂アーク circumzenithal 環水平アーク circumhorizontal 太陽柱 sun pillar タンジェントアーク 上端接弧 外接ハロ tangent arc パリーアーク parry ローウィッツアーク lowitz ラテラルアーク 120度幻日 錐面 pyramidal 9度 氷晶 ice crystal 六角柱 巻雲 cirrus ダイヤモンドダスト diamond dust 大気光学 atmospheric optics 大気光象 薄明 夕焼け 地球の影 光線追跡 ray tracing モンテカルロ monte carlo webgl',
   },
+  {
+    id: 'focusing-mask',
+    c: '画像・光学',
+    t: 'フォーカシングマスク',
+    d: 'バーティノフマスクなどを付けた星の像を、回折で計算します。',
+    ic: 'fk',
+    k: 'focusing mask フォーカスマスク ピント合わせ 合焦 focus bahtinov バーティノフ tri-bahtinov トライ・バーティノフ carey キャリー hartmann ハルトマン scheiner シャイナー 望遠鏡 telescope 天体写真 astrophotography 星 光条 回折 diffraction fraunhofer フラウンホーファー fft 点像 psf シーイング seeing 臨界焦点範囲 critical focus zone cfz 光軸 collimation コマ hfd',
+  },
 ];
 /** 準備中を後ろへ */
 export const order = (L: Tool[]): Tool[] => L.slice().sort((a, b) => (a.s || 0) - (b.s || 0));
