@@ -29,12 +29,14 @@ export type Unit =
   | 'm'
   | 'm/s'
   | 'Pa'
+  | 'kPa'
   | 'mm'
   | 'µm'
   | 'FS'
   | 'N'
   | 'L'
   | '°'
+  | '°C'
   | 'セント'
   | '× L'
   | 'km'
@@ -104,6 +106,8 @@ const STRIP: Partial<Record<Unit, [RegExp, string]>> = {
   'm/s': [/m\/s$/i, ''],
   /* 圧力（パスカル）。k などの接頭辞を読む */
   Pa: [/pa$/i, ''],
+  /* 圧力（キロパスカル）。接頭辞は読まない */
+  kPa: [/kpa$/i, ''],
   mm: [/mm$/i, ''],
   µm: [/[uμ]m$/i, ''],
   /* 張力（ニュートン）。小文字の n はナノなので外さない */
@@ -111,6 +115,8 @@ const STRIP: Partial<Record<Unit, [RegExp, string]>> = {
   /* 容積（リットル） */
   L: [/(l|L|ℓ)$/, ''],
   '°': [/(°|度|deg)$/i, ''],
+  /* 温度（セルシウス度） */
+  '°C': [/(°C|℃|度|C)$/i, ''],
   /* 音程（1 オクターブ = 1200 セント） */
   セント: [/(セント|cents?|¢)$/i, ''],
   /* 弦の長さに対する割合（ヴァイオリンの弓の位置 β） */
@@ -134,11 +140,13 @@ const STRIP: Partial<Record<Unit, [RegExp, string]>> = {
  * 1m を 1 g と読まないように読まない
  */
 const NO_PREFIX = new Set<Unit>([
+  'kPa',
   'mm',
   'µm',
   'N',
   'L',
   '°',
+  '°C',
   'セント',
   '× L',
   'km',

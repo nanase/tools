@@ -144,6 +144,14 @@ export const TOOLS: Tool[] = [
     k: 'violin bowed string acoustic physical model 物理モデル 弓 bow 擦弦 弓圧 bow force 弓速 bow speed 駒 bridge ヘルムホルツ運動 helmholtz motion シェレンゲ schelleng 摩擦 friction 松脂 rosin 重音 double stop ビブラート vibrato 胴 body 弱音器 mute 残響 reverb モード合成 modal synthesis 演奏 バッハ bach シャコンヌ chaconne パルティータ partita エクルズ eccles オーディオ audio',
   },
   {
+    id: 'trumpet',
+    c: '音響',
+    t: 'トランペット音響モデル',
+    d: 'トランペットの唇・管・ピストンを物理モデルで計算して鳴らします。',
+    ic: 'tp',
+    k: 'trumpet brass lip acoustic physical model 物理モデル 金管 唇 lips マウスピース mouthpiece リードパイプ leadpipe ピストン piston valve 弁 抜差し slide ベル bell 入力インピーダンス input impedance 共鳴 resonance 倍音 自然倍音 harmonic series 導波管 waveguide 伝達行列 transfer matrix 非線形 nonlinear ブラスネス brassiness 衝撃波 shock wave タンギング tonguing スラー slur ビブラート vibrato 残響 reverb 演奏 ヘンデル handel 王宮の花火の音楽 ラ・レジュイサンス メサイア messiah バッハ bach メヌエット minuet グノー gounod アヴェ・マリア ave maria チャイコフスキー tchaikovsky ナポリの踊り 消灯ラッパ taps オーディオ audio',
+  },
+  {
     id: 'svg-theme-checker',
     c: 'SVG',
     t: 'SVG テーマスキーマチェッカー',

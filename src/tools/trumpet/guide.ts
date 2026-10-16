@@ -2,7 +2,7 @@
  * 管の時間領域の模型（DOM に依存しない）。平面波の進行波（圧力）で、
  * マウスピースとリードパイプ、ベルは 1 標本の長さの円筒の階段（Kelly–Lochbaum の散乱）、
  * 円筒部と弁の迂回管は遅延線で表す。弁は主管・既定の通路・迂回管の 3 管の接合（圧力が等しく、流量の和が 0）。
- * 粘性・熱の損失は区間ごとに e^{−K√ω (1 + j)} を 2 次の最小位相の IIR で近似し、開口は非フランジ管の
+ * 粘性・熱の損失は区間ごとに e^{−K√ω (1 + j)} を 1 次の最小位相の区間 3 つの縦続で近似し、開口は非フランジ管の
  * 放射インピーダンス（質量と抵抗の並列）の 1 次の反射フィルタで閉じる
  */
 import { type Air, lenOf, type Profile, radiusAt, VALVE_LEN } from './bore';
@@ -181,6 +181,10 @@ export class Delay {
       c3 = ((t + 1) * t * (t - 1)) / 6;
     return c0 * xm1 + c1 * x0 + c2 * x1 + c3 * x2;
   }
+  /** k 標本前に書いた値（表示用、補間なし） */
+  peek(k: number): number {
+    return this.buf[(this.w - Math.max(1, Math.round(k)) + 2 * (this.mask + 1)) & this.mask];
+  }
   clear() {
     this.buf.fill(0);
   }
@@ -205,6 +209,11 @@ class Tube {
     this.bwd = new Delay(Math.ceil(d) + 16, d);
     this.lf = lossFilter(K, fs);
     this.lb = lossFilter(K, fs);
+  }
+  /** 円筒の中の位置 s（0 = 左端、1 = 右端）の圧力（表示用） */
+  pressure(s: number): number {
+    const d = this.fwd.d;
+    return this.fwd.peek(s * d) + this.bwd.peek((1 - s) * d);
   }
   read() {
     if (this.nl > 0) {
@@ -260,6 +269,11 @@ class Steps {
       this.lf.push(lossFilter(K[k], fs));
       this.lb.push(lossFilter(K[k], fs));
     });
+  }
+  /** 位置 s（0〜1）の区間の圧力（表示用） */
+  pressure(s: number): number {
+    const i = Math.min(this.n - 1, Math.max(0, Math.floor(s * this.n)));
+    return this.F[i] + this.B[i];
   }
   /** 1 標本進める。左端に入る往きの波 inL、右端に入る帰りの波 inR */
   step(inL: number, inR: number) {
@@ -491,6 +505,36 @@ export class Bore {
     this.cyl[3].nl = k * this.nlPerPa;
   }
 
+  /**
+   * 管の中の圧力（表示用）。el は通り道の要素（0 マウスピースとリードパイプ、1 主管抜差し、2 第 3 弁、3 弁の間、
+   * 4 第 2 弁、5 弁の間、6 第 1 弁、7 ベルの手前の円筒、8 ベル）、s はその中の位置（0〜1）。弁は押し具合の大きい側の管
+   */
+  pressureAt(el: number, s: number): number {
+    const c = this.cyl,
+      V = this.valves,
+      vt = (v: Valve) => (v.press > 0.5 ? v.byp : v.dflt);
+    switch (el) {
+      case 0:
+        return this.head.pressure(s);
+      case 1:
+        return c[0].pressure(s);
+      case 2:
+        return vt(V[2]).pressure(s);
+      case 3:
+        return c[1].pressure(s);
+      case 4:
+        return vt(V[1]).pressure(s);
+      case 5:
+        return c[2].pressure(s);
+      case 6:
+        return vt(V[0]).pressure(s);
+      case 7:
+        return c[3].pressure(s);
+      default:
+        return this.tail.pressure(s);
+    }
+  }
+
   /** 入口に着いた帰りの波 p⁻ */
   incoming(): number {
     return this.head.B[0];
@@ -507,15 +551,15 @@ export class Bore {
     /* 頭 → 円筒 0（面積は等しいので素通し） */
     const hF = head.F[head.n - 1];
     head.step(pPlus, cyl[0].outB);
-    /* 円筒 0 → 弁 1 → 円筒 1 → 弁 2 → 円筒 2 → 弁 3 → 円筒 3 */
+    /* 円筒 0（主管抜差し）→ 第 3 弁 → 円筒 1 → 第 2 弁 → 円筒 2 → 第 1 弁 → 円筒 3（ベルの手前） */
     let toLeft: number, toRight: number;
-    [toLeft, toRight] = V[0].junction(cyl[0].outF, cyl[1].outB);
+    [toLeft, toRight] = V[2].junction(cyl[0].outF, cyl[1].outB);
     cyl[0].write(hF, toLeft);
     const r1 = toRight;
     [toLeft, toRight] = V[1].junction(cyl[1].outF, cyl[2].outB);
     cyl[1].write(r1, toLeft);
     const r2 = toRight;
-    [toLeft, toRight] = V[2].junction(cyl[2].outF, cyl[3].outB);
+    [toLeft, toRight] = V[0].junction(cyl[2].outF, cyl[3].outB);
     cyl[2].write(r2, toLeft);
     const r3 = toRight;
     /* 円筒 3 → ベル */

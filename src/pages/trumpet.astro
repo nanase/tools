@@ -1,0 +1,307 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import More from '../components/More.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import { order, TOOLS } from '../data/tools';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import { outVol, TEMPO } from '../lib/play';
+import { ROOMS } from '../lib/reverb';
+import { gridSvg } from '../lib/scope';
+import '../tools/trumpet/style.css';
+import Credits from '../tools/trumpet/Credits.astro';
+import { FINGERS, PARTIALS } from '../tools/trumpet/notes';
+import { DIST, DYNS, FLIP, FMAX, PM, SLOW, SPANS, TEMP, VOL0 } from '../tools/trumpet/params';
+import { zGrid } from '../tools/trumpet/plot';
+import { PIECES } from '../tools/trumpet/score';
+import { MP_STATIC, MP_VIEW, SIDE_STATIC, SIDE_VIEW } from '../tools/trumpet/shapes';
+import Theory from '../tools/trumpet/Theory.astro';
+
+const name = 'トランペット音響モデル';
+/* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
+const CAT = '音響';
+const related = [
+  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'trumpet')),
+  ...TOOLS.filter((t) => t.c !== CAT && !t.s),
+];
+const Q9 = ['m4', 'm3', 'm2', 'm1', 'z', 'p1', 'p2', 'p3', 'p4'];
+const QC = ['pq-4', 'pq-3', 'pq-2', 'pq-1', 'pq0', 'pq1', 'pq2', 'pq3', 'pq4'];
+/** はしご の段（高い倍音から） */
+const ROWS = [...PARTIALS].reverse().filter((n) => n <= 8);
+---
+<SiteLayout title={name} tool={{ id: 'trumpet', name }} description="トランペットを物理モデルで鳴らします。唇の振動、マウスピースから弁とベルまでの管の中の波、口の圧力と唇の張り、部屋の残響から、音と管の中の圧力を計算します。" note="音と計算結果は、論文の模型を簡略化した物理モデルによるものです。">
+  <PageTitle title={name}>唇の振動（外へ開く弁）、マウスピースからリードパイプ・3 本の弁・ベルまでの管の中を行き来する波、強く吹いたときに波が切り立つ非線形の伝搬、ベルからの放射を計算して、トランペットの音を作ります。弁を押して倍音を選び、「吹く」で鳴らせます。倍音のはしごで、同じ指使いのまま唇の張りで鳴る音が変わる様子を確かめられます。曲の演奏もできます。</PageTitle>
+
+  <div class="tgrid">
+    <Panel hid="hd-fig" title="トランペット" class="a-fig">
+      <Fragment slot="aux">
+        <div class="seg" id="p-nv" role="group" aria-label="気柱の見せ方"><button type="button" data-v="amp" aria-pressed="true" title="実際の速さで、圧力の振れ幅（定在波の腹と節）を描く">振れ幅</button><button type="button" data-v="slow" aria-pressed="false" title="振動をゆっくりにして、圧力が管の中を行き来する様子を描く">スロー</button></div>
+        <div class="seg" id="p-names" role="group" aria-label="音名"><button type="button" data-v="con" aria-pressed="true" title="実際に鳴る音の名前（ピアノと同じ）">実音</button><button type="button" data-v="wri" aria-pressed="false" title="B♭ 管の楽譜に書く音の名前（実音より全音高い）">記譜</button></div>
+      </Fragment>
+      <div class="sbar">
+        <span class="stag pqk"><i aria-hidden="true"></i>気柱の圧力 <b class="hw" id="f-amp" data-ph="±99.9 kPa"></b></span>
+        <span class="stag" id="f-mode"></span>
+        <span class="stag right hw" id="f-note" data-ph="C♯5（記譜 D♯5）· 第 10 倍音 · 1+2+3"></span>
+      </div>
+      <div class="vw" id="vw-side">
+        <svg class="vf" id="tside" viewBox={SIDE_VIEW} role="img" aria-label="横から見たトランペット。管の中の空気を、圧力の色で描く。押した弁の抜差しを空気が通る">
+          <path class="t-tube" d={SIDE_STATIC.bell}></path>
+          <path class="t-tube" d={SIDE_STATIC.main}></path>
+          <path class="t-tube" d={SIDE_STATIC.third}></path>
+          <path class="t-hi" d={SIDE_STATIC.hiBack}></path>
+          {Q9.map((_, i) => <path class={QC[i]} id={`air-b-${i}`}></path>)}
+          <path class="t-tube2" d={SIDE_STATIC.bellRim}></path>
+          <path class="t-line" d={SIDE_STATIC.bellLip}></path>
+          <path class="t-tube" d={SIDE_STATIC.knuck}></path>
+          <path class="t-tube" d={SIDE_STATIC.casings}></path>
+          <path class="t-tube2" d={SIDE_STATIC.caps}></path>
+          <path class="t-thin" d={SIDE_STATIC.bands}></path>
+          <path class="t-tube2" d={SIDE_STATIC.second}></path>
+          <path class="t-tube" d={SIDE_STATIC.first}></path>
+          <path class="t-tube" d={SIDE_STATIC.recv}></path>
+          <path class="t-tube" d={SIDE_STATIC.lead}></path>
+          <path class="t-silver" d={SIDE_STATIC.mouth}></path>
+          <path class="t-hi" d={SIDE_STATIC.hiFront}></path>
+          {Q9.map((_, i) => <path class={QC[i]} id={`air-f-${i}`}></path>)}
+          <path class="t-wire" d={SIDE_STATIC.saddle}></path>
+          <path class="t-wire-i" d={SIDE_STATIC.saddle}></path>
+          <path class="t-wire" d={SIDE_STATIC.ring}></path>
+          <path class="t-wire-i" d={SIDE_STATIC.ring}></path>
+          <path class="t-silver" id="k-stems"></path>
+          {[0, 1, 2].map((i) => (
+            <g class="t-key" id={`k-${i}`} data-i={i}><path class="t-tube2"></path><path class="t-pearl"></path><path class="t-press"></path></g>
+          ))}
+          <text class="lbb" x="365" y="166" text-anchor="middle">1</text><text class="lbb" x="405" y="166" text-anchor="middle">2</text><text class="lbb" x="445" y="166" text-anchor="middle">3</text>
+          <text class="lbs" x="46" y="181" text-anchor="middle">マウスピース</text>
+          <text class="lbs" x="610" y="162" text-anchor="middle">リードパイプ</text>
+          <text class="lbs" x="772" y="196">主管抜差し</text>
+          <text class="lbs" x="590" y="270" text-anchor="middle">第 3 抜差し</text>
+          <text class="lbs" x="268" y="284" text-anchor="middle">第 1 抜差し</text>
+          <text class="lbs" x="896" y="240" text-anchor="middle">ベル</text>
+          <text class="lbs" x="405" y="320" text-anchor="middle">第 2 抜差しは弁の奥</text>
+          <path class="t-dim" d="M197 290H950M197 284V296M950 284V296"></path>
+          <text class="lbs" x="700" y="304" text-anchor="middle" id="f-len"></text>
+          <text class="lbv" x="0" y="-20" id="f-big"></text>
+          <text class="lbs" x="0" y="-4" id="f-sub"></text>
+          <text class="lbs" x="0" y="11" id="f-sub2"></text>
+        </svg>
+      </div>
+      <p class="sr" id="f-live" aria-live="polite"></p>
+      <div class="trow">
+        <div>
+          <p class="vcap">唇とマウスピース<span>縦の断面</span><span class="stp"><button type="button" class="tg" id="ph-prev" title="1/24 周期もどす" aria-label="1/24 周期もどす">◀</button><b class="hw" id="ph-text" data-ph="24/24 周期"></b><button type="button" class="tg" id="ph-next" title="1/24 周期すすめる" aria-label="1/24 周期すすめる">▶</button></span></p>
+          <div class="vw"><svg class="vf sm" id="tmp" viewBox={`0 0 ${MP_VIEW.w} ${MP_VIEW.h}`} role="img" aria-label="口とマウスピースの縦の断面。唇がカップの側へ開いて息が流れ込み、スロートとバックボアを通ってリードパイプへ続く">
+            <path class="pq3" id="mp-mouth" d={MP_STATIC.mouth}></path>
+            <path class="pq0" id="mp-cup" d={MP_STATIC.air}></path>
+            <path class="pq0" id="mp-lp" d={MP_STATIC.lpAir}></path>
+            <path class="t-tube" d={MP_STATIC.recv}></path>
+            <path class="t-silver" d={MP_STATIC.metal}></path>
+            <path class="t-skin" id="mp-tissue"></path>
+            <path class="t-lip" id="mp-red"></path>
+            <path class="t-tooth" d={MP_STATIC.teeth}></path>
+            <path class="t-jet" id="mp-jet"></path>
+            <path class="t-ar" id="mp-arrow"></path>
+            <path class="t-dim" id="mp-dim"></path>
+            <path class="t-thin" d={MP_STATIC.leads}></path>
+            <text class="lbs" x="78" y="40">唇</text>
+            <text class="lbs" x="36" y="96">歯</text>
+            <text class="lbs" x="108" y="64">リム</text>
+            <text class="lbs" x="124" y="182">カップ</text>
+            <text class="lbs" x="150" y="248" text-anchor="middle">スロート</text>
+            <text class="lbs" x="320" y="248" text-anchor="middle">バックボア</text>
+            <text class="lbs" x="482" y="248" text-anchor="middle">シャンク</text>
+            <text class="lbs" x="612" y="248" text-anchor="end">リードパイプ</text>
+            <text class="lba" x="6" y="292" id="mp-pm"></text>
+            <text class="lba" x="300" y="26" id="mp-p"></text>
+            <text class="lba" x="300" y="44" id="mp-u"></text>
+            <text class="lba" x="300" y="62" id="mp-h"></text>
+            <text class="lbs" x="300" y="80" id="mp-state"></text>
+          </svg></div>
+        </div>
+        <div>
+          <p class="vcap">倍音のはしご<span>同じ指使いのまま、唇の張りで上下の段へ移る。小さな数字は管の共鳴の平均律からのずれ</span></p>
+          <div class="lad" id="ladder">
+            <div class="lr lhd"><span class="rh">倍音</span>{FINGERS.map((g) => <span class="lh" title={g.semi ? `下げる半音 ${g.semi}` : '弁を押さない'}>{g.name}</span>)}</div>
+            {ROWS.map((n) => (
+              <div class="lr"><span class="rh">{n}</span>{FINGERS.map((_, f) => <button type="button" class="cell" data-n={n} data-f={f} aria-pressed="false"><span class="nm"></span><small class="dv"></small></button>)}</div>
+            ))}
+          </div>
+        </div>
+      </div>
+      <div class="vkeys">
+        <span class="lbl">弁</span>
+        {[0, 1, 2].map((i) => <button type="button" class="vkey" id={`vk-${i}`} aria-pressed="false" title={`第 ${i + 1} 弁（押している間だけ下がる。キーボードは ${'JKL'[i]}）`}>{i + 1}<kbd>{'JKL'[i]}</kbd></button>)}
+        <span class="lbl lbl2">倍音（唇の張り）</span>
+        <div class="chips" id="parts" role="group" aria-label="倍音">{PARTIALS.filter((n) => n <= 8).map((n) => <button type="button" class="chip" data-n={n} aria-pressed={n === 4 ? 'true' : 'false'}>{n}</button>)}</div>
+        <span class="sp"></span>
+        <button type="button" class="tg" id="blowBtn" title="押している間だけ吹く（キーボードはスペース。↑↓ で倍音）">吹く<kbd>Space</kbd></button>
+      </div>
+      <More id="g-fig" title="表示の設定"><div class="ptab">
+        <ChoiceRow k="sl" name="スローの速さ" sub="振動を何分の 1 の速さで描くか" choices={SLOW.map((v) => [v, `1/${v}`] as const)} value={400} />
+      </div></More>
+    </Panel>
+
+    <div class="col c1">
+      <Panel hid="hd-play" title="演奏" class="a-play">
+        <div slot="aux" class="seg"><button type="button" id="playBtn" aria-pressed="false" title="選んだ曲を演奏する・止める"><span class="led" id="playLed" aria-hidden="true"></span><span id="playT">演奏</span></button></div>
+        <div class="ptab">
+          <div class="prow pick" id="p-piece">
+            <div class="c-sym" aria-hidden="true"></div>
+            <div class="c-name"><label class="pn" id="n-piece" for="piece">曲</label><p class="desc tip" id="t-piece" role="tooltip" hidden>著作権の切れた曲（メサイアは CC BY 3.0 の電子楽譜）。強弱・舌・息継ぎは、このツールが楽譜から決める</p></div>
+            <div class="c-val sel"><select id="piece" autocomplete="off" aria-describedby="t-piece">{PIECES.map((p) => <option value={p.v} title={p.by}>{p.name}</option>)}</select></div>
+          </div>
+          <ChoiceRow k="expr" name="表情" sub="楽譜どおり: 決めたテンポと強弱の目安だけで吹く。楽句の弧と揺らぎ: 楽句の中ほどで少し速く大きく、終わりで延ばし、出だしを少しばらつかせる" choices={[['plain', '楽譜どおり'], ['phrase', '楽句の弧と揺らぎ']]} value="phrase" />
+          <ParamRow d={TEMPO} />
+          <ParamRow d={outVol(VOL0)} />
+        </div>
+        <div class="pbtns">
+          <p class="pl-bar hw" id="pl-bar" data-ph="000 / 000 小節（一時停止中）" aria-live="off"></p>
+          <button type="button" class="tg" id="pauseBtn" title="演奏を一時停止する・続きから再開する（スマートフォンとタブレットでは、画面が隠れると自動で一時停止する）" disabled>一時停止</button>
+          <button type="button" class="tg" id="muteBtn" title="鳴っている音を止める（演奏も止める）">すべて止める</button>
+        </div>
+        <p class="msg er snd-msg" id="snd-msg" aria-live="polite"></p>
+      </Panel>
+
+      <Panel hid="hd-blow" title="吹き方" class="a-blow">
+        <div slot="aux" class="seg" id="p-lip" role="group" aria-label="唇の張り"><button type="button" data-v="auto" aria-pressed="true" title="鳴らしたい音に合わせて、唇の張りと口の圧力を自動で決める">唇は自動</button><button type="button" data-v="man" aria-pressed="false" title="唇の張り（共振周波数）と口の圧力を手で決める。合わないと別の倍音が鳴るか、鳴らない">手動</button></div>
+        <div class="ptab">
+          <ChoiceRow k="dyn" name="強弱" sub="手で吹くときの強さ。その音が鳴る口の圧力の範囲の中で、弱い側から強い側へ割り振る（曲では楽譜の強弱を使う）" choices={DYNS.map(([v, l]) => [v, l] as const)} value="mf" layout="chips" />
+          <ParamRow d={PM} />
+          <ParamRow d={FLIP} />
+          <ChoiceRow k="tg" name="舌" sub="タンギング: 音ごとに舌で息を止めて鋭く離す（タ）。やわらかく: ゆっくり離す（ダ）。スラー: 舌を使わず、唇だけで次の音へ移る" choices={[['ta', 'タンギング'], ['da', 'やわらかく'], ['slur', 'スラー']]} value="ta" />
+          <ChoiceRow k="vib" name="ビブラート" sub="長い音で、唇の張りを毎秒 5.5 回、±14 セントほど揺らす（トランペット固有の実測はなく、このツールで決めた値）" choices={[['0', 'なし'], ['1', '長い音だけ']]} value="0" />
+        </div>
+        <dl class="metrics bmet">
+          <div class="m"><dt>鳴り始める口の圧力</dt><dd id="b-thr"></dd></div>
+          <div class="m"><dt>唇の開きの最大</dt><dd id="b-hmax"></dd></div>
+          <div class="m"><dt>唇が閉じている割合</dt><dd id="b-closed"></dd></div>
+          <div class="m"><dt>平均の流量</dt><dd id="b-flow"></dd></div>
+        </dl>
+      </Panel>
+
+      <Panel hid="hd-inst" title="楽器" class="a-inst">
+        <div class="ptab">
+          <ChoiceRow k="nl" name="非線形の伝搬" sub="あり: 圧力の高い部分ほど速く進み、強く吹くと波が切り立つ（金属的な音）。なし: 管の中の波を線形として計算する" choices={[['0', 'なし'], ['1', 'あり']]} value="1" />
+          <ChoiceRow k="corr" name="音程の直し方" sub="抜差しと唇: 1+2 は第 1 抜差し、2+3・1+3・1+2+3 は第 3 抜差しを出し、残りを唇で直す。直さない: 弁の組み合わせが高くなる分（最大約 +50 セント）をそのまま鳴らす" choices={[['slide', '抜差しと唇'], ['none', '直さない']]} value="slide" />
+          <ParamRow d={TEMP} />
+        </div>
+        <dl class="metrics bmet">
+          <div class="m"><dt>空気が通る長さ</dt><dd id="i-len"></dd></div>
+          <div class="m"><dt>第 2 共鳴</dt><dd id="i-f2"></dd></div>
+          <div class="m"><dt>マウスピースの共鳴</dt><dd id="i-pop"></dd></div>
+          <div class="m"><dt>実効円筒長 <i>z</i></dt><dd id="i-z"></dd></div>
+        </dl>
+        <More id="g-inst"><div class="ptab">
+          <ChoiceRow k="noise" name="息の雑音" sub="口の圧力の、ゆっくりした揺れの大きさ（標準偏差）" choices={[['0', 'なし'], ['0.01', '1 %'], ['0.03', '3 %']]} value="0.01" />
+          <ChoiceRow k="dir" name="聴く方向" sub="ベルの正面: ベルの軸の上で聴く（約 1 kHz より上の音が強い）。斜め: 向きで平均した音（ベルから出るパワーを全方向に均した大きさ）" choices={[['front', 'ベルの正面'], ['side', '斜め']]} value="front" />
+        </div></More>
+      </Panel>
+    </div>
+
+    <div class="col c2">
+      <Panel hid="hd-z" title="管の共鳴" class="a-z">
+        <div slot="aux" class="seg" id="p-zs" role="group" aria-label="縦軸"><button type="button" data-v="lin" aria-pressed="true" title="入力インピーダンスの大きさ（線形）">大きさ</button><button type="button" data-v="db" aria-pressed="false" title="デシベルで（1 MPa·s/m³ を 0 dB）">dB</button></div>
+        <p class="aux res-aux" id="z-aux"></p>
+        <div class="sbar bsbar">
+          <span class="stag"><i class="sw" aria-hidden="true"></i>CH1 入力インピーダンス <b id="z-div"></b>/div</span>
+          <span class="stag"><i class="sw c3" aria-hidden="true"></i>鳴っている音の倍音</span>
+          <span class="stag"><i class="sw c2" aria-hidden="true"></i>唇の共振</span>
+          <span class="stag">X LOG <b>60 Hz – 2 kHz</b></span>
+        </div>
+        <div class="scope zplot">
+          <svg viewBox="-46 -18 492 284" id="z-svg" role="img" aria-label="マウスピースから見た管の入力インピーダンス。山が共鳴で、鳴っている音の倍音と唇の共振を重ねる">
+            <g set:html={zGrid()} />
+            <rect class="zlb" id="z-lipb" x="0" y="0" width="0" height="240"></rect>
+            <path class="zl" id="z-lip"></path>
+            <path class="zh" id="z-h1"></path>
+            <path class="zh2" id="z-hn"></path>
+            <path class="zc" id="z-curve"></path>
+            <g id="z-lbl"></g>
+            <text class="zb" id="z-lipt" x="0" y="12" text-anchor="middle">唇</text>
+            <g id="z-axes"></g>
+          </svg>
+        </div>
+        <div class="sbar rdbar" data-ph="第 10 共鳴 1159.9 Hz  999 MPa·s/m³  Q 99  鳴る音 1159.9 Hz"><span class="rd" id="z-rd"></span></div>
+      </Panel>
+
+      <Panel hid="hd-room" title="残響" class="a-room">
+        <div class="ptab">
+          <ChoiceRow k="room" name="部屋" sub="響きを付ける部屋。寸法と吸音率から残響時間を求める（再生の音だけに付け、音の波形と計算結果には含めない）" choices={ROOMS.map((r) => [r.v, r.name, r.v === 'off' ? '残響なし' : `${r.dim.join(' × ')} m、平均吸音率 ${r.a}`] as const)} value="small" layout="chips" wide />
+          <ParamRow d={DIST} />
+        </div>
+        <dl class="metrics rmet">
+          <div class="m"><dt>残響時間 <i>T</i><sub>60</sub>（500 Hz）</dt><dd id="r-t"></dd></div>
+          <div class="m"><dt>残響時間 <i>T</i><sub>60</sub>（4 kHz）</dt><dd id="r-th"></dd></div>
+          <div class="m"><dt>臨界距離 <i>r</i><sub>c</sub></dt><dd id="r-rc"></dd></div>
+          <div class="m"><dt>残響音 ÷ 直接音</dt><dd id="r-dr"></dd></div>
+        </dl>
+      </Panel>
+
+      <Collapsible hid="hd-wave" title="音の波形" class="a-wave">
+        <div class="seg wv-sw" id="p-ov" role="group" aria-label="表示"><button type="button" data-v="yt" aria-pressed="true" title="1 m 先の音圧の時間変化（残響を除く）">波形</button><button type="button" data-v="sp" aria-pressed="false" title="周波数ごとの大きさ（直前の 0.17 秒）">スペクトラム</button></div>
+        <div id="v-yt">
+          <div class="sbar">
+            <span class="stag"><i class="sw" aria-hidden="true"></i>CH1 音圧 <b class="hw" id="w-vd" data-ph="0.005 Pa"></b>/div</span>
+            <span class="stag">H <b class="hw" id="w-hd" data-ph="500 ms"></b>/div</span>
+            <span class="stag hw wst" id="w-st" data-ph="PEAK 999 mPa"></span>
+          </div>
+          <div class="scope">
+            <svg viewBox="-50 -14 462 194" id="w-svg" role="img" aria-label="音の波形">
+              <defs><clipPath id="w-clip"><rect x="0" y="0" width="400" height="160"/></clipPath></defs>
+              <g set:html={gridSvg(4)} />
+              <g clip-path="url(#w-clip)"><path class="t1" id="w-t1"/></g>
+              <g id="w-axes"></g>
+            </svg>
+          </div>
+          <More id="g-yt" title="表示の設定"><div class="ptab"><ChoiceRow k="span" name="表示する長さ" sub="直前の音の長さ" choices={SPANS.map((v) => [v, `${v * 1000} ms`] as const)} value={0.01} /></div></More>
+        </div>
+        <div id="v-sp" hidden>
+          <div class="sbar">
+            <span class="stag"><i class="sw" aria-hidden="true"></i>CH1 音圧 <b>30 dB</b>/div</span>
+            <span class="stag">X <b id="s-x"></b></span>
+            <span class="stag">WIN <b>B-HARRIS</b></span>
+          </div>
+          <div class="scope">
+            <svg viewBox="-56 -14 468 194" id="s-svg" role="img" aria-label="音のスペクトラム">
+              <defs><clipPath id="s-clip"><rect x="0" y="0" width="400" height="160"/></clipPath></defs>
+              <g set:html={gridSvg(4)} />
+              <g clip-path="url(#s-clip)"><path class="t1 sp" id="s-t1"/></g>
+              <g id="s-axes"></g>
+            </svg>
+          </div>
+          <More id="g-sp" title="表示の設定"><div class="ptab"><ChoiceRow k="fmax" name="横軸の範囲" sub="スペクトラムの右端の周波数" choices={FMAX.map((v) => [v, `${v / 1000} kHz`] as const)} value={5000} /></div></More>
+        </div>
+      </Collapsible>
+
+      <Collapsible hid="hd-res" title="計算結果" class="a-out">
+        <p class="aux res-aux" id="res-aux">鳴っている音</p>
+        <dl class="metrics">
+          <div class="m m-main"><dt>鳴っている音の高さ</dt><dd><span id="o-f0"></span><span class="m-sub" id="o-f0s"></span></dd></div>
+          <div class="m"><dt>口の圧力 <i>p</i><sub>m</sub></dt><dd id="o-pm"></dd></div>
+          <div class="m"><dt>唇の共振 <i>f</i><sub>L</sub></dt><dd id="o-fl"></dd></div>
+          <div class="m"><dt>マウスピースの圧力の振れ幅</dt><dd id="o-pa"></dd></div>
+          <div class="m"><dt>1 m 先の音の大きさ</dt><dd id="o-spl"></dd></div>
+          <div class="m"><dt>唇の開きの最大</dt><dd id="o-h"></dd></div>
+          <div class="m"><dt>平均の流量</dt><dd id="o-u"></dd></div>
+          <div class="m"><dt>弁</dt><dd id="o-v"></dd></div>
+        </dl>
+      </Collapsible>
+    </div>
+
+    <Collapsible hid="hd-thy" title="動作原理と式" class="a-thy">
+      <Theory />
+    </Collapsible>
+
+    <Collapsible hid="hd-src" title="楽譜の出典" class="a-src">
+      <Credits />
+    </Collapsible>
+  </div>
+
+  <RelatedTools list={related} />
+  <script>
+    import '../tools/trumpet/client';
+  </script>
+</SiteLayout>

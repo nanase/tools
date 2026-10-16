@@ -1,0 +1,319 @@
+---
+// 動作原理と式
+---
+<h3>音の流れ</h3>
+<p>奏者が口の中の圧力を上げると、閉じかけた唇が息に押し開かれ、息がマウスピースへ流れ込みます。管の中にできた圧力の波はベルで反射して唇へ戻り、唇を開け閉めする向きに押します。唇は管の共鳴の 1 つに引き込まれて周期的に開閉し、ベルから音が出ます。どの共鳴に乗るかは、唇の張り（唇だけの共振周波数）で選びます。</p>
+<ol class="flow" aria-label="音の流れ">
+  <li><b>口</b><span>口の圧力・唇の張り</span></li>
+  <li><b>唇</b><span>外へ開く弁</span></li>
+  <li><b>マウスピース</b><span>カップ・スロート・バックボア</span></li>
+  <li><b>リードパイプ</b><span>広がる管</span></li>
+  <li><b>円筒部と弁</b><span>3 本の迂回管</span></li>
+  <li><b>ベル</b><span>Bessel ホーン</span></li>
+  <li><b>放射</b><span>1 m 先の音圧</span></li>
+  <li><b>残響</b><span>再生の音だけ</span></li>
+</ol>
+<p>唇と管は、音の標本（48 kHz など）ごとに一緒に解きます。管の中の音は、右へ進む波と左へ進む波の和で表します。唇は、管の入口に戻ってきた波を受けて、管へ送る波を決めます。</p>
+
+<h3>唇</h3>
+<p>唇は、口と管の圧力の差で外（カップの側）へ押し開かれる、1 自由度の弁として扱います。Harrison-Harsley の式です<a class="rf" href="#thy-r1">[1]</a>。唇の間を抜けた息は噴流になってカップの中で散り、圧力は戻りません（Bernoulli の流れ）。唇の動きそのものが押しのける空気も、流量に足します。</p>
+<dl class="syms">
+  <dt><math><mi>y</mi></math></dt><dd>唇の変位（静止の位置から、開く向きが正）</dd>
+  <dt><math><mi>h</mi></math></dt><dd>唇の開き</dd>
+  <dt><math><msub><mi>H</mi><mn>0</mn></msub></math></dt><dd>静止しているときの開き</dd>
+  <dt><math><msub><mi>ω</mi><mn>0</mn></msub></math></dt><dd>唇の共振の角周波数 <math><mn>2</mn><mi>π</mi><msub><mi>f</mi><mi mathvariant="normal">L</mi></msub></math>（<math><msub><mi>f</mi><mi mathvariant="normal">L</mi></msub></math> は唇の張り）</dd>
+  <dt><math><mi>Q</mi></math></dt><dd>唇の共振の Q</dd>
+  <dt><math><mi>μ</mi></math></dt><dd>唇の実効質量</dd>
+  <dt><math><msub><mi>S</mi><mi mathvariant="normal">r</mi></msub></math></dt><dd>唇の実効面積</dd>
+  <dt><math><mi>w</mi></math></dt><dd>開口の幅</dd>
+  <dt><math><msub><mi>p</mi><mi mathvariant="normal">m</mi></msub></math></dt><dd>口の圧力（大気圧との差）</dd>
+  <dt><math><mi>p</mi></math></dt><dd>マウスピースの入口の圧力</dd>
+  <dt><math><mi>U</mi></math></dt><dd>管へ入る体積流量</dd>
+  <dt><math><mi>ρ</mi></math></dt><dd>空気の密度</dd>
+</dl>
+<div class="eqs">
+  <math display="block"><mover><mi>y</mi><mo>¨</mo></mover><mo>+</mo><mfrac><msub><mi>ω</mi><mn>0</mn></msub><mi>Q</mi></mfrac><mover><mi>y</mi><mo>˙</mo></mover><mo>+</mo><msubsup><mi>ω</mi><mn>0</mn><mn>2</mn></msubsup><mi>y</mi><mo>=</mo><mfrac><msub><mi>S</mi><mi mathvariant="normal">r</mi></msub><mi>μ</mi></mfrac><mi>Δ</mi><mi>p</mi></math>
+  <math display="block"><mi>Δ</mi><mi>p</mi><mo>=</mo><msub><mi>p</mi><mi mathvariant="normal">m</mi></msub><mo>−</mo><mi>p</mi></math>
+  <math display="block"><mi>h</mi><mo>=</mo><mi>y</mi><mo>+</mo><msub><mi>H</mi><mn>0</mn></msub></math>
+  <math display="block"><mi>U</mi><mo>=</mo><mi>w</mi><msub><mrow><mo>[</mo><mi>h</mi><mo>]</mo></mrow><mo>+</mo></msub><mi>sgn</mi><mo>⁡</mo><mo stretchy="false">(</mo><mi>Δ</mi><mi>p</mi><mo stretchy="false">)</mo><msqrt><mfrac><mrow><mn>2</mn><mo>|</mo><mi>Δ</mi><mi>p</mi><mo>|</mo></mrow><mi>ρ</mi></mfrac></msqrt><mo>+</mo><msub><mi>S</mi><mi mathvariant="normal">r</mi></msub><mover><mi>y</mi><mo>˙</mo></mover></math>
+</div>
+<p><math><msub><mrow><mo>[</mo><mi>h</mi><mo>]</mo></mrow><mo>+</mo></msub></math> は <math><mi>h</mi></math> と 0 の大きいほうで、唇が閉じると息の流れは止まります。唇が閉じている間（<math><mi>h</mi><mo>&lt;</mo><mn>0</mn></math>）は、押し込んだ分に元の 3 倍の剛性の反発を足し（合わせて 4 倍）、減衰を Q 0.5 にします。Adachi・Sato の扱いです<a class="rf" href="#thy-r2">[2]</a>。</p>
+<h4>唇の値</h4>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th scope="col">量</th><th scope="col" class="num">値</th><th scope="col">出どころ</th></tr></thead>
+  <tbody>
+    <tr><th scope="row">実効質量 <math><mi>μ</mi></math></th><td class="num">1.074 × 10<sup>−4</sup> kg</td><td>Harrison-Harsley の値<a class="rf" href="#thy-r1">[1]</a>の 2 倍（下の注）</td></tr>
+    <tr><th scope="row">実効面積 <math><msub><mi>S</mi><mi mathvariant="normal">r</mi></msub></math></th><td class="num">1.46 × 10<sup>−5</sup> m²</td><td>Harrison-Harsley<a class="rf" href="#thy-r1">[1]</a></td></tr>
+    <tr><th scope="row">開口の幅 <math><mi>w</mi></math></th><td class="num">10 mm</td><td>Harrison-Harsley<a class="rf" href="#thy-r1">[1]</a></td></tr>
+    <tr><th scope="row">静止の開き <math><msub><mi>H</mi><mn>0</mn></msub></math></th><td class="num">0.29 mm</td><td>Harrison-Harsley<a class="rf" href="#thy-r1">[1]</a></td></tr>
+    <tr><th scope="row">Q</th><td class="num">50</td><td>このツールで決めた（下の注）</td></tr>
+    <tr><th scope="row">唇の張り <math><msub><mi>f</mi><mi mathvariant="normal">L</mi></msub></math></th><td class="num">100〜1200 Hz</td><td>奏者が決める（下の「奏者」）</td></tr>
+  </tbody>
+</table></div>
+<p>Harrison-Harsley の値は試行錯誤で選んだものです<a class="rf" href="#thy-r1">[1]</a>。そのままでは鳴り始める口の圧力が約 0.5 kPa と実測よりずっと低く、同じ口の圧力で録音より大きく鳴ったので、質量を 2 倍にしました。単位面積あたりの質量 <math><mi>μ</mi><mo>/</mo><msub><mi>S</mi><mi mathvariant="normal">r</mi></msub></math> は 7.4 kg/m² で、Velut らが分岐の解析に使った値（9.1 kg/m²）に近くなります<a class="rf" href="#thy-r3">[3]</a>。</p>
+<p>人の唇の Q は、高速度ビデオの測定で 1〜2.5 と小さい値です<a class="rf" href="#thy-r4">[4]</a>。この模型で Q を小さくすると高い倍音が鳴らなかったので、50 にしました。Harrison-Harsley の減衰（<math><mi>σ</mi><mo>=</mo><mn>5</mn></math> s<sup>−1</sup>）は、550 Hz で Q 約 690 にあたります<a class="rf" href="#thy-r1">[1]</a>。どちらの模型でも、唇の減衰は主に息の流れとの結合が受け持ちます。</p>
+<h4>1 標本の解き方</h4>
+<p>マウスピースの入口の圧力 <math><mi>p</mi></math> は、入口に戻ってきた波 <math><msup><mi>p</mi><mo>−</mo></msup></math> と、流量が作る波の和です（<math><msub><mi>Z</mi><mi mathvariant="normal">c</mi></msub></math> は入口の特性インピーダンス）。これを流量の式に入れると、<math><msqrt><mrow><mo>|</mo><mi>Δ</mi><mi>p</mi><mo>|</mo></mrow></msqrt></math> の 2 次方程式になり、反復なしで解けます<a class="rf" href="#thy-r1">[1]</a>。唇は中心差分で進め、管へ送る波は <math><msup><mi>p</mi><mo>+</mo></msup><mo>=</mo><mi>p</mi><mo>−</mo><msup><mi>p</mi><mo>−</mo></msup></math> です。</p>
+<div class="eqs">
+  <math display="block"><mi>p</mi><mo>=</mo><mn>2</mn><msup><mi>p</mi><mo>−</mo></msup><mo>+</mo><msub><mi>Z</mi><mi mathvariant="normal">c</mi></msub><mi>U</mi></math>
+  <math display="block"><mi>Δ</mi><mi>p</mi><mo>+</mo><mi>B</mi><mi>sgn</mi><mo>⁡</mo><mo stretchy="false">(</mo><mi>Δ</mi><mi>p</mi><mo stretchy="false">)</mo><msqrt><mrow><mo>|</mo><mi>Δ</mi><mi>p</mi><mo>|</mo></mrow></msqrt><mo>=</mo><mi>A</mi></math>
+  <math display="block"><mi>A</mi><mo>=</mo><msub><mi>p</mi><mi mathvariant="normal">m</mi></msub><mo>−</mo><mn>2</mn><msup><mi>p</mi><mo>−</mo></msup><mo>−</mo><msub><mi>Z</mi><mi mathvariant="normal">c</mi></msub><msub><mi>S</mi><mi mathvariant="normal">r</mi></msub><mover><mi>y</mi><mo>˙</mo></mover></math>
+  <math display="block"><mi>B</mi><mo>=</mo><msub><mi>Z</mi><mi mathvariant="normal">c</mi></msub><mi>w</mi><msub><mrow><mo>[</mo><mi>h</mi><mo>]</mo></mrow><mo>+</mo></msub><msqrt><mfrac><mn>2</mn><mi>ρ</mi></mfrac></msqrt></math>
+  <math display="block"><mi>Δ</mi><mi>p</mi><mo>=</mo><mi>sgn</mi><mo>⁡</mo><mo stretchy="false">(</mo><mi>A</mi><mo stretchy="false">)</mo><msup><mrow><mo>(</mo><mfrac><mrow><mo>−</mo><mi>B</mi><mo>+</mo><msqrt><mrow><msup><mi>B</mi><mn>2</mn></msup><mo>+</mo><mn>4</mn><mo>|</mo><mi>A</mi><mo>|</mo></mrow></msqrt></mrow><mn>2</mn></mfrac><mo>)</mo></mrow><mn>2</mn></msup></math>
+</div>
+
+<h3>管の形</h3>
+<p>管は、マウスピース・リードパイプ・円筒部・ベルの内径（半径）の折れ線で表します。数値まで公開されていて使える条件の内径は見つからなかったので、製品の公表寸法と教科書の関数形から組み立てました。全長は 1.40 m（弁を押さないとき）です。</p>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th scope="col">部分</th><th scope="col">形</th><th scope="col">寸法</th></tr></thead>
+  <tbody>
+    <tr><th scope="row">カップ</th><td>椀 <math><mi>r</mi><mo>=</mo><msub><mi>r</mi><mi mathvariant="normal">t</mi></msub><mo>+</mo><mo stretchy="false">(</mo><mi>R</mi><mo>−</mo><msub><mi>r</mi><mi mathvariant="normal">t</mi></msub><mo stretchy="false">)</mo><msup><mrow><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><msup><mrow><mo stretchy="false">(</mo><mi>x</mi><mo>/</mo><mi>d</mi><mo stretchy="false">)</mo></mrow><mi>q</mi></msup><mo stretchy="false">)</mo></mrow><mrow><mn>1</mn><mo>/</mo><mi>q</mi></mrow></msup></math>（<math><mi>q</mi><mo>=</mo><mn>1.6</mn></math>）。スロートへの肩は 2 次曲線で丸める</td><td>縁の内径 16.2 mm、深さ 8.4 mm、肩 1.6 mm</td></tr>
+    <tr><th scope="row">スロート</th><td>円筒</td><td>直径 3.66 mm、長さ 6 mm</td></tr>
+    <tr><th scope="row">バックボア</th><td><math><mi>r</mi><mo>=</mo><msub><mi>r</mi><mi mathvariant="normal">t</mi></msub><mo>+</mo><mo stretchy="false">(</mo><msub><mi>r</mi><mi mathvariant="normal">s</mi></msub><mo>−</mo><msub><mi>r</mi><mi mathvariant="normal">t</mi></msub><mo stretchy="false">)</mo><msup><mi>u</mi><mn>0.6</mn></msup></math></td><td>終わりの直径 8.6 mm、マウスピースの全長 88 mm</td></tr>
+    <tr><th scope="row">リードパイプ</th><td><math><mi>r</mi><mo>=</mo><msub><mi>r</mi><mn>0</mn></msub><mo>+</mo><mo stretchy="false">(</mo><msub><mi>r</mi><mi mathvariant="normal">c</mi></msub><mo>−</mo><msub><mi>r</mi><mn>0</mn></msub><mo stretchy="false">)</mo><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><msup><mrow><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><mi>u</mi><mo stretchy="false">)</mo></mrow><mn>1.19</mn></msup><mo stretchy="false">)</mo></math></td><td>入口の直径 8.9 mm、長さ 249 mm</td></tr>
+    <tr><th scope="row">円筒部</th><td>円筒（主管抜差しと 3 本の弁を含む）</td><td>直径 11.65 mm、長さ 403 mm</td></tr>
+    <tr><th scope="row">ベル</th><td>Bessel ホーン <math><mi>r</mi><mo>=</mo><mi>b</mi><mo>/</mo><msup><mrow><mo stretchy="false">(</mo><msub><mi>x</mi><mn>0</mn></msub><mo>−</mo><mi>x</mi><mo stretchy="false">)</mo></mrow><mi>γ</mi></msup></math>（<math><mi>γ</mi><mo>=</mo><mn>0.663</mn></math>）<a class="rf" href="#thy-r5">[5]</a></td><td>長さ 660 mm、開口の直径 123 mm</td></tr>
+  </tbody>
+</table></div>
+<p><math><mi>u</mi></math> はその部分の始まりから終わりまでを 0〜1 とした位置です。円筒の内径 11.65 mm とベルの直径 123 mm は Yamaha YTR-8335 の公表寸法<a class="rf" href="#thy-r6">[6]</a>、カップの直径 16.2 mm とスロートの直径 3.66 mm は Bach 7C の販売店の記載<a class="rf" href="#thy-r7">[7]</a>です。カップの深さ、各部の長さ、広がりの指数は、伝達行列で計算した共鳴が調和列にそろうように、このツールで探しました。</p>
+<p>マウスピースだけ（縁を閉じたとき）の最初の共鳴、いわゆる popping の周波数は約 820 Hz です。カップとスロートの容積は 1.19 cm³ です。</p>
+<h4>入力インピーダンス</h4>
+<p>「管の入力インピーダンス」のグラフは、管を長さ 1.5 mm 以下の円筒の列にして、平面波の伝達行列でベルの開口から縁まで順に計算したものです。管の壁での粘性と熱による損失は Keefe の太い管の近似<a class="rf" href="#thy-r8">[8]</a>、開口は非フランジ円管の放射（Silva らの近似式<a class="rf" href="#thy-r9">[9]</a>）です。空気の音速・密度・粘性率も、Keefe の温度の式で求めます<a class="rf" href="#thy-r8">[8]</a>。</p>
+<dl class="syms">
+  <dt><math><mi>a</mi></math></dt><dd>円筒の半径</dd>
+  <dt><math><mi>k</mi></math></dt><dd>波数 <math><mi>ω</mi><mo>/</mo><mi>c</mi></math></dd>
+  <dt><math><msub><mi>r</mi><mi mathvariant="normal">v</mi></msub></math></dt><dd>半径と粘性の境界層の厚さの比 <math><mi>a</mi><msqrt><mrow><mi>ρ</mi><mi>ω</mi><mo>/</mo><mi>η</mi></mrow></msqrt></math>（<math><mi>η</mi></math> は粘性率）</dd>
+  <dt><math><msub><mi>Z</mi><mn>0</mn></msub></math></dt><dd><math><mi>ρ</mi><mi>c</mi><mo>/</mo><mo stretchy="false">(</mo><mi>π</mi><msup><mi>a</mi><mn>2</mn></msup><mo stretchy="false">)</mo></math></dd>
+  <dt><math><mi>R</mi></math></dt><dd>開口の圧力の反射率（<math><mi>l</mi></math> は開口端補正）</dd>
+</dl>
+<div class="eqs">
+  <math display="block"><msub><mi>Z</mi><mtext>入</mtext></msub><mo>=</mo><mfrac><mrow><mi>cosh</mi><mo>⁡</mo><mo stretchy="false">(</mo><mi>Γ</mi><mi>L</mi><mo stretchy="false">)</mo><msub><mi>Z</mi><mtext>出</mtext></msub><mo>+</mo><msub><mi>Z</mi><mi mathvariant="normal">c</mi></msub><mi>sinh</mi><mo>⁡</mo><mo stretchy="false">(</mo><mi>Γ</mi><mi>L</mi><mo stretchy="false">)</mo></mrow><mrow><mi>sinh</mi><mo>⁡</mo><mo stretchy="false">(</mo><mi>Γ</mi><mi>L</mi><mo stretchy="false">)</mo><msub><mi>Z</mi><mtext>出</mtext></msub><mo>/</mo><msub><mi>Z</mi><mi mathvariant="normal">c</mi></msub><mo>+</mo><mi>cosh</mi><mo>⁡</mo><mo stretchy="false">(</mo><mi>Γ</mi><mi>L</mi><mo stretchy="false">)</mo></mrow></mfrac></math>
+  <math display="block"><mi>Γ</mi><mo>=</mo><mi>j</mi><mi>k</mi><mrow><mo>(</mo><mn>1</mn><mo>+</mo><mfrac><mn>1.045</mn><msub><mi>r</mi><mi mathvariant="normal">v</mi></msub></mfrac><mo>)</mo></mrow><mo>+</mo><mi>k</mi><mrow><mo>(</mo><mfrac><mn>1.045</mn><msub><mi>r</mi><mi mathvariant="normal">v</mi></msub></mfrac><mo>+</mo><mfrac><mn>1.08</mn><msubsup><mi>r</mi><mi mathvariant="normal">v</mi><mn>2</mn></msubsup></mfrac><mo>+</mo><mfrac><mn>0.75</mn><msubsup><mi>r</mi><mi mathvariant="normal">v</mi><mn>3</mn></msubsup></mfrac><mo>)</mo></mrow></math>
+  <math display="block"><msub><mi>Z</mi><mi mathvariant="normal">c</mi></msub><mo>=</mo><msub><mi>Z</mi><mn>0</mn></msub><mrow><mo>[</mo><mn>1</mn><mo>+</mo><mfrac><mn>0.369</mn><msub><mi>r</mi><mi mathvariant="normal">v</mi></msub></mfrac><mo>−</mo><mi>j</mi><mrow><mo>(</mo><mfrac><mn>0.369</mn><msub><mi>r</mi><mi mathvariant="normal">v</mi></msub></mfrac><mo>+</mo><mfrac><mn>1.149</mn><msubsup><mi>r</mi><mi mathvariant="normal">v</mi><mn>2</mn></msubsup></mfrac><mo>+</mo><mfrac><mn>0.303</mn><msubsup><mi>r</mi><mi mathvariant="normal">v</mi><mn>3</mn></msubsup></mfrac><mo>)</mo></mrow><mo>]</mo></mrow></math>
+  <math display="block"><mi>R</mi><mo>=</mo><mo>−</mo><mfrac><mrow><mn>1</mn><mo>+</mo><mn>0.2</mn><mi>k</mi><mi>a</mi><mo>−</mo><mn>0.084</mn><msup><mrow><mo stretchy="false">(</mo><mi>k</mi><mi>a</mi><mo stretchy="false">)</mo></mrow><mn>2</mn></msup></mrow><mrow><mn>1</mn><mo>+</mo><mn>0.2</mn><mi>k</mi><mi>a</mi><mo>+</mo><mn>0.416</mn><msup><mrow><mo stretchy="false">(</mo><mi>k</mi><mi>a</mi><mo stretchy="false">)</mo></mrow><mn>2</mn></msup></mrow></mfrac><msup><mi>e</mi><mrow><mo>−</mo><mn>2</mn><mi>j</mi><mi>k</mi><mi>l</mi></mrow></msup></math>
+  <math display="block"><mfrac><mi>l</mi><mi>a</mi></mfrac><mo>=</mo><mfrac><mrow><mn>0.6133</mn><mo stretchy="false">(</mo><mn>1</mn><mo>+</mo><mn>0.044</mn><msup><mrow><mo stretchy="false">(</mo><mi>k</mi><mi>a</mi><mo stretchy="false">)</mo></mrow><mn>2</mn></msup><mo stretchy="false">)</mo></mrow><mrow><mn>1</mn><mo>+</mo><mn>0.19</mn><msup><mrow><mo stretchy="false">(</mo><mi>k</mi><mi>a</mi><mo stretchy="false">)</mo></mrow><mn>2</mn></msup></mrow></mfrac><mo>−</mo><mn>0.02</mn><msup><mi>sin</mi><mn>2</mn></msup><mo>⁡</mo><mo stretchy="false">(</mo><mn>2</mn><mi>k</mi><mi>a</mi><mo stretchy="false">)</mo></math>
+</div>
+<p>弁を押さない既定の形では、第 2〜第 10 の共鳴は、それぞれの倍音の平均律の音から −34〜+13 セントのところにあります（第 7 倍音が低いのは、自然倍音そのものが平均律より 31 セント低いため）。倍音のはしごの小さな数字は、指使いごとのこのずれです（抜差しは出さないとき）。</p>
+<h4>弁と抜差し</h4>
+<p>弁を押すと、円筒部に迂回管が加わります。迂回管の長さは、伝達行列で計算した共鳴が、それぞれ全音・半音・短 3 度下がるように合わせました。</p>
+<ul class="tl">
+  <li>第 1 弁: 180 mm（全音）</li>
+  <li>第 2 弁: 87.7 mm（半音）</li>
+  <li>第 3 弁: 277 mm（短 3 度）</li>
+</ul>
+<p>弁を組み合わせると、足した長さが足りず、音が高くなります。この管では 1+2 で +9、2+3 で +14、1+3 で +27、1+2+3 で +47 セントです。奏者は第 1 抜差しや第 3 抜差しを出して直します<a class="rf" href="#thy-r10">[10]</a>。「音程の直し方」が「抜差しと唇」のときは、1+2 で第 1 抜差しの管を 16 mm、2+3・1+3・1+2+3 で第 3 抜差しの管をそれぞれ 15・31・56 mm 足します（抜差しを出す長さはその半分）。残りのずれは唇で直します（下の「奏者」）。</p>
+
+<h3>管の中の波</h3>
+<p>管の中の音は、右へ進む圧力の波 <math><msup><mi>p</mi><mo>+</mo></msup></math> と左へ進む波 <math><msup><mi>p</mi><mo>−</mo></msup></math> の和で表します。デジタル導波管の方法です<a class="rf" href="#thy-r11">[11]</a>。</p>
+<ul class="tl">
+  <li>マウスピース・リードパイプとベル: 1 標本に音が進む長さ（48 kHz で約 7.2 mm）の円筒を並べた階段。継ぎ目で Kelly–Lochbaum の散乱を計算する<a class="rf" href="#thy-r12">[12]</a>。各円筒の断面積は、その区間の容積が変わらないように決める</li>
+  <li>円筒部と迂回管: 往きと帰りの遅延線。端数の遅延は 4 点の Lagrange 補間で読む</li>
+  <li>損失: 区間ごとに、Keefe の近似の主な項 <math><msup><mi>e</mi><mrow><mo>−</mo><mi>K</mi><msqrt><mi>ω</mi></msqrt><mo stretchy="false">(</mo><mn>1</mn><mo>+</mo><mi>j</mi><mo stretchy="false">)</mo></mrow></msup></math> を掛ける<a class="rf" href="#thy-r8">[8]</a>。1 次の最小位相のフィルタ 3 つの縦続で、20 Hz〜18 kHz の大きさを合わせる</li>
+</ul>
+<dl class="syms">
+  <dt><math><msub><mi>S</mi><mi>i</mi></msub></math></dt><dd>階段の <math><mi>i</mi></math> 番目の円筒の断面積</dd>
+  <dt><math><msub><mi>r</mi><mi>i</mi></msub></math></dt><dd>継ぎ目の反射率</dd>
+  <dt><math><mi>K</mi></math></dt><dd>区間の損失の係数（<math><mi>Δ</mi><mi>x</mi></math> は区間の中の円筒の長さ）</dd>
+</dl>
+<div class="eqs">
+  <math display="block"><msub><mi>r</mi><mi>i</mi></msub><mo>=</mo><mfrac><mrow><msub><mi>S</mi><mi>i</mi></msub><mo>−</mo><msub><mi>S</mi><mrow><mi>i</mi><mo>+</mo><mn>1</mn></mrow></msub></mrow><mrow><msub><mi>S</mi><mi>i</mi></msub><mo>+</mo><msub><mi>S</mi><mrow><mi>i</mi><mo>+</mo><mn>1</mn></mrow></msub></mrow></mfrac></math>
+  <math display="block"><msubsup><mi>p</mi><mrow><mi>i</mi><mo>+</mo><mn>1</mn></mrow><mo>+</mo></msubsup><mo>=</mo><msubsup><mi>p</mi><mi>i</mi><mo>+</mo></msubsup><mo>+</mo><msub><mi>r</mi><mi>i</mi></msub><mo stretchy="false">(</mo><msubsup><mi>p</mi><mi>i</mi><mo>+</mo></msubsup><mo>−</mo><msubsup><mi>p</mi><mrow><mi>i</mi><mo>+</mo><mn>1</mn></mrow><mo>−</mo></msubsup><mo stretchy="false">)</mo></math>
+  <math display="block"><msubsup><mi>p</mi><mi>i</mi><mo>−</mo></msubsup><mo>=</mo><msubsup><mi>p</mi><mrow><mi>i</mi><mo>+</mo><mn>1</mn></mrow><mo>−</mo></msubsup><mo>+</mo><msub><mi>r</mi><mi>i</mi></msub><mo stretchy="false">(</mo><msubsup><mi>p</mi><mi>i</mi><mo>+</mo></msubsup><mo>−</mo><msubsup><mi>p</mi><mrow><mi>i</mi><mo>+</mo><mn>1</mn></mrow><mo>−</mo></msubsup><mo stretchy="false">)</mo></math>
+  <math display="block"><mi>K</mi><mo>=</mo><mfrac><mn>1.045</mn><mi>c</mi></mfrac><msqrt><mfrac><mi>η</mi><mi>ρ</mi></mfrac></msqrt><mo>∑</mo><mfrac><mrow><mi>Δ</mi><mi>x</mi></mrow><mi>a</mi></mfrac></math>
+</div>
+<h4>弁の接合</h4>
+<p>弁は、主管・既定の通路・迂回管の 3 本の管の接合です。接合では 3 本の圧力が等しく、流れ込む体積流量の和が 0 になります<a class="rf" href="#thy-r13">[13]</a>。来た波を <math><msub><mi>a</mi><mi>i</mi></msub></math>、通路の開きの割合を <math><msub><mi>q</mi><mi>i</mi></msub></math>（主管は 1）とすると、接合の圧力と出ていく波は次の式です。</p>
+<div class="eqs">
+  <math display="block"><msub><mi>p</mi><mi mathvariant="normal">J</mi></msub><mo>=</mo><mfrac><mrow><mn>2</mn><msub><mo>∑</mo><mi>i</mi></msub><msub><mi>q</mi><mi>i</mi></msub><msub><mi>a</mi><mi>i</mi></msub></mrow><mrow><msub><mo>∑</mo><mi>i</mi></msub><msub><mi>q</mi><mi>i</mi></msub></mrow></mfrac></math>
+  <math display="block"><msub><mi>b</mi><mi>i</mi></msub><mo>=</mo><msub><mi>p</mi><mi mathvariant="normal">J</mi></msub><mo>−</mo><msub><mi>a</mi><mi>i</mi></msub></math>
+</div>
+<p>ピストンの押し具合 0〜1 に対して、既定の通路は 0〜0.6 で閉じ、迂回管は 0.4〜1 で開きます。途中では両方が狭まり、波は両方の通路を通ります。半押しを開きの割合の変化で表すのは Harrison らの方法です<a class="rf" href="#thy-r14">[14]</a>。ピストンは 12 ms で押し切ります。</p>
+<h4>開口</h4>
+<p>ベルの開口は、質量と抵抗を並列にした放射インピーダンスで閉じます。質量は非フランジ円管の開口端補正（<math><mn>0.6133</mn><mi>a</mi></math>）から<a class="rf" href="#thy-r15">[15]</a>、抵抗は特性インピーダンスの 1.25 倍（このツールで決めた）です。開口の反射は 1 次のフィルタになります。</p>
+<div class="eqs">
+  <math display="block"><msub><mi>Z</mi><mi mathvariant="normal">r</mi></msub><mo>=</mo><mfrac><mrow><mi>s</mi><mi>M</mi><mo>⋅</mo><mi>r</mi><msub><mi>Z</mi><mi mathvariant="normal">c</mi></msub></mrow><mrow><mi>s</mi><mi>M</mi><mo>+</mo><mi>r</mi><msub><mi>Z</mi><mi mathvariant="normal">c</mi></msub></mrow></mfrac></math>
+  <math display="block"><mi>M</mi><mo>=</mo><mfrac><mrow><mi>ρ</mi><mo>⋅</mo><mn>0.6133</mn><mi>a</mi></mrow><mrow><mi>π</mi><msup><mi>a</mi><mn>2</mn></msup></mrow></mfrac></math>
+  <math display="block"><mi>R</mi><mo stretchy="false">(</mo><mi>s</mi><mo stretchy="false">)</mo><mo>=</mo><mfrac><mrow><mi>s</mi><mi>τ</mi><mo stretchy="false">(</mo><mi>r</mi><mo>−</mo><mn>1</mn><mo stretchy="false">)</mo><mo>−</mo><mi>r</mi></mrow><mrow><mi>s</mi><mi>τ</mi><mo stretchy="false">(</mo><mi>r</mi><mo>+</mo><mn>1</mn><mo stretchy="false">)</mo><mo>+</mo><mi>r</mi></mrow></mfrac></math>
+  <math display="block"><mi>τ</mi><mo>=</mo><mfrac><mrow><mn>0.6133</mn><mi>a</mi></mrow><mi>c</mi></mfrac><mo>,</mo><mspace width="1em"></mspace><mi>r</mi><mo>=</mo><mn>1.25</mn></math>
+</div>
+<p>導波管で求めた入力インピーダンスは、伝達行列の計算と比べて、第 2〜第 10 の共鳴の周波数が数セント以内、山の高さが ±10 % 以内で一致しました。</p>
+
+<h3>強く吹いたときの波の切り立ち</h3>
+<p>音圧の高い部分ほど音は速く進むので、強く吹くと管を進むうちに波の前が切り立ち、高い倍音が増えます。トロンボーンでは ff で衝撃波が観測されています<a class="rf" href="#thy-r16">[16]</a>。金管の ff の金属的な音（ブラスネス）は、唇よりも、この管の中の非線形の伝搬が作ります<a class="rf" href="#thy-r17">[17]</a>。</p>
+<p>このツールは、Cooper・Abel の集中型の近似を使います<a class="rf" href="#thy-r18">[18]</a>。ベルの手前の円筒で、右へ進む波の遅延を、その圧力に応じて縮めます。音速が圧力 <math><mi>p</mi></math> で <math><mi>c</mi><mo stretchy="false">(</mo><mn>1</mn><mo>+</mo><mfrac><mrow><mi>γ</mi><mo>+</mo><mn>1</mn></mrow><mrow><mn>2</mn><mi>γ</mi></mrow></mfrac><mfrac><mi>p</mi><msub><mi>P</mi><mn>0</mn></msub></mfrac><mo stretchy="false">)</mo></math> になるとして、管全体で縮む分をまとめて掛けます。</p>
+<dl class="syms">
+  <dt><math><mi>γ</mi></math></dt><dd>比熱比</dd>
+  <dt><math><msub><mi>P</mi><mn>0</mn></msub></math></dt><dd>大気圧（101325 Pa）</dd>
+  <dt><math><mi>z</mi></math></dt><dd>実効円筒長</dd>
+  <dt><math><msub><mi>D</mi><mn>0</mn></msub><mo>,</mo><mi>D</mi></math></dt><dd>円筒部の内径と、位置 <math><mi>x</mi></math> の内径</dd>
+</dl>
+<div class="eqs">
+  <math display="block"><mi>Δ</mi><mi>τ</mi><mo>=</mo><mfrac><mi>z</mi><mi>c</mi></mfrac><mo>⋅</mo><mfrac><mrow><mi>γ</mi><mo>+</mo><mn>1</mn></mrow><mrow><mn>2</mn><mi>γ</mi><msub><mi>P</mi><mn>0</mn></msub></mrow></mfrac><mi>p</mi></math>
+  <math display="block"><mi>z</mi><mo>=</mo><mo>∫</mo><mfrac><msub><mi>D</mi><mn>0</mn></msub><mi>D</mi></mfrac><mi>d</mi><mi>x</mi></math>
+</div>
+<p>管が広がると粒子速度が下がり、波は切り立ちにくくなります。実効円筒長 <math><mi>z</mi></math> は、この分を割り引いた長さです（Myers らのブラスネスの指標の分子）<a class="rf" href="#thy-r17">[17]</a>。リードパイプからベルの開口まで積分して、約 1.14 m になります。Cooper・Abel の係数 <math><mi>β</mi><mo>≈</mo><mn>1.2</mn></math> は <math><mo stretchy="false">(</mo><mi>γ</mi><mo>+</mo><mn>1</mn><mo stretchy="false">)</mo><mo>/</mo><mn>2</mn></math> にあたり、<math><mi>γ</mi></math> で割られていないので、ここでは <math><mo stretchy="false">(</mo><mi>γ</mi><mo>+</mo><mn>1</mn><mo stretchy="false">)</mo><mo>/</mo><mo stretchy="false">(</mo><mn>2</mn><mi>γ</mi><mo stretchy="false">)</mo></math> を使います。</p>
+<p>「非線形の伝搬」を「なし」にすると、この遅延の変化を止めます。</p>
+
+<h3>放射と聴く方向</h3>
+<p>ベルの開口から出る体積流量 <math><mi>U</mi></math> を単極子の音源とみなし、1 m 先の音圧にします。</p>
+<div class="eqs">
+  <math display="block"><msub><mi>p</mi><mtext>単極子</mtext></msub><mo stretchy="false">(</mo><mi>r</mi><mo stretchy="false">)</mo><mo>=</mo><mfrac><mi>ρ</mi><mrow><mn>4</mn><mi>π</mi><mi>r</mi></mrow></mfrac><mfrac><mrow><mi>d</mi><mi>U</mi></mrow><mrow><mi>d</mi><mi>t</mi></mrow></mfrac></math>
+</div>
+<p>単極子の式は、ベルの大きさに比べて波長が短くなると、放射されるパワーを過大に見積もります。そこで、開口の放射インピーダンス（上の <math><msub><mi>Z</mi><mi mathvariant="normal">r</mi></msub></math>）の実部で決まる実際のパワーに合わせて、高い音を抑えます。これが「斜め」の音（向きで平均した大きさ）です。</p>
+<p>トランペットの音は、約 1 kHz より上でベルの軸の方向へ集まります<a class="rf" href="#thy-r19">[19]</a>。「ベルの正面」では、これにバッフル付きピストンの指向係数（低い周波数で 1 にした値）を掛けます。ベルの指向性をピストンで近似するのは、このツールで決めた扱いです。軸の上の音は、低い周波数では単極子と同じで、高い周波数では単極子より約 4 dB 大きくなります。</p>
+<dl class="syms">
+  <dt><math><mi>x</mi></math></dt><dd><math><mi>k</mi><mi>a</mi></math>（<math><mi>a</mi></math> はベルの開口の半径）</dd>
+  <dt><math><msub><mi>H</mi><mtext>斜め</mtext></msub><mo>,</mo><msub><mi>H</mi><mtext>正面</mtext></msub></math></dt><dd>単極子の音圧に掛けるフィルタ</dd>
+  <dt><math><msub><mi>Q</mi><mi mathvariant="normal">n</mi></msub></math></dt><dd>指向係数（低い周波数で 1）</dd>
+</dl>
+<div class="eqs">
+  <math display="block"><msup><mrow><mo>|</mo><msub><mi>H</mi><mtext>斜め</mtext></msub><mo>|</mo></mrow><mn>2</mn></msup><mo>=</mo><mfrac><mrow><mi>Re</mi><mo>⁡</mo><msub><mi>Z</mi><mi mathvariant="normal">r</mi></msub></mrow><mrow><msub><mi>Z</mi><mi mathvariant="normal">c</mi></msub><msup><mi>x</mi><mn>2</mn></msup><mo>/</mo><mn>4</mn></mrow></mfrac><mo>=</mo><mfrac><mn>1.203</mn><mrow><mn>1</mn><mo>+</mo><mn>0.2406</mn><msup><mi>x</mi><mn>2</mn></msup></mrow></mfrac></math>
+  <math display="block"><msub><mi>Q</mi><mi mathvariant="normal">n</mi></msub><mo>=</mo><mfrac><msup><mi>x</mi><mn>2</mn></msup><mrow><mn>2</mn><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><msub><mi>J</mi><mn>1</mn></msub><mo stretchy="false">(</mo><mn>2</mn><mi>x</mi><mo stretchy="false">)</mo><mo>/</mo><mi>x</mi><mo stretchy="false">)</mo></mrow></mfrac></math>
+  <math display="block"><msup><mrow><mo>|</mo><msub><mi>H</mi><mtext>正面</mtext></msub><mo>|</mo></mrow><mn>2</mn></msup><mo>=</mo><msub><mi>Q</mi><mi mathvariant="normal">n</mi></msub><msup><mrow><mo>|</mo><msub><mi>H</mi><mtext>斜め</mtext></msub><mo>|</mo></mrow><mn>2</mn></msup></math>
+</div>
+<p><math><msub><mi>H</mi><mtext>斜め</mtext></msub></math> は 1 次（約 1.8 kHz で折れる低域通過）、<math><msub><mi>H</mi><mtext>正面</mtext></msub></math> は 2 次の有理関数で近似し（誤差 0.15 dB 以内）、双一次変換でフィルタにします。</p>
+
+<h3>奏者</h3>
+<h4>唇の張りと音の高さ</h4>
+<p>1 自由度の外開きの唇は、管の共鳴と唇の共振のどちらよりも高い周波数で鳴ります<a class="rf" href="#thy-r3">[3]</a>。音が高めになりやすいのはこの模型の欠点で、目標の音の高さにちょうど届かないことがあります<a class="rf" href="#thy-r20">[20]</a>。このツールは、管を既定の形より 5 cm 長くして共鳴を少し下げ、唇の張りで音の高さを合わせます。</p>
+<p>音の高さが平均律に合う唇の張りは、前もって模型で測った表から引きます。実音 E3〜D6 の各音と、口の圧力 2・2.8・4・5.6・8 kPa ごとに、唇の張りを鳴らす音の周波数の 0.5〜1.12 倍で 0.012 刻みに変えて 0.32 秒吹き、マウスピースの圧力の自己相関で鳴った音の高さを測ります。いちばん大きく鳴った点から 8 dB 以内の点だけを使い、音の高さが平均律と合う比を直線補間で求めます。比は 0.69〜0.98 で、低い音ほど、また口の圧力が高いほど小さくなります。IRCAM の 1 自由度の模型では、この比が約 0.75 でした<a class="rf" href="#thy-r21">[21]</a>。</p>
+<h4>強弱</h4>
+<p>トランペットの口の圧力は、音が鳴り始める閾値が音の周波数にほぼ比例し、口の圧力を 2 倍にすると音が約 15 dB 大きくなります<a class="rf" href="#thy-r22">[22]</a>。このツールは、強弱を「その音が鳴る口の圧力の範囲（表の範囲）の中の位置」として、対数で割り振ります。高い音ほど、同じ強弱でも口の圧力が高くなります。</p>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th scope="col">強弱</th><th scope="col" class="num">pp</th><th scope="col" class="num">p</th><th scope="col" class="num">mp</th><th scope="col" class="num">mf</th><th scope="col" class="num">f</th><th scope="col" class="num">ff</th></tr></thead>
+  <tbody><tr><th scope="row">範囲の中の位置</th><td class="num">0.04</td><td class="num">0.22</td><td class="num">0.40</td><td class="num">0.55</td><td class="num">0.78</td><td class="num">0.97</td></tr></tbody>
+</table></div>
+<h4>舌と立ち上がり</h4>
+<p>舌で区切る音は、舌で止めていた息を離すときの口の圧力の形で表します。はっきりしたアタックでは、口の圧力がいったん跳ね上がってから定常へ入ります<a class="rf" href="#thy-r23">[23]</a>。</p>
+<div class="eqs">
+  <math display="block"><msub><mi>p</mi><mi mathvariant="normal">m</mi></msub><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mo>=</mo><mover><msub><mi>p</mi><mi mathvariant="normal">m</mi></msub><mo>¯</mo></mover><mrow><mo>(</mo><mn>1</mn><mo>−</mo><msup><mi>e</mi><mrow><mo>−</mo><mi>t</mi><mo>/</mo><msub><mi>τ</mi><mi mathvariant="normal">t</mi></msub></mrow></msup><mo>)</mo></mrow><mrow><mo>(</mo><mn>1</mn><mo>+</mo><msub><mi>A</mi><mi mathvariant="normal">t</mi></msub><msup><mi>e</mi><mrow><mo>−</mo><mi>t</mi><mo>/</mo><mn>40</mn><mspace width="0.17em"></mspace><mtext>ms</mtext></mrow></msup><mo>)</mo></mrow></math>
+</div>
+<ul class="tl">
+  <li>立ち上がりの時定数 <math><msub><mi>τ</mi><mi mathvariant="normal">t</mi></msub></math>: タンギング（タ）5 ms、やわらかく（ダ）12 ms</li>
+  <li>行き過ぎ <math><msub><mi>A</mi><mi mathvariant="normal">t</mi></msub></math>: 0.12（アクセントは 0.3）</li>
+  <li>唇の張り: 3 % 高いところから、時定数 15 ms で目標へ下げる。ホルンの測定では、唇の振動は目標より高いところから始まって収まる<a class="rf" href="#thy-r24">[24]</a></li>
+  <li>音の終わり: 舌で止める音は、終わりの 35 ms（短い音は長さの 1/3）で口の圧力を 0 へ下げる</li>
+  <li>スラー: 口の圧力を続けたまま、唇の張りを時定数 10 ms で次の音へ移す。口の圧力の変化は 20 ms でならす</li>
+</ul>
+<h4>ビブラートと息の揺れ</h4>
+<p>ビブラートは、管楽器に多い毎秒 5〜6 回の揺れ<a class="rf" href="#thy-r25">[25]</a>として、唇の張りを毎秒 5.5 回、±14 セント揺らします。音の始まりから 0.25 秒後に、0.3 秒かけて深くします。トランペット固有の速さと深さの実測は見つからなかったので、深さはこのツールで決めました。管が音の高さを引き留めるので、鳴る音の揺れは唇の揺れより小さくなります。</p>
+<p>息の揺れは、口の圧力に、一様乱数を 1 次の低域通過に通したゆっくりした揺れを掛けて表します。Harrison-Harsley が口の圧力に乱数を掛けた形にならったものです<a class="rf" href="#thy-r1">[1]</a>。</p>
+
+<h3>楽譜から音符へ</h3>
+<p>曲は 1 声部の楽譜から、奏者が吹く音の列を作ります。規則の形は Friberg らの演奏規則（Phrase arch・Punctuation・Final ritardando・High loud・Noise）にならい<a class="rf" href="#thy-r26">[26]</a>、量はこのツールで決めました。「楽譜どおり」では楽句の弧・楽句の終わりの間・出だしのばらつきを付けません。</p>
+<h4>時刻</h4>
+<ul class="tl">
+  <li>テンポ: 曲ごとの標準のテンポに、テンポの設定を掛ける。楽句の中ほどで最大 2 % 速く、両端で 2 % 遅く</li>
+  <li>楽句の終わり: 0.06 s の間を入れる</li>
+  <li>曲の終わり: 最後の 2 拍で 0.75 倍の速さまで遅くする</li>
+  <li>フェルマータ: 音を 1.75 倍に延ばす</li>
+</ul>
+<h4>長さと舌</h4>
+<ul class="tl">
+  <li>スラーの中の音: 次の音までつなぐ。同じ高さの音へのスラーは、タイとして 1 つの音にする</li>
+  <li>舌で区切る音: 楽譜の長さの 0.85 倍。スタッカートは 0.5 倍、テヌートは 0.97 倍。鳴らす長さは 50 ms 以上、次の音との間は 20 ms 以上</li>
+  <li>息継ぎ: 楽句の終わりで、休符もスラーもなく次の音へ続くときは、0.16 s（音の長さの 1/3 まで）短くする</li>
+  <li>舌の使い分け: アクセントとスタッカートはタ。p より弱い音・テヌート・♩ = 80 より遅い曲はダ</li>
+</ul>
+<h4>強弱</h4>
+<p>楽譜の強弱の記号を dB（mf を 0）に直し、記号のところで 0.25 拍かけて移ります。ppp −16、pp −12、p −7、mp −3、mf 0、f +5、ff +9、fff +12、fz・sf・sfz +6 dB です。松葉は、終わりから 1 拍以内に記号があればその段へ直線で移り、なければ松葉の間だけ ±4 dB 動いて、終わりから 0.5 拍で元の段へ戻ります。強弱の記号のない曲は、曲ごとの目安の段（仮定）を使います。</p>
+<p>「楽句の弧と揺らぎ」では、楽句の中ほどで最大 +1 dB、両端で −1 dB にし（Phrase arch）、B♭4 から 1 オクターブ高いごとに +1.5 dB 足します（High loud）。アクセントは頭を +2 dB にします。dB は、奏者の強弱（pp 0.04 〜 ff 0.97）に直線で直します（0 dB で 0.55、1 dB あたり弱い側 0.0425、強い側 0.047）。</p>
+<h4>トリルと出だしのばらつき</h4>
+<ul class="tl">
+  <li>トリル: 調号に合わせた上の隣の音から、1 秒に 8 音で音の長さの 3/4 まで交互に吹き、残りを元の音で延ばす</li>
+  <li>出だしのばらつき: 舌で吹き始める音の頭を、標準偏差 7 ms（±12 ms まで）でずらす（Noise の規則）</li>
+</ul>
+
+<h3>図</h3>
+<p>音を計算しながら、約 25 回/秒、鳴っている音の 1 周期を 24 の位相に分けて、唇の開き・マウスピースの圧力・流量と、管の中の約 230 点の圧力を写し取ります。「振れ幅」は管の中の各点の圧力の振れ（定在波の腹と節）を、「スロー」は 1 周期を何百分の 1 の速さで繰り返して、圧力が管の中を行き来する様子を描きます。唇とマウスピースの断面は、同じ 24 の位相の唇の開きと圧力です。</p>
+<p>横から見た楽器の各部の位置と大きさ（受け口・ピストン・ケースの高さ・ベルの広がり）は、Wikimedia Commons の写真「Trompette - corps.JPG」<a class="rf" href="#thy-r27">[27]</a>と比べて合わせました。写真の楽器は抜差しを外してあるので、抜差しの形と管の重なり方は一般的な形の仮定です。管は実物より細く描いています。マウスピースの外形は、写真「Embouchure profil.jpg」<a class="rf" href="#thy-r28">[28]</a>（Bach 1½C）の輪郭を、全長 88 mm にそろえて測ったものです。内側は模型の寸法、唇と歯の形は一般的な口の縦の断面の仮定です。</p>
+
+<h3>残響</h3>
+<p>部屋の残響時間を Eyring の式で求め<a class="rf" href="#thy-r29">[29]</a>、16 本の遅延線のフィードバック遅延網で残響を作ります<a class="rf" href="#thy-r30">[30]</a>。ギターのページと同じものです。</p>
+<dl class="syms">
+  <dt><math><mi>V</mi></math></dt><dd>部屋の容積</dd>
+  <dt><math><mi>S</mi></math></dt><dd>部屋の表面積</dd>
+  <dt><math><mover><mi>α</mi><mo>¯</mo></mover></math></dt><dd>平均吸音率</dd>
+  <dt><math><mi>m</mi></math></dt><dd>空気の吸収。ISO 9613-1 の値<a class="rf" href="#thy-r31">[31]</a></dd>
+  <dt><math><mi>A</mi></math></dt><dd>等価吸音面積</dd>
+  <dt><math><msub><mi>r</mi><mi mathvariant="normal">c</mi></msub></math></dt><dd>臨界距離。<math><mi>A</mi></math> から求める</dd>
+  <dt><math><mi>r</mi></math></dt><dd>聴く位置</dd>
+</dl>
+<p>1 m 先の直接音に対する残響音の大きさは、臨界距離 <math><msub><mi>r</mi><mi mathvariant="normal">c</mi></msub></math> で決まります。聴く位置 <math><mi>r</mi></math> での比は <math><mi>r</mi><mo>/</mo><msub><mi>r</mi><mi mathvariant="normal">c</mi></msub></math> です。全体の大きさは、直接音と残響音のエネルギーの和が 1 m 先の直接音と同じになるようにそろえます。</p>
+<div class="eqs">
+  <math display="block"><msub><mi>T</mi><mn>60</mn></msub><mo>=</mo><mfrac><mrow><mn>0.161</mn><mi>V</mi></mrow><mrow><mo>−</mo><mi>S</mi><mi>ln</mi><mo>⁡</mo><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><mover><mi>α</mi><mo>¯</mo></mover><mo stretchy="false">)</mo><mo>+</mo><mn>4</mn><mi>m</mi><mi>V</mi></mrow></mfrac></math>
+  <math display="block"><msub><mi>r</mi><mi mathvariant="normal">c</mi></msub><mo>=</mo><msqrt><mfrac><mi>A</mi><mrow><mn>16</mn><mi>π</mi></mrow></mfrac></msqrt></math>
+  <math display="block"><mi>A</mi><mo>=</mo><mo>−</mo><mi>S</mi><mi>ln</mi><mo>⁡</mo><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><mover><mi>α</mi><mo>¯</mo></mover><mo stretchy="false">)</mo></math>
+</div>
+
+<h3>計算の範囲と出力</h3>
+<ul class="tl">
+  <li>音: 1 m 先の音圧。音量 0 dB のとき、1 Pa を出力のフルスケールとする。左右は同じ音</li>
+  <li>計算の刻み: 再生のサンプリング周波数（48 kHz など）の 1 標本。管の階段の 1 段も、この 1 標本に音が進む長さ</li>
+  <li>温度: 管の中の空気の温度で音速と密度が変わり、どの共鳴も高くなる（1 °C で約 3 セント）。唇の張りの表は 27 °C で作ったまま</li>
+</ul>
+<p>残響と、フルスケールを超えそうなときだけ働くリミッタは、再生の音だけに付けます。計算結果と音の波形は残響を含みません。</p>
+
+<h3>確かめたことと限界</h3>
+<ul class="tl">
+  <li>音域: 実音 E3〜D6 の全部の音が、表の唇の張りで平均律から数セント以内の高さで鳴る</li>
+  <li>音色: アイオワ大学の楽器の録音（University of Iowa Musical Instrument Samples）<a class="rf" href="#thy-r32">[32]</a>の B♭ トランペットと比べると、mf で暗い（F4 でスペクトルの重心が約 0.7 kHz、録音は約 1.6 kHz）</li>
+  <li>音量: 同じ口の圧力で、Fletcher・Tarnopolsky の測定<a class="rf" href="#thy-r22">[22]</a>より 10 dB 前後大きく、鳴り始める口の圧力が低い</li>
+  <li>唇: 1 自由度なので、共鳴より下へ音を曲げることや、リップ・グリッサンドはできない</li>
+  <li>管: 平面波の模型なので、約 1.5 kHz より上のベルの放射と指向性は近似</li>
+</ul>
+
+<h3>出典</h3>
+<ol class="refs">
+  <li id="thy-r1"><span class="rf-for">唇の式と値、1 標本の閉じた解、口の圧力の乱数</span><span class="rf-src">R. L. Harrison-Harsley, “Physical modelling of brass instruments using finite-difference time-domain methods,” PhD thesis, University of Edinburgh, 2018, <a href="https://era.ed.ac.uk/handle/1842/31272">era.ed.ac.uk/handle/1842/31272</a></span></li>
+  <li id="thy-r2"><span class="rf-for">唇が閉じている間の剛性と減衰</span><span class="rf-src">S. Adachi and M. Sato, “Trumpet sound simulation using a two-dimensional lip vibration model,” <i>J. Acoust. Soc. Am.</i>, vol. 99, no. 2, pp. 1200–1209, 1996</span></li>
+  <li id="thy-r3"><span class="rf-for">外開きの唇の単位面積あたりの質量、鳴る周波数が共鳴と唇の共振より高いこと（Mattéoli らの表と説明による）</span><span class="rf-src">L. Velut, C. Vergez, J. Gilbert and M. Djahanbani, “How well can linear stability analysis predict the behavior of an outward valve brass instrument model?,” <i>Acta Acustica united with Acustica</i>, vol. 103, no. 1, pp. 132–148, 2017。R. Mattéoli et al., “Minimal blowing pressure allowing periodic oscillations in a model of bass brass instruments,” <a href="https://arxiv.org/abs/2112.08751">arXiv:2112.08751</a></span></li>
+  <li id="thy-r4"><span class="rf-for">人の唇の Q</span><span class="rf-src">M. J. Newton, “Experimental mechanical and fluid mechanical investigations of the brass instrument lip-reed and the human vocal folds,” PhD thesis, University of Edinburgh, 2009, <a href="https://era.ed.ac.uk/handle/1842/3140">era.ed.ac.uk/handle/1842/3140</a></span></li>
+  <li id="thy-r5"><span class="rf-for">Bessel ホーン</span><span class="rf-src">N. H. Fletcher and T. D. Rossing, <i>The Physics of Musical Instruments</i>, 2nd ed., Springer, 1998</span></li>
+  <li id="thy-r6"><span class="rf-for">円筒の内径（11.65 mm）とベルの直径（123 mm）</span><span class="rf-src">Yamaha, YTR-8335 Specs, <a href="https://usa.yamaha.com/products/musical_instruments/winds/trumpets/bb_trumpets/ytr-8335s/specs.html">usa.yamaha.com/products/musical_instruments/winds/trumpets/bb_trumpets/ytr-8335s/specs.html</a></span></li>
+  <li id="thy-r7"><span class="rf-for">Bach 7C のカップの直径（16.20 mm）とスロートの直径（3.66 mm）</span><span class="rf-src">FMB-Direkt, “Bach Megatone trumpet mouthpiece No. 7C,” <a href="https://www.fmb-direkt.de/en/bach-megatone-trumpet-mouthpiece-no.-7c">fmb-direkt.de/en/bach-megatone-trumpet-mouthpiece-no.-7c</a>。Kirstein, “Bach Trumpet Mouthpiece 7C,” <a href="https://www.kirstein.de/en/Wind-Instruments/Accessories/Mouthpieces/Mouthpieces-Brass/Bach-Trumpet-Mouthpiece-7C.html">kirstein.de</a></span></li>
+  <li id="thy-r8"><span class="rf-for">管の損失（太い管の近似）、空気の定数の温度の式</span><span class="rf-src">D. H. Keefe, “Acoustical wave propagation in cylindrical ducts: Transmission line parameter approximations for isothermal and nonisothermal boundary conditions,” <i>J. Acoust. Soc. Am.</i>, vol. 75, no. 1, pp. 58–62, 1984</span></li>
+  <li id="thy-r9"><span class="rf-for">非フランジ円管の開口の反射率</span><span class="rf-src">F. Silva, Ph. Guillemain, J. Kergomard, B. Mallaroni and A. N. Norris, “Approximation formulae for the acoustic radiation impedance of a cylindrical pipe,” <i>J. Sound Vib.</i>, vol. 322, pp. 255–263, 2009</span></li>
+  <li id="thy-r10"><span class="rf-for">弁の組み合わせの音程の癖と、抜差しでの直し方</span><span class="rf-src">“Trumpet Intonation”（指導用の資料）, <a href="https://teachers.stjohns.k12.fl.us/fowler-r/wp-content/blogs.dir/1024/files/2014/05/TrumpetInt.pdf">teachers.stjohns.k12.fl.us/fowler-r/…/TrumpetInt.pdf</a></span></li>
+  <li id="thy-r11"><span class="rf-for">デジタル導波管</span><span class="rf-src">J. O. Smith III, <i>Physical Audio Signal Processing</i>, <a href="https://ccrma.stanford.edu/~jos/pasp/">ccrma.stanford.edu/~jos/pasp/</a></span></li>
+  <li id="thy-r12"><span class="rf-for">円筒の階段の継ぎ目の散乱</span><span class="rf-src">J. L. Kelly and C. C. Lochbaum, “Speech synthesis,” Proc. 4th Int. Congr. Acoust., Copenhagen, 1962</span></li>
+  <li id="thy-r13"><span class="rf-for">弁の 3 本の管の接合</span><span class="rf-src">S. Bilbao, “Modelling of brass instrument valves,” Proc. DAFx-11, Paris, 2011</span></li>
+  <li id="thy-r14"><span class="rf-for">半押しを通路の開きの割合で表すこと</span><span class="rf-src">R. L. Harrison and S. Bilbao, “An algorithm for a valved brass instrument synthesis environment using finite-difference time-domain methods with performance optimisation,” Proc. DAFx-15, Trondheim, 2015。R. L. Harrison, S. Bilbao, J. Perry and T. Wishart, “An environment for physical modeling of articulated brass instruments,” <i>Computer Music Journal</i>, vol. 39, pp. 80–95, 2015</span></li>
+  <li id="thy-r15"><span class="rf-for">非フランジ円管の開口端補正（0.6133 <math><mi>a</mi></math>）</span><span class="rf-src">H. Levine and J. Schwinger, “On the radiation of sound from an unflanged circular pipe,” <i>Phys. Rev.</i>, vol. 73, no. 4, pp. 383–406, 1948</span></li>
+  <li id="thy-r16"><span class="rf-for">トロンボーンの衝撃波</span><span class="rf-src">A. Hirschberg, J. Gilbert, R. Msallam and A. P. J. Wijnands, “Shock waves in trombones,” <i>J. Acoust. Soc. Am.</i>, vol. 99, no. 3, pp. 1754–1758, 1996</span></li>
+  <li id="thy-r17"><span class="rf-for">ブラスネスと非線形の伝搬、実効円筒長</span><span class="rf-src">A. Myers, R. W. Pyle Jr., J. Gilbert, D. M. Campbell, J. P. Chick and S. Logie, “Effects of nonlinear sound propagation on the characteristic timbres of brass instruments,” <i>J. Acoust. Soc. Am.</i>, vol. 131, no. 1, pp. 678–688, 2012。A. Myers, R. W. Pyle, J. Gilbert and D. M. Campbell, “The influence of bore size on brassiness potential,” Proc. Second Vienna Talk, 2010</span></li>
+  <li id="thy-r18"><span class="rf-for">振幅で遅延を変える近似（集中型）</span><span class="rf-src">C. M. Cooper and J. S. Abel, “Digital simulation of “brassiness” and amplitude-dependent propagation speed in wind instruments,” Proc. DAFx-10, Graz, 2010</span></li>
+  <li id="thy-r19"><span class="rf-for">トランペットの指向性</span><span class="rf-src">J. Pätynen and T. Lokki, “Directivities of symphony orchestra instruments,” <i>Acta Acustica united with Acustica</i>, vol. 96, pp. 138–167, 2010</span></li>
+  <li id="thy-r20"><span class="rf-for">1 自由度の唇の音が高めになること</span><span class="rf-src">V. Fréour, H. Masuda, B. Cochelin and C. Vergez, “Identification of lip-parameters associated to different trumpets using constrained continuation,” Proc. Forum Acusticum 2023, Turin, 2023</span></li>
+  <li id="thy-r21"><span class="rf-for">唇の張りと鳴る音の比（約 0.75）</span><span class="rf-src">W. D'haes and X. Rodet, “Physical constraints for the control of a physical model of a trumpet,” Proc. DAFx-02, Hamburg, 2002</span></li>
+  <li id="thy-r22"><span class="rf-for">口の圧力の閾値と音量の関係</span><span class="rf-src">N. H. Fletcher and A. Tarnopolsky, “Blowing pressure, power, and spectrum in trumpet playing,” <i>J. Acoust. Soc. Am.</i>, vol. 105, no. 2, pp. 874–881, 1999</span></li>
+  <li id="thy-r23"><span class="rf-for">アタックの口の圧力の形</span><span class="rf-src">V. Hruska, M. Svejda and M. Gustar, “Transients of trumpet tone: basic links between perception and measurements of lips opening surface and pressure in player's mouth,” Proc. Third Vienna Talk on Music Acoustics, 2015</span></li>
+  <li id="thy-r24"><span class="rf-for">音の始まりの唇の振動の周波数</span><span class="rf-src">S. D. F. Stevenson, “Experimental investigations of lip motion in brass instrument playing,” PhD thesis, University of Edinburgh, 2009</span></li>
+  <li id="thy-r25"><span class="rf-for">ビブラートの速さ</span><span class="rf-src">N. H. Fletcher, “Vibrato in music,” <i>Acoustics Australia</i>, vol. 29, no. 3, pp. 97–102, 2001</span></li>
+  <li id="thy-r26"><span class="rf-for">演奏の規則（Phrase arch・Punctuation・Final ritardando・High loud・Noise）</span><span class="rf-src">A. Friberg, R. Bresin and J. Sundberg, “Overview of the KTH rule system for musical performance,” <i>Advances in Cognitive Psychology</i>, vol. 2, no. 2–3, pp. 145–161, 2006</span></li>
+  <li id="thy-r27"><span class="rf-for">横から見た楽器の図の各部の位置と大きさ</span><span class="rf-src">Eusebius, “Trompette - corps.JPG,” Wikimedia Commons, 2009, <a href="https://commons.wikimedia.org/wiki/File:Trompette_-_corps.JPG">commons.wikimedia.org/wiki/File:Trompette_-_corps.JPG</a>、<a href="https://creativecommons.org/licenses/by/3.0/deed.ja">CC BY 3.0</a>。写真から測った寸法で線を描き直した</span></li>
+  <li id="thy-r28"><span class="rf-for">マウスピースの断面の図の外形</span><span class="rf-src">Eusebius, “Embouchure profil.jpg,” Wikimedia Commons, <a href="https://commons.wikimedia.org/wiki/File:Embouchure_profil.jpg">commons.wikimedia.org/wiki/File:Embouchure_profil.jpg</a>、<a href="https://creativecommons.org/licenses/by/3.0/deed.ja">CC BY 3.0</a>。写真の輪郭を測って線で描き直した</span></li>
+  <li id="thy-r29"><span class="rf-for">残響時間</span><span class="rf-src">C. F. Eyring, “Reverberation time in ‘dead’ rooms,” <i>J. Acoust. Soc. Am.</i>, vol. 1, no. 2A, pp. 217–241, 1930</span></li>
+  <li id="thy-r30"><span class="rf-for">残響</span><span class="rf-src">J.-M. Jot and A. Chaigne, “Digital delay networks for designing artificial reverberators,” AES 90th Convention, Preprint 3030, 1991</span></li>
+  <li id="thy-r31"><span class="rf-for">空気の吸収</span><span class="rf-src">ISO 9613-1</span></li>
+  <li id="thy-r32"><span class="rf-for">音色を比べた録音</span><span class="rf-src">University of Iowa Electronic Music Studios, Musical Instrument Samples, <a href="https://theremin.music.uiowa.edu/MIS.html">theremin.music.uiowa.edu/MIS.html</a></span></li>
+</ol>
+
+<h3>このツールで決めたこと</h3>
+<p>次の値と方法は、文献に基づかず、このツールで選んだものです。</p>
+<ul class="tl">
+  <li>管の形: カップの深さと椀の形、肩の丸み、スロートの長さ、バックボア・リードパイプ・円筒部・ベルの長さと広がりの指数</li>
+  <li>迂回管の長さ（180・87.7・277 mm）と、抜差しで足す管の長さ（16・15・31・56 mm）</li>
+  <li>管を既定の形より 5 cm 長くして鳴らすこと</li>
+  <li>唇の質量を Harrison-Harsley の 2 倍にしたこと、唇の Q（50）</li>
+  <li>開口の放射の抵抗（特性インピーダンスの 1.25 倍）、損失のフィルタの近似（1 次 3 つ）</li>
+  <li>弁の通路の開き方（既定の通路は押し具合 0〜0.6 で閉じ、迂回管は 0.4〜1 で開く）と、押し切るまでの時間（12 ms）、弁と弁の間の管（2 cm）と既定の通路（3 cm）の長さ</li>
+  <li>非線形の伝搬をベルの手前の円筒にまとめて掛けること</li>
+  <li>ベルの指向性をバッフル付きピストンの指向係数で近似すること</li>
+  <li>唇の張りの表の作り方（口の圧力 5 段、比の範囲と刻み、吹く時間、8 dB の範囲）と、強弱の割り振り（pp 0.04 〜 ff 0.97）</li>
+  <li>舌の立ち上がりの時定数（5・12 ms）と行き過ぎ（0.12・0.3）、唇の張りの始まり（+3 %、15 ms）、音の終わり（35 ms）、スラーの時定数（10・20 ms）</li>
+  <li>ビブラートの深さ（±14 セント）・速さ（5.5 Hz）・掛け始め（0.25 s 後、0.3 s で深く）、息の揺れの大きさ</li>
+  <li>楽譜の解釈: 長さの割合、息継ぎ、舌の使い分け、強弱の記号の値と松葉の扱い、楽句の弧の大きさ、High loud の大きさ、トリルの形、出だしのばらつき</li>
+  <li>強弱の記号のない曲（ラ・レジュイサンス・ラッパは鳴り響き・消灯ラッパ）の強弱の段と、曲ごとの標準のテンポ</li>
+  <li>部屋の寸法と吸音率</li>
+</ul>

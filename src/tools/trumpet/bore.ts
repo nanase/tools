@@ -26,9 +26,10 @@ export interface BoreSpec {
   rimR: number;
   cupDepth: number;
   cupShape: number;
-  /** スロートの半径と長さ */
+  /** スロートの半径と長さ（カップの底から）、カップからスロートへの肩の丸み */
   throatR: number;
   throatLen: number;
+  shoulder: number;
   /** バックボアの終わりの半径、マウスピースの全長、広がりの指数（1 で円錐） */
   shankR: number;
   mpLen: number;
@@ -47,23 +48,24 @@ export interface BoreSpec {
 }
 
 /**
- * 既定の形。円筒の内径 11.66 mm（0.459 in）、ベル 123 mm、スロート 3.66 mm（#27）、カップ 16.3 mm は
- * 製品の公表寸法。カップの深さと形、各部の長さと広がりの指数、ベルの指数はこのツールで決めた（伝達行列で
- * 第 2〜第 8 の共鳴が調和列から ±11 セントに並び、マウスピースの popping が約 820 Hz になるように探した）
+ * 既定の形。円筒の内径 11.65 mm とベル 123 mm は Yamaha YTR-8335 の公表寸法、スロート 3.66 mm とカップ 16.2 mm は
+ * Bach 7C の販売店の記載。カップの深さと形、各部の長さと広がりの指数、ベルの指数はこのツールで決めた（伝達行列で
+ * 第 2〜第 8 の共鳴が調和列から ±13 セントに並び、マウスピースの popping が約 820 Hz になるように探した）
  */
 export const SPEC: BoreSpec = {
-  rimR: 8.15e-3,
+  rimR: 8.1e-3,
   cupDepth: 8.4e-3,
   cupShape: 1.6,
   throatR: 1.83e-3,
   throatLen: 6e-3,
+  shoulder: 1.6e-3,
   shankR: 4.3e-3,
   mpLen: 88e-3,
   bbExp: 0.6,
   lpR: 4.45e-3,
   lpLen: 0.249,
   lpExp: 1.19,
-  cylR: 5.83e-3,
+  cylR: 5.825e-3,
   cylLen: 0.4034,
   bellLen: 0.66,
   bellR: 61.5e-3,
@@ -88,13 +90,31 @@ export function profile(s: BoreSpec = SPEC): Profile {
     hx.push(x);
     hr.push(r);
   };
-  /* カップ: r = rt + (R − rt)(1 − (x/d)^p)^(1/p) の椀 */
-  const nc = 36;
+  /*
+   * カップ: r = rt + (R − rt)(1 − (x/d)^p)^(1/p) の椀。椀の半径が rt + shoulder になったところから、スロートに
+   * shoulder 入ったところまでを、角を制御点にした 2 次曲線で丸める（肩）
+   */
+  const nc = 48,
+    rS = s.throatR + s.shoulder;
+  let xS = s.cupDepth;
   for (let i = 0; i <= nc; i++) {
     const u = i / nc,
       x = u * s.cupDepth,
-      w = (1 - u ** s.cupShape) ** (1 / s.cupShape);
-    push(x, s.throatR + (s.rimR - s.throatR) * w);
+      r = s.throatR + (s.rimR - s.throatR) * (1 - u ** s.cupShape) ** (1 / s.cupShape);
+    if (r < rS) {
+      xS = x;
+      break;
+    }
+    push(x, r);
+  }
+  const xE = s.cupDepth + s.shoulder,
+    ns = 12;
+  for (let i = 1; i <= ns; i++) {
+    const t = i / ns,
+      a = (1 - t) * (1 - t),
+      b = 2 * t * (1 - t),
+      c = t * t;
+    push(a * xS + b * s.cupDepth + c * xE, a * rS + (b + c) * s.throatR);
   }
   const x1 = s.cupDepth + s.throatLen;
   push(x1, s.throatR);

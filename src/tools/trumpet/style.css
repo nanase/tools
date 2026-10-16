@@ -1,0 +1,132 @@
+/* トランペット音響モデル: 枠の並び・図の窓と楽器の色・倍音のはしご */
+
+/* 枠の並び。PC は上に図（全幅）、左の列に 演奏・吹き方・楽器、右の列に 管の共鳴・残響・音の波形・計算結果、その下に 式・出典 */
+/* スマホは 図 → 演奏 → 吹き方 → 楽器 → 管の共鳴 → 残響 → 音の波形 → 計算結果 → 式 → 楽譜の出典（列は display: contents で解ける） */
+.a-fig{order:1}.a-play{order:2}.a-blow{order:3}.a-inst{order:4}.a-z{order:5}.a-room{order:6}.a-wave{order:7}.a-out{order:8}.a-thy{order:9}.a-src{order:10}
+@media (min-width:1000px){
+  .tgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr);grid-template-areas:"fig fig" "c1 c2" "thy thy" "src src";align-items:start}
+  .a-fig{grid-area:fig}.c1{grid-area:c1}.c2{grid-area:c2}.a-thy{grid-area:thy}.a-src{grid-area:src}
+}
+.wv-sw{margin:4px 0 12px}
+#playBtn{display:inline-flex;align-items:center;gap:7px}
+/* 「一時停止」と「再開」で幅を変えない */
+#pauseBtn{min-width:70px}
+.pbtns{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:6px;margin:6px 8px 0;padding-top:8px;border-top:1px solid var(--line)}
+.pbtns .tg{justify-content:center}
+.pbtns .tg:disabled{border-color:var(--line);background:none;color:var(--ink-3);opacity:.6;cursor:default}
+.pl-bar{margin:0 auto 0 0;text-align:left;font:500 12.5px/1.5 var(--mono);color:var(--ink-2)}
+.res-aux{margin:0 0 10px;text-align:right}
+.m-sub{display:block;margin-top:2px;font:12px/1.5 var(--sans);color:var(--ink-3)}
+.bmet,.rmet{margin-top:12px}
+.bmet .m dd,.rmet .m dd{font-size:16px}
+.a-z,.a-room,.a-blow,.a-inst{container-type:inline-size}
+.bsbar{margin-top:14px}
+.scope svg{touch-action:pan-y}
+.gl2{stroke:var(--grid);stroke-width:1;opacity:.55}
+.a-src{font-size:14.5px}
+.prow.pick{grid-template-columns:var(--sw) auto minmax(0,1fr);grid-template-areas:"sym name val"}
+.sel{position:relative}
+.sel select{appearance:none;width:100%;height:30px;padding:0 30px 0 10px;border:1px solid var(--line-2);border-radius:4px;background:var(--inset);color:var(--ink);font:500 13px/1.2 var(--mono);text-overflow:ellipsis;cursor:pointer}
+.sel::after{content:"";position:absolute;top:50%;right:12px;width:7px;height:7px;border-right:1.6px solid var(--ink-2);border-bottom:1.6px solid var(--ink-2);transform:translateY(-70%) rotate(45deg);pointer-events:none}
+
+/* 図の窓（ギターの指板・ヴァイオリンの図と同じ地） */
+.vw{position:relative;overflow-x:auto;overscroll-behavior-x:contain;border:1px solid var(--line);border-radius:var(--r);background:var(--screen);box-shadow:inset 0 1px 3px rgb(0 0 0 / .12)}
+.vw:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.vf{display:block;width:100%;min-width:600px;height:auto;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+.vf.sm{min-width:0}
+.vcap{display:flex;align-items:baseline;gap:8px;margin:0 0 5px;font:700 12px var(--sans);color:var(--ink-2)}
+.vcap span{font:500 11.5px var(--sans);color:var(--ink-3)}
+.vcap .stp{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font:500 11.5px var(--mono);color:var(--ink-2)}
+.vcap .stp .tg{min-width:30px;height:24px;padding:0 6px;justify-content:center}
+.vcap .stp b{font:700 11.5px var(--mono);color:var(--ink)}
+.trow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;margin-top:12px;align-items:start}
+@media (max-width:760px){.trow{grid-template-columns:minmax(0,1fr)}}
+
+/* 楽器の色（金属は図の地に寄せた無彩色。光る縁だけ明るく） */
+.vw{--t-metal:color-mix(in srgb,var(--screen-ink) 20%,var(--screen));--t-metal-2:color-mix(in srgb,var(--screen-ink) 34%,var(--screen));--t-edge:var(--screen-ink);--t-hi:#ffffffb3;--t-silver:color-mix(in srgb,var(--screen-ink) 10%,var(--screen));--t-pearl:#f4f5f1;--t-air0:var(--screen);--t-lip:#d9a59a;--t-lip-e:#9b5f55;--t-skin:#ead2c4}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]) .vw{--t-metal:color-mix(in srgb,var(--screen-ink) 16%,var(--surface));--t-metal-2:color-mix(in srgb,var(--screen-ink) 28%,var(--surface));--t-hi:#ffffff26;--t-silver:color-mix(in srgb,var(--screen-ink) 24%,var(--surface));--t-pearl:#d9dcd6;--t-lip:#9a6a62;--t-lip-e:#d9a59a;--t-skin:#6d5a52}}
+:root[data-theme=dark] .vw{--t-metal:color-mix(in srgb,var(--screen-ink) 16%,var(--surface));--t-metal-2:color-mix(in srgb,var(--screen-ink) 28%,var(--surface));--t-hi:#ffffff26;--t-silver:color-mix(in srgb,var(--screen-ink) 24%,var(--surface));--t-pearl:#d9dcd6;--t-lip:#9a6a62;--t-lip-e:#d9a59a;--t-skin:#6d5a52}
+.t-tube{fill:var(--t-metal);stroke:var(--t-edge);stroke-width:1.1;stroke-linejoin:round}
+.t-tube2{fill:var(--t-metal-2);stroke:var(--t-edge);stroke-width:1.1;stroke-linejoin:round}
+.t-silver{fill:var(--t-silver);stroke:var(--t-edge);stroke-width:1.1;stroke-linejoin:round}
+.t-hi{fill:none;stroke:var(--t-hi);stroke-width:1.6;stroke-linecap:round}
+.t-line{fill:none;stroke:var(--t-edge);stroke-width:1.1}
+.t-thin{fill:none;stroke:var(--t-edge);stroke-width:.8;opacity:.7}
+.t-pearl{fill:var(--t-pearl);stroke:var(--t-edge);stroke-width:1.1}
+.t-wire{fill:none;stroke:var(--t-edge);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.t-wire-i{fill:none;stroke:var(--t-silver);stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round}
+.t-dim{fill:none;stroke:var(--ink-3);stroke-width:1;stroke-dasharray:3 3}
+.t-press{fill:var(--accent);fill-opacity:.18;stroke:var(--accent);stroke-width:1.6}
+.t-off{opacity:.38}
+.t-lip{fill:var(--t-lip);stroke:var(--t-lip-e);stroke-width:1.2}
+.t-skin{fill:var(--t-skin);stroke:var(--t-lip-e);stroke-width:1}
+.t-jet{fill:none;stroke:var(--ch2);stroke-width:2;stroke-linecap:round;stroke-dasharray:2 5}
+.t-cup{fill:var(--t-air0);stroke:var(--t-edge);stroke-width:1.4}
+.t-ar{fill:none;stroke:var(--accent);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.t-sel{fill:none;stroke:var(--accent);stroke-width:2.2}
+.t-key{cursor:pointer}
+.t-key:hover .t-pearl{stroke:var(--accent);stroke-width:2}
+.t-key:focus-visible{outline:none}
+.t-key:focus-visible .t-pearl{stroke:var(--focus);stroke-width:2.4}
+
+/* 気柱の圧力（9 段の発散の色。負は CH2 の青、正は警告でない朱） */
+.pq-4{fill:var(--ch2)}.pq-3{fill:color-mix(in srgb,var(--ch2) 76%,var(--t-air0))}.pq-2{fill:color-mix(in srgb,var(--ch2) 52%,var(--t-air0))}.pq-1{fill:color-mix(in srgb,var(--ch2) 26%,var(--t-air0))}
+.pq0{fill:var(--t-air0)}
+.pq1{fill:color-mix(in srgb,var(--accent) 26%,var(--t-air0))}.pq2{fill:color-mix(in srgb,var(--accent) 52%,var(--t-air0))}.pq3{fill:color-mix(in srgb,var(--accent) 76%,var(--t-air0))}.pq4{fill:var(--accent)}
+.pqk{display:inline-flex;align-items:center;gap:6px}
+.pqk i{display:inline-block;width:64px;height:8px;border-radius:2px;background:linear-gradient(90deg,var(--ch2),var(--screen) 50%,var(--accent));border:1px solid var(--line-2)}
+
+/* 図の文字 */
+.vf text{font:500 11px var(--mono);fill:var(--ink-3)}
+.vf .lbb{font:700 12px var(--sans);fill:var(--ink-2)}
+.vf .lbv{font:700 13px var(--mono);fill:var(--ink)}
+.vf .lbs{font:500 10px var(--sans);fill:var(--ink-3)}
+.vf .lba{font:700 11px var(--mono);fill:var(--accent)}
+
+/* 図の中の読み値（左上） */
+.tnote{position:absolute;z-index:2;top:9px;left:12px;display:grid;grid-template-columns:repeat(2,auto);gap:2px 10px;align-items:baseline;font:700 13px/1.35 var(--mono);color:var(--ink);text-shadow:0 0 3px var(--screen),0 0 3px var(--screen);pointer-events:none}
+.tnote span:nth-child(2n){color:var(--ink-2);font-weight:500}
+.tnote.r{left:auto;right:12px}
+
+/* 弁のボタン（図の外の操作） */
+.vkeys{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:10px 2px 0}
+.vkeys .lbl{font:700 12px var(--sans);color:var(--ink-2);margin-right:4px}
+.vkey{display:inline-flex;align-items:center;justify-content:center;min-width:44px;height:36px;padding:0 10px;border:1px solid var(--line-2);border-radius:var(--r);background:var(--inset);font:700 14px var(--mono);color:var(--ink);cursor:pointer}
+.vkey[aria-pressed=true]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,var(--surface));color:var(--accent)}
+.vkey kbd{margin-left:6px;font:500 10px var(--mono);color:var(--ink-3)}
+.vkeys .sp{flex:1}
+
+/* 共鳴のグラフ */
+.zplot .zc{fill:none;stroke:var(--ch1);stroke-width:1.8}
+.zplot .zh{stroke:var(--accent);stroke-width:1.6}
+.zplot .zh2{stroke:var(--accent);stroke-width:1;stroke-dasharray:3 3;opacity:.7}
+.zplot .zl{fill:none;stroke:var(--ch2);stroke-width:1.6}
+.zplot .zlb{fill:color-mix(in srgb,var(--ch2) 18%,transparent)}
+.zplot text.zn{fill:var(--ch1);font:700 10.5px var(--mono)}
+.zplot text.za{fill:var(--accent);font:700 10.5px var(--mono)}
+.zplot text.zb{fill:var(--ch2);font:700 10.5px var(--mono)}
+
+.t-tooth{fill:#f4f2ea;stroke:var(--t-edge);stroke-width:1}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]) .t-tooth{fill:#cfccc2}}
+:root[data-theme=dark] .t-tooth{fill:#cfccc2}
+
+/* 倍音のはしご（案 C） */
+.lad{border:1px solid var(--line);border-radius:var(--r);background:var(--screen);overflow-x:auto}
+.lad .cell{display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;min-height:40px;border:1px solid var(--line);border-radius:4px;background:var(--surface);color:var(--ink);font:700 13px var(--mono);cursor:pointer}
+.lad .cell small{font:500 9.5px var(--mono);color:var(--ink-3)}
+.lad .cell.std{border-color:var(--line-2)}
+.lad .cell.alt{opacity:.55}
+.lad .cell.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 16%,var(--surface));color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.lad .cell.flat small{color:var(--ch2)}
+.lad .cell.sharp small{color:var(--accent)}
+.lad .cell.skip{background:var(--inset);color:var(--ink-3);border-style:dashed}
+
+.lr{display:grid;grid-template-columns:40px repeat(7,minmax(0,1fr));gap:4px;padding:3px 6px;align-items:stretch;min-width:520px}
+.lhd{border-bottom:1px solid var(--line);padding-top:7px;padding-bottom:7px;margin-bottom:3px}
+.lr .rh{display:flex;align-items:center;justify-content:flex-end;padding-right:8px;font:500 11.5px var(--mono);color:var(--ink-3)}
+.lh{font:700 11.5px var(--sans);color:var(--ink-2);text-align:center;white-space:nowrap}
+.lad .cell{min-height:38px}
+.lad .cell .nm{white-space:nowrap}
+.vkeys .lbl2{margin-left:14px}
+.vkeys kbd,.tg kbd{margin-left:6px;font:500 10px var(--mono);color:var(--ink-3)}
+.sw.c3{background:var(--accent)}

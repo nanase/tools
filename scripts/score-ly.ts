@@ -1,10 +1,13 @@
 /**
- * LilyPond の楽譜（.ly）から、独奏の声部の音を読む（scripts/violin-scores.ts が使う）。
- * 対応するもの: \relative、音名（オランダ語: c d e f g a b、is/es）、オクターブの ' と ,、長さと付点、長さの倍率（d4*1/2）、
- * 休符 r と空白の休符 s、タイ ~、スラー ( )、強弱（\pp \p \mp \mf \f \ff \fz \sf）、松葉 \< \> \!、\trill、
+ * LilyPond の楽譜（.ly）から、独奏の声部の音を読む（scripts/violin-scores.ts・trumpet-scores.ts が使う）。
+ * 対応するもの: \relative（なければ opt.absolute で絶対音高）、音名（オランダ語: c d e f g a b、is/es。
+ * opt.lang = 'it' ならイタリア語・カタルーニャ語: do re mi fa sol la si、d/s/b）、オクターブの ' と ,、長さと付点、
+ * 長さの倍率（d4*1/2）、休符 r と空白の休符 s と全休符 R（R2.*5）、タイ ~、スラー ( )、強弱（\pp \p \mp \mf \f \ff \fz \sf）、
+ * 松葉 \< \> \!、\trill、スタッカート -.、アクセント ->、テヌート --、
  * \tuplet n/m {…} と \times n/m {…}、曲の頭の \partial、\repeat volta n {…} \alternative {{…}{…}}、和音 <…>、
- * 同時の部分 << {…} \\ {…} >>、\fermata、小節線 |。装飾音（\grace など）は鳴らさない。そのほかの \命令は読み飛ばす。
- * \markup { arpeggio } は和音を分散して弾く指示、\markup { (tr) } は \trill として読み、そのほかの \markup {…} は読み飛ばす
+ * 同時の部分 << {…} \\ {…} >>、\fermata、小節線 |。装飾音（\grace など）は鳴らさない。そのほかの \命令とフレーズのスラー \( \) は読み飛ばす。
+ * \markup { arpeggio } は和音を分散して弾く指示、\markup { (tr) } は \trill、\markup { \dynamic p … } は強弱として読み、
+ * そのほかの \markup {…} は読み飛ばす
  */
 
 export interface LyNote {
@@ -21,8 +24,10 @@ export interface LyNote {
   /** 松葉: '<' '>' が始まる、'!' で終わる */
   hair?: '<' | '>' | '!';
   trill: boolean;
-  /** スタッカート（-.） */
+  /** スタッカート（-.）・アクセント（->）・テヌート（--） */
   stacc: boolean;
+  accent: boolean;
+  tenuto: boolean;
   /** \upbow \downbow */
   bow?: 'up' | 'down';
   fermata: boolean;
@@ -30,8 +35,44 @@ export interface LyNote {
   arp?: boolean;
 }
 
-const STEP: Record<string, number> = { c: 0, d: 1, e: 2, f: 3, g: 4, a: 5, b: 6 };
+/** 読み方: 音名の言語（'it' はイタリア語・カタルーニャ語）と、\relative がないときに絶対音高で読むか */
+export interface LyOpt {
+  lang?: 'nl' | 'it';
+  absolute?: boolean;
+}
+
+const STEP: Record<string, number> = {
+  c: 0,
+  d: 1,
+  e: 2,
+  f: 3,
+  g: 4,
+  a: 5,
+  b: 6,
+  do: 0,
+  re: 1,
+  mi: 2,
+  fa: 3,
+  sol: 4,
+  la: 5,
+  si: 6,
+};
 const SEMI = [0, 2, 4, 5, 7, 9, 11];
+/** 変化記号の語尾 → 半音のずれ（オランダ語の s は as・es の ♭、カタルーニャ語の s は ♯） */
+const ALT = {
+  nl: { is: 1, isis: 2, es: -1, s: -1, eses: -2 } as Record<string, number>,
+  it: { d: 1, dd: 2, s: 1, b: -1, bb: -2 } as Record<string, number>,
+};
+/** 字句に分けるときの音名と休符（長さの前まで） */
+const NAME = {
+  nl: "[a-grs](?:isis|eses|is|es|s)?!?[',]*",
+  it: "(?:do|re|mi|fa|sol|la|si)(?:dd|d|bb|b|s)?!?[',]*|[rs]",
+};
+/** 音名の字句: 音名, 変化記号, オクターブの記号, 長さ, 付点 */
+const PITCH = {
+  nl: /^([a-g])(isis|eses|is|es|s)?!?([',]*)(\d+)?(\.*)(?:\*\d+(?:\/\d+)?)?$/,
+  it: /^(do|re|mi|fa|sol|la|si)(dd|d|bb|b|s)?!?([',]*)(\d+)?(\.*)(?:\*\d+(?:\/\d+)?)?$/,
+};
 
 /** Scheme の式（#(…)、#'(…)、#'記号、#"…"、##t、#数）を取り除く */
 function stripScheme(s: string): string {
@@ -60,20 +101,23 @@ function stripScheme(s: string): string {
 }
 
 /** 字句: 波括弧・和音の括弧・\命令・音・記号に分ける */
-function tokens(src: string): string[] {
+function tokens(src: string, lang: 'nl' | 'it'): string[] {
   const s = stripScheme(
     src
       .replace(/%\{[\s\S]*?%\}/g, ' ')
       .replace(/%[^\n]*/g, ' ')
       .replace(/\\markup\s*\{\s*arpeggio\s*\}/g, ' \\arpeggioMark ')
       .replace(/\\markup\s*\{\s*\(tr\)\s*\}/g, ' \\trill ')
+      .replace(/\\markup\s*\{\s*\\dynamic\s+([a-z]+)[^{}]*\}/g, ' \\$1 ')
       .replace(/\\markup\s*\{[^{}]*\}/g, ' '),
   )
     /* 譜表・設定の命令（音符と紛れる語を含むので、字句に分ける前に消す） */
     .replace(/\\clef\s+("[^"]*"|[\w^_]+)/g, ' ')
     .replace(/\\(set|unset|override|revert)\s+[\w.]+(\s*=)?/g, ' ');
-  const re =
-    /\\\\|\\[a-zA-Z]+|\\[<>!]|[A-Z][a-zA-Z.]*|\b(?:volta|unfold|percent|tremolo)\b|<<|>>|[{}<>()[\]~|]|-\.|"[^"]*"|[a-grs](?:isis|eses|is|es|s)?!?[',]*(?:\d+\.*)?(?:\*\d+(?:\/\d+)?)?|\d+\/\d+|\d+\.*|\S/g;
+  const re = new RegExp(
+    String.raw`\\\\|\\[a-zA-Z]+|\\[<>!()]|R\d+\.*(?:\*\d+(?:\/\d+)?)?|[A-Z][a-zA-Z.]*|\b(?:volta|unfold|percent|tremolo)\b|<<|>>|[{}<>()[\]~|]|-[.>-]|"[^"]*"|(?:${NAME[lang]})(?:\d+\.*)?(?:\*\d+(?:\/\d+)?)?|\d+\/\d+|\d+\.*|\S`,
+    'g',
+  );
   return s.match(re) ?? [];
 }
 
@@ -84,17 +128,17 @@ const multOf = (tk: string) => {
 };
 
 /** 音名の字句 → [音階の段（c=0）, 半音のずれ, オクターブの記号, 長さ（なければ 0）, 付点の数] */
-function pitchTok(tk: string): [number, number, number, number, number] | null {
-  const m = tk.match(/^([a-g])(isis|eses|is|es|s)?!?([',]*)(\d+)?(\.*)(?:\*\d+(?:\/\d+)?)?$/);
+function pitchTok(tk: string, lang: 'nl' | 'it' = 'nl'): [number, number, number, number, number] | null {
+  const m = tk.match(PITCH[lang]);
   if (!m) return null;
-  const alt = m[2] === 'is' ? 1 : m[2] === 'isis' ? 2 : m[2] === 'es' || m[2] === 's' ? -1 : m[2] === 'eses' ? -2 : 0;
+  const alt = m[2] ? ALT[lang][m[2]] : 0;
   let oct = 0;
   for (const ch of m[3]) oct += ch === "'" ? 1 : -1;
   return [STEP[m[1]], alt, oct, m[4] ? Number(m[4]) : 0, m[5].length];
 }
 
 /** 変数 name の中身（name = … { … }）を取り出して字句に分ける */
-function varTokens(src: string, name: string): string[] {
+function varTokens(src: string, name: string, lang: 'nl' | 'it'): string[] {
   /* 行頭の「name =」を探す */
   let at = -1,
     pos = 0;
@@ -115,7 +159,7 @@ function varTokens(src: string, name: string): string[] {
     if (src[j] === '}') depth--;
     if (depth === 0) break;
   }
-  return tokens(src.slice(a, j + 1));
+  return tokens(src.slice(a, j + 1), lang);
 }
 
 /** seq[i] が '{' のとき、対応する '}' までの中身と、その次の位置 */
@@ -140,9 +184,14 @@ export function readLy(
   name: string,
   barChecks: number[] = [],
   simul: 'chain' | 'prev' = 'chain',
+  opt: LyOpt = {},
 ): LyNote[] {
-  const tk = varTokens(src, name),
+  const lang = opt.lang ?? 'nl',
+    pt = (s: string) => pitchTok(s, lang),
+    tk = varTokens(src, name, lang),
     notes: LyNote[] = [];
+  /* \relative の外は絶対音高（c = C3） */
+  let rel = !opt.absolute;
   /* \relative の基準（音階の段とオクターブ: c' = 中央の C = 段 0・オクターブ 4） */
   let refStep = 0,
     refOct = 4,
@@ -153,6 +202,7 @@ export function readLy(
     pendDyn: string | undefined,
     pendHair: LyNote['hair'];
   const place = (step: number, alt: number, oct: number): [number, number] => {
+    if (!rel) return [12 * (4 + oct) + SEMI[step] + alt, 3 + oct];
     /* 前の音から 4 度以内に置く */
     let o = refOct;
     const d = step - refStep;
@@ -182,6 +232,8 @@ export function readLy(
       hair: pendHair,
       trill: false,
       stacc: false,
+      accent: false,
+      tenuto: false,
       fermata: false,
     });
     pendDyn = undefined;
@@ -194,8 +246,9 @@ export function readLy(
     while (i < seq.length) {
       const x = seq[i];
       if (x === '\\relative') {
-        const p = pitchTok(seq[i + 1]);
+        const p = pt(seq[i + 1]);
         if (p) {
+          rel = true;
           refStep = p[0];
           refOct = 3 + p[2];
           i += 2;
@@ -258,7 +311,7 @@ export function readLy(
         /* 装飾音は鳴らさない（音か {…} を 1 つ）。\relative の基準は動かす */
         const g = seq[i + 1] === '{' ? block(seq, i + 1) : { inner: [seq[i + 1]], end: i + 2 };
         for (const y of g.inner) {
-          const p = pitchTok(y);
+          const p = pt(y);
           if (p) place(p[0], p[1], p[2]);
         }
         i = g.end;
@@ -324,7 +377,7 @@ export function readLy(
         let j = i + 1,
           first: [number, number] | null = null;
         while (seq[j] !== '>') {
-          const p = pitchTok(seq[j]);
+          const p = pt(seq[j]);
           if (p) {
             const [n, o] = place(p[0], p[1], p[2]);
             if (!first) first = [p[0], o];
@@ -346,8 +399,8 @@ export function readLy(
         i = j;
         continue;
       }
-      const p = pitchTok(x);
-      if (p || /^[rs]\d*\.*(?:\*\d+(?:\/\d+)?)?$/.test(x)) {
+      const p = pt(x);
+      if (p || /^[rsR]\d*\.*(?:\*\d+(?:\/\d+)?)?$/.test(x)) {
         let d = dur;
         let m = x.replace(/\*.*$/, '').match(/(\d+)(\.*)$/);
         /* 「fis 8」のように、音名と長さの間に空白があるもの */
@@ -364,7 +417,7 @@ export function readLy(
         i++;
         continue;
       }
-      /* 音に付く記号 */
+      /* 音に付く記号（休符に付いたフェルマータは前の音に付けない） */
       const last = notes[notes.length - 1];
       if (x === '|') barChecks.push(t);
       if (x === '(' && last) last.slurOn = true;
@@ -378,9 +431,11 @@ export function readLy(
         else pendHair = x.slice(1) as LyNote['hair'];
       } else if (x === '\\trill' && last) last.trill = true;
       else if (x === '-.' && last) last.stacc = true;
+      else if (x === '->' && last) last.accent = true;
+      else if (x === '--' && last) last.tenuto = true;
       else if (x === '\\upbow' && last) last.bow = 'up';
       else if (x === '\\downbow' && last) last.bow = 'down';
-      else if (x === '\\fermata' && last) last.fermata = true;
+      else if (x === '\\fermata' && last && last.t + last.d > t - 1e-9) last.fermata = true;
       else if (x === '\\arpeggioMark' && last) last.arp = true;
       i++;
     }
