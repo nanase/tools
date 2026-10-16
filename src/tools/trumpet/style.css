@@ -49,8 +49,15 @@
 .t-tube{fill:var(--t-metal);stroke:var(--t-edge);stroke-width:1.1;stroke-linejoin:round}
 .t-tube2{fill:var(--t-metal-2);stroke:var(--t-edge);stroke-width:1.1;stroke-linejoin:round}
 .t-silver{fill:var(--t-silver);stroke:var(--t-edge);stroke-width:1.1;stroke-linejoin:round}
-.t-felt{fill:var(--t-edge);opacity:.7}
-.t-line{fill:none;stroke:var(--t-edge);stroke-width:1.1}
+/* 陰影: 明るい筋は図の地の色、暗い帯は図の文字の色を薄く重ねる（暗い配色では逆）。t-hole はフェルトのような黒い部品、t-cork はウォーターキーのコルク */
+.vw{--t-hi:var(--screen);--t-hi-o:.62;--t-lo:var(--screen-ink);--t-lo-o:.17;--t-ho:.8}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]) .vw{--t-hi:var(--screen-ink);--t-hi-o:.2;--t-lo:var(--screen);--t-lo-o:.42;--t-ho:.85}}
+:root[data-theme=dark] .vw{--t-hi:var(--screen-ink);--t-hi-o:.2;--t-lo:var(--screen);--t-lo-o:.42;--t-ho:.85}
+.t-hl{fill:var(--t-hi);opacity:var(--t-hi-o);pointer-events:none}
+.t-sh{fill:var(--t-lo);opacity:var(--t-lo-o);pointer-events:none}
+.t-gl{fill:none;stroke:var(--t-hi);stroke-width:1.1;stroke-linecap:round;opacity:var(--t-hi-o);pointer-events:none}
+.t-hole{fill:var(--t-lo);opacity:var(--t-ho)}
+.t-cork{fill:color-mix(in srgb,var(--t-edge) 30%,var(--t-metal-2));stroke:var(--t-edge);stroke-width:.8}
 .t-thin{fill:none;stroke:var(--t-edge);stroke-width:.8;opacity:.7}
 .t-pearl{fill:var(--t-pearl);stroke:var(--t-edge);stroke-width:1.1}
 .t-wire{fill:none;stroke:var(--t-edge);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
