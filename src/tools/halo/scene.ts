@@ -102,7 +102,7 @@ const RE = 6360,
   RT = 6420,
   BR = [5.802e-3, 13.558e-3, 33.1e-3],
   HR = 8,
-  BME = 4.4e-3,
+  BME = 4.44e-3,
   HM = 1.2,
   BO = [0.65e-3, 1.881e-3, 0.085e-3];
 
@@ -117,8 +117,14 @@ function hitSphere(p: number[], d: number[], r: number): number {
   return t0 > 0 ? t0 : t1 > 0 ? t1 : -1;
 }
 
+/**
+ * エーロゾルの量: Hillaire 2020 の Mie の係数（鉛直の光学的厚さ約 0.005、とても澄んだ空）を何倍にするか。
+ * 晴れた日の全球平均（550 nm で約 0.12）よりは澄んだ空にする（このツールで決めたこと）
+ */
+export const AOD = 5;
+
 /** 地上から高度 elev [°] の光源までの大気の透過率（RGB）。地平線の下は 0 */
-export function groundT(elev: number, aod = 1): [number, number, number] {
+export function groundT(elev: number, aod = AOD): [number, number, number] {
   const e = (elev * Math.PI) / 180,
     p = [0, 0, RE + 0.002],
     d = [Math.cos(e), 0, Math.sin(e)];
@@ -138,10 +144,10 @@ export function groundT(elev: number, aod = 1): [number, number, number] {
   return [Math.exp(-od[0]), Math.exp(-od[1]), Math.exp(-od[2])];
 }
 
-/** 大気差（Sæmundsson 1986）: 真の高度 [°] → 見かけの高度 [°]。−2° より下は大気差を足さない */
+/** 大気差（Sæmundsson 1986）: 真の高度 [°] → 見かけの高度 [°]。−1° より下は −2° で 0 になるよう減らす */
 export function apparent(h: number): number {
-  if (h < -2) return h;
-  return h + 1.02 / Math.tan(((h + 10.3 / (h + 5.11)) * Math.PI) / 180) / 60;
+  const b = Math.max(h, -1);
+  return h + (1.02 / Math.tan(((b + 10.3 / (b + 5.11)) * Math.PI) / 180) / 60) * Math.max(0, Math.min(1, h + 2));
 }
 
 /* ---------- 月 ---------- */

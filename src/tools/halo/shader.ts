@@ -209,7 +209,7 @@ const float PI = 3.14159265358979;
 const float RE = 6360.0, RT = 6420.0;
 const vec3 BR = vec3(5.802e-3, 13.558e-3, 33.1e-3);
 const float HR = 8.0;
-const float BMS = 3.996e-3, BME = 4.40e-3, HM = 1.2, GM = 0.8;
+const float BMS = 3.996e-3, BME = 4.44e-3, HM = 1.2, GM = 0.8;
 const vec3 BO = vec3(0.650e-3, 1.881e-3, 0.085e-3);
 uniform float uAod;
 
@@ -225,12 +225,12 @@ float hitSphere(vec3 p, vec3 d, float r) {
   return t0 > 0.0 ? t0 : (t1 > 0.0 ? t1 : -1.0);
 }
 /*
- * p から光源の向き L へ大気の上端までの透過率。地球をかすめる光は、最も地面に近づく高さが 0 から −2 km の間で
- * なめらかに 0 にする（地球の影の縁。大気差で影の中へ曲がり込む光の近似）
+ * p から光源の向き L へ大気の上端までの透過率。地面をかすめる光は大気差で約 1° 曲がり、影の縁が約 0.9° 延びる
+ * （高さ 8 km の雲で）。これを、まっすぐな光線が地面の下 1〜6 km まで潜れるとして近似する（このツールで決めたこと）
  */
 vec3 sunT(vec3 p, vec3 L) {
   float tc = -dot(p, L), hmin = tc > 0.0 ? length(p + tc * L) - RE : length(p) - RE;
-  float sh = smoothstep(-2.0, 0.0, hmin);
+  float sh = smoothstep(-6.0, -1.0, hmin);
   if (sh <= 0.0) return vec3(0.0);
   float tt = hitSphere(p, L, RT);
   if (tt <= 0.0) return vec3(sh);
@@ -345,8 +345,11 @@ vec2 skyUv(vec3 s) {
   return vec2(az, (sign(a) * sqrt(abs(a)) + 1.0 / 3.0) * 0.75);
 }
 float hg(float c, float g) { return (1.0 - g * g) / (4.0 * PI * pow(1.0 + g * g - 2.0 * g * c, 1.5)); }
-/* 大気差（Bennett 1982）: 見かけの高度 [°] → 真の高度 [°] */
-float trueAlt(float a) { float r = 1.0 / tan((a + 7.31 / (a + 4.4)) * PI / 180.0) / 60.0; return a - (a > -1.5 ? r : 0.0); }
+/* 大気差（Bennett 1982）: 見かけの高度 [°] → 真の高度 [°]。−1° より下は −2° で 0 になるよう減らす */
+float trueAlt(float a) {
+  float b = max(a, -1.0), r = 1.0 / tan((b + 7.31 / (b + 4.4)) * PI / 180.0) / 60.0;
+  return a - r * clamp(a + 2.0, 0.0, 1.0);
+}
 
 void main() {
   vec2 q = (vUv * 2.0 - 1.0) * vec2(1.0, uAspect);

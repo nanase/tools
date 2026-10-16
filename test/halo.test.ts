@@ -1,4 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { caption, figOf, findRay } from '../src/tools/halo/figure';
+import { chaAlt, czaAlt, parAz, parDist, R22 } from '../src/tools/halo/labels';
+import { apparent, groundT, MAX_POP, moonRatio, PRESETS, phaseAngle, SYNODIC } from '../src/tools/halo/scene';
 import { mapIndex, newMap, pixelSr, simulate, WL_RGB } from '../src/tools/halo/sky';
 import {
   crystal,
@@ -219,5 +222,75 @@ describe('全天図', () => {
     simulate(m, [pop({ orient: 'plate', ca: 0.3, w: 0.5 }), pop({ w: 0.5 })], 20, 20000, 1);
     expect(m.rays).toBe(20000);
     expect(m.hits).toBeGreaterThan(5000);
+  });
+});
+
+describe('名前の位置（解析の式）', () => {
+  it('環天頂アークは太陽高度 32.2° を超えると消え、地平線の下でも出ない', () => {
+    expect(czaAlt(22)).toBeCloseTo(67.9, 0);
+    expect(czaAlt(32.0)).not.toBeNaN();
+    expect(czaAlt(32.5)).toBeNaN();
+    expect(czaAlt(-2)).toBeNaN();
+  });
+  it('環水平アークは太陽高度 57.8° より上だけ', () => {
+    expect(chaAlt(57)).toBeNaN();
+    expect(chaAlt(68)).toBeCloseTo(22.3, 0);
+  });
+  it('幻日は太陽が地平線にあれば内暈の上、60.75° を超えると出ない', () => {
+    expect(parDist(0)).toBeCloseTo(R22, 6);
+    expect(parAz(60.5)).not.toBeNaN();
+    expect(parAz(61)).toBeNaN();
+    /* AKM の観測の表（太陽高度 0・30・50・60° で 22°・25°・32°・45°）と 1° 以内 */
+    for (const [e, d] of [
+      [0, 22],
+      [30, 25],
+      [50, 32],
+      [60, 45],
+    ])
+      expect(Math.abs(parDist(e) - d)).toBeLessThan(1);
+  });
+  it('大気差: 真の高度 −0.57° の太陽がちょうど地平線に見え（地平線の大気差 34′）、高い所ではほぼ 0', () => {
+    expect(Math.abs(apparent(-0.575))).toBeLessThan(0.05);
+    expect((apparent(45) - 45) * 60).toBeLessThan(1.1);
+  });
+});
+
+describe('月と大気', () => {
+  it('満月は太陽の約 40 万分の 1、半月はその 1 割ほど', () => {
+    expect(phaseAngle(SYNODIC / 2)).toBeCloseTo(0, 6);
+    expect(1 / moonRatio(SYNODIC / 2)).toBeGreaterThan(3.5e5);
+    expect(1 / moonRatio(SYNODIC / 2)).toBeLessThan(4.5e5);
+    const r = moonRatio(SYNODIC / 4) / moonRatio(SYNODIC / 2);
+    expect(r).toBeGreaterThan(0.05);
+    expect(r).toBeLessThan(0.15);
+  });
+  it('地上の直達光は太陽が低いほど赤く、地平線の下では 0', () => {
+    const hi = groundT(60),
+      lo = groundT(2);
+    expect(hi[2]).toBeGreaterThan(lo[2]);
+    expect(lo[0] / lo[2]).toBeGreaterThan(hi[0] / hi[2]);
+    expect(groundT(-1)).toEqual([0, 0, 0]);
+  });
+});
+
+describe('プリセットと光路の図', () => {
+  it('プリセットの母集団はどれも割合が正で、上限の数以内', () => {
+    for (const p of PRESETS) {
+      expect(p.pops.length).toBeGreaterThan(0);
+      expect(p.pops.length).toBeLessThanOrEqual(MAX_POP);
+      for (const q of p.pops) expect(q.w).toBeGreaterThan(0);
+    }
+  });
+  it('光路の図: 太陽高度 23° の幻日・環天頂アーク・9° の暈の光線が見つかり、くさびの角が 60°・90°', () => {
+    const par = findRay(figOf('par'), 23, 400000, 7),
+      cza = findRay(figOf('cza'), 23, 400000, 7),
+      h9 = findRay(figOf('p9'), 23, 400000, 7);
+    expect(par && family(par.path)).toBe(1);
+    expect(cza && family(cza.path)).toBe(2);
+    expect(par?.faces.length).toBe(8);
+    expect(h9?.faces.length).toBe(20);
+    if (par) expect(caption(figOf('par'), par, false).wedge).toBe('60.0°');
+    if (cza) expect(caption(figOf('cza'), cza, false).wedge).toBe('90.0°');
+    expect(figOf('cza').none?.(40)).toBeTruthy();
   });
 });

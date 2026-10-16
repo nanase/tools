@@ -3,7 +3,7 @@
  * 光源の高度・雲の高さが変わったときだけ表に計算し直し、表示のたびに全天図と表を引いて合成する
  */
 import { cmf, toRgb } from '../lens/light';
-import { apparent, groundT, MAX_POP, moonRatio } from './scene';
+import { AOD, apparent, groundT, MAX_POP, moonRatio } from './scene';
 import { FULL_VERT, SHOW_FRAG, SKY_FRAG, TRACE_FRAG, TRACE_VERT } from './shader';
 import { dims, type Orient, type Population } from './trace';
 
@@ -214,7 +214,7 @@ export class HaloRenderer {
     this.gl.useProgram(pr.p);
     this.gl.uniform1f(this.loc(pr, 'uElev'), s.elev * D2R);
     /* 月の視半径は太陽とほぼ同じ */
-    this.gl.uniform1f(this.loc(pr, 'uSrcR'), (s.moon ? 0.259 : 0.2665) * D2R);
+    this.gl.uniform1f(this.loc(pr, 'uSrcR'), (s.moon ? 0.259 : 0.2679) * D2R);
     this.clear();
   }
 
@@ -255,7 +255,7 @@ export class HaloRenderer {
     gl.uniform1f(this.loc(pr, 'uElev'), elev * D2R);
     gl.uniform1f(this.loc(pr, 'uHc'), this.cloud.hc);
     gl.uniform1f(this.loc(pr, 'uTau'), this.cloud.tau);
-    gl.uniform1f(this.loc(pr, 'uAod'), 1);
+    gl.uniform1f(this.loc(pr, 'uAod'), AOD);
     gl.bindVertexArray(this.quad);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
     const a = new Float32Array(SKY_W * SKY_H * 4),
@@ -344,9 +344,9 @@ export class HaloRenderer {
     gl.uniform1f(this.loc(pr, 'uElev'), s.elev * D2R);
     gl.uniform1f(this.loc(pr, 'uElevApp'), apparent(s.elev) * D2R);
     const E = s.moon ? moonRatio(s.age) : 1;
-    gl.uniform4f(this.loc(pr, 'uSrc'), (s.moon ? 0.259 : 0.2665) * D2R, E, 0, s.moon ? 1 : 0);
-    /* 月の光は太陽の光より少し赤い（月面の反射率が長い波長ほど高い。目安の値） */
-    gl.uniform3fv(this.loc(pr, 'uSrcCol'), s.moon ? [1.06, 1, 0.9] : [1, 1, 1]);
+    gl.uniform4f(this.loc(pr, 'uSrc'), (s.moon ? 0.259 : 0.2679) * D2R, E, 0, s.moon ? 1 : 0);
+    /* 月の光は太陽の光より赤い（月面の反射率が長い波長ほど高い。680・550・440 nm で 1.20 : 1 : 0.83、Jensen ほか 2001） */
+    gl.uniform3fv(this.loc(pr, 'uSrcCol'), s.moon ? [1.2, 1, 0.83] : [1, 1, 1]);
     gl.uniform3fv(this.loc(pr, 'uSrcT'), groundT(s.elev));
     /* 露出は光源の放射照度 1 で決めたので、光源の明るさで割る（月夜は長い露出の写真のように写る） */
     const expo = v.only ? this.expoOnly : this.expo;
