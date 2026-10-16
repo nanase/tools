@@ -43,3 +43,5 @@ GitHub Actions（[.github/workflows/ci.yml](.github/workflows/ci.yml)）が、PR
 MIT
 
 ただし、楽器の音響モデルで演奏する曲のデータ（MIDI や LilyPond の楽譜と、そこから作る音符）には、曲ごとに原作と同じライセンスが付きます。曲ごとの出典とライセンスは [SCORES.md](SCORES.md) にあります。
+
+日食のページのデータ（NASA の日食の要素、Natural Earth の陸地、国土数値情報などから作った地名）にも、データごとの条件が付きます。出典と条件は [src/tools/solar-eclipse/SOURCES.md](src/tools/solar-eclipse/SOURCES.md) にあります。
