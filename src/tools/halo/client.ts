@@ -8,6 +8,7 @@ import { ParamGroup } from '../../lib/param';
 import { addRow, mark } from '../../lib/reset';
 import { forget, store, stored } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
+import { initCompare } from './compare';
 import { caption, FIG, type FigHalo, type FigRay, figOf, figureSvg, findRay } from './figure';
 import {
   chaAlt,
@@ -648,4 +649,5 @@ proj$.root.addEventListener('click', () => queueMicrotask(updateResults));
   });
 }
 
+initCompare();
 later('scene', 'cloud', 'view', 'fig', 'lab');

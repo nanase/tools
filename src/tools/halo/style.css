@@ -71,6 +71,7 @@
 @media (max-width:640px){.ph-pair{grid-template-columns:minmax(0,1fr)}}
 .ph-pair figure{margin:0;min-width:0}
 .ph-pair img,.ph-pair canvas{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:var(--r);background:#000}
+.ph-sim canvas{height:auto}
 .ph-pair figcaption{margin-top:4px;color:var(--ink-3);font-size:12.5px;line-height:1.6}
 .ph-meta{margin:0;color:var(--ink-2);font-size:13px;line-height:1.7}
 

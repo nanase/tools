@@ -357,6 +357,8 @@ void main() {
   bool inside = true;
   int pj = int(uView.x + 0.5);
   if (pj == 1) {
+    /* 全天は円が画面の短い辺に収まるように */
+    if (uAspect < 1.0) q /= uAspect;
     float R = length(q);
     inside = R <= 1.0;
     float th = 2.0 * asin(min(R, 1.0) / sqrt(2.0)), a = atan(-q.x, -q.y) + uView.z;

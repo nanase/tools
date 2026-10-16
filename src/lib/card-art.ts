@@ -720,7 +720,7 @@ export const ART: Record<string, Art> = {
      太陽高度 32° を超えると消える。1° を 0.5 にとり、地平線の下は切る */
   hl(t) {
     const k = 0.5,
-      e = 18 - 12 * Math.cos(t * 0.8),
+      e = 22 + 14 * Math.sin(t * 0.8),
       sx = 60,
       sy = 44 - e * k,
       rr = r1(R22 * k);

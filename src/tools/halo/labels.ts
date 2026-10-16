@@ -160,6 +160,11 @@ export function project(p: Proj, d: V3): [number, number] | null {
     qx = R * Math.cos(ph);
     qy = R * Math.sin(ph);
   }
+  /* 全天は円が画面の短い辺に収まるように縮める（シェーダと同じ） */
+  if (p.proj === 1 && asp < 1) {
+    qx *= asp;
+    qy *= asp;
+  }
   const x = ((qx + 1) / 2) * p.W,
     y = ((1 - qy / asp) / 2) * p.H;
   if (x < 0 || x > p.W || y < 0 || y > p.H) return null;
