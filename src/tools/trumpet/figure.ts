@@ -5,7 +5,7 @@
  * スローでは受け取った 1 周期を遅くして繰り返す
  */
 import { $ } from '../../lib/dom';
-import { type AirQuad, airIndex, airQuads, keyShapes, lipShapes } from './shapes';
+import { AIR_LAYERS, type AirLayer, type AirQuad, airIndex, airQuads, keyShapes, lipShapes } from './shapes';
 
 export type FigMode = 'amp' | 'slow';
 
@@ -23,8 +23,8 @@ export interface Cycle {
 const QKEYS = 9;
 
 export class TrumpetFigure {
-  private airB: SVGPathElement[] = [];
-  private airF: SVGPathElement[] = [];
+  /** 層ごとの、9 段の色の気柱 */
+  private airEls = new Map<AirLayer, SVGPathElement[]>();
   private keyEls: SVGPathElement[][] = [];
   private stems: SVGPathElement;
   private quads: AirQuad[] = [];
@@ -37,10 +37,11 @@ export class TrumpetFigure {
   /** 気柱の色の目盛り [Pa]（届いた周期の最大でゆっくり追う） */
   scale = 1000;
   constructor() {
-    for (let i = 0; i < QKEYS; i++) {
-      this.airB.push($<SVGPathElement>(`#air-b-${i}`));
-      this.airF.push($<SVGPathElement>(`#air-f-${i}`));
-    }
+    for (const l of AIR_LAYERS)
+      this.airEls.set(
+        l,
+        Array.from({ length: QKEYS }, (_, i) => $<SVGPathElement>(`#air-${l}-${i}`)),
+      );
     for (let i = 0; i < 3; i++) this.keyEls.push([...$(`#k-${i}`).querySelectorAll<SVGPathElement>('path')]);
     this.stems = $<SVGPathElement>('#k-stems');
     this.keys([0, 0, 0]);
@@ -80,8 +81,7 @@ export class TrumpetFigure {
   /** 気柱を塗る（位相 k の分布）。弁は押し具合が半分を超えた側の通り道 */
   air(c: Cycle | null, k: number, press: readonly number[]): void {
     this.route(press.map((x) => x > 0.5));
-    const B = new Array<string>(QKEYS).fill(''),
-      F = new Array<string>(QKEYS).fill('');
+    const D = new Map(AIR_LAYERS.map((l) => [l, new Array<string>(QKEYS).fill('')]));
     const np = c ? c.air.length / c.h.length : 0;
     if (c && np > 0) {
       let mx = 0;
@@ -93,12 +93,12 @@ export class TrumpetFigure {
       const q = this.quads[i],
         v = c && np > 0 ? c.air[k * np + this.qIdx[i]] / this.scale : 0,
         j = Math.max(-4, Math.min(4, Math.round(4 * v))) + 4;
-      if (q.layer === 'b') B[j] += q.d;
-      else F[j] += q.d;
+      (D.get(q.layer) as string[])[j] += q.d;
     }
-    for (let j = 0; j < QKEYS; j++) {
-      this.airB[j].setAttribute('d', B[j] || 'M0 0');
-      this.airF[j].setAttribute('d', F[j] || 'M0 0');
+    for (const l of AIR_LAYERS) {
+      const ds = D.get(l) as string[],
+        els = this.airEls.get(l) as SVGPathElement[];
+      for (let j = 0; j < QKEYS; j++) els[j].setAttribute('d', ds[j] || 'M0 0');
     }
   }
 

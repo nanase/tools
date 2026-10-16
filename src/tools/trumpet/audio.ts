@@ -125,11 +125,11 @@ export class TrumpetAudio {
     this.post({ type: 'scope', on });
   }
 
-  /** 手で吹く入力（null で手を離す） */
+  /** 手で吹く入力（null で手を離す）。吹き始めたときだけ曲をやめる */
   manual(m: Manual | null): void {
     this.keep();
     this.blowing = !!m?.blow;
-    if (m) this.inPiece = false;
+    if (m?.blow) this.inPiece = false;
     this.post({ type: 'manual', m });
   }
 

@@ -105,9 +105,19 @@ registerProcessor(
       super();
       this.port.onmessage = (ev: MessageEvent<TpMsg>) => this.msg(ev.data);
     }
+    /** 楽器を作り直す（温度を変えたとき）。弁の位置を引き継ぎ、吹いている途中なら唇を閉じた位置から吹き直す */
     private build(): void {
-      this.tr = new Trumpet(sampleRate, { temp: this.opts.temp, brass: this.opts.brass, onAxis: this.opts.onAxis });
-      this.tr.slides = this.opts.slides;
+      const old = this.tr,
+        tr = new Trumpet(sampleRate, { temp: this.opts.temp, brass: this.opts.brass, onAxis: this.opts.onAxis });
+      tr.slides = this.opts.slides;
+      if (old) {
+        for (let i = 0; i < 3; i++) {
+          tr.target[i] = old.target[i];
+          tr.bore.valves[i].press = old.press(i);
+        }
+        if (this.pl.pm > 1) tr.lips.set(1);
+      }
+      this.tr = tr;
     }
     private msg(m: TpMsg): void {
       if (m.type === 'init') {

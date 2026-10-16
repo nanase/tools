@@ -125,15 +125,18 @@ export class Player {
     return (this.seed / 4294967296) * 2 - 1;
   }
 
+  /** 手で吹く入力。吹いていない間の入力（吹き方の設定）は覚えるだけで、曲は止めない */
   setManual(m: Manual | null): void {
     const was = this.man;
     this.man = m;
     if (m) {
-      this.playing = false;
       const semi = (m.v[1] ? 1 : 0) + (m.v[0] ? 2 : 0) + (m.v[2] ? 3 : 0),
         target = Math.round(46 + 12 * Math.log2(m.n)) - semi;
-      /* 吹き始め、または舌を使って吹き直す音 */
-      if (m.blow && (!was?.blow || (target !== this.manM && m.tongue !== 'slur'))) this.manT = 0;
+      if (m.blow) {
+        this.playing = false;
+        /* 吹き始め、または舌を使って吹き直す音 */
+        if (!was?.blow || (target !== this.manM && m.tongue !== 'slur')) this.manT = 0;
+      }
       this.manM = target;
     }
   }
@@ -162,7 +165,7 @@ export class Player {
       idx = -1,
       vibT = -1;
     const T = this.T;
-    if (this.man) {
+    if (this.man && !this.playing) {
       const g = this.man;
       m = this.manM;
       const c = control(m, g.d),

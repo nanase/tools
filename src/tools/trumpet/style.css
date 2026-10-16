@@ -42,14 +42,14 @@
 .trow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;margin-top:12px;align-items:start}
 @media (max-width:760px){.trow{grid-template-columns:minmax(0,1fr)}}
 
-/* 楽器の色（金属は図の地に寄せた無彩色。光る縁だけ明るく） */
-.vw{--t-metal:color-mix(in srgb,var(--screen-ink) 20%,var(--screen));--t-metal-2:color-mix(in srgb,var(--screen-ink) 34%,var(--screen));--t-edge:var(--screen-ink);--t-hi:#ffffffb3;--t-silver:color-mix(in srgb,var(--screen-ink) 10%,var(--screen));--t-pearl:#f4f5f1;--t-air0:var(--screen);--t-lip:#d9a59a;--t-lip-e:#9b5f55;--t-skin:#ead2c4}
-@media (prefers-color-scheme:dark){:root:not([data-theme=light]) .vw{--t-metal:color-mix(in srgb,var(--screen-ink) 16%,var(--surface));--t-metal-2:color-mix(in srgb,var(--screen-ink) 28%,var(--surface));--t-hi:#ffffff26;--t-silver:color-mix(in srgb,var(--screen-ink) 24%,var(--surface));--t-pearl:#d9dcd6;--t-lip:#9a6a62;--t-lip-e:#d9a59a;--t-skin:#6d5a52}}
-:root[data-theme=dark] .vw{--t-metal:color-mix(in srgb,var(--screen-ink) 16%,var(--surface));--t-metal-2:color-mix(in srgb,var(--screen-ink) 28%,var(--surface));--t-hi:#ffffff26;--t-silver:color-mix(in srgb,var(--screen-ink) 24%,var(--surface));--t-pearl:#d9dcd6;--t-lip:#9a6a62;--t-lip-e:#d9a59a;--t-skin:#6d5a52}
+/* 楽器の色（金属は図の地に寄せた無彩色） */
+.vw{--t-metal:color-mix(in srgb,var(--screen-ink) 20%,var(--screen));--t-metal-2:color-mix(in srgb,var(--screen-ink) 34%,var(--screen));--t-edge:var(--screen-ink);--t-silver:color-mix(in srgb,var(--screen-ink) 10%,var(--screen));--t-pearl:#f4f5f1;--t-air0:var(--screen);--t-lip:#d9a59a;--t-lip-e:#9b5f55;--t-skin:#ead2c4}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]) .vw{--t-metal:color-mix(in srgb,var(--screen-ink) 16%,var(--surface));--t-metal-2:color-mix(in srgb,var(--screen-ink) 28%,var(--surface));--t-silver:color-mix(in srgb,var(--screen-ink) 24%,var(--surface));--t-pearl:#d9dcd6;--t-lip:#9a6a62;--t-lip-e:#d9a59a;--t-skin:#6d5a52}}
+:root[data-theme=dark] .vw{--t-metal:color-mix(in srgb,var(--screen-ink) 16%,var(--surface));--t-metal-2:color-mix(in srgb,var(--screen-ink) 28%,var(--surface));--t-silver:color-mix(in srgb,var(--screen-ink) 24%,var(--surface));--t-pearl:#d9dcd6;--t-lip:#9a6a62;--t-lip-e:#d9a59a;--t-skin:#6d5a52}
 .t-tube{fill:var(--t-metal);stroke:var(--t-edge);stroke-width:1.1;stroke-linejoin:round}
 .t-tube2{fill:var(--t-metal-2);stroke:var(--t-edge);stroke-width:1.1;stroke-linejoin:round}
 .t-silver{fill:var(--t-silver);stroke:var(--t-edge);stroke-width:1.1;stroke-linejoin:round}
-.t-hi{fill:none;stroke:var(--t-hi);stroke-width:1.6;stroke-linecap:round}
+.t-felt{fill:var(--t-edge);opacity:.7}
 .t-line{fill:none;stroke:var(--t-edge);stroke-width:1.1}
 .t-thin{fill:none;stroke:var(--t-edge);stroke-width:.8;opacity:.7}
 .t-pearl{fill:var(--t-pearl);stroke:var(--t-edge);stroke-width:1.1}

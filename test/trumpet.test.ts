@@ -192,6 +192,38 @@ describe('唇と奏者', () => {
     expect(ff.ratio).toBeGreaterThan(lin.ratio);
   });
 
+  it('曲の途中で吹き方を変えても（吹いていない手の入力）曲は止まらず、手で吹くと曲をやめる', () => {
+    const notes = [0, 1, 2].map((i) => ({
+        t: 0.1 + i * 0.4,
+        d: 0.35,
+        span: 0.4,
+        m: 70,
+        d0: 0.55,
+        d1: 0.55,
+        slur: false,
+        acc: false,
+        tongue: 'ta' as const,
+      })),
+      tr = new Trumpet(FS),
+      pl = new Player(FS),
+      hand = { v: [false, false, false] as [boolean, boolean, boolean], n: 4, d: 0.9, auto: true, fl: 0, pm: 0 };
+    pl.start(notes, 0);
+    const run = (s: number) => {
+      let e = 0;
+      for (let i = 0; i < s * FS; i++) e += pl.step(tr) ** 2;
+      return Math.sqrt(e / (s * FS));
+    };
+    run(0.3);
+    pl.setManual({ ...hand, blow: false, tongue: 'da' });
+    expect(pl.playing).toBe(true);
+    expect(run(0.5)).toBeGreaterThan(0.1);
+    expect(pl.ctl.idx).toBeGreaterThanOrEqual(1);
+    pl.setManual({ ...hand, blow: true, tongue: 'ta' });
+    expect(pl.playing).toBe(false);
+    run(0.2);
+    expect(pl.ctl.idx).toBe(-1);
+  });
+
   it('表は実音 E3〜D6 のどの音にもあり、強弱は口の圧力の範囲の中で単調', () => {
     for (let m = LOW; m <= HIGH; m++) {
       expect(CALIB[m]?.length, `MIDI ${m}`).toBeGreaterThan(0);
