@@ -12,6 +12,8 @@ const D2R = Math.PI / 180;
 /** 空の表の大きさ（方位 × 高度） */
 const SKY_W = 256,
   SKY_H = 160;
+/** 光源の視半径 [rad]（太陽 0.2679°、月 0.259°） */
+const srcR = (moon: boolean) => (moon ? 0.259 : 0.2679) * D2R;
 
 /** 波長の色の正規化: 380〜780 nm を一様に平均すると (1, 1, 1) */
 const NORM = (() => {
@@ -97,6 +99,8 @@ export class HaloRenderer {
     this.gl = gl;
     this.N = N;
     this.trace = this.program(TRACE_VERT, TRACE_FRAG);
+    gl.useProgram(this.trace.p);
+    gl.uniform1i(this.loc(this.trace, 'uNB'), 17);
     this.sky = this.program(FULL_VERT, SKY_FRAG);
     this.show = this.program(FULL_VERT, SHOW_FRAG);
     const tex = (w: number, h: number, fmt: number, filt: number) => {
@@ -167,6 +171,8 @@ export class HaloRenderer {
     gl.viewport(0, 0, MS_W, MS_H);
     gl.useProgram(pr.p);
     gl.uniform1f(this.loc(pr, 'uAod'), AOD);
+    gl.uniform1i(this.loc(pr, 'uND'), 64);
+    gl.uniform1i(this.loc(pr, 'uNS'), 24);
     gl.bindVertexArray(this.quad);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -213,7 +219,7 @@ export class HaloRenderer {
     });
     /* 雲の回折の明るい輪（太陽のまわり）の広がりは、径の平均で決める（このツールで決めた近似） */
     const dm = wsum ? dsum / wsum : 100;
-    this.sd = Math.min(0.05, Math.max(0.006, (1.2 * 0.55e-3) / dm));
+    this.sd = Math.min(0.05, Math.max(0.006, (1.2 * 0.55) / dm));
     const pr = this.trace;
     gl.useProgram(pr.p);
     gl.uniform1i(this.loc(pr, 'uNPop'), act.length);
@@ -222,7 +228,7 @@ export class HaloRenderer {
     gl.uniform4fv(this.loc(pr, 'uPopC'), C);
     gl.uniform1f(this.loc(pr, 'uP2'), p2);
     gl.uniform3fv(this.loc(pr, 'uNorm'), NORM);
-    gl.uniform1f(this.loc(pr, 'uSrcR'), 0.265 * D2R);
+    gl.uniform1f(this.loc(pr, 'uSrcR'), srcR(this.src.moon));
     gl.uniform1f(this.loc(pr, 'uElev'), this.src.elev * D2R);
     this.clear();
   }
@@ -234,7 +240,7 @@ export class HaloRenderer {
     this.gl.useProgram(pr.p);
     this.gl.uniform1f(this.loc(pr, 'uElev'), s.elev * D2R);
     /* 月の視半径は太陽とほぼ同じ */
-    this.gl.uniform1f(this.loc(pr, 'uSrcR'), (s.moon ? 0.259 : 0.2679) * D2R);
+    this.gl.uniform1f(this.loc(pr, 'uSrcR'), srcR(s.moon));
     this.clear();
   }
 
@@ -367,7 +373,7 @@ export class HaloRenderer {
     gl.uniform1f(this.loc(pr, 'uElev'), s.elev * D2R);
     gl.uniform1f(this.loc(pr, 'uElevApp'), apparent(s.elev) * D2R);
     const E = s.moon ? moonRatio(s.age) : 1;
-    gl.uniform4f(this.loc(pr, 'uSrc'), (s.moon ? 0.259 : 0.2679) * D2R, E, 0, s.moon ? 1 : 0);
+    gl.uniform4f(this.loc(pr, 'uSrc'), srcR(s.moon), E, 0, s.moon ? 1 : 0);
     /* 月の光は太陽の光より赤い（月面の反射率が長い波長ほど高い。680・550・440 nm で 1.20 : 1 : 0.83、Jensen ほか 2001） */
     gl.uniform3fv(this.loc(pr, 'uSrcCol'), s.moon ? [1.2, 1, 0.83] : [1, 1, 1]);
     gl.uniform3fv(this.loc(pr, 'uSrcT'), groundT(s.elev));

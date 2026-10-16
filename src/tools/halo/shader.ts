@@ -20,6 +20,8 @@ uniform float uElev;
 uniform float uSrcR;
 uniform float uP2;
 uniform vec3 uNorm;
+/* 結晶の中で反射する回数の上限（17。定数にすると Windows の ANGLE がループを展開し、コンパイルに数秒かかる） */
+uniform int uNB;
 flat out vec3 vCol;
 
 const float PI = 3.14159265358979;
@@ -120,7 +122,7 @@ bool through(int k, inout vec3 dw, float n) {
   d = eta * d + (eta * ci - ct) * N;
   int cur = f0;
   bool done = false, ok = false;
-  for (int b = 0; b < 17; b++) {
+  for (int b = 0; b < uNB; b++) {
     if (done) break;
     float tm = 1e30;
     int fm = -1;
@@ -171,13 +173,14 @@ void main() {
   float r = uSrcR * sqrt(rnd()), ph = 2.0 * PI * rnd();
   vec3 src = vec3(cos(uElev), 0.0, sin(uElev)), tu = vec3(-sin(uElev), 0.0, cos(uElev));
   vec3 d = -normalize(src + r * cos(ph) * tu + r * sin(ph) * vec3(0.0, 1.0, 0.0));
-  int k = pick();
-  if (!through(k, d, n)) return;
-  float dia = uPopA[k].w;
-  if (uP2 > 0.0 && rnd() < uP2) {
-    int k2 = pick();
-    if (!through(k2, d, n)) return;
-    dia = uPopA[k2].w;
+  /* 結晶に通す（確率 uP2 で 2 個目にも）。through を 1 か所から呼び、シェーダを小さく保つ */
+  float dia = 0.0;
+  int nc = 1;
+  for (int c = 0; c < nc; c++) {
+    int k = pick();
+    if (!through(k, d, n)) return;
+    dia = uPopA[k].w;
+    if (c == 0 && uP2 > 0.0 && rnd() < uP2) nc = 2;
   }
   vec3 s = -d;
   if (dia > 0.0) {
@@ -258,13 +261,15 @@ export const MS_W = 64,
 export const MS_FRAG = `#version 300 es
 precision highp float;
 ${ATMOS}
+/* 方向と区間の数（定数にすると、Windows の ANGLE がループを展開してコンパイルに数秒かかる） */
+uniform int uND, uNS;
 in vec2 vUv;
 out vec4 o;
 void main() {
   float x = vUv.x * 2.0 - 1.0, mu = sign(x) * x * x, h = max(vUv.y * (RT - RE), 0.01);
   vec3 p = vec3(0.0, 0.0, RE + h), L = vec3(sqrt(max(0.0, 1.0 - mu * mu)), 0.0, mu);
   vec3 l2 = vec3(0.0), fms = vec3(0.0);
-  const int ND = 64, NS = 24;
+  int ND = uND, NS = uNS;
   for (int k = 0; k < ND; k++) {
     /* 球面の Fibonacci 格子 */
     float z = 1.0 - (2.0 * float(k) + 1.0) / float(ND), r = sqrt(1.0 - z * z), ph = float(k) * 2.39996323;
