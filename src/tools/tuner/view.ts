@@ -123,14 +123,13 @@ export function contrast(vis: number, rate: number): number {
 
 /** 推定が途切れても、この間 [s] は直前の部分音で縞を描く（明瞭度が一瞬下がるたび、弾き直すたびに縞が消えないように） */
 export const HOLD = 0.3;
-/** ならしの時定数 [s]: 縞が濃くなるとき、薄くなるとき、縞の速さ */
+/** 濃さをならす時定数 [s]: 濃くなるとき、薄くなるとき（縞の速さはならさない。ならすと、別の音へ移った帯が速い縞から遅れて止まる） */
 const UP = 0.04,
-  DOWN = 0.3,
-  RATE = 0.1;
-const ease = (v: number, to: number, dt: number, tau = to > v ? UP : DOWN) => v + (to - v) * (1 - Math.exp(-dt / tau));
+  DOWN = 0.3;
+const ease = (v: number, to: number, dt: number) => v + (to - v) * (1 - Math.exp(-dt / (to > v ? UP : DOWN)));
 
 /**
- * 12 音のストロボの動き（帯は窓 p・帯 o で p * 4 + o）。推定ごとに update で帯の見え方と縞の速さの目標を決め、
+ * 12 音のストロボの動き（帯は窓 p・帯 o で p * 4 + o）。推定ごとに update で帯の見え方（濃さの目標）と縞の速さを決め、
  * 描画ごとに frame で縞を進め、濃さを目標へならす。推定が HOLD を超えて途切れたら、縞は薄れて灰色に戻る
  */
 export class Strobe {
@@ -139,7 +138,6 @@ export class Strobe {
   readonly rate = new Float64Array(48);
   readonly c = new Float64Array(48);
   private readonly vis = new Float64Array(48);
-  private readonly to = new Float64Array(48);
   /** 最後の update からの時間 [s] */
   private age = Number.POSITIVE_INFINITY;
 
@@ -148,7 +146,7 @@ export class Strobe {
       for (let o = 0; o < 4; o++) {
         const b = bandOf(bandHz(p, o, a4, dev), f0, parts, spd);
         this.vis[p * 4 + o] = b.vis;
-        this.to[p * 4 + o] = b.rate;
+        this.rate[p * 4 + o] = b.rate;
       }
     this.age = 0;
   }
@@ -157,7 +155,6 @@ export class Strobe {
     this.age += dt;
     const live = this.age < HOLD;
     for (let i = 0; i < 48; i++) {
-      this.rate[i] = ease(this.rate[i], this.to[i], dt, RATE);
       this.ph[i] = (this.ph[i] + this.rate[i] * dt) % 1;
       this.c[i] = ease(this.c[i], live ? contrast(this.vis[i], this.rate[i]) : 0, dt);
     }

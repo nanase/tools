@@ -3,7 +3,7 @@
  * 直近の値の中央値で外れ値（倍音を基音と取り違えたフレーム）を除き、目標の音（最も近い音・最も近い弦）と
  * そこからのずれ [セント] を出す（Tracker）
  */
-import { mpm, partial } from './mpm';
+import { mpm, type Pitch, partial } from './mpm';
 import { midiOf, nearestNote, nearestString } from './notes';
 
 const pow2 = (n: number) => 2 ** Math.ceil(Math.log2(n));
@@ -85,6 +85,49 @@ export function estimate(
   if (Wr > end - since) return { f, clarity: r.clarity, ps: null, ready: false };
   const xr = x.subarray(end - Wr, end);
   return { f, clarity: r.clarity, ps: [1, 2, 3].map((h) => partial(xr, f, h, o.fs)), ready: true };
+}
+
+/**
+ * ストロボの下見: estimate が使えない間（出だしの直後で窓 mpmWin がまだ埋まらない、または前の音が窓に残って明瞭度が低い）も、
+ * mpmWin より短い窓で MPM を回す。窓は出だしより後に収まる 2 の累乗（長いほうから 2048 まで）で、明瞭度が minClarity 以上の
+ * 最初のものを返す。探す最低音はその窓の 2.5 周期まで上がる。オクターブなどを取り違えても、そこから測る部分音は本物なので、
+ * ストロボの縞は正しく動く（読み値には使わない）
+ */
+export function glance(
+  x: Float32Array | Float64Array,
+  end: number,
+  o: EstOpts,
+  since: number,
+  minClarity: number,
+): Pitch | null {
+  for (let W = mpmWin(o.fs, o.fmin) / 2; W >= 2048; W /= 2) {
+    if (W > end - since) continue;
+    const r = mpm(x.subarray(end - W, end), { ...o, fmin: Math.max(o.fmin, (2.5 * o.fs) / W) });
+    if (r && r.clarity >= minClarity) return r;
+  }
+  return null;
+}
+
+/**
+ * ストロボに写す第 1〜8 部分音（f の k 倍の近くを位相で詰めたもの。強さはいちばん強い部分音を 1 とする）。
+ * 窓は音の 12 周期（maxW まで）で、出だしより後に収まるまで縮める（2048 まで）。W は使った窓の長さ
+ */
+export function strobeParts(
+  x: Float32Array | Float64Array,
+  end: number,
+  f: number,
+  fs: number,
+  since: number,
+  maxW: number,
+): { parts: { k: number; f: number; a: number }[]; W: number } {
+  let W = Math.min(maxW, refWin(fs, f));
+  while (W > 2048 && W > end - since) W /= 2;
+  const xs = x.subarray(end - W, end),
+    parts: { k: number; f: number; a: number }[] = [];
+  for (let k = 1; k <= 8 && k * f < fs * 0.45; k++) parts.push({ k, ...partial(xs, f, k, fs) });
+  const top = Math.max(1e-12, ...parts.map((p) => p.a));
+  for (const p of parts) p.a /= top;
+  return { parts, W };
 }
 
 /**
@@ -223,6 +266,11 @@ export class Tracker {
   private tgt: number | null = null;
   private si = -1;
   constructor(public o: TrackOpts) {}
+
+  /** 音を追っているか（出し始めの条件を満たしてから、途切れるまで。明瞭度が一瞬下がったフレームも含む） */
+  get active(): boolean {
+    return this.on;
+  }
 
   /**
    * 音が途切れた（無音・明瞭度が低い）。新しい音の出だし（Onset）では、前の音の名残（最も近い音・弦のヒステリシス）も消す

@@ -9,7 +9,6 @@ import { ParamGroup } from '../../lib/param';
 import { initToolPage } from '../../lib/tool-page';
 import { NB } from '../audio/capture';
 import { initInput } from '../audio/input';
-import { partial } from './mpm';
 import { hzOf, instrumentOf, type NameOpts, type Naming, noteLabel, noteText } from './notes';
 import {
   deviations,
@@ -23,8 +22,8 @@ import {
   TRANSPOSE,
   type View,
 } from './params';
-import { estimate, HighPass, Onset, type Reading, refWin, Tracker } from './tracker';
-import { meterTicks, needlePath, type Part, Strobe, stripes, zonePath } from './view';
+import { estimate, glance, HighPass, Onset, type Reading, strobeParts, Tracker } from './tracker';
+import { meterTicks, needlePath, Strobe, stripes, zonePath } from './view';
 
 initToolPage();
 const { a, tick: inTick } = initInput();
@@ -317,9 +316,11 @@ function analyze(now: number): void {
   }
   const since = Math.max(0, NB - onset.ago),
     [fmin, fmax] = range(),
-    e = estimate(xb, NB, { fs, fmin, fmax, maxW: 16384 }, since, tracker.hint()),
+    eo = { fs, fmin, fmax, maxW: 16384 },
+    e = estimate(xb, NB, eo, since, tracker.hint()),
     r = tracker.push(e),
-    dt = Math.min(0.2, (now - lastAna) / 1000);
+    dt = Math.min(0.2, (now - lastAna) / 1000),
+    mc = tracker.o.minClarity;
   clar = e?.clarity ?? 0;
   if (r) {
     const tau = RESP[S.resp];
@@ -330,16 +331,16 @@ function analyze(now: number): void {
     rd = r;
     seen = now;
     if (r.si >= 0) sv[r.si] = cs;
-    /* ストロボ: 第 1〜8 部分音の周波数と強さを、出だしより後の窓で測る。読み値のないフレームは、直前の帯のまま */
-    let W = Math.min(16384, refWin(fs, r.f));
-    while (W > 2048 && W > NB - since) W /= 2;
-    win = W;
-    const x = xb.subarray(NB - W),
-      parts: Part[] = [];
-    for (let k = 1; k <= 8 && k * r.f < fs * 0.45; k++) parts.push({ k, ...partial(x, r.f, k, fs) });
-    const top = Math.max(1e-12, ...parts.map((p) => p.a));
-    for (const p of parts) p.a /= top;
-    sb.update(r.f, parts, S.ref, deviations(S.tem, S.ton), S.spd);
+  }
+  /*
+   * ストロボ: 第 1〜8 部分音の周波数と強さを、出だしより後の窓で測る。読み値が出る前（出だしの直後）も、estimate の値か
+   * 短い窓の下見（glance）で先に描き始める。音を追っている間に読み値のないフレームは、直前の帯のまま
+   */
+  const f = r ? r.f : tracker.active ? null : e && e.clarity >= mc ? e.f : (glance(xb, NB, eo, since, mc)?.f ?? null);
+  if (f) {
+    const sp = strobeParts(xb, NB, f, fs, since, eo.maxW);
+    if (r) win = sp.W;
+    sb.update(f, sp.parts, S.ref, deviations(S.tem, S.ton), S.spd);
   }
 }
 

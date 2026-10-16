@@ -16,7 +16,17 @@ import {
   noteText,
 } from '../src/tools/tuner/notes';
 import { deviations, JUST_M3, JUST_m3, TEMPERAMENTS } from '../src/tools/tuner/params';
-import { type Est, estimate, HighPass, mpmWin, Onset, refWin, Tracker } from '../src/tools/tuner/tracker';
+import {
+  type Est,
+  estimate,
+  glance,
+  HighPass,
+  mpmWin,
+  Onset,
+  refWin,
+  strobeParts,
+  Tracker,
+} from '../src/tools/tuner/tracker';
 import { bandHz, bandOf, contrast, HOLD, meterTicks, needlePath, Strobe, stripes } from '../src/tools/tuner/view';
 
 const FS = 48000;
@@ -246,6 +256,24 @@ describe('追跡', () => {
     for (let i = 0; i < 3; i++) r = t2.push({ ...e, f: 440 });
     expect(r?.cents).toBeCloseTo(-5, 6);
     expect(r?.ft).toBeCloseTo(hzOf(69, 440, 5), 6);
+  });
+  it('ストロボの下見は、estimate の窓が埋まる前（出だしから 2048 標本）に音高と部分音を返す。雑音では返さない', () => {
+    const o = { fs: FS, fmin: 26, fmax: 4400, maxW: 16384 },
+      x = new Float64Array(FS);
+    x.set(tone(midiHz(57), 2048, RICH, 0, 40), FS - 2048);
+    const since = FS - 2048;
+    expect(estimate(x, FS, o, since)).toBeNull();
+    const g = glance(x, FS, o, since, 0.9);
+    expect(g && Math.abs(centsOf(g.f, midiHz(57)))).toBeLessThan(5);
+    const sp = strobeParts(x, FS, g?.f ?? 0, FS, since, o.maxW);
+    expect(sp.W).toBe(2048);
+    expect(sp.parts.length).toBe(8);
+    expect(Math.abs(centsOf(sp.parts[1].f, 2 * midiHz(57)))).toBeLessThan(5);
+    /* 出だしから 2048 標本に満たない間は返さない */
+    expect(glance(x, FS, o, since + 1, 0.9)).toBeNull();
+    const n = new Float64Array(FS);
+    for (let i = 0; i < n.length; i++) n[i] = 0.01 * gauss();
+    expect(glance(n, FS, o, 0, 0.9)).toBeNull();
   });
   it('基音のない雑音入りの低い音も、±1 セント以内', () => {
     const f = midiHz(40),
