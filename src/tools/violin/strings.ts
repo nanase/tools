@@ -66,8 +66,13 @@ export const noteHz = (n: number): number => 440 * 2 ** ((n - 69) / 12);
 /** 線密度 [kg/m]（開放弦の第 1 部分音が音の高さに合う値。曲げ剛性の分を差し引く） */
 export const muOf = (s: StringSpec): number =>
   (s.T + (Math.PI ** 2 * s.EI) / (L0 * L0)) / (4 * L0 * L0 * noteHz(s.open) ** 2);
-/** 特性インピーダンス √(T μ) [kg/s] */
-export const z0Of = (s: StringSpec): number => Math.sqrt(s.T * muOf(s));
+/**
+ * 調弦した弦の張力 [N]。cent は開放弦の音の高さを平均律からずらす量 [セント]（糸巻きで張力を変える）。
+ * 周波数は張力の平方根に比例するので、張力は 2^(cent/600) 倍
+ */
+export const tensionOf = (s: StringSpec, cent = 0): number => s.T * 2 ** (cent / 600);
+/** 特性インピーダンス √(T μ) [kg/s]（cent は調弦のずれ [セント]） */
+export const z0Of = (s: StringSpec, cent = 0): number => Math.sqrt(tensionOf(s, cent) * muOf(s));
 
 /** 指で押さえた端の損失: 第 1 モードの損失係数に足す値（端の抵抗が約 50 kg/s のときの反射の損失にあたる） */
 export const FINGER_ETA = 2.5e-3;
@@ -116,7 +121,8 @@ export interface StringModes {
 
 /**
  * 弦 si（0 = E 線）の、振動する長さ L [m] のモード。finger は指で押さえた端の損失の倍率（開放弦は 0）、
- * body を渡すと駒のアドミタンスによる周波数と減衰の変化を入れる。fmax [Hz] までのモードを作る
+ * body を渡すと駒のアドミタンスによる周波数と減衰の変化を入れる。cent は調弦のずれ [セント]（張力を変える）。
+ * fmax [Hz] までのモードを作る
  */
 export function stringModes(
   si: number,
@@ -124,11 +130,13 @@ export function stringModes(
   fmax: number,
   finger: number,
   body: Body | null,
+  cent = 0,
   nMax = 120,
 ): StringModes {
   const sp = STRINGS[si],
+    T = tensionOf(sp, cent),
     mu = muOf(sp),
-    c = Math.sqrt(sp.T / mu),
+    c = Math.sqrt(T / mu),
     tab = body ? yTable(body, si) : null,
     w: number[] = [],
     s: number[] = [],
@@ -136,13 +144,13 @@ export function stringModes(
   for (let n = 1; n <= nMax; n++) {
     const k = (n * Math.PI) / L,
       bk = sp.EI * k * k,
-      f = ((n * c) / (2 * L)) * Math.sqrt(1 + bk / sp.T);
+      f = ((n * c) / (2 * L)) * Math.sqrt(1 + bk / T);
     if (f > fmax) break;
     const wn = 2 * Math.PI * f,
       eta =
         (AIR.eta + sp.d * Math.sqrt(Math.PI * AIR.eta * AIR.rho * f)) / (mu * f) +
         sp.etaX / wn +
-        (sp.T * sp.etaF + bk * sp.etaB) / (sp.T + bk) +
+        (T * sp.etaF + bk * sp.etaB) / (T + bk) +
         (finger * FINGER_ETA) / n;
     let dw = 0,
       ds = 0;
@@ -151,13 +159,13 @@ export function stringModes(
       const x = Math.min(f, Y_MAX) / Y_DF,
         i = Math.floor(x),
         u = x - i,
-        kk = sp.T / L;
+        kk = T / L;
       dw = -kk * ((1 - u) * tab[2 * i + 1] + u * tab[2 * i + 3]);
       ds = kk * ((1 - u) * tab[2 * i] + u * tab[2 * i + 2]);
     }
     w.push(wn + dw);
     s.push((eta * wn) / 2 + ds);
-    kf.push((sp.T + bk) * k);
+    kf.push((T + bk) * k);
   }
   /* ねじり: 両端を固定した調和なモードで、Q はどのモードも同じ（Woodhouse・Loach 1999） */
   const wt: number[] = [],
@@ -179,6 +187,6 @@ export function stringModes(
     wt: Float64Array.from(wt),
     st: Float64Array.from(st),
     /* 表面の速度で見た線密度は Z_t / c_t */
-    mt: ((sp.zt * Math.sqrt(sp.T * mu)) / (sp.ct * c)) * (L / 2),
+    mt: ((sp.zt * Math.sqrt(T * mu)) / (sp.ct * c)) * (L / 2),
   };
 }

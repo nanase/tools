@@ -228,11 +228,42 @@ const MARGIN = 0.03,
 const ACC_J = 0.01,
   DEC_J = 0.008,
   LIFT_FADE = 0.04;
+/**
+ * 弓が弦に触れる・離れる時間 [s]: スラーで弦を移るとき（音の始まりを挟んで）、弓を返す・当てるとき（音の始まりの前）、
+ * 音の終わり（終わりを挟んで）
+ */
+const SLUR_R = 0.012,
+  ON_R = 0.015,
+  OFF_R = 0.012;
+
+/** 曲の音に、弓が触れ始める時刻 c0 と離れる時刻 c1 [s] を足したもの（ふつうは音の始まりと終わり） */
+export type PNote = RNote & { c0: number; c1: number };
+/** 弓が音 x の弦に触れている時間 [s]（触れ始めてから離れきるまで） */
+export const touchSpan = (x: PNote): [number, number] => [x.c0 - (x.slur ? SLUR_R / 2 : ON_R), x.c1 + OFF_R / 2];
+/**
+ * 隣り合わない弦へ移るときは、前の弦から弓が離れきってから次の弦に触れるようにする（弓はまっすぐなので、
+ * D 線と E 線のように間の弦をとばして 2 本に同時には触れない）。前の音の触れる時間を詰め、
+ * 詰めきれなければ（前の音の半分まで）次の音の触れ始めを遅らせる。notes は始まりの順
+ */
+export function untangle(notes: PNote[]): void {
+  for (let j = 1; j < notes.length; j++) {
+    const x = notes[j];
+    for (let i = j - 1; i >= Math.max(0, j - 64); i--) {
+      const y = notes[i];
+      if (Math.abs(y.si - x.si) < 2 || y.t >= x.t - 1e-6) continue;
+      const ov = touchSpan(y)[1] - touchSpan(x)[0];
+      if (ov <= 0) continue;
+      const dy = Math.min(ov, Math.max(0, y.c1 - (y.c0 + y.t + y.d) / 2));
+      y.c1 -= dy;
+      x.c0 += ov - dy;
+    }
+  }
+}
 
 /** 曲の演奏の状態（時刻は曲の頭からの秒） */
 class Piece {
   strokes: Stroke[] = [];
-  readonly byS: RNote[][];
+  readonly byS: PNote[][];
   readonly starts: number[][];
   readonly vib: PieceVib;
   readonly ptr = [0, 0, 0, 0];
@@ -249,7 +280,7 @@ class Piece {
   ) {
     const r = rng(seed),
       /* 弓を離す時間を作るために音を短くするので、写してから使う */
-      notes = perf.notes.map((x) => ({ ...x })).sort((a, b) => a.t - b.t);
+      notes: PNote[] = perf.notes.map((x) => ({ ...x, c0: 0, c1: 0 })).sort((a, b) => a.t - b.t);
     for (const nt of notes) {
       const cur = this.strokes[this.strokes.length - 1];
       if (!nt.slur && !(cur && Math.abs(cur.t0 - nt.t) < 1e-4)) {
@@ -284,6 +315,11 @@ class Piece {
     this.byS = [0, 1, 2, 3].map((q) => notes.filter((x) => x.si === q));
     this.starts = this.byS.map((ns) => ns.map((x) => x.t));
     this.plan(notes, perf.level);
+    for (const x of notes) {
+      x.c0 = x.t;
+      x.c1 = x.t + x.d;
+    }
+    untangle(notes);
     this.vib = new PieceVib(
       notes.filter((x) => x.lead),
       perf.level,
@@ -541,7 +577,9 @@ export class ViolinPlayer {
   private bank: BodyBank;
   private readonly strings: BowedString[];
   private readonly dirs = [0, 1, 2, 3].map(stringDir);
-  private readonly z0 = STRINGS.map(z0Of);
+  /** 弦ごとの調弦のずれ [セント] と、それに合わせた特性インピーダンス */
+  private readonly tune = [0, 0, 0, 0];
+  private readonly z0 = STRINGS.map((s) => z0Of(s));
   /** 出力した標本の数 */
   private n = 0;
   private piece: Piece | null = null;
@@ -646,6 +684,18 @@ export class ViolinPlayer {
     this.vib = { ...v };
   }
 
+  /** 弦ごとの調弦のずれ [セント]（0 = E 線 … 3 = G 線）。開放弦の音の高さを、張力を変えてずらす */
+  setTune(cent: readonly number[]): void {
+    for (let q = 0; q < 4; q++) {
+      this.tune[q] = cent[q] ?? 0;
+      this.z0[q] = z0Of(STRINGS[q], this.tune[q]);
+    }
+  }
+  /** 弦 q の、いまの振動する長さの第 1 部分音の目安 [Hz]（曲げの硬さと駒との結合を除く） */
+  private f0(q: number): number {
+    return (noteHz(OPEN[q]) * 2 ** (this.tune[q] / 1200) * L0) / this.len[q];
+  }
+
   /** 揺らぎの大きさの倍率（1 が標準）、松脂のむら（摩擦係数の相対の標準偏差）、曲の弓圧の倍率（1 が標準） */
   setFeel(fluct: number, rough: number, press = 1): void {
     this.fk = fluct;
@@ -727,9 +777,7 @@ export class ViolinPlayer {
     const fs = this.fs,
       { byS, strokes, ptr, lastPitch } = pc,
       tOf = (i: number) => (w0 - this.p0 + i) / fs,
-      level = pc.perf.level,
-      xR = 0.012,
-      onR = 0.015;
+      level = pc.perf.level;
     pc.vib.fill(this.vibW, w0 - this.p0, wn);
     /* 弦ごとの音の高さと、弓が触れている割合 */
     for (let q = 0; q < 4; q++) {
@@ -754,9 +802,9 @@ export class ViolinPlayer {
             nx = jj + 1 < ns.length ? ns[jj + 1] : null,
             joinPrev = !!pv && Math.abs(pv.t + pv.d - nt.t) < 1e-3,
             joinNext = !!nx && Math.abs(nt.t + nt.d - nx.t) < 1e-3,
-            on = joinPrev ? 1 : nt.slur ? smooth((t - nt.t + xR / 2) / xR) : smooth((t - nt.t + onR) / onR),
-            off = joinNext ? 1 : smooth((nt.t + nt.d + 0.006 - t) / 0.012),
-            e = t > nt.t - Math.max(onR, xR / 2) - 0.001 && t < nt.t + nt.d + 0.007 ? on * off : 0;
+            on = joinPrev ? 1 : nt.slur ? smooth((t - nt.c0 + SLUR_R / 2) / SLUR_R) : smooth((t - nt.c0 + ON_R) / ON_R),
+            off = joinNext ? 1 : smooth((nt.c1 + OFF_R / 2 - t) / OFF_R),
+            e = t > nt.c0 - Math.max(ON_R, SLUR_R / 2) - 0.001 && t < nt.c1 + OFF_R / 2 + 0.001 ? on * off : 0;
           if (e > c) c = e;
         }
         const nt = ns[j];
@@ -854,10 +902,14 @@ export class ViolinPlayer {
       this.vbW[i] = this.mv * (1 + 0.5 * SV * this.nV[i]);
       this.mph += dph;
       const vw = vib.on ? (vib.cent / 200) * Math.sin(this.mph) : 0;
+      /* 隣り合わない弦へ移るときは、前の弦から弓が離れきってから触れる（離すのは 15 ms で直線に） */
       for (let q = 0; q < 4; q++) {
-        const on = m.strings.includes(q) ? 1 : 0;
-        this.mc[q] += (on - this.mc[q]) / (0.015 * fs);
-        const c = this.mc[q] < 1e-4 && !on ? 0 : this.mc[q];
+        let on = m.strings.includes(q);
+        for (let r = 0; r < 4 && on; r++)
+          if (Math.abs(r - q) >= 2 && this.mc[r] > 0 && !m.strings.includes(r)) on = false;
+        if (on) this.mc[q] += (1 - this.mc[q]) / (0.015 * fs);
+        else this.mc[q] = Math.max(0, this.mc[q] - 1 / (0.015 * fs));
+        const c = this.mc[q];
         this.contW[q][i] = c;
         this.pitchW[q][i] = OPEN[q] + m.stop[q] + (m.stop[q] > 0 ? vw : 0);
         /* 弓圧は触れている弦で分ける。弓が止まりかけると弱める（弓を返すとき） */
@@ -927,10 +979,15 @@ export class ViolinPlayer {
         const s = strings[q],
           open = len[q] > L0 * 0.999,
           beta = this.bW[q][p],
-          f0 = (noteHz(OPEN[q]) * L0) / len[q],
+          f0 = this.f0(q),
           os = Math.max(1, Math.min(10, Math.ceil((24 * f0) / (beta * fs))));
         if (touching)
-          s.set(stringModes(q, len[q], Math.min(21600, 0.45 * fs), open ? 0 : 1, this.body), beta * len[q], true, os);
+          s.set(
+            stringModes(q, len[q], Math.min(21600, 0.45 * fs), open ? 0 : 1, this.body, this.tune[q]),
+            beta * len[q],
+            true,
+            os,
+          );
         /*
          * 摩擦曲線へ移った弦は、弓圧を上限の KC 倍にする（熱の模型より乱れやすいので低く）。熱の模型で上げた弓圧の倍率は
          * 掛けない（掛けると上限に近づき、音が割れる）
@@ -1006,7 +1063,7 @@ export class ViolinPlayer {
        * 弦の中ほどの全振幅 ≈ 駒の力の山 ÷ (4 Z0 f)（Helmholtz の運動で、駒の力の山 Z0 v/β と中ほどの全振幅 v T/(4β) から）。
        * 駒の力の山は、のこぎり波として 2 乗の平均から √3 倍で求める
        */
-      a: [0, 1, 2, 3].map((q) => Math.sqrt(3 * this.env[q]) / (4 * this.z0[q] * ((noteHz(OPEN[q]) * L0) / len[q]))),
+      a: [0, 1, 2, 3].map((q) => Math.sqrt(3 * this.env[q]) / (4 * this.z0[q] * this.f0(q))),
       beat,
       done,
     };

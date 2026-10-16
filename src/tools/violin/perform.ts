@@ -7,7 +7,7 @@
  *  - 2 音までの重なりは重音として隣の弦で弾く。弓を返す出来事では、続いている音も弾き直す
  *  - arpeggio の区間: 8 分音符ごとに、鳴っている音を 32 分音符 4 つで分散する（中・低・高・低。楽譜に書き出された
  *    最初の形と同じ。2 音ずつスラー）。4 音のときは、中の音を 8 分音符ごとに入れ替える
- *  - 弦: 単音は低いポジション（開放弦より上で最も高い弦）、重音・和音は隣り合う弦（できなければ間を空ける）
+ *  - 弦: 単音は低いポジション（開放弦より上で最も高い弦）、重音・和音は隣り合う弦（できなければ音を減らす）
  *  - トリル: 上の隣の音（調号に合わせる）から始め、速さを上げてから終わりで少し落とす
  *  - 強弱: 予定の折れ線に、楽句の弧・長い音の中のふくらみ・高い音ほど大きく（High loud）を足す
  *  - 弓を返す音の出だしを少しばらつかせる（Noise の規則）
@@ -135,36 +135,28 @@ const arch = (x: number) => Math.sin(Math.PI * Math.min(1, Math.max(0, x)) ** 1.
 const sm = (y: number) => (y <= 0 ? 0 : y >= 1 ? 1 : 0.5 - 0.5 * Math.cos(Math.PI * y));
 
 /**
- * 和音の音（低い順）に弦を割り当てる。低い音ほど低い弦（番号が大きい）。隣り合う弦を優先し、
- * だめなら間を空けてよい。指の届く幅（押さえる音のポジションの差）は 6 半音まで。できなければ null
+ * 和音の音（低い順）に弦を割り当てる。低い音ほど低い弦（番号が大きい）。弓はまっすぐなので、同時に弾く弦は
+ * 隣り合う弦だけ（D 線と E 線のように間を空けては弾けない）。指の届く幅（押さえる音のポジションの差）は
+ * 6 半音まで。できなければ null
  */
 export function chordStrings(ns: readonly number[]): number[] | null {
   const k = ns.length;
   let best: number[] | null = null,
     bestCost = 1e9;
-  const pick = (ss: number[], gapPenalty: number) => {
-    const pos = ns.map((n, j) => n - OPEN[ss[j]]);
-    if (pos.some((p) => p < 0)) return;
+  /* 隣り合う k 本の弦の組（上の弦 top から低い弦へ）を全部試す */
+  for (let top = 0; top + k <= 4; top++) {
+    const ss = ns.map((_, j) => top + k - 1 - j),
+      pos = ns.map((n, j) => n - OPEN[ss[j]]);
+    if (pos.some((p) => p < 0)) continue;
     const fing = pos.filter((p) => p > 0),
       span = fing.length ? Math.max(...fing) - Math.min(...fing) : 0;
-    if (span > 6) return;
-    const cost = Math.max(0, ...pos) + 0.5 * span + gapPenalty;
+    if (span > 6) continue;
+    const cost = Math.max(0, ...pos) + 0.5 * span;
     if (cost < bestCost) {
       bestCost = cost;
       best = ss;
     }
-  };
-  /* 弦の組（降順に並べた k 本）を全部試す */
-  const combos = (from: number, left: number, acc: number[]): void => {
-    if (left === 0) {
-      const ss = [...acc].reverse(),
-        gaps = acc.length > 1 ? acc[0] - acc[acc.length - 1] - (acc.length - 1) : 0;
-      pick(ss, 3 * gaps);
-      return;
-    }
-    for (let q = from; q <= 3; q++) combos(q + 1, left - 1, [...acc, q]);
-  };
-  combos(0, k, []);
+  }
   return best;
 }
 
@@ -416,10 +408,14 @@ export function performPoly(voices: readonly (readonly ScoreNote[])[], o: PolyOp
         ps = found ?? ps.slice(1);
         ss = chordStrings(ps.map((x) => x.n));
       }
+      /* 2 音でも隣り合う弦に置けなければ、最も高い音だけ */
+      if (!ss) ps = ps.slice(-1);
       const sOf = (j: number) => (ss ? ss[j] : stringOf(ps[j].n)),
         gap = Math.min(chordGap, 0.35 * dS);
       let dropped: Act[] = [];
-      if (ps.length === 2) {
+      if (ps.length === 1) {
+        active = [start(ps[0], sOf(0), ts, false, true)];
+      } else if (ps.length === 2) {
         active = [start(ps[0], sOf(0), ts, false, true), start(ps[1], sOf(1), ts, false, true)];
       } else if (ps.length === 3) {
         const a0 = start(ps[0], sOf(0), ts, false, true),
@@ -452,12 +448,10 @@ export function performPoly(voices: readonly (readonly ScoreNote[])[], o: PolyOp
     if (nw.length === 2) {
       for (const a of active) stop(a, ts);
       const ss = chordStrings(nw.map((x) => x.n));
-      active = nw.map((x, j) => start(x, ss ? ss[j] : stringOf(x.n), ts, slurred, false));
-      if (!ss) {
-        /* 重音にできない（同じ弦しかない）ときは高い音だけ */
-        stop(active[0], ts + 0.001);
-        active = [active[1]];
-      }
+      /* 重音にできない（隣り合う弦に置けない）ときは高い音だけ */
+      active = ss
+        ? nw.map((x, j) => start(x, ss[j], ts, slurred, false))
+        : [start(nw[1], stringOf(nw[1].n), ts, slurred, false)];
       continue;
     }
     /* 新しい音が 1 つ: 続いている音のうち最も近い高さの 1 つまで残す */

@@ -25,6 +25,8 @@ export type SynthIn =
   | { type: 'flush' }
   /* 揺らぎの倍率・松脂のむら・曲の弓圧の倍率 */
   | { type: 'feel'; fluct: number; rough: number; press: number }
+  /* 弦ごとの調弦のずれ [セント]（0 = E 線 … 3 = G 線） */
+  | { type: 'tune'; cent: number[] }
   /* 音の波形の表示に、直前の音を送るか */
   | { type: 'scope'; on: boolean };
 
@@ -70,7 +72,8 @@ let port: MessagePort | null = null,
   scopeOn = false,
   ringPos = 0,
   sinceWave = 0,
-  feel = { fluct: 1, rough: 0.03, press: 1 };
+  feel = { fluct: 1, rough: 0.03, press: 1 },
+  tune = [0, 0, 0, 0];
 const ring = new Float32Array(SCOPE_N);
 
 const post = (m: SynthOut) => postMessage(m);
@@ -144,6 +147,9 @@ self.onmessage = (e: MessageEvent<SynthIn>) => {
     } else if (m.type === 'feel') {
       feel = { fluct: m.fluct, rough: m.rough, press: m.press };
       pl?.setFeel(m.fluct, m.rough, m.press);
+    } else if (m.type === 'tune') {
+      tune = [...m.cent];
+      pl?.setTune(tune);
     } else if (m.type === 'scope') {
       scopeOn = m.on;
       sinceWave = 1e9;
@@ -151,6 +157,7 @@ self.onmessage = (e: MessageEvent<SynthIn>) => {
       pl = new ViolinPlayer(m.fs, m.body);
       pl.setVib(m.vib);
       pl.setFeel(feel.fluct, feel.rough, feel.press);
+      pl.setTune(tune);
       pump();
     } else if (!pl) {
       /* 初期化の前は何もしない */

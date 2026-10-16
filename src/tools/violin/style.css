@@ -1,8 +1,8 @@
 /* ヴァイオリン音響モデル: 枠の並び・図の窓と楽器の色・弓の状態の表示 */
 
-/* 枠の並び。PC は上に図（全幅）、左の列に 演奏・弓・左手、右の列に 胴・残響・音の波形・計算結果、その下に 式・出典 */
-/* スマホは 図 → 演奏 → 弓 → 左手 → 胴 → 残響 → 音の波形 → 計算結果 → 式 → 楽譜の出典（列は display: contents で解ける） */
-.a-fig{order:1}.a-play{order:2}.a-bow{order:3}.a-lh{order:4}.a-body{order:5}.a-room{order:6}.a-wave{order:7}.a-out{order:8}.a-thy{order:9}.a-src{order:10}
+/* 枠の並び。PC は上に図（全幅）、左の列に 演奏・弓・左手・調弦、右の列に 胴・残響・音の波形・計算結果、その下に 式・出典 */
+/* スマホは 図 → 演奏 → 弓 → 左手 → 調弦 → 胴 → 残響 → 音の波形 → 計算結果 → 式 → 楽譜の出典（列は display: contents で解ける） */
+.a-fig{order:1}.a-play{order:2}.a-bow{order:3}.a-lh{order:4}.a-tune{order:5}.a-body{order:6}.a-room{order:7}.a-wave{order:8}.a-out{order:9}.a-thy{order:10}.a-src{order:11}
 @media (min-width:1000px){
   .tgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr);grid-template-areas:"fig fig" "c1 c2" "thy thy" "src src";align-items:start}
   .a-fig{grid-area:fig}.c1{grid-area:c1}.c2{grid-area:c2}.a-thy{grid-area:thy}.a-src{grid-area:src}
