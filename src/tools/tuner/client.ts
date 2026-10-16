@@ -418,13 +418,13 @@ function render(now: number, dt: number): void {
       if (has) bar.style.left = `${(50 + Math.max(-50, Math.min(50, v))).toFixed(1)}%`;
       b.classList.toggle('cur', S.str < 0 && hold && rd?.si === i);
     }
-  /* ストロボ（窓 12 × 帯 4）。音がない間はランプが消えかかって、かすかにちらつく */
+  /* ストロボ（窓 12 × 帯 4）。音がない間も明るさは変えず、縞のない灰色にする。止めている間だけ暗くする */
   sb.frame(dt);
   if (st) {
-    const tgt = hold && rd ? ((rd.tgt % 12) + 12) % 12 : -1;
+    const tgt = hold && rd ? ((rd.tgt % 12) + 12) % 12 : -1,
+      L = run ? 1 : 0.05;
     wins.forEach((w, p) => {
       cls(w.el, `swin${p === tgt ? (ok ? ' ok' : ' on') : ''}`);
-      const L = sb.lamp(run ? 0.12 + 0.08 * Math.random() : 0.05);
       for (let o = 0; o < 4; o++) {
         const i = p * 4 + o,
           C = sb.c[i];

@@ -123,7 +123,7 @@ export function contrast(vis: number, rate: number): number {
 
 /** 推定が途切れても、この間 [s] は直前の部分音で縞を描く（明瞭度が一瞬下がるたび、弾き直すたびに縞が消えないように） */
 export const HOLD = 0.3;
-/** ならしの時定数 [s]: 濃く・明るくなるとき、薄く・暗くなるとき、縞の速さ */
+/** ならしの時定数 [s]: 縞が濃くなるとき、薄くなるとき、縞の速さ */
 const UP = 0.04,
   DOWN = 0.3,
   RATE = 0.1;
@@ -131,15 +131,13 @@ const ease = (v: number, to: number, dt: number, tau = to > v ? UP : DOWN) => v 
 
 /**
  * 12 音のストロボの動き（帯は窓 p・帯 o で p * 4 + o）。推定ごとに update で帯の見え方と縞の速さの目標を決め、
- * 描画ごとに frame で縞を進め、濃さとランプの明るさを目標へならす。推定が HOLD を超えて途切れたら、ゆっくり消える
+ * 描画ごとに frame で縞を進め、濃さを目標へならす。推定が HOLD を超えて途切れたら、縞は薄れて灰色に戻る
  */
 export class Strobe {
   /** 縞の位相 [周]・速さ [本/s]・濃さ（ならした値） */
   readonly ph = new Float64Array(48);
   readonly rate = new Float64Array(48);
   readonly c = new Float64Array(48);
-  /** ランプの明るさ（0〜1、ならした値） */
-  lit = 0;
   private readonly vis = new Float64Array(48);
   private readonly to = new Float64Array(48);
   /** 最後の update からの時間 [s] */
@@ -158,16 +156,10 @@ export class Strobe {
   frame(dt: number): void {
     this.age += dt;
     const live = this.age < HOLD;
-    this.lit = ease(this.lit, live ? 1 : 0, dt);
     for (let i = 0; i < 48; i++) {
       this.rate[i] = ease(this.rate[i], this.to[i], dt, RATE);
       this.ph[i] = (this.ph[i] + this.rate[i] * dt) % 1;
       this.c[i] = ease(this.c[i], live ? contrast(this.vis[i], this.rate[i]) : 0, dt);
     }
-  }
-
-  /** ランプの明るさ: 消えかかったとき idle から、点いたとき 1 まで */
-  lamp(idle: number): number {
-    return idle + (1 - idle) * this.lit;
   }
 }
