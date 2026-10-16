@@ -1,7 +1,7 @@
 /**
  * 地方食（DOM に依存しない）: 観測地での最大食・接触 C1〜C4・食分・面積比・太陽の高度と方位
  *
- * 式は Explanatory Supplement (1961) と同じ古典的な反復で、satkit（Apache-2.0）のチュートリアルと
+ * 式は古典的な反復で、satkit（MIT OR Apache-2.0）のチュートリアルと
  * Altmann「Helligkeitsverlauf bei Sonnenfinsternissen (II)」の記述に拠る
  */
 import { frameAt, observerXYZ, sunAltAz, toPlane, type Vec3, zenithPA } from './earth';

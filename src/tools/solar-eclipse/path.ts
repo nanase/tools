@@ -2,7 +2,7 @@
  * 経路図の曲線（DOM に依存しない）: 中心線、本影・金環帯の南北限界、半影の南北限界、
  * 日の出・日の入りに食が始まる・終わる曲線
  *
- * 中心線と限界は satkit（Apache-2.0）の Eclipse Path of Totality と同じ写像。
+ * 中心線と限界は satkit（MIT OR Apache-2.0）の Eclipse Path of Totality と同じ写像。
  * 日の出・日の入りの曲線は、基準面に写した地球の縁と半影の円の交点として求める（このツールで導いたもの）
  */
 import { type Frame, frameAt, latLon, liftToSurface, limbPoint, toPlane, type Vec3 } from './earth';
