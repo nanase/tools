@@ -1,0 +1,160 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import More from '../components/More.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import RowReset from '../components/RowReset.astro';
+import { order, TOOLS } from '../data/tools';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/halo/style.css';
+import { FIG } from '../tools/halo/figure';
+import { AGE, CA, ELEV, EV, FOV, HC, P2, PYR, ROT, ROUGH, SIZE, TAU, TILT, W } from '../tools/halo/params';
+import { MAX_POP, PRESETS } from '../tools/halo/scene';
+import Theory from '../tools/halo/Theory.astro';
+
+const name = 'ハロ（暈）';
+/* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
+const CAT = '画像・光学';
+const related = [
+  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'halo')),
+  ...TOOLS.filter((t) => t.c !== CAT && !t.s),
+];
+const ORIENTS = [
+  ['random', 'ランダム', '向きがそろわない'],
+  ['plate', '板', 'c 軸が鉛直（底面が水平）。幻日・環天頂アーク・環水平アーク・太陽柱'],
+  ['column', '柱', 'c 軸が水平。上端接弧・外接ハロ・ラテラルアーク'],
+  ['parry', 'Parry', 'c 軸が水平で、側面 2 枚も水平。パリーアーク'],
+  ['lowitz', 'Lowitz', '板が長い対角線のまわりに傾く。ローウィッツアーク'],
+] as const;
+---
+<SiteLayout title={name} tool={{ id: 'halo', name }} description="上空の氷晶（六角柱の結晶）に太陽や月の光を通す光線追跡で、日暈（内暈・外暈）・幻日・環天頂アーク・環水平アーク・タンジェントアーク・太陽柱・パリーアーク・ローウィッツアークなどのハロを描きます。結晶の形と向き、太陽の高度、雲の厚さを変えられ、日の入り後の薄明や月の暈も再現します。" note="空の映像は、氷晶の中を通る光線を幾何光学で追跡したものです（回折・大気・雲は近似）。">
+  <PageTitle title={name}>上空の巻雲に浮かぶ氷晶（六角柱の結晶）に、太陽や月の光線を何千万本も通して、出ていく向きを空に足し合わせます。結晶の面がプリズムになって光を曲げたり反射したりするので、結晶の形と向きと太陽の高度によって、内暈・幻日・環天頂アークなどのハロが現れます。結晶の中の光の通り道も図で確かめられます。</PageTitle>
+  <div class="mini" aria-hidden="true"><span>高度<b id="mE"></b></span><span>幻日の離角<b id="mP"></b></span><span>光線<b id="mR"></b></span></div>
+
+  <div class="tgrid">
+    <div class="col c1">
+      <Panel hid="hd-view" title="空" class="a-view">
+        <div slot="aux" class="seg" id="p-mode" role="group" aria-label="映像"><button type="button" data-v="photo" aria-pressed="true" title="青空と巻雲のベールの上に、ハロの光を足した見え方">写真風</button><button type="button" data-v="only" aria-pressed="false" title="結晶で曲がった光だけを、黒い地に描く">ハロだけ</button></div>
+        <div class="sbar">
+          <span class="stag"><span id="v-src">SUN</span> <b id="v-e"></b></span>
+          <span class="stag">VIEW <b id="v-view"></b></span>
+          <span class="stag">CRYSTAL <b id="v-cry"></b></span>
+          <span class="stag v-rate">RAYS <b id="v-rays">—</b></span>
+        </div>
+        <div class="hv" id="hv">
+          <canvas id="hvc" tabindex="0" role="img" aria-label="シミュレートした空"></canvas>
+          <div class="hls" id="hls"><svg id="hls-g" aria-hidden="true"></svg></div>
+          <button type="button" class="hv-fs" id="hv-fs" aria-label="全画面で表示" title="全画面で表示"><svg class="i-open" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/></svg><svg class="i-close" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 2v4H2M14 6h-4V2M10 14v-4h4M2 10h4v4"/></svg></button>
+          <p class="hv-msg" id="hv-msg" hidden></p>
+        </div>
+        <More id="g-view" title="表示の設定"><div class="ptab">
+          <ChoiceRow k="proj" name="投影" sub="魚眼: 等立体角の魚眼（画素の明るさが光線の数に比例する）。全天: 天頂を中心にした全天。カメラ: ふつうのレンズ（透視）" choices={[['fish', '魚眼'], ['sky', '全天'], ['rect', 'カメラ']]} value="fish" />
+          <ChoiceRow k="names" name="名前" sub="ハロの名前を出す。名前を押すと、結晶の中の光路の図がそのハロになる" choices={[['on', '表示'], ['off', 'なし']]} value="on" />
+          <ParamRow d={FOV} />
+          <ParamRow d={EV} />
+        </div></More>
+      </Panel>
+
+      <Panel hid="hd-ray" title="結晶の中の光路" class="a-ray">
+        <span slot="aux" class="aux" id="ray-aux"></span>
+        <div class="ptab">
+          <ChoiceRow k="hsel" name="ハロ" sub="そのハロへ向かう光線を 1 本探して描く（今の光源の高度で）" choices={FIG.map((f) => [f.k, f.name] as const)} value="par" layout="chips" />
+        </div>
+        <div class="sbar" style="margin-top:10px"><span class="stag"><i class="sw" aria-hidden="true"></i>光源の光</span><span class="stag"><i class="sw c2" aria-hidden="true"></i>出ていく光</span><span class="stag v-rate" id="ray-path"></span></div>
+        <div class="scope xs" id="xsw"><svg viewBox="0 0 560 380" id="xs" role="img" aria-label="結晶の中の光路"></svg><p class="xnone" id="xnone" hidden></p></div>
+        <p class="xcap" id="xcap"></p>
+        <dl class="metrics">
+          <div class="m"><dt>くさびの角 <i>A</i></dt><dd id="r-a"></dd></div>
+          <div class="m"><dt>最小偏角 <i>D</i><sub>m</sub></dt><dd id="r-d"></dd></div>
+          <div class="m"><dt>この光線の曲がり</dt><dd id="r-dev"></dd></div>
+          <div class="m"><dt>屈折率 <i>n</i>（550 nm）</dt><dd id="r-n"></dd></div>
+        </dl>
+      </Panel>
+    </div>
+
+    <div class="col c2">
+      <Panel hid="hd-sun" title="光源" class="a-sun">
+        <div slot="aux" class="seg" id="p-src" role="group" aria-label="光源"><button type="button" data-v="sun" aria-pressed="true">太陽</button><button type="button" data-v="moon" aria-pressed="false" title="月の光（太陽の約 40 万分の 1）。写真のように長く露出したときの見え方">月</button></div>
+        <div class="ptab">
+          <ParamRow d={ELEV} />
+          <ParamRow d={AGE} />
+        </div>
+      </Panel>
+
+      <Panel hid="hd-cry" title="氷晶" class="a-cry">
+        <div class="ptab">
+          <ChoiceRow k="pre" name="プリセット" sub="文献で再現された結晶の組み合わせなど。選ぶと光源の高度もそのプリセットの値にする" choices={PRESETS.map((p) => [p.k, p.name, p.title] as const)} value="cirrus" layout="chips" />
+          <div class="prow chr wide popc" id="p-pop" data-nm="母集団">
+            <div class="c-sym" aria-hidden="true"></div>
+            <div class="c-name"><span class="pn" id="n-pop">母集団</span></div>
+            <RowReset label="母集団をプリセットに戻す" />
+            <div class="c-sub"><div class="chips" role="group" aria-labelledby="n-pop">
+              {Array.from({ length: MAX_POP }, (_, i) => <button type="button" class="chip" data-i={i} aria-pressed="false" hidden></button>)}
+              <button type="button" class="chip add" id="pop-add" title="母集団を足す">＋</button>
+            </div></div>
+          </div>
+          <ChoiceRow k="ori" name="姿勢" sub="選んでいる母集団の結晶の向き" choices={ORIENTS} value="plate" layout="chips" />
+          <ParamRow d={W} />
+          <ParamRow d={TILT} />
+          <ParamRow d={ROT} />
+          <ParamRow d={CA} />
+        </div>
+        <More id="g-cry"><div class="ptab">
+          <ParamRow d={PYR} />
+          <ParamRow d={SIZE} />
+          <ParamRow d={P2} />
+        </div></More>
+      </Panel>
+
+      <Panel hid="hd-cloud" title="雲" class="a-cloud">
+        <div class="ptab">
+          <ParamRow d={TAU} />
+          <ParamRow d={ROUGH} />
+          <ParamRow d={HC} />
+        </div>
+      </Panel>
+
+      <Panel hid="hd-out" title="計算結果" class="a-out">
+        <dl class="metrics">
+          <div class="m m-main"><dt id="o-pt">幻日の離角</dt><dd><span id="o-p"></span><span class="m-sub" id="o-ps"></span></dd></div>
+          <div class="m"><dt>環天頂アークの高度</dt><dd><span id="o-cz"></span><span class="m-sub" id="o-czs"></span></dd></div>
+          <div class="m"><dt>環水平アークの高度</dt><dd><span id="o-ch"></span><span class="m-sub" id="o-chs"></span></dd></div>
+          <div class="m"><dt>内暈の半径</dt><dd><span id="o-22"></span><span class="m-sub" id="o-22s"></span></dd></div>
+          <div class="m"><dt>外暈の半径</dt><dd><span id="o-46"></span><span class="m-sub" id="o-46s"></span></dd></div>
+          <div class="m"><dt>見かけの高度</dt><dd><span id="o-ap"></span><span class="m-sub" id="o-aps"></span></dd></div>
+          <div class="m"><dt>雲に届く光</dt><dd><span id="o-il"></span><span class="m-sub" id="o-ils"></span></dd></div>
+          <div class="m"><dt>追った光線</dt><dd><span id="o-r"></span><span class="m-sub" id="o-rs"></span></dd></div>
+          <div class="m"><dt>追う速さ</dt><dd><span id="o-sp"></span><span class="m-sub" id="o-sps"></span></dd></div>
+        </dl>
+      </Panel>
+    </div>
+
+    <Collapsible hid="hd-ph" title="写真と比べる" class="a-ph">
+      <div class="phs" id="phs"></div>
+    </Collapsible>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <!-- 全画面: 開いている間だけ、映像・入力の行・光路の図をここへ移す（client.ts） -->
+  <div class="fs" id="fs" role="dialog" aria-modal="true" aria-label="空（全画面）" hidden>
+    <div class="fs-v" id="fs-v"><div class="fs-map" id="fs-map"><span class="fs-cap" id="fs-cap"></span></div></div>
+    <div class="fs-p">
+      <p class="fs-sec">太陽と氷晶</p><div class="ptab" id="fs-t1"></div>
+      <p class="fs-sec">雲</p><div class="ptab" id="fs-t2"></div>
+      <p class="fs-sec">表示</p><div class="ptab" id="fs-t3">
+        <ChoiceRow k="mode2" name="映像" choices={[['photo', '写真風'], ['only', 'ハロだけ']]} value="photo" />
+      </div>
+    </div>
+  </div>
+
+  <RelatedTools list={related} />
+  <script>
+    import '../tools/halo/client';
+  </script>
+</SiteLayout>

@@ -43,3 +43,5 @@ GitHub Actions（[.github/workflows/ci.yml](.github/workflows/ci.yml)）が、PR
 MIT
 
 ただし、楽器の音響モデルで演奏する曲のデータ（MIDI や LilyPond の楽譜と、そこから作る音符）には、曲ごとに原作と同じライセンスが付きます。曲ごとの出典とライセンスは [SCORES.md](SCORES.md) にあります。
+
+ハロ（暈）のページで計算と並べる写真（[public/photos/halo/](public/photos/halo/)）は Wikimedia Commons から取ったもので、写真ごとに元のライセンス（パブリックドメイン・CC0 1.0・CC BY 4.0）に従います。作者・出典・ライセンスは [src/tools/halo/photos.ts](src/tools/halo/photos.ts) とページの写真の下にあります。
