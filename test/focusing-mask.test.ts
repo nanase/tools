@@ -212,6 +212,36 @@ describe('マスク', () => {
       geo = (-400 / f) * sections(OPEN, h)[0].c[1] * (D / 2);
     expect(Math.abs(y / geo - 1)).toBeLessThan(0.02);
   });
+  it('JWST の開口は六角形 18 枚で、中央の穴と支柱が光を通さない', () => {
+    const m: Mask = { ...NONE, kind: 'jwst' },
+      n = 600,
+      px = 2 / n;
+    let open = 0;
+    for (let j = 0; j < n; j++)
+      for (let i = 0; i < n; i++) open += transmit(-1 + (i + 0.5) * px, -1 + (j + 0.5) * px, OPEN, m, px);
+    /* 外接円の半径 1 で、六角形 18 枚から支柱を引いた面積（約 25.3 m² ÷ 外接円 34.4 m²） */
+    const area = open * px * px,
+      R = 3.3;
+    expect(area * R * R).toBeGreaterThan(23);
+    expect(area * R * R).toBeLessThan(26.5);
+    expect(transmit(0, 0, OPEN, m, px)).toBe(0);
+    /* 上の支柱の上（x = 0）と、そのすぐ横 */
+    expect(transmit(0, 0.6, OPEN, m, px)).toBe(0);
+    expect(transmit(0.1, 0.6, OPEN, m, px)).toBeGreaterThan(0.9);
+  });
+
+  it('画像のマスクは、白い所が光を通し、開口全体のときは円の外も通す', () => {
+    const n = 8,
+      a = new Float32Array(n * n).fill(1),
+      img = { n, a, key: 'x' };
+    const circ: Mask = { ...NONE, kind: 'image', img },
+      whole: Mask = { ...circ, whole: true };
+    expect(transmit(0, 0, OPEN, circ, 0.01)).toBeCloseTo(1, 6);
+    expect(transmit(0.95, 0.95, OPEN, circ, 0.01)).toBe(0);
+    expect(transmit(0.95, 0.95, OPEN, whole, 0.01)).toBeCloseTo(1, 6);
+    a.fill(0);
+    expect(transmit(0, 0, OPEN, whole, 0.01)).toBe(0);
+  });
 });
 
 describe('カメラ', () => {

@@ -4,7 +4,7 @@
  */
 import { bin, seeing } from './camera';
 import { starBands } from './color';
-import type { Mask, Scope } from './mask';
+import { keyOf, type Mask, type Scope } from './mask';
 import { type Aberr, alphaFor, type Img, type Pupil, psf, pupil } from './optics';
 
 /** 1 枚の像の条件 */
@@ -39,7 +39,7 @@ export const pixelOf = (s: Scene): number => alphaFor(s.D, NM0);
 /** 描いた瞳（新しい順に 3 つまで。マスクなしの星像の計算と交互になっても描き直さない） */
 const cache: { key: string; P: Pupil }[] = [];
 function pupilOf(s: Scene): Pupil {
-  const key = JSON.stringify([s.D, s.N, s.sc, s.m, s.ab ?? null]),
+  const key = keyOf([s.D, s.N, s.sc, s.m, s.ab ?? null]),
     i = cache.findIndex((c) => c.key === key);
   if (i >= 0) {
     const [c] = cache.splice(i, 1);

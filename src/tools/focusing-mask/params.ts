@@ -15,7 +15,43 @@ const plainF = (u: string, s = 4): ParamFormat => ({
   text: (v) => `${sig(v, s)}${u ? ` ${u}` : ''}`,
 });
 
-export type Key = 'th' | 'bf' | 'rot' | 'bar' | 'hd' | 'D' | 'f' | 'obs' | 'coma' | 'ast' | 'T' | 'see' | 'px' | 'ex';
+export type Key =
+  | 'thr'
+  | 'th'
+  | 'bf'
+  | 'rot'
+  | 'bar'
+  | 'hd'
+  | 'D'
+  | 'f'
+  | 'obs'
+  | 'coma'
+  | 'ast'
+  | 'T'
+  | 'see'
+  | 'px'
+  | 'ex';
+
+export const THR: ParamDef = {
+  k: 'thr',
+  nm: 'しきい値',
+  sym: '',
+  name: 'しきい値',
+  sub: '画像の明るさがこの値より明るい所を「白」、暗い所を「黒」とみなす（境目は少しぼかす）',
+  unit: '%',
+  min: 1,
+  max: 99,
+  v: 50,
+  ph: '例 50',
+  pre: [
+    [25, '25'],
+    [50, '50'],
+    [75, '75'],
+  ],
+  lin: { step: 1, big: 5 },
+  notation: 'plain',
+  format: plainF('%', 3),
+};
 
 export const TH: ParamDef = {
   k: 'th',
@@ -328,7 +364,7 @@ export const EXP: ParamDef = {
   },
 };
 
-export const PARAMS: ParamDef[] = [TH, BF, ROT, BAR, HD, DIA, FOC, OBS, COMA, AST, TEMP, SEE, PIX, EXP];
+export const PARAMS: ParamDef[] = [THR, TH, BF, ROT, BAR, HD, DIA, FOC, OBS, COMA, AST, TEMP, SEE, PIX, EXP];
 
 /** マスクの種類: [値, 表示, title] */
 export const MASKS: readonly (readonly [MaskKind, string, string])[] = [
@@ -338,6 +374,8 @@ export const MASKS: readonly (readonly [MaskKind, string, string])[] = [
   ['carey', 'キャリー', '開きの違う 2 つの X が重なるように合わせる（2009）'],
   ['hartmann', 'ハルトマン', '3 つの穴の像が 1 つになるように合わせる'],
   ['scheiner', 'シャイナー', '2 つの穴の像が 1 つになるように合わせる（C. Scheiner、1619）'],
+  ['jwst', 'JWST', 'ジェイムズ・ウェッブ宇宙望遠鏡の主鏡の形（六角形 18 枚と副鏡の支柱 3 本）'],
+  ['image', '画像', '用意した画像をマスクにする'],
 ];
 
 /** マスクごとの斜めの格子の角度の既定値（°） */

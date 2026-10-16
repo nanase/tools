@@ -3,7 +3,14 @@
  * 透過率は 0〜1 で、標本 1 つの広さで縁をぼかす（格子は矩形波の区間平均、円と直線は縁からの距離）
  */
 
-export type MaskKind = 'none' | 'bahtinov' | 'tri' | 'carey' | 'hartmann' | 'scheiner';
+export type MaskKind = 'none' | 'bahtinov' | 'tri' | 'carey' | 'hartmann' | 'scheiner' | 'jwst' | 'image';
+
+/** 画像のマスク: 1 辺 n の正方形の透過率（0〜1、行は上から）。key は中身が変わったら変わる名前 */
+export interface MaskImage {
+  n: number;
+  a: Float32Array;
+  key: string;
+}
 
 export interface Scope {
   /** 中央遮蔽の径の比（副鏡の径 ÷ 口径） */
@@ -34,7 +41,15 @@ export interface Mask {
   holes: number;
   hd: number;
   hr: number;
+  /** 画像のマスク（kind が image のとき） */
+  img?: MaskImage;
+  /** 画像を開口全体として使う（円の開口・中央遮蔽・スパイダーを掛けない） */
+  whole?: boolean;
 }
+
+/** 値の JSON（画像は中身の代わりに key を書く。描き直すかを決める比較に使う） */
+export const keyOf = (v: unknown): string =>
+  JSON.stringify(v, (k, x) => (k === 'img' ? ((x as MaskImage | undefined)?.key ?? null) : x));
 
 /** 矩形波（周期 1、[0, d) で 1）の 0〜u の積分 */
 const sqInt = (u: number, d: number): number => {
@@ -67,8 +82,97 @@ function bahtinov(x: number, y: number, m: Mask, px: number): number {
   return k * (x < 0 ? grating(x, y, c, s, m, px) : grating(x, y, c, -s, m, px));
 }
 
+/*
+ * JWST の主鏡: 対辺 1.32 m の六角形のセグメントを 7 mm の隙間で 2 重に並べ、中央の 1 枚を除いた 18 枚。
+ * 副鏡の支柱は幅 0.1 m の 3 本（上・左下・右下）。セグメントは上下の辺が水平（6 本の光条のうち 2 本が縦）。
+ * 外接円の半径を 1 にする
+ */
+const JW_SEG = 1.32,
+  JW_GAP = 0.007,
+  JW_STRUT = 0.1,
+  /** セグメントの中心の間隔（対辺の向き）と、六角形の外接円の半径 */
+  JW_PITCH = JW_SEG + JW_GAP,
+  JW_A = JW_PITCH / Math.sqrt(3);
+/** 中心の位置（m）: 軸座標 (q, r) の上下の辺が水平な六角形の格子 */
+const jwCenter = (q: number, r: number): [number, number] => [1.5 * JW_A * q, Math.sqrt(3) * JW_A * (r + q / 2)];
+/** 外接円の半径（m）: いちばん外のセグメントの頂点まで */
+const JW_R = (() => {
+  let mx = 0;
+  for (let q = -2; q <= 2; q++)
+    for (let r = -2; r <= 2; r++) {
+      if (Math.max(Math.abs(q), Math.abs(r), Math.abs(q + r)) > 2) continue;
+      const [cx, cy] = jwCenter(q, r);
+      for (let k = 0; k < 6; k++) {
+        const a = (k * Math.PI) / 3;
+        mx = Math.max(
+          mx,
+          Math.hypot(cx + (JW_SEG / Math.sqrt(3)) * Math.cos(a), cy + (JW_SEG / Math.sqrt(3)) * Math.sin(a)),
+        );
+      }
+    }
+  return mx;
+})();
+/** JWST の開口の透過率（マスクの座標、外接円の半径を 1） */
+function jwst(u: number, v: number, px: number): number {
+  const x = u * JW_R,
+    y = v * JW_R,
+    p = px * JW_R;
+  /* 最寄りのセグメント（立方体座標の丸め） */
+  const qf = x / (1.5 * JW_A),
+    rf = y / (Math.sqrt(3) * JW_A) - qf / 2;
+  let q = Math.round(qf),
+    r = Math.round(rf);
+  const s = Math.round(-qf - rf),
+    dq = Math.abs(q - qf),
+    dr = Math.abs(r - rf),
+    ds = Math.abs(s - (-qf - rf));
+  if (dq > dr && dq > ds) q = -r - s;
+  else if (dr > ds) r = -q - s;
+  if ((q === 0 && r === 0) || Math.max(Math.abs(q), Math.abs(r), Math.abs(q + r)) > 2) return 0;
+  const [cx, cy] = jwCenter(q, r),
+    dx = x - cx,
+    dy = y - cy,
+    /* 六角形の辺までの距離: 法線は 90°・30°・150° */
+    h = JW_SEG / 2,
+    c30 = Math.sqrt(3) / 2,
+    e = h - Math.max(Math.abs(dy), Math.abs(c30 * dx + 0.5 * dy), Math.abs(-c30 * dx + 0.5 * dy));
+  let t = edge(e, p);
+  if (t <= 0) return 0;
+  /* 支柱: 上（90°）・右下（−60°）・左下（−120°） */
+  for (const a of [Math.PI / 2, -Math.PI / 3, (-2 * Math.PI) / 3]) {
+    const ca = Math.cos(a),
+      sa = Math.sin(a);
+    if (x * ca + y * sa > 0) t *= edge(Math.abs(-x * sa + y * ca) - JW_STRUT / 2, p);
+  }
+  return t;
+}
+
+/** 画像のマスクの透過率（マスクの座標。画像の正方形を [−1, 1]² に置き、双一次で引く） */
+function image(u: number, v: number, img: MaskImage | undefined): number {
+  if (!img) return 1;
+  const n = img.n,
+    fx = ((u + 1) / 2) * n - 0.5,
+    fy = ((1 - v) / 2) * n - 0.5;
+  if (fx < -0.5 || fy < -0.5 || fx > n - 0.5 || fy > n - 0.5) return 0;
+  const x0 = Math.max(0, Math.min(n - 2, Math.floor(fx))),
+    y0 = Math.max(0, Math.min(n - 2, Math.floor(fy))),
+    tx = Math.max(0, Math.min(1, fx - x0)),
+    ty = Math.max(0, Math.min(1, fy - y0)),
+    o = y0 * n + x0,
+    a = img.a;
+  return (1 - ty) * ((1 - tx) * a[o] + tx * a[o + 1]) + ty * ((1 - tx) * a[o + n] + tx * a[o + n + 1]);
+}
+
 /** 開口の中の透過率（スコープとマスクを合わせる）。(x, y) は開口の座標、px は標本の幅 */
 export function transmit(x: number, y: number, sc: Scope, m: Mask, px: number): number {
+  /* JWST と、開口全体として使う画像は、鏡筒の口・中央遮蔽・スパイダーを掛けない */
+  if (m.kind === 'jwst' || (m.kind === 'image' && m.whole)) {
+    const cr = Math.cos(m.rot),
+      sr = Math.sin(m.rot),
+      u = x * cr + y * sr,
+      v = -x * sr + y * cr;
+    return m.kind === 'jwst' ? jwst(u, v, px) : image(u, v, m.img);
+  }
   const r = Math.hypot(x, y);
   let t = edge(1 - r, px);
   if (t <= 0) return 0;
@@ -123,6 +227,8 @@ export function transmit(x: number, y: number, sc: Scope, m: Mask, px: number): 
         s = Math.sin(h) * (v < 0 ? -1 : 1);
       return t * edge(Math.abs(u) - m.bar / 2, px) * edge(Math.abs(v) - m.bar / 2, px) * grating(u, v, c, s, m, px);
     }
+    case 'image':
+      return t * image(u, v, m.img);
     case 'hartmann':
     case 'scheiner': {
       const n = m.kind === 'scheiner' ? 2 : m.holes;

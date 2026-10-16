@@ -44,9 +44,18 @@
 
 /* マスクの正面 */
 .mf{display:grid;grid-template-columns:132px minmax(0,1fr);gap:14px;align-items:center;margin-bottom:10px}
+.mf-w{position:relative;width:132px;height:132px;border-radius:4px}
 .mf canvas{display:block;width:132px;height:132px}
+.mf-t{min-width:0}
 .mf p{margin:0;font-size:13px;line-height:1.7;color:var(--ink-2)}
 .mf p b{color:var(--ink)}
+/* 画像のマスク: 選ぶボタンとファイル名、ドロップ先 */
+.mf-f{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-top:8px}
+.mf-f input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.mf-f .tg:has(+ input:focus-visible){outline:2px solid var(--focus);outline-offset:2px}
+.mf-n{min-width:0;font:500 12px/1.4 var(--mono);color:var(--ink-3);overflow-wrap:anywhere}
+.mf-drop{position:absolute;inset:0;display:grid;place-items:center;margin:0;padding:8px;border:1.5px dashed var(--line-2);border-radius:50%;background:var(--surface);color:var(--ink-2);font-size:12px;line-height:1.5;text-align:center;pointer-events:none}
+.mf.drag .mf-w{outline:2px solid var(--focus);outline-offset:3px}
 
 /* グラフ */
 .gp .cfzb{fill:var(--grid);opacity:.6}

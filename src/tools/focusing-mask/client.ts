@@ -5,12 +5,13 @@
 import { Choice } from '../../lib/choice';
 import { $ } from '../../lib/dom';
 import { ParamGroup } from '../../lib/param';
+import { mark } from '../../lib/reset';
 import { forget, store, stored } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
 import { toRgba } from './camera';
 import { type Cam, expose, type Scene } from './engine';
 import { reading, type Section, sections, spot } from './geometry';
-import { type Mask, type MaskKind, rasterize, type Scope } from './mask';
+import { keyOf, type Mask, type MaskImage, type MaskKind, rasterize, type Scope } from './mask';
 import { fitBahtinov, hfd } from './measure';
 import type { Aberr, Img } from './optics';
 import { type Key, MASKS, OBS0, PARAMS, type ScopeKind, sig, TH0 } from './params';
@@ -51,6 +52,125 @@ const ov$ = new Choice<'on' | 'off'>($('#p-ov'), () => draw());
 const gv$ = new Choice<'both' | 'one'>($('#p-gv'), () => drawGraph());
 const st$ = new Choice<'lin' | 'asinh'>($('#p-st'), () => draw());
 const cm$ = new Choice<'color' | 'mono'>($('#p-cm'), () => draw());
+const ic$ = new Choice<'white' | 'black'>($('#p-ic'), later);
+const im$ = new Choice<'circle' | 'whole'>($('#p-im'), later);
+
+/* ---------- 画像のマスク ---------- */
+/** 読み込んだ画像の明るさ（1 辺 SRC_N の正方形、0〜1、行は上から） */
+const SRC_N = 512;
+let src: { L: Float32Array; name: string; id: number } | null = null,
+  srcId = 0,
+  mimg: MaskImage | undefined;
+/** しきい値と光を通す色から、透過率の画像を作る（境目は明るさ ±4 % でぼかす） */
+function maskImage(thr: number, white: boolean): MaskImage | undefined {
+  if (!src) return undefined;
+  const key = `${src.id}:${thr}:${white ? 'w' : 'b'}`;
+  if (mimg?.key === key) return mimg;
+  const t = thr / 100,
+    w = 0.04,
+    a = new Float32Array(SRC_N * SRC_N);
+  for (let i = 0; i < a.length; i++) {
+    const v = Math.max(0, Math.min(1, (src.L[i] - t) / (2 * w) + 0.5));
+    a[i] = white ? v : 1 - v;
+  }
+  mimg = { n: SRC_N, a, key };
+  return mimg;
+}
+/** 画像を正方形に収め（縦横比は保ち、余りは黒）、明るさにする。透明な所は黒とみなす */
+function luminance(img: CanvasImageSource, w: number, h: number): Float32Array {
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = SRC_N;
+  const ctx = cv.getContext('2d');
+  const L = new Float32Array(SRC_N * SRC_N);
+  if (!ctx) return L;
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, SRC_N, SRC_N);
+  const k = SRC_N / Math.max(w, h),
+    dw = w * k,
+    dh = h * k;
+  ctx.drawImage(img, (SRC_N - dw) / 2, (SRC_N - dh) / 2, dw, dh);
+  const d = ctx.getImageData(0, 0, SRC_N, SRC_N).data,
+    lin = (c: number) => {
+      const x = c / 255;
+      return x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4;
+    };
+  /* 明るさは sRGB を線形に戻した輝度を、もう一度 sRGB の明るさの尺度にしたもの（見た目の明るさに近い） */
+  for (let i = 0; i < L.length; i++) {
+    const Y = 0.2126 * lin(d[i * 4]) + 0.7152 * lin(d[i * 4 + 1]) + 0.0722 * lin(d[i * 4 + 2]);
+    L[i] = Y <= 0.0031308 ? 12.92 * Y : 1.055 * Y ** (1 / 2.4) - 0.055;
+  }
+  return L;
+}
+/** 開き直したときに戻すため、明るさを 256 画素の PNG にして保存する */
+function keepImage(name: string): void {
+  if (!src) return;
+  const n = 256,
+    cv = document.createElement('canvas');
+  cv.width = cv.height = n;
+  const ctx = cv.getContext('2d');
+  if (!ctx) return;
+  const im = ctx.createImageData(n, n),
+    k = SRC_N / n;
+  for (let j = 0; j < n; j++)
+    for (let i = 0; i < n; i++) {
+      const v = Math.round(255 * src.L[Math.floor((j + 0.5) * k) * SRC_N + Math.floor((i + 0.5) * k)]),
+        q = (j * n + i) * 4;
+      im.data[q] = im.data[q + 1] = im.data[q + 2] = v;
+      im.data[q + 3] = 255;
+    }
+  ctx.putImageData(im, 0, 0);
+  try {
+    store('img', { name, url: cv.toDataURL('image/png') });
+  } catch {
+    /* 保存できなくても、このページを開いている間は使える */
+  }
+}
+async function loadFile(f: File): Promise<void> {
+  txt('#mf-m', '');
+  try {
+    const bm = await createImageBitmap(f);
+    src = { L: luminance(bm, bm.width, bm.height), name: f.name, id: ++srcId };
+    bm.close();
+    keepImage(f.name);
+    if (mk$.value !== 'image') mk$.set('image');
+    schedule();
+  } catch {
+    txt('#mf-m', '画像を読めませんでした（PNG・JPEG・WebP・GIF・SVG などを選んでください）');
+  }
+}
+/** 保存した画像を戻す */
+function restoreImage(): void {
+  const v = stored('img') as { name?: string; url?: string } | undefined;
+  if (!v?.url) return;
+  const im = new Image();
+  im.onload = () => {
+    src = { L: luminance(im, im.naturalWidth, im.naturalHeight), name: v.name ?? '', id: ++srcId };
+    if (ready) schedule();
+  };
+  im.src = v.url;
+}
+{
+  const inp = $<HTMLInputElement>('#mf-in'),
+    mf = $('#mf');
+  inp.addEventListener('change', () => {
+    const f = inp.files?.[0];
+    if (f) void loadFile(f);
+    inp.value = '';
+  });
+  mf.addEventListener('dragover', (e) => {
+    if (mk$.value !== 'image') return;
+    e.preventDefault();
+    mf.classList.add('drag');
+  });
+  mf.addEventListener('dragleave', () => mf.classList.remove('drag'));
+  mf.addEventListener('drop', (e) => {
+    mf.classList.remove('drag');
+    const f = e.dataTransfer?.files?.[0];
+    if (mk$.value !== 'image' || !f) return;
+    e.preventDefault();
+    void loadFile(f);
+  });
+}
 
 /** ピントの位置（µm）。入力なので保存する */
 let dz = 100;
@@ -103,11 +223,18 @@ function cond(): Cond {
     kind = mk$.value,
     tp = tp$.value,
     R = v.D / 2,
-    grating = kind === 'bahtinov' || kind === 'tri' || kind === 'carey';
+    grating = kind === 'bahtinov' || kind === 'tri' || kind === 'carey',
+    isImg = kind === 'image',
+    /* JWST と、開口全体として使う画像は、鏡筒の口・中央遮蔽・スパイダーを使わない */
+    own = kind === 'jwst' || (isImg && im$.value === 'whole');
   G.setOff('th', !grating, 'このマスクでは使いません');
   G.setOff('bf', !grating, 'このマスクでは使いません');
-  G.setOff('hd', grating || kind === 'none', '穴のマスクだけで使います');
-  G.setOff('obs', tp === 'refr', '屈折では使いません');
+  G.setOff('hd', kind !== 'hartmann' && kind !== 'scheiner', '穴のマスクだけで使います');
+  G.setOff('obs', tp === 'refr' || own, own ? 'このマスクでは使いません' : '屈折では使いません');
+  for (const id of ['#p-thr', '#p-ic', '#p-im', '#mf-f']) $(id).hidden = !isImg;
+  $('#mf-drop').hidden = !isImg || !!src;
+  txt('#mf-n', isImg && src ? src.name : '');
+  mark();
   const sc: Scope = {
     obs: tp === 'refr' ? 0 : v.obs / 100,
     vanes: tp === 'newt' ? 4 : 0,
@@ -126,6 +253,8 @@ function cond(): Cond {
     hd: (2 * v.hd) / 100,
     hr: 0.6,
     flip: or$.value === 'rev',
+    img: isImg ? maskImage(v.thr, ic$.value === 'white') : undefined,
+    whole: isImg && im$.value === 'whole',
   };
   const ab: Aberr | undefined =
     v.coma || v.ast ? { cx: v.coma * LAMBDA, cy: 0, a0: v.ast * LAMBDA, a45: 0, sph: 0 } : undefined;
@@ -187,7 +316,7 @@ function schedule(): void {
   C = cond();
   version++;
   full = false;
-  const k = JSON.stringify([C.sc, C.m, C.ab ?? null]);
+  const k = keyOf([C.sc, C.m, C.ab ?? null]);
   if (k !== secKey) {
     secKey = k;
     S = sections(C.sc, C.m, C.ab);
@@ -230,7 +359,7 @@ function refStar(): void {
     key = JSON.stringify([C.D, C.f, C.sc, C.T, cam]);
   if (ref?.key === key) return;
   const c = C,
-    s: Scene = { ...sceneOf(c, 4, 512), dz: 0, m: { ...c.m, kind: 'none' }, ab: undefined };
+    s: Scene = { ...sceneOf(c, 4, 512), dz: 0, m: { ...c.m, kind: 'none', img: undefined }, ab: undefined };
   void pool.render(s, 'ref').then((img) => {
     if (!img) return;
     const fr = expose(img, c.f, cam),
@@ -312,7 +441,8 @@ const svc = $<HTMLCanvasElement>('#sv-c'),
 
 /** マスクの正面（板は濃い灰色、開いた所は明るい灰色、外は透明） */
 function drawMask(): void {
-  const n = Math.round(132 * Math.min(2, devicePixelRatio || 1)),
+  const whole = C.kind === 'image' && !!C.m.whole,
+    n = Math.round(132 * Math.min(2, devicePixelRatio || 1)),
     a = rasterize(n, C.sc, C.m),
     ctx = mfc.getContext('2d');
   if (!ctx) return;
@@ -322,7 +452,8 @@ function drawMask(): void {
     for (let i = 0; i < n; i++) {
       const x = -1 + ((i + 0.5) * 2) / n,
         y = 1 - ((j + 0.5) * 2) / n,
-        plate = Math.max(0, Math.min(1, (1.06 - Math.hypot(x, y)) * (n / 2) + 0.5)),
+        /* 板: 円い口の外側の縁。開口全体として使う画像は正方形のまま */
+        plate = whole ? 1 : Math.max(0, Math.min(1, (1.06 - Math.hypot(x, y)) * (n / 2) + 0.5)),
         t = a[j * n + i],
         q = (j * n + i) * 4;
       im.data[q] = 0x2b + (0xd5 - 0x2b) * t;
@@ -341,6 +472,10 @@ function drawMask(): void {
     hartmann:
       '<b>ハルトマンマスク</b>。3 つの穴の像が、ピントが合うと 1 つに重なります。三角形の向きで手前か奥かが分かります。',
     scheiner: '<b>シャイナーの円板</b>（C. Scheiner、1619）。2 つの穴の像が、ピントが合うと 1 つに重なります。',
+    jwst: '<b>JWST の主鏡</b>。六角形 18 枚の鏡の縁が 6 本の大きな光条を、副鏡の縦の支柱が横の細い光条を作ります。口径は外接円の径です。',
+    image: src
+      ? '<b>画像のマスク</b>。白（または黒）の所が光を通します。'
+      : '<b>画像のマスク</b>。画像を選ぶか、左の円にドロップしてください。白（または黒）の所が光を通します。',
   };
   html('#mf-d', D[C.kind]);
   mfc.setAttribute('aria-label', `${MASKS.find((x) => x[0] === C.kind)?.[1] ?? ''}の正面`);
@@ -406,9 +541,11 @@ function drawGraph(): void {
     carey: 'CH1 2 つの X の間隔（µm）',
     hartmann: 'CH1 穴の像の間隔（µm）',
     scheiner: 'CH1 穴の像の間隔（µm）',
+    jwst: '',
+    image: '',
   };
   txt('#gp-t1', L[c.kind]);
-  $('#gp-l1').hidden = c.kind === 'none';
+  $('#gp-l1').hidden = !L[c.kind];
   txt('#gp-x', `Δz ${sig(c.R / 4, 3)} µm/div`);
   const r = readAt(dz);
   txt(
@@ -422,9 +559,11 @@ function drawRay(): void {
   const c = C,
     up: Beam = { cls: 'b1', y0: 1, y1: -1 },
     lo: Beam = { cls: 'b2', y0: 1, y1: -1 };
+  /* 区画が 1 つ（マスクなし・JWST・画像）なら開口の全体を 1 つの光束にする */
+  const one = S.length === 1;
   for (const s of S) {
     if (s.w <= 0) continue;
-    const b = c.kind === 'none' || s.c[1] < 0 ? lo : up;
+    const b = one || s.c[1] >= 0 ? up : lo;
     b.y0 = Math.min(b.y0, s.y0);
     b.y1 = Math.max(b.y1, s.y1);
   }
@@ -437,11 +576,13 @@ function drawRay(): void {
     carey: ['上の 2 区画', '下の 2 区画'],
     hartmann: ['上の穴', '下の 2 つの穴'],
     scheiner: ['上の穴', '下の穴'],
+    jwst: ['開口の全体', ''],
+    image: ['開口の全体', ''],
   };
   const [a, b] = T[c.kind];
-  txt('#ray-t1', c.kind === 'none' ? b || a : a);
+  txt('#ray-t1', a);
   txt('#ray-t2', b);
-  $('#ray-l2').hidden = !b || c.kind === 'none';
+  $('#ray-l2').hidden = !b;
 }
 
 /** 映像・重ねる線・計算結果（計算の結果が来るたび） */
@@ -639,10 +780,11 @@ function results(meas: number | null, Y: Float64Array, n: number): void {
   txt('#mE', miniE || DASH);
   txt('#mX', miniX || DASH);
   $('#mXl').hidden = c.kind !== 'bahtinov';
-  $('#mEl').hidden = c.kind === 'none';
+  $('#mEl').hidden = !r.length;
 }
 
 ready = true;
+restoreImage();
 schedule();
 queueMicrotask(() => {
   boot = false;

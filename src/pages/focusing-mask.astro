@@ -26,6 +26,7 @@ import {
   SEE,
   TEMP,
   TH,
+  THR,
 } from '../tools/focusing-mask/params';
 import { FSC, GP, RAY } from '../tools/focusing-mask/plot';
 import Theory from '../tools/focusing-mask/Theory.astro';
@@ -90,9 +91,19 @@ const related = [
 
     <div class="col c2">
       <Panel hid="hd-mask" title="マスク" class="a-mask">
-        <div class="mf"><canvas id="mf-c" role="img" aria-label="マスクの正面"></canvas><p id="mf-d" class="hh" data-ph="キャリー・マスク（2009）。四分円 4 つの斜めの格子が、開きの違う 2 つの X 字の光条を作ります。ピントが合うと 2 つの X が対称に重なります。"></p></div>
+        <div class="mf" id="mf">
+          <div class="mf-w"><canvas id="mf-c" role="img" aria-label="マスクの正面"></canvas><p class="mf-drop" id="mf-drop" hidden>ここへ画像をドロップ</p></div>
+          <div class="mf-t">
+            <p id="mf-d" class="hh" data-ph="キャリー・マスク（2009）。四分円 4 つの斜めの格子が、開きの違う 2 つの X 字の光条を作ります。ピントが合うと 2 つの X が対称に重なります。"></p>
+            <div class="mf-f" id="mf-f" hidden><label class="tg" for="mf-in">画像を選ぶ…</label><input type="file" id="mf-in" accept="image/*"><span class="mf-n" id="mf-n"></span></div>
+            <p class="msg" id="mf-m" aria-live="polite"></p>
+          </div>
+        </div>
         <div class="ptab">
           <ChoiceRow k="mk" name="マスクの種類" choices={MASKS} value="bahtinov" layout="chips" msg />
+          <ParamRow d={THR} />
+          <ChoiceRow k="ic" name="光を通す色" sub="画像の白い所と黒い所の、どちらを穴（光を通す所）にするか" choices={[['white', '白'], ['black', '黒']]} value="white" />
+          <ChoiceRow k="im" name="開口" sub="円の中だけは、鏡筒の円い口の中に画像を重ねる。画像のままは、画像の正方形をそのまま開口にする（鏡筒の口・中央遮蔽・スパイダーを使わない）" choices={[['circle', '円の中だけ'], ['whole', '画像のまま']]} value="circle" />
           <ParamRow d={TH} />
           <ParamRow d={BF} />
           <ParamRow d={ROT} />

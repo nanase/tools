@@ -77,6 +77,15 @@ const rf = (...ns: number[]) => ns.map((n) => `<a class="rf" href="#thy-r${n}">[
 </div>
 <p>穴が 2 つでは、焦点の手前と奥で同じ並びになり、どちらへずれたか分かりません。穴が 3 つなら三角形の向きが逆になります。</p>
 
+<h3>JWST の主鏡と画像のマスク</h3>
+<p>ジェイムズ・ウェッブ宇宙望遠鏡（JWST）の主鏡は、六角形のセグメント 18 枚でできています<Fragment set:html={rf(14)} />。星の像に出る 6 本の大きな光条はセグメントと開口の縁から、横の細い 2 本は副鏡を支える縦の支柱から生まれます<Fragment set:html={rf(15)} />。このツールでは、次の形を開口として描きます<Fragment set:html={rf(16)} />。</p>
+<ul class="tl">
+  <li>セグメント: 対辺 1.32 m の六角形を 7 mm の隙間で 2 重に並べ、中央の 1 枚を除いた 18 枚</li>
+  <li>副鏡の支柱: 幅 0.1 m の 3 本（上・右下・左下）</li>
+  <li>口径: 外接円の径。中央遮蔽とスパイダーは使わない</li>
+</ul>
+<p>画像のマスクは、画像の明るさをしきい値で白と黒に分け、光を通す側の透過率を 1 にします。「円の中だけ」は鏡筒の円い口の中に重ね、「画像のまま」は画像の正方形をそのまま開口にします。</p>
+
 <h3>ピントが合っているとみなす範囲</h3>
 <p>波面のずれが 1/4 波長（レイリーの基準）までなら、ピントが合っているとみなします<Fragment set:html={rf(3)} />。この範囲は臨界焦点範囲とも呼ばれます。出典によって定数が 2〜3 倍違うので、計算結果にはどの定数を使ったかを添えます。</p>
 <div class="eqs">
@@ -122,6 +131,8 @@ const rf = (...ns: number[]) => ns.map((n) => `<a class="rf" href="#thy-r${n}">[
   <li>ピントの位置の目盛りの範囲: 臨界焦点範囲の約 7.5 倍を切りのよい値にしたもの</li>
   <li>ニュートン式のスパイダー: 幅 2 mm を 4 本</li>
   <li>収差の大きさ: ゼルニケ多項式の係数（RMS、λ = 550 nm を単位）</li>
+  <li>画像のマスク: 画像を 512 × 512 の正方形に収め（縦横比は保ち、余りと透明な所は黒）、しきい値の前後 ±4 % の明るさで境目をぼかす。開き直したときのため、256 × 256 にした明るさをブラウザに保存する</li>
+  <li>JWST の形: セグメントの形の誤差は入れず、支柱は中心を通る直線とした。副鏡の影は中央の穴に収まるので描かない</li>
 </ul>
 
 <h3>出典</h3>
@@ -139,4 +150,7 @@ const rf = (...ns: number[]) => ns.map((n) => `<a class="rf" href="#thy-r${n}">[
   <li id="thy-r11"><span class="rf-for">解析ソフトの光条のずれの式と合焦の判定</span><span class="rf-src">N. Noordhoek, Bahtinov Grabber V17.0, 2011（ソースは GitHub wytsep/bahtinov-grabber に保存されたもの）</span></li>
   <li id="thy-r12"><span class="rf-for">モファット分布の β = 4.765</span><span class="rf-src">I. Trujillo, J. A. L. Aguerri, J. Cepa and C. M. Gutiérrez, “The effects of seeing on Sérsic profiles – II. The Moffat PSF,” <i>Mon. Not. R. Astron. Soc.</i>, vol. 328, no. 3, pp. 977–985, 2001</span></li>
   <li id="thy-r13"><span class="rf-for">大気の乱れによる長時間露出の像の広がり</span><span class="rf-src">D. L. Fried, “Optical resolution through a randomly inhomogeneous medium for very long and very short exposures,” <i>J. Opt. Soc. Am.</i>, vol. 56, no. 10, pp. 1372–1379, 1966, doi:10.1364/JOSA.56.001372</span></li>
+  <li id="thy-r14"><span class="rf-for">JWST の主鏡のセグメント</span><span class="rf-src">M. W. McElwain et al., “The James Webb Space Telescope Mission: Optical Telescope Element Design, Development, and Performance,” <i>Publ. Astron. Soc. Pac.</i>, vol. 135, 058001, 2023, doi:10.1088/1538-3873/acada0</span></li>
+  <li id="thy-r15"><span class="rf-for">JWST の星の像の光条（6 本と、縦の支柱による横の 2 本）</span><span class="rf-src">J. Rigby et al., “The Science Performance of JWST as Characterized in Commissioning,” <i>Publ. Astron. Soc. Pac.</i>, vol. 135, 048001, 2023, doi:10.1088/1538-3873/acb293</span></li>
+  <li id="thy-r16"><span class="rf-for">JWST の開口の模型（セグメントの大きさ・隙間・支柱の幅と向き）</span><span class="rf-src">prysm documentation, “Segmented Systems”（prysm.readthedocs.io）</span></li>
 </ol>
