@@ -185,6 +185,8 @@ interface Stroke {
   /** 前のひと弾きから・次のひと弾きへ、弓を弦に付けたまま返す */
   jin: boolean;
   jout: boolean;
+  /** 弓速の下限 [m/s]（ふつうは V_MIN。弓の長さに収まらないひと弾きは V_LONG まで遅くして、1 回の弓で弾き切る） */
+  vmin: number;
 }
 
 const bMin = (q: number, open: boolean) => (open ? OPEN_BMIN[q] : BETA_MIN[q]),
@@ -220,6 +222,15 @@ const MARGIN = 0.03,
   LIFT_MIN = 0.04,
   LIFT_MAX = 0.1,
   PROF_DT = 0.01;
+/**
+ * 弓の長さに収まらないひと弾き（ロングトーン・長いスラー）の、弓速の下限 [m/s] と β の下限の倍率。
+ * 途中で弓を返さずに 1 回の弓で弾き切るため、弓速をふつうの下限 V_MIN より遅くし、弓を駒へ寄せる（奏者と同じ）。
+ * 弓圧は弓速 ÷ β に比例するので下がり、音は小さくなる。シャコンヌの最後の音（5.45 s）では、弓を返す弾き方
+ * （0.39 m/s・β 0.1）より約 9.5 dB 小さい。駒へ寄せない（倍率 1）と雑音/全体が約 −23 dB、0.6 で約 −26 dB
+ * （エクルズとアダージョの長い音も同じ傾向。scratchpad の測り方は p7-noise.ts と同じ）
+ */
+const V_LONG = 0.08,
+  LONG_B = 0.6;
 /**
  * 弓を返すところで、弓速を上げる時間・下げる時間 [s]。弓を離すときに弓圧を抜く時間 [s]。
  * 返すところの音の落ち込み（±40 ms の平均）は、25・20 ms では −2〜−3 dB（ロングトーンの最も深いところで
@@ -300,6 +311,7 @@ class Piece {
           prof: new Float32Array(0),
           jin: false,
           jout: false,
+          vmin: V_MIN,
         });
       } else if (cur) {
         cur.t1 = Math.max(cur.t1, nt.t + nt.d);
@@ -333,7 +345,8 @@ class Piece {
    * 弓の使い方を決める（奏者が前もって考える弓の配分の代わり）。
    *  1. 弓を離すところ: 休み（前の音との間が空く）、3 音以上の和音の前、0.3 s 以上のひと弾きで終わる楽句の終わり。
    *     間が空いていなければ、前の音の終わりを縮めて離す時間（音の 1/4、0.04〜0.1 s）を作る
-   *  2. 弓の長さに収まらないひと弾き（弓速を 0.7 倍にしても収まらない長い音・長いスラー）は、途中で弓を返して分ける
+   *  2. 弓の長さに収まらないひと弾き（弓速を 0.7 倍にしても収まらない長い音・長いスラー）は、弓速を V_LONG まで落とし、
+   *     弓を駒へ寄せて 1 回の弓で弾き切る。それでも収まらなければ、途中で弓を返して分ける
    *  3. 弓の向き: 下げ弓と上げ弓を交互に。弓を離して始める和音は下げ弓（続けて下げ弓なら弓を元へ戻す）
    *  4. 弓の位置: 弓を離さずに続くひと弾きの列が、毛の両端の余裕の内に収まるように、各ひと弾きの弓速の倍率
    *     （0.7〜1.15）と始まりの位置を決める（後ろから収まる位置の範囲を求め、前から選ぶ）。どうしても収まらなければ、
@@ -368,7 +381,7 @@ class Piece {
         dt = (s.t1 - s.t0) / n,
         prof = new Float32Array(n + 1);
       let len = 0,
-        kLo = KMIN,
+        kLo = s.vmin < V_MIN ? 0 : KMIN,
         kHi = KMAX;
       for (let i = 0; i < n; i++) {
         const t = s.t0 + (i + 0.5) * dt,
@@ -376,7 +389,7 @@ class Piece {
           v = strokeSpeed(s, t, cs, oc, level).vs;
         len += v * strokeShape(s, t) * dt;
         prof[i + 1] = len;
-        kLo = Math.max(kLo, V_MIN / v);
+        kLo = Math.max(kLo, s.vmin / v);
         kHi = Math.min(kHi, (oc ? OPEN_VMAX[cs] : V_MAX) / v);
       }
       for (let i = 1; i <= n; i++) prof[i] = len > 0 ? prof[i] / len : i / n;
@@ -424,10 +437,14 @@ class Piece {
       if (s.t0 - pv.t1 > 1e-6) s.lift = true;
       else if (s.chord || (pv.t1 - pv.t0 >= 0.3 && endingAt(s.t0)?.some((x) => x.end))) steal(pv, s);
     }
-    /* 2. 弓の長さに収まらないひと弾きを分ける（分け目は近くの音の境目に寄せる） */
+    /*
+     * 2. 弓の長さに収まらないひと弾きは、まず弓速を V_LONG まで落として 1 回の弓に収める。それでも収まらなければ、
+     *    途中で弓を返して分ける（分け目は近くの音の境目に寄せる）
+     */
     const U = H1 - MARGIN,
       split: Stroke[] = [];
     for (const s of S) {
+      if (est(s).lmin > 0.95 * U) s.vmin = V_LONG;
       const np = Math.ceil(est(s).lmin / (0.95 * U));
       if (np <= 1) {
         split.push(s);
@@ -851,7 +868,7 @@ export class ViolinPlayer {
           sp = strokeSpeed(s, t, cs, oc, level),
           ratio = sp.ratio,
           vs =
-            Math.min(Math.max(sp.vs, oc ? OPEN_VMAX[cs] : V_MAX), Math.max(Math.min(sp.vs, V_MIN), sp.vs * s.k)) *
+            Math.min(Math.max(sp.vs, oc ? OPEN_VMAX[cs] : V_MAX), Math.max(Math.min(sp.vs, s.vmin), sp.vs * s.k)) *
             (1 + SV * this.nV[i]),
           w = strokeShape(s, t),
           /* 弓を当てる（15 ms 前から）・弓を離す（動いたまま、終わりの LIFT_FADE で弓圧を抜く） */
@@ -863,9 +880,19 @@ export class ViolinPlayer {
         for (let q = 0; q < 4; q++) {
           const c = this.contW[q][i];
           if (c <= 0) continue;
-          /* 重音・和音の下の弦は、β を 0.1 より小さくしない（強く鳴らしすぎると多重の滑りに落ちやすい） */
+          /*
+           * 重音・和音の下の弦は、β を 0.1 より小さくしない（強く鳴らしすぎると多重の滑りに落ちやすい）。
+           * 弓速を V_MIN より落とすひと弾きは、β の下限も LONG_B 倍まで下げる（弓を駒へ寄せる）
+           */
           const oq = Math.abs(this.pitchW[q][i] - OPEN[q]) < 0.05,
-            beta = Math.min(bMax(q, oq), Math.max(bMin(q, oq), q > cs ? 0.1 : 0, (vs / ratio) * (1 + SB * this.nB[i]))),
+            beta = Math.min(
+              bMax(q, oq),
+              Math.max(
+                bMin(q, oq) * (s.vmin < V_MIN ? LONG_B : 1),
+                q > cs ? 0.1 : 0,
+                (vs / ratio) * (1 + SB * this.nB[i]),
+              ),
+            ),
             /* 弓圧 [N] = Schelleng の上限 2 Z0 v / (β (μs − μd)) の KT 倍（μs − μd ≈ 0.85）に、利用者の決めた倍率を掛ける */
             f = (this.press * KT * 2 * this.z0[q] * u * c * (vs / beta)) / 0.85;
           if (f > this.fW[q][i]) this.fW[q][i] = f;
@@ -1126,7 +1153,7 @@ export class ViolinPlayer {
     while (this.wj[q] > 0 && S[this.wj[q]].t0 > tNow) this.wj[q]--;
     const tS = S.length && S[this.wj[q]].t0 <= tNow ? tNow - S[this.wj[q]].t0 : Infinity,
       tIn = ni >= 0 ? Math.min(tS, tNow - st[ni]) : 0,
-      moving = touching && Math.abs(this.vb[0]) > 0.5 * V_MIN,
+      moving = touching && Math.abs(this.vb[0]) > 0.5 * (S[this.wj[q]]?.vmin ?? V_MIN),
       /* 乱れ（周期的でない）と、二重の滑り（周期的で、第 2 倍音が基音を上回る） */
       rauc = moving && tIn > 0.06 && d.a > RAUC * d.e,
       dbl = moving && !rauc && tIn > 0.08 && Math.hypot(d.r2, d.i2) > Math.hypot(d.r1, d.i1);

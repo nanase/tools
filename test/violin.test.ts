@@ -140,6 +140,20 @@ describe('音', () => {
     for (let i = 0; i < FS; i += 512) pl.render(L, R, i, Math.min(512, FS - i));
     expect(rms(L.subarray(FS / 2))).toBeLessThan(on / 10);
   });
+  it('7 秒までのロングトーンは、途中で弓を返さずに 1 回の弓で弾き切る（どの曲も）', async () => {
+    for (const p of PIECES) {
+      const perf = performPiece(p, await loadScore(p.file), 'phrase', 1),
+        pl = new ViolinPlayer(FS, BODY_DEFAULT);
+      pl.play(perf);
+      for (const x of perf.notes) {
+        if (x.d > 7) continue;
+        const inside = pl.strokes.filter((s) => s.t0 > x.t + 1e-3 && s.t0 < x.t + x.d - 0.1);
+        /* その間に始まる音がなければ、弓を返してはいけない */
+        const starts = perf.notes.some((y) => y.t > x.t + 1e-3 && y.t < x.t + x.d - 0.1);
+        if (!starts) expect(inside).toEqual([]);
+      }
+    }
+  });
   it('手で弾く弦を D 線から E 線へ変えると、D 線から弓が離れてから E 線に触れる', () => {
     const pl = new ViolinPlayer(FS, BODY_DEFAULT),
       L = new Float32Array(32),
@@ -218,7 +232,8 @@ describe('音', () => {
           expect(x).toBeLessThanOrEqual(HAIR - 0.03 + 1e-9);
         }
         expect(Math.sign(s.p1 - s.p0)).toBe(s.p1 === s.p0 ? 0 : s.dir);
-        expect(s.k).toBeGreaterThanOrEqual(0.7 - 1e-9);
+        /* 弓の長さに収まらないひと弾きは、弓速を落として 1 回の弓に収める（倍率の下限を外す） */
+        if (s.vmin >= 0.22) expect(s.k).toBeGreaterThanOrEqual(0.7 - 1e-9);
         expect(s.k).toBeLessThanOrEqual(1.15 + 1e-9);
         if (j > 0 && !s.lift) {
           expect(s.t0).toBeCloseTo(S[j - 1].t1, 9);
