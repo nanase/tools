@@ -5,6 +5,7 @@
  * "Eclipse Predictions by Fred Espenak (NASA's GSFC)"
  */
 import type { Elements } from './elements';
+import { calToJd } from './time';
 
 /** NASA の型: P 部分、A 金環、T 皆既、H 混成。後ろの文字は中心・非中心などの区別 */
 export type EclipseType = 'P' | 'A' | 'T' | 'H';
@@ -38,15 +39,16 @@ export interface Entry {
 
 const unq = (s: string) => s.replace(/^"|"$/g, '');
 
-export function parseRow(header: string[], row: string[]): { entry: Entry; el: Elements } {
+export function parseRow(header: string[], row: string[]): { entry: Entry; el: Elements; tdSec: number } {
   const c: Record<string, string> = {};
   header.forEach((h, k) => {
     c[unq(h)] = unq(row[k] ?? '');
   });
   const n = (k: string) => Number(c[k]);
   const code = c.eclipse_type;
-  const jd = n('julian_date');
   const [hh, mm, ss] = c.td_ge.split(':').map(Number);
+  // CSV の julian_date は小数 3 桁（±43 秒）なので、暦の日付と最大食の時刻から出し直す
+  const jd = calToJd(n('year'), n('month'), n('day')) + (hh * 3600 + mm * 60 + ss) / 86400;
   const t0 = n('t0');
   // t0 は最大食に最も近い正時なので、日付をまたぐ（23:53 の食で t0 = 0）ときは ±24 時間を寄せる
   let dh = hh + mm / 60 + ss / 3600 - t0;
@@ -87,7 +89,7 @@ export function parseRow(header: string[], row: string[]): { entry: Entry; el: E
     tmin: n('tmin'),
     tmax: n('tmax'),
   };
-  return { entry, el };
+  return { entry, el, tdSec: hh * 3600 + mm * 60 + ss };
 }
 
 /** 引用符の中のカンマを気にしなくてよい NASA の CSV を、行と列に分ける */

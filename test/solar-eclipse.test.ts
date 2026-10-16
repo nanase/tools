@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { parseRow, sarosNumber, splitCsv } from '../src/tools/solar-eclipse/catalog';
 import { observerXYZ } from '../src/tools/solar-eclipse/earth';
 import { geomAt, localCircumstances, overlapFraction } from '../src/tools/solar-eclipse/local';
+import { pack, unpack } from '../src/tools/solar-eclipse/pack';
 import { centralPoint, limitPoint, outerCurves } from '../src/tools/solar-eclipse/path';
-import { residualFlux } from '../src/tools/solar-eclipse/shade';
+import { fluxAt, fluxLUT, residualFlux, snapAt, spotAt } from '../src/tools/solar-eclipse/shade';
+import { activityOf, sunAxisPA } from '../src/tools/solar-eclipse/solar';
 import { calToJd, deltaTEM, deltaTSigma, jdToCal } from '../src/tools/solar-eclipse/time';
 
 /** NASA の五千年正典の CSV（eclipse_besselian_from_mysqldump2.csv）から 3 行 */
@@ -159,5 +161,46 @@ describe('暦と ΔT', () => {
     expect(calToJd(1582, 10, 15) - calToJd(1582, 10, 4)).toBe(1);
     expect(jdToCal(calToJd(-584, 5, 28))).toMatchObject({ year: -584, month: 5, day: 28 });
     expect(jdToCal(e2024.entry.jd)).toMatchObject({ year: 2024, month: 4, day: 8 });
+  });
+});
+
+describe('データの詰め方', () => {
+  it('詰めて戻すと要素と暦が変わらず、t0 の JD が正時になる', () => {
+    for (const { entry, el, tdSec } of ecl) {
+      const u = unpack(JSON.parse(JSON.stringify(pack(entry, el, tdSec))));
+      expect(u.entry).toEqual(entry);
+      expect(u.el.x).toEqual(el.x);
+      expect(u.el.l2).toEqual(el.l2);
+      expect(u.el.jd0).toBeCloseTo(el.jd0, 9);
+      const h = ((u.el.jd0 + 0.5) % 1) * 24;
+      expect(Math.abs(h - Math.round(h))).toBeLessThan(1e-6);
+    }
+  });
+  it('最大食が日付の終わり近く（23:53 TD、t0 = 0）でも t0 を翌日の 0 時にする', () => {
+    // 2012-05-20 23:53:54 TD
+    expect(e2012.el.jd0).toBeCloseTo(calToJd(2012, 5, 21), 9);
+  });
+});
+
+describe('地図の濃さ', () => {
+  it('早見表の残光が、画素ごとに積分した残光と 0.01 以内で合う', () => {
+    const s = snapAt(e2024.el, 0.3);
+    const lut = fluxLUT(s);
+    const c = centralPoint(e2024.el, 0.3);
+    for (const dlat of [0, 0.5, 2, 5, 12]) {
+      const p = observerXYZ((c?.lat ?? 0) + dlat * D, c?.lon ?? 0, 0);
+      expect(Math.abs(fluxAt(lut, p).flux - spotAt(s, p).flux)).toBeLessThan(0.01);
+    }
+  });
+});
+
+describe('太陽の向きと活動', () => {
+  it('自転軸の位置角が Meeus の例 29.a（1992-10-13、P = 26.27°）と 0.2° 以内で合う', () => {
+    expect(Math.abs(sunAxisPA(2448908.5) / D - 26.27)).toBeLessThan(0.2);
+  });
+  it('活動の目安は 2019 年末に極小、約 4 年後に極大', () => {
+    expect(activityOf(2019.96)).toBeCloseTo(0, 6);
+    expect(activityOf(2019.96 + 11 * 0.36)).toBeCloseTo(1, 6);
+    expect(activityOf(2019.96 + 11)).toBeCloseTo(0, 6);
   });
 });

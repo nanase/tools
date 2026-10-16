@@ -132,3 +132,41 @@ export function maxMagnitudeGrid(
   }
   return out;
 }
+
+/**
+ * 画素ごとに使う残光の早見表: 月と太陽の半径の比を時刻 t の代表値（ζ = 0.5）に固定し、
+ * 影の軸からの距離を半影の半径で割った s = m / L1 の関数として F を 512 点で持つ。
+ * 本影の縁は比の違いで数 km ずれうるが、地図と地球儀の濃さには十分
+ */
+export interface FluxLUT {
+  snap: Snap;
+  table: Float32Array;
+}
+
+const LUT_N = 512;
+
+export function fluxLUT(s: Snap, alpha = ALPHA_V): FluxLUT {
+  const zeta = 0.5;
+  const L1 = s.l1 - zeta * s.tf1;
+  const L2 = s.l2 - zeta * s.tf2;
+  const sun = (L1 + L2) / 2;
+  const moon = (L1 - L2) / 2;
+  const table = new Float32Array(LUT_N + 1);
+  for (let k = 0; k <= LUT_N; k++) table[k] = residualFlux(sun, moon, (k / LUT_N) * L1, alpha);
+  return { snap: s, table };
+}
+
+/** 早見表で引く地表の点 p の様子（ζ と残光） */
+export function fluxAt(lut: FluxLUT, p: Vec3): { zeta: number; flux: number } {
+  const s = lut.snap;
+  const zeta = p[0] * s.k[0] + p[1] * s.k[1] + p[2] * s.k[2];
+  const xi = p[0] * s.i[0] + p[1] * s.i[1] + p[2] * s.i[2];
+  const eta = p[0] * s.j[0] + p[1] * s.j[1] + p[2] * s.j[2];
+  const L1 = s.l1 - zeta * s.tf1;
+  const m = Math.hypot(s.x - xi, s.y - eta);
+  if (m >= L1) return { zeta, flux: 1 };
+  const f = (m / L1) * LUT_N;
+  const k = Math.floor(f);
+  const a = f - k;
+  return { zeta, flux: lut.table[k] * (1 - a) + lut.table[k + 1] * a };
+}

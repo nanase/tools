@@ -7,7 +7,7 @@
 import { latLon, observerXYZ, type Vec3 } from './earth';
 import type { Elements } from './elements';
 import { isLand, type LandMask } from './land';
-import { type Snap, snapAt, spotAt } from './shade';
+import { fluxAt, fluxLUT, type Snap, snapAt } from './shade';
 
 export interface GlobeScene {
   w: number;
@@ -74,6 +74,7 @@ const ICE: Vec3 = [226, 230, 234];
 export function drawGlobe(ctx: CanvasRenderingContext2D, sc: GlobeScene) {
   const { w, h } = sc;
   const snap = snapAt(sc.el, sc.t, sc.dt);
+  const lut = fluxLUT(snap);
   const { c, ex, ey } = camera(sc.dir);
   const C: Vec3 = [c[0] * sc.dist, c[1] * sc.dist, c[2] * sc.dist];
   // 地球の縁が画面の fill の位置に来るように画角を決める
@@ -114,7 +115,8 @@ export function drawGlobe(ctx: CanvasRenderingContext2D, sc: GlobeScene) {
       const polar = Math.abs(lat) > 1.15 && land;
       const base = polar ? ICE : land ? LAND : OCEAN;
       const cosi = dot(P, snap.k);
-      const s = spotAt(snap, observerXYZ(lat, lon, 0));
+      // 球の点をそのまま地表の点として使う（扁平の分は見た目に効かない）
+      const s = fluxAt(lut, P);
       const day = Math.max(0, Math.min(1, (cosi + 0.03) / 0.08));
       const light = Math.max(0, cosi) * 0.85 + 0.15;
       const v = (day * light * s.flux) ** (1 / 2.2);
