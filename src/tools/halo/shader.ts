@@ -1,5 +1,5 @@
 /**
- * ハロのページのシェーダ: 光線の追跡（頂点シェーダで 1 点 = 1 光線）、空と雲の照らされ方の表（大気の単散乱）、
+ * ハロのページのシェーダ: 光線の追跡（頂点シェーダで 1 点 = 1 光線）、空と雲の照らされ方の表（大気の散乱）、
  * 表示（投影し直して合成）。座標は z が天頂、光源（太陽か月）は方位 0（+x）
  */
 import { MAX_POP } from './scene';
@@ -203,7 +203,7 @@ layout(location = 0) in vec2 aPos;
 out vec2 vUv;
 void main() { vUv = aPos * 0.5 + 0.5; gl_Position = vec4(aPos, 0.0, 1.0); }`;
 
-/** 大気（Hillaire 2020 の定数）の単散乱。距離は km、係数は 1/km */
+/** 大気（Hillaire 2020 の定数）。距離は km、係数は 1/km */
 const ATMOS = `
 const float PI = 3.14159265358979;
 const float RE = 6360.0, RT = 6420.0;
@@ -243,11 +243,60 @@ vec3 sunT(vec3 p, vec3 L) {
 }
 float phaseR(float c) { return 3.0 / (16.0 * PI) * (1.0 + c * c); }
 float phaseM(float c) { float g2 = GM * GM; return 3.0 / (8.0 * PI) * (1.0 - g2) * (1.0 + c * c) / ((2.0 + g2) * pow(1.0 + g2 - 2.0 * GM * c, 1.5)); }
+vec3 scat(vec3 dn) { return BR * dn.x + vec3(BMS * uAod) * dn.y; }
 `;
+
+/** 多重散乱の表の大きさ（光源の天頂角の余弦 × 高さ） */
+export const MS_W = 64,
+  MS_H = 32;
+
+/**
+ * 多重散乱の表（Hillaire 2020 の近似）。高さ h と光源の天頂角の余弦 μ ごとに、点のまわり 64 方向から届く 2 回散った光 L2 と、
+ * 散った光がもう一度散る割合 fms を求め、何度でも散った光を L2 / (1 − fms) とみなす。向きによらない明るさとして空の計算に足す。
+ * 地面（反射率 0.3）で返る光も含める。横は x = sign(μ)·√|μ|（薄明の近くを細かく）、縦は高さ 0〜60 km
+ */
+export const MS_FRAG = `#version 300 es
+precision highp float;
+${ATMOS}
+in vec2 vUv;
+out vec4 o;
+void main() {
+  float x = vUv.x * 2.0 - 1.0, mu = sign(x) * x * x, h = max(vUv.y * (RT - RE), 0.01);
+  vec3 p = vec3(0.0, 0.0, RE + h), L = vec3(sqrt(max(0.0, 1.0 - mu * mu)), 0.0, mu);
+  vec3 l2 = vec3(0.0), fms = vec3(0.0);
+  const int ND = 64, NS = 24;
+  for (int k = 0; k < ND; k++) {
+    /* 球面の Fibonacci 格子 */
+    float z = 1.0 - (2.0 * float(k) + 1.0) / float(ND), r = sqrt(1.0 - z * z), ph = float(k) * 2.39996323;
+    vec3 d = vec3(r * cos(ph), r * sin(ph), z);
+    float tg = hitSphere(p, d, RE), tt = hitSphere(p, d, RT), len = tg > 0.0 ? tg : tt;
+    if (len <= 0.0) continue;
+    vec3 thr = vec3(1.0);
+    float prev = 0.0;
+    for (int i = 0; i < NS; i++) {
+      float f = (float(i) + 1.0) / float(NS), t = len * f * f, ds = t - prev;
+      vec3 q = p + (prev + 0.5 * ds) * d;
+      prev = t;
+      vec3 dn = dens(length(q) - RE), sc = scat(dn), ex = ext(dn), tr = exp(-ex * ds);
+      /* 区間の中での減衰を解析的に積分する */
+      vec3 integ = (1.0 - tr) / max(ex, vec3(1e-7));
+      l2 += thr * sc * sunT(q, L) * integ / (4.0 * PI);
+      fms += thr * sc * integ;
+      thr *= tr;
+    }
+    if (tg > 0.0) {
+      vec3 g = p + tg * d, n = normalize(g);
+      l2 += thr * sunT(g + n * 0.01, L) * max(dot(n, L), 0.0) * 0.3 / PI;
+    }
+  }
+  l2 /= float(ND);
+  fms /= float(ND);
+  o = vec4(l2 / (1.0 - min(fms, vec3(0.99))), 1.0);
+}`;
 
 /**
  * 空と雲の照らされ方の表（方位 0〜180° × 高度 −10〜90°。高度は地平線の近くを細かく）。
- * 出力 0: 晴れた空の放射輝度（光源の放射照度 = 1、雲の層より上は雲で減光）
+ * 出力 0: 空の放射輝度（光源の放射照度 = 1。単散乱＋多重散乱、雲の層より上は雲で減光し、雲が散らす空の光を足す）
  * 出力 1: 雲の層の点に届く光源の光 × そこから目までの透過率（RGB）と、雲が散らす割合 1 − exp(−τ/μ)（A）
  */
 export const SKY_FRAG = `#version 300 es
@@ -256,9 +305,16 @@ ${ATMOS}
 uniform float uElev;
 uniform float uHc;
 uniform float uTau;
+uniform highp sampler2D uMs;
 in vec2 vUv;
 layout(location = 0) out vec4 oSky;
 layout(location = 1) out vec4 oIll;
+
+/* 点 p で何度も散った光（多重散乱の表を引く） */
+vec3 ms(vec3 p, vec3 L) {
+  float r = length(p), mu = dot(p, L) / r;
+  return texture(uMs, vec2((sign(mu) * sqrt(abs(mu)) + 1.0) * 0.5, (r - RE) / (RT - RE))).rgb;
+}
 
 void main() {
   /* 高度 = sign(x)·90°·x²（x = −1/3〜1）: 地平線の近くほど細かい */
@@ -292,9 +348,26 @@ void main() {
       if (!passed) { passed = true; tvc = exp(-od); }
     }
     vec3 T = exp(-od) * cloudT;
-    sum += T * sunT(p, L) * (BR * dn.x * pr + vec3(BMS * uAod) * dn.y * pm) * ds;
+    sum += T * (sunT(p, L) * (BR * dn.x * pr + vec3(BMS * uAod) * dn.y * pm) + scat(dn) * ms(p, L)) * ds;
   }
   if (cl && !passed) tvc = exp(-od);
+  /*
+   * 雲の層より上の空の光も雲で散って目に届く。上の空の明るさを雲の点から天頂を見た明るさで代表させ、
+   * 前方へ散る雲（g = 0.62）が上半球からの光を下へ送る割合を 0.8 とする（このツールで決めたこと）。
+   * 夕方は赤い直射に青い空の光が混ざり、雲が桃色になる
+   */
+  if (cl) {
+    vec3 up = normalize(pc), su = vec3(0.0), odu = vec3(0.0);
+    float lu = hitSphere(pc, up, RT), cu = dot(up, L), pu = 0.0;
+    for (int i = 0; i < 10; i++) {
+      float f = (float(i) + 1.0) / 10.0, t = lu * f * f, ds = t - pu, tm = pu + 0.5 * ds;
+      pu = t;
+      vec3 p = pc + tm * up, dn = dens(length(p) - RE);
+      odu += ext(dn) * ds;
+      su += exp(-odu) * (sunT(p, L) * (BR * dn.x * phaseR(cu) + vec3(BMS * uAod) * dn.y * phaseM(cu)) + scat(dn) * ms(p, L)) * ds;
+    }
+    sum += tvc * su * 0.8 * (1.0 - exp(-uTau / muc));
+  }
   oSky = vec4(sum, 1.0);
   oIll = cl ? vec4(sunT(pc, L) * tvc, 1.0 - exp(-uTau / muc)) : vec4(0.0);
 }`;

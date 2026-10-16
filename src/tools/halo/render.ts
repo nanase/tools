@@ -4,7 +4,7 @@
  */
 import { cmf, toRgb } from '../lens/light';
 import { AOD, apparent, groundT, MAX_POP, moonRatio } from './scene';
-import { FULL_VERT, SHOW_FRAG, SKY_FRAG, TRACE_FRAG, TRACE_VERT } from './shader';
+import { FULL_VERT, MS_FRAG, MS_H, MS_W, SHOW_FRAG, SKY_FRAG, TRACE_FRAG, TRACE_VERT } from './shader';
 import { dims, type Orient, type Population } from './trace';
 
 const ORIENT: Record<Orient, number> = { random: 0, plate: 1, column: 2, parry: 3, lowitz: 4 };
@@ -70,6 +70,7 @@ export class HaloRenderer {
   private skyTex: WebGLTexture;
   private illTex: WebGLTexture;
   private skyFb: WebGLFramebuffer;
+  private msTex: WebGLTexture;
   private quad: WebGLVertexArrayObject;
   private empty: WebGLVertexArrayObject;
   private seed = 1;
@@ -119,6 +120,7 @@ export class HaloRenderer {
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.skyTex, 0);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT1, gl.TEXTURE_2D, this.illTex, 0);
     gl.drawBuffers([gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1]);
+    this.msTex = tex(MS_W, MS_H, gl.RGBA16F, gl.LINEAR);
     const vao = gl.createVertexArray(),
       buf = gl.createBuffer();
     gl.bindVertexArray(vao);
@@ -128,6 +130,7 @@ export class HaloRenderer {
     gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
     this.quad = vao;
     this.empty = gl.createVertexArray();
+    this.multiScatter();
     this.clear();
   }
 
@@ -152,6 +155,23 @@ export class HaloRenderer {
   private loc(pr: Prog, name: string): WebGLUniformLocation | null {
     if (!pr.u.has(name)) pr.u.set(name, this.gl.getUniformLocation(pr.p, name));
     return pr.u.get(name) ?? null;
+  }
+
+  /** 多重散乱の表（大気が変わらないので最初に 1 回だけ） */
+  private multiScatter(): void {
+    const gl = this.gl,
+      pr = this.program(FULL_VERT, MS_FRAG),
+      fb = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.msTex, 0);
+    gl.viewport(0, 0, MS_W, MS_H);
+    gl.useProgram(pr.p);
+    gl.uniform1f(this.loc(pr, 'uAod'), AOD);
+    gl.bindVertexArray(this.quad);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.deleteFramebuffer(fb);
+    gl.deleteProgram(pr.p);
   }
 
   /** ためた光線を捨てる */
@@ -256,6 +276,9 @@ export class HaloRenderer {
     gl.uniform1f(this.loc(pr, 'uHc'), this.cloud.hc);
     gl.uniform1f(this.loc(pr, 'uTau'), this.cloud.tau);
     gl.uniform1f(this.loc(pr, 'uAod'), AOD);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, this.msTex);
+    gl.uniform1i(this.loc(pr, 'uMs'), 0);
     gl.bindVertexArray(this.quad);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
     const a = new Float32Array(SKY_W * SKY_H * 4),
