@@ -231,6 +231,14 @@ export const TOOLS: Tool[] = [
     ic: 'se',
     k: 'solar eclipse 日食 皆既日食 金環日食 部分日食 total annular hybrid partial 食分 面積比 magnitude obscuration コロナ corona ダイヤモンドリング diamond ring ベイリー baily 月の影 本影 半影 umbra penumbra 皆既帯 中心線 central line サロス saros ベッセル要素 besselian elements nasa 五千年正典 five millennium canon espenak meeus deltat δt 地方食 local circumstances 天文 astronomy 太陽 月',
   },
+  {
+    id: 'tuner',
+    c: '音響',
+    t: 'チューナー',
+    d: '楽器の音を聴き、音名とずれを針か 12 音のストロボで示します。',
+    ic: 'tu',
+    k: 'tuner チューニング 調律 調弦 音合わせ クロマチック chromatic ストロボ strobe stroboconn 針 メータ meter セント cent 基準ピッチ a440 442 ギター guitar ベース bass ウクレレ ukulele ヴァイオリン バイオリン violin ヴィオラ チェロ cello コントラバス マンドリン バンジョー ハーモニカ harmonica 管楽器 移調 transpose 音律 temperament 純正律 just intonation ピッチ pitch mpm マイク オーディオ audio',
+  },
 ];
 /** 準備中を後ろへ */
 export const order = (L: Tool[]): Tool[] => L.slice().sort((a, b) => (a.s || 0) - (b.s || 0));

@@ -13,8 +13,13 @@ import { WAVES } from './signal';
 interface Props {
   /** テスト信号の周波数比・位相差の行を出す（リサジュー用） */
   ratio?: boolean;
+  /**
+   * チューナー用: 開始・停止のボタンを置かない（ページの図の枠の右上に、同じ id で置く）。
+   * レベルは CH1 と CH2 の大きいほうを 1 本で出し、レベルの行の下に slot の行を足す
+   */
+  mono?: boolean;
 }
-const { ratio } = Astro.props;
+const { ratio, mono } = Astro.props;
 const SRCS = [
   [
     'mic',
@@ -30,7 +35,7 @@ const SRCS = [
     <div class="seg" id="p-src" role="group" aria-label="入力元">
       {SRCS.map(([v, l, t]) => <button type="button" data-v={v} aria-pressed={v === 'mic' ? 'true' : 'false'} title={t}>{l}</button>)}
     </div>
-    <div class="seg"><button type="button" id="runBtn" aria-pressed="false" title="マイクから取り込む・止める"><span class="led" id="runLed" aria-hidden="true"></span><span id="runT">開始</span></button></div>
+    {!mono && <div class="seg"><button type="button" id="runBtn" aria-pressed="false" title="マイクから取り込む・止める"><span class="led" id="runLed" aria-hidden="true"></span><span id="runT">開始</span></button></div>}
   </div>
   <p class="msg in-msg" id="in-msg" aria-live="polite"></p>
   <div class="ptab" id="in-tab" data-src="mic">
@@ -51,8 +56,9 @@ const SRCS = [
       <div class="c-sym" aria-hidden="true"></div>
       <div class="c-name"><span class="pn">レベル</span><p class="desc tip" role="tooltip" hidden>直近 50 ms のピーク（dBFS）。−3 dBFS を超えると色が変わります</p></div>
       <div class="c-sub"><div class="lvs" role="group" aria-label="入力レベル">
-        {[0, 1].map((c) => <div class="lvr"><span>{c ? 'R' : 'L'}</span><span class="lvb" aria-hidden="true"><i id={`lv${c}`}></i></span><b id={`lt${c}`}>—</b></div>)}
+        {(mono ? [0] : [0, 1]).map((c) => <div class="lvr"><span>{mono ? 'IN' : c ? 'R' : 'L'}</span><span class="lvb" aria-hidden="true"><i id={`lv${c}`}></i></span><b id={`lt${c}`}>—</b></div>)}
       </div></div>
     </div>
+    <slot />
   </div>
 </Panel>

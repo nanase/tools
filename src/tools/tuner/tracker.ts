@@ -149,6 +149,10 @@ export class Onset {
     this.blk = Math.round(0.005 * fs);
     this.skip = Math.round(skip * fs);
   }
+  /** since が今から何標本前か（出だしの直後で、まだ使えない間は負） */
+  get ago(): number {
+    return this.n - this.since;
+  }
   push(x: ArrayLike<number>, off = 0, len = x.length - off): void {
     for (let i = off; i < off + len; i++) {
       this.acc += x[i] * x[i];

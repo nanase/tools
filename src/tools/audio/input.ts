@@ -150,8 +150,9 @@ export function initInput(): InputUi {
     if (a.buf) a.seek((+seek.value / 1000) * a.buf.duration);
   });
 
-  /* レベル（直近 50 ms のピーク。下がるときはゆっくり） */
-  const pk = [0, 0];
+  /* レベル（直近 50 ms のピーク。下がるときはゆっくり）。1 本だけの枠（チューナー）では CH1 と CH2 の大きいほう */
+  const pk = [0, 0],
+    mono = !document.getElementById('lv1');
   let epoch = a.epoch;
   function tick(fresh: boolean): void {
     if (epoch !== a.epoch) {
@@ -168,8 +169,9 @@ export function initInput(): InputUi {
         }
         pk[c] = Math.max(m, pk[c] * 0.9);
       });
+      if (mono) pk[0] = Math.max(pk[0], pk[1]);
     }
-    for (const c of [0, 1]) {
+    for (const c of mono ? [0] : [0, 1]) {
       const d = 20 * Math.log10(pk[c] + 1e-12),
         q = Math.max(0, Math.min(1, (d + 60) / 60)),
         bar = $(`#lv${c}`);

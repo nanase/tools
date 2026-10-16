@@ -1,0 +1,121 @@
+---
+// 動作原理と式
+---
+<h3>音高の求め方（MPM）</h3>
+<p>周期は McLeod の MPM で求めます<a class="rf" href="#thy-r1">[1]</a>。窓 <math><msub><mi>x</mi><mi>j</mi></msub></math>（長さ <math><mi>W</mi></math>）の正規化した二乗差関数 NSDF <math><msup><mi>n</mi><mo>′</mo></msup><mo stretchy="false">(</mo><mi>τ</mi><mo stretchy="false">)</mo></math> は、ずらし <math><mi>τ</mi></math> で波形がどれだけ重なるかを −1〜1 で表します。</p>
+<div class="eqs">
+  <math display="block"><msup><mi>n</mi><mo>′</mo></msup><mo stretchy="false">(</mo><mi>τ</mi><mo stretchy="false">)</mo><mo>=</mo><mfrac><mrow><mn>2</mn><msup><mi>r</mi><mo>′</mo></msup><mo stretchy="false">(</mo><mi>τ</mi><mo stretchy="false">)</mo></mrow><mrow><msup><mi>m</mi><mo>′</mo></msup><mo stretchy="false">(</mo><mi>τ</mi><mo stretchy="false">)</mo></mrow></mfrac><mo>,</mo><mspace width="1em"/><msup><mi>r</mi><mo>′</mo></msup><mo stretchy="false">(</mo><mi>τ</mi><mo stretchy="false">)</mo><mo>=</mo><munderover><mo>∑</mo><mrow><mi>j</mi><mo>=</mo><mn>0</mn></mrow><mrow><mi>W</mi><mo>−</mo><mn>1</mn><mo>−</mo><mi>τ</mi></mrow></munderover><msub><mi>x</mi><mi>j</mi></msub><msub><mi>x</mi><mrow><mi>j</mi><mo>+</mo><mi>τ</mi></mrow></msub><mo>,</mo><mspace width="1em"/><msup><mi>m</mi><mo>′</mo></msup><mo stretchy="false">(</mo><mi>τ</mi><mo stretchy="false">)</mo><mo>=</mo><munderover><mo>∑</mo><mrow><mi>j</mi><mo>=</mo><mn>0</mn></mrow><mrow><mi>W</mi><mo>−</mo><mn>1</mn><mo>−</mo><mi>τ</mi></mrow></munderover><mrow><mo>(</mo><msubsup><mi>x</mi><mi>j</mi><mn>2</mn></msubsup><mo>+</mo><msubsup><mi>x</mi><mrow><mi>j</mi><mo>+</mo><mi>τ</mi></mrow><mn>2</mn></msubsup><mo>)</mo></mrow></math>
+</div>
+<ul class="tl">
+  <li><b>自己相関</b>: <math><msup><mi>r</mi><mo>′</mo></msup></math> は、0 を詰めて 2 倍以上の長さにした FFT で <math><msup><mrow><mo stretchy="false">|</mo><mi>X</mi><mo stretchy="false">|</mo></mrow><mn>2</mn></msup></math> を求め、もう一度 FFT して得る。<math><msup><mi>m</mi><mo>′</mo></msup></math> は <math><mi>τ</mi></math> を 1 つ進めるごとに 2 項を引く</li>
+  <li><b>周期の山</b>: <math><mi>τ</mi><mo>=</mo><mn>0</mn></math> の山を越えてから、正の山ごとの最大を集め、いちばん高いものの 0.9 倍を超える最初の山を周期とする。山の位置と高さは放物線で補う</li>
+  <li><b>明瞭度</b>: 選んだ山の高さ。周期がはっきりしているほど 1 に近い。0.9 を下回る間は音高を出さない</li>
+  <li><b>窓の長さ</b>: 探す最低音の 2.5 周期が入る 2 の累乗（2048 以上）。周期を決めるには、最も長い周期の 2 倍の信号が要る<a class="rf" href="#thy-r2">[2]</a></li>
+</ul>
+
+<h3>周波数を詰める</h3>
+<p>MPM の放物線補間には、倍音の多い高い音で偏りが残ります（このツールの合成音の試験で C7 に約 1 セント）。弦の部分音は剛性で整数倍より高くなるので<a class="rf" href="#thy-r3">[3]</a>、周期から求めた値は部分音の平均のような値になり、非調和性 <math><mi>B</mi><mo>=</mo><msup><mn>10</mn><mrow><mo>−</mo><mn>4</mn></mrow></msup></math> で約 3 セント高く出ます。そこで、MPM の周波数 <math><mi>f</mi></math> を手がかりに、第 <math><mi>k</mi></math> 部分音の周波数を窓の前半と後半の位相の差で詰めます（位相ボコーダと同じ考え方<a class="rf" href="#thy-r4">[4]</a>）。</p>
+<div class="eqs">
+  <math display="block"><msub><mi>f</mi><mi>k</mi></msub><mo>=</mo><mi>k</mi><msub><mi>f</mi><mn>1</mn></msub><msqrt><mrow><mn>1</mn><mo>+</mo><mi>B</mi><msup><mi>k</mi><mn>2</mn></msup></mrow></msqrt></math>
+  <math display="block"><msub><mi>X</mi><mn>1</mn></msub><mo>=</mo><munderover><mo>∑</mo><mrow><mi>n</mi><mo>=</mo><mn>0</mn></mrow><mrow><mi>L</mi><mo>−</mo><mn>1</mn></mrow></munderover><mi>w</mi><mo stretchy="false">[</mo><mi>n</mi><mo stretchy="false">]</mo><mspace width="0.1em"/><mi>x</mi><mo stretchy="false">[</mo><mi>n</mi><mo stretchy="false">]</mo><mspace width="0.1em"/><msup><mi>e</mi><mrow><mo>−</mo><mi>j</mi><mi>ω</mi><mi>n</mi></mrow></msup><mo>,</mo><mspace width="1em"/><msub><mi>X</mi><mn>2</mn></msub><mo>=</mo><munderover><mo>∑</mo><mrow><mi>n</mi><mo>=</mo><mn>0</mn></mrow><mrow><mi>L</mi><mo>−</mo><mn>1</mn></mrow></munderover><mi>w</mi><mo stretchy="false">[</mo><mi>n</mi><mo stretchy="false">]</mo><mspace width="0.1em"/><mi>x</mi><mo stretchy="false">[</mo><mi>n</mi><mo>+</mo><mi>L</mi><mo stretchy="false">]</mo><mspace width="0.1em"/><msup><mi>e</mi><mrow><mo>−</mo><mi>j</mi><mi>ω</mi><mi>n</mi></mrow></msup><mo>,</mo><mspace width="1em"/><mi>ω</mi><mo>=</mo><mfrac><mrow><mn>2</mn><mi>π</mi><mi>k</mi><mi>f</mi></mrow><msub><mi>f</mi><mi mathvariant="normal">s</mi></msub></mfrac></math>
+  <math display="block"><mi>Δ</mi><mi>φ</mi><mo>=</mo><mi>arg</mi><mo>&#x2061;</mo><mo stretchy="false">(</mo><msub><mi>X</mi><mn>2</mn></msub><msubsup><mi>X</mi><mn>1</mn><mo>*</mo></msubsup><mo stretchy="false">)</mo><mo>−</mo><mi>ω</mi><mi>L</mi><mspace width="0.4em"/><mtext>（±π に折り返す）</mtext><mo>,</mo><mspace width="1em"/><msub><mi>f</mi><mi>k</mi></msub><mo>=</mo><mi>k</mi><mi>f</mi><mo>+</mo><mfrac><mrow><mi>Δ</mi><mi>φ</mi><mspace width="0.1em"/><msub><mi>f</mi><mi mathvariant="normal">s</mi></msub></mrow><mrow><mn>2</mn><mi>π</mi><mi>L</mi></mrow></mfrac></math>
+</div>
+<ul class="tl">
+  <li><b>窓</b>: 前半・後半はそれぞれハン窓。全体で音の 12 周期（前半・後半に 6 周期ずつ）が入る 2 の累乗で、隣の部分音の漏れを抑える。16384 点を超える低い音は MPM の値のまま</li>
+  <li><b>どの部分音で詰めるか</b>: 第 1〜3 部分音のうち、いちばん強いものの 1/10（−20 dB）以上ある最も低いもの。スマホのマイクで基音が弱くても、第 2・第 3 部分音で詰められる</li>
+  <li><b>音ごとに固定</b>: 弦と胴の結合で、部分音ごとに整数倍からのずれが違う。途中で替えると値が跳ぶので、音の出し始めに選んだ部分音を音が途切れるまで使い、それが −20 dB より弱くなったら表示を止める</li>
+</ul>
+
+<h3>音を追う</h3>
+<ol class="flow">
+  <li><b>高域通過</b><span>20 Hz・2 次</span></li>
+  <li><b>出だし</b><span>30 ms 後から使う</span></li>
+  <li><b>MPM</b><span>周期・明瞭度</span></li>
+  <li><b>部分音の位相</b><span>周波数を詰める</span></li>
+  <li><b>中央値と折り返し</b><span>外れ値を除く</span></li>
+  <li><b>目標の音</b><span>音名・弦・ずれ</span></li>
+</ol>
+<ul class="tl">
+  <li><b>高域通過</b>: 直流や低い揺れが残ると NSDF が負にならず、周期の山を探し始められない</li>
+  <li><b>出だし</b>: 5 ms ごとの平均の 2 乗が直前 50 ms の最大の 4 倍（6 dB）を超えたら、新しい音の出だしとし、その 30 ms 後からの標本だけを窓に入れる。撥弦の出だしは打撃音で、音高も高めに出る（ギターの高音弦の第 2 部分音で約 1 Hz、約 2.6 セント高く、約 1.5 秒で戻る<a class="rf" href="#thy-r5">[5]</a>）</li>
+  <li><b>中央値</b>: 直近 5 回の推定の中央値を使う。出し始めは、3 回の推定が半音の半分以内にそろうのを待つ</li>
+  <li><b>折り返し</b>: 音が続いている間に、オクターブ・オクターブと 5 度・2 オクターブだけ跳んだ推定は、倍音を基音と取り違えたものとして元の音へ戻す。音がない状態から始めるときは、1 オクターブ下の奇数倍の部分音を確かめる（あれば、MPM は第 2 倍音の周期を選んでいる）</li>
+  <li><b>最も近い音・弦</b>: 境目で表示が行き来しないよう、前の音から離れるのは半音の 0.65 倍、前の弦から離れるのは、ほかの弦が 0.3 半音より近いときだけにする。新しい音の出だしでは前の音を忘れる</li>
+</ul>
+
+<h3>ずれと目標の音</h3>
+<p>周波数 <math><mi>f</mi></math> を、基準ピッチ <math><msub><mi>f</mi><mtext>A4</mtext></msub></math> に対する音番号 <math><mi>n</mi></math>（MIDI と同じ。A4 = 69）にし、目標の音 <math><mi>N</mi></math> からのずれをセントで出します<a class="rf" href="#thy-r6">[6]</a>。<math><msub><mi>d</mi><mi>N</mi></msub></math> は音律による目標のずれです。基準ピッチの既定は 440 Hz です<a class="rf" href="#thy-r7">[7]</a>。</p>
+<div class="eqs">
+  <math display="block"><mi>n</mi><mo>=</mo><mn>69</mn><mo>+</mo><mn>12</mn><mspace width="0.1em"/><msub><mi>log</mi><mn>2</mn></msub><mo>&#x2061;</mo><mfrac><mi>f</mi><msub><mi>f</mi><mtext>A4</mtext></msub></mfrac><mo>,</mo><mspace width="1em"/><mi>c</mi><mo>=</mo><mn>100</mn><mo stretchy="false">(</mo><mi>n</mi><mo>−</mo><mi>N</mi><mo stretchy="false">)</mo><mo>−</mo><msub><mi>d</mi><mi>N</mi></msub><mo>,</mo><mspace width="1em"/><msub><mi>f</mi><mtext>目標</mtext></msub><mo>=</mo><msub><mi>f</mi><mtext>A4</mtext></msub><mspace width="0.1em"/><msup><mn>2</mn><mrow><mo stretchy="false">(</mo><mi>N</mi><mo>−</mo><mn>69</mn><mo stretchy="false">)</mo><mo>/</mo><mn>12</mn><mo>+</mo><msub><mi>d</mi><mi>N</mi></msub><mo>/</mo><mn>1200</mn></mrow></msup></math>
+</div>
+<ul class="tl">
+  <li><b>純正律の ▼</b>: 純正の長 3 度（5:4）は <math><mn>1200</mn><msub><mi>log</mi><mn>2</mn></msub><mo>&#x2061;</mo><mo stretchy="false">(</mo><mn>5</mn><mo>/</mo><mn>4</mn><mo stretchy="false">)</mo><mo>−</mo><mn>400</mn><mo>=</mo><mo>−</mo><mn>13.7</mn></math> セント、短 3 度（6:5）は <math><mn>1200</mn><msub><mi>log</mi><mn>2</mn></msub><mo>&#x2061;</mo><mo stretchy="false">(</mo><mn>6</mn><mo>/</mo><mn>5</mn><mo stretchy="false">)</mo><mo>−</mo><mn>300</mn><mo>=</mo><mo>+</mo><mn>15.6</mn></math> セント。和音の 3 度の音をここに合わせると、うなりが消える</li>
+  <li><b>音名とオクターブ</b>: 国際式は中央のドを C4、ヤマハなどは C3 と書く<a class="rf" href="#thy-r8">[8]</a>。日本式は中央のドを一点ハとし、下へ小字・大字・下一点、上へ二点・三点と呼ぶ</li>
+  <li><b>移調</b>: B♭ 管は記譜の C で実音の B♭ が鳴るので、実音に 2 半音を足した音名で出す（E♭ 管は 9、F 管は 7）</li>
+</ul>
+<p>音律は、主音 C のとき A を 0 にそろえた平均律からのずれを表に持ち、主音を変えたら表を回して A を 0 にそろえ直します。基準ピッチの A はどの音律でも変えません。値は各音律の定義から求め、下の資料と照合しました<a class="rf" href="#thy-r9">[9]</a><a class="rf" href="#thy-r10">[10]</a><a class="rf" href="#thy-r11">[11]</a><a class="rf" href="#thy-r12">[12]</a>。</p>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th scope="col">音律（主音 C）</th><th scope="col" class="num">C</th><th scope="col" class="num">C♯</th><th scope="col" class="num">D</th><th scope="col" class="num">E♭</th><th scope="col" class="num">E</th><th scope="col" class="num">F</th><th scope="col" class="num">F♯</th><th scope="col" class="num">G</th><th scope="col" class="num">G♯</th><th scope="col" class="num">A</th><th scope="col" class="num">B♭</th><th scope="col" class="num">B</th></tr></thead>
+  <tbody>
+    <tr><th scope="row">ピタゴラス（ウルフは G♯–E♭）</th><td class="num">−5.87</td><td class="num">+7.82</td><td class="num">−1.96</td><td class="num">−11.73</td><td class="num">+1.96</td><td class="num">−7.82</td><td class="num">+5.87</td><td class="num">−3.91</td><td class="num">+9.78</td><td class="num">0</td><td class="num">−9.78</td><td class="num">+3.91</td></tr>
+    <tr><th scope="row">1/4 コンマ・ミーントーン</th><td class="num">+10.26</td><td class="num">−13.69</td><td class="num">+3.42</td><td class="num">+20.53</td><td class="num">−3.42</td><td class="num">+13.69</td><td class="num">−10.26</td><td class="num">+6.84</td><td class="num">−17.11</td><td class="num">0</td><td class="num">+17.11</td><td class="num">−6.84</td></tr>
+    <tr><th scope="row">ヴェルクマイスター III</th><td class="num">+11.73</td><td class="num">+1.96</td><td class="num">+3.91</td><td class="num">+5.87</td><td class="num">+1.96</td><td class="num">+9.78</td><td class="num">0</td><td class="num">+7.82</td><td class="num">+3.91</td><td class="num">0</td><td class="num">+7.82</td><td class="num">+3.91</td></tr>
+    <tr><th scope="row">キルンベルガー III</th><td class="num">+10.26</td><td class="num">+0.49</td><td class="num">+3.42</td><td class="num">+4.40</td><td class="num">−3.42</td><td class="num">+8.31</td><td class="num">+0.49</td><td class="num">+6.84</td><td class="num">+2.44</td><td class="num">0</td><td class="num">+6.35</td><td class="num">−1.47</td></tr>
+    <tr><th scope="row">ヴァロッティ</th><td class="num">+5.87</td><td class="num">0</td><td class="num">+1.96</td><td class="num">+3.91</td><td class="num">−1.96</td><td class="num">+7.82</td><td class="num">−1.96</td><td class="num">+3.91</td><td class="num">+1.96</td><td class="num">0</td><td class="num">+5.87</td><td class="num">−3.91</td></tr>
+    <tr><th scope="row">ヤング 第 2</th><td class="num">+5.87</td><td class="num">−3.91</td><td class="num">+1.96</td><td class="num">0</td><td class="num">−1.96</td><td class="num">+3.91</td><td class="num">−5.87</td><td class="num">+3.91</td><td class="num">−1.96</td><td class="num">0</td><td class="num">+1.96</td><td class="num">−3.91</td></tr>
+  </tbody>
+</table></div>
+
+<h3>12 音のストロボ</h3>
+<p>機械式のストロボチューナー（Conn の Stroboconn、1936 年）は、半音ごとに 1 枚、計 12 枚の円盤を基準の速さで回し、入力の音で点滅するランプで照らします。円盤には明暗の帯が同心円に並び、外側の帯ほど区画が 2 倍になって、1 枚で何オクターブもを受け持ちます。鳴っている音の円盤だけが止まって見え、ずれていればその向きにゆっくり回ります<a class="rf" href="#thy-r13">[13]</a>。</p>
+<p>このツールは、窓 <math><mi>p</mi></math>（C〜B）の帯 <math><mi>o</mi></math>（下から 2〜5 オクターブ）ごとに基準の周波数 <math><msub><mi>f</mi><mi>b</mi></msub></math> を決め、測った部分音のうち <math><msub><mi>f</mi><mi>b</mi></msub></math> に最も近いものの強さで縞の濃さを、周波数の差で縞の速さを決めます。縞 1 本は位相 1 周です。電子式の仮想ストロボも、縞の位置を基準周波数で進め、入力の周期に合わせて見せる、同じ考え方です<a class="rf" href="#thy-r14">[14]</a>。</p>
+<div class="eqs">
+  <math display="block"><msub><mi>f</mi><mi>b</mi></msub><mo>=</mo><msub><mi>f</mi><mtext>A4</mtext></msub><mspace width="0.1em"/><msup><mn>2</mn><mrow><mo stretchy="false">(</mo><mn>12</mn><mo stretchy="false">(</mo><mi>o</mi><mo>+</mo><mn>3</mn><mo stretchy="false">)</mo><mo>+</mo><mi>p</mi><mo>−</mo><mn>69</mn><mo stretchy="false">)</mo><mo>/</mo><mn>12</mn><mo>+</mo><msub><mi>d</mi><mi>p</mi></msub><mo>/</mo><mn>1200</mn></mrow></msup><mo>,</mo><mspace width="1em"/><msub><mi>φ</mi><mi>b</mi></msub><mo stretchy="false">(</mo><mi>t</mi><mo>+</mo><mi>Δ</mi><mi>t</mi><mo stretchy="false">)</mo><mo>=</mo><msub><mi>φ</mi><mi>b</mi></msub><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mo>+</mo><mo stretchy="false">(</mo><msub><mi>f</mi><mi>k</mi></msub><mo>−</mo><msub><mi>f</mi><mi>b</mi></msub><mo stretchy="false">)</mo><mspace width="0.1em"/><mi>Δ</mi><mi>t</mi></math>
+</div>
+<ul class="tl">
+  <li><b>部分音</b>: 第 1〜8 部分音の周波数と強さを、上の位相の差で測る。基音の 1/2・1/4 の高さの帯にも、縞が二重・四重に写って薄く止まって見える（機械式で、区画が点滅の 1/2・1/4 になる帯）</li>
+  <li><b>倍音の窓</b>: A を鳴らすと、第 3 部分音が E の窓の帯に写る。純正の 5 度は平均律より約 2 セント高いので、その帯はゆっくり流れる</li>
+  <li><b>縞の速さ</b>: 「周波数の差」は機械式と同じく、同じセントのずれなら高い帯ほど速い。「セント」はセント × 0.254 本/s（A4 で 1 セント = 0.254 Hz）</li>
+  <li><b>ぼけ</b>: 速く流れる縞は目で追えないので、毎秒 1.5 本より速いと薄くし、縞の間を灰色で埋める。音がない間は、ランプが消えかかってちらつく</li>
+</ul>
+
+<h3>マイクとブラウザ</h3>
+<ul class="tl">
+  <li><b>マイクの処理</b>: エコー除去・雑音抑圧・自動ゲインは、どれも音高や音量を変えるので切るよう頼む。指定は努力目標で、Safari は雑音抑圧と自動ゲインの指定に対応していない<a class="rf" href="#thy-r15">[15]</a>。Safari ではエコー除去を切ると自動ゲインも切れる<a class="rf" href="#thy-r16">[16]</a>。実際に効いた設定は入力の枠に出す</li>
+  <li><b>低い音</b>: iOS 端末の内蔵マイクは、約 250 Hz から 24 dB/oct で低域を削るという報告がある<a class="rf" href="#thy-r17">[17]</a>。ベースやチェロの開放弦の基音はほとんど届かないので、周期と第 2・第 3 部分音から求める</li>
+</ul>
+
+<h3>出典</h3>
+<ol class="refs">
+  <li id="thy-r1"><span class="rf-for">MPM（NSDF・山の選び方・明瞭度）</span><span class="rf-src">P. McLeod, <a href="https://www.cs.otago.ac.nz/research/publications/oucs-2008-03.pdf" target="_blank" rel="noopener"><i>Fast, Accurate Pitch Detection Tools for Music Analysis</i></a>, PhD thesis, University of Otago, 2008</span></li>
+  <li id="thy-r2"><span class="rf-for">周期の推定に要る窓の長さ</span><span class="rf-src">A. de Cheveigné and H. Kawahara, “YIN, a fundamental frequency estimator for speech and music,” <i>The Journal of the Acoustical Society of America</i>, vol. 111, no. 4, pp. 1917–1930, 2002</span></li>
+  <li id="thy-r3"><span class="rf-for">硬い弦の部分音</span><span class="rf-src">H. Fletcher, “Normal Vibration Frequencies of a Stiff Piano String,” <i>The Journal of the Acoustical Society of America</i>, vol. 36, no. 1, pp. 203–209, 1964</span></li>
+  <li id="thy-r4"><span class="rf-for">位相の差による周波数の推定（位相ボコーダ）</span><span class="rf-src">F. Keiler and S. Marchand, <a href="https://pageperso.univ-lr.fr/sylvain.marchand/Publications/dafx02-2.pdf" target="_blank" rel="noopener">“Survey on Extraction of Sinusoids in Stationary Sounds,”</a> <i>Proc. 5th International Conference on Digital Audio Effects (DAFx-02)</i>, 2002</span></li>
+  <li id="thy-r5"><span class="rf-for">撥弦の出だしの音高の下がり（約 1 Hz、約 1.5 秒）</span><span class="rf-src">N. Lee, J. O. Smith III, J. Abel, and D. Berners, <a href="https://dafx.de/paper-archive/2009/papers/paper_86.pdf" target="_blank" rel="noopener">“Pitch Glide Analysis and Synthesis from Recorded Tones,”</a> <i>Proc. 12th International Conference on Digital Audio Effects (DAFx-09)</i>, 2009</span></li>
+  <li id="thy-r6"><span class="rf-for">セント</span><span class="rf-src">A. J. Ellis, “On the Musical Scales of Various Nations,” <i>Journal of the Society of Arts</i>, vol. 33, pp. 485–527, 1885</span></li>
+  <li id="thy-r7"><span class="rf-for">基準ピッチ A4 = 440 Hz</span><span class="rf-src">ISO 16:1975, <a href="https://www.iso.org/standard/3601.html" target="_blank" rel="noopener"><i>Acoustics — Standard tuning frequency (Standard musical pitch)</i></a></span></li>
+  <li id="thy-r8"><span class="rf-for">中央のドを C3 と書く例</span><span class="rf-src">ヤマハ, <a href="https://data.yamaha.com/files/download/other_assets/2/2272182/psre283_ja_rm_b0_web.pdf" target="_blank" rel="noopener">PSR-E283 リファレンスマニュアル</a>（鍵盤の図）</span></li>
+  <li id="thy-r9"><span class="rf-for">ヴェルクマイスター III</span><span class="rf-src"><a href="https://en.wikipedia.org/wiki/Werckmeister_temperament" target="_blank" rel="noopener">Wikipedia “Werckmeister temperament”</a></span></li>
+  <li id="thy-r10"><span class="rf-for">キルンベルガー III</span><span class="rf-src"><a href="https://en.wikipedia.org/wiki/Kirnberger_temperament" target="_blank" rel="noopener">Wikipedia “Kirnberger temperament”</a></span></li>
+  <li id="thy-r11"><span class="rf-for">ヴァロッティ</span><span class="rf-src"><a href="https://en.wikipedia.org/wiki/Vallotti_temperament" target="_blank" rel="noopener">Wikipedia “Vallotti temperament”</a></span></li>
+  <li id="thy-r12"><span class="rf-for">ピタゴラス・1/4 コンマ・ミーントーン</span><span class="rf-src">K. Gann, <a href="https://www.kylegann.com/histune.html" target="_blank" rel="noopener">“An Introduction to Historical Tunings”</a></span></li>
+  <li id="thy-r13"><span class="rf-for">機械式のストロボ（12 枚の円盤、同心の帯）</span><span class="rf-src">R. W. Young and A. Loomis (C. G. Conn Ltd.), <a href="https://patents.google.com/patent/US2286030A/en" target="_blank" rel="noopener">US Patent 2,286,030 “Stroboscope”</a>, 1942</span></li>
+  <li id="thy-r14"><span class="rf-for">電子式の仮想ストロボ</span><span class="rf-src">M. J. Skubic (Peterson Electro-Musical Products), <a href="https://patents.google.com/patent/US6580024" target="_blank" rel="noopener">US Patent 6,580,024 “Electronic strobe tuning aid”</a>, 2003</span></li>
+  <li id="thy-r15"><span class="rf-for">自動ゲイン・雑音抑圧の指定と対応状況</span><span class="rf-src">MDN, <a href="https://developer.mozilla.org/en-US/docs/Web/API/MediaTrackConstraints/autoGainControl" target="_blank" rel="noopener">“MediaTrackConstraints: autoGainControl property”</a>・<a href="https://github.com/mdn/browser-compat-data" target="_blank" rel="noopener">browser-compat-data</a></span></li>
+  <li id="thy-r16"><span class="rf-for">Safari のエコー除去と自動ゲイン</span><span class="rf-src"><a href="https://bugs.webkit.org/show_bug.cgi?id=179411" target="_blank" rel="noopener">WebKit Bug 179411</a></span></li>
+  <li id="thy-r17"><span class="rf-for">iOS 端末の内蔵マイクの低域</span><span class="rf-src">Studio Six Digital, <a href="https://studiosixdigital.com/audio-hardware/generic-audio-hardware/iphone_3gs_microphone/" target="_blank" rel="noopener">“iPhone 3GS Microphone”</a></span></li>
+</ol>
+
+<h3>このツールで決めたこと</h3>
+<ul class="tl">
+  <li>MPM の山を選ぶ比 0.9 と、音高を出す明瞭度の下限 0.9</li>
+  <li>窓の長さ: MPM は探す最低音の 2.5 周期、周波数を詰めるのは音の 12 周期（上限 16384 点）。推定は 40 ms ごと</li>
+  <li>詰める部分音の下限 −20 dB、1 オクターブ下を確かめるときの奇数倍の比 0.2</li>
+  <li>中央値 5 回、出し始め 3 回、途切れとみなすまで 4 回</li>
+  <li>出だし: 5 ms ごと、直前 50 ms の 4 倍、30 ms 後から使う</li>
+  <li>合格の幅の既定 ±2 セント（撥弦の出だしの約 2.6 セントの高さで、±1 では最初に灯りが点いたり消えたりするため）</li>
+  <li>針のならし（時定数）: 速い 0.06 s・標準 0.16 s・ゆっくり 0.4 s</li>
+  <li>ストロボ: 帯は 2〜5 オクターブ、近さの重みは 40 セントの幅、1/2・1/4 の帯の重みは 0.3・0.15、毎秒 1.5 本より速い縞は薄くする</li>
+  <li>基準ピッチの範囲 390〜490 Hz（0.5 Hz 刻み）</li>
+  <li>精度は、合成音（正弦波、倍音の多い音、基音のない音、雑音、非調和）と、ギター音響モデルの開放弦 6 本で確かめた。6 本とも、弾いて 0.3 秒後からの値は基音から ±1 セント以内（中央値）</li>
+</ul>

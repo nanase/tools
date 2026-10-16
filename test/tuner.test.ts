@@ -15,7 +15,9 @@ import {
   noteLabel,
   noteText,
 } from '../src/tools/tuner/notes';
+import { deviations, JUST_M3, JUST_m3, TEMPERAMENTS } from '../src/tools/tuner/params';
 import { type Est, estimate, HighPass, mpmWin, Onset, refWin, Tracker } from '../src/tools/tuner/tracker';
+import { bandHz, bandOf, contrast, meterTicks, needlePath, stripes } from '../src/tools/tuner/view';
 
 const FS = 48000;
 let seed = 1;
@@ -252,6 +254,76 @@ describe('追跡', () => {
     const r = track(y, new Tracker(opts()), 60).filter((q) => q.t > 0.5);
     expect(r.length).toBeGreaterThan(20);
     for (const q of r) expect(Math.abs(centsOf(q.f, f))).toBeLessThan(1);
+  });
+});
+
+describe('音律と純正律', () => {
+  it('平均律はずれなし。A はどの音律・主音でも 0', () => {
+    expect(deviations('et', 0)).toBeNull();
+    for (const [v] of TEMPERAMENTS.slice(1))
+      for (let ton = 0; ton < 12; ton++) expect(deviations(v, ton)?.[9], `${v} ${ton}`).toBeCloseTo(0, 9);
+  });
+  it('主音を変えると、音どうしの間隔が主音ごと移る（ヴェルクマイスター III の C と G）', () => {
+    const c = deviations('wm3', 0) ?? [],
+      g = deviations('wm3', 7) ?? [];
+    expect(c[0]).toBeCloseTo(11.73, 2);
+    /* 主音 G の G–D は、主音 C の C–G と同じ間隔 */
+    expect(g[2] - g[7]).toBeCloseTo(c[7] - c[0], 9);
+  });
+  it('純正の長 3 度は −13.69 セント、短 3 度は +15.64 セント', () => {
+    expect(JUST_M3).toBeCloseTo(-13.686, 3);
+    expect(JUST_m3).toBeCloseTo(15.641, 3);
+  });
+});
+
+describe('表示の形', () => {
+  it('目盛りは ±50 で 51 本（太い 11 本）、±20 で 41 本（太い 9 本）', () => {
+    const n = (s: string) => (s.match(/M/g) ?? []).length;
+    expect(n(meterTicks(50).major)).toBe(11);
+    expect(n(meterTicks(50).minor)).toBe(40);
+    expect(n(meterTicks(20).major)).toBe(9);
+    expect(n(meterTicks(20).minor)).toBe(32);
+  });
+  it('針は 0 で真上、端の外で止まる', () => {
+    expect(needlePath(0, 50)).toBe('M300.0 196.0L300.0 47.0');
+    expect(needlePath(200, 50)).toBe(needlePath(52, 50));
+  });
+  it('ストロボの帯の基準は、窓 A・帯 4 オクターブで A4', () => {
+    expect(bandHz(9, 2, 440, null)).toBeCloseTo(440, 9);
+    expect(bandHz(0, 0, 440, null)).toBeCloseTo(hzOf(36, 440), 9);
+    expect(bandHz(0, 0, 440, deviations('wm3', 0))).toBeCloseTo(hzOf(36, 440, 11.73), 6);
+  });
+  it('帯には最も近い部分音が写る。1 オクターブ下の帯は薄く止まり、部分音のない帯はぼける', () => {
+    const parts = [
+      { k: 1, f: 441, a: 1 },
+      { k: 2, f: 882, a: 0.5 },
+      { k: 3, f: 1323, a: 0.3 },
+    ];
+    const a4 = bandOf(440, 441, parts, 'hz'),
+      a3 = bandOf(220, 441, parts, 'hz'),
+      e5 = bandOf(659.26, 441, parts, 'hz');
+    const dc = (1200 * Math.log2(441 / 440)) / 40;
+    expect(a4.vis).toBeCloseTo(Math.exp(-dc * dc), 9);
+    expect(a4.rate).toBeCloseTo(1, 9);
+    expect(a3.vis).toBeCloseTo(0.3, 1);
+    expect(e5.vis).toBeLessThan(0.01);
+    /* セントに比例: 3.93 セント × 0.254 本/s */
+    expect(bandOf(440, 441, parts, 'cent').rate).toBeCloseTo(1200 * Math.log2(441 / 440) * 0.254, 6);
+  });
+  it('速く流れる縞は薄くなる', () => {
+    expect(contrast(1, 0)).toBe(1);
+    expect(contrast(1, 4.5)).toBeCloseTo(0.5, 9);
+    expect(contrast(1, 20)).toBeCloseTo(0.1, 9);
+  });
+  it('縞は窓の内側（x 3〜97）に収まり、1 周で元の位置に戻る', () => {
+    for (let o = 0; o < 4; o++) {
+      const d = stripes(o, 0.3);
+      for (const m of d.matchAll(/M([\d.]+) [\d.]+H([\d.]+)/g)) {
+        expect(Number(m[1])).toBeGreaterThanOrEqual(3);
+        expect(Number(m[2])).toBeLessThanOrEqual(97);
+      }
+      expect(stripes(o, 1.3)).toBe(d);
+    }
   });
 });
 
