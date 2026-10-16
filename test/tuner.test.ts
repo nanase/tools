@@ -17,7 +17,7 @@ import {
 } from '../src/tools/tuner/notes';
 import { deviations, JUST_M3, JUST_m3, TEMPERAMENTS } from '../src/tools/tuner/params';
 import { type Est, estimate, HighPass, mpmWin, Onset, refWin, Tracker } from '../src/tools/tuner/tracker';
-import { bandHz, bandOf, contrast, meterTicks, needlePath, stripes } from '../src/tools/tuner/view';
+import { bandHz, bandOf, contrast, HOLD, meterTicks, needlePath, Strobe, stripes } from '../src/tools/tuner/view';
 
 const FS = 48000;
 let seed = 1;
@@ -314,6 +314,39 @@ describe('表示の形', () => {
     expect(contrast(1, 0)).toBe(1);
     expect(contrast(1, 4.5)).toBeCloseTo(0.5, 9);
     expect(contrast(1, 20)).toBeCloseTo(0.1, 9);
+  });
+  it('推定が途切れ途切れでも、縞とランプは点滅しない', () => {
+    const sb = new Strobe(),
+      parts = [{ k: 1, f: 440.5, a: 1 }],
+      A4 = 9 * 4 + 2;
+    let lo = 1,
+      lit = 1;
+    /* 60 fps で描き、推定（40 ms ごと）は 3 回に 2 回が空振り */
+    for (let n = 0; n < 300; n++) {
+      if (n % 7 === 0) sb.update(440.5, parts, 440, null, 'hz');
+      sb.frame(1 / 60);
+      if (n > 30) {
+        lo = Math.min(lo, sb.c[A4]);
+        lit = Math.min(lit, sb.lit);
+      }
+    }
+    expect(lo).toBeGreaterThan(0.95);
+    expect(lit).toBeGreaterThan(0.95);
+    /* 縞は 0.5 本/s で流れ続ける */
+    expect(sb.rate[A4]).toBeCloseTo(0.5, 6);
+  });
+  it('推定が HOLD を超えて途切れたら、縞とランプはゆっくり消える', () => {
+    const sb = new Strobe(),
+      A4 = 9 * 4 + 2;
+    sb.update(440, [{ k: 1, f: 440, a: 1 }], 440, null, 'hz');
+    for (let t = 0; t < HOLD + 0.05; t += 1 / 60) sb.frame(1 / 60);
+    expect(sb.c[A4]).toBeGreaterThan(0.8);
+    for (let t = 0; t < 0.2; t += 1 / 60) sb.frame(1 / 60);
+    expect(sb.c[A4]).toBeGreaterThan(0.3);
+    expect(sb.lamp(0.15)).toBeGreaterThan(0.4);
+    for (let t = 0; t < 2; t += 1 / 60) sb.frame(1 / 60);
+    expect(sb.c[A4]).toBeLessThan(0.02);
+    expect(sb.lamp(0.15)).toBeCloseTo(0.15, 2);
   });
   it('縞は窓の内側（x 3〜97）に収まり、1 周で元の位置に戻る', () => {
     for (let o = 0; o < 4; o++) {

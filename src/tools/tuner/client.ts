@@ -24,7 +24,7 @@ import {
   type View,
 } from './params';
 import { estimate, HighPass, Onset, type Reading, refWin, Tracker } from './tracker';
-import { bandHz, bandOf, contrast, meterTicks, needlePath, type Part, stripes, zonePath } from './view';
+import { meterTicks, needlePath, type Part, Strobe, stripes, zonePath } from './view';
 
 initToolPage();
 const { a, tick: inTick } = initInput();
@@ -271,10 +271,7 @@ const wins: Win[] = $$('.swin').map((el) => {
     st = $$<SVGPathElement>('.stp', el).reverse();
   return { el, label: $('span', el), bg, st };
 });
-/** 帯ごとの縞の位相 [周]・速さ [本/s]・見え方 */
-const ph = new Float64Array(48),
-  rate = new Float64Array(48),
-  vis = new Float64Array(48);
+const sb = new Strobe();
 function names(): void {
   wins.forEach((w, p) => {
     txt(w.label, noteLabel(60 + p, nameOpts()).name);
@@ -296,10 +293,7 @@ let onset = new Onset(48000),
   cs = 0,
   seen = -1e9,
   clar = 0,
-  win = 0,
-  /** 部分音（ストロボ用）と基本周波数 */
-  parts: Part[] = [],
-  f0 = 0;
+  win = 0;
 
 function analyze(now: number): void {
   const fs = a.fs;
@@ -336,31 +330,17 @@ function analyze(now: number): void {
     rd = r;
     seen = now;
     if (r.si >= 0) sv[r.si] = cs;
-    /* ストロボ: 第 1〜8 部分音の周波数と強さを、出だしより後の窓で測る */
+    /* ストロボ: 第 1〜8 部分音の周波数と強さを、出だしより後の窓で測る。読み値のないフレームは、直前の帯のまま */
     let W = Math.min(16384, refWin(fs, r.f));
     while (W > 2048 && W > NB - since) W /= 2;
     win = W;
-    const x = xb.subarray(NB - W);
-    parts = [];
+    const x = xb.subarray(NB - W),
+      parts: Part[] = [];
     for (let k = 1; k <= 8 && k * r.f < fs * 0.45; k++) parts.push({ k, ...partial(x, r.f, k, fs) });
     const top = Math.max(1e-12, ...parts.map((p) => p.a));
     for (const p of parts) p.a /= top;
-    f0 = r.f;
-  } else parts = [];
-  /* 帯の見え方と縞の速さ（音がなければ止める） */
-  const dev = deviations(S.tem, S.ton);
-  for (let p = 0; p < 12; p++)
-    for (let o = 0; o < 4; o++) {
-      const i = p * 4 + o;
-      if (!parts.length) {
-        vis[i] = 0;
-        rate[i] = 0;
-        continue;
-      }
-      const b = bandOf(bandHz(p, o, S.ref, dev), f0, parts, S.spd);
-      vis[i] = b.vis;
-      rate[i] = b.rate;
-    }
+    sb.update(r.f, parts, S.ref, deviations(S.tem, S.ton), S.spd);
+  }
 }
 
 /* ---------- 描画 ---------- */
@@ -439,16 +419,16 @@ function render(now: number, dt: number): void {
       b.classList.toggle('cur', S.str < 0 && hold && rd?.si === i);
     }
   /* ストロボ（窓 12 × 帯 4）。音がない間はランプが消えかかって、かすかにちらつく */
+  sb.frame(dt);
   if (st) {
     const tgt = hold && rd ? ((rd.tgt % 12) + 12) % 12 : -1;
     wins.forEach((w, p) => {
       cls(w.el, `swin${p === tgt ? (ok ? ' ok' : ' on') : ''}`);
-      const L = on ? 1 : run ? 0.12 + 0.08 * Math.random() : 0.05;
+      const L = sb.lamp(run ? 0.12 + 0.08 * Math.random() : 0.05);
       for (let o = 0; o < 4; o++) {
-        const i = p * 4 + o;
-        if (on) ph[i] = (ph[i] + rate[i] * dt) % 1;
-        const C = on ? contrast(vis[i], rate[i]) : 0;
-        attr(w.st[o], 'd', C > 0.02 ? stripes(o, ph[i]) : '');
+        const i = p * 4 + o,
+          C = sb.c[i];
+        attr(w.st[o], 'd', C > 0.02 ? stripes(o, sb.ph[i]) : '');
         attr(w.st[o], 'opacity', C.toFixed(2));
         attr(w.bg[o], 'opacity', (0.5 * (1 - C) * L).toFixed(2));
       }
