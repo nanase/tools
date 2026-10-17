@@ -196,6 +196,13 @@ export class Keys {
       r.dataset.k = String(k);
       this.keyEls[k - KEY_LO] = r;
     }
+    /* オクターブの目印（C の鍵の上の音名） */
+    let t = '';
+    for (let k = 24; k <= KEY_HI; k += 12) {
+      const [x, , w] = keyRect(k);
+      t += `<text class="kb-n" x="${(x + w / 2).toFixed(1)}" y="${KY + WH - 6}" text-anchor="middle">C${k / 12 - 1}</text>`;
+    }
+    gk.insertAdjacentHTML('beforeend', t);
     this.hover = el('rect', 'kb-hv', svg);
     this.cursor = el('rect', 'kb-cur', svg);
     this.hover.style.display = this.cursor.style.display = 'none';
@@ -357,11 +364,6 @@ export class Keys {
       hl += `${i ? 'L' : 'M'}${this.sx(i + KEY_LO).toFixed(1)} ${this.sy(x.x0).toFixed(1)}`;
     });
     h += `<path class="kb-hl" d="${hl}"/>`;
-    /* オクターブの目印（C の鍵の上の音名） */
-    for (let k = 24; k <= KEY_HI; k += 12) {
-      const [x, , w] = keyRect(k);
-      h += `<text class="kb-n" x="${(x + w / 2).toFixed(1)}" y="${KY + WH - 6}" text-anchor="middle">C${k / 12 - 1}</text>`;
-    }
     this.gStatic.innerHTML = h;
     this.strEls = Array.from(this.gStatic.querySelectorAll<SVGPathElement>('.kb-s'));
     this.vib.clear();
