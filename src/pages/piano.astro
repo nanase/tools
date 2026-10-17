@@ -47,7 +47,8 @@ const related = [
       <p class="sr" id="kb-live" aria-live="polite"></p>
       <More id="g-kb" title="表示の設定"><div class="ana2">
         <div class="ptab">
-          <ChoiceRow k="ex" name="振幅の強調" sub="弦の変位を何倍にして描くか。×1 は弦の間隔に対して実際の大きさ（弦の長さは縮め、間隔は広げて描く）" choices={EXAG.map((v) => [v, `×${v}`] as const)} value={10} />
+          <ChoiceRow k="ex" name="振幅の強調" sub="弦の変位を何倍にして描くか。×1 は弦の間隔に対して実際の大きさ（弦の長さは縮め、間隔は広げて描く）。ダンパーが上がっている弦の共鳴は打った弦よりずっと小さいので、×20 で見やすい" choices={EXAG.map((v) => [v, `×${v}`] as const)} value={10} />
+          <ChoiceRow k="sym" name="弦の共鳴" sub="ダンパーが上がっている弦が、打った弦から駒を通して揺れ始める様子を描く。描かないときは、打った弦の振動だけを描く（音は変わらない）" choices={[['on', '表示'], ['off', 'なし']]} value="on" />
         </div>
         <div class="ptab" id="sl-row" hidden>
           <ChoiceRow k="sl" name="スローの速さ" sub="振動を何分の 1 の速さで描くか" choices={SLOW.map((v) => [v, `1/${v}`] as const)} value={50} />
