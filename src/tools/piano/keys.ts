@@ -1,6 +1,7 @@
 /**
  * 鍵盤と弦の図（グランドピアノを上から見た向き。手前に鍵盤、奥へ弦が伸び、低音が左）。
- * 弦の長さは実際の長さに比例させ、弦の間隔と振動の幅は見やすいように広げて描く。
+ * 弦の長さは実際の長さの LEN_EXP 乗に比例させ（高音の短い弦も見えるように）、弦の間隔と振動の幅は見やすいように
+ * 広げて描く。弦の上の位置（打つ点・ダンパー・振動）は、弦の長さに対する比で描く。
  * ハンマーが打つ点・ダンパー・駒を示し、鳴っている弦の振動（残像・スロー）を描く。振動を描いている間は、
  * その弦の止まった線を隠す。ダンパーが上がっている弦の共鳴も描く（駒を通して揺れ始め、モードごとに持ち主の鍵の
  * ダンパーが下りると止まる）。鍵や弦を押して弾く操作を受ける
@@ -20,10 +21,18 @@ const W = 1000,
   WH = 78,
   BH = 48,
   SY0 = 252;
-/** 最も長い弦を描く長さ */
-const LEN_PX = 214;
+/** 最も長い弦を描く長さ（1.6 m より短いピアノは、1.6 m に対する比で短く描く）と、長さを縮める指数 */
+const LEN_PX = 234,
+  LEN_EXP = 0.6,
+  LEN_REF = 1.6;
 /** 弦の間隔（半音あたり） */
 const SP = (KX1 - KX0) / KEYS;
+/** ダンパーを描く幅・弦を描く長さに対する長さの比と、その上限・下限・打つ点からの隙間（図の単位） */
+const DMP_W = SP * 0.46,
+  DMP_FRAC = 0.08,
+  DMP_MAX = 16,
+  DMP_MIN = 8,
+  DMP_GAP = 3;
 /** 振動を描く点の数・残像を作る位相の数・足す部分音の数 */
 const PTS = 24,
   PHASES = 8,
@@ -235,10 +244,13 @@ function keyRect(key: number): [number, number, number, number] {
 
 export class Keys {
   private geo: KeyGeo[] = [];
-  private scale = LEN_PX / 2;
+  /** 鍵ごとの弦を描く長さ（図の単位） */
+  private len = new Float64Array(KEYS);
   private exag = 10;
   private mode: 'blur' | 'slow' = 'blur';
   private slow = 50;
+  /** 共鳴している弦を描くか */
+  private symOn = true;
   private readonly snd = new Map<number, Sounding>();
   /** 鍵ごとの共鳴している弦と、ダンパーの記録。すべて止めた時刻 [s] と、そのときの減衰率 [1/s] */
   private readonly res = new Map<number, Res[]>();
@@ -312,15 +324,16 @@ export class Keys {
     return KX0 + (key - KEY_LO + 0.5) * SP;
   }
   /** 手前の端からの距離 [m] → y */
-  private sy(m: number): number {
-    return SY0 - m * this.scale;
+  private sy(key: number, m: number): number {
+    const g = this.geo[key - KEY_LO];
+    return SY0 - (g ? (m / g.L) * this.len[key - KEY_LO] : 0);
   }
 
   /* ---------- 設定 ---------- */
   setGeo(g: KeyGeo[]): void {
     this.geo = g;
-    const Lmax = Math.max(...g.map((x) => x.L));
-    this.scale = LEN_PX / Math.max(1.6, Lmax);
+    const Lref = Math.max(LEN_REF, ...g.map((x) => x.L));
+    this.len = Float64Array.from(g, (x) => LEN_PX * (x.L / Lref) ** LEN_EXP);
     this.drawStatic();
     this.drawDampers();
     this.kick();
@@ -335,6 +348,11 @@ export class Keys {
   }
   setSlow(n: number): void {
     this.slow = n;
+    this.kick();
+  }
+  /** 共鳴している弦を描くか（描かない間も、共鳴は止まるまで覚えておく） */
+  setSym(on: boolean): void {
+    this.symOn = on;
     this.kick();
   }
   /** 鍵を押している表示。離したとき、ペダルを踏んでいなければダンパーが下りて弦が止まり始める */
@@ -445,7 +463,7 @@ export class Keys {
       else this.res.set(v.key, [r]);
     }
     const g = this.geo[key - KEY_LO];
-    if (g) this.rips.push({ x: this.sx(key), y: this.sy(g.x0), t0: s.t0, r: ripRadius(s.v), s: ripTime(s.v) });
+    if (g) this.rips.push({ x: this.sx(key), y: this.sy(key, g.x0), t0: s.t0, r: ripRadius(s.v), s: ripTime(s.v) });
   }
 
   /* ---------- 描画 ---------- */
@@ -454,7 +472,7 @@ export class Keys {
     if (!g.length) return;
     let h = '';
     /* 枠（弦の奥の端をなぞる外形）と響板 */
-    const ends = g.map((x, i) => [this.sx(i + KEY_LO), this.sy(x.L)] as const),
+    const ends = g.map((x, i) => [this.sx(i + KEY_LO), this.sy(i + KEY_LO, x.L)] as const),
       top = Math.min(...ends.map((e) => e[1])) - 14;
     let rim = `M${KX0 - 4} ${SY0 + 8}L${KX0 - 4} ${top.toFixed(1)}`;
     for (let i = 0; i < ends.length; i += 4) rim += `L${(ends[i][0] + 6).toFixed(1)} ${(ends[i][1] - 12).toFixed(1)}`;
@@ -464,7 +482,7 @@ export class Keys {
     let tb = '',
       bb = '';
     g.forEach((x, i) => {
-      const p = `${this.sx(i + KEY_LO).toFixed(1)} ${(this.sy(x.L) - 1.5).toFixed(1)}`;
+      const p = `${this.sx(i + KEY_LO).toFixed(1)} ${(this.sy(i + KEY_LO, x.L) - 1.5).toFixed(1)}`;
       if (x.wound) bb += `${bb ? 'L' : 'M'}${p}`;
       else tb += `${tb ? 'L' : 'M'}${p}`;
     });
@@ -475,12 +493,12 @@ export class Keys {
     g.forEach((x, i) => {
       const xs = this.sx(i + KEY_LO).toFixed(1),
         w = Math.max(0.7, Math.min(3, x.d * 1000 * 0.55));
-      h += `<path class="kb-s${x.wound ? ' wd' : ''}" style="stroke-width:${w.toFixed(2)}" d="M${xs} ${SY0}V${this.sy(x.L).toFixed(1)}"/>`;
+      h += `<path class="kb-s${x.wound ? ' wd' : ''}" style="stroke-width:${w.toFixed(2)}" d="M${xs} ${SY0}V${this.sy(i + KEY_LO, x.L).toFixed(1)}"/>`;
     });
     /* 打つ点を結ぶ線 */
     let hl = '';
     g.forEach((x, i) => {
-      hl += `${i ? 'L' : 'M'}${this.sx(i + KEY_LO).toFixed(1)} ${this.sy(x.x0).toFixed(1)}`;
+      hl += `${i ? 'L' : 'M'}${this.sx(i + KEY_LO).toFixed(1)} ${this.sy(i + KEY_LO, x.x0).toFixed(1)}`;
     });
     h += `<path class="kb-hl" d="${hl}"/>`;
     this.gStatic.innerHTML = h;
@@ -502,7 +520,10 @@ export class Keys {
       }
   }
 
-  /** ダンパー（鍵を押しているか、ペダルを踏んでいれば上がる） */
+  /**
+   * ダンパー（鍵を押しているか、ペダルを踏んでいれば上がり、薄く描く）。フェルトは弦に沿って長いので、打つ点のすぐ
+   * 奥から弦に沿って縦長に描く
+   */
   private drawDampers(): void {
     const g = this.geo;
     let h = '';
@@ -510,8 +531,9 @@ export class Keys {
       if (!x.damper) return;
       const k = i + KEY_LO,
         up = this.pedal || this.down.has(k),
-        y = this.sy(Math.min(x.L * 0.6, x.x0 + 0.035));
-      h += `<rect class="kb-d${up ? ' up' : ''}" x="${(this.sx(k) - SP * 0.38).toFixed(1)}" y="${(y - (up ? 7 : 3)).toFixed(1)}" width="${(SP * 0.76).toFixed(1)}" height="5" rx="1"/>`;
+        len = Math.max(DMP_MIN, Math.min(DMP_MAX, DMP_FRAC * this.len[i])),
+        y0 = this.sy(k, x.x0) - DMP_GAP;
+      h += `<rect class="kb-d${up ? ' up' : ''}" x="${(this.sx(k) - DMP_W / 2).toFixed(1)}" y="${(y0 - len).toFixed(1)}" width="${DMP_W.toFixed(1)}" height="${len.toFixed(1)}" rx="1.5"/>`;
     });
     this.gDamp.innerHTML = h;
   }
@@ -599,7 +621,7 @@ export class Keys {
         fade = this.fader(r.t0, now);
       if (t < 0) return true;
       if (envOf(r.view, t, fade) < MIN_REL * r.ref) return false;
-      src.push({ view: r.view, t, fade });
+      if (this.symOn) src.push({ view: r.view, t, fade });
       return true;
     });
     if (keep.length) this.res.set(key, keep);
@@ -607,9 +629,8 @@ export class Keys {
     if (!this.snd.has(key) && !keep.length) return null;
     if (!src.length) return '';
     const x = this.sx(key),
-      g = this.geo[key - KEY_LO],
       k = this.exag * PX_MM * 1000,
-      ys = (j: number) => (SY0 - (j / PTS) * g.L * this.scale).toFixed(1);
+      ys = (j: number) => (SY0 - (j / PTS) * this.len[key - KEY_LO]).toFixed(1);
     let peak = 0,
       d = '';
     /* 時刻をずらして（dt）、すべての振動の部分音の成分を足す */
@@ -669,7 +690,7 @@ export class Keys {
     const k = Math.round((x - KX0) / SP - 0.5) + KEY_LO;
     if (k < KEY_LO || k > KEY_HI) return null;
     const g = this.geo[k - KEY_LO];
-    return g && y >= this.sy(g.L) - 6 && y <= SY0 + 6 ? k : null;
+    return g && y >= this.sy(k, g.L) - 6 && y <= SY0 + 6 ? k : null;
   }
 
   private showRect(rc: SVGRectElement, key: number | null): void {

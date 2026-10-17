@@ -78,6 +78,7 @@ const ex = choice<string>('ex', (v) => {
   keys.setExag(Number(v));
   kbBar();
 });
+const sym = choice<'on' | 'off'>('sym', (v) => keys.setSym(v === 'on'));
 const sl = choice<string>('sl', (v) => {
   keys.setSlow(Number(v));
   kbBar();
@@ -117,6 +118,7 @@ const keys = new Keys($<SVGSVGElement>('#kbd'), {
 keys.setMode(nv.value);
 keys.setExag(Number(ex.value));
 keys.setSlow(Number(sl.value));
+keys.setSym(sym.value === 'on');
 function kbBar(): void {
   $('#sl-row').hidden = nv.value !== 'slow';
   txt('#kb-ex', `×${ex.value}`);
