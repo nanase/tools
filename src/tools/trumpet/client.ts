@@ -1,7 +1,7 @@
 /**
- * トランペット音響モデルのページの入口: 弁・倍音・吹き方・楽器・部屋の入力 → 奏者と楽器（AudioWorklet）→
- * 図（気柱・弁・唇とマウスピースの断面・倍音のはしご）・管の共鳴・音の波形・計算結果・音。
- * 「吹く」（スペースキー）を押している間だけ吹き、弁（J・K・L）と倍音（↑↓）で音を選ぶ。曲は worklet が演奏する
+ * トランペット音響モデルのページの入口: ピストン・倍音・吹き方・楽器・部屋の入力 → 奏者と楽器（AudioWorklet）→
+ * 図（気柱・ピストン・唇とマウスピースの断面・倍音のはしご）・管の共鳴・音の波形・計算結果・音。
+ * 「吹く」（スペースキー）を押している間だけ吹き、ピストン（J・K・L）と倍音（↑↓）で音を選ぶ。曲は worklet が演奏する
  */
 import { Choice } from '../../lib/choice';
 import { $ } from '../../lib/dom';
@@ -113,13 +113,13 @@ function figBar(): void {
 const nm = (m: number) => nameOf(names.value === 'wri' ? m + 2 : m);
 const vName = (v: readonly boolean[]) => {
   const s = [v[0] ? '1' : '', v[1] ? '2' : '', v[2] ? '3' : ''].filter(Boolean);
-  return s.length ? s.join('+') : '弁なし';
+  return s.length ? s.join('+') : 'ピストンなし';
 };
 
-/* ---------- 手で吹く: 弁・倍音・吹く ---------- */
+/* ---------- 手で吹く: ピストン・倍音・吹く ---------- */
 const M = { v: [false, false, false] as [boolean, boolean, boolean], n: 4, blow: false };
 let blowTimer: ReturnType<typeof setTimeout> | undefined;
-/** 鳴らす音（弁と倍音から） */
+/** 鳴らす音（ピストンと倍音から） */
 const manualNote = () => openNote(M.n) - semiOf(M.v);
 function blowRows(): void {
   const man = lipMode.value === 'man';
@@ -200,7 +200,7 @@ for (const b of $('#parts').querySelectorAll<HTMLButtonElement>('button'))
     if (e.key === 'Enter') up();
   });
 }
-/* キーボード: スペースで吹く、J・K・L で弁、↑↓ で倍音（入力欄にいるときは使わない） */
+/* キーボード: スペースで吹く、J・K・L でピストン、↑↓ で倍音（入力欄にいるときは使わない） */
 const typing = (e: KeyboardEvent) => {
   const t = e.target as HTMLElement | null;
   return !!t && (t.tagName === 'INPUT' || t.tagName === 'SELECT' || t.tagName === 'TEXTAREA' || t.isContentEditable);

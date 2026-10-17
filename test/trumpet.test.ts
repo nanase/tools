@@ -85,7 +85,7 @@ function blow(m: number, d: number, dur = 0.4, opts: { brass?: number } = {}): {
 }
 
 describe('管', () => {
-  it('弁を押さない管の第 2〜第 8 の共鳴は、B♭2 の倍音から ±40 セント以内', () => {
+  it('ピストンを押さない管の第 2〜第 8 の共鳴は、B♭2 の倍音から ±40 セント以内', () => {
     const f = new Float64Array(1800).map((_, i) => 150 + i * 0.5),
       pk = peaksOf(f, tmmZ(f));
     for (let n = 2; n <= 8; n++) {
@@ -94,7 +94,7 @@ describe('管', () => {
     }
   });
 
-  it('はしごのずれ: 1 本の弁は弁なしと同じくらいに合い、組み合わせるほど高くなる', () => {
+  it('はしごのずれ: 1 本のピストンはピストンなしと同じくらいに合い、組み合わせるほど高くなる', () => {
     const avg = (r: readonly number[]) => r.slice(0, 7).reduce((s, v) => s + v, 0) / 7;
     expect(RES_DEV).toHaveLength(FINGERS.length);
     expect(Math.abs(avg(RES_DEV[1]) - avg(RES_DEV[0]))).toBeLessThan(12);

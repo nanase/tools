@@ -1,5 +1,5 @@
 /**
- * トランペットの図（DOM）: 横から見た楽器の気柱を圧力の色で塗り、弁のボタンを押し具合で下げる。
+ * トランペットの図（DOM）: 横から見た楽器の気柱を圧力の色で塗り、ピストンのボタンを押し具合で下げる。
  * 唇とマウスピースの断面は、1 周期の位相ごとの唇の開き・マウスピースの圧力から描く。
  * 振れ幅の表示では、管の中の各点の圧力の振れ幅（1 周期の最大と最小の差の半分）を 33 段（白から朱）で塗り、
  * スローでは受け取った 1 周期を遅くして繰り返し、圧力を 65 段（負は青、正は朱）で塗る。管の中の値は読む点の間を
@@ -54,7 +54,7 @@ export class TrumpetFigure {
     this.keys([0, 0, 0]);
   }
 
-  /** 弁のボタン（押し具合 0〜1） */
+  /** ピストンのボタン（押し具合 0〜1） */
   keys(press: readonly number[]): void {
     const k = keyShapes(press);
     this.stems.setAttribute('d', k.stems);
@@ -65,7 +65,7 @@ export class TrumpetFigure {
     }
   }
 
-  /** 気柱の四角を、押している弁の組に合わせて作り直す */
+  /** 気柱の四角を、押しているピストンの組に合わせて作り直す */
   private route(v: readonly boolean[]): void {
     const key = v.map(Number).join('');
     if (key === this.vKey) return;
@@ -91,7 +91,7 @@ export class TrumpetFigure {
     return (k0 + Math.floor(this.acc * n)) % n;
   }
 
-  /** 気柱を塗る（振れ幅、またはスローの位相 k の分布）。弁は押し具合が半分を超えた側の通り道 */
+  /** 気柱を塗る（振れ幅、またはスローの位相 k の分布）。ピストンは押し具合が半分を超えた側の通り道 */
   air(c: Cycle | null, k: number, press: readonly number[]): void {
     this.route(press.map((x) => x > 0.5));
     const D = new Map(AIR_LAYERS.map((l) => [l, new Array<string>(QKEYS).fill('')]));

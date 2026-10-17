@@ -4,11 +4,11 @@ import { arc, f1, join, lerpT, mpIn, normals, OUT, P, type Pt, RIM, rect, ribbon
  * 横から見たトランペットの図の形（DOM に依存しない。図の座標、約 1.73 px/mm）。
  * 奏者の右側から見た図。各部の位置・太さ・形は、Wikimedia Commons の写真「Yamaha Trumpet YTR-8335LA.tif」
  * （Yamaha Corporation、CC BY-SA 4.0）をベルの縁の直径 123 mm で図の縮尺にそろえて測った（写真の傾きは直し、
- * リードパイプ・下の段の管を水平にした。ベル管は写真どおりベルへ向かって少し上がる）。弁のケースの口の位置は写真
+ * リードパイプ・下の段の管を水平にした。ベル管は写真どおりベルへ向かって少し上がる）。ピストンのケースの口の位置は写真
  * 「Trompette - corps.JPG」（Wikimedia Commons、Eusebius、CC BY 3.0。抜差しを外した本体）で確かめた。管の通り道:
- * マウスピース → リードパイプ → 主管抜差し → 下の管 → 第 3 弁 → 弁の間の管 → 第 2 弁 → 弁の間の管 → 第 1 弁 →
- * ベル管の下の管（第 1 抜差しの奥）→ ベルの曲がり → ベル管（弁のケースの奥）→ ベル。第 3 抜差しの下の管は主管抜差しの
- * 下の管の奥に隠れる。弁のケースの中の通り道は外から見えないので、ケースの奥に置く（見えるのはケースの間の管だけ）。
+ * マウスピース → リードパイプ → 主管抜差し → 下の管 → 第 3 ピストン → ピストンの間の管 → 第 2 ピストン → ピストンの間の管 → 第 1 ピストン →
+ * ベル管の下の管（第 1 抜差しの奥）→ ベルの曲がり → ベル管（ピストンのケースの奥）→ ベル。第 3 抜差しの下の管は主管抜差しの
+ * 下の管の奥に隠れる。ピストンのケースの中の通り道は外から見えないので、ケースの奥に置く（見えるのはケースの間の管だけ）。
  * 写真は少し上・少し前から写っているので、縦の円柱（ケース・キャップ・ボタン）の上下の縁は手前の弧、手前へ出る
  * 第 2 抜差しの輪は斜めの楕円で描く。ベルは少し奥を向くので開口の中は見えず、縁は楕円に見える（手前の半分はすべて、
  * 奥の半分は胴に隠れるまで）。縁の内側は、ほかの管と同じく気柱を透かして描く。金属には左上からの光の明るい筋と
@@ -16,10 +16,10 @@ import { arc, f1, join, lerpT, mpIn, normals, OUT, P, type Pt, RIM, rect, ribbon
  */
 export const SIDE_VIEW = '-10 -42 985 362';
 const PXM = 1.73;
-/** 弁の中心の x と、ケースの胴の半幅（気柱の通り道の目安） */
+/** ピストンの中心の x と、ケースの胴の半幅（気柱の通り道の目安） */
 export const VX = [362, 403, 444] as const;
 const CW = 17.5;
-/** 中心線の高さ: リードパイプ（とマウスピース）、下の段（主管抜差しの下の管・弁の間の管・ベル管の下の管） */
+/** 中心線の高さ: リードパイプ（とマウスピース）、下の段（主管抜差しの下の管・ピストンの間の管・ベル管の下の管） */
 const Y_LP = 142.5,
   Y_LOW = 240;
 /** 円筒部の管の外の半幅と、気柱の半幅（内径 11.65 mm から管の壁の分を引いた見た目の値） */
@@ -40,7 +40,7 @@ const bellY = (x: number) => lerpT(BELL_Y, x);
 /** ベルの曲がり（中心と半径） */
 const BOW = { x: 195.5, y: (BELL_Y[0][1] + Y_LOW) / 2, r: (Y_LOW - BELL_Y[0][1]) / 2 };
 /**
- * ベル管の外の半幅（x）。写真の上の縁から測った。弁のケースの奥（x 345〜466）はケースの間で測った。
+ * ベル管の外の半幅（x）。写真の上の縁から測った。ピストンのケースの奥（x 345〜466）はケースの間で測った。
  * 縁の近く（x 905 より右）は、写真の外形が縁の楕円の奥の半分なので、ベルの胴の輪郭は 107 − 6.73 d^0.58（d は縁の面までの距離）で補った
  */
 const BELL: readonly (readonly [number, number])[] = [
@@ -134,7 +134,7 @@ const smooth = (q: readonly Pt[], n = 6): Pt[] => {
 const at = (p: Pt, d: Pt, t: number): Pt => [p[0] + t * d[0], p[1] + t * d[1]];
 
 /**
- * 第 2 抜差し: 第 2 弁のケースの手前の 2 つの口 u0・l0 から、左下の手前へ出る U 字の管。管の面が手前へ傾くので、
+ * 第 2 抜差し: 第 2 ピストンのケースの手前の 2 つの口 u0・l0 から、左下の手前へ出る U 字の管。管の面が手前へ傾くので、
  * 曲がりは縦に長い丸みになり、手前の曲がりほど太く写る。上下の管の曲がりの側の端 u1・l1 と、曲がりの中心線の点
  */
 const S2 = (() => {
@@ -261,7 +261,7 @@ function shade(pts: readonly Pt[], hw: Width, inner: Width = 0): { hl: string; s
   return { hl, sh };
 }
 /**
- * 縦の円柱（弁のケース・キャップ）の側面の縦の帯: 上の中心 c0・半幅 rx0、下の中心 c1・半幅 rx1。帯の上下は手前の弧
+ * 縦の円柱（ピストンのケース・キャップ）の側面の縦の帯: 上の中心 c0・半幅 rx0、下の中心 c1・半幅 rx1。帯の上下は手前の弧
  * y0 + ry0·√(1−u²)、y1 + ry1·√(1−u²)（u は左の縁 −1 から右の縁 1 の位置）。us は帯ごとの u の範囲
  */
 function cyl(
@@ -350,7 +350,7 @@ const knurlLines = (cx: number, rx: number, y0: number, y1: number, ry0: number,
   return s;
 };
 
-/** 弁のケースの胴: 上（y 116）と下（y 280.6）の半幅（写真では下ほど遠く、少し細く写る）、ケースごとの中心のずれ */
+/** ピストンのケースの胴: 上（y 116）と下（y 280.6）の半幅（写真では下ほど遠く、少し細く写る）、ケースごとの中心のずれ */
 const CASE = { y0: 116, y1: 280.6, hw0: 18.2, hw1: 16.7, ry1: 5.6 };
 const LEAN = [
   [0.2, 0.4],
@@ -365,11 +365,11 @@ const CAP = { y: 105.2, rx: 19.4, ry: 6.3, yb: 113.9, yk: 111 };
 /** 下のキャップ: 上の弧・下の弧の中心の高さと縦の半径、ローレットの上下 */
 const CAPL = { y0: 280.6, ry0: 6.2, y1: 291.4, ry1: 7.6, rx: 18.3, k0: 285.2, k1: 290.8, rk: 7.3 };
 
-/** 動かない管・弁のケース・小物 */
+/** 動かない管・ピストンのケース・小物 */
 const S = (() => {
   const band = (x0: number, x1: number, y: number, hw: number, r = 1) => rect(x0, y - hw, x1, y + hw, r);
   const circ = (x: number, y: number, r: number) => ell(x, y, r, r);
-  /* 弁のケースの間（高さ y でのケースの胴の縁から縁） */
+  /* ピストンのケースの間（高さ y でのケースの胴の縁から縁） */
   const gapsAt = (y: number) => [0, 1].map((i): [number, number] => [cx(i, y) + caseHw(y), cx(i + 1, y) - caseHw(y)]);
   /*
    * 斜めに手前へ出る管の輪: 口 p から向き d に t0〜t1、管の半幅 hw より e だけ太い帯。輪の縁は管の断面の楕円の
@@ -436,7 +436,7 @@ const S = (() => {
     mouth: shade(seg(0.5, Y_LP, 106, Y_LP, 2.5), mHw, mAir),
   };
   const all = (xs: { hl: string; sh: string }[], k: 'hl' | 'sh') => xs.map((x) => x[k]).join('');
-  /* 弁のケース */
+  /* ピストンのケース */
   const caseBody = (i: number) => {
     const xs = (y: number, s: 1 | -1) => cx(i, y) + s * caseHw(y);
     return `M${P(xs(CASE.y0, -1), CASE.y0)}L${P(xs(CASE.y1, -1), CASE.y1)}A${f1(caseHw(CASE.y1))} ${CASE.ry1} 0 0 0 ${P(xs(CASE.y1, 1), CASE.y1)}L${P(xs(CASE.y0, 1), CASE.y0)}Z`;
@@ -463,7 +463,7 @@ const S = (() => {
         cyl(d, d, CAPL.rx, CAPL.rx, CAPL.y0, CAPL.y1, CAPL.ry0, CAPL.ry1, us)
       );
     }).join('');
-  /* 弁のケースの帯（ふくらんだ輪）: 上下の手前の弧の中心の高さ、縦の半径 */
+  /* ピストンのケースの帯（ふくらんだ輪）: 上下の手前の弧の中心の高さ、縦の半径 */
   const BAND = { y0: 171.8, y1: 176.5, ry: 6.4 };
   const bandAt = (i: number) => {
     const c = cx(i, 174),
@@ -471,7 +471,7 @@ const S = (() => {
     return `M${P(c - rx, BAND.y0)}A${f1(rx)} ${BAND.ry} 0 0 0 ${P(c + rx, BAND.y0)}L${P(c + rx, BAND.y1)}A${f1(rx)} ${BAND.ry} 0 0 1 ${P(c - rx, BAND.y1)}Z`;
   };
   return {
-    /* 奥: ベル管の下の管（第 1 弁から曲がりまで）・ベルの曲がり・ベル管を 1 本の帯で（継ぎ目の線を出さない） */
+    /* 奥: ベル管の下の管（第 1 ピストンから曲がりまで）・ベルの曲がり・ベル管を 1 本の帯で（継ぎ目の線を出さない） */
     bell: (() => {
       /* 縁の面で縦の線を出さないよう、終わりは縁の楕円の手前の半分の弧でつなぐ */
       const pts = join(seg(VX[0], Y_LOW, BOW.x, Y_LOW, 4), bellPts()),
@@ -494,7 +494,7 @@ const S = (() => {
       `A${f1(MOUTH.rx - MOUTH.w)} ${f1(MOUTH.ry - 1.2)} 0 0 0 ${P(MOUTH.x, MOUTH.y - MOUTH.ry - 0.6)}Z`,
     /* ベル管の下の管の金具（第 1 抜差しの上下の管の間に見える） */
     bellFit: 'M273.6 230.4H287.6L289.6 242.4H271.8Z',
-    /* 弁のケースの間: 空気が通る管（下の段）と、ケースをつなぐ支え */
+    /* ピストンのケースの間: 空気が通る管（下の段）と、ケースをつなぐ支え */
     knuck: gapsAt(240.1)
       .map(([a, b]) => band(a - 3, b + 3, 240.1, 10.4))
       .join(''),
@@ -512,7 +512,7 @@ const S = (() => {
         { rx, k0, k1, rk } = CAPL;
       return front(c, k0, rx, rk) + front(c, k1, rx, rk) + knurlLines(c, rx, k0, k1, rk, rk, 6);
     }).join(''),
-    /* 弁のケース: 胴（下ほど細い）、光の縦の帯、帯（ふくらんだ輪）、上のキャップ（上の面・ローレット）、フェルト、軸の受け */
+    /* ピストンのケース: 胴（下ほど細い）、光の縦の帯、帯（ふくらんだ輪）、上のキャップ（上の面・ローレット）、フェルト、軸の受け */
     casings: VX.map((_, i) => caseBody(i)).join(''),
     casingsHl: caseStrips([
       [-0.66, -0.4],
@@ -571,7 +571,7 @@ const S = (() => {
       band(340.5, 344, S1.yu, 11) +
       band(340.5, 344, S1.yl, 11),
     firstKnob: circ(232.3, 236.4, 5),
-    /* 第 2 抜差し（第 2 弁のケースの手前）: U 字の管、斜めの輪（ケースの口・継ぎ目・曲がりの継ぎ目）、引き手 */
+    /* 第 2 抜差し（第 2 ピストンのケースの手前）: U 字の管、斜めの輪（ケースの口・継ぎ目・曲がりの継ぎ目）、引き手 */
     second: ribbonE(s2Pts(), s2Hw, 5.6),
     secondHl: sh.second.hl,
     secondSh: sh.second.sh,
@@ -716,7 +716,7 @@ const S = (() => {
   };
 })();
 
-/** 図の描く順: 形（class・d・部品の名前）か、気柱の層（9 段の色の path を置く）。弁のボタンと文字はこの後 */
+/** 図の描く順: 形（class・d・部品の名前）か、気柱の層（9 段の色の path を置く）。ピストンのボタンと文字はこの後 */
 export type SideItem = { cls: string; d: string; name: string } | { air: AirLayer };
 /** 部品の名前（図の上で指したときの説明）。陰影の帯は、その部品の名前にする */
 const NAMES: Record<keyof typeof S, string> = {
@@ -727,19 +727,19 @@ const NAMES: Record<keyof typeof S, string> = {
   bellBackRim: 'ベルの縁',
   bellRim: 'ベルの縁',
   bellFit: 'ベル管の下の管の金具',
-  knuck: '弁の間の管',
-  spacers: '弁のケースの間の支え',
-  spacerLines: '弁のケースの間の支えの継ぎ目',
-  capsLow: '弁のケースの下のキャップ',
+  knuck: 'ピストンの間の管',
+  spacers: 'ピストンのケースの間の支え',
+  spacerLines: 'ピストンのケースの間の支えの継ぎ目',
+  capsLow: 'ピストンのケースの下のキャップ',
   knurlLow: 'キャップのローレット',
-  casings: '弁のケース',
-  casingsHl: '弁のケース',
-  casingsSh: '弁のケース',
-  bands: '弁のケースの帯',
-  bandsHl: '弁のケースの帯',
-  caps: '弁のケースのキャップ',
-  capsHl: '弁のケースのキャップ',
-  capsSh: '弁のケースのキャップ',
+  casings: 'ピストンのケース',
+  casingsHl: 'ピストンのケース',
+  casingsSh: 'ピストンのケース',
+  bands: 'ピストンのケースの帯',
+  bandsHl: 'ピストンのケースの帯',
+  caps: 'ピストンのケースのキャップ',
+  capsHl: 'ピストンのケースのキャップ',
+  capsSh: 'ピストンのケースのキャップ',
   knurl: 'キャップのローレット',
   felts: 'フェルト',
   guides: 'ピストンの軸の受け',
@@ -894,7 +894,7 @@ export const SIDE_TEXT: SideText[] = [
 ];
 
 /**
- * 弁のボタン（押し具合 0〜1 で 19 px 下がる）: 軸・ボタン・真珠・押した印。ボタンは少し上から見た円盤で、
+ * ピストンのボタン（押し具合 0〜1 で 19 px 下がる）: 軸・ボタン・真珠・押した印。ボタンは少し上から見た円盤で、
  * 上の面の奥の弧・側面・手前の下の弧と、上の面の手前の縁の線。軸の下の端はフェルトの中の受けへ手前の弧で入る
  */
 export function keyShapes(press: readonly number[]): {
@@ -924,7 +924,7 @@ export function keyShapes(press: readonly number[]): {
 }
 
 /**
- * 気柱の層: b はベル管とその下の管（弁のケースと第 1 抜差しの奥）、v は弁のケースの中と弁の間の管（ケースの奥。見えるのはケースの間だけ）、
+ * 気柱の層: b はベル管とその下の管（ピストンのケースと第 1 抜差しの奥）、v はピストンのケースの中とピストンの間の管（ケースの奥。見えるのはケースの間だけ）、
  * m は第 3 抜差し（主管抜差しの下の管の奥）、f は手前の管（マウスピース・リードパイプ・主管抜差し・第 1・第 2 抜差し）
  */
 export const AIR_LAYERS = ['b', 'v', 'm', 'f'] as const;
@@ -932,7 +932,7 @@ export type AirLayer = (typeof AIR_LAYERS)[number];
 
 /**
  * 気柱の区間: 中心線、内側の半幅、層、管の模型の要素と位置（Bore.pressureAt の el と s の範囲）。
- * 弁の組ごとに通り道が変わる（押した弁は抜差しを回る）
+ * ピストンの組ごとに通り道が変わる（押したピストンは抜差しを回る）
  */
 interface AirPiece {
   pts: Pt[];
@@ -950,7 +950,7 @@ export interface AirQuad {
   s: number;
 }
 
-/** 押した弁の組（第 1・第 2・第 3）の気柱の四角の列 */
+/** 押したピストンの組（第 1・第 2・第 3）の気柱の四角の列 */
 export function airQuads(v: readonly boolean[]): AirQuad[] {
   const pieces: AirPiece[] = [];
   type Part = [Pt[], number | ((p: Pt) => number), AirLayer];
@@ -976,7 +976,7 @@ export function airQuads(v: readonly boolean[]): AirQuad[] {
       });
     });
   };
-  /* 弁のケースの中の通り道（ケースの口と口を結ぶ。ケースに隠れる） */
+  /* ピストンのケースの中の通り道（ケースの口と口を結ぶ。ケースに隠れる） */
   const IN = 4.5;
   const inside = (x0: number, y0: number, x1: number, y1: number): Part => [seg(x0, y0, x1, y1, 3), IN, 'v'];
   const c1 = VX[0],
@@ -990,9 +990,9 @@ export function airQuads(v: readonly boolean[]): AirQuad[] {
     0.261,
     1,
   );
-  /* 主管抜差し: 曲がりから下の管を通って第 3 弁のケースの中ほどまで */
+  /* 主管抜差し: 曲がりから下の管を通って第 3 ピストンのケースの中ほどまで */
   chain(1, [[crookPts(700, c3), AIR, 'f']]);
-  /* 第 3 弁: 押すと上の管から第 3 抜差しを回り、下の管からケースへ戻る */
+  /* 第 3 ピストン: 押すと上の管から第 3 抜差しを回り、下の管からケースへ戻る */
   if (v[2])
     chain(2, [
       inside(c3, Y_LOW, S3.xe, S3.yu),
@@ -1001,7 +1001,7 @@ export function airQuads(v: readonly boolean[]): AirQuad[] {
     ]);
   else chain(2, [inside(c3, Y_LOW, c3 - CW, Y_LOW)]);
   chain(3, [[seg(c3 - CW, Y_LOW, c2 + CW, Y_LOW, 1.5), AIR, 'v']]);
-  /* 第 2 弁: 押すとケースの手前の口から第 2 抜差しを回る */
+  /* 第 2 ピストン: 押すとケースの手前の口から第 2 抜差しを回る */
   if (v[1])
     chain(4, [
       inside(c2 + CW, Y_LOW, S2.u0[0], S2.u0[1]),
@@ -1010,7 +1010,7 @@ export function airQuads(v: readonly boolean[]): AirQuad[] {
     ]);
   else chain(4, [inside(c2 + CW, Y_LOW, c2 - CW, Y_LOW)]);
   chain(5, [[seg(c2 - CW, Y_LOW, c1 + CW, Y_LOW, 1.5), AIR, 'v']]);
-  /* 第 1 弁: 押すと上の管から第 1 抜差しを回り、下の管からケースへ戻る。出口はベル管の下の管 */
+  /* 第 1 ピストン: 押すと上の管から第 1 抜差しを回り、下の管からケースへ戻る。出口はベル管の下の管 */
   if (v[0])
     chain(6, [
       inside(c1 + CW, Y_LOW, S1.xe + 4, S1.yu),

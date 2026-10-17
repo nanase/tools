@@ -1,12 +1,12 @@
 /**
  * B♭ トランペットの音名と指使い（DOM に依存しない）。音は実音の MIDI 番号（記譜は全音高い）。
- * 弁なしの倍音列は B♭2（MIDI 46）の n 倍。ふつうの指使いは、その音を下げる半音の数が最も少ない倍音を選ぶ
+ * ピストンなしの倍音列は B♭2（MIDI 46）の n 倍。ふつうの指使いは、その音を下げる半音の数が最も少ない倍音を選ぶ
  * （第 7 倍音は平均律より約 31 セント低いので使わない）
  */
 
-/** 押す弁（第 1・第 2・第 3）と、下げる半音の数（0〜6）。並びは はしご の列の順 */
+/** 押すピストン（第 1・第 2・第 3）と、下げる半音の数（0〜6）。並びは はしご の列の順 */
 export const FINGERS: readonly { v: readonly [boolean, boolean, boolean]; semi: number; name: string }[] = [
-  { v: [false, false, false], semi: 0, name: '弁なし' },
+  { v: [false, false, false], semi: 0, name: 'ピストンなし' },
   { v: [false, true, false], semi: 1, name: '2' },
   { v: [true, false, false], semi: 2, name: '1' },
   { v: [true, true, false], semi: 3, name: '1+2' },
@@ -15,10 +15,10 @@ export const FINGERS: readonly { v: readonly [boolean, boolean, boolean]; semi: 
   { v: [true, true, true], semi: 6, name: '1+2+3' },
 ];
 
-/** 弁の組から下げる半音の数（3 は 1+2 とみなす） */
+/** ピストンの組から下げる半音の数（3 は 1+2 とみなす） */
 export const semiOf = (v: readonly boolean[]): number => (v[1] ? 1 : 0) + (v[0] ? 2 : 0) + (v[2] ? 3 : 0);
 
-/** 弁なしの第 n 倍音の音（平均律に丸めた MIDI 番号） */
+/** ピストンなしの第 n 倍音の音（平均律に丸めた MIDI 番号） */
 export const openNote = (n: number): number => Math.round(46 + 12 * Math.log2(n));
 
 /** 吹く倍音（はしご の段） */

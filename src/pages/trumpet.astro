@@ -31,8 +31,8 @@ const related = [
 /** はしご の段（高い倍音から） */
 const ROWS = [...PARTIALS].reverse().filter((n) => n <= 8);
 ---
-<SiteLayout title={name} tool={{ id: 'trumpet', name }} description="トランペットを物理モデルで鳴らします。唇の振動、マウスピースから弁とベルまでの管の中の波、口の圧力と唇の張り、部屋の残響から、音と管の中の圧力を計算します。" note="音と計算結果は、論文の模型を簡略化した物理モデルによるものです。">
-  <PageTitle title={name}>唇の振動（外へ開く弁）、マウスピースからリードパイプ・3 本の弁・ベルまでの管の中を行き来する波、強く吹いたときに波が切り立つ非線形の伝搬、ベルからの放射を計算して、トランペットの音を作ります。弁を押して倍音を選び、「吹く」で鳴らせます。倍音のはしごで、同じ指使いのまま唇の張りで鳴る音が変わる様子を確かめられます。曲の演奏もできます。</PageTitle>
+<SiteLayout title={name} tool={{ id: 'trumpet', name }} description="トランペットを物理モデルで鳴らします。唇の振動、マウスピースからピストンとベルまでの管の中の波、口の圧力と唇の張り、部屋の残響から、音と管の中の圧力を計算します。" note="音と計算結果は、論文の模型を簡略化した物理モデルによるものです。">
+  <PageTitle title={name}>唇の振動（外へ開く弁）、マウスピースからリードパイプ・3 本のピストン・ベルまでの管の中を行き来する波、強く吹いたときに波が切り立つ非線形の伝搬、ベルからの放射を計算して、トランペットの音を作ります。ピストンを押して倍音を選び、「吹く」で鳴らせます。倍音のはしごで、同じ指使いのまま唇の張りで鳴る音が変わる様子を確かめられます。曲の演奏もできます。</PageTitle>
 
   <div class="tgrid">
     <Panel hid="hd-fig" title="トランペット" class="a-fig">
@@ -46,7 +46,7 @@ const ROWS = [...PARTIALS].reverse().filter((n) => n <= 8);
         <span class="stag right hw" id="f-note" data-ph="C♯5（記譜 D♯5）· 第 10 倍音 · 1+2+3"></span>
       </div>
       <div class="vw" id="vw-side">
-        <svg class="vf" id="tside" viewBox={SIDE_VIEW} role="img" aria-label="横から見たトランペット。管の中の空気を、圧力の色で描く。押した弁の抜差しを空気が通る">
+        <svg class="vf" id="tside" viewBox={SIDE_VIEW} role="img" aria-label="横から見たトランペット。管の中の空気を、圧力の色で描く。押したピストンの抜差しを空気が通る">
           {SIDE_ITEMS.map((it) => ('air' in it ? AIR_FILLS.map((f, i) => <path style={`fill:${f}`} id={`air-${it.air}-${i}`}></path>) : <path class={it.cls} d={it.d}></path>))}
           <path class="t-silver" id="k-stems"></path>
           {[0, 1, 2].map((i) => (
@@ -93,7 +93,7 @@ const ROWS = [...PARTIALS].reverse().filter((n) => n <= 8);
         <div>
           <p class="vcap">倍音のはしご<span>唇の張りで段が変わる。数字は平均律からのずれ</span></p>
           <div class="lad" id="ladder">
-            <div class="lr lhd"><span class="rh">倍音</span>{FINGERS.map((g) => <span class="lh" title={g.semi ? `下げる半音 ${g.semi}` : '弁を押さない'}>{g.name}</span>)}</div>
+            <div class="lr lhd"><span class="rh">倍音</span>{FINGERS.map((g) => <span class="lh" title={g.semi ? `下げる半音 ${g.semi}` : 'ピストンを押さない'}>{g.name}</span>)}</div>
             {ROWS.map((n) => (
               <div class="lr"><span class="rh">{n}</span>{FINGERS.map((_, f) => <button type="button" class="cell" data-n={n} data-f={f} aria-pressed="false"><span class="nm"></span><small class="dv"></small></button>)}</div>
             ))}
@@ -101,8 +101,8 @@ const ROWS = [...PARTIALS].reverse().filter((n) => n <= 8);
         </div>
       </div>
       <div class="vkeys">
-        <span class="lbl">弁</span>
-        {[0, 1, 2].map((i) => <button type="button" class="vkey" id={`vk-${i}`} aria-pressed="false" title={`第 ${i + 1} 弁（押している間だけ下がる。キーボードは ${'JKL'[i]}）`}>{i + 1}<kbd>{'JKL'[i]}</kbd></button>)}
+        <span class="lbl">ピストン</span>
+        {[0, 1, 2].map((i) => <button type="button" class="vkey" id={`vk-${i}`} aria-pressed="false" title={`第 ${i + 1} ピストン（押している間だけ下がる。キーボードは ${'JKL'[i]}）`}>{i + 1}<kbd>{'JKL'[i]}</kbd></button>)}
         <span class="lbl lbl2">倍音（唇の張り）</span>
         <div class="chips" id="parts" role="group" aria-label="倍音">{PARTIALS.filter((n) => n <= 8).map((n) => <button type="button" class="chip" data-n={n} aria-pressed={n === 4 ? 'true' : 'false'}>{n}</button>)}</div>
         <span class="sp"></span>
@@ -154,7 +154,7 @@ const ROWS = [...PARTIALS].reverse().filter((n) => n <= 8);
       <Panel hid="hd-inst" title="楽器" class="a-inst">
         <div class="ptab">
           <ChoiceRow k="nl" name="非線形の伝搬" sub="あり: 圧力の高い部分ほど速く進み、強く吹くと波が切り立つ（金属的な音）。なし: 管の中の波を線形として計算する" choices={[['0', 'なし'], ['1', 'あり']]} value="1" />
-          <ChoiceRow k="corr" name="音程の直し方" sub="抜差しと唇: 1+2 は第 1 抜差し、2+3・1+3・1+2+3 は第 3 抜差しを出し、残りを唇で直す。直さない: 弁の組み合わせが高くなる分（最大約 +50 セント）をそのまま鳴らす" choices={[['slide', '抜差しと唇'], ['none', '直さない']]} value="slide" />
+          <ChoiceRow k="corr" name="音程の直し方" sub="抜差しと唇: 1+2 は第 1 抜差し、2+3・1+3・1+2+3 は第 3 抜差しを出し、残りを唇で直す。直さない: ピストンの組み合わせが高くなる分（最大約 +50 セント）をそのまま鳴らす" choices={[['slide', '抜差しと唇'], ['none', '直さない']]} value="slide" />
           <ParamRow d={TEMP} />
         </div>
         <dl class="metrics bmet">
@@ -255,7 +255,7 @@ const ROWS = [...PARTIALS].reverse().filter((n) => n <= 8);
           <div class="m"><dt>1 m 先の音の大きさ</dt><dd id="o-spl"></dd></div>
           <div class="m"><dt>唇の開きの最大</dt><dd id="o-h"></dd></div>
           <div class="m"><dt>平均の流量</dt><dd id="o-u"></dd></div>
-          <div class="m"><dt>弁</dt><dd id="o-v"></dd></div>
+          <div class="m"><dt>ピストン</dt><dd id="o-v"></dd></div>
         </dl>
       </Collapsible>
     </div>
