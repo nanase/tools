@@ -113,8 +113,8 @@ export const DIST: ParamDef = lin({
   unit: 'm',
   min: 1,
   max: 30,
-  v: 8,
-  ph: '例 8',
+  v: 4.5,
+  ph: '例 4.5',
   step: 0.5,
   big: 2,
 });
