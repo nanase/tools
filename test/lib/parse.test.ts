@@ -116,6 +116,28 @@ describe('parse: mm と µm（接頭辞を読まない）', () => {
   });
 });
 
+describe('parse: kPa と °C（接頭辞を読まない）', () => {
+  it.each([
+    ['3.5', 'kPa', 3.5],
+    ['3.5kPa', 'kPa', 3.5],
+    ['3.5 KPA', 'kPa', 3.5],
+    ['27', '°C', 27],
+    ['27°C', '°C', 27],
+    ['27 ℃', '°C', 27],
+    ['27度', '°C', 27],
+  ] as const)('%s (%s) → %d', (raw, unit, v) => {
+    expect(parse(raw, unit)).toBe(v);
+  });
+
+  it.each([
+    ['3.5k', 'kPa'],
+    ['500m', 'kPa'],
+    ['1k', '°C'],
+  ] as const)('不正値 %s (%s) は NaN', (raw, unit) => {
+    expect(parse(raw, unit)).toBeNaN();
+  });
+});
+
 describe('parse: 質量・組立単位・回転の単位', () => {
   it.each([
     ['0.23kg', 'kg', 0.23],
