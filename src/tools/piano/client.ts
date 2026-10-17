@@ -112,6 +112,7 @@ const nowS = pauser.clock.now;
 const keys = new Keys($<SVGSVGElement>('#kbd'), {
   onKey: (k, down) => (down ? void press(k) : lift(k)),
   now: nowS,
+  sd: (k) => sdOf(k),
 });
 keys.setMode(nv.value);
 keys.setExag(Number(ex.value));

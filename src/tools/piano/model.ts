@@ -270,13 +270,18 @@ export interface StrikeMsg {
   att: Float32Array;
 }
 
-/** 表示用: 打った鍵の弦（1 本目）の変位の部分音ごとの成分（固有モードの和） */
+/** 表示用: 弦（その鍵の 1 本目）の変位の部分音ごとの成分（固有モードの和） */
 export interface StringView {
   key: number;
   L: number;
   x0: number;
-  /** 部分音 n の成分: 固有モードごとの複素振幅 [m] と複素角周波数 */
-  parts: { n: number; ar: number[]; ai: number[]; lr: number[]; li: number[] }[];
+  /**
+   * 部分音 n の成分: 固有モードごとの複素振幅 [m] と複素角周波数、モードの持ち主の鍵（そのダンパーが下りると
+   * 止まる）
+   */
+  parts: { n: number; ar: number[]; ai: number[]; lr: number[]; li: number[]; own: number[] }[];
+  /** 共鳴する弦（打った鍵のほかの、ダンパーが上がっている鍵の弦。初めは止まっていて、駒を通して揺れ始める） */
+  sym?: StringView[];
 }
 
 export interface Strike {
@@ -330,7 +335,8 @@ export function strikeKey(P: Piano, sp: StrikeSpec, fs: number, known?: Contact)
     T1 = ct.n1 / fs;
   const out: Modes = { W: [], S: [], FR: [], FI: [], OWN: [], SD: [] },
     { W, S, FR, FI, OWN, SD } = out;
-  const view: StringView = { key: sp.key, L: s.L, x0: km.x0, parts: [] };
+  const view: StringView = { key: sp.key, L: s.L, x0: km.x0, parts: [] },
+    symView = new Map<number, StringView>();
   /* 打った弦の部分音の、ハンマーが離れた時刻の駒の力の複素振幅 F = T (nπ/L) (−1)^{n+1} A */
   for (let i = 0; i < N; i++) {
     const n = i + 1,
@@ -371,19 +377,45 @@ export function strikeKey(P: Piano, sp: StrikeSpec, fs: number, known?: Contact)
     /* 垂直の偏波 */
     const amps = osc.map((o, k) => (k < s.ns && struck[k] ? 1 + IRREG * (2 * hash(sp.key * 7 + o.j, n) - 1) : 0));
     const vc = addCoupled(osc, 1, amps, Fr, Fi, T1, out, P);
+    /* 表示: 共鳴する弦は、鍵ごとに最も若い番号の弦を描く（部分音ごとに） */
+    const seen = new Map<string, number>();
+    for (let j = s.ns; j < osc.length; j++) {
+      const o = osc[j],
+        id = `${o.key}:${o.n}`,
+        prev = seen.get(id);
+      if (prev === undefined || o.j < osc[prev].j) seen.set(id, j);
+    }
+    for (const j of seen.values()) {
+      const o = osc[j],
+        ko = P.keys[o.key - KEY_LO],
+        kbo = ((ko.s.T * o.n * Math.PI) / ko.s.L) * (o.n % 2 ? 1 : -1);
+      let sv = symView.get(o.key);
+      if (!sv) {
+        sv = { key: o.key, L: ko.s.L, x0: ko.x0, parts: [] };
+        symView.set(o.key, sv);
+      }
+      sv.parts.push({
+        n: o.n,
+        ar: vc.map((c) => c.cr[j] / kbo),
+        ai: vc.map((c) => c.ci[j] / kbo),
+        lr: vc.map((c) => c.lr),
+        li: vc.map((c) => c.li),
+        own: vc.map((c) => c.own),
+      });
+    }
     /* 水平の偏波（ユニゾンの弦だけ。ハンマーのむらで少しだけ揺れる） */
     const oh = osc.slice(0, s.ns),
       ah = oh.map((o, k) => (struck[k] ? HZ_AMP * (2 * hash(sp.key * 11 + o.j, n + 1000) - 1) : 0));
     addCoupled(oh, YH, ah, Fr, Fi, T1, out, P, HZ_RAD, HZ_DAMP);
     /* 表示: 1 本目の弦の垂直の変位の成分は、駒の力 ÷ (T nπ/L (−1)^{n+1}) */
     if (n <= 40) {
-      const part = { n, ar: [] as number[], ai: [] as number[], lr: [] as number[], li: [] as number[] };
-      view.parts.push(part);
-      vc.forEach((c) => {
-        part.ar.push(c.ar / kb);
-        part.ai.push(c.ai / kb);
-        part.lr.push(c.lr);
-        part.li.push(c.li);
+      view.parts.push({
+        n,
+        ar: vc.map((c) => c.cr[0] / kb),
+        ai: vc.map((c) => c.ci[0] / kb),
+        lr: vc.map((c) => c.lr),
+        li: vc.map((c) => c.li),
+        own: vc.map((c) => c.own),
       });
     }
   }
@@ -425,6 +457,7 @@ export function strikeKey(P: Piano, sp: StrikeSpec, fs: number, known?: Contact)
     sd: Float64Array.from(SD),
     att,
   };
+  view.sym = [...symView.values()];
   return { msg, view, contact: ct, hammer: hs };
 }
 
@@ -455,7 +488,7 @@ function addCoupled(
   P: Piano,
   rad = 1,
   damp = 1,
-): { ar: number; ai: number; lr: number; li: number }[] {
+): CoupledView[] {
   const n = osc.length,
     d = cvec(n),
     v = cvec(n),
@@ -478,7 +511,7 @@ function addCoupled(
   });
   const c = coupled(d, v),
     cc = project(c, w0),
-    view: { ar: number; ai: number; lr: number; li: number }[] = [];
+    view: CoupledView[] = [];
   for (let m = 0; m < n; m++) {
     const u = c.u[m];
     /* 響板へ入る力 Σ_j e_j √g_j u_mj c_m と、持ち主（成分の最も大きい弦の鍵） */
@@ -505,12 +538,15 @@ function addCoupled(
       sn = Math.sin(lr * T1),
       back = (xr: number, xi: number): [number, number] => [e * (xr * cs + xi * sn), e * (xi * cs - xr * sn)],
       [fr, fi] = back(sr * cc.re[m] - si * cc.im[m], sr * cc.im[m] + si * cc.re[m]),
-      /* 1 本目の弦の成分（表示用）: F_1 = √g_1 u_m1 c_m */
-      [vr, vi] = back(
-        sqg[0] * (u.re[0] * cc.re[m] - u.im[0] * cc.im[m]),
-        sqg[0] * (u.re[0] * cc.im[m] + u.im[0] * cc.re[m]),
+      /* 弦ごとの成分（表示用）: F_j = √g_j u_mj c_m */
+      cr = new Float64Array(n),
+      ci = new Float64Array(n);
+    for (let j = 0; j < n; j++)
+      [cr[j], ci[j]] = back(
+        sqg[j] * (u.re[j] * cc.re[m] - u.im[j] * cc.im[m]),
+        sqg[j] * (u.re[j] * cc.im[m] + u.im[j] * cc.re[m]),
       );
-    view.push({ ar: vr, ai: vi, lr, li });
+    view.push({ cr, ci, lr, li, own });
     if (Math.hypot(fr, fi) < 1e-9) continue;
     out.W.push(lr);
     out.S.push(Math.max(1e-3, li));
@@ -523,6 +559,15 @@ function addCoupled(
 }
 
 /** 結合する弦の部分音 */
+/** 結合したモード 1 つの、弦ごとの駒の力の複素振幅（打った時刻） [N]・複素角周波数・持ち主の鍵 */
+interface CoupledView {
+  cr: Float64Array;
+  ci: Float64Array;
+  lr: number;
+  li: number;
+  own: number;
+}
+
 interface Osc {
   key: number;
   j: number;

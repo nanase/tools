@@ -4,7 +4,7 @@ import { C } from '../src/tools/guitar/body';
 import { coupled, cvec, project } from '../src/tools/piano/eig';
 import { boardDesc, Engine, minPhaseFir } from '../src/tools/piano/engine';
 import { type StruckString, strike } from '../src/tools/piano/hammer';
-import { damperFade, Gliss, ripRadius, ripTime } from '../src/tools/piano/keys';
+import { coefOf, DamperLog, damperFade, envOf, Gliss, ripRadius, ripTime } from '../src/tools/piano/keys';
 import { damperRate, hammerOf, makePiano, NO_DAMPER, type Piano, strikeKey } from '../src/tools/piano/model';
 import {
   dynamics,
@@ -725,5 +725,38 @@ describe('鍵盤と弦の図', () => {
     expect(damperFade(s, 9.5)).toBe(1);
     expect(damperFade(s, 10 + Math.log(1000) / sd)).toBeCloseTo(1e-3, 9);
     expect(damperFade({ damp: Infinity, sd }, 1e6)).toBe(1);
+  });
+  it('ダンパーの記録: 下りていた時間を区間ごとに足す（初めは下りている）', () => {
+    const d = new DamperLog(2);
+    d.set(0, false, 1);
+    d.set(0, true, 3);
+    d.set(0, true, 4);
+    d.set(0, false, 5);
+    d.set(0, true, 7);
+    expect(d.downTime(0, 0, 10)).toBeCloseTo(1 + 2 + 3, 12);
+    expect(d.downTime(0, 2, 6)).toBeCloseTo(2, 12);
+    expect(d.downTime(1, 0, 10)).toBe(10);
+  });
+  it('共鳴する弦の表示: 押さえた C4 の弦は、C3 を打つと止まった状態から揺れ始め、C3 のダンパーが下りても揺れ続ける', () => {
+    const st = strikeKey(P, { key: 48, v: 2.5, soft: false, free: (k) => k === 60 }, FS),
+      sv = st.view.sym ?? [];
+    expect(sv.map((v) => v.key)).toEqual([60]);
+    const v = sv[0],
+      one = () => 1,
+      amp = (to: number, td: number, fade: (own: number) => number) => {
+        const c = coefOf(v, to, td, fade);
+        return Math.hypot(...c);
+      },
+      a0 = amp(0, 0, one),
+      a1 = Math.max(...[0, 0.3, 0.6, 0.9].map((dt) => amp(1 + dt / 261.6, 1, one)));
+    /* 打った時刻はモードどうしが打ち消し合って止まっている（上限 envOf より十分小さい） */
+    expect(a0).toBeLessThan(0.01 * envOf(v, 0, one));
+    expect(a1).toBeGreaterThan(30 * a0);
+    expect(v.parts.some((p) => p.own.includes(48)) && v.parts.some((p) => p.own.includes(60))).toBe(true);
+    /* C3 の持つモードを止めても、C4 の持つモードで揺れ続ける */
+    const cut = (o: number) => (o === 48 ? 0 : 1);
+    expect(Math.max(...[0, 0.3, 0.6, 0.9].map((dt) => amp(2 + dt / 261.6, 2, cut)))).toBeGreaterThan(10 * a0);
+    /* ダンパーの下りた弦は共鳴しない */
+    expect(strikeKey(P, { key: 48, v: 2.5, soft: false, free: () => false }, FS).view.sym).toEqual([]);
   });
 });

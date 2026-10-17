@@ -2,7 +2,8 @@
  * 鍵盤と弦の図（グランドピアノを上から見た向き。手前に鍵盤、奥へ弦が伸び、低音が左）。
  * 弦の長さは実際の長さに比例させ、弦の間隔と振動の幅は見やすいように広げて描く。
  * ハンマーが打つ点・ダンパー・駒を示し、鳴っている弦の振動（残像・スロー）を描く。振動を描いている間は、
- * その弦の止まった線を隠す。鍵や弦を押して弾く操作を受ける
+ * その弦の止まった線を隠す。ダンパーが上がっている弦の共鳴も描く（駒を通して揺れ始め、モードごとに持ち主の鍵の
+ * ダンパーが下りると止まる）。鍵や弦を押して弾く操作を受ける
  * （押したまま動かすと、ポインタの入った鍵を押し、前の鍵を離す。グリッサンド）。振動は音と同じく、ダンパーが
  * 下りると（鍵を離していてペダルも踏んでいない）止まる。画面で 0.5 px より小さい間は描かず、打ったときより
  * 60 dB 小さくなったら（聞こえなくなる目安）消す
@@ -97,6 +98,39 @@ export interface KeyGeo {
   d: number;
 }
 
+/**
+ * 鍵ごとの、ダンパーが下りていた区間の記録（DOM に依存しない）。初めはどの鍵も下りている。
+ * 共鳴する弦の、モードごとの減衰を求めるのに使う
+ */
+export class DamperLog {
+  /** 鍵ごとの区間 [下りた時刻, 上がった時刻]（いま下りていれば上がった時刻は Infinity） */
+  private readonly iv: [number, number][][];
+  constructor(n: number) {
+    this.iv = Array.from({ length: n }, () => [[-Infinity, Infinity]]);
+  }
+  /** 鍵 i のダンパーが時刻 t に下りた（down）・上がった */
+  set(i: number, down: boolean, t: number): void {
+    const iv = this.iv[i],
+      last = iv[iv.length - 1],
+      isDown = last !== undefined && last[1] === Infinity;
+    if (down && !isDown) {
+      iv.push([t, Infinity]);
+      /* 古い区間は捨てる（いま鳴っている弦の打った時刻より前のものしか消えない数にする） */
+      if (iv.length > 64) iv.splice(0, iv.length - 64);
+    } else if (!down && isDown) last[1] = t;
+  }
+  /** 鍵 i のダンパーが、時刻 a〜b の間に下りていた時間 [s] */
+  downTime(i: number, a: number, b: number): number {
+    let s = 0;
+    for (const [d, u] of this.iv[i]) {
+      const x = Math.max(a, d),
+        y = Math.min(b, u);
+      if (y > x) s += y - x;
+    }
+    return s;
+  }
+}
+
 /** 鳴っている弦 */
 export interface Sounding {
   view: StringView;
@@ -114,6 +148,16 @@ export interface KeysOpt {
   /** 鍵 key を押す・離す */
   onKey(key: number, down: boolean): void;
   now(): number;
+  /** 鍵 key の弦にダンパーが触れたときに増える減衰率 [1/s]（表示用。ダンパーのない鍵は 0） */
+  sd(key: number): number;
+}
+
+/** 共鳴して揺れている弦（打った弦の表示が始まると始まる） */
+interface Res {
+  view: StringView;
+  t0: number;
+  /** 打った弦の、打ったときの振れ [m]（消す目安の基準） */
+  ref: number;
 }
 
 const NS = 'http://www.w3.org/2000/svg';
@@ -128,6 +172,55 @@ const el = <K extends keyof SVGElementTagNameMap>(tag: K, cls: string, parent: E
 const SIN = Array.from({ length: PARTS }, (_, i) =>
   Float64Array.from({ length: PTS + 1 }, (_, j) => Math.sin(((i + 1) * Math.PI * j) / PTS)),
 );
+
+const ONE = () => 1;
+
+/**
+ * 部分音ごとの、時刻 to の位相・時刻 td の減衰での変位 [m]（to・td は打ってからの時間）を c に足す。
+ * fade はモードの持ち主の鍵ごとのダンパーによる減衰の倍率
+ */
+export function coefOf(
+  v: StringView,
+  to: number,
+  td: number,
+  fade: (own: number) => number,
+  c = new Float64Array(PARTS),
+): Float64Array {
+  for (const p of v.parts) {
+    if (p.n > PARTS) continue;
+    let y = 0;
+    for (let m = 0; m < p.ar.length; m++) {
+      const e = Math.exp(-p.li[m] * td) * fade(p.own[m]),
+        ph = p.lr[m] * to;
+      y += e * (p.ar[m] * Math.cos(ph) - p.ai[m] * Math.sin(ph));
+    }
+    c[p.n - 1] += y;
+  }
+  return c;
+}
+
+/** 時刻 td での振れの上限 [m]（モードの大きさの和。初めは打ち消し合って止まっている共鳴の弦でも 0 にならない） */
+export function envOf(v: StringView, td: number, fade: (own: number) => number): number {
+  let s = 0;
+  for (const p of v.parts) {
+    if (p.n > PARTS) continue;
+    for (let m = 0; m < p.ar.length; m++) s += Math.hypot(p.ar[m], p.ai[m]) * Math.exp(-p.li[m] * td) * fade(p.own[m]);
+  }
+  return s;
+}
+
+/** 部分音の成分 c から、弦の上の PTS + 1 点の変位を out に書く */
+function shapeOf(c: Float64Array, out: Float64Array): Float64Array {
+  for (let j = 0; j <= PTS; j++) {
+    let y = 0;
+    for (let n = 0; n < PARTS; n++) if (c[n]) y += c[n] * SIN[n][j];
+    out[j] = y;
+  }
+  return out;
+}
+
+/** 部分音の成分 c の、弦の上での振れの最大 [m] */
+const peakOf = (c: Float64Array): number => Math.max(...shapeOf(c, new Float64Array(PTS + 1)).map(Math.abs));
 
 /** 白鍵の番号（左から）と、黒鍵の左右の位置 */
 function keyRect(key: number): [number, number, number, number] {
@@ -147,6 +240,11 @@ export class Keys {
   private mode: 'blur' | 'slow' = 'blur';
   private slow = 50;
   private readonly snd = new Map<number, Sounding>();
+  /** 鍵ごとの共鳴している弦と、ダンパーの記録。すべて止めた時刻 [s] と、そのときの減衰率 [1/s] */
+  private readonly res = new Map<number, Res[]>();
+  private readonly dlog = new DamperLog(KEYS);
+  private stopT = Infinity;
+  private stopSd = 0;
   private readonly pend: { key: number; s: Sounding }[] = [];
   private readonly down = new Set<number>();
   private pedal = false;
@@ -248,6 +346,7 @@ export class Keys {
       this.upAt[key - KEY_LO] = t;
       if (!this.pedal) this.dampKey(key, t);
     }
+    this.logDamper(key);
     this.keyEls[key - KEY_LO]?.classList.toggle('on', on);
     this.drawDampers();
   }
@@ -259,7 +358,9 @@ export class Keys {
       this.upAt[k - KEY_LO] = t;
       if (!this.pedal) this.dampKey(k, t);
     }
+    const ks = [...this.down];
     this.down.clear();
+    for (const k of ks) this.logDamper(k);
     this.drawDampers();
   }
   /** ペダル。離すと、押していない鍵の弦のダンパーが下りる */
@@ -271,7 +372,12 @@ export class Keys {
         if (!this.down.has(k)) this.dampKey(k, t);
     }
     this.pedal = on;
+    for (let k = KEY_LO; k <= KEY_HI; k++) this.logDamper(k);
     this.drawDampers();
+  }
+  /** 鍵 key のダンパーの状態を記録する（鍵を押しているか、ペダルを踏んでいれば上がっている） */
+  private logDamper(key: number): void {
+    this.dlog.set(key - KEY_LO, !this.pedal && !this.down.has(key), this.opt.now());
   }
   /** 鍵 key のダンパーが時刻 t に下りた（ダンパーのない弦は止まらない） */
   private dampKey(key: number, t: number): void {
@@ -293,6 +399,9 @@ export class Keys {
    * そこまでの減衰を保ったまま、t から速い減衰に切り替える
    */
   dampAt(key: number, t: number, sd: number): void {
+    /* 共鳴している弦と、打った弦のほかの鍵が持ち主のモードは、t からこの減衰率で止める */
+    this.stopT = t;
+    this.stopSd = sd;
     const s = this.snd.get(key);
     if (s) {
       if (s.damp >= t) {
@@ -313,10 +422,11 @@ export class Keys {
   clear(): void {
     this.pend.length = 0;
     this.snd.clear();
+    this.res.clear();
     this.kick();
   }
   sounding(): Set<number> {
-    return new Set(this.snd.keys());
+    return new Set([...this.snd.keys(), ...this.res.keys()]);
   }
 
   private start(key: number, s: Sounding): void {
@@ -325,6 +435,15 @@ export class Keys {
     if (!this.down.has(key) && !this.pedal && this.geo[key - KEY_LO]?.damper && up >= s.t0)
       s.damp = Math.min(s.damp, Math.max(up, this.pedalOffAt));
     this.snd.set(key, s);
+    s.peak0 ??= peakOf(coefOf(s.view, 0, 0, ONE));
+    /* 共鳴する弦（打ったときより 60 dB 以上小さいまま終わるものは描かない） */
+    for (const v of s.view.sym ?? []) {
+      const r: Res = { view: v, t0: s.t0, ref: s.peak0 };
+      if (envOf(v, 0, ONE) < MIN_REL * r.ref) continue;
+      const list = this.res.get(v.key);
+      if (list) list.push(r);
+      else this.res.set(v.key, [r]);
+    }
     const g = this.geo[key - KEY_LO];
     if (g) this.rips.push({ x: this.sx(key), y: this.sy(g.x0), t0: s.t0, r: ripRadius(s.v), s: ripTime(s.v) });
   }
@@ -413,17 +532,19 @@ export class Keys {
     }
     let d = '';
     const drawn = new Set<number>();
-    for (const [key, s] of this.snd) {
-      const r = this.drawString(key, s, now);
-      if (r === null) this.snd.delete(key);
-      else d += r;
+    for (const key of new Set([...this.snd.keys(), ...this.res.keys()])) {
+      const r = this.drawString(key, now);
+      if (r === null) {
+        this.snd.delete(key);
+        this.res.delete(key);
+      } else d += r;
       if (r) drawn.add(key);
     }
     this.gVib.setAttribute('d', d);
     this.hideStrings(drawn);
     this.gVib.classList.toggle('band', this.mode !== 'slow');
     const rip = this.drawRips(now);
-    if (this.snd.size || this.pend.length || rip) this.raf = requestAnimationFrame(() => this.frame());
+    if (this.snd.size || this.res.size || this.pend.length || rip) this.raf = requestAnimationFrame(() => this.frame());
   }
 
   /** 弾いた点から広がる輪。描くものが残っていれば true */
@@ -439,66 +560,78 @@ export class Keys {
   }
 
   /**
-   * 部分音ごとの、時刻 to の位相・時刻 td の減衰での変位 [m]（to・td は打ってからの時間）。
-   * ダンパーが下りていれば、下りた時刻（s.damp は絶対の時刻）からの減衰を掛ける
+   * 時刻 t0 に打った弦の、時刻 t での、モードの持ち主の鍵ごとの減衰の倍率。self は打った弦で、その鍵のモードは
+   * self のダンパーの時刻で止める。ほかの鍵のモードは、その鍵のダンパーが下りていた時間と、すべて止めた時刻から止める
    */
-  private coef(s: Sounding, to: number, td: number): Float64Array {
-    const c = new Float64Array(PARTS),
-      fade = damperFade(s, s.t0 + td);
-    for (const p of s.view.parts) {
-      if (p.n > PARTS) continue;
-      let y = 0;
-      for (let m = 0; m < p.ar.length; m++) {
-        const e = Math.exp(-p.li[m] * td),
-          ph = p.lr[m] * to;
-        y += e * (p.ar[m] * Math.cos(ph) - p.ai[m] * Math.sin(ph));
+  private fader(t0: number, t: number, self?: Sounding): (own: number) => number {
+    const memo = new Map<number, number>(),
+      stop = t0 < this.stopT && t > this.stopT ? Math.exp(-this.stopSd * (t - this.stopT)) : 1;
+    return (o) => {
+      let f = memo.get(o);
+      if (f === undefined) {
+        if (self && o === self.view.key) f = damperFade(self, t);
+        else {
+          const dt = this.geo[o - KEY_LO]?.damper ? this.dlog.downTime(o - KEY_LO, t0, t) : 0;
+          f = (dt > 0 ? Math.exp(-this.opt.sd(o) * dt) : 1) * stop;
+        }
+        memo.set(o, f);
       }
-      c[p.n - 1] += y * fade;
-    }
-    return c;
+      return f;
+    };
   }
 
-  /** 鳴っている弦の path。消えたら null */
-  private drawString(key: number, s: Sounding, now: number): string | null {
-    const t = now - s.t0;
-    if (t < 0) return '';
-    if (s.peak0 === undefined) {
-      const c0 = this.coef(s, 0, 0);
-      let p0 = 0;
-      for (let j = 0; j <= PTS; j++) {
-        let y = 0;
-        for (let n = 0; n < PARTS; n++) if (c0[n]) y += c0[n] * SIN[n][j];
-        p0 = Math.max(p0, Math.abs(y));
-      }
-      s.peak0 = p0;
+  /**
+   * 鍵 key の弦（打った振動と、共鳴の和）の path。消えたら null。打ったときより 60 dB 小さくなったら（聞こえなくなる
+   * 目安）消す。共鳴はその弦を鳴らした打鍵の振れを基準にする
+   */
+  private drawString(key: number, now: number): string | null {
+    const s = this.snd.get(key),
+      rs = this.res.get(key) ?? [],
+      src: { view: StringView; t: number; fade: (own: number) => number }[] = [];
+    if (s) {
+      const t = now - s.t0,
+        fade = this.fader(s.t0, now, s);
+      if (t >= 0 && envOf(s.view, t, fade) < MIN_REL * (s.peak0 ?? 0)) this.snd.delete(key);
+      else if (t >= 0) src.push({ view: s.view, t, fade });
     }
+    const keep = rs.filter((r) => {
+      const t = now - r.t0,
+        fade = this.fader(r.t0, now);
+      if (t < 0) return true;
+      if (envOf(r.view, t, fade) < MIN_REL * r.ref) return false;
+      src.push({ view: r.view, t, fade });
+      return true;
+    });
+    if (keep.length) this.res.set(key, keep);
+    else this.res.delete(key);
+    if (!this.snd.has(key) && !keep.length) return null;
+    if (!src.length) return '';
     const x = this.sx(key),
       g = this.geo[key - KEY_LO],
       k = this.exag * PX_MM * 1000,
       ys = (j: number) => (SY0 - (j / PTS) * g.L * this.scale).toFixed(1);
     let peak = 0,
       d = '';
-    const shape = (c: Float64Array, out: Float64Array) => {
-      for (let j = 0; j <= PTS; j++) {
-        let y = 0;
-        for (let n = 0; n < PARTS; n++) if (c[n]) y += c[n] * SIN[n][j];
-        out[j] = y;
-      }
+    /* 時刻をずらして（dt）、すべての振動の部分音の成分を足す */
+    const sum = (dt: number, slow: number) => {
+      const c = new Float64Array(PARTS);
+      for (const v of src) coefOf(v.view, (v.t + dt) / slow, v.t, v.fade, c);
+      return c;
     };
     const buf = new Float64Array(PTS + 1);
     if (this.mode === 'slow') {
-      shape(this.coef(s, t / this.slow, t), buf);
+      shapeOf(sum(0, this.slow), buf);
       for (let j = 0; j <= PTS; j++) {
         peak = Math.max(peak, Math.abs(buf[j]));
         d += `${j ? 'L' : 'M'}${(x + buf[j] * k).toFixed(1)} ${ys(j)}`;
       }
     } else {
-      const w1 = s.view.parts[0]?.lr[0] ?? 1000,
+      const w1 = src[0].view.parts[0]?.lr[0] ?? 1000,
         T1 = (2 * Math.PI) / Math.abs(w1),
         hi = new Float64Array(PTS + 1).fill(-Infinity),
         lo = new Float64Array(PTS + 1).fill(Infinity);
       for (let p = 0; p < PHASES; p++) {
-        shape(this.coef(s, t + (p / PHASES) * T1, t), buf);
+        shapeOf(sum((p / PHASES) * T1, 1), buf);
         for (let j = 0; j <= PTS; j++) {
           if (buf[j] > hi[j]) hi[j] = buf[j];
           if (buf[j] < lo[j]) lo[j] = buf[j];
@@ -511,9 +644,7 @@ export class Keys {
       for (let j = PTS; j >= 0; j--) d += `L${(x + lo[j] * k).toFixed(1)} ${ys(j)}`;
       d += 'Z';
     }
-    /* 打ったときより 60 dB 小さくなったら（聞こえなくなる目安）消す。画面で 0.5 px より小さい間は描かない
-       （振幅の強調を大きくすれば、また見える） */
-    if (peak < MIN_REL * (s.peak0 ?? 0)) return null;
+    /* 画面で 0.5 px より小さい間は描かない（振幅の強調を大きくすれば、また見える） */
     return peak * k * this.pxPerUnit >= MIN_PX ? d : '';
   }
 
