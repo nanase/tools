@@ -6,6 +6,9 @@ import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
 import RelatedTools from '../components/RelatedTools.astro';
+import Transport from '../components/Transport.astro';
+import TransportButton from '../components/TransportButton.astro';
+import TransportState from '../components/TransportState.astro';
 import { order, TOOLS } from '../data/tools';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import { outVol, TEMPO } from '../lib/play';
@@ -141,21 +144,21 @@ const PIANO = ROOTS.map((_, i) => {
 
     <div class="col c1">
       <Panel hid="hd-play" title="演奏" class="a-play">
-        <div slot="aux" class="seg"><button type="button" id="playBtn" aria-pressed="false" title="選んだ曲を演奏する・止める"><span class="led" id="playLed" aria-hidden="true"></span><span id="playT">演奏</span></button></div>
+        <TransportState slot="aux" />
         <div class="ptab">
           <div class="prow pick" id="p-piece">
             <div class="c-sym" aria-hidden="true"></div>
             <div class="c-name"><label class="pn" id="n-piece" for="piece">曲</label><p class="desc tip" id="t-piece" role="tooltip" hidden>著作権の切れた曲を、このツールでギター用に編曲したもの。運指（弦とフレット）は自動で決める</p></div>
             <div class="c-val sel"><select id="piece" autocomplete="off" aria-describedby="t-piece">{PIECES.map((p) => <option value={p.v} title={p.by}>{p.name}</option>)}</select></div>
           </div>
+        </div>
+        <Transport>
+          <TransportButton id="relBtn" icon="up" label="リリース" title="鳴っている弦をすべて止める（演奏は続ける）" />
+          <TransportButton id="muteBtn" icon="mute" label="消音" title="鳴っている弦をすべて止める（手のひらで弦に触れる。演奏と位置はそのまま）" />
+        </Transport>
+        <div class="ptab">
           <ParamRow d={TEMPO} />
           <ParamRow d={outVol(VOL0)} />
-        </div>
-        <div class="pbtns">
-          <p class="pl-bar hw" id="pl-bar" data-ph="000 / 000 小節" aria-live="off"></p>
-          <button type="button" class="tg" id="pauseBtn" title="演奏を一時停止する・続きから再開する（スマートフォンとタブレットでは、画面が隠れると自動で一時停止する）" disabled>一時停止</button>
-          <button type="button" class="tg" id="relBtn" title="鳴っている弦をすべて止める（演奏は続ける）">リリース</button>
-          <button type="button" class="tg" id="muteBtn" title="鳴っている弦をすべて止める（手のひらで弦に触れる）">すべて止める</button>
         </div>
         <p class="msg er snd-msg" id="snd-msg" aria-live="polite"></p>
       </Panel>
