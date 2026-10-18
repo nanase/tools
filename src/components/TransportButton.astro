@@ -1,0 +1,19 @@
+---
+/**
+ * 演奏の操作（Transport）の右端に置く、楽器ごとの音の操作のアイコンのボタン。
+ * up は離す（鍵から手を離す・弓を弦から離す）、mute は鳴っている音を止める
+ */
+interface Props {
+  id: string;
+  icon: 'up' | 'mute';
+  /** 読み上げ（ボタンの名前） */
+  label: string;
+  /** 吹き出し（名前のあとに、何をするか） */
+  title: string;
+  disabled?: boolean;
+}
+const { id, icon, label, title, disabled } = Astro.props;
+---
+<button type="button" class="tp-sq" id={id} title={`${label}: ${title}`} aria-label={label} disabled={disabled}>
+  {icon === 'up' ? <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4"/><path d="M7.5 8.5L12 4l4.5 4.5"/><path d="M5 20h14"/></svg> : <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M16 9.5l5 5M21 9.5l-5 5"/></svg>}
+</button>

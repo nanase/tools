@@ -135,9 +135,13 @@ registerProcessor(
       else if (m.type === 'piece') {
         this.pl.start(m.notes, m.from);
         this.wasPlaying = true;
-      } else if (m.type === 'stopPiece') this.pl.stop();
-      else if (m.type === 'mute') {
+      } else if (m.type === 'stopPiece') {
+        /* 止めたときは終わりを知らせない（すぐ別の位置から弾き直すと、新しい演奏の終わりと取り違える） */
         this.pl.stop();
+        this.wasPlaying = false;
+      } else if (m.type === 'mute') {
+        this.pl.stop();
+        this.wasPlaying = false;
         this.pl.setManual(null);
         this.tr?.reset();
         this.pl.pm = 0;

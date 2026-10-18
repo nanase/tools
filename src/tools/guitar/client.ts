@@ -13,6 +13,7 @@ import { SW } from '../../lib/scope';
 import { store, stored } from '../../lib/store';
 import { TempoMap } from '../../lib/tempo';
 import { initToolPage } from '../../lib/tool-page';
+import { evenLine, type Line, Transport } from '../../lib/transport';
 import { spectra, toDb } from '../spectrum/fft';
 import { GuitarAudio } from './audio';
 import { admittance, type BodySpec, bodyTypeOf, C, cabs, makeBody, pressure, rng } from './body';
@@ -182,6 +183,7 @@ const piece = $<HTMLSelectElement>('#piece');
 piece.addEventListener('change', () => {
   store('c:p-piece', piece.value);
   if (P) stopPiece();
+  void showLine();
 });
 const span = choice<string>('span', () => drawOut());
 const fmax = choice<string>('fmax', () => drawOut());
@@ -1055,9 +1057,11 @@ document.addEventListener('keydown', (e) => {
 
 /* テンポと音量（演奏中も効く） */
 movePlayStore();
-new ParamGroup<PlayKey>([TEMPO, outVol(VOL0)], (v) => {
+new ParamGroup<PlayKey>([TEMPO, outVol(VOL0)], (v, k) => {
   V.tempo = v.tempo;
   audio.vol(v.vol);
+  /* 生成時の 1 回目（k なし）は、演奏の操作を作る前 */
+  if (k) transport.refresh();
 });
 /* 曲のビブラートの幅と速さ（まだ予約していない音から効く） */
 const PV = new ParamGroup<'vw' | 'vh'>([VIB_W, VIB_HZ], () => {});
@@ -1075,10 +1079,17 @@ $('#relBtn').addEventListener('click', () => {
   for (let si = 0; si < 6; si++) audio.damp(si, 0, 0, 0.06);
   dampNeck();
 });
+/* 消音: 鳴っている弦をすべて止める（手のひらで弦に触れる）。演奏は続け、止めたときに消えた先の予約は、今から先の出来事として予約し直す */
 $('#muteBtn').addEventListener('click', () => {
-  if (P) stopPiece();
   audio.stop(0.06);
   dampNeck();
+  const p = P,
+    an = audio.now();
+  if (!p || an === null) return;
+  while (p.i > 0 && atOf(p, p.ev[p.i - 1].b) + p.ev[p.i - 1].jit >= an) p.i--;
+  p.until = an;
+  neck.clearPending();
+  tick();
 });
 
 /* ---------- 演奏 ---------- */
@@ -1113,9 +1124,9 @@ interface Play {
   spb: number;
   /** 予約を済ませた先の AudioContext の時刻 */
   until: number;
-  /** 最後の音の拍と、小節の数 */
+  /** 最後の音の拍（τ）と、曲の終わりの拍（楽譜の拍。演奏の位置の表示の上限） */
   last: number;
-  bars: number;
+  end: number;
   timer: ReturnType<typeof setInterval>;
   piece: Piece;
   /** 曲の途中のテンポの変化（小節の表示で、拍へ戻すのに使う） */
@@ -1124,6 +1135,8 @@ interface Play {
 let P: Play | null = null;
 const fingerCache = new Map<string, PieceData>();
 const spbOf = (pc: Piece) => 60 / (pc.bpm * (V.tempo / 100));
+/** 拍 b（τ）の AudioContext の時刻 */
+const atOf = (p: Play, b: number) => p.at0 + (b - p.b0) * p.spb;
 /** 曲の音符と運指（読み込む曲は読み込み、ほかは運指を求める）と、テンポの変化 */
 async function placedOf(pc: Piece): Promise<PieceData> {
   const open = tuningOf(pc.tuning).notes,
@@ -1176,22 +1189,32 @@ function eventsOf(data: PieceData, pc: Piece, tmap: TempoMap): Ev[] {
   });
   return ev;
 }
-/** 演奏の位置を書く（一時停止の間は、そのことも添える） */
-let plBar = '';
-function showBar(s = plBar): void {
-  plBar = s;
-  txt('#pl-bar', pauser.paused ? `${s}（一時停止中）` : s);
+const endOf = (d: PieceData) => Math.max(...d.notes.map((n) => n.t + n.d));
+const lineOf = (pc: Piece, d: PieceData): Line => {
+  const tmap = new TempoMap(d.tempo);
+  return evenLine({ bar: pc.bar, pickup: pc.pickup, end: endOf(d), sec: (b) => (tmap.tau(b) * 60) / pc.bpm });
+};
+/** 選んだ曲を読み込んで、演奏の位置の欄に小節を描く */
+async function showLine(): Promise<void> {
+  const pc = pieceOf(piece.value);
+  transport.setLine(null);
+  let pl: PieceData;
+  try {
+    pl = await placedOf(pc);
+  } catch {
+    sndMsg('曲を読み込めませんでした');
+    return;
+  }
+  if (piece.value === pc.v) transport.setLine(lineOf(pc, pl));
 }
 function syncPlay(): void {
-  $('#playBtn').setAttribute('aria-pressed', String(!!P));
-  $('#playLed').classList.toggle('on', !!P);
-  txt('#playT', P ? '停止' : '演奏');
-  $<HTMLButtonElement>('#pauseBtn').disabled = !P;
-  txt('#pauseBtn', pauser.paused ? '再開' : '一時停止');
-  showBar();
+  /* 一時停止の間は音が止まっているので、消音は使わない */
+  $<HTMLButtonElement>('#muteBtn').disabled = !!P && pauser.paused;
   if (!pauser.paused && $('#snd-msg').textContent === PAUSED) sndMsg('');
+  transport.sync();
 }
-async function startPiece(): Promise<void> {
+/** 小節 bar の頭から演奏する */
+async function startPiece(bar = 1): Promise<void> {
   const ok = await audio.ready();
   if (!ok) {
     sndMsg(NO_SOUND);
@@ -1218,24 +1241,29 @@ async function startPiece(): Promise<void> {
   /* 押さえていたコードは離す（左手は曲の運指で動く） */
   releaseChord();
   const tmap = new TempoMap(pl.tempo),
-    ev = eventsOf(pl, pc, tmap);
+    ev = eventsOf(pl, pc, tmap),
+    /* 途中から弾くときは、その小節の頭より前の音を飛ばす（運指は曲の全体で決めてあるので、そのまま使える） */
+    b0 = tmap.tau(lineOf(pc, pl).start(bar)),
+    i0 = ev.findIndex((e) => e.b >= b0 - 1e-6),
+    i = i0 < 0 ? ev.length : i0;
+  /* 飛ばした音からすべる音は鳴らさない */
+  for (const e of ev.slice(i)) if (e.slide && e.b - e.slide.gap < b0 - 1e-6) e.slide = null;
   /* 使うモードを先に求める */
-  for (const e of ev) modes(e.si, e.f);
+  for (const e of ev.slice(i)) modes(e.si, e.f);
   const now = audio.now() ?? 0;
   P = {
     ev,
-    i: 0,
+    i,
     at0: now + 0.15,
-    b0: 0,
+    b0,
     spb: spbOf(pc),
     until: now + AHEAD,
     last: Math.max(...ev.map((e) => e.b)),
-    bars: Math.ceil((Math.max(...pl.notes.map((n) => n.t + n.d)) - pc.pickup) / pc.bar),
+    end: endOf(pl),
     timer: setInterval(tick, 40),
     piece: pc,
     tm: tmap,
   };
-  plBar = '';
   syncPlay();
   tick();
 }
@@ -1251,7 +1279,6 @@ function stopPiece(): void {
     const s = neck.get(si);
     if (s && s.damp > t) neck.set(si, { ...s, damp: t });
   }
-  plBar = '';
   syncPlay();
   estimate();
 }
@@ -1291,11 +1318,10 @@ function tick(): void {
     p.at0 = Math.max(an, p.at0);
     p.spb = spb;
   }
-  const atOf = (b: number) => p.at0 + (b - p.b0) * p.spb,
-    toPerf = (a: number) => nowS() + (a - an);
-  while (p.i < p.ev.length && atOf(p.ev[p.i].b) + p.ev[p.i].jit < an + ahead) {
+  const toPerf = (a: number) => nowS() + (a - an);
+  while (p.i < p.ev.length && atOf(p, p.ev[p.i].b) + p.ev[p.i].jit < an + ahead) {
     const e = p.ev[p.i++],
-      at = Math.max(an, atOf(e.b) + e.jit),
+      at = Math.max(an, atOf(p, e.b) + e.jit),
       m = modes(e.si, e.f),
       pl = pluckOf(G, e.si, m, pluckSpec(e.si, e.amp));
     if (e.slide) {
@@ -1304,8 +1330,8 @@ function tick(): void {
       if (buf) audio.noise(e.si, buf, at - dur, slidePan(e.si, e.slide.from, e.f));
     }
     /* 指を離すのは、この音だけ（離す前に同じ弦をずらした和音で弾き直していても、その音は止めない） */
-    const off = e.off !== null ? atOf(e.off) + 0.02 : null,
-      id = audio.pluck(msgOf(e.si, m, pl.f, vibOf(e, atOf(e.end) - at)), at, panOf(e.si, e.f));
+    const off = e.off !== null ? atOf(p, e.off) + 0.02 : null,
+      id = audio.pluck(msgOf(e.si, m, pl.f, vibOf(e, atOf(p, e.end) - at)), at, panOf(e.si, e.f));
     if (off !== null) audio.damp(e.si, off, id);
     neck.set(e.si, {
       pl,
@@ -1316,28 +1342,27 @@ function tick(): void {
       xb: posOf(e.si),
     });
   }
-  const pc = p.piece,
-    beat = p.b0 + (an - p.at0) / p.spb,
-    bar = Math.max(0, Math.floor((p.tm.beat(beat) - pc.pickup) / pc.bar) + 1),
-    bars = p.bars;
-  showBar(`${Math.min(bar, bars)} / ${bars} 小節`);
+  /* 鳴り始める前（予約の 0.15 秒）は、弾き始める位置に置く */
+  const beat = p.b0 + Math.max(0, an - p.at0) / p.spb;
+  transport.setPos(Math.min(p.tm.beat(beat), p.end));
   if (p.i >= p.ev.length && beat > p.last + 2) {
     clearInterval(p.timer);
     P = null;
+    transport.stopped(true);
     syncPlay();
   }
   estimate();
 }
-$('#playBtn').addEventListener('click', () => {
-  if (P) stopPiece();
-  else void startPiece();
-});
-$('#pauseBtn').addEventListener('click', () => void (pauser.paused ? pauser.resume() : pauser.pause()));
+const transport = new Transport(
+  { active: () => !!P, start: (bar) => startPiece(bar), stop: stopPiece, tempo: () => V.tempo },
+  pauser,
+);
 
 /* ---------- 起動 ---------- */
 bodyDefaults();
 retune();
 rebuild();
+void showLine();
 neck.setPos(posAll());
 neckBar();
 showOut();

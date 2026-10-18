@@ -305,6 +305,48 @@ a.unit:hover h3{text-decoration:underline;text-decoration-color:var(--ink-3);tex
 .ana2{display:grid;grid-template-columns:minmax(0,1fr);column-gap:24px;align-items:start}
 .ana2 .ptab+.ptab{border-top:1px solid var(--line)}
 @container (min-width:700px){.ana2{grid-template-columns:repeat(2,minmax(0,1fr))}.ana2 .ptab+.ptab{border-top:0}}
+/* 楽器のページの演奏の操作（components/Transport.astro）: 頭へ戻す・演奏と一時停止・位置の欄（小節の目盛り）・楽器ごとの音の操作 */
+.tp{display:grid;grid-template-columns:auto auto minmax(0,1fr) auto;align-items:center;gap:10px;padding:12px 8px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.tp button:disabled{opacity:.5;cursor:default}
+.tp-ib{display:inline-grid;place-items:center;width:34px;height:34px;padding:0;border:1px solid var(--line-2);border-radius:50%;background:var(--surface);color:var(--ink-2);cursor:pointer}
+.tp-ib:not(:disabled):hover{border-color:var(--ink-3);color:var(--ink)}
+.tp-ib svg{width:13px;height:13px;fill:currentColor}
+.tp-pp{display:inline-grid;place-items:center;width:46px;height:46px;padding:0;border:0;border-radius:50%;background:var(--ink);color:var(--surface);cursor:pointer}
+.tp-pp svg{width:16px;height:16px;fill:currentColor}
+.tp-pp .i-pause,.tp-pp.on .i-play{display:none}
+.tp-pp.on .i-pause{display:block}
+.tp-pp.on{box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 35%,transparent)}
+.tp-tl{min-width:0}
+.tp-trk{position:relative;height:24px;cursor:pointer;touch-action:pan-y;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
+.tp-trk[aria-disabled="true"]{cursor:default}
+.tp-trk:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:3px}
+.tp-rail{position:absolute;left:0;right:0;top:9px;height:6px;border-radius:3px;background:var(--inset);box-shadow:inset 0 0 0 1px var(--line-2)}
+.tp-fill{position:absolute;left:0;top:9px;width:0;height:6px;border-radius:3px;background:var(--ink-2)}
+.tp-tk{position:absolute;left:0;top:17px;width:100%;height:7px;overflow:visible;pointer-events:none}
+.tp-tk path{fill:none;stroke:var(--ink-3);stroke-width:1;opacity:.6}
+.tp-th{position:absolute;top:5px;left:0;width:14px;height:14px;margin-left:-7px;border-radius:50%;background:var(--surface);box-shadow:inset 0 0 0 2px var(--ink);pointer-events:none}
+.tp-trk[aria-disabled="true"] .tp-th{display:none}
+.tp-tm{display:flex;flex-wrap:wrap;justify-content:space-between;column-gap:10px;margin-top:2px;font:500 12px/1.4 var(--mono);color:var(--ink-3);font-variant-numeric:tabular-nums;white-space:nowrap}
+/* 小節の数字は小節の数の桁の幅を取り（lib/transport.ts）、数字が変わっても「/ 35 小節」を動かさない */
+.tp-tm b{display:inline-block;text-align:right;color:var(--ink);font-weight:700}
+.tp-side{display:flex;gap:4px;padding-left:10px;border-left:1px solid var(--line)}
+.tp-side:empty{display:none}
+.tp-sq{display:inline-grid;place-items:center;width:30px;height:30px;padding:0;border:1px solid var(--line);border-radius:4px;background:none;color:var(--ink-2);cursor:pointer}
+.tp-sq:not(:disabled):hover{border-color:var(--line-2);color:var(--ink)}
+.tp-sq svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.tp-st{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:12px}
+.led.half{background:none;box-shadow:inset 0 0 0 1.5px var(--accent)}
+@media (pointer:coarse){
+  .tp{gap:8px}
+  .tp-ib{width:40px;height:40px}
+  .tp-pp{width:48px;height:48px}
+  .tp-trk{height:32px}
+  .tp-rail,.tp-fill{top:13px}
+  .tp-tk{top:21px}
+  .tp-th{top:8px;width:18px;height:18px;margin-left:-9px}
+  .tp-sq{width:36px;height:36px}
+}
+
 /* 数値欄の外に置くスライダー（ファイルの再生位置など） */
 .sl{position:relative}
 .sl input{-webkit-appearance:none;appearance:none;display:block;width:100%;height:28px;margin:0;background:transparent;cursor:pointer;--p:.5}

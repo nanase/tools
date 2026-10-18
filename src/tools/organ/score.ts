@@ -152,4 +152,16 @@ export function barOf(meter: readonly (readonly [number, number])[], pickup: num
   return k;
 }
 
+/** 拍子の変化の列で、小節 1, 2 … の頭の拍（barOf と同じ番号。弱起は含めない）。end は曲の終わりの拍 */
+export function barStarts(meter: readonly (readonly [number, number])[], pickup: number, end: number): number[] {
+  const out: number[] = [];
+  for (let i = 0; i < meter.length; i++) {
+    const s0 = Math.max(meter[i][0], pickup),
+      len = meter[i][1],
+      e0 = Math.min(end, i + 1 < meter.length ? meter[i + 1][0] : Infinity);
+    for (let b = s0; b < e0 - 1e-6; b += len) out.push(b);
+  }
+  return out;
+}
+
 export { TempoMap } from '../../lib/tempo';

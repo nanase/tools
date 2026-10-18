@@ -3,7 +3,7 @@ import { parse } from '../src/lib/parse';
 import { Engine, type PipeMsg, type WindDesc } from '../src/tools/organ/engine';
 import { pipeId } from '../src/tools/organ/model';
 import { FluePipe, type FlueSpec, ReedPipe, type ReedSpec, tanhP } from '../src/tools/organ/pipes';
-import { barOf, PIECES, pieceOf, TempoMap } from '../src/tools/organ/score';
+import { barOf, barStarts, PIECES, pieceOf, TempoMap } from '../src/tools/organ/score';
 import { divOf, OPT0, pipesOf, STOPS, stopOf, topfer } from '../src/tools/organ/stops';
 import { measSec, measureF0, sound } from '../src/tools/organ/tune';
 import { TUNED } from '../src/tools/organ/tuned';
@@ -318,6 +318,21 @@ describe('曲', () => {
     expect(barOf(meter, 0, 140)).toBe(36);
     expect(barOf(meter, 0, 143)).toBe(37);
     expect(barOf(meter, 0, 627 - 1e-6)).toBe(153);
+  });
+  it('小節の頭の拍（演奏の位置の欄）は barOf の小節の番号と合う', async () => {
+    for (const pc of PIECES) {
+      const d = await pc.load(),
+        meter = d.meter ?? [[0, pc.bar]],
+        end = Math.max(...d.notes.map((x) => x.t + x.d)),
+        s = barStarts(meter, pc.pickup, end);
+      expect(s.length).toBe(barOf(meter, pc.pickup, end - 1e-6));
+      expect(s.map((b) => barOf(meter, pc.pickup, b))).toEqual(s.map((_, i) => i + 1));
+    }
+    /* BWV 565: 36 小節は 140 拍からの 3/4、最後の 153 小節は 623 拍から */
+    const s = barStarts((await pieceOf('bwv565').load()).meter ?? [], 0, 627);
+    expect(s[35]).toBe(140);
+    expect(s[36]).toBe(143);
+    expect(s.at(-1)).toBe(623);
   });
   it('装飾を展開してある: BWV 645 と 582 にはトリル', async () => {
     const load = (v: string) => (PIECES.find((p) => p.v === v) as (typeof PIECES)[number]).load(),

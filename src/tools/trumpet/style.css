@@ -8,13 +8,8 @@
   .a-fig{grid-area:fig}.c1{grid-area:c1}.c2{grid-area:c2}.a-thy{grid-area:thy}.a-src{grid-area:src}
 }
 .wv-sw{margin:4px 0 12px}
-#playBtn{display:inline-flex;align-items:center;gap:7px}
-/* 「一時停止」と「再開」で幅を変えない */
-#pauseBtn{min-width:70px}
-.pbtns{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:6px;margin:6px 8px 0;padding-top:8px;border-top:1px solid var(--line)}
-.pbtns .tg{justify-content:center}
-.pbtns .tg:disabled{border-color:var(--line);background:none;color:var(--ink-3);opacity:.6;cursor:default}
-.pl-bar{margin:0 auto 0 0;text-align:left;font:500 12.5px/1.5 var(--mono);color:var(--ink-2)}
+.snd-msg{margin:6px 8px 0}
+.snd-msg:empty{display:none}
 .res-aux{margin:0 0 10px;text-align:right}
 .m-sub{display:block;margin-top:2px;font:12px/1.5 var(--sans);color:var(--ink-3)}
 .bmet,.rmet{margin-top:12px}
