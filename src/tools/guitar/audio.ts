@@ -107,6 +107,11 @@ export class GuitarAudio {
     this.post({ type: 'damp', at, si, tau, id });
   }
 
+  /** 弦 si の音の高さを、左手で動かした比 r にする（すぐ。1 で戻す） */
+  bend(si: number, r: number): void {
+    this.post({ type: 'bend', at: 0, si, r });
+  }
+
   noise(si: number, buf: Float32Array, at = 0, pan = 0): void {
     this.post({ type: 'noise', at, si, buf, pan }, [buf.buffer]);
   }

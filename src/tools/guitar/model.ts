@@ -210,3 +210,20 @@ export function shapeOf(c: Float64Array, L: number, xb: number): number {
 
 /** 減衰時間 T60 [s]（振幅が 1/1000 になるまで） */
 export const t60 = (sigma: number): number => Math.log(1000) / sigma;
+
+/**
+ * 左手で弦を動かしたときの音の高さの比（ビブラート・チョーキング）。弦 p をフレット fret で押さえ、
+ * 押さえた点で弦を横へ delta [m] 押し上げ、弦の向きへナット側に u [m] 引く（負なら駒の側へ押す）。
+ * 押し上げると弦全体が δ²/2 (1/x_f + 1/L_v) だけ伸び、弦はフレットの上をすべって張力が全体でそろう
+ * （Grimes 2014）。弦の向きの動きは指先が弦をつかむとして、振動する側（長さ L_v）だけを u / L_v 伸ばす。
+ * ΔT = EA × ひずみ（A は芯線の断面）、f ∝ √T / 振動する長さ
+ */
+export function bendRatio(p: StringPhys, L: number, fret: number, delta: number, u: number): number {
+  const xf = fretX(L, fret),
+    Lv = L - xf;
+  if (fret <= 0) return 1;
+  const EA = (p.mat.Eax * Math.PI * p.dc * p.dc) / 4,
+    dT = EA * ((delta * delta * (1 / xf + 1 / Lv)) / 2 / L + u / Lv),
+    T = Math.max(0.1 * p.T, p.T + dT);
+  return Math.sqrt(T / p.T) / Math.sqrt(1 + (delta * delta) / (Lv * Lv));
+}

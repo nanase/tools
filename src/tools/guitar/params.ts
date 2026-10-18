@@ -180,6 +180,37 @@ export const ANGLE: ParamDef = lin({
   big: 15,
 });
 
+/* ---------- 曲のビブラート ---------- */
+export const VIB_W: ParamDef = lin({
+  k: 'vw',
+  nm: '幅',
+  sym: '',
+  name: 'ビブラートの幅',
+  sub: '曲の長い旋律の音に掛ける、音の高さの揺れの全幅。ナイロン弦は指を弦の向きに揺らして上下に、スチール弦は弦を押し上げて高い側だけに揺れる',
+  unit: 'セント',
+  min: 0,
+  max: 60,
+  v: 20,
+  ph: '例 20',
+  step: 1,
+  big: 5,
+});
+export const VIB_HZ: ParamDef = lin({
+  k: 'vh',
+  nm: '速さ',
+  sym: '',
+  name: 'ビブラートの速さ',
+  sub: '1 秒あたりに揺らす回数',
+  unit: 'Hz',
+  min: 3,
+  max: 9,
+  v: 5.5,
+  ph: '例 5.5',
+  step: 0.1,
+  big: 0.5,
+  s: 2,
+});
+
 /* ---------- 胴 ---------- */
 export const THICK: ParamDef = {
   ...lin({

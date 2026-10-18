@@ -226,6 +226,52 @@ export function dynamics(notes: readonly Placed[]): Float64Array | null {
   return Float64Array.from(vs, (v) => (v / mid) ** DYN_EXP);
 }
 
+/** 音符の声部: 鳴り始めた時点で鳴っている音の中で最も高い（旋律。ほかに音がなければこれ）、最も低い（低音）、その間 */
+export type Part = 'top' | 'bass' | 'mid';
+/** 少しずらして弾く和音を同時とみなす幅 [拍] */
+const ROLL = 0.1;
+/** 音符ごとの声部（notes は開始の順に並べたもの） */
+export function parts(notes: readonly Note[]): Part[] {
+  const maxD = Math.max(0, ...notes.map((x) => x.d));
+  let j0 = 0;
+  return notes.map((x) => {
+    while (j0 < notes.length && notes[j0].t < x.t - maxD) j0++;
+    let hi = true,
+      lo = true,
+      alone = true;
+    for (let j = j0; j < notes.length && notes[j].t < x.t + ROLL; j++) {
+      const y = notes[j];
+      if (y === x || y.t + y.d <= x.t + 1e-6) continue;
+      alone = false;
+      if (y.n > x.n) hi = false;
+      if (y.n < x.n) lo = false;
+    }
+    return alone || hi ? 'top' : lo ? 'bass' : 'mid';
+  });
+}
+
+/**
+ * MIDI に強弱のない曲の強弱: 拍子（小節の頭を強く、拍の裏を弱く）と声部（旋律と低音を、内声より強く）と、
+ * 音の長さ（長い音を少し強く）から、弦を引く量の倍率を決める。曲の中央の値を 1 とする。
+ * notes は開始の順に並べたもの、bar と pickup は曲の 1 小節の拍の数と弱起の拍
+ */
+export function accents(notes: readonly Note[], bar: number, pickup: number): Float64Array {
+  const pt = parts(notes),
+    ds = notes.map((x) => x.d).sort((a, b) => a - b),
+    dMid = ds[ds.length >> 1] || 1,
+    near = (v: number) => Math.abs(v - Math.round(v)) < 1e-3;
+  const a = Float64Array.from(notes, (x, i) => {
+    const m = (((x.t - pickup) % bar) + bar) % bar,
+      metric =
+        near(m) && Math.round(m) % bar === 0 ? 1.12 : bar % 2 === 0 && near(m - bar / 2) ? 1.05 : near(m) ? 1 : 0.93,
+      part = pt[i] === 'top' ? 1.08 : pt[i] === 'bass' ? 1.04 : 0.85,
+      len = Math.min(1.15, Math.max(0.9, (x.d / dMid) ** 0.08));
+    return metric * part * len;
+  });
+  const mid = [...a].sort((p, q) => p - q)[a.length >> 1] || 1;
+  return a.map((v) => v / mid);
+}
+
 interface Beam {
   cost: number;
   /** 手の位置（人差し指のフレット。開放弦だけなら前のまま） */

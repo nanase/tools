@@ -1,12 +1,58 @@
 /* ギター音響モデルのページだけのスタイル（共通は src/styles/site.css） */
 
-/* 枠の並び。スマホは 指板 → 演奏 → 弾き方 → 弦 → 胴 → 残響 → 音の波形 → 計算結果 → 式 → 楽譜の出典。
-   PC は上に 指板（全幅）、左の列に 演奏・弾き方・弦、右の列に 胴・残響・音の波形・計算結果、その下に 式・出典（全幅） */
-.a-neck{order:1}.a-play{order:2}.a-pk{order:3}.a-str{order:4}.a-body{order:5}.a-room{order:6}.a-wave{order:7}.a-out{order:8}.a-thy{order:9}.a-src{order:10}
+/* 枠の並び。スマホは 指板 → コード → 演奏 → 弾き方 → 弦 → 胴 → 残響 → 音の波形 → 計算結果 → 式 → 楽譜の出典。
+   PC は上に 指板とコード（全幅）、左の列に 演奏・弾き方・弦、右の列に 胴・残響・音の波形・計算結果、その下に 式・出典（全幅） */
+.a-neck{order:1}.a-chd{order:1}.a-play{order:2}.a-pk{order:3}.a-str{order:4}.a-body{order:5}.a-room{order:6}.a-wave{order:7}.a-out{order:8}.a-thy{order:9}.a-src{order:10}
 @media (min-width:1000px){
-  .tgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr);grid-template-areas:"neck neck" "c1 c2" "thy thy" "src src";align-items:start}
-  .a-neck{grid-area:neck}.c1{grid-area:c1}.c2{grid-area:c2}.a-thy{grid-area:thy}.a-src{grid-area:src}
+  .tgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr);grid-template-areas:"neck neck" "chd chd" "c1 c2" "thy thy" "src src";align-items:start}
+  .a-neck{grid-area:neck}.a-chd{grid-area:chd}.c1{grid-area:c1}.c2{grid-area:c2}.a-thy{grid-area:thy}.a-src{grid-area:src}
 }
+
+/* コード（開閉できる枠）。PC は左にルートの鍵盤、右に種類・次によく続くコード・押さえ方。下にコードの名前とボタン、キーの説明 */
+.chd{display:grid;grid-template-columns:minmax(0,1fr)}
+@media (min-width:1000px){.chd{grid-template-columns:minmax(0,5fr) minmax(0,7fr);column-gap:26px;align-items:start}}
+/* ルートの鍵盤（fm-synth の鍵盤と同じ形）。次によく続く根音は、重み --w（0〜1）に応じて信号の色を混ぜる。
+   選んでいる根音は塗りつぶし（混ぜる色はそれより薄くして、選んでいる根音より目立たせない） */
+.ckb{position:relative;height:160px;max-width:560px;margin-top:6px;user-select:none;-webkit-user-select:none}
+.ck{--w:0;position:absolute;top:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:5px;padding:0 0 9px;border:1px solid var(--line-2);font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.ck.w{height:100%;border-right-width:0;border-radius:0 0 5px 5px;background:color-mix(in srgb,var(--accent) calc(var(--w) * 26%),var(--surface));color:var(--ink)}
+.ck.w[data-v="11"]{border-right-width:1px}
+.ck.b{z-index:1;height:60%;padding-bottom:7px;border-color:var(--rail);border-radius:0 0 4px 4px;background:color-mix(in srgb,var(--accent) calc(var(--w) * 40%),var(--rail));color:var(--rail-ink)}
+.ck.w:hover{border-color:var(--ink-3)}
+.ck.b:hover{border-color:var(--rail-ink-2)}
+.ck[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+/* 曲の演奏中に、鳴っている音から推定したコードの根音（選んだものと同じ塗り） */
+.ck.est{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.ck:focus-visible{z-index:2;outline-offset:-3px}
+.ck b{font:700 19px/1 var(--mono)}
+.ck.b b{font-size:15px}
+.ck-s{min-height:14px;font:700 14px/1 var(--mono);font-style:normal}
+/* キーボードのキー（キーの形の枠） */
+.ky{display:inline-block;min-width:24px;padding:4px 5px;border:1.5px solid currentColor;border-radius:4px;font:700 15px/1 var(--mono);text-align:center;opacity:.75}
+@media (max-width:559px){.ck b{font-size:16px}.ck.b b{font-size:12px}.ck .ky{min-width:0;padding:3px 3px;font-size:12.5px}}
+/* 種類と次によく続くコードのボタン: 右にキー。次によく続くものは、重み --w に応じて縁と地に信号の色を混ぜる */
+.cq .chip,.cnx .chip{--w:0;display:inline-flex;align-items:center;gap:9px;min-height:44px;padding:0 8px 0 13px;border-color:color-mix(in srgb,var(--accent) calc(var(--w) * 80%),var(--line));background:color-mix(in srgb,var(--accent) calc(var(--w) * 22%),transparent);border-width:calc(1px + var(--w) * 1px);font-size:17px;font-weight:700}
+.cq .chip .ky,.cnx .chip .ky{min-width:22px;padding:4px 5px;font-size:14px}
+.cq,.cnx{gap:6px}
+.cq .chip[aria-pressed="true"],.cq .chip.est{background:var(--ink);border-color:var(--ink);color:var(--surface)}
+/* 次によく続くコードは 1 行だけ（高さを変えない。入りきらない候補は client.ts が外す）。4 つ目からは小さく */
+.cnx{flex-wrap:nowrap;height:46px;align-items:center;overflow:hidden}
+.cnx .chip{flex:none}
+.cnx .chip.sm{gap:6px;min-height:30px;padding:0 5px 0 8px;font-size:12.5px;font-weight:500}
+.cnx .chip.sm .ky{min-width:14px;padding:2px 3px;border-width:1px;font-size:10px}
+.cnx-e{font-size:14px;color:var(--ink-3)}
+@media (max-width:559px){
+  .cq .chip,.cnx .chip{gap:6px;min-height:40px;padding:0 6px 0 10px;font-size:15px}
+  .cq .chip .ky,.cnx .chip .ky{min-width:18px;padding:3px 4px;font-size:12.5px}
+}
+/* コードの名前 */
+.a-chd .pbtns .pl-bar{font-size:16px;font-weight:700;color:var(--ink)}
+.cv-seg{align-items:center}
+.c-val .cv-seg button{flex:0 0 40px}
+.cv-shape{flex:1 1 auto;min-width:0;padding:0 8px;border-left:1px solid var(--line);border-right:1px solid var(--line);font:500 13px/30px var(--mono);text-align:center;color:var(--ink)}
+.cv-seg button:disabled{opacity:.35;cursor:default}
+.chd-keys{margin:8px 8px 0}
+#chdSnd{display:inline-flex;align-items:center;gap:7px}
 
 /* 音の波形（開閉できる枠）の表示の切り替え */
 .wv-sw{margin:4px 0 12px}
@@ -51,6 +97,17 @@
 .nk-led.on{fill:var(--accent);filter:drop-shadow(0 0 3px var(--accent))}
 .nk-pl{stroke:var(--ink-3);stroke-width:1;stroke-dasharray:3 3;opacity:.7}
 .nk-pm{fill:var(--ink-3)}
+/* 弾く位置の印の、つかめる所に乗ったとき・動かしている間 */
+.nk-pos.hot .nk-pl{stroke:var(--focus);opacity:1}
+.nk-pos.hot .nk-pm{fill:var(--focus)}
+/* 押さえているコードの形: 押さえる点（輪）・セーハ・開放（○）・鳴らさない弦（×） */
+.nk-hold{pointer-events:none}
+.nk-h{fill:none;stroke:var(--accent);stroke-width:2}
+.nk-hb{stroke:var(--accent);stroke-opacity:.35;stroke-width:11;stroke-linecap:round}
+.nk-hx{stroke:var(--ink-2);stroke-width:1.8;stroke-linecap:round}
+.nk-ho{fill:none;stroke:var(--ink-2);stroke-width:1.4}
+/* 左手で弦を動かしている間の、音の高さの変化 */
+.nk-bd{fill:var(--ink);stroke:var(--surface);stroke-width:3px;paint-order:stroke;font:700 10.5px var(--mono);pointer-events:none}
 /* 弾いた点から広がる輪（振動と同じ信号色） */
 .nk-rip{fill:none;stroke:var(--ch1);stroke-width:2;pointer-events:none}
 /* 弦: プレーンは淡く、巻弦は濃く細かい刻みを付ける */

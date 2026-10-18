@@ -2,11 +2,21 @@ import { describe, expect, it } from 'vitest';
 import { parse } from '../src/lib/parse';
 import { Reverb, reverbSpec, roomOf } from '../src/lib/reverb';
 import { admittance, BODY_TYPES, C, makeBody } from '../src/tools/guitar/body';
-import { bodyDesc, Engine } from '../src/tools/guitar/engine';
-import { coefAt, type Guitar, modesOf, pluckOf, shapeOf, t60, tuneCoupled } from '../src/tools/guitar/model';
+import {
+  chordName,
+  guessChord,
+  nextChords,
+  QUALITIES,
+  qualityOf,
+  ROOTS,
+  shapeText,
+  voicings,
+} from '../src/tools/guitar/chords';
+import { bodyDesc, Engine, type VibSpec } from '../src/tools/guitar/engine';
+import { bendRatio, coefAt, type Guitar, modesOf, pluckOf, shapeOf, t60, tuneCoupled } from '../src/tools/guitar/model';
 import { slideNoise } from '../src/tools/guitar/noise';
 import { DIST } from '../src/tools/guitar/params';
-import { dynamics, finger, midiOf, PIECES, seq } from '../src/tools/guitar/score';
+import { accents, dynamics, finger, midiOf, PIECES, parts, seq } from '../src/tools/guitar/score';
 import {
   betaOf,
   etaAir,
@@ -381,6 +391,192 @@ describe('曲と運指', () => {
     if (!p) throw new Error('bwv846');
     expect(Math.min(...p.notes.map((n) => n.n))).toBe(midiOf('D2'));
     expect(Math.max(...p.notes.map((n) => n.n))).toBe(midiOf('B5'));
+  });
+});
+
+describe('左手のビブラート', () => {
+  /** y の周波数 f の成分の大きさ（Goertzel） */
+  const tone = (y: Float32Array, f: number) => {
+    const k = 2 * Math.cos((2 * Math.PI * f) / FS);
+    let s1 = 0,
+      s2 = 0;
+    for (const v of y) {
+      const s0 = v + k * s1 - s2;
+      s2 = s1;
+      s1 = s0;
+    }
+    return Math.sqrt(s1 * s1 + s2 * s2 - k * s1 * s2);
+  };
+  /** 440 Hz の 1 つのモード（垂直）だけの撥弦 */
+  const one = (vib?: VibSpec) => ({
+    si: 0,
+    N: 1,
+    w: Float64Array.of(2 * Math.PI * 440, 2 * Math.PI * 440),
+    s: Float64Array.of(1, 1),
+    f: Float64Array.of(1, 0),
+    vib,
+  });
+  it('押し上げると、向きによらず音が高くなる。同じ量ならナイロンはスチールよりずっと小さい', () => {
+    const ny = guitar('nylon').str[0],
+      st = guitar('steel').str[0],
+      c = (p: typeof ny, d: number) => 1200 * Math.log2(bendRatio(p, 0.65, 7, d, 0));
+    expect(bendRatio(ny, 0.65, 0, 0.01, 0)).toBe(1);
+    expect(bendRatio(ny, 0.65, 7, 0, 0)).toBe(1);
+    expect(c(ny, 0.005)).toBeGreaterThan(0);
+    expect(c(ny, 0.01)).toBeGreaterThan(3 * c(ny, 0.005));
+    expect(c(st, 0.01)).toBeGreaterThan(5 * c(ny, 0.01));
+    /* スチールの 1 弦を 7 フレットで 1 cm 押し上げると、数十セント（半音より小さい） */
+    expect(c(st, 0.01)).toBeGreaterThan(20);
+    expect(c(st, 0.01)).toBeLessThan(100);
+  });
+  it('弦の向きにナット側へ引くと高く、駒の側へ押すと低くなる（小さい動きでは EA u / (2 T L_v) に比例）', () => {
+    const p = guitar('nylon').str[0],
+      L = 0.65,
+      Lv = L - fretX(L, 7),
+      EA = (p.mat.Eax * Math.PI * p.dc * p.dc) / 4,
+      u = 1e-4;
+    expect(bendRatio(p, L, 7, 0, u)).toBeGreaterThan(1);
+    expect(bendRatio(p, L, 7, 0, -u)).toBeLessThan(1);
+    expect(bendRatio(p, L, 7, 0, u) - 1).toBeCloseTo((EA * u) / (2 * p.T * Lv), 5);
+  });
+  it('音の高さの比を変えると、鳴っている音の周波数がその比で変わる', () => {
+    const e = new Engine(FS),
+      r = 2 ** (100 / 1200),
+      y = new Float32Array(FS / 2);
+    e.setBody(bodyDesc(guitar('nylon').body));
+    e.pluck(one());
+    e.bend(0, r);
+    for (let i = 0; i < y.length; i += 128) e.render(y, i, 128);
+    const z = y.subarray(FS / 10);
+    expect(tone(z, 440 * r)).toBeGreaterThan(10 * tone(z, 440));
+  });
+  it('曲のビブラートは掛け始めるまで音を変えず、そのあと音の高さを揺らす', () => {
+    const run = (vib?: VibSpec) => {
+      const e = new Engine(FS),
+        y = new Float32Array(FS);
+      e.setBody(bodyDesc(guitar('nylon').body));
+      e.pluck(one(vib));
+      for (let i = 0; i < y.length; i += 128) e.render(y, i, 128);
+      return y;
+    };
+    const a = run(),
+      b = run({ t0: 0.2, t1: 1, hz: 5, cent: 100, up: false });
+    for (let i = 0; i < FS * 0.19; i++) expect(b[i]).toBe(a[i]);
+    let d = 0;
+    for (let i = FS / 2; i < FS; i++) d = Math.max(d, Math.abs(a[i] - b[i]));
+    expect(d).toBeGreaterThan(0.1 * Math.max(...a.subarray(FS / 2).map(Math.abs)));
+  });
+});
+
+describe('曲の強弱', () => {
+  it('声部: 鳴り始めに最も高い音が旋律、最も低い音が低音、間が内声。ほかに音がなければ旋律', () => {
+    const notes = [
+      { t: 0, d: 2, n: 40 },
+      { t: 0, d: 2, n: 52 },
+      { t: 0.05, d: 1.95, n: 64 },
+      { t: 2, d: 1, n: 60 },
+    ];
+    expect(parts(notes)).toEqual(['bass', 'mid', 'top', 'top']);
+  });
+  it('拍子と声部の強弱: 小節の頭は拍の裏より強く、内声は旋律より弱い。曲の中央の値を 1 とする', () => {
+    const notes = [
+      { t: 0, d: 1, n: 64 },
+      { t: 0.5, d: 1, n: 65 },
+      { t: 1, d: 1, n: 67 },
+      { t: 1, d: 1, n: 60 },
+      { t: 1, d: 1, n: 48 },
+    ];
+    const a = accents(notes, 3, 0);
+    expect(a[0]).toBeGreaterThan(a[1]);
+    expect(a[3]).toBeLessThan(a[2]);
+    expect([...a].sort((p, q) => p - q)[2]).toBeCloseTo(1, 12);
+  });
+});
+
+describe('コードの押さえ方', () => {
+  const STD = tuningOf('std').notes;
+  const best = (root: number, q: string, open = STD) => {
+    const v = voicings(open, 19, root, qualityOf(q));
+    return shapeText(v.list[v.best].f);
+  };
+  it('標準の調弦では、よく使う形になる', () => {
+    expect(best(0, 'M')).toBe('x32010');
+    expect(best(9, 'm')).toBe('x02210');
+    expect(best(7, 'M')).toBe('320003');
+    expect(best(2, 'M')).toBe('xx0232');
+    expect(best(4, 'M')).toBe('022100');
+    expect(best(4, 'm')).toBe('022000');
+    expect(best(5, 'M')).toBe('133211');
+    expect(best(2, 'm')).toBe('xx0231');
+    expect(best(9, 'M')).toBe('x02220');
+    expect(best(11, '7')).toBe('x21202');
+    expect(best(7, '7')).toBe('320001');
+    expect(best(11, 'm')).toBe('x24432');
+    expect(best(1, 'm')).toBe('x46654');
+  });
+  it('どの根音・種類にも押さえ方があり、どれも 4 フレットの幅・最も低い音が根音・省けない音をすべて含む', () => {
+    for (const open of [STD, tuningOf('dropd').notes, tuningOf('dadgad').notes, tuningOf('opg').notes])
+      for (let root = 0; root < 12; root++)
+        for (const q of QUALITIES) {
+          const { list, best: b } = voicings(open, 19, root, q);
+          expect(list.length, `${ROOTS[root]}${q.sfx}`).toBeGreaterThan(0);
+          expect(b).toBeLessThan(list.length);
+          for (const v of list) {
+            const snd = v.f.flatMap((x, s) => (x >= 0 ? [s] : [])),
+              fs = v.f.filter((x) => x > 0),
+              pcs = new Set(snd.map((s) => (open[s] + v.f[s] - root + 120) % 12));
+            expect(snd.length).toBeGreaterThanOrEqual(4);
+            expect((open[snd[snd.length - 1]] + v.f[snd[snd.length - 1]] - root + 120) % 12).toBe(0);
+            if (fs.length) expect(Math.max(...fs) - Math.min(...fs)).toBeLessThanOrEqual(3);
+            for (const i of q.iv) if (!q.opt.includes(i)) expect(pcs.has(i % 12)).toBe(true);
+            /* 鳴らさない弦は太い側に続く */
+            const m = v.f.flatMap((x, s) => (x < 0 ? [s] : []));
+            if (m.length) expect(Math.min(...m)).toBe(6 - m.length);
+          }
+        }
+  });
+});
+
+describe('次によく続くコード', () => {
+  const names = (root: number, q: string, n = 3) =>
+    nextChords(root, qualityOf(q))
+      .slice(0, n)
+      .map((x) => chordName(x.root, x.q));
+  it('C の次は F・G・Am、G7 の次は C、Dm7 の次は G7、Csus4 の次は C', () => {
+    expect(names(0, 'M').sort()).toEqual(['Am', 'F', 'G']);
+    expect(names(7, '7', 1)).toEqual(['C']);
+    expect(names(2, 'm7', 1)).toEqual(['G7']);
+    expect(names(0, 'sus4', 1)).toEqual(['C']);
+  });
+  it('重みは 1 を最大に大きい順で、今のコードを含まない', () => {
+    for (let root = 0; root < 12; root++)
+      for (const q of QUALITIES) {
+        const nx = nextChords(root, q);
+        expect(nx.length).toBeGreaterThan(0);
+        expect(nx[0].w).toBe(1);
+        for (let i = 1; i < nx.length; i++) expect(nx[i].w).toBeLessThanOrEqual(nx[i - 1].w);
+        expect(nx.some((x) => x.root === root && x.q.v === q.v)).toBe(false);
+      }
+  });
+});
+
+describe('鳴っている音からのコードの推定', () => {
+  const g = (s: string) => {
+    const c = guessChord(s.split(' ').map(midiOf));
+    return c ? chordName(c.root, c.q) : null;
+  };
+  it('三和音・七の和音・転回形を、第一候補 1 つに決める', () => {
+    expect(g('C3 E3 G3 C4 E4')).toBe('C');
+    expect(g('A2 E3 A3 C4 E4')).toBe('Am');
+    expect(g('C3 E3 A3')).toBe('Am');
+    expect(g('E2 B2 E3 G3 B3 E4')).toBe('Em');
+    expect(g('G2 B2 D3 G3 B3 F4')).toBe('G7');
+    expect(g('D3 A3 C4 F♯4')).toBe('D7');
+    expect(g('C3 E3 G3 B3')).toBe('CM7');
+  });
+  it('音名が 3 種類より少ないときと、どのコードにも合わないときは推定しない', () => {
+    expect(g('C3 G3 C4')).toBeNull();
+    expect(g('C3 C♯3 D3 D♯3')).toBeNull();
   });
 });
 

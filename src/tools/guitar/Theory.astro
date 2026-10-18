@@ -101,6 +101,65 @@
   <math display="block"><msub><mi>f</mi><mi mathvariant="normal">c</mi></msub><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mo>=</mo><mfrac><mrow><mi>v</mi><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo></mrow><msub><mi>p</mi><mi mathvariant="normal">w</mi></msub></mfrac></math>
 </div>
 
+<h3>ビブラート</h3>
+<p>フレットのあるギターでは、押さえた指で弦の張力を少し変えて、音の高さを揺らします。指板の図で弦を押したまま動かすと、その量に応じて音の高さが変わります。</p>
+<ul class="tl">
+  <li>上下に動かす: 押し上げ。弦を横へ <math><mi>δ</mi></math> だけずらす。図の弦の間隔と同じ縮尺</li>
+  <li>左右に動かす: 弦の向きに揺らす。弦をナット側へ <math><mi>u</mi></math> だけ引く。指先が転がるぶん、弦は手の動きの 1/10 だけ動くとする</li>
+</ul>
+<p>押し上げると弦全体が伸び、張力は弦全体でそろうとします（Grimes）<a class="rf" href="#thy-r12">[12]</a>。向きによらず音は高くなります。弦の向きの動きでは、指先が弦をつかんだまま、振動する側だけが伸び縮みします。ナット側へ引けば高く、駒の側へ押せば低くなります。</p>
+<dl class="syms">
+  <dt><math><mi>E</mi><mi>A</mi></math></dt><dd>芯線の縦のヤング率 × 断面積</dd>
+  <dt><math><msub><mi>x</mi><mi mathvariant="normal">f</mi></msub></math></dt><dd>ナットから押さえたフレットまで</dd>
+  <dt><math><msub><mi>L</mi><mi mathvariant="normal">v</mi></msub></math></dt><dd>振動する長さ</dd>
+</dl>
+<p>張力に対して <math><mi>E</mi><mi>A</mi></math> が大きいスチール弦は、わずかな動きで大きく音が変わります。ナイロン弦は押し上げてもあまり変わらないので、クラシックでは弦の向きに揺らします。</p>
+<div class="eqs">
+  <math display="block"><mi>Δ</mi><mi>T</mi><mo>=</mo><mi>E</mi><mi>A</mi><mrow><mo>(</mo><mfrac><msup><mi>δ</mi><mn>2</mn></msup><mrow><mn>2</mn><mi>L</mi></mrow></mfrac><mrow><mo>(</mo><mfrac><mn>1</mn><msub><mi>x</mi><mi mathvariant="normal">f</mi></msub></mfrac><mo>+</mo><mfrac><mn>1</mn><msub><mi>L</mi><mi mathvariant="normal">v</mi></msub></mfrac><mo>)</mo></mrow><mo>+</mo><mfrac><mi>u</mi><msub><mi>L</mi><mi mathvariant="normal">v</mi></msub></mfrac><mo>)</mo></mrow></math>
+  <math display="block"><mfrac><msup><mi>f</mi><mo>′</mo></msup><mi>f</mi></mfrac><mo>=</mo><msqrt><mfrac><mrow><mi>T</mi><mo>+</mo><mi>Δ</mi><mi>T</mi></mrow><mi>T</mi></mfrac></msqrt><mfrac><msub><mi>L</mi><mi mathvariant="normal">v</mi></msub><msqrt><mrow><msubsup><mi>L</mi><mi mathvariant="normal">v</mi><mn>2</mn></msubsup><mo>+</mo><msup><mi>δ</mi><mn>2</mn></msup></mrow></msqrt></mfrac></math>
+</div>
+<p>音は、弦のすべてのモードの周波数に同じ比 <math><msup><mi>f</mi><mo>′</mo></msup><mo>/</mo><mi>f</mi></math> を掛けて作ります。曲の演奏では、押さえた旋律の音のうち 0.45 秒以上の音に、弾いてから 0.15 秒後に掛け始めます。揺れ方は弦によって違います。</p>
+<ul class="tl">
+  <li>ナイロン弦: 弦の向きに揺らす。元の高さの上下に揺れる</li>
+  <li>スチール弦: 押し上げる。元の高さより高い側だけに揺れる</li>
+</ul>
+
+<h3>弾き方と強弱</h3>
+<p>駒の側の胴の上を押したまま動かすと、横切った弦を、横切った順に弾きます。弾く強さは、動かす速さの平方根に比例させます。図の縮尺で 0.3 m/s のとき、入力の「強さ」になります。</p>
+<p>曲の強弱は、MIDI にベロシティがあればそれを使います。ない曲は、次の倍率を掛けて決めます。</p>
+<ul class="tl">
+  <li>拍子: 小節の頭を強く、拍の裏を弱く</li>
+  <li>声部: 鳴り始めに最も高い音（旋律）と最も低い音（低音）を強く、その間の音（内声）を弱く</li>
+  <li>長さ: 長い音を少し強く</li>
+</ul>
+<p>曲の中央の値を 1 とし、少しの揺らぎを足します。</p>
+
+<h3>コードの押さえ方</h3>
+<p>コードの押さえ方は、調弦とフレットの数から探します。指板の 4 フレットの幅ごとに、弦ごとに「鳴らさない・開放・コードの音のフレット」を組み合わせ、次をすべて満たすものを残します。</p>
+<ul class="tl">
+  <li>鳴らす弦が 4 本以上。鳴らさない弦は太い側に続けて並ぶ</li>
+  <li>最も低い音が根音</li>
+  <li>コードの音をすべて含む。4 和音などの完全 5 度は省いてよい</li>
+  <li>指 4 本で押さえられる。足りなければ、人差し指で最も低いフレットをセーハする</li>
+</ul>
+<p>残った形には、鳴る弦の多さ、低い位置、狭い幅、ローコードの開放弦を良しとする点を付けます。押さえる位置ごとに最も良い形を 1 つ選び、全体で最も良い形から始めます。</p>
+<p>押さえ方を変えると、フレットが変わる弦と鳴らさない弦は指が離れて音が止まります。同じフレットのままの弦は鳴り続けます。</p>
+<p>「次によく続くコード」は、調を決めずに、今のコードの働きから選びます。和声の教本とポピュラー音楽によくある進行を目安に、重みを付けました。</p>
+<ul class="tl">
+  <li>長三和音: 主和音 I と見て、IV・V・vi・ii・V7 など</li>
+  <li>属七: V7 と見て、4 度上の I・i、偽終止の vi</li>
+  <li>短三和音: vi・ii・i と見て、IV・V7・I など</li>
+  <li>短七: ii7・vi7 と見て、V7・IM7・IVM7 など</li>
+  <li>sus4: 同じ根音へ解決</li>
+  <li>減七: 半音上へ解決</li>
+</ul>
+<p>今のコードが M7 なら、続くコードも 7 の音を含む形で示します。</p>
+<p>曲の演奏中は、鳴っている弦の音からコードを推定して示します。数える弦は、指を離すまでの間で、第 1 部分音の振幅が初めの 1/10 より大きいものです。音名が 3 種類以上あるときだけ、すべての根音と種類に次の点を付け、最も高いもの 1 つを出します。</p>
+<ul class="tl">
+  <li>足す: コードに含まれる音、最も低い音が根音であること</li>
+  <li>引く: 足りない音（省いてよい 5 度は少し軽く）、コードにない音</li>
+</ul>
+
 <h3>残響</h3>
 <p>部屋の残響時間は Eyring の式で求め<a class="rf" href="#thy-r9">[9]</a>、残響音は 16 本の遅延線のフィードバック遅延網で作ります<a class="rf" href="#thy-r10">[10]</a>。</p>
 <dl class="syms">
@@ -151,6 +210,7 @@
   <li id="thy-r9"><span class="rf-for">残響時間</span><span class="rf-src">C. F. Eyring, “Reverberation time in ‘dead’ rooms,” <i>J. Acoust. Soc. Am.</i>, vol. 1, no. 2A, pp. 217–241, 1930</span></li>
   <li id="thy-r10"><span class="rf-for">残響</span><span class="rf-src">J.-M. Jot and A. Chaigne, “Digital delay networks for designing artificial reverberators,” AES 90th Convention, Preprint 3030, 1991</span></li>
   <li id="thy-r11"><span class="rf-for">空気の吸収</span><span class="rf-src">ISO 9613-1</span></li>
+  <li id="thy-r12"><span class="rf-for">押し上げによる張力と音の高さの変化</span><span class="rf-src">D. R. Grimes, “String theory – the physics of string-bending and other electric guitar techniques,” <i>PLOS ONE</i>, vol. 9, no. 7, e102088, 2014</span></li>
 </ol>
 
 <h3>このツールで決めたこと</h3>
@@ -163,4 +223,10 @@
   <li>スチール弦の損失係数</li>
   <li>こすれる音の大きさ</li>
   <li>部屋の寸法と吸音率</li>
+  <li>弦の向きの動きを手の動きの 1/10 とする割合</li>
+  <li>曲のビブラートを掛ける音と、掛け始める時間</li>
+  <li>なでる速さと弾く強さの対応</li>
+  <li>曲の強弱の倍率</li>
+  <li>コードの押さえ方に付ける点</li>
+  <li>次によく続くコードの重み</li>
 </ul>
