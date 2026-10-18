@@ -3,7 +3,7 @@
  * 弦を押すと、そのフレットを押さえて弾く。曲の演奏は先の音を少しずつ AudioWorklet へ予約する
  */
 import { Choice } from '../../lib/choice';
-import { $, esc } from '../../lib/dom';
+import { $, $$, esc } from '../../lib/dom';
 import { fmt, fmtR, minus, plain, ro } from '../../lib/format';
 import { ParamGroup } from '../../lib/param';
 import { lookahead, Pauser } from '../../lib/pause';
@@ -16,13 +16,55 @@ import { initToolPage } from '../../lib/tool-page';
 import { spectra, toDb } from '../spectrum/fft';
 import { GuitarAudio } from './audio';
 import { admittance, type BodySpec, bodyTypeOf, C, cabs, makeBody, pressure, rng } from './body';
-import { type BodyDesc, bodyDesc, type PluckMsg } from './engine';
-import { type Guitar, type Modes, modesOf, type PluckSpec, pluckOf, t60, toolOf, tuneCoupled } from './model';
+import {
+  CHORD_CODES,
+  chordName,
+  guessChord,
+  NEXT_CODES,
+  NEXT_KEYS,
+  type Next,
+  nextChords,
+  QUALITIES,
+  type Quality,
+  qualityOf,
+  ROOT_CODES,
+  shapeText,
+  type Voicing,
+  voicings,
+} from './chords';
+import { type BodyDesc, bodyDesc, type PluckMsg, type VibSpec } from './engine';
+import {
+  bendRatio,
+  type Guitar,
+  type Modes,
+  modesOf,
+  type PluckSpec,
+  pluckOf,
+  t60,
+  toolOf,
+  tuneCoupled,
+} from './model';
 import { Neck } from './neck';
 import { slideNoise } from './noise';
-import { AMP, ANGLE, DIA, DIST, HOLE, POS, SCALE, SLANT, type StrKey, TEN, THICK, VOL0, VOLUME } from './params';
+import {
+  AMP,
+  ANGLE,
+  DIA,
+  DIST,
+  HOLE,
+  POS,
+  SCALE,
+  SLANT,
+  type StrKey,
+  TEN,
+  THICK,
+  VIB_HZ,
+  VIB_W,
+  VOL0,
+  VOLUME,
+} from './params';
 import { BH, bodyPlot, fAtX, OH, specPlot, wavePlot, Y1_TOP, Y2_TOP } from './plot';
-import { dynamics, finger, PIECES, type Piece, type PieceData, pieceOf } from './score';
+import { accents, dynamics, finger, PIECES, type Piece, type PieceData, parts, pieceOf } from './score';
 import {
   betaOf,
   f1Of,
@@ -83,6 +125,8 @@ const S = {
   specs: loadSpecs(),
   /** 弦ごとの押さえているフレット */
   left: [0, 0, 0, 0, 0, 0],
+  /** 弦ごとの、鳴らさない（コードの形で × の）弦か。右手で弾いても鳴らない */
+  mute: [false, false, false, false, false, false],
   /** 計算結果に出す音（最後に弾いた音） */
   last: { si: 5, fret: 0 },
 };
@@ -99,6 +143,7 @@ bodyCh.set(S.body);
 const tun = choice<string>('tun', () => {
   retune();
   rebuild();
+  chordRetune();
 });
 const tm = choice<'auto' | 'man'>('tm', () => {
   retune();
@@ -113,6 +158,8 @@ const mat = choice<string>('mat', (v) => {
 const wood = choice<string>('wood', () => rebuild());
 const tool = choice<string>('tool', () => renderOut());
 const nz = choice<string>('nz', () => {});
+/* 曲のビブラート（まだ予約していない音から効く） */
+const vib = choice<string>('vib', () => {});
 const room = choice<string>('room', () => roomView());
 const nv = choice<'blur' | 'slow'>('nv', (v) => {
   neck.setMode(v);
@@ -167,7 +214,14 @@ const nowS = pauser.clock.now;
 
 /* ---------- 指板 ---------- */
 const neck = new Neck($<SVGSVGElement>('#neck'), {
-  onPluck: (si, fret) => void pluck(si, fret),
+  onPluck: (si, fret, gain) => void pluck(si, fret, gain),
+  onBend: (si, fret, delta, u) => {
+    const r = bendRatio(G.str[si], G.L, fret, delta, u);
+    audio.bend(si, r);
+    return 1200 * Math.log2(r);
+  },
+  /* 弾く位置を図の上で動かす（数値の行と同じく保存する） */
+  onPos: (mm) => P1.set('pos', Math.round(Math.min(POS.max, Math.max(POS.min, mm)))),
   now: nowS,
 });
 neck.setMode(nv.value);
@@ -216,7 +270,14 @@ const pluckSpec = (si: number, amp = V.amp): PluckSpec => ({
   rel: toolOf(tool.value).rel,
   angle: (V.ang * Math.PI) / 180,
 });
-const msgOf = (si: number, m: Modes, f: Float64Array): PluckMsg => ({ si, N: m.N, w: m.w, s: m.s, f });
+const msgOf = (si: number, m: Modes, f: Float64Array, vib?: VibSpec): PluckMsg => ({
+  si,
+  N: m.N,
+  w: m.w,
+  s: m.s,
+  f,
+  vib,
+});
 
 /*
  * ステレオの定位（再生だけ。−1 が左、1 が右）。模型ではなく聞こえ方の目安で、図の向き（左がヘッド、右が駒）に合わせる。
@@ -292,6 +353,7 @@ function changeSet(v: SetV): void {
   applyBody(b);
   retune();
   rebuild();
+  chordRetune();
 }
 function applyBody(b: 'classical' | 'dread'): void {
   S.body = b;
@@ -685,20 +747,29 @@ function slideOf(si: number, a: number, b: number, dur: number, seed: number): F
 let seedN = 1;
 /** 一時停止の間に弾こうとしたときの知らせ（再開・停止で消す） */
 const PAUSED = '一時停止の間は弾けません';
-/** 弦を弾く（曲の演奏中も弾ける。一時停止の間は AudioContext が止まっているので弾けない） */
-async function pluck(si: number, fret: number | null): Promise<void> {
+/**
+ * 弦を弾く（曲の演奏中も弾ける。一時停止の間は AudioContext が止まっているので弾けない）。
+ * gain は弾く強さの倍率（弦をなでた速さから）
+ */
+async function pluck(si: number, fret: number | null, gain = 1): Promise<void> {
   if (pauser.paused) {
     sndMsg(PAUSED);
     return;
   }
+  /* コードの形で鳴らさない弦は、右手で弾いても鳴らない。押さえ直せば鳴る */
+  if (fret === null && S.mute[si]) return;
   const f = fret ?? S.left[si],
     prev = S.left[si],
     held = neck.get(si);
   S.left[si] = f;
+  if (fret !== null) {
+    S.mute[si] = false;
+    holdFret(si, f);
+  }
   const ok = await audio.ready();
   sndMsg(ok ? '' : NO_SOUND);
   const m = modes(si, f),
-    pl = pluckOf(G, si, m, pluckSpec(si)),
+    pl = pluckOf(G, si, m, pluckSpec(si, Math.min(AMP.max, Math.max(AMP.min, V.amp * gain)))),
     t = nowS();
   let delay = 0;
   /* 押さえたまま別のフレットへ動いたら、すべる音を先に鳴らす */
@@ -723,12 +794,273 @@ async function pluck(si: number, fret: number | null): Promise<void> {
   renderOut();
 }
 
+/* ---------- コード ---------- */
+/** 押さえているコード: 根音・種類・押さえ方の候補と選んでいる番号（形は弦を押さえ直すと変わる） */
+let CH: { root: number; q: Quality; list: Voicing[]; i: number; f: number[] } | null = null;
+/** 最後に選んだ根音と種類（片方だけ選んだときに、もう片方に使う） */
+const chLast = { root: 0, q: QUALITIES[0] };
+const chdBox = $<HTMLDetailsElement>('details.a-chd'),
+  chdSnd = $<HTMLButtonElement>('#chdSnd');
+chdSnd.setAttribute('aria-pressed', String(stored('chdSnd') === true));
+$('#chdLed').classList.toggle('on', stored('chdSnd') === true);
+chdSnd.addEventListener('click', () => {
+  const on = chdSnd.getAttribute('aria-pressed') !== 'true';
+  chdSnd.setAttribute('aria-pressed', String(on));
+  $('#chdLed').classList.toggle('on', on);
+  store('chdSnd', on);
+});
+
+/** 次によく続くコードとして並べているもの（キー Z〜, の順） */
+let NX: Next[] = [];
+/** 曲の演奏中に、鳴っている音から推定したコード（押さえているコードがなく、3 本以上の弦が鳴っている間） */
+let EST: { root: number; q: Quality } | null = null;
+/** コードの枠の表示を、押さえているコード（なければ演奏から推定したコード）に合わせる */
+function chordView(): void {
+  const cur = CH ?? EST,
+    /* 次によく続くコード: 根音の鍵は、その根音の最も重い種類の重みで色を付けて種類を添え、種類のボタンは同じ根音のままの重み */
+    nx = cur ? nextChords(cur.root, cur.q) : [],
+    byRoot = new Map<number, Next>();
+  for (const x of nx) if (x.root !== cur?.root && !byRoot.has(x.root)) byRoot.set(x.root, x);
+  for (const b of $$<HTMLElement>('.ck', $('#ckb'))) {
+    const r = Number(b.dataset.v),
+      x = byRoot.get(r),
+      s = b.querySelector('.ck-s') as HTMLElement;
+    b.setAttribute('aria-pressed', String(!!CH && r === CH.root));
+    b.classList.toggle('est', !CH && !!EST && r === EST.root);
+    b.style.setProperty('--w', x ? x.w.toFixed(2) : '0');
+    if (s.textContent !== (x?.q.sfx ?? '')) s.textContent = x?.q.sfx ?? '';
+  }
+  for (const b of $$<HTMLElement>('.chip', $('#p-cq'))) {
+    const x = nx.find((y) => y.root === cur?.root && y.q.v === b.dataset.v);
+    b.setAttribute('aria-pressed', String(!!CH && b.dataset.v === CH.q.v));
+    b.classList.toggle('est', !CH && !!EST && b.dataset.v === EST.q.v);
+    b.style.setProperty('--w', x ? x.w.toFixed(2) : '0');
+  }
+  showNext(nx.slice(0, NEXT_KEYS.length));
+  const n = CH?.list.length ?? 0,
+    name = cur ? chordName(cur.root, cur.q) : '';
+  $<HTMLButtonElement>('#cvPrev').disabled = !CH || CH.i <= 0;
+  $<HTMLButtonElement>('#cvNext').disabled = !CH || CH.i >= n - 1;
+  $<HTMLButtonElement>('#chdRel').disabled = !CH;
+  txt('#cv-shape', CH && n ? shapeText(CH.f) : '—');
+  txt(
+    '#chd-name',
+    CH
+      ? n
+        ? `${name}  ${CH.i + 1} / ${n}`
+        : `${name}  押さえ方が見つかりません`
+      : EST
+        ? `${name}（演奏から推定）`
+        : '',
+  );
+  const tag = $('#nk-chd');
+  tag.hidden = !cur;
+  txt('#nk-chd', CH && n ? `${name}  ${shapeText(CH.f)}` : EST && !CH ? `${name}（推定）` : name);
+}
+
+/** 次によく続くコードの行で、大きく出す候補の数（それより後は小さく） */
+const NEXT_BIG = 3;
+/**
+ * 次によく続くコードを 1 行に並べる。行に入りきらない候補は外す（行の高さを変えない。キーは並んでいるものだけに効く）。
+ * 枠を閉じている間は幅が測れないので、開いたときに並べ直す
+ */
+function showNext(list: Next[]): void {
+  const row = $('#cnx');
+  row.innerHTML = list.length
+    ? list
+        .map((x, i) => {
+          const nm = chordName(x.root, x.q);
+          return `<button type="button" class="chip${i >= NEXT_BIG ? ' sm' : ''}" data-i="${i}" style="--w:${x.w.toFixed(2)}" aria-label="${esc(nm)}（キー ${NEXT_KEYS[i]}）">${esc(nm)}<span class="ky">${NEXT_KEYS[i]}</span></button>`;
+        })
+        .join('')
+    : '<span class="cnx-e">コードを押さえると出ます</span>';
+  NX = list;
+  if (!chdBox.open || !list.length) return;
+  const right = row.getBoundingClientRect().right,
+    kids = [...row.children] as HTMLElement[];
+  let k = kids.findIndex((c) => c.getBoundingClientRect().right > right + 0.5);
+  if (k < 0) return;
+  k = Math.max(1, k);
+  for (const c of kids.slice(k)) c.remove();
+  NX = list.slice(0, k);
+}
+chdBox.addEventListener('toggle', () => chdBox.open && chordView());
+{
+  let rt: ReturnType<typeof setTimeout> | undefined;
+  addEventListener('resize', () => {
+    clearTimeout(rt);
+    rt = setTimeout(chordView, 100);
+  });
+}
+
+/** 推定に数える弦:弾いてから、第 1 部分音の振幅が初めの 1/10 より大きい間（指を離すまで） */
+const EST_FLOOR = 0.1;
+/** 曲の演奏中に、鳴っている弦の音からコードを推定して出す（変わったときだけ書き直す） */
+function estimate(): void {
+  let next: typeof EST = null;
+  if (P && !CH) {
+    const t = nowS(),
+      notes = tuningOf(tun.value).notes,
+      on: number[] = [];
+    for (let si = 0; si < 6; si++) {
+      const s = neck.get(si);
+      if (!s || t < s.t0 || t >= s.damp) continue;
+      const { a, modes: m } = s.pl,
+        dt = t - s.t0,
+        a0 = Math.hypot(a[0], a[m.N]),
+        at = Math.hypot(a[0] * Math.exp(-m.s[0] * dt), a[m.N] * Math.exp(-m.s[m.N] * dt));
+      if (a0 > 0 && at > EST_FLOOR * a0) on.push(notes[si] + s.fret);
+    }
+    if (on.length >= 3) next = guessChord(on);
+  }
+  if (next?.root === EST?.root && next?.q === EST?.q) return;
+  EST = next;
+  chordView();
+}
+
+/** 弦 si の指を、今の押さえ方から変えるなら離す（鳴っている音を止める） */
+function lift(si: number, f: number, mute: boolean): void {
+  const s = neck.get(si),
+    t = nowS();
+  if (s && s.damp > t && (mute || s.fret !== f)) {
+    audio.damp(si, 0, 0, 0.06);
+    neck.set(si, { ...s, damp: t });
+  }
+}
+
+/** 押さえ方 i に変える（候補の範囲に丸める）。play なら、太い弦から順にかき鳴らす */
+function useVoicing(i: number, play: boolean): void {
+  if (!CH) return;
+  const v = CH.list[Math.max(0, Math.min(CH.list.length - 1, i))];
+  if (!v) {
+    chordView();
+    return;
+  }
+  CH.i = CH.list.indexOf(v);
+  CH.f = v.f.slice();
+  v.f.forEach((f, si) => {
+    const mute = f < 0,
+      nf = mute ? 0 : f;
+    lift(si, nf, mute);
+    S.left[si] = nf;
+    S.mute[si] = mute;
+  });
+  neck.setHold({ f: CH.f, barre: v.barre });
+  chordView();
+  if (play) strumChord();
+}
+
+/** コード（根音 root、種類 q）を押さえる。いつもの押さえ方（最も良いもの）にする */
+function setChord(root: number, q: Quality): void {
+  chLast.root = root;
+  chLast.q = q;
+  const { list, best } = voicings(tuningOf(tun.value).notes, G.frets, root, q);
+  CH = { root, q, list, i: best, f: [] };
+  if (!list.length) {
+    neck.setHold(null);
+    chordView();
+    return;
+  }
+  useVoicing(best, chdSnd.getAttribute('aria-pressed') === 'true');
+}
+
+/** 左手を弦から離して、コードの形をやめる（すべて開放弦にして、押さえていた弦の音を止める） */
+function releaseChord(): void {
+  if (!CH) return;
+  CH = null;
+  for (let si = 0; si < 6; si++) {
+    lift(si, 0, S.mute[si]);
+    S.left[si] = 0;
+    S.mute[si] = false;
+  }
+  neck.setHold(null);
+  chordView();
+}
+
+/** 弦 si をフレット f で押さえ直した（コードの形を変える） */
+function holdFret(si: number, f: number): void {
+  if (!CH || CH.f[si] === f) return;
+  CH.f[si] = f;
+  neck.setHold({ f: CH.f, barre: CH.list[CH.i]?.barre ?? false });
+  chordView();
+}
+
+/** 調弦やフレットの数が変わったら、押さえているコードを求め直す（鳴らさない） */
+function chordRetune(): void {
+  if (!CH) return;
+  const { list, best } = voicings(tuningOf(tun.value).notes, G.frets, CH.root, CH.q);
+  CH.list = list;
+  if (list.length) useVoicing(best, false);
+  else releaseChord();
+}
+
+/** 押さえているコードを、太い弦から順にかき鳴らす（鳴らさない弦は飛ばす） */
+const STRUM_MS = 14;
+function strumChord(): void {
+  let k = 0;
+  for (let si = 5; si >= 0; si--) {
+    if (S.mute[si]) continue;
+    const s = si;
+    setTimeout(() => void pluck(s, null, 1), STRUM_MS * k++);
+  }
+}
+
+$('#ckb').addEventListener('click', (e) => {
+  const b = (e.target as Element).closest<HTMLElement>('.ck');
+  if (b) setChord(Number(b.dataset.v), CH?.q ?? chLast.q);
+});
+$('#cnx').addEventListener('click', (e) => {
+  const b = (e.target as Element).closest<HTMLElement>('.chip');
+  const x = b ? NX[Number(b.dataset.i)] : undefined;
+  if (x) setChord(x.root, x.q);
+});
+$('#p-cq').addEventListener('click', (e) => {
+  const b = (e.target as Element).closest<HTMLElement>('.chip');
+  if (b) setChord(CH?.root ?? chLast.root, qualityOf(b.dataset.v ?? ''));
+});
+$('#cvPrev').addEventListener(
+  'click',
+  () => CH && useVoicing(CH.i - 1, chdSnd.getAttribute('aria-pressed') === 'true'),
+);
+$('#cvNext').addEventListener(
+  'click',
+  () => CH && useVoicing(CH.i + 1, chdSnd.getAttribute('aria-pressed') === 'true'),
+);
+$('#chdRel').addEventListener('click', releaseChord);
+
+/*
+ * コードの枠を開いている間は、キーでコードを選ぶ（入力欄・指板の図で使うキーは除く）。
+ * 押し続けたときの繰り返しは無視する（「コードを鳴らす」で何度も鳴らさない）
+ */
+document.addEventListener('keydown', (e) => {
+  if (!chdBox.open || e.defaultPrevented || e.ctrlKey || e.altKey || e.metaKey || e.shiftKey || e.isComposing) return;
+  const t = e.target as HTMLElement | null;
+  if (t?.closest('input, select, textarea, [contenteditable]')) return;
+  const play = chdSnd.getAttribute('aria-pressed') === 'true',
+    r = ROOT_CODES.indexOf(e.code),
+    qi = CHORD_CODES.indexOf(e.code as (typeof CHORD_CODES)[number]),
+    ni = NEXT_CODES.indexOf(e.code as (typeof NEXT_CODES)[number]),
+    nx = ni >= 0 ? NX[ni] : undefined,
+    arrow = (e.key === 'ArrowUp' || e.key === 'ArrowDown') && !!CH;
+  if (r < 0 && qi < 0 && !nx && !arrow && !(e.key === 'Escape' && CH)) return;
+  e.preventDefault();
+  if (e.repeat) return;
+  if (r >= 0) setChord(r, CH?.q ?? chLast.q);
+  else if (qi >= 0) setChord(CH?.root ?? chLast.root, QUALITIES[qi]);
+  else if (nx) setChord(nx.root, nx.q);
+  else if (CH && e.key === 'ArrowUp') useVoicing(CH.i + 1, play);
+  else if (CH && e.key === 'ArrowDown') useVoicing(CH.i - 1, play);
+  else releaseChord();
+});
+
 /* テンポと音量（演奏中も効く） */
 movePlayStore();
 new ParamGroup<PlayKey>([TEMPO, outVol(VOL0)], (v) => {
   V.tempo = v.tempo;
   audio.vol(v.vol);
 });
+/* 曲のビブラートの幅と速さ（まだ予約していない音から効く） */
+const PV = new ParamGroup<'vw' | 'vh'>([VIB_W, VIB_HZ], () => {});
 
 /** 指板の図の、鳴っている弦を今止める（予定した撥弦はそのまま） */
 function dampNeck(): void {
@@ -766,6 +1098,11 @@ interface Ev {
   off: number | null;
   /** すべる音の、前のフレットと、前の音からの拍（その半分の時間ですべる） */
   slide: { from: number; gap: number } | null;
+  /** 音の終わりの拍と、旋律（鳴り始めに最も高い音）か（ビブラートを掛ける音を選ぶ） */
+  end: number;
+  top: boolean;
+  /** ビブラートの速さの揺らぎ（−1〜1） */
+  vr: number;
 }
 interface Play {
   ev: Ev[];
@@ -798,11 +1135,12 @@ async function placedOf(pc: Piece): Promise<PieceData> {
   }
   return pl;
 }
-function eventsOf(data: PieceData, tmap: TempoMap): Ev[] {
+function eventsOf(data: PieceData, pc: Piece, tmap: TempoMap): Ev[] {
   const r = rng(7),
     notes = data.notes.filter((x) => x.s >= 0).sort((a, b) => a.t - b.t || a.s - b.s),
-    /* MIDI のベロシティがある曲は、弾く強さに掛ける（強さの入力の範囲に収める） */
-    dy = dynamics(notes),
+    /* MIDI のベロシティがある曲はそれを、ない曲は拍子と声部から決めた強弱を、弾く強さに掛ける（強さの入力の範囲に収める） */
+    dy = dynamics(notes) ?? accents(notes, pc.bar, pc.pickup),
+    pt = parts(notes),
     last = Math.max(...notes.map((x) => x.t + x.d)),
     ev: Ev[] = [];
   let rollJit = 0;
@@ -810,19 +1148,31 @@ function eventsOf(data: PieceData, tmap: TempoMap): Ev[] {
     const next = notes.slice(i + 1).find((y) => y.s === x.s),
       prev = [...notes.slice(0, i)].reverse().find((y) => y.s === x.s),
       end = x.t + x.d,
-      /* 少し揺らす（時刻 ±6 ms、強さ ±10%）。低い弦は少し強く。
+      /* 少し揺らす（時刻 ±6 ms、強さ ±6%）。低い弦は少し強く。
          少しずらして弾く和音（前の音から 0.1 拍未満）は、ずらし方を崩さないよう最初の音と同じだけ動かす */
       dt = i ? x.t - notes[i - 1].t : 1,
       rj = (r() - 0.5) * 0.012,
       jit = dt > 1e-6 && dt < 0.1 ? rollJit : rj,
-      amp = Math.min(AMP.max, V.amp * (dy?.[i] ?? 1) * (0.9 + 0.2 * r()) * (x.s >= 3 ? 1.1 : 1)),
+      amp = Math.min(AMP.max, V.amp * dy[i] * (0.94 + 0.12 * r()) * (x.s >= 3 ? 1.1 : 1)),
       /* 最後の和音は響かせたままにする */
       off = x.f > 0 && end < last - 1e-6 && (!next || next.t > end + 1e-6) ? tmap.tau(end) : null;
     let slide: Ev['slide'] = null;
     if (prev && prev.f > 0 && x.f > 0 && prev.f !== x.f && x.t - (prev.t + prev.d) < 0.6 && r() < 0.7)
       slide = { from: prev.f, gap: tmap.tau(x.t) - tmap.tau(prev.t) };
     rollJit = jit;
-    ev.push({ b: tmap.tau(x.t), jit, si: x.s, f: x.f, amp, off, slide });
+    ev.push({
+      b: tmap.tau(x.t),
+      jit,
+      si: x.s,
+      f: x.f,
+      amp,
+      off,
+      slide,
+      end: tmap.tau(end),
+      /* 鳴っている間にほかの音を弾かない旋律の音（左手が空く） */
+      top: pt[i] === 'top' && !notes.some((y) => y.t > x.t + 0.1 && y.t < end - 1e-6),
+      vr: 2 * r() - 1,
+    });
   });
   return ev;
 }
@@ -854,6 +1204,7 @@ async function startPiece(): Promise<void> {
     store('c:p-tun', pc.tuning);
     retune();
     rebuild();
+    chordRetune();
   }
   if (tm.value === 'man') sndMsg('張力を手で決めているため、音程がずれることがあります');
   let pl: PieceData;
@@ -864,8 +1215,10 @@ async function startPiece(): Promise<void> {
     return;
   }
   if (P || piece.value !== pc.v) return;
+  /* 押さえていたコードは離す（左手は曲の運指で動く） */
+  releaseChord();
   const tmap = new TempoMap(pl.tempo),
-    ev = eventsOf(pl, tmap);
+    ev = eventsOf(pl, pc, tmap);
   /* 使うモードを先に求める */
   for (const e of ev) modes(e.si, e.f);
   const now = audio.now() ?? 0;
@@ -900,9 +1253,27 @@ function stopPiece(): void {
   }
   plBar = '';
   syncPlay();
+  estimate();
 }
 /** 先に予約する時間 [s] */
 const AHEAD = 0.3;
+/** ビブラートを掛ける音の長さの下限と、掛け始めるまでの時間 [s] */
+const VIB_MIN = 0.45,
+  VIB_DELAY = 0.15;
+/**
+ * 曲の音のビブラート: 押さえた旋律の音のうち、長さ dur [s] が長いものにだけ、少し遅れてから掛ける。
+ * ナイロン弦は指を弦の向きに揺らし（上下に揺れる）、スチール弦は弦を押し上げる（高い側だけに揺れる）
+ */
+function vibOf(e: Ev, dur: number): VibSpec | undefined {
+  if (vib.value !== '1' || e.f <= 0 || !e.top || dur < VIB_MIN || PV.get('vw') <= 0) return undefined;
+  return {
+    t0: VIB_DELAY,
+    t1: dur,
+    hz: PV.get('vh') * (1 + 0.04 * e.vr),
+    cent: PV.get('vw'),
+    up: S.set === 'steel',
+  };
+}
 function tick(): void {
   const p = P;
   if (!p || pauser.paused) return;
@@ -932,9 +1303,9 @@ function tick(): void {
         buf = slideOf(e.si, e.slide.from, e.f, dur, p.i);
       if (buf) audio.noise(e.si, buf, at - dur, slidePan(e.si, e.slide.from, e.f));
     }
-    const id = audio.pluck(msgOf(e.si, m, pl.f), at, panOf(e.si, e.f));
     /* 指を離すのは、この音だけ（離す前に同じ弦をずらした和音で弾き直していても、その音は止めない） */
-    const off = e.off !== null ? atOf(e.off) + 0.02 : null;
+    const off = e.off !== null ? atOf(e.off) + 0.02 : null,
+      id = audio.pluck(msgOf(e.si, m, pl.f, vibOf(e, atOf(e.end) - at)), at, panOf(e.si, e.f));
     if (off !== null) audio.damp(e.si, off, id);
     neck.set(e.si, {
       pl,
@@ -955,6 +1326,7 @@ function tick(): void {
     P = null;
     syncPlay();
   }
+  estimate();
 }
 $('#playBtn').addEventListener('click', () => {
   if (P) stopPiece();

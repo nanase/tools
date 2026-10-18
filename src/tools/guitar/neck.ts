@@ -1,6 +1,7 @@
 /**
  * 指板と弦の図（ギターを横に倒した向き。左がヘッド、右が駒、1 弦が上）。弦を押さえる指と、弦の振動を描き、
- * 押して弾く・キーボードで弾く操作を受ける。振動は弦のモードの和で描き、振幅は強調できる。
+ * 押して弾く・キーボードで弾く操作と、押したまま動かす操作（胴の上で弦をなでて弾く・押さえた弦を動かすビブラート・
+ * 弾く位置の印をつかんで動かす）を受ける。振動は弦のモードの和で描き、振幅は強調できる。
  * 弦の間隔は見やすいように実際より広げて描く（横は弦長に比例）
  */
 import { coefAt, type Pluck, shapeOf } from './model';
@@ -53,11 +54,37 @@ const RIP_S = 0.7,
   RIP_R = 36;
 
 export interface NeckOpt {
-  /** 弦 si をフレット fret で弾く（null は今押さえているフレットのまま、右手で弾く） */
-  onPluck(si: number, fret: number | null): void;
+  /**
+   * 弦 si をフレット fret で弾く（null は今押さえているフレットのまま、右手で弾く）。
+   * gain は弾く強さの倍率（弦をなでた速さから。押しただけなら 1）
+   */
+  onPluck(si: number, fret: number | null, gain: number): void;
+  /**
+   * 押さえた弦 si（フレット fret）を左手で動かす: 横へ押し上げる量 delta と、弦の向きにナット側へ引く量 u [m]。
+   * 音の高さの変化 [セント] を返す（どちらも 0 で元に戻す）
+   */
+  onBend(si: number, fret: number, delta: number, u: number): number;
+  /** 弾く位置（3 弦と 4 弦の間、駒から） [mm] を変える */
+  onPos(mm: number): void;
   /** 今の時刻 [s]（Sounding.t0 と同じ時計） */
   now(): number;
 }
+
+/** なでた速さの基準 [m/s]（この速さで強さの倍率 1）と、倍率の範囲 */
+const V_REF = 0.3,
+  GAIN_MIN = 0.4,
+  GAIN_MAX = 2.5;
+/** 押し上げる量と、弦の向きに引く量の上限 [m] */
+const BEND_MAX = 0.02,
+  LONG_MAX = 1.5e-3;
+/** 弦の向きの動き: 指先が転がるぶん、弦は手の動き（図の横の縮尺）のこの割合だけ動くとする */
+const LONG_K = 0.1;
+
+/** 押したまま動かす操作: 弾く位置を動かす・弦をなでて弾く・押さえた弦を動かす */
+type Drag =
+  | { k: 'pos'; x0: number; ref: number }
+  | { k: 'strum'; x: number; y: number; armed: boolean[]; hist: { t: number; y: number }[] }
+  | { k: 'bend'; si: number; fret: number; x0: number; y0: number };
 
 const NS = 'http://www.w3.org/2000/svg';
 const el = <K extends keyof SVGElementTagNameMap>(tag: K, cls: string, parent: Element): SVGElementTagNameMap[K] => {
@@ -94,6 +121,16 @@ export class Neck {
   private raf = 0;
   /** キーボードの位置（弦・フレット） */
   private cur = { si: 0, fret: 0 };
+  /** 弾く位置の印のつかむ所: 1 弦の上と 6 弦の下へ延ばした線（端と弦の上の点）と、下の三角の中心 */
+  private hnd: { top: number[]; p0: number[]; p5: number[]; bot: number[]; tri: number[] } | null = null;
+  /** 押したまま動かしている操作（ポインタごと） */
+  private readonly drag = new Map<number, Drag>();
+  /** 左手で動かしている弦の、図の上の指のずれと音の高さの変化 [セント] */
+  private readonly bendV: ({ dx: number; dy: number; c: number } | null)[] = [null, null, null, null, null, null];
+  private readonly bendLb: SVGTextElement[] = [];
+  /** 押さえているコードの形（弦ごとのフレット。0 は開放、−1 は鳴らさない）と、セーハするか */
+  private hold: { f: readonly number[]; barre: boolean } | null = null;
+  private readonly gHold: SVGGElement;
 
   constructor(
     readonly svg: SVGSVGElement,
@@ -114,12 +151,17 @@ export class Neck {
       c.setAttribute('r', '4');
       this.leds.push(c);
     }
+    this.gHold = el('g', 'nk-hold', svg);
     const gd = el('g', 'nk-dots', svg);
     for (let i = 0; i < 6; i++) {
       const c = el('circle', 'nk-f', gd);
       c.setAttribute('r', '6.5');
       c.style.display = 'none';
       this.dots.push(c);
+      const t = el('text', 'nk-bd', gd);
+      t.setAttribute('text-anchor', 'middle');
+      t.style.display = 'none';
+      this.bendLb.push(t);
     }
     this.hover = el('rect', 'nk-hv', svg);
     this.cursor = el('rect', 'nk-cur', svg);
@@ -166,6 +208,11 @@ export class Neck {
   setMode(m: 'blur' | 'slow'): void {
     this.mode = m;
     this.kick();
+  }
+  /** 押さえているコードの形を描く（null で消す） */
+  setHold(h: { f: readonly number[]; barre: boolean } | null): void {
+    this.hold = h ? { f: h.f.slice(), barre: h.barre } : null;
+    this.drawHold();
   }
   setSlow(n: number): void {
     this.slow = n;
@@ -249,9 +296,10 @@ export class Neck {
       this.lines[si].classList.toggle('ny', g.nylon && !g.wound[si]);
     }
     this.drawPos();
+    this.drawHold();
   }
 
-  /** 弾く位置の印: 各弦の弾く点を結ぶ線（両端は少し延ばす）と、下の三角 */
+  /** 弾く位置の印: 各弦の弾く点を結ぶ線（両端は少し延ばす）と、下の三角。延ばした線と三角をつかんで動かす */
   private drawPos(): void {
     const g = this.geo;
     if (!g) return;
@@ -260,10 +308,28 @@ export class Neck {
         return [x, this.rowY(this.row(si), x)];
       }),
       ext = (a: number[], b: number[], k: number) => [a[0] + (a[0] - b[0]) * k, a[1] + (a[1] - b[1]) * k],
-      top = ext(pt[0], pt[1], 10 / Math.max(1, pt[1][1] - pt[0][1])),
-      bot = ext(pt[5], pt[4], 10 / Math.max(1, pt[5][1] - pt[4][1])),
+      top = ext(pt[0], pt[1], 16 / Math.max(1, pt[1][1] - pt[0][1])),
+      bot = ext(pt[5], pt[4], 16 / Math.max(1, pt[5][1] - pt[4][1])),
       [bx, by] = bot;
+    this.hnd = { top, p0: pt[0], p5: pt[5], bot, tri: [bx, by + 4.5] };
     this.posMk.innerHTML = `<path class="nk-pl" d="M${[top, ...pt, bot].map(([x, y]) => `${x.toFixed(1)} ${y.toFixed(1)}`).join('L')}"/><path class="nk-pm" d="M${(bx - 5).toFixed(1)} ${(by + 8).toFixed(1)}L${bx.toFixed(1)} ${(by + 1).toFixed(1)}L${(bx + 5).toFixed(1)} ${(by + 8).toFixed(1)}Z"/>`;
+  }
+  /** 図の座標 (x, y) が弾く位置の印のつかむ所か（弦の上は弾くので除く） */
+  private onHandle(x: number, y: number): boolean {
+    const h = this.hnd;
+    if (!h) return false;
+    const seg = (a: number[], b: number[]) => {
+      const vx = b[0] - a[0],
+        vy = b[1] - a[1],
+        u = Math.max(0, Math.min(1, ((x - a[0]) * vx + (y - a[1]) * vy) / (vx * vx + vy * vy || 1)));
+      return Math.hypot(x - a[0] - u * vx, y - a[1] - u * vy);
+    };
+    if (Math.hypot(x - h.tri[0], y - h.tri[1]) < 11) return true;
+    return (seg(h.top, h.p0) < 7 && y < h.p0[1] - 6) || (seg(h.p5, h.bot) < 7 && y > h.p5[1] + 6);
+  }
+  /** 弦をなでて弾く範囲（指板の終わりより駒の側） */
+  private inStrum(x: number): boolean {
+    return x >= this.X(this.boardEnd()) && x <= XB;
   }
 
   /** 弾いた点から広がる輪を描く。描くものが残っていれば true */
@@ -278,12 +344,49 @@ export class Neck {
     return this.rips.length > 0;
   }
 
+  /**
+   * コードの形: 押さえる点（輪）、セーハ（最も低いフレットを細い弦から太い側へ渡す帯）、
+   * ナットのすぐ右に開放（○）と鳴らさない弦（×）
+   */
+  private drawHold(): void {
+    const g = this.geo,
+      h = this.hold;
+    if (!g || !h) {
+      this.gHold.innerHTML = '';
+      return;
+    }
+    const fx = (f: number) => this.X(fretX(g.L, f - 1) + 0.68 * (fretX(g.L, f) - fretX(g.L, f - 1)));
+    let s = '';
+    const fs = h.f.filter((x) => x > 0),
+      lo = fs.length ? Math.min(...fs) : 0;
+    if (h.barre && lo > 0) {
+      const reach = Math.max(...h.f.flatMap((x, si) => (x === lo ? [si] : []))),
+        x = fx(lo);
+      s += `<path class="nk-hb" d="M${x.toFixed(1)} ${this.rowY(this.row(0), x).toFixed(1)}V${this.rowY(this.row(reach), x).toFixed(1)}"/>`;
+    }
+    h.f.forEach((f, si) => {
+      const r = this.row(si);
+      if (f > 0) {
+        const x = fx(f);
+        s += `<circle class="nk-h" cx="${x.toFixed(1)}" cy="${this.rowY(r, x).toFixed(1)}" r="6.5"/>`;
+      } else {
+        const x = X0 + 9,
+          y = this.rowY(r, x);
+        s +=
+          f < 0
+            ? `<path class="nk-hx" d="M${x - 3.5} ${(y - 3.5).toFixed(1)}l7 7m0 -7l-7 7"/>`
+            : `<circle class="nk-ho" cx="${x}" cy="${y.toFixed(1)}" r="3.6"/>`;
+      }
+    });
+    this.gHold.innerHTML = s;
+  }
+
   /** 弦をまっすぐに描く（鳴っていない弦） */
   private straight(si: number): void {
     const r = this.row(si);
     this.lines[si].setAttribute('d', `M${X0} ${this.rowY(r, X0).toFixed(2)}L${XB} ${this.rowY(r, XB).toFixed(2)}`);
     this.vib[si].setAttribute('d', '');
-    this.dots[si].style.display = 'none';
+    this.dots[si].style.display = this.bendLb[si].style.display = 'none';
   }
   private drawIdle(): void {
     for (let si = 0; si < 6; si++) if (!this.snd[si]) this.straight(si);
@@ -332,18 +435,21 @@ export class Neck {
       Lv = s.pl.modes.L,
       xf = this.X(g.L - Lv),
       k = this.exag * PX_MM * 1000,
-      fade = now > s.damp ? Math.exp(-(now - s.damp) / 0.06) : 1;
+      fade = now > s.damp ? Math.exp(-(now - s.damp) / 0.06) : 1,
+      /* 左手で押し上げていれば、押さえた点で弦を横へずらす（駒で 0） */
+      bv = s.fret > 0 && now < s.damp ? this.bendV[si] : null,
+      dy = bv?.dy ?? 0;
     /* ナット側（押さえた点まで）はまっすぐ */
     this.lines[si].setAttribute(
       'd',
-      s.fret > 0 ? `M${X0} ${this.rowY(r, X0).toFixed(2)}L${xf.toFixed(2)} ${this.rowY(r, xf).toFixed(2)}` : '',
+      s.fret > 0 ? `M${X0} ${this.rowY(r, X0).toFixed(2)}L${xf.toFixed(2)} ${(this.rowY(r, xf) + dy).toFixed(2)}` : '',
     );
     const xs: number[] = [],
       base: number[] = [];
     for (let j = 0; j <= PTS; j++) {
       const xb = Lv * (1 - j / PTS);
       xs.push(xb);
-      base.push(this.rowY(r, this.X(g.L - xb)));
+      base.push(this.rowY(r, this.X(g.L - xb)) + (dy * xb) / Lv);
     }
     const sx = (j: number) => this.X(g.L - xs[j]).toFixed(1);
     let d = '',
@@ -379,13 +485,23 @@ export class Neck {
     this.vib[si].setAttribute('d', d);
     this.vib[si].classList.toggle('band', this.mode !== 'slow');
     /* 押さえている指 */
-    const dot = this.dots[si];
+    const dot = this.dots[si],
+      lb = this.bendLb[si];
     if (s.fret > 0 && now < s.damp) {
-      const x = this.X(fretX(g.L, s.fret - 1) + 0.68 * (fretX(g.L, s.fret) - fretX(g.L, s.fret - 1)));
+      const x = this.X(fretX(g.L, s.fret - 1) + 0.68 * (fretX(g.L, s.fret) - fretX(g.L, s.fret - 1))) + (bv?.dx ?? 0),
+        y = this.rowY(r, x) + dy;
       dot.setAttribute('cx', x.toFixed(1));
-      dot.setAttribute('cy', this.rowY(r, x).toFixed(1));
+      dot.setAttribute('cy', y.toFixed(1));
       dot.style.display = '';
-    } else dot.style.display = 'none';
+      /* 音の高さの変化（左手で動かしている間） */
+      if (bv && Math.abs(bv.c) >= 0.05) {
+        const t = `${bv.c > 0 ? '+' : '−'}${Math.abs(bv.c).toFixed(1)} セント`;
+        if (lb.textContent !== t) lb.textContent = t;
+        lb.setAttribute('x', x.toFixed(1));
+        lb.setAttribute('y', (dy > 0 ? y - 11 : y + 18).toFixed(1));
+        lb.style.display = '';
+      } else lb.style.display = 'none';
+    } else dot.style.display = lb.style.display = 'none';
     /* 1 µm を下回ったら消す */
     return peak > 1e-6 || now < s.damp;
   }
@@ -429,28 +545,140 @@ export class Neck {
     rc.style.display = '';
   }
 
+  /** 押したまま (x, y) へ動いた（t は時刻 [ms]） */
+  private move(d: Drag, x: number, y: number, t: number): void {
+    const g = this.geo;
+    if (!g) return;
+    if (d.k === 'pos') {
+      this.opt.onPos((d.ref + ((d.x0 - x) / (XB - X0)) * g.L) * 1000);
+      return;
+    }
+    if (d.k === 'bend') {
+      /* 縦の動きは押し上げ（図の弦の間隔と同じ縮尺）、横の動きは弦の向き（左がナット側） */
+      const dy = Math.max(-BEND_MAX, Math.min(BEND_MAX, (y - d.y0) / PX_MM / 1000)) * PX_MM * 1000,
+        uMax = (LONG_MAX / LONG_K / g.L) * (XB - X0),
+        dx = Math.max(-uMax, Math.min(uMax, x - d.x0));
+      this.bendTo(d.si, d.fret, dx, dy);
+      return;
+    }
+    /* 弦をなでる: 前の点から今の点までに横切った弦を、横切った順に弾く */
+    d.hist.push({ t, y });
+    while (d.hist.length > 2 && t - d.hist[0].t > 40) d.hist.shift();
+    const h0 = d.hist[0],
+      dt = t - h0.t,
+      /* 縦の速さ [m/s]（図の弦の間隔と同じ縮尺。図の単位 / ms → mm / ms） */
+      v = dt > 0 ? Math.abs(y - h0.y) / PX_MM / dt : 0,
+      gain = Math.max(GAIN_MIN, Math.min(GAIN_MAX, Math.sqrt(v / V_REF))),
+      order = y >= d.y ? [0, 1, 2, 3, 4, 5] : [5, 4, 3, 2, 1, 0];
+    if (x >= X0 && x <= XB && d.x >= X0 && d.x <= XB)
+      for (const si of order) {
+        const r = this.row(si),
+          a = d.y - this.rowY(r, d.x),
+          b = y - this.rowY(r, x),
+          sp = SN + ((SB - SN) * (x - X0)) / (XB - X0);
+        if (d.armed[si] && ((a < 0 && b >= 0) || (a > 0 && b <= 0))) {
+          d.armed[si] = false;
+          this.opt.onPluck(si, null, gain);
+        } else if (Math.abs(b) > 0.3 * sp) d.armed[si] = true;
+      }
+    d.x = x;
+    d.y = y;
+  }
+
+  /** 押さえた弦 si を、図の上で指を (dx, dy) だけずらした形にして、音の高さを変える */
+  private bendTo(si: number, fret: number, dx: number, dy: number): void {
+    const g = this.geo;
+    if (!g) return;
+    const delta = Math.abs(dy) / PX_MM / 1000,
+      u = (-dx / (XB - X0)) * g.L * LONG_K,
+      c = this.opt.onBend(si, fret, delta, u);
+    this.bendV[si] = dx || dy ? { dx, dy, c } : null;
+    this.kick();
+  }
+
   private bind(): void {
     const { svg } = this;
-    const at = (e: PointerEvent) => {
+    const pt = (cx: number, cy: number) => {
       const m = svg.getScreenCTM();
-      if (!m) return null;
-      const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(m.inverse());
-      return this.hit(p.x, p.y);
+      return m ? new DOMPoint(cx, cy).matrixTransform(m.inverse()) : null;
     };
     svg.addEventListener('pointerdown', (e) => {
       if (e.button !== 0) return;
-      const h = at(e);
-      if (!h) return;
+      const p = pt(e.clientX, e.clientY);
+      if (!p) return;
+      const h = this.hit(p.x, p.y);
+      let d: Drag | null = null;
+      if (this.onHandle(p.x, p.y)) {
+        const pos = this.pos;
+        d = { k: 'pos', x0: p.x, ref: (pos[2] + pos[3]) / 2 };
+        this.posMk.classList.add('hot');
+      } else if (this.inStrum(p.x)) {
+        /* 弦の上なら弾く。弦の外から始めてもよい */
+        const armed = [true, true, true, true, true, true];
+        if (h) {
+          armed[h.si] = false;
+          this.opt.onPluck(h.si, null, 1);
+        }
+        d = { k: 'strum', x: p.x, y: p.y, armed, hist: [{ t: e.timeStamp, y: p.y }] };
+      } else if (h) {
+        this.opt.onPluck(h.si, h.fret, 1);
+        if (h.fret) d = { k: 'bend', si: h.si, fret: h.fret, x0: p.x, y0: p.y };
+      }
+      if (!d && !h) return;
       e.preventDefault();
-      this.opt.onPluck(h.si, h.fret);
+      if (!d) return;
+      this.drag.set(e.pointerId, d);
+      try {
+        svg.setPointerCapture(e.pointerId);
+      } catch {
+        /* 合成したイベントなど、捕まえられないポインタ */
+      }
     });
+    /*
+     * 弦をなでる範囲と弾く位置の印で始めたタッチは、スクロールさせない。SVG の中の要素の touch-action は効かないブラウザが
+     * あるので、touchstart を止める（指板の上で始めたタッチは、図を横にスクロールする）
+     */
+    svg.addEventListener(
+      'touchstart',
+      (e) => {
+        const t = e.changedTouches[0],
+          p = t ? pt(t.clientX, t.clientY) : null;
+        if (p && (this.onHandle(p.x, p.y) || this.inStrum(p.x))) e.preventDefault();
+      },
+      { passive: false },
+    );
+    const end = (e: PointerEvent) => {
+      const d = this.drag.get(e.pointerId);
+      if (!d) return;
+      this.drag.delete(e.pointerId);
+      if (d.k === 'bend') this.bendTo(d.si, d.fret, 0, 0);
+      else if (d.k === 'pos') this.posMk.classList.remove('hot');
+    };
+    svg.addEventListener('pointerup', end);
+    svg.addEventListener('pointercancel', end);
     svg.addEventListener('pointermove', (e) => {
-      if (e.pointerType !== 'mouse') return;
-      const h = at(e);
-      this.showRect(this.hover, h && h.fret !== null ? this.cell(h.si, h.fret) : null);
-      svg.style.cursor = h ? 'pointer' : '';
+      const d = this.drag.get(e.pointerId);
+      if (d) {
+        const evs = e.getCoalescedEvents?.() ?? [];
+        for (const c of evs.length ? evs : [e]) {
+          const p = pt(c.clientX, c.clientY);
+          if (p) this.move(d, p.x, p.y, c.timeStamp);
+        }
+        return;
+      }
+      if (e.pointerType !== 'mouse' || this.drag.size) return;
+      const p = pt(e.clientX, e.clientY);
+      if (!p) return;
+      const h = this.hit(p.x, p.y),
+        hd = this.onHandle(p.x, p.y);
+      this.showRect(this.hover, !hd && h && h.fret !== null ? this.cell(h.si, h.fret) : null);
+      this.posMk.classList.toggle('hot', hd);
+      svg.style.cursor = hd ? 'ew-resize' : h ? 'pointer' : '';
     });
-    svg.addEventListener('pointerleave', () => this.showRect(this.hover, null));
+    svg.addEventListener('pointerleave', () => {
+      this.showRect(this.hover, null);
+      if (!this.drag.size) this.posMk.classList.remove('hot');
+    });
     svg.addEventListener('focus', () => this.showRect(this.cursor, this.cell(this.cur.si, this.cur.fret)));
     svg.addEventListener('blur', () => this.showRect(this.cursor, null));
     svg.addEventListener('keydown', (e) => {
@@ -462,7 +690,7 @@ export class Neck {
       else if (e.key === 'ArrowDown') c.si = Math.max(0, Math.min(5, c.si - up));
       else if (e.key === 'ArrowLeft') c.fret = Math.max(0, c.fret - 1);
       else if (e.key === 'ArrowRight') c.fret = Math.min(g.frets, c.fret + 1);
-      else if (e.key === 'Enter' || e.key === ' ') this.opt.onPluck(c.si, c.fret);
+      else if (e.key === 'Enter' || e.key === ' ') this.opt.onPluck(c.si, c.fret, 1);
       else return;
       e.preventDefault();
       this.showRect(this.cursor, this.cell(c.si, c.fret));

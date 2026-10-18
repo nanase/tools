@@ -46,7 +46,26 @@ export interface PluckMsg {
   w: Float64Array;
   s: Float64Array;
   f: Float64Array;
+  /** 曲のビブラート（なければ掛けない） */
+  vib?: VibSpec;
 }
+
+/** 撥弦に掛けるビブラート。時刻は弾いてからの秒 */
+export interface VibSpec {
+  /** 掛け始める時刻と、弱めて止める時刻 [s] */
+  t0: number;
+  t1: number;
+  /** 速さ [Hz] と、音の高さの全幅 [セント] */
+  hz: number;
+  cent: number;
+  /** 押し上げ（高い側だけに揺れる）なら true、弦の向きに揺らす（上下に揺れる）なら false */
+  up: boolean;
+}
+/** ビブラートを強めていく時間・弱めて止める時間 [s] */
+const VIB_IN = 0.25,
+  VIB_OUT = 0.1;
+/** 左手で弦を動かした音の高さを追う時定数 [s]（マウスの動きの段差をならす） */
+const BEND_S = 0.012;
 
 /** 撥弦をやめた弦のモードを消す時定数 [s]（新しく弾いたとき・指を離したとき） */
 export const FADE_S = 0.01,
@@ -67,8 +86,18 @@ class Voice {
   mr: Float64Array;
   mi: Float64Array;
   pol: Uint8Array;
+  /** モードの 1 標本あたりの角度 ωT と減衰 e^{−σT}（音の高さを変えるときに、回す量を求め直す） */
+  wt: Float64Array;
+  et: Float64Array;
   /** 消している途中なら 1 標本あたりに掛ける値（1 なら消さない） */
   fade = 1;
+  /** これまでに掛けた、消すための値の積 */
+  fa = 1;
+  /** 今の音の高さの比 */
+  rho = 1;
+  /** 弾いてからの標本の数 */
+  age = 0;
+  vib: VibSpec | null;
   constructor(
     p: PluckMsg,
     fs: number,
@@ -85,6 +114,9 @@ class Voice {
     this.mr = new Float64Array(n2);
     this.mi = new Float64Array(n2);
     this.pol = new Uint8Array(n2);
+    this.wt = new Float64Array(n2);
+    this.et = new Float64Array(n2);
+    this.vib = p.vib ?? null;
     let k = 0;
     for (let i = 0; i < n2; i++) {
       if (Math.abs(p.f[i]) < FLOOR || p.w[i] * T > Math.PI * 0.95) continue;
@@ -94,6 +126,8 @@ class Voice {
       this.mr[k] = e * Math.cos(p.w[i] * T);
       this.mi[k] = e * Math.sin(p.w[i] * T);
       this.pol[k] = i < p.N ? 0 : 1;
+      this.wt[k] = p.w[i] * T;
+      this.et[k] = e;
       k++;
     }
     this.n = k;
@@ -102,7 +136,7 @@ class Voice {
   /** 小さくなったモードを外す */
   prune(): void {
     let k = 0;
-    const { zr, zi, mr, mi, pol } = this;
+    const { zr, zi, mr, mi, pol, wt, et } = this;
     for (let i = 0; i < this.n; i++) {
       if (zr[i] * zr[i] + zi[i] * zi[i] < FLOOR * FLOOR) continue;
       zr[k] = zr[i];
@@ -110,9 +144,33 @@ class Voice {
       mr[k] = mr[i];
       mi[k] = mi[i];
       pol[k] = pol[i];
+      wt[k] = wt[i];
+      et[k] = et[i];
       k++;
     }
     this.n = k;
+  }
+  /** 曲のビブラートによる音の高さの比（fs は標本化周波数） */
+  vibAt(fs: number): number {
+    const v = this.vib;
+    if (!v) return 1;
+    const t = this.age / fs;
+    if (t <= v.t0) return 1;
+    const a = Math.min(1, (t - v.t0) / VIB_IN) * (t > v.t1 ? Math.max(0, 1 - (t - v.t1) / VIB_OUT) : 1),
+      ph = 2 * Math.PI * v.hz * (t - v.t0),
+      c = v.up ? (v.cent * a * (1 - Math.cos(ph))) / 2 : ((v.cent * a) / 2) * Math.sin(ph);
+    return 2 ** (c / 1200);
+  }
+  /** 回す量を、音の高さの比 rho と消すための値から求め直す */
+  retune(rho: number): void {
+    const { mr, mi, wt, et, fa } = this;
+    for (let k = 0; k < this.n; k++) {
+      const e = et[k] * fa,
+        a = wt[k] * rho;
+      mr[k] = e * Math.cos(a);
+      mi[k] = e * Math.sin(a);
+    }
+    this.rho = rho;
   }
 }
 
@@ -179,6 +237,9 @@ export class Engine {
   /* 作業用（1 つの弦の力） */
   private vf = new Float64Array(128);
   private hf = new Float64Array(128);
+  /** 弦ごとの、左手で動かした音の高さの比（目標と、ならした今の値） */
+  private readonly bendT = [1, 1, 1, 1, 1, 1];
+  private readonly bendC = [1, 1, 1, 1, 1, 1];
 
   /** stereo なら 2 チャンネル（左・右）を出す */
   constructor(
@@ -280,6 +341,11 @@ export class Engine {
     for (const v of this.voices) if (v.si === si && (!id || v.id === id)) v.fade = Math.min(v.fade, g);
   }
 
+  /** 弦 si の音の高さを、左手で動かした比 r にする（少しならして追う） */
+  bend(si: number, r: number): void {
+    this.bendT[si] = r;
+  }
+
   /** すべての弦を止める */
   dampAll(tau = DAMP_S): void {
     for (let s = 0; s < 6; s++) this.damp(s, tau);
@@ -303,16 +369,22 @@ export class Engine {
       c.fh.fill(0, 0, len);
       c.pr.fill(0, 0, len);
     }
+    /* 左手で動かした音の高さを、ならして追う */
+    const kb = 1 - Math.exp(-len / (BEND_S * this.fs));
+    for (let s = 0; s < 6; s++) {
+      const d = this.bendT[s] - this.bendC[s];
+      this.bendC[s] = Math.abs(d) < 1e-7 ? this.bendT[s] : this.bendC[s] + kb * d;
+    }
     /* 弦 → 駒の力（弦ごとに、チャンネルの重みを掛けて足す） */
     for (const v of this.voices) {
-      const { zr, zi, mr, mi, pol } = v;
+      const { zr, zi, mr, mi, pol } = v,
+        rho = this.bendC[v.si] * v.vibAt(this.fs);
+      v.age += len;
       if (v.fade < 1) {
-        for (let k = 0; k < v.n; k++) {
-          mr[k] *= v.fade;
-          mi[k] *= v.fade;
-        }
+        v.fa *= v.fade;
         v.fade = 1;
-      }
+        v.retune(rho);
+      } else if (Math.abs(rho - v.rho) > 1e-9) v.retune(rho);
       vf.fill(0, 0, len);
       hf.fill(0, 0, len);
       for (let k = 0; k < v.n; k++) {

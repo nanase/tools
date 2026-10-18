@@ -20,6 +20,8 @@ export type GtMsg =
   | { type: 'room'; r: ReverbSpec }
   | { type: 'pluck'; at: number; p: PluckMsg; pan: number; id: number }
   | { type: 'damp'; at: number; si: number; tau: number; id: number }
+  /* 左手で弦を動かした音の高さの比（弦ごと） */
+  | { type: 'bend'; at: number; si: number; r: number }
   | { type: 'noise'; at: number; si: number; buf: Float32Array; pan: number }
   | { type: 'stop'; tau: number }
   /* 予定も、鳴っている音も、残響もすぐ消す（一時停止の間に止めたとき） */
@@ -61,6 +63,7 @@ registerProcessor(
     private fire(m: Ev): void {
       if (m.type === 'pluck') this.e.pluck(m.p, m.pan, m.id);
       else if (m.type === 'damp') this.e.damp(m.si, m.tau, m.id);
+      else if (m.type === 'bend') this.e.bend(m.si, m.r);
       else this.e.noise(m.si, m.buf, m.pan);
     }
     process(_in: Float32Array[][], outputs: Float32Array[][]): boolean {
