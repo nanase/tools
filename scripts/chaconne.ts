@@ -4,11 +4,11 @@
  *
  * chaconne.mid の音（どのトラック・チャンネルでもよい）の高さ・時刻・長さを使い、弦とフレットは
  * このツールの運指（score.ts の finger、標準の調弦）で付ける。時刻と長さは 4 分音符の 1/480 に丸める（和音をずらして弾く細かい時刻も残す）。
- * テンポは、MIDI に変化があれば、最初の値に対する比として TEMPO に入れる。ベロシティは、MIDI に 2 つ以上の値があれば
+ * テンポは、MIDI に変化があれば、ページの標準のテンポ（score.ts の bpm）に対する比として TEMPO に入れる（MIDI の値のとおりに鳴る）。ベロシティは、MIDI に 2 つ以上の値があれば
  * 音符に入れる（弾く強さになる）。どちらも、Mutopia から作ったままの MIDI にはない（MIDI を編集して付ける）
  */
 import { readFileSync, writeFileSync } from 'node:fs';
-import { finger } from '../src/tools/guitar/score';
+import { finger, PIECES } from '../src/tools/guitar/score';
 import { noteName, setOf, tuningOf } from '../src/tools/guitar/strings';
 import { readMidi, tempoSteps } from './score-midi';
 
@@ -87,8 +87,8 @@ for (const x of notes) {
   data += enc(x.t - prev, 3) + enc(x.d, 3) + enc(x.n - 40, 1) + enc(x.s * 24 + x.f, 2) + (hasVel ? enc(x.v, 2) : '');
   prev = x.t;
 }
-/* テンポの変化（最初のテンポに対する比。最初のテンポがなければ MIDI の既定の ♩ = 120） */
-const base = midi.tempo[0]?.t === 0 ? midi.tempo[0].us : 500000,
+/* テンポの変化（ページの標準のテンポに対する比） */
+const base = 60e6 / (PIECES.find((p) => p.v === 'bwv1004')?.bpm ?? 60),
   tempo = tempoSteps(
     midi.tempo.map((x) => [q(x.t), Math.round((base / x.us) * 10000) / 10000]),
     null,
