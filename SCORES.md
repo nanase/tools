@@ -127,7 +127,7 @@ L. v. ベートーヴェン「ピアノ・ソナタ 第 14 番 嬰ハ短調 作�
 - 出典: [Mutopia Project の楽譜](https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=276)（Mutopia-2007/02/11-276）
 - 入力: Stewart Holmes。第 3 楽章は Chris Sawer と Stewart Holmes
 - ライセンス: [CC BY-SA 2.5](https://creativecommons.org/licenses/by-sa/2.5/)
-- 加工: 第 3 楽章の `.mid` は、演奏の表情を MIDI の編集で付けられるように直したもの。反復を演奏順に展開し、元の MIDI で崩れていたカデンツァを組み直している
+- 加工: 第 3 楽章の `.mid` は、反復を演奏順に展開し、元の MIDI で崩れていたカデンツァを組み直したもの。ベロシティとテンポの変化は、楽譜の強弱記号から付けた下地をもとに MIDI を編集して付けている
 
 ### 幻想即興曲 嬰ハ短調 作品 66
 

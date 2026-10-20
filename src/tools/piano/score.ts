@@ -170,11 +170,11 @@ export const PIECES: readonly Piece[] = [
     name: '月光 第 3 楽章',
     by: 'L. v. ベートーヴェン（ピアノ・ソナタ第 14 番 嬰ハ短調 Op. 27 No. 2）',
     bpm: 168,
-    tempo: 'Presto agitato（♩ = 168）',
+    tempo: 'Presto agitato（♩ = 168。MIDI に付けたテンポの変化に従う）',
     bar: 4,
     pickup: 0,
     lv: 0.8,
-    /* 反復を展開した小節 251 のカデンツァ（♩ = 92.4）、252〜253 の Adagio（♩ = 58.8）は MIDI のテンポにある */
+    /* テンポの変化（反復を展開した小節 251 のカデンツァ、252〜253 の Adagio を含む）は、MIDI を編集して付けてある */
     tempoMap: [],
     load: () => import('./scores/moonlight3').then(data),
   },
