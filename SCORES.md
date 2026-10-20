@@ -15,6 +15,9 @@
 | [グノシエンヌ 第 2 番](#グノシエンヌ-第-2-番) | ピアノ | CC BY-SA 4.0 |
 | [グノシエンヌ 第 3 番](#グノシエンヌ-第-3-番) | ピアノ | CC BY-SA 4.0 |
 | [月光 第 1〜3 楽章](#月光-第-13-楽章) | ピアノ | CC BY-SA 2.5 |
+| [幻想即興曲 嬰ハ短調 作品 66](#幻想即興曲-嬰ハ短調-作品-66) | ピアノ | CC0 |
+| [ラ・カンパネラ](#ラカンパネラ) | ピアノ | CC0 |
+| [水の戯れ](#水の戯れ) | ピアノ | CC0 |
 | [トッカータとフーガ ニ短調 BWV 565](#トッカータとフーガ-ニ短調-bwv-565) | オルガン | CC0 |
 | [フーガ ト短調 BWV 578](#フーガ-ト短調-bwv-578) | オルガン | CC BY-SA 4.0 |
 | [パッサカリアとフーガ ハ短調 BWV 582](#パッサカリアとフーガ-ハ短調-bwv-582) | オルガン | パブリックドメイン |
@@ -123,6 +126,34 @@ L. v. ベートーヴェン「ピアノ・ソナタ 第 14 番 嬰ハ短調 作�
 - 出典: [Mutopia Project の楽譜](https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=276)（Mutopia-2007/02/11-276）
 - 入力: Stewart Holmes。第 3 楽章は Chris Sawer と Stewart Holmes
 - ライセンス: [CC BY-SA 2.5](https://creativecommons.org/licenses/by-sa/2.5/)
+- 加工: 第 3 楽章の `.mid` は、演奏の表情を MIDI の編集で付けられるように直したもの。反復を演奏順に展開し、元の MIDI で崩れていたカデンツァを組み直している
+
+### 幻想即興曲 嬰ハ短調 作品 66
+
+F. ショパン作曲。
+
+- ファイル: [fantaisie.mid](src/tools/piano/scores/fantaisie.mid)、[fantaisie.ts](src/tools/piano/scores/fantaisie.ts)
+- 出典: [MuseScore の楽譜](https://musescore.com/user/33306646/scores/6219891)の MIDI。[PDMX](https://zenodo.org/records/15571083)（Long ほか 2024）に収録されたもの
+- 作成: venson72150
+- ライセンス: [CC0](https://creativecommons.org/publicdomain/zero/1.0/)
+
+### ラ・カンパネラ
+
+F. リスト「パガニーニによる大練習曲」S. 141 より 第 3 番 嬰ト短調。
+
+- ファイル: [campanella.mid](src/tools/piano/scores/campanella.mid)、[campanella.ts](src/tools/piano/scores/campanella.ts)
+- 出典: [MuseScore の楽譜](https://musescore.com/user/33306646/scores/6225893)の MIDI。[PDMX](https://zenodo.org/records/15571083)（Long ほか 2024）に収録されたもの
+- 作成: venson72150
+- ライセンス: [CC0](https://creativecommons.org/publicdomain/zero/1.0/)
+
+### 水の戯れ
+
+M. ラヴェル作曲。
+
+- ファイル: [jeuxdeau.mid](src/tools/piano/scores/jeuxdeau.mid)、[jeuxdeau.ts](src/tools/piano/scores/jeuxdeau.ts)
+- 出典: [MuseScore の楽譜](https://musescore.com/user/33306646/scores/6323707)の MIDI。[PDMX](https://zenodo.org/records/15571083)（Long ほか 2024）に収録されたもの
+- 作成: venson72150
+- ライセンス: [CC0](https://creativecommons.org/publicdomain/zero/1.0/)
 
 ## オルガン音響モデル
 

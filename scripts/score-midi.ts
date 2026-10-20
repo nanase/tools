@@ -156,6 +156,11 @@ export interface Piece {
    * （changes）に書いておく。指定しない曲は、変化があれば入れ、テンポと強弱の扱いを加工の段落の終わりに自動で書き足す
    */
   tempo?: boolean;
+  /**
+   * テンポの比の基準（ページの標準のテンポ、♩/分）。指定すると、MIDI の最初の値を変えても MIDI の値のとおりに鳴る
+   * （MIDI を編集してテンポを付ける曲）。指定しなければ MIDI の最初の値
+   */
+  bpm?: number;
   /** 曲ごとの手直し。readMidi の結果を受け取り、使う音（時刻は tick）を返す */
   fix?: (m: Midi, log: (s: string) => void) => RawNote[];
   /**
@@ -484,16 +489,21 @@ export function build(p: Piece, k: Kind): void {
   }
   if (overlap) log(`同じ鍵で前の音が鳴っているうちに始まる音 ${overlap} 個（そのまま残す）`);
 
-  /* テンポの変化（最初のテンポに対する比。反復を展開した曲は、演奏順の拍に直す）。最初のテンポがなければ MIDI の既定の ♩ = 120 */
+  /*
+   * テンポの変化（基本のテンポに対する比。反復を展開した曲は、演奏順の拍に直す）。基本は bpm か MIDI の最初の値で、
+   * どちらもなければ MIDI の既定の ♩ = 120
+   */
   if (p.tempo && m.tempo[0]?.t !== 0) throw new Error(`${p.name}: 最初のテンポがありません`);
-  const base = m.tempo[0]?.t === 0 ? m.tempo[0].us : 500000,
+  const base = p.bpm ? 60e6 / p.bpm : m.tempo[0]?.t === 0 ? m.tempo[0].us : 500000,
     baseBpm = +(60e6 / base).toFixed(2),
     tempo = tempoSteps(
       m.tempo.map((x) => [snap(x.t), Math.round((base / x.us) * 10000) / 10000]),
       played,
     ).map(([t, r]): [number, number] => [t / DIV, r]);
   if (p.tempo || tempo.length)
-    log(`基本のテンポ ♩ = ${baseBpm}（MIDI の最初の値）${tempo.length ? `、変化 ${tempo.length} 個` : ''}`);
+    log(
+      `基本のテンポ ♩ = ${baseBpm}（${p.bpm ? 'ページの標準' : 'MIDI の最初の値'}）${tempo.length ? `、変化 ${tempo.length} 個` : ''}`,
+    );
 
   /* テンポと強弱の扱い（tempo を指定しない曲は、加工の段落の終わりに書き足す。短ければ最後の行に続ける） */
   const changes = [...p.changes];

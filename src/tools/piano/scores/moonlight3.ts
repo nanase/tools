@@ -5,12 +5,16 @@
  * 音符は Mutopia Project の楽譜（Stewart Holmes 作成、第 3 楽章の .ly の表記では Chris Sawer と Stewart Holmes の
  * 浄書、底本 Berners, 1908 (edited by A. Winterberger)、Mutopia-2007/02/11-276、
  * https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=276）の MIDI から変換した。
- * 変更: 提示部の反復を展開した（小節 1〜65、2〜64、66〜201。小節 1 は反復の外で、第 1 括弧の小節 65 は小節 1 に
+ * 変更: 演奏の表情を MIDI の編集で付けられるように、元の MIDI を次のように直した MIDI（moonlight3.mid）から作る。
+ * 提示部の反復を展開した（小節 1〜65、2〜64、66〜201。小節 1 は反復の外で、第 1 括弧の小節 65 は小節 1 に
  * 和音を加えた形、反復は小節 2 に戻る。66 が第 2 括弧）。
- * MIDI では小節 188 のカデンツァ（装飾音の 30 音）の時刻が崩れ、そのあとの右手の譜表が 0.7135 拍遅れていたので、
+ * 元の MIDI では小節 188 のカデンツァ（装飾音の 30 音）の時刻が崩れ、そのあとの右手の譜表が 0.7135 拍遅れていたので、
  * 遅れを戻し、カデンツァを .ly の音の並びで組み直した（トリルの A5 を 1 拍、8 分音符の装飾音を 1/12 拍、
  * 4 分音符の装飾音を 1/4 拍）。
- * 時刻と長さを 4 分音符の 1/480 に寄せ、同じ時刻の同じ高さの音を 1 つにまとめた。強弱とテンポは使わない。
+ * 時刻と長さを 4 分音符の 1/480 に寄せ、同じ時刻の同じ高さの音を 1 つにまとめた。
+ * テンポは Presto agitato の ♩ = 168 で、カデンツァ（♩ = 92.4）と続く Adagio（♩ = 58.8）を入れた。
+ * 同じ高さの長い音の中で打つ左手の譜表の音（カデンツァの G#3）は、ノートオフの対応が崩れないように別のトラックに分けた。
+ * 強弱は使わない。テンポは、MIDI の変化（♩ = 168 が基本）を、基本に対する比として TEMPO に入れた。
  *
  * このファイルと moonlight3.mid は原作と同じ Creative Commons Attribution-ShareAlike 2.5 Generic
  * （https://creativecommons.org/licenses/by-sa/2.5/）で公開する。リポジトリのほかのファイルの MIT ライセンスは適用しない。
@@ -565,9 +569,13 @@ const A = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
 const v = (s: string) => [...s].reduce((x, c) => x * 64 + A.indexOf(c), 0);
 
 /** テンポの変化: [拍, 基本のテンポに対する比]。最初の項より前の比は 1 */
-export const TEMPO: readonly [number, number][] = [];
+export const TEMPO: readonly [number, number][] = [
+  [1000, 0.55],
+  [1004, 0.35],
+  [1012, 1],
+];
 
-/** 音符（6462 音、264 小節。4/4 拍子） */
+/** 音符（6462 音、263 小節と 1 拍。4/4 拍子） */
 export function notes(): ScoreNote[] {
   const out: ScoreNote[] = [];
   let t = 0;

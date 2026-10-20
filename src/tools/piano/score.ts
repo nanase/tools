@@ -10,12 +10,19 @@ export type { ScoreNote };
 /** 曲のデータ */
 export interface PieceData {
   notes: ScoreNote[];
-  /** MIDI のテンポの変化 [拍, 最初のテンポに対する比]（変化のない MIDI では空） */
+  /** MIDI のテンポの変化 [拍, 標準のテンポに対する比]（変化のない MIDI では空） */
   tempo: readonly (readonly [number, number])[];
+  /** 拍子の変化 [拍, 1 小節の拍の数]（拍子の変わる曲だけ。なければ Piece.bar） */
+  meter?: readonly (readonly [number, number])[];
 }
-const data = (m: { notes: () => ScoreNote[]; TEMPO: readonly (readonly [number, number])[] }): PieceData => ({
+const data = (m: {
+  notes: () => ScoreNote[];
+  TEMPO: readonly (readonly [number, number])[];
+  METER?: readonly (readonly [number, number])[];
+}): PieceData => ({
   notes: m.notes(),
   tempo: m.TEMPO,
+  meter: m.METER,
 });
 
 export interface Piece {
@@ -163,13 +170,46 @@ export const PIECES: readonly Piece[] = [
     bar: 4,
     pickup: 0,
     lv: 1.1,
-    /* 反復を展開した小節 251 のカデンツァはゆっくり、252〜253 は Adagio、254 から Tempo I */
-    tempoMap: [
-      [1000, 0.55],
-      [1004, 0.35],
-      [1012, 1],
-    ],
+    /* 反復を展開した小節 251 のカデンツァ（♩ = 92.4）、252〜253 の Adagio（♩ = 58.8）は MIDI のテンポにある */
+    tempoMap: [],
     load: () => import('./scores/moonlight3').then(data),
+  },
+  /* MuseScore の楽譜の MIDI。投稿者が付けたテンポの変化とベロシティで弾く */
+  {
+    v: 'fantaisie',
+    name: '幻想即興曲',
+    by: 'F. ショパン（幻想即興曲 嬰ハ短調 Op. 66）',
+    bpm: 162,
+    tempo: 'Allegro agitato（♩ = 162。楽譜のデータのテンポの変化に従う）',
+    bar: 4,
+    pickup: 0,
+    lv: 0.9,
+    tempoMap: [],
+    load: () => import('./scores/fantaisie').then(data),
+  },
+  {
+    v: 'campanella',
+    name: 'ラ・カンパネラ',
+    by: 'F. リスト（パガニーニによる大練習曲 第 3 番 嬰ト短調）',
+    bpm: 108,
+    tempo: 'Allegretto（♩ = 108。楽譜のデータのテンポの変化に従う）',
+    bar: 3,
+    pickup: 0,
+    lv: 0.85,
+    tempoMap: [],
+    load: () => import('./scores/campanella').then(data),
+  },
+  {
+    v: 'jeux',
+    name: '水の戯れ',
+    by: 'M. ラヴェル',
+    bpm: 72,
+    tempo: 'Très doux（♩ = 72。楽譜のデータのテンポの変化に従う）',
+    bar: 4,
+    pickup: 0,
+    lv: 0.6,
+    tempoMap: [],
+    load: () => import('./scores/jeuxdeau').then(data),
   },
 ];
 export const pieceOf = (v: string): Piece => PIECES.find((p) => p.v === v) ?? PIECES[0];
