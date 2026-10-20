@@ -12,8 +12,9 @@ import { acoustics, reverbSpec, roomOf } from '../../lib/reverb';
 import { SW } from '../../lib/scope';
 import { store, stored } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
-import { evenLine, type Line, Transport } from '../../lib/transport';
+import { evenLine, type Line, Transport, tableLine } from '../../lib/transport';
 import { C, cabs } from '../guitar/body';
+import { barStarts } from '../organ/score';
 import { spectra, toDb } from '../spectrum/fft';
 import { PianoAudio } from './audio';
 import { type BoardDesc, boardDesc } from './engine';
@@ -671,9 +672,14 @@ async function loadPiece(pc: Piece): Promise<PieceData | null> {
   }
   return data;
 }
+/** 曲の小節（拍子の変わる曲は、拍子の変化に従う） */
 const lineOf = (pc: Piece, d: PieceData): Line => {
-  const tm = new TempoMap(tempoOf(pc, d));
-  return evenLine({ bar: pc.bar, pickup: pc.pickup, end: endOf(d), sec: (b) => (tm.tau(b) * 60) / pc.bpm });
+  const tm = new TempoMap(tempoOf(pc, d)),
+    end = endOf(d),
+    sec = (b: number) => (tm.tau(b) * 60) / pc.bpm;
+  return d.meter
+    ? tableLine({ starts: barStarts(d.meter, pc.pickup, end), end, sec })
+    : evenLine({ bar: pc.bar, pickup: pc.pickup, end, sec });
 };
 /** 選んだ曲を読み込んで、演奏の位置の欄に小節を描く */
 async function showLine(): Promise<void> {
@@ -708,7 +714,7 @@ async function startPiece(bar = 1): Promise<void> {
   for (const k of S.held) lift(k);
   audio.pedal(false);
   keys.setPedal(false);
-  const ev = playEvents(pc, data.notes, VEL.v, ped.value),
+  const ev = playEvents(pc, data.notes, VEL.v, ped.value, data.pedal),
     now = audio.now() ?? 0,
     tm = new TempoMap(tempoOf(pc, data)),
     /* 途中から弾くときは、その小節の頭より前の出来事を飛ばし、ペダルだけはその時点の状態にする */

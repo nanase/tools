@@ -10,12 +10,23 @@ export type { ScoreNote };
 /** 曲のデータ */
 export interface PieceData {
   notes: ScoreNote[];
-  /** MIDI のテンポの変化 [拍, 最初のテンポに対する比]（変化のない MIDI では空） */
+  /** MIDI のテンポの変化 [拍, 標準のテンポに対する比]（変化のない MIDI では空） */
   tempo: readonly (readonly [number, number])[];
+  /** 拍子の変化 [拍, 1 小節の拍の数]（拍子の変わる曲だけ。なければ Piece.bar） */
+  meter?: readonly (readonly [number, number])[];
+  /** 演奏の記録のダンパーペダル [拍, 1 = 踏む・0 = 離す]（記録のある曲だけ） */
+  pedal?: readonly (readonly [number, number])[];
 }
-const data = (m: { notes: () => ScoreNote[]; TEMPO: readonly (readonly [number, number])[] }): PieceData => ({
+const data = (m: {
+  notes: () => ScoreNote[];
+  TEMPO: readonly (readonly [number, number])[];
+  METER?: readonly (readonly [number, number])[];
+  PEDAL?: readonly (readonly [number, number])[];
+}): PieceData => ({
   notes: m.notes(),
   tempo: m.TEMPO,
+  meter: m.METER,
+  pedal: m.PEDAL,
 });
 
 export interface Piece {
@@ -159,17 +170,66 @@ export const PIECES: readonly Piece[] = [
     name: '月光 第 3 楽章',
     by: 'L. v. ベートーヴェン（ピアノ・ソナタ第 14 番 嬰ハ短調 Op. 27 No. 2）',
     bpm: 168,
-    tempo: 'Presto agitato（♩ = 168）',
+    tempo: 'Presto agitato（♩ = 168。MIDI に付けたテンポの変化に従う）',
     bar: 4,
     pickup: 0,
-    lv: 1.1,
-    /* 反復を展開した小節 251 のカデンツァはゆっくり、252〜253 は Adagio、254 から Tempo I */
-    tempoMap: [
-      [1000, 0.55],
-      [1004, 0.35],
-      [1012, 1],
-    ],
+    lv: 0.8,
+    /* テンポの変化（反復を展開した小節 251 のカデンツァ、252〜253 の Adagio を含む）は、MIDI を編集して付けてある */
+    tempoMap: [],
     load: () => import('./scores/moonlight3').then(data),
+  },
+  /* MuseScore の楽譜の MIDI。投稿者が付けたテンポの変化とベロシティで弾く */
+  {
+    v: 'fantaisie',
+    name: '幻想即興曲',
+    by: 'F. ショパン（幻想即興曲 嬰ハ短調 Op. 66）',
+    bpm: 162,
+    tempo: 'Allegro agitato（♩ = 162。楽譜のデータのテンポの変化に従う）',
+    bar: 4,
+    pickup: 0,
+    lv: 0.9,
+    tempoMap: [],
+    load: () => import('./scores/fantaisie').then(data),
+  },
+  {
+    v: 'campanella',
+    name: 'ラ・カンパネラ',
+    by: 'F. リスト（パガニーニによる大練習曲 第 3 番 嬰ト短調）',
+    bpm: 108,
+    tempo: 'Allegretto（♩ = 108。楽譜のデータのテンポの変化に従う）',
+    bar: 3,
+    pickup: 0,
+    lv: 0.85,
+    tempoMap: [],
+    load: () => import('./scores/campanella').then(data),
+  },
+  {
+    v: 'jeux',
+    name: '水の戯れ',
+    by: 'M. ラヴェル',
+    bpm: 72,
+    tempo: 'Très doux（♩ = 72。楽譜のデータのテンポの変化に従う）',
+    bar: 4,
+    pickup: 0,
+    lv: 0.6,
+    tempoMap: [],
+    load: () => import('./scores/jeuxdeau').then(data),
+  },
+  /*
+   * ブゾーニの演奏を記録したピアノロールの MIDI。時刻は演奏のとおりで、拍と小節は楽譜と合わない（♩ = 120 で 1 小節 2 秒）。
+   * ペダルもロールの記録のとおりに踏む
+   */
+  {
+    v: 'chaconne',
+    name: 'シャコンヌ（ブゾーニ編）',
+    by: 'J. S. バッハ（無伴奏ヴァイオリンのためのパルティータ 第 2 番 ニ短調 BWV 1004）、F. ブゾーニ編曲',
+    bpm: 120,
+    tempo: 'ブゾーニの演奏のとおり（ピアノロールの記録。小節は楽譜と合わない）',
+    bar: 4,
+    pickup: 0,
+    lv: 0.9,
+    tempoMap: [],
+    load: () => import('./scores/busoni-chaconne').then(data),
   },
 ];
 export const pieceOf = (v: string): Piece => PIECES.find((p) => p.v === v) ?? PIECES[0];
@@ -253,7 +313,8 @@ export type PlayEv =
 
 /**
  * 曲の出来事: 音符の打鍵と離鍵（同じ鍵を続けて打つときは、離鍵を打鍵の少し前に）とペダル。vel は mf の
- * ハンマーの速さ [m/s]、pedal はダンパーペダル（自動・踏む・踏まない）。同じ拍なら 離鍵・ペダル → 打鍵 の順。
+ * ハンマーの速さ [m/s]、pedal はダンパーペダル（自動・踏む・踏まない）。自動は、曲に演奏の記録のペダル rec があればそのとおりに、
+ * なければ低音の変わるところで踏みかえる。同じ拍なら 離鍵・ペダル → 打鍵 の順。
  * 打鍵の v は自動のベロシティ（ハンマーの速さ [m/s]）: 曲の強弱の目安 × 楽譜の強弱 × 声部の強さ × 小さなばらつき
  */
 export function playEvents(
@@ -261,6 +322,7 @@ export function playEvents(
   notes: readonly ScoreNote[],
   vel: number,
   pedal: 'auto' | 'on' | 'off',
+  rec?: readonly (readonly [number, number])[],
 ): PlayEv[] {
   const r = rng(5),
     vo = voicing(notes),
@@ -272,13 +334,16 @@ export function playEvents(
     ev.push({ b: x.t, type: 'on', key: x.n, v, jit, i });
     ev.push({ b: x.t + x.d * 0.97, type: 'off', key: x.n });
   });
-  if (pedal !== 'off') {
+  const end = Math.max(...notes.map((x) => x.t + x.d));
+  if (pedal === 'auto' && rec) {
+    for (const [b, on] of rec) ev.push({ b, type: 'pedal', on: on === 1 });
+    if (rec[rec.length - 1]?.[1] === 1) ev.push({ b: end + 2, type: 'pedal', on: false });
+  } else if (pedal !== 'off') {
     const pts = pedal === 'on' ? [0] : pedalPoints(notes);
     for (const t of pts) {
       if (t > 0) ev.push({ b: t - 0.02, type: 'pedal', on: false });
       ev.push({ b: t + 0.12, type: 'pedal', on: true });
     }
-    const end = Math.max(...notes.map((x) => x.t + x.d));
     ev.push({ b: end + 2, type: 'pedal', on: false });
   }
   const rank = (e: PlayEv) => (e.type === 'off' ? 0 : e.type === 'pedal' ? 1 : 2);

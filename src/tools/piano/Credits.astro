@@ -1,9 +1,11 @@
 ---
 // 楽譜の出典と、各曲の標準のテンポ。グノシエンヌ（CC BY-SA 4.0）と月光（CC BY-SA 2.5）の音符は、ここに帰属を表示する
+// MuseScore の楽譜（CC0）は帰属の表示が要らないが、出所として作成者と PDMX を書く
 import { pieceOf } from './score';
 
 const tempo = (v: string) => pieceOf(v).tempo;
 const MU = 'https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=';
+const MS = 'https://musescore.com/user/33306646/scores/';
 ---
 <ul class="srcs">
   <li>
@@ -71,12 +73,39 @@ const MU = 'https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=';
     <p>MIDI から変換したあと、次のところを楽譜に合わせて直しています。</p>
     <ul class="tl">
       <li><b>第 1 楽章:</b> MIDI で落ちていた 3 連符の 2 音を、楽譜のとおりに戻した。小節 9 と 46 の E4 で、旋律の同じ高さの音と重なる</li>
-      <li><b>第 3 楽章:</b> MIDI で崩れていた終わり近くのカデンツァを楽譜の音の並びで組み直し、それ以降の右手の遅れを直した</li>
+      <li><b>第 3 楽章:</b> MIDI で崩れていた終わり近くのカデンツァを楽譜の音の並びで組み直し、それ以降の右手の遅れを直した。反復を展開して直した MIDI を元のデータにし、ベロシティとテンポの変化を MIDI の編集で付けた（ベロシティの下地は楽譜の強弱記号）。カデンツァのトリルは 64 分音符に書き下した</li>
     </ul>
   </li>
   <li>
+    <h3>幻想即興曲・ラ・カンパネラ・水の戯れ <small>F. ショパン・F. リスト・M. ラヴェル</small></h3>
+    <p>音符・テンポの変化・ベロシティは、MuseScore で CC0 として公開された楽譜（<a href={`${MS}6219891`}>幻想即興曲</a>・<a href={`${MS}6225893`}>ラ・カンパネラ</a>・<a href={`${MS}6323707`}>水の戯れ</a>）の MIDI から変換しました。MIDI は、MuseScore の CC0 とパブリックドメインの楽譜を集めたデータセット <a href="https://zenodo.org/records/15571083">PDMX</a>（Long ほか 2024）に収録されたものです。</p>
+    <ul class="tl">
+      <li><b>作成:</b> venson72150</li>
+      <li><b>曲:</b> 幻想即興曲 嬰ハ短調 Op. 66、パガニーニによる大練習曲 S. 141 第 3 番 嬰ト短調「ラ・カンパネラ」、水の戯れ M. 30</li>
+      <li><b>ライセンス:</b> <a href="https://creativecommons.org/publicdomain/zero/1.0/deed.ja">CC0 1.0</a>（このツールの音符のデータも CC0）</li>
+      <li><b>標準のテンポ:</b>
+        <ul class="tl">
+          <li>幻想即興曲: {tempo('fantaisie')}</li>
+          <li>ラ・カンパネラ: {tempo('campanella')}</li>
+          <li>水の戯れ: {tempo('jeux')}</li>
+        </ul>
+      </li>
+    </ul>
+    <p>テンポの変化とベロシティは楽譜の作成者が付けたもので、そのまま演奏に使います。MIDI のペダルは使わず、このツールの自動のペダルで踏みかえます。</p>
+  </li>
+  <li>
+    <h3>シャコンヌ（ブゾーニ編） <small>J. S. バッハ「無伴奏ヴァイオリンのためのパルティータ 第 2 番」BWV 1004 より、F. ブゾーニ編曲</small></h3>
+    <p>音符とベロシティは、<a href="https://imslp.org/wiki/Violin_Partita_No.2_in_D_minor,_BWV_1004_(Bach,_Johann_Sebastian)">IMSLP で公開された MIDI</a>（ファイル #173118）から変換しました。IMSLP の説明では、ブゾーニ自身が演奏して記録した Duo-Art のピアノロールから起こしたものです。</p>
+    <ul class="tl">
+      <li><b>作成:</b> Hammondmania（2012）</li>
+      <li><b>ライセンス:</b> <a href="https://creativecommons.org/licenses/by/3.0/deed.ja">クリエイティブ・コモンズ 表示 3.0（CC BY 3.0）</a></li>
+      <li><b>標準のテンポ:</b> {tempo('chaconne')}</li>
+    </ul>
+    <p>元の MIDI と、そこから作った音符のデータ（<a href="https://github.com/nanase/tools/tree/main/src/tools/piano/scores">src/tools/piano/scores</a> の busoni-chaconne）も CC BY 3.0 で公開します。演奏の記録なので、演奏の枠の小節は楽譜の小節と合いません（2 秒ごとに区切っています）。譜表の分かれていない MIDI なので、C4 から上を右手、下を左手として声部の強弱を付けます。ダンパーペダルは、「自動」のときロールの記録（MIDI の CC64）のとおりに踏みます。</p>
+  </li>
+  <li>
     <h3>このツールで付けたもの</h3>
-    <p>声部ごとの強弱、ダンパーペダルの踏みかえ、終わりや Adagio の部分のテンポの変化は、このツールで付けています。楽譜の MIDI のテンポは使っていません。</p>
-    <p>MIDI のベロシティは、ジムノペディだけ使っています。楽譜の強弱記号と松葉から機械的に付いた値で、強弱の幅を縮めて打鍵の速さにします。ほかの曲の MIDI は、すべての音が同じベロシティです。</p>
+    <p>声部ごとの強弱とダンパーペダルの踏みかえは、このツールで付けています（ブゾーニ編のシャコンヌのペダルはロールの記録）。終わりや Adagio の部分のテンポの変化も、Mutopia の曲ではこのツールで付けています（月光 第 3 楽章は MIDI に入れました）。</p>
+    <p>MIDI のベロシティは、ジムノペディ・月光 第 3 楽章と、MuseScore とピアノロールの曲で使っています。ジムノペディと月光 第 3 楽章は楽譜の強弱記号と松葉から機械的に付けた値です。どの曲も、強弱の幅を縮めて打鍵の速さにします。ほかの Mutopia の曲の MIDI は、すべての音が同じベロシティです。</p>
   </li>
 </ul>

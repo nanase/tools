@@ -36,6 +36,8 @@ export interface Midi {
   cc: Map<number, number>;
   /** プログラムチェンジ。時刻は tick */
   programs: { t: number; tr: number; prog: number }[];
+  /** ダンパーペダル（CC64。64 以上で踏む）。時刻は tick */
+  pedal: { t: number; on: boolean }[];
 }
 
 /** SMF を読み、すべてのトラックの音（時刻は tick）とテンポ・拍子を返す */
@@ -61,7 +63,7 @@ export function readMidi(buf: Uint8Array): Midi {
     ppq = u16();
   if (ppq & 0x8000) throw new Error('SMPTE の時間単位には対応していません');
   p = h0 + hl;
-  const m: Midi = { ppq, notes: [], tempo: [], meter: [], names: [], cc: new Map(), programs: [] };
+  const m: Midi = { ppq, notes: [], tempo: [], meter: [], names: [], cc: new Map(), programs: [], pedal: [] };
   for (let k = 0; k < ntr; k++) {
     if (tag() !== 'MTrk') throw new Error(`トラック ${k} が壊れています`);
     const end = u32() + p;
@@ -102,8 +104,10 @@ export function readMidi(buf: Uint8Array): Midi {
       } else if (ty === 0x80 || ty === 0x90) {
         const o = on.get(key)?.shift();
         if (o) m.notes.push({ tr: k, n: a, t0: o[0], t1: t, v: o[1] });
-      } else if (ty === 0xb0) m.cc.set(a, (m.cc.get(a) ?? 0) + 1);
-      else if (ty === 0xc0) m.programs.push({ t, tr: k, prog: a });
+      } else if (ty === 0xb0) {
+        m.cc.set(a, (m.cc.get(a) ?? 0) + 1);
+        if (a === 64) m.pedal.push({ t, on: b >= 64 });
+      } else if (ty === 0xc0) m.programs.push({ t, tr: k, prog: a });
     }
     p = end;
   }
@@ -122,9 +126,11 @@ export interface Piece {
   source: string[];
   /** 加工の段落（行に分けたもの） */
   changes: string[];
-  license: 'pd' | 'cc-by-sa-2.5' | 'cc-by-sa-4.0' | 'cc0';
+  license: 'pd' | 'cc-by-3.0' | 'cc-by-sa-2.5' | 'cc-by-sa-4.0' | 'cc0';
   /** 使うトラックと、その譜表・鍵盤（h）: [トラックの番号, h] */
   tracks: [number, number][];
+  /** 譜表のない演奏の MIDI の音を、この高さ以上は h = 0、未満は h = 1 に分ける（tracks の h の代わり） */
+  split?: number;
   /** 拍子 [分子, 分母]。曲の途中で変わらないこと（meters のときは最初の拍子） */
   meter: [number, number];
   /** 曲の途中の拍子の変化を許し、METER（[拍, 1 小節の拍の数]）に書く */
@@ -156,8 +162,20 @@ export interface Piece {
    * （changes）に書いておく。指定しない曲は、変化があれば入れ、テンポと強弱の扱いを加工の段落の終わりに自動で書き足す
    */
   tempo?: boolean;
+  /**
+   * テンポの比の基準（ページの標準のテンポ、♩/分）。指定すると、MIDI の最初の値を変えても MIDI の値のとおりに鳴る
+   * （MIDI を編集してテンポを付ける曲）。指定しなければ MIDI の最初の値
+   */
+  bpm?: number;
   /** 曲ごとの手直し。readMidi の結果を受け取り、使う音（時刻は tick）を返す */
   fix?: (m: Midi, log: (s: string) => void) => RawNote[];
+  /** 最初の音の前の無音を除く（音・テンポ・ペダルを、最初の音が 0 拍になるようにずらす） */
+  trim?: boolean;
+  /**
+   * MIDI のダンパーペダル（CC64）を PEDAL（[拍, 1 = 踏む・0 = 離す]）に書く（演奏を記録した MIDI）。
+   * 反復を展開する曲には使えない
+   */
+  pedal?: boolean;
   /**
    * 時刻と長さを寄せて前打音を切ったあと（同じ音をまとめ、反復を展開する前）の音符の手直し（装飾の展開など）。
    * 時刻は 1/DIV 拍で、反復を展開する前の時刻
@@ -276,6 +294,11 @@ const LICENSE = {
     url: 'https://creativecommons.org/publicdomain/zero/1.0/',
     spdx: 'CC0-1.0',
   },
+  'cc-by-3.0': {
+    name: 'Creative Commons Attribution 3.0 Unported',
+    url: 'https://creativecommons.org/licenses/by/3.0/',
+    spdx: 'CC-BY-3.0',
+  },
   'cc-by-sa-2.5': {
     name: 'Creative Commons Attribution-ShareAlike 2.5 Generic',
     url: 'https://creativecommons.org/licenses/by-sa/2.5/',
@@ -288,6 +311,21 @@ const LICENSE = {
   },
 };
 
+/** 最初の音が 0 tick になるように、音・テンポ・拍子・ペダルをずらす（それより前の変化は 0 tick にまとめる） */
+function trimMidi(m: Midi, log: (s: string) => void): Midi {
+  const t0 = Math.min(...m.notes.map((x) => x.t0)),
+    at = (t: number) => Math.max(0, t - t0);
+  log(`最初の音の前の ${+(t0 / m.ppq).toFixed(3)} 拍を除いた`);
+  return {
+    ...m,
+    notes: m.notes.map((x) => ({ ...x, t0: x.t0 - t0, t1: x.t1 - t0 })),
+    tempo: m.tempo.map((x) => ({ ...x, t: at(x.t) })),
+    meter: m.meter.map((x) => ({ ...x, t: at(x.t) })),
+    programs: m.programs.map((x) => ({ ...x, t: at(x.t) })),
+    pedal: m.pedal.map((x) => ({ ...x, t: at(x.t) })),
+  };
+}
+
 /** 1 曲の .ts を作る。<name>.mid がなければ警告を出して飛ばす */
 export function build(p: Piece, k: Kind): void {
   const src = new URL(`${p.name}.mid`, k.dir),
@@ -296,9 +334,10 @@ export function build(p: Piece, k: Kind): void {
     console.warn(`skip ${k.path}/${p.name}.ts: ${k.path}/${p.name}.mid がありません`);
     return;
   }
-  const m = readMidi(readFileSync(src)),
-    msgs: string[] = [],
-    log = (s: string) => msgs.push(s);
+  const msgs: string[] = [],
+    log = (s: string) => msgs.push(s),
+    m = p.trim ? trimMidi(readMidi(readFileSync(src)), log) : readMidi(readFileSync(src));
+  if (p.pedal && p.order) throw new Error(`${p.name}: 反復を展開する曲のペダルは書けません`);
   const bar = (p.meter[0] * 4) / p.meter[1];
   /* 拍子は曲の途中で変わらず、設定と同じであること（meters なら変化を [拍, 1 小節の拍の数] の列にする） */
   const meters: [number, number][] = [[0, bar]];
@@ -314,7 +353,7 @@ export function build(p: Piece, k: Kind): void {
     if (x.num !== p.meter[0] || x.den !== p.meter[1])
       throw new Error(`${p.name}: MIDI の拍子 ${x.num}/${x.den}（${x.t / m.ppq} 拍）が設定と違います`);
   }
-  if (m.cc.get(64)) log(`CC64（ペダル）が ${m.cc.get(64)} 個あるが使わない`);
+  if (m.cc.get(64) && !p.pedal) log(`CC64（ペダル）が ${m.cc.get(64)} 個あるが使わない`);
 
   /* 拍の位置を小節と拍で表す（展開前・展開後のどちらの時刻にも使う）。拍子が変わるときは、変わった拍から数え直す */
   const barAt = (beat: number): [number, number] => {
@@ -358,7 +397,7 @@ export function build(p: Piece, k: Kind): void {
   if (rawVel) log(`ベロシティ ${Math.min(...vs0)}〜${Math.max(...vs0)}（MIDI の値をそのまま入れた）`);
   let ns: Note[] = [];
   for (const x of raw) {
-    const h = hOf.get(x.tr);
+    const h = hOf.has(x.tr) && p.split !== undefined ? (x.n >= p.split ? 0 : 1) : hOf.get(x.tr);
     if (h === undefined) continue;
     const t = snap(x.t0);
     ns.push({
@@ -484,16 +523,21 @@ export function build(p: Piece, k: Kind): void {
   }
   if (overlap) log(`同じ鍵で前の音が鳴っているうちに始まる音 ${overlap} 個（そのまま残す）`);
 
-  /* テンポの変化（最初のテンポに対する比。反復を展開した曲は、演奏順の拍に直す）。最初のテンポがなければ MIDI の既定の ♩ = 120 */
+  /*
+   * テンポの変化（基本のテンポに対する比。反復を展開した曲は、演奏順の拍に直す）。基本は bpm か MIDI の最初の値で、
+   * どちらもなければ MIDI の既定の ♩ = 120
+   */
   if (p.tempo && m.tempo[0]?.t !== 0) throw new Error(`${p.name}: 最初のテンポがありません`);
-  const base = m.tempo[0]?.t === 0 ? m.tempo[0].us : 500000,
+  const base = p.bpm ? 60e6 / p.bpm : m.tempo[0]?.t === 0 ? m.tempo[0].us : 500000,
     baseBpm = +(60e6 / base).toFixed(2),
     tempo = tempoSteps(
       m.tempo.map((x) => [snap(x.t), Math.round((base / x.us) * 10000) / 10000]),
       played,
     ).map(([t, r]): [number, number] => [t / DIV, r]);
   if (p.tempo || tempo.length)
-    log(`基本のテンポ ♩ = ${baseBpm}（MIDI の最初の値）${tempo.length ? `、変化 ${tempo.length} 個` : ''}`);
+    log(
+      `基本のテンポ ♩ = ${baseBpm}（${p.bpm ? 'ページの標準' : 'MIDI の最初の値'}）${tempo.length ? `、変化 ${tempo.length} 個` : ''}`,
+    );
 
   /* テンポと強弱の扱い（tempo を指定しない曲は、加工の段落の終わりに書き足す。短ければ最後の行に続ける） */
   const changes = [...p.changes];
@@ -511,6 +555,17 @@ export function build(p: Piece, k: Kind): void {
     log(
       `プログラムチェンジ ${reg.length} 個（番号 ${[...new Set(reg.map((x) => x[1]))].sort((a, b) => a - b).join('・')}）`,
     );
+
+  /* ダンパーペダル（状態の変わる点だけ。同じ時刻なら後ろのもの） */
+  const pedal: [number, number][] = [];
+  if (p.pedal)
+    for (const x of m.pedal) {
+      const b = snap(x.t) / DIV,
+        last = pedal[pedal.length - 1];
+      if (last && last[0] === b) last[1] = +x.on;
+      else if ((last?.[1] ?? 0) !== +x.on) pedal.push([b, +x.on]);
+    }
+  if (p.pedal) log(`ペダル（CC64）の踏みかえ ${pedal.filter((x) => x[1]).length} 回を PEDAL に入れた`);
 
   /* 符号にする: 前の音からの間（3）、長さ（3）、音の高さ（2）、h（1）、ベロシティ（2。入れる曲だけ） */
   const width = hasVel ? 11 : 9;
@@ -557,6 +612,13 @@ export function build(p: Piece, k: Kind): void {
       ...(p.meters
         ? [
             `\n/** 拍子: [拍, 1 小節の拍（4 分音符）の数]（その拍から） */\nexport const METER: readonly [number, number][] = ${list(meters)};`,
+          ]
+        : []),
+      ...(pedal.length
+        ? [
+            `
+/** ダンパーペダル: [拍, 1 = 踏む・0 = 離す]（MIDI の CC64） */
+export const PEDAL: readonly [number, number][] = ${list(pedal)};`,
           ]
         : []),
       ...(reg.length

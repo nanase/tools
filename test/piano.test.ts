@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { parse } from '../src/lib/parse';
 import { C } from '../src/tools/guitar/body';
+import { barStarts } from '../src/tools/organ/score';
 import { coupled, cvec, project } from '../src/tools/piano/eig';
 import { boardDesc, Engine, minPhaseFir } from '../src/tools/piano/engine';
 import { type StruckString, strike } from '../src/tools/piano/hammer';
@@ -586,6 +587,16 @@ describe('曲のベロシティとペダル', () => {
     ]);
     expect(pts).toEqual([0, 4, 12]);
   });
+  it('演奏の記録のペダルがある曲（ブゾーニ編のシャコンヌ）は、自動のとき記録のとおりに踏み、踏む・踏まないは今までどおり', async () => {
+    const pc = pieceOf('chaconne'),
+      { notes, pedal } = await pc.load(),
+      ons = (m: 'auto' | 'on' | 'off') =>
+        playEvents(pc, notes, 2.5, m, pedal).filter((e) => e.type === 'pedal' && e.on).length;
+    expect(pedal?.length).toBeGreaterThan(1000);
+    expect(ons('auto')).toBe(pedal?.filter((x) => x[1] === 1).length);
+    expect(ons('on')).toBe(1);
+    expect(ons('off')).toBe(0);
+  });
   it('単位: 速さ m/s・セント', () => {
     expect(parse('2.5m/s', 'm/s')).toBe(2.5);
     expect(parse('1.5セント', 'セント')).toBe(1.5);
@@ -602,9 +613,19 @@ describe('曲のベロシティとペダル', () => {
     for (const b of [0, 3.5, 5, 7.25]) expect(tm.beat(tm.tau(b))).toBeCloseTo(b, 12);
   });
   it('どの曲も、鍵盤の音域に収まり、小節の長さがそろう', async () => {
-    const bars: Record<string, number> = { bwv846: 35, gymno1: 78, gymno2: 65, gymno3: 60, moon1: 69, moon3: 264 };
+    const bars: Record<string, number> = {
+      bwv846: 35,
+      gymno1: 78,
+      gymno2: 65,
+      gymno3: 60,
+      moon1: 69,
+      moon3: 264,
+      fantaisie: 138,
+      campanella: 144,
+      jeux: 88,
+    };
     for (const p of PIECES) {
-      const { notes } = await p.load(),
+      const { notes, meter } = await p.load(),
         end = Math.max(...notes.map((x) => x.t + x.d));
       expect(notes.length).toBeGreaterThan(300);
       for (const x of notes) {
@@ -613,7 +634,9 @@ describe('曲のベロシティとペダル', () => {
         expect(x.d).toBeGreaterThan(0);
         expect([0, 1]).toContain(x.h);
       }
-      if (bars[p.v]) expect(Math.ceil((end - p.pickup) / p.bar - 1e-9)).toBe(bars[p.v]);
+      /* 拍子の変わる曲は、拍子の変化から小節を数える */
+      const n = meter ? barStarts(meter, p.pickup, end).length : Math.ceil((end - p.pickup) / p.bar - 1e-9);
+      if (bars[p.v]) expect(n).toBe(bars[p.v]);
     }
   });
 });

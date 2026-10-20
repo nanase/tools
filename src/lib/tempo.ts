@@ -17,10 +17,19 @@ export class TempoMap {
     this.t = [0];
     for (let i = 1; i < p.length; i++) this.t.push(this.t[i - 1] + (this.b[i] - this.b[i - 1]) / this.r[i - 1]);
   }
+  /** xs[i] ≤ v となる最後の i（なければ 0）。変化の多い曲（演奏を記録した MIDI など）のために二分探索する */
+  private static last(xs: readonly number[], v: number): number {
+    let lo = 0,
+      hi = xs.length - 1;
+    while (lo < hi) {
+      const m = (lo + hi + 1) >> 1;
+      if (xs[m] <= v) lo = m;
+      else hi = m - 1;
+    }
+    return lo;
+  }
   private seg(b: number): number {
-    let i = this.b.length - 1;
-    while (i > 0 && this.b[i] > b) i--;
-    return i;
+    return TempoMap.last(this.b, b);
   }
   tau(b: number): number {
     const i = this.seg(b);
@@ -28,8 +37,7 @@ export class TempoMap {
   }
   /** τ から拍へ戻す */
   beat(tau: number): number {
-    let i = this.t.length - 1;
-    while (i > 0 && this.t[i] > tau) i--;
+    const i = TempoMap.last(this.t, tau);
     return this.b[i] + (tau - this.t[i]) * this.r[i];
   }
 }

@@ -12,6 +12,7 @@
  * テンポも、MIDI に変化を入れた曲だけ入れる（Mutopia のままの MIDI は最初の値だけ）。入れた曲では、score.ts の tempoMap
  * （このツールで付けた終わりの rit. など）の代わりに、MIDI の変化で演奏する
  */
+import { pieceOf } from '../src/tools/piano/score';
 import { build, type Kind, type Midi, noteName, type Piece, type RawNote } from './score-midi';
 
 const kind: Kind = {
@@ -25,57 +26,6 @@ const kind: Kind = {
   mergeAcross: true,
   dynamics: true,
 };
-
-/**
- * 月光 第 3 楽章の小節 188 のカデンツァ（\grace）の音。右手の譜表の 18 音（8 分音符）:
- * gis fis e dis fis cis bis dis a gis fis a e dis fis cis bis dis（G#5 から）
- */
-const CADENZA_UP = [80, 78, 76, 75, 78, 73, 72, 75, 69, 68, 66, 69, 64, 63, 66, 61, 60, 63];
-/** 左手の譜表の 12 音（8 分音符 9 音と 4 分音符 3 音）: a gis fis a e dis fis cis bis、dis a gis（A3 から） */
-const CADENZA_DOWN = [57, 56, 54, 57, 52, 51, 54, 49, 48, 51, 45, 44];
-
-/**
- * 月光 第 3 楽章の小節 188 のカデンツァ（トリルの A5 のあとの \grace の 30 音）を組み直す。LilyPond 2.10 の MIDI では、
- * - トリルの A5 が 1 tick しかない
- * - 右手の譜表の 18 音と左手の譜表の 12 音が、続かずに重なっている
- * - 左手の譜表の G#3 が、左手の和音の同じ高さの全音符が鳴っているため落ちている
- * - そのあとの右手の譜表（トラック 1）の時刻が、最後まで 274 tick（0.7135 拍）遅れている
- * 遅れを戻し、.ly の音の並びのとおりに、A5 を 1 拍、8 分音符の装飾音 27 音を 1/12 拍ずつ、
- * 4 分音符の装飾音 3 音を 1/4 拍ずつ並べて小節の 4 拍に収める
- */
-function cadenza(m: Midi, log: (s: string) => void): RawNote[] {
-  const q = m.ppq,
-    bar = 187 * 4 * q,
-    drift = 274;
-  if (q % 12) throw new Error(`4 分音符の tick 数 ${q} が 12 で割り切れません`);
-  const last = (tr: number) => Math.max(...m.notes.filter((x) => x.tr === tr).map((x) => x.t1));
-  if (last(1) - last(2) !== drift) throw new Error(`右手の譜表の遅れが ${last(1) - last(2)} tick です`);
-  const isUp = (x: RawNote) => x.tr === 1 && x.t0 >= bar && x.t0 < bar + 3 * q,
-    isDown = (x: RawNote) => x.tr === 2 && x.t0 > bar && x.t0 < bar + 3 * q;
-  const up = m.notes.filter(isUp).sort((a, b) => a.t0 - b.t0 || a.t1 - b.t1),
-    down = m.notes.filter(isDown).sort((a, b) => a.t0 - b.t0);
-  const want = [81, ...CADENZA_UP].join(),
-    wantDown = CADENZA_DOWN.filter((_, i) => i !== 1).join();
-  if (up.map((x) => x.n).join() !== want || down.map((x) => x.n).join() !== wantDown)
-    throw new Error(
-      `小節 188 の音が .ly と合いません: ${up.map((x) => noteName(x.n))} / ${down.map((x) => noteName(x.n))}`,
-    );
-  const out = m.notes
-    .filter((x) => !isUp(x) && !isDown(x))
-    .map((x) => (x.tr === 1 && x.t0 >= bar + 3 * q ? { ...x, t0: x.t0 - drift, t1: x.t1 - drift } : x));
-  const e8 = q / 12,
-    at = bar + q;
-  out.push({ tr: 1, n: 81, t0: bar, t1: bar + q });
-  CADENZA_UP.forEach((n, i) => {
-    out.push({ tr: 1, n, t0: at + i * e8, t1: at + (i + 1) * e8 });
-  });
-  CADENZA_DOWN.forEach((n, i) => {
-    const t0 = i < 9 ? at + (18 + i) * e8 : at + 27 * e8 + ((i - 9) * q) / 4;
-    out.push({ tr: 2, n, t0, t1: i < 9 ? t0 + e8 : t0 + q / 4 });
-  });
-  log(`小節 188 のカデンツァを組み直し、小節 189 から後の右手の譜表を ${+(drift / q).toFixed(4)} 拍早めた`);
-  return out;
-}
 
 /**
  * LilyPond 2.10 の MIDI は、同じ譜表のほかの声部で同じ高さの音が鳴っているうちに始まり、それより先に終わる音を落とす。
@@ -149,6 +99,47 @@ const gnossienne = (n: number, id: number, date: string, by: string, src: string
     [2, 1],
   ],
   meter,
+  pickup: 0,
+});
+
+/**
+ * MuseScore で CC0 として公開された楽譜の MIDI（PDMX に収録されたもの）。MuseScore が書き出した MIDI で、
+ * トラックは譜表ごと（0 = 右手、1 = 左手、2 = 3 段目）。投稿者が付けたテンポの変化・ベロシティ・ペダル（CC64）があり、
+ * テンポとベロシティを使う。4 分音符は 480 tick なので、時刻と長さは寄せない（7 連符などの細かい時刻を残す）
+ */
+const musescore = (
+  name: string,
+  title: string,
+  id: number,
+  date: string,
+  meter: [number, number],
+  changes: string[],
+): Piece => ({
+  name,
+  title,
+  source: [
+    `音符は MuseScore で CC0 として公開された楽譜（venson72150 作成、${date}、`,
+    `https://musescore.com/user/33306646/scores/${id}）の MIDI から変換した。MIDI は PDMX（Long ほか 2024、`,
+    'https://zenodo.org/records/15571083）に収録されたものを使った。',
+  ],
+  changes: changes.length
+    ? [...changes, '同じ時刻の同じ高さの音を 1 つにまとめた。']
+    : ['変更: 同じ時刻の同じ高さの音を 1 つにまとめた。'],
+  license: 'cc0',
+  /* 3 段目の譜表は左手の譜表にまとめる */
+  tracks: changes.length
+    ? [
+        [0, 0],
+        [1, 1],
+        [2, 1],
+      ]
+    : [
+        [0, 0],
+        [1, 1],
+      ],
+  meter,
+  meters: true,
+  exact: true,
   pickup: 0,
 });
 
@@ -280,26 +271,77 @@ const pieces: Piece[] = [
       `${mutopia(276)}）の MIDI から変換した。`,
     ],
     changes: [
-      '変更: 提示部の反復を展開した（小節 1〜65、2〜64、66〜201。小節 1 は反復の外で、第 1 括弧の小節 65 は小節 1 に',
+      '変更: 演奏の表情を MIDI の編集で付けられるように、元の MIDI を次のように直した MIDI（moonlight3.mid）から作る。',
+      '提示部の反復を展開した（小節 1〜65、2〜64、66〜201。小節 1 は反復の外で、第 1 括弧の小節 65 は小節 1 に',
       '和音を加えた形、反復は小節 2 に戻る。66 が第 2 括弧）。',
-      'MIDI では小節 188 のカデンツァ（装飾音の 30 音）の時刻が崩れ、そのあとの右手の譜表が 0.7135 拍遅れていたので、',
+      '元の MIDI では小節 188 のカデンツァ（装飾音の 30 音）の時刻が崩れ、そのあとの右手の譜表が 0.7135 拍遅れていたので、',
       '遅れを戻し、カデンツァを .ly の音の並びで組み直した（トリルの A5 を 1 拍、8 分音符の装飾音を 1/12 拍、',
       '4 分音符の装飾音を 1/4 拍）。',
-      common,
+      '時刻と長さを 4 分音符の 1/480 に寄せ、同じ時刻の同じ高さの音を 1 つにまとめた。',
+      'テンポは Presto agitato の ♩ = 168 で、カデンツァ（♩ = 92.4）と続く Adagio（♩ = 58.8）を入れた。',
+      'ベロシティは編集の下地として、.ly の強弱記号から LilyPond 2.24 で付けた（Dynamic_performer を譜表の組に置き、',
+      'sf・sfz は marcato、fp は p とアクセントに置き換えて、sf の強さが後ろの音に残らないようにした）。',
+      'そのうえで MIDI を手で編集し、ベロシティとテンポの変化で演奏の表情を付け、小節 188 のトリルの A5 を',
+      'A5 と Bb5 の 64 分音符（15 音）に書き下した。',
+      '同じ高さの長い音の中で打つ左手の譜表の音（カデンツァの G#3）は、ノートオフの対応が崩れないように別のトラックに分けた。',
     ],
     license: 'cc-by-sa-2.5',
+    /* トラック 3 は、左手の譜表の同じ高さの音の中で打つ音 */
     tracks: [
       [1, 0],
       [2, 1],
+      [3, 1],
     ],
     meter: [4, 4],
     pickup: 0,
-    order: [
-      [1, 65],
-      [2, 64],
-      [66, 201],
+    /* 時刻と長さは 1/480 拍に寄せてあるので、寄せ直さない（ずらした装飾音の長さが変わる） */
+    exact: true,
+    /* MIDI のテンポは、ページの標準のテンポに対する比にする（MIDI の最初の値を変えても、MIDI の値のとおりに鳴る） */
+    bpm: pieceOf('moon3').bpm,
+  },
+  musescore('fantaisie', 'F. ショパン「幻想即興曲 嬰ハ短調 作品 66」', 6219891, '2020/06/23', [2, 2], []),
+  musescore(
+    'campanella',
+    'F. リスト「パガニーニによる大練習曲」より 第 3 番 嬰ト短調「ラ・カンパネラ」',
+    6225893,
+    '2020/06/27',
+    [6, 8],
+    [],
+  ),
+  musescore(
+    'jeuxdeau',
+    'M. ラヴェル「水の戯れ」',
+    6323707,
+    '2020/09/02',
+    [4, 4],
+    ['変更: 終わり近くの 3 段の譜表の中の段（トラック 3）を、左手の譜表にまとめた。'],
+  ),
+  /*
+   * ブゾーニ自身の演奏を記録したピアノロールから起こした MIDI。1 トラックで、テンポは ♩ = 120 の 1 つだけ、
+   * 時刻は演奏のとおり（拍と小節は楽譜と合わない）。ベロシティとダンパーペダルもロールから起こしたもの
+   */
+  {
+    name: 'busoni-chaconne',
+    title:
+      'J. S. バッハ「無伴奏ヴァイオリンのためのパルティータ 第 2 番 ニ短調 BWV 1004」より シャコンヌ（F. ブゾーニ編曲）',
+    source: [
+      '音符は IMSLP で公開された MIDI（Hammondmania 作成、2012/01/22、ファイル #173118、',
+      'https://imslp.org/wiki/Violin_Partita_No.2_in_D_minor,_BWV_1004_(Bach,_Johann_Sebastian)）から変換した。',
+      'IMSLP の説明では、ブゾーニが演奏して記録した Duo-Art のピアノロールから起こしたもの。',
     ],
-    fix: cadenza,
+    changes: [
+      '変更: 時刻と長さは MIDI の tick のまま 1/480 拍に直した（演奏の表情を崩さない）。同じ時刻の同じ高さの音を 1 つにまとめた。',
+      '譜表の分かれていない MIDI なので、C4 から上を右手の譜表、下を左手の譜表にした。',
+      '最初の音の前の無音（約 3.8 拍）を除いた。ダンパーペダル（CC64）は PEDAL に入れ、ロールの記録のとおりに踏む。',
+    ],
+    license: 'cc-by-3.0',
+    tracks: [[0, 0]],
+    split: 60,
+    meter: [4, 4],
+    exact: true,
+    pickup: 0,
+    trim: true,
+    pedal: true,
   },
 ];
 

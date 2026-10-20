@@ -85,7 +85,7 @@ const related = [
         <div class="ptab">
           <ParamRow d={VEL} />
           <ChoiceRow k="hard" name="ハンマーの硬さ" sub="フェルトの硬さ（整音）。硬いほど衝突が短く、高い倍音が強い明るい音になる" choices={HARD.map(([v, l]) => [v, l] as const)} value="1" />
-          <ChoiceRow k="ped" name="ダンパーペダル" sub="踏むとすべてのダンパーが弦から離れ、離した鍵の音も響き続け、ほかの弦も共鳴する。自動では、曲は低音が変わるところで踏みかえ、鍵盤では踏まない" choices={[['auto', '自動'], ['on', '踏む'], ['off', '踏まない']]} value="auto" />
+          <ChoiceRow k="ped" name="ダンパーペダル" sub="踏むとすべてのダンパーが弦から離れ、離した鍵の音も響き続け、ほかの弦も共鳴する。自動では、曲は低音が変わるところで踏みかえ（演奏の記録のペダルがある曲は、記録のとおりに踏む）、鍵盤では踏まない" choices={[['auto', '自動'], ['on', '踏む'], ['off', '踏まない']]} value="auto" />
           <ChoiceRow k="th" name="鍵盤の音" sub="鍵が底に当たる衝撃が、棚板と枠を通して響板を叩く音（コトンという音）の大きさ。強く打つほど大きい" choices={THUMP} value="1" />
           <ChoiceRow k="soft" name="ソフトペダル" sub="踏むと鍵盤とハンマーが横にずれ、3 本弦の鍵は 2 本、2 本弦の鍵は 1 本だけを、フェルトの柔らかい所で打つ。打たない弦も駒を通して揺れる" choices={[['off', '踏まない'], ['on', '踏む']]} value="off" />
         </div>
