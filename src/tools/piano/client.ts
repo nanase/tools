@@ -714,7 +714,7 @@ async function startPiece(bar = 1): Promise<void> {
   for (const k of S.held) lift(k);
   audio.pedal(false);
   keys.setPedal(false);
-  const ev = playEvents(pc, data.notes, VEL.v, ped.value),
+  const ev = playEvents(pc, data.notes, VEL.v, ped.value, data.pedal),
     now = audio.now() ?? 0,
     tm = new TempoMap(tempoOf(pc, data)),
     /* 途中から弾くときは、その小節の頭より前の出来事を飛ばし、ペダルだけはその時点の状態にする */

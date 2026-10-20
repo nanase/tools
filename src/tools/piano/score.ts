@@ -14,15 +14,19 @@ export interface PieceData {
   tempo: readonly (readonly [number, number])[];
   /** 拍子の変化 [拍, 1 小節の拍の数]（拍子の変わる曲だけ。なければ Piece.bar） */
   meter?: readonly (readonly [number, number])[];
+  /** 演奏の記録のダンパーペダル [拍, 1 = 踏む・0 = 離す]（記録のある曲だけ） */
+  pedal?: readonly (readonly [number, number])[];
 }
 const data = (m: {
   notes: () => ScoreNote[];
   TEMPO: readonly (readonly [number, number])[];
   METER?: readonly (readonly [number, number])[];
+  PEDAL?: readonly (readonly [number, number])[];
 }): PieceData => ({
   notes: m.notes(),
   tempo: m.TEMPO,
   meter: m.METER,
+  pedal: m.PEDAL,
 });
 
 export interface Piece {
@@ -211,7 +215,10 @@ export const PIECES: readonly Piece[] = [
     tempoMap: [],
     load: () => import('./scores/jeuxdeau').then(data),
   },
-  /* ブゾーニの演奏を記録したピアノロールの MIDI。時刻は演奏のとおりで、拍と小節は楽譜と合わない（♩ = 120 で 1 小節 2 秒） */
+  /*
+   * ブゾーニの演奏を記録したピアノロールの MIDI。時刻は演奏のとおりで、拍と小節は楽譜と合わない（♩ = 120 で 1 小節 2 秒）。
+   * ペダルもロールの記録のとおりに踏む
+   */
   {
     v: 'chaconne',
     name: 'シャコンヌ（ブゾーニ編）',
@@ -306,7 +313,8 @@ export type PlayEv =
 
 /**
  * 曲の出来事: 音符の打鍵と離鍵（同じ鍵を続けて打つときは、離鍵を打鍵の少し前に）とペダル。vel は mf の
- * ハンマーの速さ [m/s]、pedal はダンパーペダル（自動・踏む・踏まない）。同じ拍なら 離鍵・ペダル → 打鍵 の順。
+ * ハンマーの速さ [m/s]、pedal はダンパーペダル（自動・踏む・踏まない）。自動は、曲に演奏の記録のペダル rec があればそのとおりに、
+ * なければ低音の変わるところで踏みかえる。同じ拍なら 離鍵・ペダル → 打鍵 の順。
  * 打鍵の v は自動のベロシティ（ハンマーの速さ [m/s]）: 曲の強弱の目安 × 楽譜の強弱 × 声部の強さ × 小さなばらつき
  */
 export function playEvents(
@@ -314,6 +322,7 @@ export function playEvents(
   notes: readonly ScoreNote[],
   vel: number,
   pedal: 'auto' | 'on' | 'off',
+  rec?: readonly (readonly [number, number])[],
 ): PlayEv[] {
   const r = rng(5),
     vo = voicing(notes),
@@ -325,13 +334,16 @@ export function playEvents(
     ev.push({ b: x.t, type: 'on', key: x.n, v, jit, i });
     ev.push({ b: x.t + x.d * 0.97, type: 'off', key: x.n });
   });
-  if (pedal !== 'off') {
+  const end = Math.max(...notes.map((x) => x.t + x.d));
+  if (pedal === 'auto' && rec) {
+    for (const [b, on] of rec) ev.push({ b, type: 'pedal', on: on === 1 });
+    if (rec[rec.length - 1]?.[1] === 1) ev.push({ b: end + 2, type: 'pedal', on: false });
+  } else if (pedal !== 'off') {
     const pts = pedal === 'on' ? [0] : pedalPoints(notes);
     for (const t of pts) {
       if (t > 0) ev.push({ b: t - 0.02, type: 'pedal', on: false });
       ev.push({ b: t + 0.12, type: 'pedal', on: true });
     }
-    const end = Math.max(...notes.map((x) => x.t + x.d));
     ev.push({ b: end + 2, type: 'pedal', on: false });
   }
   const rank = (e: PlayEv) => (e.type === 'off' ? 0 : e.type === 'pedal' ? 1 : 2);

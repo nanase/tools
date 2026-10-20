@@ -36,6 +36,8 @@ export interface Midi {
   cc: Map<number, number>;
   /** プログラムチェンジ。時刻は tick */
   programs: { t: number; tr: number; prog: number }[];
+  /** ダンパーペダル（CC64。64 以上で踏む）。時刻は tick */
+  pedal: { t: number; on: boolean }[];
 }
 
 /** SMF を読み、すべてのトラックの音（時刻は tick）とテンポ・拍子を返す */
@@ -61,7 +63,7 @@ export function readMidi(buf: Uint8Array): Midi {
     ppq = u16();
   if (ppq & 0x8000) throw new Error('SMPTE の時間単位には対応していません');
   p = h0 + hl;
-  const m: Midi = { ppq, notes: [], tempo: [], meter: [], names: [], cc: new Map(), programs: [] };
+  const m: Midi = { ppq, notes: [], tempo: [], meter: [], names: [], cc: new Map(), programs: [], pedal: [] };
   for (let k = 0; k < ntr; k++) {
     if (tag() !== 'MTrk') throw new Error(`トラック ${k} が壊れています`);
     const end = u32() + p;
@@ -102,8 +104,10 @@ export function readMidi(buf: Uint8Array): Midi {
       } else if (ty === 0x80 || ty === 0x90) {
         const o = on.get(key)?.shift();
         if (o) m.notes.push({ tr: k, n: a, t0: o[0], t1: t, v: o[1] });
-      } else if (ty === 0xb0) m.cc.set(a, (m.cc.get(a) ?? 0) + 1);
-      else if (ty === 0xc0) m.programs.push({ t, tr: k, prog: a });
+      } else if (ty === 0xb0) {
+        m.cc.set(a, (m.cc.get(a) ?? 0) + 1);
+        if (a === 64) m.pedal.push({ t, on: b >= 64 });
+      } else if (ty === 0xc0) m.programs.push({ t, tr: k, prog: a });
     }
     p = end;
   }
@@ -165,6 +169,13 @@ export interface Piece {
   bpm?: number;
   /** 曲ごとの手直し。readMidi の結果を受け取り、使う音（時刻は tick）を返す */
   fix?: (m: Midi, log: (s: string) => void) => RawNote[];
+  /** 最初の音の前の無音を除く（音・テンポ・ペダルを、最初の音が 0 拍になるようにずらす） */
+  trim?: boolean;
+  /**
+   * MIDI のダンパーペダル（CC64）を PEDAL（[拍, 1 = 踏む・0 = 離す]）に書く（演奏を記録した MIDI）。
+   * 反復を展開する曲には使えない
+   */
+  pedal?: boolean;
   /**
    * 時刻と長さを寄せて前打音を切ったあと（同じ音をまとめ、反復を展開する前）の音符の手直し（装飾の展開など）。
    * 時刻は 1/DIV 拍で、反復を展開する前の時刻
@@ -300,6 +311,21 @@ const LICENSE = {
   },
 };
 
+/** 最初の音が 0 tick になるように、音・テンポ・拍子・ペダルをずらす（それより前の変化は 0 tick にまとめる） */
+function trimMidi(m: Midi, log: (s: string) => void): Midi {
+  const t0 = Math.min(...m.notes.map((x) => x.t0)),
+    at = (t: number) => Math.max(0, t - t0);
+  log(`最初の音の前の ${+(t0 / m.ppq).toFixed(3)} 拍を除いた`);
+  return {
+    ...m,
+    notes: m.notes.map((x) => ({ ...x, t0: x.t0 - t0, t1: x.t1 - t0 })),
+    tempo: m.tempo.map((x) => ({ ...x, t: at(x.t) })),
+    meter: m.meter.map((x) => ({ ...x, t: at(x.t) })),
+    programs: m.programs.map((x) => ({ ...x, t: at(x.t) })),
+    pedal: m.pedal.map((x) => ({ ...x, t: at(x.t) })),
+  };
+}
+
 /** 1 曲の .ts を作る。<name>.mid がなければ警告を出して飛ばす */
 export function build(p: Piece, k: Kind): void {
   const src = new URL(`${p.name}.mid`, k.dir),
@@ -308,9 +334,10 @@ export function build(p: Piece, k: Kind): void {
     console.warn(`skip ${k.path}/${p.name}.ts: ${k.path}/${p.name}.mid がありません`);
     return;
   }
-  const m = readMidi(readFileSync(src)),
-    msgs: string[] = [],
-    log = (s: string) => msgs.push(s);
+  const msgs: string[] = [],
+    log = (s: string) => msgs.push(s),
+    m = p.trim ? trimMidi(readMidi(readFileSync(src)), log) : readMidi(readFileSync(src));
+  if (p.pedal && p.order) throw new Error(`${p.name}: 反復を展開する曲のペダルは書けません`);
   const bar = (p.meter[0] * 4) / p.meter[1];
   /* 拍子は曲の途中で変わらず、設定と同じであること（meters なら変化を [拍, 1 小節の拍の数] の列にする） */
   const meters: [number, number][] = [[0, bar]];
@@ -326,7 +353,7 @@ export function build(p: Piece, k: Kind): void {
     if (x.num !== p.meter[0] || x.den !== p.meter[1])
       throw new Error(`${p.name}: MIDI の拍子 ${x.num}/${x.den}（${x.t / m.ppq} 拍）が設定と違います`);
   }
-  if (m.cc.get(64)) log(`CC64（ペダル）が ${m.cc.get(64)} 個あるが使わない`);
+  if (m.cc.get(64) && !p.pedal) log(`CC64（ペダル）が ${m.cc.get(64)} 個あるが使わない`);
 
   /* 拍の位置を小節と拍で表す（展開前・展開後のどちらの時刻にも使う）。拍子が変わるときは、変わった拍から数え直す */
   const barAt = (beat: number): [number, number] => {
@@ -529,6 +556,17 @@ export function build(p: Piece, k: Kind): void {
       `プログラムチェンジ ${reg.length} 個（番号 ${[...new Set(reg.map((x) => x[1]))].sort((a, b) => a - b).join('・')}）`,
     );
 
+  /* ダンパーペダル（状態の変わる点だけ。同じ時刻なら後ろのもの） */
+  const pedal: [number, number][] = [];
+  if (p.pedal)
+    for (const x of m.pedal) {
+      const b = snap(x.t) / DIV,
+        last = pedal[pedal.length - 1];
+      if (last && last[0] === b) last[1] = +x.on;
+      else if ((last?.[1] ?? 0) !== +x.on) pedal.push([b, +x.on]);
+    }
+  if (p.pedal) log(`ペダル（CC64）の踏みかえ ${pedal.filter((x) => x[1]).length} 回を PEDAL に入れた`);
+
   /* 符号にする: 前の音からの間（3）、長さ（3）、音の高さ（2）、h（1）、ベロシティ（2。入れる曲だけ） */
   const width = hasVel ? 11 : 9;
   let data = '',
@@ -574,6 +612,13 @@ export function build(p: Piece, k: Kind): void {
       ...(p.meters
         ? [
             `\n/** 拍子: [拍, 1 小節の拍（4 分音符）の数]（その拍から） */\nexport const METER: readonly [number, number][] = ${list(meters)};`,
+          ]
+        : []),
+      ...(pedal.length
+        ? [
+            `
+/** ダンパーペダル: [拍, 1 = 踏む・0 = 離す]（MIDI の CC64） */
+export const PEDAL: readonly [number, number][] = ${list(pedal)};`,
           ]
         : []),
       ...(reg.length

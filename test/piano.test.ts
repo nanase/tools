@@ -587,6 +587,16 @@ describe('曲のベロシティとペダル', () => {
     ]);
     expect(pts).toEqual([0, 4, 12]);
   });
+  it('演奏の記録のペダルがある曲（ブゾーニ編のシャコンヌ）は、自動のとき記録のとおりに踏み、踏む・踏まないは今までどおり', async () => {
+    const pc = pieceOf('chaconne'),
+      { notes, pedal } = await pc.load(),
+      ons = (m: 'auto' | 'on' | 'off') =>
+        playEvents(pc, notes, 2.5, m, pedal).filter((e) => e.type === 'pedal' && e.on).length;
+    expect(pedal?.length).toBeGreaterThan(1000);
+    expect(ons('auto')).toBe(pedal?.filter((x) => x[1] === 1).length);
+    expect(ons('on')).toBe(1);
+    expect(ons('off')).toBe(0);
+  });
   it('単位: 速さ m/s・セント', () => {
     expect(parse('2.5m/s', 'm/s')).toBe(2.5);
     expect(parse('1.5セント', 'セント')).toBe(1.5);
