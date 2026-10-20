@@ -122,9 +122,11 @@ export interface Piece {
   source: string[];
   /** 加工の段落（行に分けたもの） */
   changes: string[];
-  license: 'pd' | 'cc-by-sa-2.5' | 'cc-by-sa-4.0' | 'cc0';
+  license: 'pd' | 'cc-by-3.0' | 'cc-by-sa-2.5' | 'cc-by-sa-4.0' | 'cc0';
   /** 使うトラックと、その譜表・鍵盤（h）: [トラックの番号, h] */
   tracks: [number, number][];
+  /** 譜表のない演奏の MIDI の音を、この高さ以上は h = 0、未満は h = 1 に分ける（tracks の h の代わり） */
+  split?: number;
   /** 拍子 [分子, 分母]。曲の途中で変わらないこと（meters のときは最初の拍子） */
   meter: [number, number];
   /** 曲の途中の拍子の変化を許し、METER（[拍, 1 小節の拍の数]）に書く */
@@ -281,6 +283,11 @@ const LICENSE = {
     url: 'https://creativecommons.org/publicdomain/zero/1.0/',
     spdx: 'CC0-1.0',
   },
+  'cc-by-3.0': {
+    name: 'Creative Commons Attribution 3.0 Unported',
+    url: 'https://creativecommons.org/licenses/by/3.0/',
+    spdx: 'CC-BY-3.0',
+  },
   'cc-by-sa-2.5': {
     name: 'Creative Commons Attribution-ShareAlike 2.5 Generic',
     url: 'https://creativecommons.org/licenses/by-sa/2.5/',
@@ -363,7 +370,7 @@ export function build(p: Piece, k: Kind): void {
   if (rawVel) log(`ベロシティ ${Math.min(...vs0)}〜${Math.max(...vs0)}（MIDI の値をそのまま入れた）`);
   let ns: Note[] = [];
   for (const x of raw) {
-    const h = hOf.get(x.tr);
+    const h = hOf.has(x.tr) && p.split !== undefined ? (x.n >= p.split ? 0 : 1) : hOf.get(x.tr);
     if (h === undefined) continue;
     const t = snap(x.t0);
     ns.push({

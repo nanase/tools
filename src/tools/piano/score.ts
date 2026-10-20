@@ -211,6 +211,19 @@ export const PIECES: readonly Piece[] = [
     tempoMap: [],
     load: () => import('./scores/jeuxdeau').then(data),
   },
+  /* ブゾーニの演奏を記録したピアノロールの MIDI。時刻は演奏のとおりで、拍と小節は楽譜と合わない（♩ = 120 で 1 小節 2 秒） */
+  {
+    v: 'chaconne',
+    name: 'シャコンヌ（ブゾーニ編）',
+    by: 'J. S. バッハ（無伴奏ヴァイオリンのためのパルティータ 第 2 番 ニ短調 BWV 1004）、F. ブゾーニ編曲',
+    bpm: 120,
+    tempo: 'ブゾーニの演奏のとおり（ピアノロールの記録。小節は楽譜と合わない）',
+    bar: 4,
+    pickup: 0,
+    lv: 0.9,
+    tempoMap: [],
+    load: () => import('./scores/busoni-chaconne').then(data),
+  },
 ];
 export const pieceOf = (v: string): Piece => PIECES.find((p) => p.v === v) ?? PIECES[0];
 /** 演奏に使うテンポの変化: MIDI に変化があればそれを、なければこのツールで付けたものを使う */

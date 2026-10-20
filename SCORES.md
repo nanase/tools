@@ -18,6 +18,7 @@
 | [幻想即興曲 嬰ハ短調 作品 66](#幻想即興曲-嬰ハ短調-作品-66) | ピアノ | CC0 |
 | [ラ・カンパネラ](#ラカンパネラ) | ピアノ | CC0 |
 | [水の戯れ](#水の戯れ) | ピアノ | CC0 |
+| [シャコンヌ（ブゾーニ編）](#シャコンヌブゾーニ編) | ピアノ | CC BY 3.0 |
 | [トッカータとフーガ ニ短調 BWV 565](#トッカータとフーガ-ニ短調-bwv-565) | オルガン | CC0 |
 | [フーガ ト短調 BWV 578](#フーガ-ト短調-bwv-578) | オルガン | CC BY-SA 4.0 |
 | [パッサカリアとフーガ ハ短調 BWV 582](#パッサカリアとフーガ-ハ短調-bwv-582) | オルガン | パブリックドメイン |
@@ -154,6 +155,15 @@ M. ラヴェル作曲。
 - 出典: [MuseScore の楽譜](https://musescore.com/user/33306646/scores/6323707)の MIDI。[PDMX](https://zenodo.org/records/15571083)（Long ほか 2024）に収録されたもの
 - 作成: venson72150
 - ライセンス: [CC0](https://creativecommons.org/publicdomain/zero/1.0/)
+
+### シャコンヌ（ブゾーニ編）
+
+J. S. バッハ「無伴奏ヴァイオリンのためのパルティータ 第 2 番 ニ短調」BWV 1004 より、F. ブゾーニのピアノ編曲。
+
+- ファイル: [busoni-chaconne.mid](src/tools/piano/scores/busoni-chaconne.mid)、[busoni-chaconne.ts](src/tools/piano/scores/busoni-chaconne.ts)
+- 出典: [IMSLP の MIDI](https://imslp.org/wiki/Violin_Partita_No.2_in_D_minor,_BWV_1004_(Bach,_Johann_Sebastian))（ファイル #173118）。ブゾーニ自身が演奏した Duo-Art のピアノロールから起こしたもの
+- 作成: Hammondmania（2012）
+- ライセンス: [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/)
 
 ## オルガン音響モデル
 

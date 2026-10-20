@@ -312,6 +312,36 @@ const pieces: Piece[] = [
     [4, 4],
     ['変更: 終わり近くの 3 段の譜表の中の段（トラック 3）を、左手の譜表にまとめた。'],
   ),
+  /*
+   * ブゾーニ自身の演奏を記録したピアノロールから起こした MIDI。1 トラックで、テンポは ♩ = 120 の 1 つだけ、
+   * 時刻は演奏のとおり（拍と小節は楽譜と合わない）。ベロシティはロールの強弱から起こしたもの
+   */
+  {
+    name: 'busoni-chaconne',
+    title:
+      'J. S. バッハ「無伴奏ヴァイオリンのためのパルティータ 第 2 番 ニ短調 BWV 1004」より シャコンヌ（F. ブゾーニ編曲）',
+    source: [
+      '音符は IMSLP で公開された MIDI（Hammondmania 作成、2012/01/22、ファイル #173118、',
+      'https://imslp.org/wiki/Violin_Partita_No.2_in_D_minor,_BWV_1004_(Bach,_Johann_Sebastian)）から変換した。',
+      'IMSLP の説明では、ブゾーニが演奏して記録した Duo-Art のピアノロールから起こしたもの。',
+    ],
+    changes: [
+      '変更: 時刻と長さは MIDI の tick のまま 1/480 拍に直した（演奏の表情を崩さない）。同じ時刻の同じ高さの音を 1 つにまとめた。',
+      '譜表の分かれていない MIDI なので、C4 から上を右手の譜表、下を左手の譜表にした。',
+      '最初の音の前の無音（約 3.8 拍）を除いた。',
+    ],
+    license: 'cc-by-3.0',
+    tracks: [[0, 0]],
+    split: 60,
+    meter: [4, 4],
+    exact: true,
+    pickup: 0,
+    fix: (m, log) => {
+      const t0 = Math.min(...m.notes.map((x) => x.t0));
+      log(`最初の音の前の ${+(t0 / m.ppq).toFixed(3)} 拍を除いた`);
+      return m.notes.map((x) => ({ ...x, t0: x.t0 - t0, t1: x.t1 - t0 }));
+    },
+  },
 ];
 
 for (const p of pieces) build(p, kind);

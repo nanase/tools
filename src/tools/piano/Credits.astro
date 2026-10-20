@@ -94,6 +94,16 @@ const MS = 'https://musescore.com/user/33306646/scores/';
     <p>テンポの変化とベロシティは楽譜の作成者が付けたもので、そのまま演奏に使います。MIDI のペダルは使わず、このツールの自動のペダルで踏みかえます。</p>
   </li>
   <li>
+    <h3>シャコンヌ（ブゾーニ編） <small>J. S. バッハ「無伴奏ヴァイオリンのためのパルティータ 第 2 番」BWV 1004 より、F. ブゾーニ編曲</small></h3>
+    <p>音符とベロシティは、<a href="https://imslp.org/wiki/Violin_Partita_No.2_in_D_minor,_BWV_1004_(Bach,_Johann_Sebastian)">IMSLP で公開された MIDI</a>（ファイル #173118）から変換しました。IMSLP の説明では、ブゾーニ自身が演奏して記録した Duo-Art のピアノロールから起こしたものです。</p>
+    <ul class="tl">
+      <li><b>作成:</b> Hammondmania（2012）</li>
+      <li><b>ライセンス:</b> <a href="https://creativecommons.org/licenses/by/3.0/deed.ja">クリエイティブ・コモンズ 表示 3.0（CC BY 3.0）</a></li>
+      <li><b>標準のテンポ:</b> {tempo('chaconne')}</li>
+    </ul>
+    <p>元の MIDI と、そこから作った音符のデータ（<a href="https://github.com/nanase/tools/tree/main/src/tools/piano/scores">src/tools/piano/scores</a> の busoni-chaconne）も CC BY 3.0 で公開します。演奏の記録なので、演奏の枠の小節は楽譜の小節と合いません（2 秒ごとに区切っています）。譜表の分かれていない MIDI なので、C4 から上を右手、下を左手として声部の強弱を付けます。MIDI のペダルは使わず、このツールの自動のペダルで踏みかえます。</p>
+  </li>
+  <li>
     <h3>このツールで付けたもの</h3>
     <p>声部ごとの強弱とダンパーペダルの踏みかえは、このツールで付けています。終わりや Adagio の部分のテンポの変化も、Mutopia の曲ではこのツールで付けています（月光 第 3 楽章は MIDI に入れました）。</p>
     <p>MIDI のベロシティは、ジムノペディと MuseScore の 3 曲で使っています。ジムノペディは楽譜の強弱記号と松葉から機械的に付いた値で、強弱の幅を縮めて打鍵の速さにします。ほかの Mutopia の曲の MIDI は、すべての音が同じベロシティです。</p>
