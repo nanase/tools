@@ -173,7 +173,7 @@ export const PIECES: readonly Piece[] = [
     tempo: 'Presto agitato（♩ = 168）',
     bar: 4,
     pickup: 0,
-    lv: 1.1,
+    lv: 0.8,
     /* 反復を展開した小節 251 のカデンツァ（♩ = 92.4）、252〜253 の Adagio（♩ = 58.8）は MIDI のテンポにある */
     tempoMap: [],
     load: () => import('./scores/moonlight3').then(data),
