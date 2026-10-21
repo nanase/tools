@@ -215,6 +215,18 @@ export const PIECES: readonly Piece[] = [
     tempoMap: [],
     load: () => import('./scores/jeuxdeau').then(data),
   },
+  {
+    v: 'arabesque1',
+    name: 'アラベスク 第 1 番',
+    by: 'C. ドビュッシー（2 つのアラベスク 第 1 番 ホ長調）',
+    bpm: 120,
+    tempo: 'Andantino con moto（♩ = 120。楽譜のデータのテンポの変化に従う）',
+    bar: 4,
+    pickup: 0,
+    lv: 0.6,
+    tempoMap: [],
+    load: () => import('./scores/arabesque1').then(data),
+  },
   /*
    * ブゾーニの演奏を記録したピアノロールの MIDI。時刻は演奏のとおりで、拍と小節は楽譜と合わない（♩ = 120 で 1 小節 2 秒）。
    * ペダルもロールの記録のとおりに踏む
@@ -315,7 +327,8 @@ export type PlayEv =
  * 曲の出来事: 音符の打鍵と離鍵（同じ鍵を続けて打つときは、離鍵を打鍵の少し前に）とペダル。vel は mf の
  * ハンマーの速さ [m/s]、pedal はダンパーペダル（自動・踏む・踏まない）。自動は、曲に演奏の記録のペダル rec があればそのとおりに、
  * なければ低音の変わるところで踏みかえる。同じ拍なら 離鍵・ペダル → 打鍵 の順。
- * 打鍵の v は自動のベロシティ（ハンマーの速さ [m/s]）: 曲の強弱の目安 × 楽譜の強弱 × 声部の強さ × 小さなばらつき
+ * 打鍵の v は自動のベロシティ（ハンマーの速さ [m/s]）: 曲の強弱の目安 × 楽譜の強弱 × 声部の強さ × 小さなばらつき。
+ * 鍵盤の打鍵と同じ 0.3〜7 m/s（params.ts の VEL）に収める
  */
 export function playEvents(
   pc: Piece,
@@ -329,7 +342,7 @@ export function playEvents(
     dy = dynamics(notes),
     ev: PlayEv[] = [];
   notes.forEach((x, i) => {
-    const v = Math.min(7, vel * pc.lv * (dy?.[i] ?? 1) * vo[i] * (0.92 + 0.16 * r())),
+    const v = Math.min(7, Math.max(0.3, vel * pc.lv * (dy?.[i] ?? 1) * vo[i] * (0.92 + 0.16 * r()))),
       jit = (r() - 0.5) * 0.008;
     ev.push({ b: x.t, type: 'on', key: x.n, v, jit, i });
     ev.push({ b: x.t + x.d * 0.97, type: 'off', key: x.n });

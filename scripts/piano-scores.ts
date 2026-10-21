@@ -114,12 +114,14 @@ const musescore = (
   date: string,
   meter: [number, number],
   changes: string[],
+  /** 作成者と、MuseScore の利用者の番号 */
+  [by, user]: [string, number] = ['venson72150', 33306646],
 ): Piece => ({
   name,
   title,
   source: [
-    `音符は MuseScore で CC0 として公開された楽譜（venson72150 作成、${date}、`,
-    `https://musescore.com/user/33306646/scores/${id}）の MIDI から変換した。MIDI は PDMX（Long ほか 2024、`,
+    `音符は MuseScore で CC0 として公開された楽譜（${by} 作成、${date}、`,
+    `https://musescore.com/user/${user}/scores/${id}）の MIDI から変換した。MIDI は PDMX（Long ほか 2024、`,
     'https://zenodo.org/records/15571083）に収録されたものを使った。',
   ],
   changes: changes.length
@@ -142,6 +144,20 @@ const musescore = (
   exact: true,
   pickup: 0,
 });
+
+/**
+ * アラベスク 第 1 番の小節 38 の E5（全音符）は、楽譜（Durand 1904）では小節 39 の最初の 3 連符の E5 へタイでつながる。
+ * MuseScore の楽譜はタイがなく、小節 39 で打ち直しているので、2 つを 1 音にする
+ */
+function tieArabesque(m: Midi, log: (s: string) => void): RawNote[] {
+  const bar = (k: number) => (k - 1) * 4 * m.ppq,
+    a = m.notes.find((x) => x.tr === 0 && x.n === 76 && x.t0 === bar(38)),
+    b = m.notes.find((x) => x.tr === 0 && x.n === 76 && x.t0 === bar(39));
+  /* MuseScore の MIDI は、音の終わりを次の音の 1 tick 前にする */
+  if (!a || !b || b.t0 - a.t1 > m.ppq / 8) throw new Error('小節 38〜39 の右手の譜表に、続けて鳴る E5 がありません');
+  log('小節 38 の E5 と小節 39 の最初の E5 を、楽譜のタイのとおり 1 音にした');
+  return m.notes.filter((x) => x !== b).map((x) => (x === a ? { ...x, t1: b.t1 } : x));
+}
 
 const pieces: Piece[] = [
   {
@@ -316,6 +332,29 @@ const pieces: Piece[] = [
     [4, 4],
     ['変更: 終わり近くの 3 段の譜表の中の段（トラック 3）を、左手の譜表にまとめた。'],
   ),
+  /*
+   * PDMX のアラベスク 第 1 番のピアノ独奏の楽譜のうち、Mutopia の楽譜（id 1777、Durand 1904 が底本）と音が最も合うもの。
+   * 違いは、MuseScore のほかの 2 つの楽譜とも合う小節 7・9・77・79 の C#3 などだけ
+   */
+  {
+    ...musescore(
+      'arabesque1',
+      'C. ドビュッシー「2 つのアラベスク」より 第 1 番 ホ長調',
+      5976460,
+      '2020/02/19',
+      [4, 4],
+      [],
+      ['The Transcriber', 7789771],
+    ),
+    /* 2 段の譜表だけなので、musescore の changes でなくここに書く */
+    changes: [
+      '変更: 小節 38 の E5 と小節 39 の最初の E5 を、楽譜（Durand 1904）のタイのとおり 1 音にした。',
+      '同じ時刻の同じ高さの音を 1 つにまとめた。',
+    ],
+    fix: tieArabesque,
+    /* MIDI の最初のテンポ（♩ = 60）は冒頭の加速の始まりなので、基本のテンポ（♩ = 120）を比の基準にする */
+    bpm: pieceOf('arabesque1').bpm,
+  },
   /*
    * ブゾーニ自身の演奏を記録したピアノロールから起こした MIDI。1 トラックで、テンポは ♩ = 120 の 1 つだけ、
    * 時刻は演奏のとおり（拍と小節は楽譜と合わない）。ベロシティとダンパーペダルもロールから起こしたもの
