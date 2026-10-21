@@ -18,6 +18,7 @@
 | [幻想即興曲 嬰ハ短調 作品 66](#幻想即興曲-嬰ハ短調-作品-66) | ピアノ | CC0 |
 | [ラ・カンパネラ](#ラカンパネラ) | ピアノ | CC0 |
 | [水の戯れ](#水の戯れ) | ピアノ | CC0 |
+| [アラベスク 第 1 番](#アラベスク-第-1-番) | ピアノ | CC0 |
 | [シャコンヌ（ブゾーニ編）](#シャコンヌブゾーニ編) | ピアノ | CC BY 3.0 |
 | [トッカータとフーガ ニ短調 BWV 565](#トッカータとフーガ-ニ短調-bwv-565) | オルガン | CC0 |
 | [フーガ ト短調 BWV 578](#フーガ-ト短調-bwv-578) | オルガン | CC BY-SA 4.0 |
@@ -155,6 +156,16 @@ M. ラヴェル作曲。
 - 出典: [MuseScore の楽譜](https://musescore.com/user/33306646/scores/6323707)の MIDI。[PDMX](https://zenodo.org/records/15571083)（Long ほか 2024）に収録されたもの
 - 作成: venson72150
 - ライセンス: [CC0](https://creativecommons.org/publicdomain/zero/1.0/)
+
+### アラベスク 第 1 番
+
+C. ドビュッシー「2 つのアラベスク」より 第 1 番 ホ長調。
+
+- ファイル: [arabesque1.mid](src/tools/piano/scores/arabesque1.mid)、[arabesque1.ts](src/tools/piano/scores/arabesque1.ts)
+- 出典: [MuseScore の楽譜](https://musescore.com/user/7789771/scores/5976460)の MIDI。[PDMX](https://zenodo.org/records/15571083)（Long ほか 2024）に収録されたもの
+- 作成: The Transcriber
+- ライセンス: [CC0](https://creativecommons.org/publicdomain/zero/1.0/)
+- 加工: 小節 38 から 39 へのタイ（E5）を、楽譜（Durand 1904）のとおり 1 音にした
 
 ### シャコンヌ（ブゾーニ編）
 

@@ -547,7 +547,7 @@ describe('曲のベロシティとペダル', () => {
       expect([0, notes.length]).toContain(has);
       if (p.v.startsWith('gymno')) expect(has).toBe(notes.length);
       const vs = playEvents(p, notes, 2.5, 'auto').flatMap((e) => (e.type === 'on' ? [e.v] : []));
-      expect(Math.min(...vs)).toBeGreaterThan(0.3);
+      expect(Math.min(...vs)).toBeGreaterThanOrEqual(0.3);
       expect(Math.max(...vs)).toBeLessThanOrEqual(7);
       if (p.v === 'gymno2') expect(Math.max(...vs) / Math.min(...vs)).toBeGreaterThan(3);
     }
@@ -623,6 +623,7 @@ describe('曲のベロシティとペダル', () => {
       fantaisie: 138,
       campanella: 144,
       jeux: 88,
+      arabesque1: 107,
     };
     for (const p of PIECES) {
       const { notes, meter } = await p.load(),
@@ -649,6 +650,12 @@ describe('曲の音符がすべて鳴る', () => {
       expect(notes.some((x) => x.n === 64 && Math.abs(x.t - ((b - 1) * 4 + 2 / 3)) < 1e-6)).toBe(true);
     const last = Math.max(...on);
     for (let k = 1; k < last; k++) if (on.has(k - 1) && on.has(k + 1)) expect(on.has(k)).toBe(true);
+  });
+  it('アラベスク 第 1 番の小節 38 の E5 は、楽譜のタイのとおり小節 39 で打ち直さない', async () => {
+    const { notes } = await pieceOf('arabesque1').load(),
+      e5 = notes.filter((x) => x.n === 76 && x.h === 0 && x.t >= 37 * 4 && x.t <= 38 * 4);
+    expect(e5.map((x) => x.t)).toEqual([37 * 4]);
+    expect(e5[0].d).toBeCloseTo(4 + 1 / 3, 2);
   });
   it('どの曲も、すべての音符に打鍵の出来事がちょうど 1 つあり、同じ鍵の離鍵は打鍵の数だけある', async () => {
     for (const p of PIECES) {

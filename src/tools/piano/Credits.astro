@@ -6,6 +6,7 @@ import { pieceOf } from './score';
 const tempo = (v: string) => pieceOf(v).tempo;
 const MU = 'https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=';
 const MS = 'https://musescore.com/user/33306646/scores/';
+const MS2 = 'https://musescore.com/user/7789771/scores/';
 ---
 <ul class="srcs">
   <li>
@@ -92,6 +93,17 @@ const MS = 'https://musescore.com/user/33306646/scores/';
       </li>
     </ul>
     <p>テンポの変化とベロシティは楽譜の作成者が付けたもので、そのまま演奏に使います。MIDI のペダルは使わず、このツールの自動のペダルで踏みかえます。</p>
+  </li>
+  <li>
+    <h3>アラベスク 第 1 番 <small>C. ドビュッシー「2 つのアラベスク」より</small></h3>
+    <p>音符・テンポの変化・ベロシティは、MuseScore で CC0 として公開された<a href={`${MS2}5976460`}>楽譜</a>の MIDI（PDMX に収録されたもの）から変換しました。テンポの変化とベロシティは楽譜の作成者が付けたもので、ペダルはこのツールの自動のペダルで踏みかえます。</p>
+    <ul class="tl">
+      <li><b>作成:</b> The Transcriber</li>
+      <li><b>曲:</b> 2 つのアラベスク L. 66 第 1 番 ホ長調</li>
+      <li><b>ライセンス:</b> <a href="https://creativecommons.org/publicdomain/zero/1.0/deed.ja">CC0 1.0</a>（このツールの音符のデータも CC0）</li>
+      <li><b>標準のテンポ:</b> {tempo('arabesque1')}</li>
+    </ul>
+    <p>小節 38 から 39 へのタイ（E5）は、楽譜（Durand 1904）のとおり 1 音にしています。</p>
   </li>
   <li>
     <h3>シャコンヌ（ブゾーニ編） <small>J. S. バッハ「無伴奏ヴァイオリンのためのパルティータ 第 2 番」BWV 1004 より、F. ブゾーニ編曲</small></h3>
