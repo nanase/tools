@@ -7,6 +7,7 @@
  */
 import { czaAlt, parDist, R22 } from '../tools/halo/labels';
 import { fanPath } from '../tools/jjy/fan';
+import { type Encoded, encode } from '../tools/qr-code/encode';
 import {
   BODY_LEN,
   BRIDGE_M,
@@ -24,6 +25,17 @@ import {
 } from '../tools/violin/shapes';
 
 export type Art = (t: number) => string;
+
+/** カードの QR コード（型番 1・M の「QR」。初めて描くときに作る） */
+let qr0: Encoded | null = null;
+function QR(): Encoded {
+  if (!qr0) {
+    const r = encode('QR', { ecc: 'M', ver: 1, mask: -1, mode: 'auto', boost: false });
+    if ('err' in r) throw new Error(r.err);
+    qr0 = r;
+  }
+  return qr0;
+}
 
 const TAU = 2 * Math.PI;
 const r1 = (v: number): number => Math.round(v * 10) / 10;
@@ -348,6 +360,39 @@ export const ART: Record<string, Art> = {
       b.push([x, 16 + (jjyHi(CODE, S, u) ? 9 : 1.5) * z]);
     }
     return P('b', pl(b)) + P('a', jjySteps(CODE, S, off - 3, 33, 43));
+  },
+  /* QR コード: 型番 1 の QR コードの上をしみが動き、しみのかかった符号語（右の 26 本）が伸びる */
+  qr(t) {
+    const q = QR(),
+      n = q.n,
+      cx = 25 + 15 * Math.sin(t * 0.9),
+      cy = 24 + 9 * Math.cos(t * 1.3),
+      hit = new Set<number>();
+    let d = '';
+    for (let i = 0; i < n * n; i++)
+      if (q.cwAt[i] >= 0 && Math.hypot(5 + (i % n) * 2 - cx, 4 + Math.floor(i / n) * 2 - cy) < 6.5) hit.add(q.cwAt[i]);
+    for (let y = 0; y < n; y++)
+      for (let x = 0; x < n; x++) {
+        if (!q.mods[y * n + x]) continue;
+        let w = 1;
+        while (x + w < n && q.mods[y * n + x + w]) w++;
+        d += `M${4 + x * 2} ${3 + y * 2}h${w * 2}v2h-${w * 2}z`;
+        x += w - 1;
+      }
+    let bars = '',
+      lo = '';
+    q.cw.forEach((_, c) => {
+      const x = r1(57 + c * 2.25 + (q.src[c].ec ? 2.5 : 0));
+      if (hit.has(c)) bars += `M${x} 40V10`;
+      else lo += `M${x} 40V33`;
+    });
+    return (
+      P('fc', d) +
+      `<circle class="fa g" cx="${r1(cx)}" cy="${r1(cy)}" r="6.5"/>` +
+      P('c t', lo) +
+      P('a', bars || 'M57 40H57') +
+      P('c d', 'M55 44H116')
+    );
   },
   /* FIR フィルタ: 遮断周波数が変わり、係数（窓をかけた sinc）と特性の幅が変わる */
   fir(t) {

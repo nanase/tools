@@ -107,6 +107,14 @@ describe('型番ごとの数', () => {
     expect(rem[0]).toBe(0);
     expect(rem[1]).toBe(7);
   });
+  it('形式情報の 32 通りの符号どうしは 7 ビット以上、型番情報は 8 ビット以上違う', () => {
+    const pop = (v: number) => v.toString(2).replace(/0/g, '').length;
+    const f = ['L', 'M', 'Q', 'H'].flatMap((e) => Array.from({ length: 8 }, (_, m) => formatBits(e as Ecc, m)));
+    const v = Array.from({ length: 34 }, (_, i) => versionBits(i + 7));
+    const minD = (a: number[]) => Math.min(...a.flatMap((x, i) => a.slice(i + 1).map((y) => pop(x ^ y))));
+    expect(minD(f)).toBe(7);
+    expect(minD(v)).toBe(8);
+  });
   it('形式情報と型番情報（BCH）', () => {
     expect(formatBits('M', 2).toString(2).padStart(15, '0')).toBe('101111001111100');
     expect(formatBits('L', 4).toString(2).padStart(15, '0')).toBe('110011000101111');
