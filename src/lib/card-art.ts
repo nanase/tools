@@ -270,6 +270,23 @@ export const ART: Record<string, Art> = {
       )
     );
   },
+  /* カルマンフィルタ: 予測（破線）と観測の山を掛け合わせた推定の山。観測が左右に動くと推定も寄る */
+  kf(t) {
+    const g = (m: number, s: number, h: number) => (x: number) => 44 - h * Math.exp(-0.5 * ((x - m) / s) ** 2);
+    const mp = 48,
+      sp = 13,
+      mz = 70 + 10 * Math.sin(t * 1.4),
+      sz = 9,
+      K = (sp * sp) / (sp * sp + sz * sz),
+      me = mp + K * (mz - mp),
+      se = Math.sqrt((1 - K) * sp * sp);
+    return (
+      P('c', 'M4 44H116') +
+      P('c d', fx(g(mp, sp, 18), 4, 116, 56)) +
+      P('b', fx(g(mz, sz, 26), 4, 116, 56)) +
+      P('a', fx(g(me, se, Math.min(38, (18 * sp) / se)), 4, 116, 80))
+    );
+  },
   /* 双2次フィルタ: 遮断周波数が動く */
   bq(t) {
     const lp = (r: number, Q: number): number => -10 * Math.log10((1 - r * r) ** 2 + (r / Q) ** 2);

@@ -48,6 +48,14 @@ export const TOOLS: Tool[] = [
     k: 'inverted pendulum cart pole 倒立振り子 台車 振り上げ swing up エネルギー法 lqr リカッチ riccati 極配置 pole placement アッカーマン ackermann 状態フィードバック state feedback 可制御 controllability pid エンコーダ encoder quanser ip02 control',
   },
   {
+    id: 'kalman',
+    c: '制御',
+    t: 'カルマンフィルタ',
+    d: '雑音のある距離計の値から、台車の位置と速度をカルマンフィルタで推定します。',
+    ic: 'kf',
+    k: 'kalman filter 推定 estimation 状態推定 state estimation ベイズ bayes 正規分布 gaussian 共分散 covariance 楕円 ellipse 予測 更新 predict update カルマンゲイン kalman gain イノベーション innovation nis 過程雑音 観測雑音 process noise measurement noise q r 発散 divergence 追跡 tracking センサ sensor',
+  },
+  {
     id: 'biquad',
     c: 'デジタルフィルタ',
     t: '双2次フィルタ',

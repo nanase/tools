@@ -1,0 +1,129 @@
+---
+// 動作原理と式。代入した式（#subst）は client.ts が入れる
+const hat = (s: string) => `<mover><mi>${s}</mi><mo>^</mo></mover>`;
+const bx = (s: string) => `<mi mathvariant="bold">${s}</mi>`;
+const hbx = (s: string) => `<mover>${bx(s)}<mo>^</mo></mover>`;
+/** 添字 k と予測の印（−） */
+const km = (m: string) => `<msubsup>${m}<mi>k</mi><mo>−</mo></msubsup>`;
+const k_ = (m: string) => `<msub>${m}<mi>k</mi></msub>`;
+const k1 = (m: string) => `<msub>${m}<mrow><mi>k</mi><mo>−</mo><mn>1</mn></mrow></msub>`;
+const mat = (rows: string[][]) =>
+  `<mrow><mo>[</mo><mtable>${rows.map((r) => `<mtr>${r.map((c) => `<mtd>${c}</mtd>`).join('')}</mtr>`).join('')}</mtable><mo>]</mo></mrow>`;
+const fr = (a: string, b: string) => `<mfrac><mrow>${a}</mrow><mrow>${b}</mrow></mfrac>`;
+const sq = (s: string) => `<msup>${s}<mn>2</mn></msup>`;
+const sg2 = (sup: string) => `<msup><mi>σ</mi><mrow><mo>${sup}</mo><mn>2</mn></mrow></msup>`;
+const sz2 = '<msubsup><mi>σ</mi><mi>z</mi><mn>2</mn></msubsup>';
+const sp02 = '<msubsup><mi>σ</mi><mrow><mi>p</mi><mn>0</mn></mrow><mn>2</mn></msubsup>';
+const T = (n: number) => (n === 1 ? '<mi>T</mi>' : `<msup><mi>T</mi><mn>${n}</mn></msup>`);
+/* 本文の出典番号 */
+const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
+---
+<h3>台車と距離計</h3>
+<p>線路を走る台車の位置 <math><mi>p</mi></math> と速度 <math><mi>v</mi></math> をまとめて、状態 <math><mi mathvariant="bold">x</mi><mo>=</mo><msup><mrow><mo stretchy="false">[</mo><mi>p</mi><mspace width="0.3em"/><mi>v</mi><mo stretchy="false">]</mo></mrow><mi mathvariant="normal">T</mi></msup></math> とします。観測の間隔 <math><mi>T</mi></math> の間、加速度 <math><msub><mi>a</mi><mi>k</mi></msub></math> は一定で、刻みごとに独立な正規分布に従うものとします<Fragment set:html={rf(5)} /><Fragment set:html={rf(4)} />。距離計は位置だけを測り、値に雑音 <math><msub><mi>w</mi><mi>k</mi></msub></math> が乗ります。</p>
+<div class="eqs">
+  <math display="block" set:html={`${k_(bx('x'))}<mo>=</mo><mi>F</mi>${k1(bx('x'))}<mo>+</mo><mi>Γ</mi>${k_('<mi>a</mi>')}<mo>,</mo><mspace width="1em"/>${k_('<mi>z</mi>')}<mo>=</mo><mi>H</mi>${k_(bx('x'))}<mo>+</mo>${k_('<mi>w</mi>')}`} />
+  <math display="block" set:html={`<mi>F</mi><mo>=</mo>${mat([['<mn>1</mn>', '<mi>T</mi>'], ['<mn>0</mn>', '<mn>1</mn>']])}<mo>,</mo><mspace width="1em"/><mi>Γ</mi><mo>=</mo>${mat([[fr(T(2), '<mn>2</mn>')], [T(1)]])}<mo>,</mo><mspace width="1em"/><mi>H</mi><mo>=</mo>${mat([['<mn>1</mn>', '<mn>0</mn>']])}`} />
+</div>
+<dl class="syms">
+  <dt><math><msub><mi>σ</mi><mi>a</mi></msub></math></dt><dd>加速度のゆらぎ（<math><msub><mi>a</mi><mi>k</mi></msub></math> の標準偏差）</dd>
+  <dt><math><msub><mi>σ</mi><mi>z</mi></msub></math></dt><dd>観測の雑音（<math><msub><mi>w</mi><mi>k</mi></msub></math> の標準偏差）</dd>
+</dl>
+<p>加速度のゆらぎが 1 刻みで状態に足す分の共分散が、過程雑音の共分散 <math><mi>Q</mi></math> です<Fragment set:html={rf(5)} /><Fragment set:html={rf(4)} />。観測の雑音の分散が <math><mi>R</mi></math> です。</p>
+<div class="eqs">
+  <math display="block" set:html={`<mi>Q</mi><mo>=</mo>${sq('<msub><mi>σ</mi><mi>a</mi></msub>')}<mi>Γ</mi><msup><mi>Γ</mi><mi mathvariant="normal">T</mi></msup><mo>=</mo>${sq('<msub><mi>σ</mi><mi>a</mi></msub>')}${mat([[fr(T(4), '<mn>4</mn>'), fr(T(3), '<mn>2</mn>')], [fr(T(3), '<mn>2</mn>'), T(2)]])}<mo>,</mo><mspace width="1em"/><mi>R</mi><mo>=</mo>${sz2}`} />
+</div>
+
+<h3>1 次元: 予測と観測を掛け合わせる</h3>
+<p>まず位置だけを考えます。観測する前の見込み（予測）が平均 <math><msup><mi>μ</mi><mo>−</mo></msup></math>・分散 <math set:html={sg2('−')} /> の正規分布で、距離計の値 <math><mi>z</mi></math> の雑音の分散が <math set:html={sz2} /> のとき、2 つの分布を掛け合わせると、また正規分布になります<Fragment set:html={rf(2)} />。これが観測した後の推定です。</p>
+<div class="eqs">
+  <math display="block" set:html={`<mi>K</mi><mo>=</mo>${fr(sg2('−'), `${sg2('−')}<mo>+</mo>${sz2}`)}`} />
+  <math display="block" set:html={`<msup><mi>μ</mi><mo>+</mo></msup><mo>=</mo><msup><mi>μ</mi><mo>−</mo></msup><mo>+</mo><mi>K</mi><mo stretchy="false">(</mo><mi>z</mi><mo>−</mo><msup><mi>μ</mi><mo>−</mo></msup><mo stretchy="false">)</mo>`} />
+  <math display="block" set:html={`${sg2('+')}<mo>=</mo><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><mi>K</mi><mo stretchy="false">)</mo>${sg2('−')}<mo>,</mo><mspace width="1em"/>${fr('<mn>1</mn>', sg2('+'))}<mo>=</mo>${fr('<mn>1</mn>', sg2('−'))}<mo>+</mo>${fr('<mn>1</mn>', sz2)}`} />
+</div>
+<ul class="tl">
+  <li><math><mi>K</mi></math> はカルマンゲインで、0 から 1 の間の値。推定は予測から観測へ <math><mi>K</mi></math> の割合だけ寄る。位置の分布の図の下の目盛りが、この割合を示す</li>
+  <li>観測が予測より確か（<math set:html={`${sz2}<mo>&lt;</mo>${sg2('−')}`} />）なほど <math><mi>K</mi></math> は 1 に近く、推定は観測に寄る</li>
+  <li>推定の分散の逆数は、予測と観測の分散の逆数の和。推定は予測と観測のどちらよりも確かになる</li>
+</ul>
+<p>止まっていると分かっている台車（場面の「止まった台車」）では、推定をそのまま次の予測にして、観測を重ねるだけになります。<math><mi>k</mi></math> 回観測した後の推定の分散の逆数は <math set:html={`${fr('<mn>1</mn>', sp02)}<mo>+</mo>${fr('<mi>k</mi>', sz2)}`} /> なので、<math><mi>k</mi></math> 回目の <math><mi>K</mi></math> は <math set:html={`<mn>1</mn><mo>/</mo><mo stretchy="false">(</mo><mi>k</mi><mo>+</mo>${sz2}<mo>/</mo>${sp02}<mo stretchy="false">)</mo>`} /> です。観測を重ねるほど新しい観測の重みは小さくなり、推定は観測の平均に近づきます。</p>
+
+<h3>予測と更新</h3>
+<p>位置と速度の 2 次元では、平均がベクトル、分散が 2 × 2 の共分散行列 <math><mi>P</mi></math> になります。フィルタは観測の間隔ごとに、予測と更新をくり返します<Fragment set:html={rf(1)} /><Fragment set:html={rf(3)} />。</p>
+<ol class="flow">
+  <li>予測: 等速の模型で先へ進め、過程雑音の分だけ不確かさを広げる</li>
+  <li>観測: 距離計で位置を測る</li>
+  <li>更新: 予測と観測を掛け合わせる</li>
+</ol>
+<div class="eqs">
+  <math display="block" set:html={`${km(hbx('x'))}<mo>=</mo><mi>F</mi>${k1(hbx('x'))}<mo>,</mo><mspace width="1em"/>${km('<mi>P</mi>')}<mo>=</mo><mi>F</mi>${k1('<mi>P</mi>')}<msup><mi>F</mi><mi mathvariant="normal">T</mi></msup><mo>+</mo>${hat('Q')}`} />
+  <math display="block" set:html={`${k_('<mi>S</mi>')}<mo>=</mo><mi>H</mi>${km('<mi>P</mi>')}<msup><mi>H</mi><mi mathvariant="normal">T</mi></msup><mo>+</mo>${hat('R')}<mo>,</mo><mspace width="1em"/>${k_('<mi>K</mi>')}<mo>=</mo>${km('<mi>P</mi>')}<msup><mi>H</mi><mi mathvariant="normal">T</mi></msup><msubsup><mi>S</mi><mi>k</mi><mrow><mo>−</mo><mn>1</mn></mrow></msubsup>`} />
+  <math display="block" set:html={`${k_('<mi>y</mi>')}<mo>=</mo>${k_('<mi>z</mi>')}<mo>−</mo><mi>H</mi>${km(hbx('x'))}<mo>,</mo><mspace width="1em"/>${k_(hbx('x'))}<mo>=</mo>${km(hbx('x'))}<mo>+</mo>${k_('<mi>K</mi>')}${k_('<mi>y</mi>')}<mo>,</mo><mspace width="1em"/>${k_('<mi>P</mi>')}<mo>=</mo><mo stretchy="false">(</mo><mi>I</mi><mo>−</mo>${k_('<mi>K</mi>')}<mi>H</mi><mo stretchy="false">)</mo>${km('<mi>P</mi>')}`} />
+</div>
+<dl class="syms">
+  <dt><math set:html={`${hat('Q')}<mo>,</mo><mspace width="0.3em"/>${hat('R')}`} /></dt><dd>フィルタが使う過程雑音と観測の雑音の共分散（見積り）。本当の <math><mi>Q</mi></math>・<math><mi>R</mi></math> と同じとは限らない</dd>
+  <dt><math><msub><mi>y</mi><mi>k</mi></msub><mo>,</mo><mspace width="0.3em"/><msub><mi>S</mi><mi>k</mi></msub></math></dt><dd>イノベーション（観測と予測の差）と、フィルタが見積るその分散</dd>
+  <dt><math><msub><mi>K</mi><mi>k</mi></msub></math></dt><dd>カルマンゲイン。位置の分 <math><msub><mi>K</mi><mi>p</mi></msub></math> と速度の分 <math><msub><mi>K</mi><mi>v</mi></msub></math> の 2 つ</dd>
+</dl>
+<p><math><mi>H</mi><mo>=</mo><mo stretchy="false">[</mo><mn>1</mn><mspace width="0.3em"/><mn>0</mn><mo stretchy="false">]</mo></math> なので、<math><msub><mi>S</mi><mi>k</mi></msub></math> は予測の位置の分散と <math set:html={hat('R')} /> の和です。位置のカルマンゲイン <math><msub><mi>K</mi><mi>p</mi></msub></math> は 1 次元の <math><mi>K</mi></math> と同じ形になります。</p>
+
+<h3>楕円が予測で膨らみ、観測で縮む</h3>
+<p>位置と速度の平面の楕円は、共分散 <math><mi>P</mi></math> の正規分布で 95 % の確率で状態が入る範囲です。2 次元の正規分布では、平均からのマハラノビス距離の 2 乗が自由度 2 のカイ 2 乗分布に従うので、その 95 % 点 5.991 で楕円を描きます<Fragment set:html={rf(6)} /><Fragment set:html={rf(4)} />。</p>
+<div class="eqs">
+  <math display="block" set:html={`<msup><mrow><mo stretchy="false">(</mo>${bx('x')}<mo>−</mo>${hbx('x')}<mo stretchy="false">)</mo></mrow><mi mathvariant="normal">T</mi></msup><msup><mi>P</mi><mrow><mo>−</mo><mn>1</mn></mrow></msup><mo stretchy="false">(</mo>${bx('x')}<mo>−</mo>${hbx('x')}<mo stretchy="false">)</mo><mo>≤</mo><mn>5.991</mn>`} />
+</div>
+<ul class="tl">
+  <li>予測の <math><mi>F</mi><mi>P</mi><msup><mi>F</mi><mi mathvariant="normal">T</mi></msup></math> は、速さの分だけ位置がずれるので楕円を傾ける。<math><mi>F</mi></math> の行列式は 1 なので、面積は変えない</li>
+  <li>面積を増やすのは <math set:html={hat('Q')} /> を足す分。加速度のゆらぎがあるので、先の位置と速度はそのぶん不確かになる</li>
+  <li>観測は位置の向きにだけ楕円を縮める。速度は測っていないが、楕円の傾き（位置と速度の相関）を通して、速度の幅も縮む。<math><msub><mi>K</mi><mi>v</mi></msub></math> が位置のずれから速度を直す割合</li>
+</ul>
+<p>位置の分布の図は、楕円を位置の軸に映したものです。予測の山と観測の山を掛け合わせると推定の山になる、1 次元と同じことが起きています。</p>
+
+<h3>雑音の設定を誤ると</h3>
+<p>フィルタは、<math set:html={hat('Q')} />・<math set:html={hat('R')} /> が本当の値に合っていると仮定して不確かさ <math><mi>P</mi></math> を見積ります。見積りが外れると、<math><mi>P</mi></math> は本当の誤差の大きさを表さなくなります<Fragment set:html={rf(4)} /><Fragment set:html={rf(3)} />。</p>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th>場面</th><th>見積り</th><th>起きること</th></tr></thead>
+  <tbody>
+    <tr><td>動きを過信</td><td><math set:html={hat('Q')} /> が小さすぎる</td><td>楕円と ±2σ の帯が細くなり、<math><mi>K</mi></math> が 0 に近づく。観測を聞かなくなり、推定が本当の動きから遅れて離れていく（発散）</td></tr>
+    <tr><td>観測を信じすぎ</td><td><math set:html={hat('R')} /> が小さすぎる</td><td><math><mi>K</mi></math> が 1 に近づき、推定が観測の雑音にそのまま振り回される。帯は誤差より細い</td></tr>
+    <tr><td>観測を疑いすぎ</td><td><math set:html={hat('R')} /> が大きすぎる</td><td><math><mi>K</mi></math> が小さく、推定が鈍い。帯は誤差より広い</td></tr>
+  </tbody>
+</table></div>
+<p>見積りが合っているかは、観測だけから確かめられます。イノベーションを、フィルタが見積った分散で割った 2 乗が正規化イノベーション 2 乗（NIS）です<Fragment set:html={rf(5)} /><Fragment set:html={rf(4)} />。</p>
+<div class="eqs">
+  <math display="block" set:html={`${k_('<mi>ε</mi>')}<mo>=</mo>${fr(sq(k_('<mi>y</mi>')), k_('<mi>S</mi>'))}`} />
+</div>
+<ul class="tl">
+  <li>見積りが合っていれば、<math><msub><mi>ε</mi><mi>k</mi></msub></math> は自由度 1 のカイ 2 乗分布に従い、平均は 1</li>
+  <li>1 回ごとの値はばらつきが大きいので、<math><mi>N</mi></math> 回の平均で判定する。<math><mi>N</mi></math> 回の和は自由度 <math><mi>N</mi></math> のカイ 2 乗分布に従う</li>
+  <li>平均が 95 % の範囲より大きければ、誤差が見積りより大きい（過信）。小さければ、見積りが広すぎる（慎重すぎ）</li>
+</ul>
+<p>このツールは、直近 12 s の NIS の平均を、自由度 <math><mi>N</mi></math> のカイ 2 乗分布の両側 95 % の範囲を <math><mi>N</mi></math> で割った値と比べます。分位点は Wilson と Hilferty の近似で求めます<Fragment set:html={rf(7)} />。</p>
+<div class="eqs">
+  <math display="block" set:html={`${fr('<msubsup><mi>χ</mi><mi>N</mi><mn>2</mn></msubsup>', '<mi>N</mi>')}<mo>≈</mo><msup><mrow><mo>(</mo><mn>1</mn><mo>−</mo>${fr('<mn>2</mn>', '<mn>9</mn><mi>N</mi>')}<mo>±</mo><mn>1.96</mn><msqrt>${fr('<mn>2</mn>', '<mn>9</mn><mi>N</mi>')}</msqrt><mo>)</mo></mrow><mn>3</mn></msup>`} />
+</div>
+
+<h3>今の値を代入した式</h3>
+<p>観測の間隔と、フィルタが使う見積りを代入した行列と、予測と更新をくり返して落ち着いたカルマンゲイン <math><msub><mi>K</mi><mi>∞</mi></msub></math> です。</p>
+<div class="subst" id="subst" role="group" aria-label="今の値を代入した式"></div>
+
+<h3>このツールで決めたこと</h3>
+<ul class="tl">
+  <li>台車の加速度のゆらぎ・観測の雑音・観測の間隔・初めの速さの初期値</li>
+  <li>本当の初めの位置は、フィルタの初めの位置の不確かさと同じ広さの正規分布から選ぶ。フィルタは位置 0・速度 0 から推定を始める</li>
+  <li>乱数の種（同じ設定なら毎回同じ動きと観測になる）</li>
+  <li>場面ごとに、選んだときに先に進めておく回数（止まった台車 3 回、走る台車 15 回、雑音の設定の誤り 120 回）</li>
+  <li>楕円は 95 % の範囲、誤差の帯は ±2σ</li>
+  <li>NIS の平均は直近 12 s で、15 回以上観測してから判定する</li>
+  <li>位置と速度の平面の表示の範囲は、落ち着いたときの予測の標準偏差の 4 倍と観測の雑音の 3 倍の大きい方。本当の状態が外に出るときは広げる</li>
+</ul>
+
+<h3>出典</h3>
+<ol class="refs">
+  <li id="thy-r1"><span class="rf-for">カルマンフィルタ</span><span class="rf-src">R. E. Kalman, “A New Approach to Linear Filtering and Prediction Problems,” <i>Journal of Basic Engineering</i>, vol. 82, no. 1, pp. 35–45, 1960, <a href="https://doi.org/10.1115/1.3662552" target="_blank" rel="noopener">doi:10.1115/1.3662552</a></span></li>
+  <li id="thy-r2"><span class="rf-for">1 次元の正規分布の積（式 (12)・(13)）</span><span class="rf-src">R. Faragher, “Understanding the Basis of the Kalman Filter Via a Simple and Intuitive Derivation,” <i>IEEE Signal Processing Magazine</i>, vol. 29, no. 5, pp. 128–132, 2012, <a href="https://doi.org/10.1109/MSP.2012.2203621" target="_blank" rel="noopener">doi:10.1109/MSP.2012.2203621</a></span></li>
+  <li id="thy-r3"><span class="rf-for">予測と更新の式、止まった量の推定と観測の雑音の見積りを誤った例（3 章）</span><span class="rf-src">G. Welch and G. Bishop, <a href="https://techreports.cs.unc.edu/papers/95-041.pdf" target="_blank" rel="noopener">An Introduction to the Kalman Filter</a>, TR 95-041, University of North Carolina at Chapel Hill, updated April 5, 2004</span></li>
+  <li id="thy-r4"><span class="rf-for">1 次元のカルマンゲインと過程雑音の見積りの誤り（4 章 One Dimensional Kalman Filters）、共分散の楕円（5 章）、過程雑音の共分散と、小さすぎるときの発散（7 章 Kalman Filter Math）</span><span class="rf-src">R. R. Labbe Jr., <a href="https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python" target="_blank" rel="noopener">Kalman and Bayesian Filters in Python</a>（CC BY 4.0）</span></li>
+  <li id="thy-r5"><span class="rf-for">離散白色雑音加速度の模型（6.3.2 節）、フィルタの整合性と NIS（5.4 節）</span><span class="rf-src">Y. Bar-Shalom, X. R. Li, and T. Kirubarajan, <i>Estimation with Applications to Tracking and Navigation</i>, Wiley, 2001, <a href="https://doi.org/10.1002/0471221279" target="_blank" rel="noopener">doi:10.1002/0471221279</a></span></li>
+  <li id="thy-r6"><span class="rf-for">カイ 2 乗分布の分位点</span><span class="rf-src">NIST/SEMATECH, <i>e-Handbook of Statistical Methods</i>, <a href="https://www.itl.nist.gov/div898/handbook/eda/section3/eda3674.htm" target="_blank" rel="noopener">1.3.6.7.4 Critical Values of the Chi-Square Distribution</a></span></li>
+  <li id="thy-r7"><span class="rf-for">カイ 2 乗分布の分位点の近似</span><span class="rf-src">E. B. Wilson and M. M. Hilferty, “The Distribution of Chi-Square,” <i>Proceedings of the National Academy of Sciences</i>, vol. 17, no. 12, pp. 684–688, 1931, <a href="https://doi.org/10.1073/pnas.17.12.684" target="_blank" rel="noopener">doi:10.1073/pnas.17.12.684</a></span></li>
+</ol>
