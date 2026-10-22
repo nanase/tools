@@ -1,0 +1,30 @@
+{
+  "license": "CC BY-SA 4.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/deed.ja",
+  "format": "[日本語名 | null, 英語名, 緯度, 経度（東が正）, 直径 km, 種類]",
+  "usgs": {
+    "url": "https://asc-planetarynames-data.s3.us-west-2.amazonaws.com/MOON_nomenclature_center_pts.zip",
+    "page": "https://planetarynames.wr.usgs.gov/GIS_Downloads",
+    "license": "public domain"
+  },
+  "wikipedia": [
+    {
+      "title": "月の海の一覧",
+      "revid": 103420195,
+      "url": "https://ja.wikipedia.org/w/index.php?oldid=103420195",
+      "license": "CC BY-SA 4.0"
+    },
+    {
+      "title": "月のクレーターの一覧",
+      "revid": 104605018,
+      "url": "https://ja.wikipedia.org/w/index.php?oldid=104605018",
+      "license": "CC BY-SA 4.0"
+    },
+    {
+      "title": "月の地形一覧",
+      "revid": 103502553,
+      "url": "https://ja.wikipedia.org/w/index.php?oldid=103502553",
+      "license": "CC BY-SA 4.0"
+    }
+  ]
+}

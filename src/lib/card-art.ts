@@ -854,6 +854,25 @@ export const ART: Record<string, Art> = {
       `<circle class="fb" cx="${r1(px)}" cy="${r1(cur(px))}" r="2.6"/>`
     );
   },
+  /* 月: 左は満ち欠けする月、右は 1 か月の輝面比の曲線の上を今の点が進む */
+  mn(t) {
+    const R = 17,
+      cx = 26,
+      cy = 24,
+      e = mod(1.2 + t * 0.9, TAU),
+      rx = r1(R * Math.abs(Math.cos(e))),
+      w = e < Math.PI,
+      lit = `M${cx} ${cy - R}A${R} ${R} 0 0 ${w ? 1 : 0} ${cx} ${cy + R}A${rx} ${R} 0 0 ${(Math.cos(e) > 0) === w ? 0 : 1} ${cx} ${cy - R}Z`,
+      k = (x: number): number => 40 - 30 * ((1 - Math.cos(((x - 56) / 60) * TAU)) / 2),
+      px = 56 + (e / TAU) * 60;
+    return (
+      `<circle class="c" style="fill:var(--screen)" cx="${cx}" cy="${cy}" r="${R}"/>` +
+      `<path class="fa" d="${lit}"/>` +
+      P('c d', 'M56 40H116') +
+      P('b', fx(k, 56, 116, 60)) +
+      `<circle class="fb" cx="${r1(px)}" cy="${r1(k(px))}" r="2.6"/>`
+    );
+  },
   /* SVG テーマスキーマチェッカー: 明るい地と暗い地に同じ SVG を並べる。暗い地では黒い線が見えにくい。
      2 枚が同じ倍率で拡大する */
   svg(t) {
