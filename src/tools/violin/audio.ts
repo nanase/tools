@@ -3,7 +3,6 @@
  * → 音量 → リミッタ → 出力。Worker の音は MessagePort で AudioWorklet へ直接届く。
  * AudioContext は弾く操作の中で作る（自動再生の制限）。鳴らしていない間は止めて CPU を休ませる
  */
-import { AudioPause } from '../../lib/pause';
 import type { ReverbSpec } from '../../lib/reverb';
 import type { BodySpec } from './body';
 import type { Frame, Manual, Vib } from './player';
@@ -30,7 +29,6 @@ export class ViolinAudio {
   private room: ReverbSpec | null = null;
   private db = -10;
   private idle: ReturnType<typeof setTimeout> | undefined;
-  private hold: AudioPause | null = null;
   /** 最後に知らせてきた、鳴らしている標本の番号と AudioContext の時刻 */
   private pos: { at: number; t: number } | null = null;
   private bowing = false;
@@ -40,7 +38,7 @@ export class ViolinAudio {
   private scopeOn = false;
   /** 直前の音が届いたとき（音の波形の表示） */
   onWave: ((y: Float32Array, fs: number) => void) | null = null;
-  /** 止めていないのに、ブラウザや OS が AudioContext を止めたときに呼ぶ */
+  /** AudioContext が止まったときに呼ぶ（ブラウザや OS が止めたとき。鳴らしていない間に止めたときも） */
   onLost: (() => void) | null = null;
   /** 表示用の状態が届いたとき */
   onFrames: ((f: Frame[]) => void) | null = null;
@@ -52,10 +50,6 @@ export class ViolinAudio {
   /** サンプリング周波数（AudioContext を作る前は 48 kHz とみなす） */
   get fs(): number {
     return this.ac?.sampleRate ?? 48000;
-  }
-
-  get paused(): boolean {
-    return !!this.hold?.paused;
   }
 
   /** 使える状態にする。鳴らせなければ false */
@@ -82,14 +76,14 @@ export class ViolinAudio {
         };
         this.node = node;
         this.master = master;
-        this.hold = new AudioPause(ac, master, () => 10 ** (this.db / 20));
-        this.hold.onLost = () => this.onLost?.();
+        ac.addEventListener('statechange', () => {
+          if (ac.state !== 'running') this.onLost?.();
+        });
         if (this.room) this.post({ type: 'room', r: this.room });
         return this.startSynth(ac.sampleRate);
       })
       .catch(() => false);
     if (!(await this.loading)) return false;
-    this.hold?.release();
     try {
       await ac.resume();
     } catch {
@@ -231,19 +225,6 @@ export class ViolinAudio {
     if (!ac || !p || ac.state !== 'running') return p ? p.at : null;
     const lat = (ac.outputLatency || 0) + (ac.baseLatency || 0);
     return p.at + (ac.currentTime - p.t - lat) * ac.sampleRate;
-  }
-
-  /** 一時停止: AudioContext を止める（計算も、作っておいた音もそのまま残る）。ready で再開する */
-  async pause(fast = false): Promise<void> {
-    clearTimeout(this.idle);
-    await this.hold?.pause(fast);
-  }
-
-  /** 一時停止の間に止めたときは、残した音と残響をすぐ消して、AudioContext を動かしておく */
-  resetIfPaused(): void {
-    if (!this.hold?.paused) return;
-    this.post({ type: 'reset' });
-    void this.ready();
   }
 
   vol(db: number): void {

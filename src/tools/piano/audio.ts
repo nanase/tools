@@ -3,7 +3,6 @@
  * → 音量 → 出力。Worker の結果は MessagePort で AudioWorklet へ直接届く。
  * AudioContext は鍵を押した操作の中で作る（自動再生の制限）。鳴らしていない間は止めて CPU を休ませる
  */
-import { AudioPause } from '../../lib/pause';
 import type { ReverbSpec } from '../../lib/reverb';
 import type { BoardDesc } from './engine';
 import { makePiano, type Piano, type PianoSpec, type StringView, strikeKey } from './model';
@@ -29,8 +28,7 @@ export class PianoAudio {
   private spec: PianoSpec | null = null;
   private db = -30;
   private idle: ReturnType<typeof setTimeout> | undefined;
-  private hold: AudioPause | null = null;
-  /** 止めていないのに、ブラウザや OS が AudioContext を止めたときに呼ぶ */
+  /** AudioContext が止まったときに呼ぶ（ブラウザや OS が止めたとき。鳴らしていない間に止めたときも） */
   onLost: (() => void) | null = null;
   private synth: Worker | null = null;
   /** Worker を使えないときの、主スレッドの模型 */
@@ -45,9 +43,9 @@ export class PianoAudio {
     return this.ac?.sampleRate ?? 48000;
   }
 
-  /** AudioContext の時刻 [s]（作る前・止めている間は null。一時停止の間は、止めた時刻のまま） */
+  /** AudioContext の時刻 [s]（作る前・止めている間は null） */
   now(): number | null {
-    return this.ac && (this.ac.state === 'running' || this.hold?.paused) ? this.ac.currentTime : null;
+    return this.ac?.state === 'running' ? this.ac.currentTime : null;
   }
 
   /** 使える状態にする。鳴らせなければ false */
@@ -71,8 +69,9 @@ export class PianoAudio {
         node.connect(master).connect(lim).connect(ac.destination);
         this.node = node;
         this.master = master;
-        this.hold = new AudioPause(ac, master, () => 10 ** (this.db / 20));
-        this.hold.onLost = () => this.onLost?.();
+        ac.addEventListener('statechange', () => {
+          if (ac.state !== 'running') this.onLost?.();
+        });
         if (this.board) this.post({ type: 'board', d: this.board });
         if (this.room) this.post({ type: 'room', r: this.room });
         this.startSynth();
@@ -80,7 +79,6 @@ export class PianoAudio {
       })
       .catch(() => false);
     if (!(await this.loading)) return false;
-    this.hold?.release();
     try {
       await ac.resume();
     } catch {
@@ -180,21 +178,15 @@ export class PianoAudio {
     this.post({ type: 'pedal', at, on });
   }
 
-  /** 一時停止: AudioContext を止める（時刻も、鳴っている音も、予約もそのまま残る）。ready で再開する */
-  async pause(fast = false): Promise<void> {
-    clearTimeout(this.idle);
-    await this.hold?.pause(fast);
+  /** 一時停止: 予定を消して、押しているすべての鍵とペダルを離す（ダンパーが下り、鳴っている音は自然に減衰する） */
+  pause(): void {
+    this.post({ type: 'cancel', gen: ++this.gen });
+    this.releaseAll();
   }
 
-  /** 予定を消して、すべての音を止める。一時停止の間なら、残した音と残響をすぐ消して、AudioContext を動かしておく */
+  /** 予定を消して、すべての音を止める */
   stop(tau = 0.08): void {
-    const gen = ++this.gen;
-    if (!this.hold?.paused) {
-      this.post({ type: 'stop', tau, gen });
-      return;
-    }
-    this.post({ type: 'reset', gen });
-    void this.ready();
+    this.post({ type: 'stop', tau, gen: ++this.gen });
   }
 
   vol(db: number): void {

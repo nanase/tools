@@ -2,7 +2,6 @@
  * トランペットの音を Web Audio API で鳴らす: 奏者と楽器と残響（AudioWorklet、worklet.ts）→ 音量 → リミッタ → 出力。
  * AudioContext は吹く操作の中で作る（自動再生の制限）。鳴らしていない間は止めて CPU を休ませる
  */
-import { AudioPause } from '../../lib/pause';
 import type { ReverbSpec } from '../../lib/reverb';
 import type { Manual, PNote } from './player';
 import type { Opts, TpMsg, TpOut } from './worklet';
@@ -24,7 +23,6 @@ export class TrumpetAudio {
   private loading: Promise<boolean> | null = null;
   private db = -28;
   private idle: ReturnType<typeof setTimeout> | undefined;
-  private hold: AudioPause | null = null;
   private pts: Float32Array = new Float32Array(0);
   private opts: Opts = { temp: 27, brass: 1, onAxis: true, vib: false, noise: 0.01, slides: true };
   private room: ReverbSpec | null = null;
@@ -34,12 +32,8 @@ export class TrumpetAudio {
   onFrame: ((f: Frame) => void) | null = null;
   onWave: ((y: Float32Array, fs: number) => void) | null = null;
   onDone: (() => void) | null = null;
-  /** 止めていないのに、ブラウザや OS が AudioContext を止めたときに呼ぶ */
+  /** AudioContext が止まったときに呼ぶ（ブラウザや OS が止めたとき。鳴らしていない間に止めたときも） */
   onLost: (() => void) | null = null;
-
-  get paused(): boolean {
-    return !!this.hold?.paused;
-  }
 
   /** 使える状態にする。鳴らせなければ false */
   async ready(): Promise<boolean> {
@@ -71,8 +65,9 @@ export class TrumpetAudio {
         };
         this.node = node;
         this.master = master;
-        this.hold = new AudioPause(ac, master, () => 10 ** (this.db / 20));
-        this.hold.onLost = () => this.onLost?.();
+        ac.addEventListener('statechange', () => {
+          if (ac.state !== 'running') this.onLost?.();
+        });
         this.post({ type: 'init', pts: this.pts, opts: this.opts });
         if (this.room) this.post({ type: 'room', r: this.room });
         this.post({ type: 'scope', on: this.scopeOn });
@@ -80,7 +75,6 @@ export class TrumpetAudio {
       })
       .catch(() => false);
     if (!(await this.loading)) return false;
-    this.hold?.release();
     try {
       await ac.resume();
     } catch {
@@ -150,19 +144,6 @@ export class TrumpetAudio {
     this.inPiece = false;
     this.blowing = false;
     this.post({ type: 'mute' });
-  }
-
-  /** 一時停止: AudioContext を止める（計算の状態はそのまま残る）。ready で再開する */
-  async pause(fast = false): Promise<void> {
-    clearTimeout(this.idle);
-    await this.hold?.pause(fast);
-  }
-
-  /** 一時停止の間に止めたときは、残した音と残響をすぐ消して、AudioContext を動かしておく */
-  resetIfPaused(): void {
-    if (!this.hold?.paused) return;
-    this.post({ type: 'reset' });
-    void this.ready();
   }
 
   vol(db: number): void {
