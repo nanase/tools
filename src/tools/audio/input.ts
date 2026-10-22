@@ -6,6 +6,7 @@ import { Choice } from '../../lib/choice';
 import { $ } from '../../lib/dom';
 import { fmt, minus } from '../../lib/format';
 import { ParamGroup } from '../../lib/param';
+import { forget, store, stored } from '../../lib/store';
 import { AudioIn, NB, type Src } from './capture';
 import { type InKey, TF_PARAM, VOL_PARAM } from './params';
 import { PERIODIC, type Wave } from './signal';
@@ -69,6 +70,12 @@ export function initInput(): InputUi {
     },
     true,
   );
+  /* 使える間に閉じたら保存し、次に使える状態になったときも閉じておく（既定は開く） */
+  snd.addEventListener('toggle', () => {
+    if (monOff) return;
+    if (snd.open) forget('o:hd-snd');
+    else store('o:hd-snd', false);
+  });
   /** 枠の表示を入力の状態に合わせる */
   function sync(): void {
     const s = a.src,
@@ -97,13 +104,13 @@ export function initInput(): InputUi {
     tw.set(a.test.wave);
     $('#p-tf').hidden = !test || !per;
     if (ratio) ratio.hidden = $('#p-tph').hidden = !test || !per;
-    /* モニター: マイクの間は枠ごと畳んで開けなくする。ほかの入力元に変えたら開く */
+    /* モニター: マイクの間は枠ごと畳んで開けなくする。ほかの入力元に変えたら開く（閉じて保存していれば閉じたまま） */
     const mic = s === 'mic';
     if (mic !== monOff) {
       monOff = mic;
       snd.classList.toggle('lock', mic);
       $('summary', snd).setAttribute('aria-disabled', String(mic));
-      snd.open = !mic;
+      snd.open = !mic && stored('o:hd-snd') !== false;
     }
     $('#monBtn').setAttribute('aria-pressed', String(a.monOn));
     $('#monLed').classList.toggle('on', a.monOn);

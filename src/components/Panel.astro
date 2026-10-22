@@ -1,16 +1,19 @@
 ---
 /**
  * 枠: 細い線に見出しを載せる。右端に載せる補足・ボタンは slot="aux"。
- * aux の左に、枠の中の入力のうち既定値と違うものを戻す「↺ n」を置く（lib/reset.ts が出し入れする）
+ * aux の左に、枠の中の入力のうち既定値と違うものを戻す「↺ n」を置く（lib/reset.ts が出し入れする）。
+ * 見出しを押すと開閉する（閉じると見出しの載った水平線と aux だけ）。初期状態は開く。動作は lib/tool-page.ts。
+ * ページの中心の図と関連ツールは fixed で開閉しない
  */
 interface Props {
   hid: string;
   title: string;
   class?: string;
+  fixed?: boolean;
 }
-const { hid, title, class: cls } = Astro.props;
+const { hid, title, class: cls, fixed } = Astro.props;
 ---
-<section class:list={['pnl', cls]} aria-labelledby={hid}>
-  <div class="ph"><h2 id={hid}>{title}</h2><div class="pha"><button type="button" class="prst" hidden></button><slot name="aux" /></div></div>
+<section class:list={['pnl', cls]} aria-labelledby={hid} data-fold={fixed ? undefined : hid}>
+  <div class="ph">{fixed ? <h2 id={hid}>{title}</h2> : <h2><button type="button" class="fold" id={hid} aria-expanded="true">{title}</button></h2>}<div class="pha"><button type="button" class="prst" hidden></button><slot name="aux" /></div></div>
   <slot />
 </section>

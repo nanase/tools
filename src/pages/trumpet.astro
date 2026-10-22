@@ -38,7 +38,7 @@ const ROWS = [...PARTIALS].reverse().filter((n) => n <= 8);
   <PageTitle title={name}>唇の振動（外へ開く弁）、マウスピースからリードパイプ・3 本のピストン・ベルまでの管の中を行き来する波、強く吹いたときに波が切り立つ非線形の伝搬、ベルからの放射を計算して、トランペットの音を作ります。ピストンを押して倍音を選び、「吹く」で鳴らせます。倍音のはしごで、同じ指使いのまま唇の張りで鳴る音が変わる様子を確かめられます。曲の演奏もできます。</PageTitle>
 
   <div class="tgrid">
-    <Panel hid="hd-fig" title="トランペット" class="a-fig">
+    <Panel hid="hd-fig" title="トランペット" class="a-fig" fixed>
       <Fragment slot="aux">
         <div class="seg" id="p-nv" role="group" aria-label="気柱の見せ方"><button type="button" data-v="amp" aria-pressed="true" title="管の中の各点の圧力の振れ幅（定在波の腹と節）を描く">振れ幅</button><button type="button" data-v="slow" aria-pressed="false" title="振動をゆっくりにして、圧力が管の中を行き来する様子を描く">スロー</button></div>
         <div class="seg" id="p-names" role="group" aria-label="音名"><button type="button" data-v="con" aria-pressed="true" title="実際に鳴る音の名前（ピアノと同じ）">実音</button><button type="button" data-v="wri" aria-pressed="false" title="B♭ 管の楽譜に書く音の名前（実音より全音高い）">記譜</button></div>

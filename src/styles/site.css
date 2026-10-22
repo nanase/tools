@@ -444,16 +444,19 @@ a.unit:hover h3{text-decoration:underline;text-decoration-color:var(--ink-3);tex
 /* theory */
 .a-thy{font-size:14.5px}
 .a-thy math{font-family:var(--math);font-size:1.1em;color:var(--ink)}
-.clps>summary{display:flex;align-items:center;gap:10px;cursor:pointer;list-style:none;border-radius:2px}
-.clps:not([open]){padding-bottom:0;padding-top:10px;border-color:var(--line-2) transparent transparent;border-radius:0}
+.clps>summary,.fold{display:flex;align-items:center;gap:10px;cursor:pointer;list-style:none;border-radius:2px}
+.clps:not([open]),.pnl.shut{padding-bottom:0;padding-top:10px;border-color:var(--line-2) transparent transparent;border-radius:0}
 .clps>summary::-webkit-details-marker{display:none}
-.clps>summary::after{content:"";flex:none;width:7px;height:7px;margin-right:2px;border-right:2px solid var(--ink-2);border-bottom:2px solid var(--ink-2);transform:rotate(45deg) translateY(-3px)}
-.clps[open]>summary::after{transform:rotate(-135deg) translateY(-2px)}
+.clps>summary::after,.fold::after{content:"";flex:none;width:7px;height:7px;margin-right:2px;border-right:2px solid var(--ink-2);border-bottom:2px solid var(--ink-2);transform:rotate(45deg) translateY(-3px)}
+.clps[open]>summary::after,.pnl:not(.shut) .fold::after{transform:rotate(-135deg) translateY(-2px)}
+/* 開閉できる枠（Panel.astro）の見出しのボタン。閉じると見出しと右端の補足・ボタンだけを残す */
+.fold{padding:0;border:0;background:none;color:inherit;font:inherit;text-align:left}
+.pnl.shut>:not(.ph){display:none!important}
 .thy-body{padding-top:0}
 .thy-body.anim{overflow:hidden}
 @media (prefers-reduced-motion:no-preference){
-  .clps>summary::after{transition:transform .22s ease}
-  .clps{transition:border-color .25s ease,border-radius .25s ease}
+  .clps>summary::after,.fold::after{transition:transform .22s ease}
+  .clps,.pnl[data-fold]{transition:border-color .25s ease,border-radius .25s ease}
   html.theming,html.theming *,html.theming *::before,html.theming *::after{transition:background-color .3s ease,color .3s ease,border-color .3s ease,fill .3s ease,stroke .3s ease,box-shadow .3s ease!important}
 }
 .thy-body>p:not(.cite){color:var(--ink-2);line-height:1.9}

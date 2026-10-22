@@ -75,7 +75,7 @@ const METERS = [
   <PageTitle title={name}>弓と弦の摩擦（接触の温度で変わる松脂の摩擦）、ねじれも含む弦の振動、駒とつながった胴（シグネチャモードと多数の高いモード）を計算して、ヴァイオリンの音を作ります。弦を押すと、その位置を押さえて弓で弾き続けます。弓の速さ・弓圧・駒からの距離を変えると、弦の振れ方と音がすぐに変わります。弓の傾きで弾く弦（重音を含む 7 段）を選び、曲の演奏もできます。</PageTitle>
 
   <div class="tgrid">
-    <Panel hid="hd-fig" title="ヴァイオリン" class="a-fig">
+    <Panel hid="hd-fig" title="ヴァイオリン" class="a-fig" fixed>
       <Fragment slot="aux">
         <div class="seg" id="p-view" role="group" aria-label="見る位置"><button type="button" data-v="top" aria-pressed="true" title="楽器を真上から見る（指板・弦・弓の位置が正確に分かる）">上から</button><button type="button" data-v="player" aria-pressed="false" title="構えたときの演奏者の目の位置から見る">演奏者の目線</button></div>
         <div class="seg" id="p-nv" role="group" aria-label="振動の見せ方"><button type="button" data-v="blur" aria-pressed="true" title="実際の速さで、目に見える残像（振れる範囲）を描く">残像</button><button type="button" data-v="slow" aria-pressed="false" title="振動をゆっくりにして、弦の形（折れ目が往復する様子）を描く">スロー</button></div>
