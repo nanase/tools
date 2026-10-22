@@ -255,6 +255,14 @@ export const TOOLS: Tool[] = [
     ic: 'tu',
     k: 'tuner チューニング 調律 調弦 音合わせ クロマチック chromatic ストロボ strobe stroboconn 針 メータ meter セント cent 基準ピッチ a440 442 ギター guitar ベース bass ウクレレ ukulele ヴァイオリン バイオリン violin ヴィオラ チェロ cello コントラバス マンドリン バンジョー ハーモニカ harmonica 管楽器 移調 transpose 音律 temperament 純正律 just intonation ピッチ pitch mpm マイク オーディオ audio',
   },
+  {
+    id: 'temperament',
+    c: '音響',
+    t: '音律とうなり',
+    d: '平均律・純正律・ミーントーンなどで和音を鳴らし、うなりの速さを数値と音で比べます。',
+    ic: 'tm',
+    k: 'temperament tuning 音律 調律 うなり beat beats 平均律 equal temperament 純正律 just intonation ピタゴラス pythagorean ミーントーン meantone ヴェルクマイスター werckmeister キルンベルガー kirnberger ヴァロッティ vallotti ヤング young 古典調律 well temperament 和音 chord 長三和音 3 度 5 度 部分音 倍音 partial harmonic コンマ comma ウルフ wolf 非調和性 inharmonicity ストレッチ stretch ピアノ piano オルガン organ セント cent',
+  },
 ];
 /** 準備中を後ろへ */
 export const order = (L: Tool[]): Tool[] => L.slice().sort((a, b) => (a.s || 0) - (b.s || 0));
