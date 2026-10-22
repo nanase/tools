@@ -1,0 +1,117 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import More from '../components/More.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import { order, TOOLS } from '../data/tools';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import type { ParamDef } from '../lib/param-def';
+import { gridSvg } from '../lib/scope';
+import '../tools/kalman/style.css';
+import { FILT, SCENES, SPEEDS, TRUE, TS } from '../tools/kalman/params';
+import Theory from '../tools/kalman/Theory.astro';
+
+const name = 'カルマンフィルタ';
+/* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
+const CAT = '制御';
+const related = [
+  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'kalman')),
+  ...TOOLS.filter((t) => t.c !== CAT && !t.s),
+];
+/** 定義の一覧から、キーの順に行を取り出す */
+const pick = (L: readonly ParamDef[], ks: readonly string[]) =>
+  ks.map((k) => {
+    const d = L.find((x) => x.k === k);
+    if (!d) throw new Error(k);
+    return d;
+  });
+const PH =
+  '<span data-p="pred">予測</span><i aria-hidden="true">→</i><span data-p="obs">観測</span><i aria-hidden="true">→</i><span data-p="upd">更新</span>';
+---
+<SiteLayout title={name} tool={{ id: 'kalman', name }} description="線路を走る台車の位置と速度を、雑音のある距離計の値からカルマンフィルタで推定します。予測と観測の分布の掛け合わせ、不確かさの楕円の伸び縮み、雑音の設定を誤ったときの崩れ方を見られます。" note="台車の加速度と観測の雑音を、平均 0 の正規分布の白色雑音とした模型による参考値です。">
+  <PageTitle title={name}>線路を走る台車の位置を、雑音のある距離計の値から推定するカルマンフィルタです。予測の分布と観測の分布を掛け合わせて推定を更新する仕組みを、位置の山で確かめられます。位置と速度の平面では、不確かさの楕円が予測で膨らみ、観測で縮みます。フィルタの雑音の見積りを本当の値からずらすと、推定がどう崩れるかを誤差のグラフと正規化イノベーション 2 乗で比べられます。</PageTitle>
+  <div class="mini" aria-hidden="true"><span>RMS<b id="m-rms"></b></span><span><i>K</i><sub><i>p</i></sub><b id="m-kp"></b></span><span>NIS<b id="m-nis"></b></span></div>
+
+  <div class="tgrid">
+    <Panel hid="hd-fig" title="線路と推定" class="a-fig" fixed>
+      <span slot="aux" class="tp-st" id="k-st"></span>
+      <div class="scn" id="p-scene" data-nosave role="group" aria-label="場面">
+        <span class="scn-l" aria-hidden="true">場面</span>
+        {SCENES.map((s) => <button type="button" class="chip" data-v={s.v} aria-pressed={s.v === 'run' ? 'true' : 'false'} title={s.title}>{s.name}</button>)}
+      </div>
+      <div class="sbar">
+        <span class="stag"><i class="sw k-sw-pri" aria-hidden="true"></i>予測</span>
+        <span class="stag"><i class="sw c2" aria-hidden="true"></i>観測</span>
+        <span class="stag"><i class="sw" aria-hidden="true"></i>推定</span>
+        <span class="stag"><i class="sw k-sw-tru" aria-hidden="true"></i>本当の台車</span>
+      </div>
+      <div class="ktw"><svg viewBox="0 0 800 96" id="k-trk" role="img" aria-label="線路と台車と推定"></svg></div>
+      <div class="views">
+        <div><h3 class="vh">位置と速度<span>楕円は 95 % の範囲</span></h3><div class="scope"><svg viewBox="-50 -14 462 290" id="k-ph" role="img" aria-label="位置と速度の平面の楕円"></svg></div></div>
+        <div><h3 class="vh">位置の分布<span>予測 × 観測 ∝ 推定</span></h3><div class="scope"><svg viewBox="-50 -14 462 290" id="k-mg" role="img" aria-label="位置の分布"></svg></div></div>
+      </div>
+      <div class="tp">
+        <button type="button" class="tp-ib" id="k-home" title="最初から（初めの不確かさから推定し直す）" aria-label="最初から"><svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1.5" y="1.5" width="1.8" height="9"/><path d="M10.5 1.5v9L4 6z"/></svg></button>
+        <button type="button" class="tp-pp" id="k-pp" title="動かす" aria-label="動かす"><svg class="i-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.2l7.6 4.8L3 10.8z"/></svg><svg class="i-pause" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="2.8" height="9"/><rect x="7.2" y="1.5" width="2.8" height="9"/></svg></button>
+        <div class="tp-tl">
+          <div class="phs" id="k-phs" set:html={PH} />
+          <div class="tp-tm"><span>観測 <b id="k-k">0</b> 回</span><span id="k-t">0.0 s</span></div>
+        </div>
+        <div class="tp-side"><button type="button" class="tp-sq" id="k-step" title="1 段進める（予測・観測・更新を 1 つずつ）" aria-label="1 段進める"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 3l6 5-6 5M12 3v10"/></svg></button></div>
+      </div>
+      <p class="sr" id="k-live" aria-live="polite"></p>
+      <More id="g-fig" title="表示の設定"><div class="ptab">
+        <ChoiceRow k="spd" name="再生の速さ" sub="図を何分の 1 の速さで動かすか" choices={SPEEDS.map((v) => [v, v === 1 ? '実時間' : `1/${Math.round(1 / v)}`] as const)} value={1} />
+      </div></More>
+    </Panel>
+
+    <div class="col c1">
+      <Panel hid="hd-tr" title="本当の動きと雑音" class="a-tr">
+        <div class="ptab">
+          <ChoiceRow k="ts" sym="<i>T</i>" name="観測の間隔" sub="距離計で測る間隔。予測はこの時間だけ先へ進める" choices={TS.map((v) => [v, `${v} s`] as const)} value={0.2} />
+          {pick(TRUE, ['sa', 'sz']).map((d) => <ParamRow d={d} />)}
+        </div>
+        <More id="g-tr"><div class="ptab">{pick(TRUE, ['v0']).map((d) => <ParamRow d={d} />)}</div></More>
+      </Panel>
+      <Panel hid="hd-fl" title="フィルタの設定" class="a-fl">
+        <div class="ptab">{pick(FILT, ['fq', 'fr']).map((d) => <ParamRow d={d} />)}</div>
+        <More id="g-fl"><div class="ptab">{pick(FILT, ['sp0', 'sv0']).map((d) => <ParamRow d={d} />)}</div></More>
+      </Panel>
+    </div>
+
+    <div class="col c2">
+      <Panel hid="hd-err" title="誤差" class="a-err">
+        <span slot="aux" class="aux">直近 12 s</span>
+        <div class="sbar">
+          <span class="stag" title="推定の位置から本当の位置を引いた値"><i class="sw" aria-hidden="true"></i>推定の誤差 p̂ − p</span>
+          <span class="stag" title="観測から本当の位置を引いた値"><i class="sw c2" aria-hidden="true"></i>観測の誤差 z − p</span>
+          <span class="stag" title="フィルタが見積った推定の標準偏差の 2 倍"><i class="sw k-sw-band" aria-hidden="true"></i>±2σ（見積り）</span>
+          <span class="stag"><b id="k-vd"></b>/div</span>
+        </div>
+        <div class="scope"><svg viewBox="-50 -14 462 280" id="k-err" role="img" aria-label="推定の誤差と見積った範囲"><g set:html={gridSvg()} /><g id="k-errd"></g></svg></div>
+      </Panel>
+      <Panel hid="hd-out" title="計算結果" class="a-out">
+        <dl class="metrics c3">
+          <div class="m m-main"><dt>位置の推定の誤差（RMS）</dt><dd><span id="o-rms"></span><span class="m-sub hh" id="o-rmss" data-ph="観測だけなら 0.000 m（直近 240 回）"></span></dd></div>
+          <div class="m"><dt>カルマンゲイン <i>K</i><sub><i>p</i></sub></dt><dd><span id="o-kp"></span><span class="m-sub" id="o-kps"></span></dd></div>
+          <div class="m"><dt><i>K</i><sub><i>v</i></sub></dt><dd><span id="o-kv"></span><span class="m-sub" id="o-kvs"></span></dd></div>
+          <div class="m"><dt>推定の標準偏差 <i>σ</i><sub><i>p</i></sub></dt><dd><span id="o-sp"></span><span class="m-sub" id="o-sps"></span></dd></div>
+          <div class="m"><dt><i>σ</i><sub><i>v</i></sub></dt><dd><span id="o-sv"></span><span class="m-sub" id="o-svs"></span></dd></div>
+          <div class="m m-wide"><dt>正規化イノベーション 2 乗（NIS）の平均</dt><dd><span id="o-nis"></span><span class="m-sub" id="o-niss"></span></dd></div>
+        </dl>
+      </Panel>
+    </div>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools list={related} />
+  <script>
+    import '../tools/kalman/client';
+  </script>
+</SiteLayout>
