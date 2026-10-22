@@ -8,6 +8,8 @@
 import { czaAlt, parDist, R22 } from '../tools/halo/labels';
 import { fanPath } from '../tools/jjy/fan';
 import { type Encoded, encode } from '../tools/qr-code/encode';
+import { FEAT, PG2, PG3, PW2, PW3, Q_FIG } from '../tools/piano-action/geom';
+import { OUTLINE as PA_OUT } from '../tools/piano-action/outline';
 import {
   BODY_LEN,
   BRIDGE_M,
@@ -111,6 +113,46 @@ const fret = (n: number): number => 14 + 87 * (1 - 2 ** (-n / 12));
 
 /* ---------- ピアノ: 上から見たグランドの、弦の奥の端 ---------- */
 const ptop = (x: number): number => 4 + 26 * ((x - 4) / 112) ** 1.5;
+
+/*
+ * ---------- ピアノのアクション: ページの横から見た図（部品の外形は mm、y は上向き）を 0.245 倍にしたもの ----------
+ * 高さは弦から鍵の下までで決まるので、横は鍵の後ろの端（x = −236 mm）をカードの x = 5 に置き、鍵の前の端を少し切る。
+ * 鍵の支点の高さは y = 45。外形の数は mm の整数に丸める（カードでは 1 mm が 0.3 px ほどなので、形は変わらない）
+ */
+const PA = (() => {
+  const k = 0.245,
+    X0 = 5 + 236 * k,
+    Y0 = 45,
+    mm = (p: readonly number[]): [number, number] => [p[0] * 1000, p[1] * 1000],
+    out = Object.fromEntries(
+      Object.entries(PA_OUT).map(([b, d]) => [b, d.replace(/-?\d+\.\d+/g, (m) => String(Math.round(Number(m))))]),
+    ) as Record<keyof typeof PA_OUT, string>,
+    /* ハンマーの頭の上端の高さ [mm]。弦は、静止の頭の上端から打弦距離 48 mm（ページの標準）の高さ */
+    hd = FEAT.Ph4.f as { p: readonly [number, number]; r: number },
+    head = (a: number): number => (PG3[1] + hd.p[0] * Math.sin(a) + hd.p[1] * Math.cos(a) + hd.r) * 1000;
+  return {
+    k,
+    X0,
+    Y0,
+    out,
+    g2: mm(PG2),
+    g3: mm(PG3),
+    w2: mm(PW2),
+    w3: mm(PW3),
+    str: head(Q_FIG[4]) + 48,
+    /** 弦の端（アグラフ）の x [mm] */
+    agr: -138,
+  };
+})();
+const paRot = (a: number, [x, y]: [number, number]): [number, number] => [
+  x * Math.cos(a) - y * Math.sin(a),
+  x * Math.sin(a) + y * Math.cos(a),
+];
+/** 0〜1 をなめらかに（両端で速さ 0） */
+const ease = (v: number): number => {
+  const c = clamp(v, 0, 1);
+  return c * c * (3 - 2 * c);
+};
 
 /* ---------- エンジン: 内径 50・行程 63.1・連接棒 100 mm の比の単気筒 ---------- */
 const EN = { cx: 22, cy: 35, r: 4, l: 12.7 };
@@ -613,6 +655,52 @@ export const ART: Record<string, Art> = {
         s += `<circle class="a t" cx="${x}" cy="33" r="${r1(1.5 + 16 * tau)}" opacity="${r1(1 - tau / 0.7)}"/>`;
     });
     return s;
+  },
+  /* ピアノのアクション: 横から見た鍵・ウィッペン・ジャック・レペティションレバー・ハンマーと弦（ページの図を縮めた形）。
+     鍵が沈み、ジャックが抜けたハンマーが弦を打ち、落ちてバックチェックに止まり、鍵が戻ると元の姿勢に戻る。3 秒で 1 回打つ */
+  pa(t) {
+    const u = mod(t, 3),
+      /* 鍵の沈み（0〜1）。0〜0.4 s で沈み、1.6〜2.1 s で戻る */
+      dn = ease(u / 0.4) * (1 - ease((u - 1.6) / 0.5)),
+      /* ハンマーの回り（打弦で 1）。加速して 0.45 s で弦を打ち、跳ね返ってチェック（0.68）に止まり、鍵と戻る */
+      hm = u < 0.45 ? (u / 0.45) ** 1.6 : u < 1.6 ? 0.68 + 0.32 * (1 - clamp((u - 0.45) / 0.3, 0, 1)) ** 2 : 0.68 * dn,
+      /* 弦の手前で、レペティションレバーはドロップねじで止まり、ジャックはレットオフで抜ける（ウィッペンから測る）。
+         鍵が戻ると元へ */
+      jk = u < 1 ? ease((u - 0.39) / 0.07) : dn,
+      rp = u < 1 ? ease((u - 0.34) / 0.08) : dn,
+      q = [
+        Q_FIG[0] - 0.046 * dn,
+        Q_FIG[1] + 0.088 * dn,
+        Q_FIG[2] - 0.1 * jk,
+        Q_FIG[3] - 0.07 * rp,
+        Q_FIG[4] - 0.36 * hm,
+      ];
+    const [w2x, w2y] = paRot(q[1], PA.w2),
+      [w3x, w3y] = paRot(q[1], PA.w3),
+      part = (c: string, b: keyof typeof PA.out, o: readonly number[], a: number): string =>
+        `<g transform="translate(${r1(o[0])} ${r1(o[1])}) rotate(${r1((a * 180) / Math.PI)})">${P(c, PA.out[b])}</g>`;
+    const X = (x: number): number => PA.X0 + x * PA.k,
+      ys = r1(PA.Y0 - PA.str * PA.k),
+      xa = r1(X(PA.agr)),
+      /* 打ったあとの弦の振れ（カードの左の端で）。鍵が戻るとダンパーで止まる */
+      A =
+        u < 0.45
+          ? 0
+          : 1.6 * Math.exp(-1.2 * (u - 0.45)) * Math.exp(-12 * Math.max(0, u - 1.6)) * Math.sin(TAU * 7 * (u - 0.45));
+    return (
+      '<clipPath id="ca-pa"><rect x="4" y="0" width="112" height="48"/></clipPath><g clip-path="url(#ca-pa)">' +
+      P(
+        'c',
+        Math.abs(A) > 0.05 ? `M${xa} ${ys}Q${r1((xa + 4) / 2)} ${r1(ys - A / 2)} 4 ${r1(ys - A)}` : `M4 ${ys}H${xa}`,
+      ) +
+      `<g transform="matrix(${PA.k} 0 0 ${-PA.k} ${r1(PA.X0)} ${PA.Y0})">` +
+      part('c t', 'key', [0, 0], q[0]) +
+      part('b t', 'whippen', PA.g2, q[1]) +
+      part('a t', 'rep', [PA.g2[0] + w3x, PA.g2[1] + w3y], q[1] + q[3]) +
+      part('c t', 'jack', [PA.g2[0] + w2x, PA.g2[1] + w2y], q[1] + q[2]) +
+      part('c', 'hammer', PA.g3, q[4]) +
+      '</g></g>'
+    );
   },
   /*
    * ヴァイオリン音響モデル: 上から見たヴァイオリンと弓（実物の長さ）。弓は A 線を擦りながら、元から先まで弓をいっぱいに

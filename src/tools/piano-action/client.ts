@@ -304,7 +304,10 @@ function draw(force = false): void {
         .join('') || '（なし）';
   }
   txt('#cap-t', ms(t, 2));
-  txt('#cap-h', `${Math.abs(v) < 0.005 ? '0.00' : v.toFixed(2).replace('-', '−')} m/s・弦まで ${(Math.max(0, gapAt(R, i)) * 1000).toFixed(1)} mm`);
+  txt(
+    '#cap-h',
+    `${Math.abs(v) < 0.005 ? '0.00' : v.toFixed(2).replace('-', '−')} m/s・弦まで ${(Math.max(0, gapAt(R, i)) * 1000).toFixed(1)} mm`,
+  );
   txt('#tp-t', ms(t, 2));
   txt('#m-t', ms(t));
   for (const b of $$<HTMLElement>('#tp-ch .ch')) {

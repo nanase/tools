@@ -86,11 +86,11 @@
 .m-main dd{font-size:30px}
 
 /* 段階の時間 */
-.tl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 10px;align-items:center;font-size:12.5px}
-.tl .nm{color:var(--ink-2)}
-.tl .nm.on{color:var(--ink);font-weight:700}
-.tl .row{display:flex;align-items:center;gap:8px;min-width:0}
-.tl .bar{flex:none;height:10px;border-radius:2px;background:color-mix(in srgb,var(--ink-3) 45%,transparent)}
-.tl .bar.on{background:var(--hot)}
-.tl .len{font:500 11.5px/1 var(--mono);color:var(--ink-3);white-space:nowrap}
-.tl-n{margin:8px 0 0}
+.stl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 10px;align-items:center;font-size:12.5px}
+.stl .nm{color:var(--ink-2)}
+.stl .nm.on{color:var(--ink);font-weight:700}
+.stl .row{display:flex;align-items:center;gap:8px;min-width:0}
+.stl .bar{flex:none;height:10px;border-radius:2px;background:color-mix(in srgb,var(--ink-3) 45%,transparent)}
+.stl .bar.on{background:var(--hot)}
+.stl .len{font:500 11.5px/1 var(--mono);color:var(--ink-3);white-space:nowrap}
+.stl-n{margin:8px 0 0}
