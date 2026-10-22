@@ -152,6 +152,14 @@ export const TOOLS: Tool[] = [
     k: 'piano grand acoustic physical model 物理モデル 弦 string ハンマー hammer フェルト felt 響板 soundboard 非調和性 inharmonicity ユニゾン unison 二段減衰 double decay ダンパー damper ペダル pedal 共鳴 sympathetic 残響 reverb モード合成 modal synthesis 演奏 バッハ ベートーヴェン 月光 サティ オーディオ audio',
   },
   {
+    id: 'piano-action',
+    c: '音響',
+    t: 'ピアノのアクション',
+    d: 'グランドピアノの鍵からハンマーまでの機構の動きを、段階ごとにスローで追います。',
+    ic: 'pa',
+    k: 'piano action grand 機構 アクション 鍵 key ハンマー hammer ウィッペン wippen whippen ジャック jack レペティション repetition lever ナックル knuckle レットオフ let-off escapement エスケープメント ダブルエスケープメント double escapement ドロップ drop バックチェック back check ダンパー damper キャプスタン capstan 整調 regulation 連打 repetition 打弦 多体 multibody 接触 contact スロー slow motion hirschkorn',
+  },
+  {
     id: 'violin',
     c: '音響',
     t: 'ヴァイオリン音響モデル',

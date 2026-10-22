@@ -1,0 +1,119 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import { order, TOOLS } from '../data/tools';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import { outVol } from '../lib/play';
+import '../tools/piano-action/style.css';
+import { NOTES, REGS, SPEEDS, TOUCHES, VOL0 } from '../tools/piano-action/params';
+import Theory from '../tools/piano-action/Theory.astro';
+
+const name = 'ピアノのアクション';
+/* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
+const CAT = '音響';
+const related = [
+  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'piano-action')),
+  ...TOOLS.filter((t) => t.c !== CAT && !t.s),
+];
+const LEGEND = [
+  ['key', '鍵'],
+  ['whippen', 'ウィッペン'],
+  ['jack', 'ジャック'],
+  ['rep', 'レペティションレバー'],
+  ['hammer', 'ハンマー'],
+  ['damper', 'ダンパー（仮の形）'],
+] as const;
+---
+<SiteLayout title={name} tool={{ id: 'piano-action', name }} description="グランドピアノの鍵を押してからハンマーが弦を打つまでの機構（アクション）の動きを、5 つの部品と 13 か所の接触の多体の模型で計算し、段階ごとにスローで追います。整調を変えると、ブロッキングや連打できない様子も見られます。" note="動きは Hirschkorn (2004) の多体の模型による計算で、ダンパーは仮の形です。">
+  <PageTitle title={name}>グランドピアノの鍵を押してから、ハンマーが弦を打ち、バックチェックに受け止められ、鍵を戻して連打するまでの機構（アクション）の動きを計算します。鍵・ウィッペン・ジャック・レペティションレバー・ハンマーの 5 つの部品が、13 か所の接触で押し合う模型を使います。段階ごとの絵を押すと、その段階をスローで見られます。整調（レットオフ・ドロップ・バックチェックなど）を変えると、動きを計算し直します。打弦の速さで、ピアノ音響モデルの弦を鳴らせます。</PageTitle>
+  <div class="mini" aria-hidden="true"><span>段階<b id="m-st"></b></span><span><i>t</i><b id="m-t"></b></span><span><i>v</i><sub>h</sub><b id="m-v"></b></span></div>
+
+  <div class="tgrid">
+    <Panel hid="hd-stg" title="段階" class="a-stg" fixed>
+      <div slot="aux" class="seg" id="p-touch" role="group" aria-label="打鍵">{TOUCHES.map(([v, l, t], i) => <button type="button" data-v={v} aria-pressed={i === 0 ? 'true' : 'false'} title={t}>{l}</button>)}</div>
+      <div class="frames" id="frames" role="group" aria-label="段階ごとの絵"></div>
+    </Panel>
+
+    <Panel hid="hd-act" title="アクション" class="a-act" fixed>
+      <div slot="aux" class="seg" id="p-spd" role="group" aria-label="再生の速さ">{SPEEDS.map(([v, l, t], i) => <button type="button" data-v={v} aria-pressed={i === 0 ? 'true' : 'false'} title={t}>{l}</button>)}</div>
+      <div class="ag">
+        <div class="afig">
+          <div class="lgd" aria-hidden="true">
+            {LEGEND.map(([c, l]) => <span><i class={`sw p-${c}`}></i>{l}</span>)}
+            <span><span class="led on"></span>力を伝えている接触</span>
+          </div>
+          <div class="awrap">
+            <svg id="a-svg" role="img" aria-label="グランドピアノのアクションを横から見た図"></svg>
+            <div class="alab" id="a-lab" aria-hidden="true"></div>
+            <p class="busy" id="busy" hidden>計算しています…</p>
+          </div>
+        </div>
+        <div class="cap" aria-live="polite">
+          <h3><span class="no" id="cap-no"></span><span id="cap-nm"></span></h3>
+          <p id="cap-d"></p>
+          <dl>
+            <dt>時刻</dt><dd class="mono" id="cap-t"></dd>
+            <dt>動く部品</dt><dd id="cap-mv"></dd>
+            <dt>力を伝える接触</dt><dd id="cap-ct"></dd>
+            <dt>ハンマー</dt><dd class="mono" id="cap-h"></dd>
+          </dl>
+        </div>
+      </div>
+      <div class="tp">
+        <button type="button" class="tp-ib" id="tp-prev" title="前の段階" aria-label="前の段階"><svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1.5" y="1.5" width="1.8" height="9"/><path d="M10.5 1.5v9L4 6z"/></svg></button>
+        <button type="button" class="tp-pp" id="tp-pp" title="再生" aria-label="再生"><svg class="i-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.2l7.6 4.8L3 10.8z"/></svg><svg class="i-pause" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="2.8" height="9"/><rect x="7.2" y="1.5" width="2.8" height="9"/></svg></button>
+        <div class="tp-tl">
+          <div class="chs" id="tp-ch" role="group" aria-label="段階"></div>
+          <div class="tp-tm"><span>段階 <b id="tp-k">1</b> / <span id="tp-n">–</span></span><span id="tp-t"></span></div>
+        </div>
+        <div class="tp-side">
+          <button type="button" class="tp-sq" id="tp-next" title="次の段階" aria-label="次の段階"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l7 6-7 6M17 6v12"/></svg></button>
+          <button type="button" class="tp-sq" id="tp-loop" aria-pressed="false" title="この段階をくり返す" aria-label="この段階をくり返す"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 2l3 3-3 3"/><path d="M4 11V9a4 4 0 0 1 4-4h12"/><path d="M7 22l-3-3 3-3"/><path d="M20 13v2a4 4 0 0 1-4 4H4"/></svg></button>
+        </div>
+      </div>
+    </Panel>
+
+    <div class="col c1">
+      <Panel hid="hd-reg" title="整調" class="a-reg">
+        <span slot="aux" class="aux">技術者が合わせる寸法</span>
+        <div class="ptab">{REGS.map((d) => <ParamRow d={d} />)}</div>
+      </Panel>
+      <Panel hid="hd-snd" title="音" class="a-snd">
+        <div slot="aux" class="seg"><button type="button" id="sndBtn" aria-pressed="false" title="ハンマーが弦を打ったとき、その速さでピアノ音響モデルの弦を鳴らす"><span class="led" id="sndLed" aria-hidden="true"></span>打弦で鳴らす</button></div>
+        <div class="ptab">
+          <ChoiceRow k="note" name="鍵" sub="鳴らす鍵。ハンマーの頭の速さで、ピアノ音響モデル（グランド）の弦を打つ。ダンパーが弦に戻ると音を止める" choices={NOTES.map(([v, l]) => [v, l] as const)} value={60} />
+          <ParamRow d={outVol(VOL0)} />
+        </div>
+        <p class="msg er snd-msg" id="snd-msg" aria-live="polite"></p>
+      </Panel>
+    </div>
+
+    <div class="col c2">
+      <Panel hid="hd-out" title="計算結果" class="a-out">
+        <dl class="metrics c3">
+          <div class="m m-main"><dt>打弦の速さ（ハンマーの頭）</dt><dd><span id="o-v"></span><span class="m-sub" id="o-vs"></span></dd></div>
+          <div class="m"><dt>押し始めから打弦まで</dt><dd id="o-ts"></dd></div>
+          <div class="m"><dt>自由に飛ぶ時間</dt><dd id="o-tf"></dd></div>
+          <div class="m"><dt>チェックの高さ</dt><dd id="o-ck"></dd></div>
+        </dl>
+      </Panel>
+      <Panel hid="hd-tl" title="段階の時間" class="a-tl">
+        <div class="tl" id="tl"></div>
+        <p class="aux tl-n">棒の長さは対数（0.1 ms〜1 s）</p>
+      </Panel>
+    </div>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools list={related} />
+  <script>
+    import '../tools/piano-action/client';
+  </script>
+</SiteLayout>
