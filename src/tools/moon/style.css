@@ -22,7 +22,14 @@
 .vw .lab.b{top:auto;bottom:8px}
 .mview{aspect-ratio:3/2;touch-action:manipulation}
 @media (max-width:640px){.mview{aspect-ratio:1/1}}
-.mview canvas{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:zoom-in}
+.mview canvas{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:grab;touch-action:pan-y;user-select:none;-webkit-user-select:none}
+.mview canvas.drag{cursor:grabbing}
+/* 拡大・縮小と、もとに戻す（窓の右上） */
+.vctl{position:absolute;right:8px;top:8px;display:flex;align-items:center;gap:4px}
+.vbtn{min-width:30px;height:28px;padding:0 8px;border:1px solid #48525a;border-radius:4px;background:rgb(10 12 14 / .72);color:#e6e8e4;font:500 13px/1 var(--sans);cursor:pointer}
+.vbtn:hover{background:rgb(10 12 14 / .9)}
+.vbtn:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+.vz{min-width:3.6em;text-align:center;font:500 11.5px var(--mono);color:#e6e8e4;text-shadow:0 0 3px #000}
 .vmsg{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);margin:0;color:#aab3b8;font:500 13px var(--sans)}
 .mlabs{position:absolute;inset:0;pointer-events:none;overflow:hidden}
 .mlab{position:absolute;transform:translate(7px,-50%);font:500 11px/1.2 var(--sans);color:#e6e8e4;text-shadow:0 0 3px #000,0 0 6px #000,0 0 9px #000;white-space:nowrap}
@@ -53,8 +60,10 @@
 /* 1 か月の帯: 満ち欠けの小さな月と時刻の軸 */
 .month{margin-top:12px}
 .phrow{position:relative;height:30px}
-.phrow canvas{position:absolute;top:0;width:26px;height:26px;margin-left:-13px;border-radius:50%;background:#000;box-shadow:0 0 0 1px var(--line)}
-.phrow canvas.on{box-shadow:0 0 0 2px var(--ink)}
+.phrow button{position:absolute;top:0;width:26px;height:26px;margin-left:-13px;padding:0;border:0;border-radius:50%;background:#000;box-shadow:0 0 0 1px var(--line);cursor:pointer}
+.phrow button:hover{box-shadow:0 0 0 1px var(--ink-2)}
+.phrow button.on{box-shadow:0 0 0 2px var(--ink)}
+.phrow canvas{display:block;width:100%;height:100%;border-radius:50%}
 .tsv{display:block;width:100%;height:auto;overflow:visible;touch-action:pan-y;cursor:ew-resize;user-select:none;-webkit-user-select:none}
 .tsv:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .tsv .gl{stroke:var(--grid);stroke-width:1}
@@ -65,7 +74,12 @@
 .tsv .tk{stroke:var(--ink-2);stroke-width:1}
 .tsv .ev{stroke:var(--ink-3);stroke-width:1;stroke-dasharray:3 3}
 .tsv .cur{stroke:var(--ink);stroke-width:2}
-.tchips{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.keysrow{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-top:8px}
+.tchips{display:flex;flex-wrap:wrap;gap:4px}
+/* 現在へ戻るボタン: 文字を大きく太くし、インクの枠で目立たせる。現在に合わせて進んでいる間は LED を点ける */
+.nowbtn{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 16px;border:1.5px solid var(--ink);border-radius:4px;background:var(--surface);color:var(--ink);font:700 14.5px/1 var(--sans);cursor:pointer}
+.nowbtn:hover{background:var(--inset)}
+.nowbtn[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
 .tchips .chip{display:inline-flex;align-items:baseline;gap:6px}
 .tchips .chip small{font:500 11.5px var(--sans)}
 .tstep{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-top:8px}
@@ -153,7 +167,7 @@
 @media (max-width:640px){
   #p-or .w{display:none}
   .phrow{height:14px}
-  .phrow canvas{width:11px;height:11px;margin-left:-5.5px}
+  .phrow button{width:11px;height:11px;margin-left:-5.5px}
   .tstep .seg{flex-wrap:wrap}
   .tstep .seg button{min-width:0;white-space:nowrap}
   .dtin{margin-left:0}

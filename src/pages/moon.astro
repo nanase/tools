@@ -23,7 +23,7 @@ const WD = ['日', '月', '火', '水', '木', '金', '土'];
 ---
 <SiteLayout title={name} tool={{ id: 'moon', name }} description="選んだ日時と観測地から見た月を、満ち欠け・秤動・距離と、月面の地形の影まで再現します。月のカレンダーと月食も見られます。" note="月の位置は Meeus の式、標高は NASA LRO LOLA（PDS、NASA's Scientific Visualization Studio の CGI Moon Kit）、色は NASA's Scientific Visualization Studio の CGI Moon Kit、地名は IAU/USGS の惑星地名辞典と Wikipedia（CC BY-SA 4.0）、月食は Eclipse Predictions by Fred Espenak (NASA's GSFC)、本影の色は Mallama (2022) を加工して作成。地球照の明るさは推定です。">
   <PageTitle title={name}>選んだ日時と観測地から見た月を、Meeus の式で計算した位置と、月の自転の向きから描きます。月面の色と標高は NASA の月探査機 LRO のデータで、欠け際ではクレーターの縁や山が影を落とします。満ち欠け・秤動（見える面のゆれ）・距離の変化、月のカレンダー、月食の赤銅色も見られます。</PageTitle>
-  <div class="mini" aria-hidden="true"><span>時刻<b id="mT"></b></span><span>月齢<b id="mA"></b></span><span>輝面比<b id="mK"></b></span></div>
+  <div class="mini" aria-hidden="true"><span>日時<b id="mT"></b></span><span>月齢<b id="mA"></b></span><span>輝面比<b id="mK"></b></span></div>
 
   <div class="tgrid">
 
@@ -52,12 +52,13 @@ const WD = ['日', '月', '火', '水', '木', '金', '土'];
         <div class="lab" id="v-lab"></div>
         <div class="lab b" id="v-lab2"></div>
         <p class="vmsg" id="v-msg" hidden></p>
+        <div class="vctl" role="group" aria-label="表示の拡大・縮小"><button type="button" class="vbtn" id="vout" aria-label="縮小" title="縮小（ホイール・2 本指でも）">−</button><span class="vz" id="vzoom">×1.00</span><button type="button" class="vbtn" id="vin" aria-label="拡大" title="拡大（ホイール・2 本指でも）">＋</button><button type="button" class="vbtn" id="vreset" title="拡大と位置をもとに戻す" hidden>もとに戻す</button></div>
       </div>
       <div class="month">
         <div class="phrow" id="phrow"></div>
         <svg class="tsv" id="band" viewBox="0 0 1000 122" role="slider" tabindex="0" aria-label="日時（1 か月の帯の上を押して動かす）" aria-valuemin="0" aria-valuemax="1000" aria-valuenow="0"></svg>
       </div>
-      <div class="tchips" id="keys" role="group" aria-label="主な日時へ移る"></div>
+      <div class="keysrow"><button type="button" class="nowbtn" id="nowbtn" aria-pressed="true" title="現在の日時に戻し、時計に合わせて進める"><span class="led on" id="nowLed" aria-hidden="true"></span>現在</button><div class="tchips" id="keys" role="group" aria-label="主な日時へ移る"></div></div>
       <div class="tstep">
         <span class="aux">日時を少し動かす</span>
         <div class="seg" id="tstep" role="group" aria-label="日時を少し動かす"><button type="button" data-s="-86400">−1 日</button><button type="button" data-s="-3600">−1 時間</button><button type="button" data-s="-600">−10 分</button><button type="button" data-s="600">+10 分</button><button type="button" data-s="3600">+1 時間</button><button type="button" data-s="86400">+1 日</button></div>
@@ -66,8 +67,8 @@ const WD = ['日', '月', '火', '水', '木', '金', '土'];
       <More id="g-view" title="表示の設定"><div class="ana2">
         <div class="ptab">
           <ChoiceRow k="lab" name="地名" sub="欠け際の近く: 欠け際から 20° 以内のクレーターと海の名前（NASA SVS の Dial-A-Moon の決め方）" choices={[['near', '欠け際の近く'], ['all', '大きなもの'], ['off', 'なし']]} value="near" />
-          <ChoiceRow k="br" name="明るさ" sub="目: 月食で暗くなると目が少し慣れる。カメラ: いつも同じ明るさに合わせる。物理: 満月の明るさに固定" choices={[['eye', '目'], ['camera', 'カメラ'], ['phys', '物理']]} value="eye" />
-          <ChoiceRow k="es" name="地球照" sub="欠けた側を照らす地球の光。目とカメラでは見えるように 30 倍に持ち上げる" choices={[['on', 'あり'], ['off', 'なし']]} value="on" />
+          <ChoiceRow k="br" name="明るさ" sub="肉眼: 明るい縁を満月の明るさに合わせ、月食で暗くなると少し慣れる。カメラ: 月食でも同じ明るさに合わせる。物理: 満月の明るさに固定し、欠けると暗くなる" choices={[['eye', '肉眼'], ['camera', 'カメラ'], ['phys', '物理']]} value="eye" />
+          <ChoiceRow k="es" name="地球照" sub="欠けた側を照らす地球の光。肉眼とカメラでは見えるように 30 倍に持ち上げる" choices={[['on', 'あり'], ['off', 'なし']]} value="on" />
         </div>
         <div class="ptab">
           <ChoiceRow k="tz" name="時刻" sub="日本時間（UTC+9）か世界時（UT）" choices={[['jst', '日本時間'], ['ut', '世界時']]} value="jst" />

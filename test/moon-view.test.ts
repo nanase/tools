@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { MoonState } from '../src/tools/moon/ephem';
 import { malV, POS_U } from '../src/tools/moon/render';
-import { basis, earthshine, lunarL, moonUniforms, project, sunAltAt, unproject } from '../src/tools/moon/view';
+import { akimov, basis, earthshine, moonUniforms, project, sunAltAt, unproject } from '../src/tools/moon/view';
 
 type V = [number, number, number];
 const dot = (a: V, b: V) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
@@ -54,9 +54,18 @@ describe('見え方', () => {
     expect(sunAltAt(st, 0, 0)).toBeCloseTo(90, 3);
     expect(sunAltAt(st, 0, 90)).toBeCloseTo(0, 3);
   });
-  it('lunar-Lambert の L と地球照', () => {
-    expect(lunarL(0)).toBe(1);
-    expect(lunarL(90)).toBeCloseTo(1 - 1.71 + 1.9602 - 1.0643, 4);
+  it('Akimov の関数: 満月は一様、欠け際で 0、細い月は明るい縁が強く、極の側で暗い', () => {
+    const D = Math.PI / 180;
+    expect(akimov(0, 0, 0.3)).toBeCloseTo(1, 12);
+    expect(akimov(0, 0.5, -1.2)).toBeCloseTo(1, 12);
+    const a = 140 * D;
+    expect(akimov(a, 0, a - Math.PI / 2 + 1e-9)).toBeCloseTo(0, 6);
+    // 縁（γ → 90°）は内側より明るい
+    expect(akimov(a, 0, 89.9 * D)).toBeGreaterThan(akimov(a, 0, 70 * D));
+    // 極の側（β が大きい）は暗い
+    expect(akimov(a, 60 * D, 85 * D)).toBeLessThan(akimov(a, 0, 85 * D));
+  });
+  it('地球照', () => {
     expect(earthshine(180)).toBeCloseTo(1 / 8000, 12);
     expect(earthshine(0)).toBe(0);
   });

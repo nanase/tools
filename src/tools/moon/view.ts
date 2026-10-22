@@ -37,16 +37,52 @@ export function screenAngle(st: MoonState, mode: Orient, v: Vec3): number {
   return Math.atan2(dot(v, b.u), dot(v, b.r)) / D;
 }
 
-/** McEwen の lunar-Lambert の L（位相角 α [°]） */
-export const lunarL = (a: number): number => 1 - 0.019 * a + 0.000242 * a * a - 0.00000146 * a ** 3;
+/**
+ * Akimov の関数: 月の円盤の明るさの分布（位相角 a、測光の緯度 b・経度 g [rad]。g は観測者の向きから太陽の側へ）。
+ * 満月では一様、細い月では明るい縁が強まり、極の側へ細くなる。シェーダーと同じ式
+ */
+export function akimov(a: number, b: number, g: number): number {
+  if (g <= a - Math.PI / 2 || g >= Math.PI / 2) return 0;
+  const k = Math.PI / (Math.PI - a);
+  return (
+    ((Math.cos(a / 2) * Math.cos(k * (g - a / 2))) / Math.max(Math.cos(g), 1e-4)) *
+    Math.max(Math.cos(b), 0) ** (a / (Math.PI - a))
+  );
+}
 
-/** 衝効果: 位相角 4° から 0° で約 4 割明るくなる（Buratti et al. 1996）のを、指数の山で表す（このツールで決めた形） */
-export const surge = (a: number): number => 1 + 0.4 * Math.exp(-a / 2.5);
+/** Akimov の関数の円盤の中での最大（明るい縁）。位相角 a [rad] */
+export const akimovMax = (a: number): number => (a < 1e-6 ? 1 : (Math.cos(a / 2) * Math.PI) / (Math.PI - a));
+
+/** Akimov の関数の、なめらかな球の円盤での平均（満月 = 1）。位相角 a [rad]。格子で数える */
+const meanCache = new Map<number, number>();
+export function akimovMean(a: number): number {
+  const key = Math.round(a * 1000);
+  const hit = meanCache.get(key);
+  if (hit !== undefined) return hit;
+  const n = 48;
+  let sum = 0,
+    cnt = 0;
+  for (let i = 0; i < n; i++)
+    for (let j = 0; j < n; j++) {
+      const x = ((i + 0.5) / n) * 2 - 1,
+        y = ((j + 0.5) / n) * 2 - 1,
+        r2 = x * x + y * y;
+      if (r2 >= 1) continue;
+      cnt++;
+      sum += akimov(a, Math.asin(y), Math.atan2(x, Math.sqrt(1 - r2)));
+    }
+  const v = sum / cnt;
+  meanCache.set(key, v);
+  return v;
+}
+
+/** 月全体の明るさの満月に対する比（Allen の式: 等級が 0.026α + 4×10⁻⁹α⁴ だけ暗くなる。α [°]） */
+export const phaseLaw = (a: number): number => 10 ** (-0.4 * (0.026 * a + 4e-9 * a ** 4));
 
 /** 地球照の直射に対する比: 満地球で 1/8000（地球の平均の反射率による推定）に、月から見た地球の輝面比を掛ける */
 export const earthshine = (phase: number): number => ((1 - Math.cos(phase * D)) / 2) * (1 / 8000);
 
-/** 明るさの見せ方ごとの地球照の強調（目とカメラでは見えるように持ち上げる。このツールで決めた値） */
+/** 明るさの見せ方ごとの地球照の強調（肉眼とカメラでは見えるように持ち上げる。このツールで決めた値） */
 const ES_GAIN: Record<Bright, number> = { eye: 30, camera: 30, phys: 1 };
 /** 欠けていない月面を白の手前に置く基準の倍率 */
 const BASE = 1.75;
@@ -62,7 +98,7 @@ export interface ShadowGeom {
 }
 
 /**
- * 月食中の露出: 円盤の中で最も明るい点（影の中心から最も遠い点）の減光を、目は 3/4 だけ、カメラは全部取り戻す。
+ * 月食中の露出: 円盤の中で最も明るい点（影の中心から最も遠い点）の減光を、肉眼は 3/4 だけ、カメラは全部取り戻す。
  * 物理は取り戻さない
  */
 export function eclipseGain(sh: ShadowGeom, mode: Bright): number {
@@ -84,11 +120,23 @@ export function moonUniforms(st: MoonState, mode: Orient, bright: Bright, sh: Sh
     f: toBody(st, b.f),
     s: toBody(st, s),
     o: toBody(st, o),
-    L: lunarL(st.phase),
-    gain: BASE * (bright === 'phys' ? surge(st.phase) : 1) * (inShadow && sh ? eclipseGain(sh, bright) : 1),
-    es: earthshine(st.phase) * ES_GAIN[bright],
+    A: Math.min(st.phase, 179) * D,
+    np: [0, 0, 1],
+    gain: 1,
+    es: 0,
     sat,
   };
+  /* 肉眼とカメラは、円盤で最も明るい点を満月と同じ明るさに合わせる。物理は、円盤の平均が Allen の式に合うようにする */
+  const a = m.A;
+  m.gain =
+    BASE *
+    (bright === 'phys' ? phaseLaw(st.phase) / Math.max(akimovMean(a), 1e-6) : 1 / Math.max(akimovMax(a), 1e-3)) *
+    (inShadow && sh ? eclipseGain(sh, bright) : 1);
+  /* 地球照は露出の合わせ方に左右されないよう、倍率で割っておく */
+  m.es = (earthshine(st.phase) * ES_GAIN[bright] * BASE) / m.gain;
+  /* 測光の赤道の極: 観測者と太陽の向きに垂直。満月の近くで決まらないときは月の北極との外積で代える */
+  const c = cross(m.o, m.s);
+  m.np = Math.hypot(...c) > 1e-6 ? unit(c) : unit(cross(m.o, Math.abs(m.o[2]) < 0.9 ? [0, 0, 1] : [1, 0, 0]));
   if (inShadow && sh)
     m.ecl = {
       mc: st.moon,

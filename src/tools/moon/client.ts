@@ -135,10 +135,21 @@ function shadowNow(): Shadow | null {
   return Math.hypot(s.x, s.y) - s.sdMoon < s.Rp + 0.05 ? s : null;
 }
 
-function setJd(v: number, all = true): void {
+/** 現在の日時に合わせて進む状態（開いたときと「現在」を押したとき）。日時を動かすと止まる */
+let live = true;
+function setJd(v: number, all = true, keepLive = false): void {
   jd = v;
+  if (!keepLive) setLive(false);
   later(all);
 }
+function setLive(on: boolean): void {
+  live = on;
+  $('#nowbtn').setAttribute('aria-pressed', String(on));
+  $('#nowLed').classList.toggle('on', on);
+}
+setInterval(() => {
+  if (live && !playing && !document.hidden) setJd(nowJd(), false, true);
+}, 1000);
 
 /* ---------- 望遠の月 ---------- */
 const view = $('#mview');
@@ -156,12 +167,48 @@ interface Lay {
   cx: number;
   cy: number;
 }
-function layout(): Lay {
+/** 表示の拡大率と、円盤の中心のずれ [CSS px]（ドラッグとホイールで変える。保存しない） */
+let vz = 1,
+  vx = 0,
+  vy = 0;
+const VZ_MIN = 0.6,
+  VZ_MAX = 8;
+function baseLayout(): Lay {
   const W = view.clientWidth,
     H = view.clientHeight,
     wide = W / H > 1.2,
     rad = wide ? 0.46 * H : 0.44 * Math.min(W, H);
   return { W, H, rad, cx: wide ? W - 0.04 * W - rad : W / 2, cy: H / 2 };
+}
+function layout(): Lay {
+  const b = baseLayout();
+  return { ...b, rad: b.rad * vz, cx: b.cx + vx, cy: b.cy + vy };
+}
+/** 円盤が画面から出ていかないよう、中心のずれを抑える */
+function clampPan(): void {
+  const b = baseLayout(),
+    r = b.rad * vz;
+  vx = Math.min(b.W - b.cx + r * 0.8, Math.max(-b.cx - r * 0.8, vx));
+  vy = Math.min(b.H - b.cy + r * 0.8, Math.max(-b.cy - r * 0.8, vy));
+}
+/** 画面の点 (px, py) を動かさずに拡大率を f 倍にする */
+function zoomAbout(px: number, py: number, f: number): void {
+  const L = layout();
+  const nz = Math.min(VZ_MAX, Math.max(VZ_MIN, vz * f)),
+    k = nz / vz;
+  const b = baseLayout();
+  vz = nz;
+  vx = px - (px - L.cx) * k - b.cx;
+  vy = py - (py - L.cy) * k - b.cy;
+  clampPan();
+  viewChanged();
+}
+function viewChanged(): void {
+  const moved = Math.abs(vz - 1) > 1e-3 || Math.abs(vx) > 0.5 || Math.abs(vy) > 0.5;
+  $('#vreset').hidden = !moved;
+  txt('#vzoom', `×${vz.toFixed(vz < 2 ? 2 : 1)}`);
+  canvas.style.touchAction = vz > 1.01 ? 'none' : 'pan-y';
+  later();
 }
 
 type Feat = [string | null, string, number, number, number, string];
@@ -321,15 +368,87 @@ function drawMoon(): void {
   );
 }
 
-canvas.addEventListener('click', (e) => {
+/* 押す: その場所を拡大の窓に出す。ドラッグ: 位置を動かす。ホイール・2 本指: 拡大・縮小 */
+function pickAt(cx: number, cy: number): void {
   const L = layout();
-  const r = canvas.getBoundingClientRect();
-  const x = (e.clientX - r.left - L.cx) / L.rad,
-    y = -(e.clientY - r.top - L.cy) / L.rad;
-  const ll = unproject(st, or$.value, x, y);
+  const ll = unproject(st, or$.value, (cx - L.cx) / L.rad, -(cy - L.cy) / L.rad);
   if (!ll) return;
   zoomAt = ll;
   later();
+}
+const ptrs = new Map<number, { x: number; y: number }>();
+let drag: { x: number; y: number; vx: number; vy: number; moved: boolean } | null = null;
+let pinch: { d: number; z: number } | null = null;
+const local2 = (e: PointerEvent | WheelEvent) => {
+  const r = canvas.getBoundingClientRect();
+  return { x: e.clientX - r.left, y: e.clientY - r.top };
+};
+canvas.addEventListener('pointerdown', (e) => {
+  canvas.setPointerCapture(e.pointerId);
+  const p = local2(e);
+  ptrs.set(e.pointerId, p);
+  if (ptrs.size === 1) drag = { ...p, vx, vy, moved: false };
+  else if (ptrs.size === 2) {
+    const [a, b] = [...ptrs.values()];
+    pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), z: vz };
+    if (drag) drag.moved = true;
+  }
+});
+canvas.addEventListener('pointermove', (e) => {
+  if (!ptrs.has(e.pointerId)) return;
+  const p = local2(e);
+  ptrs.set(e.pointerId, p);
+  if (pinch && ptrs.size === 2) {
+    const [a, b] = [...ptrs.values()];
+    const d = Math.hypot(a.x - b.x, a.y - b.y);
+    zoomAbout((a.x + b.x) / 2, (a.y + b.y) / 2, (pinch.z * d) / pinch.d / vz);
+    return;
+  }
+  if (!drag) return;
+  const dx = p.x - drag.x,
+    dy = p.y - drag.y;
+  if (!drag.moved && Math.hypot(dx, dy) < 4) return;
+  drag.moved = true;
+  canvas.classList.add('drag');
+  vx = drag.vx + dx;
+  vy = drag.vy + dy;
+  clampPan();
+  viewChanged();
+});
+const ptrEnd = (e: PointerEvent) => {
+  if (!ptrs.has(e.pointerId)) return;
+  ptrs.delete(e.pointerId);
+  if (ptrs.size < 2) pinch = null;
+  if (ptrs.size === 0) {
+    if (drag && !drag.moved && e.type === 'pointerup') {
+      const p = local2(e);
+      pickAt(p.x, p.y);
+    }
+    drag = null;
+    canvas.classList.remove('drag');
+  }
+};
+canvas.addEventListener('pointerup', ptrEnd);
+canvas.addEventListener('pointercancel', ptrEnd);
+canvas.addEventListener(
+  'wheel',
+  (e) => {
+    e.preventDefault();
+    const p = local2(e);
+    zoomAbout(p.x, p.y, Math.exp(-e.deltaY * (e.deltaMode === 1 ? 0.05 : 0.0015)));
+  },
+  { passive: false },
+);
+const zoomCenter = (f: number) => {
+  const L = layout();
+  zoomAbout(L.W / 2, L.H / 2, f);
+};
+$('#vin').addEventListener('click', () => zoomCenter(1.5));
+$('#vout').addEventListener('click', () => zoomCenter(1 / 1.5));
+$('#vreset').addEventListener('click', () => {
+  vz = 1;
+  vx = vy = 0;
+  viewChanged();
 });
 $('#zclose').addEventListener('click', () => {
   zoomAt = null;
@@ -353,7 +472,7 @@ function drawNumbers(): void {
   txt('#o-dist', kmStr(st.dist));
   txt('#o-diam', dms(st.diam));
   txt('#o-altaz', `${sgn(st.alt, 1)}° · ${st.az.toFixed(1)}°`);
-  txt('#mT', `${hm(jd)} ${tzName()}`);
+  txt('#mT', `${dateStr(jd).slice(0, 10)} ${hm(jd)} ${tzName()}`);
   txt('#mA', age.toFixed(1));
   txt('#mK', `${(st.illum * 100).toFixed(1)} %`);
   const dk = `${dayStart(jd)}|${site.lat}|${site.lon}|${tz$.value}`;
@@ -440,7 +559,7 @@ function drawBand(): void {
     row.innerHTML = bandDays()
       .map(
         (t) =>
-          `<canvas width="52" height="52" style="left:${(BX(t) / 10).toFixed(2)}%" title="${md(t)} ${hm(t)}"></canvas>`,
+          `<button type="button" style="left:${(BX(t) / 10).toFixed(2)}%" title="${md(t)} ${hm(t)} へ" aria-label="${md(t)} ${hm(t)} へ"><canvas width="52" height="52"></canvas></button>`,
       )
       .join('');
     drawKeys();
@@ -451,7 +570,7 @@ function drawBand(): void {
   band.setAttribute('aria-valuetext', `${dateStr(jd)} ${hm(jd)}`);
   const ds = bandDays();
   const cur = ds.findIndex((t) => Math.abs(t - jd) < 0.5);
-  document.querySelectorAll('#phrow canvas').forEach((c, k) => {
+  document.querySelectorAll('#phrow button').forEach((c, k) => {
     c.classList.toggle('on', k === cur);
   });
   if (renderer?.ready && bandIcons !== `${bandKey}|${site.lat}|${site.lon}`) {
@@ -464,8 +583,6 @@ function drawBand(): void {
 }
 function iconU(s: MoonState, shd: Shadow | null = null, bright: Bright = 'eye'): MoonU {
   const u = moonUniforms(s, or$.value, bright, shd);
-  /* 小さな月は細い月も見えるよう、位相角 90° から 180° で最大 3 倍まで明るくする（このツールで決めた見せ方） */
-  u.gain *= 1 + 2 * Math.min(1, Math.max(0, (s.phase - 90) / 90));
   if (es$.value === 'off') u.es = 0;
   return u;
 }
@@ -474,6 +591,13 @@ function bandPick(e: PointerEvent): void {
   const x = Math.min(1000, Math.max(0, ((e.clientX - r.left) / r.width) * 1000));
   setJd(W0 + (x / 1000) * 32);
 }
+/* 帯の小さな月を押すと、その日の 20:00 へ */
+$('#phrow').addEventListener('click', (e) => {
+  const c = (e.target as Element).closest('button');
+  if (!c) return;
+  const k = [...document.querySelectorAll('#phrow button')].indexOf(c);
+  if (k >= 0) setJd(bandDays()[k]);
+});
 band.addEventListener('pointerdown', (e) => {
   band.setPointerCapture(e.pointerId);
   bandPick(e);
@@ -506,7 +630,7 @@ function drawKeys(): void {
   const n = nowJd();
   const next = phaseTimes(n, n + 32).slice(0, 3);
   superJd = supermoon(n);
-  const ch = [`<button type="button" class="chip" data-j="${n}">今 <small>${md(n)} ${hm(n)}</small></button>`];
+  const ch: string[] = [];
   for (const p of next)
     ch.push(`<button type="button" class="chip" data-j="${p.jd}">${QN[p.q]} <small>${md(p.jd)}</small></button>`);
   if (superJd)
@@ -515,6 +639,11 @@ function drawKeys(): void {
     );
   $('#keys').innerHTML = ch.join('');
 }
+$('#nowbtn').addEventListener('click', () => {
+  if (playing) stop();
+  setJd(nowJd(), true, true);
+  setLive(true);
+});
 $('#keys').addEventListener('click', (e) => {
   const b = (e.target as Element).closest<HTMLElement>('.chip');
   if (b) setJd(b.dataset.j === undefined ? jd : Number(b.dataset.j));
@@ -692,7 +821,7 @@ function drawFigs(): void {
     fs
       ? `<circle class="dot" cx="${sx(fs.subObs.lon).toFixed(1)}" cy="${sy(fs.subObs.lat).toFixed(1)}" r="2.5"></circle><text x="${(sx(fs.subObs.lon) + 5).toFixed(1)}" y="${(sy(fs.subObs.lat) + 12).toFixed(1)}">満月 ${md(fs.jd)}</text>`
       : '',
-    `<circle class="ring" cx="${sx(st.subObs.lon).toFixed(1)}" cy="${sy(st.subObs.lat).toFixed(1)}" r="6"></circle><circle class="dot" cx="${sx(st.subObs.lon).toFixed(1)}" cy="${sy(st.subObs.lat).toFixed(1)}" r="2.5"></circle><text class="mt" x="${(sx(st.subObs.lon) + 10).toFixed(1)}" y="${(sy(st.subObs.lat) + 4).toFixed(1)}">今</text>`,
+    `<circle class="ring" cx="${sx(st.subObs.lon).toFixed(1)}" cy="${sy(st.subObs.lat).toFixed(1)}" r="6"></circle><circle class="dot" cx="${sx(st.subObs.lon).toFixed(1)}" cy="${sy(st.subObs.lat).toFixed(1)}" r="2.5"></circle><text class="mt" x="${(sx(st.subObs.lon) + 10).toFixed(1)}" y="${(sy(st.subObs.lat) + 4).toFixed(1)}">表示中</text>`,
   ].join('');
   txt('#lib-aux', `地球直下点 · ${md(W0)}〜${md(W0 + 32)}`);
 
@@ -708,7 +837,7 @@ function drawFigs(): void {
       `<circle class="dot" cx="${dx(a.jd).toFixed(1)}" cy="${dy(a.km).toFixed(1)}" r="6"></circle><text class="ts" x="${dx(a.jd).toFixed(1)}" y="${(dy(a.km) + (a.kind === 'peri' ? 50 : -18)).toFixed(1)}" text-anchor="middle">${a.kind === 'peri' ? '近地点' : '遠地点'}</text>`,
     );
   d.push(
-    `<circle class="ring" style="stroke-width:3" cx="${dx(jd).toFixed(1)}" cy="${dy(st.distGeo).toFixed(1)}" r="12"></circle><text class="mt" x="${(dx(jd) + 22).toFixed(1)}" y="${(dy(st.distGeo) - 10).toFixed(1)}">今</text>`,
+    `<circle class="ring" style="stroke-width:3" cx="${dx(jd).toFixed(1)}" cy="${dy(st.distGeo).toFixed(1)}" r="12"></circle><text class="mt" x="${(dx(jd) + 22).toFixed(1)}" y="${(dy(st.distGeo) - 10).toFixed(1)}">表示中</text>`,
   );
   $('#dist').innerHTML = d.join('');
   txt('#size-aux', `${md(W0)}〜${md(W0 + 32)}`);
@@ -728,7 +857,7 @@ function drawSizes(): void {
   const diam = (km: number) => 2 * Math.asin(1737.4 / km) * (180 / Math.PI) * 3600;
   const items: [string, number][] = [
     ['最も遠いとき', diam(far)],
-    ['今', st.diam],
+    ['表示中', st.diam],
     ['最も近いとき', diam(near)],
   ];
   const max = diam(near);

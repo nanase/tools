@@ -68,7 +68,7 @@ void main() {
 
 /**
  * 月の円盤: 画素ごとに視線と球の交点を求め、月面の経緯度で色と地形を読む。
- * 明るさは McEwen の lunar-Lambert、落ちる影は地平線の高度角と太陽の高度（視直径 0.53° でぼかす）、
+ * 明るさは月面の円盤の明るさの分布を表す Akimov の関数（面の向きで読む）、落ちる影は地平線の高度角と太陽の高度（視直径 0.53° でぼかす）、
  * 地球照は地球の満ち欠けに比例、月食は Mallama (2022) の 3 色の減光表で本影・半影の色と暗さを付ける
  */
 export const MOON_FRAG = `${COMMON}
@@ -77,7 +77,9 @@ uniform sampler2D uT;
 uniform vec3 uR, uU, uF, uS, uO;
 /** 円盤の中心 [px]（ビューポートの左下から）、半径 [px] */
 uniform vec3 uDisk;
-uniform float uL, uGain, uEs, uSat;
+uniform float uA, uGain, uEs, uSat;
+/** 測光の赤道（観測者と太陽を通る大円）の極 */
+uniform vec3 uNp;
 uniform int uEcl;
 uniform vec3 uMc, uAx;
 uniform mat3 uB2F;
@@ -98,6 +100,15 @@ vec3 att(float th) {
   /* m.yzw は B・V・R の減光 [等]。R・G・B の順に返す */
   return pow(vec3(10.0), -0.4 * m.wzy);
 }
+const float PI = 3.14159265;
+/* Akimov の関数: 位相角 uA、測光の緯度 β・経度 γ（観測者の向きから太陽の側へ）で、円盤の明るさの分布を返す */
+float akimov(vec3 N) {
+  float b = asin(clamp(dot(N, uNp), -1.0, 1.0));
+  float g = atan(dot(N, cross(uNp, uO)), dot(N, uO));
+  if (g <= uA - 0.5 * PI || g >= 0.5 * PI) return 0.0;
+  float k = PI / (PI - uA);
+  return cos(0.5 * uA) * cos(k * (g - 0.5 * uA)) / max(cos(g), 1e-4) * pow(max(cos(b), 0.0), uA / (PI - uA));
+}
 void main() {
   vec2 q = (gl_FragCoord.xy - uDisk.xy) / uDisk.z;
   float r2 = dot(q, q);
@@ -111,8 +122,7 @@ void main() {
   vec3 e = vec3(-sin(lon), cos(lon), 0.0);
   vec3 n = vec3(-sin(lat) * cos(lon), -sin(lat) * sin(lon), cos(lat));
   vec3 N = normalize(P - T.x * e - T.y * n);
-  float mu0 = dot(N, uS), mu = max(dot(N, uO), 1e-3);
-  float refl = mu0 > 0.0 ? 2.0 * uL * mu0 / (mu0 + mu) + (1.0 - uL) * mu0 : 0.0;
+  float refl = dot(N, uS) > 0.0 ? akimov(N) : 0.0;
   float es = degrees(asin(clamp(dot(P, uS), -1.0, 1.0)));
   float hz = dot(uS, e) >= 0.0 ? T.z : T.w;
   float lit = clamp((es - hz) / 0.53 + 0.5, 0.0, 1.0);

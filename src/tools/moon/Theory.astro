@@ -8,16 +8,15 @@ const AF = '<mo>⁡</mo>';
 const mi = (s: string) => `<mi>${s}</mi>`;
 const fn = (f: string, x: string) => `<mi>${f}</mi>${AF}${sp}${x}`;
 const asin = (x: string) => fn('arcsin', x);
+const cos = (x: string) => fn('cos', x);
 const fr = (a: string, b: string) => `<mfrac><mrow>${a}</mrow><mrow>${b}</mrow></mfrac>`;
 const par = (x: string) => `<mrow><mo>(</mo>${x}<mo>)</mo></mrow>`;
 const sub = (a: string, b: string) => `<msub><mi>${a}</mi><mi>${b}</mi></msub>`;
-const subn = (a: string, b: string) => `<msub><mi>${a}</mi><mn>${b}</mn></msub>`;
 const subt = (a: string, b: string) => `<msub><mi>${a}</mi><mtext>${b}</mtext></msub>`;
 /* 太字のベクトル（数学用の太字の文字） */
 const bv = (s: string) => `<mi>${String.fromCodePoint(s.charCodeAt(0) + (s < 'a' ? 0x1d400 - 65 : 0x1d41a - 97))}</mi>`;
 const hat = (s: string) => `<mover>${bv(s)}<mo>^</mo></mover>`;
 const deg = '<mo>°</mo>';
-const mu0 = subn('μ', '0');
 const al = mi('α');
 const Ru = subt('R', '本影');
 const Rp = subt('R', '半影');
@@ -63,17 +62,20 @@ const ss = subt('s', '太陽');
 <p>地名の位置・大きさ・英語名は、国際天文学連合が承認し、米国地質調査所（USGS）が公開している惑星地名辞典によります<Fragment set:html={rf(9)} />。海、表側の直径 20 km 以上のクレーター、日本語名のある山・谷などを選んでいます。日本語名は日本語版ウィキペディアの一覧から取り、日本語名のないものは英語名で出します<Fragment set:html={rf(10)} />。</p>
 
 <h3>明るさと影</h3>
-<p>月面の明るさは、McEwen の lunar-Lambert の式で計算します<Fragment set:html={rf(11)} />。<math set:html={mu0} />・<math><mi>μ</mi></math> は面の法線と太陽・観測者の向きの余弦です。</p>
+<p>月面の明るさは、月の円盤の明るさの分布を表す Akimov の関数で計算します<Fragment set:html={rf(11)} />。<math set:html={al} /> は位相角、<math><mi>β</mi></math>・<math><mi>γ</mi></math> は測光の緯度・経度（観測者と太陽を通る大円を赤道とし、観測者の向きから太陽の側へ測る）です。地形の凹凸は、面の向きから <math><mi>β</mi></math>・<math><mi>γ</mi></math> を求めて入れます。</p>
 <div class="eqs">
-  <math display="block" set:html={`<mi>r</mi><mo>=</mo><mi>A</mi>${par(`<mn>2</mn><mi>L</mi>${fr(mu0, `${mu0}<mo>+</mo><mi>μ</mi>`)}<mo>+</mo><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><mi>L</mi><mo stretchy="false">)</mo>${mu0}`)}`} />
-  <math display="block" set:html={`<mi>L</mi><mo>=</mo><mn>1</mn><mo>−</mo><mn>0.019</mn>${al}<mo>+</mo><mn>0.000242</mn><msup>${al}<mn>2</mn></msup><mo>−</mo><mn>0.00000146</mn><msup>${al}<mn>3</mn></msup>`} />
+  <math display="block" set:html={`<mi>r</mi><mo>=</mo><mi>A</mi>${sp}${cos(fr(al, '<mn>2</mn>'))}${sp}${fr(cos(`${fr('<mi>π</mi>', `<mi>π</mi><mo>−</mo>${al}`)}${par(`<mi>γ</mi><mo>−</mo>${fr(al, '<mn>2</mn>')}`)}`), cos(mi('γ')))}${sp}<msup>${par(cos(mi('β')))}<mrow>${al}<mo>/</mo><mo stretchy="false">(</mo><mi>π</mi><mo>−</mo>${al}<mo stretchy="false">)</mo></mrow></msup>`} />
 </div>
-<p><math><mi>A</mi></math> は色の地図の値、<math set:html={al} /> は位相角 [°] です。満月の円盤の縁が暗くならないのは、第 1 項（Lommel–Seeliger の形）によります。</p>
+<p><math><mi>A</mi></math> は色の地図の値です。満月（<math set:html={`${al}<mo>=</mo><mn>0</mn>`} />）では円盤が一様に明るく、細い月では明るい縁が強まり、極の側へ細くなります。明るさの合わせ方は 3 通りです。</p>
+<ul class="tl">
+  <li><b>肉眼・カメラ</b>: 円盤で最も明るい点（明るい縁）が、満月と同じ明るさになるように合わせる。目やカメラが明るさに慣れる様子に近い</li>
+  <li><b>物理</b>: 満月の明るさに固定し、円盤の平均の明るさが、月全体の明るさの位相角による変化（Allen の式、等級で <math set:html={`<mn>0.026</mn>${al}<mo>+</mo><mn>4</mn><mo>×</mo><msup><mn>10</mn><mrow><mo>−</mo><mn>9</mn></mrow></msup><msup>${al}<mn>4</mn></msup>`} /> 暗くなる）に合うようにする<Fragment set:html={rf(21)} /></li>
+</ul>
 <p>落ちる影は、その点の太陽の高度 <math set:html={subt('h', '太陽')} /> と、太陽のある側の地平線の高度角 <math set:html={subt('h', '地平線')} /> を比べて決めます。太陽の見かけの直径 0.53° の幅でぼかします。</p>
 <div class="eqs">
   <math display="block" set:html={`<mtext>照らされ方</mtext><mo>=</mo><mi>clamp</mi>${par(`${fr(`${subt('h', '太陽')}<mo>−</mo>${subt('h', '地平線')}`, `<mn>0.53</mn>${deg}`)}<mo>+</mo><mn>0.5</mn><mo>,</mo><mn>0</mn><mo>,</mo><mn>1</mn>`)}`} />
 </div>
-<p>地球照は、月から見た地球の輝面比に比例させ、地球が満ちているとき直射の 1/8000 とします。地球の平均の反射率による式で、月から見た満地球を約 −16.9 等とし、太陽と比べた推定値です。地球が厚い雲や雪で覆われたとした明るい側の見積もり（−17.7 等）では、約 1/4000 になります<Fragment set:html={rf(12)} />。「目」と「カメラ」では、見えるように 30 倍に持ち上げます。</p>
+<p>地球照は、月から見た地球の輝面比に比例させ、地球が満ちているとき直射の 1/8000 とします。地球の平均の反射率による式で、月から見た満地球を約 −16.9 等とし、太陽と比べた推定値です。地球が厚い雲や雪で覆われたとした明るい側の見積もり（−17.7 等）では、約 1/4000 になります<Fragment set:html={rf(12)} />。「肉眼」と「カメラ」では、見えるように 30 倍に持ち上げます。</p>
 
 <h3>月食</h3>
 <p>地球の影の半径は、NASA の月食のカタログと同じく Danjon の方法で、月の地平視差 <math set:html={pim} />、太陽の視半径 <math set:html={ss} />、太陽の地平視差 <math set:html={pis} /> から求めます<Fragment set:html={rf(13)} />。係数 1.01 は、地球の大気による影の拡大（1/85）と、地球の扁平の補正（1/594）を合わせたものです。</p>
@@ -106,12 +108,11 @@ const ss = subt('s', '太陽');
   <li>地平線を東西の 2 方向だけで持ち、2 km から約 400 km まで 40 歩たどること</li>
   <li>影のぼかしの幅（太陽の視直径 0.53°）</li>
   <li>色の彩度を 0.55 倍に落とすこと、明るさの倍率と、白の手前で丸める曲線</li>
-  <li>衝効果の形（位相角 0° で 1.4 倍。増えた分が位相角 2.5° ごとに 1/e になる山。「物理」のときだけ）</li>
-  <li>地球照の強さ（満地球で直射の 1/8000）と、「目」「カメラ」での 30 倍の持ち上げ</li>
-  <li>月食の明るさの合わせ方: 円盤で最も明るい点の減光を、「目」は 3/4、「カメラ」は全部取り戻し、「物理」は取り戻さない</li>
+  <li>「肉眼」「カメラ」で、円盤で最も明るい点を満月と同じ明るさに合わせること</li>
+  <li>地球照の強さ（満地球で直射の 1/8000）と、「肉眼」「カメラ」での 30 倍の持ち上げ</li>
+  <li>月食の明るさの合わせ方: 円盤で最も明るい点の減光を、「肉眼」は 3/4、「カメラ」は全部取り戻し、「物理」は取り戻さない</li>
   <li>表の影の位置への当て方: 本影の縁を表の 0.429 の行に合わせ、その内と外を比例で伸び縮みさせる</li>
   <li>地名の選び方: 「欠け際の近く」では、名前が Mare・Oceanus の海はいつも出す。クレーターは直径 25 km 以上、緯度 ±70° 以内で、太陽直下点との経度の差が 70°〜93°（欠け際から明るい側へ 20°、暗い側へ 3° まで）のものを、大きい順に 12 個。「大きなもの」では、クレーターを直径 90 km 以上にする</li>
-  <li>暦の小さな月は、細い月も見えるよう、位相角 90° から 180° で最大 3 倍まで明るくする</li>
   <li>スーパームーンを「その年で最も近い満月」とすること</li>
 </ul>
 
@@ -127,7 +128,7 @@ const ss = subt('s', '太陽');
   <li id="thy-r8"><span class="rf-for">月面の色の地図と標高（LRO WAC・LOLA。パブリックドメイン）、WAC の画像の Hapke の正規化</span><span class="rf-src">E. Wright, “<a href="https://svs.gsfc.nasa.gov/4720/" target="_blank" rel="noopener">CGI Moon Kit</a>,” NASA Scientific Visualization Studio, 4720; H. Sato, M. S. Robinson, B. Hapke, B. W. Denevi and A. K. Boyd, “Resolved Hapke parameter maps of the Moon,” <i>J. Geophys. Res. Planets</i>, vol. 119, pp. 1775–1805, 2014; LROC, “<a href="https://data.lroc.im-ldi.com/lroc/view_rdr/WAC_HAPKE" target="_blank" rel="noopener">WAC Hapke Normalized Mosaic</a>”</span></li>
   <li id="thy-r9"><span class="rf-for">地名の位置・直径・英語名（パブリックドメイン）</span><span class="rf-src">IAU Working Group for Planetary System Nomenclature and USGS Astrogeology Science Center, “<a href="https://planetarynames.wr.usgs.gov/" target="_blank" rel="noopener">Gazetteer of Planetary Nomenclature</a>”（<a href="https://planetarynames.wr.usgs.gov/GIS_Downloads" target="_blank" rel="noopener">MOON_nomenclature_center_pts</a>、2026-10-22 版）</span></li>
   <li id="thy-r10"><span class="rf-for">地名の日本語名（CC BY-SA 4.0。features.json はこのライセンスを引き継ぐ）</span><span class="rf-src">ウィキペディア日本語版「<a href="https://ja.wikipedia.org/w/index.php?oldid=103420195" target="_blank" rel="noopener">月の海の一覧</a>」「<a href="https://ja.wikipedia.org/w/index.php?oldid=104605018" target="_blank" rel="noopener">月のクレーターの一覧</a>」「<a href="https://ja.wikipedia.org/w/index.php?oldid=103502553" target="_blank" rel="noopener">月の地形一覧</a>」（版を固定）</span></li>
-  <li id="thy-r11"><span class="rf-for">lunar-Lambert の式と係数</span><span class="rf-src">A. S. McEwen, “Photometric functions for photoclinometry and other applications,” <i>Icarus</i>, vol. 92, pp. 298–311, 1991; USGS ISIS3, <a href="https://github.com/DOI-USGS/ISIS3/blob/dev/isis/src/base/objs/LunarLambertMcEwen/LunarLambertMcEwen.cpp" target="_blank" rel="noopener">LunarLambertMcEwen.cpp</a></span></li>
+  <li id="thy-r11"><span class="rf-for">月の円盤の明るさの分布（Akimov の関数）</span><span class="rf-src">Yu. Shkuratov et al., “Optical measurements of the Moon as a tool to study its surface,” <i>Planet. Space Sci.</i>, vol. 59, pp. 1326–1371, 2011（もとは L. A. Akimov, 1988）</span></li>
   <li id="thy-r12"><span class="rf-for">月から見た満地球の明るさ（厚い雲や雪の場合の見積もりと、平均の反射率による地球の等級の式）</span><span class="rf-src">D. C. Agrawal, “Apparent magnitude of earthshine: a simple calculation,” <i>Eur. J. Phys.</i>, vol. 37, 035601, 2016; A. Mallama and J. L. Hilton, “<a href="https://arxiv.org/abs/1808.01973" target="_blank" rel="noopener">Computing apparent planetary magnitudes for The Astronomical Almanac</a>,” <i>Astron. Comput.</i>, vol. 25, pp. 10–24, 2018</span></li>
   <li id="thy-r13"><span class="rf-for">影の拡大の Danjon の方法と Chauvenet の方法、係数 1.01 の内訳</span><span class="rf-src">F. Espenak, “<a href="https://eclipse.gsfc.nasa.gov/LEcat5/shadow.html" target="_blank" rel="noopener">Enlargement of Earth's Shadows</a>,” NASA GSFC</span></li>
   <li id="thy-r14"><span class="rf-for">月食の一覧（1900〜2100 年）、食分と継続時間</span><span class="rf-src">F. Espenak and J. Meeus, <i>Five Millennium Catalog of Lunar Eclipses: −1999 to +3000</i>, NASA/TP-2009-214173, 2009; <a href="https://eclipse.gsfc.nasa.gov/5MCLE/5MKLEcatalog.txt" target="_blank" rel="noopener">5MKLEcatalog.txt</a>。謝辞は “Eclipse Predictions by Fred Espenak (NASA's GSFC)”</span></li>
@@ -137,4 +138,5 @@ const ss = subt('s', '太陽');
   <li id="thy-r18"><span class="rf-for">観測地から見た月の高度・方位・距離・地球直下点（答え合わせ）</span><span class="rf-src">JPL Solar System Dynamics, “<a href="https://ssd.jpl.nasa.gov/horizons/" target="_blank" rel="noopener">Horizons System</a>”</span></li>
   <li id="thy-r19"><span class="rf-for">月の出入りと月相の時刻（答え合わせ）</span><span class="rf-src">U.S. Naval Observatory, “<a href="https://aa.usno.navy.mil/data/api" target="_blank" rel="noopener">Astronomical Applications API</a>”</span></li>
   <li id="thy-r20"><span class="rf-for">2026-03-03 の皆既月食の時刻</span><span class="rf-src">国立天文台, “<a href="https://www.nao.ac.jp/astro/sky/2026/03-topics02.html" target="_blank" rel="noopener">皆既月食（2026年3月）</a>”</span></li>
+  <li id="thy-r21"><span class="rf-for">月全体の明るさの位相角による変化</span><span class="rf-src">A. N. Cox (ed.), <i>Allen's Astrophysical Quantities</i>, 4th ed., Springer, 2000</span></li>
 </ol>

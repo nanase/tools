@@ -87,8 +87,9 @@ export interface MoonU {
   /** 月から太陽・観測者への向き */
   s: Vec3;
   o: Vec3;
-  /** lunar-Lambert の L、明るさの倍率、地球照（直射に対する比）、彩度 */
-  L: number;
+  /** 位相角 [rad] と測光の赤道の極（Akimov の関数）、明るさの倍率、地球照（直射に対する比）、彩度 */
+  A: number;
+  np: Vec3;
   gain: number;
   es: number;
   sat: number;
@@ -146,7 +147,8 @@ export class MoonRenderer {
       'uS',
       'uO',
       'uDisk',
-      'uL',
+      'uA',
+      'uNp',
       'uGain',
       'uEs',
       'uSat',
@@ -280,7 +282,8 @@ export class MoonRenderer {
     gl.uniform3fv(g('uS'), m.s);
     gl.uniform3fv(g('uO'), m.o);
     gl.uniform3f(g('uDisk'), at.x + at.cx, at.y + at.cy, at.rad);
-    gl.uniform1f(g('uL'), m.L);
+    gl.uniform1f(g('uA'), m.A);
+    gl.uniform3fv(g('uNp'), m.np);
     gl.uniform1f(g('uGain'), m.gain);
     gl.uniform1f(g('uEs'), m.es);
     gl.uniform1f(g('uSat'), m.sat);
