@@ -38,9 +38,7 @@ export type TpMsg =
   | { type: 'stopPiece' }
   | { type: 'mute' }
   | { type: 'room'; r: ReverbSpec }
-  | { type: 'scope'; on: boolean }
-  /* 残っている音と残響をすぐ消す（一時停止の間に止めたとき） */
-  | { type: 'reset' };
+  | { type: 'scope'; on: boolean };
 
 /** 主スレッドへ送るもの */
 export type TpOut =
@@ -147,11 +145,6 @@ registerProcessor(
         this.pl.pm = 0;
       } else if (m.type === 'room') this.rv.set(m.r);
       else if (m.type === 'scope') this.scope = m.on;
-      else {
-        this.tr?.reset();
-        this.rv.clear();
-        this.pl.pm = 0;
-      }
     }
     /** 鳴っている音の高さ [Hz]（直近の 0 の横切りの間隔の平均） */
     private f0(): number {

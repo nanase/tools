@@ -7,7 +7,7 @@ import { Choice } from '../../lib/choice';
 import { $ } from '../../lib/dom';
 import { fmt, fmtR, minus, plain, ro } from '../../lib/format';
 import { ParamGroup } from '../../lib/param';
-import { Pauser } from '../../lib/pause';
+import { autoPause } from '../../lib/pause';
 import { movePlayStore, outVol, type PlayKey, TEMPO } from '../../lib/play';
 import { acoustics, reverbSpec, roomOf } from '../../lib/reverb';
 import { store, stored } from '../../lib/store';
@@ -45,7 +45,6 @@ let started = false;
 const choice = <V extends string>(k: string, fn: (v: V) => void) => new Choice<V>($(`#p-${k}`), fn);
 const audio = new TrumpetAudio();
 const NO_SOUND = '音を出せませんでした';
-const PAUSED = '一時停止の間は吹けません';
 const sndMsg = (s: string) => txt('#snd-msg', s);
 
 const nv = choice<FigMode>('nv', (v) => {
@@ -150,10 +149,6 @@ async function blow(on: boolean): Promise<void> {
   clearTimeout(blowTimer);
   if (on === M.blow) return;
   if (on) {
-    if (pauser.paused) {
-      sndMsg(PAUSED);
-      return;
-    }
     stopPiece(true);
     const ok = await audio.ready();
     if (!ok) {
@@ -406,12 +401,6 @@ function drawOut(): void {
 /** 演奏中の曲。h は曲の頭の拍（弱起の音は負の拍）、b0 は弾き始めた位置の拍（位置の欄の拍）、from は弾き始めた時刻 [s] */
 let P: { v: string; data: PieceData; perf: Performance; h: number; b0: number; from: number } | null = null;
 const piece = $<HTMLSelectElement>('#piece');
-const pauser = new Pauser(audio, {
-  playing: () => !!P,
-  changed: syncPlay,
-  failed: () => sndMsg(NO_SOUND),
-  hidden: () => {},
-});
 {
   const v = stored('c:p-piece');
   if (typeof v === 'string' && [...piece.options].some((o) => o.value === v)) piece.value = v;
@@ -451,13 +440,12 @@ async function showLine(): Promise<void> {
   if (piece.value === pc.v) transport.setLine(lineOf(pc, data));
 }
 function syncPlay(): void {
-  /* 曲が続くとすぐ音が出るので、演奏中（一時停止の間も）は消音を使わない */
+  /* 曲が続くとすぐ音が出るので、演奏中は消音を使わない */
   $<HTMLButtonElement>('#muteBtn').disabled = !!P;
-  if (!pauser.paused && $('#snd-msg').textContent === PAUSED) sndMsg('');
   transport.sync();
 }
-/** 小節 bar の頭から演奏する */
-async function startPiece(bar = 1): Promise<void> {
+/** 拍 b0（演奏の位置の欄の拍）から演奏する */
+async function startPiece(b0: number): Promise<void> {
   const ok = await audio.ready();
   if (!ok) {
     sndMsg(NO_SOUND);
@@ -475,20 +463,26 @@ async function startPiece(bar = 1): Promise<void> {
   if (P || piece.value !== pc.v) return;
   M.blow = false;
   const perf = performPiece(pc, data, tempo, expr.value),
-    h = headOf(data),
-    b0 = lineOf(pc, data).start(bar);
+    h = headOf(data);
   /*
-   * 途中から弾くときは、その小節の頭より前の音を渡さない（前の音がないので、スラーの途中でも舌で吹き始める）。
-   * 小節の頭に音があれば、その音の頭（出だしのばらつきで少し前のこともある）から、休符やタイで始まる小節は小節の頭から
+   * 途中から弾くときは、その拍より前の音を渡さない（前の音がないので、スラーの途中でも舌で吹き始める）。
+   * その拍で吹いている音があれば、その拍から吹き直す。その拍に音があれば、その音の頭（出だしのばらつきで少し前のこともある）から、
+   * 休符やタイで始まるときはその拍から
    */
   let notes = perf.notes,
     from = 0;
-  if (bar > 1) {
+  if (b0 > 0) {
     const s0 = perf.secAt(b0 + h),
       i0 = notes.findIndex((x) => x.t >= s0 - HEAD_TOL),
-      i = i0 < 0 ? notes.length : i0;
-    notes = notes.slice(i);
-    from = Math.min(s0, notes[0]?.t ?? s0);
+      i = i0 < 0 ? notes.length : i0,
+      prev = notes[i - 1];
+    if (prev && prev.t + prev.d > s0) {
+      notes = notes.slice(i - 1);
+      from = s0;
+    } else {
+      notes = notes.slice(i);
+      from = Math.min(s0, notes[0]?.t ?? s0);
+    }
   }
   P = { v: pc.v, data, perf, h, b0, from };
   /* 前の演奏の位置を出さない */
@@ -500,12 +494,19 @@ async function startPiece(bar = 1): Promise<void> {
 function stopPiece(keep = false): void {
   if (!P) return;
   P = null;
-  audio.resetIfPaused();
-  pauser.clear();
   audio.stopPiece();
   if (keep) transport.stopped(false);
   syncPlay();
 }
+/** 一時停止: 曲をやめる（息を止め、音は自然に鳴り止む。その間も手で吹ける）。止めた拍を返す */
+function pausePiece(): number {
+  const b = P ? ((last ? posOf(P, last) : null) ?? P.b0) : 0;
+  stopPiece();
+  return b;
+}
+/** 曲 p のフレーム f の、演奏の位置の欄の拍（弾き始める前に届いた、前の演奏のフレームなら null） */
+const posOf = (p: NonNullable<typeof P>, f: Frame) =>
+  f.time >= p.from - 1e-3 ? Math.max(p.b0, p.perf.beatAt(f.time) - p.h) : null;
 /** テンポと表情を変えたら、いまの拍から演奏し直す */
 function retempo(): void {
   if (!P || !last) return;
@@ -519,7 +520,6 @@ function retempo(): void {
 /* 消音: 手で吹いた音と残響を止める（曲の演奏中は使えない） */
 $('#muteBtn').addEventListener('click', () => {
   M.blow = false;
-  audio.resetIfPaused();
   audio.mute();
   syncPlay();
 });
@@ -529,10 +529,14 @@ audio.onDone = () => {
   transport.stopped(true);
   syncPlay();
 };
-const transport = new Transport(
-  { active: () => !!P, start: (bar) => startPiece(bar), stop: () => stopPiece(), tempo: () => tempo * 100 },
-  pauser,
-);
+const transport = new Transport({
+  active: () => !!P,
+  start: startPiece,
+  stop: () => stopPiece(),
+  pause: pausePiece,
+  tempo: () => tempo * 100,
+});
+autoPause(audio, { pause: () => transport.pause(), hidden: () => {} });
 
 /* ---------- 毎フレーム ---------- */
 let last: Frame | null = null;
@@ -594,7 +598,8 @@ function tick(now: number): void {
     instMetrics(v);
   }
   /* 弾き始める前に届いた、前の演奏の時刻は使わない */
-  if (P && f && f.time >= P.from - 1e-3) transport.setPos(Math.max(P.b0, P.perf.beatAt(f.time) - P.h));
+  const pos = P && f ? posOf(P, f) : null;
+  if (pos !== null) transport.setPos(pos);
   requestAnimationFrame(tick);
 }
 /** 曲の音の倍音（ふつうの指使いから） */

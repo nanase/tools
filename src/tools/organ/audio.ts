@@ -2,7 +2,6 @@
  * オルガンの音を Web Audio API で鳴らす: AudioWorklet（worklet.ts、ステレオと残響）→ 音量 → リミッタ → 出力。
  * AudioContext は鍵を押した操作の中で作る（自動再生の制限）。鳴らしていない間は止めて CPU を休ませる
  */
-import { AudioPause } from '../../lib/pause';
 import type { ReverbSpec } from '../../lib/reverb';
 import type { PipeMsg, WindDesc } from './engine';
 import type { OgMsg, OgOut } from './worklet';
@@ -40,8 +39,7 @@ export class OrganAudio {
   private swell = 1;
   private db = -30;
   private idle: ReturnType<typeof setTimeout> | undefined;
-  private hold: AudioPause | null = null;
-  /** 止めていないのに、ブラウザや OS が AudioContext を止めたときに呼ぶ */
+  /** AudioContext が止まったときに呼ぶ（ブラウザや OS が止めたとき。鳴らしていない間に止めたときも） */
   onLost: (() => void) | null = null;
   /** 弁の開いている管のストップが変わったときに呼ぶ */
   onStops: ((ids: string[]) => void) | null = null;
@@ -51,9 +49,9 @@ export class OrganAudio {
   get fs(): number {
     return this.ac?.sampleRate ?? FS;
   }
-  /** AudioContext の時刻 [s]（作る前・止めている間は null。一時停止の間は、止めた時刻のまま） */
+  /** AudioContext の時刻 [s]（作る前・止めている間は null） */
   now(): number | null {
-    return this.ac && (this.ac.state === 'running' || this.hold?.paused) ? this.ac.currentTime : null;
+    return this.ac?.state === 'running' ? this.ac.currentTime : null;
   }
 
   async ready(): Promise<boolean> {
@@ -80,8 +78,9 @@ export class OrganAudio {
         };
         this.node = node;
         this.master = master;
-        this.hold = new AudioPause(ac, master, () => 10 ** (this.db / 20));
-        this.hold.onLost = () => this.onLost?.();
+        ac.addEventListener('statechange', () => {
+          if (ac.state !== 'running') this.onLost?.();
+        });
         if (this.wind) this.post({ type: 'wind', w: this.wind });
         if (this.room) this.post({ type: 'room', r: this.room });
         this.post({ type: 'swell', s: this.swell });
@@ -89,7 +88,6 @@ export class OrganAudio {
       })
       .catch(() => false);
     if (!(await this.loading)) return false;
-    this.hold?.release();
     try {
       await ac.resume();
     } catch {
@@ -134,20 +132,9 @@ export class OrganAudio {
   release(at = 0): void {
     this.post({ type: 'release', at });
   }
-  /** 一時停止: AudioContext を止める（時刻も、鳴っている音も、予約もそのまま残る）。ready で再開する */
-  async pause(fast = false): Promise<void> {
-    clearTimeout(this.idle);
-    await this.hold?.pause(fast);
-  }
-
-  /** 予定を消して、すべての弁を閉じる。一時停止の間なら、残した音と残響をすぐ消して、AudioContext を動かしておく */
+  /** 予定を消して、すべての弁を閉じる（管は自然に鳴り止む） */
   stop(): void {
-    if (!this.hold?.paused) {
-      this.post({ type: 'stop' });
-      return;
-    }
-    this.post({ type: 'reset' });
-    void this.ready();
+    this.post({ type: 'stop' });
   }
   vol(db: number): void {
     this.db = db;
