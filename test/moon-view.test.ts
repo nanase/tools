@@ -57,7 +57,7 @@ describe('見え方', () => {
   it('lunar-Lambert の L と地球照', () => {
     expect(lunarL(0)).toBe(1);
     expect(lunarL(90)).toBeCloseTo(1 - 1.71 + 1.9602 - 1.0643, 4);
-    expect(earthshine(180)).toBeCloseTo(1 / 4000, 12);
+    expect(earthshine(180)).toBeCloseTo(1 / 8000, 12);
     expect(earthshine(0)).toBe(0);
   });
   it('影の外では月食の値を渡さない', () => {

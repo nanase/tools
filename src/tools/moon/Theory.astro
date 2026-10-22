@@ -35,35 +35,35 @@ const ss = subt('s', '太陽');
 </ol>
 
 <h3>月と太陽の位置</h3>
-<p>月の位置は、Meeus『Astronomical Algorithms』47 章の式で求めます<Fragment set:html={rf(1)} />。ELP-2000/82 を切り詰めた級数で、黄経・距離に約 60 項、黄緯に約 60 項を足し合わせます。1950〜2100 年で ELP/MPP02 と比べた誤差は、向きで RMS 約 3″、距離で RMS 約 6 km です<Fragment set:html={rf(2)} />。月の見かけの直径（約 0.5°）の 1 % に満たず、画面の 1 画素より小さくなります。</p>
-<p>太陽は VSOP87D の地球の級数のうち振幅 <math><msup><mn>10</mn><mrow><mo>−</mo><mn>7</mn></mrow></msup></math> 以上の 213 項から求めます<Fragment set:html={rf(18)} />。Meeus 25 章の簡単な式では黄経が最大 34″ ずれ、月食の時刻が 1 分ほど狂ったためです。章動と黄道傾斜は 22 章、歳差は 21 章、恒星時は 12 章によります<Fragment set:html={rf(1)} />。位置はすべて地心の「その日の真の赤道と春分点」の座標で持ちます。時刻の <math><mi mathvariant="normal">Δ</mi><mi>T</mi></math> は日食のページと同じ Espenak と Meeus の多項式です<Fragment set:html={rf(3)} />。</p>
+<p>月の位置は、Meeus『Astronomical Algorithms』47 章の式で求めます<Fragment set:html={rf(1)} />。ELP-2000/82 を切り詰めた級数で、黄経・距離に約 60 項、黄緯に約 60 項を足し合わせます。1950〜2100 年で ELP/MPP02 と比べた誤差は、向きで RMS 2.9″、位置で RMS 6.1 km です<Fragment set:html={rf(2)} />。月の見かけの直径（約 0.5°）の 1 % に満たず、画面の 1 画素より小さくなります。</p>
+<p>太陽は VSOP87D の地球の級数のうち振幅 <math><msup><mn>10</mn><mrow><mo>−</mo><mn>7</mn></mrow></msup></math> 以上の 213 項から求めます<Fragment set:html={rf(3)} />。Meeus 25 章の簡単な式では黄経が最大 34″ ずれ、月食の時刻が 1 分ほど狂ったためです。章動と黄道傾斜は 22 章、歳差は 21 章、恒星時は 12 章によります<Fragment set:html={rf(1)} />。位置はすべて地心の「その日の真の赤道と春分点」の座標で持ちます。時刻の <math><mi mathvariant="normal">Δ</mi><mi>T</mi></math> は日食のページと同じ Espenak と Meeus の多項式です<Fragment set:html={rf(4)} />。</p>
 <p>観測地から見た月は、地心の月の位置から観測地の位置（WGS84 の楕円体の上の点）を引いて求めます。月は近いので、観測地によって向きが最大約 1° 変わります（地平視差）。高度には大気差（Saemundsson の式）を足し、月の出入りは月の上の縁が見かけの地平線に来る時刻とします<Fragment set:html={rf(1)} />。</p>
 
 <h3>月の向きと秤動</h3>
-<p>月の自転の向きは、国際天文学連合の作業部会（WGCCRE）の式で求めます<Fragment set:html={rf(4)} />。北極の赤経・赤緯 <math><msub><mi>α</mi><mn>0</mn></msub></math>・<math><msub><mi>δ</mi><mn>0</mn></msub></math> と本初子午線の角 <math><mi>W</mi></math> を、13 個の角 <math><msub><mi>E</mi><mn>1</mn></msub></math>〜<math><msub><mi>E</mi><mn>13</mn></msub></math> の三角関数の和で表したもので、月探査機 LRO の地図と同じ「平均地球・極軸」の座標を与えます。</p>
+<p>月の自転の向きは、国際天文学連合の作業部会（WGCCRE）の式で求めます<Fragment set:html={rf(5)} />。北極の赤経・赤緯 <math><msub><mi>α</mi><mn>0</mn></msub></math>・<math><msub><mi>δ</mi><mn>0</mn></msub></math> と本初子午線の角 <math><mi>W</mi></math> を、13 個の角 <math><msub><mi>E</mi><mn>1</mn></msub></math>〜<math><msub><mi>E</mi><mn>13</mn></msub></math> の三角関数の和で表したものです。月探査機 LRO の地図が使う「平均地球・極軸」の座標を、この式で近似します。</p>
 <p>秤動は、月から観測者への向き <math set:html={hat('o')} /> を月固定の座標で表した経緯度（地球直下点）です。光学的秤動・物理的秤動・観測地による日周秤動が、この 1 つの変換でまとめて入ります。同じように、月から太陽への向き <math set:html={hat('s')} /> から太陽直下点と余経度を求めます。</p>
 <div class="eqs">
   <math display="block" set:html={`<msub><mi>φ</mi><mtext>直下</mtext></msub><mo>=</mo>${asin(sub('o', 'z'))}`} />
   <math display="block" set:html={`<msub><mi>λ</mi><mtext>直下</mtext></msub><mo>=</mo><mi>atan2</mi>${par(`${sub('o', 'y')}<mo>,</mo>${sub('o', 'x')}`)}`} />
   <math display="block" set:html={`<mtext>余経度</mtext><mo>=</mo><mn>90</mn>${deg}<mo>−</mo><msub><mi>λ</mi><mtext>太陽直下</mtext></msub>`} />
 </div>
-<p>2026 年の地心の秤動の範囲は、経度 −7.9°〜+7.6°、緯度 −6.8°〜+6.9° です<Fragment set:html={rf(5)} />。輝面比は位相角 <math set:html={al} />（月から見た太陽と観測者の間の角）から <math><mi>k</mi><mo>=</mo><mo stretchy="false">(</mo><mn>1</mn><mo>+</mo><mi>cos</mi>${AF}${sp}<mi>α</mi><mo stretchy="false">)</mo><mo>/</mo><mn>2</mn></math> で求めます<Fragment set:html={rf(1)} />。</p>
-<p>画面の向きは、天頂・天の北極・月の北極のどれかを上にして決めます。天頂が上のときは、空で見えるとおりの傾きになり、三日月が春の夕方には寝て、秋の夕方には立つ様子が分かります<Fragment set:html={rf(6)} />。</p>
+<p>NASA SVS の 2026 年の毎時の値では、地心の秤動の範囲は経度 −7.9°〜+7.6°、緯度 −6.8°〜+6.9° です<Fragment set:html={rf(6)} />。輝面比は位相角 <math set:html={al} />（月から見た太陽と観測者の間の角）から <math><mi>k</mi><mo>=</mo><mo stretchy="false">(</mo><mn>1</mn><mo>+</mo><mi>cos</mi>${AF}${sp}<mi>α</mi><mo stretchy="false">)</mo><mo>/</mo><mn>2</mn></math> で求めます<Fragment set:html={rf(1)} />。</p>
+<p>画面の向きは、天頂・天の北極・月の北極のどれかを上にして決めます。天頂が上のときは、空で見えるとおりの傾きになり、三日月が春の夕方には寝て、秋の夕方には立つ様子が分かります<Fragment set:html={rf(7)} />。</p>
 
 <h3>月面の色と地形</h3>
-<p>月面の色と標高は、NASA の Scientific Visualization Studio が公開している CGI Moon Kit を使います<Fragment set:html={rf(7)} />。</p>
+<p>月面の色と標高は、NASA の Scientific Visualization Studio が公開している CGI Moon Kit を使います<Fragment set:html={rf(8)} />。</p>
 <ul class="tl">
-  <li><b>色</b>: LRO の広角カメラ（WAC）の 643・566・415 nm の画像を、太陽と観測者の向きをそろえる Hapke の正規化をしてから合成したもの。影が写り込んでいないので、影を計算で足せる</li>
+  <li><b>色</b>: LRO の広角カメラ（WAC）の 10 万枚を超える画像を、地形の傾きも入れて同じ光の当たり方（入射角・位相角 60°、出射角 0°）に直してから重ねたもの（Hapke の正規化）。643・566・415 nm を赤・緑・青にしている。地形の陰影がほぼ除かれているので、影を計算で足せる</li>
   <li><b>標高</b>: LRO のレーザー高度計（LOLA）の格子。半径 1737.4 km の球からの高さ</li>
 </ul>
 <p>このページでは、どちらも表側（経度 −100°〜+100°）を 1 度あたり 8 画素（1 画素が赤道で約 3.8 km）に縮めて配ります。標高は 10 m 刻みです。</p>
-<p>読み込んだあと、GPU で一度だけ、各点の東向き・北向きの傾きと、東と西の地平線の高度角を求めます。地平線は、大円に沿って 2〜400 km を 40 歩たどり、月の丸みを入れた見込み角の最大とします。月では太陽直下点の緯度が ±1.6° ほどしか動かないため、欠け際での太陽はほぼ真東か真西にあります。そこで、地平線は東西の 2 方向だけで持ちます（このツールで決めたこと）。</p>
+<p>読み込んだあと、GPU で一度だけ、各点の東向き・北向きの傾きと、東と西の地平線の高度角を求めます。地平線は、大円に沿って 2 km から歩幅を 1.145 倍ずつ広げ、約 400 km まで 40 歩たどり、月の丸みを入れた見込み角の最大とします。月では太陽直下点の緯度が ±1.6° ほどしか動かないため、欠け際での太陽はほぼ真東か真西にあります。そこで、地平線は東西の 2 方向だけで持ちます（このツールで決めたこと）。</p>
 
 <h3>地名</h3>
-<p>地名の位置・大きさ・英語名は、国際天文学連合が承認し、米国地質調査所（USGS）が公開している惑星地名辞典によります<Fragment set:html={rf(19)} />。海と、表側の直径 20 km 以上のクレーター、名前の付いた山・谷などを選んでいます。日本語名は日本語版ウィキペディアの一覧から取り、日本語名のないものは英語名で出します<Fragment set:html={rf(20)} />。</p>
+<p>地名の位置・大きさ・英語名は、国際天文学連合が承認し、米国地質調査所（USGS）が公開している惑星地名辞典によります<Fragment set:html={rf(9)} />。海、表側の直径 20 km 以上のクレーター、日本語名のある山・谷などを選んでいます。日本語名は日本語版ウィキペディアの一覧から取り、日本語名のないものは英語名で出します<Fragment set:html={rf(10)} />。</p>
 
 <h3>明るさと影</h3>
-<p>月面の明るさは、McEwen の lunar-Lambert の式で計算します<Fragment set:html={rf(8)} />。<math set:html={mu0} />・<math><mi>μ</mi></math> は面の法線と太陽・観測者の向きの余弦です。</p>
+<p>月面の明るさは、McEwen の lunar-Lambert の式で計算します<Fragment set:html={rf(11)} />。<math set:html={mu0} />・<math><mi>μ</mi></math> は面の法線と太陽・観測者の向きの余弦です。</p>
 <div class="eqs">
   <math display="block" set:html={`<mi>r</mi><mo>=</mo><mi>A</mi>${par(`<mn>2</mn><mi>L</mi>${fr(mu0, `${mu0}<mo>+</mo><mi>μ</mi>`)}<mo>+</mo><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><mi>L</mi><mo stretchy="false">)</mo>${mu0}`)}`} />
   <math display="block" set:html={`<mi>L</mi><mo>=</mo><mn>1</mn><mo>−</mo><mn>0.019</mn>${al}<mo>+</mo><mn>0.000242</mn><msup>${al}<mn>2</mn></msup><mo>−</mo><mn>0.00000146</mn><msup>${al}<mn>3</mn></msup>`} />
@@ -73,44 +73,44 @@ const ss = subt('s', '太陽');
 <div class="eqs">
   <math display="block" set:html={`<mtext>照らされ方</mtext><mo>=</mo><mi>clamp</mi>${par(`${fr(`${subt('h', '太陽')}<mo>−</mo>${subt('h', '地平線')}`, `<mn>0.53</mn>${deg}`)}<mo>+</mo><mn>0.5</mn><mo>,</mo><mn>0</mn><mo>,</mo><mn>1</mn>`)}`} />
 </div>
-<p>地球照は、月から見た地球の輝面比に比例させ、地球が満ちているとき直射の 1/4000 とします。満地球の明るさ（月から見て約 −17.7 等）と太陽の明るさから見積もった推定値です<Fragment set:html={rf(9)} />。「目」と「カメラ」では、見えるように 30 倍に持ち上げます。</p>
+<p>地球照は、月から見た地球の輝面比に比例させ、地球が満ちているとき直射の 1/8000 とします。地球の平均の反射率による式で、月から見た満地球を約 −16.9 等とし、太陽と比べた推定値です。地球が厚い雲や雪で覆われたとした明るい側の見積もり（−17.7 等）では、約 1/4000 になります<Fragment set:html={rf(12)} />。「目」と「カメラ」では、見えるように 30 倍に持ち上げます。</p>
 
 <h3>月食</h3>
-<p>地球の影の半径は、NASA の月食のカタログと同じく Danjon の方法で、月の地平視差 <math set:html={pim} />、太陽の視半径 <math set:html={ss} />、太陽の地平視差 <math set:html={pis} /> から求めます<Fragment set:html={rf(10)} />。係数 1.01 は、地球の大気による影の拡大を表します。</p>
+<p>地球の影の半径は、NASA の月食のカタログと同じく Danjon の方法で、月の地平視差 <math set:html={pim} />、太陽の視半径 <math set:html={ss} />、太陽の地平視差 <math set:html={pis} /> から求めます<Fragment set:html={rf(13)} />。係数 1.01 は、地球の大気による影の拡大（1/85）と、地球の扁平の補正（1/594）を合わせたものです。</p>
 <div class="eqs">
   <math display="block" set:html={`${Ru}<mo>=</mo><mn>1.01</mn>${pim}<mo>−</mo>${ss}<mo>+</mo>${pis}`} />
   <math display="block" set:html={`${Rp}<mo>=</mo><mn>1.01</mn>${pim}<mo>+</mo>${ss}<mo>+</mo>${pis}`} />
 </div>
-<p>月食の一覧は NASA の五千年カタログ<Fragment set:html={rf(11)} />の 1900〜2100 年の分で、欠け始め・皆既・欠け終わりの時刻は、影と月の中心の角距離が半径の和・差になる時刻を二分法で解いて求めます。時刻はどこで見ても同じで、観測地で決まるのは月の高さです。</p>
-<p>影の中の色と暗さは、Mallama (2022) の表で付けます<Fragment set:html={rf(12)} />。半影の外縁から影の中心まで、青・緑・赤の光が何等暗くなるかを約 50 段で示した表で、中心では青が 22.2 等、緑が 15.4 等、赤が 11.0 等暗くなります。赤い光ほど地球の大気を通って影の中へ曲げられるため、皆既の月は赤銅色になります。この表はオゾンの吸収を入れていないので、本影の縁に見える青緑は出ません。</p>
+<p>月食の一覧は NASA の五千年カタログ<Fragment set:html={rf(14)} />の 1900〜2100 年の分で、欠け始め・皆既・欠け終わりの時刻は、影と月の中心の角距離が半径の和・差になる時刻を二分法で解いて求めます。時刻はどこで見ても同じで、観測地で決まるのは月の高さです。</p>
+<p>影の中の色と暗さは、Mallama (2022) の表で付けます<Fragment set:html={rf(15)} />。半影の外縁から影の中心まで、青・緑・赤の光が何等暗くなるかを約 50 段で示した表で、中心では青が 22.2 等、緑が 15.4 等、赤が 11.0 等暗くなります。大気で曲げられて影の中へ入る光のうち、青い光ほど大気に吸収されて弱まるため、皆既の月は赤銅色になります。この表のもとの模型はオゾンの吸収を入れていないので、本影の縁に見えることのある青緑は出ません。</p>
 
 <h3>暦</h3>
 <ul class="tl">
-  <li><b>新月・上弦・満月・下弦</b>: 太陽と月の地心の視黄経の差が 0°・90°・180°・270° になる時刻<Fragment set:html={rf(13)} /></li>
-  <li><b>月齢</b>: 直前の新月からの経過日数。カレンダーの数字はその日の正午の月齢<Fragment set:html={rf(13)} /></li>
-  <li><b>中秋の名月・十三夜</b>: 秋分を含む朔望月を旧暦 8 月とし、その 15 日を中秋の名月、次の月の 13 日を十三夜とする。中秋の名月は満月とは限らない<Fragment set:html={rf(14)} /></li>
+  <li><b>新月・上弦・満月・下弦</b>: 太陽と月の地心の視黄経の差が 0°・90°・180°・270° になる時刻<Fragment set:html={rf(16)} /></li>
+  <li><b>月齢</b>: 直前の新月からの経過日数。カレンダーの数字はその日の正午の月齢<Fragment set:html={rf(16)} /></li>
+  <li><b>中秋の名月・十三夜</b>: 秋分を含む朔望月を旧暦 8 月とし、その 15 日を中秋の名月、次の月の 13 日を十三夜とする。中秋の名月は満月とは限らない<Fragment set:html={rf(17)} /></li>
   <li><b>スーパームーン</b>: このページでは、その年で地球に最も近い満月とする</li>
 </ul>
 
 <h3>答え合わせ</h3>
 <ul class="tl">
-  <li>地心の距離・視直径・輝面比・地球直下点・太陽直下点・自転軸の位置角を、NASA SVS の 2026 年の毎時の値<Fragment set:html={rf(5)} />と比べる</li>
-  <li>東京から見た高度・方位・距離・地球直下点を、JPL Horizons の値と比べる<Fragment set:html={rf(15)} /></li>
-  <li>月の出入りと月相の時刻を、米国海軍天文台（USNO）の値と比べる<Fragment set:html={rf(16)} /></li>
-  <li>2026-03-03 と 2028-12-31 の月食の時刻と食分を、国立天文台と NASA の値と比べる<Fragment set:html={rf(11, 17)} /></li>
+  <li>地心の距離・視直径・輝面比・地球直下点・太陽直下点・自転軸の位置角を、NASA SVS の 2026 年の毎時の値<Fragment set:html={rf(6)} />と比べる</li>
+  <li>東京から見た高度・方位・距離・地球直下点を、JPL Horizons の値と比べる<Fragment set:html={rf(18)} /></li>
+  <li>月の出入りと月相の時刻を、米国海軍天文台（USNO）の値と比べる<Fragment set:html={rf(19)} /></li>
+  <li>2026-03-03 と 2028-12-31 の月食の時刻と食分を、国立天文台と NASA の値と比べる<Fragment set:html={rf(14, 20)} /></li>
 </ul>
 
 <h3>このツールで決めたこと</h3>
 <ul class="tl">
   <li>配る地形の範囲（表側の経度 −100°〜+100°）と解像度（1 度あたり 8 画素）、標高の刻み（10 m）</li>
-  <li>地平線を東西の 2 方向だけで持ち、2〜400 km を 40 歩たどること</li>
+  <li>地平線を東西の 2 方向だけで持ち、2 km から約 400 km まで 40 歩たどること</li>
   <li>影のぼかしの幅（太陽の視直径 0.53°）</li>
   <li>色の彩度を 0.55 倍に落とすこと、明るさの倍率と、白の手前で丸める曲線</li>
-  <li>衝効果の形（位相角 0° で 1.4 倍、2.5° で 1/e に減る山。「物理」のときだけ）</li>
-  <li>地球照の強さ（満地球で直射の 1/4000）と、「目」「カメラ」での 30 倍の持ち上げ</li>
+  <li>衝効果の形（位相角 0° で 1.4 倍。増えた分が位相角 2.5° ごとに 1/e になる山。「物理」のときだけ）</li>
+  <li>地球照の強さ（満地球で直射の 1/8000）と、「目」「カメラ」での 30 倍の持ち上げ</li>
   <li>月食の明るさの合わせ方: 円盤で最も明るい点の減光を、「目」は 3/4、「カメラ」は全部取り戻し、「物理」は取り戻さない</li>
   <li>表の影の位置への当て方: 本影の縁を表の 0.429 の行に合わせ、その内と外を比例で伸び縮みさせる</li>
-  <li>地名の選び方: 海は直径 150 km 以上をいつも、クレーターは直径 25 km 以上で、太陽の高度が −3°〜20° のもの（欠け際から約 20° 以内）を大きい順に 12 個</li>
+  <li>地名の選び方: 「欠け際の近く」では、名前が Mare・Oceanus の海はいつも出す。クレーターは直径 25 km 以上、緯度 ±70° 以内で、太陽直下点との経度の差が 70°〜93°（欠け際から明るい側へ 20°、暗い側へ 3° まで）のものを、大きい順に 12 個。「大きなもの」では、クレーターを直径 90 km 以上にする</li>
   <li>暦の小さな月は、細い月も見えるよう、位相角 90° から 180° で最大 3 倍まで明るくする</li>
   <li>スーパームーンを「その年で最も近い満月」とすること</li>
 </ul>
@@ -118,23 +118,23 @@ const ss = subt('s', '太陽');
 <h3>出典</h3>
 <ol class="refs">
   <li id="thy-r1"><span class="rf-for">月の位置（47 章）、輝面比と明るい縁の位置角（48 章）、歳差（21 章）、章動と黄道傾斜（22 章）、恒星時（12 章）、観測地の地心の座標（11 章）、視差（40 章）、大気差（16 章）、出入り（15 章）</span><span class="rf-src">J. Meeus, <i>Astronomical Algorithms</i>, 2nd ed., Willmann-Bell, 1998</span></li>
-  <li id="thy-r2"><span class="rf-for">Meeus 47 章の式（ERFA の eraMoon98）と ELP/MPP02 の差</span><span class="rf-src">pyerfa, “<a href="https://pyerfa.readthedocs.io/en/latest/api/erfa.moon98.html" target="_blank" rel="noopener">erfa.moon98</a>”</span></li>
-  <li id="thy-r3"><span class="rf-for"><math><mi mathvariant="normal">Δ</mi><mi>T</mi></math> の多項式</span><span class="rf-src">F. Espenak, “<a href="https://eclipse.gsfc.nasa.gov/SEhelp/deltatpoly2004.html" target="_blank" rel="noopener">Polynomial Expressions for Delta T (ΔT)</a>,” NASA GSFC</span></li>
-  <li id="thy-r4"><span class="rf-for">月の北極と本初子午線の式</span><span class="rf-src">B. A. Archinal et al., “Report of the IAU Working Group on Cartographic Coordinates and Rotational Elements: 2015,” <i>Celest. Mech. Dyn. Astr.</i>, vol. 130, 22, 2018</span></li>
-  <li id="thy-r5"><span class="rf-for">2026 年の毎時の秤動・距離・視直径・輝面比（答え合わせ）</span><span class="rf-src">E. Wright, “<a href="https://svs.gsfc.nasa.gov/5587/" target="_blank" rel="noopener">Moon Phase and Libration, 2026</a>,” NASA Scientific Visualization Studio, 5587</span></li>
-  <li id="thy-r6"><span class="rf-for">明縁方向と、三日月の傾きが季節で変わること</span><span class="rf-src">国立天文台 暦計算室, “<a href="https://eco.mtk.nao.ac.jp/koyomi/wiki/B7EEA4CECBFEA4C1B7E7A4B12FCCC0B1EFCAFDB8FE.html" target="_blank" rel="noopener">月の満ち欠け/明縁方向</a>,” 暦Wiki</span></li>
-  <li id="thy-r7"><span class="rf-for">月面の色の地図と標高（LRO WAC・LOLA。パブリックドメイン）</span><span class="rf-src">E. Wright, “<a href="https://svs.gsfc.nasa.gov/4720/" target="_blank" rel="noopener">CGI Moon Kit</a>,” NASA Scientific Visualization Studio, 4720</span></li>
-  <li id="thy-r8"><span class="rf-for">lunar-Lambert の式と係数</span><span class="rf-src">A. S. McEwen, “Photometric functions for photoclinometry and other applications,” <i>Icarus</i>, vol. 92, pp. 298–311, 1991; USGS ISIS3, <a href="https://github.com/DOI-USGS/ISIS3/blob/dev/isis/src/base/objs/LunarLambertMcEwen/LunarLambertMcEwen.cpp" target="_blank" rel="noopener">LunarLambertMcEwen.cpp</a></span></li>
-  <li id="thy-r9"><span class="rf-for">月から見た満地球の明るさ</span><span class="rf-src">Wikipedia, “<a href="https://en.wikipedia.org/wiki/Earthlight_(astronomy)" target="_blank" rel="noopener">Earthlight (astronomy)</a>”</span></li>
-  <li id="thy-r10"><span class="rf-for">影の拡大の Danjon の方法と Chauvenet の方法</span><span class="rf-src">F. Espenak, “<a href="https://eclipse.gsfc.nasa.gov/LEcat5/shadow.html" target="_blank" rel="noopener">Enlargement of Earth's Shadows</a>,” NASA GSFC</span></li>
-  <li id="thy-r11"><span class="rf-for">月食の一覧（1900〜2100 年）、食分と継続時間</span><span class="rf-src">F. Espenak and J. Meeus, <i>Five Millennium Canon of Lunar Eclipses: −1999 to +3000</i>, NASA/TP-2009-214172, 2009; <a href="https://eclipse.gsfc.nasa.gov/5MCLE/5MKLEcatalog.txt" target="_blank" rel="noopener">5MKLEcatalog.txt</a>。謝辞は “Eclipse Predictions by Fred Espenak (NASA's GSFC)”</span></li>
-  <li id="thy-r12"><span class="rf-for">本影と半影の中の青・緑・赤の減光（表 B.1）</span><span class="rf-src">A. Mallama, “The brightness and color of lunar eclipses,” 2022, <a href="https://arxiv.org/abs/2112.08966" target="_blank" rel="noopener">arXiv:2112.08966</a></span></li>
-  <li id="thy-r13"><span class="rf-for">朔・上弦・望・下弦と月齢の定め方</span><span class="rf-src">国立天文台 暦計算室, “<a href="https://eco.mtk.nao.ac.jp/koyomi/faq/moon.html" target="_blank" rel="noopener">月に関するよくある質問</a>”</span></li>
-  <li id="thy-r14"><span class="rf-for">中秋の名月が満月とは限らないこと</span><span class="rf-src">国立天文台 暦計算室, 暦Wiki「中秋の名月」</span></li>
-  <li id="thy-r15"><span class="rf-for">観測地から見た月の高度・方位・距離・地球直下点（答え合わせ）</span><span class="rf-src">JPL Solar System Dynamics, “<a href="https://ssd.jpl.nasa.gov/horizons/" target="_blank" rel="noopener">Horizons System</a>”</span></li>
-  <li id="thy-r16"><span class="rf-for">月の出入りと月相の時刻（答え合わせ）</span><span class="rf-src">U.S. Naval Observatory, “<a href="https://aa.usno.navy.mil/data/api" target="_blank" rel="noopener">Astronomical Applications API</a>”</span></li>
-  <li id="thy-r17"><span class="rf-for">2026-03-03 の皆既月食の時刻</span><span class="rf-src">国立天文台, “<a href="https://www.nao.ac.jp/astro/sky/2026/03-topics02.html" target="_blank" rel="noopener">皆既月食（2026 年 3 月）</a>”</span></li>
-  <li id="thy-r18"><span class="rf-for">太陽（地球）の位置の級数 VSOP87D</span><span class="rf-src">P. Bretagnon and G. Francou, “Planetary theories in rectangular and spherical variables. VSOP 87 solutions,” <i>Astron. Astrophys.</i>, vol. 202, pp. 309–315, 1988</span></li>
-  <li id="thy-r19"><span class="rf-for">地名の位置・直径・英語名（パブリックドメイン）</span><span class="rf-src">IAU Working Group for Planetary System Nomenclature and USGS Astrogeology Science Center, “<a href="https://planetarynames.wr.usgs.gov/" target="_blank" rel="noopener">Gazetteer of Planetary Nomenclature</a>”（<a href="https://planetarynames.wr.usgs.gov/GIS_Downloads" target="_blank" rel="noopener">MOON_nomenclature_center_pts</a>、2026-10-22 取得）</span></li>
-  <li id="thy-r20"><span class="rf-for">地名の日本語名（CC BY-SA 4.0。features.json はこのライセンスを引き継ぐ）</span><span class="rf-src">ウィキペディア日本語版「<a href="https://ja.wikipedia.org/w/index.php?oldid=103420195" target="_blank" rel="noopener">月の海の一覧</a>」「<a href="https://ja.wikipedia.org/w/index.php?oldid=104605018" target="_blank" rel="noopener">月のクレーターの一覧</a>」「<a href="https://ja.wikipedia.org/w/index.php?oldid=103502553" target="_blank" rel="noopener">月の地形一覧</a>」（版を固定）</span></li>
+  <li id="thy-r2"><span class="rf-for">Meeus 47 章の式（ERFA の eraMoon98）と ELP/MPP02 の差（Notes の 3）</span><span class="rf-src">pyerfa, “<a href="https://pyerfa.readthedocs.io/en/latest/api/erfa.moon98.html" target="_blank" rel="noopener">erfa.moon98</a>”</span></li>
+  <li id="thy-r3"><span class="rf-for">太陽（地球）の位置の級数 VSOP87D</span><span class="rf-src">P. Bretagnon and G. Francou, “Planetary theories in rectangular and spherical variables. VSOP 87 solutions,” <i>Astron. Astrophys.</i>, vol. 202, pp. 309–315, 1988; IMCCE, <a href="https://ftp.imcce.fr/pub/ephem/planets/vsop87/VSOP87D.ear" target="_blank" rel="noopener">VSOP87D.ear</a></span></li>
+  <li id="thy-r4"><span class="rf-for"><math><mi mathvariant="normal">Δ</mi><mi>T</mi></math> の多項式</span><span class="rf-src">F. Espenak, “<a href="https://eclipse.gsfc.nasa.gov/SEhelp/deltatpoly2004.html" target="_blank" rel="noopener">Polynomial Expressions for Delta T (ΔT)</a>,” NASA GSFC</span></li>
+  <li id="thy-r5"><span class="rf-for">月の北極と本初子午線の式と係数（2015 年の報告は月の式を載せておらず、pck00011 も 2009 年の報告の値を使う）</span><span class="rf-src">B. A. Archinal et al., “Report of the IAU Working Group on Cartographic Coordinates and Rotational Elements: 2009,” <i>Celest. Mech. Dyn. Astr.</i>, vol. 109, pp. 101–135, 2011; NAIF, <a href="https://naif.jpl.nasa.gov/pub/naif/generic_kernels/pck/pck00011.tpc" target="_blank" rel="noopener">pck00011.tpc</a></span></li>
+  <li id="thy-r6"><span class="rf-for">2026 年の毎時の秤動・距離・視直径・輝面比（答え合わせ）</span><span class="rf-src">E. Wright, “<a href="https://svs.gsfc.nasa.gov/5587/" target="_blank" rel="noopener">Moon Phase and Libration, 2026</a>,” NASA Scientific Visualization Studio, 5587</span></li>
+  <li id="thy-r7"><span class="rf-for">明縁方向と、三日月の傾きが季節で変わること</span><span class="rf-src">国立天文台 暦計算室, “<a href="https://eco.mtk.nao.ac.jp/koyomi/wiki/B7EEA4CECBFEA4C1B7E7A4B12FCCC0B1EFCAFDB8FE.html" target="_blank" rel="noopener">月の満ち欠け/明縁方向</a>,” 暦Wiki</span></li>
+  <li id="thy-r8"><span class="rf-for">月面の色の地図と標高（LRO WAC・LOLA。パブリックドメイン）、WAC の画像の Hapke の正規化</span><span class="rf-src">E. Wright, “<a href="https://svs.gsfc.nasa.gov/4720/" target="_blank" rel="noopener">CGI Moon Kit</a>,” NASA Scientific Visualization Studio, 4720; H. Sato, M. S. Robinson, B. Hapke, B. W. Denevi and A. K. Boyd, “Resolved Hapke parameter maps of the Moon,” <i>J. Geophys. Res. Planets</i>, vol. 119, pp. 1775–1805, 2014; LROC, “<a href="https://data.lroc.im-ldi.com/lroc/view_rdr/WAC_HAPKE" target="_blank" rel="noopener">WAC Hapke Normalized Mosaic</a>”</span></li>
+  <li id="thy-r9"><span class="rf-for">地名の位置・直径・英語名（パブリックドメイン）</span><span class="rf-src">IAU Working Group for Planetary System Nomenclature and USGS Astrogeology Science Center, “<a href="https://planetarynames.wr.usgs.gov/" target="_blank" rel="noopener">Gazetteer of Planetary Nomenclature</a>”（<a href="https://planetarynames.wr.usgs.gov/GIS_Downloads" target="_blank" rel="noopener">MOON_nomenclature_center_pts</a>、2026-10-22 版）</span></li>
+  <li id="thy-r10"><span class="rf-for">地名の日本語名（CC BY-SA 4.0。features.json はこのライセンスを引き継ぐ）</span><span class="rf-src">ウィキペディア日本語版「<a href="https://ja.wikipedia.org/w/index.php?oldid=103420195" target="_blank" rel="noopener">月の海の一覧</a>」「<a href="https://ja.wikipedia.org/w/index.php?oldid=104605018" target="_blank" rel="noopener">月のクレーターの一覧</a>」「<a href="https://ja.wikipedia.org/w/index.php?oldid=103502553" target="_blank" rel="noopener">月の地形一覧</a>」（版を固定）</span></li>
+  <li id="thy-r11"><span class="rf-for">lunar-Lambert の式と係数</span><span class="rf-src">A. S. McEwen, “Photometric functions for photoclinometry and other applications,” <i>Icarus</i>, vol. 92, pp. 298–311, 1991; USGS ISIS3, <a href="https://github.com/DOI-USGS/ISIS3/blob/dev/isis/src/base/objs/LunarLambertMcEwen/LunarLambertMcEwen.cpp" target="_blank" rel="noopener">LunarLambertMcEwen.cpp</a></span></li>
+  <li id="thy-r12"><span class="rf-for">月から見た満地球の明るさ（厚い雲や雪の場合の見積もりと、平均の反射率による地球の等級の式）</span><span class="rf-src">D. C. Agrawal, “Apparent magnitude of earthshine: a simple calculation,” <i>Eur. J. Phys.</i>, vol. 37, 035601, 2016; A. Mallama and J. L. Hilton, “<a href="https://arxiv.org/abs/1808.01973" target="_blank" rel="noopener">Computing apparent planetary magnitudes for The Astronomical Almanac</a>,” <i>Astron. Comput.</i>, vol. 25, pp. 10–24, 2018</span></li>
+  <li id="thy-r13"><span class="rf-for">影の拡大の Danjon の方法と Chauvenet の方法、係数 1.01 の内訳</span><span class="rf-src">F. Espenak, “<a href="https://eclipse.gsfc.nasa.gov/LEcat5/shadow.html" target="_blank" rel="noopener">Enlargement of Earth's Shadows</a>,” NASA GSFC</span></li>
+  <li id="thy-r14"><span class="rf-for">月食の一覧（1900〜2100 年）、食分と継続時間</span><span class="rf-src">F. Espenak and J. Meeus, <i>Five Millennium Catalog of Lunar Eclipses: −1999 to +3000</i>, NASA/TP-2009-214173, 2009; <a href="https://eclipse.gsfc.nasa.gov/5MCLE/5MKLEcatalog.txt" target="_blank" rel="noopener">5MKLEcatalog.txt</a>。謝辞は “Eclipse Predictions by Fred Espenak (NASA's GSFC)”</span></li>
+  <li id="thy-r15"><span class="rf-for">本影と半影の中の青・緑・赤の減光（表 B.1。CC BY 4.0）</span><span class="rf-src">A. Mallama, “<a href="https://arxiv.org/abs/2112.08966" target="_blank" rel="noopener">Lunar Eclipse Phenomena: Modeled and Explained</a>,” arXiv:2112.08966v4, 2022</span></li>
+  <li id="thy-r16"><span class="rf-for">朔・上弦・望・下弦と月齢・正午月齢の定め方</span><span class="rf-src">国立天文台 暦計算室, “<a href="https://eco.mtk.nao.ac.jp/koyomi/faq/moon.html" target="_blank" rel="noopener">こよみ用語解説 月のあれこれ</a>”</span></li>
+  <li id="thy-r17"><span class="rf-for">中秋の名月の日付の決め方と、満月とは限らないこと</span><span class="rf-src">国立天文台 暦計算室, “<a href="https://eco.mtk.nao.ac.jp/koyomi/wiki/C3E6BDA9A4CECCBEB7EEA4C8A4CF.html" target="_blank" rel="noopener">中秋の名月とは</a>”, “<a href="https://eco.mtk.nao.ac.jp/koyomi/wiki/C3E6BDA9A4CECCBEB7EEA4C8A4CF2FCCBEB7EEC9ACA4BAA4B7A4E2CBFEB7EEA4CAA4E9A4BA.html" target="_blank" rel="noopener">中秋の名月とは/名月必ずしも満月ならず</a>,” 暦Wiki</span></li>
+  <li id="thy-r18"><span class="rf-for">観測地から見た月の高度・方位・距離・地球直下点（答え合わせ）</span><span class="rf-src">JPL Solar System Dynamics, “<a href="https://ssd.jpl.nasa.gov/horizons/" target="_blank" rel="noopener">Horizons System</a>”</span></li>
+  <li id="thy-r19"><span class="rf-for">月の出入りと月相の時刻（答え合わせ）</span><span class="rf-src">U.S. Naval Observatory, “<a href="https://aa.usno.navy.mil/data/api" target="_blank" rel="noopener">Astronomical Applications API</a>”</span></li>
+  <li id="thy-r20"><span class="rf-for">2026-03-03 の皆既月食の時刻</span><span class="rf-src">国立天文台, “<a href="https://www.nao.ac.jp/astro/sky/2026/03-topics02.html" target="_blank" rel="noopener">皆既月食（2026年3月）</a>”</span></li>
 </ol>

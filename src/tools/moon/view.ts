@@ -43,8 +43,8 @@ export const lunarL = (a: number): number => 1 - 0.019 * a + 0.000242 * a * a - 
 /** 衝効果: 位相角 4° から 0° で約 4 割明るくなる（Buratti et al. 1996）のを、指数の山で表す（このツールで決めた形） */
 export const surge = (a: number): number => 1 + 0.4 * Math.exp(-a / 2.5);
 
-/** 地球照の直射に対する比: 満地球で 1/4000（推定）に、月から見た地球の輝面比を掛ける */
-export const earthshine = (phase: number): number => ((1 - Math.cos(phase * D)) / 2) * (1 / 4000);
+/** 地球照の直射に対する比: 満地球で 1/8000（地球の平均の反射率による推定）に、月から見た地球の輝面比を掛ける */
+export const earthshine = (phase: number): number => ((1 - Math.cos(phase * D)) / 2) * (1 / 8000);
 
 /** 明るさの見せ方ごとの地球照の強調（目とカメラでは見えるように持ち上げる。このツールで決めた値） */
 const ES_GAIN: Record<Bright, number> = { eye: 30, camera: 30, phys: 1 };

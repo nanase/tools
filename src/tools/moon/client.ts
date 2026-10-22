@@ -561,11 +561,12 @@ function moonFestivals(y: number): { jd: number; t: string }[] {
     if (lam(m) < 180) a = m;
     else b = m;
   }
-  const eq = a;
-  const n8 = eq - ageAt(eq);
-  const n9 = phaseTimes(n8 + 1, n8 + 40).find((p) => p.q === 0)?.jd ?? n8 + 29.53;
-  /* 旧暦の日付は日本時間の日で数える */
+  /* 旧暦の日付は日本時間の日で数える。秋分の日に秋分より後の新月があっても、その日から 8 月とする */
   const jstDay = (j: number) => Math.floor(j + 0.5 + 9 / 24) - 0.5 - 9 / 24;
+  const eq = a;
+  const after = phaseTimes(eq, eq + 1.5).find((p) => p.q === 0)?.jd;
+  const n8 = after != null && jstDay(after) <= jstDay(eq) ? after : eq - ageAt(eq);
+  const n9 = phaseTimes(n8 + 1, n8 + 40).find((p) => p.q === 0)?.jd ?? n8 + 29.53;
   return [
     { jd: jstDay(n8) + 14, t: '中秋の名月' },
     { jd: jstDay(n9) + 12, t: '十三夜' },
@@ -636,6 +637,9 @@ $('#cal-prev').addEventListener('click', () => shiftMonth(-1));
 $('#cal-next').addEventListener('click', () => shiftMonth(1));
 
 /* ---------- 図: 軌道・秤動・距離 ---------- */
+/** 帯の 32 日の地心の状態（6 時間おき）。帯が変わったときだけ作り直す */
+let serW0 = Number.NaN;
+let ser: MoonState[] = [];
 function drawFigs(): void {
   /* 軌道（北から、太陽は右）。月の向きは太陽からの離角 */
   const g = (j: number) => moonState(j, null);
@@ -664,7 +668,10 @@ function drawFigs(): void {
   $('#orb').innerHTML = o.join('');
 
   /* 秤動: 地心の地球直下点の 1 か月（6 時間おき）と、今の観測地からの点 */
-  const ser = Array.from({ length: 129 }, (_, k) => g(W0 + k / 4));
+  if (serW0 !== W0) {
+    serW0 = W0;
+    ser = Array.from({ length: 129 }, (_, k) => g(W0 + k / 4));
+  }
   const sx = (lo: number) => 120 + (lo / 8) * 110,
     sy = (la: number) => 120 - (la / 8) * 110;
   const path = (f: (s: MoonState) => [number, number]) =>
@@ -800,6 +807,7 @@ function visibleEcl(): void {
   const k = ecls.findIndex((e) => e.max > n - 0.5 && e.alt > 0);
   eIdx = k >= 0 ? k : Math.max(0, ecls.length - 1);
 }
+let eImgKey = '';
 function drawEcl(): void {
   txt('#hd-ecl', `${site.name}で見える月食`);
   if (!ecls.length) {
@@ -827,7 +835,9 @@ function drawEcl(): void {
     '#e-cap',
     `‹ › で前後の月食へ（1900〜2100 年、${site.name}で月が地平線の上にある回）。押すと上の月がその月食の最大に移ります。`,
   );
-  if (renderer?.ready) {
+  const ik = `${c.max}|${site.lat}|${site.lon}|${or$.value}`;
+  if (renderer?.ready && ik !== eImgKey) {
+    eImgKey = ik;
     const s = moonState(c.max, obs());
     renderer.icon(iconU(s, shadowAt(c.max), 'camera'), $<HTMLCanvasElement>('#e-img'));
   }

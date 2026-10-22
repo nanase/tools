@@ -83,14 +83,14 @@ uniform vec3 uMc, uAx;
 uniform mat3 uB2F;
 /** 本影・半影の半径 [°] */
 uniform vec2 uSh;
-uniform vec4 uMal[51];
+uniform vec4 uMal[50];
 out vec4 o;
 vec3 att(float th) {
   float pu = ${0.429};
   float pos = th > uSh.x ? pu * (uSh.y - th) / (uSh.y - uSh.x) : pu + (1.0 - pu) * (uSh.x - th) / uSh.x;
   pos = clamp(pos, 0.0, 1.0);
   vec4 m = uMal[0];
-  for (int i = 1; i < 51; i++) {
+  for (int i = 1; i < 50; i++) {
     vec4 n = uMal[i];
     if (pos <= n.x) { m = mix(m, n, (pos - m.x) / max(n.x - m.x, 1e-6)); break; }
     m = n;
