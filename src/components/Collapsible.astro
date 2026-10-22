@@ -11,7 +11,7 @@ interface Props {
 }
 const { hid, title, class: cls = 'a-thy' } = Astro.props;
 ---
-<details class:list={['pnl clps', cls]}>
+<details class:list={['pnl clps', cls]} data-fold={hid}>
   <summary><h2 id={hid} style="font:inherit">{title}</h2></summary>
   <div class="pha"><button type="button" class="prst" hidden></button></div>
   <div class="thy-body"><slot /></div>

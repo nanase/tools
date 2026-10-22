@@ -1,5 +1,5 @@
 /**
- * ツールのページに共通の動き: 「?」の吹き出し、項目名の吹き出し、「その他」のまとまり、開閉できる枠、関連ツールの件数。
+ * ツールのページに共通の動き: 「?」の吹き出し、項目名の吹き出し、「その他」のまとまり、枠の開閉と保存、関連ツールの件数。
  * 各ツールの入口スクリプトから initToolPage() を 1 度だけ呼ぶ。見出し以外の「?」は addTip で足す
  */
 import { $, $$ } from './dom';
@@ -193,8 +193,23 @@ function initMore(): void {
   }
 }
 
-/* 開閉できる枠（Collapsible.astro） */
+/* ---------- 開閉できる枠（Collapsible.astro・Panel.astro） ---------- */
+/** 開閉を保存する（既定と同じなら消す）。既定は Collapsible が閉じる、Panel が開く */
+function storeFold(box: HTMLElement, open: boolean): void {
+  const k = `o:${box.dataset.fold}`;
+  if (open === (box.tagName !== 'DETAILS')) forget(k);
+  else store(k, open);
+}
+
+/**
+ * 保存した開閉は SiteLayout.astro の inline script が描く前に戻す。そのとき起きた toggle は
+ * 各ツールの入口スクリプトが聞き始める前に過ぎることがあるので、開いた Collapsible には後で改めて送る
+ */
 function initCollapsible(): void {
+  for (const box of $$<HTMLDetailsElement>('details[data-fold]')) {
+    if (box.open) setTimeout(() => box.dispatchEvent(new Event('toggle')));
+    box.addEventListener('toggle', () => storeFold(box, box.open));
+  }
   for (const box of $$<HTMLDetailsElement>('details.clps')) {
     const body = $('.thy-body', box);
     $('summary', box).addEventListener('click', (e) => {
@@ -213,6 +228,37 @@ function initCollapsible(): void {
       fx(body, opening ? frames : frames.reverse(), opening ? 260 : 200, () => {
         body.classList.remove('anim');
         if (!opening) box.open = false;
+        delete box.dataset.busy;
+      });
+    });
+  }
+}
+
+/**
+ * 見出しのボタンで開閉する枠（Panel.astro。閉じると .shut）。高さを動かす間は、枠線の上に載せた見出しと
+ * 右端のボタンを切らないよう、clip-path で下だけを切る。閉じるときは動き終わるまで中を見せる
+ */
+function initFold(): void {
+  const clip = 'inset(-20px -20px 0 -20px)';
+  for (const box of $$('section[data-fold]')) {
+    const btn = $('.fold', box);
+    btn.addEventListener('click', () => {
+      if (box.dataset.busy) return;
+      const open = box.classList.contains('shut'),
+        h0 = box.offsetHeight;
+      btn.setAttribute('aria-expanded', String(open));
+      storeFold(box, open);
+      box.classList.toggle('shut', !open);
+      if (RM.matches || !box.animate) return;
+      const h1 = box.offsetHeight;
+      if (!open) box.classList.remove('shut');
+      box.dataset.busy = '1';
+      const frames = [
+        { height: `${h0}px`, clipPath: clip },
+        { height: `${h1}px`, clipPath: clip },
+      ];
+      fx(box, frames, open ? 260 : 200, () => {
+        if (!open) box.classList.add('shut');
         delete box.dataset.busy;
       });
     });
@@ -252,6 +298,7 @@ export function initToolPage(): void {
   initHints();
   initMore();
   initCollapsible();
+  initFold();
   initRelated();
   initMini();
 }

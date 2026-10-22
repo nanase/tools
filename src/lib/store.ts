@@ -1,7 +1,8 @@
 /**
  * 設定の保存（localStorage）。ページごとに 1 つのキー（settings:<パス>）へ、項目の値をまとめて JSON で持ち、
  * 開き直したときに同じ設定にする。ParamGroup（p:<項目>・series）と Choice（c:<要素の id>）は自分で読み書きし、
- * 既定値に戻した項目は消す。「その他」のまとまり（More.astro）の開閉は m:<要素の id>。
+ * 既定値に戻した項目は消す。「その他」のまとまり（More.astro）の開閉は m:<要素の id>、枠（Panel.astro・Collapsible.astro）の
+ * 開閉は既定と違うときだけ o:<見出しの id>（SiteLayout.astro が描く前に戻す）。
  * ページ見出しの「もとに戻す」ボタン（PageTitle.astro）で消して読み込み直す。
  * localStorage を使えない環境（プライベートブラウズなど）では、保存せずに既定値で動く
  */

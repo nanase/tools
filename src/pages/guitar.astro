@@ -76,7 +76,7 @@ const PIANO = ROOTS.map((_, i) => {
   <div class="mini" aria-hidden="true"><span><i>f</i><sub>1</sub><b id="mF"></b></span><span><i>T</i><sub>60</sub><b id="mT"></b></span><span><i>β</i><b id="mB"></b></span></div>
 
   <div class="tgrid">
-    <Panel hid="hd-neck" title="指板" class="a-neck">
+    <Panel hid="hd-neck" title="指板" class="a-neck" fixed>
       <div slot="aux" class="seg" id="p-nv" role="group" aria-label="振動の見せ方"><button type="button" data-v="blur" aria-pressed="true" title="実際の速さで、目に見える残像（振れる範囲）を描く">残像</button><button type="button" data-v="slow" aria-pressed="false" title="振動をゆっくりにして、弦の形（折れ目が往復する様子）を描く。減衰は実際の速さ">スロー</button></div>
       <div class="sbar">
         <span class="stag"><i class="sw" aria-hidden="true"></i>弦の変位 <b id="nk-ex"></b></span>

@@ -40,6 +40,8 @@ const base = import.meta.env.BASE_URL;
 <Rail current={tool?.id} page={tool?.name} />
 <main class="wrap">
   <slot />
+  {/* 保存した枠の開閉（lib/store.ts の o:<見出しの id>）を、描く前に戻す。動作は lib/tool-page.ts */}
+  <script is:inline>try{var s=JSON.parse(localStorage.getItem('settings:'+location.pathname)||'{}');document.querySelectorAll('[data-fold]').forEach(function(p){var v=s['o:'+p.dataset.fold];if(typeof v!=='boolean')return;if(p.tagName==='DETAILS')p.open=v;else{p.classList.toggle('shut',!v);p.querySelector('.fold').setAttribute('aria-expanded',String(v))}})}catch(e){}</script>
 </main>
 <Footer note={note} />
 </body>
