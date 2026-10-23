@@ -66,7 +66,7 @@ const WD = ['日', '月', '火', '水', '木', '金', '土'];
       </div>
       <More id="g-view" title="表示の設定"><div class="ana2">
         <div class="ptab">
-          <ChoiceRow k="lab" name="地名" sub="欠け際の近く: 欠け際から 20° 以内のクレーターと海の名前（NASA SVS の Dial-A-Moon の決め方）" choices={[['near', '欠け際の近く'], ['all', '大きなもの'], ['off', 'なし']]} value="near" />
+          <ChoiceRow k="lab" name="地名" sub="欠け際の近く: 日の当たる側で、欠け際から 20° 以内のクレーターと海の名前（NASA SVS の Dial-A-Moon の決め方）。夜の側の名前は出さない" choices={[['near', '欠け際の近く'], ['all', '大きなもの'], ['off', 'なし']]} value="near" />
           <ChoiceRow k="br" name="明るさ" sub="肉眼: 明るい縁を満月の明るさに合わせ、月食で暗くなると少し慣れる。カメラ: 月食でも同じ明るさに合わせる。物理: 満月の明るさに固定し、欠けると暗くなる" choices={[['eye', '肉眼'], ['camera', 'カメラ'], ['phys', '物理']]} value="eye" />
           <ChoiceRow k="es" name="地球照" sub="欠けた側を照らす地球の光。肉眼とカメラでは見えるように 30 倍に持ち上げる" choices={[['on', 'あり'], ['off', 'なし']]} value="on" />
         </div>

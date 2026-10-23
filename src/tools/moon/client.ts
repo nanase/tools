@@ -176,13 +176,43 @@ const VZ_MIN = 0.6,
 function baseLayout(): Lay {
   const W = view.clientWidth,
     H = view.clientHeight,
-    wide = W / H > 1.2,
-    rad = wide ? 0.46 * H : 0.44 * Math.min(W, H);
-  return { W, H, rad, cx: wide ? W - 0.04 * W - rad : W / 2, cy: H / 2 };
+    rad = W / H > 1.2 ? 0.46 * H : 0.44 * Math.min(W, H);
+  return { W, H, rad, cx: W / 2, cy: H / 2 };
 }
+/**
+ * 拡大の窓を開いている間、広い画面では窓の場所を空けるため月を右へ寄せる（lt は寄せ具合 0〜1）。
+ * 開いている間に手で動かしたら、寄せた分をずれに取り込み、閉じても戻さない
+ */
+let lt = 0;
+let ltRaf = 0;
+const shiftOf = (b: Lay): number => (b.W / b.H > 1.2 ? Math.max(0, b.W - 0.04 * b.W - b.rad * vz - (b.cx + vx)) : 0);
 function layout(): Lay {
   const b = baseLayout();
-  return { ...b, rad: b.rad * vz, cx: b.cx + vx, cy: b.cy + vy };
+  return { ...b, rad: b.rad * vz, cx: b.cx + vx + lt * shiftOf(b), cy: b.cy + vy };
+}
+function slideTo(target: 0 | 1): void {
+  cancelAnimationFrame(ltRaf);
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    lt = target;
+    later();
+    return;
+  }
+  const t0 = performance.now(),
+    from = lt;
+  const step = (now: number) => {
+    const u = Math.min(1, (now - t0) / 260);
+    lt = from + (target - from) * (1 - (1 - u) ** 3);
+    later();
+    if (u < 1) ltRaf = requestAnimationFrame(step);
+  };
+  ltRaf = requestAnimationFrame(step);
+}
+/** 手で動かす前に、寄せた分をずれに取り込む */
+function foldShift(): void {
+  if (!lt) return;
+  cancelAnimationFrame(ltRaf);
+  vx += lt * shiftOf(baseLayout());
+  lt = 0;
 }
 /** 円盤が画面から出ていかないよう、中心のずれを抑える */
 function clampPan(): void {
@@ -193,6 +223,7 @@ function clampPan(): void {
 }
 /** 画面の点 (px, py) を動かさずに拡大率を f 倍にする */
 function zoomAbout(px: number, py: number, f: number): void {
+  foldShift();
   const L = layout();
   const nz = Math.min(VZ_MAX, Math.max(VZ_MIN, vz * f)),
     k = nz / vz;
@@ -225,13 +256,15 @@ const fname = (f: Feat) => f[0] ?? f[1];
 function pickLabels(mode: 'near' | 'all' | 'off', inBox?: (x: number, y: number) => boolean, limit = 12, minD = 25) {
   if (mode === 'off' || !feats.length) return [];
   const out: { f: Feat; x: number; y: number }[] = [];
-  /* 太陽直下点からの経度差。欠け際は ±90°、その 20° 内側まで（暗い側へ 3° まで）を「欠け際の近く」とする */
+  /* 太陽直下点からの経度差。欠け際は ±90°、その 20° 内側までを「欠け際の近く」とする */
   const nearTerm = (lon: number) => {
     const h = Math.abs(((lon - st.subSun.lon + 540) % 360) - 180);
-    return h > 70 && h < 93;
+    return h > 70 && h < 90;
   };
   const cands = feats
     .filter((f) => {
+      /* 夜の側（中心で太陽が地平線の下）にあるものは出さない */
+      if (sunAltAt(st, f[2], f[3]) <= 0) return false;
       if (f[5] === 'mare') return !inBox && /^(Mare|Oceanus) /.test(f[1]);
       if (f[5] !== 'crater' || f[4] < minD) return false;
       if (inBox) return true;
@@ -373,6 +406,7 @@ function pickAt(cx: number, cy: number): void {
   const L = layout();
   const ll = unproject(st, or$.value, (cx - L.cx) / L.rad, -(cy - L.cy) / L.rad);
   if (!ll) return;
+  if (!zoomAt) slideTo(1);
   zoomAt = ll;
   later();
 }
@@ -408,6 +442,10 @@ canvas.addEventListener('pointermove', (e) => {
   const dx = p.x - drag.x,
     dy = p.y - drag.y;
   if (!drag.moved && Math.hypot(dx, dy) < 4) return;
+  if (!drag.moved) {
+    foldShift();
+    drag.vx = vx;
+  }
   drag.moved = true;
   canvas.classList.add('drag');
   vx = drag.vx + dx;
@@ -448,10 +486,13 @@ $('#vout').addEventListener('click', () => zoomCenter(1 / 1.5));
 $('#vreset').addEventListener('click', () => {
   vz = 1;
   vx = vy = 0;
+  cancelAnimationFrame(ltRaf);
+  lt = zoomAt ? 1 : 0;
   viewChanged();
 });
 $('#zclose').addEventListener('click', () => {
   zoomAt = null;
+  if (lt) slideTo(0);
   later();
 });
 
@@ -664,6 +705,7 @@ function stop(): void {
 }
 $('#play').addEventListener('click', () => {
   if (playing) return stop();
+  setLive(false);
   playing = true;
   last = performance.now();
   $('#play').setAttribute('aria-pressed', 'true');
