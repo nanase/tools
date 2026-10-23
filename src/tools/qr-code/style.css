@@ -87,7 +87,7 @@
 .q-sub{margin:0;font-size:13px;font-weight:700;color:var(--ink)}
 .q-sub small{margin-left:8px;font-weight:500;font-size:12px;color:var(--ink-3)}
 .q-sub2{margin-top:16px}
-.q-cwbox{max-height:332px;overflow-y:auto;overscroll-behavior:contain}
+.q-cwbox{max-height:340px;margin:-4px;padding:4px;overflow-y:auto;overscroll-behavior:contain}
 .q-cws{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:3px}
 .q-cws button{position:relative;display:grid;place-items:center;height:36px;padding:7px 0 0;border:0;border-radius:3px;background:var(--inset);color:var(--ink-3);font:600 13px/1 var(--mono);font-variant-numeric:tabular-nums;cursor:pointer}
 .q-cws button small{position:absolute;top:2px;left:3px;font:500 8.5px/1 var(--mono);opacity:.75}
@@ -246,3 +246,14 @@
 .q-mods .e{background:var(--q-ec-l);color:var(--q-ec)}
 @media (prefers-reduced-motion:reduce){.q-insp .a,.q-capbar i{animation:none}}
 .q-insp.still .a,.q-insp.still .q-capbar i{animation:none}
+/* 説明の下の「前の段」「次の段」 */
+.q-stepnav{display:flex;justify-content:space-between;gap:10px}
+.q-stepnav[hidden]{display:none}
+.q-step{display:inline-flex;align-items:center;gap:10px;min-height:44px;padding:4px 14px;border:1px solid var(--line);border-radius:4px;background:none;color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.q-step.r{text-align:right}
+.q-step:hover:not(:disabled){border-color:var(--line-2)}
+.q-step:disabled{visibility:hidden}
+.q-step span{display:flex;flex-direction:column;gap:1px}
+.q-step small{font-size:11px;color:var(--ink-3)}
+.q-step b{font-size:13.5px;font-weight:600}
+.q-step svg{width:7px;height:12px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}

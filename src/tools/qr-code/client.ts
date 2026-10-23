@@ -154,6 +154,7 @@ function setAct(v: 'look' | 'soil'): void {
   $('#q-leg').hidden = v === 'soil';
   $('#q-leg2').hidden = v !== 'soil';
   $('#q-stagerow').hidden = v === 'soil';
+  $('#q-stepnav').hidden = v === 'soil';
   $('#q-exp').hidden = v !== 'soil';
   $('#q-fig').classList.toggle('soil', v === 'soil');
   redecode();
@@ -340,6 +341,23 @@ function setStage(s: number): void {
   paintTable();
   render();
 }
+/* 説明の下の「前の段」「次の段」 */
+const STAGE_NAMES = $$('#q-stage span').map((s) => s.firstChild?.textContent ?? '');
+const prevBtn = $<HTMLButtonElement>('#q-prev'),
+  nextBtn = $<HTMLButtonElement>('#q-next');
+prevBtn.addEventListener('click', () => stage > STAGE.text && setStage(stage - 1));
+nextBtn.addEventListener('click', () => stage < STAGE.done && setStage(stage + 1));
+function stepNav(): void {
+  const lab = (b: HTMLButtonElement, s: number, dir: string) => {
+    b.disabled = s < STAGE.text || s > STAGE.done;
+    const name = b.disabled ? '' : STAGE_NAMES[s];
+    const t = b.querySelector('b') as HTMLElement;
+    if (t.textContent !== name) t.textContent = name;
+    b.setAttribute('aria-label', b.disabled ? `${dir}の段はありません` : `${dir}の段: ${name}`);
+  };
+  lab(prevBtn, stage - 1, '前');
+  lab(nextBtn, stage + 1, '次');
+}
 
 /* ---------- 符号語の表 ---------- */
 function buildTable(): void {
@@ -400,6 +418,7 @@ function render(): void {
 
 function stageBar(): void {
   if (!q) return;
+  stepNav();
   const used = q.spans
       .filter((s) => s.k === 'mode' || s.k === 'count' || s.k === 'data')
       .reduce((a, s) => a + s.to - s.from, 0),
