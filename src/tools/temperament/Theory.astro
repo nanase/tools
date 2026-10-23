@@ -1,0 +1,350 @@
+---
+// 動作原理と式。表の値は tem.ts（音律・うなり）と params.ts（間隔・音量）から求める
+import { PIANO_TYPES } from '../piano/strings';
+import { AB_MS, REHIT_MS, VOL } from './params';
+import {
+  analyze,
+  bOf,
+  cents,
+  deviations,
+  FIFTHS,
+  f1Of,
+  intervalName,
+  keyStats,
+  NAMES,
+  noteName,
+  type Setup,
+  TEMPERAMENTS,
+  type Timbre,
+} from './tem';
+
+/* 本文の出典番号 */
+const rf = (...ns: number[]) => ns.map((n) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`).join('');
+/** 符号つきの数（0 は 0）。マイナスは U+2212 */
+const sg = (v: number, d = 1) => {
+  const a = Math.abs(v).toFixed(d);
+  return Number(a) === 0 ? '0' : (v < 0 ? '−' : '+') + a;
+};
+/** うなりの速さ [回/秒] */
+const bt = (v: number) => {
+  const a = Math.abs(v);
+  return a < 0.0005 ? '0' : a.toFixed(a < 1 ? 3 : 2);
+};
+/** 数の MathML */
+const mn = (s: string) => `<mn>${s}</mn>`;
+/** 1 未満の正の数を a × 10⁻ⁿ の MathML にする */
+const sci = (v: number) => {
+  let e = Math.floor(Math.log10(v)),
+    m = Number((v / 10 ** e).toFixed(1));
+  if (m >= 10) {
+    m /= 10;
+    e++;
+  }
+  return `<mn>${m.toFixed(1)}</mn><mo>×</mo><msup><mn>10</mn><mrow><mo>−</mo><mn>${-e}</mn></mrow></msup>`;
+};
+
+const setup = (tem: string, tb: Timbre, pt = 'concert', st = false): Setup => ({ tem, ton: 0, a4: 440, tb, pt, st });
+const pair = (s: Setup, root: number, d: number) => analyze(s, root, [0, d]).pairs[0];
+const ORGAN = setup('et', 'organ');
+
+/* 平均律の音程ごとの一致する部分音とうなり（C4 から、整数倍の部分音） */
+const ET_ROWS = [12, 7, 5, 4, 3, 9, 16, 19, 28].map((d) => {
+  const p = pair(ORGAN, 60, d);
+  return { name: intervalName(d), notes: `${noteName(60)}–${noteName(60 + d)}`, c: p.c ?? [0, 0], ct: p.ct, b: p.b };
+});
+const F3A3 = pair(ORGAN, 53, 4).b;
+
+/* 主和音の長 3 度の、純正からのずれ（5 度の順） */
+const THIRDS = TEMPERAMENTS.map((t) => {
+  const ks = keyStats(setup(t.v, 'organ'), 4, false);
+  return { name: t.name, d: FIFTHS.map((p) => ks[p].t3) };
+});
+const WM3_C = keyStats(setup('wm3', 'organ'), 4, false)[0].b3,
+  MT4_CS = keyStats(setup('mt4', 'organ'), 4, false)[1].b3;
+
+/* ピアノの非調和性係数（ピアノ音響モデルの弦）と、うなりの変化 */
+const B_KEYS = [21, 36, 48, 60, 69, 84, 108];
+const B_ROWS = PIANO_TYPES.map((t) => ({ name: t.name, B: B_KEYS.map((m) => bOf(setup('et', 'piano', t.v), m)) }));
+const PB_SETUPS = [
+  ORGAN,
+  setup('et', 'piano', 'concert'),
+  setup('et', 'piano', 'upright'),
+  setup('et', 'piano', 'concert', true),
+];
+const PB_ROWS = (
+  [
+    [60, 4],
+    [53, 4],
+    [60, 7],
+    [60, 5],
+    [60, 12],
+    [60, 16],
+    [60, 28],
+  ] as const
+).map(([r, d]) => ({
+  name: intervalName(d),
+  notes: `${noteName(r)}–${noteName(r + d)}`,
+  b: PB_SETUPS.map((s) => pair(s, r, d).b),
+}));
+const CG = (m: number) => bOf(setup('et', 'piano', 'concert'), m);
+/* オクターブ 2k:k を合わせたときの幅 [セント]（C4–C5、コンサートグランド） */
+const octW = (k: number) => {
+  const bl = CG(60),
+    bu = CG(72);
+  return 600 * Math.log2(((1 + 4 * k * k * bl) * (1 + bu)) / ((1 + bl) * (1 + k * k * bu)));
+};
+/* ストレッチのずれ [セント]（コンサートグランド） */
+const stOf = (m: number) => {
+  const s = setup('et', 'piano', 'concert', true);
+  return 1200 * Math.log2(f1Of(s, deviations('et', 0), m) / (440 * 2 ** ((m - 69) / 12)));
+};
+const ST_TEN = pair(setup('et', 'piano', 'concert', true), 60, 16).b;
+
+/* 12 音のセント値（主音 C） */
+const CENTS = TEMPERAMENTS.map((t) => ({ name: t.name, c: cents(t) }));
+---
+<h3>音律とは</h3>
+<p>2 つの音の高さの比は、セントで表します。1 オクターブが 1200 セント、平均律の半音が 100 セントです<Fragment set:html={rf(1)} />。</p>
+<div class="eqs">
+  <math display="block"><mi>c</mi><mo>=</mo><mn>1200</mn><mspace width="0.1em"/><msub><mi>log</mi><mn>2</mn></msub><mo>&#x2061;</mo><mfrac><msub><mi>f</mi><mn>2</mn></msub><msub><mi>f</mi><mn>1</mn></msub></mfrac></math>
+  <math display="block"><msub><mi>c</mi><mtext>P5</mtext></msub><mo>=</mo><mn>1200</mn><mspace width="0.1em"/><msub><mi>log</mi><mn>2</mn></msub><mo>&#x2061;</mo><mfrac><mn>3</mn><mn>2</mn></mfrac><mo>=</mo><mn>701.955</mn></math>
+  <math display="block"><msub><mi>c</mi><mtext>M3</mtext></msub><mo>=</mo><mn>1200</mn><mspace width="0.1em"/><msub><mi>log</mi><mn>2</mn></msub><mo>&#x2061;</mo><mfrac><mn>5</mn><mn>4</mn></mfrac><mo>=</mo><mn>386.314</mn></math>
+  <math display="block"><msub><mi>c</mi><mtext>m3</mtext></msub><mo>=</mo><mn>1200</mn><mspace width="0.1em"/><msub><mi>log</mi><mn>2</mn></msub><mo>&#x2061;</mo><mfrac><mn>6</mn><mn>5</mn></mfrac><mo>=</mo><mn>315.641</mn></math>
+</div>
+<p>純正の 5 度（3:2）を 12 個積んでも、7 オクターブにちょうどは戻りません。4 個積んで 2 オクターブ下げた音も、純正の長 3 度（5:4）より高くなります。この食い違いがコンマです<Fragment set:html={rf(2)} />。</p>
+<div class="eqs">
+  <math display="block"><msub><mi>κ</mi><mi mathvariant="normal">P</mi></msub><mo>=</mo><mn>12</mn><msub><mi>c</mi><mtext>P5</mtext></msub><mo>−</mo><mn>7</mn><mo>·</mo><mn>1200</mn><mo>=</mo><mn>1200</mn><mspace width="0.1em"/><msub><mi>log</mi><mn>2</mn></msub><mo>&#x2061;</mo><mfrac><mn>531441</mn><mn>524288</mn></mfrac><mo>=</mo><mn>23.460</mn></math>
+  <math display="block"><msub><mi>κ</mi><mi mathvariant="normal">S</mi></msub><mo>=</mo><mn>4</mn><msub><mi>c</mi><mtext>P5</mtext></msub><mo>−</mo><mn>2</mn><mo>·</mo><mn>1200</mn><mo>−</mo><msub><mi>c</mi><mtext>M3</mtext></msub><mo>=</mo><mn>1200</mn><mspace width="0.1em"/><msub><mi>log</mi><mn>2</mn></msub><mo>&#x2061;</mo><mfrac><mn>81</mn><mn>80</mn></mfrac><mo>=</mo><mn>21.506</mn></math>
+  <math display="block"><msub><mi>κ</mi><mtext>sch</mtext></msub><mo>=</mo><msub><mi>κ</mi><mi mathvariant="normal">P</mi></msub><mo>−</mo><msub><mi>κ</mi><mi mathvariant="normal">S</mi></msub><mo>=</mo><mn>1200</mn><mspace width="0.1em"/><msub><mi>log</mi><mn>2</mn></msub><mo>&#x2061;</mo><mfrac><mn>32805</mn><mn>32768</mn></mfrac><mo>=</mo><mn>1.954</mn></math>
+</div>
+<dl class="syms">
+  <dt><math><msub><mi>κ</mi><mi mathvariant="normal">P</mi></msub></math></dt><dd>ピタゴラス・コンマ。5 度を 12 個積んだときのあまり</dd>
+  <dt><math><msub><mi>κ</mi><mi mathvariant="normal">S</mi></msub></math></dt><dd>シントニック・コンマ。5 度を 4 個積んだ 3 度（81:64）と純正の長 3 度の差</dd>
+  <dt><math><msub><mi>κ</mi><mtext>sch</mtext></msub></math></dt><dd>スキスマ。2 つのコンマの差</dd>
+</dl>
+<p>鍵盤の 12 音は、E♭–B♭–F–C–G–D–A–E–B–F♯–C♯–G♯ と 11 個の 5 度でつなぎます。連鎖の <math><mi>i</mi></math> 番目の音から次の音への 5 度を、純正より <math><msub><mi>ε</mi><mi>i</mi></msub></math> だけ狭めます（負なら広げる）。12 個目の G♯–E♭ まで含めて輪が閉じる条件から、狭める量の合計はピタゴラス・コンマになります<Fragment set:html={rf(2)} />。音律の違いは、このコンマを 12 個の 5 度にどう配るかの違いです。</p>
+<div class="eqs">
+  <math display="block"><msub><mi>c</mi><mrow><mn>5</mn><mo>,</mo><mi>i</mi></mrow></msub><mo>=</mo><msub><mi>c</mi><mtext>P5</mtext></msub><mo>−</mo><msub><mi>ε</mi><mi>i</mi></msub><mo>,</mo><mspace width="1em"/><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>0</mn></mrow><mn>11</mn></munderover><msub><mi>ε</mi><mi>i</mi></msub><mo>=</mo><msub><mi>κ</mi><mi mathvariant="normal">P</mi></msub></math>
+</div>
+<ul class="tl">
+  <li><b>平均律</b>: 12 個すべてを <math><msub><mi>κ</mi><mi mathvariant="normal">P</mi></msub><mo>/</mo><mn>12</mn><mo>=</mo><mn>1.955</mn></math> セントずつ狭める。どの調も同じ響きになる</li>
+  <li><b>ピタゴラス</b>: 11 個を純正にし、コンマをすべて G♯–E♭ に負わせる</li>
+  <li><b>ミーントーン</b>: 11 個を同じだけ狭め、余りを G♯–E♭ に負わせる。1/4 コンマでは長 3 度が純正になる</li>
+  <li><b>循環音律</b>（ヴェルクマイスター III・キルンベルガー III・ヴァロッティ・ヤング 第 2）: 一部の 5 度だけを狭め、残りを純正にする。どの調でも弾けるが、調ごとに響きが違う</li>
+</ul>
+
+<h3>うなりの式</h3>
+<p>2 つの音を同時に鳴らすと、近い周波数の部分音どうしが重なり、差の周波数で強弱をくり返します。これがうなりです<Fragment set:html={rf(3)} />。純正の音程 <math><mi>n</mi><mo>:</mo><mi>m</mi></math> では、下の音の第 <math><mi>n</mi></math> 部分音と上の音の第 <math><mi>m</mi></math> 部分音が一致します。音程が純正からずれると、この 2 つの部分音がうなります。</p>
+<div class="eqs">
+  <math display="block"><mi>β</mi><mo>=</mo><mrow><mo>|</mo><msub><mi>f</mi><mrow><mi mathvariant="normal">L</mi><mo>,</mo><mi>n</mi></mrow></msub><mo>−</mo><msub><mi>f</mi><mrow><mi mathvariant="normal">U</mi><mo>,</mo><mi>m</mi></mrow></msub><mo>|</mo></mrow><mo>,</mo><mspace width="1em"/><msub><mi>f</mi><mrow><mi mathvariant="normal">L</mi><mo>,</mo><mi>n</mi></mrow></msub><mo>=</mo><mi>n</mi><msub><mi>f</mi><mi mathvariant="normal">L</mi></msub><mo>,</mo><mspace width="1em"/><msub><mi>f</mi><mrow><mi mathvariant="normal">U</mi><mo>,</mo><mi>m</mi></mrow></msub><mo>=</mo><mi>m</mi><msub><mi>f</mi><mi mathvariant="normal">U</mi></msub></math>
+  <math display="block"><mi>Δ</mi><mi>c</mi><mo>=</mo><mn>1200</mn><mspace width="0.1em"/><msub><mi>log</mi><mn>2</mn></msub><mo>&#x2061;</mo><mfrac><msub><mi>f</mi><mrow><mi mathvariant="normal">U</mi><mo>,</mo><mi>m</mi></mrow></msub><msub><mi>f</mi><mrow><mi mathvariant="normal">L</mi><mo>,</mo><mi>n</mi></mrow></msub></mfrac><mo>,</mo><mspace width="1em"/><mi>β</mi><mo>≈</mo><mfrac><mrow><mi>ln</mi><mo>&#x2061;</mo><mn>2</mn></mrow><mn>1200</mn></mfrac><msub><mi>f</mi><mrow><mi mathvariant="normal">L</mi><mo>,</mo><mi>n</mi></mrow></msub><mrow><mo>|</mo><mi>Δ</mi><mi>c</mi><mo>|</mo></mrow></math>
+</div>
+<dl class="syms">
+  <dt><math><msub><mi>f</mi><mi mathvariant="normal">L</mi></msub><mo>,</mo><mspace width="0.3em"/><msub><mi>f</mi><mi mathvariant="normal">U</mi></msub></math></dt><dd>下の音と上の音の第 1 部分音</dd>
+  <dt><math><mi>β</mi></math></dt><dd>うなりの速さ [回/秒]。一致する部分音の周波数の差</dd>
+  <dt><math><mi>Δ</mi><mi>c</mi></math></dt><dd>一致する部分音どうしのずれ [セント]。整数倍の部分音なら、音程の純正からのずれと同じ。正なら純正より広い</dd>
+</dl>
+<p>うなりの速さは一致する部分音の周波数に比例するので、同じセントのずれでも、高い音ほど、高い部分音で一致する音程ほど速くうなります。下の表は A4 = 440 Hz の平均律で、C4 から上へ取った音程です。C4〜C5 の値は Reblitz の表と一致します<Fragment set:html={rf(3)} />。1 オクターブ下の F3–A3 では、長 3 度のうなりは <math set:html={mn(bt(F3A3))} /> 回/秒です。</p>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th scope="col">音程</th><th scope="col">例</th><th scope="col" class="num">純正の比</th><th scope="col">一致する部分音（下・上）</th><th scope="col" class="num">平均律の Δc [セント]</th><th scope="col" class="num">うなり [回/秒]</th></tr></thead>
+  <tbody>
+    {ET_ROWS.map((r) => (
+      <tr><th scope="row">{r.name}</th><td>{r.notes}</td><td class="num">{r.c[0]}:{r.c[1]}</td><td>第 {r.c[0]}・第 {r.c[1]}</td><td class="num">{sg(r.ct, 2)}</td><td class="num">{bt(r.b)}</td></tr>
+    ))}
+  </tbody>
+</table></div>
+<ul class="tl">
+  <li><b>和音</b>: 2 音ずつの組（3 和音なら 3 組、4 音なら 6 組）ごとに、一致する部分音とうなりを求める。長三和音では長 3 度・完全 5 度・短 3 度の 3 組</li>
+  <li><b>10 度・17 度</b>: 長 3 度をオクターブ広げた音程。下の第 5 部分音が、上の第 2・第 1 部分音と一致する。整数倍の部分音なら長 3 度と同じ速さでうなる</li>
+  <li><b>正弦波</b>: 部分音が第 1 だけなので、一致する部分音がない。3 度や 5 度のうなりは倍音どうしのずれで生じるので、正弦波ではうならない</li>
+</ul>
+<h4>うなりの包絡</h4>
+<p>一致する 2 つの部分音の振幅を <math><mi>a</mi></math>・<math><mi>b</mi></math> とすると、和の振幅は 2 つの位相の差で決まり、<math><mn>1</mn><mo>/</mo><mi>β</mi></math> 秒ごとに大きくなったり小さくなったりします。うなりの灯りと包絡のグラフは、これを振幅の和で割った <math><mi>E</mi><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo></math> で描きます。</p>
+<div class="eqs">
+  <math display="block"><mi>a</mi><mspace width="0.1em"/><mi>sin</mi><mo>&#x2061;</mo><mn>2</mn><mi>π</mi><msub><mi>f</mi><mrow><mi mathvariant="normal">L</mi><mo>,</mo><mi>n</mi></mrow></msub><mi>t</mi><mo>+</mo><mi>b</mi><mspace width="0.1em"/><mi>sin</mi><mo>&#x2061;</mo><mn>2</mn><mi>π</mi><msub><mi>f</mi><mrow><mi mathvariant="normal">U</mi><mo>,</mo><mi>m</mi></mrow></msub><mi>t</mi><mo>=</mo><mi>A</mi><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mspace width="0.1em"/><mi>sin</mi><mo>&#x2061;</mo><mo stretchy="false">(</mo><mn>2</mn><mi>π</mi><msub><mi>f</mi><mrow><mi mathvariant="normal">L</mi><mo>,</mo><mi>n</mi></mrow></msub><mi>t</mi><mo>+</mo><mi>φ</mi><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mo stretchy="false">)</mo></math>
+  <math display="block"><mi>A</mi><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mo>=</mo><msqrt><mrow><msup><mi>a</mi><mn>2</mn></msup><mo>+</mo><msup><mi>b</mi><mn>2</mn></msup><mo>+</mo><mn>2</mn><mi>a</mi><mi>b</mi><mspace width="0.1em"/><mi>cos</mi><mo>&#x2061;</mo><mn>2</mn><mi>π</mi><mi>β</mi><mi>t</mi></mrow></msqrt><mo>,</mo><mspace width="1em"/><mi>E</mi><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mo>=</mo><mfrac><mrow><mi>A</mi><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo></mrow><mrow><mi>a</mi><mo>+</mo><mi>b</mi></mrow></mfrac></math>
+</div>
+<p><math><mi>E</mi></math> は 1 と <math><mrow><mo>|</mo><mi>a</mi><mo>−</mo><mi>b</mi><mo>|</mo></mrow><mo>/</mo><mo stretchy="false">(</mo><mi>a</mi><mo>+</mo><mi>b</mi><mo stretchy="false">)</mo></math> の間を行き来します。2 つの振幅が近いほど、深くうなります。</p>
+<h4>計算の流れ</h4>
+<ol class="flow" aria-label="計算の流れ">
+  <li><b>音律・主音</b><span>12 音のずれ（A を 0 に）</span></li>
+  <li><b>和音の音</b><span>第 1 部分音の周波数</span></li>
+  <li><b>部分音</b><span>周波数（非調和性）と振幅</span></li>
+  <li><b>音の組</b><span>一致する部分音</span></li>
+  <li><b>うなり</b><span>速さ・ずれ・包絡</span></li>
+  <li><b>加算合成</b><span>部分音ごとの正弦波</span></li>
+</ol>
+
+<h3>調によって響きが変わる理由</h3>
+<p>長三和音の 3 度の音は、根音から 5 度の連鎖を 4 つ進んだ音です。そのため 3 度の大きさは、間の 4 つの 5 度をどれだけ狭めたかで決まります。短 3 度は、連鎖を逆向きに 3 つ戻った音です。</p>
+<div class="eqs">
+  <math display="block"><msub><mi>Δ</mi><mtext>M3</mtext></msub><mo>=</mo><msub><mi>κ</mi><mi mathvariant="normal">S</mi></msub><mo>−</mo><munderover><mo>∑</mo><mrow><mi>j</mi><mo>=</mo><mn>0</mn></mrow><mn>3</mn></munderover><msub><mi>ε</mi><mrow><mi>i</mi><mo>+</mo><mi>j</mi></mrow></msub><mo>,</mo><mspace width="1em"/><msub><mi>Δ</mi><mtext>m3</mtext></msub><mo>=</mo><munderover><mo>∑</mo><mrow><mi>j</mi><mo>=</mo><mn>1</mn></mrow><mn>3</mn></munderover><msub><mi>ε</mi><mrow><mi>i</mi><mo>−</mo><mi>j</mi></mrow></msub><mo>−</mo><msub><mi>κ</mi><mi mathvariant="normal">S</mi></msub><mo>,</mo><mspace width="1em"/><msub><mi>Δ</mi><mtext>P5</mtext></msub><mo>=</mo><mo>−</mo><msub><mi>ε</mi><mi>i</mi></msub></math>
+</div>
+<dl class="syms">
+  <dt><math><msub><mi>Δ</mi><mtext>M3</mtext></msub><mo>,</mo><mspace width="0.3em"/><msub><mi>Δ</mi><mtext>m3</mtext></msub><mo>,</mo><mspace width="0.3em"/><msub><mi>Δ</mi><mtext>P5</mtext></msub></math></dt><dd>根音が連鎖の <math><mi>i</mi></math> 番目の音のときの、長 3 度・短 3 度・5 度の純正からのずれ [セント]</dd>
+</dl>
+<ul class="tl">
+  <li><b>平均律</b>: <math><msub><mi>Δ</mi><mtext>M3</mtext></msub><mo>=</mo><msub><mi>κ</mi><mi mathvariant="normal">S</mi></msub><mo>−</mo><msub><mi>κ</mi><mi mathvariant="normal">P</mi></msub><mo>/</mo><mn>3</mn><mo>=</mo><mo>+</mo><mn>13.69</mn></math> セントで、どの調でも同じ</li>
+  <li><b>1/4 コンマ・ミーントーン</b>: 4 つで <math><msub><mi>κ</mi><mi mathvariant="normal">S</mi></msub></math> を狭めるので、長 3 度が純正になる</li>
+  <li><b>循環音律</b>: 狭めた 5 度が C のまわり（F–C–G–D–A–E–B）に集まる。C・G・F など近い調の 3 度は純正に近く、4 つの 5 度がすべて純正の F♯・C♯・A♭ の調では、ピタゴラスの 3 度（+21.5 セント）になる</li>
+</ul>
+<p>下の表は、主和音の長 3 度の純正からのずれ [セント] です。循環音律の目的は、よく使う調ほど協和させることでした<Fragment set:html={rf(2)} />。ヤングは、C からの転調の順に近い調ほど和声を完全にする、と書いています<Fragment set:html={rf(4)} />。たとえばヴェルクマイスター III の C4 の長 3 度は <math set:html={mn(bt(WM3_C))} /> 回/秒で、平均律の約 1/3 の速さでうなります。</p>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th scope="col">音律</th>{FIFTHS.map((p) => <th scope="col" class="num">{NAMES[p]}</th>)}</tr></thead>
+  <tbody>
+    {THIRDS.map((r) => (
+      <tr><th scope="row">{r.name}</th>{r.d.map((v) => <td class="num">{sg(v)}</td>)}</tr>
+    ))}
+  </tbody>
+</table></div>
+<h4>ウルフ</h4>
+<ul class="tl">
+  <li><b>5 度</b>: 連鎖の端をつなぐ G♯–E♭ は、コンマの余りをすべて負う。1/4 コンマ・ミーントーンでは純正より 35.7 セント広い 737.6 セント、1/6 コンマでは 717.9 セント、ピタゴラスでは 23.5 セント狭い 678.5 セントになる<Fragment set:html={rf(2)} /></li>
+  <li><b>3 度</b>: ミーントーンの B–E♭・F♯–B♭・C♯–F・G♯–C は、鍵盤の上では長 3 度でも、実は減 4 度になる。1/4 コンマでは 427.4 セントで、純正より 41.1 セント広い。上の表で B・F♯・C♯・A♭ の調が大きく外れるのはこのため</li>
+  <li><b>うなり</b>: 1/4 コンマ・ミーントーンの C♯4 の長三和音（実は C♯–F）では、3 度が <math set:html={mn(bt(MT4_CS))} /> 回/秒でうなる</li>
+</ul>
+
+<h3>ピアノの弦の非調和性とストレッチ</h3>
+<p>弦には曲げ剛性があるので、高い部分音ほど整数倍より高くなります<Fragment set:html={rf(5)} />。第 1 部分音 <math><msub><mi>f</mi><mn>1</mn></msub></math> を基準にすると、第 <math><mi>n</mi></math> 部分音は次のとおりです。</p>
+<div class="eqs">
+  <math display="block"><msub><mi>f</mi><mi>n</mi></msub><mo>=</mo><mi>n</mi><msub><mi>f</mi><mn>1</mn></msub><msqrt><mfrac><mrow><mn>1</mn><mo>+</mo><mi>B</mi><msup><mi>n</mi><mn>2</mn></msup></mrow><mrow><mn>1</mn><mo>+</mo><mi>B</mi></mrow></mfrac></msqrt><mo>,</mo><mspace width="1em"/><mi>B</mi><mo>=</mo><mfrac><mrow><msup><mi>π</mi><mn>2</mn></msup><mi>E</mi><mi>I</mi></mrow><mrow><mi>T</mi><msup><mi>L</mi><mn>2</mn></msup></mrow></mfrac></math>
+</div>
+<dl class="syms">
+  <dt><math><mi>B</mi></math></dt><dd>非調和性係数</dd>
+  <dt><math><mi>E</mi><mi>I</mi></math></dt><dd>曲げ剛性（巻弦は芯線で決まる）</dd>
+  <dt><math><mi>T</mi><mo>,</mo><mspace width="0.3em"/><mi>L</mi></math></dt><dd>張力と、振動する長さ</dd>
+</dl>
+<h4>B の大きさ</h4>
+<p>このツールの <math><mi>B</mi></math> は、ピアノ音響モデルの弦の寸法から鍵ごとに求めます。実測では、グランドの最低音で約 <math><mn>2</mn><mo>×</mo><msup><mn>10</mn><mrow><mo>−</mo><mn>4</mn></mrow></msup></math> です<Fragment set:html={rf(6)} />。中音域の計算には <math><mn>4</mn><mo>×</mo><msup><mn>10</mn><mrow><mo>−</mo><mn>4</mn></mrow></msup></math>〜<math><mn>2</mn><mo>×</mo><msup><mn>10</mn><mrow><mo>−</mo><mn>3</mn></mrow></msup></math> が使われています<Fragment set:html={rf(7)} />。低音の巻弦で小さく、高音へ向けて急に増え、<math><msup><mn>10</mn><mrow><mo>−</mo><mn>2</mn></mrow></msup></math> の桁に達します<Fragment set:html={rf(8)} />。短い弦ほど大きいので、小さいピアノほど中音・低音の <math><mi>B</mi></math> が大きくなります。</p>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th scope="col">ピアノ</th>{B_KEYS.map((m) => <th scope="col" class="num">{noteName(m)}</th>)}</tr></thead>
+  <tbody>
+    {B_ROWS.map((r) => (
+      <tr><th scope="row">{r.name}</th>{r.B.map((v) => <td class="num"><math set:html={sci(v)} /></td>)}</tr>
+    ))}
+  </tbody>
+</table></div>
+<h4>うなりがどう変わるか</h4>
+<p>下の音の高い部分音ほど上へずれるので、一致する部分音の組は、整数倍のときより広い側へずれます。</p>
+<ul class="tl">
+  <li><b>広い音程</b>（平均律の長 3 度・4 度・6 度）: うなりが遅くなる。4 度は、<math><mi>B</mi></math> が大きいとほとんどうならない</li>
+  <li><b>狭い音程</b>（平均律の 5 度）: うなりが速くなる</li>
+  <li><b>10 度・17 度</b>: 長 3 度と同じ速さではなくなる。上の音の第 1 部分音で一致する 17 度は、上の部分音が上へずれないので、10 度より遅くなる</li>
+  <li><b>オクターブ</b>: 第 1 部分音を平均律のままにすると、下の第 2 部分音が上の第 1 部分音より高く、うなる</li>
+</ul>
+<p>平均律の第 1 部分音のまま、A4 = 440 Hz で比べたうなり [回/秒] です。右端の列だけ、ストレッチ（下の節）をかけています。</p>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th scope="col">音程</th><th scope="col">例</th><th scope="col" class="num">整数倍</th><th scope="col" class="num">コンサートグランド</th><th scope="col" class="num">アップライト</th><th scope="col" class="num">コンサートグランド・ストレッチ</th></tr></thead>
+  <tbody>
+    {PB_ROWS.map((r) => (
+      <tr><th scope="row">{r.name}</th><td>{r.notes}</td>{r.b.map((v) => <td class="num">{bt(v)}</td>)}</tr>
+    ))}
+  </tbody>
+</table></div>
+<h4>オクターブの合わせ方</h4>
+<p>非調和性があると、オクターブのどの部分音どうしをそろえるかで、オクターブの幅が変わります。下の第 <math><mn>2</mn><mi>k</mi></math> 部分音と上の第 <math><mi>k</mi></math> 部分音をそろえるオクターブを <math><mn>2</mn><mi>k</mi><mo>:</mo><mi>k</mi></math> と呼びます。電子式の調律器は 4:2 か 6:3、またはその間を使い、6:3 のほうが広く伸びます<Fragment set:html={rf(8)} />。</p>
+<div class="eqs">
+  <math display="block"><msub><mi>f</mi><mrow><mi mathvariant="normal">L</mi><mo>,</mo><mn>2</mn><mi>k</mi></mrow></msub><mo>=</mo><msub><mi>f</mi><mrow><mi mathvariant="normal">U</mi><mo>,</mo><mi>k</mi></mrow></msub><mspace width="0.6em"/><mo>⟹</mo><mspace width="0.6em"/><mn>1200</mn><mspace width="0.1em"/><msub><mi>log</mi><mn>2</mn></msub><mo>&#x2061;</mo><mfrac><msub><mi>f</mi><mi mathvariant="normal">U</mi></msub><mrow><mn>2</mn><msub><mi>f</mi><mi mathvariant="normal">L</mi></msub></mrow></mfrac><mo>=</mo><mn>600</mn><mspace width="0.1em"/><msub><mi>log</mi><mn>2</mn></msub><mo>&#x2061;</mo><mfrac><mrow><mo stretchy="false">(</mo><mn>1</mn><mo>+</mo><mn>4</mn><msup><mi>k</mi><mn>2</mn></msup><msub><mi>B</mi><mi mathvariant="normal">L</mi></msub><mo stretchy="false">)</mo><mo stretchy="false">(</mo><mn>1</mn><mo>+</mo><msub><mi>B</mi><mi mathvariant="normal">U</mi></msub><mo stretchy="false">)</mo></mrow><mrow><mo stretchy="false">(</mo><mn>1</mn><mo>+</mo><msub><mi>B</mi><mi mathvariant="normal">L</mi></msub><mo stretchy="false">)</mo><mo stretchy="false">(</mo><mn>1</mn><mo>+</mo><msup><mi>k</mi><mn>2</mn></msup><msub><mi>B</mi><mi mathvariant="normal">U</mi></msub><mo stretchy="false">)</mo></mrow></mfrac></math>
+</div>
+<p>このツールのコンサートグランドの C4–C5 では、第 1 部分音どうしがちょうど 2 倍のオクターブより、2:1 で <math set:html={mn(sg(octW(1), 2))} />、4:2 で <math set:html={mn(sg(octW(2), 2))} />、6:3 で <math set:html={mn(sg(octW(3), 2))} /> セント広くなります。部分音の式から、次の 2 つの音程が同じ速さでうなれば、それぞれのオクターブがそろっていることが分かります。真ん中の音の同じ部分音を、両方の音程が使うためです。</p>
+<ul class="tl">
+  <li><b>4:2</b>: オクターブ L–U の間の音 X で、4 度 L–X と 5 度 X–U（どちらも X の第 3 部分音）。または、L の長 3 度下の音 Y で、長 3 度 Y–L と長 10 度 Y–U（どちらも Y の第 5 部分音）</li>
+  <li><b>6:3</b>: オクターブ L–U の間の音 X で、短 3 度 L–X と長 6 度 X–U（どちらも X の第 5 部分音）</li>
+</ul>
+<h4>ストレッチ</h4>
+<p>耳で合わせたピアノは、高音ほど高く、低音ほど低くずれています。Railsback が測ったこの曲線の原因は、弦の非調和性です<Fragment set:html={rf(9)} />。このツールのストレッチは、ピアノ音響モデルと同じ調律です。</p>
+<ul class="tl">
+  <li><b>A3〜A4</b>: 第 1 部分音を平均律にする</li>
+  <li><b>それより上</b>: 第 1 部分音を、1 オクターブ下の第 2 部分音に合わせる（2:1）</li>
+  <li><b>それより下</b>: 自分の第 4 部分音を、1 オクターブ上の第 2 部分音に合わせる（4:2）</li>
+</ul>
+<p>コンサートグランドでは、平均律から A0 が <math set:html={mn(sg(stOf(21)))} /> セント、C8 が <math set:html={mn(sg(stOf(108)))} /> セントずれます。低音側は、弦の非調和性だけでは −3 セントほどしか説明できず、実際のピアノはもっと低く合わせられています<Fragment set:html={rf(6)} />。ストレッチでは E5–E6 も 2:1 になるので、C4–E5 の長 10 度と C4–E6 の長 17 度は、同じ <math set:html={mn(bt(ST_TEN))} /> 回/秒でうなります。</p>
+
+<h3>各音律の定義</h3>
+<p>どの 5 度を何セント狭めるかで、音律を決めます。純正律だけは、C からの比で決めます。値は Barbour の表<Fragment set:html={rf(2)} />と Scala の音階集<Fragment set:html={rf(10)} />で照合しました。</p>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th scope="col">音律</th><th scope="col">狭める 5 度</th><th scope="col">狭める量</th><th scope="col">出典</th></tr></thead>
+  <tbody>
+    <tr><th scope="row">平均律</th><td>12 個すべて</td><td><math><msub><mi>κ</mi><mi mathvariant="normal">P</mi></msub><mo>/</mo><mn>12</mn><mo>=</mo><mn>1.955</mn></math></td><td>—</td></tr>
+    <tr><th scope="row">純正律</th><td>比で決める。C 1/1、C♯ 16/15、D 9/8、E♭ 6/5、E 5/4、F 4/3、F♯ 45/32、G 3/2、A♭ 8/5、A 5/3、B♭ 16/9、B 15/8。D–A と E♭–B♭ が 40/27（680.4）、F♯–C♯ が 19.6 広い</td><td>—</td><td><Fragment set:html={rf(2, 10)} /></td></tr>
+    <tr><th scope="row">ピタゴラス</th><td>なし。G♯–E♭ がウルフ（678.5）</td><td>—</td><td><Fragment set:html={rf(2, 10)} /></td></tr>
+    <tr><th scope="row">1/4 コンマ・ミーントーン</th><td>E♭–B♭ から C♯–G♯ までの 11 個。G♯–E♭ がウルフ（737.6）</td><td><math><msub><mi>κ</mi><mi mathvariant="normal">S</mi></msub><mo>/</mo><mn>4</mn><mo>=</mo><mn>5.377</mn></math></td><td><Fragment set:html={rf(2, 10)} /></td></tr>
+    <tr><th scope="row">1/6 コンマ・ミーントーン</th><td>E♭–B♭ から C♯–G♯ までの 11 個。G♯–E♭ がウルフ（717.9）</td><td><math><msub><mi>κ</mi><mi mathvariant="normal">S</mi></msub><mo>/</mo><mn>6</mn><mo>=</mo><mn>3.584</mn></math></td><td><Fragment set:html={rf(2, 10)} /></td></tr>
+    <tr><th scope="row">ヴェルクマイスター III</th><td>C–G・G–D・D–A・B–F♯</td><td><math><msub><mi>κ</mi><mi mathvariant="normal">P</mi></msub><mo>/</mo><mn>4</mn><mo>=</mo><mn>5.865</mn></math></td><td><Fragment set:html={rf(2, 10, 11)} /></td></tr>
+    <tr><th scope="row">キルンベルガー III</th><td>C–G・G–D・D–A・A–E と、F♯–C♯</td><td><math><msub><mi>κ</mi><mi mathvariant="normal">S</mi></msub><mo>/</mo><mn>4</mn><mo>=</mo><mn>5.377</mn></math> と <math><msub><mi>κ</mi><mtext>sch</mtext></msub><mo>=</mo><mn>1.954</mn></math></td><td><Fragment set:html={rf(10, 12)} /></td></tr>
+    <tr><th scope="row">ヴァロッティ</th><td>F–C・C–G・G–D・D–A・A–E・E–B</td><td><math><msub><mi>κ</mi><mi mathvariant="normal">P</mi></msub><mo>/</mo><mn>6</mn><mo>=</mo><mn>3.910</mn></math></td><td><Fragment set:html={rf(10, 13)} /></td></tr>
+    <tr><th scope="row">ヤング 第 2</th><td>C–G・G–D・D–A・A–E・E–B・B–F♯（ヴァロッティを 5 度 1 つ分ずらしたもの）</td><td><math><msub><mi>κ</mi><mi mathvariant="normal">P</mi></msub><mo>/</mo><mn>6</mn><mo>=</mo><mn>3.910</mn></math></td><td><Fragment set:html={rf(2, 4, 10)} /></td></tr>
+  </tbody>
+</table></div>
+<p>12 音のセント値（主音 C、C = 0）です。表と鍵盤の A♭ が、5 度の連鎖の端の G♯ に当たります。</p>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th scope="col">音律</th>{NAMES.map((n) => <th scope="col" class="num">{n}</th>)}</tr></thead>
+  <tbody>
+    {CENTS.map((r) => (
+      <tr><th scope="row">{r.name}</th>{r.c.map((v, p) => <td class="num">{p === 0 ? '0' : v.toFixed(1)}</td>)}</tr>
+    ))}
+  </tbody>
+</table></div>
+<p>鍵盤の図に書く平均律からのずれは、セント値から平均律の値を引き、A が 0 になるようにそろえた値です。主音 <math><mi>t</mi></math> を選ぶと、音律の C をその音へ移します。第 1 部分音は基準ピッチ <math><msub><mi>f</mi><mtext>A4</mtext></msub></math> から求めます。</p>
+<div class="eqs">
+  <math display="block"><msub><mi>d</mi><mi>p</mi></msub><mo>=</mo><msub><mi>c</mi><mi>p</mi></msub><mo>−</mo><mn>100</mn><mi>p</mi><mo>,</mo><mspace width="1em"/><msubsup><mi>d</mi><mi>p</mi><mo>′</mo></msubsup><mo>=</mo><msub><mi>d</mi><mrow><mo stretchy="false">(</mo><mi>p</mi><mo>−</mo><mi>t</mi><mo stretchy="false">)</mo><mspace width="0.2em"/><mi>mod</mi><mspace width="0.2em"/><mn>12</mn></mrow></msub><mo>−</mo><msub><mi>d</mi><mrow><mo stretchy="false">(</mo><mn>9</mn><mo>−</mo><mi>t</mi><mo stretchy="false">)</mo><mspace width="0.2em"/><mi>mod</mi><mspace width="0.2em"/><mn>12</mn></mrow></msub></math>
+  <math display="block"><msub><mi>f</mi><mn>1</mn></msub><mo>=</mo><msub><mi>f</mi><mtext>A4</mtext></msub><mspace width="0.1em"/><msup><mn>2</mn><mrow><mo stretchy="false">(</mo><mi>N</mi><mo>−</mo><mn>69</mn><mo stretchy="false">)</mo><mo>/</mo><mn>12</mn><mo>+</mo><mo stretchy="false">(</mo><msubsup><mi>d</mi><mi>p</mi><mo>′</mo></msubsup><mo>+</mo><msub><mi>s</mi><mi>N</mi></msub><mo stretchy="false">)</mo><mo>/</mo><mn>1200</mn></mrow></msup></math>
+</div>
+<dl class="syms">
+  <dt><math><msub><mi>c</mi><mi>p</mi></msub></math></dt><dd>ピッチクラス <math><mi>p</mi></math>（C = 0 〜 B = 11）のセント値（上の表）</dd>
+  <dt><math><mi>N</mi></math></dt><dd>音の番号（MIDI と同じ。C4 = 60、A4 = 69）</dd>
+  <dt><math><msub><mi>s</mi><mi>N</mi></msub></math></dt><dd>ストレッチのずれ（ピアノでストレッチを選んだときだけ）</dd>
+</dl>
+<p>A をそろえるので、純正律では C が平均律より 15.6 セント高くなります。</p>
+<h4>異なる流儀</h4>
+<ul class="tl">
+  <li><b>ヴェルクマイスター III</b>: 1691 年の本の並びでは 1 番目なので、I とも呼ばれる。Werckmeister はどちらのコンマかを書いていない。ふつうはピタゴラス・コンマの 1/4 で計算する<Fragment set:html={rf(11)} /></li>
+  <li><b>ヴァロッティ</b>: 今ヴァロッティと呼ばれている版は、本人の版と違うという説がある。本人の版は、同じ 6 つの 5 度をシントニック・コンマの 1/6 ずつ狭め、B♭–F をスキスマだけ狭める。耳ではほとんど区別できないとされる<Fragment set:html={rf(13)} /></li>
+  <li><b>ピタゴラスのウルフ</b>: G♯–E♭ のほか、F♯–D♭<Fragment set:html={rf(14)} />や C♯–A♭<Fragment set:html={rf(15)} />に置く流儀もある</li>
+  <li><b>純正律の D</b>: D を 10/9（B♭ を 9/5）にする流儀もある<Fragment set:html={rf(16)} />。G–D が 680.4 セントのウルフになり、属和音 G–B–D が濁る。D = 9/8 なら、C 長調の I・IV・V の和音をすべて純正にできる</li>
+  <li><b>ヤングの 1 番と 2 番</b>: Scala の音階集では、2 番は young.scl に当たる。young2.scl は 1 番に近い別の音律<Fragment set:html={rf(10)} /></li>
+</ul>
+
+<h3>このツールで決めたこと</h3>
+<ul class="tl">
+  <li>5 度の連鎖は E♭〜G♯ にし、ピタゴラスとミーントーンのウルフを G♯–E♭ に置く。主音を変えると、連鎖ごと移す</li>
+  <li>純正律は C 長調の 5 限界（D = 9/8、B♭ = 16/9）。主音を変えると、その長調の純正律になる</li>
+  <li>ヴェルクマイスター III はピタゴラス・コンマの 1/4、1/6 コンマ・ミーントーンはシントニック・コンマの 1/6、ヴァロッティは今ヴァロッティと呼ばれている版</li>
+  <li>A4 は基準ピッチのまま。どの音律・主音でも A をそろえる</li>
+  <li>一致する部分音は第 10 部分音までで探す。純正の比を決めていない音程（2 度・増 4 度・7 度）と、第 10 より上で一致する音程（短 10 度 12:5 など）は、うならない組として扱う</li>
+  <li>部分音の振幅（第 1 部分音を 1 にする）
+    <ul class="tl">
+      <li>正弦波: 第 1 部分音だけ</li>
+      <li>オルガン: <math><mn>1</mn><mo>/</mo><mi>n</mi></math> で第 8 部分音まで。40 ms で立ち上げて鳴らし続ける</li>
+      <li>ピアノ: 打弦点を弦の 1/8 とした <math><mrow><mo>|</mo><mi>sin</mi><mo>&#x2061;</mo><mo stretchy="false">(</mo><mi>π</mi><mi>n</mi><mo>/</mo><mn>8</mn><mo stretchy="false">)</mo><mo>|</mo></mrow><mo>/</mo><mi>n</mi></math> で第 10 部分音まで（第 8 部分音が抜ける）</li>
+    </ul>
+  </li>
+  <li>ピアノの減衰: 部分音ごとの指数の減衰で、時定数は <math><msub><mi>τ</mi><mi>n</mi></msub><mo>=</mo><msub><mi>τ</mi><mn>0</mn></msub><mo>/</mo><mo stretchy="false">(</mo><mn>1</mn><mo>+</mo><mn>0.18</mn><mi>n</mi><mo stretchy="false">)</mo></math>。<math><msub><mi>τ</mi><mn>0</mn></msub></math> は C5 以下で 4 s、C5 より上で 2.2 s</li>
+  <li>ピアノは {(REHIT_MS / 1000).toFixed(1)} 秒ごとに打ち直す</li>
+  <li>すべての部分音を同じ時刻に位相 0 で鳴らし始める。うなりの包絡は鳴り始めで最大になる</li>
+  <li>うなりの灯りと包絡のグラフは、一致する 2 つの部分音の振幅（ピアノは減衰の前の値）で求めた <math><mi>E</mi><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo></math> で描く。灯りは <math><msup><mi>E</mi><mn>2</mn></msup></math> で明るさを変え、うならない組は暗く、純正の組は点けたままにする</li>
+  <li>ピアノの <math><mi>B</mi></math> とストレッチは、ピアノ音響モデルの弦と調律（コンサートグランド・グランド・アップライト）をそのまま使う</li>
+  <li>調ごとの表は、選んだオクターブに主音を置いた主和音の 3 度（短調は短 3 度）と 5 度</li>
+  <li>音律 A と B を {(AB_MS / 1000).toFixed(1)} 秒ごとに入れ替えて鳴らす</li>
+  <li>音量は、鳴らす部分音の振幅の和（波形の最大）をフルスケールにしたときを 0 dB とする。既定は {sg(VOL.v, 0)} dB（楽器のページと同じ）</li>
+</ul>
+
+<h3>出典</h3>
+<ol class="refs">
+  <li id="thy-r1"><span class="rf-for">セント</span><span class="rf-src">A. J. Ellis, “On the Musical Scales of Various Nations,” <i>Journal of the Society of Arts</i>, vol. 33, pp. 485–527, 1885</span></li>
+  <li id="thy-r2"><span class="rf-for">コンマ、5 度の連鎖による音律の定義と 12 音の値（Table 22・34・80・99・140・145）、ウルフ、循環音律の目的（pp. 156–163）</span><span class="rf-src">J. M. Barbour, <a href="https://archive.org/details/tuningtemperamen00barb" target="_blank" rel="noopener"><i>Tuning and Temperament: A Historical Survey</i></a>, Michigan State College Press, 1951</span></li>
+  <li id="thy-r3"><span class="rf-for">うなりの速さ（周波数の差）、平均律の C4〜C5 のうなりの表（A. Reblitz, <i>Piano Servicing, Tuning, and Rebuilding</i>, 2nd ed., 1993, p. 225 の転載）</span><span class="rf-src"><a href="https://en.wikipedia.org/wiki/Piano_tuning" target="_blank" rel="noopener">Wikipedia “Piano tuning”</a></span></li>
+  <li id="thy-r4"><span class="rf-for">ヤング 第 2 の定義と、C に近い調ほど和声を完全にするという目的（pp. 143–147）</span><span class="rf-src">T. Young, “Outlines of Experiments and Inquiries Respecting Sound and Light,” <i>Philosophical Transactions of the Royal Society of London</i>, vol. 90, pp. 106–150, 1800, <a href="https://doi.org/10.1098/rstl.1800.0008" target="_blank" rel="noopener">doi:10.1098/rstl.1800.0008</a></span></li>
+  <li id="thy-r5"><span class="rf-for">硬い弦の部分音</span><span class="rf-src">H. Fletcher, “Normal Vibration Frequencies of a Stiff Piano String,” <i>The Journal of the Acoustical Society of America</i>, vol. 36, no. 1, pp. 203–209, 1964</span></li>
+  <li id="thy-r6"><span class="rf-for">最低音の B の実測、2:1 のオクターブから求めたストレッチと、低音側を非調和性だけでは説明できないこと</span><span class="rf-src">L. I. Ortiz-Berenguer, F. J. Casajús-Quirós, M. Torres-Guijarro, and J. A. Beracoechea, <a href="https://dafx.de/paper-archive/2004/P_212.PDF" target="_blank" rel="noopener">“Piano Transcription Using Pattern Recognition: Aspects on Parameter Extraction,”</a> <i>Proc. 7th International Conference on Digital Audio Effects (DAFx-04)</i>, 2004</span></li>
+  <li id="thy-r7"><span class="rf-for">中音域の B の範囲</span><span class="rf-src">X. Gràcia and T. Sanz-Perela, “The wave equation for stiff strings and piano tuning,” <i>Reports@SCM</i>, <a href="https://arxiv.org/abs/1603.05516" target="_blank" rel="noopener">arXiv:1603.05516</a></span></li>
+  <li id="thy-r8"><span class="rf-for">鍵盤全体の B（図 4）、電子式の調律器の 4:2・6:3 のオクターブ</span><span class="rf-src">H. Hinrichsen, “Entropy-based tuning of musical instruments,” <i>Revista Brasileira de Ensino de Física</i>, vol. 34, no. 2, 2012, <a href="https://arxiv.org/abs/1203.5101" target="_blank" rel="noopener">arXiv:1203.5101</a></span></li>
+  <li id="thy-r9"><span class="rf-for">ストレッチ調律（Railsback の曲線）と、その原因が弦の非調和性であること</span><span class="rf-src">O. L. Railsback, “Scale Temperament as Applied to Piano Tuning,” <i>The Journal of the Acoustical Society of America</i>, vol. 9, no. 3, p. 274, 1938, <a href="https://doi.org/10.1121/1.1902056" target="_blank" rel="noopener">doi:10.1121/1.1902056</a>。あわせて <a href="https://en.wikipedia.org/wiki/Piano_acoustics" target="_blank" rel="noopener">Wikipedia “Piano acoustics”</a></span></li>
+  <li id="thy-r10"><span class="rf-for">12 音の値の照合（werck3・kirnberger・vallotti・young・young2・pyth_12・meanquar・meansixth・malcolm）</span><span class="rf-src">Huygens-Fokker Foundation, <a href="https://www.huygens-fokker.org/scala/" target="_blank" rel="noopener">Scala</a> scale archive</span></li>
+  <li id="thy-r11"><span class="rf-for">ヴェルクマイスター III（番号とコンマ）</span><span class="rf-src"><a href="https://en.wikipedia.org/wiki/Werckmeister_temperament" target="_blank" rel="noopener">Wikipedia “Werckmeister temperament”</a></span></li>
+  <li id="thy-r12"><span class="rf-for">キルンベルガー III</span><span class="rf-src"><a href="https://en.wikipedia.org/wiki/Kirnberger_temperament" target="_blank" rel="noopener">Wikipedia “Kirnberger temperament”</a></span></li>
+  <li id="thy-r13"><span class="rf-for">ヴァロッティ（今の版と本人の版）</span><span class="rf-src"><a href="https://en.wikipedia.org/wiki/Vallotti_temperament" target="_blank" rel="noopener">Wikipedia “Vallotti temperament”</a></span></li>
+  <li id="thy-r14"><span class="rf-for">ピタゴラスのウルフを F♯–D♭ に置く例</span><span class="rf-src"><a href="https://en.wikipedia.org/wiki/Pythagorean_tuning" target="_blank" rel="noopener">Wikipedia “Pythagorean tuning”</a></span></li>
+  <li id="thy-r15"><span class="rf-for">ピタゴラスのウルフを C♯–A♭ に置く例</span><span class="rf-src">K. Gann, <a href="https://www.kylegann.com/histune.html" target="_blank" rel="noopener">“An Introduction to Historical Tunings”</a></span></li>
+  <li id="thy-r16"><span class="rf-for">純正律の D を 10/9 にする流儀</span><span class="rf-src"><a href="https://en.wikipedia.org/wiki/Five-limit_tuning" target="_blank" rel="noopener">Wikipedia “Five-limit tuning”</a></span></li>
+</ol>

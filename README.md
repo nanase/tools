@@ -47,3 +47,5 @@ MIT
 ハロ（暈）のページで計算と並べる写真（[public/photos/halo/](public/photos/halo/)）は Wikimedia Commons から取ったもので、写真ごとに元のライセンス（パブリックドメイン・CC0 1.0・CC BY 4.0）に従います。作者・出典・ライセンスは [src/tools/halo/photos.ts](src/tools/halo/photos.ts) とページの写真の下にあります。
 
 日食のページのデータ（NASA の日食の要素、Natural Earth の陸地、国土数値情報などから作った地名）にも、データごとの条件が付きます。出典と条件は [src/tools/solar-eclipse/SOURCES.md](src/tools/solar-eclipse/SOURCES.md) にあります。
+
+月のページのデータ（NASA の月面の標高と色、IAU・USGS の地名とウィキペディア日本語版の名前、NASA の月食の一覧）にも、データごとの条件が付きます。地名のデータ（[src/tools/moon/features.json](src/tools/moon/features.json)）は CC BY-SA 4.0 です。出典と条件は [src/tools/moon/SOURCES.md](src/tools/moon/SOURCES.md) にあります。

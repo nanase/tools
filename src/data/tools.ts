@@ -256,12 +256,28 @@ export const TOOLS: Tool[] = [
     k: 'solar eclipse 日食 皆既日食 金環日食 部分日食 total annular hybrid partial 食分 面積比 magnitude obscuration コロナ corona ダイヤモンドリング diamond ring ベイリー baily 月の影 本影 半影 umbra penumbra 皆既帯 中心線 central line サロス saros ベッセル要素 besselian elements nasa 五千年正典 five millennium canon espenak meeus deltat δt 地方食 local circumstances 天文 astronomy 太陽 月',
   },
   {
+    id: 'moon',
+    c: '画像・光学',
+    t: '月',
+    d: '選んだ日時と観測地から見た月を、満ち欠け・秤動・距離と地形の影まで再現します。',
+    ic: 'mn',
+    k: 'moon 月 満ち欠け 月齢 月相 phase 輝面比 illumination 秤動 libration 地球直下点 sub-earth 視直径 apparent diameter 近地点 遠地点 perigee apogee スーパームーン supermoon 月の出 月の入り 南中 moonrise moonset 欠け際 明暗境界 terminator クレーター crater 月の海 mare 余経度 colongitude 地球照 earthshine 月食 皆既月食 lunar eclipse 本影 半影 赤銅色 danjon 中秋の名月 十三夜 カレンダー lro lola nasa meeus 天文 astronomy',
+  },
+  {
     id: 'tuner',
     c: '音響',
     t: 'チューナー',
     d: '楽器の音を聴き、音名とずれを針か 12 音のストロボで示します。',
     ic: 'tu',
     k: 'tuner チューニング 調律 調弦 音合わせ クロマチック chromatic ストロボ strobe stroboconn 針 メータ meter セント cent 基準ピッチ a440 442 ギター guitar ベース bass ウクレレ ukulele ヴァイオリン バイオリン violin ヴィオラ チェロ cello コントラバス マンドリン バンジョー ハーモニカ harmonica 管楽器 移調 transpose 音律 temperament 純正律 just intonation ピッチ pitch mpm マイク オーディオ audio',
+  },
+  {
+    id: 'temperament',
+    c: '音響',
+    t: '音律とうなり',
+    d: '平均律・純正律・ミーントーンなどで和音を鳴らし、うなりの速さを数値と音で比べます。',
+    ic: 'tm',
+    k: 'temperament tuning 音律 調律 うなり beat beats 平均律 equal temperament 純正律 just intonation ピタゴラス pythagorean ミーントーン meantone ヴェルクマイスター werckmeister キルンベルガー kirnberger ヴァロッティ vallotti ヤング young 古典調律 well temperament 和音 chord 長三和音 3 度 5 度 部分音 倍音 partial harmonic コンマ comma ウルフ wolf 非調和性 inharmonicity ストレッチ stretch ピアノ piano オルガン organ セント cent',
   },
 ];
 /** 準備中を後ろへ */

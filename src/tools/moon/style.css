@@ -1,0 +1,182 @@
+/* 月のページだけのスタイル（共通は src/styles/site.css） */
+
+/* 並び: 上に全幅で月、その下の左に月のカレンダー、右の列に 観測地・今夜の月・月食、下に 3 列で 軌道・秤動・距離と大きさ、式。
+   スマホでは 1 列 */
+@media (min-width:1000px){
+  .tgrid{grid-template-columns:minmax(0,7fr) minmax(0,5fr);align-items:start;grid-template-areas:"moon moon" "cal c2" "trio trio" "thy thy"}
+  .a-moon{grid-area:moon}.a-cal{grid-area:cal}.c2{grid-area:c2}.trio3{grid-area:trio}.a-thy{grid-area:thy}
+}
+.trio3{display:grid;gap:26px 16px;align-items:start}
+@media (min-width:760px){.trio3{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+/* 時刻と、その時刻の様子を 1 行に（日食のページと同じ形） */
+.bigclock{display:flex;flex-wrap:wrap;align-items:center;gap:10px 22px;margin-bottom:10px}
+.bigclock .clk{font:700 34px/1 var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.01em;min-width:5.2em}
+.bigclock .clk small{font-size:14px;font-weight:500;color:var(--ink-2);margin-left:.4em}
+.bigclock .st{display:grid;gap:2px;font-size:12.5px;color:var(--ink-2)}
+.bigclock .st b{font:700 15px/1.3 var(--mono);color:var(--ink);font-variant-numeric:tabular-nums}
+
+/* 月の窓: 光の量そのものを描くので、テーマに依らず黒い地 */
+.vw{position:relative;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:#000}
+.vw .lab{position:absolute;left:10px;top:8px;font:500 11.5px/1.45 var(--mono);color:#e6e8e4;text-shadow:0 0 3px #000,0 0 6px #000;pointer-events:none}
+.vw .lab.b{top:auto;bottom:8px}
+.mview{aspect-ratio:3/2;touch-action:manipulation}
+@media (max-width:640px){.mview{aspect-ratio:1/1}}
+.mview canvas{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:grab;touch-action:pan-y;user-select:none;-webkit-user-select:none}
+.mview canvas.drag{cursor:grabbing}
+/* 拡大・縮小と、もとに戻す（窓の右上） */
+.vctl{position:absolute;right:8px;top:8px;display:flex;align-items:center;gap:4px}
+.vbtn{min-width:30px;height:28px;padding:0 8px;border:1px solid #48525a;border-radius:4px;background:rgb(10 12 14 / .72);color:#e6e8e4;font:500 13px/1 var(--sans);cursor:pointer}
+.vbtn:hover{background:rgb(10 12 14 / .9)}
+.vbtn:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+.vz{min-width:3.6em;text-align:center;font:500 11.5px var(--mono);color:#e6e8e4;text-shadow:0 0 3px #000}
+.vmsg{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);margin:0;color:#aab3b8;font:500 13px var(--sans)}
+.mlabs{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.mlab{position:absolute;transform:translate(7px,-50%);font:500 11px/1.2 var(--sans);color:#e6e8e4;text-shadow:0 0 3px #000,0 0 6px #000,0 0 9px #000;white-space:nowrap}
+.mlab::before{content:"";position:absolute;left:-7px;top:50%;width:5px;height:5px;margin-top:-2.5px;border-radius:50%;border:1px solid #f2c230;box-sizing:border-box}
+.mlab.l{transform:translate(calc(-100% - 7px),-50%)}
+.mlab.l::before{left:auto;right:-7px}
+.mlab.sea{color:#aab3b8;font-size:10.5px;transform:translate(-50%,-50%)}
+.mlab.sea::before{display:none}
+.zframe{position:absolute;border:1px solid rgb(242 194 48 / .85);pointer-events:none}
+.lead{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.lead path{stroke:rgb(242 194 48 / .85);stroke-width:1.2;fill:none}
+.loupe{position:absolute;border:1px solid rgb(242 194 48 / .85);box-shadow:0 8px 28px rgb(0 0 0 / .6)}
+.loupe .zbox{position:relative;aspect-ratio:760/480}
+.loupe .lh{background:#000;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 6px 5px 10px;border-top:1px solid #2b3237;font:500 11.5px/1.4 var(--mono);color:#aab3b8}
+.loupe .lh b{color:#e6e8e4;font-family:var(--sans)}
+.loupe .x{flex:none;width:28px;height:28px;border:1px solid #48525a;border-radius:4px;background:rgb(10 12 14 / .8);color:#e6e8e4;font:500 15px/1 var(--sans);cursor:pointer}
+.loupe .x:hover{background:rgb(10 12 14 / .95)}
+/* 向きの印（天頂・天の北・月の北） */
+.orient{position:absolute;left:10px;top:30px;width:96px;height:96px;pointer-events:none}
+.orient line,.orient path,.orient circle{stroke:#e6e8e4;stroke-width:1.4;fill:none}
+.orient .n{stroke:#52c4dd}
+.orient circle{fill:#e6e8e4}.orient circle.n{fill:#52c4dd}.orient circle.p{fill:#f2c230}
+.orient .p{stroke:#f2c230}
+.orient text{font:500 10px var(--sans);fill:#e6e8e4;paint-order:stroke;stroke:#000;stroke-width:3px}
+.orient .tn{fill:#52c4dd}
+.orient .tp{fill:#f2c230}
+
+/* 1 か月の帯: 満ち欠けの小さな月と時刻の軸 */
+.month{margin-top:12px}
+.phrow{position:relative;height:30px}
+.phrow button{position:absolute;top:0;width:26px;height:26px;margin-left:-13px;padding:0;border:0;border-radius:50%;background:#000;box-shadow:0 0 0 1px var(--line);cursor:pointer}
+.phrow button:hover{box-shadow:0 0 0 1px var(--ink-2)}
+.phrow button.on{box-shadow:0 0 0 2px var(--ink)}
+.phrow canvas{display:block;width:100%;height:100%;border-radius:50%}
+.tsv{display:block;width:100%;height:auto;overflow:visible;touch-action:pan-y;cursor:ew-resize;user-select:none;-webkit-user-select:none}
+.tsv:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.tsv .gl{stroke:var(--grid);stroke-width:1}
+.tsv text{fill:var(--ink-3);font:10.5px var(--mono)}
+.tsv .q{fill:var(--ink);font:600 11px var(--sans)}
+.tsv .ap{fill:none;stroke:var(--ink-2);stroke-width:1.2}
+.tsv .apt{fill:var(--ink-2);font:500 10.5px var(--sans)}
+.tsv .tk{stroke:var(--ink-2);stroke-width:1}
+.tsv .ev{stroke:var(--ink-3);stroke-width:1;stroke-dasharray:3 3}
+.tsv .cur{stroke:var(--ink);stroke-width:2}
+.tchips{display:flex;flex-wrap:wrap;gap:4px}
+/* 現在へ戻るボタン: 文字を大きく太くし、インクの枠で目立たせる。現在に合わせて進んでいる間は LED を点ける */
+.nowbtn{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 16px;border:1.5px solid var(--ink);border-radius:4px;background:var(--surface);color:var(--ink);font:700 14.5px/1 var(--sans);cursor:pointer}
+.nowbtn:hover{background:var(--inset)}
+.nowbtn[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
+.tchips .chip{display:inline-flex;align-items:center;gap:6px}
+.tchips .chip small{font:500 11.5px var(--sans)}
+.tstep{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-top:8px}
+.tstep .seg button{min-width:52px}
+/* 日付の右の日時を選ぶボタン。入力欄はボタンの下に隠し、選択の窓だけを開く */
+.dtrow{display:inline-flex;align-items:center;gap:6px}
+.dtpick{position:relative;display:inline-flex}
+.calbtn{display:inline-flex;align-items:center;justify-content:center;width:28px;height:26px;padding:0;border:1px solid var(--line-2);border-radius:4px;background:var(--surface);color:var(--ink-2);cursor:pointer}
+.calbtn:hover{border-color:var(--ink-3);color:var(--ink)}
+.calbtn svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.dtpick input{position:absolute;left:0;bottom:0;width:28px;height:1px;padding:0;border:0;opacity:0;pointer-events:none}
+
+/* 月のカレンダー */
+.calh{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.calh b{font:700 15px var(--mono)}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.cal .dh{font:600 11.5px var(--sans);color:var(--ink-3);text-align:center;padding-bottom:2px}
+.cal .d{display:grid;justify-items:center;gap:2px;padding:4px 2px 5px;border:1px solid var(--line);border-radius:4px;background:none;color:var(--ink-2);font:500 11px/1.2 var(--mono);min-width:0;cursor:pointer}
+.cal .d:hover{border-color:var(--line-2)}
+.cal .d canvas{width:34px;height:34px;max-width:100%;border-radius:50%;background:#000}
+.cal .d small{font:600 10.5px var(--sans);color:var(--ink);min-height:1.2em;white-space:nowrap;overflow:hidden;max-width:100%}
+.cal .d .ag{font:500 10px var(--mono);color:var(--ink-3)}
+.cal .d[aria-current="date"]{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink);color:var(--ink);font-weight:700}
+.cal .x{border:1px dashed var(--line);border-radius:4px;opacity:.45}
+.vcap{margin:8px 2px 0;font-size:12.5px;line-height:1.6;color:var(--ink-2)}
+.vcap b{color:var(--ink)}
+
+/* 観測地（日食のページと同じ形） */
+.evbtn{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 12px;border:1px solid var(--line-2);border-radius:4px;background:var(--surface);color:var(--ink);font:500 12.5px/1 var(--sans);text-decoration:none;cursor:pointer}
+.evbtn:hover{border-color:var(--ink-3);color:var(--ink)}
+.evbtn svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.evbtn[aria-expanded="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.locbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px}
+.lsearch{position:relative;flex:1 1 260px;min-width:0}
+.lsearch input{box-sizing:border-box;width:100%;height:36px;padding:0 12px;border:1px solid var(--line-2);border-radius:4px;background:var(--inset);color:var(--ink);font:500 14px var(--sans)}
+.lsearch input:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+.sugg{position:absolute;z-index:30;left:0;right:0;top:calc(100% + 4px);margin:0;padding:4px;list-style:none;border:1px solid var(--line-2);border-radius:6px;background:var(--surface);box-shadow:0 10px 28px rgb(0 0 0 / .25);max-height:340px;overflow:auto}
+.sg{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:1px 12px;width:100%;padding:6px 8px;border:0;border-radius:4px;background:none;color:var(--ink);text-align:left;cursor:pointer;font:inherit}
+.sg:hover,.sg[aria-selected="true"]{background:var(--inset)}
+.sg b{font-size:14px}
+.sg small{grid-column:1;font-size:12px;color:var(--ink-3)}
+.sg span{grid-row:1/3;grid-column:2;align-self:center;font:600 12.5px var(--mono);color:var(--ink-2)}
+.locnow{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px;margin-top:6px}
+.locnow b{font-size:18px}
+.locnow span{font:500 13px var(--mono);color:var(--ink-2)}
+.a-loc .msg:empty{display:none}
+.mapbox{margin-top:8px;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:#0d1b2a}
+.mapbox canvas{display:block;width:100%;height:auto;cursor:crosshair}
+
+/* 今夜の月 */
+.a-out .m-sub{display:block;font:500 14px/1.45 var(--sans);color:var(--ink-2)}
+
+/* 月食の札: 押すとその月食の最大へ */
+.pager{display:flex;align-items:center;gap:4px}
+.pager span{font:600 12px var(--mono);color:var(--ink-2);min-width:3.6em;text-align:center}
+.ecard{display:grid;grid-template-columns:120px minmax(0,1fr);gap:12px;align-items:center;width:100%;padding:0;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.ecard .vw{display:block;aspect-ratio:1/1}
+.ecard canvas{display:block;width:100%;height:100%}
+.ecard .note{display:block;margin:0 0 6px;font-size:12.5px;color:var(--ink-2)}
+.ecard .note b{color:var(--ink);margin-right:.4em}
+.edl{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;font-size:12.5px;color:var(--ink-2)}
+.edl b{font:600 13px var(--mono);color:var(--ink)}
+
+/* 図（軌道・秤動・距離） */
+.mfig{display:block;width:100%;height:auto;overflow:visible}
+.mfig .ax{stroke:var(--line-2);stroke-width:1;fill:none}
+.mfig .gr{stroke:var(--grid);stroke-width:1;fill:none}
+.mfig .ln{stroke:var(--ink);stroke-width:1.6;fill:none}
+.mfig .ln3{stroke:var(--ink-3);stroke-width:1;fill:none;stroke-dasharray:1.5 2.5;opacity:.8}
+.mfig .ln2{stroke:var(--ink-2);stroke-width:1.2;fill:none;stroke-dasharray:4 3}
+.mfig .dot{fill:var(--ink)}
+.mfig .ring{fill:none;stroke:var(--ink);stroke-width:1.6}
+.mfig text{fill:var(--ink-3);font:10.5px var(--mono)}
+.mfig .mt{fill:var(--ink);font:600 11px var(--sans)}
+.mfig .ts{fill:var(--ink-2);font:500 10.5px var(--sans)}
+.mfig .orb{fill:none;stroke:var(--ink-3);stroke-width:1;stroke-dasharray:3 4}
+.mfig .earth{fill:#3d6e9e;stroke:var(--ink)}
+.mfig .lit{fill:var(--ink)}
+.mfig .drk{fill:var(--surface);stroke:var(--ink);stroke-width:1}
+.mfig .sunar{stroke:#9a6c00;stroke-width:1.6;fill:none}
+.mfig.big text{font-size:26px}
+.mfig.big .ts,.mfig.big .mt{font-size:26px}
+.sizes{display:flex;align-items:flex-end;justify-content:space-around;gap:10px;padding:10px 4px 0}
+.sizes figure{margin:0;display:grid;justify-items:center;gap:4px;font:500 11.5px/1.4 var(--sans);color:var(--ink-2);text-align:center}
+.sizes figure b{font:600 12.5px var(--mono);color:var(--ink)}
+.sizes canvas{display:block;border-radius:50%;background:#000}
+.legend{display:flex;flex-wrap:wrap;gap:4px 16px;margin-top:6px;font:500 12px/1.4 var(--sans);color:var(--ink-2)}
+.legend i{display:inline-block;vertical-align:middle;width:18px;height:0;margin-right:6px;border-top:2px solid var(--ink)}
+.legend i.dot3{border-top:1.5px dotted var(--ink-3)}
+.note{margin:6px 2px 0;font-size:12.5px;line-height:1.6;color:var(--ink-2)}
+.note b{color:var(--ink)}
+
+/* スマホ: 向きの選択肢を短くし、帯の小さな月と時刻のボタンを詰める。拡大を開いている間は下の注記を隠す */
+@media (max-width:640px){
+  #p-or .w{display:none}
+  .phrow{height:14px}
+  .phrow button{width:11px;height:11px;margin-left:-5.5px}
+  .tstep .seg{flex-wrap:wrap}
+  .tstep .seg button{min-width:0;white-space:nowrap}
+  .mview.zoomed .lab.b{display:none}
+}

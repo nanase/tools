@@ -18,7 +18,10 @@
     "chaconne": "bun scripts/chaconne.ts",
     "piano-scores": "bun scripts/piano-scores.ts",
     "violin-scores": "bun scripts/violin-scores.ts",
-    "trumpet-scores": "bun scripts/trumpet-scores.ts"
+    "trumpet-scores": "bun scripts/trumpet-scores.ts",
+    "moon-textures": "bun scripts/moon-textures.ts",
+    "moon-features": "bun scripts/moon-features.ts",
+    "moon-eclipses": "bun scripts/moon-eclipses.ts"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",

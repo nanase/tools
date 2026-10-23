@@ -1,0 +1,101 @@
+/* 音律とうなり（デザイン案 B 部分音のはしご）。共通は site.css */
+
+/* 枠の並び。スマホは 図 → 音律 → 和音 → うなり → 音 → 式。PC は上に図（全幅）、左の列に音律・和音、右の列にうなり・音 */
+.a-fig{order:1}.a-tem{order:2}.a-chd{order:3}.a-out{order:4}.a-snd{order:5}.a-thy{order:6}
+@media (min-width:1000px){
+  .tgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr);grid-template-areas:"fig fig" "c1 c2" "thy thy";align-items:start}
+  .a-fig{grid-area:fig}.c1{grid-area:c1}.c2{grid-area:c2}.a-thy{grid-area:thy}
+}
+.ph .seg button{display:inline-flex;align-items:center;justify-content:center;gap:7px}
+.a-fig,.a-out{container-type:inline-size}
+.sbar .right{margin-left:auto}
+.sbar .ab{display:inline-flex;align-items:center;gap:6px;padding:1px 8px;border:1px solid var(--line-2);border-radius:10px}
+.sbar .ab b{font-weight:700}
+.pbar{display:flex;align-items:center;gap:8px}
+.ph .seg button:disabled{opacity:.45;cursor:default}
+
+/* うなりの灯り: うなりの包絡で明滅する。純正（うなりなし）は灯ったまま */
+.lamp{display:inline-block;width:12px;height:12px;border-radius:50%;background:var(--ch1);box-shadow:0 0 0 1px var(--line-2)}
+.lamp.still{background:var(--led-off)}
+
+/* うなりの表（行の中身はブラウザで入れる） */
+.prs{display:grid;font:500 13px/1.4 var(--mono);font-variant-numeric:tabular-nums}
+.prs .r{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1.1fr) minmax(0,.9fr) minmax(0,1fr) minmax(0,.9fr) 24px;align-items:center;border-bottom:1px solid var(--line)}
+.prs .r:last-child{border-bottom:0}
+.prs .r>*{padding:5px 6px;text-align:right;white-space:nowrap;color:var(--ink)}
+.prs .r>*:first-child{text-align:left}
+.prs .hd{border-bottom-color:var(--line-2)}
+.prs .hd>*{font:700 11.5px/1.3 var(--sans);color:var(--ink-3)}
+.prs .lc{text-align:center}
+.prs .prb{padding:0;border:0;background:none;font:700 13px/1.4 var(--sans);color:var(--ink);cursor:pointer;text-align:left}
+.prs .prb:hover{text-decoration:underline;text-underline-offset:3px}
+.prs .r.on{background:var(--inset)}
+.prs .r.on .prb::before{content:"▸ ";color:var(--ink-2)}
+.prs .r.na>*{color:var(--ink-3)}
+.prs .bt{font-weight:700;font-size:15px}
+.prs .dir{display:block;font:500 11px/1.2 var(--sans);color:var(--ink-3)}
+@container (max-width:460px){.prs .r{grid-template-columns:minmax(0,1.25fr) minmax(0,1.1fr) minmax(0,1fr) minmax(0,.9fr) 24px}.prs .hn{display:none}}
+.envw{display:grid;gap:4px;margin-top:12px}
+.envw .cap{display:flex;justify-content:space-between;gap:8px;font:500 12px/1.4 var(--mono);color:var(--ink-2)}
+.env svg{display:block;width:100%;height:auto}
+.env .g{stroke:var(--grid);stroke-width:1}
+.env .e{fill:none;stroke:var(--ch1);stroke-width:2;stroke-linejoin:round}
+.env .now{stroke:var(--ch2);stroke-width:1.5}
+.env text{fill:var(--screen-ink);font:10px var(--mono)}
+.nts{display:grid;margin-top:12px;font:500 12.5px/1.5 var(--mono);font-variant-numeric:tabular-nums;color:var(--ink-2)}
+.nts .r{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+.nts .r>*{padding:3px 6px;text-align:right}
+.nts .hd{border-bottom:1px solid var(--line)}
+.nts .hd>*{font:700 11px/1.3 var(--sans);color:var(--ink-3)}
+.nts .r>*:first-child{text-align:left;color:var(--ink);font-weight:700}
+
+/* ===== 部分音のはしご ===== */
+.lad{overflow-x:auto}
+.lad svg{display:block;width:100%;min-width:680px;height:auto}
+.lad .lmp{fill:var(--ch1)}
+.lad .ax{stroke:var(--grid-2);stroke-width:1}
+.lad .gl{stroke:var(--grid);stroke-width:1}
+.lad .hm{stroke:var(--grid-2);stroke-width:1;stroke-dasharray:2 3}
+.lad .pt{stroke:var(--screen-ink);stroke-width:2.2;stroke-linecap:round}
+.lad .pt.c{stroke:var(--ch1);stroke-width:3}
+.lad .cn{stroke:var(--ch1);stroke-width:1.2;stroke-dasharray:3 3}
+.lad text{fill:var(--screen-ink);font:11px var(--mono)}
+.lad text.m{text-anchor:middle}
+.lad text.r{text-anchor:end}
+.lad text.nl{font:700 13px var(--mono);fill:var(--ink)}
+.lad text.bl{font:700 12px var(--mono);fill:var(--ch1)}
+.zms{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-top:10px}
+.zm{display:grid;gap:4px;padding:8px 10px;border:1px solid var(--line);border-radius:var(--r);background:var(--screen);cursor:pointer;text-align:left;color:var(--ink);font:inherit}
+.zm.on{border-color:var(--ink-2);box-shadow:inset 0 0 0 1px var(--ink-2)}
+.zm .zh{display:flex;justify-content:space-between;align-items:center;gap:6px;font:700 12.5px/1.3 var(--sans)}
+.zm .zb{font:700 18px/1.2 var(--mono);font-variant-numeric:tabular-nums}
+.zm .zb small{font:500 11px var(--sans);color:var(--ink-2);margin-left:4px}
+.zm svg{display:block;width:100%;height:auto}
+.zm .za{stroke:var(--grid-2);stroke-width:1}
+.zm .zp{stroke:var(--grid-2);stroke-width:1;stroke-dasharray:2 2}
+.zm .z1{stroke:var(--ch2);stroke-width:3;stroke-linecap:round}
+.zm .z2{stroke:var(--ch1);stroke-width:3;stroke-linecap:round}
+.zm text{fill:var(--screen-ink);font:9.5px var(--mono);text-anchor:middle}
+.zm .zs{font:500 11px/1.3 var(--mono);color:var(--ink-2)}
+.kbw{margin-top:12px;overflow-x:auto}
+/* 鍵の色はピアノ音響モデルと同じ（テーマで少し暗くする）。和音の音は信号色を混ぜ、根音は下端に線 */
+.kb{--kb-w:#f4f5f1;--kb-b:#2a2f33;position:relative;height:118px;min-width:620px}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .kb{--kb-w:#d9dcd6;--kb-b:#15181a}}
+:root[data-theme="dark"] .kb{--kb-w:#d9dcd6;--kb-b:#15181a}
+.kb .w,.kb .b{position:absolute;top:0;border:1px solid var(--line-2);cursor:pointer;font:500 10px/1.2 var(--mono);display:flex;flex-direction:column;justify-content:flex-end;align-items:center;padding:0 0 4px}
+.kb .w{height:110px;background:var(--kb-w);color:#48505a;border-radius:0 0 4px 4px;z-index:1}
+.kb .b{height:68px;background:var(--kb-b);color:#d9dcd6;border-color:var(--kb-b);border-radius:0 0 3px 3px;z-index:2}
+.kb .on.w{background:color-mix(in srgb,var(--ch1) 38%,var(--kb-w));color:#15191c}
+.kb .on.b{background:color-mix(in srgb,var(--ch1) 60%,var(--kb-b));border-color:var(--ch1)}
+.kb .rt{box-shadow:inset 0 -4px 0 var(--ch2)}
+.kb b{font-weight:700;font-size:11px}
+.kb .dv{font-size:9.5px;font-variant-numeric:tabular-nums}
+.kb .b .dv{font-size:8.5px}
+.k12{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:3px;margin-top:12px}
+@container (max-width:640px){.k12{grid-template-columns:repeat(6,minmax(0,1fr))}}
+.k12 button{display:grid;gap:2px;justify-items:center;padding:4px 0 5px;border:1px solid var(--line);border-radius:3px;background:none;cursor:pointer;color:var(--ink-2);font:500 10.5px/1.2 var(--mono)}
+.k12 button[aria-pressed="true"]{border-color:var(--ink-2);box-shadow:inset 0 0 0 1px var(--ink-2)}
+.k12 .bx{position:relative;width:70%;height:46px;border-bottom:1px solid var(--grid-2)}
+.k12 .bx i{position:absolute;left:0;right:0;bottom:0;background:var(--ch1);opacity:.8;border-radius:2px 2px 0 0}
+.k12 b{font:700 12px var(--mono);color:var(--ink)}
+.lbl{margin-top:12px;font:700 12.5px/1.4 var(--sans);color:var(--ink-2)}
