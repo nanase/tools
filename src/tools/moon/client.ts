@@ -540,6 +540,15 @@ function drawNumbers(): void {
   ($('#dt') as HTMLInputElement).value =
     `${c.year}-${p2(c.month)}-${p2(c.day)}T${p2(Math.floor(s / 3600))}:${p2(Math.floor((s % 3600) / 60))}`;
 }
+/* 日時を選ぶ: 隠した入力欄の日時の選択を、日付の右のボタンから開く */
+$('#dtbtn').addEventListener('click', () => {
+  const i = $<HTMLInputElement>('#dt');
+  try {
+    i.showPicker();
+  } catch {
+    i.focus();
+  }
+});
 $('#dt').addEventListener('change', (e) => {
   const v = (e.target as HTMLInputElement).value;
   const m = /^(\d{4})-(\d\d)-(\d\d)T(\d\d):(\d\d)/.exec(v);
@@ -811,6 +820,8 @@ $('#cal-next').addEventListener('click', () => shiftMonth(1));
 /** 帯の 32 日の地心の状態（6 時間おき）。帯が変わったときだけ作り直す */
 let serW0 = Number.NaN;
 let ser: MoonState[] = [];
+let tserKey = '';
+let tser: { lat: number; lon: number }[] = [];
 function drawFigs(): void {
   /* 軌道（北から、太陽は右）。月の向きは太陽からの離角 */
   const g = (j: number) => moonState(j, null);
@@ -843,6 +854,13 @@ function drawFigs(): void {
     serW0 = W0;
     ser = Array.from({ length: 129 }, (_, k) => g(W0 + k / 4));
   }
+  /* 観測地から見た地球直下点（1 時間おき）。日周秤動で、地心の線のまわりを 1 日に 1 回まわる */
+  const tk = `${W0}|${site.lat}|${site.lon}|${site.h}`;
+  if (tserKey !== tk) {
+    tserKey = tk;
+    const o = obs();
+    tser = Array.from({ length: 32 * 24 + 1 }, (_, k) => moonState(W0 + k / 24, o).subObs);
+  }
   const sx = (lo: number) => 120 + (lo / 8) * 110,
     sy = (la: number) => 120 - (la / 8) * 110;
   const path = (f: (s: MoonState) => [number, number]) =>
@@ -858,6 +876,7 @@ function drawFigs(): void {
   $('#lib').innerHTML = [
     '<path class="gr" d="M10 120H230M120 10V230M10 10H230V230H10Z"></path><path class="gr" d="M65 10V230M175 10V230M10 65H230M10 175H230"></path>',
     '<text x="122" y="20">北 8°</text><text x="122" y="226">南 8°</text><text x="14" y="116">西 8°</text><text x="226" y="116" text-anchor="end">東 8°</text>',
+    `<path class="ln3" d="M${tser.map((p) => `${sx(p.lon).toFixed(1)} ${sy(p.lat).toFixed(1)}`).join('L')}"></path>`,
     `<path class="ln" d="${path((s) => [sx(s.subObs.lon), sy(s.subObs.lat)])}"></path>`,
     `<circle class="dot" cx="${sx(ser[0].subObs.lon).toFixed(1)}" cy="${sy(ser[0].subObs.lat).toFixed(1)}" r="2.5"></circle><text x="${(sx(ser[0].subObs.lon) + 5).toFixed(1)}" y="${(sy(ser[0].subObs.lat) + 4).toFixed(1)}">${md(W0)}</text>`,
     fs
@@ -866,6 +885,7 @@ function drawFigs(): void {
     `<circle class="ring" cx="${sx(st.subObs.lon).toFixed(1)}" cy="${sy(st.subObs.lat).toFixed(1)}" r="6"></circle><circle class="dot" cx="${sx(st.subObs.lon).toFixed(1)}" cy="${sy(st.subObs.lat).toFixed(1)}" r="2.5"></circle><text class="mt" x="${(sx(st.subObs.lon) + 10).toFixed(1)}" y="${(sy(st.subObs.lat) + 4).toFixed(1)}">表示中</text>`,
   ].join('');
   txt('#lib-aux', `地球直下点 · ${md(W0)}〜${md(W0 + 32)}`);
+  txt('#lib-site', `${site.name}から（1 時間おき）`);
 
   /* 距離（地心） */
   const dx = (j: number) => ((j - W0) / 32) * 1000,
@@ -918,9 +938,7 @@ function drawSizes(): void {
     });
   }
   const sj = superJd || supermoon(nowJd());
-  $('#size-note').innerHTML = sj
-    ? `次の<b>スーパームーン</b>（その年で最も近い満月）は ${local(sj).year}/${md(sj)} ${hm(sj)}。`
-    : '';
+  $('#size-note').innerHTML = sj ? `次回<b>スーパームーン</b>: ${local(sj).year}/${md(sj)} ${hm(sj)}` : '';
 }
 
 /* ---------- 月食 ---------- */
@@ -1002,10 +1020,6 @@ function drawEcl(): void {
   if (c.u4 != null) rows.push(['欠け終わり', hm(c.u4)]);
   else if (c.p4 != null) rows.push(['半影食の終わり', hm(c.p4)]);
   $('#e-dl').innerHTML = rows.map(([a, b]) => `<span>${a}</span><b>${b}</b>`).join('');
-  txt(
-    '#e-cap',
-    `‹ › で前後の月食へ（1900〜2100 年、${site.name}で月が地平線の上にある回）。押すと上の月がその月食の最大に移ります。`,
-  );
   const ik = `${c.max}|${site.lat}|${site.lon}|${or$.value}`;
   if (renderer?.ready && ik !== eImgKey) {
     eImgKey = ik;
@@ -1173,7 +1187,7 @@ $('#here').addEventListener('click', () => {
   );
 });
 
-/* 地図で選ぶ: 正距円筒の世界地図（Natural Earth の陸地、日食のページと同じデータ） */
+/* 地図から選ぶ: 正距円筒の世界地図（Natural Earth の陸地、日食のページと同じデータ） */
 const mapC = $<HTMLCanvasElement>('#map');
 let land: number[][] | null = null;
 async function drawMap(): Promise<void> {

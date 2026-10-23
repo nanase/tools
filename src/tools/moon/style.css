@@ -74,8 +74,7 @@
 .tsv .tk{stroke:var(--ink-2);stroke-width:1}
 .tsv .ev{stroke:var(--ink-3);stroke-width:1;stroke-dasharray:3 3}
 .tsv .cur{stroke:var(--ink);stroke-width:2}
-.keysrow{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-top:8px}
-.tchips{display:flex;flex-wrap:wrap;gap:4px}
+.tchips{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
 /* 現在へ戻るボタン: 文字を大きく太くし、インクの枠で目立たせる。現在に合わせて進んでいる間は LED を点ける */
 .nowbtn{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 16px;border:1.5px solid var(--ink);border-radius:4px;background:var(--surface);color:var(--ink);font:700 14.5px/1 var(--sans);cursor:pointer}
 .nowbtn:hover{background:var(--inset)}
@@ -84,8 +83,13 @@
 .tchips .chip small{font:500 11.5px var(--sans)}
 .tstep{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-top:8px}
 .tstep .seg button{min-width:52px}
-.dtin{display:inline-flex;align-items:center;gap:6px;margin-left:auto}
-.dtin input{height:30px;padding:0 6px;border:1px solid var(--line-2);border-radius:4px;background:var(--inset);color:var(--ink);font:500 13px var(--mono)}
+/* 日付の右の日時を選ぶボタン。入力欄はボタンの下に隠し、選択の窓だけを開く */
+.dtrow{display:inline-flex;align-items:center;gap:6px}
+.dtpick{position:relative;display:inline-flex}
+.calbtn{display:inline-flex;align-items:center;justify-content:center;width:28px;height:26px;padding:0;border:1px solid var(--line-2);border-radius:4px;background:var(--surface);color:var(--ink-2);cursor:pointer}
+.calbtn:hover{border-color:var(--ink-3);color:var(--ink)}
+.calbtn svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.dtpick input{position:absolute;left:0;bottom:0;width:28px;height:1px;padding:0;border:0;opacity:0;pointer-events:none}
 
 /* 月のカレンダー */
 .calh{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
@@ -143,6 +147,7 @@
 .mfig .ax{stroke:var(--line-2);stroke-width:1;fill:none}
 .mfig .gr{stroke:var(--grid);stroke-width:1;fill:none}
 .mfig .ln{stroke:var(--ink);stroke-width:1.6;fill:none}
+.mfig .ln3{stroke:var(--ink-3);stroke-width:1;fill:none;stroke-dasharray:1.5 2.5;opacity:.8}
 .mfig .ln2{stroke:var(--ink-2);stroke-width:1.2;fill:none;stroke-dasharray:4 3}
 .mfig .dot{fill:var(--ink)}
 .mfig .ring{fill:none;stroke:var(--ink);stroke-width:1.6}
@@ -160,6 +165,9 @@
 .sizes figure{margin:0;display:grid;justify-items:center;gap:4px;font:500 11.5px/1.4 var(--sans);color:var(--ink-2);text-align:center}
 .sizes figure b{font:600 12.5px var(--mono);color:var(--ink)}
 .sizes canvas{display:block;border-radius:50%;background:#000}
+.legend{display:flex;flex-wrap:wrap;gap:4px 16px;margin-top:6px;font:500 12px/1.4 var(--sans);color:var(--ink-2)}
+.legend i{display:inline-block;vertical-align:middle;width:18px;height:0;margin-right:6px;border-top:2px solid var(--ink)}
+.legend i.dot3{border-top:1.5px dotted var(--ink-3)}
 .note{margin:6px 2px 0;font-size:12.5px;line-height:1.6;color:var(--ink-2)}
 .note b{color:var(--ink)}
 
@@ -170,6 +178,5 @@
   .phrow button{width:11px;height:11px;margin-left:-5.5px}
   .tstep .seg{flex-wrap:wrap}
   .tstep .seg button{min-width:0;white-space:nowrap}
-  .dtin{margin-left:0}
   .mview.zoomed .lab.b{display:none}
 }
