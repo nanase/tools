@@ -275,7 +275,7 @@ function stPlace(q: Encoded, c: number): string {
 function stMask(q: Encoded, c: number): string {
   const head = h3(`マスク ${q.mask}`) + `<p class="q-eq a"${ai(0)}>${MASK_TEXT[q.mask]}</p>`,
     tail = note(
-      '同じ色の長い並びやファインダーに似た模様は読み取りを誤らせるので、データの明暗を模様で散らします。8 種のうちペナルティがいちばん小さいものを選びます。',
+      '同じ色の長い並びやファインダーに似た模様は読み取りにくいため、データの明暗を模様で散らします。8 種のうちペナルティがいちばん小さいマスクを選びます。',
     );
   if (c < 0) return head + tail;
   const f = MASKS[q.mask];
