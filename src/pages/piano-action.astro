@@ -25,7 +25,7 @@ const LEGEND = [
   ['jack', 'ジャック'],
   ['rep', 'レペティションレバー'],
   ['hammer', 'ハンマー'],
-  ['damper', 'ダンパー（仮の形）'],
+  ['damper', 'ダンパー'],
 ] as const;
 ---
 <SiteLayout title={name} tool={{ id: 'piano-action', name }} description="グランドピアノの鍵を押してからハンマーが弦を打つまでの機構（アクション）の動きを 5 つの部品と 13 か所の接触の多体の模型で計算し、段階ごとにスローで追います。整調を変えるとブロッキングや連打できない様子も見られます。" note="動きは Hirschkorn (2004) の多体の模型による計算で、ダンパーは仮の形です。">
@@ -104,7 +104,7 @@ const LEGEND = [
       </Panel>
       <Panel hid="hd-tl" title="段階の時間" class="a-tl">
         <div class="stl" id="tl"></div>
-        <p class="aux stl-n">棒の長さは対数（0.1 ms〜1 s）</p>
+        <p class="aux stl-n">バーの長さは対数（0.1 ms〜1 s）</p>
       </Panel>
     </div>
 

@@ -267,6 +267,8 @@ function setPlaying(on: boolean): void {
   pp.setAttribute('aria-label', on ? '一時停止する' : '再生する');
   pp.title = on ? '一時停止する' : '今の位置から再生する';
   last = null;
+  /* 再生を押した操作の中で、止まっている AudioContext を動かしておく */
+  if (on && sndOn) void audio.ready();
   if (on) loop();
 }
 
@@ -539,9 +541,15 @@ function sound(t: number): void {
     if (s.t > a && s.t <= t) {
       const free = new Uint8Array(KEYS);
       free[key - KEY_LO] = 1;
-      void audio.strike(key, Math.max(0.1, s.v), false, 1, free);
-      /* ブロッキングでは、押し付けたハンマーがすぐに弦を止める */
-      if (s.blocked) setTimeout(() => audio.release(key), 30);
+      const v = Math.max(0.1, s.v),
+        blocked = s.blocked;
+      /* 鳴らさない間が 1 分続くと AudioContext が止まるので、打つたびに動かし直す */
+      void audio.ready().then((ok) => {
+        if (!ok) return;
+        void audio.strike(key, v, false, 1, free);
+        /* ブロッキングでは、押し付けたハンマーがすぐに弦を止める */
+        if (blocked) setTimeout(() => audio.release(key), 30);
+      });
     }
   }
   const da = damperLift(qAt(run, Math.round(a / FRAME)), run.q0),

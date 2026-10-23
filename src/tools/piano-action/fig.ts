@@ -42,10 +42,11 @@ function checkPath(dx: number, dy: number): { head: string; wire: string } {
 const CHECK0 = [-0.2192, 0.0817] as const;
 
 /* ---------- ダンパー（論文の模型にない。仮の形） ---------- */
-/** 鍵の後ろの端（ダンパーのてこを持ち上げる点）[m]、てこの軸 [mm]、針金の x [mm] */
+/** 鍵の後ろの端（ダンパーのてこのフェルトが載る点）[m]、てこの軸の x・針金の x [mm]、てこが鍵に触れるまでの隙間 [mm] */
 const KEY_TAIL = [-0.233, 0.0167] as const;
-const DMP_PIV = [-300, 22] as const,
-  DMP_WX = -262;
+const DMP_PX = -300,
+  DMP_WX = -262,
+  DMP_GAP = 3.9;
 /** ダンパーの持ち上がり [mm]。鍵の後ろが 3.9 mm 上がってから、その 0.56 倍で上がる */
 export function damperLift(q: ArrayLike<number>, q0: ArrayLike<number>): number {
   const y = gp(pose(q), 'key', KEY_TAIL)[1],
@@ -81,15 +82,27 @@ function bodies(q: ArrayLike<number>, rig: Rig, cls: (b: Body) => string): strin
   }
   return s;
 }
-function damper(dl: number, cls: string): string {
-  const a = Math.atan2(dl, DMP_WX - DMP_PIV[0]);
-  return `<g transform="translate(${DMP_PIV[0]},${DMP_PIV[1]}) rotate(${deg(a)})"><rect class="bd damper ${cls}" x="0" y="-1.4" width="74" height="6" rx="1"/><circle class="pv" cx="0" cy="1.6" r="1.6"/></g><g transform="translate(0,${r2(dl)})"><line class="bd damper ${cls}" x1="${DMP_WX}" x2="${DMP_WX}" y1="26" y2="172"/><rect class="bd damper ${cls}" x="-272" y="171.2" width="20" height="13" rx="1.5"/><rect class="ft" x="-271" y="171.2" width="18" height="4"/></g>`;
+/**
+ * ダンパー: 頭は自分の重さで弦に載り、てこは針金で頭から下がる。てこの先のフェルトは、静止のとき
+ * 鍵の後ろの端から DMP_GAP だけ上にあり、鍵がそれだけ上がると触れて持ち上がり始める（鍵の深さの途中から上がる）
+ */
+function damper(q: ArrayLike<number>, q0: ArrayLike<number>, rig: Rig, cls: string): string {
+  const k0 = gp(pose(q0), 'key', KEY_TAIL),
+    tx = k0[0] * MM,
+    /* フェルトの下面・てこの下面・軸の高さ（静止のとき） */
+    pad = k0[1] * MM + DMP_GAP,
+    py = pad + 2 + 2.5,
+    dl = damperLift(q, q0),
+    a = Math.atan2(dl, DMP_WX - DMP_PX),
+    L = tx - DMP_PX + 8,
+    hy = rig.str * MM + 0.6;
+  return `<g transform="translate(${DMP_PX},${r2(py)}) rotate(${deg(a)})"><rect class="bd damper ${cls}" x="0" y="-2.5" width="${r2(L)}" height="5" rx="1"/><rect class="ft" x="${r2(tx - DMP_PX - 4)}" y="-4.5" width="8" height="2"/><circle class="pv" cx="0" cy="0" r="1.6"/></g><g transform="translate(0,${r2(dl)})"><line class="bd damper ${cls}" x1="${DMP_WX}" x2="${DMP_WX}" y1="${r2(py + 2.5)}" y2="${r2(hy + 1)}"/><rect class="bd damper ${cls}" x="-272" y="${r2(hy)}" width="20" height="13" rx="1.5"/><rect class="ft" x="-271" y="${r2(hy)}" width="18" height="4"/></g>`;
 }
 
 /** 段階のコマの絵（強調する部品のほかは薄く） */
 export function thumbSvg(q: ArrayLike<number>, q0: ArrayLike<number>, rig: Rig, focus: readonly string[]): string {
   const cls = (b: string) => (focus.length ? (focus.includes(b) ? 'em' : 'dim') : '');
-  return `<svg viewBox="${VB_THUMB.join(' ')}" aria-hidden="true"><g transform="scale(1,-1)">${FIXED}${rigged(rig)}${damper(damperLift(q, q0), cls('damper'))}${bodies(q, rig, cls)}${PIVOTS}</g></svg>`;
+  return `<svg viewBox="${VB_THUMB.join(' ')}" aria-hidden="true"><g transform="scale(1,-1)">${FIXED}${rigged(rig)}${damper(q, q0, rig, cls('damper'))}${bodies(q, rig, cls)}${PIVOTS}</g></svg>`;
 }
 
 /* ---------- 主の図 ---------- */
@@ -225,7 +238,7 @@ export class ActionFig {
     const rig = this.rig;
     if (!rig) return;
     const cls = (b: string) => (o.focus.length ? (o.focus.includes(b) ? 'em' : 'dim') : '');
-    this.g.innerHTML = `${FIXED}${rigged(rig, false)}${damper(damperLift(o.q, this.q0), cls('damper'))}${bodies(o.q, rig, cls)}${PIVOTS}`;
+    this.g.innerHTML = `${FIXED}${rigged(rig, false)}${damper(o.q, this.q0, rig, cls('damper'))}${bodies(o.q, rig, cls)}${PIVOTS}`;
     /* 上に重ねるもの（y は下向き） */
     const P = pose(o.q);
     let s = stringSvg(rig.str, o.ripples);
