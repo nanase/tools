@@ -1,0 +1,152 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import More from '../components/More.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import { order, TOOLS } from '../data/tools';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/moon/style.css';
+import { ELEV, LAT, LON, SPEEDS } from '../tools/moon/params';
+import Theory from '../tools/moon/Theory.astro';
+
+const name = '月';
+/* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
+const CAT = '画像・光学';
+const related = [
+  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'moon')),
+  ...TOOLS.filter((t) => t.c !== CAT && !t.s),
+];
+const WD = ['日', '月', '火', '水', '木', '金', '土'];
+---
+<SiteLayout title={name} tool={{ id: 'moon', name }} description="選んだ日時と観測地から見た月を、満ち欠け・秤動・距離と、月面の地形の影まで再現します。月カレンダーと月食も見られます。" note="月の位置は Meeus の式、標高は NASA LRO LOLA（PDS、NASA's Scientific Visualization Studio の CGI Moon Kit）、色は NASA's Scientific Visualization Studio の CGI Moon Kit、地名は IAU/USGS の惑星地名辞典と Wikipedia（CC BY-SA 4.0）、月食は Eclipse Predictions by Fred Espenak (NASA's GSFC)、本影の色は Mallama (2022) を加工して作成。地球照の明るさは推定です。">
+  <PageTitle title={name}>選んだ日時と観測地から見た月を、Meeus の式で計算した位置と、月の自転の向きから描きます。月面の色と標高は NASA の月探査機 LRO のデータで、欠け際ではクレーターの縁や山が影を落とします。満ち欠け・秤動（見える面のゆれ）・距離の変化、月カレンダー、月食の赤銅色も見られます。</PageTitle>
+  <div class="mini" aria-hidden="true"><span>日時<b id="mT"></b></span><span>月齢<b id="mA"></b></span><span>輝面比<b id="mK"></b></span></div>
+
+  <div class="tgrid">
+
+    <Panel hid="hd-moon" title="東京から見た月" class="a-moon" fixed>
+      <div slot="aux" class="seg" id="p-or" role="group" aria-label="画面の向き"><button type="button" data-v="zenith" aria-pressed="false" title="観測地の天頂を上にする（空で見える向き）">天頂<span class="w">が上</span></button><button type="button" data-v="moon" aria-pressed="true" title="月の北極を上にする">月の北<span class="w">が上</span></button><button type="button" data-v="sky" aria-pressed="false" title="天の北極を上にする（望遠鏡の写真の向き）">天の北<span class="w">が上</span></button></div>
+      <div slot="aux" class="seg" id="p-play" data-nosave><button type="button" id="play" aria-pressed="false" title="時刻を進める（表示の設定の速さで）"><span class="led" id="playLed" aria-hidden="true"></span><span id="playT">再生</span></button></div>
+      <div class="bigclock">
+        <button type="button" class="nowbtn" id="nowbtn" aria-pressed="true" title="現在の日時に戻し、時計に合わせて進める"><span class="led on" id="nowLed" aria-hidden="true"></span>現在</button>
+        <span class="clk"><span id="clk">—</span><small id="clkz">JST</small></span>
+        <span class="st">日付<span class="dtrow"><b id="o-date">—</b><span class="dtpick"><button type="button" class="calbtn" id="dtbtn" aria-label="日時を選ぶ" title="日時を選ぶ"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"></rect><path d="M3.5 10h17M8 3v4M16 3v4"></path></svg></button><input type="datetime-local" id="dt" step="60" tabindex="-1" aria-hidden="true"></span></span></span>
+        <span class="st">月齢<b id="o-age">—</b></span>
+        <span class="st">輝面比<b id="o-k">—</b></span>
+        <span class="st">距離<b id="o-dist">—</b></span>
+        <span class="st">視直径<b id="o-diam">—</b></span>
+        <span class="st">高度 · 方位<b id="o-altaz">—</b></span>
+      </div>
+      <div class="vw mview" id="mview">
+        <canvas id="mc" role="img" aria-label="観測地から見た月。押すとその場所を拡大する"></canvas>
+        <div class="mlabs" id="labs" aria-hidden="true"></div>
+        <span class="zframe" id="zframe" hidden></span>
+        <svg class="lead" id="lead" aria-hidden="true" style="display:none"><path id="leadP"></path></svg>
+        <div class="loupe" id="loupe" hidden>
+          <div class="zbox" id="zbox"><div class="mlabs" id="zlabs" aria-hidden="true"></div></div>
+          <div class="lh"><span id="zcap"></span><button type="button" class="x" id="zclose" aria-label="拡大を閉じる">×</button></div>
+        </div>
+        <svg class="orient" id="orient" viewBox="0 0 96 96" aria-hidden="true"></svg>
+        <div class="lab" id="v-lab"></div>
+        <div class="lab b" id="v-lab2"></div>
+        <p class="vmsg" id="v-msg" hidden></p>
+        <div class="vctl" role="group" aria-label="表示の拡大・縮小"><button type="button" class="vbtn" id="vout" aria-label="縮小" title="縮小（ホイール・2 本指でも）">−</button><span class="vz" id="vzoom">×1.00</span><button type="button" class="vbtn" id="vin" aria-label="拡大" title="拡大（ホイール・2 本指でも）">＋</button><button type="button" class="vbtn" id="vreset" title="拡大と位置をもとに戻す" hidden>もとに戻す</button></div>
+      </div>
+      <div class="month">
+        <div class="phrow" id="phrow"></div>
+        <svg class="tsv" id="band" viewBox="0 0 1000 122" role="slider" tabindex="0" aria-label="日時（1 か月の帯の上を押して動かす）" aria-valuemin="0" aria-valuemax="1000" aria-valuenow="0"></svg>
+      </div>
+      <div class="tstep">
+        <div class="tchips" id="keys" role="group" aria-label="主な日時へ移る"></div>
+        <div class="seg" id="tstep" role="group" aria-label="日時を少し動かす"><button type="button" data-s="-86400">−1 日</button><button type="button" data-s="-3600">−1 時間</button><button type="button" data-s="-600">−10 分</button><button type="button" data-s="600">+10 分</button><button type="button" data-s="3600">+1 時間</button><button type="button" data-s="86400">+1 日</button></div>
+      </div>
+      <More id="g-view" title="表示の設定"><div class="ana2">
+        <div class="ptab">
+          <ChoiceRow k="lab" name="地名" sub="欠け際の近く: 日の当たる側で、欠け際から 20° 以内のクレーターと海の名前（NASA SVS の Dial-A-Moon の決め方）。夜の側の名前は出さない" choices={[['near', '欠け際の近く'], ['all', '大きなもの'], ['off', 'なし']]} value="near" />
+          <ChoiceRow k="br" name="明るさ" sub="肉眼: 明るい縁を満月の明るさに合わせ、月食で暗くなると少し慣れる。カメラ: 月食でも同じ明るさに合わせる。物理: 満月の明るさに固定し、欠けると暗くなる" choices={[['eye', '肉眼'], ['camera', 'カメラ'], ['phys', '物理']]} value="eye" />
+          <ChoiceRow k="es" name="地球照" sub="欠けた側を照らす地球の光。肉眼とカメラでは見えるように 30 倍に持ち上げる" choices={[['on', 'あり'], ['off', 'なし']]} value="on" />
+        </div>
+        <div class="ptab">
+          <ChoiceRow k="tz" name="時刻" sub="日本時間（UTC+9）か世界時（UT）" choices={[['jst', '日本時間'], ['ut', '世界時']]} value="jst" />
+          <ChoiceRow k="sp" name="再生の速さ" sub="実際の時間の何倍で進めるか" choices={SPEEDS} value="21600" />
+        </div>
+      </div></More>
+    </Panel>
+
+    <Panel hid="hd-cal" title="月カレンダー" class="a-cal">
+      <span slot="aux" class="aux" id="cal-aux">毎日 20:00 · 数字は正午月齢</span>
+      <div class="calh"><button type="button" class="evbtn" id="cal-prev">‹ <span id="cal-pm"></span></button><b id="cal-t"></b><button type="button" class="evbtn" id="cal-next"><span id="cal-nm"></span> ›</button></div>
+      <div class="cal" id="cal">{WD.map((w) => <span class="dh">{w}</span>)}</div>
+    </Panel>
+
+    <div class="col c2">
+      <Panel hid="hd-loc" title="観測地" class="a-loc">
+        <div class="locbar">
+          <div class="lsearch">
+            <input type="search" id="q" aria-label="地名で探す" placeholder="地名で探す（日本の市・世界の主要都市）" autocomplete="off" aria-controls="sugg" aria-expanded="false">
+            <ul class="sugg" id="sugg" aria-label="候補" hidden></ul>
+          </div>
+          <button type="button" class="evbtn" id="here"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v4M12 18v4M2 12h4M18 12h4"></path></svg>現在地</button>
+          <button type="button" class="evbtn" id="mapbtn" aria-expanded="false" aria-controls="mapbox"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2z"></path><path d="M9 4v14M15 6v14"></path></svg>地図から選ぶ</button>
+        </div>
+        <p class="msg" id="loc-msg" aria-live="polite"></p>
+        <div class="mapbox" id="mapbox" hidden><canvas id="map" width="720" height="360" role="img" aria-label="世界地図。押した地点を観測地にする"></canvas></div>
+        <div class="locnow"><b id="loc-name"></b><span id="loc-coord"></span></div>
+        <More id="g-loc" title="緯度・経度で指定"><div class="ptab"><ParamRow d={LAT} /><ParamRow d={LON} /><ParamRow d={ELEV} /></div></More>
+      </Panel>
+
+      <Panel hid="hd-out" title="今夜の月" class="a-out">
+        <dl class="metrics c3">
+          <div class="m m-main"><dt>月齢</dt><dd><span id="o-mage">—</span><span class="m-sub" id="o-msub"></span></dd></div>
+          <div class="m"><dt>月の出</dt><dd id="o-rise">—</dd></div>
+          <div class="m"><dt id="o-trt">南中</dt><dd id="o-tr">—</dd></div>
+          <div class="m"><dt>月の入り</dt><dd id="o-set">—</dd></div>
+          <div class="m"><dt>秤動 経度</dt><dd id="o-llon">—</dd></div>
+          <div class="m"><dt>秤動 緯度</dt><dd id="o-llat">—</dd></div>
+          <div class="m"><dt>明るい縁の位置角</dt><dd id="o-pa">—</dd></div>
+        </dl>
+      </Panel>
+
+      <Panel hid="hd-ecl" title="見える月食" class="a-ecl">
+        <div slot="aux" class="pager"><button type="button" class="prst" id="e-prev" aria-label="前の月食">‹</button><span id="e-pos"></span><button type="button" class="prst" id="e-next" aria-label="次の月食">›</button></div>
+        <button type="button" class="ecard" id="ecard">
+          <span class="vw"><canvas id="e-img" width="160" height="160"></canvas></span>
+          <span class="ebody">
+            <span class="note"><b id="e-title">—</b><span id="e-sub"></span></span>
+            <span class="edl" id="e-dl"></span>
+          </span>
+        </button>
+      </Panel>
+    </div>
+
+    <div class="trio3">
+      <Panel hid="hd-orb" title="北から見た軌道" class="a-orb">
+        <span slot="aux" class="aux">黄道の北極の側から · 太陽は右</span>
+        <svg class="mfig" id="orb" viewBox="0 0 300 300" role="img" aria-label="北から見た地球と月の軌道。太陽は右"></svg>
+      </Panel>
+      <Panel hid="hd-lib" title="秤動" class="a-lib">
+        <span slot="aux" class="aux" id="lib-aux"></span>
+        <svg class="mfig" id="lib" viewBox="0 0 240 240" role="img" aria-label="地球から見える月面の中心（地球直下点）の 1 か月の動き"></svg>
+        <div class="legend"><span><i></i>地心から</span><span><i class="dot3"></i><span id="lib-site">観測地から</span></span></div>
+      </Panel>
+      <Panel hid="hd-size" title="距離と大きさ" class="a-size">
+        <span slot="aux" class="aux" id="size-aux"></span>
+        <svg class="mfig big" id="dist" viewBox="0 0 1000 300" role="img" aria-label="地球と月の距離の 1 か月の変化"></svg>
+        <div class="sizes" id="sizes"></div>
+        <p class="note" id="size-note"></p>
+      </Panel>
+    </div>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools list={related} />
+  <script>
+    import '../tools/moon/client';
+  </script>
+</SiteLayout>

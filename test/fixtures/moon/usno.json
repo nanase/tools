@@ -1,0 +1,105 @@
+{
+  "phases": {
+    "source": "https://aa.usno.navy.mil/api/moon/phases/year?year=2026 (UT), fetched 2026-10-23",
+    "rows": [
+      "2026-01-03 10:03 Full Moon",
+      "2026-01-10 15:48 Last Quarter",
+      "2026-01-18 19:52 New Moon",
+      "2026-01-26 04:47 First Quarter",
+      "2026-02-01 22:09 Full Moon",
+      "2026-02-09 12:43 Last Quarter",
+      "2026-02-17 12:01 New Moon",
+      "2026-02-24 12:27 First Quarter",
+      "2026-03-03 11:38 Full Moon",
+      "2026-03-11 09:38 Last Quarter",
+      "2026-03-19 01:23 New Moon",
+      "2026-03-25 19:18 First Quarter",
+      "2026-04-02 02:12 Full Moon",
+      "2026-04-10 04:51 Last Quarter",
+      "2026-04-17 11:52 New Moon",
+      "2026-04-24 02:32 First Quarter",
+      "2026-05-01 17:23 Full Moon",
+      "2026-05-09 21:10 Last Quarter",
+      "2026-05-16 20:01 New Moon",
+      "2026-05-23 11:11 First Quarter",
+      "2026-05-31 08:45 Full Moon",
+      "2026-06-08 10:00 Last Quarter",
+      "2026-06-15 02:54 New Moon",
+      "2026-06-21 21:55 First Quarter",
+      "2026-06-29 23:56 Full Moon",
+      "2026-07-07 19:29 Last Quarter",
+      "2026-07-14 09:43 New Moon",
+      "2026-07-21 11:05 First Quarter",
+      "2026-07-29 14:36 Full Moon",
+      "2026-08-06 02:21 Last Quarter",
+      "2026-08-12 17:37 New Moon",
+      "2026-08-20 02:46 First Quarter",
+      "2026-08-28 04:18 Full Moon",
+      "2026-09-04 07:51 Last Quarter",
+      "2026-09-11 03:27 New Moon",
+      "2026-09-18 20:44 First Quarter",
+      "2026-09-26 16:49 Full Moon",
+      "2026-10-03 13:25 Last Quarter",
+      "2026-10-10 15:50 New Moon",
+      "2026-10-18 16:12 First Quarter",
+      "2026-10-26 04:12 Full Moon",
+      "2026-11-01 20:28 Last Quarter",
+      "2026-11-09 07:02 New Moon",
+      "2026-11-17 11:48 First Quarter",
+      "2026-11-24 14:53 Full Moon",
+      "2026-12-01 06:08 Last Quarter",
+      "2026-12-09 00:52 New Moon",
+      "2026-12-17 05:42 First Quarter",
+      "2026-12-24 01:28 Full Moon",
+      "2026-12-30 18:59 Last Quarter"
+    ]
+  },
+  "rstt": {
+    "source": "https://aa.usno.navy.mil/api/rstt/oneday?date=<date>&coords=35.6895,139.6917&tz=9 (JST, moondata), fetched 2026-10-23",
+    "days": {
+      "2026-01-15": {
+        "Rise": "03:59",
+        "Upper Transit": "08:42",
+        "Set": "13:23"
+      },
+      "2026-03-03": {
+        "Set": "05:54",
+        "Rise": "17:27",
+        "Upper Transit": "23:59"
+      },
+      "2026-06-21": {
+        "Rise": "10:57",
+        "Upper Transit": "17:15",
+        "Set": "23:24"
+      },
+      "2026-10-20": {
+        "Rise": "13:47",
+        "Upper Transit": "19:02"
+      },
+      "2026-10-21": {
+        "Set": "00:24",
+        "Rise": "14:15",
+        "Upper Transit": "19:46"
+      },
+      "2026-10-22": {
+        "Set": "01:25",
+        "Rise": "14:41",
+        "Upper Transit": "20:30"
+      },
+      "2026-10-23": {
+        "Set": "02:27",
+        "Rise": "15:07",
+        "Upper Transit": "21:14"
+      },
+      "2026-10-24": {
+        "Set": "03:31",
+        "Rise": "15:33",
+        "Upper Transit": "22:00"
+      },
+      "2026-12-24": {
+        "Set": "06:58",
+        "Rise": "16:33"
+      }
+    }
+  }
+}
