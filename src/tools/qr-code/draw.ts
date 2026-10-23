@@ -17,6 +17,8 @@ const COL = {
   fmt: '#f6e7a8',
   rem: '#d9dbd6',
   bad: '#d1242f',
+  /** 訂正した符号語の枠（元と違うモジュールの赤と見分けるため青） */
+  fix: '#1f6feb',
   cat: {
     h: ['#e4d8f3', '#5a2d91'],
     d: ['#d3e3f6', '#1d4f91'],
@@ -130,7 +132,7 @@ export function drawMap(ctx: CanvasRenderingContext2D, k: number, s: MapState, e
     for (let i = 0; i < n * n; i++)
       if (soil[i] !== q.mods[i])
         ctx.strokeRect(((i % n) + QZ) * k + o, (Math.floor(i / n) + QZ) * k + o, k - 2 * o, k - 2 * o);
-    if (s.bad.size) stroke(ctx, cwEdges(q, s.bad), k, COL.bad, Math.max(1.5, k * 0.12), [k * 0.5, k * 0.3]);
+    if (s.bad.size) stroke(ctx, cwEdges(q, s.bad), k, COL.fix, Math.max(2, k * 0.16));
   } else if (stage === STAGE.place || stage === STAGE.mask)
     stroke(ctx, edges, k, 'rgba(21,25,28,.55)', Math.max(1, k * 0.07));
   if (s.sel >= 0 && (soil || (stage >= STAGE.place && stage < STAGE.done))) {

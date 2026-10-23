@@ -42,14 +42,14 @@ const TOOLS_SOIL = [
   ],
 ];
 ---
-<SiteLayout title={name} tool={{ id: 'qr-code', name }} description="文字列から QR コードができるまでを、モード・ビット列・符号語・リード・ソロモン符号・配置・マスク・形式情報の段に分けて見せます。誤り訂正実験では、図にしみやこすれを付けると、壊れた符号語を誤り訂正で直して読む様子が分かります。" note="符号化と復号は、このツールの実装によるものです。画像から格子を読み取る処理はしません。QRコードは株式会社デンソーウェーブの登録商標です。">
-  <PageTitle title={name}>文字列から QR コードができるまでを、モード・ビット列・符号語・リード・ソロモン符号の誤り訂正語・配置・マスク・形式情報の段に分けて追います。図のモジュールと符号語の表は結びついていて、押した符号語のビットがどの文字のどの部分か、どこに置かれたかが分かります。「誤り訂正実験」に切り替えて図をなぞると、しみやこすれで壊れた符号語をリード・ソロモン符号で直して読み、直せる上限を超えると読めなくなります。</PageTitle>
+<SiteLayout title={name} tool={{ id: 'qr-code', name }} description="文字列から QR コードができるまでを、モード・ビット列・符号語・リード・ソロモン符号・配置・マスク・形式情報の段に分けて見せます。誤り訂正実験では、図にしみやこすれを付けると、壊れた符号語を誤り訂正して読み取る様子が分かります。" note="符号化と復号は、このツールの実装によるものです。画像から格子を読み取る処理はしません。QRコードは株式会社デンソーウェーブの登録商標です。">
+  <PageTitle title={name}>文字列から QR コードができるまでを、モード・ビット列・符号語・リード・ソロモン符号の誤り訂正語・配置・マスク・形式情報の段に分けて追います。図のモジュールと符号語の表は結びついていて、押した符号語のビットがどの文字のどの部分か、どこに置かれたかが分かります。「誤り訂正実験」に切り替えて図をなぞると、しみやこすれで壊れた符号語をリード・ソロモン符号で訂正して読み取り、訂正できる上限を超えると読み取れなくなります。</PageTitle>
   <div class="mini" aria-hidden="true"><span>VER<b id="m-ver"></b></span><span>ECC<b id="m-ecc"></b></span><span>MASK<b id="m-mask"></b></span><span>ERR<b id="m-err"></b></span></div>
 
   <div class="tgrid">
     <Panel hid="hd-map" title="QR コードの構造" class="a-map" fixed>
       <div slot="aux" class="seg" id="p-act" role="group" aria-label="図で行うこと" data-nosave>
-        <button type="button" data-v="look" aria-pressed="true" title="押した符号語の中身と配置した場所を調べる">調べる</button><button type="button" data-v="soil" aria-pressed="false" title="図にしみやこすれを付け、読み取って誤り訂正で直す">誤り訂正実験</button>
+        <button type="button" data-v="look" aria-pressed="true" title="押した符号語の中身と配置した場所を調べる">調べる</button><button type="button" data-v="soil" aria-pressed="false" title="図にしみやこすれを付け、読み取って誤り訂正する">誤り訂正実験</button>
       </div>
       <div slot="aux" class="seg"><button type="button" id="saveBtn" title="今の図の QR コードを PNG で保存する">保存</button></div>
 
@@ -69,13 +69,13 @@ const TOOLS_SOIL = [
           <div class="q-fig" id="q-fig" tabindex="0" role="group" aria-roledescription="図" aria-label="QR コードの図。押した符号語を選ぶ。← → で前後の符号語へ移る"><canvas id="cv-map" width="370" height="370"></canvas></div>
           <div class="sbar rdbar" data-ph="(176, 176) · 符号語 3705 のビット 7 · 誤り訂正"><span class="rd" id="q-rd"></span></div>
           <div class="q-leg" id="q-leg"><span><i class="h"></i>モードと文字数</span><span><i class="d"></i>データ</span><span><i class="p"></i>終端と埋め草</span><span><i class="e"></i>誤り訂正語</span><span><i class="f"></i>形式情報</span></div>
-          <div class="q-leg" id="q-leg2" hidden><span><i class="x"></i>元と違うモジュール</span><span><i class="xd"></i>直した符号語</span></div>
+          <div class="q-leg" id="q-leg2" hidden><span><i class="x"></i>元と違うモジュール</span><span><i class="xd"></i>訂正した符号語</span></div>
         </div>
         <div class="q-right">
           <p class="q-sub">符号語<small id="q-cwn"></small></p>
           <div class="q-cwbox"><div class="q-cws" id="q-cws" role="group" aria-label="符号語（配置順）"></div></div>
           <div class="q-exp" id="q-exp" hidden>
-            <p class="q-sub">読み取りの結果<small id="q-readst"></small></p>
+            <p class="q-sub">読み取り結果<small id="q-readst"></small></p>
             <div class="q-meters" id="q-meters"></div>
             <div class="q-out" id="q-out" aria-live="polite"></div>
           </div>

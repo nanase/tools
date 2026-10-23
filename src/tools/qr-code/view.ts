@@ -189,7 +189,7 @@ function cwTitle(q: Encoded, c: number): string {
   return `符号語 ${c} · 0x${hex2(q.cw[c])} · ${pos}`;
 }
 
-/** 読んだ値の 8 ビット。元と違うビットだけ赤くする */
+/** 読み取った値の 8 ビット。正解値と違うビットだけ赤くする */
 const bitRowDiff = (v: number, ref: number, i0: number) =>
   `<div class="q-bitbox">${Array.from({ length: 8 }, (_, i) => {
     const b = (v >>> (7 - i)) & 1;
@@ -231,14 +231,14 @@ function stEc(q: Encoded, c: number): string {
     `<div class="q-blk">${cells}</div>` +
     `<p class="q-eq a"${ai(2)}>g(<i>x</i>) = (<i>x</i> − α⁰)(<i>x</i> − α¹) ⋯ (<i>x</i> − α${sup(ec - 1)})</p>` +
     note(
-      `データを g(<i>x</i>) で割った余りが誤り訂正語です。${ec} 語あれば、${ec / 2} 語まで直せます。${nb > 1 ? `${nb} ブロックに分け、1 語ずつ交互に並べます。` : ''}`,
+      `誤り訂正には<b>リード・ソロモン符号</b>を使います。データを g(<i>x</i>) で割った余りが誤り訂正語で、${ec} 語あれば ${ec / 2} 語まで訂正できます。${nb > 1 ? `${nb} ブロックに分け、1 語ずつ交互に並べます。` : ''}`,
     )
   );
 }
 
 function stPlace(q: Encoded, c: number): string {
-  const tail = note('右下から 2 列ずつ、上下に折り返しながら置きます。数字はビットの番号です。');
-  if (c < 0) return h3(`符号語 ${q.cw.length} 語を置く`, false) + tail;
+  const ALL = '全体は右下から始め、2 列ずつ上へ、下へと折り返して置きます。';
+  if (c < 0) return h3(`符号語 ${q.cw.length} 語を置く`, false) + note(ALL);
   const ms = cwModules(q, c),
     xs = ms.map((m) => m[0]),
     ys = ms.map((m) => m[1]),
@@ -246,6 +246,16 @@ function stPlace(q: Encoded, c: number): string {
     x1 = Math.max(...xs),
     y0 = Math.min(...ys),
     y1 = Math.max(...ys);
+  /* ビット 7 から 0 への行の進み方で、この符号語を置いた向きを決める */
+  const up = ys.every((y, i) => i === 0 || y <= ys[i - 1]),
+    down = ys.every((y, i) => i === 0 || y >= ys[i - 1]),
+    tail = note(
+      up
+        ? '2 列の右・左の順に、下から上へ置きます。数字はビットの番号です。'
+        : down
+          ? '2 列の右・左の順に、上から下へ置きます。数字はビットの番号です。'
+          : '列の端で折り返し、隣の 2 列へ移りながら置きます。数字はビットの番号です。',
+    );
   let g = '';
   for (let y = y0; y <= y1; y++)
     for (let x = x0; x <= x1; x++) {
@@ -264,7 +274,9 @@ function stPlace(q: Encoded, c: number): string {
 
 function stMask(q: Encoded, c: number): string {
   const head = h3(`マスク ${q.mask}`) + `<p class="q-eq a"${ai(0)}>${MASK_TEXT[q.mask]}</p>`,
-    tail = note('この式が成り立つ所を反転します。8 種のうちペナルティがいちばん小さいものを選びます。');
+    tail = note(
+      '同じ色の長い並びやファインダーに似た模様は読み取りを誤らせるので、データの明暗を模様で散らします。8 種のうちペナルティがいちばん小さいものを選びます。',
+    );
   if (c < 0) return head + tail;
   const f = MASKS[q.mask];
   let m = 0;
@@ -294,7 +306,7 @@ function stDone(q: Encoded): string {
     h3(`形式情報 · ${q.ecc}・マスク ${q.mask}`) +
     h +
     note(
-      `レベルとマスクの番号に検査ビットを足して XOR し、2 か所に置きます。3 ビットまでの誤りなら直せます。${q.ver >= 7 ? 'バージョン 7 以上は、バージョン情報も置きます。' : ''}`,
+      `レベルとマスクの番号に検査ビットを足して XOR し、2 か所に置きます。3 ビットまでの誤りなら訂正できます。${q.ver >= 7 ? 'バージョン 7 以上は、バージョン情報も置きます。' : ''}`,
     )
   );
 }
@@ -319,32 +331,28 @@ export function inspect(q: Encoded, stage: number, c: number, o: InspectOpts): s
   }
 }
 
-/** 誤り訂正実験のときの説明（選んだ符号語の、読んだ値と直した値） */
+/** 誤り訂正実験のときの説明（選んだ符号語の、読み取った値と正解値） */
 export function inspectSoil(q: Encoded, d: Decoded | null, c: number): string {
   if (!d)
     return (
       h3('形式情報を読めません', false) +
       note('形式情報が 2 か所とも 4 ビット以上ずれたので、レベルとマスクが分かりません。')
     );
-  if (c < 0) return h3('符号語を選ぶ', false) + note('図か表の符号語を押すと、読んだ値と直した値を出します。');
+  if (c < 0) return h3('符号語を選ぶ', false) + note('図か表の符号語を押すと、読み取った値と正解値を出します。');
   const got = d.recv[c],
     fix = d.fixed[c],
     s = d.src[c],
     r = d.rs[s.b],
-    t = q.bk.ec / 2,
     title =
       got === fix
         ? got === q.cw[c]
           ? `符号語 ${c} · 0x${hex2(got)} · 誤りなし`
-          : `符号語 ${c} · 0x${hex2(got)} · 直せなかった`
-        : `符号語 ${c} · 0x${hex2(got)} → 0x${hex2(fix)}`;
-  const why = r.ok
-    ? `ブロック ${s.b + 1} の誤りは ${r.fixes.length} 語で、${t} 語まで直せます。`
-    : `ブロック ${s.b + 1} は誤りが ${t} 語を超えたので、直せません。`;
+          : `符号語 ${c} · 0x${hex2(got)} · 訂正できなかった`
+        : `符号語 ${c} · 0x${hex2(got)} → 0x${hex2(fix)} に訂正`;
   return (
     h3(title) +
-    `<div class="q-mrow"><span class="a"${ai(0)}>読んだ値</span>${bitRowDiff(got, q.cw[c], 0)}</div>` +
-    `<div class="q-mrow"><span class="a"${ai(3)}>元の値</span>${bitRowA(q.cw[c], 'd', 3)}</div>` +
-    note(why)
+    `<div class="q-mrow"><span class="a"${ai(0)}>読み取った値</span>${bitRowDiff(got, q.cw[c], 0)}</div>` +
+    `<div class="q-mrow"><span class="a"${ai(3)}>正解値</span>${bitRowA(q.cw[c], 'd', 3)}</div>` +
+    (r.ok ? '' : note(`ブロック ${s.b + 1} は誤りが訂正できる上限を超えました。`))
   );
 }

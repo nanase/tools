@@ -1,6 +1,6 @@
 /**
  * QR コードのページの入口: 入力 → 符号化（encode.ts）→ QR コードの構造（段ごとの図・符号語の表・説明）・計算結果・マスクの比較。
- * 誤り訂正実験では図をなぞってしみやこすれを付け、そのたびに復号（decode.ts）して読み取りの結果を出す
+ * 誤り訂正実験では図をなぞってしみやこすれを付け、そのたびに復号（decode.ts）して読み取り結果を出す
  */
 import { Choice } from '../../lib/choice';
 import { $, $$, esc } from '../../lib/dom';
@@ -236,7 +236,7 @@ function drawNow(): void {
   );
 }
 new ResizeObserver(() => requestAnimationFrame(drawNow)).observe(fig);
-/** 直した符号語（配置順） */
+/** 訂正した符号語（配置順） */
 function badSet(): Set<number> {
   const s = new Set<number>();
   if (dec) for (let i = 0; i < dec.recv.length; i++) if (dec.recv[i] !== dec.fixed[i]) s.add(i);
@@ -323,6 +323,7 @@ $('#q-insp').addEventListener('click', (e) => {
   if (!(e.target as Element).closest('.q-replay')) return;
   const el = $('#q-insp'),
     h = el.innerHTML;
+  el.classList.remove('still');
   el.innerHTML = '';
   void el.offsetWidth;
   el.innerHTML = h;
@@ -379,9 +380,14 @@ function paintTable(): void {
 }
 
 /* ---------- まとめて描く ---------- */
+/** 説明の動きを始めからにする場面（段・操作・符号）。符号語を選び直しただけなら動かさずに出す */
+let inspKey = '';
 function render(): void {
   if (!q) return;
   drawNow();
+  const key = `${act}:${stage}:${q.ver}:${q.ecc}:${q.mask}:${q.text}`;
+  $('#q-insp').classList.toggle('still', key === inspKey);
+  inspKey = key;
   html(
     '#q-insp',
     act === 'soil' ? inspectSoil(q, dec, sel) : inspect(q, stage, sel, { autoMode: modeCh.value === 'auto' }),
@@ -443,7 +449,7 @@ function outputs(): void {
   txt('#o-data', `${q.bk.data - pads} / ${q.bk.data} 語`);
   txt('#o-datas', `埋め草 ${pads} 語`);
   txt('#o-ec', `${q.bk.ec * nb} 語`);
-  txt('#o-ecs', nb > 1 ? `ブロックごとに ${q.bk.ec / 2} 語まで直せる` : `${q.bk.ec / 2} 語まで直せる`);
+  txt('#o-ecs', nb > 1 ? `ブロックごとに ${q.bk.ec / 2} 語まで訂正できる` : `${q.bk.ec / 2} 語まで訂正できる`);
   txt('#o-mask', String(q.mask));
   txt(
     '#o-masks',
@@ -513,19 +519,16 @@ function maskPanel(): void {
   );
 }
 
-/* ---------- 読み取りの結果 ---------- */
+/* ---------- 読み取り結果 ---------- */
 function readPanel(): void {
   if (!q) return;
   const changed = soil ? soil.reduce((a, v, i) => a + (v !== q?.mods[i] ? 1 : 0), 0) : 0,
     d = soil && changed ? dec : baseDec;
-  txt('#q-readst', changed ? `変わったモジュール ${changed} 個` : 'まだ汚れはありません');
+  txt('#q-readst', changed ? `変わったモジュール ${changed} 個` : '');
   txt('#m-err', d ? String(d.rs.reduce((a, r) => a + (r.ok ? r.fixes.length : 0), 0)) : DASH);
   if (!d) {
     html('#q-meters', '');
-    html(
-      '#q-out',
-      '<span class="k">読み取り</span><span class="q-ng">形式情報を読めません（2 か所とも 4 ビット以上ずれた）</span>',
-    );
+    html('#q-out', '<span class="q-ng">読み取り失敗（形式情報が 2 か所とも 4 ビット以上ずれた）</span>');
     return;
   }
   /* ブロックごとの誤りの数（元と違う符号語）と上限 */
@@ -543,10 +546,7 @@ function readPanel(): void {
   }
   html('#q-meters', mh);
   if (!changed) {
-    html(
-      '#q-out',
-      `<span class="k">読んだ文字列</span><span class="v">${esc(d.parsed.text)}</span><span class="q-note">左の図をなぞると、選んだ道具でしみやこすれを付けられます。</span>`,
-    );
+    html('#q-out', `<span class="k">読み取れた文字列</span><span class="v">${esc(d.parsed.text)}</span>`);
     return;
   }
   const fixedPos = new Set<number>();
@@ -563,14 +563,14 @@ function readPanel(): void {
   const nFix = fixedPos.size;
   let out = '';
   if (wrongPos.size)
-    out += `<span class="k">そのまま読むと</span><span class="v">${show(d.raw, wrongPos, 'u') || '（読めない）'}</span>`;
+    out += `<span class="k">訂正しないで読み取ると</span><span class="v">${show(d.raw, wrongPos, 'u') || '（読めない）'}</span>`;
   if (d.ok && d.parsed.text === q.text)
-    out += `<span class="k">リード・ソロモン符号で直すと</span><span class="v">${show(d.parsed, fixedPos, 'em')}</span><span class="q-ok">${nFix ? `${nFix} 語を直して読めた` : '符号語に誤りはなく、そのまま読めた'}</span>`;
+    out += `<span class="k">リード・ソロモン符号で訂正すると</span><span class="v">${show(d.parsed, fixedPos, 'em')}</span><span class="q-ok">${nFix ? `読み取り成功（${nFix} 語を訂正）` : '読み取り成功（誤りなし）'}</span>`;
   else if (d.ok)
-    out += `<span class="k">リード・ソロモン符号で直すと</span><span class="v">${esc(d.parsed.text)}</span><span class="q-ng">誤りが多すぎて、別の正しい符号語に直してしまった（誤った読み取り）</span>`;
+    out += `<span class="k">リード・ソロモン符号で訂正すると</span><span class="v">${esc(d.parsed.text)}</span><span class="q-ng">読み取り失敗（誤りが多すぎて、別の正しい符号語に訂正してしまった）</span>`;
   else {
     const bad = d.rs.map((r, i) => (r.ok ? -1 : i + 1)).filter((i) => i > 0);
-    out += `<span class="q-ng">直せる上限を超えたので読めない（${nb > 1 ? `ブロック ${bad.join('・')}` : '誤りが多すぎる'}）</span>`;
+    out += `<span class="q-ng">読み取り失敗（訂正できる上限を超えた${nb > 1 ? `: ブロック ${bad.join('・')}` : ''}）</span>`;
   }
   html('#q-out', out);
 }
