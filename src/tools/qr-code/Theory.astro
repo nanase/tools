@@ -1,0 +1,120 @@
+---
+// 動作原理と式
+/* 本文の出典番号 */
+const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
+const al = (i: string) => `<msup><mi>α</mi>${i}</msup>`;
+---
+<h3>QR コードの形</h3>
+<p>QR コードは、暗いモジュールと明るいモジュールの正方形の格子です。バージョン <math><mi>v</mi></math>（1〜40）の大きさは <math><mn>17</mn><mo>+</mo><mn>4</mn><mi>v</mi></math> モジュール角で、まわりに 4 モジュールの余白を空けます<Fragment set:html={rf(1)} /><Fragment set:html={rf(2)} />。格子の一部は、読み取り機が位置と向きと大きさを知るための決まった模様（機能パターン）です。</p>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th>模様</th><th>役割</th></tr></thead>
+  <tbody>
+    <tr><td>ファインダー</td><td>3 つの角の 7 × 7 の同心の正方形。どの向きから横切っても暗・明・暗・明・暗が 1:1:3:1:1 で並ぶ</td></tr>
+    <tr><td>分離帯</td><td>ファインダーのまわりの明るい 1 列</td></tr>
+    <tr><td>タイミング</td><td>6 行目と 6 列目の、暗・明が交互の並び。モジュールの間隔を測る</td></tr>
+    <tr><td>位置合わせ</td><td>バージョン 2 以上の 5 × 5 の模様。ゆがみを直す目印</td></tr>
+    <tr><td>形式情報・バージョン情報</td><td>誤り訂正のレベルとマスク（15 ビット）、バージョン 7 以上はバージョン（18 ビット）。どちらも 2 か所に置く</td></tr>
+  </tbody>
+</table></div>
+<p>残りがデータの領域で、文字列から作った符号語を置きます。</p>
+
+<h3>文字列をビット列にする</h3>
+<p>文字列は、文字の種類に合ったモードで符号化します<Fragment set:html={rf(2)} />。モードが狭いほど、1 文字に使うビットが少なくなります。</p>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th>モード</th><th>指示子</th><th>使える文字</th><th>単位</th><th>文字数の欄（バージョン 1〜9・10〜26・27〜40）</th></tr></thead>
+  <tbody>
+    <tr><td>数字</td><td>0001</td><td>0〜9</td><td>3 文字を 10 ビット（余りは 2 文字 7・1 文字 4）</td><td>10・12・14 ビット</td></tr>
+    <tr><td>英数字</td><td>0010</td><td>0〜9・A〜Z・空白 $ % * + - . / :</td><td>2 文字を 45 進で 11 ビット（余りは 6）</td><td>9・11・13 ビット</td></tr>
+    <tr><td>8 ビットバイト</td><td>0100</td><td>任意のバイト（このツールは UTF-8）</td><td>1 バイトを 8 ビット</td><td>8・16・16 ビット</td></tr>
+    <tr><td>漢字</td><td>1000</td><td>Shift_JIS の 2 バイト文字</td><td>1 文字を 13 ビット</td><td>8・10・12 ビット</td></tr>
+  </tbody>
+</table></div>
+<p>漢字モードは、Shift_JIS の符号から 0x8140（0xE040 以上は 0xC140）を引き、上位のバイトに 0xC0 を掛けて下位のバイトを足した値を 13 ビットで書きます<Fragment set:html={rf(2)} />。モード指示子・文字数・データの後に、次の順でビット列を埋めます。</p>
+<ol class="flow">
+  <li><b>終端</b><span>0000（容量が足りなければ短く）</span></li>
+  <li><b>端数</b><span>8 の倍数になるまで 0</span></li>
+  <li><b>埋め草</b><span>11101100 と 00010001 を交互に</span></li>
+</ol>
+<p>できたビット列を 8 ビットずつ区切ったものが、データの符号語です。</p>
+
+<h3>リード・ソロモン符号</h3>
+<p>誤り訂正語はリード・ソロモン符号で作ります<Fragment set:html={rf(3)} /><Fragment set:html={rf(4)} />。符号語は 8 ビットなので、256 個の元からなる有限体 GF(2<sup>8</sup>) の上で計算します。足し算と引き算はビットごとの XOR で、掛け算は既約多項式 <math><msup><mi>x</mi><mn>8</mn></msup><mo>+</mo><msup><mi>x</mi><mn>4</mn></msup><mo>+</mo><msup><mi>x</mi><mn>3</mn></msup><mo>+</mo><msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><mn>1</mn></math>（0x11D）を法とする多項式の積です。原始元 <math><mi>α</mi><mo>=</mo><mn>2</mn></math> の累乗 <math set:html={`${al('<mn>0</mn>')}<mo>,</mo>${al('<mn>1</mn>')}<mo>,</mo><mo>…</mo><mo>,</mo>${al('<mn>254</mn>')}`} /> が、0 以外の 255 個の元を一度ずつ通ります。</p>
+<p>データの符号語 <math><msub><mi>d</mi><mn>0</mn></msub><mo>,</mo><mo>…</mo><mo>,</mo><msub><mi>d</mi><mrow><mi>k</mi><mo>−</mo><mn>1</mn></mrow></msub></math> を多項式の係数とみて、誤り訂正語 <math><mi>n</mi></math> 語は次の割り算の余りです。</p>
+<div class="eqs">
+  <math display="block" set:html={`<mi>g</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo><mo>=</mo><munderover><mo>∏</mo><mrow><mi>i</mi><mo>=</mo><mn>0</mn></mrow><mrow><mi>n</mi><mo>−</mo><mn>1</mn></mrow></munderover><mo stretchy="false">(</mo><mi>x</mi><mo>−</mo>${al('<mi>i</mi>')}<mo stretchy="false">)</mo>`} />
+  <math display="block" set:html={`<mi>D</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo><mo>=</mo><munderover><mo>∑</mo><mrow><mi>j</mi><mo>=</mo><mn>0</mn></mrow><mrow><mi>k</mi><mo>−</mo><mn>1</mn></mrow></munderover><msub><mi>d</mi><mi>j</mi></msub><msup><mi>x</mi><mrow><mi>k</mi><mo>−</mo><mn>1</mn><mo>−</mo><mi>j</mi></mrow></msup><mo>,</mo><mspace width="1em"/><mi>E</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo><mo>=</mo><mi>D</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo><msup><mi>x</mi><mi>n</mi></msup><mspace width="0.4em"/><mo>mod</mo><mspace width="0.4em"/><mi>g</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo>`} />
+</div>
+<p>データと誤り訂正語を並べた多項式 <math><mi>C</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo><mo>=</mo><mi>D</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo><msup><mi>x</mi><mi>n</mi></msup><mo>−</mo><mi>E</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo></math> は <math><mi>g</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo></math> で割り切れるので、<math set:html={`${al('<mn>0</mn>')}<mo>,</mo><mo>…</mo><mo>,</mo>${al('<mrow><mi>n</mi><mo>−</mo><mn>1</mn></mrow>')}`} /> で 0 になります。<math><mi>n</mi></math> 語の誤り訂正語で、どこが壊れたか分からない誤りを <math><mi>n</mi><mo>/</mo><mn>2</mn></math> 語まで直せます。</p>
+<p>バージョンとレベルが大きいと、データを複数のブロックに分け、ブロックごとに誤り訂正語を付けます。置くときは、各ブロックの 1 語目、2 語目…と交互に並べ、続けて誤り訂正語も交互に並べます<Fragment set:html={rf(2)} />。1 か所の汚れが 1 つのブロックに集まりにくくなります。</p>
+
+<h3>配置とマスク</h3>
+<p>符号語のビットは、右下の角から 2 列ずつ、上・下に折り返しながら、機能パターンと形式情報の所を避けて置きます。縦のタイミングの列（6 列目）は飛ばします<Fragment set:html={rf(2)} />。余ったモジュール（バージョンにより 0・3・4・7 個）は 0 です。</p>
+<p>次に、データの領域を 8 種のどれかの模様（マスク）で反転します。<math><mi>x</mi></math> は列、<math><mi>y</mi></math> は行の番号で、条件が成り立つモジュールを反転します。</p>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th>マスク</th><th>反転する条件</th><th>マスク</th><th>反転する条件</th></tr></thead>
+  <tbody>
+    <tr><td>0</td><td>(x + y) mod 2 = 0</td><td>4</td><td>(⌊y/2⌋ + ⌊x/3⌋) mod 2 = 0</td></tr>
+    <tr><td>1</td><td>y mod 2 = 0</td><td>5</td><td>xy mod 2 + xy mod 3 = 0</td></tr>
+    <tr><td>2</td><td>x mod 3 = 0</td><td>6</td><td>(xy mod 2 + xy mod 3) mod 2 = 0</td></tr>
+    <tr><td>3</td><td>(x + y) mod 3 = 0</td><td>7</td><td>((x + y) mod 2 + xy mod 3) mod 2 = 0</td></tr>
+  </tbody>
+</table></div>
+<p>8 種それぞれで形式情報まで書いた格子のペナルティを求め、いちばん小さいものを使います<Fragment set:html={rf(2)} /><Fragment set:html={rf(5)} />。</p>
+<dl class="syms">
+  <dt>N1</dt><dd>行・列に同じ色が 5 つ以上続く: 5 つで 3、1 つ増えるごとに 1</dd>
+  <dt>N2</dt><dd>同じ色の 2 × 2 の塊: 1 つにつき 3</dd>
+  <dt>N3</dt><dd>ファインダーに似た 1:1:3:1:1 の並びで、片側に明るい 4 モジュールが続くもの: 1 つにつき 40</dd>
+  <dt>N4</dt><dd>暗いモジュールの割合が 50 % から 5 % ずれるごとに 10</dd>
+</dl>
+
+<h3>形式情報とバージョン情報</h3>
+<p>形式情報は、誤り訂正のレベル 2 ビット（L 01・M 00・Q 11・H 10）とマスクの番号 3 ビットの 5 ビットに、BCH(15, 5) 符号の検査 10 ビットを足し、101010000010010 と XOR した 15 ビットです<Fragment set:html={rf(2)} />。検査ビットは、5 ビットを 10 ビット左へずらして生成多項式 <math><msup><mi>x</mi><mn>10</mn></msup><mo>+</mo><msup><mi>x</mi><mn>8</mn></msup><mo>+</mo><msup><mi>x</mi><mn>5</mn></msup><mo>+</mo><msup><mi>x</mi><mn>4</mn></msup><mo>+</mo><msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><mi>x</mi><mo>+</mo><mn>1</mn></math> で割った余りです。正しい 32 通りの符号どうしは 7 ビット以上違う（このツールのテストで総当たりで確かめた）ので、3 ビットまでの誤りなら最も近い符号に決められます<Fragment set:html={rf(4)} />。バージョン 7 以上は、バージョン 6 ビットに BCH(18, 6) の 12 ビットを足したバージョン情報も置きます。</p>
+
+<h3>読み取りと誤り訂正</h3>
+<p>読む側は、形式情報からレベルとマスクを知り、マスクを外し、置いた順に符号語を集めてブロックに戻します。受け取った多項式を <math><mi>R</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo><mo>=</mo><mi>C</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo><mo>+</mo><mi>e</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo></math> として、誤り <math><mi>e</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo></math> を次の順で求めます<Fragment set:html={rf(4)} />。</p>
+<ol class="flow">
+  <li><b>シンドローム</b><span>S<sub>i</sub> = R(α<sup>i</sup>)</span></li>
+  <li><b>誤り位置多項式</b><span>Berlekamp–Massey 法</span></li>
+  <li><b>誤りの位置</b><span>Chien 探索</span></li>
+  <li><b>誤りの大きさ</b><span>Forney の式</span></li>
+</ol>
+<div class="eqs">
+  <math display="block" set:html={`<msub><mi>S</mi><mi>i</mi></msub><mo>=</mo><mi>R</mi><mo stretchy="false">(</mo>${al('<mi>i</mi>')}<mo stretchy="false">)</mo><mo>=</mo><mi>e</mi><mo stretchy="false">(</mo>${al('<mi>i</mi>')}<mo stretchy="false">)</mo><mo>=</mo><munderover><mo>∑</mo><mrow><mi>l</mi><mo>=</mo><mn>1</mn></mrow><mi>ν</mi></munderover><msub><mi>Y</mi><mi>l</mi></msub><msubsup><mi>X</mi><mi>l</mi><mi>i</mi></msubsup><mo>,</mo><mspace width="1em"/><mi>i</mi><mo>=</mo><mn>0</mn><mo>,</mo><mo>…</mo><mo>,</mo><mi>n</mi><mo>−</mo><mn>1</mn>`} />
+  <math display="block" set:html={`<mi>Λ</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo><mo>=</mo><munderover><mo>∏</mo><mrow><mi>l</mi><mo>=</mo><mn>1</mn></mrow><mi>ν</mi></munderover><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><msub><mi>X</mi><mi>l</mi></msub><mi>x</mi><mo stretchy="false">)</mo><mo>,</mo><mspace width="1em"/><mi>Ω</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo><mo>=</mo><mi>S</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo><mi>Λ</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo><mspace width="0.4em"/><mo>mod</mo><mspace width="0.4em"/><msup><mi>x</mi><mi>n</mi></msup>`} />
+  <math display="block" set:html={`<msub><mi>Y</mi><mi>l</mi></msub><mo>=</mo><msub><mi>X</mi><mi>l</mi></msub><mfrac><mrow><mi>Ω</mi><mo stretchy="false">(</mo><msubsup><mi>X</mi><mi>l</mi><mrow><mo>−</mo><mn>1</mn></mrow></msubsup><mo stretchy="false">)</mo></mrow><mrow><msup><mi>Λ</mi><mo>′</mo></msup><mo stretchy="false">(</mo><msubsup><mi>X</mi><mi>l</mi><mrow><mo>−</mo><mn>1</mn></mrow></msubsup><mo stretchy="false">)</mo></mrow></mfrac>`} />
+</div>
+<dl class="syms">
+  <dt><math><mi>ν</mi></math></dt><dd>誤りの数。<math><mi>ν</mi><mo>≤</mo><mi>n</mi><mo>/</mo><mn>2</mn></math> なら直せる</dd>
+  <dt><math><msub><mi>X</mi><mi>l</mi></msub><mo>=</mo><msup><mi>α</mi><msub><mi>j</mi><mi>l</mi></msub></msup></math></dt><dd>誤りの位置（<math><msup><mi>x</mi><msub><mi>j</mi><mi>l</mi></msub></msup></math> の係数が壊れた）。符号語の番号は、長さ − 1 − <math><msub><mi>j</mi><mi>l</mi></msub></math></dd>
+  <dt><math><msub><mi>Y</mi><mi>l</mi></msub></math></dt><dd>誤りの大きさ。直した値は、読んだ値と <math><msub><mi>Y</mi><mi>l</mi></msub></math> の XOR</dd>
+  <dt><math><mi>Λ</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo></math></dt><dd>誤り位置多項式。根の逆数が誤りの位置。Berlekamp–Massey 法は、シンドロームの並びを生む最短の線形帰還シフトレジスタとして求める<Fragment set:html={rf(6)} /></dd>
+</dl>
+<ul class="tl">
+  <li>Chien 探索は、<math><mi>Λ</mi><mo stretchy="false">(</mo><msup><mi>α</mi><mrow><mo>−</mo><mi>j</mi></mrow></msup><mo stretchy="false">)</mo></math> をすべての位置 <math><mi>j</mi></math> で計算して根を探す<Fragment set:html={rf(7)} /></li>
+  <li>Forney の式は、生成多項式の根が <math set:html={al('<mn>0</mn>')} /> から始まる QR コードの形では、<math><msub><mi>X</mi><mi>l</mi></msub></math> を 1 つ掛けた形になる<Fragment set:html={rf(8)} /><Fragment set:html={rf(4)} /></li>
+  <li>誤りが <math><mi>n</mi><mo>/</mo><mn>2</mn></math> 語を超えると、<math><mi>Λ</mi></math> の次数が上限を超えるか、根の数が次数と合わず、直せないと分かることが多い。まれに、別の正しい符号語に近づき、誤った文字列に直してしまう</li>
+</ul>
+
+<h3>このツールで決めたこと</h3>
+<ul class="tl">
+  <li>文字列全体を 1 つのモードで符号化する。モードを途中で切り替えてビット列を短くする最適化と、ECI（文字コードの指定）はしない</li>
+  <li>バイトモードは UTF-8 にする。漢字モードの Shift_JIS は、ブラウザの TextDecoder で作った対応表を使う</li>
+  <li>自動のモードは、符号化できるモードのうちビット列がいちばん短いもの。自動のバージョンは、選んだレベルで入る最小のもの</li>
+  <li>「レベルを上げる」は、同じバージョンに入る範囲でいちばん高いレベルにする</li>
+  <li>N3 の数え方は Nayuki の実装に合わせ、記号の外の余白も明るいモジュールとして数える<Fragment set:html={rf(5)} /></li>
+  <li>読み取りは、モジュールの格子から始める。画像からファインダーを探して格子を読む処理と、消失（位置の分かる誤り）を使う訂正はしない。形式情報は、2 か所のうち近い方で決める</li>
+  <li>誤り訂正実験の道具の大きさ（しみは半径 1.35、こすれは半径 0.75 モジュール）と、ランダムで入れ替える数（8 個）</li>
+  <li>図と表の区分の色</li>
+</ul>
+
+<h3>出典</h3>
+<ol class="refs">
+  <li id="thy-r1"><span class="rf-for">QR コードの規格（有料のため、このツールでは直接は参照していない）</span><span class="rf-src">ISO/IEC 18004:2024, <i>Information technology — Automatic identification and data capture techniques — QR code bar code symbology specification</i></span></li>
+  <li id="thy-r2"><span class="rf-for">モードと文字数の欄、容量と誤り訂正の表、ブロックの並べ方、配置、マスクとペナルティ、形式情報とバージョン情報</span><span class="rf-src">Thonky.com, <a href="https://www.thonky.com/qr-code-tutorial/" target="_blank" rel="noopener">QR Code Tutorial</a></span></li>
+  <li id="thy-r3"><span class="rf-for">リード・ソロモン符号</span><span class="rf-src">I. S. Reed and G. Solomon, “Polynomial Codes Over Certain Finite Fields,” <i>Journal of the Society for Industrial and Applied Mathematics</i>, vol. 8, no. 2, pp. 300–304, 1960, <a href="https://doi.org/10.1137/0108018" target="_blank" rel="noopener">doi:10.1137/0108018</a></span></li>
+  <li id="thy-r4"><span class="rf-for">GF(2⁸) の計算、QR コードの形のリード・ソロモン符号の符号化と復号（シンドローム・Berlekamp–Massey 法・誤りの位置の探し方・Forney の式）</span><span class="rf-src">Wikiversity, <a href="https://en.wikiversity.org/wiki/Reed%E2%80%93Solomon_codes_for_coders" target="_blank" rel="noopener">Reed–Solomon codes for coders</a>（CC BY-SA 4.0）</span></li>
+  <li id="thy-r5"><span class="rf-for">符号化の照合（このツールの出力と、バージョン 1〜40 の模様が一致することをテストで確かめた）とペナルティの数え方</span><span class="rf-src">Project Nayuki, <a href="https://www.nayuki.io/page/qr-code-generator-library" target="_blank" rel="noopener">QR Code generator library</a>（MIT License）</span></li>
+  <li id="thy-r6"><span class="rf-for">Berlekamp–Massey 法</span><span class="rf-src">J. L. Massey, “Shift-Register Synthesis and BCH Decoding,” <i>IEEE Transactions on Information Theory</i>, vol. 15, no. 1, pp. 122–127, 1969, <a href="https://doi.org/10.1109/TIT.1969.1054260" target="_blank" rel="noopener">doi:10.1109/TIT.1969.1054260</a></span></li>
+  <li id="thy-r7"><span class="rf-for">Chien 探索</span><span class="rf-src">R. T. Chien, “Cyclic Decoding Procedures for Bose-Chaudhuri-Hocquenghem Codes,” <i>IEEE Transactions on Information Theory</i>, vol. 10, no. 4, pp. 357–363, 1964, <a href="https://doi.org/10.1109/TIT.1964.1053699" target="_blank" rel="noopener">doi:10.1109/TIT.1964.1053699</a></span></li>
+  <li id="thy-r8"><span class="rf-for">Forney の式</span><span class="rf-src">G. D. Forney, Jr., “On Decoding BCH Codes,” <i>IEEE Transactions on Information Theory</i>, vol. 11, no. 4, pp. 549–557, 1965, <a href="https://doi.org/10.1109/TIT.1965.1053825" target="_blank" rel="noopener">doi:10.1109/TIT.1965.1053825</a></span></li>
+</ol>

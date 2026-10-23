@@ -88,6 +88,14 @@ export const TOOLS: Tool[] = [
     k: '電波時計 標準電波 タイムコード 復号 デコード 受信 マイク decoder',
   },
   {
+    id: 'qr-code',
+    c: '信号・通信',
+    t: 'QR コード',
+    d: '文字列から QR コードができるまでを追い、しみやこすれで壊れた所を誤り訂正する様子を見せます。',
+    ic: 'qr',
+    k: 'qr code qrコード 二次元コード 2次元バーコード barcode 誤り訂正 error correction リード・ソロモン reed solomon bch ガロア体 有限体 galois field gf(256) シンドローム syndrome berlekamp massey chien forney マスク mask 形式情報 format information バージョン version 符号語 codeword 漢字 shift_jis utf-8 デンソーウェーブ denso wave iso/iec 18004 jis x 0510',
+  },
+  {
     id: 'fir',
     c: 'デジタルフィルタ',
     t: 'FIR フィルタ',
