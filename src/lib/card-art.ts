@@ -7,9 +7,9 @@
  */
 import { czaAlt, parDist, R22 } from '../tools/halo/labels';
 import { fanPath } from '../tools/jjy/fan';
-import { type Encoded, encode } from '../tools/qr-code/encode';
 import { FEAT, PG2, PG3, PW2, PW3, Q_FIG } from '../tools/piano-action/geom';
 import { OUTLINE as PA_OUT } from '../tools/piano-action/outline';
+import { type Encoded, encode } from '../tools/qr-code/encode';
 import {
   BODY_LEN,
   BRIDGE_M,
