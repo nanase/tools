@@ -318,6 +318,17 @@ function pick(c: number): void {
   b?.scrollIntoView({ block: 'nearest' });
 }
 
+/** 説明の「もう一度見る」: 中身を入れ直して、現れる動きを始めからにする */
+$('#q-insp').addEventListener('click', (e) => {
+  if (!(e.target as Element).closest('.q-replay')) return;
+  const el = $('#q-insp'),
+    h = el.innerHTML;
+  el.innerHTML = '';
+  void el.offsetWidth;
+  el.innerHTML = h;
+  el.querySelector<HTMLElement>('.q-replay')?.focus();
+});
+
 /* ---------- 段 ---------- */
 const stageBtns = $$<HTMLButtonElement>('#q-stage button');
 for (const b of stageBtns) b.addEventListener('click', () => setStage(Number(b.dataset.s)));
@@ -371,7 +382,10 @@ function paintTable(): void {
 function render(): void {
   if (!q) return;
   drawNow();
-  html('#q-insp', act === 'soil' ? inspectSoil(q, dec, sel) : inspect(q, stage, sel));
+  html(
+    '#q-insp',
+    act === 'soil' ? inspectSoil(q, dec, sel) : inspect(q, stage, sel, { autoMode: modeCh.value === 'auto' }),
+  );
   stageBar();
   outputs();
   maskPanel();
