@@ -42,19 +42,18 @@ const TOOLS_SOIL = [
   ],
 ];
 ---
-<SiteLayout title={name} tool={{ id: 'qr-code', name }} description="文字列から QR コードができるまでを、モード・ビット列・符号語・リード・ソロモン符号・配置・マスク・形式情報の段に分けて見せます。図を汚すと、壊れた符号語を誤り訂正で直して読む様子が分かります。" note="符号化と復号は、このツールの実装によるものです。画像から格子を読み取る処理はしません。QRコードは株式会社デンソーウェーブの登録商標です。">
-  <PageTitle title={name}>文字列から QR コードができるまでを、モード・ビット列・符号語・リード・ソロモン符号の誤り訂正語・配置・マスク・形式情報の段に分けて追います。図のモジュールと符号語の表は結びついていて、押した符号語のビットがどの文字のどの部分か、どこに置かれたかが分かります。「汚す」に切り替えて図をなぞると、壊れた符号語をリード・ソロモン符号で直して読み、直せる上限を超えると読めなくなります。</PageTitle>
+<SiteLayout title={name} tool={{ id: 'qr-code', name }} description="文字列から QR コードができるまでを、モード・ビット列・符号語・リード・ソロモン符号・配置・マスク・形式情報の段に分けて見せます。誤り訂正実験では、図にしみやこすれを付けると、壊れた符号語を誤り訂正で直して読む様子が分かります。" note="符号化と復号は、このツールの実装によるものです。画像から格子を読み取る処理はしません。QRコードは株式会社デンソーウェーブの登録商標です。">
+  <PageTitle title={name}>文字列から QR コードができるまでを、モード・ビット列・符号語・リード・ソロモン符号の誤り訂正語・配置・マスク・形式情報の段に分けて追います。図のモジュールと符号語の表は結びついていて、押した符号語のビットがどの文字のどの部分か、どこに置かれたかが分かります。「誤り訂正実験」に切り替えて図をなぞると、しみやこすれで壊れた符号語をリード・ソロモン符号で直して読み、直せる上限を超えると読めなくなります。</PageTitle>
   <div class="mini" aria-hidden="true"><span>VER<b id="m-ver"></b></span><span>ECC<b id="m-ecc"></b></span><span>MASK<b id="m-mask"></b></span><span>ERR<b id="m-err"></b></span></div>
 
   <div class="tgrid">
-    <Panel hid="hd-map" title="符号の地図" class="a-map" fixed>
+    <Panel hid="hd-map" title="QR コードの構造" class="a-map" fixed>
       <div slot="aux" class="seg" id="p-act" role="group" aria-label="図で行うこと" data-nosave>
-        <button type="button" data-v="look" aria-pressed="true" title="押した符号語の中身と置いた場所を調べる">調べる</button><button type="button" data-v="soil" aria-pressed="false" title="図をなぞって汚し、読み取って直す">汚す</button>
+        <button type="button" data-v="look" aria-pressed="true" title="押した符号語の中身と配置した場所を調べる">調べる</button><button type="button" data-v="soil" aria-pressed="false" title="図にしみやこすれを付け、読み取って誤り訂正で直す">誤り訂正実験</button>
       </div>
       <div slot="aux" class="seg"><button type="button" id="saveBtn" title="今の図の QR コードを PNG で保存する">保存</button></div>
 
-      <div class="q-playrow" id="q-playrow">
-        <button type="button" class="tp-pp" id="q-play" title="段を順に見る" aria-label="段を順に見る"><svg class="i-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.2l7.6 4.8L3 10.8z"/></svg><svg class="i-pause" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="2.8" height="9"/><rect x="7.2" y="1.5" width="2.8" height="9"/></svg></button>
+      <div class="q-stagerow" id="q-stagerow">
         <ol class="q-stage" id="q-stage" aria-label="符号化の段">
           {STAGES.map(([t, id], i) => <li><button type="button" data-s={i} aria-labelledby={id}></button><span id={id}>{t}<small class="hw" data-ph="000 ビット"></small></span></li>)}
         </ol>
@@ -62,10 +61,10 @@ const TOOLS_SOIL = [
 
       <div class="q-map">
         <div class="q-left">
-          <div class="q-tools" id="q-tools" role="group" aria-label="汚す道具" hidden>
+          <div class="q-tools" id="q-tools" role="group" aria-label="汚れを付ける道具" hidden>
             {TOOLS_SOIL.map(([v, l, t, ic], i) => <button type="button" class="q-tool" data-t={v} aria-pressed={i === 0 ? 'true' : 'false'} title={t}><svg viewBox="0 0 24 24" aria-hidden="true" set:html={ic} />{l}</button>)}
             <button type="button" class="q-tool" id="q-rand" title="ランダムに 8 個のモジュールの明暗を入れ替える"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="7" cy="8" r="1.5"/><circle cx="16" cy="6" r="1.5"/><circle cx="12" cy="13" r="1.5"/><circle cx="6" cy="17" r="1.5"/><circle cx="18" cy="16" r="1.5"/></svg>ランダム</button>
-            <button type="button" class="q-tool r" id="q-clean" title="汚す前に戻す"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4.5V9h4.5"/></svg>元に戻す</button>
+            <button type="button" class="q-tool r" id="q-clean" title="汚れをすべて消す"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4.5V9h4.5"/></svg>元に戻す</button>
           </div>
           <div class="q-fig" id="q-fig" tabindex="0" role="group" aria-roledescription="図" aria-label="QR コードの図。押した符号語を選ぶ。← → で前後の符号語へ移る"><canvas id="cv-map" width="370" height="370"></canvas></div>
           <div class="sbar rdbar" data-ph="(176, 176) · 符号語 3705 のビット 7 · 誤り訂正"><span class="rd" id="q-rd"></span></div>
@@ -74,7 +73,12 @@ const TOOLS_SOIL = [
         </div>
         <div class="q-right">
           <p class="q-sub">符号語<small id="q-cwn"></small></p>
-          <div class="q-cwbox"><div class="q-cws" id="q-cws" role="group" aria-label="符号語（置く順）"></div></div>
+          <div class="q-cwbox"><div class="q-cws" id="q-cws" role="group" aria-label="符号語（配置順）"></div></div>
+          <div class="q-exp" id="q-exp" hidden>
+            <p class="q-sub">読み取りの結果<small id="q-readst"></small></p>
+            <div class="q-meters" id="q-meters"></div>
+            <div class="q-out" id="q-out" aria-live="polite"></div>
+          </div>
           <div class="q-insp" id="q-insp" aria-live="polite"></div>
         </div>
       </div>
@@ -89,18 +93,18 @@ const TOOLS_SOIL = [
             <div class="c-val"><textarea id="q-text" rows="2" maxlength={MAX_LEN} spellcheck="false" autocomplete="off" autocapitalize="off" aria-describedby="q-cnt m-text">{TEXT0}</textarea></div>
             <div class="c-sub"><p class="q-cnt" id="q-cnt"></p><p class="msg" id="m-text" aria-live="polite"></p></div>
           </div>
-          <ChoiceRow k="ecc" name="誤り訂正" sub="誤り訂正語の割合。高いほど汚れに強いが、同じ文字列でも型番が大きくなる" choices={ECC_CHOICES} value="M" />
+          <ChoiceRow k="ecc" name="誤り訂正" sub="誤り訂正語の割合。高いほど汚れに強いが、同じ文字列でもバージョンが大きくなる" choices={ECC_CHOICES} value="M" />
           <ParamRow d={VER} />
         </div>
         <More id="g-in"><div class="ptab">
           <ChoiceRow k="mode" name="モード" sub="文字をビットにする方法。文字列全体を 1 つのモードで符号化する" choices={MODE_CHOICES} value="auto" msg />
-          <ChoiceRow k="boost" name="レベルを上げる" sub="型番を変えずに入るなら、誤り訂正のレベルを上げる（多くの生成ライブラリの既定）" choices={BOOST_CHOICES} value="0" />
+          <ChoiceRow k="boost" name="レベルを上げる" sub="バージョンを変えずに入るなら、誤り訂正のレベルを上げる（多くの生成ライブラリの既定）" choices={BOOST_CHOICES} value="0" />
         </div></More>
       </Panel>
 
       <Panel hid="hd-out" title="計算結果" class="a-out">
         <dl class="metrics c3">
-          <div class="m m-main"><dt>型番</dt><dd><span id="o-ver"></span><span class="m-sub" id="o-vers"></span></dd></div>
+          <div class="m m-main"><dt>バージョン</dt><dd><span id="o-ver"></span><span class="m-sub" id="o-vers"></span></dd></div>
           <div class="m"><dt>データ</dt><dd><span id="o-data"></span><span class="m-sub" id="o-datas"></span></dd></div>
           <div class="m"><dt>誤り訂正語</dt><dd><span id="o-ec"></span><span class="m-sub" id="o-ecs"></span></dd></div>
           <div class="m"><dt>マスク</dt><dd><span id="o-mask"></span><span class="m-sub" id="o-masks"></span></dd></div>
@@ -114,23 +118,14 @@ const TOOLS_SOIL = [
     <div class="col c2">
       <Panel hid="hd-mask" title="マスクの比較" class="a-mask">
         <div slot="aux" class="seg" id="p-mauto" role="group" aria-label="マスクの選び方" data-nosave>
-          <button type="button" data-v="auto" aria-pressed="true" title="失点がいちばん小さいマスクを使う">自動</button><button type="button" data-v="fix" aria-pressed="false" title="下で選んだマスクを使う">固定</button>
+          <button type="button" data-v="auto" aria-pressed="true" title="ペナルティがいちばん小さいマスクを使う">自動</button><button type="button" data-v="fix" aria-pressed="false" title="下で選んだマスクを使う">固定</button>
         </div>
         <div class="q-masks-c"><div class="q-masks" id="q-masks" role="group" aria-label="マスク">
           {Array.from({ length: 8 }, (_, i) => <button type="button" class="q-mask" data-m={i} aria-pressed="false"><canvas width="58" height="58" aria-hidden="true"></canvas><span class="t"><b>{i}</b><span></span></span></button>)}
         </div></div>
-        <p class="q-sub q-sub2">失点の内訳<small>小さいほど読み取りやすい</small></p>
+        <p class="q-sub q-sub2">ペナルティの内訳<small>小さいほど読み取りやすい</small></p>
         <div class="q-pen" id="q-pen"></div>
         <div class="q-pen-leg"><span><i class="n1"></i>N1 同じ色の並び</span><span><i class="n2"></i>N2 2×2 の塊</span><span><i class="n3"></i>N3 ファインダーに似た並び</span><span><i class="n4"></i>N4 明暗の偏り</span></div>
-      </Panel>
-
-      <Panel hid="hd-read" title="読み取りの結果" class="a-read">
-        <span slot="aux" class="aux" id="q-readst"></span>
-        <div class="q-read">
-          <div class="q-fig q-thumb"><canvas id="cv-soil" width="150" height="150" aria-hidden="true"></canvas></div>
-          <div class="q-meters" id="q-meters"></div>
-        </div>
-        <div class="q-out" id="q-out"></div>
       </Panel>
     </div>
 

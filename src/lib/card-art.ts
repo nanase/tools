@@ -26,7 +26,7 @@ import {
 
 export type Art = (t: number) => string;
 
-/** カードの QR コード（型番 1・M の「QR」。初めて描くときに作る） */
+/** カードの QR コード（バージョン 1・M の「QR」。初めて描くときに作る） */
 let qr0: Encoded | null = null;
 function QR(): Encoded {
   if (!qr0) {
@@ -361,7 +361,7 @@ export const ART: Record<string, Art> = {
     }
     return P('b', pl(b)) + P('a', jjySteps(CODE, S, off - 3, 33, 43));
   },
-  /* QR コード: 型番 1 の QR コードの上をしみが動き、しみのかかった符号語（右の 26 本）が伸びる */
+  /* QR コード: バージョン 1 の QR コードの上をしみが動き、しみのかかった符号語（右の 26 本）が伸びる */
   qr(t) {
     const q = QR(),
       n = q.n,

@@ -1,5 +1,5 @@
 /**
- * 符号の地図（canvas）を描く。QR コードは地の色に依らず白地に描く（読み取れる色のまま見せるため）。
+ * QR コードの構造（canvas）を描く。QR コードは地の色に依らず白地に描く（読み取れる色のまま見せるため）。
  * 区分の色は、この図と符号語の表だけで使う（信号色・LED の色とは別。style.css の --q-* の明るい地の値と同じ）
  */
 import type { Encoded } from './encode';
@@ -42,11 +42,11 @@ export interface MapState {
   q: Encoded;
   cats: Cat[];
   stage: number;
-  /** 選んだ符号語（置く順の番号。−1 はなし） */
+  /** 選んだ符号語（配置順の番号。−1 はなし） */
   sel: number;
-  /** 汚した格子（汚すときだけ） */
+  /** 汚れを付けた格子（誤り訂正実験のときだけ） */
   soil: Uint8Array | null;
-  /** 直した符号語（汚すときだけ） */
+  /** 直した符号語（誤り訂正実験のときだけ） */
   bad: ReadonlySet<number>;
 }
 
@@ -94,7 +94,7 @@ function stroke(
   ctx.setLineDash([]);
 }
 
-/** 符号の地図を描く。k は 1 モジュールの画素数 */
+/** QR コードの構造を描く。k は 1 モジュールの画素数 */
 export function drawMap(ctx: CanvasRenderingContext2D, k: number, s: MapState, edges: number[]): void {
   const { q, stage, soil } = s,
     n = q.n,
@@ -155,7 +155,7 @@ export function drawMask(ctx: CanvasRenderingContext2D, k: number, q: Encoded, m
     }
 }
 
-/** 白黒の格子（汚したもの） */
+/** 白黒の格子（保存する図） */
 export function drawPlain(ctx: CanvasRenderingContext2D, k: number, m: Uint8Array, n: number, qz = QZ): void {
   const W = (n + 2 * qz) * k;
   ctx.fillStyle = COL.paper;

@@ -85,7 +85,7 @@ describe('リード・ソロモン符号', () => {
   });
 });
 
-describe('型番ごとの数', () => {
+describe('バージョンごとの数', () => {
   it('大きさと位置合わせの模様（Thonky の表の例）', () => {
     expect(size(1)).toBe(21);
     expect(size(40)).toBe(177);
@@ -107,7 +107,7 @@ describe('型番ごとの数', () => {
     expect(rem[0]).toBe(0);
     expect(rem[1]).toBe(7);
   });
-  it('形式情報の 32 通りの符号どうしは 7 ビット以上、型番情報は 8 ビット以上違う', () => {
+  it('形式情報の 32 通りの符号どうしは 7 ビット以上、バージョン情報は 8 ビット以上違う', () => {
     const pop = (v: number) => v.toString(2).replace(/0/g, '').length;
     const f = ['L', 'M', 'Q', 'H'].flatMap((e) => Array.from({ length: 8 }, (_, m) => formatBits(e as Ecc, m)));
     const v = Array.from({ length: 34 }, (_, i) => versionBits(i + 7));
@@ -115,7 +115,7 @@ describe('型番ごとの数', () => {
     expect(minD(f)).toBe(7);
     expect(minD(v)).toBe(8);
   });
-  it('形式情報と型番情報（BCH）', () => {
+  it('形式情報とバージョン情報（BCH）', () => {
     expect(formatBits('M', 2).toString(2).padStart(15, '0')).toBe('101111001111100');
     expect(formatBits('L', 4).toString(2).padStart(15, '0')).toBe('110011000101111');
     expect(versionBits(7).toString(2).padStart(18, '0')).toBe('000111110010010100');
@@ -149,7 +149,7 @@ describe('符号化', () => {
     ).toBe('BF 78 EC BF A7 DC FC F1 D3 FB 55 1A 66 2A D1 21 CA 50 F9 91 29 38 43 97 D4 85');
     expect(q.pens.map((p) => p.total)).toEqual([1545, 1383, 1306, 1332, 1428, 1407, 1384, 1416]);
   });
-  it('Nayuki の実装と同じ模様になる（型番 1〜40、4 つのレベル、3 つのモード）', () => {
+  it('Nayuki の実装と同じ模様になる（バージョン 1〜40、4 つのレベル、3 つのモード）', () => {
     const fx = JSON.parse(readFileSync(new URL('./fixtures/qr-code/nayuki.json', import.meta.url), 'utf8'));
     for (const c of fx.cases as {
       text: string;
@@ -178,14 +178,14 @@ describe('符号化', () => {
     expect(q.mode).toBe('kanji');
     expect(decode(q.mods, q.n)?.parsed.text).toBe('漢字モード');
   });
-  it('入らない長さ・固定した型番・レベルを上げる', () => {
+  it('入らない長さ・固定したバージョン・レベルを上げる', () => {
     expect(encode('A'.repeat(5000), opts)).toMatchObject({ err: 'long', ver: 40 });
     expect(ok(encode('HELLO', { ...opts, ver: 5 })).ver).toBe(5);
     expect(encode('A'.repeat(100), { ...opts, ver: 1 })).toMatchObject({ err: 'long', ver: 1 });
     const b = ok(encode('https://nanase.cc/tools/qr-code/', { ...opts, boost: true }));
     expect([b.ver, b.ecc, b.ecc0]).toEqual([3, 'Q', 'M']);
   });
-  it('失点の 4 つの和', () => {
+  it('ペナルティの 4 つの和', () => {
     const q = ok(encode('HELLO WORLD', opts));
     for (const p of q.pens) expect(p.n1 + p.n2 + p.n3 + p.n4).toBe(p.total);
     expect(penalty(q.mods, q.n).total).toBe(q.pens[q.mask].total);
@@ -206,7 +206,7 @@ describe('符号化', () => {
 });
 
 describe('復号', () => {
-  it('汚していなければそのまま読める（モードと型番を変えて）', () => {
+  it('汚れがなければそのまま読める（モードとバージョンを変えて）', () => {
     for (const [t, m] of [
       ['https://nanase.cc/tools/qr-code/', 'auto'],
       ['31415926535897932384626433832795', 'num'],
@@ -241,12 +241,12 @@ describe('復号', () => {
     expect(d?.parsed.text).toBe('https://nanase.cc/tools/qr-code/');
     expect(d?.raw.text).not.toBe(d?.parsed.text);
   });
-  it('ブロックごとに上限まで壊しても読める（型番 10・H）', () => {
+  it('ブロックごとに上限まで壊しても読める（バージョン 10・H）', () => {
     const t = 'x'.repeat(100),
       q = ok(encode(t, { ...opts, ecc: 'H', ver: 10 })),
       d0 = decode(q.mods, q.n);
     expect(d0?.ok).toBe(true);
-    /* 置く順の符号語を、ブロックごとに ec/2 語ずつ壊す */
+    /* 配置順の符号語を、ブロックごとに ec/2 語ずつ壊す */
     const m = q.mods.slice(),
       per = new Map<number, number>(),
       hit = new Set<number>();

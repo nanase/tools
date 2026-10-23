@@ -1,6 +1,6 @@
 /**
- * QR コードのページの入口: 入力 → 符号化（encode.ts）→ 符号の地図（段ごとの図・符号語の表・説明）・計算結果・マスクの比較。
- * 「汚す」では図をなぞって格子を変え、そのたびに復号（decode.ts）して読み取りの結果を出す
+ * QR コードのページの入口: 入力 → 符号化（encode.ts）→ QR コードの構造（段ごとの図・符号語の表・説明）・計算結果・マスクの比較。
+ * 誤り訂正実験では図をなぞってしみやこすれを付け、そのたびに復号（decode.ts）して読み取りの結果を出す
  */
 import { Choice } from '../../lib/choice';
 import { $, $$, esc } from '../../lib/dom';
@@ -79,7 +79,7 @@ let act: 'look' | 'soil' = 'look';
 let soil: Uint8Array | null = null;
 let dec: Decoded | null = null;
 new Choice<'look' | 'soil'>($('#p-act'), (v) => setAct(v));
-/** 汚していないときの読み取り（入力が変わるたびに作る） */
+/** 汚れのないときの読み取り（入力が変わるたびに作る） */
 let baseDec: Decoded | null = null;
 
 const ERR_TEXT = (e: EncodeError): string => {
@@ -90,8 +90,8 @@ const ERR_TEXT = (e: EncodeError): string => {
       return `${MODE_NAME[e.mode]}モードでは「${vis(e.ch)}」（${e.at + 1} 文字目）を符号化できません`;
     default:
       return e.ver === 40
-        ? `長すぎて型番 40 にも入りません（${e.need} ビット、容量 ${e.cap} ビット）`
-        : `型番 ${e.ver} に入りません（${e.need} ビット、容量 ${e.cap} ビット）。型番を上げるか自動にしてください`;
+        ? `長すぎてバージョン 40 にも入りません（${e.need} ビット、容量 ${e.cap} ビット）`
+        : `バージョン ${e.ver} に入りません（${e.need} ビット、容量 ${e.cap} ビット）。バージョンを上げるか自動にしてください`;
   }
 };
 
@@ -146,15 +146,15 @@ function counts(r: Encoded | null): void {
   );
 }
 
-/* ---------- 汚す ---------- */
+/* ---------- 誤り訂正実験 ---------- */
 function setAct(v: 'look' | 'soil'): void {
   act = v;
-  stopPlay();
   if (v === 'soil' && q && !soil) soil = q.mods.slice();
   $('#q-tools').hidden = v !== 'soil';
   $('#q-leg').hidden = v === 'soil';
   $('#q-leg2').hidden = v !== 'soil';
-  $('#q-playrow').classList.toggle('off', v === 'soil');
+  $('#q-stagerow').hidden = v === 'soil';
+  $('#q-exp').hidden = v !== 'soil';
   $('#q-fig').classList.toggle('soil', v === 'soil');
   redecode();
   buildTable();
@@ -179,7 +179,7 @@ $('#q-clean').addEventListener('click', () => {
   soil = q.mods.slice();
   soiled();
 });
-/** 汚した格子が変わった */
+/** 汚れを付けた格子が変わった */
 let rq = 0;
 function soiled(): void {
   if (rq) return;
@@ -236,7 +236,7 @@ function drawNow(): void {
   );
 }
 new ResizeObserver(() => requestAnimationFrame(drawNow)).observe(fig);
-/** 直した符号語（置く順） */
+/** 直した符号語（配置順） */
 function badSet(): Set<number> {
   const s = new Set<number>();
   if (dec) for (let i = 0; i < dec.recv.length; i++) if (dec.recv[i] !== dec.fixed[i]) s.add(i);
@@ -328,27 +328,6 @@ function setStage(s: number): void {
   paintTable();
   render();
 }
-let playTimer: ReturnType<typeof setInterval> | undefined;
-const playBtn = $<HTMLButtonElement>('#q-play');
-playBtn.addEventListener('click', () => {
-  if (playTimer) {
-    stopPlay();
-    return;
-  }
-  if (stage >= STAGE.done) setStage(STAGE.text);
-  playBtn.classList.add('on');
-  playBtn.setAttribute('aria-label', '止める');
-  playTimer = setInterval(() => {
-    if (stage >= STAGE.done) stopPlay();
-    else setStage(stage + 1);
-  }, 1600);
-});
-function stopPlay(): void {
-  clearInterval(playTimer);
-  playTimer = undefined;
-  playBtn.classList.remove('on');
-  playBtn.setAttribute('aria-label', '段を順に見る');
-}
 
 /* ---------- 符号語の表 ---------- */
 function buildTable(): void {
@@ -358,7 +337,7 @@ function buildTable(): void {
     .map((_, i) => `<button type="button" data-c="${i}"><small>${i}</small><span></span></button>`)
     .join('');
   const nb = q.bk.sizes.length;
-  txt('#q-cwn', `${q.cw.length} 語（データ ${q.bk.data} + 誤り訂正 ${q.bk.ec}${nb > 1 ? ` × ${nb}` : ''}）· 置く順`);
+  txt('#q-cwn', `${q.cw.length} 語（データ ${q.bk.data} + 誤り訂正 ${q.bk.ec}${nb > 1 ? ` × ${nb}` : ''}）· 配置順`);
   paintTable();
 }
 $('#q-cws').addEventListener('click', (e) => {
@@ -423,7 +402,7 @@ function stageBar(): void {
   });
 }
 
-/** 型番 ver・レベル ecc に入る文字数（モードの単位） */
+/** バージョン ver・レベル ecc に入る文字数（モードの単位） */
 function capChars(mode: Mode, ver: number, ecc: Ecc): number {
   const a = capBits(ver, ecc) - 4 - ccBits(mode, ver);
   if (a <= 0) return 0;
@@ -454,7 +433,7 @@ function outputs(): void {
   txt('#o-mask', String(q.mask));
   txt(
     '#o-masks',
-    `失点 ${q.pens[q.mask].total}${maskFix >= 0 && q.mask !== best ? `（最小は ${best} の ${q.pens[best].total}）` : ''}`,
+    `ペナルティ ${q.pens[q.mask].total}${maskFix >= 0 && q.mask !== best ? `（最小は ${best} の ${q.pens[best].total}）` : ''}`,
   );
   const dark = q.pens[q.mask].dark;
   txt('#o-dark', `${((dark / (q.n * q.n)) * 100).toFixed(1)} %`);
@@ -463,13 +442,13 @@ function outputs(): void {
   txt(
     '#o-rooms',
     up.length
-      ? `${up[up.length - 1]} でも同じ型番`
+      ? `${up[up.length - 1]} でも同じバージョン`
       : q.ecc === 'H'
         ? 'いちばん高いレベル'
-        : '上のレベルでは型番が上がる',
+        : '上のレベルではバージョンが上がる',
   );
   txt('#o-rem', String(rem));
-  txt('#o-rems', `型番 ${q.ver} の端数`);
+  txt('#o-rems', `バージョン ${q.ver} の端数`);
   txt('#m-ver', `${q.ver}`);
   txt('#m-ecc', q.ecc);
   txt('#m-mask', String(q.mask));
@@ -506,7 +485,7 @@ function maskPanel(): void {
     b.classList.toggle('best', i === best);
     const s = b.querySelector('.t span') as HTMLElement;
     s.textContent = String(q?.pens[i].total);
-    b.title = `マスク ${i}: 失点 ${q?.pens[i].total}`;
+    b.title = `マスク ${i}: ペナルティ ${q?.pens[i].total}`;
   });
   const w = (v: number) => `${((v / max) * 100).toFixed(2)}%`;
   html(
@@ -521,18 +500,11 @@ function maskPanel(): void {
 }
 
 /* ---------- 読み取りの結果 ---------- */
-const scv = $<HTMLCanvasElement>('#cv-soil');
 function readPanel(): void {
   if (!q) return;
-  const m = soil ?? q.mods,
-    side = q.n + 2 * QZ,
-    k = Math.max(1, Math.round((150 * devicePixelRatio) / side));
-  scv.width = side * k;
-  scv.height = side * k;
-  drawPlain(scv.getContext('2d') as CanvasRenderingContext2D, k, m, q.n);
   const changed = soil ? soil.reduce((a, v, i) => a + (v !== q?.mods[i] ? 1 : 0), 0) : 0,
     d = soil && changed ? dec : baseDec;
-  txt('#q-readst', changed ? `変えたモジュール ${changed} 個` : '汚していません');
+  txt('#q-readst', changed ? `変わったモジュール ${changed} 個` : 'まだ汚れはありません');
   txt('#m-err', d ? String(d.rs.reduce((a, r) => a + (r.ok ? r.fixes.length : 0), 0)) : DASH);
   if (!d) {
     html('#q-meters', '');
@@ -559,7 +531,7 @@ function readPanel(): void {
   if (!changed) {
     html(
       '#q-out',
-      `<span class="k">読んだ文字列</span><span class="v">${esc(d.parsed.text)}</span><span class="q-note">「符号の地図」で「汚す」を選び、図をなぞると汚せます。</span>`,
+      `<span class="k">読んだ文字列</span><span class="v">${esc(d.parsed.text)}</span><span class="q-note">左の図をなぞると、選んだ道具でしみやこすれを付けられます。</span>`,
     );
     return;
   }

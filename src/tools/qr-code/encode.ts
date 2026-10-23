@@ -1,6 +1,6 @@
 /**
  * QR コードの符号化: 文字列 → モードと文字数・データのビット列 → 終端と埋め草 → 符号語 → ブロックごとのリード・ソロモン符号
- * → 交互に並べる → ジグザグに置く → 8 つのマスクの失点を比べる → 形式情報・型番情報。
+ * → 交互に並べる → ジグザグに置く → 8 つのマスクのペナルティを比べる → 形式情報・バージョン情報。
  * 文字列は 1 つのモードでまとめて符号化する（モードを途中で切り替える最適化はしない）
  */
 import { rsEncode } from './rs';
@@ -163,7 +163,7 @@ export interface Span {
 export const needBits = (us: readonly Unit[], m: Mode, ver: number): number =>
   4 + ccBits(m, ver) + us.reduce((s, u) => s + u.bits, 0);
 
-/* ---------- 失点 ---------- */
+/* ---------- ペナルティ ---------- */
 export interface Penalty {
   /** 同じ色が 5 つ以上並ぶ（3 + 5 を超えた数） */
   n1: number;
@@ -178,7 +178,7 @@ export interface Penalty {
 }
 
 /**
- * マスクの失点。1:1:3:1:1 の並びは、両側のどちらかに 4 つ以上の明るいモジュール（記号の外の余白を含む）が
+ * マスクのペナルティ。1:1:3:1:1 の並びは、両側のどちらかに 4 つ以上の明るいモジュール（記号の外の余白を含む）が
  * あるものを数える（Nayuki の実装と同じ数え方）
  */
 export function penalty(m: Uint8Array, n: number): Penalty {
@@ -235,13 +235,13 @@ export function penalty(m: Uint8Array, n: number): Penalty {
 /* ---------- 符号化 ---------- */
 export interface Options {
   ecc: Ecc;
-  /** 0 なら自動（入る最小の型番） */
+  /** 0 なら自動（入る最小のバージョン） */
   ver: number;
-  /** −1 なら自動（失点の最も小さいマスク） */
+  /** −1 なら自動（ペナルティの最も小さいマスク） */
   mask: number;
   /** 'auto' なら自動 */
   mode: Mode | 'auto';
-  /** 同じ型番に入るなら誤り訂正のレベルを上げる */
+  /** 同じバージョンに入るなら誤り訂正のレベルを上げる */
   boost: boolean;
 }
 
@@ -277,7 +277,7 @@ export interface Encoded {
   /** データの符号語（ブロックに分ける前の並び） */
   data: number[];
   blocks: { data: number[]; ec: number[] }[];
-  /** 置く順の符号語 */
+  /** 配置順の符号語 */
   cw: number[];
   src: Src[];
   frame: Frame;
@@ -285,15 +285,15 @@ export interface Encoded {
   cwAt: Int16Array;
   /** モジュール → 符号語の中のビット（7 が最上位）。符号語でなければ −1 */
   bitAt: Int8Array;
-  /** マスクをかける前（機能パターン＋符号語。形式情報・型番情報は 0） */
+  /** マスクをかける前（機能パターン＋符号語。形式情報・バージョン情報は 0） */
   base: Uint8Array;
   pens: Penalty[];
-  /** 完成（マスク・形式情報・型番情報の後） */
+  /** 完成（マスク・形式情報・バージョン情報の後） */
   mods: Uint8Array;
   fmt: number;
 }
 
-/** 置く順の符号語の出どころ: データ語を 1 語ずつブロックの順に交互に並べ、その後に誤り訂正語を同じく交互に並べる */
+/** 配置順の符号語の出どころ: データ語を 1 語ずつブロックの順に交互に並べ、その後に誤り訂正語を同じく交互に並べる */
 export function srcOrder(bk: Blocks): Src[] {
   const out: Src[] = [],
     maxD = Math.max(...bk.sizes);
@@ -304,7 +304,7 @@ export function srcOrder(bk: Blocks): Src[] {
   return out;
 }
 
-/** 型番 ver・レベル ecc のデータのビット数 */
+/** バージョン ver・レベル ecc のデータのビット数 */
 export const capBits = (ver: number, ecc: Ecc): number => blocks(ver, ecc).data * 8;
 
 export function encode(text: string, o: Options): Encoded | EncodeError {
@@ -417,7 +417,7 @@ export function encode(text: string, o: Options): Encoded | EncodeError {
   };
 }
 
-/** 形式情報と型番情報を書き込む */
+/** 形式情報とバージョン情報を書き込む */
 export function drawInfo(m: Uint8Array, n: number, ver: number, ecc: Ecc, mask: number): void {
   const f = formatBits(ecc, mask);
   for (const cells of formatCells(n))
@@ -433,7 +433,7 @@ export function drawInfo(m: Uint8Array, n: number, ver: number, ecc: Ecc, mask: 
   }
 }
 
-/** 型番 ver のマスクの模様（データの領域だけ 1） */
+/** バージョン ver のマスクの模様（データの領域だけ 1） */
 export function maskPattern(ver: number, mk: number): Uint8Array {
   const fr = frame(ver),
     n = size(ver),

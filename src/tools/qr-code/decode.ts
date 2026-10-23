@@ -1,7 +1,7 @@
 /**
  * QR コードの復号（モジュールの格子 → 文字列）: 形式情報を読む → マスクを外す → ジグザグに符号語を集める
  * → ブロックに戻す → ブロックごとにリード・ソロモン符号で直す → モードと文字数に従ってビット列を読む。
- * 画像から格子を読み取る処理（ファインダーを探す・傾きを直す）はしない。格子の大きさから型番を決める
+ * 画像から格子を読み取る処理（ファインダーを探す・傾きを直す）はしない。格子の大きさからバージョンを決める
  */
 import { ALNUM, ccBits, MODE_IND, type Mode, type Src, sjisChar, srcOrder } from './encode';
 import { type RsResult, rsDecode } from './rs';
@@ -47,7 +47,7 @@ export function readFormat(m: Uint8Array, n: number): InfoRead & { ecc: Ecc; mas
   return { got, dist, code: best.code, ok: best.d <= 3, ecc: best.ecc, mask: best.mask };
 }
 
-/** 型番情報を読む（型番 7 以上）。34 通りの正しい符号のうち最も近いもの */
+/** バージョン情報を読む（バージョン 7 以上）。34 通りの正しい符号のうち最も近いもの */
 export function readVersion(m: Uint8Array, n: number): InfoRead & { ver: number } {
   const [a, b] = versionCells(n),
     got: [number, number] = [readCells(m, n, a), readCells(m, n, b)];
@@ -181,23 +181,23 @@ export interface Decoded {
   ver: number;
   n: number;
   fmt: ReturnType<typeof readFormat>;
-  /** 型番情報（型番 7 以上） */
+  /** バージョン情報（バージョン 7 以上） */
   vinfo: ReturnType<typeof readVersion> | null;
   ecc: Ecc;
   mask: number;
   src: Src[];
   /** マスクを外した格子 */
   unmasked: Uint8Array;
-  /** 読んだ符号語（置く順） */
+  /** 読んだ符号語（配置順） */
   recv: number[];
-  /** 直した符号語（置く順。直せないブロックは読んだまま） */
+  /** 直した符号語（配置順。直せないブロックは読んだまま） */
   fixed: number[];
   rs: RsResult[];
   ok: boolean;
   /** データの符号語（ブロックの順に並べ直したもの）。直したもの・読んだまま */
   data: number[];
   rawData: number[];
-  /** データの並びの番号 → 置く順の番号 */
+  /** データの並びの番号 → 配置順の番号 */
   dataPos: number[];
   parsed: Parsed;
   raw: Parsed;

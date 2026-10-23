@@ -1,10 +1,10 @@
-/** QR コードのページの入力の定義（型番の行・選択肢・既定の文字列） */
+/** QR コードのページの入力の定義（バージョンの行・選択肢・既定の文字列） */
 import type { ParamDef } from '../../lib/param-def';
 import type { Mode } from './encode';
 import type { Ecc } from './spec';
 
 export const TEXT0 = 'https://nanase.cc/tools/qr-code/';
-/** 文字列の長さの上限（型番 40 の数字モードの容量を少し超える程度） */
+/** 文字列の長さの上限（バージョン 40 の数字モードの容量を少し超える程度） */
 export const MAX_LEN = 8000;
 
 export const ECC_CHOICES: readonly [Ecc, string, string][] = [
@@ -22,10 +22,10 @@ export const MODE_CHOICES: readonly [Mode | 'auto', string, string][] = [
 ];
 export const BOOST_CHOICES: readonly [string, string, string][] = [
   ['0', '上げない', '選んだレベルのまま'],
-  ['1', '上げる', '同じ型番に入る範囲で、誤り訂正のレベルを上げる'],
+  ['1', '上げる', '同じバージョンに入る範囲で、誤り訂正のレベルを上げる'],
 ];
 
-/** 自動で選んだ型番（欄の「自動（3）」の表示に使う。client.ts が入れる） */
+/** 自動で選んだバージョン（欄の「自動（3）」の表示に使う。client.ts が入れる） */
 let autoVer = 0;
 export const setAutoVer = (v: number): void => {
   autoVer = v;
@@ -34,10 +34,10 @@ const verText = (v: number) => (v === 0 ? (autoVer ? `自動（${autoVer}）` : 
 
 export const VER: ParamDef = {
   k: 'ver',
-  nm: '型番',
+  nm: 'バージョン',
   sym: '',
-  name: '型番',
-  sub: '1〜40。型番 v の QR コードは 17 + 4v モジュール角。0 は自動で、文字列が入る最小の型番にする',
+  name: 'バージョン',
+  sub: '1〜40。バージョン v の QR コードは 17 + 4v モジュール角。0 は自動で、文字列が入る最小のバージョンにする',
   unit: '',
   min: 0,
   max: 40,
@@ -56,5 +56,10 @@ export const VER: ParamDef = {
   inputmode: 'decimal',
   bad: '0〜40 の整数を入れてください（0 は自動）',
   fix: (v) => (Number.isInteger(v) ? null : [Math.round(v), '整数に丸めました']),
-  format: { input: (v) => String(v), view: verText, step: verText, text: (v) => (v === 0 ? '自動' : `型番 ${v}`) },
+  format: {
+    input: (v) => String(v),
+    view: verText,
+    step: verText,
+    text: (v) => (v === 0 ? '自動' : `バージョン ${v}`),
+  },
 };

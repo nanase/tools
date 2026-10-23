@@ -1,5 +1,5 @@
 /**
- * QR コード（モデル 2）の型番ごとの数と、機能パターンの置き方。
+ * QR コード（モデル 2）のバージョンごとの数と、機能パターンの置き方。
  * 表の数は公開の解説（Thonky の QR Code Tutorial の誤り訂正の表）と Nayuki の実装（MIT）で照合した
  */
 export type Ecc = 'L' | 'M' | 'Q' | 'H';
@@ -9,7 +9,7 @@ export const ECC_BITS: Record<Ecc, number> = { L: 1, M: 0, Q: 3, H: 2 };
 /** 直せる符号語のおよその割合（規格の目安） */
 export const ECC_RATE: Record<Ecc, number> = { L: 7, M: 15, Q: 25, H: 30 };
 
-/* 型番 1〜40 の、ブロックあたりの誤り訂正語の数とブロックの数（添字 0 は使わない） */
+/* バージョン 1〜40 の、ブロックあたりの誤り訂正語の数とブロックの数（添字 0 は使わない） */
 const EC_PER_BLOCK: Record<Ecc, number[]> = {
   L: [
     0, 7, 10, 15, 20, 26, 18, 20, 24, 30, 18, 20, 24, 26, 30, 22, 24, 28, 30, 28, 28, 28, 28, 30, 30, 26, 28, 30, 30,
@@ -49,7 +49,7 @@ const BLOCKS: Record<Ecc, number[]> = {
 
 export const size = (ver: number): number => 17 + 4 * ver;
 
-/** 位置合わせの模様の中心の座標（行と列に共通）。最後は size − 7、間隔は偶数でそろえる（型番 32 だけ 26） */
+/** 位置合わせの模様の中心の座標（行と列に共通）。最後は size − 7、間隔は偶数でそろえる（バージョン 32 だけ 26） */
 export function alignPos(ver: number): number[] {
   if (ver === 1) return [];
   const n = Math.floor(ver / 7) + 2,
@@ -60,7 +60,7 @@ export function alignPos(ver: number): number[] {
   return out;
 }
 
-/** 符号語と余りのビットを置けるモジュールの数（機能パターンと形式情報・型番情報を除く） */
+/** 符号語と余りのビットを置けるモジュールの数（機能パターンと形式情報・バージョン情報を除く） */
 export const rawModules = (ver: number): number => frame(ver).order.length;
 
 export interface Blocks {
@@ -84,7 +84,7 @@ export function blocks(ver: number, ecc: Ecc): Blocks {
   return { total, data: total - nb * ec, ec, sizes };
 }
 
-/* ---------- 形式情報と型番情報（BCH 符号） ---------- */
+/* ---------- 形式情報とバージョン情報（BCH 符号） ---------- */
 /** BCH 符号の余り（data を bits ビット左へずらして gen で割る） */
 function bchRem(data: number, gen: number, bits: number): number {
   const deg = 31 - Math.clz32(gen);
@@ -101,7 +101,7 @@ export const formatBits = (ecc: Ecc, mask: number): number => {
   const d = (ECC_BITS[ecc] << 3) | mask;
   return ((d << 10) | bchRem(d, FORMAT_GEN, 10)) ^ FORMAT_MASK;
 };
-/** 型番情報の 18 ビット（型番 6 ビット・BCH 12 ビット）。型番 7 以上だけ */
+/** バージョン情報の 18 ビット（バージョン 6 ビット・BCH 12 ビット）。バージョン 7 以上だけ */
 export const versionBits = (ver: number): number => (ver << 12) | bchRem(ver, VERSION_GEN, 12);
 export const bchFormatRem = (d: number): number => bchRem(d, FORMAT_GEN, 10);
 
@@ -150,7 +150,7 @@ export const ROLE_NAME = [
   'タイミング',
   '位置合わせ',
   '形式情報',
-  '型番情報',
+  'バージョン情報',
   '暗いモジュール',
   '余りのビット',
 ];
@@ -160,15 +160,15 @@ export interface Frame {
   n: number;
   /** 役割（n × n、行ごと） */
   role: Uint8Array;
-  /** 機能パターンの色（1 が暗い）。形式情報・型番情報の所は 0 のまま */
+  /** 機能パターンの色（1 が暗い）。形式情報・バージョン情報の所は 0 のまま */
   fn: Uint8Array;
-  /** データの領域を置く順（ジグザグ）。モジュールの番号 y·n + x */
+  /** データの領域を配置順（ジグザグ）。モジュールの番号 y·n + x */
   order: Int32Array;
 }
 
 const frames = new Map<number, Frame>();
 
-/** 型番の機能パターンの枠（データの値に依らない） */
+/** バージョンの機能パターンの枠（データの値に依らない） */
 export function frame(ver: number): Frame {
   const hit = frames.get(ver);
   if (hit) return hit;
@@ -237,7 +237,7 @@ export function formatCells(n: number): [[number, number][], [number, number][]]
   return [a, b];
 }
 
-/** 型番情報の 2 か所の座標 [x, y]。添字 i がビット i */
+/** バージョン情報の 2 か所の座標 [x, y]。添字 i がビット i */
 export function versionCells(n: number): [[number, number][], [number, number][]] {
   const a: [number, number][] = [],
     b: [number, number][] = [];
