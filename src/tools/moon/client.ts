@@ -396,8 +396,8 @@ function drawMoon(): void {
   txt(
     '#v-lab2',
     st.alt < 0
-      ? `地平線の下（高度 ${sgn(st.alt, 1)}°）· 月を押すとその場所を拡大`
-      : `欠け際 ${term < 0 ? '西経' : '東経'} ${Math.abs(term).toFixed(1)}° · 月を押すとその場所を拡大`,
+      ? `地平線の下（高度 ${sgn(st.alt, 1)}°）`
+      : `欠け際 ${term < 0 ? '西経' : '東経'} ${Math.abs(term).toFixed(1)}°`,
   );
 }
 

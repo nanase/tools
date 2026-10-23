@@ -74,12 +74,12 @@
 .tsv .tk{stroke:var(--ink-2);stroke-width:1}
 .tsv .ev{stroke:var(--ink-3);stroke-width:1;stroke-dasharray:3 3}
 .tsv .cur{stroke:var(--ink);stroke-width:2}
-.tchips{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.tchips{display:flex;flex-wrap:wrap;gap:4px}
 /* 現在へ戻るボタン: 文字を大きく太くし、インクの枠で目立たせる。現在に合わせて進んでいる間は LED を点ける */
 .nowbtn{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 16px;border:1.5px solid var(--ink);border-radius:4px;background:var(--surface);color:var(--ink);font:700 14.5px/1 var(--sans);cursor:pointer}
 .nowbtn:hover{background:var(--inset)}
 .nowbtn[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
-.tchips .chip{display:inline-flex;align-items:baseline;gap:6px}
+.tchips .chip{display:inline-flex;align-items:center;gap:6px}
 .tchips .chip small{font:500 11.5px var(--sans)}
 .tstep{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-top:8px}
 .tstep .seg button{min-width:52px}
