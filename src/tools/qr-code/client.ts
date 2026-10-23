@@ -235,7 +235,7 @@ function drawNow(): void {
     edges,
   );
 }
-new ResizeObserver(() => drawNow()).observe(fig);
+new ResizeObserver(() => requestAnimationFrame(drawNow)).observe(fig);
 /** 直した符号語（置く順） */
 function badSet(): Set<number> {
   const s = new Set<number>();
