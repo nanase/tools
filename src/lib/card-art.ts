@@ -902,6 +902,25 @@ export const ART: Record<string, Art> = {
       P('a', `M${pt(14, c)}L${pt(R + 2, c)}`)
     );
   },
+  /* 音律とうなり: 2 つの近い部分音の和。包絡（破線）の山と谷が流れる */
+  tm(t) {
+    const e = (x: number): number => Math.abs(Math.cos(TAU * 0.0125 * (x - 4) - 1.2 * t));
+    return (
+      P('c t', 'M4 24H116') +
+      P(
+        'c d',
+        fx((x) => 24 - 17 * e(x), 4, 116, 112),
+      ) +
+      P(
+        'c d',
+        fx((x) => 24 + 17 * e(x), 4, 116, 112),
+      ) +
+      P(
+        'a',
+        fx((x) => 24 - 17 * e(x) * Math.sin((TAU * (x - 4)) / 5), 4, 116, 336),
+      )
+    );
+  },
 };
 
 /** 止まっているときの図柄（ビルド時に HTML へ出す） */
