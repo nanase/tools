@@ -140,7 +140,30 @@ function stringSvg(str: number, rs: readonly Ripple[]): string {
     }
   return `${rings}<path class="str" d="${d}"/>`;
 }
+/** 名前と役割を出す部品 */
+export type PartTip = 'button' | 'drop' | 'check';
+export const PART_TIP: Record<PartTip, { name: string; role: string }> = {
+  button: {
+    name: 'レットオフボタン',
+    role: 'ジャックのつま先が当たる止め。鍵を押していき、ハンマーが弦の手前（レットオフの距離）まで来たところでつま先が当たると、ジャックが回ってナックルの下から抜ける。ハンマーは押し付けられずに自分の勢いで弦を打ち、跳ね返れる',
+  },
+  drop: {
+    name: 'ドロップねじ',
+    role: 'レペティションレバーの先が上がりすぎないよう止めるねじ。ウィッペンが上がる途中でレバーを止めるので、ジャックが抜けたあとハンマーが落ちてレバーに載る高さ（ドロップ）がこれで決まる',
+  },
+  check: {
+    name: 'バックチェック',
+    role: '鍵の後ろに立つ受け。弦から跳ね返って落ちてきたハンマーの尾を受け止め、鍵を押している間ハンマーを途中の高さで止めておく。ハンマーが弦をもう一度打つのを防ぎ、連打に備えさせる',
+  },
+};
+/** 図の上で名前を出せる所（SVG の座標、y は下向き） */
+export type Spot =
+  | { kind: 'contact'; n: number; x: number; y: number; r: number }
+  | { kind: 'part'; id: PartTip; x: number; y: number; r: number; y2?: number };
+
 export class ActionFig {
+  /** 直前に描いた、名前を出せる所 */
+  spots: Spot[] = [];
   private rig: Rig | null = null;
   private q0: ArrayLike<number> = [0, 0, 0, 0, 0];
   private readonly g: SVGGElement;
@@ -160,6 +183,33 @@ export class ActionFig {
   setRig(rig: Rig, q0: ArrayLike<number>): void {
     this.rig = rig;
     this.q0 = q0;
+  }
+  /** 画面の点（client 座標）に近い、名前を出せる所（tol は許す距離 [px]） */
+  hit(cx: number, cy: number, tol: number): Spot | null {
+    const r = this.svg.getBoundingClientRect(),
+      k = this.vb[2] / Math.max(1, r.width),
+      x = this.vb[0] + (cx - r.left) * k,
+      y = this.vb[1] + (cy - r.top) * k;
+    let best: Spot | null = null,
+      bd = Infinity;
+    for (const s of this.spots) {
+      /* ドロップねじは、ねじの棒も含める */
+      const yy = s.kind === 'part' && s.y2 !== undefined ? Math.min(s.y, Math.max(s.y2, y)) : s.y;
+      const d = Math.hypot(x - s.x, y - yy) - s.r;
+      /* 接触の点を部品より先に選ぶ */
+      const w = s.kind === 'contact' ? d - 2 * k : d;
+      if (d < tol * k && w < bd) {
+        bd = w;
+        best = s;
+      }
+    }
+    return best;
+  }
+  /** SVG の座標を、図の枠の中の位置 [px] に */
+  px(x: number, y: number): [number, number] {
+    const r = this.svg.getBoundingClientRect(),
+      k = r.width / this.vb[2];
+    return [(x - this.vb[0]) * k, (y - this.vb[1]) * k];
   }
   /** 狭い画面では鍵の前を切って、機構を大きく見せる */
   setNarrow(on: boolean): void {
@@ -194,9 +244,13 @@ export class ActionFig {
       s += `<line class="vel" x1="${x}" x2="${x}" y1="${y0}" y2="${y1}"/><path class="velh" d="M${x - 2.5} ${y1 + 4}L${x} ${y1}L${x + 2.5} ${y1 + 4}Z"/>`;
       velLab = `<span class="a-vel" style="${this.pc(x + 4, y1 + 4)}">${o.vel.toFixed(2)} m/s</span>`;
     }
+    const spots: Spot[] = [];
     for (const n of o.on) {
-      const T = touch(P, CONTACTS[n - 1], rig);
-      s += `<circle class="cdot" cx="${r2(T.x[0] * MM)}" cy="${r2(-T.x[1] * MM)}" r="2.2"/>`;
+      const T = touch(P, CONTACTS[n - 1], rig),
+        x = r2(T.x[0] * MM),
+        y = r2(-T.x[1] * MM);
+      s += `<circle class="cdot" cx="${x}" cy="${y}" r="2.2"/>`;
+      spots.push({ kind: 'contact', n, x, y, r: 2.2 });
     }
     if (o.hl) {
       const T = touch(P, CONTACTS[o.hl - 1], rig);
@@ -206,12 +260,19 @@ export class ActionFig {
     /* 色のない小さな部品の名前（引き出し線なしで、すぐ横に） */
     const b = rig.button * MM,
       d = rig.dropY * MM,
-      ck = gp(P, 'key', rig.check);
+      ck = gp(P, 'key', rig.check),
+      ckc = gp(P, 'key', [rig.check[0] - 0.006, rig.check[1] - 0.004]);
+    spots.push(
+      { kind: 'part', id: 'button', x: -58, y: -(b + 2.5), r: 6 },
+      { kind: 'part', id: 'drop', x: -84.3, y: -d, r: 4, y2: -128 },
+      { kind: 'part', id: 'check', x: ckc[0] * MM, y: -ckc[1] * MM, r: 11 },
+    );
+    this.spots = spots;
     this.lab.innerHTML =
       `<span class="a-lab" style="${this.pc(-160, -rig.str * MM - 7)}">弦</span>` +
-      `<span class="a-lab" style="${this.pc(-50, -(b + 2.5))}">レットオフボタン</span>` +
-      `<span class="a-lab" style="${this.pc(-79.3, -(d + 9))}">ドロップねじ</span>` +
-      `<span class="a-lab r" style="${this.pc(ck[0] * MM - 15, -ck[1] * MM)}">バックチェック</span>` +
+      `<span class="a-lab hv" data-p="button" style="${this.pc(-50, -(b + 2.5))}">レットオフボタン</span>` +
+      `<span class="a-lab hv" data-p="drop" style="${this.pc(-79.3, -(d + 9))}">ドロップねじ</span>` +
+      `<span class="a-lab hv r" data-p="check" style="${this.pc(ck[0] * MM - 15, -ck[1] * MM)}">バックチェック</span>` +
       velLab;
   }
 }

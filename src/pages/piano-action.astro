@@ -48,19 +48,15 @@ const LEGEND = [
           </div>
           <div class="awrap">
             <svg id="a-svg" role="img" aria-label="グランドピアノのアクションを横から見た図"></svg>
-            <div class="alab" id="a-lab" aria-hidden="true"></div>
+            <div class="alab" id="a-lab"></div>
+            <div class="a-info" aria-live="off"><span>時刻 <b id="cap-t"></b></span><span>ハンマー <b id="cap-h"></b></span></div>
+            <div class="a-tip" id="a-tip" role="tooltip" hidden></div>
             <p class="busy" id="busy" hidden>計算しています…</p>
           </div>
         </div>
         <div class="cap" aria-live="polite">
           <h3><span class="no" id="cap-no"></span><span id="cap-nm"></span></h3>
           <p id="cap-d"></p>
-          <dl>
-            <dt>時刻</dt><dd class="mono" id="cap-t"></dd>
-            <dt>動く部品</dt><dd id="cap-mv"></dd>
-            <dt>力を伝える接触</dt><dd id="cap-ct"></dd>
-            <dt>ハンマー</dt><dd class="mono" id="cap-h"></dd>
-          </dl>
         </div>
       </div>
       <div class="tp">

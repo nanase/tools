@@ -13,7 +13,7 @@ import { PianoAudio } from '../piano/audio';
 import { boardDesc } from '../piano/engine';
 import { KEYS, makePiano, type PianoSpec } from '../piano/model';
 import { KEY_LO, pianoTypeOf } from '../piano/strings';
-import { ActionFig, damperLift, type Ripple, thumbSvg } from './fig';
+import { ActionFig, damperLift, PART_TIP, type PartTip, type Ripple, thumbSvg } from './fig';
 import { CONTACTS } from './geom';
 import { gp, pose, type Reg } from './model';
 import { REGS, type RegKey, VOL0 } from './params';
@@ -30,14 +30,6 @@ const txt = (id: string, s: string) => {
 const ms = (t: number, d = 1) => `${(t * 1000).toFixed(d)} ms`;
 
 /* ---------- 段階ごとの部品 ---------- */
-const PN: Record<string, string> = {
-  key: '鍵',
-  whippen: 'ウィッペン',
-  jack: 'ジャック',
-  rep: 'レペティションレバー',
-  hammer: 'ハンマー',
-  damper: 'ダンパー',
-};
 /** 図で強調する部品 */
 const FOCUS: Record<StageId, string[]> = {
   rest: [],
@@ -52,22 +44,6 @@ const FOCUS: Record<StageId, string[]> = {
   rep: ['jack', 'hammer', 'rep'],
   fail: ['jack', 'rep'],
   ret: ['rep', 'jack', 'damper', 'key'],
-  rest2: [],
-};
-/** 説明の「動く部品」 */
-const MOVING: Record<StageId, string[]> = {
-  rest: [],
-  acc: ['key', 'whippen', 'jack', 'rep', 'hammer', 'damper'],
-  let: ['jack', 'hammer'],
-  hit: ['hammer'],
-  hit2: ['hammer', 'rep'],
-  block: ['key', 'jack', 'hammer'],
-  miss: ['jack', 'hammer'],
-  chk: ['hammer'],
-  half: ['key', 'whippen', 'rep', 'hammer', 'jack', 'damper'],
-  rep: ['key', 'whippen', 'jack', 'hammer'],
-  fail: ['key', 'whippen'],
-  ret: ['key', 'whippen', 'rep', 'jack', 'hammer', 'damper'],
   rest2: [],
 };
 const BAD = new Set<StageId>(['hit2', 'block', 'miss', 'fail']);
@@ -336,7 +312,7 @@ function results(): void {
 
 /* ---------- 描く ---------- */
 let shownK = -1,
-  shownCt = '';
+  curI = 0;
 /* ---------- 打弦の波紋（実時間で広がる。スローでも止めていても動く） ---------- */
 const RIP_S = 2.4;
 let rips: { x: number; t0: number; a: number; tau: number }[] = [],
@@ -372,6 +348,7 @@ function draw(force = false): void {
     s = L[S.k],
     t = s.t0 + (s.t1 - s.t0) * S.u,
     i = Math.min(R.n - 1, Math.round(t / FRAME));
+  curI = i;
   const q = qAt(R, i);
   const on = CONTACTS.filter((c) => fnAt(R, i, c.n) > 0.005).map((c) => c.n);
   const v = headSpeed(R, i);
@@ -384,29 +361,18 @@ function draw(force = false): void {
     vel: (s.id === 'acc' || s.id === 'let' || s.id === 'rep') && v > 0.25 ? v : null,
     ripples: ripplesAt(t),
   });
+  showTip();
   /* 説明（段階が変わったときと、接触が変わったときだけ書き直す） */
   if (force || shownK !== S.k) {
     shownK = S.k;
     txt('#cap-no', String(S.k + 1));
     txt('#cap-nm', s.name);
     txt('#cap-d', s.desc);
-    txt('#cap-mv', MOVING[s.id].map((b) => PN[b]).join('・') || '（なし）');
     txt('#m-st', s.name);
     $('#a-svg').setAttribute('aria-label', `グランドピアノのアクションを横から見た図。${S.k + 1} ${s.name}`);
     for (const b of $$('#frames .fr')) b.setAttribute('aria-pressed', String(Number(b.dataset.k) === S.k));
     for (const b of $$('#tl [data-k]')) b.classList.toggle('on', Number(b.dataset.k) === S.k);
     txt('#tp-k', String(S.k + 1));
-  }
-  const ct = on.join(',');
-  if (force || ct !== shownCt) {
-    shownCt = ct;
-    $('#cap-ct').innerHTML =
-      on
-        .map(
-          (n) =>
-            `<button type="button" class="ctb" data-n="${n}" title="図の上に印を付ける"><span class="led on" aria-hidden="true"></span>${esc(CONTACTS[n - 1].name)}</button>`,
-        )
-        .join('') || '（なし）';
   }
   txt('#cap-t', ms(t, 2));
   txt(
@@ -421,19 +387,63 @@ function draw(force = false): void {
   trk.setAttribute('aria-valuenow', String(Math.round(p)));
   trk.setAttribute('aria-valuetext', `${S.k + 1} ${s.name}、${ms(t, 2)}`);
 }
-/* 説明の接触の名前にマウスやフォーカスを当てると、図の上に輪を付ける */
-const capCt = $('#cap-ct');
-const hlOf = (e: Event) => Number((e.target as Element).closest<HTMLElement>('.ctb')?.dataset.n ?? 0);
-for (const ev of ['mouseover', 'focusin'])
-  capCt.addEventListener(ev, (e) => {
-    S.hl = hlOf(e);
-    draw();
-  });
-for (const ev of ['mouseout', 'focusout'])
-  capCt.addEventListener(ev, () => {
-    S.hl = 0;
-    draw();
-  });
+/* ---------- 図の上の名前と役割の吹き出し ---------- */
+/** 吹き出しを出している所（接触の番号か部品）。描き直すたびに位置と力を更新する */
+let tipOn: { kind: 'contact'; n: number } | { kind: 'part'; id: PartTip } | null = null;
+const awrap = $('.awrap'),
+  tip = $('#a-tip');
+function showTip(): void {
+  const sp =
+    tipOn &&
+    fig.spots.find((x) =>
+      tipOn?.kind === 'contact'
+        ? x.kind === 'contact' && x.n === tipOn.n
+        : x.kind === 'part' && x.id === (tipOn as { id: PartTip }).id,
+    );
+  if (!tipOn || !sp || !run) {
+    tip.hidden = true;
+    return;
+  }
+  if (tipOn.kind === 'contact') {
+    const f = fnAt(run, curI, tipOn.n);
+    tip.innerHTML = `<b>${esc(CONTACTS[tipOn.n - 1].name)}</b><span class="f">押す力 ${f < 10 ? f.toFixed(2) : f.toFixed(1)} N</span>`;
+  } else {
+    const d = PART_TIP[tipOn.id];
+    tip.innerHTML = `<b>${esc(d.name)}</b>${esc(d.role)}`;
+  }
+  tip.hidden = false;
+  const [x, y] = fig.px(sp.x, sp.y),
+    W = awrap.clientWidth,
+    w = tip.offsetWidth,
+    h = tip.offsetHeight;
+  const left = Math.max(0, Math.min(W - w, x + 12)),
+    top = y + 14 + h > awrap.clientHeight ? Math.max(0, y - 14 - h) : y + 14;
+  tip.style.left = `${left}px`;
+  tip.style.top = `${top}px`;
+}
+function setTip(t: typeof tipOn): void {
+  const same = JSON.stringify(t) === JSON.stringify(tipOn);
+  tipOn = t;
+  S.hl = t?.kind === 'contact' ? t.n : 0;
+  if (!same) draw();
+  else showTip();
+}
+const tipAt = (e: PointerEvent): typeof tipOn => {
+  const lab = (e.target as Element).closest<HTMLElement>('.a-lab.hv');
+  if (lab) return { kind: 'part', id: lab.dataset.p as PartTip };
+  const s = fig.hit(e.clientX, e.clientY, e.pointerType === 'touch' ? 16 : 9);
+  return !s ? null : s.kind === 'contact' ? { kind: 'contact', n: s.n } : { kind: 'part', id: s.id };
+};
+awrap.addEventListener('pointermove', (e) => {
+  if (e.pointerType !== 'touch') setTip(tipAt(e));
+});
+awrap.addEventListener('pointerleave', (e) => {
+  if (e.pointerType !== 'touch') setTip(null);
+});
+/* タッチは押した所の吹き出しを出し、ほかを押すと消す */
+awrap.addEventListener('pointerdown', (e) => {
+  if (e.pointerType === 'touch') setTip(tipAt(e));
+});
 
 /* ---------- 再生 ---------- */
 let raf = 0,

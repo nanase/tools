@@ -45,21 +45,23 @@
 .sw.p-rep{background:var(--c-rep)}.sw.p-hammer{background:var(--c-ham)}.sw.p-damper{background:var(--c-dmp)}
 .awrap{position:relative}
 .alab{position:absolute;inset:0;pointer-events:none;font:500 12px/1 var(--sans)}
+.a-lab.hv{pointer-events:auto;cursor:help;text-decoration:underline dotted var(--ink-3);text-underline-offset:3px}
+/* 図の右上: 時刻とハンマー */
+.a-info{position:absolute;top:2px;right:2px;display:flex;flex-direction:column;align-items:flex-end;gap:2px;font:500 12px/1.4 var(--sans);color:var(--ink-3);pointer-events:none}
+.a-info b{font:700 12.5px/1.4 var(--mono);color:var(--ink);margin-left:6px}
+/* 接触の点・部品の名前と役割の吹き出し */
+.a-tip{position:absolute;z-index:5;max-width:min(280px,90%);padding:7px 10px;border:1px solid var(--line-2);border-radius:6px;background:var(--surface);box-shadow:0 6px 18px rgb(0 0 0 / .18);font-size:12.5px;line-height:1.6;color:var(--ink-2);pointer-events:none}
+.a-tip b{display:block;color:var(--ink);font-size:13px}
+.a-tip .f{font-family:var(--mono);color:var(--ink-3)}
 .a-lab{position:absolute;transform:translate(0,-50%);white-space:nowrap;color:var(--ink-3)}
 .a-lab.r{transform:translate(-100%,-50%)}
 .a-vel{position:absolute;transform:translate(0,-50%);white-space:nowrap;font:700 12px/1 var(--mono);color:var(--ch2)}
-.busy{position:absolute;right:6px;top:6px;margin:0;padding:3px 8px;border-radius:3px;background:var(--surface);border:1px solid var(--line);font-size:12px;color:var(--ink-2)}
+.busy{position:absolute;right:6px;bottom:6px;margin:0;padding:3px 8px;border-radius:3px;background:var(--surface);border:1px solid var(--line);font-size:12px;color:var(--ink-2)}
 
 /* 説明 */
 .cap h3{font-size:18px;line-height:1.35;margin:0 0 6px}
 .cap h3 .no{font:700 14px/1 var(--mono);color:var(--ink-3);margin-right:8px}
 .cap p{font-size:13.5px;line-height:1.7;color:var(--ink-2);margin:0 0 10px}
-.cap dl{margin:0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 10px;font-size:12.5px}
-.cap dt{color:var(--ink-3)}
-.cap dd{margin:0;min-width:0}
-.cap .mono{font-family:var(--mono)}
-.ctb{display:flex;align-items:center;gap:6px;width:100%;border:0;background:none;padding:3px 0;font:inherit;color:inherit;text-align:left;cursor:default}
-.ctb:focus-visible{outline-offset:0}
 
 /* 段階のコマ */
 .frames{display:grid;grid-template-columns:repeat(var(--nf,7),minmax(0,1fr));gap:8px}
