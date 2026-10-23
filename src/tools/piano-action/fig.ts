@@ -62,13 +62,13 @@ const VB_FULL = [-322, -200, 578, 232] as const,
 const FIXED = `<line class="fx-l" x1="-320" x2="255" y1="-15.5" y2="-15.5"/><path class="fx" d="M-4 -15.5L0 -1.6L4 -15.5Z"/><circle class="ft" cx="-203.7" cy="-10.5" r="5"/><circle class="ft" cx="-192.1" cy="76.6" r="5"/><rect class="fx" x="-196" y="34" width="22" height="12"/><rect class="fx" x="-100" y="119" width="30" height="10"/>`;
 const PIVOTS = `<circle class="pv" cx="0" cy="0" r="1.6"/><circle class="pv" cx="${PG2[0] * MM}" cy="${PG2[1] * MM}" r="1.6"/><circle class="pv" cx="${PG3[0] * MM}" cy="${PG3[1] * MM}" r="1.6"/>`;
 /** 整調で動く部分（弦・フロントレールの山・レットオフボタン・ドロップねじ） */
-function rigged(rig: Rig): string {
+function rigged(rig: Rig, str = true): string {
   const s = r2(rig.str * MM),
     f = r2(rig.front * MM),
     b = r2(rig.button * MM),
     d = r2(rig.dropY * MM),
     dx = -84.3;
-  return `<line class="str" x1="-322" x2="-138" y1="${s}" y2="${s}"/><circle class="ft" cx="217.2" cy="${f}" r="5"/><rect class="fx" x="-63" y="${b}" width="10" height="5"/><line class="mt" x1="-58" x2="-58" y1="${r2(b + 5)}" y2="${r2(b + 30)}"/><line class="mt" x1="${dx}" x2="${dx}" y1="${d}" y2="128"/><circle class="ft" cx="${dx}" cy="${d}" r="3.3"/>`;
+  return `${str ? `<line class="str" x1="-322" x2="-138" y1="${s}" y2="${s}"/>` : ''}<circle class="ft" cx="217.2" cy="${f}" r="5"/><rect class="fx" x="-63" y="${b}" width="10" height="5"/><line class="mt" x1="-58" x2="-58" y1="${r2(b + 5)}" y2="${r2(b + 30)}"/><line class="mt" x1="${dx}" x2="${dx}" y1="${d}" y2="128"/><circle class="ft" cx="${dx}" cy="${d}" r="3.3"/>`;
 }
 const tf = (o: readonly number[], a: number) => `translate(${r2(o[0] * MM)},${r2(o[1] * MM)}) rotate(${deg(a)})`;
 function bodies(q: ArrayLike<number>, rig: Rig, cls: (b: Body) => string): string {
@@ -103,6 +103,42 @@ export interface Draw {
   /** 鍵の前を押している・ハンマーの頭の速さ [m/s]（null なら出さない） */
   push: boolean;
   vel: number | null;
+  /** 打弦の波紋（打った点 [mm]・打ってからの実時間 [s]・弦の振れの大きさ [mm]・減衰の時定数 [s]） */
+  ripples: readonly Ripple[];
+}
+export interface Ripple {
+  x: number;
+  age: number;
+  a: number;
+  tau: number;
+}
+/** 波紋の速さ（見やすい速さ）[mm/s]: 弦を伝わる山・まわりへ広がる輪 */
+const C_STR = 90,
+  C_RING = 45;
+/** 弦の線（打った点から左右へ山が伝わる）と、打った点から広がる輪。y は下向き */
+function stringSvg(str: number, rs: readonly Ripple[]): string {
+  const y0 = -str * MM;
+  if (!rs.length) return `<line class="str" x1="-322" x2="-138" y1="${r2(y0)}" y2="${r2(y0)}"/>`;
+  let d = '';
+  for (let x = -322; x <= -138; x += 1) {
+    let u = 0;
+    for (const r of rs) {
+      const A = r.a * Math.exp(-r.age / r.tau),
+        s = r.age * C_STR,
+        g = (z: number) => Math.exp(-(z * z) / 50);
+      u += (A / 2) * (g(x - r.x - s) + g(x - r.x + s));
+    }
+    d += `${d ? 'L' : 'M'}${x} ${r2(y0 - u)}`;
+  }
+  let rings = '';
+  for (const r of rs)
+    for (let k = 0; k < 3; k++) {
+      const a = r.age - 0.35 * k,
+        o = (1 - r.age / 2.4) * Math.min(1, r.a / 3);
+      if (a > 0 && o > 0)
+        rings += `<circle class="rip" cx="${r2(r.x)}" cy="${r2(y0)}" r="${r2(a * C_RING)}" style="opacity:${r2(o)}"/>`;
+    }
+  return `${rings}<path class="str" d="${d}"/>`;
 }
 export class ActionFig {
   private rig: Rig | null = null;
@@ -139,10 +175,10 @@ export class ActionFig {
     const rig = this.rig;
     if (!rig) return;
     const cls = (b: string) => (o.focus.length ? (o.focus.includes(b) ? 'em' : 'dim') : '');
-    this.g.innerHTML = `${FIXED}${rigged(rig)}${damper(damperLift(o.q, this.q0), cls('damper'))}${bodies(o.q, rig, cls)}${PIVOTS}`;
+    this.g.innerHTML = `${FIXED}${rigged(rig, false)}${damper(damperLift(o.q, this.q0), cls('damper'))}${bodies(o.q, rig, cls)}${PIVOTS}`;
     /* 上に重ねるもの（y は下向き） */
     const P = pose(o.q);
-    let s = '';
+    let s = stringSvg(rig.str, o.ripples);
     if (o.push) {
       const k = gp(P, 'key', [0.2278, 0.0261]),
         x = r2(k[0] * MM),

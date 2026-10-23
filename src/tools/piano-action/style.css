@@ -14,7 +14,9 @@
 :root[data-theme="dark"]{--c-key:#c9a46a;--c-whp:#80acee;--c-jack:#5fd09a;--c-rep:#f2c230;--c-ham:#c9a3e6;--c-dmp:#a7afb5;--felt:#3d4a3f;--felt-ln:#9bb08f;--str:#c7cdd1}
 
 /* 図 */
-.a-act svg,.frames svg{display:block;width:100%;height:auto;overflow:visible}
+.awrap svg,.fr .fth svg{display:block;width:100%;height:auto;overflow:visible}
+/* 打弦の波紋は図の外へ出さない */
+.awrap svg{overflow:hidden}
 .bd{fill:none;stroke-width:.75;stroke-linejoin:round;stroke-linecap:round}
 .bd.key{stroke:var(--c-key)}.bd.whippen{stroke:var(--c-whp)}.bd.jack{stroke:var(--c-jack)}
 .bd.rep{stroke:var(--c-rep)}.bd.hammer{stroke:var(--c-ham)}.bd.damper{stroke:var(--c-dmp)}
@@ -25,7 +27,8 @@
 .fx-l{stroke:var(--line-2);stroke-width:.8}
 .pv{fill:var(--surface);stroke:var(--ink-2);stroke-width:.6}
 .mt{fill:none;stroke:var(--ink-3);stroke-width:.9;stroke-linecap:round}
-.str{stroke:var(--str);stroke-width:1.4}
+.str{fill:none;stroke:var(--str);stroke-width:1.4}
+.rip{fill:none;stroke:var(--ch2);stroke-width:1}
 .cdot{fill:var(--hot)}
 .chl{fill:none;stroke:var(--ink);stroke-width:1.2}
 .push{stroke:var(--ink);stroke-width:1.2}
@@ -74,10 +77,8 @@
 
 /* 段階のトランスポート */
 .tp{margin-top:12px}
-.chs{display:flex;gap:3px;height:28px;align-items:stretch}
-.ch{position:relative;min-width:0;border:1px solid var(--line-2);border-radius:3px;background:none;padding:0;cursor:pointer;overflow:hidden}
-.ch.on{background:var(--inset)}
-.ch i{position:absolute;left:0;top:0;bottom:0;background:color-mix(in srgb,var(--ink-2) 28%,transparent)}
+/* 段階の境の目盛り（長い目盛りの線を、段階の境にだけ引く） */
+.tp-tk path.mj{stroke-width:1.5px}
 .tp-tm{margin-top:6px}
 #tp-loop[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
 

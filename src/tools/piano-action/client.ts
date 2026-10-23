@@ -13,9 +13,9 @@ import { PianoAudio } from '../piano/audio';
 import { boardDesc } from '../piano/engine';
 import { KEYS, makePiano, type PianoSpec } from '../piano/model';
 import { KEY_LO, pianoTypeOf } from '../piano/strings';
-import { ActionFig, damperLift, thumbSvg } from './fig';
+import { ActionFig, damperLift, type Ripple, thumbSvg } from './fig';
 import { CONTACTS } from './geom';
-import type { Reg } from './model';
+import { gp, pose, type Reg } from './model';
 import { REGS, type RegKey, VOL0 } from './params';
 import { FRAME, fnAt, gapAt, headSpeed, qAt, type Run, simulate, type TouchKind } from './sim';
 import { type Events, events, type Stage, type StageId, stages } from './stages';
@@ -181,23 +181,99 @@ $('#frames').addEventListener('click', (e) => {
 });
 
 /* ---------- 段階のトランスポート ---------- */
+/** 位置の欄での段階の区切り（0〜1）。段階の幅は長さの対数で決め、短い打弦やレットオフも押せる幅にする */
+let B: number[] = [0, 1];
+const trk = $('#tp-trk'),
+  tk = $<SVGSVGElement>('#tp-tk');
 function chapters(): void {
-  $('#tp-ch').innerHTML = L.map((s, i) => {
-    const w = Math.max(4, Math.log(1 + (s.t1 - s.t0) * 1000) * 10);
-    return `<button type="button" class="ch" data-k="${i}" style="flex:${w.toFixed(1)} 1 0" title="${esc(s.name)}" aria-label="${i + 1} ${esc(s.name)}"><i></i></button>`;
-  }).join('');
+  const w = L.map((s) => Math.max(4, Math.log(1 + (s.t1 - s.t0) * 1000) * 10)),
+    sum = w.reduce((a, b) => a + b, 0);
+  B = [0];
+  for (const x of w) B.push(B[B.length - 1] + x / sum);
+  B[B.length - 1] = 1;
   txt('#tp-n', String(L.length));
+  ticks();
 }
-$('#tp-ch').addEventListener('click', (e) => {
-  const b = (e.target as Element).closest<HTMLElement>('.ch');
-  if (b) goStage(Number(b.dataset.k), 0);
-});
+/** 段階の境の目盛り */
+function ticks(): void {
+  const w = trk.clientWidth;
+  tk.setAttribute('viewBox', `0 0 ${w} 7`);
+  (tk.firstElementChild as SVGPathElement).setAttribute(
+    'd',
+    B.map((b) => `M${(Math.round(b * (w - 1)) + 0.5).toFixed(1)} 0V7`).join(''),
+  );
+}
+new ResizeObserver(() => requestAnimationFrame(ticks)).observe(trk);
+/** 欄の位置 p（0〜1）を段階と段階の中の位置に */
+function seekTo(p: number): void {
+  p = Math.max(0, Math.min(1, p));
+  let k = 0;
+  while (k < L.length - 1 && p > B[k + 1]) k++;
+  goStage(k, (p - B[k]) / Math.max(1e-9, B[k + 1] - B[k]));
+}
+{
+  let id: number | null = null,
+    x0 = 0,
+    moved = false;
+  const at = (e: PointerEvent) => {
+    const r = trk.getBoundingClientRect();
+    return (e.clientX - r.left) / Math.max(1, r.width);
+  };
+  trk.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0) return;
+    id = e.pointerId;
+    x0 = e.clientX;
+    moved = false;
+    /* タッチは横に動かしたときだけ位置を動かす（縦のスクロールを妨げない） */
+    if (e.pointerType !== 'touch') {
+      seekTo(at(e));
+      trk.setPointerCapture(id);
+    }
+  });
+  trk.addEventListener('pointermove', (e) => {
+    if (e.pointerId !== id) return;
+    if (!moved && Math.abs(e.clientX - x0) < 4) return;
+    if (!moved && e.pointerType === 'touch') trk.setPointerCapture(id);
+    moved = true;
+    seekTo(at(e));
+  });
+  const end = (e: PointerEvent) => {
+    if (e.pointerId !== id) return;
+    id = null;
+    if (e.pointerType === 'touch' && !moved) seekTo(at(e));
+  };
+  trk.addEventListener('pointerup', end);
+  trk.addEventListener('pointercancel', () => {
+    id = null;
+  });
+  trk.addEventListener('keydown', (e) => {
+    const p = B[S.k] + (B[S.k + 1] - B[S.k]) * S.u;
+    const to =
+      e.key === 'ArrowLeft' || e.key === 'ArrowDown'
+        ? p - 0.01
+        : e.key === 'ArrowRight' || e.key === 'ArrowUp'
+          ? p + 0.01
+          : e.key === 'PageDown'
+            ? B[Math.max(0, S.k - 1)]
+            : e.key === 'PageUp'
+              ? B[Math.min(L.length - 1, S.k + 1)]
+              : e.key === 'Home'
+                ? 0
+                : e.key === 'End'
+                  ? 1
+                  : null;
+    if (to === null) return;
+    e.preventDefault();
+    seekTo(to);
+  });
+}
 function goStage(k: number, u: number): void {
   S.k = Math.max(0, Math.min(L.length - 1, k));
   S.u = Math.max(0, Math.min(1, u));
   last = null;
   draw();
 }
+$('#tp-home').addEventListener('click', () => goStage(0, 0));
 $('#tp-prev').addEventListener('click', () => goStage(S.k - 1, 0));
 $('#tp-next').addEventListener('click', () => goStage(S.k + 1, 0));
 $('#tp-loop').addEventListener('click', () => {
@@ -212,8 +288,8 @@ pp.addEventListener('click', () => {
 function setPlaying(on: boolean): void {
   S.playing = on;
   pp.classList.toggle('on', on);
-  pp.setAttribute('aria-label', on ? '一時停止' : '再生');
-  pp.title = on ? '一時停止' : '再生';
+  pp.setAttribute('aria-label', on ? '一時停止する' : '再生する');
+  pp.title = on ? '一時停止する' : '今の位置から再生する';
   last = null;
   if (on) loop();
 }
@@ -261,6 +337,35 @@ function results(): void {
 /* ---------- 描く ---------- */
 let shownK = -1,
   shownCt = '';
+/* ---------- 打弦の波紋（実時間で広がる。スローでも止めていても動く） ---------- */
+const RIP_S = 2.4;
+let rips: { x: number; t0: number; a: number; tau: number }[] = [],
+  drawnT: number | null = null,
+  ripRaf = 0;
+/** 表示の時刻が打弦を前へ越えたら（打弦の 20 ms 以内に来たら）波紋を足す */
+function ripplesAt(t: number): Ripple[] {
+  const R = run;
+  if (R && E && drawnT !== null && t > drawnT)
+    for (const s of E.strikes)
+      if (s.t > drawnT && s.t <= t && t - s.t < 0.02) {
+        const P = pose(qAt(R, Math.round(s.t / FRAME)));
+        rips.push({
+          x: gp(P, 'hammer', [-0.1321, 0.0356])[0] * 1000,
+          t0: performance.now(),
+          a: Math.min(6, 1 + 1.6 * s.v),
+          tau: s.blocked ? 0.2 : 1.6,
+        });
+      }
+  drawnT = t;
+  const now = performance.now();
+  rips = rips.filter((r) => now - r.t0 < RIP_S * 1000);
+  if (rips.length && !ripRaf && !S.playing)
+    ripRaf = requestAnimationFrame(() => {
+      ripRaf = 0;
+      draw();
+    });
+  return rips.map((r) => ({ x: r.x, age: (now - r.t0) / 1000, a: r.a, tau: r.tau }));
+}
 function draw(force = false): void {
   if (!run) return;
   const R = run,
@@ -277,6 +382,7 @@ function draw(force = false): void {
     hl: on.includes(S.hl) ? S.hl : 0,
     push: R.force[i] > 0.3,
     vel: (s.id === 'acc' || s.id === 'let' || s.id === 'rep') && v > 0.25 ? v : null,
+    ripples: ripplesAt(t),
   });
   /* 説明（段階が変わったときと、接触が変わったときだけ書き直す） */
   if (force || shownK !== S.k) {
@@ -288,7 +394,6 @@ function draw(force = false): void {
     txt('#m-st', s.name);
     $('#a-svg').setAttribute('aria-label', `グランドピアノのアクションを横から見た図。${S.k + 1} ${s.name}`);
     for (const b of $$('#frames .fr')) b.setAttribute('aria-pressed', String(Number(b.dataset.k) === S.k));
-    for (const b of $$('#tp-ch .ch')) b.classList.toggle('on', Number(b.dataset.k) === S.k);
     for (const b of $$('#tl [data-k]')) b.classList.toggle('on', Number(b.dataset.k) === S.k);
     txt('#tp-k', String(S.k + 1));
   }
@@ -310,10 +415,11 @@ function draw(force = false): void {
   );
   txt('#tp-t', ms(t, 2));
   txt('#m-t', ms(t));
-  for (const b of $$<HTMLElement>('#tp-ch .ch')) {
-    const k = Number(b.dataset.k);
-    (b.firstElementChild as HTMLElement).style.width = `${k < S.k ? 100 : k === S.k ? S.u * 100 : 0}%`;
-  }
+  const p = (B[S.k] + (B[S.k + 1] - B[S.k]) * S.u) * 100;
+  $('#tp-fill').style.width = `${p}%`;
+  $('#tp-th').style.left = `${p}%`;
+  trk.setAttribute('aria-valuenow', String(Math.round(p)));
+  trk.setAttribute('aria-valuetext', `${S.k + 1} ${s.name}、${ms(t, 2)}`);
 }
 /* 説明の接触の名前にマウスやフォーカスを当てると、図の上に輪を付ける */
 const capCt = $('#cap-ct');
@@ -393,16 +499,18 @@ async function soundOn(on: boolean): Promise<void> {
     audio.stop();
     return;
   }
+  if (!ready) {
+    /* ピアノのページと同じく、AudioContext を作る前に模型・響板・部屋を渡しておく */
+    const spec = specOf();
+    audio.setSpec(spec);
+    audio.setBoard(boardDesc(makePiano(spec, audio.fs).board));
+    const room = ROOMS.find((r) => r.v === 'small') ?? ROOMS[0];
+    audio.setRoom(reverbSpec(room, 4.5));
+    audio.vol(volDb);
+  }
   const ok = await audio.ready();
   txt('#snd-msg', ok ? '' : 'このブラウザでは音を鳴らせません');
-  if (!ok || ready) return;
-  ready = true;
-  const spec = specOf();
-  audio.setSpec(spec);
-  audio.setBoard(boardDesc(makePiano(spec, audio.fs).board));
-  const room = ROOMS.find((r) => r.v === 'small') ?? ROOMS[0];
-  audio.setRoom(reverbSpec(room, 4.5));
-  audio.vol(volDb);
+  ready = ok;
 }
 sndBtn.addEventListener('click', () => void soundOn(!sndOn));
 let volDb = VOL0;

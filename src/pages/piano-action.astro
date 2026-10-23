@@ -64,13 +64,19 @@ const LEGEND = [
         </div>
       </div>
       <div class="tp">
-        <button type="button" class="tp-ib" id="tp-prev" title="前の段階" aria-label="前の段階"><svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1.5" y="1.5" width="1.8" height="9"/><path d="M10.5 1.5v9L4 6z"/></svg></button>
-        <button type="button" class="tp-pp" id="tp-pp" title="再生" aria-label="再生"><svg class="i-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.2l7.6 4.8L3 10.8z"/></svg><svg class="i-pause" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="2.8" height="9"/><rect x="7.2" y="1.5" width="2.8" height="9"/></svg></button>
+        <button type="button" class="tp-ib" id="tp-home" title="最初へ戻す" aria-label="最初へ戻す"><svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1.5" y="1.5" width="1.8" height="9"/><path d="M10.5 1.5v9L4 6z"/></svg></button>
+        <button type="button" class="tp-pp" id="tp-pp" title="今の位置から再生する" aria-label="再生する"><svg class="i-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.2l7.6 4.8L3 10.8z"/></svg><svg class="i-pause" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="2.8" height="9"/><rect x="7.2" y="1.5" width="2.8" height="9"/></svg></button>
         <div class="tp-tl">
-          <div class="chs" id="tp-ch" role="group" aria-label="段階"></div>
+          <div class="tp-trk" id="tp-trk" role="slider" tabindex="0" aria-label="再生の位置" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+            <div class="tp-rail"></div>
+            <div class="tp-fill" id="tp-fill"></div>
+            <svg class="tp-tk" id="tp-tk" aria-hidden="true"><path class="mj"/></svg>
+            <div class="tp-th" id="tp-th"></div>
+          </div>
           <div class="tp-tm"><span>段階 <b id="tp-k">1</b> / <span id="tp-n">–</span></span><span id="tp-t"></span></div>
         </div>
         <div class="tp-side">
+          <button type="button" class="tp-sq" id="tp-prev" title="前の段階" aria-label="前の段階"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6l-7 6 7 6M7 6v12"/></svg></button>
           <button type="button" class="tp-sq" id="tp-next" title="次の段階" aria-label="次の段階"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l7 6-7 6M17 6v12"/></svg></button>
           <button type="button" class="tp-sq" id="tp-loop" aria-pressed="false" title="この段階をくり返す" aria-label="この段階をくり返す"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 2l3 3-3 3"/><path d="M4 11V9a4 4 0 0 1 4-4h12"/><path d="M7 22l-3-3 3-3"/><path d="M20 13v2a4 4 0 0 1-4 4H4"/></svg></button>
         </div>
