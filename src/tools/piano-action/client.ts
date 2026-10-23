@@ -13,7 +13,7 @@ import { PianoAudio } from '../piano/audio';
 import { boardDesc } from '../piano/engine';
 import { KEYS, makePiano, type PianoSpec } from '../piano/model';
 import { KEY_LO, pianoTypeOf } from '../piano/strings';
-import { ActionFig, damperLift, PART_TIP, type PartTip, type Ripple, thumbSvg } from './fig';
+import { ActionFig, DAMPER_N, damperLift, PART_TIP, type PartTip, type Ripple, thumbSvg } from './fig';
 import { CONTACTS } from './geom';
 import { gp, pose, type Reg } from './model';
 import { REGS, type RegKey, VOL0 } from './params';
@@ -358,7 +358,7 @@ function draw(force = false): void {
     q,
     focus: FOCUS[s.id],
     on,
-    hl: on.includes(S.hl) ? S.hl : 0,
+    hl: S.hl,
     push: R.force[i] > 0.3,
     vel: (s.id === 'acc' || s.id === 'let' || s.id === 'rep') && v > 0.25 ? v : null,
     ripples: ripplesAt(t),
@@ -407,8 +407,12 @@ function showTip(): void {
     return;
   }
   if (tipOn.kind === 'contact') {
-    const f = fnAt(run, curI, tipOn.n);
-    tip.innerHTML = `<b>${esc(CONTACTS[tipOn.n - 1].name)}</b><span class="f">押す力 ${f < 10 ? f.toFixed(2) : f.toFixed(1)} N</span>`;
+    if (tipOn.n === DAMPER_N)
+      tip.innerHTML = '<b>鍵の後ろ → ダンパーのてこ</b>ダンパーは仮の形なので、力は計算に入れていない';
+    else {
+      const f = fnAt(run, curI, tipOn.n);
+      tip.innerHTML = `<b>${esc(CONTACTS[tipOn.n - 1].name)}</b><span class="f">押す力 ${f < 10 ? f.toFixed(2) : f.toFixed(1)} N</span>`;
+    }
   } else {
     const d = PART_TIP[tipOn.id];
     tip.innerHTML = `<b>${esc(d.name)}</b>${esc(d.role)}`;

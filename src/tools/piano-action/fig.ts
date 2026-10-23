@@ -44,6 +44,8 @@ const CHECK0 = [-0.2192, 0.0817] as const;
 /* ---------- ダンパー（論文の模型にない。仮の形） ---------- */
 /** 鍵の後ろの端（ダンパーのてこのフェルトが載る点）[m]、てこの軸の x・針金の x [mm]、てこが鍵に触れるまでの隙間 [mm] */
 const KEY_TAIL = [-0.233, 0.0167] as const;
+/** ダンパーのてこのフェルトが鍵に載っている接触の番号（模型の 13 か所のあと） */
+export const DAMPER_N = 14;
 const DMP_PX = -300,
   DMP_WX = -262,
   DMP_GAP = 3.9;
@@ -265,10 +267,16 @@ export class ActionFig {
       s += `<circle class="cdot" cx="${x}" cy="${y}" r="2.2"/>`;
       spots.push({ kind: 'contact', n, x, y, r: 2.2 });
     }
-    if (o.hl) {
-      const T = touch(P, CONTACTS[o.hl - 1], rig);
-      s += `<circle class="chl" cx="${r2(T.x[0] * MM)}" cy="${r2(-T.x[1] * MM)}" r="7"/>`;
+    /* ダンパーのてこのフェルトが鍵の後ろの端に載っている間 */
+    if (damperLift(o.q, this.q0) > 0) {
+      const k = gp(P, 'key', KEY_TAIL),
+        x = r2(k[0] * MM),
+        y = r2(-k[1] * MM);
+      s += `<circle class="cdot" cx="${x}" cy="${y}" r="2.2"/>`;
+      spots.push({ kind: 'contact', n: DAMPER_N, x, y, r: 2.2 });
     }
+    const h = spots.find((x) => x.kind === 'contact' && x.n === o.hl);
+    if (h) s += `<circle class="chl" cx="${h.x}" cy="${h.y}" r="7"/>`;
     this.top.innerHTML = s;
     /* 色のない小さな部品の名前（引き出し線なしで、すぐ横に） */
     const b = rig.button * MM,
