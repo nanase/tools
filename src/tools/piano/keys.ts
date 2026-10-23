@@ -436,6 +436,10 @@ export class Keys {
         p.s.sd = sd;
       }
   }
+  /** まだ始まっていない振動の予定を消す（鳴っている振動はそのまま） */
+  clearPending(): void {
+    this.pend.length = 0;
+  }
   /** 予定と振動をすべて消す */
   clear(): void {
     this.pend.length = 0;

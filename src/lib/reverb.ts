@@ -185,13 +185,6 @@ export class Reverb {
     this.pp = 0;
   }
 
-  /** 残っている残響音を消す（設定はそのまま） */
-  clear(): void {
-    for (const b of this.bufs) b.fill(0);
-    this.z.fill(0);
-    this.pre.fill(0);
-  }
-
   /** L・R の off から len 標本に残響音を足す（直接音は全体をそろえる大きさにする） */
   process(L: Float32Array | Float64Array, R: Float32Array | Float64Array, off: number, len: number): void {
     if (this.off) return;

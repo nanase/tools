@@ -22,9 +22,7 @@ export type VnMsg =
   | { type: 'audio'; epoch: number; at: number; L: Float32Array; R: Float32Array }
   /* 作っておいた音を捨てる（新しい区切りの音から鳴らす） */
   | { type: 'flush'; epoch: number }
-  | { type: 'room'; r: ReverbSpec }
-  /* 残っている音と残響をすぐ消す（一時停止の間に止めたとき） */
-  | { type: 'reset' };
+  | { type: 'room'; r: ReverbSpec };
 
 /** 主スレッドへ送るもの: いま鳴らしている標本の番号（音がなければ null）と、AudioContext の時刻 [s] */
 export interface PosMsg {
@@ -78,11 +76,6 @@ registerProcessor(
       } else if (m.type === 'flush') {
         if (m.epoch > this.epoch) this.drop(m.epoch);
       } else if (m.type === 'room') this.rv.set(m.r);
-      else {
-        this.q = [];
-        this.o = 0;
-        this.rv.clear();
-      }
     }
     /** 新しい区切りへ: 鳴らしている音は FADE 標本で消し、残りは捨てる */
     private drop(epoch: number): void {

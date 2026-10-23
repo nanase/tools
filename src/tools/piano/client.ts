@@ -6,7 +6,7 @@ import { Choice } from '../../lib/choice';
 import { $ } from '../../lib/dom';
 import { fmt, fmtR, minus, plain, ro } from '../../lib/format';
 import { ParamGroup } from '../../lib/param';
-import { lookahead, Pauser } from '../../lib/pause';
+import { autoPause, lookahead } from '../../lib/pause';
 import { movePlayStore, outVol, type PlayKey, TEMPO } from '../../lib/play';
 import { acoustics, reverbSpec, roomOf } from '../../lib/reverb';
 import { SW } from '../../lib/scope';
@@ -22,7 +22,17 @@ import { Keys } from './keys';
 import { damperRate, makePiano, NO_DAMPER, type Piano, type PianoSpec, type Strike, strikeKey } from './model';
 import { DIST, THICK, UNI, VEL, VOL0 } from './params';
 import { BH, boardPlot, fAtX, forcePlot, OH, specPlot, wavePlot, Y1_TOP, Y2_TOP } from './plot';
-import { PIECES, type Piece, type PieceData, type PlayEv, pieceOf, playEvents, TempoMap, tempoOf } from './score';
+import {
+  eventsFrom,
+  PIECES,
+  type Piece,
+  type PieceData,
+  type PlayEv,
+  pieceOf,
+  playEvents,
+  TempoMap,
+  tempoOf,
+} from './score';
 import { admittance, pressure, yMeanOf } from './soundboard';
 import { inharm, KEY_HI, KEY_LO, KEYS, noteHz, noteName, PIANO_TYPES, pianoTypeOf } from './strings';
 import type { Job, Reply } from './worker';
@@ -103,14 +113,7 @@ piece.addEventListener('change', () => {
 /** 数値の入力（保存する） */
 const V = { vel: VEL.v, uni: UNI.v, h: THICK.v, dist: DIST.v, tempo: 100 };
 const audio = new PianoAudio();
-/* 一時停止。図の振動と予約した表示は、一時停止の間は進まない時計に合わせる */
-const pauser = new Pauser(audio, {
-  playing: () => !!PL,
-  changed: syncPlay,
-  failed: () => sndMsg(NO_SOUND),
-  hidden: tick,
-});
-const nowS = pauser.clock.now;
+const nowS = () => performance.now() / 1000;
 
 /* ---------- 鍵盤と弦 ---------- */
 const keys = new Keys($<SVGSVGElement>('#kbd'), {
@@ -691,12 +694,10 @@ async function showLine(): Promise<void> {
   else sndMsg('曲を読み込めませんでした');
 }
 function syncPlay(): void {
-  /* 一時停止の間は音が止まっているので、消音は使わない */
-  $<HTMLButtonElement>('#muteBtn').disabled = !!PL && pauser.paused;
   transport.sync();
 }
-/** 小節 bar の頭から演奏する */
-async function startPiece(bar = 1): Promise<void> {
+/** 拍 b0 から演奏する */
+async function startPiece(b0: number): Promise<void> {
   const ok = await audio.ready();
   if (!ok) {
     sndMsg(NO_SOUND);
@@ -714,21 +715,13 @@ async function startPiece(bar = 1): Promise<void> {
   for (const k of S.held) lift(k);
   audio.pedal(false);
   keys.setPedal(false);
-  const ev = playEvents(pc, data.notes, VEL.v, ped.value, data.pedal),
+  /* 途中から弾くときは、その拍より前の出来事を飛ばし、押している鍵は打ち直す。ペダルはその時点の状態にする */
+  const { ev, pedal } = eventsFrom(playEvents(pc, data.notes, VEL.v, ped.value, data.pedal), b0),
     now = audio.now() ?? 0,
-    tm = new TempoMap(tempoOf(pc, data)),
-    /* 途中から弾くときは、その小節の頭より前の出来事を飛ばし、ペダルだけはその時点の状態にする */
-    b0 = lineOf(pc, data).start(bar),
-    i0 = ev.findIndex((e) => e.b >= b0 - 1e-6),
-    i = i0 < 0 ? ev.length : i0;
-  let pedal = false;
-  for (let j = 0; j < i; j++) {
-    const e = ev[j];
-    if (e.type === 'pedal') pedal = e.on;
-  }
+    tm = new TempoMap(tempoOf(pc, data));
   PL = {
     ev,
-    i,
+    i: 0,
     tm,
     at0: now + 0.25,
     tau0: tm.tau(b0),
@@ -754,7 +747,6 @@ function stopPiece(): void {
   if (!PL) return;
   clearInterval(PL.timer);
   PL = null;
-  pauser.clear();
   audio.stop(0.08);
   keys.clear();
   keys.upAll();
@@ -763,13 +755,34 @@ function stopPiece(): void {
   syncPlay();
   syncPedal();
 }
+/**
+ * 一時停止: 予約を消して、押している鍵とペダルを離す（鳴っている音は自然に減衰し、その間も手で弾ける）。止めた拍を返す
+ */
+function pausePiece(): number {
+  const p = PL;
+  if (!p) return 0;
+  const beat = Math.min(p.last, beatOf(p, audio.now() ?? p.at0));
+  clearInterval(p.timer);
+  PL = null;
+  audio.pause();
+  keys.clearPending();
+  keys.upAll();
+  keys.setPedal(false);
+  $('#pedLed').classList.remove('on');
+  syncPlay();
+  syncPedal();
+  return beat;
+}
+/** AudioContext の時刻 an での曲の拍（鳴り始める前は、弾き始める位置） */
+const beatOf = (p: Play, an: number) => p.tm.beat(p.tau0 + Math.max(0, an - p.at0) / p.spb);
 /** 時刻 t（表示の時計の秒）に表示を変える（止めたあとの、予約済みの表示は捨てる） */
-const later = (p: Play, t: number, fn: () => void) => pauser.clock.at(t, () => PL === p && fn());
+const later = (p: Play, t: number, fn: () => void) =>
+  setTimeout(() => PL === p && fn(), Math.max(0, (t - nowS()) * 1000));
 /** 先に予約する時間 [s] */
 const AHEAD = 0.5;
 function tick(): void {
   const p = PL;
-  if (!p || pauser.paused) return;
+  if (!p) return;
   const an = audio.now();
   if (an === null) return;
   /* 画面が隠れている間は、タイマーが間引かれるぶん先まで予約する */
@@ -817,7 +830,7 @@ function tick(): void {
     }
   }
   /* 鳴り始める前（予約の 0.25 秒）は、弾き始める位置に置く */
-  const beat = p.tm.beat(p.tau0 + Math.max(0, an - p.at0) / p.spb);
+  const beat = beatOf(p, an);
   transport.setPos(Math.min(beat, p.last));
   if (p.i >= p.ev.length && beat > p.last + 3) {
     clearInterval(p.timer);
@@ -827,10 +840,14 @@ function tick(): void {
     syncPedal();
   }
 }
-const transport = new Transport(
-  { active: () => !!PL, start: (bar) => startPiece(bar), stop: stopPiece, tempo: () => V.tempo },
-  pauser,
-);
+const transport = new Transport({
+  active: () => !!PL,
+  start: startPiece,
+  stop: stopPiece,
+  pause: pausePiece,
+  tempo: () => V.tempo,
+});
+autoPause(audio, { pause: () => transport.pause(), hidden: tick });
 
 /* ---------- 起動 ---------- */
 rebuildNow();

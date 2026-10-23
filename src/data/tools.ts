@@ -48,6 +48,14 @@ export const TOOLS: Tool[] = [
     k: 'inverted pendulum cart pole 倒立振り子 台車 振り上げ swing up エネルギー法 lqr リカッチ riccati 極配置 pole placement アッカーマン ackermann 状態フィードバック state feedback 可制御 controllability pid エンコーダ encoder quanser ip02 control',
   },
   {
+    id: 'kalman',
+    c: '制御',
+    t: 'カルマンフィルタ',
+    d: '雑音のある距離計の値から、台車の位置と速度をカルマンフィルタで推定します。',
+    ic: 'kf',
+    k: 'kalman filter 推定 estimation 状態推定 state estimation ベイズ bayes 正規分布 gaussian 共分散 covariance 楕円 ellipse 予測 更新 predict update カルマンゲイン kalman gain イノベーション innovation nis 過程雑音 観測雑音 process noise measurement noise q r 発散 divergence 追跡 tracking センサ sensor',
+  },
+  {
     id: 'biquad',
     c: 'デジタルフィルタ',
     t: '双2次フィルタ',
@@ -254,6 +262,14 @@ export const TOOLS: Tool[] = [
     d: '楽器の音を聴き、音名とずれを針か 12 音のストロボで示します。',
     ic: 'tu',
     k: 'tuner チューニング 調律 調弦 音合わせ クロマチック chromatic ストロボ strobe stroboconn 針 メータ meter セント cent 基準ピッチ a440 442 ギター guitar ベース bass ウクレレ ukulele ヴァイオリン バイオリン violin ヴィオラ チェロ cello コントラバス マンドリン バンジョー ハーモニカ harmonica 管楽器 移調 transpose 音律 temperament 純正律 just intonation ピッチ pitch mpm マイク オーディオ audio',
+  },
+  {
+    id: 'temperament',
+    c: '音響',
+    t: '音律とうなり',
+    d: '平均律・純正律・ミーントーンなどで和音を鳴らし、うなりの速さを数値と音で比べます。',
+    ic: 'tm',
+    k: 'temperament tuning 音律 調律 うなり beat beats 平均律 equal temperament 純正律 just intonation ピタゴラス pythagorean ミーントーン meantone ヴェルクマイスター werckmeister キルンベルガー kirnberger ヴァロッティ vallotti ヤング young 古典調律 well temperament 和音 chord 長三和音 3 度 5 度 部分音 倍音 partial harmonic コンマ comma ウルフ wolf 非調和性 inharmonicity ストレッチ stretch ピアノ piano オルガン organ セント cent',
   },
 ];
 /** 準備中を後ろへ */

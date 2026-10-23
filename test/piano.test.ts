@@ -9,7 +9,9 @@ import { coefOf, DamperLog, damperFade, envOf, Gliss, ripRadius, ripTime } from 
 import { damperRate, hammerOf, makePiano, NO_DAMPER, type Piano, strikeKey } from '../src/tools/piano/model';
 import {
   dynamics,
+  eventsFrom,
   PIECES,
+  type PlayEv,
   pedalPoints,
   pieceOf,
   playEvents,
@@ -724,6 +726,45 @@ describe('曲の音符がすべて鳴る', () => {
   it('打った鍵のモードは、刈り込まれずに 40 ms 後も鳴っている（月光 第 1 楽章の小節 9、第 3 楽章の初め）', async () => {
     expect(await silent('moon1', 32, 36)).toEqual([]);
     expect(await silent('moon3', 0, 12)).toEqual([]);
+  });
+});
+
+describe('途中から弾く', () => {
+  const on = (b: number, key: number, i: number): PlayEv => ({ b, type: 'on', key, v: 2, jit: 0.003, i }),
+    off = (b: number, key: number): PlayEv => ({ b, type: 'off', key });
+  it('その拍より前の出来事を飛ばし、押している鍵だけを打ち直す。ペダルはその時点の状態', () => {
+    const ev = [
+      on(0, 60, 0),
+      { b: 0.12, type: 'pedal', on: true },
+      on(1, 62, 1),
+      off(1.94, 62),
+      on(2, 64, 2),
+      off(3.88, 60),
+    ];
+    const r = eventsFrom(ev as PlayEv[], 2);
+    expect(r.pedal).toBe(true);
+    expect(r.ev).toEqual([{ ...on(2, 60, 0), jit: 0 }, on(2, 64, 2), off(3.88, 60)]);
+  });
+  it('同じ鍵を重ねて押していれば 1 回だけ打ち直し、余る離鍵は除く', () => {
+    const r = eventsFrom([on(0, 60, 0), on(1, 60, 1), off(1.94, 60), off(3.88, 60)], 1.5);
+    expect(r.ev).toEqual([{ ...on(1.5, 60, 1), jit: 0 }, off(3.88, 60)]);
+  });
+  it('どの曲のどこから弾いても、鍵ごとに打鍵と離鍵の数がそろう', async () => {
+    for (const p of PIECES) {
+      const { notes } = await p.load(),
+        ev = playEvents(p, notes, 2.5, 'auto'),
+        end = Math.max(...notes.map((x) => x.t + x.d));
+      for (const f of [0.1, 0.37, 0.5, 0.83]) {
+        const b0 = end * f,
+          r = eventsFrom(ev, b0).ev,
+          n = new Map<number, number>();
+        for (const e of r) {
+          expect(e.b).toBeGreaterThanOrEqual(b0 - 1e-6);
+          if (e.type !== 'pedal') n.set(e.key, (n.get(e.key) ?? 0) + (e.type === 'on' ? 1 : -1));
+        }
+        expect([...n.values()].every((c) => c === 0)).toBe(true);
+      }
+    }
   });
 });
 

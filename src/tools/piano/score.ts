@@ -359,8 +359,40 @@ export function playEvents(
     }
     ev.push({ b: end + 2, type: 'pedal', on: false });
   }
-  const rank = (e: PlayEv) => (e.type === 'off' ? 0 : e.type === 'pedal' ? 1 : 2);
-  return ev.sort((a, b) => a.b - b.b || rank(a) - rank(b));
+  return ev.sort(byBeat);
+}
+const rank = (e: PlayEv) => (e.type === 'off' ? 0 : e.type === 'pedal' ? 1 : 2);
+/** 拍の順。同じ拍なら 離鍵・ペダル → 打鍵 の順 */
+const byBeat = (a: PlayEv, b: PlayEv) => a.b - b.b || rank(a) - rank(b);
+
+/**
+ * 拍 b0 から弾くときの出来事（playEvents の列から）と、その拍でのペダル。b0 より前の出来事は飛ばし、b0 で押している鍵
+ * （前に打って、まだ離していない鍵）は b0 で打ち直す。同じ鍵を重ねて押していれば 1 回だけ打ち、余る離鍵は除く
+ */
+export function eventsFrom(ev: readonly PlayEv[], b0: number): { ev: PlayEv[]; pedal: boolean } {
+  /* 鍵ごとの、まだ離していない打鍵 */
+  const held = new Map<number, Extract<PlayEv, { type: 'on' }>[]>();
+  let pedal = false,
+    i = 0;
+  for (; i < ev.length && ev[i].b < b0 - 1e-6; i++) {
+    const e = ev[i];
+    if (e.type === 'pedal') pedal = e.on;
+    else if (e.type === 'on') held.set(e.key, [...(held.get(e.key) ?? []), e]);
+    else held.get(e.key)?.shift();
+  }
+  const out: PlayEv[] = [],
+    extra = new Map<number, number>();
+  for (const [key, ons] of held) {
+    if (!ons.length) continue;
+    out.push({ ...ons[ons.length - 1], b: b0, jit: 0 });
+    if (ons.length > 1) extra.set(key, ons.length - 1);
+  }
+  for (const e of ev.slice(i)) {
+    const n = e.type === 'off' ? extra.get(e.key) : undefined;
+    if (e.type === 'off' && n) extra.set(e.key, n - 1);
+    else out.push(e);
+  }
+  return { ev: out.sort(byBeat), pedal };
 }
 
 export { TempoMap } from '../../lib/tempo';

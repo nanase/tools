@@ -1,10 +1,11 @@
 /**
  * 楽器のページの演奏の操作（components/Transport.astro・TransportState.astro）。
- * 演奏と一時停止は 1 つのボタンで切り替え、一時停止しても位置は残る。位置の欄を押すかドラッグすると、その小節の頭から弾く
- * （演奏中はすぐ、止まっている間は次に演奏したとき）。曲の頭へ戻ると、一時停止は解いて止める（演奏中なら頭から弾き直す）
+ * 演奏と一時停止は 1 つのボタンで切り替える。一時停止は曲を止めて、止めた拍を残す（音は楽器ごとに自然に離し、その間も手で弾ける）。
+ * 再開すると、その拍から弾く。位置の欄を押すかドラッグすると、その小節の頭から弾く（演奏中はすぐ、止まっている間は次に演奏したとき）。
+ * 曲の頭へ戻ると、一時停止は解く（演奏中なら頭から弾き直す）
  */
 import { $ } from './dom';
-import type { Pauser } from './pause';
+import { asleep } from './pause';
 
 /** 曲の小節と時間（曲を読み込んだあとで作る） */
 export interface Line {
@@ -22,12 +23,14 @@ export interface Line {
 
 /** ページの演奏 */
 export interface PlayHooks {
-  /** 曲を演奏しているか（一時停止の間も含む） */
+  /** 曲を演奏しているか（一時停止の間は含まない） */
   active(): boolean;
-  /** 小節 bar の頭から演奏する */
-  start(bar: number): void | Promise<void>;
+  /** 拍 b から演奏する（その拍で伸ばしている音は、残りの長さで弾き直す） */
+  start(b: number): void | Promise<void>;
   /** 演奏を止める（音も止める）。ここでは Transport の stopped を呼ばない */
   stop(): void;
+  /** 一時停止: 演奏を止め、鳴っている音は楽器ごとに自然に離す。止めた拍を返す */
+  pause(): number;
   /** テンポ [%]（時間の表示に使う） */
   tempo(): number;
 }
@@ -48,8 +51,8 @@ export class Transport {
   private line: Line | null = null;
   /** 曲の頭からの時間の割合（小節の頭ごと。最後は曲の終わりの 1） */
   private fr: number[] = [];
-  /** 演奏していないときに、次に弾き始める小節 */
-  private cue = 1;
+  /** 演奏していないときに、次に弾き始める拍（0 は曲の頭） */
+  private cue = 0;
   /** 表示している位置の拍（演奏中は今の位置） */
   private beat = 0;
   /** ドラッグ中・キーで動かしている間の小節（null は動かしていない） */
@@ -64,10 +67,7 @@ export class Transport {
   private readonly tk = $<SVGSVGElement>('#tp-tk');
   private readonly st = $('#tp-st');
 
-  constructor(
-    private readonly hooks: PlayHooks,
-    private readonly pauser: Pauser,
-  ) {
+  constructor(private readonly hooks: PlayHooks) {
     this.pp.addEventListener('click', () => this.toggle());
     this.home.addEventListener('click', () => this.seek(1));
     this.bindTrack();
@@ -78,7 +78,7 @@ export class Transport {
   /** 曲を変えた・読み込んだ（null は読み込み中）。位置は曲の頭に戻す */
   setLine(l: Line | null): void {
     this.line = l;
-    this.cue = 1;
+    this.cue = 0;
     this.beat = 0;
     this.pick = null;
     if (l) {
@@ -110,16 +110,23 @@ export class Transport {
    */
   stopped(end: boolean): void {
     const l = this.line;
-    this.cue = end || !l ? 1 : l.barOf(this.beat);
-    this.beat = l && !end ? l.start(this.cue) : 0;
+    this.cue = end || !l ? 0 : l.start(l.barOf(this.beat));
+    this.beat = this.cue;
     this.sync();
   }
 
-  /** 演奏・一時停止の状態が変わったときに呼ぶ（ページの syncPlay と Pauser の changed） */
+  /** 一時停止する（演奏中だけ。画面が隠れたときなども）。次に演奏したときは、止めた拍から弾く */
+  pause(): void {
+    if (!this.hooks.active()) return;
+    this.cue = this.hooks.pause();
+    this.beat = this.cue;
+    this.sync();
+  }
+
+  /** 演奏・一時停止の状態が変わったときに呼ぶ（ページの syncPlay） */
   sync(): void {
-    const act = this.hooks.active(),
-      play = act && !this.pauser.paused,
-      wait = !play && (act || this.cue > 1);
+    const play = this.hooks.active(),
+      wait = !play && this.cue > 0;
     this.pp.classList.toggle('on', play);
     this.pp.setAttribute('aria-label', play ? '一時停止する' : '演奏する');
     this.pp.title = play
@@ -137,8 +144,14 @@ export class Transport {
 
   private toggle(): void {
     if (!this.line) return;
-    if (this.hooks.active()) void (this.pauser.paused ? this.pauser.resume() : this.pauser.pause());
-    else void this.hooks.start(this.cue);
+    if (this.hooks.active()) this.pause();
+    else void this.play(this.cue);
+  }
+
+  /** 拍 b から演奏する。弾き始めるのを待つ間に、スマートフォンで画面が隠れたら一時停止する */
+  private async play(b: number): Promise<void> {
+    await this.hooks.start(b);
+    if (asleep()) this.pause();
   }
 
   /** 小節 n へ移る。演奏中ならそこから弾き直し、一時停止の間と止まっている間は、次に演奏したときにそこから弾く */
@@ -146,12 +159,11 @@ export class Transport {
     const l = this.line;
     if (!l) return;
     n = Math.min(l.bars, Math.max(1, Math.round(n)));
-    const act = this.hooks.active(),
-      play = act && !this.pauser.paused;
-    if (act) this.hooks.stop();
-    this.cue = n;
-    this.beat = l.start(n);
-    if (play) void this.hooks.start(n);
+    const play = this.hooks.active();
+    if (play) this.hooks.stop();
+    this.cue = l.start(n);
+    this.beat = this.cue;
+    if (play) void this.play(this.cue);
     this.sync();
   }
 

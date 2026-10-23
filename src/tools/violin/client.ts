@@ -6,7 +6,7 @@ import { Choice } from '../../lib/choice';
 import { $ } from '../../lib/dom';
 import { fmt, fmtR, minus, plain, ro } from '../../lib/format';
 import { ParamGroup } from '../../lib/param';
-import { Pauser } from '../../lib/pause';
+import { autoPause } from '../../lib/pause';
 import { movePlayStore, outVol, type PlayKey, TEMPO } from '../../lib/play';
 import { acoustics, reverbSpec, roomOf } from '../../lib/reverb';
 import { SW } from '../../lib/scope';
@@ -67,7 +67,6 @@ let started = false;
 const choice = <V extends string>(k: string, fn: (v: V) => void) => new Choice<V>($(`#p-${k}`), fn);
 const audio = new ViolinAudio();
 const NO_SOUND = '音を出せませんでした';
-const PAUSED = '一時停止の間は弾けません';
 const sndMsg = (s: string) => txt('#snd-msg', s);
 
 const view = choice<'top' | 'player'>('view', () => showView());
@@ -181,10 +180,6 @@ function sendVib(): void {
 
 /** 弦 si を、音の高さ n（null なら押さえる位置はそのまま）で弾く */
 async function press(si: number, n: number | null): Promise<void> {
-  if (pauser.paused) {
-    sndMsg(PAUSED);
-    return;
-  }
   breakPiece();
   if (n !== null) M.stop[si] = Math.max(0, n - OPEN[si]);
   if (!levelStrings().includes(si)) lv.set(String(levelOf(si)));
@@ -396,17 +391,11 @@ function drawOut(): void {
 
 /* ---------- 曲の演奏 ---------- */
 /**
- * 演奏中の曲（一時停止の間も含む）。b0 は弾き始めた拍、heard は弾き始めた位置の音が聞こえ始めたか
- * （Worker が先に作った前の位置の音が聞こえ終わるまでは、その拍を演奏の位置に使わない）
+ * 演奏中の曲。b0 は弾き始めた拍、heard は弾き始めた位置の音が聞こえ始めたか
+ * （Worker が先に作った前の位置の音が聞こえ終わるまでは、その拍を演奏の位置に使わない）、pos は聞こえている拍
  */
-let P: { v: string; b0: number; heard: boolean } | null = null;
+let P: { v: string; b0: number; heard: boolean; pos: number } | null = null;
 const piece = $<HTMLSelectElement>('#piece');
-const pauser = new Pauser(audio, {
-  playing: () => !!P,
-  changed: syncPlay,
-  failed: () => sndMsg(NO_SOUND),
-  hidden: () => {},
-});
 {
   const v = stored('c:p-piece');
   if (typeof v === 'string' && [...piece.options].some((o) => o.value === v)) piece.value = v;
@@ -455,16 +444,18 @@ async function showLine(): Promise<void> {
 }
 function syncPlay(): void {
   $<HTMLButtonElement>('#liftBtn').disabled = !M.bowing;
-  /* 曲の演奏中（一時停止の間も）は、消音しても続きの音がすぐ鳴るので使わない */
+  /* 曲の演奏中は、消音しても続きの音がすぐ鳴るので使わない */
   $<HTMLButtonElement>('#muteBtn').disabled = !!P;
   /* 図の左下のボタン: 弾き続けている間は弓を離す、曲の間は演奏を止める */
   $('#vf-stop').hidden = !(M.bowing || P);
   txt('#vf-stopT', P ? '演奏を止める' : '弓を離す');
-  if (!pauser.paused && $('#snd-msg').textContent === PAUSED) sndMsg('');
   transport.sync();
 }
-/** 小節 bar の頭から演奏する（小節 1 は曲の頭から。途中からは、その拍より前のひと弾きと音符を Worker が飛ばす） */
-async function startPiece(bar = 1): Promise<void> {
+/**
+ * 拍 b0 から演奏する（0 は曲の頭から。途中からは、その拍より前のひと弾きと音符を Worker が飛ばし、
+ * その拍で弾いている音は途中から弾く）
+ */
+async function startPiece(b0: number): Promise<void> {
   const ok = await audio.ready();
   if (!ok) {
     sndMsg(NO_SOUND);
@@ -479,18 +470,21 @@ async function startPiece(bar = 1): Promise<void> {
   }
   if (P || piece.value !== pc.v) return;
   M.bowing = false;
-  const b0 = bar > 1 ? data.bars[Math.min(bar, data.bars.length + 1) - 2] : 0;
-  P = { v: pc.v, b0, heard: false };
-  audio.playPiece(pc.v, data, expr.value, tempo, bar > 1 ? b0 : null);
+  P = { v: pc.v, b0, heard: false, pos: b0 };
+  audio.playPiece(pc.v, data, expr.value, tempo, b0 > 0 ? b0 : null);
   syncPlay();
 }
 function stopPiece(): void {
   if (!P) return;
   P = null;
-  audio.resetIfPaused();
-  pauser.clear();
   audio.stopPiece();
   syncPlay();
+}
+/** 一時停止: 曲をやめる（弓を離し、弦は鳴り残る。その間も手で弾ける）。聞こえていた拍を返す */
+function pausePiece(): number {
+  const b = P?.pos ?? 0;
+  stopPiece();
+  return b;
 }
 /** 手で弾くなど、演奏の操作の外で曲を止める（止めた小節を、次に弾き始める位置に残す） */
 function breakPiece(): void {
@@ -509,10 +503,14 @@ audio.onDone = () => {
   syncPlay();
 };
 audio.onError = (msg) => sndMsg(`計算で問題が起きました（${msg}）`);
-const transport = new Transport(
-  { active: () => !!P, start: (bar) => startPiece(bar), stop: stopPiece, tempo: () => tempo * 100 },
-  pauser,
-);
+const transport = new Transport({
+  active: () => !!P,
+  start: startPiece,
+  stop: stopPiece,
+  pause: pausePiece,
+  tempo: () => tempo * 100,
+});
+autoPause(audio, { pause: () => transport.pause(), hidden: () => {} });
 $('#liftBtn').addEventListener('click', () => lift());
 $('#vf-stop').addEventListener('click', () => {
   if (P) breakPiece();
@@ -692,7 +690,7 @@ function tick(): void {
     if (on.length) lastTouch = on;
   }
   const v = viewOf(f);
-  fig.draw(v, pauser.clock.now(), view.value === 'top');
+  fig.draw(v, performance.now() / 1000, view.value === 'top');
   meters(f, v);
   noteBar(f && (P || M.bowing || f.c.some((c) => c > 0)) ? f : null);
   results(f, v);
@@ -701,7 +699,10 @@ function tick(): void {
   if (P && f && f.beat !== null) {
     /* 弾き始めた位置の近く（弱起の負の拍を含む）の拍が届いたら、聞こえ始めたとみなす */
     if (!P.heard) P.heard = f.beat > P.b0 - HEARD_BEFORE && f.beat < P.b0 + HEARD_AFTER;
-    if (P.heard) transport.setPos(f.beat);
+    if (P.heard) {
+      P.pos = f.beat;
+      transport.setPos(f.beat);
+    }
   }
   requestAnimationFrame(tick);
 }
