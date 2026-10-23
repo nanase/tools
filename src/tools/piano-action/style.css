@@ -1,0 +1,99 @@
+/* ピアノのアクションのページだけのスタイル（共通は src/styles/site.css） */
+
+/* 枠の並び。スマホは 段階 → アクション → 音 → 整調 → 計算結果 → 段階の時間 → 式。
+   PC は上に段階とアクション（全幅）、左の列に音と整調、右の列に計算結果と段階の時間、その下に式（全幅） */
+.a-stg{order:1}.a-act{order:2}.a-snd{order:3}.a-reg{order:4}.a-out{order:5}.a-tl{order:6}.a-thy{order:7}
+@media (min-width:1000px){
+  .tgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr);grid-template-areas:"stg stg" "act act" "c1 c2" "thy thy";align-items:start}
+  .a-stg{grid-area:stg}.a-act{grid-area:act}.c1{grid-area:c1}.c2{grid-area:c2}.a-thy{grid-area:thy}
+}
+
+/* 部品の色（線だけ）。鍵は木、ウィッペンは青、ジャックは緑、レペティションは黄、ハンマーは紫、ダンパーは灰 */
+:root{--c-key:#8a6a3a;--c-whp:#2a64b0;--c-jack:#1d7f52;--c-rep:#a66a00;--c-ham:#7044b8;--c-dmp:#687078;--felt:#cfd8c6;--felt-ln:#6f7d66;--str:#3b434a;--hot:var(--accent)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--c-key:#c9a46a;--c-whp:#80acee;--c-jack:#5fd09a;--c-rep:#f2c230;--c-ham:#c9a3e6;--c-dmp:#a7afb5;--felt:#3d4a3f;--felt-ln:#9bb08f;--str:#c7cdd1}}
+:root[data-theme="dark"]{--c-key:#c9a46a;--c-whp:#80acee;--c-jack:#5fd09a;--c-rep:#f2c230;--c-ham:#c9a3e6;--c-dmp:#a7afb5;--felt:#3d4a3f;--felt-ln:#9bb08f;--str:#c7cdd1}
+
+/* 図 */
+.awrap svg,.fr .fth svg{display:block;width:100%;height:auto;overflow:visible}
+/* 打弦の波紋は図の外へ出さない */
+.awrap svg{overflow:hidden}
+.bd{fill:none;stroke-width:.75;stroke-linejoin:round;stroke-linecap:round}
+.bd.key{stroke:var(--c-key)}.bd.whippen{stroke:var(--c-whp)}.bd.jack{stroke:var(--c-jack)}
+.bd.rep{stroke:var(--c-rep)}.bd.hammer{stroke:var(--c-ham)}.bd.damper{stroke:var(--c-dmp)}
+.bd.dim{opacity:.32}
+.bd.em{stroke-width:1.5}
+.ft{fill:var(--felt);stroke:var(--felt-ln);stroke-width:.5}
+.fx{fill:var(--inset);stroke:var(--line-2);stroke-width:.6}
+.fx-l{stroke:var(--line-2);stroke-width:.8}
+.pv{fill:var(--surface);stroke:var(--ink-2);stroke-width:.6}
+.mt{fill:none;stroke:var(--ink-3);stroke-width:.9;stroke-linecap:round}
+.str{fill:none;stroke:var(--str);stroke-width:1.4}
+.rip{fill:none;stroke:var(--ch2);stroke-width:1}
+.cdot{fill:var(--hot)}
+.chl{fill:none;stroke:var(--ink);stroke-width:1.2}
+.push{stroke:var(--ink);stroke-width:1.2}
+.pushh{fill:var(--ink)}
+.vel{stroke:var(--ch2);stroke-width:1.2}
+.velh{fill:var(--ch2)}
+
+.ag{display:grid;grid-template-columns:minmax(0,1fr);gap:14px 22px;align-items:start}
+@media (min-width:900px){.ag{grid-template-columns:minmax(0,1fr) 300px}}
+.lgd{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--ink-2);margin:0 0 6px}
+.lgd span{display:inline-flex;align-items:center;gap:6px}
+.sw.p-key,.sw.p-whippen,.sw.p-jack,.sw.p-rep,.sw.p-hammer,.sw.p-damper{box-shadow:none;height:3px}
+.sw.p-key{background:var(--c-key)}.sw.p-whippen{background:var(--c-whp)}.sw.p-jack{background:var(--c-jack)}
+.sw.p-rep{background:var(--c-rep)}.sw.p-hammer{background:var(--c-ham)}.sw.p-damper{background:var(--c-dmp)}
+.awrap{position:relative}
+.alab{position:absolute;inset:0;pointer-events:none;font:500 12px/1 var(--sans)}
+.a-lab.hv{pointer-events:auto;cursor:help;text-decoration:underline dotted var(--ink-3);text-underline-offset:3px}
+/* 図の右上: 時刻とハンマー */
+.a-info{position:absolute;top:2px;right:2px;display:flex;flex-direction:column;align-items:flex-end;gap:2px;font:500 12px/1.4 var(--sans);color:var(--ink-3);pointer-events:none}
+.a-info b{font:700 12.5px/1.4 var(--mono);color:var(--ink);margin-left:6px}
+/* 接触の点・部品の名前と役割の吹き出し */
+.a-tip{position:absolute;z-index:5;max-width:min(280px,90%);padding:7px 10px;border:1px solid var(--line-2);border-radius:6px;background:var(--surface);box-shadow:0 6px 18px rgb(0 0 0 / .18);font-size:12.5px;line-height:1.6;color:var(--ink-2);pointer-events:none}
+.a-tip b{display:block;color:var(--ink);font-size:13px}
+.a-tip .f{font-family:var(--mono);color:var(--ink-3)}
+.a-lab{position:absolute;transform:translate(0,-50%);white-space:nowrap;color:var(--ink-3)}
+.a-lab.r{transform:translate(-100%,-50%)}
+.a-vel{position:absolute;transform:translate(0,-50%);white-space:nowrap;font:700 12px/1 var(--mono);color:var(--ch2)}
+.busy{position:absolute;right:6px;bottom:6px;margin:0;padding:3px 8px;border-radius:3px;background:var(--surface);border:1px solid var(--line);font-size:12px;color:var(--ink-2)}
+
+/* 説明 */
+.cap h3{font-size:18px;line-height:1.35;margin:0 0 6px}
+.cap h3 .no{font:700 14px/1 var(--mono);color:var(--ink-3);margin-right:8px}
+.cap p{font-size:13.5px;line-height:1.7;color:var(--ink-2);margin:0 0 10px}
+
+/* 段階のコマ */
+.frames{display:grid;grid-template-columns:repeat(var(--nf,7),minmax(0,1fr));gap:8px}
+@media (max-width:860px){.frames{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.fr{display:flex;flex-direction:column;gap:2px;padding:6px 6px 8px;border:1px solid var(--line);border-radius:4px;background:none;text-align:left;cursor:pointer;min-width:0;color:inherit;font:inherit}
+.fr:hover{border-color:var(--line-2)}
+.fr[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.fr .no{font:700 11px/1 var(--mono);color:var(--ink-3)}
+.fr b{font-size:13px;line-height:1.3}
+.fr small{font:500 11px/1.2 var(--mono);color:var(--ink-3)}
+.fr .fth{display:block;border-radius:3px;background:var(--surface);overflow:hidden;margin:2px 0 4px}
+/* コマの絵は小さいので線を太く */
+.fr .bd{stroke-width:1.6}.fr .bd.em{stroke-width:2.4}.fr .bd.dim{opacity:.45}
+.fr.bad b{color:var(--warn)}
+
+/* 段階のトランスポート */
+.tp{margin-top:12px}
+/* 段階の境の目盛り（長い目盛りの線を、段階の境にだけ引く） */
+.tp-tk path.mj{stroke-width:1.5px}
+.tp-tm{margin-top:6px}
+#tp-loop[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+
+/* 計算結果 */
+.m-sub{display:block;margin-top:2px;font:12px/1.5 var(--sans);color:var(--ink-3)}
+.m-main dd{font-size:30px}
+
+/* 段階の時間 */
+.stl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 10px;align-items:center;font-size:12.5px}
+.stl .nm{color:var(--ink-2)}
+.stl .nm.on{color:var(--ink);font-weight:700}
+.stl .row{display:flex;align-items:center;gap:8px;min-width:0}
+.stl .bar{flex:none;height:10px;border-radius:2px;background:color-mix(in srgb,var(--ink-3) 45%,transparent)}
+.stl .bar.on{background:var(--hot)}
+.stl .len{font:500 11.5px/1 var(--mono);color:var(--ink-3);white-space:nowrap}
+.stl-n{margin:8px 0 0}

@@ -1,0 +1,253 @@
+---
+// 動作原理と式
+/* 本文の出典番号 */
+const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
+const bx = (s: string) => `<mi mathvariant="bold">${s}</mi>`;
+const dot = (s: string) => `<mover>${s}<mo>˙</mo></mover>`;
+const ddot = (s: string) => `<mover>${s}<mo>¨</mo></mover>`;
+const sub = (s: string, i: string) => `<msub>${s}<mi mathvariant="normal">${i}</mi></msub>`;
+const tr = (s: string) => `<msup>${s}<mi mathvariant="normal">T</mi></msup>`;
+const fr = (a: string, b: string) => `<mfrac><mrow>${a}</mrow><mrow>${b}</mrow></mfrac>`;
+const th = (i: string) => sub('<mi>θ</mi>', i);
+const mb = sub('<mi>m</mi>', 'b'),
+  Ib = sub('<mi>I</mi>', 'b'),
+  Jb = sub(bx('J'), 'b'),
+  eb = sub(bx('e'), 'b'),
+  hb = sub(bx('h'), 'b');
+const sum = (i: string) => `<munder><mo>∑</mo><mi>${i}</mi></munder>`;
+const ffit = '<msub><mi>f</mi><mi>fit</mi></msub>';
+const fn = sub('<mi>f</mi>', 'n');
+const vt = sub('<mi>v</mi>', 't');
+const wt = sub('<mi>ω</mi>', 't');
+const sv = fr('<mi>s</mi>', vt);
+const p = (s: string) => `<mo stretchy="false">(</mo>${s}<mo stretchy="false">)</mo>`;
+const dt = '<mi>Δ</mi><mi>t</mi>';
+const Mq = `${bx('M')}${p(bx('q'))}`;
+const MC = `<mo stretchy="false">(</mo>${bx('M')}<mo>+</mo>${dt}${bx('C')}<mo stretchy="false">)</mo>`;
+const qdn = (n: string) => `<msub>${dot(bx('q'))}<mi>${n}</mi></msub>`;
+const n1 = '<mrow><mi>n</mi><mo>+</mo><mn>1</mn></mrow>';
+const jn = sub(bx('j'), 'n'),
+  jt = sub(bx('j'), 't');
+---
+<h3>機構の部品と段階</h3>
+<p>グランドピアノのアクションは鍵の前を押す力をハンマーへ伝え、弦の手前で手放してハンマーを自分の勢いで弦へ飛ばす機構です。このページは Hirschkorn の修士論文の模型を使います<Fragment set:html={rf(1)} />。模型の数値は Boston GP-178 の鍵 52 番を分解して測ったものです。</p>
+<ul class="tl">
+  <li><b>鍵:</b> バランスレールを支点に回る。前を押すと後ろのキャプスタンがウィッペンを押し上げる</li>
+  <li><b>ウィッペン:</b> 上にジャックとレペティションレバーを載せて回る</li>
+  <li><b>ジャック:</b> 上の角でハンマーのナックルを押す。つま先がレットオフボタンに当たると回ってナックルの下から抜ける</li>
+  <li><b>レペティションレバー:</b> ばねでナックルを持ち上げる。ドロップねじで上がる高さが決まる</li>
+  <li><b>ハンマー:</b> 頭で弦を打つ。跳ね返ると尾を鍵の後ろのバックチェックが受け止める</li>
+</ul>
+<p>ハンマーの頭は鍵の前の約 5 倍の速さで動きます<Fragment set:html={rf(5)} />。1 回の打鍵は次の段階に分けて見せます。</p>
+<ol class="flow" aria-label="打鍵の段階">
+  <li><b>加速</b><span>ジャックがナックルを押す</span></li>
+  <li><b>レットオフ</b><span>ジャックが抜ける</span></li>
+  <li><b>打弦</b><span>ハンマーが弦を打つ</span></li>
+  <li><b>チェック</b><span>バックチェックが受け止める</span></li>
+  <li><b>鍵を戻す</b><span>レバーがハンマーを持ち上げる</span></li>
+  <li><b>連打</b><span>鍵が上がりきる前に押し直す</span></li>
+</ol>
+<p>鍵を半分ほど戻すと、レペティションレバーがハンマーを持ち上げたままジャックがナックルの下へ戻ります。鍵が上がりきる前に押し直せるので速い連打ができます。これをダブルエスケープメントと呼びます。</p>
+
+<h3>多体の模型</h3>
+<p>5 つの部品は 2 次元の剛体として扱います。鍵・ウィッペン・ハンマーの角度は地面から、ジャックとレペティションレバーの角度はウィッペンから反時計回りに測ります<Fragment set:html={rf(1)} />。この 5 つの角度が一般化座標です。</p>
+<div class="eqs">
+  <math display="block" set:html={`${bx('q')}<mo>=</mo>${tr(`<mrow><mo stretchy="false">[</mo>${th('k')}<mspace width="0.3em"/>${th('w')}<mspace width="0.3em"/>${th('j')}<mspace width="0.3em"/>${th('r')}<mspace width="0.3em"/>${th('h')}<mo stretchy="false">]</mo></mrow>`)}`} />
+</div>
+<p>運動方程式は質量行列 <math set:html={Mq} /> を使った次の形です<Fragment set:html={rf(1)} />。論文は DynaFlexPro で式を作り、MATLAB で解いています。このページは同じ形の式を部品の質量と軸の位置から直接組み立てます。</p>
+<div class="eqs">
+  <math display="block" set:html={`${Mq}${ddot(bx('q'))}<mo>=</mo>${bx('Q')}<mo>−</mo>${sum('b')}${mb}${tr(Jb)}${hb}`} />
+  <math display="block" set:html={`${Mq}<mo>=</mo>${sum('b')}<mrow><mo>(</mo>${mb}${tr(Jb)}${Jb}<mo>+</mo>${Ib}${tr(eb)}${eb}<mo>)</mo></mrow><mo>,</mo><mspace width="1em"/>${hb}<mo>=</mo>${dot(Jb)}${dot(bx('q'))}`} />
+</div>
+<dl class="syms">
+  <dt><math set:html={`${mb}<mo>,</mo><mspace width="0.3em"/>${Ib}`} /></dt><dd>部品 <math><mi>b</mi></math> の質量と重心のまわりの慣性モーメント（表 A.1）</dd>
+  <dt><math set:html={Jb} /></dt><dd>重心の速度を <math set:html={dot(bx('q'))} /> から求める 2 × 5 の行列</dd>
+  <dt><math set:html={eb} /></dt><dd>部品の角速度を <math set:html={dot(bx('q'))} /> から求める行。ジャックの角速度は <math set:html={`${dot(th('w'))}<mo>+</mo>${dot(th('j'))}`} /></dd>
+  <dt><math set:html={hb} /></dt><dd>速さの積の項。軸のまわりに回る重心の向心加速度など</dd>
+  <dt><math set:html={bx('Q')} /></dt><dd>一般化力。重力・接触の力・ばね・軸の摩擦・鍵の前を押す力</dd>
+</dl>
+<p>部品の上の点 P にかかる力 <math set:html={bx('F')} /> は、その点の速度を求める行列 <math set:html={sub(bx('J'), 'P')} /> を通して <math set:html={`${tr(sub(bx('J'), 'P'))}${bx('F')}`} /> を一般化力に足します。これは軸のまわりのトルクを、その力で回る自由度ごとに足すことと同じです。</p>
+
+<h3>接触の力と摩擦</h3>
+<p>部品どうしは 13 か所の接触で押し合います。接触の面は円・直線・hybrid の 3 つの形で表します<Fragment set:html={rf(1)} />。hybrid は円弧と、その両端から接線の向きに延びる直線です。</p>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th>番号</th><th>押し合う部品</th><th>面の形</th><th>摩擦</th></tr></thead>
+  <tbody>
+    <tr><td class="num">1</td><td>キャプスタン → ウィッペン</td><td>円と円</td><td>あり</td></tr>
+    <tr><td class="num">2</td><td>鍵の前 → フロントレール</td><td>直線と円</td><td></td></tr>
+    <tr><td class="num">3</td><td>鍵の後ろ → バックレール</td><td>直線と円</td><td></td></tr>
+    <tr><td class="num">4</td><td>バックチェック → ハンマーの尾</td><td>直線と円</td><td>あり</td></tr>
+    <tr><td class="num">5</td><td>ジャック → ジャックの止め</td><td>直線と円</td><td></td></tr>
+    <tr><td class="num">6</td><td>レペティションのねじ → ウィッペン</td><td>直線と円</td><td></td></tr>
+    <tr><td class="num">7</td><td>ジャック → ナックル</td><td>hybrid と円</td><td>あり</td></tr>
+    <tr><td class="num">8</td><td>ジャック → レットオフボタン</td><td>円と直線</td><td></td></tr>
+    <tr><td class="num">9</td><td>ジャック → レペティション</td><td>直線と円</td><td></td></tr>
+    <tr><td class="num">10</td><td>レペティション → ナックル</td><td>hybrid と円</td><td>あり</td></tr>
+    <tr><td class="num">11</td><td>レペティション → ドロップねじ</td><td>直線と円</td><td></td></tr>
+    <tr><td class="num">12</td><td>ハンマー → 弦</td><td>円と直線</td><td></td></tr>
+    <tr><td class="num">13</td><td>ハンマー → ハンマーレール</td><td>直線と円</td><td></td></tr>
+  </tbody>
+</table></div>
+<p>面の形は表 A.2〜A.7 の点の種類に従います。食い込み <math><mi>x</mi></math> は、2 つの円なら半径の和から中心の間の距離を引いた値、直線と円なら円の半径から中心と直線の距離を引いた値です。hybrid では円の中心が円弧の角度の範囲にあれば円弧との距離、外れていれば近い側の端の接線との距離を使います。</p>
+<h4>法線の力</h4>
+<p>法線の力は Hunt と Crossley の模型<Fragment set:html={rf(2)} />のばねの項を、接触ごとに押し込んで測った曲線の 3 次式に置き換えたものです<Fragment set:html={rf(1)} />。押し込むときは近似の曲線より強く、戻るときは弱くなります。これでフェルトのヒステリシスを表します。</p>
+<div class="eqs">
+  <math display="block" set:html={`${fn}<mo>=</mo><mi>max</mi><mo>⁡</mo><mrow><mo>(</mo><mn>0</mn><mo>,</mo><mspace width="0.3em"/>${ffit}${p('<mi>x</mi>')}<mo stretchy="false">(</mo><mn>1</mn><mo>+</mo><mi>D</mi>${dot('<mi>x</mi>')}<mo stretchy="false">)</mo><mo>)</mo></mrow><mo>,</mo><mspace width="1em"/>${ffit}${p('<mi>x</mi>')}<mo>=</mo><mi>a</mi><msup><mi>x</mi><mn>3</mn></msup><mo>+</mo><mi>b</mi><msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><mi>c</mi><mi>x</mi>`} />
+</div>
+<dl class="syms">
+  <dt><math><mi>x</mi><mo>,</mo><mspace width="0.3em"/><mover><mi>x</mi><mo>˙</mo></mover></math></dt><dd>食い込みと食い込む速さ</dd>
+  <dt><math><mi>a</mi><mo>,</mo><mspace width="0.3em"/><mi>b</mi><mo>,</mo><mspace width="0.3em"/><mi>c</mi></math></dt><dd>押し込んで戻す実験の曲線の中ほどを最小 2 乗で近似した係数（表 A.8）</dd>
+  <dt><math><mi>D</mi></math></dt><dd>減衰。強く打ったときの接触の平均の速さで、押し込む曲線に合うように決めた値。弦（接触 12）だけはハンマーが跳ね返る速さに合わせて手で調整した値</dd>
+</dl>
+<h4>摩擦</h4>
+<p>摩擦はクーロン摩擦を滑らかな曲線で近づけたものです。Cull と Tucker の形<Fragment set:html={rf(3)} />を少し変えた式で、接触 1・4・7・10 だけにあります<Fragment set:html={rf(1)} />。ほかの接触はほとんど横に滑らないので、摩擦を省いています。</p>
+<div class="eqs">
+  <math display="block" set:html={`<mi>μ</mi><mo>=</mo><mi>A</mi><mrow><mo>(</mo><mi>tanh</mi><mo>⁡</mo>${sv}<mo>+</mo>${fr(`${sub('<mi>B</mi>', '1')}${sv}`, `<mn>1</mn><mo>+</mo>${sub('<mi>B</mi>', '2')}<msup>${p(sv)}<mn>4</mn></msup>`)}<mo>)</mo></mrow><mo>,</mo><mspace width="1em"/>${sub('<mi>f</mi>', 't')}<mo>=</mo><mi>μ</mi>${fn}`} />
+</div>
+<dl class="syms">
+  <dt><math><mi>s</mi></math></dt><dd>接線の向きの相対の速さ</dd>
+  <dt><math set:html={vt} /></dt><dd>しきい値の速さ。これより遅い滑りでは摩擦が速さに比例して静止摩擦の山まで上がる</dd>
+  <dt><math><mi>A</mi></math></dt><dd>動摩擦係数。速く滑ると <math><mi>μ</mi></math> はこの値に近づく</dd>
+  <dt><math set:html={`${sub('<mi>B</mi>', '1')}<mo>,</mo><mspace width="0.3em"/>${sub('<mi>B</mi>', '2')}`} /></dt><dd>山の高さを静止摩擦係数に合わせる値（表 A.8）</dd>
+</dl>
+
+<h3>ばねと軸の摩擦</h3>
+<ul class="tl">
+  <li><b>ジャックのばね:</b> ほぼ一定のトルク 0.0042 N·m で、ジャックをナックルの下へ戻す向きに押す<Fragment set:html={rf(1)} /></li>
+  <li><b>レペティションのばね:</b> ウィッペンから測った角度に比例するトルク（式 A.3）<Fragment set:html={rf(1)} />。整調の「レペティションのばね」の倍率 <math set:html={sub('<mi>k</mi>', 's')} /> を掛ける</li>
+  <li><b>軸の摩擦:</b> 摩擦と同じ形の曲線を角速度とトルクに使う（式 2.12）<Fragment set:html={rf(1)} />。表 A.9 では山の項がない（<math set:html={`${sub('<mi>B</mi>', '1')}<mo>=</mo>${sub('<mi>B</mi>', '2')}<mo>=</mo><mn>0</mn>`} />）。大きさ <math><mi>A</mi></math> は鍵 0.0122、ウィッペン 0.000397、ジャック 0.000397、レペティションレバー 0.00247、ハンマー 0.00101 N·m</li>
+  <li><b>重力:</b> 部品ごとに重心にかける</li>
+  <li><b>鍵の前を押す力:</b> 鍵の前の決まった点（表 A.3）に真下へかける</li>
+</ul>
+<div class="eqs">
+  <math display="block" set:html={`<msub><mi>T</mi><mi mathvariant="normal">r</mi></msub><mo>=</mo><mo>−</mo>${sub('<mi>k</mi>', 's')}<mo>·</mo><mn>0.073</mn><mo stretchy="false">(</mo>${th('r')}<mo>−</mo><mn>0.832</mn><mo stretchy="false">)</mo><mo>,</mo><mspace width="1em"/><mi>T</mi><mo>=</mo><mo>−</mo><mi>A</mi><mi>tanh</mi><mo>⁡</mo>${fr('<mi>ω</mi>', wt)}`} />
+</div>
+
+<h3>積分の方法</h3>
+<p>接触は硬く、摩擦の曲線はわずかな速さの違いで大きく変わるので、式はとても硬い（stiff な）連立微分方程式になります。論文は MATLAB の ode15s で解いています<Fragment set:html={rf(1)} />。このページは半陰的オイラー法で、刻み <math><mi>Δ</mi><mi>t</mi></math> = 20 µs で解きます。</p>
+<div class="eqs">
+  <math display="block" set:html={`${MC}${qdn(n1)}<mo>=</mo>${MC}${qdn('n')}<mo>+</mo>${dt}<msub>${bx('Q')}<mi>n</mi></msub><mo>,</mo><mspace width="1em"/><msub>${bx('q')}${n1}</msub><mo>=</mo><msub>${bx('q')}<mi>n</mi></msub><mo>+</mo>${dt}${qdn(n1)}`} />
+  <math display="block" set:html={`${bx('C')}<mo>=</mo>${sum('c')}${ffit}<mi>D</mi>${tr(jn)}${jn}<mo>+</mo>${sum('c')}${fn}<msup><mi>μ</mi><mo>′</mo></msup>${p('<mi>s</mi>')}${tr(jt)}${jt}<mo>+</mo><mi>diag</mi><mo>⁡</mo><mrow><mo>(</mo>${fr('<mi>A</mi>', wt)}<msup><mi>sech</mi><mn>2</mn></msup><mo>⁡</mo>${fr('<mi>ω</mi>', wt)}<mo>)</mo></mrow>`} />
+</div>
+<dl class="syms">
+  <dt><math set:html={bx('C')} /></dt><dd>速さに比例する力（接触の減衰・摩擦・軸の摩擦）を一般化速度で微分した行列</dd>
+  <dt><math set:html={`${jn}<mo>,</mo><mspace width="0.3em"/>${jt}`} /></dt><dd>接触の点の法線と接線の向きの相対の速さを <math set:html={dot(bx('q'))} /> から求める行</dd>
+  <dt><math set:html={`<msub>${bx('Q')}<mi>n</mi></msub>`} /></dt><dd>一般化力に速さの積の項 <math set:html={`<mo>−</mo>${sum('b')}${mb}${tr(Jb)}${hb}`} /> を含めたもの</dd>
+</dl>
+<ul class="tl">
+  <li>速さに比例する力だけを次の刻みの速さで評価する。摩擦の曲線が急に立ち上がるしきい値の近くでも刻みを小さくせずに安定する</li>
+  <li>5 × 5 の連立 1 次方程式は、部分ピボット選択のガウスの消去法で解く</li>
+  <li><math><mi>μ</mi><mo>′</mo></math> が負になる所（静止摩擦の山の先）は 0 にする</li>
+  <li>計算した動きは 0.1 ms ごとに記録し、図と段階はこの記録から作る</li>
+</ul>
+<p>静止の姿勢は論文の図 A.1 に描かれた姿勢から、力をかけずに 0.2 s 動かして決めます。</p>
+
+<h3>鍵を押す力</h3>
+<p>鍵の前を押す力は、論文の実験でモーターが鍵を押したときに測った力です<Fragment set:html={rf(1)} />。強く打つ力は図 4.1、弱く打つ力は図 4.5 の曲線を 2 ms ごとに読み、間は直線で補います。</p>
+<ul class="tl">
+  <li><b>強く:</b> 0.05 s から 0.11 s にかけて 10 N まで上げると、鍵が底に当たって力が約 34 N まで跳ね、約 0.2 s 押し続けてから離す</li>
+  <li><b>弱く:</b> 約 1.5 N まで上げ、鍵が底に当たって約 4 N まで跳ねる。底に着くまでは強くの約 3 倍の時間がかかる</li>
+  <li><b>強く・連打:</b> 強く打って 0.25 s で離し、16 ms 後に強く打つ力を 3 N の所から掛け直す</li>
+</ul>
+<p>実験の力には押す前にも 0.2〜0.4 N が残っています。押す前の値を引き、0 未満を 0 にしてから使います。</p>
+<div class="eqs">
+  <math display="block" set:html={`<mi>F</mi>${p('<mi>t</mi>')}<mo>=</mo><mi>max</mi><mo>⁡</mo><mrow><mo>(</mo><mn>0</mn><mo>,</mo><mspace width="0.3em"/>${sub('<mi>F</mi>', 'exp')}${p('<mi>t</mi>')}<mo>−</mo>${sub('<mover><mi>F</mi><mo>¯</mo></mover>', '0')}<mo>)</mo></mrow>`} />
+</div>
+<p>力は実験の曲線のまま入れるので、整調を変えても力が跳ね上がる時刻は変わりません。</p>
+
+<h3>整調</h3>
+<p>整調はアクションの寸法を技術者が合わせることです。論文の手順<Fragment set:html={rf(1)} />に対応する点を次のように動かします。レットオフとドロップはゆっくり押した姿勢で合わせます。ジャックは止めに、レペティションレバーはねじに当てたまま、ジャックの角がナックルを支える姿勢です。表の長さの単位は mm です。</p>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th>項目</th><th>動かす点</th><th>決め方</th><th>論文の目標</th><th>既定値</th></tr></thead>
+  <tbody>
+    <tr><th>鍵の深さ</th><td>フロントレールの山の高さ</td><td>鍵の前が指定の深さだけ下がったとき、鍵の前の面が山に触れる</td><td class="num">10.0</td><td class="num">10</td></tr>
+    <tr><th>打弦距離</th><td>弦の高さ</td><td>止まっているハンマーの頭から弦まで</td><td class="num">48.0</td><td class="num">48</td></tr>
+    <tr><th>レットオフ</th><td>ボタンの高さ</td><td>ゆっくり押した姿勢でハンマーが弦から指定の距離のとき、ジャックのつま先がボタンに触れる</td><td class="num">1.0</td><td class="num">2</td></tr>
+    <tr><th>ドロップ</th><td>ドロップねじの高さ</td><td>同じ姿勢でレペティションレバーがねじに触れる</td><td class="num">3.0</td><td class="num">3</td></tr>
+    <tr><th>バックチェック</th><td>バックチェックの面（法線の向きへ）</td><td>鍵が底にあり、ハンマーが弦から指定の距離のとき、ハンマーの尾が面に触れる</td><td class="num">15.0</td><td class="num">15</td></tr>
+  </tbody>
+</table></div>
+<p>レペティションのばねは、論文のばねの強さに倍率を掛けて変えます。既定値は 100 % です。</p>
+<p>整調の目安は打弦距離 45〜47 mm、レットオフ 1〜3 mm です<Fragment set:html={rf(5)} />。論文の表のボタンとドロップねじの位置のままでは、ゆっくり押した姿勢で計算したレットオフは約 13 mm、ドロップは約 10 mm になり、論文の整調の目標と合いません。そのためこのページは整調の値からボタンとねじの位置を決めます。</p>
+
+<h3>段階の見分け方</h3>
+<p>接触の法線の力が 0.005 N を超えた時刻を「接触が付いた」とし、計算した動きを段階に分けます。</p>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th>段階</th><th>始まる時刻</th></tr></thead>
+  <tbody>
+    <tr><th>加速</th><td>鍵の前が 0.2 mm 下がった</td></tr>
+    <tr><th>レットオフ</th><td>接触 8（ジャックとボタン）が付いた</td></tr>
+    <tr><th>打弦</th><td>接触 12（弦）が付いた</td></tr>
+    <tr><th>チェック</th><td>打弦のあとに接触 4（バックチェック）が付いた</td></tr>
+    <tr><th>戻り・鍵を戻す</th><td>鍵を押す力が山の 20 % を下回った</td></tr>
+    <tr><th>連打</th><td>力が山の 5 % を下回ったあと、また上回った</td></tr>
+    <tr><th>静止</th><td>離したあとに鍵の前の下がりが 0.2 mm 未満に戻った</td></tr>
+  </tbody>
+</table></div>
+<p>整調が悪いと、次の段階が現れます。</p>
+<ul class="tl">
+  <li><b>ブロッキング:</b> 打弦のときに接触 7（ジャックとナックル）が付いたまま。ジャックが抜けず、ハンマーが弦に押し付けられる</li>
+  <li><b>2 度打ち:</b> チェックの 30 ms 後までに、もう一度弦に触れる</li>
+  <li><b>空振り:</b> 押し直すまでに弦に触れない</li>
+  <li><b>連打できない:</b> 押し直したあとに弦に触れない</li>
+</ul>
+<p>打弦の速さは、弦に触れる前の 0.3 ms の間にハンマーの頭と弦の間が縮む速さです。</p>
+
+<h3>論文との比較</h3>
+<p>既定の整調で計算した打弦の時刻とハンマーの頭の速さを、論文の実験と模型<Fragment set:html={rf(1)} />と比べます。時刻は実験の力の曲線の始まりから測ります。</p>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th>打鍵</th><th>比べる値</th><th>実験</th><th>論文の模型</th><th>このページ</th></tr></thead>
+  <tbody>
+    <tr><th>強く</th><td>打弦の時刻</td><td class="num">0.1105 s</td><td class="num">0.110 s</td><td class="num">0.1111 s</td></tr>
+    <tr><th>強く</th><td>頭の速さ</td><td class="num">約 2.8 m/s</td><td class="num">約 2.9 m/s</td><td class="num">3.13 m/s</td></tr>
+    <tr><th>弱く</th><td>打弦の時刻</td><td class="num">0.228 s</td><td class="num">0.230 s</td><td class="num">0.2276 s</td></tr>
+    <tr><th>弱く</th><td>頭の速さ</td><td class="num">約 0.9 m/s</td><td class="num">約 1.1 m/s</td><td class="num">1.02 m/s</td></tr>
+  </tbody>
+</table></div>
+<ul class="tl">
+  <li>打弦の時刻は強くでも弱くでも実験と 1 ms 以内で合う。鍵が動き始めてから打弦までは強くで約 41.6 ms</li>
+  <li>論文には速さの数値がない。表の「実験」と「論文の模型」の速さは、図 4.4・4.8 のハンマーの角度の曲線で、打弦の直前の傾きから読んだ概数</li>
+  <li>強く打った速さは実験より約 1 割速い。図 4.4 の論文の模型の曲線は打弦の約 4 ms 前に加速が止まって見え、表のボタンの位置のままでレットオフが早いことと合う。このページはレットオフを 2 mm に置き直したので、ジャックがハンマーを押す時間が長い。ただし、ずれの理由がこれだとは確かめていない</li>
+  <li>ジャックが抜けてから打弦までは強くで 1.9 ms、弱くで 2.5 ms。レットオフが 1 mm より短ければ 1 ms 未満になるという測定<Fragment set:html={rf(4)} /><Fragment set:html={rf(5)} />より長いのは、レットオフを 2 mm にしているため</li>
+  <li>鍵が底に当たるのは弱くでは打弦の 4.5 ms 後、強くでは打弦の 0.1 ms 前で、ほぼ同時。弱く打つと鍵の底が打弦より遅れ、強く打つと先になるという測定<Fragment set:html={rf(4)} /><Fragment set:html={rf(5)} />と向きは合う</li>
+</ul>
+<p>論文の模型と同じく次のことは入っていません<Fragment set:html={rf(1)} />。打弦よりあとの動きは実験とずれます。</p>
+<ul class="tl">
+  <li>弦は動かない硬い面で、弦の振動は扱わない</li>
+  <li>ハンマーのシャンクのしなり。打弦のあとの頭の振動が出ない</li>
+  <li>鍵がバランスレールから浮く動き</li>
+</ul>
+
+<h3>ダンパーと音</h3>
+<p>論文の模型にはダンパーがありません。図のダンパーは鍵の後ろの端の上がり <math><mi>Δ</mi><mi>y</mi></math> から次の持ち上がり <math><mi>d</mi></math> で動かす仮の形です。鍵の後ろが約 3.9 mm 上がるまでは動かず、そこから 0.56 倍で上がります。静止のときダンパーの頭は自分の重さで弦に載り、てこの先のフェルトは鍵の後ろの端から 3.9 mm 上にあります。鍵を途中まで押すとフェルトが鍵に載り、ダンパーが上がり始めます。</p>
+<div class="eqs">
+  <math display="block"><mi>d</mi><mo>=</mo><mi>max</mi><mo>⁡</mo><mrow><mo>(</mo><mn>0</mn><mo>,</mo><mspace width="0.3em"/><mn>0.56</mn><mi>Δ</mi><mi>y</mi><mo>−</mo><mn>2.2</mn><mspace width="0.2em"/><mi mathvariant="normal">mm</mi><mo>)</mo></mrow></math>
+</div>
+<p>「打弦で鳴らす」では、打弦のときのハンマーの頭の速さをこのサイトのピアノ音響モデルの打鍵の速さとして渡します。ダンパーが弦に戻ったときに音を止めます。</p>
+
+<h3>このツールで決めたこと</h3>
+<ul class="tl">
+  <li>摩擦のしきい値の速さ <math set:html={`${vt}<mo>=</mo><msup><mn>10</mn><mrow><mo>−</mo><mn>5</mn></mrow></msup>`} /> m/s。論文の本文に値がなく、図 2.7 の例の曲線の値を使った</li>
+  <li>軸の摩擦のしきい値の角速度 <math set:html={`${wt}<mo>=</mo><msup><mn>10</mn><mrow><mo>−</mo><mn>3</mn></mrow></msup>`} /> rad/s。論文に値がない</li>
+  <li>ジャックのばねの向き。論文に書かれていないので、ジャックをナックルの下へ戻す向きとした</li>
+  <li>hybrid の面の食い込みの求め方。論文には形の説明しかない</li>
+  <li>静止の姿勢。論文に角度の数値がないので、図 A.1 に描かれた部品の傾きから読み、力をかけずに 0.2 s 動かして落ち着かせた</li>
+  <li>積分の方法（半陰的オイラー法、刻み 20 µs、記録は 0.1 ms ごと）</li>
+  <li>鍵を押す力。図 4.1・4.5 を 2 ms ごとに読んだ値で、鍵が底に当たったときの振動は均した。押す前の値を引いて 0 未満を 0 にした</li>
+  <li>連打の力。強く打って 0.25 s で離し、16 ms 後（鍵がほぼ半分戻ったところ）に強く打つ力を 3 N の所（0.08 s の値）から掛け直す。論文の 2 度の打鍵（図 4.12）は強く打つ力を 0.20 s 空けて 2 回かけたもの</li>
+  <li>レットオフとドロップは、ゆっくり押した姿勢で整調の値からボタンとドロップねじの位置を決める。論文の手順では、ドロップはジャックが抜けたあとハンマーがレバーに載った高さで合わせる</li>
+  <li>バックチェックは鍵が底にある姿勢で面の位置を決める。論文の手順では中くらいの打鍵でハンマーが止まる高さで合わせる</li>
+  <li>レットオフの既定値 2 mm（論文の目標は 1.0 mm）。整調の各項目の範囲</li>
+  <li>段階を見分けるしきい値（接触の力 0.005 N、鍵の前の下がり 0.2 mm、力の山の 20 %・5 %、2 度打ちの 30 ms）と、打弦の速さを測る 0.3 ms</li>
+  <li>ダンパーの形と動き（鍵の後ろが約 3.9 mm 上がってから、0.56 倍で上がる）</li>
+  <li>音を鳴らす鍵。どの鍵を鳴らしても、アクションの模型は鍵 52 番のまま</li>
+</ul>
+
+<h3>出典</h3>
+<ol class="refs">
+  <li id="thy-r1"><span class="rf-for">5 つの部品の模型、質量と寸法（表 A.1〜A.9、図 A.1）、接触の力と摩擦（式 2.4・2.5・2.10〜2.12、表 2.1・A.8、図 2.7）、ばね（A.4 節）、整調の手順（2.3 節）、鍵を押す力と実験の結果（図 4.1・4.4・4.5・4.8・4.12）</span><span class="rf-src">M. C. Hirschkorn, <a href="http://hdl.handle.net/10012/877" target="_blank" rel="noopener">Dynamic Model of a Piano Action Mechanism</a>, MASc thesis, University of Waterloo, 2004</span></li>
+  <li id="thy-r2"><span class="rf-for">減衰を食い込む速さに比例させる接触の力の形</span><span class="rf-src">K. H. Hunt and F. R. E. Crossley, “Coefficient of Restitution Interpreted as Damping in Vibroimpact,” <i>Journal of Applied Mechanics</i>, vol. 42, no. 2, pp. 440–445, 1975, <a href="https://doi.org/10.1115/1.3423596" target="_blank" rel="noopener">doi:10.1115/1.3423596</a></span></li>
+  <li id="thy-r3"><span class="rf-for">滑らかな摩擦の曲線</span><span class="rf-src">S. J. Cull and R. W. Tucker, “On the modelling of Coulomb friction,” <i>Journal of Physics A: Mathematical and General</i>, vol. 32, no. 11, pp. 2103–2113, 1999, <a href="https://doi.org/10.1088/0305-4470/32/11/006" target="_blank" rel="noopener">doi:10.1088/0305-4470/32/11/006</a></span></li>
+  <li id="thy-r4"><span class="rf-for">アクションの動きの時刻（鍵の底と打弦の関係、ハンマーがジャックを離れてから打弦までの時間、整調と強弱による違い）</span><span class="rf-src">A. Askenfelt and E. V. Jansson, “From touch to string vibrations. I: Timing in the grand piano action,” <i>J. Acoust. Soc. Am.</i>, vol. 88, no. 1, pp. 52–63, 1990, <a href="https://doi.org/10.1121/1.399933" target="_blank" rel="noopener">doi:10.1121/1.399933</a></span></li>
+  <li id="thy-r5"><span class="rf-for">打弦距離 45〜47 mm とレットオフ 1〜3 mm（Timing in the action）、レットオフが 1 mm 未満なら抜けてから打弦まで 1 ms 未満、弱く打つと鍵の底が打弦より遅れ、強く打つと先になること（Key bottom and hammer-string contact）、ハンマーが鍵の約 5 倍の速さで動くこと（The motions of the key and the hammer）</span><span class="rf-src">A. Askenfelt and E. Jansson, “From touch to string vibrations,” in <i>Five Lectures on the Acoustics of the Piano</i>, Royal Swedish Academy of Music, 1990, <a href="https://www.speech.kth.se/music/5_lectures/askenflt/askenflt.html" target="_blank" rel="noopener">speech.kth.se/music/5_lectures/askenflt/</a></span></li>
+</ol>
