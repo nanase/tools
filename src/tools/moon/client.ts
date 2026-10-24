@@ -845,7 +845,7 @@ function drawFigs(): void {
     );
   }
   o.push(
-    `<path class="ln2" d="M150 150L${mx.toFixed(1)} ${my.toFixed(1)}"></path><circle class="drk" cx="${mx.toFixed(1)}" cy="${my.toFixed(1)}" r="9"></circle><path class="lit" d="M${mx.toFixed(1)} ${(my - 9).toFixed(1)}A9 9 0 0 1 ${mx.toFixed(1)} ${(my + 9).toFixed(1)}Z"></path><text class="mt" x="${(mx + 13).toFixed(1)}" y="${(my - 4).toFixed(1)}">月</text>`,
+    `<path class="ln2" d="M150 150L${mx.toFixed(1)} ${my.toFixed(1)}"></path><circle class="drk" cx="${mx.toFixed(1)}" cy="${my.toFixed(1)}" r="9"></circle><path class="lit" d="M${mx.toFixed(1)} ${(my - 9).toFixed(1)}A9 9 0 0 1 ${mx.toFixed(1)} ${(my + 9).toFixed(1)}Z"></path><circle class="rim" cx="${mx.toFixed(1)}" cy="${my.toFixed(1)}" r="9"></circle><text class="mt" x="${(mx + 13).toFixed(1)}" y="${(my - 4).toFixed(1)}">月</text>`,
   );
   $('#orb').innerHTML = o.join('');
 

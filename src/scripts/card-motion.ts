@@ -1,23 +1,48 @@
 /**
- * カードの図柄: マウスを乗せている間だけ、図柄の時刻を進めて描き直す。
- * 図柄の式（lib/card-art.ts）は、初めて乗せたときに読み込む。タッチと動きを減らす設定では動かさない
+ * カードの図柄: マウスを乗せている間（タッチでは指が触れている間）だけ、図柄の時刻を進めて描き直す。
+ * 離すと時刻を逆に戻して止まっている絵へ帰る。
+ * 図柄の式（lib/card-art.ts）は、初めて乗せたときに読み込む。動きを減らす設定では動かさない
  */
 import { $$ } from '../lib/dom';
 import { RM } from '../lib/motion';
 
 type Arts = typeof import('../lib/card-art');
 
+/** 戻すのにかける最長の時間 [s]。それより短く動かしたときは同じ速さで戻す */
+const BACK = 0.6;
+
+/** 動かしている図柄。進めているときは t = t1 + (now − at)、戻しているときは t1 から back 秒かけて 0 へ */
+interface Live {
+  at: number;
+  t1: number;
+  back: number;
+}
+
 let arts: Promise<Arts> | undefined;
-/** 動かしている図柄と、動かし始めた時刻 [ms] */
-const live = new Map<SVGSVGElement, number>();
+const live = new Map<SVGSVGElement, Live>();
 /** ビルド時に出した、止まっているときの図柄 */
 const still = new Map<SVGSVGElement, string>();
 let raf = 0,
   tick = 0;
 
+/** 図柄の今の時刻 [s]。戻し終えたら null */
+function timeOf(m: Live, now: number): number | null {
+  const s = Math.max(0, (now - m.at) / 1000);
+  if (!m.back) return m.t1 + s;
+  if (s >= m.back) return null;
+  const p = s / m.back;
+  return m.t1 * (1 - p * p * (3 - 2 * p));
+}
+
 function step(now: number, A: Arts['ART']): void {
   tick = performance.now();
-  for (const [svg, t0] of live) svg.innerHTML = A[svg.dataset.art ?? '']?.(Math.max(0, (now - t0) / 1000)) ?? '';
+  for (const [svg, m] of live) {
+    const t = timeOf(m, now);
+    if (t === null) {
+      live.delete(svg);
+      svg.innerHTML = still.get(svg) ?? svg.innerHTML;
+    } else svg.innerHTML = A[svg.dataset.art ?? '']?.(t) ?? '';
+  }
   raf = live.size ? requestAnimationFrame((n) => step(n, A)) : 0;
 }
 
@@ -32,18 +57,29 @@ function kick(A: Arts['ART']): void {
 function play(svg: SVGSVGElement): void {
   if (RM.matches) return;
   if (!still.has(svg)) still.set(svg, svg.innerHTML);
-  live.set(svg, performance.now());
+  const m = live.get(svg),
+    now = performance.now();
+  /* 戻している途中なら、その時刻から進め直す */
+  live.set(svg, { at: now, t1: m ? (timeOf(m, now) ?? 0) : 0, back: 0 });
   arts ??= import('../lib/card-art');
-  arts.then((m) => kick(m.ART));
+  arts.then((a) => kick(a.ART));
 }
 
 function stop(svg: SVGSVGElement): void {
-  if (!live.delete(svg)) return;
-  svg.innerHTML = still.get(svg) ?? svg.innerHTML;
+  const m = live.get(svg);
+  if (!m || m.back) return;
+  const now = performance.now(),
+    t1 = timeOf(m, now) ?? 0;
+  if (t1 > 0) live.set(svg, { at: now, t1, back: Math.min(BACK, t1) });
+  else {
+    live.delete(svg);
+    svg.innerHTML = still.get(svg) ?? svg.innerHTML;
+  }
 }
 
 for (const svg of $$<SVGSVGElement>('a.unit svg[data-art]')) {
   const card = svg.closest('a') as HTMLAnchorElement;
-  card.addEventListener('pointerenter', (e) => e.pointerType === 'mouse' && play(svg));
+  /* タッチでは指を置いたときに pointerenter、離すか画面を動かしたときに pointerleave が届く */
+  card.addEventListener('pointerenter', () => play(svg));
   card.addEventListener('pointerleave', () => stop(svg));
 }
