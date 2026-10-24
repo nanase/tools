@@ -156,8 +156,9 @@
 .mfig .ts{fill:var(--ink-2);font:500 10.5px var(--sans)}
 .mfig .orb{fill:none;stroke:var(--ink-3);stroke-width:1;stroke-dasharray:3 4}
 .mfig .earth{fill:#3d6e9e;stroke:var(--ink)}
-.mfig .lit{fill:var(--ink)}
-.mfig .drk{fill:var(--surface);stroke:var(--ink);stroke-width:1}
+.mfig .lit{fill:#eeeadf}
+.mfig .drk{fill:#30363b}
+.mfig .rim{fill:none;stroke:var(--ink);stroke-width:1}
 .mfig .sunar{stroke:#9a6c00;stroke-width:1.6;fill:none}
 .mfig.big text{font-size:26px}
 .mfig.big .ts,.mfig.big .mt{font-size:26px}

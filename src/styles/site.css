@@ -97,7 +97,8 @@ sub{font-size:.7em;line-height:0}
 .rb:hover{color:var(--rail-ink);background:var(--rail-2)}
 .rb[aria-expanded="true"]{background:var(--rail-2);color:var(--rail-ink)}
 #themeBtn svg{display:none}
-#themeBtn[data-s="system"] .t-sys,#themeBtn[data-s="light"] .t-sun,#themeBtn[data-s="dark"] .t-moon{display:block}
+/* アイコンは描画前に head のインラインスクリプトが当てる data-theme で選ぶ（スクリプトを待つと自動のアイコンが一瞬出る） */
+:root:not([data-theme]) #themeBtn .t-sys,:root[data-theme="light"] #themeBtn .t-sun,:root[data-theme="dark"] #themeBtn .t-moon{display:block}
 .rb{padding:0}
 
 /* ===== tool menu ===== */

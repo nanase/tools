@@ -14,7 +14,7 @@ import Theory from '../tools/solar-eclipse/Theory.astro';
 
 const name = '日食';
 /* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
-const CAT = '画像・光学';
+const CAT = '天文';
 const related = [
   ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'solar-eclipse')),
   ...TOOLS.filter((t) => t.c !== CAT && !t.s),

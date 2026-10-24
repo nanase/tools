@@ -13,7 +13,7 @@ export interface Tool {
   s?: 1;
 }
 
-export const CATS = ['電子回路', '制御', 'デジタルフィルタ', '信号・通信', '音響', '画像・光学', 'SVG'];
+export const CATS = ['電子回路', '制御', 'デジタルフィルタ', '信号・通信', '音響', '画像・光学', '天文', 'SVG'];
 export const TOOLS: Tool[] = [
   {
     id: 'timer555',
@@ -51,7 +51,7 @@ export const TOOLS: Tool[] = [
     id: 'kalman',
     c: '制御',
     t: 'カルマンフィルタ',
-    d: '雑音のある距離計の値から、台車の位置と速度をカルマンフィルタで推定します。',
+    d: '雑音のある測定値から台車の位置と速度を推定します。',
     ic: 'kf',
     k: 'kalman filter 推定 estimation 状態推定 state estimation ベイズ bayes 正規分布 gaussian 共分散 covariance 楕円 ellipse 予測 更新 predict update カルマンゲイン kalman gain イノベーション innovation nis 過程雑音 観測雑音 process noise measurement noise q r 発散 divergence 追跡 tracking センサ sensor',
   },
@@ -91,7 +91,7 @@ export const TOOLS: Tool[] = [
     id: 'qr-code',
     c: '信号・通信',
     t: 'QR コード',
-    d: '文字列から QR コードができるまでを追い、しみやこすれで壊れた所を誤り訂正する様子を見せます。',
+    d: '文字列から QR コードを作る手順と誤り訂正を追います。',
     ic: 'qr',
     k: 'qr code qrコード 二次元コード 2次元バーコード barcode 誤り訂正 error correction リード・ソロモン reed solomon bch ガロア体 有限体 galois field gf(256) シンドローム syndrome berlekamp massey chien forney マスク mask 形式情報 format information バージョン version 符号語 codeword 漢字 shift_jis utf-8 デンソーウェーブ denso wave iso/iec 18004 jis x 0510',
   },
@@ -115,7 +115,7 @@ export const TOOLS: Tool[] = [
     id: 'spectrum',
     c: '音響',
     t: 'スペクトラムアナライザ',
-    d: 'マイクや音楽ファイルの音をスペクトラムまたはスペクトログラムで表示します。',
+    d: 'マイクや音楽ファイルの音の周波数成分を表示します。',
     ic: 'sp',
     k: 'spectrum analyzer fft スペクトル スペクトログラム spectrogram 周波数 窓関数 メル mel マイク 音声 オーディオ audio',
   },
@@ -155,7 +155,7 @@ export const TOOLS: Tool[] = [
     id: 'piano-action',
     c: '音響',
     t: 'ピアノのアクション',
-    d: 'グランドピアノの鍵からハンマーまでの機構の動きを、段階ごとにスローで追います。',
+    d: '鍵からハンマーまでの機構の動きをスローで追います。',
     ic: 'pa',
     k: 'piano action grand 機構 アクション 鍵 key ハンマー hammer ウィッペン wippen whippen ジャック jack レペティション repetition lever ナックル knuckle レットオフ let-off escapement エスケープメント ダブルエスケープメント double escapement ドロップ drop バックチェック back check ダンパー damper キャプスタン capstan 整調 regulation 連打 repetition 打弦 多体 multibody 接触 contact スロー slow motion hirschkorn',
   },
@@ -257,17 +257,17 @@ export const TOOLS: Tool[] = [
   },
   {
     id: 'solar-eclipse',
-    c: '画像・光学',
+    c: '天文',
     t: '日食',
-    d: '過去と未来の日食を、選んだ地点から見た空と、宇宙から見た月の影で再現します。',
+    d: '過去と未来の日食を地上の空と月の影で再現します。',
     ic: 'se',
     k: 'solar eclipse 日食 皆既日食 金環日食 部分日食 total annular hybrid partial 食分 面積比 magnitude obscuration コロナ corona ダイヤモンドリング diamond ring ベイリー baily 月の影 本影 半影 umbra penumbra 皆既帯 中心線 central line サロス saros ベッセル要素 besselian elements nasa 五千年正典 five millennium canon espenak meeus deltat δt 地方食 local circumstances 天文 astronomy 太陽 月',
   },
   {
     id: 'moon',
-    c: '画像・光学',
+    c: '天文',
     t: '月',
-    d: '選んだ日時と観測地から見た月を、満ち欠け・秤動・距離と地形の影まで再現します。',
+    d: '選んだ日時の月を満ち欠けから地形の影まで再現します。',
     ic: 'mn',
     k: 'moon 月 満ち欠け 月齢 月相 phase 輝面比 illumination 秤動 libration 地球直下点 sub-earth 視直径 apparent diameter 近地点 遠地点 perigee apogee スーパームーン supermoon 月の出 月の入り 南中 moonrise moonset 欠け際 明暗境界 terminator クレーター crater 月の海 mare 余経度 colongitude 地球照 earthshine 月食 皆既月食 lunar eclipse 本影 半影 赤銅色 danjon 中秋の名月 十三夜 カレンダー lro lola nasa meeus 天文 astronomy',
   },
@@ -283,7 +283,7 @@ export const TOOLS: Tool[] = [
     id: 'temperament',
     c: '音響',
     t: '音律とうなり',
-    d: '平均律・純正律・ミーントーンなどで和音を鳴らし、うなりの速さを数値と音で比べます。',
+    d: '音律ごとに和音を鳴らし、うなりの速さを比べます。',
     ic: 'tm',
     k: 'temperament tuning 音律 調律 うなり beat beats 平均律 equal temperament 純正律 just intonation ピタゴラス pythagorean ミーントーン meantone ヴェルクマイスター werckmeister キルンベルガー kirnberger ヴァロッティ vallotti ヤング young 古典調律 well temperament 和音 chord 長三和音 3 度 5 度 部分音 倍音 partial harmonic コンマ comma ウルフ wolf 非調和性 inharmonicity ストレッチ stretch ピアノ piano オルガン organ セント cent',
   },
