@@ -394,7 +394,7 @@ export const ART: Record<string, Art> = {
   jjyd(t) {
     const S = 14,
       off = t * 21,
-      CODE = 'P1001011010P0110100100';
+      CODE = 'P1001011010';
     const b: [number, number][] = [];
     for (let x = 4; x <= 116; x++) {
       const u = x + off,
@@ -408,7 +408,7 @@ export const ART: Record<string, Art> = {
     const q = QR(),
       n = q.n,
       cx = 25 + 15 * Math.sin(t * 0.9),
-      cy = 24 + 9 * Math.cos(t * 1.3),
+      cy = 24 + 9 * Math.cos(t * 1.35),
       hit = new Set<number>();
     let d = '';
     for (let i = 0; i < n * n; i++)
@@ -497,9 +497,9 @@ export const ART: Record<string, Art> = {
       )
     );
   },
-  /* スペクトラムアナライザ: 測るたびにピークと雑音の床がゆらぐ */
+  /* スペクトラムアナライザ: 測るたびにピークと雑音の床がゆらぐ。ゆらぎは 2 秒（24 回）でくり返す */
   sp(t) {
-    const T = Math.floor(t * 12),
+    const T = Math.floor(t * 12) % 24,
       pk = [
         [22, 32],
         [44, 15],
@@ -726,8 +726,8 @@ export const ART: Record<string, Art> = {
     let s = VN.still;
     if (!t) s += P('a', band(1) + band(-1));
     else {
-      /* 折れ目は前半で駒から上駒へ（上の枝）、後半で上駒から駒へ（下の枝）。上げ弓では上下が逆 */
-      const ph = mod(t * 1.7, 1),
+      /* 折れ目は前半で駒から上駒へ（上の枝）、後半で上駒から駒へ（下の枝）。上げ弓では上下が逆。片道に 3 回まわる */
+      const ph = mod(t * 1.875, 1),
         u = ph < 0.5 ? 1 - 2 * ph : 2 * ph - 1,
         side = (ph < 0.5 ? 1 : -1) * (down ? 1 : -1);
       s += P('a g', band(1) + band(-1)) + P('a', pl([at(0, 0), at(u, side * A * env(u)), at(1, 0)]));
@@ -772,9 +772,10 @@ export const ART: Record<string, Art> = {
         P('c t', `M${x} ${r1(y)}V18.8`) +
         P(v[i] ? 'a w' : 'c w', `M${x - 1.7} ${r1(y)}H${x + 1.7}`);
     });
-    if (t) s += P('b', air, ` stroke-dasharray="3 26" stroke-dashoffset="${r1(-t * 45)}"`);
+    /* 運指の 1 巡（4.8 s）に、圧力の波は 7 つ、ベルの輪は 3 つ進む */
+    if (t) s += P('b', air, ` stroke-dasharray="3 26" stroke-dashoffset="${r1((-t * 29 * 7) / 4.8)}"`);
     for (let j = 0; j < 3; j++) {
-      const r = t ? mod(t * 9 + j * 5, 15) : 3 + j * 5,
+      const r = t ? mod((t * 15 * 3) / 4.8 + j * 5, 15) : 3 + j * 5,
         x = r1(102 + r),
         h = r1(6 + r * 0.6);
       s += P('a', `M${x} ${r1(19.8 - h)}Q${r1(x + 2.5)} 19.8 ${x} ${r1(19.8 + h)}`, ` opacity="${r1(1 - r / 16)}"`);
@@ -847,7 +848,7 @@ export const ART: Record<string, Art> = {
       const x = 10 + i * 10,
         y0 = top(i),
         len = 34 - y0,
-        a = 2.2 * Math.cos(TAU * 2.2 * t) * (t ? Math.min(1, tau * 8) : 1);
+        a = 2.2 * Math.cos((TAU * 7 * t) / 3) * (t ? Math.min(1, tau * 8) : 1);
       const side = (sg: number): string => {
         const p: [number, number][] = [];
         for (let k = 0; k <= 12; k++) p.push([x + sg * a * Math.sin((Math.PI * k) / 12), y0 + (len * k) / 12]);
@@ -1073,6 +1074,47 @@ export const ART: Record<string, Art> = {
       )
     );
   },
+};
+
+/**
+ * 図柄の 1 周 [s]。t > 0 で、t と t + 1 周は同じ絵になる。離したときは 1 周で割った余りから戻す（scripts/card-motion.ts）。
+ * JJY（14 s）とノイズ（25.4 s）は長いので 2 s で区切る。どちらも絵がとびとびに変わるので、余りへ移ったときの飛びは目立たない
+ */
+export const LOOP: Record<string, number> = {
+  sq: 36 / 30,
+  rr: 7 / 14,
+  pid: TAU / 1.6,
+  ip: TAU / 2.4,
+  kf: TAU / 1.4,
+  bq: TAU / 1.3,
+  iir: TAU / 1.5,
+  jjy: 2,
+  jjyd: (11 * 14) / 21,
+  qr: TAU / 0.45,
+  fir: TAU / 1.8,
+  pz: TAU / 0.7,
+  cc: 2,
+  os: 48 / 17,
+  sp: 2,
+  fm: TAU / 1.5,
+  nz: 2,
+  gt: 3,
+  pn: 0.32 * 7 + 1.2,
+  pa: 3,
+  vn: 3.2,
+  tp: 4.8,
+  pc: 16 / 30,
+  jp: 3,
+  og: 3,
+  en: 720 / 400,
+  ln: TAU / 1.4,
+  hl: TAU / 0.8,
+  fk: TAU / 2.1,
+  se: 1 / 0.12,
+  mn: TAU / 0.9,
+  svg: TAU / 1.8,
+  tu: 3,
+  tm: Math.PI / 1.2,
 };
 
 /** 止まっているときの図柄（ビルド時に HTML へ出す） */

@@ -1,6 +1,6 @@
 /**
  * カードの図柄: マウスを乗せている間（タッチでは指が触れている間）だけ、図柄の時刻を進めて描き直す。
- * 離すと時刻を逆に戻して止まっている絵へ帰る。
+ * 離すと時刻を逆に戻して止まっている絵へ帰る。1 周より長く動かしたときは、1 周で割った余りの分だけ戻す。
  * 図柄の式（lib/card-art.ts）は、初めて乗せたときに読み込む。動きを減らす設定では動かさない
  */
 import { $$ } from '../lib/dom';
@@ -19,6 +19,8 @@ interface Live {
 }
 
 let arts: Promise<Arts> | undefined;
+/** 読み込み終えた図柄の式 */
+let lib: Arts | undefined;
 const live = new Map<SVGSVGElement, Live>();
 /** ビルド時に出した、止まっているときの図柄 */
 const still = new Map<SVGSVGElement, string>();
@@ -62,14 +64,20 @@ function play(svg: SVGSVGElement): void {
   /* 戻している途中なら、その時刻から進め直す */
   live.set(svg, { at: now, t1: m ? (timeOf(m, now) ?? 0) : 0, back: 0 });
   arts ??= import('../lib/card-art');
-  arts.then((a) => kick(a.ART));
+  arts.then((a) => {
+    lib = a;
+    kick(a.ART);
+  });
 }
 
 function stop(svg: SVGSVGElement): void {
   const m = live.get(svg);
   if (!m || m.back) return;
   const now = performance.now(),
-    t1 = timeOf(m, now) ?? 0;
+    t = timeOf(m, now) ?? 0,
+    /* t と t + 1 周は同じ絵なので、余りへ移しても見た目は変わらない */
+    loop = lib?.LOOP[svg.dataset.art ?? ''],
+    t1 = loop ? t % loop : t;
   if (t1 > 0) live.set(svg, { at: now, t1, back: Math.min(BACK, t1) });
   else {
     live.delete(svg);
