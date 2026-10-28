@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="230" viewBox="0 0 360 230">
+  <!-- 構成図: 線・文字・塗り・強調の色を CSS 変数で差し替える。矢印の先（marker）も同じ変数で塗る -->
+  <style>
+    :root {
+      --text: #1d2433;
+      --sub: #6a7385;
+      --line: #5a6478;
+      --node: #f3f6fb;
+      --node-edge: #9aa6ba;
+      --group: #e9f3ff;
+      --group-edge: #7fa8d8;
+      --accent: #e0702a;
+      --db: #fff4e5;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --text: #e6eaf2;
+        --sub: #98a2b5;
+        --line: #a3adbf;
+        --node: #222a38;
+        --node-edge: #56627a;
+        --group: #142236;
+        --group-edge: #3d6699;
+        --accent: #ff9c5b;
+        --db: #33281a;
+      }
+    }
+    text { font-family: system-ui, sans-serif; fill: var(--text); }
+    .title { font-size: 14px; font-weight: 700; }
+    .label { font-size: 12px; font-weight: 600; text-anchor: middle; }
+    .sub { font-size: 9.5px; fill: var(--sub); text-anchor: middle; }
+    .edge-label { font-size: 9.5px; fill: var(--sub); }
+    .node { fill: var(--node); stroke: var(--node-edge); stroke-width: 1.2; }
+    .db { fill: var(--db); stroke: var(--accent); stroke-width: 1.2; }
+    .group { fill: var(--group); stroke: var(--group-edge); stroke-width: 1.2; stroke-dasharray: 5 4; }
+    .group-label { font-size: 10px; fill: var(--group-edge); font-weight: 700; letter-spacing: 1px; }
+    .wire { fill: none; stroke: var(--line); stroke-width: 1.4; }
+    .hit { fill: none; stroke: var(--accent); stroke-width: 1.4; stroke-dasharray: 4 3; }
+    .head { fill: var(--line); }
+    .head-hit { fill: var(--accent); }
+  </style>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path class="head" d="M0 0l10 5-10 5z"/>
+    </marker>
+    <marker id="arrow-hit" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path class="head-hit" d="M0 0l10 5-10 5z"/>
+    </marker>
+  </defs>
+
+  <text class="title" x="16" y="26">リクエストの流れ</text>
+
+  <rect class="group" x="130" y="42" width="216" height="160" rx="12"/>
+  <text class="group-label" x="142" y="60">CLOUD</text>
+
+  <rect class="node" x="16" y="92" width="76" height="46" rx="9"/>
+  <text class="label" x="54" y="113">Browser</text>
+  <text class="sub" x="54" y="127">利用者</text>
+
+  <rect class="node" x="142" y="92" width="68" height="46" rx="9"/>
+  <text class="label" x="176" y="113">CDN</text>
+  <text class="sub" x="176" y="127">キャッシュ</text>
+
+  <rect class="node" x="254" y="70" width="78" height="42" rx="9"/>
+  <text class="label" x="293" y="89">App</text>
+  <text class="sub" x="293" y="102">API サーバ</text>
+
+  <path class="db" d="M256 150a37 8 0 0 1 74 0v30a37 8 0 0 1-74 0z"/>
+  <path class="db" d="M256 150a37 8 0 0 0 74 0" fill="none"/>
+  <text class="label" x="293" y="174">DB</text>
+
+  <path class="wire" d="M92 108h48" marker-end="url(#arrow)"/>
+  <text class="edge-label" x="95" y="101">HTTPS</text>
+  <path class="wire" d="M210 106c18 0 24-14 42-14" marker-end="url(#arrow)"/>
+  <text class="edge-label" x="216" y="88">miss</text>
+  <path class="wire" d="M293 112v28" marker-end="url(#arrow)"/>
+  <text class="edge-label" x="299" y="130">SQL</text>
+  <path class="hit" d="M142 126H94" marker-end="url(#arrow-hit)"/>
+  <text class="edge-label" x="104" y="140">hit</text>
+
+  <path class="wire" d="M16 216h22" marker-end="url(#arrow)"/>
+  <text class="edge-label" x="44" y="219">リクエスト</text>
+  <path class="hit" d="M110 216h22" marker-end="url(#arrow-hit)"/>
+  <text class="edge-label" x="138" y="219">キャッシュから返す</text>
+</svg>

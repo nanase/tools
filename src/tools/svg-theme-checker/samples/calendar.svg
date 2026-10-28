@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="280" height="240" viewBox="0 0 280 240">
+  <!-- style の media 属性: ダーク用の style 要素を丸ごと分ける。後ろの style が前の指定を上書きする -->
+  <style>
+    .shadow { fill: #1b2a4a; opacity: .14; }
+    .page { fill: #ffffff; stroke: #d9dde3; }
+    .head { fill: #e8604c; }
+    .month { fill: #ffffff; }
+    .ring { fill: #c3cad5; stroke: #8f99a8; }
+    .hole { fill: #a8382a; }
+    .dow { fill: #8a94a6; }
+    .day { fill: #2d3748; }
+    .sun { fill: #e8604c; }
+    .today { fill: #ffe1d9; }
+    .today-text { fill: #b83a26; font-weight: 700; }
+    text { font-family: system-ui, sans-serif; text-anchor: middle; }
+  </style>
+  <style media="(prefers-color-scheme: dark)">
+    .shadow { fill: #000000; opacity: .45; }
+    .page { fill: #1f2430; stroke: #3a4252; }
+    .head { fill: #a9402f; }
+    .month { fill: #ffe9e4; }
+    .ring { fill: #687284; stroke: #9aa3b3; }
+    .hole { fill: #5e2219; }
+    .dow { fill: #7d879a; }
+    .day { fill: #dfe4ec; }
+    .sun { fill: #ff8f7a; }
+    .today { fill: #6a2d23; }
+    .today-text { fill: #ffd6cc; }
+  </style>
+  <rect class="shadow" x="26" y="32" width="240" height="200" rx="14"/>
+  <rect class="page" x="20" y="24" width="240" height="200" rx="14"/>
+  <path class="head" d="M34 24h212a14 14 0 0 1 14 14v38H20V38a14 14 0 0 1 14-14z"/>
+  <circle class="hole" cx="80" cy="36" r="5"/>
+  <circle class="hole" cx="200" cy="36" r="5"/>
+  <rect class="ring" x="76" y="12" width="8" height="26" rx="4"/>
+  <rect class="ring" x="196" y="12" width="8" height="26" rx="4"/>
+  <text class="month" x="140" y="63" font-size="19" font-weight="700" letter-spacing="2">OCTOBER 2026</text>
+  <g class="dow" font-size="11" font-weight="600">
+    <text x="37.1" y="96">S</text><text x="71.4" y="96">M</text><text x="105.7" y="96">T</text><text x="140" y="96">W</text><text x="174.3" y="96">T</text><text x="208.6" y="96">F</text><text x="242.9" y="96">S</text>
+  </g>
+  <circle class="today" cx="140" cy="201.5" r="11"/>
+  <g class="day" font-size="13">
+    <text x="174.3" y="120">1</text><text x="208.6" y="120">2</text><text x="242.9" y="120">3</text>
+    <text class="sun" x="37.1" y="142">4</text><text x="71.4" y="142">5</text><text x="105.7" y="142">6</text><text x="140" y="142">7</text><text x="174.3" y="142">8</text><text x="208.6" y="142">9</text><text x="242.9" y="142">10</text>
+    <text class="sun" x="37.1" y="164">11</text><text x="71.4" y="164">12</text><text x="105.7" y="164">13</text><text x="140" y="164">14</text><text x="174.3" y="164">15</text><text x="208.6" y="164">16</text><text x="242.9" y="164">17</text>
+    <text class="sun" x="37.1" y="186">18</text><text x="71.4" y="186">19</text><text x="105.7" y="186">20</text><text x="140" y="186">21</text><text x="174.3" y="186">22</text><text x="208.6" y="186">23</text><text x="242.9" y="186">24</text>
+    <text class="sun" x="37.1" y="206">25</text><text x="71.4" y="206">26</text><text x="105.7" y="206">27</text><text class="today-text" x="140" y="206">28</text><text x="174.3" y="206">29</text><text x="208.6" y="206">30</text><text x="242.9" y="206">31</text>
+  </g>
+</svg>

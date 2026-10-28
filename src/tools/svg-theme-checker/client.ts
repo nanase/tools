@@ -4,6 +4,7 @@ import { initToolPage } from '../../lib/tool-page';
 import { type Edit, gutterHtml, hlHtml, indentEdit, lineCount, newlineEdit } from './code';
 import { reportText } from './policy';
 import { Preview } from './preview';
+import { SAMPLES } from './samples';
 import { sanitize, themed } from './sanitize';
 import { n4, sizeOf, type Theme } from './view';
 
@@ -118,6 +119,7 @@ function paint(): void {
 let upT: ReturnType<typeof setTimeout> | undefined;
 function onEdit(): void {
   paint();
+  syncSel();
   clearTimeout(upT);
   upT = setTimeout(update, 160);
 }
@@ -162,16 +164,33 @@ ta.addEventListener('keydown', (e) => {
 });
 
 /* ---------- 読み込み（ファイル・例） ---------- */
-/** 例の SVG はビルド時に textarea の初期値として入れてある */
-const EXAMPLE = ta.defaultValue;
-function setCode(text: string): void {
-  ta.value = text;
+const sel = $<HTMLSelectElement>('#exSel');
+/** 最後に読み込んだコード（例・ファイル）と、それが例ならその id。これと違えば書き換えたとみなす */
+let base: string | null = null,
+  baseId = '';
+/** 読み込んだ例のままなら一覧でその例を選び、書き換えたら「—」にする（同じ例をもう一度選べるように） */
+function syncSel(): void {
+  sel.value = baseId && ta.value === base ? baseId : '';
+}
+/** 書き換えたコードがあれば、捨ててよいかを確かめる */
+const mayDiscard = (q: string): boolean =>
+  !ta.value.trim() || ta.value === base || confirm(`書き換えたコードは保存されません。${q}`);
+function setCode(text: string, id = ''): void {
+  ta.value = base = text;
+  baseId = id;
   ed.scrollTop = ed.scrollLeft = 0;
   pendingFit = true;
   clearTimeout(upT);
   paint();
+  syncSel();
   update();
 }
+sel.addEventListener('change', () => {
+  const s = SAMPLES.find((x) => x.id === sel.value);
+  if (!s) return;
+  if (mayDiscard(`「${s.name}」の例に切り替えますか？`)) setCode(s.svg, s.id);
+  else syncSel();
+});
 const MAX = 5 * 1024 * 1024;
 async function loadFile(f: File | undefined): Promise<void> {
   if (!f) return;
@@ -179,6 +198,7 @@ async function loadFile(f: File | undefined): Promise<void> {
     say(codeMsg, 'er', `「${f.name}」は 5 MB を超えるため開けません`);
     return;
   }
+  if (!mayDiscard(`「${f.name}」を開きますか？`)) return;
   try {
     setCode(await f.text());
   } catch {
@@ -191,7 +211,6 @@ file.addEventListener('change', () => {
   void loadFile(file.files?.[0]);
   file.value = '';
 });
-$('#exBtn').addEventListener('click', () => setCode(EXAMPLE));
 const hasFile = (e: DragEvent) => !!e.dataTransfer && [...e.dataTransfer.types].includes('Files');
 for (const z of [ed, ...pv.panes]) {
   z.addEventListener('dragover', (e) => {
@@ -218,7 +237,13 @@ $('#zseg').addEventListener('click', (e) => {
   else if (z === 'one') pv.actual();
 });
 
-/* 戻る操作で textarea の中身が復元されることがあるので、今の値から描く */
+/* 戻る操作で textarea の中身が復元されることがあるので、今の値から描く。例のままならその例を選んでおく */
+const restored = SAMPLES.find((s) => s.svg === ta.value);
+if (restored) {
+  base = restored.svg;
+  baseId = restored.id;
+}
+syncSel();
 pendingFit = true;
 paint();
 update();

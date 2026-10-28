@@ -15,6 +15,7 @@ import {
   XLNS,
   XMLNS,
 } from '../src/tools/svg-theme-checker/policy';
+import { SAMPLE_GROUPS, SAMPLES } from '../src/tools/svg-theme-checker/samples';
 import {
   actualView,
   fitView,
@@ -369,5 +370,26 @@ describe('コード入力', () => {
   it('Enter: 今の行の頭の空白を引き継ぐ', () => {
     expect(newlineEdit('<g>\n    <path/>', 15, 15)).toEqual({ from: 15, to: 15, text: '\n    ' });
     expect(newlineEdit('\t<g>', 2, 4)).toEqual({ from: 2, to: 4, text: '\n\t' });
+  });
+});
+
+describe('例の SVG', () => {
+  it('id は重ならず、どの分類にも例がある', () => {
+    expect(new Set(SAMPLES.map((s) => s.id)).size).toBe(SAMPLES.length);
+    for (const g of SAMPLE_GROUPS) expect(SAMPLES.some((s) => s.group === g)).toBe(true);
+  });
+
+  it('svg で始まり、2 行目のコメントにねらいを書く', () => {
+    for (const s of SAMPLES) {
+      const [l1, l2] = s.svg.split('\n');
+      expect(l1, s.id).toMatch(/^<svg\s/);
+      expect(l2, s.id).toMatch(/^\s*<!-- .+ -->$/);
+    }
+  });
+
+  it('light-dark() の例は、color-scheme をそれぞれのテーマに固定すれば切り替わる', () => {
+    const svg = SAMPLES.find((s) => s.id === 'scenery')?.svg ?? '';
+    expect(themeCss(svg, 'dark')).toContain('color-scheme: dark;');
+    expect(themeCss(svg, 'light')).toContain('color-scheme: light;');
   });
 });

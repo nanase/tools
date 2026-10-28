@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="340" height="220" viewBox="0 0 340 220">
+  <!-- 失敗例: 白い背景を敷いている。ライトでは気づかないが、ダークでは白い四角が浮く -->
+  <defs>
+    <linearGradient id="bar" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5b8def"/>
+      <stop offset="1" stop-color="#3461c9"/>
+    </linearGradient>
+  </defs>
+  <rect x="0.5" y="0.5" width="339" height="219" rx="12" fill="#ffffff" stroke="#e3e7ee"/>
+  <text x="20" y="32" fill="#111827" font-family="system-ui, sans-serif" font-size="15" font-weight="700">月別の訪問数</text>
+  <text x="20" y="50" fill="#6b7280" font-family="system-ui, sans-serif" font-size="11">2026 年 4〜9 月</text>
+  <g stroke="#eceff4">
+    <path d="M48 70h272M48 105h272M48 140h272"/>
+  </g>
+  <path d="M48 175h272" stroke="#c7cdd7"/>
+  <g fill="#9098a6" font-family="system-ui, sans-serif" font-size="10" text-anchor="end">
+    <text x="40" y="74">3k</text><text x="40" y="109">2k</text><text x="40" y="144">1k</text><text x="40" y="179">0</text>
+  </g>
+  <g fill="url(#bar)">
+    <rect x="62" y="133" width="26" height="42" rx="3"/>
+    <rect x="106" y="119" width="26" height="56" rx="3"/>
+    <rect x="150" y="98" width="26" height="77" rx="3"/>
+    <rect x="194" y="108" width="26" height="67" rx="3"/>
+    <rect x="238" y="84" width="26" height="91" rx="3"/>
+    <rect x="282" y="73" width="26" height="102" rx="3"/>
+  </g>
+  <path d="M75 150L119 140 163 122 207 128 251 106 295 96" fill="none" stroke="#f08a24" stroke-width="2.2" stroke-linejoin="round"/>
+  <g fill="#ffffff" stroke="#f08a24" stroke-width="2">
+    <circle cx="75" cy="150" r="3.5"/><circle cx="119" cy="140" r="3.5"/><circle cx="163" cy="122" r="3.5"/><circle cx="207" cy="128" r="3.5"/><circle cx="251" cy="106" r="3.5"/><circle cx="295" cy="96" r="3.5"/>
+  </g>
+  <g fill="#6b7280" font-family="system-ui, sans-serif" font-size="10" text-anchor="middle">
+    <text x="75" y="192">4 月</text><text x="119" y="192">5 月</text><text x="163" y="192">6 月</text><text x="207" y="192">7 月</text><text x="251" y="192">8 月</text><text x="295" y="192">9 月</text>
+  </g>
+  <g font-family="system-ui, sans-serif" font-size="10" fill="#4b5563">
+    <rect x="214" y="24" width="10" height="10" rx="2" fill="url(#bar)"/>
+    <text x="229" y="33">訪問数</text>
+    <path d="M268 29h14" stroke="#f08a24" stroke-width="2.2"/>
+    <text x="287" y="33">平均</text>
+  </g>
+</svg>
