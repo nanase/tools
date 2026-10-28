@@ -3,7 +3,6 @@
  * → 音量 → リミッタ → 出力。Worker の音は MessagePort で AudioWorklet へ直接届く。
  * AudioContext は弾く操作の中で作る（自動再生の制限）。鳴らしていない間は止めて CPU を休ませる
  */
-import { clockLead } from '../../lib/pause';
 import type { ReverbSpec } from '../../lib/reverb';
 import type { BodySpec } from './body';
 import type { Frame, Manual, Vib } from './player';
@@ -53,9 +52,9 @@ export class ViolinAudio {
     return this.ac?.sampleRate ?? 48000;
   }
 
-  /** AudioContext の時計が、出力している音より何秒先にあるか（測れないときは null） */
-  lead(): number | null {
-    return clockLead(this.ac);
+  /** AudioContext を止める（次に鳴らすときに動かし直す） */
+  suspend(): void {
+    void this.ac?.suspend();
   }
 
   /** 使える状態にする。鳴らせなければ false */
