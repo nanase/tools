@@ -178,7 +178,8 @@ function rebuildNow(): void {
 
 /** 鍵 key を速さ v で打ったときの模型（表示用。主スレッドで解く） */
 function strikeOf(key: number, v: number, free: (k: number) => boolean = () => false): Strike {
-  const ck = `${key}|${v}|${soft.value}`,
+  /* 接触はサンプル単位で解くので、サンプリング周波数ごとに覚える（スマートフォンでは AudioContext を作ると変わる） */
+  const ck = `${key}|${v}|${soft.value}|${audio.fs}`,
     s = strikeKey(
       PM,
       { key, v, soft: soft.value === 'on', free, thump: Number(thump.value) },
@@ -847,7 +848,7 @@ const transport = new Transport({
   pause: pausePiece,
   tempo: () => V.tempo,
 });
-autoPause(audio, { pause: () => transport.pause(), hidden: tick });
+autoPause(audio, { pause: () => transport.pause(), hidden: tick, msg: sndMsg });
 
 /* ---------- 起動 ---------- */
 rebuildNow();

@@ -1044,7 +1044,7 @@ const transport = new Transport({
   pause: pausePiece,
   tempo: () => V.tempo,
 });
-autoPause(audio, { pause: () => transport.pause(), hidden: tick });
+autoPause(audio, { pause: () => transport.pause(), hidden: tick, msg: sndMsg });
 
 /* ---------- 起動 ---------- */
 syncStops();
