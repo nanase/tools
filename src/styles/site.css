@@ -177,7 +177,9 @@ a.unit:hover h3{text-decoration:underline;text-decoration-color:var(--ink-3);tex
 .ic .t{stroke-width:1}.ic .w{stroke-width:3.5;stroke-linecap:butt}.ic .g{opacity:.45}
 .ic .fa{fill:var(--ch1);stroke:none}.ic .fb{fill:var(--ch2);stroke:none}.ic .fc{fill:var(--screen-ink);stroke:none;opacity:.75}
 /* SVG テーマスキーマチェッカーの図柄は、サイトのテーマによらず明るい地と暗い地を並べる */
-.ic .pl{fill:#f4f5f1}.ic .pd{fill:#121517}.ic .il{stroke:#15191c}.ic .ih{stroke:#2b3237}.ic .al{stroke:#0a6e8a}.ic .ad{stroke:#52c4dd}
+.ic .pl{fill:#f4f5f1}.ic .pd{fill:#121517}.ic .il{stroke:#15191c}.ic .ih{stroke:#e6e8e4}
+.ic .sn{fill:#e8a020;stroke:none}.ic .sr{stroke:#e8a020}.ic .ml{fill:#dde2da;stroke:#15191c}.ic .md{fill:#283035;stroke:#e6e8e4}
+.ic .mn{fill:#f3d77c;stroke:none}.ic .mn.g0{opacity:.13}.ic .sk{fill:#e6e8e4;stroke:none}
 .soon .ic *{stroke:var(--screen-ink);opacity:.4;stroke-dasharray:4 3}
 .u-meta{display:flex;align-items:center;gap:7px;margin:0 6px;font-size:12px;color:var(--ink-3)}
 .unit h3{margin:0 6px;font-size:15.5px;line-height:1.4}
