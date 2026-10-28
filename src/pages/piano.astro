@@ -25,7 +25,7 @@ import Theory from '../tools/piano/Theory.astro';
 
 const name = 'ピアノ音響モデル';
 /* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
-const CAT = '音響';
+const CAT = '音響モデル';
 const related = [
   ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'piano')),
   ...TOOLS.filter((t) => t.c !== CAT && !t.s),

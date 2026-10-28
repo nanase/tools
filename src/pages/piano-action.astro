@@ -13,11 +13,13 @@ import { NOTES, REGS, SPEEDS, TOUCHES, VOL0 } from '../tools/piano-action/params
 import Theory from '../tools/piano-action/Theory.astro';
 
 const name = 'ピアノのアクション';
-/* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
-const CAT = '音響';
+/* 打弦で鳴らすピアノを先に、続けて同じカテゴリ（準備中を含む）、ほかのカテゴリの公開中のツール */
+const CAT = '楽器・調律';
+const FIRST = ['piano'];
 const related = [
+  ...FIRST.map((id) => TOOLS.find((t) => t.id === id)).filter((t) => t !== undefined),
   ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'piano-action')),
-  ...TOOLS.filter((t) => t.c !== CAT && !t.s),
+  ...TOOLS.filter((t) => t.c !== CAT && !t.s && !FIRST.includes(t.id)),
 ];
 const LEGEND = [
   ['key', '鍵'],
