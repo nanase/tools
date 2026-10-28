@@ -1,8 +1,8 @@
 /**
- * WebGL2 で月を描く。読み込んだ標高から、傾きと東西の地平線の高度角を一度だけ前処理してテクスチャに持ち、
+ * WebGL2 で月を描く。読み込んだ標高から、傾きと 8 方位の地平線の高度角を一度だけ前処理してテクスチャに持ち、
  * 毎回の描画は全画面の三角形 1 枚で済ませる。小さな月（暦の欄）は別の枠に描いて読み出す
  */
-import { MOON_FRAG, PREP_FRAG, TH, TW, VERT } from './shader';
+import { HORIZON_FRAG, MOON_FRAG, SLOPE_FRAG, TH, TW, VERT } from './shader';
 
 export type Vec3 = [number, number, number];
 
@@ -116,7 +116,9 @@ export class MoonRenderer {
   private vao: WebGLVertexArrayObject;
   private moon: Prog;
   private color: WebGLTexture | null = null;
-  private terr: WebGLTexture | null = null;
+  /** 傾き、地平線（東〜北西）、地平線（西〜南東） */
+  private terr: WebGLTexture[] = [];
+  private aniso: EXT_texture_filter_anisotropic | null;
   private iconFb: { fb: WebGLFramebuffer; tex: WebGLTexture; n: number } | null = null;
   ready = false;
 
@@ -130,6 +132,7 @@ export class MoonRenderer {
     if (!gl) throw new Error('webgl2');
     if (!gl.getExtension('EXT_color_buffer_float')) throw new Error('float');
     this.gl = gl;
+    this.aniso = gl.getExtension('EXT_texture_filter_anisotropic');
     const vao = gl.createVertexArray(),
       buf = gl.createBuffer();
     gl.bindVertexArray(vao);
@@ -141,6 +144,8 @@ export class MoonRenderer {
     this.moon = this.program(MOON_FRAG, [
       'uC',
       'uT',
+      'uZ0',
+      'uZ1',
       'uR',
       'uU',
       'uF',
@@ -206,29 +211,50 @@ export class MoonRenderer {
     this.filter(false);
     cb.close();
     hb.close();
-    /* 前処理: 傾きと地平線 */
-    this.terr = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, this.terr);
-    gl.texStorage2D(gl.TEXTURE_2D, Math.floor(Math.log2(Math.max(TW, TH))) + 1, gl.RGBA16F, TW, TH);
+    /* 前処理: 傾きと 8 方位の地平線 */
+    const levels = Math.floor(Math.log2(Math.max(TW, TH))) + 1;
+    const tex = (fmt: number) => {
+      const t = gl.createTexture() as WebGLTexture;
+      gl.bindTexture(gl.TEXTURE_2D, t);
+      gl.texStorage2D(gl.TEXTURE_2D, levels, fmt, TW, TH);
+      return t;
+    };
+    this.terr = [tex(gl.RG16F), tex(gl.RGBA16F), tex(gl.RGBA16F)];
     const fb = gl.createFramebuffer();
     gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
-    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.terr, 0);
-    const prep = this.program(PREP_FRAG, ['uH']);
-    gl.useProgram(prep.p);
-    gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, ht);
-    gl.uniform1i(prep.u.get('uH') ?? null, 0);
     gl.viewport(0, 0, TW, TH);
     gl.disable(gl.SCISSOR_TEST);
     gl.bindVertexArray(this.vao);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, ht);
+    const slope = this.program(SLOPE_FRAG, ['uH']);
+    gl.useProgram(slope.p);
+    gl.uniform1i(slope.u.get('uH') ?? null, 0);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.terr[0], 0);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
+    const hor = this.program(HORIZON_FRAG, ['uH', 'uK']);
+    gl.useProgram(hor.p);
+    gl.uniform1i(hor.u.get('uH') ?? null, 0);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.terr[1], 0);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT1, gl.TEXTURE_2D, this.terr[2], 0);
+    gl.drawBuffers([gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1]);
+    /* 向きごとに描画を分け、1 回の描画が長くなりすぎないようにする */
+    for (let k = 0; k < 4; k++) {
+      gl.colorMask(k === 0, k === 1, k === 2, k === 3);
+      gl.uniform1i(hor.u.get('uK') ?? null, k);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+    }
+    gl.colorMask(true, true, true, true);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.deleteFramebuffer(fb);
     gl.deleteTexture(ht);
-    gl.deleteProgram(prep.p);
-    gl.bindTexture(gl.TEXTURE_2D, this.terr);
-    gl.generateMipmap(gl.TEXTURE_2D);
-    this.filter(true);
+    gl.deleteProgram(slope.p);
+    gl.deleteProgram(hor.p);
+    for (const t of this.terr) {
+      gl.bindTexture(gl.TEXTURE_2D, t);
+      gl.generateMipmap(gl.TEXTURE_2D);
+      this.filter(true);
+    }
     this.ready = true;
   }
 
@@ -238,6 +264,8 @@ export class MoonRenderer {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, mip ? gl.LINEAR : gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    /* 縁の近くは斜めから見て縦に縮むので、異方性フィルタでその向きだけ細かく読む */
+    if (mip && this.aniso) gl.texParameterf(gl.TEXTURE_2D, this.aniso.TEXTURE_MAX_ANISOTROPY_EXT, 8);
   }
 
   /** キャンバスの大きさを表示の大きさに合わせる（装置の画素） */
@@ -273,9 +301,11 @@ export class MoonRenderer {
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, this.color);
     gl.uniform1i(g('uC'), 0);
-    gl.activeTexture(gl.TEXTURE1);
-    gl.bindTexture(gl.TEXTURE_2D, this.terr);
-    gl.uniform1i(g('uT'), 1);
+    ['uT', 'uZ0', 'uZ1'].forEach((n, i) => {
+      gl.activeTexture(gl.TEXTURE1 + i);
+      gl.bindTexture(gl.TEXTURE_2D, this.terr[i]);
+      gl.uniform1i(g(n), 1 + i);
+    });
     gl.uniform3fv(g('uR'), m.r);
     gl.uniform3fv(g('uU'), m.u);
     gl.uniform3fv(g('uF'), m.f);
