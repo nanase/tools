@@ -63,7 +63,9 @@
 /* ===== base ===== */
 *,*::before,*::after{box-sizing:border-box}
 html{background:var(--bg);-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.7 var(--sans);overflow-x:hidden}
+/* 中身が画面より短いとき（トップの絞り込みなど）も、main を伸ばしてフッターを画面の下端に置く */
+body{display:flex;flex-direction:column;min-height:100dvh;margin:0;background:var(--bg);color:var(--ink);font:15px/1.7 var(--sans);overflow-x:hidden}
+body>main{flex:1 0 auto;width:100%}
 /* 図はスクロールの位置の基準にしない。SVG の text は箱として扱われ、動く文字が基準に選ばれると、ブラウザが文字の動きに合わせてページを上下に送ってしまう */
 svg{overflow-anchor:none}
 a{color:var(--ink);text-decoration:underline;text-decoration-color:var(--line-2);text-underline-offset:3px}
