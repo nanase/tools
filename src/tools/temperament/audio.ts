@@ -2,7 +2,7 @@
  * 和音の音: 部分音ごとの正弦波を足す（Web Audio の OscillatorNode）。すべての部分音を同じ時刻に位相 0 で始めるので、
  * うなりの包絡は鳴り始め（start の戻り値）で最大になる。オルガンと正弦波は鳴らし続け、ピアノは部分音ごとに減衰する
  */
-import type { Note, Timbre } from './tem';
+import { type Note, type Timbre, tauOf } from './tem';
 
 /** 鳴らし直すときに前の音を消す時間 [s] */
 const FADE = 0.04;
@@ -67,8 +67,7 @@ export class Synth {
           pg = c.createGain();
         o.frequency.value = p.f;
         pg.gain.setValueAtTime(p.a, t);
-        /* ピアノ: 高い部分音ほど速く減衰する（C5 より上は全体に速い） */
-        if (tb === 'piano') pg.gain.setTargetAtTime(0, t + 0.01, (n.m > 72 ? 2.2 : 4) / (1 + 0.18 * p.n));
+        if (tb === 'piano') pg.gain.setTargetAtTime(0, t + 0.01, tauOf(n.m, p.n));
         o.connect(pg);
         pg.connect(g);
         o.start(t);

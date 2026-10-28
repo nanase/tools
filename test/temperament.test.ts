@@ -4,13 +4,19 @@ import {
   analyze,
   CHORDS,
   cents,
+  chordOf,
   coincidence,
+  coins,
   deviations,
   envelope,
+  firstOrder,
+  INTERVALS,
+  justRatios,
   keyStats,
   M3,
   P5,
   type Setup,
+  swell,
   TEMPERAMENTS,
   temperamentOf,
 } from '../src/tools/temperament/tem';
@@ -90,10 +96,48 @@ describe('うなり', () => {
     expect(ce.ct).toBeCloseTo(400 - M3, 6);
     expect(cg.ct).toBeCloseTo(700 - P5, 6);
   });
-  it('正弦波では 3 度の部分音がない', () => {
-    const r = analyze({ ...S, tb: 'sine' }, 60, [0, 4]);
+  it('正弦波では 3 度の部分音がないが、同じ速さの 2 次のうなりになる', () => {
+    const r = analyze({ ...S, tb: 'sine' }, 60, [0, 4]),
+      o = analyze(S, 60, [0, 4]);
     expect(r.pairs[0].ah).toBe(0);
     expect(amp('sine', 5)).toBe(0);
+    expect(firstOrder(r.pairs[0])).toBe(false);
+    expect(firstOrder(o.pairs[0])).toBe(true);
+    /* Plomp 1967: 比 m:n に近い 2 つの純音は mN − nM 回/秒（C4 の 5 倍と E4 の 4 倍の差） */
+    expect(Math.abs(r.pairs[0].b)).toBeCloseTo(10.38, 2);
+    expect(r.pairs[0].b).toBeCloseTo(o.pairs[0].b, 9);
+    const c = coins(r);
+    expect(c).toHaveLength(1);
+    expect(firstOrder(c[0])).toBe(false);
+  });
+  it('一致する部分音の 2 倍・3 倍の組も並べる', () => {
+    const c = coins(analyze(S, 60, [0, 4, 7]));
+    /* C–E は第 5・第 4、C–G は第 3・第 2 と第 6・第 4、E–G は第 6・第 5（オルガンは第 8 部分音まで） */
+    expect(c.map((x) => [x.i, x.nl, x.nh])).toEqual([
+      [0, 5, 4],
+      [1, 3, 2],
+      [1, 6, 4],
+      [2, 6, 5],
+    ]);
+    expect(c[2].b).toBeCloseTo(2 * c[1].b, 9);
+  });
+  it('純正な比', () => {
+    expect(justRatios(chordOf('maj').iv)).toEqual([4, 5, 6]);
+    expect(justRatios(chordOf('min').iv)).toEqual([10, 12, 15]);
+    expect(justRatios(chordOf('dom7').iv)).toEqual([20, 25, 30, 36]);
+    expect(justRatios(chordOf('open').iv)).toEqual([1, 2, 3, 5]);
+    expect(justRatios(chordOf('M17').iv)).toEqual([1, 5]);
+    /* 一致する部分音が、比の目盛りの同じ位置に来る */
+    for (const ch of [...CHORDS, ...INTERVALS]) {
+      const r = analyze(S, 60, ch.iv),
+        q = justRatios(ch.iv);
+      for (const p of r.pairs) {
+        if (!p.c) continue;
+        const a = r.notes.indexOf(p.lo),
+          b = r.notes.indexOf(p.hi);
+        expect(p.c[0] * q[a]).toBe(p.c[1] * q[b]);
+      }
+    }
   });
   it('ピアノの非調和性で、長 3 度のうなりは遅く、5 度は速くなる', () => {
     const o = analyze(S, 60, [0, 4, 7]).pairs,
@@ -125,5 +169,27 @@ describe('調ごとの主和音', () => {
   it('平均律はどの調も同じ', () => {
     const k = keyStats(S, 4, false);
     for (const x of k) expect(x.t3).toBeCloseTo(400 - M3, 9);
+  });
+});
+
+describe('全体の音の揺れ', () => {
+  const sw = (tem: string, tb: Setup['tb'], iv: readonly number[]) =>
+    swell(analyze({ ...S, tem, tb }, 60, iv).notes, justRatios(iv), tb, 2, 200);
+  const range = (v: number[]) => Math.max(...v) - Math.min(...v);
+  it('純正律の長三和音（正弦波・オルガン）は揺れない', () => {
+    expect(range(sw('just', 'sine', [0, 4, 7]))).toBeLessThan(1e-9);
+    expect(range(sw('just', 'organ', [0, 4, 7]))).toBeLessThan(1e-9);
+  });
+  it('正弦波でも、平均律の長三和音は山の高さが 2 次のうなりで揺れる', () => {
+    const v = sw('et', 'sine', [0, 4, 7]);
+    expect(Math.max(...v)).toBeGreaterThan(0.99);
+    expect(Math.min(...v)).toBeLessThan(0.7);
+    expect(range(sw('et', 'sine', [0, 4]))).toBeGreaterThan(0.05);
+  });
+  it('ピアノは減衰を割って除くので、山の高さが 0〜1 に収まる', () => {
+    for (const x of sw('et', 'piano', [0, 4, 7])) {
+      expect(x).toBeGreaterThan(0);
+      expect(x).toBeLessThanOrEqual(1 + 1e-9);
+    }
   });
 });
