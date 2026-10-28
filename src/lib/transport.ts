@@ -115,13 +115,12 @@ export class Transport {
     this.sync();
   }
 
-  /** 一時停止する（演奏中だけ。画面が隠れたときなども）。次に演奏したときは、止めた拍から弾く。一時停止したら true */
-  pause(): boolean {
-    if (!this.hooks.active()) return false;
+  /** 一時停止する（演奏中だけ。画面が隠れたときなども）。次に演奏したときは、止めた拍から弾く */
+  pause(): void {
+    if (!this.hooks.active()) return;
     this.cue = this.hooks.pause();
     this.beat = this.cue;
     this.sync();
-    return true;
   }
 
   /** 演奏・一時停止の状態が変わったときに呼ぶ（ページの syncPlay） */

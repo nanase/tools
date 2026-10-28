@@ -3,7 +3,7 @@
  * → 音量 → 出力。Worker の結果は MessagePort で AudioWorklet へ直接届く。
  * AudioContext は鍵を押した操作の中で作る（自動再生の制限）。鳴らしていない間は止めて CPU を休ませる
  */
-import { clockLead, handheld } from '../../lib/pause';
+import { handheld } from '../../lib/pause';
 import type { ReverbSpec } from '../../lib/reverb';
 import type { BoardDesc } from './engine';
 import { makePiano, type Piano, type PianoSpec, type StringView, strikeKey } from './model';
@@ -62,9 +62,9 @@ export class PianoAudio {
     return this.ac?.sampleRate ?? 48000;
   }
 
-  /** AudioContext の時計が、出力している音より何秒先にあるか（測れないときは null） */
-  lead(): number | null {
-    return clockLead(this.ac);
+  /** AudioContext を止める（次に鳴らすときに動かし直す） */
+  suspend(): void {
+    void this.ac?.suspend();
   }
 
   /** AudioContext の時刻 [s]（作る前・止めている間は null） */

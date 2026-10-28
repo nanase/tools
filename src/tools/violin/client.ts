@@ -510,7 +510,7 @@ const transport = new Transport({
   pause: pausePiece,
   tempo: () => tempo * 100,
 });
-autoPause(audio, { pause: () => transport.pause(), hidden: () => {}, msg: sndMsg });
+autoPause(audio, { pause: () => transport.pause(), hidden: () => {} });
 $('#liftBtn').addEventListener('click', () => lift());
 $('#vf-stop').addEventListener('click', () => {
   if (P) breakPiece();

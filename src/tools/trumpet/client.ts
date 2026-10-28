@@ -536,7 +536,7 @@ const transport = new Transport({
   pause: pausePiece,
   tempo: () => tempo * 100,
 });
-autoPause(audio, { pause: () => transport.pause(), hidden: () => {}, msg: sndMsg });
+autoPause(audio, { pause: () => transport.pause(), hidden: () => {} });
 
 /* ---------- 毎フレーム ---------- */
 let last: Frame | null = null;

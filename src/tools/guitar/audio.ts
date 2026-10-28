@@ -2,7 +2,6 @@
  * ギターの音を Web Audio API で鳴らす: AudioWorklet（worklet.ts、ステレオと残響）→ 音量 → 出力。
  * AudioContext は弦を弾いた操作の中で作る（自動再生の制限）。鳴らしていない間は止めて CPU を休ませる
  */
-import { clockLead } from '../../lib/pause';
 import type { ReverbSpec } from '../../lib/reverb';
 import type { BodyDesc, PluckMsg } from './engine';
 import type { GtMsg } from './worklet';
@@ -34,9 +33,9 @@ export class GuitarAudio {
     return this.ac?.sampleRate ?? 48000;
   }
 
-  /** AudioContext の時計が、出力している音より何秒先にあるか（測れないときは null） */
-  lead(): number | null {
-    return clockLead(this.ac);
+  /** AudioContext を止める（次に鳴らすときに動かし直す） */
+  suspend(): void {
+    void this.ac?.suspend();
   }
 
   /** AudioContext の時刻 [s]（作る前・止めている間は null） */

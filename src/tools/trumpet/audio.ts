@@ -2,7 +2,6 @@
  * トランペットの音を Web Audio API で鳴らす: 奏者と楽器と残響（AudioWorklet、worklet.ts）→ 音量 → リミッタ → 出力。
  * AudioContext は吹く操作の中で作る（自動再生の制限）。鳴らしていない間は止めて CPU を休ませる
  */
-import { clockLead } from '../../lib/pause';
 import type { ReverbSpec } from '../../lib/reverb';
 import type { Manual, PNote } from './player';
 import type { Opts, TpMsg, TpOut } from './worklet';
@@ -36,9 +35,9 @@ export class TrumpetAudio {
   /** AudioContext が止まったときに呼ぶ（ブラウザや OS が止めたとき。鳴らしていない間に止めたときも） */
   onLost: (() => void) | null = null;
 
-  /** AudioContext の時計が、出力している音より何秒先にあるか（測れないときは null） */
-  lead(): number | null {
-    return clockLead(this.ac);
+  /** AudioContext を止める（次に鳴らすときに動かし直す） */
+  suspend(): void {
+    void this.ac?.suspend();
   }
 
   /** 使える状態にする。鳴らせなければ false */
