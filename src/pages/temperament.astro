@@ -44,10 +44,10 @@ const KEYS = keyboard();
         <span class="stag right ab" id="s-now" hidden>鳴っている音律 <b id="s-cur"></b></span>
       </div>
       <div class="lgd">
-        <span><i class="tk" aria-hidden="true"></i>目盛り ＝ 純正なら部分音が来る位置</span>
-        <span><i class="dt" aria-hidden="true"></i>点 ＝ 部分音（数字は第何部分音か。大きさは強さ、目盛りからのずれは {KX} 倍）</span>
-        <span><i class="sw" aria-hidden="true"></i>帯 ＝ 2 つの音の部分音が同じ目盛りに来る所。数字はうなりの速さ [回/秒]</span>
-        <span id="lg-e" hidden><i class="ring" aria-hidden="true"></i>破線 ＝ 部分音はないが、2 次のうなりが生じる所</span>
+        <span><i class="tk" aria-hidden="true"></i>純正の位置</span>
+        <span><i class="dt" aria-hidden="true"></i>部分音（ずれ ×{KX}）</span>
+        <span><i class="sw" aria-hidden="true"></i>うなり [回/秒]</span>
+        <span id="lg-e" hidden><i class="ring" aria-hidden="true"></i>2 次のうなり</span>
       </div>
       <div class="scope lad"><svg viewBox={`0 0 ${LW} ${LH}`} id="lad" role="img" aria-label="和音の部分音を純正な比の目盛りに並べた図"><g id="lad-g"></g></svg></div>
       <div class="zms" id="zms"></div>
@@ -56,7 +56,7 @@ const KEYS = keyboard();
           <button type="button" class={k.black ? 'b' : 'w'} data-m={k.m} style={`left:${k.left.toFixed(3)}%;width:${k.width.toFixed(3)}%`}><b>{k.black ? '' : k.m % 12 === 0 ? `C${k.m / 12 - 1}` : NAMES[k.m % 12]}</b><span class="dv"></span></button>
         ))}
       </div></div>
-      <p class="lbl" id="k12-l">調ごとの長 3 度（主和音、純正からのずれ [セント]）</p>
+      <p class="lbl" id="k12-l">調ごとの長 3 度 [セント]</p>
       <div class="k12" id="k12" role="group" aria-label="調ごとの 3 度（押すとその調の主和音を鳴らす）">
         {FIFTHS.map((p) => (
           <button type="button" data-p={p} aria-pressed="false"><span class="bx" aria-hidden="true"><i></i></span><b>{NAMES[p]}</b><span class="v">—</span></button>
@@ -70,7 +70,7 @@ const KEYS = keyboard();
           <button type="button" id="abBtn" aria-pressed="false" title="音律 A と比べる音律 B を 2 秒ごとに入れ替えて鳴らす"><span class="led" id="abLed" aria-hidden="true"></span><span>A・B 交互</span></button>
         </div>
         <div class="ttab">
-          <span class="th">A</span><span class="th">B</span><span class="th">音律（B は比べる音律）</span><span class="th num" id="tt-3">C–E</span><span class="th num" id="tt-5">C–G</span>
+          <span class="th">A</span><span class="th">B</span><span class="th">音律</span><span class="th num" id="tt-3">C–E</span><span class="th num" id="tt-5">C–G</span>
           <div class="tcol" id="p-tem" role="group" aria-label="音律 A">
             {TEMPERAMENTS.map((t, i) => <button type="button" class="rb" data-v={t.v} aria-pressed={t.v === 'et' ? 'true' : 'false'} aria-label={`音律 A を${t.name}にする`} style={`grid-row:${i + 2}`}><i></i></button>)}
           </div>
@@ -86,9 +86,8 @@ const KEYS = keyboard();
           ))}
           <span class="tn none" style={`grid-row:${TEMPERAMENTS.length + 2}`}>比べない</span>
         </div>
-        <p class="tnote" id="tt-n"></p>
         <More id="g-tem"><div class="ptab">
-          <ChoiceRow k="ton" name="音律の主音" sub="音律を組んだ C をどの音へ移すか。純正律を G 長調で使うときは G。A4 は基準ピッチのまま" choices={NAMES.map((n, i) => [String(i), n] as const)} value="0" layout="chips" />
+          <ChoiceRow k="ton" name="音律の主音" sub="音律の C を置く音" choices={NAMES.map((n, i) => [String(i), n] as const)} value="0" layout="chips" />
           <ParamRow d={A4} />
         </div></More>
       </Panel>
@@ -97,7 +96,7 @@ const KEYS = keyboard();
         <div class="ptab">
           <div class="prow chr wide" id="p-chord" data-nm="和音・音程">
             <div class="c-sym" aria-hidden="true"></div>
-            <div class="c-name"><span class="pn" id="n-chord">和音・音程</span><p class="desc tip" id="t-chord" role="tooltip" hidden>開いた長三和音は、ピアノの調律で聴く根音・1 オクターブ上・5 度・10 度の形</p></div>
+            <div class="c-name"><span class="pn" id="n-chord">和音・音程</span><p class="desc tip" id="t-chord" role="tooltip" hidden>開いた長三和音 ＝ 根音・オクターブ・12 度・17 度（ピアノの調律で聴く形）</p></div>
             <RowReset label="和音・音程を既定値に戻す" />
             <div class="c-sub">
               <span class="cg" aria-hidden="true">和音</span>
@@ -118,9 +117,8 @@ const KEYS = keyboard();
           <div id="prs-b" role="rowgroup"></div>
         </div>
         <div class="envw">
-          <div class="cap"><span id="env-n"></span><span>2 秒</span></div>
-          <div class="scope env"><svg viewBox="0 0 300 64" role="img" aria-label="うなりの包絡"><path class="g" d="M0 4H300M0 60H300M75 0V64M150 0V64M225 0V64" /><path class="e" id="env-p" d="" /><path class="now" id="env-now" d="M-10 0V64" /></svg></div>
-          <p class="msg" id="env-m"></p>
+          <div class="cap"><span>全体の音の揺れ</span><span>2 秒</span></div>
+          <div class="scope env"><svg viewBox="0 0 300 64" role="img" aria-label="全体の音の波の山の高さ（2 秒）" id="env"><path class="g" d="M0 4H300M0 60H300M75 0V64M150 0V64M225 0V64" /><path class="e" id="env-p" d="" /><path class="now" id="env-now" d="M-10 0V64" /><text x="2" y="10" id="env-hi"></text><text x="2" y="58" id="env-lo"></text></svg></div>
         </div>
         <div class="nts" role="table" aria-label="和音の音">
           <div class="r hd" role="row"><span role="columnheader">音</span><span role="columnheader">周波数</span><span role="columnheader">平均律から [セント]</span><span role="columnheader">非調和性 B</span></div>
@@ -130,9 +128,9 @@ const KEYS = keyboard();
 
       <Panel hid="hd-snd" title="音" class="a-snd">
         <div class="ptab">
-          <ChoiceRow k="tb" name="音色" sub="正弦波は部分音がないので、比が整数比から少しずれた音程で 2 次のうなりだけが聞こえます。ピアノは弦の非調和性で部分音が高くずれます" choices={TIMBRES} value="organ" />
-          <ChoiceRow k="pt" name="ピアノ" sub="弦の寸法はピアノ音響モデルと同じ。非調和性係数 B は弦ごとに違います" choices={PIANOS} value="concert" layout="chips" class="pno" />
-          <ChoiceRow k="st" name="ストレッチ" sub="オクターブを部分音に合わせて広げる調律。ピアノ音響モデルと同じ" choices={[['0', 'なし'], ['1', 'あり']]} value="0" class="pno" />
+          <ChoiceRow k="tb" name="音色" sub="正弦波は部分音なし／ピアノは部分音が高めにずれる" choices={TIMBRES} value="organ" />
+          <ChoiceRow k="pt" name="ピアノ" sub="弦の寸法はピアノ音響モデルと同じ" choices={PIANOS} value="concert" layout="chips" class="pno" />
+          <ChoiceRow k="st" name="ストレッチ" sub="オクターブを部分音に合わせて広げる" choices={[['0', 'なし'], ['1', 'あり']]} value="0" class="pno" />
           <ParamRow d={VOL} />
         </div>
       </Panel>

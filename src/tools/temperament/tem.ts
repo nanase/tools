@@ -409,6 +409,67 @@ export function envelope(p: Beat, t: number): number {
   return Math.sqrt(Math.max(0, a * a + b * b + 2 * a * b * Math.cos(2 * Math.PI * p.b * t))) / (a + b);
 }
 
+/** ピアノの部分音の減衰の時定数 [s]（高い部分音ほど速い。C5 より上は全体に速い） */
+export const tauOf = (m: number, n: number): number => (m > 72 ? 2.2 : 4) / (1 + 0.18 * n);
+
+/**
+ * 全体の音の揺れ: 鳴り始めから T 秒の波の山の高さ（その時刻の全部分音の振幅の和で割った 0〜1。ピアノの減衰は割って除く）を N + 1 点。
+ * 部分音を、純正の比 ratios の共通の基本周波数 F0 の倍音 kF0 とずれ δ に分け、時刻 t の山を max_θ Σ a sin(kθ + 2πδt) とする
+ * （共通の周期ごとの波形の最大）。音は全部分音を位相 0 で同時に鳴らす（audio.ts）。正弦波でも 2 次のうなりで揺れる。
+ * sm 秒の移動平均でならす（ピアノは非調和性で高い部分音の位相が速く回り、山が細かく震えるので、うなりより速い震えを除く）
+ */
+export function swell(
+  notes: readonly Note[],
+  ratios: readonly number[],
+  tb: Timbre,
+  T: number,
+  N: number,
+  sm = 0,
+): number[] {
+  const F0 = notes[0].f / ratios[0],
+    ps = notes.flatMap((nt, i) =>
+      nt.parts.map((p) => {
+        const k = p.n * ratios[i];
+        return { k, d: 2 * Math.PI * (p.f - k * F0), a: p.a, tau: tb === 'piano' ? tauOf(nt.m, p.n) : 0 };
+      }),
+    ),
+    kmax = Math.max(...ps.map((p) => p.k)),
+    K = Math.max(256, 8 * kmax),
+    sn = Float64Array.from({ length: K }, (_, j) => Math.sin((2 * Math.PI * j) / K)),
+    cs = Float64Array.from({ length: K }, (_, j) => Math.cos((2 * Math.PI * j) / K)),
+    w = new Float64Array(K),
+    out: number[] = [];
+  for (let i = 0; i <= N; i++) {
+    const t = (T * i) / N;
+    let sum = 0;
+    w.fill(0);
+    for (const p of ps) {
+      /* a sin(kθ + φ) = a (sin kθ cos φ + cos kθ sin φ)。ピアノは鳴り始めの 0.01 秒後から減衰する */
+      const a = p.tau ? p.a * Math.exp(-Math.max(0, t - 0.01) / p.tau) : p.a,
+        c = a * Math.cos(p.d * t),
+        s = a * Math.sin(p.d * t);
+      sum += a;
+      for (let j = 0, x = 0; j < K; j++) {
+        w[j] += sn[x] * c + cs[x] * s;
+        x += p.k;
+        if (x >= K) x -= K;
+      }
+    }
+    let mx = 0;
+    for (let j = 0; j < K; j++) if (w[j] > mx) mx = w[j];
+    out.push(mx / sum);
+  }
+  const h = Math.round((sm * N) / T / 2);
+  if (!h) return out;
+  return out.map((_, i) => {
+    const a = Math.max(0, i - h),
+      b = Math.min(N, i + h);
+    let s = 0;
+    for (let j = a; j <= b; j++) s += out[j];
+    return s / (b - a + 1);
+  });
+}
+
 /** 5 度の順（C G D A E B F♯ C♯ G♯ E♭ B♭ F） */
 export const FIFTHS = [0, 7, 2, 9, 4, 11, 6, 1, 8, 3, 10, 5] as const;
 

@@ -1,6 +1,6 @@
 /**
  * 音律とうなりの入口: 入力（音律・和音・音色）→ 和音の音と部分音・うなり（tem.ts）→ 純正の物差し・拡大図・うなりの表・
- * 鍵盤・調ごとの 3 度・音律の表、和音の音（audio.ts）。入力が変わるたびに描き直して鳴らし直し、うなりの灯りと包絡の今の位置は毎フレーム動かす
+ * 全体の音の揺れ・鍵盤・調ごとの 3 度・音律の表、和音の音（audio.ts）。入力が変わるたびに描き直して鳴らし直し、うなりの灯りとグラフの今の位置は毎フレーム動かす
  */
 import { Choice } from '../../lib/choice';
 import { $, $$ } from '../../lib/dom';
@@ -27,11 +27,12 @@ import {
   pcOf,
   pure,
   type Setup,
+  swell,
   TEMPERAMENTS,
   type Timbre,
   temperamentOf,
 } from './tem';
-import { envPath, lampOpacity, ruler, sg, zoomX } from './view';
+import { lampOpacity, ruler, sg, swellPath, zoomX } from './view';
 
 initToolPage();
 
@@ -187,6 +188,7 @@ function sci(v: number): string {
 /* ---------- 描画 ---------- */
 let pairs: Pair[] = [],
   cs: Coin[] = [];
+const swells = new Map<string, number[]>();
 const kbKeys = $$<HTMLButtonElement>('#kb button[data-m]'),
   k12 = $$<HTMLButtonElement>('#k12 button[data-p]');
 
@@ -255,11 +257,7 @@ function draw(): void {
   $('#zms').innerHTML = pairs
     .map((p, i) => {
       if (!p.c) return '';
-      /* 2 次のうなりは部分音がないので、第 1 部分音の何倍かで書く */
-      const one = firstOrder(p),
-        [lo, hi] = one
-          ? [`下の第 ${p.c[0]} 部分音`, `上の第 ${p.c[1]} 部分音`]
-          : [`下の音の ${p.c[0]} 倍`, `上の音の ${p.c[1]} 倍`];
+      const one = firstOrder(p);
       return (
         `<button type="button" class="zm${i === S.sel ? ' on' : ''}" data-i="${i}" aria-pressed="${i === S.sel}">` +
         `<span class="zh"><span>${intervalName(p.d)} ${noteName(p.lo.m)}–${noteName(p.hi.m)}</span><i class="${lampCls(p, i)}" data-i="${i}" aria-hidden="true"></i></span>` +
@@ -267,8 +265,8 @@ function draw(): void {
         '<svg viewBox="0 0 200 46" aria-hidden="true"><path class="za" d="M10 32H190M10 28V36M40 30V34M70 30V34M100 26V38M130 30V34M160 30V34M190 28V36"/>' +
         `<path class="z1" d="M100 10V30"/><path class="z2" d="M${zoomX(p.ct).toFixed(1)} 10V30"/>` +
         '<text x="10" y="45">−30</text><text x="100" y="45">0</text><text x="190" y="45">+30</text></svg>' +
-        `<span class="zs">${lo} ${p.fl.toFixed(1)} Hz</span>` +
-        `<span class="zs">${hi} ${p.fh.toFixed(1)} Hz（${sg(p.ct)} セント）</span></button>`
+        `<span class="zs">${noteName(p.lo.m)}×${p.c[0]} ${p.fl.toFixed(1)} Hz</span>` +
+        `<span class="zs">${noteName(p.hi.m)}×${p.c[1]} ${p.fh.toFixed(1)} Hz（${sg(p.ct)} セント）</span></button>`
       );
     })
     .join('');
@@ -287,7 +285,7 @@ function draw(): void {
 
   /* 調ごとの 3 度 */
   const ks = keyStats(s, S.oct, minor);
-  txt($('#k12-l'), `調ごとの${t3}（主和音、純正からのずれ [セント]）`);
+  txt($('#k12-l'), `調ごとの${t3} [セント]`);
   for (const b of k12) {
     const p = Number(b.dataset.p),
       k = ks[p];
@@ -303,7 +301,6 @@ function draw(): void {
     fifth = (S.root + 7) % 12;
   txt($('#tt-3'), `${NAMES[S.root]}–${NAMES[third]}`);
   txt($('#tt-5'), `${NAMES[S.root]}–${NAMES[fifth]}`);
-  txt($('#tt-n'), `右の 2 列は、${NAMES[S.root]} の${t3}と 5 度の純正からのずれ [セント]。棒は 25 セントで端まで`);
   for (const t of TEMPERAMENTS) {
     const k = keyStats({ ...s, tem: t.v }, S.oct, minor)[S.root];
     for (const [sel, v] of [
@@ -332,16 +329,18 @@ function draw(): void {
       );
     })
     .join('');
-  txt($('#env-n'), sp ? `${intervalName(sp.d)}（${noteName(sp.lo.m)}–${noteName(sp.hi.m)}）の音量の揺れ` : '');
-  $('#env-p').setAttribute('d', envPath(sp?.c ? sp : null, 300, 64, 2));
-  const msg = !sp?.c
-    ? 'この音程には一致する部分音がありません'
-    : firstOrder(sp)
-      ? ''
-      : pure(sp)
-        ? '比がちょうど整数比なので、うなりません'
-        : `第 ${sp.c[0]}・第 ${sp.c[1]} 部分音がないので音量は揺れませんが、2 つの音の波の形が 1 秒に ${Math.abs(sp.b).toFixed(2)} 回移り変わり、2 次のうなりとして聞こえます`;
-  txt($('#env-m'), msg);
+  /* 全体の音の揺れ（計算が重いので、同じ音の組み合わせは覚えておく） */
+  const sk = `${S.tb}|${r.notes.map((n) => n.parts.map((q) => q.f.toFixed(4)).join(',')).join('/')}`;
+  let sv = swells.get(sk);
+  if (!sv) {
+    sv = S.tb === 'piano' ? swell(r.notes, ratios, S.tb, 2, 600, 0.03) : swell(r.notes, ratios, S.tb, 2, 300);
+    if (swells.size > 8) swells.clear();
+    swells.set(sk, sv);
+  }
+  const sw = swellPath(sv, 300, 64);
+  $('#env-p').setAttribute('d', sw.d);
+  txt($('#env-hi'), sw.hi.toFixed(1));
+  txt($('#env-lo'), sw.lo.toFixed(1));
   $('#nts-b').innerHTML = r.notes
     .map(
       (n) =>
@@ -360,7 +359,7 @@ function draw(): void {
   frame(performance.now());
 }
 
-/** 毎フレーム: 灯りと包絡の今の位置 */
+/** 毎フレーム: 灯りとグラフの今の位置 */
 function frame(now: number): void {
   const T = Math.max(0, S.play ? (now - t0) / 1000 : 0);
   for (const el of $$<HTMLElement>('[data-i].lamp')) {
@@ -371,8 +370,7 @@ function frame(now: number): void {
     const c = cs[Number(el.dataset.c)];
     if (c) el.style.opacity = lampOpacity(c, T, S.play).toFixed(3);
   }
-  const sp = pairs[S.sel],
-    x = sp?.c && firstOrder(sp) && S.play ? (300 * ((T % 2) / 2)).toFixed(1) : '-10';
+  const x = S.play ? (300 * ((T % 2) / 2)).toFixed(1) : '-10';
   $('#env-now').setAttribute('d', `M${x} 0V64`);
 }
 

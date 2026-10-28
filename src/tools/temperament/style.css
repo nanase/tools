@@ -42,7 +42,7 @@
 .env .g{stroke:var(--grid);stroke-width:1}
 .env .e{fill:none;stroke:var(--ch1);stroke-width:2;stroke-linejoin:round}
 .env .now{stroke:var(--ch2);stroke-width:1.5}
-.env text{fill:var(--screen-ink);font:10px var(--mono)}
+.env text{fill:var(--screen-ink);font:6px var(--mono);paint-order:stroke;stroke:var(--screen);stroke-width:2px;stroke-linejoin:round}
 .nts{display:grid;margin-top:12px;font:500 12.5px/1.5 var(--mono);font-variant-numeric:tabular-nums;color:var(--ink-2)}
 .nts .r{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
 .nts .r>*{padding:3px 6px;text-align:right}
@@ -101,7 +101,6 @@
 .ttab .num{display:grid;align-content:center;gap:4px;padding:4px 6px 4px 0;text-align:right;font:600 12.5px/1.2 var(--mono);font-variant-numeric:tabular-nums}
 .ttab .v3{grid-column:4}.ttab .v5{grid-column:5}
 .ttab .num i{display:block;height:4px;margin-left:auto;border-radius:2px;background:var(--ch1)}
-.tnote{margin-top:8px;font:500 12px/1.6 var(--sans);color:var(--ink-3)}
 .a-chd .cg{display:block;margin:2px 0 4px;font:700 12px/1.4 var(--sans);color:var(--ink-3)}
 .a-chd .cg~.cg{margin-top:10px}
 .zms{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-top:10px}

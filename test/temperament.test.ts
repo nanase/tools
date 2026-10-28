@@ -16,6 +16,7 @@ import {
   M3,
   P5,
   type Setup,
+  swell,
   TEMPERAMENTS,
   temperamentOf,
 } from '../src/tools/temperament/tem';
@@ -168,5 +169,27 @@ describe('調ごとの主和音', () => {
   it('平均律はどの調も同じ', () => {
     const k = keyStats(S, 4, false);
     for (const x of k) expect(x.t3).toBeCloseTo(400 - M3, 9);
+  });
+});
+
+describe('全体の音の揺れ', () => {
+  const sw = (tem: string, tb: Setup['tb'], iv: readonly number[]) =>
+    swell(analyze({ ...S, tem, tb }, 60, iv).notes, justRatios(iv), tb, 2, 200);
+  const range = (v: number[]) => Math.max(...v) - Math.min(...v);
+  it('純正律の長三和音（正弦波・オルガン）は揺れない', () => {
+    expect(range(sw('just', 'sine', [0, 4, 7]))).toBeLessThan(1e-9);
+    expect(range(sw('just', 'organ', [0, 4, 7]))).toBeLessThan(1e-9);
+  });
+  it('正弦波でも、平均律の長三和音は山の高さが 2 次のうなりで揺れる', () => {
+    const v = sw('et', 'sine', [0, 4, 7]);
+    expect(Math.max(...v)).toBeGreaterThan(0.99);
+    expect(Math.min(...v)).toBeLessThan(0.7);
+    expect(range(sw('et', 'sine', [0, 4]))).toBeGreaterThan(0.05);
+  });
+  it('ピアノは減衰を割って除くので、山の高さが 0〜1 に収まる', () => {
+    for (const x of sw('et', 'piano', [0, 4, 7])) {
+      expect(x).toBeGreaterThan(0);
+      expect(x).toBeLessThanOrEqual(1 + 1e-9);
+    }
   });
 });

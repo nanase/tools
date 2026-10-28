@@ -1,6 +1,6 @@
 /**
  * 図（DOM に依存しない）: 純正の物差し（周波数を等間隔に並べ、和音を純正な比にしたときに部分音が来る位置を目盛りにして、
- * 各音の部分音を目盛りからのずれを拡大して描く）と、音の組ごとの拡大図・うなりの包絡・鍵盤の配置。SVG の文字列と座標を返す
+ * 各音の部分音を目盛りからのずれを拡大して描く）と、音の組ごとの拡大図・全体の音の揺れ・鍵盤の配置。SVG の文字列と座標を返す
  */
 import { type Beat, type Coin, envelope, firstOrder, type Note, noteName, pure } from './tem';
 
@@ -156,16 +156,24 @@ export function ruler(
 /** 拡大図の横軸: 一致する部分音どうしのずれ [セント]（±30 を 10〜190） */
 export const zoomX = (ct: number): number => 100 + 3 * Math.max(-32, Math.min(32, ct));
 
-/** うなりの包絡のグラフ（幅 W・高さ H、T 秒）。部分音どうしのうなりだけ（2 次のうなりは音量が揺れない） */
-export function envPath(p: Beat | null | undefined, W: number, H: number, T: number): string {
-  if (!p || !firstOrder(p)) return '';
-  let s = '';
-  const N = 240;
-  for (let i = 0; i <= N; i++) {
-    const y = envelope(p, (T * i) / N);
-    s += `${i ? 'L' : 'M'}${f1((W * i) / N)} ${f1(H - 4 - (H - 8) * y)}`;
+/**
+ * 全体の音の揺れのグラフ（幅 W・高さ H）。v は swell の結果。縦軸は値の範囲に合わせて 0.1 刻みで広げ（幅は 0.1 以上）、
+ * 揺れの小さい正弦波の長 3 度でも形が見えるようにする。lo・hi は縦軸の下端・上端
+ */
+export function swellPath(v: readonly number[], W: number, H: number): { d: string; lo: number; hi: number } {
+  const mn = Math.min(...v),
+    mx = Math.max(...v);
+  let lo = Math.max(0, Math.floor((mn - 0.005) * 10) / 10),
+    hi = Math.min(1, Math.ceil((mx + 0.005) * 10) / 10);
+  if (hi - lo < 0.1) {
+    if (hi < 1) hi = lo + 0.1;
+    else lo = hi - 0.1;
   }
-  return s;
+  let d = '';
+  v.forEach((y, i) => {
+    d += `${i ? 'L' : 'M'}${f1((W * i) / (v.length - 1))} ${f1(H - 4 - ((H - 8) * (y - lo)) / (hi - lo))}`;
+  });
+  return { d, lo, hi };
 }
 
 /**
