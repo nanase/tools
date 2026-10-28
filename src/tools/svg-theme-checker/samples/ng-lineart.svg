@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="280" height="240" viewBox="0 0 280 240">
+  <!-- 失敗例: 線と文字の色を黒に決め打ちしている。ダークでは線と文字が背景に沈み、淡い塗りだけが浮く -->
+  <g fill="none" stroke="#1a1a1a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M118 62c-8-10 8-16 0-28M140 58c-8-10 8-16 0-28M162 62c-8-10 8-16 0-28"/>
+    <ellipse cx="140" cy="186" rx="96" ry="18" fill="#e9eef5"/>
+    <ellipse cx="140" cy="184" rx="58" ry="9"/>
+    <path d="M196 104c26-6 40 8 34 26s-24 24-42 20" stroke-width="9" stroke="#1a1a1a"/>
+    <path d="M196 104c26-6 40 8 34 26s-24 24-42 20" stroke-width="4.6" stroke="#f6d7c3"/>
+    <path d="M78 84h124l-10 76a24 24 0 0 1-24 20h-56a24 24 0 0 1-24-20z" fill="#f6d7c3"/>
+    <ellipse cx="140" cy="84" rx="62" ry="10" fill="#7b4a2b"/>
+    <path d="M98 118c10 6 20 6 30 0s20-6 30 0 20 6 30 0" stroke="#c4553b"/>
+    <path d="M104 138c4-8 14-8 14 0s-14 12-14 12-14-4-14-12 10-8 14 0z" transform="translate(36 0)" fill="#e8806b"/>
+  </g>
+  <g fill="#1a1a1a" stroke="none">
+    <ellipse cx="44" cy="150" rx="8" ry="5" transform="rotate(-30 44 150)"/>
+    <ellipse cx="238" cy="196" rx="8" ry="5" transform="rotate(25 238 196)"/>
+    <ellipse cx="52" cy="200" rx="7" ry="4.5" transform="rotate(10 52 200)"/>
+  </g>
+  <text x="140" y="228" fill="#1a1a1a" font-family="Georgia, serif" font-size="20" font-style="italic" text-anchor="middle">Coffee Break</text>
+</svg>

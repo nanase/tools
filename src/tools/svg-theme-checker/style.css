@@ -11,6 +11,17 @@
   .a-code .ed{height:440px}
 }
 
+/* コードの読み込み（枠線の上の右端）: 「開く」と例のドロップダウン。狭い画面では見出しに重ならないよう選択欄を詰める */
+.ldr{display:flex;align-items:center;gap:6px}
+.exs{position:relative;display:inline-flex;align-items:center;height:28px;border:1px solid var(--line);border-radius:4px;background:var(--bg);font:500 12px/1 var(--mono);color:var(--ink-3);cursor:pointer}
+.exs:hover{border-color:var(--line-2)}
+.exs:focus-within{border-color:var(--focus);box-shadow:0 0 0 1px var(--focus)}
+.exs>span{padding-left:9px}
+.exs select{appearance:none;height:100%;max-width:min(250px,calc(100vw - 250px));padding:0 26px 0 6px;border:0;border-radius:4px;background:none;color:var(--ink);font:inherit;text-overflow:ellipsis;cursor:pointer;outline:none}
+.exs select option,.exs select optgroup{background:var(--surface);color:var(--ink)}
+.exs::after{content:"";position:absolute;top:50%;right:10px;width:6px;height:6px;border-right:1.5px solid var(--ink-2);border-bottom:1.5px solid var(--ink-2);transform:translateY(-70%) rotate(45deg);pointer-events:none}
+@media (pointer:coarse){.exs{height:36px}}
+
 /* 状態表示（オシロの表示窓と同じ英語表記のバー） */
 .stag.hold b{color:var(--warn)}
 

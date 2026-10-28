@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="160" viewBox="0 0 240 160">
+  <!-- 文字入りのバッジ: 背景と文字の明暗を CSS 変数でまとめて入れ替える -->
+  <style>
+    :root {
+      --label-bg: #39414f;
+      --label-fg: #ffffff;
+      --value-fg: #ffffff;
+      --ok: #2da44e;
+      --warn: #9a6700;
+      --info: #0a69da;
+      --lic: #8250df;
+      --gloss: #ffffff;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --label-bg: #d3d9e0;
+        --label-fg: #1f2328;
+        --value-fg: #0d1117;
+        --ok: #4ac26b;
+        --warn: #f0c045;
+        --info: #64aaff;
+        --lic: #c29bff;
+        --gloss: #000000;
+      }
+    }
+    .label { fill: var(--label-bg); }
+    .label-text { fill: var(--label-fg); }
+    .value-text { fill: var(--value-fg); font-weight: 700; }
+    .ok { fill: var(--ok); }
+    .warn { fill: var(--warn); }
+    .info { fill: var(--info); }
+    .lic { fill: var(--lic); }
+    .gloss { fill: var(--gloss); opacity: .12; }
+    .icon { fill: none; stroke: var(--label-fg); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+    text { font: 12.5px Verdana, "DejaVu Sans", sans-serif; text-anchor: middle; }
+  </style>
+  <defs>
+    <path id="tab" d="M6 0h104v28H6a6 6 0 0 1-6-6V6a6 6 0 0 1 6-6z"/>
+  </defs>
+
+  <g transform="translate(10 10)">
+    <rect class="ok" width="220" height="28" rx="6"/>
+    <use href="#tab" class="label"/>
+    <path class="icon" d="M14 14.5l3.5 3.5 7-8"/>
+    <text class="label-text" x="66" y="18.5">build</text>
+    <text class="value-text" x="165" y="18.5">passing</text>
+    <rect class="gloss" width="220" height="13" rx="6"/>
+  </g>
+
+  <g transform="translate(10 46)">
+    <rect class="warn" width="220" height="28" rx="6"/>
+    <use href="#tab" class="label"/>
+    <path class="icon" d="M13 20V15M18 20V10M23 20V13"/>
+    <text class="label-text" x="66" y="18.5">coverage</text>
+    <text class="value-text" x="165" y="18.5">87%</text>
+    <rect class="gloss" width="220" height="13" rx="6"/>
+  </g>
+
+  <g transform="translate(10 82)">
+    <rect class="info" width="220" height="28" rx="6"/>
+    <use href="#tab" class="label"/>
+    <path class="icon" d="M13 9h6.5a2.5 2.5 0 0 1 2.5 2.5V20H15.5A2.5 2.5 0 0 1 13 17.5zM16 13h3M16 16h3"/>
+    <text class="label-text" x="66" y="18.5">docs</text>
+    <text class="value-text" x="165" y="18.5">latest</text>
+    <rect class="gloss" width="220" height="13" rx="6"/>
+  </g>
+
+  <g transform="translate(10 118)">
+    <rect class="lic" width="220" height="28" rx="6"/>
+    <use href="#tab" class="label"/>
+    <path class="icon" d="M18 8v13M12 11h12M14 11l-2.5 6h5zM22 11l-2.5 6h5z"/>
+    <text class="label-text" x="66" y="18.5">license</text>
+    <text class="value-text" x="165" y="18.5">MIT</text>
+    <rect class="gloss" width="220" height="13" rx="6"/>
+  </g>
+</svg>

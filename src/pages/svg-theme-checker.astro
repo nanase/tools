@@ -7,7 +7,7 @@ import { TOOLS } from '../data/tools';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import '../tools/svg-theme-checker/style.css';
 import { gutterHtml, hlHtml, lineCount } from '../tools/svg-theme-checker/code';
-import { EXAMPLE } from '../tools/svg-theme-checker/example';
+import { SAMPLE_GROUPS, SAMPLES } from '../tools/svg-theme-checker/samples';
 import Theory from '../tools/svg-theme-checker/Theory.astro';
 
 const id = 'svg-theme-checker';
@@ -16,6 +16,8 @@ const name = 'SVG テーマスキーマチェッカー';
 const related = TOOLS.filter((t) => !t.s && t.id !== id);
 const self = TOOLS.find((t) => t.id === id);
 const view = 'ドラッグで移動、ホイールで拡大縮小';
+/* 初期表示の例 */
+const first = SAMPLES[0]?.svg ?? '';
 ---
 <SiteLayout title={name} tool={{ id, name }} description={self?.d ?? ''} note="SVG コードは外部には送信されません。">
   <PageTitle title={name} titleHtml="SVG テーマスキーマ<wbr>チェッカー">ライトテーマとダークテーマで、SVG の外観が意図したとおりになるかを並べて確かめます。コードを書き換えると、両方のプレビューがすぐに変わります。</PageTitle>
@@ -44,14 +46,18 @@ const view = 'ドラッグで移動、ホイールで拡大縮小';
     </Panel>
 
     <Panel hid="hd-code" title="SVG コード" class="a-code">
-      <div slot="aux" class="seg" role="group" aria-label="コードの読み込み">
-        <button type="button" id="openBtn" title="SVG ファイルを開く（ここへドロップしても開けます）">開く</button><button type="button" id="exBtn" title="例の SVG に戻す">例に戻す</button>
+      <div slot="aux" class="ldr" role="group" aria-label="コードの読み込み">
+        <div class="seg"><button type="button" id="openBtn" title="SVG ファイルを開く（ここへドロップしても開けます）">開く</button></div>
+        <label class="exs" title="例の SVG を読み込む"><span>例</span><select id="exSel" autocomplete="off" aria-label="例の SVG">
+          <option value="" hidden>—</option>
+          {SAMPLE_GROUPS.map((g) => <optgroup label={g}>{SAMPLES.filter((s) => s.group === g).map((s) => <option value={s.id} selected={s === SAMPLES[0]}>{s.name}</option>)}</optgroup>)}
+        </select></label>
       </div>
       <div class="ed" id="ed">
-        <div class="gut" id="gut" aria-hidden="true" set:html={gutterHtml(lineCount(EXAMPLE))} />
+        <div class="gut" id="gut" aria-hidden="true" set:html={gutterHtml(lineCount(first))} />
         <div class="cz">
-          <pre id="hl" aria-hidden="true" set:html={hlHtml(EXAMPLE)} />
-          <textarea id="code" rows="1" wrap="off" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" aria-label="SVG のコード" aria-describedby="codeMsg rmMsg" title="Tab: 字下げ　Shift+Tab: 字下げを戻す　Esc の後に Tab: 次の項目へ">{EXAMPLE}</textarea>
+          <pre id="hl" aria-hidden="true" set:html={hlHtml(first)} />
+          <textarea id="code" rows="1" wrap="off" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off" aria-label="SVG のコード" aria-describedby="codeMsg rmMsg" title="Tab: 字下げ　Shift+Tab: 字下げを戻す　Esc の後に Tab: 次の項目へ">{first}</textarea>
         </div>
       </div>
       <p class="msg" id="codeMsg" aria-live="polite"></p>
