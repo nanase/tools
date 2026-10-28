@@ -1,5 +1,5 @@
 /**
- * 音律とうなりの入口: 入力（音律・和音・音色）→ 和音の音と部分音・うなり（tem.ts）→ 純正の物差し・拡大図・うなりの表・
+ * 音律とうなりの入口: 入力（音律・和音・音色）→ 和音の音と部分音・うなり（tem.ts）→ 純正の目盛り・拡大図・うなりの表・
  * 全体の音の揺れ・鍵盤・調ごとの 3 度・音律の表、和音の音（audio.ts）。入力が変わるたびに描き直して鳴らし直し、うなりの灯りとグラフの今の位置は毎フレーム動かす
  */
 import { Choice } from '../../lib/choice';
@@ -240,12 +240,12 @@ function draw(): void {
   (abBtn as HTMLButtonElement).disabled = S.cmp === 'none';
   txt($('#o-ab'), tn);
 
-  /* 純正の物差し。一致する部分音を持つ組が 3 つまでなら組ごとに色、4 つ以上なら選んだ組だけ */
+  /* 純正の目盛り。一致する部分音を持つ組が 3 つまでなら組ごとに色、4 つ以上なら選んだ組だけ */
   const ratios = justRatios(ch.iv),
     withC = pairs.flatMap((p, i) => (p.c ? [i] : [])),
     cls = (i: number) => (withC.length <= 3 ? `k${withC.indexOf(i)}` : i === S.sel ? 'k0' : ''),
     lampCls = (p: Pair, i: number) => `lamp ${cls(i) || 'g'}${p.c && !pure(p) ? '' : ' still'}`;
-  txt($('#s-rt'), `純正 ${ratios.join(' : ')} の物差し`);
+  txt($('#s-rt'), `純正 ${ratios.join(' : ')} の目盛り`);
   $('#lad-g').innerHTML = ruler(r.notes, cs, ratios, cls);
   $('#lad').setAttribute(
     'aria-label',

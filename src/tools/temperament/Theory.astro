@@ -160,7 +160,7 @@ const CENTS = TEMPERAMENTS.map((t) => ({ name: t.name, c: cents(t) }));
   <li><b>10 度・17 度</b>: 長 3 度をオクターブ広げた音程。下の第 5 部分音が、上の第 2・第 1 部分音と一致する。整数倍の部分音なら長 3 度と同じ速さでうなる</li>
   <li><b>正弦波</b>: 部分音が第 1 だけなので、一致する部分音がない。それでも比が純正からずれた音程では、同じ速さ <math><mi>β</mi></math> の 2 次のうなりが聞こえる（下の「2 次のうなり」）</li>
 </ul>
-<h4>純正の物差し</h4>
+<h4>純正の目盛り</h4>
 <p>上の図は、周波数を等間隔に並べます。部分音は第 1 部分音の整数倍なので、どの音の部分音も等間隔に並びます。和音を純正にしたときの周波数の比（長三和音なら 4:5:6）を <math><msub><mi>r</mi><mi>k</mi></msub></math> とすると、音 <math><mi>k</mi></math> の第 <math><mi>n</mi></math> 部分音は、純正なら <math><msub><mi>F</mi><mn>0</mn></msub></math> の <math><mi>n</mi><msub><mi>r</mi><mi>k</mi></msub></math> 倍の目盛りに来ます。2 つの音の部分音が同じ目盛りに来る所が、一致する部分音です。点は実際の部分音で、目盛りからのずれを {KX} 倍にして描きます。</p>
 <div class="eqs">
   <math display="block"><msub><mi>F</mi><mn>0</mn></msub><mo>=</mo><mfrac><msub><mi>f</mi><mn>1</mn></msub><msub><mi>r</mi><mn>1</mn></msub></mfrac><mo>,</mo><mspace width="1em"/><msub><mi>u</mi><mrow><mi>k</mi><mo>,</mo><mi>n</mi></mrow></msub><mo>=</mo><mi>n</mi><msub><mi>r</mi><mi>k</mi></msub><mo>+</mo><mn>{KX}</mn><mrow><mo>(</mo><mfrac><msub><mi>f</mi><mrow><mi>k</mi><mo>,</mo><mi>n</mi></mrow></msub><msub><mi>F</mi><mn>0</mn></msub></mfrac><mo>−</mo><mi>n</mi><msub><mi>r</mi><mi>k</mi></msub><mo>)</mo></mrow></math>
@@ -348,7 +348,7 @@ const CENTS = TEMPERAMENTS.map((t) => ({ name: t.name, c: cents(t) }));
   <li>すべての部分音を同じ時刻に位相 0 で鳴らし始める。うなりの包絡は鳴り始めで最大になる</li>
   <li>うなりの灯りは、一致する 2 つの部分音の振幅（ピアノは減衰の前の値）で求めた <math><mi>E</mi><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo></math> で描く。灯りは <math><msup><mi>E</mi><mn>2</mn></msup></math> で明るさを変え、一致する部分音を持たない組は暗く、純正の組は点けたままにする。2 次のうなりの灯りは 0.2〜1 の間で明滅させる</li>
   <li>全体の音の揺れのグラフは、鳴り始めから 2 秒を 300 点で描く。ピアノは 600 点で求め、その時刻の振幅の和で割って減衰を除き、非調和性で高い部分音の位相が速く回る細かな震えを 30 ms の移動平均でならす。縦軸は値の範囲に合わせて 0.1 刻みで広げる</li>
-  <li>純正の物差しの色は、一致する部分音を持つ組が 3 つまでなら組ごとに分ける。4 つ以上の和音（属七の和音・開いた長三和音）では、表や拡大図で選んだ組だけに色をつけ、ほかの組は灰色の帯にする</li>
+  <li>純正の目盛りの色は、一致する部分音を持つ組が 3 つまでなら組ごとに分ける。4 つ以上の和音（属七の和音・開いた長三和音）では、表や拡大図で選んだ組だけに色をつけ、ほかの組は灰色の帯にする</li>
   <li>ピアノの <math><mi>B</mi></math> とストレッチは、ピアノ音響モデルの弦と調律（コンサートグランド・グランド・アップライト）をそのまま使う</li>
   <li>調ごとの表は、選んだオクターブに主音を置いた主和音の 3 度（短調は短 3 度）と 5 度</li>
   <li>音律の表の右の 2 列は、今の根音の主和音の 3 度（短調は短 3 度）と 5 度の、純正からのずれ</li>

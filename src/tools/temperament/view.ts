@@ -1,10 +1,10 @@
 /**
- * 図（DOM に依存しない）: 純正の物差し（周波数を等間隔に並べ、和音を純正な比にしたときに部分音が来る位置を目盛りにして、
+ * 図（DOM に依存しない）: 純正の目盛り（周波数を等間隔に並べ、和音を純正な比にしたときに部分音が来る位置を目盛りにして、
  * 各音の部分音を目盛りからのずれを拡大して描く）と、音の組ごとの拡大図・全体の音の揺れ・鍵盤の配置。SVG の文字列と座標を返す
  */
 import { type Beat, type Coin, envelope, firstOrder, type Note, noteName, pure } from './tem';
 
-/** 物差しの大きさ */
+/** 図の大きさ */
 export const LW = 1100,
   LH = 300;
 const X0 = 136,
@@ -33,7 +33,7 @@ export const beatLabel = (x: Beat): string =>
   pure(x) ? '0' : `${Math.abs(x.b).toFixed(1)}${firstOrder(x) ? '' : '（2 次）'}`;
 
 /**
- * 物差しの SVG の中身。notes は和音の順（根音から）、ratios はその純正な比（justRatios）。
+ * 純正の目盛りの図の SVG の中身。notes は和音の順（根音から）、ratios はその純正な比（justRatios）。
  * 上ほど高い音の行に、部分音を点（大きさは振幅、下の数字は部分音の番号）で描く。2 つの音の部分音が同じ目盛りに来る所
  * （cs）は縦の帯で結び、うなりの速さと灯り（circle.lmp、data-c は cs の番号）を添える。部分音がない 2 次のうなりは破線。
  * cls(i) は音の組 i の色のクラス（k0〜k2。'' の組は灰色で、速さの数字を書かない）
