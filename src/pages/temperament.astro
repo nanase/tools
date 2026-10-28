@@ -17,12 +17,12 @@ import { keyboard, LH, LW } from '../tools/temperament/view';
 
 const name = '音律とうなり';
 /* チューナー・オルガン・ピアノを先に、続けて同じカテゴリ（準備中を含む）、ほかのカテゴリの公開中のツール */
-const CAT = '音響';
+const CAT = '楽器・調律';
 const FIRST = ['tuner', 'organ', 'piano'];
 const related = [
   ...FIRST.map((id) => TOOLS.find((t) => t.id === id)).filter((t) => t !== undefined),
   ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'temperament' && !FIRST.includes(t.id))),
-  ...TOOLS.filter((t) => t.c !== CAT && !t.s),
+  ...TOOLS.filter((t) => t.c !== CAT && !t.s && !FIRST.includes(t.id)),
 ];
 const TEMS = TEMPERAMENTS.map((t) => [t.v, t.name] as const);
 const KEYS = keyboard();

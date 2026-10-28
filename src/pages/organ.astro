@@ -24,7 +24,7 @@ import { TEMPERAMENTS } from '../tools/organ/tuning';
 
 const name = 'オルガン音響モデル';
 /* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
-const CAT = '音響';
+const CAT = '音響モデル';
 const related = [
   ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'organ')),
   ...TOOLS.filter((t) => t.c !== CAT && !t.s),
