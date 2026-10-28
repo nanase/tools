@@ -153,10 +153,12 @@
 .mfig{display:block;width:100%;height:auto;overflow:visible}
 .mfig .ax{stroke:var(--line-2);stroke-width:1;fill:none}
 .mfig .gr{stroke:var(--grid);stroke-width:1;fill:none}
-.mfig .ln{stroke:var(--ink);stroke-width:1.6;fill:none}
-.mfig .ln3{stroke:var(--ink-3);stroke-width:1;fill:none;stroke-dasharray:1.5 2.5;opacity:.8}
+/* 秤動と距離の線は灰にして、黒い縁の月の絵（いまの印）と見分ける */
+.mfig .ln{stroke:var(--ink-3);stroke-width:1.6;fill:none}
+.mfig .ln3{stroke:var(--ink-3);stroke-width:1;fill:none;stroke-dasharray:1.5 2.5;opacity:.65}
 .mfig .ln2{stroke:var(--ink-2);stroke-width:1.2;fill:none;stroke-dasharray:4 3}
 .mfig .dot{fill:var(--ink)}
+#lib .dot,#dist .dot{fill:var(--ink-3)}
 .mfig text{fill:var(--ink-3);font:10.5px var(--mono)}
 .mfig .mt{fill:var(--ink);font:600 11px var(--sans)}
 .mfig .ts{fill:var(--ink-2);font:500 10.5px var(--sans)}
@@ -186,7 +188,7 @@
 .sizes .shd.c{left:0;right:0;opacity:0}
 .sizes:has(.f:is(:hover,:focus)) .shd.f,.sizes:has(.c:is(:hover,:focus)) .shd.c,.sizes:has(.n:is(:hover,:focus)) .shd.n{opacity:1;background:color-mix(in srgb,var(--ink) 18%,transparent);box-shadow:inset 0 1px var(--ink-2),inset 0 -1px var(--ink-2)}
 .legend{display:flex;flex-wrap:wrap;gap:4px 16px;margin-top:6px;font:500 12px/1.4 var(--sans);color:var(--ink-2)}
-.legend i{display:inline-block;vertical-align:middle;width:18px;height:0;margin-right:6px;border-top:2px solid var(--ink)}
+.legend i{display:inline-block;vertical-align:middle;width:18px;height:0;margin-right:6px;border-top:2px solid var(--ink-3)}
 .legend i.dot3{border-top:1.5px dotted var(--ink-3)}
 .note{margin:6px 2px 0;font-size:12.5px;line-height:1.6;color:var(--ink-2)}
 .note b{color:var(--ink)}
