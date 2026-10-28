@@ -3,6 +3,7 @@
  * → 音量 → 出力。Worker の結果は MessagePort で AudioWorklet へ直接届く。
  * AudioContext は鍵を押した操作の中で作る（自動再生の制限）。鳴らしていない間は止めて CPU を休ませる
  */
+import { clockLead, handheld } from '../../lib/pause';
 import type { ReverbSpec } from '../../lib/reverb';
 import type { BoardDesc } from './engine';
 import { makePiano, type Piano, type PianoSpec, type StringView, strikeKey } from './model';
@@ -17,6 +18,24 @@ const AC: Ctor | undefined =
 
 /** 最後の音から止めるまでの時間 [ms] */
 const IDLE_MS = 60000;
+/**
+ * スマートフォンとタブレットでのサンプリング周波数 [Hz]。48 kHz では計算が間に合わない機器がある（Android の Chrome は
+ * 遅れた分を後でまとめて計算し、時計だけが出力より先へ進んで、曲が音のないまま速く進む）。弦のモードは 12 kHz まで
+ * （model.ts の F_MAX）なので、32 kHz でも同じモードを鳴らせる
+ */
+const FS_HANDHELD = 32000;
+
+/** AudioContext を作る（スマートフォンとタブレットでは FS_HANDHELD。指定できないブラウザでは装置の値で） */
+function newContext(ac: Ctor): AudioContext {
+  if (handheld()) {
+    try {
+      return new ac({ latencyHint: 'interactive', sampleRate: FS_HANDHELD });
+    } catch {
+      /* 下へ */
+    }
+  }
+  return new ac({ latencyHint: 'interactive' });
+}
 
 export class PianoAudio {
   private ac: AudioContext | null = null;
@@ -43,6 +62,11 @@ export class PianoAudio {
     return this.ac?.sampleRate ?? 48000;
   }
 
+  /** AudioContext の時計が、出力している音より何秒先にあるか（測れないときは null） */
+  lead(): number | null {
+    return clockLead(this.ac);
+  }
+
   /** AudioContext の時刻 [s]（作る前・止めている間は null） */
   now(): number | null {
     return this.ac?.state === 'running' ? this.ac.currentTime : null;
@@ -51,7 +75,7 @@ export class PianoAudio {
   /** 使える状態にする。鳴らせなければ false */
   async ready(): Promise<boolean> {
     if (!AC) return false;
-    const ac = this.ac ?? new AC({ latencyHint: 'interactive' });
+    const ac = this.ac ?? newContext(AC);
     this.ac = ac;
     this.loading ??= ac.audioWorklet
       .addModule(workletUrl)
