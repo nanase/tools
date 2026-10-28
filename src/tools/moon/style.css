@@ -155,6 +155,7 @@
 .mfig .mt{fill:var(--ink);font:600 11px var(--sans)}
 .mfig .ts{fill:var(--ink-2);font:500 10.5px var(--sans)}
 .mfig .orb{fill:none;stroke:var(--ink-3);stroke-width:1;stroke-dasharray:3 4}
+.mfig .orb2{fill:none;stroke:var(--ink-2);stroke-width:1.4}
 .mfig .earth{fill:#3d6e9e;stroke:var(--ink)}
 .mfig .lit{fill:#eeeadf}
 .mfig .drk{fill:#30363b}

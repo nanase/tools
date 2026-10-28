@@ -823,16 +823,31 @@ let ser: MoonState[] = [];
 let tserKey = '';
 let tser: { lat: number; lon: number }[] = [];
 function drawFigs(): void {
-  /* 軌道（北から、太陽は右）。月の向きは太陽からの離角 */
   const g = (j: number) => moonState(j, null);
+  if (serW0 !== W0) {
+    serW0 = W0;
+    ser = Array.from({ length: 129 }, (_, k) => g(W0 + k / 4));
+  }
+  /* 軌道（北から、太陽は右）。月の向きは太陽からの離角 */
   const pos = (j: number, s = g(j)) => {
     const r = (s.distGeo / 384400) * 110,
       a = s.elong * D;
     return [150 + r * Math.cos(a), 150 - r * Math.sin(a)];
   };
   const [mx, my] = pos(jd, st);
+  /* 帯の新月から次の新月までの道すじ。近地点が太陽に対して回るので、1 周しても閉じない */
+  const nm = bandPh.find((p) => p.q === 0)?.jd ?? W0 + 1;
+  const orbD = ser
+    .filter((s) => s.jd >= nm && s.jd <= nm + 29.53)
+    .map((s) =>
+      pos(s.jd, s)
+        .map((v) => v.toFixed(1))
+        .join(' '),
+    )
+    .join('L');
   const o: string[] = [
     '<circle class="orb" cx="150" cy="150" r="110"></circle>',
+    `<path class="orb2" d="M${orbD}"></path>`,
     '<path class="ax" d="M150 30V270M30 150H270"></path>',
     '<text class="ts" x="268" y="144" text-anchor="end">新月</text><text class="ts" x="156" y="34">上弦</text><text class="ts" x="34" y="144">満月</text><text class="ts" x="156" y="276">下弦</text>',
     '<path class="sunar" d="M276 150H296M290 145L296 150L290 155"></path><text class="ts" x="294" y="168" text-anchor="end">太陽へ</text>',
@@ -850,10 +865,6 @@ function drawFigs(): void {
   $('#orb').innerHTML = o.join('');
 
   /* 秤動: 地心の地球直下点の 1 か月（6 時間おき）と、今の観測地からの点 */
-  if (serW0 !== W0) {
-    serW0 = W0;
-    ser = Array.from({ length: 129 }, (_, k) => g(W0 + k / 4));
-  }
   /* 観測地から見た地球直下点（1 時間おき）。日周秤動で、地心の線のまわりを 1 日に 1 回まわる */
   const tk = `${W0}|${site.lat}|${site.lon}|${site.h}`;
   if (tserKey !== tk) {
