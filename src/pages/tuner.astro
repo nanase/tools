@@ -19,7 +19,7 @@ import { bandY, MR, meterTicks, zonePath } from '../tools/tuner/view';
 
 const name = 'チューナー';
 /* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
-const CAT = '音響';
+const CAT = '楽器・調律';
 const related = [
   ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'tuner')),
   ...TOOLS.filter((t) => t.c !== CAT && !t.s),

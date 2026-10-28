@@ -3,7 +3,8 @@
  * 図柄は時刻 t [s] の関数で、t = 0 が止まっているときの絵である。ビルド時に t = 0 を HTML に出し、
  * マウスを乗せている間だけブラウザで t を進めて描き直す（scripts/card-motion.ts）。
  * 線の class は site.css の .ic にある: a = ch1、b = ch2、c = 画面の線、d = 破線、t = 細線、g = 残像、
- * w = 黒鍵の太線、fa・fb・fc = 塗り、pl・pd・il・ih・al・ad = SVG テーマの図柄の明るい地と暗い地
+ * w = 黒鍵の太線、fa・fb・fc = 塗り、pl・pd・il・ih = SVG テーマの図柄の明るい地と暗い地とその線、
+ * sn・sr・ml・md・mn・sk = 同じく太陽・光・昼の山・夜の山・月・星
  */
 import { czaAlt, parDist, R22 } from '../tools/halo/labels';
 import { fanPath } from '../tools/jjy/fan';
@@ -1024,17 +1025,35 @@ export const ART: Record<string, Art> = {
       `<circle class="fb" cx="${r1(px)}" cy="${r1(k(px))}" r="2.6"/>`
     );
   },
-  /* SVG テーマスキーマチェッカー: 明るい地と暗い地に同じ SVG を並べる。暗い地では黒い線が見えにくい。
-     2 枚が同じ倍率で拡大する */
+  /* SVG テーマスキーマチェッカー: 明るい地と暗い地に、テーマで配色と構図が変わる絵を並べる。
+     昼は左上の太陽と山（光がゆっくり回る）、夜は右上の三日月と明るい線の山、またたく星 */
   svg(t) {
-    const z = r1(100 + 45 * (0.5 - 0.5 * Math.cos(t * 1.8))) / 100;
-    const fig = (cx: number, ink: string, ac: string): string =>
-      `<g${z !== 1 ? ` transform="translate(${cx} 24) scale(${z}) translate(${-cx} -24)"` : ''}>` +
-      `<circle class="${ac}" cx="${cx - 8}" cy="21" r="6"/>${P(ink, `M${cx - 3} 33L${cx + 5} 16L${cx + 13} 33Z`)}${P(ac, `M${cx - 17} 33H${cx + 17}`)}</g>`;
+    const L = 31.5,
+      D = 88.5,
+      mt = (c: string, x: number): string =>
+        P(c, `M${x - 21} 34L${x - 11} 26L${x - 1} 34`) + P(c, `M${x - 7} 34L${x + 5} 16L${x + 18} 34Z`),
+      /* 太陽の光は 8 本なので 1/8 回転で同じ絵（角度はその余りを使う）。星の 1 周（2π/2.4 s）で 1/4 回転する */
+      sx = L - 13,
+      a0 = -Math.PI / 8 + mod(t * 0.6, TAU / 8);
+    let ray = '';
+    for (let i = 0; i < 8; i++) {
+      const q = a0 + (i / 8) * TAU;
+      ray += `M${r1(sx + 6 * Math.cos(q))} ${r1(16 + 6 * Math.sin(q))}L${r1(sx + 8 * Math.cos(q))} ${r1(16 + 8 * Math.sin(q))}`;
+    }
+    const star = (x: number, y: number, ph: number, r = 0.9): string =>
+      `<circle class="sk" cx="${x}" cy="${y}" r="${r}" opacity="${r1(55 + 45 * Math.cos(2.4 * t + ph)) / 100}"/>`;
+    /* 三日月は右側が光る。暗い部分も薄く描いて丸さを見せる */
+    const mx = D + 15,
+      R = 4.8,
+      moon =
+        `<circle class="mn g0" cx="${mx}" cy="14" r="${R}"/>` +
+        P('mn', `M${mx} ${14 - R}A${R} ${R} 0 0 1 ${mx} ${14 + R}A${r1(R * 0.55)} ${R} 0 0 0 ${mx} ${14 - R}Z`);
     return (
       '<clipPath id="ca-svg-l"><rect x="6" y="7" width="51" height="34"/></clipPath><clipPath id="ca-svg-r"><rect x="63" y="7" width="51" height="34"/></clipPath>' +
       '<rect class="pl c" x="6" y="7" width="51" height="34" rx="1.5"/><rect class="pd c" x="63" y="7" width="51" height="34" rx="1.5"/>' +
-      `<g clip-path="url(#ca-svg-l)">${fig(31.5, 'il', 'al')}</g><g clip-path="url(#ca-svg-r)">${fig(88.5, 'ih', 'ad')}</g>`
+      `<g clip-path="url(#ca-svg-l)"><circle class="sn" cx="${sx}" cy="16" r="4.2"/>${P('sr', ray)}${mt('ml', L)}${P('il', `M${L - 25} 34H${L + 25}`)}</g>` +
+      `<g clip-path="url(#ca-svg-r)">${star(D - 18, 12, 0)}${star(D - 8, 9, 2.1, 0.7)}${star(D - 13, 20, 4, 0.7)}${star(D + 3, 10, 1)}${star(D + 21, 24, 3, 0.7)}` +
+      `${moon}${mt('md', D)}${P('ih', `M${D - 25} 34H${D + 25}`)}</g>`
     );
   },
   /* チューナー: 針のメータ（±50 セント、合格の帯、純正律の ▼）。3 秒ごとに弾き直し、低めから振れて 0 に落ち着く */
@@ -1112,7 +1131,7 @@ export const LOOP: Record<string, number> = {
   fk: TAU / 2.1,
   se: 1 / 0.12,
   mn: TAU / 0.9,
-  svg: TAU / 1.8,
+  svg: TAU / 2.4,
   tu: 3,
   tm: Math.PI / 1.2,
 };
