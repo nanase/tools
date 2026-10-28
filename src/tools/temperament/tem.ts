@@ -291,10 +291,118 @@ export function analyze(
   return { dev, notes, pairs };
 }
 
-/** うなりが聞こえるか（一致する部分音が両方鳴っている） */
-export const audible = (p: Pair): boolean => !!p.c && p.al > 0 && p.ah > 0;
+/** うなりの速さと、一致する部分音のずれ・振幅（Pair と Coin に共通） */
+export interface Beat {
+  b: number;
+  ct: number;
+  al: number;
+  ah: number;
+}
+/**
+ * 一致する部分音が両方鳴っているか（部分音どうしのうなり）。片方でも欠けると、同じ速さの 2 次のうなりになる
+ * （2 つの音の比が整数比から少しずれると、純音どうしでも波形の移り変わりがうなりとして聞こえる。R. Plomp, JASA 42, 1967）
+ */
+export const firstOrder = (x: Beat): boolean => x.al > 0 && x.ah > 0;
+/** うならない（一致する部分音の高さがそろっている） */
+export const pure = (x: Beat): boolean => Math.abs(x.ct) < 0.05;
+
+/** 図の目盛りに使う一致: 音の組 i の、下の第 nl 部分音と上の第 nh 部分音（組の一致する部分音の j 倍） */
+export interface Coin extends Beat {
+  /** 音の組の番号と、下・上の音（MIDI のノート番号） */
+  i: number;
+  lo: number;
+  hi: number;
+  j: number;
+  nl: number;
+  nh: number;
+  fl: number;
+  fh: number;
+}
+/**
+ * 音の組ごとの一致する部分音を、1 倍・2 倍…と鳴っている部分音の範囲で並べる。一致する部分音のどちらかがない音色
+ * （正弦波など）では、1 倍の組だけを 2 次のうなりとして並べる
+ */
+export function coins(r: { notes: readonly Note[]; pairs: readonly Pair[] }): Coin[] {
+  const out: Coin[] = [];
+  const part = (nt: Note, n: number) => nt.parts.find((p) => p.n === n);
+  r.pairs.forEach((p, i) => {
+    if (!p.c) return;
+    if (!firstOrder(p)) {
+      out.push({
+        i,
+        lo: p.lo.m,
+        hi: p.hi.m,
+        j: 1,
+        nl: p.c[0],
+        nh: p.c[1],
+        fl: p.fl,
+        fh: p.fh,
+        b: p.b,
+        ct: p.ct,
+        al: p.al,
+        ah: p.ah,
+      });
+      return;
+    }
+    for (let j = 1; p.c[0] * j <= PARTIALS && p.c[1] * j <= PARTIALS; j++) {
+      const a = part(p.lo, p.c[0] * j),
+        b = part(p.hi, p.c[1] * j);
+      if (a && b)
+        out.push({
+          i,
+          lo: p.lo.m,
+          hi: p.hi.m,
+          j,
+          nl: a.n,
+          nh: b.n,
+          fl: a.f,
+          fh: b.f,
+          b: a.f - b.f,
+          ct: 1200 * L2(b.f / a.f),
+          al: a.a,
+          ah: b.a,
+        });
+    }
+  });
+  return out;
+}
+
+/**
+ * 和音を純正にしたときの、各音の周波数の比（互いに素な整数）。一致する部分音を持つ組をたどって決める。
+ * 長三和音は 4 : 5 : 6、属七の和音は 20 : 25 : 30 : 36（B♭ は G の短 3 度上）。たどれない音は平均律の比で近似する
+ */
+export function justRatios(iv: readonly number[]): number[] {
+  /* 分数 [分子, 分母] */
+  const q: ([number, number] | null)[] = iv.map((_, i) => (i ? null : [1, 1]));
+  for (let pass = 0; pass < iv.length; pass++)
+    for (let a = 0; a < iv.length; a++)
+      for (let b = 0; b < iv.length; b++) {
+        const qa = q[a];
+        if (a === b || !qa || q[b] || iv[b] <= iv[a]) continue;
+        const c = coincidence(iv[b] - iv[a]);
+        /* 上 / 下 = c[0] / c[1] */
+        if (c) q[b] = [qa[0] * c[0], qa[1] * c[1]];
+      }
+  /* 根音より下の音（開いた長三和音の C3 など）は、上の音から下へたどる */
+  for (let pass = 0; pass < iv.length; pass++)
+    for (let a = 0; a < iv.length; a++) {
+      const qa = q[a];
+      if (!qa) continue;
+      for (let b = 0; b < iv.length; b++) {
+        if (q[b] || iv[b] >= iv[a]) continue;
+        const c = coincidence(iv[a] - iv[b]);
+        if (c) q[b] = [qa[0] * c[1], qa[1] * c[0]];
+      }
+    }
+  const fr = q.map((x, i): [number, number] => x ?? [Math.round(1000 * 2 ** ((iv[i] - iv[0]) / 12)), 1000]);
+  const den = fr.reduce((m, [, d]) => (m * d) / gcd(m, d), 1),
+    v = fr.map(([n, d]) => (n * den) / d),
+    g = v.reduce((a, b) => gcd(a, b));
+  return v.map((x) => x / g);
+}
+
 /** うなりの包絡（2 つの部分音の和の振幅を、振幅の和で割った 0〜1） */
-export function envelope(p: Pair, t: number): number {
+export function envelope(p: Beat, t: number): number {
   const a = p.al,
     b = p.ah;
   if (!(a + b)) return 1;

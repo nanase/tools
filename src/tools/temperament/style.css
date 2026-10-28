@@ -16,6 +16,7 @@
 
 /* うなりの灯り: うなりの包絡で明滅する。純正（うなりなし）は灯ったまま */
 .lamp{display:inline-block;width:12px;height:12px;border-radius:50%;background:var(--ch1);box-shadow:0 0 0 1px var(--line-2)}
+.lamp.k1{background:var(--ch2)}.lamp.k2{background:var(--tm-c3)}.lamp.g{background:var(--ink-3)}
 .lamp.still{background:var(--led-off)}
 
 /* うなりの表（行の中身はブラウザで入れる） */
@@ -49,21 +50,60 @@
 .nts .hd>*{font:700 11px/1.3 var(--sans);color:var(--ink-3)}
 .nts .r>*:first-child{text-align:left;color:var(--ink);font-weight:700}
 
-/* ===== 部分音のはしご ===== */
+/* ===== 純正の物差し ===== */
+/* 音の組の色: 1 つ目・2 つ目は信号色、3 つ目はこのページだけの紫。組が 4 つ以上の和音では、選んだ組だけ k0 で、ほかは灰色（g） */
+.tgrid{--tm-c3:#8a3fb0}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .tgrid{--tm-c3:#d197ff}}
+:root[data-theme="dark"] .tgrid{--tm-c3:#d197ff}
+.lgd{display:flex;flex-wrap:wrap;gap:2px 16px;margin:0 0 8px;font:500 12px/1.6 var(--sans);color:var(--ink-2)}
+.lgd i{display:inline-block;vertical-align:middle;margin-right:6px}
+.lgd .tk{width:2px;height:12px;background:var(--grid-2)}
+.lgd .dt{width:10px;height:10px;border-radius:50%;background:var(--screen-ink)}
+.lgd .sw{width:12px;height:12px;border-radius:2px;background:color-mix(in srgb,var(--ch1) 30%,transparent)}
+.lgd .ring{width:11px;height:11px;border-radius:50%;border:1.5px dashed var(--ink-2)}
 .lad{overflow-x:auto}
 .lad svg{display:block;width:100%;min-width:680px;height:auto}
-.lad .lmp{fill:var(--ch1)}
 .lad .ax{stroke:var(--grid-2);stroke-width:1}
 .lad .gl{stroke:var(--grid);stroke-width:1}
-.lad .hm{stroke:var(--grid-2);stroke-width:1;stroke-dasharray:2 3}
-.lad .pt{stroke:var(--screen-ink);stroke-width:2.2;stroke-linecap:round}
-.lad .pt.c{stroke:var(--ch1);stroke-width:3}
-.lad .cn{stroke:var(--ch1);stroke-width:1.2;stroke-dasharray:3 3}
+.lad .idl{stroke:var(--grid-2);stroke-width:1.5}
+.lad .dvl{stroke:var(--ink-3);stroke-width:1.2}
+.lad .k0{--k:var(--ch1)}.lad .k1{--k:var(--ch2)}.lad .k2{--k:var(--tm-c3)}.lad .g{--k:var(--ink-3)}
+.lad .dt{fill:var(--k)}
+.lad .dt.n{fill:var(--screen-ink);opacity:.6}
+.lad .band{fill:var(--k);opacity:.18}
+.lad .band.e{fill:none;stroke:var(--k);stroke-width:1.5;stroke-dasharray:4 3;opacity:1}
+.lad .ear{fill:none;stroke:var(--k);stroke-width:1.6;stroke-dasharray:3 3}
+.lad .lmp{fill:var(--k)}
+.lad .lmp.e{fill:none;stroke:var(--k);stroke-width:2}
 .lad text{fill:var(--screen-ink);font:11px var(--mono)}
-.lad text.m{text-anchor:middle}
+.lad text.m,.lad text.pn{text-anchor:middle}
 .lad text.r{text-anchor:end}
-.lad text.nl{font:700 13px var(--mono);fill:var(--ink)}
-.lad text.bl{font:700 12px var(--mono);fill:var(--ch1)}
+.lad text.nl{font:700 14px var(--mono);fill:var(--ink)}
+.lad text.nf{fill:var(--ink-3)}
+.lad text.pn{font-size:10.5px;fill:var(--ink-3)}
+.lad text.pn.k0,.lad text.pn.k1,.lad text.pn.k2{fill:var(--k);font-weight:700}
+.lad text.bl{font:700 12.5px var(--mono);fill:var(--k)}
+
+/* ===== 音律の表（A・B の列は Choice の群。display:contents で表の列に並べる） ===== */
+.ttab{display:grid;grid-template-columns:40px 40px minmax(0,1fr) 68px 68px;align-items:center}
+.ttab>*{min-height:40px;border-top:1px solid var(--line)}
+.ttab .tcol{display:contents}
+.ttab .th{min-height:0;padding:2px 0 6px;border-top:0;font:700 11.5px/1.3 var(--sans);color:var(--ink-3);text-align:center}
+.ttab .th:nth-child(3){text-align:left;padding-left:4px}
+.ttab .th.num{text-align:right;padding-right:6px;font-family:var(--mono)}
+.ttab .rb{display:grid;place-items:center;width:40px;height:40px;padding:0;border:0;border-top:1px solid var(--line);background:none;cursor:pointer}
+#p-tem .rb{grid-column:1}#p-cmp .rb{grid-column:2}
+.ttab .rb i{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--line-2)}
+.ttab .rb[aria-pressed="true"] i{border:5px solid var(--ink)}
+.ttab .rb.b[aria-pressed="true"] i{border-color:var(--ch2)}
+.ttab .tn{grid-column:3;display:flex;align-items:center;padding:4px;font:600 13.5px/1.35 var(--sans)}
+.ttab .tn.none{color:var(--ink-3);font-weight:500}
+.ttab .num{display:grid;align-content:center;gap:4px;padding:4px 6px 4px 0;text-align:right;font:600 12.5px/1.2 var(--mono);font-variant-numeric:tabular-nums}
+.ttab .v3{grid-column:4}.ttab .v5{grid-column:5}
+.ttab .num i{display:block;height:4px;margin-left:auto;border-radius:2px;background:var(--ch1)}
+.tnote{margin-top:8px;font:500 12px/1.6 var(--sans);color:var(--ink-3)}
+.a-chd .cg{display:block;margin:2px 0 4px;font:700 12px/1.4 var(--sans);color:var(--ink-3)}
+.a-chd .cg~.cg{margin-top:10px}
 .zms{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-top:10px}
 .zm{display:grid;gap:4px;padding:8px 10px;border:1px solid var(--line);border-radius:var(--r);background:var(--screen);cursor:pointer;text-align:left;color:var(--ink);font:inherit}
 .zm.on{border-color:var(--ink-2);box-shadow:inset 0 0 0 1px var(--ink-2)}

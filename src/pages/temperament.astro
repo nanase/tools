@@ -10,10 +10,10 @@ import RowReset from '../components/RowReset.astro';
 import { order, TOOLS } from '../data/tools';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import '../tools/temperament/style.css';
-import { A4, OCTAVES, PIANOS, VOL } from '../tools/temperament/params';
+import { A4, PIANOS, VOL } from '../tools/temperament/params';
 import Theory from '../tools/temperament/Theory.astro';
 import { CHORDS, FIFTHS, INTERVALS, NAMES, TEMPERAMENTS, TIMBRES } from '../tools/temperament/tem';
-import { keyboard, LH, LW } from '../tools/temperament/view';
+import { KX, keyboard, LH, LW } from '../tools/temperament/view';
 
 const name = '音律とうなり';
 /* チューナー・オルガン・ピアノを先に、続けて同じカテゴリ（準備中を含む）、ほかのカテゴリの公開中のツール */
@@ -24,7 +24,6 @@ const related = [
   ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'temperament' && !FIRST.includes(t.id))),
   ...TOOLS.filter((t) => t.c !== CAT && !t.s && !FIRST.includes(t.id)),
 ];
-const TEMS = TEMPERAMENTS.map((t) => [t.v, t.name] as const);
 const KEYS = keyboard();
 ---
 <SiteLayout title={name} tool={{ id: 'temperament', name }} description="平均律・純正律・ミーントーン・ヴェルクマイスターなどの音律で和音を鳴らし、うなりの速さを数値と音で比べます。" note="音はこの端末の中で作り、送信しません。">
@@ -33,20 +32,24 @@ const KEYS = keyboard();
 
   <div class="tgrid">
     <Panel hid="hd-fig" title="部分音" class="a-fig" fixed>
-      <div slot="aux" class="pbar">
-        <div class="seg">
-          <button type="button" id="abBtn" aria-pressed="false" title="音律 A と比べる音律 B を 2 秒ごとに入れ替えて鳴らす"><span class="led" id="abLed" aria-hidden="true"></span><span>A・B 交互</span></button>
-          <button type="button" id="playBtn" aria-pressed="false" title="和音を鳴らす・止める"><span class="led" id="playLed" aria-hidden="true"></span><span id="playT">鳴らす</span></button>
-        </div>
+      <div slot="aux" class="seg">
+        <button type="button" id="playBtn" aria-pressed="false" title="和音を鳴らす・止める"><span class="led" id="playLed" aria-hidden="true"></span><span id="playT">鳴らす</span></button>
       </div>
       <div class="sbar">
         <span class="stag">A <b id="s-a">平均律</b></span>
         <span class="stag" id="s-bw">B <b id="s-b"></b></span>
         <span class="stag" id="s-ch">—</span>
         <span class="stag" id="s-tb">—</span>
+        <span class="stag" id="s-rt">—</span>
         <span class="stag right ab" id="s-now" hidden>鳴っている音律 <b id="s-cur"></b></span>
       </div>
-      <div class="scope lad"><svg viewBox={`0 0 ${LW} ${LH}`} id="lad" role="img" aria-label="和音の部分音と、一致する部分音のうなり"><g id="lad-g"></g></svg></div>
+      <div class="lgd">
+        <span><i class="tk" aria-hidden="true"></i>目盛り ＝ 純正なら部分音が来る位置</span>
+        <span><i class="dt" aria-hidden="true"></i>点 ＝ 部分音（数字は第何部分音か。大きさは強さ、目盛りからのずれは {KX} 倍）</span>
+        <span><i class="sw" aria-hidden="true"></i>帯 ＝ 2 つの音の部分音が同じ目盛りに来る所。数字はうなりの速さ [回/秒]</span>
+        <span id="lg-e" hidden><i class="ring" aria-hidden="true"></i>破線 ＝ 部分音はないが、2 次のうなりが生じる所</span>
+      </div>
+      <div class="scope lad"><svg viewBox={`0 0 ${LW} ${LH}`} id="lad" role="img" aria-label="和音の部分音を純正な比の目盛りに並べた図"><g id="lad-g"></g></svg></div>
       <div class="zms" id="zms"></div>
       <div class="kbw"><div class="kb" id="kb" role="group" aria-label="鍵盤（押すと根音にする）">
         {KEYS.map((k) => (
@@ -63,10 +66,27 @@ const KEYS = keyboard();
 
     <div class="col c1">
       <Panel hid="hd-tem" title="音律" class="a-tem">
-        <div class="ptab">
-          <ChoiceRow k="tem" name="音律 A" choices={TEMS} value="et" layout="chips" />
-          <ChoiceRow k="cmp" name="比べる音律 B" sub="「A・B 交互」で、音律 A と 2 秒ごとに入れ替えて鳴らします" choices={[['none', 'なし'], ...TEMS]} value="mt4" layout="chips" />
+        <div slot="aux" class="seg">
+          <button type="button" id="abBtn" aria-pressed="false" title="音律 A と比べる音律 B を 2 秒ごとに入れ替えて鳴らす"><span class="led" id="abLed" aria-hidden="true"></span><span>A・B 交互</span></button>
         </div>
+        <div class="ttab">
+          <span class="th">A</span><span class="th">B</span><span class="th">音律（B は比べる音律）</span><span class="th num" id="tt-3">C–E</span><span class="th num" id="tt-5">C–G</span>
+          <div class="tcol" id="p-tem" role="group" aria-label="音律 A">
+            {TEMPERAMENTS.map((t, i) => <button type="button" class="rb" data-v={t.v} aria-pressed={t.v === 'et' ? 'true' : 'false'} aria-label={`音律 A を${t.name}にする`} style={`grid-row:${i + 2}`}><i></i></button>)}
+          </div>
+          <div class="tcol" id="p-cmp" role="group" aria-label="比べる音律 B">
+            {[...TEMPERAMENTS, { v: 'none', name: '比べない' }].map((t, i) => <button type="button" class="rb b" data-v={t.v} aria-pressed={t.v === 'mt4' ? 'true' : 'false'} aria-label={t.v === 'none' ? '音律 B で比べない' : `比べる音律 B を${t.name}にする`} style={`grid-row:${i + 2}`}><i></i></button>)}
+          </div>
+          {TEMPERAMENTS.map((t, i) => (
+            <>
+              <span class="tn" style={`grid-row:${i + 2}`}>{t.name}</span>
+              <span class="num v3" data-t={t.v} style={`grid-row:${i + 2}`}><span>—</span><i></i></span>
+              <span class="num v5" data-t={t.v} style={`grid-row:${i + 2}`}><span>—</span><i></i></span>
+            </>
+          ))}
+          <span class="tn none" style={`grid-row:${TEMPERAMENTS.length + 2}`}>比べない</span>
+        </div>
+        <p class="tnote" id="tt-n"></p>
         <More id="g-tem"><div class="ptab">
           <ChoiceRow k="ton" name="音律の主音" sub="音律を組んだ C をどの音へ移すか。純正律を G 長調で使うときは G。A4 は基準ピッチのまま" choices={NAMES.map((n, i) => [String(i), n] as const)} value="0" layout="chips" />
           <ParamRow d={A4} />
@@ -80,12 +100,12 @@ const KEYS = keyboard();
             <div class="c-name"><span class="pn" id="n-chord">和音・音程</span><p class="desc tip" id="t-chord" role="tooltip" hidden>開いた長三和音は、ピアノの調律で聴く根音・1 オクターブ上・5 度・10 度の形</p></div>
             <RowReset label="和音・音程を既定値に戻す" />
             <div class="c-sub">
+              <span class="cg" aria-hidden="true">和音</span>
               <div class="chips" role="group" aria-label="和音">{CHORDS.map((c) => <button type="button" class="chip" data-v={c.v} aria-pressed={c.v === 'maj' ? 'true' : 'false'}>{c.name}</button>)}</div>
+              <span class="cg" aria-hidden="true">音程</span>
               <div class="chips" role="group" aria-label="音程">{INTERVALS.map((c) => <button type="button" class="chip" data-v={c.v} aria-pressed="false">{c.name}</button>)}</div>
             </div>
           </div>
-          <ChoiceRow k="root" name="根音" choices={NAMES.map((n, i) => [String(i), n] as const)} value="0" layout="chips" />
-          <ChoiceRow k="oct" name="根音のオクターブ" sub="4 は中央の C（C4）からのオクターブ" choices={OCTAVES.map((o) => [String(o), String(o)] as const)} value="4" />
         </div>
       </Panel>
     </div>
@@ -110,7 +130,7 @@ const KEYS = keyboard();
 
       <Panel hid="hd-snd" title="音" class="a-snd">
         <div class="ptab">
-          <ChoiceRow k="tb" name="音色" sub="正弦波は部分音がないので、3 度や 5 度はうなりません。ピアノは弦の非調和性で部分音が高くずれます" choices={TIMBRES} value="organ" />
+          <ChoiceRow k="tb" name="音色" sub="正弦波は部分音がないので、比が整数比から少しずれた音程で 2 次のうなりだけが聞こえます。ピアノは弦の非調和性で部分音が高くずれます" choices={TIMBRES} value="organ" />
           <ChoiceRow k="pt" name="ピアノ" sub="弦の寸法はピアノ音響モデルと同じ。非調和性係数 B は弦ごとに違います" choices={PIANOS} value="concert" layout="chips" class="pno" />
           <ChoiceRow k="st" name="ストレッチ" sub="オクターブを部分音に合わせて広げる調律。ピアノ音響モデルと同じ" choices={[['0', 'なし'], ['1', 'あり']]} value="0" class="pno" />
           <ParamRow d={VOL} />
