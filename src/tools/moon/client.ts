@@ -148,7 +148,9 @@ function setLive(on: boolean): void {
   $('#nowLed').classList.toggle('on', on);
 }
 setInterval(() => {
-  if (live && !playing && !document.hidden) setJd(nowJd(), false, true);
+  if (document.hidden) return;
+  if (live && !playing) setJd(nowJd(), false, true);
+  else if (!live && W0) placeNow();
 }, 1000);
 
 /* ---------- 望遠の月 ---------- */
@@ -603,7 +605,10 @@ function drawBand(): void {
       if (c.day % 2 === 0 && x > 12 && x < 988)
         h.push(`<text x="${x.toFixed(1)}" y="116" text-anchor="middle">${c.month}/${c.day}</text>`);
     }
-    h.push('<path class="cur" id="bcur" d="M0 4V102"></path>');
+    h.push(
+      '<path class="tri" id="bnow" d=""></path><text class="nowt" id="bnowt">現在</text>',
+      '<path class="cur" id="bcur" d="M0 -4V102"></path><rect class="tagr" id="btagr" y="-22" height="19" rx="3"></rect><text class="tagt" id="btagt" y="-8"></text>',
+    );
     band.innerHTML = h.join('');
     const row = $('#phrow');
     row.innerHTML = bandDays()
@@ -615,7 +620,17 @@ function drawBand(): void {
     drawKeys();
   }
   const x = BX(jd);
-  $('#bcur').setAttribute('d', `M${x.toFixed(1)} 4V102`);
+  $('#bcur').setAttribute('d', `M${x.toFixed(1)} -4V102`);
+  /* 日時の札。幅は字数から見積もり、帯からはみ出さないよう寄せる */
+  const t = whenStr();
+  const tw = [...t].reduce((w, c) => w + (c.charCodeAt(0) > 0xff ? 11.5 : 6.7), 14);
+  const tx = Math.min(1000 - tw / 2, Math.max(tw / 2, x));
+  $('#btagr').setAttribute('x', (tx - tw / 2).toFixed(1));
+  $('#btagr').setAttribute('width', tw.toFixed(1));
+  $('#btagt').setAttribute('x', tx.toFixed(1));
+  $('#btagt').textContent = t;
+  for (const id of ['#bcur', '#btagr']) $(id).classList.toggle('now', live);
+  placeNow();
   band.setAttribute('aria-valuenow', String(Math.round(x)));
   band.setAttribute('aria-valuetext', `${dateStr(jd)} ${hm(jd)}`);
   const ds = bandDays();
@@ -630,6 +645,15 @@ function drawBand(): void {
       renderer?.icon(iconU(moonState(t, obs())), cs[k]);
     });
   }
+}
+/** 帯の現在の印（三角）。現在に合わせて進んでいる間と、日時の札に重なるときは出さない */
+function placeNow(): void {
+  const x = BX(nowJd());
+  const off = live || x < 0 || x > 1000 || Math.abs(x - BX(jd)) < 56;
+  $('#bnow').setAttribute('d', off ? '' : `M${(x - 7).toFixed(1)} -8H${(x + 7).toFixed(1)}L${x.toFixed(1)} 2Z`);
+  $('#bnowt').setAttribute('x', x.toFixed(1));
+  $('#bnowt').setAttribute('y', '-12');
+  $('#bnowt').style.display = off ? 'none' : '';
 }
 function iconU(s: MoonState, shd: Shadow | null = null, bright: Bright = 'eye'): MoonU {
   const u = moonUniforms(s, or$.value, bright, shd);
@@ -817,22 +841,45 @@ $('#cal-prev').addEventListener('click', () => shiftMonth(-1));
 $('#cal-next').addEventListener('click', () => shiftMonth(1));
 
 /* ---------- 図: 軌道・秤動・距離 ---------- */
+/** 図の印にする小さな月。輝面比と、満ちていくか欠けていくかで明るい側の形を変える（右が西の空の向き） */
+function moonIcon(x: number, y: number, r: number, s: MoonState, w = 1): string {
+  const f = (v: number) => v.toFixed(1),
+    wax = s.elong < 180,
+    rx = r * Math.abs(2 * s.illum - 1),
+    c = `cx="${f(x)}" cy="${f(y)}" r="${r}"`;
+  return `<circle class="mhalo" style="stroke-width:${w * 5}" ${c}></circle><circle class="drk" ${c}></circle><path class="lit" d="M${f(x)} ${f(y - r)}A${r} ${r} 0 0 ${wax ? 1 : 0} ${f(x)} ${f(y + r)}A${f(rx)} ${r} 0 0 ${s.illum > 0.5 === wax ? 1 : 0} ${f(x)} ${f(y - r)}Z"></path><circle class="rim" style="stroke-width:${w}" ${c}></circle>`;
+}
 /** 帯の 32 日の地心の状態（6 時間おき）。帯が変わったときだけ作り直す */
 let serW0 = Number.NaN;
 let ser: MoonState[] = [];
 let tserKey = '';
 let tser: { lat: number; lon: number }[] = [];
 function drawFigs(): void {
-  /* 軌道（北から、太陽は右）。月の向きは太陽からの離角 */
   const g = (j: number) => moonState(j, null);
+  if (serW0 !== W0) {
+    serW0 = W0;
+    ser = Array.from({ length: 129 }, (_, k) => g(W0 + k / 4));
+  }
+  /* 軌道（北から、太陽は右）。月の向きは太陽からの離角 */
   const pos = (j: number, s = g(j)) => {
     const r = (s.distGeo / 384400) * 110,
       a = s.elong * D;
     return [150 + r * Math.cos(a), 150 - r * Math.sin(a)];
   };
   const [mx, my] = pos(jd, st);
+  /* 帯の新月から次の新月までの道すじ。近地点が太陽に対して回るので、1 周しても閉じない */
+  const nm = bandPh.find((p) => p.q === 0)?.jd ?? W0 + 1;
+  const orbD = ser
+    .filter((s) => s.jd >= nm && s.jd <= nm + 29.53)
+    .map((s) =>
+      pos(s.jd, s)
+        .map((v) => v.toFixed(1))
+        .join(' '),
+    )
+    .join('L');
   const o: string[] = [
     '<circle class="orb" cx="150" cy="150" r="110"></circle>',
+    `<path class="orb2" d="M${orbD}"></path>`,
     '<path class="ax" d="M150 30V270M30 150H270"></path>',
     '<text class="ts" x="268" y="144" text-anchor="end">新月</text><text class="ts" x="156" y="34">上弦</text><text class="ts" x="34" y="144">満月</text><text class="ts" x="156" y="276">下弦</text>',
     '<path class="sunar" d="M276 150H296M290 145L296 150L290 155"></path><text class="ts" x="294" y="168" text-anchor="end">太陽へ</text>',
@@ -850,10 +897,6 @@ function drawFigs(): void {
   $('#orb').innerHTML = o.join('');
 
   /* 秤動: 地心の地球直下点の 1 か月（6 時間おき）と、今の観測地からの点 */
-  if (serW0 !== W0) {
-    serW0 = W0;
-    ser = Array.from({ length: 129 }, (_, k) => g(W0 + k / 4));
-  }
   /* 観測地から見た地球直下点（1 時間おき）。日周秤動で、地心の線のまわりを 1 日に 1 回まわる */
   const tk = `${W0}|${site.lat}|${site.lon}|${site.h}`;
   if (tserKey !== tk) {
@@ -882,7 +925,7 @@ function drawFigs(): void {
     fs
       ? `<circle class="dot" cx="${sx(fs.subObs.lon).toFixed(1)}" cy="${sy(fs.subObs.lat).toFixed(1)}" r="2.5"></circle><text x="${(sx(fs.subObs.lon) + 5).toFixed(1)}" y="${(sy(fs.subObs.lat) + 12).toFixed(1)}">満月 ${md(fs.jd)}</text>`
       : '',
-    `<circle class="ring" cx="${sx(st.subObs.lon).toFixed(1)}" cy="${sy(st.subObs.lat).toFixed(1)}" r="6"></circle><circle class="dot" cx="${sx(st.subObs.lon).toFixed(1)}" cy="${sy(st.subObs.lat).toFixed(1)}" r="2.5"></circle><text class="mt" x="${(sx(st.subObs.lon) + 10).toFixed(1)}" y="${(sy(st.subObs.lat) + 4).toFixed(1)}">表示中</text>`,
+    moonIcon(sx(st.subObs.lon), sy(st.subObs.lat), 8, st),
   ].join('');
   txt('#lib-aux', `地球直下点 · ${md(W0)}〜${md(W0 + 32)}`);
   txt('#lib-site', `${site.name}から（1 時間おき）`);
@@ -898,18 +941,28 @@ function drawFigs(): void {
     d.push(
       `<circle class="dot" cx="${dx(a.jd).toFixed(1)}" cy="${dy(a.km).toFixed(1)}" r="6"></circle><text class="ts" x="${dx(a.jd).toFixed(1)}" y="${(dy(a.km) + (a.kind === 'peri' ? 50 : -18)).toFixed(1)}" text-anchor="middle">${a.kind === 'peri' ? '近地点' : '遠地点'}</text>`,
     );
+  /* 月の絵の右上（右端の近くでは左上、上端の近くでは下）に距離を書く */
+  const cx = dx(jd),
+    cy = dy(st.distGeo),
+    left = cx > 760;
   d.push(
-    `<circle class="ring" style="stroke-width:3" cx="${dx(jd).toFixed(1)}" cy="${dy(st.distGeo).toFixed(1)}" r="12"></circle><text class="mt" x="${(dx(jd) + 22).toFixed(1)}" y="${(dy(st.distGeo) - 10).toFixed(1)}">表示中</text>`,
+    moonIcon(cx, cy, 26, st, 3),
+    `<text class="vl${left ? ' e' : ''}" x="${(cx + (left ? -36 : 36)).toFixed(1)}" y="${(cy < 100 ? cy + 54 : cy - 32).toFixed(1)}">${kmStr(st.distGeo)}</text>`,
   );
   $('#dist').innerHTML = d.join('');
-  txt('#size-aux', `${md(W0)}〜${md(W0 + 32)}`);
+  txt('#size-aux', `地心 · ${md(W0)}〜${md(W0 + 32)}`);
 }
 
-/* 見かけの大きさ: その年で最も遠い・近いときと今（地心）。小さな月は満月として描く */
+/** 帯の日時の札と、見かけの大きさの中央の札。現在に合わせて進んでいる間は「現在」 */
+const whenStr = () => (live ? `現在 ${hm(jd)}` : `${md(jd)} ${hm(jd)}`);
+
+/* 見かけの大きさ: その年で最も遠い・近いときと今（地心）。小さな月は満月として描く。
+   最も近いときの影を左へ、最も遠いときの影を右へ伸ばし、月を押す・乗せるとその月の影を濃くする（中央の月は乗せたときだけ影を出す） */
 let sizeKey = '';
 function drawSizes(): void {
   const y = local(jd).year;
-  const key = `${y}|${Math.round(st.diam)}|${renderer?.ready}|${or$.value}`;
+  const when = whenStr();
+  const key = `${y}|${Math.round(st.diam)}|${renderer?.ready}|${or$.value}|${when}`;
   if (key === sizeKey) return;
   sizeKey = key;
   const j0 = calToJd(y, 1, 1);
@@ -917,24 +970,26 @@ function drawSizes(): void {
   const far = Math.max(...ap.map((a) => a.km)),
     near = Math.min(...ap.map((a) => a.km));
   const diam = (km: number) => 2 * Math.asin(1737.4 / km) * (180 / Math.PI) * 3600;
-  const items: [string, number][] = [
-    ['最も遠いとき', diam(far)],
-    ['表示中', st.diam],
-    ['最も近いとき', diam(near)],
+  const items: [string, number, string][] = [
+    ['最も遠いとき', diam(far), 'f'],
+    [when, st.diam, 'c'],
+    ['最も近いとき', diam(near), 'n'],
   ];
   const max = diam(near);
-  $('#sizes').innerHTML = items
-    .map(([t, a]) => {
-      const px = Math.round((80 * a) / max);
-      return `<figure><canvas width="${px * 2}" height="${px * 2}" style="width:${px}px;height:${px}px"></canvas><span>${t}<br><b>${dms(a)}</b></span></figure>`;
-    })
-    .join('');
+  const px = (a: number) => Math.round((80 * a) / max);
+  $('#sizes').innerHTML = [
+    ...items.map(([, a, k]) => `<i class="shd ${k}" style="height:${px(a)}px"></i>`),
+    ...items.map(
+      ([t, a, k]) =>
+        `<figure class="${k}" tabindex="0"><span class="mbox"><canvas width="${px(a) * 2}" height="${px(a) * 2}" style="width:${px(a)}px;height:${px(a)}px"></canvas></span><span>${t}<br><b>${dms(a)}</b></span></figure>`,
+    ),
+  ].join('');
   if (renderer?.ready) {
+    /* 満月は太陽を観測地の真後ろに置いて描く（太陽の向きだけ替えると、位相角で決まる明るさと測光の極が今のままになる） */
+    const fullSt: MoonState = { ...st, phase: 0, sun: st.moon.map((v, i) => v + (st.obs[i] - v) * 400) as Vec3 };
     const cs = document.querySelectorAll<HTMLCanvasElement>('#sizes canvas');
     cs.forEach((cv, k) => {
-      const u = iconU(st);
-      if (k !== 1) u.s = u.o;
-      renderer?.icon(u, cv);
+      renderer?.icon(iconU(k === 1 ? st : fullSt), cv);
     });
   }
   const sj = superJd || supermoon(nowJd());
