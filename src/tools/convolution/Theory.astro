@@ -27,7 +27,7 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
   <dt><math><mi>h</mi></math></dt><dd>核（インパルス応答）</dd>
   <dt><math><mi>y</mi></math></dt><dd>出力</dd>
 </dl>
-<p>連続は積分、離散は和<Fragment set:html={rf(1)} /><Fragment set:html={rf(6)} />。長さ <math><mi>N</mi></math> と <math><mi>M</mi></math> の離散の信号の畳み込みは <math><mi>N</mi><mo>+</mo><mi>M</mi><mo>−</mo><mn>1</mn></math> 点<Fragment set:html={rf(1)} />。</p>
+<p>連続は積分、離散は和<Fragment set:html={rf(1)} /><Fragment set:html={rf(5)} />。長さ <math><mi>N</mi></math> と <math><mi>M</mi></math> の離散の信号の畳み込みは <math><mi>N</mi><mo>+</mo><mi>M</mi><mo>−</mo><mn>1</mn></math> 点<Fragment set:html={rf(1)} />。</p>
 
 <h3>出力の側から: 裏返して滑らせる</h3>
 <ol class="flow">
@@ -62,7 +62,7 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
 </table></div>
 
 <h3>確率: 和の分布</h3>
-<p>独立な確率変数の和の分布は、分布の畳み込み<Fragment set:html={rf(6)} />。</p>
+<p>独立な確率変数の和の分布は、分布の畳み込み<Fragment set:html={rf(5)} />。</p>
 <div class="tt-w"><table class="tt">
   <thead><tr><th>例</th><th>分布</th><th>和の分布</th></tr></thead>
   <tbody>
@@ -74,35 +74,14 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
 </table></div>
 <p>何度も畳み込むと正規分布に近づく（中心極限定理）<Fragment set:html={rf(2)} />。</p>
 
-<h3>2 次元: 画像</h3>
-<div class="eqs">
-  <math display="block" set:html={`${sq('y', '<mi>r</mi><mo>,</mo><mi>c</mi>')}<mo>=</mo>${sum('<mi>k</mi>')}${sum('<mi>j</mi>')}${sq('h', '<mi>k</mi><mo>,</mo><mi>j</mi>')}<mspace width="0.2em"/>${sq('x', '<mi>r</mi><mo>−</mo><mi>k</mi><mo>,</mo><mi>c</mi><mo>−</mo><mi>j</mi>')}`} />
-</div>
-<ul class="tl">
-  <li>核を 180° 回して画像に重ね、積の和を出力の 1 画素にする（式 24-3）<Fragment set:html={rf(5)} /></li>
-  <li>核は点が広がる形なので、点像分布関数（PSF）とも呼ぶ<Fragment set:html={rf(5)} /></li>
-  <li>核の和が 1 なら明るさを保ち、0 なら平らな所が 0 になる</li>
-</ul>
-<div class="tt-w"><table class="tt">
-  <thead><tr><th>核</th><th>3 × 3 の値</th><th>出典</th></tr></thead>
-  <tbody>
-    <tr><td>恒等（デルタ）</td><td>中央 1、ほか 0</td><td>図 24-4 a<Fragment set:html={rf(5)} /></td></tr>
-    <tr><td>浮き彫り（ずらして引く）</td><td>中央 1、右下 −1</td><td>図 24-4 b<Fragment set:html={rf(5)} /></td></tr>
-    <tr><td>エッジ検出</td><td>中央 1、まわり −1/8</td><td>図 24-4 c<Fragment set:html={rf(5)} /></td></tr>
-    <tr><td>エッジ強調</td><td>中央 <math><mi>k</mi><mo>+</mo><mn>1</mn></math>、まわり <math><mo>−</mo><mi>k</mi><mo>/</mo><mn>8</mn></math></td><td>図 24-4 d<Fragment set:html={rf(5)} /></td></tr>
-    <tr><td>Sobel <math><mi>x</mi></math></td><td><math><msup><mrow><mo stretchy="false">[</mo><mn>1</mn><mspace width="0.3em"/><mn>2</mn><mspace width="0.3em"/><mn>1</mn><mo stretchy="false">]</mo></mrow><mi mathvariant="normal">T</mi></msup><mo stretchy="false">[</mo><mn>1</mn><mspace width="0.3em"/><mn>0</mn><mspace width="0.3em"/><mo>−</mo><mn>1</mn><mo stretchy="false">]</mo></math></td><td><Fragment set:html={rf(10)} /></td></tr>
-  </tbody>
-</table></div>
-<p>縦と横の 1 次元の核の積に分けられる核（分離できる核）は、横に畳み込んでから縦に畳み込めば同じ結果になる。<math><mi>M</mi><mo>×</mo><mi>M</mi></math> の核の 1 画素あたりの掛け算が <math><msup><mi>M</mi><mn>2</mn></msup></math> 回から <math><mn>2</mn><mi>M</mi></math> 回に減る。円対称で分離できるのはガウスだけ（式 24-1）<Fragment set:html={rf(5)} />。</p>
-
 <h3>相関</h3>
 <div class="eqs">
   <math display="block" set:html={`${sq('r', it('n'))}<mo>=</mo>${sum('<mi>m</mi>')}${sq('x', '<mi>n</mi><mo>+</mo><mi>m</mi>')}<mspace width="0.2em"/>${sq('h', it('m'))}<mo>=</mo><mo stretchy="false">(</mo><mi>x</mi>${conv}<mover><mi>h</mi><mo>~</mo></mover><mo stretchy="false">)</mo><mo stretchy="false">[</mo><mi>n</mi><mo stretchy="false">]</mo><mo>,</mo><mspace width="1em"/>${sq('<mover><mi>h</mi><mo>~</mo></mover>', it('m'))}<mo>=</mo>${sq('h', '<mo>−</mo><mi>m</mi>')}`} />
 </div>
 <ul class="tl">
   <li>核を裏返さずに滑らせると相関</li>
-  <li>畳み込みニューラルネットワークの「畳み込み」の多くは相関（式 9.6）<Fragment set:html={rf(8)} /></li>
-  <li>左右対称の核（平均・ガウス）では同じ。Sobel・浮き彫りでは向きが逆になる</li>
+  <li>畳み込みニューラルネットワークの「畳み込み」の多くは相関（式 9.6）<Fragment set:html={rf(7)} /></li>
+  <li>左右対称の核（矩形・ガウス）では同じ。指数・こだまでは向きが逆になる</li>
 </ul>
 
 <h3>畳み込み定理</h3>
@@ -110,9 +89,9 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
   <math display="block" set:html={`<mi>x</mi>${conv}<mi>h</mi><mspace width="0.6em"/><mo>⟷</mo><mspace width="0.6em"/>${fn('X', it('f'))}<mspace width="0.2em"/>${fn('H', it('f'))}`} />
 </div>
 <ul class="tl">
-  <li>時間の畳み込みは周波数の積<Fragment set:html={rf(3)} /><Fragment set:html={rf(7)} />。核の周波数特性が、入力の各周波数を何倍にするかを決める</li>
+  <li>時間の畳み込みは周波数の積<Fragment set:html={rf(3)} /><Fragment set:html={rf(6)} />。核の周波数特性が、入力の各周波数を何倍にするかを決める</li>
   <li><math><mi>L</mi></math> 点の DFT の積は、長さ <math><mi>L</mi></math> の円状畳み込みに当たる。はみ出した分が頭へ回るので、<math><mi>L</mi><mo>≥</mo><mi>N</mi><mo>+</mo><mi>M</mi><mo>−</mo><mn>1</mn></math> まで 0 で埋める<Fragment set:html={rf(3)} /></li>
-  <li>FFT で変換して掛けて戻すと速い。核が約 64 点より長いと直接の和より速い<Fragment set:html={rf(4)} /><Fragment set:html={rf(9)} />。算法は <a href="../fft/">FFT</a>、DFT の周期性は <a href="../dct-dft/">DCT と DFT</a></li>
+  <li>FFT で変換して掛けて戻すと速い。核が約 64 点より長いと直接の和より速い<Fragment set:html={rf(4)} /><Fragment set:html={rf(8)} />。算法は <a href="../fft/">FFT</a>、DFT の周期性は <a href="../dct-dft/">DCT と DFT</a></li>
 </ul>
 
 <h3>このツールで決めたこと</h3>
@@ -120,10 +99,6 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
   <li>連続の信号は刻み 0.01 の格子の値で持ち、積分は刻みを掛けた和で近似する。格子の間は直線で補う</li>
   <li>連続のインパルスは面積 1・幅 1 刻みの柱で近似し、図では矢印（高さは面積）で描く</li>
   <li>核の見本（矩形・三角・指数・ガウス・こだま・パルス列）は面積を 1 にそろえる</li>
-  <li>画像は灰色（Rec. 709 の重み）で扱う</li>
-  <li>画像の外の画素は、端の値をのばす・0・鏡・反対側から の 4 通りから選ぶ</li>
-  <li>和が 0 の核の出力は、0 を灰色にして正負を明暗で描く</li>
-  <li>ガウスの核は ±3σ で打ち切り、和を 1 にする</li>
 </ul>
 
 <h3>出典</h3>
@@ -132,10 +107,8 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
   <li id="thy-r2"><span class="rf-for">デルタ・ずらし・交換・結合・分配（式 7-1〜7-8）、中心極限定理（7 章）</span><span class="rf-src">同, <a href="https://www.dspguide.com/ch7.htm" target="_blank" rel="noopener">ch. 7 Properties of Convolution</a></span></li>
   <li id="thy-r3"><span class="rf-for">周波数領域での畳み込み、円状畳み込み（9 章）</span><span class="rf-src">同, <a href="https://www.dspguide.com/ch9.htm" target="_blank" rel="noopener">ch. 9 Applications of the DFT</a></span></li>
   <li id="thy-r4"><span class="rf-for">FFT 畳み込みが速くなる核の長さ（18 章）</span><span class="rf-src">同, <a href="https://www.dspguide.com/ch18.htm" target="_blank" rel="noopener">ch. 18 FFT Convolution</a></span></li>
-  <li id="thy-r5"><span class="rf-for">点像分布関数、3 × 3 の核（図 24-4）、分離できる核（式 24-1）、画像の畳み込み（式 24-3）</span><span class="rf-src">同, <a href="https://www.dspguide.com/ch24.htm" target="_blank" rel="noopener">ch. 24 Linear Image Processing</a></span></li>
-  <li id="thy-r6"><span class="rf-for">分布の畳み込み（定義 7.1・7.2）と例 7.1・7.3〜7.5（285〜291 頁）</span><span class="rf-src">C. M. Grinstead and J. L. Snell, <a href="https://math.dartmouth.edu/~prob/prob/prob.pdf" target="_blank" rel="noopener"><i>Introduction to Probability</i></a>, 2nd ed., American Mathematical Society, 2003（The CHANCE Project 版、2006 年 7 月 4 日、GNU FDL）, ch. 7 Sums of Independent Random Variables</span></li>
-  <li id="thy-r7"><span class="rf-for">DFT の畳み込み定理</span><span class="rf-src">J. O. Smith III, <i>Mathematics of the Discrete Fourier Transform (DFT), with Audio Applications</i>, 2nd ed., W3K Publishing, 2007, <a href="https://ccrma.stanford.edu/~jos/mdft/Convolution_Theorem.html" target="_blank" rel="noopener">Convolution Theorem</a></span></li>
-  <li id="thy-r8"><span class="rf-for">相互相関と畳み込みの呼び分け（9.1 節、式 9.6）</span><span class="rf-src">I. Goodfellow, Y. Bengio, and A. Courville, <a href="https://www.deeplearningbook.org/contents/convnets.html" target="_blank" rel="noopener"><i>Deep Learning</i></a>, MIT Press, 2016, ch. 9 Convolutional Networks</span></li>
-  <li id="thy-r9"><span class="rf-for">FFT による速い畳み込み</span><span class="rf-src">T. G. Stockham Jr., “High-speed convolution and correlation,” <i>Proc. AFIPS Spring Joint Computer Conference</i>, pp. 229–233, 1966, <a href="https://doi.org/10.1145/1464182.1464209" target="_blank" rel="noopener">doi:10.1145/1464182.1464209</a></span></li>
-  <li id="thy-r10"><span class="rf-for">Sobel の 3 × 3 の勾配の演算子</span><span class="rf-src">I. Sobel, “History and Definition of the Sobel Operator,” 2014（1968 年の講演 “An Isotropic 3×3 Image Gradient Operator” の記録）</span></li>
+  <li id="thy-r5"><span class="rf-for">分布の畳み込み（定義 7.1・7.2）と例 7.1・7.3〜7.5（285〜291 頁）</span><span class="rf-src">C. M. Grinstead and J. L. Snell, <a href="https://math.dartmouth.edu/~prob/prob/prob.pdf" target="_blank" rel="noopener"><i>Introduction to Probability</i></a>, 2nd ed., American Mathematical Society, 2003（The CHANCE Project 版、2006 年 7 月 4 日、GNU FDL）, ch. 7 Sums of Independent Random Variables</span></li>
+  <li id="thy-r6"><span class="rf-for">DFT の畳み込み定理</span><span class="rf-src">J. O. Smith III, <i>Mathematics of the Discrete Fourier Transform (DFT), with Audio Applications</i>, 2nd ed., W3K Publishing, 2007, <a href="https://ccrma.stanford.edu/~jos/mdft/Convolution_Theorem.html" target="_blank" rel="noopener">Convolution Theorem</a></span></li>
+  <li id="thy-r7"><span class="rf-for">相互相関と畳み込みの呼び分け（9.1 節、式 9.6）</span><span class="rf-src">I. Goodfellow, Y. Bengio, and A. Courville, <a href="https://www.deeplearningbook.org/contents/convnets.html" target="_blank" rel="noopener"><i>Deep Learning</i></a>, MIT Press, 2016, ch. 9 Convolutional Networks</span></li>
+  <li id="thy-r8"><span class="rf-for">FFT による速い畳み込み</span><span class="rf-src">T. G. Stockham Jr., “High-speed convolution and correlation,” <i>Proc. AFIPS Spring Joint Computer Conference</i>, pp. 229–233, 1966, <a href="https://doi.org/10.1145/1464182.1464209" target="_blank" rel="noopener">doi:10.1145/1464182.1464209</a></span></li>
 </ol>
