@@ -23,6 +23,7 @@ export const CATS = [
   '楽器・調律',
   '画像・光学',
   '天文',
+  '数学',
   'SVG',
 ];
 export const TOOLS: Tool[] = [
@@ -297,6 +298,14 @@ export const TOOLS: Tool[] = [
     d: '音律ごとに和音を鳴らし、うなりの速さを比べます。',
     ic: 'tm',
     k: 'temperament tuning 音律 調律 うなり beat beats 平均律 equal temperament 純正律 just intonation ピタゴラス pythagorean ミーントーン meantone ヴェルクマイスター werckmeister キルンベルガー kirnberger ヴァロッティ vallotti ヤング young 古典調律 well temperament 和音 chord 長三和音 3 度 5 度 部分音 倍音 partial harmonic コンマ comma ウルフ wolf 非調和性 inharmonicity ストレッチ stretch ピアノ piano オルガン organ セント cent',
+  },
+  {
+    id: 'convolution',
+    c: '数学',
+    t: '畳み込み',
+    d: '核を裏返して滑らせ、重なりの面積が出力になる様子を 1 次元と画像で見ます。',
+    ic: 'cv',
+    k: 'convolution 畳み込み たたみこみ 合成積 convolve kernel カーネル 核 インパルス応答 impulse response 線形時不変 lti 移動平均 moving average ぼかし blur ガウス gaussian 鮮鋭化 sharpen エッジ検出 edge detection sobel ソーベル ラプラシアン laplacian 点像分布関数 psf 分離可能 separable 相関 相互相関 cross-correlation cnn 畳み込み定理 convolution theorem フーリエ fourier fft 円状畳み込み circular convolution 確率 サイコロ dice 中心極限定理 central limit theorem 数学 math',
   },
 ];
 /** 準備中を後ろへ */

@@ -1075,6 +1075,35 @@ export const ART: Record<string, Art> = {
     );
   },
   /* 音律とうなり: 2 つの近い部分音の和。包絡（破線）の山と谷が流れる */
+  /* 畳み込み: 裏返した核が矩形の入力の上を滑り、重なりの面積（塗り）が上の出力の曲線を描いていく */
+  cv(t) {
+    const c = 24 + mod(28 + (76 * t) / 3, 76),
+      tau = 8,
+      a = 30,
+      b = 60,
+      /* y(c) = ∫ rect(x)·e^(−(c − x)/τ)/τ dx */
+      y = (u: number) => (u <= a ? 0 : Math.exp(-(u - Math.min(u, b)) / tau) - Math.exp(-(u - a) / tau)),
+      h = (x: number) => (x > c + 1e-6 ? 44 : 44 - 14 * Math.exp(-Math.max(0, c - x) / tau)),
+      lo = a,
+      hi = Math.min(b, c);
+    let fill = '';
+    if (hi > lo) fill = P('fa g', `${fx(h, lo, hi, 24)}L${r1(hi)} 44L${r1(lo)} 44Z`);
+    return (
+      P('c t', 'M4 22H116M4 44H116') +
+      P(
+        'a g',
+        fx((u) => 22 - 15 * y(u), 4, 116, 112),
+      ) +
+      P(
+        'a',
+        fx((u) => 22 - 15 * y(u), 4, c, Math.max(2, Math.round(c - 4))),
+      ) +
+      fill +
+      P('b', `M4 44H${a}V30H${b}V44H116`) +
+      P('c', fx(h, 4, c, 60) + `L${r1(c)} 44`) +
+      P('c d t', `M${r1(c)} 4V46`)
+    );
+  },
   tm(t) {
     const e = (x: number): number => Math.abs(Math.cos(TAU * 0.0125 * (x - 4) - 1.2 * t));
     return (
@@ -1134,6 +1163,7 @@ export const LOOP: Record<string, number> = {
   svg: TAU / 2.4,
   tu: 3,
   tm: Math.PI / 1.2,
+  cv: 3,
 };
 
 /** 止まっているときの図柄（ビルド時に HTML へ出す） */
