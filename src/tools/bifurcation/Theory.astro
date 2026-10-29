@@ -1,0 +1,113 @@
+---
+// 動作原理と式（下書き。デザインが決まる前に書いたので、図の名前や操作の言い方は案に合わせて直す）。
+// 表の値はビルド時に map.ts で計算する
+import { ALPHA, cascade, DELTA, doublings, MAPS, R_INF_LOGISTIC, windowStart } from './map';
+
+const L = MAPS.logistic;
+const C = cascade(L, 11);
+const D = doublings(L, C);
+const W3 = windowStart(L, 3, 3.835);
+const S = cascade(MAPS.sine, 11);
+const f = (v: number, n: number) => (Number.isFinite(v) ? v.toFixed(n) : '');
+const sub = (s: string, i: string) => `<msub><mi>${s}</mi><mi>${i}</mi></msub>`;
+const xn = sub('x', 'n');
+const xn1 = '<msub><mi>x</mi><mrow><mi>n</mi><mo>+</mo><mn>1</mn></mrow></msub>';
+/* 本文の出典番号 */
+const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
+---
+<h3>写像</h3>
+<div class="eqs">
+  <math display="block" set:html={`${xn1}<mo>=</mo><mi>f</mi><mo stretchy="false">(</mo>${xn}<mo stretchy="false">)</mo>`} />
+</div>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th>写像</th><th><math><mi>f</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo></math></th><th>範囲</th><th>極大</th></tr></thead>
+  <tbody>
+    <tr><th>ロジスティク<Fragment set:html={rf(1)} /></th><td><math><mi>r</mi><mi>x</mi><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><mi>x</mi><mo stretchy="false">)</mo></math></td><td><math><mn>0</mn><mo>≤</mo><mi>r</mi><mo>≤</mo><mn>4</mn></math></td><td>2 次</td></tr>
+    <tr><th>正弦<Fragment set:html={rf(6)} /></th><td><math><mi>r</mi><mi>sin</mi><mi>π</mi><mi>x</mi></math></td><td><math><mn>0</mn><mo>≤</mo><mi>r</mi><mo>≤</mo><mn>1</mn></math></td><td>2 次</td></tr>
+    <tr><th>テント<Fragment set:html={rf(9)} /></th><td><math><mi>μ</mi><mi>min</mi><mo stretchy="false">(</mo><mi>x</mi><mo>,</mo><mn>1</mn><mo>−</mo><mi>x</mi><mo stretchy="false">)</mo></math></td><td><math><mn>0</mn><mo>≤</mo><mi>μ</mi><mo>≤</mo><mn>2</mn></math></td><td>折れ目</td></tr>
+  </tbody>
+</table></div>
+<ul class="tl">
+  <li>クモの巣図: 曲線 <math><mi>y</mi><mo>=</mo><mi>f</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo></math> へ縦、対角線 <math><mi>y</mi><mo>=</mo><mi>x</mi></math> へ横<Fragment set:html={rf(9)} /></li>
+  <li>分岐図: 過渡を捨てたあとの <math><msub><mi>x</mi><mi>n</mi></msub></math> を <math><mi>r</mi></math> ごとに縦に打つ<Fragment set:html={rf(1)} /></li>
+</ul>
+
+<h3>安定と周期倍分岐</h3>
+<div class="eqs">
+  <math display="block" set:html={`<msup><mi>x</mi><mo>*</mo></msup><mo>=</mo><mi>f</mi><mo stretchy="false">(</mo><msup><mi>x</mi><mo>*</mo></msup><mo stretchy="false">)</mo><mo>,</mo><mspace width="1em"/><mo stretchy="false">|</mo><msup><mi>f</mi><mo>′</mo></msup><mo stretchy="false">(</mo><msup><mi>x</mi><mo>*</mo></msup><mo stretchy="false">)</mo><mo stretchy="false">|</mo><mo>&lt;</mo><mn>1</mn><mspace width="0.5em"/><mtext>で安定</mtext>`} />
+  <math display="block" set:html={`<msup><mrow><mo stretchy="false">(</mo><msup><mi>f</mi><mi>p</mi></msup><mo stretchy="false">)</mo></mrow><mo>′</mo></msup><mo>=</mo><munderover><mo>∏</mo><mrow><mi>k</mi><mo>=</mo><mn>0</mn></mrow><mrow><mi>p</mi><mo>−</mo><mn>1</mn></mrow></munderover><msup><mi>f</mi><mo>′</mo></msup><mo stretchy="false">(</mo><msub><mi>x</mi><mi>k</mi></msub><mo stretchy="false">)</mo>`} />
+</div>
+<ul class="tl">
+  <li>乗数 <math><mo>−</mo><mn>1</mn></math>: 周期倍分岐（<math><mi>p</mi><mo>→</mo><mn>2</mn><mi>p</mi></math>）</li>
+  <li>乗数 <math><mo>+</mo><mn>1</mn></math>: 接線分岐（窓の始まり）</li>
+  <li>乗数 0: 超安定（軌道が極大 <math><mi>x</mi><mo>=</mo><mn>1</mn><mo>/</mo><mn>2</mn></math> を通る）</li>
+</ul>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th>周期</th><th>始まり <math><msub><mi>r</mi><mi>k</mi></msub></math></th><th>超安定 <math><msub><mi>R</mi><mi>k</mi></msub></math></th><th><math><msub><mi>δ</mi><mi>k</mi></msub></math></th><th><math><msub><mi>α</mi><mi>k</mi></msub></math></th></tr></thead>
+  <tbody>
+    {C.R.slice(0, 10).map((R, k) => (
+      <tr><th>{2 ** k}</th><td class="num">{k === 0 ? '1' : f(D[k - 1], 9)}</td><td class="num">{f(R, 9)}</td><td class="num">{f(C.delta[k], 5)}</td><td class="num">{f(C.alpha[k], 5)}</td></tr>
+    ))}
+    <tr><th>∞</th><td class="num" colspan="2">{f(R_INF_LOGISTIC, 12)}</td><td class="num">{f(DELTA, 5)}</td><td class="num">{f(ALPHA, 5)}</td></tr>
+  </tbody>
+</table></div>
+<div class="eqs">
+  <math display="block" set:html={`<msub><mi>δ</mi><mi>k</mi></msub><mo>=</mo><mfrac><mrow><msub><mi>R</mi><mi>k</mi></msub><mo>−</mo><msub><mi>R</mi><mrow><mi>k</mi><mo>−</mo><mn>1</mn></mrow></msub></mrow><mrow><msub><mi>R</mi><mrow><mi>k</mi><mo>+</mo><mn>1</mn></mrow></msub><mo>−</mo><msub><mi>R</mi><mi>k</mi></msub></mrow></mfrac><mo>→</mo><mi>δ</mi><mo>=</mo><mn>4.669201609</mn><mo>…</mo>`} />
+  <math display="block" set:html={`<msub><mi>α</mi><mi>k</mi></msub><mo>=</mo><mo>−</mo><mfrac><msub><mi>d</mi><mi>k</mi></msub><msub><mi>d</mi><mrow><mi>k</mi><mo>+</mo><mn>1</mn></mrow></msub></mfrac><mo>→</mo><mi>α</mi><mo>=</mo><mn>2.502907875</mn><mo>…</mo><mo>,</mo><mspace width="1em"/><msub><mi>d</mi><mi>k</mi></msub><mo>=</mo><msup><mi>f</mi><msup><mn>2</mn><mrow><mi>k</mi><mo>−</mo><mn>1</mn></mrow></msup></msup><mo stretchy="false">(</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mo stretchy="false">)</mo><mo>−</mo><mfrac><mn>1</mn><mn>2</mn></mfrac>`} />
+</div>
+<ul class="tl">
+  <li>δ・α は極大が 2 次の写像に共通（普遍性）<Fragment set:html={rf(2)} /><Fragment set:html={rf(3)} />。正弦写像で <math><msub><mi>δ</mi><mn>9</mn></msub></math> = {f(S.delta[9], 5)}・<math><msub><mi>α</mi><mn>9</mn></msub></math> = {f(S.alpha[9], 5)}</li>
+  <li>値は Briggs<Fragment set:html={rf(4)} />・OEIS<Fragment set:html={rf(5)} /></li>
+  <li>電子回路の実験でも同じ比<Fragment set:html={rf(10)} /></li>
+</ul>
+
+<h3>窓</h3>
+<ul class="tl">
+  <li>周期 3 の窓は <math><mi>r</mi><mo>=</mo><mn>1</mn><mo>+</mo><mn>2</mn><msqrt><mn>2</mn></msqrt></math> = {f(W3, 9)} の接線分岐で始まる<Fragment set:html={rf(8)} /></li>
+  <li>手前は間欠性（周期 3 に近い動きとカオスの交代）<Fragment set:html={rf(9)} /></li>
+  <li>周期 3 があればすべての周期がある<Fragment set:html={rf(7)} /></li>
+  <li>窓の並びはロジスティクと正弦で同じ<Fragment set:html={rf(6)} /></li>
+</ul>
+
+<h3>リアプノフ指数</h3>
+<div class="eqs">
+  <math display="block" set:html={`<mi>λ</mi><mo>=</mo><munder><mi>lim</mi><mrow><mi>n</mi><mo>→</mo><mi>∞</mi></mrow></munder><mfrac><mn>1</mn><mi>n</mi></mfrac><munderover><mo>∑</mo><mrow><mi>k</mi><mo>=</mo><mn>0</mn></mrow><mrow><mi>n</mi><mo>−</mo><mn>1</mn></mrow></munderover><mi>ln</mi><mo stretchy="false">|</mo><msup><mi>f</mi><mo>′</mo></msup><mo stretchy="false">(</mo><msub><mi>x</mi><mi>k</mi></msub><mo stretchy="false">)</mo><mo stretchy="false">|</mo>`} />
+</div>
+<ul class="tl">
+  <li><math><mi>λ</mi><mo>&lt;</mo><mn>0</mn></math>: 周期に落ち着く。超安定で <math><mo>−</mo><mi>∞</mi></math></li>
+  <li><math><mi>λ</mi><mo>=</mo><mn>0</mn></math>: 分岐の点</li>
+  <li><math><mi>λ</mi><mo>&gt;</mo><mn>0</mn></math>: カオス（近い 2 点が <math><msup><mi>e</mi><mrow><mi>λ</mi><mi>n</mi></mrow></msup></math> で離れる）</li>
+  <li>ロジスティクの <math><mi>r</mi><mo>=</mo><mn>4</mn></math> で <math><mi>ln</mi><mn>2</mn></math>、テントで <math><mi>ln</mi><mi>μ</mi></math><Fragment set:html={rf(9)} /></li>
+</ul>
+
+<h3>音</h3>
+<ul class="tl">
+  <li>波形: <math><msub><mi>x</mi><mi>n</mi></msub></math> を毎秒 <math><msub><mi>f</mi><mi>s</mi></msub></math> 回の標本にする。周期 <math><mi>p</mi></math> は <math><msub><mi>f</mi><mi>s</mi></msub><mo>/</mo><mi>p</mi></math> Hz、周期倍分岐で 1 オクターブ下がる</li>
+  <li>旋律: <math><msub><mi>x</mi><mi>n</mi></msub></math> を音の高さにする<Fragment set:html={rf(11)} /></li>
+  <li>音のスペクトルは <a href="../fft/">FFT</a> のページで</li>
+</ul>
+
+<h3>このツールで決めたこと</h3>
+<ul class="tl">
+  <li>初めの値 <math><msub><mi>x</mi><mn>0</mn></msub></math> = 0.3</li>
+  <li>分岐図の過渡は 500 回から（拡大するほど増やす）、打つ点は 1 列あたり 300〜900 個</li>
+  <li>周期は過渡 4000 回のあと、128 回以内に 10⁻⁷ 以内へ戻るもの</li>
+  <li>超安定な <math><msub><mi>R</mi><mi>k</mi></msub></math> は Newton 法で <math><mi>k</mi></math> = 11 まで（倍精度の限界）</li>
+  <li>テント写像の傾き 2 は 2 − 10⁻¹²（2 のままでは浮動小数点で 0 に落ちる）</li>
+  <li>波形の音は毎秒 880 回（周期 2 で 440 Hz）、直流を 10 Hz の高域通過で除く。旋律は毎秒 8 音・220〜880 Hz</li>
+</ul>
+
+<h3>出典</h3>
+<ol class="refs">
+  <li id="thy-r1"><span class="rf-for">ロジスティク写像と分岐図</span><span class="rf-src">R. M. May, “Simple mathematical models with very complicated dynamics,” <i>Nature</i>, vol. 261, pp. 459–467, 1976, <a href="https://doi.org/10.1038/261459a0" target="_blank" rel="noopener">doi:10.1038/261459a0</a></span></li>
+  <li id="thy-r2"><span class="rf-for">δ と普遍性</span><span class="rf-src">M. J. Feigenbaum, “Quantitative universality for a class of nonlinear transformations,” <i>Journal of Statistical Physics</i>, vol. 19, pp. 25–52, 1978, <a href="https://doi.org/10.1007/BF01020332" target="_blank" rel="noopener">doi:10.1007/BF01020332</a></span></li>
+  <li id="thy-r3"><span class="rf-for">α と普遍関数</span><span class="rf-src">M. J. Feigenbaum, “The universal metric properties of nonlinear transformations,” <i>Journal of Statistical Physics</i>, vol. 21, pp. 669–706, 1979, <a href="https://doi.org/10.1007/BF01107909" target="_blank" rel="noopener">doi:10.1007/BF01107909</a></span></li>
+  <li id="thy-r4"><span class="rf-for">δ・α の値</span><span class="rf-src">K. Briggs, “A precise calculation of the Feigenbaum constants,” <i>Mathematics of Computation</i>, vol. 57, pp. 435–439, 1991, <a href="https://doi.org/10.1090/S0025-5718-1991-1079009-6" target="_blank" rel="noopener">doi:10.1090/S0025-5718-1991-1079009-6</a></span></li>
+  <li id="thy-r5"><span class="rf-for">δ・α・集積点の値</span><span class="rf-src">OEIS <a href="https://oeis.org/A006890" target="_blank" rel="noopener">A006890</a>・<a href="https://oeis.org/A006891" target="_blank" rel="noopener">A006891</a>・<a href="https://oeis.org/A098587" target="_blank" rel="noopener">A098587</a></span></li>
+  <li id="thy-r6"><span class="rf-for">正弦写像と窓の並び</span><span class="rf-src">N. Metropolis, M. L. Stein, and P. R. Stein, “On finite limit sets for transformations on the unit interval,” <i>Journal of Combinatorial Theory, Series A</i>, vol. 15, pp. 25–44, 1973, <a href="https://doi.org/10.1016/0097-3165(73)90033-2" target="_blank" rel="noopener">doi:10.1016/0097-3165(73)90033-2</a></span></li>
+  <li id="thy-r7"><span class="rf-for">周期 3</span><span class="rf-src">T.-Y. Li and J. A. Yorke, “Period three implies chaos,” <i>The American Mathematical Monthly</i>, vol. 82, pp. 985–992, 1975, <a href="https://doi.org/10.2307/2318254" target="_blank" rel="noopener">doi:10.2307/2318254</a></span></li>
+  <li id="thy-r8"><span class="rf-for">周期 3 の窓の始まり</span><span class="rf-src">P. Saha and S. H. Strogatz, “The birth of period three,” <i>Mathematics Magazine</i>, vol. 68, pp. 42–47, 1995</span></li>
+  <li id="thy-r9"><span class="rf-for">クモの巣図・窓と間欠性・リアプノフ指数・テント写像（10 章）</span><span class="rf-src">S. H. Strogatz, <i>Nonlinear Dynamics and Chaos</i>, 2nd ed., Westview Press, 2015</span></li>
+  <li id="thy-r10"><span class="rf-for">回路での周期倍分岐</span><span class="rf-src">P. S. Linsay, “Period doubling and chaotic behavior in a driven anharmonic oscillator,” <i>Physical Review Letters</i>, vol. 47, p. 1349, 1981, <a href="https://doi.org/10.1103/PhysRevLett.47.1349" target="_blank" rel="noopener">doi:10.1103/PhysRevLett.47.1349</a></span></li>
+  <li id="thy-r11"><span class="rf-for">値の列の旋律</span><span class="rf-src">A. Capozucca, M. Fermani, and S. Giorgini, “<a href="https://archive.bridgesmathart.org/2017/bridges2017-443.html" target="_blank" rel="noopener">Listening to the Logistic Map</a>,” <i>Proceedings of Bridges 2017</i>, pp. 443–446</span></li>
+</ol>
