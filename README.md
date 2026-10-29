@@ -1,6 +1,6 @@
-# tools
+![Tools + Simulators: 電子から音響・光学・天文まで](.github/banner.svg)
 
-電子回路・信号処理の計算とシミュレーションができるツール集です。<https://nanase.cc/tools/>
+電子回路やフィルタの計算と楽器・光学・天文のシミュレーションができるツール集です。<https://nanase.cc/tools/>
 
 Astro とフレームワークなしの TypeScript で作っています。見た目と動作の基準は [design/](design/) のモックです。
 
@@ -31,6 +31,10 @@ Astro と Vitest は [scripts/node.ts](scripts/node.ts) を通して、mise が�
 GitHub Actions（[.github/workflows/ci.yml](.github/workflows/ci.yml)）が、PR と main への push ごとに lint・型検査・テスト・ビルドを行います。main へ push すると、ビルド結果を GitHub Pages へ公開します。
 
 依存の更新は [Renovate](https://docs.renovatebot.com/) が PR を立てます。設定は [renovate.json](renovate.json) にあります。TypeScript は 6 系、Node は v26 系に留めます。PR は自動マージしません。
+
+## 共有の画像
+
+共有したときに出る画像（`public/og.png`）と、この README の冒頭の画像（`.github/banner.svg`）は、カードの図柄から作ります。図柄や副題を変えたら `bun run og-image` で作り直します。文字のフォントを Google Fonts から取り、PNG は Edge か Chrome のヘッドレスで撮ります（Windows の Edge 以外は環境変数 `BROWSER` でブラウザを指します）。
 
 ## 旧 URL の転送
 

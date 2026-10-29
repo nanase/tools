@@ -15,6 +15,7 @@
     "organ-scores": "bun scripts/organ-scores.ts",
     "organ-tune": "bun scripts/organ-tune.ts",
     "redirects": "bun scripts/redirects-csv.ts",
+    "og-image": "bun scripts/og-image.ts",
     "chaconne": "bun scripts/chaconne.ts",
     "piano-scores": "bun scripts/piano-scores.ts",
     "violin-scores": "bun scripts/violin-scores.ts",
@@ -25,6 +26,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
+    "@astrojs/sitemap": "^3.7.4",
     "@biomejs/biome": "^2.5.14",
     "@fontsource/fira-mono": "^5.3.0",
     "@types/node": "^26.6.3",
