@@ -1,61 +1,111 @@
 ---
-// 動作原理と式（下書き。畳み込みのページから分けた 2 次元の節。デザインが決まったら図の名前と「このツールで決めたこと」を実装に合わせて直す）
+// 動作原理と式（下書き。デザインが決まったら図の名前と「このツールで決めたこと」を実装に合わせて直す）
 /** f[arg] */
 const sq = (f: string, arg: string) => `<mi>${f}</mi><mo stretchy="false">[</mo>${arg}<mo stretchy="false">]</mo>`;
 const sum = (lo: string) => `<munder><mo>∑</mo><mrow>${lo}</mrow></munder>`;
+const rc = '<mi>r</mi><mo>,</mo><mi>c</mi>';
+const uv = '<mi>u</mi><mo>,</mo><mi>v</mi>';
 /* 本文の出典番号 */
 const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
 ---
 <h3>2 次元の畳み込み</h3>
 <div class="eqs">
-  <math display="block" set:html={`${sq('y', '<mi>r</mi><mo>,</mo><mi>c</mi>')}<mo>=</mo>${sum('<mi>k</mi>')}${sum('<mi>j</mi>')}${sq('h', '<mi>k</mi><mo>,</mo><mi>j</mi>')}<mspace width="0.2em"/>${sq('x', '<mi>r</mi><mo>−</mo><mi>k</mi><mo>,</mo><mi>c</mi><mo>−</mo><mi>j</mi>')}`} />
+  <math display="block" set:html={`${sq('y', rc)}<mo>=</mo>${sum('<mi>k</mi>')}${sum('<mi>j</mi>')}${sq('h', '<mi>k</mi><mo>,</mo><mi>j</mi>')}<mspace width="0.2em"/>${sq('x', '<mi>r</mi><mo>−</mo><mi>k</mi><mo>,</mo><mi>c</mi><mo>−</mo><mi>j</mi>')}`} />
 </div>
 <dl class="syms">
   <dt><math><mi>x</mi></math></dt><dd>入力の画像</dd>
   <dt><math><mi>h</mi></math></dt><dd>核（点像分布関数）</dd>
   <dt><math><mi>y</mi></math></dt><dd>出力の画像</dd>
-  <dt><math><mi>r</mi><mo>,</mo><mi>c</mi></math></dt><dd>行・列</dd>
+  <dt><math set:html={rc} /></dt><dd>行・列</dd>
 </dl>
 <ul class="tl">
-  <li>核を 180° 回して画像に重ね、積の和を出力の 1 画素にする（式 24-3）<Fragment set:html={rf(1)} />。1 次元の原理は <a href="../convolution/">畳み込み</a></li>
-  <li>核は 1 点の光が広がる形なので、点像分布関数（PSF）とも呼ぶ<Fragment set:html={rf(1)} /></li>
-  <li>核の和が 1 なら明るさを保ち、0 なら平らな所が 0 になる</li>
+  <li>出力の側: 核を 180° 回して重ね、積の和を 1 画素に（式 24-3）<Fragment set:html={rf(1)} /></li>
+  <li>入力の側: 各画素が核の写しを配って足す（図 24-14）<Fragment set:html={rf(1)} /></li>
+  <li>1 次元の原理は <a href="../convolution/">畳み込み</a></li>
+  <li>核の和 1 → 明るさを保つ。和 0 → 平らな所が 0</li>
 </ul>
 
 <h3>核の見本</h3>
 <div class="tt-w"><table class="tt">
-  <thead><tr><th>核</th><th>3 × 3 の値</th><th>出典</th></tr></thead>
+  <thead><tr><th>核</th><th>値</th><th>出典</th></tr></thead>
   <tbody>
     <tr><td>恒等（デルタ）</td><td>中央 1、ほか 0</td><td>図 24-4 a<Fragment set:html={rf(1)} /></td></tr>
+    <tr><td>ピンぼけ（円柱）</td><td>円の中で一定、和 1</td><td>図 24-3 a<Fragment set:html={rf(1)} /></td></tr>
+    <tr><td>ガウス</td><td><math><msup><mi>e</mi><mrow><mo>−</mo><mo stretchy="false">(</mo><msup><mi>r</mi><mn>2</mn></msup><mo>+</mo><msup><mi>c</mi><mn>2</mn></msup><mo stretchy="false">)</mo><mo>/</mo><mn>2</mn><msup><mi>σ</mi><mn>2</mn></msup></mrow></msup></math>、±3σ で打ち切る</td><td>図 24-3 b<Fragment set:html={rf(1)} /></td></tr>
     <tr><td>浮き彫り（ずらして引く）</td><td>中央 1、右下 −1</td><td>図 24-4 b<Fragment set:html={rf(1)} /></td></tr>
     <tr><td>エッジ検出</td><td>中央 1、まわり −1/8</td><td>図 24-4 c<Fragment set:html={rf(1)} /></td></tr>
-    <tr><td>エッジ強調</td><td>中央 <math><mi>k</mi><mo>+</mo><mn>1</mn></math>、まわり <math><mo>−</mo><mi>k</mi><mo>/</mo><mn>8</mn></math></td><td>図 24-4 d<Fragment set:html={rf(1)} /></td></tr>
-    <tr><td>Sobel <math><mi>x</mi></math></td><td><math><msup><mrow><mo stretchy="false">[</mo><mn>1</mn><mspace width="0.3em"/><mn>2</mn><mspace width="0.3em"/><mn>1</mn><mo stretchy="false">]</mo></mrow><mi mathvariant="normal">T</mi></msup><mo stretchy="false">[</mo><mn>1</mn><mspace width="0.3em"/><mn>0</mn><mspace width="0.3em"/><mo>−</mo><mn>1</mn><mo stretchy="false">]</mo></math></td><td><Fragment set:html={rf(3)} /></td></tr>
+    <tr><td>鮮鋭化</td><td>中央 <math><mi>k</mi><mo>+</mo><mn>1</mn></math>、まわり <math><mo>−</mo><mi>k</mi><mo>/</mo><mn>8</mn></math></td><td>図 24-4 d<Fragment set:html={rf(1)} /></td></tr>
+    <tr><td>アンシャープマスク</td><td><math><mo stretchy="false">(</mo><mn>1</mn><mo>+</mo><mi>k</mi><mo stretchy="false">)</mo><mi>δ</mi><mo>−</mo><mi>k</mi><mi>G</mi></math></td><td><Fragment set:html={rf(6)} /></td></tr>
+    <tr><td>Sobel <math><mi>x</mi></math></td><td><math><msup><mrow><mo stretchy="false">[</mo><mn>1</mn><mspace width="0.3em"/><mn>2</mn><mspace width="0.3em"/><mn>1</mn><mo stretchy="false">]</mo></mrow><mi mathvariant="normal">T</mi></msup><mo stretchy="false">[</mo><mn>1</mn><mspace width="0.3em"/><mn>0</mn><mspace width="0.3em"/><mo>−</mo><mn>1</mn><mo stretchy="false">]</mo></math></td><td><Fragment set:html={rf(4)} /></td></tr>
   </tbody>
 </table></div>
 
+<h3>アンシャープマスク</h3>
+<div class="eqs">
+  <math display="block" set:html={`<mi>y</mi><mo>=</mo><mi>x</mi><mo>+</mo><mi>k</mi><mo stretchy="false">(</mo><mi>x</mi><mo>−</mo><mi>G</mi><mo>∗</mo><mi>x</mi><mo stretchy="false">)</mo><mo>=</mo><mo stretchy="false">(</mo><mo stretchy="false">(</mo><mn>1</mn><mo>+</mo><mi>k</mi><mo stretchy="false">)</mo><mi>δ</mi><mo>−</mo><mi>k</mi><mi>G</mi><mo stretchy="false">)</mo><mo>∗</mo><mi>x</mi>`} />
+</div>
+<ul class="tl">
+  <li>ぼかした画像を引いた差を足す<Fragment set:html={rf(6)} /></li>
+  <li>平滑化の核を負にしてデルタを足すとエッジ強調（図 24-3 d）<Fragment set:html={rf(1)} /></li>
+</ul>
+
 <h3>分離できる核</h3>
-<p>縦と横の 1 次元の核の積に分けられる核は、横に畳み込んでから縦に畳み込めば同じ結果になる。<math><mi>M</mi><mo>×</mo><mi>M</mi></math> の核の 1 画素あたりの掛け算が <math><msup><mi>M</mi><mn>2</mn></msup></math> 回から <math><mn>2</mn><mi>M</mi></math> 回に減る。円対称で分離できるのはガウスだけ（式 24-1）<Fragment set:html={rf(1)} />。</p>
+<div class="eqs">
+  <math display="block" set:html={`${sq('h', rc)}<mo>=</mo>${sq('a', '<mi>r</mi>')}<mspace width="0.2em"/>${sq('b', '<mi>c</mi>')}`} />
+</div>
+<ul class="tl">
+  <li>横に 1 次元で畳み込んでから縦に（式 24-1）<Fragment set:html={rf(1)} /></li>
+  <li><math><mi>M</mi><mo>×</mo><mi>M</mi></math> の核で 1 画素の掛け算 <math><msup><mi>M</mi><mn>2</mn></msup></math> 回 → <math><mn>2</mn><mi>M</mi></math> 回</li>
+  <li>円対称で分離できるのはガウスだけ<Fragment set:html={rf(1)} /></li>
+  <li>1 次元の核は <a href="../fir/">FIR フィルタ</a> の係数と同じ</li>
+</ul>
 
 <h3>相関</h3>
+<div class="eqs">
+  <math display="block" set:html={`${sq('y', rc)}<mo>=</mo>${sum('<mi>k</mi>')}${sum('<mi>j</mi>')}${sq('h', '<mi>k</mi><mo>,</mo><mi>j</mi>')}<mspace width="0.2em"/>${sq('x', '<mi>r</mi><mo>+</mo><mi>k</mi><mo>,</mo><mi>c</mi><mo>+</mo><mi>j</mi>')}`} />
+</div>
 <ul class="tl">
-  <li>核を回さずに重ねると相関</li>
-  <li>畳み込みニューラルネットワークの「畳み込み」の多くは相関（式 9.6）<Fragment set:html={rf(2)} /></li>
-  <li>点対称の核（平均・ガウス）では同じ。Sobel・浮き彫りでは向きが逆になる</li>
+  <li>核を回さずに重ねる</li>
+  <li>CNN の「畳み込み」の多くは相関（式 9.6）<Fragment set:html={rf(3)} /></li>
+  <li>点対称の核（平均・ガウス）では同じ。Sobel・浮き彫り・ずらすでは向きが逆</li>
+</ul>
+
+<h3>周波数で見る</h3>
+<div class="eqs">
+  <math display="block" set:html={`${sq('Y', uv)}<mo>=</mo>${sq('X', uv)}<mspace width="0.2em"/>${sq('H', uv)}`} />
+</div>
+<ul class="tl">
+  <li>2 次元の DFT は行ごとに FFT をしてから列ごとに<Fragment set:html={rf(1)} /></li>
+  <li>0 を足さずに掛けると円状の畳み込み（画像の外 ＝ 反対側）<Fragment set:html={rf(1)} /></li>
+  <li><math><mo stretchy="false">|</mo><mi>H</mi><mo stretchy="false">|</mo></math> は核の MTF。ガウスの MTF もガウス（図 25-1）<Fragment set:html={rf(2)} /></li>
+  <li>大きい核では FFT の方が速い（512 × 512 に 50 × 50 で約 20 倍）<Fragment set:html={rf(1)} /></li>
+  <li>DFT は <a href="../dct-dft/">DCT と DFT</a>、速い計算は <a href="../fft/">FFT</a></li>
+</ul>
+
+<h3>畳み込みでない処理</h3>
+<ul class="tl">
+  <li>メディアン: 窓の中の値を並べた真ん中<Fragment set:html={rf(7)} />。足し算を保たない</li>
+  <li>勾配の大きさ <math><msqrt><msubsup><mi>G</mi><mi>x</mi><mn>2</mn></msubsup><mo>+</mo><msubsup><mi>G</mi><mi>y</mi><mn>2</mn></msubsup></msqrt></math>: 2 つの畳み込みの後の計算</li>
+  <li>膨張・収縮（形態学）も線形でない<Fragment set:html={rf(2)} /></li>
 </ul>
 
 <h3>このツールで決めたこと</h3>
 <ul class="tl">
-  <li>画像は灰色（Rec. 709 の重み）で扱う</li>
-  <li>画像の外の画素は、端の値をのばす・0・鏡・反対側から の 4 通りから選ぶ</li>
-  <li>和が 0 の核の出力は、0 を灰色にして正負を明暗で描く</li>
-  <li>ガウスの核は ±3σ で打ち切り、和を 1 にする</li>
-  <li>Sobel の勾配の大きさ <math><msqrt><msubsup><mi>G</mi><mi>x</mi><mn>2</mn></msubsup><mo>+</mo><msubsup><mi>G</mi><mi>y</mi><mn>2</mn></msubsup></msqrt></math> は 2 つの畳み込みの後の計算で、畳み込みではない</li>
+  <li>画像は灰色（Rec. 709 の重み）、256 × 192</li>
+  <li>画像の外: のばす・0・鏡（端の画素も写す）・反対側<Fragment set:html={rf(5)} /></li>
+  <li>和 0 の核の出力: 0 を灰色に、正負を明暗で</li>
+  <li>ガウス: ±3σ で打ち切り、和 1</li>
+  <li>ピンぼけ: 升を 8 × 8 に分けて円に入る割合を重みに</li>
+  <li>分離できる核は横 → 縦の 2 回で計算</li>
 </ul>
 
 <h3>出典</h3>
 <ol class="refs">
-  <li id="thy-r1"><span class="rf-for">点像分布関数、3 × 3 の核（図 24-4）、分離できる核（式 24-1）、画像の畳み込み（式 24-3）</span><span class="rf-src">S. W. Smith, <a href="https://www.dspguide.com/ch24.htm" target="_blank" rel="noopener"><i>The Scientist and Engineer’s Guide to Digital Signal Processing</i></a>, California Technical Publishing, 1997, ch. 24 Linear Image Processing</span></li>
-  <li id="thy-r2"><span class="rf-for">相互相関と畳み込みの呼び分け（9.1 節、式 9.6）</span><span class="rf-src">I. Goodfellow, Y. Bengio, and A. Courville, <a href="https://www.deeplearningbook.org/contents/convnets.html" target="_blank" rel="noopener"><i>Deep Learning</i></a>, MIT Press, 2016, ch. 9 Convolutional Networks</span></li>
-  <li id="thy-r3"><span class="rf-for">Sobel の 3 × 3 の勾配の演算子</span><span class="rf-src">I. Sobel, “History and Definition of the Sobel Operator,” 2014（1968 年の講演 “An Isotropic 3×3 Image Gradient Operator” の記録）</span></li>
+  <li id="thy-r1"><span class="rf-for">点像分布関数、入力の側と出力の側（図 24-14）、円柱とガウスの PSF・エッジ強調（図 24-3）、3 × 3 の核（図 24-4）、分離できる核（式 24-1）、画像の畳み込み（式 24-3）、2 次元の DFT と FFT による畳み込み</span><span class="rf-src">S. W. Smith, <a href="https://www.dspguide.com/ch24.htm" target="_blank" rel="noopener"><i>The Scientist and Engineer’s Guide to Digital Signal Processing</i></a>, California Technical Publishing, 1997, ch. 24 Linear Image Processing</span></li>
+  <li id="thy-r2"><span class="rf-for">PSF と MTF（図 25-1）、線像と縁の応答（図 25-3）、形態学の処理</span><span class="rf-src">S. W. Smith, <a href="https://www.dspguide.com/ch25.htm" target="_blank" rel="noopener"><i>The Scientist and Engineer’s Guide to Digital Signal Processing</i></a>, California Technical Publishing, 1997, ch. 25 Special Imaging Techniques</span></li>
+  <li id="thy-r3"><span class="rf-for">相互相関と畳み込みの呼び分け（9.1 節、式 9.6）</span><span class="rf-src">I. Goodfellow, Y. Bengio, and A. Courville, <a href="https://www.deeplearningbook.org/contents/convnets.html" target="_blank" rel="noopener"><i>Deep Learning</i></a>, MIT Press, 2016, ch. 9 Convolutional Networks</span></li>
+  <li id="thy-r4"><span class="rf-for">Sobel の 3 × 3 の勾配の演算子</span><span class="rf-src">I. Sobel, “History and Definition of the Sobel Operator,” 2014（1968 年の講演 “An Isotropic 3×3 Image Gradient Operator” の記録）</span></li>
+  <li id="thy-r5"><span class="rf-for">画像の外の扱い（reflect・constant・nearest・wrap）</span><span class="rf-src">SciPy, <a href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.convolve.html" target="_blank" rel="noopener">scipy.ndimage.convolve</a></span></li>
+  <li id="thy-r6"><span class="rf-for">アンシャープマスク</span><span class="rf-src">scikit-image, <a href="https://scikit-image.org/docs/stable/api/skimage.filters.html#skimage.filters.unsharp_mask" target="_blank" rel="noopener">skimage.filters.unsharp_mask</a>（M. Petrou and C. Petrou, <i>Image Processing: The Fundamentals</i>, 2nd ed., Wiley, 2010, p. 357 を引く）</span></li>
+  <li id="thy-r7"><span class="rf-for">メディアン</span><span class="rf-src">SciPy, <a href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.median_filter.html" target="_blank" rel="noopener">scipy.ndimage.median_filter</a></span></li>
 </ol>

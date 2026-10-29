@@ -823,6 +823,40 @@ export const ART: Record<string, Art> = {
       (bars ? P('b', bars) : '')
     );
   },
+  /* 画像の畳み込み: 升目の画像の上を 3×3 の窓が左から右へ滑り、通った列はぼける（3×3 の平均） */
+  icv(t) {
+    const CW = 14,
+      RH = 5,
+      on = (c: number, r: number): number =>
+        c < 0 || c >= CW || r < 0 || r >= RH
+          ? 0
+          : c === 1 ||
+              c === 2 ||
+              (c === 4 && r === 2) ||
+              ((c === 6 || c === 7) && (c + r) % 2 === 0) ||
+              (c >= 9 && c <= 12 && r >= 1 && r <= 3)
+            ? 1
+            : 0;
+    /* 窓の中心の列（1〜12）。止まっているときは中ほど */
+    const wx = t ? 1 + Math.floor(mod(t, 3) / (3 / 12)) : 7;
+    let s = '';
+    for (let r = 0; r < RH; r++)
+      for (let c = 0; c < CW; c++) {
+        let v = on(c, r);
+        if (c < wx) {
+          v = 0;
+          for (let j = -1; j <= 1; j++) for (let i = -1; i <= 1; i++) v += on(c + i, r + j) / 9;
+        }
+        if (v > 0.01)
+          s += `<rect class="fa" x="${4 + c * 8}" y="${4 + r * 8}" width="8" height="8" fill-opacity="${r1(v)}"/>`;
+      }
+    return (
+      s +
+      `<rect class="c t" x="4" y="4" width="${CW * 8}" height="${RH * 8}"/>` +
+      `<rect class="b" x="${4 + (wx - 1) * 8}" y="12" width="24" height="24"/>` +
+      `<rect class="b t" x="${4 + wx * 8}" y="20" width="8" height="8"/>`
+    );
+  },
   /* オルガン音響モデル: 口と円錐の足があるパイプの正面。和音を鳴らし、鳴っている管に定在波を描く */
   og(t) {
     let body = '',
@@ -1134,6 +1168,7 @@ export const LOOP: Record<string, number> = {
   svg: TAU / 2.4,
   tu: 3,
   tm: Math.PI / 1.2,
+  icv: 3,
 };
 
 /** 止まっているときの図柄（ビルド時に HTML へ出す） */
