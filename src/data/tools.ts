@@ -23,6 +23,7 @@ export const CATS = [
   '楽器・調律',
   '画像・光学',
   '天文',
+  '数学',
   'SVG',
 ];
 export const TOOLS: Tool[] = [
@@ -297,6 +298,14 @@ export const TOOLS: Tool[] = [
     d: '音律ごとに和音を鳴らし、うなりの速さを比べます。',
     ic: 'tm',
     k: 'temperament tuning 音律 調律 うなり beat beats 平均律 equal temperament 純正律 just intonation ピタゴラス pythagorean ミーントーン meantone ヴェルクマイスター werckmeister キルンベルガー kirnberger ヴァロッティ vallotti ヤング young 古典調律 well temperament 和音 chord 長三和音 3 度 5 度 部分音 倍音 partial harmonic コンマ comma ウルフ wolf 非調和性 inharmonicity ストレッチ stretch ピアノ piano オルガン organ セント cent',
+  },
+  {
+    id: 'wavelet',
+    c: '数学',
+    t: 'ウェーブレット変換',
+    d: '時間と周波数の平面の区切り方を STFT と比べ、分解・雑音除去・音のスカログラムを見ます。',
+    ic: 'wv',
+    k: 'wavelet ウェーブレット 変換 transform cwt dwt 連続ウェーブレット変換 離散ウェーブレット変換 morlet モルレ haar ハール daubechies ドベシィ スカログラム scalogram 多重解像度 multiresolution mra mallat フィルタバンク filter bank 時間周波数 time-frequency stft 短時間フーリエ変換 不確定性 heisenberg gabor ガボール 雑音除去 denoise ノイズ除去 閾値 threshold 縮小 shrinkage 圧縮 compression jpeg 2000 スペクトログラム spectrogram 音 audio マイク 数学 math',
   },
 ];
 /** 準備中を後ろへ */

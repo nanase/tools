@@ -1074,6 +1074,32 @@ export const ART: Record<string, Art> = {
       P('a', `M${pt(14, c)}L${pt(R + 2, c)}`)
     );
   },
+  /* ウェーブレット変換: 2 進の区切り（低いほど横長の箱）の上を、1 つの箱とその波形が段を替えながら滑る */
+  wv(t) {
+    /* 段ごとの [上端, 下端, 箱の幅]（上が高い周波数） */
+    const B: [number, number, number][] = [
+        [4, 24, 7],
+        [24, 34, 14],
+        [34, 40, 28],
+        [40, 44, 56],
+      ],
+      j = Math.floor(mod(t, 6) / 1.5),
+      [y0, y1, w] = B[(j + 1) % 4],
+      x0 = 4 + mod(28 + (112 * mod(t, 1.5)) / 1.5, 112 - w + 0.001),
+      xc = x0 + w / 2,
+      /* 箱の幅に 2 周期ほど入る Morlet の実部 */
+      g = (x: number) => 24 - 15 * Math.exp(-0.5 * ((x - xc) / (w / 5)) ** 2) * Math.cos((TAU * 2.2 * (x - xc)) / w);
+    let grid = '';
+    for (const [a, b, d] of B) {
+      grid += `M4 ${b}H116`;
+      for (let x = 4 + d; x < 116; x += d) grid += `M${x} ${a}V${b}`;
+    }
+    return (
+      P('c t g', grid) +
+      P('fa g', `M${r1(x0)} ${y0}H${r1(x0 + w)}V${y1}H${r1(x0)}Z`) +
+      P('a', fx(g, Math.max(4, xc - w), Math.min(116, xc + w), 60))
+    );
+  },
   /* 音律とうなり: 2 つの近い部分音の和。包絡（破線）の山と谷が流れる */
   tm(t) {
     const e = (x: number): number => Math.abs(Math.cos(TAU * 0.0125 * (x - 4) - 1.2 * t));
@@ -1134,6 +1160,7 @@ export const LOOP: Record<string, number> = {
   svg: TAU / 2.4,
   tu: 3,
   tm: Math.PI / 1.2,
+  wv: 6,
 };
 
 /** 止まっているときの図柄（ビルド時に HTML へ出す） */
