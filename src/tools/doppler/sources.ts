@@ -19,18 +19,18 @@ export interface SourceSpec {
   r0: number;
   db: number;
 }
-/** 音源の一覧（大きさはこのツールで決めた値。サイレンは保安基準の 90〜120 dB（前方 20 m）の中ほど） */
+/** 音源の一覧。大きさは範囲の中ほどにした: サイレンは保安基準の 90〜120 dB（前方 20 m）、警笛は Zöllner の EN 15153-2 の品の 101〜109 dB(C)（25 m） */
 export const SOURCES: readonly SourceSpec[] = [
   { v: 'siren', name: '救急車のサイレン', r0: 20, db: 105 },
-  { v: 'horn', name: '電車の警笛', r0: 5, db: 110 },
+  { v: 'horn', name: '電車の警笛', r0: 25, db: 105 },
   { v: 'engine', name: 'エンジン', r0: 0.5, db: 0 },
   { v: 'tone', name: '正弦波', r0: 10, db: 90 },
 ];
 export const sourceOf = (v: string): SourceSpec => SOURCES.find((s) => s.v === v) ?? SOURCES[0];
 
-/** 救急車のサイレン: ピー 960 Hz・ポー 770 Hz を 0.65 s ずつ（1 周期 1.3 s） */
-export const SIREN = { hi: 960, lo: 770, half: 0.65 };
-/** 電車の警笛の 2 音 [Hz]（EN 15153-2 の中心の値） */
+/** 救急車のサイレン: ピー 960 Hz・ポー 770 Hz を 0.65 s ずつ（1 周期 1.3 s）、ビブラート 10 Hz（消防科学研究所報 30 号の規定値）。ビブラートの深さ trem は報告に書かれていないので仮の値 */
+export const SIREN = { hi: 960, lo: 770, half: 0.65, vib: 10, trem: 0.3 };
+/** 電車の警笛の 2 音 [Hz]（EN 15153-2 の組み合わせの 1 つ。370 Hz ± 20 Hz・660 Hz ± 30 Hz） */
 export const HORN = { lo: 370, hi: 660 };
 
 /** 波形表の長さ */
@@ -96,19 +96,25 @@ export class Siren implements Source {
   private loO: Osc;
   private n = 0;
   private a: number;
-  constructor(private fs: number) {
+  constructor(
+    private fs: number,
+    /** ビブラート（10 Hz の振幅の揺れ）の深さ（0〜1。仮の値） */
+    private trem = SIREN.trem,
+  ) {
     this.hiO = new Osc(waveTable(SIREN.hi, fs, odd), fs);
     this.loO = new Osc(waveTable(SIREN.lo, fs, odd), fs);
-    this.a = paOf(this.spec.db);
+    /* 揺らしても実効値が変わらないようにする */
+    this.a = paOf(this.spec.db) / Math.sqrt(1 + (trem * trem) / 2);
   }
   /** 今がピー（高い音）か */
   private get high(): boolean {
     return (this.n / this.fs) % (2 * SIREN.half) < SIREN.half;
   }
   step(): number {
-    const y = this.high ? this.hiO.step(SIREN.hi) : this.loO.step(SIREN.lo);
+    const y = this.high ? this.hiO.step(SIREN.hi) : this.loO.step(SIREN.lo),
+      g = 1 + this.trem * Math.sin((2 * Math.PI * SIREN.vib * this.n) / this.fs);
     this.n++;
-    return this.a * y;
+    return this.a * g * y;
   }
   f0(): number {
     return this.high ? SIREN.hi : SIREN.lo;

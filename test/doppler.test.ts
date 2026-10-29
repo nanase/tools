@@ -237,7 +237,7 @@ describe('音源', () => {
     expect(h.f0()).toBe(HORN.hi);
     const y = new Float32Array(FS);
     for (let i = 0; i < y.length; i++) y[i] = h.step();
-    expect(rms(y, 0, FS)).toBeCloseTo(paOf(110), 1);
+    expect(rms(y, 0, FS)).toBeCloseTo(paOf(105), 1);
   });
   it('エンジンの回転数: 60 km/h は 4 速で約 4800 rpm、止まればアイドリング', () => {
     const a = engineRpm(60 / 3.6);
