@@ -12,6 +12,7 @@
       "!**/design",
       "!**/.astro",
       "!public/**/*.svg",
+      "!.github/banner.svg",
       "!src/tools/svg-theme-checker/samples/*.svg",
       "!public/solar-eclipse/*.json",
       "!public/moon/*.json"

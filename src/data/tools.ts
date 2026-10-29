@@ -190,7 +190,7 @@ export const TOOLS: Tool[] = [
     id: 'svg-theme-checker',
     c: 'SVG',
     t: 'SVG テーマスキーマチェッカー',
-    d: 'ライトテーマとダークテーマによってSVGの外観が意図したものになるかを確認できます。',
+    d: 'ライトテーマとダークテーマで SVG の外観が意図したとおりになるかを並べて確かめます。',
     ic: 'svg',
     k: 'dark light ダーク ライト テーマ',
   },

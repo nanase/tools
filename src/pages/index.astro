@@ -5,7 +5,7 @@ import SiteLayout from '../layouts/SiteLayout.astro';
 
 const shelves = CATS.map((c) => [c, order(TOOLS.filter((t) => t.c === c))] as const);
 ---
-<SiteLayout description="電子回路・信号処理の計算とシミュレーションができるツール集">
+<SiteLayout description="電子回路やフィルタの計算と楽器・光学・天文のシミュレーションができるツール集">
   <h1 class="sr">Tools + Simulators</h1>
 
   <div class="filter">

@@ -20,7 +20,7 @@ const related = [
   ...TOOLS.filter((t) => t.c !== CAT && !t.s),
 ];
 ---
-<SiteLayout title={name} tool={{ id: 'pid', name }} description="フィードバック制御の一種であるPID制御を各項を調整しながらシミュレートします。" note="シミュレーション結果は簡略化したモデルによる参考値です。">
+<SiteLayout title={name} tool={{ id: 'pid', name }} description="流れのある水の中で物体を目標の位置に留める PID 制御をシミュレートします。比例・積分・微分のゲインを変えて応答を確かめられます。" note="シミュレーション結果は簡略化したモデルによる参考値です。">
   <PageTitle title={name}>流れのある水の中で、物体を目標の位置へ動かして留める PID 制御を 100 秒間シミュレートします。比例・積分・微分の各ゲインや流速を変えると、位置と速度の応答、整定時間などの指標がすぐに変わります。</PageTitle>
   <div class="mini" aria-hidden="true"><span><i>t</i><sub>s</sub><b id="mts"></b></span><span>OS<b id="mos"></b></span><span><i>e</i><sub>end</sub><b id="mee"></b></span></div>
 
