@@ -285,6 +285,27 @@ describe('曲', () => {
       expect(p.couplers.every((c) => ['II/I', 'I/P', 'II/P'].includes(c))).toBe(true);
     }
   });
+  it('レジストレーションの切り替えは、どれも曲の regs にあり、ストップと鍵盤は実在する', async () => {
+    for (const p of PIECES) {
+      const { notes, reg = [] } = await p.load();
+      if (!p.regs) {
+        expect(reg.length).toBe(0);
+        continue;
+      }
+      expect(reg.length).toBeGreaterThan(0);
+      for (const [b, r] of reg) {
+        const x = p.regs[r];
+        expect(x, `${p.v} ${b} 拍の ${r}`).toBeDefined();
+        for (const id of x.stops) expect(STOPS.some((s) => s.id === id)).toBe(true);
+        /* 手を移す先の鍵盤にも、その譜表の音が収まる */
+        for (const n of notes.filter((y) => y.t >= b)) {
+          const d = divOf((x.hands ?? p.hands)[n.h]);
+          expect(n.n).toBeGreaterThanOrEqual(d.lo);
+          expect(n.n).toBeLessThanOrEqual(d.hi);
+        }
+      }
+    }
+  });
   it('BWV 565 は演奏の MIDI: 冒頭は A–G–A のモルデント（オクターブ）、テンポと拍子とレジストレーションが変わる', async () => {
     const pc = pieceOf('bwv565'),
       d = await pc.load(),

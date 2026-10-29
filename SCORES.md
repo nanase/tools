@@ -24,6 +24,20 @@
 | [フーガ ト短調 BWV 578](#フーガ-ト短調-bwv-578) | オルガン | CC BY-SA 4.0 |
 | [パッサカリアとフーガ ハ短調 BWV 582](#パッサカリアとフーガ-ハ短調-bwv-582) | オルガン | パブリックドメイン |
 | [目覚めよと呼ぶ声あり BWV 645](#目覚めよと呼ぶ声あり-bwv-645) | オルガン | CC BY-SA 2.5 |
+| [結婚行進曲（真夏の夜の夢）](#結婚行進曲真夏の夜の夢) | オルガン | CC BY-SA 4.0 |
+| [トランペット・ヴォランタリー ニ長調 作品 6 第 5 番](#トランペットヴォランタリー-ニ長調-作品-6-第-5-番) | オルガン | パブリックドメイン |
+| [オルガン交響曲 第 6 番 より フィナーレ](#オルガン交響曲-第-6-番-より-フィナーレ) | オルガン | CC0 |
+| [オルガン交響曲 第 5 番 より アダージョ](#オルガン交響曲-第-5-番-より-アダージョ) | オルガン | CC BY-SA 3.0 |
+| [トッカータ ロ短調](#トッカータ-ロ短調) | オルガン | パブリックドメイン |
+| [威風堂々 第 1 番 より トリオ](#威風堂々-第-1-番-より-トリオ) | オルガン | CC0 |
+| [オフェルトワール](#オフェルトワール) | オルガン | CC BY-SA 2.5 |
+| [トッカータ ニ短調 BuxWV 155](#トッカータ-ニ短調-buxwv-155) | オルガン | パブリックドメイン |
+| [カノン ニ長調](#カノン-ニ長調) | オルガン | CC0 |
+| [協奏曲 イ短調 BWV 593 より 第 1 楽章](#協奏曲-イ短調-bwv-593-より-第-1-楽章) | オルガン | CC0 |
+| [トリオ・ソナタ 第 1 番 BWV 525 より 第 1 楽章](#トリオソナタ-第-1-番-bwv-525-より-第-1-楽章) | オルガン | パブリックドメイン |
+| [主イエス・キリストよ、われ汝を呼ぶ BWV 639](#主イエスキリストよわれ汝を呼ぶ-bwv-639) | オルガン | CC0 |
+| [トッカータ ハ長調 BWV 564](#トッカータ-ハ長調-bwv-564) | オルガン | CC0 |
+| [幻想曲 ト短調 BWV 542](#幻想曲-ト短調-bwv-542) | オルガン | パブリックドメイン |
 | [パルティータ 第 2 番 BWV 1004（5 楽章）](#パルティータ-第-2-番-bwv-10045-楽章) | ヴァイオリン | CC BY-SA 3.0 |
 | [前奏曲 ホ長調 BWV 1006](#前奏曲-ホ長調-bwv-1006) | ヴァイオリン | CC BY-SA 3.0 |
 | [アダージョ ト短調 BWV 1001](#アダージョ-ト短調-bwv-1001) | ヴァイオリン | CC BY-SA 3.0 |
@@ -215,6 +229,143 @@ J. S. バッハ「シューブラー・コラール集」第 1 曲。
 - 出典: [Mutopia Project の楽譜](https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=601)（Mutopia-2006/06/29-601）
 - 入力: Bart Golsteijn
 - ライセンス: [CC BY-SA 2.5](https://creativecommons.org/licenses/by-sa/2.5/)
+
+### 結婚行進曲（真夏の夜の夢）
+
+F. メンデルスゾーン「真夏の夜の夢」より、T. デュボワのオルガン編曲。
+
+- ファイル: [wedding.mid](src/tools/organ/scores/wedding.mid)、[wedding.ts](src/tools/organ/scores/wedding.ts)
+- 出典: [Mutopia Project の楽譜](https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=2198)（Mutopia-2017/10/24-2198）
+- 入力: Alexander Brock
+- 底本: Durand & Cie., Paris（D. & F. 9516）
+- ライセンス: [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)
+- 加工: 最初の音の前の 3 拍の休みを除いた
+
+### トランペット・ヴォランタリー ニ長調 作品 6 第 5 番
+
+J. スタンリー作曲。
+
+- ファイル: [stanley65.mid](src/tools/organ/scores/stanley65.mid)、[stanley65.ts](src/tools/organ/scores/stanley65.ts)
+- 出典: [MuseScore の楽譜](https://musescore.com/user/7279491/scores/1814311)の MIDI（2016/02/28）。[PDMX](https://zenodo.org/records/15571083)（Long ほか 2024）に収録されたもの
+- 作成: dolch
+- ライセンス: パブリックドメイン（[Public Domain Mark 1.0](https://creativecommons.org/publicdomain/mark/1.0/)）
+
+### オルガン交響曲 第 6 番 より フィナーレ
+
+C.-M. ヴィドール「オルガン交響曲 第 6 番 ト短調」作品 42 第 2 より 第 5 楽章。
+
+- ファイル: [widor6.mid](src/tools/organ/scores/widor6.mid)、[widor6.ts](src/tools/organ/scores/widor6.ts)
+- 出典: [MuseScore の楽譜](https://musescore.com/user/7540966/scores/4692306)の MIDI（2017/10/09）。[PDMX](https://zenodo.org/records/15571083)（Long ほか 2024）に収録されたもの
+- 作成: Noxygen
+- ライセンス: [CC0](https://creativecommons.org/publicdomain/zero/1.0/)
+
+### オルガン交響曲 第 5 番 より アダージョ
+
+C.-M. ヴィドール「オルガン交響曲 第 5 番 ヘ短調」作品 42 第 1 より 第 4 楽章。
+
+- ファイル: [widor5.mid](src/tools/organ/scores/widor5.mid)、[widor5.ts](src/tools/organ/scores/widor5.ts)
+- 出典: [Mutopia Project の楽譜](https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=1201)（Mutopia-2008/09/08-1201）
+- 入力: Bart Golsteijn
+- 底本: J. Maho et J. Hamelle, Paris, 1880
+- ライセンス: [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/)
+- 加工: 前打音を本音符の開始で切った
+
+### トッカータ ロ短調
+
+E. ジグー「10 のオルガン曲」より。
+
+- ファイル: [gigout.mid](src/tools/organ/scores/gigout.mid)、[gigout.ts](src/tools/organ/scores/gigout.ts)
+- 出典: [MuseScore の楽譜](https://musescore.com/user/11441/scores/916706)の MIDI（2015/06/02）。[PDMX](https://zenodo.org/records/15571083)（Long ほか 2024）に収録されたもの
+- 作成: karlk62
+- ライセンス: パブリックドメイン（[Public Domain Mark 1.0](https://creativecommons.org/publicdomain/mark/1.0/)）
+
+### 威風堂々 第 1 番 より トリオ
+
+E. エルガー「威風堂々 第 1 番」作品 39 より トリオのオルガン独奏用の編曲。
+
+- ファイル: [pomp.mid](src/tools/organ/scores/pomp.mid)、[pomp.ts](src/tools/organ/scores/pomp.ts)
+- 出典: [MuseScore の楽譜](https://musescore.com/user/18351/scores/5103275)の MIDI（2018/05/20）。[PDMX](https://zenodo.org/records/15571083)（Long ほか 2024）に収録されたもの
+- 作成: musikmann
+- ライセンス: [CC0](https://creativecommons.org/publicdomain/zero/1.0/)
+
+### オフェルトワール
+
+J.-F. ダンドリュー作曲。
+
+- ファイル: [dandrieu.mid](src/tools/organ/scores/dandrieu.mid)、[dandrieu.ts](src/tools/organ/scores/dandrieu.ts)
+- 出典: [Mutopia Project の楽譜](https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=696)（Mutopia-2006/03/13-696）
+- 入力: Gérard Gréco
+- 底本: Archives des Maîtres de l’Orgue, vol. 7（A. Guilmant 編、A. Durand et fils, 1905）
+- ライセンス: [CC BY-SA 2.5](https://creativecommons.org/licenses/by-sa/2.5/)
+
+### トッカータ ニ短調 BuxWV 155
+
+D. ブクステフーデ作曲。
+
+- ファイル: [buxwv155.mid](src/tools/organ/scores/buxwv155.mid)、[buxwv155.ts](src/tools/organ/scores/buxwv155.ts)
+- 出典: [Mutopia Project の楽譜](https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=2075)（Mutopia-2015/11/18-2075）
+- 入力: Pierre Masson
+- 底本: Breitkopf & Härtel, Leipzig, 1888, rev. 1903–04
+- ライセンス: パブリックドメイン
+
+### カノン ニ長調
+
+J. パッヘルベル作曲、B. Rodriguez のオルガン編曲。
+
+- ファイル: [canon.mid](src/tools/organ/scores/canon.mid)、[canon.ts](src/tools/organ/scores/canon.ts)
+- 出典: [MuseScore の楽譜](https://musescore.com/user/3785676/scores/5577547)の MIDI（2019/05/20）。[PDMX](https://zenodo.org/records/15571083)（Long ほか 2024）に収録されたもの
+- 作成: PhantomTones
+- ライセンス: [CC0](https://creativecommons.org/publicdomain/zero/1.0/)
+
+### 協奏曲 イ短調 BWV 593 より 第 1 楽章
+
+J. S. バッハ作曲（A. ヴィヴァルディ 作品 3 第 8 による）。
+
+- ファイル: [bwv593.mid](src/tools/organ/scores/bwv593.mid)、[bwv593.ts](src/tools/organ/scores/bwv593.ts)
+- 出典: [MuseScore の楽譜](https://musescore.com/user/33765145/scores/5907027)の MIDI（2019/12/28）。[PDMX](https://zenodo.org/records/15571083)（Long ほか 2024）に収録されたもの
+- 作成: Sonxaj
+- ライセンス: [CC0](https://creativecommons.org/publicdomain/zero/1.0/)
+- 加工: ペダルを 1 オクターブ上げた（MIDI は 16' の高さ）
+
+### トリオ・ソナタ 第 1 番 BWV 525 より 第 1 楽章
+
+J. S. バッハ作曲。
+
+- ファイル: [bwv525.mid](src/tools/organ/scores/bwv525.mid)、[bwv525.ts](src/tools/organ/scores/bwv525.ts)
+- 出典: [MuseScore の楽譜](https://musescore.com/user/101554/scores/115160)の MIDI（2013/06/27）。[PDMX](https://zenodo.org/records/15571083)（Long ほか 2024）に収録されたもの
+- 作成: Johann Sebastian Bach（MuseScore の利用者名）
+- ライセンス: パブリックドメイン（[Public Domain Mark 1.0](https://creativecommons.org/publicdomain/mark/1.0/)）
+
+### 主イエス・キリストよ、われ汝を呼ぶ BWV 639
+
+J. S. バッハ「オルガン小曲集」より。
+
+- ファイル: [bwv639.mid](src/tools/organ/scores/bwv639.mid)、[bwv639.ts](src/tools/organ/scores/bwv639.ts)
+- 出典: [MuseScore の楽譜](https://musescore.com/user/30732005/scores/6304139)の MIDI（2020/08/20）。[PDMX](https://zenodo.org/records/15571083)（Long ほか 2024）に収録されたもの
+- 作成: leonkopecny11
+- ライセンス: [CC0](https://creativecommons.org/publicdomain/zero/1.0/)
+- 加工: ペダルを 1 オクターブ上げた（MIDI は 16' の高さ）
+
+### トッカータ ハ長調 BWV 564
+
+J. S. バッハ「トッカータ、アダージョとフーガ ハ長調」より。
+
+- ファイル: [bwv564.mid](src/tools/organ/scores/bwv564.mid)、[bwv564.ts](src/tools/organ/scores/bwv564.ts)
+- 出典: [MuseScore の楽譜](https://musescore.com/user/33765145/scores/5946480)の MIDI（2020/01/29）。[PDMX](https://zenodo.org/records/15571083)（Long ほか 2024）に収録されたもの
+- 作成: Sonxaj
+- ライセンス: [CC0](https://creativecommons.org/publicdomain/zero/1.0/)
+- 加工: ペダルを 1 オクターブ上げた（MIDI は 16' の高さ）
+
+### 幻想曲 ト短調 BWV 542
+
+J. S. バッハ「幻想曲とフーガ ト短調」より。
+
+- ファイル: [bwv542.mid](src/tools/organ/scores/bwv542.mid)、[bwv542.ts](src/tools/organ/scores/bwv542.ts)
+- 出典: [Mutopia Project の楽譜](https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=984)（Mutopia-2007/05/20-984）
+- 入力: Urs Metzger
+- 底本: C. F. Peters, Leipzig（8657）
+- ライセンス: パブリックドメイン
+- 加工: 楽譜の forte の声部を第 1 手鍵盤、piano の声部を第 2 手鍵盤に分けた。ペダルを 1 オクターブ上げた（MIDI は 16' の高さ）
 
 ## ヴァイオリン音響モデル
 
