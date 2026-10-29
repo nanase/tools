@@ -1,6 +1,7 @@
 ---
-// 楽譜の出典と、各曲の標準のテンポとレジストレーション。BWV 645 の音符は CC BY-SA 2.5、BWV 578 は CC BY-SA 4.0 の楽譜から変換したので、ここに帰属を表示する。BWV 565 は CC0 の演奏の MIDI
-import { pieceOf } from './score';
+// 楽譜の出典と、各曲の標準のテンポとレジストレーション。BWV 645 の音符は CC BY-SA 2.5、BWV 578 は CC BY-SA 4.0 の楽譜から変換したので、ここに帰属を表示する。BWV 565 は CC0 の演奏の MIDI。
+// あとから足した曲（MORE）は、Mutopia と MuseScore（PDMX）の楽譜の MIDI。CC BY-SA の曲（結婚行進曲・ヴィドール 第 5 番・ダンドリュー）も、ここに帰属を表示する
+import { type Piece, pieceOf } from './score';
 import { stopName } from './stops';
 
 /* 曲ごとの標準のテンポとレジストレーション。箇条書きの項目名と値の組 */
@@ -8,11 +9,95 @@ const meta = (v: string): [string, string][] => {
   const p = pieceOf(v);
   return [
     ['標準のテンポ', p.tempo],
-    ['ストップ', p.stops.map(stopName).join('・')],
+    [p.regs ? '始めのストップ' : 'ストップ', p.stops.map(stopName).join('・')],
     ...(p.couplers.length ? [['カプラー', p.couplers.join('・')] as [string, string]] : []),
   ];
 };
 const MU = 'https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=';
+const MS = 'https://musescore.com/user/';
+const PDMX = 'https://zenodo.org/records/15571083';
+const LIC = {
+  'by-sa-4.0': ['CC BY-SA 4.0', 'https://creativecommons.org/licenses/by-sa/4.0/deed.ja'],
+  'by-sa-3.0': ['CC BY-SA 3.0', 'https://creativecommons.org/licenses/by-sa/3.0/deed.ja'],
+  'by-sa-2.5': ['CC BY-SA 2.5', 'https://creativecommons.org/licenses/by-sa/2.5/deed.ja'],
+  cc0: ['CC0', 'https://creativecommons.org/publicdomain/zero/1.0/deed.ja'],
+  pdm: ['パブリックドメイン（Public Domain Mark 1.0）', 'https://creativecommons.org/publicdomain/mark/1.0/deed.ja'],
+  pd: ['パブリックドメイン', ''],
+} as const;
+const OCT = "ペダルを 1 オクターブ上げた（MIDI は 16' の高さ）";
+/*
+ * あとから足した曲。src は Mutopia の番号か MuseScore の [楽譜の番号, 利用者の番号]、who は入力・作成者、
+ * base は底本、mod は変換のほかに加えた変更
+ */
+const MORE: {
+  v: string;
+  src: number | readonly [number, number];
+  who: string;
+  date: string;
+  base?: string;
+  lic: keyof typeof LIC;
+  mod?: string;
+}[] = [
+  {
+    v: 'wedding',
+    src: 2198,
+    who: 'Alexander Brock',
+    date: 'Mutopia-2017/10/24-2198',
+    base: 'Durand & Cie., Paris（D. & F. 9516）',
+    lic: 'by-sa-4.0',
+    mod: '最初の音の前の 3 拍の休みを除いた',
+  },
+  { v: 'stanley65', src: [1814311, 7279491], who: 'dolch', date: '2016/02/28', lic: 'pdm' },
+  { v: 'widor6', src: [4692306, 7540966], who: 'Noxygen', date: '2017/10/09', lic: 'cc0' },
+  {
+    v: 'widor5',
+    src: 1201,
+    who: 'Bart Golsteijn',
+    date: 'Mutopia-2008/09/08-1201',
+    base: 'J. Maho et J. Hamelle, Paris, 1880',
+    lic: 'by-sa-3.0',
+    mod: '前打音を本音符の開始で切った',
+  },
+  { v: 'gigout', src: [916706, 11441], who: 'karlk62', date: '2015/06/02', lic: 'pdm' },
+  { v: 'pomp', src: [5103275, 18351], who: 'musikmann', date: '2018/05/20', lic: 'cc0' },
+  {
+    v: 'dandrieu',
+    src: 696,
+    who: 'Gérard Gréco',
+    date: 'Mutopia-2006/03/13-696',
+    base: 'Archives des Maîtres de l’Orgue, vol. 7（A. Guilmant 編、A. Durand et fils, 1905）',
+    lic: 'by-sa-2.5',
+  },
+  {
+    v: 'buxwv155',
+    src: 2075,
+    who: 'Pierre Masson',
+    date: 'Mutopia-2015/11/18-2075',
+    base: 'Breitkopf & Härtel, Leipzig, 1888, rev. 1903–04',
+    lic: 'pd',
+  },
+  { v: 'canon', src: [5577547, 3785676], who: 'PhantomTones', date: '2019/05/20', lic: 'cc0' },
+  { v: 'bwv593', src: [5907027, 33765145], who: 'Sonxaj', date: '2019/12/28', lic: 'cc0', mod: OCT },
+  {
+    v: 'bwv525',
+    src: [115160, 101554],
+    who: 'Johann Sebastian Bach（MuseScore の利用者名）',
+    date: '2013/06/27',
+    lic: 'pdm',
+  },
+  { v: 'bwv639', src: [6304139, 30732005], who: 'leonkopecny11', date: '2020/08/20', lic: 'cc0', mod: OCT },
+  { v: 'bwv564', src: [5946480, 33765145], who: 'Sonxaj', date: '2020/01/29', lic: 'cc0', mod: OCT },
+  {
+    v: 'bwv542',
+    src: 984,
+    who: 'Urs Metzger',
+    date: 'Mutopia-2007/05/20-984',
+    base: 'C. F. Peters, Leipzig（8657）',
+    lic: 'pd',
+    mod: `楽譜の forte の声部を第 1 手鍵盤、piano の声部を第 2 手鍵盤で弾く。${OCT}`,
+  },
+];
+const switches = (p: Piece) => (p.regs ? Object.keys(p.regs).length : 0);
 const SCORES = 'https://github.com/nanase/tools/tree/main/src/tools/organ/scores';
 /* Mutopia の MIDI には装飾が入っていないので、.ly の原本から展開したことを書く */
 const ORN =
@@ -81,4 +166,58 @@ const ORN_WAYS: [string, string][] = [
     <p>原作のライセンスは <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.ja">クリエイティブ・コモンズ 表示 - 継承 4.0 国際（CC BY-SA 4.0）</a>で、元の MIDI と、そこから作った音符のデータ（<a href={SCORES}>src/tools/organ/scores</a> の bwv578）も同じライセンスで公開します。</p>
     <p>MIDI でペダルに重ねてあった 1 オクターブ下の音（16' の代わり）は除き、テンポの変化と、音の長さや時刻の細かなずれ（演奏の表情）は MIDI のものを使っています。トリルなどの装飾は、MIDI に演奏として入っています。両手とも第 1 手鍵盤で弾きます。</p>
   </li>
+</ul>
+<p>次の曲は、<a href="https://www.mutopiaproject.org/">Mutopia Project</a> の楽譜か、MuseScore の楽譜（<a href={PDMX}>PDMX</a>、Long ほか 2024 に収録されたもの）の MIDI から変換しました。ストップの切り替えは MIDI にないので、強弱の変わり目・エコー・ペダルの休む区間からこのツールで決めました。音符のデータ（<a href={SCORES}>src/tools/organ/scores</a>）は、元の MIDI と同じライセンスで公開します。</p>
+<ul class="srcs">
+  {
+    MORE.map((m) => {
+      const p = pieceOf(m.v),
+        [lic, url] = LIC[m.lic],
+        n = switches(p);
+      return (
+        <li>
+          <h3>
+            {p.name} <small>{p.by}</small>
+          </h3>
+          <ul class="tl">
+            <li>
+              <b>出典:</b>{' '}
+              {typeof m.src === 'number' ? (
+                <a href={`${MU}${m.src}`}>Mutopia Project の楽譜</a>
+              ) : (
+                <a href={`${MS}${m.src[1]}/scores/${m.src[0]}`}>MuseScore の楽譜</a>
+              )}
+              （{m.date}）
+            </li>
+            <li>
+              <b>{typeof m.src === 'number' ? '入力' : '作成'}:</b> {m.who}
+            </li>
+            {m.base && (
+              <li>
+                <b>底本:</b> {m.base}
+              </li>
+            )}
+            <li>
+              <b>ライセンス:</b> {url ? <a href={url}>{lic}</a> : lic}
+            </li>
+            {m.mod && (
+              <li>
+                <b>変更:</b> {m.mod}
+              </li>
+            )}
+            {meta(m.v).map(([k, v]) => (
+              <li>
+                <b>{k}:</b> {v}
+              </li>
+            ))}
+            {n > 1 && (
+              <li>
+                <b>切り替え:</b> {n} 種のレジストレーション
+              </li>
+            )}
+          </ul>
+        </li>
+      );
+    })
+  }
 </ul>

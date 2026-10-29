@@ -14,8 +14,8 @@ const kind: Kind = {
   path: 'src/tools/organ/scores',
   script: 'scripts/organ-scores.ts',
   staves: [
-    { name: '第 1 手鍵盤', lo: 36, hi: 84 },
-    { name: '第 2 手鍵盤', lo: 36, hi: 84 },
+    { name: '第 1 手鍵盤', lo: 36, hi: 96 },
+    { name: '第 2 手鍵盤', lo: 36, hi: 96 },
     { name: 'ペダル', lo: 36, hi: 67 },
   ],
   mergeAcross: false,
@@ -299,6 +299,50 @@ function oga565(m: Midi, log: (s: string) => void): RawNote[] {
   return m.notes.filter((x) => !bad.includes(x));
 }
 
+/**
+ * MuseScore の楽譜の MIDI は、オルガンのペダルの譜表を 1 オクターブ下（16' の高さ）で書き出すことがある。
+ * トラック trs の音を 1 オクターブ上げて、譜面の高さに戻す
+ */
+const octaveUp =
+  (...trs: number[]) =>
+  (m: Midi, log: (s: string) => void): RawNote[] => {
+    log(`トラック ${trs.join('・')} の音を 1 オクターブ上げた（MIDI は 16' の高さ）`);
+    return m.notes.map((x) => (trs.includes(x.tr) ? { ...x, n: x.n + 12 } : x));
+  };
+
+/**
+ * MuseScore で CC0 またはパブリックドメインとして公開された楽譜の MIDI（PDMX に収録されたもの）。トラックは譜表ごと
+ * （0 = 右手、1 = 左手、2 = ペダル）。4 分音符は 480 tick なので、時刻と長さは寄せない
+ */
+const musescore = (
+  name: string,
+  title: string,
+  [id, user, by, date]: [number, number, string, string],
+  license: 'cc0' | 'pdm',
+  changes: string[],
+  rest: Pick<Piece, 'meter'> & Partial<Piece>,
+): Piece => ({
+  name,
+  title,
+  source: [
+    `音符は MuseScore で${license === 'cc0' ? ' CC0 として' : 'パブリックドメインとして'}公開された楽譜（${by} 作成、${date}、`,
+    `https://musescore.com/user/${user}/scores/${id}）の MIDI から変換した。MIDI は PDMX（Long ほか 2024、`,
+    'https://zenodo.org/records/15571083）に収録されたものを使った。',
+  ],
+  changes: changes.length
+    ? [...changes, '同じ鍵盤で同じ時刻の同じ高さの音を 1 つにまとめた。']
+    : ['変更: 同じ鍵盤で同じ時刻の同じ高さの音を 1 つにまとめた。'],
+  license,
+  tracks: [
+    [0, 0],
+    [1, 1],
+    [2, 2],
+  ],
+  exact: true,
+  pickup: 0,
+  ...rest,
+});
+
 const mutopia = (id: number) => `https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=${id}`;
 /** 加工の段落の終わり。テンポの扱いは、MIDI の中身に合わせて score-midi.ts が書き足す（tempo を指定しない曲） */
 const common = '時刻と長さを 4 分音符の 1/480 に寄せ、同じ鍵盤で同じ時刻の同じ高さの音を 1 つにまとめた。';
@@ -415,6 +459,186 @@ const pieces: Piece[] = [
     pickup: 0,
     tempo: true,
     fix: gouin,
+  },
+  {
+    name: 'wedding',
+    title: 'F. メンデルスゾーン「真夏の夜の夢」より 結婚行進曲（T. デュボワ編）',
+    source: [
+      '音符は Mutopia Project の楽譜（Alexander Brock 作成、底本 Durand & Cie., Paris, Plate D. & F. 9516、',
+      `Mutopia-2017/10/24-2198、${mutopia(2198)}）の MIDI から変換した。反復は MIDI で展開されている。`,
+    ],
+    changes: [
+      '変更: 右手・左手・ペダルの譜表を h = 0・1・2 にした。最初の音の前の 3 拍の休みを除いた（1 拍の弱起になる）。',
+      common,
+    ],
+    license: 'cc-by-sa-4.0',
+    tracks: [
+      [1, 0],
+      [2, 1],
+      [3, 2],
+    ],
+    meter: [4, 4],
+    pickup: 1,
+    trim: true,
+    grace: true,
+  },
+  musescore(
+    'stanley65',
+    'J. スタンリー「ヴォランタリー 第 5 番 ニ長調」作品 6（トランペット・ヴォランタリー）',
+    [1814311, 7279491, 'dolch', '2016/02/28'],
+    'pdm',
+    ['変更: 右手・左手の譜表を h = 0・1 にした（ペダルはない）。'],
+    {
+      tracks: [
+        [0, 0],
+        [1, 1],
+      ],
+      meter: [4, 4],
+    },
+  ),
+  musescore(
+    'widor6',
+    'C.-M. ヴィドール「オルガン交響曲 第 6 番 ト短調」作品 42 第 2 より 第 5 楽章 フィナーレ',
+    [4692306, 7540966, 'Noxygen', '2017/10/09'],
+    'cc0',
+    [],
+    { meter: [4, 4], meters: true, pickup: 1 },
+  ),
+  {
+    name: 'widor5',
+    title: 'C.-M. ヴィドール「オルガン交響曲 第 5 番 ヘ短調」作品 42 第 1 より 第 4 楽章 アダージョ',
+    source: [
+      '音符は Mutopia Project の楽譜（Bart Golsteijn 作成、底本 J. Maho et J. Hamelle, Paris, 1880、',
+      `Mutopia-2008/09/08-1201、${mutopia(1201)}）の MIDI から変換した。`,
+    ],
+    changes: ['変更: 右手・左手・ペダルの譜表を h = 0・1・2 にした。前打音は本音符の開始で切った。', common],
+    license: 'cc-by-sa-3.0',
+    tracks: [
+      [2, 0],
+      [3, 1],
+      [1, 2],
+    ],
+    meter: [4, 4],
+    pickup: 0,
+    grace: true,
+  },
+  musescore(
+    'gigout',
+    'E. ジグー「10 のオルガン曲」より トッカータ ロ短調',
+    [916706, 11441, 'karlk62', '2015/06/02'],
+    'pdm',
+    [],
+    { meter: [2, 4] },
+  ),
+  musescore(
+    'pomp',
+    'E. エルガー「威風堂々 第 1 番」作品 39 より トリオ（オルガン独奏用の編曲）',
+    [5103275, 18351, 'musikmann', '2018/05/20'],
+    'cc0',
+    [],
+    { meter: [2, 4] },
+  ),
+  {
+    name: 'dandrieu',
+    title: 'J.-F. ダンドリュー「オフェルトワール」',
+    source: [
+      '音符は Mutopia Project の楽譜（Gérard Gréco 作成、底本 Archives des Maîtres de l’Orgue, vol. 7（A. Guilmant 編、',
+      `A. Durand et fils, 1905）、Mutopia-2006/03/13-696、${mutopia(696)}）の MIDI から変換した。`,
+    ],
+    changes: ['変更: 上の譜表（dessus）を h = 0、下の譜表（basse）を h = 1 にした（ペダルはない）。', common],
+    license: 'cc-by-sa-2.5',
+    tracks: [
+      [1, 0],
+      [2, 1],
+    ],
+    meter: [4, 4],
+    meters: true,
+    pickup: 0,
+  },
+  {
+    name: 'buxwv155',
+    title: 'D. ブクステフーデ「トッカータ ニ短調」BuxWV 155',
+    source: [
+      '音符は Mutopia Project の楽譜（Pierre Masson 作成、底本 Breitkopf & Härtel, Leipzig, 1888, rev. 1903–04、',
+      `Mutopia-2015/11/18-2075、${mutopia(2075)}）の MIDI から変換した。`,
+    ],
+    changes: ['変更: 右手・左手・ペダルの譜表を h = 0・1・2 にした。', common],
+    license: 'pd',
+    tracks: [
+      [1, 0],
+      [2, 1],
+      [3, 2],
+    ],
+    meter: [4, 4],
+    meters: true,
+    pickup: 0,
+  },
+  musescore(
+    'canon',
+    'J. パッヘルベル「カノン ニ長調」（B. Rodriguez によるオルガン編曲）',
+    [5577547, 3785676, 'PhantomTones', '2019/05/20'],
+    'cc0',
+    [],
+    { meter: [4, 4] },
+  ),
+  musescore(
+    'bwv593',
+    'J. S. バッハ「協奏曲 イ短調」BWV 593（A. ヴィヴァルディ作品 3 第 8 による）より 第 1 楽章',
+    [5907027, 33765145, 'Sonxaj', '2019/12/28'],
+    'cc0',
+    ["変更: ペダルの音を 1 オクターブ上げた（MIDI は 16' の高さ）。"],
+    { meter: [4, 4], fix: octaveUp(2) },
+  ),
+  musescore(
+    'bwv525',
+    'J. S. バッハ「トリオ・ソナタ 第 1 番 変ホ長調」BWV 525 より 第 1 楽章',
+    [115160, 101554, 'Johann Sebastian Bach（MuseScore の利用者名）', '2013/06/27'],
+    'pdm',
+    [],
+    { meter: [4, 4] },
+  ),
+  musescore(
+    'bwv639',
+    'J. S. バッハ「主イエス・キリストよ、われ汝を呼ぶ」BWV 639（オルガン小曲集）',
+    [6304139, 30732005, 'leonkopecny11', '2020/08/20'],
+    'cc0',
+    ["変更: ペダルの音を 1 オクターブ上げた（MIDI は 16' の高さ）。"],
+    { meter: [4, 4], meters: true, pickup: 1, fix: octaveUp(2) },
+  ),
+  musescore(
+    'bwv564',
+    'J. S. バッハ「トッカータ、アダージョとフーガ ハ長調」BWV 564 より トッカータ',
+    [5946480, 33765145, 'Sonxaj', '2020/01/29'],
+    'cc0',
+    ["変更: ペダルの音を 1 オクターブ上げた（MIDI は 16' の高さ）。"],
+    { meter: [4, 4], fix: octaveUp(2) },
+  ),
+  {
+    name: 'bwv542',
+    title: 'J. S. バッハ「幻想曲とフーガ ト短調」BWV 542 より 幻想曲',
+    source: [
+      '音符は Mutopia Project の楽譜（Urs Metzger 作成、底本 8657, C. F. Peters, Leipzig、Mutopia-2007/05/20-984、',
+      `${mutopia(984)}）の幻想曲の MIDI（bwv542.mid）から変換した。`,
+    ],
+    changes: [
+      '変更: .ly の原本は声部を forte と piano に分けて書いており、MIDI も forte の右手・左手（トラック 1・2）と',
+      'piano の右手・左手（3・4）が別のトラックになっている。forte を h = 0（第 1 手鍵盤）、piano を h = 1（第 2 手鍵盤）、',
+      'ペダル（forte の 5 と piano の 7）を h = 2 にした。トラック 6 は 5 の写し（音色を変えた重ね）なので使わない。',
+      "ペダルの音は 1 オクターブ上げた（MIDI は 16' の高さ）。",
+      common,
+    ],
+    license: 'pd',
+    tracks: [
+      [1, 0],
+      [2, 0],
+      [3, 1],
+      [4, 1],
+      [5, 2],
+      [7, 2],
+    ],
+    meter: [4, 4],
+    pickup: 0,
+    fix: octaveUp(5, 7),
   },
 ];
 

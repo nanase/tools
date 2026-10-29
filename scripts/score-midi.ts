@@ -126,7 +126,8 @@ export interface Piece {
   source: string[];
   /** 加工の段落（行に分けたもの） */
   changes: string[];
-  license: 'pd' | 'cc-by-3.0' | 'cc-by-sa-2.5' | 'cc-by-sa-4.0' | 'cc0';
+  /** pd は Mutopia の Public Domain、pdm は MuseScore の Public Domain Mark */
+  license: 'pd' | 'pdm' | 'cc-by-3.0' | 'cc-by-sa-2.5' | 'cc-by-sa-3.0' | 'cc-by-sa-4.0' | 'cc0';
   /** 使うトラックと、その譜表・鍵盤（h）: [トラックの番号, h] */
   tracks: [number, number][];
   /** 譜表のない演奏の MIDI の音を、この高さ以上は h = 0、未満は h = 1 に分ける（tracks の h の代わり） */
@@ -303,6 +304,11 @@ const LICENSE = {
     name: 'Creative Commons Attribution-ShareAlike 2.5 Generic',
     url: 'https://creativecommons.org/licenses/by-sa/2.5/',
     spdx: 'CC-BY-SA-2.5',
+  },
+  'cc-by-sa-3.0': {
+    name: 'Creative Commons Attribution-ShareAlike 3.0 Unported',
+    url: 'https://creativecommons.org/licenses/by-sa/3.0/',
+    spdx: 'CC-BY-SA-3.0',
   },
   'cc-by-sa-4.0': {
     name: 'Creative Commons Attribution-ShareAlike 4.0 International',
@@ -584,7 +590,7 @@ export function build(p: Piece, k: Kind): void {
   const meter = `${p.meter[0]}/${p.meter[1]} 拍子${meters.length > 1 ? '（途中で変わる）' : ''}${p.pickup ? `、最初の ${p.pickup} 拍は弱起` : ''}`,
     size = `${full} 小節${rest ? `と ${rest} 拍` : ''}`;
 
-  const lic = p.license === 'pd' ? undefined : LICENSE[p.license],
+  const lic = p.license === 'pd' || p.license === 'pdm' ? undefined : LICENSE[p.license],
     license = lic
       ? [
           `このファイルと ${p.name}.mid は原作と同じ ${lic.name}`,
@@ -592,9 +598,14 @@ export function build(p: Piece, k: Kind): void {
           '',
           `SPDX-License-Identifier: ${lic.spdx}`,
         ]
-      : [
-          `原作はパブリックドメイン（Mutopia の表記は Public Domain）。このファイルと ${p.name}.mid も著作権を主張しない。`,
-        ];
+      : p.license === 'pd'
+        ? [
+            `原作はパブリックドメイン（Mutopia の表記は Public Domain）。このファイルと ${p.name}.mid も著作権を主張しない。`,
+          ]
+        : [
+            '原作はパブリックドメイン（MuseScore の表記は Public Domain Mark 1.0）。',
+            `このファイルと ${p.name}.mid も著作権を主張しない。`,
+          ];
   const head = [
     /* 曲名が半角の文字で終わるときだけ空白を入れる */
     `${p.title}${/[!-~]$/.test(p.title) ? ' ' : ''}の音符。`,

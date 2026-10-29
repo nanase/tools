@@ -836,10 +836,17 @@ const cache = new Map<string, PieceData>();
 const spbOf = (pc: Piece) => 60 / (pc.bpm * (V.tempo / 100));
 /** 曲の出来事（音の始まりと終わり、レジストレーションの切り替え）。同じ拍では 終わり → 切り替え → 始まり の順 */
 function eventsOf(pc: Piece, notes: ScoreNote[], reg: readonly (readonly [number, number])[] = []): Ev[] {
-  const ev: Ev[] = [];
-  if (pc.regs) for (const [b, r] of reg) if (pc.regs[r]) ev.push({ b, type: 'reg', reg: r });
+  const ev: Ev[] = [],
+    marks = reg.filter(([, r]) => pc.regs?.[r]).sort((a, b) => a[0] - b[0]);
+  for (const [b, r] of marks) ev.push({ b, type: 'reg', reg: r });
+  /* 譜表を弾く鍵盤は、音の始まりで入っているレジストレーションのもの（鍵盤の指定がなければ曲のもの） */
+  const handsAt = (t: number) => {
+    let h = pc.hands;
+    for (const [b, r] of marks) if (b <= t) h = pc.regs?.[r]?.hands ?? pc.hands;
+    return h;
+  };
   for (const x of notes) {
-    const n: Note = { key: x.n, div: pc.hands[x.h] ?? 'I', at: 0, st: 0, vis: 0 };
+    const n: Note = { key: x.n, div: handsAt(x.t)[x.h] ?? 'I', at: 0, st: 0, vis: 0 };
     ev.push({ b: x.t, type: 'on', n });
     /* 同じ鍵を続けて弾くときに弁が閉じる間をあける */
     ev.push({ b: x.t + Math.max(x.d * 0.95, x.d - 0.06), type: 'off', n });
