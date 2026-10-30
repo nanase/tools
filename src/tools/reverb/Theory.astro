@@ -1,6 +1,6 @@
 ---
-// 動作原理と式（下書き。ページの組み方が決まったら、図や操作の名前に合わせて直す）。表の値は room.ts・ir.ts から求める
-import { EARLY_S, ECHO_MIN_S, EK } from './ir';
+// 動作原理と式。表の値は room.ts・ir.ts から求める
+import { EARLY_S, ECHO_MIN_S, EK, HP_HZ } from './ir';
 import { acoustics, BANDS, MATERIALS, OPEN, PRESETS } from './room';
 
 /* 本文の出典番号 */
@@ -46,7 +46,7 @@ const ROOMS = PRESETS.map((p) => ({ name: p.name, ac: acoustics(p.room), dim: p.
 
 <h3>吸音率</h3>
 <p>帯域ごとの吸音率<Fragment set:html={rf(6)} />。硬い面は高い音までほとんど吸わず、布や吸音板は高い音ほどよく吸います。</p>
-<div class="tw"><table class="tab">
+<div class="tt-w"><table class="tt">
   <thead><tr><th>材料</th>{BANDS.map((f) => <th class="num">{hz(f)}</th>)}</tr></thead>
   <tbody>{MATS.map((m) => <tr><td>{m.name}</td>{m.a.map((a) => <td class="num">{f2(a)}</td>)}</tr>)}</tbody>
 </table></div>
@@ -70,7 +70,7 @@ const ROOMS = PRESETS.map((p) => ({ name: p.name, ac: acoustics(p.room), dim: p.
   <li>鏡のような反射だけの直方体の部屋は拡散音場にならない。吸音率がどの面も同じなら鏡像法の減衰は Eyring とよく合う<Fragment set:html={rf(1)} />が、細長い部屋や、天井だけ吸う部屋では、吸わない面の間を往復する音が残って減衰が遅れる</li>
   <li>臨界距離 <math><msub><mi>r</mi><mi mathvariant="normal">c</mi></msub><mo>=</mo><msqrt><mi>A</mi><mo>/</mo><mn>16</mn><mi>π</mi></msqrt><mo>≈</mo><mn>0.057</mn><msqrt><mi>V</mi><mo>/</mo><mi>T</mi></msqrt></math>: 直接音と残響音が同じ強さになる距離（無指向性の音源）<Fragment set:html={rf(5)} /></li>
 </ul>
-<div class="tw"><table class="tab">
+<div class="tt-w"><table class="tt">
   <thead><tr><th>部屋の例</th><th class="num">寸法 [m]</th><th class="num">Sabine [s]</th><th class="num">Eyring [s]</th><th class="num">臨界距離 [m]</th></tr></thead>
   <tbody>{ROOMS.filter((r) => r.ac.closed).map((r) => <tr><td>{r.name}</td><td class="num">{r.dim.join(' × ')}</td><td class="num">{f2(r.ac.sab[2])}</td><td class="num">{f2(r.ac.eyr[2])}</td><td class="num">{r.ac.rc[2].toFixed(1)}</td></tr>)}</tbody>
 </table></div>
@@ -81,6 +81,7 @@ const ROOMS = PRESETS.map((p) => ({ name: p.name, ac: acoustics(p.room), dim: p.
   <li>帯域（125 Hz〜4 kHz のオクターブ）ごとに、届く時刻に振幅 <math><msub><mi>a</mi><mi>i</mi></msub></math> のインパルスを置く</li>
   <li>閉じた部屋では、数えきった時刻から先を、指数で減衰する正規雑音で延ばす<Fragment set:html={rf(9)} />。減衰の速さは帯域ごとの Eyring の残響時間、強さは数えきる直前の鏡像のエネルギーにつなぐ</li>
   <li>帯域ごとの列を、和が 1 になる周波数の重みで分けて足す。帯域の値がすべて同じなら、元のインパルス列のまま</li>
+  <li>鏡像の振幅はどれも正なので、足すと直流と低い周波数が積み上がる。{HP_HZ} Hz の 2 次の高域通過で取り除く</li>
 </ol>
 <p>拡散音場では、時刻 <math><mi>t</mi></math> に届く反射の密度 <math><mn>4</mn><mi>π</mi><msup><mi>c</mi><mn>3</mn></msup><msup><mi>t</mi><mn>2</mn></msup><mo>/</mo><mi>V</mi></math> と 1 つの強さ <math><mn>1</mn><mo>/</mo><msup><mrow><mo stretchy="false">(</mo><mi>c</mi><mi>t</mi><mo stretchy="false">)</mo></mrow><mn>2</mn></msup></math> の積で <math><msup><mi>t</mi><mn>2</mn></msup></math> が消え、強さは時間あたり <math><mn>4</mn><mi>π</mi><mi>c</mi><mo>/</mo><mi>V</mi></math> に吸音の指数を掛けた形になります。</p>
 
@@ -90,6 +91,7 @@ const ROOMS = PRESETS.map((p) => ({ name: p.name, ac: acoustics(p.room), dim: p.
   <math display="block"><mi>E</mi><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mo>=</mo><msubsup><mo>∫</mo><mi>t</mi><mi>∞</mi></msubsup><msup><mi>h</mi><mn>2</mn></msup><mo stretchy="false">(</mo><mi>τ</mi><mo stretchy="false">)</mo><mspace width="0.2em"/><mi>d</mi><mi>τ</mi></math>
 </div>
 <ul class="tl">
+  <li>帯域ごとの値は、応答をオクターブ帯（125 Hz の帯域は 62.5〜250 Hz）に分けてから求める</li>
   <li>EDT・T20・T30: 減衰曲線の 0〜−10・−5〜−25・−5〜−35 dB を直線で当てはめ、60 dB 下がる時間にしたもの<Fragment set:html={rf(7)} /></li>
   <li>C80: 直接音から 80 ms までと、それより後のエネルギーの比 [dB]。音楽の明瞭さ</li>
   <li>D50: 50 ms までのエネルギーの、全体に対する割合。言葉の聞き取りやすさ</li>
@@ -100,7 +102,7 @@ const ROOMS = PRESETS.map((p) => ({ name: p.name, ac: acoustics(p.room), dim: p.
 <div class="eqs">
   <math display="block"><msub><mi>t</mi><mi mathvariant="normal">s</mi></msub><mo stretchy="false">(</mo><mi>τ</mi><mo stretchy="false">)</mo><mo>=</mo><mfrac><mrow><msubsup><mo>∫</mo><mn>0</mn><mi>τ</mi></msubsup><mi>t</mi><msup><mrow><mo>|</mo><mi>h</mi><mo>|</mo></mrow><mi>n</mi></msup><mi>d</mi><mi>t</mi></mrow><mrow><msubsup><mo>∫</mo><mn>0</mn><mi>τ</mi></msubsup><msup><mrow><mo>|</mo><mi>h</mi><mo>|</mo></mrow><mi>n</mi></msup><mi>d</mi><mi>t</mi></mrow></mfrac><mo>,</mo><mspace width="1em"/><mi>EK</mi><mo stretchy="false">(</mo><mi>τ</mi><mo stretchy="false">)</mo><mo>=</mo><mfrac><mrow><msub><mi>t</mi><mi mathvariant="normal">s</mi></msub><mo stretchy="false">(</mo><mi>τ</mi><mo stretchy="false">)</mo><mo>−</mo><msub><mi>t</mi><mi mathvariant="normal">s</mi></msub><mo stretchy="false">(</mo><mi>τ</mi><mo>−</mo><msub><mi>Δ</mi><mi>E</mi></msub><mo stretchy="false">)</mo></mrow><msub><mi>Δ</mi><mi>E</mi></msub></mfrac></math>
 </div>
-<div class="tw"><table class="tab">
+<div class="tt-w"><table class="tt">
   <thead><tr><th></th><th class="num">n</th><th class="num">Δ<sub>E</sub> [ms]</th><th class="num">帯域 [Hz]</th><th class="num">閾（50 %）</th></tr></thead>
   <tbody>
     <tr><td>声</td><td class="num">2/3</td><td class="num">{EK.speech.win * 1000}</td><td class="num">{EK.speech.lo}–{EK.speech.hi}</td><td class="num">{EK.speech.crit.toFixed(1)}</td></tr>
@@ -120,7 +122,7 @@ const ROOMS = PRESETS.map((p) => ({ name: p.name, ac: acoustics(p.room), dim: p.
 </div>
 <ul class="tl">
   <li>ブラウザの ConvolverNode で畳み込む。インパルス応答は AudioContext と同じ標本化周波数で作る</li>
-  <li>音の大きさは、インパルス応答のエネルギーで割ってそろえる（仮）。直接音と残響音の比は変わる</li>
+  <li>音の大きさは、インパルス応答のエネルギーで割ってそろえる。直接音と残響音の比は変わる</li>
   <li>楽器のページの残響は、同じ部屋の Eyring の残響時間（500 Hz・4 kHz）と臨界距離から、16 本の遅延線のフィードバック遅延網で作る<Fragment set:html={rf(8)} />。部屋の形や位置を使わないので初期反射の並びはないが、計算は軽い</li>
 </ul>
 

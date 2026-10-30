@@ -2,7 +2,7 @@
  * インパルス応答（DOM に依存しない）: 鏡像法の反射を帯域ごとに並べ、閉じた部屋では鏡像を数えきった時刻から先を
  * 指数で減衰する雑音で延ばす（Polack の統計モデル）。減衰の速さは既定で Eyring の式（拡散音場を仮定）。
  * 鏡のような反射だけの直方体の部屋は拡散音場にならず、細長い部屋や吸音の多い部屋では減衰が Eyring より遅い。
- * 実際の部屋は面の凹凸の散乱で拡散に近づくので、延ばす部分は拡散音場の式に合わせる（仮）。
+ * 実際の部屋は面の凹凸の散乱で拡散に近づくので、延ばす部分は拡散音場の式に合わせる。
  * 帯域ごとの列は、和が 1 になる周波数の重みで分けて足す（帯域がすべて同じなら、元のインパルス列そのもの）。
  * 解析: Schroeder の逆向き積分で減衰曲線を出し、EDT・T20・T30・C80・D50 を求める（ISO 3382-1 の定義）
  */
@@ -25,6 +25,46 @@ export function bandWeight(b: number, f: number): number {
   const d = x - b;
   return Math.abs(d) >= 1 ? 0 : Math.cos((Math.PI / 2) * d) ** 2;
 }
+
+/**
+ * 解析用のオクターブ帯域の重み。bandWeight と同じだが、最も低い帯域は 62.5 Hz から、最も高い帯域は 8 kHz まで
+ * （両端を受け渡しと同じ cos² で落とす）。鏡像法の応答の直流と、低い周波数に寄った成分を 125 Hz の帯域に入れない
+ */
+export function octWeight(b: number, f: number): number {
+  if (f <= 0) return 0;
+  const d = Math.log2(f / BANDS[0]) - b;
+  return Math.abs(d) >= 1 ? 0 : Math.cos((Math.PI / 2) * d) ** 2;
+}
+
+/**
+ * 2 次の Butterworth の高域通過（双 1 次変換、RBJ の式）をその場で掛ける。
+ * 鏡像の振幅はどれも正なので、反射を足すと直流と低い周波数が積み上がる（応答のエネルギーの大半になる部屋もある）
+ */
+export function highpass(x: Float32Array | Float64Array, fs: number, fc: number): void {
+  const w = (2 * Math.PI * fc) / fs,
+    al = Math.sin(w) / Math.SQRT2,
+    a0 = 1 + al,
+    c = Math.cos(w),
+    b0 = (1 + c) / 2 / a0,
+    b1 = -(1 + c) / a0,
+    a1 = (-2 * c) / a0,
+    a2 = (1 - al) / a0;
+  let x1 = 0,
+    x2 = 0,
+    y1 = 0,
+    y2 = 0;
+  for (let i = 0; i < x.length; i++) {
+    const v = x[i],
+      y = b0 * v + b1 * x1 + b0 * x2 - a1 * y1 - a2 * y2;
+    x2 = x1;
+    x1 = v;
+    y2 = y1;
+    y1 = y;
+    x[i] = y;
+  }
+}
+/** 応答に掛ける高域通過の遮断周波数 [Hz] */
+export const HP_HZ = 40;
 
 /** 実数の列 re の、その場の逆変換（実部だけを返す。入力のスペクトルはエルミートとする） */
 function ifftReal(p: Plan): void {
@@ -75,8 +115,8 @@ export function mixBands(xs: readonly Float64Array[], fs: number): Float64Array 
   return p.re.slice(0, L);
 }
 
-/** 1 本の列を帯域ごとに分ける（解析用） */
-export function splitBands(x: ArrayLike<number>, fs: number): Float64Array[] {
+/** 1 本の列を帯域ごとに分ける（解析用）。w は帯域の重み（既定は和が 1 の bandWeight） */
+export function splitBands(x: ArrayLike<number>, fs: number, w = bandWeight): Float64Array[] {
   const L = x.length,
     pad = Math.ceil(0.05 * fs),
     N = pow2(L + pad),
@@ -90,7 +130,7 @@ export function splitBands(x: ArrayLike<number>, fs: number): Float64Array[] {
     Xi = p.im.slice();
   for (let b = 0; b < NB; b++) {
     for (let k = 0; k < N; k++) {
-      const g = bandWeight(b, ((k <= N / 2 ? k : N - k) * fs) / N);
+      const g = w(b, ((k <= N / 2 ? k : N - k) * fs) / N);
       p.re[k] = Xr[k] * g;
       p.im[k] = Xi[k] * g;
     }
@@ -238,6 +278,7 @@ export function synth(room: Room, o: SynthOpts): Synth {
     }
   }
   const h = mixBands(xs, fs);
+  highpass(h, fs, HP_HZ);
   return { h: Float32Array.from(h), fs, im, tTail, tailT60, t0 };
 }
 
@@ -307,7 +348,7 @@ function energy(h: ArrayLike<number>, k1: number, k2: number): number {
 
 /** 帯域ごとの指標。t0 は直接音の届く時刻 [s]（C80・D50 の時刻の起点） */
 export function params(h: ArrayLike<number>, fs: number, t0: number): Params {
-  const bands = splitBands(h, fs),
+  const bands = splitBands(h, fs, octWeight),
     k0 = Math.max(0, Math.floor(t0 * fs) - Math.round(0.002 * fs)),
     k50 = Math.floor(t0 * fs) + Math.round(0.05 * fs),
     k80 = Math.floor(t0 * fs) + Math.round(0.08 * fs),
@@ -328,7 +369,7 @@ export function params(h: ArrayLike<number>, fs: number, t0: number): Params {
 
 /* ---------- 直接音・初期反射・後部残響 ---------- */
 
-/** 初期反射と後部残響の境目（直接音から） [s]。仮: C80 と同じ 80 ms */
+/** 初期反射と後部残響の境目（直接音から） [s]。C80 と同じ 80 ms（部屋ごとの混合時間は図に印だけ出す） */
 export const EARLY_S = 0.08;
 
 export type Part = 'direct' | 'early' | 'late';

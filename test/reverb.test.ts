@@ -9,7 +9,9 @@ import {
   edc,
   fdnIR,
   gauss,
+  highpass,
   mixBands,
+  octWeight,
   params,
   partOf,
   splitBands,
@@ -25,6 +27,7 @@ import {
   MATERIALS,
   NB,
   PRESETS,
+  presetOf,
   type Room,
   sabine,
 } from '../src/tools/reverb/room';
@@ -198,6 +201,30 @@ describe('帯域', () => {
       x = Float64Array.from({ length: 3000 }, () => r()),
       bs = splitBands(x, fs);
     for (let i = 0; i < x.length; i += 37) expect(bs.reduce((s, b) => s + b[i], 0)).toBeCloseTo(x[i], 9);
+  });
+  it('解析のオクターブ帯は 62.5 Hz〜8 kHz の外を含まない', () => {
+    for (const f of [0, 20, 62.5, 8000, 12000]) for (let b = 0; b < NB; b++) expect(octWeight(b, f)).toBe(0);
+    expect(octWeight(0, 125)).toBe(1);
+    expect(octWeight(0, 88.39)).toBeCloseTo(0.5, 3);
+  });
+  it('高域通過は直流を消し、高い周波数はそのまま通す', () => {
+    const dc = new Float64Array(fs).fill(1),
+      sn = Float64Array.from({ length: fs }, (_, k) => Math.sin((2 * Math.PI * 1000 * k) / fs));
+    highpass(dc, fs, 40);
+    highpass(sn, fs, 40);
+    expect(Math.abs(dc[fs - 1])).toBeLessThan(1e-6);
+    expect(Math.max(...sn.subarray(fs / 2))).toBeCloseTo(1, 2);
+  });
+  it('部屋の応答に直流は残らない（鏡像の振幅はどれも正で、足すと直流が積み上がる）', () => {
+    const r = presetOf('class').room,
+      h = synth(r, { fs, dur: 1.5 }).h;
+    let s = 0,
+      e = 0;
+    for (const v of h) {
+      s += v;
+      e += v * v;
+    }
+    expect(Math.abs(s) / Math.sqrt(e * h.length)).toBeLessThan(0.01);
   });
 });
 

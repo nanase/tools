@@ -68,7 +68,7 @@ export interface Room {
   air?: Air;
 }
 
-/** 部屋の例（寸法と材料はこのツールで選んだ概数。仮） */
+/** 部屋の例（寸法と材料はこのツールで選んだ概数） */
 export interface Preset {
   v: string;
   name: string;

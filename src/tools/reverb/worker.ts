@@ -1,4 +1,5 @@
-/** インパルス応答と指標をメインスレッドの外で計算する（部屋を動かすたびに数十〜数百 ms かかる） */
+/** インパルス応答と指標をメインスレッドの外で計算する（部屋を動かすたびに数十〜数百 ms かかる）。ギターの乾いた音もここで作る */
+import { guitar } from './guitar-dry';
 import { type Echo, echoes, type Params, params, type SynthOpts, synth } from './ir';
 import { NB, type Room } from './room';
 
@@ -20,6 +21,17 @@ export interface Reply {
   ip: Float64Array;
   p: Params;
   ec: Echo[];
+}
+
+/** ギターの乾いた音を作る */
+export interface DryJob {
+  id: number;
+  dry: 'guitar';
+  fs: number;
+}
+export interface DryReply {
+  id: number;
+  y: Float32Array;
 }
 
 export function run(j: Job): Reply {
@@ -50,7 +62,13 @@ export function run(j: Job): Reply {
 
 /* Worker の中でだけ受け付ける */
 if (typeof document === 'undefined' && typeof self !== 'undefined' && 'postMessage' in self)
-  self.onmessage = (e: MessageEvent<Job>) => {
-    const r = run(e.data);
+  self.onmessage = (e: MessageEvent<Job | DryJob>) => {
+    const d = e.data;
+    if ('dry' in d) {
+      const y = guitar(d.fs);
+      postMessage({ id: d.id, y } satisfies DryReply, { transfer: [y.buffer] });
+      return;
+    }
+    const r = run(d);
     postMessage(r, { transfer: [r.h.buffer, r.it.buffer, r.io.buffer, r.ia.buffer, r.ip.buffer] });
   };

@@ -1,0 +1,136 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import More from '../components/More.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import { order, TOOLS } from '../data/tools';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import { DRY } from '../tools/reverb/dry';
+import { HEIGHTS, MODES, ROOM, VOL, ZOOMS } from '../tools/reverb/params';
+import { BANDS, FACE_NAMES, FACES, MATERIALS, PRESETS, presetOf } from '../tools/reverb/room';
+import '../tools/reverb/style.css';
+import Theory from '../tools/reverb/Theory.astro';
+import { roomAspect } from '../tools/reverb/view';
+
+const name = '残響';
+/* 畳み込み・ドップラー効果・雷鳴を先に、続けて同じカテゴリ（準備中を含む）、ほかのカテゴリの公開中のツール */
+const CAT = '音響';
+const FIRST = ['convolution', 'doppler', 'thunder'];
+const related = [
+  ...FIRST.map((id) => TOOLS.find((t) => t.id === id)).filter((t) => t !== undefined),
+  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'reverb' && !FIRST.includes(t.id))),
+  ...TOOLS.filter((t) => t.c !== CAT && !t.s && !FIRST.includes(t.id)),
+];
+const R0 = presetOf('class').room;
+const hz = (f: number) => (f >= 1000 ? `${f / 1000}k` : `${f}`);
+const DRYS = [
+  ...DRY.map((d) => [d.v, d.name] as const),
+  ['guitar', 'ギター'] as const,
+  ['file', 'ファイル…', '手持ちの音のファイルを開く（この端末の中だけで使い、送信しません）'] as const,
+];
+---
+<SiteLayout title={name} tool={{ id: 'reverb', name }} description="部屋の壁での反射を鏡像法で求め、波面の広がり・インパルス応答・残響時間を見て、乾いた音に畳み込んで響きを聞きます。" note="直方体の部屋で、面は鏡のように反射するとした模型による参考値です。音はこの端末の中で作り、送信しません。">
+  <PageTitle title={name}>部屋の壁での反射を鏡像法で求めます。音源と聞き手を動かし、波面が壁で跳ね返る様子・インパルス応答・残響時間を見て、乾いた音に畳み込んで響きを聞けます。</PageTitle>
+  <div class="mini" aria-hidden="true"><span>RT60<b id="mt">—</b></span><span>C80<b id="mc">—</b></span><span>ECHO<b id="me">—</b></span></div>
+
+  <div class="tgrid">
+    <Panel hid="hd-fig" title="部屋（上から）" class="a-fig" fixed>
+      <div slot="aux" class="seg">
+        <button type="button" id="playBtn" aria-pressed="false" title="乾いた音に応答を畳み込んで鳴らす"><span class="led" id="playLed" aria-hidden="true"></span><span>聞く</span></button>
+      </div>
+      <div class="scn" id="p-preset" data-nosave role="group" aria-label="部屋の例">
+        <span class="scn-l" aria-hidden="true">部屋の例</span>
+        {PRESETS.map((p) => <button type="button" class="chip" data-v={p.v} aria-pressed={p.v === 'class' ? 'true' : 'false'}>{p.name}</button>)}
+      </div>
+      <div class="sbar">
+        <span class="stag">t <b id="s-t">0 ms</b></span>
+        <span class="stag">直接音 <b id="s-t0">—</b></span>
+        <span class="stag">鏡像 <b id="s-n">—</b></span>
+        <span class="stag">混合時間 <b id="s-mix">—</b></span>
+        <span class="stag right">速さ <b id="s-spd">—</b></span>
+      </div>
+      <div class="scope rvw"><canvas id="rv-top" data-ar={roomAspect(R0).toFixed(3)} style={`aspect-ratio:${roomAspect(R0).toFixed(3)}`} tabindex="0" role="img" aria-label="上から見た部屋の波面と反射の経路" title="音源と聞き手はドラッグで動かす（キーは矢印、Shift で 1 m、Enter で音源と聞き手を切り替え）"></canvas></div>
+      <p class="pick" id="s-pick" hidden>選んだ反射 <b id="s-pick-v"></b></p>
+      <div class="lgd">
+        <span><i class="sw" aria-hidden="true"></i>直接音の波面</span>
+        <span><i class="sw c2" aria-hidden="true"></i>反射の波面・経路</span>
+        <span><i class="sw w-hard" aria-hidden="true"></i>硬い面</span>
+        <span><i class="sw w-soft" aria-hidden="true"></i>吸う面</span>
+        <span><i class="sw w-open" aria-hidden="true"></i>開放</span>
+      </div>
+      <p class="sr" id="rv-live" aria-live="polite"></p>
+    </Panel>
+
+    <div class="col c1">
+      <Panel hid="hd-room" title="部屋の寸法と面" class="a-room">
+        <div class="ptab">{ROOM.map((d) => <ParamRow d={d} />)}</div>
+        <div class="faces" role="group" aria-label="面の材料">
+          <span class="fh" aria-hidden="true">面</span><span class="fh" aria-hidden="true">材料</span><span class="fh num" aria-hidden="true">吸音率 500 Hz</span>
+          {FACES.map((f) => (
+            <>
+              <label class="fn" for={`m-${f}`}>{FACE_NAMES[f]}</label>
+              <div class="sel"><select id={`m-${f}`} autocomplete="off">{MATERIALS.map((m) => <option value={m.v} selected={R0.mat[f] === m.v}>{m.name}</option>)}</select></div>
+              <span class="num fa" id={`a-${f}`}>—</span>
+            </>
+          ))}
+        </div>
+        <More id="g-room"><div class="ptab">{HEIGHTS.map((d) => <ParamRow d={d} />)}</div></More>
+      </Panel>
+    </div>
+
+    <div class="col c2">
+      <Panel hid="hd-ir" title="インパルス応答" class="a-ir" fixed>
+        <div slot="aux" class="seg" id="p-zoom" role="group" aria-label="時間の幅">
+          {ZOOMS.map(([v, l]) => <button type="button" data-v={v} aria-pressed={v === 'early' ? 'true' : 'false'}>{l}</button>)}
+        </div>
+        <div class="scope rvw"><canvas id="rv-ir" data-ar="1.7" style="aspect-ratio:1.7" tabindex="0" role="img" aria-label="インパルス応答と減衰曲線" title="なぞると時刻を止め、その時刻に届いた反射の経路を部屋の図に出す（キーは左右で前後の反射、Esc で戻す）"></canvas></div>
+        <div class="lgd">
+          <span><i class="sw" aria-hidden="true"></i>直接音</span>
+          <span><i class="sw c2" aria-hidden="true"></i>初期反射（80 ms まで）</span>
+          <span><i class="sw late" aria-hidden="true"></i>後部残響</span>
+          <span><i class="sw edc" aria-hidden="true"></i>減衰曲線</span>
+          <span><i class="tri" aria-hidden="true"></i>混合時間</span>
+        </div>
+      </Panel>
+
+      <Panel hid="hd-out" title="残響時間と指標" class="a-out">
+        <dl class="metrics">
+          <div class="m m-main"><dt>残響時間（500 Hz・Eyring）</dt><dd><span id="o-rt">—</span><span class="u">s</span><span class="m-sub" id="o-rts"></span></dd></div>
+          <div class="m"><dt>T30（応答）</dt><dd><span id="o-t30">—</span><span class="u">s</span></dd></div>
+          <div class="m"><dt>EDT（応答）</dt><dd><span id="o-edt">—</span><span class="u">s</span></dd></div>
+          <div class="m"><dt>エコー</dt><dd><span id="o-echo" class="vd">—</span></dd></div>
+          <div class="m"><dt>C80（1 kHz）</dt><dd><span id="o-c80">—</span><span class="u">dB</span></dd></div>
+          <div class="m"><dt>D50（1 kHz）</dt><dd><span id="o-d50">—</span><span class="u">%</span></dd></div>
+          <div class="m"><dt>距離 / 臨界距離</dt><dd><span id="o-r">—</span> / <span id="o-rc">—</span><span class="u">m</span></dd></div>
+          <div class="m"><dt>容積</dt><dd><span id="o-v">—</span><span class="u">m³</span></dd></div>
+          <div class="m"><dt>平均自由行程</dt><dd><span id="o-mfp">—</span><span class="u">m</span></dd></div>
+        </dl>
+        <div class="tt-w"><table class="tt bands">
+          <thead><tr><th>帯域 [Hz]</th>{BANDS.map((b) => <th class="num">{hz(b)}</th>)}</tr></thead>
+          <tbody id="o-bands"></tbody>
+        </table></div>
+      </Panel>
+
+      <Panel hid="hd-snd" title="聞く" class="a-snd">
+        <div class="ptab">
+          <ChoiceRow k="dry" name="乾いた音" sub="残響のない音。手拍子・拍子木・声は合成音、ギターはギター音響モデルの音" choices={DRYS} value="clap" layout="chips" msg />
+          <ChoiceRow k="mode" name="響き" sub="楽器ページの残響は、楽器のページと同じフィードバック遅延網に、この部屋の残響時間を入れたもの" choices={MODES} value="room" layout="chips" msg />
+          <ParamRow d={VOL} />
+        </div>
+        <input type="file" id="rv-file" accept="audio/*" hidden>
+      </Panel>
+    </div>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools list={related} />
+  <script>
+    import '../tools/reverb/client';
+  </script>
+</SiteLayout>

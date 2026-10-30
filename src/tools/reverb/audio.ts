@@ -1,13 +1,15 @@
 /**
  * 音: 乾いた音に部屋のインパルス応答を畳み込んで鳴らす（Web Audio の ConvolverNode）。
  * インパルス応答は AudioContext と同じ標本化周波数で作る（ConvolverNode は違う周波数の応答を受け付けない）。
- * 大きさは応答のエネルギーで割ってそろえる（部屋や位置を変えても全体の大きさが大きく変わらないように。仮）
+ * 大きさは応答のエネルギーで割ってそろえる（部屋や位置を変えても全体の大きさが大きく変わらないように）
  */
 
 /** 鳴らし直すときに前の音を消す時間 [s] */
 const FADE = 0.03;
 /** 鳴り始めまでの余裕 [s] */
 const LEAD = 0.03;
+/** 音量 0 dB の倍率（乾いた音の最大 1 を、これだけ下げて出す） */
+const GAIN = 0.6;
 
 /** 聞き方: 部屋の応答・楽器のページの残響（左右）・乾いた音のまま */
 export type Listen = 'room' | 'fdn' | 'dry';
@@ -21,6 +23,8 @@ export class RoomAudio {
   private norm = 1;
   /** 最後に鳴らし始めた時刻（AudioContext の目盛り） */
   t0 = 0;
+  /** ブラウザや OS が AudioContext を止めたとき（lib/pause.ts の autoPause が入れる） */
+  onLost: (() => void) | null = null;
 
   /** 標本化周波数（作る前は 48 kHz とみなす） */
   get fs(): number {
@@ -33,6 +37,9 @@ export class RoomAudio {
       this.ctx = c;
       this.out = c.createGain();
       this.out.connect(c.destination);
+      c.onstatechange = () => {
+        if (c.state !== 'running') this.onLost?.();
+      };
     }
     if (this.ctx.state === 'suspended') void this.ctx.resume();
     return this.ctx;
@@ -57,8 +64,8 @@ export class RoomAudio {
       for (const v of x) e += v * v;
     });
     e /= ch.length;
-    /* 応答のエネルギー（1 m 先の直接音を 1 とした標本の 2 乗和）で割る。0.25 は余裕 */
-    this.norm = 0.25 / Math.sqrt(Math.max(e, 1e-12));
+    /* 応答のエネルギー（1 m 先の直接音を 1 とした標本の 2 乗和）で割る。白色雑音なら乾いた音と同じ大きさになる */
+    this.norm = GAIN / Math.sqrt(Math.max(e, 1e-12));
     const v = c.createConvolver();
     v.normalize = false;
     v.buffer = b;
@@ -83,7 +90,7 @@ export class RoomAudio {
       g = c.createGain();
     s.buffer = buf;
     s.connect(g);
-    g.gain.value = 10 ** (vol / 20) * (mode === 'dry' ? 0.25 : this.norm);
+    g.gain.value = 10 ** (vol / 20) * (mode === 'dry' ? GAIN : this.norm);
     if (mode === 'dry' || !this.conv) g.connect(this.out as GainNode);
     else g.connect(this.conv);
     s.start(t);
