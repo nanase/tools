@@ -39,7 +39,7 @@ const DRYS = [
   <div class="tgrid">
     <Panel hid="hd-fig" title="部屋（上から）" class="a-fig" fixed>
       <div slot="aux" class="seg">
-        <button type="button" id="playBtn" aria-pressed="false" title="乾いた音に応答を畳み込んで鳴らす"><span class="led" id="playLed" aria-hidden="true"></span><span>聞く</span></button>
+        <button type="button" id="runBtn" aria-pressed="true" title="波面の動きを止める・再び動かす"><span class="led on" id="runLed" aria-hidden="true"></span><span id="runT">RUN</span></button>
       </div>
       <div class="scn" id="p-preset" data-nosave role="group" aria-label="部屋の例">
         <span class="scn-l" aria-hidden="true">部屋の例</span>
@@ -115,6 +115,9 @@ const DRYS = [
       </Panel>
 
       <Panel hid="hd-snd" title="聞く" class="a-snd">
+        <div slot="aux" class="seg">
+          <button type="button" id="playBtn" aria-pressed="false" title="乾いた音に応答を畳み込んで鳴らす"><span class="led" id="playLed" aria-hidden="true"></span><span>聞く</span></button>
+        </div>
         <div class="ptab">
           <ChoiceRow k="dry" name="乾いた音" sub="残響のない音。手拍子・拍子木・声は合成音、ギターはギター音響モデルの音" choices={DRYS} value="clap" layout="chips" msg />
           <ChoiceRow k="mode" name="響き" sub="楽器ページの残響は、楽器のページと同じフィードバック遅延網に、この部屋の残響時間を入れたもの" choices={MODES} value="room" layout="chips" msg />

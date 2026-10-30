@@ -218,6 +218,8 @@ const S = {
   t: 0,
   /** 応答のグラフで時刻を止めている間 */
   hold: false,
+  /** 波面を動かす（動きを減らす設定なら止めて始める） */
+  run: !RM.matches,
   pick: -1,
   hot: null as 'src' | 'rcv' | null,
   /** キーで動かす点 */
@@ -241,7 +243,7 @@ const earlyT = (d: IrData & { dur: number }) =>
 
 function status(): void {
   const lp = tLoop(room),
-    slow = RM.matches ? 0 : Math.round(4 / lp);
+    slow = S.run ? Math.round(4 / lp) : 0;
   txt('#s-t', ms(S.t));
   txt('#s-spd', slow ? `1/${slow}` : '止めています');
   const pk = $('#s-pick');
@@ -314,10 +316,18 @@ function frame(now: number): void {
   const dt = Math.min(0.1, (now - last) / 1000),
     lp = tLoop(room);
   last = now;
-  if (!S.hold) S.t = RM.matches ? 0.45 * lp : (S.t + (dt * lp) / 4) % lp;
+  if (!S.hold && S.run) S.t = (S.t + (dt * lp) / 4) % lp;
   if (seen) draw();
   requestAnimationFrame(frame);
 }
+/** 動きを止める・再び動かす（止めても、なぞる・ドラッグはそのまま使える） */
+function setRun(on: boolean): void {
+  S.run = on;
+  $('#runBtn').setAttribute('aria-pressed', String(on));
+  $('#runLed').classList.toggle('on', on);
+  txt('#runT', on ? 'RUN' : 'STOP');
+}
+$('#runBtn').addEventListener('click', () => setRun(!S.run));
 watchTheme(draw);
 addEventListener('resize', draw);
 
@@ -569,4 +579,6 @@ function syncMode(): void {
 for (const [f, el] of sels) el.value = room.mat[f];
 heightMax();
 changed();
+setRun(S.run);
+if (!S.run) S.t = 0.45 * tLoop(room);
 requestAnimationFrame(frame);
