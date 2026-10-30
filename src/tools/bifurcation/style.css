@@ -1,0 +1,66 @@
+/* 分岐図のページだけのスタイル（共通は src/styles/site.css） */
+
+/* 枠の並び。スマホは 写像と分岐図 → 写像 → 音 → Feigenbaum 定数 → 式。
+   PC は上に写像と分岐図（全幅）、左の列に写像と音、右の列に Feigenbaum 定数、その下に式（全幅） */
+.a-fig{order:1}.a-map{order:2}.a-snd{order:3}.a-fg{order:4}.a-thy{order:5}
+@media (min-width:1000px){
+  .tgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr);grid-template-areas:"fig fig" "c1 c2" "thy thy";align-items:start}
+  .a-fig{grid-area:fig}.c1{grid-area:c1}.c2{grid-area:c2}.a-thy{grid-area:thy}
+}
+
+/* 拡大の行 */
+.zrow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:10px}
+.zl{font-size:12.5px;color:var(--ink-3);margin-right:2px}
+.zchips{display:contents}
+.zrow .chip{font-family:var(--sans)}
+.zrow .chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--surface)}
+.zrow .chip:disabled{opacity:.35;cursor:default}
+.zmode{margin-left:auto}
+.zmode button{font-family:var(--sans)}
+
+/* 4 面。クモの巣図（正方形）の右に分岐図（縦の x を共有）、下に縦向きの時系列（横の x を共有）、分岐図の下にリアプノフ指数（r を共有） */
+.quad{display:grid;gap:14px}
+.q{display:flex;flex-direction:column;min-width:0}
+.vh{display:flex;flex-wrap:nowrap;justify-content:space-between;gap:2px 10px;margin:0 0 5px;font-size:12.5px;font-weight:700;color:var(--ink-2);white-space:nowrap}
+.vh span{font-weight:400;color:var(--ink-3);font-family:var(--mono)}
+.vh i{font-family:var(--math);font-size:1.08em}
+.quad canvas{display:block;width:100%;border:1px solid var(--line);border-radius:var(--r);box-shadow:inset 0 1px 3px rgb(0 0 0 / .19);background:var(--screen)}
+.quad canvas.drag{cursor:ew-resize;touch-action:pan-y}
+.quad canvas.drag:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+.zoomdrag #cv-bif{cursor:crosshair;touch-action:none}
+#cv-cob{aspect-ratio:1/1}
+#cv-bif{aspect-ratio:2/1}
+#cv-ts{aspect-ratio:1/1.2}
+#cv-ly{aspect-ratio:2.6/1}
+@media (min-width:760px){
+  .quad{grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:8px 10px}
+  /* 分岐図の高さはクモの巣図に合わせる（縦の x を共有するため） */
+  #cv-bif{aspect-ratio:auto;flex:1 1 0;height:0;min-height:0}
+}
+.a-out{margin-top:12px}
+
+/* 掃引 */
+.tp{margin-top:14px}
+
+/* Feigenbaum 定数の表 */
+.ftw{overflow-x:auto}
+.ft{width:100%;border-collapse:collapse;font:500 12.5px/1.5 var(--mono);font-variant-numeric:tabular-nums}
+.ft th{font-family:var(--sans);font-weight:700;color:var(--ink-2);text-align:right;padding:3px 6px;border-bottom:1px solid var(--line-2);white-space:nowrap}
+.ft th i{font-family:var(--math);font-size:1.08em}
+.ft td{text-align:right;padding:2px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
+.ft th:first-child,.ft td:first-child{text-align:left}
+.ft tbody tr[data-n]{cursor:pointer}
+.ft tbody tr[data-n]:hover td{background:var(--inset)}
+.ft tr.on td{background:var(--ink);color:var(--surface)}
+.ft .lim td{border-bottom:0;color:var(--ink-3)}
+.ft .lim td b{color:var(--ink);font-weight:500}
+.ft-none{margin:8px 0;color:var(--ink-3);font-size:13px}
+
+/* 式（見出しの下の帯） */
+.eq{font:15px/1.3 var(--math);color:var(--ink)}
+.eq i{font-style:italic}
+
+/* 音 */
+.snd-msg{margin:0 8px 6px}
+.snd-msg:empty{display:none}
+@media (max-width:759px){#cv-ts{aspect-ratio:1/1}}
