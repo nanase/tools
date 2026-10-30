@@ -1,0 +1,133 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import More from '../components/More.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import { order, TOOLS } from '../data/tools';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import { gridSvg } from '../lib/scope';
+import '../tools/doppler/style.css';
+import { DIST, LSPEED, RH, SPEED, TEMP, TONE, VOL } from '../tools/doppler/params';
+import Theory from '../tools/doppler/Theory.astro';
+
+const name = 'ドップラー効果';
+/* 同じカテゴリ（準備中を含む）の後ろに、エンジン音響モデルと、ほかのカテゴリの公開中のツールを並べる */
+const CAT = '音響';
+const related = [
+  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'doppler')),
+  ...TOOLS.filter((t) => t.id === 'engine'),
+  ...TOOLS.filter((t) => t.c !== CAT && t.id !== 'engine' && !t.s),
+];
+const desc =
+  '救急車のサイレンやエンジンの音源が道路を走り、すれ違うときに聞こえる音の高さと大きさの変化を計算して鳴らします。音速を超えたときのマッハ円錐も見られます。';
+---
+<SiteLayout title={name} tool={{ id: 'doppler', name }} description={desc} note="音はこの端末の中で作り、送信しません。">
+  <PageTitle title={name}>{desc}</PageTitle>
+  <div class="mini" aria-hidden="true"><span><i>f</i><b id="mF">—</b></span><span><i>M</i><b id="mM">—</b></span><span><i>L</i><b id="mL">—</b></span></div>
+
+  <div class="tgrid">
+    <Panel hid="hd-fig" title="道路と波面" class="a-fig" fixed>
+      <div slot="aux" class="seg"><button type="button" id="moveBtn" aria-pressed="true" title="音源を走らせる・止める">走らせる</button></div>
+      <div class="sbar">
+        <span class="stag"><i class="sw c2" aria-hidden="true"></i>波面</span>
+        <span class="stag"><i class="sw" aria-hidden="true"></i>マッハ円錐</span>
+        <span class="stag"><i class="sw dash" aria-hidden="true"></i>いま聞こえる音の出どころ</span>
+        <span class="stag right">ドラッグ: 聞き手・音源</span>
+      </div>
+      <div class="scope road"><canvas id="road" role="img" aria-label="道路を上から見た図。音源の出した波面と聞き手"></canvas></div>
+    </Panel>
+
+    <div class="col c1">
+      <Panel hid="hd-fq" title="聞こえる周波数" class="a-fq">
+        <p slot="aux" class="aux">すれ違いの前後</p>
+        <div class="sbar">
+          <span class="stag"><i class="sw" aria-hidden="true"></i>聞こえる <i>f</i> <b id="f-vd"></b>/div</span>
+          <span class="stag"><i class="sw dash" aria-hidden="true"></i><i>f</i><sub>0</sub> <b id="f-f0"></b></span>
+          <span class="stag">X <b id="f-td"></b>/div</span>
+        </div>
+        <div class="scope">
+          <svg viewBox="-46 -14 462 194" id="fq-svg" role="img" aria-label="すれ違いの前後に聞こえる周波数">
+            <g set:html={gridSvg(4)} />
+            <g class="cv"></g>
+          </svg>
+        </div>
+      </Panel>
+
+      <Panel hid="hd-lv" title="音の大きさ" class="a-lv">
+        <p slot="aux" class="aux">聞き手の位置</p>
+        <div class="sbar">
+          <span class="stag"><i class="sw c2" aria-hidden="true"></i>音圧レベル <b id="l-vd">10 dB</b>/div</span>
+          <span class="stag"><i class="sw dash" aria-hidden="true"></i>距離だけ</span>
+          <span class="stag">X <b id="l-td"></b>/div</span>
+        </div>
+        <div class="scope">
+          <svg viewBox="-46 -14 462 194" id="lv-svg" role="img" aria-label="すれ違いの前後の音圧レベル">
+            <g set:html={gridSvg(4)} />
+            <g class="cv"></g>
+          </svg>
+        </div>
+      </Panel>
+    </div>
+
+    <div class="col c2">
+      <Panel hid="hd-src" title="音源" class="a-src">
+        <div class="ptab">
+          <ChoiceRow
+            k="src"
+            name="音源"
+            sub="サイレンは 960・770 Hz、警笛は 370＋660 Hz、エンジンは CT125"
+            choices={[
+              ['siren', '救急車'],
+              ['engine', 'エンジン'],
+              ['horn', '警笛'],
+              ['tone', '正弦波'],
+            ]}
+            value="siren"
+            layout="chips"
+          />
+          <ParamRow d={SPEED} />
+          <ParamRow d={DIST} />
+        </div>
+        <More id="g-src"><div class="ptab">
+          <ParamRow d={TONE} />
+          <ParamRow d={LSPEED} />
+          <ParamRow d={TEMP} />
+          <ParamRow d={RH} />
+          <ChoiceRow k="abs" name="空気の吸収" sub="ISO 9613-1。高い音ほど遠くで弱まる" choices={[['1', 'あり'], ['0', 'なし']]} value="1" />
+          <ChoiceRow k="gnd" name="地面の反射" sub="硬い地面（アスファルト）。音だけに入れる" choices={[['1', 'あり'], ['0', 'なし']]} value="1" />
+        </div></More>
+      </Panel>
+
+      <Panel hid="hd-out" title="計算結果" class="a-out">
+        <dl class="metrics c3">
+          <div class="m m-main"><dt>いま聞こえる周波数</dt><dd id="o-f"></dd></div>
+          <div class="m"><dt>近づくとき</dt><dd id="o-fb"></dd></div>
+          <div class="m"><dt>遠ざかるとき</dt><dd id="o-fa"></dd></div>
+          <div class="m"><dt>マッハ数 <i>M</i></dt><dd id="o-m"></dd></div>
+          <div class="m"><dt>距離</dt><dd id="o-r"></dd></div>
+          <div class="m"><dt>音の遅れ</dt><dd id="o-dl"></dd></div>
+          <div class="m"><dt>音圧レベル</dt><dd id="o-l"></dd></div>
+          <div class="m wide"><dt>聞こえる音</dt><dd id="o-n" class="sm"></dd></div>
+        </dl>
+      </Panel>
+
+      <Panel hid="hd-snd" title="音" class="a-snd">
+        <div slot="aux" class="seg"><button type="button" id="playBtn" aria-pressed="false" title="聞き手の位置の音を鳴らす・止める"><span class="led" id="playLed" aria-hidden="true"></span><span id="playT">鳴らす</span></button></div>
+        <div class="ptab"><ParamRow d={VOL} /></div>
+        <p class="msg er snd-msg" id="snd-msg" aria-live="polite"></p>
+      </Panel>
+    </div>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools list={related} />
+  <script>
+    import '../tools/doppler/client';
+  </script>
+</SiteLayout>

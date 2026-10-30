@@ -1,5 +1,5 @@
 ---
-// 動作原理と式（下書き。デザインが決まってからページに組み、文を削る）
+// 動作原理と式
 const fr = (a: string, b: string) => `<mfrac><mrow>${a}</mrow><mrow>${b}</mrow></mfrac>`;
 const sq = (s: string) => `<msup><mrow>${s}</mrow><mn>2</mn></msup>`;
 const bx = (s: string) => `<mi mathvariant="bold">${s}</mi>`;
@@ -67,7 +67,8 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
   <tbody>
     <tr><td>救急車のサイレン</td><td>ピー 960 Hz・ポー 770 Hz を 0.65 s ずつ、ビブラート 10 Hz<Fragment set:html={rf(5)} /></td><td>前方 20 m で 90〜120 dB<Fragment set:html={rf(5)} /></td></tr>
     <tr><td>電車の警笛</td><td>370 Hz ± 20 Hz と 660 Hz ± 30 Hz（EN 15153-2 の組み合わせの 1 つ）<Fragment set:html={rf(6)} /></td><td>25 m で 101〜109 dB(C)<Fragment set:html={rf(6)} /></td></tr>
-    <tr><td>エンジン</td><td><a href="/tools/engine/">エンジン音響モデル</a>の CT125（JA65）を、速さに合うギアと回転数で回す</td><td>模型の音圧（排気口から 0.5 m）</td></tr>
+    <tr><td>エンジン</td><td><a href="/tools/engine/">エンジン音響モデル</a>の CT125（JA65）を、速さに合うギアと回転数で回す</td><td>模型の音圧（排気口から 0.5 m で 104〜111 dB）</td></tr>
+    <tr><td>正弦波</td><td>100〜4000 Hz</td><td>10 m で 90 dB</td></tr>
   </tbody>
 </table></div>
 
@@ -78,7 +79,9 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
   <li>空気の吸収は 1 次の低域通過 4 段で近似し、吸収が 10 dB になる周波数で式に合わせる。10 dB までの周波数では式との差が 2.5 dB 以内（20 m〜3 km）</li>
   <li>地面は平らで硬く、反射の係数は 1</li>
   <li>サイレンは奇数倍音（矩形波に近い）、警笛はすべての倍音（のこぎり波に近い）。ビブラートの深さは 30 %。大きさは範囲の中ほど（サイレン 20 m で 105 dB、警笛 25 m で 105 dB）</li>
-  <li>エンジンは 5500 rpm を超えたら上のギアにする</li>
+  <li>エンジンは 5500 rpm を超えたら上のギアにする。グラフの大きさは 0.5 m で 108 dB とする</li>
+  <li>高さはサイレン 2 m・警笛 3 m・エンジン 0.3 m・正弦波 1 m、聞き手の耳 1.5 m</li>
+  <li>図の波面はストロボで照らしたように描く。図の幅の 1/12 ごとに出た 9 本を、2 秒で 1 間隔ぶん広げる</li>
 </ul>
 
 <h3>出典</h3>

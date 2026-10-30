@@ -147,6 +147,14 @@ export const TOOLS: Tool[] = [
     k: 'noise generator 雑音 ノイズ white ホワイトノイズ 白色雑音 pink ピンクノイズ 1/f brown ブラウンノイズ red 赤色雑音 blue ブルー violet バイオレット grey gray グレー velvet ベルベット lfsr 線形帰還シフトレジスタ m系列 m-sequence prbs 疑似乱数 原始多項式 ファミコン nes ゲームボーイ gameboy sn76489 スペクトル スペクトログラム spectrogram オーディオ audio',
   },
   {
+    id: 'doppler',
+    c: '音響',
+    t: 'ドップラー効果',
+    d: 'すれ違う救急車やエンジンの音の高さと大きさの変化を計算して鳴らします。',
+    ic: 'dp',
+    k: 'doppler effect ドップラー 救急車 サイレン siren 電車 警笛 horn エンジン engine すれ違い 音速 マッハ mach 衝撃波 マッハ円錐 mach cone ソニックブーム sonic boom 波面 空気の吸収 air absorption iso 9613 地面の反射 ground reflection 遅延線 delay line オーディオ audio',
+  },
+  {
     id: 'guitar',
     c: '音響モデル',
     t: 'ギター音響モデル',

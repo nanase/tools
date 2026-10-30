@@ -545,6 +545,19 @@ export const ART: Record<string, Art> = {
       )
     );
   },
+  /* ドップラー効果: 道路を右へ走る音源（マッハ 0.5）の波面。前で詰まり後ろで広がる。波面はストロボのようにゆっくり広がる */
+  dp(t) {
+    const g = 8,
+      ph = mod(t / 1.2, 1),
+      sx = 78;
+    let s = P('c d', 'M4 24H116');
+    for (let k = 0; k < 7; k++) {
+      const a = (k + ph) * g,
+        u = (k + ph) / 7;
+      s += `<circle class="b" cx="${r1(sx - 0.5 * a)}" cy="24" r="${r1(a)}" opacity="${r1(Math.min(1, u * 8) * (1 - u))}"/>`;
+    }
+    return `${s}<path class="fc" d="M${sx - 4} 22h8v4h-8Z"/><circle class="fa" cx="104" cy="38" r="2.2"/>`;
+  },
   /* ノイズジェネレータ: ホワイトノイズの波形と、LFSR のセル・⊕ の帰還・出力のビット列。ビットが 1 つずつ送られる */
   nz(t) {
     const k = Math.floor(t / 0.2),
@@ -1117,6 +1130,7 @@ export const LOOP: Record<string, number> = {
   sp: 2,
   fm: TAU / 1.5,
   nz: 2,
+  dp: 1.2,
   gt: 3,
   pn: 0.32 * 7 + 1.2,
   pa: 3,

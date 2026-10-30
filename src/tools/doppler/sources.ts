@@ -11,20 +11,26 @@ export const paOf = (db: number): number => 20e-6 * 10 ** (db / 20);
 /** 音源の種類 */
 export type SourceId = 'siren' | 'horn' | 'engine' | 'tone';
 
-/** 音源の諸元: 大きさ（r0 [m] での音圧レベル [dB]） */
+/** 音源の諸元: 大きさ（r0 [m] での音圧レベル [dB]）と高さ */
 export interface SourceSpec {
   v: SourceId;
   name: string;
   /** 大きさを決める距離 [m] と、そこでの音圧レベル [dB] */
   r0: number;
   db: number;
+  /** 地面からの高さ [m]（このツールで決めた） */
+  h: number;
 }
-/** 音源の一覧。大きさは範囲の中ほどにした: サイレンは保安基準の 90〜120 dB（前方 20 m）、警笛は Zöllner の EN 15153-2 の品の 101〜109 dB(C)（25 m） */
+/**
+ * 音源の一覧。大きさは範囲の中ほどにした: サイレンは保安基準の 90〜120 dB（前方 20 m）、警笛は Zöllner の EN 15153-2 の品の
+ * 101〜109 dB(C)（25 m）。エンジンの大きさは EngineSim の音（排気口から 0.5 m）の実効値で、10〜100 km/h で 104〜111 dB の中ほど
+ * （グラフと計算結果だけに使い、音は EngineSim の音圧のまま）
+ */
 export const SOURCES: readonly SourceSpec[] = [
-  { v: 'siren', name: '救急車のサイレン', r0: 20, db: 105 },
-  { v: 'horn', name: '電車の警笛', r0: 25, db: 105 },
-  { v: 'engine', name: 'エンジン', r0: 0.5, db: 0 },
-  { v: 'tone', name: '正弦波', r0: 10, db: 90 },
+  { v: 'siren', name: '救急車のサイレン', r0: 20, db: 105, h: 2 },
+  { v: 'horn', name: '電車の警笛', r0: 25, db: 105, h: 3 },
+  { v: 'engine', name: 'エンジン', r0: 0.5, db: 108, h: 0.3 },
+  { v: 'tone', name: '正弦波', r0: 10, db: 90, h: 1 },
 ];
 export const sourceOf = (v: string): SourceSpec => SOURCES.find((s) => s.v === v) ?? SOURCES[0];
 
