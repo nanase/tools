@@ -296,9 +296,6 @@ function results(): void {
   txt('#o-tds', td ? '鍵を離したあとの第 1 部分音の T60' : 'この鍵にはダンパーがない');
   html('#o-y', `${(cabs(y) * 1000).toFixed(3)}<span class="u">mm/(s·N)</span>`);
   txt('#o-ys', `第 1 部分音の周波数で、実部 ${(y.re * 1000).toFixed(3)} mm/(s·N)`);
-  html('#mF', fmtR(f1, 'Hz', 5));
-  txt('#mT', fmtR(ta, 's', 3));
-  txt('#mB', plain(B, 3, true));
   txt('#kb-note', `${noteName(k)}  ${fmtR(f1, 'Hz', 4)}`);
   /* 代入した式 */
   const f0 = Math.sqrt(s.T / s.mu) / (2 * s.L);

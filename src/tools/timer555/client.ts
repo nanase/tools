@@ -29,9 +29,6 @@ function render(v: In): void {
   html('#o-I', ro(o.I, 'A'));
   html('#o-P', ro(o.P, 'W'));
   txt('#o-Pn', o.P > 0.25 ? '1/4 W 抵抗の定格を超えます' : '');
-  txt('#mf', fmtR(o.f, 'Hz'));
-  txt('#md', `${o.D.toFixed(1)} %`);
-  txt('#mT', fmtR(o.T, 's'));
   txt('#s-vcc', fmt(vcc, 'V', 3));
   txt('#s-r1', fmt(r1, 'Ω', 3));
   txt('#s-r2', fmt(r2, 'Ω', 3));

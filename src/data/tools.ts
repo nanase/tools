@@ -349,6 +349,14 @@ export const TOOLS: Tool[] = [
     k: 'convolution 畳み込み たたみこみ 合成積 convolve kernel カーネル 核 インパルス応答 impulse response 線形時不変 lti 移動平均 moving average 相関 相互相関 cross-correlation cnn 畳み込み定理 convolution theorem フーリエ fourier fft 円状畳み込み circular convolution 確率 サイコロ dice 中心極限定理 central limit theorem 数学 math',
   },
   {
+    id: 'fft',
+    c: '数学',
+    t: 'FFT',
+    d: 'バタフライ図の上を値が流れる様子を、時間間引きと周波数間引きで見ます。',
+    ic: 'ff',
+    k: 'fft 高速フーリエ変換 fast fourier transform dft 離散フーリエ変換 バタフライ butterfly cooley tukey クーリー テューキー 時間間引き decimation in time dit 周波数間引き decimation in frequency dif gentleman sande ビット反転 bit reversal 並べ替え 回転因子 twiddle factor 基数 2 radix-2 基数 4 分割基数 split radix 計算量 演算量 n log n 複素数 complex gauss ガウス 数学 math',
+  },
+  {
     id: 'wavelet',
     c: '数学',
     t: 'ウェーブレット変換',

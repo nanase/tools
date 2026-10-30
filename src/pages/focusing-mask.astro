@@ -41,7 +41,7 @@ const related = [
 ---
 <SiteLayout title={name} tool={{ id: 'focusing-mask', name }} description="望遠鏡にバーティノフマスクなどのピント合わせのマスクを付けたときの星の像を、波長ごとの回折で計算します。ピントのずれと光条のずれの関係を、像とグラフで確かめられます。" note="星の像は、フラウンホーファー回折を波長ごとに計算して足し合わせたものです（大気のゆらぎは近似）。">
   <PageTitle title={name}>望遠鏡の前にピント合わせのマスク（バーティノフマスクなど）を付けたときの星の像を、開口とマスクの形のとおりに波長ごとの回折で計算します。ピントをずらすと、光条や穴の像がどれだけずれるかを、カメラの映像・グラフ・横から見た光の通り道で確かめられます。</PageTitle>
-  <div class="mini" aria-hidden="true"><span>Δz<b id="mZ"></b></span><span id="mEl">e<b id="mE"></b></span><span id="mXl">推定<b id="mX"></b></span></div>
+  <div class="mini" data-mini="op" aria-hidden="true"><span>Δz<b id="mZ"></b></span><span id="mEl">e<b id="mE"></b></span><span id="mXl">推定<b id="mX"></b></span></div>
 
   <div class="tgrid">
 

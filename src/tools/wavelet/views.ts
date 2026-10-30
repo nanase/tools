@@ -15,7 +15,7 @@ const W = 400;
  * 行 j は j 段まで分けた係数の並び [a_j | d_j | d_(j−1) | … | d_1]（どの係数も同じ間隔）。
  * 動かすと、1 つ上の行の近似の上をフィルタが 2 つずつ進み、近似と詳細を 1 組ずつ作る
  */
-export function initSteps(onLevel: (s: string) => void): void {
+export function initSteps(): void {
   const N = 128,
     J = 5,
     RH = 46,
@@ -108,7 +108,6 @@ export function initSteps(onLevel: (s: string) => void): void {
     pp.classList.toggle('on', S.run);
     pp.title = S.run ? '一時停止' : '分解の再生';
     pp.setAttribute('aria-label', pp.title);
-    onLevel(`${lv} / ${J}`);
   }
 
   function tick(now: number): void {

@@ -28,7 +28,7 @@ interface Sel {
   f: number;
 }
 
-export function initPlane(onBox: (s: string) => void): void {
+export function initPlane(): void {
   const S = { sig: 'click' as Sig, L: 32, w: 'haar' as Wav, log: false };
   let x = sample(S.sig, N),
     tiles: [Tile[], Tile[]] = [[], []],
@@ -155,7 +155,6 @@ export function initPlane(onBox: (s: string) => void): void {
     });
     if (!b || !s) {
       txt('#pl-rd', '');
-      onBox('—');
       return;
     }
     const J = c.d.length,
@@ -164,7 +163,6 @@ export function initPlane(onBox: (s: string) => void): void {
       f1 = (b.f1 * FS) / 2,
       fd = f1 < 10 ? 2 : 1;
     txt('#pl-rd', `${nm}  t ${fx(b.t0, 3)}〜${fx(b.t1, 3)} s  f ${fx(f0, fd)}〜${fx(f1, fd)} Hz  |c| ${fx(b.v, 3)}`);
-    onBox(`${s.side ? tileName(b, J) : 'STFT'} ${Number(f0.toPrecision(3))}〜${Number(f1.toPrecision(3))} Hz`);
   }
 
   /* 触れる・押して選ぶ・矢印キー */

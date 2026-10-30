@@ -3,14 +3,13 @@
  * 3 時間と周波数の平面（STFT と DWT の箱）・4 隣り合う 2 つの平均と差・5 分解を段ごとに。枠ごとに入力を持ち、ほかの枠とは値を共有しない
  */
 import { initToolPage } from '../../lib/tool-page';
-import { txt } from './fig';
 import { initPlane } from './plane-view';
 import { initHaar8, initOrder, initSlide } from './principle-view';
 import { initSteps } from './views';
 
 initToolPage();
 initOrder();
-initSlide((s) => txt('#m-pr', s));
-initPlane((s) => txt('#m-box', s));
+initSlide();
+initPlane();
 initHaar8();
-initSteps((s) => txt('#m-lev', s));
+initSteps();

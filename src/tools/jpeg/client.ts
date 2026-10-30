@@ -4,7 +4,7 @@
  */
 import { Choice } from '../../lib/choice';
 import { $, $$ } from '../../lib/dom';
-import { fmtR, minus, plain, ro } from '../../lib/format';
+import { minus, plain, ro } from '../../lib/format';
 import { ParamGroup } from '../../lib/param';
 import { nice } from '../../lib/scope';
 import { initToolPage } from '../../lib/tool-page';
@@ -42,7 +42,6 @@ const int = (v: number): string => minus(String(Math.round(v) || 0));
 /** 実数を小数 n 桁で */
 const fix = (v: number, n = 2): string => minus((Math.abs(v) < 0.5 * 10 ** -n ? 0 : v).toFixed(n));
 const bytesH = (n: number): string => (n < 1000 ? `${Math.round(n)}<span class="u">B</span>` : ro(n, 'B'));
-const bytesT = (n: number): string => (n < 1000 ? `${Math.round(n)} B` : fmtR(n, 'B'));
 const dbH = (v: number): string => (Number.isFinite(v) ? `${sig(v)}<span class="u">dB</span>` : '∞');
 const CN = ['Y', 'Cb', 'Cr'];
 /** ビット数の地図の濃淡（テーマに依らない）: 黒 → 紫 → 白。明るいほど多い */
@@ -459,9 +458,6 @@ function showResults(): void {
   txt('#o-hds', `DQT ${len('DQT')}・DHT ${len('DHT')}・ほか ${n - e.ecs - len('DQT') - len('DHT')}`);
   html('#o-mcu', `${e.mx * e.my}<span class="u">個</span>`);
   txt('#o-mcus', `${8 * e.hmax}×${8 * e.vmax} 画素・Y ${e.hmax * e.vmax}、Cb 1、Cr 1 ブロック`);
-  txt('#mS', bytesT(n));
-  txt('#mB', sig(bits / px, 3));
-  txt('#mP', Number.isFinite(r.psnrY) ? `${sig(r.psnrY)} dB` : '∞');
   txt('#iv-mcu', `${8 * e.hmax}×${8 * e.vmax}`);
   legend();
 }

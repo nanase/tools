@@ -39,7 +39,6 @@ const COUPLERS = [
 ---
 <SiteLayout title={name} tool={{ id: 'organ', name }} description="パイプオルガンを物理モデルで鳴らします。フルー管のエアジェットとリード管の舌の自励振動、管の共鳴、風箱の風と教会の残響から、管の振動と音を計算します。" note="音と計算結果は、論文の模型を簡略化した物理モデルによるものです。">
   <PageTitle title={name}>フルー管（唇管）は、口から吹き出す空気の薄い流れ（ジェット）が管の中の音で揺れ、唇の内と外へ振り分けられて音を保つ自励振動として、リード管（舌管）は、真鍮の舌がシャロットに当たって風を断続させる自励振動として計算します。管の長さと太さ、口の寸法、風圧から、管ごとの音が決まります。ストップを選んで鍵を押すと、その管が鳴ります。教会の残響を付けて、曲の演奏もできます。</PageTitle>
-  <div class="mini" aria-hidden="true"><span><i>f</i><sub>1</sub><b id="mF"></b></span><span><i>θ</i><b id="mTh"></b></span><span><i>U</i><sub>j</sub><b id="mU"></b></span></div>
 
   <div class="tgrid">
     <Panel hid="hd-pp" title="管と鍵盤" class="a-pp" fixed>

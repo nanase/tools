@@ -132,7 +132,7 @@ export function initOrder(): void {
 }
 
 /* ================= 2 短い波を重ねて、掛けて足す ================= */
-export function initSlide(onProbe: (s: string) => void): void {
+export function initSlide(): void {
   const pnl = $('.a-sl'),
     xs = $<SVGSVGElement>('#sl-x'),
     ps = $<SVGSVGElement>('#sl-p'),
@@ -215,7 +215,6 @@ export function initSlide(onProbe: (s: string) => void): void {
       '#sl-rd',
       `t ${(u / PN).toFixed(2)} s  ${f.toFixed(fd)} Hz  幅 ${(4 * s * 1000).toFixed(0)} ms  合計 ${v.toFixed(2)}`,
     );
-    onProbe(`${f.toFixed(fd)} Hz`);
     /* スカログラムの印: 位置の縦線、幅の帯（±2s）、丸 */
     const mx = ((u + 0.5) / PN) * W,
       my = yOfJ(S.j);

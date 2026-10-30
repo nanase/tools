@@ -211,9 +211,6 @@ function outputs(): void {
     html('#o-nis', DASH);
     txt('#o-niss', '15 回観測すると判定する');
   }
-  txt('#m-rms', st ? fmtR(st.rms, 'm', 3) : DASH);
-  txt('#m-kp', k ? num(f.K[0], 3) : DASH);
-  txt('#m-nis', st ? num(st.nis, 3) : DASH);
   html('#k-st', running ? '<span class="led on" aria-hidden="true"></span>動作中' : '');
 }
 
