@@ -100,7 +100,7 @@ export const BASES: readonly (readonly [Basis, string])[] = [
   ['dft', 'DFT'],
   ['mdct', 'MDCT'],
 ];
-/** MDCT の枠の半分（AAC の長い枠と同じ 2048 点の枠） */
+/** MDCT の枠の半分（2048 点の枠を 1024 点ずつずらす） */
 export const MDCT_M = 1024;
 
 /** 係数の 1 列と、そこから音へ戻す関数 */
