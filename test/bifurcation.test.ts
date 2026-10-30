@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { Density, offset, PASSES } from '../src/tools/bifurcation/density';
 import {
   ALPHA,
   ALPHA4,
@@ -264,5 +265,21 @@ describe('値の列の音', () => {
     /* 半音 5（ファ）はミ（4）へ、半音 6 はソ（7）へ（同じ近さなら下を残す） */
     expect(pitchOf(5 / 24, q)).toBeCloseTo(220 * 2 ** (4 / 12), 9);
     expect(pitchOf(6.4 / 24, q)).toBeCloseTo(220 * 2 ** (7 / 12), 9);
+  });
+});
+
+describe('分岐図の濃さ', () => {
+  it('列の中の位置は 1 回目が中央で、回を重ねると重ならずに埋まる', () => {
+    expect([0, 1, 2, 3].map(offset)).toEqual([0.5, 0, 0.75, 0.25]);
+    expect(new Set(Array.from({ length: PASSES }, (_, k) => offset(k))).size).toBe(PASSES);
+  });
+  it('周期 1 の点は画素にかかる割合の濃さになる（境目なら上下に半分ずつ）', () => {
+    /* r = 2.5 の不動点 0.6 は、縦 0〜1 を 100 画素にした 39 と 40 の境目 */
+    const d = new Density(L, { r0: 2.5, r1: 2.5, y0: 0, y1: 1 }, 1, 100, 500, 400);
+    while (!d.done) d.work(Number.POSITIVE_INFINITY);
+    const a = Array.from(d.ink, (v) => v / d.passes);
+    expect(a[39]).toBeCloseTo(0.5, 6);
+    expect(a[40]).toBeCloseTo(0.5, 6);
+    expect(a.reduce((x, y) => x + y)).toBeCloseTo(1, 6);
   });
 });
