@@ -127,4 +127,3 @@
 /* 知らせ（ファイルを読めない、保存できない） */
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:40;transform:translateX(-50%);max-width:calc(100vw - 32px);padding:9px 14px;border-radius:var(--r);background:var(--ink);color:var(--surface);font-size:13.5px;transition:opacity .2s}
 .toast[data-off]{opacity:0;pointer-events:none}
-@media (min-width:1000px){html.mini-on .toast{bottom:calc(var(--mini-h) + 20px)}}

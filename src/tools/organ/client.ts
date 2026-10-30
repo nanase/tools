@@ -529,8 +529,6 @@ function results(): void {
     h += mrow('走行時間 <i>τ</i>', ro(v.tau, 's', 3), `周期の ${plain(v.tau * t.fMeas, 3, true)} 倍`);
     h += mrow('<i>θ</i> = <i>U</i><sub>j</sub>/<i>fW</i>', plain(v.theta, 3, true), '大きすぎると上のモードへ跳ぶ');
     h += mrow('口の端補正 <i>M</i>', ro(v.M, 'm', 3), `音響的な長さ ${fmtR(v.Lac, 'm', 4)}`);
-    html('#mTh', plain(v.theta, 3, true));
-    html('#mU', fmtR(v.Uj, 'm/s', 3));
   } else {
     const v = reedView(t),
       rd = v.s;
@@ -547,8 +545,6 @@ function results(): void {
     h += mrow('共鳴管の第 1 共鳴', ro(v.fRes, 'Hz', 4), `鳴る高さの ${plain(v.fRes / t.fMeas, 3, true)} 倍`);
     h += mrow('閉じる圧力 <i>p</i><sub>c</sub>', ro(v.pc, 'Pa', 3), `風箱の ${plain(v.pc / chestOf(s), 3, true)} 倍`);
     h += mrow('先の開き <i>y</i><sub>0</sub>', ro(rd.y0, 'm', 3), `流れの幅 ${(rd.w * 1000).toFixed(1)} mm、Q ${rd.Q}`);
-    html('#mTh', '—');
-    html('#mU', '—');
   }
   h += mrow('立ち上がり', ro(t.rise, 's', 3), '定常の −3 dB まで');
   h += mrow('音圧（1 m 先）', ro(t.rms, 'Pa', 3), `${(20 * Math.log10(t.rms / 2e-5)).toFixed(1)} dB SPL`);
@@ -558,7 +554,6 @@ function results(): void {
     '調律のあとの残り',
   );
   html('#res', h);
-  html('#mF', fmtR(t.fMeas, 'Hz', 5));
   txt('#pp-note', `${s.name}  ${noteName(key)}  ${fmtR(t.fMeas, 'Hz', 4)}`);
 }
 

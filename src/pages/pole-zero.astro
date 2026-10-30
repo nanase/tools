@@ -29,7 +29,7 @@ const related = [...pub.filter((t) => t.c === 'デジタルフィルタ'), ...pu
 ---
 <SiteLayout title={name} tool={{ id, name }} note="特性・係数・共振の値は、極と零点の位置から倍精度で求めた参考値です。" description={desc}>
   <PageTitle title={name}>z 平面に極と零点を置いて動かし、デジタルフィルタの周波数特性（振幅・位相・群遅延）、インパルス応答、伝達関数の係数と双2次の縦続を求めます。周波数特性の上の点から極と零点へ引いた線の長さと角度で、振幅と位相が決まる様子を見られます。ホワイトノイズや鋸歯状波に掛けた音も聞けます。</PageTitle>
-  <div class="mini" aria-hidden="true"><span id="mst"></span><span>max |<i>H</i>|<b id="mmx"></b></span><span>次数<b id="mord"></b></span></div>
+  <div class="mini" data-mini="op" aria-hidden="true"><span id="mst"></span><span>max |<i>H</i>|<b id="mmx"></b></span><span>次数<b id="mord"></b></span></div>
 
   <div class="tgrid">
     <div class="col c-a">

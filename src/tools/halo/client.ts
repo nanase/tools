@@ -394,7 +394,6 @@ function stats(): void {
   if (!R) return;
   const [a, u] = fmtN(R.rays);
   txt('#v-rays', `${a} ${u.replace(' 本', '')}`);
-  txt('#mR', `${a} ${u}`);
   html('#o-r', rv(a, u));
   txt('#o-rs', R.rays >= R.maxRays ? 'ためる上限に達した' : 'ためながら描き直している');
   if (rate) html('#o-sp', rv(sig(rate / 1000, 3, true), 'M 本/s'));
@@ -531,20 +530,17 @@ function updateResults(): void {
     deg = (v: number, n = 2) => rv(fix(v, n), '°');
   txt('#v-src', m ? 'MOON' : 'SUN');
   txt('#v-e', `${minus(String(e))}°`);
-  txt('#mE', `${minus(String(e))}°`);
   const p = parDist(e);
   txt('#o-pt', `幻${sp}の離角`);
   if (Number.isNaN(p)) {
     html('#o-p', '出ない');
     txt('#o-ps', `高度 ${fix(PAR_MAX, 1)}° 以上では出ない（次の側面で全反射する）`);
-    txt('#mP', '—');
   } else {
     html('#o-p', deg(p));
     txt(
       '#o-ps',
       `方位の差 ${fix(parAz(e))}°（Bravais の実効屈折率 ${fix(Math.sqrt(N550 ** 2 - Math.sin(e * D) ** 2) / Math.cos(e * D), 4)}）`,
     );
-    txt('#mP', `${fix(p)}°`);
   }
   const cz = czaAlt(e),
     ch = chaAlt(e);

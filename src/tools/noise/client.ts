@@ -815,9 +815,6 @@ function measure(): void {
   html('#o-ku', Number.isFinite(st.kurt) ? plain(st.kurt, 4, true) : '—');
   txt('#o-kut', '正規分布は 3');
   txt('#o-aux', `直近 ${fmtR(cnt / fs, 's', 3)}`);
-  txt('#mS', fit ? `${signed(fit.slope)} dB/oct` : '—');
-  txt('#mR', `${dbT(r, 1)} dBFS`);
-  txt('#mC', Number.isFinite(cf) ? `${cf.toFixed(1)} dB` : '—');
   /* ベルベットを疎にしてピークをフルスケールに抑えたときは、実効値が下がる */
   const low = rmsOf(spec) < RMS * 0.999;
   txt('#o-rmsn', low ? `ピークを 1 に抑えたため、${dbT(dbfs(Math.SQRT2 * rmsOf(spec)), 1)} dBFS` : '');
