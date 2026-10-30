@@ -262,6 +262,54 @@ const bowStroke = (u: number): { pos: number; v: number } => {
   return { pos: p / (1 - r), v };
 };
 
+/** 分岐図の図柄の地（周期 1〜8 の枝の線とカオスの点。初めて描くときに作る） */
+let bf0 = '';
+function BF(): string {
+  if (bf0) return bf0;
+  const X = (r: number): number => 4 + (112 * (r - 2.9)) / 1.1,
+    Y = (x: number): number => 44 - 40 * x,
+    orb = (r: number, p: number): number[] => {
+      let x = 0.3;
+      for (let i = 0; i < 6000; i++) x = r * x * (1 - x);
+      const o: number[] = [];
+      for (let i = 0; i < p; i++) {
+        x = r * x * (1 - x);
+        o.push(x);
+      }
+      return o.sort((a, b) => a - b);
+    };
+  /* 周期 p の区間 [a, b]。端は収束が遅いので少し内側から */
+  const SEG: [number, number, number][] = [
+    [2.9, 3, 1],
+    [3, 1 + Math.sqrt(6), 2],
+    [1 + Math.sqrt(6), 3.5441, 4],
+    [3.5441, 3.5644, 8],
+  ];
+  let line = '';
+  for (const [a, b, p] of SEG) {
+    const n = Math.max(2, Math.round((X(b) - X(a)) / 2)),
+      br: [number, number][][] = Array.from({ length: p }, () => []);
+    for (let i = 0; i <= n; i++) {
+      const r = a + 0.002 + ((b - a - 0.004) * i) / n,
+        o = orb(r, p);
+      for (let k = 0; k < p; k++) br[k].push([X(r), Y(o[k])]);
+    }
+    line += br.map(pl).join('');
+  }
+  let dot = '';
+  for (let c = X(3.5644) + 1.2; c <= 116; c += 1.2) {
+    const r = 2.9 + (1.1 * (c - 4)) / 112;
+    let x = 0.3;
+    for (let i = 0; i < 400; i++) x = r * x * (1 - x);
+    for (let i = 0; i < 16; i++) {
+      x = r * x * (1 - x);
+      dot += `M${r1(c)} ${r1(Y(x))}h0`;
+    }
+  }
+  bf0 = P('c t', line) + P('c t', dot);
+  return bf0;
+}
+
 export const ART: Record<string, Art> = {
   /* タイマIC 555: 出力（周期 36、High 24）と C1 の電圧。時間が流れる */
   sq(t) {
@@ -1156,6 +1204,20 @@ export const ART: Record<string, Art> = {
       )
     );
   },
+  /* 分岐図: ロジスティック写像の枝分かれ（周期 1〜8 は線、その先のカオスは点）。r の縦線が左から右へ動き、その r の軌道の点を光らせる */
+  bf(t) {
+    /* r は丸めた位置から決める（カオスの軌道は r のわずかな差で変わるので、1 周後も同じ絵にするため） */
+    const X = r1(4 + 112 * mod(t / LOOP.bf + 0.55, 1)),
+      r = 2.9 + (1.1 * (X - 4)) / 112;
+    let x = 0.3,
+      d = '';
+    for (let i = 0; i < 400; i++) x = r * x * (1 - x);
+    for (let i = 0; i < 24; i++) {
+      x = r * x * (1 - x);
+      d += `<circle class="fa" cx="${X}" cy="${r1(44 - 40 * x)}" r="1.4"/>`;
+    }
+    return BF() + P('a t', `M${X} 4V44`) + d;
+  },
   /* 残響: 上から見た部屋で、音源と 1 回反射の鏡像から波面が広がる。右はインパルス応答が届いた所まで */
   rv(t) {
     const X0 = 4,
@@ -1289,6 +1351,7 @@ export const LOOP: Record<string, number> = {
   svg: TAU / 2.4,
   tu: 3,
   tm: Math.PI / 1.2,
+  bf: 4,
   rv: 2.4,
   cv: 3,
   icv: 3,

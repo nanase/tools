@@ -309,6 +309,14 @@ export const TOOLS: Tool[] = [
     k: 'moon 月 満ち欠け 月齢 月相 phase 輝面比 illumination 秤動 libration 地球直下点 sub-earth 視直径 apparent diameter 近地点 遠地点 perigee apogee スーパームーン supermoon 月の出 月の入り 南中 moonrise moonset 欠け際 明暗境界 terminator クレーター crater 月の海 mare 余経度 colongitude 地球照 earthshine 月食 皆既月食 lunar eclipse 本影 半影 赤銅色 danjon 中秋の名月 十三夜 カレンダー lro lola nasa meeus 天文 astronomy',
   },
   {
+    id: 'bifurcation',
+    c: '数学',
+    t: '分岐図',
+    d: 'ロジスティック写像が周期倍分岐をくり返してカオスに至る様子を見ます。',
+    ic: 'bf',
+    k: 'bifurcation diagram 分岐図 ロジスティック写像 logistic map 正弦写像 sine map テント写像 tent map エノン写像 henon map カオスニューロン chaotic neuron tanh ガウス写像 gauss map mouse map リッカー写像 ricker map 3 次写像 cubic map クモの巣図 蜘蛛の巣図 cobweb 時系列 周期倍分岐 period doubling カオス chaos リアプノフ指数 lyapunov exponent feigenbaum ファイゲンバウム 定数 普遍性 universality 集積点 窓 周期 3 period three li-yorke sharkovskii 超安定 superstable 力学系 dynamical system 非線形 nonlinear may 数学 math',
+  },
+  {
     id: 'tuner',
     c: '楽器・調律',
     t: 'チューナー',

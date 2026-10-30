@@ -1,0 +1,113 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import More from '../components/More.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import { order, TOOLS } from '../data/tools';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/bifurcation/style.css';
+import { MAP_CHOICES, R, SCALES, SND_MODES, SPEEDS, VOL, X0, ZOOMS } from '../tools/bifurcation/params';
+import Theory from '../tools/bifurcation/Theory.astro';
+
+const name = '分岐図';
+/* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
+const CAT = '数学';
+const related = [
+  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'bifurcation')),
+  ...TOOLS.filter((t) => t.c !== CAT && !t.s),
+];
+---
+<SiteLayout title={name} tool={{ id: 'bifurcation', name }} description="ロジスティック写像・ガウス写像・エノン写像・カオスニューロンなど 9 つの写像で、パラメータを動かすと周期倍分岐をくり返してカオスに至る様子を、クモの巣図・時系列・分岐図・リアプノフ指数を連動させて見ます。Feigenbaum 定数と周期 3 の窓も拡大して確かめられ、値の列を音でも聞けます。" note="倍精度の浮動小数点で計算した参考値です。音はこの端末の中で作り、送信しません。">
+  <PageTitle title={name}>ロジスティック写像など 9 つの写像のパラメータを動かし、周期倍分岐からカオスへ至る様子をクモの巣図・時系列・分岐図・リアプノフ指数で見ます。</PageTitle>
+  <div class="mini" aria-hidden="true"><span><i id="m-sym">r</i><b id="m-r"></b></span><span>PERIOD<b id="m-p"></b></span><span><i>λ</i><b id="m-lam"></b></span></div>
+
+  <div class="tgrid">
+    <Panel hid="hd-fig" title="写像と分岐図" class="a-fig" fixed>
+      <span slot="aux" class="tp-st" id="b-st"></span>
+      <div class="sbar">
+        <span class="stag eq" id="b-eq"></span>
+        <span class="stag"><i class="sw" aria-hidden="true"></i>軌道</span>
+        <span class="stag"><i class="sw c2" aria-hidden="true"></i>λ</span>
+      </div>
+      <div class="zrow">
+        <span class="zl" aria-hidden="true">拡大</span>
+        <div class="zchips" id="b-zoom" role="group" aria-label="拡大">
+          {ZOOMS.map(([n, , t], i) => <button type="button" class="chip" data-i={i} title={t} aria-pressed={i === 0 ? 'true' : 'false'}>{n}</button>)}
+        </div>
+        <button type="button" class="chip" id="b-feig" title="Feigenbaum の段を 1 つ進め、分岐図を δ 倍に拡大する">δ 倍 ▸</button>
+        <button type="button" class="chip" id="b-back" title="1 つ前の範囲へ戻す" disabled>◂ 戻す</button>
+        <div class="seg zmode" id="b-mode" data-nosave role="group" aria-label="分岐図のドラッグ">
+          <button type="button" data-v="r" aria-pressed="true" title="ドラッグで r を動かす">r</button>
+          <button type="button" data-v="z" aria-pressed="false" title="ドラッグで囲んだ範囲を拡大する">範囲</button>
+        </div>
+      </div>
+      <div class="quad">
+        <div class="q q-cob"><h3 class="vh"><span class="vt" id="b-cobt">クモの巣図</span><span><i>x</i><sub><i>n</i></sub> → <i>x</i><sub><i>n</i>+1</sub></span></h3><canvas id="cv-cob" role="img" aria-label="クモの巣図"></canvas></div>
+        <div class="q q-bif"><h3 class="vh">分岐図<span><i id="b-sym">r</i> = <b id="b-r"></b></span></h3><canvas id="cv-bif" class="drag" tabindex="0" role="slider" aria-label="分岐図（ドラッグでパラメータを変える）"></canvas></div>
+        <div class="q q-ts"><h3 class="vh">時系列<span><i>n</i> ↓</span></h3><canvas id="cv-ts" role="img" aria-label="時系列"></canvas></div>
+        <div class="q q-ly"><h3 class="vh">リアプノフ指数<span><i>λ</i> = <b id="b-lam"></b></span></h3><canvas id="cv-ly" class="drag" aria-hidden="true"></canvas>
+          <div class="a-out">
+            <dl class="metrics">
+              <div class="m m-main"><dt>周期</dt><dd id="o-p"></dd></div>
+              <div class="m"><dt id="o-symt"><i>r</i></dt><dd id="o-r"></dd></div>
+              <div class="m"><dt>リアプノフ指数 <i>λ</i></dt><dd id="o-lam"></dd></div>
+              <div class="m"><dt>音の高さ</dt><dd id="o-hz"></dd></div>
+            </dl>
+          </div>
+        </div>
+      </div>
+      <div class="tp">
+        <button type="button" class="tp-ib" id="b-home" title="左端へ戻す" aria-label="左端へ戻す"><svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1.5" y="1.5" width="1.8" height="9"/><path d="M10.5 1.5v9L4 6z"/></svg></button>
+        <button type="button" class="tp-pp" id="b-pp" title="r を左から右へ動かす" aria-label="掃引"><svg class="i-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.2l7.6 4.8L3 10.8z"/></svg><svg class="i-pause" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="2.8" height="9"/><rect x="7.2" y="1.5" width="2.8" height="9"/></svg></button>
+        <div class="tp-tl">
+          <div class="tp-trk" id="b-trk" tabindex="0" role="slider" aria-label="掃引の位置"><span class="tp-rail"></span><span class="tp-fill" id="b-fill"></span><span class="tp-th" id="b-th"></span></div>
+          <div class="tp-tm"><span id="b-rr"></span><span id="b-t"></span></div>
+        </div>
+      </div>
+      <p class="sr" id="b-live" aria-live="polite"></p>
+      <More id="g-fig" title="表示の設定"><div class="ptab">
+        <ChoiceRow k="spd" name="掃引の速さ" sub="表示の範囲を 24 秒（×1）で動かす" choices={SPEEDS.map((v) => [v, v === 0.5 ? '×1/2' : `×${v}`] as const)} value={1} />
+        <ChoiceRow k="flip" name="δ 倍の拡大の上下" sub="段ごとに枝の向きが入れ替わるのを反転してそろえる" choices={[['1', 'そろえる'], ['0', 'そのまま']]} value="1" />
+      </div></More>
+    </Panel>
+
+    <div class="col c1">
+      <Panel hid="hd-map" title="写像" class="a-map">
+        <div class="ptab">
+          <ChoiceRow k="map" name="写像" sub="極大が 2 次なら δ = 4.669…（4 次は 7.285…、テントは折れ目で段がない）" layout="chips" choices={MAP_CHOICES} value="logistic" />
+          <ParamRow d={R} />
+        </div>
+        <More id="g-map"><div class="ptab"><ParamRow d={X0} /></div></More>
+      </Panel>
+
+      <Panel hid="hd-snd" title="音" class="a-snd">
+        <div slot="aux" class="seg"><button type="button" id="playBtn" aria-pressed="false" title="値の列を音で鳴らす・止める"><span class="led" id="sndLed" aria-hidden="true"></span><span>鳴らす</span></button></div>
+        <p class="msg er snd-msg" id="snd-msg" aria-live="polite"></p>
+        <div class="ptab">
+          <ChoiceRow k="mode" name="鳴らし方" sub="波形: 周期が倍になるたびに 1 オクターブ下がり、カオスで雑音になる／旋律: 値 0〜1 を 220〜880 Hz へ" choices={SND_MODES} value="wave" />
+          <ChoiceRow k="scale" name="音階" sub="旋律の高さを五音音階（ド・レ・ミ・ソ・ラ）に丸める" choices={SCALES} value="cont" />
+          <ParamRow d={VOL} />
+        </div>
+      </Panel>
+    </div>
+
+    <div class="col c2">
+      <Panel hid="hd-fg" title="Feigenbaum 定数" class="a-fg">
+        <span slot="aux" class="aux" id="fg-aux"></span>
+        <div class="ftw"><table class="ft" id="ft"></table></div>
+      </Panel>
+    </div>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools list={related} />
+  <script>
+    import '../tools/bifurcation/client';
+  </script>
+</SiteLayout>
