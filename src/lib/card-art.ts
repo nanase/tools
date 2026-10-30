@@ -823,6 +823,40 @@ export const ART: Record<string, Art> = {
       (bars ? P('b', bars) : '')
     );
   },
+  /* 画像の畳み込み: 升目の画像の上を 3×3 の窓が左から右へ滑り、通った列はぼける（3×3 の平均） */
+  icv(t) {
+    const CW = 14,
+      RH = 5,
+      on = (c: number, r: number): number =>
+        c < 0 || c >= CW || r < 0 || r >= RH
+          ? 0
+          : c === 1 ||
+              c === 2 ||
+              (c === 4 && r === 2) ||
+              ((c === 6 || c === 7) && (c + r) % 2 === 0) ||
+              (c >= 9 && c <= 12 && r >= 1 && r <= 3)
+            ? 1
+            : 0;
+    /* 窓の中心の列（1〜12）。止まっているときは中ほど */
+    const wx = t ? 1 + Math.floor(mod(t, 3) / (3 / 12)) : 7;
+    let s = '';
+    for (let r = 0; r < RH; r++)
+      for (let c = 0; c < CW; c++) {
+        let v = on(c, r);
+        if (c < wx) {
+          v = 0;
+          for (let j = -1; j <= 1; j++) for (let i = -1; i <= 1; i++) v += on(c + i, r + j) / 9;
+        }
+        if (v > 0.01)
+          s += `<rect class="fa" x="${4 + c * 8}" y="${4 + r * 8}" width="8" height="8" fill-opacity="${r1(v)}"/>`;
+      }
+    return (
+      s +
+      `<rect class="c t" x="4" y="4" width="${CW * 8}" height="${RH * 8}"/>` +
+      `<rect class="b" x="${4 + (wx - 1) * 8}" y="12" width="24" height="24"/>` +
+      `<rect class="b t" x="${4 + wx * 8}" y="20" width="8" height="8"/>`
+    );
+  },
   /* オルガン音響モデル: 口と円錐の足があるパイプの正面。和音を鳴らし、鳴っている管に定在波を描く */
   og(t) {
     let body = '',
@@ -1075,6 +1109,35 @@ export const ART: Record<string, Art> = {
     );
   },
   /* 音律とうなり: 2 つの近い部分音の和。包絡（破線）の山と谷が流れる */
+  /* 畳み込み: 反転した核が矩形の入力の上を滑り、重なりの面積（塗り）が上の出力の曲線を描いていく */
+  cv(t) {
+    const c = 24 + mod(28 + (76 * t) / 3, 76),
+      tau = 8,
+      a = 30,
+      b = 60,
+      /* y(c) = ∫ rect(x)·e^(−(c − x)/τ)/τ dx */
+      y = (u: number) => (u <= a ? 0 : Math.exp(-(u - Math.min(u, b)) / tau) - Math.exp(-(u - a) / tau)),
+      h = (x: number) => (x > c + 1e-6 ? 44 : 44 - 14 * Math.exp(-Math.max(0, c - x) / tau)),
+      lo = a,
+      hi = Math.min(b, c);
+    let fill = '';
+    if (hi > lo) fill = P('fa g', `${fx(h, lo, hi, 24)}L${r1(hi)} 44L${r1(lo)} 44Z`);
+    return (
+      P('c t', 'M4 22H116M4 44H116') +
+      P(
+        'a g',
+        fx((u) => 22 - 15 * y(u), 4, 116, 112),
+      ) +
+      P(
+        'a',
+        fx((u) => 22 - 15 * y(u), 4, c, Math.max(2, Math.round(c - 4))),
+      ) +
+      fill +
+      P('b', `M4 44H${a}V30H${b}V44H116`) +
+      P('c', `${fx(h, 4, c, 60)}L${r1(c)} 44`) +
+      P('c d t', `M${r1(c)} 4V46`)
+    );
+  },
   tm(t) {
     const e = (x: number): number => Math.abs(Math.cos(TAU * 0.0125 * (x - 4) - 1.2 * t));
     return (
@@ -1091,6 +1154,58 @@ export const ART: Record<string, Art> = {
         'a',
         fx((x) => 24 - 17 * e(x) * Math.sin((TAU * (x - 4)) / 5), 4, 116, 336),
       )
+    );
+  },
+  /* 残響: 上から見た部屋で、音源と 1 回反射の鏡像から波面が広がる。右はインパルス応答が届いた所まで */
+  rv(t) {
+    const X0 = 4,
+      Y0 = 6,
+      W = 48,
+      H = 36,
+      sx = 16,
+      sy = 19,
+      u = mod(t, 2.4) / 2.4,
+      R = 3 + 64 * u,
+      inside = (x: number, y: number): boolean => x >= X0 && x <= X0 + W && y >= Y0 && y <= Y0 + H,
+      /* 円のうち部屋の中の弧だけを折れ線にする */
+      arc = (cx: number, cy: number): string => {
+        let d = '',
+          on = false;
+        for (let k = 0; k <= 96; k++) {
+          const a = (TAU * k) / 96,
+            x = cx + R * Math.cos(a),
+            y = cy + R * Math.sin(a);
+          if (inside(x, y)) {
+            d += `${on ? 'L' : 'M'}${r1(x)} ${r1(y)}`;
+            on = true;
+          } else on = false;
+        }
+        return d;
+      },
+      imgs: [number, number][] = [
+        [2 * X0 - sx, sy],
+        [2 * (X0 + W) - sx, sy],
+        [sx, 2 * Y0 - sy],
+        [sx, 2 * (Y0 + H) - sy],
+      ];
+    /* インパルス応答: 直接音・1 回反射・密になる残響。今の時刻まで描く */
+    const ir: [number, number][] = [],
+      T0 = 64,
+      T1 = 116,
+      now = T0 + (T1 - T0) * u;
+    for (let k = 0; k < 44; k++) {
+      const x = T0 + 2 + (k < 5 ? [0, 5, 8, 12, 15][k] : 15 + (k - 4) * 0.9),
+        h = k === 0 ? 30 : 30 * Math.exp(-(x - T0) / 14) * (0.5 + 0.5 * hn(k));
+      if (x <= now) ir.push([x, h]);
+    }
+    return (
+      P('c', `M${X0} ${Y0}h${W}v${H}h${-W}Z`) +
+      P('a', arc(sx, sy)) +
+      P('b', imgs.map(([x, y]) => arc(x, y)).join('')) +
+      P('fc', `M${sx - 1.6} ${sy}a1.6 1.6 0 1 0 3.2 0a1.6 1.6 0 1 0 -3.2 0`) +
+      P('c t', `M${T0} 42H${T1}`) +
+      P('a', ir.map(([x, h]) => `M${r1(x)} 42V${r1(42 - h)}`).join('')) +
+      P('c d', `M${r1(now)} 6V42`)
     );
   },
   /* 雷鳴（仮）: ジグザグの放電路の折れ目から波面が広がり、右の波形は届いた所まで。最初の鋭い山のあとにゴロゴロが続く */
@@ -1174,6 +1289,9 @@ export const LOOP: Record<string, number> = {
   svg: TAU / 2.4,
   tu: 3,
   tm: Math.PI / 1.2,
+  rv: 2.4,
+  cv: 3,
+  icv: 3,
   th: 3,
 };
 
