@@ -1,0 +1,122 @@
+---
+import { TOOLS } from '../../data/tools';
+
+// 動作原理と式
+const it = (s: string) => `<mi>${s}</mi>`;
+/** f(arg) */
+const fn = (f: string, arg: string) => `<mi>${f}</mi><mo stretchy="false">(</mo>${arg}<mo stretchy="false">)</mo>`;
+/** f[arg] */
+const sq = (f: string, arg: string) => `<mi>${f}</mi><mo stretchy="false">[</mo>${arg}<mo stretchy="false">]</mo>`;
+const conv = '<mo>∗</mo>';
+const sum = (lo: string, hi = '') =>
+  hi
+    ? `<munderover><mo>∑</mo><mrow>${lo}</mrow><mrow>${hi}</mrow></munderover>`
+    : `<munder><mo>∑</mo><mrow>${lo}</mrow></munder>`;
+const int = '<msubsup><mo>∫</mo><mrow><mo>−</mo><mi>∞</mi></mrow><mi>∞</mi></msubsup>';
+const tm = '<mi>t</mi><mo>−</mo><mi>τ</mi>';
+const nk = '<mi>n</mi><mo>−</mo><mi>k</mi>';
+/* 本文の出典番号 */
+const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
+/** ほかのページへのリンク（まだ公開していないページは名前だけ。公開すると一覧に載り、リンクになる） */
+const ln = (id: string, label: string) =>
+  TOOLS.some((t) => t.id === id && !t.s) ? `<a href="../${id}/">${label}</a>` : label;
+---
+<h3>定義</h3>
+<div class="eqs">
+  <math display="block" set:html={`${fn('y', it('t'))}<mo>=</mo><mo stretchy="false">(</mo><mi>x</mi>${conv}<mi>h</mi><mo stretchy="false">)</mo><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mo>=</mo>${int}${fn('x', it('τ'))}<mspace width="0.2em"/>${fn('h', tm)}<mspace width="0.2em"/><mi>d</mi><mi>τ</mi>`} />
+  <math display="block" set:html={`${sq('y', it('n'))}<mo>=</mo>${sum('<mi>k</mi>')}${sq('x', it('k'))}<mspace width="0.2em"/>${sq('h', nk)}`} />
+</div>
+<dl class="syms">
+  <dt><math><mi>x</mi></math></dt><dd>入力</dd>
+  <dt><math><mi>h</mi></math></dt><dd>核（インパルス応答）</dd>
+  <dt><math><mi>y</mi></math></dt><dd>出力</dd>
+</dl>
+<p>連続は積分、離散は和<Fragment set:html={rf(1)} /><Fragment set:html={rf(5)} />。長さ <math><mi>N</mi></math> と <math><mi>M</mi></math> の離散の信号の畳み込みは <math><mi>N</mi><mo>+</mo><mi>M</mi><mo>−</mo><mn>1</mn></math> 点<Fragment set:html={rf(1)} />。</p>
+
+<h3>出力の側から: 反転して滑らせる</h3>
+<ol class="flow">
+  <li>核を反転 <math set:html={`${fn('h', it('τ'))}<mo>→</mo>${fn('h', '<mo>−</mo><mi>τ</mi>')}`} /></li>
+  <li><math><mi>t</mi></math> だけずらす <math set:html={fn('h', tm)} /></li>
+  <li>入力と掛ける</li>
+  <li>面積（和）が <math set:html={fn('y', it('t'))} /></li>
+</ol>
+<p>出力の 1 点ごとに、重なった部分の積の面積を求める<Fragment set:html={rf(1)} />。</p>
+
+<h3>入力の側から: 核の写しを重ねる</h3>
+<div class="eqs">
+  <math display="block" set:html={`${fn('x', it('t'))}<mo>=</mo>${int}${fn('x', it('τ'))}<mspace width="0.2em"/>${fn('δ', tm)}<mspace width="0.2em"/><mi>d</mi><mi>τ</mi><mspace width="1em"/><mo>⟹</mo><mspace width="1em"/>${fn('y', it('t'))}<mo>=</mo>${int}${fn('x', it('τ'))}<mspace width="0.2em"/>${fn('h', tm)}<mspace width="0.2em"/><mi>d</mi><mi>τ</mi>`} />
+</div>
+<ul class="tl">
+  <li>入力はずらしたインパルスの重ね合わせ</li>
+  <li>線形で時不変の系は、インパルス <math><mi>δ</mi></math> に <math><mi>h</mi></math> で応える。だから出力は、入力の各点が出す高さ <math set:html={fn('x', it('τ'))} /> の <math><mi>h</mi></math> の写しの和<Fragment set:html={rf(1)} /></li>
+  <li>部屋の残響（<Fragment set:html={ln('reverb', '残響')} />）と FIR フィルタ（<Fragment set:html={ln('fir', 'FIR フィルタ')} />）の出力は、この形の畳み込み</li>
+</ul>
+
+<h3>性質</h3>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th>性質</th><th>式</th><th>出典</th></tr></thead>
+  <tbody>
+    <tr><td>恒等</td><td><math><mi>x</mi><mo>∗</mo><mi>δ</mi><mo>=</mo><mi>x</mi></math></td><td>式 7-1<Fragment set:html={rf(2)} /></td></tr>
+    <tr><td>ずらし</td><td><math set:html={`${sq('x', it('n'))}${conv}${sq('δ', '<mi>n</mi><mo>+</mo><mi>s</mi>')}<mo>=</mo>${sq('x', '<mi>n</mi><mo>+</mo><mi>s</mi>')}`} /></td><td>式 7-3<Fragment set:html={rf(2)} /></td></tr>
+    <tr><td>交換</td><td><math><mi>a</mi><mo>∗</mo><mi>b</mi><mo>=</mo><mi>b</mi><mo>∗</mo><mi>a</mi></math></td><td>式 7-6<Fragment set:html={rf(2)} /></td></tr>
+    <tr><td>結合</td><td><math><mo stretchy="false">(</mo><mi>a</mi><mo>∗</mo><mi>b</mi><mo stretchy="false">)</mo><mo>∗</mo><mi>c</mi><mo>=</mo><mi>a</mi><mo>∗</mo><mo stretchy="false">(</mo><mi>b</mi><mo>∗</mo><mi>c</mi><mo stretchy="false">)</mo></math></td><td>式 7-7<Fragment set:html={rf(2)} /></td></tr>
+    <tr><td>分配</td><td><math><mi>a</mi><mo>∗</mo><mi>b</mi><mo>+</mo><mi>a</mi><mo>∗</mo><mi>c</mi><mo>=</mo><mi>a</mi><mo>∗</mo><mo stretchy="false">(</mo><mi>b</mi><mo>+</mo><mi>c</mi><mo stretchy="false">)</mo></math></td><td>式 7-8<Fragment set:html={rf(2)} /></td></tr>
+    <tr><td>面積</td><td><math><mo>∫</mo><mi>y</mi><mo>=</mo><mo>∫</mo><mi>x</mi><mo>·</mo><mo>∫</mo><mi>h</mi></math></td><td>定義から</td></tr>
+  </tbody>
+</table></div>
+
+<h3>確率: 和の分布</h3>
+<p>独立な確率変数の和の分布は、分布の畳み込み<Fragment set:html={rf(5)} />。</p>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th>例</th><th>分布</th><th>和の分布</th></tr></thead>
+  <tbody>
+    <tr><td>サイコロ 2 個（例 7.1）</td><td>1〜6 が 1/6</td><td>2〜12 が 1/36, 2/36, …, 6/36, …, 1/36</td></tr>
+    <tr><td>一様 2 つ（例 7.3）</td><td>[0, 1] で 1</td><td>三角形 <math><mi>z</mi></math>（0〜1）・<math><mn>2</mn><mo>−</mo><mi>z</mi></math>（1〜2）</td></tr>
+    <tr><td>指数 2 つ（例 7.4）</td><td><math><mi>λ</mi><msup><mi>e</mi><mrow><mo>−</mo><mi>λ</mi><mi>x</mi></mrow></msup></math></td><td><math><msup><mi>λ</mi><mn>2</mn></msup><mi>z</mi><msup><mi>e</mi><mrow><mo>−</mo><mi>λ</mi><mi>z</mi></mrow></msup></math></td></tr>
+    <tr><td>正規 2 つ（例 7.5）</td><td><math><msubsup><mi>σ</mi><mn>1</mn><mn>2</mn></msubsup><mo>,</mo><msubsup><mi>σ</mi><mn>2</mn><mn>2</mn></msubsup></math></td><td>正規、分散 <math><msubsup><mi>σ</mi><mn>1</mn><mn>2</mn></msubsup><mo>+</mo><msubsup><mi>σ</mi><mn>2</mn><mn>2</mn></msubsup></math></td></tr>
+  </tbody>
+</table></div>
+<p>何度も畳み込むと正規分布に近づく（中心極限定理）<Fragment set:html={rf(2)} />。</p>
+
+<h3>相関</h3>
+<div class="eqs">
+  <math display="block" set:html={`${sq('r', it('n'))}<mo>=</mo>${sum('<mi>m</mi>')}${sq('x', '<mi>n</mi><mo>+</mo><mi>m</mi>')}<mspace width="0.2em"/>${sq('h', it('m'))}<mo>=</mo><mo stretchy="false">(</mo><mi>x</mi>${conv}<mover><mi>h</mi><mo>~</mo></mover><mo stretchy="false">)</mo><mo stretchy="false">[</mo><mi>n</mi><mo stretchy="false">]</mo><mo>,</mo><mspace width="1em"/>${sq('<mover><mi>h</mi><mo>~</mo></mover>', it('m'))}<mo>=</mo>${sq('h', '<mo>−</mo><mi>m</mi>')}`} />
+</div>
+<ul class="tl">
+  <li>核を反転せずに滑らせると相関</li>
+  <li>畳み込みニューラルネットワークの「畳み込み」の多くは相関（式 9.6）<Fragment set:html={rf(7)} /></li>
+  <li>左右対称の核（矩形・ガウス）では同じ。指数・こだまでは向きが逆になる</li>
+  <li>2 次元（画像）の畳み込みと相関: <Fragment set:html={ln('image-convolution', '画像の畳み込み')} /></li>
+</ul>
+
+<h3>畳み込み定理</h3>
+<div class="eqs">
+  <math display="block" set:html={`<mi>x</mi>${conv}<mi>h</mi><mspace width="0.6em"/><mo>⟷</mo><mspace width="0.6em"/>${fn('X', it('f'))}<mspace width="0.2em"/>${fn('H', it('f'))}`} />
+</div>
+<ul class="tl">
+  <li>時間の畳み込みは周波数の積<Fragment set:html={rf(3)} /><Fragment set:html={rf(6)} />。核の周波数特性が、入力の各周波数を何倍にするかを決める</li>
+  <li><math><mi>L</mi></math> 点の DFT の積は、長さ <math><mi>L</mi></math> の円状畳み込みに当たる。はみ出した分が頭へ回るので、<math><mi>L</mi><mo>≥</mo><mi>N</mi><mo>+</mo><mi>M</mi><mo>−</mo><mn>1</mn></math> まで 0 で埋める<Fragment set:html={rf(3)} /></li>
+  <li>FFT で変換して掛けて戻すと速い。核が約 64 点より長いと直接の和より速い<Fragment set:html={rf(4)} /><Fragment set:html={rf(8)} />。算法は <Fragment set:html={ln('fft', 'FFT')} />、DFT の周期性は <Fragment set:html={ln('dct-dft', 'DCT と DFT')} /></li>
+</ul>
+
+<h3>このツールで決めたこと</h3>
+<ul class="tl">
+  <li>連続の信号は刻み 0.01 の格子の値で持ち、積分は刻みを掛けた和で近似する。格子の間は直線で補う</li>
+  <li>連続のインパルスは面積 1・幅 1 刻みの柱で近似し、図では矢印（高さは面積）で描く</li>
+  <li>核の見本（矩形・三角・指数・ガウス・こだま・パルス列）は面積を 1 にそろえる</li>
+  <li>入力の側からの図は、連続の入力を 0.25 ごとにまとめた写しで描く。写しの和は刻み 0.01 のまま足す</li>
+  <li>出力の重心と分散は、入力と核に負の値がないときだけ出す</li>
+  <li>サイコロでは、入力を n − 1 個の和、核を 1 個にして、出力を n 個の和にする</li>
+</ul>
+
+<h3>出典</h3>
+<ol class="refs">
+  <li id="thy-r1"><span class="rf-for">畳み込みの和（式 6-1）、出力の点数、畳み込みの機械（図 6-8）、入力の側と出力の側の見方（6 章）</span><span class="rf-src">S. W. Smith, <a href="https://www.dspguide.com/ch6.htm" target="_blank" rel="noopener"><i>The Scientist and Engineer’s Guide to Digital Signal Processing</i></a>, California Technical Publishing, 1997, ch. 6 Convolution</span></li>
+  <li id="thy-r2"><span class="rf-for">デルタ・ずらし・交換・結合・分配（式 7-1〜7-8）、中心極限定理（7 章）</span><span class="rf-src">同, <a href="https://www.dspguide.com/ch7.htm" target="_blank" rel="noopener">ch. 7 Properties of Convolution</a></span></li>
+  <li id="thy-r3"><span class="rf-for">周波数領域での畳み込み、円状畳み込み（9 章）</span><span class="rf-src">同, <a href="https://www.dspguide.com/ch9.htm" target="_blank" rel="noopener">ch. 9 Applications of the DFT</a></span></li>
+  <li id="thy-r4"><span class="rf-for">FFT 畳み込みが速くなる核の長さ（18 章）</span><span class="rf-src">同, <a href="https://www.dspguide.com/ch18.htm" target="_blank" rel="noopener">ch. 18 FFT Convolution</a></span></li>
+  <li id="thy-r5"><span class="rf-for">分布の畳み込み（定義 7.1・7.2）と例 7.1・7.3〜7.5（285〜291 頁）</span><span class="rf-src">C. M. Grinstead and J. L. Snell, <a href="https://math.dartmouth.edu/~prob/prob/prob.pdf" target="_blank" rel="noopener"><i>Introduction to Probability</i></a>, 2nd ed., American Mathematical Society, 2003（The CHANCE Project 版、2006 年 7 月 4 日、GNU FDL）, ch. 7 Sums of Independent Random Variables</span></li>
+  <li id="thy-r6"><span class="rf-for">DFT の畳み込み定理</span><span class="rf-src">J. O. Smith III, <i>Mathematics of the Discrete Fourier Transform (DFT), with Audio Applications</i>, 2nd ed., W3K Publishing, 2007, <a href="https://ccrma.stanford.edu/~jos/mdft/Convolution_Theorem.html" target="_blank" rel="noopener">Convolution Theorem</a></span></li>
+  <li id="thy-r7"><span class="rf-for">相互相関と畳み込みの呼び分け（9.1 節、式 9.6）</span><span class="rf-src">I. Goodfellow, Y. Bengio, and A. Courville, <a href="https://www.deeplearningbook.org/contents/convnets.html" target="_blank" rel="noopener"><i>Deep Learning</i></a>, MIT Press, 2016, ch. 9 Convolutional Networks</span></li>
+  <li id="thy-r8"><span class="rf-for">FFT による速い畳み込み</span><span class="rf-src">T. G. Stockham Jr., “High-speed convolution and correlation,” <i>Proc. AFIPS Spring Joint Computer Conference</i>, pp. 229–233, 1966, <a href="https://doi.org/10.1145/1464182.1464209" target="_blank" rel="noopener">doi:10.1145/1464182.1464209</a></span></li>
+</ol>
