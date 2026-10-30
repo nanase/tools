@@ -37,7 +37,7 @@
 .loupe .lsum{margin-top:4px;text-align:center;font:700 11px var(--mono);color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap}
 
 /* 拡大鏡のマスと、重ねたカーネル */
-.mg{position:relative;display:grid;gap:1px;width:max-content;max-width:100%;margin-inline:auto;padding:1px;background:var(--line);border-radius:3px}
+.ic-mg{position:relative;display:grid;gap:1px;width:max-content;max-width:100%;margin-inline:auto;padding:1px;background:var(--line);border-radius:3px}
 .mc{position:relative;display:grid;place-items:end center;font:600 10.5px/1 var(--mono);font-variant-numeric:tabular-nums;padding-bottom:4px}
 .mc.out{background-image:repeating-linear-gradient(45deg,transparent 0 5px,color-mix(in srgb,var(--ink) 18%,transparent) 5px 6px)}
 .mc.cen::after{content:"";position:absolute;inset:-1px;border:2px solid var(--accent);pointer-events:none}

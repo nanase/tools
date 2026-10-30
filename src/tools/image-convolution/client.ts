@@ -330,7 +330,7 @@ function magGrid(box: HTMLElement, cs: number, compact: boolean): { m: Mag; sh: 
   let m = MAGS.get(box);
   if (!m || m.key !== key) {
     const mg = document.createElement('div');
-    mg.className = 'mg';
+    mg.className = 'ic-mg';
     mg.style.gridTemplateColumns = `repeat(${cols},${cs}px)`;
     const cells: HTMLElement[] = [];
     for (let i = 0; i < cols * rows; i++) {
@@ -353,7 +353,7 @@ function magGrid(box: HTMLElement, cs: number, compact: boolean): { m: Mag; sh: 
     const spans: HTMLElement[] = [];
     for (let i = 0; i < sh * sv; i++) spans.push(kov.appendChild(document.createElement('span')));
     mg.appendChild(kov);
-    box.querySelector('.mg')?.remove();
+    box.querySelector('.ic-mg')?.remove();
     box.prepend(mg);
     m = { key, cells, kov, spans };
     MAGS.set(box, m);
