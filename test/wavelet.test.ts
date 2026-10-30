@@ -16,9 +16,10 @@ import {
   waverec,
 } from '../src/tools/wavelet/dwt';
 import { freqs, ScaloBank } from '../src/tools/wavelet/live';
+import { atom, dwtTiles, stftTiles } from '../src/tools/wavelet/plane';
 import { noisy, rng, sample, sigAt } from '../src/tools/wavelet/signals';
 import { processAudio, testClip } from '../src/tools/wavelet/sound';
-import { dwtTiles, gaborSpread, HEISENBERG, morletSpread, stft } from '../src/tools/wavelet/tf';
+import { gaborSpread, HEISENBERG, morletSpread, stft } from '../src/tools/wavelet/tf';
 
 const rand = (n: number, seed = 3) => {
   const r = rng(seed);
@@ -212,13 +213,38 @@ describe('時間と周波数の箱', () => {
       expect(m.f / m.df).toBeCloseTo(morletSpread(1).f / morletSpread(1).df, 10);
     }
   });
-  it('DWT の箱は N 個で、どれも面積 1/2、合わせて区間全体を覆う', () => {
+  it('DWT の箱は N 個で、どれも面積 1/2、合わせて平面全体を覆う（時間 N/fs × 周波数 fs/2）', () => {
     const N = 64,
-      fs = 64,
-      b = dwtTiles(N, fs, 4);
+      c = wavedec(rand(N), 'haar', 4),
+      b = dwtTiles(c),
+      area = (t: { t0: number; t1: number; f0: number; f1: number }) => (t.t1 - t.t0) * N * (t.f1 - t.f0) * 0.5;
     expect(b.length).toBe(N);
-    for (const x of b) expect(4 * x.dt * x.df).toBeCloseTo(0.5, 12);
-    expect(sum(b.map((x) => 4 * x.dt * x.df))).toBeCloseTo((N / fs) * (fs / 2), 10);
+    for (const t of b) expect(area(t)).toBeCloseTo(0.5, 12);
+    expect(sum(b.map(area))).toBeCloseTo(N / 2, 10);
+  });
+  it('STFT の箱は N/2 個（複素数 1 つで実数 2 つ）で面積 1、平面全体を覆う', () => {
+    const N = 256,
+      b = stftTiles(rand(N), 32);
+    expect(b.length).toBe(N / 2);
+    expect(sum(b.map((t) => (t.t1 - t.t0) * (t.f1 - t.f0)))).toBeCloseTo(1, 12);
+  });
+  it('DWT の箱の波形は、その係数だけを 1 にして戻した波形で、エネルギー 1・ほかの箱と直交', () => {
+    const N = 128,
+      c = wavedec(rand(N), 'db2', 5),
+      b = dwtTiles(c),
+      p = atom(b[70], N, { c }),
+      q = atom(b[3], N, { c });
+    expect(sum2(p)).toBeCloseTo(1, 12);
+    expect(sum(p.map((v, i) => v * q[i]))).toBeCloseTo(0, 12);
+  });
+  it('STFT の箱は、その周波数の正弦波で最も大きい', () => {
+    const N = 256,
+      L = 32,
+      /* 箱 k = 3 の中心 (3.5)·fs/L */
+      x = Float64Array.from({ length: N }, (_, n) => Math.cos((2 * Math.PI * 3.5 * n) / L)),
+      b = stftTiles(x, L).filter((t) => t.t0 === 0.5),
+      top = b.reduce((m, t) => (t.v > m.v ? t : m));
+    expect(top.k % (L / 2)).toBe(3);
   });
   it('STFT（ハン）は振幅 1 の正弦波で、その周波数の bin のパワーが 1', () => {
     const N = 256,

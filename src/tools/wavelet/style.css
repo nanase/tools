@@ -1,0 +1,73 @@
+/* ウェーブレット変換のページだけのスタイル（共通は src/styles/site.css、表示窓に重ねるキャンバスと入力元の帯は ../audio/style.css） */
+
+/* 枠の並び。スマホは 平面 → 分解 → 多重解像度 → 捨てて戻す → スカログラム → 音 → 式。
+   PC は上に平面（全幅）、左の列に分解と多重解像度、右の列に捨てて戻すとスカログラム、その下に音と式（全幅） */
+.a-pl{order:1}.a-st{order:2}.a-mr{order:3}.a-sh{order:4}.a-sc{order:5}.a-au{order:6}.a-thy{order:7}
+@media (min-width:1000px){
+  .tgrid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-areas:"pl pl" "c1 c2" "au au" "thy thy";align-items:start}
+  .a-pl{grid-area:pl}.c1{grid-area:c1}.c2{grid-area:c2}.a-au{grid-area:au}.a-thy{grid-area:thy}
+}
+
+/* 図の上の帯（名前と選択肢） */
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin-bottom:10px}
+.bar .stag{flex-wrap:wrap}
+.bl{font-size:12.5px;color:var(--ink-3)}
+.a-pl .bar .chips{margin-top:0}
+.a-pl .bar .chip{font-family:var(--sans)}
+.a-pl .bar .chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--surface)}
+.bar .seg button{padding:0 8px}
+.sbar.lg{margin:8px 0}
+.vh{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px 10px;margin:0 0 5px;font-size:12.5px;color:var(--ink-3)}
+.vh b{color:var(--ink-2)}
+figure{margin:0;min-width:0}
+
+/* 時間と周波数の平面: 2 つを横に並べる（狭い画面は縦） */
+.pl2,.aud2{display:grid;gap:14px}
+@media (min-width:760px){.pl2,.aud2{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+.plf .scope+.scope{margin-top:6px}
+.cv canvas{left:calc(100% * 50 / 462);top:calc(100% * 14 / 282);width:calc(100% * 400 / 462);height:calc(100% * 240 / 282)}
+.plf canvas{image-rendering:pixelated}
+.scope svg[tabindex]:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+/* 箱の枠: 選んだ箱は白、もう一方の平面で同じ所は点線 */
+.bx{fill:none;stroke:#fff;stroke-width:2}
+.bx.o{stroke-dasharray:4 3;stroke-width:1.4}
+.span{fill:var(--ch1);opacity:.12}
+.span.o{fill:var(--ink-3);opacity:.1}
+
+/* 黒い地の表示窓（平面・スカログラム・スペクトログラム）。色は強度の弱い順に 黒 → 紫 → 青 → 緑 → 赤 → 白
+   （スペクトラムアナライザのスペクトログラムと同じ） */
+.a-pl,.a-sc,.a-au{--sg0:#000000;--sg1:#5b1a8f;--sg2:#2050e0;--sg3:#1fb04a;--sg4:#e3261f;--sg5:#ffffff}
+.scope.dk{--screen:#000000;--grid-2:#3b474e;--screen-ink:#aab3b8;border-color:#2b3237}
+.cbar{display:inline-block;width:72px;height:8px;border:1px solid var(--line);border-radius:2px;background:linear-gradient(90deg,var(--sg0),var(--sg1),var(--sg2),var(--sg3),var(--sg4),var(--sg5))}
+
+/* 分解を段ごとに */
+.w-sw-f{background:var(--accent)}
+.st-f{fill:var(--accent);opacity:.2}
+.st-fl{stroke:var(--accent);stroke-width:1}
+.st-d{stroke:var(--ch1);fill:none}
+.a-st .tp{margin-top:10px}
+.phs{display:flex;flex-wrap:wrap;align-items:center;gap:5px;font:500 12px/1 var(--mono);color:var(--ink-3)}
+.phs span{padding:5px 7px;border:1px solid var(--line);border-radius:4px}
+.phs span.done{color:var(--ink-2);border-color:var(--line-2)}
+.phs span.on{background:var(--ink);border-color:var(--ink);color:var(--surface);font-weight:700}
+.tp-tm{margin-top:6px}
+
+/* 係数を捨てて戻す */
+.a-sh:not([data-m="dn"]) :is(.dn-only,#p-lam),.a-sh[data-m="dn"] #p-keep{display:none}
+.a-sh .ptab{margin-bottom:6px}
+.w-sw-g{background:var(--ink-3)}
+.w-sw-t{height:8px;background:color-mix(in srgb,var(--ch2) 25%,transparent)}
+.sh-g{stroke:var(--ink-3);opacity:.6}
+.sh-t{fill:var(--ch2);opacity:.13}
+.scope text.lv{fill:var(--ink-3);font-size:10px}
+
+/* スカログラム: 影響の円錐の外は網 */
+.w-sw-coi{display:inline-block;width:14px;height:10px;border:1px solid var(--line-2);background:repeating-linear-gradient(45deg,var(--ink-3) 0 2px,transparent 2px 4px)}
+
+/* 音 */
+#au-tab:not([data-src="file"]) #p-file,#au-tab[data-src="mic"] :is(#p-clip,#p-proc),#au-tab:not([data-src="test"]) #p-clip{display:none}
+.a-au .ptab{margin-bottom:10px}
+.phd{stroke:#fff;stroke-width:1.2}
+.cur{stroke:var(--screen-ink);stroke-width:1}
+.aud2 svg{touch-action:pan-y}
+#au-info{color:var(--ink-3)}
