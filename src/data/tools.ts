@@ -270,7 +270,7 @@ export const TOOLS: Tool[] = [
     id: 'image-convolution',
     c: '画像・光学',
     t: '画像の畳み込み',
-    d: '核の窓が画像の上を滑り、ぼかしやエッジ検出の画素を 1 つずつ作る様子を見せます。',
+    d: 'カーネルを画像の上でずらし、ぼかしやエッジ検出の出力を 1 画素ずつ作る様子を見せます。',
     ic: 'icv',
     k: 'image convolution 画像 畳み込み たたみこみ 2次元 2d kernel 核 カーネル フィルタ filter ぼかし blur 平均 box ガウス gaussian ピンぼけ defocus ぶれ motion blur 鮮鋭化 sharpen アンシャープマスク unsharp mask エッジ検出 edge detection ラプラシアン laplacian sobel ソーベル 勾配 gradient 浮き彫り emboss 点像分布関数 psf mtf 分離 separable 相関 correlation cnn メディアン median 端 padding',
   },

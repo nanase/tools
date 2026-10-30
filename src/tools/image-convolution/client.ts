@@ -1,14 +1,14 @@
 /**
- * 画像の畳み込みのページの入口: 画像と核 → 出力の画像を計算し、走査線より上を出力・下を入力にした 1 枚の画像、
- * 窓に付いて動く拡大鏡、窓の中の積と和、核の升（上下のドラッグで編集）と |H| を描く。
- * 入力の側の見方では、入力の画素ごとに核の写しを配って足していく（Smith の図 24-14）
+ * 画像の畳み込みのページの入口: 画像とカーネル → 出力の画像を計算し、走査線より上を出力・下を入力にした 1 枚の画像、
+ * 止めている間だけ窓に付く拡大鏡、窓の積和、カーネルの係数（上下のドラッグで編集）と |H| を描く。
+ * 「入力ごとに配る」では、入力の画素ごとにカーネルの写しを配って足していく（Smith の図 24-14）
  */
 import { Choice } from '../../lib/choice';
 import { $, $$ } from '../../lib/dom';
 import { RM } from '../../lib/motion';
 import { ParamGroup } from '../../lib/param';
 import { initToolPage } from '../../lib/tool-page';
-import { drawSample, SAMPLE_H, SAMPLE_W } from '../jpeg/sample';
+import { TILE, testChart } from './chart';
 import {
   conv2,
   conv2sep,
@@ -41,12 +41,12 @@ const S = {
   src: 'chart' as SrcName,
   edge: 'clamp' as Edge,
   kn: 'gauss' as KindName,
-  /** 升を編集した核（見本のままなら null） */
+  /** 係数を編集したカーネル（例のままなら null） */
   kern: null as Kernel | null,
   corr: false,
-  /** 出力の側の走査の位置（出力の画素の番号） */
+  /** 「出力ごとに集める」の位置（出力の画素の番号） */
   pos: 64 * W,
-  /** 入力の側の位置（外に核の半幅を足した入力の画素の番号） */
+  /** 「入力ごとに配る」の位置（外にカーネルの半幅を足した入力の画素の番号） */
   q: 0,
   play: !RM.matches,
   view: 'out' as 'out' | 'in',
@@ -70,15 +70,27 @@ function fromCanvas(draw: (g: CanvasRenderingContext2D) => void): Img {
   draw(g);
   return fromRGBA(g.getImageData(0, 0, W, H).data, W, H);
 }
+/** テスト画像。文字の区画だけキャンバスで描く（左右・上下の向きが分かる F と、細い線の多い漢字） */
 function chartImg(): Img {
-  const big = document.createElement('canvas');
-  big.width = SAMPLE_W;
-  big.height = SAMPLE_H;
-  const g = big.getContext('2d');
-  if (g) drawSample(g);
-  return fromCanvas((c) => c.drawImage(big, 0, 0, W, H));
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = TILE;
+  const g = cv.getContext('2d');
+  let text: Float32Array | null = null;
+  if (g) {
+    g.fillStyle = '#e6e6e6';
+    g.fillRect(0, 0, TILE, TILE);
+    g.fillStyle = '#1a1a1a';
+    g.font = 'bold 34px sans-serif';
+    g.fillText('F', 6, 34);
+    g.font = 'bold 26px sans-serif';
+    g.fillText('字', 32, 32);
+    g.font = '13px sans-serif';
+    g.fillText('Aa 画像', 5, 56);
+    text = fromRGBA(g.getImageData(0, 0, TILE, TILE).data, TILE, TILE).v;
+  }
+  return { w: W, h: H, v: testChart(text) };
 }
-/** 点・線・縁: 核がそのまま点像・線像・縁の応答として見える。下は市松と円 */
+/** 手描きの最初の絵。点・線・縁: カーネルがそのまま点像・線像・縁の応答として見える。下は市松と円 */
 function drawImg(): Img {
   const v = new Float32Array(N).fill(0.08),
     set = (r: number, c: number, a: number) => {
@@ -114,7 +126,7 @@ function loadImage(url: string, done: (im: HTMLImageElement) => void, fail?: () 
   im.src = url;
 }
 
-/* ---------- 核と計算 ---------- */
+/* ---------- カーネルと計算 ---------- */
 const isNC = () => !S.kern && (S.kn === 'median' || S.kn === 'grad');
 const isMedian = () => !S.kern && S.kn === 'median';
 const isGrad = () => !S.kern && S.kn === 'grad';
@@ -141,7 +153,7 @@ function compute(): void {
   else if (isGrad())
     OUT = gradMag(conv2(SRC, kernel('sobelx'), S.edge, S.corr), conv2(SRC, kernel('sobely'), S.edge, S.corr));
   else {
-    /* 分離できる大きい核は横 → 縦の 2 回で（相関は直接） */
+    /* 分離できる大きいカーネルは横 → 縦の 2 回で（相関は直接） */
     const sp = !S.corr && k.w * k.h > 9 ? separate(k) : null;
     OUT = sp ? conv2sep(SRC, sp.a, sp.b, S.edge) : conv2(SRC, k, S.edge, S.corr);
   }
@@ -153,7 +165,7 @@ function compute(): void {
   OUT_RGBA = toRGBA(OUT, SHOW, GAIN);
   ACC = null;
 }
-/** 計算し直して描く。核が変わったときは升・|H|・行の出し入れも */
+/** 計算し直して描く。カーネルが変わったときは係数・|H|・行の出し入れも */
 function recompute(kchanged = false): void {
   if (!ready) return;
   compute();
@@ -183,7 +195,7 @@ const px = (r: number, c: number) => {
   return rr < 0 || cc < 0 ? 0 : SRC.v[rr * W + cc];
 };
 
-/* ---------- 入力の側: 入力の画素ごとに核の写しを配る（外の画素も配り終えると出力と同じ） ---------- */
+/* ---------- 入力ごとに配る: 入力の画素ごとにカーネルの写しを足す（外の画素も配り終えると出力と同じ） ---------- */
 let ACC: Float32Array | null = null,
   ACCQ = 0;
 const kr = (): [number, number] => {
@@ -200,7 +212,7 @@ function setPos(p: number): void {
   if (scatter()) S.q = v;
   else S.pos = v;
 }
-/** 今の位置の画素（入力の側では、外を含む入力の画素） */
+/** 今の位置の画素（配るときは、外を含む入力の画素） */
 function curRC(): [number, number] {
   const p = curPos();
   if (!scatter()) return [Math.floor(p / W), p % W];
@@ -239,7 +251,7 @@ function accTo(q: number): Float32Array {
 /* ---------- 表記 ---------- */
 const f2 = (v: number) => (Math.abs(v) < 5e-4 ? '0.00' : v.toFixed(2));
 const f3 = (v: number) => (Math.abs(v) < 5e-4 ? '0.000' : v.toFixed(3));
-/** 核の重み（整数はそのまま、小数は先頭の 0 を省く） */
+/** カーネルの係数（整数はそのまま、小数は先頭の 0 を省く） */
 const fw = (v: number) =>
   Math.abs(v) < 1e-9
     ? '0'
@@ -261,7 +273,7 @@ const stage = $('#st'),
   loupe = $('#loupe'),
   ctx = cv.getContext('2d');
 const IMD = ctx?.createImageData(PW, PH);
-/** 走査した所までは出力、その先は入力。入力の側では、配り始めた所から出力（足しかけの値） */
+/** 走査した所までは出力、その先は入力。配るときは、配り始めた所から出力（足しかけの値） */
 function paint(): void {
   if (!ctx || !IMD) return;
   const d = IMD.data;
@@ -299,7 +311,7 @@ function overlay(): void {
   ov.innerHTML = s;
 }
 
-/* ---------- 拡大鏡（窓のまわりの画素と、重ねた核の値） ---------- */
+/* ---------- 拡大鏡（窓のまわりの画素と、重ねたカーネルの係数） ---------- */
 interface Mag {
   key: string;
   cells: HTMLElement[];
@@ -383,7 +395,7 @@ function magnifier(box: HTMLElement, cs: number, compact: boolean): void {
         txt(t, nums ? f2(v) : '');
       }
     }
-  /* 出力の側では核を 180° 回して重ねる（相関なら回さない）。入力の側では配る形がそのまま（相関なら回す） */
+  /* 集めるときはカーネルを 180° 回して重ねる（相関なら回さない）。配るときは形がそのまま（相関なら回す） */
   m.kov.classList.toggle('rot', !isMedian() && (sc ? S.corr : !S.corr));
   m.kov.classList.toggle('med', isMedian());
   const v0 = sc ? px(r0, c0) : 1;
@@ -394,9 +406,9 @@ function magnifier(box: HTMLElement, cs: number, compact: boolean): void {
     }
 }
 
-/** 窓に付いて動く小さな拡大鏡 */
+/** 窓に付く小さな拡大鏡。再生中は窓が速く動いて追えないので、止めている間だけ出す */
 function placeLoupe(): void {
-  const show = !scatter();
+  const show = !scatter() && !S.play;
   loupe.hidden = !show;
   if (!show) return;
   const sw = stage.clientWidth,
@@ -419,7 +431,7 @@ function placeLoupe(): void {
   loupe.style.top = `${Math.min(sh - lh - 6, Math.max(6, y > sh / 2 ? y - lh - 14 : y + 14))}px`;
 }
 
-/* ---------- 窓の中（枠） ---------- */
+/* ---------- 窓の計算（枠） ---------- */
 const magBox = $('#mag');
 function windowPanel(): void {
   const k = curK(),
@@ -444,7 +456,7 @@ function windowPanel(): void {
     t.hidden = true;
     html(
       s,
-      `<span>入力 (${c}, ${r})</span>${pxb(Math.round(Math.min(1, Math.max(0, v)) * 255))}<b>${f2(v)}</b><span>× 核 を</span><span class="eq">足す</span><span>${S.corr ? '180° 回して' : '向きはそのまま'}</span>`,
+      `<span>入力 (${c}, ${r})</span>${pxb(Math.round(Math.min(1, Math.max(0, v)) * 255))}<b>${f2(v)}</b><span>× カーネル${S.corr ? '（反転）' : ''}</span><span class="eq">→</span><span>出力に足す</span>`,
     );
     return;
   }
@@ -462,7 +474,7 @@ function windowPanel(): void {
       t,
       `${vals.length > 9 ? `<em>小さい ${mid - 4} 個</em>` : ''}${shown.map((v, i) => `<span${(vals.length > 9 ? i === 4 : i === mid) ? ' class="on"' : ''}>${f2(v)}</span>`).join('')}${vals.length > 9 ? `<em>大きい ${mid - 4} 個</em>` : ''}`,
     );
-    html(s, `<span>${vals.length} 個を並べて真ん中</span><span class="eq">=</span>${pxb(shade(y))}<b>${f3(y)}</b>`);
+    html(s, `<span>${vals.length} 個の中央値</span><span class="eq">=</span>${pxb(shade(y))}<b>${f3(y)}</b>`);
     return;
   }
   const T = terms(SRC, k, r, c, S.edge, S.corr),
@@ -486,10 +498,10 @@ function windowPanel(): void {
       s,
       `<span><i>G</i>x ${f3(T.sum)}</span><span><i>G</i>y ${f3(gy)}</span><span class="eq">→</span><span>√(<i>G</i>x² + <i>G</i>y²)</span>${pxb(shade(y))}<b>${f3(y)}</b>`,
     );
-  } else html(s, `<span>Σ 核 × 画素${big}</span><span class="eq">=</span>${pxb(shade(y))}<b>${f3(T.sum)}</b>`);
+  } else html(s, `<span>Σ 係数 × 画素値${big}</span><span class="eq">=</span>${pxb(shade(y))}<b>${f3(T.sum)}</b>`);
 }
 
-/* ---------- 核の升と |H| ---------- */
+/* ---------- カーネルの係数と |H| ---------- */
 const kgBox = $('#kg'),
   kmeta = $('#o-km'),
   kreset = $<HTMLButtonElement>('#b-kreset'),
@@ -571,23 +583,29 @@ function kernelUI(): void {
   const k = curK();
   kernelGrid();
   const sep = isMedian() ? null : separate(k);
-  let m: string;
-  if (isMedian()) m = `${k.w}×${k.h} の窓 · 中央の値を出す · 畳み込みでない`;
-  else if (isGrad()) m = 'Sobel x と y · √(Gx² + Gy²) · 畳み込みの後の計算';
+  let m: string[];
+  if (isMedian()) m = [`${k.w}×${k.h} の窓`, '中央値', '非線形'];
+  else if (isGrad()) m = ['Sobel x・y', '√(Gx² + Gy²)', '非線形'];
   else {
     const n = k.w * k.h,
-      ops = sep && n > 9 ? `${k.w + k.h} 回（直接 ${n}）` : `${n} 回`;
-    m = `${k.w}×${k.h}${k.w > 7 || k.h > 7 ? '（中央 7×7）' : ''} · 和 ${fw(ksum(k))} · ${sep ? '分離できる' : '分離できない'} · 1 画素 ${ops}`;
+      ops = sep && n > 9 ? `積和 ${k.w + k.h} 回/画素（直接なら ${n} 回）` : `積和 ${n} 回/画素`;
+    m = [
+      `${k.w}×${k.h}${k.w > 7 || k.h > 7 ? '（中央 7×7）' : ''}`,
+      `係数の和 ${fw(ksum(k))}`,
+      sep ? '分離可能' : '分離不可',
+      ops,
+    ];
   }
-  txt(kmeta, m);
+  /* 区切りの所でだけ折り返す */
+  html(kmeta, m.map((x) => `<span>${x}</span>`).join(' · '));
   kreset.disabled = !S.kern;
-  /* 数値の行は見本の核のときだけ */
+  /* 数値の行は例のカーネルのときだけ */
   for (const p of PARAMS) $(`#p-${p.k}`).hidden = !!S.kern || !(USES[S.kn] ?? []).includes(p.k as ParamKey);
   viewCh.disable('in', isNC());
   paintH();
   txt($('#o-op'), isMedian() ? 'メディアン' : isGrad() ? '勾配の大きさ' : S.corr ? '相関' : '畳み込み');
 }
-/** 核の周波数特性 |H|（0 の周波数を中央に、直線の目盛り） */
+/** カーネルの周波数特性 |H|（0 の周波数を中央に、直線の目盛り） */
 function paintH(): void {
   const g = cvH.getContext('2d');
   if (!g) return;
@@ -603,7 +621,7 @@ function paintH(): void {
     id.data[4 * i + 3] = 255;
   }
   g.putImageData(id, 0, 0);
-  txt(hcap, hk ? `|H| 白 = ${top === 1 ? '1' : f2(top)}` : '|H| なし（線形でない）');
+  txt(hcap, hk ? `周波数特性 |H|（白 = ${top === 1 ? '1' : f2(top)}）` : '|H| なし（非線形）');
 }
 
 /* ---------- まとめて描く ---------- */
@@ -624,17 +642,17 @@ function render(): void {
   const [r, c] = curRC(),
     p = curPos() / Math.max(1, total() - 1);
   html(oPl, scatter() ? `入力 <b>(${c}, ${r})</b>` : `画素 <b>(${c}, ${r})</b>`);
-  txt(oY, scatter() ? '配る' : f3(OUT.v[r * W + c] ?? 0));
+  txt(oY, scatter() ? '—' : f3(OUT.v[r * W + c] ?? 0));
   txt(sShow, SHOW === 'clip' ? '0〜1' : SHOW === 'abs' ? `0〜${GAIN}` : `±${GAIN}（0 が灰色）`);
-  txt(sLg, scatter() ? '配った所から出力 · 下は入力' : '走査線の上 出力 · 下 入力');
-  txt(sSt, S.view === 'in' && isNC() ? '入力の側は畳み込みだけ' : '');
+  txt(sLg, scatter() ? '線より上: 足しかけの出力　下: 入力' : '線より上: 出力　下: 入力');
+  txt(sSt, S.view === 'in' && isNC() ? '「配る」は線形のカーネルだけ' : '');
   trkF.style.width = `${p * 100}%`;
   trkT.style.left = `${p * 100}%`;
   trk.setAttribute('aria-valuenow', String(Math.round(p * 100)));
   trk.setAttribute('aria-valuetext', `${scatter() ? '入力' : '画素'} (${c}, ${r})`);
   ppBtn.classList.toggle('on', S.play);
-  ppBtn.setAttribute('aria-label', S.play ? '止める' : '走査する');
-  ppBtn.title = S.play ? '止める' : '走査する';
+  ppBtn.setAttribute('aria-label', S.play ? '一時停止' : '再生');
+  ppBtn.title = S.play ? '一時停止' : '再生';
 }
 
 /* ---------- 入力 ---------- */
@@ -717,13 +735,11 @@ $('#b-clear').addEventListener('click', () => {
   useSrc();
   recompute();
 });
-$('#b-rot').addEventListener('click', (e) => {
-  const b = e.currentTarget as HTMLElement;
-  S.corr = !S.corr;
-  b.setAttribute('aria-pressed', String(!S.corr));
-  b.querySelector('.led')?.classList.toggle('on', !S.corr);
+const opCh = new Choice<'conv' | 'corr'>($('#p-op'), (v) => {
+  S.corr = v === 'corr';
   recompute(true);
 });
+S.corr = opCh.value === 'corr';
 kreset.addEventListener('click', () => {
   S.kern = null;
   kgKey = '';
@@ -785,7 +801,7 @@ function keyMove(e: KeyboardEvent): void {
 trk.addEventListener('keydown', keyMove);
 stage.addEventListener('keydown', keyMove);
 
-/* 画像を押すとその画素へ（描くときは白・黒で塗る） */
+/* 画像を押すとその画素へ（手描きでは白・黒で塗る） */
 function at(e: PointerEvent): [number, number] {
   const b = cv.getBoundingClientRect();
   return [

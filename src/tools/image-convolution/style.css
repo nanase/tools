@@ -1,6 +1,6 @@
 /* 画像の畳み込みのページだけのスタイル（共通は src/styles/site.css） */
 
-/* 枠の並び。スマホは 画像 → 核 → 窓の中 → 式。PC は左に画像（2 段ぶん）、右に核と窓の中 */
+/* 枠の並び。スマホは 画像 → カーネル → 窓の計算 → 式。PC は左に画像（2 段ぶん）、右にカーネルと窓の計算 */
 .a-img{order:1}.a-ker{order:2}.a-mag{order:3}.a-thy{order:4}
 @media (min-width:1000px){
   .tgrid{grid-template-columns:minmax(0,7fr) minmax(0,4fr);grid-template-areas:"img ker" "img mag" "thy thy";align-items:start}
@@ -17,7 +17,7 @@
 .ic-sw{display:inline-block;width:14px;height:0;border-top:1.5px solid var(--accent)}
 .ic-st{color:var(--ink-3)}
 
-/* 1 枚に重ねた画像: 走査線より上が出力、下が入力。外側の幅 8 画素は「画像の外」 */
+/* 1 枚に重ねた画像: 走査線より上が出力、下が入力。外側の幅 8 画素は端の外 */
 .ic-stage{position:relative;border:1px solid var(--line);border-radius:4px;overflow:hidden;background:var(--screen);touch-action:pan-y;user-select:none;-webkit-user-select:none}
 .ic-stage.drop{outline:2px dashed var(--focus);outline-offset:2px}
 .ic-stage:focus-visible{outline-offset:2px}
@@ -36,7 +36,7 @@
 @media (prefers-reduced-motion:no-preference){.loupe{transition:left .12s,top .12s}}
 .loupe .lsum{margin-top:4px;text-align:center;font:700 11px var(--mono);color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap}
 
-/* 拡大鏡の升と、重ねた核 */
+/* 拡大鏡のマスと、重ねたカーネル */
 .mg{position:relative;display:grid;gap:1px;width:max-content;max-width:100%;margin-inline:auto;padding:1px;background:var(--line);border-radius:3px}
 .mc{position:relative;display:grid;place-items:end center;font:600 10.5px/1 var(--mono);font-variant-numeric:tabular-nums;padding-bottom:4px}
 .mc.out{background-image:repeating-linear-gradient(45deg,transparent 0 5px,color-mix(in srgb,var(--ink) 18%,transparent) 5px 6px)}
@@ -50,7 +50,7 @@
 .kov.rot,.kov.rot span{transform:rotate(180deg)}
 @media (prefers-reduced-motion:no-preference){.kov,.kov span{transition:transform .7s cubic-bezier(.3,.7,.3,1)}}
 
-/* 窓の中: 積の表と和 */
+/* 窓の計算: 積の表と和 */
 #mag{display:grid;gap:10px}
 .terms{display:grid;gap:2px;max-width:340px;width:100%;margin-inline:auto;font:500 10.5px/1 var(--mono);font-variant-numeric:tabular-nums}
 .terms span{display:grid;place-items:center;min-width:0;height:22px;padding:0 2px;border-radius:3px;background:var(--inset);color:var(--ink-2);white-space:nowrap;overflow:hidden}
@@ -65,7 +65,7 @@
 .sumline .eq{font:700 20px/1 var(--mono);color:var(--ink)}
 .sumline .px{display:inline-block;width:34px;height:34px;border:2px solid var(--accent);border-radius:3px}
 
-/* 核 */
+/* カーネル */
 .kch{display:grid;gap:6px;margin-bottom:8px}
 .kch .lbl{margin-top:4px;font-size:12px;color:var(--ink-3)}
 .chip.nc{border-style:dashed}
@@ -80,4 +80,5 @@
 .kspec canvas{width:84px;height:84px;image-rendering:pixelated;border:1px solid var(--line);border-radius:3px;background:#000}
 .kspec figcaption{font:500 11.5px var(--mono);color:var(--ink-3)}
 .kmeta{margin:0;text-align:center;font:500 12px/1.5 var(--mono);color:var(--ink-3)}
+.kmeta span{white-space:nowrap}
 .krow{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:6px 10px;margin-top:6px}

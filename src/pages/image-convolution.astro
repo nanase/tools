@@ -25,13 +25,13 @@ const PW = W + 2 * PAD,
   PH = H + 2 * PAD;
 const ICON_HOME = '<rect x="1.5" y="1.5" width="1.8" height="9"/><path d="M10.5 1.5v9L4 6z"/>';
 ---
-<SiteLayout title={name} tool={{ id: 'image-convolution', name }} description="核の窓が画像の上を滑り、ぼかし・鮮鋭化・エッジ検出の出力を 1 画素ずつ作る様子を見せます。窓の中の積と和、核の編集、画像の外の扱い、相関との違いを確かめられます。" note="画像はこの端末の中だけで処理し、送信しません。画像は灰色にして 256 × 192 画素に縮めます。">
-  <PageTitle title={name}>核（小さな重みの表）を画像の上で滑らせ、重なった画素との積の和を出力の 1 画素にします。走査線より上が出力、下が入力で、窓の中の積と和を横の枠で確かめられます。ぼかし・鮮鋭化・エッジ検出などの見本の核を選び、升の値を上下にドラッグして核を作り変えられます。1 次元の原理は「畳み込み」のページにあります。</PageTitle>
+<SiteLayout title={name} tool={{ id: 'image-convolution', name }} description="カーネルを画像の上でずらし、ぼかし・鮮鋭化・エッジ検出の出力を 1 画素ずつ作る様子を見せます。積和の内訳、カーネルの編集、端の処理、相関との違いを確かめられます。" note="画像はこの端末の中だけで処理し、送信しません。画像は灰色にして 256 × 192 画素に縮めます。">
+  <PageTitle title={name}>カーネル（小さな重みの表）を画像の上で 1 画素ずつずらし、重なった画素との積の和を出力にします。横線より上が出力、下が入力です。ぼかし・鮮鋭化・エッジ検出などのカーネルを選び、係数を上下にドラッグして作り変えられます。1 次元の原理は「畳み込み」のページで扱います。</PageTitle>
 
   <div class="tgrid">
     <Panel hid="hd-img" title="画像" class="a-img" fixed>
-      <div slot="aux" class="seg" id="p-view" role="group" aria-label="見方" data-nosave>
-        <button type="button" data-v="out" aria-pressed="true" title="出力の画素ごとに、窓の中の入力を集める">出力の側</button><button type="button" data-v="in" aria-pressed="false" title="入力の画素ごとに、核の写しを配って足す">入力の側</button>
+      <div slot="aux" class="seg" id="p-view" role="group" aria-label="計算の順" data-nosave>
+        <button type="button" data-v="out" aria-pressed="true" title="出力の 1 画素ごとに、窓の中の入力を集めて積和をとる">出力ごとに集める</button><button type="button" data-v="in" aria-pressed="false" title="入力の 1 画素ごとに、その値を掛けたカーネルを出力へ足し込む。全部配り終えると同じ結果になる">入力ごとに配る</button>
       </div>
       <div class="ibar">
         <div class="grp"><span class="lbl" id="l-src">画像</span>
@@ -40,47 +40,49 @@ const ICON_HOME = '<rect x="1.5" y="1.5" width="1.8" height="9"/><path d="M10.5 
           </div>
           <input type="file" id="fileIn" accept="image/*" hidden>
         </div>
-        <div class="grp"><span class="lbl" id="l-edge">画像の外</span>
+        <div class="grp"><span class="lbl" id="l-edge">端の処理</span>
           <div class="seg" id="p-edge" role="group" aria-labelledby="l-edge">
             {EDGES.map(([v, l, t]) => <button type="button" data-v={v} aria-pressed={v === 'clamp' ? 'true' : 'false'} title={t}>{l}</button>)}
           </div>
         </div>
-        <div class="grp" id="g-brush" hidden><span class="lbl" id="l-brush">押すと</span>
+        <div class="grp" id="g-brush" hidden><span class="lbl" id="l-brush">クリック</span>
           <div class="seg" id="p-brush" role="group" aria-labelledby="l-brush" data-nosave>
-            <button type="button" data-v="pick" aria-pressed="true" title="押した画素まで走査を進める">選ぶ</button><button type="button" data-v="w" aria-pressed="false" title="白で描く">白</button><button type="button" data-v="k" aria-pressed="false" title="黒で描く">黒</button>
+            <button type="button" data-v="pick" aria-pressed="true" title="クリックした画素へ移る">移動</button><button type="button" data-v="w" aria-pressed="false" title="白で描く">白で描く</button><button type="button" data-v="k" aria-pressed="false" title="黒で描く">黒で描く</button>
           </div>
-          <button type="button" class="ic-btn" id="b-clear" title="描いた画像を点・線・縁に戻す">戻す</button>
+          <button type="button" class="ic-btn" id="b-clear" title="描いたものを消して最初の絵に戻す">最初に戻す</button>
         </div>
       </div>
       <div class="sbar">
-        <span class="stag"><i class="ic-sw" aria-hidden="true"></i><span id="s-lg">走査線の上 出力 · 下 入力</span></span>
-        <span class="stag">表示 <b id="s-show">0〜1</b></span>
+        <span class="stag"><i class="ic-sw" aria-hidden="true"></i><span id="s-lg">線より上: 出力　下: 入力</span></span>
+        <span class="stag">表示範囲 <b id="s-show">0〜1</b></span>
         <span class="stag ic-st" id="s-st" aria-live="polite"></span>
       </div>
-      <div class="ic-stage" id="st" tabindex="0" role="group" aria-roledescription="画像" aria-label="画像。押した画素まで走査を進める。矢印キーで 1 画素ずつ動かす">
+      <div class="ic-stage" id="st" tabindex="0" role="group" aria-roledescription="画像" aria-label="画像。クリックした画素へ移る。矢印キーで 1 画素ずつ動かす">
         <canvas id="cv" width={PW} height={PH}></canvas>
         <svg id="ov" viewBox={`0 0 ${PW} ${PH}`} preserveAspectRatio="none" aria-hidden="true"></svg>
         <div class="loupe" id="loupe" aria-hidden="true"></div>
       </div>
       <div class="tp">
-        <button type="button" class="tp-ib" id="b-home" title="左上から" aria-label="左上から"><svg viewBox="0 0 12 12" aria-hidden="true" set:html={ICON_HOME} /></button>
-        <button type="button" class="tp-pp" id="b-pp" title="走査する" aria-label="走査する"><svg class="i-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.2l7.6 4.8L3 10.8z"/></svg><svg class="i-pause" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="2.8" height="9"/><rect x="7.2" y="1.5" width="2.8" height="9"/></svg></button>
+        <button type="button" class="tp-ib" id="b-home" title="最初へ" aria-label="最初へ"><svg viewBox="0 0 12 12" aria-hidden="true" set:html={ICON_HOME} /></button>
+        <button type="button" class="tp-pp" id="b-pp" title="再生" aria-label="再生"><svg class="i-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.2l7.6 4.8L3 10.8z"/></svg><svg class="i-pause" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="2.8" height="9"/><rect x="7.2" y="1.5" width="2.8" height="9"/></svg></button>
         <div class="tp-tl">
-          <div class="tp-trk" id="trk" role="slider" tabindex="0" aria-label="走査の位置" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="tp-rail"></div><div class="tp-fill" id="trk-f"></div><div class="tp-th" id="trk-t"></div></div>
+          <div class="tp-trk" id="trk" role="slider" tabindex="0" aria-label="再生の位置" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="tp-rail"></div><div class="tp-fill" id="trk-f"></div><div class="tp-th" id="trk-t"></div></div>
           <div class="tp-tm"><span id="o-pl">画素</span><span id="o-yl">出力 <b id="o-y">—</b></span></div>
         </div>
-        <div class="tp-side"><button type="button" class="tp-sq" id="b-step" title="1 画素進める" aria-label="1 画素進める"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 3l6 5-6 5M12 3v10"/></svg></button></div>
+        <div class="tp-side"><button type="button" class="tp-sq" id="b-step" title="1 画素進む" aria-label="1 画素進む"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 3l6 5-6 5M12 3v10"/></svg></button></div>
       </div>
-      <More id="g-img" title="表示の設定"><div class="ptab">
-        <ChoiceRow k="spd" name="走査の速さ" sub="1 秒に進む画素。ゆっくり 5・ふつう 900・速く 16000" choices={SPEEDS.map(([v, l]) => [v, l] as const)} value="mid" />
+      <More id="g-img" title="再生の設定"><div class="ptab">
+        <ChoiceRow k="spd" name="速さ" sub="1 秒に進む画素数。ゆっくり 5・ふつう 900・速く 16000" choices={SPEEDS.map(([v, l]) => [v, l] as const)} value="mid" />
       </div></More>
     </Panel>
 
-    <Panel hid="hd-ker" title="核 h" class="a-ker">
-      <button slot="aux" type="button" class="tg" id="b-rot" aria-pressed="true" title="押して外すと、核を回さずに重ねる相関になる"><span class="led on" aria-hidden="true"></span>180° 回す</button>
-      <div class="kch" id="p-kn" role="group" aria-label="核">
+    <Panel hid="hd-ker" title="カーネル h" class="a-ker">
+      <div slot="aux" class="seg" id="p-op" role="group" aria-label="演算">
+        <button type="button" data-v="conv" aria-pressed="true" title="カーネルを上下左右に反転してから重ねる">畳み込み</button><button type="button" data-v="corr" aria-pressed="false" title="カーネルを反転せずに重ねる">相関</button>
+      </div>
+      <div class="kch" id="p-kn" role="group" aria-label="カーネル">
         <div class="chips">{KN.map(([v, l, t]) => <button type="button" class="chip" data-v={v} aria-pressed={v === 'gauss' ? 'true' : 'false'} title={t}>{l}</button>)}</div>
-        <span class="lbl">比べる（畳み込みでない）</span>
+        <span class="lbl">比較用の非線形フィルタ（畳み込みでない）</span>
         <div class="chips">{NC.map(([v, l, t]) => <button type="button" class="chip nc" data-v={v} aria-pressed="false" title={t}>{l}</button>)}</div>
       </div>
       <div class="ptab">{PARAMS.map((d) => <ParamRow d={d} />)}</div>
@@ -88,11 +90,11 @@ const ICON_HOME = '<rect x="1.5" y="1.5" width="1.8" height="9"/><path d="M10.5 
         <div class="kwrap" id="kg"></div>
         <figure class="kspec"><canvas id="cv-h" width="64" height="64"></canvas><figcaption id="o-hcap">|H|</figcaption></figure>
       </div>
-      <p class="kmeta hh" id="o-km" data-ph="15×15（中央 7×7） · 和 1 · 分離できる · 1 画素 30 回（直接 225）"></p>
-      <div class="krow"><span class="aux">↕ 升をドラッグ</span><button type="button" class="ic-btn" id="b-kreset" disabled>見本に戻す</button></div>
+      <p class="kmeta hh" id="o-km" data-ph="15×15（中央 7×7） · 係数の和 1 · 分離可能 · 積和 30 回/画素（直接なら 225 回）"></p>
+      <div class="krow"><span class="aux">↕ 係数を上下にドラッグ</span><button type="button" class="ic-btn" id="b-kreset" disabled>元に戻す</button></div>
     </Panel>
 
-    <Panel hid="hd-mag" title="窓の中" class="a-mag">
+    <Panel hid="hd-mag" title="窓の計算" class="a-mag">
       <span slot="aux" class="aux" id="o-op">畳み込み</span>
       <div id="mag"></div>
     </Panel>
