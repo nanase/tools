@@ -29,11 +29,11 @@ const hz = (f: number) => (f >= 1000 ? `${f / 1000}k` : `${f}`);
 const DRYS = [
   ...DRY.map((d) => [d.v, d.name] as const),
   ['guitar', 'ギター'] as const,
-  ['file', 'ファイル…', '手持ちの音のファイルを開く（この端末の中だけで使い、送信しません）'] as const,
+  ['file', 'ファイル…', '音のファイルを開く。送信はしない'] as const,
 ];
 ---
-<SiteLayout title={name} tool={{ id: 'reverb', name }} description="部屋の壁での反射を鏡像法で求め、波面の広がり・インパルス応答・残響時間を見て、乾いた音に畳み込んで響きを聞きます。" note="直方体の部屋で、面は鏡のように反射するとした模型による参考値です。音はこの端末の中で作り、送信しません。">
-  <PageTitle title={name}>部屋の壁での反射を鏡像法で求めます。音源と聞き手を動かし、波面が壁で跳ね返る様子・インパルス応答・残響時間を見て、乾いた音に畳み込んで響きを聞けます。</PageTitle>
+<SiteLayout title={name} tool={{ id: 'reverb', name }} description="鏡像法で部屋の反射を求め、インパルス応答と残響時間を出します。乾いた音に畳み込んで響きを聞けます。" note="面が鏡のように反射する直方体の部屋の模型による参考値です。">
+  <PageTitle title={name}>鏡像法で部屋の反射を求め、響きを図と音で確かめます。</PageTitle>
   <div class="mini" aria-hidden="true"><span>RT60<b id="mt">—</b></span><span>C80<b id="mc">—</b></span><span>ECHO<b id="me">—</b></span></div>
 
   <div class="tgrid">
@@ -52,7 +52,7 @@ const DRYS = [
         <span class="stag">混合時間 <b id="s-mix">—</b></span>
         <span class="stag right">速さ <b id="s-spd">—</b></span>
       </div>
-      <div class="scope rvw"><canvas id="rv-top" data-ar={roomAspect(R0).toFixed(3)} style={`aspect-ratio:${roomAspect(R0).toFixed(3)}`} tabindex="0" role="img" aria-label="上から見た部屋の波面と反射の経路" title="音源と聞き手はドラッグで動かす（キーは矢印、Shift で 1 m、Enter で音源と聞き手を切り替え）"></canvas></div>
+      <div class="scope rvw"><canvas id="rv-top" data-ar={roomAspect(R0).toFixed(3)} style={`aspect-ratio:${roomAspect(R0).toFixed(3)}`} tabindex="0" role="img" aria-label="上から見た部屋の波面と反射の経路" title="音源と聞き手をドラッグで動かす。矢印キーでも動く（Shift で 1 m ずつ・Enter で切り替え）"></canvas></div>
       <p class="pick" id="s-pick" hidden>選んだ反射 <b id="s-pick-v"></b></p>
       <div class="lgd">
         <span><i class="sw" aria-hidden="true"></i>直接音の波面</span>
@@ -86,7 +86,7 @@ const DRYS = [
         <div slot="aux" class="seg" id="p-zoom" role="group" aria-label="時間の幅">
           {ZOOMS.map(([v, l]) => <button type="button" data-v={v} aria-pressed={v === 'early' ? 'true' : 'false'}>{l}</button>)}
         </div>
-        <div class="scope rvw"><canvas id="rv-ir" data-ar="1.7" style="aspect-ratio:1.7" tabindex="0" role="img" aria-label="インパルス応答と減衰曲線" title="なぞると時刻を止め、その時刻に届いた反射の経路を部屋の図に出す（キーは左右で前後の反射、Esc で戻す）"></canvas></div>
+        <div class="scope rvw"><canvas id="rv-ir" data-ar="1.7" style="aspect-ratio:1.7" tabindex="0" role="img" aria-label="インパルス応答と減衰曲線" title="なぞった時刻に届いた反射の経路を部屋の図に出す。左右キーで前後の反射へ・Esc で戻す"></canvas></div>
         <div class="lgd">
           <span><i class="sw" aria-hidden="true"></i>直接音</span>
           <span><i class="sw c2" aria-hidden="true"></i>初期反射（80 ms まで）</span>
@@ -119,8 +119,8 @@ const DRYS = [
           <button type="button" id="playBtn" aria-pressed="false" title="乾いた音に応答を畳み込んで鳴らす"><span class="led" id="playLed" aria-hidden="true"></span><span>聞く</span></button>
         </div>
         <div class="ptab">
-          <ChoiceRow k="dry" name="乾いた音" sub="残響のない音。手拍子・拍子木・声は合成音、ギターはギター音響モデルの音" choices={DRYS} value="clap" layout="chips" msg />
-          <ChoiceRow k="mode" name="響き" sub="楽器ページの残響は、楽器のページと同じフィードバック遅延網に、この部屋の残響時間を入れたもの" choices={MODES} value="room" layout="chips" msg />
+          <ChoiceRow k="dry" name="乾いた音" sub="残響のない音。ギターはギター音響モデルで弾く" choices={DRYS} value="clap" layout="chips" msg />
+          <ChoiceRow k="mode" name="響き" sub="「楽器ページの残響」は楽器のページの残響（フィードバック遅延網）をこの部屋の残響時間で鳴らす" choices={MODES} value="room" layout="chips" msg />
           <ParamRow d={VOL} />
         </div>
         <input type="file" id="rv-file" accept="audio/*" hidden>

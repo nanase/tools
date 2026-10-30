@@ -572,7 +572,7 @@ playBtn.addEventListener('click', () => void play());
 autoPause(audio, { pause: stop, hidden: () => {} });
 function syncMode(): void {
   /* 楽器ページの残響は閉じた部屋だけ */
-  modeCh.note(modeCh.value === 'fdn' && !ac.closed ? '開いた空間では残響がなく、直接音だけになります' : '');
+  modeCh.note(modeCh.value === 'fdn' && !ac.closed ? '開いた空間では直接音だけになります' : '');
 }
 
 /* ---------- 始める ---------- */
