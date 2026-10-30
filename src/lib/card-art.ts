@@ -1156,6 +1156,58 @@ export const ART: Record<string, Art> = {
       )
     );
   },
+  /* 残響: 上から見た部屋で、音源と 1 回反射の鏡像から波面が広がる。右はインパルス応答が届いた所まで */
+  rv(t) {
+    const X0 = 4,
+      Y0 = 6,
+      W = 48,
+      H = 36,
+      sx = 16,
+      sy = 19,
+      u = mod(t, 2.4) / 2.4,
+      R = 3 + 64 * u,
+      inside = (x: number, y: number): boolean => x >= X0 && x <= X0 + W && y >= Y0 && y <= Y0 + H,
+      /* 円のうち部屋の中の弧だけを折れ線にする */
+      arc = (cx: number, cy: number): string => {
+        let d = '',
+          on = false;
+        for (let k = 0; k <= 96; k++) {
+          const a = (TAU * k) / 96,
+            x = cx + R * Math.cos(a),
+            y = cy + R * Math.sin(a);
+          if (inside(x, y)) {
+            d += `${on ? 'L' : 'M'}${r1(x)} ${r1(y)}`;
+            on = true;
+          } else on = false;
+        }
+        return d;
+      },
+      imgs: [number, number][] = [
+        [2 * X0 - sx, sy],
+        [2 * (X0 + W) - sx, sy],
+        [sx, 2 * Y0 - sy],
+        [sx, 2 * (Y0 + H) - sy],
+      ];
+    /* インパルス応答: 直接音・1 回反射・密になる残響。今の時刻まで描く */
+    const ir: [number, number][] = [],
+      T0 = 64,
+      T1 = 116,
+      now = T0 + (T1 - T0) * u;
+    for (let k = 0; k < 44; k++) {
+      const x = T0 + 2 + (k < 5 ? [0, 5, 8, 12, 15][k] : 15 + (k - 4) * 0.9),
+        h = k === 0 ? 30 : 30 * Math.exp(-(x - T0) / 14) * (0.5 + 0.5 * hn(k));
+      if (x <= now) ir.push([x, h]);
+    }
+    return (
+      P('c', `M${X0} ${Y0}h${W}v${H}h${-W}Z`) +
+      P('a', arc(sx, sy)) +
+      P('b', imgs.map(([x, y]) => arc(x, y)).join('')) +
+      P('fc', `M${sx - 1.6} ${sy}a1.6 1.6 0 1 0 3.2 0a1.6 1.6 0 1 0 -3.2 0`) +
+      P('c t', `M${T0} 42H${T1}`) +
+      P('a', ir.map(([x, h]) => `M${r1(x)} 42V${r1(42 - h)}`).join('')) +
+      P('c d', `M${r1(now)} 6V42`)
+    );
+  },
 };
 
 /**
@@ -1197,6 +1249,7 @@ export const LOOP: Record<string, number> = {
   svg: TAU / 2.4,
   tu: 3,
   tm: Math.PI / 1.2,
+  rv: 2.4,
   cv: 3,
   icv: 3,
 };

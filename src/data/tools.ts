@@ -148,6 +148,14 @@ export const TOOLS: Tool[] = [
     k: 'noise generator 雑音 ノイズ white ホワイトノイズ 白色雑音 pink ピンクノイズ 1/f brown ブラウンノイズ red 赤色雑音 blue ブルー violet バイオレット grey gray グレー velvet ベルベット lfsr 線形帰還シフトレジスタ m系列 m-sequence prbs 疑似乱数 原始多項式 ファミコン nes ゲームボーイ gameboy sn76489 スペクトル スペクトログラム spectrogram オーディオ audio',
   },
   {
+    id: 'reverb',
+    c: '音響',
+    t: '残響',
+    d: '部屋の反射を鏡像法で求め、インパルス応答を畳み込んで響きを聞きます。',
+    ic: 'rv',
+    k: 'reverb reverberation 残響 反響 エコー echo やまびこ 鏡像法 image source method インパルス応答 impulse response rir 残響時間 rt60 t60 sabine セイビン eyring アイリング 吸音率 absorption coefficient 初期反射 early reflection 後部残響 late reverberation 臨界距離 critical distance 平均自由行程 edt t20 t30 c80 d50 schroeder シュレーダー 畳み込み convolution convolver 部屋 ホール 教会 屋外 オーディオ audio',
+  },
+  {
     id: 'guitar',
     c: '音響モデル',
     t: 'ギター音響モデル',
