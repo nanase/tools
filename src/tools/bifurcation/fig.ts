@@ -2,6 +2,7 @@
  * 分岐図のページの図（Canvas）: 枠と目盛り、分岐図の濃さの画像、リアプノフ指数、クモの巣図、縦向きの時系列。
  * 隣り合う図は軸を 1 本ずつ共有するので、上下の余白（クモの巣図と分岐図）と左右の余白（クモの巣図と時系列）をそろえる
  */
+import { Density } from './density';
 import { lyapunov, type MapDef, Walker, winX } from './map';
 import type { View } from './params';
 
@@ -178,42 +179,15 @@ export function attractor(m: MapDef, r: number, x0: number, n = 64): number[] {
 }
 
 /* ---------- 分岐図 ---------- */
-/**
- * 分岐図の濃さの画像（W × H 画素）。列ごとに skip 回の過渡を捨て、keep 回の値を升に数えて、
- * 回数を 1 − exp(−n/s) で濃さにする（周期の点は濃く、カオスの帯は薄く）。
- * 出発点は写像の既定の初めの値（対称な写像はその符号を変えた値からも）
- */
-export function bifImage(
-  m: MapDef,
-  v: View,
-  W: number,
-  H: number,
-  skip: number,
-  keep: number,
-  col: Col,
-): HTMLCanvasElement {
-  const cnt = new Uint32Array(W * H),
-    k = H / (v.y1 - v.y0);
-  const seeds = m.odd ? [m.x0, -m.x0] : [m.x0];
-  for (let i = 0; i < W; i++) {
-    const r = v.r0 + ((i + 0.5) / W) * (v.r1 - v.r0);
-    for (const s0 of seeds) {
-      const w = new Walker(m, r, s0).run(skip);
-      for (let n = 0; n < keep; n++) {
-        const x = w.step();
-        if (Number.isNaN(x)) break;
-        let j = Math.floor((v.y1 - x) * k);
-        if (v.flip) j = H - 1 - j;
-        if (j >= 0 && j < H) cnt[j * W + i]++;
-      }
-    }
-  }
-  const img = new ImageData(W, H),
+/** 濃さを色にした画像（W × H 画素） */
+function bifImage(d: Density, col: Col): HTMLCanvasElement {
+  const { W, H, ink } = d,
+    img = new ImageData(W, H),
     bg = rgb(col.screen),
     fg = rgb(col.ink),
-    s = (2 * keep) / H + 0.6;
+    q = 1 / Math.max(1, d.passes);
   for (let p = 0; p < W * H; p++) {
-    const a = cnt[p] ? 1 - Math.exp(-cnt[p] / s) : 0;
+    const a = ink[p] * q;
     img.data[p * 4] = bg[0] + (fg[0] - bg[0]) * a;
     img.data[p * 4 + 1] = bg[1] + (fg[1] - bg[1]) * a;
     img.data[p * 4 + 2] = bg[2] + (fg[2] - bg[2]) * a;
@@ -240,27 +214,57 @@ export interface BifState {
   box: { x0: number; y0: number; x1: number; y1: number } | null;
 }
 
-/** 分岐図を描く。濃さの画像は範囲・大きさ・色が変わったときだけ作り直す */
+/**
+ * 分岐図を描く。濃さは範囲・大きさが変わったら 1 回目だけ計算して描き、残りの回は refine で少しずつ足す。
+ * 色が変わったときは濃さを計算し直さずに塗り直す
+ */
 export class BifFig {
   P: Frame | null = null;
   private key = '';
+  private ckey = '';
+  private den: Density | null = null;
   private img: HTMLCanvasElement | null = null;
+  private col: Col | null = null;
   constructor(readonly cv: HTMLCanvasElement) {}
+
+  /** 細かくする回が残っている */
+  get busy(): boolean {
+    return !!this.den && !this.den.done;
+  }
+
+  /** 時刻 until [ms] まで濃さを足す。回が 1 つ終わって画像が変わったら true */
+  refine(until: number): boolean {
+    const d = this.den;
+    if (!d || d.done || !this.col || !d.work(until)) return false;
+    this.img = bifImage(d, this.col);
+    return true;
+  }
 
   draw(s: BifState, col: Col): void {
     const F = fitCanvas(this.cv),
       { v, m } = s;
     const P = frame(F, { x0: v.r0, x1: v.r1, y0: v.y0, y1: v.y1, flip: v.flip }, col, { xl: s.sym, yl: 'x' });
     this.P = P;
-    const W = Math.max(1, Math.round(P.pw * F.d)),
-      H = Math.max(1, Math.round(P.ph * F.d)),
+    /* 画像は端末の画素に合わせて置く（ずれると補間でぼける） */
+    const ix = Math.round(P.l * F.d),
+      iy = Math.round(P.t * F.d),
+      W = Math.max(1, Math.round((P.l + P.pw) * F.d) - ix),
+      H = Math.max(1, Math.round((P.t + P.ph) * F.d) - iy),
       zoom = s.span / (v.r1 - v.r0),
       skip = Math.round(500 + 300 * Math.log2(Math.max(1, zoom))) * (v.deep ?? 1),
       keep = Math.round(Math.min(900, 300 + H * 0.8));
-    const k = [m.id, v.r0, v.r1, v.y0, v.y1, v.flip, v.deep, W, H, col.screen, col.ink].join();
-    if (k !== this.key || !this.img) {
-      this.img = bifImage(m, v, W, H, skip, keep, col);
+    const k = [m.id, v.r0, v.r1, v.y0, v.y1, v.flip, v.deep, W, H].join(),
+      ck = [col.screen, col.ink].join();
+    this.col = col;
+    if (k !== this.key || !this.den) {
+      this.den = new Density(m, v, W, H, skip, keep);
+      this.den.work(Number.POSITIVE_INFINITY);
       this.key = k;
+      this.ckey = '';
+    }
+    if (ck !== this.ckey || !this.img) {
+      this.img = bifImage(this.den, col);
+      this.ckey = ck;
     }
     const c = F.c,
       rx = s.rev != null ? P.X(s.rev) : P.l + P.pw;
@@ -268,7 +272,8 @@ export class BifFig {
     c.beginPath();
     c.rect(P.l, P.t, Math.max(0, Math.min(P.pw, rx - P.l)), P.ph);
     c.clip();
-    c.drawImage(this.img, P.l, P.t, P.pw, P.ph);
+    c.setTransform(1, 0, 0, 1, 0, 0);
+    c.drawImage(this.img, ix, iy);
     c.restore();
     c.strokeStyle = col.grid2;
     c.lineWidth = 1;

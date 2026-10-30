@@ -281,6 +281,19 @@ function draw(): void {
   drawCob(cvCob, s, col);
   drawTs(cvTs, s, col);
   outs();
+  refine();
+}
+
+/** 分岐図の濃さを、1 フレームに 8 ms ずつ足して細かくする */
+let rf = 0;
+function refine(): void {
+  if (rf || !bif.busy) return;
+  const step = () => {
+    rf = 0;
+    if (bif.refine(performance.now() + 8)) bif.draw(state(), col);
+    if (bif.busy) rf = requestAnimationFrame(step);
+  };
+  rf = requestAnimationFrame(step);
 }
 
 /* ---------- 計算結果 ---------- */
