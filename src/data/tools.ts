@@ -364,6 +364,14 @@ export const TOOLS: Tool[] = [
     ic: 'wv',
     k: 'wavelet ウェーブレット 変換 transform cwt dwt 連続ウェーブレット変換 離散ウェーブレット変換 morlet モルレ haar ハール daubechies ドベシィ スカログラム scalogram 多重解像度 multiresolution mra mallat フィルタバンク filter bank 時間周波数 time-frequency stft 短時間フーリエ変換 不確定性 heisenberg gabor ガボール 内積 inner product 平均と差 位相 phase フーリエ fourier 数学 math',
   },
+  {
+    id: 'wavelet-denoise',
+    c: '数学',
+    t: 'ウェーブレットで雑音除去と圧縮',
+    d: 'ウェーブレットの係数を捨てて戻し、雑音を除いた音と圧縮した音を元の音と聴き比べます。',
+    ic: 'wd',
+    k: 'wavelet ウェーブレット 雑音除去 ノイズ除去 denoise denoising noise reduction 圧縮 compression 閾値 threshold 硬い閾値 柔らかい閾値 hard soft shrinkage 縮小 visushrink sureshrink bayesshrink sure 普遍閾値 universal threshold donoho johnstone cycle spinning 量子化 quantization ビット bit エントロピー entropy jpeg 2000 dct dft mdct aac mp3 フーリエ fourier sn 比 snr スカログラム scalogram 聴き比べ 音 audio マイク 録音 数学 math',
+  },
 ];
 /** 準備中を後ろへ */
 export const order = (L: Tool[]): Tool[] => L.slice().sort((a, b) => (a.s || 0) - (b.s || 0));

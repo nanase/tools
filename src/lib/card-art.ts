@@ -1195,6 +1195,36 @@ export const ART: Record<string, Art> = {
       P('a', fx(g, Math.max(4, xc - w), Math.min(116, xc + w), 60))
     );
   },
+  /* ウェーブレットで雑音除去と圧縮: 走査線の左は雑音の消えた波形、右は雑音入り。下の係数は閾値の帯より小さいものが左から消える */
+  wd(t) {
+    const xs = 4 + 112 * mod(t / 4, 1),
+      s = (x: number) =>
+        Math.exp(-(((x - 38) / 9) ** 2)) * Math.sin(x * 1.3) +
+        0.6 * Math.exp(-(((x - 84) / 14) ** 2)) * Math.sin(x * 0.55),
+      wave = (x0: number, x1: number, nz: number) =>
+        x1 - x0 < 1
+          ? ''
+          : fx((x) => 15 - 10 * (s(x) + nz * (hn(Math.round(x * 2)) - 0.5)), x0, x1, Math.ceil((x1 - x0) * 2));
+    let keep = '',
+      drop = '';
+    for (let i = 0; i < 28; i++) {
+      const x = 6 + i * 4,
+        /* 大きい係数は波の山の所だけ */
+        v = 1.6 * Math.abs(s(x)) * 6 + 2.4 * hn(i + 50),
+        seg = `M${x} 45V${r1(45 - v)}`;
+      if (v > 4.5) keep += seg;
+      else if (x > xs) drop += seg;
+    }
+    return (
+      P('fc', `M4 ${45 - 4.5}H116V45H4Z`) +
+      P('c t', 'M4 45H116') +
+      (drop ? P('c g', drop) : '') +
+      P('a', keep) +
+      P('c g', wave(xs, 116, 0.9)) +
+      P('a', wave(4, xs, 0)) +
+      P('c d', `M${r1(xs)} 3V47`)
+    );
+  },
   /* 音律とうなり: 2 つの近い部分音の和。包絡（破線）の山と谷が流れる */
   /* 畳み込み: 反転した核が矩形の入力の上を滑り、重なりの面積（塗り）が上の出力の曲線を描いていく */
   cv(t) {
@@ -1427,6 +1457,7 @@ export const LOOP: Record<string, number> = {
   icv: 3,
   th: 3,
   ff: 3,
+  wd: 4,
 };
 
 /** 止まっているときの図柄（ビルド時に HTML へ出す） */
