@@ -32,7 +32,6 @@ const LEGEND = [
 ---
 <SiteLayout title={name} tool={{ id: 'piano-action', name }} description="グランドピアノの鍵からハンマーが弦を打つまでのアクションの動きを計算しスローで確認できます。" note="動きは Hirschkorn (2004) の多体の模型による計算で、ダンパーは仮の形です。">
   <PageTitle title={name}>グランドピアノの鍵を押してからハンマーが弦を打ち、バックチェックに受け止められ、鍵を戻して連打するまでの機構（アクション）の動きを計算します。鍵・ウィッペン・ジャック・レペティションレバー・ハンマーの 5 つの部品が 13 か所の接触で押し合う模型を使います。段階ごとの絵を押すとその段階をスローで見られます。レットオフ・ドロップ・バックチェックなどの整調を変えると、動きを計算し直します。打弦の速さでピアノ音響モデルの弦を鳴らせます。</PageTitle>
-  <div class="mini" aria-hidden="true"><span>段階<b id="m-st"></b></span><span><i>t</i><b id="m-t"></b></span><span><i>v</i><sub>h</sub><b id="m-v"></b></span></div>
 
   <div class="tgrid">
     <Panel hid="hd-stg" title="段階" class="a-stg" fixed>

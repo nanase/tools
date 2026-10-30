@@ -222,7 +222,6 @@ function draw(): void {
   pairs = r.pairs;
   cs = coins(r);
   if (S.sel >= pairs.length) S.sel = 0;
-  const sp = pairs[S.sel];
 
   /* 状態の帯 */
   txt($('#s-a'), temperamentOf(S.tem).name);
@@ -352,10 +351,6 @@ function draw(): void {
   /* ピアノだけの行 */
   for (const el of $$('.pno')) el.hidden = S.tb !== 'piano';
 
-  /* 要約の帯 */
-  txt($('#mt'), tn);
-  txt($('#mc'), `${NAMES[S.root]} ${ch.name}`);
-  txt($('#mb'), sp?.c ? `${beatT(sp)} 回/秒${firstOrder(sp) ? '' : '（2 次）'}` : '—');
   frame(performance.now());
 }
 

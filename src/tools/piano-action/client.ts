@@ -309,7 +309,6 @@ function results(): void {
     E.check === null
       ? '—'
       : `${(gapAt(R, Math.round((E.release - 5e-3) / FRAME)) * 1000).toFixed(1)}<span class="u">mm</span>`;
-  txt('#m-v', miss || block ? '—' : `${s1.v.toFixed(2)} m/s`);
 }
 
 /* ---------- 描く ---------- */
@@ -370,7 +369,6 @@ function draw(force = false): void {
     txt('#cap-no', String(S.k + 1));
     txt('#cap-nm', s.name);
     txt('#cap-d', s.desc);
-    txt('#m-st', s.name);
     $('#a-svg').setAttribute('aria-label', `グランドピアノのアクションを横から見た図。${S.k + 1} ${s.name}`);
     for (const b of $$('#frames .fr')) b.setAttribute('aria-pressed', String(Number(b.dataset.k) === S.k));
     for (const b of $$('#tl [data-k]')) b.classList.toggle('on', Number(b.dataset.k) === S.k);
@@ -382,7 +380,6 @@ function draw(force = false): void {
     `${Math.abs(v) < 0.005 ? '0.00' : v.toFixed(2).replace('-', '−')} m/s・弦まで ${(Math.max(0, gapAt(R, i)) * 1000).toFixed(1)} mm`,
   );
   txt('#tp-t', ms(t, 2));
-  txt('#m-t', ms(t));
   const p = (B[S.k] + (B[S.k + 1] - B[S.k]) * S.u) * 100;
   $('#tp-fill').style.width = `${p}%`;
   $('#tp-th').style.left = `${p}%`;

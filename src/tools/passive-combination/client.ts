@@ -359,9 +359,6 @@ function render(): void {
   runBtn.hidden = !anyRun && !anyAbort;
   runBtn.textContent = anyRun ? '中止' : 'もう一度探索';
   runBtn.dataset.a = anyRun ? 'stop' : 'run';
-  /* スマホで上に留まる要約 */
-  html('#mn', `${nSel} 本<b>${c ? esc(fmtR(c.v, u, 6)) : '—'}</b>`);
-  txt('#me', c ? errTxt(c.e) : '—');
   /* 候補 */
   txt('#cmb-aux', c ? `${r.sel + 1} 番目の候補` : '');
   html(

@@ -33,7 +33,6 @@ const PH =
 ---
 <SiteLayout title={name} tool={{ id: 'kalman', name }} description="線路を走る台車の位置と速度を、雑音のある距離計の値からカルマンフィルタで推定します。予測と観測の分布の掛け合わせ、不確かさの楕円の伸び縮み、雑音の設定を誤ったときの崩れ方を見られます。" note="台車の加速度と観測の雑音を、平均 0 の正規分布の白色雑音とした模型による参考値です。">
   <PageTitle title={name}>線路を走る台車の位置を、雑音のある距離計の値から推定するカルマンフィルタです。予測の分布と観測の分布を掛け合わせて推定を更新する仕組みを、位置の山で確かめられます。位置と速度の平面では、不確かさの楕円が予測で膨らみ、観測で縮みます。フィルタの雑音の見積りを本当の値からずらすと、推定がどう崩れるかを誤差のグラフと正規化イノベーション 2 乗で比べられます。</PageTitle>
-  <div class="mini" aria-hidden="true"><span>RMS<b id="m-rms"></b></span><span><i>K</i><sub><i>p</i></sub><b id="m-kp"></b></span><span>NIS<b id="m-nis"></b></span></div>
 
   <div class="tgrid">
     <Panel hid="hd-fig" title="線路と推定" class="a-fig" fixed>

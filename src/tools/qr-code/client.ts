@@ -17,7 +17,6 @@ import { hex2, inspect, inspectSoil, vis } from './view';
 
 initToolPage();
 
-const DASH = '—';
 const txt = (id: string, s: string) => {
   const el = $(id);
   if (el.textContent !== s) el.textContent = s;
@@ -488,9 +487,6 @@ function outputs(): void {
   );
   txt('#o-rem', String(rem));
   txt('#o-rems', `バージョン ${q.ver} の端数`);
-  txt('#m-ver', `${q.ver}`);
-  txt('#m-ecc', q.ecc);
-  txt('#m-mask', String(q.mask));
 }
 
 const maskBtns = $$<HTMLButtonElement>('#q-masks button');
@@ -544,7 +540,6 @@ function readPanel(): void {
   const changed = soil ? soil.reduce((a, v, i) => a + (v !== q?.mods[i] ? 1 : 0), 0) : 0,
     d = soil && changed ? dec : baseDec;
   txt('#q-readst', changed ? `変わったモジュール ${changed} 個` : '');
-  txt('#m-err', d ? String(d.rs.reduce((a, r) => a + (r.ok ? r.fixes.length : 0), 0)) : DASH);
   if (!d) {
     html('#q-meters', '');
     html('#q-out', '<span class="q-ng">読み取り失敗（形式情報が 2 か所とも 4 ビット以上ずれた）</span>');

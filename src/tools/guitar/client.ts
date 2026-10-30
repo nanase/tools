@@ -516,9 +516,6 @@ function results(): void {
   html('#o-xp', `1/${ratio.toFixed(2)}`);
   txt('#o-xps', ratio > 1.5 && Math.abs(ratio - k) < 0.15 ? `${k} の倍数の部分音が弱い` : '');
   html('#o-f0', ro(Math.hypot(pl.f0[0], pl.f0[1]), 'N', 3));
-  html('#mF', fmtR(f1, 'Hz', 5));
-  txt('#mT', fmtR(tv, 's', 3));
-  txt('#mB', plain(beta, 3, true));
   txt('#nk-note', `${si + 1} 弦 ${fret ? `${fret} フレット` : '開放'}  ${noteName(n0)}  ${fmtR(f1, 'Hz', 4)}`);
   /* 代入した式 */
   const eta = (2 * m.s0[0]) / m.w[0];

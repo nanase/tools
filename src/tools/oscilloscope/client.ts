@@ -372,9 +372,6 @@ function measure(): void {
   html('#o-r2', dbHtml(dbfs(Math.SQRT2 * s2.rms)));
   html('#o-p1', dbHtml(dbfs(s1.pk)));
   html('#o-p2', dbHtml(dbfs(s2.pk)));
-  txt('#mf', fmtR(f, 'Hz', 4));
-  txt('#mr', `${r1 < -150 ? '−∞' : minus(r1.toFixed(1))} dBFS`);
-  txt('#mt', O.st);
 }
 
 /* ---------- 毎フレーム ---------- */
@@ -385,7 +382,7 @@ function newInput(): void {
   epoch = a.epoch;
   fr = null;
   O.xyClear = true;
-  for (const id of ['#o-f', '#o-T', '#o-ph', '#o-r1', '#o-r2', '#o-p1', '#o-p2', '#mf', '#mr']) txt(id, '—');
+  for (const id of ['#o-f', '#o-T', '#o-ph', '#o-r1', '#o-r2', '#o-p1', '#o-p2']) txt(id, '—');
 }
 function loop(now: number): void {
   if (epoch !== a.epoch) newInput();

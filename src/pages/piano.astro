@@ -33,7 +33,6 @@ const related = [
 ---
 <SiteLayout title={name} tool={{ id: 'piano', name }} description="グランドピアノを物理モデルで鳴らします。弦の長さ・太さ・張力、フェルトのハンマー、ユニゾンの弦と響板の結合、ダンパーとペダル、部屋の残響から、弦の振動と音を計算します。" note="音と計算結果は、論文の模型を簡略化した物理モデルによるものです。">
   <PageTitle title={name}>弦の振動（曲げ剛性と周波数で変わる損失を含む硬い弦）、フェルトのハンマーとの衝突、駒でつながった 2〜3 本のユニゾンの弦と響板（多数のモード）を計算して、ピアノの音を作ります。鍵や弦を押すと、その鍵を打ちます。ハンマーの速さ、ピアノの大きさ、調律、響板の厚さを変えると、音と振動がすぐに変わります。部屋の残響を付けて、曲の演奏もできます。</PageTitle>
-  <div class="mini" aria-hidden="true"><span><i>f</i><sub>1</sub><b id="mF"></b></span><span><i>T</i><sub>60</sub><b id="mT"></b></span><span><i>B</i><b id="mB"></b></span></div>
 
   <div class="tgrid">
     <Panel hid="hd-kb" title="鍵盤と弦" class="a-kb" fixed>

@@ -397,9 +397,6 @@ function measure(): void {
   html('#o-pf', pk ? ro(pk.f, 'Hz', 5) : '—');
   txt('#o-pn', nt ? `${ntT} セント` : '');
   html('#o-pl', pk ? `${dbT(pk.db, 2)}<span class="u">dBFS</span>` : '—');
-  txt('#mf', pk ? fmtR(pk.f, 'Hz', 4) : '—');
-  txt('#ml', pk ? `${dbT(pk.db)} dBFS` : '—');
-  txt('#mn', nt ? `${ntT}¢` : '—');
 }
 
 /* ---------- 毎フレーム ---------- */
