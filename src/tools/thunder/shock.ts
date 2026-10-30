@@ -14,9 +14,12 @@ export const airDensity = (t: number, p = P0): number => p / (RD * (t + 273.15))
 /** 円柱の衝撃波の緩和半径 R₀ = √(E/πp₀) [m]（E は単位長さあたりのエネルギー [J/m]） */
 export const relaxRadius = (e: number, p = P0): number => Math.sqrt(e / (Math.PI * p));
 
-/** Few のスペクトルのピーク f_m = 0.63 c/R₀ [Hz] */
+/**
+ * Few のスペクトルのピーク f_m = 0.63 c √(p₀/E) [Hz]（Few の学位論文の式 4.7 E ≈ 5×10⁹/f_m² と同じ）。
+ * R₀ で書くと 0.63 c/(√π R₀) ≈ 0.355 c/R₀
+ */
 export const FEW_K = 0.63;
-export const fewPeak = (e: number, c: number, p = P0): number => (FEW_K * c) / relaxRadius(e, p);
+export const fewPeak = (e: number, c: number, p = P0): number => FEW_K * c * Math.sqrt(p / e);
 
 /**
  * 継続時間 T の N 波の振幅スペクトル。|X(f)| = (P/πf)·|sin x/x − cos x|、x = πfT。
@@ -46,24 +49,62 @@ export const N_PEAK_X = (() => {
 /** 継続時間 T の N 波のスペクトルのピークの周波数 [Hz] */
 export const nPeak = (T: number): number => N_PEAK_X / (Math.PI * T);
 
-/**
- * 緩和半径のあたりで出る N 波の継続時間 [s]。
- * N 波のスペクトルのピークが Few の f_m に一致する長さとする（このツールで決めた。仮）
- */
-export const nDuration0 = (e: number, c: number, p = P0): number => N_PEAK_X / (Math.PI * fewPeak(e, c, p));
+/** 緩和半径のあたりの N 波の正の側の長さは 0.53 R₀（Few 1986 の表 4.2） */
+export const POS_LEN = 0.53;
 
-/** N 波の伸び（仮）: T(r) = T₀ √(1 + κ ln(r/r₁))（r > r₁）。弱い衝撃波の球面の伸びの形 */
+/** 緩和半径のあたりで出る N 波の継続時間 [s]: 正の側の長さ 0.53 R₀ の 2 倍を音速で割る */
+export const nDuration0 = (e: number, c: number, p = P0): number => (2 * POS_LEN * relaxRadius(e, p)) / c;
+
+/**
+ * N 波の伸び: 最初の 1 km でおよそ 2 倍になり、その先はほとんど伸びない（Few 1986）。
+ * 間は弱い衝撃波の伸びの形 T ∝ √(1 + κ ln(r/r₁)) でつなぐ（このツールで決めた）
+ */
 export interface Stretch {
   /** 伸び始める距離 [m] */
   r1: number;
-  /** 伸びの強さ（0 なら伸びない） */
-  kappa: number;
+  /** 伸びが止まる距離 [m] */
+  r2: number;
+  /** r2 での伸びの倍率（1 なら伸びない） */
+  k: number;
 }
-export const STRETCH0: Stretch = { r1: 10, kappa: 1.3 };
+export const STRETCH0: Stretch = { r1: 20, r2: 1000, k: 2 };
 
 /** 距離 r [m] で届く N 波の継続時間 [s] */
-export const nDuration = (T0: number, r: number, s: Stretch = STRETCH0): number =>
-  r <= s.r1 || s.kappa <= 0 ? T0 : T0 * Math.sqrt(1 + s.kappa * Math.log(r / s.r1));
+export function nDuration(T0: number, r: number, s: Stretch = STRETCH0): number {
+  if (r <= s.r1 || s.k <= 1) return T0;
+  const u = Math.min(1, Math.log(r / s.r1) / Math.log(s.r2 / s.r1));
+  return T0 * Math.sqrt(1 + (s.k * s.k - 1) * u);
+}
+
+/**
+ * まっすぐな長い放電路の要素の N 波を足し合わせた円筒波の形の積分 G = ∫g(s)² ds。
+ * g(s) = ∫₀^∞ n(s − v) v^(−1/2) dv、n(s) = 1 − 2s（0 ≤ s ≤ 1）。遠くの円筒波は √(2cρ T)·a·g(t/T) になる
+ */
+export const LINE_G = (() => {
+  const g = (s: number) => {
+    if (s <= 0) return 0;
+    if (s <= 1) return 2 * Math.sqrt(s) - (8 / 3) * s ** 1.5;
+    return (1 - 2 * s) * 2 * (Math.sqrt(s) - Math.sqrt(s - 1)) + (4 / 3) * (s ** 1.5 - (s - 1) ** 1.5);
+  };
+  /* 尾は −s^(−3/2)/12 で減る。2 乗の 2000 から先は 10⁻⁹ ほどで無視できる。値は 1/4 になる */
+  let G = 0;
+  const h = 1e-4;
+  for (let s = h / 2; s < 4; s += h) G += g(s) ** 2 * h;
+  const h2 = 1e-2;
+  for (let s = 4 + h2 / 2; s < 2000; s += h2) G += g(s) ** 2 * h2;
+  return G;
+})();
+
+/**
+ * 要素の N 波の振幅の係数 a [Pa·s]: 要素 dl [m] が距離 r [m] に N 波の山 a·dl/(r T) を出すとき、
+ * まっすぐな長い放電路の音のエネルギーが単位長さあたり ηE になる値。
+ * 円筒波のエネルギー 2πρ∫p²dt/(ρ₀c) = 4πG a²/ρ₀ を ηE と置く（このツールで導いた）
+ */
+export const lineAmp = (e: number, eta: number, rho: number): number =>
+  Math.sqrt((eta * e * rho) / (4 * Math.PI * LINE_G));
+
+/** 音になるエネルギーの割合（Few の学位論文の 0.42〜0.47 %。Holmes ほか 1971 は 0.18 %） */
+export const ETA0 = 0.0045;
 
 /**
  * N 波の時間積分 F(τ) = P(τ − τ²/T)（0 ≤ τ ≤ T、外は 0）。

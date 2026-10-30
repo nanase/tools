@@ -9,11 +9,8 @@ export type V3 = [number, number, number];
 
 /** 折れ線 1 本 */
 export interface Branch {
-  /** 大きな曲がり（区間）の頂点 x, y, z [m] を 3 つずつ */
+  /** 頂点 x, y, z [m] を 3 つずつ */
   p: Float64Array;
-  /** 区間の中の細かい曲がりまで入れた頂点（f の fi[k] 番目の頂点が p の k 番目の頂点） */
-  f: Float64Array;
-  fi: Uint32Array;
   /** 単位長さあたりのエネルギー [J/m] */
   e: number;
   /** 本流は 0、枝は 1 */
@@ -29,15 +26,11 @@ export interface ChannelSet {
   cloud: number;
   /** 雲の中を進む向き [度]（+x から反時計回り。聞き手は 0°） */
   az: number;
-  /** 区間の長さの下限と上限 [m]（この間で対数一様） */
+  /** 区間の長さの下限と上限 [m]（この間で一様） */
   lmin: number;
   lmax: number;
   /** 隣り合う区間の向きの変化の平均 [度] */
   turn: number;
-  /** 区間の中の細かい曲がり: 小区間の長さの下限と上限 [m]、区間の向きからのずれの平均 [度]（0 で入れない） */
-  mmin: number;
-  mmax: number;
-  mturn: number;
   /** 枝の数 */
   branches: number;
   /** 本流の単位長さあたりのエネルギー [J/m] */
@@ -46,20 +39,20 @@ export interface ChannelSet {
   eBranch: number;
 }
 
-/** 既定（仮）: 区間 5〜70 m・向きの変化の平均 16°（Hill 1968） */
+/**
+ * 既定: 区間の平均 8 m（LeVine・Gilson 1984、Lacroix ほか 2019）・向きの変化の平均 16°（Hill 1968）・
+ * E = 10⁶ J/m（Few 1969）。雲の高さ・枝の数とエネルギー・長さの幅は仮
+ */
 export const CH0: ChannelSet = {
   seed: 1,
   base: 2000,
   cloud: 3000,
   az: 90,
-  lmin: 5,
-  lmax: 70,
+  lmin: 4,
+  lmax: 12,
   turn: 16,
-  mmin: 0.5,
-  mmax: 5,
-  mturn: 0,
   branches: 4,
-  e: 5e5,
+  e: 1e6,
   eBranch: 0.3,
 };
 
@@ -105,7 +98,6 @@ function walk(
 ): number[] {
   /* 半正規分布の平均は σ√(2/π) */
   const sig = ((s.turn * Math.PI) / 180) * Math.sqrt(Math.PI / 2),
-    lr = Math.log(s.lmax / s.lmin),
     out = [...from];
   let p = from,
     d = norm(d0),
@@ -119,7 +111,7 @@ function walk(
       nd = tilt(d, th, ph);
     }
     d = nd;
-    const l = s.lmin * Math.exp(lr * r());
+    const l = s.lmin + (s.lmax - s.lmin) * r();
     p = [p[0] + l * d[0], p[1] + l * d[1], p[2] + l * d[2]];
     /* 地面より下へは行かない */
     if (p[2] < 0) p[2] = 0;
@@ -127,47 +119,6 @@ function walk(
     len += l;
   }
   return out;
-}
-
-/**
- * 区間の中に細かい曲がりを入れる。小区間の向きは区間の向きから平均 mturn の角度だけずらし（前の小区間には依らない）、
- * たどり着く点のずれを長さに比例して配り直して、区間の終わりの頂点に戻す
- */
-function meso(r: () => number, s: ChannelSet, p: Float64Array): { f: Float64Array; fi: Uint32Array } {
-  const nv = p.length / 3,
-    fi = new Uint32Array(nv);
-  if (s.mturn <= 0) return { f: p.slice(), fi: fi.map((_, i) => i) };
-  const sig = ((s.mturn * Math.PI) / 180) * Math.sqrt(Math.PI / 2),
-    lr = Math.log(s.mmax / s.mmin),
-    out: number[] = [p[0], p[1], p[2]];
-  for (let k = 1; k < nv; k++) {
-    const a: V3 = [p[3 * k - 3], p[3 * k - 2], p[3 * k - 1]],
-      b: V3 = [p[3 * k], p[3 * k + 1], p[3 * k + 2]],
-      L = Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]),
-      d = norm([b[0] - a[0], b[1] - a[1], b[2] - a[2]]),
-      pts: V3[] = [],
-      acc: number[] = [];
-    let q = a,
-      along = 0,
-      len = 0;
-    /* 区間の向きに沿って L だけ進むまで */
-    while (along < L - 1e-9) {
-      const l = Math.min(s.mmin * Math.exp(lr * r()), L - along),
-        e = tilt(d, Math.abs(normal(r)) * sig, 2 * Math.PI * r());
-      q = [q[0] + l * e[0], q[1] + l * e[1], q[2] + l * e[2]];
-      along += l * dot(e, d);
-      len += l;
-      pts.push(q);
-      acc.push(len);
-    }
-    const ex = [b[0] - q[0], b[1] - q[1], b[2] - q[2]];
-    pts.forEach((v, i) => {
-      const w = acc[i] / len;
-      out.push(v[0] + w * ex[0], v[1] + w * ex[1], Math.max(0, v[2] + w * ex[2]));
-    });
-    fi[k] = out.length / 3 - 1;
-  }
-  return { f: Float64Array.from(out), fi };
 }
 
 /** 放電路を作る。同じ設定と種なら同じ形 */
@@ -180,11 +131,7 @@ export function makeChannel(s: ChannelSet): Branch[] {
   const top = trunk.slice(-3) as V3,
     cloud = walk(r, s, top, norm([side[0], side[1], 0.3]), side, (_, len) => len >= s.cloud).slice(3);
   const main = [...trunk, ...cloud],
-    rm = mulberry(s.seed * 104729 + 7),
-    mk = (q: number[], e: number, k: 0 | 1): Branch => {
-      const p = Float64Array.from(q);
-      return { p, ...meso(rm, s, p), e, k };
-    },
+    mk = (q: number[], e: number, k: 0 | 1): Branch => ({ p: Float64Array.from(q), e, k }),
     out: Branch[] = [mk(main, s.e, 0)],
     nv = main.length / 3,
     nt = trunk.length / 3;

@@ -4,7 +4,7 @@
  */
 import { AIR0, type Air, soundSpeed } from '../../lib/air';
 import type { Branch } from './channel';
-import { nDuration, nDuration0, P0, STRETCH0, type Stretch } from './shock';
+import { airDensity, ETA0, lineAmp, nDuration, nDuration0, P0, STRETCH0, type Stretch } from './shock';
 
 /** 届く経路: 直接・地面・山・地面と山 */
 export enum Via {
@@ -32,6 +32,8 @@ export interface Scene {
   /** 影の領域での減衰 [dB] */
   shadowDb: number;
   stretch: Stretch;
+  /** 放電路のエネルギーのうち音になる割合 */
+  eta: number;
 }
 
 /** 既定（仮） */
@@ -39,13 +41,14 @@ export const SCENE0: Scene = {
   dist: 3000,
   ear: 1.5,
   air: AIR0,
-  ground: 0.9,
+  ground: 1,
   hillBack: 1500,
   hillH: 0,
   hill: 0.8,
   lapse: 6.5,
   shadowDb: 25,
   stretch: STRETCH0,
+  eta: ETA0,
 };
 
 /** 要素の長さを、その距離の N 波の波長の何分の 1 にするか（これより細かくすると、区間の指向性が要素の間隔に依らなくなる） */
@@ -53,7 +56,6 @@ const PER_WAVE = 8;
 
 /**
  * 要素の一覧。区間（折れ線の隣り合う頂点の間）ごとに並ぶ。
- * 区間は折れ線の大きな曲がりの頂点の間（細かい曲がりは区間の中に含む）。
  * seg[k] は区間 k の要素の範囲 [start, end)、segT[k]・segR[k] はその区間の N 波の継続時間と代表の距離
  */
 export interface Elements {
@@ -87,13 +89,6 @@ export const bendRadius = (tC: number, lapse: number): number =>
 export const audibleRange = (z: number, h: number, R: number): number =>
   Math.sqrt(2 * R * Math.max(z, 0)) + Math.sqrt(2 * R * Math.max(h, 0));
 
-/**
- * 振幅の目安（仮）: 本流 1 m あたり、距離 1 m で N 波の山が AMP·√(E/E_REF) [Pa]。
- * 距離に反比例し、N 波が伸びた分だけ低くなる（正の側の面積を保つ）
- */
-export const AMP = 40;
-export const E_REF = 5e5;
-
 /** 鏡像: 経路ごとに点を映す */
 function image(x: number, y: number, z: number, via: Via, xm: number): [number, number, number] {
   return [via & 2 ? 2 * xm - x : x, y, via & 1 ? -z : z];
@@ -106,6 +101,7 @@ function image(x: number, y: number, z: number, via: Via, xm: number): [number, 
 export function elements(ch: readonly Branch[], s: Scene): Elements {
   const c = soundSpeed(s.air.t),
     p0 = (s.air.p ?? P0 / 1000) * 1000,
+    rho = airDensity(s.air.t, p0),
     R = bendRadius(s.air.t, s.lapse),
     xm = s.dist + s.hillBack,
     ox = s.dist,
@@ -130,60 +126,53 @@ export function elements(ch: readonly Branch[], s: Scene): Elements {
     sV: number[] = [];
   ch.forEach((b, bi) => {
     const T0 = nDuration0(b.e, c, p0),
-      amp = AMP * Math.sqrt(b.e / E_REF),
-      q = b.p,
-      f = b.f;
-    for (let k = 1; k < q.length / 3; k++) {
-      /* 区間の中点 */
-      const mx = (q[3 * k - 3] + q[3 * k]) / 2,
-        my = (q[3 * k - 2] + q[3 * k + 1]) / 2,
-        mz = (q[3 * k - 1] + q[3 * k + 2]) / 2;
+      amp = lineAmp(b.e, s.eta, rho),
+      q = b.p;
+    for (let k = 3; k < q.length; k += 3) {
+      const ax = q[k - 3],
+        ay = q[k - 2],
+        az = q[k - 1],
+        dx = q[k] - ax,
+        dy = q[k + 1] - ay,
+        dz = q[k + 2] - az,
+        L = Math.hypot(dx, dy, dz);
+      if (L <= 0) continue;
       for (const via of vias) {
         const coef = (via & 1 ? s.ground : 1) * (via & 2 ? s.hill : 1),
-          [ix0, iy0, iz0] = image(mx, my, mz, via, xm),
-          rMid = Math.hypot(ix0 - ox, iy0, iz0 - oz),
+          [mx, my, mz] = image(ax + dx / 2, ay + dy / 2, az + dz / 2, via, xm),
+          rMid = Math.hypot(mx - ox, my, mz - oz),
           Tm = nDuration(T0, rMid, s.stretch),
-          step = (c * Tm) / PER_WAVE,
+          /* 要素は N 波の波長の 1/PER_WAVE より短くする */
+          n = Math.max(1, Math.ceil(L / ((c * Tm) / PER_WAVE))),
+          dl = L / n,
           start = T.length;
-        /* 区間の中の小区間ごとに、N 波の波長の 1/PER_WAVE より短い要素に分ける */
-        for (let j = b.fi[k - 1] + 1; j <= b.fi[k]; j++) {
-          const ax = f[3 * j - 3],
-            ay = f[3 * j - 2],
-            az = f[3 * j - 1],
-            dx = f[3 * j] - ax,
-            dy = f[3 * j + 1] - ay,
-            dz = f[3 * j + 2] - az,
-            L = Math.hypot(dx, dy, dz);
-          if (L <= 0) continue;
-          const n = Math.max(1, Math.ceil(L / step)),
-            dl = L / n;
-          for (let e = 0; e < n; e++) {
-            const u = (e + 0.5) / n,
-              x = ax + u * dx,
-              y = ay + u * dy,
-              z = az + u * dz,
-              [ix, iy, iz] = image(x, y, z, via, xm);
-            /* 山の経路は、崖を横切る点が崖の高さより下のときだけ */
-            if (via & 2) {
-              const w = (xm - ix) / (ox - ix),
-                zc = iz + w * (oz - iz);
-              if (Math.abs(zc) > s.hillH) continue;
-            }
-            const r = Math.hypot(ix - ox, iy, iz - oz),
-              Tn = nDuration(T0, r, s.stretch),
-              /* 影の領域: 鏡像から聞き手への水平距離が届く範囲を超えた分だけ、範囲の 1 割で shadowDb まで下げる */
-              hd = Math.hypot(ix - ox, iy),
-              lim = audibleRange(Math.abs(z), oz, R),
-              over = Number.isFinite(lim) ? Math.min(1, Math.max(0, (hd - lim) / (0.1 * lim))) : 0,
-              sh = 10 ** ((-s.shadowDb * over) / 20);
-            T.push(r / c);
-            Rr.push(r);
-            P.push(((coef * amp * dl) / Math.max(r, 1)) * (T0 / Tn) * sh);
-            DL.push(dl);
-            X.push(x, y, z);
-            V.push(via);
-            B.push(bi);
+        for (let e = 0; e < n; e++) {
+          const u = (e + 0.5) / n,
+            x = ax + u * dx,
+            y = ay + u * dy,
+            z = az + u * dz,
+            [ix, iy, iz] = image(x, y, z, via, xm);
+          /* 山の経路は、崖を横切る点が崖の高さより下のときだけ */
+          if (via & 2) {
+            const w = (xm - ix) / (ox - ix),
+              zc = iz + w * (oz - iz);
+            if (Math.abs(zc) > s.hillH) continue;
           }
+          const r = Math.hypot(ix - ox, iy, iz - oz),
+            Tn = nDuration(T0, r, s.stretch),
+            /* 影の領域: 鏡像から聞き手への水平距離が届く範囲を超えた分だけ、範囲の 1 割で shadowDb まで下げる */
+            hd = Math.hypot(ix - ox, iy),
+            lim = audibleRange(z, oz, R),
+            over = Number.isFinite(lim) ? Math.min(1, Math.max(0, (hd - lim) / (0.1 * lim))) : 0,
+            sh = 10 ** ((-s.shadowDb * over) / 20);
+          T.push(r / c);
+          Rr.push(r);
+          /* 正の側の面積 a·dl/(2r) を保って伸びる */
+          P.push((coef * amp * dl * sh) / (Math.max(r, 1) * Tn));
+          DL.push(dl);
+          X.push(x, y, z);
+          V.push(via);
+          B.push(bi);
         }
         if (T.length > start) {
           ss.push(start);

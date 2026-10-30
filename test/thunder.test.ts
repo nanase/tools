@@ -13,7 +13,9 @@ import {
 } from '../src/tools/thunder/path';
 import {
   addNWave,
+  airDensity,
   fewPeak,
+  LINE_G,
   N_PEAK_X,
   nDuration,
   nDuration0,
@@ -31,18 +33,27 @@ const FS = 48000,
 const line = (a: [number, number, number], b: [number, number, number], e = 5e5, n = 20): Branch => {
   const p = new Float64Array(3 * (n + 1));
   for (let k = 0; k <= n; k++) for (let j = 0; j < 3; j++) p[3 * k + j] = a[j] + ((b[j] - a[j]) * k) / n;
-  return { p, f: p, fi: Uint32Array.from({ length: n + 1 }, (_, i) => i), e, k: 0 };
+  return { p, e, k: 0 };
 };
 /** 反射も影もない場面 */
 const FREE: Scene = { ...SCENE0, ground: 0, hillH: 0, lapse: 0 };
 
 describe('衝撃波と N 波', () => {
-  it('緩和半径 R₀ = √(E/πp₀)。E = πp₀ なら 1 m', () => {
+  it('緩和半径 R₀ = √(E/πp₀)。100 kPa で 10⁴・10⁵・10⁶ J/m なら 0.18・0.56・1.78 m（Few 1986 の表 4.1）', () => {
     expect(relaxRadius(Math.PI * P0)).toBeCloseTo(1, 12);
-    expect(relaxRadius(4 * Math.PI * P0)).toBeCloseTo(2, 12);
+    expect(relaxRadius(1e4, 1e5)).toBeCloseTo(0.18, 2);
+    expect(relaxRadius(1e5, 1e5)).toBeCloseTo(0.56, 2);
+    expect(relaxRadius(1e6, 1e5)).toBeCloseTo(1.78, 2);
   });
-  it('Few のピーク f_m = 0.63 c/R₀', () => {
-    expect(fewPeak(Math.PI * P0, 340)).toBeCloseTo(0.63 * 340, 9);
+  it('Few のピーク f_m = 0.63 c √(p₀/E) は、学位論文の式 4.7 E ≈ 5×10⁹/f_m² の f_m と 3 % 以内で合い、10⁶ J/m で約 69 Hz', () => {
+    for (const e of [1e4, 1e5, 1e6]) {
+      const f = Math.sqrt(5e9 / e);
+      expect(Math.abs(fewPeak(e, 343) - f) / f).toBeLessThan(0.03);
+    }
+    expect(fewPeak(1e6, 343)).toBeGreaterThan(65);
+    expect(fewPeak(1e6, 343)).toBeLessThan(72);
+    /* R₀ で書くと 0.63 c/(√π R₀) */
+    expect(fewPeak(1e6, 343) * relaxRadius(1e6)).toBeCloseTo((0.63 * 343) / Math.sqrt(Math.PI), 9);
   });
   it('N 波のスペクトルのピークは x = πfT ≈ 2.08（tan x = x/(1 − x²/2) の解でもある）', () => {
     expect(N_PEAK_X).toBeCloseTo(2.0816, 3);
@@ -50,9 +61,13 @@ describe('衝撃波と N 波', () => {
     const x = N_PEAK_X;
     expect(Math.tan(x) * (1 - (x * x) / 2) - x).toBeCloseTo(0, 6);
   });
-  it('N 波の継続時間は、スペクトルのピークが Few の f_m に重なる長さ', () => {
-    const e = 5e5;
-    expect(nPeak(nDuration0(e, C))).toBeCloseTo(fewPeak(e, C), 6);
+  it('N 波の長さは正の側 0.53 R₀ の 2 倍。1 km で 2 倍に伸びると、スペクトルのピークが Few の f_m に 15 % 以内で近い', () => {
+    for (const e of [1e5, 1e6]) {
+      const T0 = nDuration0(e, C);
+      expect((T0 * C) / 2 / relaxRadius(e)).toBeCloseTo(0.53, 9);
+      const f = nPeak(nDuration(T0, 1000));
+      expect(Math.abs(f - fewPeak(e, C)) / fewPeak(e, C)).toBeLessThan(0.15);
+    }
   });
   it('標本にした N 波は面積 0、正の側の面積 PT/4、DFT が式のスペクトルに合う', () => {
     const N = 1 << 14,
@@ -79,11 +94,28 @@ describe('衝撃波と N 波', () => {
       expect(Math.hypot(re, im) / nSpectrum(k / N, T, P)).toBeCloseTo(1, 2);
     }
   });
-  it('N 波は遠いほど伸び、近い所（r₁ まで）は伸びない', () => {
-    const s = { r1: 10, kappa: 1 };
-    expect(nDuration(0.004, 5, s)).toBe(0.004);
-    expect(nDuration(0.004, 10 * Math.E, s)).toBeCloseTo(0.004 * Math.SQRT2, 12);
-    expect(nDuration(0.004, 1e4, s)).toBeGreaterThan(nDuration(0.004, 1e3, s));
+  it('N 波は最初の 1 km で 2 倍に伸び、その先は伸びない（Few 1986）', () => {
+    expect(nDuration(0.004, 10)).toBe(0.004);
+    expect(nDuration(0.004, 1000)).toBeCloseTo(0.008, 12);
+    expect(nDuration(0.004, 1e4)).toBeCloseTo(0.008, 12);
+    let prev = 0;
+    for (const r of [30, 100, 300, 999]) {
+      const T = nDuration(0.004, r);
+      expect(T).toBeGreaterThan(prev);
+      prev = T;
+    }
+  });
+  it('まっすぐな長い放電路の音のエネルギーは単位長さあたり ηE（円筒を通る量で確かめる）', () => {
+    const e = 1e6,
+      rho = 50,
+      s: Scene = { ...FREE, dist: rho, ear: 0, stretch: { r1: 1, r2: 2, k: 1 } },
+      w = render(elements([line([0, 0, -3000], [0, 0, 3000], e, 1)], s), s.air, FS);
+    let sum = 0;
+    for (const v of w.y) sum += v * v;
+    const flux = (2 * Math.PI * rho * sum) / FS / (airDensity(20) * C);
+    expect(flux / (s.eta * e)).toBeGreaterThan(0.85);
+    expect(flux / (s.eta * e)).toBeLessThan(1.1);
+    expect(LINE_G).toBeCloseTo(0.25, 4);
   });
 });
 
@@ -95,7 +127,7 @@ describe('放電路', () => {
     expect(Array.from(a[0].p)).toEqual(Array.from(b[0].p));
     expect(Array.from(c[0].p)).not.toEqual(Array.from(a[0].p));
   });
-  it('区間の向きの変化の平均は turn（Hill の 16°）に近く、区間の長さは lmin〜lmax', () => {
+  it('区間の向きの変化の平均は turn（Hill の 16°）に近く、区間の長さは lmin〜lmax で平均 8 m', () => {
     const all: number[] = [],
       lens: number[] = [];
     for (let s = 1; s <= 20; s++)
@@ -110,6 +142,7 @@ describe('放電路', () => {
     /* 地面で止めた区間だけ短くなりうる */
     expect(lens.filter((l) => l > CH0.lmax + 1e-9).length).toBe(0);
     expect(lens.filter((l) => l < CH0.lmin - 1e-9).length / lens.length).toBeLessThan(0.01);
+    expect(lens.reduce((x, y) => x + y, 0) / lens.length).toBeCloseTo(8, 0);
   });
   it('本流は地面から雲の底まで上がり、雲の中を cloud だけ進む', () => {
     const [m] = makeChannel(CH0),
@@ -151,17 +184,17 @@ describe('届く時刻', () => {
     const tHill = Math.min(...Array.from(el.t).filter((_, i) => el.via[i] === Via.Hill));
     expect(tHill - firstArrival(el)).toBeGreaterThanOrEqual((2 * 1000) / C - 1e-6);
   });
-  it('影の領域: 曲がりの半径 R = 2T/Γ、届く距離 √(2Rz)。高さ 4 km なら約 25 km（Fleagle 1949）', () => {
-    const R = bendRadius(15, 6.5);
-    expect(R / 1000).toBeCloseTo(88.6, 0);
-    const x = audibleRange(4000, 0, R);
-    expect(x / 1000).toBeGreaterThan(24);
-    expect(x / 1000).toBeLessThan(28);
+  it('影の領域: 届く距離 √(2Rz)、R = 2T/Γ。Fleagle の例（30 °C・9.8 K/km・5 km）で 25 km（l² = 4T₀h/Γ）', () => {
+    const R = bendRadius(30, 9.8),
+      x = audibleRange(5000, 0, R);
+    expect(x ** 2).toBeCloseTo((4 * 303.15 * 5000) / 9.8e-3, 0);
+    expect(x / 1000).toBeGreaterThan(24.5);
+    expect(x / 1000).toBeLessThan(25.5);
   });
   it('分布の和は要素の分け方に依らない（山の高さは要素の長さに比例する）', () => {
     const ch = [line([0, 0, 0], [300, 0, 1500])],
       a = elements(ch, FREE),
-      b = elements(ch, { ...FREE, stretch: { r1: 10, kappa: 6 } }),
+      b = elements(ch, { ...FREE, stretch: { r1: 10, r2: 1000, k: 4 } }),
       sum = (el: typeof a) => arrivalHistogram(el, 0, 30, 0.1)[0].reduce((x, y) => x + y, 0);
     expect(b.n).toBeLessThan(a.n);
     /* 伸びの分 T₀/T だけ下がるので、伸びの比で割って比べる */
@@ -171,7 +204,7 @@ describe('届く時刻', () => {
 });
 
 describe('波形', () => {
-  it('区間の指向性: 横から聞くと鋭い山、端の向きから聞くとなまって低い（Wright・Medendorp 1967）', () => {
+  it('区間の指向性: 横から聞くと鋭い山、端の向きから聞くとなまって低い（Wright・Medendorp 1968）', () => {
     const seg = [line([-50, 0, 1000], [50, 0, 1000], 5e5, 1)],
       side = render(elements(seg, { ...FREE, dist: 0, ear: 0 }), FREE.air, FS),
       end = render(elements([line([-50, 0, 0], [50, 0, 0], 5e5, 1)], { ...FREE, dist: 1000, ear: 0 }), FREE.air, FS);
@@ -196,6 +229,21 @@ describe('波形', () => {
     expect(far).toBeLessThan(near * 0.7);
     /* 8 km で 1 kHz は 30 dB 以上減る */
     expect(absorption(1000) * 8000).toBeGreaterThan(30);
+  });
+  it('落雷（既定の放電路）を 2〜5 km で聞くと、スペクトルのピークは 20〜120 Hz（Holmes ほか 1971 の落雷の平均 50 Hz）', () => {
+    const pk: number[] = [];
+    for (let seed = 1; seed <= 4; seed++)
+      for (const d of [2000, 5000]) {
+        const s = { ...SCENE0, dist: d },
+          w = render(elements(makeChannel({ ...CH0, seed }), s), s.air, FS),
+          sp = spectrum(w.y, FS);
+        let b = 1;
+        for (let k = 1; k < sp.f.length; k++) if (sp.db[k] > sp.db[b]) b = k;
+        pk.push(sp.f[b]);
+      }
+    const mean = pk.reduce((x, y) => x + y, 0) / pk.length;
+    expect(mean).toBeGreaterThan(20);
+    expect(mean).toBeLessThan(120);
   });
   it('波形は光ってから最初に届く時刻の少し前から始まる', () => {
     const el = elements(makeChannel(CH0), SCENE0),
