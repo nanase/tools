@@ -1,4 +1,6 @@
 ---
+import { TOOLS } from '../../data/tools';
+
 /** f[arg] */
 const sq = (f: string, arg: string) => `<mi>${f}</mi><mo stretchy="false">[</mo>${arg}<mo stretchy="false">]</mo>`;
 const sum = (lo: string) => `<munder><mo>∑</mo><mrow>${lo}</mrow></munder>`;
@@ -6,6 +8,8 @@ const rc = '<mi>r</mi><mo>,</mo><mi>c</mi>';
 const uv = '<mi>u</mi><mo>,</mo><mi>v</mi>';
 /* 本文の出典番号 */
 const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
+/** ほかのページへのリンク（まだ公開していないページは名前だけ） */
+const to = (id: string, t: string) => (TOOLS.some((x) => x.id === id && !x.s) ? `<a href="../${id}/">${t}</a>` : t);
 ---
 <h3>2 次元の畳み込み</h3>
 <div class="eqs">
@@ -20,7 +24,7 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
 <ul class="tl">
   <li>出力の側: 核を 180° 回して重ね、積の和を 1 画素に（式 24-3）<Fragment set:html={rf(1)} /></li>
   <li>入力の側: 各画素が核の写しを配って足す（図 24-14）<Fragment set:html={rf(1)} /></li>
-  <li>1 次元の原理は <a href="../convolution/">畳み込み</a></li>
+  <li>1 次元の原理は <Fragment set:html={to('convolution', '畳み込み')} /></li>
   <li>核の和 1 → 明るさを保つ。和 0 → 平らな所が 0</li>
 </ul>
 
@@ -39,7 +43,7 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
   </tbody>
 </table></div>
 <ul class="tl">
-  <li>ピンぼけ・ガウス・ぶれは点像（PSF）。レンズの点像は <a href="../lens/">カメラレンズ</a></li>
+  <li>ピンぼけ・ガウス・ぶれは点像（PSF）。レンズの点像は <Fragment set:html={to('lens', 'カメラレンズ')} /></li>
 </ul>
 
 <h3>アンシャープマスク</h3>
@@ -59,7 +63,7 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
   <li>横に 1 次元で畳み込んでから縦に（式 24-1）<Fragment set:html={rf(1)} /></li>
   <li><math><mi>M</mi><mo>×</mo><mi>M</mi></math> の核で 1 画素の掛け算 <math><msup><mi>M</mi><mn>2</mn></msup></math> 回 → <math><mn>2</mn><mi>M</mi></math> 回</li>
   <li>円対称で分離できるのはガウスだけ<Fragment set:html={rf(1)} /></li>
-  <li>1 次元の核は <a href="../fir/">FIR フィルタ</a> の係数と同じ</li>
+  <li>1 次元の核は <Fragment set:html={to('fir', 'FIR フィルタ')} /> の係数と同じ</li>
 </ul>
 
 <h3>相関</h3>
@@ -81,7 +85,7 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
   <li>0 を足さずに掛けると円状の畳み込み（画像の外 ＝ 反対側）<Fragment set:html={rf(1)} /></li>
   <li><math><mo stretchy="false">|</mo><mi>H</mi><mo stretchy="false">|</mo></math> は核の MTF。ガウスの MTF もガウス（図 25-1）<Fragment set:html={rf(2)} /></li>
   <li>大きい核では FFT の方が速い（512 × 512 に 50 × 50 で約 20 倍）<Fragment set:html={rf(1)} /></li>
-  <li>DFT は <a href="../dct-dft/">DCT と DFT</a>、速い計算は <a href="../fft/">FFT</a></li>
+  <li>DFT は <Fragment set:html={to('dct-dft', 'DCT と DFT')} />、速い計算は <Fragment set:html={to('fft', 'FFT')} /></li>
 </ul>
 
 <h3>畳み込みでない処理</h3>
