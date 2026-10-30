@@ -356,6 +356,14 @@ export const TOOLS: Tool[] = [
     ic: 'ff',
     k: 'fft 高速フーリエ変換 fast fourier transform dft 離散フーリエ変換 バタフライ butterfly cooley tukey クーリー テューキー 時間間引き decimation in time dit 周波数間引き decimation in frequency dif gentleman sande ビット反転 bit reversal 並べ替え 回転因子 twiddle factor 基数 2 radix-2 基数 4 分割基数 split radix 計算量 演算量 n log n 複素数 complex gauss ガウス 数学 math',
   },
+  {
+    id: 'wavelet',
+    c: '数学',
+    t: 'ウェーブレット変換',
+    d: '短い波を信号に重ねて掛けて足し、いつ・どの高さの音が鳴ったかを見ます。',
+    ic: 'wv',
+    k: 'wavelet ウェーブレット 変換 transform cwt dwt 連続ウェーブレット変換 離散ウェーブレット変換 morlet モルレ haar ハール daubechies ドベシィ スカログラム scalogram 多重解像度 multiresolution mra mallat フィルタバンク filter bank 時間周波数 time-frequency stft 短時間フーリエ変換 不確定性 heisenberg gabor ガボール 内積 inner product 平均と差 位相 phase フーリエ fourier 数学 math',
+  },
 ];
 /** 準備中を後ろへ */
 export const order = (L: Tool[]): Tool[] => L.slice().sort((a, b) => (a.s || 0) - (b.s || 0));

@@ -1,0 +1,97 @@
+/* ウェーブレット変換のページだけのスタイル（共通は src/styles/site.css、表示窓に重ねるキャンバスは ../audio/style.css） */
+
+/* 枠の並び。上から 1〜5 の順に読む。PC は 4 と 5 を左右に並べ、ほかは全幅 */
+.a-or{order:1}.a-sl{order:2}.a-pl{order:3}.a-h8{order:4}.a-st{order:5}.a-thy{order:6}
+@media (min-width:1000px){
+  .tgrid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-areas:"or or" "sl sl" "pl pl" "h8 st" "thy thy";align-items:start}
+  .a-or{grid-area:or}.a-sl{grid-area:sl}.a-pl{grid-area:pl}.a-h8{grid-area:h8}.a-st{grid-area:st}.a-thy{grid-area:thy}
+}
+
+/* 図の上の帯（名前と選択肢） */
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin-bottom:10px}
+.bar .stag{flex-wrap:wrap}
+.bl{font-size:12.5px;color:var(--ink-3)}
+.a-pl .bar .chips{margin-top:0}
+.a-pl .bar .chip{font-family:var(--sans)}
+.a-pl .bar .chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--surface)}
+.bar .seg button{padding:0 8px}
+.sbar.lg{margin:8px 0}
+.vh{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px 10px;margin:0 0 5px;font-size:12.5px;color:var(--ink-3)}
+.vh b{color:var(--ink-2);margin-right:4px}
+figure{margin:0;min-width:0}
+
+/* 2 つの図を横に並べる（枠の幅が狭いときは縦） */
+.a-or,.a-sl{container-type:inline-size}
+.w2,.pl2{display:grid;gap:12px 14px}
+@container (min-width:720px){.w2{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start}}
+@media (min-width:760px){.pl2{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+.sl-l{display:grid;gap:8px;min-width:0}
+.plf .scope+.scope{margin-top:6px}
+.cv canvas{left:calc(100% * 50 / 462);top:calc(100% * 14 / 282);width:calc(100% * 400 / 462);height:calc(100% * 240 / 282)}
+.plf canvas{image-rendering:pixelated}
+.scope svg[tabindex]:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+/* 箱の枠: 選んだ箱は白、もう一方の平面で同じ所は点線 */
+.bx{fill:none;stroke:#fff;stroke-width:2}
+.bx.o{stroke-dasharray:4 3;stroke-width:1.4}
+.span{fill:var(--ch1);opacity:.12}
+.span.o{fill:var(--ink-3);opacity:.1}
+
+/* 黒い地の表示窓（スカログラム・平面）。色は強度の弱い順に 黒 → 紫 → 青 → 緑 → 赤 → 白
+   （スペクトラムアナライザのスペクトログラムと同じ） */
+.a-or,.a-sl,.a-pl{--sg0:#000000;--sg1:#5b1a8f;--sg2:#2050e0;--sg3:#1fb04a;--sg4:#e3261f;--sg5:#ffffff}
+.scope.dk{--screen:#000000;--grid-2:#3b474e;--screen-ink:#aab3b8;border-color:#2b3237}
+/* 端の影響（影響の円錐の外）は網 */
+.w-sw-coi{display:inline-block;width:14px;height:10px;border:1px solid var(--line-2);background:repeating-linear-gradient(45deg,var(--ink-3) 0 2px,transparent 2px 4px)}
+
+/* 1 同じ 1 秒の変換: フーリエ変換では「いつ」が消える */
+.note{margin:8px 2px 0;font-size:12.5px;color:var(--ink-3)}
+.fq{fill:var(--ch2)}
+
+/* 2 短い波を重ねて、掛けて足す */
+#sl-x{cursor:ew-resize;touch-action:none}
+#sl-s{cursor:crosshair;touch-action:none}
+.wv{fill:none;stroke:var(--accent);stroke-width:1.8;stroke-linejoin:round}
+.pp{fill:var(--ch1);opacity:.75}
+.pn{fill:var(--warn);opacity:.7}
+.w-sw-wv{background:var(--accent)}
+.w-sw-pp{height:8px;background:var(--ch1)}
+.w-sw-pn{height:8px;background:var(--warn)}
+.mk line{stroke:#fff;stroke-width:1;opacity:.6}
+.mk circle{fill:none;stroke:#fff;stroke-width:2}
+.mk .mb{fill:none;stroke:#fff;stroke-width:1.2;opacity:.8}
+.wrow{display:flex;align-items:center;gap:8px}
+.wrow .sl{flex:1;min-width:0}
+.wrow .sm{font-size:11.5px;color:var(--ink-3)}
+.a-sl[data-hand="0"] .hand-only{display:none}
+.a-sl:not(.run) .i-st,.a-sl.run .i-go{display:none}
+
+/* 4 隣り合う 2 つの平均と差 */
+#h8-svg{touch-action:none}
+.lev{font:500 12.5px var(--mono);color:var(--ink-2);font-variant-numeric:tabular-nums}
+.h8b{fill:var(--ch2);opacity:.85;cursor:ns-resize}
+.h8b.hl{opacity:1;stroke:var(--screen-ink);stroke-width:1.5}
+.h8g{fill:var(--screen-ink)}
+.w-sw-h8g{background:var(--screen-ink)}
+.h8c .fr{fill:none;stroke:var(--grid-2)}
+.h8c.a .fr{stroke:var(--ch2)}
+.h8c.d .fr{stroke:var(--ch1)}
+.h8c.o{opacity:.55}
+.h8c.hl .fr{stroke:var(--screen-ink);stroke-width:2}
+.h8c.a .mi{fill:var(--ch2)}
+.h8c:is(.d,.o) .mi{fill:var(--ch1)}
+.h8c.z text{fill:var(--ink-3)}
+.h8c.z .fr{stroke-dasharray:3 3}
+
+/* 5 同じことを 256 点で */
+.w-sw-f{background:var(--accent)}
+.st-f{fill:var(--accent);opacity:.2}
+.st-fl{stroke:var(--accent);stroke-width:1}
+.st-d{stroke:var(--ch1);fill:none}
+.sh-g{stroke:var(--ink-3);opacity:.6}
+.a-st .tp{margin-top:10px}
+.phs{display:flex;flex-wrap:wrap;align-items:center;gap:5px;font:500 12px/1 var(--mono);color:var(--ink-3)}
+.phs span{padding:5px 7px;border:1px solid var(--line);border-radius:4px}
+.phs span.done{color:var(--ink-2);border-color:var(--line-2)}
+.phs span.on{background:var(--ink);border-color:var(--ink);color:var(--surface);font-weight:700}
+.tp-tm{margin-top:6px}
+
