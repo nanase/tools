@@ -9,7 +9,6 @@ import RelatedTools from '../components/RelatedTools.astro';
 import Transport from '../components/Transport.astro';
 import TransportButton from '../components/TransportButton.astro';
 import TransportState from '../components/TransportState.astro';
-import { order, TOOLS } from '../data/tools';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import { outVol, TEMPO } from '../lib/play';
 import { ROOMS } from '../lib/reverb';
@@ -24,11 +23,6 @@ import { TEMPERAMENTS } from '../tools/organ/tuning';
 
 const name = 'オルガン音響モデル';
 /* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
-const CAT = '音響モデル';
-const related = [
-  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'organ')),
-  ...TOOLS.filter((t) => t.c !== CAT && !t.s),
-];
 /* 鍵盤は実際のコンソールと同じく、上から第 2 手鍵盤・第 1 手鍵盤・ペダルの順に並べる */
 const CONSOLE = (['II', 'I', 'P'] as const).map(divOf);
 const COUPLERS = [
@@ -213,7 +207,7 @@ const COUPLERS = [
     </Collapsible>
   </div>
 
-  <RelatedTools list={related} />
+  <RelatedTools current="organ" />
   <script>
     import '../tools/organ/client';
   </script>

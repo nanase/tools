@@ -6,7 +6,6 @@ import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
 import RelatedTools from '../components/RelatedTools.astro';
-import { order, TOOLS } from '../data/tools';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import { DIST, ENERGIES, GROUNDS, HILL, HILLS, LAPSE, VOL, WAITS } from '../tools/thunder/params';
 import '../tools/thunder/style.css';
@@ -15,11 +14,6 @@ import Theory from '../tools/thunder/Theory.astro';
 
 const name = '雷鳴';
 /* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
-const CAT = '音響';
-const related = [
-  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'thunder')),
-  ...TOOLS.filter((t) => t.c !== CAT && !t.s),
-];
 ---
 <SiteLayout title={name} tool={{ id: 'thunder', name }} description="曲がりくねった放電路の各区間が出す衝撃波（N 波）が、聞き手までの距離の差で時間をずらして届き、雷鳴になる様子を断面図・届く量の分布・波形で見て、音で聞きます。聞き手を動かすと、近い雷の「バリッ」と遠い雷の「ゴロゴロ」の違いと、光ってから音までの時間を確かめられます。" note="放電路は乱数で作った模型で、エネルギーと音になる割合は文献の値の 1 つです。大きさは同じ雷を 1 km 先で聞いたときとの差だけを出します。">
   <PageTitle title={name}>曲がりくねった放電路の折れ目ごとに衝撃波（N 波）が出て、聞き手までの距離の差だけ時間をずらして届きます。断面図の聞き手を動かして、近い雷の「バリッ」と遠い雷の「ゴロゴロ」、光ってから音までの時間（約 3 秒で 1 km）を比べられます。空気の吸収で遠いほど低く、地面と山の反射や周りの家・木の響きで長くなります。</PageTitle>
@@ -93,7 +87,7 @@ const related = [
     </Collapsible>
   </div>
 
-  <RelatedTools list={related} />
+  <RelatedTools current="thunder" />
   <script>
     import '../tools/thunder/client';
   </script>

@@ -6,7 +6,6 @@ import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
 import RelatedTools from '../components/RelatedTools.astro';
-import { order, TOOLS } from '../data/tools';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import { gridSvg } from '../lib/scope';
 import '../tools/doppler/style.css';
@@ -15,12 +14,6 @@ import Theory from '../tools/doppler/Theory.astro';
 
 const name = 'ドップラー効果';
 /* 同じカテゴリ（準備中を含む）の後ろに、エンジン音響モデルと、ほかのカテゴリの公開中のツールを並べる */
-const CAT = '音響';
-const related = [
-  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'doppler')),
-  ...TOOLS.filter((t) => t.id === 'engine'),
-  ...TOOLS.filter((t) => t.c !== CAT && t.id !== 'engine' && !t.s),
-];
 const desc =
   '救急車のサイレンやエンジンの音源が道路を走り、すれ違うときに聞こえる音の高さと大きさの変化を計算して鳴らします。音速を超えたときのマッハコーンも見られます。';
 ---
@@ -131,7 +124,7 @@ const desc =
     </Collapsible>
   </div>
 
-  <RelatedTools list={related} />
+  <RelatedTools current="doppler" />
   <script>
     import '../tools/doppler/client';
   </script>

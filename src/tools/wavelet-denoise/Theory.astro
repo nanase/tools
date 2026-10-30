@@ -98,7 +98,7 @@ const to = (id: string, t: string) => (TOOLS.some((x) => x.id === id && !x.s) ? 
   <li>MDCT: 2M 点の枠を M 点ずつずらす。窓が上の条件を満たすと、重ねて足したときに時間の折り返しが打ち消し合う<Fragment set:html={rf(10)} /></li>
   <li>MP3・AAC の芯は MDCT。量子化の雑音を、その時その周波数で聞こえない大きさ（マスキングしきい値）の下に収めてビットを減らす。長い枠では打音の前に雑音がにじむ（プリエコー）ので、短い枠に切り替える<Fragment set:html={rf(11)} /></li>
   <li>DCT・DFT は全体を 1 回で変換する。どの係数も全体に広がる波なので、打音を残すには多くの係数が要る</li>
-  <li>DCT と DFT の違い（端のつなぎ方）は <Fragment set:html={to('dct-dft', 'DCT と DFT')} />、速い計算は <Fragment set:html={to('fft', 'FFT')} />、分解の仕組みは <Fragment set:html={to('wavelet', 'ウェーブレット変換')} /></li>
+  <li>DFT の速い計算は <Fragment set:html={to('fft', 'FFT')} />、分解の仕組みは <Fragment set:html={to('wavelet', 'ウェーブレット変換')} /></li>
 </ul>
 
 <h3>このツールで決めたこと</h3>

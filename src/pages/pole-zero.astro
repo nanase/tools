@@ -6,7 +6,6 @@ import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
 import RelatedTools from '../components/RelatedTools.astro';
-import { order, TOOLS } from '../data/tools';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import '../tools/pole-zero/style.css';
 import { gridSvg } from '../lib/scope';
@@ -24,8 +23,6 @@ const prm = (k: string) => {
   return d;
 };
 /* 同じカテゴリのツールを先に、続けて公開中のほかのツールを並べる */
-const pub = order(TOOLS.filter((t) => !t.s && t.id !== id));
-const related = [...pub.filter((t) => t.c === 'デジタルフィルタ'), ...pub.filter((t) => t.c !== 'デジタルフィルタ')];
 ---
 <SiteLayout title={name} tool={{ id, name }} note="特性・係数・共振の値は、極と零点の位置から倍精度で求めた参考値です。" description={desc}>
   <PageTitle title={name}>z 平面に極と零点を置いて動かし、デジタルフィルタの周波数特性（振幅・位相・群遅延）、インパルス応答、伝達関数の係数と双2次の縦続を求めます。周波数特性の上の点から極と零点へ引いた線の長さと角度で、振幅と位相が決まる様子を見られます。ホワイトノイズや鋸歯状波に掛けた音も聞けます。</PageTitle>
@@ -197,7 +194,7 @@ const related = [...pub.filter((t) => t.c === 'デジタルフィルタ'), ...pu
     </Collapsible>
   </div>
 
-  <RelatedTools list={related} />
+  <RelatedTools current={id} />
   <div class="toast" id="toast" role="status" aria-live="polite" data-off></div>
   <script>
     import '../tools/pole-zero/client';

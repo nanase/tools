@@ -7,6 +7,8 @@ export interface Tool {
   d: string;
   /** カードの図柄（lib/card-art.ts の ART のキー） */
   ic: string;
+  /** 関連ツールの id（関連の強い順。ページの下に PC で 4 件、スマホで 3 件出る） */
+  r: string[];
   /** 絞り込み用の追加語 */
   k: string;
   /** 準備中 */
@@ -33,6 +35,7 @@ export const TOOLS: Tool[] = [
     t: 'タイマIC 555',
     d: '抵抗器とコンデンサを使ったタイマIC555の出力をシミュレートします。',
     ic: 'sq',
+    r: ['passive-combination', 'colorcode', 'pcb-coil', 'oscilloscope'],
     k: 'ne555 発振 非安定 マルチバイブレータ timer シミュレータ simulator',
   },
   {
@@ -41,6 +44,7 @@ export const TOOLS: Tool[] = [
     t: '受動素子組み合わせ計算機',
     d: '抵抗器・コンデンサ・インダクタにおける最適な組み合わせを探索します。',
     ic: 'rr',
+    r: ['colorcode', 'timer555', 'pcb-coil', 'biquad'],
     k: '合成抵抗 直列 並列 e系列 resistor capacitor',
   },
   {
@@ -49,6 +53,7 @@ export const TOOLS: Tool[] = [
     t: 'PID制御',
     d: 'フィードバック制御の一種であるPID制御の応答を計算します。',
     ic: 'pid',
+    r: ['pendulum', 'kalman', 'pole-zero', 'biquad'],
     k: 'フィードバック 比例 積分 微分 control',
   },
   {
@@ -57,6 +62,7 @@ export const TOOLS: Tool[] = [
     t: '倒立振子',
     d: '台車に立てた振子を PID・極配置・LQR を使って倒れないようにします。',
     ic: 'ip',
+    r: ['pid', 'kalman', 'pole-zero', 'biquad'],
     k: 'inverted pendulum cart pole 倒立振り子 台車 振り上げ swing up エネルギー法 lqr リカッチ riccati 極配置 pole placement アッカーマン ackermann 状態フィードバック state feedback 可制御 controllability pid エンコーダ encoder quanser ip02 control',
   },
   {
@@ -65,6 +71,7 @@ export const TOOLS: Tool[] = [
     t: 'カルマンフィルタ',
     d: '雑音のある測定値から台車の位置と速度を推定します。',
     ic: 'kf',
+    r: ['pendulum', 'pid', 'wavelet-denoise', 'fir'],
     k: 'kalman filter 推定 estimation 状態推定 state estimation ベイズ bayes 正規分布 gaussian 共分散 covariance 楕円 ellipse 予測 更新 predict update カルマンゲイン kalman gain イノベーション innovation nis 過程雑音 観測雑音 process noise measurement noise q r 発散 divergence 追跡 tracking センサ sensor',
   },
   {
@@ -73,6 +80,7 @@ export const TOOLS: Tool[] = [
     t: '双2次フィルタ',
     d: 'ローパスなど各種特性の双2次フィルタの係数を計算します。',
     ic: 'bq',
+    r: ['iir', 'pole-zero', 'fir', 'noise'],
     k: 'biquad iir lpf hpf ローパス ハイパス',
   },
   {
@@ -81,6 +89,7 @@ export const TOOLS: Tool[] = [
     t: 'IIR フィルタ',
     d: 'バターワース・チェビシェフなどの IIR フィルタを双一次変換で設計します。',
     ic: 'iir',
+    r: ['pole-zero', 'biquad', 'fir', 'noise'],
     k: 'iir butterworth chebyshev elliptic cauer bessel 楕円 チェビシェフ バターワース ベッセル 双一次変換 bilinear プリワーピング インパルス不変 sos 縦続 双2次 極 零点 群遅延 lpf hpf bpf bsf ローパス ハイパス バンドパス',
   },
   {
@@ -89,6 +98,7 @@ export const TOOLS: Tool[] = [
     t: 'JJY シミュレータ',
     d: '電波時計などで利用されているJJYの信号をシミュレートします。',
     ic: 'jjy',
+    r: ['jjy-decoder', 'qr-code', 'oscilloscope', 'pcb-coil'],
     k: '電波時計 標準電波 タイムコード',
   },
   {
@@ -97,6 +107,7 @@ export const TOOLS: Tool[] = [
     t: 'JJY デコーダ',
     d: '音声から JJY の信号を読み取り、信号が表す時刻とフラグに復号します。',
     ic: 'jjyd',
+    r: ['jjy', 'spectrum', 'oscilloscope', 'qr-code'],
     k: '電波時計 標準電波 タイムコード 復号 デコード 受信 マイク decoder',
   },
   {
@@ -105,6 +116,7 @@ export const TOOLS: Tool[] = [
     t: 'QR コード',
     d: '文字列から QR コードを作る手順と誤り訂正を追います。',
     ic: 'qr',
+    r: ['jpeg', 'noise', 'jjy', 'jjy-decoder'],
     k: 'qr code qrコード 二次元コード 2次元バーコード barcode 誤り訂正 error correction リード・ソロモン reed solomon bch ガロア体 有限体 galois field gf(256) シンドローム syndrome berlekamp massey chien forney マスク mask 形式情報 format information バージョン version 符号語 codeword 漢字 shift_jis utf-8 デンソーウェーブ denso wave iso/iec 18004 jis x 0510',
   },
   {
@@ -113,6 +125,7 @@ export const TOOLS: Tool[] = [
     t: 'FIR フィルタ',
     d: '直線位相の FIR フィルタを設計し周波数特性・零点・係数を求めます。',
     ic: 'fir',
+    r: ['convolution', 'iir', 'pole-zero', 'biquad'],
     k: 'fir finite impulse response 有限インパルス応答 窓関数 window カイザー kaiser ハミング hamming ハン hann ブラックマン blackman 等リップル equiripple parks-mcclellan remez 最小二乗 least squares 直線位相 linear phase タップ tap 係数 lpf hpf bpf bsf ローパス ハイパス',
   },
   {
@@ -121,6 +134,7 @@ export const TOOLS: Tool[] = [
     t: 'オシロスコープ',
     d: 'マイクや音楽ファイルの音を波形やリサジューで表示します。',
     ic: 'os',
+    r: ['spectrum', 'tuner', 'fm-synth', 'noise'],
     k: 'oscilloscope 波形 トリガ リサジュー lissajous マイク 音声 オーディオ audio',
   },
   {
@@ -129,6 +143,7 @@ export const TOOLS: Tool[] = [
     t: 'スペクトラムアナライザ',
     d: 'マイクや音楽ファイルの音の周波数成分を表示します。',
     ic: 'sp',
+    r: ['oscilloscope', 'fft', 'wavelet', 'tuner'],
     k: 'spectrum analyzer fft スペクトル スペクトログラム spectrogram 周波数 窓関数 メル mel マイク 音声 オーディオ audio',
   },
   {
@@ -137,6 +152,7 @@ export const TOOLS: Tool[] = [
     t: 'FM音源',
     d: '4 つのオペレータの FM 音源で波形と音を作ります。',
     ic: 'fm',
+    r: ['spectrum', 'oscilloscope', 'noise', 'organ'],
     k: 'fm synth synthesizer ヤマハ yamaha シンセサイザー 周波数変調 オペレータ アルゴリズム 変調指数 opn ym2612 ym2203 ym2608 ベッセル 音色 オーディオ audio',
   },
   {
@@ -145,6 +161,7 @@ export const TOOLS: Tool[] = [
     t: 'ノイズジェネレータ',
     d: 'ホワイト・ピンクなどの色のノイズやLFSR のノイズを作って鳴らします。',
     ic: 'nz',
+    r: ['spectrum', 'fm-synth', 'wavelet-denoise', 'biquad'],
     k: 'noise generator 雑音 ノイズ white ホワイトノイズ 白色雑音 pink ピンクノイズ 1/f brown ブラウンノイズ red 赤色雑音 blue ブルー violet バイオレット grey gray グレー velvet ベルベット lfsr 線形帰還シフトレジスタ m系列 m-sequence prbs 疑似乱数 原始多項式 ファミコン nes ゲームボーイ gameboy sn76489 スペクトル スペクトログラム spectrogram オーディオ audio',
   },
   {
@@ -153,6 +170,7 @@ export const TOOLS: Tool[] = [
     t: 'ドップラー効果',
     d: 'すれ違う救急車やエンジンの音の高さと大きさの変化を計算して鳴らします。',
     ic: 'dp',
+    r: ['engine', 'thunder', 'reverb', 'spectrum'],
     k: 'doppler effect ドップラー 救急車 サイレン siren 電車 警笛 horn エンジン engine すれ違い 音速 マッハ mach 衝撃波 マッハコーン マッハ円錐 mach cone ソニックブーム sonic boom 波面 空気の吸収 air absorption iso 9613 地面の反射 ground reflection 遅延線 delay line オーディオ audio',
   },
   {
@@ -161,6 +179,7 @@ export const TOOLS: Tool[] = [
     t: '残響',
     d: '部屋の反射を鏡像法で求め、インパルス応答を畳み込んで響きを聞きます。',
     ic: 'rv',
+    r: ['convolution', 'thunder', 'doppler', 'guitar'],
     k: 'reverb reverberation 残響 反響 エコー echo やまびこ 鏡像法 image source method インパルス応答 impulse response rir 残響時間 rt60 t60 sabine セイビン eyring アイリング 吸音率 absorption coefficient 初期反射 early reflection 後部残響 late reverberation 臨界距離 critical distance 平均自由行程 edt t20 t30 c80 d50 schroeder シュレーダー 畳み込み convolution convolver 部屋 ホール 教会 屋外 オーディオ audio',
   },
   {
@@ -169,6 +188,7 @@ export const TOOLS: Tool[] = [
     t: '雷鳴',
     d: '曲がりくねった放電路の衝撃波が時間をずらして届き、雷鳴になる様子を見て聞きます。',
     ic: 'th',
+    r: ['reverb', 'doppler', 'noise', 'spectrum'],
     k: 'thunder 雷鳴 雷 かみなり 稲妻 稲光 lightning 落雷 放電路 衝撃波 shock wave n波 n-wave ゴロゴロ バリバリ rumble clap 光ってから 3秒 1km 距離 空気の吸収 air absorption iso 9613 反射 こだま 影の領域 shadow zone few ribner tortuosity オーディオ audio',
   },
   {
@@ -177,6 +197,7 @@ export const TOOLS: Tool[] = [
     t: 'ギター音響モデル',
     d: 'アコースティックギターの弦と胴の振動を物理モデルで計算して鳴らします。',
     ic: 'gt',
+    r: ['violin', 'piano', 'tuner', 'temperament'],
     k: 'guitar acoustic physical model 物理モデル 弦 string 張力 tension フレット fret 響板 表板 soundboard ヘルムホルツ helmholtz 撥弦 pluck 非調和性 inharmonicity 残響 reverb モード合成 modal synthesis 演奏 バッハ bach クラシック ナイロン スチール オーディオ audio',
   },
   {
@@ -185,6 +206,7 @@ export const TOOLS: Tool[] = [
     t: 'ピアノ音響モデル',
     d: 'グランドピアノのハンマー・弦・響板を物理モデルで計算して鳴らします。',
     ic: 'pn',
+    r: ['piano-action', 'temperament', 'organ', 'guitar'],
     k: 'piano grand acoustic physical model 物理モデル 弦 string ハンマー hammer フェルト felt 響板 soundboard 非調和性 inharmonicity ユニゾン unison 二段減衰 double decay ダンパー damper ペダル pedal 共鳴 sympathetic 残響 reverb モード合成 modal synthesis 演奏 バッハ ベートーヴェン 月光 サティ オーディオ audio',
   },
   {
@@ -193,6 +215,7 @@ export const TOOLS: Tool[] = [
     t: 'ピアノのアクション',
     d: '鍵からハンマーまでの機構の動きをスローで追います。',
     ic: 'pa',
+    r: ['piano', 'organ', 'temperament', 'tuner'],
     k: 'piano action grand 機構 アクション 鍵 key ハンマー hammer ウィッペン wippen whippen ジャック jack レペティション repetition lever ナックル knuckle レットオフ let-off escapement エスケープメント ダブルエスケープメント double escapement ドロップ drop バックチェック back check ダンパー damper キャプスタン capstan 整調 regulation 連打 repetition 打弦 多体 multibody 接触 contact スロー slow motion hirschkorn',
   },
   {
@@ -201,6 +224,7 @@ export const TOOLS: Tool[] = [
     t: 'ヴァイオリン音響モデル',
     d: 'ヴァイオリンの弓・弦・胴を物理モデルで計算して鳴らします。',
     ic: 'vn',
+    r: ['guitar', 'tuner', 'piano', 'trumpet'],
     k: 'violin bowed string acoustic physical model 物理モデル 弓 bow 擦弦 弓圧 bow force 弓速 bow speed 駒 bridge ヘルムホルツ運動 helmholtz motion シェレンゲ schelleng 摩擦 friction 松脂 rosin 重音 double stop ビブラート vibrato 胴 body 弱音器 mute 残響 reverb モード合成 modal synthesis 演奏 バッハ bach シャコンヌ chaconne パルティータ partita エクルズ eccles オーディオ audio',
   },
   {
@@ -209,6 +233,7 @@ export const TOOLS: Tool[] = [
     t: 'トランペット音響モデル',
     d: 'トランペットの唇・管・ピストンを物理モデルで計算して鳴らします。',
     ic: 'tp',
+    r: ['organ', 'tuner', 'violin', 'temperament'],
     k: 'trumpet brass lip acoustic physical model 物理モデル 金管 唇 lips マウスピース mouthpiece リードパイプ leadpipe ピストン piston valve 弁 抜差し slide ベル bell 入力インピーダンス input impedance 共鳴 resonance 倍音 自然倍音 harmonic series 導波管 waveguide 伝達行列 transfer matrix 非線形 nonlinear ブラスネス brassiness 衝撃波 shock wave タンギング tonguing スラー slur ビブラート vibrato 残響 reverb 演奏 ヘンデル handel 王宮の花火の音楽 ラ・レジュイサンス メサイア messiah バッハ bach メヌエット minuet グノー gounod アヴェ・マリア ave maria チャイコフスキー tchaikovsky ナポリの踊り 消灯ラッパ taps オーディオ audio',
   },
   {
@@ -217,6 +242,7 @@ export const TOOLS: Tool[] = [
     t: 'SVG テーマスキーマチェッカー',
     d: 'ライトテーマとダークテーマで SVG の外観が意図したとおりになるかを並べて確かめます。',
     ic: 'svg',
+    r: ['jpeg', 'qr-code', 'image-convolution', 'colorcode'],
     k: 'dark light ダーク ライト テーマ',
   },
   {
@@ -225,6 +251,7 @@ export const TOOLS: Tool[] = [
     t: '極と零点',
     d: 'z 平面に極と零点を置いて周波数特性・インパルス応答・係数を求めます。',
     ic: 'pz',
+    r: ['iir', 'biquad', 'fir', 'pendulum'],
     k: 'pole zero z平面 z-plane 伝達関数 transfer function 周波数特性 振幅 位相 群遅延 group delay 安定 stability 双2次 縦続 sos biquad iir fir 共振 resonator ノッチ notch オールパス allpass くし形 comb 移動平均',
   },
   {
@@ -233,6 +260,7 @@ export const TOOLS: Tool[] = [
     t: '抵抗カラーコード',
     d: '4〜6 本帯のカラーコードと抵抗値を相互に求めます。',
     ic: 'cc',
+    r: ['passive-combination', 'timer555', 'pcb-coil', 'qr-code'],
     k: '色帯 color code e系列 許容差 resistor',
   },
   {
@@ -241,6 +269,7 @@ export const TOOLS: Tool[] = [
     t: 'PCBコイル',
     d: '基板の配線で作るうずまき状のコイルのインダクタンス・抵抗・Q を求めます。',
     ic: 'pc',
+    r: ['passive-combination', 'timer555', 'jjy', 'colorcode'],
     k: 'pcb 共振 コンデンサ スパイラル うずまき アンテナ インダクタンス nfc rfid spiral coil antenna inductor',
   },
   {
@@ -249,6 +278,7 @@ export const TOOLS: Tool[] = [
     t: 'JPEG',
     d: 'JPEG に符号化する過程を順に解説し、圧縮の結果と画質を比べます。',
     ic: 'jp',
+    r: ['wavelet-denoise', 'image-convolution', 'fft', 'qr-code'],
     k: 'jpeg jpg 画像 圧縮 image compression dct 離散コサイン変換 量子化 quantization ハフマン huffman ジグザグ zigzag ycbcr 色差 間引き chroma subsampling 4:2:0 ブロックノイズ psnr',
   },
   {
@@ -257,6 +287,7 @@ export const TOOLS: Tool[] = [
     t: 'オルガン音響モデル',
     d: 'パイプオルガンの管の発音と共鳴を物理モデルで計算して鳴らします。',
     ic: 'og',
+    r: ['trumpet', 'piano', 'temperament', 'reverb'],
     k: 'organ pipe organ パイプオルガン acoustic physical model 物理モデル フルー管 flue リード管 reed ジェット jet エッジトーン 共鳴管 resonator ストップ stop レジストレーション registration プリンシパル ゲダクト トランペット 風箱 wind トレモラント tremulant 調律 temperament 教会 残響 reverb 演奏 バッハ bach オーディオ audio',
   },
   {
@@ -265,6 +296,7 @@ export const TOOLS: Tool[] = [
     t: 'エンジン音響モデル',
     d: 'CT125 をもとにした単気筒エンジンの排気音とトルク・出力を再現します。',
     ic: 'en',
+    r: ['doppler', 'spectrum', 'trumpet', 'organ'],
     k: 'engine エンジン honda ホンダ 空冷 単気筒 single cylinder 4 stroke 4 ストローク ハンターカブ hunter cub ct125 スーパーカブ super cub ja65 ja55 排気音 exhaust マフラー muffler silencer 触媒 吸気 intake トルク torque 出力 power 回転数 rpm 空ぶかし アイドリング idle 燃焼 combustion wiebe 筒内圧 p-v 体積効率 導波管 waveguide 物理モデル physical model オーディオ audio',
   },
   {
@@ -273,6 +305,7 @@ export const TOOLS: Tool[] = [
     t: 'カメラレンズ',
     d: '実在のレンズのデータどおりに光線を追跡し、ボケや収差を映像で再現します。',
     ic: 'ln',
+    r: ['focusing-mask', 'moon', 'image-convolution', 'halo'],
     k: 'lens camera optics レンズ カメラ 光学 光線追跡 ray tracing 絞り aperture f値 焦点距離 focal length ピント focus 被写界深度 depth of field ボケ bokeh 玉ボケ 収差 aberration ザイデル seidel 球面収差 コマ 非点収差 像面湾曲 歪曲 distortion 色収差 chromatic 周辺減光 vignetting ダブルガウス double gauss テッサー tessar トリプレット triplet アクロマート achromat 望遠 広角 webgl',
   },
   {
@@ -281,6 +314,7 @@ export const TOOLS: Tool[] = [
     t: 'ハロ（暈）',
     d: '氷晶に通した光線を追い、日暈や幻日、環天頂アークの空を描きます。',
     ic: 'hl',
+    r: ['lens', 'moon', 'solar-eclipse', 'focusing-mask'],
     k: 'halo ハロー 日暈 月暈 暈 かさ 内暈 22度 外暈 46度 幻日 幻月 sun dog parhelion 幻日環 parhelic circle 環天頂アーク circumzenithal 環水平アーク circumhorizontal 太陽柱 sun pillar タンジェントアーク 上端接弧 外接ハロ tangent arc パリーアーク parry ローウィッツアーク lowitz ラテラルアーク 120度幻日 錐面 pyramidal 9度 氷晶 ice crystal 六角柱 巻雲 cirrus ダイヤモンドダスト diamond dust 大気光学 atmospheric optics 大気光象 薄明 夕焼け 地球の影 光線追跡 ray tracing モンテカルロ monte carlo webgl',
   },
   {
@@ -289,6 +323,7 @@ export const TOOLS: Tool[] = [
     t: 'フォーカシングマスク',
     d: 'バーティノフマスクなどを付けた星の像を、回折で計算します。',
     ic: 'fk',
+    r: ['lens', 'moon', 'fft', 'halo'],
     k: 'focusing mask フォーカスマスク ピント合わせ 合焦 focus bahtinov バーティノフ tri-bahtinov トライ・バーティノフ carey キャリー hartmann ハルトマン scheiner シャイナー 望遠鏡 telescope 天体写真 astrophotography 星 光条 回折 diffraction fraunhofer フラウンホーファー fft 点像 psf シーイング seeing 臨界焦点範囲 critical focus zone cfz 光軸 collimation コマ hfd',
   },
   {
@@ -297,6 +332,7 @@ export const TOOLS: Tool[] = [
     t: '画像の畳み込み',
     d: 'ぼかしやエッジ検出の出力をカーネルの積和で 1 画素ずつ作ります。',
     ic: 'icv',
+    r: ['convolution', 'fir', 'jpeg', 'fft'],
     k: 'image convolution 画像 畳み込み たたみこみ 2次元 2d kernel 核 カーネル フィルタ filter ぼかし blur 平均 box ガウス gaussian ピンぼけ defocus ぶれ motion blur 鮮鋭化 sharpen アンシャープマスク unsharp mask エッジ検出 edge detection ラプラシアン laplacian sobel ソーベル 勾配 gradient 浮き彫り emboss 点像分布関数 psf mtf 分離 separable 相関 correlation cnn メディアン median 端 padding',
   },
 
@@ -306,6 +342,7 @@ export const TOOLS: Tool[] = [
     t: '日食',
     d: '過去と未来の日食を地上の空と月の影で再現します。',
     ic: 'se',
+    r: ['moon', 'lens', 'halo', 'focusing-mask'],
     k: 'solar eclipse 日食 皆既日食 金環日食 部分日食 total annular hybrid partial 食分 面積比 magnitude obscuration コロナ corona ダイヤモンドリング diamond ring ベイリー baily 月の影 本影 半影 umbra penumbra 皆既帯 中心線 central line サロス saros ベッセル要素 besselian elements nasa 五千年正典 five millennium canon espenak meeus deltat δt 地方食 local circumstances 天文 astronomy 太陽 月',
   },
   {
@@ -314,6 +351,7 @@ export const TOOLS: Tool[] = [
     t: '月',
     d: '選んだ日時の月を満ち欠けから地形の影まで再現します。',
     ic: 'mn',
+    r: ['solar-eclipse', 'lens', 'halo', 'focusing-mask'],
     k: 'moon 月 満ち欠け 月齢 月相 phase 輝面比 illumination 秤動 libration 地球直下点 sub-earth 視直径 apparent diameter 近地点 遠地点 perigee apogee スーパームーン supermoon 月の出 月の入り 南中 moonrise moonset 欠け際 明暗境界 terminator クレーター crater 月の海 mare 余経度 colongitude 地球照 earthshine 月食 皆既月食 lunar eclipse 本影 半影 赤銅色 danjon 中秋の名月 十三夜 カレンダー lro lola nasa meeus 天文 astronomy',
   },
   {
@@ -322,6 +360,7 @@ export const TOOLS: Tool[] = [
     t: '分岐図',
     d: 'ロジスティック写像が周期倍分岐をくり返してカオスに至る様子を見ます。',
     ic: 'bf',
+    r: ['noise', 'pendulum', 'spectrum', 'fft'],
     k: 'bifurcation diagram 分岐図 ロジスティック写像 logistic map 正弦写像 sine map テント写像 tent map エノン写像 henon map カオスニューロン chaotic neuron tanh ガウス写像 gauss map mouse map リッカー写像 ricker map 3 次写像 cubic map クモの巣図 蜘蛛の巣図 cobweb 時系列 周期倍分岐 period doubling カオス chaos リアプノフ指数 lyapunov exponent feigenbaum ファイゲンバウム 定数 普遍性 universality 集積点 窓 周期 3 period three li-yorke sharkovskii 超安定 superstable 力学系 dynamical system 非線形 nonlinear may 数学 math',
   },
   {
@@ -330,6 +369,7 @@ export const TOOLS: Tool[] = [
     t: 'チューナー',
     d: '楽器の音を聴き、音名とずれを針か 12 音のストロボで示します。',
     ic: 'tu',
+    r: ['temperament', 'spectrum', 'oscilloscope', 'guitar'],
     k: 'tuner チューニング 調律 調弦 音合わせ クロマチック chromatic ストロボ strobe stroboconn 針 メータ meter セント cent 基準ピッチ a440 442 ギター guitar ベース bass ウクレレ ukulele ヴァイオリン バイオリン violin ヴィオラ チェロ cello コントラバス マンドリン バンジョー ハーモニカ harmonica 管楽器 移調 transpose 音律 temperament 純正律 just intonation ピッチ pitch mpm マイク オーディオ audio',
   },
   {
@@ -338,6 +378,7 @@ export const TOOLS: Tool[] = [
     t: '音律とうなり',
     d: '音律ごとに和音を鳴らし、うなりの速さを比べます。',
     ic: 'tm',
+    r: ['tuner', 'piano', 'organ', 'guitar'],
     k: 'temperament tuning 音律 調律 うなり beat beats 平均律 equal temperament 純正律 just intonation ピタゴラス pythagorean ミーントーン meantone ヴェルクマイスター werckmeister キルンベルガー kirnberger ヴァロッティ vallotti ヤング young 古典調律 well temperament 和音 chord 長三和音 3 度 5 度 部分音 倍音 partial harmonic コンマ comma ウルフ wolf 非調和性 inharmonicity ストレッチ stretch ピアノ piano オルガン organ セント cent',
   },
   {
@@ -346,6 +387,7 @@ export const TOOLS: Tool[] = [
     t: '畳み込み',
     d: '核を反転して滑らせ、重なりの面積が出力になる様子を連続と離散で見ます。',
     ic: 'cv',
+    r: ['image-convolution', 'fir', 'reverb', 'fft'],
     k: 'convolution 畳み込み たたみこみ 合成積 convolve kernel カーネル 核 インパルス応答 impulse response 線形時不変 lti 移動平均 moving average 相関 相互相関 cross-correlation cnn 畳み込み定理 convolution theorem フーリエ fourier fft 円状畳み込み circular convolution 確率 サイコロ dice 中心極限定理 central limit theorem 数学 math',
   },
   {
@@ -354,6 +396,7 @@ export const TOOLS: Tool[] = [
     t: 'FFT',
     d: 'バタフライ図の上を値が流れる様子を、時間間引きと周波数間引きで見ます。',
     ic: 'ff',
+    r: ['spectrum', 'convolution', 'wavelet', 'fir'],
     k: 'fft 高速フーリエ変換 fast fourier transform dft 離散フーリエ変換 バタフライ butterfly cooley tukey クーリー テューキー 時間間引き decimation in time dit 周波数間引き decimation in frequency dif gentleman sande ビット反転 bit reversal 並べ替え 回転因子 twiddle factor 基数 2 radix-2 基数 4 分割基数 split radix 計算量 演算量 n log n 複素数 complex gauss ガウス 数学 math',
   },
   {
@@ -362,6 +405,7 @@ export const TOOLS: Tool[] = [
     t: 'ウェーブレット変換',
     d: '短い波を信号に重ねて掛けて足し、いつ・どの高さの音が鳴ったかを見ます。',
     ic: 'wv',
+    r: ['wavelet-denoise', 'fft', 'spectrum', 'convolution'],
     k: 'wavelet ウェーブレット 変換 transform cwt dwt 連続ウェーブレット変換 離散ウェーブレット変換 morlet モルレ haar ハール daubechies ドベシィ スカログラム scalogram 多重解像度 multiresolution mra mallat フィルタバンク filter bank 時間周波数 time-frequency stft 短時間フーリエ変換 不確定性 heisenberg gabor ガボール 内積 inner product 平均と差 位相 phase フーリエ fourier 数学 math',
   },
   {
@@ -370,6 +414,7 @@ export const TOOLS: Tool[] = [
     t: 'ウェーブレット変換での雑音除去と圧縮',
     d: 'ウェーブレットの係数を捨てて戻し、雑音を除いた音と圧縮した音を元の音と聴き比べます。',
     ic: 'wd',
+    r: ['wavelet', 'jpeg', 'noise', 'fft'],
     k: 'wavelet ウェーブレット 雑音除去 ノイズ除去 denoise denoising noise reduction 圧縮 compression 閾値 threshold 硬い閾値 柔らかい閾値 hard soft shrinkage 縮小 visushrink sureshrink bayesshrink sure 普遍閾値 universal threshold donoho johnstone cycle spinning 量子化 quantization ビット bit エントロピー entropy jpeg 2000 dct dft mdct aac mp3 フーリエ fourier sn 比 snr スカログラム scalogram 聴き比べ 音 audio マイク 録音 数学 math',
   },
 ];

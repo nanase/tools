@@ -5,7 +5,6 @@ import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
 import RelatedTools from '../components/RelatedTools.astro';
-import { order, TOOLS } from '../data/tools';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import { outVol } from '../lib/play';
 import '../tools/piano-action/style.css';
@@ -14,13 +13,6 @@ import Theory from '../tools/piano-action/Theory.astro';
 
 const name = 'ピアノのアクション';
 /* 打弦で鳴らすピアノを先に、続けて同じカテゴリ（準備中を含む）、ほかのカテゴリの公開中のツール */
-const CAT = '楽器・調律';
-const FIRST = ['piano'];
-const related = [
-  ...FIRST.map((id) => TOOLS.find((t) => t.id === id)).filter((t) => t !== undefined),
-  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'piano-action')),
-  ...TOOLS.filter((t) => t.c !== CAT && !t.s && !FIRST.includes(t.id)),
-];
 const LEGEND = [
   ['key', '鍵'],
   ['whippen', 'ウィッペン'],
@@ -114,7 +106,7 @@ const LEGEND = [
     </Collapsible>
   </div>
 
-  <RelatedTools list={related} />
+  <RelatedTools current="piano-action" />
   <script>
     import '../tools/piano-action/client';
   </script>

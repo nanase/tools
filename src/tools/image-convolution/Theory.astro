@@ -85,7 +85,7 @@ const to = (id: string, t: string) => (TOOLS.some((x) => x.id === id && !x.s) ? 
   <li>ゼロ埋めせずに掛けると巡回畳み込み（端の処理 = 周期）<Fragment set:html={rf(1)} /></li>
   <li><math><mo stretchy="false">|</mo><mi>H</mi><mo stretchy="false">|</mo></math> はカーネルの MTF。ガウシアンの MTF もガウス関数（図 25-1）<Fragment set:html={rf(2)} /></li>
   <li>大きいカーネルでは FFT が速い（512 × 512 の画像に 50 × 50 で約 20 倍）<Fragment set:html={rf(1)} /></li>
-  <li>DFT: <Fragment set:html={to('dct-dft', 'DCT と DFT')} />　高速な計算: <Fragment set:html={to('fft', 'FFT')} /></li>
+  <li>DFT の高速な計算: <Fragment set:html={to('fft', 'FFT')} /></li>
 </ul>
 
 <h3>非線形のフィルタ</h3>

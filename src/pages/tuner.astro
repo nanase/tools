@@ -6,7 +6,6 @@ import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
 import RelatedTools from '../components/RelatedTools.astro';
-import { order, TOOLS } from '../data/tools';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import '../tools/audio/style.css';
 import '../tools/tuner/style.css';
@@ -19,11 +18,6 @@ import { bandY, MR, meterTicks, zonePath } from '../tools/tuner/view';
 
 const name = 'チューナー';
 /* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
-const CAT = '楽器・調律';
-const related = [
-  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'tuner')),
-  ...TOOLS.filter((t) => t.c !== CAT && !t.s),
-];
 /* 目盛りの数字（−50・−14・0・+16・+50。±20 のときは −20・−14・0・+16・+20）と純正律の ▼ の位置。半径 265（数字）と MR + 2〜11（▼） */
 const at = (r: number, a: number) => [300 + r * Math.sin((a * Math.PI) / 180), 300 - r * Math.cos((a * Math.PI) / 180)];
 const JM = 1200 * Math.log2(5 / 4) - 400,
@@ -190,7 +184,7 @@ const PCS = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯
     </Collapsible>
   </div>
 
-  <RelatedTools list={related} />
+  <RelatedTools current="tuner" />
   <script>
     import '../tools/tuner/client';
   </script>

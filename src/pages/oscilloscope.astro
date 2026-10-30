@@ -6,7 +6,6 @@ import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
 import RelatedTools from '../components/RelatedTools.astro';
-import { order, TOOLS } from '../data/tools';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import { gridSvg } from '../lib/scope';
 import '../tools/audio/style.css';
@@ -18,11 +17,6 @@ import Theory from '../tools/oscilloscope/Theory.astro';
 
 const name = 'オシロスコープ';
 /* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
-const CAT = '音響';
-const related = [
-  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'oscilloscope')),
-  ...TOOLS.filter((t) => t.c !== CAT && !t.s),
-];
 const pct = (v: number) => `${v * 100} %`;
 ---
 <SiteLayout title={name} tool={{ id: 'oscilloscope', name }} description="マイクや音楽ファイルの音を波形で表示します。トリガと表示範囲を変えられ、リサジューも描けます。" note="音声はこの端末の中だけで処理し、送信しません。">
@@ -116,7 +110,7 @@ const pct = (v: number) => `${v * 100} %`;
     </Collapsible>
   </div>
 
-  <RelatedTools list={related} />
+  <RelatedTools current="oscilloscope" />
   <script>
     import '../tools/oscilloscope/client';
   </script>

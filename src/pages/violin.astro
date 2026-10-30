@@ -9,7 +9,6 @@ import RelatedTools from '../components/RelatedTools.astro';
 import Transport from '../components/Transport.astro';
 import TransportButton from '../components/TransportButton.astro';
 import TransportState from '../components/TransportState.astro';
-import { order, TOOLS } from '../data/tools';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import { outVol, TEMPO } from '../lib/play';
 import { ROOMS } from '../lib/reverb';
@@ -40,11 +39,6 @@ import Theory from '../tools/violin/Theory.astro';
 
 const name = 'ヴァイオリン音響モデル';
 /* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
-const CAT = '音響モデル';
-const related = [
-  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'violin')),
-  ...TOOLS.filter((t) => t.c !== CAT && !t.s),
-];
 /** 弓の状態の行（表示だけ）。帯はよく鳴る範囲、目盛りは左・中・右 */
 const METERS = [
   {
@@ -298,7 +292,7 @@ const METERS = [
     </Collapsible>
   </div>
 
-  <RelatedTools list={related} />
+  <RelatedTools current="violin" />
   <script>
     import '../tools/violin/client';
   </script>

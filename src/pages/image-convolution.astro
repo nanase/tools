@@ -6,7 +6,6 @@ import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
 import RelatedTools from '../components/RelatedTools.astro';
-import { order, TOOLS, type Tool } from '../data/tools';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import '../tools/image-convolution/style.css';
 import { EDGES, H, KN, NC, PAD, PARAMS, SPEEDS, SRCS, W } from '../tools/image-convolution/params';
@@ -14,13 +13,6 @@ import Theory from '../tools/image-convolution/Theory.astro';
 
 const name = '画像の畳み込み';
 /* 同じカテゴリ（準備中を含む）の後ろに、信号処理に近いもの、ほかの公開中のツールを並べる */
-const CAT = '画像・光学';
-const NEAR = ['convolution', 'fir', 'dct-dft', 'fft'];
-const related = [
-  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'image-convolution')),
-  ...NEAR.map((id) => TOOLS.find((t) => t.id === id)).filter((t): t is Tool => !!t && !t.s),
-  ...TOOLS.filter((t) => t.c !== CAT && !t.s && !NEAR.includes(t.id)),
-];
 const PW = W + 2 * PAD,
   PH = H + 2 * PAD;
 const ICON_HOME = '<rect x="1.5" y="1.5" width="1.8" height="9"/><path d="M10.5 1.5v9L4 6z"/>';
@@ -104,7 +96,7 @@ const ICON_HOME = '<rect x="1.5" y="1.5" width="1.8" height="9"/><path d="M10.5 
     </Collapsible>
   </div>
 
-  <RelatedTools list={related} />
+  <RelatedTools current="image-convolution" />
   <script>
     import '../tools/image-convolution/client';
   </script>

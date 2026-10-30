@@ -6,7 +6,6 @@ import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
 import RelatedTools from '../components/RelatedTools.astro';
-import { TOOLS } from '../data/tools';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import '../tools/iir/style.css';
 import { gridSvg } from '../lib/scope';
@@ -25,8 +24,6 @@ const def = (k: string) => {
     : d;
 };
 /* 同じカテゴリのツールを先に、続けて公開中のほかのツールを並べる */
-const same = TOOLS.filter((t) => !t.s && t.id !== 'iir' && t.c === 'デジタルフィルタ'),
-  related = [...same, ...TOOLS.filter((t) => !t.s && t.c !== 'デジタルフィルタ')];
 const pzSvg = (id: string, label: string) =>
   `<svg viewBox="-46 -16 ${PZ + 76} ${PZ + 40}" id="${id}-svg" role="img" aria-label="${label}"><defs><clipPath id="${id}-clip"><rect x="-8" y="-8" width="${PZ + 16}" height="${PZ + 16}"/></clipPath></defs><g id="${id}-g"></g><g id="${id}-m" clip-path="url(#${id}-clip)"></g></svg>`;
 ---
@@ -190,7 +187,7 @@ const pzSvg = (id: string, label: string) =>
     </Collapsible>
   </div>
 
-  <RelatedTools list={related} />
+  <RelatedTools current="iir" />
   <div class="toast" id="toast" role="status" aria-live="polite" data-off></div>
   <script>
     import '../tools/iir/client';

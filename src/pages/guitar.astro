@@ -9,7 +9,6 @@ import RelatedTools from '../components/RelatedTools.astro';
 import Transport from '../components/Transport.astro';
 import TransportButton from '../components/TransportButton.astro';
 import TransportState from '../components/TransportState.astro';
-import { order, TOOLS } from '../data/tools';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import { outVol, TEMPO } from '../lib/play';
 import { ROOMS } from '../lib/reverb';
@@ -47,11 +46,6 @@ import Theory from '../tools/guitar/Theory.astro';
 
 const name = 'ギター音響モデル';
 /* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
-const CAT = '音響モデル';
-const related = [
-  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'guitar')),
-  ...TOOLS.filter((t) => t.c !== CAT && !t.s),
-];
 const tunName = (n: readonly number[]) => {
   const L = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
   return [...n]
@@ -317,7 +311,7 @@ const PIANO = ROOTS.map((_, i) => {
     </Collapsible>
   </div>
 
-  <RelatedTools list={related} />
+  <RelatedTools current="guitar" />
   <script>
     import '../tools/guitar/client';
   </script>
