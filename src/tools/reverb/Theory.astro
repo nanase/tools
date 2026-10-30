@@ -1,0 +1,144 @@
+---
+// 動作原理と式。表の値は room.ts・ir.ts から求める
+import { EARLY_S, ECHO_MIN_S, EK, HP_HZ } from './ir';
+import { acoustics, BANDS, MATERIALS, OPEN, PRESETS } from './room';
+
+/* 本文の出典番号 */
+const rf = (...ns: number[]) => ns.map((n) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`).join('');
+const f2 = (v: number) => v.toFixed(2);
+const hz = (f: number) => (f >= 1000 ? `${f / 1000}k` : `${f}`);
+
+const MATS = MATERIALS.filter((m) => m.v !== OPEN);
+/* 部屋の例の残響時間（500 Hz） */
+const ROOMS = PRESETS.map((p) => ({ name: p.name, ac: acoustics(p.room), dim: p.room.dim }));
+---
+<h3>直接音・初期反射・後部残響</h3>
+<p>直接音に続いて壁で反射した音が次々に届きます。</p>
+<ul class="tl">
+  <li>直接音: 最初に届く音。距離 <math><mi>r</mi></math> に反比例して小さくなる</li>
+  <li>初期反射: 直接音から {EARLY_S * 1000} ms（C80 の境目）まで。1 つずつは聞き分けられないが、音の広がりと明瞭さを変える</li>
+  <li>後部残響: それより後。反射が密になり、指数で減衰する雑音のように聞こえる。始まり（混合時間）の目安は <math><msqrt><mi>V</mi></msqrt></math> ms（<math><mi>V</mi></math> は容積 [m³]）で、反射が 1 秒に 400 を超える頃<Fragment set:html={rf(9)} /></li>
+</ul>
+
+<h3>鏡像法</h3>
+<p>平らな壁での反射は、壁に映した音源（鏡像）から届く音と同じです。直方体の部屋では鏡像がさらに映り、格子状に並びます<Fragment set:html={rf(1)} />。</p>
+<div class="eqs">
+  <math display="block"><msub><mi>x</mi><mi>i</mi></msub><mo>=</mo><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><mn>2</mn><mi>p</mi><mo stretchy="false">)</mo><msub><mi>x</mi><mi mathvariant="normal">s</mi></msub><mo>+</mo><mn>2</mn><mi>n</mi><msub><mi>L</mi><mi>x</mi></msub><mo>,</mo><mspace width="1em"/><mi>p</mi><mo>∈</mo><mo stretchy="false">{</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo stretchy="false">}</mo><mo>,</mo><mspace width="0.5em"/><mi>n</mi><mo>∈</mo><mi mathvariant="double-struck">Z</mi></math>
+  <math display="block"><msub><mi>a</mi><mi>i</mi></msub><mo>=</mo><mfrac><mrow><munder><mo>∏</mo><mi>w</mi></munder><msubsup><mi>β</mi><mi>w</mi><msub><mi>k</mi><mi>w</mi></msub></msubsup></mrow><msub><mi>r</mi><mi>i</mi></msub></mfrac><mo>,</mo><mspace width="1em"/><msub><mi>β</mi><mi>w</mi></msub><mo>=</mo><msqrt><mn>1</mn><mo>−</mo><msub><mi>α</mi><mi>w</mi></msub></msqrt><mo>,</mo><mspace width="1em"/><msub><mi>t</mi><mi>i</mi></msub><mo>=</mo><mfrac><msub><mi>r</mi><mi>i</mi></msub><mi>c</mi></mfrac></math>
+</div>
+<dl class="syms">
+  <dt><math><msub><mi>x</mi><mi mathvariant="normal">s</mi></msub><mo>,</mo><mspace width="0.3em"/><msub><mi>L</mi><mi>x</mi></msub></math></dt><dd>音源の位置と部屋の幅（<math><mi>y</mi></math>・<math><mi>z</mi></math> も同じ）</dd>
+  <dt><math><msub><mi>k</mi><mi>w</mi></msub></math></dt><dd>面 <math><mi>w</mi></math> に当たる回数。手前の面は <math><mo>|</mo><mi>n</mi><mo>−</mo><mi>p</mi><mo>|</mo></math>・奥の面は <math><mo>|</mo><mi>n</mi><mo>|</mo></math></dd>
+  <dt><math><msub><mi>β</mi><mi>w</mi></msub></math></dt><dd>音圧の反射率。吸音率 <math><msub><mi>α</mi><mi>w</mi></msub></math> は強さのうち吸われる割合</dd>
+  <dt><math><msub><mi>r</mi><mi>i</mi></msub></math></dt><dd>鏡像から聞き手までの距離。反射の経路の長さに等しい</dd>
+</dl>
+<ul class="tl">
+  <li>反射の経路: 聞き手と鏡像を結ぶ直線が格子の面を横切る点を、部屋の中へ折り返すと反射点になる</li>
+  <li>半径 <math><mi>R</mi></math> の球に入る鏡像の数は <math><mn>4</mn><mi>π</mi><msup><mi>R</mi><mn>3</mn></msup><mo>/</mo><mn>3</mn><mi>V</mi></math>。時刻 <math><mi>t</mi></math> に届く反射の密度は <math><mn>4</mn><mi>π</mi><msup><mi>c</mi><mn>3</mn></msup><msup><mi>t</mi><mn>2</mn></msup><mo>/</mo><mi>V</mi></math><Fragment set:html={rf(5)} /></li>
+  <li>空気の吸収: ISO 9613-1 の式で帯域の中心周波数の減衰率を求め、距離に掛ける<Fragment set:html={rf(12)} /></li>
+</ul>
+
+<h3>波面</h3>
+<p>図の波面は、鏡像を中心とする半径 <math><mi>c</mi><mi>t</mi></math> の球を聞き手の高さで水平に切った円です。描くのは部屋の中の弧だけです。壁で跳ね返る波面は、壁の向こうの鏡像の円が入ってきたものです。</p>
+<div class="eqs">
+  <math display="block"><mi>ρ</mi><mo>=</mo><msqrt><msup><mrow><mo stretchy="false">(</mo><mi>c</mi><mi>t</mi><mo stretchy="false">)</mo></mrow><mn>2</mn></msup><mo>−</mo><msup><mrow><mo stretchy="false">(</mo><msub><mi>z</mi><mi>i</mi></msub><mo>−</mo><msub><mi>z</mi><mi mathvariant="normal">r</mi></msub><mo stretchy="false">)</mo></mrow><mn>2</mn></msup></msqrt></math>
+</div>
+
+<h3>吸音率</h3>
+<p>帯域ごとの吸音率です<Fragment set:html={rf(6)} />。硬い面は高い音もほとんど吸いません。布や吸音板は高い音ほどよく吸います。</p>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th>材料</th>{BANDS.map((f) => <th class="num">{hz(f)}</th>)}</tr></thead>
+  <tbody>{MATS.map((m) => <tr><td>{m.name}</td>{m.a.map((a) => <td class="num">{f2(a)}</td>)}</tr>)}</tbody>
+</table></div>
+<ul class="tl">
+  <li>開放（屋外）は吸音率 1。音はすべて抜けて反射しない</li>
+  <li>屋外の硬い地面はコンクリートの値で代える。草地など柔らかい地面は扱わない（普通は吸音率でなく地面のインピーダンスで扱う）<Fragment set:html={rf(13)} /></li>
+</ul>
+
+<h3>残響時間</h3>
+<p>音を止めてから 60 dB 下がるまでの時間です。音が部屋中で混ざり、どの向きにも同じ強さで進む（拡散音場）とすれば、容積と吸音から求まります。</p>
+<div class="eqs">
+  <math display="block"><msub><mi>T</mi><mtext>Sabine</mtext></msub><mo>=</mo><mfrac><mrow><mn>0.161</mn><mi>V</mi></mrow><mrow><mi>A</mi><mo>+</mo><mn>4</mn><mi>m</mi><mi>V</mi></mrow></mfrac><mo>,</mo><mspace width="1em"/><mi>A</mi><mo>=</mo><munder><mo>∑</mo><mi>w</mi></munder><msub><mi>S</mi><mi>w</mi></msub><msub><mi>α</mi><mi>w</mi></msub></math>
+  <math display="block"><msub><mi>T</mi><mtext>Eyring</mtext></msub><mo>=</mo><mfrac><mrow><mn>0.161</mn><mi>V</mi></mrow><mrow><mo>−</mo><mi>S</mi><mi>ln</mi><mo>&#x2061;</mo><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><mover><mi>α</mi><mo>¯</mo></mover><mo stretchy="false">)</mo><mo>+</mo><mn>4</mn><mi>m</mi><mi>V</mi></mrow></mfrac><mo>,</mo><mspace width="1em"/><mover><mi>α</mi><mo>¯</mo></mover><mo>=</mo><mfrac><mi>A</mi><mi>S</mi></mfrac></math>
+</div>
+<dl class="syms">
+  <dt><math><mn>0.161</mn></math></dt><dd><math><mn>24</mn><mi>ln</mi><mo>&#x2061;</mo><mn>10</mn><mo>/</mo><mi>c</mi></math>（<math><mi>c</mi></math> = 343 m/s）。Sabine 自身は 4 部屋の測定から 0.164 とした<Fragment set:html={rf(2)} /></dd>
+  <dt><math><mi>m</mi></math></dt><dd>空気の強さの減衰率 [1/m]</dd>
+</dl>
+<ul class="tl">
+  <li>吸音率が小さいと 2 つの式はほぼ同じ。吸音が多い部屋では Sabine は長く出すぎる（全面が吸音率 1 でも 0 にならない）。Eyring は 0 になる<Fragment set:html={rf(3)} /></li>
+  <li>鏡のような反射だけの直方体は拡散音場にならない。吸音率がどの面も同じなら、鏡像法の減衰は Eyring とよく合う<Fragment set:html={rf(1)} />。細長い部屋や天井だけ吸う部屋では、吸わない面の間を往復する音が残り、減衰が遅れる</li>
+  <li>臨界距離 <math><msub><mi>r</mi><mi mathvariant="normal">c</mi></msub><mo>=</mo><msqrt><mi>A</mi><mo>/</mo><mn>16</mn><mi>π</mi></msqrt><mo>≈</mo><mn>0.057</mn><msqrt><mi>V</mi><mo>/</mo><mi>T</mi></msqrt></math>: 直接音と残響音が同じ強さになる距離（無指向性の音源）<Fragment set:html={rf(5)} /></li>
+</ul>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th>部屋の例</th><th class="num">寸法 [m]</th><th class="num">Sabine [s]</th><th class="num">Eyring [s]</th><th class="num">臨界距離 [m]</th></tr></thead>
+  <tbody>{ROOMS.filter((r) => r.ac.closed).map((r) => <tr><td>{r.name}</td><td class="num">{r.dim.join(' × ')}</td><td class="num">{f2(r.ac.sab[2])}</td><td class="num">{f2(r.ac.eyr[2])}</td><td class="num">{r.ac.rc[2].toFixed(1)}</td></tr>)}</tbody>
+</table></div>
+
+<h3>インパルス応答の作り方</h3>
+<ol class="flow">
+  <li>鏡像を届く時刻の順に数える。閉じた部屋は 2 万個まで、開いた空間はすべて</li>
+  <li>帯域（125 Hz〜4 kHz のオクターブ）ごとに、届く時刻に振幅 <math><msub><mi>a</mi><mi>i</mi></msub></math> のインパルスを置く</li>
+  <li>閉じた部屋では、数えきった時刻より後を指数で減衰する正規雑音で延ばす<Fragment set:html={rf(9)} />。減衰の速さは帯域ごとの Eyring の残響時間で決め、強さは直前の鏡像のエネルギーにつなぐ</li>
+  <li>帯域ごとの列を周波数の重み（足すと 1）で取り出して足す。どの帯域も同じ値なら元のインパルス列に戻る</li>
+  <li>鏡像の振幅はどれも正なので、足すと直流と低い周波数が積み上がる。{HP_HZ} Hz の 2 次の高域通過で取り除く</li>
+</ol>
+<p>拡散音場では、反射の密度 <math><mn>4</mn><mi>π</mi><msup><mi>c</mi><mn>3</mn></msup><msup><mi>t</mi><mn>2</mn></msup><mo>/</mo><mi>V</mi></math> と 1 つの強さ <math><mn>1</mn><mo>/</mo><msup><mrow><mo stretchy="false">(</mo><mi>c</mi><mi>t</mi><mo stretchy="false">)</mo></mrow><mn>2</mn></msup></math> を掛けると <math><msup><mi>t</mi><mn>2</mn></msup></math> が消えます。残る強さは <math><mn>4</mn><mi>π</mi><mi>c</mi><mo>/</mo><mi>V</mi></math> に吸音による指数の減衰を掛けた形です。</p>
+
+<h3>指標</h3>
+<p>インパルス応答の 2 乗を後ろから積分すると、なめらかな減衰曲線になります<Fragment set:html={rf(4)} />。</p>
+<div class="eqs">
+  <math display="block"><mi>E</mi><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mo>=</mo><msubsup><mo>∫</mo><mi>t</mi><mi>∞</mi></msubsup><msup><mi>h</mi><mn>2</mn></msup><mo stretchy="false">(</mo><mi>τ</mi><mo stretchy="false">)</mo><mspace width="0.2em"/><mi>d</mi><mi>τ</mi></math>
+</div>
+<ul class="tl">
+  <li>帯域ごとの値: 応答をオクターブ帯（125 Hz の帯域は 62.5〜250 Hz）に分けて求める</li>
+  <li>EDT・T20・T30: 減衰曲線の 0〜−10・−5〜−25・−5〜−35 dB に直線を当てはめ、60 dB 下がる時間に延ばしたもの<Fragment set:html={rf(7)} /></li>
+  <li>C80: 直接音から 80 ms より前と後のエネルギーの比 [dB]。音楽の明瞭さ</li>
+  <li>D50: 全体のエネルギーのうち 50 ms までの割合。言葉の聞き取りやすさ</li>
+</ul>
+
+<h3>エコーとリバーブ</h3>
+<p>反射が密に届くと、1 つの長い響き（リバーブ）に聞こえます。大きな反射が 1 つだけ遅れて届くと、別の音（エコー）に聞こえます。エコーかどうかは Dietsch・Kraak の基準で判定します<Fragment set:html={rf(10)} /><Fragment set:html={rf(11)} />。</p>
+<div class="eqs">
+  <math display="block"><msub><mi>t</mi><mi mathvariant="normal">s</mi></msub><mo stretchy="false">(</mo><mi>τ</mi><mo stretchy="false">)</mo><mo>=</mo><mfrac><mrow><msubsup><mo>∫</mo><mn>0</mn><mi>τ</mi></msubsup><mi>t</mi><msup><mrow><mo>|</mo><mi>h</mi><mo>|</mo></mrow><mi>n</mi></msup><mi>d</mi><mi>t</mi></mrow><mrow><msubsup><mo>∫</mo><mn>0</mn><mi>τ</mi></msubsup><msup><mrow><mo>|</mo><mi>h</mi><mo>|</mo></mrow><mi>n</mi></msup><mi>d</mi><mi>t</mi></mrow></mfrac><mo>,</mo><mspace width="1em"/><mi>EK</mi><mo stretchy="false">(</mo><mi>τ</mi><mo stretchy="false">)</mo><mo>=</mo><mfrac><mrow><msub><mi>t</mi><mi mathvariant="normal">s</mi></msub><mo stretchy="false">(</mo><mi>τ</mi><mo stretchy="false">)</mo><mo>−</mo><msub><mi>t</mi><mi mathvariant="normal">s</mi></msub><mo stretchy="false">(</mo><mi>τ</mi><mo>−</mo><msub><mi>Δ</mi><mi>E</mi></msub><mo stretchy="false">)</mo></mrow><msub><mi>Δ</mi><mi>E</mi></msub></mfrac></math>
+</div>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th></th><th class="num">n</th><th class="num">Δ<sub>E</sub> [ms]</th><th class="num">帯域 [Hz]</th><th class="num">閾（50 %）</th></tr></thead>
+  <tbody>
+    <tr><td>声</td><td class="num">2/3</td><td class="num">{EK.speech.win * 1000}</td><td class="num">{EK.speech.lo}–{EK.speech.hi}</td><td class="num">{EK.speech.crit.toFixed(1)}</td></tr>
+    <tr><td>音楽</td><td class="num">1</td><td class="num">{EK.music.win * 1000}</td><td class="num">{EK.music.lo}–{EK.music.hi}</td><td class="num">{EK.music.crit.toFixed(1)}</td></tr>
+  </tbody>
+</table></div>
+<ul class="tl">
+  <li><math><msub><mi>t</mi><mi mathvariant="normal">s</mi></msub></math> は時刻 <math><mi>τ</mi></math> までの応答の重心。遅れて強い反射が入ると重心が跳び、EK が大きくなる</li>
+  <li>直接音から {ECHO_MIN_S * 1000} ms より後で EK が閾を超えると、聞き手の半数がエコーに気づく</li>
+  <li>屋外に建物の壁が 1 枚だけあると、ほかに反射がないので小さな反射でも別に聞こえる（やまびこ）。部屋の中では同じ大きさの反射も前後の反射に埋もれる</li>
+</ul>
+
+<h3>畳み込みで聞く</h3>
+<p>部屋は、音源の音を入れて聞き手の位置の音を出す線形時不変系とみなせます。出力は乾いた音とインパルス応答の畳み込みです（計算のしかたは <a href="../convolution/">畳み込み</a>）。</p>
+<div class="eqs">
+  <math display="block"><mi>y</mi><mo stretchy="false">[</mo><mi>n</mi><mo stretchy="false">]</mo><mo>=</mo><munder><mo>∑</mo><mi>k</mi></munder><mi>h</mi><mo stretchy="false">[</mo><mi>k</mi><mo stretchy="false">]</mo><mspace width="0.2em"/><mi>x</mi><mo stretchy="false">[</mo><mi>n</mi><mo>−</mo><mi>k</mi><mo stretchy="false">]</mo></math>
+</div>
+<ul class="tl">
+  <li>ブラウザの ConvolverNode で畳み込む。インパルス応答は AudioContext と同じ標本化周波数で作る</li>
+  <li>音の大きさはインパルス応答のエネルギーで割ってそろえる。直接音と残響音の比は部屋ごとに変わる</li>
+  <li>楽器ページの残響: 16 本の遅延線のフィードバック遅延網<Fragment set:html={rf(8)} />に、この部屋の Eyring の残響時間（500 Hz・4 kHz）と臨界距離を入れる。部屋の形と位置を使わないので初期反射の並びはないが、計算は軽い</li>
+</ul>
+
+<h3>出典</h3>
+<ol class="refs">
+  <li id="thy-r1"><span class="rf-for">鏡像の位置（式 (6)・(7)）・吸音率 α = 1 − β²（式 (9)）・残響時間が Eyring とよく合い β が全面で同じとき最もよく合うこと（946 頁）</span><span class="rf-src">J. B. Allen and D. A. Berkley, <a href="https://jontalle.web.engr.illinois.edu/Public/Allen-pdf/AllenBerkley79.pdf" target="_blank" rel="noopener">“Image method for efficiently simulating small-room acoustics,”</a> <i>The Journal of the Acoustical Society of America</i>, vol. 65, no. 4, pp. 943–950, 1979, <a href="https://doi.org/10.1121/1.382599" target="_blank" rel="noopener">doi:10.1121/1.382599</a></span></li>
+  <li id="thy-r2"><span class="rf-for">残響時間の式と定数 0.164（4 部屋の測定の平均）</span><span class="rf-src">W. C. Sabine, <a href="https://archive.org/details/collectedpaperso00sabiuoft" target="_blank" rel="noopener"><i>Collected Papers on Acoustics</i></a>, Harvard University Press, 1922</span></li>
+  <li id="thy-r3"><span class="rf-for">吸音の多い部屋の残響時間</span><span class="rf-src">C. F. Eyring, “Reverberation time in ‘dead’ rooms,” <i>The Journal of the Acoustical Society of America</i>, vol. 1, no. 2A, pp. 217–241, 1930, <a href="https://doi.org/10.1121/1.1915175" target="_blank" rel="noopener">doi:10.1121/1.1915175</a></span></li>
+  <li id="thy-r4"><span class="rf-for">逆向き積分の減衰曲線</span><span class="rf-src">M. R. Schroeder, “New method of measuring reverberation time,” <i>The Journal of the Acoustical Society of America</i>, vol. 37, no. 3, pp. 409–412, 1965, <a href="https://doi.org/10.1121/1.1909343" target="_blank" rel="noopener">doi:10.1121/1.1909343</a></span></li>
+  <li id="thy-r5"><span class="rf-for">鏡像の数・反射の密度・臨界距離・平均自由行程 4V/S（章・式番号は未確認）</span><span class="rf-src">H. Kuttruff, <i>Room Acoustics</i>, 6th ed., CRC Press, 2016, <a href="https://doi.org/10.1201/9781315372150" target="_blank" rel="noopener">doi:10.1201/9781315372150</a></span></li>
+  <li id="thy-r6"><span class="rf-for">吸音率の表（付録。値は pyroomacoustics の materials.json の転記で確かめた）</span><span class="rf-src">M. Vorländer, <i>Auralization</i>, Springer, 2008, <a href="https://doi.org/10.1007/978-3-540-48830-9" target="_blank" rel="noopener">doi:10.1007/978-3-540-48830-9</a>; <a href="https://github.com/LCAV/pyroomacoustics/blob/master/pyroomacoustics/data/materials.json" target="_blank" rel="noopener">pyroomacoustics materials.json</a></span></li>
+  <li id="thy-r7"><span class="rf-for">EDT・T20・T30・C80・D50 の定義（本文は未確認。DataKustik の資料と照合）</span><span class="rf-src">ISO 3382-1:2009, Acoustics — Measurement of room acoustic parameters — Part 1: Performance spaces</span></li>
+  <li id="thy-r8"><span class="rf-for">フィードバック遅延網</span><span class="rf-src">J.-M. Jot and A. Chaigne, “Digital delay networks for designing artificial reverberators,” AES 90th Convention, Preprint 3030, 1991</span></li>
+  <li id="thy-r9"><span class="rf-for">混合時間 √V ms（Cremer・Müller の目安）と 400 /s の反射の密度</span><span class="rf-src">A. Lindau, L. Kosanke, and S. Weinzierl, <a href="https://depositonce.tu-berlin.de/items/47045cb9-0ae3-489e-9e87-b175e0f5ae02" target="_blank" rel="noopener">“Perceptual evaluation of model- and signal-based predictors of the mixing time in binaural room impulse responses,”</a> <i>J. Audio Eng. Soc.</i>, vol. 60, no. 11, pp. 887–898, 2012。後部残響の統計モデルは J.-D. Polack, “Playing billiards in the concert hall,” <i>Applied Acoustics</i>, vol. 38, pp. 235–244, 1993</span></li>
+  <li id="thy-r10"><span class="rf-for">エコーの基準 EK</span><span class="rf-src">L. Dietsch and W. Kraak, “Ein objektives Kriterium zur Erfassung von Echostörungen bei Musik- und Sprachdarbietungen,” <i>Acustica</i>, vol. 60, pp. 205–216, 1986</span></li>
+  <li id="thy-r11"><span class="rf-for">EK の指数・窓・帯域・閾（表 1）</span><span class="rf-src">Martín-Castizo ほか, <a href="https://dael.euracoustics.org/confs/fa2025/data/articles/000318.pdf" target="_blank" rel="noopener">Forum Acusticum 2025</a>, <a href="https://doi.org/10.61782/fa.2025.0318" target="_blank" rel="noopener">doi:10.61782/fa.2025.0318</a></span></li>
+  <li id="thy-r12"><span class="rf-for">空気の吸収</span><span class="rf-src">ISO 9613-1:1993, Acoustics — Attenuation of sound during propagation outdoors — Part 1: Calculation of the absorption of sound by the atmosphere</span></li>
+  <li id="thy-r13"><span class="rf-for">屋外の地面の効果</span><span class="rf-src">ISO 9613-2:2024, Acoustics — Attenuation of sound during propagation outdoors — Part 2: Engineering method for the prediction of sound pressure levels outdoors</span></li>
+</ol>
