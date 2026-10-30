@@ -1,0 +1,100 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import More from '../components/More.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import { order, TOOLS } from '../data/tools';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import { DIST, ENERGIES, GROUNDS, HILL, HILLS, LAPSE, VOL, WAITS } from '../tools/thunder/params';
+import '../tools/thunder/style.css';
+import { SURROUNDS } from '../tools/thunder/surround';
+import Theory from '../tools/thunder/Theory.astro';
+
+const name = '雷鳴';
+/* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
+const CAT = '音響';
+const related = [
+  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'thunder')),
+  ...TOOLS.filter((t) => t.c !== CAT && !t.s),
+];
+---
+<SiteLayout title={name} tool={{ id: 'thunder', name }} description="曲がりくねった放電路の各区間が出す衝撃波（N 波）が、聞き手までの距離の差で時間をずらして届き、雷鳴になる様子を断面図・届く量の分布・波形で見て、音で聞きます。聞き手を動かすと、近い雷の「バリッ」と遠い雷の「ゴロゴロ」の違いと、光ってから音までの時間を確かめられます。" note="放電路は乱数で作った模型で、エネルギーと音になる割合は文献の値の 1 つです。大きさは同じ雷を 1 km 先で聞いたときとの差だけを出します。">
+  <PageTitle title={name}>曲がりくねった放電路の折れ目ごとに衝撃波（N 波）が出て、聞き手までの距離の差だけ時間をずらして届きます。断面図の聞き手を動かして、近い雷の「バリッ」と遠い雷の「ゴロゴロ」、光ってから音までの時間（約 3 秒で 1 km）を比べられます。空気の吸収で遠いほど低く、地面と山の反射や周りの家・木の響きで長くなります。</PageTitle>
+  <div class="mini" aria-hidden="true"><span>WAIT<b id="m-wait">—</b></span><span>DIST<b id="m-dist">—</b></span><span>LEN<b id="m-len">—</b></span></div>
+
+  <div class="tgrid">
+    <Panel hid="hd-fig" title="断面" class="a-fig" fixed>
+      <span slot="aux" class="aux th-st" id="th-st"></span>
+      <div class="sbar">
+        <span class="stag"><i class="sw th-sw-t" aria-hidden="true"></i>届く時刻（黄が早い）</span>
+        <span class="stag"><i class="th-dot" aria-hidden="true"></i>聞き手</span>
+        <span class="stag"><i class="sw th-sw-e" aria-hidden="true"></i>反射（地面・山）</span>
+        <span class="stag th-hint">地面をドラッグして聞き手を動かす</span>
+      </div>
+      <div class="th-cv"><canvas id="th-sec" class="th-sec" role="img" aria-label="横から見た放電路と聞き手"></canvas></div>
+      <h3 class="vh">届く量<span><i class="sw c2" aria-hidden="true"></i> 直接 <i class="sw th-sw-r" aria-hidden="true"></i> 反射</span></h3>
+      <div class="th-cv"><canvas id="th-hist" role="img" aria-label="届く時刻ごとの、届く N 波の山の高さの和"></canvas></div>
+      <h3 class="vh">音圧の波形<span>横軸は光ってからの時間</span></h3>
+      <div class="th-cv"><canvas id="th-wave" role="img" aria-label="聞き手に届く音圧の波形"></canvas></div>
+      <div class="tp">
+        <button type="button" class="tp-ib" id="th-seed" title="別の雷（放電路を作り直す）" aria-label="別の雷"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M7.2 0.8L2.6 6.6h3l-1 4.6 4.8-6.2H6.3z"/></svg></button>
+        <button type="button" class="tp-pp" id="th-pp" title="光らせる" aria-label="光らせる"><svg class="i-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.2l7.6 4.8L3 10.8z"/></svg><svg class="i-pause" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="2" width="8" height="8" rx="1"/></svg></button>
+        <div class="tp-tl">
+          <div class="tp-trk" id="th-trk" role="slider" tabindex="0" aria-label="光ってからの時間" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0"><div class="tp-rail"></div><div class="th-wait" id="th-waitbar"></div><div class="tp-fill" id="th-fill"></div><div class="tp-th" id="th-th"></div></div>
+          <div class="tp-tm"><span>光ってから <b id="th-tau">0.0</b> s</span><span id="th-end"></span></div>
+        </div>
+      </div>
+      <p class="sr" id="th-live" aria-live="polite"></p>
+    </Panel>
+
+    <div class="col c1">
+      <Panel hid="hd-src" title="雷と聞き手" class="a-src">
+        <div class="ptab">
+          <ParamRow d={DIST} />
+          <ChoiceRow k="e" sym="<i>E</i>" name="放電路のエネルギー" sub="放電路 1 m あたりに出るエネルギー [J/m]。大きいほど N 波が長く、音が低い" choices={ENERGIES} value="1e6" />
+        </div>
+      </Panel>
+      <Panel hid="hd-env" title="地面と周り" class="a-env">
+        <div class="ptab">
+          <ChoiceRow k="gnd" name="地面の反射" sub="地面で返る音を足すか" choices={GROUNDS} value="1" />
+          <ChoiceRow k="env" name="周りの響き" sub="聞き手の近くの家・木・建物で散った音が遅れて重なる" choices={SURROUNDS} value="town" />
+          <ChoiceRow k="hill" name="後ろの山" sub="聞き手の後ろに崖を置き、そこで返る音（こだま）を足す" choices={HILLS} value="0" />
+          {HILL.map((d) => <ParamRow d={d} />)}
+        </div>
+        <More id="g-env"><div class="ptab"><ParamRow d={LAPSE} /></div></More>
+      </Panel>
+    </div>
+
+    <div class="col c2">
+      <Panel hid="hd-out" title="計算結果" class="a-out">
+        <dl class="metrics">
+          <div class="m m-main"><dt>光ってから音まで</dt><dd><span id="o-wait">—</span><span class="m-sub hh" id="o-waits" data-ph="÷ 3 で 0.0 km（聞き手まで 0.00 km）"></span></dd></div>
+          <div class="m"><dt>鳴り続ける時間</dt><dd><span id="o-len">—</span><span class="m-sub" id="o-lens"></span></dd></div>
+          <div class="m"><dt>スペクトルの山</dt><dd><span id="o-pk">—</span><span class="m-sub" id="o-pks"></span></dd></div>
+          <div class="m"><dt>大きさ</dt><dd><span id="o-db">—</span><span class="m-sub" id="o-dbs">1 km 先で聞いたときとの差</span></dd></div>
+          <div class="m m-wide"><dt>雲の底の音が届く距離</dt><dd><span id="o-rng">—</span><span class="m-sub" id="o-rngs"></span></dd></div>
+        </dl>
+        <h3 class="vh th-sph">スペクトル<span>最大を 0 dB、横軸は Hz</span></h3>
+        <div class="th-cv"><canvas id="th-spec" role="img" aria-label="聞き手に届く音のスペクトル"></canvas></div>
+      </Panel>
+      <Panel hid="hd-snd" title="音" class="a-snd">
+        <div class="ptab">
+          <ChoiceRow k="wait" name="光ってから音まで" sub="待つ: 音が届くまで実際の時間だけ待つ。待たない: 最初の音の直前から鳴らす" choices={WAITS} value="1" />
+          <ParamRow d={VOL} />
+        </div>
+      </Panel>
+    </div>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools list={related} />
+  <script>
+    import '../tools/thunder/client';
+  </script>
+</SiteLayout>

@@ -156,6 +156,14 @@ export const TOOLS: Tool[] = [
     k: 'reverb reverberation 残響 反響 エコー echo やまびこ 鏡像法 image source method インパルス応答 impulse response rir 残響時間 rt60 t60 sabine セイビン eyring アイリング 吸音率 absorption coefficient 初期反射 early reflection 後部残響 late reverberation 臨界距離 critical distance 平均自由行程 edt t20 t30 c80 d50 schroeder シュレーダー 畳み込み convolution convolver 部屋 ホール 教会 屋外 オーディオ audio',
   },
   {
+    id: 'thunder',
+    c: '音響',
+    t: '雷鳴',
+    d: '曲がりくねった放電路の衝撃波が時間をずらして届き、雷鳴になる様子を見て聞きます。',
+    ic: 'th',
+    k: 'thunder 雷鳴 雷 かみなり 稲妻 稲光 lightning 落雷 放電路 衝撃波 shock wave n波 n-wave ゴロゴロ バリバリ rumble clap 光ってから 3秒 1km 距離 空気の吸収 air absorption iso 9613 反射 こだま 影の領域 shadow zone few ribner tortuosity オーディオ audio',
+  },
+  {
     id: 'guitar',
     c: '音響モデル',
     t: 'ギター音響モデル',
