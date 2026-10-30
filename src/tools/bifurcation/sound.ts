@@ -1,10 +1,11 @@
 /**
  * 値の列を音にする（worklet.ts が出力のサンプリング周波数で呼ぶ。テストからも直接呼べる）。
+ * 値は写像の x の範囲を 0〜1 に直して使う。
  * - 波形: 写像を毎秒 rate 回まわし、値をそのまま波形の標本にする。周期 p の軌道は rate/p Hz の音になり、
  *   周期が倍になるたびに 1 オクターブ下がる。カオスでは雑音になる
  * - 旋律: 毎秒 rate 回の音符にし、値 0〜1 を高さ lo〜lo·2^oct へ写す（scale が 'penta' なら五音音階へ丸める）
  */
-import { MAPS, type MapId } from './map';
+import { MAPS, type MapDef, type MapId } from './map';
 
 export type SoundMode = 'wave' | 'melody';
 export type Scale = 'cont' | 'penta';
@@ -47,7 +48,7 @@ export function pitchOf(x: number, p: Pick<SoundParams, 'lo' | 'oct' | 'scale'>)
 
 export class MapVoice {
   private p: SoundParams = SOUND0;
-  private x = 0.3;
+  private x = MAPS.logistic.x0;
   /** 次の反復までの位相（0〜1） */
   private ph = 1;
   private hp = 0;
@@ -60,13 +61,18 @@ export class MapVoice {
   private age = 0;
 
   set(p: SoundParams): void {
-    if (p.map !== this.p.map) this.x = 0.3;
+    if (p.map !== this.p.map) this.x = MAPS[p.map].x0;
     this.p = p;
   }
 
   /** 今の値（表示と合わせるため） */
   get value(): number {
     return this.x;
+  }
+
+  /** 今の値を x の範囲の中の割合（0〜1）で */
+  private u(m: MapDef): number {
+    return (this.x - m.x[0]) / (m.x[1] - m.x[0]);
   }
 
   /** n 個の標本を out へ書く（大きさは ±1 以内） */
@@ -83,7 +89,7 @@ export class MapVoice {
           this.ph -= Math.floor(this.ph);
           this.next(m, r);
         }
-        this.lp += b * (this.x - this.lp);
+        this.lp += b * (this.u(m) - this.lp);
         /* 1 次の高域通過 y[n] = a (y[n−1] + x[n] − x[n−1]) */
         this.hp = a * (this.hp + this.lp - this.hpIn);
         this.hpIn = this.lp;
@@ -98,7 +104,7 @@ export class MapVoice {
       if (this.ph >= 1) {
         this.ph -= Math.floor(this.ph);
         this.next(m, r);
-        this.f = pitchOf(this.x, this.p);
+        this.f = pitchOf(this.u(m), this.p);
         this.age = 0;
       }
       /* 立ち上がりは目標 1 へ近づけ、そのあとは指数で減衰させる */
@@ -110,11 +116,13 @@ export class MapVoice {
     }
   }
 
-  private next(m: (typeof MAPS)[MapId], r: number): void {
-    const y = m.f(this.x, r);
-    /* 外へ出た軌道と、0 が不安定なのに丸めでちょうど 0・1 に乗った軌道（r = 4 の 0.5 → 1 → 0）は始め直す */
-    if (!(y >= 0 && y <= 1)) this.x = 0.3;
-    else if ((y === 0 || y === 1) && m.dx(0, r) > 1) this.x = 0.3;
-    else this.x = y;
+  private next(m: MapDef, r: number): void {
+    const y = m.f(this.x, r),
+      [a, b] = m.x;
+    /* 外へ出た値は端に収める（表示の iterate と同じ）。NaN と、不安定なのに丸めでちょうど端に乗った軌道
+       （ロジスティクの r = 4 の 0.5 → 1 → 0）は始め直す */
+    if (Number.isNaN(y)) this.x = m.x0;
+    else if ((y === a || y === b) && Math.abs(m.dx(y, r)) > 1) this.x = m.x0;
+    else this.x = y < a ? a : y > b ? b : y;
   }
 }

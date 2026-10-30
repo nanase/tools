@@ -2,7 +2,7 @@
  * 分岐図のページの図（Canvas）: 枠と目盛り、分岐図の濃さの画像、リアプノフ指数、クモの巣図、縦向きの時系列。
  * 隣り合う図は軸を 1 本ずつ共有するので、上下の余白（クモの巣図と分岐図）と左右の余白（クモの巣図と時系列）をそろえる
  */
-import { iterate, lyapunov, type MapDef } from './map';
+import { clampX, iterate, lyapunov, type MapDef } from './map';
 import type { View } from './params';
 
 /** テーマの色（CSS 変数を読む） */
@@ -42,7 +42,6 @@ export const rgba = (h: string, a: number): string => {
   const [r, g, b] = rgb(h);
   return `rgba(${r},${g},${b},${a})`;
 };
-const clamp01 = (x: number): number => (x > 0 ? (x < 1 ? x : 1) : 0);
 
 /** 図の余白 [px]。上下はクモの巣図と分岐図、左右はクモの巣図と時系列で同じ値を使う */
 export const PAD = { l: 38, r: 12, t: 8, b: 20 };
@@ -89,7 +88,8 @@ const niceStep = (span: number, n: number): number => {
   return (m < 1.5 ? 1 : m < 3.5 ? 2 : m < 7.5 ? 5 : 10) * 10 ** e;
 };
 const digits = (s: number): number => Math.max(0, -Math.floor(Math.log10(s) + 1e-9));
-const minus = (s: string): string => s.replace(/^-/, '−');
+/** 負の符号を − に。丸めで出る −0 は 0 にする */
+const minus = (s: string): string => (/^-0(\.0*)?$/.test(s) ? s.slice(1) : s.replace(/^-/, '−'));
 
 /** 地・目盛り・軸の名前を描き、座標の変換を返す。flip は縦を上から下へ増やす */
 export function frame(
@@ -170,7 +170,7 @@ export function attractor(m: MapDef, r: number, x0: number, n = 64): number[] {
   let x = iterate(m, r, x0, 2000);
   const o: number[] = [];
   for (let i = 0; i < n; i++) {
-    x = clamp01(m.f(x, r));
+    x = clampX(m, m.f(x, r));
     o.push(x);
   }
   return o;
@@ -179,7 +179,8 @@ export function attractor(m: MapDef, r: number, x0: number, n = 64): number[] {
 /* ---------- 分岐図 ---------- */
 /**
  * 分岐図の濃さの画像（W × H 画素）。列ごとに skip 回の過渡を捨て、keep 回の値を升に数えて、
- * 回数を 1 − exp(−n/s) で濃さにする（周期の点は濃く、カオスの帯は薄く）
+ * 回数を 1 − exp(−n/s) で濃さにする（周期の点は濃く、カオスの帯は薄く）。
+ * 出発点は写像の既定の初めの値（対称な写像はその符号を変えた値からも）
  */
 export function bifImage(
   m: MapDef,
@@ -192,14 +193,17 @@ export function bifImage(
 ): HTMLCanvasElement {
   const cnt = new Uint32Array(W * H),
     k = H / (v.y1 - v.y0);
+  const seeds = m.odd ? [m.x0, -m.x0] : [m.x0];
   for (let i = 0; i < W; i++) {
     const r = v.r0 + ((i + 0.5) / W) * (v.r1 - v.r0);
-    let x = iterate(m, r, 0.3, skip);
-    for (let n = 0; n < keep; n++) {
-      x = clamp01(m.f(x, r));
-      let j = Math.floor((v.y1 - x) * k);
-      if (v.flip) j = H - 1 - j;
-      if (j >= 0 && j < H) cnt[j * W + i]++;
+    for (const s0 of seeds) {
+      let x = iterate(m, r, s0, skip);
+      for (let n = 0; n < keep; n++) {
+        x = clampX(m, m.f(x, r));
+        let j = Math.floor((v.y1 - x) * k);
+        if (v.flip) j = H - 1 - j;
+        if (j >= 0 && j < H) cnt[j * W + i]++;
+      }
     }
   }
   const img = new ImageData(W, H),
@@ -291,9 +295,6 @@ export class BifFig {
 }
 
 /* ---------- リアプノフ指数 ---------- */
-/** 写像ごとの縦の範囲 */
-const LY: Record<string, [number, number]> = { logistic: [-2, 1], sine: [-2, 1], tent: [-1, 1] };
-
 /** r の位置の λ（表示用、過渡 1000 回のあと 4000 回の平均） */
 export const lamAt = (m: MapDef, r: number, x0: number): number => lyapunov(m, r, x0, 1000, 4000);
 
@@ -306,14 +307,14 @@ export class LyFig {
   draw(s: BifState, lam: number, col: Col): void {
     const F = fitCanvas(this.cv),
       { v, m } = s,
-      [y0, y1] = LY[m.id];
+      [y0, y1] = m.ly;
     const P = frame(F, { x0: v.r0, x1: v.r1, y0, y1 }, col, { xl: s.sym, yl: 'λ' });
     this.P = P;
     const W = Math.max(1, Math.round(P.pw)),
       k = [m.id, v.r0, v.r1, W].join();
     if (k !== this.key) {
       this.vals = new Float64Array(W);
-      for (let i = 0; i < W; i++) this.vals[i] = lyapunov(m, v.r0 + ((i + 0.5) / W) * (v.r1 - v.r0), 0.3, 400, 700);
+      for (let i = 0; i < W; i++) this.vals[i] = lyapunov(m, v.r0 + ((i + 0.5) / W) * (v.r1 - v.r0), m.x0, 400, 700);
       this.key = k;
     }
     const c = F.c,
@@ -359,9 +360,10 @@ export class LyFig {
 export function drawCob(cv: HTMLCanvasElement, s: BifState, col: Col): void {
   const F = fitCanvas(cv),
     { m, r } = s,
-    c = F.c;
-  const P = frame(F, { x0: 0, x1: 1, y0: 0, y1: 1 }, col, { xl: 'xₙ', yl: 'xₙ₊₁' });
-  if (s.v.y0 > 0 || s.v.y1 < 1) {
+    c = F.c,
+    [a0, a1] = m.x;
+  const P = frame(F, { x0: a0, x1: a1, y0: a0, y1: a1 }, col, { xl: 'xₙ', yl: 'xₙ₊₁' });
+  if (s.v.y0 > a0 || s.v.y1 < a1) {
     c.fillStyle = rgba(col.ch2, 0.1);
     const a = P.Y(s.v.y1),
       b = P.Y(s.v.y0);
@@ -370,30 +372,36 @@ export function drawCob(cv: HTMLCanvasElement, s: BifState, col: Col): void {
   c.strokeStyle = col.grid2;
   c.setLineDash([3, 3]);
   c.beginPath();
-  c.moveTo(P.X(0), P.Y(0));
-  c.lineTo(P.X(1), P.Y(1));
+  c.moveTo(P.X(a0), P.Y(a0));
+  c.lineTo(P.X(a1), P.Y(a1));
   c.stroke();
   c.setLineDash([]);
+  /* 曲線は枠の外へ出ることがある（ガウス写像の頂上）ので枠で切る */
+  c.save();
+  c.beginPath();
+  c.rect(P.l, P.t, P.pw, P.ph);
+  c.clip();
   c.strokeStyle = col.ink2;
   c.lineWidth = 1.6;
   c.beginPath();
   for (let i = 0; i <= 240; i++) {
-    const x = i / 240,
+    const x = a0 + ((a1 - a0) * i) / 240,
       y = m.f(x, r);
     if (i) c.lineTo(P.X(x), P.Y(y));
     else c.moveTo(P.X(x), P.Y(y));
   }
   c.stroke();
+  c.restore();
   /* 階段: 初めの 66 段は薄く、最後の 24 段は濃く */
   const N = 90,
     tail = 24;
   let x = s.x0;
   c.lineWidth = 1.1;
   for (let n = 0; n < N; n++) {
-    const y = clamp01(m.f(x, r));
+    const y = clampX(m, m.f(x, r));
     c.strokeStyle = rgba(col.ch1, n < N - tail ? 0.18 : 0.95);
     c.beginPath();
-    c.moveTo(P.X(x), P.Y(n ? x : 0));
+    c.moveTo(P.X(x), P.Y(n ? x : a0));
     c.lineTo(P.X(x), P.Y(y));
     c.lineTo(P.X(y), P.Y(y));
     c.stroke();
@@ -419,9 +427,9 @@ export function drawTs(cv: HTMLCanvasElement, s: BifState, col: Col): void {
   let x = s.x0;
   for (let n = 0; n <= TS_N; n++) {
     o.push(x);
-    x = clamp01(m.f(x, r));
+    x = clampX(m, m.f(x, r));
   }
-  const P = frame(F, { x0: 0, x1: 1, y0: 0, y1: TS_N, flip: true }, col, { xl: 'xₙ', yl: 'n' });
+  const P = frame(F, { x0: m.x[0], x1: m.x[1], y0: 0, y1: TS_N, flip: true }, col, { xl: 'xₙ', yl: 'n' });
   c.strokeStyle = rgba(col.ch1, 0.5);
   c.lineWidth = 1;
   c.beginPath();

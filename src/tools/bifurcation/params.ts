@@ -5,7 +5,7 @@
 import { linList } from '../../lib/eseries';
 import { minus } from '../../lib/format';
 import type { ParamDef, ParamFormat } from '../../lib/param-def';
-import { MAPS, type MapId, R_INF_LOGISTIC } from './map';
+import { GAUSS_A, MAPS, type MapId, R_INF_LOGISTIC } from './map';
 
 export type Key = 'r' | 'x0' | 'vol';
 
@@ -16,12 +16,18 @@ const plainF = (s: number): ParamFormat => ({
   text: (v) => sig(v, s),
 });
 
-/** 写像ごとの名前・記号・式と、r の欄のプリセット */
-export const MAP_INFO: Record<MapId, { name: string; sym: string; eq: string; pre: [number, string, string?][] }> = {
+const xn = '<i>x</i><sub><i>n</i></sub>';
+
+/** 写像ごとの名前・記号・式と、r の欄の既定値・プリセット */
+export const MAP_INFO: Record<
+  MapId,
+  { name: string; sym: string; eq: string; v: number; pre: [number, string, string?][] }
+> = {
   logistic: {
     name: 'ロジスティク',
     sym: 'r',
-    eq: '<i>x</i><sub><i>n</i>+1</sub> = <i>r</i> <i>x</i><sub><i>n</i></sub>(1 − <i>x</i><sub><i>n</i></sub>)',
+    eq: `<i>x</i><sub><i>n</i>+1</sub> = <i>r</i> ${xn}(1 − ${xn})`,
+    v: 3.5,
     pre: [
       [3, '3', '周期 1 → 2'],
       [1 + Math.sqrt(6), '3.4495', '周期 2 → 4'],
@@ -33,7 +39,8 @@ export const MAP_INFO: Record<MapId, { name: string; sym: string; eq: string; pr
   sine: {
     name: '正弦',
     sym: 'r',
-    eq: '<i>x</i><sub><i>n</i>+1</sub> = <i>r</i> sin π<i>x</i><sub><i>n</i></sub>',
+    eq: `<i>x</i><sub><i>n</i>+1</sub> = <i>r</i> sin π${xn}`,
+    v: 0.85,
     pre: [
       [0.8655792688, '0.8656', '集積点'],
       [1, '1', '上端'],
@@ -42,28 +49,90 @@ export const MAP_INFO: Record<MapId, { name: string; sym: string; eq: string; pr
   tent: {
     name: 'テント',
     sym: 'μ',
-    eq: '<i>x</i><sub><i>n</i>+1</sub> = <i>μ</i> min(<i>x</i><sub><i>n</i></sub>, 1 − <i>x</i><sub><i>n</i></sub>)',
+    eq: `<i>x</i><sub><i>n</i>+1</sub> = <i>μ</i> min(${xn}, 1 − ${xn})`,
+    v: 1.5,
     pre: [
       [1, '1', 'カオスの始まり'],
       [Math.SQRT2, '1.4142', '2 つの帯が 1 つに'],
       [2, '2', '上端'],
     ],
   },
+  quartic: {
+    name: '4 次',
+    sym: 'r',
+    eq: `<i>x</i><sub><i>n</i>+1</sub> = <i>r</i>{1 − (2${xn} − 1)<sup>4</sup>}`,
+    v: 0.95,
+    pre: [
+      [0.9686193661, '0.9686', '集積点'],
+      [0.9875818268, '0.9876', '周期 3 の窓'],
+      [1, '1', '上端'],
+    ],
+  },
+  cubic: {
+    name: '3 次',
+    sym: 'r',
+    eq: `<i>x</i><sub><i>n</i>+1</sub> = <i>r</i> ${xn} − ${xn}<sup>3</sup>`,
+    v: 2.2,
+    pre: [
+      [1, '1', '対称が破れる'],
+      [2, '2', '周期 1 → 2'],
+      [2.3022834627, '2.3023', '集積点'],
+      [(3 * Math.sqrt(3)) / 2, '2.5981', '2 つが 1 つに'],
+      [3, '3', '上端'],
+    ],
+  },
+  gauss: {
+    name: 'ガウス',
+    sym: 'β',
+    eq: `<i>x</i><sub><i>n</i>+1</sub> = e<sup>−${GAUSS_A} ${xn}<sup>2</sup></sup> + <i>β</i>`,
+    v: -0.6,
+    pre: [
+      [-0.836353, '−0.8364', '周期 1 → 2'],
+      [-0.5682172365, '−0.5682', '集積点'],
+      [0, '0'],
+    ],
+  },
+  ricker: {
+    name: 'リッカー',
+    sym: 'r',
+    eq: `<i>x</i><sub><i>n</i>+1</sub> = ${xn} e<sup><i>r</i>(1 − ${xn})</sup>`,
+    v: 2.5,
+    pre: [
+      [2, '2', '周期 1 → 2'],
+      [2.6923688544, '2.6924', '集積点'],
+      [3.1024399156, '3.1024', '周期 3 の窓'],
+      [4, '4', '上端'],
+    ],
+  },
 };
 export const MAP_CHOICES = (Object.keys(MAPS) as MapId[]).map((k) => [k, MAP_INFO[k].name] as const);
 
 /** r の欄の定義（写像に合わせて範囲・記号・プリセットを差し替える） */
-export function rPatch(id: MapId): Pick<ParamDef, 'nm' | 'sym' | 'min' | 'max' | 'v' | 'ph' | 'pre'> {
+export function rPatch(id: MapId): Pick<ParamDef, 'nm' | 'sym' | 'min' | 'max' | 'v' | 'ph' | 'pre' | 'sign'> {
   const m = MAPS[id],
-    s = MAP_INFO[id].sym;
+    { sym: s, v } = MAP_INFO[id];
   return {
     nm: s,
     sym: `<i>${s}</i>`,
     min: m.lo,
     max: m.hi,
-    v: id === 'logistic' ? 3.5 : id === 'sine' ? 0.85 : 1.5,
-    ph: `例 ${id === 'logistic' ? 3.5 : id === 'sine' ? 0.85 : 1.5}`,
+    v,
+    ph: `例 ${minus(String(v))}`,
     pre: MAP_INFO[id].pre,
+    sign: m.lo < 0 ? 'any' : 'nonneg',
+  };
+}
+
+/** 初めの値の欄（写像の x の範囲の両端から 1 % 内側まで） */
+export function x0Patch(id: MapId): Pick<ParamDef, 'min' | 'max' | 'v' | 'ph' | 'sign'> {
+  const m = MAPS[id],
+    w = m.x[1] - m.x[0];
+  return {
+    min: Number((m.x[0] + 0.01 * w).toPrecision(4)),
+    max: Number((m.x[1] - 0.01 * w).toPrecision(4)),
+    v: m.x0,
+    ph: `例 ${m.x0}`,
+    sign: m.x[0] < 0 ? 'any' : 'pos',
   };
 }
 
@@ -75,7 +144,6 @@ export const R: ParamDef & { k: Key } = {
   ...rPatch('logistic'),
   lin: { step: 0.001, big: 0.01 },
   notation: 'plain',
-  sign: 'nonneg',
   inputmode: 'decimal',
   format: plainF(6),
   bad: '数を入れてください（例 3.5）',
@@ -88,14 +156,10 @@ export const X0: ParamDef & { k: Key } = {
   name: '初めの値',
   sub: 'クモの巣図と時系列の出発点',
   unit: '',
-  min: 0.01,
-  max: 0.99,
-  v: 0.3,
-  ph: '例 0.3',
+  ...x0Patch('logistic'),
   pre: [],
   lin: { step: 0.01, big: 0.1 },
   notation: 'plain',
-  sign: 'pos',
   inputmode: 'decimal',
   format: plainF(4),
   bad: '数を入れてください（例 0.3）',
@@ -152,9 +216,10 @@ export interface View {
   /** 過渡を捨てる回数の倍率（集積点の近くは収束が遅い） */
   deep?: number;
 }
-/** ロジスティク写像の拡大のプリセット [名前, 範囲]。null は写像の既定の範囲 */
-export const ZOOMS: readonly (readonly [string, View | null])[] = [
-  ['全体', null],
+/** 拡大のプリセット [名前, 範囲, title]。null は写像の既定の範囲、'all' はパラメータの範囲全体。3 つ目からはロジスティク写像だけ */
+export const ZOOMS: readonly (readonly [string, View | null | 'all', string?])[] = [
+  ['標準', null, '周期倍分岐からカオスまで'],
+  ['全域', 'all', 'パラメータの範囲全体（ロジスティクは r = 0〜4）'],
   ['周期倍分岐', { r0: 3.4, r1: 3.6, y0: 0.28, y1: 0.92 }],
   ['集積点の付近', { r0: 3.5625, r1: 3.5735, y0: 0.32, y1: 0.92, deep: 2 }],
   ['周期 3 の窓', { r0: 3.8406, r1: 3.8572, y0: 0.43, y1: 0.55 }],

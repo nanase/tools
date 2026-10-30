@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   ALPHA,
+  ALPHA4,
   cascade,
   DELTA,
+  DELTA4,
   doublings,
   iterate,
   lyapunov,
@@ -95,6 +97,65 @@ describe('普遍性', () => {
   it('テント写像には滑らかな極大がないので超安定な周期を求めない', () => {
     expect(() => cascade(T, 4)).toThrow();
   });
+  it('極大が 4 次の写像は別の値 δ = 7.2847…・α = 1.6903… に近づく', () => {
+    const c = cascade(MAPS.quartic, 11);
+    expect(Math.abs(c.delta[10] - DELTA4)).toBeLessThan(1e-3);
+    expect(Math.abs(c.alpha[10] - ALPHA4)).toBeLessThan(1e-4);
+    expect(c.R[0]).toBeCloseTo(0.5, 12);
+  });
+  it('ガウス写像・リッカー写像・3 次写像も 2 次の δ・α に近づく', () => {
+    for (const id of ['gauss', 'ricker', 'cubic'] as const) {
+      const c = cascade(MAPS[id], 11);
+      expect(c.R.length, id).toBeGreaterThanOrEqual(11);
+      expect(Math.abs(c.delta[9] - DELTA), id).toBeLessThan(1e-3);
+      expect(Math.abs(c.alpha[9] - ALPHA), id).toBeLessThan(1e-2);
+    }
+  });
+});
+
+describe('ほかの写像', () => {
+  const K = MAPS.cubic,
+    G = MAPS.gauss,
+    Rk = MAPS.ricker;
+  it('3 次写像: 対称、r = 1 で正負に分かれ、r = 3/√2 が超安定な周期 2、r = 2 で周期倍分岐', () => {
+    for (const x of [0.2, 0.7, 1.5]) expect(K.f(-x, 2.4)).toBeCloseTo(-K.f(x, 2.4), 14);
+    expect(iterate(K, 1.5, 0.3, 2000)).toBeCloseTo(Math.sqrt(0.5), 10);
+    expect(iterate(K, 1.5, -0.3, 2000)).toBeCloseTo(-Math.sqrt(0.5), 10);
+    const c = cascade(K, 4);
+    expect(c.R[0]).toBeCloseTo(1.5, 12);
+    expect(c.R[1]).toBeCloseTo(3 / Math.SQRT2, 10);
+    expect(doublings(K, c)[0]).toBeCloseTo(2, 9);
+  });
+  it('3 次写像: r = 3√3/2 の手前は正の値だけ、その先は正負にまたがり、r = 3 で λ = ln 3', () => {
+    const range = (r: number) => {
+      let x = iterate(K, r, 0.3, 3000),
+        lo = x,
+        hi = x;
+      for (let i = 0; i < 20000; i++) {
+        x = K.f(x, r);
+        lo = Math.min(lo, x);
+        hi = Math.max(hi, x);
+      }
+      return [lo, hi];
+    };
+    expect(range(2.55)[0]).toBeGreaterThan(0);
+    expect(range(2.65)[0]).toBeLessThan(-1);
+    expect(lyapunov(K, 3, 0.3, 1000, 200000)).toBeCloseTo(Math.log(3), 2);
+  });
+  it('ガウス写像: 周期倍分岐でカオスへ進み、右で周期 2・1 へ戻る。β = −0.9 では x₀ で落ち着く先が違う', () => {
+    expect(period(G, -0.9, 0)).toBe(1);
+    expect(period(G, -0.7, 0)).toBe(2);
+    expect(period(G, -0.6, 0)).toBe(4);
+    expect(lyapunov(G, -0.45, 0, 2000, 50000)).toBeGreaterThan(0.05);
+    expect(period(G, 0, 0)).toBe(2);
+    expect(period(G, 0.6, 0)).toBe(1);
+    expect(iterate(G, -0.9, 0, 3000)).toBeGreaterThan(0);
+    expect(iterate(G, -0.9, 0.8, 3000)).toBeLessThan(-0.8);
+  });
+  it('リッカー写像: r = 2 で周期 1 → 2、x は 5.1 を超えない', () => {
+    expect(doublings(Rk, cascade(Rk, 4))[0]).toBeCloseTo(2, 9);
+    for (let r = 0.5; r <= 4; r += 0.5) expect(Rk.f(1 / r, r)).toBeLessThan(Rk.x[1]);
+  });
 });
 
 /** 周波数 f の成分の大きさ（Goertzel） */
@@ -136,6 +197,13 @@ describe('値の列の音', () => {
   it('カオスは広い帯域に散らばる', () => {
     const a = render({ r: 4 });
     for (const f of [110, 330, 600]) expect(mag(a, f, fs)).toBeGreaterThan(0.002);
+  });
+  it('x の範囲が 0〜1 でない写像も、範囲を 0〜1 に直して鳴らす', () => {
+    const a = render({ map: 'cubic', r: 2.1 });
+    expect(mag(a, 440, fs)).toBeGreaterThan(0.02);
+    for (const v of a) expect(Math.abs(v)).toBeLessThanOrEqual(1);
+    for (const v of render({ map: 'gauss', r: -0.45, mode: 'melody', rate: 8 }, fs / 4))
+      expect(Math.abs(v)).toBeLessThanOrEqual(0.5);
   });
   it('出力は ±1 に収まる', () => {
     for (const r of [3.2, 3.83, 4]) for (const v of render({ r }, fs / 4)) expect(Math.abs(v)).toBeLessThanOrEqual(1);

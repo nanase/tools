@@ -20,8 +20,8 @@ const related = [
   ...TOOLS.filter((t) => t.c !== CAT && !t.s),
 ];
 ---
-<SiteLayout title={name} tool={{ id: 'bifurcation', name }} description="ロジスティク写像などの 1 次元の写像で、パラメータを動かすと周期倍分岐をくり返してカオスに至る様子を、クモの巣図・時系列・分岐図・リアプノフ指数を連動させて見ます。Feigenbaum 定数と周期 3 の窓も拡大して確かめられ、値の列を音でも聞けます。" note="倍精度の浮動小数点で計算した参考値です。音はこの端末の中で作り、送信しません。">
-  <PageTitle title={name}>ロジスティク写像・正弦写像・テント写像のパラメータを動かし、周期倍分岐からカオスへ至る様子をクモの巣図・時系列・分岐図・リアプノフ指数で見ます。</PageTitle>
+<SiteLayout title={name} tool={{ id: 'bifurcation', name }} description="ロジスティク写像・ガウス写像・リッカー写像など 7 つの 1 次元の写像で、パラメータを動かすと周期倍分岐をくり返してカオスに至る様子を、クモの巣図・時系列・分岐図・リアプノフ指数を連動させて見ます。Feigenbaum 定数と周期 3 の窓も拡大して確かめられ、値の列を音でも聞けます。" note="倍精度の浮動小数点で計算した参考値です。音はこの端末の中で作り、送信しません。">
+  <PageTitle title={name}>ロジスティク写像など 7 つの写像のパラメータを動かし、周期倍分岐からカオスへ至る様子をクモの巣図・時系列・分岐図・リアプノフ指数で見ます。</PageTitle>
   <div class="mini" aria-hidden="true"><span><i id="m-sym">r</i><b id="m-r"></b></span><span>PERIOD<b id="m-p"></b></span><span><i>λ</i><b id="m-lam"></b></span></div>
 
   <div class="tgrid">
@@ -35,7 +35,7 @@ const related = [
       <div class="zrow">
         <span class="zl" aria-hidden="true">拡大</span>
         <div class="zchips" id="b-zoom" role="group" aria-label="拡大">
-          {ZOOMS.map(([n], i) => <button type="button" class="chip" data-i={i} aria-pressed={i === 0 ? 'true' : 'false'}>{n}</button>)}
+          {ZOOMS.map(([n, , t], i) => <button type="button" class="chip" data-i={i} title={t} aria-pressed={i === 0 ? 'true' : 'false'}>{n}</button>)}
         </div>
         <button type="button" class="chip" id="b-feig" title="Feigenbaum の段を 1 つ進め、分岐図を δ 倍に拡大する">δ 倍 ▸</button>
         <button type="button" class="chip" id="b-back" title="1 つ前の範囲へ戻す" disabled>◂ 戻す</button>
@@ -77,7 +77,7 @@ const related = [
     <div class="col c1">
       <Panel hid="hd-map" title="写像" class="a-map">
         <div class="ptab">
-          <ChoiceRow k="map" name="写像" sub="ロジスティクと正弦は極大が滑らか（同じ Feigenbaum 定数）、テントは折れ目" choices={MAP_CHOICES} value="logistic" />
+          <ChoiceRow k="map" name="写像" sub="極大が 2 次なら δ = 4.669…（4 次は 7.285…、テントは折れ目で段がない）" layout="chips" choices={MAP_CHOICES} value="logistic" />
           <ParamRow d={R} />
         </div>
         <More id="g-map"><div class="ptab"><ParamRow d={X0} /></div></More>

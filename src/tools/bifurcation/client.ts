@@ -10,7 +10,7 @@ import { handheld } from '../../lib/pause';
 import { initToolPage } from '../../lib/tool-page';
 import { MapAudio } from './audio';
 import { BifFig, type BifState, type Col, drawCob, drawTs, LyFig, lamAt, readCol } from './fig';
-import { type Cascade, cascade, iterate, MAPS, type MapId, period } from './map';
+import { ALPHA, type Cascade, cascade, DELTA, MAPS, type MapId, period } from './map';
 import {
   FEIG_LEVELS,
   type Key,
@@ -25,8 +25,10 @@ import {
   VOL,
   WAVE_RATE,
   X0,
+  x0Patch,
   ZOOMS,
 } from './params';
+
 import type { Scale, SoundMode } from './sound';
 
 initToolPage();
@@ -57,22 +59,19 @@ const S = {
 const m = () => MAPS[S.map];
 const defView = (): View => {
   const [r0, r1] = m().view;
-  return { r0, r1, y0: 0, y1: 1 };
+  return { r0, r1, y0: m().x[0], y1: m().x[1] };
 };
+/** パラメータの範囲全体 */
+const allView = (): View => ({ r0: m().lo, r1: m().hi, y0: m().x[0], y1: m().x[1] });
 const curView = (): View => S.view ?? defView();
 
 /** 滑らかな写像の超安定な周期 2ⁿ の値と、半周期先の値と極大の差 d（α の元） */
-const CAS: Partial<Record<MapId, Cascade & { d: number[] }>> = {};
-function cas(id: MapId): (Cascade & { d: number[] }) | null {
+const CAS: Partial<Record<MapId, Cascade>> = {};
+function cas(id: MapId): Cascade | null {
   const mm = MAPS[id];
   if (!mm.smooth) return null;
-  let c = CAS[id];
-  if (!c) {
-    const k = cascade(mm, 11);
-    c = { ...k, d: k.R.map((r, n) => (n > 0 ? iterate(mm, r, mm.c, 2 ** (n - 1)) - mm.c : Number.NaN)) };
-    CAS[id] = c;
-  }
-  return c;
+  CAS[id] ??= cascade(mm, 11);
+  return CAS[id];
 }
 
 /* ---------- 入力 ---------- */
@@ -106,13 +105,19 @@ function offs(): void {
   scaleCh.setOff(modeCh.value !== 'melody', modeCh.value !== 'melody' ? '旋律のときだけ使います' : '');
 }
 
-/** 写像を変える。user なら r を表示の範囲の中の同じ割合の位置へ移す */
+/** 写像を変える。user なら r を表示の範囲の中の同じ割合の位置へ移す。初めの値は前の写像の既定のままか範囲の外なら、新しい写像の既定へ */
 function setMap(id: MapId, user: boolean): void {
   if (id === S.map) return;
   const old = m(),
     fr = (S.r - old.view[0]) / (old.view[1] - old.view[0]);
   S.map = id;
   P.update('r', rPatch(id));
+  const xp = x0Patch(id);
+  P.update('x0', xp);
+  if (S.x0 === old.x0 || S.x0 < xp.min || S.x0 > xp.max) {
+    S.x0 = xp.v;
+    P.set('x0', xp.v, { silent: true });
+  }
   S.view = null;
   S.hist = [];
   S.lev = 0;
@@ -134,6 +139,7 @@ function setR(v: number, toRow = true): void {
 
 /* ---------- 拡大 ---------- */
 const zoomBtns = $$<HTMLButtonElement>('#b-zoom .chip');
+const sameView = (a: View | null, b: View) => !!a && a.r0 === b.r0 && a.r1 === b.r1 && a.y0 === b.y0 && a.y1 === b.y1;
 function zoomTo(v: View | null, push = true): void {
   if (push) S.hist.push(S.view);
   S.view = v;
@@ -146,8 +152,8 @@ function syncZoom(): void {
   const logi = S.map === 'logistic';
   zoomBtns.forEach((b, i) => {
     const z = ZOOMS[i][1];
-    b.disabled = !logi && i > 0;
-    b.setAttribute('aria-pressed', String(z === S.view || (i === 0 && S.view === null)));
+    b.disabled = !logi && i > 1;
+    b.setAttribute('aria-pressed', String(z === 'all' ? sameView(S.view, allView()) : z === S.view));
   });
   ($('#b-feig') as HTMLButtonElement).disabled = !cas(S.map);
   ($('#b-back') as HTMLButtonElement).disabled = S.hist.length === 0;
@@ -157,7 +163,8 @@ function syncZoom(): void {
 zoomBtns.forEach((b, i) => {
   b.addEventListener('click', () => {
     S.lev = 0;
-    zoomTo(ZOOMS[i][1]);
+    const z = ZOOMS[i][1];
+    zoomTo(z === 'all' ? allView() : z);
   });
 });
 $('#b-back').addEventListener('click', () => {
@@ -173,10 +180,11 @@ $('#b-back').addEventListener('click', () => {
  * 段ごとに横は δ 倍、縦は α 倍に縮み、枝の向きが入れ替わる（「そろえる」なら上下を反転して向きをそろえる）
  */
 function feigView(n: number): View {
-  const C = cas(S.map) as Cascade & { d: number[] },
+  const C = cas(S.map) as Cascade,
     Rn = C.R,
     d = C.d[n],
-    c = m().c;
+    mm = m(),
+    c = mm.c(Rn[n]);
   const r0 = Rn[n] - 0.35 * (Rn[n] - Rn[n - 1]),
     r1 = C.rInf + 1.1 * (C.rInf - Rn[n]);
   const lo = c + Math.min(0, d) * 1.45 - Math.abs(d) * 0.45,
@@ -184,8 +192,8 @@ function feigView(n: number): View {
   return {
     r0,
     r1,
-    y0: Math.max(0, lo),
-    y1: Math.min(1, hi),
+    y0: Math.max(mm.x[0], lo),
+    y1: Math.min(mm.x[1], hi),
     flip: flipCh.value === '1' && d > 0,
     deep: 2 ** Math.max(0, n - 2),
   };
@@ -212,8 +220,9 @@ function paintFt(): void {
   let h = `<thead><tr><th><i>n</i></th><th>周期</th><th>超安定な <i>${sym}</i></th><th><i>δ</i><sub><i>n</i></sub></th><th><i>α</i><sub><i>n</i></sub></th></tr></thead><tbody>`;
   const N = Math.min(9, C.R.length - 1);
   for (let n = 1; n <= N; n++)
-    h += `<tr data-n="${n}"${n === S.lev ? ' class="on"' : ''} title="${n <= FEIG_LEVELS ? 'この段へ拡大' : ''}"><td>${n}</td><td>${2 ** n}</td><td>${f(C.R[n], 9)}</td><td>${f(C.delta[n], 5)}</td><td>${f(C.alpha[n], 5)}</td></tr>`;
-  h += `<tr class="lim"><td>∞</td><td></td><td><b>${C.rInf.toFixed(9)}</b></td><td>4.66920</td><td>2.50291</td></tr></tbody>`;
+    h += `<tr data-n="${n}"${n === S.lev ? ' class="on"' : ''} title="${n <= FEIG_LEVELS ? 'この段へ拡大' : ''}"><td>${n}</td><td>${2 ** n}</td><td>${minus(f(C.R[n], 9))}</td><td>${f(C.delta[n], 5)}</td><td>${f(C.alpha[n], 5)}</td></tr>`;
+  const [dl, al] = m().feig ?? [DELTA, ALPHA];
+  h += `<tr class="lim"><td>∞</td><td></td><td><b>${minus(C.rInf.toFixed(9))}</b></td><td>${dl.toFixed(5)}</td><td>${al.toFixed(5)}</td></tr></tbody>`;
   ft.innerHTML = h;
 }
 ft.addEventListener('click', (e) => {
@@ -271,7 +280,7 @@ function draw(): void {
 const lamText = (v: number) => (v < -9 ? '−∞' : minus(v.toFixed(3)));
 function outs(): void {
   const sym = MAP_INFO[S.map].sym,
-    rs = S.r.toFixed(5),
+    rs = minus(S.r.toFixed(5)),
     ps = per ? String(per) : lam > 0.001 ? 'カオス' : DASH;
   html('#b-eq', MAP_INFO[S.map].eq);
   txt('#b-sym', sym);
@@ -295,7 +304,7 @@ function outs(): void {
     t = Math.max(0, Math.min(1, (S.r - v.r0) / (v.r1 - v.r0)));
   $('#b-fill').style.width = `${(100 * t).toFixed(2)}%`;
   $('#b-th').style.left = `${(100 * t).toFixed(2)}%`;
-  txt('#b-rr', `${sym} ${v.r0.toFixed(4)} → ${v.r1.toFixed(4)}`);
+  txt('#b-rr', `${sym} ${minus(v.r0.toFixed(4))} → ${minus(v.r1.toFixed(4))}`);
   txt('#b-t', `${(t * SWEEP_S).toFixed(1)} / ${SWEEP_S.toFixed(1)} s`);
 }
 
@@ -512,7 +521,10 @@ new ResizeObserver(() => {
 /* ---------- 始める ---------- */
 S.map = mapCh.value;
 P.update('r', rPatch(S.map));
+P.update('x0', x0Patch(S.map));
 S.r = Math.min(m().hi, Math.max(m().lo, P.get('r')));
+const xp0 = x0Patch(S.map);
+S.x0 = Math.min(xp0.max, Math.max(xp0.min, P.get('x0')));
 offs();
 syncZoom();
 ready = true;
