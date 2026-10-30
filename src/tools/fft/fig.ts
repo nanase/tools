@@ -1,14 +1,12 @@
 /**
  * FFT のページの図（SVG と式の HTML を組み立てる）: バタフライ図・今のバタフライの拡大（複素平面）・
- * 図の下の式・入力の棒・演算の数のグラフ。値は文字列にして innerHTML で入れる（入る文字は数と固定の語だけ）
+ * 図の下の式・入力の棒。値は文字列にして innerHTML で入れる（入る文字は数と固定の語だけ）
  */
 import { plan } from '../spectrum/fft';
-import { ops, twKind } from './count';
+import { twKind } from './count';
 import { type Bf, type Flow, group, type Kind, tw } from './radix2';
 
 /* ---------- 表記 ---------- */
-const SUP = '⁰¹²³⁴⁵⁶⁷⁸⁹';
-export const sup = (n: number): string => [...String(n)].map((d) => SUP[+d]).join('');
 export const big = (n: number): string => n.toLocaleString('ja-JP');
 const bin = (i: number, m: number) => i.toString(2).padStart(m, '0');
 /** 小数 2 桁（−0 は 0） */
@@ -343,7 +341,7 @@ export function fxHtml(R: Run, V: View): string {
   for (let k = 0; k < N; k++) e = Math.max(e, Math.hypot(re[cl][k] - R.ref[0][k], im[cl][k] - R.ref[1][k]));
   return (
     `<div class="fx-h">完了<small>${m} 段 × ${N / 2} 個のバタフライ</small></div>` +
-    `<div class="fx-r"><span class="t">掛け算</span><span class="n w"><span class="er">${(N / 2) * m} 回</span>　定義どおりなら ${N * N} 回</span></div>` +
+    `<div class="fx-r"><span class="t">掛け算</span><span class="n w"><span class="er">${(N / 2) * m} 回</span></span></div>` +
     `<div class="fx-r"><span class="t">出力</span><span class="n w">定義どおりの DFT との差 ${e === 0 ? '0' : e.toExponential(1).replace(/e-(\d+)/, ' × 10<sup>−$1</sup>')}</span></div>`
   );
 }
@@ -451,7 +449,7 @@ export function inputSvg(re: ArrayLike<number>, im: ArrayLike<number>): string {
     const x = L + dx * (n + 0.5),
       yr = y0 - A * re[n],
       yi = y0 - A * im[n];
-    if (im[n])
+    if (Math.abs(im[n]) > 1e-9)
       h += `<line class="im-s" x1="${x + 4}" x2="${x + 4}" y1="${y0}" y2="${yi}"/><circle class="im-d" cx="${x + 4}" cy="${yi}" r="3"/>`;
     h += `<line class="re-s" x1="${x}" x2="${x}" y1="${y0}" y2="${yr}"/><circle class="re-d" cx="${x}" cy="${yr}" r="4.5"/><text x="${x}" y="${H - 4}" text-anchor="middle">${n}</text>`;
   }
@@ -466,34 +464,4 @@ export function inputAt(svg: SVGSVGElement, N: number, e: PointerEvent): [number
     n = Math.floor((x - L) / ((W - L - 10) / N));
   if (n < 0 || n >= N) return null;
   return [n, Math.max(-1, Math.min(1, Math.round(((y0 - y) / A) * 20) / 20))];
-}
-
-/* ---------- 演算の数 ---------- */
-export function countSvg(N: number, real: boolean): string {
-  const W = 420,
-    H = 230,
-    L = 40,
-    R = 12,
-    T = 12,
-    B = 28,
-    ymax = 42,
-    X = (k: number) => L + ((k - 1) / 19) * (W - L - R),
-    Y = (v: number) => T + (1 - Math.log2(Math.max(1, v)) / ymax) * (H - T - B),
-    cn = Math.log2(N),
-    [a, b] = ops(N, real);
-  let h = '';
-  for (let e = 0; e <= ymax; e += 6)
-    h += `<line class="gr" x1="${L}" x2="${W - R}" y1="${Y(2 ** e)}" y2="${Y(2 ** e)}"/><text class="tk" x="${L - 4}" y="${Y(2 ** e) + 3}" text-anchor="end">${e ? `2${sup(e)}` : '1'}</text>`;
-  for (const k of [1, 4, 8, 12, 16, 20])
-    h += `<line class="gr" x1="${X(k)}" x2="${X(k)}" y1="${T}" y2="${H - B}"/><text class="tk" x="${X(k)}" y="${H - B + 13}" text-anchor="middle">2${sup(k)}</text>`;
-  h += `<text class="tk" x="${(W + L) / 2}" y="${H - 2}" text-anchor="middle">N</text>`;
-  const path = (i: 0 | 1) => {
-    let d = '';
-    for (let k = 1; k <= 20; k += 0.25) d += `${d ? 'L' : 'M'}${X(k).toFixed(1)} ${Y(ops(2 ** k, real)[i]).toFixed(1)}`;
-    return d;
-  };
-  h += `<path class="c-d" d="${path(0)}"/><path class="c-f" d="${path(1)}"/>`;
-  h += `<text class="cl-d" x="${X(14)}" y="${Y(ops(2 ** 14, real)[0]) - 7}">${real ? '定義どおり' : 'N²'}</text><text class="cl-f" x="${X(15)}" y="${Y(ops(2 ** 15, real)[1]) + 15}">${real ? 'FFT' : '(N/2) log₂N'}</text>`;
-  h += `<line class="cur" x1="${X(cn)}" x2="${X(cn)}" y1="${Y(a)}" y2="${Y(b)}"/><circle class="pd" cx="${X(cn)}" cy="${Y(a)}" r="4"/><circle class="pf" cx="${X(cn)}" cy="${Y(b)}" r="4"/>`;
-  return h;
 }

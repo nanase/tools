@@ -1,11 +1,11 @@
 /* FFT のページだけのスタイル（共通は src/styles/site.css） */
 
-/* 枠の並び（案 A3）。スマホはバタフライ図 → 入力 → 演算の数 → 計算結果 → 式。
-   PC は上にバタフライ図（全幅）、下の左に入力と計算結果、右に演算の数、その下に式（全幅） */
-.a-fig{order:1}.a-in{order:2}.a-cnt{order:3}.a-out{order:4}.a-thy{order:5}
+/* 枠の並び（案 A3）。スマホはバタフライ図 → 入力 → 計算結果 → 式。
+   PC は上にバタフライ図（全幅）、下の左に入力、右に計算結果、その下に式（全幅） */
+.a-fig{order:1}.a-in{order:2}.a-out{order:3}.a-thy{order:4}
 @media (min-width:1000px){
-  .tgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr);grid-template-areas:"fig fig" "c1 c2" "thy thy";align-items:start}
-  .a-fig{grid-area:fig}.c1{grid-area:c1}.c2{grid-area:c2}.a-thy{grid-area:thy}
+  .tgrid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-areas:"fig fig" "in out" "thy thy";align-items:start}
+  .a-fig{grid-area:fig}.a-in{grid-area:in}.a-out{grid-area:out}.a-thy{grid-area:thy}
 }
 
 /* 枠線の上の右端: 間引きと点の数。スマホでは枠の中へ下ろす */
@@ -28,6 +28,8 @@
 @media (min-width:1000px){.ff-figw{grid-template-columns:minmax(0,1fr) 300px}}
 .ff-bf{border:1px solid var(--line);border-radius:var(--r);background:var(--screen);box-shadow:inset 0 1px 3px rgb(0 0 0 / .19);overflow-x:auto;overscroll-behavior-x:contain}
 .ff-bf svg{display:block;width:100%;height:auto;touch-action:manipulation}
+/* 押したりドラッグしたりする図の文字は選ばない */
+.ff-bf svg,#ff-zp,#ff-in{user-select:none;-webkit-user-select:none}
 .ff-bf text{fill:var(--screen-ink);font:11px var(--mono)}
 .ff-bf text.hd{font:700 12.5px var(--sans);fill:var(--ink)}
 .ff-bf text.hs{font:500 10.5px var(--mono);fill:var(--ink-3)}
@@ -101,32 +103,3 @@
 #ff-in .re-d{fill:var(--ch1)}
 #ff-in .im-d{fill:var(--ch2)}
 .ff-insb{margin:8px 0 0}
-
-/* 計算結果 */
-.ff-ms{display:block;margin-top:2px;font:12px/1.5 var(--sans);color:var(--ink-3)}
-
-/* 演算の数 */
-.ff-cnt{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:6px 10px;align-items:center;margin:0 0 10px;font:500 12.5px/1.3 var(--mono);font-variant-numeric:tabular-nums}
-.ff-cnt .k{font-family:var(--sans);color:var(--ink-2)}
-.ff-cnt .bar{height:10px;background:var(--inset);border:1px solid var(--line);border-radius:3px;overflow:hidden}
-.ff-cnt .bar i{display:block;height:100%;background:var(--ink-3)}
-.ff-cnt .bar.f i{background:var(--ink)}
-.a-cnt .ptab{margin:0 0 10px}
-#ff-cg .gr{stroke:var(--grid);stroke-width:1}
-#ff-cg text.tk{font:10px var(--sans)}
-#ff-cg .c-d{fill:none;stroke:var(--ink-3);stroke-width:2}
-#ff-cg .c-f{fill:none;stroke:var(--ink);stroke-width:2.4}
-#ff-cg text.cl-d{fill:var(--ink-3);font:12px var(--sans)}
-#ff-cg text.cl-f{fill:var(--ink);font:12px var(--sans)}
-#ff-cg .cur{stroke:var(--focus);stroke-width:1.5;stroke-dasharray:3 3}
-#ff-cg .pd{fill:var(--ink-3)}
-#ff-cg .pf{fill:var(--ink)}
-.cnote{margin:8px 0 0;font:500 12.5px/1.6 var(--mono);color:var(--ink-3)}
-.ff-bench{padding:10px 8px}
-.ff-btn{height:30px;padding:0 12px;border:1px solid var(--line-2);border-radius:4px;background:var(--surface);color:var(--ink);font:500 12.5px var(--sans);cursor:pointer}
-.ff-btn:disabled{opacity:.5;cursor:default}
-.ff-bout{margin-top:8px;overflow-x:auto}
-.ff-t{border-collapse:collapse;width:100%;font:500 12.5px/1.5 var(--mono);font-variant-numeric:tabular-nums}
-.ff-t th,.ff-t td{padding:4px 8px;border-bottom:1px solid var(--line);text-align:right}
-.ff-t th:first-child,.ff-t td:first-child{text-align:left}
-.ff-t th{font:700 12px var(--sans);color:var(--ink-2)}

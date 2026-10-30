@@ -1,19 +1,16 @@
 /**
  * FFT のページの入口: 入力 → 段ごとの FFT の記録 → バタフライ図・拡大・式・計算結果。
- * 進み具合 pos（バタフライの数）は再生（requestAnimationFrame）・帯のドラッグ・キーで動かす。演算の数の枠は別に数える
+ * 進み具合 pos（バタフライの数）は再生（requestAnimationFrame）・帯のドラッグ・キーで動かす
  */
 import { Choice } from '../../lib/choice';
 import { $ } from '../../lib/dom';
 import { RM } from '../../lib/motion';
-import { ParamGroup } from '../../lib/param';
 import { initToolPage } from '../../lib/tool-page';
-import { fft, plan } from '../spectrum/fft';
-import { dftOps, fftOps, ops } from './count';
+import { fftOps } from './count';
 import {
   type BfFig,
   big,
   buildBf,
-  countSvg,
   drawBf,
   fxHtml,
   inputAt,
@@ -24,7 +21,7 @@ import {
   type View,
   zoomSvg,
 } from './fig';
-import { BASE, COUNT_N } from './params';
+import { BASE } from './params';
 import { dft, flow, type Kind } from './radix2';
 import { type Sig, signal } from './signals';
 
@@ -110,20 +107,16 @@ function draw(force = false): void {
 /** 入力と計算結果（入力・点の数・間引きが変わったとき） */
 function drawStatic(): void {
   const N = R.N,
-    f = fftOps(N, R.kind, '4/2', false),
-    d = dftOps(N);
+    f = fftOps(N, R.kind, '4/2', false);
   $('#ff-in').innerHTML = inputSvg(re, im);
   txt($('#o-cm'), String(nbf()));
-  txt($('#o-cm-d'), `定義どおりなら ${big(N * N)} 回（${+((N * N) / nbf()).toFixed(1)} 分の 1）`);
   txt($('#o-st'), String(R.f.m));
   txt($('#o-bf'), String(nbf()));
   txt($('#o-mul'), big(f.mul));
-  txt($('#o-mul-d'), `定義どおり ${big(d.mul)}`);
   txt($('#o-add'), big(f.add));
-  txt($('#o-add-d'), `定義どおり ${big(d.add)}`);
   txt($('#m-n'), String(N));
+  txt($('#m-st'), String(R.f.m));
   txt($('#m-f'), String(nbf()));
-  txt($('#m-d'), big(N * N));
 }
 /** 再生の帯の目盛り: 段の区切り */
 function ticks(): void {
@@ -159,21 +152,24 @@ bfSvg.addEventListener('click', (e) => {
   draw();
 });
 
-/* ---------- 入力の棒をドラッグ ---------- */
+/* ---------- 入力の棒をドラッグ: 押した所に近い方（実部か虚部）の点だけを動かす ---------- */
 const inSvg = $<SVGSVGElement>('#ff-in');
-function putIn(e: PointerEvent): void {
+let part: 're' | 'im' = 're';
+function putIn(e: PointerEvent, first = false): void {
   const h = inputAt(inSvg, R.N, e);
   if (!h) return;
   const [n, v] = h;
-  if (re[n] === v && im[n] === 0) return;
-  re[n] = v;
-  im[n] = 0;
+  if (first) part = Math.abs(im[n]) > 1e-9 && Math.abs(v - im[n]) < Math.abs(v - re[n]) ? 'im' : 're';
+  const x = part === 're' ? re : im;
+  if (x[n] === v) return;
+  x[n] = v;
   sigCh.set('');
   recompute();
 }
 inSvg.addEventListener('pointerdown', (e) => {
+  e.preventDefault();
   inSvg.setPointerCapture(e.pointerId);
-  putIn(e);
+  putIn(e, true);
 });
 inSvg.addEventListener('pointermove', (e) => {
   if (inSvg.hasPointerCapture(e.pointerId)) putIn(e);
@@ -258,70 +254,9 @@ new ResizeObserver(() => {
   draw(true);
 }).observe(bfw);
 
-/* ---------- 演算の数 ---------- */
-let cn = COUNT_N.v;
-const cmCh = new Choice<'c' | 'r'>($('#ff-cm'), () => drawCount());
-new ParamGroup<'cn'>([COUNT_N], (v) => {
-  cn = v.cn;
-  drawCount();
-});
-function drawCount(): void {
-  const real = cmCh.value === 'r',
-    [a, b] = ops(cn, real);
-  $('#ff-cnt').innerHTML =
-    `<span class="k">定義どおり</span><div class="bar"><i style="width:100%"></i></div><span>${big(a)}</span>` +
-    `<span class="k">FFT</span><div class="bar f"><i style="width:${Math.max(0.4, (100 * b) / a)}%"></i></div><span>${big(b)}</span>`;
-  $('#ff-cg').innerHTML = countSvg(cn, real);
-  txt(
-    $('#ff-cnote'),
-    `${big(cn)} 点: ${(a / b).toLocaleString('ja-JP', { maximumFractionDigits: 1 })} 分の 1${real ? '（FFT は 1・−i・(1 − i)/√2 を掛けずに数える）' : ''}`,
-  );
-}
-
-/* ---------- このブラウザで測る（スペクトラムアナライザの FFT と定義どおりの和） ---------- */
-$('#ff-bench').addEventListener('click', async (e) => {
-  const btn = e.currentTarget as HTMLButtonElement,
-    out = $('#ff-bout'),
-    rows: string[] = [];
-  btn.disabled = true;
-  out.innerHTML = '<p class="cnote">測っています…</p>';
-  /* minMs の間くり返した 1 回あたり [ms] */
-  const time = (fn: () => void, minMs: number) => {
-    let n = 0;
-    const t0 = performance.now();
-    let t1 = t0;
-    while (t1 - t0 < minMs) {
-      fn();
-      n++;
-      t1 = performance.now();
-    }
-    return (t1 - t0) / n;
-  };
-  for (let k = 6; k <= 14; k += 2) {
-    await new Promise((r) => setTimeout(r, 0));
-    const N = 2 ** k,
-      xr = Float64Array.from({ length: N }, () => Math.random()),
-      xi = new Float64Array(N),
-      p = plan(N),
-      tf = time(() => {
-        p.re.set(xr);
-        p.im.fill(0);
-        fft(p);
-      }, 60),
-      td = k <= 12 ? time(() => dft(xr, xi), 60) : null;
-    rows.push(
-      `<tr><td>${big(N)}</td><td>${tf.toFixed(4)}</td><td>${td === null ? '—' : td.toFixed(2)}</td><td>${td === null ? '—' : `${big(Math.round(td / tf))} 倍`}</td></tr>`,
-    );
-    out.innerHTML = `<table class="ff-t"><thead><tr><th>N</th><th>FFT ms</th><th>定義どおり ms</th><th>比</th></tr></thead><tbody>${rows.join('')}</tbody></table>`;
-  }
-  out.insertAdjacentHTML('beforeend', '<p class="cnote">1 回あたり。定義どおりは 4,096 点まで</p>');
-  btn.disabled = false;
-});
-
 /* ---------- 起動 ---------- */
 setSig();
 recompute();
-drawCount();
 /* 保存した値を戻したあと（マイクロタスク）に入力を作り直し、動きを減らす設定でなければ動かす */
 queueMicrotask(() => {
   if (!sigCh.value) sigCh.set('rand');

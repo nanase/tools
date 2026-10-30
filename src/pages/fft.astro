@@ -4,12 +4,11 @@ import Collapsible from '../components/Collapsible.astro';
 import More from '../components/More.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
-import ParamRow from '../components/ParamRow.astro';
 import RelatedTools from '../components/RelatedTools.astro';
 import { order, TOOLS } from '../data/tools';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import '../tools/fft/style.css';
-import { COUNT_N, NS, SPEEDS } from '../tools/fft/params';
+import { NS, SPEEDS } from '../tools/fft/params';
 import { SIGS } from '../tools/fft/signals';
 import Theory from '../tools/fft/Theory.astro';
 
@@ -21,9 +20,9 @@ const related = [
   ...TOOLS.filter((t) => t.c !== CAT && !t.s),
 ];
 ---
-<SiteLayout title={name} tool={{ id: 'fft', name }} description="N 点の DFT を半分の DFT 2 つに分けることを繰り返す、基数 2 の FFT です。バタフライ図の上を値が流れる様子を時間間引きと周波数間引きで動かし、今のバタフライを複素平面で拡大して見ます。定義どおりの N² 回と FFT の (N/2) log₂N 回の掛け算の数も比べられます。">
-  <PageTitle title={name}>N 点の DFT を半分の DFT 2 つに分けることを繰り返す、基数 2 の FFT です。バタフライ図の上を値が流れる様子と、定義どおりの <i>N</i>² 回と FFT の (<i>N</i>/2) log₂<i>N</i> 回の掛け算の数を比べられます。</PageTitle>
-  <div class="mini" aria-hidden="true"><span><i>N</i><b id="m-n"></b></span><span>FFT の掛け算<b id="m-f"></b></span><span>定義どおり<b id="m-d"></b></span></div>
+<SiteLayout title={name} tool={{ id: 'fft', name }} description="N 点の DFT を半分の DFT 2 つに分けることを繰り返す、基数 2 の FFT です。バタフライ図の上を値が流れる様子を時間間引きと周波数間引きで動かし、今のバタフライを複素平面で拡大して見ます。入力を変えると、各段の途中の値も変わります。">
+  <PageTitle title={name}><i>N</i> 点の DFT を半分の DFT 2 つに分けることを繰り返す、基数 2 の FFT です。バタフライ図の上を値が流れる様子を、時間間引きと周波数間引きで見られます。</PageTitle>
+  <div class="mini" aria-hidden="true"><span><i>N</i><b id="m-n"></b></span><span>段<b id="m-st"></b></span><span>掛け算<b id="m-f"></b></span></div>
 
   <div class="tgrid">
     <Panel hid="hd-fig" title="バタフライ図" class="a-fig" fixed>
@@ -81,7 +80,6 @@ const related = [
       </More>
     </Panel>
 
-    <div class="col c1">
       <Panel hid="hd-in" title="入力 x[n]" class="a-in">
         <span slot="aux" class="aux">棒をドラッグ</span>
         <div class="chips ff-sig" id="ff-sig" role="group" aria-label="入力の見本">
@@ -95,33 +93,13 @@ const related = [
       </Panel>
       <Panel hid="hd-out" title="計算結果" class="a-out">
         <dl class="metrics">
-          <div class="m m-main"><dt>FFT の複素数の掛け算</dt><dd><span id="o-cm"></span><span class="u">回</span><span class="ff-ms" id="o-cm-d"></span></dd></div>
+          <div class="m m-main"><dt>FFT の複素数の掛け算</dt><dd><span id="o-cm"></span><span class="u">回</span></dd></div>
           <div class="m"><dt>段の数 log₂<i>N</i></dt><dd id="o-st"></dd></div>
           <div class="m"><dt>バタフライ</dt><dd><span id="o-bf"></span><span class="u">個</span></dd></div>
-          <div class="m"><dt>実数の掛け算</dt><dd><span id="o-mul"></span><span class="u">回</span><span class="ff-ms" id="o-mul-d"></span></dd></div>
-          <div class="m"><dt>実数の足し算</dt><dd><span id="o-add"></span><span class="u">回</span><span class="ff-ms" id="o-add-d"></span></dd></div>
+          <div class="m"><dt>実数の掛け算</dt><dd><span id="o-mul"></span><span class="u">回</span></dd></div>
+          <div class="m"><dt>実数の足し算</dt><dd><span id="o-add"></span><span class="u">回</span></dd></div>
         </dl>
       </Panel>
-    </div>
-
-    <div class="col c2">
-      <Panel hid="hd-cnt" title="演算の数" class="a-cnt">
-        <div slot="aux" class="seg" id="ff-cm" role="group" aria-label="数えるもの">
-          <button type="button" data-v="c" aria-pressed="true">複素数の掛け算</button>
-          <button type="button" data-v="r" aria-pressed="false" title="実数の掛け算と足し算の和">実数の演算</button>
-        </div>
-        <div class="ff-cnt" id="ff-cnt"></div>
-        <div class="ptab"><ParamRow d={COUNT_N} /></div>
-        <div class="scope"><svg id="ff-cg" viewBox="0 0 420 230" role="img" aria-label="点の数と演算の数（両対数）"></svg></div>
-        <p class="cnote" id="ff-cnote"></p>
-        <More id="ff-bm" title="このブラウザで測る">
-          <div class="ff-bench">
-            <button type="button" class="ff-btn" id="ff-bench">測る</button>
-            <div class="ff-bout" id="ff-bout"></div>
-          </div>
-        </More>
-      </Panel>
-    </div>
 
     <Collapsible hid="hd-thy" title="動作原理と式">
       <Theory />
