@@ -55,6 +55,9 @@ const sigCh = new Choice<Sig | ''>($('#ff-sig'), () => {
   recompute();
 });
 const spCh = new Choice<string>($('#p-sp'));
+const partCh = new Choice<'re' | 'im'>($('#ff-part'), () => {
+  $('#ff-in').innerHTML = inputSvg(re, im, partCh.value);
+});
 function setSig(): void {
   [re, im] = signal(sigCh.value || 'rand', Number(nCh.value), 3);
 }
@@ -108,7 +111,7 @@ function draw(force = false): void {
 function drawStatic(): void {
   const N = R.N,
     f = fftOps(N, R.kind, '4/2', false);
-  $('#ff-in').innerHTML = inputSvg(re, im);
+  $('#ff-in').innerHTML = inputSvg(re, im, partCh.value);
   txt($('#o-cm'), String(nbf()));
   txt($('#o-st'), String(R.f.m));
   txt($('#o-bf'), String(nbf()));
@@ -152,15 +155,13 @@ bfSvg.addEventListener('click', (e) => {
   draw();
 });
 
-/* ---------- 入力の棒をドラッグ: 押した所に近い方（実部か虚部）の点だけを動かす ---------- */
+/* ---------- 入力の棒をドラッグ: 凡例で選んだ方（実部か虚部）だけを動かす ---------- */
 const inSvg = $<SVGSVGElement>('#ff-in');
-let part: 're' | 'im' = 're';
-function putIn(e: PointerEvent, first = false): void {
+function putIn(e: PointerEvent): void {
   const h = inputAt(inSvg, R.N, e);
   if (!h) return;
-  const [n, v] = h;
-  if (first) part = Math.abs(im[n]) > 1e-9 && Math.abs(v - im[n]) < Math.abs(v - re[n]) ? 'im' : 're';
-  const x = part === 're' ? re : im;
+  const [n, v] = h,
+    x = partCh.value === 're' ? re : im;
   if (x[n] === v) return;
   x[n] = v;
   sigCh.set('');
@@ -169,7 +170,7 @@ function putIn(e: PointerEvent, first = false): void {
 inSvg.addEventListener('pointerdown', (e) => {
   e.preventDefault();
   inSvg.setPointerCapture(e.pointerId);
-  putIn(e, true);
+  putIn(e);
 });
 inSvg.addEventListener('pointermove', (e) => {
   if (inSvg.hasPointerCapture(e.pointerId)) putIn(e);

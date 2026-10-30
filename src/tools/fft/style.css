@@ -98,8 +98,12 @@
 #ff-in{touch-action:none;cursor:ns-resize}
 #ff-in .ax{stroke:var(--grid-2);stroke-width:1}
 #ff-in .gr{stroke:var(--grid);stroke-width:1}
-#ff-in .re-s{stroke:var(--ch1);stroke-width:2.2}
-#ff-in .im-s{stroke:var(--ch2);stroke-width:2.2}
-#ff-in .re-d{fill:var(--ch1)}
-#ff-in .im-d{fill:var(--ch2)}
-.ff-insb{margin:8px 0 0}
+#ff-in .re line{stroke:var(--ch1);stroke-width:2.2}
+#ff-in .im line{stroke:var(--ch2);stroke-width:2.2}
+#ff-in .re circle{fill:var(--ch1)}
+#ff-in .im circle{fill:var(--ch2)}
+#ff-in .dim{opacity:.3}
+#ff-in .dim line{stroke-width:1.6}
+/* 凡例を兼ねた切り替え: ドラッグで変える方 */
+.ff-insb{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:8px 0 0}
+#ff-part button{display:inline-flex;align-items:center;gap:6px;font-family:var(--sans)}

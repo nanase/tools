@@ -81,14 +81,16 @@ const related = [
     </Panel>
 
       <Panel hid="hd-in" title="入力 x[n]" class="a-in">
-        <span slot="aux" class="aux">棒をドラッグ</span>
         <div class="chips ff-sig" id="ff-sig" role="group" aria-label="入力の見本">
           {SIGS.map(([v, l]) => <button type="button" class="chip" data-v={v} aria-pressed={v === 'rand' ? 'true' : 'false'}>{l}</button>)}
         </div>
-        <div class="scope"><svg id="ff-in" viewBox="0 0 420 150" role="img" aria-label="入力の実部と虚部。棒をドラッグすると実部を変える"></svg></div>
-        <div class="sbar ff-insb">
-          <span class="stag"><i class="sw" aria-hidden="true"></i>実部</span>
-          <span class="stag"><i class="sw c2" aria-hidden="true"></i>虚部</span>
+        <div class="scope"><svg id="ff-in" viewBox="0 0 420 150" role="img" aria-label="入力の実部と虚部。棒をドラッグすると、下で選んだ方を変える"></svg></div>
+        <div class="ff-insb">
+          <div class="seg" id="ff-part" role="group" aria-label="ドラッグで変える方" data-nosave>
+            <button type="button" data-v="re" aria-pressed="true"><i class="sw" aria-hidden="true"></i>実部</button>
+            <button type="button" data-v="im" aria-pressed="false"><i class="sw c2" aria-hidden="true"></i>虚部</button>
+          </div>
+          <span class="aux">← 棒をドラッグして変える方</span>
         </div>
       </Panel>
       <Panel hid="hd-out" title="計算結果" class="a-out">

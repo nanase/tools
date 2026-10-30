@@ -440,18 +440,23 @@ export function zoomSvg(R: Run, V: View): [string, string] {
 
 /* ---------- 入力（棒をドラッグ） ---------- */
 export const IN = { W: 420, H: 150, y0: 72, A: 56, L: 24 } as const;
-export function inputSvg(re: ArrayLike<number>, im: ArrayLike<number>): string {
+/** 入力の棒。ドラッグで変える方（part）を上に濃く、もう片方を下に薄く描く（0 の点も描く） */
+export function inputSvg(re: ArrayLike<number>, im: ArrayLike<number>, part: 're' | 'im'): string {
   const N = re.length,
     { W, H, y0, A, L } = IN,
-    dx = (W - L - 10) / N;
+    dx = (W - L - 10) / N,
+    stem = (k: 're' | 'im', x: number, v: number) => {
+      const y = y0 - A * v,
+        on = k === part;
+      return `<g class="${k}${on ? '' : ' dim'}"><line x1="${x}" x2="${x}" y1="${y0}" y2="${y}"/><circle cx="${x}" cy="${y}" r="${on ? 4.5 : 3}"/></g>`;
+    };
   let h = `<line class="gr" x1="${L}" x2="${W - 6}" y1="${y0 - A}" y2="${y0 - A}"/><line class="gr" x1="${L}" x2="${W - 6}" y1="${y0 + A}" y2="${y0 + A}"/><line class="ax" x1="${L}" x2="${W - 6}" y1="${y0}" y2="${y0}"/><text x="4" y="${y0 - A + 4}">1</text><text x="0" y="${y0 + A + 4}">−1</text>`;
   for (let n = 0; n < N; n++) {
     const x = L + dx * (n + 0.5),
-      yr = y0 - A * re[n],
-      yi = y0 - A * im[n];
-    if (Math.abs(im[n]) > 1e-9)
-      h += `<line class="im-s" x1="${x + 4}" x2="${x + 4}" y1="${y0}" y2="${yi}"/><circle class="im-d" cx="${x + 4}" cy="${yi}" r="3"/>`;
-    h += `<line class="re-s" x1="${x}" x2="${x}" y1="${y0}" y2="${yr}"/><circle class="re-d" cx="${x}" cy="${yr}" r="4.5"/><text x="${x}" y="${H - 4}" text-anchor="middle">${n}</text>`;
+      xr = x - 3,
+      xi = x + 3;
+    h += part === 're' ? stem('im', xi, im[n]) + stem('re', xr, re[n]) : stem('re', xr, re[n]) + stem('im', xi, im[n]);
+    h += `<text x="${x}" y="${H - 4}" text-anchor="middle">${n}</text>`;
   }
   return h;
 }
