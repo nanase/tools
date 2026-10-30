@@ -1,0 +1,71 @@
+/* ウェーブレットで雑音除去と圧縮のページだけのスタイル（共通は src/styles/site.css、入力元の帯は ../audio/style.css） */
+
+/* 枠の並び。スマホは 聴き比べ → 処理 → スカログラム → 式。
+   PC は左の列に聴き比べとスカログラム、右の列に処理（案 A） */
+.a-ab{order:1}.a-pr{order:2}.a-sc{order:3}.a-thy{order:4}
+@media (min-width:1000px){
+  .tgrid{grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);grid-template-areas:"ab pr" "sc pr" "thy thy";align-items:start}
+  .a-ab{grid-area:ab}.a-sc{grid-area:sc}.a-pr{grid-area:pr;align-self:stretch}.a-thy{grid-area:thy}
+}
+
+/* 目的ごとの行: 雑音除去だけ・圧縮だけ */
+#wd[data-m="cp"] :is(#p-noise,#p-snr,#p-rule,#p-m,#p-sm,#p-k,#p-spin),
+#wd[data-m="dn"] :is(#p-keep,.cp-only){display:none}
+
+/* 入力元ごとの行 */
+#ab-tab:not([data-src="test"]) #p-clip,#ab-tab:not([data-src="file"]) #p-file,#ab-tab:not([data-src="mic"]) #p-mic{display:none}
+.a-ab .ptab{margin-bottom:10px}
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin-bottom:10px}
+.bl{font-size:12.5px;color:var(--ink-3)}
+.bar .seg button{padding:0 9px}
+.a-ab.drop{border-color:var(--focus);box-shadow:inset 0 0 0 1px var(--focus)}
+
+/* 聴き比べのキー: 左の色の帯が音の色。選んだキーは枠を濃く */
+.keys{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:8px;margin-bottom:12px}
+.key{--kc:var(--ink-3);position:relative;display:grid;align-content:start;gap:2px;min-height:58px;padding:7px 10px 7px 36px;border:1px solid var(--line-2);border-radius:var(--r);background:var(--inset);color:var(--ink);text-align:left;cursor:pointer;font:inherit}
+.key::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:var(--r) 0 0 var(--r);background:var(--kc);opacity:.35}
+.key kbd{position:absolute;left:9px;top:8px;padding:0 4px;border:1px solid var(--line-2);border-radius:3px;background:var(--surface);font:700 11.5px/1.4 var(--mono);color:var(--ink-2)}
+.key b{font-size:13.5px}
+.key small{font:12px/1.4 var(--mono);color:var(--ink-3);font-variant-numeric:tabular-nums}
+.key[aria-pressed="true"]{background:var(--surface);border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.key[aria-pressed="true"]::before{opacity:1}
+.key:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.key.k1{--kc:var(--ch2)}.key.k2{--kc:var(--ch1)}.key.k3{--kc:var(--accent)}
+#wd[data-m="cp"] .key.k1{--kc:var(--ch1)}#wd[data-m="cp"] .key.k2{--kc:var(--accent)}
+.keys .key[hidden]{display:none}
+
+/* 波形（押す・なぞると頭出し）。雑音だけの区間は帯で示す */
+.a-ab .tp{align-items:center}
+.wv{position:relative;height:64px;border:1px solid var(--line);border-radius:var(--r);background:var(--inset);cursor:pointer;touch-action:none}
+.wv:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.wv canvas{display:block;width:100%;height:100%}
+.wph{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--accent);pointer-events:none}
+.qz{position:absolute;top:0;bottom:0;border-inline:1px dashed var(--ch2);background:color-mix(in srgb,var(--ch2) 16%,transparent);pointer-events:none}
+.tp-tm{display:flex;justify-content:space-between;gap:10px;margin-top:5px;font:500 12.5px var(--mono);font-variant-numeric:tabular-nums;color:var(--ink-2)}
+.busy{color:var(--ink-3)}
+
+/* スカログラム: 黒い地の表示窓。色は強度の弱い順に 黒 → 紫 → 青 → 緑 → 赤 → 白（スペクトラムアナライザと同じ） */
+#wd{--sg0:#000000;--sg1:#5b1a8f;--sg2:#2050e0;--sg3:#1fb04a;--sg4:#e3261f;--sg5:#ffffff}
+.sc2{display:grid;gap:12px}
+.a-sc figure{margin:0;min-width:0}
+.vh{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px 10px;margin:0 0 5px;font-size:12.5px;color:var(--ink-3)}
+.vh b{color:var(--ink-2)}
+.scope.dk{--screen:#000000;--grid-2:#3b474e;--screen-ink:#aab3b8;border-color:#2b3237}
+.cv{position:relative}
+.cv canvas{position:absolute;left:calc(100% * 50 / 462);top:calc(100% * 14 / 202);width:calc(100% * 400 / 462);height:calc(100% * 160 / 202)}
+.cv svg{position:relative;touch-action:pan-y}
+.phd{stroke:#fff;stroke-width:1.2}
+.cur{stroke:var(--screen-ink);stroke-width:1}
+.cbar{display:inline-block;width:72px;height:8px;border:1px solid var(--line);border-radius:2px;background:linear-gradient(90deg,var(--sg0),var(--sg1),var(--sg2),var(--sg3),var(--sg4),var(--sg5))}
+.sbar.lg{margin:8px 0}
+
+/* 処理の枠: 数値と表 */
+.a-pr .ptab{margin-bottom:10px}
+.a-pr .metrics{margin-bottom:10px}
+.tt td.n,.tt th.n{text-align:right;font-variant-numeric:tabular-nums}
+.tt tr.on td{background:var(--inset);font-weight:700}
+.bar.cp-only{margin-top:-2px}
+#pr-tab .pbar{display:inline-block;width:38px;height:7px;margin:0 6px 0 0;vertical-align:middle;border-radius:2px;background:linear-gradient(90deg,var(--ch1) var(--p),var(--line) var(--p))}
+.lnk{padding:0;border:0;background:none;color:inherit;font:inherit;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+.lnk[aria-pressed="true"]{text-decoration:none}
+#pr-tab td{white-space:nowrap}

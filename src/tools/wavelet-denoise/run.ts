@@ -134,7 +134,7 @@ export interface CpOut {
   kept: number;
   total: number;
   /** 量子化した係数（表示用） */
-  q: Int32Array;
+  q: Float64Array;
   /** ビット数の見積もり（位置・値） */
   pos: number;
   val: number;
@@ -145,8 +145,8 @@ export function compressAudio(x: Float32Array, b: Basis, keep: number, w: Wav = 
   const n = x.length,
     [c, inv] = forward(x, b, w, J),
     K = Math.max(1, Math.round(keep * n)),
-    /* 全部残すときも幅は 0 にしない */
-    step = Math.max(kth(c, K), 1e-9),
+    /* 全部 0 のときも幅は 0 にしない */
+    step = kth(c, K) || 1,
     ck = Float64Array.from(c),
     kept = keepAbove(ck, step),
     q = quantize(c, step),

@@ -179,3 +179,20 @@ export function addNoise(x: Float32Array, kind: Noise, snrDb: number, seed = 5):
   for (let i = 0; i < w.length; i++) w[i] *= g;
   return [Float32Array.from(x, (v, i) => v + w[i]), w];
 }
+
+/** 最も静かな len 秒の区間 [始め, 終わり)（標本の番号）。50 ms ごとにずらして 2 乗和を比べる */
+export function quietest(x: ArrayLike<number>, fs: number, len = 0.4): [number, number] {
+  const L = Math.min(x.length, Math.round(len * fs)),
+    st = Math.max(1, Math.round(0.05 * fs));
+  let best = Number.POSITIVE_INFINITY,
+    at = 0;
+  for (let i = 0; i + L <= x.length; i += st) {
+    let s = 0;
+    for (let j = i; j < i + L; j++) s += x[j] * x[j];
+    if (s < best) {
+      best = s;
+      at = i;
+    }
+  }
+  return [at, at + L];
+}

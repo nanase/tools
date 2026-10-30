@@ -1,0 +1,116 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import { order, TOOLS } from '../data/tools';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/audio/style.css';
+import '../tools/wavelet-denoise/style.css';
+import { CLIPS } from '../tools/wavelet-denoise/clips';
+import { NOISE, PARAMS, RULE, SHRINK, SIGMA, SPIN, WAV } from '../tools/wavelet-denoise/params';
+import { BASES } from '../tools/wavelet-denoise/run';
+import Theory from '../tools/wavelet-denoise/Theory.astro';
+
+const name = 'ウェーブレットで雑音除去と圧縮';
+/* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる。原理のページは先頭に */
+const CAT = '音響';
+const related = [
+  ...TOOLS.filter((t) => t.id === 'wavelet' && !t.s),
+  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'wavelet-denoise')),
+  ...TOOLS.filter((t) => t.c !== CAT && t.id !== 'wavelet' && !t.s),
+];
+const P = Object.fromEntries(PARAMS.map((d) => [d.k, d]));
+/** 聴き比べのキー: [番号, 名前（雑音除去・圧縮）, 色] */
+const KEYS = [
+  ['原音', '原音', 'k0'],
+  ['雑音入り', '圧縮後', 'k1'],
+  ['除いた後', '差分', 'k2'],
+  ['取り除いた成分', '', 'k3'],
+] as const;
+const SC = [
+  { k: 'b', h: '雑音入り' },
+  { k: 'a', h: '除いた後' },
+];
+---
+<SiteLayout title={name} tool={{ id: 'wavelet-denoise', name }} description="ウェーブレットの小さい係数を捨てて戻し、雑音を除いた音と圧縮した音を、原音・取り除いた成分と同じ位置で切り替えて聴き比べます。閾値の規則（VisuShrink・SureShrink・BayesShrink）と、同じ数の係数を残した MDCT・DCT・DFT との違いを、SN 比・ビット数・スカログラムで比べられます。" note="音声はこの端末の中だけで処理し、送信しません。">
+  <PageTitle title={name}>ウェーブレットの係数のうち小さいものを捨てて戻すと、雑音が消え、少ないビットで音を表せます。原音・雑音入り・除いた後・取り除いた成分を、再生を止めずに同じ位置で切り替えて聴き比べられます。圧縮では同じ数の係数を残した MDCT・DCT・DFT と比べます。試しの音のほか、音楽ファイルやマイクで録った数秒も使えます。</PageTitle>
+  <div class="mini" data-mini="op" aria-hidden="true"><span>SN 比<b id="m-snr">—</b></span><span>残した<b id="m-kept">—</b></span><span id="m-xl">改善<b id="m-x">—</b></span></div>
+
+  <div class="tgrid" id="wd" data-m="dn">
+    <Panel hid="hd-ab" title="聴き比べ" class="a-ab" fixed>
+      <div slot="aux" class="seg" id="ab-mode" role="group" aria-label="目的"><button type="button" data-v="dn" aria-pressed="true" title="雑音を足して、小さい係数を閾値で捨てる">雑音除去</button><button type="button" data-v="cp" aria-pressed="false" title="大きい順に係数を残して量子化する">圧縮</button></div>
+      <div class="bar"><span class="bl" id="ab-src-l">入力</span><div class="seg" id="ab-src" data-nosave role="group" aria-labelledby="ab-src-l"><button type="button" data-v="test" aria-pressed="true" title="この端末の中で作る 3 秒の音（頭に 0.5 秒の無音）">試しの音</button><button type="button" data-v="file" aria-pressed="false" title="WAV・MP3・FLAC など。先頭 10 秒">ファイル</button><button type="button" data-v="mic" aria-pressed="false" title="押している間（最大 10 秒）録る">マイク</button></div></div>
+      <div class="ptab" id="ab-tab" data-src="test">
+        <ChoiceRow k="clip" name="試しの音" choices={CLIPS} value="drums" layout="chips" wide />
+        <div class="prow" id="p-file">
+          <div class="c-sym" aria-hidden="true"></div>
+          <div class="c-name"><span class="pn">ファイル</span><p class="desc tip" role="tooltip" hidden>WAV・MP3・FLAC など。先頭 10 秒をモノラルにして使います。この枠へ落としても読み込めます</p></div>
+          <div class="c-val"><div class="seg"><button type="button" id="ab-fileBtn">ファイルを選ぶ</button></div><input type="file" id="ab-file" accept="audio/*,.wav,.mp3,.m4a,.ogg,.flac" hidden></div>
+          <div class="c-sub"><p class="msg" id="ab-fileMsg" aria-live="polite">まだ選んでいません</p></div>
+        </div>
+        <div class="prow" id="p-mic">
+          <div class="c-sym" aria-hidden="true"></div>
+          <div class="c-name"><span class="pn">マイク</span><p class="desc tip" role="tooltip" hidden>押すと録り始め、もう一度押すか 10 秒で止めます。録っている間は鳴らしません</p></div>
+          <div class="c-val"><div class="seg"><button type="button" id="ab-rec" aria-pressed="false"><span class="led" id="ab-recLed" aria-hidden="true"></span><span id="ab-recT">録る</span></button></div></div>
+          <div class="c-sub"><p class="msg" id="ab-micMsg" aria-live="polite">まだ録っていません</p></div>
+        </div>
+      </div>
+      <div class="keys" id="ab-keys" role="group" aria-label="聴く音（1〜4 のキーでも切り替え）">
+        {KEYS.map(([d, c, cls], i) => (
+          <button type="button" class:list={['key', cls]} data-i={i} aria-pressed={i === 2 ? 'true' : 'false'}><kbd>{i + 1}</kbd><b data-dn={d} data-cp={c}>{d}</b><small id={`ab-km${i}`}></small></button>
+        ))}
+      </div>
+      <div class="bar cp-only"><span class="bl" id="ab-b-l">圧縮後の基底</span><div class="seg" id="ab-b" role="group" aria-labelledby="ab-b-l">{BASES.map(([v, l], i) => <button type="button" data-v={v} aria-pressed={i === 0 ? 'true' : 'false'}>{l}</button>)}</div></div>
+      <div class="tp">
+        <button type="button" class="tp-ib" id="ab-home" title="頭へ戻す" aria-label="頭へ戻す"><svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1.5" y="1.5" width="1.8" height="9"/><path d="M10.5 1.5v9L4 6z"/></svg></button>
+        <button type="button" class="tp-pp" id="ab-pp" title="再生・一時停止（スペース）" aria-label="再生する"><svg class="i-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.2l7.6 4.8L3 10.8z"/></svg><svg class="i-pause" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="2.8" height="9"/><rect x="7.2" y="1.5" width="2.8" height="9"/></svg></button>
+        <div class="tp-tl">
+          <div class="wv" id="ab-wv" role="slider" tabindex="0" aria-label="再生の位置" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0"><canvas id="ab-wc"></canvas><span class="qz" id="ab-qz" hidden></span><span class="wph" id="ab-ph"></span></div>
+          <div class="tp-tm"><span id="ab-tm">0.00 / 0.00 s</span><span id="ab-busy" class="busy" hidden>計算しています…</span></div>
+        </div>
+      </div>
+    </Panel>
+
+    <Panel hid="hd-sc" title="スカログラム" class="a-sc">
+      <span slot="aux" class="aux">Morlet・1 オクターブ 8 行</span>
+      <div class="sc2">
+        {SC.map((v) => (
+          <figure>
+            <figcaption class="vh"><span><b id={`sc-h${v.k}`}>{v.h}</b></span></figcaption>
+            <div class="scope dk"><div class="cv"><canvas id={`sc-c${v.k}`} width="300" height="64"></canvas><svg viewBox="-50 -14 462 202" id={`sc-s${v.k}`} role="img" aria-label={`${v.h}のスカログラム`}><g class="ax"></g><path class="phd" id={`sc-ph${v.k}`} d=""/><path class="cur" id={`sc-cur${v.k}`} d=""/></svg></div></div>
+          </figure>
+        ))}
+      </div>
+      <div class="sbar lg"><span class="stag"><b>−90</b><i class="cbar" aria-hidden="true"></i><b>0</b> dBFS</span><a class="stag" href="../spectrum/">スペクトラムアナライザ</a></div>
+      <div class="sbar rdbar" data-ph="t 0.00 s  f 12.3k Hz  前 −123.4  後 −123.4 dBFS"><span class="rd" id="sc-rd"></span></div>
+    </Panel>
+
+    <Panel hid="hd-pr" title="雑音除去" class="a-pr a-out">
+      <div class="ptab">
+        <ChoiceRow k="noise" name="足す雑音" choices={NOISE} value="white" />
+        <ParamRow d={P.snr} />
+        <ChoiceRow k="rule" name="閾値の規則" choices={RULE} value="sure" layout="chips" />
+        <ChoiceRow k="m" name="切り方" choices={SHRINK} value="soft" />
+        <ChoiceRow k="sm" name="雑音の σ" sub="閾値の基準にする雑音の大きさの測り方" choices={SIGMA} value="global" />
+        <ParamRow d={P.k} />
+        <ChoiceRow k="spin" name="ずらして平均" choices={SPIN} value="1" />
+        <ParamRow d={P.keep} />
+        <ChoiceRow k="w" name="ウェーブレット" sub="8 段に分ける" choices={WAV} value="db4" />
+      </div>
+      <dl class="metrics" id="pr-out"></dl>
+      <div class="tt-w" id="pr-tab"></div>
+    </Panel>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools list={related} />
+  <script>
+    import '../tools/wavelet-denoise/client';
+  </script>
+</SiteLayout>

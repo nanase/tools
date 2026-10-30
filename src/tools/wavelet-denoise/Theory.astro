@@ -1,5 +1,5 @@
 ---
-// 動作原理と式（下書き。デザインが決まったら図の名前に合わせて直す）
+// 動作原理と式
 import { TOOLS } from '../../data/tools';
 
 const fr = (a: string, b: string) => `<mfrac><mrow>${a}</mrow><mrow>${b}</mrow></mfrac>`;
@@ -112,6 +112,9 @@ const to = (id: string, t: string) => (TOOLS.some((x) => x.id === id && !x.s) ? 
   <li>DCT・DFT は全体を 2 の累乗の長さまで 0 で埋めて 1 回で変換する。DCT は Makhoul の並べ替えで FFT 1 回<Fragment set:html={rf(12)} />。DFT は余弦と正弦の係数を別に数える</li>
   <li>MDCT は 2048 点の枠（M = 1024）で、窓は正弦。聴覚の模型は使わない（どの基底も同じ規則で比べる）</li>
   <li>試しの音の撥弦は Karplus・Strong の算法<Fragment set:html={rf(13)} /></li>
+  <li>ファイルは先頭 10 秒をモノラルにして使う。マイクはブラウザの雑音を消す・音量をそろえる処理を切り、最大 10 秒を録る</li>
+  <li>聴き比べの音はどれも同じ時刻から繰り返して鳴らし、音量だけを 10 ms ほどで切り替える</li>
+  <li>スカログラムは Morlet（<math><msub><mi>ω</mi><mn>0</mn></msub><mo>=</mo><mn>6</mn></math>）で 50 Hz〜12 kHz を 1 オクターブ 8 行、10 ms ごと。振幅 1 の正弦波が 0 dBFS</li>
   <li>音はこの端末の中だけで処理し、送らない</li>
 </ul>
 

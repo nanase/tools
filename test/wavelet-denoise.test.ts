@@ -163,6 +163,14 @@ describe('量子化とビット数', () => {
   it('K 番目に大きい絶対値', () => {
     expect(kth([1, -5, 3, 0.5], 2)).toBe(3);
     expect(kth([1, 2], 0)).toBe(Number.POSITIVE_INFINITY);
+    /* 0 でない係数が足りなければ、0 でない最も小さいもの */
+    expect(kth([0, 0, 0, 3, -0.5], 3)).toBe(0.5);
+    expect(kth([0, 0], 1)).toBe(0);
+  });
+  it('無音を多く含む音: 0 でない係数をすべて残しても、量子化した音は元の音に近い', () => {
+    const x = new Float32Array(48000);
+    for (let i = 20000; i < 20400; i++) x[i] = 0.8 * Math.sin(i / 3);
+    for (const [b] of BASES) expect(snr(x, compressAudio(x, b, 0.3).y)).toBeGreaterThan(10);
   });
 });
 
