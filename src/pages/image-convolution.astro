@@ -25,13 +25,13 @@ const PW = W + 2 * PAD,
   PH = H + 2 * PAD;
 const ICON_HOME = '<rect x="1.5" y="1.5" width="1.8" height="9"/><path d="M10.5 1.5v9L4 6z"/>';
 ---
-<SiteLayout title={name} tool={{ id: 'image-convolution', name }} description="カーネルを画像の上でずらし、ぼかし・鮮鋭化・エッジ検出の出力を 1 画素ずつ作る様子を見せます。積和の内訳、カーネルの編集、端の処理、相関との違いを確かめられます。" note="画像はこの端末の中だけで処理し、送信しません。画像は灰色にして 256 × 192 画素に縮めます。">
-  <PageTitle title={name}>カーネル（小さな重みの表）を画像の上で 1 画素ずつずらし、重なった画素との積の和を出力にします。横線より上が出力、下が入力です。ぼかし・鮮鋭化・エッジ検出などのカーネルを選び、係数を上下にドラッグして作り変えられます。1 次元の原理は「畳み込み」のページで扱います。</PageTitle>
+<SiteLayout title={name} tool={{ id: 'image-convolution', name }} description="画像の畳み込みを 1 画素ずつ見せます。ぼかし・鮮鋭化・エッジ検出などのカーネルを選んで係数も編集できます。" note="画像は端末の中だけで処理して送信しません。256 × 192 画素のグレースケールに縮めます。">
+  <PageTitle title={name}>カーネル（小さな重みの表）を 1 画素ずつずらして積和をとります。横線より上が出力で下が入力です。係数は上下にドラッグして変えられます。1 次元の原理は「畳み込み」のページにあります。</PageTitle>
 
   <div class="tgrid">
     <Panel hid="hd-img" title="画像" class="a-img" fixed>
       <div slot="aux" class="seg" id="p-view" role="group" aria-label="計算の順" data-nosave>
-        <button type="button" data-v="out" aria-pressed="true" title="出力の 1 画素ごとに、窓の中の入力を集めて積和をとる">出力ごとに集める</button><button type="button" data-v="in" aria-pressed="false" title="入力の 1 画素ごとに、その値を掛けたカーネルを出力へ足し込む。全部配り終えると同じ結果になる">入力ごとに配る</button>
+        <button type="button" data-v="out" aria-pressed="true" title="窓の中の入力との積和を出力の 1 画素にする">出力ごとに集める</button><button type="button" data-v="in" aria-pressed="false" title="入力の値 × カーネルを出力へ足していく。配り終えると集めた結果と同じ">入力ごとに配る</button>
       </div>
       <div class="ibar">
         <div class="grp"><span class="lbl" id="l-src">画像</span>
