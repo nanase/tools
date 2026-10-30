@@ -6,7 +6,6 @@ import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
 import RelatedTools from '../components/RelatedTools.astro';
-import { order, TOOLS } from '../data/tools';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import '../tools/moon/style.css';
 import { ELEV, LAT, LON, SPEEDS } from '../tools/moon/params';
@@ -14,11 +13,6 @@ import Theory from '../tools/moon/Theory.astro';
 
 const name = '月';
 /* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
-const CAT = '天文';
-const related = [
-  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'moon')),
-  ...TOOLS.filter((t) => t.c !== CAT && !t.s),
-];
 const WD = ['日', '月', '火', '水', '木', '金', '土'];
 ---
 <SiteLayout title={name} tool={{ id: 'moon', name }} description="選んだ日時と観測地から見た月を、満ち欠け・秤動・距離と、月面の地形の影まで再現します。月カレンダーと月食も見られます。" note="月の位置は Meeus の式、標高は NASA LRO LOLA（PDS、NASA's Scientific Visualization Studio の CGI Moon Kit）、色は NASA's Scientific Visualization Studio の CGI Moon Kit、地名は IAU/USGS の惑星地名辞典と Wikipedia（CC BY-SA 4.0）、月食は Eclipse Predictions by Fred Espenak (NASA's GSFC)、本影の色は Mallama (2022) を加工して作成。地球照の明るさは推定です。">
@@ -145,7 +139,7 @@ const WD = ['日', '月', '火', '水', '木', '金', '土'];
     </Collapsible>
   </div>
 
-  <RelatedTools list={related} />
+  <RelatedTools current="moon" />
   <script>
     import '../tools/moon/client';
   </script>

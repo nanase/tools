@@ -5,7 +5,6 @@ import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
 import RelatedTools from '../components/RelatedTools.astro';
-import { order, TOOLS } from '../data/tools';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import '../tools/convolution/style.css';
 import { DICE, SHAPES, WIDTHS } from '../tools/convolution/params';
@@ -13,11 +12,6 @@ import Theory from '../tools/convolution/Theory.astro';
 
 const name = '畳み込み';
 /* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
-const CAT = '数学';
-const related = [
-  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'convolution')),
-  ...TOOLS.filter((t) => t.c !== CAT && !t.s),
-];
 const W = (k: string) => {
   const d = WIDTHS.find((x) => x.k === k);
   if (!d) throw new Error(k);
@@ -123,7 +117,7 @@ const SH = SHAPES.map(([v, l, t]) => [v, l, t] as const);
     </Collapsible>
   </div>
 
-  <RelatedTools list={related} />
+  <RelatedTools current="convolution" />
   <script>
     import '../tools/convolution/client';
   </script>

@@ -6,7 +6,6 @@ import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
 import RelatedTools from '../components/RelatedTools.astro';
-import { order, TOOLS } from '../data/tools';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import '../tools/solar-eclipse/style.css';
 import { ELEV, LAT, LON, SPEEDS, ZOOMS } from '../tools/solar-eclipse/params';
@@ -14,11 +13,6 @@ import Theory from '../tools/solar-eclipse/Theory.astro';
 
 const name = '日食';
 /* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
-const CAT = '天文';
-const related = [
-  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'solar-eclipse')),
-  ...TOOLS.filter((t) => t.c !== CAT && !t.s),
-];
 ---
 <SiteLayout title={name} tool={{ id: 'solar-eclipse', name }} description="紀元前 2000 年から 3000 年までの日食を、選んだ観測地から見た空と太陽、宇宙から見た地球に落ちる月の影、サロス周期で並ぶ日食の経路で再現します。" note="日食の要素は NASA の五千年正典（Eclipse Predictions by Fred Espenak, NASA's GSFC）、地図は Natural Earth、地名は国土数値情報（国土交通省）と全国地方公共団体コード（総務省）を加工して作成。月の縁の凹凸と大気差は入れていません。">
   <PageTitle title={name}>NASA の五千年正典（Espenak & Meeus 2006）のベッセル要素から、選んだ観測地での日食の始まり・最大・終わりの時刻と食分を計算し、空の暗さ、欠けていく太陽、皆既のコロナとダイヤモンドリングを描きます。宇宙から見た地球には月の影が落ち、サロス周期（18 年 11 日）で並ぶ同じ系列の日食の経路も世界地図で比べられます。</PageTitle>
@@ -158,7 +152,7 @@ const related = [
     </Collapsible>
   </div>
 
-  <RelatedTools list={related} />
+  <RelatedTools current="solar-eclipse" />
   <script>
     import '../tools/solar-eclipse/client';
   </script>

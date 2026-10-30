@@ -96,7 +96,7 @@ const ln = (id: string, label: string) =>
 <ul class="tl">
   <li>時間の畳み込みは周波数の積<Fragment set:html={rf(3)} /><Fragment set:html={rf(6)} />。核の周波数特性が、入力の各周波数を何倍にするかを決める</li>
   <li><math><mi>L</mi></math> 点の DFT の積は、長さ <math><mi>L</mi></math> の円状畳み込みに当たる。はみ出した分が頭へ回るので、<math><mi>L</mi><mo>≥</mo><mi>N</mi><mo>+</mo><mi>M</mi><mo>−</mo><mn>1</mn></math> まで 0 で埋める<Fragment set:html={rf(3)} /></li>
-  <li>FFT で変換して掛けて戻すと速い。核が約 64 点より長いと直接の和より速い<Fragment set:html={rf(4)} /><Fragment set:html={rf(8)} />。算法は <Fragment set:html={ln('fft', 'FFT')} />、DFT の周期性は <Fragment set:html={ln('dct-dft', 'DCT と DFT')} /></li>
+  <li>FFT で変換して掛けて戻すと速い。核が約 64 点より長いと直接の和より速い<Fragment set:html={rf(4)} /><Fragment set:html={rf(8)} />。算法は <Fragment set:html={ln('fft', 'FFT')} /></li>
 </ul>
 
 <h3>このツールで決めたこと</h3>

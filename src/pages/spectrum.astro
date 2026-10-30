@@ -6,7 +6,6 @@ import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
 import RelatedTools from '../components/RelatedTools.astro';
-import { order, TOOLS } from '../data/tools';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import '../tools/audio/style.css';
 import '../tools/spectrum/style.css';
@@ -18,11 +17,6 @@ import Theory from '../tools/spectrum/Theory.astro';
 
 const name = 'スペクトラムアナライザ';
 /* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
-const CAT = '音響';
-const related = [
-  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'spectrum')),
-  ...TOOLS.filter((t) => t.c !== CAT && !t.s),
-];
 ---
 <SiteLayout title={name} tool={{ id: 'spectrum', name }} description="マイクや音楽ファイルの音を FFT で周波数に分け、スペクトラムとスペクトログラムで表示します。" note="音声はこの端末の中だけで処理し、送信しません。">
   <PageTitle title={name}>マイクや音楽ファイルの音を FFT で周波数ごとの強さに分け、スペクトラムと、時間とともに流れるスペクトログラムで表示します。</PageTitle>
@@ -117,7 +111,7 @@ const related = [
     </Collapsible>
   </div>
 
-  <RelatedTools list={related} />
+  <RelatedTools current="spectrum" />
   <script>
     import '../tools/spectrum/client';
   </script>

@@ -1,21 +1,22 @@
 ---
-/** 関連ツール。表示件数の調整は lib/tool-page.ts */
-import { order, TOOLS, type Tool } from '../data/tools';
+/** 関連ツール。並びは data/tools.ts の r、表示件数の調整は lib/tool-page.ts */
+import { TOOLS } from '../data/tools';
 import Panel from './Panel.astro';
 import ToolCard from './ToolCard.astro';
 
-type Props =
-  | {
-      current: string;
-      /** 同じカテゴリのツールを並べる */
-      category: string;
-    }
-  | {
-      /** 並べるツールを直接渡す（カテゴリにほかのツールがない場合など） */
-      list: Tool[];
-    };
-const p = Astro.props;
-const list = 'list' in p ? p.list : order(TOOLS.filter((t) => t.c === p.category && t.id !== p.current));
+interface Props {
+  current: string;
+}
+const { current } = Astro.props;
+const self = TOOLS.find((t) => t.id === current);
+if (!self) throw new Error(`ツールがない: ${current}`);
+/* r の順、足りなければ同じカテゴリ、ほかのカテゴリの順で埋める */
+const pub = TOOLS.filter((t) => !t.s && t.id !== current);
+const list = [
+  ...self.r.map((id) => pub.find((t) => t.id === id)).filter((t) => t !== undefined),
+  ...pub.filter((t) => t.c === self.c && !self.r.includes(t.id)),
+  ...pub.filter((t) => t.c !== self.c && !self.r.includes(t.id)),
+];
 ---
 <Panel hid="hd-rel" title="関連ツール" class="rel" fixed>
   <a slot="aux" class="aux" href={import.meta.env.BASE_URL}>すべてのツール</a>

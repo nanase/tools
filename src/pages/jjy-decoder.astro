@@ -5,7 +5,6 @@ import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
 import RelatedTools from '../components/RelatedTools.astro';
-import { order, TOOLS } from '../data/tools';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import '../tools/jjy-decoder/style.css';
 import Fan from '../tools/jjy/Fan.astro';
@@ -17,11 +16,6 @@ import Theory from '../tools/jjy-decoder/Theory.astro';
 
 const name = 'JJY デコーダ';
 /* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
-const CAT = '信号・通信';
-const related = [
-  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'jjy-decoder')),
-  ...TOOLS.filter((t) => t.c !== CAT && !t.s),
-];
 ---
 <SiteLayout title={name} tool={{ id: 'jjy-decoder', name }} description="音声から JJY の信号を読み取り、信号が表す時刻とフラグに復号します。" note="音声はこの端末の中だけで処理し、送信しません。時刻のずれはこの端末の時計と比べています。">
   <PageTitle title={name}>音声から標準電波 JJY のタイムコードを読み取り、信号が表す時刻とフラグに復号します。JJY シミュレータの可聴音のような、正弦波の振幅を高出力と低出力で切り替えた音を読み取れます。</PageTitle>
@@ -100,7 +94,7 @@ const related = [
     </Collapsible>
   </div>
 
-  <RelatedTools list={related} />
+  <RelatedTools current="jjy-decoder" />
   <div class="toast" id="toast" role="status" aria-live="polite" data-off></div>
   <script>
     import '../tools/jjy-decoder/client';

@@ -7,7 +7,6 @@ import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
 import RelatedTools from '../components/RelatedTools.astro';
 import RowReset from '../components/RowReset.astro';
-import { order, TOOLS, type Tool } from '../data/tools';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import '../tools/qr-code/style.css';
 import { BOOST_CHOICES, ECC_CHOICES, MAX_LEN, MODE_CHOICES, TEXT0, VER } from '../tools/qr-code/params';
@@ -15,13 +14,6 @@ import Theory from '../tools/qr-code/Theory.astro';
 
 const name = 'QR コード';
 /* 同じカテゴリ（準備中を含む）の後ろに、符号化を扱うもの、ほかの公開中のツールを並べる */
-const CAT = '信号・通信';
-const NEAR = ['jpeg', 'noise'];
-const related = [
-  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'qr-code')),
-  ...NEAR.map((id) => TOOLS.find((t) => t.id === id)).filter((t): t is Tool => !!t && !t.s),
-  ...TOOLS.filter((t) => t.c !== CAT && !t.s && !NEAR.includes(t.id)),
-];
 const STAGES = [
   ['文字列', 'q-s0'],
   ['ビット列', 'q-s1'],
@@ -134,7 +126,7 @@ const TOOLS_SOIL = [
     </Collapsible>
   </div>
 
-  <RelatedTools list={related} />
+  <RelatedTools current="qr-code" />
   <script>
     import '../tools/qr-code/client';
   </script>

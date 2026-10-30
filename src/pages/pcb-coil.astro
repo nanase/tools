@@ -5,7 +5,6 @@ import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
 import RelatedTools from '../components/RelatedTools.astro';
-import { TOOLS, type Tool } from '../data/tools';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import '../tools/pcb-coil/style.css';
 import { gridSvg } from '../lib/scope';
@@ -18,9 +17,6 @@ import Theory from '../tools/pcb-coil/Theory.astro';
 const name = 'PCBコイル';
 const row = (ks: string[]) => PARAMS.filter((d) => ks.includes(d.k));
 /* 同じ電子回路の公開中のツール、続いて信号・フィルタに近いもの */
-const related = ['passive-combination', 'timer555', 'jjy', 'biquad', 'pid']
-  .map((id) => TOOLS.find((t) => t.id === id))
-  .filter((t): t is Tool => !!t && !t.s);
 ---
 <SiteLayout title={name} tool={{ id: 'pcb-coil', name }} note="計算結果は近似式による参考値です。" description="プリント基板上のうずまき状の配線で作るコイルについて、インダクタンス・抵抗・Q と共振用のコンデンサを求めます。">
   <PageTitle title={name}>プリント基板の銅箔で作るうずまき状のコイル（スパイラルコイル）について、形と寸法からインダクタンス・抵抗・Q を求め、指定の周波数で共振させるコンデンサの値を出します。NFC や RFID のアンテナの設計に使えます。</PageTitle>
@@ -135,7 +131,7 @@ const related = ['passive-combination', 'timer555', 'jjy', 'biquad', 'pid']
     </Collapsible>
   </div>
 
-  <RelatedTools list={related} />
+  <RelatedTools current="pcb-coil" />
   <script>
     import '../tools/pcb-coil/client';
   </script>

@@ -7,7 +7,6 @@ import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
 import RelatedTools from '../components/RelatedTools.astro';
 import RowReset from '../components/RowReset.astro';
-import { order, TOOLS } from '../data/tools';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import '../tools/temperament/style.css';
 import { A4, PIANOS, VOL } from '../tools/temperament/params';
@@ -17,13 +16,6 @@ import { KX, keyboard, LH, LW } from '../tools/temperament/view';
 
 const name = '音律とうなり';
 /* チューナー・オルガン・ピアノを先に、続けて同じカテゴリ（準備中を含む）、ほかのカテゴリの公開中のツール */
-const CAT = '楽器・調律';
-const FIRST = ['tuner', 'organ', 'piano'];
-const related = [
-  ...FIRST.map((id) => TOOLS.find((t) => t.id === id)).filter((t) => t !== undefined),
-  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'temperament' && !FIRST.includes(t.id))),
-  ...TOOLS.filter((t) => t.c !== CAT && !t.s && !FIRST.includes(t.id)),
-];
 const KEYS = keyboard();
 ---
 <SiteLayout title={name} tool={{ id: 'temperament', name }} description="平均律・純正律・ミーントーン・ヴェルクマイスターなどの音律で和音を鳴らし、うなりの速さを数値と音で比べます。" note="音はこの端末の中で作り、送信しません。">
@@ -140,7 +132,7 @@ const KEYS = keyboard();
     </Collapsible>
   </div>
 
-  <RelatedTools list={related} />
+  <RelatedTools current="temperament" />
   <script>
     import '../tools/temperament/client';
   </script>

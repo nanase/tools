@@ -6,7 +6,6 @@ import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
 import RelatedTools from '../components/RelatedTools.astro';
-import { order, TOOLS } from '../data/tools';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import { gridSvg } from '../lib/scope';
 import '../tools/engine/style.css';
@@ -16,11 +15,6 @@ import Theory from '../tools/engine/Theory.astro';
 
 const name = 'エンジン音響モデル';
 /* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
-const CAT = '音響モデル';
-const related = [
-  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'engine')),
-  ...TOOLS.filter((t) => t.c !== CAT && !t.s),
-];
 ---
 <SiteLayout title={name} tool={{ id: 'engine', name }} description="空冷 4 ストローク単気筒エンジン（Honda CT125 の公表諸元をもとにした模型）を物理モデルで回します。燃焼、吸気と排気の管、マフラーを計算して、排気音・トルク・出力を再現します。" note="音と計算結果は、公表諸元と録音に合わせた簡略な物理モデルによるものです。">
   <PageTitle title={name}>シリンダの中の燃焼と、吸気・排気の管を行き来する圧力の波、マフラーの消音を計算して、空冷 4 ストローク単気筒エンジンの音を作ります。寸法は Honda CT125（JA65・JA55）の公表諸元をもとにし、公表されていない吸排気とマフラーの寸法は録音に合わせました。スロットルを開けると、回転・トルク・出力・排気音がすぐに変わります。4 段の変速で走らせ、坂やブレーキも試せます。</PageTitle>
@@ -202,7 +196,7 @@ const related = [
     </Collapsible>
   </div>
 
-  <RelatedTools list={related} />
+  <RelatedTools current="engine" />
   <script>
     import '../tools/engine/client';
   </script>

@@ -6,7 +6,6 @@ import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
 import RelatedTools from '../components/RelatedTools.astro';
-import { order, TOOLS } from '../data/tools';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import '../tools/fir/style.css';
 import { gridSvg } from '../lib/scope';
@@ -20,11 +19,6 @@ const row = (ks: string[]) => PARAMS.filter((d) => ks.includes(d.k));
 const t0 = TYPES[0],
   m0 = METHODS[0];
 /* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
-const CAT = 'デジタルフィルタ';
-const related = [
-  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'fir')),
-  ...TOOLS.filter((t) => t.c !== CAT && !t.s),
-];
 ---
 <SiteLayout title={name} tool={{ id: 'fir', name }} note="係数は倍精度の数値計算で求めた値です。実際のリップル・減衰と IIR フィルタの次数は参考値です。" description="直線位相の FIR フィルタを、窓関数法・等リップル（Parks–McClellan 法）・最小二乗法で設計し、周波数特性・零点・係数を求めます。">
   <PageTitle title={name}>直線位相の FIR フィルタの係数を、窓関数法（カイザー窓など）・等リップル（Parks–McClellan 法）・最小二乗法で求めます。通過域と阻止域の仕様からタップ数を決め、振幅・位相・群遅延の周波数特性、インパルス応答、z 平面の零点を描きます。係数は C の配列で書き出せ、ホワイトノイズに掛けた音も聞けます。</PageTitle>
@@ -165,7 +159,7 @@ const related = [
     </Collapsible>
   </div>
 
-  <RelatedTools list={related} />
+  <RelatedTools current="fir" />
   <div class="toast" id="toast" role="status" aria-live="polite" data-off></div>
   <script>
     import '../tools/fir/client';

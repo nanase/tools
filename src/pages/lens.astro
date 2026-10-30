@@ -6,7 +6,6 @@ import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
 import RelatedTools from '../components/RelatedTools.astro';
-import { order, TOOLS } from '../data/tools';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import '../tools/lens/style.css';
 import { LENSES } from '../tools/lens/lenses';
@@ -16,11 +15,6 @@ import Theory from '../tools/lens/Theory.astro';
 
 const name = 'カメラレンズ';
 /* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
-const CAT = '画像・光学';
-const related = [
-  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'lens')),
-  ...TOOLS.filter((t) => t.c !== CAT && !t.s),
-];
 ---
 <SiteLayout title={name} tool={{ id: 'lens', name }} description="実在の設計のカメラレンズを、面の曲率・間隔・硝材のとおりに光線を追跡してシミュレートします。絞り・焦点距離・ピントと、ボケ・被写界深度・収差を、3D の被写体や月・惑星を写した映像で確かめられます。" note="映像は、公開されたレンズデータのとおりに光線を幾何光学で追跡したものです（回折は近似）。">
   <PageTitle title={name}>写真用のレンズの断面の形（面の曲率・間隔・ガラスの種類）のとおりに、センサーの各点から光線をレンズへ逆にたどって 3D の被写体に当て、レンズ越しの映像を作ります。ボケ、被写界深度、球面収差やコマ、像面の湾曲、歪曲、色のにじみ、周辺の暗さが、実際のレンズと同じしくみで現れます。収差のない理想のレンズとも比べられます。</PageTitle>
@@ -155,7 +149,7 @@ const related = [
     <div class="fs-p"><div class="ptab" id="fs-t"></div></div>
   </div>
 
-  <RelatedTools list={related} />
+  <RelatedTools current="lens" />
   <script>
     import '../tools/lens/client';
   </script>

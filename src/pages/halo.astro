@@ -7,7 +7,6 @@ import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
 import RelatedTools from '../components/RelatedTools.astro';
 import RowReset from '../components/RowReset.astro';
-import { order, TOOLS } from '../data/tools';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import '../tools/halo/style.css';
 import { FIG } from '../tools/halo/figure';
@@ -17,11 +16,6 @@ import Theory from '../tools/halo/Theory.astro';
 
 const name = 'ハロ（暈）';
 /* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
-const CAT = '画像・光学';
-const related = [
-  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'halo')),
-  ...TOOLS.filter((t) => t.c !== CAT && !t.s),
-];
 const ORIENTS = [
   ['random', 'ランダム', '向きがそろわない'],
   ['plate', '板', 'c 軸が鉛直（底面が水平）。幻日・環天頂アーク・環水平アーク・太陽柱'],
@@ -152,7 +146,7 @@ const ORIENTS = [
     </div>
   </div>
 
-  <RelatedTools list={related} />
+  <RelatedTools current="halo" />
   <script>
     import '../tools/halo/client';
   </script>

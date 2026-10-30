@@ -6,7 +6,6 @@ import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
 import RelatedTools from '../components/RelatedTools.astro';
-import { order, TOOLS, type Tool } from '../data/tools';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import '../tools/jpeg/style.css';
 import { GAINS, HUFFS, MAX_SIDE, QTABS, QUALITY, SUBS, UPS, VIEWS, ZOOMS } from '../tools/jpeg/params';
@@ -14,13 +13,6 @@ import Theory from '../tools/jpeg/Theory.astro';
 
 const name = 'JPEG';
 /* 同じカテゴリ（準備中を含む）の後ろに、信号処理に近いもの、ほかの公開中のツールを並べる */
-const CAT = '画像・光学';
-const NEAR = ['spectrum', 'biquad', 'fm-synth'];
-const related = [
-  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'jpeg')),
-  ...NEAR.map((id) => TOOLS.find((t) => t.id === id)).filter((t): t is Tool => !!t && !t.s),
-  ...TOOLS.filter((t) => t.c !== CAT && !t.s && !NEAR.includes(t.id)),
-];
 const C64 = Array.from({ length: 64 }, (_, i) => i);
 /** 段 3〜7 の読み値の最も長い例（読み値が変わっても段の高さを保つ） */
 const RD_PH: Record<string, string> = {
@@ -195,7 +187,7 @@ const MX = {
     </Collapsible>
   </div>
 
-  <RelatedTools list={related} />
+  <RelatedTools current="jpeg" />
   <div class="toast" id="toast" role="status" aria-live="polite" data-off></div>
   <script>
     import '../tools/jpeg/client';

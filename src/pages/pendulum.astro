@@ -7,7 +7,6 @@ import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
 import RelatedTools from '../components/RelatedTools.astro';
 import Scope from '../components/Scope.astro';
-import { order, TOOLS } from '../data/tools';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import type { ParamDef } from '../lib/param-def';
 import { gridSvg } from '../lib/scope';
@@ -30,11 +29,6 @@ import Theory from '../tools/pendulum/Theory.astro';
 
 const name = '倒立振子';
 /* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
-const CAT = '制御';
-const related = [
-  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'pendulum')),
-  ...TOOLS.filter((t) => t.c !== CAT && !t.s),
-];
 /** 定義の一覧から、キーの順に行を取り出す */
 const pick = (L: readonly ParamDef[], ks: readonly string[]) =>
   ks.map((k) => {
@@ -162,7 +156,7 @@ const pick = (L: readonly ParamDef[], ks: readonly string[]) =>
     </Collapsible>
   </div>
 
-  <RelatedTools list={related} />
+  <RelatedTools current="pendulum" />
   <script>
     import '../tools/pendulum/client';
   </script>

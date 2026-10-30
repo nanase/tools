@@ -6,7 +6,6 @@ import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
 import RelatedTools from '../components/RelatedTools.astro';
-import { order, TOOLS } from '../data/tools';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import '../tools/bifurcation/style.css';
 import { MAP_CHOICES, R, SCALES, SND_MODES, SPEEDS, VOL, X0, ZOOMS } from '../tools/bifurcation/params';
@@ -14,11 +13,6 @@ import Theory from '../tools/bifurcation/Theory.astro';
 
 const name = '分岐図';
 /* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
-const CAT = '数学';
-const related = [
-  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'bifurcation')),
-  ...TOOLS.filter((t) => t.c !== CAT && !t.s),
-];
 ---
 <SiteLayout title={name} tool={{ id: 'bifurcation', name }} description="ロジスティック写像・ガウス写像・エノン写像・カオスニューロンなど 9 つの写像で、パラメータを動かすと周期倍分岐をくり返してカオスに至る様子を、クモの巣図・時系列・分岐図・リアプノフ指数を連動させて見ます。Feigenbaum 定数と周期 3 の窓も拡大して確かめられ、値の列を音でも聞けます。" note="倍精度の浮動小数点で計算した参考値です。音はこの端末の中で作り、送信しません。">
   <PageTitle title={name}>ロジスティック写像など 9 つの写像のパラメータを動かし、周期倍分岐からカオスへ至る様子をクモの巣図・時系列・分岐図・リアプノフ指数で見ます。</PageTitle>
@@ -106,7 +100,7 @@ const related = [
     </Collapsible>
   </div>
 
-  <RelatedTools list={related} />
+  <RelatedTools current="bifurcation" />
   <script>
     import '../tools/bifurcation/client';
   </script>

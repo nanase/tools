@@ -6,7 +6,6 @@ import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
 import RelatedTools from '../components/RelatedTools.astro';
-import { order, TOOLS } from '../data/tools';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import { gridSvg } from '../lib/scope';
 import '../tools/audio/style.css';
@@ -20,11 +19,6 @@ import Theory from '../tools/noise/Theory.astro';
 
 const name = 'ノイズジェネレータ';
 /* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
-const CAT = '音響';
-const related = [
-  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'noise')),
-  ...TOOLS.filter((t) => t.c !== CAT && !t.s),
-];
 ---
 <SiteLayout title={name} tool={{ id: 'noise', name }} description="ホワイト・ピンク・ブラウンなどの色のノイズと、線形帰還シフトレジスタ（LFSR）によるノイズを作り、波形・スペクトラム・スペクトログラムで表示して音でも鳴らします。" note="実在の音源のプリセットはシフトレジスタの動きだけをまねたもので、音量の包絡や出力の回路は含みません。">
   <PageTitle title={name}>ホワイト・ピンク・ブラウン・ブルー・バイオレット・グレー・ベルベットの各ノイズと、線形帰還シフトレジスタ（LFSR）によるノイズを作ります。波形・振幅の分布・平均したスペクトラム・スペクトログラムで表示し、スペクトラムの傾きを測ります。どのノイズも実効値を −20 dBFS にそろえるので、切り替えても大きさは変わりません。</PageTitle>
@@ -199,7 +193,7 @@ const related = [
     </Collapsible>
   </div>
 
-  <RelatedTools list={related} />
+  <RelatedTools current="noise" />
   <script>
     import '../tools/noise/client';
   </script>

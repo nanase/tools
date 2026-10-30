@@ -3,7 +3,6 @@ import Collapsible from '../components/Collapsible.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import RelatedTools from '../components/RelatedTools.astro';
-import { order, TOOLS } from '../data/tools';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import '../tools/audio/style.css';
 import '../tools/wavelet/style.css';
@@ -12,14 +11,7 @@ import Theory from '../tools/wavelet/Theory.astro';
 
 const name = 'ウェーブレット変換';
 /* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
-const CAT = '数学';
 /** 応用（雑音除去と圧縮）のページ。できたら先頭に置く */
-const APP = 'wavelet-denoise';
-const related = [
-  ...TOOLS.filter((t) => t.id === APP),
-  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'wavelet' && t.id !== APP)),
-  ...TOOLS.filter((t) => t.c !== CAT && !t.s && t.id !== APP),
-];
 type Opt = readonly (readonly [string, string])[];
 /** 見出しのない選択肢の群（図の上の帯に置く）。id は保存に使う */
 const seg = (id: string, label: string, opts: Opt, v: string) => ({ id, label, opts, v });
@@ -161,7 +153,7 @@ const H8_PH = '平均 (00 + 00) / 2 = 00  差 (00 − 00) / 2 = −0.0  復元 0
     </Collapsible>
   </div>
 
-  <RelatedTools list={related} />
+  <RelatedTools current="wavelet" />
   <script>
     import '../tools/wavelet/client';
   </script>
