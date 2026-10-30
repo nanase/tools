@@ -1,5 +1,5 @@
 /**
- * 原理の図の計算（DOM に依存しない）: フーリエで消える「いつ」・短い波を当てて掛けて足す・8 つの数の平均と差
+ * 原理の図の計算（DOM に依存しない）: フーリエ変換で消える「いつ」・短い波を重ねて掛けて足す・8 つの数の平均と差
  */
 import { type Cwt, coiPeriod, cwt, fourierFactor, PSI0, scales, W0 } from './cwt';
 
@@ -72,7 +72,7 @@ export function scaloOf(x: ArrayLike<number>): Scalo {
 }
 
 /**
- * 位置 u（標本の番号）・尺度 s に Morlet を当てて掛けて足す（スカログラムと同じ W/√s）。
+ * 位置 u（標本の番号）・尺度 s に Morlet を重ねて掛けて足す（スカログラムと同じ W/√s）。
  * cos と sin の 2 つで掛けて足し、波の山の位置（位相 ph）を一番よく合う所へずらす。
  * ずらした波 psi で掛けた prod を足すと、ちょうど大きさ mag になる
  */

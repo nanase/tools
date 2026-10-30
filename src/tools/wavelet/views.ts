@@ -106,7 +106,7 @@ export function initSteps(onLevel: (s: string) => void): void {
     txt('#st-len', lv ? `長さ ${N >> (lv - 1)} → ${N >> lv} + ${N >> lv}` : `長さ ${N}`);
     txt('#st-aux', `${N} 点・${J} 段`);
     pp.classList.toggle('on', S.run);
-    pp.title = S.run ? '一時停止' : '分解を動かす';
+    pp.title = S.run ? '一時停止' : '分解の再生';
     pp.setAttribute('aria-label', pp.title);
     onLevel(`${lv} / ${J}`);
   }

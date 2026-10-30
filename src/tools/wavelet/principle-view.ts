@@ -1,5 +1,5 @@
 /**
- * 原理の枠: 1 フーリエでは「いつ」が消える・2 短い波を当てて掛けて足す・4 2 つずつ平均と差
+ * 原理の枠: 1 フーリエ変換では「いつ」が消える・2 短い波を重ねて掛けて足す・4 隣り合う 2 つの平均と差
  */
 import { Choice } from '../../lib/choice';
 import { $ } from '../../lib/dom';
@@ -73,7 +73,7 @@ function scaloAxes(svg: SVGSVGElement): void {
   svg.prepend(g);
 }
 
-/* ================= 1 フーリエでは「いつ」が消える ================= */
+/* ================= 1 フーリエ変換では「いつ」が消える ================= */
 export function initOrder(): void {
   const xs = $<SVGSVGElement>('#or-x'),
     fs = $<SVGSVGElement>('#or-f'),
@@ -82,7 +82,7 @@ export function initOrder(): void {
     K = 48,
     FH = 120;
   scaloAxes($<SVGSVGElement>('#or-s'));
-  /* 物差しの形: 正弦波は区間の端から端まで続き、ウェーブレットは短い */
+  /* 比べる波の形: 正弦波は区間の端から端まで続き、ウェーブレットは短い */
   {
     const sine = Float64Array.from({ length: PN }, (_, n) => Math.sin((2 * Math.PI * 8 * n) / PN)),
       wav = Float64Array.from({ length: PN }, (_, n) => {
@@ -131,7 +131,7 @@ export function initOrder(): void {
   draw(false);
 }
 
-/* ================= 2 短い波を当てて、掛けて足す ================= */
+/* ================= 2 短い波を重ねて、掛けて足す ================= */
 export function initSlide(onProbe: (s: string) => void): void {
   const pnl = $('.a-sl'),
     xs = $<SVGSVGElement>('#sl-x'),
@@ -170,7 +170,7 @@ export function initSlide(onProbe: (s: string) => void): void {
       kp = maxAbs(p.psi),
       x0 = Math.max(0, ((u - 2 * s * PN) / PN) * W),
       x1 = Math.min(W, ((u + 2 * s * PN) / PN) * W);
-    /* 信号と当てた波（波の山の位置は一番合う所へずらす） */
+    /* 信号とウェーブレット（波の山の位置は一番合う所へずらす） */
     xs.replaceChildren(
       el('rect', { class: 'span', x: x0, y: 0, width: x1 - x0, height: 56 }),
       el('line', { class: 'gl', x1: 0, y1: 28, x2: W, y2: 28 }),
@@ -194,7 +194,7 @@ export function initSlide(onProbe: (s: string) => void): void {
       el('line', { class: 'gl', x1: 0, y1: 28, x2: W, y2: 28 }),
       el('text', { x: -6, y: 32, 'text-anchor': 'end' }, 'x × ψ'),
     );
-    /* 足した値: スカログラムの 1 番明るい所で 1。棒の色はスカログラムの同じ所の色 */
+    /* 合計: スカログラムの 1 番明るい所で 1。棒の色はスカログラムの同じ所の色 */
     gs.replaceChildren(
       el('rect', { class: 'gb', x: 0, y: 3, width: W, height: 16 }),
       el('rect', {
@@ -205,7 +205,7 @@ export function initSlide(onProbe: (s: string) => void): void {
         fill: rgb(lut, Math.max(0.12, (20 * Math.log10(v + 1e-9) + RANGE) / RANGE)),
       }),
       ...[0.25, 0.5, 0.75].map((t) => el('line', { class: 'gl', x1: t * W, y1: 19, x2: t * W, y2: 23 })),
-      el('text', { x: -6, y: 15, 'text-anchor': 'end' }, '足す'),
+      el('text', { x: -6, y: 15, 'text-anchor': 'end' }, '合計'),
     );
     rng.value = String(S.j);
     rng.style.setProperty('--p', String(S.j / PJ));
@@ -213,7 +213,7 @@ export function initSlide(onProbe: (s: string) => void): void {
       fd = f < 10 ? 1 : 0;
     txt(
       '#sl-rd',
-      `t ${(u / PN).toFixed(2)} s  ${f.toFixed(fd)} Hz  幅 ${(4 * s * 1000).toFixed(0)} ms  足した値 ${v.toFixed(2)}`,
+      `t ${(u / PN).toFixed(2)} s  ${f.toFixed(fd)} Hz  幅 ${(4 * s * 1000).toFixed(0)} ms  合計 ${v.toFixed(2)}`,
     );
     onProbe(`${f.toFixed(fd)} Hz`);
     /* スカログラムの印: 位置の縦線、幅の帯（±2s）、丸 */
@@ -276,7 +276,7 @@ export function initSlide(onProbe: (s: string) => void): void {
     stop();
     set(S.u, Number(rng.value));
   });
-  /* 掃く: 今の幅で左から右へ 1.6 秒 */
+  /* 掃引: 今の幅で左から右へ 1.6 秒 */
   $('#sl-sweep').addEventListener('click', () => {
     if (raf) {
       stop();
@@ -317,7 +317,7 @@ export function initSlide(onProbe: (s: string) => void): void {
   draw();
 }
 
-/* ================= 4 2 つずつ平均と差 ================= */
+/* ================= 4 隣り合う 2 つの平均と差 ================= */
 export function initHaar8(): void {
   const svg = $<SVGSVGElement>('#h8-svg'),
     x = [4, 6, 10, 12, 8, 6, 5, 5],
@@ -388,12 +388,12 @@ export function initHaar8(): void {
         b = pv[2 * hk + 1];
       txt(
         '#h8-rd',
-        `平均 (${fn(a)} + ${fn(b)}) / 2 = ${fn((a + b) / 2)}  差 (${fn(a)} − ${fn(b)}) / 2 = ${fn((a - b) / 2)}  戻す ${fn((a + b) / 2)} ± ${fn((a - b) / 2)} → ${fn(a)}, ${fn(b)}`,
+        `平均 (${fn(a)} + ${fn(b)}) / 2 = ${fn((a + b) / 2)}  差 (${fn(a)} − ${fn(b)}) / 2 = ${fn((a - b) / 2)}  復元 ${fn((a + b) / 2)} ± ${fn((a - b) / 2)} → ${fn(a)}, ${fn(b)}`,
       );
     } else if (S.cut) {
       const nz = last.filter((v, i) => i > 0 && v === 0).length,
         err = Math.max(...rec.map((v, i) => Math.abs(v - x[i])));
-      txt('#h8-rd', `0 にした差 ${nz} / 7  戻したときのずれ 最大 ${fn(err)}`);
+      txt('#h8-rd', `0 にした差 ${nz} / 7  復元の誤差 最大 ${fn(err)}`);
     } else txt('#h8-rd', '');
   }
   /* 棒を上下に引く・マスに触れる */

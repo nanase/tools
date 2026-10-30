@@ -1,10 +1,10 @@
 /* ウェーブレット変換のページだけのスタイル（共通は src/styles/site.css、表示窓に重ねるキャンバスは ../audio/style.css） */
 
 /* 枠の並び。上から 1〜5 の順に読む。PC は 4 と 5 を左右に並べ、ほかは全幅 */
-.a-or{order:1}.a-sl{order:2}.a-pl{order:3}.a-h8{order:4}.a-st{order:5}.a-us{order:6}.a-thy{order:7}
+.a-or{order:1}.a-sl{order:2}.a-pl{order:3}.a-h8{order:4}.a-st{order:5}.a-thy{order:6}
 @media (min-width:1000px){
-  .tgrid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-areas:"or or" "sl sl" "pl pl" "h8 st" "us us" "thy thy";align-items:start}
-  .a-or{grid-area:or}.a-sl{grid-area:sl}.a-pl{grid-area:pl}.a-h8{grid-area:h8}.a-st{grid-area:st}.a-us{grid-area:us}.a-thy{grid-area:thy}
+  .tgrid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-areas:"or or" "sl sl" "pl pl" "h8 st" "thy thy";align-items:start}
+  .a-or{grid-area:or}.a-sl{grid-area:sl}.a-pl{grid-area:pl}.a-h8{grid-area:h8}.a-st{grid-area:st}.a-thy{grid-area:thy}
 }
 
 /* 図の上の帯（名前と選択肢） */
@@ -43,10 +43,11 @@ figure{margin:0;min-width:0}
 /* 端の影響（影響の円錐の外）は網 */
 .w-sw-coi{display:inline-block;width:14px;height:10px;border:1px solid var(--line-2);background:repeating-linear-gradient(45deg,var(--ink-3) 0 2px,transparent 2px 4px)}
 
-/* 1 フーリエでは「いつ」が消える */
+/* 1 同じ 1 秒の変換: フーリエ変換では「いつ」が消える */
+.note{margin:8px 2px 0;font-size:12.5px;color:var(--ink-3)}
 .fq{fill:var(--ch2)}
 
-/* 2 短い波を当てて、掛けて足す */
+/* 2 短い波を重ねて、掛けて足す */
 #sl-x{cursor:ew-resize;touch-action:none}
 #sl-s{cursor:crosshair;touch-action:none}
 .wv{fill:none;stroke:var(--accent);stroke-width:1.8;stroke-linejoin:round}
@@ -64,7 +65,7 @@ figure{margin:0;min-width:0}
 .a-sl[data-hand="0"] .hand-only{display:none}
 .a-sl:not(.run) .i-st,.a-sl.run .i-go{display:none}
 
-/* 4 2 つずつ平均と差 */
+/* 4 隣り合う 2 つの平均と差 */
 #h8-svg{touch-action:none}
 .lev{font:500 12.5px var(--mono);color:var(--ink-2);font-variant-numeric:tabular-nums}
 .h8b{fill:var(--ch2);opacity:.85;cursor:ns-resize}
@@ -94,9 +95,3 @@ figure{margin:0;min-width:0}
 .phs span.on{background:var(--ink);border-color:var(--ink);color:var(--surface);font-weight:700}
 .tp-tm{margin-top:6px}
 
-/* 使いみち */
-.uses{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}
-.use{display:grid;gap:2px;padding:10px 12px;border:1px solid var(--line-2);border-radius:var(--r);color:var(--ink);text-decoration:none}
-.use span{font-size:12px;color:var(--ink-3)}
-.use:hover{border-color:var(--ink)}
-.use-n{margin:8px 2px 0;font-size:12.5px;color:var(--ink-3)}

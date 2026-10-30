@@ -21,18 +21,19 @@ const dj = '<mi>δ</mi><mi>j</mi>';
 /* 本文の出典番号 */
 const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
 ---
-<h3>1 フーリエと「いつ」</h3>
+<h3>1 フーリエ変換と「いつ」</h3>
 <div class="eqs">
   <math display="block" set:html={`${sq('X', it('k'))}<mo>=</mo>${sum('<mi>n</mi><mo>=</mo><mn>0</mn>', '<mi>N</mi><mo>−</mo><mn>1</mn>')}${sq('x', it('n'))}<mspace width="0.1em"/><msup><mi>e</mi><mrow><mo>−</mo><mi>i</mi><mn>2</mn><mi>π</mi><mi>k</mi><mi>n</mi><mo>/</mo><mi>N</mi></mrow></msup>`} />
   <math display="block" set:html={`${sq('x', '<mi>n</mi><mo>−</mo><mi>m</mi>')}<mspace width="0.5em"/><mo>⟶</mo><mspace width="0.5em"/><msup><mi>e</mi><mrow><mo>−</mo><mi>i</mi><mn>2</mn><mi>π</mi><mi>k</mi><mi>m</mi><mo>/</mo><mi>N</mi></mrow></msup>${sq('X', it('k'))}<mspace width="1em"/><mo>⟹</mo><mspace width="1em"/><mo stretchy="false">|</mo>${sq('X', it('k'))}<mo stretchy="false">|</mo><mtext> は同じ</mtext>`} />
 </div>
 <ul class="tl">
-  <li>正弦波は区間の端から端まで続く。係数が持つのは「どの周波数がどれだけ」で、「いつ」は位相に散らばる</li>
+  <li>区間全体（図では 1 s）を一度に変換したとき。正弦波は区間の端から端まで続き、係数が持つのは「どの周波数がどれだけ」だけ。「いつ」は位相に散らばる</li>
   <li>図の 2 つの音の入れ替えは、半周（<math><mi>m</mi><mo>=</mo><mi>N</mi><mo>/</mo><mn>2</mn></math>）の回転。強さ <math><mo stretchy="false">|</mo><mi>X</mi><mo stretchy="false">|</mo></math> は 1 つも変わらない</li>
+  <li>窓で短く区切ってから変換する STFT なら時刻もわかる。ただし窓の長さは周波数によらず 1 つで、時刻と周波数の細かさは窓で決まる（3）</li>
   <li>DFT を速く求める算法は <a href="../fft/">FFT</a>、区間の端がつながる周期性は <a href="../dct-dft/">DCT と DFT</a></li>
 </ul>
 
-<h3>2 当てて、掛けて、足す</h3>
+<h3>2 重ねて、掛けて、足す</h3>
 <div class="eqs">
   <math display="block" set:html={`<mi>W</mi><mo stretchy="false">(</mo><mi>u</mi><mo>,</mo><mi>s</mi><mo stretchy="false">)</mo><mo>=</mo>${sum('<mi>n</mi>')}${sub('<mi>x</mi>', '<mi>n</mi>')}<mspace width="0.1em"/>${sqrt(fr(dt, '<mi>s</mi>'))}<mspace width="0.1em"/>${sub('<msup><mi>ψ</mi><mo>*</mo></msup>', '<mn>0</mn>')}<mo stretchy="false">(</mo>${fr(`<mo stretchy="false">(</mo><mi>n</mi><mo>−</mo><mi>u</mi><mo stretchy="false">)</mo>${dt}`, '<mi>s</mi>')}<mo stretchy="false">)</mo>`} />
   <math display="block" set:html={`${sub('<mi>ψ</mi>', '<mn>0</mn>')}<mo stretchy="false">(</mo><mi>η</mi><mo stretchy="false">)</mo><mo>=</mo><msup><mi>π</mi><mrow><mo>−</mo><mn>1</mn><mo>/</mo><mn>4</mn></mrow></msup><msup><mi>e</mi><mrow><mi>i</mi>${w0}<mi>η</mi></mrow></msup><msup><mi>e</mi><mrow><mo>−</mo><msup><mi>η</mi><mn>2</mn></msup><mo>/</mo><mn>2</mn></mrow></msup><mo>,</mo><mspace width="1em"/>${w0}<mo>=</mo><mn>6</mn>`} />
@@ -40,12 +41,12 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
   <math display="block" set:html={`<mi>λ</mi><mo>=</mo>${fr('<mn>4</mn><mi>π</mi><mi>s</mi>', `${w0}<mo>+</mo>${sqrt(`<mn>2</mn><mo>+</mo><msubsup><mi>ω</mi><mn>0</mn><mn>2</mn></msubsup>`)}`)}<mo>=</mo><mn>1.033</mn><mspace width="0.1em"/><mi>s</mi><mo>,</mo><mspace width="1em"/>${sj}<mo>=</mo>${sub('<mi>s</mi>', '<mn>0</mn>')}<msup><mn>2</mn><mrow><mi>j</mi>${dj}</mrow></msup>`} />
 </div>
 <dl class="syms">
-  <dt><math><mi>u</mi></math></dt><dd>当てる位置（時刻）</dd>
+  <dt><math><mi>u</mi></math></dt><dd>重ねる位置（時刻）</dd>
   <dt><math><mi>s</mi></math></dt><dd>尺度（波の幅）。大きいほど長く低い波</dd>
   <dt><math set:html={sub('<mi>η</mi>', '<mi>n</mi>')} /></dt><dd><math set:html={`<mo stretchy="false">(</mo><mi>n</mi><mo>−</mo><mi>u</mi><mo stretchy="false">)</mo>${dt}<mo>/</mo><mi>s</mi>`} /></dd>
 </dl>
 <ul class="tl">
-  <li>信号と、ずらして伸ばした短い波の内積。似ている所では積の符号がそろって和が大きく、似ていない所では打ち消して 0 に近い<Fragment set:html={rf(1)} /><Fragment set:html={rf(9)} /></li>
+  <li>信号と、ずらして伸ばした短い波の内積。形が合う所では山 × 山・谷 × 谷で積がどこも正になり、合計が大きい。合わない所では正と負が打ち消し合って 0 に近い<Fragment set:html={rf(1)} /><Fragment set:html={rf(9)} /></li>
   <li>Morlet は複素正弦にガウスの包絡を掛けた波（式 (1)）。<math set:html={`${w0}<mo>=</mo><mn>6</mn>`} /> で平均がほぼ 0 になる<Fragment set:html={rf(1)} /></li>
   <li>cos だけで掛けると、波の山の位置がずれた所で和が 0 になる。cos と sin（実部と虚部）の 2 つで足して大きさをとるのは、山の位置 <math><mi>φ</mi></math> を一番合う所へずらして掛けて足すのと同じ。図の波はずらしたもの</li>
   <li>尺度 <math><mi>s</mi></math> はフーリエ周期 <math><mi>λ</mi></math> とほぼ同じ（表 1）<Fragment set:html={rf(1)} /></li>
@@ -79,7 +80,7 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
   <math display="block" set:html={`${sub('<mi>a</mi>', '<mi>k</mi>')}<mo>=</mo>${fr(`${sub('<mi>x</mi>', '<mn>2</mn><mi>k</mi>')}<mo>+</mo>${sub('<mi>x</mi>', '<mn>2</mn><mi>k</mi><mo>+</mo><mn>1</mn>')}`, '<mn>2</mn>')}<mo>,</mo><mspace width="0.8em"/>${sub('<mi>d</mi>', '<mi>k</mi>')}<mo>=</mo>${fr(`${sub('<mi>x</mi>', '<mn>2</mn><mi>k</mi>')}<mo>−</mo>${sub('<mi>x</mi>', '<mn>2</mn><mi>k</mi><mo>+</mo><mn>1</mn>')}`, '<mn>2</mn>')}<mspace width="1em"/><mo>⟹</mo><mspace width="1em"/>${sub('<mi>x</mi>', '<mn>2</mn><mi>k</mi>')}<mo>,</mo>${sub('<mi>x</mi>', '<mn>2</mn><mi>k</mi><mo>+</mo><mn>1</mn>')}<mo>=</mo>${sub('<mi>a</mi>', '<mi>k</mi>')}<mo>±</mo>${sub('<mi>d</mi>', '<mi>k</mi>')}`} />
 </div>
 <ul class="tl">
-  <li>2 つずつ平均と差をとり、平均の側をまた分ける。8 つの数は 3 段で平均 1 つと差 7 つになり、数は増えも減りもしない<Fragment set:html={rf(7)} /></li>
+  <li>隣り合う 2 つの平均と差をとり、平均の側をまた分ける。8 つの数は 3 段で平均 1 つと差 7 つになり、数は増えも減りもしない<Fragment set:html={rf(7)} /></li>
   <li>本来の Haar は 2 でなく <math><msqrt><mn>2</mn></msqrt></math> で割る。こうすると 2 乗和が変わらない（正規直交）</li>
   <li>滑らかな所は差が小さい。小さい差を 0 にしても形はほぼ残る。これを使う雑音除去と圧縮は「<a href="../wavelet-denoise/">ウェーブレットで雑音除去と圧縮</a>」</li>
 </ul>
@@ -112,7 +113,7 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
 <ul class="tl">
   <li>図 1・2 の信号は 256 点（1 s、256 Hz）。2 つの音は前半 6 Hz・後半 32 Hz で、それぞれハンの包絡</li>
   <li>スカログラムは Morlet で 2〜128 Hz、1 オクターブ 12 行。信号の平均を引いてから求め、<math set:html={`<mo stretchy="false">|</mo><mi>W</mi><mo stretchy="false">|</mo><mo>/</mo>${sqrt('<mi>s</mi>')}`} /> を最も大きい所から 30 dB の範囲で塗る。足した値はその最大を 1 とする</li>
-  <li>当てた波の帯と「幅」は <math><mo>±</mo><mn>2</mn><mi>s</mi></math>（包絡が 0.14 になる所）</li>
+  <li>ウェーブレットの帯と「幅」は <math><mo>±</mo><mn>2</mn><mi>s</mi></math>（包絡が 0.14 になる所）</li>
   <li>8 つの数は 2 で割る（整数のまま追えるように）。「小さい差」は <math><mo stretchy="false">|</mo><mi>d</mi><mo stretchy="false">|</mo><mo>≤</mo><mn>1</mn></math></li>
   <li>平面の DWT の箱は係数 1 つ（実数）で面積 1/2、STFT の箱は複素数 1 つ（実数 2 つ）で面積 1</li>
   <li>STFT の箱の値は、長さ <math><mi>L</mi></math> のハン窓を <math><mi>L</mi><mo>/</mo><mn>4</mn></math> ずつずらし、中心が箱の中にある 4 つの窓の最大。箱の端の出来事を窓の裾で見落とさない。箱の色は最も大きい箱から 36 dB の範囲</li>

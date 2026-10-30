@@ -352,7 +352,7 @@ export const TOOLS: Tool[] = [
     id: 'wavelet',
     c: '数学',
     t: 'ウェーブレット変換',
-    d: '短い波を信号に当てて掛けて足し、いつ・どの高さの音が鳴ったかを見ます。',
+    d: '短い波を信号に重ねて掛けて足し、いつ・どの高さの音が鳴ったかを見ます。',
     ic: 'wv',
     k: 'wavelet ウェーブレット 変換 transform cwt dwt 連続ウェーブレット変換 離散ウェーブレット変換 morlet モルレ haar ハール daubechies ドベシィ スカログラム scalogram 多重解像度 multiresolution mra mallat フィルタバンク filter bank 時間周波数 time-frequency stft 短時間フーリエ変換 不確定性 heisenberg gabor ガボール 内積 inner product 平均と差 位相 phase フーリエ fourier 数学 math',
   },
