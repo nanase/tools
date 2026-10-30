@@ -42,9 +42,11 @@ export type Unit =
   | 'km'
   | 'EV'
   | '日'
+  | '点'
   | 'K'
   | '″'
   | 'λ'
+  | '画素'
   | (typeof COMPOUND)[number];
 
 /**
@@ -76,6 +78,7 @@ const COMPOUND = [
   'rpm',
   'rev',
   'P/R',
+  'km/h',
 ] as const;
 const unitRe = (u: string) =>
   new RegExp(
@@ -127,12 +130,16 @@ const STRIP: Partial<Record<Unit, [RegExp, string]>> = {
   EV: [/ev$/i, ''],
   /* 月齢（ハロ） */
   日: [/日$/, ''],
+  /* 離散の信号の点の数（畳み込み） */
+  点: [/点$/, ''],
   /* 温度（ケルビン）。数字の直後だけ外す（5.8k は 5800） */
   K: [/([\d.])K$/, '$1'],
   /* 角度の秒 */
   '″': [/(″|′′|"|”|arcsec|秒)$/i, ''],
   /* 波長を単位にした長さ（波面のずれ） */
   λ: [/(λ|waves?)$/i, ''],
+  /* 画像の長さ（画像の畳み込み） */
+  画素: [/(画素|px|pixels?)$/i, ''],
 };
 
 /**
@@ -152,12 +159,15 @@ const NO_PREFIX = new Set<Unit>([
   'km',
   'EV',
   '日',
+  '点',
   '″',
   'λ',
+  '画素',
   'kg',
   'kg·cm²',
   'g·cm²',
   'mN·m/A',
+  'km/h',
 ]);
 
 /**

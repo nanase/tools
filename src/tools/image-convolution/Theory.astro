@@ -1,0 +1,123 @@
+---
+import { TOOLS } from '../../data/tools';
+
+/** f[arg] */
+const sq = (f: string, arg: string) => `<mi>${f}</mi><mo stretchy="false">[</mo>${arg}<mo stretchy="false">]</mo>`;
+const sum = (lo: string) => `<munder><mo>∑</mo><mrow>${lo}</mrow></munder>`;
+const rc = '<mi>r</mi><mo>,</mo><mi>c</mi>';
+const uv = '<mi>u</mi><mo>,</mo><mi>v</mi>';
+/* 本文の出典番号 */
+const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
+/** ほかのページへのリンク（まだ公開していないページは名前だけ） */
+const to = (id: string, t: string) => (TOOLS.some((x) => x.id === id && !x.s) ? `<a href="../${id}/">${t}</a>` : t);
+---
+<h3>2 次元の畳み込み</h3>
+<div class="eqs">
+  <math display="block" set:html={`${sq('y', rc)}<mo>=</mo>${sum('<mi>k</mi>')}${sum('<mi>j</mi>')}${sq('h', '<mi>k</mi><mo>,</mo><mi>j</mi>')}<mspace width="0.2em"/>${sq('x', '<mi>r</mi><mo>−</mo><mi>k</mi><mo>,</mo><mi>c</mi><mo>−</mo><mi>j</mi>')}`} />
+</div>
+<dl class="syms">
+  <dt><math><mi>x</mi></math></dt><dd>入力の画像</dd>
+  <dt><math><mi>h</mi></math></dt><dd>カーネル（点像分布関数）</dd>
+  <dt><math><mi>y</mi></math></dt><dd>出力の画像</dd>
+  <dt><math set:html={rc} /></dt><dd>行・列</dd>
+</dl>
+<ul class="tl">
+  <li>出力ごとに集める: 180° 回したカーネルを重ねて積和をとる（式 24-3）<Fragment set:html={rf(1)} /></li>
+  <li>入力ごとに配る: 入力の値を掛けたカーネルを出力へ足し込む（図 24-14）<Fragment set:html={rf(1)} />。配り終えると同じ結果</li>
+  <li>1 次元の原理: <Fragment set:html={to('convolution', '畳み込み')} /></li>
+  <li>係数の和 1 → 明るさを保つ。和 0 → 平らな所が 0</li>
+</ul>
+
+<h3>カーネルの例</h3>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th>カーネル</th><th>係数</th><th>出典</th></tr></thead>
+  <tbody>
+    <tr><td>恒等（デルタ関数）</td><td>中央だけ 1</td><td>図 24-4 a<Fragment set:html={rf(1)} /></td></tr>
+    <tr><td>円形ぼけ</td><td>円の中で一定（和 1）</td><td>図 24-3 a<Fragment set:html={rf(1)} /></td></tr>
+    <tr><td>ガウシアン</td><td><math><msup><mi>e</mi><mrow><mo>−</mo><mo stretchy="false">(</mo><msup><mi>r</mi><mn>2</mn></msup><mo>+</mo><msup><mi>c</mi><mn>2</mn></msup><mo stretchy="false">)</mo><mo>/</mo><mn>2</mn><msup><mi>σ</mi><mn>2</mn></msup></mrow></msup></math>（±3σ で打ち切り）</td><td>図 24-3 b<Fragment set:html={rf(1)} /></td></tr>
+    <tr><td>エンボス</td><td>中央 1・右下 −1</td><td>図 24-4 b<Fragment set:html={rf(1)} /></td></tr>
+    <tr><td>エッジ検出</td><td>中央 1・周囲 −1/8</td><td>図 24-4 c<Fragment set:html={rf(1)} /></td></tr>
+    <tr><td>鮮鋭化</td><td>中央 <math><mi>k</mi><mo>+</mo><mn>1</mn></math>・周囲 <math><mo>−</mo><mi>k</mi><mo>/</mo><mn>8</mn></math></td><td>図 24-4 d<Fragment set:html={rf(1)} /></td></tr>
+    <tr><td>アンシャープマスク</td><td><math><mo stretchy="false">(</mo><mn>1</mn><mo>+</mo><mi>k</mi><mo stretchy="false">)</mo><mi>δ</mi><mo>−</mo><mi>k</mi><mi>G</mi></math></td><td><Fragment set:html={rf(6)} /></td></tr>
+    <tr><td>Sobel <math><mi>x</mi></math></td><td><math><msup><mrow><mo stretchy="false">[</mo><mn>1</mn><mspace width="0.3em"/><mn>2</mn><mspace width="0.3em"/><mn>1</mn><mo stretchy="false">]</mo></mrow><mi mathvariant="normal">T</mi></msup><mo stretchy="false">[</mo><mn>1</mn><mspace width="0.3em"/><mn>0</mn><mspace width="0.3em"/><mo>−</mo><mn>1</mn><mo stretchy="false">]</mo></math></td><td><Fragment set:html={rf(4)} /></td></tr>
+  </tbody>
+</table></div>
+<ul class="tl">
+  <li>円形ぼけ・ガウシアン・モーションブラーは点像分布関数（PSF）。レンズの点像: <Fragment set:html={to('lens', 'カメラレンズ')} /></li>
+</ul>
+
+<h3>アンシャープマスク</h3>
+<div class="eqs">
+  <math display="block" set:html={`<mi>y</mi><mo>=</mo><mi>x</mi><mo>+</mo><mi>k</mi><mo stretchy="false">(</mo><mi>x</mi><mo>−</mo><mi>G</mi><mo>∗</mo><mi>x</mi><mo stretchy="false">)</mo><mo>=</mo><mo stretchy="false">(</mo><mo stretchy="false">(</mo><mn>1</mn><mo>+</mo><mi>k</mi><mo stretchy="false">)</mo><mi>δ</mi><mo>−</mo><mi>k</mi><mi>G</mi><mo stretchy="false">)</mo><mo>∗</mo><mi>x</mi>`} />
+</div>
+<ul class="tl">
+  <li>元の画像とぼかした画像の差を足す<Fragment set:html={rf(6)} /></li>
+  <li>平滑化のカーネルを負にしてデルタ関数を足すとエッジ強調（図 24-3 d）<Fragment set:html={rf(1)} /></li>
+</ul>
+
+<h3>分離可能なカーネル</h3>
+<div class="eqs">
+  <math display="block" set:html={`${sq('h', rc)}<mo>=</mo>${sq('a', '<mi>r</mi>')}<mspace width="0.2em"/>${sq('b', '<mi>c</mi>')}`} />
+</div>
+<ul class="tl">
+  <li>横方向に 1 次元の畳み込み → 縦方向に 1 次元の畳み込み（式 24-1）<Fragment set:html={rf(1)} /></li>
+  <li><math><mi>M</mi><mo>×</mo><mi>M</mi></math> のカーネル: 1 画素あたりの積和 <math><msup><mi>M</mi><mn>2</mn></msup></math> 回 → <math><mn>2</mn><mi>M</mi></math> 回</li>
+  <li>円対称で分離可能なのはガウシアンだけ<Fragment set:html={rf(1)} /></li>
+  <li>1 次元のカーネル = <Fragment set:html={to('fir', 'FIR フィルタ')} /> の係数</li>
+</ul>
+
+<h3>相関</h3>
+<div class="eqs">
+  <math display="block" set:html={`${sq('y', rc)}<mo>=</mo>${sum('<mi>k</mi>')}${sum('<mi>j</mi>')}${sq('h', '<mi>k</mi><mo>,</mo><mi>j</mi>')}<mspace width="0.2em"/>${sq('x', '<mi>r</mi><mo>+</mo><mi>k</mi><mo>,</mo><mi>c</mi><mo>+</mo><mi>j</mi>')}`} />
+</div>
+<ul class="tl">
+  <li>カーネルを反転せずに重ねる</li>
+  <li>CNN の「畳み込み」は多くが相関（式 9.6）<Fragment set:html={rf(3)} /></li>
+  <li>点対称のカーネル（平均化・ガウシアン）では同じ結果。Sobel・エンボス・平行移動では向きが逆</li>
+</ul>
+
+<h3>周波数で見る</h3>
+<div class="eqs">
+  <math display="block" set:html={`${sq('Y', uv)}<mo>=</mo>${sq('X', uv)}<mspace width="0.2em"/>${sq('H', uv)}`} />
+</div>
+<ul class="tl">
+  <li>2 次元の DFT: 行ごとに FFT → 列ごとに FFT<Fragment set:html={rf(1)} /></li>
+  <li>ゼロ埋めせずに掛けると巡回畳み込み（端の処理 = 周期）<Fragment set:html={rf(1)} /></li>
+  <li><math><mo stretchy="false">|</mo><mi>H</mi><mo stretchy="false">|</mo></math> はカーネルの MTF。ガウシアンの MTF もガウス関数（図 25-1）<Fragment set:html={rf(2)} /></li>
+  <li>大きいカーネルでは FFT が速い（512 × 512 の画像に 50 × 50 で約 20 倍）<Fragment set:html={rf(1)} /></li>
+  <li>DFT: <Fragment set:html={to('dct-dft', 'DCT と DFT')} />　高速な計算: <Fragment set:html={to('fft', 'FFT')} /></li>
+</ul>
+
+<h3>非線形のフィルタ</h3>
+<ul class="tl">
+  <li>メディアン: 窓の中の中央値<Fragment set:html={rf(7)} />。ごま塩ノイズに強い</li>
+  <li>勾配強度 <math><msqrt><msubsup><mi>G</mi><mi>x</mi><mn>2</mn></msubsup><mo>+</mo><msubsup><mi>G</mi><mi>y</mi><mn>2</mn></msubsup></msqrt></math>: 2 つの畳み込みの結果から計算</li>
+  <li>膨張・収縮（モルフォロジー）も非線形<Fragment set:html={rf(2)} /></li>
+</ul>
+
+<h3>このツールの設定</h3>
+<ul class="tl">
+  <li>画像: 256 × 192 のグレースケール（Rec. 709 の重み）</li>
+  <li>テスト画像: 64 × 64 の区画 12 個（点と線・縞・ジーメンススター・ゾーンプレート・ノイズ・文字など）</li>
+  <li>端の処理: 延長・ゼロ・折り返し（端の画素も写す）・周期<Fragment set:html={rf(5)} /></li>
+  <li>係数の和 0 のカーネル: 出力 0 を灰色で表示（正は明・負は暗）</li>
+  <li>ガウシアン: ±3σ で打ち切って和を 1 に</li>
+  <li>円形ぼけ: マスが円に入る割合を係数に（8 × 8 の点で数える）</li>
+  <li>分離可能なカーネル: 横 → 縦の 2 回で計算</li>
+  <li>画像の表示: 線より上が出力で下が入力（「配る」では足しかけの値）</li>
+  <li>係数と窓の計算: 大きいカーネルは中央 7 × 7 だけ表示。係数は 1/8 刻み</li>
+  <li>メディアンの窓: 3〜7</li>
+  <li>月面: NASA SVS の CGI Moon Kit のカラーマップを切り抜いてグレースケールに<Fragment set:html={rf(8)} /></li>
+</ul>
+
+<h3>出典</h3>
+<ol class="refs">
+  <li id="thy-r1"><span class="rf-for">集める見方と配る見方（図 24-14）・PSF の例（図 24-3）・3 × 3 のカーネル（図 24-4）・分離可能なカーネル（式 24-1）・2 次元の畳み込み（式 24-3）・FFT による畳み込み</span><span class="rf-src">S. W. Smith, <a href="https://www.dspguide.com/ch24.htm" target="_blank" rel="noopener"><i>The Scientist and Engineer’s Guide to Digital Signal Processing</i></a>, California Technical Publishing, 1997, ch. 24 Linear Image Processing</span></li>
+  <li id="thy-r2"><span class="rf-for">PSF と MTF（図 25-1）・線像と縁の応答（図 25-3）・モルフォロジー</span><span class="rf-src">S. W. Smith, <a href="https://www.dspguide.com/ch25.htm" target="_blank" rel="noopener"><i>The Scientist and Engineer’s Guide to Digital Signal Processing</i></a>, California Technical Publishing, 1997, ch. 25 Special Imaging Techniques</span></li>
+  <li id="thy-r3"><span class="rf-for">相互相関と畳み込みの呼び分け（9.1 節・式 9.6）</span><span class="rf-src">I. Goodfellow, Y. Bengio, and A. Courville, <a href="https://www.deeplearningbook.org/contents/convnets.html" target="_blank" rel="noopener"><i>Deep Learning</i></a>, MIT Press, 2016, ch. 9 Convolutional Networks</span></li>
+  <li id="thy-r4"><span class="rf-for">Sobel の 3 × 3 の勾配の演算子</span><span class="rf-src">I. Sobel, “History and Definition of the Sobel Operator,” 2014（1968 年の講演 “An Isotropic 3×3 Image Gradient Operator” の記録）</span></li>
+  <li id="thy-r5"><span class="rf-for">端の処理（reflect・constant・nearest・wrap）</span><span class="rf-src">SciPy, <a href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.convolve.html" target="_blank" rel="noopener">scipy.ndimage.convolve</a></span></li>
+  <li id="thy-r6"><span class="rf-for">アンシャープマスク</span><span class="rf-src">scikit-image, <a href="https://scikit-image.org/docs/stable/api/skimage.filters.html#skimage.filters.unsharp_mask" target="_blank" rel="noopener">skimage.filters.unsharp_mask</a>（M. Petrou and C. Petrou, <i>Image Processing: The Fundamentals</i>, 2nd ed., Wiley, 2010, p. 357 を引く）</span></li>
+  <li id="thy-r7"><span class="rf-for">メディアン</span><span class="rf-src">SciPy, <a href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.median_filter.html" target="_blank" rel="noopener">scipy.ndimage.median_filter</a></span></li>
+  <li id="thy-r8"><span class="rf-for">月面の画像</span><span class="rf-src">E. Wright, <a href="https://svs.gsfc.nasa.gov/4720/" target="_blank" rel="noopener">CGI Moon Kit</a>, NASA's Scientific Visualization Studio, 2019</span></li>
+</ol>
