@@ -1,10 +1,11 @@
 /** 波形と分布をメインスレッドの外で計算する（放電路や聞き手を動かすたびに 100 ms ほどかかる） */
 
 import { Reverb } from '../../lib/reverb';
-import { type Branch, type ChannelSet, makeChannel } from './channel';
+import { type Branch, type ChannelSet, makeChannel, strokeTimes } from './channel';
 import { arrivalHistogram, elements, firstArrival, type Scene, Via } from './path';
 import { surroundSpec } from './surround';
 import { render, spectrum } from './synth';
+import { terrainTail } from './terrain';
 
 export interface Job {
   id: number;
@@ -13,14 +14,18 @@ export interface Job {
   fs: number;
   /** 分布の箱の幅 [s] */
   dt: number;
-  /** 周りの響き（surround.ts の SURROUNDS） */
+  /** 周囲の反響（surround.ts の SURROUNDS） */
   env: string;
+  /** 地形の反響（terrain.ts の TERRAINS） */
+  terrain: string;
 }
 export interface Reply {
   id: number;
   branches: Branch[];
+  /** 放電の時刻 [s]（最初が 0） */
+  strokes: number[];
   first: number;
-  /** 聞き手の左右の耳の音圧 [Pa]（周りの響きを含む。響きなしなら同じ） */
+  /** 聞き手の左右の耳の音圧 [Pa]（周囲と地形の反響を含む。反響なしなら同じ） */
   y: Float32Array;
   yr: Float32Array;
   fs: number;
@@ -41,8 +46,9 @@ export interface Reply {
   hist: Float64Array[];
   h0: number;
   dt: number;
-  /** 要素の届く時刻 [s]・中点 x, z [m]・経路（図で放電路を届く時刻で塗る） */
+  /** 要素の届く時刻 [s]・その放電が光ってからの届く時刻 [s]・中点 x, z [m]・経路（図で放電路を届く時刻で塗る） */
   et: Float64Array;
+  er: Float64Array;
   exz: Float32Array;
   ev: Uint8Array;
   sf: Float64Array;
@@ -63,11 +69,15 @@ function refPeak(j: Job, branches: Branch[]): number {
   return p;
 }
 
-/** 周りの響きを足す（左右で響きが違う）。尾の分だけ長くする */
-function surround(y: Float32Array, fs: number, env: string): [Float32Array, Float32Array] {
-  const spec = surroundSpec(env);
-  if (spec.off) return [y, y];
-  const n = y.length + Math.ceil((spec.t60 + spec.pre) * fs),
+/**
+ * 周囲の反響と地形の反響を足す（左右で響きが違う）。尾の分だけ長くする。
+ * 地形の反響は、周囲の反響を足す前の音から作る
+ */
+function surround(y: Float32Array, fs: number, env: string, terrain: string): [Float32Array, Float32Array] {
+  const spec = surroundSpec(env),
+    tail = terrainTail(y, fs, terrain);
+  if (spec.off && !tail) return [y, y];
+  const n = Math.max(y.length + (spec.off ? 0 : Math.ceil((spec.t60 + spec.pre) * fs)), tail ? tail[0].length : 0),
     L = new Float32Array(n),
     R = new Float32Array(n),
     rv = new Reverb(fs);
@@ -75,6 +85,11 @@ function surround(y: Float32Array, fs: number, env: string): [Float32Array, Floa
   R.set(y);
   rv.set(spec);
   rv.process(L, R, 0, n);
+  if (tail)
+    for (let i = 0; i < tail[0].length; i++) {
+      L[i] += tail[0][i];
+      R[i] += tail[1][i];
+    }
   return [L, R];
 }
 
@@ -117,16 +132,18 @@ export function run(j: Job): Reply {
   const branches = makeChannel(j.ch),
     el = elements(branches, j.scene),
     w = render(el, j.scene.air, j.fs),
-    [y, yr] = surround(w.y, w.fs, j.env),
+    [y, yr] = surround(w.y, w.fs, j.env, j.terrain),
     t1 = w.t0 + y.length / w.fs,
     hist = arrivalHistogram(el, w.t0, t1, j.dt),
     sp = spectrum(y, w.fs),
-    exz = new Float32Array(2 * el.n);
+    exz = new Float32Array(2 * el.n),
+    er = new Float64Array(el.n);
   let d0 = Number.POSITIVE_INFINITY,
     d1 = 0;
   for (let i = 0; i < el.n; i++) {
     exz[2 * i] = el.xyz[3 * i];
     exz[2 * i + 1] = el.xyz[3 * i + 2];
+    er[i] = el.t[i] - branches[el.br[i]].t;
     if (el.via[i] === Via.Direct) {
       d0 = Math.min(d0, el.t[i]);
       d1 = Math.max(d1, el.t[i]);
@@ -137,6 +154,7 @@ export function run(j: Job): Reply {
   return {
     id: j.id,
     branches,
+    strokes: strokeTimes(branches),
     first: firstArrival(el),
     y,
     yr,
@@ -153,6 +171,7 @@ export function run(j: Job): Reply {
     h0: w.t0,
     dt: j.dt,
     et: el.t,
+    er,
     exz,
     ev: el.via,
     sf: sp.f,
@@ -164,7 +183,7 @@ export function run(j: Job): Reply {
 if (typeof document === 'undefined' && typeof self !== 'undefined' && 'postMessage' in self)
   self.onmessage = (e: MessageEvent<Job>) => {
     const r = run(e.data);
-    const bufs = [r.y.buffer, r.et.buffer, r.exz.buffer, r.ev.buffer];
+    const bufs = [r.y.buffer, r.et.buffer, r.er.buffer, r.exz.buffer, r.ev.buffer];
     if (r.yr !== r.y) bufs.push(r.yr.buffer);
     postMessage(r, { transfer: bufs });
   };

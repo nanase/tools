@@ -4,6 +4,7 @@ import { absorption, soundSpeed } from '../../lib/air';
 import { CH0 } from './channel';
 import { audibleRange, bendRadius } from './path';
 import { ETA0, fewPeak, N_PEAK_X, nDuration, nDuration0, relaxRadius } from './shock';
+import { BANDS } from './terrain';
 
 /* 本文の出典番号 */
 const rf = (...ns: number[]) => ns.map((n) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`).join('');
@@ -90,6 +91,14 @@ const ABS = [100, 250, 1000].map((f) => ({ f, a: absorption(f) * 1000 }));
   <li>雲の中を横に何 km も進む放電路は、遠くでも長く続く</li>
 </ul>
 
+<h3>多重雷</h3>
+<p>落雷の多くは、同じ放電路に数十 ms おきに何回も電流が流れます。光が瞬いて見え、雷鳴もそのたびに出て重なります<Fragment set:html={rf(11, 12)} />。</p>
+<ul class="tl">
+  <li>回数は多くが 3〜5 回。間隔の幾何平均は 61 ms で、ここでは対数正規分布の乱数で決める<Fragment set:html={rf(11, 12)} /></li>
+  <li>2 回目からは枝を通らない。雲の中では、前の回より遠い所の電荷をほぼ同じ高さで引く（最大 8 km）<Fragment set:html={rf(13)} />。ここでは前の回の雲の中の放電路から分かれ、外へ {CH0.grow / 1000} km 伸ばす（仮）</li>
+  <li>2 回目からのエネルギーは最初の {CH0.eSub} 倍（仮）。N 波が短く、少し高い音になる</li>
+</ul>
+
 <h3>遠いほど低く</h3>
 <p>空気の吸収は高い音ほど大きく、遠い雷は高い音が消えて低いゴロゴロだけが残ります<Fragment set:html={rf(10)} />。式と近似のしかたは <a href="../doppler/">ドップラー効果</a> と同じです。</p>
 <div class="tw"><table class="tab">
@@ -100,8 +109,9 @@ const ABS = [100, 250, 1000].map((f) => ({ f, a: absorption(f) * 1000 }));
 <h3>地面と山の反射</h3>
 <ul class="tl">
   <li>地面での反射は、地面に映した放電路（鏡像）から届く音とみなす。耳の高さが低いので、直接の音とほぼ同時に届いて重なる。雷鳴の測定でも硬い地面として音圧を 2 倍に扱う<Fragment set:html={rf(2, 9)} /></li>
-  <li>聞き手の後ろの山は鉛直の崖とし、崖に映した放電路から届く。崖を横切る点が崖の高さより下の部分だけが返る。直接の音より、往復の距離の分だけ遅れる（やまびこ。部屋の中の反射は <a href="../reverb/">残響</a>）</li>
-  <li>周りの響き: 聞き手の近くの家・木・建物で散った音を、部屋の残響と同じフィードバック遅延網で足す。残響時間（500 Hz）は木々 1.2 s・家と木 1.8 s・建物 2.6 s で仮の値。左右の耳で響きを変える</li>
+  <li>聞き手の後方の山は鉛直の崖とし、崖に映した放電路から届く。崖を横切る点が崖の高さより下の部分だけが返る。直接の音より、往復の距離の分だけ遅れる（やまびこ。部屋の中の反射は <a href="../reverb/">残響</a>）</li>
+  <li>周囲の反響: 聞き手の近くの家・木・建物で散った音を、部屋の残響と同じフィードバック遅延網で足す。残響時間（500 Hz）は木々 1.2 s・家と木 1.8 s・建物 2.6 s で仮の値。左右の耳で響きを変える</li>
+  <li>地形の反響: 数 km 先の丘・山・林で散った音は、何秒もかけて戻る。戻るまでに地面と草木で高い音が吸われ、低い音だけが残る。{BANDS.map((b) => `${b.f}`).join('・')} Hz までの 3 つの帯で、残響時間を低い方から {BANDS.map((b) => b.k).join(' : ')}、響きのエネルギーを同じ比にした（どれも仮）。標本化周波数を 1/16 に落として、雑音で作った応答とたたみ込む</li>
 </ul>
 
 <h3>聞こえない遠い雷</h3>
@@ -130,4 +140,7 @@ const ABS = [100, 250, 1000].map((f) => ({ f, a: absorption(f) * 1000 }));
   <li id="thy-r8"><span class="rf-for">気温の勾配による影の領域（本文は未確認。[3] の式 4.8 と図 4.10）</span><span class="rf-src">R. G. Fleagle, “The audibility of thunder,” <i>The Journal of the Acoustical Society of America</i>, vol. 21, no. 4, pp. 411–412, 1949, <a href="https://doi.org/10.1121/1.1906528" target="_blank" rel="noopener">doi:10.1121/1.1906528</a></span></li>
   <li id="thy-r9"><span class="rf-for">区間 8 m、E = 4〜60 J/cm、硬い地面でスペクトルを 4 倍</span><span class="rf-src">A. Lacroix, F. Coulouvrat, R. Marchiano, T. Farges, and J.-F. Ripoll, “Acoustical energy of return strokes: A comparison between a statistical model and measurements,” <i>Geophysical Research Letters</i>, vol. 46, no. 20, 2019, <a href="https://doi.org/10.1029/2019GL085369" target="_blank" rel="noopener">doi:10.1029/2019GL085369</a></span></li>
   <li id="thy-r10"><span class="rf-for">空気の吸収</span><span class="rf-src">ISO 9613-1:1993, Acoustics — Attenuation of sound during propagation outdoors — Part 1: Calculation of the absorption of sound by the atmosphere</span></li>
+  <li id="thy-r11"><span class="rf-for">放電の間隔の幾何平均 61 ms（本文は未確認）</span><span class="rf-src">M. M. F. Saba, M. G. Ballarotti, and O. Pinto Jr., “Negative cloud-to-ground lightning properties from high-speed video observations,” <i>Journal of Geophysical Research</i>, vol. 111, D03101, 2006, <a href="https://doi.org/10.1029/2005JD006415" target="_blank" rel="noopener">doi:10.1029/2005JD006415</a></span></li>
+  <li id="thy-r12"><span class="rf-for">1 回の落雷の放電の回数は多くが 3〜5 回（本文は未確認）</span><span class="rf-src">CIGRE Working Group C4.407 (V. A. Rakov, convenor), <i>Lightning Parameters for Engineering Applications</i>, Technical Brochure 549, 2013</span></li>
+  <li id="thy-r13"><span class="rf-for">2 回目からの放電は雲の中の遠い所の電荷を引く（本文は未確認。要旨で確かめた）</span><span class="rf-src">P. R. Krehbiel, M. Brook, and R. A. McCrory, “An analysis of the charge structure of lightning discharges to ground,” <i>Journal of Geophysical Research</i>, vol. 84, no. C5, pp. 2432–2456, 1979, <a href="https://doi.org/10.1029/JC084iC05p02432" target="_blank" rel="noopener">doi:10.1029/JC084iC05p02432</a></span></li>
 </ol>

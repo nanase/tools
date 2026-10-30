@@ -1,12 +1,13 @@
 /**
  * 雷鳴のページの音（DOM に依存しない）: 要素ごとの N 波を届く時刻に足し、区間ごとに距離の分の空気の吸収を掛ける。
  * 区間の中の N 波を線形に足すので、区間の向きによる指向性（横から聞くと鋭く、端から聞くとなまる）は足し合わせから出る。
- * 要素の N 波は、隣の要素との届く時刻の差の幅にならして足す（放電路を点の列でなく、つながった線として聞く）
+ * 要素の N 波は、隣の要素との届く時刻の差の幅にならして足す（放電路を点の列でなく、つながった線として聞く）。
+ * 区間の中の N 波はどれも同じ長さなので、届く時刻の密度を作ってから N 波とたたみ込む（要素ごとに N 波を足すより速い）
  */
 import { AIR_N, type Air, AirFilter, airPole } from '../../lib/air';
 import { fft } from '../biquad/filter';
 import type { Elements } from './path';
-import { addNWaveBox } from './shock';
+import { addBox, convolveNWave } from './shock';
 
 export interface Wave {
   /** 音圧 [Pa] */
@@ -53,6 +54,7 @@ export function render(el: Elements, air: Air, fs: number, vias?: ReadonlySet<nu
   for (let k = 0; k < el.nSeg; k++) maxTail = Math.max(maxTail, (TAIL_TAU * AIR_N) / (1 - pole(el.segR[k])));
   const out = new Float64Array(Math.ceil((tMax - t0) * fs + maxTail) + 1);
   let buf = new Float64Array(1024),
+    rho = new Float64Array(1024),
     wb = new Float64Array(64);
   for (let k = 0; k < el.nSeg; k++) {
     if (vias && !vias.has(el.segVia[k])) continue;
@@ -77,10 +79,16 @@ export function render(el: Elements, air: Air, fs: number, vias?: ReadonlySet<nu
       /* 前に箱の半分、後ろに N 波と箱の半分の余白 */
       n0 = Math.floor((lo - t0) * fs - wmax / 2) - 1,
       len = Math.ceil((hi - lo) * fs + T + wmax + (TAIL_TAU * AIR_N) / (1 - p)) + 3;
-    if (buf.length < len) buf = new Float64Array(len * 2);
+    if (buf.length < len) {
+      buf = new Float64Array(len * 2);
+      rho = new Float64Array(len * 2);
+    }
     buf.fill(0, 0, len);
-    const local = buf.subarray(0, len);
-    for (let i = a; i < b; i++) addNWaveBox(local, (el.t[i] - t0) * fs - n0, T, el.p[i], wb[i - a]);
+    rho.fill(0, 0, len);
+    const local = buf.subarray(0, len),
+      dens = rho.subarray(0, len);
+    for (let i = a; i < b; i++) addBox(dens, (el.t[i] - t0) * fs - n0, el.p[i], wb[i - a]);
+    convolveNWave(dens, local, len, T);
     f.reset();
     f.p = p;
     for (let n = 0; n < len && n0 + n < out.length; n++) {

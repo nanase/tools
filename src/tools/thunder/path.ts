@@ -63,7 +63,7 @@ const PER_WAVE = 4;
  */
 export interface Elements {
   n: number;
-  /** 届く時刻 [s]（光った時刻が 0） */
+  /** 届く時刻 [s]（最初に光った時刻が 0） */
   t: Float64Array;
   /** 経路の長さ [m] */
   r: Float64Array;
@@ -129,6 +129,7 @@ export function elements(ch: readonly Branch[], s: Scene): Elements {
     sV: number[] = [];
   ch.forEach((b, bi) => {
     const T0 = nDuration0(b.e, c, p0),
+      t0 = b.t,
       amp = lineAmp(b.e, s.eta, rho),
       q = b.p;
     for (let k = 3; k < q.length; k += 3) {
@@ -168,7 +169,7 @@ export function elements(ch: readonly Branch[], s: Scene): Elements {
             lim = audibleRange(z, oz, R),
             over = Number.isFinite(lim) ? Math.min(1, Math.max(0, (hd - lim) / (0.1 * lim))) : 0,
             sh = 10 ** ((-s.shadowDb * over) / 20);
-          T.push(r / c);
+          T.push(t0 + r / c);
           Rr.push(r);
           /* 正の側の面積 a·dl/(2r) を保って伸びる */
           P.push((coef * amp * dl * sh) / (Math.max(r, 1) * Tn));

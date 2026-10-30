@@ -156,3 +156,48 @@ export function addNWaveBox(y: Float64Array, t0: number, T: number, P: number, W
     prev = next;
   }
 }
+
+/**
+ * 時刻の密度に足す: 中心が c [標本] の幅 W [標本] の箱（面積 P）を、標本の区間 [n, n+1) ごとの重なりで分ける。
+ * W が 1 より狭いときは幅 1 にする（区間の中の位置は、隣との分け方で残る）
+ */
+export function addBox(x: Float64Array, c: number, P: number, W: number): void {
+  const w = Math.max(W, 1),
+    a = c - w / 2,
+    b = c + w / 2,
+    n0 = Math.max(0, Math.floor(a)),
+    n1 = Math.min(x.length - 1, Math.ceil(b) - 1),
+    k = P / w;
+  for (let n = n0; n <= n1; n++) x[n] += k * (Math.min(b, n + 1) - Math.max(a, n));
+}
+
+/**
+ * 時刻の密度 x（addBox で作る）と、継続時間 T [標本] の N 波のたたみ込みを y に足す（長さ len）。
+ * 区間 [n, n+1) に一様に散った衝撃が、区間 [n+m, n+m+1) に足す平均は G(m+1) − 2G(m) + G(m−1)（G は nIntegral2）。
+ * 1 ≤ m ≤ M−1 では 1 − 2m/T の 1 次式なので、窓の中の和 Σx と Σm·x を順にずらして 1 標本あたり定数の手間で求め、
+ * 端の m = 0・M・M+1 だけ別に足す（M = ⌊T⌋）
+ */
+export function convolveNWave(x: Float64Array, y: Float64Array, len: number, T: number): void {
+  const M = Math.floor(T),
+    G = (s: number) => nIntegral2(s, T, 1),
+    tap = (m: number) => G(m + 1) - 2 * G(m) + G(m - 1);
+  if (M < 2) {
+    /* 1 標本ほどの短い N 波はそのままたたみ込む */
+    const k = Array.from({ length: M + 2 }, (_, m) => tap(m));
+    for (let n = 0; n < len; n++) for (let m = 0; m < k.length && m <= n; m++) y[n] += k[m] * x[n - m];
+    return;
+  }
+  const k0 = tap(0),
+    kM = tap(M),
+    kM1 = tap(M + 1),
+    b = 2 / T;
+  let s0 = 0,
+    s1 = 0;
+  for (let n = 0; n < len; n++) {
+    const prev = n >= 1 ? x[n - 1] : 0,
+      out = n >= M ? x[n - M] : 0;
+    s1 += s0 - M * out + prev;
+    s0 += prev - out;
+    y[n] += k0 * x[n] + s0 - b * s1 + kM * out + (n > M ? kM1 * x[n - M - 1] : 0);
+  }
+}

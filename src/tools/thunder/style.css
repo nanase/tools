@@ -1,8 +1,8 @@
 /* 雷鳴のページだけのスタイル（共通は src/styles/site.css）。デザイン案 A（断面が主役） */
 
-/* 枠の並び。スマホは 断面 → 雷と聞き手 → 計算結果 → 地面と周り → 音 → 式。
-   PC は上に断面（全幅）、左の列に入力の枠、右の列に計算結果と音、その下に式（全幅） */
-.a-fig{order:1}.a-src{order:2}.a-out{order:3}.a-env{order:4}.a-snd{order:5}.a-thy{order:6}
+/* 枠の並び。スマホは 断面 → 雷と聞き手 → 音 → 計算結果 → 地面と周囲 → 式。
+   PC は上に断面（全幅）、左の列に入力の枠、右の列に音と計算結果、その下に式（全幅） */
+.a-fig{order:1}.a-src{order:2}.a-snd{order:3}.a-out{order:4}.a-env{order:5}.a-thy{order:6}
 @media (min-width:1000px){
   .tgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr);grid-template-areas:"fig fig" "c1 c2" "thy thy";align-items:start}
   .a-fig{grid-area:fig}.c1{grid-area:c1}.c2{grid-area:c2}.a-thy{grid-area:thy}
@@ -10,10 +10,14 @@
 .a-out{container-type:inline-size}
 .m-sub{display:block;font:500 12px/1.4 var(--sans);color:var(--ink-3)}
 
-/* 断面の色: 空・雲・地面・山・光った瞬間・反射・家の壁と屋根 */
-.tgrid{--th-sky:#e4e9ec;--th-cloud:#cdd4d9;--th-earth:#d3cbb9;--th-hill:#a99f8a;--th-flash:#ffffff;--th-echo:#7b61c9;--th-wall:#b3a68e;--th-roof:#7d5946}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .tgrid{--th-sky:#0e1418;--th-cloud:#252c32;--th-earth:#2a2620;--th-hill:#4a4236;--th-flash:#dfe8ff;--th-echo:#a991f0;--th-wall:#6b6151;--th-roof:#9a6f57}}
-:root[data-theme="dark"] .tgrid{--th-sky:#0e1418;--th-cloud:#252c32;--th-earth:#2a2620;--th-hill:#4a4236;--th-flash:#dfe8ff;--th-echo:#a991f0;--th-wall:#6b6151;--th-roof:#9a6f57}
+/* 反射の色（届く量の図） */
+.tgrid{--th-echo:#7b61c9}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .tgrid{--th-echo:#a991f0}}
+:root[data-theme="dark"] .tgrid{--th-echo:#a991f0}
+/* 断面は見やすさのため、ライトのテーマでも夜の色で描く（凡例の印も合わせる）。
+   色: 空・雲・地面・山・光った瞬間・反射・家の壁と屋根と、文字・目盛り・届く時刻・聞き手はサイトの夜の色 */
+.th-dk{--th-sky:#0e1418;--th-cloud:#252c32;--th-earth:#2a2620;--th-hill:#4a4236;--th-flash:#dfe8ff;--th-echo:#a991f0;--th-wall:#6b6151;--th-roof:#9a6f57;
+  --screen:#08090a;--ink:#e6e8e4;--ink-3:#838c93;--grid:#1c2428;--grid-2:#3b474e;--ch1:#f2c230;--ch2:#52c4dd;--accent:#ff8a4c}
 
 .th-cv{border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--screen);box-shadow:inset 0 1px 3px rgb(0 0 0 / .19)}
 .th-cv canvas{display:block;width:100%}
@@ -23,16 +27,29 @@
 .th-sec{cursor:ew-resize;touch-action:pan-y}
 .th-sec.drag{cursor:grabbing}
 .sw.th-sw-t{width:22px;height:6px;background:linear-gradient(90deg,var(--ch1),var(--ch2))}
-.sw.th-sw-r{background:var(--th-echo)}
 .sw.th-sw-e{width:18px;height:0;border-top:2px dashed var(--th-echo);background:none}
-.vh .sw{vertical-align:middle;margin-left:6px}
+.sw.th-sw-d{width:18px;height:0;border-top:2px solid var(--ch2);background:none}
 .th-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--accent)}
 .th-hint{color:var(--ink-3)}
 .th-st{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:12px}
 .th-sph{margin-top:14px}
 
+/* 計算中: 断面に回る輪を重ね、ほかの図を薄くする（すぐ終わるときはちらつかないよう少し待ってから出す） */
+.th-cv{position:relative}
+.th-busy{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:10px;background:rgb(8 9 10 / .5);color:var(--ink);font:500 13px/1 var(--mono);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .15s,visibility 0s .15s}
+.th-busy i{width:18px;height:18px;border:2px solid var(--grid-2);border-top-color:var(--accent);border-radius:50%;animation:th-spin .8s linear infinite}
+.a-fig.busy .th-busy{opacity:1;visibility:visible;transition:opacity .15s .12s,visibility 0s .12s}
+.a-fig .th-cv:not(.th-dk) canvas{transition:opacity .15s}
+.a-fig.busy .th-cv:not(.th-dk) canvas{opacity:.4;transition-delay:.12s}
+@keyframes th-spin{to{transform:rotate(1turn)}}
+@media (prefers-reduced-motion:reduce){.th-busy i{animation-duration:2.4s}}
+
 /* 光らせる: 時間の帯（灰の所は光ってから音が届くまで） */
-.a-fig .tp{margin-top:12px;grid-template-columns:auto auto minmax(0,1fr)}
+.a-fig .tp{margin-top:12px;grid-template-columns:auto auto auto minmax(0,1fr)}
+/* 左端の別の雷のボタン（区切り線で再生の操作と分ける） */
+.th-lead{display:flex;padding-right:10px;border-right:1px solid var(--line)}
+/* 音圧の波形の下に、N 波の量の図を続ける */
+.th-tr canvas+canvas{border-top:1px solid var(--line)}
 .th-wait{position:absolute;left:0;top:9px;width:0;height:6px;border-radius:3px 0 0 3px;background:var(--grid-2);opacity:.6}
 .a-fig .tp-fill{background:var(--accent)}
 @media (pointer:coarse){.th-wait{top:13px}}
