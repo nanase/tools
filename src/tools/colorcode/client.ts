@@ -1,8 +1,8 @@
 /** 抵抗カラーコードの入口: 抵抗値 ↔ 色帯 → 結果・E 系列・代入式 */
 import { COLORS, type ColorKey } from '../../lib/colorcode';
-import { $, $$, esc } from '../../lib/dom';
+import { $, $$ } from '../../lib/dom';
 import type { Series } from '../../lib/eseries';
-import { fmt, fmtR, ro } from '../../lib/format';
+import { fmt, ro } from '../../lib/format';
 import { ParamGroup } from '../../lib/param';
 import { addRow } from '../../lib/reset';
 import { store, stored } from '../../lib/store';
@@ -18,7 +18,6 @@ import {
   keyOf,
   ohmsOf,
   optsOf,
-  pct,
   pick,
   type Role,
   roleLong,
@@ -200,16 +199,6 @@ function renderOut(R: number): void {
   html('#o-tc', code.n === 6 ? `${tc}<span class="u">ppm/K</span>` : '—<span class="m-q">6 本帯のみ</span>');
   html('#o-es', ins.length ? ins.map((s) => `E${s}`).join('・') : '—<span class="m-q">どの E 系列にもない値</span>');
   html('#o-c', colorSeq(code));
-  html('#mn', `R<b>${esc(fmtR(R, 'Ω', rs))}</b>`);
-  txt('#mt', pct(t));
-  txt(
-    '#mc',
-    rolesOf(code.n)
-      .map((r) => keyOf(code, r))
-      .filter((k) => k !== 'no')
-      .map((k) => COLORS[k].n)
-      .join(' '),
-  );
   html('#subst', substHtml(code));
 }
 

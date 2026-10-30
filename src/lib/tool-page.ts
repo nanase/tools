@@ -280,15 +280,70 @@ function initRelated(): void {
   new ResizeObserver(fit).observe(box);
 }
 
-/* 計算結果の要約（.mini）。PC では画面の下に留め、計算結果の大きい値が画面にない間だけ出す */
+/* 計算結果の要約（.mini）。PC では画面の下に留め、計算結果の大きい値が画面にない間だけ出す。
+   data-mini="op" は、操作して要約の値が変わってから 2 秒の間だけ出す（スマホでも同じ） */
+const MINI_HOLD = 2000;
 function initMini(): void {
-  const mini = document.querySelector('.mini'),
+  const mini = document.querySelector<HTMLElement>('.mini'),
     out = document.querySelector('.a-out .m-main') ?? document.querySelector('.a-out');
   if (!mini || !out) return;
+  const op = mini.dataset.mini === 'op';
+  let away = false,
+    busy = !op;
+  const show = () => {
+    const on = away && busy;
+    mini.classList.toggle('show', on);
+    document.documentElement.classList.toggle('mini-on', on);
+  };
   new IntersectionObserver(([e]) => {
-    mini.classList.toggle('show', !e.isIntersecting);
-    document.documentElement.classList.toggle('mini-on', !e.isIntersecting);
+    away = !e.isIntersecting;
+    show();
   }).observe(out);
+  if (!op) return;
+  /* 操作: 枠の中で押している間と、離す・入力するから 0.5 秒。動きや描き直しだけで値が変わっても出さない */
+  let down = false,
+    last = -Infinity,
+    timer = 0,
+    text = mini.textContent;
+  const inside = (e: Event) => e.target instanceof Element && !!e.target.closest('.tgrid');
+  document.addEventListener(
+    'pointerdown',
+    (e) => {
+      if (inside(e)) down = true;
+    },
+    true,
+  );
+  for (const n of ['pointerup', 'pointercancel']) {
+    addEventListener(
+      n,
+      () => {
+        if (down) last = performance.now();
+        down = false;
+      },
+      true,
+    );
+  }
+  for (const n of ['input', 'change', 'keydown']) {
+    document.addEventListener(
+      n,
+      (e) => {
+        if (inside(e)) last = performance.now();
+      },
+      true,
+    );
+  }
+  new MutationObserver(() => {
+    if (mini.textContent === text) return;
+    text = mini.textContent;
+    if (!down && performance.now() - last > 500) return;
+    busy = true;
+    show();
+    clearTimeout(timer);
+    timer = window.setTimeout(() => {
+      busy = false;
+      show();
+    }, MINI_HOLD);
+  }).observe(mini, { subtree: true, childList: true, characterData: true });
 }
 
 export function initToolPage(): void {

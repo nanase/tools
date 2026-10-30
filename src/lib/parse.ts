@@ -78,6 +78,7 @@ const COMPOUND = [
   'rpm',
   'rev',
   'P/R',
+  'km/h',
 ] as const;
 const unitRe = (u: string) =>
   new RegExp(
@@ -166,6 +167,7 @@ const NO_PREFIX = new Set<Unit>([
   'kg·cm²',
   'g·cm²',
   'mN·m/A',
+  'km/h',
 ]);
 
 /**

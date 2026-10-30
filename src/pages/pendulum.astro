@@ -45,7 +45,7 @@ const pick = (L: readonly ParamDef[], ks: readonly string[]) =>
 ---
 <SiteLayout title={name} tool={{ id: 'pendulum', name }} description="レールの上を動く台車に立てた振子を、PID・極配置・LQR の制御で倒れないように支えます。エネルギー法の振り上げ、制御周期・エンコーダの分解能・速度の推定・入力の飽和も再現します。" note="振子と台車を剛体とし、モータの巻線のインダクタンスと歯車のがたを無視した模型による参考値です。">
   <PageTitle title={name}>レールの上を動く台車に立てた振子（倒立振子）を、PID・極配置・LQR のいずれかの制御で倒れないように支えるシミュレーションです。真下に垂れた振子はエネルギー法で振り上げてから立てます。制御周期、エンコーダの分解能、差分からの速度の推定、モータの電圧の上限といった実機の制約も入れてあり、ゲインや装置の値を変えると、立ち方や倒れ方、開ループと閉ループの極がすぐに変わります。振子や台車を押すこともできます。</PageTitle>
-  <div class="mini" aria-hidden="true"><span><i>t</i><sub>s</sub><b id="mts"></b></span><span><i>t</i><sub>up</sub><b id="mtu"></b></span><span>|<i>F</i>|<sub>max</sub><b id="mfm"></b></span></div>
+  <div class="mini" data-mini="op" aria-hidden="true"><span><i>t</i><sub>s</sub><b id="mts"></b></span><span><i>t</i><sub>up</sub><b id="mtu"></b></span><span>|<i>F</i>|<sub>max</sub><b id="mfm"></b></span></div>
 
   <div class="tgrid">
     <div class="col c1">

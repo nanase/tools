@@ -206,6 +206,13 @@ a.unit:hover h3{text-decoration:underline;text-decoration-color:var(--ink-3);tex
 .desc::before{content:"";position:absolute;top:-6px;left:var(--ax,12px);width:12px;height:12px;background:inherit;transform:translateX(-50%) rotate(45deg);border-radius:2px}
 .mini{position:sticky;top:var(--rail-h);z-index:20;display:flex;gap:24px;margin:0 -16px 14px;padding:6px 16px;background:var(--rail-2);color:var(--rail-ink-2);font:500 12.5px/1.5 var(--mono);white-space:nowrap;overflow:hidden}
 .mini b{color:var(--rail-ink);font-weight:700;font-size:14px;margin-left:.6em}
+.mini>b{margin-left:0}
+@media (max-width:480px){.mini{gap:16px}}
+/* 操作中だけ出す要約（data-mini="op"）。スマホでは場所を空けず、上の帯の裏から下りてくる */
+@media (max-width:999.98px){
+  .mini[data-mini="op"]{position:fixed;left:0;right:0;margin:0;transform:translateY(-100%);visibility:hidden;transition:transform .2s ease,visibility .2s}
+  .mini[data-mini="op"].show{transform:none;visibility:visible}
+}
 .tgrid{display:grid;gap:26px 16px;padding-top:10px;grid-template-columns:minmax(0,1fr)}
 /* 枠の並び（grid-template-areas など）は各ツールの style.css で決める。
    .col は PC で縦に積む列、スマホでは中の枠を .tgrid に直接並べる（order で順を変えられる） */

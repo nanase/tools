@@ -515,7 +515,7 @@ function drawNumbers(): void {
   txt('#o-dist', kmStr(st.dist));
   txt('#o-diam', dms(st.diam));
   txt('#o-altaz', `${sgn(st.alt, 1)}° · ${st.az.toFixed(1)}°`);
-  txt('#mT', `${dateStr(jd).slice(0, 10)} ${hm(jd)} ${tzName()}`);
+  txt('#mT', `${dateStr(jd).slice(5, 10)} ${hm(jd)} ${tzName()}`);
   txt('#mA', age.toFixed(1));
   txt('#mK', `${(st.illum * 100).toFixed(1)} %`);
   const dk = `${dayStart(jd)}|${site.lat}|${site.lon}|${tz$.value}`;

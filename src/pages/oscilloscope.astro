@@ -27,7 +27,6 @@ const pct = (v: number) => `${v * 100} %`;
 ---
 <SiteLayout title={name} tool={{ id: 'oscilloscope', name }} description="マイクや音楽ファイルの音を波形で表示します。トリガと表示範囲を変えられ、リサジューも描けます。" note="音声はこの端末の中だけで処理し、送信しません。">
   <PageTitle title={name}>マイクや音楽ファイルの音を、オシロスコープのように波形で表示します。トリガで波形を止めて見られ、L と R を X-Y に描くリサジューも出せます。</PageTitle>
-  <div class="mini" aria-hidden="true"><span><i>f</i><b id="mf">—</b></span><span>CH1<b id="mr">—</b></span><span>TRIG<b id="mt">—</b></span></div>
 
   <div class="tgrid">
     <div class="col c1">
