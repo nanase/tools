@@ -1,18 +1,24 @@
 /**
- * 分岐図のページの計算: 1 次元の写像（ロジスティク・正弦・テント・4 次・3 次・ガウス・リッカー）の軌道、リアプノフ指数、周期の判定、
- * 分岐図の 1 列の濃さ、超安定な周期 2ⁿ の値と Feigenbaum 定数、周期倍分岐・接線分岐の位置
+ * 分岐図のページの計算: 1 次元の写像（ロジスティック・正弦・テント・4 次・3 次・ガウス・リッカー）と
+ * 2 次元のエノン写像の軌道、リアプノフ指数、周期の判定、超安定な周期 2ⁿ の値と Feigenbaum 定数、周期倍分岐・接線分岐の位置
  */
 
-export type MapId = 'logistic' | 'sine' | 'tent' | 'quartic' | 'cubic' | 'gauss' | 'ricker';
+export type MapId = 'logistic' | 'sine' | 'tent' | 'quartic' | 'cubic' | 'gauss' | 'ricker' | 'henon';
 
 export interface MapDef {
   id: MapId;
   /** パラメータの範囲（写像が x の範囲を x の範囲へ写すパラメータ） */
   lo: number;
   hi: number;
-  /** x の範囲（軌道はこの中に収める）と、初めの値の既定 */
+  /** x の範囲（1 次元の写像の軌道はこの中に収める）と、初めの値の既定 */
   x: readonly [number, number];
   x0: number;
+  /** 標準の表示と初めの値の欄の x の範囲（既定は x） */
+  xs?: readonly [number, number];
+  /** パラメータ r のときにクモの巣図・時系列・音で使う x の範囲（既定は x） */
+  win?(r: number): readonly [number, number];
+  /** 2 次元の写像（エノン）: (x, y) → (f(x) + y, b x)。1 次元の写像にはない */
+  b?: number;
   /** 分岐図の既定の表示範囲 */
   view: readonly [number, number];
   /** 極大の位置（リッカー写像は r で動く）と、その r による微分 */
@@ -42,12 +48,16 @@ export interface MapDef {
 const TENT_MAX = 2 - 1e-12;
 /** ガウス写像の幅 α（固定。4.9 で周期倍分岐の泡とカオスが両方出る） */
 export const GAUSS_A = 4.9;
+/** エノン写像の b（固定。Hénon 1976 の値） */
+export const HENON_B = 0.3;
+/** 2 次元の写像で、この大きさを超えた軌道は無限へ逃げたとみなす */
+const ESC = 1e3;
 const half = () => 0.5;
 
 /** Feigenbaum の値 δ（パラメータの間隔の比）= 4.669201609102990671853… と α（枝の幅の比）= 2.502907875095892822283…（倍精度に丸めた値） */
 export const DELTA = 4.66920160910299;
 export const ALPHA = 2.502907875095893;
-/** ロジスティク写像の集積点（Myrberg 点）= 3.569945671870944901842…（OEIS A098587、倍精度に丸めた値） */
+/** ロジスティック写像の集積点（Myrberg 点）= 3.569945671870944901842…（OEIS A098587、倍精度に丸めた値） */
 export const R_INF_LOGISTIC = 3.569945671870945;
 /** 極大が 4 次の写像の δ・α（Briggs 1991 の表、倍精度より短い桁） */
 export const DELTA4 = 7.284686217;
@@ -56,10 +66,13 @@ export const ALPHA4 = 1.690302971;
 export const MAPS: Record<MapId, MapDef> = {
   logistic: {
     id: 'logistic',
-    lo: 0,
+    lo: -2,
     hi: 4,
-    x: [0, 1],
+    x: [-0.5, 1.5],
     x0: 0.3,
+    xs: [0, 1],
+    /* r < 0 では極小 r/4 とその像 f(r/4) の間に収まる */
+    win: (r) => (r >= 0 ? [0, 1] : [r / 4, Math.max(1, ((r * r) / 4) * (1 - r / 4))]),
     view: [2.8, 4],
     c: half,
     smooth: true,
@@ -162,75 +175,103 @@ export const MAPS: Record<MapId, MapDef> = {
     dr: (x, r) => x * (1 - x) * Math.exp(r * (1 - x)),
     seed: [1, 2.5],
   },
+  henon: {
+    id: 'henon',
+    lo: 0,
+    hi: 1.4,
+    x: [-1.5, 1.5],
+    x0: 0.3,
+    view: [0.3, 1.4],
+    c: () => 0,
+    smooth: false,
+    b: HENON_B,
+    ly: [-2, 1],
+    f: (x, r) => 1 - r * x * x,
+    dx: (x, r) => -2 * r * x,
+    dr: (x) => -x * x,
+  },
 };
 
 /** 値を写像の x の範囲に収める（丸めで外へ出た値と NaN を戻す） */
 export const clampX = (m: MapDef, x: number): number => (x > m.x[0] ? (x < m.x[1] ? x : m.x[1]) : m.x[0]);
 
-/** x から n 回写した値 */
-export function iterate(m: MapDef, r: number, x: number, n: number): number {
-  for (let i = 0; i < n; i++) x = clampX(m, m.f(x, r));
-  return x;
+/** パラメータ r のときの表示の x の範囲 */
+export const winX = (m: MapDef, r: number): readonly [number, number] => m.win?.(r) ?? m.x;
+
+/**
+ * 軌道を 1 回ずつ進める。1 次元の写像は x の範囲に収め、2 次元の写像は y も持ち、逃げたら x を NaN にする
+ * （NaN は以後も NaN のまま）
+ */
+export class Walker {
+  y = 0;
+  constructor(
+    readonly m: MapDef,
+    readonly r: number,
+    public x: number,
+  ) {}
+  step(): number {
+    const { m, r } = this;
+    if (m.b === undefined) this.x = clampX(m, m.f(this.x, r));
+    else {
+      const x = this.x,
+        nx = m.f(x, r) + this.y;
+      this.y = m.b * x;
+      this.x = Math.abs(nx) < ESC ? nx : Number.NaN;
+    }
+    return this.x;
+  }
+  run(n: number): this {
+    for (let i = 0; i < n; i++) this.step();
+    return this;
+  }
 }
 
-/** x0 から始めた軌道 x0, x1, …, x(n−1) */
-export function orbit(m: MapDef, r: number, x0: number, n: number): Float64Array {
-  const o = new Float64Array(n);
-  let x = x0;
-  for (let i = 0; i < n; i++) {
-    o[i] = x;
-    x = clampX(m, m.f(x, r));
-  }
-  return o;
+/** x から n 回写した値（2 次元の写像は y = 0 から） */
+export function iterate(m: MapDef, r: number, x: number, n: number): number {
+  return new Walker(m, r, x).run(n).x;
 }
 
 /**
  * リアプノフ指数 λ = (1/n) Σ ln |f′(xₖ)|（skip 回の過渡を捨てた n 回の平均）。
- * 超安定な周期で極大に乗ると f′ = 0 になるので、|f′| の下限を 1e-300 にする（λ は大きな負の値）
+ * 超安定な周期で極大に乗ると f′ = 0 になるので、|f′| の下限を 1e-300 にする（λ は大きな負の値）。
+ * 2 次元の写像は接ベクトルをヤコビ行列 [[f′, 1], [b, 0]] で運び、伸びの対数を平均する（最大リアプノフ指数）。
+ * 逃げた軌道は NaN
  */
 export function lyapunov(m: MapDef, r: number, x0: number, skip: number, n: number): number {
-  let x = iterate(m, r, x0, skip),
-    s = 0;
+  const w = new Walker(m, r, x0).run(skip);
+  let s = 0;
+  if (m.b === undefined) {
+    for (let i = 0; i < n; i++) {
+      s += Math.log(Math.max(Math.abs(m.dx(w.x, r)), 1e-300));
+      w.step();
+    }
+    return s / n;
+  }
+  let v1 = 1,
+    v2 = 0;
   for (let i = 0; i < n; i++) {
-    s += Math.log(Math.max(Math.abs(m.dx(x, r)), 1e-300));
-    x = clampX(m, m.f(x, r));
+    const a = m.dx(w.x, r) * v1 + v2,
+      b = m.b * v1,
+      h = Math.hypot(a, b);
+    s += Math.log(Math.max(h, 1e-300));
+    v1 = a / h;
+    v2 = b / h;
+    w.step();
   }
   return s / n;
 }
 
 /** 過渡を捨てたあとの周期（maxP 以下で、tol 以内で戻れば周期とみなす）。見つからなければ 0 */
 export function period(m: MapDef, r: number, x0: number, skip = 4000, maxP = 128, tol = 1e-7): number {
-  const x = iterate(m, r, x0, skip);
-  let y = x;
+  const w = new Walker(m, r, x0).run(skip),
+    x = w.x,
+    y = w.y;
+  if (Number.isNaN(x)) return 0;
   for (let p = 1; p <= maxP; p++) {
-    y = clampX(m, m.f(y, r));
-    if (Math.abs(y - x) < tol) return p;
+    w.step();
+    if (Math.abs(w.x - x) < tol && Math.abs(w.y - y) < tol) return p;
   }
   return 0;
-}
-
-/**
- * 分岐図の 1 列: 過渡 skip 回のあと keep 回の値を、縦 [y0, y1] を H 個に分けた升へ数える。
- * out[i] は下から i 番目の升の回数（out は呼ぶ側が 0 にする）
- */
-export function column(
-  m: MapDef,
-  r: number,
-  x0: number,
-  skip: number,
-  keep: number,
-  y0: number,
-  y1: number,
-  out: Float32Array | Uint32Array,
-): void {
-  const H = out.length,
-    k = H / (y1 - y0);
-  let x = iterate(m, r, x0, skip);
-  for (let i = 0; i < keep; i++) {
-    x = clampX(m, m.f(x, r));
-    const j = Math.floor((x - y0) * k);
-    if (j >= 0 && j < H) out[j]++;
-  }
 }
 
 /** fᴺ(x) と r による微分（xₖ₊₁ = f(xₖ)、dxₖ₊₁/dr = f′(xₖ)·dxₖ/dr + ∂f/∂r(xₖ)、dx₀/dr = d） */

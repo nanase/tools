@@ -20,8 +20,8 @@ const related = [
   ...TOOLS.filter((t) => t.c !== CAT && !t.s),
 ];
 ---
-<SiteLayout title={name} tool={{ id: 'bifurcation', name }} description="ロジスティク写像・ガウス写像・リッカー写像など 7 つの 1 次元の写像で、パラメータを動かすと周期倍分岐をくり返してカオスに至る様子を、クモの巣図・時系列・分岐図・リアプノフ指数を連動させて見ます。Feigenbaum 定数と周期 3 の窓も拡大して確かめられ、値の列を音でも聞けます。" note="倍精度の浮動小数点で計算した参考値です。音はこの端末の中で作り、送信しません。">
-  <PageTitle title={name}>ロジスティク写像など 7 つの写像のパラメータを動かし、周期倍分岐からカオスへ至る様子をクモの巣図・時系列・分岐図・リアプノフ指数で見ます。</PageTitle>
+<SiteLayout title={name} tool={{ id: 'bifurcation', name }} description="ロジスティック写像・ガウス写像・エノン写像など 8 つの写像で、パラメータを動かすと周期倍分岐をくり返してカオスに至る様子を、クモの巣図・時系列・分岐図・リアプノフ指数を連動させて見ます。Feigenbaum 定数と周期 3 の窓も拡大して確かめられ、値の列を音でも聞けます。" note="倍精度の浮動小数点で計算した参考値です。音はこの端末の中で作り、送信しません。">
+  <PageTitle title={name}>ロジスティック写像など 8 つの写像のパラメータを動かし、周期倍分岐からカオスへ至る様子をクモの巣図・時系列・分岐図・リアプノフ指数で見ます。</PageTitle>
   <div class="mini" aria-hidden="true"><span><i id="m-sym">r</i><b id="m-r"></b></span><span>PERIOD<b id="m-p"></b></span><span><i>λ</i><b id="m-lam"></b></span></div>
 
   <div class="tgrid">
@@ -45,7 +45,7 @@ const related = [
         </div>
       </div>
       <div class="quad">
-        <div class="q q-cob"><h3 class="vh">クモの巣図<span><i>x</i><sub><i>n</i></sub> → <i>x</i><sub><i>n</i>+1</sub></span></h3><canvas id="cv-cob" role="img" aria-label="クモの巣図"></canvas></div>
+        <div class="q q-cob"><h3 class="vh"><span class="vt" id="b-cobt">クモの巣図</span><span><i>x</i><sub><i>n</i></sub> → <i>x</i><sub><i>n</i>+1</sub></span></h3><canvas id="cv-cob" role="img" aria-label="クモの巣図"></canvas></div>
         <div class="q q-bif"><h3 class="vh">分岐図<span><i id="b-sym">r</i> = <b id="b-r"></b></span></h3><canvas id="cv-bif" class="drag" tabindex="0" role="slider" aria-label="分岐図（ドラッグでパラメータを変える）"></canvas></div>
         <div class="q q-ts"><h3 class="vh">時系列<span><i>n</i> ↓</span></h3><canvas id="cv-ts" role="img" aria-label="時系列"></canvas></div>
         <div class="q q-ly"><h3 class="vh">リアプノフ指数<span><i>λ</i> = <b id="b-lam"></b></span></h3><canvas id="cv-ly" class="drag" aria-hidden="true"></canvas>

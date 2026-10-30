@@ -5,7 +5,7 @@
 import { linList } from '../../lib/eseries';
 import { minus } from '../../lib/format';
 import type { ParamDef, ParamFormat } from '../../lib/param-def';
-import { GAUSS_A, MAPS, type MapId, R_INF_LOGISTIC } from './map';
+import { GAUSS_A, HENON_B, MAPS, type MapId, R_INF_LOGISTIC } from './map';
 
 export type Key = 'r' | 'x0' | 'vol';
 
@@ -24,11 +24,13 @@ export const MAP_INFO: Record<
   { name: string; sym: string; eq: string; v: number; pre: [number, string, string?][] }
 > = {
   logistic: {
-    name: 'ロジスティク',
+    name: 'ロジスティック',
     sym: 'r',
     eq: `<i>x</i><sub><i>n</i>+1</sub> = <i>r</i> ${xn}(1 − ${xn})`,
     v: 3.5,
     pre: [
+      [-2, '−2', '下端'],
+      [2 - R_INF_LOGISTIC, '−1.5699', '負の集積点'],
       [3, '3', '周期 1 → 2'],
       [1 + Math.sqrt(6), '3.4495', '周期 2 → 4'],
       [R_INF_LOGISTIC, '3.5699', '集積点'],
@@ -92,6 +94,17 @@ export const MAP_INFO: Record<
       [0, '0'],
     ],
   },
+  henon: {
+    name: 'エノン',
+    sym: 'a',
+    eq: `<i>x</i><sub><i>n</i>+1</sub> = 1 − <i>a</i> ${xn}<sup>2</sup> + <i>y</i><sub><i>n</i></sub>, <i>y</i><sub><i>n</i>+1</sub> = ${HENON_B} ${xn}`,
+    v: 1.2,
+    pre: [
+      [0.3675, '0.3675', '周期 1 → 2'],
+      [0.9125, '0.9125', '周期 2 → 4'],
+      [1.4, '1.4', '上端'],
+    ],
+  },
   ricker: {
     name: 'リッカー',
     sym: 'r',
@@ -123,16 +136,17 @@ export function rPatch(id: MapId): Pick<ParamDef, 'nm' | 'sym' | 'min' | 'max' |
   };
 }
 
-/** 初めの値の欄（写像の x の範囲の両端から 1 % 内側まで） */
+/** 初めの値の欄（写像の標準の x の範囲の両端から 1 % 内側まで） */
 export function x0Patch(id: MapId): Pick<ParamDef, 'min' | 'max' | 'v' | 'ph' | 'sign'> {
   const m = MAPS[id],
-    w = m.x[1] - m.x[0];
+    [a, b] = m.xs ?? m.x,
+    w = b - a;
   return {
-    min: Number((m.x[0] + 0.01 * w).toPrecision(4)),
-    max: Number((m.x[1] - 0.01 * w).toPrecision(4)),
+    min: Number((a + 0.01 * w).toPrecision(4)),
+    max: Number((b - 0.01 * w).toPrecision(4)),
     v: m.x0,
     ph: `例 ${m.x0}`,
-    sign: m.x[0] < 0 ? 'any' : 'pos',
+    sign: a < 0 ? 'any' : 'pos',
   };
 }
 
@@ -216,10 +230,10 @@ export interface View {
   /** 過渡を捨てる回数の倍率（集積点の近くは収束が遅い） */
   deep?: number;
 }
-/** 拡大のプリセット [名前, 範囲, title]。null は写像の既定の範囲、'all' はパラメータの範囲全体。3 つ目からはロジスティク写像だけ */
+/** 拡大のプリセット [名前, 範囲, title]。null は写像の既定の範囲、'all' はパラメータの範囲全体。3 つ目からはロジスティック写像だけ */
 export const ZOOMS: readonly (readonly [string, View | null | 'all', string?])[] = [
   ['標準', null, '周期倍分岐からカオスまで'],
-  ['全域', 'all', 'パラメータの範囲全体（ロジスティクは r = 0〜4）'],
+  ['全域', 'all', 'パラメータの範囲全体（ロジスティックは r = −2〜4）'],
   ['周期倍分岐', { r0: 3.4, r1: 3.6, y0: 0.28, y1: 0.92 }],
   ['集積点の付近', { r0: 3.5625, r1: 3.5735, y0: 0.32, y1: 0.92, deep: 2 }],
   ['周期 3 の窓', { r0: 3.8406, r1: 3.8572, y0: 0.43, y1: 0.55 }],

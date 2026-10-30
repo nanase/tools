@@ -1,11 +1,11 @@
 /**
  * 値の列を音にする（worklet.ts が出力のサンプリング周波数で呼ぶ。テストからも直接呼べる）。
- * 値は写像の x の範囲を 0〜1 に直して使う。
+ * 値は表示の x の範囲（winX）を 0〜1 に直して使う。
  * - 波形: 写像を毎秒 rate 回まわし、値をそのまま波形の標本にする。周期 p の軌道は rate/p Hz の音になり、
  *   周期が倍になるたびに 1 オクターブ下がる。カオスでは雑音になる
  * - 旋律: 毎秒 rate 回の音符にし、値 0〜1 を高さ lo〜lo·2^oct へ写す（scale が 'penta' なら五音音階へ丸める）
  */
-import { MAPS, type MapDef, type MapId } from './map';
+import { MAPS, type MapDef, type MapId, winX } from './map';
 
 export type SoundMode = 'wave' | 'melody';
 export type Scale = 'cont' | 'penta';
@@ -49,6 +49,8 @@ export function pitchOf(x: number, p: Pick<SoundParams, 'lo' | 'oct' | 'scale'>)
 export class MapVoice {
   private p: SoundParams = SOUND0;
   private x = MAPS.logistic.x0;
+  /** 2 次元の写像の y */
+  private y = 0;
   /** 次の反復までの位相（0〜1） */
   private ph = 1;
   private hp = 0;
@@ -61,7 +63,10 @@ export class MapVoice {
   private age = 0;
 
   set(p: SoundParams): void {
-    if (p.map !== this.p.map) this.x = MAPS[p.map].x0;
+    if (p.map !== this.p.map) {
+      this.x = MAPS[p.map].x0;
+      this.y = 0;
+    }
     this.p = p;
   }
 
@@ -70,9 +75,10 @@ export class MapVoice {
     return this.x;
   }
 
-  /** 今の値を x の範囲の中の割合（0〜1）で */
+  /** 今の値を表示の x の範囲の中の割合（0〜1）で */
   private u(m: MapDef): number {
-    return (this.x - m.x[0]) / (m.x[1] - m.x[0]);
+    const [a, b] = winX(m, this.p.r);
+    return (this.x - a) / (b - a);
   }
 
   /** n 個の標本を out へ書く（大きさは ±1 以内） */
@@ -117,12 +123,25 @@ export class MapVoice {
   }
 
   private next(m: MapDef, r: number): void {
+    if (m.b !== undefined) {
+      /* 2 次元の写像は表示の Walker と同じ。逃げたら始め直す */
+      const x = this.x,
+        nx = m.f(x, r) + this.y;
+      this.y = m.b * x;
+      this.x = nx;
+      if (!(Math.abs(nx) < 1e3)) {
+        this.x = m.x0;
+        this.y = 0;
+      }
+      return;
+    }
     const y = m.f(this.x, r),
-      [a, b] = m.x;
-    /* 外へ出た値は端に収める（表示の iterate と同じ）。NaN と、不安定なのに丸めでちょうど端に乗った軌道
-       （ロジスティクの r = 4 の 0.5 → 1 → 0）は始め直す */
+      [a, b] = m.x,
+      [wa, wb] = winX(m, r);
+    /* 外へ出た値は端に収める（表示の Walker と同じ）。NaN と、不安定なのに丸めでちょうど表示の範囲の端に乗った軌道
+       （ロジスティックの r = 4 の 0.5 → 1 → 0）は始め直す */
     if (Number.isNaN(y)) this.x = m.x0;
-    else if ((y === a || y === b) && Math.abs(m.dx(y, r)) > 1) this.x = m.x0;
+    else if ((y === wa || y === wb) && Math.abs(m.dx(y, r)) > 1) this.x = m.x0;
     else this.x = y < a ? a : y > b ? b : y;
   }
 }

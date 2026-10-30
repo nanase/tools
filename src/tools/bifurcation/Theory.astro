@@ -1,6 +1,19 @@
 ---
 // 動作原理と式。表の値はビルド時に map.ts で計算する
-import { ALPHA, ALPHA4, cascade, DELTA, DELTA4, doublings, GAUSS_A, MAPS, R_INF_LOGISTIC, windowStart } from './map';
+import {
+  ALPHA,
+  ALPHA4,
+  cascade,
+  DELTA,
+  DELTA4,
+  doublings,
+  GAUSS_A,
+  HENON_B,
+  lyapunov,
+  MAPS,
+  R_INF_LOGISTIC,
+  windowStart,
+} from './map';
 
 const L = MAPS.logistic;
 const C = cascade(L, 11);
@@ -11,6 +24,7 @@ const Q = cascade(MAPS.quartic, 11);
 const K = cascade(MAPS.cubic, 11);
 const G = cascade(MAPS.gauss, 11);
 const Rk = cascade(MAPS.ricker, 11);
+const LH = lyapunov(MAPS.henon, 1.4, 0.3, 1000, 200000);
 const f = (v: number, n: number) => (Number.isFinite(v) ? v.toFixed(n) : '');
 const sub = (s: string, i: string) => `<msub><mi>${s}</mi><mi>${i}</mi></msub>`;
 const xn = sub('x', 'n');
@@ -25,13 +39,14 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
 <div class="tt-w"><table class="tt">
   <thead><tr><th>写像</th><th><math><mi>f</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo></math></th><th>範囲</th><th>極大</th></tr></thead>
   <tbody>
-    <tr><th>ロジスティク<Fragment set:html={rf(1)} /></th><td><math><mi>r</mi><mi>x</mi><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><mi>x</mi><mo stretchy="false">)</mo></math></td><td><math><mn>0</mn><mo>≤</mo><mi>r</mi><mo>≤</mo><mn>4</mn></math></td><td>2 次</td></tr>
+    <tr><th>ロジスティック<Fragment set:html={rf(1)} /></th><td><math><mi>r</mi><mi>x</mi><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><mi>x</mi><mo stretchy="false">)</mo></math></td><td><math><mo>−</mo><mn>2</mn><mo>≤</mo><mi>r</mi><mo>≤</mo><mn>4</mn></math></td><td>2 次</td></tr>
     <tr><th>正弦<Fragment set:html={rf(6)} /></th><td><math><mi>r</mi><mi>sin</mi><mi>π</mi><mi>x</mi></math></td><td><math><mn>0</mn><mo>≤</mo><mi>r</mi><mo>≤</mo><mn>1</mn></math></td><td>2 次</td></tr>
     <tr><th>テント<Fragment set:html={rf(9)} /></th><td><math><mi>μ</mi><mi>min</mi><mo stretchy="false">(</mo><mi>x</mi><mo>,</mo><mn>1</mn><mo>−</mo><mi>x</mi><mo stretchy="false">)</mo></math></td><td><math><mn>0</mn><mo>≤</mo><mi>μ</mi><mo>≤</mo><mn>2</mn></math></td><td>折れ目</td></tr>
     <tr><th>4 次<Fragment set:html={rf(4)} /></th><td><math><mi>r</mi><mo stretchy="false">{</mo><mn>1</mn><mo>−</mo><msup><mrow><mo stretchy="false">(</mo><mn>2</mn><mi>x</mi><mo>−</mo><mn>1</mn><mo stretchy="false">)</mo></mrow><mn>4</mn></msup><mo stretchy="false">}</mo></math></td><td><math><mn>0</mn><mo>≤</mo><mi>r</mi><mo>≤</mo><mn>1</mn></math></td><td>4 次</td></tr>
     <tr><th>3 次</th><td><math><mi>r</mi><mi>x</mi><mo>−</mo><msup><mi>x</mi><mn>3</mn></msup></math></td><td><math><mn>0</mn><mo>≤</mo><mi>r</mi><mo>≤</mo><mn>3</mn><mo>,</mo><mo stretchy="false">|</mo><mi>x</mi><mo stretchy="false">|</mo><mo>≤</mo><mn>2</mn></math></td><td>2 次（2 つ）</td></tr>
     <tr><th>ガウス<Fragment set:html={rf(12)} /></th><td><math set:html={`<msup><mi>e</mi><mrow><mo>−</mo><mn>${GAUSS_A}</mn><msup><mi>x</mi><mn>2</mn></msup></mrow></msup><mo>+</mo><mi>β</mi>`} /></td><td><math><mo>−</mo><mn>1</mn><mo>≤</mo><mi>β</mi><mo>≤</mo><mn>1</mn></math></td><td>2 次</td></tr>
     <tr><th>リッカー<Fragment set:html={rf(13)} /></th><td><math><mi>x</mi><msup><mi>e</mi><mrow><mi>r</mi><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><mi>x</mi><mo stretchy="false">)</mo></mrow></msup></math></td><td><math><mn>0</mn><mo>≤</mo><mi>r</mi><mo>≤</mo><mn>4</mn></math></td><td>2 次</td></tr>
+    <tr><th>エノン<Fragment set:html={rf(14)} /></th><td><math set:html={`<mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><mi>a</mi><msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><mi>y</mi><mo>,</mo><mspace width="0.3em"/><mn>${HENON_B}</mn><mi>x</mi><mo stretchy="false">)</mo>`} /></td><td><math><mn>0</mn><mo>≤</mo><mi>a</mi><mo>≤</mo><mn>1.4</mn></math></td><td>2 次元</td></tr>
   </tbody>
 </table></div>
 <ul class="tl">
@@ -47,7 +62,7 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
 <ul class="tl">
   <li>乗数 <math><mo>−</mo><mn>1</mn></math>: 周期倍分岐（<math><mi>p</mi><mo>→</mo><mn>2</mn><mi>p</mi></math>）</li>
   <li>乗数 <math><mo>+</mo><mn>1</mn></math>: 接線分岐（窓の始まり）</li>
-  <li>乗数 0: 超安定（軌道が極大 <math><mi>c</mi></math> を通る。ロジスティクは <math><mi>c</mi><mo>=</mo><mn>1</mn><mo>/</mo><mn>2</mn></math>）</li>
+  <li>乗数 0: 超安定（軌道が極大 <math><mi>c</mi></math> を通る。ロジスティックは <math><mi>c</mi><mo>=</mo><mn>1</mn><mo>/</mo><mn>2</mn></math>）</li>
 </ul>
 <div class="tt-w"><table class="tt">
   <thead><tr><th>周期</th><th>始まり <math><msub><mi>r</mi><mi>k</mi></msub></math></th><th>超安定 <math><msub><mi>R</mi><mi>k</mi></msub></math></th><th><math><msub><mi>δ</mi><mi>k</mi></msub></math></th><th><math><msub><mi>α</mi><mi>k</mi></msub></math></th></tr></thead>
@@ -74,7 +89,7 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
   <li>周期 3 の窓は <math><mi>r</mi><mo>=</mo><mn>1</mn><mo>+</mo><mn>2</mn><msqrt><mn>2</mn></msqrt></math> = <Fragment set:html={f(W3, 9)} /> の接線分岐で始まる<Fragment set:html={rf(8)} /></li>
   <li>手前は間欠性（周期 3 に近い動きとカオスの交代）<Fragment set:html={rf(9)} /></li>
   <li>周期 3 があればすべての周期がある<Fragment set:html={rf(7)} /></li>
-  <li>窓の並びはロジスティクと正弦で同じ<Fragment set:html={rf(6)} /></li>
+  <li>窓の並びはロジスティックと正弦で同じ<Fragment set:html={rf(6)} /></li>
 </ul>
 
 <h3>ほかの写像</h3>
@@ -88,8 +103,10 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
   </tbody>
 </table></div>
 <ul class="tl">
+  <li>ロジスティックの <math><mi>r</mi><mo>&lt;</mo><mn>0</mn></math>: <math><mi>r</mi></math> と <math><mn>2</mn><mo>−</mo><mi>r</mi></math> は同じ動き（共役）。<math><mi>r</mi><mo>=</mo><mo>−</mo><mn>1</mn></math> で周期 1 → 2、<math><mi>r</mi><mo>=</mo><mo>−</mo><mn>2</mn></math> は <math><mi>r</mi><mo>=</mo><mn>4</mn></math> と同じ。<math><mi>x</mi></math> は <math><mi>r</mi><mo>/</mo><mn>4</mn></math>〜<math><mi>f</mi><mo stretchy="false">(</mo><mi>r</mi><mo>/</mo><mn>4</mn><mo stretchy="false">)</mo></math></li>
   <li>3 次: <math><mi>r</mi><mo>=</mo><mn>1</mn></math> で 0 が不安定になり、正と負の 2 つに分かれる（<math><msub><mi>x</mi><mn>0</mn></msub></math> の符号で決まる）。<math><mi>r</mi><mo>=</mo><mn>3</mn><msqrt><mn>3</mn></msqrt><mo>/</mo><mn>2</mn></math> で 2 つのカオスが 1 つに。<math><mi>r</mi><mo>=</mo><mn>3</mn></math> は <math><mi>x</mi><mo>=</mo><mn>2</mn><mi>cos</mi><mi>θ</mi></math> で <math><mi>θ</mi><mo>→</mo><mn>3</mn><mi>θ</mi></math>（<math><mi>λ</mi><mo>=</mo><mi>ln</mi><mn>3</mn></math>）</li>
   <li>ガウス: 左から周期倍分岐でカオスへ進み、右で逆にたどって戻る<Fragment set:html={rf(12)} />。<math><mi>β</mi></math> が −1 に近い所では <math><msub><mi>x</mi><mn>0</mn></msub></math> で落ち着く先が 2 つ</li>
+  <li>エノン: 2 次元の写像<Fragment set:html={rf(14)} />。<math><msub><mi>x</mi><mrow><mi>n</mi><mo>+</mo><mn>1</mn></mrow></msub></math> は <math><msub><mi>x</mi><mi>n</mi></msub></math> だけで決まらないので、クモの巣図の代わりに点 <math><mo stretchy="false">(</mo><msub><mi>x</mi><mi>n</mi></msub><mo>,</mo><msub><mi>x</mi><mrow><mi>n</mi><mo>+</mo><mn>1</mn></mrow></msub><mo stretchy="false">)</mo></math> を打つ。<math><mi>λ</mi></math> は最大リアプノフ指数（<math><mi>a</mi></math> = 1.4 で <Fragment set:html={f(LH, 3)} />）。<math><mi>b</mi><mo>=</mo><mn>0</mn></math> なら 1 次元の 2 次写像</li>
   <li>リッカー: 魚の親と子の数の模型<Fragment set:html={rf(13)} />。極大の位置 <math><mi>x</mi><mo>=</mo><mn>1</mn><mo>/</mo><mi>r</mi></math> が <math><mi>r</mi></math> で動く。カオスでは 0 の近くまで減る年がある</li>
 </ul>
 
@@ -101,7 +118,7 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
   <li><math><mi>λ</mi><mo>&lt;</mo><mn>0</mn></math>: 周期に落ち着く。超安定で <math><mo>−</mo><mi>∞</mi></math></li>
   <li><math><mi>λ</mi><mo>=</mo><mn>0</mn></math>: 分岐の点</li>
   <li><math><mi>λ</mi><mo>&gt;</mo><mn>0</mn></math>: カオス（近い 2 点が <math><msup><mi>e</mi><mrow><mi>λ</mi><mi>n</mi></mrow></msup></math> で離れる）</li>
-  <li>ロジスティクの <math><mi>r</mi><mo>=</mo><mn>4</mn></math> で <math><mi>ln</mi><mn>2</mn></math>、テントで <math><mi>ln</mi><mi>μ</mi></math><Fragment set:html={rf(9)} /></li>
+  <li>ロジスティックの <math><mi>r</mi><mo>=</mo><mn>4</mn></math> で <math><mi>ln</mi><mn>2</mn></math>、テントで <math><mi>ln</mi><mi>μ</mi></math><Fragment set:html={rf(9)} /></li>
 </ul>
 
 <h3>音</h3>
@@ -114,6 +131,7 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
 <h3>このツールで決めたこと</h3>
 <ul class="tl">
   <li>初めの値 <math><msub><mi>x</mi><mn>0</mn></msub></math> = 0.3（ガウスは 0）。3 次の分岐図は ±0.3 の両方から</li>
+  <li>エノン写像の <math><mi>b</mi></math> = 0.3 に固定、<math><msub><mi>y</mi><mn>0</mn></msub></math> = 0。<math><mo stretchy="false">|</mo><mi>x</mi><mo stretchy="false">|</mo></math> が 1000 を超えたら発散</li>
   <li>ガウス写像の幅は 4.9 に固定、<math><mi>x</mi></math> は −1〜1.5 に収める。リッカーは 0〜5.1</li>
   <li>分岐図の過渡は 500 回から（拡大するほど増やす）、打つ点は 1 列あたり 300〜900 個</li>
   <li>周期は過渡 4000 回のあと、128 回以内に 10⁻⁷ 以内へ戻るもの</li>
@@ -124,7 +142,7 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
 
 <h3>出典</h3>
 <ol class="refs">
-  <li id="thy-r1"><span class="rf-for">ロジスティク写像と分岐図</span><span class="rf-src">R. M. May, “Simple mathematical models with very complicated dynamics,” <i>Nature</i>, vol. 261, pp. 459–467, 1976, <a href="https://doi.org/10.1038/261459a0" target="_blank" rel="noopener">doi:10.1038/261459a0</a></span></li>
+  <li id="thy-r1"><span class="rf-for">ロジスティック写像と分岐図</span><span class="rf-src">R. M. May, “Simple mathematical models with very complicated dynamics,” <i>Nature</i>, vol. 261, pp. 459–467, 1976, <a href="https://doi.org/10.1038/261459a0" target="_blank" rel="noopener">doi:10.1038/261459a0</a></span></li>
   <li id="thy-r2"><span class="rf-for">δ と普遍性</span><span class="rf-src">M. J. Feigenbaum, “Quantitative universality for a class of nonlinear transformations,” <i>Journal of Statistical Physics</i>, vol. 19, pp. 25–52, 1978, <a href="https://doi.org/10.1007/BF01020332" target="_blank" rel="noopener">doi:10.1007/BF01020332</a></span></li>
   <li id="thy-r3"><span class="rf-for">α と普遍関数</span><span class="rf-src">M. J. Feigenbaum, “The universal metric properties of nonlinear transformations,” <i>Journal of Statistical Physics</i>, vol. 21, pp. 669–706, 1979, <a href="https://doi.org/10.1007/BF01107909" target="_blank" rel="noopener">doi:10.1007/BF01107909</a></span></li>
   <li id="thy-r4"><span class="rf-for">δ・α の値（極大の次数 2〜12）</span><span class="rf-src">K. Briggs, “A precise calculation of the Feigenbaum constants,” <i>Mathematics of Computation</i>, vol. 57, pp. 435–439, 1991, <a href="https://doi.org/10.1090/S0025-5718-1991-1079009-6" target="_blank" rel="noopener">doi:10.1090/S0025-5718-1991-1079009-6</a></span></li>
@@ -137,4 +155,5 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
   <li id="thy-r11"><span class="rf-for">値の列の旋律</span><span class="rf-src">A. Capozucca, M. Fermani, and S. Giorgini, “<a href="https://archive.bridgesmathart.org/2017/bridges2017-443.html" target="_blank" rel="noopener">Listening to the Logistic Map</a>,” <i>Proceedings of Bridges 2017</i>, pp. 443–446</span></li>
   <li id="thy-r12"><span class="rf-for">ガウス写像</span><span class="rf-src">R. C. Hilborn, <i>Chaos and Nonlinear Dynamics</i>, 2nd ed., Oxford University Press, 2000</span></li>
   <li id="thy-r13"><span class="rf-for">リッカー写像</span><span class="rf-src">W. E. Ricker, “Stock and recruitment,” <i>Journal of the Fisheries Research Board of Canada</i>, vol. 11, pp. 559–623, 1954, <a href="https://doi.org/10.1139/f54-039" target="_blank" rel="noopener">doi:10.1139/f54-039</a></span></li>
+  <li id="thy-r14"><span class="rf-for">エノン写像</span><span class="rf-src">M. Hénon, “A two-dimensional mapping with a strange attractor,” <i>Communications in Mathematical Physics</i>, vol. 50, pp. 69–77, 1976, <a href="https://doi.org/10.1007/BF01608556" target="_blank" rel="noopener">doi:10.1007/BF01608556</a></span></li>
 </ol>

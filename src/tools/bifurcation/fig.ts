@@ -2,7 +2,7 @@
  * 分岐図のページの図（Canvas）: 枠と目盛り、分岐図の濃さの画像、リアプノフ指数、クモの巣図、縦向きの時系列。
  * 隣り合う図は軸を 1 本ずつ共有するので、上下の余白（クモの巣図と分岐図）と左右の余白（クモの巣図と時系列）をそろえる
  */
-import { clampX, iterate, lyapunov, type MapDef } from './map';
+import { lyapunov, type MapDef, Walker, winX } from './map';
 import type { View } from './params';
 
 /** テーマの色（CSS 変数を読む） */
@@ -165,12 +165,13 @@ function cursor(c: CanvasRenderingContext2D, P: Frame, X: number, col: Col): voi
   c.stroke();
 }
 
-/** 過渡を捨てたあとの軌道の値（重なりを除いて最大 n 個） */
+/** 過渡を捨てたあとの軌道の値 n 個（逃げた軌道は空） */
 export function attractor(m: MapDef, r: number, x0: number, n = 64): number[] {
-  let x = iterate(m, r, x0, 2000);
-  const o: number[] = [];
+  const w = new Walker(m, r, x0).run(2000),
+    o: number[] = [];
   for (let i = 0; i < n; i++) {
-    x = clampX(m, m.f(x, r));
+    const x = w.step();
+    if (Number.isNaN(x)) return [];
     o.push(x);
   }
   return o;
@@ -197,9 +198,10 @@ export function bifImage(
   for (let i = 0; i < W; i++) {
     const r = v.r0 + ((i + 0.5) / W) * (v.r1 - v.r0);
     for (const s0 of seeds) {
-      let x = iterate(m, r, s0, skip);
+      const w = new Walker(m, r, s0).run(skip);
       for (let n = 0; n < keep; n++) {
-        x = clampX(m, m.f(x, r));
+        const x = w.step();
+        if (Number.isNaN(x)) break;
         let j = Math.floor((v.y1 - x) * k);
         if (v.flip) j = H - 1 - j;
         if (j >= 0 && j < H) cnt[j * W + i]++;
@@ -356,13 +358,33 @@ export class LyFig {
 }
 
 /* ---------- クモの巣図 ---------- */
-/** 縦の範囲 [y0, y1] は分岐図の縦の範囲（拡大したとき、その帯を薄く塗る） */
+/** x0 から n 回の軌道（逃げたらそこまで） */
+function path(m: MapDef, r: number, x0: number, n: number): number[] {
+  const w = new Walker(m, r, x0),
+    o = [x0];
+  for (let i = 0; i < n; i++) {
+    const x = w.step();
+    if (Number.isNaN(x)) break;
+    o.push(x);
+  }
+  return o;
+}
+
+/**
+ * 横 xₙ・縦 xₙ₊₁ の図。1 次元の写像は曲線 f と階段（クモの巣図）。2 次元の写像（エノン）は xₙ₊₁ が xₙ だけで
+ * 決まらないので、曲線の代わりに過渡を捨てた点 (xₙ, xₙ₊₁) を打ち（リターンマップ）、その上に同じ階段を描く。
+ * 縦の範囲 [y0, y1] は分岐図の縦の範囲（拡大したとき、その帯を薄く塗る）
+ */
 export function drawCob(cv: HTMLCanvasElement, s: BifState, col: Col): void {
   const F = fitCanvas(cv),
     { m, r } = s,
     c = F.c,
-    [a0, a1] = m.x;
+    [a0, a1] = winX(m, r);
   const P = frame(F, { x0: a0, x1: a1, y0: a0, y1: a1 }, col, { xl: 'xₙ', yl: 'xₙ₊₁' });
+  c.save();
+  c.beginPath();
+  c.rect(P.l, P.t, P.pw, P.ph);
+  c.clip();
   if (s.v.y0 > a0 || s.v.y1 < a1) {
     c.fillStyle = rgba(col.ch2, 0.1);
     const a = P.Y(s.v.y1),
@@ -376,36 +398,41 @@ export function drawCob(cv: HTMLCanvasElement, s: BifState, col: Col): void {
   c.lineTo(P.X(a1), P.Y(a1));
   c.stroke();
   c.setLineDash([]);
-  /* 曲線は枠の外へ出ることがある（ガウス写像の頂上）ので枠で切る */
-  c.save();
-  c.beginPath();
-  c.rect(P.l, P.t, P.pw, P.ph);
-  c.clip();
-  c.strokeStyle = col.ink2;
-  c.lineWidth = 1.6;
-  c.beginPath();
-  for (let i = 0; i <= 240; i++) {
-    const x = a0 + ((a1 - a0) * i) / 240,
-      y = m.f(x, r);
-    if (i) c.lineTo(P.X(x), P.Y(y));
-    else c.moveTo(P.X(x), P.Y(y));
+  if (m.b === undefined) {
+    c.strokeStyle = col.ink2;
+    c.lineWidth = 1.6;
+    c.beginPath();
+    for (let i = 0; i <= 240; i++) {
+      const x = a0 + ((a1 - a0) * i) / 240,
+        y = m.f(x, r);
+      if (i) c.lineTo(P.X(x), P.Y(y));
+      else c.moveTo(P.X(x), P.Y(y));
+    }
+    c.stroke();
+  } else {
+    const w = new Walker(m, r, s.x0).run(1000);
+    let x = w.x;
+    c.fillStyle = col.ink2;
+    for (let i = 0; i < 4000 && !Number.isNaN(x); i++) {
+      const y = w.step();
+      c.fillRect(P.X(x) - 0.6, P.Y(y) - 0.6, 1.2, 1.2);
+      x = y;
+    }
   }
-  c.stroke();
-  c.restore();
   /* 階段: 初めの 66 段は薄く、最後の 24 段は濃く */
   const N = 90,
-    tail = 24;
-  let x = s.x0;
+    tail = 24,
+    o = path(m, r, s.x0, N);
   c.lineWidth = 1.1;
-  for (let n = 0; n < N; n++) {
-    const y = clampX(m, m.f(x, r));
+  for (let n = 0; n + 1 < o.length; n++) {
+    const x = o[n],
+      y = o[n + 1];
     c.strokeStyle = rgba(col.ch1, n < N - tail ? 0.18 : 0.95);
     c.beginPath();
     c.moveTo(P.X(x), P.Y(n ? x : a0));
     c.lineTo(P.X(x), P.Y(y));
     c.lineTo(P.X(y), P.Y(y));
     c.stroke();
-    x = y;
   }
   c.fillStyle = col.ch1;
   for (const z of attractor(m, r, s.x0)) {
@@ -413,6 +440,7 @@ export function drawCob(cv: HTMLCanvasElement, s: BifState, col: Col): void {
     c.arc(P.X(z), P.Y(z), 2.4, 0, 7);
     c.fill();
   }
+  c.restore();
 }
 
 /* ---------- 時系列（縦向き） ---------- */
@@ -423,13 +451,9 @@ export function drawTs(cv: HTMLCanvasElement, s: BifState, col: Col): void {
   const F = fitCanvas(cv),
     { m, r } = s,
     c = F.c,
-    o: number[] = [];
-  let x = s.x0;
-  for (let n = 0; n <= TS_N; n++) {
-    o.push(x);
-    x = clampX(m, m.f(x, r));
-  }
-  const P = frame(F, { x0: m.x[0], x1: m.x[1], y0: 0, y1: TS_N, flip: true }, col, { xl: 'xₙ', yl: 'n' });
+    o = path(m, r, s.x0, TS_N),
+    [a0, a1] = winX(m, r);
+  const P = frame(F, { x0: a0, x1: a1, y0: 0, y1: TS_N, flip: true }, col, { xl: 'xₙ', yl: 'n' });
   c.strokeStyle = rgba(col.ch1, 0.5);
   c.lineWidth = 1;
   c.beginPath();

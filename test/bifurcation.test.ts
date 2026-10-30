@@ -12,6 +12,7 @@ import {
   period,
   R_INF_LOGISTIC,
   superstable,
+  Walker,
   windowStart,
 } from '../src/tools/bifurcation/map';
 import { MapVoice, pitchOf, SOUND0, type SoundParams } from '../src/tools/bifurcation/sound';
@@ -20,7 +21,7 @@ const L = MAPS.logistic,
   S = MAPS.sine,
   T = MAPS.tent;
 
-describe('ロジスティク写像の周期倍分岐', () => {
+describe('ロジスティック写像の周期倍分岐', () => {
   it('周期倍分岐の位置は 3・1+√6 と Feigenbaum 定数の項の表の値に合う', () => {
     const r = doublings(L, cascade(L, 9));
     expect(r[0]).toBeCloseTo(3, 10);
@@ -152,6 +153,34 @@ describe('ほかの写像', () => {
     expect(iterate(G, -0.9, 0, 3000)).toBeGreaterThan(0);
     expect(iterate(G, -0.9, 0.8, 3000)).toBeLessThan(-0.8);
   });
+  it('ロジスティック写像の負の r: r と 2 − r は同じ動き（周期・λ が同じ）', () => {
+    for (const r of [-0.5, -1.2, -1.5, -2]) {
+      expect(period(L, r, 0.3)).toBe(period(L, 2 - r, 0.3));
+      expect(lyapunov(L, r, 0.3, 1000, 100000)).toBeCloseTo(lyapunov(L, 2 - r, 0.3, 1000, 100000), 1);
+    }
+    expect(lyapunov(L, -2, 0.3, 1000, 1_000_000)).toBeCloseTo(Math.LN2, 2);
+    /* x は r/4 と f(r/4) の間に収まる */
+    const w = new Walker(L, -1.8, 0.3).run(1000);
+    for (let i = 0; i < 10000; i++) {
+      const x = w.step();
+      expect(x).toBeGreaterThanOrEqual(-1.8 / 4 - 1e-12);
+      expect(x).toBeLessThanOrEqual(L.f(-1.8 / 4, -1.8) + 1e-12);
+    }
+  });
+  it('エノン写像: a = 0.3675 で周期 1 → 2、0.9125 の先で周期 4、a = 1.4 の最大リアプノフ指数は 0.42', () => {
+    const H = MAPS.henon;
+    expect(period(H, 0.36, 0.3)).toBe(1);
+    expect(period(H, 0.38, 0.3, 20000)).toBe(2);
+    expect(period(H, 0.9, 0.3)).toBe(2);
+    expect(period(H, 0.95, 0.3)).toBe(4);
+    /* Hénon 1976 の a = 1.4、b = 0.3。文献の値は約 0.42 */
+    expect(lyapunov(H, 1.4, 0.3, 1000, 200000)).toBeCloseTo(0.42, 1);
+    /* 周期 2 では 2 つの指数の和が ln b、複素の固有値なら各々 (ln b)/2 */
+    expect(lyapunov(H, 0.6, 0.3, 1000, 20000)).toBeCloseTo(Math.log(0.3) / 2, 3);
+    /* 遠くから始めると逃げる（NaN） */
+    expect(Number.isNaN(iterate(H, 1.4, 1.4, 5000))).toBe(true);
+    expect(period(H, 1.4, 1.4)).toBe(0);
+  });
   it('リッカー写像: r = 2 で周期 1 → 2、x は 5.1 を超えない', () => {
     expect(doublings(Rk, cascade(Rk, 4))[0]).toBeCloseTo(2, 9);
     for (let r = 0.5; r <= 4; r += 0.5) expect(Rk.f(1 / r, r)).toBeLessThan(Rk.x[1]);
@@ -204,6 +233,13 @@ describe('値の列の音', () => {
     for (const v of a) expect(Math.abs(v)).toBeLessThanOrEqual(1);
     for (const v of render({ map: 'gauss', r: -0.45, mode: 'melody', rate: 8 }, fs / 4))
       expect(Math.abs(v)).toBeLessThanOrEqual(0.5);
+  });
+  it('エノン写像の周期 4 は rate/4 の音になり、カオスでも逃げずに鳴る', () => {
+    const a = render({ map: 'henon', r: 1 });
+    expect(mag(a, 220, fs)).toBeGreaterThan(0.01);
+    const c = render({ map: 'henon', r: 1.4 });
+    expect(Math.max(...c.map(Math.abs))).toBeGreaterThan(0.05);
+    for (const v of c) expect(Math.abs(v)).toBeLessThanOrEqual(1);
   });
   it('出力は ±1 に収まる', () => {
     for (const r of [3.2, 3.83, 4]) for (const v of render({ r }, fs / 4)) expect(Math.abs(v)).toBeLessThanOrEqual(1);

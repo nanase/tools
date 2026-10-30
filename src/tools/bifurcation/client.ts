@@ -58,8 +58,9 @@ const S = {
 };
 const m = () => MAPS[S.map];
 const defView = (): View => {
-  const [r0, r1] = m().view;
-  return { r0, r1, y0: m().x[0], y1: m().x[1] };
+  const [r0, r1] = m().view,
+    [y0, y1] = m().xs ?? m().x;
+  return { r0, r1, y0, y1 };
 };
 /** パラメータの範囲全体 */
 const allView = (): View => ({ r0: m().lo, r1: m().hi, y0: m().x[0], y1: m().x[1] });
@@ -212,7 +213,11 @@ const ft = $('#ft');
 function paintFt(): void {
   const C = cas(S.map);
   if (!C) {
-    ft.innerHTML = '<caption class="ft-none">テント写像は極大が折れ目なので、周期倍分岐の段がありません</caption>';
+    const why =
+      m().b === undefined
+        ? 'テント写像は極大が折れ目なので、周期倍分岐の段がありません'
+        : '2 次元の写像なので、極大を通る超安定な段を使うこの表は作りません';
+    ft.innerHTML = `<caption class="ft-none">${why}</caption>`;
     return;
   }
   const f = (v: number, n: number) => (Number.isFinite(v) ? v.toFixed(n) : '');
@@ -277,12 +282,15 @@ function draw(): void {
 }
 
 /* ---------- 計算結果 ---------- */
-const lamText = (v: number) => (v < -9 ? '−∞' : minus(v.toFixed(3)));
+const lamText = (v: number) => (Number.isNaN(v) ? DASH : v < -9 ? '−∞' : minus(v.toFixed(3)));
 function outs(): void {
   const sym = MAP_INFO[S.map].sym,
     rs = minus(S.r.toFixed(5)),
-    ps = per ? String(per) : lam > 0.001 ? 'カオス' : DASH;
+    ps = per ? String(per) : Number.isNaN(lam) ? '発散' : lam > 0.001 ? 'カオス' : DASH;
   html('#b-eq', MAP_INFO[S.map].eq);
+  const cobT = m().b === undefined ? 'クモの巣図' : 'リターンマップ';
+  txt('#b-cobt', cobT);
+  if (cvCob.getAttribute('aria-label') !== cobT) cvCob.setAttribute('aria-label', cobT);
   txt('#b-sym', sym);
   txt('#m-sym', sym);
   html('#o-symt', `<i>${sym}</i>`);

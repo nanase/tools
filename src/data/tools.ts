@@ -287,9 +287,9 @@ export const TOOLS: Tool[] = [
     id: 'bifurcation',
     c: '数学',
     t: '分岐図',
-    d: 'ロジスティク写像が周期倍分岐をくり返してカオスに至る様子を見ます。',
+    d: 'ロジスティック写像が周期倍分岐をくり返してカオスに至る様子を見ます。',
     ic: 'bf',
-    k: 'bifurcation diagram 分岐図 ロジスティック写像 ロジスティク写像 logistic map 正弦写像 sine map テント写像 tent map クモの巣図 蜘蛛の巣図 cobweb 時系列 周期倍分岐 period doubling カオス chaos リアプノフ指数 lyapunov exponent feigenbaum ファイゲンバウム 定数 普遍性 universality 集積点 窓 周期 3 period three li-yorke sharkovskii 超安定 superstable 力学系 dynamical system 非線形 nonlinear may 数学 math',
+    k: 'bifurcation diagram 分岐図 ロジスティック写像 logistic map 正弦写像 sine map テント写像 tent map エノン写像 henon map ガウス写像 gauss map mouse map リッカー写像 ricker map 3 次写像 cubic map クモの巣図 蜘蛛の巣図 cobweb 時系列 周期倍分岐 period doubling カオス chaos リアプノフ指数 lyapunov exponent feigenbaum ファイゲンバウム 定数 普遍性 universality 集積点 窓 周期 3 period three li-yorke sharkovskii 超安定 superstable 力学系 dynamical system 非線形 nonlinear may 数学 math',
   },
   {
     id: 'tuner',
