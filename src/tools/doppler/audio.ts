@@ -55,7 +55,7 @@ export class DopplerAudio {
           master = ac.createGain(),
           lim = ac.createDynamicsCompressor(),
           an = ac.createAnalyser();
-        /* 速いピークだけを抑える制限器（マッハ円錐が届いたときの大きな音で割れないように） */
+        /* 速いピークだけを抑える制限器（マッハコーンが届いたときの大きな音で割れないように） */
         lim.threshold.value = -3;
         lim.knee.value = 0;
         lim.ratio.value = 20;

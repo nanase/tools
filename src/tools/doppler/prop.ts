@@ -130,6 +130,49 @@ export function findRoots(tr: Track, now: number, lx: number, ly: number, dz: nu
   return out;
 }
 
+/**
+ * 速く読むときの折り返し（エイリアス）を防ぐため、音源の音を帯域を半分ずつ狭めた写しでもためる（ミップマップ）。
+ * 写し L は 6 次のバターワース低域通過（遮断 0.45 fs / 2^L）を通したもので、2^L 倍に速めて読んでも 0.45 fs を超えない。
+ * 段の間は重みでつなぐ。低域通過の遅れ（直流での群遅延）だけ先を読んでそろえる
+ */
+export const MIP_N = 5;
+class Lp6 {
+  private b: number[][] = [];
+  private a: number[][] = [];
+  private z = new Float64Array(6);
+  /** 直流での群遅延 [標本] */
+  readonly gd: number;
+  constructor(fc: number, fs: number) {
+    const w = (2 * Math.PI * fc) / fs,
+      cw = Math.cos(w);
+    let gd = 0;
+    /* 6 次のバターワースの 3 段の Q: 1 / (2 cos(kπ/12))、k = 1, 3, 5 */
+    for (const q of [1, 3, 5].map((k) => 1 / (2 * Math.cos((k * Math.PI) / 12)))) {
+      const al = Math.sin(w) / (2 * q),
+        a0 = 1 + al,
+        b = [(1 - cw) / 2 / a0, (1 - cw) / a0, (1 - cw) / 2 / a0],
+        a = [1, (-2 * cw) / a0, (1 - al) / a0];
+      this.b.push(b);
+      this.a.push(a);
+      gd += (b[1] + 2 * b[2]) / (b[0] + b[1] + b[2]) - (a[1] + 2 * a[2]) / (a[0] + a[1] + a[2]);
+    }
+    this.gd = gd;
+  }
+  step(x: number): number {
+    const z = this.z;
+    let y = x;
+    for (let i = 0; i < 3; i++) {
+      const b = this.b[i],
+        a = this.a[i],
+        o = b[0] * y + z[2 * i];
+      z[2 * i] = b[1] * y - a[1] * o + z[2 * i + 1];
+      z[2 * i + 1] = b[2] * y - a[2] * o;
+      y = o;
+    }
+    return y;
+  }
+}
+
 /** 道（直接音・地面で反射した音）の 1 つの解を鳴らす声。前の刻みから今の刻みまで、読む位置と大きさを直線で補間する */
 interface Voice {
   /** 読む位置 [標本]（放射時刻）の前と今 */
@@ -168,8 +211,10 @@ export interface PropSet {
 }
 export const PROP0: PropSet = { c: 343.2, air: AIR0, absorb: true, ground: 1, hs: 1, hl: 1.5, r0: 1 };
 
-/** 前の刻みの声を続けるとみなす、読む位置のずれの上限 [標本] */
+/** 前の刻みの声を続けるとみなす、読む位置のずれの上限 [標本]（読む速さが速いほど広げる） */
 const MATCH = 2 * TICK;
+/** 新しい声の読む速さの上限（1 刻みに読み進める標本の数の、TICK に対する比） */
+const SLOPE_MAX = 64;
 
 /** 吸収の係数を引く表の距離 [m]（対数で等間隔） */
 const POLE_R0 = 1,
@@ -197,6 +242,10 @@ export class Propagator {
   set: PropSet;
   /** 音源の音（放射時刻の目盛り）。長さは 2 のべき */
   private sig: Float32Array;
+  /** 帯域を狭めた写し（mip[0] は sig）と、その低域通過・群遅延 */
+  private mip: Float32Array[];
+  private lps: Lp6[];
+  private gds: number[];
   private mask: number;
   /** 書いた標本の数 */
   private written = 0;
@@ -216,6 +265,9 @@ export class Propagator {
     let len = 1;
     while (len < (n + 2) * TICK) len *= 2;
     this.sig = new Float32Array(len);
+    this.lps = Array.from({ length: MIP_N }, (_, i) => new Lp6((0.45 * fs) / 2 ** (i + 1), fs));
+    this.mip = [this.sig, ...this.lps.map(() => new Float32Array(len))];
+    this.gds = [0, ...this.lps.map((f) => f.gd)];
     this.mask = len - 1;
     this.set = set;
     this.setAir(set);
@@ -250,7 +302,12 @@ export class Propagator {
       sig = this.sig,
       mask = this.mask;
     tr.push(sx, sy, jump);
-    for (let j = 0; j < TICK; j++) sig[(this.written + j) & mask] = src[j];
+    for (let j = 0; j < TICK; j++) {
+      const i = (this.written + j) & mask,
+        x = src[j];
+      sig[i] = x;
+      for (let l = 0; l < MIP_N; l++) this.mip[l + 1][i] = this.lps[l].step(x);
+    }
     this.written += TICK;
     out.fill(0);
     const now = tr.head;
@@ -288,11 +345,11 @@ export class Propagator {
           p = this.pole(r.r);
         /* 前の刻みの声のうち、同じ速さで読み進めた位置がいちばん近いものを続ける */
         let best: Voice | null = null,
-          bd = MATCH;
+          bd = Number.POSITIVE_INFINITY;
         for (const v of vs) {
           if (v.hit) continue;
           const d = Math.abs(v.t0 + v.slope - t);
-          if (d < bd) {
+          if (d < MATCH + 0.25 * Math.abs(v.slope) && d < bd) {
             best = v;
             bd = d;
           }
@@ -305,9 +362,15 @@ export class Propagator {
           best.r = r.r;
           best.mr = r.mr;
         } else {
-          /* 新しい解（マッハ円錐が来たとき・記録の始め）: 大きさ 0 から上げる */
-          const f = new AirFilter();
-          vs.push({ t0: t, t1: t, slope: 0, g0: 0, g1: gain, p0: p, p1: p, f, hit: true, r: r.r, mr: r.mr });
+          /* 新しい解（マッハコーンが来たとき・記録の始め）: 大きさ 0 から上げる。読む速さは 1/(1 − M_r) から見積もり、
+             最初の刻みから正しい速さで読む（音速を超えた音は 1 刻みに TICK の何倍も進む。見積もらないと次の刻みで
+             同じ声とみなせず、毎刻み作り直して音が崩れる） */
+          const f = new AirFilter(),
+            k = 1 - r.mr,
+            est =
+              TICK *
+              Math.max(-SLOPE_MAX, Math.min(SLOPE_MAX, 1 / (Math.sign(k || 1) * Math.max(1 / SLOPE_MAX, Math.abs(k)))));
+          vs.push({ t0: t - est, t1: t, slope: est, g0: 0, g1: gain, p0: p, p1: p, f, hit: true, r: r.r, mr: r.mr });
         }
       }
       /* 解がなくなった声は、同じ速さで読み進めながら大きさを 0 へ下げ、次の刻みで消す */
@@ -327,11 +390,25 @@ export class Propagator {
       for (const v of vs) {
         const dt = (v.t1 - v.t0) / TICK,
           dg = (v.g1 - v.g0) / TICK,
-          dp = (v.p1 - v.p0) / TICK;
+          dp = (v.p1 - v.p0) / TICK,
+          sp = Math.abs(dt),
+          /* 読む速さに合う写し: 写し L は速さ 2^L まで使える。2 倍より速ければ、重みでつなぐ両側の写しが
+             どちらも使える段（log2 s + 1）にする。1〜2 倍は写し 0（音源の波形表は 2 倍まで折り返さない）から上げていく */
+          lv = Math.min(MIP_N, sp <= 1 ? 0 : sp <= 2 ? 2 * (sp - 1) : Math.log2(sp) + 1),
+          l0 = Math.min(MIP_N - 1, Math.floor(lv)),
+          w = lv - l0,
+          m0 = this.mip[l0],
+          m1 = this.mip[l0 + 1],
+          d0 = this.gds[l0],
+          d1 = this.gds[l0 + 1];
         for (let j = 0; j < TICK; j++) {
-          const t = Math.min(top, v.t0 + dt * j);
+          const t = v.t0 + dt * j,
+            x =
+              w > 0
+                ? (1 - w) * hermite(m0, mask, Math.min(top, t + d0)) + w * hermite(m1, mask, Math.min(top, t + d1))
+                : hermite(m0, mask, Math.min(top, t + d0));
           v.f.p = v.p0 + dp * j;
-          out[j] += (v.g0 + dg * j) * v.f.step(hermite(sig, mask, t));
+          out[j] += (v.g0 + dg * j) * v.f.step(x);
         }
       }
     }

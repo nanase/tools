@@ -22,7 +22,7 @@ const related = [
   ...TOOLS.filter((t) => t.c !== CAT && t.id !== 'engine' && !t.s),
 ];
 const desc =
-  '救急車のサイレンやエンジンの音源が道路を走り、すれ違うときに聞こえる音の高さと大きさの変化を計算して鳴らします。音速を超えたときのマッハ円錐も見られます。';
+  '救急車のサイレンやエンジンの音源が道路を走り、すれ違うときに聞こえる音の高さと大きさの変化を計算して鳴らします。音速を超えたときのマッハコーンも見られます。';
 ---
 <SiteLayout title={name} tool={{ id: 'doppler', name }} description={desc} note="音はこの端末の中で作り、送信しません。">
   <PageTitle title={name}>{desc}</PageTitle>
@@ -30,10 +30,10 @@ const desc =
 
   <div class="tgrid">
     <Panel hid="hd-fig" title="道路と波面" class="a-fig" fixed>
-      <div slot="aux" class="seg"><button type="button" id="moveBtn" aria-pressed="true" title="音源を走らせる・止める">走らせる</button></div>
+      <div slot="aux" class="seg"><button type="button" id="runBtn" aria-pressed="true" title="音源を走らせる・止める"><span class="led on" id="runLed" aria-hidden="true"></span><span id="runT">RUN</span></button></div>
       <div class="sbar">
         <span class="stag"><i class="sw c2" aria-hidden="true"></i>波面</span>
-        <span class="stag"><i class="sw" aria-hidden="true"></i>マッハ円錐</span>
+        <span class="stag"><i class="sw" aria-hidden="true"></i>マッハコーン</span>
         <span class="stag"><i class="sw dash" aria-hidden="true"></i>いま聞こえる音の出どころ</span>
         <span class="stag right">ドラッグ: 聞き手・音源</span>
       </div>
@@ -77,6 +77,12 @@ const desc =
     </div>
 
     <div class="col c2">
+      <Panel hid="hd-snd" title="音" class="a-snd">
+        <div slot="aux" class="seg"><button type="button" id="playBtn" aria-pressed="false" title="聞き手の位置の音を鳴らす・止める"><span class="led" id="playLed" aria-hidden="true"></span><span id="playT">再生</span></button></div>
+        <div class="ptab"><ParamRow d={VOL} /></div>
+        <p class="msg er snd-msg" id="snd-msg" aria-live="polite"></p>
+      </Panel>
+
       <Panel hid="hd-src" title="音源" class="a-src">
         <div class="ptab">
           <ChoiceRow
@@ -118,11 +124,6 @@ const desc =
         </dl>
       </Panel>
 
-      <Panel hid="hd-snd" title="音" class="a-snd">
-        <div slot="aux" class="seg"><button type="button" id="playBtn" aria-pressed="false" title="聞き手の位置の音を鳴らす・止める"><span class="led" id="playLed" aria-hidden="true"></span><span id="playT">鳴らす</span></button></div>
-        <div class="ptab"><ParamRow d={VOL} /></div>
-        <p class="msg er snd-msg" id="snd-msg" aria-live="polite"></p>
-      </Panel>
     </div>
 
     <Collapsible hid="hd-thy" title="動作原理と式">

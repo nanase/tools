@@ -254,3 +254,90 @@ describe('音源', () => {
     expect(e.f0()).toBeCloseTo(4802 / 120, -1);
   });
 });
+
+/** 基数 2 の FFT（その場で） */
+function fft(re: Float64Array, im: Float64Array): void {
+  const n = re.length;
+  for (let i = 1, j = 0; i < n; i++) {
+    let b = n >> 1;
+    for (; j & b; b >>= 1) j ^= b;
+    j ^= b;
+    if (i < j) {
+      [re[i], re[j]] = [re[j], re[i]];
+      [im[i], im[j]] = [im[j], im[i]];
+    }
+  }
+  for (let len = 2; len <= n; len <<= 1) {
+    const a = (-2 * Math.PI) / len;
+    for (let i = 0; i < n; i += len)
+      for (let k = 0; k < len / 2; k++) {
+        const wr = Math.cos(a * k),
+          wi = Math.sin(a * k),
+          p = i + k + len / 2,
+          xr = re[p] * wr - im[p] * wi,
+          xi = re[p] * wi + im[p] * wr;
+        re[p] = re[i + k] - xr;
+        im[p] = im[i + k] - xi;
+        re[i + k] += xr;
+        im[i + k] += xi;
+      }
+  }
+}
+
+describe('速い音源の音の崩れ', () => {
+  /**
+   * 正弦波 f0 の音源が速さ M で道路を走り、聞き手（距離 20 m）が時刻 tw に聞く音のうち、
+   * 式で求めた周波数（各解の f0·|比|。ナイキスト未満）の ±4 % の内と外のエネルギー
+   */
+  function band(f0: number, M: number, tw: number): { inE: number; outE: number } {
+    const v = M * C,
+      d = 20,
+      T0 = 3,
+      src = new Tone(FS, f0),
+      p = new Propagator(FS, 8, { ...PROP0, ground: 0, absorb: false, hs: 1, hl: 1, r0: 10 }),
+      n = Math.floor(((T0 + tw + 0.1) * FS) / TICK),
+      y = new Float32Array(n * TICK),
+      s = new Float32Array(TICK),
+      o = new Float32Array(TICK);
+    for (let k = 0; k < n; k++) {
+      for (let j = 0; j < TICK; j++) s[j] = src.step();
+      p.advance(s, v * ((k * TICK) / FS - T0), 0, false, 0, d, o);
+      y.set(o, k * TICK);
+    }
+    const N = 2048,
+      i0 = Math.floor((T0 + tw) * FS),
+      re = new Float64Array(N),
+      im = new Float64Array(N);
+    for (let i = 0; i < N; i++) re[i] = y[i0 + i] * (0.5 - 0.5 * Math.cos((2 * Math.PI * i) / N));
+    fft(re, im);
+    const tm = tw + N / 2 / FS,
+      want = emissions(vec(v * tm, 0, 1), vec(v, 0, 0), vec(0, d, 1), O, C)
+        .map((e) => f0 * Math.abs(e.ratio))
+        .filter((f) => f < FS / 2);
+    let inE = 0,
+      outE = 0;
+    for (let k = 1; k < N / 2; k++) {
+      const f = (k * FS) / N,
+        e = re[k] ** 2 + im[k] ** 2;
+      if (want.some((w) => Math.abs(f - w) < w * 0.04 + (3 * FS) / N)) inE += e;
+      else outE += e;
+    }
+    return { inE, outE };
+  }
+  /** 外にあるエネルギーの割合 [dB] */
+  const stray = (f0: number, M: number, tw: number) => {
+    const { inE, outE } = band(f0, M, tw);
+    return 10 * Math.log10(outE / (inE + outE));
+  };
+  it('近づく音が 2 倍より高くなっても（マッハ 0.8）、声が途切れず式の周波数だけになる', () => {
+    expect(stray(1000, 0.8, -0.3)).toBeLessThan(-40);
+  });
+  it('音速を超えたとき（マッハ 1.2）、遅れて届く近づく音と遠ざかる音の 2 つだけになる', () => {
+    expect(stray(2000, 1.2, 0.3)).toBeLessThan(-40);
+  });
+  it('速く読んでもナイキストを超える音は折り返さない（正弦波 5 kHz、近づく音は 25 kHz）', () => {
+    /* 折り返した音を、同じ大きさで 2 kHz（近づく音は 10 kHz で聞こえる）を鳴らしたときと比べる */
+    const ref = band(2000, 1.2, 0.3).inE;
+    expect(10 * Math.log10(band(5000, 1.2, 0.3).outE / ref)).toBeLessThan(-30);
+  });
+});

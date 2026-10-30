@@ -1,7 +1,7 @@
 /**
  * 直線を等速で動く音源と聞き手の運動学（DOM に依存しない）。グラフと図の計算に使う。
  * 聞き手が時刻 t に聞く音は、音源が時刻 τ に出した音で、|L(t) − S(τ)| = c (t − τ) を満たす（放射時刻）。
- * 音源が音速より遅ければ τ は 1 つ、速ければ 0 か 2 つ（マッハ円錐の内側で 2 つ）
+ * 音源が音速より遅ければ τ は 1 つ、速ければ 0 か 2 つ（マッハコーンの内側で 2 つ）
  */
 
 export interface Vec {
@@ -61,7 +61,7 @@ export function emissions(S: Vec, V: Vec, L: Vec, U: Vec, c: number): Emission[]
   return out.sort((p, q) => p.delay - q.delay);
 }
 
-/** マッハ円錐の半頂角 [rad]: sin μ = 1/M（M ≤ 1 では円錐にならないので NaN） */
+/** マッハコーンの半頂角 [rad]: sin μ = 1/M（M ≤ 1 ではコーンにならないので NaN） */
 export const machAngle = (m: number): number => (m > 1 ? Math.asin(1 / m) : Number.NaN);
 
 /** 止まった聞き手で、近づくとき・遠ざかるときの周波数の比 1/(1 ∓ M)（音源が真っすぐ向かってくるとき） */
@@ -72,7 +72,7 @@ export const ratioHeadOn = (m: number): { toward: number; away: number } => ({
 
 /**
  * 動く単極音源の音圧の振幅の倍率: 止まっているときの r₀/r に、1/(1 − M_r)² を掛ける（単極音源の遠方の音場）。
- * 1 − M_r が 0 に近い所（マッハ円錐の上）は無限大になるので、|1 − M_r| を eps で下から抑える
+ * 1 − M_r が 0 に近い所（マッハコーンの上）は無限大になるので、|1 − M_r| を eps で下から抑える
  */
 export const DOPPLER_EPS = 0.1;
 export function ampFactor(r: number, mr: number, r0 = 1, rMin = 1, eps = DOPPLER_EPS): number {

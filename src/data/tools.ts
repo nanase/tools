@@ -152,7 +152,7 @@ export const TOOLS: Tool[] = [
     t: 'ドップラー効果',
     d: 'すれ違う救急車やエンジンの音の高さと大きさの変化を計算して鳴らします。',
     ic: 'dp',
-    k: 'doppler effect ドップラー 救急車 サイレン siren 電車 警笛 horn エンジン engine すれ違い 音速 マッハ mach 衝撃波 マッハ円錐 mach cone ソニックブーム sonic boom 波面 空気の吸収 air absorption iso 9613 地面の反射 ground reflection 遅延線 delay line オーディオ audio',
+    k: 'doppler effect ドップラー 救急車 サイレン siren 電車 警笛 horn エンジン engine すれ違い 音速 マッハ mach 衝撃波 マッハコーン マッハ円錐 mach cone ソニックブーム sonic boom 波面 空気の吸収 air absorption iso 9613 地面の反射 ground reflection 遅延線 delay line オーディオ audio',
   },
   {
     id: 'guitar',

@@ -186,11 +186,13 @@ new Choice<'1' | '0'>($('#p-gnd'), (s) => {
   audio.set(propSet());
 });
 
-/* ---------- 走らせる・止める ---------- */
-const moveBtn = $('#moveBtn');
-moveBtn.addEventListener('click', () => {
+/* ---------- 走らせる・止める（RUN・STOP） ---------- */
+const runBtn = $('#runBtn');
+runBtn.addEventListener('click', () => {
   moving = !moving;
-  moveBtn.setAttribute('aria-pressed', String(moving));
+  runBtn.setAttribute('aria-pressed', String(moving));
+  $('#runLed').classList.toggle('on', moving);
+  $('#runT').textContent = moving ? 'RUN' : 'STOP';
   anchor();
 });
 
@@ -203,7 +205,7 @@ function setPlay(on: boolean): void {
   playing = on;
   playBtn.setAttribute('aria-pressed', String(on));
   playLed.classList.toggle('on', on);
-  playT.textContent = on ? '鳴っている' : '鳴らす';
+  playT.textContent = on ? '停止' : '再生';
 }
 playBtn.addEventListener('click', async () => {
   if (playing) {
@@ -356,7 +358,7 @@ function drawRoad(rs: Emission[]): void {
     ctx.stroke();
   }
   ctx.globalAlpha = 1;
-  /* マッハ円錐 */
+  /* マッハコーン */
   const M = vNow() / c();
   if (M > 1) {
     const mu = Math.asin(1 / M),
@@ -506,7 +508,7 @@ function redraw(): void {
     ts = Array.from({ length: n + 1 }, (_, i) => -5 * td + (10 * td * i) / n),
     rows = ts.map((t) => passAt(p, t));
   gF.td = gL.td = td;
-  /* 周波数: 上は近づく音の値まで。音速を超えると円錐が届いた所で限りなく高くなるので、
+  /* 周波数: 上は近づく音の値まで。音速を超えるとマッハコーンが届いた所で限りなく高くなるので、
      遅れて届く近づく音（f₀/(M − 1)）の少し上で切る */
   const M = v / c(),
     cap =
@@ -614,7 +616,7 @@ function setOut(rs: Emission[]): void {
   $('#o-l').innerHTML = e ? u(level(e).toFixed(1), 'dB') : '—';
   $('#mF').textContent = e ? `${fs[0]} Hz` : '—';
   $('#mL').textContent = e ? `${level(e).toFixed(0)} dB` : '—';
-  $('#o-n').textContent = rs.length >= 2 ? '2 つ（マッハ円錐の内側）' : rs.length ? '1 つ' : 'まだ届かない';
+  $('#o-n').textContent = rs.length >= 2 ? '2 つ（マッハコーンの内側）' : rs.length ? '1 つ' : 'まだ届かない';
 }
 
 /* ---------- 毎フレーム ---------- */
