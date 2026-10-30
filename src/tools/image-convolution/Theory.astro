@@ -1,5 +1,4 @@
 ---
-// 動作原理と式（下書き。デザインが決まったら図の名前と「このツールで決めたこと」を実装に合わせて直す）
 /** f[arg] */
 const sq = (f: string, arg: string) => `<mi>${f}</mi><mo stretchy="false">[</mo>${arg}<mo stretchy="false">]</mo>`;
 const sum = (lo: string) => `<munder><mo>∑</mo><mrow>${lo}</mrow></munder>`;
@@ -39,6 +38,9 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
     <tr><td>Sobel <math><mi>x</mi></math></td><td><math><msup><mrow><mo stretchy="false">[</mo><mn>1</mn><mspace width="0.3em"/><mn>2</mn><mspace width="0.3em"/><mn>1</mn><mo stretchy="false">]</mo></mrow><mi mathvariant="normal">T</mi></msup><mo stretchy="false">[</mo><mn>1</mn><mspace width="0.3em"/><mn>0</mn><mspace width="0.3em"/><mo>−</mo><mn>1</mn><mo stretchy="false">]</mo></math></td><td><Fragment set:html={rf(4)} /></td></tr>
   </tbody>
 </table></div>
+<ul class="tl">
+  <li>ピンぼけ・ガウス・ぶれは点像（PSF）。レンズの点像は <a href="../lens/">カメラレンズ</a></li>
+</ul>
 
 <h3>アンシャープマスク</h3>
 <div class="eqs">
@@ -97,6 +99,10 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
   <li>ガウス: ±3σ で打ち切り、和 1</li>
   <li>ピンぼけ: 升を 8 × 8 に分けて円に入る割合を重みに</li>
   <li>分離できる核は横 → 縦の 2 回で計算</li>
+  <li>画像: 走査線の上が出力、下が入力。入力の側の見方では配り始めた所から出力（足しかけの値）</li>
+  <li>升と窓の中: 大きい核は中央 7 × 7。升の値は 1/8 刻み</li>
+  <li>メディアンの窓: 3〜7</li>
+  <li>月面: NASA SVS の CGI Moon Kit の色の地図を切り抜き、灰色に<Fragment set:html={rf(8)} /></li>
 </ul>
 
 <h3>出典</h3>
@@ -108,4 +114,5 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
   <li id="thy-r5"><span class="rf-for">画像の外の扱い（reflect・constant・nearest・wrap）</span><span class="rf-src">SciPy, <a href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.convolve.html" target="_blank" rel="noopener">scipy.ndimage.convolve</a></span></li>
   <li id="thy-r6"><span class="rf-for">アンシャープマスク</span><span class="rf-src">scikit-image, <a href="https://scikit-image.org/docs/stable/api/skimage.filters.html#skimage.filters.unsharp_mask" target="_blank" rel="noopener">skimage.filters.unsharp_mask</a>（M. Petrou and C. Petrou, <i>Image Processing: The Fundamentals</i>, 2nd ed., Wiley, 2010, p. 357 を引く）</span></li>
   <li id="thy-r7"><span class="rf-for">メディアン</span><span class="rf-src">SciPy, <a href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.median_filter.html" target="_blank" rel="noopener">scipy.ndimage.median_filter</a></span></li>
+  <li id="thy-r8"><span class="rf-for">月面の画像</span><span class="rf-src">E. Wright, <a href="https://svs.gsfc.nasa.gov/4720/" target="_blank" rel="noopener">CGI Moon Kit</a>, NASA's Scientific Visualization Studio, 2019</span></li>
 </ol>
