@@ -268,6 +268,15 @@ export const TOOLS: Tool[] = [
     k: 'focusing mask フォーカスマスク ピント合わせ 合焦 focus bahtinov バーティノフ tri-bahtinov トライ・バーティノフ carey キャリー hartmann ハルトマン scheiner シャイナー 望遠鏡 telescope 天体写真 astrophotography 星 光条 回折 diffraction fraunhofer フラウンホーファー fft 点像 psf シーイング seeing 臨界焦点範囲 critical focus zone cfz 光軸 collimation コマ hfd',
   },
   {
+    id: 'image-convolution',
+    c: '画像・光学',
+    t: '画像の畳み込み',
+    d: 'ぼかしやエッジ検出の出力をカーネルの積和で 1 画素ずつ作ります。',
+    ic: 'icv',
+    k: 'image convolution 画像 畳み込み たたみこみ 2次元 2d kernel 核 カーネル フィルタ filter ぼかし blur 平均 box ガウス gaussian ピンぼけ defocus ぶれ motion blur 鮮鋭化 sharpen アンシャープマスク unsharp mask エッジ検出 edge detection ラプラシアン laplacian sobel ソーベル 勾配 gradient 浮き彫り emboss 点像分布関数 psf mtf 分離 separable 相関 correlation cnn メディアン median 端 padding',
+  },
+
+  {
     id: 'solar-eclipse',
     c: '天文',
     t: '日食',

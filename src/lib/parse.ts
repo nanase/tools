@@ -46,6 +46,7 @@ export type Unit =
   | 'K'
   | '″'
   | 'λ'
+  | '画素'
   | (typeof COMPOUND)[number];
 
 /**
@@ -136,6 +137,8 @@ const STRIP: Partial<Record<Unit, [RegExp, string]>> = {
   '″': [/(″|′′|"|”|arcsec|秒)$/i, ''],
   /* 波長を単位にした長さ（波面のずれ） */
   λ: [/(λ|waves?)$/i, ''],
+  /* 画像の長さ（画像の畳み込み） */
+  画素: [/(画素|px|pixels?)$/i, ''],
 };
 
 /**
@@ -158,6 +161,7 @@ const NO_PREFIX = new Set<Unit>([
   '点',
   '″',
   'λ',
+  '画素',
   'kg',
   'kg·cm²',
   'g·cm²',
