@@ -1,0 +1,55 @@
+/* 畳み込みのページだけのスタイル（共通は src/styles/site.css） */
+
+/* 核の色（このページだけ）: 入力 x は CH2、出力 y は CH1、核 h は紫 */
+:root{--cvh:#a03c8c}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--cvh:#e58ad6}}
+:root[data-theme="dark"]{--cvh:#e58ad6}
+
+/* 枠の並び（案 C）。スマホは 2 つの見方 → 入力 → 核 → 計算結果 → 周波数 → 式。
+   PC は左に 2 つの見方と計算結果、右の列に入力・核・周波数、その下に式（全幅） */
+.a-fig{order:1}.a-x{order:2}.a-h{order:3}.a-out{order:4}.a-fq{order:5}.a-thy{order:6}
+@media (min-width:1000px){
+  .tgrid{grid-template-columns:minmax(0,7fr) minmax(0,4fr);grid-template-areas:"fig c2" "out c2" "thy thy";grid-template-rows:auto 1fr;align-items:start}
+  .a-fig{grid-area:fig}.a-out{grid-area:out}.c2{grid-area:c2}.a-thy{grid-area:thy}
+}
+
+/* 枠線の上の右端: 見方と連続・離散 */
+.cv-aux{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px}
+@media (max-width:520px){.cv-aux .seg button{padding:0 7px}}
+.scope+.scope,#v-out+.scope,#v-in+.scope{margin-top:6px}
+
+/* 凡例 */
+.sw.cv-sw-x{background:var(--ch2)}
+.sw.cv-sw-h{background:var(--cvh)}
+.sw.cv-sw-p{height:10px;background:color-mix(in srgb,var(--ink-2) 30%,transparent);border:1px solid var(--ink-3)}
+
+/* 図 */
+.scope svg{touch-action:pan-y}
+.cv-gl{stroke:var(--grid);stroke-width:1}
+.cv-gb{stroke:var(--grid-2);stroke-width:1;fill:none}
+.cv-x,.cv-h,.cv-y,.cv-c{fill:none;stroke-linejoin:round;stroke-linecap:round}
+.cv-x{stroke:var(--ch2);stroke-width:2}
+.cv-h{stroke:var(--cvh);stroke-width:2}
+.cv-y{stroke:var(--ch1);stroke-width:2.4}
+.cv-y.ghost{opacity:.3;stroke-dasharray:4 4;stroke-width:1.6}
+.cv-c{stroke:var(--cvh);stroke-width:1;opacity:.55}
+.cv-dx{fill:var(--ch2)}.cv-dh{fill:var(--cvh)}.cv-dy{fill:var(--ch1)}.cv-dc{fill:var(--cvh);opacity:.5}
+.cv-pa{fill:color-mix(in srgb,var(--ink-2) 26%,transparent);stroke:var(--ink-2);stroke-width:1.2}
+.cv-pa.neg{fill:color-mix(in srgb,var(--cvh) 22%,transparent);stroke:var(--cvh)}
+.cv-cur{stroke:var(--ink);stroke-width:1;stroke-dasharray:3 3;opacity:.6}
+.scope text.cv-lb{font:italic 15px var(--math)}
+.scope text.cv-ax{font:italic 14px var(--math)}
+.scope text.cv-lab{font:700 13px var(--mono);fill:var(--ink);paint-order:stroke;stroke:var(--screen);stroke-width:4px;stroke-linejoin:round}
+
+/* 入力と核の小さい図（なぞって描く） */
+.cv-draw{margin-top:8px}
+.cv-draw svg{cursor:crosshair;touch-action:none}
+.cv-hint{margin:4px 0 0;font:500 12px/1.4 var(--mono);color:var(--ink-3)}
+
+/* 周波数の 3 段 */
+.cv-fq{display:grid;grid-template-columns:18px minmax(0,1fr);align-items:center;gap:4px 4px}
+.cv-fq .op{font:700 16px var(--math);color:var(--ink-3);text-align:center}
+.cv-fq .scope+.scope{margin-top:0}
+
+/* 計算結果 */
+#o-len,#o-mu,#o-var{font-size:14px}

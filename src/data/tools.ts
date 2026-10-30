@@ -148,6 +148,22 @@ export const TOOLS: Tool[] = [
     k: 'noise generator 雑音 ノイズ white ホワイトノイズ 白色雑音 pink ピンクノイズ 1/f brown ブラウンノイズ red 赤色雑音 blue ブルー violet バイオレット grey gray グレー velvet ベルベット lfsr 線形帰還シフトレジスタ m系列 m-sequence prbs 疑似乱数 原始多項式 ファミコン nes ゲームボーイ gameboy sn76489 スペクトル スペクトログラム spectrogram オーディオ audio',
   },
   {
+    id: 'reverb',
+    c: '音響',
+    t: '残響',
+    d: '部屋の反射を鏡像法で求め、インパルス応答を畳み込んで響きを聞きます。',
+    ic: 'rv',
+    k: 'reverb reverberation 残響 反響 エコー echo やまびこ 鏡像法 image source method インパルス応答 impulse response rir 残響時間 rt60 t60 sabine セイビン eyring アイリング 吸音率 absorption coefficient 初期反射 early reflection 後部残響 late reverberation 臨界距離 critical distance 平均自由行程 edt t20 t30 c80 d50 schroeder シュレーダー 畳み込み convolution convolver 部屋 ホール 教会 屋外 オーディオ audio',
+  },
+  {
+    id: 'thunder',
+    c: '音響',
+    t: '雷鳴',
+    d: '曲がりくねった放電路の衝撃波が時間をずらして届き、雷鳴になる様子を見て聞きます。',
+    ic: 'th',
+    k: 'thunder 雷鳴 雷 かみなり 稲妻 稲光 lightning 落雷 放電路 衝撃波 shock wave n波 n-wave ゴロゴロ バリバリ rumble clap 光ってから 3秒 1km 距離 空気の吸収 air absorption iso 9613 反射 こだま 影の領域 shadow zone few ribner tortuosity オーディオ audio',
+  },
+  {
     id: 'guitar',
     c: '音響モデル',
     t: 'ギター音響モデル',
@@ -268,6 +284,15 @@ export const TOOLS: Tool[] = [
     k: 'focusing mask フォーカスマスク ピント合わせ 合焦 focus bahtinov バーティノフ tri-bahtinov トライ・バーティノフ carey キャリー hartmann ハルトマン scheiner シャイナー 望遠鏡 telescope 天体写真 astrophotography 星 光条 回折 diffraction fraunhofer フラウンホーファー fft 点像 psf シーイング seeing 臨界焦点範囲 critical focus zone cfz 光軸 collimation コマ hfd',
   },
   {
+    id: 'image-convolution',
+    c: '画像・光学',
+    t: '画像の畳み込み',
+    d: 'ぼかしやエッジ検出の出力をカーネルの積和で 1 画素ずつ作ります。',
+    ic: 'icv',
+    k: 'image convolution 画像 畳み込み たたみこみ 2次元 2d kernel 核 カーネル フィルタ filter ぼかし blur 平均 box ガウス gaussian ピンぼけ defocus ぶれ motion blur 鮮鋭化 sharpen アンシャープマスク unsharp mask エッジ検出 edge detection ラプラシアン laplacian sobel ソーベル 勾配 gradient 浮き彫り emboss 点像分布関数 psf mtf 分離 separable 相関 correlation cnn メディアン median 端 padding',
+  },
+
+  {
     id: 'solar-eclipse',
     c: '天文',
     t: '日食',
@@ -306,6 +331,14 @@ export const TOOLS: Tool[] = [
     d: '音律ごとに和音を鳴らし、うなりの速さを比べます。',
     ic: 'tm',
     k: 'temperament tuning 音律 調律 うなり beat beats 平均律 equal temperament 純正律 just intonation ピタゴラス pythagorean ミーントーン meantone ヴェルクマイスター werckmeister キルンベルガー kirnberger ヴァロッティ vallotti ヤング young 古典調律 well temperament 和音 chord 長三和音 3 度 5 度 部分音 倍音 partial harmonic コンマ comma ウルフ wolf 非調和性 inharmonicity ストレッチ stretch ピアノ piano オルガン organ セント cent',
+  },
+  {
+    id: 'convolution',
+    c: '数学',
+    t: '畳み込み',
+    d: '核を反転して滑らせ、重なりの面積が出力になる様子を連続と離散で見ます。',
+    ic: 'cv',
+    k: 'convolution 畳み込み たたみこみ 合成積 convolve kernel カーネル 核 インパルス応答 impulse response 線形時不変 lti 移動平均 moving average 相関 相互相関 cross-correlation cnn 畳み込み定理 convolution theorem フーリエ fourier fft 円状畳み込み circular convolution 確率 サイコロ dice 中心極限定理 central limit theorem 数学 math',
   },
 ];
 /** 準備中を後ろへ */
