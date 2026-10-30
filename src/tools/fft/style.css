@@ -67,6 +67,9 @@
 #ff-zp text.twl{fill:var(--focus)}
 #ff-zp .vec{stroke-width:2.4;fill:none}
 #ff-zp text.vl{font-size:15px;font-weight:700}
+/* 札は線の上でも読めるように地の色で縁取る */
+#ff-zp text.vl,#ff-zp text.twl{paint-order:stroke;stroke:var(--screen);stroke-width:4px;stroke-linejoin:round}
+#ff-zp .lead{stroke:var(--focus);stroke-width:1;opacity:.6}
 #ff-zp text.note{font-size:12px}
 
 /* 図の下の式（a は黒・b は青・W は紺・結果は黄） */

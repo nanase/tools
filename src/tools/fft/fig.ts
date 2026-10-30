@@ -347,6 +347,99 @@ export function fxHtml(R: Run, V: View): string {
 }
 
 /* ---------- 拡大（今のバタフライを複素平面で） ---------- */
+/** 文字の枠（(x, y) は中心） */
+interface Box {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+/** 名前の札。(ax, ay) の点に添え、(x, y) は札の中心 */
+interface Tag extends Box {
+  html: string;
+  cls: string;
+  col: string;
+  ax: number;
+  ay: number;
+}
+/** 札の幅の見積もり（15px の等幅の太字。和文は 1 字 15px） */
+const textW = (t: string) => [...t].reduce((a, c) => a + (c.charCodeAt(0) > 0x2000 && c !== '·' ? 15 : 9), 4);
+/** 点 (ax, ay) から向き (dx, dy)（SVG の座標）の先に札を置く。向きがなければ右上 */
+function tag(
+  html: string,
+  cls: string,
+  col: string,
+  ax: number,
+  ay: number,
+  dx: number,
+  dy: number,
+  w: number,
+  h: number,
+): Tag {
+  const L = Math.hypot(dx, dy),
+    ux = L > 1e-9 ? dx / L : Math.SQRT1_2,
+    uy = L > 1e-9 ? dy / L : -Math.SQRT1_2,
+    d = 9 + (Math.abs(ux) * w) / 2 + (Math.abs(uy) * h) / 2;
+  return { html, cls, col, ax, ay, x: ax + ux * d, y: ay + uy * d, w, h };
+}
+/**
+ * 札を重ならないように押し広げて描く。fixed は動かない文字の枠 [中心 x, 中心 y, 幅, 高さ]。
+ * 重なった 2 つは、重なりの小さい向きへ離す。置きたい所から離れた札には細い線を引く
+ */
+function placeTags(tags: Tag[], fixed: [number, number, number, number][]): string {
+  const S = 300,
+    fx = fixed.map(([x, y, w, h]) => ({ x, y, w, h })),
+    clamp = (t: Tag) => {
+      t.x = Math.min(S - t.w / 2 - 2, Math.max(t.w / 2 + 2, t.x));
+      t.y = Math.min(S - t.h / 2 - 2, Math.max(t.h / 2 + 2, t.y));
+    },
+    inside = (t: Box, x: number, y: number) =>
+      x >= t.w / 2 + 2 && x <= S - t.w / 2 - 2 && y >= t.h / 2 + 2 && y <= S - t.h / 2 - 2,
+    /* 重なった 2 つを、上下左右のうち枠の中に収まる最も短い動きで離す（both は半分ずつ動かす） */
+    push = (a: Tag, b: Box, both: boolean) => {
+      const gx = (a.w + b.w) / 2 + 3,
+        gy = (a.h + b.h) / 2 + 1;
+      if (Math.abs(a.x - b.x) >= gx || Math.abs(a.y - b.y) >= gy) return false;
+      const k = both ? 0.5 : 1,
+        c: [number, number][] = [
+          [b.x + gx - a.x, 0],
+          [b.x - gx - a.x, 0],
+          [0, b.y + gy - a.y],
+          [0, b.y - gy - a.y],
+        ].sort((p, q) => Math.hypot(p[0], p[1]) - Math.hypot(q[0], q[1])) as [number, number][],
+        [dx, dy] =
+          c.find(
+            ([dx, dy]) => inside(a, a.x + dx * k, a.y + dy * k) && (!both || inside(b, b.x - dx * k, b.y - dy * k)),
+          ) ?? c[0];
+      a.x += dx * k;
+      a.y += dy * k;
+      if (both) {
+        b.x -= dx * k;
+        b.y -= dy * k;
+      }
+      return true;
+    };
+  for (const t of tags) clamp(t);
+  for (let it = 0; it < 80; it++) {
+    let moved = false;
+    for (let i = 0; i < tags.length; i++) {
+      for (let j = i + 1; j < tags.length; j++) moved = push(tags[i], tags[j], true) || moved;
+      for (const f of fx) moved = push(tags[i], f, false) || moved;
+      clamp(tags[i]);
+    }
+    if (!moved) break;
+  }
+  let h = '';
+  for (const t of tags) {
+    /* 札の枠で点に最も近い所まで線を引く（離れたときだけ） */
+    const nx = Math.min(t.x + t.w / 2, Math.max(t.x - t.w / 2, t.ax)),
+      ny = Math.min(t.y + t.h / 2, Math.max(t.y - t.h / 2, t.ay));
+    if (Math.hypot(nx - t.ax, ny - t.ay) > 16)
+      h += `<line class="lead" x1="${t.ax}" y1="${t.ay}" x2="${nx}" y2="${ny}"${t.col ? ` style="stroke:${t.col}"` : ''}/>`;
+    h += `<text class="${t.cls}" x="${t.x}" y="${t.y}" text-anchor="middle" dominant-baseline="central"${t.col ? ` style="fill:${t.col}"` : ''}>${t.html}</text>`;
+  }
+  return h;
+}
 type Z = [number, number];
 /** [始点, 終点, 色, 名前, 点線] */
 type Vec = [Z, Z, string, string, string?];
@@ -363,7 +456,7 @@ export function zoomSvg(R: Run, V: View): [string, string] {
   let h = `<line class="ax" x1="8" x2="292" y1="${cy}" y2="${cy}"/><line class="ax" x1="${cx}" x2="${cx}" y1="8" y2="292"/><text x="290" y="${cy - 7}" text-anchor="end">実</text><text x="${cx + 7}" y="22">虚</text>`;
   if (o.t === 'rev')
     return [
-      `${h}<text class="zh" x="${cx}" y="${cy - 30}" text-anchor="middle">並べ替え</text><text x="${cx}" y="${cy - 12}" text-anchor="middle">掛け算なし</text>`,
+      `${h}<text class="zh" x="${cx}" y="${cy - 38}" text-anchor="middle">並べ替え</text><text x="${cx}" y="${cy - 14}" text-anchor="middle">掛け算なし</text>`,
       '',
     ];
   const { a, b, p } = o.b,
@@ -420,7 +513,10 @@ export function zoomSvg(R: Run, V: View): [string, string] {
     const [xr, xi] = tw(N, q);
     h += `<circle class="twd${q === p ? ' on' : ''}" cx="${cx + k * xr}" cy="${cy - k * xi}" r="${q === p ? 4.5 : 2}"/>`;
   }
-  h += `<text class="twl" x="${cx + k * wr + (wr >= 0 ? 7 : -7)}" y="${cy - k * wi + (wi > 0 ? -6 : 14)}" text-anchor="${wr >= 0 ? 'start' : 'end'}">${Ws(N, p)}</text>`;
+  /* 名前の札は、重ならないように後でまとめて置く。W は円の外向き */
+  const tags: Tag[] = [
+    tag(Ws(N, p), 'twl', '', cx + k * wr, cy - k * wi, wr, -wi, 9 + 6.5 * (String(N).length + String(p).length), 22),
+  ];
   for (const [s, e, col, lab, dash] of vecs) {
     const x1 = cx + k * s[0],
       y1 = cy - k * s[1],
@@ -432,9 +528,14 @@ export function zoomSvg(R: Run, V: View): [string, string] {
     h += `<line class="vec" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${col}"${dash ? ` stroke-dasharray="${dash}"` : ''}/>`;
     if (Math.hypot(x2 - x1, y2 - y1) > 6)
       h += `<path d="M${x2} ${y2}l${-hx(-0.4)} ${-hy(-0.4)}l${hx(-0.4) - hx(0.4)} ${hy(-0.4) - hy(0.4)}z" fill="${col}"/>`;
-    if (lab) h += `<text class="vl" x="${x2 + 6}" y="${y2 - 6}" style="fill:${col}">${lab}</text>`;
+    if (lab) tags.push(tag(lab, 'vl', col, x2, y2, x2 - x1, y2 - y1, textW(lab), 18));
   }
   h += '<text x="8" y="292" class="note">点線の円は大きさ 1</text>';
+  h += placeTags(tags, [
+    [282, cy - 13, 22, 22],
+    [cx + 14, 17, 20, 22],
+    [80, 288, 150, 16],
+  ]);
   return [h, `段 ${o.s}・行 ${a} と ${b}`];
 }
 
