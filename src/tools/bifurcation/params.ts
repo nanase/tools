@@ -5,7 +5,7 @@
 import { linList } from '../../lib/eseries';
 import { minus } from '../../lib/format';
 import type { ParamDef, ParamFormat } from '../../lib/param-def';
-import { GAUSS_A, HENON_B, MAPS, type MapId, R_INF_LOGISTIC } from './map';
+import { GAUSS_A, HENON_B, MAPS, type MapId, NEURON, R_INF_LOGISTIC } from './map';
 
 export type Key = 'r' | 'x0' | 'vol';
 
@@ -92,6 +92,17 @@ export const MAP_INFO: Record<
       [-0.836353, '−0.8364', '周期 1 → 2'],
       [-0.5682172365, '−0.5682', '集積点'],
       [0, '0'],
+    ],
+  },
+  neuron: {
+    name: 'カオスニューロン',
+    sym: 'a',
+    eq: `<i>x</i><sub><i>n</i>+1</sub> = ${NEURON.k} ${xn} − {1 + tanh(${1 / (2 * NEURON.eps)} ${xn})}/2 + <i>a</i>`,
+    v: 0.65,
+    pre: [
+      [0.3, '0.3', '周期 3'],
+      [0.5, '0.5', '周期 2'],
+      [0.65, '0.65', 'カオス'],
     ],
   },
   henon: {

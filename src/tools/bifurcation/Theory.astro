@@ -11,6 +11,7 @@ import {
   HENON_B,
   lyapunov,
   MAPS,
+  NEURON,
   R_INF_LOGISTIC,
   windowStart,
 } from './map';
@@ -46,6 +47,7 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
     <tr><th>3 次</th><td><math><mi>r</mi><mi>x</mi><mo>−</mo><msup><mi>x</mi><mn>3</mn></msup></math></td><td><math><mn>0</mn><mo>≤</mo><mi>r</mi><mo>≤</mo><mn>3</mn><mo>,</mo><mo stretchy="false">|</mo><mi>x</mi><mo stretchy="false">|</mo><mo>≤</mo><mn>2</mn></math></td><td>2 次（2 つ）</td></tr>
     <tr><th>ガウス<Fragment set:html={rf(12)} /></th><td><math set:html={`<msup><mi>e</mi><mrow><mo>−</mo><mn>${GAUSS_A}</mn><msup><mi>x</mi><mn>2</mn></msup></mrow></msup><mo>+</mo><mi>β</mi>`} /></td><td><math><mo>−</mo><mn>1</mn><mo>≤</mo><mi>β</mi><mo>≤</mo><mn>1</mn></math></td><td>2 次</td></tr>
     <tr><th>リッカー<Fragment set:html={rf(13)} /></th><td><math><mi>x</mi><msup><mi>e</mi><mrow><mi>r</mi><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><mi>x</mi><mo stretchy="false">)</mo></mrow></msup></math></td><td><math><mn>0</mn><mo>≤</mo><mi>r</mi><mo>≤</mo><mn>4</mn></math></td><td>2 次</td></tr>
+    <tr><th>カオスニューロン<Fragment set:html={rf(15)} /></th><td><math set:html={`<mn>${NEURON.k}</mn><mi>x</mi><mo>−</mo><mfrac><mrow><mn>1</mn><mo>+</mo><mi>tanh</mi><mo stretchy="false">(</mo><mi>x</mi><mo>/</mo><mn>2</mn><mi>ε</mi><mo stretchy="false">)</mo></mrow><mn>2</mn></mfrac><mo>+</mo><mi>a</mi>`} /></td><td><math><mn>0</mn><mo>≤</mo><mi>a</mi><mo>≤</mo><mn>1</mn></math></td><td>急な段</td></tr>
     <tr><th>エノン<Fragment set:html={rf(14)} /></th><td><math set:html={`<mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><mi>a</mi><msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><mi>y</mi><mo>,</mo><mspace width="0.3em"/><mn>${HENON_B}</mn><mi>x</mi><mo stretchy="false">)</mo>`} /></td><td><math><mn>0</mn><mo>≤</mo><mi>a</mi><mo>≤</mo><mn>1.4</mn></math></td><td>2 次元</td></tr>
   </tbody>
 </table></div>
@@ -107,6 +109,7 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
   <li>3 次: <math><mi>r</mi><mo>=</mo><mn>1</mn></math> で 0 が不安定になり、正と負の 2 つに分かれる（<math><msub><mi>x</mi><mn>0</mn></msub></math> の符号で決まる）。<math><mi>r</mi><mo>=</mo><mn>3</mn><msqrt><mn>3</mn></msqrt><mo>/</mo><mn>2</mn></math> で 2 つのカオスが 1 つに。<math><mi>r</mi><mo>=</mo><mn>3</mn></math> は <math><mi>x</mi><mo>=</mo><mn>2</mn><mi>cos</mi><mi>θ</mi></math> で <math><mi>θ</mi><mo>→</mo><mn>3</mn><mi>θ</mi></math>（<math><mi>λ</mi><mo>=</mo><mi>ln</mi><mn>3</mn></math>）</li>
   <li>ガウス: 左から周期倍分岐でカオスへ進み、右で逆にたどって戻る<Fragment set:html={rf(12)} />。<math><mi>β</mi></math> が −1 に近い所では <math><msub><mi>x</mi><mn>0</mn></msub></math> で落ち着く先が 2 つ</li>
   <li>エノン: 2 次元の写像<Fragment set:html={rf(14)} />。<math><msub><mi>x</mi><mrow><mi>n</mi><mo>+</mo><mn>1</mn></mrow></msub></math> は <math><msub><mi>x</mi><mi>n</mi></msub></math> だけで決まらないので、クモの巣図の代わりに点 <math><mo stretchy="false">(</mo><msub><mi>x</mi><mi>n</mi></msub><mo>,</mo><msub><mi>x</mi><mrow><mi>n</mi><mo>+</mo><mn>1</mn></mrow></msub><mo stretchy="false">)</mo></math> を打つ。<math><mi>λ</mi></math> は最大リアプノフ指数（<math><mi>a</mi></math> = 1.4 で <Fragment set:html={f(LH, 3)} />）。<math><mi>b</mi><mo>=</mo><mn>0</mn></math> なら 1 次元の 2 次写像</li>
+  <li>カオスニューロン: 減衰する膜電位 <math><mi>x</mi></math> から、出力 <math><mo stretchy="false">(</mo><mn>1</mn><mo>+</mo><mi>tanh</mi><mo stretchy="false">)</mo><mo>/</mo><mn>2</mn></math>（シグモイド）の分の不応性を引く<Fragment set:html={rf(15)} />。<math><mi>a</mi></math> を動かすと周期とカオスが交互に並び、<math><mi>a</mi><mo>=</mo><mn>1</mn><mo>/</mo><mn>2</mn></math> を中心に左右対称</li>
   <li>リッカー: 魚の親と子の数の模型<Fragment set:html={rf(13)} />。極大の位置 <math><mi>x</mi><mo>=</mo><mn>1</mn><mo>/</mo><mi>r</mi></math> が <math><mi>r</mi></math> で動く。カオスでは 0 の近くまで減る年がある</li>
 </ul>
 
@@ -131,6 +134,7 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
 <h3>このツールで決めたこと</h3>
 <ul class="tl">
   <li>初めの値 <math><msub><mi>x</mi><mn>0</mn></msub></math> = 0.3（ガウスは 0）。3 次の分岐図は ±0.3 の両方から</li>
+  <li>カオスニューロンは <math><mi>k</mi></math> = 0.7・<math><mi>α</mi></math> = 1・<math><mi>ε</mi></math> = 0.02 に固定、<math><msub><mi>x</mi><mn>0</mn></msub></math> = 0.1</li>
   <li>エノン写像の <math><mi>b</mi></math> = 0.3 に固定、<math><msub><mi>y</mi><mn>0</mn></msub></math> = 0。<math><mo stretchy="false">|</mo><mi>x</mi><mo stretchy="false">|</mo></math> が 1000 を超えたら発散</li>
   <li>ガウス写像の幅は 4.9 に固定、<math><mi>x</mi></math> は −1〜1.5 に収める。リッカーは 0〜5.1</li>
   <li>分岐図の過渡は 500 回から（拡大するほど増やす）、打つ点は 1 列あたり 300〜900 個</li>
@@ -156,4 +160,5 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
   <li id="thy-r12"><span class="rf-for">ガウス写像</span><span class="rf-src">R. C. Hilborn, <i>Chaos and Nonlinear Dynamics</i>, 2nd ed., Oxford University Press, 2000</span></li>
   <li id="thy-r13"><span class="rf-for">リッカー写像</span><span class="rf-src">W. E. Ricker, “Stock and recruitment,” <i>Journal of the Fisheries Research Board of Canada</i>, vol. 11, pp. 559–623, 1954, <a href="https://doi.org/10.1139/f54-039" target="_blank" rel="noopener">doi:10.1139/f54-039</a></span></li>
   <li id="thy-r14"><span class="rf-for">エノン写像</span><span class="rf-src">M. Hénon, “A two-dimensional mapping with a strange attractor,” <i>Communications in Mathematical Physics</i>, vol. 50, pp. 69–77, 1976, <a href="https://doi.org/10.1007/BF01608556" target="_blank" rel="noopener">doi:10.1007/BF01608556</a></span></li>
+  <li id="thy-r15"><span class="rf-for">カオスニューロン</span><span class="rf-src">K. Aihara, T. Takabe, and M. Toyoda, “Chaotic neural networks,” <i>Physics Letters A</i>, vol. 144, pp. 333–340, 1990, <a href="https://doi.org/10.1016/0375-9601(90)90136-C" target="_blank" rel="noopener">doi:10.1016/0375-9601(90)90136-C</a></span></li>
 </ol>

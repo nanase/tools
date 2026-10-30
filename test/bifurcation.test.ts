@@ -181,6 +181,17 @@ describe('ほかの写像', () => {
     expect(Number.isNaN(iterate(H, 1.4, 1.4, 5000))).toBe(true);
     expect(period(H, 1.4, 1.4)).toBe(0);
   });
+  it('カオスニューロン: a = 1/2 を中心に対称、周期とカオスが交互に並ぶ', () => {
+    const N = MAPS.neuron;
+    /* x → −x、a → 1 − a で同じ形（tanh が奇関数のため） */
+    for (const x of [-0.4, 0.03, 0.5]) expect(N.f(-x, 0.3)).toBeCloseTo(-N.f(x, 0.7), 12);
+    expect(period(N, 0.3, 0.1)).toBe(3);
+    expect(period(N, 0.5, 0.1)).toBe(2);
+    expect(period(N, 0.7, 0.1)).toBe(3);
+    expect(lyapunov(N, 0.65, 0.1, 2000, 50000)).toBeGreaterThan(0.1);
+    expect(lyapunov(N, 0.35, 0.1, 2000, 50000)).toBeGreaterThan(0.1);
+    expect(() => cascade(N, 4)).toThrow();
+  });
   it('リッカー写像: r = 2 で周期 1 → 2、x は 5.1 を超えない', () => {
     expect(doublings(Rk, cascade(Rk, 4))[0]).toBeCloseTo(2, 9);
     for (let r = 0.5; r <= 4; r += 0.5) expect(Rk.f(1 / r, r)).toBeLessThan(Rk.x[1]);

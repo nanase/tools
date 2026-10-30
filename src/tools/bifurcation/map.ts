@@ -1,9 +1,9 @@
 /**
- * 分岐図のページの計算: 1 次元の写像（ロジスティック・正弦・テント・4 次・3 次・ガウス・リッカー）と
+ * 分岐図のページの計算: 1 次元の写像（ロジスティック・正弦・テント・4 次・3 次・ガウス・リッカー・カオスニューロン）と
  * 2 次元のエノン写像の軌道、リアプノフ指数、周期の判定、超安定な周期 2ⁿ の値と Feigenbaum 定数、周期倍分岐・接線分岐の位置
  */
 
-export type MapId = 'logistic' | 'sine' | 'tent' | 'quartic' | 'cubic' | 'gauss' | 'ricker' | 'henon';
+export type MapId = 'logistic' | 'sine' | 'tent' | 'quartic' | 'cubic' | 'gauss' | 'ricker' | 'neuron' | 'henon';
 
 export interface MapDef {
   id: MapId;
@@ -50,6 +50,10 @@ const TENT_MAX = 2 - 1e-12;
 export const GAUSS_A = 4.9;
 /** エノン写像の b（固定。Hénon 1976 の値） */
 export const HENON_B = 0.3;
+/** カオスニューロンの減衰 k・不応性 α・出力の急峻さ ε（固定。このツールで決めた値） */
+export const NEURON = { k: 0.7, alpha: 1, eps: 0.02 } as const;
+/** 出力 (1 + tanh(x/2ε))/2（シグモイド 1/(1 + e^(−x/ε)) と同じ） */
+const nOut = (x: number): number => 0.5 * (1 + Math.tanh(x / (2 * NEURON.eps)));
 /** 2 次元の写像で、この大きさを超えた軌道は無限へ逃げたとみなす */
 const ESC = 1e3;
 const half = () => 0.5;
@@ -174,6 +178,23 @@ export const MAPS: Record<MapId, MapDef> = {
     dx: (x, r) => Math.exp(r * (1 - x)) * (1 - r * x),
     dr: (x, r) => x * (1 - x) * Math.exp(r * (1 - x)),
     seed: [1, 2.5],
+  },
+  neuron: {
+    id: 'neuron',
+    lo: 0,
+    hi: 1,
+    x: [-1, 1],
+    x0: 0.1,
+    view: [0, 1],
+    c: () => 0,
+    smooth: false,
+    ly: [-2, 1],
+    f: (x, r) => NEURON.k * x - NEURON.alpha * nOut(x) + r,
+    dx: (x) => {
+      const s = nOut(x);
+      return NEURON.k - (NEURON.alpha * s * (1 - s)) / NEURON.eps;
+    },
+    dr: () => 1,
   },
   henon: {
     id: 'henon',

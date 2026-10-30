@@ -214,9 +214,11 @@ function paintFt(): void {
   const C = cas(S.map);
   if (!C) {
     const why =
-      m().b === undefined
-        ? 'テント写像は極大が折れ目なので、周期倍分岐の段がありません'
-        : '2 次元の写像なので、極大を通る超安定な段を使うこの表は作りません';
+      m().b !== undefined
+        ? '2 次元の写像なので、極大を通る超安定な段を使うこの表は作りません'
+        : S.map === 'tent'
+          ? 'テント写像は極大が折れ目なので、周期倍分岐の段がありません'
+          : '極大が 1 つの山ではないので、この表は作りません';
     ft.innerHTML = `<caption class="ft-none">${why}</caption>`;
     return;
   }
