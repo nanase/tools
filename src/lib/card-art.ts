@@ -1197,7 +1197,8 @@ export const ART: Record<string, Art> = {
   },
   /* ウェーブレットで雑音除去と圧縮: 走査線の左は雑音の消えた波形、右は雑音入り。下の係数は閾値の帯より小さいものが左から消える */
   wd(t) {
-    const xs = 4 + 112 * mod(t / 4, 1),
+    /* 止まっているときは走査線が真ん中 */
+    const xs = 4 + 112 * mod(t / 4 + 0.5, 1),
       s = (x: number) =>
         Math.exp(-(((x - 38) / 9) ** 2)) * Math.sin(x * 1.3) +
         0.6 * Math.exp(-(((x - 84) / 14) ** 2)) * Math.sin(x * 0.55),
@@ -1210,13 +1211,13 @@ export const ART: Record<string, Art> = {
     for (let i = 0; i < 28; i++) {
       const x = 6 + i * 4,
         /* 大きい係数は波の山の所だけ */
-        v = 1.6 * Math.abs(s(x)) * 6 + 2.4 * hn(i + 50),
+        v = 13 * Math.abs(s(x)) + 3 * hn(i + 50),
         seg = `M${x} 45V${r1(45 - v)}`;
-      if (v > 4.5) keep += seg;
+      if (v > 5.5) keep += seg;
       else if (x > xs) drop += seg;
     }
     return (
-      P('fc', `M4 ${45 - 4.5}H116V45H4Z`) +
+      P('fc', `M4 ${45 - 5.5}H116V45H4Z`) +
       P('c t', 'M4 45H116') +
       (drop ? P('c g', drop) : '') +
       P('a', keep) +

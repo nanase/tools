@@ -1,0 +1,133 @@
+---
+// 動作原理と式（下書き。デザインが決まったら図の名前に合わせて直す）
+import { TOOLS } from '../../data/tools';
+
+const fr = (a: string, b: string) => `<mfrac><mrow>${a}</mrow><mrow>${b}</mrow></mfrac>`;
+const sub = (b: string, s: string) => `<msub>${b}<mrow>${s}</mrow></msub>`;
+const sum = (lo: string, hi = '') =>
+  hi
+    ? `<munderover><mo>∑</mo><mrow>${lo}</mrow><mrow>${hi}</mrow></munderover>`
+    : `<munder><mo>∑</mo><mrow>${lo}</mrow></munder>`;
+const sqrt = (s: string) => `<msqrt>${s}</msqrt>`;
+const abs = (s: string) => `<mo>|</mo>${s}<mo>|</mo>`;
+const hat = (s: string) => `<mover><mi>${s}</mi><mo>^</mo></mover>`;
+const sj = sub('<mi>σ</mi>', '<mi>j</mi>');
+const lj = sub('<mi>λ</mi>', '<mi>j</mi>');
+/* 本文の出典番号 */
+const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
+/** ほかのページへのリンク（まだ公開していないページは名前だけ） */
+const to = (id: string, t: string) => (TOOLS.some((x) => x.id === id && !x.s) ? `<a href="../${id}/">${t}</a>` : t);
+---
+<h3>雑音と閾値</h3>
+<div class="eqs">
+  <math display="block" set:html={`<mi>y</mi><mo>=</mo><mi>x</mi><mo>+</mo><mi>σ</mi><mi>z</mi><mspace width="1em"/><mo>⟹</mo><mspace width="1em"/>${sub('<mi>d</mi>', '<mi>j</mi><mo>,</mo><mi>k</mi>')}<mo>=</mo>${sub('<mi>θ</mi>', '<mi>j</mi><mo>,</mo><mi>k</mi>')}<mo>+</mo><mi>σ</mi>${sub('<mi>z</mi>', '<mi>j</mi><mo>,</mo><mi>k</mi>')}`} />
+  <math display="block" set:html={`<mtext>硬い</mtext><mo>:</mo><mspace width="0.3em"/><mi>d</mi><mo>·</mo><mn>1</mn><mo stretchy="false">[</mo>${abs('<mi>d</mi>')}<mo>&gt;</mo><mi>λ</mi><mo stretchy="false">]</mo><mo>,</mo><mspace width="1.2em"/><mtext>柔らかい</mtext><mo>:</mo><mspace width="0.3em"/><mo>sgn</mo><mo stretchy="false">(</mo><mi>d</mi><mo stretchy="false">)</mo><mspace width="0.1em"/><mo>max</mo><mo stretchy="false">(</mo>${abs('<mi>d</mi>')}<mo>−</mo><mi>λ</mi><mo>,</mo><mn>0</mn><mo stretchy="false">)</mo>`} />
+  <math display="block" set:html={`${hat('σ')}<mo>=</mo>${fr(`<mtext>median</mtext><mo stretchy="false">(</mo>${abs(sub('<mi>d</mi>', '<mn>1</mn>'))}<mo stretchy="false">)</mo>`, '<mn>0.6745</mn>')}`} />
+</div>
+<dl class="syms">
+  <dt><math><mi>z</mi></math></dt><dd>標準正規の白色雑音</dd>
+  <dt><math set:html={sub('<mi>d</mi>', '<mi>j</mi><mo>,</mo><mi>k</mi>')} /></dt><dd>段 j・位置 k の詳細の係数</dd>
+  <dt><math><mi>λ</mi></math></dt><dd>閾値</dd>
+</dl>
+<ul class="tl">
+  <li>正規直交の変換なので、白色雑音は係数でも同じ σ の白色雑音<Fragment set:html={rf(1)} /></li>
+  <li>信号は少数の大きな係数に集まり、雑音は全部の係数に薄く広がる。小さい係数を 0 にして戻す</li>
+  <li>σ は最も細かい段の絶対値の中央値から推定する。0.6745 は標準正規の上側 25 % 点（4.2 節）<Fragment set:html={rf(1)} /></li>
+  <li>柔らかい閾値で戻した信号は元の信号より波打たない<Fragment set:html={rf(3)} /></li>
+  <li>近似（最も粗い段）は処理しない</li>
+</ul>
+
+<h3>閾値の決め方</h3>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th>規則</th><th>閾値</th><th>段ごと</th><th>出典</th></tr></thead>
+  <tbody>
+    <tr><td>VisuShrink</td><td><math set:html={`<mi>λ</mi><mo>=</mo>${hat('σ')}${sqrt('<mn>2</mn><mi>ln</mi><mi>N</mi>')}`} /></td><td>全段で 1 つ</td><td><Fragment set:html={rf(1)} /></td></tr>
+    <tr><td>SureShrink</td><td>SURE が最小の <math><mi>t</mi></math>（<math set:html={`<mn>0</mn><mo>≤</mo><mi>t</mi><mo>≤</mo>${sqrt('<mn>2</mn><mi>ln</mi><mi>n</mi>')}`} />）</td><td>段ごと</td><td><Fragment set:html={rf(2)} /></td></tr>
+    <tr><td>BayesShrink</td><td><math set:html={`<mi>λ</mi><mo>=</mo>${fr(`${hat('σ')}<msup><mrow/><mn>2</mn></msup>`, sub(hat('σ'), '<mi>X</mi>'))}`} /></td><td>段ごと</td><td><Fragment set:html={rf(4)} /></td></tr>
+  </tbody>
+</table></div>
+<div class="eqs">
+  <math display="block" set:html={`<mtext>SURE</mtext><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mo>=</mo><mi>n</mi><mo>−</mo><mn>2</mn><mo>#</mo><mo stretchy="false">{</mo><mi>i</mi><mo>:</mo>${abs(sub('<mi>x</mi>', '<mi>i</mi>'))}<mo>≤</mo><mi>t</mi><mo stretchy="false">}</mo><mo>+</mo>${sum('<mi>i</mi>')}<mo>min</mo><mo stretchy="false">(</mo><msubsup><mi>x</mi><mi>i</mi><mn>2</mn></msubsup><mo>,</mo><msup><mi>t</mi><mn>2</mn></msup><mo stretchy="false">)</mo>`} />
+  <math display="block" set:html={`${fr(`<mn>1</mn>`, '<mi>n</mi>')}${sum('<mi>i</mi>')}<mo stretchy="false">(</mo><msubsup><mi>x</mi><mi>i</mi><mn>2</mn></msubsup><mo>−</mo><mn>1</mn><mo stretchy="false">)</mo><mo>≤</mo>${fr(`<msup><mrow><mo stretchy="false">(</mo>${sub('<mi>log</mi>', '<mn>2</mn>')}<mi>n</mi><mo stretchy="false">)</mo></mrow><mrow><mn>3</mn><mo>/</mo><mn>2</mn></mrow></msup>`, sqrt('<mi>n</mi>'))}<mspace width="0.6em"/><mo>⟹</mo><mspace width="0.6em"/><mi>t</mi><mo>=</mo>${sqrt('<mn>2</mn><mi>ln</mi><mi>n</mi>')}`} />
+  <math display="block" set:html={`${sub(hat('σ'), '<mi>X</mi>')}<mo>=</mo>${sqrt(`<mo>max</mo><mo stretchy="false">(</mo>${fr('<mn>1</mn>', '<mi>n</mi>')}${sum('<mi>k</mi>')}<msubsup><mi>d</mi><mi>k</mi><mn>2</mn></msubsup><mo>−</mo>${hat('σ')}<msup><mrow/><mn>2</mn></msup><mo>,</mo><mn>0</mn><mo stretchy="false">)</mo>`)}`} />
+</div>
+<ul class="tl">
+  <li>VisuShrink: 雑音だけの係数がこの閾値を超える確率は N が大きいと 0 に近づく。雑音を消し切るが、信号も削りやすい<Fragment set:html={rf(1)} /></li>
+  <li>SURE は元の信号を知らずに柔らかい閾値の誤差を見積もる式（σ = 1 にそろえた <math><msub><mi>x</mi><mi>i</mi></msub><mo>=</mo><msub><mi>d</mi><mi>i</mi></msub><mo>/</mo><mi>σ</mi></math>）（式 (6)）<Fragment set:html={rf(2)} /></li>
+  <li>係数がまばらな段では SURE がぶれるので、普遍閾値に切り替える（2.4 節）<Fragment set:html={rf(2)} /></li>
+  <li>BayesShrink: 信号の強い段ほど閾値が小さい。信号の分散が雑音より小さい段は全部捨てる（式 (19)・(20)）<Fragment set:html={rf(4)} /></li>
+</ul>
+
+<h3>雑音の大きさを段ごとに</h3>
+<div class="eqs">
+  <math display="block" set:html={`${lj}<mo>=</mo>${sj}<mspace width="0.2em"/>${sub('<mi>t</mi>', '<mi>j</mi>')}<mo>,</mo><mspace width="1em"/>${sub(hat('σ'), '<mi>j</mi>')}<mo>=</mo>${fr(`<mtext>median</mtext><mo stretchy="false">(</mo>${abs(sub('<mi>d</mi>', '<mi>j</mi>'))}<mo stretchy="false">)</mo>`, '<mn>0.6745</mn>')}`} />
+</div>
+<ul class="tl">
+  <li>色のついた雑音（ピンク雑音など）は段ごとに強さが違う。段ごとに σ<sub>j</sub> を測って閾値を変える（式 (4)）<Fragment set:html={rf(5)} /><Fragment set:html={rf(6)} /></li>
+  <li>音楽では信号の係数が多い段で中央値が信号に引っ張られ、σ<sub>j</sub> を大きく見積もる。このページは雑音だけの区間（無音の所）の係数から σ<sub>j</sub> を測る</li>
+</ul>
+
+<h3>ずらして平均する</h3>
+<div class="eqs">
+  <math display="block" set:html={`${hat('x')}<mo>=</mo>${fr('<mn>1</mn>', '<mi>H</mi>')}${sum('<mi>h</mi><mo>=</mo><mn>0</mn>', '<mi>H</mi><mo>−</mo><mn>1</mn>')}${sub('<mi>S</mi>', '<mo>−</mo><mi>h</mi>')}<mspace width="0.1em"/><mi>T</mi><mo stretchy="false">(</mo>${sub('<mi>S</mi>', '<mi>h</mi>')}<mi>y</mi><mo stretchy="false">)</mo>`} />
+</div>
+<ul class="tl">
+  <li>閾値処理は段差や打音の前後に行き過ぎの揺れ（擬似ギブス現象）を出す。大きさは出来事の位置で変わる<Fragment set:html={rf(7)} /></li>
+  <li>ずらす（<math set:html={sub('<mi>S</mi>', '<mi>h</mi>')} />）→ 除く（<math><mi>T</mi></math>）→ 戻す、を何通りもして平均すると揺れが減る。硬い閾値と組み合わせると誤差が半分近くになる例もある（式 (1)・表 2）<Fragment set:html={rf(7)} /></li>
+</ul>
+
+<h3>係数を残して符号にする</h3>
+<div class="eqs">
+  <math display="block" set:html={`<mi>q</mi><mo>=</mo><mo>sgn</mo><mo stretchy="false">(</mo><mi>c</mi><mo stretchy="false">)</mo><mrow><mo>⌊</mo>${fr(abs('<mi>c</mi>'), '<mi>Δ</mi>')}<mo>⌋</mo></mrow><mo>,</mo><mspace width="1em"/>${hat('c')}<mo>=</mo><mo>sgn</mo><mo stretchy="false">(</mo><mi>q</mi><mo stretchy="false">)</mo><mo stretchy="false">(</mo>${abs('<mi>q</mi>')}<mo>+</mo><mtext>½</mtext><mo stretchy="false">)</mo><mi>Δ</mi>`} />
+  <math display="block" set:html={`<mi>R</mi><mo>=</mo>${sub('<mi>R</mi>', '<mn>0</mn>')}<mo>+</mo>${sub('<mi>R</mi>', '<mn>1</mn>')}<mo>,</mo><mspace width="0.6em"/>${sub('<mi>R</mi>', '<mn>0</mn>')}<mo>≤</mo><mi>N</mi><mspace width="0.1em"/>${sub('<mi>H</mi>', '<mn>2</mn>')}<mo stretchy="false">(</mo><mi>K</mi><mo>/</mo><mi>N</mi><mo stretchy="false">)</mo><mo>,</mo><mspace width="0.6em"/>${sub('<mi>R</mi>', '<mn>1</mn>')}<mo>=</mo><mi>K</mi><mspace width="0.1em"/><mi>H</mi><mo stretchy="false">(</mo><mi>q</mi><mo>≠</mo><mn>0</mn><mo stretchy="false">)</mo>`} />
+  <math display="block" set:html={`<mi>D</mi><mo>=</mo>${sum(`${abs('<mi>c</mi>')}<mo>&lt;</mo><mi>Δ</mi>`)}<msup><mi>c</mi><mn>2</mn></msup><mo>+</mo><mi>K</mi>${fr('<msup><mi>Δ</mi><mn>2</mn></msup>', '<mn>12</mn>')}`} />
+</div>
+<ul class="tl">
+  <li>0 のまわりだけ幅 2Δ の一様な量子化（デッドゾーン）。JPEG 2000 と同じ形（式 (4)）<Fragment set:html={rf(9)} />。Δ を残す境と同じにすると、大きい順に K 個を残すのと同じになる</li>
+  <li>ビット数は「どこに残したか」<math set:html={sub('<mi>R</mi>', '<mn>0</mn>')} /> と「残した値」<math set:html={sub('<mi>R</mi>', '<mn>1</mn>')} /> の和（式 (9)・(10)）<Fragment set:html={rf(8)} /></li>
+  <li>誤差は捨てた係数の 2 乗和と、残した係数の丸め（1 個あたり Δ²/12）の和（式 (11)・(13)）<Fragment set:html={rf(8)} /></li>
+  <li>JPEG 2000 は双直交の 9/7（非可逆）と 5/3（可逆）を使い、ビットプレーンごとに算術符号で送る<Fragment set:html={rf(9)} /></li>
+</ul>
+
+<h3>フーリエと比べる</h3>
+<div class="eqs">
+  <math display="block" set:html={`${sub('<mi>X</mi>', '<mi>k</mi>')}<mo>=</mo>${sqrt(fr('<mn>2</mn>', '<mi>M</mi>'))}${sum('<mi>n</mi><mo>=</mo><mn>0</mn>', '<mn>2</mn><mi>M</mi><mo>−</mo><mn>1</mn>')}${sub('<mi>w</mi>', '<mi>n</mi>')}${sub('<mi>x</mi>', '<mi>n</mi>')}<mo>cos</mo><mrow><mo>[</mo>${fr('<mi>π</mi>', '<mi>M</mi>')}<mrow><mo>(</mo><mi>n</mi><mo>+</mo><mtext>½</mtext><mo>+</mo>${fr('<mi>M</mi>', '<mn>2</mn>')}<mo>)</mo></mrow><mrow><mo>(</mo><mi>k</mi><mo>+</mo><mtext>½</mtext><mo>)</mo></mrow><mo>]</mo></mrow>`} />
+  <math display="block" set:html={`${sub('<mi>w</mi>', '<mi>n</mi>')}<mo>=</mo><mo>sin</mo>${fr('<mi>π</mi><mo stretchy="false">(</mo><mi>n</mi><mo>+</mo><mtext>½</mtext><mo stretchy="false">)</mo>', '<mn>2</mn><mi>M</mi>')}<mo>,</mo><mspace width="1em"/><msubsup><mi>w</mi><mi>n</mi><mn>2</mn></msubsup><mo>+</mo><msubsup><mi>w</mi><mrow><mi>n</mi><mo>+</mo><mi>M</mi></mrow><mn>2</mn></msubsup><mo>=</mo><mn>1</mn>`} />
+</div>
+<ul class="tl">
+  <li>MDCT: 2M 点の枠を M 点ずつずらす。窓が上の条件を満たすと、重ねて足したときに時間の折り返しが打ち消し合う<Fragment set:html={rf(10)} /></li>
+  <li>MP3・AAC の芯は MDCT。量子化の雑音を、その時その周波数で聞こえない大きさ（マスキングしきい値）の下に収めてビットを減らす。長い枠では打音の前に雑音がにじむ（プリエコー）ので、短い枠に切り替える<Fragment set:html={rf(11)} /></li>
+  <li>DCT・DFT は全体を 1 回で変換する。どの係数も全体に広がる波なので、打音を残すには多くの係数が要る</li>
+  <li>DCT と DFT の違い（端のつなぎ方）は <Fragment set:html={to('dct-dft', 'DCT と DFT')} />、速い計算は <Fragment set:html={to('fft', 'FFT')} />、分解の仕組みは <Fragment set:html={to('wavelet', 'ウェーブレット変換')} /></li>
+</ul>
+
+<h3>このツールで決めたこと</h3>
+<ul class="tl">
+  <li>ウェーブレットは Haar・db2・db4、8 段、端は周期的につなぐ。長さは <math><msup><mn>2</mn><mn>8</mn></msup></math> の倍数まで 0 で埋める</li>
+  <li>雑音は実効値の比で SN 比を決めて足す。白色は正規乱数、ピンクは Kellet の近似のフィルタ</li>
+  <li>雑音だけの区間は、試しの音では頭の 0.5 秒の無音、ファイルでは最も静かな 0.4 秒。段 j の係数はフィルタの長さの分だけ両端を削って使う</li>
+  <li>ずらして平均するのは 8 回（0〜7 点）</li>
+  <li>圧縮は信号の長さ N の割合で残す数 K を決め、どの基底でも同じ K を残す。Δ は K 番目に大きい係数の絶対値</li>
+  <li>ビット数は量子化した番号の 0 次のエントロピー。前後の係数の関係（文脈）を使わないので、実際の符号化より多め</li>
+  <li>DCT・DFT は全体を 2 の累乗の長さまで 0 で埋めて 1 回で変換する。DCT は Makhoul の並べ替えで FFT 1 回<Fragment set:html={rf(12)} />。DFT は余弦と正弦の係数を別に数える</li>
+  <li>MDCT は 2048 点の枠（M = 1024）で、窓は正弦。聴覚の模型は使わない（どの基底も同じ規則で比べる）</li>
+  <li>試しの音の撥弦は Karplus・Strong の算法<Fragment set:html={rf(13)} /></li>
+  <li>音はこの端末の中だけで処理し、送らない</li>
+</ul>
+
+<h3>出典</h3>
+<ol class="refs">
+  <li id="thy-r1"><span class="rf-for">雑音の模型、硬い・柔らかい閾値、普遍閾値（VisuShrink）、σ̂ の推定（4.2 節）</span><span class="rf-src">D. L. Donoho and I. M. Johnstone, “Ideal spatial adaptation by wavelet shrinkage,” <i>Biometrika</i>, vol. 81, no. 3, pp. 425–455, 1994, <a href="https://doi.org/10.1093/biomet/81.3.425" target="_blank" rel="noopener">doi:10.1093/biomet/81.3.425</a></span></li>
+  <li id="thy-r2"><span class="rf-for">SURE（式 (6)）、疎な段での切り替え（2.4 節）、SureShrink</span><span class="rf-src">D. L. Donoho and I. M. Johnstone, “Adapting to unknown smoothness via wavelet shrinkage,” <i>Journal of the American Statistical Association</i>, vol. 90, no. 432, pp. 1200–1224, 1995, <a href="https://doi.org/10.1080/01621459.1995.10476626" target="_blank" rel="noopener">doi:10.1080/01621459.1995.10476626</a></span></li>
+  <li id="thy-r3"><span class="rf-for">柔らかい閾値の滑らかさ</span><span class="rf-src">D. L. Donoho, “De-noising by soft-thresholding,” <i>IEEE Transactions on Information Theory</i>, vol. 41, no. 3, pp. 613–627, 1995, <a href="https://doi.org/10.1109/18.382009" target="_blank" rel="noopener">doi:10.1109/18.382009</a></span></li>
+  <li id="thy-r4"><span class="rf-for">BayesShrink（式 (12)・(19)・(20)）</span><span class="rf-src">S. G. Chang, B. Yu, and M. Vetterli, “Adaptive wavelet thresholding for image denoising and compression,” <i>IEEE Transactions on Image Processing</i>, vol. 9, no. 9, pp. 1532–1546, 2000, <a href="https://doi.org/10.1109/83.862633" target="_blank" rel="noopener">doi:10.1109/83.862633</a></span></li>
+  <li id="thy-r5"><span class="rf-for">段ごとの σ の推定（式 (4)）</span><span class="rf-src">I. M. Johnstone, “Wavelet shrinkage for correlated data and inverse problems: adaptivity results,” <i>Statistica Sinica</i>, vol. 9, pp. 51–83, 1999</span></li>
+  <li id="thy-r6"><span class="rf-for">相関のある雑音での段ごとの閾値</span><span class="rf-src">I. M. Johnstone and B. W. Silverman, “Wavelet threshold estimators for data with correlated noise,” <i>Journal of the Royal Statistical Society: Series B</i>, vol. 59, no. 2, pp. 319–351, 1997, <a href="https://doi.org/10.1111/1467-9868.00071" target="_blank" rel="noopener">doi:10.1111/1467-9868.00071</a></span></li>
+  <li id="thy-r7"><span class="rf-for">ずらして平均（式 (1)・表 2）、擬似ギブス現象</span><span class="rf-src">R. R. Coifman and D. L. Donoho, “Translation-invariant de-noising,” in <i>Wavelets and Statistics</i>, Lecture Notes in Statistics, vol. 103, Springer, 1995, pp. 125–150, <a href="https://doi.org/10.1007/978-1-4612-2544-7_9" target="_blank" rel="noopener">doi:10.1007/978-1-4612-2544-7_9</a></span></li>
+  <li id="thy-r8"><span class="rf-for">位置と値のビット数（式 (9)・(10)）、誤差の分解（式 (11)・(13)）</span><span class="rf-src">S. Mallat and F. Falzon, “Analysis of low bit rate image transform coding,” <i>IEEE Transactions on Signal Processing</i>, vol. 46, no. 4, pp. 1027–1042, 1998, <a href="https://doi.org/10.1109/78.668554" target="_blank" rel="noopener">doi:10.1109/78.668554</a></span></li>
+  <li id="thy-r9"><span class="rf-for">JPEG 2000 の量子化（式 (4)）、9/7 と 5/3、ビットプレーンの符号化</span><span class="rf-src">A. Skodras, C. Christopoulos, and T. Ebrahimi, “The JPEG 2000 still image compression standard,” <i>IEEE Signal Processing Magazine</i>, vol. 18, no. 5, pp. 36–58, 2001, <a href="https://doi.org/10.1109/79.952804" target="_blank" rel="noopener">doi:10.1109/79.952804</a></span></li>
+  <li id="thy-r10"><span class="rf-for">時間の折り返しの打ち消し（TDAC）、MDCT</span><span class="rf-src">J. P. Princen and A. B. Bradley, “Analysis/synthesis filter bank design based on time domain aliasing cancellation,” <i>IEEE Transactions on Acoustics, Speech, and Signal Processing</i>, vol. 34, no. 5, pp. 1153–1161, 1986, <a href="https://doi.org/10.1109/TASSP.1986.1164954" target="_blank" rel="noopener">doi:10.1109/TASSP.1986.1164954</a></span></li>
+  <li id="thy-r11"><span class="rf-for">MP3・AAC のフィルタバンク、マスキングしきい値、プリエコー</span><span class="rf-src">K. Brandenburg, “MP3 and AAC explained,” in <i>Proc. AES 17th International Conference on High-Quality Audio Coding</i>, Florence, 1999, paper 17-009</span></li>
+  <li id="thy-r12"><span class="rf-for">N 点の FFT による DCT</span><span class="rf-src">J. Makhoul, “A fast cosine transform in one and two dimensions,” <i>IEEE Transactions on Acoustics, Speech, and Signal Processing</i>, vol. 28, no. 1, pp. 27–34, 1980, <a href="https://doi.org/10.1109/TASSP.1980.1163351" target="_blank" rel="noopener">doi:10.1109/TASSP.1980.1163351</a></span></li>
+  <li id="thy-r13"><span class="rf-for">撥弦の音（遅延の線で平均をとって返す）</span><span class="rf-src">K. Karplus and A. Strong, “Digital synthesis of plucked-string and drum timbres,” <i>Computer Music Journal</i>, vol. 7, no. 2, pp. 43–55, 1983, <a href="https://doi.org/10.2307/3680062" target="_blank" rel="noopener">doi:10.2307/3680062</a></span></li>
+</ol>
