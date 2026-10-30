@@ -67,7 +67,9 @@ const P = new ParamGroup<Key>(PARAMS, (v, k) => {
     moved = true;
     txt('#th-st', '離すと計算します');
     draw();
-  } else if (k && k !== 'vol') request();
+  } else if (k === 'vol') {
+    if (play) audio.gain(gainOf(play.r));
+  } else if (k) request();
 });
 V = P.values();
 const eCh = new Choice<string>($('#p-e'), () => request());
@@ -127,16 +129,25 @@ function request(): void {
   else post();
 }
 const fig = $('.a-fig');
+/** 計算中は、古い雷を鳴らさないよう再生の操作を止める */
+function busyState(on: boolean): void {
+  fig.classList.toggle('busy', on);
+  if (on) fig.setAttribute('aria-busy', 'true');
+  else fig.removeAttribute('aria-busy');
+  for (const b of [pp, home]) b.disabled = on;
+  trk.setAttribute('aria-disabled', String(on));
+}
 function post(): void {
   busy = true;
   again = false;
   txt('#th-st', '');
-  fig.classList.add('busy');
-  fig.setAttribute('aria-busy', 'true');
+  busyState(true);
   worker.postMessage(job(++jobId));
 }
 worker.onmessage = (e: MessageEvent<Reply>) => {
   busy = false;
+  /* 前の雷を鳴らしたままにしない */
+  stop();
   cur = e.data;
   pts = arrivalPts(cur, [Via.Direct]);
   echo = arrivalPts(cur, [Via.Hill, Via.Both]);
@@ -151,10 +162,7 @@ worker.onmessage = (e: MessageEvent<Reply>) => {
     }
   peakHz = spectrumPeak(cur);
   if (again) post();
-  else {
-    fig.classList.remove('busy');
-    fig.removeAttribute('aria-busy');
-  }
+  else busyState(false);
   outputs();
   draw();
   drawSpec();
@@ -264,21 +272,24 @@ function outputs(): void {
 /* ---------- 光らせる ---------- */
 const audio = new ThunderAudio(),
   pp = $<HTMLButtonElement>('#th-pp'),
+  home = $<HTMLButtonElement>('#th-home'),
   trk = $('#th-trk');
 let play: { flash: number; skip: number; r: Reply } | null = null,
   raf = 0,
   /** 止まっている間に時間の帯で選んだ時刻 [s]（次に光らせるとそこから） */
   cue: number | null = null;
+/** 鳴らす大きさ: 雷ごとに 100 Hz より上（と全帯域）の強さをそろえ、音量を掛ける */
+const gainOf = (r: Reply): number =>
+  Math.min(LOUD_HP / Math.max(r.loud, 1e-12), LOUD_FULL / Math.max(r.full, 1e-12)) * 10 ** (V.vol / 20);
 function playTau(): number | null {
   return play ? Math.max(0, audio.now() - play.flash + play.skip) : null;
 }
 /** 光らせる。from は鳴らし始める時刻 [s]（省くと、待つなら 0、待たないなら最初の音の直前） */
 function start(from?: number): void {
-  if (!cur) return;
+  if (!cur || busy) return;
   audio.open();
   const skip = from ?? (wCh.value === '1' ? 0 : Math.max(0, cur.first - PRE)),
-    gain = Math.min(LOUD_HP / Math.max(cur.loud, 1e-12), LOUD_FULL / Math.max(cur.full, 1e-12)) * 10 ** (V.vol / 20),
-    flash = audio.play(cur.y, cur.yr, cur.fs, cur.t0 - skip, gain);
+    flash = audio.play(cur.y, cur.yr, cur.fs, cur.t0 - skip, gainOf(cur));
   play = { flash, skip, r: cur };
   cue = null;
   ppState();
@@ -332,7 +343,7 @@ pp.addEventListener('click', () => {
   else start(cue != null && cue < tEnd ? cue : undefined);
 });
 /* 最初から: 鳴らしているなら光る所からやり直し、止まっているなら光る前へ戻す */
-$('#th-home').addEventListener('click', () => {
+home.addEventListener('click', () => {
   cue = null;
   if (play) start();
   else {
@@ -352,7 +363,7 @@ const tauAt = (e: PointerEvent) => {
   return ((e.clientX - r.left) / r.width) * tEnd;
 };
 trk.addEventListener('pointerdown', (e) => {
-  if (!cur || e.button !== 0) return;
+  if (!cur || busy || e.button !== 0) return;
   trk.setPointerCapture(e.pointerId);
   /* ドラッグの間は音を止め、離したら鳴らしていたならそこから鳴らす */
   seek = { resume: !!play };
@@ -383,7 +394,7 @@ trk.addEventListener('keydown', (e) => {
             : e.key === 'End'
               ? tEnd
               : null;
-  if (to == null || !cur) return;
+  if (to == null || !cur || busy) return;
   e.preventDefault();
   if (play) start(Math.min(tEnd, Math.max(0, to)));
   else {

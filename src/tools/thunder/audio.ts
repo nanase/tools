@@ -80,6 +80,13 @@ export class ThunderAudio {
     this.live = [];
   }
 
+  /** 鳴らしている音の大きさを変える（音量を動かしたとき） */
+  gain(v: number): void {
+    const c = this.ctx;
+    if (!c) return;
+    for (const { g } of this.live) g.gain.setTargetAtTime(v, c.currentTime, 0.02);
+  }
+
   /** 今の時刻（AudioContext の目盛り [s]） */
   now(): number {
     return this.ctx?.currentTime ?? 0;
