@@ -360,7 +360,7 @@ export function zoomSvg(R: Run, V: View): [string, string] {
     o = R.ops[i0],
     cx = 150,
     cy = 150;
-  let h = `<line class="ax" x1="8" x2="292" y1="${cy}" y2="${cy}"/><line class="ax" x1="${cx}" x2="${cx}" y1="8" y2="292"/><text x="288" y="${cy - 6}" text-anchor="end">実</text><text x="${cx + 6}" y="18">虚</text>`;
+  let h = `<line class="ax" x1="8" x2="292" y1="${cy}" y2="${cy}"/><line class="ax" x1="${cx}" x2="${cx}" y1="8" y2="292"/><text x="290" y="${cy - 7}" text-anchor="end">実</text><text x="${cx + 7}" y="22">虚</text>`;
   if (o.t === 'rev')
     return [
       `${h}<text class="zh" x="${cx}" y="${cy - 30}" text-anchor="middle">並べ替え</text><text x="${cx}" y="${cy - 12}" text-anchor="middle">掛け算なし</text>`,
@@ -434,7 +434,7 @@ export function zoomSvg(R: Run, V: View): [string, string] {
       h += `<path d="M${x2} ${y2}l${-hx(-0.4)} ${-hy(-0.4)}l${hx(-0.4) - hx(0.4)} ${hy(-0.4) - hy(0.4)}z" fill="${col}"/>`;
     if (lab) h += `<text class="vl" x="${x2 + 6}" y="${y2 - 6}" style="fill:${col}">${lab}</text>`;
   }
-  h += '<text x="10" y="290" class="note">点線の円は大きさ 1</text>';
+  h += '<text x="8" y="292" class="note">点線の円は大きさ 1</text>';
   return [h, `段 ${o.s}・行 ${a} と ${b}`];
 }
 

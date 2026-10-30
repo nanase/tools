@@ -55,19 +55,19 @@
 .ff-dot{fill:var(--ink)}
 .ff-dot.b{fill:var(--ch2)}
 
-.ff-zh{display:flex;justify-content:space-between;gap:8px;margin:0 0 5px;font-size:12.5px;font-weight:700;color:var(--ink-2)}
-.ff-zh span{font-weight:400;color:var(--ink-3);font-family:var(--mono)}
+.ff-zh{display:flex;justify-content:space-between;gap:8px;margin:0 0 5px;font-size:13.5px;font-weight:700;color:var(--ink-2)}
+.ff-zh span{font-weight:500;color:var(--ink-2);font-family:var(--mono)}
 .ff-zp .sbar{margin:6px 0 0}
-#ff-zp text{font:11px var(--mono)}
+#ff-zp text{font:14px var(--mono)}
 #ff-zp .ax{stroke:var(--grid-2);stroke-width:1}
-#ff-zp text.zh{font:700 13px var(--sans);fill:var(--ink)}
+#ff-zp text.zh{font:700 16px var(--sans);fill:var(--ink)}
 #ff-zp .unit{fill:none;stroke:var(--focus);stroke-width:1;stroke-dasharray:2 3;opacity:.7}
 #ff-zp .twd{fill:var(--focus);opacity:.45}
 #ff-zp .twd.on{opacity:1}
 #ff-zp text.twl{fill:var(--focus)}
 #ff-zp .vec{stroke-width:2.4;fill:none}
-#ff-zp text.vl{font-weight:700}
-#ff-zp text.note{font-size:10px}
+#ff-zp text.vl{font-size:15px;font-weight:700}
+#ff-zp text.note{font-size:12px}
 
 /* 図の下の式（a は黒・b は青・W は紺・結果は黄） */
 .ff-fx{display:grid;gap:3px;min-height:5.4em;margin:12px 2px 0;font:500 13px/1.55 var(--mono);color:var(--ink-2);font-variant-numeric:tabular-nums}
