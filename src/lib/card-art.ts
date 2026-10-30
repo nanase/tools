@@ -1323,6 +1323,35 @@ export const ART: Record<string, Art> = {
       (wave.length > 1 ? P('a', pl(wave)) : '')
     );
   },
+  /* FFT: 8 点のバタフライ図。段ごとに線を光が流れ、通った段は青で残る */
+  ff(t) {
+    const X = [8, 45, 82, 112],
+      Y = (r: number): number => 6 + r * 5.2,
+      ph = mod(t + 2.6, 3),
+      k = Math.floor(ph),
+      u = ph - k;
+    let base = '',
+      past = '',
+      cur = '',
+      nd = '';
+    for (let s = 0; s < 3; s++) {
+      const h = 1 << s,
+        x0 = X[s],
+        x1 = X[s + 1];
+      for (let r = 0; r < 8; r++) {
+        const q = r & h ? r - h : r + h;
+        for (const v of [r, q]) {
+          const seg = `M${x0} ${r1(Y(r))}L${x1} ${r1(Y(v))}`;
+          base += seg;
+          if (s < k) past += seg;
+          else if (s === k) cur += `M${x0} ${r1(Y(r))}L${r1(x0 + (x1 - x0) * u)} ${r1(Y(r) + (Y(v) - Y(r)) * u)}`;
+        }
+      }
+    }
+    for (const x of X)
+      for (let r = 0; r < 8; r++) nd += `M${x - 1.6} ${r1(Y(r))}a1.6 1.6 0 1 0 3.2 0a1.6 1.6 0 1 0 -3.2 0`;
+    return P('c t g', base) + P('b t', past) + P('a', cur) + P('fc', nd);
+  },
 };
 
 /**
@@ -1370,6 +1399,7 @@ export const LOOP: Record<string, number> = {
   cv: 3,
   icv: 3,
   th: 3,
+  ff: 3,
 };
 
 /** 止まっているときの図柄（ビルド時に HTML へ出す） */
