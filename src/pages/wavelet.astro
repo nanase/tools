@@ -1,16 +1,13 @@
 ---
-import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
-import ParamRow from '../components/ParamRow.astro';
 import RelatedTools from '../components/RelatedTools.astro';
 import { order, TOOLS } from '../data/tools';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import '../tools/audio/style.css';
 import '../tools/wavelet/style.css';
-import { SHRINK, sigs, WAV3 } from '../tools/wavelet/params';
-import { AUDIO_TESTS } from '../tools/wavelet/sound';
+import { sigs, WAV3 } from '../tools/wavelet/params';
 import Theory from '../tools/wavelet/Theory.astro';
 
 const name = 'ウェーブレット変換';
@@ -37,35 +34,80 @@ const PL_N = seg(
 const PL_W = seg('pl-w', 'ウェーブレット', WAV3, 'haar');
 const ST_SIG = seg('st-sig', '信号', sigs('doppler', 'blocks', 'heavisine', 'chirp'), 'heavisine');
 const ST_W = seg('st-w', 'フィルタ', WAV3, 'db2');
-const MR_SIG = seg('mr-sig', '信号', sigs('click', 'doppler', 'bumps', 'heavisine'), 'doppler');
-const MR_W = seg('mr-w', 'フィルタ', WAV3, 'db4');
-const SH_SIG = seg('sh-sig', '信号', sigs('doppler', 'blocks', 'bumps', 'heavisine'), 'doppler');
-const SH_W = seg('sh-w', 'フィルタ', WAV3, 'db4');
-const SH_M = seg(
-  'sh-m',
-  '閾値',
+const SL_SIG = seg(
+  'sl-sig',
+  '信号',
   [
-    ['hard', '硬い'],
-    ['soft', '柔らかい'],
+    ['two', '2 つの音'],
+    ['chirp', 'チャープ'],
+    ['doppler', 'ドップラー'],
   ],
-  'hard',
+  'two',
 );
-const SC_SIG = seg('sc-sig', '信号', sigs('click', 'chirp', 'doppler', 'bumps'), 'doppler');
-const lam = SHRINK.find((d) => d.k === 'lam'),
-  keep = SHRINK.find((d) => d.k === 'keep');
-if (!lam || !keep) throw new Error('SHRINK');
+const SL_REV = seg(
+  'sl-reveal',
+  'スカログラム',
+  [
+    ['all', '全部'],
+    ['hand', 'なぞった所だけ'],
+  ],
+  'all',
+);
+/** 使いみち（応用のページへ） */
+const USES = [
+  ['雑音を除く', '小さい係数を 0 に'],
+  ['圧縮する', '大きい係数だけ残す'],
+  ['音で聴き比べる', '原音・雑音入り・戻した音'],
+];
 const T_PH = 'DWT d3  t 0.000〜0.000 s  f 000.0〜000.0 Hz  |c| 0.000';
+const SL_PH = 't 0.00 s  00.0 Hz  幅 000 ms  足した値 0.00';
+const H8_PH = '平均 (00 + 00) / 2 = 00  差 (00 − 00) / 2 = −0.0  戻す 00 ± −0.0 → 00, 00';
 ---
-<SiteLayout title={name} tool={{ id: 'wavelet', name }} description="時間と周波数の平面の区切り方を、STFT の同じ大きさの箱とウェーブレットの低いほど横長の箱で比べます。離散ウェーブレット変換の段ごとの分解、係数を捨てる雑音除去と圧縮、マイクや音楽ファイルの音のスカログラムを見られます。" note="音声はこの端末の中だけで処理し、送信しません。">
-  <PageTitle title={name}>時間と周波数の平面を、STFT は同じ大きさの箱で、ウェーブレットは低い周波数ほど横長の箱で区切ります。箱に触れると、その箱に当たる波形が信号に重なります。離散ウェーブレット変換が 2 つのフィルタで信号を段ごとに分ける様子、係数を捨てて雑音を除き圧縮する様子、マイクや音楽ファイルの音のスカログラムをスペクトログラムと並べて見られます。</PageTitle>
-  <div class="mini" aria-hidden="true"><span>箱<b id="m-box">—</b></span><span>段<b id="m-lev">—</b></span><span>SN 比<b id="m-snr">—</b></span></div>
+<SiteLayout title={name} tool={{ id: 'wavelet', name }} description="短い波を信号に当てて掛けて足し、幅を変えながら似ている度合いを測ります。フーリエでは消える「いつ」が残る様子、スカログラムのでき方、2 つずつ平均と差をとる速い計算を、触って確かめられます。">
+  <PageTitle title={name}>短い波を信号のあちこちに当て、幅を変えながら似ている度合いを測ります。いつ・どの高さの音が鳴ったかが同時にわかります。</PageTitle>
+  <div class="mini" aria-hidden="true"><span>波<b id="m-pr">—</b></span><span>箱<b id="m-box">—</b></span><span>段<b id="m-lev">—</b></span></div>
 
   <div class="tgrid">
-    <Panel hid="hd-pl" title="時間と周波数の平面" class="a-pl" fixed>
-      <div slot="aux" class="seg" id="pl-ax" role="group" aria-label="周波数軸"><button type="button" data-v="lin" aria-pressed="true" title="周波数を等間隔に">線形</button><button type="button" data-v="log" aria-pressed="false" title="1 オクターブを同じ高さに">対数</button></div>
+    <Panel hid="hd-or" title="1 フーリエでは「いつ」が消える" class="a-or">
+      <div class="bar"><span class="stag"><span class="bl" id="or-ord-l">順番</span><span class="seg" id="or-ord" role="group" aria-labelledby="or-ord-l"><button type="button" data-v="lh" aria-pressed="true">低い音 → 高い音</button><button type="button" data-v="hl" aria-pressed="false">高い音 → 低い音</button></span></span></div>
+      <div class="w2">
+        <figure><figcaption class="vh"><span><b>信号</b> 2 つの音</span></figcaption><div class="scope"><svg viewBox="-50 -14 462 64" id="or-x" role="img" aria-label="信号（2 つの音）"></svg></div></figure>
+        <figure><figcaption class="vh"><span><b>物差しの形</b> 正弦波はずっと続く・ウェーブレットは短い</span></figcaption><div class="scope"><svg viewBox="-98 -2 510 62" id="or-k" role="img" aria-label="正弦波とウェーブレットの形"></svg></div></figure>
+        <figure><figcaption class="vh"><span><b>フーリエ</b> 順番を変えても同じ</span></figcaption><div class="scope"><svg viewBox="-50 -6 462 146" id="or-f" role="img" aria-label="周波数ごとの強さ"></svg></div></figure>
+        <figure><figcaption class="vh"><span><b>スカログラム</b> いつ鳴ったかが残る</span></figcaption><div class="scope dk"><div class="cv"><canvas id="or-m" width="800" height="480"></canvas><svg viewBox="-50 -14 462 282" id="or-s" role="img" aria-label="スカログラム。横は時間、縦は周波数"></svg></div></div></figure>
+      </div>
+    </Panel>
+
+    <Panel hid="hd-sl" title="2 短い波を当てて、掛けて足す" class="a-sl" fixed>
+      <div class="bar">
+        {[SL_SIG, SL_REV].map((s) => <span class="stag"><span class="bl" id={`${s.id}-l`}>{s.label}</span><span class="seg" id={s.id} data-nosave={s === SL_REV ? true : undefined} role="group" aria-labelledby={`${s.id}-l`}>{s.opts.map(([v, l]) => <button type="button" data-v={v} aria-pressed={v === s.v ? 'true' : 'false'}>{l}</button>)}</span></span>)}
+        <span class="seg"><button type="button" id="sl-sweep" title="今の幅で左から右へ当てていく"><span class="i-go" aria-hidden="true">▶</span><span class="i-st" aria-hidden="true">■</span> この幅で掃く</button><button type="button" id="sl-clear" class="hand-only" title="塗った所を消す">消す</button></span>
+      </div>
+      <div class="w2">
+        <div class="sl-l">
+          <figure><figcaption class="vh"><span><b>当てる</b> 信号に短い波を重ねる。引くと位置が動く</span></figcaption><div class="scope"><svg viewBox="-50 -2 462 60" id="sl-x" role="img" aria-label="信号と当てた波。左右に引くと位置が動く"></svg></div></figure>
+          <figure><figcaption class="vh"><span><b>掛ける</b> 似ていれば ＋ がそろう</span></figcaption><div class="scope"><svg viewBox="-50 -2 462 60" id="sl-p" role="img" aria-label="掛けた値"></svg></div></figure>
+          <figure><figcaption class="vh"><span><b>足す</b> 似ていれば大きく、似ていなければ 0 に近い</span></figcaption><div class="scope"><svg viewBox="-50 -1 462 26" id="sl-g" role="img" aria-label="足した値"></svg></div></figure>
+          <div class="wrow"><span class="bl">幅</span><span class="sm">短い</span><div class="sl"><input type="range" id="sl-w" min="0" max="72" step="1" value="40" aria-label="当てる波の幅"></div><span class="sm">長い</span></div>
+        </div>
+        <figure><figcaption class="vh"><span><b>スカログラム</b> 横は時間・縦は周波数・明るさは足した値の大きさ</span></figcaption><div class="scope dk"><div class="cv"><canvas id="sl-m" width="800" height="480"></canvas><svg viewBox="-50 -14 462 282" id="sl-s" tabindex="0" role="img" aria-label="スカログラム。押すと位置と幅を選ぶ。矢印キーでも動かせる"></svg></div></div></figure>
+      </div>
+      <div class="sbar lg">
+        <span class="stag"><i class="sw c2" aria-hidden="true"></i>信号</span>
+        <span class="stag"><i class="sw w-sw-wv" aria-hidden="true"></i>当てた波</span>
+        <span class="stag"><i class="sw w-sw-pp" aria-hidden="true"></i>掛けて ＋</span>
+        <span class="stag"><i class="sw w-sw-pn" aria-hidden="true"></i>掛けて −</span>
+        <span class="stag"><i class="w-sw-coi" aria-hidden="true"></i>端の影響</span>
+        <span class="stag">波の山の位置は一番合う所へずらす</span>
+      </div>
+      <div class="sbar rdbar" data-ph={SL_PH}><span class="rd" id="sl-rd"></span></div>
+    </Panel>
+
+    <Panel hid="hd-pl" title="3 高い音は短い波、低い音は長い波で測る" class="a-pl">
       <div class="bar">
         <span class="bl" id="pl-sig-l">{PL_SIG.label}</span>
         <div class="chips" id={PL_SIG.id} role="group" aria-labelledby="pl-sig-l">{PL_SIG.opts.map(([v, l]) => <button type="button" class="chip" data-v={v} aria-pressed={v === PL_SIG.v ? 'true' : 'false'}>{l}</button>)}</div>
+        <span class="stag"><span class="bl" id="pl-ax-l">周波数軸</span><span class="seg" id="pl-ax" role="group" aria-labelledby="pl-ax-l"><button type="button" data-v="lin" aria-pressed="true" title="周波数を等間隔に">線形</button><button type="button" data-v="log" aria-pressed="false" title="1 オクターブを同じ高さに">対数</button></span></span>
       </div>
       <div class="pl2">
         {[{ k: 0, s: PL_N, h: 'STFT', d: '同じ大きさの箱' }, { k: 1, s: PL_W, h: 'ウェーブレット（DWT）', d: '低いほど横長の箱' }].map((p) => (
@@ -79,102 +121,47 @@ const T_PH = 'DWT d3  t 0.000〜0.000 s  f 000.0〜000.0 Hz  |c| 0.000';
       <div class="sbar rdbar" data-ph={T_PH}><span class="rd" id="pl-rd"></span></div>
     </Panel>
 
-    <div class="col c1">
-      <Panel hid="hd-st" title="分解を段ごとに" class="a-st">
-        <span slot="aux" class="aux" id="st-aux"></span>
-        <div class="bar">
-          {[ST_SIG, ST_W].map((s) => <span class="stag"><span class="bl" id={`${s.id}-l`}>{s.label}</span><span class="seg" id={s.id} role="group" aria-labelledby={`${s.id}-l`}>{s.opts.map(([v, l]) => <button type="button" data-v={v} aria-pressed={v === s.v ? 'true' : 'false'}>{l}</button>)}</span></span>)}
-        </div>
-        <div class="scope"><svg viewBox="-52 -6 460 286" id="st-svg" role="img" aria-label="段ごとの分解"></svg></div>
-        <div class="sbar lg">
-          <span class="stag"><i class="sw c2" aria-hidden="true"></i>近似（低域）</span>
-          <span class="stag"><i class="sw" aria-hidden="true"></i>詳細（高域）</span>
-          <span class="stag"><i class="sw w-sw-f" aria-hidden="true"></i>フィルタ</span>
-        </div>
-        <div class="tp">
-          <button type="button" class="tp-ib" id="st-home" title="最初から（分ける前の信号へ）" aria-label="最初から"><svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1.5" y="1.5" width="1.8" height="9"/><path d="M10.5 1.5v9L4 6z"/></svg></button>
-          <button type="button" class="tp-pp" id="st-pp" title="分解を動かす" aria-label="分解を動かす"><svg class="i-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.2l7.6 4.8L3 10.8z"/></svg><svg class="i-pause" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="2.8" height="9"/><rect x="7.2" y="1.5" width="2.8" height="9"/></svg></button>
-          <div class="tp-tl">
-            <div class="phs" id="st-phs"></div>
-            <div class="tp-tm"><span>係数 <b id="st-n">0</b> 組</span><span id="st-len"></span></div>
-          </div>
-          <div class="tp-side"><button type="button" class="tp-sq" id="st-step" title="1 段進める" aria-label="1 段進める"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 3l6 5-6 5M12 3v10"/></svg></button></div>
-        </div>
-      </Panel>
-
-      <Panel hid="hd-mr" title="多重解像度の成分" class="a-mr">
-        <span slot="aux" class="aux" id="mr-aux"></span>
-        <div class="bar">
-          {[MR_SIG, MR_W].map((s) => <span class="stag"><span class="bl" id={`${s.id}-l`}>{s.label}</span><span class="seg" id={s.id} role="group" aria-labelledby={`${s.id}-l`}>{s.opts.map(([v, l]) => <button type="button" data-v={v} aria-pressed={v === s.v ? 'true' : 'false'}>{l}</button>)}</span></span>)}
-        </div>
-        <div class="scope"><svg viewBox="-52 -4 460 244" id="mr-svg" role="img" aria-label="多重解像度の成分"></svg></div>
-      </Panel>
-    </div>
-
-    <div class="col c2">
-      <Panel hid="hd-sh" title="係数を捨てて戻す" class="a-sh">
-        <div slot="aux" class="seg" id="sh-mode" role="group" aria-label="捨て方"><button type="button" data-v="dn" aria-pressed="true" title="小さい詳細を閾値で 0 にする">雑音除去</button><button type="button" data-v="cp" aria-pressed="false" title="大きい順に残す">圧縮</button></div>
-        <div class="bar">
-          {[SH_SIG, SH_W, SH_M].map((s) => <span class:list={['stag', { 'dn-only': s === SH_M }]}><span class="bl" id={`${s.id}-l`}>{s.label}</span><span class="seg" id={s.id} role="group" aria-labelledby={`${s.id}-l`}>{s.opts.map(([v, l]) => <button type="button" data-v={v} aria-pressed={v === s.v ? 'true' : 'false'}>{l}</button>)}</span></span>)}
-        </div>
-        <div class="ptab"><ParamRow d={lam} /><ParamRow d={keep} /></div>
-        <div class="sbar lg">
-          <span class="stag"><i class="sw c2" aria-hidden="true"></i><span id="sh-l2">雑音あり</span></span>
-          <span class="stag"><i class="sw" aria-hidden="true"></i>戻した信号</span>
-        </div>
-        <div class="scope"><svg viewBox="-50 -6 462 112" id="sh-svg" role="img" aria-label="戻した信号"></svg></div>
-        <div class="sbar lg">
-          <span class="stag"><i class="sw" aria-hidden="true"></i>残す係数</span>
-          <span class="stag"><i class="sw w-sw-g" aria-hidden="true"></i>捨てる係数</span>
-          <span class="stag"><i class="sw w-sw-t" aria-hidden="true"></i><span id="sh-lt">閾値 ±λ</span></span>
-        </div>
-        <div class="scope"><svg viewBox="-50 -6 462 92" id="sh-c" role="img" aria-label="係数（左から近似、粗い詳細、細かい詳細）"></svg></div>
-        <dl class="metrics" id="sh-out"></dl>
-      </Panel>
-
-      <Panel hid="hd-sc" title="スカログラム" class="a-sc">
-        <span slot="aux" class="aux">Morlet <i>ω</i><sub>0</sub> = 6</span>
-        <div class="bar">
-          <span class="stag"><span class="bl" id="sc-sig-l">{SC_SIG.label}</span><span class="seg" id={SC_SIG.id} role="group" aria-labelledby="sc-sig-l">{SC_SIG.opts.map(([v, l]) => <button type="button" data-v={v} aria-pressed={v === SC_SIG.v ? 'true' : 'false'}>{l}</button>)}</span></span>
-        </div>
-        <div class="scope"><svg viewBox="-50 -6 462 56" id="sc-x" role="img" aria-label="信号"></svg></div>
-        <div class="scope dk"><div class="cv"><canvas id="sc-cv" width="512" height="240"></canvas><svg viewBox="-50 -14 462 282" id="sc-svg" role="img" aria-label="スカログラム"></svg></div></div>
-        <div class="sbar lg">
-          <span class="stag"><b id="sc-lo">−40</b><i class="cbar" aria-hidden="true"></i><b>0</b> dB</span>
-          <span class="stag"><i class="w-sw-coi" aria-hidden="true"></i>影響の円錐の外</span>
-        </div>
-        <div class="sbar rdbar" data-ph="t 0.000 s  f 000.0 Hz  −00.0 dB"><span class="rd" id="sc-rd"></span></div>
-      </Panel>
-    </div>
-
-    <Panel hid="hd-au" title="音のスカログラム" class="a-au">
-      <div slot="aux" class="seg"><button type="button" id="au-run" aria-pressed="false"><span class="led" id="au-led" aria-hidden="true"></span><span id="au-runT">再生</span></button></div>
-      <div class="bar"><span class="bl" id="au-src-l">入力</span><div class="seg" id="au-src" data-nosave role="group" aria-labelledby="au-src-l"><button type="button" data-v="mic" aria-pressed="false" title="マイク・ライン入力。スカログラムを見るだけで、処理はしない">マイク</button><button type="button" data-v="file" aria-pressed="false" title="WAV・MP3・FLAC など。先頭 30 秒">ファイル</button><button type="button" data-v="test" aria-pressed="true" title="この端末の中で作る 3 秒の音">試しの音</button></div></div>
-      <p class="msg in-msg" id="au-msg" aria-live="polite"></p>
-      <div class="ptab" id="au-tab" data-src="test">
-        <div class="prow" id="p-file">
-          <div class="c-sym" aria-hidden="true"></div>
-          <div class="c-name"><span class="pn">ファイル</span><p class="desc tip" role="tooltip" hidden>WAV・MP3・FLAC など。先頭 30 秒をモノラルにして使います。この枠へ落としても読み込めます</p></div>
-          <div class="c-val"><div class="seg"><button type="button" id="au-fileBtn">ファイルを選ぶ</button></div><input type="file" id="au-file" accept="audio/*,.wav,.mp3,.m4a,.ogg,.flac" hidden></div>
-          <div class="c-sub"><p class="msg" id="au-fileMsg" aria-live="polite">まだ選んでいません</p></div>
-        </div>
-        <ChoiceRow k="clip" name="試しの音" choices={AUDIO_TESTS} value="mix" layout="chips" wide />
-        <ChoiceRow k="proc" name="処理" sub="db4・8 段。雑音を除く: 雑音を足してから普遍閾値で硬く切る。圧縮: 大きい順に 5 % を残す" choices={[['off', 'そのまま'], ['noise', '雑音'], ['dn', '雑音を除く'], ['cp', '圧縮 5 %']]} value="off" layout="chips" wide />
+    <Panel hid="hd-h8" title="4 速い計算: 2 つずつ平均と差" class="a-h8">
+      <div class="bar">
+        <span class="seg"><button type="button" id="h8-home" title="最初へ（分ける前の数）" aria-label="最初へ">⏮</button><button type="button" id="h8-next" title="次の段" aria-label="次の段">⏭</button></span>
+        <b class="lev" id="h8-lev">段 3 / 3</b>
+        <span class="seg" id="h8-cut" role="group" aria-label="小さい差"><button type="button" data-v="off" aria-pressed="true">そのまま</button><button type="button" data-v="on" aria-pressed="false" title="|差| ≤ 1 を 0 にして戻す">小さい差を 0 に</button></span>
       </div>
-      <div class="aud2">
-        {[{ k: 'w', h: 'スカログラム', d: 'Morlet・1 オクターブ 10 行' }, { k: 's', h: 'スペクトログラム', d: 'STFT 4096 点・ハン' }].map((v) => (
-          <figure>
-            <figcaption class="vh"><span><b>{v.h}</b> {v.d}</span></figcaption>
-            <div class="scope dk"><div class="cv"><canvas id={`au-c${v.k}`} width="300" height="77"></canvas><svg viewBox="-50 -14 462 282" id={`au-s${v.k}`} role="img" aria-label={v.h}><path class="phd" id={`au-ph${v.k}`} d=""/><path class="cur" id={`au-cur${v.k}`} d=""/></svg></div></div>
-          </figure>
-        ))}
-      </div>
+      <div class="scope"><svg viewBox="-48 0 452 266" id="h8-svg" role="img" aria-label="8 つの数を平均と差に分ける。棒は上下に引ける"></svg></div>
       <div class="sbar lg">
-        <span class="stag"><b>−100</b><i class="cbar" aria-hidden="true"></i><b>0</b> dBFS</span>
-        <span class="stag" id="au-info"></span>
-        <a class="stag" href="../spectrum/">スペクトラムアナライザ</a>
+        <span class="stag"><i class="sw c2" aria-hidden="true"></i>平均</span>
+        <span class="stag"><i class="sw" aria-hidden="true"></i>差</span>
+        <span class="stag"><i class="sw w-sw-h8g" aria-hidden="true"></i>戻した数</span>
+        <span class="stag">棒は上下に引ける</span>
       </div>
-      <div class="sbar rdbar" data-ph="t −10.00 s  f 12.34 kHz  W −123.4  S −123.4 dBFS"><span class="rd" id="au-rd"></span></div>
+      <div class="sbar rdbar" data-ph={H8_PH}><span class="rd" id="h8-rd"></span></div>
+    </Panel>
+
+    <Panel hid="hd-st" title="5 同じことを 256 点で" class="a-st">
+      <span slot="aux" class="aux" id="st-aux"></span>
+      <div class="bar">
+        {[ST_SIG, ST_W].map((s) => <span class="stag"><span class="bl" id={`${s.id}-l`}>{s.label}</span><span class="seg" id={s.id} role="group" aria-labelledby={`${s.id}-l`}>{s.opts.map(([v, l]) => <button type="button" data-v={v} aria-pressed={v === s.v ? 'true' : 'false'}>{l}</button>)}</span></span>)}
+      </div>
+      <div class="scope"><svg viewBox="-52 -6 460 286" id="st-svg" role="img" aria-label="段ごとの分解"></svg></div>
+      <div class="sbar lg">
+        <span class="stag"><i class="sw c2" aria-hidden="true"></i>近似（低域）</span>
+        <span class="stag"><i class="sw" aria-hidden="true"></i>詳細（高域）</span>
+        <span class="stag"><i class="sw w-sw-f" aria-hidden="true"></i>フィルタ</span>
+      </div>
+      <div class="tp">
+        <button type="button" class="tp-ib" id="st-home" title="最初から（分ける前の信号へ）" aria-label="最初から"><svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1.5" y="1.5" width="1.8" height="9"/><path d="M10.5 1.5v9L4 6z"/></svg></button>
+        <button type="button" class="tp-pp" id="st-pp" title="分解を動かす" aria-label="分解を動かす"><svg class="i-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.2l7.6 4.8L3 10.8z"/></svg><svg class="i-pause" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="2.8" height="9"/><rect x="7.2" y="1.5" width="2.8" height="9"/></svg></button>
+        <div class="tp-tl">
+          <div class="phs" id="st-phs"></div>
+          <div class="tp-tm"><span>係数 <b id="st-n">0</b> 組</span><span id="st-len"></span></div>
+        </div>
+        <div class="tp-side"><button type="button" class="tp-sq" id="st-step" title="1 段進める" aria-label="1 段進める"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 3l6 5-6 5M12 3v10"/></svg></button></div>
+      </div>
+    </Panel>
+
+    <Panel hid="hd-us" title="使いみち" class="a-us">
+      <div class="uses">{USES.map(([h, d]) => <a class="use" href="../wavelet-denoise/"><b>{h}</b><span>{d}</span></a>)}</div>
+      <p class="use-n">小さい係数を捨てても形が残る。これを使う雑音除去と圧縮は「ウェーブレットで雑音除去と圧縮」のページで</p>
     </Panel>
 
     <Collapsible hid="hd-thy" title="動作原理と式">

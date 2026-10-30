@@ -6,6 +6,8 @@ const it = (s: string) => `<mi>${s}</mi>`;
 const fn = (f: string, arg: string) => `<mi>${f}</mi><mo stretchy="false">(</mo>${arg}<mo stretchy="false">)</mo>`;
 /** f[arg] */
 const sq = (f: string, arg: string) => `<mi>${f}</mi><mo stretchy="false">[</mo>${arg}<mo stretchy="false">]</mo>`;
+/** b[arg]（b は式） */
+const sqm = (b: string, arg: string) => `${b}<mo stretchy="false">[</mo>${arg}<mo stretchy="false">]</mo>`;
 const sub = (b: string, s: string) => `<msub>${b}<mrow>${s}</mrow></msub>`;
 const sum = (lo: string, hi = '') =>
   hi
@@ -19,7 +21,45 @@ const dj = '<mi>δ</mi><mi>j</mi>';
 /* 本文の出典番号 */
 const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
 ---
-<h3>時間と周波数の箱</h3>
+<h3>1 フーリエと「いつ」</h3>
+<div class="eqs">
+  <math display="block" set:html={`${sq('X', it('k'))}<mo>=</mo>${sum('<mi>n</mi><mo>=</mo><mn>0</mn>', '<mi>N</mi><mo>−</mo><mn>1</mn>')}${sq('x', it('n'))}<mspace width="0.1em"/><msup><mi>e</mi><mrow><mo>−</mo><mi>i</mi><mn>2</mn><mi>π</mi><mi>k</mi><mi>n</mi><mo>/</mo><mi>N</mi></mrow></msup>`} />
+  <math display="block" set:html={`${sq('x', '<mi>n</mi><mo>−</mo><mi>m</mi>')}<mspace width="0.5em"/><mo>⟶</mo><mspace width="0.5em"/><msup><mi>e</mi><mrow><mo>−</mo><mi>i</mi><mn>2</mn><mi>π</mi><mi>k</mi><mi>m</mi><mo>/</mo><mi>N</mi></mrow></msup>${sq('X', it('k'))}<mspace width="1em"/><mo>⟹</mo><mspace width="1em"/><mo stretchy="false">|</mo>${sq('X', it('k'))}<mo stretchy="false">|</mo><mtext> は同じ</mtext>`} />
+</div>
+<ul class="tl">
+  <li>正弦波は区間の端から端まで続く。係数が持つのは「どの周波数がどれだけ」で、「いつ」は位相に散らばる</li>
+  <li>図の 2 つの音の入れ替えは、半周（<math><mi>m</mi><mo>=</mo><mi>N</mi><mo>/</mo><mn>2</mn></math>）の回転。強さ <math><mo stretchy="false">|</mo><mi>X</mi><mo stretchy="false">|</mo></math> は 1 つも変わらない</li>
+  <li>DFT を速く求める算法は <a href="../fft/">FFT</a>、区間の端がつながる周期性は <a href="../dct-dft/">DCT と DFT</a></li>
+</ul>
+
+<h3>2 当てて、掛けて、足す</h3>
+<div class="eqs">
+  <math display="block" set:html={`<mi>W</mi><mo stretchy="false">(</mo><mi>u</mi><mo>,</mo><mi>s</mi><mo stretchy="false">)</mo><mo>=</mo>${sum('<mi>n</mi>')}${sub('<mi>x</mi>', '<mi>n</mi>')}<mspace width="0.1em"/>${sqrt(fr(dt, '<mi>s</mi>'))}<mspace width="0.1em"/>${sub('<msup><mi>ψ</mi><mo>*</mo></msup>', '<mn>0</mn>')}<mo stretchy="false">(</mo>${fr(`<mo stretchy="false">(</mo><mi>n</mi><mo>−</mo><mi>u</mi><mo stretchy="false">)</mo>${dt}`, '<mi>s</mi>')}<mo stretchy="false">)</mo>`} />
+  <math display="block" set:html={`${sub('<mi>ψ</mi>', '<mn>0</mn>')}<mo stretchy="false">(</mo><mi>η</mi><mo stretchy="false">)</mo><mo>=</mo><msup><mi>π</mi><mrow><mo>−</mo><mn>1</mn><mo>/</mo><mn>4</mn></mrow></msup><msup><mi>e</mi><mrow><mi>i</mi>${w0}<mi>η</mi></mrow></msup><msup><mi>e</mi><mrow><mo>−</mo><msup><mi>η</mi><mn>2</mn></msup><mo>/</mo><mn>2</mn></mrow></msup><mo>,</mo><mspace width="1em"/>${w0}<mo>=</mo><mn>6</mn>`} />
+  <math display="block" set:html={`<mo stretchy="false">|</mo><mi>W</mi><mo stretchy="false">|</mo><mo>=</mo>${sub('<mo>max</mo>', '<mi>φ</mi>')}${sum('<mi>n</mi>')}${sub('<mi>x</mi>', '<mi>n</mi>')}<mspace width="0.1em"/>${sub('<mi>g</mi>', '<mi>n</mi>')}<mspace width="0.1em"/><mo>cos</mo><mo stretchy="false">(</mo>${w0}${sub('<mi>η</mi>', '<mi>n</mi>')}<mo>−</mo><mi>φ</mi><mo stretchy="false">)</mo><mo>,</mo><mspace width="1em"/>${sub('<mi>g</mi>', '<mi>n</mi>')}<mo>=</mo>${sqrt(fr(dt, '<mi>s</mi>'))}<mspace width="0.1em"/><msup><mi>π</mi><mrow><mo>−</mo><mn>1</mn><mo>/</mo><mn>4</mn></mrow></msup><msup><mi>e</mi><mrow><mo>−</mo><msubsup><mi>η</mi><mi>n</mi><mn>2</mn></msubsup><mo>/</mo><mn>2</mn></mrow></msup>`} />
+  <math display="block" set:html={`<mi>λ</mi><mo>=</mo>${fr('<mn>4</mn><mi>π</mi><mi>s</mi>', `${w0}<mo>+</mo>${sqrt(`<mn>2</mn><mo>+</mo><msubsup><mi>ω</mi><mn>0</mn><mn>2</mn></msubsup>`)}`)}<mo>=</mo><mn>1.033</mn><mspace width="0.1em"/><mi>s</mi><mo>,</mo><mspace width="1em"/>${sj}<mo>=</mo>${sub('<mi>s</mi>', '<mn>0</mn>')}<msup><mn>2</mn><mrow><mi>j</mi>${dj}</mrow></msup>`} />
+</div>
+<dl class="syms">
+  <dt><math><mi>u</mi></math></dt><dd>当てる位置（時刻）</dd>
+  <dt><math><mi>s</mi></math></dt><dd>尺度（波の幅）。大きいほど長く低い波</dd>
+  <dt><math set:html={sub('<mi>η</mi>', '<mi>n</mi>')} /></dt><dd><math set:html={`<mo stretchy="false">(</mo><mi>n</mi><mo>−</mo><mi>u</mi><mo stretchy="false">)</mo>${dt}<mo>/</mo><mi>s</mi>`} /></dd>
+</dl>
+<ul class="tl">
+  <li>信号と、ずらして伸ばした短い波の内積。似ている所では積の符号がそろって和が大きく、似ていない所では打ち消して 0 に近い<Fragment set:html={rf(1)} /><Fragment set:html={rf(9)} /></li>
+  <li>Morlet は複素正弦にガウスの包絡を掛けた波（式 (1)）。<math set:html={`${w0}<mo>=</mo><mn>6</mn>`} /> で平均がほぼ 0 になる<Fragment set:html={rf(1)} /></li>
+  <li>cos だけで掛けると、波の山の位置がずれた所で和が 0 になる。cos と sin（実部と虚部）の 2 つで足して大きさをとるのは、山の位置 <math><mi>φ</mi></math> を一番合う所へずらして掛けて足すのと同じ。図の波はずらしたもの</li>
+  <li>尺度 <math><mi>s</mi></math> はフーリエ周期 <math><mi>λ</mi></math> とほぼ同じ（表 1）<Fragment set:html={rf(1)} /></li>
+  <li>すべての <math><mi>u</mi></math> と <math><mi>s</mi></math> で <math set:html={`<msup><mrow><mo stretchy="false">|</mo><mi>W</mi><mo stretchy="false">|</mo></mrow><mn>2</mn></msup><mo>/</mo><mi>s</mi>`} /> を求め、横を時間・縦を周波数にして明るさで塗ったものがスカログラム。<math><mi>s</mi></math> で割ると、同じ振幅の正弦波がどの周波数でも同じ明るさになる<Fragment set:html={rf(10)} /></li>
+  <li>端は 0 で埋めるので、端から <math><msqrt><mn>2</mn></msqrt><mspace width="0.1em"/><mi>s</mi></math> の内側（影響の円錐の外）は値が下がる（3g 節）<Fragment set:html={rf(1)} /></li>
+  <li>実際の計算は、1 つの尺度の全時刻を FFT で一度に求める（式 (4)）。直接の和と同じ値になる<Fragment set:html={rf(1)} /></li>
+</ul>
+<div class="eqs">
+  <math display="block" set:html={`${sub('<mi>W</mi>', '<mi>n</mi>')}<mo stretchy="false">(</mo><mi>s</mi><mo stretchy="false">)</mo><mo>=</mo>${sum('<mi>k</mi><mo>=</mo><mn>0</mn>', '<mi>N</mi><mo>−</mo><mn>1</mn>')}${sub('<mover><mi>x</mi><mo>^</mo></mover>', '<mi>k</mi>')}<mspace width="0.1em"/><msup><mover><mi>ψ</mi><mo>^</mo></mover><mo>*</mo></msup><mo stretchy="false">(</mo><mi>s</mi>${sub('<mi>ω</mi>', '<mi>k</mi>')}<mo stretchy="false">)</mo><mspace width="0.1em"/><msup><mi>e</mi><mrow><mi>i</mi>${sub('<mi>ω</mi>', '<mi>k</mi>')}<mi>n</mi>${dt}</mrow></msup>`} />
+  <math display="block" set:html={`${sub('<mi>x</mi>', '<mi>n</mi>')}<mo>=</mo>${fr(`${dj}<mspace width="0.1em"/><msup><mrow>${dt}</mrow><mrow><mn>1</mn><mo>/</mo><mn>2</mn></mrow></msup>`, `${sub('<mi>C</mi>', '<mi>δ</mi>')}<mspace width="0.1em"/>${sub('<mi>ψ</mi>', '<mn>0</mn>')}<mo stretchy="false">(</mo><mn>0</mn><mo stretchy="false">)</mo>`)}${sum('<mi>j</mi><mo>=</mo><mn>0</mn>', '<mi>J</mi>')}${fr(`<mo>ℜ</mo><mo stretchy="false">{</mo>${sub('<mi>W</mi>', '<mi>n</mi>')}<mo stretchy="false">(</mo>${sj}<mo stretchy="false">)</mo><mo stretchy="false">}</mo>`, `<msubsup><mi>s</mi><mi>j</mi><mrow><mn>1</mn><mo>/</mo><mn>2</mn></mrow></msubsup>`)}<mo>,</mo><mspace width="1em"/>${sub('<mi>C</mi>', '<mi>δ</mi>')}<mo>=</mo><mn>0.776</mn>`} />
+</div>
+<p>尺度ごとの実部を足すと元に戻る（式 (11)・表 2）<Fragment set:html={rf(1)} />。</p>
+
+<h3>3 箱の形</h3>
 <div class="eqs">
   <math display="block" set:html={`${sub('<mi>σ</mi>', '<mi>t</mi>')}<mspace width="0.2em"/>${sub('<mi>σ</mi>', '<mi>f</mi>')}<mo>≥</mo>${fr('<mn>1</mn>', '<mn>4</mn><mi>π</mi>')}`} />
   <math display="block" set:html={`${sub('<mi>ψ</mi>', '<mi>s</mi>')}<mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mo>=</mo>${fr('<mn>1</mn>', sqrt('<mi>s</mi>'))}<mspace width="0.2em"/>${fn('ψ', fr('<mi>t</mi>', '<mi>s</mi>'))}<mspace width="1em"/><mo>⟹</mo><mspace width="1em"/>${sub('<mi>σ</mi>', '<mi>t</mi>')}<mo>∝</mo><mi>s</mi><mo>,</mo><mspace width="0.5em"/>${sub('<mi>σ</mi>', '<mi>f</mi>')}<mo>∝</mo>${fr('<mn>1</mn>', '<mi>s</mi>')}`} />
@@ -27,7 +67,6 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
 <dl class="syms">
   <dt><math set:html={sub('<mi>σ</mi>', '<mi>t</mi>')} /></dt><dd>時間の広がり（|g(t)|² の標準偏差）</dd>
   <dt><math set:html={sub('<mi>σ</mi>', '<mi>f</mi>')} /></dt><dd>周波数の広がり</dd>
-  <dt><math><mi>s</mi></math></dt><dd>尺度</dd>
 </dl>
 <ul class="tl">
   <li>箱の面積には下限がある。ガウスの窓（Gabor）と Morlet はちょうど下限<Fragment set:html={rf(5)} /><Fragment set:html={rf(8)} /></li>
@@ -35,39 +74,29 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
   <li>ウェーブレットは尺度で伸び縮みする。低い周波数ほど横長、高いほど縦長。中心の周波数と幅の比（Q）は一定</li>
 </ul>
 
-<h3>連続ウェーブレット変換</h3>
+<h3>4・5 平均と差を段ごとに</h3>
 <div class="eqs">
-  <math display="block" set:html={`${sub('<mi>W</mi>', '<mi>n</mi>')}<mo stretchy="false">(</mo><mi>s</mi><mo stretchy="false">)</mo><mo>=</mo>${sum('<mi>k</mi><mo>=</mo><mn>0</mn>', '<mi>N</mi><mo>−</mo><mn>1</mn>')}${sub('<mover><mi>x</mi><mo>^</mo></mover>', '<mi>k</mi>')}<mspace width="0.1em"/><msup><mover><mi>ψ</mi><mo>^</mo></mover><mo>*</mo></msup><mo stretchy="false">(</mo><mi>s</mi>${sub('<mi>ω</mi>', '<mi>k</mi>')}<mo stretchy="false">)</mo><mspace width="0.1em"/><msup><mi>e</mi><mrow><mi>i</mi>${sub('<mi>ω</mi>', '<mi>k</mi>')}<mi>n</mi>${dt}</mrow></msup>`} />
-  <math display="block" set:html={`${sub('<mi>ψ</mi>', '<mn>0</mn>')}<mo stretchy="false">(</mo><mi>η</mi><mo stretchy="false">)</mo><mo>=</mo><msup><mi>π</mi><mrow><mo>−</mo><mn>1</mn><mo>/</mo><mn>4</mn></mrow></msup><msup><mi>e</mi><mrow><mi>i</mi>${w0}<mi>η</mi></mrow></msup><msup><mi>e</mi><mrow><mo>−</mo><msup><mi>η</mi><mn>2</mn></msup><mo>/</mo><mn>2</mn></mrow></msup><mo>,</mo><mspace width="1em"/>${w0}<mo>=</mo><mn>6</mn>`} />
-  <math display="block" set:html={`<mi>λ</mi><mo>=</mo>${fr('<mn>4</mn><mi>π</mi><mi>s</mi>', `${w0}<mo>+</mo>${sqrt(`<mn>2</mn><mo>+</mo><msubsup><mi>ω</mi><mn>0</mn><mn>2</mn></msubsup>`)}`)}<mo>=</mo><mn>1.033</mn><mspace width="0.1em"/><mi>s</mi><mo>,</mo><mspace width="1em"/>${sj}<mo>=</mo>${sub('<mi>s</mi>', '<mn>0</mn>')}<msup><mn>2</mn><mrow><mi>j</mi>${dj}</mrow></msup>`} />
+  <math display="block" set:html={`${sub('<mi>a</mi>', '<mi>k</mi>')}<mo>=</mo>${fr(`${sub('<mi>x</mi>', '<mn>2</mn><mi>k</mi>')}<mo>+</mo>${sub('<mi>x</mi>', '<mn>2</mn><mi>k</mi><mo>+</mo><mn>1</mn>')}`, '<mn>2</mn>')}<mo>,</mo><mspace width="0.8em"/>${sub('<mi>d</mi>', '<mi>k</mi>')}<mo>=</mo>${fr(`${sub('<mi>x</mi>', '<mn>2</mn><mi>k</mi>')}<mo>−</mo>${sub('<mi>x</mi>', '<mn>2</mn><mi>k</mi><mo>+</mo><mn>1</mn>')}`, '<mn>2</mn>')}<mspace width="1em"/><mo>⟹</mo><mspace width="1em"/>${sub('<mi>x</mi>', '<mn>2</mn><mi>k</mi>')}<mo>,</mo>${sub('<mi>x</mi>', '<mn>2</mn><mi>k</mi><mo>+</mo><mn>1</mn>')}<mo>=</mo>${sub('<mi>a</mi>', '<mi>k</mi>')}<mo>±</mo>${sub('<mi>d</mi>', '<mi>k</mi>')}`} />
 </div>
 <ul class="tl">
-  <li>信号とずらして伸ばしたウェーブレットの相関。FFT で掛けて戻すと、1 つの尺度の全時刻が一度に求まる（式 (4)）<Fragment set:html={rf(1)} /></li>
-  <li>Morlet は複素正弦にガウスの包絡を掛けた波（式 (1)）。<math set:html={`${w0}<mo>=</mo><mn>6</mn>`} /> で平均がほぼ 0 になる<Fragment set:html={rf(1)} /><Fragment set:html={rf(9)} /></li>
-  <li>尺度 <math><mi>s</mi></math> はフーリエ周期 <math><mi>λ</mi></math> とほぼ同じ（表 1）<Fragment set:html={rf(1)} /></li>
-  <li><math set:html={`<msup><mrow><mo>|</mo><mi>W</mi><mo>|</mo></mrow><mn>2</mn></msup>`} /> を時間と周期の平面に塗ったものがスカログラム</li>
-  <li>端は 0 で埋めるので、端から <math><msqrt><mn>2</mn></msqrt><mspace width="0.1em"/><mi>s</mi></math> の内側（影響の円錐の外）は値が下がる（3g 節）<Fragment set:html={rf(1)} /></li>
+  <li>2 つずつ平均と差をとり、平均の側をまた分ける。8 つの数は 3 段で平均 1 つと差 7 つになり、数は増えも減りもしない<Fragment set:html={rf(7)} /></li>
+  <li>本来の Haar は 2 でなく <math><msqrt><mn>2</mn></msqrt></math> で割る。こうすると 2 乗和が変わらない（正規直交）</li>
+  <li>滑らかな所は差が小さい。小さい差を 0 にしても形はほぼ残る。これを使う雑音除去と圧縮は「<a href="../wavelet-denoise/">ウェーブレットで雑音除去と圧縮</a>」</li>
 </ul>
-<div class="eqs">
-  <math display="block" set:html={`${sub('<mi>x</mi>', '<mi>n</mi>')}<mo>=</mo>${fr(`${dj}<mspace width="0.1em"/><msup><mrow>${dt}</mrow><mrow><mn>1</mn><mo>/</mo><mn>2</mn></mrow></msup>`, `${sub('<mi>C</mi>', '<mi>δ</mi>')}<mspace width="0.1em"/>${sub('<mi>ψ</mi>', '<mn>0</mn>')}<mo stretchy="false">(</mo><mn>0</mn><mo stretchy="false">)</mo>`)}${sum('<mi>j</mi><mo>=</mo><mn>0</mn>', '<mi>J</mi>')}${fr(`<mo>ℜ</mo><mo stretchy="false">{</mo>${sub('<mi>W</mi>', '<mi>n</mi>')}<mo stretchy="false">(</mo>${sj}<mo stretchy="false">)</mo><mo stretchy="false">}</mo>`, `<msubsup><mi>s</mi><mi>j</mi><mrow><mn>1</mn><mo>/</mo><mn>2</mn></mrow></msubsup>`)}<mo>,</mo><mspace width="1em"/>${sub('<mi>C</mi>', '<mi>δ</mi>')}<mo>=</mo><mn>0.776</mn>`} />
-</div>
-<p>尺度ごとの実部を足すと元に戻る（式 (11)・表 2）<Fragment set:html={rf(1)} />。</p>
-
-<h3>離散ウェーブレット変換</h3>
 <ol class="flow">
   <li>低域 <math><mi>h</mi></math> と高域 <math><mi>g</mi></math> に通す</li>
   <li>1 つおきに残す（↓2）</li>
   <li>低域（近似 <math><mi>a</mi></math>）をまた分ける</li>
 </ol>
 <div class="eqs">
-  <math display="block" set:html={`${sq(sub('<mi>a</mi>', '<mi>j</mi><mo>+</mo><mn>1</mn>'), it('k'))}<mo>=</mo>${sum('<mi>n</mi>')}${sq('h', it('n'))}<mspace width="0.1em"/>${sq(sub('<mi>a</mi>', '<mi>j</mi>'), '<mn>2</mn><mi>k</mi><mo>+</mo><mi>n</mi>')}<mo>,</mo><mspace width="1em"/>${sq(sub('<mi>d</mi>', '<mi>j</mi><mo>+</mo><mn>1</mn>'), it('k'))}<mo>=</mo>${sum('<mi>n</mi>')}${sq('g', it('n'))}<mspace width="0.1em"/>${sq(sub('<mi>a</mi>', '<mi>j</mi>'), '<mn>2</mn><mi>k</mi><mo>+</mo><mi>n</mi>')}`} />
+  <math display="block" set:html={`${sqm(sub('<mi>a</mi>', '<mi>j</mi><mo>+</mo><mn>1</mn>'), it('k'))}<mo>=</mo>${sum('<mi>n</mi>')}${sq('h', it('n'))}<mspace width="0.1em"/>${sqm(sub('<mi>a</mi>', '<mi>j</mi>'), '<mn>2</mn><mi>k</mi><mo>+</mo><mi>n</mi>')}<mo>,</mo><mspace width="1em"/>${sqm(sub('<mi>d</mi>', '<mi>j</mi><mo>+</mo><mn>1</mn>'), it('k'))}<mo>=</mo>${sum('<mi>n</mi>')}${sq('g', it('n'))}<mspace width="0.1em"/>${sqm(sub('<mi>a</mi>', '<mi>j</mi>'), '<mn>2</mn><mi>k</mi><mo>+</mo><mi>n</mi>')}`} />
   <math display="block" set:html={`${sq('g', it('n'))}<mo>=</mo><msup><mrow><mo stretchy="false">(</mo><mo>−</mo><mn>1</mn><mo stretchy="false">)</mo></mrow><mi>n</mi></msup>${sq('h', '<mi>L</mi><mo>−</mo><mn>1</mn><mo>−</mo><mi>n</mi>')}<mo>,</mo><mspace width="1em"/><mi>x</mi><mo>=</mo>${sub('<mi>A</mi>', '<mi>J</mi>')}<mo>+</mo>${sum('<mi>j</mi><mo>=</mo><mn>1</mn>', '<mi>J</mi>')}${sub('<mi>D</mi>', '<mi>j</mi>')}`} />
 </div>
 <ul class="tl">
-  <li>Mallat の算法。長さ <math><mi>N</mi></math> の信号は、ちょうど <math><mi>N</mi></math> 個の係数になる<Fragment set:html={rf(4)} /></li>
-  <li>段 <math><mi>j</mi></math> の詳細は周波数 <math set:html={`${fr('<msub><mi>f</mi><mi mathvariant="normal">s</mi></msub>', '<msup><mn>2</mn><mrow><mi>j</mi><mo>+</mo><mn>1</mn></mrow></msup>')}<mo>〜</mo>${fr('<msub><mi>f</mi><mi mathvariant="normal">s</mi></msub>', '<msup><mn>2</mn><mi>j</mi></msup>')}`} />、時間の幅 <math set:html={`<msup><mn>2</mn><mi>j</mi></msup><mo>/</mo><msub><mi>f</mi><mi mathvariant="normal">s</mi></msub>`} /> の箱。どの箱も面積 1/2</li>
-  <li>正規直交なので、係数の 2 乗和は信号の 2 乗和に等しい。合成は分解の転置</li>
-  <li><math><mi>A</mi></math>・<math><mi>D</mi></math> は各段の係数だけを残して戻したもの（多重解像度の成分）</li>
+  <li>Mallat の算法。Haar の平均と差を、長さ <math><mi>L</mi></math> のフィルタに広げたもの。長さ <math><mi>N</mi></math> の信号は、ちょうど <math><mi>N</mi></math> 個の係数になる<Fragment set:html={rf(4)} /></li>
+  <li>フィルタに通すのは畳み込み（<a href="../convolution/">畳み込み</a>）。1 段ごとに長さが半分になるので、全部の段を合わせても計算は <math><mi>N</mi></math> に比例する</li>
+  <li>段 <math><mi>j</mi></math> の詳細は周波数 <math set:html={`${fr('<msub><mi>f</mi><mi mathvariant="normal">s</mi></msub>', '<msup><mn>2</mn><mrow><mi>j</mi><mo>+</mo><mn>1</mn></mrow></msup>')}<mo>〜</mo>${fr('<msub><mi>f</mi><mi mathvariant="normal">s</mi></msub>', '<msup><mn>2</mn><mi>j</mi></msup>')}`} />、時間の幅 <math set:html={`<msup><mn>2</mn><mi>j</mi></msup><mo>/</mo><msub><mi>f</mi><mi mathvariant="normal">s</mi></msub>`} /> の箱（図 3 の DWT の箱）</li>
+  <li>正規直交なので、係数の 2 乗和は信号の 2 乗和に等しい。合成は分解の転置。<math><mi>A</mi></math>・<math><mi>D</mi></math> は各段の係数だけを残して戻したもの（多重解像度の成分）</li>
 </ul>
 <div class="tt-w"><table class="tt">
   <thead><tr><th>フィルタ</th><th>長さ</th><th>消える積率</th><th>低域の係数</th><th>出典</th></tr></thead>
@@ -79,38 +108,16 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
 </table></div>
 <p><math><mi>p</mi></math> 個の積率が消えるフィルタでは、<math><mi>p</mi><mo>−</mo><mn>1</mn></math> 次までの多項式の詳細が 0 になる<Fragment set:html={rf(2)} />。滑らかな所は係数が小さく、跳びと山の所だけ大きい。</p>
 
-<h3>係数を捨てて戻す</h3>
-<div class="eqs">
-  <math display="block" set:html={`<mtext>硬い</mtext><mo>:</mo><mspace width="0.3em"/><mi>d</mi><mo>·</mo><mn>1</mn><mo stretchy="false">[</mo><mo>|</mo><mi>d</mi><mo>|</mo><mo>&gt;</mo><mi>λ</mi><mo stretchy="false">]</mo><mo>,</mo><mspace width="1.2em"/><mtext>柔らかい</mtext><mo>:</mo><mspace width="0.3em"/><mo>sgn</mo><mo stretchy="false">(</mo><mi>d</mi><mo stretchy="false">)</mo><mspace width="0.1em"/><mo>max</mo><mo stretchy="false">(</mo><mo>|</mo><mi>d</mi><mo>|</mo><mo>−</mo><mi>λ</mi><mo>,</mo><mn>0</mn><mo stretchy="false">)</mo>`} />
-  <math display="block" set:html={`<mi>λ</mi><mo>=</mo><mover><mi>σ</mi><mo>^</mo></mover>${sqrt('<mn>2</mn><mi>ln</mi><mi>N</mi>')}<mo>,</mo><mspace width="1em"/><mover><mi>σ</mi><mo>^</mo></mover><mo>=</mo>${fr(`<mtext>median</mtext><mo stretchy="false">(</mo><mo>|</mo>${sub('<mi>d</mi>', '<mn>1</mn>')}<mo>|</mo><mo stretchy="false">)</mo>`, '<mn>0.6745</mn>')}`} />
-</div>
-<ul class="tl">
-  <li>雑音除去: 詳細のうち閾値より小さいものを 0 にする。普遍閾値は Donoho・Johnstone<Fragment set:html={rf(6)} />、柔らかい閾値は Donoho<Fragment set:html={rf(10)} /></li>
-  <li>雑音の大きさは、最も細かい詳細の絶対値の中央値から推定する（正規分布の |z| の中央値が 0.6745）</li>
-  <li>圧縮: 大きい順に係数を残す。戻した信号の誤差の 2 乗和は、捨てた係数の 2 乗和に等しい</li>
-  <li>試しの信号の Blocks・Bumps・HeaviSine・Doppler は Donoho・Johnstone の 4 つ<Fragment set:html={rf(6)} /><Fragment set:html={rf(3)} /></li>
-</ul>
-
-<h3>音のスカログラム</h3>
-<ul class="tl">
-  <li>行ごとに Morlet の核（ガウスの包絡 × 複素正弦）を持ち、10 ms ごとに内積をとる</li>
-  <li>振幅 1 の正弦波がその周波数の行で 0 dBFS になるように、包絡の和で割る。<a href="../spectrum/">スペクトラムアナライザ</a>の dBFS と読み比べられる</li>
-  <li>1 オクターブ上の行へは <math><msup><mi>e</mi><mrow><mo>−</mo><msubsup><mi>ω</mi><mn>0</mn><mn>2</mn></msubsup><mo>/</mo><mn>8</mn></mrow></msup></math>（−39 dB）漏れる。低い音ほど時間方向に、高い音ほど周波数方向ににじむ</li>
-  <li>FFT の算法は <a href="../fft/">FFT</a>、窓と DFT の周期性は <a href="../dct-dft/">DCT と DFT</a>、フィルタが畳み込みであることは <a href="../convolution/">畳み込み</a></li>
-</ul>
-
 <h3>このツールで決めたこと</h3>
 <ul class="tl">
-  <li>平面の信号は 256 点（1 s、256 Hz）。DWT の箱は係数 1 つ（実数）で面積 1/2、STFT の箱は複素数 1 つ（実数 2 つ）で面積 1</li>
-  <li>STFT の箱の値は、長さ <math><mi>L</mi></math> のハン窓を <math><mi>L</mi><mo>/</mo><mn>4</mn></math> ずつずらし、中心が箱の中にある 4 つの窓の最大。箱の端の出来事を窓の裾で見落とさない</li>
-  <li>箱とスカログラムの色は、最も大きい値から 36 dB・40 dB の範囲</li>
-  <li>連続変換は平均を引き、長さの 2 倍以上の 2 の累乗まで 0 で埋める。尺度は周期 <math set:html={`<mn>2</mn>${dt}`} /> から <math set:html={`${dj}<mo>=</mo><mn>1</mn><mo>/</mo><mn>10</mn>`} /></li>
+  <li>図 1・2 の信号は 256 点（1 s、256 Hz）。2 つの音は前半 6 Hz・後半 32 Hz で、それぞれハンの包絡</li>
+  <li>スカログラムは Morlet で 2〜128 Hz、1 オクターブ 12 行。信号の平均を引いてから求め、<math set:html={`<mo stretchy="false">|</mo><mi>W</mi><mo stretchy="false">|</mo><mo>/</mo>${sqrt('<mi>s</mi>')}`} /> を最も大きい所から 30 dB の範囲で塗る。足した値はその最大を 1 とする</li>
+  <li>当てた波の帯と「幅」は <math><mo>±</mo><mn>2</mn><mi>s</mi></math>（包絡が 0.14 になる所）</li>
+  <li>8 つの数は 2 で割る（整数のまま追えるように）。「小さい差」は <math><mo stretchy="false">|</mo><mi>d</mi><mo stretchy="false">|</mo><mo>≤</mo><mn>1</mn></math></li>
+  <li>平面の DWT の箱は係数 1 つ（実数）で面積 1/2、STFT の箱は複素数 1 つ（実数 2 つ）で面積 1</li>
+  <li>STFT の箱の値は、長さ <math><mi>L</mi></math> のハン窓を <math><mi>L</mi><mo>/</mo><mn>4</mn></math> ずつずらし、中心が箱の中にある 4 つの窓の最大。箱の端の出来事を窓の裾で見落とさない。箱の色は最も大きい箱から 36 dB の範囲</li>
   <li>離散変換の端は周期的につなぐ。段の数は、各段の長さがフィルタの長さ以上の所まで</li>
-  <li>雑音除去は詳細だけを閾値で処理し、近似は残す</li>
-  <li>音の核は <math><mo>±</mo><mn>4</mn><mi>σ</mi></math> で打ち切る（包絡は −70 dB）。列の時刻は最も長い核の半分だけ遅らせてそろえる</li>
-  <li>音の雑音除去と圧縮は db4・8 段。長さは <math><msup><mn>2</mn><mn>8</mn></msup></math> の倍数まで 0 で埋める。雑音は σ 0.03 の白色雑音、圧縮は大きい順に 5 % を残す</li>
-  <li>音のスペクトログラムは 4096 点のハン窓（スペクトラムアナライザの既定と同じ）。スカログラムと同じ行の周波数の幅に入る bin の最大</li>
-  <li>ファイルは先頭 30 秒をモノラルにして使う。マイクはスカログラムを見るだけで、処理した音は鳴らさない（ハウリングを避ける）</li>
+  <li>試しの信号の Blocks・Bumps・HeaviSine・Doppler は Donoho・Johnstone の 4 つ<Fragment set:html={rf(6)} /><Fragment set:html={rf(3)} /></li>
 </ul>
 
 <h3>出典</h3>
@@ -120,9 +127,9 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
   <li id="thy-r3"><span class="rf-for">Daubechies の係数の数値、試しの信号（WaveLab の MakeSignal の再実装）</span><span class="rf-src">G. R. Lee, R. Gommers, F. Waselewski, K. Wohlfahrt, and A. O’Leary, “PyWavelets: A Python package for wavelet analysis,” <i>Journal of Open Source Software</i>, vol. 4, no. 36, 1237, 2019, <a href="https://doi.org/10.21105/joss.01237" target="_blank" rel="noopener">doi:10.21105/joss.01237</a></span></li>
   <li id="thy-r4"><span class="rf-for">多重解像度と分解・合成の算法</span><span class="rf-src">S. G. Mallat, “A theory for multiresolution signal decomposition: the wavelet representation,” <i>IEEE Transactions on Pattern Analysis and Machine Intelligence</i>, vol. 11, no. 7, pp. 674–693, 1989, <a href="https://doi.org/10.1109/34.192463" target="_blank" rel="noopener">doi:10.1109/34.192463</a></span></li>
   <li id="thy-r5"><span class="rf-for">時間と周波数の箱（Heisenberg の箱）、不確定性</span><span class="rf-src">S. Mallat, <i>A Wavelet Tour of Signal Processing: The Sparse Way</i>, 3rd ed., Academic Press, 2009</span></li>
-  <li id="thy-r6"><span class="rf-for">普遍閾値、試しの信号 Blocks・Bumps・HeaviSine・Doppler</span><span class="rf-src">D. L. Donoho and I. M. Johnstone, “Ideal spatial adaptation by wavelet shrinkage,” <i>Biometrika</i>, vol. 81, no. 3, pp. 425–455, 1994, <a href="https://doi.org/10.1093/biomet/81.3.425" target="_blank" rel="noopener">doi:10.1093/biomet/81.3.425</a></span></li>
+  <li id="thy-r6"><span class="rf-for">試しの信号 Blocks・Bumps・HeaviSine・Doppler</span><span class="rf-src">D. L. Donoho and I. M. Johnstone, “Ideal spatial adaptation by wavelet shrinkage,” <i>Biometrika</i>, vol. 81, no. 3, pp. 425–455, 1994, <a href="https://doi.org/10.1093/biomet/81.3.425" target="_blank" rel="noopener">doi:10.1093/biomet/81.3.425</a></span></li>
   <li id="thy-r7"><span class="rf-for">Haar の関数系</span><span class="rf-src">A. Haar, “Zur Theorie der orthogonalen Funktionensysteme,” <i>Mathematische Annalen</i>, vol. 69, no. 3, pp. 331–371, 1910, <a href="https://doi.org/10.1007/BF01456326" target="_blank" rel="noopener">doi:10.1007/BF01456326</a></span></li>
   <li id="thy-r8"><span class="rf-for">ガウスの窓で区切る時間と周波数の平面</span><span class="rf-src">D. Gabor, “Theory of communication. Part 1: The analysis of information,” <i>Journal of the Institution of Electrical Engineers</i>, vol. 93, no. 26, pp. 429–441, 1946, <a href="https://doi.org/10.1049/ji-3-2.1946.0074" target="_blank" rel="noopener">doi:10.1049/ji-3-2.1946.0074</a></span></li>
   <li id="thy-r9"><span class="rf-for">形を保って伸び縮みするウェーブレットによる分解</span><span class="rf-src">A. Grossmann and J. Morlet, “Decomposition of Hardy functions into square integrable wavelets of constant shape,” <i>SIAM Journal on Mathematical Analysis</i>, vol. 15, no. 4, pp. 723–736, 1984, <a href="https://doi.org/10.1137/0515056" target="_blank" rel="noopener">doi:10.1137/0515056</a></span></li>
-  <li id="thy-r10"><span class="rf-for">柔らかい閾値</span><span class="rf-src">D. L. Donoho, “De-noising by soft-thresholding,” <i>IEEE Transactions on Information Theory</i>, vol. 41, no. 3, pp. 613–627, 1995, <a href="https://doi.org/10.1109/18.382009" target="_blank" rel="noopener">doi:10.1109/18.382009</a></span></li>
+  <li id="thy-r10"><span class="rf-for">パワーを尺度で割り、同じ振幅の正弦波を同じ値にそろえる</span><span class="rf-src">Y. Liu, X. S. Liang, and R. H. Weisberg, “Rectification of the bias in the wavelet power spectrum,” <i>Journal of Atmospheric and Oceanic Technology</i>, vol. 24, no. 12, pp. 2093–2102, 2007, <a href="https://doi.org/10.1175/2007JTECHO511.1" target="_blank" rel="noopener">doi:10.1175/2007JTECHO511.1</a></span></li>
 </ol>

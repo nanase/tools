@@ -17,6 +17,20 @@ import {
 } from '../src/tools/wavelet/dwt';
 import { freqs, ScaloBank } from '../src/tools/wavelet/live';
 import { atom, dwtTiles, stftTiles } from '../src/tools/wavelet/plane';
+import {
+  centered,
+  cutSmall,
+  dftMag,
+  freqOfJ,
+  haarRebuild,
+  haarRows,
+  jOfFreq,
+  PN,
+  PS,
+  probe,
+  scaloOf,
+  twoTones,
+} from '../src/tools/wavelet/principle';
 import { noisy, rng, sample, sigAt } from '../src/tools/wavelet/signals';
 import { processAudio, testClip } from '../src/tools/wavelet/sound';
 import { gaborSpread, HEISENBERG, morletSpread, stft } from '../src/tools/wavelet/tf';
@@ -297,5 +311,63 @@ describe('音の処理', () => {
       y = testClip('sweep', fs, 1, 0.05),
       r = processAudio(y, 'db4', 8, { kind: 'denoise', m: 'soft', k: 1 });
     expect(snr(x, r.y)).toBeLessThan(snr(x, y));
+  });
+});
+
+describe('原理の図', () => {
+  it('2 つの音の順番を入れ替えても |DFT| は同じで、信号は違う', () => {
+    const a = twoTones(false),
+      b = twoTones(true),
+      fa = dftMag(a, 64),
+      fb = dftMag(b, 64);
+    for (let k = 0; k <= 64; k++) expect(fb[k]).toBeCloseTo(fa[k], 9);
+    expect(Math.abs(a[40] - b[40])).toBeGreaterThan(0.1);
+    /* 山は 6 Hz と 32 Hz */
+    const peak = (lo: number, hi: number) => {
+      let m = lo;
+      for (let k = lo; k <= hi; k++) if (fa[k] > fa[m]) m = k;
+      return m;
+    };
+    expect(peak(1, 15)).toBe(6);
+    expect(peak(20, 50)).toBe(32);
+  });
+  it('スカログラムは前半の 6 Hz の行と後半の 32 Hz の行が明るく、入れ替えると左右も入れ替わる', () => {
+    const j6 = Math.round(jOfFreq(6)),
+      j32 = Math.round(jOfFreq(32)),
+      m = scaloOf(twoTones(false)),
+      w = scaloOf(twoTones(true)),
+      mag = (M: typeof m, j: number, n: number) => Math.hypot(M.re[j][n], M.im[j][n]) / M.mx;
+    expect(freqOfJ(j6)).toBeCloseTo(6, 0);
+    expect(mag(m, j6, 64)).toBeGreaterThan(0.5);
+    expect(mag(m, j32, 192)).toBeGreaterThan(0.6);
+    expect(mag(m, j32, 64)).toBeLessThan(0.05);
+    expect(mag(w, j6, 192)).toBeGreaterThan(0.5);
+    expect(mag(w, j6, 64)).toBeLessThan(0.05);
+  });
+  it('直接の内積は FFT の連続変換と同じ値で、位相を合わせた波で掛けて足すと大きさになる', () => {
+    const x = centered(sample('chirp', PN)),
+      m = scaloOf(x);
+    for (const [j, n] of [
+      [30, 136],
+      [40, 85],
+      [60, 40],
+    ]) {
+      const p = probe(x, n, PS[j]),
+        sum = p.prod.reduce((a, v) => a + v, 0) / Math.sqrt(PS[j]);
+      expect(p.re / m.mx).toBeCloseTo(m.re[j][n] / m.mx, 4);
+      expect(p.im / m.mx).toBeCloseTo(m.im[j][n] / m.mx, 4);
+      expect(sum).toBeCloseTo(p.mag, 9);
+    }
+  });
+  it('8 つの数を 2 つずつ平均と差に分け、a ± d で元に戻る', () => {
+    const x = [4, 6, 10, 12, 8, 6, 5, 5],
+      R = haarRows(x);
+    expect(R.map((r) => r.na)).toEqual([8, 4, 2, 1]);
+    expect(R[1].v).toEqual([5, 11, 7, 5, -1, -1, 1, 0]);
+    expect(R[3].v).toEqual([7, 1, -3, 1, -1, -1, 1, 0]);
+    expect(haarRebuild(R[3].v)).toEqual(x);
+    const c = cutSmall(R[3].v, 1);
+    expect(c).toEqual([7, 0, -3, 0, 0, 0, 0, 0]);
+    expect(haarRebuild(c)).toEqual([4, 4, 10, 10, 7, 7, 7, 7]);
   });
 });
