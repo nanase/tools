@@ -1,7 +1,8 @@
 /**
  * 雷鳴のページの入口: 入力 → 放電路・届く時刻・波形を Worker で計算 → 断面・届く量・波形・スペクトルを描く。
  * 光らせると、光った瞬間から AudioContext の時計で波面を広げ、今届いている所を断面と波形に重ねる。
- * 時間の帯を押すかドラッグすると、その時刻の様子を描き、そこから鳴らす（鳴らしている間はすぐ、止まっている間は次に光らせたとき）
+ * 時間の帯を押すかドラッグすると、その時刻の様子を描き、そこから鳴らす（鳴らしている間はすぐ、止まっている間は次に光らせたとき）。
+ * 一時停止すると今の時刻で止まり、次はそこから鳴らす。最初からのボタンで光る前へ戻す
  */
 import { AIR0, soundSpeed } from '../../lib/air';
 import { Choice } from '../../lib/choice';
@@ -60,10 +61,17 @@ const unit = (v: string, u: string) => `${v}<span class="u">${u}</span>`;
 let V = {} as Record<Key, number>;
 const P = new ParamGroup<Key>(PARAMS, (v, k) => {
   V = v;
-  if (k && k !== 'vol') request();
+  /* 聞き手をドラッグしている間は計算せず、離したときに計算する */
+  if (k === 'dist' && dragView) {
+    stop();
+    moved = true;
+    txt('#th-st', '離すと計算します');
+    draw();
+  } else if (k && k !== 'vol') request();
 });
 V = P.values();
 const eCh = new Choice<string>($('#p-e'), () => request());
+const nCh = new Choice<string>($('#p-n'), () => request());
 const gCh = new Choice<string>($('#p-gnd'), () => request());
 const hCh = new Choice<string>($('#p-hill'), () => {
   hillOff();
@@ -71,12 +79,13 @@ const hCh = new Choice<string>($('#p-hill'), () => {
 });
 const wCh = new Choice<string>($('#p-wait'));
 const sCh = new Choice<string>($('#p-env'), () => request());
+const tCh = new Choice<string>($('#p-ter'), () => request());
 let seed = CH0.seed;
 const hillOn = () => hCh.value === '1';
 function hillOff(): void {
   const off = !hillOn();
-  P.setOff('hx', off, off ? '後ろの山が「なし」なので使いません' : '');
-  P.setOff('hh', off, off ? '後ろの山が「なし」なので使いません' : '');
+  P.setOff('hx', off, off ? '後方の山が「なし」なので使いません' : '');
+  P.setOff('hh', off, off ? '後方の山が「なし」なので使いません' : '');
 }
 hillOff();
 
@@ -85,7 +94,8 @@ const job = (id: number): Job => ({
   fs: FS,
   dt: DT,
   env: sCh.value,
-  ch: { ...CH0, seed, e: Number(eCh.value) },
+  terrain: tCh.value,
+  ch: { ...CH0, seed, e: Number(eCh.value), strokes: Number(nCh.value) },
   scene: {
     ...SCENE0,
     dist: V.dist * 1000,
@@ -112,13 +122,17 @@ let cur: Reply | null = null,
 function request(): void {
   stop();
   cue = null;
+  ppState();
   if (busy) again = true;
   else post();
 }
+const fig = $('.a-fig');
 function post(): void {
   busy = true;
   again = false;
-  txt('#th-st', '計算しています');
+  txt('#th-st', '');
+  fig.classList.add('busy');
+  fig.setAttribute('aria-busy', 'true');
   worker.postMessage(job(++jobId));
 }
 worker.onmessage = (e: MessageEvent<Reply>) => {
@@ -137,7 +151,10 @@ worker.onmessage = (e: MessageEvent<Reply>) => {
     }
   peakHz = spectrumPeak(cur);
   if (again) post();
-  else txt('#th-st', '');
+  else {
+    fig.classList.remove('busy');
+    fig.removeAttribute('aria-busy');
+  }
   outputs();
   draw();
   drawSpec();
@@ -155,10 +172,13 @@ const sec = $<HTMLCanvasElement>('#th-sec'),
   hist = $<HTMLCanvasElement>('#th-hist'),
   wave = $<HTMLCanvasElement>('#th-wave'),
   spec = $<HTMLCanvasElement>('#th-spec');
-let pal: Pal = palette(sec),
+/** 断面はいつも夜の色（.th-dk）、ほかの図はテーマの色 */
+let secPal: Pal = palette(sec),
+  pal: Pal = palette(hist),
   theme = 0;
-/** ドラッグの間は窓を止める（指の下から聞き手が逃げないように） */
-let dragView: View | null = null;
+/** ドラッグの間は窓を止める（指の下から聞き手が逃げないように）。moved はドラッグで聞き手が動いたか */
+let dragView: View | null = null,
+  moved = false;
 const secH = () => (sec.clientWidth < 560 ? 240 : 320);
 
 function draw(tau: number | null = playTau() ?? cue): void {
@@ -180,15 +200,16 @@ function draw(tau: number | null = playTau() ?? cue): void {
       ground: gCh.value !== '0',
       hill: on ? { x: d + V.hx * 1000, h: V.hh } : null,
       src,
-      pal,
+      strokes: cur.strokes,
+      pal: secPal,
       c: C,
     },
     { tau, drag: !!dragView },
     `${key}|${view.x0}|${view.x1}`,
   );
   const tr = { r: cur, pal, t1: tEnd };
-  drawHist(hist, 64, tr, tau, key);
-  drawWave(wave, 110, tr, tau, key);
+  drawWave(wave, 96, tr, tau, key);
+  drawHist(hist, 78, tr, tau, key);
   timeline(tau);
 }
 function drawSpec(): void {
@@ -260,10 +281,8 @@ function start(from?: number): void {
     flash = audio.play(cur.y, cur.yr, cur.fs, cur.t0 - skip, gain);
   play = { flash, skip, r: cur };
   cue = null;
-  pp.classList.add('on');
-  pp.setAttribute('aria-label', '止める');
-  pp.title = '止める';
-  txt('#th-live', '光りました');
+  ppState();
+  txt('#th-live', from ? '続きから鳴らします' : '光りました');
   cancelAnimationFrame(raf);
   raf = requestAnimationFrame(frame);
 }
@@ -278,19 +297,48 @@ function frame(): void {
   draw(tau);
   raf = requestAnimationFrame(frame);
 }
-function stop(): void {
-  if (!play) return;
+/** 再生・一時停止の印と名前: 鳴らしている間は一時停止、止まっているときは光らせる（途中なら続きから） */
+function ppState(): void {
+  const s = play ? '一時停止' : cue ? '続きから鳴らす' : '光らせる';
+  pp.classList.toggle('on', !!play);
+  pp.setAttribute('aria-label', s);
+  pp.title = s;
+}
+/** 音を止める（時刻は呼んだ側で決める） */
+function halt(): void {
   play = null;
   cancelAnimationFrame(raf);
   audio.stop();
-  pp.classList.remove('on');
-  pp.setAttribute('aria-label', '光らせる');
-  pp.title = '光らせる';
+}
+/** 止めて最初へ戻す（計算し直すとき・鳴り終わったとき） */
+function stop(): void {
+  if (!play) return;
+  halt();
+  ppState();
   draw(null);
 }
+/** 一時停止: 今の時刻で止め、次はそこから鳴らす */
+function pause(): void {
+  const tau = playTau();
+  if (tau == null) return;
+  halt();
+  cue = Math.min(tEnd, tau);
+  ppState();
+  draw(cue);
+  txt('#th-live', '一時停止しました');
+}
 pp.addEventListener('click', () => {
-  if (play) stop();
+  if (play) pause();
   else start(cue != null && cue < tEnd ? cue : undefined);
+});
+/* 最初から: 鳴らしているなら光る所からやり直し、止まっているなら光る前へ戻す */
+$('#th-home').addEventListener('click', () => {
+  cue = null;
+  if (play) start();
+  else {
+    ppState();
+    draw(null);
+  }
 });
 
 /* ---------- 時間の帯: 押す・ドラッグで時刻を選ぶ ---------- */
@@ -308,11 +356,7 @@ trk.addEventListener('pointerdown', (e) => {
   trk.setPointerCapture(e.pointerId);
   /* ドラッグの間は音を止め、離したら鳴らしていたならそこから鳴らす */
   seek = { resume: !!play };
-  if (play) {
-    play = null;
-    cancelAnimationFrame(raf);
-    audio.stop();
-  }
+  if (play) halt();
   seekTo(tauAt(e));
 });
 trk.addEventListener('pointermove', (e) => {
@@ -323,11 +367,7 @@ const endSeek = () => {
   const { resume } = seek;
   seek = null;
   if (resume && cue != null) start(cue);
-  else if (!play) {
-    pp.classList.remove('on');
-    pp.setAttribute('aria-label', '光らせる');
-    pp.title = '光らせる';
-  }
+  else ppState();
 };
 trk.addEventListener('pointerup', endSeek);
 trk.addEventListener('pointercancel', endSeek);
@@ -346,7 +386,10 @@ trk.addEventListener('keydown', (e) => {
   if (to == null || !cur) return;
   e.preventDefault();
   if (play) start(Math.min(tEnd, Math.max(0, to)));
-  else seekTo(to);
+  else {
+    seekTo(to);
+    ppState();
+  }
 });
 $('#th-seed').addEventListener('click', () => {
   seed++;
@@ -354,7 +397,7 @@ $('#th-seed').addEventListener('click', () => {
 });
 document.addEventListener('visibilitychange', () => {
   if (document.hidden && handheld()) {
-    stop();
+    pause();
     audio.suspend();
   }
 });
@@ -372,6 +415,7 @@ sec.addEventListener('pointerdown', (e) => {
   if (!cur || e.button !== 0) return;
   const d = V.dist * 1000;
   dragView = sectionView(sec.clientWidth, secH(), d, hillOn() ? V.hx * 1000 + 200 : 0, xmin, xmax);
+  moved = false;
   sec.setPointerCapture(e.pointerId);
   sec.classList.add('drag');
   dragTo(e);
@@ -383,7 +427,8 @@ const endDrag = () => {
   if (!dragView) return;
   dragView = null;
   sec.classList.remove('drag');
-  draw();
+  if (moved) request();
+  else draw();
 };
 sec.addEventListener('pointerup', endDrag);
 sec.addEventListener('pointercancel', endDrag);
@@ -397,7 +442,8 @@ new ResizeObserver(() =>
 ).observe($('.a-fig'));
 new ResizeObserver(() => requestAnimationFrame(drawSpec)).observe($('.a-out'));
 const repaint = () => {
-  pal = palette(sec);
+  secPal = palette(sec);
+  pal = palette(hist);
   theme++;
   draw();
   drawSpec();

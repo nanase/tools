@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { absorption, soundSpeed } from '../src/lib/air';
-import { type Branch, branchLength, CH0, makeChannel, turnAngles } from '../src/tools/thunder/channel';
+import { fft } from '../src/tools/biquad/filter';
+import { type Branch, branchLength, CH0, makeChannel, strokeTimes, turnAngles } from '../src/tools/thunder/channel';
 import type { Elements } from '../src/tools/thunder/path';
 import {
   arrivalHistogram,
@@ -13,9 +14,11 @@ import {
   Via,
 } from '../src/tools/thunder/path';
 import {
+  addBox,
   addNWave,
   addNWaveBox,
   airDensity,
+  convolveNWave,
   fewPeak,
   LINE_G,
   N_PEAK_X,
@@ -27,6 +30,7 @@ import {
   relaxRadius,
 } from '../src/tools/thunder/shock';
 import { render, spectrum } from '../src/tools/thunder/synth';
+import { terrainIR, terrainTail } from '../src/tools/thunder/terrain';
 
 const FS = 48000,
   C = soundSpeed(20);
@@ -35,7 +39,7 @@ const FS = 48000,
 const line = (a: [number, number, number], b: [number, number, number], e = 5e5, n = 20): Branch => {
   const p = new Float64Array(3 * (n + 1));
   for (let k = 0; k <= n; k++) for (let j = 0; j < 3; j++) p[3 * k + j] = a[j] + ((b[j] - a[j]) * k) / n;
-  return { p, e, k: 0 };
+  return { p, e, k: 0, t: 0 };
 };
 /** 反射も影もない場面 */
 const FREE: Scene = { ...SCENE0, ground: 0, hillH: 0, lapse: 0 };
@@ -117,6 +121,30 @@ describe('衝撃波と N 波', () => {
       expect(Math.hypot(re, im) / (nSpectrum(k / N, T, P) * Math.abs(Math.sin(x) / x))).toBeCloseTo(1, 2);
     }
   });
+  it('時刻の密度と N 波のたたみ込みは、幅 W にならした N 波を足したものと同じ（W ≥ 1 標本）', () => {
+    const N = 4096,
+      T = 96.3,
+      a = new Float64Array(N),
+      b = new Float64Array(N),
+      x = new Float64Array(N);
+    for (const [c, P, W] of [
+      [300.37, 2, 17.6],
+      [341.9, -0.7, 1.3],
+      [512.05, 1.1, 40],
+    ]) {
+      addNWaveBox(a, c, T, P, W);
+      addBox(x, c, P, W);
+    }
+    convolveNWave(x, b, N, T);
+    let e = 0,
+      s = 0;
+    for (let n = 0; n < N; n++) {
+      e += (a[n] - b[n]) ** 2;
+      s += a[n] ** 2;
+    }
+    expect(Math.sqrt(e / s)).toBeLessThan(0.02);
+    expect(b.reduce((p, v) => p + v, 0)).toBeCloseTo(0, 9);
+  });
   it('N 波は最初の 1 km で 2 倍に伸び、その先は伸びない（Few 1986）', () => {
     expect(nDuration(0.004, 10)).toBe(0.004);
     expect(nDuration(0.004, 1000)).toBeCloseTo(0.008, 12);
@@ -174,6 +202,35 @@ describe('放電路', () => {
     expect(Math.max(...zs)).toBeGreaterThanOrEqual(CH0.base);
     expect(branchLength(m.p)).toBeGreaterThan(CH0.base + CH0.cloud);
   });
+  it('多重雷: 2 回目からは本流の根元を通り、雲の中で分かれて grow だけ伸びる。回数を増やしても前の回は変わらない', () => {
+    const four = makeChannel(CH0),
+      eight = makeChannel({ ...CH0, strokes: 8 }),
+      mains = (bs: Branch[]) => bs.filter((b) => b.k === 0);
+    expect(strokeTimes(four)).toHaveLength(4);
+    expect(strokeTimes(eight)).toHaveLength(8);
+    expect(strokeTimes(eight).slice(0, 4)).toEqual(strokeTimes(four));
+    expect(
+      mains(eight)
+        .slice(0, 4)
+        .map((b) => Array.from(b.p)),
+    ).toEqual(mains(four).map((b) => Array.from(b.p)));
+    const [m, ...rest] = mains(four);
+    for (const b of rest) {
+      expect(Array.from(b.p.subarray(0, 300))).toEqual(Array.from(m.p.subarray(0, 300)));
+      expect(b.e).toBeCloseTo(CH0.e * CH0.eSub);
+    }
+    expect(makeChannel({ ...CH0, strokes: 1 }).filter((b) => b.t > 0)).toHaveLength(0);
+  });
+  it('放電の間隔の幾何平均は gap（Saba ほか 2006 の 61 ms）に近い', () => {
+    const logs: number[] = [];
+    for (let seed = 1; seed <= 200; seed++) {
+      const t = strokeTimes(makeChannel({ ...CH0, seed, strokes: 8, branches: 0, cloud: 100, grow: 100 }));
+      for (let k = 1; k < t.length; k++) logs.push(Math.log(t[k] - t[k - 1]));
+    }
+    const gm = Math.exp(logs.reduce((x, y) => x + y, 0) / logs.length);
+    expect(gm).toBeGreaterThan(CH0.gap * 0.85);
+    expect(gm).toBeLessThan(CH0.gap * 1.15);
+  });
 });
 
 describe('届く時刻', () => {
@@ -182,6 +239,10 @@ describe('届く時刻', () => {
     expect(firstArrival(el)).toBeCloseTo(1000 / C, 3);
     expect(1000 / C).toBeGreaterThan(2.8);
     expect(1000 / C).toBeLessThan(3.0);
+  });
+  it('後の放電の音は、その放電の時刻だけ遅れて届く', () => {
+    const el = elements([{ ...line([0, 0, 0], [0, 0, 2000]), t: 0.2 }], { ...FREE, dist: 1000, ear: 0 });
+    expect(firstArrival(el)).toBeCloseTo(0.2 + 1000 / C, 3);
   });
   it('雷鳴の長さ: 高さ H の放電路は、根元と先端の距離の差 (√(d² + H²) − d)/c だけ続く', () => {
     const d = 3000,
@@ -311,5 +372,40 @@ describe('波形', () => {
     expect(w.t0).toBeLessThan(firstArrival(el));
     expect(firstArrival(el) - w.t0).toBeLessThan(0.1);
     expect(w.peak).toBeGreaterThan(0);
+  });
+});
+
+describe('地形の反響', () => {
+  it('帯の中の |H|² は wet²·k、低い帯ほど長く続く', () => {
+    const fs = 3000,
+      h = terrainIR('hills', fs, 1) as Float64Array,
+      N = 2 ** Math.ceil(Math.log2(h.length)),
+      re = new Float64Array(N),
+      im = new Float64Array(N);
+    re.set(h);
+    fft(re, im);
+    const mean = (f0: number, f1: number) => {
+      let s = 0,
+        c = 0;
+      for (let k = Math.ceil((f0 / fs) * N); k <= (f1 / fs) * N; k++, c++) s += re[k] ** 2 + im[k] ** 2;
+      return s / c;
+    };
+    /* 帯の真ん中あたりで比べる（端はフィルタの肩で下がる） */
+    expect(mean(15, 40) / (1.2 ** 2 * 1)).toBeGreaterThan(0.6);
+    expect(mean(15, 40) / (1.2 ** 2 * 1)).toBeLessThan(1.5);
+    expect(mean(230, 330) / (1.2 ** 2 * 0.3)).toBeGreaterThan(0.6);
+    expect(mean(230, 330) / (1.2 ** 2 * 0.3)).toBeLessThan(1.5);
+    expect(mean(600, 1400)).toBeLessThan(mean(15, 40) * 1e-3);
+    expect(terrainIR('0', fs, 1)).toBeNull();
+  });
+  it('反響の尾は低い音ほど長く、元の音より長い', () => {
+    const fs = 48000,
+      y = new Float32Array(fs);
+    y[100] = 1;
+    const tail = terrainTail(y, fs, 'valley');
+    expect(tail).not.toBeNull();
+    const [L, R] = tail as [Float64Array, Float64Array];
+    expect(L.length).toBeGreaterThan(y.length + 7 * fs);
+    expect(Array.from(L.subarray(fs, fs + 100))).not.toEqual(Array.from(R.subarray(fs, fs + 100)));
   });
 });
