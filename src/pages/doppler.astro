@@ -51,7 +51,9 @@ const desc =
         <div class="scope">
           <svg viewBox="-46 -14 462 194" id="fq-svg" role="img" aria-label="すれ違いの前後に聞こえる周波数">
             <g set:html={gridSvg(4)} />
-            <g class="cv"></g>
+            <clipPath id="fq-clip"><rect x="0" y="0" width="400" height="160" /></clipPath>
+            <g class="cv" clip-path="url(#fq-clip)"></g>
+            <g class="ax"></g>
           </svg>
         </div>
       </Panel>
@@ -66,7 +68,9 @@ const desc =
         <div class="scope">
           <svg viewBox="-46 -14 462 194" id="lv-svg" role="img" aria-label="すれ違いの前後の音圧レベル">
             <g set:html={gridSvg(4)} />
-            <g class="cv"></g>
+            <clipPath id="lv-clip"><rect x="0" y="0" width="400" height="160" /></clipPath>
+            <g class="cv" clip-path="url(#lv-clip)"></g>
+            <g class="ax"></g>
           </svg>
         </div>
       </Panel>

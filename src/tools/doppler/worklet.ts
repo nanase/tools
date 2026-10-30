@@ -1,8 +1,9 @@
 /**
  * ドップラー効果の音を作る AudioWorklet。audio.ts が ?worker&url で読み込み、'doppler' として使う。
  * 音源の音を作り（sources.ts）、Propagator で聞き手の位置の音圧 [Pa] にして出す（音量は主スレッドの GainNode）。
- * 音源と聞き手の位置は主スレッドが AudioContext の時刻つきで送り、ここでは LAG だけ遅らせて直線で補間する
- * （主スレッドの描画の間隔がばらついても、位置の動きをなめらかにするため）
+ * 音源と聞き手の動きは、主スレッドが AudioContext の時刻つきの「節目」（その時刻の位置と速度）で送る。
+ * 節目の間は速度で延ばして位置を決めるので、描画の間隔がばらついても動きはなめらかなまま。
+ * ドラッグ中は描画ごとに節目が来るので、LAG だけ遅らせて節目の間を直線で補間する
  */
 import { Propagator, type PropSet, TICK } from './prop';
 import { makeSource, type Source, type SourceId, Tone } from './sources';
@@ -17,7 +18,11 @@ declare function registerProcessor(name: string, ctor: new () => AudioWorkletPro
 /** 位置を遅らせる時間 [s] */
 export const LAG = 0.05;
 
-/** 位置の知らせ: AudioContext の時刻 [s]、音源と聞き手の位置 [m]、瞬間移動か、音源の速さ [m/s] */
+/**
+ * 動きの節目: AudioContext の時刻 [s]、その時刻の音源と聞き手の位置 [m]、x の向きの速度 [m/s]。
+ * jump は音源の瞬間移動（道路の端から端へ）、cut は前の節目から補間しない（聞き手の瞬間移動を含む）、
+ * pre は先の予定（折り返し）で、時刻の順に差し込む。pre でない節目は、それより先の予定を消す（動きが変わったため）
+ */
 export interface PosMsg {
   type: 'pos';
   t: number;
@@ -25,8 +30,11 @@ export interface PosMsg {
   sy: number;
   lx: number;
   ly: number;
-  jump?: boolean;
   v: number;
+  u: number;
+  jump?: boolean;
+  cut?: boolean;
+  pre?: boolean;
 }
 
 /** 主スレッドから送るもの */
@@ -43,6 +51,7 @@ registerProcessor(
     private p: Propagator | null = null;
     private src: Source | null = null;
     private q: PosMsg[] = [];
+    private p0: PosMsg = { type: 'pos', t: 0, sx: 0, sy: 0, lx: 0, ly: 0, v: 0, u: 0 };
     private s = new Float32Array(TICK);
     private o = new Float32Array(TICK);
     /** 次の刻みの位置が瞬間移動か（送られた知らせの間に jump があった） */
@@ -61,15 +70,23 @@ registerProcessor(
         } else if (m.type === 'tone') {
           if (this.src instanceof Tone) this.src.f = m.f;
         } else if (m.type === 'pos') {
-          this.q.push(m);
-          if (this.q.length > 64) this.q.shift();
+          const q = this.q;
+          if (m.pre) {
+            let i = q.length;
+            while (i > 0 && q[i - 1].t > m.t) i--;
+            q.splice(i, 0, m);
+          } else {
+            while (q.length && q[q.length - 1].t > m.t) q.pop();
+            q.push(m);
+          }
+          if (q.length > 64) q.shift();
         } else {
           this.p = null;
           this.src = null;
         }
       };
     }
-    /** 時刻 t の位置（知らせの間を直線で補間。瞬間移動の知らせの前後は補間しない） */
+    /** 時刻 t の位置: 次の節目まで直線で補間する。次がない・cut なら、前の節目から速度で延ばす */
     private posAt(t: number): PosMsg | null {
       const q = this.q;
       if (!q.length) return null;
@@ -78,18 +95,25 @@ registerProcessor(
         q.shift();
       }
       const a = q[0],
-        b = q[1];
-      if (!b || b.jump || t <= a.t) return a;
-      const u = (t - a.t) / (b.t - a.t);
-      return {
-        type: 'pos',
-        t,
-        sx: a.sx + u * (b.sx - a.sx),
-        sy: a.sy + u * (b.sy - a.sy),
-        lx: a.lx + u * (b.lx - a.lx),
-        ly: a.ly + u * (b.ly - a.ly),
-        v: a.v + u * (b.v - a.v),
-      };
+        b = q[1],
+        p = this.p0;
+      p.t = t;
+      if (b && !b.cut && t > a.t) {
+        const w = (t - a.t) / (b.t - a.t);
+        p.sx = a.sx + w * (b.sx - a.sx);
+        p.sy = a.sy + w * (b.sy - a.sy);
+        p.lx = a.lx + w * (b.lx - a.lx);
+        p.ly = a.ly + w * (b.ly - a.ly);
+        p.v = a.v + w * (b.v - a.v);
+      } else {
+        const dt = Math.max(0, t - a.t);
+        p.sx = a.sx + a.v * dt;
+        p.sy = a.sy;
+        p.lx = a.lx + a.u * dt;
+        p.ly = a.ly;
+        p.v = a.v;
+      }
+      return p;
     }
     process(_in: Float32Array[][], outputs: Float32Array[][]): boolean {
       const out = outputs[0];

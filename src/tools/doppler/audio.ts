@@ -3,7 +3,7 @@
  * AudioContext は再生を押した操作の中で作る（自動再生の制限）。止めたら AudioContext も止めて CPU を休ませる
  */
 import type { PropSet } from './prop';
-import type { SourceId } from './sources';
+import { paOf, type SourceId, sourceOf } from './sources';
 import type { DopMsg, PosMsg } from './worklet';
 import workletUrl from './worklet.ts?worker&url';
 
@@ -11,8 +11,16 @@ type Ctor = typeof AudioContext;
 const AC: Ctor | undefined =
   globalThis.AudioContext ?? (globalThis as unknown as { webkitAudioContext?: Ctor }).webkitAudioContext;
 
-/** 音量 0 dB でフルスケールにする音圧 [Pa]（20 Pa は 120 dB SPL） */
-export const P_FS = 20;
+/**
+ * 音量 0 dB で、音源から 10 m の音の実効値をこの大きさ（フルスケールに対する比）にする。音源ごとに大きさをそろえ、
+ * 静かなエンジンもサイレンと同じくらいに聞こえるようにする（距離による変化はそのまま）
+ */
+export const REF_10M = 0.25;
+/** 音源から 10 m の音圧の実効値 [Pa] */
+const pa10 = (src: SourceId): number => {
+  const s = sourceOf(src);
+  return paOf(s.db + 20 * Math.log10(s.r0 / 10));
+};
 
 export class DopplerAudio {
   private ac: AudioContext | null = null;
@@ -21,7 +29,9 @@ export class DopplerAudio {
   /** 音量の前の音圧（波形・スペクトラム用） */
   analyser: AnalyserNode | null = null;
   private loading: Promise<boolean> | null = null;
-  private db = -30;
+  private db = -10;
+  /** 音圧 [Pa] からフルスケールへの比（音源ごと） */
+  private ref = REF_10M / pa10('siren');
   private stopT: ReturnType<typeof setTimeout> | undefined;
 
   /** AudioContext の今の時刻 [s]（まだなければ 0） */
@@ -71,7 +81,7 @@ export class DopplerAudio {
   }
 
   private gain(): number {
-    return 10 ** (this.db / 20) / P_FS;
+    return 10 ** (this.db / 20) * this.ref;
   }
 
   private post(m: DopMsg): void {
@@ -81,6 +91,7 @@ export class DopplerAudio {
   /** 音源を鳴らし始める（記録は空から） */
   start(src: SourceId, set: PropSet, tone?: number): void {
     clearTimeout(this.stopT);
+    this.ref = REF_10M / pa10(src);
     const { ac, master } = this;
     if (ac && master) {
       master.gain.cancelScheduledValues(ac.currentTime);
@@ -97,9 +108,9 @@ export class DopplerAudio {
     this.post({ type: 'tone', f });
   }
 
-  /** 位置を送る。t は AudioContext の時刻 [s]（省けば今） */
-  pos(m: Omit<PosMsg, 'type' | 't'> & { t?: number }): void {
-    this.post({ type: 'pos', ...m, t: m.t ?? this.now });
+  /** 動きの節目を送る（t は AudioContext の時刻 [s]） */
+  pos(m: Omit<PosMsg, 'type'>): void {
+    this.post({ type: 'pos', ...m });
   }
 
   /** 音を絞ってから止め、AudioContext も止める */

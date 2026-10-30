@@ -71,15 +71,81 @@ const levelR = (r: number): number => spec().db + 20 * Math.log10(spec().r0 / Ma
 let xs = 0,
   lx = 0,
   ly = dist,
-  jump = false,
   drag: 's' | 'l' | null = null,
-  /** 図の時刻 [s]（実時間） */
-  simT = 0;
+  /** 図の時刻 [s]（performance の時計） */
+  simT = 0,
+  /** 図の左右の端 [m]、音源が右の端で折り返す所と左で現れる所 [m]（どちらも図の外） */
+  half = 160,
+  L = 184,
+  L0 = -184;
 /** 音源の位置の記録（波面の中心） */
 const hist: { t: number; x: number }[] = [];
 /** 音源の今の速さ（止めているとき・ドラッグ中は 0） */
 const vNow = () => (moving && drag !== 's' ? v : 0);
 const uNow = () => (drag === 'l' ? 0 : lu);
+
+/**
+ * 動きの決まり: 時刻 t0 [s] に x0 にいて、速度 v で進む。音源は ±L、聞き手は ±half の端で反対の端へ移る。
+ * 位置は時刻だけで決まるので、描画の間隔がばらついても図と音の動きは乱れない
+ */
+interface Law {
+  x0: number;
+  t0: number;
+  v: number;
+}
+let sLaw: Law = { x0: -160, t0: 0, v: 0 },
+  lLaw: Law = { x0: 0, t0: 0, v: 0 },
+  /** 音へ送った折り返しの節目の時刻（同じ節目を 2 度送らない） */
+  sentS = 0,
+  sentL = 0,
+  /** performance の時計と AudioContext の時計の差 [s] */
+  off = 0;
+const clock = () => performance.now() / 1000;
+/** x を a〜b に折り返す */
+const wrapX = (x: number, a: number, b: number) => a + ((((x - a) % (b - a)) + (b - a)) % (b - a));
+const sAt = (t: number) => (sLaw.v ? wrapX(sLaw.x0 + sLaw.v * (t - sLaw.t0), L0, L) : sLaw.x0);
+const lAt = (t: number) => (lLaw.v ? wrapX(lLaw.x0 + lLaw.v * (t - lLaw.t0), -half, half) : lLaw.x0);
+/** 時刻 t の節目を音へ送る。pre は先の予定（折り返し） */
+function key(t: number, o: { sx?: number; lx?: number; jump?: boolean; cut?: boolean; pre?: boolean } = {}): void {
+  if (!playing) return;
+  audio.pos({
+    t: t - off,
+    sx: o.sx ?? sAt(t),
+    sy: 0,
+    lx: o.lx ?? lAt(t),
+    ly,
+    v: sLaw.v,
+    u: lLaw.v,
+    jump: o.jump,
+    cut: o.cut,
+    pre: o.pre,
+  });
+}
+/** 今の位置から、今の速さで決まりを引き直して音へ送る */
+function anchor(): void {
+  const t = clock();
+  sLaw = { x0: sAt(t), t0: t, v: vNow() };
+  lLaw = { x0: lAt(t), t0: t, v: uNow() };
+  sentS = sentL = 0;
+  key(t);
+}
+/** 折り返しの節目を、0.5 s 前に先に送っておく */
+function schedule(t: number): void {
+  if (sLaw.v > 0) {
+    const tw = t + (L - sAt(t)) / sLaw.v;
+    if (tw - t < 0.5 && Math.abs(tw - sentS) > 1e-6) {
+      key(tw, { sx: L0, jump: true, cut: true, pre: true });
+      sentS = tw;
+    }
+  }
+  if (lLaw.v) {
+    const tw = t + ((lLaw.v > 0 ? half : -half) - lAt(t)) / lLaw.v;
+    if (tw - t < 0.5 && Math.abs(tw - sentL) > 1e-6) {
+      key(tw, { lx: lLaw.v > 0 ? -half : half, cut: true, pre: true });
+      sentL = tw;
+    }
+  }
+}
 
 /* ---------- 入力 ---------- */
 const srcPg = new ParamGroup<SrcKey>([SPEED, DIST], (p, k) => {
@@ -87,10 +153,14 @@ const srcPg = new ParamGroup<SrcKey>([SPEED, DIST], (p, k) => {
   dist = p.d;
   if (k === 'd' || k === undefined) ly = Math.sign(ly || 1) * dist;
   if (k === 'v') hist.length = 0;
+  anchor();
   redraw();
 });
 new ParamGroup<MoreKey>([LSPEED, TONE, TEMP, RH], (p, k) => {
-  lu = p.u / 3.6;
+  if (lu !== p.u / 3.6) {
+    lu = p.u / 3.6;
+    anchor();
+  }
   tone = p.tone;
   temp = p.temp;
   rh = p.rh;
@@ -102,7 +172,7 @@ new ParamGroup<'vol'>([VOL], (p) => audio.vol(p.vol));
 new Choice<SourceId>($('#p-src'), (s) => {
   src = s;
   $('#p-tone').hidden = s !== 'tone';
-  if (playing) audio.start(src, propSet(), tone);
+  if (playing) start();
   redraw();
 });
 $('#p-tone').hidden = true;
@@ -121,6 +191,7 @@ const moveBtn = $('#moveBtn');
 moveBtn.addEventListener('click', () => {
   moving = !moving;
   moveBtn.setAttribute('aria-pressed', String(moving));
+  anchor();
 });
 
 /* ---------- 音 ---------- */
@@ -145,9 +216,16 @@ playBtn.addEventListener('click', async () => {
     sndMsg.textContent = 'このブラウザでは音を鳴らせません';
     return;
   }
-  audio.start(src, propSet(), tone);
   setPlay(true);
+  start();
 });
+/** 音源を鳴らし始め、今の動きを送る */
+function start(): void {
+  off = clock() - audio.now;
+  audio.start(src, propSet(), tone);
+  sentS = sentL = 0;
+  key(clock());
+}
 /* スマートフォンで画面が隠れたら止める（lib/pause.ts と同じ考え） */
 document.addEventListener('visibilitychange', () => {
   if (document.hidden && handheld() && playing) {
@@ -163,7 +241,6 @@ let W = 0,
   H = 0,
   /** 図の縮尺 [px/m]、左右の端の x [m]、道路の y [px] */
   sx = 1,
-  half = 160,
   cy = 0;
 const narrow = () => W < 600;
 function resize(): void {
@@ -179,12 +256,31 @@ function resize(): void {
   H = h;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
-/** 縮尺: 道路の長さは広い図で ±160 m、狭い図で ±60 m。聞き手が下にはみ出るときは縮める */
+/**
+ * 縮尺: 道路の長さは広い図で ±160 m、狭い図で ±60 m。速い音源は、図を横切るのに 5 秒かかるまで広げる。
+ * 聞き手が下にはみ出るときは縮める。端が変わったら、今の位置から動きの決まりを引き直す
+ */
 function scale(): void {
   cy = H * 0.34;
-  const base = narrow() ? 60 : 160;
+  const base = Math.max(narrow() ? 60 : 160, 2.5 * v);
   sx = Math.min(W / (2 * base), (H - cy - 24) / Math.max(12, Math.abs(ly) * 1.1));
-  half = W / (2 * sx);
+  const h = W / (2 * sx),
+    l = Math.max(h * 1.15, h + 2 * v);
+  if (Math.abs(h - half) < 1e-6 && Math.abs(l - L) < 1e-6) return;
+  /* 右の端は、通り過ぎた音が届き終わるまで図の外を 2 秒走らせる所。左はすぐ図に入る所 */
+  const t = clock();
+  sLaw = { x0: sAt(t), t0: t, v: sLaw.v };
+  lLaw = { x0: lAt(t), t0: t, v: lLaw.v };
+  half = h;
+  L = l;
+  L0 = -h * 1.15;
+  sentS = sentL = 0;
+  if (sLaw.x0 > L || sLaw.x0 < L0) {
+    sLaw.x0 = L0;
+    hist.length = 0;
+    key(t, { jump: true, cut: true });
+  } else key(t);
+  if (Math.abs(lLaw.x0) > half) lLaw.x0 = Math.sign(lLaw.x0) * half;
 }
 const X = (x: number) => W / 2 + x * sx,
   Y = (y: number) => cy + y * sx;
@@ -323,6 +419,7 @@ cv.addEventListener('pointerdown', (e) => {
     ds = Math.hypot(px - X(xs), py - Y(0));
   drag = dl < 26 ? 'l' : ds < 30 ? 's' : null;
   if (!drag) return;
+  anchor();
   e.preventDefault();
   cv.setPointerCapture(e.pointerId);
   cv.classList.add('drag');
@@ -337,11 +434,13 @@ cv.addEventListener('pointermove', (e) => {
     return;
   }
   const x = Math.max(-half, Math.min(half, (px - W / 2) / sx));
+  const t = clock();
   if (drag === 'l') {
     const y = (py - cy) / sx;
-    lx = x;
+    lLaw = { x0: x, t0: t, v: 0 };
     ly = (y < 0 ? -1 : 1) * Math.max(DIST.min, Math.min(DIST.max, Math.abs(y)));
-  } else xs = x;
+  } else sLaw = { x0: x, t0: t, v: 0 };
+  key(t);
 });
 const endDrag = () => {
   if (drag === 'l') {
@@ -350,13 +449,16 @@ const endDrag = () => {
   }
   drag = null;
   cv.classList.remove('drag');
+  anchor();
 };
 cv.addEventListener('pointerup', endDrag);
 cv.addEventListener('pointercancel', endDrag);
 
 /* ---------- すれ違いのグラフ（SVG、10 × 6 div） ---------- */
 interface Graph {
+  /** 曲線（枠で切る）と軸の数値 */
   g: SVGGElement;
+  ax: SVGGElement;
   now: SVGPathElement;
   dots: SVGGElement;
   /** 横軸 1 div [s]、縦軸 1 div と下端の値 */
@@ -367,11 +469,12 @@ interface Graph {
 function mkGraph(id: string): Graph {
   const svg = $<SVGSVGElement>(id),
     g = svg.querySelector('.cv') as SVGGElement,
+    ax = svg.querySelector('.ax') as SVGGElement,
     now = document.createElementNS(NS, 'path'),
     dots = document.createElementNS(NS, 'g');
   now.setAttribute('class', 'nowl');
   svg.append(now, dots);
-  return { g, now, dots, td: 1, vd: 1, y0: 0 };
+  return { g, ax, now, dots, td: 1, vd: 1, y0: 0 };
 }
 const gF = mkGraph('#fq-svg'),
   gL = mkGraph('#lv-svg');
@@ -403,22 +506,28 @@ function redraw(): void {
     ts = Array.from({ length: n + 1 }, (_, i) => -5 * td + (10 * td * i) / n),
     rows = ts.map((t) => passAt(p, t));
   gF.td = gL.td = td;
-  /* 周波数: f₀ の 0.2〜3 倍に収める */
+  /* 周波数: 上は近づく音の値まで。音速を超えると円錐が届いた所で限りなく高くなるので、
+     遅れて届く近づく音（f₀/(M − 1)）の少し上で切る */
+  const M = v / c(),
+    cap =
+      f0 *
+      (1 + Math.abs(lu) / c()) *
+      (M < 0.98 ? 1.05 / (1 - Math.min(M, 0.9)) : 1.15 * Math.min(10, Math.max(1, 1 / (M - 1))));
   let lo = f0,
     hi = f0;
   for (const rs of rows)
     for (const e of rs) {
       const f = Math.abs(e.ratio) * f0;
-      if (f < 3 * f0 && f > 0.2 * f0) {
+      if (f <= cap) {
         lo = Math.min(lo, f);
         hi = Math.max(hi, f);
       }
     }
   let vd = niceUp(Math.max((hi - lo) / (GR - 0.4), f0 * 0.005)),
-    y0 = Math.round((lo + hi) / 2 / vd - GR / 2) * vd;
+    y0 = Math.max(0, Math.round((lo + hi) / 2 / vd - GR / 2) * vd);
   while (y0 > lo || y0 + GR * vd < hi) {
     vd = niceUp(vd * 1.05);
-    y0 = Math.round((lo + hi) / 2 / vd - GR / 2) * vd;
+    y0 = Math.max(0, Math.round((lo + hi) / 2 / vd - GR / 2) * vd);
   }
   gF.vd = vd;
   gF.y0 = y0;
@@ -439,7 +548,7 @@ function redraw(): void {
         pen = false;
         return;
       }
-      const y = Math.max(-6, Math.min(GR * DV + 6, GY(gr, val(e))));
+      const y = Math.max(-1e4, Math.min(1e4, GY(gr, val(e))));
       d += `${pen ? 'L' : 'M'}${GX(gr, ts[i]).toFixed(1)} ${y.toFixed(1)}`;
       pen = true;
     });
@@ -448,22 +557,20 @@ function redraw(): void {
   const fv = (e: Emission) => Math.abs(e.ratio) * f0;
   let s = `<path class="f0l" d="M0 ${GY(gF, f0).toFixed(1)}H${10 * DV}"/>`;
   s += `<path class="t1" d="${path(gF, fv, 0)}"/><path class="t1" d="${path(gF, fv, 1)}"/>`;
-  s += axes(gF, (y) => fmtN(y));
   gF.g.innerHTML = s;
+  gF.ax.innerHTML = axes(gF, (y) => fmtN(y));
   let dr = '';
   ts.forEach((t, i) => {
     const r = Math.hypot((v - lu) * t, dist, HL - spec().h);
-    dr += `${i ? 'L' : 'M'}${GX(gL, t).toFixed(1)} ${Math.max(-6, Math.min(GR * DV + 6, GY(gL, levelR(r)))).toFixed(1)}`;
+    dr += `${i ? 'L' : 'M'}${GX(gL, t).toFixed(1)} ${GY(gL, levelR(r)).toFixed(1)}`;
   });
-  gL.g.innerHTML =
-    `<path class="f0l" d="${dr}"/><path class="t2" d="${path(gL, level, 0)}"/><path class="t2" d="${path(gL, level, 1)}"/>` +
-    axes(gL, (y) => String(Math.round(y)));
+  gL.g.innerHTML = `<path class="f0l" d="${dr}"/><path class="t2" d="${path(gL, level, 0)}"/><path class="t2" d="${path(gL, level, 1)}"/>`;
+  gL.ax.innerHTML = axes(gL, (y) => String(Math.round(y)));
   $('#f-vd').textContent = `${fmtN(vd)} Hz`;
   $('#f-f0').textContent = `${fmtN(f0)} Hz`;
   $('#l-vd').textContent = `${gL.vd} dB`;
   for (const id of ['#f-td', '#l-td']) $(id).textContent = `${tFmt(td)} s`;
   /* 計算結果のうち、位置によらない値 */
-  const M = v / c();
   $('#o-fb').innerHTML = M < 1 ? u(fmtN(f0 / (1 - M)), 'Hz') : '—';
   $('#o-fa').innerHTML = u(fmtN(f0 / (1 + M)), 'Hz');
   $('#o-m').textContent = M.toFixed(3);
@@ -511,40 +618,28 @@ function setOut(rs: Emission[]): void {
 }
 
 /* ---------- 毎フレーム ---------- */
-let last = performance.now(),
-  outT = 0,
+let outT = 0,
   wasNarrow: boolean | null = null;
 function frame(now: number): void {
-  const dt = Math.min(0.05, (now - last) / 1000);
-  last = now;
   resize();
   scale();
   if (wasNarrow !== narrow()) {
     wasNarrow = narrow();
     redraw();
   }
-  simT += dt;
-  /* 音源は道路の端から端へ。速いときは、通り過ぎた音が届き終わるまで画面の外を 2 秒走らせる */
-  const L = Math.max(half * 1.15, half + 2 * v);
-  if (moving && drag !== 's') {
-    xs += v * dt;
-    if (xs > L) {
-      xs = -L;
-      jump = true;
-      hist.length = 0;
-    }
+  const t = clock();
+  if (playing) {
+    /* 時計の差は、AudioContext の時刻の刻みのばらつきをならしながら追う */
+    off += (t - audio.now - off) * 0.02;
+    schedule(t);
   }
-  if (drag !== 'l' && lu) {
-    lx += lu * dt;
-    if (Math.abs(lx) > half) {
-      lx -= Math.sign(lx) * 2 * half;
-      jump = true;
-    }
-  }
-  hist.push({ t: simT, x: xs });
-  while (hist.length > 2 && hist[1].t < simT - (N + 1) * gap()) hist.shift();
-  if (playing) audio.pos({ sx: xs, sy: 0, lx, ly, jump, v: vNow() });
-  jump = false;
+  const nx = sAt(t);
+  if (sLaw.v > 0 && nx < xs - 1) hist.length = 0;
+  xs = nx;
+  lx = lAt(t);
+  simT = t;
+  hist.push({ t, x: xs });
+  while (hist.length > 2 && hist[1].t < t - (N + 1) * gap()) hist.shift();
   const rs = rootsNow();
   drawRoad(rs);
   drawNow(rs);
@@ -554,6 +649,6 @@ function frame(now: number): void {
   }
   requestAnimationFrame(frame);
 }
-xs = -half;
+anchor();
 booted = true;
 requestAnimationFrame(frame);

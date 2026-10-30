@@ -179,19 +179,19 @@ export const RH: ParamDef = row({
 });
 
 const dbIn = (v: number) => minus(String(Math.round(v)));
-/** 音量 [dB]（0 dB で、聞き手の位置の音圧 20 Pa（120 dB）をフルスケールにする） */
+/** 音量 [dB]（0 dB で、音源から 10 m の音を −12 dBFS にする。音源ごとに大きさをそろえる） */
 export const VOL: ParamDef = row({
   k: 'vol',
   nm: '音量',
   sym: '',
   name: '音量',
-  sub: '0 dB で聞き手の位置の 120 dB をフルスケール',
+  sub: '0 dB で音源から 10 m の音を −12 dBFS（音源ごとにそろえる）',
   unit: 'dB',
   min: -60,
-  max: 0,
-  v: -30,
-  ph: '例 −30',
-  list: linList(-60, 0, 1),
+  max: 10,
+  v: -10,
+  ph: '例 −10',
+  list: linList(-60, 10, 1),
   jump: 6,
   sign: 'any',
   format: { input: dbIn, step: dbIn, text: (v) => `${dbIn(v)} dB` },

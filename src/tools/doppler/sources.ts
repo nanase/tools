@@ -102,6 +102,9 @@ export class Siren implements Source {
   private loO: Osc;
   private n = 0;
   private a: number;
+  /** ピーの重み（0〜1）。切り替えを 4 ms かけてつなぎ、波形の段差で鳴る「プツッ」を消す */
+  private w = 1;
+  private dw: number;
   constructor(
     private fs: number,
     /** ビブラート（10 Hz の振幅の揺れ）の深さ（0〜1。仮の値） */
@@ -111,13 +114,16 @@ export class Siren implements Source {
     this.loO = new Osc(waveTable(SIREN.lo, fs, odd), fs);
     /* 揺らしても実効値が変わらないようにする */
     this.a = paOf(this.spec.db) / Math.sqrt(1 + (trem * trem) / 2);
+    this.dw = 1 / (0.004 * fs);
   }
   /** 今がピー（高い音）か */
   private get high(): boolean {
     return (this.n / this.fs) % (2 * SIREN.half) < SIREN.half;
   }
   step(): number {
-    const y = this.high ? this.hiO.step(SIREN.hi) : this.loO.step(SIREN.lo),
+    this.w = this.high ? Math.min(1, this.w + this.dw) : Math.max(0, this.w - this.dw);
+    const w = this.w,
+      y = w * this.hiO.step(SIREN.hi) + (1 - w) * this.loO.step(SIREN.lo),
       g = 1 + this.trem * Math.sin((2 * Math.PI * SIREN.vib * this.n) / this.fs);
     this.n++;
     return this.a * g * y;
