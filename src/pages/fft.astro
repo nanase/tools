@@ -22,7 +22,6 @@ const related = [
 ---
 <SiteLayout title={name} tool={{ id: 'fft', name }} description="N 点の DFT を半分の DFT 2 つに分けることを繰り返す、基数 2 の FFT です。バタフライ図の上を値が流れる様子を時間間引きと周波数間引きで動かし、今のバタフライを複素平面で拡大して見ます。入力を変えると、各段の途中の値も変わります。">
   <PageTitle title={name}><i>N</i> 点の DFT を半分の DFT 2 つに分けることを繰り返す、基数 2 の FFT です。バタフライ図の上を値が流れる様子を、時間間引きと周波数間引きで見られます。</PageTitle>
-  <div class="mini" aria-hidden="true"><span><i>N</i><b id="m-n"></b></span><span>段<b id="m-st"></b></span><span>掛け算<b id="m-f"></b></span></div>
 
   <div class="tgrid">
     <Panel hid="hd-fig" title="バタフライ図" class="a-fig" fixed>

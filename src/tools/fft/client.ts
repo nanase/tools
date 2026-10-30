@@ -117,9 +117,6 @@ function drawStatic(): void {
   txt($('#o-bf'), String(nbf()));
   txt($('#o-mul'), big(f.mul));
   txt($('#o-add'), big(f.add));
-  txt($('#m-n'), String(N));
-  txt($('#m-st'), String(R.f.m));
-  txt($('#m-f'), String(nbf()));
 }
 /** 再生の帯の目盛り: 段の区切り */
 function ticks(): void {
