@@ -147,6 +147,14 @@ export const TOOLS: Tool[] = [
     k: 'noise generator 雑音 ノイズ white ホワイトノイズ 白色雑音 pink ピンクノイズ 1/f brown ブラウンノイズ red 赤色雑音 blue ブルー violet バイオレット grey gray グレー velvet ベルベット lfsr 線形帰還シフトレジスタ m系列 m-sequence prbs 疑似乱数 原始多項式 ファミコン nes ゲームボーイ gameboy sn76489 スペクトル スペクトログラム spectrogram オーディオ audio',
   },
   {
+    id: 'thunder',
+    c: '音響',
+    t: '雷鳴',
+    d: '曲がりくねった放電路の衝撃波が時間をずらして届き、雷鳴になる様子を見て聞きます。',
+    ic: 'th',
+    k: 'thunder 雷鳴 雷 かみなり 稲妻 稲光 lightning 落雷 放電路 衝撃波 shock wave n波 n-wave ゴロゴロ バリバリ rumble clap 光ってから 3秒 1km 距離 空気の吸収 air absorption iso 9613 反射 こだま 影の領域 shadow zone few ribner tortuosity オーディオ audio',
+  },
+  {
     id: 'guitar',
     c: '音響モデル',
     t: 'ギター音響モデル',

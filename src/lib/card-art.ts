@@ -1093,6 +1093,46 @@ export const ART: Record<string, Art> = {
       )
     );
   },
+  /* 雷鳴（仮）: ジグザグの放電路の折れ目から波面が広がり、右の波形は届いた所まで。最初の鋭い山のあとにゴロゴロが続く */
+  th(t) {
+    const u = mod(t + 1.6, 3) / 3,
+      R = 2 + 62 * u,
+      bolt: [number, number][] = [];
+    for (let k = 0; k <= 8; k++) bolt.push([16 + 9 * (hn(k + 40) - 0.5) + (k % 2 ? 3 : -3), 4 + 4.75 * k]);
+    /* 円のうち地面より上で、左右の枠の中の弧だけ */
+    const arc = ([cx, cy]: [number, number]): string => {
+      let d = '',
+        on = false;
+      for (let k = 0; k <= 72; k++) {
+        const a = (TAU * k) / 72,
+          x = cx + R * Math.cos(a),
+          y = cy + R * Math.sin(a);
+        if (x >= 4 && x <= 60 && y >= 2 && y <= 43) {
+          d += `${on ? 'L' : 'M'}${r1(x)} ${r1(y)}`;
+          on = true;
+        } else on = false;
+      }
+      return d;
+    };
+    const X0 = 66,
+      X1 = 116,
+      now = X0 + (X1 - X0) * u,
+      wave: [number, number][] = [];
+    for (let x = X0; x <= now; x += 0.5) {
+      const s = x - X0,
+        clap = s < 3 ? 14 * (1 - (2 * s) / 3) : 0,
+        rumble = s >= 3 ? 9 * Math.exp(-(s - 3) / 22) * (hn(Math.floor(s * 1.3)) - 0.5) * 2 * Math.sin(s * 2.1) : 0;
+      wave.push([x, 24 - clap - rumble]);
+    }
+    return (
+      P('c t', 'M4 43H60') +
+      P('a', pl(bolt)) +
+      P('b', [bolt[2], bolt[5], bolt[8]].map(arc).join('')) +
+      P('fc', 'M56.4 41a1.6 1.6 0 1 0 3.2 0a1.6 1.6 0 1 0 -3.2 0') +
+      P('c t', `M${X0} 24H${X1}`) +
+      (wave.length > 1 ? P('a', pl(wave)) : '')
+    );
+  },
 };
 
 /**
@@ -1134,6 +1174,7 @@ export const LOOP: Record<string, number> = {
   svg: TAU / 2.4,
   tu: 3,
   tm: Math.PI / 1.2,
+  th: 3,
 };
 
 /** 止まっているときの図柄（ビルド時に HTML へ出す） */
