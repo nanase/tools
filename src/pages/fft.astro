@@ -1,0 +1,135 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import More from '../components/More.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import { order, TOOLS } from '../data/tools';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/fft/style.css';
+import { COUNT_N, NS, SPEEDS } from '../tools/fft/params';
+import { SIGS } from '../tools/fft/signals';
+import Theory from '../tools/fft/Theory.astro';
+
+const name = 'FFT';
+/* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
+const CAT = '数学';
+const related = [
+  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'fft')),
+  ...TOOLS.filter((t) => t.c !== CAT && !t.s),
+];
+---
+<SiteLayout title={name} tool={{ id: 'fft', name }} description="N 点の DFT を半分の DFT 2 つに分けることを繰り返す、基数 2 の FFT です。バタフライ図の上を値が流れる様子を時間間引きと周波数間引きで動かし、今のバタフライを複素平面で拡大して見ます。定義どおりの N² 回と FFT の (N/2) log₂N 回の掛け算の数も比べられます。">
+  <PageTitle title={name}>N 点の DFT を半分の DFT 2 つに分けることを繰り返す、基数 2 の FFT です。バタフライ図の上を値が流れる様子と、定義どおりの <i>N</i>² 回と FFT の (<i>N</i>/2) log₂<i>N</i> 回の掛け算の数を比べられます。</PageTitle>
+  <div class="mini" aria-hidden="true"><span><i>N</i><b id="m-n"></b></span><span>FFT の掛け算<b id="m-f"></b></span><span>定義どおり<b id="m-d"></b></span></div>
+
+  <div class="tgrid">
+    <Panel hid="hd-fig" title="バタフライ図" class="a-fig" fixed>
+      <div slot="aux" class="ff-aux">
+        <div class="seg" id="ff-kind" role="group" aria-label="間引き">
+          <button type="button" data-v="dit" aria-pressed="true" title="入力を偶数番と奇数番に分ける（DIT）">時間間引き</button>
+          <button type="button" data-v="dif" aria-pressed="false" title="出力を偶数番と奇数番に分ける（DIF）">周波数間引き</button>
+        </div>
+        <span class="ff-nl" aria-hidden="true">N</span>
+        <div class="seg" id="ff-n" role="group" aria-label="点の数">
+          {NS.map((n) => <button type="button" data-v={n} aria-pressed={n === 8 ? 'true' : 'false'}>{n}</button>)}
+        </div>
+      </div>
+      <div class="sbar">
+        <span class="stag">矢印は値（実部 →・虚部 ↑、列ごとの最大で割る）</span>
+        <span class="stag"><i class="sw ff-sw-a" aria-hidden="true"></i>a</span>
+        <span class="stag"><i class="sw c2" aria-hidden="true"></i>b（W を掛ける）</span>
+        <span class="stag"><i class="sw" aria-hidden="true"></i>|X[k]|</span>
+      </div>
+      <div class="ff-figw">
+        <div class="ff-bf" id="ff-bfw"><svg id="ff-bf" role="img" aria-label="バタフライ図。節点を押すと、その値を作った計算を下に出す"></svg></div>
+        <div class="ff-zp">
+          <div class="ff-zh">拡大<span id="ff-zt"></span></div>
+          <div class="scope"><svg id="ff-zp" viewBox="0 0 300 300" role="img" aria-label="今のバタフライを複素平面で"></svg></div>
+          <div class="sbar">
+            <span class="stag"><i class="sw ff-sw-a" aria-hidden="true"></i>a</span>
+            <span class="stag"><i class="sw ff-sw-g" aria-hidden="true"></i>b</span>
+            <span class="stag"><i class="sw c2" aria-hidden="true"></i>W·b</span>
+            <span class="stag"><i class="sw" aria-hidden="true"></i>和・差</span>
+            <span class="stag"><i class="sw ff-sw-f" aria-hidden="true"></i>W</span>
+          </div>
+        </div>
+      </div>
+      <div class="ff-fx" id="ff-fx" aria-live="polite"></div>
+      <div class="tp">
+        <button type="button" class="tp-ib" id="tp-home" title="最初へ戻す" aria-label="最初へ戻す"><svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1.5" y="1.5" width="1.8" height="9"/><path d="M10.5 1.5v9L4 6z"/></svg></button>
+        <button type="button" class="tp-pp" id="tp-pp" title="動かす" aria-label="動かす"><svg class="i-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.2l7.6 4.8L3 10.8z"/></svg><svg class="i-pause" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="2.8" height="9"/><rect x="7.2" y="1.5" width="2.8" height="9"/></svg></button>
+        <div class="tp-tl">
+          <div class="tp-trk" id="tp-trk" role="slider" tabindex="0" aria-label="進み具合" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0">
+            <div class="tp-rail"></div>
+            <div class="tp-fill" id="tp-fill"></div>
+            <svg class="tp-tk" id="tp-tk" aria-hidden="true"><path class="mj"/></svg>
+            <div class="tp-th" id="tp-th"></div>
+          </div>
+          <div class="tp-tm"><span id="tp-a"></span><span id="tp-b"></span></div>
+        </div>
+        <div class="tp-side">
+          <button type="button" class="tp-sq" id="tp-step" title="バタフライを 1 つ進める" aria-label="バタフライを 1 つ進める"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 3l6 5-6 5M12 3v10"/></svg></button>
+        </div>
+      </div>
+      <More id="ff-disp" title="表示の設定">
+        <div class="ptab">
+          <ChoiceRow k="sp" name="再生の速さ" sub="1× は 1 秒にバタフライ 0.75 個" choices={SPEEDS} value={1} />
+        </div>
+      </More>
+    </Panel>
+
+    <div class="col c1">
+      <Panel hid="hd-in" title="入力 x[n]" class="a-in">
+        <span slot="aux" class="aux">棒をドラッグ</span>
+        <div class="chips ff-sig" id="ff-sig" role="group" aria-label="入力の見本">
+          {SIGS.map(([v, l]) => <button type="button" class="chip" data-v={v} aria-pressed={v === 'rand' ? 'true' : 'false'}>{l}</button>)}
+        </div>
+        <div class="scope"><svg id="ff-in" viewBox="0 0 420 150" role="img" aria-label="入力の実部と虚部。棒をドラッグすると実部を変える"></svg></div>
+        <div class="sbar ff-insb">
+          <span class="stag"><i class="sw" aria-hidden="true"></i>実部</span>
+          <span class="stag"><i class="sw c2" aria-hidden="true"></i>虚部</span>
+        </div>
+      </Panel>
+      <Panel hid="hd-out" title="計算結果" class="a-out">
+        <dl class="metrics">
+          <div class="m m-main"><dt>FFT の複素数の掛け算</dt><dd><span id="o-cm"></span><span class="u">回</span><span class="ff-ms" id="o-cm-d"></span></dd></div>
+          <div class="m"><dt>段の数 log₂<i>N</i></dt><dd id="o-st"></dd></div>
+          <div class="m"><dt>バタフライ</dt><dd><span id="o-bf"></span><span class="u">個</span></dd></div>
+          <div class="m"><dt>実数の掛け算</dt><dd><span id="o-mul"></span><span class="u">回</span><span class="ff-ms" id="o-mul-d"></span></dd></div>
+          <div class="m"><dt>実数の足し算</dt><dd><span id="o-add"></span><span class="u">回</span><span class="ff-ms" id="o-add-d"></span></dd></div>
+        </dl>
+      </Panel>
+    </div>
+
+    <div class="col c2">
+      <Panel hid="hd-cnt" title="演算の数" class="a-cnt">
+        <div slot="aux" class="seg" id="ff-cm" role="group" aria-label="数えるもの">
+          <button type="button" data-v="c" aria-pressed="true">複素数の掛け算</button>
+          <button type="button" data-v="r" aria-pressed="false" title="実数の掛け算と足し算の和">実数の演算</button>
+        </div>
+        <div class="ff-cnt" id="ff-cnt"></div>
+        <div class="ptab"><ParamRow d={COUNT_N} /></div>
+        <div class="scope"><svg id="ff-cg" viewBox="0 0 420 230" role="img" aria-label="点の数と演算の数（両対数）"></svg></div>
+        <p class="cnote" id="ff-cnote"></p>
+        <More id="ff-bm" title="このブラウザで測る">
+          <div class="ff-bench">
+            <button type="button" class="ff-btn" id="ff-bench">測る</button>
+            <div class="ff-bout" id="ff-bout"></div>
+          </div>
+        </More>
+      </Panel>
+    </div>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools list={related} />
+  <script>
+    import '../tools/fft/client';
+  </script>
+</SiteLayout>

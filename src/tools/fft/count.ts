@@ -74,3 +74,14 @@ export const splitRadixFormula = (N: number): [number, number] => {
   const L = N * log2(N);
   return [L - 3 * N + 4, 3 * L - 3 * N + 4];
 };
+
+/**
+ * グラフの曲線 [定義どおり, FFT]。real = false は複素数の掛け算（N²・(N/2) log2 N）、
+ * true は実数の掛け算と足し算の和（FFT は 1・−i・(1 − i)/√2 を除く。Burrus 表 8.5.1 の 2 つの式の和）。
+ * N は 2 の累乗でなくてもよい（曲線を描くため）
+ */
+export function ops(N: number, real: boolean): [number, number] {
+  const m = Math.log2(N);
+  if (!real) return [N * N, (N / 2) * m];
+  return [8 * N * N - 2 * N, N < 4 ? 2 * N * m : 5 * N * m - 10 * N + 16];
+}

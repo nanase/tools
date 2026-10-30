@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dftOps, fftOps, radix2Formula, splitRadixFormula, twKind } from '../src/tools/fft/count';
+import { dftOps, fftOps, ops, radix2Formula, splitRadixFormula, twKind } from '../src/tools/fft/count';
 import { bitrev, butterflies, dft, flow, group, log2, output, tw } from '../src/tools/fft/radix2';
 import { rng, type SIGS, signal } from '../src/tools/fft/signals';
 import { fft, plan } from '../src/tools/spectrum/fft';
@@ -273,6 +273,14 @@ describe('演算の数', () => {
   it('分割基数の式は N = 16 で 20・148、N = 1024 で 7172・27652', () => {
     expect(splitRadixFormula(16)).toEqual([20, 148]);
     expect(splitRadixFormula(1024)).toEqual([7172, 27652]);
+  });
+  it('グラフの曲線は数えた数と同じ（N = 2〜1024）', () => {
+    for (let N = 2; N <= 1024; N *= 2) {
+      const d = dftOps(N),
+        f = fftOps(N, 'dit', '4/2', false);
+      expect(ops(N, false)).toEqual([d.cmul, fftOps(N).cmul]);
+      expect(ops(N, true)).toEqual([d.mul + d.add, f.mul + f.add]);
+    }
   });
   it('N = 1024 で複素数の掛け算は 1/204.8', () => {
     expect(dftOps(1024).cmul / fftOps(1024).cmul).toBeCloseTo(204.8, 9);
