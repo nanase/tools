@@ -1,0 +1,130 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import { order, TOOLS } from '../data/tools';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/convolution/style.css';
+import { DICE, SHAPES, WIDTHS } from '../tools/convolution/params';
+import Theory from '../tools/convolution/Theory.astro';
+
+const name = '畳み込み';
+/* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
+const CAT = '数学';
+const related = [
+  ...order(TOOLS.filter((t) => t.c === CAT && t.id !== 'convolution')),
+  ...TOOLS.filter((t) => t.c !== CAT && !t.s),
+];
+const W = (k: string) => {
+  const d = WIDTHS.find((x) => x.k === k);
+  if (!d) throw new Error(k);
+  return d;
+};
+const SH = SHAPES.map(([v, l, t]) => [v, l, t] as const);
+---
+<SiteLayout title={name} tool={{ id: 'convolution', name }} description="核を裏返して入力の上を滑らせ、重なった部分の積の面積が出力の 1 点になる様子を、連続と離散で動かして見ます。入力の各点が核の写しを出して重なる見方、相関、サイコロの和、周波数の積も見られます。" note="連続の信号は刻み 0.01 の格子で近似した計算です。">
+  <PageTitle title={name}>核 <i>h</i> を裏返して入力 <i>x</i> の上を滑らせ、重なった部分の積の面積を出力 <i>y</i> の 1 点にします。入力と核は形を選ぶか、図をなぞって描けます。</PageTitle>
+  <div class="mini" aria-hidden="true"><span><i>t</i><b id="m-t"></b></span><span><i>y</i>(<i>t</i>)<b id="m-yt"></b></span><span>∫<i>y</i><b id="m-ay"></b></span></div>
+
+  <div class="tgrid">
+    <Panel hid="hd-fig" title="2 つの見方" class="a-fig" fixed>
+      <div slot="aux" class="cv-aux">
+        <div class="seg" id="cv-view" role="group" aria-label="見方">
+          <button type="button" data-v="out" aria-pressed="true" title="核を裏返して滑らせ、重なりの面積を出力にする">出力の側から</button>
+          <button type="button" data-v="in" aria-pressed="false" title="入力の各点が核の写しを出し、それが重なって出力になる">入力の側から</button>
+        </div>
+        <div class="seg" id="cv-mode" role="group" aria-label="連続と離散">
+          <button type="button" data-v="c" aria-pressed="true">連続</button>
+          <button type="button" data-v="d" aria-pressed="false">離散</button>
+        </div>
+      </div>
+      <div id="v-out">
+        <div class="sbar">
+          <span class="stag"><i class="sw cv-sw-x" aria-hidden="true"></i>入力 x</span>
+          <span class="stag"><i class="sw cv-sw-h" aria-hidden="true"></i><span id="lg-h">核 h（裏返して t へ）</span></span>
+          <span class="stag"><i class="sw cv-sw-p" aria-hidden="true"></i>積</span>
+          <span class="stag"><i class="sw" aria-hidden="true"></i>出力 y</span>
+        </div>
+        <div class="scope"><svg id="f-ov" role="img" aria-label="入力と、裏返して滑らせた核と、その積"></svg></div>
+      </div>
+      <div id="v-in" hidden>
+        <div class="sbar">
+          <span class="stag"><i class="sw cv-sw-h" aria-hidden="true"></i>核の写し</span>
+          <span class="stag"><i class="sw" aria-hidden="true"></i>写しの和</span>
+        </div>
+        <div class="scope"><svg id="f-in" role="img" aria-label="入力の各点が出す核の写しと、その和"></svg></div>
+      </div>
+      <div class="scope"><svg id="f-y" role="img" aria-label="出力 y(t)"></svg></div>
+      <div class="tp">
+        <button type="button" class="tp-ib" id="tp-home" title="最初へ戻す" aria-label="最初へ戻す"><svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1.5" y="1.5" width="1.8" height="9"/><path d="M10.5 1.5v9L4 6z"/></svg></button>
+        <button type="button" class="tp-pp" id="tp-pp" title="滑らせる" aria-label="滑らせる"><svg class="i-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.2l7.6 4.8L3 10.8z"/></svg><svg class="i-pause" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="2.8" height="9"/><rect x="7.2" y="1.5" width="2.8" height="9"/></svg></button>
+        <div class="tp-tl">
+          <div class="tp-trk" id="tp-trk" role="slider" tabindex="0" aria-label="滑らせる位置 t" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0">
+            <div class="tp-rail"></div>
+            <div class="tp-fill" id="tp-fill"></div>
+            <div class="tp-th" id="tp-th"></div>
+          </div>
+          <div class="tp-tm"><span><i>t</i> = <b id="tp-t"></b></span><span><i>y</i>(<i>t</i>) = <b id="tp-y"></b></span></div>
+        </div>
+        <div class="tp-side">
+          <button type="button" class="tp-sq" id="tp-step" title="1 刻み進める" aria-label="1 刻み進める"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 3l6 5-6 5M12 3v10"/></svg></button>
+        </div>
+      </div>
+    </Panel>
+
+    <Panel hid="hd-out" title="計算結果" class="a-out">
+      <dl class="metrics">
+        <div class="m m-main"><dt>出力 <i>y</i>(<i>t</i>)（重なりの面積）</dt><dd id="o-yt"></dd></div>
+        <div class="m"><dt>入力の面積 ∫<i>x</i></dt><dd id="o-ax"></dd></div>
+        <div class="m"><dt>核の面積 ∫<i>h</i></dt><dd id="o-ah"></dd></div>
+        <div class="m"><dt>出力の面積 ∫<i>y</i></dt><dd id="o-ay"></dd></div>
+        <div class="m"><dt>出力の長さ</dt><dd id="o-len"></dd></div>
+        <div class="m"><dt>出力の重心</dt><dd id="o-mu"></dd></div>
+        <div class="m"><dt>出力の分散</dt><dd id="o-var"></dd></div>
+      </dl>
+    </Panel>
+
+    <div class="col c2">
+      <Panel hid="hd-x" title="入力 x" class="a-x">
+        <div class="ptab">
+          <ChoiceRow k="xs" name="形" choices={SH} value="rect" layout="chips" />
+          <ChoiceRow k="dn" sym="<i>n</i>" name="サイコロの数" sub="出力が n 個のサイコロの目の和の分布になる。入力は n − 1 個の和、核は 1 個" choices={DICE.map((v) => [v, `${v} 個`] as const)} value={2} class="cv-dice" />
+          <ParamRow d={W('xa')} />
+          <ParamRow d={W('xn')} />
+        </div>
+        <div class="scope cv-draw"><svg id="mn-x" role="img" aria-label="入力 x(t)。なぞると手で描ける"></svg></div>
+        <p class="cv-hint" aria-hidden="true">✎ なぞって描く</p>
+      </Panel>
+      <Panel hid="hd-h" title="核 h" class="a-h">
+        <button slot="aux" type="button" class="tg" id="cv-flip" aria-pressed="true" title="押すと裏返さずに滑らせる（相関）"><span class="led on" aria-hidden="true"></span>裏返す</button>
+        <div class="ptab">
+          <ChoiceRow k="hs" name="形" choices={SH} value="exp" layout="chips" />
+          <ParamRow d={W('ha')} />
+          <ParamRow d={W('hn')} />
+        </div>
+        <div class="scope cv-draw"><svg id="mn-h" role="img" aria-label="核 h(t)。なぞると手で描ける"></svg></div>
+        <p class="cv-hint" aria-hidden="true">✎ なぞって描く</p>
+      </Panel>
+      <Panel hid="hd-fq" title="周波数で見る" class="a-fq">
+        <span slot="aux" class="aux">畳み込み → 積</span>
+        <div class="cv-fq">
+          <span class="op" aria-hidden="true"></span><div class="scope"><svg id="fq-x" role="img" aria-label="入力の振幅スペクトル"></svg></div>
+          <span class="op" aria-hidden="true">×</span><div class="scope"><svg id="fq-h" role="img" aria-label="核の振幅スペクトル"></svg></div>
+          <span class="op" aria-hidden="true">=</span><div class="scope"><svg id="fq-y" role="img" aria-label="出力の振幅スペクトル"></svg></div>
+        </div>
+      </Panel>
+    </div>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools list={related} />
+  <script>
+    import '../tools/convolution/client';
+  </script>
+</SiteLayout>

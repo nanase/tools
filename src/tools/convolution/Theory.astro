@@ -1,6 +1,7 @@
 ---
-// 動作原理と式（下書き。デザインが決まったら、図の名前と「このツールで決めたこと」を実装に合わせて直す）
-const fr = (a: string, b: string) => `<mfrac><mrow>${a}</mrow><mrow>${b}</mrow></mfrac>`;
+import { TOOLS } from '../../data/tools';
+
+// 動作原理と式
 const it = (s: string) => `<mi>${s}</mi>`;
 /** f(arg) */
 const fn = (f: string, arg: string) => `<mi>${f}</mi><mo stretchy="false">(</mo>${arg}<mo stretchy="false">)</mo>`;
@@ -16,6 +17,9 @@ const tm = '<mi>t</mi><mo>−</mo><mi>τ</mi>';
 const nk = '<mi>n</mi><mo>−</mo><mi>k</mi>';
 /* 本文の出典番号 */
 const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
+/** ほかのページへのリンク（まだ公開していないページは名前だけ。公開すると一覧に載り、リンクになる） */
+const ln = (id: string, label: string) =>
+  TOOLS.some((t) => t.id === id && !t.s) ? `<a href="../${id}/">${label}</a>` : label;
 ---
 <h3>定義</h3>
 <div class="eqs">
@@ -45,7 +49,7 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
 <ul class="tl">
   <li>入力はずらしたインパルスの重ね合わせ</li>
   <li>線形で時不変の系は、インパルス <math><mi>δ</mi></math> に <math><mi>h</mi></math> で応える。だから出力は、入力の各点が出す高さ <math set:html={fn('x', it('τ'))} /> の <math><mi>h</mi></math> の写しの和<Fragment set:html={rf(1)} /></li>
-  <li>部屋の残響（<a href="../reverb/">残響</a>）と FIR フィルタ（<a href="../fir/">FIR フィルタ</a>）の出力は、この形の畳み込み</li>
+  <li>部屋の残響（<Fragment set:html={ln('reverb', '残響')} />）と FIR フィルタ（<Fragment set:html={ln('fir', 'FIR フィルタ')} />）の出力は、この形の畳み込み</li>
 </ul>
 
 <h3>性質</h3>
@@ -91,7 +95,7 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
 <ul class="tl">
   <li>時間の畳み込みは周波数の積<Fragment set:html={rf(3)} /><Fragment set:html={rf(6)} />。核の周波数特性が、入力の各周波数を何倍にするかを決める</li>
   <li><math><mi>L</mi></math> 点の DFT の積は、長さ <math><mi>L</mi></math> の円状畳み込みに当たる。はみ出した分が頭へ回るので、<math><mi>L</mi><mo>≥</mo><mi>N</mi><mo>+</mo><mi>M</mi><mo>−</mo><mn>1</mn></math> まで 0 で埋める<Fragment set:html={rf(3)} /></li>
-  <li>FFT で変換して掛けて戻すと速い。核が約 64 点より長いと直接の和より速い<Fragment set:html={rf(4)} /><Fragment set:html={rf(8)} />。算法は <a href="../fft/">FFT</a>、DFT の周期性は <a href="../dct-dft/">DCT と DFT</a></li>
+  <li>FFT で変換して掛けて戻すと速い。核が約 64 点より長いと直接の和より速い<Fragment set:html={rf(4)} /><Fragment set:html={rf(8)} />。算法は <Fragment set:html={ln('fft', 'FFT')} />、DFT の周期性は <Fragment set:html={ln('dct-dft', 'DCT と DFT')} /></li>
 </ul>
 
 <h3>このツールで決めたこと</h3>
@@ -99,6 +103,9 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
   <li>連続の信号は刻み 0.01 の格子の値で持ち、積分は刻みを掛けた和で近似する。格子の間は直線で補う</li>
   <li>連続のインパルスは面積 1・幅 1 刻みの柱で近似し、図では矢印（高さは面積）で描く</li>
   <li>核の見本（矩形・三角・指数・ガウス・こだま・パルス列）は面積を 1 にそろえる</li>
+  <li>入力の側からの図は、連続の入力を 0.25 ごとにまとめた写しで描く。写しの和は刻み 0.01 のまま足す</li>
+  <li>出力の重心と分散は、入力と核に負の値がないときだけ出す</li>
+  <li>サイコロでは、入力を n − 1 個の和、核を 1 個にして、出力を n 個の和にする</li>
 </ul>
 
 <h3>出典</h3>

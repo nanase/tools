@@ -1100,7 +1100,7 @@ export const ART: Record<string, Art> = {
       ) +
       fill +
       P('b', `M4 44H${a}V30H${b}V44H116`) +
-      P('c', fx(h, 4, c, 60) + `L${r1(c)} 44`) +
+      P('c', `${fx(h, 4, c, 60)}L${r1(c)} 44`) +
       P('c d t', `M${r1(c)} 4V46`)
     );
   },
