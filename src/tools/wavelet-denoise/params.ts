@@ -1,4 +1,4 @@
-/** ウェーブレットで雑音除去と圧縮のページの入力の定義（数値の行と選択肢） */
+/** ウェーブレット変換での雑音除去と圧縮のページの入力の定義（数値の行と選択肢） */
 import { linList } from '../../lib/eseries';
 import type { ParamDef } from '../../lib/param-def';
 
@@ -98,7 +98,7 @@ export const SHRINK: Opt = [
 ];
 export const SIGMA: Opt = [
   ['global', '最も細かい段', '最も細かい段の係数の中央値から 1 つ'],
-  ['quiet', '静かな区間', '雑音だけの区間の係数から段ごとに'],
+  ['quiet', '雑音だけから', '雑音だけの音から段ごとに。雑音を足したときは足した雑音、足さないときは最も静かな 0.4 秒'],
 ];
 export const SPIN: Opt = [
   ['1', 'しない'],

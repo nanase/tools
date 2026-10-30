@@ -5,7 +5,7 @@
 import { type Coeffs, maxLevel, type Shrink, snr, type Wav, wavedec, waverec } from '../wavelet/dwt';
 import { bits, dequantize, keepAbove, kth, quantize } from './code';
 import { dct, idct, imdct, irdft, mdct, rdft } from './fourier';
-import { apply, plan, type Rule, type SigmaMode } from './thresh';
+import { apply, levelSigma, plan, type Rule, type SigmaMode } from './thresh';
 
 /** 2 の累乗の長さへ（0 で埋める） */
 const pow2 = (n: number) => 2 ** Math.ceil(Math.log2(Math.max(2, n)));
@@ -57,8 +57,10 @@ export interface DnOpts {
   k: number;
   /** ずらして平均する回数（1 でずらさない。Coifman・Donoho の cycle spinning） */
   spin: number;
-  /** 雑音だけの区間（標本の番号）。sm が quiet のとき使う */
+  /** 雑音だけの区間（標本の番号）。sm が quiet で noise がないとき使う */
   quiet?: readonly [number, number];
+  /** 雑音だけの音（足した雑音そのもの）。sm が quiet のとき、ここから段ごとの σ を測る */
+  noise?: ArrayLike<number>;
 }
 
 export interface DnOut {
@@ -77,11 +79,12 @@ export function denoiseAudio(x: Float32Array, o: DnOpts): DnOut {
     acc = new Float64Array(n),
     S = Math.max(1, Math.round(o.spin));
   let first: Omit<DnOut, 'y'> | null = null;
+  const given = o.sm === 'quiet' && o.noise ? levelSigma(dec(o.noise, o.w, o.J)) : null;
   for (let s = 0; s < S; s++) {
     /* s 点だけ左へ回してから処理し、戻した後に右へ回す */
     const xs = s ? Float64Array.from({ length: n }, (_, i) => x[(i + s) % n]) : x,
       c = dec(xs, o.w, o.J),
-      p = plan(c, o.rule, o.sm, o.k, o.quiet && [o.quiet[0] - s, o.quiet[1] - s]),
+      p = plan(c, o.rule, o.sm, o.k, given ?? (o.quiet && [o.quiet[0] - s, o.quiet[1] - s])),
       r = apply(c, p.lam, o.m),
       y = waverec(r.c);
     for (let i = 0; i < n; i++) acc[(i + s) % n] += y[i];

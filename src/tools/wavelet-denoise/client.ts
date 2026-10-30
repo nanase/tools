@@ -1,6 +1,6 @@
 /**
- * ウェーブレットで雑音除去と圧縮のページの入口（案 A 聴き比べ卓）。
- * 音源（試しの音・ファイル・マイク）を計算のワーカーへ渡し、返ってきた音を同じ位置で切り替えて鳴らす。
+ * ウェーブレット変換での雑音除去と圧縮のページの入口（案 A 聴き比べ卓）。
+ * 音源（サンプル音源・ファイル・マイク）を計算のワーカーへ渡し、返ってきた音を同じ位置で切り替えて鳴らす。
  * 前後のスカログラム・段ごとの σ と λ・基底ごとの SN 比とビット数を描く
  */
 import { Choice } from '../../lib/choice';
@@ -30,10 +30,9 @@ interface Source {
   quiet: [number, number];
 }
 
-/** 試しの音の標本化周波数・長さ・頭の無音 [s]、ファイルとマイクの長さの上限 [s]、色の下限 dBFS、目盛りの範囲 */
+/** サンプル音源の標本化周波数・長さ [s]（4 秒は打楽器 2 小節・撥弦 8 音で、繰り返してもテンポが崩れない）、ファイルとマイクの長さの上限 [s]、色の下限 dBFS、目盛りの範囲 */
 const TEST_FS = 48000,
-  TEST_DUR = 3,
-  TEST_LEAD = 0.5,
+  TEST_DUR = 4,
   MAX = 10,
   LO = -90,
   W = 400,
@@ -72,7 +71,8 @@ function source(): Source | null {
   if (S.src === 'mic') return S.mic;
   let s = testCache.get(S.clip);
   if (!s) {
-    s = { x: clip(S.clip, TEST_FS, TEST_DUR, TEST_LEAD), fs: TEST_FS, quiet: [0, Math.round(TEST_LEAD * TEST_FS)] };
+    const x = clip(S.clip, TEST_FS, TEST_DUR);
+    s = { x, fs: TEST_FS, quiet: quietest(x, TEST_FS) };
     testCache.set(S.clip, s);
   }
   return s;
@@ -188,7 +188,7 @@ function show(): void {
     txt('#sc-ha', `圧縮後（${BASES.find((b) => b[0] === S.basis)?.[1]}）`);
     html(
       '#pr-out',
-      m('SN 比', fx(row.snr), 'dB') +
+      m('SN 比', fx(row.snr), 'dB', true) +
         m('おおよそ', fx(row.kbps, 0), 'kbps') +
         m('残した係数', pct(c.kept / s.x.length), '%'),
     );
@@ -227,10 +227,10 @@ function basisTable(c: CpOut, pcm: number): string {
   const rows = c.rows
     .map((r) => {
       const l = BASES.find((b) => b[0] === r.b)?.[1] ?? r.b;
-      return `<tr class="${r.b === S.basis ? 'on' : ''}"><td><button type="button" class="lnk" data-b="${r.b}" aria-pressed="${r.b === S.basis}">${l}</button></td><td class="n">${fx(r.snr)}</td><td class="n">${fx(r.snrKeep)}</td><td class="n">${fx(r.kbps, 0)}</td><td class="n">${fx(pcm / r.kbps, 0)}</td></tr>`;
+      return `<tr class="${r.b === S.basis ? 'on' : ''}"><td><button type="button" class="lnk" data-b="${r.b}" aria-pressed="${r.b === S.basis}">${l}</button></td><td class="n">${fx(r.snr)}</td><td class="n">${fx(r.snrKeep)}</td><td class="n">${fx(r.kbps, 0)}</td><td class="n">1/${fx(pcm / r.kbps, 0)}</td></tr>`;
     })
     .join('');
-  return `<table class="tt"><thead><tr><th>基底</th><th class="n">SN 比 dB</th><th class="n">量子化なし</th><th class="n">kbps</th><th class="n">PCM の 1/n</th></tr></thead><tbody>${rows}</tbody></table>`;
+  return `<table class="tt"><thead><tr><th>基底</th><th class="n">SN 比 dB</th><th class="n" title="係数の値を丸めない（量子化しない）ときの SN 比">値を丸める前 dB</th><th class="n">kbps</th><th class="n" title="PCM 16 ビットに対するビット数の比">圧縮率</th></tr></thead><tbody>${rows}</tbody></table>`;
 }
 
 /* 波形: 原音（灰）の上に聴いている音 */
@@ -248,8 +248,8 @@ function drawWave(): void {
     { x: tracks[0], color: css('--line-2') },
     ...(i ? [{ x: tracks[i], color: css(COL[S.mode][i]) }] : [{ x: tracks[0], color: css('--ink-3') }]),
   ]);
-  /* 雑音だけの区間（静かな区間から σ を測るとき） */
-  q.hidden = !(S.mode === 'dn' && S.set.sm === 'quiet');
+  /* 雑音だけの区間（雑音を足さずに、雑音だけから σ を測るとき） */
+  q.hidden = !(S.mode === 'dn' && S.set.sm === 'quiet' && S.set.noise === 'none');
   q.style.left = `${(100 * s.quiet[0]) / s.x.length}%`;
   q.style.width = `${(100 * (s.quiet[1] - s.quiet[0])) / s.x.length}%`;
 }

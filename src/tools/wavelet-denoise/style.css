@@ -1,11 +1,11 @@
-/* ウェーブレットで雑音除去と圧縮のページだけのスタイル（共通は src/styles/site.css、入力元の帯は ../audio/style.css） */
+/* ウェーブレット変換での雑音除去と圧縮のページだけのスタイル（共通は src/styles/site.css、入力元の帯は ../audio/style.css） */
 
 /* 枠の並び。スマホは 聴き比べ → 処理 → スカログラム → 式。
    PC は左の列に聴き比べとスカログラム、右の列に処理（案 A） */
 .a-ab{order:1}.a-pr{order:2}.a-sc{order:3}.a-thy{order:4}
 @media (min-width:1000px){
   .tgrid{grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);grid-template-areas:"ab pr" "sc pr" "thy thy";align-items:start}
-  .a-ab{grid-area:ab}.a-sc{grid-area:sc}.a-pr{grid-area:pr;align-self:stretch}.a-thy{grid-area:thy}
+  .a-ab{grid-area:ab}.a-sc{grid-area:sc}.a-pr{grid-area:pr}.a-thy{grid-area:thy}
 }
 
 /* 目的ごとの行: 雑音除去だけ・圧縮だけ */

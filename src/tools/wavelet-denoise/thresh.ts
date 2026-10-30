@@ -82,16 +82,25 @@ export function quietSigma(c: Coeffs, i0: number, i1: number): Float64Array {
   return out;
 }
 
+/** 雑音だけの音の係数から、段ごとの σ を測る（区間を切らずに全体を使う） */
+export const levelSigma = (c: Coeffs): Float64Array => Float64Array.from(c.d, (d) => sigmaMad(d));
+
 /**
  * 段ごとの σ と λ。σ は最も細かい詳細から 1 つ（global）か、段ごとに中央値から（level）か、
- * 雑音だけの区間 quiet = [i0, i1) から段ごとに（quiet）。
+ * 雑音だけから段ごとに（quiet）。quiet の σ は、雑音だけの区間 [i0, i1) か、測っておいた段ごとの σ で渡す。
  * k は λ に掛ける倍率（1 で各規則のまま）。N は信号の長さ（普遍閾値の n）
  */
-export function plan(c: Coeffs, rule: Rule, sm: SigmaMode, k = 1, quiet?: readonly [number, number]): Plan {
+export function plan(
+  c: Coeffs,
+  rule: Rule,
+  sm: SigmaMode,
+  k = 1,
+  quiet?: readonly [number, number] | Float64Array,
+): Plan {
   const J = c.d.length,
     N = c.d.reduce((s, v) => s + v.length, c.a.length),
     g = sigmaMad(c.d[0]),
-    q = sm === 'quiet' && quiet ? quietSigma(c, quiet[0], quiet[1]) : null,
+    q = sm !== 'quiet' || !quiet ? null : quiet instanceof Float64Array ? quiet : quietSigma(c, quiet[0], quiet[1]),
     sig = Float64Array.from({ length: J }, (_, j) => (q ? q[j] : sm === 'level' ? sigmaMad(c.d[j]) : g)),
     lam = new Float64Array(J);
   for (let j = 0; j < J; j++) {

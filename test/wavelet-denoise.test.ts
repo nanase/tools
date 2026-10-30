@@ -241,6 +241,14 @@ describe('音の処理', () => {
       snr(x, denoiseAudio(nz, { ...o, sm: 'global' }).y) + 1,
     );
   });
+  it('無音のない音でも、足した雑音そのものから段ごとに測った σ なら、ピンク雑音で全体の σ より SN 比が高い', () => {
+    const x = clip('drums', 48000, 4),
+      [nz, w] = addNoise(x, 'pink', 10),
+      o = { w: 'db4', J: 8, rule: 'sure', m: 'soft', k: 1, spin: 1 } as const;
+    expect(snr(x, denoiseAudio(nz, { ...o, sm: 'quiet', noise: w }).y)).toBeGreaterThan(
+      snr(x, denoiseAudio(nz, { ...o, sm: 'global' }).y) + 1,
+    );
+  });
   it('同じ 5 % を残すと、打楽器はウェーブレットが DCT・DFT より、持続音は MDCT がウェーブレットより SN 比が高い', () => {
     const s = (k: 'drums' | 'organ', b: 'wav' | 'dct' | 'dft' | 'mdct') => {
       const x = clip(k, fs, 2);

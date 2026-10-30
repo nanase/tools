@@ -14,7 +14,7 @@ import { NOISE, PARAMS, RULE, SHRINK, SIGMA, SPIN, WAV } from '../tools/wavelet-
 import { BASES } from '../tools/wavelet-denoise/run';
 import Theory from '../tools/wavelet-denoise/Theory.astro';
 
-const name = 'ウェーブレットで雑音除去と圧縮';
+const name = 'ウェーブレット変換での雑音除去と圧縮';
 /* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる。原理のページは先頭に */
 const CAT = '音響';
 const related = [
@@ -36,15 +36,15 @@ const SC = [
 ];
 ---
 <SiteLayout title={name} tool={{ id: 'wavelet-denoise', name }} description="ウェーブレットの小さい係数を捨てて戻し、雑音を除いた音と圧縮した音を、原音・取り除いた成分と同じ位置で切り替えて聴き比べます。閾値の規則（VisuShrink・SureShrink・BayesShrink）と、同じ数の係数を残した MDCT・DCT・DFT との違いを、SN 比・ビット数・スカログラムで比べられます。" note="音声はこの端末の中だけで処理し、送信しません。">
-  <PageTitle title={name}>ウェーブレットの係数のうち小さいものを捨てて戻すと、雑音が消え、少ないビットで音を表せます。原音・雑音入り・除いた後・取り除いた成分を、再生を止めずに同じ位置で切り替えて聴き比べられます。圧縮では同じ数の係数を残した MDCT・DCT・DFT と比べます。試しの音のほか、音楽ファイルやマイクで録った数秒も使えます。</PageTitle>
+  <PageTitle title={name}>ウェーブレットの係数のうち小さいものを捨てて戻すと、雑音が消え、少ないビットで音を表せます。原音・雑音入り・除いた後・取り除いた成分を、再生を止めずに同じ位置で切り替えて聴き比べられます。圧縮では同じ数の係数を残した MDCT・DCT・DFT と比べます。サンプル音源のほか、音楽ファイルやマイクで録った数秒も使えます。</PageTitle>
   <div class="mini" data-mini="op" aria-hidden="true"><span>SN 比<b id="m-snr">—</b></span><span>残した<b id="m-kept">—</b></span><span id="m-xl">改善<b id="m-x">—</b></span></div>
 
   <div class="tgrid" id="wd" data-m="dn">
     <Panel hid="hd-ab" title="聴き比べ" class="a-ab" fixed>
       <div slot="aux" class="seg" id="ab-mode" role="group" aria-label="目的"><button type="button" data-v="dn" aria-pressed="true" title="雑音を足して、小さい係数を閾値で捨てる">雑音除去</button><button type="button" data-v="cp" aria-pressed="false" title="大きい順に係数を残して量子化する">圧縮</button></div>
-      <div class="bar"><span class="bl" id="ab-src-l">入力</span><div class="seg" id="ab-src" data-nosave role="group" aria-labelledby="ab-src-l"><button type="button" data-v="test" aria-pressed="true" title="この端末の中で作る 3 秒の音（頭に 0.5 秒の無音）">試しの音</button><button type="button" data-v="file" aria-pressed="false" title="WAV・MP3・FLAC など。先頭 10 秒">ファイル</button><button type="button" data-v="mic" aria-pressed="false" title="押している間（最大 10 秒）録る">マイク</button></div></div>
+      <div class="bar"><span class="bl" id="ab-src-l">入力</span><div class="seg" id="ab-src" data-nosave role="group" aria-labelledby="ab-src-l"><button type="button" data-v="test" aria-pressed="true" title="この端末の中で作る 4 秒の音（そのまま繰り返せる長さ）">サンプル音源</button><button type="button" data-v="file" aria-pressed="false" title="WAV・MP3・FLAC など。先頭 10 秒">ファイル</button><button type="button" data-v="mic" aria-pressed="false" title="押している間（最大 10 秒）録る">マイク</button></div></div>
       <div class="ptab" id="ab-tab" data-src="test">
-        <ChoiceRow k="clip" name="試しの音" choices={CLIPS} value="drums" layout="chips" wide />
+        <ChoiceRow k="clip" name="サンプル音源" choices={CLIPS} value="drums" layout="chips" wide />
         <div class="prow" id="p-file">
           <div class="c-sym" aria-hidden="true"></div>
           <div class="c-name"><span class="pn">ファイル</span><p class="desc tip" role="tooltip" hidden>WAV・MP3・FLAC など。先頭 10 秒をモノラルにして使います。この枠へ落としても読み込めます</p></div>

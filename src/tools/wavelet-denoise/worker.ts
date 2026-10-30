@@ -114,8 +114,9 @@ function scalo(x: Float32Array): Scalo {
 function dn(j: DnJob): DnOut {
   const s = j.set,
     x = src.x,
-    noisy = s.noise === 'none' ? x : addNoise(x, s.noise, s.snrIn)[0],
-    o = denoiseAudio(noisy, { ...s, quiet: src.quiet }),
+    [noisy, noise] = s.noise === 'none' ? [x, undefined] : addNoise(x, s.noise, s.snrIn),
+    /* 雑音だけから測るとき: 足した雑音があればそれを、なければ音の中で最も静かな区間を使う */
+    o = denoiseAudio(noisy, { ...s, noise, quiet: src.quiet }),
     keptJ = Float64Array.from(o.c.d, (d, k) => {
       let n = 0;
       for (const v of d) if (Math.abs(v) > o.lam[k]) n++;

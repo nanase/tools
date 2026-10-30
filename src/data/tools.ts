@@ -367,7 +367,7 @@ export const TOOLS: Tool[] = [
   {
     id: 'wavelet-denoise',
     c: '音響',
-    t: 'ウェーブレットで雑音除去と圧縮',
+    t: 'ウェーブレット変換での雑音除去と圧縮',
     d: 'ウェーブレットの係数を捨てて戻し、雑音を除いた音と圧縮した音を元の音と聴き比べます。',
     ic: 'wd',
     k: 'wavelet ウェーブレット 雑音除去 ノイズ除去 denoise denoising noise reduction 圧縮 compression 閾値 threshold 硬い閾値 柔らかい閾値 hard soft shrinkage 縮小 visushrink sureshrink bayesshrink sure 普遍閾値 universal threshold donoho johnstone cycle spinning 量子化 quantization ビット bit エントロピー entropy jpeg 2000 dct dft mdct aac mp3 フーリエ fourier sn 比 snr スカログラム scalogram 聴き比べ 音 audio マイク 録音 数学 math',
