@@ -1,11 +1,12 @@
 /**
  * 雷鳴のページの音（DOM に依存しない）: 要素ごとの N 波を届く時刻に足し、区間ごとに距離の分の空気の吸収を掛ける。
- * 区間の中の N 波を線形に足すので、区間の向きによる指向性（横から聞くと鋭く、端から聞くとなまる）は足し合わせから出る
+ * 区間の中の N 波を線形に足すので、区間の向きによる指向性（横から聞くと鋭く、端から聞くとなまる）は足し合わせから出る。
+ * 要素の N 波は、隣の要素との届く時刻の差の幅にならして足す（放電路を点の列でなく、つながった線として聞く）
  */
 import { AIR_N, type Air, AirFilter, airPole } from '../../lib/air';
 import { fft } from '../biquad/filter';
 import type { Elements } from './path';
-import { addNWave } from './shock';
+import { addNWaveBox } from './shock';
 
 export interface Wave {
   /** 音圧 [Pa] */
@@ -51,28 +52,41 @@ export function render(el: Elements, air: Air, fs: number, vias?: ReadonlySet<nu
   };
   for (let k = 0; k < el.nSeg; k++) maxTail = Math.max(maxTail, (TAIL_TAU * AIR_N) / (1 - pole(el.segR[k])));
   const out = new Float64Array(Math.ceil((tMax - t0) * fs + maxTail) + 1);
-  let buf = new Float64Array(1024);
+  let buf = new Float64Array(1024),
+    wb = new Float64Array(64);
   for (let k = 0; k < el.nSeg; k++) {
     if (vias && !vias.has(el.segVia[k])) continue;
     const a = el.segStart[k],
       b = el.segEnd[k],
       T = el.segT[k] * fs;
+    /* 要素が受け持つ時間の幅 [標本]: 隣の要素との届く時刻の差（両隣があれば小さい方） */
+    if (wb.length < b - a) wb = new Float64Array(2 * (b - a));
     let lo = Number.POSITIVE_INFINITY,
-      hi = 0;
+      hi = 0,
+      wmax = 0;
     for (let i = a; i < b; i++) {
       lo = Math.min(lo, el.t[i]);
       hi = Math.max(hi, el.t[i]);
+      const dp = i > a ? Math.abs(el.t[i] - el.t[i - 1]) : Number.POSITIVE_INFINITY,
+        dn = i + 1 < b ? Math.abs(el.t[i + 1] - el.t[i]) : Number.POSITIVE_INFINITY,
+        W = Math.min(dp, dn);
+      wb[i - a] = Number.isFinite(W) ? W * fs : 0;
+      wmax = Math.max(wmax, wb[i - a]);
     }
     const p = pole(el.segR[k]),
-      n0 = Math.floor((lo - t0) * fs) - 1,
-      len = Math.ceil((hi - lo) * fs + T + (TAIL_TAU * AIR_N) / (1 - p)) + 3;
+      /* 前に箱の半分、後ろに N 波と箱の半分の余白 */
+      n0 = Math.floor((lo - t0) * fs - wmax / 2) - 1,
+      len = Math.ceil((hi - lo) * fs + T + wmax + (TAIL_TAU * AIR_N) / (1 - p)) + 3;
     if (buf.length < len) buf = new Float64Array(len * 2);
     buf.fill(0, 0, len);
     const local = buf.subarray(0, len);
-    for (let i = a; i < b; i++) addNWave(local, (el.t[i] - t0) * fs - n0, T, el.p[i]);
+    for (let i = a; i < b; i++) addNWaveBox(local, (el.t[i] - t0) * fs - n0, T, el.p[i], wb[i - a]);
     f.reset();
     f.p = p;
-    for (let n = 0; n < len && n0 + n < out.length; n++) out[n0 + n] += f.step(local[n]);
+    for (let n = 0; n < len && n0 + n < out.length; n++) {
+      const v = f.step(local[n]);
+      if (n0 + n >= 0) out[n0 + n] += v;
+    }
   }
   let peak = 0;
   const y = new Float32Array(out.length);

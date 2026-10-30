@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { absorption, soundSpeed } from '../src/lib/air';
 import { type Branch, branchLength, CH0, makeChannel, turnAngles } from '../src/tools/thunder/channel';
+import type { Elements } from '../src/tools/thunder/path';
 import {
   arrivalHistogram,
   audibleRange,
@@ -13,6 +14,7 @@ import {
 } from '../src/tools/thunder/path';
 import {
   addNWave,
+  addNWaveBox,
   airDensity,
   fewPeak,
   LINE_G,
@@ -92,6 +94,27 @@ describe('衝撃波と N 波', () => {
         im -= y[n] * Math.sin((2 * Math.PI * k * n) / N);
       }
       expect(Math.hypot(re, im) / nSpectrum(k / N, T, P)).toBeCloseTo(1, 2);
+    }
+  });
+  it('幅 W にならした N 波は面積 0・正の側も N 波と同じ、DFT は N 波のスペクトルに箱の sinc を掛けたもの', () => {
+    const N = 1 << 14,
+      T = 96.3,
+      P = 2,
+      W = 17.6,
+      y = new Float64Array(N);
+    addNWaveBox(y, 300.37, T, P, W);
+    let sum = 0;
+    for (const v of y) sum += v;
+    expect(sum).toBeCloseTo(0, 9);
+    for (const k of [20, 60, 200]) {
+      let re = 0,
+        im = 0;
+      for (let n = 0; n < N; n++) {
+        re += y[n] * Math.cos((2 * Math.PI * k * n) / N);
+        im -= y[n] * Math.sin((2 * Math.PI * k * n) / N);
+      }
+      const x = (Math.PI * k * W) / N;
+      expect(Math.hypot(re, im) / (nSpectrum(k / N, T, P) * Math.abs(Math.sin(x) / x))).toBeCloseTo(1, 2);
     }
   });
   it('N 波は最初の 1 km で 2 倍に伸び、その先は伸びない（Few 1986）', () => {
@@ -210,23 +233,59 @@ describe('波形', () => {
       end = render(elements([line([-50, 0, 0], [50, 0, 0], 5e5, 1)], { ...FREE, dist: 1000, ear: 0 }), FREE.air, FS);
     expect(side.peak / end.peak).toBeGreaterThan(5);
   });
+  it('並んだ要素の分け方に音が依らない（点の列が出す 1/Δt の音がない）', () => {
+    /* 届く時刻が Δt ずつずれる要素の列を、n 個と 4n 個（山は 1/4）で作って比べる */
+    const T = 0.003,
+      span = 0.04,
+      make = (n: number): Elements => {
+        const t = Float64Array.from({ length: n }, (_, i) => 1 + ((i + 0.5) / n) * span);
+        return {
+          n,
+          t,
+          r: new Float64Array(n).fill(300),
+          p: new Float64Array(n).fill(40 / n),
+          dl: new Float64Array(n).fill(1),
+          xyz: new Float64Array(3 * n),
+          via: new Uint8Array(n),
+          br: new Uint16Array(n),
+          nSeg: 1,
+          segStart: Uint32Array.of(0),
+          segEnd: Uint32Array.of(n),
+          segT: Float64Array.of(T),
+          segR: Float64Array.of(300),
+          segVia: Uint8Array.of(0),
+        };
+      },
+      /* 4 個ずつで Δt = 10 ms（100 Hz の列）。点のままだと 100 Hz とその倍音が立つ */
+      a = render(make(4), FREE.air, FS),
+      b = render(make(16), FREE.air, FS),
+      /* 波形の先頭は最初の要素の時刻で決まるので、そろえて比べる */
+      k = Math.round((a.t0 - b.t0) * FS);
+    let e = 0,
+      d = 0;
+    for (let i = 0; i < b.y.length; i++) {
+      const u = i - k < 0 || i - k >= a.y.length ? 0 : a.y[i - k];
+      e += b.y[i] ** 2;
+      d += (u - b.y[i]) ** 2;
+    }
+    expect(d / e).toBeLessThan(0.01);
+  });
   it('遠いほど高い音が減る（空気の吸収）', () => {
     const ch = [line([0, 0, 0], [0, 0, 2000], 5e5, 40)],
-      centroid = (d: number) => {
+      /* 300 Hz より上のエネルギーの割合 [dB] */
+      high = (d: number) => {
         const w = render(elements(ch, { ...FREE, dist: d }), FREE.air, FS),
           s = spectrum(w.y, FS);
         let a = 0,
           b = 0;
         for (let k = 1; k < s.f.length; k++) {
           const p = 10 ** (s.db[k] / 10);
-          a += s.f[k] * p;
+          if (s.f[k] > 300) a += p;
           b += p;
         }
-        return a / b;
+        return 10 * Math.log10(a / b);
       };
-    const near = centroid(500),
-      far = centroid(8000);
-    expect(far).toBeLessThan(near * 0.7);
+    expect(high(8000)).toBeLessThan(high(500) - 10);
     /* 8 km で 1 kHz は 30 dB 以上減る */
     expect(absorption(1000) * 8000).toBeGreaterThan(30);
   });

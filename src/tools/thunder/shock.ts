@@ -127,3 +127,32 @@ export function addNWave(y: Float64Array, t0: number, T: number, P: number): voi
     prev = next;
   }
 }
+
+/** nIntegral の時間積分 P(τ²/2 − τ³/(3T))（0 ≤ τ ≤ T。先は P T²/6 のまま） */
+const nIntegral2 = (tau: number, T: number, P: number): number => {
+  if (tau <= 0) return 0;
+  const u = Math.min(tau, T);
+  return P * ((u * u) / 2 - (u * u * u) / (3 * T));
+};
+
+/**
+ * 時刻を幅 W [標本] にならした N 波を足す: 中心が t0 [標本] の幅 W の箱と N 波のたたみ込み（面積は N 波と同じ）。
+ * 放電路の 1 本の線から届く N 波を、要素ごとの点ではなく、要素が受け持つ長さに広げて足す。
+ * 点のまま足すと、要素の間隔 Δt の列が 1/Δt の音（区間ごとに高さが変わり、さえずりのように聞こえる）を作る
+ */
+export function addNWaveBox(y: Float64Array, t0: number, T: number, P: number, W: number): void {
+  if (W < 1e-3) {
+    addNWave(y, t0, T, P);
+    return;
+  }
+  const a = t0 - W / 2,
+    n0 = Math.max(0, Math.floor(a)),
+    n1 = Math.min(y.length - 1, Math.ceil(a + T + W)),
+    J = (n: number) => nIntegral2(n - a, T, P) - nIntegral2(n - a - W, T, P);
+  let prev = J(n0);
+  for (let n = n0; n <= n1; n++) {
+    const next = J(n + 1);
+    y[n] += (next - prev) / W;
+    prev = next;
+  }
+}
