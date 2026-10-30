@@ -33,9 +33,9 @@ const ln = (id: string, label: string) =>
 </dl>
 <p>連続は積分、離散は和<Fragment set:html={rf(1)} /><Fragment set:html={rf(5)} />。長さ <math><mi>N</mi></math> と <math><mi>M</mi></math> の離散の信号の畳み込みは <math><mi>N</mi><mo>+</mo><mi>M</mi><mo>−</mo><mn>1</mn></math> 点<Fragment set:html={rf(1)} />。</p>
 
-<h3>出力の側から: 裏返して滑らせる</h3>
+<h3>出力の側から: 反転して滑らせる</h3>
 <ol class="flow">
-  <li>核を裏返す <math set:html={`${fn('h', it('τ'))}<mo>→</mo>${fn('h', '<mo>−</mo><mi>τ</mi>')}`} /></li>
+  <li>核を反転 <math set:html={`${fn('h', it('τ'))}<mo>→</mo>${fn('h', '<mo>−</mo><mi>τ</mi>')}`} /></li>
   <li><math><mi>t</mi></math> だけずらす <math set:html={fn('h', tm)} /></li>
   <li>入力と掛ける</li>
   <li>面積（和）が <math set:html={fn('y', it('t'))} /></li>
@@ -83,7 +83,7 @@ const ln = (id: string, label: string) =>
   <math display="block" set:html={`${sq('r', it('n'))}<mo>=</mo>${sum('<mi>m</mi>')}${sq('x', '<mi>n</mi><mo>+</mo><mi>m</mi>')}<mspace width="0.2em"/>${sq('h', it('m'))}<mo>=</mo><mo stretchy="false">(</mo><mi>x</mi>${conv}<mover><mi>h</mi><mo>~</mo></mover><mo stretchy="false">)</mo><mo stretchy="false">[</mo><mi>n</mi><mo stretchy="false">]</mo><mo>,</mo><mspace width="1em"/>${sq('<mover><mi>h</mi><mo>~</mo></mover>', it('m'))}<mo>=</mo>${sq('h', '<mo>−</mo><mi>m</mi>')}`} />
 </div>
 <ul class="tl">
-  <li>核を裏返さずに滑らせると相関</li>
+  <li>核を反転せずに滑らせると相関</li>
   <li>畳み込みニューラルネットワークの「畳み込み」の多くは相関（式 9.6）<Fragment set:html={rf(7)} /></li>
   <li>左右対称の核（矩形・ガウス）では同じ。指数・こだまでは向きが逆になる</li>
 </ul>

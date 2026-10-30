@@ -57,7 +57,7 @@ describe('離散の畳み込みの和（Smith 6 章・7 章）', () => {
     const y = conv(x, h);
     for (let n = 0; n < y.v.length; n++) expect(slide(x, h, n).area).toBeCloseTo(y.v[n], 12);
   });
-  it('相関は核を裏返した畳み込み（Goodfellow ほか 9.1 節の式 9.6）', () => {
+  it('相関は核を反転した畳み込み（Goodfellow ほか 9.1 節の式 9.6）', () => {
     const r = corr(x, h);
     /* r[n] = Σ_m x[n + m] h[m] */
     for (let i = 0; i < r.v.length; i++) {

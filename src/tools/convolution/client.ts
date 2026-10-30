@@ -54,7 +54,7 @@ flipBtn.addEventListener('click', () => {
   flipOn = !flipOn;
   flipBtn.setAttribute('aria-pressed', String(flipOn));
   flipBtn.querySelector('.led')?.classList.toggle('on', flipOn);
-  flipBtn.title = flipOn ? '押すと裏返さずに滑らせる（相関）' : '押すと裏返して滑らせる（畳み込み）';
+  flipBtn.title = flipOn ? '押すと反転せずに滑らせる（相関）' : '押すと反転して滑らせる（畳み込み）';
   update();
 });
 
@@ -224,7 +224,7 @@ function drawStatic(): void {
     txt($('#o-mu'), '—');
     txt($('#o-var'), '—');
   }
-  $('#lg-h').textContent = flipOn ? '核 h（裏返して t へ）' : '核 h（裏返さずに t へ）';
+  $('#lg-h').textContent = flipOn ? '核 h（反転して t へ）' : '核 h（反転せずに t へ）';
 }
 function update(): void {
   const mode = modeCh.value;

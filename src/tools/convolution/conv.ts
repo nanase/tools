@@ -33,12 +33,12 @@ export function conv(x: Sig, h: Sig): Sig {
   return { t0: x.t0 + h.t0, dt: x.dt, v: y };
 }
 
-/** 相互相関 r(t) = ∫ x(τ) h(τ − t) dτ … ではなく、h を裏返さずに重ねる形 r(t) = ∫ x(τ + t) h(τ) dτ（Goodfellow ほかの式 9.6 の 1 次元） */
+/** 相互相関 r(t) = ∫ x(τ) h(τ − t) dτ … ではなく、h を反転せずに重ねる形 r(t) = ∫ x(τ + t) h(τ) dτ（Goodfellow ほかの式 9.6 の 1 次元） */
 export function corr(x: Sig, h: Sig): Sig {
   return conv(x, flip(h));
 }
 
-/** 時間を裏返す: h(t) → h(−t) */
+/** 時間を反転: h(t) → h(−t) */
 export function flip(h: Sig): Sig {
   const M = h.v.length,
     v = new Float64Array(M);

@@ -303,7 +303,7 @@ export const TOOLS: Tool[] = [
     id: 'convolution',
     c: '数学',
     t: '畳み込み',
-    d: '核を裏返して滑らせ、重なりの面積が出力になる様子を連続と離散で見ます。',
+    d: '核を反転して滑らせ、重なりの面積が出力になる様子を連続と離散で見ます。',
     ic: 'cv',
     k: 'convolution 畳み込み たたみこみ 合成積 convolve kernel カーネル 核 インパルス応答 impulse response 線形時不変 lti 移動平均 moving average 相関 相互相関 cross-correlation cnn 畳み込み定理 convolution theorem フーリエ fourier fft 円状畳み込み circular convolution 確率 サイコロ dice 中心極限定理 central limit theorem 数学 math',
   },

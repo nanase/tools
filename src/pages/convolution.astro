@@ -25,15 +25,15 @@ const W = (k: string) => {
 };
 const SH = SHAPES.map(([v, l, t]) => [v, l, t] as const);
 ---
-<SiteLayout title={name} tool={{ id: 'convolution', name }} description="核を裏返して入力の上を滑らせ、重なった部分の積の面積が出力の 1 点になる様子を、連続と離散で動かして見ます。入力の各点が核の写しを出して重なる見方、相関、サイコロの和、周波数の積も見られます。" note="連続の信号は刻み 0.01 の格子で近似した計算です。">
-  <PageTitle title={name}>核 <i>h</i> を裏返して入力 <i>x</i> の上を滑らせ、重なった部分の積の面積を出力 <i>y</i> の 1 点にします。入力と核は形を選ぶか、図をなぞって描けます。</PageTitle>
+<SiteLayout title={name} tool={{ id: 'convolution', name }} description="核を反転して入力の上を滑らせ、重なった部分の積の面積が出力の 1 点になる様子を、連続と離散で動かして見ます。入力の各点が核の写しを出して重なる見方、相関、サイコロの和、周波数の積も見られます。" note="連続の信号は刻み 0.01 の格子で近似した計算です。">
+  <PageTitle title={name}>核 <i>h</i> を反転して入力 <i>x</i> の上を滑らせ、重なった部分の積の面積を出力 <i>y</i> の 1 点にします。入力と核は形を選ぶか、図をなぞって描けます。</PageTitle>
   <div class="mini" aria-hidden="true"><span><i>t</i><b id="m-t"></b></span><span><i>y</i>(<i>t</i>)<b id="m-yt"></b></span><span>∫<i>y</i><b id="m-ay"></b></span></div>
 
   <div class="tgrid">
     <Panel hid="hd-fig" title="2 つの見方" class="a-fig" fixed>
       <div slot="aux" class="cv-aux">
         <div class="seg" id="cv-view" role="group" aria-label="見方">
-          <button type="button" data-v="out" aria-pressed="true" title="核を裏返して滑らせ、重なりの面積を出力にする">出力の側から</button>
+          <button type="button" data-v="out" aria-pressed="true" title="核を反転して滑らせ、重なりの面積を出力にする">出力の側から</button>
           <button type="button" data-v="in" aria-pressed="false" title="入力の各点が核の写しを出し、それが重なって出力になる">入力の側から</button>
         </div>
         <div class="seg" id="cv-mode" role="group" aria-label="連続と離散">
@@ -44,11 +44,11 @@ const SH = SHAPES.map(([v, l, t]) => [v, l, t] as const);
       <div id="v-out">
         <div class="sbar">
           <span class="stag"><i class="sw cv-sw-x" aria-hidden="true"></i>入力 x</span>
-          <span class="stag"><i class="sw cv-sw-h" aria-hidden="true"></i><span id="lg-h">核 h（裏返して t へ）</span></span>
+          <span class="stag"><i class="sw cv-sw-h" aria-hidden="true"></i><span id="lg-h">核 h（反転して t へ）</span></span>
           <span class="stag"><i class="sw cv-sw-p" aria-hidden="true"></i>積</span>
           <span class="stag"><i class="sw" aria-hidden="true"></i>出力 y</span>
         </div>
-        <div class="scope"><svg id="f-ov" role="img" aria-label="入力と、裏返して滑らせた核と、その積"></svg></div>
+        <div class="scope"><svg id="f-ov" role="img" aria-label="入力と、反転して滑らせた核と、その積"></svg></div>
       </div>
       <div id="v-in" hidden>
         <div class="sbar">
@@ -99,7 +99,7 @@ const SH = SHAPES.map(([v, l, t]) => [v, l, t] as const);
         <p class="cv-hint" aria-hidden="true">✎ なぞって描く</p>
       </Panel>
       <Panel hid="hd-h" title="核 h" class="a-h">
-        <button slot="aux" type="button" class="tg" id="cv-flip" aria-pressed="true" title="押すと裏返さずに滑らせる（相関）"><span class="led on" aria-hidden="true"></span>裏返す</button>
+        <button slot="aux" type="button" class="tg" id="cv-flip" aria-pressed="true" title="押すと反転せずに滑らせる（相関）"><span class="led on" aria-hidden="true"></span>反転</button>
         <div class="ptab">
           <ChoiceRow k="hs" name="形" choices={SH} value="exp" layout="chips" />
           <ParamRow d={W('ha')} />
