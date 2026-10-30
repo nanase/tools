@@ -37,13 +37,13 @@ export class ThunderAudio {
   }
 
   /**
-   * 波形 y [Pa]（AudioContext と同じ標本化周波数）を鳴らす。y[0] は光ってから wait [s] 後。
+   * 波形 y [Pa]（標本化周波数 fs）を鳴らす。y[0] は光ってから wait [s] 後。
    * 戻り値は光った時刻（AudioContext の目盛り [s]）
    */
-  play(y: Float32Array, wait: number, peak: number, lv: Level, vol: number): number {
+  play(y: Float32Array, fs: number, wait: number, peak: number, lv: Level, vol: number): number {
     const c = this.context(),
       flash = c.currentTime + LEAD,
-      buf = c.createBuffer(1, y.length, c.sampleRate);
+      buf = c.createBuffer(1, y.length, fs);
     this.stop();
     buf.copyToChannel(y as Float32Array<ArrayBuffer>, 0);
     const s = c.createBufferSource(),

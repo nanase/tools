@@ -1,0 +1,37 @@
+/* 雷鳴のページだけのスタイル（共通は src/styles/site.css）。デザイン案 A（断面が主役） */
+
+/* 枠の並び。スマホは 断面 → 雷と聞き手 → 計算結果 → 地面と山 → 音 → 式。
+   PC は上に断面（全幅）、左の列に入力の枠、右の列に計算結果と音、その下に式（全幅） */
+.a-fig{order:1}.a-src{order:2}.a-out{order:3}.a-env{order:4}.a-snd{order:5}.a-thy{order:6}
+@media (min-width:1000px){
+  .tgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr);grid-template-areas:"fig fig" "c1 c2" "thy thy";align-items:start}
+  .a-fig{grid-area:fig}.c1{grid-area:c1}.c2{grid-area:c2}.a-thy{grid-area:thy}
+}
+.a-out{container-type:inline-size}
+.m-sub{display:block;font:500 12px/1.4 var(--sans);color:var(--ink-3)}
+
+/* 断面の色: 空・雲・地面・山・光った瞬間 */
+.tgrid{--th-sky:#e4e9ec;--th-cloud:#cdd4d9;--th-earth:#d3cbb9;--th-hill:#a99f8a;--th-flash:#ffffff}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .tgrid{--th-sky:#0e1418;--th-cloud:#252c32;--th-earth:#2a2620;--th-hill:#4a4236;--th-flash:#dfe8ff}}
+:root[data-theme="dark"] .tgrid{--th-sky:#0e1418;--th-cloud:#252c32;--th-earth:#2a2620;--th-hill:#4a4236;--th-flash:#dfe8ff}
+
+.th-cv{border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--screen);box-shadow:inset 0 1px 3px rgb(0 0 0 / .19)}
+.th-cv canvas{display:block;width:100%}
+.vh{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:2px 10px;margin:0 0 5px;font-size:12.5px;font-weight:700;color:var(--ink-2)}
+.vh span{font-weight:400;color:var(--ink-3)}
+.th-cv+.vh{margin-top:10px}
+.th-sec{cursor:ew-resize;touch-action:pan-y}
+.th-sec.drag{cursor:grabbing}
+.sw.th-sw-t{width:22px;height:6px;background:linear-gradient(90deg,var(--ch1),var(--ch2))}
+.sw.th-sw-r{background:var(--grid-2)}
+.vh .sw{vertical-align:middle;margin-left:6px}
+.th-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--accent)}
+.th-hint{color:var(--ink-3)}
+.th-st{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:12px}
+.th-sph{margin-top:14px}
+
+/* 光らせる: 時間の帯（灰の所は光ってから音が届くまで） */
+.a-fig .tp{margin-top:12px;grid-template-columns:auto auto minmax(0,1fr)}
+.th-wait{position:absolute;left:0;top:9px;width:0;height:6px;border-radius:3px 0 0 3px;background:var(--grid-2);opacity:.6}
+.a-fig .tp-fill{background:var(--accent)}
+@media (pointer:coarse){.th-wait{top:13px}}
