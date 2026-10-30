@@ -23,6 +23,7 @@ export const CATS = [
   '楽器・調律',
   '画像・光学',
   '天文',
+  '数学',
   'SVG',
 ];
 export const TOOLS: Tool[] = [
@@ -297,6 +298,14 @@ export const TOOLS: Tool[] = [
     d: '音律ごとに和音を鳴らし、うなりの速さを比べます。',
     ic: 'tm',
     k: 'temperament tuning 音律 調律 うなり beat beats 平均律 equal temperament 純正律 just intonation ピタゴラス pythagorean ミーントーン meantone ヴェルクマイスター werckmeister キルンベルガー kirnberger ヴァロッティ vallotti ヤング young 古典調律 well temperament 和音 chord 長三和音 3 度 5 度 部分音 倍音 partial harmonic コンマ comma ウルフ wolf 非調和性 inharmonicity ストレッチ stretch ピアノ piano オルガン organ セント cent',
+  },
+  {
+    id: 'fft',
+    c: '数学',
+    t: 'FFT',
+    d: 'バタフライ図の上を値が流れる様子と、N² と N log N の演算の数を比べます。',
+    ic: 'ff',
+    k: 'fft 高速フーリエ変換 fast fourier transform dft 離散フーリエ変換 バタフライ butterfly cooley tukey クーリー テューキー 時間間引き decimation in time dit 周波数間引き decimation in frequency dif gentleman sande ビット反転 bit reversal 並べ替え 回転因子 twiddle factor 基数 2 radix-2 基数 4 分割基数 split radix 計算量 演算量 n log n 複素数 complex gauss ガウス 数学 math',
   },
 ];
 /** 準備中を後ろへ */

@@ -266,6 +266,10 @@ describe('演算の数', () => {
       expect([o.mul, o.add]).toEqual([2 * N * m - 7 * N + 12, 3 * N * m - 3 * N + 4]);
     }
   });
+  it('4/2 の数は Burrus の表 8.5.1 と同じ（N = 16 で 28・148、N = 1024 で 13324・27652）', () => {
+    expect(fftOps(16, 'dit', '4/2', false)).toMatchObject({ mul: 28, add: 148 });
+    expect(fftOps(1024, 'dit', '4/2', false)).toMatchObject({ mul: 13324, add: 27652 });
+  });
   it('分割基数の式は N = 16 で 20・148、N = 1024 で 7172・27652', () => {
     expect(splitRadixFormula(16)).toEqual([20, 148]);
     expect(splitRadixFormula(1024)).toEqual([7172, 27652]);
