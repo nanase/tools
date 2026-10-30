@@ -97,13 +97,13 @@ export const LAPSE: ParamDef = listed({
 });
 
 const dbIn = (v: number): string => minus(String(Math.round(v)));
-/** 音量 [dB]。0 dB で波形の最大が −6 dBFS */
+/** 音量 [dB]。雷ごとに、聞こえやすい帯域（100 Hz より上）の強さをそろえる */
 export const VOL: ParamDef = {
   k: 'vol',
   nm: '音量',
   sym: '',
   name: '音量',
-  sub: 'スピーカーへ出す大きさ。雷ごとに波形の最大をそろえる（0 dB で最大が −6 dBFS）',
+  sub: 'スピーカーへ出す大きさ。雷ごとに 100 Hz より上の音の強さをそろえ、近い雷の鋭い山はリミッターで抑える',
   unit: 'dB',
   min: -40,
   max: 0,

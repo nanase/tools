@@ -1,15 +1,13 @@
 /**
- * 雷鳴のページの音を鳴らす: 作った波形（音圧 [Pa]）を AudioBufferSourceNode で流す。
- * 光った時刻を決めてから、届くまでの時間だけ待って鳴らす（待たずに鳴らすこともできる）
+ * 雷鳴のページの音を鳴らす: 作った左右の波形（音圧 [Pa]）を AudioBufferSourceNode で流す。
+ * 光った時刻を決めてから、届くまでの時間だけ待って鳴らす（待たずに・途中から鳴らすこともできる）。
+ * 出口に速いリミッターを置き、近い雷の「バリッ」の山だけを抑える
  */
 
 /** 鳴らし直すときに前の音を消す時間 [s] */
 const FADE = 0.05;
 /** 光るまでの余裕 [s] */
 const LEAD = 0.05;
-
-/** 大きさの合わせ方: 波形の最大をそろえる・距離による差を残す（基準の音圧 ref [Pa] を 0 dBFS の 1/4 にする） */
-export type Level = { kind: 'peak' } | { kind: 'abs'; ref: number };
 
 export class ThunderAudio {
   private ctx: AudioContext | null = null;
@@ -25,7 +23,13 @@ export class ThunderAudio {
       const c = new AudioContext();
       this.ctx = c;
       this.out = c.createGain();
-      this.out.connect(c.destination);
+      const lim = c.createDynamicsCompressor();
+      lim.threshold.value = -3;
+      lim.knee.value = 0;
+      lim.ratio.value = 20;
+      lim.attack.value = 0.001;
+      lim.release.value = 0.2;
+      this.out.connect(lim).connect(c.destination);
     }
     if (this.ctx.state === 'suspended') void this.ctx.resume();
     return this.ctx;
@@ -37,23 +41,24 @@ export class ThunderAudio {
   }
 
   /**
-   * 波形 y [Pa]（標本化周波数 fs）を鳴らす。y[0] は光ってから wait [s] 後。
+   * 左右の波形 yl・yr [Pa]（標本化周波数 fs）を gain 倍して鳴らす。y[0] は光ってから wait [s] 後（負なら途中から）。
    * 戻り値は光った時刻（AudioContext の目盛り [s]）
    */
-  play(y: Float32Array, fs: number, wait: number, peak: number, lv: Level, vol: number): number {
+  play(yl: Float32Array, yr: Float32Array, fs: number, wait: number, gain: number): number {
     const c = this.context(),
       flash = c.currentTime + LEAD,
-      buf = c.createBuffer(1, y.length, fs);
+      buf = c.createBuffer(2, yl.length, fs);
     this.stop();
-    buf.copyToChannel(y as Float32Array<ArrayBuffer>, 0);
+    buf.copyToChannel(yl as Float32Array<ArrayBuffer>, 0);
+    buf.copyToChannel(yr as Float32Array<ArrayBuffer>, 1);
     const s = c.createBufferSource(),
-      g = c.createGain(),
-      scale = lv.kind === 'peak' ? 0.5 / Math.max(peak, 1e-9) : 0.25 / lv.ref;
+      g = c.createGain();
     s.buffer = buf;
     s.connect(g);
-    g.gain.value = scale * 10 ** (vol / 20);
+    g.gain.value = gain;
     g.connect(this.out as GainNode);
-    s.start(flash + Math.max(0, wait));
+    if (wait >= 0) s.start(flash + wait);
+    else s.start(flash, -wait);
     const item = { s, g };
     this.live.push(item);
     s.onended = () => {

@@ -19,6 +19,9 @@ export interface Pal {
   earth: string;
   hill: string;
   flash: string;
+  echo: string;
+  wall: string;
+  roof: string;
   mono: string;
 }
 export function palette(el: Element): Pal {
@@ -38,6 +41,9 @@ export function palette(el: Element): Pal {
     earth: v('--th-earth'),
     hill: v('--th-hill'),
     flash: v('--th-flash'),
+    echo: v('--th-echo'),
+    wall: v('--th-wall'),
+    roof: v('--th-roof'),
     mono: v('--mono'),
   };
 }
@@ -131,7 +137,7 @@ export function sectionView(w: number, h: number, d: number, back: number, xmin:
   };
 }
 
-/** 放電路の点を、届く時刻の順に並べたもの（光らせている間に今届く所を探す） */
+/** 放電路の点を、届く時刻の順に並べたもの（光らせている間に今届く所を探す）。経路ごとに作る */
 export interface Pts {
   n: number;
   t: Float64Array;
@@ -140,9 +146,9 @@ export interface Pts {
   t0: number;
   t1: number;
 }
-export function directPts(r: Reply): Pts {
+export function arrivalPts(r: Reply, vias: readonly number[]): Pts {
   const idx: number[] = [];
-  for (let i = 0; i < r.ev.length; i++) if (r.ev[i] === 0) idx.push(i);
+  for (let i = 0; i < r.ev.length; i++) if (vias.includes(r.ev[i])) idx.push(i);
   idx.sort((a, b) => r.et[a] - r.et[b]);
   const n = idx.length,
     t = new Float64Array(n),
@@ -174,11 +180,17 @@ export const NOW = 0.06;
 
 export interface Section {
   r: Reply;
+  /** 直接届く点と、山で返って届く点 */
   pts: Pts;
+  echo: Pts;
   view: View;
   base: number;
   dist: number;
+  /** 地面で返すか */
+  ground: boolean;
   hill: { x: number; h: number } | null;
+  /** 止まっているときに道すじを描く放電路の点 [m]（雲の底） */
+  src: [number, number];
   pal: Pal;
   /** 波面の音速 [m/s] */
   c: number;
@@ -223,32 +235,79 @@ export function drawSection(cv: HTMLCanvasElement, s: Section, lv: Live, key: st
     });
   });
   g.drawImage(bg, 0, 0, w, h);
-  /* 波面: 放電路の頂点から半径 c·τ（縦横の縮尺が違うので楕円） */
-  if (lv.tau != null && lv.tau > 0) {
-    const r = s.c * lv.tau;
-    g.strokeStyle = p.ch2;
-    g.globalAlpha = 0.08;
-    g.lineWidth = 1;
-    for (const br of s.r.branches)
-      for (let i = 0; i < br.p.length; i += 3 * 12) {
-        g.beginPath();
-        g.ellipse(v.sx(br.p[i]), v.sz(br.p[i + 2]), r * v.kx, r * v.kz, 0, 0, 2 * Math.PI);
-        g.stroke();
+  const gy = v.sz(0),
+    lx = v.sx(s.dist),
+    ly = gy - 12,
+    hx = s.hill ? v.sx(s.hill.x) : w;
+  const tau = lv.tau;
+  if (tau != null && tau > 0) {
+    /* 波面: 放電路の頂点から半径 c·τ（縦横の縮尺が違うので楕円）。地面と山で返った波面は鏡像の点から */
+    const r = s.c * tau,
+      fronts = (cx: (x: number) => number, cz: (z: number) => number, col: string, al: number) => {
+        g.strokeStyle = col;
+        g.globalAlpha = al;
+        g.lineWidth = 1;
+        for (const br of s.r.branches)
+          for (let i = 0; i < br.p.length; i += 3 * 12) {
+            g.beginPath();
+            g.ellipse(cx(br.p[i]), cz(br.p[i + 2]), r * v.kx, r * v.kz, 0, 0, 2 * Math.PI);
+            g.stroke();
+          }
+        g.globalAlpha = 1;
+      };
+    const clip = (x1: number, f: () => void) => {
+      g.save();
+      g.beginPath();
+      g.rect(0, 0, x1, gy);
+      g.clip();
+      f();
+      g.restore();
+    };
+    clip(w, () => {
+      fronts(v.sx, v.sz, p.ch2, 0.08);
+      if (s.ground) fronts(v.sx, (z) => v.sz(-z), p.echo, 0.07);
+    });
+    const hl = s.hill?.x;
+    if (hl != null) clip(hx, () => fronts((x) => v.sx(2 * hl - x), v.sz, p.echo, 0.1));
+    /* 今届いている所: 直接の音と、山で返った音 */
+    const now = (q: Pts, col: string): [number, number, number] => {
+      const a = lower(q.t, tau - NOW),
+        e = lower(q.t, tau + NOW);
+      let sx = 0,
+        sz = 0;
+      g.fillStyle = col;
+      for (let i = a; i < e; i++) {
+        g.fillRect(v.sx(q.x[i]) - 1.8, v.sz(q.z[i]) - 1.8, 3.6, 3.6);
+        sx += q.x[i];
+        sz += q.z[i];
       }
+      return [e - a, sx / Math.max(1, e - a), sz / Math.max(1, e - a)];
+    };
+    now(s.pts, p.accent);
+    if (s.hill) {
+      const [n, ex, ez] = now(s.echo, p.echo);
+      if (n) echoRay(g, s, ex, ez, p.echo, 0.9, false);
+    }
+  } else {
+    /* 止まっているとき: 聞き手への道すじ（雲の底からの直接の音と、山で返る音） */
+    const [x, z] = s.src;
+    g.strokeStyle = p.ink3;
+    g.globalAlpha = 0.5;
+    g.lineWidth = 1;
+    g.beginPath();
+    g.moveTo(v.sx(x), v.sz(z));
+    g.lineTo(lx, ly);
+    g.stroke();
     g.globalAlpha = 1;
-    /* 今届いている所 */
-    const a = lower(s.pts.t, lv.tau - NOW),
-      e = lower(s.pts.t, lv.tau + NOW);
-    g.fillStyle = p.accent;
-    for (let i = a; i < e; i++) g.fillRect(v.sx(s.pts.x[i]) - 1.8, v.sz(s.pts.z[i]) - 1.8, 3.6, 3.6);
+    /* 山で返る音は、崖で返れる低い所（山で返って届く点の真ん中の時刻のもの）から */
+    const m = s.echo.n >> 1;
+    if (s.hill && s.echo.n) echoRay(g, s, s.echo.x[m], s.echo.z[m], p.echo, 0.8, true);
   }
   /* 地面と山 */
-  const gy = v.sz(0);
   g.fillStyle = p.earth;
   g.fillRect(0, gy, w, h - gy);
   if (s.hill) {
-    const hx = v.sx(s.hill.x),
-      top = v.sz(s.hill.h);
+    const top = v.sz(s.hill.h);
     g.fillStyle = p.hill;
     g.beginPath();
     g.moveTo(hx, gy);
@@ -263,9 +322,8 @@ export function drawSection(cv: HTMLCanvasElement, s: Section, lv: Live, key: st
   const stp = niceStep(v.x1 - v.x0);
   for (let x = 0; x <= v.x1 && v.sx(x) < w - 36; x += stp) g.fillText(`${x / 1000}`, v.sx(x) - 3, h - 5);
   g.fillText('km', w - 22, h - 5);
-  /* 落雷点 */
-  g.fillStyle = p.ink;
-  g.fillRect(v.sx(0) - 1, gy, 2, 5);
+  /* 落雷点の家（大きさは図の縮尺によらない絵） */
+  house(g, v.sx(0), gy, p);
   /* 光った瞬間 */
   if (lv.tau != null && lv.tau < 0.25) {
     g.fillStyle = p.flash;
@@ -274,24 +332,82 @@ export function drawSection(cv: HTMLCanvasElement, s: Section, lv: Live, key: st
     g.globalAlpha = 1;
   }
   /* 聞き手 */
-  const lx = v.sx(s.dist);
-  g.fillStyle = p.accent;
-  g.beginPath();
-  g.arc(lx, gy - 5, lv.drag ? 7 : 5, 0, 2 * Math.PI);
-  g.fill();
-  g.strokeStyle = p.accent;
-  g.lineWidth = 1.5;
-  g.beginPath();
-  g.moveTo(lx - 14, gy - 5);
-  g.lineTo(lx - 9, gy - 5);
-  g.moveTo(lx + 9, gy - 5);
-  g.lineTo(lx + 14, gy - 5);
-  g.stroke();
+  person(g, lx, gy, lv.drag ? 1.2 : 1, p.accent);
   g.font = `600 11.5px ${p.mono}`;
   g.fillStyle = p.ink;
   const lab = `${fmtKm(s.dist)} km`,
     tw = g.measureText(lab).width;
-  g.fillText(lab, Math.min(lx + 16, w - tw - 4), gy - 12);
+  g.fillText(lab, Math.min(lx + 12, w - tw - 4), gy - 16);
+}
+
+/** 放電路の点 (x, z) から山の崖で返って聞き手へ届く道すじ（崖より高い所で返るなら描かない） */
+function echoRay(
+  g: CanvasRenderingContext2D,
+  s: Section,
+  x: number,
+  z: number,
+  col: string,
+  al: number,
+  dash: boolean,
+): void {
+  if (!s.hill) return;
+  const v = s.view,
+    H = s.hill.x,
+    /* 崖の鏡像 (2H − x, z) と聞き手を結ぶ線が崖を横切る高さ */
+    u = (H - (2 * H - x)) / (s.dist - (2 * H - x)),
+    zh = z + (0 - z) * u;
+  if (zh > s.hill.h || zh < 0) return;
+  const hx = v.sx(H) - 1,
+    hy = v.sz(zh);
+  g.strokeStyle = col;
+  g.globalAlpha = al;
+  g.lineWidth = 1.2;
+  g.setLineDash(dash ? [4, 3] : []);
+  g.beginPath();
+  g.moveTo(v.sx(x), v.sz(z));
+  g.lineTo(hx, hy);
+  g.lineTo(v.sx(s.dist), v.sz(0) - 12);
+  g.stroke();
+  g.setLineDash([]);
+  g.globalAlpha = 1;
+}
+
+/** 家: 地面の (x, gy) に立つ、幅 24 px の切妻屋根 */
+function house(g: CanvasRenderingContext2D, x: number, gy: number, p: Pal): void {
+  g.fillStyle = p.wall;
+  g.fillRect(x - 9, gy - 12, 18, 12);
+  g.fillStyle = p.roof;
+  g.beginPath();
+  g.moveTo(x - 12.5, gy - 11.5);
+  g.lineTo(x, gy - 22);
+  g.lineTo(x + 12.5, gy - 11.5);
+  g.closePath();
+  g.fill();
+  g.fillStyle = p.sky;
+  g.fillRect(x - 6, gy - 8, 4, 4);
+  g.fillRect(x + 2, gy - 8, 3.5, 8);
+}
+
+/** 棒人間: 足が地面の (x, gy)、高さ 24 px × k */
+function person(g: CanvasRenderingContext2D, x: number, gy: number, k: number, col: string): void {
+  g.strokeStyle = col;
+  g.fillStyle = col;
+  g.lineWidth = 2 * k;
+  g.lineCap = 'round';
+  g.beginPath();
+  g.arc(x, gy - 20.5 * k, 3.5 * k, 0, 2 * Math.PI);
+  g.fill();
+  g.beginPath();
+  g.moveTo(x, gy - 16.5 * k);
+  g.lineTo(x, gy - 8 * k);
+  g.moveTo(x - 4.5 * k, gy);
+  g.lineTo(x, gy - 8 * k);
+  g.lineTo(x + 4.5 * k, gy);
+  g.moveTo(x - 5.5 * k, gy - 10 * k);
+  g.lineTo(x, gy - 14.5 * k);
+  g.lineTo(x + 5.5 * k, gy - 10 * k);
+  g.stroke();
+  g.lineCap = 'butt';
 }
 const niceStep = (span: number): number => {
   const raw = span / 6,
@@ -333,7 +449,7 @@ export function drawHist(cv: HTMLCanvasElement, h: number, s: Track, tau: number
         x = tx(r.h0 + k * r.dt, s.t1, w);
       b.fillStyle = p.ch2;
       b.fillRect(x, h - 2 - a * hh, bw, a * hh);
-      b.fillStyle = p.grid2;
+      b.fillStyle = p.echo;
       b.fillRect(x, h - 2 - (a + q) * hh, bw, q * hh);
     }
   });
@@ -348,7 +464,7 @@ export function drawWave(cv: HTMLCanvasElement, h: number, s: Track, tau: number
     r = s.r;
   const bg = waveLayer.get(key, w, h, (b) => {
     const y = r.y,
-      pk = r.peak || 1,
+      pk = r.ypk || 1,
       mid = (h - 14) / 2,
       amp = mid - 3,
       first = tx(r.first, s.t1, w);

@@ -41,13 +41,14 @@ export interface ChannelSet {
 
 /**
  * 既定: 区間の平均 8 m（LeVine・Gilson 1984、Lacroix ほか 2019）・向きの変化の平均 16°（Hill 1968）・
- * E = 10⁶ J/m（Few 1969）。雲の高さ・枝の数とエネルギー・長さの幅は仮
+ * E = 10⁶ J/m（Few 1969）。雲の高さ・雲の中の長さと向き・枝の数とエネルギー・長さの幅は仮。
+ * 雲の中は聞き手から斜めに遠ざかる向きに 5 km 進め、3 km 先で雷鳴が 10 秒あまり続くようにした
  */
 export const CH0: ChannelSet = {
   seed: 1,
   base: 2000,
-  cloud: 3000,
-  az: 90,
+  cloud: 5000,
+  az: 150,
   lmin: 4,
   lmax: 12,
   turn: 16,

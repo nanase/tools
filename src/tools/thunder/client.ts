@@ -1,6 +1,7 @@
 /**
  * 雷鳴のページの入口: 入力 → 放電路・届く時刻・波形を Worker で計算 → 断面・届く量・波形・スペクトルを描く。
- * 光らせると、光った瞬間から AudioContext の時計で波面を広げ、今届いている所を断面と波形に重ねる
+ * 光らせると、光った瞬間から AudioContext の時計で波面を広げ、今届いている所を断面と波形に重ねる。
+ * 時間の帯を押すかドラッグすると、その時刻の様子を描き、そこから鳴らす（鳴らしている間はすぐ、止まっている間は次に光らせたとき）
  */
 import { AIR0, soundSpeed } from '../../lib/air';
 import { Choice } from '../../lib/choice';
@@ -11,7 +12,7 @@ import { initToolPage } from '../../lib/tool-page';
 import { ThunderAudio } from './audio';
 import { CH0 } from './channel';
 import {
-  directPts,
+  arrivalPts,
   drawHist,
   drawSection,
   drawSpectrum,
@@ -25,7 +26,7 @@ import {
   type View,
 } from './fig';
 import { DIST_MAX, DIST_MIN, type Key, PARAMS } from './params';
-import { audibleRange, bendRadius, SCENE0 } from './path';
+import { audibleRange, bendRadius, SCENE0, Via } from './path';
 import { fewPeak } from './shock';
 import type { Job, Reply } from './worker';
 
@@ -37,6 +38,11 @@ const FS = 48000;
 const DT = 0.05;
 /** 待たないときに、最初の音の何秒前から鳴らすか */
 const PRE = 0.3;
+/** 音量 0 dB での、0.4 s ごとの実効値の最大（0 dBFS が 1）。100 Hz より上と全帯域の、大きくなりすぎない方に合わせる */
+const LOUD_HP = 0.14,
+  LOUD_FULL = 0.35;
+/** 時間の帯をキーで動かす幅 [s] */
+const KEY_STEP = 0.5;
 const C = soundSpeed(AIR0.t);
 const DASH = '—';
 
@@ -64,6 +70,7 @@ const hCh = new Choice<string>($('#p-hill'), () => {
   request();
 });
 const wCh = new Choice<string>($('#p-wait'));
+const sCh = new Choice<string>($('#p-env'), () => request());
 let seed = CH0.seed;
 const hillOn = () => hCh.value === '1';
 function hillOff(): void {
@@ -77,6 +84,7 @@ const job = (id: number): Job => ({
   id,
   fs: FS,
   dt: DT,
+  env: sCh.value,
   ch: { ...CH0, seed, e: Number(eCh.value) },
   scene: {
     ...SCENE0,
@@ -95,12 +103,15 @@ let jobId = 0,
   again = false;
 let cur: Reply | null = null,
   pts: Pts | null = null,
+  echo: Pts | null = null,
+  src: [number, number] = [0, CH0.base],
   tEnd = 1,
   xmin = 0,
   xmax = 0,
   peakHz = 0;
 function request(): void {
   stop();
+  cue = null;
   if (busy) again = true;
   else post();
 }
@@ -113,7 +124,9 @@ function post(): void {
 worker.onmessage = (e: MessageEvent<Reply>) => {
   busy = false;
   cur = e.data;
-  pts = directPts(cur);
+  pts = arrivalPts(cur, [Via.Direct]);
+  echo = arrivalPts(cur, [Via.Hill, Via.Both]);
+  src = cloudBase(cur);
   tEnd = cur.t0 + cur.y.length / cur.fs;
   xmin = 0;
   xmax = 0;
@@ -130,6 +143,13 @@ worker.onmessage = (e: MessageEvent<Reply>) => {
   drawSpec();
 };
 
+/** 本流が雲の底に着いた点 [m]（止まっているときの道すじの始まり） */
+function cloudBase(r: Reply): [number, number] {
+  const p = r.branches[0].p;
+  for (let i = 0; i < p.length; i += 3) if (p[i + 2] >= CH0.base) return [p[i], p[i + 2]];
+  return [0, CH0.base];
+}
+
 /* ---------- 描く ---------- */
 const sec = $<HTMLCanvasElement>('#th-sec'),
   hist = $<HTMLCanvasElement>('#th-hist'),
@@ -141,8 +161,8 @@ let pal: Pal = palette(sec),
 let dragView: View | null = null;
 const secH = () => (sec.clientWidth < 560 ? 240 : 320);
 
-function draw(tau: number | null = playTau()): void {
-  if (!cur || !pts) return;
+function draw(tau: number | null = playTau() ?? cue): void {
+  if (!cur || !pts || !echo) return;
   const d = V.dist * 1000,
     on = hillOn(),
     w = sec.clientWidth,
@@ -150,7 +170,19 @@ function draw(tau: number | null = playTau()): void {
     key = `${cur.id}|${theme}`;
   drawSection(
     sec,
-    { r: cur, pts, view, base: CH0.base, dist: d, hill: on ? { x: d + V.hx * 1000, h: V.hh } : null, pal, c: C },
+    {
+      r: cur,
+      pts,
+      echo,
+      view,
+      base: CH0.base,
+      dist: d,
+      ground: gCh.value !== '0',
+      hill: on ? { x: d + V.hx * 1000, h: V.hh } : null,
+      src,
+      pal,
+      c: C,
+    },
     { tau, drag: !!dragView },
     `${key}|${view.x0}|${view.x1}`,
   );
@@ -164,8 +196,13 @@ function drawSpec(): void {
 }
 function timeline(tau: number | null): void {
   if (!cur) return;
+  const f = `${(Math.min(Math.max(tau ?? 0, 0), tEnd) / tEnd) * 100}%`;
   $('#th-waitbar').style.width = `${(Math.min(cur.first, tEnd) / tEnd) * 100}%`;
-  $('#th-fill').style.width = `${(Math.min(Math.max(tau ?? 0, 0), tEnd) / tEnd) * 100}%`;
+  $('#th-fill').style.width = f;
+  $('#th-th').style.left = f;
+  trk.setAttribute('aria-valuemax', tEnd.toFixed(1));
+  trk.setAttribute('aria-valuenow', (tau ?? 0).toFixed(1));
+  trk.setAttribute('aria-valuetext', `光ってから ${(tau ?? 0).toFixed(1)} 秒`);
   txt('#th-tau', (tau ?? 0).toFixed(1));
   txt('#th-end', `音まで ${cur.first.toFixed(1)} s・終わり ${tEnd.toFixed(1)} s`);
 }
@@ -205,18 +242,24 @@ function outputs(): void {
 
 /* ---------- 光らせる ---------- */
 const audio = new ThunderAudio(),
-  pp = $<HTMLButtonElement>('#th-pp');
+  pp = $<HTMLButtonElement>('#th-pp'),
+  trk = $('#th-trk');
 let play: { flash: number; skip: number; r: Reply } | null = null,
-  raf = 0;
+  raf = 0,
+  /** 止まっている間に時間の帯で選んだ時刻 [s]（次に光らせるとそこから） */
+  cue: number | null = null;
 function playTau(): number | null {
   return play ? Math.max(0, audio.now() - play.flash + play.skip) : null;
 }
-function start(): void {
+/** 光らせる。from は鳴らし始める時刻 [s]（省くと、待つなら 0、待たないなら最初の音の直前） */
+function start(from?: number): void {
   if (!cur) return;
   audio.open();
-  const skip = wCh.value === '1' ? 0 : Math.max(0, cur.first - PRE),
-    flash = audio.play(cur.y, cur.fs, cur.t0 - skip, cur.peak, { kind: 'peak' }, V.vol);
+  const skip = from ?? (wCh.value === '1' ? 0 : Math.max(0, cur.first - PRE)),
+    gain = Math.min(LOUD_HP / Math.max(cur.loud, 1e-12), LOUD_FULL / Math.max(cur.full, 1e-12)) * 10 ** (V.vol / 20),
+    flash = audio.play(cur.y, cur.yr, cur.fs, cur.t0 - skip, gain);
   play = { flash, skip, r: cur };
+  cue = null;
   pp.classList.add('on');
   pp.setAttribute('aria-label', '止める');
   pp.title = '止める';
@@ -245,7 +288,66 @@ function stop(): void {
   pp.title = '光らせる';
   draw(null);
 }
-pp.addEventListener('click', () => (play ? stop() : start()));
+pp.addEventListener('click', () => {
+  if (play) stop();
+  else start(cue != null && cue < tEnd ? cue : undefined);
+});
+
+/* ---------- 時間の帯: 押す・ドラッグで時刻を選ぶ ---------- */
+let seek: { resume: boolean } | null = null;
+function seekTo(tau: number): void {
+  cue = Math.min(tEnd, Math.max(0, tau));
+  draw(cue);
+}
+const tauAt = (e: PointerEvent) => {
+  const r = trk.getBoundingClientRect();
+  return ((e.clientX - r.left) / r.width) * tEnd;
+};
+trk.addEventListener('pointerdown', (e) => {
+  if (!cur || e.button !== 0) return;
+  trk.setPointerCapture(e.pointerId);
+  /* ドラッグの間は音を止め、離したら鳴らしていたならそこから鳴らす */
+  seek = { resume: !!play };
+  if (play) {
+    play = null;
+    cancelAnimationFrame(raf);
+    audio.stop();
+  }
+  seekTo(tauAt(e));
+});
+trk.addEventListener('pointermove', (e) => {
+  if (seek) seekTo(tauAt(e));
+});
+const endSeek = () => {
+  if (!seek) return;
+  const { resume } = seek;
+  seek = null;
+  if (resume && cue != null) start(cue);
+  else if (!play) {
+    pp.classList.remove('on');
+    pp.setAttribute('aria-label', '光らせる');
+    pp.title = '光らせる';
+  }
+};
+trk.addEventListener('pointerup', endSeek);
+trk.addEventListener('pointercancel', endSeek);
+trk.addEventListener('keydown', (e) => {
+  const now = playTau() ?? cue ?? 0,
+    to =
+      e.key === 'ArrowRight' || e.key === 'ArrowUp'
+        ? now + KEY_STEP
+        : e.key === 'ArrowLeft' || e.key === 'ArrowDown'
+          ? now - KEY_STEP
+          : e.key === 'Home'
+            ? 0
+            : e.key === 'End'
+              ? tEnd
+              : null;
+  if (to == null || !cur) return;
+  e.preventDefault();
+  if (play) start(Math.min(tEnd, Math.max(0, to)));
+  else seekTo(to);
+});
 $('#th-seed').addEventListener('click', () => {
   seed++;
   request();

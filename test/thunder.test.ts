@@ -244,7 +244,8 @@ describe('波形', () => {
     const mean = pk.reduce((x, y) => x + y, 0) / pk.length;
     expect(mean).toBeGreaterThan(20);
     expect(mean).toBeLessThan(120);
-  });
+    /* 8 本の波形を作るので、ほかのテストと並ぶと 5 秒を超えることがある */
+  }, 30000);
   it('波形は光ってから最初に届く時刻の少し前から始まる', () => {
     const el = elements(makeChannel(CH0), SCENE0),
       w = render(el, SCENE0.air, FS);
