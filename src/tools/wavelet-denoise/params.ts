@@ -105,7 +105,7 @@ export const SPIN: Opt = [
   ['8', '8 回', '0〜7 点ずらして除き、戻して平均する'],
 ];
 export const WAV: Opt = [
-  ['haar', 'Haar'],
-  ['db2', 'db2'],
-  ['db4', 'db4'],
+  ['haar', 'Haar', '長さ 2 の階段の波'],
+  ['db2', 'db2', 'Daubechies の長さ 4 の波'],
+  ['db4', 'db4', 'Daubechies の長さ 8 の波'],
 ];
