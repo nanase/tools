@@ -2,7 +2,7 @@
 
 /* 枠の並び。PC は上に図（全幅）、左の列に 演奏・吹き方・楽器、右の列に 管の共鳴・残響・音の波形・計算結果、その下に 式・出典 */
 /* スマホは 図 → 演奏 → 吹き方 → 楽器 → 管の共鳴 → 残響 → 音の波形 → 計算結果 → 式 → 楽譜の出典（列は display: contents で解ける） */
-.a-fig{order:1}.a-play{order:2}.a-blow{order:3}.a-inst{order:4}.a-z{order:5}.a-room{order:6}.a-wave{order:7}.a-out{order:8}.a-thy{order:9}.a-src{order:10}
+.a-fig{order:1}.a-play,.a-midi{order:2}.a-blow{order:3}.a-inst{order:4}.a-z{order:5}.a-room{order:6}.a-wave{order:7}.a-out{order:8}.a-thy{order:9}.a-src{order:10}
 @media (min-width:1000px){
   .tgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr);grid-template-areas:"fig fig" "c1 c2" "thy thy" "src src";align-items:start}
   .a-fig{grid-area:fig}.c1{grid-area:c1}.c2{grid-area:c2}.a-thy{grid-area:thy}.a-src{grid-area:src}
