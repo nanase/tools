@@ -1,6 +1,7 @@
 ---
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import MidiPanel from '../components/MidiPanel.astro';
 import More from '../components/More.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
@@ -17,7 +18,7 @@ import '../tools/organ/style.css';
 import Credits from '../tools/organ/Credits.astro';
 import { A4S, CUT, DIST, EXAG, FMAX, SCALE, SLOW, SPANS, SWELL, VOL0, WIND } from '../tools/organ/params';
 import { PIECES } from '../tools/organ/score';
-import { divOf, STOPS } from '../tools/organ/stops';
+import { DIVS, divOf, STOPS } from '../tools/organ/stops';
 import Theory from '../tools/organ/Theory.astro';
 import { TEMPERAMENTS } from '../tools/organ/tuning';
 
@@ -111,6 +112,10 @@ const COUPLERS = [
         </div>
         <p class="msg er snd-msg" id="snd-msg" aria-live="polite"></p>
       </Panel>
+
+      <MidiPanel>
+        <ChoiceRow k="md" name="鍵盤" sub="MIDI の音を入れる鍵盤" choices={DIVS.map((d) => [d.v, d.short, d.name] as const)} value="I" />
+      </MidiPanel>
 
 
       <Panel hid="hd-wind" title="風と調律" class="a-wind">

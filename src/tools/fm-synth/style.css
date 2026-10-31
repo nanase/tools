@@ -2,7 +2,7 @@
 
 /* 枠の並び。スマホは 波形 → アルゴリズム → オペレータ → 音 → 演奏 → 式 → 楽譜の出典。
    PC は左の列に アルゴリズム・音・演奏、右の列に 波形・オペレータ */
-.a-wave{order:1}.a-alg{order:2}.a-ops{order:3}.a-snd{order:4}.a-play{order:5}.a-thy{order:6}.a-src{order:7}
+.a-wave{order:1}.a-alg{order:2}.a-ops{order:3}.a-snd{order:4}.a-play,.a-midi{order:5}.a-thy{order:6}.a-src{order:7}
 @media (min-width:1000px){
   .tgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr);grid-template-areas:"c1 c2" "thy thy" "src src";align-items:start}
   .c1{grid-area:c1}.c2{grid-area:c2}.a-thy{grid-area:thy}.a-src{grid-area:src}

@@ -7,6 +7,7 @@
 import { Choice } from '../../lib/choice';
 import { $, $$ } from '../../lib/dom';
 import { fmt, fmtR, minus, plain, ro } from '../../lib/format';
+import { MidiBox } from '../../lib/midi';
 import { ParamGroup } from '../../lib/param';
 import { autoPause, lookahead } from '../../lib/pause';
 import { movePlayStore, outVol, type PlayKey, TEMPO } from '../../lib/play';
@@ -721,6 +722,30 @@ function lift(d: Div, k: number): void {
   show(d, k, false, nowS());
   keyOff(d, k, 0);
 }
+
+/* ---------- MIDI ---------- */
+/* 選んだ鍵盤に入れる（ベロシティは使わない）。押している間に鍵盤を選び直しても、押した鍵盤で離す */
+const md = choice<Div>('md', () => {});
+const midiDiv = new Map<number, Div>();
+const midiBox = new MidiBox(
+  {
+    on: (n, vel) => {
+      const d = md.value,
+        dv = divOf(d);
+      midiBox.show(noteName(n), vel, '');
+      if (n < dv.lo || n > dv.hi || midiDiv.has(n)) return;
+      midiDiv.set(n, d);
+      void press(d, n);
+    },
+    off: (n) => {
+      const d = midiDiv.get(n);
+      if (!d) return;
+      midiDiv.delete(n);
+      lift(d, n);
+    },
+  },
+  { ready: () => audio.ready() },
+);
 
 /* テンポと音量（演奏中も効く） */
 movePlayStore();

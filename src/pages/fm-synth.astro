@@ -1,6 +1,7 @@
 ---
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import MidiPanel from '../components/MidiPanel.astro';
 import More from '../components/More.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
@@ -66,6 +67,8 @@ const chain = (a: number) =>
         </div>
         <p class="msg er snd-msg" id="pl-msg" aria-live="polite"></p>
       </Panel>
+
+      <MidiPanel />
     </div>
 
     <div class="col c2">

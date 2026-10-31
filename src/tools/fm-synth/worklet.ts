@@ -1,7 +1,7 @@
 /**
  * FM 音源を鳴らす AudioWorklet。audio.ts が ?worker&url で読み込み、'fm-synth' として使う。
  * port で受け取った音色（FmMsg）で、表示と同じ式（synth.ts）を出力のサンプリング周波数で計算する。
- * 鍵盤と再生ボタンの音（1 音）と、曲の音（AudioContext の時刻で予約した音。数に上限はほぼない）を足して出す。
+ * 鍵盤と再生ボタンの音（1 音）と、曲と MIDI の音（AudioContext の時刻で予約した音。あわせて MAX_NOTES まで）を足して出す。
  * エンベロープはなく、音の始まりと終わりは、ぷつ音を防ぐ短いフェードだけ
  */
 import { type Patch, Voice } from './synth';
@@ -19,10 +19,10 @@ export type FmMsg =
   | { type: 'patch'; p: Patch }
   /** 鍵盤と再生ボタンの音: 基本周波数 [Hz] と、鳴らすか */
   | { type: 'hand'; f0: number; on: boolean }
-  /** 曲の音を時刻 at（AudioContext の時刻）に鳴らし始める・離す */
+  /** 曲の音（id ≥ 0）と MIDI の音（id < 0）を時刻 at（AudioContext の時刻）に鳴らし始める・離す */
   | { type: 'on'; id: number; f0: number; at: number }
   | { type: 'off'; id: number; at: number }
-  /** 予約を消して、曲の音をすべて離す */
+  /** 予約を消して、曲の音をすべて離す（MIDI の音は残す） */
   | { type: 'stop' };
 
 /** 出力の大きさを目標へ近づける時定数（s） */
@@ -71,7 +71,8 @@ registerProcessor(
         h.to = m.on ? 1 : 0;
       } else if (m.type === 'stop') {
         this.queue = [];
-        for (const s of this.notes) s.to = 0;
+        /* MIDI の音（id が負）は残す */
+        for (const s of this.notes) if (s.id >= 0) s.to = 0;
       } else {
         const q = this.queue;
         let i = q.length;

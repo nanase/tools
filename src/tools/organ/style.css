@@ -9,7 +9,7 @@
 
 /* 枠の並び。スマホは 管と鍵盤（ストップを含む） → 演奏 → 風と調律 → 整音 → 残響 → 音の波形 → 計算結果 → 式 → 楽譜の出典。
    PC は上に 管と鍵盤（全幅）、左の列に 演奏・風と調律、右の列に 整音・残響・音の波形・計算結果、その下に 式・出典（全幅） */
-.a-pp{order:1}.a-play{order:2}.a-wind{order:3}.a-voice{order:4}.a-room{order:5}.a-wave{order:6}.a-out{order:7}.a-thy{order:8}.a-src{order:9}
+.a-pp{order:1}.a-play,.a-midi{order:2}.a-wind{order:3}.a-voice{order:4}.a-room{order:5}.a-wave{order:6}.a-out{order:7}.a-thy{order:8}.a-src{order:9}
 @media (min-width:1000px){
   .tgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr);grid-template-areas:"pp pp" "c1 c2" "thy thy" "src src";align-items:start}
   .a-pp{grid-area:pp}.c1{grid-area:c1}.c2{grid-area:c2}.a-thy{grid-area:thy}.a-src{grid-area:src}
