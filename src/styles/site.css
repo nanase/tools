@@ -105,22 +105,50 @@ sub{font-size:.7em;line-height:0}
 
 /* ===== tool menu ===== */
 .scrim{position:fixed;left:0;right:0;bottom:0;top:var(--rail-h);z-index:25;background:rgb(8 10 12 / .42)}
-/* biome-ignore lint/suspicious/noDuplicateProperties: dvh に対応しない環境向けに vh を先に書く */
-.menu{position:fixed;top:var(--rail-h);left:0;right:0;z-index:26;max-height:calc(100vh - var(--rail-h));max-height:calc(100dvh - var(--rail-h));overflow:auto;overscroll-behavior:contain;background:var(--surface);border-bottom:1px solid var(--line)}
+/* スマホでは上部バーの下を埋め、左にカテゴリ・右にツールの行。PC では右に寄せた枠で、右はツールの図柄を 3 列に並べる */
+.menu{position:fixed;top:var(--rail-h);left:0;right:0;bottom:0;z-index:26;display:flex;flex-direction:column;overscroll-behavior:contain;background:var(--surface);border-bottom:1px solid var(--line)}
 .menu:focus{outline:none}
-@media (min-width:720px){.menu{left:auto;right:max(16px,calc((100vw - 1180px) / 2 + 16px));width:min(660px,calc(100vw - 32px));max-height:calc(100dvh - var(--rail-h) - 24px);border:1px solid var(--line);border-top:0;border-radius:0 0 8px 8px}}
-.menu-q{position:sticky;top:0;display:flex;align-items:center;gap:8px;padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--line);color:var(--ink-3)}
+@media (min-width:720px){.menu{bottom:auto;left:auto;right:max(16px,calc((100vw - 1180px) / 2 + 16px));width:min(780px,calc(100vw - 32px));max-height:calc(100dvh - var(--rail-h) - 24px);border:1px solid var(--line);border-top:0;border-radius:0 0 8px 8px;box-shadow:0 14px 36px rgb(0 0 0 / .22);overflow:hidden}}
+.menu-q{display:flex;align-items:center;gap:8px;padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--line);color:var(--ink-3)}
 .menu-q input{flex:1;min-width:0;height:36px;border:0;background:none;color:var(--ink);font:inherit;font-size:16px;outline:none}
 .menu-q input::placeholder,.qf input::placeholder{color:var(--ink-3)}
 .menu-q:focus-within{box-shadow:inset 0 -2px 0 var(--focus)}
-.menu-list{columns:2 250px;column-gap:20px;padding:4px 12px 14px}
-.mg{break-inside:avoid;padding-top:10px}
-.mg h2{font-size:12px;font-weight:700;color:var(--ink-3);padding:0 8px 2px}
-.mg ul{list-style:none;margin:0;padding:0}
-.mi{display:flex;align-items:center;gap:10px;min-height:38px;padding:4px 8px;border-radius:4px;color:var(--ink);text-decoration:none;font-size:14px;line-height:1.4}
-a.mi:hover{background:var(--inset);text-decoration:none}
-a.mi[aria-current="page"]{background:var(--inset);font-weight:700;box-shadow:inset 3px 0 var(--accent)}
-.mi.soon{color:var(--ink-3)}
+.menu-kbd{font:500 11px/1 var(--mono);color:var(--ink-3);border:1px solid var(--line);border-radius:3px;padding:4px 6px;white-space:nowrap}
+@media (max-width:719.98px),(hover:none){.menu-kbd{display:none}}
+.menu-body{flex:1 1 auto;min-height:0;display:grid;grid-template-columns:128px minmax(0,1fr)}
+@media (min-width:720px){.menu-body{flex-basis:486px;grid-template-columns:200px minmax(0,1fr)}}
+.menu-cats{display:flex;flex-direction:column;gap:2px;padding:8px 6px;border-right:1px solid var(--line);overflow:auto;overscroll-behavior:contain}
+.menu-cat{display:flex;align-items:center;gap:6px;flex:none;min-height:44px;padding:4px 8px;border:0;border-radius:4px;background:none;color:var(--ink);font:inherit;font-size:13px;line-height:1.25;text-align:left;cursor:pointer}
+.menu-cat:hover{background:var(--inset)}
+.menu-n{margin-left:auto;font:500 11.5px/1 var(--mono);color:var(--ink-3)}
+.menu .menu-cat[aria-selected="true"]{background:var(--ink);color:var(--surface)}
+.menu-cat[aria-selected="true"] .menu-n{color:inherit;opacity:.7}
+.menu-cat.dim{opacity:.45}
+/* 絞り込み中は全カテゴリから出すので、選んだ印は消す */
+.menu.filtering .menu-cat[aria-selected="true"]{background:none;color:var(--ink)}
+.menu.filtering .menu-cat[aria-selected="true"]:hover{background:var(--inset)}
+@media (min-width:720px){.menu-cats{padding:10px 8px}.menu-cat{min-height:38px;padding:0 10px;font-size:14px}}
+.menu-pane{position:relative;overflow:auto;overscroll-behavior:contain;padding:4px 8px 16px}
+@media (min-width:720px){.menu-pane{padding:4px 16px 16px}}
+.menu-sec h2{display:flex;align-items:baseline;gap:8px;margin:0;padding:10px 0 8px;font-size:12px;font-weight:700;color:var(--ink-3)}
+.menu-sec h2 .menu-n{margin-left:0}
+.menu-sec ul{list-style:none;margin:0;padding:0}
+.menu-tile{display:flex;align-items:center;gap:10px;min-height:52px;padding:6px 8px;border-radius:4px;color:var(--ink);text-decoration:none;font-size:14px;line-height:1.35}
+a.menu-tile:hover{background:var(--inset)}
+a.menu-tile[aria-current="page"]{background:var(--inset);font-weight:700;box-shadow:inset 3px 0 var(--accent)}
+.menu-tn{display:flex;align-items:center;flex-wrap:wrap;gap:4px 6px;min-width:0}
+.menu-scr{flex:none;display:block;width:80px;aspect-ratio:5/2;border:1px solid var(--line);border-radius:3px;
+  background-color:var(--screen);background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:14px 14px;background-position:center}
+.menu-tile.soon{color:var(--ink-3)}
+.menu-tile.soon .menu-scr{border-style:dashed}
+@media (min-width:720px){
+  .menu-sec ul{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+  .menu-tile{flex-direction:column;align-items:stretch;gap:7px;min-height:0;padding:8px;border:1px solid var(--line);border-radius:6px;font-size:13.5px}
+  a.menu-tile:hover{background:none;border-color:var(--ink-3)}
+  a.menu-tile[aria-current="page"]{background:none;border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+  .menu-tile.soon{border-style:dashed}
+  .menu-scr{width:auto;box-shadow:inset 0 1px 2px rgb(0 0 0 / .12)}
+}
 .tag{margin-left:auto;font-size:11px;line-height:18px;padding:0 6px;border:1px dashed var(--line-2);border-radius:3px;color:var(--ink-3);white-space:nowrap}
 .none{padding:14px 8px;color:var(--ink-3);font-size:14px}
 
