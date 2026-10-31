@@ -1,7 +1,7 @@
 ---
 // 動作原理と式（下書き。デザインが決まってからページに組み、図や操作の名前に合わせて文を削る）。表の値は shock.ts・path.ts から求める
 import { absorption, soundSpeed } from '../../lib/air';
-import { CH0 } from './channel';
+import { CH0, FORK_P, LEGS_P, PLANE_DEV, TWIN_P } from './channel';
 import { audibleRange, bendRadius } from './path';
 import { ETA0, fewPeak, N_PEAK_X, nDuration, nDuration0, relaxRadius } from './shock';
 import { BANDS } from './terrain';
@@ -21,6 +21,7 @@ const ES = [1e4, 1e5, 1e6].map((e) => ({
 const R = bendRadius(15, 6.5);
 const RANGE = [1000, 2000, 4000].map((z) => ({ z, x: audibleRange(z, 0, R) / 1000 }));
 const ABS = [100, 250, 1000].map((f) => ({ f, a: absorption(f) * 1000 }));
+const pc = (v: number) => `${Math.round(v * 100)} %`;
 ---
 <h3>光と音</h3>
 <p>光は一瞬で届き、音は 1 秒に約 {Math.round(c20)} m 進みます。光ってから音までの秒数を 3 で割ると、いちばん近い所までの距離 [km] になります。</p>
@@ -81,6 +82,13 @@ const ABS = [100, 250, 1000].map((f) => ({ f, a: absorption(f) * 1000 }));
   <li>区間ごとに、距離の分の空気の吸収を掛けて足す</li>
 </ol>
 
+<h3>放電路の形</h3>
+<p>形は雷ごとに乱数で決めます。確かさはどれも仮の値です。</p>
+<ul class="tl">
+  <li>雲の底から横へ進む向き: {LEGS_P.map((v, n) => `${n} 方向 ${pc(v)}`).join('・')}。右と左へ交互に、x 軸から ±{PLANE_DEV}° まで。軸から横へ離れると戻るように進め、断面で頭上に見える所は実際にも頭上に置く</li>
+  <li>枝が別の所でも地面に届く（落雷 2 か所以上）: {pc(FORK_P)}。落雷点に 2 本の放電路がつながる: {pc(TWIN_P)}。高速度カメラの映像に見られる形</li>
+</ul>
+
 <h3>雷鳴の長さ</h3>
 <p>雷鳴が続く時間は、放電路のうち聞き手にいちばん近い所と遠い所の距離の差を音速で割った時間です。</p>
 <div class="eqs">
@@ -95,7 +103,7 @@ const ABS = [100, 250, 1000].map((f) => ({ f, a: absorption(f) * 1000 }));
 <p>落雷の多くは、同じ放電路に数十 ms おきに何回も電流が流れます。光が瞬いて見え、雷鳴もそのたびに出て重なります<Fragment set:html={rf(11, 12)} />。</p>
 <ul class="tl">
   <li>回数は多くが 3〜5 回。間隔の幾何平均は 61 ms で、ここでは対数正規分布の乱数で決める<Fragment set:html={rf(11, 12)} /></li>
-  <li>2 回目からは枝を通らない。雲の中では、前の回より遠い所の電荷をほぼ同じ高さで引く（最大 8 km）<Fragment set:html={rf(13)} />。ここでは前の回の雲の中の放電路から分かれ、外へ {CH0.grow / 1000} km 伸ばす（仮）</li>
+  <li>2 回目からは枝を通らない。雲の中では、前の回より遠い所の電荷をほぼ同じ高さで引く（最大 8 km）<Fragment set:html={rf(13)} />。ここでは前の回の雲の中の放電路から分かれ、外へ {CH0.grow / 1000} km 伸ばす（仮）。雲の中へ進まない雷は、同じ放電路を何回も通る</li>
   <li>2 回目からのエネルギーは最初の {CH0.eSub} 倍（仮）。N 波が短く、少し高い音になる</li>
 </ul>
 
@@ -109,7 +117,8 @@ const ABS = [100, 250, 1000].map((f) => ({ f, a: absorption(f) * 1000 }));
 <h3>地面と山の反射</h3>
 <ul class="tl">
   <li>地面での反射は、地面に映した放電路（鏡像）から届く音とみなす。耳の高さが低いので、直接の音とほぼ同時に届いて重なる。雷鳴の測定でも硬い地面として音圧を 2 倍に扱う<Fragment set:html={rf(2, 9)} /></li>
-  <li>聞き手の後方の山は鉛直の崖とし、崖に映した放電路から届く。崖を横切る点が崖の高さより下の部分だけが返る。直接の音より、往復の距離の分だけ遅れる（やまびこ。部屋の中の反射は <a href="../reverb/">残響</a>）</li>
+  <li>山は鉛直の崖とし、面は聞き手の側を向く。崖に映した放電路から届く。聞き手の側にあり、崖を横切る点が崖の高さより下の部分だけが返る。直接の音より、往復の距離の分だけ遅れる（やまびこ。部屋の中の反射は <a href="../reverb/">残響</a>）</li>
+  <li>崖の向こうの放電路で、聞き手への線が崖より低い所を通る部分の音は、崖の上端を回り込む分だけ弱める。道の長さの差 δ からフレネル数 <math><mi>N</mi><mo>=</mo><mn>2</mn><mi>δ</mi><mo>/</mo><mi>λ</mi></math> を出し、<math><mn>10</mn><msub><mi>log</mi><mn>10</mn></msub><mo stretchy="false">(</mo><mn>3</mn><mo>+</mo><mn>20</mn><mi>N</mi><mo stretchy="false">)</mo></math> dB（上限 24 dB）<Fragment set:html={rf(14)} />。波長はその要素の N 波のスペクトルの山で代表させる（仮）</li>
   <li>周囲の反響: 聞き手の近くの家・木・建物で散った音を、部屋の残響と同じフィードバック遅延網で足す。残響時間（500 Hz）は木々 1.2 s・家と木 1.8 s・建物 2.6 s で仮の値。左右の耳で響きを変える</li>
   <li>地形の反響: 数 km 先の丘・山・林で散った音は、何秒もかけて戻る。戻るまでに地面と草木で高い音が吸われ、低い音だけが残る。{BANDS.map((b) => `${b.f}`).join('・')} Hz までの 3 つの帯で、残響時間を低い方から {BANDS.map((b) => b.k).join(' : ')}、響きのエネルギーを同じ比にした（どれも仮）。標本化周波数を 1/16 に落として、雑音で作った応答とたたみ込む</li>
 </ul>
@@ -143,4 +152,5 @@ const ABS = [100, 250, 1000].map((f) => ({ f, a: absorption(f) * 1000 }));
   <li id="thy-r11"><span class="rf-for">放電の間隔の幾何平均 61 ms（本文は未確認）</span><span class="rf-src">M. M. F. Saba, M. G. Ballarotti, and O. Pinto Jr., “Negative cloud-to-ground lightning properties from high-speed video observations,” <i>Journal of Geophysical Research</i>, vol. 111, D03101, 2006, <a href="https://doi.org/10.1029/2005JD006415" target="_blank" rel="noopener">doi:10.1029/2005JD006415</a></span></li>
   <li id="thy-r12"><span class="rf-for">1 回の落雷の放電の回数は多くが 3〜5 回（本文は未確認）</span><span class="rf-src">CIGRE Working Group C4.407 (V. A. Rakov, convenor), <i>Lightning Parameters for Engineering Applications</i>, Technical Brochure 549, 2013</span></li>
   <li id="thy-r13"><span class="rf-for">2 回目からの放電は雲の中の遠い所の電荷を引く（本文は未確認。要旨で確かめた）</span><span class="rf-src">P. R. Krehbiel, M. Brook, and R. A. McCrory, “An analysis of the charge structure of lightning discharges to ground,” <i>Journal of Geophysical Research</i>, vol. 84, no. C5, pp. 2432–2456, 1979, <a href="https://doi.org/10.1029/JC084iC05p02432" target="_blank" rel="noopener">doi:10.1029/JC084iC05p02432</a></span></li>
+  <li id="thy-r14"><span class="rf-for">塀の回折による減衰 10 log₁₀(3 + 20N)（本文は未確認。書誌は Crossref で確かめた）</span><span class="rf-src">Z. Maekawa, “Noise reduction by screens,” <i>Applied Acoustics</i>, vol. 1, no. 3, pp. 157–173, 1968, <a href="https://doi.org/10.1016/0003-682X(68)90020-0" target="_blank" rel="noopener">doi:10.1016/0003-682X(68)90020-0</a></span></li>
 </ol>

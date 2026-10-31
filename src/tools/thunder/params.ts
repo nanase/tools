@@ -38,17 +38,17 @@ export type Key = 'dist' | 'hx' | 'hh' | 'lapse' | 'vol';
 
 /** 聞き手の距離の範囲 [km]（対数で動かす） */
 export const DIST_MIN = 0.2;
-export const DIST_MAX = 20;
+export const DIST_MAX = 50;
 
 export const DIST: ParamDef = listed({
   k: 'dist',
   nm: 'd',
   sym: '<i>d</i>',
   name: '聞き手の距離',
-  sub: '落雷点から聞き手までの水平の距離。図の地面を押してドラッグしても動かせる',
+  sub: '落雷点から聞き手までの水平の距離。図の地面を押してドラッグしても動かせる（左右とも）',
   unit: 'km',
   v: 3,
-  list: [0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10, 12, 15, 20],
+  list: [0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30, 40, 50],
   log: true,
   jump: 3,
   pre: [
@@ -56,34 +56,35 @@ export const DIST: ParamDef = listed({
     [1, '1'],
     [3, '3'],
     [10, '10'],
-    [20, '20', '遠く'],
+    [30, '30', '遠く'],
   ],
 });
 
-export const HILL: ParamDef[] = [
-  listed({
-    k: 'hx',
-    nm: '山まで',
-    sym: '',
-    name: '聞き手から山まで',
-    sub: '聞き手の後方（雷と反対の側）に立つ崖までの距離',
-    unit: 'km',
-    v: 1.5,
-    list: [0.1, 0.2, 0.3, 0.5, 0.7, 1, 1.5, 2, 3, 5],
-    log: true,
-  }),
-  listed({
-    k: 'hh',
-    nm: '山の高さ',
-    sym: '',
-    name: '山の高さ',
-    sub: '崖の高さ。反射する点がこれより低い音だけ返る',
-    unit: 'm',
-    v: 400,
-    list: [50, 100, 200, 300, 400, 600, 800, 1000, 1500],
-    log: true,
-  }),
-];
+/** 落雷点から山までの距離の範囲 [km] */
+export const HILL_MIN = 0.1;
+export const HILL_MAX = 50;
+export const HILL_X: ParamDef = listed({
+  k: 'hx',
+  nm: '山まで',
+  sym: '',
+  name: '落雷点から山まで',
+  sub: '落雷点から崖までの水平の距離。図の山をドラッグしても動かせる',
+  unit: 'km',
+  v: 4.5,
+  list: [0.1, 0.2, 0.3, 0.5, 0.7, 1, 1.5, 2, 2.5, 3, 4, 4.5, 5, 6, 8, 10, 12, 15, 20, 25, 30, 40, 50],
+  log: true,
+});
+export const HILL_H: ParamDef = listed({
+  k: 'hh',
+  nm: '山の高さ',
+  sym: '',
+  name: '山の高さ',
+  sub: '崖の高さ。反射する点がこれより低い音だけ返り、崖の向こうの低い所の音は回り込む分だけ弱まる',
+  unit: 'm',
+  v: 400,
+  list: [50, 100, 200, 300, 400, 600, 800, 1000, 1500],
+  log: true,
+});
 
 export const LAPSE: ParamDef = listed({
   k: 'lapse',
@@ -122,8 +123,13 @@ export const VOL: ParamDef = {
   pre: [],
 };
 
-export const PARAMS: ParamDef[] = [DIST, ...HILL, LAPSE, VOL];
+export const PARAMS: ParamDef[] = [DIST, HILL_X, HILL_H, LAPSE, VOL];
 
+/** 聞き手と山の方向（落雷点から見て）。値は x の符号 */
+export const SIDES = [
+  ['-1', '左'],
+  ['1', '右'],
+] as const;
 /** 放電路の単位長さあたりのエネルギー [J/m]（Few 1969 は 10⁶。測定には 10³〜10⁵ もある） */
 export const ENERGIES = [
   ['1e4', '10⁴', '弱い（Lacroix ほか 2019 の測定に近い）'],
@@ -143,7 +149,7 @@ export const GROUNDS = [
 ] as const;
 export const HILLS = [
   ['0', 'なし'],
-  ['1', 'あり', '聞き手の後方に崖を置く'],
+  ['1', 'あり', '崖を置く（面は聞き手の側を向く）'],
 ] as const;
 export const WAITS = [
   ['1', '待つ', '光ってから音が届くまで、実際の時間だけ待つ'],

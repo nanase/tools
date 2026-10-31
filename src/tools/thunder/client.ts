@@ -2,7 +2,8 @@
  * 雷鳴のページの入口: 入力 → 放電路・届く時刻・波形を Worker で計算 → 断面・届く量・波形・スペクトルを描く。
  * 光らせると、光った瞬間から AudioContext の時計で波面を広げ、今届いている所を断面と波形に重ねる。
  * 時間の帯を押すかドラッグすると、その時刻の様子を描き、そこから鳴らす（鳴らしている間はすぐ、止まっている間は次に光らせたとき）。
- * 一時停止すると今の時刻で止まり、次はそこから鳴らす。最初からのボタンで光る前へ戻す
+ * 一時停止すると今の時刻で止まり、次はそこから鳴らす。最初からのボタンで光る前へ戻す。
+ * 放電路の形はメインスレッドでもすぐ作り、計算が届く前に灰で描く（図の大きさと地面・家・聞き手を先に出す）
  */
 import { AIR0, soundSpeed } from '../../lib/air';
 import { Choice } from '../../lib/choice';
@@ -11,7 +12,7 @@ import { ParamGroup } from '../../lib/param';
 import { handheld } from '../../lib/pause';
 import { initToolPage } from '../../lib/tool-page';
 import { ThunderAudio } from './audio';
-import { CH0 } from './channel';
+import { type Branch, CH0, type ChannelSet, makeChannel, type Shape, shape } from './channel';
 import {
   arrivalPts,
   drawHist,
@@ -26,7 +27,7 @@ import {
   spectrumPeak,
   type View,
 } from './fig';
-import { DIST_MAX, DIST_MIN, type Key, PARAMS } from './params';
+import { DIST_MAX, DIST_MIN, HILL_MAX, HILL_MIN, type Key, PARAMS } from './params';
 import { audibleRange, bendRadius, SCENE0, Via } from './path';
 import { fewPeak } from './shock';
 import type { Job, Reply } from './worker';
@@ -61,8 +62,8 @@ const unit = (v: string, u: string) => `${v}<span class="u">${u}</span>`;
 let V = {} as Record<Key, number>;
 const P = new ParamGroup<Key>(PARAMS, (v, k) => {
   V = v;
-  /* 聞き手をドラッグしている間は計算せず、離したときに計算する */
-  if (k === 'dist' && dragView) {
+  /* 聞き手・山をドラッグしている間は計算せず、離したときに計算する */
+  if ((k === 'dist' || k === 'hx') && dragView) {
     stop();
     moved = true;
     txt('#th-st', '離すと計算します');
@@ -80,29 +81,37 @@ const hCh = new Choice<string>($('#p-hill'), () => {
   request();
 });
 const wCh = new Choice<string>($('#p-wait'));
+const sideCh = new Choice<string>($('#p-side'), () => request());
+const hsCh = new Choice<string>($('#p-hside'), () => request());
 const sCh = new Choice<string>($('#p-env'), () => request());
 const tCh = new Choice<string>($('#p-ter'), () => request());
 let seed = CH0.seed;
 const hillOn = () => hCh.value === '1';
 function hillOff(): void {
   const off = !hillOn();
-  P.setOff('hx', off, off ? '後方の山が「なし」なので使いません' : '');
-  P.setOff('hh', off, off ? '後方の山が「なし」なので使いません' : '');
+  const note = off ? '山が「なし」なので使いません' : '';
+  P.setOff('hx', off, note);
+  P.setOff('hh', off, note);
+  hsCh.setOff(off, note);
 }
 hillOff();
+/** 聞き手の x [m] と山の崖の x [m]（どちらも負なら落雷点の左） */
+const lisX = () => Number(sideCh.value) * V.dist * 1000;
+const hillX = () => Number(hsCh.value) * V.hx * 1000;
 
+const chSet = (): ChannelSet => ({ ...CH0, seed, e: Number(eCh.value), strokes: Number(nCh.value) });
 const job = (id: number): Job => ({
   id,
   fs: FS,
   dt: DT,
   env: sCh.value,
   terrain: tCh.value,
-  ch: { ...CH0, seed, e: Number(eCh.value), strokes: Number(nCh.value) },
+  ch: chSet(),
   scene: {
     ...SCENE0,
-    dist: V.dist * 1000,
+    dist: lisX(),
     ground: Number(gCh.value),
-    hillBack: V.hx * 1000,
+    hillX: hillX(),
     hillH: hillOn() ? V.hh : 0,
     lapse: V.lapse,
   },
@@ -116,18 +125,59 @@ let jobId = 0,
 let cur: Reply | null = null,
   pts: Pts | null = null,
   echo: Pts | null = null,
-  src: [number, number] = [0, CH0.base],
   tEnd = 1,
-  xmin = 0,
-  xmax = 0,
   peakHz = 0;
+/** 今の設定の放電路（計算を待たずに作る）。鍵は放電路の設定 */
+let shown: {
+    key: string;
+    /** 描き直しの鍵に使う通し番号 */
+    sid: number;
+    branches: Branch[];
+    sh: Shape;
+    xmin: number;
+    xmax: number;
+    src: [number, number];
+  } | null = null,
+  sid = 0;
+/** 届いた計算の放電路の鍵と、送った計算の鍵 */
+let curKey = '';
+const sent = new Map<number, string>();
+function reshape(): void {
+  const ch = chSet(),
+    key = JSON.stringify(ch);
+  if (shown?.key === key) return;
+  const branches = makeChannel(ch);
+  let xmin = 0,
+    xmax = 0;
+  for (const b of branches)
+    for (let i = 0; i < b.p.length; i += 3) {
+      xmin = Math.min(xmin, b.p[i]);
+      xmax = Math.max(xmax, b.p[i]);
+    }
+  shown = { key, sid: ++sid, branches, sh: shape(ch), xmin, xmax, src: cloudBase(branches) };
+}
+/** 届いた計算が今の放電路のものか（違えば放電路を灰で描き、波形は枠だけ） */
+const ready = (): Reply | null => (cur && curKey === shown?.key ? cur : null);
 function request(): void {
   stop();
   cue = null;
   ppState();
+  reshape();
+  idleSt();
+  draw();
+  drawSpec();
   if (busy) again = true;
   else post();
 }
+/** 図の右上: 放電路の形（雲の中の向きの数・落雷点の数・同じ落雷点への本数） */
+function shapeText(sh: Shape): string {
+  const n = sh.legs.length,
+    a = [n ? `雲の中 ${n} 方向` : '雲の中なし'];
+  if (sh.forks.length) a.push(`落雷 ${sh.forks.length + 1} か所`);
+  if (sh.twins) a.push(`落雷点に ${sh.twins + 1} 本`);
+  return a.join('・');
+}
+const idleSt = () => txt('#th-st', shown ? shapeText(shown.sh) : '');
 const fig = $('.a-fig');
 /** 計算中は、古い雷を鳴らさないよう再生の操作を止める */
 function busyState(on: boolean): void {
@@ -140,26 +190,21 @@ function busyState(on: boolean): void {
 function post(): void {
   busy = true;
   again = false;
-  txt('#th-st', '');
   busyState(true);
-  worker.postMessage(job(++jobId));
+  const j = job(++jobId);
+  sent.set(j.id, JSON.stringify(j.ch));
+  worker.postMessage(j);
 }
 worker.onmessage = (e: MessageEvent<Reply>) => {
   busy = false;
   /* 前の雷を鳴らしたままにしない */
   stop();
   cur = e.data;
+  curKey = sent.get(cur.id) ?? '';
+  sent.delete(cur.id);
   pts = arrivalPts(cur, [Via.Direct]);
   echo = arrivalPts(cur, [Via.Hill, Via.Both]);
-  src = cloudBase(cur);
   tEnd = cur.t0 + cur.y.length / cur.fs;
-  xmin = 0;
-  xmax = 0;
-  for (const b of cur.branches)
-    for (let i = 0; i < b.p.length; i += 3) {
-      xmin = Math.min(xmin, b.p[i]);
-      xmax = Math.max(xmax, b.p[i]);
-    }
   peakHz = spectrumPeak(cur);
   if (again) post();
   else busyState(false);
@@ -169,8 +214,8 @@ worker.onmessage = (e: MessageEvent<Reply>) => {
 };
 
 /** 本流が雲の底に着いた点 [m]（止まっているときの道すじの始まり） */
-function cloudBase(r: Reply): [number, number] {
-  const p = r.branches[0].p;
+function cloudBase(bs: readonly Branch[]): [number, number] {
+  const p = bs[0].p;
   for (let i = 0; i < p.length; i += 3) if (p[i + 2] >= CH0.base) return [p[i], p[i + 2]];
   return [0, CH0.base];
 }
@@ -184,47 +229,71 @@ const sec = $<HTMLCanvasElement>('#th-sec'),
 let secPal: Pal = palette(sec),
   pal: Pal = palette(hist),
   theme = 0;
-/** ドラッグの間は窓を止める（指の下から聞き手が逃げないように）。moved はドラッグで聞き手が動いたか */
+/** ドラッグの間は窓を止める（指の下から聞き手が逃げないように）。dragging は動かすもの、moved はドラッグで動いたか */
 let dragView: View | null = null,
+  dragging: 'lis' | 'hill' = 'lis',
   moved = false;
 const secH = () => (sec.clientWidth < 560 ? 240 : 320);
 
+/** 断面の窓（聞き手の側の端は、聞き手と山の少し先まで） */
+const viewNow = (): View =>
+  sectionView(sec.clientWidth, secH(), lisX(), hillOn() ? hillX() : null, shown?.xmin ?? 0, shown?.xmax ?? 0);
+/** 計算が届く前の見積もり: 放電路の頂点のうち聞き手にいちばん近い所と遠い所まで、音が進む時間 [s] */
+function guess(): [number, number] {
+  const d = lisX();
+  let lo = Number.POSITIVE_INFINITY,
+    hi = 0;
+  for (const b of shown?.branches ?? [])
+    for (let i = 0; i < b.p.length; i += 3) {
+      const r = Math.hypot(b.p[i] - d, b.p[i + 1], b.p[i + 2]) / C + b.t;
+      lo = Math.min(lo, r);
+      hi = Math.max(hi, r);
+    }
+  return Number.isFinite(lo) ? [lo, hi] : [Math.abs(d) / C, Math.abs(d) / C + 10];
+}
 function draw(tau: number | null = playTau() ?? cue): void {
-  if (!cur || !pts || !echo) return;
-  const d = V.dist * 1000,
-    on = hillOn(),
-    w = sec.clientWidth,
-    view = dragView ?? sectionView(w, secH(), d, on ? V.hx * 1000 + 200 : 0, xmin, xmax),
-    key = `${cur.id}|${theme}`;
+  if (!shown) return;
+  const r = ready(),
+    d = lisX(),
+    view = dragView ?? viewNow(),
+    key = r ? `${r.id}|${theme}` : `p${shown.sid}|${theme}`;
+  if (!r) tau = null;
   drawSection(
     sec,
     {
-      r: cur,
-      pts,
-      echo,
+      branches: shown.branches,
+      pts: r && pts,
+      echo: r && echo,
       view,
       base: CH0.base,
       dist: d,
       ground: gCh.value !== '0',
-      hill: on ? { x: d + V.hx * 1000, h: V.hh } : null,
-      src,
-      strokes: cur.strokes,
+      hill: hillOn() ? { x: hillX(), h: V.hh } : null,
+      src: shown.src,
+      strokes: r?.strokes ?? [],
       pal: secPal,
       c: C,
     },
-    { tau, drag: !!dragView },
+    { tau, drag: dragView ? dragging : null },
     `${key}|${view.x0}|${view.x1}`,
   );
-  const tr = { r: cur, pal, t1: tEnd };
+  const [f, l] = r ? [r.first, tEnd] : guess(),
+    tr = { r, pal, t1: r ? tEnd : l + 2, first: f };
   drawWave(wave, 96, tr, tau, key);
   drawHist(hist, 78, tr, tau, key);
   timeline(tau);
 }
 function drawSpec(): void {
-  if (cur) drawSpectrum(spec, 150, cur, pal, peakHz);
+  drawSpectrum(spec, 150, ready(), pal, peakHz);
 }
 function timeline(tau: number | null): void {
-  if (!cur) return;
+  if (!ready() || !cur) {
+    /* 前の雷の時刻を残さない */
+    for (const id of ['#th-waitbar', '#th-fill']) $(id).style.width = '0';
+    $('#th-th').style.left = '0';
+    txt('#th-end', '');
+    return;
+  }
   const f = `${(Math.min(Math.max(tau ?? 0, 0), tEnd) / tEnd) * 100}%`;
   $('#th-waitbar').style.width = `${(Math.min(cur.first, tEnd) / tEnd) * 100}%`;
   $('#th-fill').style.width = f;
@@ -240,6 +309,7 @@ function outputs(): void {
   if (!cur) return;
   const r = cur,
     d = V.dist * 1000,
+    side = sideCh.value === '-1' ? '左' : '右',
     len = r.d1 - r.d0;
   let last = 0;
   for (let i = 0; i < r.et.length; i++) if (r.et[i] > last) last = r.et[i];
@@ -261,11 +331,11 @@ function outputs(): void {
     txt('#o-rngs', '気温が高さで変わらないので、音は曲がらない');
   }
   txt('#m-wait', `${r.first.toFixed(1)} s`);
-  txt('#m-dist', `${fmtKm(d)} km`);
+  txt('#m-dist', `${side} ${fmtKm(d)} km`);
   txt('#m-len', `${len.toFixed(1)} s`);
   sec.setAttribute(
     'aria-label',
-    `横から見た放電路と聞き手。聞き手は落雷点から ${fmtKm(d)} km、光ってから ${r.first.toFixed(1)} 秒で音が届き、${len.toFixed(1)} 秒鳴り続ける`,
+    `横から見た放電路と聞き手。${shown ? `${shapeText(shown.sh)}。` : ''}聞き手は落雷点の${side} ${fmtKm(d)} km、光ってから ${r.first.toFixed(1)} 秒で音が届き、${len.toFixed(1)} 秒鳴り続ける`,
   );
 }
 
@@ -413,19 +483,40 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 
-/* ---------- 聞き手をドラッグ ---------- */
+/* ---------- 聞き手・山をドラッグ ---------- */
+/** 押した所へ聞き手（か山）を動かす。落雷点をまたげば左右も変える */
 function dragTo(e: PointerEvent): void {
   if (!dragView) return;
   const r = sec.getBoundingClientRect(),
     x = dragView.ix(e.clientX - r.left),
-    km = Math.round(Math.min(DIST_MAX, Math.max(DIST_MIN, x / 1000)) * 100) / 100;
-  if (km !== V.dist) P.set('dist', km);
+    hill = dragging === 'hill',
+    [ch, k, lo, hi] = hill ? [hsCh, 'hx' as const, HILL_MIN, HILL_MAX] : [sideCh, 'dist' as const, DIST_MIN, DIST_MAX],
+    side = x < 0 ? '-1' : '1',
+    km = Math.round(Math.min(hi, Math.max(lo, Math.abs(x) / 1000)) * 100) / 100;
+  if (side !== ch.value) {
+    ch.choose(side);
+    stop();
+    moved = true;
+    txt('#th-st', '離すと計算します');
+  }
+  if (km !== V[k]) P.set(k, km);
   else draw();
 }
+/** 押した所が山の絵の上か（崖から斜面の端まで、左右に 8 px の余裕） */
+function onHill(e: PointerEvent, v: View): boolean {
+  if (!hillOn()) return false;
+  const r = sec.getBoundingClientRect(),
+    px = e.clientX - r.left,
+    hx = v.sx(hillX()),
+    w = Math.max(10, (v.sz(0) - v.sz(V.hh)) * 1.5),
+    dir = hillX() < lisX() ? -1 : 1,
+    [a, b] = dir > 0 ? [hx, hx + w] : [hx - w, hx];
+  return px >= a - 8 && px <= b + 8 && e.clientY - r.top >= v.sz(V.hh) - 12;
+}
 sec.addEventListener('pointerdown', (e) => {
-  if (!cur || e.button !== 0) return;
-  const d = V.dist * 1000;
-  dragView = sectionView(sec.clientWidth, secH(), d, hillOn() ? V.hx * 1000 + 200 : 0, xmin, xmax);
+  if (!shown || e.button !== 0) return;
+  dragView = viewNow();
+  dragging = onHill(e, dragView) ? 'hill' : 'lis';
   moved = false;
   sec.setPointerCapture(e.pointerId);
   sec.classList.add('drag');
@@ -439,7 +530,10 @@ const endDrag = () => {
   dragView = null;
   sec.classList.remove('drag');
   if (moved) request();
-  else draw();
+  else {
+    idleSt();
+    draw();
+  }
 };
 sec.addEventListener('pointerup', endDrag);
 sec.addEventListener('pointercancel', endDrag);

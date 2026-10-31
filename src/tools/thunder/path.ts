@@ -1,10 +1,11 @@
 /**
  * 雷鳴のページの伝わり方（DOM に依存しない）: 放電路を短い要素に分け、要素ごとに聞き手までの距離と届く時刻を求める。
- * 地面と山（鉛直の崖）での反射は鏡像で、気温の勾配で音が上へ曲がる影の領域（Fleagle 1949）は届く範囲の判定で扱う
+ * 地面と山（鉛直の崖）での反射は鏡像で、気温の勾配で音が上へ曲がる影の領域（Fleagle 1949）は届く範囲の判定で扱う。
+ * 崖の面は聞き手の側を向く。崖の向こうの放電路の音は、崖の上端を越えて回り込む分だけ弱める（Maekawa 1968 の近似）
  */
 import { AIR0, type Air, soundSpeed } from '../../lib/air';
 import type { Branch } from './channel';
-import { airDensity, ETA0, lineAmp, nDuration, nDuration0, P0, STRETCH0, type Stretch } from './shock';
+import { airDensity, ETA0, lineAmp, nDuration, nDuration0, nPeak, P0, STRETCH0, type Stretch } from './shock';
 
 /** 届く経路: 直接・地面・山・地面と山 */
 export enum Via {
@@ -15,15 +16,15 @@ export enum Via {
 }
 
 export interface Scene {
-  /** 落雷点から聞き手までの水平距離 [m]（聞き手は +x） */
+  /** 聞き手の x [m]（落雷点からの水平距離。負なら落雷点の左） */
   dist: number;
   /** 聞き手の耳の高さ [m] */
   ear: number;
   air: Air;
   /** 地面の音圧の反射率（0 で反射なし、1 で硬い地面） */
   ground: number;
-  /** 聞き手の後ろの山（x = dist + hillBack に立つ鉛直の崖）。hillH = 0 で山なし */
-  hillBack: number;
+  /** 山: x = hillX [m] に立つ鉛直の崖（面は聞き手の側を向く）と、その高さ [m]。hillH = 0 で山なし */
+  hillX: number;
   hillH: number;
   /** 山の音圧の反射率 */
   hill: number;
@@ -42,7 +43,7 @@ export const SCENE0: Scene = {
   ear: 1.5,
   air: AIR0,
   ground: 1,
-  hillBack: 1500,
+  hillX: 5000,
   hillH: 0,
   hill: 0.8,
   lapse: 6.5,
@@ -56,6 +57,36 @@ export const SCENE0: Scene = {
  * 4 で 64 に細かくしたときとスペクトルが 1 dB 以内で合う（300 m 先の 8 kHz まで）
  */
 const PER_WAVE = 4;
+/** 崖を回り込む音の弱まりの上限 [dB]（Maekawa の図の上限の目安） */
+const BARRIER_MAX = 24;
+
+/**
+ * 崖で隠れる音の弱まり [dB]: Maekawa の 10 log₁₀(3 + 20N)、N = 2δ/λ（δ は崖の上端を回る道の長さの差）。
+ * 周波数は要素の N 波のスペクトルの山で代表させる。
+ * 崖の向こう側の点 (x, y, z) から聞き手 (ox, 0, oz) へのまっすぐな線が、崖（x = xm）を高さ H より下で横切るときだけ。
+ * 地面の鏡像の点（z < 0）は、線が地面より下で横切るなら、崖も地面に映した上端（−H）を回るとみなす
+ */
+export function barrierDb(
+  x: number,
+  y: number,
+  z: number,
+  ox: number,
+  oz: number,
+  xm: number,
+  H: number,
+  T: number,
+  c: number,
+): number {
+  if ((x - xm) * (ox - xm) >= 0 || H <= 0) return 0;
+  const w = (xm - x) / (ox - x),
+    yc = y * (1 - w),
+    zc = z + w * (oz - z);
+  if (Math.abs(zc) >= H) return 0;
+  const e = zc < 0 ? -H : H,
+    delta = Math.hypot(xm - x, yc - y, e - z) + Math.hypot(ox - xm, yc, oz - e) - Math.hypot(ox - x, y, oz - z),
+    N = (2 * delta * nPeak(T)) / c;
+  return Math.min(BARRIER_MAX, 10 * Math.log10(3 + 20 * N));
+}
 
 /**
  * 要素の一覧。区間（折れ線の隣り合う頂点の間）ごとに並ぶ。
@@ -99,19 +130,21 @@ function image(x: number, y: number, z: number, via: Via, xm: number): [number, 
 
 /**
  * 放電路の要素を作り、聞き手に届く時刻と山の高さを求める。
- * 山がなければ山の経路は作らない。山の経路は、反射点が崖の高さより下にあるときだけ
+ * 山がなければ山の経路は作らない。山の経路は、放電路の点が聞き手と同じ側にあり、反射点が崖の高さより下にあるときだけ。
+ * 崖の向こう側の点からの音（直接と地面の経路）は、崖を回り込む分だけ弱める
  */
 export function elements(ch: readonly Branch[], s: Scene): Elements {
   const c = soundSpeed(s.air.t),
     p0 = (s.air.p ?? P0 / 1000) * 1000,
     rho = airDensity(s.air.t, p0),
     R = bendRadius(s.air.t, s.lapse),
-    xm = s.dist + s.hillBack,
+    xm = s.hillX,
+    hillOn = s.hillH > 0,
     ox = s.dist,
     oz = s.ear,
     vias: Via[] = [Via.Direct];
   if (s.ground > 0) vias.push(Via.Ground);
-  if (s.hillH > 0 && s.hill > 0) {
+  if (hillOn && s.hill > 0) {
     vias.push(Via.Hill);
     if (s.ground > 0) vias.push(Via.Both);
   }
@@ -156,14 +189,17 @@ export function elements(ch: readonly Branch[], s: Scene): Elements {
             y = ay + u * dy,
             z = az + u * dz,
             [ix, iy, iz] = image(x, y, z, via, xm);
-          /* 山の経路は、崖を横切る点が崖の高さより下のときだけ */
+          /* 山の経路は、放電路の点が聞き手の側にあり、崖を横切る点が崖の高さより下のときだけ */
           if (via & 2) {
+            if ((x - xm) * (ox - xm) <= 0) continue;
             const w = (xm - ix) / (ox - ix),
               zc = iz + w * (oz - iz);
             if (Math.abs(zc) > s.hillH) continue;
           }
           const r = Math.hypot(ix - ox, iy, iz - oz),
             Tn = nDuration(T0, r, s.stretch),
+            /* 崖の向こうからの直接と地面の経路は、崖を回り込む分だけ弱める（地面の経路は鏡像の点で） */
+            bar = hillOn && !(via & 2) ? barrierDb(ix, iy, iz, ox, oz, xm, s.hillH, Tn, c) : 0,
             /* 影の領域: 鏡像から聞き手への水平距離が届く範囲を超えた分だけ、範囲の 1 割で shadowDb まで下げる */
             hd = Math.hypot(ix - ox, iy),
             lim = audibleRange(z, oz, R),
@@ -172,7 +208,7 @@ export function elements(ch: readonly Branch[], s: Scene): Elements {
           T.push(t0 + r / c);
           Rr.push(r);
           /* 正の側の面積 a·dl/(2r) を保って伸びる */
-          P.push((coef * amp * dl * sh) / (Math.max(r, 1) * Tn));
+          P.push((coef * amp * dl * sh * 10 ** (-bar / 20)) / (Math.max(r, 1) * Tn));
           DL.push(dl);
           X.push(x, y, z);
           V.push(via);
