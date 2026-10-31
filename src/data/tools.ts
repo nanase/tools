@@ -411,7 +411,7 @@ export const TOOLS: Tool[] = [
   {
     id: 'wavelet-denoise',
     c: '音響',
-    t: 'ウェーブレット変換での雑音除去と圧縮',
+    t: '雑音除去と圧縮',
     d: 'ウェーブレットの係数を捨てて戻し、雑音を除いた音と圧縮した音を元の音と聴き比べます。',
     ic: 'wd',
     r: ['wavelet', 'jpeg', 'noise', 'fft'],

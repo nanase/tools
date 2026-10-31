@@ -1,4 +1,4 @@
-/** ウェーブレット変換での雑音除去と圧縮のページの入力の定義（数値の行と選択肢） */
+/** 雑音除去と圧縮のページの入力の定義（数値の行と選択肢） */
 import { linList } from '../../lib/eseries';
 import type { ParamDef } from '../../lib/param-def';
 
