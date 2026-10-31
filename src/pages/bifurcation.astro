@@ -82,7 +82,7 @@ const name = '分岐図';
         <p class="msg er snd-msg" id="snd-msg" aria-live="polite"></p>
         <div class="ptab">
           <ChoiceRow k="mode" name="鳴らし方" sub="波形: 周期が倍になるたびに 1 オクターブ下がり、カオスで雑音になる／旋律: 値 0〜1 を 220〜880 Hz へ" choices={SND_MODES} value="wave" />
-          <ChoiceRow k="scale" name="音階" sub="旋律の高さを五音音階（ド・レ・ミ・ソ・ラ）に丸める" choices={SCALES} value="cont" />
+          <ChoiceRow k="scale" name="音階" sub="旋律の高さを五音音階（ド・レ・ミ・ソ・ラ）に丸める" choices={SCALES} value="cont" offIn />
           <ParamRow d={VOL} />
         </div>
       </Panel>
