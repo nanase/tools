@@ -5,6 +5,7 @@
 import { Choice } from '../../lib/choice';
 import { $ } from '../../lib/dom';
 import { fmt, fmtR, minus, plain, ro } from '../../lib/format';
+import { logMap, MidiBox, pedalOn, type Touch, touchOf } from '../../lib/midi';
 import { ParamGroup } from '../../lib/param';
 import { autoPause, lookahead } from '../../lib/pause';
 import { movePlayStore, outVol, type PlayKey, TEMPO } from '../../lib/play';
@@ -58,6 +59,8 @@ const S = {
   type: (PIANO_TYPES.some((t) => t.v === stored('type')) ? stored('type') : 'concert') as TypeV,
   /** 計算結果に出す鍵（最後に打った鍵） */
   last: 60,
+  /** 最後に MIDI で打ったハンマーの速さ [m/s]（鍵盤の図・打鍵の枠のベロシティで打ったあとは null） */
+  lastV: null as number | null,
   /** 押している鍵（鍵盤） */
   held: new Set<number>(),
 };
@@ -179,13 +182,8 @@ function rebuildNow(): void {
 /** 鍵 key を速さ v で打ったときの模型（表示用。主スレッドで解く） */
 function strikeOf(key: number, v: number, free: (k: number) => boolean = () => false): Strike {
   /* 接触はサンプル単位で解くので、サンプリング周波数ごとに覚える（スマートフォンでは AudioContext を作ると変わる） */
-  const ck = `${key}|${v}|${soft.value}|${audio.fs}`,
-    s = strikeKey(
-      PM,
-      { key, v, soft: soft.value === 'on', free, thump: Number(thump.value) },
-      audio.fs,
-      contacts.get(ck),
-    );
+  const ck = `${key}|${v}|${softOn()}|${audio.fs}`,
+    s = strikeKey(PM, { key, v, soft: softOn(), free, thump: Number(thump.value) }, audio.fs, contacts.get(ck));
   contacts.set(ck, s.contact);
   return s;
 }
@@ -198,6 +196,7 @@ new ParamGroup<string>([VEL, UNI, THICK, DIST], (v, k) => {
   V.dist = v.dist;
   if (!PM) return;
   if (k === 'vel') {
+    S.lastV = null;
     results();
     renderOut();
   } else if (k === 'uni' || k === 'h') rebuild();
@@ -254,7 +253,7 @@ function results(): void {
   const k = S.last,
     km = PM.keys[k - KEY_LO],
     s = km.s,
-    st = strikeOf(k, qv(V.vel)),
+    st = strikeOf(k, shownV()),
     f1 = PM.f1[k - KEY_LO],
     B = inharm(s),
     [ta, tb] = decays(st, km),
@@ -398,7 +397,7 @@ function renderOut(): void {
   }
   outDirty = false;
   outTimer = setTimeout(() => {
-    const st = strikeOf(S.last, qv(V.vel)),
+    const st = strikeOf(S.last, shownV()),
       fs = audio.fs,
       p = st.msg,
       j: Job = {
@@ -534,8 +533,17 @@ for (const [id, h] of [
 /* ---------- 打鍵（鍵盤） ---------- */
 const NO_SOUND = '音を出せませんでした';
 const sndMsg = (s: string) => txt('#snd-msg', s);
-/** 鍵盤で弾くときのペダル */
-const livePedal = () => ped.value === 'on';
+/** MIDI から受けたダンパーペダル・ソフトペダル（受けるまでは null で、画面の設定に従う） */
+let midiPed: boolean | null = null,
+  midiSoft: boolean | null = null;
+/** 鍵盤で弾くときのペダル（MIDI のペダルを受けたら、そちらに従う） */
+const livePedal = () => midiPed ?? ped.value === 'on';
+/** ソフトペダル（MIDI のペダルを受けたら、そちらに従う） */
+function softOn(): boolean {
+  return midiSoft ?? soft.value === 'on';
+}
+/** 計算結果と音の波形に使うハンマーの速さ */
+const shownV = () => qv(S.lastV ?? V.vel);
 /** 鍵ごとにダンパーが上がっているか（held は押している鍵、pedal はペダル） */
 function freeOf(held: Set<number>, pedal: boolean): Uint8Array {
   const f = new Uint8Array(KEYS);
@@ -552,18 +560,27 @@ function syncPedal(): void {
 /** 表示用のダンパーの減衰率（第 1 部分音） */
 const sdOf = (k: number) => (k < NO_DAMPER ? damperRate(PM.keys[k - KEY_LO], 1) : 0);
 
-async function press(k: number): Promise<void> {
-  if (PL) return;
+/**
+ * 鍵 k を打つ。vel は MIDI で打つときのハンマーの速さ [m/s]（なければ打鍵の枠のベロシティ）。
+ * 曲の演奏中は、MIDI の鍵だけ曲に重ねて弾ける
+ */
+async function press(k: number, vel?: number): Promise<void> {
+  const midi = vel !== undefined;
+  if (PL && !midi) return;
   S.held.add(k);
   keys.setDown(k, true);
   const ok = await audio.ready();
   sndMsg(ok ? '' : NO_SOUND);
-  if (!ok) return;
-  /* AudioWorklet を作った直後や、リリースでペダルを離したあとでも、ペダルの状態をそろえる */
+  /* 音を出せないか、準備の間に離した */
+  if (!ok || !S.held.has(k)) return;
+  /* AudioWorklet を作った直後や、リリースでペダルを離したあとでも、ペダルの状態をそろえる（曲の演奏中は曲のペダル） */
   syncPedal();
-  const t = nowS(),
-    v = qv(V.vel),
-    view = audio.strike(k, v, soft.value === 'on', Number(thump.value), freeOf(S.held, livePedal()));
+  const p = PL,
+    free = p ? freeOf(new Set([...S.held, ...p.held.keys()]), p.pedal || livePedal()) : freeOf(S.held, livePedal()),
+    t = nowS(),
+    v = qv(vel ?? V.vel),
+    view = audio.strike(k, v, softOn(), Number(thump.value), free);
+  S.lastV = midi ? v : null;
   txt('#kb-live', noteName(k));
   /* ダンパーは図が鍵とペダルの状態から決める（表示が届く前に離していても、離した時刻から止める） */
   view.then((vw) => keys.set(k, { view: vw, t0: t, v, damp: Infinity, sd: sdOf(k) }));
@@ -585,12 +602,65 @@ function showLastSoon(): void {
     renderOut();
   }, 60);
 }
-function lift(k: number): void {
-  if (PL) return;
+/** 鍵 k から手を離す。midi なら曲の演奏中も離す */
+function lift(k: number, midi = false): void {
+  if (PL && !midi) return;
+  if (midi && !S.held.has(k)) return;
   S.held.delete(k);
   keys.setDown(k, false);
   audio.release(k);
 }
+
+/* ---------- MIDI ---------- */
+const mv = choice<'key' | 'fix'>('mv', () => syncTouch());
+const mt = choice<Touch>('mt', () => {});
+const PED_NOTE = 'MIDI のペダルに従います';
+function syncTouch(): void {
+  mt.setOff(mv.value === 'fix', '固定では使いません');
+}
+syncTouch();
+/** MIDI のベロシティ（1〜127）からハンマーの速さ [m/s] */
+const hammerOf = (vel: number) => (mv.value === 'fix' ? V.vel : logMap(touchOf(vel, mt.value), VEL.min, VEL.max));
+/** MIDI のダンパーペダル: 曲の演奏中は曲のペダルより優先して、すぐ踏みかえる */
+function midiPedal(on: boolean): void {
+  if (midiPed === null) ped.setOff(true, PED_NOTE);
+  midiPed = on;
+  if (PL) {
+    audio.pedal(on);
+    keys.setPedal(on);
+    $('#pedLed').classList.toggle('on', on);
+  } else syncPedal();
+  midiBox.pedals(midiPed, midiSoft);
+}
+const midiBox = new MidiBox(
+  {
+    on: (n, vel) => {
+      if (n < KEY_LO || n > KEY_HI) return;
+      const v = hammerOf(vel);
+      midiBox.show(noteName(n), vel, `${qv(v).toFixed(2)} m/s`);
+      void press(n, v);
+    },
+    off: (n) => lift(n, true),
+    cc: (num, v) => {
+      if (num === 64) midiPedal(pedalOn(v));
+      else if (num === 67) {
+        if (midiSoft === null) soft.setOff(true, PED_NOTE);
+        midiSoft = pedalOn(v);
+        midiBox.pedals(midiPed, midiSoft);
+      }
+    },
+  },
+  {
+    ready: () => audio.ready(),
+    stopped: () => {
+      midiPed = null;
+      midiSoft = null;
+      ped.setOff(false);
+      soft.setOff(false);
+      syncPedal();
+    },
+  },
+);
 
 /* テンポと音量（演奏中も効く） */
 movePlayStore();
@@ -820,7 +890,7 @@ function tick(): void {
       const free = freeOf(new Set(p.held.keys()), p.pedal),
         key = e.key,
         v = qv(pv.value === 'fix' ? V.vel : e.v);
-      void audio.strike(key, v, soft.value === 'on', Number(thump.value), free, at).then((view) => {
+      void audio.strike(key, v, softOn(), Number(thump.value), free, at).then((view) => {
         if (PL !== p) return;
         keys.set(key, { view, t0: tp, v, damp: Infinity, sd: sdOf(key) });
       });

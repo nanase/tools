@@ -320,7 +320,11 @@ a.unit:hover h3{text-decoration:underline;text-decoration-color:var(--ink-3);tex
 .prow.off .seg,.prow.off .chips{pointer-events:none}
 .prow.off .sc{grid-template-columns:minmax(0,1fr);height:auto;min-height:30px;padding:3px 6px;border-style:dashed;border-color:var(--line-2);background:none;cursor:default}
 .prow.off .sc-a,.prow.off .sc-f,.prow.off .sc-c,.prow.off .sc-p{display:none}
-.prow.off .sc-v{font:12px/1.3 var(--sans);color:var(--ink-3);white-space:normal}
+.prow.off .sc-v{font:12px/1.3 var(--sans);color:var(--ink-3);white-space:normal;text-align:center}
+/* 選択肢の行（ChoiceRow の offIn）も、無効の間は区切りボタンの代わりに破線の枠で理由を出す */
+.c-off{display:none;margin:0}
+.prow.off .c-off:not(:empty){display:flex;align-items:center;justify-content:center;text-align:center;min-height:30px;padding:3px 8px;border:1px dashed var(--line-2);border-radius:4px;font:12px/1.3 var(--sans);color:var(--ink-3)}
+.prow.off .c-val:has(.c-off:not(:empty)) .seg{display:none}
 .msg{min-height:18px;margin:0;font:500 12px/18px var(--mono);color:var(--ink-3);overflow-wrap:anywhere}
 .msg.pv{color:var(--ink)}
 .msg.er{color:var(--warn)}
@@ -386,6 +390,18 @@ a.unit:hover h3{text-decoration:underline;text-decoration-color:var(--ink-3);tex
   .tp-th{top:8px;width:18px;height:18px;margin-left:-9px}
   .tp-sq{width:36px;height:36px}
 }
+
+/* MIDI の枠（MidiPanel.astro）: 入力の行は、最後に弾いた音・ベロシティのバー・値・ペダルの灯りを 1 行に並べる */
+#midiBtn{display:inline-flex;align-items:center;gap:7px}
+.prow.mi-in{grid-template-columns:var(--sw) auto minmax(0,1fr);grid-template-areas:"sym name sub"}
+.mi-mon{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;padding:0;font:500 12.5px/1.3 var(--mono);color:var(--ink-2)}
+.mi-mon b{min-width:2.6em;color:var(--ink);font-weight:700}
+.mi-bar{position:relative;flex:1 1 60px;min-width:40px;height:8px;border:1px solid var(--line);border-radius:2px;background:var(--inset);overflow:hidden}
+.mi-bar i{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--ink-2)}
+.mi-v{min-width:8.5em;white-space:nowrap;font-variant-numeric:tabular-nums}
+.mi-pd{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.midi-msg{margin:8px 8px 0}
+.midi-msg:empty{display:none}
 
 /* 数値欄の外に置くスライダー（ファイルの再生位置など） */
 .sl{position:relative}
