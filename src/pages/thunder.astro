@@ -7,7 +7,19 @@ import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
 import RelatedTools from '../components/RelatedTools.astro';
 import SiteLayout from '../layouts/SiteLayout.astro';
-import { DIST, ENERGIES, GROUNDS, HILL, HILLS, LAPSE, STROKES, VOL, WAITS } from '../tools/thunder/params';
+import {
+  DIST,
+  ENERGIES,
+  GROUNDS,
+  HILL_H,
+  HILL_X,
+  HILLS,
+  LAPSE,
+  SIDES,
+  STROKES,
+  VOL,
+  WAITS,
+} from '../tools/thunder/params';
 import '../tools/thunder/style.css';
 import { SURROUNDS } from '../tools/thunder/surround';
 import Theory from '../tools/thunder/Theory.astro';
@@ -28,7 +40,7 @@ const name = '雷鳴';
         <span class="stag"><i class="th-dot th-dk" aria-hidden="true"></i>聞き手</span>
         <span class="stag"><i class="sw th-sw-d th-dk" aria-hidden="true"></i>直接音</span>
         <span class="stag"><i class="sw th-sw-e th-dk" aria-hidden="true"></i>反射音</span>
-        <span class="stag th-hint">地面をドラッグして聞き手を動かす</span>
+        <span class="stag th-hint">地面や山をドラッグして動かす</span>
       </div>
       <div class="th-cv th-dk"><canvas id="th-sec" class="th-sec" role="img" aria-label="横から見た放電路と聞き手"></canvas><div class="th-busy" aria-hidden="true"><i></i>計算しています</div></div>
       <h3 class="vh">音圧の波形<span>横軸は光ってからの時間</span></h3>
@@ -49,6 +61,7 @@ const name = '雷鳴';
       <Panel hid="hd-src" title="雷と聞き手" class="a-src">
         <div class="ptab">
           <ParamRow d={DIST} />
+          <ChoiceRow k="side" name="聞き手の方向" sub="落雷点から見た聞き手の方向。図の地面で落雷点の反対側へドラッグしても変わる" choices={SIDES} value="1" />
           <ChoiceRow k="n" name="放電の回数" sub="1 回の雷で同じ放電路に電流が流れる回数。2 回目からは雲の中で分かれて先へ伸びる" choices={STROKES} value="4" />
           <ChoiceRow k="e" sym="<i>E</i>" name="放電路のエネルギー" sub="放電路 1 m あたりに出るエネルギー [J/m]。大きいほど N 波が長く、音が低い" choices={ENERGIES} value="1e6" />
         </div>
@@ -58,8 +71,10 @@ const name = '雷鳴';
           <ChoiceRow k="gnd" name="地面の反射" sub="地面で返る音を足すか" choices={GROUNDS} value="1" />
           <ChoiceRow k="env" name="周囲の反響" sub="聞き手の近くの家・木・建物で散った音が遅れて重なる" choices={SURROUNDS} value="town" />
           <ChoiceRow k="ter" name="地形の反響" sub="数 km 先の丘・山・林で散って戻る音。高い音は途中で吸われ、低い音ほど長く残る" choices={TERRAINS} value="hills" />
-          <ChoiceRow k="hill" name="後方の山" sub="聞き手の後方に崖を置き、そこで返る音（こだま）を足す" choices={HILLS} value="0" />
-          {HILL.map((d) => <ParamRow d={d} />)}
+          <ChoiceRow k="hill" name="山" sub="崖を置き、そこで返る音（こだま）を足す。崖の面は聞き手の側を向き、雷との間にあると崖の向こうの低い所の音が弱まる" choices={HILLS} value="0" />
+          <ChoiceRow k="hside" name="山の方向" sub="落雷点から見た山の方向" choices={SIDES} value="1" msg />
+          <ParamRow d={HILL_X} />
+          <ParamRow d={HILL_H} />
         </div>
         <More id="g-env"><div class="ptab"><ParamRow d={LAPSE} /></div></More>
       </Panel>

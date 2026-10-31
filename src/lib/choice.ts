@@ -62,12 +62,17 @@ export class Choice<V extends string = string> {
 
   /** 選んで保存し、onChange を呼ぶ */
   private pick(v: V): void {
+    this.choose(v);
+    this.onChange?.(v);
+  }
+
+  /** 押したときと同じく選んで保存する（図のドラッグなど、ほかの操作で選ぶとき。onChange は呼ばない） */
+  choose(v: V): void {
     this.set(v);
     if (this.key) {
       if (v === this.def) forget(this.key);
       else store(this.key, v);
     }
-    this.onChange?.(v);
   }
 
   /** 既定値と違うか（無効の行と、既定値の選択肢を選べない間は数えない） */

@@ -1,7 +1,9 @@
 /**
  * 雷鳴のページの図（canvas）: 横から見た断面・届く量の分布・波形・スペクトル。
- * 重い部分（放電路の点・波形）は裏の canvas に一度だけ描き、光らせている間は波面・届いている所・再生の線だけを重ねる
+ * 重い部分（放電路の点・波形）は裏の canvas に一度だけ描き、光らせている間は波面・届いている所・再生の線だけを重ねる。
+ * 計算が届く前は、放電路の形（灰）・地面・家・聞き手と、波形の枠と目盛りだけを描く
  */
+import type { Branch } from './channel';
 import type { Reply } from './worker';
 
 /** 色（CSS の変数から読む） */
@@ -116,10 +118,15 @@ const PADL = 34,
   PADR = 14,
   GROUND = 20,
   TOP = 8;
-/** 窓の右端: 聞き手（と山）が入り、地面をドラッグして少し先まで動かせる幅 */
-export function sectionView(w: number, h: number, d: number, back: number, xmin: number, xmax: number): View {
-  const x0 = Math.min(-1500, xmin - 300),
-    x1 = Math.max(3500, xmax + 300, (d + back + 300) * 1.25),
+/**
+ * 窓の端: 放電路・聞き手・山が入り、聞き手と山はドラッグして少し先まで動かせる幅。
+ * d は聞き手の x、hill は山の崖の x（なしは null）。どちらも負なら落雷点の左
+ */
+export function sectionView(w: number, h: number, d: number, hill: number | null, xmin: number, xmax: number): View {
+  const far = (x: number) => x * 1.25 + Math.sign(x) * 800,
+    ends = [d, hill ?? 0].map(far),
+    x0 = Math.min(-1500, xmin - 300, ...ends),
+    x1 = Math.max(3500, xmax + 300, ...ends),
     z1 = 3000,
     kx = (w - PADL - PADR) / (x1 - x0),
     kz = (h - GROUND - TOP) / z1;
@@ -191,15 +198,17 @@ export const NOW = 0.06;
 const FLASH = 0.08;
 
 export interface Section {
-  r: Reply;
-  /** 直接届く点と、山で返って届く点 */
-  pts: Pts;
-  echo: Pts;
+  branches: readonly Branch[];
+  /** 直接届く点と、山で返って届く点（計算が届く前は null で、放電路を灰で描く） */
+  pts: Pts | null;
+  echo: Pts | null;
   view: View;
   base: number;
+  /** 聞き手の x [m]（負なら落雷点の左） */
   dist: number;
   /** 地面で返すか */
   ground: boolean;
+  /** 山の崖の x [m]（聞き手の後ろ）と高さ [m] */
   hill: { x: number; h: number } | null;
   /** 止まっているときに道すじを描く放電路の点 [m]（雲の底） */
   src: [number, number];
@@ -212,7 +221,8 @@ export interface Section {
 export interface Live {
   /** 光ってからの時間 [s]（null は止まっている） */
   tau: number | null;
-  drag: boolean;
+  /** ドラッグしているもの（していなければ null） */
+  drag: 'lis' | 'hill' | null;
 }
 
 const sectionLayer = new Layer();
@@ -238,42 +248,64 @@ export function drawSection(cv: HTMLCanvasElement, s: Section, lv: Live, key: st
       b.stroke();
       b.fillText(`${k} km`, 2, y + 4);
     }
+    const q = s.pts;
+    if (!q) {
+      /* 計算が届く前: 放電路の形だけを灰で */
+      b.strokeStyle = p.ink3;
+      b.globalAlpha = 0.6;
+      b.lineWidth = 1.2;
+      for (const br of s.branches) {
+        if (br.t > 0) continue;
+        b.beginPath();
+        for (let i = 0; i < br.p.length; i += 3) b.lineTo(v.sx(br.p[i]), v.sz(br.p[i + 2]));
+        b.stroke();
+      }
+      b.globalAlpha = 1;
+      return;
+    }
     /* 放電路: 届く時刻で塗る（黄が早く、青が遅い） */
-    const span = Math.max(s.pts.c1 - s.pts.c0, 1e-3),
+    const span = Math.max(q.c1 - q.c0, 1e-3),
       cols = Array.from({ length: NC }, (_, k) => mix(p.ch1, p.ch2, k / (NC - 1))),
       bins: number[][] = cols.map(() => []);
-    for (let i = 0; i < s.pts.n; i++) bins[Math.min(NC - 1, Math.floor(((s.pts.c[i] - s.pts.c0) / span) * NC))].push(i);
+    for (let i = 0; i < q.n; i++) bins[Math.min(NC - 1, Math.floor(((q.c[i] - q.c0) / span) * NC))].push(i);
     bins.forEach((L, k) => {
       b.fillStyle = cols[k];
-      for (const i of L) b.fillRect(v.sx(s.pts.x[i]) - 0.9, v.sz(s.pts.z[i]) - 0.9, 1.8, 1.8);
+      for (const i of L) b.fillRect(v.sx(q.x[i]) - 0.9, v.sz(q.z[i]) - 0.9, 1.8, 1.8);
     });
   });
   g.drawImage(bg, 0, 0, w, h);
   const gy = v.sz(0),
     lx = v.sx(s.dist),
     ly = gy - 12,
-    hx = s.hill ? v.sx(s.hill.x) : w;
-  const tau = lv.tau;
-  if (tau != null && tau > 0) {
+    /* 山は聞き手の後ろ: 右の聞き手なら右に、左の聞き手なら左に立つ（dir は崖から見た落雷点と反対の向き） */
+    dir = s.hill && s.hill.x < s.dist ? -1 : 1,
+    hx = s.hill ? v.sx(s.hill.x) : dir > 0 ? w : 0;
+  const tau = lv.tau,
+    pts = s.pts,
+    echo = s.echo;
+  if (tau != null && tau > 0 && pts && echo) {
     /* 波面: 放電路の頂点から半径 c·(τ − 放電の時刻)（縦横の縮尺が違うので楕円）。地面と山で返った波面は鏡像の点から。
-       2 回目からの放電は、頂点を間引いて描く。each で頂点ごとに描く前の切り抜きを足せる */
+       2 回目からの放電は、頂点を間引いて描く。each で頂点ごとに描く前の切り抜きを足せる（false を返すとその頂点は描かない） */
     const fronts = (
       cx: (x: number) => number,
       cz: (z: number) => number,
       col: string,
       al: number,
-      each?: (x: number, z: number) => void,
+      each?: (x: number, z: number) => boolean,
     ) => {
       g.strokeStyle = col;
       g.globalAlpha = al;
       g.lineWidth = 1;
-      for (const br of s.r.branches) {
+      for (const br of s.branches) {
         const r = s.c * (tau - br.t);
         if (r <= 0) continue;
         for (let i = 0; i < br.p.length; i += 3 * (br.t > 0 ? 36 : 12)) {
           if (each) {
             g.save();
-            each(br.p[i], br.p[i + 2]);
+            if (!each(br.p[i], br.p[i + 2])) {
+              g.restore();
+              continue;
+            }
           }
           g.beginPath();
           g.ellipse(cx(br.p[i]), cz(br.p[i + 2]), r * v.kx, r * v.kz, 0, 0, 2 * Math.PI);
@@ -283,30 +315,32 @@ export function drawSection(cv: HTMLCanvasElement, s: Section, lv: Live, key: st
       }
       g.globalAlpha = 1;
     };
-    const clip = (x1: number, f: () => void) => {
+    /* 地面より上の、画面の x が xa〜xb の間だけに描く */
+    const clip = (xa: number, xb: number, f: () => void) => {
       g.save();
       g.beginPath();
-      g.rect(0, 0, x1, gy);
+      g.rect(xa, 0, xb - xa, gy);
       g.clip();
       f();
       g.restore();
     };
-    clip(w, () => {
+    clip(0, w, () => {
       fronts(v.sx, v.sz, p.ch2, 0.08);
       if (s.ground) fronts(v.sx, (z) => v.sz(-z), p.echo, 0.07);
     });
     const hl = s.hill;
     if (hl)
-      clip(hx, () =>
+      clip(dir > 0 ? 0 : hx, dir > 0 ? hx : w, () =>
         fronts(
           (x) => v.sx(2 * hl.x - x),
           v.sz,
           p.echo,
           0.1,
-          /* 崖で返った波は、崖の鏡像の点から崖の上端と下端を通る 2 本の線の間にだけある */
+          /* 崖で返った波は、崖の鏡像の点から崖の上端と下端を通る 2 本の線の間にだけある。崖の向こうの点の音は返らない */
           (x, z) => {
+            if ((x - hl.x) * (s.dist - hl.x) <= 0) return false;
             const ix = 2 * hl.x - x,
-              far = v.x0 - 1000,
+              far = dir > 0 ? v.x0 - 1000 : v.x1 + 1000,
               at = (zc: number) => z + ((zc - z) * (far - ix)) / (hl.x - ix);
             g.beginPath();
             g.moveTo(v.sx(hl.x), v.sz(hl.h));
@@ -315,6 +349,7 @@ export function drawSection(cv: HTMLCanvasElement, s: Section, lv: Live, key: st
             g.lineTo(v.sx(hl.x), v.sz(0));
             g.closePath();
             g.clip();
+            return true;
           },
         ),
       );
@@ -332,9 +367,9 @@ export function drawSection(cv: HTMLCanvasElement, s: Section, lv: Live, key: st
       }
       return [e - a, sx / Math.max(1, e - a), sz / Math.max(1, e - a)];
     };
-    now(s.pts, p.accent);
+    now(pts, p.accent);
     if (s.hill) {
-      const [n, ex, ez] = now(s.echo, p.echo);
+      const [n, ex, ez] = now(echo, p.echo);
       if (n) echoRay(g, s, ex, ez, p.echo, 0.9, false);
     }
   } else {
@@ -349,8 +384,10 @@ export function drawSection(cv: HTMLCanvasElement, s: Section, lv: Live, key: st
     g.stroke();
     g.globalAlpha = 1;
     /* 山で返る音は、崖で返れる低い所（山で返って届く点の真ん中の時刻のもの）から */
-    const m = s.echo.n >> 1;
-    if (s.hill && s.echo.n) echoRay(g, s, s.echo.x[m], s.echo.z[m], p.echo, 0.8, true);
+    if (s.hill && echo?.n) {
+      const m = echo.n >> 1;
+      echoRay(g, s, echo.x[m], echo.z[m], p.echo, 0.8, true);
+    }
   }
   /* 地面と山 */
   g.fillStyle = p.earth;
@@ -361,18 +398,28 @@ export function drawSection(cv: HTMLCanvasElement, s: Section, lv: Live, key: st
     g.beginPath();
     g.moveTo(hx, gy);
     g.lineTo(hx, top);
-    g.lineTo(hx + Math.max(10, (gy - top) * 1.5), gy);
+    g.lineTo(hx + dir * Math.max(10, (gy - top) * 1.5), gy);
     g.closePath();
     g.fill();
+    if (lv.drag === 'hill') {
+      g.strokeStyle = p.accent;
+      g.lineWidth = 1.5;
+      g.stroke();
+    }
   }
-  /* 距離の目盛り（地面の中） */
+  /* 距離の目盛り（地面の中。左も落雷点からの距離） */
   g.font = `10px ${p.mono}`;
   g.fillStyle = p.ink3;
   const stp = niceStep(v.x1 - v.x0);
-  for (let x = 0; x <= v.x1 && v.sx(x) < w - 36; x += stp) g.fillText(`${x / 1000}`, v.sx(x) - 3, h - 5);
+  for (let x = Math.ceil(v.x0 / stp) * stp; x <= v.x1 && v.sx(x) < w - 36; x += stp)
+    if (v.sx(x) > 6) g.fillText(`${Math.abs(x) / 1000}`, v.sx(x) - 3, h - 5);
   g.fillText('km', w - 22, h - 5);
-  /* 落雷点の家（大きさは図の縮尺によらない絵） */
+  /* 落雷点の家（大きさは図の縮尺によらない絵）と、ほかに地面に届いた所の印 */
   house(g, v.sx(0), gy, p);
+  for (const br of s.branches) {
+    const n = br.p.length;
+    if (br.k === 0 && br.t === 0 && n > 3 && br.p[n - 1] <= 0) strike(g, v.sx(br.p[n - 3]), gy, p.ch1);
+  }
   /* 光った瞬間（放電ごと。2 回目からは少し弱く） */
   if (lv.tau != null) {
     let al = 0;
@@ -388,10 +435,10 @@ export function drawSection(cv: HTMLCanvasElement, s: Section, lv: Live, key: st
     }
   }
   /* 聞き手 */
-  person(g, lx, gy, lv.drag ? 1.2 : 1, p.accent);
+  person(g, lx, gy, lv.drag === 'lis' ? 1.2 : 1, p.accent);
   g.font = `600 11.5px ${p.mono}`;
   g.fillStyle = p.ink;
-  const lab = `${fmtKm(s.dist)} km`,
+  const lab = `${fmtKm(Math.abs(s.dist))} km`,
     tw = g.measureText(lab).width;
   g.fillText(lab, Math.min(lx + 12, w - tw - 4), gy - 16);
 }
@@ -413,7 +460,7 @@ function echoRay(
     u = (H - (2 * H - x)) / (s.dist - (2 * H - x)),
     zh = z + (0 - z) * u;
   if (zh > s.hill.h || zh < 0) return;
-  const hx = v.sx(H) - 1,
+  const hx = v.sx(H) + (H < s.dist ? 1 : -1),
     hy = v.sz(zh);
   g.strokeStyle = col;
   g.globalAlpha = al;
@@ -442,6 +489,21 @@ function house(g: CanvasRenderingContext2D, x: number, gy: number, p: Pal): void
   g.fillStyle = p.sky;
   g.fillRect(x - 6, gy - 8, 4, 4);
   g.fillRect(x + 2, gy - 8, 3.5, 8);
+}
+
+/** 地面に届いた所: 地面の (x, gy) から上へ開く 5 本の短い線 */
+function strike(g: CanvasRenderingContext2D, x: number, gy: number, col: string): void {
+  g.strokeStyle = col;
+  g.lineWidth = 1.5;
+  g.lineCap = 'round';
+  g.beginPath();
+  for (let k = -2; k <= 2; k++) {
+    const a = (k * Math.PI) / 7;
+    g.moveTo(x + 3 * Math.sin(a), gy - 3 * Math.cos(a));
+    g.lineTo(x + 8 * Math.sin(a), gy - 8 * Math.cos(a));
+  }
+  g.stroke();
+  g.lineCap = 'butt';
 }
 
 /** 棒人間: 足が地面の (x, gy)、高さ 24 px × k */
@@ -477,10 +539,13 @@ export const fmtKm = (m: number): string =>
 /* ---------- 届く量と波形（時間の軸は光った時刻から） ---------- */
 
 export interface Track {
-  r: Reply;
+  /** 計算が届く前は null で、枠と目盛りだけを描く */
+  r: Reply | null;
   pal: Pal;
   /** 横軸の右端 [s] */
   t1: number;
+  /** 光ってから最初の音まで [s]（計算が届く前は見積もり） */
+  first: number;
 }
 const tx = (t: number, t1: number, w: number) => (t / t1) * w;
 
@@ -489,7 +554,7 @@ const AXIS = 14;
 /** 光ってから最初の音までを灰で塗る */
 function waitZone(b: CanvasRenderingContext2D, s: Track, w: number, h: number): void {
   b.fillStyle = s.pal.grid;
-  b.fillRect(0, 0, tx(s.r.first, s.t1, w), h);
+  b.fillRect(0, 0, tx(s.first, s.t1, w), h);
 }
 
 /**
@@ -506,14 +571,14 @@ export function drawHist(cv: HTMLCanvasElement, h: number, s: Track, tau: number
     b.fillStyle = p.screen;
     b.fillRect(0, 0, w, h);
     waitZone(b, s, w, hb);
-    const H = r.hist,
-      n = H[0].length;
+    const H = r?.hist ?? [],
+      n = H.length ? H[0].length : 0;
     let mx = 1e-30;
     for (let k = 0; k < n; k++) mx = Math.max(mx, H[0][k] + H[1][k] + H[2][k] + H[3][k]);
-    const bw = Math.max(tx(r.dt, s.t1, w), 0.7),
+    const bw = Math.max(tx(r?.dt ?? 0, s.t1, w), 0.7),
       top = 18,
       hh = hb - top - 2;
-    for (let k = 0; k < n; k++) {
+    for (let k = 0; r && k < n; k++) {
       const a = H[0][k] / mx,
         q = (H[1][k] + H[2][k] + H[3][k]) / mx,
         x = tx(r.h0 + k * r.dt, s.t1, w);
@@ -565,11 +630,9 @@ export function drawWave(cv: HTMLCanvasElement, h: number, s: Track, tau: number
     p = s.pal,
     r = s.r;
   const bg = waveLayer.get(key, w, h, (b) => {
-    const y = r.y,
-      pk = r.ypk || 1,
-      mid = h / 2,
+    const mid = h / 2,
       amp = mid - 3,
-      first = tx(r.first, s.t1, w);
+      first = tx(s.first, s.t1, w);
     b.fillStyle = p.screen;
     b.fillRect(0, 0, w, h);
     waitZone(b, s, w, h);
@@ -579,6 +642,9 @@ export function drawWave(cv: HTMLCanvasElement, h: number, s: Track, tau: number
     b.moveTo(0, Math.round(mid) + 0.5);
     b.lineTo(w, Math.round(mid) + 0.5);
     b.stroke();
+    if (!r) return;
+    const y = r.y,
+      pk = r.ypk || 1;
     b.strokeStyle = p.ch1;
     b.beginPath();
     for (let px = 0; px < w; px++) {
@@ -619,7 +685,8 @@ function cursor(g: CanvasRenderingContext2D, tau: number | null, t1: number, w: 
 /** 横軸の範囲 [Hz]（対数） */
 const F0 = 5,
   F1 = 2000;
-export function drawSpectrum(cv: HTMLCanvasElement, h: number, r: Reply, pal: Pal, peakHz: number): void {
+/** スペクトル（r が null なら目盛りだけ） */
+export function drawSpectrum(cv: HTMLCanvasElement, h: number, r: Reply | null, pal: Pal, peakHz: number): void {
   const [g, w] = sizeCanvas(cv, h),
     L = 30,
     B = 16,
@@ -629,8 +696,8 @@ export function drawSpectrum(cv: HTMLCanvasElement, h: number, r: Reply, pal: Pa
     hh = h - B - top;
   g.fillStyle = pal.screen;
   g.fillRect(0, 0, w, h);
-  let mx = Number.NEGATIVE_INFINITY;
-  for (let k = 1; k < r.sf.length && r.sf[k] <= F1; k++) if (r.sf[k] >= F0) mx = Math.max(mx, r.sdb[k]);
+  let mx = r ? Number.NEGATIVE_INFINITY : 0;
+  for (let k = 1; r && k < r.sf.length && r.sf[k] <= F1; k++) if (r.sf[k] >= F0) mx = Math.max(mx, r.sdb[k]);
   const fy = (db: number) => top + (Math.min(0, Math.max(-span, db - mx)) / -span) * hh;
   /* 目盛り */
   g.strokeStyle = pal.grid;
@@ -653,6 +720,7 @@ export function drawSpectrum(cv: HTMLCanvasElement, h: number, r: Reply, pal: Pa
     g.stroke();
     g.fillText(d ? `−${d}` : '0', 2, y + 4);
   }
+  if (!r) return;
   /* 帯ごとに平らにならす（1/12 オクターブの平均） */
   g.strokeStyle = pal.ch1;
   g.lineWidth = 1.6;

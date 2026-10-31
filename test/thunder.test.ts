@@ -1,11 +1,23 @@
 import { describe, expect, it } from 'vitest';
 import { absorption, soundSpeed } from '../src/lib/air';
 import { fft } from '../src/tools/biquad/filter';
-import { type Branch, branchLength, CH0, makeChannel, strokeTimes, turnAngles } from '../src/tools/thunder/channel';
+import {
+  type Branch,
+  branchLength,
+  CH0,
+  FORK_P,
+  LEGS_P,
+  makeChannel,
+  shape,
+  strokeTimes,
+  TWIN_P,
+  turnAngles,
+} from '../src/tools/thunder/channel';
 import type { Elements } from '../src/tools/thunder/path';
 import {
   arrivalHistogram,
   audibleRange,
+  barrierDb,
   bendRadius,
   elements,
   firstArrival,
@@ -195,17 +207,80 @@ describe('放電路', () => {
     expect(lens.filter((l) => l < CH0.lmin - 1e-9).length / lens.length).toBeLessThan(0.01);
     expect(lens.reduce((x, y) => x + y, 0) / lens.length).toBeCloseTo(8, 0);
   });
-  it('本流は地面から雲の底まで上がり、雲の中を cloud だけ進む', () => {
-    const [m] = makeChannel(CH0),
+  it('本流は地面から雲の底まで上がり、雲の中の最初の向きへ進む。ほかの向きは雲の底から', () => {
+    const sh = shape(CH0),
+      bs = makeChannel(CH0),
+      [m] = bs,
       zs = m.p.filter((_, i) => i % 3 === 2);
+    expect(sh.legs.length).toBe(2);
     expect(m.p[2]).toBe(0);
     expect(Math.max(...zs)).toBeGreaterThanOrEqual(CH0.base);
-    expect(branchLength(m.p)).toBeGreaterThan(CH0.base + CH0.cloud);
+    expect(branchLength(m.p)).toBeGreaterThan(CH0.base + sh.legs[0].len);
+    const leg = bs[1];
+    expect(leg.k).toBe(0);
+    /* 本流が雲の底に着いた点から始まる */
+    const top = m.p.findIndex((v, i) => i % 3 === 2 && v >= CH0.base) - 2;
+    expect(Array.from(leg.p.subarray(0, 3))).toEqual(Array.from(m.p.subarray(top, top + 3)));
+    expect(branchLength(leg.p)).toBeGreaterThanOrEqual(sh.legs[1].len);
+  });
+  it('形の確かさ: 雲の中の向きの数・落雷 2 か所以上・落雷点に 2 本は、LEGS_P・FORK_P・TWIN_P に近い', () => {
+    const N = 4000,
+      legs = [0, 0, 0, 0];
+    let forks = 0,
+      twins = 0;
+    for (let seed = 1; seed <= N; seed++) {
+      const sh = shape({ ...CH0, seed });
+      legs[sh.legs.length]++;
+      if (sh.forks.length) forks++;
+      twins += sh.twins;
+    }
+    for (let k = 0; k < legs.length; k++) expect(Math.abs(legs[k] / N - LEGS_P[k])).toBeLessThan(0.03);
+    expect(Math.abs(forks / N - FORK_P)).toBeLessThan(0.02);
+    expect(Math.abs(twins / N - TWIN_P)).toBeLessThan(0.02);
+  });
+  it('地面に届く枝は地面まで下り、2 本目の放電路は落雷点から雲の底まで上がる', () => {
+    let fk = 0,
+      tw = 0;
+    for (let seed = 1; seed <= 60; seed++) {
+      const ch = { ...CH0, seed, strokes: 1 },
+        sh = shape(ch),
+        bs = makeChannel(ch).filter((b) => b.k === 0),
+        extra = bs.slice(sh.legs.length ? sh.legs.length : 1);
+      expect(extra).toHaveLength(sh.forks.length + sh.twins);
+      sh.forks.forEach((f, i) => {
+        const p = extra[i].p,
+          n = p.length;
+        expect(p[n - 1]).toBe(0);
+        /* 分かれる高さの近くから、目標の点の向きへ（乱歩は目標の向きから 35° までそれる） */
+        expect(Math.abs(p[2] - f.z)).toBeLessThan(CH0.lmax);
+        expect(Math.hypot(p[n - 3] - f.x, p[n - 2] - f.y)).toBeLessThan(
+          Math.tan((35 * Math.PI) / 180) * Math.hypot(f.z, f.x - p[0], f.y - p[1]),
+        );
+        fk++;
+      });
+      for (let i = 0; i < sh.twins; i++) {
+        const p = extra[sh.forks.length + i].p;
+        expect(Array.from(p.subarray(0, 3))).toEqual([0, 0, 0]);
+        expect(p[p.length - 1]).toBeGreaterThanOrEqual(CH0.base);
+        tw++;
+      }
+    }
+    expect(fk).toBeGreaterThan(0);
+    expect(tw).toBeGreaterThan(0);
+  });
+  it('雲の中へ進まない雷は、2 回目からも落雷点から雲の底までを通る', () => {
+    let seed = 1;
+    while (shape({ ...CH0, seed }).legs.length) seed++;
+    const bs = makeChannel({ ...CH0, seed }),
+      later = bs.filter((b) => b.t > 0);
+    expect(later).toHaveLength(CH0.strokes - 1);
+    for (const b of later) expect(Array.from(b.p)).toEqual(Array.from(bs[0].p));
   });
   it('多重雷: 2 回目からは本流の根元を通り、雲の中で分かれて grow だけ伸びる。回数を増やしても前の回は変わらない', () => {
     const four = makeChannel(CH0),
       eight = makeChannel({ ...CH0, strokes: 8 }),
-      mains = (bs: Branch[]) => bs.filter((b) => b.k === 0);
+      /* 放電ごとの本流（最初の本流と、2 回目からの本流） */
+      mains = (bs: Branch[]) => bs.filter((b, i) => i === 0 || b.t > 0);
     expect(strokeTimes(four)).toHaveLength(4);
     expect(strokeTimes(eight)).toHaveLength(8);
     expect(strokeTimes(eight).slice(0, 4)).toEqual(strokeTimes(four));
@@ -257,8 +332,22 @@ describe('届く時刻', () => {
     expect(el.t[g] - el.t[d]).toBeCloseTo((Math.hypot(3000, 510.5) - Math.hypot(3000, 490.5)) / C, 4);
     expect(el.p[g] / el.p[d]).toBeCloseTo(0.8 * (el.r[d] / el.r[g]) * 1, 1);
   });
+  it('左の聞き手: 放電路を左右に映したときの右の聞き手と、届く時刻と山の高さが同じ（後ろの山も左へ）', () => {
+    const ch = makeChannel({ ...CH0, strokes: 2 }),
+      flip = ch.map((b) => ({ ...b, p: b.p.map((v, i) => (i % 3 === 0 ? -v : v)) })),
+      s: Scene = { ...SCENE0, dist: 2500, hillX: 3300, hillH: 300 },
+      a = elements(ch, s),
+      b = elements(flip, { ...s, dist: -2500, hillX: -3300 });
+    expect(b.n).toBe(a.n);
+    expect(Array.from(b.via)).toEqual(Array.from(a.via));
+    for (let i = 0; i < a.n; i += 97) {
+      expect(b.t[i]).toBeCloseTo(a.t[i], 9);
+      expect(b.p[i]).toBeCloseTo(a.p[i], 9);
+    }
+    expect(Array.from(a.via).includes(Via.Hill)).toBe(true);
+  });
   it('聞き手の後ろの山は、崖の高さより下で反射する部分だけこだまを返す', () => {
-    const s: Scene = { ...FREE, dist: 2000, hillBack: 1000, hillH: 300, hill: 0.7 },
+    const s: Scene = { ...FREE, dist: 2000, hillX: 3000, hillH: 300, hill: 0.7 },
       el = elements([line([0, 0, 0], [0, 0, 3000], 5e5, 60)], s),
       hz = Array.from(el.via).flatMap((v, i) => (v === Via.Hill ? [el.xyz[3 * i + 2]] : []));
     expect(hz.length).toBeGreaterThan(0);
@@ -267,6 +356,53 @@ describe('届く時刻', () => {
     /* こだまは直接の音より 2·1000/c 以上遅れる */
     const tHill = Math.min(...Array.from(el.t).filter((_, i) => el.via[i] === Via.Hill));
     expect(tHill - firstArrival(el)).toBeGreaterThanOrEqual((2 * 1000) / C - 1e-6);
+  });
+  it('雷との間の山: 崖の向こうの低い所の音だけ弱まり、こだまは返らない', () => {
+    const ch = [line([0, 0, 0], [0, 0, 3000], 5e5, 60)],
+      s: Scene = { ...FREE, dist: 3000, hillX: 1500, hillH: 300, hill: 0.7 },
+      a = elements(ch, { ...s, hillH: 0 }),
+      b = elements(ch, s);
+    expect(Array.from(b.via).includes(Via.Hill)).toBe(false);
+    /* 聞き手への線が崖を横切る高さは z/2。z < 600 m は隠れ、それより上は変わらない */
+    for (let i = 0; i < a.n; i++) {
+      if (a.via[i] !== Via.Direct) continue;
+      const z = a.xyz[3 * i + 2];
+      if (z < 550) expect(b.p[i] / a.p[i]).toBeLessThan(10 ** (-4.7 / 20));
+      if (z > 650) expect(b.p[i]).toBeCloseTo(a.p[i], 12);
+    }
+  });
+  it('崖の回折の弱まりは 10 log₁₀(3 + 20N)、N = 2δ/λ（上限 24 dB）', () => {
+    const T = 0.01,
+      f = nPeak(T),
+      /* 点 (−100, 0, 0) から聞き手 (100, 0, 0) へ、x = 0 の高さ 10 m の崖を越える。δ = 2√(100² + 10²) − 200 */
+      d = 2 * Math.hypot(100, 10) - 200,
+      N = (2 * d * f) / C;
+    expect(barrierDb(-100, 0, 0, 100, 0, 0, 10, T, C)).toBeCloseTo(10 * Math.log10(3 + 20 * N), 9);
+    expect(barrierDb(-100, 0, 0, 100, 0, 0, 1000, T, C)).toBe(24);
+    /* 同じ側・崖より上を通るときは弱めない */
+    expect(barrierDb(50, 0, 0, 100, 0, 0, 10, T, C)).toBe(0);
+    expect(barrierDb(-100, 0, 30, 100, 0, 30, 10, T, C)).toBe(0);
+  });
+  it('頭上の雲の中の放電路: その下の聞き手には、落雷点より先に頭上から届く', () => {
+    let n = 0;
+    for (let seed = 1; seed <= 12; seed++) {
+      const ch = { ...CH0, seed, strokes: 1 },
+        right = shape(ch).legs.filter((l) => Math.cos((l.az * Math.PI) / 180) > 0);
+      if (!right.length || right[0].len < 4500) continue;
+      const el = elements(makeChannel(ch), { ...SCENE0, dist: 4000 });
+      /* 落雷点からなら 4000/c ≈ 11.7 s。頭上の雲の底（約 2 km）からなら 7 s 前後 */
+      expect(firstArrival(el)).toBeLessThan(4000 / C - 2);
+      n++;
+    }
+    expect(n).toBeGreaterThan(0);
+  });
+  it('雲の中の放電路は図の面（y = 0）の近くにある', () => {
+    const ys: number[] = [];
+    for (let seed = 1; seed <= 40; seed++)
+      for (const b of makeChannel({ ...CH0, seed }))
+        if (b.k === 0) for (let i = 0; i < b.p.length; i += 3) if (b.p[i + 2] > CH0.base) ys.push(Math.abs(b.p[i + 1]));
+    ys.sort((x, y) => x - y);
+    expect(ys[Math.floor(ys.length * 0.9)]).toBeLessThan(800);
   });
   it('影の領域: 届く距離 √(2Rz)、R = 2T/Γ。Fleagle の例（30 °C・9.8 K/km・5 km）で 25 km（l² = 4T₀h/Γ）', () => {
     const R = bendRadius(30, 9.8),
