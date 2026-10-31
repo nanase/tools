@@ -10,7 +10,7 @@
 
 ## 日食の要素（NASA の五千年正典）
 
-−1999〜+3000 年の 11,898 件の日食の目録とベッセル要素。ページは、ビルドのときにこの CSV から 100 年ごと・サロス系列ごとの JSON を作って読み込む（[src/pages/solar-eclipse/](../../pages/solar-eclipse/)）。
+−1999〜+3000 年の 11,898 件の日食の目録とベッセル要素です。ビルドのときにこの CSV から 100 年ごと・サロス系列ごとの JSON を作り、ページはそれを読み込みます（[src/pages/solar-eclipse/](../../pages/solar-eclipse/)）。
 
 - ファイル: [data/5mcse-besselian.csv](data/5mcse-besselian.csv)（取得したままで、加工していない）
 - 出典: [eclipse_besselian_from_mysqldump2.csv](https://eclipse.gsfc.nasa.gov/eclipse_besselian_from_mysqldump2.csv)（NASA Goddard Space Flight Center、Fred Espenak）
@@ -22,7 +22,7 @@
 
 ## 陸地（Natural Earth）
 
-地図・地球儀・サロス系列の図の陸地。
+地図・地球儀・サロス系列の図に描く陸地です。
 
 - ファイル: [public/solar-eclipse/land110.json](../../../public/solar-eclipse/land110.json)（1:110m）、[land50.json](../../../public/solar-eclipse/land50.json)（1:50m）
 - 出典: [Natural Earth](https://www.naturalearthdata.com/) の Physical Vectors の Land（[natural-earth-vector](https://github.com/nvkelso/natural-earth-vector) の GeoJSON）

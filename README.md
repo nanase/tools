@@ -1,55 +1,28 @@
 ![Tools + Simulators: 電子から音響・光学・天文まで](.github/banner.svg)
 
-電子回路やフィルタの計算と楽器・光学・天文のシミュレーションができるツール集です。<https://nanase.cc/tools/>
+電子回路の計算と、楽器・光学・天文のシミュレーションができるツール集です。
 
-Astro とフレームワークなしの TypeScript で作っています。見た目と動作の基準は [design/](design/) のモックです。
+<https://nanase.cc/tools/>
 
-## 準備
+## 動かし方
 
-[mise](https://mise.jdx.dev/) で Node と bun を入れ、依存を入れます。
+[mise](https://mise.jdx.dev/) で Node と bun を入れてから、次を実行します。
 
 ```sh
 mise install
 bun install
+bun run dev
 ```
 
-## コマンド
-
-| コマンド | 内容 |
-| --- | --- |
-| `bun run dev` | 開発サーバ（<http://localhost:4321/tools/>） |
-| `bun run build` | `dist/` へビルドする |
-| `bun run preview` | ビルド結果を確かめる |
-| `bun run check` | 型検査（astro check） |
-| `bun run lint` | Biome で検査する（`lint:fix` で直す） |
-| `bun run test` | Vitest でテストする |
-
-Astro と Vitest は [scripts/node.ts](scripts/node.ts) を通して、mise が入れた Node（`.mise.toml` の版）で動かします。PATH の先にほかの版の Node があっても使いません。版が違えば止まります。
-
-## CI と公開
-
-GitHub Actions（[.github/workflows/ci.yml](.github/workflows/ci.yml)）が、PR と main への push ごとに lint・型検査・テスト・ビルドを行います。main へ push すると、ビルド結果を GitHub Pages へ公開します。
-
-依存の更新は [Renovate](https://docs.renovatebot.com/) が PR を立てます。設定は [renovate.json](renovate.json) にあります。TypeScript は 6 系、Node は v26 系に留めます。PR は自動マージしません。
-
-## 共有の画像
-
-共有したときに出る画像（`public/og.png`）と、この README の冒頭の画像（`.github/banner.svg`）は、カードの図柄から作ります。図柄や副題を変えたら `bun run og-image` で作り直します。文字のフォントを Google Fonts から取り、PNG は Edge か Chrome のヘッドレスで撮ります（Windows の Edge 以外は環境変数 `BROWSER` でブラウザを指します）。
-
-## 旧 URL の転送
-
-旧 URL（`/tools/electric/timer555.html` など）と新 URL の対応表は `src/data/redirects.ts` にあります。ビルドすると旧パスに転送ページが出ます。
-
-本番の転送は Cloudflare の Bulk Redirects で行います。`bun run redirects` で `redirects/cloudflare.csv` を作り直し、ダッシュボードの Bulk Redirects で、リストへ CSV を取り込みます。
+<http://localhost:4321/tools/> で開きます。ほかのコマンドと公開の仕組みは [DEVELOPMENT.md](DEVELOPMENT.md) にあります。
 
 ## ライセンス
 
-MIT
+MIT です。
 
-ただし、楽器の音響モデルで演奏する曲のデータ（MIDI や LilyPond の楽譜と、そこから作る音符）には、曲ごとに原作と同じライセンスが付きます。曲ごとの出典とライセンスは [SCORES.md](SCORES.md) にあります。
+ただし、次のデータには元のライセンスが付きます。出典とライセンスはリンク先にあります。
 
-ハロ（暈）のページで計算と並べる写真（[public/photos/halo/](public/photos/halo/)）は Wikimedia Commons から取ったもので、写真ごとに元のライセンス（パブリックドメイン・CC0 1.0・CC BY 4.0）に従います。作者・出典・ライセンスは [src/tools/halo/photos.ts](src/tools/halo/photos.ts) とページの写真の下にあります。
-
-日食のページのデータ（NASA の日食の要素、Natural Earth の陸地、国土数値情報などから作った地名）にも、データごとの条件が付きます。出典と条件は [src/tools/solar-eclipse/SOURCES.md](src/tools/solar-eclipse/SOURCES.md) にあります。
-
-月のページのデータ（NASA の月面の標高と色、IAU・USGS の地名とウィキペディア日本語版の名前、NASA の月食の一覧）にも、データごとの条件が付きます。地名のデータ（[src/tools/moon/features.json](src/tools/moon/features.json)）は CC BY-SA 4.0 です。出典と条件は [src/tools/moon/SOURCES.md](src/tools/moon/SOURCES.md) にあります。
+- 楽器のページの曲: [SCORES.md](SCORES.md)
+- ハロ（暈）のページの写真（`public/photos/halo/`）: [src/tools/halo/photos.ts](src/tools/halo/photos.ts)
+- 日食のページのデータ: [src/tools/solar-eclipse/SOURCES.md](src/tools/solar-eclipse/SOURCES.md)
+- 月のページのデータ: [src/tools/moon/SOURCES.md](src/tools/moon/SOURCES.md)
