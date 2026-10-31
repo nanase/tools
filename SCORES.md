@@ -1,8 +1,11 @@
 # 曲のデータの出典とライセンス
 
-楽器の音響モデルで演奏する曲のデータは、公開されている電子楽譜から作っています。データは元の MIDI（`.mid`）か LilyPond のファイル（`.ly`・`.ily`。ヴァイオリンとトランペット）と、そこからスクリプトで作る音符（`.ts`）の 2 つです。
+楽器の音響モデルで演奏する曲のデータは、公開されている電子楽譜から作っています。1 曲のデータは次の 2 つです。
 
-この 2 つには、リポジトリの MIT ライセンスではなく、曲ごとに次のライセンスが付きます。加工の内容は、各 `.ts` の先頭のコメントに書いています。
+- 元の楽譜: MIDI（`.mid`）。ヴァイオリンとトランペットは LilyPond（`.ly`・`.ily`）
+- 楽譜からスクリプトで作る音符（`.ts`）
+
+この 2 つには、リポジトリの MIT ライセンスではなく曲ごとのライセンスが付きます。加工の内容は各 `.ts` の先頭のコメントにもあります。
 
 | 曲 | ツール | ライセンス |
 | --- | --- | --- |
@@ -378,7 +381,11 @@ J. S. バッハ「幻想曲とフーガ ト短調」より。
 
 データは [src/tools/violin/scores/](src/tools/violin/scores/) にあり、`bun run violin-scores` で作ります。MIDI ではなく LilyPond のファイルの声部を直接読みます（スラー・トリル・フェルマータ・強弱の記号を残すため）。
 
-加工（どの曲も共通）: 反復を演奏順に展開し、装飾音を除いた。時刻と長さを 4 分音符の 1/960 に丸めた。`.ly` は Mutopia Project の配布ファイルから、入力者のメールアドレスの行（`maintainerEmail`）だけを除いた。
+どの曲にも共通の加工:
+
+- 反復を演奏順に展開し、装飾音を除いた
+- 時刻と長さを 4 分音符の 1/960 に丸めた
+- `.ly` は Mutopia Project の配布ファイルから、入力者のメールアドレスの行（`maintainerEmail`）だけを除いた
 
 ### パルティータ 第 2 番 BWV 1004（5 楽章）
 
@@ -412,7 +419,7 @@ J. S. バッハ「無伴奏ヴァイオリンのためのソナタ 第 1 番」�
 
 ### エクルズ ソナタ ト短調（グラーヴェ・アダージョ）
 
-H. エクルズ作曲、J. Salmon によるヴァイオリンとピアノの編曲（1914 年）。ヴァイオリンの声部だけを使う。
+H. エクルズ作曲、J. Salmon によるヴァイオリンとピアノの編曲（1914 年）。ヴァイオリンの声部だけを使います。
 
 - ファイル: [eccles.ly](src/tools/violin/scores/eccles.ly)、[eccles-1.ts](src/tools/violin/scores/eccles-1.ts)（グラーヴェ）、[eccles-3.ts](src/tools/violin/scores/eccles-3.ts)（アダージョ）
 - 出典: [Mutopia Project の楽譜](https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=540)（Mutopia-2015/09/01-540）
@@ -423,11 +430,16 @@ H. エクルズ作曲、J. Salmon によるヴァイオリンとピアノの編�
 
 データは [src/tools/trumpet/scores/](src/tools/trumpet/scores/) にあり、`bun run trumpet-scores` で作ります。ヴァイオリンと同じく、LilyPond のファイルの旋律の声部を直接読みます（スラー・トリル・フェルマータ・強弱・スタッカート・アクセント・テヌートを残すため）。
 
-加工（どの曲も共通）: 音の高さを実音にした。時刻と長さを 4 分音符の 1/960 に丸めた。Mutopia Project の `.ly` は配布ファイルから、入力者のメールアドレスの行（`maintainerEmail`）だけを除いた（その行のあるメヌエット・アヴェ・マリア・御身がともにあるならば・メサイアのみ）。
+どの曲にも共通の加工:
+
+- 音の高さを実音にした
+- 時刻と長さを 4 分音符の 1/960 に丸めた
+- Mutopia Project の `.ly` は配布ファイルから、入力者のメールアドレスの行（`maintainerEmail`）だけを除いた
+  - その行があるのは、メヌエット・アヴェ・マリア・御身がともにあるならば・メサイアだけ
 
 ### ラ・レジュイサンス HWV 351
 
-G. F. ヘンデル「王宮の花火の音楽」より。C. Lecourt によるトランペットとオルガンの編曲の、トランペットの声部だけを使う。
+G. F. ヘンデル「王宮の花火の音楽」より。C. Lecourt によるトランペットとオルガンの編曲の、トランペットの声部だけを使います。
 
 - ファイル: [hwv351.ly](src/tools/trumpet/scores/hwv351.ly)、[hwv351.ts](src/tools/trumpet/scores/hwv351.ts)
 - 出典: [Mutopia Project の楽譜](https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=1864)（Mutopia-2013/09/01-1864）
@@ -438,7 +450,7 @@ G. F. ヘンデル「王宮の花火の音楽」より。C. Lecourt によるト
 
 ### メヌエット ト長調 BWV Anh. 114
 
-C. ペツォルト作曲（伝 J. S. バッハ）。S. Mohamed による 2 本のトランペットの編曲の、第 1 声部だけを使う。
+C. ペツォルト作曲（伝 J. S. バッハ）。S. Mohamed による 2 本のトランペットの編曲の、第 1 声部だけを使います。
 
 - ファイル: [bwv-anh114.ly](src/tools/trumpet/scores/bwv-anh114.ly)、[bwv-anh114.ts](src/tools/trumpet/scores/bwv-anh114.ts)
 - 出典: [Mutopia Project の楽譜](https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=258)（Mutopia-2011/06/19-258）
@@ -468,7 +480,7 @@ G. H. シュテルツェル作曲（伝 J. S. バッハ）。「Bist du bei mir�
 
 ### ナポリの踊り（白鳥の湖）
 
-P. I. チャイコフスキー「白鳥の湖」より。L. Sardain によるトランペット・タンバリン・ピアノの編曲の、トランペットの声部だけを使う。
+P. I. チャイコフスキー「白鳥の湖」より。L. Sardain によるトランペット・タンバリン・ピアノの編曲の、トランペットの声部だけを使います。
 
 - ファイル: [napolitaine.ly](src/tools/trumpet/scores/napolitaine.ly)、[napolitaine.ts](src/tools/trumpet/scores/napolitaine.ts)
 - 出典: [Mutopia Project の楽譜](https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=896)（Mutopia-2006/12/22-896）
@@ -478,7 +490,7 @@ P. I. チャイコフスキー「白鳥の湖」より。L. Sardain によるト
 
 ### ラッパは鳴り響き（メサイア HWV 56）
 
-G. F. ヘンデル「メサイア」第 3 部のバスのアリア「The trumpet shall sound」。トランペットの声部だけを使う。
+G. F. ヘンデル「メサイア」第 3 部のバスのアリア「The trumpet shall sound」。トランペットの声部だけを使います。
 
 - ファイル: [hwv56-tromba.ily](src/tools/trumpet/scores/hwv56-tromba.ily)（配布ファイルの CDairBass/tromba.ily）、[hwv56-global.ily](src/tools/trumpet/scores/hwv56-global.ily)（CDairBass/global.ily）、[hwv56-header.ly](src/tools/trumpet/scores/hwv56-header.ly)（Messiah-header.ly）、[hwv56.ts](src/tools/trumpet/scores/hwv56.ts)
 - 出典: [Mutopia Project の楽譜](https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=1732)（Mutopia-2009/12/15-1732）
@@ -489,7 +501,7 @@ G. F. ヘンデル「メサイア」第 3 部のバスのアリア「The trumpet
 
 ### 消灯ラッパ（Taps）
 
-米軍のビューグルの号令。Mutopia Project にはないので、パブリックドメインの楽譜を手で `.ly` に写した。
+米軍のビューグルの号令です。Mutopia Project にないので、パブリックドメインの楽譜を手で `.ly` に写しました。
 
 - ファイル: [taps.ly](src/tools/trumpet/scores/taps.ly)、[taps.ts](src/tools/trumpet/scores/taps.ts)
 - 出典: [Wikimedia Commons の楽譜「Bugle Calls Taps.svg」](https://commons.wikimedia.org/wiki/File:Bugle_Calls_Taps.svg)
@@ -501,7 +513,10 @@ G. F. ヘンデル「メサイア」第 3 部のバスのアリア「The trumpet
 
 データは [src/tools/fm-synth/scores/](src/tools/fm-synth/scores/) にあり、`bun run fm-scores` で作ります。どの曲もすべてのパートをページの音色で弾くので、ベロシティは使いません。
 
-加工（どの曲も共通）: 時刻と長さを 4 分音符の 1/480 に寄せた。同じ時刻の同じ高さの音は、譜表が違っても 1 つにまとめた。
+どの曲にも共通の加工:
+
+- 時刻と長さを 4 分音符の 1/480 に寄せた
+- 同じ時刻の同じ高さの音は、譜表が違っても 1 つにまとめた
 
 ### トルコ行進曲
 
@@ -516,7 +531,7 @@ W. A. モーツァルト「ピアノ・ソナタ 第 11 番 イ長調 K. 331」�
 
 ### ジ・エンターテイナー
 
-S. ジョプリン。MIDI は反復を展開している。
+S. ジョプリン。MIDI は反復を展開しています。
 
 - ファイル: [entertainer.mid](src/tools/fm-synth/scores/entertainer.mid)、[entertainer.ts](src/tools/fm-synth/scores/entertainer.ts)
 - 出典: [Mutopia Project の楽譜](https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=263)（Mutopia-2016/11/25-263）
@@ -526,7 +541,7 @@ S. ジョプリン。MIDI は反復を展開している。
 
 ### メイプル・リーフ・ラグ
 
-S. ジョプリン。MIDI は反復を展開している。
+S. ジョプリン。MIDI は反復を展開しています。
 
 - ファイル: [maple.mid](src/tools/fm-synth/scores/maple.mid)、[maple.ts](src/tools/fm-synth/scores/maple.ts)
 - 出典: [Mutopia Project の楽譜](https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=23)（Mutopia-2011/11/13-23）
@@ -536,7 +551,7 @@ S. ジョプリン。MIDI は反復を展開している。
 
 ### 山の魔王の宮殿にて
 
-E. グリーグ「ペール・ギュント 第 1 組曲」の第 4 曲を、作曲者がピアノ独奏に編曲したもの。MIDI は反復を展開している。
+E. グリーグ「ペール・ギュント 第 1 組曲」の第 4 曲を、作曲者がピアノ独奏に編曲したものです。MIDI は反復を展開しています。
 
 - ファイル: [mountain-king.mid](src/tools/fm-synth/scores/mountain-king.mid)、[mountain-king.ts](src/tools/fm-synth/scores/mountain-king.ts)
 - 出典: [Mutopia Project の楽譜](https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=1888)（Mutopia-2013/12/07-1888）
@@ -556,7 +571,7 @@ J. S. バッハ「2 声のインヴェンション」より。
 
 ### アイネ・クライネ・ナハトムジーク 第 1 楽章
 
-W. A. モーツァルト「セレナード 第 13 番 ト長調 K. 525」の弦楽四重奏の版。MIDI は反復を展開している。
+W. A. モーツァルト「セレナード 第 13 番 ト長調 K. 525」の弦楽四重奏の版。MIDI は反復を展開しています。
 
 - ファイル: [kv525.mid](src/tools/fm-synth/scores/kv525.mid)、[kv525.ts](src/tools/fm-synth/scores/kv525.ts)
 - 出典: [Mutopia Project の楽譜](https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=900)（Mutopia-2007/01/01-900）
