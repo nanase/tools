@@ -186,7 +186,7 @@ export const TOOLS: Tool[] = [
     id: 'thunder',
     c: '音響',
     t: '雷鳴',
-    d: '曲がりくねった放電路の衝撃波が時間をずらして届き、雷鳴になる様子を見て聞きます。',
+    d: '稲妻の放電路の衝撃波を再現し、雷鳴として試聴できます。',
     ic: 'th',
     r: ['reverb', 'doppler', 'noise', 'spectrum'],
     k: 'thunder 雷鳴 雷 かみなり 稲妻 稲光 lightning 落雷 放電路 衝撃波 shock wave n波 n-wave ゴロゴロ バリバリ rumble clap 光ってから 3秒 1km 距離 空気の吸収 air absorption iso 9613 反射 こだま 影の領域 shadow zone few ribner tortuosity オーディオ audio',
