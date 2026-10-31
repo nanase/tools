@@ -2,7 +2,7 @@
 
 /* 枠の並び。スマホは 指板 → コード → 演奏 → 弾き方 → 弦 → 胴 → 残響 → 音の波形 → 計算結果 → 式 → 楽譜の出典。
    PC は上に 指板とコード（全幅）、左の列に 演奏・弾き方・弦、右の列に 胴・残響・音の波形・計算結果、その下に 式・出典（全幅） */
-.a-neck{order:1}.a-chd{order:1}.a-play{order:2}.a-pk{order:3}.a-str{order:4}.a-body{order:5}.a-room{order:6}.a-wave{order:7}.a-out{order:8}.a-thy{order:9}.a-src{order:10}
+.a-neck{order:1}.a-chd{order:1}.a-play,.a-midi{order:2}.a-pk{order:3}.a-str{order:4}.a-body{order:5}.a-room{order:6}.a-wave{order:7}.a-out{order:8}.a-thy{order:9}.a-src{order:10}
 @media (min-width:1000px){
   .tgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr);grid-template-areas:"neck neck" "chd chd" "c1 c2" "thy thy" "src src";align-items:start}
   .a-neck{grid-area:neck}.a-chd{grid-area:chd}.c1{grid-area:c1}.c2{grid-area:c2}.a-thy{grid-area:thy}.a-src{grid-area:src}

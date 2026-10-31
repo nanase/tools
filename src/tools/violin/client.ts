@@ -5,6 +5,7 @@
 import { Choice } from '../../lib/choice';
 import { $ } from '../../lib/dom';
 import { fmt, fmtR, minus, plain, ro } from '../../lib/format';
+import { logMap, MidiBox, touchOf } from '../../lib/midi';
 import { ParamGroup } from '../../lib/param';
 import { autoPause } from '../../lib/pause';
 import { movePlayStore, outVol, type PlayKey, TEMPO } from '../../lib/play';
@@ -154,6 +155,8 @@ function figBar(): void {
 /* ---------- 手で弾く ---------- */
 /** 弓を当てているか、弦ごとに押さえている音の高さ（開放弦からの半音） */
 const M = { bowing: false, stop: [0, 0, 0, 0] };
+/** MIDI で弾いている間の、弓の速さと弓圧に掛ける倍率（ベロシティから。MIDI で弾いていなければ null） */
+let midiK: number | null = null;
 const level = () => Number(lv.value);
 const levelStrings = (): number[] => [...LEVELS[level()].s];
 /** 手で弾くときのいちばん高い弦 */
@@ -162,8 +165,8 @@ function manualMsg(): Manual {
   return {
     strings: M.bowing ? levelStrings() : [],
     stop: [...M.stop],
-    v: PB.get('vb'),
-    F: PB.get('fb'),
+    v: Math.min(BOW_V.max, Math.max(BOW_V.min, PB.get('vb') * (midiK ?? 1))),
+    F: Math.min(BOW_F.max, Math.max(BOW_F.min, PB.get('fb') * (midiK ?? 1))),
     beta: PB.get('beta'),
     dir: Number(dir.value),
   };
@@ -225,6 +228,60 @@ for (const id of ['#vw-top', '#vw-pl'])
     } else return;
     e.preventDefault();
   });
+
+/* ---------- MIDI ---------- */
+/*
+ * 押した音を、押さえる位置がいちばん低くなる弦で弾く（1 本の弦だけ）。ベロシティで弓の速さと弓圧を
+ * 同じ倍率で変える（比を保つので、鳴る範囲から外れにくい）。押したまま別の鍵を押すと、弓を返さず左手だけ変える。
+ * 離すと、まだ押している最後の音へ戻り、すべて離すと弓を離す。弾ける範囲の外の音は鳴らさない
+ */
+const midiStack: number[] = [];
+/** 押さえる位置の上限（開放弦から半音いくつ。鍵盤の操作と同じ） */
+const STOP_MAX = 24;
+/** 音 n を弾く弦（弾けなければ −1） */
+function midiString(n: number): number {
+  let best = -1;
+  for (let si = 0; si < 4; si++) {
+    const s = n - OPEN[si];
+    if (s >= 0 && s <= STOP_MAX && (best < 0 || s < n - OPEN[best])) best = si;
+  }
+  return best;
+}
+function midiPlay(n: number): void {
+  const si = midiString(n);
+  lv.set(String(levelOf(si)));
+  /* 音の準備の間に離していたら、弾き始めてすぐ弓を離す */
+  void press(si, n).then(() => {
+    if (!midiStack.length) lift();
+  });
+}
+const midiBox = new MidiBox(
+  {
+    on: (n, vel) => {
+      const si = midiString(n);
+      midiBox.show(noteName(n), vel, si < 0 ? '' : `${NAMES[si]} 線`);
+      if (si < 0) return;
+      const i = midiStack.indexOf(n);
+      if (i >= 0) midiStack.splice(i, 1);
+      midiStack.push(n);
+      midiK = logMap(touchOf(vel, 'std'), 0.4, 2);
+      midiPlay(n);
+    },
+    off: (n) => {
+      const i = midiStack.indexOf(n);
+      if (i < 0) return;
+      midiStack.splice(i, 1);
+      const top = midiStack.at(-1);
+      if (top !== undefined) {
+        if (i === midiStack.length) midiPlay(top);
+        return;
+      }
+      lift();
+      midiK = null;
+    },
+  },
+  { ready: () => audio.ready() },
+);
 
 /* ---------- 弓の値 ---------- */
 /** 松脂の静止と動きの摩擦係数の差（模型の値） */
