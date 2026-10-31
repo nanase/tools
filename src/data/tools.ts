@@ -24,9 +24,10 @@ export const CATS = [
   '音響モデル',
   '楽器・調律',
   '画像・光学',
+  '画像形式',
+  'CG',
   '天文',
   '数学',
-  'SVG',
 ];
 export const TOOLS: Tool[] = [
   {
@@ -238,7 +239,7 @@ export const TOOLS: Tool[] = [
   },
   {
     id: 'svg-theme-checker',
-    c: 'SVG',
+    c: 'CG',
     t: 'SVG テーマスキーマチェッカー',
     d: 'ライトテーマとダークテーマで SVG の外観が意図したとおりになるかを並べて確かめます。',
     ic: 'svg',
@@ -274,7 +275,7 @@ export const TOOLS: Tool[] = [
   },
   {
     id: 'jpeg',
-    c: '画像・光学',
+    c: '画像形式',
     t: 'JPEG',
     d: 'JPEG に符号化する過程を順に解説し、圧縮の結果と画質を比べます。',
     ic: 'jp',
