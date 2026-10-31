@@ -1,0 +1,48 @@
+---
+// 楽譜の出典と、各曲の標準のテンポ。どの曲も Mutopia Project のパブリックドメインの楽譜で、帰属の表示は要らないが出所を書く
+import { pieceOf } from './score';
+
+const MU = 'https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=';
+/* id は Mutopia の番号、who は入力、base は底本、how は変換のほかに加えたこと */
+const LIST = [
+  {
+    v: 'kv331',
+    id: 108,
+    who: 'Rune Zedeler・Chris Sawer',
+    base: 'IMSLP',
+    no: 'Mutopia-2015/08/13-108',
+    how: 'Mutopia の MIDI は反復を展開していないので、.ly から LilyPond 2.24 で反復を展開した MIDI を作り直しました。',
+  },
+  { v: 'entertainer', id: 263, who: 'Chris Sawer', base: '1902 年の初版の複製', no: 'Mutopia-2016/11/25-263' },
+  { v: 'maple', id: 23, who: 'Chris Sawer', base: '1899 年の初版の複製', no: 'Mutopia-2011/11/13-23' },
+  { v: 'mountain-king', id: 1888, who: 'Coyau', base: 'The University Society, 1918', no: 'Mutopia-2013/12/07-1888' },
+  { v: 'bwv779', id: 61, who: 'Allen Garvin', base: 'Bach-Gesellschaft', no: 'Mutopia-2008/06/15-61' },
+  { v: 'kv525', id: 900, who: '匿名', base: 'IMSLP', no: 'Mutopia-2007/01/01-900' },
+  {
+    v: 'fur-elise',
+    id: 931,
+    who: 'Stelios Samelis',
+    base: 'Breitkopf & Härtel, 1888',
+    no: 'Mutopia-2015/08/18-931',
+    how: 'Mutopia の MIDI は反復を展開していないので、.ly から LilyPond 2.24 で反復を展開した MIDI を作り直しました。',
+  },
+];
+---
+<ul class="srcs">
+  {LIST.map((x) => {
+    const p = pieceOf(x.v);
+    return (
+      <li>
+        <h3>{p.name} <small>{p.by}</small></h3>
+        <p>音符は、<a href={`${MU}${x.id}`}>Mutopia Project の楽譜</a>の MIDI から変換しました。{x.how}</p>
+        <ul class="tl">
+          <li><b>入力:</b> {x.who}</li>
+          <li><b>底本:</b> {x.base}</li>
+          <li><b>楽譜の番号:</b> {x.no}</li>
+          <li><b>ライセンス:</b> パブリックドメイン</li>
+          <li><b>標準のテンポ:</b> {p.tempo}</li>
+        </ul>
+      </li>
+    );
+  })}
+</ul>
