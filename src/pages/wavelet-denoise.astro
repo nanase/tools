@@ -13,7 +13,7 @@ import { NOISE, PARAMS, RULE, SHRINK, SIGMA, SPIN, WAV } from '../tools/wavelet-
 import { BASES } from '../tools/wavelet-denoise/run';
 import Theory from '../tools/wavelet-denoise/Theory.astro';
 
-const name = 'ウェーブレット変換での雑音除去と圧縮';
+const name = '雑音除去と圧縮';
 /* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる。原理のページは先頭に */
 const P = Object.fromEntries(PARAMS.map((d) => [d.k, d]));
 /** 聴き比べのキー: [番号, 名前（雑音除去・圧縮）, 色] */
@@ -29,7 +29,7 @@ const SC = [
 ];
 ---
 <SiteLayout title={name} tool={{ id: 'wavelet-denoise', name }} description="ウェーブレットの小さい係数を捨てて戻し、雑音を除いた音と圧縮した音を、原音・取り除いた成分と同じ位置で切り替えて聴き比べます。閾値の規則（VisuShrink・SureShrink・BayesShrink）と、同じ数の係数を残した MDCT・DCT・DFT との違いを、SN 比・ビット数・スカログラムで比べられます。" note="音声はこの端末の中だけで処理し、送信しません。">
-  <PageTitle title={name}>ウェーブレットの係数のうち小さいものを捨てて戻すと、雑音が消え、少ないビットで音を表せます。原音・雑音入り・除いた後・取り除いた成分を、再生を止めずに同じ位置で切り替えて聴き比べられます。圧縮では同じ数の係数を残した MDCT・DCT・DFT と比べます。サンプル音源のほか、音楽ファイルやマイクで録った数秒も使えます。</PageTitle>
+  <PageTitle title={name}>ウェーブレットの小さい係数を捨てて戻し、雑音を除いた音と圧縮した音を原音と聴き比べます。</PageTitle>
   <div class="mini" data-mini="op" aria-hidden="true"><span>SN 比<b id="m-snr">—</b></span><span>残した<b id="m-kept">—</b></span><span id="m-xl">改善<b id="m-x">—</b></span></div>
 
   <div class="tgrid" id="wd" data-m="dn">
