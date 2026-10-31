@@ -16,7 +16,7 @@ import { TERRAINS } from '../tools/thunder/terrain';
 const name = '雷鳴';
 /* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
 ---
-<SiteLayout title={name} tool={{ id: 'thunder', name }} description="曲がりくねった放電路の各区間が出す衝撃波（N 波）が、聞き手までの距離の差で時間をずらして届き、雷鳴になる様子を断面図・届く量の分布・波形で見て、音で聞きます。1 回の雷で何回も放電する多重雷も聞けます。聞き手を動かすと、近い雷の「バリッ」と遠い雷の「ゴロゴロ」の違いと、光ってから音までの時間を確かめられます。" note="放電路は乱数で作った模型で、エネルギーと音になる割合は文献の値の 1 つです。大きさは同じ雷を 1 km 先で聞いたときとの差だけを出します。">
+<SiteLayout title={name} tool={{ id: 'thunder', name }} note="放電路は乱数で作った模型で、エネルギーと音になる割合は文献の値の 1 つです。大きさは同じ雷を 1 km 先で聞いたときとの差だけを出します。">
   <PageTitle title={name}>稲妻の放電路の衝撃波を再現し、雷鳴として試聴できます。</PageTitle>
   <div class="mini" data-mini="op" aria-hidden="true"><span>WAIT<b id="m-wait">—</b></span><span>DIST<b id="m-dist">—</b></span><span>LEN<b id="m-len">—</b></span></div>
 

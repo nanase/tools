@@ -19,7 +19,7 @@ const row = (ks: string[]) => PARAMS.filter((d) => ks.includes(d.k));
 const t0 = TYPES[0];
 /* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
 ---
-<SiteLayout title={name} tool={{ id: 'biquad', name }} note="係数と特性は倍精度の数値計算による参考値です。" description="各種フィルタ特性に対応する双2次フィルタ（バイクアッドフィルタ）の係数を計算します。">
+<SiteLayout title={name} tool={{ id: 'biquad', name }} note="係数と特性は倍精度の数値計算による参考値です。">
   <PageTitle title={name}>双2次フィルタ（バイクアッドフィルタ）の係数を、フィルタの種類・カットオフ周波数・Q・増幅量・サンプリング周波数から求めます。周波数特性とインパルス応答を描き、ホワイトノイズに掛けた音も聞けます。</PageTitle>
   <div class="mini" data-mini="op" aria-hidden="true"><span id="mt"></span><span><i>f</i><sub>c</sub><b id="mfc"></b></span><span><i>Q</i><b id="mq2"></b></span><span><i>A</i>(<i>f</i><sub>c</sub>)<b id="ma"></b></span></div>
 

@@ -27,7 +27,7 @@ const def = (k: string) => {
 const pzSvg = (id: string, label: string) =>
   `<svg viewBox="-46 -16 ${PZ + 76} ${PZ + 40}" id="${id}-svg" role="img" aria-label="${label}"><defs><clipPath id="${id}-clip"><rect x="-8" y="-8" width="${PZ + 16}" height="${PZ + 16}"/></clipPath></defs><g id="${id}-g"></g><g id="${id}-m" clip-path="url(#${id}-clip)"></g></svg>`;
 ---
-<SiteLayout title={name} tool={{ id: 'iir', name }} note="係数と特性は倍精度の数値計算による参考値で、試聴の音は再生装置のサンプリング周波数で設計し直したものです。" description="バターワース・チェビシェフ・楕円・ベッセルのアナログ原型から、周波数変換と双一次変換で IIR フィルタを設計します。">
+<SiteLayout title={name} tool={{ id: 'iir', name }} note="係数と特性は倍精度の数値計算による参考値で、試聴の音は再生装置のサンプリング周波数で設計し直したものです。">
   <PageTitle title={name}>バターワース・チェビシェフ I・チェビシェフ II・楕円・ベッセルのアナログ原型から、周波数変換と双一次変換で IIR フィルタ（LPF・HPF・BPF・BSF）を設計します。次数を指定するか、通過域と阻止域の仕様を満たす最小の次数を求め、周波数特性・極と零点・時間応答と、双2次の縦続（SOS）と直接形の係数を出します。ホワイトノイズに掛けた音も聞けます。</PageTitle>
   <div class="mini" data-mini="op" aria-hidden="true"><span id="mt"></span><span><i>N</i><b id="mN"></b></span><span><i>f</i><sub>−3dB</sub><b id="mf3"></b></span><span id="mxs"><i>A</i><sub>s</sub><b id="mas"></b></span></div>
 

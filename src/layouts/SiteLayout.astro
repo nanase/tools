@@ -3,17 +3,21 @@ import '../styles/site.css';
 import Fonts from '../components/Fonts.astro';
 import Footer from '../components/Footer.astro';
 import Rail from '../components/Rail.astro';
+import { TOOLS } from '../data/tools';
 
 interface Props {
   /** <title>。省略するとサイト名だけ */
   title?: string;
-  description: string;
+  /** 検索結果と共有の説明。ツールのページは省略し、ツール一覧のカードの説明（d）を使う */
+  description?: string;
   /** ツールのページなら、その id（メニューの現在地）とページ名（上部バー） */
   tool?: { id: string; name: string };
   /** フッターの注記。省略時は出さない */
   note?: string;
 }
-const { title, description, tool, note } = Astro.props;
+const { title, tool, note } = Astro.props;
+const description = Astro.props.description ?? TOOLS.find((t) => t.id === tool?.id)?.d;
+if (!description) throw new Error(`説明がない: ${tool?.id ?? title}`);
 const site = 'Tools + Simulators';
 /* アイコンは public/ に置く。ルート（/favicon.ico）はドメインのものなので base を付ける */
 const base = import.meta.env.BASE_URL;

@@ -54,7 +54,7 @@ const S50 = scaleMarks(50),
 const INSTS = [['chr', 'クロマチック'] as const, ...INSTRUMENTS.map((i) => [i.v, i.name] as const)];
 const PCS = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
 ---
-<SiteLayout title={name} tool={{ id: 'tuner', name }} description="楽器の音をマイクで聴き、音名と基準からのずれ（セント）を針か 12 音のストロボで示します。" note="音声はこの端末の中だけで処理し、送信しません。">
+<SiteLayout title={name} tool={{ id: 'tuner', name }} note="音声はこの端末の中だけで処理し、送信しません。">
   <PageTitle title={name}>楽器の音をマイクで聴き、いちばん近い音名と、そこからのずれ（セント）を針で示します。ストロボに切り替えると、12 の音名の窓のうち、鳴っている音の窓の縞が止まって見えます。</PageTitle>
   <div class="mini" aria-hidden="true"><span>NOTE<b id="mn">—</b></span><span>CENT<b id="mc">—</b></span><span><i>f</i><b id="mf">—</b></span></div>
 

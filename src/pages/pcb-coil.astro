@@ -18,7 +18,7 @@ const name = 'PCBコイル';
 const row = (ks: string[]) => PARAMS.filter((d) => ks.includes(d.k));
 /* 同じ電子回路の公開中のツール、続いて信号・フィルタに近いもの */
 ---
-<SiteLayout title={name} tool={{ id: 'pcb-coil', name }} note="計算結果は近似式による参考値です。" description="プリント基板上のうずまき状の配線で作るコイルについて、インダクタンス・抵抗・Q と共振用のコンデンサを求めます。">
+<SiteLayout title={name} tool={{ id: 'pcb-coil', name }} note="計算結果は近似式による参考値です。">
   <PageTitle title={name}>プリント基板の銅箔で作るうずまき状のコイル（スパイラルコイル）について、形と寸法からインダクタンス・抵抗・Q を求め、指定の周波数で共振させるコンデンサの値を出します。NFC や RFID のアンテナの設計に使えます。</PageTitle>
   <div class="mini" data-mini="op" aria-hidden="true"><span><i>L</i><b id="mL"></b></span><span><i>Q</i><b id="mQ"></b></span><span><i>C</i><b id="mC"></b></span></div>
 
