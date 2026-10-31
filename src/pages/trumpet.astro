@@ -1,6 +1,7 @@
 ---
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import MidiPanel from '../components/MidiPanel.astro';
 import More from '../components/More.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
@@ -130,6 +131,8 @@ const ROWS = [...PARTIALS].reverse().filter((n) => n <= 8);
         </div>
         <p class="msg er snd-msg" id="snd-msg" aria-live="polite"></p>
       </Panel>
+
+      <MidiPanel />
 
       <Panel hid="hd-blow" title="吹き方" class="a-blow">
         <div slot="aux" class="seg" id="p-lip" role="group" aria-label="唇の張り"><button type="button" data-v="auto" aria-pressed="true" title="鳴らしたい音に合わせて、唇の張りと口の圧力を自動で決める">唇は自動</button><button type="button" data-v="man" aria-pressed="false" title="唇の張り（共振周波数）と口の圧力を手で決める。合わないと別の倍音が鳴るか、鳴らない">手動</button></div>

@@ -6,6 +6,7 @@
 import { Choice } from '../../lib/choice';
 import { $ } from '../../lib/dom';
 import { fmt, fmtR, minus, plain, ro } from '../../lib/format';
+import { MidiBox, touchOf } from '../../lib/midi';
 import { ParamGroup } from '../../lib/param';
 import { autoPause } from '../../lib/pause';
 import { movePlayStore, outVol, type PlayKey, TEMPO } from '../../lib/play';
@@ -20,7 +21,7 @@ import { VALVE_LEN } from './bore';
 import { CALIB, RES_DEV } from './calib';
 import { type Cycle, type FigMode, TrumpetFigure } from './figure';
 import { SCOPE_N } from './frame';
-import { FINGERS, mtof, nameOf, openNote, semiOf } from './notes';
+import { FINGERS, fingering, HIGH, LOW, mtof, nameOf, openNote, semiOf } from './notes';
 import { type BlowKey, DIST, DYNS, dynOf, FLIP, PM, TEMP, VOL0 } from './params';
 import { type Expr, type Performance, performPiece } from './perform';
 import { control, type Manual } from './player';
@@ -120,6 +121,8 @@ const vName = (v: readonly boolean[]) => {
 
 /* ---------- 手で吹く: ピストン・倍音・吹く ---------- */
 const M = { v: [false, false, false] as [boolean, boolean, boolean], n: 4, blow: false };
+/** MIDI で吹いている間の強弱（0〜1。MIDI で吹いていなければ null で、画面の強弱に従う） */
+let midiD: number | null = null;
 let blowTimer: ReturnType<typeof setTimeout> | undefined;
 /** 鳴らす音（ピストンと倍音から） */
 const manualNote = () => openNote(M.n) - semiOf(M.v);
@@ -136,7 +139,7 @@ function sendManual(): void {
       v: [...M.v],
       n: M.n,
       blow: M.blow,
-      d: dynOf(dyn.value),
+      d: midiD ?? dynOf(dyn.value),
       auto: !man,
       fl: PB.get('fl'),
       pm: man ? PB.get('pm') * 1000 : 0,
@@ -229,6 +232,57 @@ window.addEventListener('blur', () => {
   void blow(false);
   for (let i = 0; i < 3; i++) setValve(i, false);
 });
+
+/* ---------- MIDI ---------- */
+/*
+ * 押した音（実音）をふつうの指使いで吹く。ベロシティは強弱（DYNS の pp〜ff の範囲）にする。
+ * 押したまま別の鍵を押すと、息を止めずに指使いだけ変える。離すと、まだ押している最後の音へ戻る。
+ * 吹ける範囲（E3〜D6）の外の音は鳴らさない
+ */
+const midiStack: number[] = [];
+const D_LO = DYNS[0][2],
+  D_HI = DYNS[DYNS.length - 1][2];
+/** 強弱（0〜1）にいちばん近い記号 */
+const dynName = (d: number) => DYNS.reduce((a, b) => (Math.abs(b[2] - d) < Math.abs(a[2] - d) ? b : a))[1];
+function midiPlay(m: number): void {
+  const f = fingering(m),
+    g = FINGERS.find((x) => x.semi === f.semi) ?? FINGERS[0];
+  M.v = [...g.v];
+  setPartial(f.n);
+  /* 音の準備の間に離していたら、吹き始めてすぐ止める */
+  if (!M.blow)
+    void blow(true).then(() => {
+      if (!midiStack.length) void blow(false);
+    });
+}
+const midiBox = new MidiBox(
+  {
+    on: (m, vel) => {
+      const d = D_LO + (D_HI - D_LO) * touchOf(vel, 'std');
+      midiBox.show(nm(m), vel, m < LOW || m > HIGH ? '' : dynName(d));
+      if (m < LOW || m > HIGH) return;
+      const i = midiStack.indexOf(m);
+      if (i >= 0) midiStack.splice(i, 1);
+      midiStack.push(m);
+      midiD = d;
+      midiPlay(m);
+    },
+    off: (m) => {
+      const i = midiStack.indexOf(m);
+      if (i < 0) return;
+      midiStack.splice(i, 1);
+      const top = midiStack.at(-1);
+      if (top !== undefined) {
+        if (i === midiStack.length) midiPlay(top);
+        return;
+      }
+      void blow(false).then(() => {
+        if (!midiStack.length) midiD = null;
+      });
+    },
+  },
+  { ready: () => audio.ready() },
+);
 
 /* ---------- 倍音のはしご ---------- */
 const cells = [...$('#ladder').querySelectorAll<HTMLButtonElement>('.cell')];
