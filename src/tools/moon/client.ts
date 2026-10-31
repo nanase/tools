@@ -1,26 +1,28 @@
 /**
  * 月のページ: 日時と観測地から月の状態を計算し、望遠の月・1 か月の帯・暦・月食・図を描く
  */
+
+import type { Obs } from '../../lib/astro/observer';
+import { calToJd, jdToCal } from '../../lib/astro/time';
+import type { Vec3 } from '../../lib/astro/vec';
 import { Choice } from '../../lib/choice';
 import { $, esc, norm } from '../../lib/dom';
 import { ParamGroup } from '../../lib/param';
 import { store, stored } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
-import { calToJd, jdToCal } from '../solar-eclipse/time';
 import {
   ageAt,
   apsides,
   eclipseContacts,
   type MoonState,
   moonState,
-  type Obs,
   phaseTimes,
   riseSet,
   type Shadow,
   shadowAt,
 } from './ephem';
 import { type Key, PARAMS } from './params';
-import { type Place as GlPlace, MoonRenderer, type MoonU, type Vec3 } from './render';
+import { type Place as GlPlace, MoonRenderer, type MoonU } from './render';
 import { type Bright, moonUniforms, type Orient, project, screenAngle, sunAltAt, unproject } from './view';
 
 const BASE = import.meta.env.BASE_URL;

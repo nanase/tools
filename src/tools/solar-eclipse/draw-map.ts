@@ -4,7 +4,7 @@
  *
  * 地図の明るさは太陽の光の量そのもので、テーマに依らない
  */
-import { observerXYZ } from './earth';
+import { observerXYZ } from '../../lib/astro/earth';
 import { D2R, type Projection, unwrap } from './geo';
 import { isLand, type LandMask, type Rings, ringsPath } from './land';
 import { type FluxLUT, fluxAt } from './shade';

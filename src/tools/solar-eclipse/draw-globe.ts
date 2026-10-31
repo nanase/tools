@@ -4,7 +4,9 @@
  *
  * 地球は球として描く（扁平は 0.3 % で、この大きさでは見えない）
  */
-import { latLon, observerXYZ, type Vec3 } from './earth';
+import { observerXYZ } from '../../lib/astro/earth';
+import type { Vec3 } from '../../lib/astro/vec';
+import { latLon } from './earth';
 import type { Elements } from './elements';
 import { isLand, type LandMask } from './land';
 import { fluxAt, fluxLUT, type Snap, snapAt } from './shade';

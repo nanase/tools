@@ -4,7 +4,9 @@
  * 式は古典的な反復で、satkit（MIT OR Apache-2.0）のチュートリアルと
  * Altmann「Helligkeitsverlauf bei Sonnenfinsternissen (II)」の記述に拠る
  */
-import { frameAt, observerXYZ, sunAltAz, toPlane, type Vec3, zenithPA } from './earth';
+import { observerXYZ } from '../../lib/astro/earth';
+import type { Vec3 } from '../../lib/astro/vec';
+import { frameAt, sunAltAz, toPlane, zenithPA } from './earth';
 import { type Elements, K_PENUMBRA, stateAt } from './elements';
 
 /** 観測地: 測地緯度・東経 [rad]、標高 [m] */

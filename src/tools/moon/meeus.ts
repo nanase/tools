@@ -1,20 +1,17 @@
 /**
- * 月の位置・章動・恒星時・歳差（DOM に依存しない）
+ * 月の位置（DOM に依存しない）
  *
- * 式は Meeus『Astronomical Algorithms』第 2 版。月は 47 章（ELP-2000/82 を切り詰めた級数）で、
+ * 式は Meeus『Astronomical Algorithms』第 2 版 47 章（ELP-2000/82 を切り詰めた級数）で、
  * 係数表は ERFA の eraMoon98（BSD-3-Clause、末尾に許諾文）から写した。eraMoon98 は光差を除いた平均黄経
  * 218.31665436° を使うが、ここでは Meeus の 218.3164477°（光差込み）に戻している。
- * 章動は 22 章の低精度の式（Δψ 0.5″）、恒星時は 12 章、歳差は 21 章（IAU 1976）。太陽は sun.ts
+ * 章動・恒星時・歳差は lib/astro/frame.ts、太陽は lib/astro/sun.ts
  */
-export type Vec3 = [number, number, number];
+import { type Ecl, rev } from '../../lib/astro/frame';
 
 const D = Math.PI / 180;
-const AS = D / 3600;
 
 /** 度で表した多項式 c0 + c1 T + … を [rad] で */
 const polyDeg = (c: number[], t: number) => (c.reduceRight((s, k) => s * t + k, 0) % 360) * D;
-/** 角を 0〜2π に */
-const rev = (r: number) => ((r % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
 
 /**
  * 経度と距離の項（Meeus 表 47.A）: D, M, M′, F の倍数、Σl の係数 [1e−6°]、Σr の係数 [m]
@@ -53,13 +50,6 @@ const B = [
   4,-1,-1,-1,166, 1,0,1,-1,-164, 4,0,1,-1,132, 1,0,-1,-1,-119, 4,-1,0,-1,115, 2,-2,0,1,107,
 ];
 
-export interface Ecl {
-  /** 黄経・黄緯（平均黄道と平均分点 of date、章動を含まない）[rad] と、地心距離 [km] */
-  lon: number;
-  lat: number;
-  dist: number;
-}
-
 /** 月の地心位置（Meeus 47 章）。T は J2000.0 からの TT のユリウス世紀 */
 export function moonEcl(t: number): Ecl {
   const lp = polyDeg([218.3164477, 481267.88123421, -0.0015786, 1 / 538841, -1 / 65194000], t);
@@ -91,90 +81,6 @@ export function moonEcl(t: number): Ecl {
     sb += B[k + 4] * ek(B[k + 1]) * Math.sin(B[k] * d + B[k + 1] * m + B[k + 2] * mp + B[k + 3] * f);
   }
   return { lon: rev(lp + sl * 1e-6 * D), lat: sb * 1e-6 * D, dist: 385000.56 + sr / 1000 };
-}
-
-export const AU = 149597870.7;
-
-export interface Nut {
-  /** 黄経の章動 Δψ・傾斜の章動 Δε・平均黄道傾斜 ε0 [rad] */
-  dpsi: number;
-  deps: number;
-  eps0: number;
-}
-
-/** 章動（Meeus 22 章の低精度の式、Δψ 0.5″・Δε 0.1″）と平均黄道傾斜（式 22.2） */
-export function nutation(t: number): Nut {
-  const om = (125.04452 - 1934.136261 * t + 0.0020708 * t * t + (t * t * t) / 450000) * D;
-  const l = (280.4665 + 36000.7698 * t) * D;
-  const lp = (218.3165 + 481267.8813 * t) * D;
-  return {
-    dpsi: (-17.2 * Math.sin(om) - 1.32 * Math.sin(2 * l) - 0.23 * Math.sin(2 * lp) + 0.21 * Math.sin(2 * om)) * AS,
-    deps: (9.2 * Math.cos(om) + 0.57 * Math.cos(2 * l) + 0.1 * Math.cos(2 * lp) - 0.09 * Math.cos(2 * om)) * AS,
-    eps0: (84381.448 - 46.815 * t - 0.00059 * t * t + 0.001813 * t * t * t) * AS,
-  };
-}
-
-/** グリニッジ視恒星時 [rad]（式 12.4 に分点差 Δψ cos ε を足す）。jd は UT */
-export function gast(jd: number, n: Nut): number {
-  const t = (jd - 2451545) / 36525;
-  const g = 280.46061837 + 360.98564736629 * (jd - 2451545) + 0.000387933 * t * t - (t * t * t) / 38710000;
-  return rev(g * D + n.dpsi * Math.cos(n.eps0 + n.deps));
-}
-
-/** 黄経・黄緯・距離を、真の赤道と分点 of date の直交座標へ（黄経に Δψ を足し、真の黄道傾斜で回す） */
-export function eclToEqu(p: Ecl, n: Nut): Vec3 {
-  const eps = n.eps0 + n.deps;
-  const l = p.lon + n.dpsi;
-  const x = p.dist * Math.cos(p.lat) * Math.cos(l);
-  const y = p.dist * Math.cos(p.lat) * Math.sin(l);
-  const z = p.dist * Math.sin(p.lat);
-  return [x, Math.cos(eps) * y - Math.sin(eps) * z, Math.sin(eps) * y + Math.cos(eps) * z];
-}
-
-/** J2000.0 の平均赤道から、真の赤道と分点 of date への回転行列（歳差 21.3 式 × 章動）。行ごとに並べる */
-export function precNut(t: number, n: Nut): number[] {
-  const z0 = (2306.2181 * t + 0.30188 * t * t + 0.017998 * t * t * t) * AS;
-  const z = (2306.2181 * t + 1.09468 * t * t + 0.018203 * t * t * t) * AS;
-  const th = (2004.3109 * t - 0.42665 * t * t - 0.041833 * t * t * t) * AS;
-  const [cz0, sz0, cz, sz, ct, st] = [Math.cos(z0), Math.sin(z0), Math.cos(z), Math.sin(z), Math.cos(th), Math.sin(th)];
-  // P = R3(−z) R2(θ) R3(−ζ)
-  const p = [
-    cz * ct * cz0 - sz * sz0,
-    -cz * ct * sz0 - sz * cz0,
-    -cz * st,
-    sz * ct * cz0 + cz * sz0,
-    -sz * ct * sz0 + cz * cz0,
-    -sz * st,
-    st * cz0,
-    -st * sz0,
-    ct,
-  ];
-  // N = R1(−ε) R3(−Δψ) R1(ε0)
-  const e0 = n.eps0;
-  const e = e0 + n.deps;
-  const [cp, sp, ce, se, c0, s0] = [
-    Math.cos(n.dpsi),
-    Math.sin(n.dpsi),
-    Math.cos(e),
-    Math.sin(e),
-    Math.cos(e0),
-    Math.sin(e0),
-  ];
-  const nm = [
-    cp,
-    -sp * c0,
-    -sp * s0,
-    sp * ce,
-    cp * ce * c0 + se * s0,
-    cp * ce * s0 - se * c0,
-    sp * se,
-    cp * se * c0 - ce * s0,
-    cp * se * s0 + ce * c0,
-  ];
-  const r: number[] = [];
-  for (let i = 0; i < 3; i++)
-    for (let j = 0; j < 3; j++) r.push(nm[i * 3] * p[j] + nm[i * 3 + 1] * p[3 + j] + nm[i * 3 + 2] * p[6 + j]);
-  return r;
 }
 
 /*

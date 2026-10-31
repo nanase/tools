@@ -1,5 +1,5 @@
 /**
- * 暦と ΔT（DOM に依存しない）
+ * 暦・JD・ΔT（DOM に依存しない）
  *
  * 暦は NASA の正典と同じく、1582-10-15 より前をユリウス暦、年を天文学的な数え方（0 年 = 紀元前 1 年）で表す。
  * ΔT は Espenak & Meeus (2006) の区間多項式に、月の永年加速の補正 c = −0.000012932 (y − 1955)² を加えたもの
@@ -13,6 +13,12 @@ export interface Cal {
   /** 日の中の時刻 [h] */
   hour: number;
 }
+
+/** Date（UTC を UT とみなす）を JD に */
+export const jdOfDate = (d: Date): number => d.getTime() / 86400000 + 2440587.5;
+
+/** JD を Date に */
+export const dateOfJd = (jd: number): Date => new Date((jd - 2440587.5) * 86400000);
 
 /** JD を暦に直す（Meeus『Astronomical Algorithms』7 章） */
 export function jdToCal(jd: number): Cal {
@@ -75,6 +81,12 @@ export function deltaTEM(y: number): number {
   else dt = long((y - 1820) / 100);
   if (y < 1955 || y > 2005) dt += -0.000012932 * (y - 1955) * (y - 1955);
   return dt;
+}
+
+/** JD（UT）での ΔT = TT − UT [s]。年の小数は月の中ほどで代表させる */
+export function deltaT(jd: number): number {
+  const c = jdToCal(jd);
+  return deltaTEM(c.year + (c.month - 0.5) / 12);
 }
 
 /** Huber (2000) のブラウン運動とドリフトの模型による ΔT の標準誤差 [s] */
