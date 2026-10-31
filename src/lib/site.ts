@@ -47,33 +47,115 @@ function initTheme(): void {
   set(cur === 'light' || cur === 'dark' ? cur : 'system');
 }
 
-/* ---------- メニュー（ツール一覧はビルド時に HTML で出し、ここでは絞り込みだけ） ---------- */
+/* ---------- メニュー（ツール一覧はビルド時に HTML で出し、ここではカテゴリの切り替え・絞り込み・図柄の読み込み） ---------- */
+/** マウスを乗せたカテゴリへ切り替えるまでの時間 [ms]。ツールへ斜めに動かす途中で別のカテゴリを横切っても切り替えない */
+const HOVER_MS = 300;
+
 function initMenu(): void {
   const menu = $('#menu'),
     btn = $('#menuBtn'),
     scrim = $('#scrim'),
     mq = $<HTMLInputElement>('#mq'),
     list = $('#menuList');
-  const groups = $$('.mg', list),
+  /* カテゴリのボタンと、そのツールの節は同じ順に並ぶ */
+  const tabs = $$<HTMLButtonElement>('.menu-cat', menu),
+    secs = $$('.menu-sec', list),
     none = $('.none', list);
+  /** 開いたときに選ぶカテゴリ（今のツールのカテゴリ。ビルド時に選んである） */
+  const home = Math.max(
+    0,
+    tabs.findIndex((b) => b.getAttribute('aria-selected') === 'true'),
+  );
+  let cur = home;
+  const filtering = () => mq.value.trim() !== '';
+  const select = (i: number) => {
+    cur = i;
+    tabs.forEach((b, j) => {
+      b.setAttribute('aria-selected', String(j === i));
+      b.tabIndex = j === i ? 0 : -1;
+    });
+    /* 絞り込み中は当てはまるツールをすべてのカテゴリから出し、押したカテゴリの節へ送る */
+    if (filtering()) list.scrollTop = secs[i].offsetTop;
+    else
+      secs.forEach((s, j) => {
+        s.hidden = j !== i;
+      });
+  };
   const filter = () => {
-    const ws = norm(mq.value.trim()).split(/\s+/).filter(Boolean);
+    const ws = norm(mq.value.trim()).split(/\s+/).filter(Boolean),
+      on = ws.length > 0;
+    menu.classList.toggle('filtering', on);
     let any = false;
-    for (const g of groups) {
+    secs.forEach((s, j) => {
       let n = 0;
-      for (const li of $$('li', g)) {
+      for (const li of $$('li', s)) {
         const hit = ws.every((w) => li.dataset.k?.includes(w));
         li.hidden = !hit;
         if (hit) n++;
       }
-      g.hidden = !n;
+      s.hidden = on ? !n : j !== cur;
+      tabs[j].classList.toggle('dim', !n);
+      for (const c of [tabs[j], s]) $('.menu-n', c).textContent = String(n);
       any ||= n > 0;
-    }
+    });
     none.hidden = any;
   };
+  let hov: ReturnType<typeof setTimeout> | undefined;
+  tabs.forEach((b, i) => {
+    b.addEventListener('click', () => {
+      clearTimeout(hov);
+      select(i);
+    });
+    b.addEventListener('pointerenter', (e) => {
+      if (e.pointerType !== 'mouse' || filtering()) return;
+      clearTimeout(hov);
+      hov = setTimeout(() => select(i), HOVER_MS);
+    });
+    b.addEventListener('pointerleave', () => clearTimeout(hov));
+  });
+  $('#menuCats').addEventListener('keydown', (e) => {
+    const n = tabs.length,
+      i =
+        e.key === 'ArrowDown'
+          ? (cur + 1) % n
+          : e.key === 'ArrowUp'
+            ? (cur + n - 1) % n
+            : e.key === 'Home'
+              ? 0
+              : e.key === 'End'
+                ? n - 1
+                : -1;
+    if (i < 0) return;
+    e.preventDefault();
+    select(i);
+    tabs[i].focus();
+  });
+  /* 図柄は全ページの HTML に入れると重いので、メニューに近づいたときに 1 度だけ読む。読めなければ枠だけ出し、次に開くときに読み直す */
+  let art = false;
+  const loadArt = () => {
+    if (art) return;
+    art = true;
+    fetch(menu.dataset.art ?? '')
+      .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+      .then((A: Record<string, string>) => {
+        for (const s of $$('.menu-scr', menu)) {
+          const a = A[s.dataset.ic ?? ''];
+          if (a) s.innerHTML = `<svg class="ic" viewBox="0 0 120 48" aria-hidden="true">${a}</svg>`;
+        }
+      })
+      .catch(() => {
+        art = false;
+      });
+  };
+  btn.addEventListener('pointerenter', loadArt);
+  btn.addEventListener('focus', loadArt);
+  if (/Mac|iPhone|iPad/.test(navigator.userAgent)) $('#mkbd').textContent = '⌘ K';
   const isOpen = () => btn.getAttribute('aria-expanded') === 'true';
   const open = (focusQ: boolean) => {
+    loadArt();
+    if (!filtering()) select(home);
     filter();
+    list.scrollTop = 0;
     menu.hidden = scrim.hidden = false;
     btn.setAttribute('aria-expanded', 'true');
     fx(menu, POP_IN, 180);
@@ -93,7 +175,7 @@ function initMenu(): void {
   scrim.addEventListener('click', () => close(false));
   mq.addEventListener('input', filter);
   mq.addEventListener('keydown', (e) => {
-    const a = list.querySelector<HTMLElement>('li:not([hidden]) a.mi');
+    const a = list.querySelector<HTMLElement>('.menu-sec:not([hidden]) li:not([hidden]) a.menu-tile');
     if (e.key === 'Enter') {
       e.preventDefault();
       a?.click();

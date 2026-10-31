@@ -9,6 +9,9 @@ interface Props {
 }
 const { current, page } = Astro.props;
 const groups = CATS.map((c) => [c, order(TOOLS.filter((t) => t.c === c))] as const);
+/** 開いたときに選んでおくカテゴリ: 今のツールのカテゴリ（トップでは先頭） */
+const here = TOOLS.find((t) => t.id === current)?.c;
+const sel = here ?? CATS[0];
 ---
 <header class="rail">
   <div class="wrap">
@@ -28,25 +31,39 @@ const groups = CATS.map((c) => [c, order(TOOLS.filter((t) => t.c === c))] as con
     </nav>
   </div>
   <div class="scrim" id="scrim" hidden></div>
-  <div class="menu" id="menu" role="dialog" aria-label="ツール一覧" tabindex="-1" hidden>
+  {/* 左にカテゴリ、右に選んだカテゴリのツール。図柄はメニューを初めて開くときに data-art から読み込む（lib/site.ts） */}
+  <div class="menu" id="menu" role="dialog" aria-label="ツール一覧" tabindex="-1" hidden data-art={`${import.meta.env.BASE_URL}menu-art.json`}>
     <label class="menu-q">
       <svg class="ic-s" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>
       <span class="sr">ツールを絞り込み</span>
       <input id="mq" type="search" placeholder="ツールを絞り込み" autocomplete="off" spellcheck="false" enterkeyhint="go">
+      <kbd class="menu-kbd" id="mkbd">Ctrl K</kbd>
     </label>
-    <div class="menu-list" id="menuList">
-      {groups.map(([c, L]) => (
-        <section class="mg"><h2>{c}</h2><ul>
-          {L.map(t => (
-            <li data-k={keys(t)}>
-              {t.s
-                ? <span class="mi soon"><span class="led" aria-hidden="true"></span>{t.t}<span class="tag">準備中</span></span>
-                : <a class="mi" href={href(t)} aria-current={t.id === current ? 'page' : undefined}><span class="led on" aria-hidden="true"></span>{t.t}</a>}
-            </li>
-          ))}
-        </ul></section>
-      ))}
-      <p class="none" hidden>該当するツールはありません。</p>
+    <div class="menu-body">
+      <div class="menu-cats" id="menuCats" role="tablist" aria-label="カテゴリ" aria-orientation="vertical">
+        {groups.map(([c, L], i) => (
+          <button type="button" class="menu-cat" role="tab" id={`mc${i}`} aria-controls={`mp${i}`} aria-selected={c === sel ? 'true' : 'false'} tabindex={c === sel ? 0 : -1}>
+            <span class="menu-cn">{c}</span>{c === here && <span class="led on" aria-hidden="true"></span>}<span class="menu-n">{L.length}</span>
+          </button>
+        ))}
+      </div>
+      <div class="menu-pane" id="menuList">
+        {groups.map(([c, L], i) => (
+          <section class="menu-sec" id={`mp${i}`} role="tabpanel" aria-labelledby={`mc${i}`} hidden={c !== sel}>
+            <h2>{c}<span class="menu-n">{L.length}</span></h2>
+            <ul>
+              {L.map(t => (
+                <li data-k={keys(t)}>
+                  {t.s
+                    ? <span class="menu-tile soon"><span class="menu-scr" data-ic={t.ic} aria-hidden="true"></span><span class="menu-tn">{t.t}<span class="tag">準備中</span></span></span>
+                    : <a class="menu-tile" href={href(t)} aria-current={t.id === current ? 'page' : undefined}><span class="menu-scr" data-ic={t.ic} aria-hidden="true"></span><span class="menu-tn">{t.id === current && <span class="led on" aria-hidden="true"></span>}{t.t}</span></a>}
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
+        <p class="none" hidden>該当なし</p>
+      </div>
     </div>
   </div>
 </header>
