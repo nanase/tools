@@ -21,6 +21,8 @@ export class FmAudio {
   held = false;
   /** 曲を演奏しているか（ページが入れる。演奏の間は AudioContext を止めない） */
   song = false;
+  /** MIDI で弾いているか（ページが入れる。間は AudioContext を止めず、すぐ鳴らせるようにしておく） */
+  midi = false;
   /** AudioContext が止まったときに呼ぶ（ブラウザや OS が止めたとき。鳴らしていない間に止めたときも） */
   onLost: (() => void) | null = null;
   private ac: AudioContext | null = null;
@@ -118,7 +120,7 @@ export class FmAudio {
   off(id: number, at: number): void {
     this.post({ type: 'off', id, at });
   }
-  /** 予約を消して、曲の音をすべて離す */
+  /** 予約を消して、曲の音をすべて離す（MIDI の音は残す） */
   stop(): void {
     this.post({ type: 'stop' });
   }
@@ -126,10 +128,10 @@ export class FmAudio {
   /** 何も鳴らしていなければ、少しあとで AudioContext を止める */
   idle(): void {
     clearTimeout(this.timer);
-    if (this.play || this.song) return;
+    if (this.play || this.song || this.midi) return;
     const { ac } = this;
     this.timer = setTimeout(() => {
-      if (!this.play && !this.song) void ac?.suspend();
+      if (!this.play && !this.song && !this.midi) void ac?.suspend();
     }, IDLE_MS);
   }
 

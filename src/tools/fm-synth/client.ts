@@ -6,6 +6,7 @@ import { Choice } from '../../lib/choice';
 import { $, $$ } from '../../lib/dom';
 import { same } from '../../lib/eseries';
 import { fmt, fmtR, minus, plain } from '../../lib/format';
+import { MidiBox } from '../../lib/midi';
 import { ParamGroup } from '../../lib/param';
 import { autoPause, lookahead } from '../../lib/pause';
 import { type PlayKey, TEMPO } from '../../lib/play';
@@ -595,6 +596,8 @@ function stopPiece(): void {
   audio.song = false;
   audio.idle();
   lit.clear();
+  /* MIDI で押している鍵の印は残す */
+  for (const n of midiHeld) lit.set(n, 1);
   litKeys();
   transport.sync();
 }
@@ -674,6 +677,50 @@ autoPause(audio, { pause: () => transport.pause(), hidden: tick });
     syncSnd();
   };
 }
+
+/* ---------- MIDI ---------- */
+/*
+ * 曲の音と同じ仕組みで、押している間だけ鳴らす（和音も弾ける。曲とあわせて同時に 32 音まで）。
+ * ベロシティとペダルは使わない。図と計算結果は、最後に押した音の高さにする
+ */
+const midiHeld = new Set<number>();
+/** MIDI の音の id（曲の音の id は 0 以上） */
+const midiId = (n: number) => -1 - n;
+let midiPick = -1;
+function midiOn(n: number, vel: number): void {
+  midiBox.show(noteName(n), vel, '');
+  if (midiHeld.has(n)) return;
+  midiHeld.add(n);
+  light(n, true);
+  const play = () => midiHeld.has(n) && audio.on(midiId(n), noteHz(n), 0);
+  if (audio.now() !== null) play();
+  else void audio.ready().then((ok) => ok && play());
+  /* 図は 1 フレームに 1 回だけ描き直す（和音で続けて押したとき） */
+  if (midiPick < 0)
+    requestAnimationFrame(() => {
+      pick(midiPick);
+      midiPick = -1;
+    });
+  midiPick = n;
+}
+function midiOff(n: number): void {
+  if (!midiHeld.delete(n)) return;
+  light(n, false);
+  audio.off(midiId(n), 0);
+}
+const midiBox = new MidiBox(
+  { on: midiOn, off: midiOff },
+  {
+    ready: () => {
+      audio.midi = true;
+      return audio.ready();
+    },
+    stopped: () => {
+      audio.midi = false;
+      audio.idle();
+    },
+  },
+);
 
 /* ---------- 起動 ---------- */
 syncKb();
