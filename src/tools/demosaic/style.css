@@ -64,7 +64,8 @@
 .dm-tbl tr.sel{background:var(--inset)}
 .dm-tbl tr.sel th{color:var(--accent)}
 .dm-tbl td:nth-child(2){width:46%;text-align:left}
-.dm-bar-v{display:inline-block;width:0;height:8px;margin-right:6px;border-radius:2px;background:var(--ink-2)}
+.dm-bar-v{display:inline-block;width:0;height:8px;margin-right:6px;border-radius:2px;background:var(--ink-2);vertical-align:middle}
+.dm-tbl .hw{vertical-align:middle}
 .dm-tbl tr.sel .dm-bar-v{background:var(--ink)}
 .dm-tbl b{font-weight:700}
 
