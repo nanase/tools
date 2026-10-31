@@ -279,7 +279,7 @@ export const TOOLS: Tool[] = [
     t: 'JPEG',
     d: 'JPEG に符号化する過程を順に解説し、圧縮の結果と画質を比べます。',
     ic: 'jp',
-    r: ['wavelet-denoise', 'image-convolution', 'fft', 'qr-code'],
+    r: ['wavelet-denoise', 'image-convolution', 'demosaic', 'fft'],
     k: 'jpeg jpg 画像 圧縮 image compression dct 離散コサイン変換 量子化 quantization ハフマン huffman ジグザグ zigzag ycbcr 色差 間引き chroma subsampling 4:2:0 ブロックノイズ psnr',
   },
   {
@@ -306,7 +306,7 @@ export const TOOLS: Tool[] = [
     t: 'カメラレンズ',
     d: '実在のレンズのデータどおりに光線を追跡し、ボケや収差を映像で再現します。',
     ic: 'ln',
-    r: ['focusing-mask', 'moon', 'image-convolution', 'halo'],
+    r: ['focusing-mask', 'demosaic', 'moon', 'image-convolution'],
     k: 'lens camera optics レンズ カメラ 光学 光線追跡 ray tracing 絞り aperture f値 焦点距離 focal length ピント focus 被写界深度 depth of field ボケ bokeh 玉ボケ 収差 aberration ザイデル seidel 球面収差 コマ 非点収差 像面湾曲 歪曲 distortion 色収差 chromatic 周辺減光 vignetting ダブルガウス double gauss テッサー tessar トリプレット triplet アクロマート achromat 望遠 広角 webgl',
   },
   {
@@ -333,8 +333,17 @@ export const TOOLS: Tool[] = [
     t: '画像の畳み込み',
     d: 'ぼかしやエッジ検出の出力をカーネルの積和で 1 画素ずつ作ります。',
     ic: 'icv',
-    r: ['convolution', 'fir', 'jpeg', 'fft'],
+    r: ['convolution', 'demosaic', 'fir', 'jpeg'],
     k: 'image convolution 画像 畳み込み たたみこみ 2次元 2d kernel 核 カーネル フィルタ filter ぼかし blur 平均 box ガウス gaussian ピンぼけ defocus ぶれ motion blur 鮮鋭化 sharpen アンシャープマスク unsharp mask エッジ検出 edge detection ラプラシアン laplacian sobel ソーベル 勾配 gradient 浮き彫り emboss 点像分布関数 psf mtf 分離 separable 相関 correlation cnn メディアン median 端 padding',
+  },
+  {
+    id: 'demosaic',
+    c: '画像・光学',
+    t: 'デモザイク',
+    d: 'ベイヤー配列の 1 画素 1 色の値から RGB を復元し、6 つの手法の偽色やジャギーを比べます。',
+    ic: 'dm',
+    r: ['image-convolution', 'lens', 'jpeg', 'focusing-mask'],
+    k: 'demosaic demosaicing デモザイク デモザイキング ベイヤー bayer cfa color filter array カラーフィルタ raw 現像 イメージセンサー image sensor 補間 interpolation 最近傍 nearest バイリニア bilinear malvar he cutler mhc hamilton adams vng variable number of gradients ahd adaptive homogeneity 偽色 false color モアレ moire ジャギー jaggies ジッパー zipper 光学ローパスフィルタ olpf ローパス 色差 メディアン median psnr cpsnr cielab ΔE',
   },
 
   {

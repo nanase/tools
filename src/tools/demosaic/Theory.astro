@@ -1,0 +1,159 @@
+---
+import { TOOLS } from '../../data/tools';
+import { CHART_H, CHART_W } from './chart';
+import { MHC, VNG_K1, VNG_K2 } from './demosaic';
+import { LP_SIGMA, MED_TIMES } from './params';
+
+/* 本文の出典番号 */
+const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
+/** ほかのページへのリンク（まだ公開していないページは名前だけ） */
+const to = (id: string, t: string) => (TOOLS.some((x) => x.id === id && !x.s) ? `<a href="../${id}/">${t}</a>` : t);
+const mi = (s: string) => `<mi>${s}</mi>`;
+const sub = (b: string, s: string) => `<msub><mi>${b}</mi><mrow>${s}</mrow></msub>`;
+const abs = (s: string) => `<mo stretchy="false">|</mo>${s}<mo stretchy="false">|</mo>`;
+const frac = (a: string, b: string) => `<mfrac><mrow>${a}</mrow><mrow>${b}</mrow></mfrac>`;
+const m1 = '<mo>−</mo><mn>1</mn>',
+  p1 = '<mo>+</mo><mn>1</mn>',
+  m2 = '<mo>−</mo><mn>2</mn>',
+  p2 = '<mo>+</mo><mn>2</mn>';
+/* ベイヤー配列の 4 × 4（RGGB） */
+const BAYER = Array.from({ length: 16 }, (_, i) => {
+  const x = i % 4,
+    y = Math.floor(i / 4),
+    c = (y & 1 ? 'GB' : 'RG')[x & 1];
+  return { x, y, c };
+});
+const KERN = [
+  { c: MHC.g, t: 'R・B の画素の G' },
+  { c: MHC.row, t: 'G の画素の左右にある色' },
+  { c: MHC.col, t: 'G の画素の上下にある色' },
+  { c: MHC.diag, t: 'R の画素の B・B の画素の R' },
+];
+/** 係数の表記（0 は空、半端は 1/2 の形） */
+const kv = (v: number) => (v === 0 ? '' : Number.isInteger(v) ? String(v) : `${v * 2}/2`).replace('-', '−');
+---
+<h3>ベイヤー配列</h3>
+<div class="dm-cfa">
+  <svg viewBox="0 0 84 84" role="img" aria-label="RGGB の並びの 4 × 4">
+    {BAYER.map(({ x, y, c }) => <g><rect x={2 + x * 20} y={2 + y * 20} width="19" height="19" class={`f${c}`} /><text x={11.5 + x * 20} y={15.5 + y * 20}>{c}</text></g>)}
+  </svg>
+  <ul class="tl">
+    <li>2 × 2 の区画に G が 2 つ、R と B が 1 つずつ<Fragment set:html={rf(1)} /></li>
+    <li>画素ごとに 1 色 → 足りない 2 色を周りから補う（デモザイク）</li>
+    <li>G の間隔は R・B の半分（斜めに詰まる）→ G を先に埋めて R・B の手がかりにする手法が多い</li>
+  </ul>
+</div>
+
+<h3>偽色・ジャギー・ジッパー</h3>
+<ul class="tl">
+  <li>偽色: 細かい縞で R・G・B の推定がずれ、元にない色が出る（ゾーンプレート・布目・柵）</li>
+  <li>ジャギー: 斜めの縁が階段になる（文字・斜めの縁）</li>
+  <li>ジッパー: 縁に沿って明暗が 1 画素おきに交互に並ぶ（色の境界）。縁をまたいで平均すると出る<Fragment set:html={rf(2)} /></li>
+  <li>ローパス: センサーの前でぼかし、ナイキスト周波数より細かい模様を弱める。偽色は減るが細部も鈍る</li>
+</ul>
+
+<h3>手法</h3>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th>手法</th><th>G</th><th>R・B</th><th>出典</th></tr></thead>
+  <tbody>
+    <tr><td>最近傍</td><td colspan="2">同じ 2 × 2 の区画の値を写す</td><td></td></tr>
+    <tr><td>バイリニア</td><td colspan="2">隣（3 × 3）の同じ色の平均。縦横 2 つ・4 つ、斜め 4 つ</td><td><Fragment set:html={rf(3)} /></td></tr>
+    <tr><td>Malvar-He-Cutler</td><td colspan="2">5 × 5 の決まった係数。ほかの色の 2 次の変化（ラプラシアン）も足す</td><td><Fragment set:html={rf(3) + rf(4)} /></td></tr>
+    <tr><td>Hamilton-Adams</td><td>勾配の小さい向きに補間</td><td>色差 <math set:html={`${mi('R')}<mo>−</mo>${mi('G')}`} /> を補間</td><td><Fragment set:html={rf(5)} /></td></tr>
+    <tr><td>VNG</td><td colspan="2">8 方向の勾配のうち閾値以下の方向だけで色差を平均</td><td><Fragment set:html={rf(6) + rf(7)} /></td></tr>
+    <tr><td>AHD</td><td colspan="2">横だけ・縦だけで補間した 2 枚から、CIELAB で均質な方を画素ごとに選ぶ</td><td><Fragment set:html={rf(8)} /></td></tr>
+  </tbody>
+</table></div>
+
+<h3>Malvar-He-Cutler の係数（× 1/8）</h3>
+<div class="dm-ks">
+  {KERN.map(({ c, t }) => (
+    <figure class="dm-k">
+      <div class="dm-kg">{c.map((v, j) => <span class:list={[{ z: v === 0, c: j === 12 }]}>{kv(v)}</span>)}</div>
+      <figcaption>{t}</figcaption>
+    </figure>
+  ))}
+</div>
+<ul class="tl">
+  <li>係数の和は 8（明るさを保つ）。中央の画素は自分の色<Fragment set:html={rf(3)} /></li>
+  <li>バイリニアに、測った色のラプラシアンを決まった重みで足したもの。重みは Kodak の画像で最小 2 乗に合わせた値<Fragment set:html={rf(3)} /></li>
+</ul>
+
+<h3>Hamilton-Adams</h3>
+<div class="eqs">
+  <math display="block" set:html={`<msub><mi mathvariant="normal">Δ</mi><mi>H</mi></msub><mo>=</mo>${abs(`${sub('G', m1)}<mo>−</mo>${sub('G', p1)}`)}<mo>+</mo>${abs(`<mn>2</mn>${sub('X', '<mn>0</mn>')}<mo>−</mo>${sub('X', m2)}<mo>−</mo>${sub('X', p2)}`)}`} />
+  <math display="block" set:html={`<msub><mover><mi>G</mi><mo>^</mo></mover><mi>H</mi></msub><mo>=</mo>${frac(`${sub('G', m1)}<mo>+</mo>${sub('G', p1)}`, '<mn>2</mn>')}<mo>+</mo>${frac(`<mn>2</mn>${sub('X', '<mn>0</mn>')}<mo>−</mo>${sub('X', m2)}<mo>−</mo>${sub('X', p2)}`, '<mn>4</mn>')}`} />
+</div>
+<dl class="syms">
+  <dt><math><mi>X</mi></math></dt><dd>その画素の色（R か B）。添字は横の位置</dd>
+  <dt><math set:html={`<msub><mi mathvariant="normal">Δ</mi><mi>H</mi></msub><mo>,</mo><msub><mi mathvariant="normal">Δ</mi><mi>V</mi></msub>`} /></dt><dd>横・縦の勾配</dd>
+</dl>
+<ul class="tl">
+  <li><math set:html={`<msub><mi mathvariant="normal">Δ</mi><mi>H</mi></msub><mo>&lt;</mo><msub><mi mathvariant="normal">Δ</mi><mi>V</mi></msub>`} /> なら横、逆なら縦、等しければ平均<Fragment set:html={rf(5)} /></li>
+  <li>R・B: 埋めた G との差 <math set:html={`${mi('R')}<mo>−</mo>${mi('G')}`} /> を補間して G に足す。R の画素の B は斜めの勾配の小さい向き</li>
+</ul>
+
+<h3>VNG</h3>
+<div class="eqs">
+  <math display="block" set:html={`${mi('T')}<mo>=</mo><msub><mi>k</mi><mn>1</mn></msub><mspace width="0.15em"/><mi>min</mi><mo>+</mo><msub><mi>k</mi><mn>2</mn></msub><mo stretchy="false">(</mo><mi>max</mi><mo>−</mo><mi>min</mi><mo stretchy="false">)</mo>`} />
+  <math display="block" set:html={`<mover><mi>C</mi><mo>^</mo></mover><mo>=</mo>${sub('X', '<mn>0</mn>')}<mo>+</mo>${frac(`<munder><mo>∑</mo><mrow><mi>d</mi><mo>∈</mo><mi>D</mi></mrow></munder><mo stretchy="false">(</mo>${sub('C̄', '<mi>d</mi>')}<mo>−</mo>${sub('X̄', '<mi>d</mi>')}<mo stretchy="false">)</mo>`, `<mo stretchy="false">|</mo><mi>D</mi><mo stretchy="false">|</mo>`)}`} />
+</div>
+<dl class="syms">
+  <dt><math><mi>D</mi></math></dt><dd>勾配が <math><mi>T</mi></math> 以下の方向（N・NE・E・SE・S・SW・W・NW のうち）</dd>
+  <dt><math set:html={`${sub('C̄', '<mi>d</mi>')}<mo>,</mo>${sub('X̄', '<mi>d</mi>')}`} /></dt><dd>方向 <math><mi>d</mi></math> の側の 3 × 3 の、求める色・その画素の色の平均</dd>
+</dl>
+<ul class="tl">
+  <li><math set:html={`<msub><mi>k</mi><mn>1</mn></msub><mo>=</mo><mn>${VNG_K1}</mn><mo>,</mo><msub><mi>k</mi><mn>2</mn></msub><mo>=</mo><mn>${VNG_K2}</mn>`} /><Fragment set:html={rf(6)} /></li>
+  <li>勾配: 5 × 5 の中の同じ色の画素の組の差の絶対値の和。中央の線の組は重み 1、隣の線の組は 1/2<Fragment set:html={rf(7)} /></li>
+</ul>
+
+<h3>AHD</h3>
+<ol class="flow"><li>横だけで G → R・B／縦だけで G → R・B</li><li>CIELAB へ</li><li>均質さを数える</li><li>3 × 3 で足して多い方</li></ol>
+<ul class="tl">
+  <li>均質さ: 上下左右の 4 画素のうち、明るさの差と色の差が両方とも許す差以下の数<Fragment set:html={rf(8)} /></li>
+  <li>許す差: 横の画像の左右の差・縦の画像の上下の差の大きい方の、小さい方（画素ごとに変わる）<Fragment set:html={rf(8)} /></li>
+</ul>
+
+<h3>色差メディアン</h3>
+<ul class="tl">
+  <li><math set:html={`${mi('R')}<mo>−</mo>${mi('G')}`} />・<math set:html={`${mi('B')}<mo>−</mo>${mi('G')}`} /> に 3 × 3 のメディアン → 測った色に足して残り 2 色を作り直す<Fragment set:html={rf(9)} /></li>
+  <li>偽色の点を消すが、細い色の線も消える</li>
+</ul>
+
+<h3>誤差の指標</h3>
+<div class="eqs">
+  <math display="block" set:html={`<mi>CPSNR</mi><mo>=</mo><mn>10</mn><msub><mi>log</mi><mn>10</mn></msub>${frac('<mn>1</mn>', `${frac('<mn>1</mn>', '<mn>3</mn><mi>N</mi>')}<munder><mo>∑</mo><mrow><mi>c</mi><mo>,</mo><mi>i</mi></mrow></munder><msup><mrow><mo stretchy="false">(</mo>${sub('x', '<mi>c</mi><mo>,</mo><mi>i</mi>')}<mo>−</mo>${sub('y', '<mi>c</mi><mo>,</mo><mi>i</mi>')}<mo stretchy="false">)</mo></mrow><mn>2</mn></msup>`)}`} />
+</div>
+<ul class="tl">
+  <li>値は 0〜1。R・G・B をまとめた平均 2 乗誤差から（単位 dB、大きいほど元に近い）<Fragment set:html={rf(10)} /></li>
+  <li>ΔE: sRGB → CIELAB（D65）の色差 <math set:html={`<mi mathvariant="normal">Δ</mi><msubsup><mi>E</mi><mrow><mi>a</mi><mi>b</mi></mrow><mo>*</mo></msubsup>`} /> の平均<Fragment set:html={rf(11) + rf(12)} />。ΔE&gt;10 はその割合</li>
+</ul>
+
+<h3>このツールで決めたこと</h3>
+<ul class="tl">
+  <li>画像: {CHART_W} × {CHART_H}。値は sRGB の 0〜1 のままモザイクにする（線形の光に戻さない）</li>
+  <li>テスト画像: 128 × 128 の区画 6 つ。各画素は 4 × 4 の点の平均</li>
+  <li>端: 端の画素を軸に折り返す（色の並びの偶奇が保たれる）。指標は端の 4 画素を除く</li>
+  <li>ローパス: 色ごとに σ {LP_SIGMA} 画素のガウスでぼかす。元画像もぼかしたものにする</li>
+  <li>VNG の勾配の項: 論文の式が手に入らず、N 方向の式<Fragment set:html={rf(7)} /> を 90° ずつ回した。斜めの方向は、中央の斜めの線の 2 組と隣の斜めの線の同じ色の 4 組</li>
+  <li>AHD の G: 隣の 2 つの G の間に収める。最後のメディアンは入れず、色差メディアンの切り替えで別にかける</li>
+  <li>色差メディアン: {MED_TIMES} 回くり返す</li>
+  <li>計算した値は 0〜1 に収める</li>
+  <li>関連: <Fragment set:html={to('image-convolution', '画像の畳み込み')} />・<Fragment set:html={to('lens', 'カメラレンズ')} />・<Fragment set:html={to('jpeg', 'JPEG')} /></li>
+</ul>
+
+<h3>出典</h3>
+<ol class="refs">
+  <li id="thy-r1"><span class="rf-for">ベイヤー配列</span><span class="rf-src">B. E. Bayer, “Color imaging array,” U.S. Patent 3,971,065, 1976</span></li>
+  <li id="thy-r2"><span class="rf-for">ジッパーの現れ方</span><span class="rf-src">W. Lu and Y.-P. Tan, “Color filter array demosaicking: new method and performance measures,” <i>IEEE Trans. Image Processing</i>, vol. 12, no. 10, pp. 1194–1210, 2003</span></li>
+  <li id="thy-r3"><span class="rf-for">バイリニアと 5 × 5 の係数（図 2）</span><span class="rf-src">H. S. Malvar, L.-W. He, and R. Cutler, “High-quality linear interpolation for demosaicing of Bayer-patterned color images,” <i>Proc. IEEE ICASSP</i>, vol. 3, pp. 485–488, 2004</span></li>
+  <li id="thy-r4"><span class="rf-for">MHC の解説と実装</span><span class="rf-src">P. Getreuer, “<a href="https://www.ipol.im/pub/art/2011/g_mhcd/" target="_blank" rel="noopener">Malvar-He-Cutler Linear Image Demosaicking</a>,” <i>Image Processing On Line</i>, vol. 1, pp. 83–89, 2011</span></li>
+  <li id="thy-r5"><span class="rf-for">勾配で向きを選ぶ G と色差の補間</span><span class="rf-src">J. F. Hamilton Jr. and J. E. Adams Jr., “Adaptive color plan interpolation in single sensor color electronic camera,” U.S. Patent 5,629,734, 1997</span></li>
+  <li id="thy-r6"><span class="rf-for">VNG（閾値の式と <math><msub><mi>k</mi><mn>1</mn></msub><mo>,</mo><msub><mi>k</mi><mn>2</mn></msub></math>）</span><span class="rf-src">E. Chang, S. Cheung, and D. Y. Pan, “Color filter array recovery using a threshold-based variable number of gradients,” <i>Proc. SPIE</i>, vol. 3650, pp. 36–43, 1999</span></li>
+  <li id="thy-r7"><span class="rf-for">VNG の勾配の項</span><span class="rf-src">R. Ramanath, W. E. Snyder, G. L. Bilbro, and W. A. Sander III, “Demosaicking methods for Bayer color arrays,” <i>J. Electronic Imaging</i>, vol. 11, no. 3, pp. 306–315, 2002</span></li>
+  <li id="thy-r8"><span class="rf-for">AHD</span><span class="rf-src">K. Hirakawa and T. W. Parks, “Adaptive homogeneity-directed demosaicing algorithm,” <i>IEEE Trans. Image Processing</i>, vol. 14, no. 3, pp. 360–369, 2005</span></li>
+  <li id="thy-r9"><span class="rf-for">色差のメディアン</span><span class="rf-src">W. T. Freeman, “Median filter for reconstructing missing color samples,” U.S. Patent 4,724,395, 1988</span></li>
+  <li id="thy-r10"><span class="rf-for">CPSNR</span><span class="rf-src">X. Li, B. Gunturk, and L. Zhang, “Image demosaicing: a systematic survey,” <i>Proc. SPIE</i>, vol. 6822, 68221J, 2008</span></li>
+  <li id="thy-r11"><span class="rf-for">sRGB</span><span class="rf-src">IEC 61966-2-1:1999, Multimedia systems and equipment – Colour measurement and management – Part 2-1: Default RGB colour space – sRGB</span></li>
+  <li id="thy-r12"><span class="rf-for">CIELAB と色差</span><span class="rf-src">CIE 15:2004, <i>Colorimetry</i>, 3rd ed.</span></li>
+</ol>
