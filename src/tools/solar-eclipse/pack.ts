@@ -5,9 +5,10 @@
  * 太陽の高度, 経路幅, 中心の継続時間, t0, x0〜x3, y0〜y3, d0〜d2, μ0・μ1, l1₀〜l1₂, l2₀〜l2₂, tan f1, tan f2]。
  * μ2 は正典のすべてで 0、tmin・tmax はすべて ∓3 なので送らない
  */
+
+import { calToJd } from '../../lib/astro/time';
 import type { EclipseType, Entry } from './catalog';
 import type { Elements } from './elements';
-import { calToJd } from './time';
 
 export type Packed = (number | string)[];
 

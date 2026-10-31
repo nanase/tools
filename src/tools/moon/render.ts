@@ -2,9 +2,8 @@
  * WebGL2 で月を描く。読み込んだ標高から、傾きと 8 方位の地平線の高度角を一度だけ前処理してテクスチャに持ち、
  * 毎回の描画は全画面の三角形 1 枚で済ませる。小さな月（暦の欄）は別の枠に描いて読み出す
  */
+import type { Vec3 } from '../../lib/astro/vec';
 import { HORIZON_FRAG, MOON_FRAG, SLOPE_FRAG, TH, TW, VERT } from './shader';
-
-export type Vec3 = [number, number, number];
 
 /** Mallama (2022) 表 B.1: 影の位置（0 = 半影の外縁、1 = 中心）と B・V・R の減光 [等] */
 const MAL = [

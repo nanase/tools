@@ -4,8 +4,9 @@
  * 出典: eclipse.gsfc.nasa.gov/eclipse_besselian_from_mysqldump2.csv
  * "Eclipse Predictions by Fred Espenak (NASA's GSFC)"
  */
+
+import { calToJd } from '../../lib/astro/time';
 import type { Elements } from './elements';
-import { calToJd } from './time';
 
 /** NASA の型: P 部分、A 金環、T 皆既、H 混成。後ろの文字は中心・非中心などの区別 */
 export type EclipseType = 'P' | 'A' | 'T' | 'H';

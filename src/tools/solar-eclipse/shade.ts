@@ -3,7 +3,8 @@
  *
  * 周辺減光は Hestroffer & Magnan (1998) のべき乗則 I(μ)/I(1) = μ^α、α = −0.023 + 0.292/λ[µm]
  */
-import { frameAt, type Vec3 } from './earth';
+import type { Vec3 } from '../../lib/astro/vec';
+import { frameAt } from './earth';
 import { type Elements, stateAt } from './elements';
 
 /** 波長 λ [µm] での周辺減光の指数 α */

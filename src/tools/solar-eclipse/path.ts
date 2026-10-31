@@ -5,7 +5,8 @@
  * 中心線と限界は satkit（MIT OR Apache-2.0）の Eclipse Path of Totality と同じ写像。
  * 日の出・日の入りの曲線は、基準面に写した地球の縁と半影の円の交点として求める（このツールで導いたもの）
  */
-import { type Frame, frameAt, latLon, liftToSurface, limbPoint, toPlane, type Vec3 } from './earth';
+import type { Vec3 } from '../../lib/astro/vec';
+import { type Frame, frameAt, latLon, liftToSurface, limbPoint, toPlane } from './earth';
 import { type Elements, type State, stateAt } from './elements';
 
 /** 経路の 1 点: 時刻 t [h]、緯度・経度 [rad]、地球固定の座標 */

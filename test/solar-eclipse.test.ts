@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
+import { observerXYZ } from '../src/lib/astro/earth';
+import { calToJd, deltaTEM, deltaTSigma, jdToCal } from '../src/lib/astro/time';
 import { parseRow, sarosNumber, splitCsv } from '../src/tools/solar-eclipse/catalog';
-import { observerXYZ } from '../src/tools/solar-eclipse/earth';
 import { geomAt, localCircumstances, overlapFraction } from '../src/tools/solar-eclipse/local';
 import { pack, unpack } from '../src/tools/solar-eclipse/pack';
 import { centralPoint, limitPoint, outerCurves } from '../src/tools/solar-eclipse/path';
 import { fluxAt, fluxLUT, residualFlux, snapAt, spotAt } from '../src/tools/solar-eclipse/shade';
 import { activityOf, sunAxisPA } from '../src/tools/solar-eclipse/solar';
-import { calToJd, deltaTEM, deltaTSigma, jdToCal } from '../src/tools/solar-eclipse/time';
 
 /** NASA の五千年正典の CSV（eclipse_besselian_from_mysqldump2.csv）から 3 行 */
 const CSV = `"year","month","day","td_ge","dt","luna_num","saros","eclipse_type","gamma","magnitude","lat_ge","lng_ge","lat_dd_ge","lng_dd_ge","sun_alt","sun_azm","path_width","central_duration","duration_secs","cat_no","canon_plate","julian_date","t0","x0","x1","x2","x3","y0","y1","y2","y3","d0","d1","d2","mu0","mu1","mu2","l10","l11","l12","l20","l21","l22","tan_f1","tan_f2","tmin","tmax","etype","PNS","UNS","NCN","nSer","nSeq","nJLE"

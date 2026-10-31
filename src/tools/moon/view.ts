@@ -1,24 +1,15 @@
 /**
  * 見え方の計算（DOM に依存しない）: 画面の向き、月固定の座標への変換、明るさ（露出・地球照）、地名の位置
  */
+
+import { cross, dot, sub, unit, type Vec3 } from '../../lib/astro/vec';
 import type { MoonState } from './ephem';
-import { type MoonU, malV, type Vec3 } from './render';
+import { type MoonU, malV } from './render';
 
 export type Orient = 'zenith' | 'moon' | 'sky';
 export type Bright = 'eye' | 'camera' | 'phys';
 
 const D = Math.PI / 180;
-const dot = (a: Vec3, b: Vec3) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-const sub = (a: Vec3, b: Vec3): Vec3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
-const cross = (a: Vec3, b: Vec3): Vec3 => [
-  a[1] * b[2] - a[2] * b[1],
-  a[2] * b[0] - a[0] * b[2],
-  a[0] * b[1] - a[1] * b[0],
-];
-const unit = (a: Vec3): Vec3 => {
-  const l = Math.hypot(a[0], a[1], a[2]);
-  return [a[0] / l, a[1] / l, a[2] / l];
-};
 
 /** 画面の右・上・奥（観測者から月へ）。上は天頂・月の北極・天の北極のどれか */
 export function basis(st: MoonState, mode: Orient): { r: Vec3; u: Vec3; f: Vec3 } {

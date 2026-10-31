@@ -6,47 +6,17 @@
  * （Archinal et al. 2011、係数は NAIF の pck00011.tpc）で、これは ICRF の値なので歳差と章動で of date へ回す。
  * 秤動は観測地への向きを月固定の座標で表したもので、光学的・物理的・日周の秤動をまとめて含む
  */
-import { A_M, observerXYZ } from '../solar-eclipse/earth';
-import { AU, type Ecl, eclToEqu, gast, moonEcl, type Nut, nutation, precNut, type Vec3 } from './meeus';
-import { sunEcl } from './sun';
-import { deltaT } from './time';
-
-export type { Vec3 } from './meeus';
+import { AU, deg360, type Ecl, eclToEqu, type Nut, nutation, POLE, posAngle, precNut } from '../../lib/astro/frame';
+import { altAz, eastward, H_REFR, type Obs, R_EARTH, riseTransitSet, site } from '../../lib/astro/observer';
+import { bisect, golden } from '../../lib/astro/solve';
+import { sunEcl } from '../../lib/astro/sun';
+import { deltaT } from '../../lib/astro/time';
+import { angle, cross, dot, len, mul, sub, unit, type Vec3 } from '../../lib/astro/vec';
+import { moonEcl } from './meeus';
 
 const D = Math.PI / 180;
-/** 月の半径（IAU）と地球の赤道半径（WGS84）[km] */
+/** 月の半径（IAU）[km] */
 export const R_MOON = 1737.4;
-const R_EARTH = A_M / 1000;
-/** 地平線での大気差と月の上縁で出没を決める（Meeus 15 章の −0.5667°） */
-const H_REFR = 0.5667;
-
-const dot = (a: Vec3, b: Vec3) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-const sub = (a: Vec3, b: Vec3): Vec3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
-const len = (a: Vec3) => Math.hypot(a[0], a[1], a[2]);
-const unit = (a: Vec3): Vec3 => {
-  const l = len(a);
-  return [a[0] / l, a[1] / l, a[2] / l];
-};
-const cross = (a: Vec3, b: Vec3): Vec3 => [
-  a[1] * b[2] - a[2] * b[1],
-  a[2] * b[0] - a[0] * b[2],
-  a[0] * b[1] - a[1] * b[0],
-];
-const mul = (m: number[], v: Vec3): Vec3 => [
-  m[0] * v[0] + m[1] * v[1] + m[2] * v[2],
-  m[3] * v[0] + m[4] * v[1] + m[5] * v[2],
-  m[6] * v[0] + m[7] * v[1] + m[8] * v[2],
-];
-const deg360 = (r: number) => (((r / D) % 360) + 360) % 360;
-const angle = (a: Vec3, b: Vec3) => Math.atan2(len(cross(a, b)), dot(a, b));
-const POLE: Vec3 = [0, 0, 1];
-
-export interface Obs {
-  /** 測地緯度・経度（東が正）[°]、標高 [m] */
-  lat: number;
-  lon: number;
-  h: number;
-}
 
 interface Core {
   jd: number;
@@ -66,17 +36,6 @@ function core(jd: number): Core {
   const mEcl = moonEcl(t);
   const sEcl = sunEcl(t);
   return { jd, jdTT, t, n, mEcl, sEcl, moon: eclToEqu(mEcl, n), sun: eclToEqu(sEcl, n) };
-}
-
-/** 観測地の地心の位置 [km] と天頂（測地の法線）の向き */
-function site(c: Core, o: Obs): { obs: Vec3; zenith: Vec3 } {
-  const th = gast(c.jd, c.n) + o.lon * D;
-  const p = observerXYZ(o.lat * D, 0, o.h);
-  const cl = Math.cos(o.lat * D);
-  return {
-    obs: [R_EARTH * p[0] * Math.cos(th), R_EARTH * p[0] * Math.sin(th), R_EARTH * p[2]],
-    zenith: [cl * Math.cos(th), cl * Math.sin(th), Math.sin(o.lat * D)],
-  };
 }
 
 /** 月の章動角 E1〜E13（pck00011.tpc の BODY3_NUT_PREC_ANGLES、定数 [°] と 1 世紀あたり [°]） */
@@ -120,20 +79,6 @@ function moonAxes(c: Core): [Vec3, Vec3, Vec3] {
   const mz = mul(m, z);
   const mx = mul(m, x);
   return [mx, cross(mz, mx), mz];
-}
-
-/** 大気差 [°]（Saemundsson、Meeus 16.4 式）。h は大気差を含まない高度 [°]。−1° より下は −1° の値 */
-export function refraction(h: number): number {
-  const x = Math.max(h, -1);
-  return 1.02 / Math.tan((x + 10.3 / (x + 5.11)) * D) / 60;
-}
-
-/** 視線 u（単位ベクトル）の向きに見た天球で、ベクトル v の位置角（天の北から東へ）[°] */
-function posAngle(u: Vec3, v: Vec3): number {
-  const k = dot(POLE, u);
-  const n = unit([-k * u[0], -k * u[1], 1 - k * u[2]]);
-  const e = cross(n, u);
-  return deg360(Math.atan2(dot(v, e), dot(v, n)));
 }
 
 export interface MoonState {
@@ -185,7 +130,7 @@ const selen = (mx: Vec3, my: Vec3, mz: Vec3, v: Vec3) => {
 export function moonState(jd: number, o: Obs | null): MoonState {
   const c = core(jd);
   const nan: Vec3 = [Number.NaN, Number.NaN, Number.NaN];
-  const { obs, zenith } = o ? site(c, o) : { obs: [0, 0, 0] as Vec3, zenith: nan };
+  const { obs, zenith } = o ? site(c.jd, c.n, o) : { obs: [0, 0, 0] as Vec3, zenith: nan };
   const top = sub(c.moon, obs);
   const u = unit(top);
   const dist = len(top);
@@ -197,13 +142,7 @@ export function moonState(jd: number, o: Obs | null): MoonState {
   let altGeo = Number.NaN;
   let az = Number.NaN;
   let q = Number.NaN;
-  if (o) {
-    altGeo = Math.asin(dot(u, zenith)) / D;
-    alt = altGeo + refraction(altGeo);
-    const east = unit(cross(POLE, zenith));
-    az = deg360(Math.atan2(dot(u, east), dot(u, cross(zenith, east))));
-    q = posAngle(u, zenith);
-  }
+  if (o) ({ alt, altGeo, az, q } = altAz(u, zenith));
   return {
     jd,
     jdTT: c.jdTT,
@@ -241,19 +180,6 @@ function elongAt(jd: number): number {
 
 const wrap180 = (x: number) => ((((x + 180) % 360) + 360) % 360) - 180;
 
-/** f(lo) と f(hi) の符号が逆の区間を二分して根を出す */
-function bisect(f: (t: number) => number, lo: number, hi: number, n = 24): number {
-  const sl = Math.sign(f(lo));
-  let a = lo;
-  let b = hi;
-  for (let k = 0; k < n; k++) {
-    const m = (a + b) / 2;
-    if (Math.sign(f(m)) === sl) a = m;
-    else b = m;
-  }
-  return (a + b) / 2;
-}
-
 /** 月齢: 直前の新月（黄経の差 0）からの日数 */
 export function ageAt(jd: number): number {
   let t = jd - elongAt(jd) / 12.19;
@@ -285,33 +211,6 @@ const distAt = (jd: number) => {
   return moonEcl(t).dist;
 };
 
-/** 黄金分割で f の極小を探す */
-function golden(f: (t: number) => number, lo: number, hi: number, n = 50): number {
-  const g = (Math.sqrt(5) - 1) / 2;
-  let a = lo;
-  let b = hi;
-  let c = b - g * (b - a);
-  let d = a + g * (b - a);
-  let fc = f(c);
-  let fd = f(d);
-  for (let k = 0; k < n; k++) {
-    if (fc < fd) {
-      b = d;
-      d = c;
-      fd = fc;
-      c = b - g * (b - a);
-      fc = f(c);
-    } else {
-      a = c;
-      c = d;
-      fc = fd;
-      d = a + g * (b - a);
-      fd = f(d);
-    }
-  }
-  return (a + b) / 2;
-}
-
 /** [jd0, jd1) の近地点・遠地点（地心距離の極値）の時刻と距離 [km] */
 export function apsides(jd0: number, jd1: number): { jd: number; km: number; kind: 'peri' | 'apo' }[] {
   const out: { jd: number; km: number; kind: 'peri' | 'apo' }[] = [];
@@ -336,11 +235,11 @@ export function apsides(jd0: number, jd1: number): { jd: number; km: number; kin
 /** 観測地での月の上縁の高度（出没の判定の値）[°] と、東西の成分（南中で + から − へ） */
 function horizonAt(jd: number, o: Obs): [number, number] {
   const c = core(jd);
-  const { obs, zenith } = site(c, o);
+  const { obs, zenith } = site(c.jd, c.n, o);
   const top = sub(c.moon, obs);
   const u = unit(top);
   const sd = Math.asin(R_MOON / len(top)) / D;
-  return [Math.asin(dot(u, zenith)) / D + sd + H_REFR, dot(u, cross(POLE, zenith))];
+  return [Math.asin(dot(u, zenith)) / D + sd + H_REFR, eastward(u, zenith)];
 }
 
 /**
@@ -351,20 +250,8 @@ export function riseSet(
   jd0: number,
   o: Obs,
 ): { rise: number | null; transit: number; transitAlt: number; set: number | null } {
-  const n = 48;
-  const s = Array.from({ length: n + 1 }, (_, i) => horizonAt(jd0 + i / n, o));
-  let rise: number | null = null;
-  let set: number | null = null;
-  let transit = Number.NaN;
-  for (let i = 0; i < n; i++) {
-    const [a, b] = [s[i], s[i + 1]];
-    const lo = jd0 + i / n;
-    const hi = jd0 + (i + 1) / n;
-    if (rise === null && a[0] < 0 && b[0] >= 0) rise = bisect((t) => horizonAt(t, o)[0], lo, hi, 20);
-    if (set === null && a[0] >= 0 && b[0] < 0) set = bisect((t) => horizonAt(t, o)[0], lo, hi, 20);
-    if (Number.isNaN(transit) && a[1] > 0 && b[1] <= 0) transit = bisect((t) => horizonAt(t, o)[1], lo, hi, 20);
-  }
-  return { rise, transit, transitAlt: Number.isNaN(transit) ? Number.NaN : moonState(transit, o).alt, set };
+  const r = riseTransitSet(jd0, (t) => horizonAt(t, o));
+  return { ...r, transitAlt: Number.isNaN(r.transit) ? Number.NaN : moonState(r.transit, o).alt };
 }
 
 export interface Shadow {

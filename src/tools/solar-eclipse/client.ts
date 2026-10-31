@@ -1,6 +1,9 @@
 /**
  * 日食のページの入口: 日食（NASA のベッセル要素）と観測地 → 地方食 → 空・太陽・地図・地球・予報・一覧・サロス系列
  */
+
+import { observerXYZ } from '../../lib/astro/earth';
+import { deltaTSigma, jdToCal } from '../../lib/astro/time';
 import { Choice } from '../../lib/choice';
 import { $, esc, norm } from '../../lib/dom';
 import { ParamGroup } from '../../lib/param';
@@ -11,7 +14,6 @@ import * as data from './data';
 import { drawGlobe, viewDir } from './draw-globe';
 import { drawMap, type LatLon, MAP_STYLE } from './draw-map';
 import { drawSky, makeCorona, SunPainter } from './draw-sky';
-import { observerXYZ } from './earth';
 import { D2R, equalEarth, equirect, orthographic, type Projection } from './geo';
 import { type LandMask, landMask, type Rings } from './land';
 import {
@@ -28,7 +30,6 @@ import { type Key, PARAMS } from './params';
 import { centralPoint, limitPoint, trace } from './path';
 import { fluxLUT, residualFlux, snapAt } from './shade';
 import { activityOf, sunAxisPA } from './solar';
-import { deltaTSigma, jdToCal } from './time';
 
 const R2D = 180 / Math.PI;
 const txt = (id: string, s: string) => {
