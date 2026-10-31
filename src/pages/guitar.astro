@@ -1,6 +1,7 @@
 ---
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import MidiPanel from '../components/MidiPanel.astro';
 import More from '../components/More.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
@@ -155,6 +156,8 @@ const PIANO = ROOTS.map((_, i) => {
         </div>
         <p class="msg er snd-msg" id="snd-msg" aria-live="polite"></p>
       </Panel>
+
+      <MidiPanel />
 
       <Panel hid="hd-pk" title="弾き方" class="a-pk">
         <div class="ptab">

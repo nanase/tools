@@ -1,6 +1,7 @@
 ---
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import MidiPanel from '../components/MidiPanel.astro';
 import More from '../components/More.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
@@ -144,6 +145,8 @@ const METERS = [
         </div>
         <p class="msg er snd-msg" id="snd-msg" aria-live="polite"></p>
       </Panel>
+
+      <MidiPanel />
 
       <Panel hid="hd-bow" title="弓" class="a-bow">
         <div slot="aux" class="seg" id="p-dir" role="group" aria-label="弓の向き" data-nosave><button type="button" data-v="1" aria-pressed="true" title="毛箱の側（元）から先の側へ弓を動かす">下げ弓</button><button type="button" data-v="-1" aria-pressed="false" title="先の側から毛箱の側（元）へ弓を動かす">上げ弓</button></div>

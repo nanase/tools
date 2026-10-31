@@ -5,6 +5,7 @@
 import { Choice } from '../../lib/choice';
 import { $, $$, esc } from '../../lib/dom';
 import { fmt, fmtR, minus, plain, ro } from '../../lib/format';
+import { logMap, MidiBox, touchOf } from '../../lib/midi';
 import { ParamGroup } from '../../lib/param';
 import { autoPause, lookahead } from '../../lib/pause';
 import { movePlayStore, outVol, type PlayKey, TEMPO } from '../../lib/play';
@@ -779,6 +780,57 @@ async function pluck(si: number, fret: number | null, gain = 1): Promise<void> {
   }
   renderOut();
 }
+
+/* ---------- MIDI ---------- */
+/*
+ * 押した音を、押さえるフレットがいちばん低くなる空いた弦で弾く（同時に押した音は別の弦へ）。
+ * 空いた弦がなければ、その音を弾ける弦のうち最も前に押した音の弦を使い回す。
+ * ベロシティははじく強さ、離すとその弦を押さえて止める
+ */
+/** MIDI の音 → 弾いている弦とフレット。弦ごとに、弾いている MIDI の音と押した順 */
+const midiOn = new Map<number, { si: number; f: number }>();
+const strOwner: (number | null)[] = [null, null, null, null, null, null];
+const strAge = [0, 0, 0, 0, 0, 0];
+let midiAge = 0;
+/** 音 n を弾く弦とフレット（弾ける弦がなければ null） */
+function midiSpot(n: number): { si: number; f: number } | null {
+  const open = tuningOf(tun.value).notes,
+    cand: { si: number; f: number }[] = [];
+  for (let si = 0; si < 6; si++) {
+    const f = n - open[si];
+    if (f >= 0 && f <= G.frets) cand.push({ si, f });
+  }
+  if (!cand.length) return null;
+  const free = cand.filter((c) => strOwner[c.si] === null);
+  if (free.length) return free.reduce((a, b) => (b.f < a.f ? b : a));
+  return cand.reduce((a, b) => (strAge[b.si] < strAge[a.si] ? b : a));
+}
+const midiBox = new MidiBox(
+  {
+    on: (n, vel) => {
+      const sp = midiSpot(n);
+      midiBox.show(noteName(n), vel, sp ? `${sp.si + 1} 弦 ${sp.f ? `${sp.f} フレット` : '開放'}` : '');
+      if (!sp) return;
+      const old = midiOn.get(n);
+      if (old && strOwner[old.si] === n) strOwner[old.si] = null;
+      const prev = strOwner[sp.si];
+      if (prev !== null) midiOn.delete(prev);
+      strOwner[sp.si] = n;
+      strAge[sp.si] = ++midiAge;
+      midiOn.set(n, sp);
+      void pluck(sp.si, sp.f, logMap(touchOf(vel, 'std'), 0.3, 3));
+    },
+    off: (n) => {
+      const sp = midiOn.get(n);
+      if (!sp) return;
+      midiOn.delete(n);
+      if (strOwner[sp.si] !== n) return;
+      strOwner[sp.si] = null;
+      lift(sp.si, sp.f, true);
+    },
+  },
+  { ready: () => audio.ready() },
+);
 
 /* ---------- コード ---------- */
 /** 押さえているコード: 根音・種類・押さえ方の候補と選んでいる番号（形は弦を押さえ直すと変わる） */
