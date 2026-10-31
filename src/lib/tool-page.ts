@@ -194,10 +194,10 @@ function initMore(): void {
 }
 
 /* ---------- 開閉できる枠（Collapsible.astro・Panel.astro） ---------- */
-/** 開閉を保存する（既定と同じなら消す）。既定は Collapsible が閉じる、Panel が開く */
+/** 開閉を保存する（既定と同じなら消す）。既定は Collapsible が閉じる、Panel が開く（shut の Panel は閉じる） */
 function storeFold(box: HTMLElement, open: boolean): void {
   const k = `o:${box.dataset.fold}`;
-  if (open === (box.tagName !== 'DETAILS')) forget(k);
+  if (open === (box.tagName !== 'DETAILS' && box.dataset.shut === undefined)) forget(k);
   else store(k, open);
 }
 

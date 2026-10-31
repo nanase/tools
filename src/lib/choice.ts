@@ -31,7 +31,7 @@ export class Choice<V extends string = string> {
   ) {
     this.root = root;
     this.btns = $$<HTMLButtonElement>('button[data-v]', root);
-    this.msgEl = root.querySelector('.msg');
+    this.msgEl = root.querySelector('.msg, .c-off');
     this.cur = (this.btns.find((b) => b.getAttribute('aria-pressed') === 'true')?.dataset.v ?? '') as V;
     this.def = this.cur;
     const save = !!root.id && !root.hasAttribute('data-nosave');
@@ -118,7 +118,8 @@ export class Choice<V extends string = string> {
   /** 行の下にメッセージを出す（ChoiceRow の msg を置いた行だけ） */
   note(text: string, kind: MsgKind = ''): void {
     if (!this.msgEl) return;
-    this.msgEl.className = `msg${kind ? ` ${kind}` : ''}`;
+    /* 破線の枠（ChoiceRow の offIn）は、無効の理由だけを出す */
+    if (!this.msgEl.classList.contains('c-off')) this.msgEl.className = `msg${kind ? ` ${kind}` : ''}`;
     if (this.msgEl.textContent !== text) this.msgEl.textContent = text;
   }
 

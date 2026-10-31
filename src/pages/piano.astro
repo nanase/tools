@@ -1,6 +1,7 @@
 ---
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import MidiPanel from '../components/MidiPanel.astro';
 import More from '../components/More.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
@@ -74,13 +75,18 @@ const name = 'ピアノ音響モデル';
         <p class="msg er snd-msg" id="snd-msg" aria-live="polite"></p>
       </Panel>
 
+      <MidiPanel pedals>
+        <ChoiceRow k="mv" name="ベロシティ" sub="鍵盤どおりは、MIDI のベロシティ（1〜127）をハンマーの速さ（0.3〜7 m/s）に直して打つ。固定は、打鍵の枠のベロシティで打つ" choices={[['key', '鍵盤どおり'], ['fix', '固定']]} value="key" />
+        <ChoiceRow k="mt" name="タッチ" sub="ベロシティをハンマーの速さに直す曲線。軽いほど、弱く弾いても強い音になる" choices={[['light', '軽い'], ['std', '標準'], ['heavy', '重い']]} value="std" offIn />
+      </MidiPanel>
+
       <Panel hid="hd-hit" title="打鍵" class="a-hit">
         <div class="ptab">
           <ParamRow d={VEL} />
           <ChoiceRow k="hard" name="ハンマーの硬さ" sub="フェルトの硬さ（整音）。硬いほど衝突が短く、高い倍音が強い明るい音になる" choices={HARD.map(([v, l]) => [v, l] as const)} value="1" />
-          <ChoiceRow k="ped" name="ダンパーペダル" sub="踏むとすべてのダンパーが弦から離れ、離した鍵の音も響き続け、ほかの弦も共鳴する。自動では、曲は低音が変わるところで踏みかえ（演奏の記録のペダルがある曲は、記録のとおりに踏む）、鍵盤では踏まない" choices={[['auto', '自動'], ['on', '踏む'], ['off', '踏まない']]} value="auto" />
+          <ChoiceRow k="ped" name="ダンパーペダル" sub="踏むとすべてのダンパーが弦から離れ、離した鍵の音も響き続け、ほかの弦も共鳴する。自動では、曲は低音が変わるところで踏みかえ（演奏の記録のペダルがある曲は、記録のとおりに踏む）、鍵盤では踏まない" choices={[['auto', '自動'], ['on', '踏む'], ['off', '踏まない']]} value="auto" offIn />
           <ChoiceRow k="th" name="鍵盤の音" sub="鍵が底に当たる衝撃が、棚板と枠を通して響板を叩く音（コトンという音）の大きさ。強く打つほど大きい" choices={THUMP} value="1" />
-          <ChoiceRow k="soft" name="ソフトペダル" sub="踏むと鍵盤とハンマーが横にずれ、3 本弦の鍵は 2 本、2 本弦の鍵は 1 本だけを、フェルトの柔らかい所で打つ。打たない弦も駒を通して揺れる" choices={[['off', '踏まない'], ['on', '踏む']]} value="off" />
+          <ChoiceRow k="soft" name="ソフトペダル" sub="踏むと鍵盤とハンマーが横にずれ、3 本弦の鍵は 2 本、2 本弦の鍵は 1 本だけを、フェルトの柔らかい所で打つ。打たない弦も駒を通して揺れる" choices={[['off', '踏まない'], ['on', '踏む']]} value="off" offIn />
         </div>
       </Panel>
 

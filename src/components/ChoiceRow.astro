@@ -27,6 +27,8 @@ interface Props {
   wide?: boolean;
   /** メッセージの欄を置く（Choice の note・setOff で使う） */
   msg?: boolean;
+  /** 無効にしたとき（Choice の setOff）、区切りボタンの代わりに破線の枠で理由を出す（数値の行と同じ形。msg の代わり） */
+  offIn?: boolean;
   class?: string;
 }
 const {
@@ -41,6 +43,7 @@ const {
   layout = 'seg',
   wide,
   msg,
+  offIn,
   class: cls,
 } = Astro.props;
 const nid = `n-${k}`,
@@ -54,7 +57,7 @@ const chips = layout === 'chips';
   {!chips && (
     <div class="c-val"><div class="seg" role="group" aria-labelledby={nid} aria-describedby={tid}>
       {btns.map((b) => <button type="button" data-v={b.v} aria-pressed={b.on ? 'true' : 'false'} title={b.t}>{b.l}</button>)}
-    </div></div>
+    </div>{offIn && <p class="c-off" aria-live="polite"></p>}</div>
   )}
   <RowReset label={`${name}を既定値に戻す`} />
   {(msg || chips) && (

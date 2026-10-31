@@ -1,0 +1,42 @@
+---
+/**
+ * MIDI の枠: MIDI 機器の鍵盤で楽器を弾く。初めは閉じ、使えない環境（Safari など）では出さない。
+ * 右上に開始・停止、中に機器とチャンネルの選択と、楽器ごとの行（slot）、最後に弾いた音とペダルの表示を置く。
+ * 選択欄の形（.prow.pick・.sel）は楽器のページの style.css にある。動作は lib/midi.ts の MidiBox
+ */
+import Panel from './Panel.astro';
+
+interface Props {
+  /** ダンパーペダル・ソフトペダルの灯りを出す */
+  pedals?: boolean;
+}
+const { pedals } = Astro.props;
+---
+<Panel hid="hd-midi" title="MIDI" class="a-midi" shut hidden>
+  <div slot="aux" class="seg"><button type="button" id="midiBtn" aria-pressed="false" title="MIDI 機器の鍵盤で弾く"><span class="led" id="midiLed" aria-hidden="true"></span><span id="midiT">開始</span></button></div>
+  <div class="ptab">
+    <div class="prow pick">
+      <div class="c-sym" aria-hidden="true"></div>
+      <div class="c-name"><label class="pn" for="midi-dev">機器</label></div>
+      <div class="c-val sel"><select id="midi-dev" autocomplete="off" disabled><option value="">すべての機器</option></select></div>
+    </div>
+    <div class="prow pick">
+      <div class="c-sym" aria-hidden="true"></div>
+      <div class="c-name"><label class="pn" for="midi-ch">チャンネル</label></div>
+      <div class="c-val sel"><select id="midi-ch" autocomplete="off"><option value="0">すべて</option>{Array.from({ length: 16 }, (_, i) => <option value={i + 1}>{i + 1}</option>)}</select></div>
+    </div>
+    <slot />
+    <div class="prow wide mi-in">
+      <div class="c-sym" aria-hidden="true"></div>
+      <div class="c-name"><span class="pn">入力</span></div>
+      <div class="c-sub mi-mon">
+        <b id="mi-note">—</b>
+        <span class="mi-bar" aria-hidden="true"><i id="mi-bar"></i></span>
+        <span class="mi-v" id="mi-v"></span>
+        {pedals && <span class="mi-pd"><span class="led" id="mi-ped" aria-hidden="true"></span>ダンパー</span>}
+        {pedals && <span class="mi-pd"><span class="led" id="mi-soft" aria-hidden="true"></span>ソフト</span>}
+      </div>
+    </div>
+  </div>
+  <p class="msg midi-msg" id="midi-msg" aria-live="polite"></p>
+</Panel>
