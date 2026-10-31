@@ -19,7 +19,7 @@ const W = (k: string) => {
 };
 const SH = SHAPES.map(([v, l, t]) => [v, l, t] as const);
 ---
-<SiteLayout title={name} tool={{ id: 'convolution', name }} description="核を反転して入力の上を滑らせ、重なった部分の積の面積が出力の 1 点になる様子を、連続と離散で動かして見ます。入力の各点が核の写しを出して重なる見方、相関、サイコロの和、周波数の積も見られます。" note="連続の信号は刻み 0.01 の格子で近似した計算です。">
+<SiteLayout title={name} tool={{ id: 'convolution', name }} note="連続の信号は刻み 0.01 の格子で近似した計算です。">
   <PageTitle title={name}>核 <i>h</i> を反転して入力 <i>x</i> の上を滑らせ、重なった部分の積の面積を出力 <i>y</i> の 1 点にします。入力と核は形を選ぶか、図をなぞって描けます。</PageTitle>
   <div class="mini" data-mini="op" aria-hidden="true"><span><i>t</i><b id="m-t"></b></span><span><i>y</i>(<i>t</i>)<b id="m-yt"></b></span><span>∫<i>y</i><b id="m-ay"></b></span></div>
 

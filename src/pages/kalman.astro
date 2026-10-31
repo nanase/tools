@@ -25,7 +25,7 @@ const pick = (L: readonly ParamDef[], ks: readonly string[]) =>
 const PH =
   '<span data-p="pred">予測</span><i aria-hidden="true">→</i><span data-p="obs">観測</span><i aria-hidden="true">→</i><span data-p="upd">更新</span>';
 ---
-<SiteLayout title={name} tool={{ id: 'kalman', name }} description="線路を走る台車の位置と速度を、雑音のある距離計の値からカルマンフィルタで推定します。予測と観測の分布の掛け合わせ、不確かさの楕円の伸び縮み、雑音の設定を誤ったときの崩れ方を見られます。" note="台車の加速度と観測の雑音を、平均 0 の正規分布の白色雑音とした模型による参考値です。">
+<SiteLayout title={name} tool={{ id: 'kalman', name }} note="台車の加速度と観測の雑音を、平均 0 の正規分布の白色雑音とした模型による参考値です。">
   <PageTitle title={name}>線路を走る台車の位置を、雑音のある距離計の値から推定するカルマンフィルタです。予測の分布と観測の分布を掛け合わせて推定を更新する仕組みを、位置の山で確かめられます。位置と速度の平面では、不確かさの楕円が予測で膨らみ、観測で縮みます。フィルタの雑音の見積りを本当の値からずらすと、推定がどう崩れるかを誤差のグラフと正規化イノベーション 2 乗で比べられます。</PageTitle>
 
   <div class="tgrid">

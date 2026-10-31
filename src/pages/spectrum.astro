@@ -18,7 +18,7 @@ import Theory from '../tools/spectrum/Theory.astro';
 const name = 'スペクトラムアナライザ';
 /* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
 ---
-<SiteLayout title={name} tool={{ id: 'spectrum', name }} description="マイクや音楽ファイルの音を FFT で周波数に分け、スペクトラムとスペクトログラムで表示します。" note="音声はこの端末の中だけで処理し、送信しません。">
+<SiteLayout title={name} tool={{ id: 'spectrum', name }} note="音声はこの端末の中だけで処理し、送信しません。">
   <PageTitle title={name}>マイクや音楽ファイルの音を FFT で周波数ごとの強さに分け、スペクトラムと、時間とともに流れるスペクトログラムで表示します。</PageTitle>
 
   <div class="tgrid">

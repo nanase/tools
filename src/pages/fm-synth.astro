@@ -23,7 +23,7 @@ const chain = (a: number) =>
     ? `${ALGS[a].e.map(([j, k]) => `${j + 1}→${k + 1}`).join('、')}、出力 ${ALGS[a].c.map((k) => k + 1).join('・')}`
     : '変調なし、すべて出力';
 ---
-<SiteLayout title={name} tool={{ id: 'fm-synth', name }} description="ヤマハの FM 音源 IC のような 4 オペレータの FM 音源で、アルゴリズムと変調の強さを変えながら波形とスペクトラムを表示し、音でも鳴らします。" note="エンベロープと LFO を持たない、簡略化したモデルによる波形です。">
+<SiteLayout title={name} tool={{ id: 'fm-synth', name }} note="エンベロープと LFO を持たない、簡略化したモデルによる波形です。">
   <PageTitle title={name}>ヤマハの FM 音源 IC（OPN 系）のように、4 つのオペレータを 8 通りのアルゴリズムでつないで音を作ります。オペレータの波形・周波数比・変調指数を変えると、波形とスペクトラムがすぐに変わります。鍵盤を押すと音で聞けます。</PageTitle>
 
   <div class="tgrid">

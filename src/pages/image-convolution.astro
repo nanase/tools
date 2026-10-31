@@ -17,7 +17,7 @@ const PW = W + 2 * PAD,
   PH = H + 2 * PAD;
 const ICON_HOME = '<rect x="1.5" y="1.5" width="1.8" height="9"/><path d="M10.5 1.5v9L4 6z"/>';
 ---
-<SiteLayout title={name} tool={{ id: 'image-convolution', name }} description="画像の畳み込みを 1 画素ずつ見せます。ぼかし・鮮鋭化・エッジ検出などのカーネルを選んで係数も編集できます。" note="画像は端末の中だけで処理して送信しません。256 × 192 画素のグレースケールに縮めます。">
+<SiteLayout title={name} tool={{ id: 'image-convolution', name }} note="画像は端末の中だけで処理して送信しません。256 × 192 画素のグレースケールに縮めます。">
   <PageTitle title={name}>カーネル（小さな重みの表）を 1 画素ずつずらして積和をとります。横線より上が出力で下が入力です。係数は上下にドラッグして変えられます。1 次元の原理は「畳み込み」のページにあります。</PageTitle>
 
   <div class="tgrid">

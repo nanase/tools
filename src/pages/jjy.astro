@@ -20,7 +20,7 @@ const off = offRows(DEFAULTS);
 const rows = (tab: OptRow['tab']) => OPT_ROWS.filter((r) => r.tab === tab);
 /* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
 ---
-<SiteLayout title={name} tool={{ id: 'jjy', name }} description="標準電波 JJY のタイムコードを表示し音でも確認できます。電波時計の時刻合わせにも使えます。" note="時刻はこの端末の時計をもとにしています。">
+<SiteLayout title={name} tool={{ id: 'jjy', name }} note="時刻はこの端末の時計をもとにしています。">
   <PageTitle title={name}>電波時計などで利用されている標準電波 JJY の信号をシミュレートします。日本標準時から 1 分ごとのタイムコードを作り、符号の種類で色分けして表示します。音で鳴らして、電波時計の時刻合わせにも使えます。</PageTitle>
   <div class="mini" aria-hidden="true"><span>JST<b id="mt"></b></span><span>SEC<b id="ms"></b></span><span>CODE<b id="mc"></b></span></div>
 

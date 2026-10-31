@@ -14,7 +14,7 @@ import Theory from '../tools/fft/Theory.astro';
 const name = 'FFT';
 /* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
 ---
-<SiteLayout title={name} tool={{ id: 'fft', name }} description="N 点の DFT を半分の DFT 2 つに分けることを繰り返す、基数 2 の FFT です。バタフライ図の上を値が流れる様子を時間間引きと周波数間引きで動かし、今のバタフライを複素平面で拡大して見ます。入力を変えると、各段の途中の値も変わります。">
+<SiteLayout title={name} tool={{ id: 'fft', name }}>
   <PageTitle title={name}><i>N</i> 点の DFT を半分の DFT 2 つに分けることを繰り返す、基数 2 の FFT です。バタフライ図の上を値が流れる様子を、時間間引きと周波数間引きで見られます。</PageTitle>
 
   <div class="tgrid">
