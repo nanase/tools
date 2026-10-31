@@ -6,13 +6,18 @@ import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
 import RelatedTools from '../components/RelatedTools.astro';
+import Transport from '../components/Transport.astro';
+import TransportState from '../components/TransportState.astro';
 import SiteLayout from '../layouts/SiteLayout.astro';
+import { TEMPO } from '../lib/play';
 import { gridSvg } from '../lib/scope';
 import '../tools/fm-synth/style.css';
+import Credits from '../tools/fm-synth/Credits.astro';
 import { algH, algSvg, algText, DW } from '../tools/fm-synth/diagram';
 import Keyboard from '../tools/fm-synth/Keyboard.astro';
 import Operators from '../tools/fm-synth/Operators.astro';
 import { ALG0, FB0, HMAX, NORM0, PERIODS, RANGES, VOL } from '../tools/fm-synth/params';
+import { PIECES } from '../tools/fm-synth/score';
 import { ALGS, FB_LABEL } from '../tools/fm-synth/synth';
 import Theory from '../tools/fm-synth/Theory.astro';
 
@@ -24,7 +29,7 @@ const chain = (a: number) =>
     : '変調なし、すべて出力';
 ---
 <SiteLayout title={name} tool={{ id: 'fm-synth', name }} note="エンベロープと LFO を持たない、簡略化したモデルによる波形です。">
-  <PageTitle title={name}>ヤマハの FM 音源 IC（OPN 系）のように、4 つのオペレータを 8 通りのアルゴリズムでつないで音を作ります。オペレータの波形・周波数比・変調指数を変えると、波形とスペクトラムがすぐに変わります。鍵盤を押すと音で聞けます。</PageTitle>
+  <PageTitle title={name}>ヤマハの FM 音源 IC（OPN 系）のように、4 つのオペレータを 8 通りのアルゴリズムでつないで音を作ります。オペレータの波形・周波数比・変調指数を変えると、波形とスペクトラムがすぐに変わります。鍵盤を押すと音で聞けます。作った音色で曲も演奏できます。</PageTitle>
 
   <div class="tgrid">
     <div class="col c1">
@@ -44,6 +49,22 @@ const chain = (a: number) =>
         <div class="ptab">
           <ParamRow d={VOL} />
         </div>
+      </Panel>
+
+      <Panel hid="hd-play" title="演奏" class="a-play">
+        <TransportState slot="aux" />
+        <div class="ptab">
+          <div class="prow pick" id="p-piece">
+            <div class="c-sym" aria-hidden="true"></div>
+            <div class="c-name"><label class="pn" id="n-piece" for="piece">曲</label><p class="desc tip" id="t-piece" role="tooltip" hidden>著作権の切れた曲の電子楽譜から変換したもの。すべてのパートを今の音色で弾く。演奏中に音色を変えると、鳴っている音もすぐ変わる</p></div>
+            <div class="c-val sel"><select id="piece" autocomplete="off" aria-describedby="t-piece">{PIECES.map((p) => <option value={p.v} title={p.by}>{p.name}</option>)}</select></div>
+          </div>
+        </div>
+        <Transport />
+        <div class="ptab">
+          <ParamRow d={TEMPO} />
+        </div>
+        <p class="msg er snd-msg" id="pl-msg" aria-live="polite"></p>
       </Panel>
     </div>
 
@@ -104,6 +125,10 @@ const chain = (a: number) =>
 
     <Collapsible hid="hd-thy" title="動作原理と式">
       <Theory />
+    </Collapsible>
+
+    <Collapsible hid="hd-src" title="楽譜の出典" class="a-src">
+      <Credits />
     </Collapsible>
   </div>
 

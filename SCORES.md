@@ -49,6 +49,13 @@
 | [ナポリの踊り（白鳥の湖）](#ナポリの踊り白鳥の湖) | トランペット | パブリックドメイン |
 | [ラッパは鳴り響き（メサイア HWV 56）](#ラッパは鳴り響きメサイア-hwv-56) | トランペット | CC BY 3.0 |
 | [消灯ラッパ（Taps）](#消灯ラッパtaps) | トランペット | パブリックドメイン |
+| [トルコ行進曲](#トルコ行進曲) | FM音源 | パブリックドメイン |
+| [ジ・エンターテイナー](#ジエンターテイナー) | FM音源 | パブリックドメイン |
+| [メイプル・リーフ・ラグ](#メイプルリーフラグ) | FM音源 | パブリックドメイン |
+| [山の魔王の宮殿にて](#山の魔王の宮殿にて) | FM音源 | パブリックドメイン |
+| [インヴェンション 第 8 番 ヘ長調 BWV 779](#インヴェンション-第-8-番-ヘ長調-bwv-779) | FM音源 | パブリックドメイン |
+| [アイネ・クライネ・ナハトムジーク 第 1 楽章](#アイネクライネナハトムジーク-第-1-楽章) | FM音源 | パブリックドメイン |
+| [エリーゼのために](#エリーゼのために) | FM音源 | パブリックドメイン |
 
 パブリックドメインの曲のデータには、このリポジトリも著作権を主張しません。
 
@@ -490,18 +497,96 @@ G. F. ヘンデル「メサイア」第 3 部のバスのアリア「The trumpet
 - ライセンス: パブリックドメイン
 - 加工: ハ調のビューグルの記譜を、B♭ 管のトランペットがピストンを押さずに吹く実音へ長 2 度下げた
 
+## FM音源
+
+データは [src/tools/fm-synth/scores/](src/tools/fm-synth/scores/) にあり、`bun run fm-scores` で作ります。どの曲もすべてのパートをページの音色で弾くので、ベロシティは使いません。
+
+加工（どの曲も共通）: 時刻と長さを 4 分音符の 1/480 に寄せた。同じ時刻の同じ高さの音は、譜表が違っても 1 つにまとめた。
+
+### トルコ行進曲
+
+W. A. モーツァルト「ピアノ・ソナタ 第 11 番 イ長調 K. 331」の第 3 楽章。
+
+- ファイル: [kv331.mid](src/tools/fm-synth/scores/kv331.mid)、[kv331.ts](src/tools/fm-synth/scores/kv331.ts)
+- 出典: [Mutopia Project の楽譜](https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=108)（Mutopia-2015/08/13-108）
+- 入力: Rune Zedeler、Chris Sawer
+- 底本: IMSLP
+- ライセンス: パブリックドメイン
+- 加工: Mutopia の MIDI は反復を展開していないので、`.ly` を LilyPond 2.24.4 の `convert-ly` で直し、`\unfoldRepeats` を付けて MIDI を作り直した。終わりの区間の手書きの反復も 2 回弾くように並べ、テンポを ♩ = 120 にした
+
+### ジ・エンターテイナー
+
+S. ジョプリン。MIDI は反復を展開している。
+
+- ファイル: [entertainer.mid](src/tools/fm-synth/scores/entertainer.mid)、[entertainer.ts](src/tools/fm-synth/scores/entertainer.ts)
+- 出典: [Mutopia Project の楽譜](https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=263)（Mutopia-2016/11/25-263）
+- 入力: Chris Sawer
+- 底本: 1902 年の初版の複製
+- ライセンス: パブリックドメイン
+
+### メイプル・リーフ・ラグ
+
+S. ジョプリン。MIDI は反復を展開している。
+
+- ファイル: [maple.mid](src/tools/fm-synth/scores/maple.mid)、[maple.ts](src/tools/fm-synth/scores/maple.ts)
+- 出典: [Mutopia Project の楽譜](https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=23)（Mutopia-2011/11/13-23）
+- 入力: Chris Sawer
+- 底本: 1899 年の初版の複製
+- ライセンス: パブリックドメイン
+
+### 山の魔王の宮殿にて
+
+E. グリーグ「ペール・ギュント 第 1 組曲」の第 4 曲を、作曲者がピアノ独奏に編曲したもの。MIDI は反復を展開している。
+
+- ファイル: [mountain-king.mid](src/tools/fm-synth/scores/mountain-king.mid)、[mountain-king.ts](src/tools/fm-synth/scores/mountain-king.ts)
+- 出典: [Mutopia Project の楽譜](https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=1888)（Mutopia-2013/12/07-1888）
+- 入力: Coyau
+- 底本: The University Society, 1918
+- ライセンス: パブリックドメイン
+
+### インヴェンション 第 8 番 ヘ長調 BWV 779
+
+J. S. バッハ「2 声のインヴェンション」より。
+
+- ファイル: [bwv779.mid](src/tools/fm-synth/scores/bwv779.mid)、[bwv779.ts](src/tools/fm-synth/scores/bwv779.ts)
+- 出典: [Mutopia Project の楽譜](https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=61)（Mutopia-2008/06/15-61）
+- 入力: Allen Garvin
+- 底本: Bach-Gesellschaft
+- ライセンス: パブリックドメイン
+
+### アイネ・クライネ・ナハトムジーク 第 1 楽章
+
+W. A. モーツァルト「セレナード 第 13 番 ト長調 K. 525」の弦楽四重奏の版。MIDI は反復を展開している。
+
+- ファイル: [kv525.mid](src/tools/fm-synth/scores/kv525.mid)、[kv525.ts](src/tools/fm-synth/scores/kv525.ts)
+- 出典: [Mutopia Project の楽譜](https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=900)（Mutopia-2007/01/01-900）
+- 入力: 匿名
+- 底本: IMSLP
+- ライセンス: パブリックドメイン
+
+### エリーゼのために
+
+L. v. ベートーヴェン WoO 59。
+
+- ファイル: [fur-elise.mid](src/tools/fm-synth/scores/fur-elise.mid)、[fur-elise.ts](src/tools/fm-synth/scores/fur-elise.ts)
+- 出典: [Mutopia Project の楽譜](https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=931)（Mutopia-2015/08/18-931）
+- 入力: Stelios Samelis
+- 底本: Breitkopf & Härtel, 1888
+- ライセンス: パブリックドメイン
+- 加工: Mutopia の MIDI は反復を展開していないので、`.ly` を LilyPond 2.24.4 の `convert-ly` で直し、`\unfoldRepeats` を付けて MIDI を作り直した
+
 ## MIDI を編集するとき
 
 `.mid` を編集して変換し直すと、演奏に反映されます。`.ts` は変換で上書きされるので、直接は編集しません。
 
-| 編集するもの | ギター | ピアノ | オルガン |
-| --- | --- | --- | --- |
-| 音の高さ・時刻・長さ | 反映する | 反映する | 反映する |
-| テンポの変化 | 反映する | 反映する | 反映する |
-| ベロシティ | 反映する | 反映する | 使わない |
-| ペダル（CC64）などのコントロールチェンジ | 使わない | 使わない | 使わない |
+| 編集するもの | ギター | ピアノ | オルガン | FM音源 |
+| --- | --- | --- | --- | --- |
+| 音の高さ・時刻・長さ | 反映する | 反映する | 反映する | 反映する |
+| テンポの変化 | 反映する | 反映する | 反映する | 反映する |
+| ベロシティ | 反映する | 反映する | 使わない | 使わない |
+| ペダル（CC64）などのコントロールチェンジ | 使わない | 使わない | 使わない | 使わない |
 
-変換のコマンドは、ギターが `bun run chaconne`、ピアノが `bun run piano-scores`、オルガンが `bun run organ-scores` です。
+変換のコマンドは、ギターが `bun run chaconne`、ピアノが `bun run piano-scores`、オルガンが `bun run organ-scores`、FM音源が `bun run fm-scores` です。
 
 テンポの決まり:
 

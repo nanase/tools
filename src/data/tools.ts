@@ -153,7 +153,7 @@ export const TOOLS: Tool[] = [
     d: '4 つのオペレータの FM 音源で波形と音を作ります。',
     ic: 'fm',
     r: ['spectrum', 'oscilloscope', 'noise', 'organ'],
-    k: 'fm synth synthesizer ヤマハ yamaha シンセサイザー 周波数変調 オペレータ アルゴリズム 変調指数 opn ym2612 ym2203 ym2608 ベッセル 音色 オーディオ audio',
+    k: 'fm synth synthesizer ヤマハ yamaha シンセサイザー 周波数変調 オペレータ アルゴリズム 変調指数 opn ym2612 ym2203 ym2608 ベッセル 音色 演奏 曲 トルコ行進曲 エンターテイナー ラグ エリーゼのために オーディオ audio',
   },
   {
     id: 'noise',

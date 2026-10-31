@@ -1,15 +1,19 @@
 /**
  * FM 音源のページの入口: アルゴリズム・帰還量・オペレータ・鍵盤の入力 → 音色 → 結線図・波形・スペクトラム・代入式・音。
- * 波形とスペクトラムは入力が変わるたびに 32 周期ぶんを計算し直す
+ * 波形とスペクトラムは入力が変わるたびに 32 周期ぶんを計算し直す。曲の演奏は、すべての音を今の音色で弾く
  */
 import { Choice } from '../../lib/choice';
 import { $, $$ } from '../../lib/dom';
 import { same } from '../../lib/eseries';
 import { fmt, fmtR, minus, plain } from '../../lib/format';
 import { ParamGroup } from '../../lib/param';
+import { autoPause, lookahead } from '../../lib/pause';
+import { type PlayKey, TEMPO } from '../../lib/play';
 import { DV } from '../../lib/scope';
 import { forget, store, stored } from '../../lib/store';
+import { TempoMap } from '../../lib/tempo';
 import { initToolPage } from '../../lib/tool-page';
+import { evenLine, type Line, Transport } from '../../lib/transport';
 import { spectra, toDb } from '../spectrum/fft';
 import { FmAudio } from './audio';
 import { algH, algSvg, algText, DW } from './diagram';
@@ -34,6 +38,7 @@ import {
   ratioDef,
   VOL,
 } from './params';
+import { PIECES, type Piece, type PieceData, pieceOf } from './score';
 import { ALGS, FB_LABEL, isCarrier, normGain, type Patch, PTS, WAVES, waveIndex, waveOf } from './synth';
 
 initToolPage();
@@ -382,6 +387,7 @@ function syncKb(): void {
   txt('#kb-hz', fmtR(noteHz(KB.n), 'Hz', 5));
   $<HTMLButtonElement>('#octDn').disabled = KB.o <= OCT.min;
   $<HTMLButtonElement>('#octUp').disabled = KB.o >= OCT.max;
+  litKeys();
 }
 function pick(n: number): void {
   if (n === KB.n) return;
@@ -441,9 +447,238 @@ kb.addEventListener('click', (e) => {
   if (b && e.detail === 0) pick(noteOf(b));
 });
 
+/* ---------- 曲の演奏 ---------- */
+const piece = $<HTMLSelectElement>('#piece');
+{
+  const v = stored('c:p-piece');
+  if (typeof v === 'string' && PIECES.some((p) => p.v === v)) piece.value = v;
+}
+piece.addEventListener('change', () => {
+  store('c:p-piece', piece.value);
+  if (PL) stopPiece();
+  void showLine();
+});
+const plMsg = (s: string) => txt('#pl-msg', s);
+let tempo = TEMPO.v;
+
+/* 曲で鳴っている鍵の印（鍵盤に見えている範囲だけ）。同じ高さの音が重なることがあるので数える */
+const lit = new Map<number, number>();
+function litKeys(): void {
+  const c0 = 12 * (KB.o + 1);
+  for (const b of keys) b.classList.toggle('on', (lit.get(c0 + Number(b.dataset.i)) ?? 0) > 0);
+}
+function light(n: number, on: boolean): void {
+  const c = (lit.get(n) ?? 0) + (on ? 1 : -1);
+  if (c > 0) lit.set(n, c);
+  else lit.delete(n);
+  keys.find((b) => noteOf(b) === n)?.classList.toggle('on', c > 0);
+}
+
+/** 曲の音 1 つ。vis は鍵の印（0 = まだ・1 = 出している・2 = 消した） */
+interface Note {
+  id: number;
+  n: number;
+  vis: 0 | 1 | 2;
+}
+interface Ev {
+  b: number;
+  on: boolean;
+  x: Note;
+}
+interface Play {
+  ev: Ev[];
+  i: number;
+  tm: TempoMap;
+  at0: number;
+  tau0: number;
+  spb: number;
+  /** 予約を済ませた先の AudioContext の時刻 */
+  until: number;
+  last: number;
+  timer: ReturnType<typeof setInterval>;
+  piece: Piece;
+}
+let PL: Play | null = null;
+const cache = new Map<string, PieceData>();
+const spbOf = (pc: Piece) => 60 / (pc.bpm * (tempo / 100));
+const tempoOf = (d: PieceData) => new TempoMap(d.tempo);
+const endOf = (d: PieceData) => Math.max(...d.notes.map((x) => x.t + x.d));
+/** 拍の順。同じ拍では 終わり → 始まり の順 */
+const byBeat = (a: Ev, b: Ev) => a.b - b.b || +a.on - +b.on;
+/** 曲の出来事（音の始まりと終わり）。同じ高さの音を続けて弾くときに間があくよう、終わりを少し早める */
+function eventsOf(d: PieceData): Ev[] {
+  const ev: Ev[] = [];
+  d.notes.forEach((y, id) => {
+    const x: Note = { id, n: y.n, vis: 0 };
+    ev.push({ b: y.t, on: true, x }, { b: y.t + Math.max(y.d * 0.95, y.d - 0.06), on: false, x });
+  });
+  return ev.sort(byBeat);
+}
+/** 拍 b の AudioContext の時刻 */
+const atOf = (p: Play, b: number) => p.at0 + (p.tm.tau(b) - p.tau0) * p.spb;
+/** AudioContext の時刻 an での曲の拍（鳴り始める前は、弾き始める位置） */
+const beatOf = (p: Play, an: number) => p.tm.beat(p.tau0 + Math.max(0, an - p.at0) / p.spb);
+/** 曲を読み込む（読み込んだ曲は覚えておく。読めなければ null） */
+async function loadPiece(pc: Piece): Promise<PieceData | null> {
+  let d = cache.get(pc.v);
+  if (!d) {
+    try {
+      d = await pc.load();
+    } catch {
+      return null;
+    }
+    cache.set(pc.v, d);
+  }
+  return d;
+}
+function lineOf(pc: Piece, d: PieceData): Line {
+  const tm = tempoOf(d);
+  return evenLine({ bar: pc.bar, pickup: pc.pickup, end: endOf(d), sec: (b) => (tm.tau(b) * 60) / pc.bpm });
+}
+/** 選んだ曲を読み込んで、演奏の位置の欄に小節を描く */
+async function showLine(): Promise<void> {
+  const pc = pieceOf(piece.value);
+  transport.setLine(null);
+  const d = await loadPiece(pc);
+  if (piece.value !== pc.v) return;
+  if (d) transport.setLine(lineOf(pc, d));
+  else plMsg('曲を読み込めませんでした');
+}
+/** 途中から弾くときに、弾き始める拍より前でも含める音の拍（小節の頭の直前の短い音） */
+const EARLY = 0.05;
+const AHEAD = 0.3;
+/** 拍 b0 から演奏する。その拍で伸ばしている音は、その拍で弾き直す */
+async function startPiece(b0: number): Promise<void> {
+  const ok = await audio.ready();
+  if (!ok) {
+    plMsg(NO_SOUND);
+    return;
+  }
+  plMsg('');
+  const pc = pieceOf(piece.value),
+    d = await loadPiece(pc);
+  if (!d) {
+    plMsg('曲を読み込めませんでした');
+    return;
+  }
+  if (PL || piece.value !== pc.v) return;
+  const all = eventsOf(d),
+    i0 = all.findIndex((e) => e.b >= b0 - EARLY),
+    i = i0 < 0 ? all.length : i0,
+    rest = all.slice(i),
+    ends = new Map<Note, number>(),
+    now = audio.now() ?? 0,
+    tm = tempoOf(d);
+  for (const e of rest) if (!e.on) ends.set(e.x, e.b);
+  for (const e of all.slice(0, i)) if (e.on && (ends.get(e.x) ?? 0) > b0 + 1e-6) rest.push({ ...e, b: b0 });
+  audio.song = true;
+  PL = {
+    ev: rest.sort(byBeat),
+    i: 0,
+    tm,
+    at0: now + 0.15,
+    tau0: tm.tau(b0),
+    spb: spbOf(pc),
+    until: now + AHEAD,
+    last: endOf(d),
+    timer: setInterval(tick, 40),
+    piece: pc,
+  };
+  transport.sync();
+  tick();
+}
+function stopPiece(): void {
+  if (!PL) return;
+  clearInterval(PL.timer);
+  PL = null;
+  audio.stop();
+  audio.song = false;
+  audio.idle();
+  lit.clear();
+  litKeys();
+  transport.sync();
+}
+/** 一時停止: 演奏を止めて、鳴っている音を離す（その間も鍵盤で弾ける）。止めた拍を返す */
+function pausePiece(): number {
+  const p = PL;
+  if (!p) return 0;
+  const beat = Math.min(p.last, beatOf(p, audio.now() ?? p.at0));
+  stopPiece();
+  return beat;
+}
+const nowS = () => performance.now() / 1000;
+const later = (t: number, fn: () => void) => setTimeout(fn, Math.max(0, (t - nowS()) * 1000));
+function tick(): void {
+  const p = PL;
+  if (!p) return;
+  const an = audio.now();
+  if (an === null) return;
+  /* 画面が隠れている間は、タイマーが間引かれるぶん先まで予約する */
+  const ahead = lookahead(AHEAD);
+  /* タイマーが止まっていた間に過ぎた分は、後ろへずらして続きから弾く（遅れた音をまとめて鳴らさない） */
+  if (an > p.until) p.at0 += an - p.until;
+  p.until = Math.max(p.until, an + ahead);
+  const spb = spbOf(p.piece);
+  if (spb !== p.spb) {
+    p.tau0 += Math.max(0, an - p.at0) / p.spb;
+    p.at0 = Math.max(an, p.at0);
+    p.spb = spb;
+  }
+  const toPerf = (a: number) => nowS() + (a - an);
+  while (p.i < p.ev.length && atOf(p, p.ev[p.i].b) < an + ahead) {
+    const e = p.ev[p.i++],
+      at = Math.max(an, atOf(p, e.b)),
+      x = e.x;
+    if (e.on) {
+      audio.on(x.id, noteHz(x.n), at);
+      later(toPerf(at), () => {
+        if (PL !== p || x.vis) return;
+        x.vis = 1;
+        light(x.n, true);
+      });
+    } else {
+      audio.off(x.id, at);
+      later(toPerf(at), () => {
+        if (PL !== p || x.vis !== 1) return;
+        x.vis = 2;
+        light(x.n, false);
+      });
+    }
+  }
+  const beat = beatOf(p, an);
+  transport.setPos(Math.min(beat, p.last));
+  if (p.i >= p.ev.length && beat > p.last + 1) {
+    stopPiece();
+    transport.stopped(true);
+  }
+}
+const transport = new Transport({
+  active: () => !!PL,
+  start: startPiece,
+  stop: stopPiece,
+  pause: pausePiece,
+  tempo: () => tempo,
+});
+new ParamGroup<PlayKey>([TEMPO], (v, k) => {
+  tempo = v.tempo;
+  if (k) transport.refresh();
+});
+autoPause(audio, { pause: () => transport.pause(), hidden: tick });
+/* ブラウザや OS が AudioContext を止めたら、再生ボタンの音も止める */
+{
+  const lost = audio.onLost;
+  audio.onLost = () => {
+    lost?.();
+    if (!audio.latch) return;
+    audio.latch = false;
+    syncSnd();
+  };
+}
+
 /* ---------- 起動 ---------- */
 syncKb();
 /* 生成時に 1 回目の onChange で音量を送る */
 new ParamGroup<Key>([VOL], (v) => audio.vol(v.vol));
 update();
 showView();
+void showLine();

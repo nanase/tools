@@ -13,6 +13,7 @@
     "lint:fix": "biome check --write .",
     "test": "bun scripts/node.ts vitest run",
     "organ-scores": "bun scripts/organ-scores.ts",
+    "fm-scores": "bun scripts/fm-scores.ts",
     "organ-tune": "bun scripts/organ-tune.ts",
     "redirects": "bun scripts/redirects-csv.ts",
     "og-image": "bun scripts/og-image.ts",
