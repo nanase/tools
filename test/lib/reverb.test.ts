@@ -28,11 +28,17 @@ function bandDb(y: Float32Array, f0: number): number {
     cnt = 0;
   for (let f = f0 / Math.SQRT2; f <= f0 * Math.SQRT2; f += 1) {
     let re = 0,
-      im = 0;
-    const w = (2 * Math.PI * f) / FS;
+      im = 0,
+      c = 1,
+      s = 0;
+    const w = (2 * Math.PI * f) / FS,
+      cw = Math.cos(w),
+      sw = Math.sin(w);
+    /* 標本ごとに cos・sin を呼ぶと、全体の実行で 5 秒の制限を超える */
     for (let i = 0; i < y.length; i++) {
-      re += y[i] * Math.cos(w * i);
-      im -= y[i] * Math.sin(w * i);
+      re += y[i] * c;
+      im -= y[i] * s;
+      [c, s] = [c * cw - s * sw, s * cw + c * sw];
     }
     acc += re * re + im * im;
     cnt++;
