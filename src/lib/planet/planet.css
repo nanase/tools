@@ -169,6 +169,34 @@
 .pn-mut p{margin:0;font-size:12.5px;color:var(--ink-2)}
 .pn-mut p b{font-family:var(--mono);color:var(--ink)}
 
+/* 土星: タイタンの影の季節と環の傾きの枠、軌道の図の環 */
+@media (min-width:1000px){
+  .pn-grid.pn-sat{grid-template-areas:"scope scope" "all all" "top wig" "mut mut" "tilt tilt" "thy thy"}
+  .pn-a-tilt{grid-area:tilt}
+}
+.pn-sat .pn-strip{aspect-ratio:6/1}
+@media (max-width:640px){.pn-sat .pn-strip{aspect-ratio:3/1}}
+.pn-sd.pn-clipu,.pn-sd.pn-clipd{width:0;height:0;margin:-4px 0 0 -4px;border:4px solid transparent;border-radius:0;background:none;box-shadow:none}
+.pn-sd.pn-clipu{border-bottom:6px solid #f4f1e8;border-top:0}
+.pn-sd.pn-clipd{border-top:6px solid #f4f1e8;border-bottom:0}
+.pn-of .pn-rg{fill:none;stroke:#c9b98e;opacity:.6}
+.pn-of .pn-orbx{fill:none;stroke:var(--line-2);stroke-width:1;stroke-dasharray:3 3}
+.pn-of .pn-fx{fill:var(--ink-2)}
+.pn-kx{color:var(--ink-2)}
+.pn-key i.pn-idot2{width:9px;height:9px;border-radius:50%}
+.pn-of .pn-tl0{stroke:var(--ink-3);stroke-width:1}
+.pn-of .pn-tle{fill:none;stroke:var(--ink);stroke-width:1.2}
+.pn-of .pn-tls{fill:none;stroke:var(--pn-m6);stroke-width:1.2}
+.pn-kte{color:var(--ink)}
+.pn-kts{color:var(--pn-m6)}
+.pn-tilt{cursor:pointer;touch-action:pan-y}
+.pn-cross{display:grid;gap:2px;align-content:start}
+.pn-cross h3{margin:0 0 4px;font:700 13.5px var(--sans)}
+.pn-crow{display:flex;justify-content:space-between;gap:12px;padding:5px 8px;border:0;border-bottom:1px solid var(--line);background:none;color:var(--ink);font:500 13px var(--sans);text-align:left;cursor:pointer}
+.pn-crow:hover{background:var(--inset)}
+.pn-crow:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+.pn-crow b{font:600 13px var(--mono)}
+
 /* スマホ: 向きの選択肢を短くし、時刻のボタンを詰める */
 @media (max-width:640px){
   .pn-w{display:none}
@@ -182,6 +210,7 @@
   /* 横に縮む図の文字は、図の単位で大きくして読める大きさに保つ */
   .pn-wig text,.pn-wig .pn-ts,.pn-wig .pn-nowt{font-size:19px}
   .pn-sea text,.pn-sea .pn-nowt{font-size:21px}
+  .pn-tilt text,.pn-tilt .pn-ts,.pn-tilt .pn-nowt{font-size:19px}
   .pn-tstep .seg{width:100%}
   .pn-tstep .seg button{flex:1;min-width:0;padding:0 2px;font-size:12px;white-space:nowrap}
   /* 時刻と数値を詰める */

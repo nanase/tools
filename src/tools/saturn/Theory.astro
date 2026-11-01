@@ -1,0 +1,197 @@
+---
+// 動作原理と式
+/* 本文の出典番号 */
+const rf = (...ns: number[]) => ns.map((n) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`).join('');
+/* MathML の部品 */
+const sp = '<mspace width="0.17em"/>';
+const AF = '<mo>⁡</mo>';
+const fn = (f: string, x: string) => `<mi>${f}</mi>${AF}${sp}${x}`;
+const sin = (x: string) => fn('sin', x);
+const par = (x: string) => `<mrow><mo>(</mo>${x}<mo>)</mo></mrow>`;
+const sub = (a: string, b: string) => `<msub><mi>${a}</mi><mn>${b}</mn></msub>`;
+const subt = (a: string, b: string) => `<msub><mi>${a}</mi><mtext>${b}</mtext></msub>`;
+const sup = (a: string, b: string) => `<msup>${a}<mrow>${b}</mrow></msup>`;
+const deg = '<mo>°</mo>';
+const mu0 = sub('μ', '0');
+const frac = (a: string, b: string) => `<mfrac><mrow>${a}</mrow><mrow>${b}</mrow></mfrac>`;
+const exp = (x: string) => `<mi>exp</mi>${AF}${par(x)}`;
+const m = '<mi>μ</mi>';
+const t = '<mi>τ</mi>';
+---
+<h3>計算と描画の流れ</h3>
+<ol class="flow" aria-label="計算と描画の流れ">
+  <li>日時（UT）に <math><mi mathvariant="normal">Δ</mi><mi>T</mi></math> を足して力学時にする</li>
+  <li>光行時間だけ前の土星と、今の地球の位置から、地球から見た土星を求める</li>
+  <li>同じ時刻の自転軸と 8 衛星の位置を求め、環の傾きを出す</li>
+  <li>衛星ごとに、土星の前・裏・影の中か、影が土星に落ちるかを判定する</li>
+  <li>WebGL2 で画素ごとに土星・環・衛星の前後を決め、模様・周縁減光・環の透け具合・影を描く</li>
+</ol>
+
+<h3>土星の位置</h3>
+<p>土星と地球の日心位置は VSOP87D の級数で求めます<Fragment set:html={rf(2)} />。土星は全 5759 項のうち、振幅 × 0.1<sup><i>p</i></sup> が 3 × 10<sup>−7</sup> 以上の 374 項を残しました（<i>p</i> は時間のべき、動径は閾値を軌道半径の 9.55 倍にする）。全項と比べた誤差は 1900〜2100 年で地心の向き 0.93″ 以下です。地球は月のページと同じ 213 項です。</p>
+<p>手順は Meeus 33 章のとおりです<Fragment set:html={rf(1)} />。光行時間 <math><mi>τ</mi></math>（67〜92 分）だけ前の土星と今の地球の差をとり、FK5 への補正・年周光行差・章動を入れます。</p>
+
+<h3>環の傾き</h3>
+<p>環は土星の赤道面にあるとします。自転軸は IAU WGCCRE 2015 の式です<Fragment set:html={rf(3)} />。<math><mi>T</mi></math> は J2000.0 からのユリウス世紀、<math><mi>d</mi></math> は日です。</p>
+<div class="eqs">
+  <math display="block" set:html={`${sub('α', '0')}<mo>=</mo><mn>40.589</mn>${deg}<mo>−</mo><mn>0.036</mn>${deg}${sp}<mi>T</mi><mspace width="1em"/>${sub('δ', '0')}<mo>=</mo><mn>83.537</mn>${deg}<mo>−</mo><mn>0.004</mn>${deg}${sp}<mi>T</mi>`} />
+  <math display="block" set:html={`${subt('W', 'III')}<mo>=</mo><mn>38.90</mn>${deg}<mo>+</mo><mn>810.7939024</mn>${deg}${sp}<mi>d</mi>`} />
+  <math display="block" set:html={`<mi>B</mi><mo>=</mo><mi>asin</mi>${par(`<mi mathvariant="bold">e</mi><mo>·</mo><mi mathvariant="bold">z</mi>`)}<mspace width="1em"/><msup><mi>B</mi><mo>′</mo></msup><mo>=</mo><mi>asin</mi>${par(`<mi mathvariant="bold">s</mi><mo>·</mo><mi mathvariant="bold">z</mi>`)}`} />
+</div>
+<p><math><mi mathvariant="bold">z</mi></math> は北極、<math><mi mathvariant="bold">e</mi></math> は地球、<math><mi mathvariant="bold">s</mi></math> は太陽への向きです。土星の公転周期は 29.46 年で、自転軸は軌道面に 26.7° 傾くので、この周期で北面と南面が入れ替わります。地球は 1 年で太陽のまわりを回るので、<math><mi>B</mi></math> は <math><msup><mi>B</mi><mo>′</mo></msup></math> のまわりで 1 年周期に揺れます<Fragment set:html={rf(4)} />。</p>
+<p><math><mi>B</mi></math> の符号の変わり目が環の面の通過で、地球が見る環は真横になります。<math><mi>B</mi></math> と <math><msup><mi>B</mi><mo>′</mo></msup></math> の符号が違うと、照らされていない裏面が見えます。</p>
+
+<h3>環の透け具合と色</h3>
+<p>半径 74000〜141000 km を 4000 点に分けた 1 次元の表を持ちます（1 点 16.75 km）。</p>
+<ul class="tl">
+  <li>光学的厚さ <math><mi>τ</mi></math>: Cassini VIMS の γ Cru の恒星掩蔽 32 回の中央値（波長 2.9 µm、10 km 分解能）<Fragment set:html={rf(5)} />。測れる最大を超える所は最大の値とする</li>
+  <li>色: Cassini の自然色のモザイク PIA11142 の放射の明るさ<Fragment set:html={rf(6)} /> を、撮影の幾何と <math><mi>τ</mi></math> から計算した明るさで割り、100 km ほどでならす</li>
+</ul>
+<p>モザイクの放射の縮尺は場所で変わります（1 画素 5.9〜6.7 km）。掩蔽から計算した明るさとの局所の相関で、画素と半径の対応を折れ線で決めました。薄い間隙は割り算が暴れるので、近い点の色で埋めます。</p>
+<p>望遠鏡で見える A・B・C 環とカッシーニの間隙、F 環が表の範囲です。エンケの間隙は幅 322 km で、地球から 0.05″ ほどです。拡大すると線になりますが、実際の写真には写りません。</p>
+
+<h3>環の明るさ</h3>
+<p>環の明るさは単散乱の式で求めます<Fragment set:html={rf(7)} />。<math set:html={m} />・<math set:html={mu0} /> は地球と太陽の高さの正弦の絶対値です。</p>
+<div class="eqs">
+  <math display="block" set:html={`<mtext>表側:</mtext>${sp}${sp}<mi>I</mi><mo>=</mo><mi>A</mi>${sp}${frac(mu0, `${m}<mo>+</mo>${mu0}`)}${par(`<mn>1</mn><mo>−</mo>${exp(`<mo>−</mo>${t}${par(`${frac('<mn>1</mn>', m)}<mo>+</mo>${frac('<mn>1</mn>', mu0)}`)}`)}`)}`} />
+  <math display="block" set:html={`<mtext>裏側:</mtext>${sp}${sp}<mi>I</mi><mo>=</mo><mi>A</mi>${sp}${frac(mu0, `${mu0}<mo>−</mo>${m}`)}${par(`${exp(`<mo>−</mo>${t}<mo>/</mo>${mu0}`)}<mo>−</mo>${exp(`<mo>−</mo>${t}<mo>/</mo>${m}`)}`)}`} />
+</div>
+<p><math><mi>A</mi></math> は表の色で、粒子のアルベドと散乱の相が入っています。この式で次の見え方が出ます。</p>
+<ul class="tl">
+  <li>環が開くほど、太陽が高いほど明るい</li>
+  <li>表から見ると厚い B 環が明るい</li>
+  <li>裏から見ると薄い C 環とカッシーニの間隙が明るく、厚い B 環は暗い<Fragment set:html={rf(6)} /></li>
+</ul>
+<p>衝の前後には環が急に明るくなります<Fragment set:html={rf(8)} />。Mallama と Hilton の等級の位相角 <math><mi>α</mi></math> の項を環の光だけが受けたとして、次の倍率を掛けます。</p>
+<div class="eqs">
+  <math display="block" set:html={`<mn>1</mn><mo>+</mo><mn>0.3</mn>${sp}${exp('<mo>−</mo><mn>2.25</mn><mi>α</mi>')}<mo>+</mo><mn>0.07</mn>${sp}<mi>max</mi>${par('<mn>0</mn><mo>,</mo><mn>6</mn><mo>−</mo><mi>α</mi>')}`} />
+</div>
+<p>環が真横に近いと、画面の幅が 1 画素を切ります。線として残るよう傾きの下限を 1 画素分にし、その分だけ暗くします。</p>
+
+<h3>環と土星の前後と影</h3>
+<p>画素ごとに視線を 1 本とり、土星の楕円体・衛星の球・環の面（<math><mi>z</mi><mo>=</mo><mn>0</mn></math>）との交点を求めます。環が手前なら後ろの光を <math set:html={exp(`<mo>−</mo>${t}<mo>/</mo>${m}`)} /> 倍に透かして重ね、環が土星の裏なら描きません。衛星も同じ順で重ねます。</p>
+<ul class="tl">
+  <li>環の影が土星に: 土星の面の点から太陽へ向かう直線と環の面の交点で <math><mi>τ</mi></math> を引き、<math set:html={exp(`<mo>−</mo>${t}<mo>/</mo>${mu0}`)} /> を掛ける</li>
+  <li>土星の影が環に: 環の点から太陽へ向かう直線が楕円体に当たるかを調べ、太陽の視直径の幅でぼかす</li>
+  <li>衛星の影: 面の点から見た太陽の円盤のうち、衛星に隠れる割合で暗くする。環の上にも落とす</li>
+</ul>
+<p>影は衝のころ土星の真後ろに隠れ、矩のころ最も広く見えます。環の中や後ろの衛星の丸も、同じ <math><mi>τ</mi></math> で薄くします。</p>
+
+<h3>8 衛星</h3>
+<p>ミマス〜イアペトゥスの位置は Meeus 46 章の式です<Fragment set:html={rf(1, 9)} />。式は B1950.0 の黄道の座標で、長さは土星の半径の単位です。J2000.0 の赤道へ回し、長さの単位は衛星ごとに Horizons の位置へ当てはめました（60372〜60438 km）。衛星が土星より遠い分だけ光が早く出ているので、衛星ごとに光行時間を足し直します。</p>
+<p>等級は Horizons の <math><mi>V</mi><mo stretchy="false">(</mo><mn>1</mn><mo>,</mo><mn>0</mn><mo stretchy="false">)</mo></math> です<Fragment set:html={rf(10)} />。土星の衛星の Horizons の等級に位相の項はありません。イアペトゥスの前と後ろの半球の明るさの違い（10.2〜11.9 等）も入っていません。</p>
+
+<h3>すべての衛星</h3>
+<p>JPL Horizons にある 292 個の衛星を出します<Fragment set:html={rf(10)} />。8 衛星のほかは丸と名前だけで、どれも位置の目安です。</p>
+<p>環のすぐ外の 15 個は周期が短いので、2015〜2040 年の位置に土星の赤道の面の円軌道を当てはめ、経度に正弦波を 1 つ足しました。ヤヌスとエピメテウスの 4 年ごとの入れ替わりや、トロヤ衛星の秤動がこの波です。差はパンの 6 km からアイガイオンの 5.4 万 km までです。</p>
+<p>外側の 269 個は太陽の摂動で軌道が大きく変わるので、2015〜2036 年の 180 日おきの位置と速度を表にしました。間の時刻は両端の状態から 2 体で進めた位置を混ぜて求めます。Horizons との差は中央値 7.5 万 km（土星の距離で 11″ ほど）、最大 18 万 km（27″ ほど）です。</p>
+<p>フェーベは軌道の図で 1900〜2100 年に出すので、1460 日おきの表を別に持ちます。軌道の図の半径は、フェーベまで 1 枚に入れるため対数です。</p>
+<p>名前と群はウィキペディア日本語版の一覧によります<Fragment set:html={rf(11)} />。一覧にない 146 個の群は、軌道の傾きから決めました。</p>
+
+<h3>現象の判定</h3>
+<p>楕円体の z を赤道半径 / 極半径 倍に伸ばすと、半径 1 の球になります。衛星の中心 <math><mi mathvariant="bold">p</mi></math> から向き <math><mi mathvariant="bold">u</mi></math> へのびる直線が球を通るかは、次の値の符号で決まります。</p>
+<div class="eqs">
+  <math display="block" set:html={`<mi>g</mi><mo>=</mo>${sup('<mi>|</mi><mi mathvariant="bold">p</mi><mi>|</mi>', '<mn>2</mn>')}<mo>−</mo>${sup(par('<mi mathvariant="bold">p</mi><mo>·</mo><mi mathvariant="bold">u</mi>'), '<mn>2</mn>')}<mo>−</mo><mn>1</mn>`} />
+</div>
+<ul class="tl">
+  <li><b>土星の前</b>: <math><mi mathvariant="bold">u</mi></math> が地球の向きで <math><mi>g</mi><mo>&lt;</mo><mn>0</mn></math>、衛星が地球の側</li>
+  <li><b>土星の裏（掩蔽）</b>: 同じく <math><mi>g</mi><mo>&lt;</mo><mn>0</mn></math>、衛星が奥</li>
+  <li><b>影が土星に</b>: <math><mi mathvariant="bold">u</mi></math> が太陽の向きで <math><mi>g</mi><mo>&lt;</mo><mn>0</mn></math>、衛星が太陽の側</li>
+  <li><b>土星の影の中（食）</b>: 同じく <math><mi>g</mi><mo>&lt;</mo><mn>0</mn></math>、衛星が太陽と反対の側</li>
+</ul>
+<p>衛星の中心で判定します。5 分刻みで符号の変わり目を探し、二分法で詰めます。内側の衛星の軌道は環とほぼ同じ面にあるので、現象が起こるのは環の傾きが小さい年だけです。</p>
+
+<h3>タイタンの影の季節</h3>
+<p>タイタンは軌道が大きいので、影が土星に落ちるのは太陽が環の面に近い年だけです<Fragment set:html={rf(12)} />。2024-11〜2025-10 の季節が終わり、次は 2038〜39 年です。図の陰は土星が地平線の下か昼の時間で、観測地で見える回数を数えます。2 つの季節の影は日本の昼に起こるものが多く、東京からは 1 回も見えません。</p>
+
+<h3>模様と明るさ</h3>
+<p>模様は Hubble 宇宙望遠鏡の OPAL の 2025 年の全球の地図です<Fragment set:html={rf(13)} />。行ごとの中央値で経度方向にならした帯にしたので、衛星の写り込みと自転の流れは気にしなくてよくなります。環で隠れた赤道と撮れていない極は近い行で埋めます。</p>
+<p>OPAL の色合成は 395 nm を青に当てるので青みが強く、目で見た色と違います。sRGB の値に 1.12・0.96・0.70 を掛けて淡い黄土色へ寄せました。</p>
+<p>地図は周縁減光を Minnaert 則で除いてあります<Fragment set:html={rf(14)} />。OPAL の <math><mi>k</mi></math> は赤 0.80・緑 0.65・青 0.40 です。青の値をそのまま掛けると縁が青く光るので、色を寄せた絵に合わせて赤 0.80・緑 0.72・青 0.62 にしました。</p>
+<div class="eqs">
+  <math display="block" set:html={`<mi>I</mi><mo>=</mo><mi>A</mi>${sp}${sup(mu0, '<mi>k</mi>')}${sp}${sup('<mi>μ</mi>', '<mi>k</mi><mo>−</mo><mn>1</mn>')}`} />
+</div>
+<p>等級は環を含む Mallama と Hilton の式です<Fragment set:html={rf(15)} />。<math><mi>r</mi></math>・<math><mi>Δ</mi></math> は太陽・地球からの距離 [au]、<math><mi>α</mi></math> は位相角 [°] です。<math><mi>β</mi></math> は有効な傾きで、<math><mi>B</mi></math> と <math><msup><mi>B</mi><mo>′</mo></msup></math> が同符号なら <math><msqrt><mi>B</mi><msup><mi>B</mi><mo>′</mo></msup></msqrt></math>、異符号なら 0 です。</p>
+<div class="eqs">
+  <math display="block" set:html={`<mi>V</mi><mo>=</mo><mn>5</mn>${sp}${fn('log', '<mn>10</mn>')}${par('<mi>r</mi><mi>Δ</mi>')}<mo>−</mo><mn>8.914</mn><mo>−</mo><mn>1.825</mn>${sp}${sin('<mi>β</mi>')}<mo>+</mo><mn>0.026</mn><mi>α</mi><mo>−</mo><mn>0.378</mn>${sp}${sin('<mi>β</mi>')}${sp}${sup('<mi>e</mi>', '<mo>−</mo><mn>2.25</mn><mi>α</mi>')}`} />
+</div>
+
+<h3>北極の六角形</h3>
+<p>六角形は北緯 78° 付近にあります<Fragment set:html={rf(16)} />。経度方向にならした帯には写りません。地球から見える緯度の上限は <math><mn>90</mn><mo>°</mo><mo>+</mo><mi>B</mi></math> なので、南面が見えている間（2038 年まで）は縁の向こうに隠れています。</p>
+
+<h3>答え合わせ</h3>
+<ul class="tl">
+  <li>JPL Horizons（2015〜2045 年の 6 時点）<Fragment set:html={rf(10)} />
+    <ul class="tl">
+      <li>地心の位置: 1″ 以内</li>
+      <li>System III の中央子午線: 0.2° 以内（2026 年で 0.05°）</li>
+      <li>視直径・北極の位置角・位相角・土星中心緯度: 0.01 以内</li>
+      <li>等級: 0.002 等以内</li>
+      <li>衛星の離れ: 内側の 6 個 0.25″・ヒペリオン 3.3″・イアペトゥス 0.9″ 以内</li>
+      <li>東京から見た高度・方位: 0.02° 以内</li>
+    </ul>
+  </li>
+  <li>Horizons の現象の印（2025・2026・2039 年の数日）<Fragment set:html={rf(10)} />
+    <ul class="tl">
+      <li>通過と掩蔽の始めと終わり: 多くは 1〜3 分の差</li>
+      <li>ディオネの通過: 8 分の差。Horizons は赤道半径の球で判定し、ディオネは高い緯度を通る</li>
+      <li>レアの通過（2026-12-05）: Horizons は印を出すが、楕円体では縁の外を通る</li>
+    </ul>
+  </li>
+  <li>PDS Ring-Moon Systems Node<Fragment set:html={rf(4, 17)} />
+    <ul class="tl">
+      <li>環の面の通過 2025-03-23・2025-05-06・2038-10-15・2039-01-22・2039-04-01・2039-07-09: 4 時間以内</li>
+      <li>傾きの最大 2032-05-12 の −26.94°: 一致</li>
+      <li>Saturn Viewer の図と、環の向き・衛星の位置を見比べた（2026-12-04）</li>
+    </ul>
+  </li>
+  <li>BAA の 2025 年の観測の記録<Fragment set:html={rf(12)} />
+    <ul class="tl">
+      <li>タイタンの影 5/15 9:34〜15:42 UT: 7 分の差</li>
+      <li>5〜10 月の影と 10/21 の通過の日付: 一致</li>
+    </ul>
+  </li>
+</ul>
+
+<h3>このツールで決めたこと</h3>
+<ul class="tl">
+  <li>VSOP87D の打ち切りの閾値（3 × 10<sup>−7</sup>、374 項）</li>
+  <li>環を土星の赤道面とすること</li>
+  <li>環の表の範囲と点の数（74000〜141000 km、4000 点）</li>
+  <li>環の明るさの倍率（1.25）と衝の前後の増光の式</li>
+  <li>γ Cru の掩蔽を使うこと（環の面から高い星で、厚い所まで測れる）</li>
+  <li>環の色の出し方（PIA11142 の画素と半径の対応、ならす幅 100 km）</li>
+  <li>環を線として残す傾きの下限（1 画素）と、明るさの下限（0.15 倍）</li>
+  <li>模様を帯にすること、色に掛ける値（1.12・0.96・0.70）</li>
+  <li>周縁減光の <math><mi>k</mi></math>（0.80・0.72・0.62）</li>
+  <li>Meeus 46 章の長さの単位を衛星ごとに当てはめること</li>
+  <li>現象を衛星の中心で判定し、楕円体の縁を使うこと</li>
+  <li>衛星の色（幾何アルベドに比例させた目安）</li>
+  <li>環のすぐ外の衛星を円軌道と正弦波とすること</li>
+  <li>外側の衛星の表の間隔（180 日）</li>
+  <li>一覧にない衛星の群を決める閾値（傾き 40° と 90°）</li>
+  <li>時刻の帯の範囲（今の時刻の前後 12 時間）</li>
+  <li>薄明の陰の範囲（太陽の高度 −0.83°〜−12°）</li>
+  <li>軌道の図の半径を対数にすること</li>
+</ul>
+
+<h3>出典</h3>
+<ol class="refs">
+  <li id="thy-r1"><span class="rf-for">惑星の見かけの位置（33 章）、FK5 への補正（32 章）、土星の衛星（46 章）、章動・歳差・恒星時</span><span class="rf-src">J. Meeus, <i>Astronomical Algorithms</i>, 2nd ed., Willmann-Bell, 1998</span></li>
+  <li id="thy-r2"><span class="rf-for">土星と地球の位置の級数 VSOP87D</span><span class="rf-src">P. Bretagnon and G. Francou, “Planetary theories in rectangular and spherical variables. VSOP 87 solutions,” <i>Astron. Astrophys.</i>, vol. 202, pp. 309–315, 1988; IMCCE, <a href="https://ftp.imcce.fr/pub/ephem/planets/vsop87/VSOP87D.sat" target="_blank" rel="noopener">VSOP87D.sat</a></span></li>
+  <li id="thy-r3"><span class="rf-for">土星の形・自転軸・System III</span><span class="rf-src">B. A. Archinal et al., “Report of the IAU Working Group on Cartographic Coordinates and Rotational Elements: 2015,” <i>Celest. Mech. Dyn. Astr.</i>, vol. 130, 22, 2018; NAIF, <a href="https://naif.jpl.nasa.gov/pub/naif/generic_kernels/pck/pck00011.tpc" target="_blank" rel="noopener">pck00011.tpc</a></span></li>
+  <li id="thy-r4"><span class="rf-for">環の傾きと環の面の通過の表（答え合わせ）</span><span class="rf-src">R. Victor, “<a href="https://abramsplanetarium.natsci.msu.edu/_assets/files/Sky_Cal_PDFS/BobCorner/Appearance_of_Saturn_Rings_2025-2039.pdf" target="_blank" rel="noopener">Appearance of Saturn's Rings, 2025-2039 and beyond</a>,” Abrams Planetarium, 2025</span></li>
+  <li id="thy-r5"><span class="rf-for">環の光学的厚さ</span><span class="rf-src">PDS Ring-Moon Systems Node, “<a href="https://pds-rings.seti.org/holdings/volumes/COVIMS_8xxx/COVIMS_8001/" target="_blank" rel="noopener">COVIMS_8001</a>”（Cassini VIMS の恒星掩蔽の動径分布）; “<a href="https://arxiv.org/abs/1907.06980" target="_blank" rel="noopener">Occultation observations of Saturn's rings with Cassini VIMS</a>,” arXiv:1907.06980</span></li>
+  <li id="thy-r6"><span class="rf-for">環の色（NASA/JPL/Space Science Institute）</span><span class="rf-src">“<a href="https://pds-rings.seti.org/press_releases/pages/PIA11xxx/PIA11142.html" target="_blank" rel="noopener">PIA11142: A Full Sweep of Saturn's Rings</a>,” 2009</span></li>
+  <li id="thy-r7"><span class="rf-for">環の明るさの単散乱の式</span><span class="rf-src">“<a href="https://arxiv.org/abs/1310.2966" target="_blank" rel="noopener">The vertical structure of the F ring of Saturn from ring-plane crossings</a>,” arXiv:1310.2966</span></li>
+  <li id="thy-r8"><span class="rf-for">環の衝効果</span><span class="rf-src">H. Salo and R. G. French, “<a href="https://arxiv.org/abs/1007.0349" target="_blank" rel="noopener">The opposition and tilt effects of Saturn's rings from HST observations</a>,” arXiv:1007.0349</span></li>
+  <li id="thy-r9"><span class="rf-for">Meeus 46 章の移植（MIT ライセンス）</span><span class="rf-src">commenthol, “<a href="https://github.com/commenthol/astronomia" target="_blank" rel="noopener">astronomia</a>”（saturnmoons）; S. Keys, “<a href="https://github.com/soniakeys/meeus" target="_blank" rel="noopener">meeus</a>”</span></li>
+  <li id="thy-r10"><span class="rf-for">位置・物理暦・衛星の等級（答え合わせ）、8 衛星以外の衛星の位置、衛星の半径と V(1,0)</span><span class="rf-src">JPL Solar System Dynamics, “<a href="https://ssd.jpl.nasa.gov/horizons/" target="_blank" rel="noopener">Horizons System</a>”; “<a href="https://ssd.jpl.nasa.gov/sats/phys_par/" target="_blank" rel="noopener">Planetary Satellite Physical Parameters</a>”; “<a href="https://ssd.jpl.nasa.gov/sats/elem/" target="_blank" rel="noopener">Planetary Satellite Mean Elements</a>”</span></li>
+  <li id="thy-r11"><span class="rf-for">衛星の日本語名と群（CC BY-SA 4.0）</span><span class="rf-src">ウィキペディア日本語版「<a href="https://ja.wikipedia.org/w/index.php?title=%E5%9C%9F%E6%98%9F%E3%81%AE%E8%A1%9B%E6%98%9F&amp;oldid=111388335" target="_blank" rel="noopener">土星の衛星</a>」（版を固定）</span></li>
+  <li id="thy-r12"><span class="rf-for">2025 年のタイタンの影の観測（答え合わせ）</span><span class="rf-src">BAA, “<a href="https://britastro.org/section_information_/saturn-uranus-and-neptune-section-overview/saturn-apparition-notes/saturn-2025-apparition-notes" target="_blank" rel="noopener">Saturn 2025 Apparition Notes</a>”</span></li>
+  <li id="thy-r13"><span class="rf-for">土星の全球の地図（CC BY 4.0）</span><span class="rf-src">A. A. Simon, M. H. Wong and G. S. Orton, “First results from the Hubble OPAL program: Jupiter in 2015,” <i>Astrophys. J.</i>, vol. 812, 55, 2015; MAST, <a href="https://doi.org/10.17909/T9G593" target="_blank" rel="noopener">OPAL, DOI 10.17909/T9G593</a></span></li>
+  <li id="thy-r14"><span class="rf-for">地図の周縁減光の補正（Minnaert の k）と撮影日</span><span class="rf-src">MAST, “<a href="https://archive.stsci.edu/hlsps/opal/cycle32/saturn/hlsp_opal_hst_wfc3-uvis_saturn-2025_all_v1_readme.txt" target="_blank" rel="noopener">OPAL Cycle 32 Saturn README</a>”</span></li>
+  <li id="thy-r15"><span class="rf-for">土星の等級</span><span class="rf-src">A. Mallama and J. L. Hilton, “<a href="https://arxiv.org/abs/1808.01973" target="_blank" rel="noopener">Computing apparent planetary magnitudes for The Astronomical Almanac</a>,” <i>Astron. Comput.</i>, vol. 25, pp. 10–24, 2018</span></li>
+  <li id="thy-r16"><span class="rf-for">北極の六角形</span><span class="rf-src">“<a href="https://arxiv.org/abs/1609.09626" target="_blank" rel="noopener">Saturn's polar atmosphere</a>,” arXiv:1609.09626</span></li>
+  <li id="thy-r17"><span class="rf-for">環の区分の半径と図の見た目（答え合わせ）</span><span class="rf-src">PDS Ring-Moon Systems Node, “<a href="https://pds-rings.seti.org/saturn/saturn_tables.html" target="_blank" rel="noopener">Vital Statistics for Saturn's Rings and Inner Satellites</a>”; “<a href="https://pds-rings.seti.org/tools/" target="_blank" rel="noopener">Saturn Viewer・Saturn Ephemeris Generator</a>”</span></li>
+</ol>

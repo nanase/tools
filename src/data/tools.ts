@@ -408,7 +408,7 @@ export const TOOLS: Tool[] = [
     t: '日食',
     d: '過去と未来の日食を地上の空と月の影で再現します。',
     ic: 'se',
-    r: ['moon', 'jupiter', 'lens', 'halo'],
+    r: ['moon', 'jupiter', 'saturn', 'lens'],
     k: 'solar eclipse 日食 皆既日食 金環日食 部分日食 total annular hybrid partial 食分 面積比 magnitude obscuration コロナ corona ダイヤモンドリング diamond ring ベイリー baily 月の影 本影 半影 umbra penumbra 皆既帯 中心線 central line サロス saros ベッセル要素 besselian elements nasa 五千年正典 five millennium canon espenak meeus deltat δt 地方食 local circumstances 天文 astronomy 太陽 月',
   },
   {
@@ -417,7 +417,7 @@ export const TOOLS: Tool[] = [
     t: '月',
     d: '選んだ日時の月を満ち欠けから地形の影まで再現します。',
     ic: 'mn',
-    r: ['solar-eclipse', 'jupiter', 'lens', 'halo'],
+    r: ['solar-eclipse', 'jupiter', 'saturn', 'lens'],
     k: 'moon 月 満ち欠け 月齢 月相 phase 輝面比 illumination 秤動 libration 地球直下点 sub-earth 視直径 apparent diameter 近地点 遠地点 perigee apogee スーパームーン supermoon 月の出 月の入り 南中 moonrise moonset 欠け際 明暗境界 terminator クレーター crater 月の海 mare 余経度 colongitude 地球照 earthshine 月食 皆既月食 lunar eclipse 本影 半影 赤銅色 danjon 中秋の名月 十三夜 カレンダー lro lola nasa meeus 天文 astronomy',
   },
   {
@@ -426,8 +426,17 @@ export const TOOLS: Tool[] = [
     t: '木星',
     d: '選んだ日時の木星と衛星を、大赤斑や衛星の影まで再現します。',
     ic: 'jv',
-    r: ['moon', 'solar-eclipse', 'lens', 'focusing-mask'],
+    r: ['saturn', 'moon', 'solar-eclipse', 'lens'],
     k: 'jupiter 木星 惑星 planet ガリレオ衛星 galilean moons イオ io エウロパ europa ガニメデ ganymede カリスト callisto ヒマリア himalia アマルテア amalthea 不規則衛星 irregular moons 大赤斑 great red spot grs 中央子午線 central meridian system i ii iii 衛星の影 shadow transit 通過 掩蔽 occultation 食 eclipse 相互食 mutual events phemu 衝 opposition 縞 belt hubble opal minnaert 周縁減光 limb darkening vsop87 l1.2 jupos imcce horizons 天文 astronomy',
+  },
+  {
+    id: 'saturn',
+    c: '天文',
+    t: '土星',
+    d: '選んだ日時の土星と環と衛星を、環の透け具合や影まで再現します。',
+    ic: 'st',
+    r: ['jupiter', 'moon', 'solar-eclipse', 'lens'],
+    k: 'saturn 土星 惑星 planet 環 rings 環の傾き ring tilt 環の消失 ring plane crossing a環 b環 c環 カッシーニの間隙 cassini division エンケの間隙 encke gap 光学的厚さ optical depth タイタン titan レア rhea ディオネ dione テティス tethys エンケラドゥス enceladus ミマス mimas ヒペリオン hyperion イアペトゥス iapetus フェーベ phoebe ヤヌス janus エピメテウス epimetheus 衛星の影 shadow transit タイタンの影 通過 掩蔽 occultation 食 eclipse 衝 opposition 衝効果 opposition effect 北極の六角形 hexagon hubble opal cassini minnaert 周縁減光 limb darkening vsop87 meeus horizons 天文 astronomy',
   },
   {
     id: 'bifurcation',

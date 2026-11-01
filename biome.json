@@ -16,7 +16,8 @@
       "!src/tools/svg-theme-checker/samples/*.svg",
       "!public/solar-eclipse/*.json",
       "!public/moon/*.json",
-      "!public/jupiter/*.json"
+      "!public/jupiter/*.json",
+      "!public/saturn/*.json"
     ]
   },
   "formatter": {

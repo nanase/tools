@@ -25,7 +25,9 @@
     "moon-features": "bun scripts/moon-features.ts",
     "moon-eclipses": "bun scripts/moon-eclipses.ts",
     "jupiter-maps": "bun scripts/jupiter-maps.ts",
-    "jupiter-moons": "bun scripts/jupiter-moons.ts"
+    "jupiter-moons": "bun scripts/jupiter-moons.ts",
+    "saturn-moons": "bun scripts/saturn-moons.ts",
+    "saturn-rings": "bun scripts/saturn-rings.ts"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",

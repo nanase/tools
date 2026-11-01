@@ -92,6 +92,16 @@ export function facing(st: PlanetState, v: Vec3): boolean {
   return dot(v, unit(sub([0, 0, 0], st.P))) > 0;
 }
 
+/**
+ * 窓の外の天体の札の置き場と矢印。px・py は窓の中の座標で、W は窓の幅。
+ * 左右に外れていればその側へ、上下だけに外れていれば近い側に置いて上下の矢印を付ける
+ */
+export function edgeDir(px: number, py: number, W: number): { left: boolean; arrow: string } {
+  if (px < 0) return { left: true, arrow: '←' };
+  if (px > W) return { left: false, arrow: '→' };
+  return { left: px < W / 2, arrow: py < 0 ? '↑' : '↓' };
+}
+
 /** 画面での向き（右 = 0°、反時計回り）[°] */
 export function screenAngle(st: PlanetState, mode: Orient, v: Vec3): number {
   const b = basis(st, mode);
