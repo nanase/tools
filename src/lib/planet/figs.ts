@@ -18,8 +18,8 @@ export interface BandOpt {
   /** 行の名前（衛星の順） */
   rows: string[];
   phen: Phen[];
-  /** 大赤斑が中央に来る時刻（行を 1 つ足す）。null なら行を作らない */
-  grs: number[] | null;
+  /** 大赤斑の見え始め a・南中 t・見え終わり b（行を 1 つ足す）。null なら行を作らない */
+  grs: { a: number; t: number; b: number }[] | null;
   /** 暗く塗る範囲（惑星が地平線の下・昼）と、薄く塗る範囲（薄明） */
   dark: [number, number][];
   twi: [number, number][];
@@ -55,8 +55,12 @@ export function timeBand(o: BandOpt): string {
       h.push(`<path class="${cls[kind]} pn-k${p.k + 1}" d="M${f1(cx(p.t0))} ${y}H${f1(cx(p.t1))}"></path>`);
     }
   if (o.grs)
-    for (const t of o.grs)
-      h.push(`<circle class="pn-grs" cx="${f1(X(t))}" cy="${bandRowY(o.rows.length)}" r="4.5"></circle>`);
+    for (const { a, t, b } of o.grs) {
+      if (b < o.t0 || a > o.t1) continue;
+      const y = bandRowY(o.rows.length);
+      h.push(`<path class="pn-grsb" d="M${f1(cx(a))} ${y}H${f1(cx(b))}"></path>`);
+      if (t >= o.t0 && t <= o.t1) h.push(`<circle class="pn-grs" cx="${f1(X(t))}" cy="${y}" r="4.5"></circle>`);
+    }
   h.push(`<path class="pn-gl" d="M${f1(X(o.t0))} ${ay}H${f1(X(o.t1))}"></path>`);
   let tk = '';
   for (const t of o.ticks) tk += `M${f1(X(t.t))} ${ay}V${ay + 5}`;

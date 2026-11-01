@@ -35,9 +35,9 @@
 .pn-view canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 #pc,#ac{cursor:grab;touch-action:pan-y;user-select:none;-webkit-user-select:none}
 #pc.drag,#ac.drag{cursor:grabbing}
-.pn-strip{aspect-ratio:4/1;margin-top:10px}
+.pn-strip{aspect-ratio:8/1;margin-top:10px}
 .pn-allv{aspect-ratio:2/1}
-@media (max-width:640px){.pn-view{aspect-ratio:3/2}.pn-strip{aspect-ratio:3/1}.pn-allv{aspect-ratio:1/1}}
+@media (max-width:640px){.pn-view{aspect-ratio:3/2}.pn-strip{aspect-ratio:7/2}.pn-allv{aspect-ratio:1/1}}
 .pn-lab{position:absolute;left:10px;top:8px;font:500 11.5px/1.45 var(--mono);color:#e6e8e4;text-shadow:0 0 3px #000,0 0 6px #000;pointer-events:none}
 .pn-lab.pn-b{top:auto;bottom:8px;right:10px}
 .pn-labs{position:absolute;inset:0;pointer-events:none;overflow:hidden}
@@ -81,6 +81,7 @@
 .pn-nb .pn-bs{stroke-width:7;stroke-dasharray:2 2}
 .pn-nb .pn-bh{stroke-width:2;opacity:.55}
 .pn-nb .pn-grs{fill:var(--pn-grs)}
+.pn-nb .pn-grsb{stroke:var(--pn-grs);stroke-width:7;opacity:.4}
 .pn-key{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:6px;font:500 12px/1.4 var(--sans);color:var(--ink-2)}
 .pn-key i{display:inline-block;vertical-align:middle;width:16px;height:7px;margin-right:5px;border-radius:1px;background:currentColor}
 .pn-key i.pn-ish{background:repeating-linear-gradient(90deg,currentColor 0 2px,transparent 2px 4px)}
@@ -176,10 +177,12 @@
   .pn-a-scope .pn-locw{position:static}
   .pn-a-scope .pn-locpop{left:8px;right:8px;top:62px;width:auto}
   .pn-lab{font-size:10.5px}
+  /* 衛星の並びは高さが足りないので、離れの値と目盛りを出さない */
+  .pn-strip .pn-sl small,.pn-strip .pn-scale{display:none}
   /* 横に縮む図の文字は、図の単位で大きくして読める大きさに保つ */
   .pn-nb text{font-size:22px}
   .pn-nb .pn-rl{font-size:15px}
-  .pn-nb .pn-bt,.pn-nb .pn-bs{stroke-width:11}
+  .pn-nb .pn-bt,.pn-nb .pn-bs,.pn-nb .pn-grsb{stroke-width:11}
   .pn-wig text,.pn-wig .pn-ts,.pn-wig .pn-nowt{font-size:19px}
   .pn-sea text,.pn-sea .pn-nowt{font-size:21px}
   #mut-aux{display:none}

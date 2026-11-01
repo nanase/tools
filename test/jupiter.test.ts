@@ -204,6 +204,16 @@ describe('大赤斑と地図', () => {
 });
 
 describe('図', () => {
+  it('大赤斑の見えている間を帯の範囲で切って描く', () => {
+    const band = (grs: { a: number; t: number; b: number }[]) =>
+      timeBand({ anchor: 0, t0: 0, t1: 1, rows: [], phen: [], grs, dark: [], twi: [], ticks: [] });
+    expect(band([{ a: -0.1, t: 0.1, b: 0.2 }])).toMatch(/class="pn-grsb" d="M0\.0 34H200\.0"/);
+    expect(band([{ a: 0.9, t: 1.1, b: 1.3 }])).toMatch(/class="pn-grsb" d="M900\.0 34H1000\.0"/);
+    /* 南中が帯の外なら丸を描かない */
+    expect(band([{ a: 0.9, t: 1.1, b: 1.3 }])).not.toContain('pn-grs"');
+    expect(band([{ a: 1.1, t: 1.3, b: 1.5 }])).toBe(band([]));
+  });
+
   it('数値が壊れない', () => {
     const e = new Ephem(M);
     const t0 = calToJd(2026, 12, 4.5);
@@ -215,7 +225,7 @@ describe('図', () => {
         t1: t0 + 0.4,
         rows: ['a', 'b', 'c', 'd'],
         phen: ph,
-        grs: [t0 + 0.1],
+        grs: [{ a: t0 - 0.1, t: t0 + 0.1, b: t0 + 0.2 }],
         dark: [[t0, t0 + 0.05]],
         twi: [],
         ticks: [{ t: t0, label: '0:00' }],

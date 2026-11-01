@@ -151,6 +151,8 @@ setInterval(() => {
 }, 1000);
 
 /* ---------- 大赤斑 ---------- */
+/** System II の自転の速さ [°/日] */
+const RATE_II = 870.27;
 let grsOff = typeof stored('grsOff') === 'number' ? (stored('grsOff') as number) : 0;
 const grsAt = (t: number) => wrap(grsL2(t) + grsOff);
 
@@ -192,6 +194,15 @@ function grsTransits(t0: number, t1: number): number[] {
     fa = fb;
   }
   return out;
+}
+
+/** 南中 t の前後で、大赤斑が中央子午線から 90° 離れる時刻（見え始めと見え終わり） */
+function grsPass(t: number): { a: number; t: number; b: number } {
+  const edge = (sign: number) => {
+    const e = t + (sign * 90) / RATE_II;
+    return e - (grsDelta(e) - sign * 90) / RATE_II;
+  };
+  return { a: edge(-1), t, b: edge(1) };
 }
 
 /* ---------- 模様の地図 ---------- */
@@ -352,7 +363,7 @@ function drawMain(): void {
         );
       });
   }
-  h.push(...innerMarks(L.cx, L.cy, L.rad, L.W, L.H, nm$.value === 'on'));
+  h.push(...innerMarks(or$.value, L.cx, L.cy, L.rad, L.W, L.H, nm$.value === 'on'));
   $('#labs').innerHTML = h.join('');
   const fov = (L.W / L.rad) * rs;
   txt('#v-lab', `${ORIENT_T[mode]} · 視野 ${(fov / 60).toFixed(1)}′`);
@@ -360,7 +371,7 @@ function drawMain(): void {
 }
 
 /** 内側の 4 個の丸と名前。木星の裏のものは出さない。名前は互いに重なるなら出さない */
-function innerMarks(cx: number, cy: number, rad: number, W: number, H: number, names: boolean): string[] {
+function innerMarks(mode: Orient, cx: number, cy: number, rad: number, W: number, H: number, names: boolean): string[] {
   const g = st.geo;
   const out: string[] = [];
   const used: [number, number][] = [];
@@ -368,7 +379,7 @@ function innerMarks(cx: number, cy: number, rad: number, W: number, H: number, n
   for (const k of [2, 3, 0, 1]) {
     const [nm] = INNER[k];
     const v = mul(g.M, innerPos(k, g.jdTT - g.lt));
-    const [sx, sy, sz] = screenOf(M, st, or$.value, v);
+    const [sx, sy, sz] = screenOf(M, st, mode, v);
     if (sz > 0 && Math.hypot(sx, sy * (M.re / M.rp)) < 1) continue;
     const px = cx + sx * rad,
       py = cy - sy * rad;
@@ -389,7 +400,7 @@ function bottomNote(): string {
   if (st.alt < 0) parts.push(`地平線の下（高度 ${minus(st.alt.toFixed(1))}°）`);
   const [, ii] = cmNow();
   const dl = wrap180(grsAt(jd) - ii);
-  if (Math.abs(dl) < 80) parts.push(`大赤斑は中央から${dl > 0 ? '西' : '東'}へ ${Math.abs(dl).toFixed(0)}°`);
+  if (Math.abs(dl) < 90) parts.push(`大赤斑は中央から${dl > 0 ? '西' : '東'}へ ${Math.abs(dl).toFixed(0)}°`);
   else {
     const tr = grsTransits(jd - 0.42, jd + 0.42).sort((a, b) => Math.abs(a - jd) - Math.abs(b - jd))[0];
     parts.push(tr ? `大赤斑は裏側（${hm(tr)} に南中${tr < jd ? 'した' : 'する'}）` : '大赤斑は裏側');
@@ -416,9 +427,12 @@ function drawStrip(): void {
   if (!c) return;
   c.fillStyle = '#000';
   c.fillRect(0, 0, scv.width, scv.height);
-  const mode = or$.value;
+  /* 細い帯に収めるため、向きの選択に依らず赤道を横にする */
+  const mode: Orient = 'planet';
   const g = st.geo;
-  const k = W / 2 / stripR;
+  /* 近くに衛星が集まる夜も、木星とその上の名前が帯に収まる広さにする */
+  const R = Math.max(stripR, W / 2 / Math.max(10, H / 2 - 26));
+  const k = W / 2 / R;
   const rad = k;
   if (renderer) {
     const n = Math.max(8, Math.round(rad * 2.4 * dpr));
@@ -435,6 +449,8 @@ function drawStrip(): void {
   }
   const rs = st.diam / 2;
   const h: string[] = [];
+  /* 高さが足りないので、名前が横に重なる衛星は名前を上に出す */
+  const below: number[] = [];
   MOONS.forEach((m, i) => {
     const [sx, sy] = screenOf(M, st, mode, g.moons[i]);
     const px = W / 2 + sx * k,
@@ -447,29 +463,23 @@ function drawStrip(): void {
       );
     if (nm$.value === 'on') {
       const sep = Math.hypot(...skyOffset(g, g.moons[i], M.re)) * rs;
+      const lx = Math.max(26, Math.min(W - 26, px)).toFixed(1);
+      const up = !inBody && below.some((x) => Math.abs(x - px) < 50);
+      if (!inBody && !up) below.push(px);
       h.push(
         inBody
-          ? `<span class="pn-sl pn-up" style="left:${px.toFixed(1)}px;top:${(H / 2 - rad - 6).toFixed(1)}px">${esc(m.name)}</span>`
-          : `<span class="pn-sl" style="left:${px.toFixed(1)}px;top:${(py + 8).toFixed(1)}px">${esc(m.name)}<small>${(sep / 60).toFixed(1)}′</small></span>`,
+          ? `<span class="pn-sl pn-up" style="left:${lx}px;top:${(H / 2 - rad - 6).toFixed(1)}px">${esc(m.name)}</span>`
+          : `<span class="pn-sl${up ? ' pn-up' : ''}" style="left:${lx}px;top:${(up ? py - 8 : py + 8).toFixed(1)}px">${esc(m.name)}<small>${(sep / 60).toFixed(1)}′</small></span>`,
       );
     }
   });
-  h.push(...innerMarks(W / 2, H / 2, k, W, H, false));
+  h.push(...innerMarks(mode, W / 2, H / 2, k, W, H, false));
   $('#slabs').innerHTML = h.join('');
-  const fov = 2 * stripR * rs;
-  const east = Math.cos(screenAngleEast() * D) < -0.7;
-  txt('#s-lab', `衛星の並び · 視野 ${Math.round(fov / 60)}′${east ? ' · 東が左' : ''}`);
+  const fov = 2 * R * rs;
+  txt('#s-lab', `衛星の並び · 視野 ${Math.round(fov / 60)}′ · 東が左`);
   const minPx = (60 / rs) * k;
   $('#s-scale').style.display = minPx < W * 0.3 ? '' : 'none';
   ($('#s-scale i') as HTMLElement).style.width = `${minPx.toFixed(1)}px`;
-}
-/** 画面での東の向き [°]（右 = 0） */
-function screenAngleEast(): number {
-  const u = unit(st.P);
-  const n0 = unit([-u[2] * u[0], -u[2] * u[1], 1 - u[2] * u[2]]);
-  const e: Vec3 = [n0[1] * u[2] - n0[2] * u[1], n0[2] * u[0] - n0[0] * u[2], n0[0] * u[1] - n0[1] * u[0]];
-  const [x, y] = screenOf(M, st, or$.value, [e[0] * M.re, e[1] * M.re, e[2] * M.re]);
-  return Math.atan2(y, x) / D;
 }
 
 /* ---------- 数値 ---------- */
@@ -595,7 +605,7 @@ function buildBand(anchor: number): void {
       t1,
       rows: NAMES,
       phen: findPhen(E, t0, t1, 5 / 1440),
-      grs: grsTransits(t0, t1),
+      grs: grsTransits(t0 - 0.11, t1 + 0.11).map(grsPass),
       dark: runs(
         ts,
         ts.map((_, i) => alt[i] <= 0 || sun[i] >= SUN_SET),
