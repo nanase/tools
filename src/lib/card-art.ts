@@ -1044,6 +1044,43 @@ export const ART: Record<string, Art> = {
       `<circle class="b" cx="${r1(head[0])}" cy="${r1(head[1])}" r="1.8"/>`
     );
   },
+  /* GIF: LZW の辞書の木が 1 符号ずつ育つ。足した節を塗り、根からの道すじを色の線で示す */
+  gif(t) {
+    /* [x, y, 親]。先頭の 3 つが根で、後ろほど後に足す */
+    const N: readonly (readonly [number, number, number])[] = [
+        [26, 8, -1],
+        [62, 8, -1],
+        [96, 8, -1],
+        [16, 24, 0],
+        [62, 24, 1],
+        [36, 24, 0],
+        [96, 24, 2],
+        [50, 40, 4],
+        [8, 40, 3],
+        [74, 24, 1],
+        [24, 40, 3],
+        [86, 40, 6],
+        [74, 40, 4],
+        [106, 40, 6],
+      ],
+      S = 3.5,
+      n = t ? 3 + Math.floor((mod(t, 3) / 3) * (N.length - 2)) : N.length,
+      last = Math.min(n, N.length) - 1,
+      box = (i: number): string => `M${N[i][0] - S} ${N[i][1] - S}h${2 * S}v${2 * S}h${-2 * S}Z`,
+      edge = (i: number): string => {
+        const p = N[N[i][2]];
+        return `M${p[0]} ${p[1] + S}L${N[i][0]} ${N[i][1] - S}`;
+      };
+    let lines = '',
+      old = '',
+      path = '';
+    for (let i = 0; i <= last; i++) {
+      if (N[i][2] >= 0) lines += edge(i);
+      if (i < last) old += box(i);
+    }
+    for (let i = last; N[i][2] >= 0; i = N[i][2]) path += edge(i);
+    return P('c t', lines) + P('fc', old) + (path ? P('a', path) : '') + P('fb', box(last));
+  },
   /* オルガン音響モデル: 口と円錐の足があるパイプの正面。和音を鳴らし、鳴っている管に定在波を描く */
   og(t) {
     let body = '',
@@ -1568,6 +1605,7 @@ export const LOOP: Record<string, number> = {
   pc: 16 / 30,
   jp: 3,
   png: 3,
+  gif: 3,
   og: 3,
   en: 720 / 400,
   ln: TAU / 1.4,

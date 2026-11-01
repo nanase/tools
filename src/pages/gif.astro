@@ -1,0 +1,115 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../lib/imgfmt/hexdump.css';
+import '../tools/gif/style.css';
+import { CHAPTERS, COLOR_CHOICES, DITHER_CHOICES, SAMPLE_CHOICES } from '../tools/gif/params';
+import Theory from '../tools/gif/Theory.astro';
+
+const name = 'GIF';
+---
+<SiteLayout title={name} tool={{ id: 'gif', name }} note="画像はこの端末の中だけで処理し、送信しません。符号化と復号は、このツールの実装によるものです。">
+  <PageTitle title={name}>GIF の LZW 圧縮で辞書が育つ様子を、パレットからファイルまで 1 符号ずつ追います。</PageTitle>
+
+  <div class="gf-root" id="gf-root">
+    <div class="gf-src" id="src">
+      <span class="gf-srcl" id="src-l">見本</span>
+      <div class="seg gf-srcb">
+        <div class="gf-seg" id="p-smp" role="group" aria-labelledby="src-l">
+          {SAMPLE_CHOICES.map(([v, l, t], i) => <button type="button" data-v={v} aria-pressed={i === 0 ? 'true' : 'false'} title={t}>{l}</button>)}
+        </div>
+        <button type="button" id="fileBtn" aria-pressed="false" title="GIF はそのまま読み、ほかの画像は減色して符号化する">ファイル</button>
+      </div>
+      <input type="file" id="fileIn" accept="image/*" hidden>
+      <p class="msg" id="m-file" aria-live="polite"></p>
+    </div>
+
+    <ol class="gf-bar" id="bar" aria-label="項目">
+      {CHAPTERS.map(([v, l]) => <li><button type="button" data-v={v} aria-pressed={v === 'lzw' ? 'true' : 'false'}><span>{l}</span><b id={`bv-${v}`}>—</b></button></li>)}
+    </ol>
+
+    <Panel hid="hd-pal" title="パレット" class="gf-ch gc-pal" fixed>
+      <div class="ptab gf-ctl">
+        <ChoiceRow k="cl" name="色数の上限" choices={COLOR_CHOICES} value={256} offIn />
+        <ChoiceRow k="di" name="ディザ" choices={DITHER_CHOICES} value="0" offIn />
+      </div>
+      <div class="gf-palb">
+        <div class="gf-chk gf-palimg"><canvas id="cv-pal" width="1" height="1"></canvas></div>
+        <div>
+          <div class="gf-sw" id="sw" aria-hidden="true"></div>
+          <div class="sbar rdbar gf-rd0" data-ph="番号 255 · #FFFFFF · 123,456 画素"><span class="rd" id="sw-rd" aria-live="polite"></span></div>
+        </div>
+      </div>
+    </Panel>
+
+    <Panel hid="hd-il" title="インターレース" class="gf-ch gc-il" fixed>
+      <div class="gf-ilc">
+        <label for="il-r">受信 <b class="hw" id="il-p" data-ph="100 %">—</b></label>
+        <div class="sl"><input type="range" id="il-r" min="1" max="100" value="30"></div>
+      </div>
+      <div class="gf-ilb">
+        <figure><div class="gf-ilw"><div class="gf-chk"><canvas id="cv-il0" width="1" height="1"></canvas></div></div><figcaption>なし <b id="il-s0"></b></figcaption></figure>
+        <figure><div class="gf-ilw"><canvas id="cv-ilb" width="1" height="1" aria-hidden="true"></canvas><div class="gf-chk"><canvas id="cv-il1" width="1" height="1"></canvas></div></div><figcaption>4 パス <b id="il-s1"></b></figcaption></figure>
+      </div>
+    </Panel>
+
+    <Panel hid="hd-lzw" title="LZW" class="gf-ch gc-lzw" fixed>
+      <div slot="aux" class="seg" id="p-dir" role="group" aria-label="向き">
+        <button type="button" data-v="e" aria-pressed="true">符号化</button><button type="button" data-v="d" aria-pressed="false">復号</button>
+      </div>
+      <div class="sbar gf-stb">
+        <span class="stag" id="lz-fr" hidden><button type="button" class="gf-nb" id="fr-prev" aria-label="前のフレーム">‹</button>フレーム <b class="hw" id="fr-cur" data-ph="999 / 999">—</b><button type="button" class="gf-nb" id="fr-next" aria-label="次のフレーム">›</button></span>
+        <span class="stag">符号長 <b class="hw" id="st-w" data-ph="12 ビット">—</b></span>
+        <span class="stag">辞書 <b class="hw" id="st-d" data-ph="4096 / 4096">—</b></span>
+        <span class="stag gf-stop" id="st-stop"></span>
+      </div>
+      <div class="gf-now" id="now"></div>
+      <div class="gf-lz">
+        <div class="gf-chk"><canvas id="cv-grid" width="1" height="1" role="img" aria-label="画素の格子。いまの列を太い枠、次の画素を破線で示す"></canvas></div>
+        <div class="gf-treew" id="treew" tabindex="0" role="group" aria-label="辞書の木。いまの列の道すじを太い線で示す"><svg id="tree" aria-hidden="true"></svg></div>
+      </div>
+      <div class="tp gf-tp">
+        <button type="button" class="tp-ib" id="nav-first" title="先頭へ戻す" aria-label="先頭へ戻す"><svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1.5" y="1.5" width="1.8" height="9"/><path d="M10.5 1.5v9L4 6z"/></svg></button>
+        <button type="button" class="tp-pp" id="nav-play" title="再生" aria-label="再生"><svg class="i-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.2l7.6 4.8L3 10.8z"/></svg><svg class="i-pause" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="2.8" height="9"/><rect x="7.2" y="1.5" width="2.8" height="9"/></svg></button>
+        <div class="tp-tl">
+          <div class="tp-trk" id="st-trk" role="slider" tabindex="0" aria-label="符号の位置" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0">
+            <div class="tp-rail"></div>
+            <div class="tp-fill"></div>
+            <div class="tp-th"></div>
+          </div>
+          <div class="tp-tm"><span>符号 <b id="st-n">0</b> / <span id="st-max">–</span></span></div>
+        </div>
+        <div class="tp-side">
+          <button type="button" class="tp-sq" id="nav-prev" title="1 つ前の符号" aria-label="1 つ前の符号"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+          <button type="button" class="tp-sq" id="nav-next" title="1 つ次の符号" aria-label="1 つ次の符号"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+        </div>
+      </div>
+    </Panel>
+
+    <Panel hid="hd-file" title="ファイル" class="gf-ch gc-file" fixed>
+      <div slot="aux" class="seg"><button type="button" id="save" title="符号化した GIF ファイルを保存する">保存</button></div>
+      <div class="gf-strip" id="strip" role="group" aria-label="ファイルの区画の並び"></div>
+      <div class="sbar rdbar gf-rd0" data-ph="Image Data · 位置 12,345 · 12,345 バイト · 符号 4095 · 12 ビット"><span class="rd" id="fi-rd"></span></div>
+      <div class="gf-bits" id="bitv"></div>
+      <div id="hx"></div>
+    </Panel>
+
+    <div class="gf-stepnav">
+      <button type="button" class="gf-step" id="ch-prev"><svg viewBox="0 0 6 10" aria-hidden="true"><path d="M5 1L1 5L5 9"/></svg><span><small>前の工程</small><b></b></span></button>
+      <button type="button" class="gf-step r" id="ch-next"><span><small>次の工程</small><b></b></span><svg viewBox="0 0 6 10" aria-hidden="true"><path d="M1 1L5 5L1 9"/></svg></button>
+    </div>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools current="gif" />
+  <script>
+    import '../tools/gif/client';
+  </script>
+</SiteLayout>
