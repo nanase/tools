@@ -17,6 +17,8 @@ export interface EncOpts {
   sub: Sub;
   qt: QTab;
   huff: Huff;
+  /** リスタートの間隔 [MCU]（省略か 0 なら入れない） */
+  dri?: number;
 }
 
 /** 1 つの成分の途中の値と、符号の量 */
@@ -162,6 +164,9 @@ export function encode(rgba: ArrayLike<number>, w: number, h: number, opts: EncO
     };
   });
   const geo = { mx, my, comps };
+  /* リスタートの間隔をブロックの数で。間隔ごとに DC の予測を 0 に戻す */
+  const dri = opts.dri ?? 0,
+    driBlocks = dri * comps.reduce((a, c) => a + c.h * c.v, 0);
 
   /* ハフマン表: 標準（K.3〜K.6）か、記号の出現回数から作る */
   let dc: [HuffSpec, HuffSpec] = [DC_LUM, DC_CHR],
@@ -170,8 +175,11 @@ export function encode(rgba: ArrayLike<number>, w: number, h: number, opts: EncO
     const fd = [new Uint32Array(256), new Uint32Array(256)],
       fa = [new Uint32Array(256), new Uint32Array(256)],
       pred = [0, 0, 0];
+    let nth = 0;
     forEachBlock(geo, (ci, b) => {
       const c = comps[ci];
+      if (driBlocks && nth > 0 && nth % driBlocks === 0) pred.fill(0);
+      nth++;
       scanBlock(c.coef, b * 64, pred[ci], (isDc, sym) => {
         (isDc ? fd : fa)[c.t][sym]++;
       });
@@ -233,6 +241,12 @@ export function encode(rgba: ArrayLike<number>, w: number, h: number, opts: EncO
       out.bytes(t.vals);
     }
   });
+  if (dri)
+    seg('DRI', () => {
+      out.word(0xffdd);
+      out.word(4);
+      out.word(dri);
+    });
   seg('SOS', () => {
     out.word(0xffda);
     out.word(6 + 2 * comps.length);
@@ -250,7 +264,16 @@ export function encode(rgba: ArrayLike<number>, w: number, h: number, opts: EncO
   const bw = new BitWriter(out),
     pred = [0, 0, 0],
     ecs0 = out.n;
+  let nth = 0,
+    rst = 0;
   forEachBlock(geo, (ci, b) => {
+    if (driBlocks && nth > 0 && nth % driBlocks === 0) {
+      bw.finish();
+      out.word(0xffd0 + rst);
+      rst = (rst + 1) & 7;
+      pred.fill(0);
+    }
+    nth++;
     const c = comps[ci],
       D = dcC[c.t],
       A = acC[c.t];

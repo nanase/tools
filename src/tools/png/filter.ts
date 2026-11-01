@@ -121,15 +121,21 @@ export interface Unfiltered {
   rows: number;
   /** 途中まで読めた次の行のバイト数（フィルタの種類のバイトを除く） */
   partial: number;
-  /** 種類が 5 以上の行（なければ -1） */
+  /** 種類が 5 以上の最初の行（なければ -1） */
   badRow: number;
 }
 
 /**
  * filterImage の逆。data が足りなければ読めた所まで戻す（途中までの行もフィルタは左と上しか見ないので戻せる）。
- * 種類が 5 以上の行で止まる
+ * 種類が 5 以上の行で止まる。keepGoing なら None として続ける
  */
-export function unfilterImage(data: Uint8Array, rowBytes: number, rows: number, bpp: number): Unfiltered {
+export function unfilterImage(
+  data: Uint8Array,
+  rowBytes: number,
+  rows: number,
+  bpp: number,
+  keepGoing = false,
+): Unfiltered {
   const raw = new Uint8Array(rows * rowBytes),
     types = new Uint8Array(rows).fill(255),
     k = Math.max(1, bpp);
@@ -141,14 +147,14 @@ export function unfilterImage(data: Uint8Array, rowBytes: number, rows: number, 
     if (o >= data.length) break;
     const t = data[o];
     if (t > 4) {
-      badRow = y;
-      break;
+      if (badRow < 0) badRow = y;
+      if (!keepGoing) break;
     }
     types[y] = t;
     const n = Math.min(rowBytes, data.length - o - 1),
       c = y * rowBytes;
     raw.set(data.subarray(o + 1, o + 1 + n), c);
-    unfilterRow(t as FilterType, raw, c, y > 0 ? raw : null, c - rowBytes, n, k);
+    unfilterRow((t > 4 ? 0 : t) as FilterType, raw, c, y > 0 ? raw : null, c - rowBytes, n, k);
     if (n < rowBytes) {
       partial = n;
       break;

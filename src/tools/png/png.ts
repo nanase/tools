@@ -591,6 +591,8 @@ export interface PngDecodeOptions {
   trace?: boolean;
   /** 画素の数の上限。超えるなら IHDR を読んだ所で止め、画素のメモリを取らない */
   maxPixels?: number;
+  /** 種類が 5 以上のフィルタを None として読み続ける（tolerant と一緒に使う） */
+  keepGoing?: boolean;
 }
 
 export interface PngDecoded {
@@ -852,7 +854,7 @@ export function decodePng(src: Uint8Array, opts: PngDecodeOptions = {}): PngDeco
         ps.filteredOffset,
         Math.min(filtered.length, ps.filteredOffset + ps.h * (ps.rowBytes + 1)),
       ),
-      u = unfilterImage(part, ps.rowBytes, ps.h, L.bpp);
+      u = unfilterImage(part, ps.rowBytes, ps.h, L.bpp, opts.keepGoing);
     raw.set(u.raw, ps.rawOffset);
     filterTypes.set(u.types, ps.rowStart);
     rows += u.rows;
@@ -870,7 +872,7 @@ export function decodePng(src: Uint8Array, opts: PngDecodeOptions = {}): PngDeco
     }
     if (u.badRow >= 0) {
       report('filter', true, -1);
-      break;
+      if (!opts.keepGoing) break;
     }
     if (u.rows < ps.h) break;
   }
