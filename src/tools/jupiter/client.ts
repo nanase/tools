@@ -34,7 +34,15 @@ import { type MoonTable, tablePos } from '../../lib/planet/moons';
 import { PlanetRenderer } from '../../lib/planet/render';
 import { SitePicker } from '../../lib/planet/site';
 import { altFast, SUN_DARK, SUN_SET, sunAlt } from '../../lib/planet/sky';
-import { facing, type MoonLook, type Orient, planetUniforms, screenOf, shadowPoint } from '../../lib/planet/view';
+import {
+  edgeDir,
+  facing,
+  type MoonLook,
+  type Orient,
+  planetUniforms,
+  screenOf,
+  shadowPoint,
+} from '../../lib/planet/view';
 import { PanZoom } from '../../lib/planet/zoom';
 import { store, stored } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
@@ -336,7 +344,7 @@ function drawMain(): void {
         );
       } else if (Math.abs(py - L.cy) < L.H) {
         const sep = Math.hypot(...skyOffset(g, g.moons[k], M.re)) * rs;
-        const left = px < L.cx;
+        const { left, arrow } = edgeDir(px, py, L.W);
         /* 同じ側の札は重ならないよう、空いている上か下へずらす */
         const used = left ? edgeL : edgeR;
         const lo = 44,
@@ -348,7 +356,7 @@ function drawMain(): void {
           ) ?? base;
         used.push(top);
         h.push(
-          `<span class="pn-edge ${left ? 'pn-l' : 'pn-r'}" style="top:${top.toFixed(0)}px">${left ? '← ' : ''}${esc(m.name)}${left ? '' : ' →'}<br>${dms(sep)}</span>`,
+          `<span class="pn-edge ${left ? 'pn-l' : 'pn-r'}" style="top:${top.toFixed(0)}px">${left ? `${arrow} ` : ''}${esc(m.name)}${left ? '' : ` ${arrow}`}<br>${dms(sep)}</span>`,
         );
       }
     });
