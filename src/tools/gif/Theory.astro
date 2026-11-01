@@ -1,0 +1,55 @@
+---
+// 動作原理と式
+---
+<h3>符号化の手順</h3>
+<ol class="flow" aria-label="符号化の手順">
+  <li><b>パレット</b><span>色を番号に</span></li>
+  <li><b>インターレース</b><span>行の順を変える（選んだときだけ）</span></li>
+  <li><b>LZW</b><span>番号の並びを可変長の符号に</span></li>
+  <li><b>サブブロック</b><span>255 バイトずつに分ける</span></li>
+</ol>
+
+<h3>LZW</h3>
+<p>同じ並びを辞書の番号に置き換えます<a class="rf" href="#thy-r1">[1]</a><a class="rf" href="#thy-r2">[2]</a>。辞書そのものはファイルに入れず、符号を読みながら復号器が同じ辞書を作ります。</p>
+<ul class="tl">
+  <li><b>始まり</b>: 最小符号サイズを <math><mi>m</mi></math> として、0〜<math><msup><mn>2</mn><mi>m</mi></msup><mo>−</mo><mn>1</mn></math> が 1 画素の符号、<math><msup><mn>2</mn><mi>m</mi></msup></math> が Clear、その次が EOI、足す項目はその次の番号から</li>
+  <li><b>符号化</b>: 辞書にある最長の列の符号を出し、「その列 + 次の画素」を足す</li>
+  <li><b>復号</b>: 符号の列を出し、「前の列 + いまの列の先頭」を足す。符号化より 1 つ遅れる</li>
+  <li><b>KwKwK</b>: 符号化器が足した直後の番号を使うと、復号器にはまだない番号が来る。この番号の列は「前の列 + 前の列の先頭」と決まる</li>
+  <li><b>符号長</b>: <math><mi>m</mi><mo>+</mo><mn>1</mn></math> ビットから始め、番号が今の長さに入らなくなると 1 増やす。上限は 12 ビット</li>
+  <li><b>Clear</b>: 辞書と符号長を初めに戻す。このツールは番号が 4096 に達したら出す</li>
+  <li><b>ビットの順</b>: 符号をバイトの下位ビットから詰める</li>
+</ul>
+
+<h3>パレット</h3>
+<p>カラーテーブルは 2〜256 色で、画素は色の番号です<a class="rf" href="#thy-r1">[1]</a>。色の多い画像は median cut で減色します<a class="rf" href="#thy-r3">[3]</a>。誤差拡散は置き換えた誤差を隣の画素へ配ります<a class="rf" href="#thy-r4">[4]</a>。階調は滑らかになりますが、同じ並びが減るので LZW は効きにくくなります。</p>
+
+<h3>インターレース</h3>
+<p>行を 4 つのパスに分けて送ります<a class="rf" href="#thy-r1">[1]</a>。途中まで届いた時点で全体の荒い絵を出せます。上下の行が離れるので LZW は効きにくくなることがあります。</p>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th scope="col">パス</th><th scope="col">始めの行</th><th scope="col">間隔</th></tr></thead>
+  <tbody>
+    <tr><th scope="row">1</th><td class="num">0</td><td class="num">8</td></tr>
+    <tr><th scope="row">2</th><td class="num">4</td><td class="num">8</td></tr>
+    <tr><th scope="row">3</th><td class="num">2</td><td class="num">4</td></tr>
+    <tr><th scope="row">4</th><td class="num">1</td><td class="num">2</td></tr>
+  </tbody>
+</table></div>
+
+<h3>出典</h3>
+<ol class="refs">
+  <li id="thy-r1"><span class="rf-for">ファイルの構成・インターレース（付録 E）・LZW の可変長符号（付録 F）</span><span class="rf-src">CompuServe, <a href="https://www.w3.org/Graphics/GIF/spec-gif89a.txt" target="_blank" rel="noopener">Graphics Interchange Format, Version 89a</a>, 1990</span></li>
+  <li id="thy-r2"><span class="rf-for">LZW</span><span class="rf-src">T. A. Welch, “A Technique for High-Performance Data Compression,” IEEE Computer, vol. 17, no. 6, pp. 8–19, 1984。<a href="https://patents.google.com/patent/US4558302" target="_blank" rel="noopener">米国特許 4,558,302</a></span></li>
+  <li id="thy-r3"><span class="rf-for">median cut</span><span class="rf-src">P. Heckbert, “Color Image Quantization for Frame Buffer Display,” SIGGRAPH ’82, 1982</span></li>
+  <li id="thy-r4"><span class="rf-for">誤差拡散</span><span class="rf-src">R. W. Floyd, L. Steinberg, “An Adaptive Algorithm for Spatial Greyscale,” Proceedings of the SID, vol. 17, no. 2, pp. 75–77, 1976</span></li>
+</ol>
+
+<h3>このツールで決めたこと</h3>
+<ul class="tl">
+  <li>見本は式と文字の図から描く。写真風は PNG のページの見本を半分に縮めたもの</li>
+  <li>減色は 5 ビットのヒストグラムから median cut で作る。透明な画素（不透明度 128 未満）は透過色の 1 色にまとめる</li>
+  <li>GIF ファイルはそのまま読む。ほかの画像は長い辺を 512 画素までに縮めて符号化する</li>
+  <li>壊れたファイルは、読めた所まで出す</li>
+  <li>辞書の木は新しい 200 項目とその祖先だけを描く</li>
+  <li>開くフレームは 4,194,304 画素まで</li>
+</ul>
