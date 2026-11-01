@@ -47,10 +47,13 @@ export const tableEnd = (t: MoonTable): number => t.t0 + t.dt * (t.n - 1);
 export function tablePos(t: MoonTable, k: number, jdTT: number, gm: number): Vec3 | null {
   const u = (jdTT - t.t0) / t.dt;
   if (u < 0 || u > t.n - 1) return null;
+  const s = t.moons[k].s;
   const i = Math.min(t.n - 2, Math.floor(u));
   const f = u - i;
+  /* 暦が途中で終わる衛星は、最後の状態から 2 体で進める */
+  const last = s.length / 6 - 1;
+  if (i + 1 > last) return kepler(s, last * 6, jdTT - (t.t0 + last * t.dt), gm);
   const w = f * f * (3 - 2 * f);
-  const s = t.moons[k].s;
   const a = kepler(s, i * 6, f * t.dt, gm);
   const b = kepler(s, (i + 1) * 6, (f - 1) * t.dt, gm);
   return [a[0] + (b[0] - a[0]) * w, a[1] + (b[1] - a[1]) * w, a[2] + (b[2] - a[2]) * w];

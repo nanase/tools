@@ -1367,6 +1367,39 @@ export const ART: Record<string, Art> = {
       front
     );
   },
+  /* 土星: 傾いた環の奥と手前で本体をはさみ、環の傾きがゆっくり開いて閉じる。衛星が環の外を行き来する */
+  st(t) {
+    const cx = 60,
+      cy = 24,
+      R = 10;
+    const open = 0.1 + 0.28 * Math.abs(Math.sin((TAU * t) / 12.8));
+    const ring = (rx: number, half: 0 | 1) =>
+      `M${r1(cx - rx)} ${cy}A${rx} ${r1(rx * open)} 0 0 ${half} ${r1(cx + rx)} ${cy}`;
+    const MO: [number, number, number][] = [
+      [31, 3.2, 0.4],
+      [42, 6.4, 2.6],
+      [53, 12.8, 4.6],
+    ];
+    let back = '',
+      front = '';
+    for (const [a, p, ph] of MO) {
+      const u = (TAU * t) / p + ph,
+        x = cx + a * Math.cos(u),
+        y = cy + a * open * 0.5 * Math.sin(u);
+      const dot = `<circle class="fc" cx="${r1(x)}" cy="${r1(y)}" r="1.7"/>`;
+      if (Math.sin(u) > 0) front += dot;
+      else back += dot;
+    }
+    return (
+      back +
+      P('c', ring(24, 1)) +
+      P('c t', ring(18, 1)) +
+      `<ellipse class="fa" cx="${cx}" cy="${cy}" rx="${R}" ry="${r1(R * 0.9)}"/>` +
+      P('c', ring(24, 0)) +
+      P('c t', ring(18, 0)) +
+      front
+    );
+  },
   /* SVG テーマスキーマチェッカー: 明るい地と暗い地に、テーマで配色と構図が変わる絵を並べる。
      昼は左上の太陽と山（光がゆっくり回る）、夜は右上の三日月と明るい線の山、またたく星 */
   svg(t) {
@@ -1699,6 +1732,7 @@ export const LOOP: Record<string, number> = {
   se: 1 / 0.12,
   mn: TAU / 0.9,
   jv: 12.8,
+  st: 12.8,
   svg: TAU / 2.4,
   tu: 3,
   tm: Math.PI / 1.2,

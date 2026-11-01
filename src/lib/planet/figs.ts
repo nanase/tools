@@ -90,6 +90,8 @@ export interface WiggleOpt {
   days: { t: number; label: string }[];
   /** 印（相互食など） */
   marks: { t: number; x: number }[];
+  /** 環の外縁（惑星の赤道半径）。あれば惑星の帯の外に薄い帯を足す */
+  ring?: number;
 }
 
 /** グラフの描く範囲（viewBox は -40 0 600 486、中は 0〜560 × 22〜462） */
@@ -103,6 +105,10 @@ export function wiggle(o: WiggleOpt): string {
   const h: string[] = [
     `<rect class="pn-bandc" x="${f1(X(1))}" y="${WIG.top}" width="${f1(2 * sx)}" height="${WIG.h}"></rect>`,
   ];
+  if (o.ring)
+    h.push(
+      `<rect class="pn-bandc" x="${f1(X(o.ring))}" y="${WIG.top}" width="${f1(2 * o.ring * sx)}" height="${WIG.h}"></rect>`,
+    );
   let gr = '';
   for (const d of o.days) gr += `M0 ${f1(Y(d.t))}H${WIG.w}`;
   h.push(`<path class="pn-gr" d="${gr}"></path>`);

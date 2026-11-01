@@ -2,7 +2,8 @@
  * WebGL2 で惑星を描く: 経緯度の地図を自転楕円体に貼り、Minnaert 則の周縁減光・欠け・衛星の影（本影と半影）・
  * 衛星の円盤を画素ごとに計算する。全画面の三角形 1 枚で、2×2 の点を平均して縁をなめらかにする。
  * ベクトルはすべて惑星固定の座標で、長さは惑星の赤道半径を 1 とする。
- * 土星の環は、球との交点の前後で環の面との交点を足せばよい（今は持たない）
+ * 環（土星）は { rings: true } で作ったときだけシェーダに入る。環の面と視線の交点で前後を決め、
+ * 惑星の影が環に・環の影が惑星に落ちる。半径ごとの色と透け具合は 1 次元の表で受ける
  */
 import type { Vec3 } from '../astro/vec';
 
@@ -14,7 +15,8 @@ layout(location = 0) in vec2 p;
 void main() { gl_Position = vec4(p, 0.0, 1.0); }
 `;
 
-const FRAG = /* glsl */ `#version 300 es
+const frag = (rings: boolean) => /* glsl */ `#version 300 es
+${rings ? '#define RINGS' : ''}
 precision highp float;
 uniform sampler2D uMap;
 uniform bool uHasMap;
@@ -29,6 +31,14 @@ uniform int uN;
 uniform bool uShadows;
 uniform vec4 uMoonP[${MAX_MOONS}];
 uniform vec4 uMoonC[${MAX_MOONS}];
+#ifdef RINGS
+uniform sampler2D uRing;
+uniform bool uRingOn;
+/* 内縁と外縁の半径・表の点の数・線として残す最小の sin B */
+uniform vec4 uRingR;
+/* 明るさの倍率・衝の前後の増光 */
+uniform vec2 uRingL;
+#endif
 out vec4 o;
 const float PI = 3.14159265358979;
 
@@ -56,6 +66,44 @@ float sunlit(vec3 p) {
   }
   return lit;
 }
+
+#ifdef RINGS
+float tauAt(float s, float lod) {
+  return -log(1.0 - min(textureLod(uRing, vec2(s, 0.5), lod).a, 0.998));
+}
+
+/* 惑星の面の点 p から太陽へ向かう光が環を抜ける割合 */
+float ringPass(vec3 p) {
+  if (!uRingOn || abs(uS.z) < 1e-5) return 1.0;
+  float t = -p.z / uS.z;
+  if (t <= 0.0) return 1.0;
+  float r = length(p.xy + t * uS.xy);
+  if (r < uRingR.x || r > uRingR.y) return 1.0;
+  /* 面の 1 画素が環の上で広がる分と、太陽の視直径でぼける分を、表の段で平均する */
+  float texel = uRingR.z / (uRingR.y - uRingR.x);
+  float m0 = abs(uS.z);
+  float lod = log2(max(1.0, texel * max(1.0 / (uDisk.z * max(m0, 0.03)), uSunR * t)));
+  return exp(-tauAt((r - uRingR.x) / (uRingR.y - uRingR.x), lod) / max(m0, 1e-3));
+}
+
+/* 環の面の点 x に太陽の光が惑星に隠されず届く割合（半影はこの距離の太陽の視直径の幅） */
+float ringLit(vec2 x) {
+  vec3 d = normalize(uS * vec3(1.0, 1.0, uK));
+  vec3 q = vec3(x, 0.0);
+  float b = dot(q, d);
+  if (b >= 0.0) return 1.0;
+  float dist = sqrt(max(dot(q, q) - b * b, 0.0));
+  float w = max(uSunR * -b, 0.002);
+  return smoothstep(1.0 - w, 1.0 + w, dist);
+}
+
+/* 環の明るさ（単散乱）。表側は反射、裏側は透過した光 */
+float ringI(float tau, float m, float m0, bool lit) {
+  if (lit) return m0 / (m + m0) * (1.0 - exp(-tau * (1.0 / m + 1.0 / m0)));
+  if (abs(m - m0) < 1e-3) return tau / m * exp(-tau / m);
+  return m0 / (m0 - m) * (exp(-tau / m0) - exp(-tau / m));
+}
+#endif
 
 /* 画面の点が惑星に当たるなら、地図の座標を返す */
 bool mapUv(vec2 q, out vec2 uv) {
@@ -111,6 +159,9 @@ vec4 shade(vec2 q) {
       }
       vec3 m = pow(vec3(mu0), uMinn) * pow(vec3(mu), uMinn - 1.0);
       col = alb * m * sunlit(p);
+#ifdef RINGS
+      col *= ringPass(p);
+#endif
     }
   }
   /* 衛星: 手前にあるものを描く（惑星より奥のものは隠れる） */
@@ -130,6 +181,31 @@ vec4 shade(vec2 q) {
     col = uMoonC[i].rgb * max(dot(nm, uS), 0.0) * uMoonC[i].a;
     hit = 1.0;
   }
+#ifdef RINGS
+  /* 環: 手前にあれば後ろの惑星と衛星を透かして重ねる。真横に近いときは細い線として残し、線の分だけ暗くする */
+  if (uRingOn) {
+    float m = abs(uF.z);
+    float mc = max(m, uRingR.w);
+    float fz = (uF.z < 0.0 ? -1.0 : 1.0) * mc;
+    float tr = -p0.z / fz;
+    vec2 x = p0.xy + tr * uF.xy;
+    float r = length(x);
+    if (tr < best && r > uRingR.x && r < uRingR.y) {
+      vec2 hx = x / r;
+      float dr = max(abs(dot(hx, uR.xy - uR.z / fz * uF.xy)), abs(dot(hx, uU.xy - uU.z / fz * uF.xy))) / uDisk.z * 0.5;
+      float lod = log2(max(1.0, dr * uRingR.z / (uRingR.y - uRingR.x)));
+      float sr = (r - uRingR.x) / (uRingR.y - uRingR.x);
+      vec4 t = textureLod(uRing, vec2(sr, 0.5), lod);
+      float tau = -log(1.0 - min(t.a, 0.998));
+      float m0 = max(abs(uS.z), 1e-4);
+      bool lit = uS.z * uF.z < 0.0;
+      float l = ringI(tau, mc, m0, lit) * uRingL.x * uRingL.y * max(m / mc, 0.15);
+      vec3 p3 = vec3(x, 0.0);
+      col = t.rgb * l * ringLit(x) * sunlit(p3) + col * exp(-tau / mc);
+      hit = 1.0;
+    }
+  }
+#endif
   return vec4(col, hit);
 }
 
@@ -171,6 +247,8 @@ export interface PlanetU {
   moons: { p: Vec3; r: number; rgb: Vec3; lit: number }[];
   /** 衛星の影を描くか */
   shadows: boolean;
+  /** 環（内縁と外縁の半径 [赤道半径]、明るさの倍率、衝の前後の増光、線として残す最小の sin B）。{ rings: true } のときだけ使う */
+  ring?: { r0: number; r1: number; gain: number; surge: number; muMin: number };
 }
 
 /** 描く場所（キャンバスの画素、左下が原点）と、惑星の中心と赤道半径 [px] */
@@ -190,9 +268,14 @@ export class PlanetRenderer {
   private u = new Map<string, WebGLUniformLocation | null>();
   private vao: WebGLVertexArrayObject;
   private tex: WebGLTexture | null = null;
+  private ringTex: WebGLTexture | null = null;
+  private ringN = 1;
   private iconFb: { fb: WebGLFramebuffer; tex: WebGLTexture; w: number; h: number } | null = null;
 
-  constructor(readonly canvas: HTMLCanvasElement) {
+  constructor(
+    readonly canvas: HTMLCanvasElement,
+    opt: { rings?: boolean } = {},
+  ) {
     const gl = canvas.getContext('webgl2', {
       antialias: false,
       depth: false,
@@ -210,7 +293,7 @@ export class PlanetRenderer {
     };
     const p = gl.createProgram() as WebGLProgram;
     gl.attachShader(p, sh(gl.VERTEX_SHADER, VERT));
-    gl.attachShader(p, sh(gl.FRAGMENT_SHADER, FRAG));
+    gl.attachShader(p, sh(gl.FRAGMENT_SHADER, frag(!!opt.rings)));
     gl.bindAttribLocation(p, 0, 'p');
     gl.linkProgram(p);
     if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p) ?? 'link');
@@ -232,6 +315,10 @@ export class PlanetRenderer {
       'uShadows',
       'uMoonP',
       'uMoonC',
+      'uRing',
+      'uRingOn',
+      'uRingR',
+      'uRingL',
     ])
       this.u.set(n, gl.getUniformLocation(p, n));
     const vao = gl.createVertexArray(),
@@ -264,6 +351,22 @@ export class PlanetRenderer {
     bmp.close();
     if (this.tex) gl.deleteTexture(this.tex);
     this.tex = t;
+  }
+
+  /** 環の表を読む（n 点。1 点あたり RGBA で、RGB は sRGB の色、A は 1 − exp(−τ)） */
+  loadRings(data: Uint8Array, n: number): void {
+    const gl = this.gl;
+    const t = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, t);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.SRGB8_ALPHA8, n, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
+    gl.generateMipmap(gl.TEXTURE_2D);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    this.ringTex = t;
+    this.ringN = n;
   }
 
   get ready(): boolean {
@@ -321,6 +424,18 @@ export class PlanetRenderer {
     });
     gl.uniform4fv(g('uMoonP'), P);
     gl.uniform4fv(g('uMoonC'), C);
+    if (g('uRingR')) {
+      const on = !!(m.ring && this.ringTex);
+      gl.uniform1i(g('uRingOn'), on ? 1 : 0);
+      gl.activeTexture(gl.TEXTURE1);
+      gl.bindTexture(gl.TEXTURE_2D, this.ringTex);
+      gl.uniform1i(g('uRing'), 1);
+      gl.activeTexture(gl.TEXTURE0);
+      if (m.ring) {
+        gl.uniform4f(g('uRingR'), m.ring.r0, m.ring.r1, this.ringN, m.ring.muMin);
+        gl.uniform2f(g('uRingL'), m.ring.gain, m.ring.surge);
+      }
+    }
     gl.enable(gl.SCISSOR_TEST);
     gl.scissor(at.x, at.y, at.w, at.h);
     gl.viewport(at.x, at.y, at.w, at.h);

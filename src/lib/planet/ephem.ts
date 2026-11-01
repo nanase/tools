@@ -36,8 +36,8 @@ export interface PlanetModel {
   moon(k: number, jdTT: number): Vec3;
   /** 衛星の数 */
   nMoons: number;
-  /** 地球から見た明るさ [等]。r・Δ [au]、位相角 α [°] */
-  mag(r: number, delta: number, alpha: number): number;
+  /** 地球から見た明るさ [等]。r・Δ [au]、位相角 α [°]、地球と太陽の直下点の惑星中心緯度 [°]（土星の環に使う） */
+  mag(r: number, delta: number, alpha: number, latObs: number, latSun: number): number;
 }
 
 const add = (a: Vec3, b: Vec3): Vec3 => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
@@ -271,6 +271,8 @@ export function planetState(m: PlanetModel, jd: number, o: Obs | null): PlanetSt
   const ph = angle(g.s, toObs);
   const aa = o ? altAz(u, st.zenith) : { alt: Number.NaN, az: Number.NaN, q: Number.NaN };
   const dau = len(P) / AU;
+  const subObs = subPoint(g, toObs);
+  const subSun = subPoint(g, g.s);
   return {
     geo: g,
     P,
@@ -280,9 +282,9 @@ export function planetState(m: PlanetModel, jd: number, o: Obs | null): PlanetSt
     diam: (2 * Math.asin(m.re / len(P))) / AS,
     phase: ph / D,
     illum: (1 + Math.cos(ph)) / 2,
-    mag: m.mag(g.r, dau, ph / D),
-    subObs: subPoint(g, toObs),
-    subSun: subPoint(g, g.s),
+    mag: m.mag(g.r, dau, ph / D, subObs.lat, subSun.lat),
+    subObs,
+    subSun,
     paAxis: posAngle(u, g.z),
     alt: aa.alt,
     az: aa.az,
