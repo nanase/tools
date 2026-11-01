@@ -1,0 +1,159 @@
+---
+import Collapsible from '../components/Collapsible.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/image-corruption/style.css';
+import { COUNT_CHOICES, OP_CHOICES, PLACE_CHOICES, SAMPLE_CHOICES } from '../tools/image-corruption/params';
+import Theory from '../tools/image-corruption/Theory.astro';
+
+const name = '画像の破損';
+const ROWS: readonly {
+  id: string;
+  label: string;
+  on: string;
+  items: readonly (readonly [string | number, string, string?])[];
+}[] = [
+  { id: 'p-place', label: '場所', on: 'data', items: PLACE_CHOICES },
+  { id: 'p-op', label: '操作', on: 'flip', items: OP_CHOICES },
+  { id: 'p-n', label: '数', on: '8', items: COUNT_CHOICES },
+];
+const FORMATS = [
+  ['png', 'PNG'],
+  ['jpeg', 'JPEG'],
+  ['gif', 'GIF'],
+] as const;
+const seg = (id: string, items: readonly (readonly [string, string])[], on: string, label: string) => ({
+  id,
+  items,
+  on,
+  label,
+});
+const ENC = {
+  png: [
+    seg(
+      'p-level',
+      [
+        ['6', 'あり'],
+        ['0', 'なし'],
+      ],
+      '6',
+      '圧縮',
+    ),
+    seg(
+      'p-filter',
+      [
+        ['adaptive', '自動'],
+        ['0', 'None'],
+        ['1', 'Sub'],
+        ['2', 'Up'],
+        ['3', 'Average'],
+        ['4', 'Paeth'],
+      ],
+      'adaptive',
+      'フィルタ',
+    ),
+  ],
+  jpeg: [
+    seg(
+      'p-dri',
+      [
+        ['0', 'なし'],
+        ['8', '8 MCU'],
+        ['1', '1 MCU'],
+      ],
+      '0',
+      'RST の間隔',
+    ),
+  ],
+  gif: [
+    seg(
+      'p-il',
+      [
+        ['0', 'なし'],
+        ['1', 'あり'],
+      ],
+      '0',
+      'インターレース',
+    ),
+  ],
+};
+---
+<SiteLayout title={name} tool={{ id: 'image-corruption', name }} note="画像はこの端末の中だけで処理し、送信しません。符号化と復号は、このツールの実装によるものです。">
+  <PageTitle title={name}>同じ画像の PNG・JPEG・GIF を同じ操作で壊し、崩れ方の違いから形式の構造を見ます。</PageTitle>
+
+  <div class="ic-root" id="ic-root">
+    <div class="ic-src">
+      <span class="ic-srcl" id="src-l">見本</span>
+      <div class="seg ic-srcb">
+        <div class="ic-seg" id="p-smp" role="group" aria-labelledby="src-l">
+          {SAMPLE_CHOICES.map(([v, l, t], i) => <button type="button" data-v={v} aria-pressed={i === 0 ? 'true' : 'false'} title={t}>{l}</button>)}
+        </div>
+        <button type="button" id="fileBtn" aria-pressed="false" title="手元の画像の読み込み">ファイル</button>
+      </div>
+      <input type="file" id="fileIn" accept="image/*" hidden>
+      <p class="msg" id="m-file" aria-live="polite"></p>
+    </div>
+
+    <Panel hid="hd-hit" title="壊す" fixed>
+      <div slot="aux" class="seg" id="p-view" role="group" aria-label="表示">
+        <button type="button" data-v="0" aria-pressed="true" title="このツールの復号器での描画">このツール</button><button type="button" data-v="1" aria-pressed="false" title="いま使っているブラウザでの表示">ブラウザ</button>
+      </div>
+      <div class="ic-ctl">
+        {ROWS.map((r) => (
+          <div class="ic-gp">
+            <span id={`${r.id}-l`}>{r.label}</span>
+            <div class="seg" id={r.id} role="group" aria-labelledby={`${r.id}-l`}>
+              {r.items.map(([v, t, tip], i) => <button type="button" data-v={String(v)} aria-pressed={String(v) === r.on ? 'true' : 'false'} title={tip}>{t}</button>)}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div class="ic-pos">
+        <label for="pos"><span id="pos-l">位置</span> <b class="hw" id="pos-v" data-ph="100.0 %">—</b></label>
+        <div class="sl"><input type="range" id="pos" min="0" max="999" value="300"></div>
+        <div class="seg"><button type="button" id="again" title="壊すビットと位置の選び直し">選び直し</button></div>
+      </div>
+    </Panel>
+
+    <div class="ic-tri">
+      {FORMATS.map(([f, l]) => (
+        <Panel hid={`hd-${f}`} title={l} fixed>
+          <span slot="aux" class="ic-rd">崩れ <b id={`rd-${f}`} class="hw" data-ph="100 %">—</b></span>
+          <div class="ic-fr" id={`fr-${f}`}>
+            <canvas id={`cv-${f}`} width="1" height="1" role="img" aria-label={`${l} の復号の結果`}></canvas>
+            <img id={`im-${f}`} alt={`${l} をブラウザで開いた結果`} hidden>
+            <span class="ic-no" id={`no-${f}`} hidden>開けません</span>
+          </div>
+          <div class="ic-st" aria-hidden="true">
+            <span class="ic-sh" id={`sh-${f}`}></span>
+            <span class="ic-sd" id={`sd-${f}`}></span>
+            <span class="ic-se" id={`st-${f}`}></span>
+            <i class="ic-mark" id={`sm-${f}`}></i>
+          </div>
+          <p class="ic-info"><b id={`hit-${f}`}></b><span class="ic-iss" id={`iss-${f}`}></span></p>
+          <div class="ic-enc">
+            {ENC[f].map((s) => (
+              <div class="ic-er">
+                <span id={`${s.id}-l`}>{s.label}</span>
+                <div class="seg" id={s.id} role="group" aria-labelledby={`${s.id}-l`}>
+                  {s.items.map(([v, t]) => <button type="button" data-v={v} aria-pressed={v === s.on ? 'true' : 'false'}>{t}</button>)}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Panel>
+      ))}
+    </div>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools current="image-corruption" />
+  <script>
+    import '../tools/image-corruption/client';
+  </script>
+</SiteLayout>

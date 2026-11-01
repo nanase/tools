@@ -91,6 +91,7 @@ const name = 'GIF';
     </Panel>
 
     <Panel hid="hd-file" title="ファイル" class="gf-ch gc-file" fixed>
+      <a slot="aux" class="aux" href={`${import.meta.env.BASE_URL}image-corruption/`} title="このファイルの壊れ方の比較">画像の破損</a>
       <div slot="aux" class="seg"><button type="button" id="save" title="符号化した GIF ファイルを保存する">保存</button></div>
       <div class="gf-strip" id="strip" role="group" aria-label="ファイルの区画の並び"></div>
       <div class="sbar rdbar gf-rd0" data-ph="Image Data · 位置 12,345 · 12,345 バイト · 符号 4095 · 12 ビット"><span class="rd" id="fi-rd"></span></div>

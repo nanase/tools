@@ -233,11 +233,14 @@ export interface GifFile {
   brokenAt: number;
 }
 
-/** GIF ファイルを読む。GIF でなければ null、途中で壊れていれば読めた所まで */
-export function parseGif(b: Uint8Array): GifFile | null {
+/**
+ * GIF ファイルを読む。GIF でなければ null、途中で壊れていれば読めた所まで。
+ * lenient なら署名を問わず、区画の先頭でない所は 1 バイトずつ読み飛ばして次を探す
+ */
+export function parseGif(b: Uint8Array, opts: { lenient?: boolean } = {}): GifFile | null {
   if (b.length < 13) return null;
   const sig = String.fromCharCode(...b.subarray(0, 6));
-  if (!/^GIF8[79]a$/.test(sig)) return null;
+  if (!opts.lenient && !/^GIF8[79]a$/.test(sig)) return null;
   const u16 = (p: number): number => b[p] | (b[p + 1] << 8);
   const g: GifFile = {
     version: sig,
@@ -320,8 +323,13 @@ export function parseGif(b: Uint8Array): GifFile | null {
       p = end;
       continue;
     }
+    if (opts.lenient && t !== 0x2c && p + 1 < b.length) {
+      if (g.brokenAt < 0) g.brokenAt = p;
+      p++;
+      continue;
+    }
     if (t !== 0x2c || p + 10 > b.length) {
-      g.brokenAt = p;
+      if (g.brokenAt < 0) g.brokenAt = p;
       add('junk', p, b.length);
       return g;
     }

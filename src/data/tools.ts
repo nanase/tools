@@ -279,7 +279,7 @@ export const TOOLS: Tool[] = [
     t: 'PNG',
     d: 'PNG の行ごとのフィルタと Deflate の圧縮を、画像の上で 1 行ずつ追います。',
     ic: 'png',
-    r: ['jpeg', 'gif', 'image-convolution', 'qr-code'],
+    r: ['jpeg', 'gif', 'image-corruption', 'image-convolution'],
     k: 'png portable network graphics 画像 可逆圧縮 lossless compression deflate zlib lz77 ハフマン huffman フィルタ filter none sub up average paeth 予測 prediction adam7 インターレース interlace チャンク chunk ihdr plte trns idat iend crc-32 crc32 adler-32 パレット palette 透過 alpha 16進ダンプ hex dump',
   },
   {
@@ -288,7 +288,7 @@ export const TOOLS: Tool[] = [
     t: 'GIF',
     d: 'GIF の LZW 圧縮で辞書が育つ様子を、パレットからファイルまで 1 符号ずつ追います。',
     ic: 'gif',
-    r: ['png', 'jpeg', 'qr-code', 'image-convolution'],
+    r: ['png', 'jpeg', 'image-corruption', 'qr-code'],
     k: 'gif graphics interchange format 画像 可逆圧縮 lossless compression lzw 辞書 dictionary 符号長 clear eoi kwkwk パレット palette カラーテーブル color table 減色 median cut ディザ dither 誤差拡散 floyd-steinberg インターレース interlace 透過色 transparent サブブロック sub-block 16進ダンプ hex dump',
   },
   {
@@ -297,8 +297,17 @@ export const TOOLS: Tool[] = [
     t: 'JPEG',
     d: 'JPEG に符号化する過程を順に解説し、圧縮の結果と画質を比べます。',
     ic: 'jp',
-    r: ['png', 'gif', 'wavelet-denoise', 'image-convolution'],
+    r: ['png', 'gif', 'image-corruption', 'wavelet-denoise'],
     k: 'jpeg jpg 画像 圧縮 image compression dct 離散コサイン変換 量子化 quantization ハフマン huffman ジグザグ zigzag ycbcr 色差 間引き chroma subsampling 4:2:0 ブロックノイズ psnr',
+  },
+  {
+    id: 'image-corruption',
+    c: '画像形式',
+    t: '画像の破損',
+    d: '同じ画像の PNG・JPEG・GIF を同じ操作で壊し、崩れ方の違いから形式の構造を見ます。',
+    ic: 'crp',
+    r: ['png', 'jpeg', 'gif', 'qr-code'],
+    k: 'corruption corrupt glitch グリッチ 破損 壊す 壊れる ビット反転 bit flip 16進 png jpeg gif deflate フィルタ filter crc adler dc 差分 リスタート restart rst dri lzw 辞書 clear サブブロック 砂嵐 ヘッダ header ihdr sof dqt dht',
   },
   {
     id: 'organ',

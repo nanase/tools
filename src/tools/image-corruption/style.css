@@ -1,0 +1,62 @@
+/* 画像の破損のページだけのスタイル（共通は src/styles/site.css） */
+
+.ic-root{display:grid;gap:18px;padding-top:6px;min-width:0}
+.ic-root.drop{outline:2px dashed var(--focus);outline-offset:6px}
+
+/* 入力: 見本とファイル（GIF のページの .gf-src と同じ形） */
+.ic-src{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}
+.ic-srcl{font-size:13.5px;font-weight:700}
+.ic-srcb{display:inline-flex;flex-wrap:wrap}
+.ic-seg{display:inline-flex;flex-wrap:wrap}
+.ic-srcb button{height:32px;padding:0 12px;border:0;background:none;color:var(--ink-3);font:500 12.5px/1 var(--sans);cursor:pointer;white-space:nowrap}
+.ic-srcb button+button,.ic-seg+button{border-left:1px solid var(--line)}
+.ic-srcb button:hover{color:var(--ink)}
+.ic-srcb button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
+.ic-src .msg{min-height:0;flex:1 1 12em}
+
+/* 壊す */
+.ic-ctl{display:flex;flex-wrap:wrap;gap:8px 22px;margin-bottom:10px}
+.ic-gp{display:flex;align-items:center;gap:8px;min-width:0;font-size:13.5px;font-weight:700}
+.ic-gp>span{flex:none}
+.ic-gp .seg{flex-wrap:wrap}
+.ic-gp .seg.off{opacity:.4}
+.ic-gp .seg button{white-space:nowrap;font-family:var(--sans)}
+.ic-gp .seg button:disabled{cursor:default}
+.ic-pos{display:flex;align-items:center;gap:14px;font-size:13.5px;font-weight:700}
+.ic-pos label{flex:none;white-space:nowrap}
+.ic-pos b{font:700 13px/1 var(--mono);font-variant-numeric:tabular-nums}
+.ic-pos .sl{flex:1;min-width:0}
+.ic-pos .seg{flex:none;font-weight:500}
+.ic-pos .seg button{white-space:nowrap}
+.ic-pos button:disabled{opacity:.45;cursor:default}
+
+/* 3 形式 */
+.ic-tri{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px 14px}
+@media (max-width:860px){.ic-tri{grid-template-columns:minmax(0,1fr)}}
+.ic-tri>.pnl{display:grid;gap:8px;align-content:start}
+.ic-rd{display:inline-flex;align-items:baseline;gap:6px;font:500 12px/1.3 var(--mono);color:var(--ink-2);padding-right:6px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.ic-rd b{color:var(--ink);font-weight:700;font-size:14px;line-height:1.3}
+
+.ic-fr{position:relative;min-width:0;overflow:hidden;background:var(--inset) repeating-conic-gradient(var(--line) 0 25%,transparent 0 50%) 0 0/12px 12px;line-height:0;border:1px solid var(--line)}
+.ic-fr canvas,.ic-fr img{display:block;height:auto;image-rendering:pixelated}
+.ic-no{position:absolute;inset:0;display:grid;place-items:center;font:500 12.5px/1 var(--sans);color:var(--ink-2);background:var(--inset)}
+
+/* ファイルの帯: ヘッダ・データ・終わり */
+.ic-st{position:relative;display:flex;height:24px;font:700 11px/22px var(--mono);border:1px solid var(--line-2);border-radius:2px;color:var(--ink);font-variant-numeric:tabular-nums}
+.ic-st>span{position:relative;display:block;white-space:nowrap}
+/* GIF のページのファイルの帯と同じ色（ヘッダ・データ・終わり） */
+.ic-sh{flex:0 0 60px;padding:0 5px;background:color-mix(in srgb,#8f979e 45%,var(--surface));border-right:1px solid var(--surface)}
+.ic-sd{flex:1 1 auto;min-width:0;padding:0 6px;background:color-mix(in srgb,#4393c3 55%,var(--surface))}
+.ic-se{flex:0 0 8px;background:color-mix(in srgb,#8f979e 45%,var(--surface));border-left:1px solid var(--surface)}
+/* 数字を隠さないよう、上下の端だけに置く */
+.ic-mark{position:absolute;top:-1px;bottom:-1px;width:3px;margin-left:-1.5px;background:linear-gradient(var(--accent) 0 6px,transparent 6px calc(100% - 6px),var(--accent) 0)}
+
+/* 問題の数が変わっても下の行が動かないよう、3 行分の高さで固定する（収まらない分は title で読む） */
+.ic-info{font:500 12px/18px var(--mono);color:var(--ink-3)}
+.ic-info b{display:block;font-weight:500;color:var(--ink-2)}
+.ic-iss{display:-webkit-box;height:54px;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:3}
+
+/* 形式ごとの符号化 */
+.ic-enc{display:grid;gap:6px}
+.ic-er{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;font-size:12.5px;color:var(--ink-2)}
+.ic-er>span{flex:none;min-width:5.4em;white-space:nowrap}

@@ -1,0 +1,58 @@
+---
+// 動作原理と式
+import { DIFF_MIN, MAX_PIXELS } from './codec';
+import { SPREAD } from './model';
+import { MAX_SIDE } from './params';
+---
+<h3>崩れ方の違い</h3>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th scope="col">形式</th><th scope="col">変わるもの</th><th scope="col">広がる範囲</th><th scope="col">戻る所</th></tr></thead>
+  <tbody>
+    <tr><th scope="row">PNG</th><td>Deflate の符号の切れ目</td><td>残り全部</td><td>なし</td></tr>
+    <tr><th scope="row">PNG（圧縮なし）</th><td>フィルタの基準の画素</td><td>Sub は右、Up は下、Average と Paeth は右下へ</td><td>None の行</td></tr>
+    <tr><th scope="row">JPEG</th><td>DC の差分・符号の切れ目</td><td>同じ成分の残り全部</td><td>RST</td></tr>
+    <tr><th scope="row">GIF</th><td>辞書の項目</td><td>次の Clear まで。長さが変わると位置のずれは残る</td><td>Clear（色だけ）</td></tr>
+  </tbody>
+</table></div>
+
+<h3>PNG</h3>
+<p>Deflate はハフマン符号を切れ目なく並べるので、符号のビットが変わると以降の切れ目がずれます<a class="rf" href="#thy-r2">[2]</a>。距離や付加ビットだけが変わった場合は切れ目が保たれ、崩れは一部で済みます。圧縮なしでは 1 バイトがそのまま 1 標本になり、フィルタの差分がそのバイトを基準に広げます<a class="rf" href="#thy-r1">[1]</a><a class="rf" href="#thy-r5">[5]</a>。幅を変えると行の先頭のフィルタ番号の位置もずれるので、フィルタを使う画像は砂嵐になり、None だけの画像は斜めの絵になります。</p>
+<p>3 形式のうち PNG だけが検査値を持ちます。チャンクごとの CRC-32 と zlib の Adler-32 です<a class="rf" href="#thy-r1">[1]</a>。合わないファイルを開かないブラウザもあります。</p>
+
+<h3>JPEG</h3>
+<p>DC 係数は前のブロックとの差で符号化するので、差が変わると同じ成分の以降のブロックの明るさや色がずれ続けます<a class="rf" href="#thy-r3">[3]</a>。ハフマン符号の切れ目がずれてもやがて合い直しますが、読んだブロックの数が変わった分だけ絵が横にずれます。付加ビットだけが変わると 1 ブロックで済むので、崩れは残り全部かほぼ 0 に分かれます。</p>
+<p>RST は符号の切れ目と DC の予測を戻すマーカーです<a class="rf" href="#thy-r3">[3]</a>。間隔を短くすると崩れはその間隔の中で止まり、ファイルは大きくなります。</p>
+
+<h3>GIF</h3>
+<p>LZW の符号の幅は辞書の項目の数で決まるので、値が変わっても切れ目はずれません<a class="rf" href="#thy-r4">[4]</a>。変わるのはその符号の列と、それを元に足した辞書の項目です。この項目は次の Clear で消えます。列の長さが変わると以降の画素の位置がずれ、Clear の後もずれたままです。</p>
+<p>サブブロックの長さのバイトを壊すと、データと長さの境が変わり、符号の切れ目もずれます。</p>
+
+<h3>出典</h3>
+<ol class="refs">
+  <li id="thy-r1"><span class="rf-for">フィルタ（9 章）・CRC-32（5.5）</span><span class="rf-src">W3C, <a href="https://www.w3.org/TR/png-3/" target="_blank" rel="noopener">Portable Network Graphics (PNG) Specification (Third Edition)</a>, W3C Recommendation, 2025-06-24</span></li>
+  <li id="thy-r2"><span class="rf-for">Deflate のハフマン符号と距離</span><span class="rf-src">P. Deutsch, <a href="https://www.rfc-editor.org/rfc/rfc1951" target="_blank" rel="noopener">RFC 1951: DEFLATE Compressed Data Format Specification version 1.3</a>, 1996</span></li>
+  <li id="thy-r3"><span class="rf-for">DC の差分（F.1.2）・リスタートマーカー（Annex B）。崩れ方そのものはこのツールでの測定</span><span class="rf-src">ITU-T Recommendation T.81 | ISO/IEC 10918-1, <a href="https://www.w3.org/Graphics/JPEG/itu-t81.pdf" target="_blank" rel="noopener">Digital compression and coding of continuous-tone still images – Requirements and guidelines</a>, 1992</span></li>
+  <li id="thy-r4"><span class="rf-for">LZW の可変長符号（付録 F）・サブブロック</span><span class="rf-src">CompuServe, <a href="https://www.w3.org/Graphics/GIF/spec-gif89a.txt" target="_blank" rel="noopener">Graphics Interchange Format, Version 89a</a>, 1990</span></li>
+  <li id="thy-r5"><span class="rf-for">PNG のフィルタごとの崩れ方</span><span class="rf-src">UCNV, <a href="https://ucnv.github.io/pnglitch/" target="_blank" rel="noopener">The Art of PNG Glitch</a>, 2015</span></li>
+  <li id="thy-r6"><span class="rf-for">読めない符号を 0 として続ける</span><span class="rf-src"><a href="https://github.com/libjpeg-turbo/libjpeg-turbo" target="_blank" rel="noopener">libjpeg-turbo</a>, jdhuff.c の jpeg_huff_decode</span></li>
+</ol>
+
+<h3>このツールで決めたこと</h3>
+<ul class="tl">
+  <li><b>崩れ</b>: 元の復号と色の差が {DIFF_MIN} 以上の画素と、読めなかった画素の割合</li>
+  <li><b>読めなかった画素</b>: 市松模様</li>
+  <li><b>PNG の検査値</b>: 不一致でも読み続ける</li>
+  <li><b>PNG の 5 以上のフィルタ番号</b>: None として読む</li>
+  <li><b>PNG の Deflate</b>: 読めなくなった所で止まる</li>
+  <li><b>JPEG の読めない符号</b>: 0 として読む<a class="rf" href="#thy-r6">[6]</a></li>
+  <li><b>JPEG の 63 を超える係数</b>: 捨てる</li>
+  <li><b>JPEG のスキャンの中の余分なマーカー</b>: 読み飛ばす</li>
+  <li><b>JPEG のデータが尽きたあとのブロック</b>: 読まない</li>
+  <li><b>GIF の辞書にない符号</b>: KwKwK として読む</li>
+  <li><b>GIF の途中の EOI</b>: 読み飛ばす</li>
+  <li><b>GIF の区画の先頭でないバイト</b>: 次の区画まで読み飛ばす</li>
+  <li><b>符号化</b>: PNG は RGB、JPEG は品質 75・4:2:0・標準のハフマン表、GIF は 256 色で誤差拡散なし</li>
+  <li><b>8 か所と 64 か所</b>: データでは位置の後ろ {SPREAD * 100} % の幅に、ほかの場所では範囲の中に散らす</li>
+  <li><b>ファイル</b>: {`長い辺を ${MAX_SIDE} 画素までに縮め、透明な所を白で塗って 3 形式に符号化`}</li>
+  <li><b>大きさの上限</b>: {`${MAX_PIXELS.toLocaleString('en')} 画素`}</li>
+</ul>

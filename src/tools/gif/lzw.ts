@@ -148,8 +148,12 @@ export interface LzwDecoded {
   bitPos: number;
   /** 読んだ符号の数 */
   codes: number;
-  /** 止まった符号の値（bad-code のとき） */
+  /** 最初の読めない符号の値（なければ −1） */
   badCode: number;
+  /** 最初の読めない符号のビット位置（なければ −1） */
+  badBit: number;
+  /** keepGoing で読み替えた符号の数 */
+  bad: number;
   /** 止まったときの辞書の次の番号 */
   next: number;
   /** KwKwK（辞書にまだない番号が来た）の回数 */
@@ -159,9 +163,25 @@ export interface LzwDecoded {
 }
 
 /** 復号する。want は期待する画素の数。例外は投げない */
-export function decodeLzw(data: Uint8Array, m: number, want: number, opts: { trace?: boolean } = {}): LzwDecoded {
+export function decodeLzw(
+  data: Uint8Array,
+  m: number,
+  want: number,
+  opts: { trace?: boolean; keepGoing?: boolean } = {},
+): LzwDecoded {
   const out = new Uint8Array(want);
-  const res: LzwDecoded = { out, n: 0, stop: 'bad-min', bitPos: 0, codes: 0, badCode: -1, next: 0, kwkwk: 0 };
+  const res: LzwDecoded = {
+    out,
+    n: 0,
+    stop: 'bad-min',
+    bitPos: 0,
+    codes: 0,
+    badCode: -1,
+    badBit: -1,
+    bad: 0,
+    next: 0,
+    kwkwk: 0,
+  };
   if (!(m >= 1 && m <= 8)) return res;
   const clear = 1 << m,
     eoi = clear + 1,
@@ -211,16 +231,24 @@ export function decodeLzw(data: Uint8Array, m: number, want: number, opts: { tra
       log(code, w, b, pos, 0, -1);
       continue;
     }
-    if (code === eoi) {
+    if (code === eoi && !(opts.keepGoing && pos < want && bit < total)) {
       log(code, w, b, pos, 0, -1);
       stop = 'eoi';
       break;
     }
     /* Clear の直後は 1 画素の符号だけ。それ以外は今の次の番号（KwKwK）まで */
-    if ((prev < 0 && code >= clear) || (prev >= 0 && code > next)) {
-      res.badCode = code;
-      stop = 'bad-code';
-      break;
+    if ((prev < 0 && code >= clear) || (prev >= 0 && code > next) || code === eoi) {
+      if (res.badCode < 0) {
+        res.badCode = code;
+        res.badBit = b;
+      }
+      if (!opts.keepGoing) {
+        stop = 'bad-code';
+        break;
+      }
+      /* 辞書の大きさを符号器とそろえ、符号の切れ目を保つ。Clear の直後は 1 画素、ほかは KwKwK として読む */
+      res.bad++;
+      code = prev < 0 ? code % clear : next < DICT_MAX ? next : prev;
     }
     let added = -1;
     if (prev >= 0) {

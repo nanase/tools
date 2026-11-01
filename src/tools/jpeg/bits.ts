@@ -111,4 +111,10 @@ export class BitReader {
   align(): void {
     this.nb = 0;
   }
+  /** 当たったマーカーを読み捨てて続きを読む */
+  skipMarker(): void {
+    this.p += 2;
+    this.marker = -1;
+    this.nb = 0;
+  }
 }
