@@ -24,6 +24,8 @@ export interface BandOpt {
   dark: [number, number][];
   twi: [number, number][];
   ticks: { t: number; label: string }[];
+  /** 帯の幅（24 時間）。省くと BAND_W */
+  w?: number;
 }
 
 /** 帯の幅（24 時間）。今の時刻の線は中央に固定し、中身を横に動かす */
@@ -34,9 +36,9 @@ export const bandRowY = (i: number): number => 34 + ROW * i;
 /** 時刻の軸の高さ（行の下端） */
 export const bandAxisY = (n: number): number => bandRowY(n - 1) + 12;
 
-/** 帯の動く中身。x は (t − anchor) × BAND_W */
+/** 帯の動く中身。x は (t − anchor) × 帯の幅 */
 export function timeBand(o: BandOpt): string {
-  const X = (t: number) => (t - o.anchor) * BAND_W;
+  const X = (t: number) => (t - o.anchor) * (o.w ?? BAND_W);
   const cx = (t: number) => X(Math.max(o.t0, Math.min(o.t1, t)));
   const n = o.rows.length + (o.grs ? 1 : 0);
   const ay = bandAxisY(n);
@@ -87,7 +89,7 @@ export interface WiggleOpt {
   /** 日付の目盛り */
   days: { t: number; label: string }[];
   /** 印（相互食など） */
-  marks: { t: number; x: number; label: string }[];
+  marks: { t: number; x: number }[];
 }
 
 /** グラフの描く範囲（viewBox は -40 0 600 486、中は 0〜560 × 22〜462） */
@@ -118,10 +120,7 @@ export function wiggle(o: WiggleOpt): string {
     }
     h.push(`<path class="pn-wl pn-k${k + 1}" d="${d}"></path>`);
   });
-  for (const m of o.marks)
-    h.push(
-      `<circle class="pn-pk" cx="${f1(X(m.x))}" cy="${f1(Y(m.t))}" r="4.5"></circle><text class="pn-ts" x="${f1(X(m.x) + 9)}" y="${f1(Y(m.t) + 14)}">${esc(m.label)}</text>`,
-    );
+  for (const m of o.marks) h.push(`<circle class="pn-pk" cx="${f1(X(m.x))}" cy="${f1(Y(m.t))}" r="4.5"></circle>`);
   h.push(
     `<text x="0" y="12">← 東</text><text x="${WIG.w}" y="12" text-anchor="end">西 →</text>`,
     `<path class="pn-now" id="wnow" d=""></path><text class="pn-nowt" id="wnowt" x="${WIG.w + 2}"></text>`,
@@ -192,7 +191,7 @@ export function orbitTop(o: TopOpt): string {
     `<path class="pn-sunar" d="M${f1(bx)} ${f1(by)}L${f1(ex)} ${f1(ey)}M${ah(0.5)}L${f1(ex)} ${f1(ey)}L${ah(-0.5)}"></path><text class="pn-ts" x="${sx - 18}" y="${sy + 10}" text-anchor="end">太陽へ</text>`,
   );
   h.push(
-    '<path class="pn-ax" d="M262 92A124 124 0 0 0 214 42"></path><path class="pn-ax" d="M219 40L213 42L216 48"></path><text class="pn-ts" x="262" y="62" text-anchor="middle">公転の向き</text>',
+    '<path class="pn-ax" d="M262 92A124 124 0 0 0 214 42"></path><path class="pn-ax" d="M219 40L213 42L216 48"></path>',
   );
   return h.join('');
 }

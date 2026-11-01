@@ -212,6 +212,21 @@ describe('図', () => {
     /* 南中が帯の外なら丸を描かない */
     expect(band([{ a: 0.9, t: 1.1, b: 1.3 }])).not.toContain('pn-grs"');
     expect(band([{ a: 1.1, t: 1.3, b: 1.5 }])).toBe(band([]));
+    /* 帯の幅を変えられる */
+    expect(
+      timeBand({
+        anchor: 0,
+        t0: 0,
+        t1: 1,
+        rows: [],
+        phen: [],
+        grs: [{ a: 0, t: 0.5, b: 1 }],
+        dark: [],
+        twi: [],
+        ticks: [],
+        w: 400,
+      }),
+    ).toContain('d="M0.0 34H400.0"');
   });
 
   it('数値が壊れない', () => {

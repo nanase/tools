@@ -184,10 +184,10 @@ export class SitePicker {
   private here(): void {
     const msg = $('#loc-msg');
     if (!navigator.geolocation) {
-      msg.textContent = 'このブラウザでは現在地を使えません';
+      msg.textContent = 'このブラウザでは現在地を使えません。';
       return;
     }
-    msg.textContent = '現在地を調べています…';
+    msg.textContent = '現在地を取得中…';
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         const lat = pos.coords.latitude,
@@ -203,7 +203,7 @@ export class SitePicker {
         });
       },
       () => {
-        msg.textContent = '現在地を使えませんでした（位置情報の許可を確かめてください）';
+        msg.textContent = '現在地を使えません。位置情報の許可を確かめてください。';
       },
       { maximumAge: 600000, timeout: 15000 },
     );

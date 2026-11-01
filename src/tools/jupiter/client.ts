@@ -38,7 +38,7 @@ import { facing, type MoonLook, type Orient, planetUniforms, screenOf, shadowPoi
 import { PanZoom } from '../../lib/planet/zoom';
 import { store, stored } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
-import { GRS_LAST, GRS_LAST_JD, GRS_RATE, grsL2, MAPS, type MapInfo, nearestMap } from './grs';
+import { GRS_LAST, GRS_LAST_JD, grsL2, MAPS, type MapInfo, nearestMap } from './grs';
 import { GM_JUP, INNER, innerPos, JUPITER_MODEL as M, MOONS, w1, w2 } from './model';
 
 const BASE = import.meta.env.BASE_URL;
@@ -225,7 +225,7 @@ function loadMap(m: MapInfo): void {
       mapWant = '';
       const v = $('#v-msg');
       v.hidden = false;
-      v.textContent = '模様の地図を読み込めませんでした';
+      v.textContent = '模様の地図を読み込めませんでした。';
     });
 }
 
@@ -291,8 +291,6 @@ function mapShift(): number {
   return wrap180(l3 - mapOn.grsL3) * D;
 }
 
-const ORIENT_T: Record<Orient, string> = { zenith: '天頂が上', planet: '木星の北が上', sky: '天の北が上' };
-
 function drawMain(): void {
   if (!renderer) return;
   renderer.fit();
@@ -337,16 +335,20 @@ function drawMain(): void {
           `<span class="pn-sl${up ? ' pn-up' : ''}" style="left:${px.toFixed(1)}px;top:${(up ? py - r - 4 : py + r + 4).toFixed(1)}px">${esc(m.name)}${note ? `<small>${note}</small>` : ''}</span>`,
         );
       } else if (Math.abs(py - L.cy) < L.H) {
-        const [e] = skyOffset(g, g.moons[k], M.re);
         const sep = Math.hypot(...skyOffset(g, g.moons[k], M.re)) * rs;
         const left = px < L.cx;
-        /* 同じ側の札は重ならないよう下へずらす */
+        /* 同じ側の札は重ならないよう、空いている上か下へずらす */
         const used = left ? edgeL : edgeR;
-        let top = Math.max(44, Math.min(L.H - 72, py - 10));
-        while (used.some((y) => Math.abs(y - top) < 36)) top += 36;
+        const lo = 44,
+          hi = L.H - 72;
+        const base = Math.max(lo, Math.min(hi, py - 10));
+        const top =
+          Array.from({ length: L.H }, (_, i) => base + (i % 2 ? 2 : -2) * ((i + 1) >> 1)).find(
+            (y) => y >= lo && y <= hi && !used.some((u) => Math.abs(u - y) < 34),
+          ) ?? base;
         used.push(top);
         h.push(
-          `<span class="pn-edge ${left ? 'pn-l' : 'pn-r'}" style="top:${top.toFixed(0)}px">${left ? '← ' : ''}${esc(m.name)}${left ? '' : ' →'}<br>${e > 0 ? '東' : '西'} ${dms(sep)}</span>`,
+          `<span class="pn-edge ${left ? 'pn-l' : 'pn-r'}" style="top:${top.toFixed(0)}px">${left ? '← ' : ''}${esc(m.name)}${left ? '' : ' →'}<br>${dms(sep)}</span>`,
         );
       }
     });
@@ -363,10 +365,10 @@ function drawMain(): void {
         );
       });
   }
-  h.push(...innerMarks(or$.value, L.cx, L.cy, L.rad, L.W, L.H, nm$.value === 'on'));
+  h.push(...innerMarks(or$.value, L.cx, L.cy, L.rad, L.W, L.H, nm$.value === 'on' && L.W >= 640));
   $('#labs').innerHTML = h.join('');
   const fov = (L.W / L.rad) * rs;
-  txt('#v-lab', `${ORIENT_T[mode]} · 視野 ${(fov / 60).toFixed(1)}′`);
+  txt('#v-lab', `視野 ${(fov / 60).toFixed(1)}′`);
   txt('#v-lab2', bottomNote());
 }
 
@@ -385,7 +387,9 @@ function innerMarks(mode: Orient, cx: number, cy: number, rad: number, W: number
       py = cy - sy * rad;
     if (px < 0 || px > W || py < 0 || py > H) continue;
     out.push(`<span class="pn-sd pn-sm" style="left:${px.toFixed(1)}px;top:${py.toFixed(1)}px"></span>`);
-    if (!names || used.some(([a, b]) => Math.abs(a - px) < 56 && Math.abs(b - py) < 14)) continue;
+    /* 窓の端の札と重なる所には名前を出さない */
+    if (!names || px < 130 || px > W - 130 || used.some(([a, b]) => Math.abs(a - px) < 56 && Math.abs(b - py) < 14))
+      continue;
     used.push([px, py]);
     out.push(
       `<span class="pn-sl pn-si" style="left:${px.toFixed(1)}px;top:${(py + 4).toFixed(1)}px">${esc(nm)}</span>`,
@@ -394,18 +398,14 @@ function innerMarks(mode: Orient, cx: number, cy: number, rad: number, W: number
   return out;
 }
 
-/** 窓の下の注記: 地平線の下、大赤斑の向き、模様の地図 */
+/** 窓の下の注記: 地平線の下、大赤斑の向き、模様の地図の年 */
 function bottomNote(): string {
   const parts: string[] = [];
-  if (st.alt < 0) parts.push(`地平線の下（高度 ${minus(st.alt.toFixed(1))}°）`);
+  if (st.alt < 0) parts.push(`地平線の下 ${minus(st.alt.toFixed(1))}°`);
   const [, ii] = cmNow();
   const dl = wrap180(grsAt(jd) - ii);
-  if (Math.abs(dl) < 90) parts.push(`大赤斑は中央から${dl > 0 ? '西' : '東'}へ ${Math.abs(dl).toFixed(0)}°`);
-  else {
-    const tr = grsTransits(jd - 0.42, jd + 0.42).sort((a, b) => Math.abs(a - jd) - Math.abs(b - jd))[0];
-    parts.push(tr ? `大赤斑は裏側（${hm(tr)} に南中${tr < jd ? 'した' : 'する'}）` : '大赤斑は裏側');
-  }
-  if (mapOn) parts.push(`模様は ${mapOn.label} の地図を大赤斑に合わせて回したもの · ほかの模様は目安`);
+  parts.push(Math.abs(dl) < 90 ? `大赤斑 ${dl > 0 ? '西' : '東'} ${Math.abs(dl).toFixed(0)}°` : '大赤斑 裏側');
+  if (mapOn) parts.push(`模様 ${mapOn.label}`);
   return parts.join(' · ');
 }
 
@@ -476,7 +476,7 @@ function drawStrip(): void {
   h.push(...innerMarks(mode, W / 2, H / 2, k, W, H, false));
   $('#slabs').innerHTML = h.join('');
   const fov = 2 * R * rs;
-  txt('#s-lab', `衛星の並び · 視野 ${Math.round(fov / 60)}′ · 東が左`);
+  txt('#s-lab', `視野 ${Math.round(fov / 60)}′ · 東が左`);
   const minPx = (60 / rs) * k;
   $('#s-scale').style.display = minPx < W * 0.3 ? '' : 'none';
   ($('#s-scale i') as HTMLElement).style.width = `${minPx.toFixed(1)}px`;
@@ -559,6 +559,8 @@ interface Span {
 }
 let span: Span | null = null;
 const HALF = 1.6;
+/** 帯の座標の幅（24 時間）。スマホでは実際の幅にして、文字を読める大きさに保つ */
+let bandW = BAND_W;
 
 /** 真の区間をつなぐ */
 function runs(ts: number[], ok: boolean[]): [number, number][] {
@@ -588,7 +590,7 @@ function buildBand(anchor: number): void {
     alt.push(altFast(E, t, o));
   }
   const ticks: { t: number; label: string }[] = [];
-  const every = band.clientWidth < 600 ? 4 : 2;
+  const every = bandW < 600 ? 4 : 2;
   const first = Math.ceil((t0 + tzh() / 24) * 24) / 24 - tzh() / 24;
   for (let t = first; t <= t1; t += 1 / 24) {
     const hr = Math.round(local(t).hour) % 24;
@@ -596,9 +598,9 @@ function buildBand(anchor: number): void {
   }
   const rows = NAMES.length + 1;
   const ay = bandAxisY(rows);
-  band.setAttribute('viewBox', `0 -24 ${BAND_W} ${ay + 48}`);
+  band.setAttribute('viewBox', `0 -24 ${bandW} ${ay + 48}`);
   band.innerHTML =
-    `<defs><clipPath id="bclip"><rect x="0" y="-24" width="${BAND_W}" height="${ay + 48}"></rect></clipPath></defs>` +
+    `<defs><clipPath id="bclip"><rect x="0" y="-24" width="${bandW}" height="${ay + 48}"></rect></clipPath></defs>` +
     `<g clip-path="url(#bclip)"><g id="bscroll">${timeBand({
       anchor,
       t0,
@@ -615,22 +617,25 @@ function buildBand(anchor: number): void {
         ts.map((_, i) => sun[i] < SUN_SET && sun[i] >= SUN_DARK),
       ),
       ticks,
+      w: bandW,
     })}</g></g>` +
     bandRows(NAMES, true) +
-    `<path class="pn-cur" id="bcur" d="M${BAND_W / 2} 2V${ay}"></path><rect class="pn-tag" id="btag" y="-22" height="19" rx="3"></rect><text class="pn-tagt" id="btagt" x="${BAND_W / 2}" y="-8"></text>`;
+    `<path class="pn-cur" id="bcur" d="M${bandW / 2} 2V${ay}"></path><rect class="pn-tag" id="btag" y="-22" height="19" rx="3"></rect><text class="pn-tagt" id="btagt" x="${bandW / 2}" y="-8"></text>`;
 }
 
 function drawBand(): void {
-  const key = `${picker.place.lat}|${picker.place.lon}|${tz$.value}|${grsOff}|${band.clientWidth < 600}`;
+  const cw = Math.round(band.clientWidth);
+  bandW = cw > 0 && cw < 600 ? cw : BAND_W;
+  const key = `${picker.place.lat}|${picker.place.lon}|${tz$.value}|${grsOff}|${bandW}`;
   if (!span || span.key !== key || Math.abs(jd - span.anchor) > 0.9) {
     span = { key, anchor: Math.round(jd * 4) / 4 };
     buildBand(span.anchor);
   }
-  $('#bscroll').setAttribute('transform', `translate(${(BAND_W / 2 - (jd - span.anchor) * BAND_W).toFixed(2)} 0)`);
+  $('#bscroll').setAttribute('transform', `translate(${(bandW / 2 - (jd - span.anchor) * bandW).toFixed(2)} 0)`);
   const t = live ? `現在 ${md(jd)} ${hm(jd)}` : `${md(jd)} ${hm(jd)}`;
   const tw = [...t].reduce((w, c) => w + (c.charCodeAt(0) > 0xff ? 11.5 : 6.7), 14);
   const tag = $('#btag');
-  tag.setAttribute('x', (BAND_W / 2 - tw / 2).toFixed(1));
+  tag.setAttribute('x', (bandW / 2 - tw / 2).toFixed(1));
   tag.setAttribute('width', tw.toFixed(1));
   $('#btagt').textContent = t;
   tag.classList.toggle('pn-on', live);
@@ -641,7 +646,7 @@ function drawBand(): void {
 let bandDrag: { x: number; jd: number; moved: boolean } | null = null;
 const bandX = (e: PointerEvent) => {
   const r = band.getBoundingClientRect();
-  return ((e.clientX - r.left) / r.width) * BAND_W;
+  return ((e.clientX - r.left) / r.width) * bandW;
 };
 band.addEventListener('pointerdown', (e) => {
   band.setPointerCapture(e.pointerId);
@@ -654,10 +659,10 @@ band.addEventListener('pointermove', (e) => {
   if (!bandDrag.moved && Math.abs(dx) < 4) return;
   bandDrag.moved = true;
   band.classList.add('drag');
-  setJd(bandDrag.jd - dx / BAND_W);
+  setJd(bandDrag.jd - dx / bandW);
 });
 const bandEnd = (e: PointerEvent) => {
-  if (bandDrag && !bandDrag.moved && e.type === 'pointerup') setJd(jd + (bandX(e) - BAND_W / 2) / BAND_W);
+  if (bandDrag && !bandDrag.moved && e.type === 'pointerup') setJd(jd + (bandX(e) - bandW / 2) / bandW);
   bandDrag = null;
   band.classList.remove('drag');
 };
@@ -686,9 +691,6 @@ let nextTwo: number | null | undefined;
 let nextMut: number | null | undefined;
 let nextOpp: number | undefined;
 let keyJob = 0;
-function nightLabel(n0: number): string {
-  return `${md(n0 + 0.01)}〜${local(n0 + 1).day} の夜`;
-}
 function drawKeys(): void {
   const n = ensureNight();
   const key = `${n.key}`;
@@ -699,21 +701,17 @@ function drawKeys(): void {
     const job = ++keyJob;
     void searchKeys(n, job);
   }
-  const ch: string[] = [
-    `<button type="button" class="chip" data-d="-1">‹ 前の夜</button>`,
-    `<span class="pn-night">${nightLabel(n.n0)}</span>`,
-    `<button type="button" class="chip" data-d="1">次の夜 ›</button>`,
-  ];
+  const ch: string[] = [];
   const chip = (t: number | null | undefined, label: string, long = false) => {
     if (t === null) return;
     ch.push(
       t === undefined
-        ? `<button type="button" class="chip" disabled>${label} <small>探しています…</small></button>`
+        ? `<button type="button" class="chip" disabled>${label} <small>…</small></button>`
         : `<button type="button" class="chip" data-j="${t}">${label} <small>${long ? `${local(t).year}/` : ''}${md(t)} ${hm(t)}</small></button>`,
     );
   };
-  chip(nextTwo, '次の「影が 2 つ」');
-  chip(nextMut, '次の相互食');
+  chip(nextTwo, '影 2 つ');
+  chip(nextMut, '相互食');
   if (nextOpp)
     ch.push(
       `<button type="button" class="chip" data-j="${nextOpp}">衝 <small>${local(nextOpp).year}/${md(nextOpp)}</small></button>`,
@@ -796,8 +794,7 @@ $('#nowbtn').addEventListener('click', () => {
 $('#keys').addEventListener('click', (e) => {
   const b = (e.target as Element).closest<HTMLElement>('.chip');
   if (!b) return;
-  if (b.dataset.d) setJd(jd + Number(b.dataset.d));
-  else if (b.dataset.j) setJd(Number(b.dataset.j));
+  if (b.dataset.j) setJd(Number(b.dataset.j));
 });
 $('#tstep').addEventListener('click', (e) => {
   const b = (e.target as Element).closest<HTMLElement>('button[data-s]');
@@ -897,13 +894,10 @@ async function loadTable(): Promise<void> {
 }
 function drawKey(): void {
   if (!table) return;
-  const n = table.groups.map((_, g) => table?.moons.filter((m) => m.g === g).length ?? 0);
-  n[0] = INNER.length;
-  n[1] = MOONS.length;
   $('#akey').innerHTML = table.groups
-    .map((nm, g) => `<span><i class="pn-gd" style="background:${GC[g]}"></i>${esc(nm)} ${n[g]}</span>`)
+    .map((nm, g) => `<span><i class="pn-gd" style="background:${GC[g]}"></i>${esc(nm)}</span>`)
     .join('');
-  txt('#all-aux', `${n.reduce((a, b) => a + b, 0)} 個`);
+  txt('#all-aux', `${table.moons.length + INNER.length + MOONS.length} 個`);
 }
 /** 目盛りの環の間隔 [″] の候補 */
 const RINGS = [3600, 1800, 600, 300, 120, 60, 30, 10];
@@ -972,7 +966,7 @@ function drawAll(): void {
   aDots = dots;
   const m = $('#a-msg');
   m.hidden = !outside;
-  if (outside) m.textContent = '外側の衛星の軌道は 2015〜2036 年の分だけ持っています。';
+  if (outside) m.textContent = '外側の衛星は 2015〜2036 年だけ表示します。';
   /* 木星 */
   c.fillStyle = '#c9a77c';
   c.beginPath();
@@ -987,13 +981,14 @@ function drawAll(): void {
     c.arc(d.x, d.y, d.d > 1000 ? 3.4 : d.d > 20 ? 2.6 : 1.9, 0, 2 * Math.PI);
     c.fill();
   }
-  /* 名前: 大きな衛星から置き、重なるものは出さない（拡大すると出る）。選んだ衛星はいつも出す */
+  /* 名前: 大きな衛星から置き、重なるものは出さない（拡大すると出る）。仮符号は拡大したときだけ。選んだ衛星はいつも出す */
   const sel = dots.find((d) => d.name === aSel);
   const boxes: [number, number, number, number][] = [
     [cx - Math.max(3, pxRe), cy - Math.max(3, pxRe), cx + Math.max(3, pxRe), cy + Math.max(3, pxRe)],
   ];
   c.font = '500 11px system-ui, sans-serif';
   c.textBaseline = 'middle';
+  const pad = W < 640 ? 6 : 0;
   const label = (d: Dot, force: boolean) => {
     const w = c.measureText(d.name).width;
     const x0 = d.x + 6,
@@ -1001,7 +996,7 @@ function drawAll(): void {
       y0 = d.y - 7,
       y1 = d.y + 7;
     if (x1 < 0 || x0 > W || y1 < 0 || y0 > H) return;
-    if (!force && boxes.some((b) => x0 < b[2] && x1 > b[0] && y0 < b[3] && y1 > b[1])) return;
+    if (!force && boxes.some((b) => x0 - pad < b[2] && x1 + pad > b[0] && y0 - pad < b[3] && y1 + pad > b[1])) return;
     boxes.push([x0, y0, x1, y1]);
     c.fillStyle = force ? '#fff' : GC[d.g];
     c.fillText(d.name, x0, d.y);
@@ -1013,14 +1008,15 @@ function drawAll(): void {
     c.stroke();
     label(sel, true);
   }
-  if (nm$.value === 'on') for (const d of [...dots].sort((a, b) => b.d - a.d)) if (d !== sel) label(d, false);
+  if (nm$.value === 'on')
+    for (const d of [...dots].sort((a, b) => b.d - a.d))
+      if (d !== sel && (az.z >= 3 || !d.name.startsWith('S/'))) label(d, false);
   c.textBaseline = 'alphabetic';
-  txt('#a-lab', `${ORIENT_T[mode]} · 環は ${ringLabel(step)} おき`);
   txt(
     '#a-info',
     sel
-      ? `${sel.name} · ${table?.groups[sel.g] ?? ''} · 木星から ${sel.sep >= 3600 ? `${(sel.sep / 3600).toFixed(2)}°` : dms(sel.sep)}`
-      : '押すと名前と離れを出します',
+      ? `${sel.name} · ${table?.groups[sel.g] ?? ''} · ${sel.sep >= 3600 ? `${(sel.sep / 3600).toFixed(2)}°` : dms(sel.sep)}`
+      : '',
   );
 }
 
@@ -1078,21 +1074,21 @@ function drawWiggle(): void {
       dticks.push({ t: d, label: md(d + 0.01) });
     }
     const o = obs();
-    const marks: { t: number; x: number; label: string }[] = [];
+    const marks: { t: number; x: number }[] = [];
     void mutualRange(t0, t1).then((ev) => {
       if (wigKey !== key) return;
       for (const m of ev) {
         if (!visibleAt(m.tm, o)) continue;
         const g = E.at(m.tm);
-        marks.push({ t: m.tm, x: skyOffset(g, g.moons[m.b], M.re)[0], label: `相互食 ${md(m.tm)} ${hm(m.tm)}` });
+        marks.push({ t: m.tm, x: skyOffset(g, g.moons[m.b], M.re)[0] });
       }
       wig.innerHTML = wiggle({ t0, t1, xMax: 28, series, days: dticks, marks });
       placeWigNow();
     });
     wig.innerHTML = wiggle({ t0, t1, xMax: 28, series, days: dticks, marks: [] });
-    $('#wkey').innerHTML = NAMES.map(
-      (nm, k) => `<span class="pn-k${k + 1}"><i class="pn-iln"></i>${esc(nm)}</span>`,
-    ).join('');
+    $('#wkey').innerHTML =
+      NAMES.map((nm, k) => `<span class="pn-k${k + 1}"><i class="pn-iln"></i>${esc(nm)}</span>`).join('') +
+      '<span><i class="pn-ibody"></i>木星</span><span><i class="pn-imk"></i>相互食</span>';
   }
   placeWigNow();
 }
@@ -1126,10 +1122,10 @@ function drawGrs(): void {
   txt(
     '#grs-note',
     grsOff
-      ? `表の値から ${grsOff > 0 ? '+' : '−'}${Math.abs(grsOff).toFixed(1)}° 直した値`
+      ? `補正 ${grsOff > 0 ? '+' : '−'}${Math.abs(grsOff).toFixed(1)}°`
       : jd > GRS_LAST_JD
-        ? `${GRS_LAST.slice(0, 7)} の実測から外挿（月 ${GRS_RATE.toFixed(1)}°）· 自分の観測で直せる`
-        : 'OPAL の地図と JUPOS の実測から補間 · 自分の観測で直せる',
+        ? `${GRS_LAST.slice(0, 7)} から外挿`
+        : '',
   );
 }
 function setGrsOff(v: number): void {
@@ -1246,14 +1242,14 @@ function renderSeason(): void {
 function renderMutual(): void {
   const m = seaEv[seaSel];
   if (!m) {
-    txt('#mut-h', 'この期間に見える相互食はありません');
-    $('#mut-p').textContent = '相互食は、木星の春分・秋分の前後に地球と太陽が木星の赤道の面を通る季節に起きます。';
+    txt('#mut-h', 'この期間に見える相互食はありません。');
+    $('#mut-p').textContent = '';
     $('#mut-curve').innerHTML = '';
     return;
   }
-  const what = m.kind === 'occ' ? `${NAMES[m.a]}が${NAMES[m.b]}を隠す` : `${NAMES[m.a]}の影が${NAMES[m.b]}にかかる`;
-  txt('#mut-h', `${md(m.t0)} ${hm(m.t0)}〜${hm(m.t1)} · ${what}`);
-  $('#mut-p').innerHTML = `最大 ${hm(m.tm)} · 2 つの合計の光が <b>${Math.round(m.depth * 100)} %</b> 減る（概算）`;
+  const what = `${NAMES[m.a]}による${NAMES[m.b]}の${m.kind === 'occ' ? '掩蔽' : '食'}`;
+  txt('#mut-h', what);
+  $('#mut-p').innerHTML = `${md(m.t0)} ${hm(m.t0)}〜${hm(m.t1)} · 減光 <b>${Math.round(m.depth * 100)} %</b>（概算）`;
   const dur = m.t1 - m.t0;
   const a = m.t0 - dur / 2,
     b = m.t1 + dur / 2;
@@ -1334,6 +1330,6 @@ try {
   renderer = null;
   const m = $('#v-msg');
   m.hidden = false;
-  m.textContent = 'このブラウザでは WebGL2 を使えないため、木星を描けません';
+  m.textContent = 'このブラウザでは木星を描けません。WebGL2 が必要です。';
 }
 later(true);

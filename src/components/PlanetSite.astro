@@ -4,18 +4,18 @@
  */
 ---
 <div class="pn-locw">
-  <button type="button" class="chip pn-locbtn" id="loc-btn" aria-expanded="false" aria-controls="loc-pop" aria-label="観測地を変える" title="観測地を変える"><span id="loc-name">東京</span> ▾</button>
+  <button type="button" class="chip pn-locbtn" id="loc-btn" aria-expanded="false" aria-controls="loc-pop" aria-label="観測地の変更" title="観測地の変更"><span id="loc-name">東京</span> ▾</button>
   <div class="pn-locpop" id="loc-pop" hidden>
     <div class="pn-locbar">
       <div class="pn-lsearch">
-        <input type="search" id="loc-q" aria-label="地名で探す" placeholder="地名で探す（日本の市・世界の主要都市）" autocomplete="off" aria-controls="loc-sugg" aria-expanded="false">
+        <input type="search" id="loc-q" aria-label="地名で検索" placeholder="地名で検索" autocomplete="off" aria-controls="loc-sugg" aria-expanded="false">
         <ul class="pn-sugg" id="loc-sugg" aria-label="候補" hidden></ul>
       </div>
       <button type="button" class="pn-evbtn" id="loc-here"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v4M12 18v4M2 12h4M18 12h4"></path></svg>現在地</button>
-      <button type="button" class="pn-evbtn" id="loc-mapbtn" aria-expanded="false" aria-controls="loc-mapbox"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2z"></path><path d="M9 4v14M15 6v14"></path></svg>地図から選ぶ</button>
+      <button type="button" class="pn-evbtn" id="loc-mapbtn" aria-expanded="false" aria-controls="loc-mapbox"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2z"></path><path d="M9 4v14M15 6v14"></path></svg>地図</button>
     </div>
     <p class="msg" id="loc-msg" aria-live="polite"></p>
-    <div class="pn-mapbox" id="loc-mapbox" hidden><canvas id="loc-map" width="720" height="360" role="img" aria-label="世界地図。押した地点を観測地にする"></canvas></div>
+    <div class="pn-mapbox" id="loc-mapbox" hidden><canvas id="loc-map" width="720" height="360" role="img" aria-label="観測地を選ぶ世界地図"></canvas></div>
     <div class="pn-locnow"><b id="loc-now"></b><span id="loc-coord"></span></div>
   </div>
 </div>

@@ -63,7 +63,7 @@
 .pn-vmsg{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);margin:0;color:#aab3b8;font:500 13px var(--sans)}
 
 /* 今夜の帯: 横に時刻、縦に衛星ごとの現象 */
-.pn-nb{display:block;width:100%;height:auto;overflow:visible;margin-top:24px;touch-action:pan-y;cursor:grab;user-select:none;-webkit-user-select:none}
+.pn-nb{display:block;width:100%;height:auto;overflow:visible;margin-top:8px;touch-action:pan-y;cursor:grab;user-select:none;-webkit-user-select:none}
 .pn-nb.drag{cursor:grabbing}
 .pn-nb:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .pn-nb .pn-tw{fill:color-mix(in srgb,var(--ink) 7%,transparent)}
@@ -88,6 +88,8 @@
 .pn-key i.pn-iln{height:0;border-top:2px solid currentColor;background:none}
 .pn-key i.pn-ihl{height:0;border-top:2px solid currentColor;background:none;opacity:.55}
 .pn-key i.pn-idot{width:9px;height:9px;border-radius:50%;background:var(--pn-grs)}
+.pn-key i.pn-ibody{height:12px;width:9px;border-radius:0;background:color-mix(in srgb,currentColor 25%,transparent)}
+.pn-key i.pn-imk{width:9px;height:9px;border-radius:50%;background:var(--accent)}
 .pn-key i.pn-gd{width:9px;height:9px;border-radius:50%}
 .pn-key i.pn-dotf{width:9px;height:9px;border-radius:50%;background:var(--ink-2)}
 .pn-key i.pn-doto{width:9px;height:9px;border-radius:50%;background:none;border:2px solid var(--ink-2);box-sizing:border-box}
@@ -96,11 +98,11 @@
 .pn-tchips{display:flex;flex-wrap:wrap;gap:4px;margin-top:12px}
 .pn-tchips .chip{display:inline-flex;align-items:center;gap:6px}
 .pn-tchips .chip small{font:500 11.5px var(--sans)}
-.pn-tchips .pn-night{display:inline-flex;align-items:center;min-height:28px;padding:0 9px;border-radius:4px;background:var(--ink);color:var(--surface);font:500 12.5px/1 var(--mono)}
 .pn-tstep{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-top:8px}
 .pn-tstep .seg button{min-width:52px}
 
 /* 観測地の小窓 */
+.pn-a-scope>.ph>.pha{z-index:40}
 .pn-locw{position:relative;display:inline-block;margin-right:6px}
 .pn-locbtn{font-family:var(--sans)}
 .pn-locpop{position:absolute;z-index:40;right:0;top:calc(100% + 6px);width:min(560px,calc(100vw - 32px));padding:10px;border:1px solid var(--line-2);border-radius:6px;background:var(--surface);box-shadow:0 10px 28px rgb(0 0 0 / .25);line-height:1.5;text-align:left}
@@ -124,8 +126,6 @@
 .pn-locnow{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px;margin-top:8px}
 .pn-locnow b{font-size:15px}
 .pn-locnow span{font:500 12.5px var(--mono);color:var(--ink-2)}
-
-.pn-cap{margin:2px 2px 0;font-size:12.5px;line-height:1.6;color:var(--ink-2);text-align:center}
 
 /* 図 */
 .pn-of{display:block;width:100%;height:auto;overflow:visible}
@@ -180,12 +180,15 @@
   /* 衛星の並びは高さが足りないので、離れの値と目盛りを出さない */
   .pn-strip .pn-sl small,.pn-strip .pn-scale{display:none}
   /* 横に縮む図の文字は、図の単位で大きくして読める大きさに保つ */
-  .pn-nb text{font-size:22px}
-  .pn-nb .pn-rl{font-size:15px}
-  .pn-nb .pn-bt,.pn-nb .pn-bs,.pn-nb .pn-grsb{stroke-width:11}
   .pn-wig text,.pn-wig .pn-ts,.pn-wig .pn-nowt{font-size:19px}
   .pn-sea text,.pn-sea .pn-nowt{font-size:21px}
-  #mut-aux{display:none}
-  .pn-tstep .seg{flex-wrap:wrap}
-  .pn-tstep .seg button{min-width:0;white-space:nowrap}
+  .pn-tstep .seg{width:100%}
+  .pn-tstep .seg button{flex:1;min-width:0;padding:0 2px;font-size:12px;white-space:nowrap}
+  /* 時刻と数値を詰める */
+  .pn-clock{gap:6px 12px}
+  .pn-clk{font-size:28px;min-width:0}
+  .pn-st{font-size:11px}
+  .pn-st b{font-size:12.5px}
+  .pn-a-scope .more-s{display:none}
+  .pn-a-scope .c-val .seg button{padding:0 2px;font-size:11.5px}
 }

@@ -70,7 +70,7 @@ bun run jupiter-moons [置き場]
 
 - 位置: [JPL Horizons](https://ssd.jpl.nasa.gov/horizons/) の木星中心のベクトル（ICRF）
   - 取得日: 2026-11-01
-  - 外側の 107 個は 2015-01-01 から 90 日おきに 90 時点を持つ
+  - 外側の 107 個は 2015-01-01 から 90 日おきの 90 時点
   - 内側の 4 個は円軌道を当てはめ、スクリプトが出す値を [model.ts](model.ts) の `INNER` に写す
 - 名前と群: ウィキペディア日本語版「[木星の衛星](https://ja.wikipedia.org/w/index.php?title=%E6%9C%A8%E6%98%9F%E3%81%AE%E8%A1%9B%E6%98%9F&oldid=109799938)」の一覧（版 109799938、CC BY-SA 4.0）
   - 一覧にない 14 個は仮符号を名前にし、群は軌道から決める
