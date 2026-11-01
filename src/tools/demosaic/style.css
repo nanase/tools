@@ -1,0 +1,84 @@
+/* デモザイクのページだけのスタイル（共通は src/styles/site.css）。クラス名には dm- を付ける */
+
+/* 枠の並び。スマホは 画像 → 画素の計算 → 比較 → 式。PC は上に画像、下に画素の計算と比較 */
+@media (min-width:1000px){
+  .tgrid{grid-template-columns:minmax(0,6fr) minmax(0,5fr);grid-template-areas:"img img" "calc cmp" "thy thy";align-items:start}
+  .a-img{grid-area:img}.a-calc{grid-area:calc}.a-cmp{grid-area:cmp}.a-thy{grid-area:thy}
+}
+
+/* 画像の上の操作 */
+.dm-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;margin-bottom:8px}
+.dm-grp{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.dm-lbl{font-size:12.5px;font-weight:700;color:var(--ink-2)}
+.dm-lbl[title]{text-decoration:underline dotted;text-underline-offset:3px;cursor:help}
+.dm-mrow{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-bottom:8px}
+.dm-mrow .chips{margin:0}
+.dm-sbar{display:flex;flex-wrap:wrap;align-items:center;gap:4px 14px;margin-bottom:8px;font:500 12px/1.3 var(--mono);color:var(--ink-2)}
+.dm-sbar b{color:var(--ink);font-weight:700}
+.dm-st-n{color:var(--ink-3)}
+.dm-aux{font:500 11.5px/1.4 var(--mono);color:var(--ink-3)}
+
+/* 画像と拡大鏡。画像はテーマに依らず黒い地 */
+.dm-stage{position:relative;border:1px solid var(--line);border-radius:4px;background:#000;touch-action:pan-y;user-select:none;-webkit-user-select:none}
+.dm-stage.drop{outline:2px dashed var(--focus);outline-offset:2px}
+.dm-stage:focus-visible{outline-offset:2px}
+.dm-stage canvas#cv{display:block;width:100%;height:auto;image-rendering:pixelated;cursor:crosshair;touch-action:none}
+.dm-loupe{position:absolute;left:0;top:0;z-index:2;padding:5px;border:1px solid var(--line-2);border-radius:6px;background:var(--surface);box-shadow:0 6px 18px rgb(0 0 0 / .25);pointer-events:none}
+.dm-loupe canvas{display:block;width:160px;height:160px;image-rendering:pixelated}
+@media (max-width:600px){.dm-loupe canvas{width:112px;height:112px}}
+@media (prefers-reduced-motion:no-preference){.dm-loupe{transition:left .1s,top .1s}}
+
+/* 画素の計算: 5 × 5 のフィルタの色と値 */
+.dm-calc{display:grid;gap:10px}
+.dm-calc>.seg{justify-self:start}
+.dm-cb{display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+.dm-sten{display:grid;grid-template-columns:repeat(5,40px);gap:2px;padding:2px;background:var(--line);border-radius:3px}
+.dm-c{position:relative;width:40px;height:40px;display:grid;place-items:center;color:#fff;font:600 10.5px/1 var(--mono);font-variant-numeric:tabular-nums}
+.dm-c .cn{position:absolute;top:2px;left:3px;font-size:9px;opacity:.8}
+.dm-c .cv{text-shadow:0 0 3px #000}
+.dm-c .cw{position:absolute;bottom:2px;right:2px;padding:0 2px;border-radius:2px;background:var(--surface);color:var(--accent);font-size:9.5px;font-weight:700}
+.dm-c .cw:empty{display:none}
+.dm-c.dim{opacity:.35}
+.dm-c.use{outline:2px solid var(--ink);outline-offset:-2px}
+.dm-c.cen{outline:2.5px solid var(--accent);outline-offset:-2.5px}
+.dm-cmp{width:120px;height:120px;flex:none}
+.dm-cmp .cb{stroke:var(--line-2);stroke-width:5;stroke-linecap:round}
+.dm-cmp .cb.on{stroke:var(--ink)}
+.dm-cmp .ct{fill:none;stroke:var(--accent);stroke-width:1.2;stroke-dasharray:3 2}
+.dm-cmp .cl{fill:var(--ink-3);font:600 8.5px var(--mono);text-anchor:middle}
+.dm-cmp .cl.on{fill:var(--ink)}
+.dm-ex{display:grid;gap:6px;min-width:0;flex:1 1 200px}
+.dm-ex .eq{font:500 13px/1.5 var(--mono);color:var(--ink-2)}
+.dm-ex .eq b{color:var(--ink);font-size:14px}
+.dm-sw{display:inline-block;width:18px;height:18px;vertical-align:-4px;border:1px solid var(--line-2);border-radius:3px}
+.dm-res{padding-top:6px;border-top:1px solid var(--line)}
+
+/* 手法の比較 */
+.dm-tw{overflow-x:auto}
+.dm-tbl{width:100%;border-collapse:collapse;font:500 12.5px/1.3 var(--mono);font-variant-numeric:tabular-nums}
+.dm-tbl th,.dm-tbl td{padding:7px 6px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+.dm-tbl th:first-child{text-align:left}
+.dm-tbl thead th{color:var(--ink-3);font-weight:500}
+.dm-tbl tbody tr{cursor:pointer}
+.dm-tbl tbody tr:hover{background:var(--inset)}
+.dm-tbl tr.sel{background:var(--inset)}
+.dm-tbl tr.sel th{color:var(--accent)}
+.dm-tbl td:nth-child(2){width:46%;text-align:left}
+.dm-bar-v{display:inline-block;width:0;height:8px;margin-right:6px;border-radius:2px;background:var(--ink-2);vertical-align:middle}
+.dm-tbl .hw{vertical-align:middle}
+.dm-tbl tr.sel .dm-bar-v{background:var(--ink)}
+.dm-tbl b{font-weight:700}
+
+/* 動作原理と式: ベイヤー配列の図と MHC の係数 */
+.dm-cfa{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px}
+.dm-cfa svg{width:96px;height:96px;flex:none}
+.dm-cfa .tl{flex:1 1 260px;min-width:0}
+.dm-cfa rect.fR{fill:#d23a2a}.dm-cfa rect.fG{fill:#2e9a3c}.dm-cfa rect.fB{fill:#2f55c8}
+.dm-cfa text{fill:#fff;font:700 9px var(--mono);text-anchor:middle}
+.dm-ks{display:flex;flex-wrap:wrap;gap:14px 20px;margin:8px 0}
+.dm-k{margin:0;display:grid;gap:4px;justify-items:center}
+.dm-kg{display:grid;grid-template-columns:repeat(5,28px);gap:1px;padding:1px;background:var(--line);border-radius:3px}
+.dm-kg span{display:grid;place-items:center;height:24px;background:var(--surface);font:600 11px/1 var(--mono);color:var(--ink);font-variant-numeric:tabular-nums}
+.dm-kg span.z{background:var(--inset)}
+.dm-kg span.c{box-shadow:inset 0 0 0 2px var(--accent)}
+.dm-k figcaption{font:500 11.5px var(--mono);color:var(--ink-3);max-width:150px;text-align:center}

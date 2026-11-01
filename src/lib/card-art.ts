@@ -918,6 +918,26 @@ export const ART: Record<string, Art> = {
       `<rect class="b t" x="${4 + wx * 8}" y="20" width="8" height="8"/>`
     );
   },
+  /* デモザイク: 斜めの縁の画像。右はベイヤー配列のモザイク（R の升は ch1、B の升は ch2、G の升は灰）、
+     縦の線より左は復元した明るさ。線が左から右へ進む */
+  dm(t) {
+    const CW = 14,
+      RH = 5,
+      val = (c: number, r: number): number => (c < 3.5 + 2.2 * r ? 0.95 : 0.12);
+    const wx = t ? Math.floor(mod(t, 3) / (3 / 15)) : 7;
+    let s = '';
+    for (let r = 0; r < RH; r++)
+      for (let c = 0; c < CW; c++) {
+        const v = val(c, r),
+          k = c < wx ? 'fc' : (r & 1) === 0 && (c & 1) === 0 ? 'fa' : (r & 1) === 1 && (c & 1) === 1 ? 'fb' : 'fc';
+        s += `<rect class="${k}" x="${4 + c * 8}" y="${4 + r * 8}" width="8" height="8" fill-opacity="${r1(c < wx ? v : v * 0.9)}"/>`;
+      }
+    return (
+      s +
+      `<rect class="c t" x="4" y="4" width="${CW * 8}" height="${RH * 8}"/>` +
+      (wx > 0 && wx < CW ? P('a', `M${4 + wx * 8} 2V46`) : '')
+    );
+  },
   /* オルガン音響モデル: 口と円錐の足があるパイプの正面。和音を鳴らし、鳴っている管に定在波を描く */
   og(t) {
     let body = '',
@@ -1456,6 +1476,7 @@ export const LOOP: Record<string, number> = {
   rv: 2.4,
   cv: 3,
   icv: 3,
+  dm: 3,
   th: 3,
   ff: 3,
   wd: 4,

@@ -1,0 +1,99 @@
+---
+import Collapsible from '../components/Collapsible.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/demosaic/style.css';
+import { CHART_H, CHART_W } from '../tools/demosaic/chart';
+import { PATTERNS } from '../tools/demosaic/demosaic';
+import { METHOD_L, SRCS, VIEWS } from '../tools/demosaic/params';
+import Theory from '../tools/demosaic/Theory.astro';
+
+const name = 'デモザイク';
+const OFFON = [
+  ['off', '切'],
+  ['on', '入'],
+] as const;
+---
+<SiteLayout title={name} tool={{ id: 'demosaic', name }} note={`画像は端末の中だけで処理して送信しません。${CHART_W} × ${CHART_H} 画素に縮めます。`}>
+  <PageTitle title={name}>ベイヤー配列のセンサーは画素ごとに R・G・B のどれか 1 色だけを測ります。足りない 2 色を周りの画素から補う手法を 6 つ並べ、偽色やジャギーを比べます。画像を押すとその画素の計算を下に出します。</PageTitle>
+
+  <div class="tgrid">
+    <Panel hid="hd-img" title="画像" class="a-img" fixed>
+      <div slot="aux" class="seg" id="p-view" role="group" aria-label="表示">
+        {VIEWS.map(([v, l, t]) => <button type="button" data-v={v} aria-pressed={v === 'out' ? 'true' : 'false'} title={t}>{l}</button>)}
+      </div>
+      <div class="dm-bar">
+        <div class="dm-grp"><span class="dm-lbl" id="l-src">画像</span>
+          <div class="seg" id="p-src" role="group" aria-labelledby="l-src" data-nosave>
+            {SRCS.map(([v, l, t]) => <button type="button" data-v={v} aria-pressed={v === 'chart' ? 'true' : 'false'} title={t}>{l}</button>)}
+          </div>
+          <input type="file" id="fileIn" accept="image/*" hidden>
+        </div>
+        <div class="dm-grp"><span class="dm-lbl" id="l-pat" title="左上の 2 × 2 の色の並び">並び</span>
+          <div class="seg" id="p-pat" role="group" aria-labelledby="l-pat">
+            {PATTERNS.map((p) => <button type="button" data-v={p} aria-pressed={p === 'RGGB' ? 'true' : 'false'}>{p}</button>)}
+          </div>
+        </div>
+        <div class="dm-grp"><span class="dm-lbl" id="l-lp" title="センサーの前の光学ローパスフィルタ。σ 0.6 画素のぼかし">ローパス</span>
+          <div class="seg" id="p-lp" role="group" aria-labelledby="l-lp">
+            {OFFON.map(([v, l]) => <button type="button" data-v={v} aria-pressed={v === 'off' ? 'true' : 'false'}>{l}</button>)}
+          </div>
+        </div>
+        <div class="dm-grp"><span class="dm-lbl" id="l-med" title="復元したあと R − G・B − G に 3 × 3 のメディアンを 2 回かける">色差メディアン</span>
+          <div class="seg" id="p-med" role="group" aria-labelledby="l-med">
+            {OFFON.map(([v, l]) => <button type="button" data-v={v} aria-pressed={v === 'off' ? 'true' : 'false'}>{l}</button>)}
+          </div>
+        </div>
+      </div>
+      <div class="dm-mrow"><span class="dm-lbl" id="l-m">手法</span>
+        <div class="chips" id="p-m" role="group" aria-labelledby="l-m">
+          {METHOD_L.map(([v, l, t]) => <button type="button" class="chip" data-v={v} aria-pressed={v === 'ahd' ? 'true' : 'false'} title={t}>{l}</button>)}
+        </div>
+      </div>
+      <div class="dm-sbar">
+        <span id="s-name" class="dm-st-n"></span>
+        <span>CPSNR <b id="s-ps" class="hw" data-ph="00.0 dB"></b></span>
+        <span>ΔE <b id="s-de" class="hw" data-ph="0.00"></b></span>
+      </div>
+      <div class="dm-stage" id="st" tabindex="0" role="group" aria-roledescription="画像" aria-label="画像。押した画素を拡大する。矢印キーで 1 画素ずつ動かす">
+        <canvas id="cv" width={CHART_W} height={CHART_H}></canvas>
+        <div class="dm-loupe" id="lp" aria-hidden="true"><canvas id="lc" width="160" height="160"></canvas></div>
+      </div>
+    </Panel>
+
+    <Panel hid="hd-calc" title="画素の計算" class="a-calc">
+      <span slot="aux" class="dm-aux" id="o-px"></span>
+      <div class="dm-calc" id="calc">
+        <div class="seg" id="p-tgt" role="group" aria-label="求める色" data-nosave></div>
+        <div class="dm-cb">
+          <div class="dm-sten" id="sten"></div>
+          <div id="cmpw" hidden><svg class="dm-cmp" id="cmpss" viewBox="0 0 120 120" role="img" aria-label="8 方向の勾配"></svg></div>
+          <div class="dm-ex" id="ex"></div>
+        </div>
+      </div>
+    </Panel>
+
+    <Panel hid="hd-cmp" title="手法の比較" class="a-cmp">
+      <span slot="aux" class="dm-aux">端の 4 画素を除く</span>
+      <div class="dm-tw">
+        <table class="dm-tbl" id="cmp">
+          <thead><tr><th scope="col">手法</th><th scope="col" title="R・G・B をまとめた PSNR。大きいほど元に近い">CPSNR</th><th scope="col" title="CIELAB の色差の平均">ΔE</th><th scope="col" title="色差が 10 を超えた画素の割合">ΔE&gt;10</th></tr></thead>
+          <tbody>
+            {METHOD_L.map(([v, l, t]) => <tr data-v={v} title={t}><th scope="row">{l}</th><td><span class="dm-bar-v"></span><b class="hw" data-ph="00.0 dB"></b></td><td><span class="hw" data-ph="00.00"></span></td><td><span class="hw" data-ph="00.0%"></span></td></tr>)}
+          </tbody>
+        </table>
+      </div>
+    </Panel>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools current="demosaic" />
+  <script>
+    import '../tools/demosaic/client';
+  </script>
+</SiteLayout>
