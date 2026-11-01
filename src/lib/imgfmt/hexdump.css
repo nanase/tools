@@ -1,0 +1,14 @@
+/* 16 進ダンプ（hexdump.ts）の共通の形。範囲の色（.hx-<cls>）はページの CSS で付ける */
+.hx{--hx-cols:16;--hx-row:20px;--hx-rows:16;container-type:inline-size;min-width:0}
+.hx-box{position:relative;height:calc(var(--hx-row) * var(--hx-rows));overflow:auto;border:1px solid var(--line);background:var(--surface);overscroll-behavior:contain}
+.hx-box:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.hx-body{position:relative;min-width:max-content}
+.hx-row{position:absolute;left:0;right:0;display:flex;gap:14px;height:var(--hx-row);padding:0 8px;font:500 12px/var(--hx-row) var(--mono);font-variant-numeric:tabular-nums;white-space:pre}
+.hx-off{color:var(--ink-3)}
+.hx-b{display:grid;grid-template-columns:repeat(var(--hx-cols),2.6ch);column-gap:0}
+.hx-b span{padding:0 .3ch;cursor:default}
+.hx-a{display:grid;grid-template-columns:repeat(var(--hx-cols),1ch);color:var(--ink-3)}
+.hx-a span{cursor:default}
+.hx .hx-on{outline:1.5px solid var(--ink);outline-offset:-1.5px;color:var(--ink);position:relative;z-index:1}
+/* 狭い枠では ASCII の欄を隠す */
+@container (max-width:520px){.hx-a{display:none}}
