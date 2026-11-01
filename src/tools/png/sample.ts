@@ -1,6 +1,6 @@
 /**
  * PNG のページの見本「イラスト」: 色の少ない平らな塗りと透明・半透明の所がある絵を、画素ごとの式で描く。
- * ぼかしを入れないので色は 256 色に収まり、パレットにできる。写真風の見本は JPEG のページの試験図を使う
+ * ぼかしを入れないので色は 16 色に収まり、深度 4 のパレットにできる。写真風の見本は JPEG のページの試験図を使う
  */
 export const ILLUST_W = 256;
 export const ILLUST_H = 192;
@@ -26,8 +26,8 @@ function pix(x: number, y: number): C {
     cy = y + 0.5;
   /* 半透明の青い板（右上）: 透明度の段階 */
   if (cx > 196 && cx < 244 && cy > 12 && cy < 60) {
-    const k = Math.floor((cx - 196) / 12);
-    if ((Math.floor(cx) + Math.floor(cy)) % 2 === 0 || k > 1) return [GLASS[0], GLASS[1], GLASS[2], 64 + k * 48];
+    const k = Math.floor((cx - 196) / 16);
+    if ((Math.floor(cx) + Math.floor(cy)) % 2 === 0 || k > 1) return [GLASS[0], GLASS[1], GLASS[2], 64 + k * 80];
   }
   /* 太陽と光線 */
   const dx = cx - 52,

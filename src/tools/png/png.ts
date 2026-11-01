@@ -53,7 +53,7 @@ export interface Layout {
   filteredSize: number;
 }
 
-/** 行の並べ方（7.1・8.2） */
+/** 行の並べ方（PNG 仕様 7 章・8 章） */
 export function pngLayout(
   width: number,
   height: number,

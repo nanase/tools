@@ -71,7 +71,7 @@ export function rowHtml(
 
 /** 16 進ダンプの表示。root の中身は作り直す */
 export class HexView {
-  private b = new Uint8Array(0);
+  private b: Uint8Array = new Uint8Array(0);
   private R: readonly HexRange[] = [];
   private ms = 0;
   private me = 0;

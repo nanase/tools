@@ -1,0 +1,90 @@
+---
+// 動作原理と式
+import { EQS } from './theory';
+---
+<h3>符号化の手順</h3>
+<ol class="flow" aria-label="符号化の手順">
+  <li><b>画素</b><span>色の型・深度のバイトの並び</span></li>
+  <li><b>Adam7</b><span>7 パスに並べ替え（選んだときだけ）</span></li>
+  <li><b>フィルタ</b><span>行ごとに予測との差</span></li>
+  <li><b>Deflate</b><span>LZ77 とハフマン符号</span></li>
+  <li><b>zlib</b><span>頭 2 バイトと Adler-32</span></li>
+  <li><b>チャンク</b><span>IDAT に分けて CRC-32</span></li>
+</ol>
+<p>PNG の圧縮は可逆です。フィルタは値を変えずに並びを圧縮しやすくし、Deflate が同じ並びの繰り返しと値の偏りを詰めます<a class="rf" href="#thy-r1">[1]</a>。</p>
+
+<h3>チャンク</h3>
+<p>ファイルは 8 バイトの署名 <code>89 50 4E 47 0D 0A 1A 0A</code> と、チャンクの並びです<a class="rf" href="#thy-r1">[1]</a>。</p>
+<ol class="flow" aria-label="チャンクの形">
+  <li><b>長さ</b><span>4 バイト</span></li>
+  <li><b>種類</b><span>英字 4 文字</span></li>
+  <li><b>データ</b><span>長さの分</span></li>
+  <li><b>CRC-32</b><span>種類とデータから</span></li>
+</ol>
+<ul class="tl">
+  <li><b>IHDR</b>: 幅・高さ・深度・色の型・インターレース</li>
+  <li><b>PLTE</b>: パレットの色（色の型 3）</li>
+  <li><b>tRNS</b>: パレットの不透明度か、透明にする 1 色</li>
+  <li><b>IDAT</b>: zlib のデータ。いくつに分けてもよい</li>
+  <li><b>IEND</b>: 終わり</li>
+  <li>種類の 1 文字目が小文字のチャンクは補助で、知らなければ読み飛ばしてよい</li>
+</ul>
+
+<h3>フィルタ</h3>
+<p>各行の先頭に種類 0〜4 のバイトを置き、行のバイト <math><mi>x</mi></math> を予測との差 <math><mi>r</mi></math> に置き換えます<a class="rf" href="#thy-r1">[1]</a>。</p>
+<ul class="tl">
+  <li><math><mi>a</mi></math>: 1 画素左の同じバイト（深度 8 未満は 1 バイト左）</li>
+  <li><math><mi>b</mi></math>: 上の行の同じバイト</li>
+  <li><math><mi>c</mi></math>: 左上</li>
+  <li>行の外と最初の行の上は 0。Adam7 ではパスの中の上の行</li>
+</ul>
+<div class="eqs"><Fragment set:html={EQS.filter} /><Fragment set:html={EQS.paeth} /></div>
+<p>適応は、差を符号付きのバイト <math><mi>s</mi></math> とみなした絶対値の和が最小の種類を行ごとに選びます。仕様が勧める経験則で、libpng も同じです<a class="rf" href="#thy-r1">[1]</a><a class="rf" href="#thy-r5">[5]</a>。最小の大きさになるとは限りません。</p>
+<div class="eqs"><Fragment set:html={EQS.adaptive} /></div>
+
+<h3>Deflate</h3>
+<p>フィルタ後の行の並びを、LZ77 とハフマン符号で詰めます<a class="rf" href="#thy-r2">[2]</a>。</p>
+<ul class="tl">
+  <li><b>LZ77</b>: 32,768 バイト前までに同じ並びがあれば、長さ 3〜258 と距離 1〜32,768 の一致にする。なければ文字（1 バイト）</li>
+  <li><b>記号</b>: 文字 0〜255・ブロックの終わり 256・長さの符号 257〜285 を 1 つの表、距離の符号 0〜29 を別の表で符号にする。長さと距離の端数は付加ビット</li>
+  <li><b>ブロック</b>: stored（そのまま）・固定の表・動的な表（表そのものを頭に書く）の 3 種。符号の長さは 15 ビットまで</li>
+  <li><b>ビットの順</b>: バイトの下位ビットから詰める。ハフマン符号だけは符号の先頭のビットから詰める</li>
+</ul>
+<p>一致の探し方と圧縮レベルは zlib の deflate.c の表にならいます。レベル 1〜3 はすぐに一致を採り、4 以上は次の位置の一致と比べてから決めます（遅延一致）<a class="rf" href="#thy-r4">[4]</a>。復号では、符号長の表と符号を puff.c と同じ水準で検査します<a class="rf" href="#thy-r6">[6]</a>。</p>
+
+<h3>Adam7</h3>
+<p>8×8 の区画の画素を 7 つのパスに分け、粗い格子から送ります<a class="rf" href="#thy-r1">[1]</a>。読み込みの途中でも全体の荒い絵が出せる代わりに、隣の画素が離れるのでフィルタと LZ77 が効きにくくなります。</p>
+<div class="segw"><table class="ptab7">
+  <thead><tr><th scope="col">パス</th><th scope="col">1</th><th scope="col">2</th><th scope="col">3</th><th scope="col">4</th><th scope="col">5</th><th scope="col">6</th><th scope="col">7</th></tr></thead>
+  <tbody>
+    <tr><th scope="row">始まり (x, y)</th><td>0, 0</td><td>4, 0</td><td>0, 4</td><td>2, 0</td><td>0, 2</td><td>1, 0</td><td>0, 1</td></tr>
+    <tr><th scope="row">間隔 (x, y)</th><td>8, 8</td><td>8, 8</td><td>4, 8</td><td>4, 4</td><td>2, 4</td><td>2, 2</td><td>1, 2</td></tr>
+  </tbody>
+</table></div>
+
+<h3>CRC-32 と Adler-32</h3>
+<ul class="tl">
+  <li><b>CRC-32</b>: チャンクごとに種類とデータから求める。生成多項式は次の式で、初めの値とでき上がりをすべて反転する<a class="rf" href="#thy-r1">[1]</a></li>
+  <li><b>Adler-32</b>: zlib の末尾に、戻したデータ <math><msub><mi>D</mi><mi>i</mi></msub></math> から求めて書く<a class="rf" href="#thy-r3">[3]</a></li>
+</ul>
+<div class="eqs"><Fragment set:html={EQS.crc} /><Fragment set:html={EQS.adler} /></div>
+
+<h3>出典</h3>
+<ol class="refs">
+  <li id="thy-r1"><span class="rf-for">署名・チャンク・色の型・フィルタ（9 章）・適応の選び方（12.7）・Adam7（8.1）・CRC-32（5.5・付録 D）</span><span class="rf-src">W3C, <a href="https://www.w3.org/TR/png-3/" target="_blank" rel="noopener">Portable Network Graphics (PNG) Specification (Third Edition)</a>, W3C Recommendation, 2025-06-24</span></li>
+  <li id="thy-r2"><span class="rf-for">Deflate の LZ77・ハフマン符号・ブロック・ビットの順</span><span class="rf-src">P. Deutsch, <a href="https://www.rfc-editor.org/rfc/rfc1951" target="_blank" rel="noopener">RFC 1951: DEFLATE Compressed Data Format Specification version 1.3</a>, 1996</span></li>
+  <li id="thy-r3"><span class="rf-for">zlib の頭と Adler-32</span><span class="rf-src">P. Deutsch, J.-L. Gailly, <a href="https://www.rfc-editor.org/rfc/rfc1950" target="_blank" rel="noopener">RFC 1950: ZLIB Compressed Data Format Specification version 3.3</a>, 1996</span></li>
+  <li id="thy-r4"><span class="rf-for">圧縮レベルの表（configuration_table）、ハッシュの連鎖、遅延一致</span><span class="rf-src">J.-L. Gailly, M. Adler, <a href="https://zlib.net/" target="_blank" rel="noopener">zlib</a> 1.3.1, deflate.c</span></li>
+  <li id="thy-r5"><span class="rf-for">適応のフィルタの選び方</span><span class="rf-src"><a href="http://www.libpng.org/pub/png/libpng.html" target="_blank" rel="noopener">libpng</a>, pngwutil.c の png_write_find_filter</span></li>
+  <li id="thy-r6"><span class="rf-for">復号の検査の水準</span><span class="rf-src">M. Adler, puff.c（<a href="https://github.com/madler/zlib/tree/develop/contrib/puff" target="_blank" rel="noopener">zlib の contrib/puff</a>）</span></li>
+</ol>
+
+<h3>このツールで決めたこと</h3>
+<ul class="tl">
+  <li>Deflate のブロックは記号 16,384 個ごとに区切り、stored・固定・動的のうち最も短いものを使う</li>
+  <li>残差の画像は 128 に差の 2 倍を足した灰色（RGB はチャンネルごと）。None は元のバイトのまま</li>
+  <li>1 画素あたりのビット数は、記号のビットを記号が作るバイトに等分して配る</li>
+  <li>グレーは 0.299R + 0.587G + 0.114B を丸めた値</li>
+  <li>ブラウザの zlib は CompressionStream の deflate で、同じフィルタ後の並びを圧縮した大きさ</li>
+  <li>符号化し直すときは長い辺を 1,024 画素まで、元のファイルのまま調べるのは 1,048,576 画素まで</li>
+</ul>

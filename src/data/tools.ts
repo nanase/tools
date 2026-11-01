@@ -274,12 +274,21 @@ export const TOOLS: Tool[] = [
     k: 'pcb 共振 コンデンサ スパイラル うずまき アンテナ インダクタンス nfc rfid spiral coil antenna inductor',
   },
   {
+    id: 'png',
+    c: '画像形式',
+    t: 'PNG',
+    d: 'PNG の行ごとのフィルタと Deflate の圧縮を、画像の上で 1 行ずつ追います。',
+    ic: 'png',
+    r: ['jpeg', 'image-convolution', 'qr-code', 'fft'],
+    k: 'png portable network graphics 画像 可逆圧縮 lossless compression deflate zlib lz77 ハフマン huffman フィルタ filter none sub up average paeth 予測 prediction adam7 インターレース interlace チャンク chunk ihdr plte trns idat iend crc-32 crc32 adler-32 パレット palette 透過 alpha 16進ダンプ hex dump',
+  },
+  {
     id: 'jpeg',
     c: '画像形式',
     t: 'JPEG',
     d: 'JPEG に符号化する過程を順に解説し、圧縮の結果と画質を比べます。',
     ic: 'jp',
-    r: ['wavelet-denoise', 'image-convolution', 'demosaic', 'fft'],
+    r: ['png', 'wavelet-denoise', 'image-convolution', 'demosaic'],
     k: 'jpeg jpg 画像 圧縮 image compression dct 離散コサイン変換 量子化 quantization ハフマン huffman ジグザグ zigzag ycbcr 色差 間引き chroma subsampling 4:2:0 ブロックノイズ psnr',
   },
   {

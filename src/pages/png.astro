@@ -1,0 +1,136 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../lib/imgfmt/hexdump.css';
+import '../tools/png/style.css';
+import { COLOR_TYPES, FILTERS, INTERLACES, LAYERS, LEVELS, MAX_SIDE, SRCS, TARGETS } from '../tools/png/params';
+import Theory from '../tools/png/Theory.astro';
+
+const name = 'PNG';
+const CMP = ['None', 'Sub', 'Up', 'Average', 'Paeth', '適応'];
+---
+<SiteLayout title={name} tool={{ id: 'png', name }} note="画像はこの端末の中だけで処理し、送信しません。符号化と復号は、このツールの実装によるものです。">
+  <PageTitle title={name}>PNG の行ごとのフィルタと Deflate の圧縮を、画像の上で 1 行ずつ追います。</PageTitle>
+
+  <div class="tgrid pgrid">
+    <div class="col c1">
+      <Panel hid="hd-in" title="入力" class="a-in">
+        <div slot="aux" class="seg" id="p-src" role="group" aria-label="画像" data-nosave>
+          {SRCS.map(([v, l, t]) => <button type="button" data-v={v} aria-pressed={v === 'test' ? 'true' : 'false'} title={t}>{l}</button>)}
+        </div>
+        <div class="ptab" id="in-tab" data-src="test">
+          <div class="prow" id="p-file">
+            <div class="c-sym" aria-hidden="true"></div>
+            <div class="c-name"><span class="pn">ファイル</span><p class="desc tip" role="tooltip" hidden>{`PNG・JPEG・WebP など。この枠か画像の枠へ落としても読み込める。符号化し直すときは長い辺を ${MAX_SIDE} 画素までに縮める`}</p></div>
+            <div class="c-val"><div class="seg"><button type="button" id="fileBtn">ファイルを選ぶ</button></div><input type="file" id="fileIn" accept="image/*" hidden></div>
+            <div class="c-sub"><p class="msg" id="m-file" aria-live="polite">まだ選んでいません</p></div>
+          </div>
+          <ChoiceRow k="tg" name="対象" choices={TARGETS} value="file" class="r-tg" />
+          <ChoiceRow k="ct" name="色の型" choices={COLOR_TYPES} value="6" offIn />
+          <ChoiceRow k="fi" name="フィルタ" choices={FILTERS} value="a" offIn />
+          <ChoiceRow k="lv" name="圧縮レベル" choices={LEVELS} value="6" offIn />
+          <ChoiceRow k="il" name="インターレース" choices={INTERLACES} value="0" offIn />
+        </div>
+      </Panel>
+
+      <Panel hid="hd-out" title="計算結果" class="a-out">
+        <div slot="aux" class="seg"><button type="button" id="saveBtn" title="符号化した PNG ファイルを保存する" disabled>保存</button></div>
+        <dl class="metrics c3">
+          <div class="m m-main"><dt>ファイルの大きさ</dt><dd><span id="o-size">—</span><span class="m-sub" id="o-sizes"></span></dd></div>
+          <div class="m"><dt>1 画素あたり</dt><dd><span id="o-bpp">—</span><span class="m-sub" id="o-bpps"></span></dd></div>
+          <div class="m"><dt>圧縮率</dt><dd><span id="o-ratio">—</span><span class="m-sub" id="o-ratios"></span></dd></div>
+          <div class="m"><dt>ブラウザの zlib</dt><dd><span id="o-zl">—</span><span class="m-sub" id="o-zls"></span></dd></div>
+          <div class="m"><dt>文字</dt><dd><span id="o-lit">—</span><span class="m-sub" id="o-lits"></span></dd></div>
+          <div class="m"><dt>一致</dt><dd><span id="o-mat">—</span><span class="m-sub" id="o-mats"></span></dd></div>
+          <div class="m"><dt>CRC-32 · Adler-32</dt><dd><span id="o-crc">—</span><span class="m-sub" id="o-crcs"></span></dd></div>
+        </dl>
+      </Panel>
+    </div>
+
+    <div class="col c2">
+      <Panel hid="hd-img" title="画像" class="a-img" fixed>
+        <div slot="aux" class="seg" id="p-lay" role="group" aria-label="表示">
+          {LAYERS.map(([v, l, t]) => <button type="button" data-v={v} aria-pressed={v === 'o' ? 'true' : 'false'} title={t}>{l}</button>)}
+        </div>
+        <div class="sbar">
+          <span class="stag">SIZE <b id="iv-sz">—</b></span>
+          <span class="stag">ROW <b class="hw" id="iv-row" data-ph="1023">—</b></span>
+          <span class="stag"><span class="hw" id="iv-lg" data-ph="Average の残差 · 灰色が 0"></span></span>
+          <span class="stag iv-st" id="iv-st" aria-live="polite"></span>
+        </div>
+        <div class="eiv">
+          <div class="fband" aria-hidden="true"><canvas id="cv-band" width="1" height="1"></canvas></div>
+          <div class="iv" id="iv" tabindex="0" role="group" aria-roledescription="画像" aria-label="画像。押した所の行を選ぶ。上下の矢印キーで行、左右で位置を動かす">
+            <canvas id="cv-img" width="512" height="384"></canvas>
+            <canvas class="ovc" id="cv-ov" width="1024" height="768"></canvas>
+          </div>
+        </div>
+        <div class="sbar"><span class="leg" id="iv-blg"></span></div>
+        <div class="sbar rdbar" data-ph="(1023, 1023) · パス 7 · Average"><span class="rd" id="iv-rd"></span></div>
+      </Panel>
+    </div>
+
+    <Panel hid="hd-cmp" title="フィルタの比較" class="a-cmp">
+      <div slot="aux" class="seg" id="p-cmpv" role="group" aria-label="表示">
+        <button type="button" data-v="r" aria-pressed="true" title="フィルタ後のバイト">残差</button><button type="button" data-v="o" aria-pressed="false" title="フィルタの帯だけ">元</button>
+      </div>
+      <div class="sbar"><span class="stag" id="cmp-lv"></span><span class="stag" id="cmp-st"></span></div>
+      <div class="egrid" id="cmp">
+        {CMP.map((n, f) => <figure data-f={f} tabindex="0" role="button" aria-label={`${n} の残差。押すとこのフィルタで符号化する`}><canvas width="1" height="1"></canvas><figcaption><span>{n}</span><b>—</b><i><u></u></i></figcaption></figure>)}
+      </div>
+    </Panel>
+
+    <Panel hid="hd-row" title="行の符号化" class="a-row">
+      <div slot="aux" class="seg" id="ladNav"><button type="button" data-d="-1" title="左へ">‹</button><button type="button" data-d="1" title="右へ">›</button></div>
+      <div class="sbar">
+        <span class="stag">ROW <b class="hw" id="ld-row" data-ph="1023">—</b></span>
+        <span class="stag">X <b class="hw" id="ld-x" data-ph="1023–1023">—</b></span>
+        <span class="stag">FILTER <b class="hw" id="ld-f" data-ph="Average">—</b></span>
+        <span class="stag">BITS <b class="hw" id="ld-bits" data-ph="999 / 256">—</b></span>
+      </div>
+      <div class="ladw"><div class="lad" id="lad"></div></div>
+      <div class="ldet" id="ldet"></div>
+    </Panel>
+
+    <Panel hid="hd-huf" title="ハフマン表" class="a-huf">
+      <div slot="aux" class="seg" id="p-hsw" role="group" aria-label="表">
+        <button type="button" data-v="l" aria-pressed="true" title="文字・終わり・一致の長さの符号">文字・長さ</button><button type="button" data-v="d" aria-pressed="false" title="一致の距離の符号">距離</button>
+      </div>
+      <div class="sbar">
+        <span class="stag blk"><button type="button" class="nb" id="blkPrev" aria-label="前のブロック">‹</button>BLOCK <b class="hw" id="hf-blk" data-ph="999 / 999">—</b><button type="button" class="nb" id="blkNext" aria-label="次のブロック">›</button></span>
+        <span class="stag"><b class="hw" id="hf-type" data-ph="dynamic · 99,999 ビット">—</b></span>
+        <span class="stag" id="hf-lg"></span>
+      </div>
+      <svg class="hufg" id="huf" viewBox="0 0 1000 270" role="img" aria-label="記号ごとの符号の長さ"></svg>
+      <div class="sbar rdbar" data-ph="長さの符号 285（258） · 123,456 回 · 15 ビット 111111111111111"><span class="rd" id="hf-rd"></span></div>
+    </Panel>
+
+    <Collapsible hid="hd-file" title="ファイルの構成" class="a-file">
+      <div class="strip" id="strip" role="img" aria-label="ファイルの中のチャンクの並び"></div>
+      <div class="segw">
+        <table class="segs" id="segs">
+          <thead><tr><th scope="col">チャンク</th><th scope="col">位置</th><th scope="col">長さ</th><th scope="col">内容</th><th scope="col">CRC-32</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="fmap">
+        <div id="hx"></div>
+        <div class="fsym" id="fsym"></div>
+      </div>
+    </Collapsible>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools current="png" />
+  <div class="toast" id="toast" role="status" aria-live="polite" data-off></div>
+  <script>
+    import '../tools/png/client';
+  </script>
+</SiteLayout>
