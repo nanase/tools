@@ -694,7 +694,8 @@ let keyJob = 0;
 function drawKeys(): void {
   const n = ensureNight();
   const key = `${n.key}`;
-  if (keyKey !== key) {
+  /* 再生中は探さず、止めたときに探す */
+  if (keyKey !== key && !playing) {
     keyKey = key;
     nextTwo = undefined;
     nextMut = undefined;
@@ -809,6 +810,7 @@ function stop(): void {
   $('#play').setAttribute('aria-pressed', 'false');
   $('#playLed').classList.remove('on');
   txt('#playT', '再生');
+  later(true);
 }
 $('#play').addEventListener('click', () => {
   if (playing) return stop();
@@ -1047,15 +1049,20 @@ function drawTop(): void {
 
 /* ---------- 衛星の動き ---------- */
 let wigKey = '';
+let wigBase = '';
 let wigWin = { t0: 0, t1: 1 };
 const wig = $<SVGSVGElement>('#wig');
 function drawWiggle(): void {
   const days = Number(wr$.value);
   const n = ensureNight();
   const c0 = n.n0 + 0.5;
-  const key = `${c0}|${days}|${tz$.value}|${n.key}`;
-  if (key !== wigKey) {
+  const base = `${days}|${tz$.value}|${picker.place.lat}|${picker.place.lon}`;
+  const key = `${c0}|${base}`;
+  /* 再生中は、今の時刻が窓の中央から離れるまで作り直さない */
+  const keep = playing && base === wigBase && Math.abs(jd - (wigWin.t0 + wigWin.t1) / 2) < days * 0.6;
+  if (key !== wigKey && !keep) {
     wigKey = key;
+    wigBase = base;
     const t0 = c0 - days,
       t1 = c0 + days;
     wigWin = { t0, t1 };
