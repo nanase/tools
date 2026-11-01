@@ -1,0 +1,157 @@
+/* PNG のページだけのスタイル（共通は src/styles/site.css、16 進ダンプは lib/imgfmt/hexdump.css） */
+
+/* 枠の並び。スマホは 入力 → 画像 → 計算結果 → フィルタの比較 → 行の符号化 → ハフマン表 → ファイルの構成 → 式。
+   PC は左の列に 入力・計算結果、右の列に 画像、その下に全幅で残り */
+.pgrid .a-in{order:1}.pgrid .a-img{order:2}.pgrid .a-out{order:3}.pgrid .a-cmp{order:4}.pgrid .a-row{order:5}.pgrid .a-huf{order:6}.pgrid .a-file{order:7}.pgrid .a-thy{order:8}
+@media (min-width:1000px){
+  .pgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr);align-items:start}
+  .pgrid>.pnl{grid-column:1/-1}
+}
+
+/* 色: フィルタ 5 種と Deflate の記号（このページだけの色。信号色・LED の色とは別） */
+.pgrid{--f0:#8f979e;--f1:#d6604d;--f2:#4393c3;--f3:#5aae61;--f4:#9970ab;--lit:#c9a227;--mat:#4393c3}
+.leg{display:inline-flex;flex-wrap:wrap;align-items:center;gap:2px 0;font:500 12px/1.4 var(--mono);color:var(--ink-2)}
+.leg i{display:inline-block;width:10px;height:10px;margin:0 4px 0 10px;border-radius:2px}
+.leg i:first-child{margin-left:6px}
+
+/* 枠の右上のボタン */
+.seg button:disabled{opacity:.45;cursor:default;color:var(--ink-3)}
+
+/* 入力: ファイルの行はファイルのときだけ、対象の行は PNG ファイルのときだけ */
+#in-tab:not([data-src="file"]) #p-file,#in-tab:not([data-src="smp"]) #p-smp,#in-tab:not([data-png]) .r-tg{display:none}
+.a-in.drop,.a-img.drop{border-color:var(--focus);box-shadow:inset 0 0 0 1px var(--focus)}
+.m-sub{display:block;margin-top:2px;font:500 12px/1.5 var(--mono);color:var(--ink-3);letter-spacing:0}
+.ok{color:var(--ink)}
+.ng{color:var(--warn)}
+
+/* ---------- 画像 ---------- */
+/* 画像の左に行ごとのフィルタの帯。透明な所は市松で見せる */
+.eiv{display:grid;grid-template-columns:10px minmax(0,1fr);gap:4px;align-items:stretch;max-width:min(100%,calc(var(--ivh,720px) * var(--ar,1.333) + 14px));margin:0 auto}
+.fband{position:relative;border:1px solid var(--line)}
+.fband canvas{position:absolute;inset:0;display:block;width:100%;height:100%;image-rendering:pixelated}
+.iv{position:relative;width:100%;border:1px solid var(--line);background:var(--inset) repeating-conic-gradient(var(--line) 0 25%,transparent 0 50%) 0 0/16px 16px;line-height:0;cursor:crosshair;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.iv:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.iv canvas{display:block;width:100%;height:auto;image-rendering:pixelated}
+.iv .ovc{position:absolute;inset:0;width:100%;height:100%;image-rendering:auto;pointer-events:none}
+.iv.busy canvas{opacity:.75;transition:opacity .2s .15s}
+.iv-st{margin-left:auto;color:var(--ink-3)}
+
+/* ---------- フィルタの比較 ---------- */
+.egrid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}
+@media (max-width:760px){.egrid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.egrid figure{margin:0;min-width:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.egrid figure:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
+.egrid canvas{display:block;width:100%;height:auto;border:1px solid var(--line);background:var(--inset);image-rendering:pixelated}
+.egrid figure[aria-pressed="true"] canvas{outline:2px solid var(--ink);outline-offset:1px}
+.egrid figcaption{display:grid;grid-template-columns:auto 1fr;gap:2px 6px;margin-top:5px;font:500 12px/1.3 var(--mono);color:var(--ink-2)}
+.egrid figcaption b{text-align:right;color:var(--ink);font-variant-numeric:tabular-nums}
+.egrid figcaption i{grid-column:1/-1;display:block;height:4px;border-radius:2px;background:var(--line)}
+.egrid figcaption i u{display:block;width:0;height:100%;border-radius:2px;background:var(--ink-2)}
+.egrid .u{margin-left:.2em;color:var(--ink-2)}
+.egrid figure.best figcaption>span::after{content:" 最小";color:var(--ink-3)}
+
+/* ---------- 行の符号化: バイトの位置をそろえた段 ---------- */
+.ladw{overflow-x:auto;container-type:inline-size}
+.lad{--n:32;display:grid;grid-template-columns:5.4em repeat(var(--n),minmax(1.9em,1fr)) 8.5em;gap:1px;min-width:min-content;font:500 11.5px/1 var(--mono);font-variant-numeric:tabular-nums}
+.lad .ln{display:flex;align-items:center;gap:5px;padding-right:6px;font:500 12px/1.2 var(--sans);color:var(--ink-2);white-space:nowrap}
+.lad .ln i{flex:none;width:9px;height:9px;border-radius:2px}
+.lad .ln.on{color:var(--ink);font-weight:700}
+.lad .hd{grid-column:1/-1;display:flex;align-items:baseline;gap:8px;margin-top:8px;padding-bottom:3px;border-bottom:1px solid var(--line);font:700 12.5px/1.3 var(--sans)}
+.lad .hd span{font-weight:400;color:var(--ink-3)}
+.lad .c{position:relative;display:grid;place-items:center;height:24px;background:var(--surface);color:var(--ink-2);cursor:default;user-select:none;-webkit-user-select:none}
+.lad .c.z{color:var(--ink-3)}
+.lad .c.hv{z-index:1;box-shadow:inset 0 0 0 2px var(--ink);color:var(--ink)}
+.lad .c.nb{box-shadow:inset 0 0 0 1.5px var(--ink-3)}
+.lad .c.nb::after{content:attr(data-nb);position:absolute;top:1px;right:2px;font-size:8.5px;line-height:1;color:var(--ink-3)}
+.lad .px{display:flex;align-items:stretch;height:22px;padding:0;border:1px solid var(--line);background:var(--inset) repeating-conic-gradient(var(--line) 0 25%,transparent 0 50%) 0 0/8px 8px}
+.lad .px span{flex:1}
+.lad .ch{height:14px;font-size:9.5px;color:var(--ink-3);background:none}
+.lad .sum{display:flex;align-items:center;gap:6px;padding-left:8px;font-size:11.5px;color:var(--ink-2);white-space:nowrap}
+.lad .sum u{flex:none;display:block;height:6px;border-radius:2px;background:var(--line-2)}
+.lad .sum.on{color:var(--ink);font-weight:700}
+.lad .sum.on u{background:var(--ink)}
+.lad .c.on{background:color-mix(in srgb,var(--ink) 9%,var(--surface))}
+.lad .tk{display:flex;align-items:center;justify-content:center;gap:4px;height:26px;padding:0 4px;overflow:hidden;white-space:nowrap;border-radius:2px;color:var(--ink);cursor:default}
+.lad .tk.l{background:color-mix(in srgb,var(--lit) 26%,transparent)}
+.lad .tk.m,.lad .tk.s{justify-content:flex-start;background:color-mix(in srgb,var(--mat) 28%,transparent)}
+.lad .tk.s{background:color-mix(in srgb,var(--ink-3) 22%,transparent)}
+.lad .tk.cl{border-top-left-radius:0;border-bottom-left-radius:0}
+.lad .tk.cr{border-top-right-radius:0;border-bottom-right-radius:0}
+.lad .tk.hv{box-shadow:inset 0 0 0 2px var(--ink)}
+.lad .bt{display:grid;place-items:center;height:20px;font-size:10.5px;color:var(--ink-2);border-top:2px solid var(--line-2)}
+.lad .bt.l{border-top-color:var(--lit)}
+.lad .bt.m{border-top-color:var(--mat)}
+.ldet{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(320px,100%),1fr));gap:12px 24px;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.ldet h3{margin-bottom:6px;font-size:13px}
+.kv{display:grid;grid-template-columns:7.5em minmax(0,1fr) 6.5em;gap:2px 14px;margin:0;font:500 12.5px/1.65 var(--mono);font-variant-numeric:tabular-nums}
+.kv dt{color:var(--ink-3)}
+.kv dd{margin:0;min-width:0;overflow-wrap:anywhere}
+.kv dd.r{text-align:right}
+.kv .on{color:var(--ink);font-weight:700}
+.eq{margin-bottom:4px;font:500 12.5px/1.7 var(--mono);color:var(--ink-2)}
+.eq b{color:var(--ink)}
+
+/* ---------- ハフマン表 ---------- */
+.blk{display:inline-flex;align-items:center;gap:4px}
+.blk .nb{width:22px;height:20px;padding:0;border:1px solid var(--line);border-radius:3px;background:none;color:var(--ink-2);font:inherit;cursor:pointer}
+.blk .nb:disabled{opacity:.4;cursor:default}
+.hufg{display:block;width:100%;height:auto;font:500 14px var(--mono);user-select:none;-webkit-user-select:none}
+.hufg .gl{stroke:var(--line);stroke-width:1}
+.hufg .ax{stroke:var(--ink-3);stroke-width:1}
+.hufg .tl{fill:var(--ink-3)}
+.hufg .tl.b{fill:var(--ink-2)}
+.hufg .no{fill:var(--line)}
+.hufg rect.hv{stroke:var(--ink);stroke-width:2}
+.hufg .msg{fill:var(--ink-3);font-size:18px}
+
+/* ---------- ファイルの構成 ---------- */
+.strip{display:flex;height:26px;margin-bottom:12px;border:1px solid var(--line);overflow:hidden}
+.strip span{display:grid;place-items:center;min-width:3px;font:700 11px/1 var(--mono);color:#fff;overflow:hidden;white-space:nowrap;border-right:1px solid var(--surface)}
+.segw{overflow-x:auto;margin-bottom:14px}
+.segs{width:100%;border-collapse:collapse;font:500 12.5px/1.4 var(--mono);font-variant-numeric:tabular-nums}
+.segs th{padding:7px 8px 5px;font:700 11.5px/1.3 var(--sans);color:var(--ink-3);text-align:right;white-space:nowrap}
+.segs td{padding:4px 8px;border-top:1px solid var(--line);text-align:right;white-space:nowrap}
+.segs th:nth-child(1),.segs td:nth-child(1),.segs th:nth-child(4),.segs td:nth-child(4){text-align:left}
+.segs td:nth-child(1){font-weight:700}
+.segs td:nth-child(4){font-family:var(--sans);white-space:normal;min-width:16em;color:var(--ink-2)}
+.segs tr.hv td{background:var(--inset)}
+.fmap{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;align-items:start}
+@media (min-width:1000px){.fmap{grid-template-columns:minmax(0,3fr) minmax(0,2fr)}}
+.fsym h3{margin-bottom:6px;font-size:13px}
+.fsym .kv{grid-template-columns:7em minmax(0,1fr)}
+.bitrow{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 10px;font:500 13px/1 var(--mono)}
+.bitrow .by{display:grid;grid-template-columns:repeat(8,1.45em);border:1px solid var(--line)}
+.bitrow .by span{display:grid;place-items:center;height:1.9em;color:var(--ink-3)}
+.bitrow .by span.cd{background:var(--ink);color:var(--surface);font-weight:700}
+.bitrow .by span.ex{background:var(--inset);color:var(--ink);box-shadow:inset 0 -2px 0 var(--mat)}
+.bitrow small{display:block;margin-top:3px;font-size:10.5px;color:var(--ink-3);text-align:center}
+/* 16 進ダンプの範囲の色 */
+.hx-sig{background:color-mix(in srgb,var(--f0) 35%,transparent)}
+.hx-len{color:var(--ink-3)}
+.hx-typ{font-weight:700;color:var(--ink)}
+.hx-dat{background:color-mix(in srgb,var(--f4) 20%,transparent)}
+.hx-crc{background:color-mix(in srgb,var(--f1) 30%,transparent)}
+.hx-zh,.hx-bh{background:color-mix(in srgb,var(--f4) 45%,transparent)}
+.hx-lit{background:color-mix(in srgb,var(--lit) 24%,transparent)}
+.hx-mat{background:color-mix(in srgb,var(--mat) 28%,transparent)}
+.hx-raw{background:color-mix(in srgb,var(--ink-3) 22%,transparent)}
+.hx-ad{background:color-mix(in srgb,var(--f1) 30%,transparent)}
+
+/* 知らせ */
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:40;transform:translateX(-50%);max-width:calc(100vw - 32px);padding:9px 14px;border-radius:var(--r);background:var(--ink);color:var(--surface);font-size:13.5px;transition:opacity .2s}
+.toast[data-off]{opacity:0;pointer-events:none}
+
+/* 動作原理と式: Adam7 のパスの表 */
+.ptab7{border-collapse:collapse;font:500 12.5px/1.4 var(--mono);font-variant-numeric:tabular-nums}
+.ptab7 th,.ptab7 td{padding:4px 10px;border-top:1px solid var(--line);text-align:center;white-space:nowrap}
+.ptab7 th[scope="row"]{font:500 12px/1.4 var(--sans);color:var(--ink-2);text-align:left}
+.segs .pal{display:inline-flex;flex-wrap:wrap;gap:1px;vertical-align:middle}
+.segs .pal i{display:inline-block;width:9px;height:9px;border:1px solid var(--line)}
+.fsym{min-height:16em}
+
+/* 狭い画面: 選択肢の多い行の区切りボタンを詰め、行の符号化の説明の列を狭める */
+@media (max-width:520px){
+  #p-lay button{padding:0 6px}
+  #p-fi.segr,#p-ct.segr,#p-smp.segr{grid-template-columns:var(--sw) minmax(0,1fr) 24px;grid-template-areas:"sym name rst" ". val val" ". sub sub";row-gap:4px;padding-bottom:8px}
+  .kv{grid-template-columns:5.5em minmax(0,1fr) auto;gap:2px 8px;font-size:12px}
+}

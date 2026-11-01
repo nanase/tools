@@ -938,6 +938,40 @@ export const ART: Record<string, Art> = {
       (wx > 0 && wx < CW ? P('a', `M${4 + wx * 8} 2V46`) : '')
     );
   },
+  /*
+   * PNG: 4 行のバイトを Deflate の記号に分けた帯。文字は黄、一致は青。1 行目は文字だけで、2 行目からは
+   * 1 行上の同じ所を写す一致が増える。記号が左上から順に現れ、最後に現れた一致から写し元へ弧を描く
+   */
+  png(t) {
+    const ROWS = ['l28', 'l2 m10 l3 m13', 'l1 m27', 'l4 m8 l2 m14'],
+      tot = 112,
+      shown = t ? (mod(t, 3) / 2.4) * tot : tot;
+    let lit = '',
+      mat = '',
+      arc = '',
+      k = 0;
+    ROWS.forEach((row, r) => {
+      const y = 6 + r * 10;
+      let u = 0;
+      for (const tk of row.split(' ')) {
+        const n = Number(tk.slice(1));
+        if (tk[0] === 'l')
+          for (let i = 0; i < n; i++, u++, k++) {
+            if (k * 4 < shown) lit += `M${4 + u * 4} ${y}h3v6h-3Z`;
+          }
+        else {
+          if (k * 4 < shown) {
+            const x = 4 + u * 4;
+            mat += `M${x} ${y}h${n * 4 - 1}v6h${1 - n * 4}Z`;
+            arc = `M${x + 1.5} ${y}Q${x - 5} ${y - 2} ${x + 1.5} ${y - 4}`;
+          }
+          u += n;
+          k += n;
+        }
+      }
+    });
+    return P('fa', lit) + (mat ? P('fb', mat) : '') + (arc ? P('a', arc) : '');
+  },
   /* オルガン音響モデル: 口と円錐の足があるパイプの正面。和音を鳴らし、鳴っている管に定在波を描く */
   og(t) {
     let body = '',
@@ -1461,6 +1495,7 @@ export const LOOP: Record<string, number> = {
   tp: 4.8,
   pc: 16 / 30,
   jp: 3,
+  png: 3,
   og: 3,
   en: 720 / 400,
   ln: TAU / 1.4,
