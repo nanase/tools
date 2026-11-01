@@ -1,0 +1,116 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import More from '../components/More.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import PlanetSite from '../components/PlanetSite.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../lib/planet/planet.css';
+import { SPEEDS } from '../tools/jupiter/params';
+import Theory from '../tools/jupiter/Theory.astro';
+
+const name = '木星';
+---
+<SiteLayout title={name} tool={{ id: 'jupiter', name }} note="模様: NASA/ESA Hubble OPAL（PI: Simon, GO13937, STScI, DOI 10.17909/T9G593, CC BY 4.0）を加工 · ガリレオ衛星: Astronomy Engine（MIT, Copyright (c) 2019-2025 Don Cross）· ほかの衛星: JPL Horizons · 名前と群: ウィキペディア日本語版（CC BY-SA 4.0）· 大赤斑: JUPOS, BAA, OPAL">
+  <PageTitle title={name}>選んだ日時と観測地から見た木星と衛星を描きます。</PageTitle>
+
+  <div class="tgrid pn-grid">
+
+    <Panel hid="hd-jup" title="東京から見た木星" class="pn-a-scope" fixed>
+      <PlanetSite slot="aux" />
+      <div slot="aux" class="seg" id="p-or" role="group" aria-label="画面の向き"><button type="button" data-v="zenith" aria-pressed="false" title="空で見える向き">天頂<span class="pn-w">が上</span></button><button type="button" data-v="planet" aria-pressed="true">木星の北<span class="pn-w">が上</span></button><button type="button" data-v="sky" aria-pressed="false" title="望遠鏡の写真の向き">天の北<span class="pn-w">が上</span></button></div>
+      <div slot="aux" class="seg" id="p-play" data-nosave><button type="button" id="play" aria-pressed="false"><span class="led" id="playLed" aria-hidden="true"></span><span id="playT">再生</span></button></div>
+      <div class="pn-clock">
+        <button type="button" class="pn-nowbtn" id="nowbtn" aria-pressed="true" title="現在の日時へ"><span class="led on" id="nowLed" aria-hidden="true"></span>現在</button>
+        <span class="pn-clk"><span id="clk">—</span><small id="clkz">JST</small></span>
+        <span class="pn-st"><span class="pn-dtrow"><b id="o-date">—</b><span class="pn-dtpick"><button type="button" class="pn-calbtn" id="dtbtn" aria-label="日時の選択" title="日時の選択"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"></rect><path d="M3.5 10h17M8 3v4M16 3v4"></path></svg></button><input type="datetime-local" id="dt" step="60" tabindex="-1" aria-hidden="true"></span></span></span>
+        <span class="pn-st">視直径<b id="o-diam">—</b></span>
+        <span class="pn-st">等級<b id="o-mag">—</b></span>
+        <span class="pn-st">中央子午線 I · II · III<b id="o-cm">—</b></span>
+        <span class="pn-st">高度 · 方位<b id="o-altaz">—</b></span>
+      </div>
+      <div class="pn-view" id="pview">
+        <canvas id="pc" role="img" aria-label="観測地から見た木星とガリレオ衛星"></canvas>
+        <div class="pn-labs" id="labs" aria-hidden="true"></div>
+        <div class="pn-lab" id="v-lab"></div>
+        <div class="pn-lab pn-b" id="v-lab2"></div>
+        <p class="pn-vmsg" id="v-msg" hidden></p>
+        <div class="pn-vctl" role="group" aria-label="表示の拡大・縮小"><button type="button" class="pn-vbtn" id="vout" aria-label="縮小" title="縮小">−</button><span class="pn-vz" id="vzoom">×1.00</span><button type="button" class="pn-vbtn" id="vin" aria-label="拡大" title="拡大">＋</button><button type="button" class="pn-vbtn" id="vreset" hidden>元の表示</button></div>
+      </div>
+      <div class="pn-view pn-strip" id="sview">
+        <canvas id="sc" aria-hidden="true"></canvas>
+        <div class="pn-labs" id="slabs" aria-hidden="true"></div>
+        <div class="pn-lab" id="s-lab"></div>
+        <div class="pn-scale" id="s-scale"><i></i>1′</div>
+      </div>
+      <svg class="pn-nb" id="band" viewBox="0 -24 1000 176" role="slider" tabindex="0" aria-label="日時の帯" aria-valuemin="0" aria-valuemax="1000" aria-valuenow="500"></svg>
+      <div class="pn-tchips" id="keys" role="group" aria-label="主な日時"></div>
+      <div class="pn-tstep"><div class="seg" id="tstep" role="group" aria-label="日時の微調整"><button type="button" data-s="-86400">−1 日</button><button type="button" data-s="-3600">−1 時間</button><button type="button" data-s="-600">−10 分</button><button type="button" data-s="600">+10 分</button><button type="button" data-s="3600">+1 時間</button><button type="button" data-s="86400">+1 日</button></div></div>
+      <More id="g-view" title="表示の設定"><div class="ana2">
+        <div class="ptab">
+          <ChoiceRow k="nm" name="衛星の名前" choices={[['on', 'あり'], ['off', 'なし']]} value="on" />
+          <ChoiceRow k="sh" name="衛星の影" choices={[['on', 'あり'], ['off', 'なし']]} value="on" />
+          <ChoiceRow k="map" name="模様" choices={[['near', '近い年'], ['latest', '最新']]} value="near" />
+        </div>
+        <div class="ptab">
+          <ChoiceRow k="tz" name="時刻" choices={[['jst', '日本時間'], ['ut', '世界時']]} value="jst" />
+          <ChoiceRow k="sp" name="再生の速さ" choices={SPEEDS} value="600" />
+        </div>
+      </div>
+      <div class="pn-grsin">
+        <label class="aux" for="grs-l">大赤斑の経度（System II）</label>
+        <input id="grs-l" type="text" inputmode="decimal" autocomplete="off">
+        <button type="button" class="pn-vbtn pn-grsrst" id="grs-rst" aria-label="補正の取り消し" title="補正の取り消し" hidden>↺</button>
+        <span class="aux" id="grs-note"></span>
+      </div></More>
+    </Panel>
+
+    <Panel hid="hd-all" title="すべての衛星" class="pn-a-all">
+      <span slot="aux" class="aux" id="all-aux"></span>
+      <div class="pn-view pn-allv" id="aview">
+        <canvas id="ac" role="img" aria-label="すべての衛星の空での位置"></canvas>
+        <div class="pn-lab pn-b" id="a-info"></div>
+        <p class="pn-vmsg" id="a-msg" hidden></p>
+        <div class="pn-vctl" role="group" aria-label="表示の拡大・縮小"><button type="button" class="pn-vbtn" id="aout" aria-label="縮小" title="縮小">−</button><span class="pn-vz" id="azoom">×1.00</span><button type="button" class="pn-vbtn" id="ain" aria-label="拡大" title="拡大">＋</button><button type="button" class="pn-vbtn" id="areset" hidden>元の表示</button></div>
+      </div>
+      <div class="pn-key" id="akey"></div>
+    </Panel>
+
+    <Panel hid="hd-top" title="北から見た軌道" class="pn-a-top">
+      <svg class="pn-of pn-top" id="top" viewBox="0 0 300 300" role="img" aria-label="北から見たガリレオ衛星の軌道と位置"></svg>
+    </Panel>
+
+    <Panel hid="hd-wig" title="衛星の動き" class="pn-a-wig">
+      <div slot="aux" class="seg" id="p-wr" role="group" aria-label="期間"><button type="button" data-v="1" aria-pressed="false">±1 日</button><button type="button" data-v="3" aria-pressed="true">±3 日</button><button type="button" data-v="8" aria-pressed="false">±8 日</button></div>
+      <svg class="pn-of pn-wig" id="wig" viewBox="-40 0 600 486" role="img" aria-label="ガリレオ衛星の東西の離れの変化（縦が時刻）"></svg>
+      <div class="pn-key" id="wkey"></div>
+    </Panel>
+
+    <Panel hid="hd-mut" title="相互食の季節" class="pn-a-mut">
+      <div slot="aux" class="seg" id="p-mk" role="group" aria-label="種類"><button type="button" data-v="all" aria-pressed="true">すべて</button><button type="button" data-v="occ" aria-pressed="false">掩蔽</button><button type="button" data-v="ecl" aria-pressed="false">食</button></div>
+      <div class="pn-split">
+        <div>
+          <div class="pn-mnav"><button type="button" class="pn-vbtn" id="mut-prev" aria-label="前の月">‹</button><span id="mut-range"></span><button type="button" class="pn-vbtn" id="mut-next" aria-label="次の月">›</button></div>
+          <svg class="pn-of pn-sea" id="sea" viewBox="-44 -10 660 260" role="img" aria-label="見える相互食（横が日付、縦が夜の時刻）"></svg>
+        </div>
+        <div class="pn-mut" id="mut-detail">
+          <h3 id="mut-h"></h3>
+          <p id="mut-p"></p>
+          <svg class="pn-of" id="mut-curve" viewBox="0 0 300 124" role="img" aria-label="2 つの衛星の合計の明るさ"></svg>
+          <div class="pn-key"><span><i class="pn-dotf"></i>掩蔽</span><span><i class="pn-doto"></i>食</span></div>
+        </div>
+      </div>
+    </Panel>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools current="jupiter" />
+  <script>
+    import '../tools/jupiter/client';
+  </script>
+</SiteLayout>

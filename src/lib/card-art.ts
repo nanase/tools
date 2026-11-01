@@ -1283,6 +1283,37 @@ export const ART: Record<string, Art> = {
       `<circle class="fb" cx="${r1(px)}" cy="${r1(k(px))}" r="2.6"/>`
     );
   },
+  /* 木星: 縞のある本体の前と後ろを 4 つの衛星が行き来する（周期は 1:2:4:8、裏に回った衛星は隠れる） */
+  jv(t) {
+    const cx = 60,
+      cy = 24,
+      R = 12;
+    const MO: [number, number, number][] = [
+      [18, 1.6, 0.4],
+      [27, 3.2, 2.1],
+      [38, 6.4, 4.0],
+      [53, 12.8, 1.0],
+    ];
+    let back = '',
+      front = '';
+    for (const [a, p, ph] of MO) {
+      const u = (TAU * t) / p + ph,
+        x = cx + a * Math.cos(u),
+        behind = Math.sin(u) > 0;
+      const dot = `<circle class="fc" cx="${r1(x)}" cy="${cy}" r="1.9"/>`;
+      if (behind) {
+        if (Math.abs(x - cx) > R + 1) back += dot;
+      } else front += dot;
+    }
+    return (
+      P('c t', `M4 ${cy}H116`) +
+      back +
+      `<clipPath id="ca-jv"><ellipse cx="${cx}" cy="${cy}" rx="${R}" ry="${r1(R * 0.935)}"/></clipPath>` +
+      `<ellipse class="fa" cx="${cx}" cy="${cy}" rx="${R}" ry="${r1(R * 0.935)}"/>` +
+      `<g clip-path="url(#ca-jv)">${P('c', `M${cx - R} ${cy - 3.5}H${cx + R}M${cx - R} ${cy + 3}H${cx + R}`, ' style="stroke-width:2.2"')}${P('c t', `M${cx - R} ${cy - 7.5}H${cx + R}M${cx - R} ${cy + 7}H${cx + R}`)}<ellipse class="fb" cx="${cx + 4}" cy="${cy + 5}" rx="2.6" ry="1.5"/></g>` +
+      front
+    );
+  },
   /* SVG テーマスキーマチェッカー: 明るい地と暗い地に、テーマで配色と構図が変わる絵を並べる。
      昼は左上の太陽と山（光がゆっくり回る）、夜は右上の三日月と明るい線の山、またたく星 */
   svg(t) {
@@ -1613,6 +1644,7 @@ export const LOOP: Record<string, number> = {
   fk: TAU / 2.1,
   se: 1 / 0.12,
   mn: TAU / 0.9,
+  jv: 12.8,
   svg: TAU / 2.4,
   tu: 3,
   tm: Math.PI / 1.2,

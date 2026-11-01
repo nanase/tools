@@ -1,0 +1,196 @@
+/* 木星・土星のページのスタイル（共通は src/styles/site.css）。クラスは pn- で始める */
+
+/* 衛星の色: 明暗でも見分けられるよう、明るさをずらす */
+:root{--pn-m1:#a77700;--pn-m2:#2a7aa6;--pn-m3:#8459b3;--pn-m4:#36864a;--pn-m5:#c4572b;--pn-m6:#b07420;--pn-m7:#687784;--pn-m8:#a8436f;--pn-grs:#c4572b}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--pn-m1:#e8b52e;--pn-m2:#5fb3e0;--pn-m3:#b394e0;--pn-m4:#6cc37d;--pn-m5:#ee8458;--pn-m6:#f0a94e;--pn-m7:#a9b6c0;--pn-m8:#e07aa8;--pn-grs:#ee8458}}
+:root[data-theme=dark]{--pn-m1:#e8b52e;--pn-m2:#5fb3e0;--pn-m3:#b394e0;--pn-m4:#6cc37d;--pn-m5:#ee8458;--pn-m6:#f0a94e;--pn-m7:#a9b6c0;--pn-m8:#e07aa8;--pn-grs:#ee8458}
+.pn-k1{stroke:var(--pn-m1);color:var(--pn-m1)}.pn-k2{stroke:var(--pn-m2);color:var(--pn-m2)}.pn-k3{stroke:var(--pn-m3);color:var(--pn-m3)}.pn-k4{stroke:var(--pn-m4);color:var(--pn-m4)}
+.pn-k5{stroke:var(--pn-m5);color:var(--pn-m5)}.pn-k6{stroke:var(--pn-m6);color:var(--pn-m6)}.pn-k7{stroke:var(--pn-m7);color:var(--pn-m7)}.pn-k8{stroke:var(--pn-m8);color:var(--pn-m8)}
+.pn-f1{fill:var(--pn-m1)}.pn-f2{fill:var(--pn-m2)}.pn-f3{fill:var(--pn-m3)}.pn-f4{fill:var(--pn-m4)}.pn-f5{fill:var(--pn-m5)}.pn-f6{fill:var(--pn-m6)}.pn-f7{fill:var(--pn-m7)}.pn-f8{fill:var(--pn-m8)}
+
+/* 並び: 全幅で望遠の図、全幅ですべての衛星、2 列で軌道｜動き、全幅で相互食、式。スマホでは 1 列 */
+@media (min-width:1000px){
+  .pn-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start;grid-template-areas:"scope scope" "all all" "top wig" "mut mut" "thy thy"}
+  .pn-a-scope{grid-area:scope}.pn-a-all{grid-area:all}.pn-a-top{grid-area:top}.pn-a-wig{grid-area:wig}.pn-a-mut{grid-area:mut}.pn-grid>.a-thy{grid-area:thy}
+}
+
+/* 時刻と、その時刻の様子を 1 行に（月のページと同じ形） */
+.pn-clock{display:flex;flex-wrap:wrap;align-items:center;gap:10px 22px;margin-bottom:10px}
+.pn-clk{font:700 34px/1 var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.01em;min-width:5.2em}
+.pn-clk small{font-size:14px;font-weight:500;color:var(--ink-2);margin-left:.4em}
+.pn-st{display:grid;gap:2px;font-size:12.5px;color:var(--ink-2)}
+.pn-st b{font:700 15px/1.3 var(--mono);color:var(--ink);font-variant-numeric:tabular-nums}
+.pn-nowbtn{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 16px;border:1.5px solid var(--ink);border-radius:4px;background:var(--surface);color:var(--ink);font:700 14.5px/1 var(--sans);cursor:pointer}
+.pn-nowbtn:hover{background:var(--inset)}
+.pn-nowbtn[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
+.pn-dtrow{display:inline-flex;align-items:center;gap:6px}
+.pn-dtpick{position:relative;display:inline-flex}
+.pn-calbtn{display:inline-flex;align-items:center;justify-content:center;width:28px;height:26px;padding:0;border:1px solid var(--line-2);border-radius:4px;background:var(--surface);color:var(--ink-2);cursor:pointer}
+.pn-calbtn:hover{border-color:var(--ink-3);color:var(--ink)}
+.pn-calbtn svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.pn-dtpick input{position:absolute;left:0;bottom:0;width:28px;height:1px;padding:0;border:0;opacity:0;pointer-events:none}
+
+/* 望遠の窓: 光の量そのものを描くので、テーマに依らず黒い地 */
+.pn-view{position:relative;aspect-ratio:2.2/1;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:#000;touch-action:manipulation}
+.pn-view canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+#pc,#ac{cursor:grab;touch-action:pan-y;user-select:none;-webkit-user-select:none}
+#pc.drag,#ac.drag{cursor:grabbing}
+.pn-strip{aspect-ratio:8/1;margin-top:10px}
+.pn-allv{aspect-ratio:2/1}
+@media (max-width:640px){.pn-view{aspect-ratio:3/2}.pn-strip{aspect-ratio:7/2}.pn-allv{aspect-ratio:1/1}}
+.pn-lab{position:absolute;left:10px;top:8px;font:500 11.5px/1.45 var(--mono);color:#e6e8e4;text-shadow:0 0 3px #000,0 0 6px #000;pointer-events:none}
+.pn-lab.pn-b{top:auto;bottom:8px;right:10px}
+.pn-labs{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.pn-sl{position:absolute;transform:translate(-50%,0);font:600 11px/1.2 var(--sans);white-space:nowrap;text-shadow:0 0 3px #000,0 0 6px #000;color:#e6e8e4;text-align:center}
+.pn-sl.pn-up{transform:translate(-50%,-100%)}
+.pn-sl small{display:block;font:500 10px var(--mono);color:#aab3b8}
+.pn-sl.pn-sh{color:#aab3b8;font-weight:500}
+.pn-edge{position:absolute;top:46%;font:500 11.5px/1.45 var(--mono);color:#e6e8e4;text-shadow:0 0 3px #000,0 0 6px #000}
+.pn-edge.pn-l{left:10px}
+.pn-edge.pn-r{right:10px;text-align:right}
+.pn-sd{position:absolute;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%;background:#f4f1e8;box-shadow:0 0 4px rgb(255 255 255 / .6)}
+.pn-sd.pn-dim{background:#6d777e;box-shadow:none}
+.pn-sd.pn-sm{width:3px;height:3px;margin:-1.5px 0 0 -1.5px;background:#ee8458;box-shadow:none}
+.pn-sl.pn-si{font-weight:500;font-size:10px;color:#f0b49c}
+.pn-sd.pn-hid{background:none;border:1px dashed #6d777e;width:7px;height:7px;margin:-3.5px 0 0 -3.5px;box-shadow:none}
+.pn-scale{position:absolute;right:12px;bottom:8px;font:500 10.5px var(--mono);color:#aab3b8;text-align:center;pointer-events:none}
+.pn-scale i{display:block;height:4px;border:1px solid #aab3b8;border-top:0;margin-bottom:2px}
+.pn-vctl{position:absolute;right:8px;top:8px;display:flex;align-items:center;gap:4px}
+.pn-vbtn{min-width:30px;height:28px;padding:0 8px;border:1px solid #48525a;border-radius:4px;background:rgb(10 12 14 / .72);color:#e6e8e4;font:500 13px/1 var(--sans);cursor:pointer}
+.pn-vbtn:hover{background:rgb(10 12 14 / .9)}
+.pn-vbtn:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+.pn-vz{min-width:3.6em;text-align:center;font:500 11.5px var(--mono);color:#e6e8e4;text-shadow:0 0 3px #000}
+.pn-vmsg{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);margin:0;color:#aab3b8;font:500 13px var(--sans)}
+
+/* 今夜の帯: 横に時刻、縦に衛星ごとの現象 */
+.pn-nb{display:block;width:100%;height:auto;overflow:visible;margin-top:8px;touch-action:pan-y;cursor:grab;user-select:none;-webkit-user-select:none}
+.pn-nb.drag{cursor:grabbing}
+.pn-nb:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.pn-nb .pn-tw{fill:color-mix(in srgb,var(--ink) 7%,transparent)}
+.pn-nb .pn-dk{fill:color-mix(in srgb,var(--ink) 13%,transparent)}
+.pn-nb .pn-gl{stroke:var(--grid);stroke-width:1}
+.pn-nb .pn-tk{stroke:var(--ink-3);stroke-width:1}
+.pn-nb text{fill:var(--ink-3);font:10.5px var(--mono)}
+.pn-nb .pn-rl{fill:var(--ink-2);font:600 11px var(--sans);paint-order:stroke;stroke:var(--bg);stroke-width:3px}
+.pn-nb .pn-cur{stroke:var(--ink);stroke-width:2}
+.pn-nb .pn-tag{fill:var(--ink)}
+.pn-nb .pn-tagt{fill:var(--surface);font:700 11px var(--mono);text-anchor:middle}
+.pn-nb .pn-cur.pn-on{stroke:var(--accent)}
+.pn-nb .pn-tag.pn-on{fill:var(--accent)}
+.pn-nb .pn-bt{stroke-width:7;stroke-linecap:butt}
+.pn-nb .pn-bs{stroke-width:7;stroke-dasharray:2 2}
+.pn-nb .pn-bh{stroke-width:2;opacity:.55}
+.pn-nb .pn-grs{fill:var(--pn-grs)}
+.pn-nb .pn-grsb{stroke:var(--pn-grs);stroke-width:7;opacity:.4}
+.pn-key{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:6px;font:500 12px/1.4 var(--sans);color:var(--ink-2)}
+.pn-key i{display:inline-block;vertical-align:middle;width:16px;height:7px;margin-right:5px;border-radius:1px;background:currentColor}
+.pn-key i.pn-ish{background:repeating-linear-gradient(90deg,currentColor 0 2px,transparent 2px 4px)}
+.pn-key i.pn-iln{height:0;border-top:2px solid currentColor;background:none}
+.pn-key i.pn-ihl{height:0;border-top:2px solid currentColor;background:none;opacity:.55}
+.pn-key i.pn-idot{width:9px;height:9px;border-radius:50%;background:var(--pn-grs)}
+.pn-key i.pn-ibody{height:12px;width:9px;border-radius:0;background:color-mix(in srgb,currentColor 25%,transparent)}
+.pn-key i.pn-imk{width:9px;height:9px;border-radius:50%;background:var(--accent)}
+.pn-key i.pn-gd{width:9px;height:9px;border-radius:50%}
+.pn-key i.pn-dotf{width:9px;height:9px;border-radius:50%;background:var(--ink-2)}
+.pn-key i.pn-doto{width:9px;height:9px;border-radius:50%;background:none;border:2px solid var(--ink-2);box-sizing:border-box}
+
+/* 主な日時と、日時を少し動かす */
+.pn-tchips{display:flex;flex-wrap:wrap;gap:4px;margin-top:12px}
+.pn-tchips .chip{display:inline-flex;align-items:center;gap:6px}
+.pn-tchips .chip small{font:500 11.5px var(--sans)}
+.pn-tstep{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-top:8px}
+.pn-tstep .seg button{min-width:52px}
+
+/* 観測地の小窓 */
+.pn-a-scope>.ph>.pha{z-index:40}
+.pn-locw{position:relative;display:inline-block;margin-right:6px}
+.pn-locbtn{font-family:var(--sans)}
+.pn-locpop{position:absolute;z-index:40;right:0;top:calc(100% + 6px);width:min(560px,calc(100vw - 32px));padding:10px;border:1px solid var(--line-2);border-radius:6px;background:var(--surface);box-shadow:0 10px 28px rgb(0 0 0 / .25);line-height:1.5;text-align:left}
+.pn-locbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px}
+.pn-lsearch{position:relative;flex:1 1 240px;min-width:0}
+.pn-lsearch input{box-sizing:border-box;width:100%;height:36px;padding:0 12px;border:1px solid var(--line-2);border-radius:4px;background:var(--inset);color:var(--ink);font:500 14px var(--sans)}
+.pn-lsearch input:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+.pn-sugg{position:absolute;z-index:30;left:0;right:0;top:calc(100% + 4px);margin:0;padding:4px;list-style:none;border:1px solid var(--line-2);border-radius:6px;background:var(--surface);box-shadow:0 10px 28px rgb(0 0 0 / .25);max-height:300px;overflow:auto}
+.pn-sg{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:1px 12px;width:100%;padding:6px 8px;border:0;border-radius:4px;background:none;color:var(--ink);text-align:left;cursor:pointer;font:inherit}
+.pn-sg:hover,.pn-sg[aria-selected="true"]{background:var(--inset)}
+.pn-sg b{font-size:14px}
+.pn-sg small{grid-column:1;font-size:12px;color:var(--ink-3)}
+.pn-sg span{grid-row:1/3;grid-column:2;align-self:center;font:600 12.5px var(--mono);color:var(--ink-2)}
+.pn-evbtn{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 12px;border:1px solid var(--line-2);border-radius:4px;background:var(--surface);color:var(--ink);font:500 12.5px/1 var(--sans);cursor:pointer}
+.pn-evbtn:hover{border-color:var(--ink-3)}
+.pn-evbtn svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.pn-evbtn[aria-expanded="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.pn-locpop .msg:empty{display:none}
+.pn-mapbox{margin-top:8px;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:#0d1b2a}
+.pn-mapbox canvas{display:block;width:100%;height:auto;cursor:crosshair}
+.pn-locnow{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px;margin-top:8px}
+.pn-locnow b{font-size:15px}
+.pn-locnow span{font:500 12.5px var(--mono);color:var(--ink-2)}
+
+/* 図 */
+.pn-of{display:block;width:100%;height:auto;overflow:visible}
+.pn-top{max-width:420px;margin:0 auto}
+.pn-of .pn-orb{fill:none;stroke:var(--line-2);stroke-width:1}
+.pn-of .pn-ax{stroke:var(--ink-3);stroke-width:1;fill:none}
+.pn-of .pn-gr{stroke:var(--grid);stroke-width:1;fill:none}
+.pn-of text{fill:var(--ink-3);font:10.5px var(--mono)}
+.pn-of .pn-tn{fill:var(--ink);font:600 11px var(--sans);paint-order:stroke;stroke:var(--bg);stroke-width:3px}
+.pn-of .pn-ts{fill:var(--ink-2);font:500 10.5px var(--sans)}
+.pn-of .pn-pl{fill:#c9a77c;stroke:var(--ink);stroke-width:.8}
+.pn-of .pn-shd{fill:color-mix(in srgb,var(--ink) 16%,transparent)}
+.pn-of .pn-sunar{stroke:#9a6c00;stroke-width:1.6;fill:none}
+.pn-of .pn-eyar{stroke:var(--ink-2);stroke-width:1.4;fill:none}
+.pn-of .pn-wl{fill:none;stroke-width:1.6}
+.pn-of .pn-now{stroke:var(--ink);stroke-width:1.6}
+.pn-of .pn-nowt{fill:var(--ink);font:700 11px var(--mono)}
+.pn-of .pn-bandc{fill:color-mix(in srgb,var(--ink) 7%,transparent)}
+.pn-of .pn-pk{fill:var(--accent)}
+.pn-of .pn-ring{fill:none;stroke-width:2}
+.pn-of .pn-curve{stroke:var(--ink-2)}
+.pn-wig{cursor:pointer;touch-action:pan-y}
+.pn-sea .pn-ev{cursor:pointer;outline:none}
+.pn-sea .pn-hit{fill:transparent}
+.pn-sea .pn-ev:focus-visible .pn-hit,.pn-sea .pn-ev:hover .pn-hit{fill:color-mix(in srgb,var(--ink) 10%,transparent)}
+.pn-sea .pn-sel .pn-hit{fill:none;stroke:var(--ink);stroke-width:1.4}
+
+/* 大赤斑の経度 */
+.pn-grsin{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-top:10px}
+.pn-grsin input{width:5.5em;height:30px;padding:0 8px;border:1px solid var(--line-2);border-radius:4px;background:var(--inset);color:var(--ink);font:600 13px var(--mono)}
+.pn-grsin input:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+.pn-grsrst{background:var(--surface);color:var(--ink);border-color:var(--line-2)}
+
+/* 相互食 */
+.pn-split{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:14px;align-items:start}
+@media (max-width:760px){.pn-split{grid-template-columns:minmax(0,1fr)}}
+.pn-mnav{display:flex;align-items:center;gap:6px;margin-bottom:8px;font:600 12.5px var(--mono);color:var(--ink-2)}
+.pn-mnav .pn-vbtn{background:var(--surface);color:var(--ink);border-color:var(--line-2)}
+.pn-mut{display:grid;gap:6px}
+.pn-mut h3{margin:0;font:700 13.5px var(--sans)}
+.pn-mut p{margin:0;font-size:12.5px;color:var(--ink-2)}
+.pn-mut p b{font-family:var(--mono);color:var(--ink)}
+
+/* スマホ: 向きの選択肢を短くし、時刻のボタンを詰める */
+@media (max-width:640px){
+  .pn-w{display:none}
+  /* 見出しの右の操作は、見出しと重ならないよう枠の中の 1 行目に下ろす。観測地の小窓は枠の幅いっぱいに */
+  .pn-a-scope>.ph>.pha{position:static;transform:none;background:none;flex-wrap:wrap;justify-content:flex-end;margin:0 0 10px;padding:0}
+  .pn-a-scope .pn-locw{position:static}
+  .pn-a-scope .pn-locpop{left:8px;right:8px;top:62px;width:auto}
+  .pn-lab{font-size:10.5px}
+  /* 衛星の並びは高さが足りないので、離れの値と目盛りを出さない */
+  .pn-strip .pn-sl small,.pn-strip .pn-scale{display:none}
+  /* 横に縮む図の文字は、図の単位で大きくして読める大きさに保つ */
+  .pn-wig text,.pn-wig .pn-ts,.pn-wig .pn-nowt{font-size:19px}
+  .pn-sea text,.pn-sea .pn-nowt{font-size:21px}
+  .pn-tstep .seg{width:100%}
+  .pn-tstep .seg button{flex:1;min-width:0;padding:0 2px;font-size:12px;white-space:nowrap}
+  /* 時刻と数値を詰める */
+  .pn-clock{gap:6px 12px}
+  .pn-clk{font-size:28px;min-width:0}
+  .pn-st{font-size:11px}
+  .pn-st b{font-size:12.5px}
+  .pn-a-scope .more-s{display:none}
+  /* 再生の速さは数字が長いので、選択肢を項目名の下の段に置く */
+  #p-sp.prow{grid-template-columns:var(--sw) minmax(0,1fr) 24px;grid-template-areas:"sym name rst" ". val val"}
+  #p-sp .seg button{padding:0 2px}
+}
