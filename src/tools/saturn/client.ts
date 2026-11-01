@@ -15,6 +15,7 @@ import { SitePicker } from '../../lib/planet/site';
 import { altFast, SUN_DARK, SUN_SET, sunAlt } from '../../lib/planet/sky';
 import {
   basis,
+  edgeDir,
   facing,
   type MoonLook,
   type Orient,
@@ -292,7 +293,7 @@ function drawMain(): void {
       );
     } else if (Math.abs(py - L.cy) < L.H) {
       const sep = Math.hypot(...skyOffset(g, g.moons[k], RE)) * rs;
-      const left = px < L.cx;
+      const { left, arrow } = edgeDir(px, py, L.W);
       /* 同じ側の札は重ならないよう、空いている上か下へずらす */
       const list = left ? edgeL : edgeR;
       const lo = 44,
@@ -308,7 +309,7 @@ function drawMain(): void {
         ) ?? base;
       list.push(top);
       h.push(
-        `<span class="pn-edge ${left ? 'pn-l' : 'pn-r'}" style="top:${top.toFixed(0)}px">${left ? '← ' : ''}${esc(m.name)}${left ? '' : ' →'}<br>${dms(sep)}</span>`,
+        `<span class="pn-edge ${left ? 'pn-l' : 'pn-r'}" style="top:${top.toFixed(0)}px">${left ? `${arrow} ` : ''}${esc(m.name)}${left ? '' : ` ${arrow}`}<br>${dms(sep)}</span>`,
       );
     }
   });

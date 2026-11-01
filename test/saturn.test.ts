@@ -5,6 +5,7 @@ import { unit, type Vec3 } from '../src/lib/astro/vec';
 import { Ephem, graphic, planetState, slowAt } from '../src/lib/planet/ephem';
 import { findPhen } from '../src/lib/planet/events';
 import { type MoonTable, tablePos } from '../src/lib/planet/moons';
+import { edgeDir } from '../src/lib/planet/view';
 import { logR, orbitSat, tiltChart } from '../src/tools/saturn/figs';
 import { GM_SAT, INNER, innerPos, SATURN_MODEL as M, MOONS, moonMag, ringTilt } from '../src/tools/saturn/model';
 import { PHOEBE } from '../src/tools/saturn/phoebe';
@@ -280,6 +281,15 @@ describe('環の表と明るさ', () => {
     expect(ringSurge(0)).toBeGreaterThan(1.6);
     expect(ringSurge(6)).toBeCloseTo(1, 1);
     expect(ringSurge(0.2)).toBeLessThan(ringSurge(0));
+  });
+});
+
+describe('窓の外の札', () => {
+  it('土星の位置に依らず、衛星が外れた側に矢印を出す', () => {
+    expect(edgeDir(1200, 100, 1000)).toEqual({ left: false, arrow: '→' });
+    expect(edgeDir(-50, 100, 1000)).toEqual({ left: true, arrow: '←' });
+    expect(edgeDir(300, -20, 1000)).toEqual({ left: true, arrow: '↑' });
+    expect(edgeDir(700, 900, 1000)).toEqual({ left: false, arrow: '↓' });
   });
 });
 
