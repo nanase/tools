@@ -315,7 +315,7 @@ export const TOOLS: Tool[] = [
     t: 'カメラレンズ',
     d: '実在のレンズのデータどおりに光線を追跡し、ボケや収差を映像で再現します。',
     ic: 'ln',
-    r: ['focusing-mask', 'demosaic', 'rolling-shutter', 'image-convolution'],
+    r: ['focusing-mask', 'demosaic', 'raytracing', 'rolling-shutter'],
     k: 'lens camera optics レンズ カメラ 光学 光線追跡 ray tracing 絞り aperture f値 焦点距離 focal length ピント focus 被写界深度 depth of field ボケ bokeh 玉ボケ 収差 aberration ザイデル seidel 球面収差 コマ 非点収差 像面湾曲 歪曲 distortion 色収差 chromatic 周辺減光 vignetting ダブルガウス double gauss テッサー tessar トリプレット triplet アクロマート achromat 望遠 広角 webgl',
   },
   {
@@ -324,7 +324,7 @@ export const TOOLS: Tool[] = [
     t: 'ハロ（暈）',
     d: '氷晶に通した光線を追い、日暈や幻日、環天頂アークの空を描きます。',
     ic: 'hl',
-    r: ['lens', 'moon', 'solar-eclipse', 'focusing-mask'],
+    r: ['lens', 'moon', 'solar-eclipse', 'raytracing'],
     k: 'halo ハロー 日暈 月暈 暈 かさ 内暈 22度 外暈 46度 幻日 幻月 sun dog parhelion 幻日環 parhelic circle 環天頂アーク circumzenithal 環水平アーク circumhorizontal 太陽柱 sun pillar タンジェントアーク 上端接弧 外接ハロ tangent arc パリーアーク parry ローウィッツアーク lowitz ラテラルアーク 120度幻日 錐面 pyramidal 9度 氷晶 ice crystal 六角柱 巻雲 cirrus ダイヤモンドダスト diamond dust 大気光学 atmospheric optics 大気光象 薄明 夕焼け 地球の影 光線追跡 ray tracing モンテカルロ monte carlo webgl',
   },
   {
@@ -362,6 +362,16 @@ export const TOOLS: Tool[] = [
     ic: 'rs',
     r: ['lens', 'demosaic', 'image-convolution', 'doppler'],
     k: 'rolling shutter ローリングシャッター グローバルシャッター global shutter cmos イメージセンサー image sensor 電子シャッター 走査 読み出し readout 露光 exposure シャッター速度 こんにゃく現象 ゆがみ 歪み skew wobble jello プロペラ propeller 電車 自動車 自転車 ゴルフ スイング モトクロス バックフリップ ヘリコプター ローター rotor スマートフォン iphone z9 r6 α7 gfx',
+  },
+
+  {
+    id: 'raytracing',
+    c: 'CG',
+    t: 'レイトレーシング',
+    d: '画素ごとに光線を飛ばして反射と屈折をたどり、サンプル数を増やして絵を収束させます。',
+    ic: 'rt',
+    r: ['lens', 'halo', 'demosaic', 'image-convolution'],
+    k: 'ray tracing raytracing レイトレーシング レイトレ パストレーシング path tracing cg コンピュータグラフィックス レンダリング rendering モンテカルロ monte carlo 光線 反射 屈折 グローバルイルミネーション global illumination 間接光 コースティクス caustics コーネルボックス cornell box brdf ggx nee 次イベント推定 next event estimation mis 重点的サンプリング importance sampling ウィッテッド whitted ロシアンルーレット russian roulette 被写界深度 色温度 rmse spp サンプル数 ノイズ 収束',
   },
 
   {

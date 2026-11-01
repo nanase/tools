@@ -1,0 +1,43 @@
+/* レイトレーシングのページだけのスタイル（共通は src/styles/site.css）。クラス名には rt- を付ける */
+
+/* 枠の並び。スマホは 画像 → 反射 → 計算結果 → 入力 → 式。PC は左に画像、右に反射と計算結果、下に入力 */
+@media (min-width:1000px){
+  .tgrid{grid-template-columns:repeat(12,minmax(0,1fr));grid-template-rows:auto 1fr;align-items:start}
+  .a-img{grid-column:span 7;grid-row:span 2}
+  .a-ref,.a-out{grid-column:span 5}
+  .a-int,.a-lig,.a-cam{grid-column:span 4}
+  .a-thy{grid-column:1/-1}
+}
+
+.rt-sc{margin-bottom:8px}
+
+/* 画面。テーマに依らず黒い地 */
+.rt-stage{position:relative;width:100%;aspect-ratio:1;max-width:100%;border:1px solid var(--line);border-radius:4px;background:#000;overflow:hidden;cursor:grab;touch-action:pan-y;user-select:none;-webkit-user-select:none}
+.rt-stage.drag{cursor:grabbing}
+.rt-stage canvas{display:block;width:100%;height:100%}
+.rt-tag{position:absolute;top:6px;left:6px;padding:2px 7px;border-radius:3px;background:rgb(0 0 0 / .6);color:#fff;font:600 11.5px/1.4 var(--mono);pointer-events:none}
+.rt-msg{position:absolute;inset:0;display:grid;place-items:center;margin:0;padding:16px;color:#d6d9dc;font-size:13.5px;text-align:center;pointer-events:none}
+
+/* サンプルの目標（演奏の枠と同じ形） */
+.rt-tp{grid-template-columns:auto auto minmax(0,1fr);margin-top:10px;border-bottom:0;padding-bottom:0}
+.rt-trk{margin-top:14px}
+.rt-mk{position:absolute;left:0;right:0;top:-14px;height:14px;font:500 10.5px/14px var(--mono);color:var(--ink-3);pointer-events:none}
+.rt-mk span{position:absolute;transform:translateX(-50%)}
+.rt-mk span:first-child{transform:none}
+.rt-mk span:last-child{transform:translateX(-100%)}
+@media (max-width:640px){.rt-mk .rt-mk-o{display:none}}
+.rt-st{display:inline-block;width:7px;height:7px;margin-right:5px;border-radius:50%;background:var(--accent)}
+
+/* 反射の回数ごとの小さな画像 */
+.rt-minis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.rt-mini{position:relative;display:block;width:100%;aspect-ratio:1;padding:0;border:0;border-radius:3px;background:#000;overflow:hidden;cursor:pointer;line-height:0}
+.rt-mini canvas{display:block;width:100%;height:100%}
+.rt-mini:disabled{opacity:.25;cursor:default}
+.rt-mini[aria-pressed="true"]{outline:2px solid var(--accent);outline-offset:-2px}
+.rt-mini:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+.rt-mini .rt-n,.rt-mini .rt-p{position:absolute;bottom:4px;padding:1px 5px;border-radius:3px;background:rgb(0 0 0 / .6);color:#fff;font:600 11px/1.4 var(--mono);pointer-events:none}
+.rt-mini .rt-n{left:4px}
+.rt-mini .rt-p{right:4px;font-weight:500;color:#d6d9dc}
+.rt-mini .rt-p:empty{display:none}
+.rt-sum{height:24px;padding:0 8px;border:1px solid var(--line-2);border-radius:4px;background:var(--surface);color:var(--ink-2);font:500 12px/1 var(--sans);cursor:pointer}
+.rt-sum:hover{color:var(--ink);border-color:var(--ink-3)}

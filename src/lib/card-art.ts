@@ -1016,6 +1016,34 @@ export const ART: Record<string, Art> = {
     }
     return `${s}<circle class="c" cx="${cx}" cy="${cy}" r="2.4"/>`;
   },
+  /* レイトレーシング: 箱の部屋の中を光線が反射して天井の光源へ届く。先の点が進み、通った所を線で残す */
+  rt(t) {
+    const room = 'M38 6H82V42H38ZM22 2L38 6M98 2L82 6M22 46L38 42M98 46L82 42';
+    const path: [number, number][] = [
+      [60, 47],
+      [47, 33],
+      [74, 21],
+      [50, 13],
+      [60, 5],
+    ];
+    const lens = path.slice(1).map((p, i) => Math.hypot(p[0] - path[i][0], p[1] - path[i][1]));
+    const total = lens.reduce((a, b) => a + b, 0);
+    let run = t ? (mod(t, 3) / 3) * 1.15 * total : total;
+    const pts: [number, number][] = [path[0]];
+    for (let i = 0; i < lens.length && run > 0; i++) {
+      const u = Math.min(1, run / lens[i]);
+      pts.push([path[i][0] + (path[i + 1][0] - path[i][0]) * u, path[i][1] + (path[i + 1][1] - path[i][1]) * u]);
+      run -= lens[i];
+    }
+    const head = pts[pts.length - 1];
+    return (
+      P('c', room) +
+      P('b', 'M52 5H68') +
+      '<circle class="c" cx="47" cy="33" r="7"/>' +
+      P('a', pl(pts)) +
+      `<circle class="b" cx="${r1(head[0])}" cy="${r1(head[1])}" r="1.8"/>`
+    );
+  },
   /* オルガン音響モデル: 口と円錐の足があるパイプの正面。和音を鳴らし、鳴っている管に定在波を描く */
   og(t) {
     let body = '',
@@ -1557,6 +1585,7 @@ export const LOOP: Record<string, number> = {
   icv: 3,
   dm: 3,
   rs: 3,
+  rt: 3,
   th: 3,
   ff: 3,
   wd: 4,

@@ -1,0 +1,95 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/raytracing/style.css';
+import { KV, LS, MB, PITCH, PW, YAW } from '../tools/raytracing/params';
+import { SCENES } from '../tools/raytracing/scene';
+import Theory from '../tools/raytracing/Theory.astro';
+
+const name = 'レイトレーシング';
+const MARKS = [1, 4, 16, 64, 256, 1024, 4096, 16384];
+const MINIS = ['0 回', '1 回', '2 回', '3 回', '4 回', '5 回〜'];
+---
+<SiteLayout title={name} tool={{ id: 'raytracing', name }}>
+  <PageTitle title={name}>画素ごとに光線を飛ばし、反射と屈折をたどって光源に届く光を足し合わせます。光線の本数を増やすとノイズが減り、絵が収束していきます。</PageTitle>
+
+  <div class="tgrid">
+    <Panel hid="hd-img" title="画像" class="a-img" fixed>
+      <div class="chips rt-sc" id="p-sc" role="group" aria-label="場面">
+        {SCENES.map(([v, l]) => <button type="button" class="chip" data-v={v} aria-pressed={v === 'spheres' ? 'true' : 'false'}>{l}</button>)}
+      </div>
+      <div class="rt-stage" id="st">
+        <canvas id="cv" role="img" aria-label="パストレーシングの画像"></canvas>
+        <span class="rt-tag" id="o-tag" hidden></span>
+        <p class="rt-msg" id="st-msg" hidden></p>
+      </div>
+      <div class="tp rt-tp">
+        <button type="button" class="tp-ib" id="rs" aria-label="最初からためる" title="最初からためる"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 1.5h2v9H2zM10.5 1.5v9L4.5 6z"/></svg></button>
+        <button type="button" class="tp-pp on" id="pp" aria-label="一時停止" title="一時停止"><svg class="i-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.2l7.6 4.8L3 10.8z"/></svg><svg class="i-pause" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="2.8" height="9"/><rect x="7.2" y="1.5" width="2.8" height="9"/></svg></button>
+        <div class="tp-tl">
+          <div class="tp-trk rt-trk" id="trk" role="slider" tabindex="0" aria-label="サンプル数の目標" aria-valuemin="0" aria-valuemax="14" aria-valuenow="12">
+            <div class="rt-mk" aria-hidden="true">{MARKS.map((v, i) => <span class={i % 2 ? 'rt-mk-o' : undefined} style={`left:${(Math.log2(v) / 14) * 100}%`}>{v}</span>)}</div>
+            <div class="tp-rail"></div>
+            <div class="tp-fill" id="trk-f"></div>
+            <div class="tp-th" id="trk-t"></div>
+          </div>
+          <div class="tp-tm"><span id="o-state-w"><i class="rt-st" id="o-state" aria-hidden="true"></i>サンプル <b id="o-n">0</b> / <b id="o-goal">4096</b></span></div>
+        </div>
+      </div>
+    </Panel>
+
+    <Panel hid="hd-ref" title="反射の回数" class="a-ref" fixed>
+      <button slot="aux" type="button" class="rt-sum" id="b-sum" hidden>合計に戻す</button>
+      <div class="rt-minis">
+        {MINIS.map((l) => <button type="button" class="rt-mini" aria-pressed="false" aria-label={`反射 ${l} を大きく出す`}><canvas></canvas><span class="rt-n">{l}</span><span class="rt-p"></span></button>)}
+      </div>
+    </Panel>
+
+    <Panel hid="hd-out" title="計算結果" class="a-out">
+      <dl class="metrics c3" id="met">
+        <div class="m m-main"><dt>RMSE</dt><dd><span class="hw" id="o-rmse" data-ph="0.0000">—</span></dd></div>
+        <div class="m"><dt>サンプル数</dt><dd><span class="hw" id="o-spp" data-ph="00000">0</span><span class="u">spp</span></dd></div>
+        <div class="m"><dt>速さ</dt><dd><span class="hw" id="o-rate" data-ph="0000">—</span><span class="u">spp/s</span></dd></div>
+        <div class="m"><dt>経過</dt><dd><span class="hw" id="o-time" data-ph="00.0">0</span><span class="u">s</span></dd></div>
+      </dl>
+    </Panel>
+
+    <Panel hid="hd-int" title="追い方" class="a-int">
+      <div class="ptab">
+        <ChoiceRow k="integ" name="手法" layout="chips" value="2" choices={[['0', 'BRDF', '跳ね返った先で光源に当たるのを待つ'], ['1', 'NEE', '毎回の点から光源へ影の光線を飛ばす'], ['2', 'MIS', 'BRDF と NEE を重みで混ぜる'], ['3', 'ウィッテッド式', '影は光源の中心だけ、鏡とガラスだけを追う']]} />
+        <ParamRow d={MB} />
+        <ChoiceRow k="rr" name="ロシアンルーレット" sub="暗くなった経路を確率で打ち切る" value="1" offIn choices={[['1', '入'], ['0', '切']]} />
+      </div>
+    </Panel>
+
+    <Panel hid="hd-lig" title="光源" class="a-lig">
+      <div class="ptab">
+        <ChoiceRow k="kind" name="種類" value="rect" choices={[['rect', '四角'], ['sphere', '球'], ['point', '点'], ['sky', '空']]} />
+        <ParamRow d={LS} />
+        <ParamRow d={PW} />
+        <ParamRow d={KV} />
+      </div>
+    </Panel>
+
+    <Panel hid="hd-cam" title="カメラ" class="a-cam">
+      <div class="ptab">
+        <ParamRow d={YAW} />
+        <ParamRow d={PITCH} />
+      </div>
+    </Panel>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools current="raytracing" />
+  <script>
+    import '../tools/raytracing/client';
+  </script>
+</SiteLayout>
