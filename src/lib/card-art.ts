@@ -972,6 +972,50 @@ export const ART: Record<string, Art> = {
     });
     return P('fa', lit) + (mat ? P('fb', mat) : '') + (arc ? P('a', arc) : '');
   },
+  /* ローリングシャッター: 2 枚羽のプロペラを上の行から順に読み出す。走査線より上は行ごとに違う瞬間の羽で曲がって写り、
+     下は今の羽。1 走査の間に 0.8 回転する */
+  rs(t) {
+    const cx = 60,
+      cy = 24,
+      R = 19,
+      ys = t ? 4 + (mod(t, 3) / 3) * 40 : 44;
+    const th0 = (y: number): number => 0.4 + TAU * 0.8 * ((y - 4) / 40);
+    let s = '';
+    for (let k = 0; k < 2; k++) {
+      let run: [number, number][] = [];
+      const flush = () => {
+        if (run.length > 1) s += P('a', pl(run));
+        run = [];
+      };
+      for (let y = 4; y <= ys + 1e-9; y += 0.5) {
+        const th = th0(y) + k * Math.PI,
+          sn = Math.sin(th),
+          rho = Math.abs(sn) < 1e-3 ? -1 : (cy - y) / sn;
+        if (rho < 0 || rho > R) flush();
+        else run.push([cx + rho * Math.cos(th), y]);
+      }
+      flush();
+    }
+    if (ys < 44) {
+      const th = th0(ys);
+      /* 今の羽は走査線より下だけ描く */
+      for (const g of [0, Math.PI]) {
+        const ex = cx + R * Math.cos(th + g),
+          ey = cy - R * Math.sin(th + g);
+        if (Math.max(cy, ey) <= ys) continue;
+        /* 中心から先端までのうち、走査線より下の区間 */
+        const cut = (ys - cy) / (ey - cy || 1),
+          a = cy >= ys ? 0 : cut,
+          b = ey >= ys ? 1 : cut;
+        s += P(
+          'g',
+          `M${r1(cx + (ex - cx) * a)} ${r1(cy + (ey - cy) * a)}L${r1(cx + (ex - cx) * b)} ${r1(cy + (ey - cy) * b)}`,
+        );
+      }
+      s += P('b', `M4 ${r1(ys)}H116`);
+    }
+    return `${s}<circle class="c" cx="${cx}" cy="${cy}" r="2.4"/>`;
+  },
   /* オルガン音響モデル: 口と円錐の足があるパイプの正面。和音を鳴らし、鳴っている管に定在波を描く */
   og(t) {
     let body = '',
@@ -1512,6 +1556,7 @@ export const LOOP: Record<string, number> = {
   cv: 3,
   icv: 3,
   dm: 3,
+  rs: 3,
   th: 3,
   ff: 3,
   wd: 4,
