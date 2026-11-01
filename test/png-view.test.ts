@@ -89,6 +89,18 @@ describe('符号化とファイルの読み取り', () => {
     expect(f.crcOk && f.adlerOk).toBe(true);
   });
 
+  it('画素が多すぎるファイルは、復号する前に断る', () => {
+    const e = model(encodeModel(grad(8, 8), 8, 8, { colorType: 6, filter: 'adaptive', level: 6, interlace: false })),
+      huge = e.bytes.slice(),
+      v = new DataView(huge.buffer);
+    /* 署名 8・長さ 4・種類 4 の後が IHDR の幅と高さ。CRC は読むときに無視する */
+    v.setUint32(16, 65535);
+    v.setUint32(20, 65535);
+    expect(fileModel(huge)).toEqual({ fail: 'too-large' });
+    /* 先に別の問題（途中で切れている）があっても同じ */
+    expect(fileModel(huge.subarray(0, huge.length - 6))).toEqual({ fail: 'too-large' });
+  });
+
   it('PNG でないものは読めない', () => {
     expect(fileModel(new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9]))).toEqual({ fail: 'not-png' });
   });
