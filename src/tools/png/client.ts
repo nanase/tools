@@ -229,6 +229,7 @@ function done(r: Reply): void {
       if (img.png) {
         tg$.set('enc');
         tg$.disable('file');
+        tgForced = true;
         request();
       }
     } else toast('符号化できませんでした。');
@@ -710,6 +711,9 @@ function setImage(i: Img, at: [number, number]): void {
   pendingSel = at;
   palette(countColors(i.rgba) <= 256);
   tg$.disable('file', false);
+  /* 前のファイルを読めずに切り替えた「符号化し直す」は、次の画像に持ち越さない */
+  if (tgForced) tg$.set('file');
+  tgForced = false;
   $<HTMLButtonElement>('#saveBtn').disabled = true;
   if (worker) sendImg(i);
   request();
@@ -728,6 +732,8 @@ function palette(ok: boolean): void {
   b.title = ok ? COLOR_TYPES[3][2] : '色が 256 を超えるため選べない';
   if (!ok && ct$.value === '3') ct$.set('6');
 }
+/** 元のファイルのままでは読めず、対象を「符号化し直す」に切り替えたか */
+let tgForced = false;
 /** 新しい画像の最初の結果で選ぶ画素 */
 let pendingSel: [number, number] | null = null;
 function setSrc(v: string): void {
@@ -758,9 +764,8 @@ async function loadFile(f: File): Promise<void> {
     const b = new Uint8Array(await f.arrayBuffer());
     try {
       if (!isPng(b)) throw new Error('PNG でない');
-      const d = decodePng(b, { tolerant: true, ignoreCrc: true, trace: false }),
-        n = d.width * d.height;
-      if (!n || n > FILE_MAX_PIXELS) throw new Error('大きさ');
+      const d = decodePng(b, { tolerant: true, ignoreCrc: true, trace: false, maxPixels: FILE_MAX_PIXELS });
+      if (!d.layout) throw new Error('読めない');
       imgs.file = {
         id: ++nextImg,
         w: d.width,
@@ -777,6 +782,8 @@ async function loadFile(f: File): Promise<void> {
     } catch {
       ms.className = 'msg er';
       ms.textContent = `${f.name} を画像として読めませんでした`;
+      /* 見本を選んでいる間はこの行が隠れているので、知らせでも出す */
+      toast(`${f.name} を画像として読めませんでした。`);
     }
   }
 }

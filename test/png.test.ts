@@ -797,6 +797,33 @@ describe('PNG', () => {
   });
 });
 
+describe('画素の数の上限', () => {
+  /* 幅と高さだけが巨大な PNG。上限を確かめる前にメモリを取ると 17 GB を超える */
+  const huge = concat([
+    PNG_SIGNATURE,
+    chunk('IHDR', ihdr(65535, 65535, 8, 6)),
+    chunk('IDAT', Uint8Array.from(deflateSync(new Uint8Array(16)))),
+    chunk('IEND', new Uint8Array(0)),
+  ]);
+
+  it('上限を超える IHDR は、復号せずに止める', () => {
+    const d = decodePng(huge, { tolerant: true, maxPixels: 1 << 20 });
+    expect(d.error?.reason).toBe('too-large');
+    expect(d.width).toBe(65535);
+    expect(d.layout).toBeNull();
+    expect(d.rgba.length).toBe(0);
+    expect(d.idat.length).toBe(0);
+    expect(() => decodePng(huge, { maxPixels: 1 << 20 })).toThrow(PngError);
+  });
+
+  it('上限ちょうどの画像は読める', () => {
+    const e = encodePng(new Uint8ClampedArray(4 * 4 * 4), 4, 4);
+    if (!e.ok) throw new Error(e.reason);
+    expect(decodePng(e.bytes, { maxPixels: 16 }).complete).toBe(true);
+    expect(() => decodePng(e.bytes, { maxPixels: 15 })).toThrow(PngError);
+  });
+});
+
 describe('記録の例', () => {
   it('記号の種類の定数', () => {
     expect([TK_LIT, TK_MATCH, TK_END, TK_STORED]).toEqual([0, 1, 2, 3]);

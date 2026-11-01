@@ -98,12 +98,12 @@ export const FILE_MAX_PIXELS = 1024 * 1024;
 export function fileModel(bytes: Uint8Array): Model | { fail: Fail } {
   let d: ReturnType<typeof decodePng>;
   try {
-    d = decodePng(bytes, { tolerant: true, trace: true, ignoreCrc: true });
+    d = decodePng(bytes, { tolerant: true, trace: true, ignoreCrc: true, maxPixels: FILE_MAX_PIXELS });
   } catch {
     return { fail: 'not-png' };
   }
+  if (d.issues.some((i) => i.reason === 'too-large')) return { fail: 'too-large' };
   if (!d.layout || !d.zlib?.inflate.trace) return { fail: 'not-png' };
-  if (d.width * d.height > FILE_MAX_PIXELS) return { fail: 'too-large' };
   const L = d.layout,
     /* 途中で切れたファイルは、足りない行を 0 で埋める */
     pad = (a: Uint8Array, n: number): Uint8Array => {

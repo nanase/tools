@@ -518,6 +518,7 @@ export type PngReason =
   | 'crc'
   | 'no-ihdr'
   | 'ihdr'
+  | 'too-large'
   | 'order'
   | 'plte'
   | 'no-plte'
@@ -541,6 +542,7 @@ const PNG_MESSAGES: Record<PngReason, string> = {
   crc: 'CRC が合わない',
   'no-ihdr': '最初のチャンクが IHDR でない',
   ihdr: 'IHDR の値が正しくない',
+  'too-large': '画素の数が上限を超えている',
   order: 'チャンクの順序が正しくない',
   plte: 'PLTE が正しくない',
   'no-plte': 'パレットの画像に PLTE がない',
@@ -587,6 +589,8 @@ export interface PngDecodeOptions {
   tolerant?: boolean;
   /** Deflate の記録を取るか（既定 true） */
   trace?: boolean;
+  /** 画素の数の上限。超えるなら IHDR を読んだ所で止め、画素のメモリを取らない */
+  maxPixels?: number;
 }
 
 export interface PngDecoded {
@@ -771,6 +775,11 @@ export function decodePng(src: Uint8Array, opts: PngDecodeOptions = {}): PngDeco
     return res;
   }
   Object.assign(res, { width, height, bitDepth: depth, colorType: ct, interlace: il === 1 });
+  if (opts.maxPixels !== undefined && width * height > opts.maxPixels) {
+    report('too-large', true, ihdrAt);
+    res.error = error;
+    return res;
+  }
 
   /* PLTE と tRNS（11.2.3・11.3.2.1） */
   if (plte) {
