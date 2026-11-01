@@ -1,0 +1,148 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import RowReset from '../components/RowReset.astro';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/shading/style.css';
+import { DEFAULT_HEX, PRESETS } from '../tools/shading/material';
+import { MODELS } from '../tools/shading/models';
+import { AMB, AZ, DIST, DIV, F0, INC, KELVIN, METAL, POWER, ROUGH } from '../tools/shading/params';
+import { INTERP } from '../tools/shading/shader';
+import Theory from '../tools/shading/Theory.astro';
+
+const name = 'シェーディング';
+const short = { lambert: 'Lambert', phong: 'Phong', blinn: 'Blinn', ggx: 'GGX' } as const;
+const FUR = [0.2, 0.4, 0.6, 0.8, 1];
+const INTS = [
+  [INTERP.FLAT, 'フラット'],
+  [INTERP.GOURAUD, 'グーロー'],
+  [INTERP.PIXEL, 'フォン'],
+] as const;
+---
+<SiteLayout title={name} tool={{ id: 'shading', name }}>
+  <PageTitle title={name}>同じ光と材質で反射モデルを並べ、ハイライトの形・ローブ・エネルギー保存の違いを見比べます。</PageTitle>
+
+  <div class="tgrid">
+    <Panel hid="hd-sph" title="反射モデル" class="a-sph" fixed>
+      <div slot="aux" class="seg" id="p-shape" role="group" aria-label="形">
+        <button type="button" data-v="sphere" aria-pressed="true">球</button><button type="button" data-v="floor" aria-pressed="false">床</button>
+      </div>
+      <div class="sh-four">
+        {MODELS.map((m) => (
+          <figure>
+            <div class="sh-st" data-light><canvas data-sph={m.id} role="img" aria-label={`${m.name} で描いた形`}></canvas></div>
+            <figcaption class="sh-cap"><i style={`background:var(${m.color})`}></i><b>{m.name}</b><span class="hw" id={`o-xp-${m.id}`} data-ph="α = 0.000"></span></figcaption>
+          </figure>
+        ))}
+      </div>
+      <p class="sh-msg" id="st-msg" hidden></p>
+    </Panel>
+
+    <Panel hid="hd-lig" title="光源" class="a-lig">
+      <div class="ptab">
+        <ChoiceRow k="kind" name="種類" value="dir" choices={[['dir', '平行光'], ['point', '点光源']]} />
+        <ParamRow d={INC} />
+        <ParamRow d={AZ} />
+        <ParamRow d={DIST} />
+        <ParamRow d={POWER} />
+        <ParamRow d={KELVIN} />
+        <ParamRow d={AMB} />
+      </div>
+    </Panel>
+
+    <Panel hid="hd-mat" title="材質" class="a-mat">
+      <div class="sh-mat" id="p-mat" role="group" aria-label="材質のプリセット">
+        {PRESETS.map((m) => <button type="button" class="chip" data-v={m.id} aria-pressed={m.id === 'plastic' ? 'true' : 'false'}>{m.name}</button>)}
+      </div>
+      <div class="ptab">
+        <ParamRow d={ROUGH} />
+        <div class="prow segr" id="p-color">
+          <div class="c-sym" aria-hidden="true"></div>
+          <div class="c-name"><span class="pn" id="n-color">色</span></div>
+          <div class="c-val"><input class="sh-color" id="in-color" type="color" value={DEFAULT_HEX} aria-labelledby="n-color"></div>
+          <RowReset label="色を既定値に戻す" />
+        </div>
+        <ParamRow d={METAL} />
+        <ParamRow d={F0} />
+        <ChoiceRow k="expo" name="Phong の指数" sub="同じ指数だと Phong の方が太くなる" value="q" choices={[['q', 'Blinn の 1/4'], ['s', 'Blinn と同じ']]} />
+        <ChoiceRow k="norm" name="正規化" sub="切ると Phong・Blinn-Phong は元の式になり、エネルギーを保存しない" value="1" choices={[['1', '入'], ['0', '切']]} />
+      </div>
+    </Panel>
+
+    <Panel hid="hd-lob" title="ローブ" class="a-lob">
+      <div slot="aux" class="seg" id="p-scale" role="group" aria-label="半径の目盛り">
+        <button type="button" data-v="log" aria-pressed="true">対数</button><button type="button" data-v="lin" aria-pressed="false">線形</button>
+      </div>
+      <div class="sh-show" id="p-show" role="group" aria-label="ローブに出す反射モデル">
+        {MODELS.map((m) => <button type="button" class="chip" data-v={m.id} aria-pressed="true"><i style={`background:var(${m.color})`}></i>{m.name}</button>)}
+      </div>
+      <div class="scope"><svg id="polar" viewBox="0 0 360 208" role="img" aria-label="入射面でのローブ"></svg></div>
+    </Panel>
+
+    <div class="sh-right">
+      <Panel hid="hd-ref" title="反射率" class="a-ref">
+        <span slot="aux" class="aux" id="o-ti"></span>
+        <dl class="sh-bars">
+          {MODELS.map((m) => (
+            <div class="sh-bar">
+              <dt>{m.name}</dt>
+              <dd><span class="sh-t"><i id={`b-r-${m.id}`} style={`background:var(${m.color})`}></i><u></u></span><b id={`o-r-${m.id}`}>—</b></dd>
+            </div>
+          ))}
+        </dl>
+      </Panel>
+
+      <Panel hid="hd-int" title="シェーディングの補間" class="a-int">
+        <div slot="aux" class="seg" id="p-im" role="group" aria-label="反射モデル">
+          {MODELS.map((m) => <button type="button" data-v={m.id} aria-pressed={m.id === 'blinn' ? 'true' : 'false'}>{short[m.id]}</button>)}
+        </div>
+        <div class="sh-int">
+          {INTS.map(([v, l]) => (
+            <figure>
+              <div class="sh-st" data-light><canvas data-int={v} role="img" aria-label={`${l}シェーディング`}></canvas></div>
+              <figcaption>{l}</figcaption>
+            </figure>
+          ))}
+        </div>
+        <div class="ptab"><ParamRow d={DIV} /></div>
+      </Panel>
+    </div>
+
+    <Panel hid="hd-trm" title="項の内訳" class="a-trm">
+      <div slot="aux" class="seg" id="p-tm" role="group" aria-label="反射モデル">
+        {MODELS.map((m) => <button type="button" data-v={m.id} aria-pressed={m.id === 'ggx' ? 'true' : 'false'}>{short[m.id]}</button>)}
+      </div>
+      <div class="sh-terms" id="terms"></div>
+    </Panel>
+
+    <Panel hid="hd-fur" title="ファーネステスト" class="a-fur">
+      <div slot="aux" class="seg" id="p-fm" role="group" aria-label="反射モデル">
+        {MODELS.map((m) => <button type="button" data-v={m.id} aria-pressed={m.id === 'ggx' ? 'true' : 'false'}>{short[m.id]}</button>)}
+      </div>
+      <div class="sh-fur">
+        {FUR.map((r) => (
+          <figure>
+            <div class="sh-st sh-still"><canvas data-fur={r} role="img" aria-label={`粗さ ${r} の球`}></canvas></div>
+            <figcaption>r = {r.toFixed(1)}<b data-furv={r}>—</b></figcaption>
+          </figure>
+        ))}
+      </div>
+      <div class="ptab">
+        <ChoiceRow k="ms" name="多重散乱の補正" sub="マイクロファセットの間で跳ね返る光を足す。ほかの枠の GGX にも効く" value="0" choices={[['0', '切'], ['1', '入']]} />
+      </div>
+    </Panel>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools current="shading" />
+  <script>
+    import '../tools/shading/client';
+  </script>
+</SiteLayout>

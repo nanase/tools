@@ -388,8 +388,18 @@ export const TOOLS: Tool[] = [
     t: 'レイトレーシング',
     d: '画素ごとに光線を飛ばして反射と屈折をたどり、サンプル数を増やして絵を収束させます。',
     ic: 'rt',
-    r: ['lens', 'halo', 'demosaic', 'image-convolution'],
+    r: ['shading', 'lens', 'halo', 'demosaic'],
     k: 'ray tracing raytracing レイトレーシング レイトレ パストレーシング path tracing cg コンピュータグラフィックス レンダリング rendering モンテカルロ monte carlo 光線 反射 屈折 グローバルイルミネーション global illumination 間接光 コースティクス caustics コーネルボックス cornell box brdf ggx nee 次イベント推定 next event estimation mis 重点的サンプリング importance sampling ウィッテッド whitted ロシアンルーレット russian roulette 被写界深度 色温度 rmse spp サンプル数 ノイズ 収束',
+  },
+
+  {
+    id: 'shading',
+    c: 'CG',
+    t: 'シェーディング',
+    d: 'Lambert・Phong・Blinn-Phong・GGX を同じ光と材質で並べ、ハイライトとローブの違いを見比べます。',
+    ic: 'sh',
+    r: ['raytracing', 'lens', 'image-convolution', 'demosaic'],
+    k: 'shading シェーディング brdf 反射モデル lambert ランバート phong フォン blinn ブリン cook-torrance クック トランス ggx trowbridge-reitz マイクロファセット microfacet pbr 物理ベース physically based レンダリング rendering ローブ lobe ハイライト specular 鏡面 拡散 diffuse フレネル fresnel schlick smith 遮蔽 粗さ roughness 金属 metal メタリック metallic ファーネステスト ホワイトファーネステスト white furnace test 多重散乱 kulla conty グーロー gouraud フラット flat 補間 cg コンピュータグラフィックス',
   },
 
   {
