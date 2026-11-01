@@ -59,6 +59,7 @@ const MX = {
       </Panel>
 
       <Panel hid="hd-out" title="計算結果" class="a-out">
+        <a slot="aux" class="aux" href={`${import.meta.env.BASE_URL}image-corruption/`} title="このファイルの壊れ方の比較">画像の破損</a>
         <div slot="aux" class="seg"><button type="button" id="saveBtn" title="符号化した JPEG ファイルを保存する" disabled>保存</button></div>
         <dl class="metrics c3">
           <div class="m m-main"><dt>ファイルの大きさ</dt><dd><span id="o-size">—</span><span class="m-sub" id="o-sizes"></span></dd></div>

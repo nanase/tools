@@ -1044,6 +1044,32 @@ export const ART: Record<string, Art> = {
       `<circle class="b" cx="${r1(head[0])}" cy="${r1(head[1])}" r="1.8"/>`
     );
   },
+  /* 画像の破損: 走査線で描いた絵の 1 か所を壊すと、そこから下の行が横にずれて色も変わる。壊れる行が上から下りてくる */
+  crp(t) {
+    const ROWS = 9,
+      /* 行ごとの山の輪郭（中央が高い絵） */
+      hi = (r: number): number => 58 - 46 * Math.abs(r - 4.2) * 0.2,
+      at = t ? Math.floor((mod(t, 3) / 3) * (ROWS + 2)) : 5;
+    let ok = '',
+      sky = '',
+      bad = '',
+      off = '';
+    for (let r = 0; r < ROWS; r++) {
+      const y = 4 + r * 4.6,
+        w = hi(r),
+        c = 60;
+      if (r < at) {
+        sky += `M6 ${r1(y)}H${r1(c - w / 2 - 3)}M${r1(c + w / 2 + 3)} ${r1(y)}H114`;
+        ok += `M${r1(c - w / 2)} ${r1(y)}H${r1(c + w / 2)}`;
+      } else {
+        const d = ((r - at + 1) * 11) % 37,
+          x0 = 6 + d;
+        bad += `M${r1(x0)} ${r1(y)}H${r1(Math.min(114, x0 + 34))}`;
+        off += `M${r1(Math.min(112, x0 + 42))} ${r1(y)}H114M6 ${r1(y)}H${r1(Math.max(6, x0 - 6))}`;
+      }
+    }
+    return P('c t', sky) + P('b', ok) + (bad ? P('a', bad) : '') + (off ? P('c d', off) : '');
+  },
   /* GIF: LZW の辞書の木が 1 符号ずつ育つ。足した節を塗り、根からの道すじを色の線で示す */
   gif(t) {
     /* [x, y, 親]。先頭の 3 つが根で、後ろほど後に足す */
@@ -1637,6 +1663,7 @@ export const LOOP: Record<string, number> = {
   jp: 3,
   png: 3,
   gif: 3,
+  crp: 3,
   og: 3,
   en: 720 / 400,
   ln: TAU / 1.4,
