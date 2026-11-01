@@ -7,7 +7,17 @@ import RelatedTools from '../components/RelatedTools.astro';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import '../lib/imgfmt/hexdump.css';
 import '../tools/png/style.css';
-import { COLOR_TYPES, FILTERS, INTERLACES, LAYERS, LEVELS, MAX_SIDE, SRCS, TARGETS } from '../tools/png/params';
+import {
+  COLOR_TYPES,
+  FILTERS,
+  INTERLACES,
+  LAYERS,
+  LEVELS,
+  MAX_SIDE,
+  SAMPLE_CHOICES,
+  SRCS,
+  TARGETS,
+} from '../tools/png/params';
 import Theory from '../tools/png/Theory.astro';
 
 const name = 'PNG';
@@ -20,9 +30,10 @@ const CMP = ['None', 'Sub', 'Up', 'Average', 'Paeth', '適応'];
     <div class="col c1">
       <Panel hid="hd-in" title="入力" class="a-in">
         <div slot="aux" class="seg" id="p-src" role="group" aria-label="画像" data-nosave>
-          {SRCS.map(([v, l, t]) => <button type="button" data-v={v} aria-pressed={v === 'test' ? 'true' : 'false'} title={t}>{l}</button>)}
+          {SRCS.map(([v, l, t]) => <button type="button" data-v={v} aria-pressed={v === 'smp' ? 'true' : 'false'} title={t}>{l}</button>)}
         </div>
-        <div class="ptab" id="in-tab" data-src="test">
+        <div class="ptab" id="in-tab" data-src="smp">
+          <ChoiceRow k="smp" name="見本" choices={SAMPLE_CHOICES} value="chart" />
           <div class="prow" id="p-file">
             <div class="c-sym" aria-hidden="true"></div>
             <div class="c-name"><span class="pn">ファイル</span><p class="desc tip" role="tooltip" hidden>{`PNG・JPEG・WebP など。この枠か画像の枠へ落としても読み込める。符号化し直すときは長い辺を ${MAX_SIDE} 画素までに縮める`}</p></div>

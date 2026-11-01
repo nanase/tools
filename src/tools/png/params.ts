@@ -4,9 +4,16 @@
 export const MAX_SIDE = 1024;
 
 export const SRCS = [
-  ['test', '試験図', 'JPEG のページと同じ試験図。色が多く、なめらかな所と細かい模様がある'],
-  ['illust', 'イラスト', '平らな塗りと透明・半透明の所がある絵。16 色'],
+  ['smp', '見本', 'このツールで描いた画像'],
   ['file', 'ファイル', 'この端末の画像ファイル'],
+] as const;
+
+/** 見本の画像（samples.ts の SAMPLES と同じ順） */
+export const SAMPLE_CHOICES = [
+  ['chart', '試験図', '6 段の帯。上から Sub・Up・Paeth・Average・None が効く段と、一致が効く繰り返しの段'],
+  ['photo', '写真風', '滑らかな空と山にわずかな雑音。PNG が苦手な画像'],
+  ['screen', '画面', '平らな色と同じ部品の繰り返し。15 色でパレットにでき、一致が長い'],
+  ['illust', 'イラスト', '平らな塗りと透明・半透明の所。16 色でパレットにできる'],
 ] as const;
 
 export const TARGETS = [

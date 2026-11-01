@@ -8,7 +8,6 @@ import { minus, plain, ro } from '../../lib/format';
 import { bindFileInput, loadImage, saveBytes } from '../../lib/imgfmt/file';
 import { nice } from '../../lib/scope';
 import { initToolPage } from '../../lib/tool-page';
-import { drawSample, SAMPLE_H, SAMPLE_W } from '../jpeg/sample';
 import { FileMap } from './filemap';
 import { Huff } from './huff';
 import { Ladder } from './ladder';
@@ -31,7 +30,7 @@ import {
 } from './model';
 import { COLOR_TYPES, LADDER_N, MAX_SIDE } from './params';
 import { type ColorType, decodePng } from './png';
-import { ILLUST_H, ILLUST_W, illust } from './sample';
+import { SAMPLES } from './samples';
 import { TK_MATCH, tokenAtPos } from './trace';
 import { FILE_CMP_LEVEL, type Job, type Reply, run } from './worker';
 
@@ -88,7 +87,7 @@ interface Img {
 }
 let img: Img | null = null,
   nextImg = 0;
-const imgs: Partial<Record<'test' | 'illust' | 'file', Img>> = {};
+const imgs: Partial<Record<string, Img>> = {};
 /** 今の結果と、フィルタの比較（あとから届く） */
 let M: Model | null = null,
   CMP: Compare | null = null;
@@ -104,7 +103,8 @@ let preview = -1;
 const css = (v: string): string => getComputedStyle($('.pgrid')).getPropertyValue(v).trim();
 
 /* ---------- 入力 ---------- */
-const src$ = new Choice($('#p-src'), (v) => setSrc(v as 'test' | 'illust' | 'file'));
+const src$ = new Choice($('#p-src'), (v) => setSrc(v));
+const smp$ = new Choice($('#p-smp'), () => setSrc('smp'));
 const tg$ = new Choice($('#p-tg'), () => request());
 const ct$ = new Choice($('#p-ct'), () => request());
 const fi$ = new Choice($('#p-fi'), () => request());
@@ -698,21 +698,6 @@ function focusBlock(): void {
 }
 
 /* ---------- 入力元 ---------- */
-function sampleTest(): Img {
-  const c = document.createElement('canvas');
-  c.width = SAMPLE_W;
-  c.height = SAMPLE_H;
-  const x = ctx2d(c);
-  drawSample(x);
-  return {
-    id: ++nextImg,
-    w: SAMPLE_W,
-    h: SAMPLE_H,
-    rgba: x.getImageData(0, 0, SAMPLE_W, SAMPLE_H).data,
-    name: 'test',
-    png: null,
-  };
-}
 function setImage(i: Img, at: [number, number]): void {
   img = i;
   M = null;
@@ -745,14 +730,12 @@ function palette(ok: boolean): void {
 }
 /** 新しい画像の最初の結果で選ぶ画素 */
 let pendingSel: [number, number] | null = null;
-function setSrc(v: 'test' | 'illust' | 'file'): void {
+function setSrc(v: string): void {
   $('#in-tab').dataset.src = v;
-  if (v === 'test') {
-    imgs.test ??= sampleTest();
-    setImage(imgs.test, [150, 150]);
-  } else if (v === 'illust') {
-    imgs.illust ??= { id: ++nextImg, w: ILLUST_W, h: ILLUST_H, rgba: illust(), name: 'illust', png: null };
-    setImage(imgs.illust, [44, 30]);
+  if (v === 'smp') {
+    const s = SAMPLES.find((q) => q.id === smp$.value) ?? SAMPLES[0];
+    imgs[s.id] ??= { id: ++nextImg, w: s.w, h: s.h, rgba: s.draw(), name: s.id, png: null };
+    setImage(imgs[s.id] as Img, s.at);
   } else if (imgs.file) setImage(imgs.file, [imgs.file.h >> 1, imgs.file.w >> 2]);
   else $<HTMLInputElement>('#fileIn').click();
 }
@@ -812,4 +795,5 @@ $('#saveBtn').addEventListener('click', () => {
 });
 
 /* ---------- 始める ---------- */
-setSrc(src$.value === 'file' ? 'test' : (src$.value as 'test' | 'illust'));
+src$.set('smp');
+setSrc('smp');

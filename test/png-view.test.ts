@@ -14,7 +14,16 @@ import {
   rowStartPos,
 } from '../src/tools/png/model';
 import { pngLayout } from '../src/tools/png/png';
-import { ILLUST_H, ILLUST_W, illust } from '../src/tools/png/sample';
+import {
+  CHART_BAND,
+  CHART_FILTERS,
+  CHART_W,
+  chart,
+  ILLUST_H,
+  ILLUST_W,
+  illust,
+  SAMPLES,
+} from '../src/tools/png/samples';
 
 /** なめらかな模様（色が多い） */
 function grad(w: number, h: number): Uint8ClampedArray {
@@ -117,5 +126,31 @@ describe('画像に描く層', () => {
     expect(distLabel(m, 1, 2 * stride)).toBe('↑ 2 行上');
     expect(distLabel(m, 1, 8)).toBe('← 2 画素');
     expect(distLabel(m, 1, 7)).toBe('距離 7');
+  });
+});
+
+describe('見本', () => {
+  it('試験図の各段は、狙ったフィルタで最も小さくなる', () => {
+    const all = chart(),
+      W = CHART_W,
+      B = CHART_BAND;
+    CHART_FILTERS.forEach((want, k) => {
+      const band = all.slice(k * B * W * 4, (k + 1) * B * W * 4),
+        sizes = ([0, 1, 2, 3, 4] as const).map(
+          (f) => model(encodeModel(band, W, B, { colorType: 2, filter: f, level: 6, interlace: false })).zlib.length,
+        );
+      expect(sizes.indexOf(Math.min(...sizes))).toBe(want);
+    });
+  });
+
+  it('画面とイラストはパレットにでき、写真風と試験図はできない', () => {
+    const ok = (s: (typeof SAMPLES)[number]) =>
+      !('fail' in encodeModel(s.draw(), s.w, s.h, { colorType: 3, filter: 'adaptive', level: 6, interlace: false }));
+    expect(SAMPLES.map((s) => [s.id, ok(s)])).toEqual([
+      ['chart', false],
+      ['photo', false],
+      ['screen', true],
+      ['illust', true],
+    ]);
   });
 });
