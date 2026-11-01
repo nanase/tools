@@ -1,0 +1,160 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/sort/style.css';
+import { ALGS, algOf, GROUPS } from '../tools/sort/algorithms';
+import { DISTS, shapeSvg } from '../tools/sort/data';
+import { SIZE, SPEED, VOL } from '../tools/sort/params';
+import Theory from '../tools/sort/Theory.astro';
+
+const name = 'ソート';
+const DEF = algOf('quick-last');
+/* 組み合わせの表の見出しは、語の切れ目で折り返す */
+const wrapHead = (s: string) => s.replace(/(に偏り|並び替え|済み|が少ない)/g, '<wbr>$1');
+const firstOfGroup = new Set(GROUPS.map((g) => ALGS.find((a) => a.g === g)?.id));
+---
+<SiteLayout title={name} tool={{ id: 'sort', name }}>
+  <PageTitle title={name}>棒グラフが小さい順に並ぶ様子を、音とともに追います。アルゴリズムどうし、データどうしを並べて比べられます。</PageTitle>
+
+  <div class="tgrid" id="so" data-mode="one">
+    <Panel hid="hd-fig" title={DEF.f} class="a-fig" fixed>
+      <span slot="aux" class="aux tp-st" id="so-st" hidden><span class="led" id="so-led" aria-hidden="true"></span><span id="so-stT"></span></span>
+      <div slot="aux" class="seg" id="so-mode" role="group" aria-label="表示">
+        <button type="button" data-v="one" aria-pressed="true">単独</button>
+        <button type="button" data-v="cmp" aria-pressed="false">比較</button>
+        <button type="button" data-v="list" aria-pressed="false">一覧</button>
+      </div>
+      <div class="sbar so-lg">
+        <span class="stag"><i class="sw c2" aria-hidden="true"></i>比較・読み取り</span>
+        <span class="stag"><i class="sw" aria-hidden="true"></i>交換・書き込み</span>
+        <button type="button" class="tg" id="so-t-pivot" aria-pressed="true" hidden><i class="so-sw pv" aria-hidden="true"></i><span>ピボット</span></button>
+        <button type="button" class="tg" id="so-t-range" aria-pressed="true" hidden><i class="so-sw rg" aria-hidden="true"></i><span>範囲</span></button>
+        <button type="button" class="tg" id="so-t-fix" aria-pressed="true" hidden><i class="so-sw fx" aria-hidden="true"></i><span>確定</span></button>
+        <button type="button" class="tg" id="so-t-info" aria-pressed="true" hidden><i class="so-sw nf" aria-hidden="true"></i><span>ギャップ</span></button>
+        <button type="button" class="tg" id="so-t-aux" aria-pressed="true" hidden><i class="so-sw au" aria-hidden="true"></i><span>補助配列</span></button>
+        <div class="seg so-axis" id="so-axis" role="group" aria-label="比べるもの" hidden>
+          <button type="button" data-v="alg" aria-pressed="true">アルゴリズムを比較</button>
+          <button type="button" data-v="data" aria-pressed="false">データを比較</button>
+        </div>
+      </div>
+      <div class="so-solo">
+        <div class="scope so-scr">
+          <canvas id="so-main" role="img" aria-label="棒グラフ"></canvas>
+          <canvas id="so-aux" role="img" aria-label="補助配列" hidden></canvas>
+        </div>
+      </div>
+      <div class="so-race" id="so-race"></div>
+      <div class="tp">
+        <button type="button" class="tp-ib" id="tp-home" title="最初へ戻す" aria-label="最初へ戻す"><svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1.5" y="1.5" width="1.8" height="9"/><path d="M10.5 1.5v9L4 6z"/></svg></button>
+        <button type="button" class="tp-pp" id="tp-pp" title="再生" aria-label="再生"><svg class="i-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.2l7.6 4.8L3 10.8z"/></svg><svg class="i-pause" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="2.8" height="9"/><rect x="7.2" y="1.5" width="2.8" height="9"/></svg></button>
+        <div class="tp-tl">
+          <div class="tp-trk" id="tp-trk" role="slider" tabindex="0" aria-label="進み具合" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0">
+            <div class="tp-rail"></div>
+            <div class="tp-fill" id="tp-fill"></div>
+            <div class="tp-th" id="tp-th"></div>
+          </div>
+          <div class="tp-tm"><span><b id="tp-a">0</b> / <span id="tp-b">0</span> 回</span><span id="tp-t"></span></div>
+        </div>
+        <div class="tp-side">
+          <button type="button" class="tp-sq" id="tp-back" title="1 回戻す" aria-label="1 回戻す"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M12 3L6 8l6 5M4 3v10"/></svg></button>
+          <button type="button" class="tp-sq" id="tp-step" title="1 回進める" aria-label="1 回進める"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 3l6 5-6 5M12 3v10"/></svg></button>
+        </div>
+      </div>
+      <div class="ptab so-row"><ParamRow d={SPEED} /></div>
+    </Panel>
+
+    <Panel hid="hd-mat" title="組み合わせ" class="a-mat">
+      <div slot="aux" class="seg" id="so-metric" role="group" aria-label="表の値">
+        <button type="button" data-v="total" aria-pressed="true">全操作</button>
+        <button type="button" data-v="cmp" aria-pressed="false">比較</button>
+        <button type="button" data-v="mv" aria-pressed="false">移動</button>
+      </div>
+      <div class="so-mx">
+        <table class="so-tb" id="so-tb">
+          <thead><tr><th></th>{DISTS.map(([k, nm]) => <th scope="col"><button type="button" class="so-mh" data-d={k} title="少ない順の 6 種を比較"><Fragment set:html={shapeSvg(k)} /><Fragment set:html={wrapHead(nm)} /></button></th>)}</tr></thead>
+          <tbody>
+            {ALGS.map((a) => (
+              <tr class:list={{ g0: firstOfGroup.has(a.id) }}>
+                <th scope="row"><button type="button" class="so-mr" data-a={a.id} title="データ 9 種を比較">{a.s}</button></th>
+                {DISTS.map(([k, nm]) => <td><button type="button" class="so-c" data-a={a.id} data-d={k} title={`${a.f}・${nm}`}>…</button></td>)}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </Panel>
+
+    <div class="col">
+      <Panel hid="hd-alg" title="アルゴリズム" class="a-alg">
+        <span slot="aux" class="aux" id="so-an"></span>
+        <div id="so-algs">
+          {GROUPS.map((g) => (
+            <div class="so-grp">
+              <h3>{g}</h3>
+              <div class="chips">
+                {ALGS.filter((a) => a.g === g).map((a) => <button type="button" class="chip" data-v={a.id} title={a.f} aria-pressed={a.id === DEF.id ? 'true' : 'false'}>{a.s}</button>)}
+              </div>
+            </div>
+          ))}
+        </div>
+      </Panel>
+      <Panel hid="hd-data" title="データ" class="a-data">
+        <button slot="aux" type="button" class="prst" id="so-new">新しいデータ</button>
+        <div class="so-dists" id="so-dists" role="group" aria-label="データの偏り">
+          {DISTS.map(([k, nm]) => <button type="button" class="so-d" data-v={k} aria-pressed={k === 'random' ? 'true' : 'false'}><Fragment set:html={shapeSvg(k)} /><span>{nm}</span></button>)}
+          <button type="button" class="so-d" data-v="draw" aria-pressed="false"><svg viewBox="0 0 32 12" preserveAspectRatio="none" aria-hidden="true"><path d="M1 10c5-9 8-9 12-4s8 6 18-5" fill="none" stroke="currentColor" stroke-width="1.5" vector-effect="non-scaling-stroke"/></svg><span>手描き</span></button>
+        </div>
+        <div class="ptab so-row"><ParamRow d={SIZE} /></div>
+      </Panel>
+    </div>
+    <div class="col">
+      <Panel hid="hd-out" title="計算結果" class="a-out">
+        <dl class="metrics so-res">
+          <div class="m m-main"><dt>全操作</dt><dd><span id="o-t">0</span><span class="u">回</span></dd></div>
+          <div class="m"><dt>比較</dt><dd id="o-c">0</dd></div>
+          <div class="m"><dt>交換</dt><dd id="o-s">0</dd></div>
+          <div class="m"><dt>読み取り</dt><dd id="o-r">0</dd></div>
+          <div class="m"><dt>書き込み</dt><dd id="o-w">0</dd></div>
+          <div class="m m-sub"><dt>最良</dt><dd id="o-b"></dd></div>
+          <div class="m m-sub"><dt>平均</dt><dd id="o-av"></dd></div>
+          <div class="m m-sub"><dt>最悪</dt><dd id="o-wc"></dd></div>
+          <div class="m m-sub"><dt>補助メモリ</dt><dd id="o-mm"></dd></div>
+          <div class="m m-sub"><dt>安定性</dt><dd id="o-st"></dd></div>
+        </dl>
+        <div class="so-rank"><table class="so-rt" id="so-rt"></table></div>
+      </Panel>
+      <Panel hid="hd-snd" title="音" class="a-snd">
+        <div slot="aux" class="seg"><button type="button" id="so-snd" aria-pressed="true"><span class="led on" id="so-sndL" aria-hidden="true"></span> 鳴らす</button></div>
+        <div class="ptab so-row">
+          <ParamRow d={VOL} />
+          <div class="prow chr wide">
+            <div class="c-sym" aria-hidden="true"></div>
+            <div class="c-name"><span class="pn" id="n-kinds">鳴らす操作</span></div>
+            <div class="c-rst"></div>
+            <div class="c-sub"><div class="chips" id="so-kinds" role="group" aria-labelledby="n-kinds">
+              <button type="button" class="chip" data-v="c" aria-pressed="true">比較</button>
+              <button type="button" class="chip" data-v="r" aria-pressed="true">読み取り</button>
+              <button type="button" class="chip" data-v="w" aria-pressed="true">交換・書き込み</button>
+            </div></div>
+          </div>
+          <ChoiceRow k="wave" name="音色" choices={[['triangle', '三角波'], ['square', '矩形波'], ['sine', '正弦波']]} value="triangle" />
+          <ChoiceRow k="scale" name="高さ" choices={[['cont', '連続'], ['penta', '五音音階']]} value="cont" />
+        </div>
+      </Panel>
+    </div>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools current="sort" />
+  <script>
+    import '../tools/sort/client';
+  </script>
+</SiteLayout>

@@ -48,6 +48,8 @@ export type Unit =
   | 'λ'
   | '画素'
   | '回'
+  | '回/秒'
+  | '個'
   | '倍'
   | (typeof COMPOUND)[number];
 

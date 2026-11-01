@@ -1,0 +1,281 @@
+---
+// 動作原理と式
+import { ALGS } from './algorithms';
+
+type Ref = { for: string; src: string; url?: string };
+const doi = (d: string) => `https://doi.org/${d}`;
+const R = {
+  knuth: {
+    for: '基本のソート・比較の回数の下限',
+    src: 'D. E. Knuth, The Art of Computer Programming, Vol. 3: Sorting and Searching, 2nd ed., Addison-Wesley, 1998',
+  },
+  clrs: {
+    for: '計数・基数・バケット',
+    src: 'T. H. Cormen, C. E. Leiserson, R. L. Rivest, C. Stein, Introduction to Algorithms, 4th ed., MIT Press, 2022',
+  },
+  clrs2: {
+    for: 'ストゥージ（問題 7-3）',
+    src: 'T. H. Cormen, C. E. Leiserson, R. L. Rivest, C. Stein, Introduction to Algorithms, 2nd ed., MIT Press, 2001',
+  },
+  hoare: {
+    for: 'クイック',
+    src: 'C. A. R. Hoare, “Quicksort,” The Computer Journal, vol. 5, no. 1, pp. 10–16, 1962',
+    url: doi('10.1093/comjnl/5.1.10'),
+  },
+  williams: {
+    for: 'ヒープ',
+    src: 'J. W. J. Williams, “Algorithm 232: Heapsort,” CACM, vol. 7, no. 6, pp. 347–348, 1964',
+    url: doi('10.1145/512274.3734138'),
+  },
+  floyd: {
+    for: 'ヒープの作り方',
+    src: 'R. W. Floyd, “Algorithm 245: Treesort 3,” CACM, vol. 7, no. 12, p. 701, 1964',
+    url: doi('10.1145/355588.365103'),
+  },
+  dijkstra: {
+    for: 'スムース',
+    src: 'E. W. Dijkstra, “Smoothsort, an alternative for sorting in situ,” Science of Computer Programming, vol. 1, no. 3, pp. 223–233, 1982',
+    url: doi('10.1016/0167-6423(82)90016-8'),
+  },
+  shell: {
+    for: 'シェル',
+    src: 'D. L. Shell, “A High-Speed Sorting Procedure,” CACM, vol. 2, no. 7, pp. 30–32, 1959',
+    url: doi('10.1145/368370.368387'),
+  },
+  ciura: {
+    for: 'シェルの増分',
+    src: 'M. Ciura, “Best Increments for the Average Case of Shellsort,” FCT 2001, LNCS 2138, pp. 106–117',
+    url: doi('10.1007/3-540-44669-9_12'),
+  },
+  bentley: {
+    for: '3 値の中央値・3 分割',
+    src: 'J. L. Bentley, M. D. McIlroy, “Engineering a Sort Function,” Software: Practice and Experience, vol. 23, no. 11, pp. 1249–1265, 1993',
+    url: doi('10.1002/spe.4380231105'),
+  },
+  yaroslavskiy: {
+    for: 'デュアルピボット',
+    src: 'V. Yaroslavskiy, “Replacement of Quicksort in java.util.Arrays with new Dual-Pivot Quicksort,” OpenJDK core-libs-dev, 2009',
+    url: 'https://mail.openjdk.org/pipermail/core-libs-dev/2009-September/002630.html',
+  },
+  wild: {
+    for: 'デュアルピボットの解析',
+    src: 'S. Wild, M. E. Nebel, “Average Case Analysis of Java 7’s Dual Pivot Quicksort,” ESA 2012, LNCS 7501, pp. 825–836',
+    url: doi('10.1007/978-3-642-33090-2_71'),
+  },
+  musser: {
+    for: 'イントロ',
+    src: 'D. R. Musser, “Introspective Sorting and Selection Algorithms,” Software: Practice and Experience, vol. 27, no. 8, pp. 983–993, 1997',
+  },
+  orlp: {
+    for: 'pdqsort',
+    src: 'O. R. L. Peters, “Pattern-defeating Quicksort,” arXiv:2106.05123, 2021',
+    url: 'https://arxiv.org/abs/2106.05123',
+  },
+  peters: {
+    for: 'ティム',
+    src: 'T. Peters, listsort.txt, CPython, 2002',
+    url: 'https://github.com/python/cpython/blob/main/Objects/listsort.txt',
+  },
+  munro: {
+    for: 'パワー',
+    src: 'J. I. Munro, S. Wild, “Nearly-Optimal Mergesorts: Fast, Practical Sorting Methods That Optimally Adapt to Existing Runs,” ESA 2018, LIPIcs 112, 63:1–63:16',
+    url: doi('10.4230/LIPIcs.ESA.2018.63'),
+  },
+  kim: {
+    for: 'インプレース（SymMerge）',
+    src: 'P.-S. Kim, A. Kutzner, “Stable Minimum Storage Merging by Symmetric Comparisons,” ESA 2004, LNCS 3221, pp. 714–723',
+    url: doi('10.1007/978-3-540-30140-0_63'),
+  },
+  batcher: {
+    for: 'バイトニック・奇偶マージ',
+    src: 'K. E. Batcher, “Sorting Networks and Their Applications,” AFIPS Spring Joint Computer Conference, vol. 32, pp. 307–314, 1968',
+    url: doi('10.1145/1468075.1468121'),
+  },
+  parberry: {
+    for: 'ペアワイズ',
+    src: 'I. Parberry, “The Pairwise Sorting Network,” Parallel Processing Letters, vol. 2, no. 2–3, pp. 205–211, 1992',
+    url: doi('10.1142/S0129626492000337'),
+  },
+  haddon: {
+    for: 'サイクル',
+    src: 'B. K. Haddon, “Cycle-Sort: A Linear Sorting Method,” The Computer Journal, vol. 33, no. 4, pp. 365–367, 1990',
+    url: doi('10.1093/comjnl/33.4.365'),
+  },
+  gates: {
+    for: 'パンケーキ（反転の回数）',
+    src: 'W. H. Gates, C. H. Papadimitriou, “Bounds for Sorting by Prefix Reversal,” Discrete Mathematics, vol. 27, no. 1, pp. 47–57, 1979',
+    url: doi('10.1016/0012-365X(79)90068-2'),
+  },
+  grune: {
+    for: 'ノーム',
+    src: 'H. Sarbazi-Azad, “Stupid Sort: A New Sorting Algorithm,” Newsletter, Dept. of Computing Science, Univ. of Glasgow, 599:4, 2000。D. Grune, Gnome Sort',
+    url: 'https://dickgrune.com/Programs/gnomesort.html',
+  },
+  dobo: {
+    for: 'コム',
+    src: 'W. Dobosiewicz, “An Efficient Variation of Bubble Sort,” Information Processing Letters, vol. 11, no. 1, pp. 5–6, 1980',
+    url: doi('10.1016/0020-0190(80)90022-8'),
+  },
+  lacey: {
+    for: 'コムの縮小率 1.3',
+    src: 'S. Lacey, R. Box, “A Fast, Easy Sort,” Byte, vol. 16, no. 4, pp. 315–316, 318, 320, 1991',
+  },
+  habermann: {
+    for: '奇偶転置',
+    src: 'N. Habermann, “Parallel Neighbor Sort (or the Glory of the Induction Principle),” CMU Computer Science Report, 1972',
+  },
+  mcilroy: {
+    for: '基数（MSD）・アメリカンフラッグ',
+    src: 'P. M. McIlroy, K. Bostic, M. D. McIlroy, “Engineering Radix Sort,” Computing Systems, vol. 6, no. 1, pp. 5–27, 1993',
+    url: 'https://static.usenix.org/publications/compsystems/1993/win_mcilroy.pdf',
+  },
+  neubert: {
+    for: 'フラッシュ',
+    src: 'K.-D. Neubert, “The Flashsort1 Algorithm,” Dr. Dobb’s Journal, vol. 23, no. 2, 1998',
+    url: 'https://jacobfilipp.com/DrDobbs/articles/DDJ/1998/9802/9802n/9802n.htm',
+  },
+  bead: {
+    for: 'ビーズ',
+    src: 'J. J. Arulanandham, C. S. Calude, M. J. Dinneen, “Bead-Sort: A Natural Sorting Algorithm,” Bulletin of the EATCS, vol. 76, pp. 153–162, 2002',
+  },
+  broder: {
+    for: 'スロー',
+    src: 'A. Broder, J. Stolfi, “Pessimal Algorithms and Simplexity Analysis,” SIGACT News, vol. 16, no. 3, pp. 49–53, 1984',
+    url: doi('10.1145/990534.990536'),
+  },
+  gruber: {
+    for: 'ボゴ・ボゾ',
+    src: 'H. Gruber, M. Holzer, O. Ruepp, “Sorting the Slow Way: An Analysis of Perversely Awful Randomized Sorting Algorithms,” FUN 2007, LNCS 4475, pp. 183–197',
+    url: doi('10.1007/978-3-540-72914-3_17'),
+  },
+  bingmann: {
+    for: '操作を音にする',
+    src: 'T. Bingmann, The Sound of Sorting, 2013',
+    url: 'https://panthema.net/2013/sound-of-sorting/',
+  },
+} satisfies Record<string, Ref>;
+type K = keyof typeof R;
+
+const REFS_OF: Record<string, K[]> = {
+  bubble: ['knuth'],
+  shaker: ['knuth'],
+  comb: ['dobo', 'lacey'],
+  gnome: ['grune'],
+  oddeven: ['habermann'],
+  selection: ['knuth'],
+  dselection: [],
+  heap: ['williams', 'floyd'],
+  smooth: ['dijkstra'],
+  cycle: ['haddon'],
+  pancake: ['gates'],
+  insertion: ['knuth'],
+  binsert: ['knuth'],
+  shell: ['shell', 'ciura'],
+  merge: ['knuth'],
+  bmerge: ['knuth'],
+  tim: ['peters'],
+  power: ['munro'],
+  inplace: ['kim'],
+  'quick-last': ['hoare'],
+  'quick-mid': ['hoare'],
+  'quick-med': ['hoare', 'bentley'],
+  quick3: ['bentley'],
+  dual: ['yaroslavskiy', 'wild'],
+  intro: ['musser'],
+  pdq: ['orlp'],
+  counting: ['clrs'],
+  'radix-lsd': ['clrs'],
+  'radix-msd': ['mcilroy'],
+  flag: ['mcilroy'],
+  bucket: ['clrs'],
+  flash: ['neubert'],
+  bead: ['bead'],
+  bitonic: ['batcher'],
+  batcher: ['batcher'],
+  pairwise: ['parberry'],
+  stooge: ['clrs2'],
+  slow: ['broder'],
+  bogo: ['gruber'],
+  bozo: ['gruber'],
+};
+/* 表の順に番号を振る。本文でだけ使う出典はあとに続ける */
+const order: K[] = ['knuth', 'bingmann'];
+for (const a of ALGS) for (const k of REFS_OF[a.id] ?? []) if (!order.includes(k)) order.push(k);
+const num = (k: K) => order.indexOf(k) + 1;
+const Rf = (k: K) => `<a class="rf" href="#thy-r${num(k)}">[${num(k)}]</a>`;
+---
+<h3>操作の数え方</h3>
+<ul class="tl">
+  <li><b>比較</b>: 2 つの要素、または要素と手元の値を比べる 1 回</li>
+  <li><b>交換</b>: 2 つの要素を入れ替える 1 回</li>
+  <li><b>読み取り</b>: 配列か補助配列の値を手元へ取る 1 回。比較の分は数えない</li>
+  <li><b>書き込み</b>: 配列か補助配列へ値を置く 1 回</li>
+</ul>
+
+<h3>比較の回数の下限</h3>
+<p>比較だけで並べ替えるには、<math><mi>n</mi><mo>!</mo></math> 通りの並びを見分ける必要があります<Fragment set:html={Rf('knuth')} />。</p>
+<div class="eqs"><math display="block"><mrow><msub><mi>C</mi><mi>min</mi></msub><mo>≥</mo><mo>⌈</mo><msub><mi>log</mi><mn>2</mn></msub><mi>n</mi><mo>!</mo><mo>⌉</mo><mo>≈</mo><mi>n</mi><msub><mi>log</mi><mn>2</mn></msub><mi>n</mi><mo>−</mo><mn>1.44</mn><mi>n</mi></mrow></math></div>
+<p>計数・基数などの非比較のソートは、値そのものを使うのでこの下限を受けません。</p>
+
+<h3>データとの相性</h3>
+<ul class="tl">
+  <li><b>挿入</b>: 移動の回数は順序が逆の組（転倒）の数に等しい。ほぼ並び替え済みなら少ない</li>
+  <li><b>末尾をピボットにするクイック</b>: 並び替え済みでは毎回 1 個しか分かれず、比較は <math><mi>n</mi><mo>(</mo><mi>n</mi><mo>−</mo><mn>1</mn><mo>)</mo><mo>/</mo><mn>2</mn></math> 回</li>
+  <li><b>3 分割クイック</b>: ピボットと等しい値をまとめて除くので、値の種類が少ないと速い</li>
+  <li><b>ティム・パワー・スムース</b>: すでに並んだ部分を活かす</li>
+  <li><b>ソーティングネットワーク</b>: 比べる位置が初めから決まっていて、比較の回数はデータによらない</li>
+</ul>
+
+<h3>音</h3>
+<p>値 <math><mi>v</mi></math> の音の高さを次の式で決めます。比較では 2 つの値、交換では入れ替えた 2 つの値を鳴らします。値を音にする発想は The Sound of Sorting にならいました<Fragment set:html={Rf('bingmann')} />。</p>
+<div class="eqs"><math display="block"><mrow><mi>f</mi><mo>=</mo><mn>110</mn><mo>×</mo><msup><mn>2</mn><mrow><mn>4</mn><mo>(</mo><mi>v</mi><mo>−</mo><mn>1</mn><mo>)</mo><mo>/</mo><mo>(</mo><msub><mi>v</mi><mi>max</mi></msub><mo>−</mo><mn>1</mn><mo>)</mo></mrow></msup><mtext> Hz</mtext></mrow></math></div>
+
+<h3>計算量</h3>
+<p><math><mi>n</mi></math> は要素数、<math><mi>k</mi></math> は値の範囲、<math><mi>d</mi></math> は桁数です。「不明」は一般の式が知られていないものです。</p>
+<div class="tt-w"><table class="tt so-cx">
+  <thead><tr><th scope="col">名前</th><th scope="col">最良</th><th scope="col">平均</th><th scope="col">最悪</th><th scope="col">補助メモリ</th><th scope="col">安定性</th><th scope="col">出典</th></tr></thead>
+  <tbody>
+    {ALGS.map((a) => (
+      <tr>
+        <th scope="row">{a.f}</th>
+        <td set:html={a.b} />
+        <td set:html={a.a} />
+        <td set:html={a.w} />
+        <td set:html={a.m} />
+        <td>{a.st ? '安定' : '不安定'}</td>
+        <td set:html={(REFS_OF[a.id] ?? []).map(Rf).join('')} />
+      </tr>
+    ))}
+  </tbody>
+</table></div>
+
+<h3>出典</h3>
+<ol class="refs">
+  {order.map((k, i) => {
+    const r: Ref = R[k];
+    return (
+      <li id={`thy-r${i + 1}`}>
+        <span class="rf-for">{r.for}</span>
+        <span class="rf-src">{r.url ? <a href={r.url} target="_blank" rel="noopener">{r.src}</a> : r.src}</span>
+      </li>
+    );
+  })}
+</ol>
+
+<h3>このツールで決めたこと</h3>
+<ul class="tl">
+  <li>値は 1〜<math><mi>n</mi></math> の整数</li>
+  <li>ほぼ並び替え済みは約 5 % の要素を近くの要素と入れ替えたもの</li>
+  <li>中央値付近に偏りは平均 <math><mi>n</mi><mo>/</mo><mn>2</mn></math>、標準偏差 <math><mi>n</mi><mo>/</mo><mn>8</mn></math> の正規分布</li>
+  <li>両端に偏りは標準偏差 <math><mi>n</mi><mo>/</mo><mn>10</mn></math> の正規分布の半分を両端から</li>
+  <li>値の種類が少ないは 5 種類、のこぎりは 4 山</li>
+  <li>ティムとパワーは最小のランまで挿入で伸ばす。ギャロップはしない</li>
+  <li>pdqsort は分岐の少ない分割を使わない</li>
+  <li>基数は 4、バケットは <math><msqrt><mi>n</mi></msqrt></math> 個、フラッシュの区分は <math><mn>0.43</mn><mi>n</mi></math> 個</li>
+  <li>シェルの増分は Ciura の 701 まで。要素数の上限は 1,024</li>
+  <li>ビーズは高い段から順に段ごとに全要素を読むので <math><mi>n</mi><mi>k</mi></math> 回。論文の式は入力の総和に比例</li>
+  <li>ボゾは異なる 2 つを選んで交換する形。平均は交換が <math><mi>n</mi><mo>!</mo></math> 程度、比較が <math><mi>n</mi><mo>!</mo></math> 以上 <math><mi>n</mi><mo>·</mo><mi>n</mi><mo>!</mo></math> 以下</li>
+  <li>双方向選択は選択ソートの最小と最大を同時に選ぶ形</li>
+  <li>操作は 3,000,000 回で打ち切る。比較は 1,000,000 回、ボゴとボゾは 200,000 回</li>
+  <li>速いときは 1 コマに 8 音まで間引く</li>
+</ul>

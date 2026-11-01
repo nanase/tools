@@ -29,6 +29,21 @@ import {
 
 export type Art = (t: number) => string;
 
+/** ソートの図柄のコマ: 配列・比べている位置・交換したか */
+const SO_FRAMES: { a: readonly number[]; i: number; sw: boolean }[] = [];
+function soFrames(): void {
+  const a = [9, 3, 12, 6, 1, 14, 8, 4, 11, 2, 13, 7, 5, 10, 0, 15];
+  SO_FRAMES.push({ a: [...a], i: -1, sw: false });
+  for (let e = a.length - 1; e > 0; e--)
+    for (let i = 0; i < e; i++) {
+      const sw = a[i] > a[i + 1];
+      if (sw) [a[i], a[i + 1]] = [a[i + 1], a[i]];
+      SO_FRAMES.push({ a: [...a], i, sw });
+    }
+  /* 最後は並んだ絵のまま少し止める */
+  for (let k = 0; k < 16; k++) SO_FRAMES.push({ a: [...a], i: -1, sw: false });
+}
+
 /** カードの QR コード（バージョン 1・M の「QR」。初めて描くときに作る） */
 let qr0: Encoded | null = null;
 function QR(): Encoded {
@@ -1134,6 +1149,23 @@ export const ART: Record<string, Art> = {
     for (let i = last; N[i][2] >= 0; i = N[i][2]) path += edge(i);
     return P('c t', lines) + P('fc', old) + (path ? P('a', path) : '') + P('fb', box(last));
   },
+  /* ソート: 棒をバブルソートで並べる。比べている 2 本を色で示し、位置の決まった棒は濃く描く */
+  so(t) {
+    if (!SO_FRAMES.length) soFrames();
+    const f = SO_FRAMES[t ? Math.min(SO_FRAMES.length - 1, Math.floor((mod(t, 3) / 3) * SO_FRAMES.length)) : 0],
+      B = 7.2,
+      bar = (i: number, v: number): string => {
+        const h = 3 + v * 2.9;
+        return `M${(5 + i * B).toFixed(1)} ${(47 - h).toFixed(1)}h5.6v${h.toFixed(1)}h-5.6Z`;
+      };
+    let base = '',
+      hit = '';
+    f.a.forEach((v, i) => {
+      if (f.i >= 0 && (i === f.i || i === f.i + 1)) hit += bar(i, v);
+      else base += bar(i, v);
+    });
+    return P('fc', base) + (hit ? P(f.sw ? 'fa' : 'fb', hit) : '');
+  },
   /* オルガン音響モデル: 口と円錐の足があるパイプの正面。和音を鳴らし、鳴っている管に定在波を描く */
   og(t) {
     let body = '',
@@ -1748,6 +1780,7 @@ export const LOOP: Record<string, number> = {
   th: 3,
   ff: 3,
   wd: 4,
+  so: 3,
 };
 
 /** 止まっているときの図柄（ビルド時に HTML へ出す） */
