@@ -1,0 +1,149 @@
+---
+import { TOOLS } from '../../data/tools';
+
+/* 本文の出典番号 */
+const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
+/** ほかのページへのリンク（まだ公開していないページは名前だけ） */
+const to = (id: string, t: string) => (TOOLS.some((x) => x.id === id && !x.s) ? `<a href="../${id}/">${t}</a>` : t);
+const sub = (b: string, s: string) => `<msub><mi>${b}</mi><mrow>${s}</mrow></msub>`;
+const frac = (a: string, b: string) => `<mfrac><mrow>${a}</mrow><mrow>${b}</mrow></mfrac>`;
+const P = (s: string) => `<mo stretchy="false">(</mo>${s}<mo stretchy="false">)</mo>`;
+const dot = (a: string, b: string) => P(`<mi>${a}</mi><mo>·</mo><mi>${b}</mi>`);
+const pw = (b: string, e: string) => `<msup><mrow>${b}</mrow><mrow>${e}</mrow></msup>`;
+const fr = sub('f', '<mi>r</mi>');
+const fs = sub('f', '<mi>s</mi>');
+const ks = sub('k', '<mi>s</mi>');
+const F0 = sub('F', '<mn>0</mn>');
+const nB = sub('n', '<mi>B</mi>');
+const nP = sub('n', '<mi>P</mi>');
+const E = (m: string) => `<mi>E</mi>${P(sub('μ', `<mi>${m}</mi>`))}`;
+const Eavg = sub('E', '<mi>avg</mi>');
+const Favg = sub('F', '<mi>avg</mi>');
+---
+<h3>反射モデル</h3>
+<div class="eqs">
+  <math display="block" set:html={`${sub('L', '<mi>o</mi>')}<mo>=</mo>${fr}<mi>π</mi>${sub('L', '<mi>i</mi>')}${dot('n', 'l')}<mo>+</mo><mi>A</mi><mi>R</mi>`} />
+  <math display="block" set:html={`${fr}<mo>=</mo>${frac('<mi>ρ</mi>', '<mi>π</mi>')}<mo>+</mo>${fs}`} />
+</div>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th>モデル</th><th>鏡面反射の項 <math set:html={fs} /></th><th>ハイライトを決めるもの</th></tr></thead>
+  <tbody>
+    <tr><th>Lambert<Fragment set:html={rf(1)} /></th><td>なし</td><td>なし</td></tr>
+    <tr><th>Phong<Fragment set:html={rf(2) + rf(3)} /></th><td><math set:html={`${ks}${frac(`${nP}<mo>+</mo><mn>2</mn>`, '<mn>2</mn><mi>π</mi>')}${pw(dot('r', 'v'), nP)}`} /></td><td>反射ベクトルと視線のなす角</td></tr>
+    <tr><th>Blinn-Phong<Fragment set:html={rf(4)} /></th><td><math set:html={`${ks}${frac(`${nB}<mo>+</mo><mn>8</mn>`, '<mn>8</mn><mi>π</mi>')}${pw(dot('n', 'h'), nB)}`} /></td><td>法線とハーフベクトルのなす角</td></tr>
+    <tr><th>GGX<Fragment set:html={rf(5) + rf(6)} /></th><td><math set:html={frac('<mi>D</mi><mi>F</mi><mi>G</mi>', `<mn>4</mn>${dot('n', 'v')}${dot('n', 'l')}`)} /></td><td>マイクロファセットの法線分布</td></tr>
+  </tbody>
+</table></div>
+<ul class="tl">
+  <li>同じ指数なら Phong のハイライトの方が太い
+    <ul class="tl"><li>Blinn-Phong の指数を約 4 倍にすると太さがそろう</li></ul>
+  </li>
+  <li>光が低いと形に差が出る
+    <ul class="tl"><li>床では Phong は丸く、Blinn-Phong と GGX は縦に伸びる</li></ul>
+  </li>
+  <li>正規化を切ると元の式 <math set:html={`${ks}${pw(dot('r', 'v'), '<mi>n</mi>')}`} /> に戻り、指数を上げるほどハイライトの光が減る</li>
+</ul>
+
+<h3>GGX の項</h3>
+<div class="eqs">
+  <math display="block" set:html={`<mi>D</mi><mo>=</mo>${frac('<msup><mi>α</mi><mn>2</mn></msup>', `<mi>π</mi>${pw(P(`${pw(dot('n', 'h'), '<mn>2</mn>')}${P('<msup><mi>α</mi><mn>2</mn></msup><mo>−</mo><mn>1</mn>')}<mo>+</mo><mn>1</mn>`), '<mn>2</mn>')}`)}`} />
+  <math display="block" set:html={`<mi>F</mi><mo>=</mo>${F0}<mo>+</mo>${P(`<mn>1</mn><mo>−</mo>${F0}`)}${pw(P(`<mn>1</mn><mo>−</mo><mi>v</mi><mo>·</mo><mi>h</mi>`), '<mn>5</mn>')}`} />
+  <math display="block" set:html={`<mi>G</mi><mo>=</mo>${frac('<mn>1</mn>', `<mn>1</mn><mo>+</mo><mi>Λ</mi>${P('<mi>v</mi>')}<mo>+</mo><mi>Λ</mi>${P('<mi>l</mi>')}`)}`} />
+</div>
+<ul class="tl">
+  <li><math><mi>D</mi></math>: 法線分布関数<Fragment set:html={rf(6)} /></li>
+  <li><math><mi>F</mi></math>: フレネル項の Schlick 近似<Fragment set:html={rf(7)} /></li>
+  <li><math><mi>G</mi></math>: 高さに相関のある Smith のマスキング・シャドウイング関数<Fragment set:html={rf(8)} /></li>
+  <li>金属の <math set:html={F0} />: 複素屈折率から求める<Fragment set:html={rf(12)} /></li>
+  <li>メタリック: 拡散反射の色と <math set:html={F0} /> を混ぜる割合</li>
+</ul>
+
+<h3>ローブと反射率</h3>
+<div class="eqs">
+  <math display="block" set:html={`<mi>R</mi>${P('<mi>μ</mi>')}<mo>=</mo><msub><mo>∫</mo><mi mathvariant="normal">Ω</mi></msub>${fr}<mi>cos</mi><mi>θ</mi><mspace width="0.2em"/><mi>d</mi><mi>ω</mi>`} />
+</div>
+<ul class="tl">
+  <li>ローブ: 入射角を固定したときの <math set:html={fr} /> の入射面での断面
+    <ul class="tl">
+      <li>半径が値で、対数の目盛りは 3 桁</li>
+      <li>入射角はハイライトの中心で測る。球では光の角度 <math><mi>θ</mi></math> の半分</li>
+    </ul>
+  </li>
+  <li>反射率: 入射角の余弦が <math><mi>μ</mi></math> の光を面が返す割合（輝度）
+    <ul class="tl">
+      <li>棒の目盛りの線が 1</li>
+      <li>1 を超えるのは、正規化を切ったときと、入射角が大きい非金属</li>
+    </ul>
+  </li>
+</ul>
+
+<h3>ファーネステストと多重散乱</h3>
+<div class="eqs">
+  <math display="block" set:html={`${sub('f', '<mi>ms</mi>')}<mo>=</mo>${frac(`${P(`<mn>1</mn><mo>−</mo>${E('o')}`)}${P(`<mn>1</mn><mo>−</mo>${E('i')}`)}`, `<mi>π</mi>${P(`<mn>1</mn><mo>−</mo>${Eavg}`)}`)}`} />
+  <math display="block" set:html={`${sub('F', '<mi>ms</mi>')}<mo>=</mo>${frac(`<msup>${Favg}<mn>2</mn></msup>${Eavg}`, `<mn>1</mn><mo>−</mo>${Favg}${P(`<mn>1</mn><mo>−</mo>${Eavg}`)}`)}`} />
+  <math display="block" set:html={`${Eavg}<mo>=</mo><mn>2</mn><msubsup><mo>∫</mo><mn>0</mn><mn>1</mn></msubsup><mi>E</mi>${P('<mi>μ</mi>')}<mi>μ</mi><mspace width="0.2em"/><mi>d</mi><mi>μ</mi>`} />
+  <math display="block" set:html={`${Favg}<mo>=</mo>${F0}<mo>+</mo>${frac(`<mn>1</mn><mo>−</mo>${F0}`, '<mn>21</mn>')}`} />
+</div>
+<ul class="tl">
+  <li>ファーネステスト: 全方向から放射輝度 1 の光が来る中に <math set:html={`${F0}<mo>=</mo><mn>1</mn>`} /> の球を置く<Fragment set:html={rf(9)} />
+    <ul class="tl">
+      <li>エネルギーを失わなければ、球は背景と見分けがつかない</li>
+      <li>図の下の数値は半球の平均 <math set:html={Eavg} /></li>
+    </ul>
+  </li>
+  <li>GGX の式は 1 回の反射だけを数えるので、粗いほど多重散乱の分を失って暗くなる</li>
+  <li>失った分 <math set:html={`<mn>1</mn><mo>−</mo><mi>E</mi>`} /> を <math set:html={sub('f', '<mi>ms</mi>')} /> で補うと、平均はちょうど 1 になる<Fragment set:html={rf(9)} /></li>
+  <li><math set:html={sub('F', '<mi>ms</mi>')} />: 跳ね返りのたびに吸収される分を含めた色の係数<Fragment set:html={rf(10)} /></li>
+</ul>
+
+<h3>シェーディングの補間</h3>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th>補間</th><th>計算する場所</th><th>見え方</th></tr></thead>
+  <tbody>
+    <tr><th>フラット</th><td>面の中心で 1 回</td><td>面の形がそのまま見える</td></tr>
+    <tr><th>グーロー<Fragment set:html={rf(11)} /></th><td>頂点で計算して色を補間</td><td>頂点の配置でハイライトが欠ける</td></tr>
+    <tr><th>フォン<Fragment set:html={rf(2)} /></th><td>法線を補間して画素ごとに計算</td><td>輪郭は多面体のまま、ハイライトは滑らか</td></tr>
+  </tbody>
+</table></div>
+
+<h3>このツールで決めたこと</h3>
+<ul class="tl">
+  <li>粗さと指数の関係: <math set:html={`<mi>α</mi><mo>=</mo><msup><mi>r</mi><mn>2</mn></msup>`} />、<math set:html={`${nB}<mo>=</mo><mn>2</mn><mo>/</mo><msup><mi>α</mi><mn>2</mn></msup><mo>−</mo><mn>2</mn>`} />
+    <ul class="tl"><li>Beckmann と Blinn-Phong の対応<Fragment set:html={rf(6)} />を GGX の α にも使う</li></ul>
+  </li>
+  <li>近似として使う値: <math set:html={`${nP}<mo>=</mo>${nB}<mo>/</mo><mn>4</mn>`} /> と Blinn-Phong の係数 <math set:html={`${P(`<mi>n</mi><mo>+</mo><mn>8</mn>`)}<mo>/</mo><mn>8</mn><mi>π</mi>`} /></li>
+  <li>粗さの下限: 0.05</li>
+  <li>Phong の裏側: <math set:html={`<mi>r</mi><mo>·</mo><mi>v</mi><mo>≤</mo><mn>0</mn>`} /> なら粗さ 1 でも 0</li>
+  <li>正規化を切った式の <math set:html={ks} />: 非金属は 0.5、金属は色
+    <ul class="tl"><li>BRDF に直すため <math set:html={dot('n', 'l')} />（下限 0.02）で割る</li></ul>
+  </li>
+  <li>金属の Lambert: 色をそのまま拡散反射に使う
+    <ul class="tl"><li>メタリックで消すと球が黒くなり、比べられないため</li></ul>
+  </li>
+  <li><math set:html={sub('F', '<mi>ms</mi>')} />: 文献 [10] の <math set:html={sub('F', '<mi>ss</mi>')} /> を <math set:html={Favg} /> に置き換えた形</li>
+  <li>環境光: 全方向から一様
+    <ul class="tl"><li>鏡面反射の分は <math><mi>μ</mi></math> と粗さの 32 × 32 の表を引く</li></ul>
+  </li>
+  <li>点光源: 球の中心の明るさを平行光にそろえ、距離の 2 乗で割る</li>
+  <li>光の色: 色温度から求める<Fragment set:html={rf(13)} /></li>
+  <li>画面の値: 0.8 までは線形で、その上はなだらかに 1 へ寄せる</li>
+  <li>金属の複素屈折率の波長: R・G・B に 617・521・451 nm を当てる</li>
+  <li>関連: <Fragment set:html={to('raytracing', 'レイトレーシング')} /></li>
+</ul>
+
+<h3>出典</h3>
+<ol class="refs">
+  <li id="thy-r1"><span class="rf-for">拡散反射</span><span class="rf-src">J. H. Lambert, <i>Photometria</i>, 1760</span></li>
+  <li id="thy-r2"><span class="rf-for">Phong の反射モデルと補間</span><span class="rf-src">B. T. Phong, “Illumination for computer generated pictures,” <i>Commun. ACM</i>, vol. 18, no. 6, pp. 311–317, 1975. <a href="https://doi.org/10.1145/360825.360839" target="_blank" rel="noopener">doi:10.1145/360825.360839</a></span></li>
+  <li id="thy-r3"><span class="rf-for">Phong の正規化</span><span class="rf-src">E. P. Lafortune and Y. D. Willems, “Using the modified Phong reflectance model for physically based rendering,” Report CW197, Dept. of Computer Science, K.U. Leuven, 1994</span></li>
+  <li id="thy-r4"><span class="rf-for">Blinn-Phong</span><span class="rf-src">J. F. Blinn, “Models of light reflection for computer synthesized pictures,” <i>SIGGRAPH ’77</i>, pp. 192–198, 1977. <a href="https://doi.org/10.1145/563858.563893" target="_blank" rel="noopener">doi:10.1145/563858.563893</a></span></li>
+  <li id="thy-r5"><span class="rf-for">マイクロファセットモデル</span><span class="rf-src">R. L. Cook and K. E. Torrance, “A reflectance model for computer graphics,” <i>ACM Trans. Graphics</i>, vol. 1, no. 1, pp. 7–24, 1982. <a href="https://doi.org/10.1145/357290.357293" target="_blank" rel="noopener">doi:10.1145/357290.357293</a></span></li>
+  <li id="thy-r6"><span class="rf-for">GGX</span><span class="rf-src">B. Walter, S. R. Marschner, H. Li, and K. E. Torrance, “Microfacet models for refraction through rough surfaces,” <i>EGSR 2007</i>, pp. 195–206. <a href="https://doi.org/10.2312/EGWR/EGSR07/195-206" target="_blank" rel="noopener">doi:10.2312/EGWR/EGSR07/195-206</a></span></li>
+  <li id="thy-r7"><span class="rf-for">Schlick 近似</span><span class="rf-src">C. Schlick, “An inexpensive BRDF model for physically-based rendering,” <i>Computer Graphics Forum</i>, vol. 13, no. 3, pp. 233–246, 1994. <a href="https://doi.org/10.1111/1467-8659.1330233" target="_blank" rel="noopener">doi:10.1111/1467-8659.1330233</a></span></li>
+  <li id="thy-r8"><span class="rf-for">Smith のマスキング・シャドウイング関数</span><span class="rf-src">E. Heitz, “Understanding the masking-shadowing function in microfacet-based BRDFs,” <i>JCGT</i>, vol. 3, no. 2, 2014</span></li>
+  <li id="thy-r9"><span class="rf-for">ファーネステストと多重散乱の補正</span><span class="rf-src">C. Kulla and A. Conty, “Revisiting physically based shading at Imageworks,” SIGGRAPH 2017 course: Physically Based Shading in Theory and Practice. <a href="https://blog.selfshadow.com/publications/s2017-shading-course/" target="_blank" rel="noopener">スライド</a></span></li>
+  <li id="thy-r10"><span class="rf-for">多重散乱の色の係数</span><span class="rf-src">C. J. Fdez-Agüera, “A multiple-scattering microfacet model for real-time image-based lighting,” <i>JCGT</i>, vol. 8, no. 1, pp. 45–55, 2019. <a href="https://www.jcgt.org/published/0008/01/03/" target="_blank" rel="noopener">jcgt.org</a></span></li>
+  <li id="thy-r11"><span class="rf-for">グーローシェーディング</span><span class="rf-src">H. Gouraud, “Continuous shading of curved surfaces,” <i>IEEE Trans. Computers</i>, vol. C-20, no. 6, pp. 623–629, 1971. <a href="https://doi.org/10.1109/T-C.1971.223313" target="_blank" rel="noopener">doi:10.1109/T-C.1971.223313</a></span></li>
+  <li id="thy-r12"><span class="rf-for">金属の光学定数</span><span class="rf-src">P. B. Johnson and R. W. Christy, “Optical constants of the noble metals,” <i>Phys. Rev. B</i>, vol. 6, pp. 4370–4379, 1972. <a href="https://doi.org/10.1103/PhysRevB.6.4370" target="_blank" rel="noopener">doi:10.1103/PhysRevB.6.4370</a>（値は <a href="https://refractiveindex.info/" target="_blank" rel="noopener">refractiveindex.info</a>、CC0）</span></li>
+  <li id="thy-r13"><span class="rf-for">色温度の近似</span><span class="rf-src">B. Kang, O. Moon, C. Hong, H. Lee, B. Cho, and Y. Kim, “Design of advanced color temperature control system for HDTV applications,” <i>J. Korean Physical Society</i>, vol. 41, no. 6, pp. 865–871, 2002</span></li>
+</ol>

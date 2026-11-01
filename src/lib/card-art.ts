@@ -1070,6 +1070,33 @@ export const ART: Record<string, Art> = {
     }
     return P('c t', sky) + P('b', ok) + (bad ? P('a', bad) : '') + (off ? P('c d', off) : '');
   },
+  /* シェーディング: 光が動くと、左の球のハイライトと右のローブが一緒に動く。ローブは GGX の断面 */
+  sh(t) {
+    const th = (Math.PI / 180) * (38 + 22 * Math.sin((t / 3) * TAU)),
+      cx = 30,
+      cy = 25,
+      R = 20,
+      hx = cx + R * 0.55 * Math.sin(th / 2 + 0.2),
+      hy = cy - R * 0.55 * Math.cos(th / 2 + 0.2);
+    let s = `<circle class="c" cx="${cx}" cy="${cy}" r="${R}"/>`;
+    for (const r of [5.5, 3.2, 1.2]) s += `<circle class="a" cx="${r1(hx)}" cy="${r1(hy)}" r="${r}"/>`;
+    const ox = 84,
+      oy = 44,
+      a = 0.16;
+    const pts: [number, number][] = [[ox, oy]];
+    for (let d = -88; d <= 88; d += 4) {
+      const q = (d * Math.PI) / 180,
+        h = (q - th) / 2,
+        c2 = Math.cos(h) ** 2,
+        D = (a * a) / (Math.PI * (c2 * (a * a - 1) + 1) ** 2),
+        v = Math.min(1, 0.32 + 0.68 * Math.min(1, D / 12));
+      pts.push([ox + 32 * v * Math.sin(q), oy - 32 * v * Math.cos(q)]);
+    }
+    pts.push([ox, oy]);
+    s += P('c g', 'M52 44H116') + P('a', pl(pts));
+    s += P('b', `M${r1(ox - 36 * Math.sin(th))} ${r1(oy - 36 * Math.cos(th))}L${ox} ${oy}`);
+    return s;
+  },
   /* GIF: LZW の辞書の木が 1 符号ずつ育つ。足した節を塗り、根からの道すじを色の線で示す */
   gif(t) {
     /* [x, y, 親]。先頭の 3 つが根で、後ろほど後に足す */
@@ -1683,6 +1710,7 @@ export const LOOP: Record<string, number> = {
   dm: 3,
   rs: 3,
   rt: 3,
+  sh: 3,
   th: 3,
   ff: 3,
   wd: 4,

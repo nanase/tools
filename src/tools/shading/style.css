@@ -1,0 +1,72 @@
+/* シェーディングのページだけのスタイル（共通は src/styles/site.css）。クラス名には sh- を付ける */
+
+/* 反射モデルの色。ローブの線と凡例に使う */
+:root{--sh-l:#687078;--sh-p:#9a6c00;--sh-b:#0a6e8a;--sh-g:#a03c8c}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--sh-l:#aab3b8;--sh-p:#f2c230;--sh-b:#52c4dd;--sh-g:#e58ad6}}
+:root[data-theme="dark"]{--sh-l:#aab3b8;--sh-p:#f2c230;--sh-b:#52c4dd;--sh-g:#e58ad6}
+
+/* 枠の並び。スマホは上から順。PC は球を幅いっぱいに、すぐ下に入力、その下に図 */
+@media (min-width:1000px){
+  .tgrid{grid-template-columns:repeat(12,minmax(0,1fr));align-items:start}
+  .a-sph,.a-trm,.a-fur,.a-thy{grid-column:1/-1}
+  .a-lig,.a-mat{grid-column:span 6}
+  .a-lob{grid-column:span 7}
+  .sh-right{grid-column:span 5}
+}
+
+/* 球。テーマに依らず黒い地 */
+.sh-four{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+@media (min-width:720px){.sh-four{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.sh-four figure,.sh-int figure,.sh-fur figure,.sh-tm{margin:0;min-width:0}
+.sh-st{position:relative;background:#000;border-radius:3px;overflow:hidden;line-height:0;cursor:grab;touch-action:pan-y;user-select:none;-webkit-user-select:none}
+.sh-st.drag{cursor:grabbing}
+.sh-still{cursor:default;touch-action:auto}
+.sh-st canvas{display:block;width:100%;height:auto;aspect-ratio:1}
+.sh-msg{margin:8px 0 0;font-size:13.5px;color:var(--ink-2)}
+.sh-cap{display:flex;align-items:baseline;flex-wrap:wrap;gap:0 8px;margin-top:5px;font:500 12px/1.5 var(--mono);color:var(--ink-3);font-variant-numeric:tabular-nums}
+.sh-cap b{font:700 13.5px/1.5 var(--sans);color:var(--ink)}
+.sh-cap i{align-self:center;display:inline-block;width:12px;height:3px;border-radius:1px}
+
+/* 材質のプリセット */
+.sh-mat{display:flex;flex-wrap:wrap;gap:4px;padding:2px 8px 8px;border-bottom:1px solid var(--line)}
+.sh-mat .chip{font-family:var(--sans)}
+.sh-color{display:block;width:100%;height:30px;padding:2px;border:1px solid var(--line-2);border-radius:4px;background:var(--inset);cursor:pointer}
+.sh-color::-webkit-color-swatch-wrapper{padding:0}
+.sh-color::-webkit-color-swatch{border:0;border-radius:2px}
+.sh-color::-moz-color-swatch{border:0;border-radius:2px}
+@media (pointer:coarse){.sh-color{height:36px}}
+
+/* ローブ */
+.sh-show{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px}
+.sh-show .chip{display:inline-flex;align-items:center;gap:6px;font-family:var(--sans)}
+.sh-show .chip i{width:12px;height:3px;border-radius:1px}
+.sh-lobe{fill:none;stroke-width:2;stroke-linejoin:round}
+.sh-ray{stroke:var(--ink-2);stroke-width:1.5}
+.sh-sun{fill:var(--ink)}
+.sh-mir{stroke:var(--ink-3);stroke-width:1;stroke-dasharray:4 4}
+
+/* 反射率 */
+.sh-right{display:grid;gap:26px;min-width:0;grid-template-columns:minmax(0,1fr)}
+.sh-bars{display:grid;gap:7px;margin:0}
+.sh-bar{display:grid;grid-template-columns:7.2em minmax(0,1fr) 3.4em;gap:8px;align-items:center;font-size:13px}
+.sh-bar dt{margin:0}
+.sh-bar dd{display:contents;margin:0}
+.sh-t{position:relative;display:block;height:12px;border-radius:2px;background:var(--inset);box-shadow:inset 0 0 0 1px var(--line)}
+.sh-t i{position:absolute;left:0;top:0;bottom:0;border-radius:2px}
+.sh-t u{position:absolute;left:83.333%;top:-2px;bottom:-2px;width:1px;background:var(--ink-3)}
+.sh-bar b{font:700 14px/1 var(--mono);text-align:right;font-variant-numeric:tabular-nums}
+
+/* 補間 */
+.sh-int{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-bottom:6px}
+.sh-int figcaption,.sh-tm figcaption,.sh-fur figcaption{margin-top:3px;font:600 12px/1.4 var(--mono);text-align:center;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.sh-int figcaption{font-family:var(--sans)}
+
+/* 項 */
+.sh-terms{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.sh-tm{width:clamp(84px,12.5vw,128px)}
+.sh-op{padding-bottom:18px;font:500 18px/1 var(--mono);color:var(--ink-3)}
+
+/* ファーネステスト */
+.sh-fur{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin-bottom:6px}
+.sh-fur .sh-st{background:#fff;border:1px solid var(--line)}
+.sh-fur figcaption b{display:block;font-weight:700;color:var(--ink)}
