@@ -1,0 +1,123 @@
+/* ソートのページだけのスタイル（共通は src/styles/site.css） */
+:root{--so-pv:#a03c8c;--so-ok:#1d8a45;--so-fix:#bcc3b6}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--so-pv:#e58ad6;--so-ok:#49d17f;--so-fix:#e6e8e4}}
+:root[data-theme="dark"]{--so-pv:#e58ad6;--so-ok:#49d17f;--so-fix:#e6e8e4}
+
+/* 枠の並び。スマホは図 → 表 → アルゴリズム → データ → 計算結果 → 音。
+   PC の単独と比較は図の下に 2 列、一覧は図の右に表を置き、左に計算結果と音を積む */
+.a-fig{order:1}.a-mat{order:2}.col{order:3}.a-alg{order:3}.a-data{order:4}.a-out{order:5}.a-snd{order:6}.a-thy{order:7}
+.so-row .prow{--sw:0px}
+.so-row .c-sym{display:none}
+.a-fig{scroll-margin-top:calc(var(--rail-h) + 20px)}
+@media (min-width:1000px){
+  #so{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start}
+  .a-fig,.a-thy{grid-column:1/-1}
+  #so[data-mode="list"]{grid-template-columns:minmax(0,.78fr) minmax(0,1fr)}
+  #so[data-mode="list"] .col{display:contents}
+  #so[data-mode="list"] .a-fig{grid-column:1;grid-row:1}
+  #so[data-mode="list"] .a-mat{grid-column:2;grid-row:1/span 3}
+  #so[data-mode="list"] .a-out{grid-column:1;grid-row:2}
+  #so[data-mode="list"] .a-snd{grid-column:1;grid-row:3}
+  #so[data-mode="list"] .a-data{grid-column:2;grid-row:4}
+}
+#so:not([data-mode="list"]) .a-mat{display:none}
+#so[data-mode="list"] .a-alg,#so[data-mode="list"] .so-dists{display:none}
+#so[data-mode="cmp"] .so-solo,#so:not([data-mode="cmp"]) .so-race,#so:not([data-mode="cmp"]) .so-rank{display:none}
+#so[data-mode="cmp"] .so-res{display:none}
+
+/* 枠線の上の右端: 状態と表示の切り替え */
+.a-fig>.ph>.pha .seg button{font-family:var(--sans)}
+.a-fig .tp-st{font-family:var(--sans)}
+.led.so-ok{background:var(--so-ok);box-shadow:0 0 5px var(--so-ok)}
+@media (min-width:721px){.a-fig>.ph>h2{max-width:calc(100% - 215px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
+@media (max-width:720px){
+  .a-fig{padding-top:24px}
+  .a-fig>.ph>.pha{position:static;transform:none;width:100%;margin:0 0 8px;padding:0;background:none;justify-content:flex-end}
+}
+
+/* 凡例を兼ねた切り替え */
+.so-lg{min-height:30px;font-family:var(--sans)}
+.so-lg .tg{font-family:var(--sans)}
+.so-sw{display:inline-block;width:10px;height:10px;border-radius:1px}
+.tg[aria-pressed="false"] .so-sw{opacity:.35}
+.so-sw.pv{background:var(--so-pv)}
+.so-sw.rg{background:var(--grid-2)}
+.so-sw.fx{background:var(--so-fix)}
+.so-sw.nf{background:var(--ink-3)}
+.so-sw.au{background:var(--screen-ink)}
+.so-axis{margin-left:auto}
+.so-axis button{font-family:var(--sans)}
+@media (max-width:720px){.so-axis{margin-left:0}}
+
+/* 図 */
+.so-scr{padding:0;overflow:hidden}
+.so-scr canvas{display:block;width:100%;touch-action:pan-y}
+#so-main{height:340px}
+#so[data-mode="list"] #so-main{height:300px}
+@media (max-width:620px){#so-main,#so[data-mode="list"] #so-main{height:230px}}
+#so-aux{height:64px;border-top:1px solid var(--line)}
+.so-drawing #so-main{cursor:crosshair;touch-action:none}
+.a-fig .tp{margin-top:10px}
+.a-fig .ptab{margin-top:2px}
+
+/* 比較 */
+.so-race{display:grid;gap:8px;grid-template-columns:repeat(var(--cols,3),minmax(0,1fr))}
+@media (max-width:620px){.so-race{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.so-cell{display:block;width:100%;min-width:0;padding:0;border:1px solid var(--line);border-radius:var(--r);background:var(--screen);color:var(--ink);text-align:left;cursor:pointer;overflow:hidden}
+.so-cell:hover{border-color:var(--line-2)}
+.so-cell[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.so-cell canvas{display:block;width:100%;height:150px}
+.so-ch{display:flex;align-items:center;gap:6px;min-height:26px;padding:2px 8px;font-size:12.5px;line-height:1.25;font-weight:700}
+.so-cn{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.so-ch em{margin-left:auto;font:500 12px/1 var(--mono);font-style:normal;font-variant-numeric:tabular-nums;color:var(--ink-2);white-space:nowrap}
+.so-ch .led{width:7px;height:7px}
+.so-rk{flex:none;display:inline-grid;place-items:center;min-width:18px;height:18px;border-radius:3px;background:var(--so-ok);color:var(--surface);font:700 11.5px/1 var(--mono)}
+
+/* アルゴリズムの選択 */
+.so-grp{display:grid;grid-template-columns:5.6em minmax(0,1fr);gap:6px 8px;padding:7px 2px;border-bottom:1px solid var(--line)}
+.so-grp:last-child{border-bottom:0}
+.so-grp>h3{margin:0;font-size:12.5px;font-weight:700;line-height:28px;color:var(--ink-2)}
+.so-grp .chip{font-family:var(--sans)}
+@media (max-width:480px){.so-grp{grid-template-columns:minmax(0,1fr)}.so-grp>h3{line-height:1.4}}
+
+/* データ: 形の見える選択肢 */
+.a-data .prst{font-family:var(--sans)}
+.so-dists{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:6px;margin-top:2px}
+.so-d{display:block;min-width:0;padding:5px 6px 4px;border:1px solid var(--line);border-radius:4px;background:none;color:var(--ink-2);font-size:12px;line-height:1.3;text-align:left;cursor:pointer}
+.so-d:not(:disabled):hover{border-color:var(--line-2);color:var(--ink)}
+.so-d:disabled{opacity:.4;cursor:default}
+.so-d svg{display:block;width:100%;height:24px;margin-bottom:3px;fill:currentColor}
+.so-d[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--surface)}
+
+/* 計算結果 */
+.m-sub dd{font-size:15px}
+.m-sub sup{font-size:.72em;line-height:0}
+.so-rank{overflow-x:auto}
+.so-rt{width:100%;border-collapse:collapse;font:500 12.5px/1.3 var(--mono);font-variant-numeric:tabular-nums}
+.so-rt th{padding:4px 8px;font:700 12px/1.3 var(--sans);color:var(--ink-2);text-align:right;border-bottom:1px solid var(--line-2);white-space:nowrap}
+.so-rt td{padding:5px 8px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+.so-rt tr:last-child td{border-bottom:0}
+.so-rt .l{text-align:left;font-family:var(--sans);font-weight:700}
+.so-rt b{font-weight:700}
+
+/* 動作原理と式の計算量の表 */
+.so-cx th[scope="row"]{white-space:nowrap}
+.so-cx td{white-space:nowrap;font-family:var(--mono);font-size:12.5px}
+
+/* 組み合わせの表 */
+.a-mat .seg button{font-family:var(--sans)}
+.so-mx{overflow-x:auto}
+.so-tb{width:100%;border-collapse:collapse;table-layout:fixed;min-width:560px}
+.so-tb th{font:500 11px/1.2 var(--sans);color:var(--ink-2);padding:2px}
+.so-tb thead th{vertical-align:bottom;height:64px;word-break:keep-all;overflow-wrap:anywhere}
+.so-tb thead th:first-child{width:112px}
+.so-tb thead svg{display:block;width:100%;max-width:40px;height:14px;margin:0 auto 3px;fill:var(--ink-3)}
+.so-tb tbody th{position:sticky;left:0;z-index:1;background:var(--bg);text-align:left;font-size:11.5px;font-weight:700;padding-left:0}
+.so-tb tr.g0 th,.so-tb tr.g0 td{border-top:1px solid var(--line-2)}
+.so-tb td{padding:1px}
+.so-mr,.so-mh{display:block;width:100%;padding:0;border:0;background:none;color:inherit;font:inherit;cursor:pointer}
+.so-mr{text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.so-mr:hover,.so-mh:hover{color:var(--ink);text-decoration:underline;text-underline-offset:3px}
+.so-c{display:block;width:100%;height:23px;padding:0;border:0;border-radius:2px;background:none;color:var(--ink-3);font:500 11px/23px var(--mono);font-variant-numeric:tabular-nums;text-align:center;cursor:pointer;white-space:nowrap;overflow:hidden}
+.so-c:hover{outline:1px solid var(--ink-2);outline-offset:-1px}
+.so-c.sel{outline:2px solid var(--accent);outline-offset:-2px}

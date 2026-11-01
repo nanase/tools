@@ -28,6 +28,7 @@ export const CATS = [
   'CG',
   '天文',
   '数学',
+  'アルゴリズム',
 ];
 export const TOOLS: Tool[] = [
   {
@@ -444,7 +445,7 @@ export const TOOLS: Tool[] = [
     t: '分岐図',
     d: 'ロジスティック写像が周期倍分岐をくり返してカオスに至る様子を見ます。',
     ic: 'bf',
-    r: ['noise', 'pendulum', 'spectrum', 'fft'],
+    r: ['noise', 'pendulum', 'sort', 'fft'],
     k: 'bifurcation diagram 分岐図 ロジスティック写像 logistic map 正弦写像 sine map テント写像 tent map エノン写像 henon map カオスニューロン chaotic neuron tanh ガウス写像 gauss map mouse map リッカー写像 ricker map 3 次写像 cubic map クモの巣図 蜘蛛の巣図 cobweb 時系列 周期倍分岐 period doubling カオス chaos リアプノフ指数 lyapunov exponent feigenbaum ファイゲンバウム 定数 普遍性 universality 集積点 窓 周期 3 period three li-yorke sharkovskii 超安定 superstable 力学系 dynamical system 非線形 nonlinear may 数学 math',
   },
   {
@@ -480,7 +481,7 @@ export const TOOLS: Tool[] = [
     t: 'FFT',
     d: 'バタフライ図の上を値が流れる様子を、時間間引きと周波数間引きで見ます。',
     ic: 'ff',
-    r: ['spectrum', 'convolution', 'wavelet', 'fir'],
+    r: ['spectrum', 'convolution', 'wavelet', 'sort'],
     k: 'fft 高速フーリエ変換 fast fourier transform dft 離散フーリエ変換 バタフライ butterfly cooley tukey クーリー テューキー 時間間引き decimation in time dit 周波数間引き decimation in frequency dif gentleman sande ビット反転 bit reversal 並べ替え 回転因子 twiddle factor 基数 2 radix-2 基数 4 分割基数 split radix 計算量 演算量 n log n 複素数 complex gauss ガウス 数学 math',
   },
   {
@@ -500,6 +501,15 @@ export const TOOLS: Tool[] = [
     ic: 'wd',
     r: ['wavelet', 'jpeg', 'noise', 'fft'],
     k: 'wavelet ウェーブレット 雑音除去 ノイズ除去 denoise denoising noise reduction 圧縮 compression 閾値 threshold 硬い閾値 柔らかい閾値 hard soft shrinkage 縮小 visushrink sureshrink bayesshrink sure 普遍閾値 universal threshold donoho johnstone cycle spinning 量子化 quantization ビット bit エントロピー entropy jpeg 2000 dct dft mdct aac mp3 フーリエ fourier sn 比 snr スカログラム scalogram 聴き比べ 音 audio マイク 録音 数学 math',
+  },
+  {
+    id: 'sort',
+    c: 'アルゴリズム',
+    t: 'ソート',
+    d: '棒が小さい順に並ぶ様子を音で追い、アルゴリズムとデータの相性を比べます。',
+    ic: 'so',
+    r: ['fft', 'gif', 'qr-code', 'bifurcation'],
+    k: 'sort sorting 並べ替え 並び替え 整列 アルゴリズム algorithm バブル bubble シェーカー cocktail shaker コム comb ノーム gnome 奇偶転置 odd-even 選択 selection ヒープ heap スムース smooth サイクル cycle パンケーキ pancake 挿入 insertion 二分挿入 binary シェル shell マージ merge ボトムアップ bottom-up ティム timsort パワー powersort インプレース symmerge クイック quick ピボット pivot 3 分割 three-way デュアルピボット dual-pivot イントロ introsort pdqsort 計数 counting 基数 radix lsd msd アメリカンフラッグ american flag バケット bucket フラッシュ flash ビーズ bead 比較 計算量 安定 stable バイトニック bitonic バッチャー batcher ペアワイズ pairwise ソーティングネットワーク sorting network ストゥージ stooge スロー slow ボゴ bogo ボゾ bozo 音 sound of sorting',
   },
 ];
 /** 準備中を後ろへ */
