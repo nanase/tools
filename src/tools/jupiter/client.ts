@@ -1,9 +1,9 @@
 /**
- * 木星のページ: 日時と観測地から木星とガリレオ衛星の状態を計算し、望遠の図・衛星の並び・今夜の帯・現象の一覧・
- * 軌道・衛星の動き・大赤斑の南中・相互食を描く
+ * 木星のページ: 日時と観測地から木星と衛星の状態を計算し、望遠の図・衛星の並び・時刻の帯・すべての衛星・
+ * 軌道・衛星の動き・相互食を描く
  */
 import { calToJd, jdToCal } from '../../lib/astro/time';
-import { dot, len, sub, unit, type Vec3 } from '../../lib/astro/vec';
+import { dot, len, mul, sub, unit, type Vec3 } from '../../lib/astro/vec';
 import { Choice } from '../../lib/choice';
 import { $, esc } from '../../lib/dom';
 import { cmFromNodeOfDate, Ephem, type Geo, type PlanetState, planetState } from '../../lib/planet/ephem';
@@ -12,7 +12,6 @@ import {
   findPhen,
   limb,
   type Mutual,
-  type Phen,
   pairFlux,
   planetShadow,
   skyOffset,
@@ -22,22 +21,25 @@ import {
 import {
   BAND_W,
   bandAxisY,
+  bandRows,
   lightCurve,
-  nightBand,
   orbitTop,
   season,
+  timeBand,
   WIG,
   wiggle,
   wiggleTime,
 } from '../../lib/planet/figs';
+import { type MoonTable, tablePos } from '../../lib/planet/moons';
 import { PlanetRenderer } from '../../lib/planet/render';
 import { SitePicker } from '../../lib/planet/site';
-import { altFast, crossings, SUN_DARK, SUN_SET, sunAlt, transits } from '../../lib/planet/sky';
+import { altFast, SUN_DARK, SUN_SET, sunAlt } from '../../lib/planet/sky';
 import { facing, type MoonLook, type Orient, planetUniforms, screenOf, shadowPoint } from '../../lib/planet/view';
+import { PanZoom } from '../../lib/planet/zoom';
 import { store, stored } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
 import { GRS_LAST, GRS_LAST_JD, GRS_RATE, grsL2, MAPS, type MapInfo, nearestMap } from './grs';
-import { JUPITER_MODEL as M, MOONS, w1, w2 } from './model';
+import { GM_JUP, INNER, innerPos, JUPITER_MODEL as M, MOONS, w1, w2 } from './model';
 
 const BASE = import.meta.env.BASE_URL;
 const D = Math.PI / 180;
@@ -115,6 +117,7 @@ const dms = (as: number) => {
 const picker = new SitePicker(
   BASE,
   () => {
+    txt('#hd-jup', `${picker.place.name}から見た木星`);
     resetNight();
     later(true);
   },
@@ -218,11 +221,6 @@ function loadMap(m: MapInfo): void {
 /* ---------- 望遠の図 ---------- */
 const view = $('#pview');
 const canvas = $<HTMLCanvasElement>('#pc');
-let vz = 1,
-  vx = 0,
-  vy = 0;
-const VZ_MIN = 0.4,
-  VZ_MAX = 12;
 interface Lay {
   W: number;
   H: number;
@@ -231,103 +229,25 @@ interface Lay {
   cy: number;
 }
 const baseRad = (W: number, H: number) => 0.4 * Math.min(H, W / 1.6);
+const pz = new PanZoom(canvas, {
+  min: 0.4,
+  max: 12,
+  onChange: () => {
+    $('#vreset').hidden = !pz.moved;
+    txt('#vzoom', `×${pz.z.toFixed(pz.z < 2 ? 2 : 1)}`);
+    later();
+  },
+});
 function layout(): Lay {
   const W = view.clientWidth,
     H = view.clientHeight;
-  return { W, H, rad: baseRad(W, H) * vz, cx: W / 2 + vx, cy: H / 2 + vy };
+  return { W, H, rad: baseRad(W, H) * pz.z, cx: W / 2 + pz.x, cy: H / 2 + pz.y };
 }
-function clampPan(): void {
-  const W = view.clientWidth,
-    H = view.clientHeight;
-  vx = Math.max(-W, Math.min(W, vx));
-  vy = Math.max(-H, Math.min(H, vy));
-}
-function zoomAbout(px: number, py: number, f: number): void {
-  const L = layout();
-  const nz = Math.min(VZ_MAX, Math.max(VZ_MIN, vz * f)),
-    k = nz / vz;
-  vz = nz;
-  vx = px - (px - L.cx) * k - L.W / 2;
-  vy = py - (py - L.cy) * k - L.H / 2;
-  clampPan();
-  viewChanged();
-}
-function viewChanged(): void {
-  const moved = Math.abs(vz - 1) > 1e-3 || Math.abs(vx) > 0.5 || Math.abs(vy) > 0.5;
-  $('#vreset').hidden = !moved;
-  txt('#vzoom', `×${vz.toFixed(vz < 2 ? 2 : 1)}`);
-  canvas.style.touchAction = vz > 1.01 ? 'none' : 'pan-y';
-  later();
-}
-const ptrs = new Map<number, { x: number; y: number }>();
-let drag: { x: number; y: number; vx: number; vy: number; moved: boolean } | null = null;
-let pinch: { d: number; z: number } | null = null;
-const localXY = (e: PointerEvent | WheelEvent) => {
-  const r = canvas.getBoundingClientRect();
-  return { x: e.clientX - r.left, y: e.clientY - r.top };
-};
-canvas.addEventListener('pointerdown', (e) => {
-  canvas.setPointerCapture(e.pointerId);
-  const p = localXY(e);
-  ptrs.set(e.pointerId, p);
-  if (ptrs.size === 1) drag = { ...p, vx, vy, moved: false };
-  else if (ptrs.size === 2) {
-    const [a, b] = [...ptrs.values()];
-    pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), z: vz };
-  }
-});
-canvas.addEventListener('pointermove', (e) => {
-  if (!ptrs.has(e.pointerId)) return;
-  const p = localXY(e);
-  ptrs.set(e.pointerId, p);
-  if (pinch && ptrs.size === 2) {
-    const [a, b] = [...ptrs.values()];
-    zoomAbout((a.x + b.x) / 2, (a.y + b.y) / 2, (pinch.z * Math.hypot(a.x - b.x, a.y - b.y)) / pinch.d / vz);
-    return;
-  }
-  if (!drag) return;
-  const dx = p.x - drag.x,
-    dy = p.y - drag.y;
-  if (!drag.moved && Math.hypot(dx, dy) < 4) return;
-  drag.moved = true;
-  canvas.classList.add('drag');
-  vx = drag.vx + dx;
-  vy = drag.vy + dy;
-  clampPan();
-  viewChanged();
-});
-const ptrEnd = (e: PointerEvent) => {
-  ptrs.delete(e.pointerId);
-  if (ptrs.size < 2) pinch = null;
-  if (ptrs.size === 0) {
-    drag = null;
-    canvas.classList.remove('drag');
-  }
-};
-canvas.addEventListener('pointerup', ptrEnd);
-canvas.addEventListener('pointercancel', ptrEnd);
-canvas.addEventListener(
-  'wheel',
-  (e) => {
-    e.preventDefault();
-    const p = localXY(e);
-    zoomAbout(p.x, p.y, Math.exp(-e.deltaY * (e.deltaMode === 1 ? 0.05 : 0.0015)));
-  },
-  { passive: false },
-);
-const zoomCenter = (f: number) => {
-  const L = layout();
-  zoomAbout(L.W / 2, L.H / 2, f);
-};
-$('#vin').addEventListener('click', () => zoomCenter(1.5));
-$('#vout').addEventListener('click', () => zoomCenter(1 / 1.5));
-$('#vreset').addEventListener('click', () => {
-  vz = 1;
-  vx = vy = 0;
-  viewChanged();
-});
+$('#vin').addEventListener('click', () => pz.zoomCenter(1.5));
+$('#vout').addEventListener('click', () => pz.zoomCenter(1 / 1.5));
+$('#vreset').addEventListener('click', () => pz.reset());
 
-/** 衛星の状態（本体の前・本体の裏・影が本体に・本体の影の中） */
+/** 衛星の状態（木星の前・木星の裏・影が木星に・木星の影の中） */
 function moonState(g: Geo, k: number) {
   const m = g.moons[k];
   const [o, fo] = limb(g, M.re, M.rp, m, toEarth(g));
@@ -335,7 +255,7 @@ function moonState(g: Geo, k: number) {
   return { tr: o < 0 && fo, oc: o < 0 && !fo, sh: s < 0 && fs, ec: s < 0 && !fs };
 }
 
-/** 衛星の明るさ: 本体の影と、ほかの衛星の影（中心で見積もる） */
+/** 衛星の明るさ: 木星の影と、ほかの衛星の影（中心で見積もる） */
 function moonLooks(g: Geo): MoonLook[] {
   const ts = 695700 / (g.r * 149597870.7);
   return MOONS.map((m, k) => {
@@ -389,6 +309,8 @@ function drawMain(): void {
   /* 名前と影 */
   const h: string[] = [];
   const rs = st.diam / 2;
+  const edgeL: number[] = [];
+  const edgeR: number[] = [];
   if (nm$.value === 'on') {
     MOONS.forEach((m, k) => {
       const [sx, sy, sz] = screenOf(M, st, mode, g.moons[k]);
@@ -396,7 +318,7 @@ function drawMain(): void {
         py = L.cy - sy * L.rad;
       const ms = moonState(g, k);
       const inBody = Math.hypot(sx, sy * (M.re / M.rp)) < 1;
-      const note = ms.tr ? '本体の前' : ms.oc ? '本体の裏' : ms.ec ? '木星の影の中' : '';
+      const note = ms.tr ? '木星の前' : ms.oc ? '木星の裏' : ms.ec ? '木星の影の中' : '';
       if (px >= 0 && px <= L.W && py >= 0 && py <= L.H) {
         const r = (m.r / M.re) * L.rad;
         const up = inBody && sz < 0;
@@ -406,9 +328,14 @@ function drawMain(): void {
       } else if (Math.abs(py - L.cy) < L.H) {
         const [e] = skyOffset(g, g.moons[k], M.re);
         const sep = Math.hypot(...skyOffset(g, g.moons[k], M.re)) * rs;
-        const left = px < 0;
+        const left = px < L.cx;
+        /* 同じ側の札は重ならないよう下へずらす */
+        const used = left ? edgeL : edgeR;
+        let top = Math.max(44, Math.min(L.H - 72, py - 10));
+        while (used.some((y) => Math.abs(y - top) < 36)) top += 36;
+        used.push(top);
         h.push(
-          `<span class="pn-edge ${left ? 'pn-l' : 'pn-r'}" style="top:${Math.max(44, Math.min(L.H - 72, py - 10)).toFixed(0)}px">${left ? '← ' : ''}${esc(m.name)}${left ? '' : ' →'}<br>${e > 0 ? '東' : '西'} ${dms(sep)}</span>`,
+          `<span class="pn-edge ${left ? 'pn-l' : 'pn-r'}" style="top:${top.toFixed(0)}px">${left ? '← ' : ''}${esc(m.name)}${left ? '' : ' →'}<br>${e > 0 ? '東' : '西'} ${dms(sep)}</span>`,
         );
       }
     });
@@ -425,10 +352,35 @@ function drawMain(): void {
         );
       });
   }
+  h.push(...innerMarks(L.cx, L.cy, L.rad, L.W, L.H, nm$.value === 'on'));
   $('#labs').innerHTML = h.join('');
   const fov = (L.W / L.rad) * rs;
   txt('#v-lab', `${ORIENT_T[mode]} · 視野 ${(fov / 60).toFixed(1)}′`);
   txt('#v-lab2', bottomNote());
+}
+
+/** 内側の 4 個の丸と名前。木星の裏のものは出さない。名前は互いに重なるなら出さない */
+function innerMarks(cx: number, cy: number, rad: number, W: number, H: number, names: boolean): string[] {
+  const g = st.geo;
+  const out: string[] = [];
+  const used: [number, number][] = [];
+  /* 大きなものから名前を置く */
+  for (const k of [2, 3, 0, 1]) {
+    const [nm] = INNER[k];
+    const v = mul(g.M, innerPos(k, g.jdTT - g.lt));
+    const [sx, sy, sz] = screenOf(M, st, or$.value, v);
+    if (sz > 0 && Math.hypot(sx, sy * (M.re / M.rp)) < 1) continue;
+    const px = cx + sx * rad,
+      py = cy - sy * rad;
+    if (px < 0 || px > W || py < 0 || py > H) continue;
+    out.push(`<span class="pn-sd pn-sm" style="left:${px.toFixed(1)}px;top:${py.toFixed(1)}px"></span>`);
+    if (!names || used.some(([a, b]) => Math.abs(a - px) < 56 && Math.abs(b - py) < 14)) continue;
+    used.push([px, py]);
+    out.push(
+      `<span class="pn-sl pn-si" style="left:${px.toFixed(1)}px;top:${(py + 4).toFixed(1)}px">${esc(nm)}</span>`,
+    );
+  }
+  return out;
 }
 
 /** 窓の下の注記: 地平線の下、大赤斑の向き、模様の地図 */
@@ -502,6 +454,7 @@ function drawStrip(): void {
       );
     }
   });
+  h.push(...innerMarks(W / 2, H / 2, k, W, H, false));
   $('#slabs').innerHTML = h.join('');
   const fov = 2 * stripR * rs;
   const east = Math.cos(screenAngleEast() * D) < -0.7;
@@ -547,39 +500,57 @@ $('#dt').addEventListener('change', (e) => {
   if (m) setJd(calToJd(+m[1], +m[2], +m[3]) + (+m[4] + +m[5] / 60 - tzh()) / 24);
 });
 
-/* ---------- 今夜 ---------- */
-interface Item {
-  t: number;
-  t1?: number;
-  text: string;
-  dot: string;
-}
+/* ---------- 夜 ---------- */
 interface Night {
   key: string;
   n0: number;
-  t0: number;
-  t1: number;
-  phen: Phen[];
-  grs: number[];
-  dark: [number, number][];
-  twi: [number, number][];
-  items: Item[];
-  mutual: Mutual[];
-  /** 見える時間（太陽が沈み木星が昇っている） */
-  vis: [number, number][];
 }
 let night: Night | null = null;
 function resetNight(): void {
   night = null;
+  span = null;
   wigKey = '';
   seaKey = '';
-  grsKey = '';
   keyKey = '';
   topKey = '';
   mutCache.clear();
 }
 
-/** 0〜1 の判定の値の列から、真の区間をつなぐ */
+function visibleAt(t: number, o = obs()): boolean {
+  return sunAlt(t, o) < SUN_SET && altFast(E, t, o) > 5;
+}
+
+function ensureNight(): Night {
+  const n0 = nightStart(jd);
+  const key = `${n0}|${picker.place.lat}|${picker.place.lon}|${tz$.value}|${grsOff}`;
+  if (!night || night.key !== key) {
+    night = { key, n0 };
+    stripR = stripRange(n0);
+  }
+  return night;
+}
+
+/** 衛星の並びの片側の広さ: その夜の 12 時間の衛星の離れの最大の 1.15 倍（赤道半径） */
+function stripRange(n0: number): number {
+  let mx = 6;
+  for (let t = n0 + 0.2; t <= n0 + 0.8; t += 1 / 24) {
+    const g = E.at(t);
+    for (const m of g.moons) mx = Math.max(mx, Math.abs(skyOffset(g, m, M.re)[0]));
+  }
+  return mx * 1.15;
+}
+
+/* ---------- 時刻の帯 ---------- */
+const band = $<SVGSVGElement>('#band');
+/** 帯の中身は今の時刻の前後 1.6 日を先に作り、横に動かす。今の時刻が 0.9 日離れたら作り直す */
+interface Span {
+  key: string;
+  anchor: number;
+}
+let span: Span | null = null;
+const HALF = 1.6;
+
+/** 真の区間をつなぐ */
 function runs(ts: number[], ok: boolean[]): [number, number][] {
   const out: [number, number][] = [];
   let a: number | null = null;
@@ -594,184 +565,94 @@ function runs(ts: number[], ok: boolean[]): [number, number][] {
   return out;
 }
 
-const PHEN_T: Record<Phen['kind'], (n: string) => string> = {
-  TR: (n) => `${n}が本体の前に`,
-  SH: (n) => `${n}の影が本体に`,
-  OC: (n) => `${n}が本体の裏に`,
-  EC: (n) => `${n}が木星の影に入る`,
-};
-
-function visibleAt(t: number, o = obs()): boolean {
-  return sunAlt(t, o) < SUN_SET && altFast(E, t, o) > 5;
-}
-
-function buildNight(n0: number): Night {
+function buildBand(anchor: number): void {
   const o = obs();
-  const step = 5 / 1440;
+  const t0 = anchor - HALF,
+    t1 = anchor + HALF;
   const ts: number[] = [];
   const sun: number[] = [];
   const alt: number[] = [];
-  for (let t = n0; t <= n0 + 1 + 1e-9; t += step) {
+  for (let t = t0; t <= t1 + 1e-9; t += 1 / 144) {
     ts.push(t);
     sun.push(sunAlt(t, o));
     alt.push(altFast(E, t, o));
   }
-  const vis = runs(
-    ts,
-    ts.map((_, i) => sun[i] < SUN_SET && alt[i] > 0),
-  );
-  const fSun = (t: number) => sunAlt(t, o);
-  const sunC = crossings(fSun, SUN_SET, n0, n0 + 1, 1 / 48);
-  const darkC = crossings(fSun, SUN_DARK, n0, n0 + 1, 1 / 48);
-  const jupC = crossings((t) => altFast(E, t, o), 0, n0, n0 + 1, 1 / 48);
-  const sunset = sunC.find((c) => !c.up)?.t ?? n0 + 0.25;
-  const sunrise = sunC.find((c) => c.up)?.t ?? n0 + 0.8;
-  const hour = 1 / 24;
-  const floorH = (t: number) => Math.floor((t + tzh() / 24) * 24) / 24 - tzh() / 24;
-  const ceilH = (t: number) => Math.ceil((t + tzh() / 24) * 24) / 24 - tzh() / 24;
-  let t0: number, t1: number;
-  if (vis.length) {
-    t0 = Math.max(floorH(sunset), floorH(vis[0][0]) - hour);
-    t1 = Math.min(ceilH(sunrise), ceilH(vis[vis.length - 1][1] + hour));
-    if (t1 - t0 < 6 * hour) {
-      const c = (t0 + t1) / 2;
-      t0 = floorH(c - 3 * hour);
-      t1 = t0 + 6 * hour;
-    }
-  } else {
-    t0 = floorH(sunset);
-    t1 = ceilH(sunrise);
+  const ticks: { t: number; label: string }[] = [];
+  const every = band.clientWidth < 600 ? 4 : 2;
+  const first = Math.ceil((t0 + tzh() / 24) * 24) / 24 - tzh() / 24;
+  for (let t = first; t <= t1; t += 1 / 24) {
+    const hr = Math.round(local(t).hour) % 24;
+    if (hr % every === 0) ticks.push({ t, label: hr === 0 ? md(t + 0.01) : `${hr}:00` });
   }
-  const inW = ts.map((t) => t >= t0 - step && t <= t1 + step);
-  const dark = runs(
-    ts.filter((_, i) => inW[i]),
-    ts.map((_, i) => alt[i] <= 0 || sun[i] >= SUN_SET).filter((_, i) => inW[i]),
-  );
-  const twi = runs(
-    ts.filter((_, i) => inW[i]),
-    ts.map((_, i) => sun[i] < SUN_SET && sun[i] >= SUN_DARK).filter((_, i) => inW[i]),
-  );
-  const phen = findPhen(E, t0 - 0.25, t1 + 0.25, 5 / 1440);
-  const grs = grsTransits(t0 - 0.1, t1 + 0.1);
-  const mutual = findMutual(E, RADII, FLUX, t0, t1);
-  /* 一覧 */
-  const items: Item[] = [];
-  const add = (t: number, text: string, dot = 'pn-ig', t1x?: number) => {
-    if (t >= t0 && t <= t1) items.push({ t, text, dot, t1: t1x });
-  };
-  for (const c of jupC) add(c.t, c.up ? '木星が昇る' : '木星が沈む');
-  for (const c of sunC) add(c.t, c.up ? '日の出' : '日の入り');
-  for (const c of darkC) add(c.t, c.up ? '空が明るくなり始める' : '空が暗くなる');
-  for (const tr of transits(M, t0, t1, o)) add(tr.t, `木星が南中（${tr.alt.toFixed(1)}°）`);
-  for (const t of grs) add(t, '大赤斑が中央に来る', 'pn-igrs');
-  for (const p of phen) {
-    const t = Math.max(p.t0, t0);
-    if (p.t1 < t0 || p.t0 > t1) continue;
-    items.push({ t, t1: p.t1, text: PHEN_T[p.kind](NAMES[p.k]), dot: `pn-k${p.k + 1}` });
-  }
-  /* 影が 2 つ以上: 影の区間が重なり始める所 */
-  const sh = phen.filter((p) => p.kind === 'SH');
-  for (const a of sh)
-    for (const b of sh) {
-      if (a === b || b.t0 < a.t0 || b.t0 > a.t1) continue;
-      add(b.t0, `${NAMES[b.k]}の影も入り、影が 2 つ`, `pn-k${b.k + 1}`, Math.min(a.t1, b.t1));
-    }
-  for (const m of mutual)
-    add(
-      m.t0,
-      m.kind === 'occ'
-        ? `${NAMES[m.a]}が${NAMES[m.b]}を隠す（相互食）`
-        : `${NAMES[m.a]}の影が${NAMES[m.b]}に（相互食）`,
-      `pn-k${m.a + 1}`,
-      m.t1,
-    );
-  items.sort((a, b) => a.t - b.t);
-  return { key: '', n0, t0, t1, phen, grs, dark, twi, items, mutual, vis };
-}
-
-function ensureNight(): Night {
-  const n0 = nightStart(jd);
-  const key = `${n0}|${picker.place.lat}|${picker.place.lon}|${tz$.value}|${grsOff}`;
-  if (!night || night.key !== key) {
-    night = buildNight(n0);
-    night.key = key;
-    bandKey = '';
-    listKey = '';
-    stripR = stripRange(night);
-  }
-  return night;
-}
-
-/** 衛星の並びの片側の広さ: 夜の間の衛星の離れの最大の 1.15 倍（赤道半径） */
-function stripRange(n: Night): number {
-  let mx = 6;
-  for (let t = n.t0; t <= n.t1; t += 1 / 24) {
-    const g = E.at(t);
-    for (const m of g.moons) mx = Math.max(mx, Math.abs(skyOffset(g, m, M.re)[0]));
-  }
-  return mx * 1.15;
-}
-
-/* ---------- 今夜の帯 ---------- */
-const band = $<SVGSVGElement>('#band');
-let bandKey = '';
-function drawBand(): void {
-  const n = ensureNight();
   const rows = NAMES.length + 1;
   const ay = bandAxisY(rows);
-  if (bandKey !== n.key) {
-    bandKey = n.key;
-    const ticks: { t: number; label: string }[] = [];
-    const span = (n.t1 - n.t0) * 24;
-    const every = span > 11 || band.clientWidth < 600 ? 2 : 1;
-    for (let t = Math.ceil((n.t0 + tzh() / 24) * 24 - 1e-6) / 24 - tzh() / 24; t <= n.t1 + 1e-6; t += 1 / 24) {
-      const h = Math.round(local(t).hour) % 24;
-      if (h % every === 0) ticks.push({ t, label: `${h}:00` });
-    }
-    band.setAttribute('viewBox', `0 -24 ${BAND_W} ${ay + 48}`);
-    band.innerHTML =
-      nightBand({
-        t0: n.t0,
-        t1: n.t1,
-        rows: NAMES,
-        phen: n.phen,
-        grs: n.grs,
-        dark: n.dark,
-        twi: n.twi,
-        ticks,
-      }) +
-      `<path class="pn-cur" id="bcur" d=""></path><rect class="pn-tag" id="btag" y="-22" height="19" rx="3"></rect><text class="pn-tagt" id="btagt" y="-8"></text>`;
+  band.setAttribute('viewBox', `0 -24 ${BAND_W} ${ay + 48}`);
+  band.innerHTML =
+    `<defs><clipPath id="bclip"><rect x="0" y="-24" width="${BAND_W}" height="${ay + 48}"></rect></clipPath></defs>` +
+    `<g clip-path="url(#bclip)"><g id="bscroll">${timeBand({
+      anchor,
+      t0,
+      t1,
+      rows: NAMES,
+      phen: findPhen(E, t0, t1, 5 / 1440),
+      grs: grsTransits(t0, t1),
+      dark: runs(
+        ts,
+        ts.map((_, i) => alt[i] <= 0 || sun[i] >= SUN_SET),
+      ),
+      twi: runs(
+        ts,
+        ts.map((_, i) => sun[i] < SUN_SET && sun[i] >= SUN_DARK),
+      ),
+      ticks,
+    })}</g></g>` +
+    bandRows(NAMES, true) +
+    `<path class="pn-cur" id="bcur" d="M${BAND_W / 2} 2V${ay}"></path><rect class="pn-tag" id="btag" y="-22" height="19" rx="3"></rect><text class="pn-tagt" id="btagt" x="${BAND_W / 2}" y="-8"></text>`;
+}
+
+function drawBand(): void {
+  const key = `${picker.place.lat}|${picker.place.lon}|${tz$.value}|${grsOff}|${band.clientWidth < 600}`;
+  if (!span || span.key !== key || Math.abs(jd - span.anchor) > 0.9) {
+    span = { key, anchor: Math.round(jd * 4) / 4 };
+    buildBand(span.anchor);
   }
-  const x = ((jd - n.t0) / (n.t1 - n.t0)) * BAND_W;
-  const inside = x >= 0 && x <= BAND_W;
-  $('#bcur').setAttribute('d', inside ? `M${x.toFixed(1)} 2V${ay}` : '');
-  const t = live ? `現在 ${hm(jd)}` : hm(jd);
+  $('#bscroll').setAttribute('transform', `translate(${(BAND_W / 2 - (jd - span.anchor) * BAND_W).toFixed(2)} 0)`);
+  const t = live ? `現在 ${md(jd)} ${hm(jd)}` : `${md(jd)} ${hm(jd)}`;
   const tw = [...t].reduce((w, c) => w + (c.charCodeAt(0) > 0xff ? 11.5 : 6.7), 14);
-  const tx = Math.min(BAND_W - tw / 2, Math.max(tw / 2, x));
   const tag = $('#btag');
-  tag.setAttribute('x', (tx - tw / 2).toFixed(1));
+  tag.setAttribute('x', (BAND_W / 2 - tw / 2).toFixed(1));
   tag.setAttribute('width', tw.toFixed(1));
-  tag.style.display = inside ? '' : 'none';
-  $('#btagt').setAttribute('x', tx.toFixed(1));
-  $('#btagt').textContent = inside ? t : '';
+  $('#btagt').textContent = t;
   tag.classList.toggle('pn-on', live);
   $('#bcur').classList.toggle('pn-on', live);
-  band.setAttribute('aria-valuenow', String(Math.round(x)));
   band.setAttribute('aria-valuetext', `${dateStr(jd)} ${hm(jd)}`);
 }
-function bandPick(e: PointerEvent): void {
-  const n = ensureNight();
+/* つかんで流す: 左へ動かすと時刻が進む。動かさずに離すと、押した所の時刻へ移る */
+let bandDrag: { x: number; jd: number; moved: boolean } | null = null;
+const bandX = (e: PointerEvent) => {
   const r = band.getBoundingClientRect();
-  const x = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
-  setJd(n.t0 + x * (n.t1 - n.t0));
-}
+  return ((e.clientX - r.left) / r.width) * BAND_W;
+};
 band.addEventListener('pointerdown', (e) => {
   band.setPointerCapture(e.pointerId);
-  bandPick(e);
-  const mv = (ev: PointerEvent) => bandPick(ev);
-  band.addEventListener('pointermove', mv);
-  band.addEventListener('pointerup', () => band.removeEventListener('pointermove', mv), { once: true });
+  bandDrag = { x: bandX(e), jd, moved: false };
+  if (playing) stop();
 });
+band.addEventListener('pointermove', (e) => {
+  if (!bandDrag) return;
+  const dx = bandX(e) - bandDrag.x;
+  if (!bandDrag.moved && Math.abs(dx) < 4) return;
+  bandDrag.moved = true;
+  band.classList.add('drag');
+  setJd(bandDrag.jd - dx / BAND_W);
+});
+const bandEnd = (e: PointerEvent) => {
+  if (bandDrag && !bandDrag.moved && e.type === 'pointerup') setJd(jd + (bandX(e) - BAND_W / 2) / BAND_W);
+  bandDrag = null;
+  band.classList.remove('drag');
+};
+band.addEventListener('pointerup', bandEnd);
+band.addEventListener('pointercancel', bandEnd);
 band.addEventListener('keydown', (e) => {
   const k = e.key;
   const d =
@@ -933,36 +814,205 @@ $('#play').addEventListener('click', () => {
   later();
 });
 
-/* ---------- 今夜の現象 ---------- */
-let listKey = '';
-function drawList(): void {
-  const n = ensureNight();
-  const key = `${n.key}|${Math.floor(jd * 1440)}`;
-  if (key === listKey) return;
-  listKey = key;
-  txt('#ev-aux', `${picker.place.name}で見える時刻`);
-  if (!n.vis.length) {
-    $('#evlist').innerHTML = '<li class="pn-none">この夜は木星が見えません。</li>';
-    return;
-  }
-  $('#evlist').innerHTML = n.items
-    .map((it, i) => {
-      const end = it.t1 ?? it.t;
-      const on = it.t1 !== undefined && jd >= it.t && jd <= end;
-      const past = end < jd && !on;
-      const sub =
-        it.t1 !== undefined
-          ? `<small>${Number.isFinite(it.t1) ? `${hm(it.t1)} まで` : ''}${on ? ` · いま ${hm(jd)}` : ''}</small>`
-          : '';
-      return `<li class="${on ? 'pn-on' : past ? 'pn-past' : ''}"><button type="button" data-i="${i}"><b>${hm(it.t)}</b><i class="${it.dot}"></i><span>${esc(it.text)}${sub}</span></button></li>`;
-    })
-    .join('');
+/* ---------- すべての衛星 ---------- */
+const aview = $('#aview');
+const acv = $<HTMLCanvasElement>('#ac');
+/** 群の色（黒い地の上で見分けられる明るさ） */
+const GC = ['#ee8458', '#e8b52e', '#6cc37d', '#a9b6c0', '#5fb3e0', '#b394e0', '#e07aa8'];
+let table: MoonTable | null = null;
+let tableLoading = false;
+let aVisible = false;
+/** 押した・乗せた衛星の名前 */
+let aSel = '';
+interface Dot {
+  name: string;
+  g: number;
+  d: number;
+  x: number;
+  y: number;
+  sep: number;
 }
-$('#evlist').addEventListener('click', (e) => {
-  const b = (e.target as Element).closest<HTMLElement>('button[data-i]');
-  const n = night;
-  if (b && n) setJd(n.items[Number(b.dataset.i)].t + 1 / 1440);
+let aDots: Dot[] = [];
+const az = new PanZoom(acv, {
+  min: 0.6,
+  max: 120,
+  onChange: () => {
+    $('#areset').hidden = !az.moved;
+    txt('#azoom', `×${az.z.toFixed(az.z < 10 ? 2 : 0)}`);
+    drawAll();
+  },
+  onTap: (x, y) => pickDot(x, y),
 });
+$('#ain').addEventListener('click', () => az.zoomCenter(1.6));
+$('#aout').addEventListener('click', () => az.zoomCenter(1 / 1.6));
+$('#areset').addEventListener('click', () => az.reset());
+function pickDot(x: number, y: number): void {
+  let best = 16;
+  let hit = '';
+  for (const d of aDots) {
+    const v = Math.hypot(d.x - x, d.y - y);
+    if (v < best) {
+      best = v;
+      hit = d.name;
+    }
+  }
+  aSel = hit;
+  drawAll();
+}
+acv.addEventListener('pointermove', (e) => {
+  if (e.buttons || e.pointerType !== 'mouse') return;
+  const r = acv.getBoundingClientRect();
+  pickDot(e.clientX - r.left, e.clientY - r.top);
+});
+new IntersectionObserver(
+  (es) => {
+    aVisible = es.some((x) => x.isIntersecting);
+    if (aVisible) {
+      void loadTable();
+      drawAll();
+    }
+  },
+  { rootMargin: '300px' },
+).observe(aview);
+async function loadTable(): Promise<void> {
+  if (table || tableLoading) return;
+  tableLoading = true;
+  try {
+    table = (await (await fetch(`${BASE}jupiter/moons.json`)).json()) as MoonTable;
+    drawKey();
+    drawAll();
+  } catch {
+    tableLoading = false;
+  }
+}
+function drawKey(): void {
+  if (!table) return;
+  const n = table.groups.map((_, g) => table?.moons.filter((m) => m.g === g).length ?? 0);
+  n[0] = INNER.length;
+  n[1] = MOONS.length;
+  $('#akey').innerHTML = table.groups
+    .map((nm, g) => `<span><i class="pn-gd" style="background:${GC[g]}"></i>${esc(nm)} ${n[g]}</span>`)
+    .join('');
+  txt('#all-aux', `${n.reduce((a, b) => a + b, 0)} 個`);
+}
+/** 目盛りの環の間隔 [″] の候補 */
+const RINGS = [3600, 1800, 600, 300, 120, 60, 30, 10];
+function ringLabel(as: number): string {
+  return as >= 3600 ? `${as / 3600}°` : as >= 60 ? `${as / 60}′` : `${as}″`;
+}
+function drawAll(): void {
+  if (!aVisible) return;
+  const W = aview.clientWidth,
+    H = aview.clientHeight;
+  const dpr = Math.min(devicePixelRatio || 1, 2);
+  if (acv.width !== Math.round(W * dpr) || acv.height !== Math.round(H * dpr)) {
+    acv.width = Math.round(W * dpr);
+    acv.height = Math.round(H * dpr);
+  }
+  const c = acv.getContext('2d');
+  if (!c) return;
+  c.setTransform(dpr, 0, 0, dpr, 0, 0);
+  c.fillStyle = '#000';
+  c.fillRect(0, 0, W, H);
+  const g = st.geo;
+  const mode = or$.value;
+  /* 既定は木星から 3300 万 km までが窓の高さに入る大きさ */
+  const pxRe = ((H / 2 / 33e6) * M.re * az.z) as number;
+  const cx = W / 2 + az.x,
+    cy = H / 2 + az.y;
+  const rs = st.diam / 2;
+  /* 目盛りの環 */
+  const ppa = pxRe / rs;
+  const step = RINGS.filter((a) => a * ppa >= 70).pop() ?? RINGS[0];
+  c.strokeStyle = '#2b3237';
+  c.fillStyle = '#6d777e';
+  c.lineWidth = 1;
+  c.font = '500 10.5px "Fira Mono", monospace';
+  c.textAlign = 'left';
+  const far = Math.hypot(Math.max(cx, W - cx), Math.max(cy, H - cy));
+  for (let k = 1; k * step * ppa < far && k < 60; k++) {
+    const r = k * step * ppa;
+    c.beginPath();
+    c.arc(cx, cy, r, 0, 2 * Math.PI);
+    c.stroke();
+    c.fillText(ringLabel(k * step), cx + 4, cy - r - 3);
+  }
+  /* 衛星の位置 */
+  const dots: Dot[] = [];
+  const put = (name: string, gr: number, d: number, v: Vec3) => {
+    const [sx, sy, sz] = screenOf(M, st, mode, v);
+    if (sz > 0 && Math.hypot(sx, sy * (M.re / M.rp)) < 1) return;
+    dots.push({ name, g: gr, d, x: cx + sx * pxRe, y: cy - sy * pxRe, sep: Math.hypot(sx, sy) * rs });
+  };
+  MOONS.forEach((m, k) => {
+    put(m.name, 1, 2 * m.r, g.moons[k]);
+  });
+  const tl = g.jdTT - g.lt;
+  INNER.forEach(([nm, d], k) => {
+    put(nm, 0, d, mul(g.M, innerPos(k, tl)));
+  });
+  let outside = false;
+  if (table) {
+    table.moons.forEach((m, k) => {
+      const p = table && tablePos(table, k, tl, GM_JUP);
+      if (p) put(m.n, m.g, m.d, mul(g.M, p));
+      else outside = true;
+    });
+  }
+  aDots = dots;
+  const m = $('#a-msg');
+  m.hidden = !outside;
+  if (outside) m.textContent = '外側の衛星の軌道は 2015〜2036 年の分だけ持っています。';
+  /* 木星 */
+  c.fillStyle = '#c9a77c';
+  c.beginPath();
+  c.arc(cx, cy, Math.max(3, pxRe), 0, 2 * Math.PI);
+  c.fill();
+  /* 大きな衛星が上に来るよう、小さなものから描く */
+  const order = [...dots].sort((a, b) => a.d - b.d);
+  for (const d of order) {
+    if (d.x < -6 || d.x > W + 6 || d.y < -6 || d.y > H + 6) continue;
+    c.fillStyle = GC[d.g];
+    c.beginPath();
+    c.arc(d.x, d.y, d.d > 1000 ? 3.4 : d.d > 20 ? 2.6 : 1.9, 0, 2 * Math.PI);
+    c.fill();
+  }
+  /* 名前: 大きな衛星から置き、重なるものは出さない（拡大すると出る）。選んだ衛星はいつも出す */
+  const sel = dots.find((d) => d.name === aSel);
+  const boxes: [number, number, number, number][] = [
+    [cx - Math.max(3, pxRe), cy - Math.max(3, pxRe), cx + Math.max(3, pxRe), cy + Math.max(3, pxRe)],
+  ];
+  c.font = '500 11px system-ui, sans-serif';
+  c.textBaseline = 'middle';
+  const label = (d: Dot, force: boolean) => {
+    const w = c.measureText(d.name).width;
+    const x0 = d.x + 6,
+      x1 = x0 + w,
+      y0 = d.y - 7,
+      y1 = d.y + 7;
+    if (x1 < 0 || x0 > W || y1 < 0 || y0 > H) return;
+    if (!force && boxes.some((b) => x0 < b[2] && x1 > b[0] && y0 < b[3] && y1 > b[1])) return;
+    boxes.push([x0, y0, x1, y1]);
+    c.fillStyle = force ? '#fff' : GC[d.g];
+    c.fillText(d.name, x0, d.y);
+  };
+  if (sel) {
+    c.strokeStyle = '#fff';
+    c.beginPath();
+    c.arc(sel.x, sel.y, 6, 0, 2 * Math.PI);
+    c.stroke();
+    label(sel, true);
+  }
+  if (nm$.value === 'on') for (const d of [...dots].sort((a, b) => b.d - a.d)) if (d !== sel) label(d, false);
+  c.textBaseline = 'alphabetic';
+  txt('#a-lab', `${ORIENT_T[mode]} · 環は ${ringLabel(step)} おき`);
+  txt(
+    '#a-info',
+    sel
+      ? `${sel.name} · ${table?.groups[sel.g] ?? ''} · 木星から ${sel.sep >= 3600 ? `${(sel.sep / 3600).toFixed(2)}°` : dms(sel.sep)}`
+      : '押すと名前と離れを出します',
+  );
+}
 
 /* ---------- 北から見た軌道 ---------- */
 let topKey = '';
@@ -1058,37 +1108,8 @@ wig.addEventListener('click', (e) => {
   setJd(wiggleTime(wigWin, q.y));
 });
 
-/* ---------- 大赤斑が中央に来る時刻 ---------- */
-let grsKey = '';
+/* ---------- 大赤斑の経度 ---------- */
 function drawGrs(): void {
-  const n = ensureNight();
-  const key = `${n.key}|${Math.floor(jd * 96)}`;
-  if (key !== grsKey) {
-    grsKey = key;
-    const o = obs();
-    txt('#grs-aux', `${picker.place.name}で見える夜だけ`);
-    const rows: string[] = [];
-    const ts = grsTransits(n.n0, n.n0 + 10);
-    for (const t of ts) {
-      const s = sunAlt(t, o);
-      const a = altFast(E, t, o);
-      if (s >= SUN_SET || a < 8) continue;
-      const tags: string[] = [];
-      if (a < 25) tags.push('低い');
-      if (s > SUN_DARK) tags.push('薄明');
-      else {
-        const sa = sunAlt(t + 1 / 24, o);
-        const sb = sunAlt(t - 1 / 24, o);
-        if (sa > SUN_DARK && sa > s) tags.push('薄明の直前');
-        else if (sb > SUN_DARK && sb > s) tags.push('暗くなった直後');
-      }
-      rows.push(
-        `<tr class="${t < jd ? 'pn-past' : ''}"><td class="pn-t"><button type="button" data-j="${t}">${md(t)} ${hm(t)}</button></td><td><button type="button" data-j="${t}">${a.toFixed(0)}°</button></td><td><button type="button" data-j="${t}">${tags.map((x) => `<span class="pn-tag2">${x}</span>`).join(' ')}</button></td></tr>`,
-      );
-      if (rows.length >= 7) break;
-    }
-    $('#grs-rows').innerHTML = rows.length ? rows.join('') : '<tr><td colspan="3">見える夜がありません。</td></tr>';
-  }
   const inp = $<HTMLInputElement>('#grs-l');
   if (document.activeElement !== inp) inp.value = `${grsAt(jd).toFixed(1)}°`;
   $('#grs-rst').hidden = grsOff === 0;
@@ -1101,14 +1122,9 @@ function drawGrs(): void {
         : 'OPAL の地図と JUPOS の実測から補間 · 自分の観測で直せる',
   );
 }
-$('#grs-rows').addEventListener('click', (e) => {
-  const b = (e.target as Element).closest<HTMLElement>('button[data-j]');
-  if (b) setJd(Number(b.dataset.j));
-});
 function setGrsOff(v: number): void {
   grsOff = Math.round(v * 10) / 10;
-  if (grsOff) store('grsOff', grsOff);
-  else store('grsOff', 0);
+  store('grsOff', grsOff);
   resetNight();
   later(true);
 }
@@ -1287,7 +1303,7 @@ function frame(now: number): void {
   drawNumbers();
   drawBand();
   drawKeys();
-  drawList();
+  drawAll();
   drawTop();
   drawWiggle();
   if (full || !playing) {
@@ -1299,6 +1315,7 @@ function frame(now: number): void {
 new ResizeObserver(() => later()).observe(view);
 
 /* ---------- 始める ---------- */
+txt('#hd-jup', `${picker.place.name}から見た木星`);
 try {
   renderer = new PlanetRenderer(canvas);
   /* 最新の地図を先に読み、日付に近い年の地図は後から読む */

@@ -13,12 +13,12 @@ import Theory from '../tools/jupiter/Theory.astro';
 
 const name = '木星';
 ---
-<SiteLayout title={name} tool={{ id: 'jupiter', name }} note="木星の模様は NASA/ESA の Hubble 宇宙望遠鏡の OPAL（PI: Simon, GO13937、STScI がアーカイブ、DOI 10.17909/T9G593、CC BY 4.0）の全球の地図を加工したもの。ガリレオ衛星の位置は Astronomy Engine（MIT、Copyright (c) 2019-2025 Don Cross）の L1.2 の打ち切り版、大赤斑の経度は JUPOS と BAA の報告と OPAL の地図から読んだ値です。">
-  <PageTitle title={name}>選んだ日時と観測地から見た木星とガリレオ衛星を描きます。模様は Hubble 宇宙望遠鏡の毎年の地図を大赤斑の位置に合わせて回したもので、衛星の影・本体の前の通過・食・掩蔽・相互食の時刻も計算します。</PageTitle>
+<SiteLayout title={name} tool={{ id: 'jupiter', name }} note="木星の模様は NASA/ESA の Hubble 宇宙望遠鏡の OPAL（PI: Simon, GO13937、STScI がアーカイブ、DOI 10.17909/T9G593、CC BY 4.0）の全球の地図を加工したもの。ガリレオ衛星の位置は Astronomy Engine（MIT、Copyright (c) 2019-2025 Don Cross）の L1.2 の打ち切り版、ほかの衛星の位置は JPL Horizons、衛星の日本語名と群はウィキペディア日本語版（CC BY-SA 4.0）、大赤斑の経度は JUPOS と BAA の報告と OPAL の地図から読んだ値です。">
+  <PageTitle title={name}>選んだ日時と観測地から見た木星と衛星を描きます。模様は Hubble 宇宙望遠鏡の毎年の地図を大赤斑の位置に合わせて回したものです。衛星の影・木星の前の通過・食・掩蔽・相互食を計算し、115 個の衛星の位置も示します。</PageTitle>
 
   <div class="tgrid pn-grid">
 
-    <Panel hid="hd-jup" title="今夜の木星" class="pn-a-scope" fixed>
+    <Panel hid="hd-jup" title="東京から見た木星" class="pn-a-scope" fixed>
       <PlanetSite slot="aux" />
       <div slot="aux" class="seg" id="p-or" role="group" aria-label="画面の向き"><button type="button" data-v="zenith" aria-pressed="false" title="観測地の天頂を上にする（空で見える向き）">天頂<span class="pn-w">が上</span></button><button type="button" data-v="planet" aria-pressed="true" title="木星の北極を上にする">木星の北<span class="pn-w">が上</span></button><button type="button" data-v="sky" aria-pressed="false" title="天の北極を上にする（望遠鏡の写真の向き）">天の北<span class="pn-w">が上</span></button></div>
       <div slot="aux" class="seg" id="p-play" data-nosave><button type="button" id="play" aria-pressed="false" title="時刻を進める（表示の設定の速さで）"><span class="led" id="playLed" aria-hidden="true"></span><span id="playT">再生</span></button></div>
@@ -45,7 +45,7 @@ const name = '木星';
         <div class="pn-lab" id="s-lab"></div>
         <div class="pn-scale" id="s-scale"><i></i>1′</div>
       </div>
-      <svg class="pn-nb" id="band" viewBox="0 -24 1000 176" role="slider" tabindex="0" aria-label="日時（今夜の帯の上を押して動かす）" aria-valuemin="0" aria-valuemax="1000" aria-valuenow="0"></svg>
+      <svg class="pn-nb" id="band" viewBox="0 -24 1000 176" role="slider" tabindex="0" aria-label="日時（帯をドラッグすると時刻が流れる）" aria-valuemin="0" aria-valuemax="1000" aria-valuenow="500"></svg>
       <div class="pn-tchips" id="keys" role="group" aria-label="主な日時へ移る"></div>
       <div class="pn-tstep"><span class="aux">日時を少し動かす</span><div class="seg" id="tstep" role="group" aria-label="日時を少し動かす"><button type="button" data-s="-86400">−1 日</button><button type="button" data-s="-3600">−1 時間</button><button type="button" data-s="-600">−10 分</button><button type="button" data-s="600">+10 分</button><button type="button" data-s="3600">+1 時間</button><button type="button" data-s="86400">+1 日</button></div></div>
       <More id="g-view" title="表示の設定"><div class="ana2">
@@ -58,13 +58,25 @@ const name = '木星';
           <ChoiceRow k="tz" name="時刻" sub="日本時間（UTC+9）か世界時（UT）" choices={[['jst', '日本時間'], ['ut', '世界時']]} value="jst" />
           <ChoiceRow k="sp" name="再生の速さ" sub="実際の時間の何倍で進めるか" choices={SPEEDS} value="600" />
         </div>
+      </div>
+      <div class="pn-grsin">
+        <label class="aux" for="grs-l">大赤斑の経度（System II）</label>
+        <input id="grs-l" type="text" inputmode="decimal" autocomplete="off">
+        <button type="button" class="pn-vbtn pn-grsrst" id="grs-rst" title="表の値に戻す" hidden>↺</button>
+        <span class="aux" id="grs-note"></span>
       </div></More>
     </Panel>
 
-    <Panel hid="hd-ev" title="今夜の現象" class="pn-a-ev">
-      <span slot="aux" class="aux" id="ev-aux">東京で見える時刻</span>
-      <ul class="pn-nl" id="evlist"></ul>
-      <p class="pn-vcap">行を押すと、その時刻の木星に移ります。</p>
+    <Panel hid="hd-all" title="すべての衛星" class="pn-a-all">
+      <span slot="aux" class="aux" id="all-aux"></span>
+      <div class="pn-view pn-allv" id="aview">
+        <canvas id="ac" role="img" aria-label="木星のまわりのすべての衛星の、空での位置"></canvas>
+        <div class="pn-lab" id="a-lab"></div>
+        <div class="pn-lab pn-b" id="a-info"></div>
+        <p class="pn-vmsg" id="a-msg" hidden></p>
+        <div class="pn-vctl" role="group" aria-label="表示の拡大・縮小"><button type="button" class="pn-vbtn" id="aout" aria-label="縮小" title="縮小（ホイール・2 本指でも）">−</button><span class="pn-vz" id="azoom">×1.00</span><button type="button" class="pn-vbtn" id="ain" aria-label="拡大" title="拡大（ホイール・2 本指でも）">＋</button><button type="button" class="pn-vbtn" id="areset" title="拡大と位置をもとに戻す" hidden>もとに戻す</button></div>
+      </div>
+      <div class="pn-key" id="akey"></div>
     </Panel>
 
     <Panel hid="hd-top" title="北から見た軌道" class="pn-a-top">
@@ -75,22 +87,8 @@ const name = '木星';
     <Panel hid="hd-wig" title="衛星の動き" class="pn-a-wig">
       <div slot="aux" class="seg" id="p-wr" role="group" aria-label="期間"><button type="button" data-v="1" aria-pressed="false">±1 日</button><button type="button" data-v="3" aria-pressed="true">±3 日</button><button type="button" data-v="8" aria-pressed="false">±8 日</button></div>
       <svg class="pn-of pn-wig" id="wig" viewBox="-40 0 600 486" role="img" aria-label="ガリレオ衛星の東西の離れの時間の変化。縦が時刻で下へ進む"></svg>
-      <p class="pn-cap">横は木星の半径（灰の帯が本体）· 押すとその日時へ</p>
+      <p class="pn-cap">横は木星の半径（灰の帯が木星）· 押すとその日時へ</p>
       <div class="pn-key" id="wkey"></div>
-    </Panel>
-
-    <Panel hid="hd-grs" title="大赤斑が中央に来る時刻" class="pn-a-grs">
-      <span slot="aux" class="aux" id="grs-aux">東京で見える夜だけ</span>
-      <table class="pn-evt">
-        <thead><tr><th>日時</th><th>木星の高度</th><th></th></tr></thead>
-        <tbody id="grs-rows"></tbody>
-      </table>
-      <div class="pn-grsin">
-        <label class="aux" for="grs-l">大赤斑の経度（System II）</label>
-        <input id="grs-l" type="text" inputmode="decimal" autocomplete="off">
-        <button type="button" class="pn-vbtn pn-grsrst" id="grs-rst" title="表の値に戻す" hidden>↺</button>
-        <span class="aux" id="grs-note"></span>
-      </div>
     </Panel>
 
     <Panel hid="hd-mut" title="相互食の季節" class="pn-a-mut">

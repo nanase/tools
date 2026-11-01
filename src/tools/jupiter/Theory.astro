@@ -20,7 +20,7 @@ const mu0 = sub('μ', '0');
   <li>日時（UT）に <math><mi mathvariant="normal">Δ</mi><mi>T</mi></math> を足して力学時にする</li>
   <li>光行時間だけ前の木星と、今の地球の位置から、地球から見た木星を求める</li>
   <li>同じ時刻の自転軸・自転角と、ガリレオ衛星の位置を求める</li>
-  <li>衛星ごとに、本体の前・裏・影の中か、影が本体に落ちるかを判定する</li>
+  <li>衛星ごとに、木星の前・裏・影の中か、影が木星に落ちるかを判定する</li>
   <li>WebGL2 で画素ごとに楕円体の点を求め、模様・周縁減光・欠け・衛星の影を描く</li>
 </ol>
 
@@ -45,16 +45,24 @@ const mu0 = sub('μ', '0');
 <h3>ガリレオ衛星</h3>
 <p>衛星の位置は Lainey らの L1.2 を Astronomy Engine が 75 項に打ち切ったものです<Fragment set:html={rf(4)} />。軌道要素の級数から木星の赤道の座標の位置を出し、地球の赤道の座標へ回します。衛星が木星より遠い分だけ光が早く出ているので、衛星ごとに光行時間を足し直します（最大 6 秒ほど）。JPL Horizons との差は 2020 年代で 0.25″ 以下です。</p>
 
+<h3>すべての衛星</h3>
+<p>JPL Horizons にある 115 個の衛星を出します<Fragment set:html={rf(10)} />。ガリレオ衛星のほかは丸と名前だけで、どれも位置の目安です。</p>
+<ul class="tl">
+  <li><b>内側の 4 個</b>: 周期が 1 日に満たないので、木星の赤道の面の円軌道を 2015〜2041 年の位置に当てはめました。差はメティスの 240 km からテーベの 8900 km までです</li>
+  <li><b>外側の 107 個</b>: 太陽の摂動で軌道が大きく変わるので、2015〜2036 年の 90 日おきの位置と速度を持ちます。間の時刻は、両端の状態から 2 体で進めた位置を混ぜて求めます。Horizons との差は最大 15 万 km で、木星の距離で 40″ ほどです</li>
+</ul>
+<p>名前と群はウィキペディア日本語版の一覧によります<Fragment set:html={rf(14)} />。一覧にない 14 個の群は、軌道の大きさと傾きから決めました。小さな衛星は観測が少なく、Horizons の位置そのものの誤差が大きいものもあります。</p>
+
 <h3>現象の判定</h3>
 <p>楕円体の z を赤道半径 / 極半径 倍に伸ばすと、半径 1 の球になります。衛星の中心 <math><mi mathvariant="bold">p</mi></math> から向き <math><mi mathvariant="bold">u</mi></math> へのびる直線が球を通るかは、次の値の符号で決まります。</p>
 <div class="eqs">
   <math display="block" set:html={`<mi>g</mi><mo>=</mo>${sup('<mi>|</mi><mi mathvariant="bold">p</mi><mi>|</mi>', '<mn>2</mn>')}<mo>−</mo>${sup(par('<mi mathvariant="bold">p</mi><mo>·</mo><mi mathvariant="bold">u</mi>'), '<mn>2</mn>')}<mo>−</mo><mn>1</mn>`} />
 </div>
 <ul class="tl">
-  <li><b>本体の前</b>: <math><mi mathvariant="bold">u</mi></math> が地球の向きで <math><mi>g</mi><mo>&lt;</mo><mn>0</mn></math>、衛星が地球の側</li>
-  <li><b>本体の裏（掩蔽）</b>: 同じく <math><mi>g</mi><mo>&lt;</mo><mn>0</mn></math>、衛星が奥</li>
-  <li><b>影が本体に</b>: <math><mi mathvariant="bold">u</mi></math> が太陽の向きで <math><mi>g</mi><mo>&lt;</mo><mn>0</mn></math>、衛星が太陽の側</li>
-  <li><b>本体の影の中（食）</b>: 同じく <math><mi>g</mi><mo>&lt;</mo><mn>0</mn></math>、衛星が太陽と反対の側</li>
+  <li><b>木星の前</b>: <math><mi mathvariant="bold">u</mi></math> が地球の向きで <math><mi>g</mi><mo>&lt;</mo><mn>0</mn></math>、衛星が地球の側</li>
+  <li><b>木星の裏（掩蔽）</b>: 同じく <math><mi>g</mi><mo>&lt;</mo><mn>0</mn></math>、衛星が奥</li>
+  <li><b>影が木星に</b>: <math><mi mathvariant="bold">u</mi></math> が太陽の向きで <math><mi>g</mi><mo>&lt;</mo><mn>0</mn></math>、衛星が太陽の側</li>
+  <li><b>木星の影の中（食）</b>: 同じく <math><mi>g</mi><mo>&lt;</mo><mn>0</mn></math>、衛星が太陽と反対の側</li>
 </ul>
 <p>判定は衛星の中心で行い、IMCCE の予報と同じ定め方にしました<Fragment set:html={rf(5)} />。5 分刻みで符号の変わり目を探し、二分法で詰めます。</p>
 
@@ -75,7 +83,7 @@ const mu0 = sub('μ', '0');
 </div>
 
 <h3>大赤斑の経度</h3>
-<p>大赤斑は System II でも 1 か月に 1〜2° ずつ流れ、速さも季節で変わります。経度が 1° ずれると中央に来る時刻が 1.7 分ずれます。そこで、OPAL の地図で測った経度（撮影日の System III を System II に直したもの）と、JUPOS の経度の図・BAA の報告から読んだ値を表に持ちます<Fragment set:html={rf(11, 12)} />。表の間は直線で補い、表より後は最後の 3 点の回帰直線でのばします。自分の観測があれば、表の下の欄で直せます。</p>
+<p>大赤斑は System II でも 1 か月に 1〜2° ずつ流れ、速さも季節で変わります。経度が 1° ずれると中央に来る時刻が 1.7 分ずれます。そこで、OPAL の地図で測った経度（撮影日の System III を System II に直したもの）と、JUPOS の経度の図・BAA の報告から読んだ値を表に持ちます<Fragment set:html={rf(11, 12)} />。表の間は直線で補い、表より後は最後の 3 点の回帰直線でのばします。自分の観測があれば、表示の設定の欄で直せます。</p>
 
 <h3>答え合わせ</h3>
 <ul class="tl">
@@ -93,8 +101,9 @@ const mu0 = sub('μ', '0');
   <li>地図を 3072 × 1536 に縮め、撮れていない極を端に近い行の平均の色で埋めること</li>
   <li>大赤斑の経度の表と、表より後を最後の 3 点の回帰直線でのばすこと</li>
   <li>衛星の色（幾何アルベドに比例させた目安）と、相互食で円盤を一様とすること</li>
-  <li>今夜の帯の範囲: 木星が見える時間の 1 時間前から日の出まで（正時にそろえる）</li>
-  <li>「空が暗くなる」「明るくなり始める」を太陽の高度 −12° とすること</li>
+  <li>時刻の帯の範囲（今の時刻の前後 12 時間）と、薄明の陰を太陽の高度 −0.83°〜−12° とすること</li>
+  <li>内側の衛星を円軌道とし、外側の衛星の状態を 90 日おきに持つこと</li>
+  <li>外側の衛星の群を、一覧にないものは軌道で決める閾値（順行は半長径 1300 万 km、逆行は傾き 160° と半長径 2220 万 km）</li>
 </ul>
 
 <h3>出典</h3>
@@ -108,8 +117,9 @@ const mu0 = sub('μ', '0');
   <li id="thy-r7"><span class="rf-for">木星の全球の地図（CC BY 4.0）</span><span class="rf-src">A. A. Simon, M. H. Wong and G. S. Orton, “First results from the Hubble OPAL program: Jupiter in 2015,” <i>Astrophys. J.</i>, vol. 812, 55, 2015; M. H. Wong et al., “High-resolution UV/optical/IR imaging of Jupiter in 2016–2019,” <i>Astrophys. J. Suppl. Ser.</i>, vol. 247, 58, 2020; MAST, <a href="https://doi.org/10.17909/T9G593" target="_blank" rel="noopener">OPAL, DOI 10.17909/T9G593</a></span></li>
   <li id="thy-r8"><span class="rf-for">地図の周縁減光の補正（Minnaert の k）と撮影日</span><span class="rf-src">MAST, “<a href="https://archive.stsci.edu/hlsps/opal/cycle32/jupiter/hlsp_opal_hst_wfc3-uvis_jupiter-2025_all_v1_readme.txt" target="_blank" rel="noopener">OPAL Cycle 32 Jupiter README</a>” ほか各年の README</span></li>
   <li id="thy-r9"><span class="rf-for">木星の等級</span><span class="rf-src">A. Mallama and J. L. Hilton, “<a href="https://arxiv.org/abs/1808.01973" target="_blank" rel="noopener">Computing apparent planetary magnitudes for The Astronomical Almanac</a>,” <i>Astron. Comput.</i>, vol. 25, pp. 10–24, 2018</span></li>
-  <li id="thy-r10"><span class="rf-for">位置・物理暦・衛星の等級（答え合わせ）、衛星の半径と V(1,0)</span><span class="rf-src">JPL Solar System Dynamics, “<a href="https://ssd.jpl.nasa.gov/horizons/" target="_blank" rel="noopener">Horizons System</a>”（jup365_merged）; “<a href="https://ssd.jpl.nasa.gov/sats/phys_par/" target="_blank" rel="noopener">Planetary Satellite Physical Parameters</a>”; “<a href="https://ssd.jpl.nasa.gov/sats/elem/sep.html" target="_blank" rel="noopener">Planetary Satellite Mean Elements</a>”</span></li>
+  <li id="thy-r10"><span class="rf-for">位置・物理暦・衛星の等級（答え合わせ）、ガリレオ衛星以外の衛星の位置、衛星の半径と V(1,0)</span><span class="rf-src">JPL Solar System Dynamics, “<a href="https://ssd.jpl.nasa.gov/horizons/" target="_blank" rel="noopener">Horizons System</a>”（jup365_merged）; “<a href="https://ssd.jpl.nasa.gov/sats/phys_par/" target="_blank" rel="noopener">Planetary Satellite Physical Parameters</a>”; “<a href="https://ssd.jpl.nasa.gov/sats/elem/sep.html" target="_blank" rel="noopener">Planetary Satellite Mean Elements</a>”</span></li>
   <li id="thy-r11"><span class="rf-for">大赤斑の System II の経度（2026 年の値）</span><span class="rf-src">JUPOS, “<a href="https://jupos.hier-im-netz.de/rGrs.htm" target="_blank" rel="noopener">GRS longitude (System 2)</a>”（2026-10-09 更新の図）</span></li>
   <li id="thy-r12"><span class="rf-for">大赤斑の経度と動き（2025-12-01 に L2 = 79°）</span><span class="rf-src">BAA Jupiter Section, “Jupiter in 2025/26, Report no. 4,” 2025</span></li>
   <li id="thy-r13"><span class="rf-for">System II の中央子午線（答え合わせ）</span><span class="rf-src">IMCCE, “<a href="https://ssp.imcce.fr/webservices/vo-tools/jgrs/" target="_blank" rel="noopener">JGRS</a>”</span></li>
+  <li id="thy-r14"><span class="rf-for">衛星の日本語名と群（CC BY-SA 4.0）</span><span class="rf-src">ウィキペディア日本語版「<a href="https://ja.wikipedia.org/w/index.php?title=%E6%9C%A8%E6%98%9F%E3%81%AE%E8%A1%9B%E6%98%9F&amp;oldid=109799938" target="_blank" rel="noopener">木星の衛星</a>」（版を固定）</span></li>
 </ol>

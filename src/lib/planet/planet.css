@@ -8,10 +8,10 @@
 .pn-k5{stroke:var(--pn-m5);color:var(--pn-m5)}.pn-k6{stroke:var(--pn-m6);color:var(--pn-m6)}.pn-k7{stroke:var(--pn-m7);color:var(--pn-m7)}.pn-k8{stroke:var(--pn-m8);color:var(--pn-m8)}
 .pn-f1{fill:var(--pn-m1)}.pn-f2{fill:var(--pn-m2)}.pn-f3{fill:var(--pn-m3)}.pn-f4{fill:var(--pn-m4)}.pn-f5{fill:var(--pn-m5)}.pn-f6{fill:var(--pn-m6)}.pn-f7{fill:var(--pn-m7)}.pn-f8{fill:var(--pn-m8)}
 
-/* 並び: 上に全幅で今夜の木星、その下に 2 列（現象｜軌道、動き｜大赤斑）、全幅で相互食、式。スマホでは 1 列 */
+/* 並び: 全幅で望遠の図、全幅ですべての衛星、2 列で軌道｜動き、全幅で相互食、式。スマホでは 1 列 */
 @media (min-width:1000px){
-  .pn-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start;grid-template-areas:"scope scope" "ev top" "wig grs" "mut mut" "thy thy"}
-  .pn-a-scope{grid-area:scope}.pn-a-ev{grid-area:ev}.pn-a-top{grid-area:top}.pn-a-wig{grid-area:wig}.pn-a-grs{grid-area:grs}.pn-a-mut{grid-area:mut}.pn-grid>.a-thy{grid-area:thy}
+  .pn-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start;grid-template-areas:"scope scope" "all all" "top wig" "mut mut" "thy thy"}
+  .pn-a-scope{grid-area:scope}.pn-a-all{grid-area:all}.pn-a-top{grid-area:top}.pn-a-wig{grid-area:wig}.pn-a-mut{grid-area:mut}.pn-grid>.a-thy{grid-area:thy}
 }
 
 /* 時刻と、その時刻の様子を 1 行に（月のページと同じ形） */
@@ -33,10 +33,11 @@
 /* 望遠の窓: 光の量そのものを描くので、テーマに依らず黒い地 */
 .pn-view{position:relative;aspect-ratio:2.2/1;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:#000;touch-action:manipulation}
 .pn-view canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
-#pc{cursor:grab;touch-action:pan-y;user-select:none;-webkit-user-select:none}
-#pc.drag{cursor:grabbing}
+#pc,#ac{cursor:grab;touch-action:pan-y;user-select:none;-webkit-user-select:none}
+#pc.drag,#ac.drag{cursor:grabbing}
 .pn-strip{aspect-ratio:4/1;margin-top:10px}
-@media (max-width:640px){.pn-view{aspect-ratio:3/2}.pn-strip{aspect-ratio:3/1}}
+.pn-allv{aspect-ratio:2/1}
+@media (max-width:640px){.pn-view{aspect-ratio:3/2}.pn-strip{aspect-ratio:3/1}.pn-allv{aspect-ratio:1/1}}
 .pn-lab{position:absolute;left:10px;top:8px;font:500 11.5px/1.45 var(--mono);color:#e6e8e4;text-shadow:0 0 3px #000,0 0 6px #000;pointer-events:none}
 .pn-lab.pn-b{top:auto;bottom:8px;right:10px}
 .pn-labs{position:absolute;inset:0;pointer-events:none;overflow:hidden}
@@ -49,6 +50,8 @@
 .pn-edge.pn-r{right:10px;text-align:right}
 .pn-sd{position:absolute;width:5px;height:5px;margin:-2.5px 0 0 -2.5px;border-radius:50%;background:#f4f1e8;box-shadow:0 0 4px rgb(255 255 255 / .6)}
 .pn-sd.pn-dim{background:#6d777e;box-shadow:none}
+.pn-sd.pn-sm{width:3px;height:3px;margin:-1.5px 0 0 -1.5px;background:#ee8458;box-shadow:none}
+.pn-sl.pn-si{font-weight:500;font-size:10px;color:#f0b49c}
 .pn-sd.pn-hid{background:none;border:1px dashed #6d777e;width:7px;height:7px;margin:-3.5px 0 0 -3.5px;box-shadow:none}
 .pn-scale{position:absolute;right:12px;bottom:8px;font:500 10.5px var(--mono);color:#aab3b8;text-align:center;pointer-events:none}
 .pn-scale i{display:block;height:4px;border:1px solid #aab3b8;border-top:0;margin-bottom:2px}
@@ -60,14 +63,15 @@
 .pn-vmsg{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);margin:0;color:#aab3b8;font:500 13px var(--sans)}
 
 /* 今夜の帯: 横に時刻、縦に衛星ごとの現象 */
-.pn-nb{display:block;width:100%;height:auto;overflow:visible;margin-top:24px;touch-action:pan-y;cursor:ew-resize;user-select:none;-webkit-user-select:none}
+.pn-nb{display:block;width:100%;height:auto;overflow:visible;margin-top:24px;touch-action:pan-y;cursor:grab;user-select:none;-webkit-user-select:none}
+.pn-nb.drag{cursor:grabbing}
 .pn-nb:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .pn-nb .pn-tw{fill:color-mix(in srgb,var(--ink) 7%,transparent)}
 .pn-nb .pn-dk{fill:color-mix(in srgb,var(--ink) 13%,transparent)}
 .pn-nb .pn-gl{stroke:var(--grid);stroke-width:1}
 .pn-nb .pn-tk{stroke:var(--ink-3);stroke-width:1}
 .pn-nb text{fill:var(--ink-3);font:10.5px var(--mono)}
-.pn-nb .pn-rl{fill:var(--ink-2);font:600 11px var(--sans)}
+.pn-nb .pn-rl{fill:var(--ink-2);font:600 11px var(--sans);paint-order:stroke;stroke:var(--bg);stroke-width:3px}
 .pn-nb .pn-cur{stroke:var(--ink);stroke-width:2}
 .pn-nb .pn-tag{fill:var(--ink)}
 .pn-nb .pn-tagt{fill:var(--surface);font:700 11px var(--mono);text-anchor:middle}
@@ -83,6 +87,7 @@
 .pn-key i.pn-iln{height:0;border-top:2px solid currentColor;background:none}
 .pn-key i.pn-ihl{height:0;border-top:2px solid currentColor;background:none;opacity:.55}
 .pn-key i.pn-idot{width:9px;height:9px;border-radius:50%;background:var(--pn-grs)}
+.pn-key i.pn-gd{width:9px;height:9px;border-radius:50%}
 .pn-key i.pn-dotf{width:9px;height:9px;border-radius:50%;background:var(--ink-2)}
 .pn-key i.pn-doto{width:9px;height:9px;border-radius:50%;background:none;border:2px solid var(--ink-2);box-sizing:border-box}
 
@@ -119,21 +124,7 @@
 .pn-locnow b{font-size:15px}
 .pn-locnow span{font:500 12.5px var(--mono);color:var(--ink-2)}
 
-/* 今夜の現象 */
-.pn-nl{margin:0;padding:0;list-style:none}
-.pn-nl li{border-bottom:1px solid var(--grid)}
-.pn-nl button{display:grid;grid-template-columns:4.2em 1.4em minmax(0,1fr);gap:8px;align-items:center;width:100%;padding:7px 4px;border:0;background:none;color:var(--ink);font:inherit;font-size:13px;text-align:left;cursor:pointer}
-.pn-nl button:hover{background:var(--inset)}
-.pn-nl b{font:700 13px var(--mono)}
-.pn-nl i{width:10px;height:10px;border-radius:50%;background:currentColor;display:block}
-.pn-nl i.pn-ig{color:var(--ink-3)}
-.pn-nl i.pn-igrs{color:var(--pn-grs)}
-.pn-nl li.pn-on button{background:color-mix(in srgb,var(--accent) 12%,transparent);border-radius:3px}
-.pn-nl li.pn-past button{color:var(--ink-3)}
-.pn-nl small{color:var(--ink-3);font-size:11.5px;display:block}
-.pn-nl .pn-none{padding:10px 4px;color:var(--ink-2);font-size:13px}
-.pn-vcap,.pn-cap{margin:8px 2px 0;font-size:12.5px;line-height:1.6;color:var(--ink-2)}
-.pn-cap{text-align:center;margin-top:2px}
+.pn-cap{margin:2px 2px 0;font-size:12.5px;line-height:1.6;color:var(--ink-2);text-align:center}
 
 /* 図 */
 .pn-of{display:block;width:100%;height:auto;overflow:visible}
@@ -161,15 +152,7 @@
 .pn-sea .pn-ev:focus-visible .pn-hit,.pn-sea .pn-ev:hover .pn-hit{fill:color-mix(in srgb,var(--ink) 10%,transparent)}
 .pn-sea .pn-sel .pn-hit{fill:none;stroke:var(--ink);stroke-width:1.4}
 
-/* 大赤斑の表 */
-.pn-evt{width:100%;border-collapse:collapse;font-size:13px}
-.pn-evt th{text-align:left;font:600 11.5px var(--sans);color:var(--ink-3);padding:4px 6px;border-bottom:1px solid var(--line)}
-.pn-evt td{padding:0;border-bottom:1px solid var(--grid);vertical-align:middle}
-.pn-evt td button{display:block;width:100%;padding:5px 6px;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}
-.pn-evt tr:hover td{background:var(--inset)}
-.pn-evt td.pn-t button{font:600 13px var(--mono);white-space:nowrap;font-variant-numeric:tabular-nums}
-.pn-evt tr.pn-past td{color:var(--ink-3)}
-.pn-evt .pn-tag2{display:inline-block;padding:0 6px;border:1px solid var(--line-2);border-radius:3px;font:500 11px/1.6 var(--sans);color:var(--ink-2)}
+/* 大赤斑の経度 */
 .pn-grsin{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-top:10px}
 .pn-grsin input{width:5.5em;height:30px;padding:0 8px;border:1px solid var(--line-2);border-radius:4px;background:var(--inset);color:var(--ink);font:600 13px var(--mono)}
 .pn-grsin input:focus-visible{outline:2px solid var(--focus);outline-offset:1px}

@@ -8,8 +8,9 @@
 | [ガリレオ衛星の位置](#ガリレオ衛星の位置astronomy-engine) | [galilean.ts](galilean.ts) | MIT（Astronomy Engine） |
 | [木星の位置](#木星の位置vsop87d) | [vsop.ts](vsop.ts) | 論文と IMCCE の公開データ |
 | [大赤斑の経度](#大赤斑の経度) | [grs.ts](grs.ts) | 読み取った値 |
+| [すべての衛星](#すべての衛星) | [public/jupiter/moons.json](../../../public/jupiter/moons.json)・[model.ts](model.ts) の `INNER` | 位置は JPL Horizons、名前と群は CC BY-SA 4.0 |
 
-ページのフッターには、OPAL の謝辞（Hubble の OPAL、PI と提案番号、STScI、DOI）と Astronomy Engine の著作権表示を出します。
+ページのフッターには、OPAL の謝辞（Hubble の OPAL、PI と提案番号、STScI、DOI）、Astronomy Engine の著作権表示、ウィキペディア日本語版から取ったことを出します。
 
 ## 模様の地図（OPAL）
 
@@ -58,3 +59,19 @@ IMCCE の [VSOP87D.jup](https://ftp.imcce.fr/pub/ephem/planets/vsop87/VSOP87D.ju
 - 確認: BAA Jupiter Section の Report no. 4（2025-12-31）の 2025-12-01 の値 L2 = 79°
 
 季節ごとに JUPOS の図を見て、表の最後に行を足します。
+
+## すべての衛星
+
+[scripts/jupiter-moons.ts](../../../scripts/jupiter-moons.ts) で作ります。
+
+```sh
+bun run jupiter-moons [置き場]
+```
+
+- 位置: [JPL Horizons](https://ssd.jpl.nasa.gov/horizons/) の木星中心のベクトル（ICRF）
+  - 取得日: 2026-11-01
+  - 外側の 107 個は 2015-01-01 から 90 日おきに 90 時点を持つ
+  - 内側の 4 個は円軌道を当てはめ、スクリプトが出す値を [model.ts](model.ts) の `INNER` に写す
+- 名前と群: ウィキペディア日本語版「[木星の衛星](https://ja.wikipedia.org/w/index.php?title=%E6%9C%A8%E6%98%9F%E3%81%AE%E8%A1%9B%E6%98%9F&oldid=109799938)」の一覧（版 109799938、CC BY-SA 4.0）
+  - 一覧にない 14 個は仮符号を名前にし、群は軌道から決める
+  - moons.json はこのライセンスを引き継ぐ

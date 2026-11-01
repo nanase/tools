@@ -1,5 +1,5 @@
 /**
- * 衛星の現象（DOM に依存しない）: 本体の前の通過・本体の裏（掩蔽）・影の通過・本体の影の中（食）と、衛星どうしの相互食
+ * 衛星の現象（DOM に依存しない）: 惑星の前の通過・惑星の裏（掩蔽）・影の通過・惑星の影の中（食）と、衛星どうしの相互食
  *
  * 判定は衛星の中心で行う（IMCCE の現象の表と同じ）。惑星は自転楕円体で、惑星固定の座標の z を
  * 赤道半径 / 極半径 倍に伸ばすと半径 1 の球になるので、視線（または太陽の光）の向きの直線と球の距離で判定する。
@@ -105,7 +105,7 @@ export function overlap(r1: number, r2: number, d: number): number {
 export const sunHidden = (ts: number, tb: number, th: number): number => overlap(ts, tb, th) / (Math.PI * ts * ts);
 
 /**
- * 衛星 k の中心から見た太陽のうち、惑星に隠れる割合（0〜1。本体の影の中の明るさに使う）。
+ * 衛星 k の中心から見た太陽のうち、惑星に隠れる割合（0〜1。惑星の影の中の明るさに使う）。
  * 惑星は伸ばした座標で半径 1 の球として扱う
  */
 export function planetShadow(g: Geo, re: number, rp: number, k: number): number {
@@ -145,7 +145,7 @@ function pairGeom(g: Geo, radii: number[], kind: 'occ' | 'ecl', i: number, j: nu
   return { sep, lim, near, far, along, u };
 }
 
-/** 衛星 k が本体の裏か本体の影の中にあるか（相互食が見えない） */
+/** 衛星 k が惑星の裏か惑星の影の中にあるか（相互食が見えない） */
 function hiddenByPlanet(g: Geo, re: number, rp: number, k: number): boolean {
   const s = state(g, re, rp, k);
   return s.OC || s.EC;

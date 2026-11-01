@@ -57,6 +57,33 @@ float sunlit(vec3 p) {
   return lit;
 }
 
+/* 画面の点が惑星に当たるなら、地図の座標を返す */
+bool mapUv(vec2 q, out vec2 uv) {
+  vec3 p0 = q.x * uR + q.y * uU;
+  vec3 sc = vec3(1.0, 1.0, uK);
+  vec3 a3 = p0 * sc, f3 = uF * sc;
+  float a = dot(f3, f3), b = 2.0 * dot(a3, f3), c = dot(a3, a3) - 1.0;
+  float disc = b * b - 4.0 * a * c;
+  if (disc < 0.0) return false;
+  vec3 p = p0 + (-b - sqrt(disc)) / (2.0 * a) * uF;
+  uv = vec2((atan(p.y, p.x) + uShift) / (2.0 * PI), 0.5 - atan(uK * uK * p.z, length(p.xy)) / PI);
+  return true;
+}
+
+/* 点 q の地図の座標と、半画素あたりの変化。
+   経度は 1 周で値が飛ぶので、差を −0.5〜0.5 に戻す（自動の微分に任せると飛ぶ所で最も粗い段を読み、子午線の線が出る） */
+vec2 mapStep(vec2 q, vec2 uv, vec2 h) {
+  vec2 o;
+  float s = 1.0;
+  if (!mapUv(q + h, o)) {
+    if (!mapUv(q - h, o)) return vec2(0.0);
+    s = -1.0;
+  }
+  vec2 d = o - uv;
+  d.x -= floor(d.x + 0.5);
+  return d * s;
+}
+
 /* 画面の点（赤道半径が単位）の色（線形）と、何かに当たったか */
 vec4 shade(vec2 q) {
   vec3 p0 = q.x * uR + q.y * uU;
@@ -76,10 +103,11 @@ vec4 shade(vec2 q) {
     if (mu0 > 0.0) {
       vec3 alb = vec3(0.55, 0.5, 0.42);
       if (uHasMap) {
-        float lonE = atan(p.y, p.x);
-        float latg = atan(uK * uK * p.z, length(p.xy));
-        vec2 uv = vec2(fract((lonE + uShift) / (2.0 * PI)), 0.5 - latg / PI);
-        alb = texture(uMap, uv).rgb;
+        vec2 uv;
+        if (mapUv(q, uv)) {
+          float px = 0.5 / uDisk.z;
+          alb = textureGrad(uMap, uv, mapStep(q, uv, vec2(px, 0.0)), mapStep(q, uv, vec2(0.0, px))).rgb;
+        }
       }
       vec3 m = pow(vec3(mu0), uMinn) * pow(vec3(mu), uMinn - 1.0);
       col = alb * m * sunlit(p);

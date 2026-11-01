@@ -1,11 +1,13 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { calToJd, jdOfDate } from '../src/lib/astro/time';
 import { unit, type Vec3 } from '../src/lib/astro/vec';
 import { cmFromNodeOfDate, Ephem, graphic, planetState } from '../src/lib/planet/ephem';
 import { findMutual, findPhen, overlap, skyOffset } from '../src/lib/planet/events';
-import { lightCurve, nightBand, orbitTop, season, wiggle } from '../src/lib/planet/figs';
+import { lightCurve, orbitTop, season, timeBand, wiggle } from '../src/lib/planet/figs';
+import { type MoonTable, tableEnd, tablePos } from '../src/lib/planet/moons';
 import { grsL2, MAPS, nearestMap } from '../src/tools/jupiter/grs';
-import { JUPITER_MODEL as M, MOONS, moonMag, w2 } from '../src/tools/jupiter/model';
+import { GM_JUP, INNER, innerPos, JUPITER_MODEL as M, MOONS, moonMag, w2 } from '../src/tools/jupiter/model';
 
 const D = Math.PI / 180;
 const radec = (v: Vec3): [number, number] => {
@@ -106,7 +108,7 @@ describe('衛星の現象', () => {
     }
   });
 
-  it('2026-12-05 4:33〜4:50 JST にイオとエウロパの影が同時に本体の上にある', () => {
+  it('2026-12-05 4:33〜4:50 JST にイオとエウロパの影が同時に木星の上にある', () => {
     const ph = findPhen(e, calToJd(2026, 12, 4.75), calToJd(2026, 12, 4.85));
     const t = calToJd(2026, 12, 4) + (19 + 40 / 60) / 24;
     const on = ph.filter((p) => p.kind === 'SH' && p.t0 <= t && p.t1 >= t).map((p) => p.k);
@@ -139,6 +141,53 @@ describe('衛星の現象', () => {
   });
 });
 
+describe('すべての衛星', () => {
+  const tab = JSON.parse(readFileSync(new URL('../public/jupiter/moons.json', import.meta.url), 'utf8')) as MoonTable;
+  /* JPL Horizons の木星中心の位置 [km]（2024-12-27 12:00 TDB、ICRF）。表の状態の間の時刻 */
+  const T = 2460668.5;
+
+  it('ガリレオ衛星と内側の 4 個を合わせて 115 個ある', () => {
+    expect(tab.moons.length + MOONS.length + INNER.length).toBe(115);
+    expect(new Set(tab.moons.map((m) => m.n)).size).toBe(tab.moons.length);
+    expect(tab.moons.every((m) => m.s.length === 6 * tab.n)).toBe(true);
+  });
+
+  it('外側の衛星は Horizons と 16 万 km 以内で合う', () => {
+    for (const [name, x, y, z] of [
+      ['ヒマリア', -4467008, -9539861, -8218883],
+      ['シノーペ', -25247726, 19599888, -2759741],
+      ['カリロエ', -19694076, 26199815, -5717184],
+      ['S/2024 J 1', -6051886, 16900838, 1989075],
+    ] as const) {
+      const p = tablePos(
+        tab,
+        tab.moons.findIndex((m) => m.n === name),
+        T,
+        GM_JUP,
+      );
+      expect(p, name).not.toBeNull();
+      if (p) expect(Math.hypot(p[0] - x, p[1] - y, p[2] - z), name).toBeLessThan(160000);
+    }
+  });
+
+  it('表の範囲の外は出さない', () => {
+    expect(tablePos(tab, 0, tab.t0 - 1, GM_JUP)).toBeNull();
+    expect(tablePos(tab, 0, tableEnd(tab) + 1, GM_JUP)).toBeNull();
+  });
+
+  it('内側の 4 個は Horizons と 9000 km 以内で合う', () => {
+    for (const [k, x, y, z] of [
+      [0, 25088.5, -113400.6, -53668.7],
+      [1, -87948.3, -84500.1, -41725.8],
+      [2, 96013.1, -138960.0, -65018.0],
+      [3, 171151.3, 127751.6, 63617.9],
+    ] as const) {
+      const p = innerPos(k, T);
+      expect(Math.hypot(p[0] - x, p[1] - y, p[2] - z), INNER[k][0]).toBeLessThan(9000);
+    }
+  });
+});
+
 describe('大赤斑と地図', () => {
   it('大赤斑の経度は BAA の 2025-12-01 の値（79°）に 1.5° 以内で合い、2026-12 は 99° ほどへのびる', () => {
     expect(Math.abs(grsL2(calToJd(2025, 12, 1)) - 79)).toBeLessThan(1.5);
@@ -160,7 +209,8 @@ describe('図', () => {
     const t0 = calToJd(2026, 12, 4.5);
     const ph = findPhen(e, t0, t0 + 0.5);
     const out = [
-      nightBand({
+      timeBand({
+        anchor: t0,
         t0,
         t1: t0 + 0.4,
         rows: ['a', 'b', 'c', 'd'],

@@ -5,6 +5,7 @@
  * System I・II の自転角は Meeus『Astronomical Algorithms』43 章。明るさは Mallama & Hilton (2018)。
  * 衛星の半径は JPL SSD の Planetary Satellite Physical Parameters、衛星の明るさは JPL Horizons の値に合わせた
  */
+import type { Vec3 } from '../../lib/astro/vec';
 import type { PlanetModel } from '../../lib/planet/ephem';
 import { galilean } from './galilean';
 import { JUPITER } from './vsop';
@@ -59,6 +60,35 @@ export const MOONS: MoonInfo[] = [
   { name: 'ガニメデ', r: 2631.2, v10: -2.09, ph: [0.0323, -0.00066], rgb: [0.45, 0.42, 0.38] },
   { name: 'カリスト', r: 2410.3, v10: -1.05, ph: [0.078, -0.00274], rgb: [0.19, 0.17, 0.15] },
 ];
+
+/** 木星の重力定数 [km³/日²]（JPL） */
+export const GM_JUP = 126686531.9 * 86400 ** 2;
+
+/**
+ * 内側の 4 個: 木星の赤道の面の円軌道（名前、直径 [km]、半径 [km]、J2000.0 の角 [°]、平均運動 [°/日]）。
+ * 2015〜2041 年の Horizons の位置に当てはめた（scripts/jupiter-moons.ts）。差はメティス 230 km〜テーベ 8900 km
+ */
+export const INNER: [string, number, number, number, number][] = [
+  ['メティス', 60, 127978, 166.0016, 1221.2546892],
+  ['アドラステア', 26, 128980, -145.5391, 1206.9988797],
+  ['アマルテア', 262, 181372, 53.491, 722.6317289],
+  ['テーベ', 110, 221941, -170.9037, 533.7002712],
+];
+
+/** 内側の衛星 k の木星中心の位置（ICRF）[km]。jdTT は TT の JD */
+export function innerPos(k: number, jdTT: number): Vec3 {
+  const [, , a, l0, n] = INNER[k];
+  const [ra, dec] = pole((jdTT - 2451545) / 36525);
+  const sa = Math.sin(ra * D),
+    ca = Math.cos(ra * D),
+    sd = Math.sin(dec * D),
+    cd = Math.cos(dec * D);
+  const th = ((l0 + n * (jdTT - 2451545)) % 360) * D;
+  const c = a * Math.cos(th),
+    s = a * Math.sin(th);
+  /* 木星の赤道と ICRF の赤道の交点の向き q と、赤道の面で 90° 東の向き z × q */
+  return [-sa * c - sd * ca * s, ca * c - sd * sa * s, cd * s];
+}
 
 export const JUPITER_MODEL: PlanetModel = {
   vsop: JUPITER,

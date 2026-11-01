@@ -8,9 +8,11 @@ import type { Phen } from './events';
 const f1 = (v: number): string => v.toFixed(1);
 const esc = (s: string): string => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
 
-/* ---------- 今夜の帯 ---------- */
+/* ---------- 時刻の帯 ---------- */
 
 export interface BandOpt {
+  /** 帯の x = 0 の時刻と、描く範囲 */
+  anchor: number;
   t0: number;
   t1: number;
   /** 行の名前（衛星の順） */
@@ -24,6 +26,7 @@ export interface BandOpt {
   ticks: { t: number; label: string }[];
 }
 
+/** 帯の幅（24 時間）。今の時刻の線は中央に固定し、中身を横に動かす */
 export const BAND_W = 1000;
 /** 帯の行の高さと、行 i の中心 */
 const ROW = 22;
@@ -31,22 +34,17 @@ export const bandRowY = (i: number): number => 34 + ROW * i;
 /** 時刻の軸の高さ（行の下端） */
 export const bandAxisY = (n: number): number => bandRowY(n - 1) + 12;
 
-export function nightBand(o: BandOpt): string {
-  const X = (t: number) => ((t - o.t0) / (o.t1 - o.t0)) * BAND_W;
-  const cx = (t: number) => Math.min(BAND_W, Math.max(0, X(t)));
+/** 帯の動く中身。x は (t − anchor) × BAND_W */
+export function timeBand(o: BandOpt): string {
+  const X = (t: number) => (t - o.anchor) * BAND_W;
+  const cx = (t: number) => X(Math.max(o.t0, Math.min(o.t1, t)));
   const n = o.rows.length + (o.grs ? 1 : 0);
   const ay = bandAxisY(n);
   const h: string[] = [];
   for (const [a, b] of o.twi)
-    if (b > o.t0 && a < o.t1)
-      h.push(`<rect class="pn-tw" x="${f1(cx(a))}" y="8" width="${f1(cx(b) - cx(a))}" height="${ay - 8}"></rect>`);
+    h.push(`<rect class="pn-tw" x="${f1(cx(a))}" y="8" width="${f1(cx(b) - cx(a))}" height="${ay - 8}"></rect>`);
   for (const [a, b] of o.dark)
-    if (b > o.t0 && a < o.t1)
-      h.push(`<rect class="pn-dk" x="${f1(cx(a))}" y="8" width="${f1(cx(b) - cx(a))}" height="${ay - 8}"></rect>`);
-  o.rows.forEach((r, i) => {
-    h.push(`<text class="pn-rl" x="4" y="${bandRowY(i) + 4}">${esc(r)}</text>`);
-  });
-  if (o.grs) h.push(`<text class="pn-rl" x="4" y="${bandRowY(o.rows.length) + 4}">大赤斑</text>`);
+    h.push(`<rect class="pn-dk" x="${f1(cx(a))}" y="8" width="${f1(cx(b) - cx(a))}" height="${ay - 8}"></rect>`);
   const cls: Record<Phen['kind'], string> = { TR: 'pn-bt', SH: 'pn-bs', OC: 'pn-bh', EC: 'pn-bh' };
   /* 食・掩蔽を先に、通過と影を上に重ねる */
   const order: Phen['kind'][] = ['OC', 'EC', 'SH', 'TR'];
@@ -58,18 +56,19 @@ export function nightBand(o: BandOpt): string {
     }
   if (o.grs)
     for (const t of o.grs)
-      if (t >= o.t0 && t <= o.t1)
-        h.push(`<circle class="pn-grs" cx="${f1(X(t))}" cy="${bandRowY(o.rows.length)}" r="4.5"></circle>`);
-  h.push(`<path class="pn-gl" d="M0 ${ay}H${BAND_W}"></path>`);
+      h.push(`<circle class="pn-grs" cx="${f1(X(t))}" cy="${bandRowY(o.rows.length)}" r="4.5"></circle>`);
+  h.push(`<path class="pn-gl" d="M${f1(X(o.t0))} ${ay}H${f1(X(o.t1))}"></path>`);
   let tk = '';
   for (const t of o.ticks) tk += `M${f1(X(t.t))} ${ay}V${ay + 5}`;
   h.push(`<path class="pn-tk" d="${tk}"></path>`);
-  o.ticks.forEach((t, i) => {
-    const x = X(t.t);
-    const a = i === 0 && x < 20 ? 'start' : i === o.ticks.length - 1 && x > BAND_W - 20 ? 'end' : 'middle';
-    h.push(`<text x="${f1(x)}" y="${ay + 17}" text-anchor="${a}">${esc(t.label)}</text>`);
-  });
+  for (const t of o.ticks) h.push(`<text x="${f1(X(t.t))}" y="${ay + 17}" text-anchor="middle">${esc(t.label)}</text>`);
   return h.join('');
+}
+
+/** 帯の行の名前（中身の上に重ねる） */
+export function bandRows(rows: string[], grs: boolean): string {
+  const names = grs ? [...rows, '大赤斑'] : rows;
+  return names.map((r, i) => `<text class="pn-rl" x="4" y="${bandRowY(i) + 4}">${esc(r)}</text>`).join('');
 }
 
 /* ---------- 衛星の動きのグラフ ---------- */

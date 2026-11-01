@@ -377,10 +377,10 @@ export const TOOLS: Tool[] = [
     id: 'jupiter',
     c: '天文',
     t: '木星',
-    d: '選んだ日時の木星と 4 つの衛星を、大赤斑や衛星の影まで再現します。',
+    d: '選んだ日時の木星と衛星を、大赤斑や衛星の影まで再現します。',
     ic: 'jv',
     r: ['moon', 'solar-eclipse', 'lens', 'focusing-mask'],
-    k: 'jupiter 木星 惑星 planet ガリレオ衛星 galilean moons イオ io エウロパ europa ガニメデ ganymede カリスト callisto 大赤斑 great red spot grs 中央子午線 central meridian system i ii iii 衛星の影 shadow transit 通過 掩蔽 occultation 食 eclipse 相互食 mutual events phemu 衝 opposition 縞 belt hubble opal minnaert 周縁減光 limb darkening vsop87 l1.2 jupos imcce horizons 天文 astronomy',
+    k: 'jupiter 木星 惑星 planet ガリレオ衛星 galilean moons イオ io エウロパ europa ガニメデ ganymede カリスト callisto ヒマリア himalia アマルテア amalthea 不規則衛星 irregular moons 大赤斑 great red spot grs 中央子午線 central meridian system i ii iii 衛星の影 shadow transit 通過 掩蔽 occultation 食 eclipse 相互食 mutual events phemu 衝 opposition 縞 belt hubble opal minnaert 周縁減光 limb darkening vsop87 l1.2 jupos imcce horizons 天文 astronomy',
   },
   {
     id: 'bifurcation',
