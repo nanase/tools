@@ -1,0 +1,35 @@
+/* ローリングシャッターのページだけのスタイル（共通は src/styles/site.css）。クラス名には rs- を付ける */
+
+/* 枠の並び。スマホは 画像 → カメラ → 題材 → 計算結果 → 式。PC は上に画像、下に 3 つ */
+@media (min-width:1000px){
+  .tgrid{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-areas:"img img img" "cam sub out" "thy thy thy";align-items:start}
+  .a-img{grid-area:img}.a-cam{grid-area:cam}.a-sub{grid-area:sub}.a-out{grid-area:out}.a-thy{grid-area:thy}
+}
+
+.rs-aux{font:500 11.5px/1.4 var(--mono);color:var(--ink-3);white-space:nowrap}
+.rs-sub{margin-bottom:8px}
+
+/* 画面。テーマに依らず黒い地 */
+.rs-stage{position:relative;width:100%;aspect-ratio:16/9;max-width:100%;border:1px solid var(--line);border-radius:4px;background:#000;overflow:hidden}
+.rs-stage canvas{display:block;width:100%;height:100%}
+.rs-tag{position:absolute;top:6px;left:6px;padding:2px 7px;border-radius:3px;background:rgb(0 0 0 / .6);color:#fff;font:600 11.5px/1.4 var(--mono);pointer-events:none}
+.rs-msg{position:absolute;inset:0;display:grid;place-items:center;padding:16px;color:#d6d9dc;font-size:13.5px;text-align:center}
+
+/* 走査の再生（演奏の枠と同じ形。頭へ戻すボタンと右端はなし） */
+.rs-tp{grid-template-columns:auto minmax(0,1fr);margin-top:10px;border-bottom:0;padding-bottom:0}
+.rs-tp .tp-tm i{font-family:var(--math);font-size:1.08em}
+
+/* 題材ごとの行。包みは並びに影響させない */
+.a-sub .ptab>[data-rows]{display:contents}
+/* 走査時間・露光時間の例のチップ（名前のない行） */
+.prow.rs-chips{display:block;min-height:0;padding:2px 8px 8px}
+
+/* 動作原理と式: 行ごとの露光の図 */
+.rs-thy{display:flex;flex-wrap:wrap;gap:8px 20px;align-items:center}
+.rs-thy .tl{flex:1 1 260px;min-width:0}
+.rs-rows{width:260px;max-width:100%;height:auto;flex:none}
+.rs-rows .ax{fill:none;stroke:var(--ink-3);stroke-width:1}
+.rs-rows .bar{fill:color-mix(in srgb,var(--ch2) 55%,transparent)}
+.rs-rows .rd{fill:none;stroke:var(--ink-2);stroke-width:1;stroke-dasharray:4 3}
+.rs-rows text{fill:var(--ink-3);font:11px var(--mono)}
+.rs-rows text.m{font:italic 13px var(--math);fill:var(--ink-2)}

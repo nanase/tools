@@ -1,0 +1,89 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/rolling-shutter/style.css';
+import { SUBJECTS } from '../tools/rolling-shutter/motion';
+import { CAMS, RPM, RR, SHUTTERS, TE, TG, TM, TR, VB, VC, VG, VT } from '../tools/rolling-shutter/params';
+import Theory from '../tools/rolling-shutter/Theory.astro';
+
+const name = 'ローリングシャッター';
+---
+<SiteLayout title={name} tool={{ id: 'rolling-shutter', name }} note="題材は式と絵で描いた模型です。走査時間の例は第三者の計測です。">
+  <PageTitle title={name}>イメージセンサーの多くは、画面の行を上から順に少しずつ遅らせて露光し、読み出します。速く動くものは行ごとに違う瞬間が写り、プロペラが曲がったり電車が傾いたりします。走査線がゆっくり下りる様子で、どの行がいつ写ったかを確かめられます。</PageTitle>
+
+  <div class="tgrid">
+    <Panel hid="hd-img" title="画像" class="a-img" fixed>
+      <span slot="aux" class="rs-aux" id="o-key"></span>
+      <div class="chips rs-sub" id="p-sub" role="group" aria-label="題材">
+        {SUBJECTS.map(([v, l]) => <button type="button" class="chip" data-v={v} aria-pressed={v === 'prop' ? 'true' : 'false'}>{l}</button>)}
+      </div>
+      <div class="rs-stage" id="st">
+        <canvas id="cv" role="img" aria-label="撮れた像"></canvas>
+        <span class="rs-tag" id="o-tag"></span>
+        <p class="rs-msg" id="st-msg" hidden></p>
+      </div>
+      <div class="tp rs-tp">
+        <button type="button" class="tp-pp" id="pp" aria-label="走査を再生する" title="走査をゆっくり再生する"><svg class="i-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.2l7.6 4.8L3 10.8z"/></svg><svg class="i-pause" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="2.8" height="9"/><rect x="7.2" y="1.5" width="2.8" height="9"/></svg></button>
+        <div class="tp-tl">
+          <div class="tp-trk" id="trk" role="slider" tabindex="0" aria-label="読み出した行" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100">
+            <div class="tp-rail"></div>
+            <div class="tp-fill" id="trk-f"></div>
+            <div class="tp-th" id="trk-t"></div>
+          </div>
+          <div class="tp-tm"><span>読み出した行 <b id="o-row">100%</b></span><span><i>t</i> = <b id="o-t">0</b> ms</span></div>
+        </div>
+      </div>
+    </Panel>
+
+    <Panel hid="hd-cam" title="カメラ" class="a-cam">
+      <div slot="aux" class="seg" id="p-dir" role="group" aria-label="走査の向き"><button type="button" data-v="0" aria-pressed="true">上→下</button><button type="button" data-v="1" aria-pressed="false">左→右</button></div>
+      <div class="ptab">
+        <ParamRow d={TR} />
+        <div class="prow chr wide rs-chips" id="p-cam" data-nosave data-noreset>
+          <div class="c-sub"><div class="chips" role="group" aria-label="走査時間の例">
+            {CAMS.map(([v, l, , t]) => <button type="button" class="chip" data-v={v} aria-pressed={v === 'r6' ? 'true' : 'false'} title={t}>{l}</button>)}
+          </div></div>
+        </div>
+        <ParamRow d={TE} />
+        <div class="prow chr wide rs-chips" id="p-tes" data-nosave data-noreset>
+          <div class="c-sub"><div class="chips" role="group" aria-label="露光時間の例">
+            {SHUTTERS.map((x) => <button type="button" class="chip" data-v={String(x)} aria-pressed={x === 2000 ? 'true' : 'false'}>1/{x}</button>)}
+          </div></div>
+        </div>
+      </div>
+    </Panel>
+
+    <Panel hid="hd-sub" title="題材" class="a-sub">
+      <button slot="aux" type="button" class="tg" id="t-rev" aria-pressed="false" data-rows="prop"><span class="led" aria-hidden="true"></span>逆回転</button>
+      <div class="ptab">
+        <div data-rows="prop"><ParamRow d={RPM} /></div>
+        <div data-rows="prop"><ChoiceRow k="nb" name="羽の数" choices={[['2', '2'], ['3', '3'], ['4', '4'], ['5', '5']]} value="2" /></div>
+        <div data-rows="train"><ParamRow d={VT} /></div>
+        <div data-rows="car"><ParamRow d={VC} /><ParamRow d={VB} /></div>
+        <div data-rows="golf"><ParamRow d={VG} /><ParamRow d={TG} /></div>
+        <div data-rows="moto"><ParamRow d={TM} /></div>
+        <div data-rows="heli"><ParamRow d={RR} /></div>
+      </div>
+    </Panel>
+
+    <Panel hid="hd-out" title="計算結果" class="a-out">
+      <dl class="metrics" id="met">
+        {[0, 1, 2, 3].map((i) => <div class:list={['m', { 'm-main': i === 0 }]}><dt></dt><dd><span class="hw" data-ph="00.0"></span></dd></div>)}
+      </dl>
+    </Panel>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools current="rolling-shutter" />
+  <script>
+    import '../tools/rolling-shutter/client';
+  </script>
+</SiteLayout>

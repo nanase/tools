@@ -1,0 +1,91 @@
+---
+import { TOOLS } from '../../data/tools';
+import { CAR_VIEW, GOLF, HELI, MOTO, MOTO_W, TRAIN, TRAIN_VIEW } from './motion';
+import { CAMS } from './params';
+
+/* 本文の出典番号 */
+const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
+/** ほかのページへのリンク（まだ公開していないページは名前だけ） */
+const to = (id: string, t: string) => (TOOLS.some((x) => x.id === id && !x.s) ? `<a href="../${id}/">${t}</a>` : t);
+const sub = (b: string, s: string) => `<msub><mi>${b}</mi><mrow>${s}</mrow></msub>`;
+const Tr = sub('T', '<mi>r</mi>');
+const Te = sub('T', '<mi>e</mi>');
+const ti = sub('t', '<mi>i</mi>');
+const frac = (a: string, b: string) => `<mfrac><mrow>${a}</mrow><mrow>${b}</mrow></mfrac>`;
+/* 行ごとの露光の帯（図） */
+const ROWS = Array.from({ length: 9 }, (_, i) => i);
+const ms = (v: number) => (v === 0 ? '0' : String(Number((v * 1e3).toPrecision(3))));
+const deg = (r: number) => Math.round((r * 180) / Math.PI);
+---
+<h3>行ごとの露光</h3>
+<div class="rs-thy">
+  <svg class="rs-rows" viewBox="0 0 260 150" role="img" aria-label="行ごとの露光の時間。下の行ほど遅れて始まる">
+    <path class="ax" d="M30 12V138H252" />
+    {ROWS.map((i) => <rect class="bar" x={34 + i * 18} y={16 + i * 13.5} width="70" height="9" rx="2" />)}
+    <path class="rd" d="M104 20L248 128" />
+    <text x="26" y="22" text-anchor="end">1</text>
+    <text x="26" y="134" text-anchor="end">N</text>
+    <text x="246" y="148" text-anchor="end">時刻</text>
+    <text x="69" y="12" text-anchor="middle" class="m">Te</text>
+    <text x="180" y="146" text-anchor="middle" class="m">Tr</text>
+  </svg>
+  <ul class="tl">
+    <li>行 <math><mi>i</mi></math>（<math><mn>0</mn><mo>≤</mo><mi>i</mi><mo>&lt;</mo><mi>N</mi></math>）の露光は <math set:html={`${ti}<mo>=</mo>${sub('t', '<mn>0</mn>')}<mo>+</mo>${frac('<mi>i</mi>', '<mi>N</mi>')}${Tr}`} /> から <math set:html={`${ti}<mo>+</mo>${Te}`} /> まで<Fragment set:html={rf(1) + rf(2)} /></li>
+    <li>走査時間 <math set:html={Tr} /> と露光時間 <math set:html={Te} /> は別々に決まる</li>
+    <li>画素の値は露光の間の明るさの平均</li>
+  </ul>
+</div>
+<div class="eqs">
+  <math display="block" set:html={`<mi>I</mi><mo stretchy="false">(</mo><mi>x</mi><mo>,</mo>${sub('y', '<mi>i</mi>')}<mo stretchy="false">)</mo><mo>=</mo>${frac('<mn>1</mn>', Te)}<msubsup><mo>∫</mo>${ti}<mrow>${ti}<mo>+</mo>${Te}</mrow></msubsup><mi>L</mi><mo stretchy="false">(</mo><mi>x</mi><mo>,</mo>${sub('y', '<mi>i</mi>')}<mo>,</mo><mi>t</mi><mo stretchy="false">)</mo><mspace width="0.2em"/><mi>d</mi><mi>t</mi>`} />
+</div>
+<ul class="tl">
+  <li><math set:html={Tr} /> = 0 はグローバルシャッター。全部の行が同じ瞬間</li>
+  <li><math set:html={Te} /> が長いと、動きは行の中でも流れる（ぶれ）</li>
+</ul>
+
+<h3>ゆがみの大きさ</h3>
+<div class="eqs">
+  <math display="block" set:html={`<mi mathvariant="normal">Δ</mi><mi>x</mi><mo>=</mo><mi>v</mi>${Tr}`} />
+  <math display="block" set:html={`<mi>θ</mi><mo>=</mo><mi>arctan</mi>${frac(`<mi>v</mi>${Tr}`, '<mi>H</mi>')}`} />
+  <math display="block" set:html={`<mi mathvariant="normal">Δ</mi><mi>φ</mi><mo>=</mo><mi>ω</mi>${Tr}`} />
+</div>
+<ul class="tl">
+  <li>横に速さ <math><mi>v</mi></math> で動くもの: 上端と下端が <math><mi mathvariant="normal">Δ</mi><mi>x</mi></math> ずれ、縦の線が <math><mi>θ</mi></math> 傾く（<math><mi>H</mi></math> は画面の高さ）</li>
+  <li>角速度 <math><mi>ω</mi></math> で回るもの: 1 走査の間に <math><mi mathvariant="normal">Δ</mi><mi>φ</mi></math> 回る。羽が曲がり、速いと切れて浮く<Fragment set:html={rf(3)} /></li>
+  <li>プロペラの写り方は、羽の形 <math><mi>f</mi></math> を極座標で <math set:html={`<mi>I</mi><mo stretchy="false">(</mo><mi>r</mi><mo>,</mo><mi>θ</mi><mo stretchy="false">)</mo><mo>=</mo><mi>f</mi><mo stretchy="false">(</mo><mi>r</mi><mo>,</mo><mi>θ</mi><mo>+</mo>${frac(`<mi>ω</mi>${Tr}`, '<mi>H</mi>')}<mi>r</mi><mi>sin</mi><mi>θ</mi><mo stretchy="false">)</mo>`} /> と移したもの<Fragment set:html={rf(3)} />。効くのは <math set:html={`<mi>ω</mi>${Tr}`} /> だけ</li>
+  <li>走査を左→右にすると、回るもののゆがみは 90° 回り、右へ動くものは傾かずに <math set:html={`${frac('<mn>1</mn>', `<mn>1</mn><mo>−</mo><mi>v</mi>${Tr}<mo>/</mo><mi>W</mi>`)}`} /> 倍に伸びる（<math><mi>W</mi></math> は画面の幅）</li>
+</ul>
+
+<h3>走査時間の例</h3>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th>機種</th><th>走査時間</th><th>出典</th></tr></thead>
+  <tbody>
+    {CAMS.filter((c) => c[2] > 0).map(([k, l, v]) => <tr><td>{l}</td><td>{ms(v)} ms</td><td><Fragment set:html={rf(k === 'ip' ? 5 : 4)} /></td></tr>)}
+  </tbody>
+</table></div>
+<ul class="tl">
+  <li>静止画の電子シャッターで、最初の行から最後の行まで。iPhone は動画の値</li>
+  <li>グローバルシャッターのセンサー（Sony α9 III など）は 0</li>
+</ul>
+
+<h3>このツールで決めたこと</h3>
+<ul class="tl">
+  <li>露光の間を最大 48 の時刻に分けて平均する。分け方は画素ごとに少しずらす（縞の代わりに細かい粒になる）</li>
+  <li>スロー再生: 走査 1 回に 3.5 秒以上。画面の同じ所の明暗が 1 秒に 2 回より速く変わらないよう、羽の多い題材ではさらに延ばす</li>
+  <li>次のコマは 1/30 秒後。読み出していない行は今の様子を暗く描く</li>
+  <li>電車: 視野 {TRAIN_VIEW[2]} m、車両 20 m、車輪の直径 {TRAIN.wr * 2000} mm</li>
+  <li>自動車: 視野 {CAR_VIEW[2]} m、全長 4.5 m、タイヤの直径 640 mm。自転車は車の手前の車線</li>
+  <li>ゴルフ: 正面から。腕と手首の 2 つの角を tanh とロジスティック関数で決めた模型。写る長さは腕 {GOLF.la} m・クラブ {GOLF.lc} m（スイング面が傾くため実際より短い）。ヘッドスピードは時間の伸び縮みで変える</li>
+  <li>モトクロス: 踏み切り {MOTO.vx} m/s・上向き {MOTO.vy} m/s、{MOTO.flight} 秒で 1 回転（{deg(MOTO_W)}°/s）。車輪は {MOTO.spin} rad/s で回り続ける</li>
+  <li>ヘリコプター: 主ローターの半径 {HELI.R} m・{HELI.blades} 枚、テールローターは {HELI.tailRatio} 倍の回転。少し見下ろすので円盤は縦に {HELI.squash} 倍</li>
+  <li>関連: <Fragment set:html={to('lens', 'カメラレンズ')} />・<Fragment set:html={to('demosaic', 'デモザイク')} /></li>
+</ul>
+
+<h3>出典</h3>
+<ol class="refs">
+  <li id="thy-r1"><span class="rf-for">行ごとに遅れる露光の模型</span><span class="rf-src">C.-K. Liang, L.-W. Chang, and H. H. Chen, “Analysis and compensation of rolling shutter effect,” <i>IEEE Trans. Image Processing</i>, vol. 17, no. 8, pp. 1323–1330, 2008</span></li>
+  <li id="thy-r2"><span class="rf-for">ローリングシャッターの幾何</span><span class="rf-src">M. Meingast, C. Geyer, and S. Sastry, “<a href="https://arxiv.org/abs/cs/0503076" target="_blank" rel="noopener">Geometric models of rolling-shutter cameras</a>,” arXiv:cs/0503076, 2005</span></li>
+  <li id="thy-r3"><span class="rf-for">プロペラの写り方</span><span class="rf-src">J. Cole, “<a href="https://jasmcole.com/2014/10/12/rolling-shutters" target="_blank" rel="noopener">Rolling shutters</a>,” 2014</span></li>
+  <li id="thy-r4"><span class="rf-for">カメラの読み出し時間の計測</span><span class="rf-src">horshack-dpreview, “<a href="https://horshack-dpreview.github.io/RollingShutter/" target="_blank" rel="noopener">Camera Sensor Readout Speeds</a>”</span></li>
+  <li id="thy-r5"><span class="rf-for">iPhone 15 Pro の主カメラ</span><span class="rf-src">CineD, “<a href="https://cined.com/iphone-15-pro-lab-test-rolling-shutter-dynamic-range-and-exposure-latitude/" target="_blank" rel="noopener">iPhone 15 Pro Lab Test – Rolling Shutter, Dynamic Range and Exposure Latitude</a>,” 2023</span></li>
+</ol>
