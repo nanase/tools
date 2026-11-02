@@ -1,7 +1,7 @@
 /**
  * 雷鳴のページの放電路（DOM に依存しない）: 乱数で曲がりくねった折れ線を作る。
- * 地面の落雷点から雲の底まで上がり、雲の中を横に進む本流と、本流から下へ伸びる枝。
- * 雲の中へ進む向きの数（0 もある）・別の所でも地面に届く枝・同じ落雷点への 2 本目の放電路は、種ごとの乱数で決める（shape）。
+ * 雲の中の放電路の複数の所から樹状に垂れ下がる先駆放電を競争させ、最初に地面へ届いた経路を本流に、残りを止まった枝にする（growTree）。
+ * 本流は分かれた所から雲の中を横へ続く。雲の中へ進む向きの数（0 もある）は種ごとの乱数で決める（shape）。
  * 雲の中の放電路と地面に届く枝は、断面の図で見たとおりに聞こえるよう、x 軸に沿う面（聞き手の通る面）の近くに寄せる。
  * 1 回の雷で同じ放電路に何回も電流が流れる（多重雷）。2 回目からは枝を通らず、雲の中で分かれて新しい所まで伸びる。
  * 座標は落雷点を原点、z を上。聞き手は x 軸の上（右が +x）
@@ -16,7 +16,7 @@ export interface Branch {
   p: Float64Array;
   /** 単位長さあたりのエネルギー [J/m] */
   e: number;
-  /** 電流が流れる放電路（本流・雲の中・地面に届く枝・2 本目）は 0、下へ伸びて止まった枝は 1 */
+  /** 電流が流れる放電路（本流・雲の中・地面に届く枝）は 0、下へ伸びて止まった枝は 1 */
   k: 0 | 1;
   /** 電流が流れる時刻 [s]（最初の放電が 0） */
   t: number;
@@ -34,12 +34,10 @@ export interface ChannelSet {
   lmax: number;
   /** 隣り合う区間の向きの変化の平均 [度] */
   turn: number;
-  /** 枝の数 */
-  branches: number;
   /** 本流の単位長さあたりのエネルギー [J/m] */
   e: number;
-  /** 枝のエネルギーの本流に対する比 */
-  eBranch: number;
+  /** 止まった枝のエネルギーの合計を、本流の長さに直した値 [m]。枝の形によらず合計をそろえる */
+  eTree: number;
   /** 放電の回数（多重雷） */
   strokes: number;
   /** 放電の間隔の幾何平均 [s]（対数正規分布） */
@@ -60,7 +58,7 @@ const GAP_SD = 0.8,
 /**
  * 既定: 区間の平均 8 m（LeVine・Gilson 1984、Lacroix ほか 2019）・向きの変化の平均 16°（Hill 1968）・
  * E = 10⁶ J/m（Few 1969）・放電の間隔の幾何平均 61 ms（Saba ほか 2006）・放電の回数 4（多くは 3〜5 回）。
- * 雲の高さ・雲の中の長さ・枝の数とエネルギー・長さの幅・2 回目からのエネルギーと伸びは仮。
+ * 雲の高さ・雲の中の長さ・枝のエネルギー・長さの幅・2 回目からのエネルギーと伸びは仮。
  * 雲の中は 5 km 前後進め、3 km 先で雷鳴が 10 秒ほど続くようにした。
  * 2 回目からは雲の中の電荷を、ほぼ同じ高さで最初より遠い所から引く（Krehbiel ほか 1979 は最大 8 km）ので、雲の中で分かれて 3 km 伸ばす
  */
@@ -71,9 +69,8 @@ export const CH0: ChannelSet = {
   lmin: 4,
   lmax: 12,
   turn: 16,
-  branches: 4,
   e: 1e6,
-  eBranch: 0.3,
+  eTree: 900,
   strokes: 4,
   gap: 0.061,
   eSub: 0.3,
@@ -82,12 +79,7 @@ export const CH0: ChannelSet = {
 
 /** 雲の中へ進む向きの数が 0・1・2・3 になる確かさ（仮） */
 export const LEGS_P = [0.15, 0.45, 0.3, 0.1];
-/** 本流のほかに枝が地面に届く確かさと、届いたときに 2 か所目もある確かさ（仮） */
-export const FORK_P = 0.12,
-  FORK2_P = 0.25;
-/** 落雷点から雲の底へ、2 本目の放電路が上がる確かさ（仮） */
-export const TWIN_P = 0.1;
-/** 地面に届く枝と 2 本目の放電路のエネルギーの、本流に対する比（仮） */
+/** 地面に届く枝のエネルギーの、本流に対する比（仮） */
 const FORK_E = 0.5;
 
 /** 雲の中の向きと、地面に届く枝の向きの、x 軸からのずれの上限 [度]（図の面に寄せる） */
@@ -99,10 +91,6 @@ const LOOK = 120;
 export interface Shape {
   /** 雲の底から横へ進む向き [度]（+x から反時計回り）と長さ [m]。0 本もある */
   legs: { az: number; len: number }[];
-  /** 本流のほかに地面に届く枝: 本流から分かれる高さ [m] と、地面に届く点 x, y [m] */
-  forks: { z: number; x: number; y: number }[];
-  /** 落雷点から雲の底へ、本流のほかに上がる放電路の数 */
-  twins: number;
 }
 
 /** 放電路の形を決める。折れ線とは別の乱数を使う */
@@ -117,15 +105,8 @@ export function shape(s: ChannelSet): Shape {
     legs = Array.from({ length: n }, (_, k) => ({
       az: s0 + (k % 2) * 180 + dev(),
       len: s.cloud * (0.6 + 0.6 * r()),
-    })),
-    forks: Shape['forks'] = [];
-  if (r() < FORK_P)
-    for (let k = 0, m = r() < FORK2_P ? 2 : 1; k < m; k++) {
-      const b = ((r() < 0.5 ? 0 : 180) + dev()) * (Math.PI / 180),
-        d = 300 + 1700 * r();
-      forks.push({ z: s.base * (0.25 + 0.5 * r()), x: d * Math.cos(b), y: d * Math.sin(b) });
-    }
-  return { legs, forks, twins: r() < TWIN_P ? 1 : 0 };
+    }));
+  return { legs };
 }
 
 /** 向きがこれより目標から離れたら、曲がる向きを目標の側へ折り返す [度] */
@@ -224,63 +205,329 @@ function walk(
   return out;
 }
 
+/* 先駆放電の樹の値はどれも仮。枝の数と総延長が写真に近く、地面に届く枝が測定の割合になるように選んだ */
+/** 雲の中の向きの数ごとの、1 つの向きから垂れ下がる経路の数 */
+const TREE_ROOTS = [0, 4, 3, 2];
+/** 垂れ下がる所の、雲の中の放電路に沿った範囲 [m] と、向きの長さに対する上限 */
+const ROOT_SPAN = 2000,
+  ROOT_SPAN_MAX = 0.6;
+/** 雲の中へ進まない雷の、経路の数・分かれる高さの雲の底からの差 [m]・傾き [度] */
+const LONE_ROOTS = 3,
+  LONE_RISE = 500,
+  LONE_TILT = 20;
+/** 枝の段ごとの、次の枝を出すまでの平均の長さ [m]。これより先の段は枝を出さない */
+const TREE_SPAWN = [400, 500];
+/** 枝の段ごとの、伸びが止まるまでの平均の長さ [m]。最初の経路だけは止めないので、必ずどれかが地面に届く */
+const TREE_LIFE = [1500, 600, 250];
+/** 垂れ下がる経路が止まらずに伸びる長さの下限 [m] */
+const ROOT_LIFE_MIN = 900;
+/** 枝ごとの速さの対数の標準偏差と、親に対する速さの比 */
+const TREE_SPEED_SD = 0.4,
+  TREE_SPEED_CHILD = 0.85;
+/** 枝が親の向きから開く角度の下限と幅、鉛直からの傾きの上限 [度]、垂れ下がる経路の傾きの上限 [度] */
+const TREE_FORK = 20,
+  TREE_FORK_W = 30,
+  TREE_TILT = 60,
+  TREE_ROOT_TILT = 15;
+/** 頂点の数の上限。超えたら新しい枝を出さない */
+const TREE_VERTS = 6000;
+/** 本流が接地したとき、これより低い先端は電位の変化が届く前に地面に届く [m] */
+const FORK_REACH = 25;
+/** 別の落雷点とみなす、本流の接地点からの水平距離の下限 [m] と、地面に届く枝の数の上限 */
+const FORK_SEP = 100,
+  FORK_MAX = 2;
+/** 止まった枝の単位長さあたりのエネルギーの、本流に対する上限と下限 */
+const DEAD_E_MAX = 0.3,
+  DEAD_E_MIN = 0.01;
+
+/** 伸びている途中の枝 */
+interface Arm {
+  /** 頂点 x, y, z。先頭は親の頂点と同じ点 */
+  q: number[];
+  /** 親の番号（垂れ下がる経路は −1）と、分かれた親の頂点の番号 */
+  parent: number;
+  at: number;
+  /** 枝の段（垂れ下がる経路が 0） */
+  order: number;
+  /** 速さの比 */
+  v: number;
+  /** 鉛直からの傾き [度]。正は +x の側 */
+  lean: number;
+  /** 目指す向きと、今の向き */
+  g: V3;
+  d: V3;
+  /** 次の頂点と、そこに着く時刻 */
+  pend: V3;
+  when: number;
+  /** 止まるまでと、次の枝を出すまでの残りの長さ [m] */
+  life: number;
+  spawn: number;
+  stopped: boolean;
+}
+
+/** 折れ線の頂点の順を逆にする */
+function flip(q: readonly number[]): number[] {
+  const o: number[] = [];
+  for (let i = q.length - 3; i >= 0; i -= 3) o.push(q[i], q[i + 1], q[i + 2]);
+  return o;
+}
+
+/** 平均 mean の指数分布 */
+const expo = (r: () => number, mean: number) =>
+  Number.isFinite(mean) ? -mean * Math.log(1 - r()) : Number.POSITIVE_INFINITY;
+
+/** 傾き lean [度] で x 軸に沿う面の近くを下りる向き */
+function downward(r: () => number, lean: number): V3 {
+  const th = (lean * Math.PI) / 180,
+    az = ((r() - 0.5) * 2 * PLANE_DEV * Math.PI) / 180;
+  return norm([Math.sin(th) * Math.cos(az), Math.sin(th) * Math.sin(az), -Math.cos(th)]);
+}
+
+/** 垂れ下がる経路の根元 */
+interface Seed {
+  p: V3;
+  /** 鉛直からの傾き [度] */
+  lean: number;
+  /** 雲の中の向きの番号と頂点の番号（雲の中へ進まない雷は −1） */
+  leg: number;
+  i: number;
+}
+
+/**
+ * 垂れ下がる経路の根元を決める。雲の中の向きごとに範囲を等分して、分けた区間から 1 つずつ選ぶ。
+ * 根元に近い順に並べる（最初の経路だけは止めない）
+ */
+function rootSeeds(r: () => number, legs: readonly number[][], top: V3): Seed[] {
+  if (!legs.length)
+    return Array.from({ length: LONE_ROOTS }, (_, k) => ({
+      p: top,
+      lean: ((k * 2) / (LONE_ROOTS - 1) - 1) * LONE_TILT,
+      leg: -1,
+      i: 0,
+    }));
+  const out: (Seed & { d: number })[] = [];
+  legs.forEach((q, leg) => {
+    const n = TREE_ROOTS[legs.length],
+      span = Math.min(ROOT_SPAN, ROOT_SPAN_MAX * branchLength(Float64Array.from(q)));
+    let i = 0,
+      len = 0;
+    for (let k = 0; k < n; k++) {
+      const d = (span * (k + r())) / n;
+      for (; i < q.length / 3 - 1 && len < d; i++)
+        len += Math.hypot(q[3 * i + 3] - q[3 * i], q[3 * i + 4] - q[3 * i + 1], q[3 * i + 5] - q[3 * i + 2]);
+      out.push({
+        p: [q[3 * i], q[3 * i + 1], q[3 * i + 2]],
+        lean: (r() - 0.5) * 2 * TREE_ROOT_TILT,
+        leg,
+        i,
+        d,
+      });
+    }
+  });
+  return out.sort((a, b) => a.d - b.d);
+}
+
+/** 先駆放電の樹。座標は接地した点を原点にそろえたもの */
+interface Tree {
+  /** 接地した点から根元までの本流 */
+  trunk: number[];
+  /** 接地した点の、原点へ移す前の座標と、本流の根元の番号 */
+  zero: number[];
+  root: number;
+  /** 止まった枝 */
+  dead: { q: number[]; e: number }[];
+  /** 本流のほかに地面に届いた枝（分かれた点から地面まで） */
+  forks: number[][];
+}
+
+/**
+ * 止まった枝のエネルギーを配る。枝にためた電荷は接地のあと本流へ抜けるので、その先の枝まで含めて長い枝ほど大きくする。
+ * 比例の形は仮で、合計は eTree にそろえる（上限と下限で切った分だけずれる）
+ */
+function deadBranches(arms: readonly Arm[], used: readonly number[], s: ChannelSet): Tree['dead'] {
+  const lens = arms.map((a, k) => branchLength(Float64Array.from(a.q.slice(3 * used[k])))),
+    sub = [...lens];
+  /* 子は親より後ろに並ぶので、後ろから足す。電流の道に使った所より手前で分かれた子は、親の枝の先ではない */
+  for (let k = arms.length - 1; k >= 0; k--) {
+    const a = arms[k];
+    if (a.parent >= 0 && a.at > used[a.parent]) sub[a.parent] += sub[k];
+  }
+  let sum = 0;
+  for (let k = 0; k < arms.length; k++) sum += sub[k] * lens[k];
+  const c = sum > 0 ? s.eTree / sum : 0,
+    out: Tree['dead'] = [];
+  arms.forEach((a, k) => {
+    if (lens[k] > 0)
+      out.push({ q: a.q.slice(3 * used[k]), e: s.e * Math.min(DEAD_E_MAX, Math.max(DEAD_E_MIN, c * sub[k])) });
+  });
+  return out;
+}
+
+/**
+ * 根元から先端を伸ばす。枝ごとに速さが違い、途中で枝を出し、止まる枝もある。
+ * 時刻の順に頂点を足し、最初に地面へ届いた先端で全体を止める。そこから根元へたどった道が本流になる。
+ * 接地の電位の変化が届く前に地面へ届くほど低い先端は、そのまま地面まで伸ばす（Guo・Krider 1982）
+ */
+function growTree(r: () => number, s: ChannelSet, seeds: readonly Seed[]): Tree {
+  const sig = ((s.turn * Math.PI) / 180) * Math.sqrt(Math.PI / 2),
+    arms: Arm[] = [];
+  /** 先端 p から次の頂点を決める */
+  const plan = (a: Arm, t: number, p: V3) => {
+    const th = Math.abs(normal(r)) * sig;
+    let nd = tilt(a.d, th, 2 * Math.PI * r());
+    if (angle(a.d, a.g) * (180 / Math.PI) > WANDER && angle(nd, a.g) > angle(a.d, a.g))
+      nd = [2 * a.d[0] * dot(a.d, nd) - nd[0], 2 * a.d[1] * dot(a.d, nd) - nd[1], 2 * a.d[2] * dot(a.d, nd) - nd[2]];
+    a.d = nd;
+    const l = s.lmin + (s.lmax - s.lmin) * r();
+    a.pend = [p[0] + l * nd[0], p[1] + l * nd[1], Math.max(0, p[2] + l * nd[2])];
+    a.when = t + l / a.v;
+    a.life -= l;
+    a.spawn -= l;
+  };
+  const sprout = (parent: number, at: number, from: V3, order: number, v: number, lean: number, t: number) => {
+    const g = downward(r, lean),
+      a: Arm = {
+        q: [...from],
+        parent,
+        at,
+        order,
+        v,
+        lean,
+        g,
+        d: g,
+        pend: from,
+        when: t,
+        life: expo(r, TREE_LIFE[order]),
+        spawn: order < TREE_SPAWN.length ? expo(r, TREE_SPAWN[order]) : Number.POSITIVE_INFINITY,
+        stopped: false,
+      };
+    arms.push(a);
+    plan(a, t, from);
+  };
+  for (const f of seeds) sprout(-1, 0, f.p, 0, Math.exp(TREE_SPEED_SD * normal(r)), f.lean, 0);
+  /* どの経路も雲の下までは伸ばす */
+  for (const a of arms) a.life += ROOT_LIFE_MIN;
+  arms[0].life = Number.POSITIVE_INFINITY;
+  /* 時刻のいちばん早い先端を 1 区間ずつ進める */
+  let won = -1,
+    verts = 0;
+  while (won < 0) {
+    let i = -1;
+    for (let k = 0; k < arms.length; k++) if (!arms[k].stopped && (i < 0 || arms[k].when < arms[i].when)) i = k;
+    const a = arms[i],
+      p = a.pend,
+      t = a.when;
+    a.q.push(...p);
+    verts++;
+    if (p[2] <= 0) {
+      won = i;
+    } else if (a.life <= 0) {
+      a.stopped = true;
+    } else {
+      if (a.spawn <= 0) {
+        a.spawn = expo(r, TREE_SPAWN[a.order]);
+        if (verts < TREE_VERTS)
+          sprout(
+            i,
+            a.q.length / 3 - 1,
+            p,
+            a.order + 1,
+            a.v * TREE_SPEED_CHILD * Math.exp(TREE_SPEED_SD * normal(r)),
+            Math.max(-TREE_TILT, Math.min(TREE_TILT, a.lean + (r() < 0.5 ? -1 : 1) * (TREE_FORK + TREE_FORK_W * r()))),
+            t,
+          );
+      }
+      plan(a, t, p);
+    }
+  }
+  const zero = arms[won].q.slice(-3);
+  /* 地面の近くまで来ていた先端は、そのまま地面まで伸ばす */
+  const near = arms
+    .map((a, k) => ({ k, a, n: a.q.length }))
+    .filter(
+      ({ k, a, n }) =>
+        k !== won &&
+        !a.stopped &&
+        n > 3 &&
+        a.q[n - 1] <= FORK_REACH &&
+        Math.hypot(a.q[n - 3] - zero[0], a.q[n - 2] - zero[1]) >= FORK_SEP,
+    )
+    .sort((x, y) => x.a.q[x.n - 1] - y.a.q[y.n - 1])
+    .slice(0, FORK_MAX);
+  for (const { a } of near) a.q.push(...walk(r, s, a.q.slice(-3) as V3, a.d, a.g, (q) => q[2] <= 0).slice(3));
+  /* 接地した点を原点へ */
+  for (const a of arms)
+    for (let i = 0; i < a.q.length; i += 3) {
+      a.q[i] -= zero[0];
+      a.q[i + 1] -= zero[1];
+    }
+  /* 枝ごとの、電流の道に使った頂点の番号。先端から根元へたどり、使った道か根元に着くまでを返す */
+  const used = arms.map(() => 0),
+    vertex = (a: Arm, i: number) => [a.q[3 * i], a.q[3 * i + 1], a.q[3 * i + 2]],
+    chain = (tip: number): number[] => {
+      const out: number[] = [];
+      let k = tip,
+        end = arms[tip].q.length / 3 - 1;
+      for (;;) {
+        const a = arms[k],
+          from = used[k];
+        if (end <= from) {
+          out.push(...vertex(a, end));
+          return out;
+        }
+        for (let i = end; i > from; i--) out.push(...vertex(a, i));
+        used[k] = end;
+        if (from > 0 || a.parent < 0) {
+          out.push(...vertex(a, from));
+          return out;
+        }
+        end = a.at;
+        k = a.parent;
+      }
+    };
+  /* 本流は接地した点から根元へ、地面に届いた枝は分かれた点から地面へ */
+  const trunk = chain(won),
+    forks = near.map(({ k }) => flip(chain(k)));
+  let root = won;
+  while (arms[root].parent >= 0) root = arms[root].parent;
+  return { trunk, zero, root, dead: deadBranches(arms, used, s), forks };
+}
+
 /**
  * 放電路を作る。同じ設定と種なら同じ形。
- * 並びは最初の放電の本流・雲の中のほかの向き・枝・地面に届く枝・2 本目の放電路、2 回目からの放電の本流。
+ * 並びは最初の放電の本流・雲の中のほかの道・止まった枝・地面に届く枝、2 回目からの放電の本流。
+ * 本流は接地した点から根元へ上がり、根元のある雲の中の向きの先へ続く。その向きの手前と、ほかの向きが雲の中のほかの道になる。
  * 2 回目からの本流は、前の放電の雲の中の放電路の途中から分かれ、外へ向かう新しい向きに grow だけ進む
  */
 export function makeChannel(s: ChannelSet): Branch[] {
   const r = mulberry(s.seed * 7919 + 13),
     sh = shape(s),
-    up: V3 = [0, 0, 1],
-    mk = (q: number[], e: number, k: 0 | 1, t: number): Branch => ({ p: Float64Array.from(q), e, k, t });
-  const trunk = walk(r, s, [0, 0, 0], up, up, (p) => p[2] >= s.base);
-  const top = trunk.slice(-3) as V3,
+    mk = (q: number[], e: number, k: 0 | 1, t: number): Branch => ({ p: Float64Array.from(q), e, k, t }),
+    /* 雲の中へ進まない雷は、雲の中の 1 点で分かれてから雲の底を抜ける */
+    top: V3 = [0, 0, s.base + (sh.legs.length ? 0 : LONE_RISE)],
     legs = sh.legs.map(({ az, len }) => {
       const a = (az * Math.PI) / 180,
         side: V3 = [Math.cos(a), Math.sin(a), 0];
       return walk(r, s, top, norm([side[0], side[1], 0.3]), side, (_, l) => l >= len, CLOUD_WANDER);
-    });
-  /* 本流は雲の中の最初の向きへ続く。ほかの向きは雲の底からの別の折れ線 */
-  const main = legs.length ? [...trunk, ...legs[0].slice(3)] : trunk,
-    out: Branch[] = [mk(main, s.e, 0, 0), ...legs.slice(1).map((q) => mk(q, s.e, 0, 0))],
-    nv = main.length / 3,
+    }),
+    seeds = rootSeeds(r, legs, top),
+    tree = growTree(r, s, seeds),
+    { trunk, zero } = tree,
+    seed = seeds[tree.root];
+  for (const q of legs)
+    for (let i = 0; i < q.length; i += 3) {
+      q[i] -= zero[0];
+      q[i + 1] -= zero[1];
+    }
+  /* 本流は根元のある向きの先へ続く。その向きの手前とほかの向きは、雲の中のほかの道 */
+  const home = seed.leg >= 0 ? legs[seed.leg] : [],
+    main = [...trunk, ...home.slice(3 * (seed.i + 1))],
+    back = flip(home.slice(0, 3 * (seed.i + 1))),
+    cloud = [...(back.length > 3 ? [back] : []), ...legs.filter((_, k) => k !== seed.leg)],
+    out: Branch[] = [mk(main, s.e, 0, 0), ...cloud.map((q) => mk(q, s.e, 0, 0))],
     nt = trunk.length / 3;
-  for (let b = 0; b < s.branches; b++) {
-    /* 枝は本流の雲の底の近くから、下へ斜めに伸びる */
-    const i = Math.min(nv - 1, Math.floor(nt * (0.45 + 0.5 * r()) + (nv - nt) * 0.2 * r())),
-      o: V3 = [main[3 * i], main[3 * i + 1], main[3 * i + 2]],
-      b2 = 2 * Math.PI * r(),
-      g = norm([Math.cos(b2), Math.sin(b2), -0.7]),
-      want = 300 + 900 * r();
-    const p = walk(r, s, o, g, g, (q, len) => len >= want || q[2] <= 50);
-    out.push(mk(p, s.e * s.eBranch, 1, 0));
-  }
-  /* 地面に届く枝は、本流のその高さの点から地面の点へ下りる。2 本目の放電路は、落雷点から雲の底まで上がる */
-  const rf = mulberry(s.seed * 3571 + 29);
-  for (const f of sh.forks) {
-    let i = 0;
-    while (i < nt - 1 && trunk[3 * i + 2] < f.z) i++;
-    const o: V3 = [trunk[3 * i], trunk[3 * i + 1], trunk[3 * i + 2]],
-      g = norm([f.x - o[0], f.y - o[1], -o[2]]);
-    out.push(
-      mk(
-        walk(rf, s, o, g, g, (q) => q[2] <= 0),
-        s.e * FORK_E,
-        0,
-        0,
-      ),
-    );
-  }
-  for (let k = 0; k < sh.twins; k++)
-    out.push(
-      mk(
-        walk(rf, s, [0, 0, 0], up, up, (p) => p[2] >= s.base),
-        s.e * FORK_E,
-        0,
-        0,
-      ),
-    );
+  for (const d of tree.dead) out.push(mk(d.q, d.e, 1, 0));
+  for (const f of tree.forks) out.push(mk(f, s.e * FORK_E, 0, 0));
   /* 2 回目からの放電: 形と間隔は回ごとの乱数で決め、回数を変えても前の回の形と時刻が変わらない。
      雲の中へ進まない雷は、2 回目からも落雷点から雲の底までを通る */
   let prev = main,
@@ -306,6 +553,10 @@ export function makeChannel(s: ChannelSet): Branch[] {
   }
   return out;
 }
+
+/** 最初の放電で地面に届いた所の数 */
+export const strikeCount = (bs: readonly Branch[]): number =>
+  1 + bs.filter((b) => b.k === 0 && b.t === 0 && b.p[b.p.length - 1] <= 0).length;
 
 /** 放電の時刻 [s] の一覧（最初が 0） */
 export const strokeTimes = (bs: readonly Branch[]): number[] => [

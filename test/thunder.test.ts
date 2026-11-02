@@ -5,12 +5,11 @@ import {
   type Branch,
   branchLength,
   CH0,
-  FORK_P,
   LEGS_P,
   makeChannel,
   shape,
+  strikeCount,
   strokeTimes,
-  TWIN_P,
   turnAngles,
 } from '../src/tools/thunder/channel';
 import type { Elements } from '../src/tools/thunder/path';
@@ -207,66 +206,132 @@ describe('放電路', () => {
     expect(lens.filter((l) => l < CH0.lmin - 1e-9).length / lens.length).toBeLessThan(0.01);
     expect(lens.reduce((x, y) => x + y, 0) / lens.length).toBeCloseTo(8, 0);
   });
-  it('本流は地面から雲の底まで上がり、雲の中の最初の向きへ進む。ほかの向きは雲の底から', () => {
+  it('本流は地面から雲の中まで上がり、雲の中の道はすべて本流につながって向きの長さの合計を保つ', () => {
     const sh = shape(CH0),
-      bs = makeChannel(CH0),
+      bs = makeChannel({ ...CH0, strokes: 1 }),
       [m] = bs,
-      zs = m.p.filter((_, i) => i % 3 === 2);
+      zs = m.p.filter((_, i) => i % 3 === 2),
+      cloud = bs.slice(1).filter((b) => b.k === 0 && b.p[b.p.length - 1] > 0),
+      points = new Set<string>();
     expect(sh.legs.length).toBe(2);
     expect(m.p[2]).toBe(0);
     expect(Math.max(...zs)).toBeGreaterThanOrEqual(CH0.base);
-    expect(branchLength(m.p)).toBeGreaterThan(CH0.base + sh.legs[0].len);
-    const leg = bs[1];
-    expect(leg.k).toBe(0);
-    /* 本流が雲の底に着いた点から始まる */
-    const top = m.p.findIndex((v, i) => i % 3 === 2 && v >= CH0.base) - 2;
-    expect(Array.from(leg.p.subarray(0, 3))).toEqual(Array.from(m.p.subarray(top, top + 3)));
-    expect(branchLength(leg.p)).toBeGreaterThanOrEqual(sh.legs[1].len);
+    for (let i = 0; i < m.p.length; i += 3) points.add(`${m.p[i]},${m.p[i + 1]},${m.p[i + 2]}`);
+    /* どの道も、本流かほかの雲の中の道の頂点から始まる */
+    for (const b of cloud) for (let i = 0; i < b.p.length; i += 3) points.add(`${b.p[i]},${b.p[i + 1]},${b.p[i + 2]}`);
+    for (const b of cloud) expect(points.has(`${b.p[0]},${b.p[1]},${b.p[2]}`)).toBe(true);
+    /* 本流の接地から雲の中までの道を除いた長さの合計が、向きの長さの合計以上 */
+    const inCloud = cloud.reduce((x, b) => x + branchLength(b.p), 0) + branchLength(m.p) - CH0.base;
+    expect(inCloud).toBeGreaterThan(sh.legs[0].len + sh.legs[1].len - CH0.base);
   });
-  it('形の確かさ: 雲の中の向きの数・落雷 2 か所以上・落雷点に 2 本は、LEGS_P・FORK_P・TWIN_P に近い', () => {
+  it('雲を出る時点で複数の枝に分かれ、雲の底の下で横に広がる', () => {
+    const counts: number[] = [],
+      spreads: number[] = [],
+      z = CH0.base - 100;
+    for (let seed = 1; seed <= 100; seed++) {
+      const xs: number[] = [];
+      for (const b of makeChannel({ ...CH0, seed, strokes: 1 }))
+        for (let i = 3; i < b.p.length; i += 3)
+          if ((b.p[i - 1] - z) * (b.p[i + 2] - z) < 0) {
+            xs.push(b.p[i]);
+            break;
+          }
+      counts.push(xs.length);
+      spreads.push(Math.max(...xs) - Math.min(...xs));
+    }
+    const med = (a: number[]) => [...a].sort((x, y) => x - y)[a.length >> 1];
+    expect(Math.min(...counts)).toBeGreaterThanOrEqual(2);
+    expect(med(counts)).toBeGreaterThanOrEqual(3);
+    expect(med(spreads)).toBeGreaterThan(300);
+  });
+  it('雲の中の向きの数は LEGS_P に近い', () => {
     const N = 4000,
       legs = [0, 0, 0, 0];
-    let forks = 0,
-      twins = 0;
-    for (let seed = 1; seed <= N; seed++) {
-      const sh = shape({ ...CH0, seed });
-      legs[sh.legs.length]++;
-      if (sh.forks.length) forks++;
-      twins += sh.twins;
-    }
+    for (let seed = 1; seed <= N; seed++) legs[shape({ ...CH0, seed }).legs.length]++;
     for (let k = 0; k < legs.length; k++) expect(Math.abs(legs[k] / N - LEGS_P[k])).toBeLessThan(0.03);
-    expect(Math.abs(forks / N - FORK_P)).toBeLessThan(0.02);
-    expect(Math.abs(twins / N - TWIN_P)).toBeLessThan(0.02);
   });
-  it('地面に届く枝は地面まで下り、2 本目の放電路は落雷点から雲の底まで上がる', () => {
-    let fk = 0,
-      tw = 0;
-    for (let seed = 1; seed <= 60; seed++) {
-      const ch = { ...CH0, seed, strokes: 1 },
-        sh = shape(ch),
-        bs = makeChannel(ch).filter((b) => b.k === 0),
-        extra = bs.slice(sh.legs.length ? sh.legs.length : 1);
-      expect(extra).toHaveLength(sh.forks.length + sh.twins);
-      sh.forks.forEach((f, i) => {
-        const p = extra[i].p,
-          n = p.length;
-        expect(p[n - 1]).toBe(0);
-        /* 分かれる高さの近くから、目標の点の向きへ（乱歩は目標の向きから 35° までそれる） */
-        expect(Math.abs(p[2] - f.z)).toBeLessThan(CH0.lmax);
-        expect(Math.hypot(p[n - 3] - f.x, p[n - 2] - f.y)).toBeLessThan(
-          Math.tan((35 * Math.PI) / 180) * Math.hypot(f.z, f.x - p[0], f.y - p[1]),
-        );
-        fk++;
-      });
-      for (let i = 0; i < sh.twins; i++) {
-        const p = extra[sh.forks.length + i].p;
-        expect(Array.from(p.subarray(0, 3))).toEqual([0, 0, 0]);
-        expect(p[p.length - 1]).toBeGreaterThanOrEqual(CH0.base);
-        tw++;
+  it('本流の接地点が原点で、雲の中へ続く根元は雲の底の高さにある', () => {
+    for (let seed = 1; seed <= 40; seed++) {
+      const [m] = makeChannel({ ...CH0, seed, strokes: 1, cloud: 100 });
+      expect(Array.from(m.p.subarray(0, 3))).toEqual([0, 0, 0]);
+      expect(Math.max(...m.p.filter((_, i) => i % 3 === 2))).toBeGreaterThanOrEqual(CH0.base);
+    }
+  });
+  it('止まった枝は地面に届かず、根元が本流かほかの枝の頂点につながる', () => {
+    const key = (p: Float64Array, i: number) => `${p[i]},${p[i + 1]},${p[i + 2]}`;
+    for (let seed = 1; seed <= 40; seed++) {
+      const bs = makeChannel({ ...CH0, seed, strokes: 1 }),
+        points = new Set<string>(),
+        dead = bs.filter((b) => b.k === 1);
+      for (const b of bs) for (let i = 0; i < b.p.length; i += 3) points.add(key(b.p, i));
+      expect(dead.length).toBeGreaterThan(0);
+      for (const b of dead) {
+        expect(b.p[b.p.length - 1]).toBeGreaterThan(0);
+        /* 根元の点が、自分のほかの放電路にもある */
+        const root = key(b.p, 0),
+          shared = bs.some(
+            (o) =>
+              o !== b && o.p.length && Array.from({ length: o.p.length / 3 }, (_, i) => key(o.p, 3 * i)).includes(root),
+          );
+        expect(shared).toBe(true);
       }
     }
-    expect(fk).toBeGreaterThan(0);
-    expect(tw).toBeGreaterThan(0);
+  });
+  it('止まった枝のエネルギーは本流より弱く、合計は枝の形によらず eTree に近い', () => {
+    const sums: number[] = [];
+    for (let seed = 1; seed <= 200; seed++) {
+      const dead = makeChannel({ ...CH0, seed, strokes: 1, cloud: 100 }).filter((b) => b.k === 1);
+      let sum = 0;
+      for (const b of dead) {
+        expect(b.e).toBeLessThanOrEqual(CH0.e * 0.3);
+        sum += (b.e / CH0.e) * branchLength(b.p);
+      }
+      sums.push(sum);
+    }
+    sums.sort((x, y) => x - y);
+    expect(sums[100] / CH0.eTree).toBeGreaterThan(0.9);
+    expect(sums[100] / CH0.eTree).toBeLessThan(1.1);
+    expect(sums[20] / CH0.eTree).toBeGreaterThan(0.75);
+    expect(sums[180] / CH0.eTree).toBeLessThan(1.25);
+  });
+  it('枝の数と総延長は決めた範囲にあり、接地点は雲の底の真下から離れる', () => {
+    const cnt: number[] = [],
+      tot: number[] = [],
+      side: number[] = [];
+    for (let seed = 1; seed <= 200; seed++) {
+      const bs = makeChannel({ ...CH0, seed, strokes: 1, cloud: 100 }),
+        m = bs[0].p,
+        dead = bs.filter((b) => b.k === 1);
+      cnt.push(dead.length);
+      tot.push(dead.reduce((x, b) => x + branchLength(b.p), 0));
+      let i = 0;
+      while (i < m.length - 3 && m[i + 2] < CH0.base) i += 3;
+      side.push(Math.hypot(m[i], m[i + 1]));
+    }
+    const med = (a: number[]) => [...a].sort((x, y) => x - y)[a.length >> 1];
+    expect(med(cnt)).toBeGreaterThan(12);
+    expect(med(cnt)).toBeLessThan(50);
+    expect(med(tot)).toBeGreaterThan(5000);
+    expect(med(tot)).toBeLessThan(20000);
+    expect(med(side)).toBeGreaterThan(50);
+    expect(med(side)).toBeLessThan(1500);
+  });
+  it('地面に届く枝: 割合は測定の 1.3〜15.3 % の中で、本流から離れた所に届く', () => {
+    const N = 600;
+    let n = 0;
+    for (let seed = 1; seed <= N; seed++) {
+      const bs = makeChannel({ ...CH0, seed, strokes: 1, cloud: 100 }),
+        forks = bs.filter((b) => b.k === 0 && b.p[b.p.length - 1] <= 0);
+      expect(strikeCount(bs)).toBe(forks.length + 1);
+      if (forks.length) n++;
+      for (const f of forks) {
+        const k = f.p.length;
+        expect(f.p[k - 1]).toBe(0);
+        expect(Math.hypot(f.p[k - 3], f.p[k - 2])).toBeGreaterThan(50);
+      }
+    }
+    expect(n / N).toBeGreaterThan(0.05);
+    expect(n / N).toBeLessThan(0.153);
   });
   it('雲の中へ進まない雷は、2 回目からも落雷点から雲の底までを通る', () => {
     let seed = 1;
@@ -299,7 +364,7 @@ describe('放電路', () => {
   it('放電の間隔の幾何平均は gap（Saba ほか 2006 の 61 ms）に近い', () => {
     const logs: number[] = [];
     for (let seed = 1; seed <= 200; seed++) {
-      const t = strokeTimes(makeChannel({ ...CH0, seed, strokes: 8, branches: 0, cloud: 100, grow: 100 }));
+      const t = strokeTimes(makeChannel({ ...CH0, seed, strokes: 8, cloud: 100, grow: 100 }));
       for (let k = 1; k < t.length; k++) logs.push(Math.log(t[k] - t[k - 1]));
     }
     const gm = Math.exp(logs.reduce((x, y) => x + y, 0) / logs.length);

@@ -154,6 +154,8 @@ export interface Pts {
   c: Float64Array;
   x: Float32Array;
   z: Float32Array;
+  /** 止まった枝なら 1 */
+  d: Uint8Array;
   c0: number;
   c1: number;
 }
@@ -165,7 +167,8 @@ export function arrivalPts(r: Reply, vias: readonly number[]): Pts {
     t = new Float64Array(n),
     c = new Float64Array(n),
     x = new Float32Array(n),
-    z = new Float32Array(n);
+    z = new Float32Array(n),
+    d = new Uint8Array(n);
   let c0 = Number.POSITIVE_INFINITY,
     c1 = 0;
   idx.forEach((i, k) => {
@@ -175,8 +178,9 @@ export function arrivalPts(r: Reply, vias: readonly number[]): Pts {
     c1 = Math.max(c1, c[k]);
     x[k] = r.exz[2 * i];
     z[k] = r.exz[2 * i + 1];
+    d[k] = r.ed[i];
   });
-  return { n, t, c, x, z, c0: n ? c0 : 0, c1 };
+  return { n, t, c, x, z, d, c0: n ? c0 : 0, c1 };
 }
 /** 時刻 t より前に届く点の数 */
 const lower = (a: Float64Array, t: number): number => {
@@ -192,6 +196,9 @@ const lower = (a: Float64Array, t: number): number => {
 
 /** 届く時刻の色の段数 */
 const NC = 24;
+/** 止まった枝の点の大きさ [px] と濃さ */
+const DEAD_DOT = 1,
+  DEAD_ALPHA = 0.5;
 /** 今届いている所とみなす幅 [s] */
 export const NOW = 0.06;
 /** 光った瞬間の明るさが消えるまで [s]（放電の間隔より短く、1 回ずつ瞬いて見える長さ） */
@@ -252,10 +259,10 @@ export function drawSection(cv: HTMLCanvasElement, s: Section, lv: Live, key: st
     if (!q) {
       /* 計算が届く前: 放電路の形だけを灰で */
       b.strokeStyle = p.ink3;
-      b.globalAlpha = 0.6;
-      b.lineWidth = 1.2;
       for (const br of s.branches) {
         if (br.t > 0) continue;
+        b.globalAlpha = br.k ? DEAD_ALPHA * 0.6 : 0.6;
+        b.lineWidth = br.k ? DEAD_DOT : 1.2;
         b.beginPath();
         for (let i = 0; i < br.p.length; i += 3) b.lineTo(v.sx(br.p[i]), v.sz(br.p[i + 2]));
         b.stroke();
@@ -263,15 +270,23 @@ export function drawSection(cv: HTMLCanvasElement, s: Section, lv: Live, key: st
       b.globalAlpha = 1;
       return;
     }
-    /* 放電路: 届く時刻で塗る（黄が早く、青が遅い） */
+    /* 放電路: 届く時刻で塗る（黄が早く、青が遅い）。止まった枝は細く暗くして、電流が流れた道をその上に描く */
     const span = Math.max(q.c1 - q.c0, 1e-3),
-      cols = Array.from({ length: NC }, (_, k) => mix(p.ch1, p.ch2, k / (NC - 1))),
-      bins: number[][] = cols.map(() => []);
-    for (let i = 0; i < q.n; i++) bins[Math.min(NC - 1, Math.floor(((q.c[i] - q.c0) / span) * NC))].push(i);
-    bins.forEach((L, k) => {
-      b.fillStyle = cols[k];
-      for (const i of L) b.fillRect(v.sx(q.x[i]) - 0.9, v.sz(q.z[i]) - 0.9, 1.8, 1.8);
-    });
+      cols = Array.from({ length: NC }, (_, k) => mix(p.ch1, p.ch2, k / (NC - 1)));
+    for (const [dead, dot, al] of [
+      [1, DEAD_DOT, DEAD_ALPHA],
+      [0, 1.8, 1],
+    ]) {
+      const bins: number[][] = cols.map(() => []);
+      for (let i = 0; i < q.n; i++)
+        if (q.d[i] === dead) bins[Math.min(NC - 1, Math.floor(((q.c[i] - q.c0) / span) * NC))].push(i);
+      b.globalAlpha = al;
+      bins.forEach((L, k) => {
+        b.fillStyle = cols[k];
+        for (const i of L) b.fillRect(v.sx(q.x[i]) - dot / 2, v.sz(q.z[i]) - dot / 2, dot, dot);
+      });
+    }
+    b.globalAlpha = 1;
   });
   g.drawImage(bg, 0, 0, w, h);
   const gy = v.sz(0),
@@ -299,7 +314,7 @@ export function drawSection(cv: HTMLCanvasElement, s: Section, lv: Live, key: st
       for (const br of s.branches) {
         const r = s.c * (tau - br.t);
         if (r <= 0) continue;
-        for (let i = 0; i < br.p.length; i += 3 * (br.t > 0 ? 36 : 12)) {
+        for (let i = 0; i < br.p.length; i += 3 * (br.t > 0 || br.k ? 36 : 12)) {
           if (each) {
             g.save();
             if (!each(br.p[i], br.p[i + 2])) {
@@ -361,7 +376,8 @@ export function drawSection(cv: HTMLCanvasElement, s: Section, lv: Live, key: st
         sz = 0;
       g.fillStyle = col;
       for (let i = a; i < e; i++) {
-        g.fillRect(v.sx(q.x[i]) - 1.8, v.sz(q.z[i]) - 1.8, 3.6, 3.6);
+        const dot = q.d[i] ? 1.8 : 3.6;
+        g.fillRect(v.sx(q.x[i]) - dot / 2, v.sz(q.z[i]) - dot / 2, dot, dot);
         sx += q.x[i];
         sz += q.z[i];
       }
