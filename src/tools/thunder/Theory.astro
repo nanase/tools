@@ -1,7 +1,7 @@
 ---
 // 動作原理と式（下書き。デザインが決まってからページに組み、図や操作の名前に合わせて文を削る）。表の値は shock.ts・path.ts から求める
 import { absorption, soundSpeed } from '../../lib/air';
-import { CH0, FORK_P, LEGS_P, PLANE_DEV, TWIN_P } from './channel';
+import { CH0, LEGS_P, PLANE_DEV } from './channel';
 import { audibleRange, bendRadius } from './path';
 import { ETA0, fewPeak, N_PEAK_X, nDuration, nDuration0, relaxRadius } from './shock';
 import { BANDS } from './terrain';
@@ -83,10 +83,12 @@ const pc = (v: number) => `${Math.round(v * 100)} %`;
 </ol>
 
 <h3>放電路の形</h3>
-<p>形は雷ごとに乱数で決めます。確かさはどれも仮の値です。</p>
+<p>先駆放電は雲の中の放電路の複数の所から樹状に垂れ下がり、最初に地面へ届いた経路だけに大きな電流が流れます。この競争をそのまま計算します。速さは平均で約 2.7×10⁵ m/s<Fragment set:html={rf(15)} /> で、2 km 下りても 10 ms ほどです。音が進むのは数 m なので、伸びる順序は雷鳴に影響しません。</p>
 <ul class="tl">
-  <li>雲の底から横へ進む向き: {LEGS_P.map((v, n) => `${n} 方向 ${pc(v)}`).join('・')}。右と左へ交互に、x 軸から ±{PLANE_DEV}° まで。軸から横へ離れると戻るように進め、断面で頭上に見える所は実際にも頭上に置く</li>
-  <li>枝が別の所でも地面に届く（落雷 2 か所以上）: {pc(FORK_P)}。落雷点に 2 本の放電路がつながる: {pc(TWIN_P)}。高速度カメラの映像に見られる形</li>
+  <li>枝: 速さ・枝分かれ・止まる所を乱数で決める。接地すると電位の変化が上へ伝わり、ほかの枝は伸びが止まる<Fragment set:html={rf(16)} /></li>
+  <li>止まった枝のエネルギー: 枝にためた電荷は接地のあと本流へ抜ける<Fragment set:html={rf(17)} />。その先の枝まで含めて長い枝ほど大きくし、合計は本流 {CH0.eTree} m 分にそろえる（仮）</li>
+  <li>落雷 2 か所以上: 接地の瞬間に地面のすぐ近くまで来ていた枝も届く<Fragment set:html={rf(16)} />。測定の割合は 1.3〜15.3 %<Fragment set:html={rf(16)} /> で、ここでは約 1 割になる</li>
+  <li>雲の底から横へ進む向き: {LEGS_P.map((v, n) => `${n} 方向 ${pc(v)}`).join('・')}（仮）。右と左へ交互に、x 軸から ±{PLANE_DEV}° まで。軸から横へ離れると戻るように進め、断面で頭上に見える所は実際にも頭上に置く</li>
 </ul>
 
 <h3>雷鳴の長さ</h3>
@@ -153,4 +155,7 @@ const pc = (v: number) => `${Math.round(v * 100)} %`;
   <li id="thy-r12"><span class="rf-for">1 回の落雷の放電の回数は多くが 3〜5 回（本文は未確認）</span><span class="rf-src">CIGRE Working Group C4.407 (V. A. Rakov, convenor), <i>Lightning Parameters for Engineering Applications</i>, Technical Brochure 549, 2013</span></li>
   <li id="thy-r13"><span class="rf-for">2 回目からの放電は雲の中の遠い所の電荷を引く（本文は未確認。要旨で確かめた）</span><span class="rf-src">P. R. Krehbiel, M. Brook, and R. A. McCrory, “An analysis of the charge structure of lightning discharges to ground,” <i>Journal of Geophysical Research</i>, vol. 84, no. C5, pp. 2432–2456, 1979, <a href="https://doi.org/10.1029/JC084iC05p02432" target="_blank" rel="noopener">doi:10.1029/JC084iC05p02432</a></span></li>
   <li id="thy-r14"><span class="rf-for">塀の回折による減衰 10 log₁₀(3 + 20N)（本文は未確認。書誌は Crossref で確かめた）</span><span class="rf-src">Z. Maekawa, “Noise reduction by screens,” <i>Applied Acoustics</i>, vol. 1, no. 3, pp. 157–173, 1968, <a href="https://doi.org/10.1016/0003-682X(68)90020-0" target="_blank" rel="noopener">doi:10.1016/0003-682X(68)90020-0</a></span></li>
+  <li id="thy-r15"><span class="rf-for">負極性の先駆放電の 2 次元の速さの幾何平均 2.68×10⁵ m/s（62 例）</span><span class="rf-src">L. Z. S. Campos, M. M. F. Saba, T. A. Warner, E. P. Krider, K. L. Cummins, and R. E. Orville, <a href="https://www.vaisala.com/sites/default/files/documents/2.Campos%2C%20Saba%2C%20Warner.pdf" target="_blank" rel="noopener">“Does the average downward speed of a lightning leader change as it approaches the ground? – An observational approach,”</a> <i>21st International Lightning Detection Conference</i>, Orlando</span></li>
+  <li id="thy-r16"><span class="rf-for">接地の電位の変化でほかの枝が止まる説明、地面に近い枝も届く説明（Guo・Krider 1982 ほかの引用）、落雷 2 か所以上の割合 1.3〜15.3 %（表 1）</span><span class="rf-src">L. Z. S. Campos, A. C. V. Saraiva, K. L. Cummins, L. Antunes, O. Pinto Jr., and D. G. Guedes, <a href="https://www.nssl.noaa.gov/users/mansell/icae2014/preprints/Campos_57.pdf" target="_blank" rel="noopener">“Phenomenology and characterization of multiple ground contact strokes in natural lightning,”</a> <i>XV International Conference on Atmospheric Electricity</i>, Norman, 2014</span></li>
+  <li id="thy-r17"><span class="rf-for">枝の光は先駆放電がためた電荷が急に抜けるため（本文は未確認。第 4 章の解説で確かめた）</span><span class="rf-src">V. A. Rakov and M. A. Uman, <i>Lightning: Physics and Effects</i>, Cambridge University Press, 2003</span></li>
 </ol>

@@ -12,7 +12,7 @@ import { ParamGroup } from '../../lib/param';
 import { handheld } from '../../lib/pause';
 import { initToolPage } from '../../lib/tool-page';
 import { ThunderAudio } from './audio';
-import { type Branch, CH0, type ChannelSet, makeChannel, type Shape, shape } from './channel';
+import { type Branch, CH0, type ChannelSet, makeChannel, type Shape, shape, strikeCount } from './channel';
 import {
   arrivalPts,
   drawHist,
@@ -169,15 +169,15 @@ function request(): void {
   if (busy) again = true;
   else post();
 }
-/** 図の右上: 放電路の形（雲の中の向きの数・落雷点の数・同じ落雷点への本数） */
-function shapeText(sh: Shape): string {
+/** 図の右上: 放電路の形（雲の中の向きの数・落雷点の数） */
+function shapeText(sh: Shape, branches: readonly Branch[]): string {
   const n = sh.legs.length,
-    a = [n ? `雲の中 ${n} 方向` : '雲の中なし'];
-  if (sh.forks.length) a.push(`落雷 ${sh.forks.length + 1} か所`);
-  if (sh.twins) a.push(`落雷点に ${sh.twins + 1} 本`);
+    a = [n ? `雲の中 ${n} 方向` : '雲の中なし'],
+    strikes = strikeCount(branches);
+  if (strikes > 1) a.push(`落雷 ${strikes} か所`);
   return a.join('・');
 }
-const idleSt = () => txt('#th-st', shown ? shapeText(shown.sh) : '');
+const idleSt = () => txt('#th-st', shown ? shapeText(shown.sh, shown.branches) : '');
 const fig = $('.a-fig');
 /** 計算中は、古い雷を鳴らさないよう再生の操作を止める */
 function busyState(on: boolean): void {
@@ -335,7 +335,7 @@ function outputs(): void {
   txt('#m-len', `${len.toFixed(1)} s`);
   sec.setAttribute(
     'aria-label',
-    `横から見た放電路と聞き手。${shown ? `${shapeText(shown.sh)}。` : ''}聞き手は落雷点の${side} ${fmtKm(d)} km、光ってから ${r.first.toFixed(1)} 秒で音が届き、${len.toFixed(1)} 秒鳴り続ける`,
+    `横から見た放電路と聞き手。${shown ? `${shapeText(shown.sh, shown.branches)}。` : ''}聞き手は落雷点の${side} ${fmtKm(d)} km、光ってから ${r.first.toFixed(1)} 秒で音が届き、${len.toFixed(1)} 秒鳴り続ける`,
   );
 }
 

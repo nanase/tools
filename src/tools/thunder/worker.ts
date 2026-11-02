@@ -46,11 +46,12 @@ export interface Reply {
   hist: Float64Array[];
   h0: number;
   dt: number;
-  /** 要素の届く時刻 [s]・その放電が光ってからの届く時刻 [s]・中点 x, z [m]・経路（図で放電路を届く時刻で塗る） */
+  /** 要素の届く時刻 [s]・その放電が光ってからの届く時刻 [s]・中点 x, z [m]・経路・止まった枝か（図で放電路を届く時刻で塗る） */
   et: Float64Array;
   er: Float64Array;
   exz: Float32Array;
   ev: Uint8Array;
+  ed: Uint8Array;
   sf: Float64Array;
   sdb: Float64Array;
 }
@@ -137,13 +138,15 @@ export function run(j: Job): Reply {
     hist = arrivalHistogram(el, w.t0, t1, j.dt),
     sp = spectrum(y, w.fs),
     exz = new Float32Array(2 * el.n),
-    er = new Float64Array(el.n);
+    er = new Float64Array(el.n),
+    ed = new Uint8Array(el.n);
   let d0 = Number.POSITIVE_INFINITY,
     d1 = 0;
   for (let i = 0; i < el.n; i++) {
     exz[2 * i] = el.xyz[3 * i];
     exz[2 * i + 1] = el.xyz[3 * i + 2];
     er[i] = el.t[i] - branches[el.br[i]].t;
+    ed[i] = branches[el.br[i]].k;
     if (el.via[i] === Via.Direct) {
       d0 = Math.min(d0, el.t[i]);
       d1 = Math.max(d1, el.t[i]);
@@ -174,6 +177,7 @@ export function run(j: Job): Reply {
     er,
     exz,
     ev: el.via,
+    ed,
     sf: sp.f,
     sdb: sp.db,
   };
@@ -183,7 +187,7 @@ export function run(j: Job): Reply {
 if (typeof document === 'undefined' && typeof self !== 'undefined' && 'postMessage' in self)
   self.onmessage = (e: MessageEvent<Job>) => {
     const r = run(e.data);
-    const bufs = [r.y.buffer, r.et.buffer, r.er.buffer, r.exz.buffer, r.ev.buffer];
+    const bufs = [r.y.buffer, r.et.buffer, r.er.buffer, r.exz.buffer, r.ev.buffer, r.ed.buffer];
     if (r.yr !== r.y) bufs.push(r.yr.buffer);
     postMessage(r, { transfer: bufs });
   };
