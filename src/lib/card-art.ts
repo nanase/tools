@@ -1578,6 +1578,20 @@ export const ART: Record<string, Art> = {
       ) + P('a', st)
     );
   },
+  /* MP3: 周波数の棒をローパスが右から削る。捨てた高音は細い線になり、残りの棒が伸びる */
+  mp3(t) {
+    const xc = 66 + 34 * Math.sin((TAU * t) / 4);
+    let keep = '',
+      gone = '';
+    for (let i = 0; i < 28; i++) {
+      const x = 6 + i * 4,
+        h = 34 * Math.exp(-i / 14) * (0.55 + 0.45 * hn(i + 90)) + 3,
+        gain = 1 + (0.35 * (100 - xc)) / 34;
+      if (x < xc) keep += `M${x} 45V${r1(45 - Math.min(40, h * gain))}`;
+      else gone += `M${x} 45V${r1(45 - h)}`;
+    }
+    return P('c t g', gone) + P('a', keep) + P('b t', `M${r1(xc)} 4V46`);
+  },
   /* 雑音除去と圧縮: 走査線の左は雑音の消えた波形、右は雑音入り。下の係数は閾値の帯より小さいものが左から消える */
   wd(t) {
     /* 止まっているときは走査線が真ん中 */
@@ -1854,6 +1868,7 @@ export const LOOP: Record<string, number> = {
   so: 3,
   ls: 3,
   pcm: 3,
+  mp3: 4,
 };
 
 /** 止まっているときの図柄（ビルド時に HTML へ出す） */

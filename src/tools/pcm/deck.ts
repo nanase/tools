@@ -1,10 +1,14 @@
 /**
  * 聴き比べの再生: 選んだ音を同じ時刻から繰り返して鳴らす。音を替えるときは位置を保ったまま 12 ms で入れ替えるので、
- * 値をドラッグしている間も音が途切れない
+ * 値をドラッグしている間も音が途切れない。1 つの音は 1 本の列か、チャンネルごとの列の配列
  */
 import { mod } from './pcm';
 
 type Ctor = typeof AudioContext;
+export type Track = Float32Array | readonly Float32Array[];
+const first = (t: Track | undefined): Float32Array | null =>
+  !t ? null : t instanceof Float32Array ? t : (t[0] ?? null);
+
 const AC: Ctor | undefined =
   globalThis.AudioContext ?? (globalThis as unknown as { webkitAudioContext?: Ctor }).webkitAudioContext;
 
@@ -17,7 +21,7 @@ export class Deck {
   private master: GainNode | null = null;
   private src: AudioBufferSourceNode | null = null;
   private g: GainNode | null = null;
-  private tracks: Float32Array[] = [];
+  private tracks: Track[] = [];
   private fs = 48000;
   private t0 = 0;
   private off = 0;
@@ -32,7 +36,8 @@ export class Deck {
   }
   /** 1 周の長さ [s] */
   get dur(): number {
-    return this.tracks.length ? this.tracks[0].length / this.fs : 0;
+    const t = first(this.tracks[0]);
+    return t ? t.length / this.fs : 0;
   }
   /** 今の位置 [s] */
   pos(): number {
@@ -43,9 +48,9 @@ export class Deck {
   }
   /** 今鳴らす列 */
   get cur(): Float32Array | null {
-    return this.tracks[this.sel] ?? null;
+    return first(this.tracks[this.sel]);
   }
-  set(tracks: Float32Array[], fs: number): void {
+  set(tracks: Track[], fs: number): void {
     const p = this.pos();
     this.tracks = tracks;
     this.fs = fs;
@@ -60,10 +65,13 @@ export class Deck {
   /** 今の列の音を鳴らし始め、前の音と入れ替える */
   private voice(): void {
     const a = this.a,
-      x = this.cur;
-    if (!a || !x || !this.master) return;
-    const b = a.createBuffer(1, x.length, this.fs);
-    b.copyToChannel(x as Float32Array<ArrayBuffer>, 0);
+      x = this.tracks[this.sel],
+      ch = x instanceof Float32Array ? [x] : x;
+    if (!a || !ch?.length || !this.master) return;
+    const b = a.createBuffer(ch.length, ch[0].length, this.fs);
+    ch.forEach((c, i) => {
+      b.copyToChannel(c as Float32Array<ArrayBuffer>, i);
+    });
     const s = a.createBufferSource(),
       g = a.createGain(),
       t = a.currentTime + LEAD;
