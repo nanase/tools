@@ -39,4 +39,19 @@ describe('カードの図柄', () => {
   it('止まっているときの図柄は毎回同じ', () => {
     for (const k of Object.keys(ART)) expect(artAt(k)).toBe(ART[k](0));
   });
+
+  it('PNG は全行を差にすると 0 でない値の横線が短くなる', () => {
+    const bars = (s: string, cls: string): number[] =>
+      [...(s.match(new RegExp(`<path class="${cls}" d="([^"]*)"`))?.[1] ?? '').matchAll(/M74 \d+H([\d.]+)/g)].map(
+        (m) => Number(m[1]) - 74,
+      );
+    const sum = (a: number[]): number => a.reduce((x, y) => x + y, 0);
+    /* 始まりはすべて青、最後の行まで済むとすべて黄 */
+    const raw = bars(ART.png(0.01), 'b');
+    const dif = bars(ART.png(3), 'a');
+    expect(raw.length).toBeGreaterThan(0);
+    expect(dif.length).toBeGreaterThan(0);
+    expect(bars(ART.png(3), 'b')).toEqual([]);
+    expect(sum(dif)).toBeLessThan(sum(raw) / 2);
+  });
 });

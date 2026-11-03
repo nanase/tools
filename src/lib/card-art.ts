@@ -325,6 +325,29 @@ function BF(): string {
   return bf0;
 }
 
+/* ---------- PNG: 山・塔・地面の絵。1 = 山と地面、2 = 塔、0 = 空 ---------- */
+const PNG_W = 16;
+const PNG_H = 10;
+const PNG_PIC: readonly (readonly number[])[] = Array.from({ length: PNG_H }, (_, r) =>
+  Array.from({ length: PNG_W }, (_, c) => {
+    const u = (c + 0.5) / PNG_W,
+      v = (r + 0.5) / PNG_H;
+    if (v >= 0.86) return 1;
+    if (u >= 0.64 && u < 0.84 && v >= 0.3) return 2;
+    return v >= 0.1 + Math.abs(u - 0.3) * 1.9 ? 1 : 0;
+  }),
+);
+/** 行ごとに左との差と上との差を取り、0 でない数が少ないほうを残す。raw は差を取る前の 0 でない数 */
+const PNG_ROWS = PNG_PIC.map((row, r) => {
+  const sub = row.map((x, c) => (c ? row[c - 1] : 0) !== x),
+    up = row.map((x, c) => (r ? PNG_PIC[r - 1][c] : 0) !== x),
+    count = (a: boolean[]): number => a.filter(Boolean).length;
+  return {
+    dif: count(up) < count(sub) ? up : sub,
+    raw: row.filter(Boolean).length,
+  };
+});
+
 export const ART: Record<string, Art> = {
   /* タイマIC 555: 出力（周期 36、High 24）と C1 の電圧。時間が流れる */
   sq(t) {
@@ -954,38 +977,41 @@ export const ART: Record<string, Art> = {
     );
   },
   /*
-   * PNG: 4 行のバイトを Deflate の記号に分けた帯。文字は黄、一致は青。1 行目は文字だけで、2 行目からは
-   * 1 行上の同じ所を写す一致が増える。記号が左上から順に現れ、最後に現れた一致から写し元へ弧を描く
+   * PNG: 絵を上から 1 行ずつフィルタにかける。済んだ行は差の 0 でない所だけが黄で残り、
+   * 右の横線（行ごとの 0 でない値の数）が青の長い線から黄の短い線に変わる
    */
   png(t) {
-    const ROWS = ['l28', 'l2 m10 l3 m13', 'l1 m27', 'l4 m8 l2 m14'],
-      tot = 112,
-      shown = t ? (mod(t, 3) / 2.4) * tot : tot;
-    let lit = '',
-      mat = '',
-      arc = '',
-      k = 0;
-    ROWS.forEach((row, r) => {
-      const y = 6 + r * 10;
-      let u = 0;
-      for (const tk of row.split(' ')) {
-        const n = Number(tk.slice(1));
-        if (tk[0] === 'l')
-          for (let i = 0; i < n; i++, u++, k++) {
-            if (k * 4 < shown) lit += `M${4 + u * 4} ${y}h3v6h-3Z`;
-          }
-        else {
-          if (k * 4 < shown) {
-            const x = 4 + u * 4;
-            mat += `M${x} ${y}h${n * 4 - 1}v6h${1 - n * 4}Z`;
-            arc = `M${x + 1.5} ${y}Q${x - 5} ${y - 2} ${x + 1.5} ${y - 4}`;
-          }
-          u += n;
-          k += n;
-        }
-      }
+    const done = t ? Math.min(PNG_H, Math.floor(mod(t, 3.4) / 0.26)) : 5,
+      cell = (r: number, c: number): string => `M${4 + c * 4} ${4 + r * 4}h4v4h-4Z`,
+      crisp = ' shape-rendering="crispEdges"';
+    let hill = '',
+      tower = '',
+      dif = '',
+      rawBar = '',
+      difBar = '';
+    PNG_PIC.forEach((row, r) => {
+      const { dif: marks, raw } = PNG_ROWS[r],
+        isDone = r < done,
+        n = isDone ? marks.filter(Boolean).length : raw,
+        bar = n ? `M74 ${6 + r * 4}H${r1(74 + n * 2.6)}` : '';
+      if (isDone) difBar += bar;
+      else rawBar += bar;
+      row.forEach((x, c) => {
+        if (isDone) {
+          if (marks[c]) dif += cell(r, c);
+        } else if (x === 1) hill += cell(r, c);
+        else if (x === 2) tower += cell(r, c);
+      });
     });
-    return P('fa', lit) + (mat ? P('fb', mat) : '') + (arc ? P('a', arc) : '');
+    return (
+      (hill ? P('fb', hill, crisp) : '') +
+      (tower ? P('fc', tower, crisp) : '') +
+      (dif ? P('fa', dif, crisp) : '') +
+      P('c t', 'M4 4H68V44H4ZM72 4V44') +
+      (rawBar ? P('b', rawBar) : '') +
+      (difBar ? P('a', difBar) : '') +
+      (done < PNG_H ? P('c t', `M2 ${4 + done * 4}H116`) : '')
+    );
   },
   /* ローリングシャッター: 2 枚羽のプロペラを上の行から順に読み出す。走査線より上は行ごとに違う瞬間の羽で曲がって写り、
      下は今の羽。1 走査の間に 0.8 回転する */
@@ -1798,7 +1824,7 @@ export const LOOP: Record<string, number> = {
   tp: 4.8,
   pc: 16 / 30,
   jp: 3,
-  png: 3,
+  png: 3.4,
   gif: 3,
   crp: 3,
   og: 3,
