@@ -213,7 +213,7 @@ export interface IirOrder {
 
 /**
  * 同じ仕様（双一次変換で帯域端を写す）を満たすアナログ原型の次数から、デジタル IIR フィルタの次数を求める。
- * 楕円: n ≥ K(k) K′(k1) / (K′(k) K(k1))、バタワース: n ≥ log(1/k1) / log(1/k)（BPF・BSF は 2 倍）
+ * 楕円: n ≥ K(k) K′(k1) / (K′(k) K(k1))、バターワース: n ≥ log(1/k1) / log(1/k)（BPF・BSF は 2 倍）
  */
 export function iirOrder(t: Resp, f1: number, f2: number, df: number, ap: number, as: number): IirOrder {
   const W = (f: number) => Math.tan(Math.PI * f),

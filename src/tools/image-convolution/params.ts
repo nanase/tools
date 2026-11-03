@@ -36,7 +36,7 @@ export type SrcName = 'chart' | 'moon' | 'own' | 'draw';
 export const SRCS: readonly (readonly [SrcName, string, string])[] = [
   ['chart', 'テスト画像', '点・線・縞・ノイズなどを並べた画像'],
   ['moon', '月面', '月の表側の一部（NASA SVS の CGI Moon Kit）'],
-  ['own', 'ファイル', 'この端末の画像を読み込む（送信しない）'],
+  ['own', 'ファイル', 'この端末の画像（送信なし）'],
   ['draw', '手描き', '白と黒で描き足す'],
 ];
 export const EDGES: readonly (readonly [Edge, string, string])[] = [

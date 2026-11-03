@@ -264,8 +264,8 @@ pp.addEventListener('click', () => {
 function setPlaying(on: boolean): void {
   S.playing = on;
   pp.classList.toggle('on', on);
-  pp.setAttribute('aria-label', on ? '一時停止する' : '再生する');
-  pp.title = on ? '一時停止する' : '今の位置から再生する';
+  pp.setAttribute('aria-label', on ? '一時停止' : '再生');
+  pp.title = on ? '一時停止' : '今の位置から再生';
   last = null;
   /* 再生を押した操作の中で、止まっている AudioContext を動かしておく */
   if (on && sndOn) void audio.ready();
@@ -404,8 +404,7 @@ function showTip(): void {
     return;
   }
   if (tipOn.kind === 'contact') {
-    if (tipOn.n === DAMPER_N)
-      tip.innerHTML = '<b>鍵の後ろ → ダンパーのてこ</b>ダンパーは仮の形なので、力は計算に入れていない';
+    if (tipOn.n === DAMPER_N) tip.innerHTML = '<b>鍵の後ろ → ダンパーのてこ</b>仮の形で、力は計算外';
     else {
       const f = fnAt(run, curI, tipOn.n);
       tip.innerHTML = `<b>${esc(CONTACTS[tipOn.n - 1].name)}</b><span class="f">押す力 ${f < 10 ? f.toFixed(2) : f.toFixed(1)} N</span>`;

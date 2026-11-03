@@ -85,7 +85,7 @@ type Opt = readonly (readonly [string, string] | readonly [string, string, strin
 export const NOISE: Opt = [
   ['white', '白色', 'どの周波数にも同じ強さ'],
   ['pink', 'ピンク', '低いほど強い（1/f）。閾値処理の苦手な例'],
-  ['none', '足さない', '元から雑音のある録音に'],
+  ['none', 'なし', '元から雑音のある録音に'],
 ];
 export const RULE: Opt = [
   ['universal', 'VisuShrink', '普遍閾値 σ√(2 ln N)。全段で 1 つ'],
@@ -93,16 +93,16 @@ export const RULE: Opt = [
   ['bayes', 'BayesShrink', '段ごとに σ²/σX'],
 ];
 export const SHRINK: Opt = [
-  ['hard', '硬い', '閾値より小さい係数を 0 にする'],
-  ['soft', '柔らかい', 'さらに残す係数を λ だけ 0 へ寄せる'],
+  ['hard', '硬い', '閾値より小さい係数を 0 に'],
+  ['soft', '柔らかい', 'さらに残す係数を λ だけ 0 へ'],
 ];
 export const SIGMA: Opt = [
   ['global', '最も細かい段', '最も細かい段の係数の中央値から 1 つ'],
   ['quiet', '雑音だけから', '雑音だけの音から段ごとに。雑音を足したときは足した雑音、足さないときは最も静かな 0.4 秒'],
 ];
 export const SPIN: Opt = [
-  ['1', 'しない'],
-  ['8', '8 回', '0〜7 点ずらして除き、戻して平均する'],
+  ['1', 'なし'],
+  ['8', '8 回', '0〜7 点ずらして除き、戻した平均'],
 ];
 export const WAV: Opt = [
   ['haar', 'Haar', '長さ 2 の階段の波'],

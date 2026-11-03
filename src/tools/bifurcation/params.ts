@@ -76,7 +76,7 @@ export const MAP_INFO: Record<
     eq: `<i>x</i><sub><i>n</i>+1</sub> = <i>r</i> ${xn} − ${xn}<sup>3</sup>`,
     v: 2.2,
     pre: [
-      [1, '1', '対称が破れる'],
+      [1, '1', '対称の破れ'],
       [2, '2', '周期 1 → 2'],
       [2.3022834627, '2.3023', '集積点'],
       [(3 * Math.sqrt(3)) / 2, '2.5981', '2 つが 1 つに'],
@@ -164,7 +164,7 @@ export function x0Patch(id: MapId): Pick<ParamDef, 'min' | 'max' | 'v' | 'ph' | 
 export const R: ParamDef & { k: Key } = {
   k: 'r',
   name: 'パラメータ',
-  sub: '分岐図・リアプノフ指数の上をドラッグしても変わる',
+  sub: '分岐図・リアプノフ指数のドラッグでも変更',
   unit: '',
   ...rPatch('logistic'),
   lin: { step: 0.001, big: 0.01 },

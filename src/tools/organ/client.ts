@@ -200,7 +200,7 @@ function setRegistration(r: Registration, at = 0): void {
   store('couplers', [...couplers]);
 }
 /** 計算が間に合わないときの、同時に鳴らす管の数の上限（AudioWorklet が知らせる） */
-audio.onBudget = (n) => txt('#pp-load', n ? `計算が重いので管を ${n} 本までに` : '');
+audio.onBudget = (n) => txt('#pp-load', n ? `計算が重いので管を ${n} 本までにしました。` : '');
 /** 弁の開いている管のストップのボタンを点ける（AudioWorklet が知らせる） */
 audio.onStops = (ids) => {
   for (const b of stopBtns) b.querySelector('.led')?.classList.toggle('on', ids.includes(b.dataset.stop as string));
@@ -465,8 +465,8 @@ function syncVoice(): void {
   P1.update('cut', { v: cd });
   P1.set('scale', o.scale ?? sd, { silent: true });
   P1.set('cut', o.cut ?? cd, { silent: true });
-  P1.setOff('scale', reed, 'リード管には使わない');
-  P1.setOff('cut', reed, 'リード管には使わない');
+  P1.setOff('scale', reed, 'リード管には使いません');
+  P1.setOff('cut', reed, 'リード管には使いません');
   html('#v-al', s.kind === 'flue' ? plain(s.alpha, 3, true) : '—');
   html('#v-ga', s.kind === 'flue' ? plain(s.gamma, 3, true) : '—');
   const d = divOf(s.div);
@@ -528,7 +528,7 @@ function results(): void {
     h += mrow('足の圧力', ro(v.pFoot, 'Pa', 3), `風箱の ${plain(fl.toe, 3, true)} 倍`);
     h += mrow('ジェットの速さ <i>U</i><sub>j</sub>', ro(v.Uj, 'm/s', 3));
     h += mrow('走行時間 <i>τ</i>', ro(v.tau, 's', 3), `周期の ${plain(v.tau * t.fMeas, 3, true)} 倍`);
-    h += mrow('<i>θ</i> = <i>U</i><sub>j</sub>/<i>fW</i>', plain(v.theta, 3, true), '大きすぎると上のモードへ跳ぶ');
+    h += mrow('<i>θ</i> = <i>U</i><sub>j</sub>/<i>fW</i>', plain(v.theta, 3, true), '大きすぎると上のモードへ跳びます');
     h += mrow('口の端補正 <i>M</i>', ro(v.M, 'm', 3), `音響的な長さ ${fmtR(v.Lac, 'm', 4)}`);
   } else {
     const v = reedView(t),

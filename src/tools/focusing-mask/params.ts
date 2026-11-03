@@ -37,7 +37,7 @@ export const THR: ParamDef = {
   nm: 'しきい値',
   sym: '',
   name: 'しきい値',
-  sub: '画像の明るさがこの値より明るい所を「白」、暗い所を「黒」とみなす（境目は少しぼかす）',
+  sub: '「白」と「黒」を分ける明るさ',
   unit: '%',
   min: 1,
   max: 99,
@@ -58,7 +58,7 @@ export const TH: ParamDef = {
   nm: 'θ',
   sym: '<i>θ</i>',
   name: '斜めの格子の角度',
-  sub: '中央の格子と斜めの格子のなす角。大きいほど光条のずれが大きいが、X が開いて交点が読みにくい。Bahtinov は約 20°。トライ・バーティノフは 10°。キャリーは左の 2 区画の開き（右は 10/12 倍）',
+  sub: '中央の格子と斜めの格子のなす角。Bahtinov は約 20°・トライ・バーティノフは 10°・キャリーは左 2 区画の開き',
   unit: '°',
   min: 3,
   max: 45,
@@ -81,7 +81,7 @@ export const BF: ParamDef = {
   nm: 'B',
   sym: '<i>B</i>',
   name: 'バーティノフ係数',
-  sub: '焦点距離 ÷ 格子の周期（スリットと桟を合わせた幅）。大きいほど格子が細かく、光条の点が中心から離れる。150〜200 が目安',
+  sub: '焦点距離 ÷ 格子の周期（スリットと桟を合わせた幅）。150〜200 が目安',
   unit: '',
   min: 50,
   max: 300,
@@ -103,7 +103,7 @@ export const ROT: ParamDef = {
   nm: 'φ',
   sym: '<i>φ</i>',
   name: 'マスクの回転',
-  sub: 'マスクを鏡筒の軸のまわりに回す角度。スパイダーの光条と重ならない向きにすると読みやすい',
+  sub: 'マスクを鏡筒の軸のまわりに回す角度',
   unit: '°',
   min: -90,
   max: 90,
@@ -125,7 +125,7 @@ export const BAR: ParamDef = {
   nm: 'w',
   sym: '<i>w</i>',
   name: '区画の間の桟の幅',
-  sub: '区画を分ける桟（マスクを支える板）の幅。桟が光をさえぎるぶん、区画の重心が外へ寄り、光条のずれが少し大きくなる',
+  sub: '区画を分ける桟（マスクを支える板）の幅',
   unit: 'mm',
   min: 0,
   max: 20,
@@ -147,7 +147,7 @@ export const HD: ParamDef = {
   nm: 'd',
   sym: '<i>d</i>',
   name: '穴の径',
-  sub: 'ハルトマン・シャイナーの穴の直径（口径に対する割合）。穴は口径の 60 % の円の上に等間隔に並べる',
+  sub: 'ハルトマン・シャイナーの穴の直径（口径に対する割合）',
   unit: '%',
   min: 5,
   max: 40,
@@ -195,7 +195,7 @@ export const FOC: ParamDef = {
   nm: 'f',
   sym: '<i>f</i>',
   name: '焦点距離',
-  sub: '望遠鏡の合成焦点距離。F 値（焦点距離 ÷ 口径）が大きいほど、ピントの合う範囲が広く、光条のずれは小さい',
+  sub: '望遠鏡の合成焦点距離',
   unit: 'mm',
   min: 150,
   max: 4000,
@@ -221,7 +221,7 @@ export const OBS: ParamDef = {
   nm: 'ε',
   sym: '<i>ε</i>',
   name: '中央遮蔽',
-  sub: '副鏡の影の径 ÷ 口径。中央遮蔽があると区画の重心が外へ寄り、光条のずれが大きくなる',
+  sub: '副鏡の影の径 ÷ 口径',
   unit: '%',
   min: 0,
   max: 50,
@@ -259,11 +259,7 @@ const ab = (k: 'coma' | 'ast', name: string, sub: string): ParamDef => ({
   notation: 'plain',
   format: plainF('λ', 3),
 });
-export const COMA = ab(
-  'coma',
-  '光軸のずれ（コマ）',
-  '光軸がずれたときに出るコマ収差の大きさ（RMS、λ = 550 nm）。トライ・バーティノフでは、3 組の光条が同時に合わなくなる',
-);
+export const COMA = ab('coma', '光軸のずれ（コマ）', '光軸がずれたときに出るコマ収差の大きさ（RMS、λ = 550 nm）');
 export const AST = ab('ast', '非点収差', '縦と横でピントの位置が違う収差の大きさ（RMS、λ = 550 nm）');
 
 export const TEMP: ParamDef = {
@@ -340,7 +336,7 @@ export const EXP: ParamDef = {
   nm: '露出',
   sym: '',
   name: '露出',
-  sub: '映像の明るさの倍率。上げるほど芯が飽和し、暗い光条が見えてくる',
+  sub: '映像の明るさの倍率',
   unit: '',
   min: 1 / 16,
   max: 64,
@@ -368,7 +364,7 @@ export const PARAMS: ParamDef[] = [THR, TH, BF, ROT, BAR, HD, DIA, FOC, OBS, COM
 
 /** マスクの種類: [値, 表示, title] */
 export const MASKS: readonly (readonly [MaskKind, string, string])[] = [
-  ['none', 'なし', 'マスクを付けない'],
+  ['none', 'なし', 'マスクなし'],
   ['bahtinov', 'バーティノフ', 'P. Bahtinov（2005）。3 本の光条で合わせる'],
   ['tri', 'トライ・バーティノフ', 'C. Y. Tan（2016）。120° ずつの 3 組で、光軸のずれも分かる'],
   ['carey', 'キャリー', '開きの違う 2 つの X が重なるように合わせる（2009）'],
@@ -384,8 +380,8 @@ export const TH0: Partial<Record<MaskKind, number>> = { bahtinov: 20, tri: 10, c
 /** 望遠鏡の形式: 中央遮蔽とスパイダー */
 export type ScopeKind = 'refr' | 'newt' | 'sct';
 export const SCOPES: readonly (readonly [ScopeKind, string, string])[] = [
-  ['refr', '屈折', '中央遮蔽もスパイダーもない'],
-  ['newt', 'ニュートン', '副鏡の中央遮蔽と、4 本のスパイダー'],
+  ['refr', '屈折', '中央遮蔽・スパイダーなし'],
+  ['newt', 'ニュートン', '副鏡の中央遮蔽と 4 本のスパイダー'],
   ['sct', 'シュミカセ', '副鏡の中央遮蔽（補正板に付くのでスパイダーはない）'],
 ];
 export const OBS0: Record<ScopeKind, number> = { refr: 0, newt: 25, sct: 35 };

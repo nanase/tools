@@ -169,7 +169,7 @@ export class MidiIn {
 
 const NO_ACCESS = 'MIDI の使用が許可されていません。';
 const NO_DEVICE = 'MIDI 機器がつながっていません。';
-const NO_SOUND = '音を出せませんでした';
+const NO_SOUND = '音を出せませんでした。';
 const ALL = 'すべての機器';
 
 /**

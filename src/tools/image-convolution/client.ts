@@ -644,8 +644,8 @@ function render(): void {
   html(oPl, scatter() ? `入力 <b>(${c}, ${r})</b>` : `画素 <b>(${c}, ${r})</b>`);
   txt(oY, scatter() ? '—' : f3(OUT.v[r * W + c] ?? 0));
   txt(sShow, SHOW === 'clip' ? '0〜1' : SHOW === 'abs' ? `0〜${GAIN}` : `±${GAIN}（0 が灰色）`);
-  txt(sLg, scatter() ? '線より上: 足しかけの出力　下: 入力' : '線より上: 出力　下: 入力');
-  txt(sSt, S.view === 'in' && isNC() ? '「配る」は線形のカーネルだけ' : '');
+  txt(sLg, scatter() ? '線より上: 途中の出力　下: 入力' : '線より上: 出力　下: 入力');
+  txt(sSt, S.view === 'in' && isNC() ? '「配る」は線形のカーネルだけです。' : '');
   trkF.style.width = `${p * 100}%`;
   trkT.style.left = `${p * 100}%`;
   trk.setAttribute('aria-valuenow', String(Math.round(p * 100)));

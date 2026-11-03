@@ -36,7 +36,7 @@ export const MB = row({
   nm: 'n',
   sym: '',
   name: '反射の上限',
-  sub: 'ガラスでの屈折も 1 回に数える',
+  sub: 'ガラスでの屈折も 1 回',
   unit: '回',
   min: 1,
   max: 32,

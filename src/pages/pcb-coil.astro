@@ -35,8 +35,8 @@ const row = (ks: string[]) => PARAMS.filter((d) => ks.includes(d.k));
           {LAYERS.map((n) => <button type="button" data-v={n} aria-pressed={n === 1 ? 'true' : 'false'} title={n === 1 ? '片面の 1 層だけに巻く' : `${n} 層に同じうずまきを重ねる`}>{n} 層</button>)}
         </div>
         <div class="ptab">
-          <ChoiceRow k="stack" name="基板の構成" sub="板厚と、隣り合う銅箔の間の誘電体（FR-4、比誘電率 4.4）の厚さ。一般的な構成の概数です" choices={STACKS.filter((s) => s.n > 1).map((s) => [s.v, s.ab, `層の間 ${gapsText(s)}`] as const)} value="2-16" layout="chips" wide msg class="multi" />
-          <ChoiceRow k="conn" name="層の接続" sub="直列はインダクタンスを稼ぎ、並列は抵抗を下げる" choices={[['ser', '直列'], ['par', '並列']]} value="ser" msg class="multi" />
+          <ChoiceRow k="stack" name="基板の構成" sub="板厚と隣り合う銅箔の間の誘電体（FR-4、比誘電率 4.4）の厚さ。一般的な構成の概数" choices={STACKS.filter((s) => s.n > 1).map((s) => [s.v, s.ab, `層の間 ${gapsText(s)}`] as const)} value="2-16" layout="chips" wide msg class="multi" />
+          <ChoiceRow k="conn" name="層の接続" sub="直列: インダクタンスが増える。並列: 抵抗が下がる" choices={[['ser', '直列'], ['par', '並列']]} value="ser" msg class="multi" />
           {row(['t', 'f']).map((d) => <ParamRow d={d} />)}
         </div>
       </Panel>
@@ -45,13 +45,13 @@ const row = (ks: string[]) => PARAMS.filter((d) => ks.includes(d.k));
     <div class="col">
       <Panel hid="hd-fig" title="コイルの形" class="a-fig">
         <div slot="aux" class="seg" id="fview" role="group" aria-label="図の見せ方">
-          <button type="button" data-v="3d" aria-pressed="true" title="斜めから見た立体。層のつなぎ方と電流の向きを示す（ドラッグで回す、ホイールかピンチで拡大縮小）">3D</button><button type="button" data-v="top" aria-pressed="false" title="表面から見た形（縮尺どおり、寸法つき）">2D</button>
+          <button type="button" data-v="3d" aria-pressed="true" title="斜めから見た立体（ドラッグで回転、ホイールかピンチで拡大縮小）">3D</button><button type="button" data-v="top" aria-pressed="false" title="表面から見た形（縮尺どおり、寸法つき）">2D</button>
         </div>
         <div id="v3d">
           <div class="c3w" id="c3w">
             <svg class="c3d" id="c3d" viewBox="0 0 400 280" role="img" aria-label="コイルの立体図"><g id="c3d-g"></g></svg>
             <div class="c3b">
-              <button type="button" class="tg ib" id="c3cur" aria-pressed="true" aria-label="電流の向きを表示" title="電流の向き（流れる粒）を表示する"><svg class="ic-s" viewBox="0 0 24 24" aria-hidden="true"><circle class="dot" cx="4" cy="12" r="1.6"/><circle class="dot" cx="9" cy="12" r="1.6"/><path d="M13 12h8M17 8l4 4-4 4"/></svg></button>
+              <button type="button" class="tg ib" id="c3cur" aria-pressed="true" aria-label="電流の向きを表示" title="電流の向き（流れる粒）の表示"><svg class="ic-s" viewBox="0 0 24 24" aria-hidden="true"><circle class="dot" cx="4" cy="12" r="1.6"/><circle class="dot" cx="9" cy="12" r="1.6"/><path d="M13 12h8M17 8l4 4-4 4"/></svg></button>
               <button type="button" class="tg ib" id="c3home" aria-label="初期位置に戻す" title="向きと大きさを初めの状態に戻す"><svg class="ic-s" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3"/><path d="M4.5 4v4.5H9"/></svg></button>
             </div>
           </div>

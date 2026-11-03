@@ -2,10 +2,10 @@
 // 動作原理
 ---
 <h3>プレビュー</h3>
-<p>プレビューは、SVG を <code>&lt;img&gt;</code> で埋め込んだときと同じ扱いで描きます。README などに置いた画像と同じく、スクリプトは動かず、外部のファイルも読み込まれません。</p>
+<p>プレビューは SVG を <code>&lt;img&gt;</code> で埋め込んだときと同じ扱いで描きます。README などに置いた画像と同じく、スクリプトは動かず、外部のファイルも読み込まれません。</p>
 
 <h3>ライトとダーク</h3>
-<p>ライトとダークの違いは、SVG の中の <code>@media (prefers-color-scheme: …)</code> だけです。それぞれの側で、条件を次のように置き換えます。</p>
+<p>ライトとダークの違いは SVG の中の <code>@media (prefers-color-scheme: …)</code> だけです。それぞれの側で、条件を次のように置き換えます。</p>
 <div class="tt-w"><table class="tt">
   <thead><tr><th scope="col"></th><th scope="col">ライト側</th><th scope="col">ダーク側</th></tr></thead>
   <tbody>
@@ -17,7 +17,7 @@
 <p><code>color-scheme</code> もそれぞれのテーマに固定するので、<code>light-dark()</code> も切り替わります。</p>
 
 <h3>取り除くもの</h3>
-<p>コードは、描く前に許可リストで組み立て直します。次のものは取り除きます。</p>
+<p>コードは描く前に許可リストで組み立て直します。次のものは取り除きます。</p>
 <ul class="tl">
   <li><b>要素</b>: リストにないもの。<code>script</code>・<code>foreignObject</code> など</li>
   <li><b>属性</b>: リストにないもの。<code>onload</code> などのイベント属性</li>

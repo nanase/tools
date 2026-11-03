@@ -134,7 +134,7 @@ try {
   msg.textContent =
     String(e).includes('float') || String(e).includes('webgl2')
       ? 'このブラウザでは WebGL2（浮動小数点の描画）が使えないため、映像を描けません。図と計算結果は使えます。'
-      : `映像のシェーダを用意できませんでした（${String(e).slice(0, 120)}）`;
+      : `映像を描く準備ができませんでした（${String(e).slice(0, 120)}）。`;
   lv.classList.add('nogl');
 }
 canvas.addEventListener('webglcontextlost', (e) => {
@@ -258,10 +258,10 @@ function results(c: number): void {
   const il = illum(s, HALF_DIAG, tb);
   const ev = Math.log2(il);
   html('#o-ill', il > 0 ? rv((ev > 0 ? '+' : '') + sig(ev, 2, true), 'EV') : '—');
-  txt('#o-ills', il > 0 ? `中心に対して ${sig(il * 100, 3, true)} %（cos⁴ とけられを含む）` : '隅まで光が届かない');
+  txt('#o-ills', il > 0 ? `中心に対して ${sig(il * 100, 3, true)} %（cos⁴ とけられを含む）` : '隅まで届く光なし');
   const ds = distortion(s, HALF_DIAG);
   html('#o-dis', Number.isFinite(ds) ? rv(sig(ds, 3, true), '%') : '—');
-  txt('#o-diss', Number.isFinite(ds) ? (ds < 0 ? '樽型' : '糸巻き型') : '主光線が届かない');
+  txt('#o-diss', Number.isFinite(ds) ? (ds < 0 ? '樽型' : '糸巻き型') : '届く主光線なし');
   html('#o-airy', rv(sig(2.44 * LD * s.Nw, 3, true), 'µm'));
   txt('#o-airys', '2.44 λ × 実効 F 値（λ = 587.6 nm）');
   const sf = s.sys.s,
@@ -292,7 +292,7 @@ function coc(c: number): void {
   txt('#o-dofs', `近点 ${dist(d.near)}・遠点 ${dist(d.far)}（センサーから、c = ${sig(c, 3)} mm）`);
   txt('#mD', Number.isFinite(tot) ? fmtR(tot / 1000, 'm', 3) : '∞');
   html('#o-hyp', fmtR(d.hyper / 1000, 'm', 3).replace(/ (\S+)$/, '<span class="u">$1</span>'));
-  txt('#o-hyps', `ピントを合わせると、${dist(d.hyper / 2)} くらいから無限遠まで`);
+  txt('#o-hyps', `ピントを合わせると ${dist(d.hyper / 2)} くらいから無限遠まで`);
 }
 
 /* ---------- 図 ---------- */
@@ -368,7 +368,7 @@ function prescription(): void {
     rx = s.rx;
   html(
     '#rx-src',
-    `出典: ${rx.src}。表は焦点距離 ${sig(s.f, 4)} mm に相似拡大した値（出典の値の ${sig(s.k, 4)} 倍）で、有効径は${rx.dia ? '出典の値' : '設計の F 値と画角の光線から求めた値'}。最後の面からセンサーまでは、撮影距離から求める。`,
+    `出典: ${rx.src}。表は焦点距離 ${sig(s.f, 4)} mm に相似拡大した値（出典の値の ${sig(s.k, 4)} 倍）で、有効径は${rx.dia ? '出典の値' : '設計の F 値と画角の光線から求めた値'}です。最後の面からセンサーまでは撮影距離から求めます。`,
   );
   let no = 0;
   const rows = s.s

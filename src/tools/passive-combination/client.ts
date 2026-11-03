@@ -109,7 +109,7 @@ function renderEx(): void {
     L.map(
       (v) =>
         `<button type="button" class="chip xc" data-v="${v}" aria-label="${esc(fmt(v, T.u))} を除外から外す">${esc(fmt(v, T.u, 3))}${XMARK}</button>`,
-    ).join('') + (L.length > 1 ? '<button type="button" class="chip clr" data-all="1">すべて外す</button>' : '');
+    ).join('') + (L.length > 1 ? '<button type="button" class="chip clr" data-all="1">すべて解除</button>' : '');
   exRow.dataset.sum = L.length ? `${L.length} 個` : 'なし';
   mark();
 }

@@ -17,7 +17,7 @@ const OFFON = [
 ] as const;
 ---
 <SiteLayout title={name} tool={{ id: 'demosaic', name }} note={`画像は端末の中だけで処理して送信しません。${CHART_W} × ${CHART_H} 画素に縮めます。`}>
-  <PageTitle title={name}>ベイヤー配列のセンサーは画素ごとに R・G・B のどれか 1 色だけを測ります。足りない 2 色を周りの画素から補う手法を 6 つ並べ、偽色やジャギーを比べます。画像を押すとその画素の計算を下に出します。</PageTitle>
+  <PageTitle title={name}>ベイヤー配列で足りない 2 色を周りの画素から補う手法を 6 つ比べます。画像を押すとその画素の計算を下に出します。</PageTitle>
 
   <div class="tgrid">
     <Panel hid="hd-img" title="画像" class="a-img" fixed>

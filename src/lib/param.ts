@@ -136,7 +136,7 @@ class Param {
     this.list = valueList(d, s);
     this.key = keyOf(d, this.list);
     this.inp.title = titleText(d, s, this.f);
-    this.sc.title = `${this.f.text(d.min)} – ${this.f.text(d.max)}　ドラッグ・← →: 値を変える　押す・Enter: 入力`;
+    this.sc.title = `${this.f.text(d.min)} – ${this.f.text(d.max)}　ドラッグ・← →: 値の変更　押す・Enter: 入力`;
     this.preEl.innerHTML = presetPos(d, this.list)
       .map((x) => `<i style="left:${pct(x)}"></i>`)
       .join('');

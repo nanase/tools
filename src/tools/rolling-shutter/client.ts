@@ -222,7 +222,7 @@ const pp = $('#pp');
 function setPlay(on: boolean): void {
   S.play = on;
   pp.classList.toggle('on', on);
-  pp.setAttribute('aria-label', on ? '走査を止める' : '走査を再生する');
+  pp.setAttribute('aria-label', on ? '走査の停止' : '走査の再生');
   if (on && S.phase >= 1) S.phase = 0;
   last = 0;
   later();

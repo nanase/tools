@@ -789,7 +789,7 @@ function info(): void {
   html(
     '#o-pern',
     spec.locked
-      ? '止まったまま（初期値を変える）'
+      ? '止まったまま。初期値を変えてください。'
       : p === null
         ? '16777216 ステップより長い'
         : spec.prim
@@ -851,7 +851,7 @@ function lfReset(): void {
   );
   svg.setAttribute(
     'aria-label',
-    `${c.n} ビットのシフトレジスタ（${c.form === 'fib' ? 'フィボナッチ形' : 'ガロア形'}、${c.xnor ? 'XNOR' : 'XOR'}）。タップのビットを押すと入れ切りする`,
+    `${c.n} ビットのシフトレジスタ（${c.form === 'fib' ? 'フィボナッチ形' : 'ガロア形'}、${c.xnor ? 'XNOR' : 'XOR'}）。タップのビットを押すと切り替わる`,
   );
 }
 function drawBits(fresh: boolean): void {

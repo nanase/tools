@@ -242,7 +242,7 @@ function designOut(): void {
     txt(
       '#o-cls',
       unstable
-        ? '右半面に極があり、線形の模型でも倒れる'
+        ? '右半面に極があり、線形の模型でも倒れます。'
         : `線形の模型では安定${kindCh.value === 'pid' && ds.cl.length > 4 ? '（積分の極を含む）' : ''}`,
     );
     const units = [`${u}/m`, `${u}/rad`, `${u}·s/m`, `${u}·s/rad`];
@@ -351,7 +351,7 @@ function clearScopes(): void {
 }
 
 /* ---------- 状態と測定 ---------- */
-const MODE = { swing: '振り上げ中', bal: '安定化中', fall: '倒れた（制御を止めた）' } as const;
+const MODE = { swing: '振り上げ中', bal: '安定化中', fall: '転倒（制御停止）' } as const;
 const EV: Record<EvKind, string> = {
   start: '手を離してから',
   catch: '振り上げて切り替えてから',

@@ -352,7 +352,7 @@ function findLater(): void {
   const f = G.get('f');
   txt(
     '#find-note',
-    `基板と周波数の設定（${stack.n > 1 ? `${stack.n} 層・${stack.ab}・${conn === 'ser' ? '直列' : '並列'}` : '片面の 1 層'}、銅箔 ${sig(G.get('t'), 3)} µm、${fmt(f, 'Hz', 4)} で共振）のまま、外径を取れる大きさいっぱいにして、形・巻数・配線の幅を探します。1 V で駆動したとき 1 m 先に作る磁界の強い順に並べます。`,
+    `基板と周波数の設定（${stack.n > 1 ? `${stack.n} 層・${stack.ab}・${conn === 'ser' ? '直列' : '並列'}` : '片面の 1 層'}、銅箔 ${sig(G.get('t'), 3)} µm、${fmt(f, 'Hz', 4)} で共振）のまま、外径を置ける大きさいっぱいにして、形・巻数・配線の幅を探します。1 V で駆動したとき 1 m 先に作る磁界の強い順に並べます。`,
   );
   fl.classList.add('busy');
   findT = setTimeout(find, 350);
@@ -381,7 +381,7 @@ function find(): void {
           const g = c.g,
             lay = g.nl > 1 ? ` × ${g.nl} 層` : '';
           return (
-            `<button type="button" class="fr${i ? '' : ' best'}" data-i="${i}" title="押すと入力に反映する">` +
+            `<button type="button" class="fr${i ? '' : ' best'}" data-i="${i}" title="入力に反映">` +
             `<span class="c1"><b>${esc(c.sh.ab)} ${sig(c.dout, 4)} mm</b><small>${c.n} 巻${lay}・幅 ${sig(c.w, 3)}・間隔 ${sig(c.s, 3)} mm</small></span>` +
             `<span data-l="L"><b>${esc(fmtR(g.L, 'H', 3))}</b></span>` +
             `<span data-l="抵抗"><b>${esc(fmtR(c.rTot, 'Ω', 3))}</b><small>${c.rAdd > 0.05 ? `コイル ${esc(fmtR(g.rac, 'Ω', 3))} + ${esc(fmtR(c.rAdd, 'Ω', 2))}` : 'コイルだけ'}</small></span>` +
@@ -392,7 +392,7 @@ function find(): void {
           );
         })
         .join('')
-    : '<p class="empty-c">条件を満たすコイルがありません。取れる大きさか抵抗の範囲を広げてください。</p>';
+    : '<p class="empty-c">条件を満たすコイルがありません。置ける大きさか抵抗の範囲を広げてください。</p>';
 }
 /** 候補を入力に反映する: 形、外径 → 幅・間隔（上限が外径で決まる）→ 巻数の順に入れる */
 fl.addEventListener('click', (e) => {

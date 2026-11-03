@@ -88,7 +88,7 @@ const note = (s: string) => `<p class="q-note a" style="--i:${NOTE_I}">${s}</p>`
 /** 説明の文は、図が出そろうころに出す */
 const NOTE_I = 6;
 const REPLAY =
-  '<button type="button" class="q-replay" title="もう一度見る" aria-label="もう一度見る"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4.5V9h4.5"/></svg></button>';
+  '<button type="button" class="q-replay" title="もう一度再生" aria-label="もう一度再生"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4.5V9h4.5"/></svg></button>';
 const h3 = (s: string, replay = true) => `<h3><span>${s}</span>${replay ? REPLAY : ''}</h3>`;
 const ai = (i: number) => ` style="--i:${i}"`;
 const MAX_UNITS = 32;
@@ -159,7 +159,7 @@ function stBits(q: Encoded): string {
     h3(`ビット列 · ${nh + nd} ビット`) +
     `<div class="q-segs">${h}</div>` +
     `<div class="q-capbar" role="img" aria-label="容量 ${cap} ビットの内訳"><i class="h" style="width:${pc(nh)};--i:0"></i><i class="d" style="width:${pc(nd)};--i:1"></i><i class="p" style="width:${pc(np)};--i:2"></i></div>` +
-    `<div class="q-caplab"><span><i class="h"></i>見出し ${nh}</span><span><i class="d"></i>データ ${nd}</span><span><i class="p"></i>終端と埋め草 ${np}</span><span>容量 ${cap} ビット</span></div>` +
+    `<div class="q-caplab"><span><i class="h"></i>モードと文字数 ${nh}</span><span><i class="d"></i>データ ${nd}</span><span><i class="p"></i>終端と埋め草 ${np}</span><span>容量 ${cap} ビット</span></div>` +
     note('モード・文字数・データの順に並べ、終端と埋め草で容量いっぱいまで埋めます。')
   );
 }
@@ -347,7 +347,7 @@ export function inspectSoil(q: Encoded, d: Decoded | null, c: number): string {
       got === fix
         ? got === q.cw[c]
           ? `符号語 ${c} · 0x${hex2(got)} · 誤りなし`
-          : `符号語 ${c} · 0x${hex2(got)} · 訂正できなかった`
+          : `符号語 ${c} · 0x${hex2(got)} · 訂正失敗`
         : `符号語 ${c} · 0x${hex2(got)} → 0x${hex2(fix)} に訂正`;
   return (
     h3(title) +

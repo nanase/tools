@@ -155,12 +155,12 @@ export function titleText(d: ParamDef, g: Series, f: Fmt): string {
 
 function hintText(d: ParamDef, g: Series): string {
   const u = d.unit ? ` ${d.unit}` : '';
-  if (d.lin) return `↑↓: ±${d.lin.step}${u}（Shift で ±${d.lin.big}${u}）　Enter: 確定　Esc: 戻す`;
+  if (d.lin) return `↑↓: ±${d.lin.step}${u}（Shift で ±${d.lin.big}${u}）　Enter: 確定　Esc: 取り消し`;
   if (d.list)
     return (d.jump ?? 1) > 1
-      ? '↑↓: 隣の値　PgUp/PgDn・Shift: 大きく動かす　Enter: 確定　Esc: 戻す'
-      : '↑↓: 隣の値　Enter: 確定　Esc: 戻す';
-  return `↑↓: E${d.series ?? g} の隣の値　PgUp/PgDn: 10 倍・1/10　Enter: 確定　Esc: 戻す`;
+      ? '↑↓: 隣の値　PgUp/PgDn・Shift: 大きく移動　Enter: 確定　Esc: 取り消し'
+      : '↑↓: 隣の値　Enter: 確定　Esc: 取り消し';
+  return `↑↓: E${d.series ?? g} の隣の値　PgUp/PgDn: 10 倍・1/10　Enter: 確定　Esc: 取り消し`;
 }
 
 /** ‹ › の読み上げの「{ラベル}1 つ上の」 */

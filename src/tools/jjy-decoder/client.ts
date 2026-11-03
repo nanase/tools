@@ -251,7 +251,7 @@ async function liveStart(kind: Src): Promise<void> {
       mRun.textContent = 'この環境ではマイクを使えません';
       return;
     }
-    mRun.textContent = 'マイクを準備しています…';
+    mRun.textContent = 'マイクを準備中…';
     try {
       stream = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: 1 },
@@ -483,7 +483,7 @@ const OAC: OCtor | undefined =
   globalThis.OfflineAudioContext ??
   (globalThis as unknown as { webkitOfflineAudioContext?: OCtor }).webkitOfflineAudioContext;
 async function loadFile(file: File): Promise<void> {
-  mRun.textContent = `${file.name} を読んでいます…`;
+  mRun.textContent = `${file.name} を読み込み中…`;
   let ab: AudioBuffer;
   try {
     if (!OAC) throw new Error('no audio');
@@ -527,7 +527,7 @@ function runWorker(x: Float32Array, fs: number, f: number): Promise<Reply> {
 async function analyze(): Promise<void> {
   if (!fileData) return;
   const { name, x, fs, dur, cut } = fileData;
-  mRun.textContent = `${name} を解読しています…`;
+  mRun.textContent = `${name} を解読中…`;
   const r = await runWorker(x, fs, ui.fm === 'manual' ? manualF : 0);
   if (!r) {
     mRun.textContent = `${name} は短すぎて解読できません`;
@@ -798,8 +798,8 @@ function syncState(v: View): [string, string] {
   const d = dec;
   if (!d?.sig) return ['信号がありません', 'NO SIG'];
   if (d.state === 'LOCK') return [`受信中（${Math.min(59, d.s)} 秒）`, 'LOCK'];
-  if (d.reg >= 2) return ['分の始まりを待っています', 'WAIT M'];
-  return ['秒の区切りを探しています', 'SEARCH'];
+  if (d.reg >= 2) return ['分の始まりを待機中', 'WAIT M'];
+  return ['秒の区切りを検出中', 'SEARCH'];
 }
 function renderStats(v: View): void {
   const [ja, en] = syncState(v);

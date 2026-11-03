@@ -204,7 +204,7 @@ export class AudioIn {
       this.micMsg = 'この環境ではマイクを使えません';
       return;
     }
-    this.micMsg = 'マイクを準備しています…';
+    this.micMsg = 'マイクを準備中…';
     this.onChange();
     let st: MediaStream;
     try {

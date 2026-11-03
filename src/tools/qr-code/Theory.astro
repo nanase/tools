@@ -5,7 +5,7 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
 const al = (i: string) => `<msup><mi>α</mi>${i}</msup>`;
 ---
 <h3>QR コードの形</h3>
-<p>QR コードは、暗いモジュールと明るいモジュールの正方形の格子です。バージョン <math><mi>v</mi></math>（1〜40）の大きさは <math><mn>17</mn><mo>+</mo><mn>4</mn><mi>v</mi></math> モジュール角で、まわりに 4 モジュールの余白を空けます<Fragment set:html={rf(1)} /><Fragment set:html={rf(2)} />。格子の一部は、読み取り機が位置と向きと大きさを知るための決まった模様（機能パターン）です。</p>
+<p>QR コードは暗いモジュールと明るいモジュールの正方形の格子です。バージョン <math><mi>v</mi></math>（1〜40）の大きさは <math><mn>17</mn><mo>+</mo><mn>4</mn><mi>v</mi></math> モジュール角で、まわりに 4 モジュールの余白を空けます<Fragment set:html={rf(1)} /><Fragment set:html={rf(2)} />。格子の一部は、読み取り機が位置と向きと大きさを知るための決まった模様（機能パターン）です。</p>
 <div class="tt-w"><table class="tt">
   <thead><tr><th>模様</th><th>役割</th></tr></thead>
   <tbody>
@@ -19,7 +19,7 @@ const al = (i: string) => `<msup><mi>α</mi>${i}</msup>`;
 <p>残りがデータの領域で、文字列から作った符号語を置きます。</p>
 
 <h3>文字列をビット列にする</h3>
-<p>文字列は、文字の種類に合ったモードで符号化します<Fragment set:html={rf(2)} />。モードが狭いほど、1 文字に使うビットが少なくなります。</p>
+<p>文字列は文字の種類に合ったモードで符号化します<Fragment set:html={rf(2)} />。使える文字が少ないモードほど、1 文字に使うビットが少なくなります。</p>
 <div class="tt-w"><table class="tt">
   <thead><tr><th>モード</th><th>指示子</th><th>使える文字</th><th>単位</th><th>文字数の欄（バージョン 1〜9・10〜26・27〜40）</th></tr></thead>
   <tbody>
@@ -35,11 +35,11 @@ const al = (i: string) => `<msup><mi>α</mi>${i}</msup>`;
   <li><b>端数</b><span>8 の倍数になるまで 0</span></li>
   <li><b>埋め草</b><span>11101100 と 00010001 を交互に</span></li>
 </ol>
-<p>できたビット列を 8 ビットずつ区切ったものが、データの符号語です。</p>
+<p>できたビット列を 8 ビットずつ区切ったものがデータの符号語です。</p>
 
 <h3>リード・ソロモン符号</h3>
 <p>誤り訂正語はリード・ソロモン符号で作ります<Fragment set:html={rf(3)} /><Fragment set:html={rf(4)} />。符号語は 8 ビットなので、256 個の元からなる有限体 GF(2<sup>8</sup>) の上で計算します。足し算と引き算はビットごとの XOR で、掛け算は既約多項式 <math><msup><mi>x</mi><mn>8</mn></msup><mo>+</mo><msup><mi>x</mi><mn>4</mn></msup><mo>+</mo><msup><mi>x</mi><mn>3</mn></msup><mo>+</mo><msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><mn>1</mn></math>（0x11D）を法とする多項式の積です。原始元 <math><mi>α</mi><mo>=</mo><mn>2</mn></math> の累乗 <math set:html={`${al('<mn>0</mn>')}<mo>,</mo>${al('<mn>1</mn>')}<mo>,</mo><mo>…</mo><mo>,</mo>${al('<mn>254</mn>')}`} /> が、0 以外の 255 個の元を一度ずつ通ります。</p>
-<p>データの符号語 <math><msub><mi>d</mi><mn>0</mn></msub><mo>,</mo><mo>…</mo><mo>,</mo><msub><mi>d</mi><mrow><mi>k</mi><mo>−</mo><mn>1</mn></mrow></msub></math> を多項式の係数とみて、誤り訂正語 <math><mi>n</mi></math> 語は次の割り算の余りです。</p>
+<p>データの符号語 <math><msub><mi>d</mi><mn>0</mn></msub><mo>,</mo><mo>…</mo><mo>,</mo><msub><mi>d</mi><mrow><mi>k</mi><mo>−</mo><mn>1</mn></mrow></msub></math> を多項式の係数とみると、誤り訂正語 <math><mi>n</mi></math> 語は次の割り算の余りです。</p>
 <div class="eqs">
   <math display="block" set:html={`<mi>g</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo><mo>=</mo><munderover><mo>∏</mo><mrow><mi>i</mi><mo>=</mo><mn>0</mn></mrow><mrow><mi>n</mi><mo>−</mo><mn>1</mn></mrow></munderover><mo stretchy="false">(</mo><mi>x</mi><mo>−</mo>${al('<mi>i</mi>')}<mo stretchy="false">)</mo>`} />
   <math display="block" set:html={`<mi>D</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo><mo>=</mo><munderover><mo>∑</mo><mrow><mi>j</mi><mo>=</mo><mn>0</mn></mrow><mrow><mi>k</mi><mo>−</mo><mn>1</mn></mrow></munderover><msub><mi>d</mi><mi>j</mi></msub><msup><mi>x</mi><mrow><mi>k</mi><mo>−</mo><mn>1</mn><mo>−</mo><mi>j</mi></mrow></msup><mo>,</mo><mspace width="1em"/><mi>E</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo><mo>=</mo><mi>D</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo><msup><mi>x</mi><mi>n</mi></msup><mspace width="0.4em"/><mo>mod</mo><mspace width="0.4em"/><mi>g</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo>`} />
@@ -68,7 +68,7 @@ const al = (i: string) => `<msup><mi>α</mi>${i}</msup>`;
 </dl>
 
 <h3>形式情報とバージョン情報</h3>
-<p>形式情報は、誤り訂正のレベル 2 ビット（L 01・M 00・Q 11・H 10）とマスクの番号 3 ビットの 5 ビットに、BCH(15, 5) 符号の検査 10 ビットを足し、101010000010010 と XOR した 15 ビットです<Fragment set:html={rf(2)} />。検査ビットは、5 ビットを 10 ビット左へずらして生成多項式 <math><msup><mi>x</mi><mn>10</mn></msup><mo>+</mo><msup><mi>x</mi><mn>8</mn></msup><mo>+</mo><msup><mi>x</mi><mn>5</mn></msup><mo>+</mo><msup><mi>x</mi><mn>4</mn></msup><mo>+</mo><msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><mi>x</mi><mo>+</mo><mn>1</mn></math> で割った余りです。正しい 32 通りの符号どうしは 7 ビット以上違う（このツールのテストで総当たりで確かめた）ので、3 ビットまでの誤りなら最も近い符号に決められます<Fragment set:html={rf(4)} />。バージョン 7 以上は、バージョン 6 ビットに BCH(18, 6) の 12 ビットを足したバージョン情報も置きます。</p>
+<p>形式情報は 15 ビットです。誤り訂正のレベル 2 ビット（L 01・M 00・Q 11・H 10）とマスクの番号 3 ビットの 5 ビットに、BCH(15, 5) 符号の検査 10 ビットを足し、101010000010010 と XOR します<Fragment set:html={rf(2)} />。検査ビットは、5 ビットを 10 ビット左へずらして生成多項式 <math><msup><mi>x</mi><mn>10</mn></msup><mo>+</mo><msup><mi>x</mi><mn>8</mn></msup><mo>+</mo><msup><mi>x</mi><mn>5</mn></msup><mo>+</mo><msup><mi>x</mi><mn>4</mn></msup><mo>+</mo><msup><mi>x</mi><mn>2</mn></msup><mo>+</mo><mi>x</mi><mo>+</mo><mn>1</mn></math> で割った余りです。正しい 32 通りの符号どうしは 7 ビット以上違う（このツールのテストで総当たりで確かめた）ので、3 ビットまでの誤りなら最も近い符号に決められます<Fragment set:html={rf(4)} />。バージョン 7 以上は、バージョン 6 ビットに BCH(18, 6) の 12 ビットを足したバージョン情報も置きます。</p>
 
 <h3>読み取りと誤り訂正</h3>
 <p>読む側は、形式情報からレベルとマスクを知り、マスクを外し、置いた順に符号語を集めてブロックに戻します。受け取った多項式を <math><mi>R</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo><mo>=</mo><mi>C</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo><mo>+</mo><mi>e</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo></math> として、誤り <math><mi>e</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo></math> を次の順で求めます<Fragment set:html={rf(4)} />。</p>
@@ -92,7 +92,7 @@ const al = (i: string) => `<msup><mi>α</mi>${i}</msup>`;
 <ul class="tl">
   <li>Chien 探索は、<math><mi>Λ</mi><mo stretchy="false">(</mo><msup><mi>α</mi><mrow><mo>−</mo><mi>j</mi></mrow></msup><mo stretchy="false">)</mo></math> をすべての位置 <math><mi>j</mi></math> で計算して根を探す<Fragment set:html={rf(7)} /></li>
   <li>Forney の式は、生成多項式の根が <math set:html={al('<mn>0</mn>')} /> から始まる QR コードの形では、<math><msub><mi>X</mi><mi>l</mi></msub></math> を 1 つ掛けた形になる<Fragment set:html={rf(8)} /><Fragment set:html={rf(4)} /></li>
-  <li>誤りが <math><mi>n</mi><mo>/</mo><mn>2</mn></math> 語を超えると、<math><mi>Λ</mi></math> の次数が上限を超えるか、根の数が次数と合わず、直せないと分かることが多い。まれに、別の正しい符号語に近づき、誤った文字列に直してしまう</li>
+  <li>誤りが <math><mi>n</mi><mo>/</mo><mn>2</mn></math> 語を超えると、<math><mi>Λ</mi></math> の次数が上限を超えるか、根の数が次数と合わず、直せないと分かることが多い。まれに別の正しい符号語に近づき、誤った文字列に直してしまう</li>
 </ul>
 
 <h3>このツールで決めたこと</h3>
@@ -102,7 +102,7 @@ const al = (i: string) => `<msup><mi>α</mi>${i}</msup>`;
   <li>自動のモードは、符号化できるモードのうちビット列がいちばん短いもの。自動のバージョンは、選んだレベルで入る最小のもの</li>
   <li>「レベルを上げる」は、同じバージョンに入る範囲でいちばん高いレベルにする</li>
   <li>N3 の数え方は Nayuki の実装に合わせ、記号の外の余白も明るいモジュールとして数える<Fragment set:html={rf(5)} /></li>
-  <li>読み取りは、モジュールの格子から始める。画像からファインダーを探して格子を読む処理と、消失（位置の分かる誤り）を使う訂正はしない。形式情報は、2 か所のうち近い方で決める</li>
+  <li>読み取りは、モジュールの格子から始める。画像からファインダーを探して格子を読む処理と、消失（位置の分かる誤り）を使う訂正はしない。形式情報は 2 か所のうち近い方で決める</li>
   <li>誤り訂正実験の道具の大きさ（しみは半径 1.35、こすれは半径 0.75 モジュール）と、ランダムで入れ替える数（8 個）</li>
   <li>図と表の区分の色</li>
 </ul>

@@ -159,7 +159,7 @@ nowBtn.addEventListener('click', () => {
   audio.resync();
 });
 
-/* 選ぶ秒: 既定は現在の秒を追う。押すと固定し、もう一度押すか「現在の秒に戻す」で戻す */
+/* 選ぶ秒: 既定は現在の秒を追う。押すと固定し、もう一度押すか「現在の秒へ」で戻す */
 const follow = $<HTMLButtonElement>('#follow');
 function showCursor(): void {
   if (!cur) return;

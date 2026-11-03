@@ -266,9 +266,9 @@ const Rf = (k: K) => `<a class="rf" href="#thy-r${num(k)}">[${num(k)}]</a>`;
 <ul class="tl">
   <li>値は 1〜<math><mi>n</mi></math> の整数</li>
   <li>ほぼ並び替え済みは約 5 % の要素を近くの要素と入れ替えたもの</li>
-  <li>中央値付近に偏りは平均 <math><mi>n</mi><mo>/</mo><mn>2</mn></math>、標準偏差 <math><mi>n</mi><mo>/</mo><mn>8</mn></math> の正規分布</li>
-  <li>両端に偏りは標準偏差 <math><mi>n</mi><mo>/</mo><mn>10</mn></math> の正規分布の半分を両端から</li>
-  <li>値の種類が少ないは 5 種類、のこぎりは 4 山</li>
+  <li>「中央値付近に偏り」は平均 <math><mi>n</mi><mo>/</mo><mn>2</mn></math>、標準偏差 <math><mi>n</mi><mo>/</mo><mn>8</mn></math> の正規分布</li>
+  <li>「両端に偏り」は標準偏差 <math><mi>n</mi><mo>/</mo><mn>10</mn></math> の正規分布の半分を両端から</li>
+  <li>「値の種類が少ない」は 5 種類、「のこぎり」は 4 山</li>
   <li>ティムとパワーは最小のランまで挿入で伸ばす。ギャロップはしない</li>
   <li>pdqsort は分岐の少ない分割を使わない</li>
   <li>基数は 4、バケットは <math><msqrt><mi>n</mi></msqrt></math> 個、フラッシュの区分は <math><mn>0.43</mn><mi>n</mi></math> 個</li>
@@ -276,6 +276,6 @@ const Rf = (k: K) => `<a class="rf" href="#thy-r${num(k)}">[${num(k)}]</a>`;
   <li>ビーズは高い段から順に段ごとに全要素を読むので <math><mi>n</mi><mi>k</mi></math> 回。論文の式は入力の総和に比例</li>
   <li>ボゾは異なる 2 つを選んで交換する形。平均は交換が <math><mi>n</mi><mo>!</mo></math> 程度、比較が <math><mi>n</mi><mo>!</mo></math> 以上 <math><mi>n</mi><mo>·</mo><mi>n</mi><mo>!</mo></math> 以下</li>
   <li>双方向選択は選択ソートの最小と最大を同時に選ぶ形</li>
-  <li>操作は 3,000,000 回で打ち切る。比較は 1,000,000 回、ボゴとボゾは 200,000 回</li>
+  <li>操作は 3,000,000 回で打ち切る。比較の表示は 1,000,000 回、ボゴとボゾは 200,000 回</li>
   <li>速いときは 1 コマに 8 音まで間引く</li>
 </ul>

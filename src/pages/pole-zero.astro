@@ -32,7 +32,7 @@ const prm = (k: string) => {
     <div class="col c-a">
       <Panel hid="hd-z" title="z 平面" class="a-z">
         <div slot="aux" class="seg zbar" role="group" aria-label="点の追加と削除">
-          <button type="button" id="addP" title="極の対を足す">＋極</button><button type="button" id="addZ" title="零点の対を足す">＋零点</button><button type="button" id="delB" title="選んだ点を消す（Delete）">削除</button>
+          <button type="button" id="addP" title="極の対を追加">＋極</button><button type="button" id="addZ" title="零点の対を追加">＋零点</button><button type="button" id="delB" title="選んだ点を削除（Delete）">削除</button>
         </div>
         <div class="sbar">
           <span class="stag" title="極（共役の対は 2 個と数える）"><i class="sw" aria-hidden="true"></i>× 極 <b id="z-np"></b></span>
@@ -63,7 +63,7 @@ const prm = (k: string) => {
           <div class="seg" id="p-src" role="group" aria-label="入力の音">
             {SRCS.map(([v, l, t]) => <button type="button" data-v={v} aria-pressed={v === 'noise' ? 'true' : 'false'} title={t}>{l}</button>)}
           </div>
-          <div class="seg"><button type="button" id="playBtn" aria-pressed="false" title="入力の音にこのフィルタを掛けて鳴らす"><span class="led" aria-hidden="true"></span><span id="playT">再生</span></button></div>
+          <div class="seg"><button type="button" id="playBtn" aria-pressed="false" title="このフィルタを掛けた入力の音"><span class="led" aria-hidden="true"></span><span id="playT">再生</span></button></div>
         </div>
         <div class="sbar">
           <span class="stag">IN <b id="lv-in">WHITE NOISE</b></span>

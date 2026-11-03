@@ -17,9 +17,9 @@ const txt = (id: string, s: string) => {
 };
 const tms = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 const RUN_TITLE: Record<Src, string> = {
-  mic: 'マイクから取り込む・止める',
-  file: 'ファイルを再生する・一時停止する',
-  test: 'テスト信号を出す・止める',
+  mic: 'マイク入力の開始・停止',
+  file: 'ファイルの再生・一時停止',
+  test: 'テスト信号の開始・停止',
 };
 
 export interface InputUi {
@@ -129,7 +129,7 @@ export function initInput(): InputUi {
   const open = (f: File | undefined) => {
     if (!f) return;
     a.fileMsg = '';
-    txt('#m-file', '読み込んでいます…');
+    txt('#m-file', '読み込み中…');
     a.open(f);
   };
   $('#fileBtn').addEventListener('click', () => fin.click());

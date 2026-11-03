@@ -128,10 +128,8 @@ export class Transport {
     const play = this.hooks.active(),
       wait = !play && this.cue > 0;
     this.pp.classList.toggle('on', play);
-    this.pp.setAttribute('aria-label', play ? '一時停止する' : '演奏する');
-    this.pp.title = play
-      ? '一時停止する（位置は残る。スマートフォンとタブレットでは、画面が隠れると自動で一時停止する）'
-      : '今の位置から演奏する';
+    this.pp.setAttribute('aria-label', play ? '一時停止' : '演奏');
+    this.pp.title = play ? '一時停止（位置は保持）' : '今の位置から演奏';
     this.pp.disabled = !this.line;
     this.home.disabled = !this.line;
     this.trk.setAttribute('aria-disabled', String(!this.line));
@@ -187,7 +185,7 @@ export class Transport {
     $('#tp-bar').textContent = String(bar);
     $('#tp-time').textContent = l ? `${mmss(l.sec(b) / k)} / ${mmss(total / k)}` : '';
     this.trk.setAttribute('aria-valuenow', String(bar));
-    this.trk.setAttribute('aria-valuetext', l ? `${bar} / ${l.bars} 小節` : '曲を読み込んでいます');
+    this.trk.setAttribute('aria-valuetext', l ? `${bar} / ${l.bars} 小節` : '曲を読み込み中');
   }
 
   private drawTicks(): void {

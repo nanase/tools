@@ -24,7 +24,7 @@ const KEYS = keyboard();
   <div class="tgrid">
     <Panel hid="hd-fig" title="部分音" class="a-fig" fixed>
       <div slot="aux" class="seg">
-        <button type="button" id="playBtn" aria-pressed="false" title="和音を鳴らす・止める"><span class="led" id="playLed" aria-hidden="true"></span><span id="playT">鳴らす</span></button>
+        <button type="button" id="playBtn" aria-pressed="false"><span class="led" id="playLed" aria-hidden="true"></span><span id="playT">再生</span></button>
       </div>
       <div class="sbar">
         <span class="stag">A <b id="s-a">平均律</b></span>
@@ -58,7 +58,7 @@ const KEYS = keyboard();
     <div class="col c1">
       <Panel hid="hd-tem" title="音律" class="a-tem">
         <div slot="aux" class="seg">
-          <button type="button" id="abBtn" aria-pressed="false" title="音律 A と比べる音律 B を 2 秒ごとに入れ替えて鳴らす"><span class="led" id="abLed" aria-hidden="true"></span><span>A・B 交互</span></button>
+          <button type="button" id="abBtn" aria-pressed="false" title="2 秒ごとに入れ替え"><span class="led" id="abLed" aria-hidden="true"></span><span>A・B 交互</span></button>
         </div>
         <div class="ttab">
           <span class="th">A</span><span class="th">B</span><span class="th">音律</span><span class="th num" id="tt-3">C–E</span><span class="th num" id="tt-5">C–G</span>
@@ -119,9 +119,9 @@ const KEYS = keyboard();
 
       <Panel hid="hd-snd" title="音" class="a-snd">
         <div class="ptab">
-          <ChoiceRow k="tb" name="音色" sub="正弦波は部分音なし／ピアノは部分音が高めにずれる" choices={TIMBRES} value="organ" />
+          <ChoiceRow k="tb" name="音色" sub="正弦波は第 1 部分音だけ／ピアノは部分音が高めにずれる" choices={TIMBRES} value="organ" />
           <ChoiceRow k="pt" name="ピアノ" sub="弦の寸法はピアノ音響モデルと同じ" choices={PIANOS} value="concert" layout="chips" class="pno" />
-          <ChoiceRow k="st" name="ストレッチ" sub="オクターブを部分音に合わせて広げる" choices={[['0', 'なし'], ['1', 'あり']]} value="0" class="pno" />
+          <ChoiceRow k="st" name="ストレッチ" sub="オクターブを部分音に合わせて広げた調律" choices={[['0', 'なし'], ['1', 'あり']]} value="0" class="pno" />
           <ParamRow d={VOL} />
         </div>
       </Panel>

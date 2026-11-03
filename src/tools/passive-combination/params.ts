@@ -89,7 +89,7 @@ const ROW: Record<NumKey, Row> = {
     sub: 'これ以上の値を使う',
     sym: (s) => `<i>${s}</i><sub>min</sub>`,
     stepLabel: '10 倍ずつ',
-    hint: '↑↓: 10 倍ずつ隣の値　PgUp/PgDn: 10 倍・1/10　Enter: 確定　Esc: 戻す',
+    hint: '↑↓: 10 倍ずつ隣の値　PgUp/PgDn: 10 倍・1/10　Enter: 確定　Esc: 取り消し',
   },
   max: {
     series: 1,
@@ -98,7 +98,7 @@ const ROW: Record<NumKey, Row> = {
     sub: 'これ以下の値を使う',
     sym: (s) => `<i>${s}</i><sub>max</sub>`,
     stepLabel: '10 倍ずつ',
-    hint: '↑↓: 10 倍ずつ隣の値　PgUp/PgDn: 10 倍・1/10　Enter: 確定　Esc: 戻す',
+    hint: '↑↓: 10 倍ずつ隣の値　PgUp/PgDn: 10 倍・1/10　Enter: 確定　Esc: 取り消し',
   },
 };
 

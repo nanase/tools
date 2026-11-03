@@ -21,7 +21,7 @@ const hz = (f: number) => (f >= 1000 ? `${f / 1000}k` : `${f}`);
 const DRYS = [
   ...DRY.map((d) => [d.v, d.name] as const),
   ['guitar', 'ギター'] as const,
-  ['file', 'ファイル…', '音のファイルを開く。送信はしない'] as const,
+  ['file', 'ファイル…', '音のファイル（送信なし）'] as const,
 ];
 ---
 <SiteLayout title={name} tool={{ id: 'reverb', name }} note="面が鏡のように反射する直方体の部屋の模型による参考値です。">
@@ -31,7 +31,7 @@ const DRYS = [
   <div class="tgrid">
     <Panel hid="hd-fig" title="部屋（上から）" class="a-fig" fixed>
       <div slot="aux" class="seg">
-        <button type="button" id="runBtn" aria-pressed="true" title="波面の動きを止める・再び動かす"><span class="led on" id="runLed" aria-hidden="true"></span><span id="runT">RUN</span></button>
+        <button type="button" id="runBtn" aria-pressed="true" title="波面の停止・再開"><span class="led on" id="runLed" aria-hidden="true"></span><span id="runT">RUN</span></button>
       </div>
       <div class="scn" id="p-preset" data-nosave role="group" aria-label="部屋の例">
         <span class="scn-l" aria-hidden="true">部屋の例</span>
@@ -44,7 +44,7 @@ const DRYS = [
         <span class="stag">混合時間 <b id="s-mix">—</b></span>
         <span class="stag right">速さ <b id="s-spd">—</b></span>
       </div>
-      <div class="scope rvw"><canvas id="rv-top" data-ar={roomAspect(R0).toFixed(3)} style={`aspect-ratio:${roomAspect(R0).toFixed(3)}`} tabindex="0" role="img" aria-label="上から見た部屋の波面と反射の経路" title="音源と聞き手をドラッグで動かす。矢印キーでも動く（Shift で 1 m ずつ・Enter で切り替え）"></canvas></div>
+      <div class="scope rvw"><canvas id="rv-top" data-ar={roomAspect(R0).toFixed(3)} style={`aspect-ratio:${roomAspect(R0).toFixed(3)}`} tabindex="0" role="img" aria-label="上から見た部屋の波面と反射の経路" title="ドラッグ・矢印キーで音源と聞き手を移動（Shift で 1 m ずつ・Enter で切り替え）"></canvas></div>
       <p class="pick" id="s-pick" hidden>選んだ反射 <b id="s-pick-v"></b></p>
       <div class="lgd">
         <span><i class="sw" aria-hidden="true"></i>直接音の波面</span>
@@ -78,7 +78,7 @@ const DRYS = [
         <div slot="aux" class="seg" id="p-zoom" role="group" aria-label="時間の幅">
           {ZOOMS.map(([v, l]) => <button type="button" data-v={v} aria-pressed={v === 'early' ? 'true' : 'false'}>{l}</button>)}
         </div>
-        <div class="scope rvw"><canvas id="rv-ir" data-ar="1.7" style="aspect-ratio:1.7" tabindex="0" role="img" aria-label="インパルス応答と減衰曲線" title="なぞった時刻に届いた反射の経路を部屋の図に出す。左右キーで前後の反射へ・Esc で戻す"></canvas></div>
+        <div class="scope rvw"><canvas id="rv-ir" data-ar="1.7" style="aspect-ratio:1.7" tabindex="0" role="img" aria-label="インパルス応答と減衰曲線" title="なぞった時刻に届いた反射の経路を部屋の図に表示（左右キーで前後の反射へ・Esc で戻す）"></canvas></div>
         <div class="lgd">
           <span><i class="sw" aria-hidden="true"></i>直接音</span>
           <span><i class="sw c2" aria-hidden="true"></i>初期反射（80 ms まで）</span>
@@ -106,12 +106,12 @@ const DRYS = [
         </table></div>
       </Panel>
 
-      <Panel hid="hd-snd" title="聞く" class="a-snd">
+      <Panel hid="hd-snd" title="試聴" class="a-snd">
         <div slot="aux" class="seg">
-          <button type="button" id="playBtn" aria-pressed="false" title="乾いた音に応答を畳み込んで鳴らす"><span class="led" id="playLed" aria-hidden="true"></span><span>聞く</span></button>
+          <button type="button" id="playBtn" aria-pressed="false" title="乾いた音に応答を畳み込んだ音"><span class="led" id="playLed" aria-hidden="true"></span><span>再生</span></button>
         </div>
         <div class="ptab">
-          <ChoiceRow k="dry" name="乾いた音" sub="残響のない音。ギターはギター音響モデルで弾く" choices={DRYS} value="clap" layout="chips" msg />
+          <ChoiceRow k="dry" name="乾いた音" sub="残響のない音" choices={DRYS} value="clap" layout="chips" msg />
           <ChoiceRow k="mode" name="響き" sub="「楽器ページの残響」は楽器のページの残響（フィードバック遅延網）をこの部屋の残響時間で鳴らす" choices={MODES} value="room" layout="chips" msg />
           <ParamRow d={VOL} />
         </div>

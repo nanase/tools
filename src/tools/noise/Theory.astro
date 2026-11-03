@@ -2,7 +2,7 @@
 // 動作原理と式
 ---
 <h3>ノイズの色</h3>
-<p>ノイズの「色」は、パワースペクトル密度 <math><mi>S</mi><mo stretchy="false">(</mo><mi>f</mi><mo stretchy="false">)</mo></math> が周波数のべき <math><msup><mi>f</mi><mi>β</mi></msup></math> に比例するときの指数 <math><mi>β</mi></math> で決まります。周波数が 2 倍（1 オクターブ）になるごとに、<math><mn>3.01</mn><mi>β</mi></math> dB 変わります。</p>
+<p>ノイズの「色」はパワースペクトル密度 <math><mi>S</mi><mo stretchy="false">(</mo><mi>f</mi><mo stretchy="false">)</mo></math> が周波数のべき <math><msup><mi>f</mi><mi>β</mi></msup></math> に比例するときの指数 <math><mi>β</mi></math> で決まります。周波数が 2 倍（1 オクターブ）になるごとに、<math><mn>3.01</mn><mi>β</mi></math> dB 変わります。</p>
 <div class="tt-w"><table class="tt">
   <thead><tr><th scope="col">色</th><th scope="col" class="num"><math><mi>β</mi></math></th><th scope="col">性質・作り方</th></tr></thead>
   <tbody>
@@ -18,8 +18,8 @@
 </div>
 
 <h3>大きさをそろえる</h3>
-<p>どのノイズも、白色雑音を通すフィルタのインパルス応答のエネルギーで割って、実効値を −20 dBFS にそろえます。</p>
-<p>dBFS は、フルスケールの正弦波を 0 dBFS とする決め方です<a class="rf" href="#thy-r1">[1]</a>。</p>
+<p>どのノイズも白色雑音を通すフィルタのインパルス応答のエネルギーで割って、実効値を −20 dBFS にそろえます。</p>
+<p>dBFS はフルスケールの正弦波を 0 dBFS とする決め方です<a class="rf" href="#thy-r1">[1]</a>。</p>
 <ul class="tl">
   <li><b>実効値</b>: <math><msqrt><mn>2</mn></msqrt></math> 倍してから dB にする</li>
   <li><b>ピーク</b>: 振幅の絶対値の最大をそのまま dB にする</li>
@@ -30,7 +30,7 @@
 </div>
 
 <h3>乱数</h3>
-<p>白色雑音の元になる乱数は、xorshift128 で作ります<a class="rf" href="#thy-r2">[2]</a>。周期は <math><msup><mn>2</mn><mn>128</mn></msup><mo>−</mo><mn>1</mn></math> です。xorshift もシフトと排他的論理和だけで状態を進める、線形帰還シフトレジスタの仲間です。</p>
+<p>白色雑音の元になる乱数は xorshift128 で作ります<a class="rf" href="#thy-r2">[2]</a>。周期は <math><msup><mn>2</mn><mn>128</mn></msup><mo>−</mo><mn>1</mn></math> です。xorshift もシフトと排他的論理和だけで状態を進める、線形帰還シフトレジスタの仲間です。</p>
 <div class="tt-w"><table class="tt">
   <thead><tr><th scope="col">分布</th><th scope="col">作り方</th><th scope="col">ピーク</th><th scope="col" class="num">尖度</th></tr></thead>
   <tbody>
@@ -38,7 +38,7 @@
     <tr><th scope="row">正規分布</th><td>Box–Muller 法で 2 つの一様乱数から作る<a class="rf" href="#thy-r3">[3]</a></td><td>上限がない</td><td class="num">3</td></tr>
   </tbody>
 </table></div>
-<p>尖度は、4 次のモーメントを分散の 2 乗で割った値です。</p>
+<p>尖度は 4 次のモーメントを分散の 2 乗で割った値です。</p>
 <div class="eqs">
   <math display="block"><msub><mi>x</mi><mtext>一様</mtext></msub><mo>=</mo><msqrt><mn>3</mn></msqrt><mspace width="0.15em"/><msub><mi>x</mi><mi>rms</mi></msub><mo stretchy="false">(</mo><mn>2</mn><mi>u</mi><mo>−</mo><mn>1</mn><mo stretchy="false">)</mo><mo>,</mo><mspace width="1em"/><msub><mi>x</mi><mtext>正規</mtext></msub><mo>=</mo><msub><mi>x</mi><mi>rms</mi></msub><msqrt><mrow><mo>−</mo><mn>2</mn><mi>ln</mi><mo>&#x2061;</mo><msub><mi>u</mi><mn>1</mn></msub></mrow></msqrt><mspace width="0.15em"/><mi>cos</mi><mo>&#x2061;</mo><mn>2</mn><mi>π</mi><msub><mi>u</mi><mn>2</mn></msub></math>
 </div>
@@ -77,8 +77,8 @@
 </div>
 
 <h3>グレー</h3>
-<p>グレーは、人が同じ大きさに感じるよう、A 特性<a class="rf" href="#thy-r6">[6]</a>の逆数の形にしたノイズです。A 特性の逆数は 0 Hz に向かって <math><msup><mi>f</mi><mrow><mo>−</mo><mn>4</mn></mrow></msup></math> で大きくなるので、20 Hz の 4 次バターワースの高域通過を掛けて止めます。</p>
-<p>この形の 20 Hz の値は、1 kHz より 47 dB 大きくなります。パワーの 9 割は 50 Hz より下にあります。</p>
+<p>グレーは人が同じ大きさに感じるよう、A 特性<a class="rf" href="#thy-r6">[6]</a>の逆数の形にしたノイズです。A 特性の逆数は 0 Hz に向かって <math><msup><mi>f</mi><mrow><mo>−</mo><mn>4</mn></mrow></msup></math> で大きくなるので、20 Hz の 4 次バターワースの高域通過を掛けて止めます。</p>
+<p>この形の 20 Hz の値は 1 kHz より 47 dB 大きくなります。パワーの 9 割は 50 Hz より下にあります。</p>
 <p>フィルタの作り方は次のとおりで、目標からのずれは ±0.04 dB です。</p>
 <ul class="tl">
   <li>20.6・107.7・737.9 Hz の零と、高域通過の極は、整合 z 変換で移す</li>
@@ -119,7 +119,7 @@
   <math display="block"><mi>P</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo><mo>=</mo><msup><mi>x</mi><mi>n</mi></msup><mo>+</mo><munder><mo>∑</mo><mrow><mi>e</mi><mo>∈</mo><mi>E</mi></mrow></munder><msup><mi>x</mi><mi>e</mi></msup><mo>+</mo><mn>1</mn><mo>,</mo><mspace width="1em"/><mi>P</mi><mo>=</mo><msup><mn>2</mn><mi>n</mi></msup><mo>−</mo><mn>1</mn><mspace width="0.5em"/><mo>⇔</mo><mspace width="0.5em"/><mi>P</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo><mtext> が原始多項式</mtext></math>
 </div>
 <p>原始多項式でなければ、周期は短くなり、初期値で変わることもあります。NES の短周期モードは、初期値 1 からは 93 ステップで、ほかに 31 ステップの輪があります<a class="rf" href="#thy-r10">[10]</a>。</p>
-<p>タップの「最大周期の表」は、3〜32 ビットの最大周期のタップの表<a class="rf" href="#thy-r11">[11]</a>によります。「実在の音源」は、NES<a class="rf" href="#thy-r10">[10]</a>、ゲームボーイ<a class="rf" href="#thy-r12">[12]</a>、SN76489 とセガの互換品<a class="rf" href="#thy-r13">[13]</a>の資料によります。</p>
+<p>タップの「最大周期の表」は 3〜32 ビットの最大周期のタップの表<a class="rf" href="#thy-r11">[11]</a>によります。「実在の音源」は、NES<a class="rf" href="#thy-r10">[10]</a>、ゲームボーイ<a class="rf" href="#thy-r12">[12]</a>、SN76489 とセガの互換品<a class="rf" href="#thy-r13">[13]</a>の資料によります。</p>
 <h4>スペクトル</h4>
 <p>M 系列の出力を ±1 にすると、自己相関は 2 値になります。0 のずれで 1、それ以外で <math><mo>−</mo><mn>1</mn><mo>/</mo><mi>P</mi></math> です<a class="rf" href="#thy-r9">[9]</a>。</p>
 <ul class="tl">
@@ -137,7 +137,7 @@
 </div>
 
 <h3>スペクトラムの表示</h3>
-<p>スペクトラムは、Welch 法で求めたパワースペクトル密度です<a class="rf" href="#thy-r14">[14]</a>。1 Hz あたりの dBFS で表します。</p>
+<p>スペクトラムは Welch 法で求めたパワースペクトル密度です<a class="rf" href="#thy-r14">[14]</a>。1 Hz あたりの dBFS で表します。</p>
 <ol class="flow" aria-label="パワースペクトル密度を求める流れ">
   <li><b>直近の <math><mi>N</mi></math> 点</b><span>半分ずつ重ねた区間</span></li>
   <li><b>ハン窓</b><span>区間ごとに掛ける</span></li>
@@ -174,7 +174,7 @@
 
 <h3>このツールで決めたこと</h3>
 <ul class="tl">
-  <li>ピンクの 2 つの作り方の、1/f からのずれの値。このツールで周波数応答から求めた</li>
+  <li>ピンクの 2 つの作り方の 1/f からのずれの値。このツールで周波数応答から求めた</li>
   <li>グレーの形（20 Hz の高域通過）とフィルタの係数</li>
   <li>「最大周期の表」のタップが最大周期になることは、このツールのテストで確かめている</li>
 </ul>

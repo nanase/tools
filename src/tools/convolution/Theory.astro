@@ -31,7 +31,7 @@ const ln = (id: string, label: string) =>
   <dt><math><mi>h</mi></math></dt><dd>核（インパルス応答）</dd>
   <dt><math><mi>y</mi></math></dt><dd>出力</dd>
 </dl>
-<p>連続は積分、離散は和<Fragment set:html={rf(1)} /><Fragment set:html={rf(5)} />。長さ <math><mi>N</mi></math> と <math><mi>M</mi></math> の離散の信号の畳み込みは <math><mi>N</mi><mo>+</mo><mi>M</mi><mo>−</mo><mn>1</mn></math> 点<Fragment set:html={rf(1)} />。</p>
+<p>連続は積分、離散は和である<Fragment set:html={rf(1)} /><Fragment set:html={rf(5)} />。長さ <math><mi>N</mi></math> と <math><mi>M</mi></math> の離散の信号の畳み込みは <math><mi>N</mi><mo>+</mo><mi>M</mi><mo>−</mo><mn>1</mn></math> 点になる<Fragment set:html={rf(1)} />。</p>
 
 <h3>出力の側から: 反転して滑らせる</h3>
 <ol class="flow">
@@ -66,7 +66,7 @@ const ln = (id: string, label: string) =>
 </table></div>
 
 <h3>確率: 和の分布</h3>
-<p>独立な確率変数の和の分布は、分布の畳み込み<Fragment set:html={rf(5)} />。</p>
+<p>独立な確率変数の和の分布は分布の畳み込みになる<Fragment set:html={rf(5)} />。</p>
 <div class="tt-w"><table class="tt">
   <thead><tr><th>例</th><th>分布</th><th>和の分布</th></tr></thead>
   <tbody>
@@ -96,7 +96,7 @@ const ln = (id: string, label: string) =>
 <ul class="tl">
   <li>時間の畳み込みは周波数の積<Fragment set:html={rf(3)} /><Fragment set:html={rf(6)} />。核の周波数特性が、入力の各周波数を何倍にするかを決める</li>
   <li><math><mi>L</mi></math> 点の DFT の積は、長さ <math><mi>L</mi></math> の円状畳み込みに当たる。はみ出した分が頭へ回るので、<math><mi>L</mi><mo>≥</mo><mi>N</mi><mo>+</mo><mi>M</mi><mo>−</mo><mn>1</mn></math> まで 0 で埋める<Fragment set:html={rf(3)} /></li>
-  <li>FFT で変換して掛けて戻すと速い。核が約 64 点より長いと直接の和より速い<Fragment set:html={rf(4)} /><Fragment set:html={rf(8)} />。算法は <Fragment set:html={ln('fft', 'FFT')} /></li>
+  <li>FFT で変換して掛けて戻すと速い。核が約 64 点より長いと直接の和より速い<Fragment set:html={rf(4)} /><Fragment set:html={rf(8)} />。アルゴリズムは <Fragment set:html={ln('fft', 'FFT')} /></li>
 </ul>
 
 <h3>このツールで決めたこと</h3>

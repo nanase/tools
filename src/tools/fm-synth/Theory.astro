@@ -2,8 +2,8 @@
 // 動作原理と式。代入した式（#subst）は client.ts が入れる
 ---
 <h3>FM の原理</h3>
-<p>FM（周波数変調）音源は、正弦波の位相を別の正弦波でずらして倍音を作ります。変調する側をモジュレータ、変調される側をキャリアと呼びます<a class="rf" href="#thy-r1">[1]</a>。</p>
-<p>キャリアの周波数 <math><msub><mi>f</mi><mi>c</mi></msub></math> の両側に、モジュレータの周波数 <math><msub><mi>f</mi><mi>m</mi></msub></math> の間隔で側帯波が並びます。その大きさは、変調指数 <math><mi>I</mi></math> を引数とするベッセル関数 <math><msub><mi>J</mi><mi>n</mi></msub></math> で決まります<a class="rf" href="#thy-r1">[1]</a>。</p>
+<p>FM（周波数変調）音源は正弦波の位相を別の正弦波でずらして倍音を作ります。変調する側をモジュレータ、変調される側をキャリアと呼びます<a class="rf" href="#thy-r1">[1]</a>。</p>
+<p>キャリアの周波数 <math><msub><mi>f</mi><mi>c</mi></msub></math> の両側に、モジュレータの周波数 <math><msub><mi>f</mi><mi>m</mi></msub></math> の間隔で側帯波が並びます。その大きさは変調指数 <math><mi>I</mi></math> を引数とするベッセル関数 <math><msub><mi>J</mi><mi>n</mi></msub></math> で決まります<a class="rf" href="#thy-r1">[1]</a>。</p>
 <ul class="tl">
   <li><math><mi>I</mi></math> が大きいほど、遠くの側帯波まで大きくなり、音が明るくなる</li>
   <li>周波数比が整数なら、側帯波は基本周波数の整数倍に重なり、音程のはっきりした音になる</li>
@@ -13,7 +13,7 @@
 </div>
 
 <h3>オペレータ</h3>
-<p>このツールは、4 つのオペレータ（発振器）を持ちます。</p>
+<p>このツールには 4 つのオペレータ（発振器）があります。</p>
 <dl class="syms">
   <dt><math><msub><mi>W</mi><mi>k</mi></msub></math></dt><dd>オペレータ <math><mi>k</mi></math> の波形</dd>
   <dt><math><msub><mi>f</mi><mn>0</mn></msub></math></dt><dd>基本周波数。鍵盤で選ぶ平均律の音で、A4 = 440 Hz</dd>
@@ -21,17 +21,17 @@
   <dt><math><msub><mi>L</mi><mi>k</mi></msub></math></dt><dd>出力レベル（dB）</dd>
   <dt><math><msub><mi>A</mi><mi>k</mi></msub></math></dt><dd>振幅。<math><msub><mi>L</mi><mi>k</mi></msub></math> を dB から直したもの</dd>
 </dl>
-<p>アルゴリズムは 8 通りです<a class="rf" href="#thy-r2">[2]</a>。アルゴリズムで決まったモジュレータの出力に変調指数を掛けて、キャリアの位相に足します。キャリアの出力に振幅 <math><msub><mi>A</mi><mi>k</mi></msub></math> を掛けて足したものが、出力です。</p>
+<p>アルゴリズムは 8 通りです<a class="rf" href="#thy-r2">[2]</a>。アルゴリズムで決まったモジュレータの出力に変調指数を掛けて、キャリアの位相に足します。キャリアの出力に振幅 <math><msub><mi>A</mi><mi>k</mi></msub></math> を掛けて足したものが出力です。</p>
 <ol class="flow" aria-label="オペレータの信号の流れ">
   <li><b>モジュレータ</b><span>出力に変調指数を掛ける</span></li>
   <li><b>キャリア</b><span>位相に足して発振する</span></li>
   <li><b>足し合わせ</b><span>振幅 <math><msub><mi>A</mi><mi>k</mi></msub></math> を掛けて足す</span></li>
-  <li><b>音量の調整</b><span>「する」のときだけ</span></li>
+  <li><b>音量の調整</b><span>「あり」のときだけ</span></li>
 </ol>
 <h4>音量の調整</h4>
-<p>キャリアが 2 つ以上あると、足した分だけ出力が大きくなります。音量の調整を「する」にすると、振幅の合計が 1 を超えたときに出力を合計で割り、ピークをフルスケール（1）以内に収めます。キャリアどうしの大きさの比は変わりません。</p>
+<p>キャリアが 2 つ以上あると、足した分だけ出力が大きくなります。音量の調整を「あり」にすると、振幅の合計が 1 を超えたときに出力を合計で割り、ピークをフルスケール（1）以内に収めます。キャリアどうしの大きさの比は変わりません。</p>
 <h4>帰還</h4>
-<p>OP1 は、自身の直近 2 標本の平均に帰還量 <math><mi>β</mi></math> を掛けて、自身の位相に戻せます<a class="rf" href="#thy-r2">[2]</a>。<math><mi>β</mi></math> を大きくするとのこぎり波に近づき、さらに大きくすると雑音になります。</p>
+<p>OP1 は自身の直近 2 標本の平均に帰還量 <math><mi>β</mi></math> を掛けて、自身の位相に戻せます<a class="rf" href="#thy-r2">[2]</a>。<math><mi>β</mi></math> を大きくするとのこぎり波に近づき、さらに大きくすると雑音になります。</p>
 <div class="eqs">
   <math display="block"><msub><mi>s</mi><mi>k</mi></msub><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mo>=</mo><msub><mi>W</mi><mi>k</mi></msub><mrow><mo>(</mo><mn>2</mn><mi>π</mi><msub><mi>r</mi><mi>k</mi></msub><msub><mi>f</mi><mn>0</mn></msub><mi>t</mi><mo>+</mo><munder><mo>∑</mo><mrow><mi>j</mi><mo>→</mo><mi>k</mi></mrow></munder><msub><mi>I</mi><mi>j</mi></msub><msub><mi>s</mi><mi>j</mi></msub><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mo>)</mo></mrow></math>
   <math display="block"><mi>y</mi><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mo>=</mo><munder><mo>∑</mo><mrow><mi>k</mi><mo>∈</mo><mtext>キャリア</mtext></mrow></munder><msub><mi>A</mi><mi>k</mi></msub><msub><mi>s</mi><mi>k</mi></msub><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo></math>
@@ -42,7 +42,7 @@
 </div>
 
 <h3>波形</h3>
-<p>波形は、次の 7 つから選べます。どれも位相 0 で 0 から始まります。</p>
+<p>波形は次の 7 つから選べます。どれも位相 0 で 0 から始まります。</p>
 <div class="tt-w"><table class="tt">
   <thead><tr><th>波形</th><th>略号</th><th>形</th></tr></thead>
   <tbody>
@@ -55,7 +55,7 @@
     <tr><th>四分波</th><td>qsin</td><td>全波整流の各半周期の後ろ半分を 0 にしたもの</td></tr>
   </tbody>
 </table></div>
-<p>半波整流・全波整流・四分波は、ヤマハの OPL2 の波形選択にならいます<a class="rf" href="#thy-r3">[3]</a>。正弦波でない波形はもとから倍音を含むため、変調指数が小さくても音が明るくなります。</p>
+<p>半波整流・全波整流・四分波はヤマハの OPL2 の波形選択にならいます<a class="rf" href="#thy-r3">[3]</a>。正弦波でない波形はもとから倍音を含むため、変調指数が小さくても音が明るくなります。</p>
 
 <h3>計算と表示</h3>
 <p>時刻 0 ですべてのオペレータの位相を 0 にして計算します。</p>
@@ -74,7 +74,7 @@
 </ol>
 
 <h3>このツールで決めたこと</h3>
-<p>次の点は、このツールの実装によります。</p>
+<p>次の点はこのツールの実装によります。</p>
 <ul class="tl">
   <li>オペレータの出力の大きさの決め方</li>
   <li>帰還の大きさ</li>

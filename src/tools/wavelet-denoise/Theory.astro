@@ -73,7 +73,7 @@ const to = (id: string, t: string) => (TOOLS.some((x) => x.id === id && !x.s) ? 
 </div>
 <ul class="tl">
   <li>閾値処理は段差や打音の前後に行き過ぎの揺れ（擬似ギブス現象）を出す。大きさは出来事の位置で変わる<Fragment set:html={rf(7)} /></li>
-  <li>ずらす（<math set:html={sub('<mi>S</mi>', '<mi>h</mi>')} />）→ 除く（<math><mi>T</mi></math>）→ 戻す、を何通りもして平均すると揺れが減る。硬い閾値と組み合わせると誤差が半分近くになる例もある（式 (1)・表 2）<Fragment set:html={rf(7)} /></li>
+  <li>ずらす（<math set:html={sub('<mi>S</mi>', '<mi>h</mi>')} />）→ 除く（<math><mi>T</mi></math>）→ 戻す、を何通りもして平均すると揺れが減る</li><li>硬い閾値と組み合わせると誤差が半分近くになる例もある（式 (1)・表 2）<Fragment set:html={rf(7)} /></li>
 </ul>
 
 <h3>係数を残して符号にする</h3>
@@ -96,7 +96,7 @@ const to = (id: string, t: string) => (TOOLS.some((x) => x.id === id && !x.s) ? 
 </div>
 <ul class="tl">
   <li>MDCT: 2M 点の枠を M 点ずつずらす。窓が上の条件を満たすと、重ねて足したときに時間の折り返しが打ち消し合う<Fragment set:html={rf(10)} /></li>
-  <li>MP3・AAC の芯は MDCT。量子化の雑音を、その時その周波数で聞こえない大きさ（マスキングしきい値）の下に収めてビットを減らす。長い枠では打音の前に雑音がにじむ（プリエコー）ので、短い枠に切り替える<Fragment set:html={rf(11)} /></li>
+  <li>MP3・AAC は MDCT を使う</li><li>量子化の雑音をその時その周波数で聞こえない大きさ（マスキングしきい値）の下に収めてビットを減らす</li><li>長い枠では打音の前に雑音がにじむ（プリエコー）ので短い枠に切り替える<Fragment set:html={rf(11)} /></li>
   <li>DCT・DFT は全体を 1 回で変換する。どの係数も全体に広がる波なので、打音を残すには多くの係数が要る</li>
   <li>DFT の速い計算は <Fragment set:html={to('fft', 'FFT')} />、分解の仕組みは <Fragment set:html={to('wavelet', 'ウェーブレット変換')} /></li>
 </ul>
@@ -105,14 +105,14 @@ const to = (id: string, t: string) => (TOOLS.some((x) => x.id === id && !x.s) ? 
 <ul class="tl">
   <li>ウェーブレットは Haar・db2・db4、8 段、端は周期的につなぐ。長さは <math><msup><mn>2</mn><mn>8</mn></msup></math> の倍数まで 0 で埋める</li>
   <li>雑音は実効値の比で SN 比を決めて足す。白色は正規乱数、ピンクは Kellet の近似のフィルタ</li>
-  <li>雑音だけの音は、雑音を足したときは足した雑音そのもの、足さないときは音の中で最も静かな 0.4 秒。区間の係数はフィルタの長さの分だけ両端を削って使う</li>
+  <li>雑音だけの音は、雑音を足したときは足した雑音そのもの、足さないときは音の中で最も静かな 0.4 秒</li><li>区間の係数はフィルタの長さの分だけ両端を削って使う</li>
   <li>サンプル音源は 4 秒。打楽器は 120 BPM の 2 小節、撥弦は 8 音で、繰り返してもテンポが崩れない</li>
   <li>ずらして平均するのは 8 回（0〜7 点）</li>
   <li>圧縮は信号の長さ N の割合で残す数 K を決め、どの基底でも同じ K を残す。Δ は K 番目に大きい係数の絶対値</li>
   <li>ビット数は量子化した番号の 0 次のエントロピー。前後の係数の関係（文脈）を使わないので、実際の符号化より多め</li>
   <li>DCT・DFT は全体を 2 の累乗の長さまで 0 で埋めて 1 回で変換する。DCT は Makhoul の並べ替えで FFT 1 回<Fragment set:html={rf(12)} />。DFT は余弦と正弦の係数を別に数える</li>
   <li>MDCT は 2048 点の枠（M = 1024）で、窓は正弦。聴覚の模型は使わない（どの基底も同じ規則で比べる）</li>
-  <li>サンプル音源の撥弦は Karplus・Strong の算法<Fragment set:html={rf(13)} /></li>
+  <li>サンプル音源の撥弦は Karplus・Strong のアルゴリズム<Fragment set:html={rf(13)} /></li>
   <li>ファイルは先頭 10 秒をモノラルにして使う。マイクはブラウザの雑音を消す・音量をそろえる処理を切り、最大 10 秒を録る</li>
   <li>聴き比べの音はどれも同じ時刻から繰り返して鳴らし、音量だけを 10 ms ほどで切り替える</li>
   <li>スカログラムは Morlet（<math><msub><mi>ω</mi><mn>0</mn></msub><mo>=</mo><mn>6</mn></math>）で 50 Hz〜12 kHz を 1 オクターブ 8 行、10 ms ごと。振幅 1 の正弦波が 0 dBFS</li>

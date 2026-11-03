@@ -47,7 +47,7 @@ export const ELEV: ParamDef = {
   nm: 'h',
   sym: '<i>h</i>',
   name: '標高',
-  sub: '楕円体からの高さとして扱う。月の出入りの時刻が少し変わる',
+  sub: '楕円体からの高さ · 月の出入りの時刻に少しの差',
   unit: 'm',
   min: -400,
   max: 9000,

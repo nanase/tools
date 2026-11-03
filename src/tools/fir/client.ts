@@ -182,7 +182,7 @@ function render(): void {
   html('#o-mul', `${Math.ceil(N / 2)}<span class="u">回</span>`);
   txt('#o-muls', `対称性を使わないと ${N} 回`);
   html('#o-iir', `楕円 ${r.iir.ellip}<span class="u">次</span>`);
-  txt('#o-iirs', `乗算 ${iirMults(r.iir.ellip)} 回・バタワースなら ${r.iir.butter} 次・位相は非直線`);
+  txt('#o-iirs', `乗算 ${iirMults(r.iir.ellip)} 回・バターワースなら ${r.iir.butter} 次・位相は非直線`);
   txt('#mt', type.ab);
   txt('#mn', String(N));
   txt('#md', `${M} S`);

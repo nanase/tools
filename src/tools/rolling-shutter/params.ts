@@ -53,7 +53,7 @@ const steps = (...seg: [number, number, number][]): number[] => [
  * iPhone は CineD、ほかは horshack の計測（動作原理と式の出典）
  */
 export const CAMS: readonly (readonly [key: string, label: string, tr: number, title: string])[] = [
-  ['gs', 'グローバル', 0, 'グローバルシャッター（全部の行を同時に露光する。Sony α9 III など）'],
+  ['gs', 'グローバル', 0, 'グローバルシャッター（全部の行を同時に露光。Sony α9 III など）'],
   ['z9', 'Z9', 3.73e-3, 'Nikon Z9（積層型）3.73 ms'],
   ['ip', 'iPhone', 5.3e-3, 'iPhone 15 Pro の主カメラ 5.3 ms'],
   ['r6', 'R6', 19.4e-3, 'Canon EOS R6 の電子シャッター 19.4 ms'],

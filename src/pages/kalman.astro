@@ -47,13 +47,13 @@ const PH =
         <div><h3 class="vh">位置の分布<span>予測 × 観測 ∝ 推定</span></h3><div class="scope"><svg viewBox="-50 -14 462 290" id="k-mg" role="img" aria-label="位置の分布"></svg></div></div>
       </div>
       <div class="tp">
-        <button type="button" class="tp-ib" id="k-home" title="最初から（初めの不確かさから推定し直す）" aria-label="最初から"><svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1.5" y="1.5" width="1.8" height="9"/><path d="M10.5 1.5v9L4 6z"/></svg></button>
-        <button type="button" class="tp-pp" id="k-pp" title="動かす" aria-label="動かす"><svg class="i-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.2l7.6 4.8L3 10.8z"/></svg><svg class="i-pause" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="2.8" height="9"/><rect x="7.2" y="1.5" width="2.8" height="9"/></svg></button>
+        <button type="button" class="tp-ib" id="k-home" title="最初から（初めの不確かさから推定）" aria-label="最初から"><svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1.5" y="1.5" width="1.8" height="9"/><path d="M10.5 1.5v9L4 6z"/></svg></button>
+        <button type="button" class="tp-pp" id="k-pp" title="再生" aria-label="再生"><svg class="i-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.2l7.6 4.8L3 10.8z"/></svg><svg class="i-pause" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="2.8" height="9"/><rect x="7.2" y="1.5" width="2.8" height="9"/></svg></button>
         <div class="tp-tl">
           <div class="phs" id="k-phs" set:html={PH} />
           <div class="tp-tm"><span>観測 <b id="k-k">0</b> 回</span><span id="k-t">0.0 s</span></div>
         </div>
-        <div class="tp-side"><button type="button" class="tp-sq" id="k-step" title="1 段進める（予測・観測・更新を 1 つずつ）" aria-label="1 段進める"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 3l6 5-6 5M12 3v10"/></svg></button></div>
+        <div class="tp-side"><button type="button" class="tp-sq" id="k-step" title="次の段（予測・観測・更新を 1 つずつ）" aria-label="次の段"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 3l6 5-6 5M12 3v10"/></svg></button></div>
       </div>
       <p class="sr" id="k-live" aria-live="polite"></p>
       <More id="g-fig" title="表示の設定"><div class="ptab">

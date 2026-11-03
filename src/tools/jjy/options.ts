@@ -45,7 +45,7 @@ export const OPT_ROWS: readonly OptRow[] = [
     ch: [
       ['default', '15・45 分'],
       ['force', '常に'],
-      ['disable', '送らない'],
+      ['disable', '送信なし'],
     ],
   },
   {

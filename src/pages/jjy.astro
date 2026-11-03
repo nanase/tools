@@ -33,12 +33,12 @@ const rows = (tab: OptRow['tab']) => OPT_ROWS.filter((r) => r.tab === tab);
           <div class="m"><dt>日付</dt><dd id="o-date"></dd></div>
           <div class="m"><dt>曜日</dt><dd id="o-wd"></dd></div>
           <div class="m"><dt>年の通算日</dt><dd id="o-doy"></dd></div>
-          <div class="m"><dt>現在時刻との差</dt><dd><span id="o-diff"></span><button type="button" class="tg" id="nowBtn">現在時刻に戻す</button></dd></div>
+          <div class="m"><dt>現在時刻との差</dt><dd><span id="o-diff"></span><button type="button" class="tg" id="nowBtn">現在時刻へ</button></dd></div>
         </dl>
       </Panel>
 
       <Panel hid="hd-snd" title="音" class="a-snd">
-        <div slot="aux" class="seg"><button type="button" id="playBtn" aria-pressed="false" title="信号を音で鳴らす（低出力は高出力の 10 % の音量）"><span class="led" id="sndLed" aria-hidden="true"></span><span id="playT">再生</span></button></div>
+        <div slot="aux" class="seg"><button type="button" id="playBtn" aria-pressed="false" title="信号の音（低出力は高出力の 10 % の音量）"><span class="led" id="sndLed" aria-hidden="true"></span><span id="playT">再生</span></button></div>
         <div class="ptab">
           <ChoiceRow k="mode" sym="<i>~</i>" name="音の種類" sub="時刻合わせは 13.333 kHz の矩形波" choices={[['tone', '可聴音'], ['sync', '時刻合わせ']]} value="tone" msg>
             <button slot="help" type="button" class="qbtn" id="syncBtn" aria-expanded="false" aria-controls="syncTip" aria-label="時刻合わせのやりかた" title="時刻合わせのやりかた">?</button>
@@ -46,7 +46,7 @@ const rows = (tab: OptRow['tab']) => OPT_ROWS.filter((r) => r.tab === tab);
           {PARAMS.filter((d) => d.k !== 'f').map((d) => <ParamRow d={d} />)}
         </div>
         <More id="g-snd"><div class="ptab">{PARAMS.filter((d) => d.k === 'f').map((d) => <ParamRow d={d} />)}</div></More>
-        <p class="desc" id="syncTip" role="tooltip" hidden>スピーカーかイヤホンをつなぎ、「時刻合わせ」を選んで再生します。配線の近くに電波時計を置くと受信が始まります。13.333 kHz の矩形波の第 3 高調波（40 kHz）を使うため、サウンドデバイスのローパスフィルタで 40 kHz が出ず、合わせられない場合があります。時刻合わせによって生じた問題について責任は負いかねます。</p>
+        <p class="desc" id="syncTip" role="tooltip" hidden>スピーカーかイヤホンをつなぎ、「時刻合わせ」を選んで再生します。配線の近くに電波時計を置くと受信が始まります。13.333 kHz の矩形波の第 3 高調波（40 kHz）を使います。サウンドデバイスのローパスフィルタで 40 kHz が出ず、合わせられない場合があります。時刻合わせによって生じた問題について責任は負いかねます。</p>
       </Panel>
     </div>
 

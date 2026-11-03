@@ -17,20 +17,20 @@ import Theory from '../tools/halo/Theory.astro';
 const name = 'ハロ（暈）';
 /* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
 const ORIENTS = [
-  ['random', 'ランダム', '向きがそろわない'],
+  ['random', 'ランダム', 'そろわない向き'],
   ['plate', '板', 'c 軸が鉛直（底面が水平）。幻日・環天頂アーク・環水平アーク・太陽柱'],
   ['column', '柱', 'c 軸が水平。上端接弧・外接ハロ・ラテラルアーク'],
   ['parry', 'Parry', 'c 軸が水平で、側面 2 枚も水平。パリーアーク'],
-  ['lowitz', 'Lowitz', '板が長い対角線のまわりに傾く。ローウィッツアーク'],
+  ['lowitz', 'Lowitz', '長い対角線のまわりに傾く板。ローウィッツアーク'],
 ] as const;
 ---
-<SiteLayout title={name} tool={{ id: 'halo', name }} note="空の映像は、氷晶の中を通る光線を幾何光学で追跡したものです（回折・大気・雲は近似）。">
+<SiteLayout title={name} tool={{ id: 'halo', name }} note="空の映像は氷晶の中を通る光線を幾何光学で追跡したものです（回折・大気・雲は近似）。">
   <PageTitle title={name}>上空の巻雲に浮かぶ氷晶（六角柱の結晶）に、太陽や月の光線を何千万本も通して、出ていく向きを空に足し合わせます。結晶の面がプリズムになって光を曲げたり反射したりするので、結晶の形と向きと太陽の高度によって、内暈・幻日・環天頂アークなどのハロが現れます。結晶の中の光の通り道も図で確かめられます。</PageTitle>
 
   <div class="tgrid">
     <div class="col c1">
       <Panel hid="hd-view" title="空" class="a-view">
-        <div slot="aux" class="seg" id="p-mode" role="group" aria-label="映像"><button type="button" data-v="photo" aria-pressed="true" title="青空と巻雲のベールの上に、ハロの光を足した見え方">写真風</button><button type="button" data-v="only" aria-pressed="false" title="結晶で曲がった光だけを、黒い地に描く">ハロだけ</button></div>
+        <div slot="aux" class="seg" id="p-mode" role="group" aria-label="映像"><button type="button" data-v="photo" aria-pressed="true" title="青空と巻雲のベールの上にハロの光を足した見え方">写真風</button><button type="button" data-v="only" aria-pressed="false" title="結晶で曲がった光だけ（黒い地）">ハロだけ</button></div>
         <div class="sbar">
           <span class="stag"><span id="v-src">SUN</span> <b id="v-e"></b></span>
           <span class="stag">VIEW <b id="v-view"></b></span>
@@ -38,14 +38,14 @@ const ORIENTS = [
           <span class="stag v-rate">RAYS <b id="v-rays">—</b></span>
         </div>
         <div class="hv" id="hv">
-          <canvas id="hvc" tabindex="0" role="img" aria-label="シミュレートした空"></canvas>
+          <canvas id="hvc" tabindex="0" role="img" aria-label="計算した空"></canvas>
           <div class="hls" id="hls"><svg id="hls-g" aria-hidden="true"></svg></div>
           <button type="button" class="hv-fs" id="hv-fs" aria-label="全画面で表示" title="全画面で表示"><svg class="i-open" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/></svg><svg class="i-close" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 2v4H2M14 6h-4V2M10 14v-4h4M2 10h4v4"/></svg></button>
           <p class="hv-msg" id="hv-msg" hidden></p>
         </div>
         <More id="g-view" title="表示の設定"><div class="ptab">
-          <ChoiceRow k="proj" name="投影" sub="魚眼: 等立体角の魚眼（画素の明るさが光線の数に比例する）。全天: 天頂を中心にした全天。カメラ: ふつうのレンズ（透視）" choices={[['fish', '魚眼'], ['sky', '全天'], ['rect', 'カメラ']]} value="fish" />
-          <ChoiceRow k="names" name="名前" sub="ハロの名前を出す。名前を押すと、結晶の中の光路の図がそのハロになる" choices={[['on', '表示'], ['off', 'なし']]} value="on" />
+          <ChoiceRow k="proj" name="投影" sub="魚眼: 等立体角（画素の明るさが光線の数に比例）。全天: 天頂が中心。カメラ: ふつうのレンズ（透視）" choices={[['fish', '魚眼'], ['sky', '全天'], ['rect', 'カメラ']]} value="fish" />
+          <ChoiceRow k="names" name="名前" sub="ハロの名前（押すと光路の図を切り替え）" choices={[['on', '表示'], ['off', 'なし']]} value="on" />
           <ParamRow d={FOV} />
           <ParamRow d={EV} />
         </div></More>
@@ -54,7 +54,7 @@ const ORIENTS = [
       <Panel hid="hd-ray" title="結晶の中の光路" class="a-ray">
         <span slot="aux" class="aux" id="ray-aux"></span>
         <div class="ptab">
-          <ChoiceRow k="hsel" name="ハロ" sub="そのハロへ向かう光線を 1 本探して描く（今の光源の高度で）" choices={FIG.map((f) => [f.k, f.name] as const)} value="par" layout="chips" />
+          <ChoiceRow k="hsel" name="ハロ" sub="そのハロへ向かう光線 1 本（今の光源の高度）" choices={FIG.map((f) => [f.k, f.name] as const)} value="par" layout="chips" />
         </div>
         <div class="sbar" style="margin-top:10px"><span class="stag"><i class="sw" aria-hidden="true"></i>光源の光</span><span class="stag"><i class="sw c2" aria-hidden="true"></i>出ていく光</span><span class="stag v-rate" id="ray-path"></span></div>
         <div class="scope xs" id="xsw"><svg viewBox="0 0 560 380" id="xs" role="img" aria-label="結晶の中の光路"></svg><p class="xnone" id="xnone" hidden></p></div>
@@ -79,14 +79,14 @@ const ORIENTS = [
 
       <Panel hid="hd-cry" title="氷晶" class="a-cry">
         <div class="ptab">
-          <ChoiceRow k="pre" name="プリセット" sub="文献で再現された結晶の組み合わせなど。選ぶと光源の高度もそのプリセットの値にする" choices={PRESETS.map((p) => [p.k, p.name, p.title] as const)} value="cirrus" layout="chips" />
+          <ChoiceRow k="pre" name="プリセット" sub="文献で再現された結晶の組み合わせなど（光源の高度も連動）" choices={PRESETS.map((p) => [p.k, p.name, p.title] as const)} value="cirrus" layout="chips" />
           <div class="prow chr wide popc" id="p-pop" data-nm="母集団">
             <div class="c-sym" aria-hidden="true"></div>
             <div class="c-name"><span class="pn" id="n-pop">母集団</span></div>
             <RowReset label="母集団をプリセットに戻す" />
             <div class="c-sub"><div class="chips" role="group" aria-labelledby="n-pop">
               {Array.from({ length: MAX_POP }, (_, i) => <button type="button" class="chip" data-i={i} aria-pressed="false" hidden></button>)}
-              <button type="button" class="chip add" id="pop-add" title="母集団を足す">＋</button>
+              <button type="button" class="chip add" id="pop-add" title="母集団の追加">＋</button>
             </div></div>
           </div>
           <ChoiceRow k="ori" name="姿勢" sub="選んでいる母集団の結晶の向き" choices={ORIENTS} value="plate" layout="chips" />
@@ -119,8 +119,8 @@ const ORIENTS = [
           <div class="m"><dt>外暈の半径</dt><dd><span id="o-46"></span><span class="m-sub" id="o-46s"></span></dd></div>
           <div class="m"><dt>見かけの高度</dt><dd><span id="o-ap"></span><span class="m-sub" id="o-aps"></span></dd></div>
           <div class="m"><dt>雲に届く光</dt><dd><span id="o-il"></span><span class="m-sub" id="o-ils"></span></dd></div>
-          <div class="m"><dt>追った光線</dt><dd><span id="o-r"></span><span class="m-sub" id="o-rs"></span></dd></div>
-          <div class="m"><dt>追う速さ</dt><dd><span id="o-sp"></span><span class="m-sub" id="o-sps"></span></dd></div>
+          <div class="m"><dt>追跡した光線</dt><dd><span id="o-r"></span><span class="m-sub" id="o-rs"></span></dd></div>
+          <div class="m"><dt>追跡の速さ</dt><dd><span id="o-sp"></span><span class="m-sub" id="o-sps"></span></dd></div>
         </dl>
       </Panel>
     </div>

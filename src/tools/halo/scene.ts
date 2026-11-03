@@ -30,7 +30,7 @@ export const PRESETS: Preset[] = [
   {
     k: 'cirrus',
     name: '巻雲',
-    title: '板 50 %・ずんぐりした柱 25 %・鉛筆状の柱 25 %（橋詰ほか 2006 が岐阜の表示を再現した割合）',
+    title: '板 50 %・ずんぐりした柱 25 %・鉛筆状の柱 25 %（橋詰ほか 2006 が岐阜のハロを再現した割合）',
     e: 23,
     pops: [
       P({ orient: 'plate', ca: 0.3, tilt: 1, w: 50, d: 150 }),
@@ -41,7 +41,7 @@ export const PRESETS: Preset[] = [
   {
     k: 'columns',
     name: '柱の多い空',
-    title: '水平な柱 76 %・ランダムな柱 10 %・板 11 %・Parry 3 %（atoptics が英国 2001-02-09 の表示を再現した割合）',
+    title: '水平な柱 76 %・ランダムな柱 10 %・板 11 %・Parry 3 %（atoptics が英国 2001-02-09 のハロを再現した割合）',
     e: 22,
     pops: [
       P({ orient: 'column', ca: 1.2, tilt: 1, w: 76, d: 100 }),

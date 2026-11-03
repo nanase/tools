@@ -274,7 +274,7 @@ function update(): void {
 }
 
 function phaseOf(g: Geom): string {
-  if (!L || L.kind === 'none') return '欠けない';
+  if (!L || L.kind === 'none') return '欠けなし';
   if (g.alt < HORIZON) return '太陽は地平線の下';
   const m = Math.hypot(g.u, g.v);
   if (m >= g.L1) return t < L.max.t ? '食の前' : '食の後';
@@ -425,7 +425,7 @@ function drawCurve(): void {
   txt(
     '#lg-band',
     !vis
-      ? 'この地点では欠けない'
+      ? 'この地点では食なし'
       : L.c2
         ? `${L.kind === 'total' ? '皆既' : '金環'} ${durStr(L.duration)}`
         : `部分食 ${hms((L.c1 as { t: number }).t, false)}〜${hms((L.c4 as { t: number }).t, false)}`,
@@ -674,7 +674,7 @@ function drawSpace(): void {
   const turned = gOff[0] !== 0 || gOff[1] !== 0;
   const where =
     v === 'l1'
-      ? '太陽と地球の間の L1 から見た地球。DSCOVR の位置に合わせ、太陽の向きから 8° ずらして見ている（月が地球に重ならないように）'
+      ? '太陽と地球の間の L1 から見た地球（月と重ならないよう太陽の向きから 8° ずらす）'
       : v === 'geo'
         ? '静止軌道の東経 140.7°（ひまわりの位置）から見た地球'
         : '月から見た地球';
@@ -718,9 +718,9 @@ function drawOut(): void {
   const mx = L.max;
   const altDir = `太陽の高度 ${Math.round(mx.alt * R2D)}° · ${dirOf(mx.az)}`;
   if (!vis) {
-    txt('#o-mt', L.kind === 'none' ? '欠けない' : '見えない');
+    txt('#o-mt', L.kind === 'none' ? '欠けなし' : '見えない');
     txt('#o-mv', L.kind === 'none' ? '食なし' : '地平線の下');
-    txt('#o-ms', L.kind === 'none' ? '半影がこの地点を通らない' : '食の間、太陽は地平線の下にある');
+    txt('#o-ms', L.kind === 'none' ? '半影がこの地点を通りません。' : '食の間、太陽は地平線の下にあります。');
   } else if (L.c2 && L.c3) {
     txt('#o-mt', L.kind === 'total' ? '皆既' : '金環');
     txt('#o-mv', `${hms(L.c2.t)} → ${hms(L.c3.t)}`);
@@ -819,7 +819,8 @@ async function drawList(): Promise<void> {
       `<tr data-id="${e.id}"${e.id === ecl?.id ? ' class="on"' : ''}><td>${dateStr(e.entry)}</td><td class="t">${TYPE_S[e.entry.type]}</td><td>${here}</td><td>${Lx.max.mag.toFixed(3)}</td><td>${tm}</td><td>${Math.round(Lx.max.alt * R2D)}°</td></tr>`,
     );
   }
-  $('#list').innerHTML = rows.join('') || '<tr><td class="none" colspan="6">この期間に欠けて見える日食はない</td></tr>';
+  $('#list').innerHTML =
+    rows.join('') || '<tr><td class="none" colspan="6">この期間に欠けて見える日食はありません。</td></tr>';
 }
 $('#list').addEventListener('click', (e) => {
   const tr = (e.target as Element).closest<HTMLElement>('tr[data-id]');
@@ -852,7 +853,7 @@ async function runFind(): Promise<void> {
         (e) =>
           `<tr data-id="${e.id}"${e.id === ecl?.id ? ' class="on"' : ''}><td>${dateStr(e.entry)}</td><td class="t">${TYPE_S[e.entry.type]}</td><td>${e.entry.saros}</td><td>${e.entry.gamma.toFixed(4)}</td><td>${durShort(e.entry.duration)}</td><td>${llStr(e.entry.lat, e.entry.lon, 1)}</td></tr>`,
       )
-      .join('') || '<tr><td class="none" colspan="6">見つからない</td></tr>';
+      .join('') || '<tr><td class="none" colspan="6">見つかりません。</td></tr>';
 }
 fq.addEventListener('input', () => void runFind());
 $('#find').addEventListener('click', (e) => {
@@ -1009,7 +1010,7 @@ function drawSarosPaths(): void {
           ? `金環 ${durShort(h.duration)}`
           : h.max.visible
             ? `部分食 食分 ${h.max.mag.toFixed(3)}`
-            : `日の出・日の入りに欠けている（食分 ${h.max.mag.toFixed(3)}）`,
+            : `日の出・日の入りの欠け（食分 ${h.max.mag.toFixed(3)}）`,
   );
   ($('#s-go') as HTMLButtonElement).disabled = sel.e.id === ecl?.id;
   drawTiles();
@@ -1111,7 +1112,7 @@ async function showSugg(): Promise<void> {
     q.setAttribute('aria-expanded', 'false');
     return;
   }
-  const head = ecl ? `<li class="sgh">候補と、${dateStr(ecl.entry)} の日食での見え方</li>` : '';
+  const head = ecl ? `<li class="sgh">候補と ${dateStr(ecl.entry)} の日食での見え方</li>` : '';
   sugg.innerHTML =
     head +
     hits

@@ -22,7 +22,7 @@ const name = 'エンジン音響モデル';
 
   <div class="tgrid">
     <Panel hid="hd-eng" title="エンジン" class="a-eng" fixed>
-      <div slot="aux" class="seg" id="p-ev" role="group" aria-label="動きの見せ方"><button type="button" data-v="real" aria-pressed="false" title="実際の速さで回す（ピストンは残像になる）">実際の速さ</button><button type="button" data-v="slow" aria-pressed="true" title="ゆっくり回して、弁の開閉と管の中の圧力の波を見る。音は実際の速さのまま">スロー</button></div>
+      <div slot="aux" class="seg" id="p-ev" role="group" aria-label="動きの見せ方"><button type="button" data-v="real" aria-pressed="false" title="ピストンは残像">実際の速さ</button><button type="button" data-v="slow" aria-pressed="true" title="弁の開閉と管の中の圧力の波が見える速さ。音は実際の速さのまま">スロー</button></div>
       <div class="sbar">
         <span class="stag"><i class="sw hi" aria-hidden="true"></i>大気より高い <i class="sw lo" aria-hidden="true"></i>低い <b id="e-pr"></b></span>
         <span class="stag" id="e-st"></span>
@@ -37,16 +37,16 @@ const name = 'エンジン音響モデル';
           <ChoiceRow k="sl" name="スローの速さ" sub="クランク軸の回転を何分の 1 の速さで描くか。音は実際の速さのまま" choices={SLOW.map((v) => [v, `1/${v}`] as const)} value={50} />
         </div>
         <div class="ptab">
-          <ChoiceRow k="pr" name="圧力の色の範囲" sub="管の中の圧力の大気との差を、どこまでの大きさで最も濃い色にするか" choices={PRANGE.map((v) => [v, `±${v} kPa`] as const)} value={50} />
+          <ChoiceRow k="pr" name="圧力の色の範囲" sub="最も濃い色にする圧力（大気との差）" choices={PRANGE.map((v) => [v, `±${v} kPa`] as const)} value={50} />
         </div>
       </div></More>
     </Panel>
 
     <div class="col c1">
       <Panel hid="hd-run" title="運転" class="a-run">
-        <div slot="aux" class="seg"><button type="button" id="runBtn" aria-pressed="false" title="エンジンを掛ける・止める（音も鳴らす）"><span class="led" id="runLed" aria-hidden="true"></span><span id="runT">運転</span></button></div>
+        <div slot="aux" class="seg"><button type="button" id="runBtn" aria-pressed="false" title="エンジンの始動・停止（音あり）"><span class="led" id="runLed" aria-hidden="true"></span><span id="runT">運転</span></button></div>
         <div class="ptab">
-          <ChoiceRow k="load" name="走らせ方" sub="走行: 遠心クラッチと 4 段の変速機を通して車体を走らせる（N なら空ぶかし）。回転数固定: 台上の動力計のように、どのスロットルでも回転数を一定にする" choices={[['drive', '走行'], ['hold', '回転数固定']]} value="drive" />
+          <ChoiceRow k="load" name="走らせ方" sub="走行: 車体を走らせる（N なら空ぶかし）。回転数固定: 台上の動力計のように回転数を一定に" choices={[['drive', '走行'], ['hold', '回転数固定']]} value="drive" />
           <ParamRow d={SPEED} />
           <ParamRow d={SLOPE} />
           <ParamRow d={VOL} />
@@ -60,16 +60,16 @@ const name = 'エンジン音響モデル';
           <div class="drv-fe"><span class="drv-l">燃費</span><b id="d-fe">—</b><span class="u">km/L</span></div>
         </div>
         <div class="thr-row">
-        <div class="thr" id="thr" tabindex="0" role="slider" aria-label="スロットルのパッド。押している間だけ、押した位置の開きまで開く" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-valuetext="閉じている">
+        <div class="thr" id="thr" tabindex="0" role="slider" aria-label="スロットルのパッド。押している間だけ、押した位置の開きまで開く" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-valuetext="全閉">
           <span class="thr-f" id="thr-f" aria-hidden="true"></span>
           <span class="thr-c" id="thr-c" aria-hidden="true" hidden></span>
           <span class="thr-k" aria-hidden="true"><i style="left:25%"></i><i style="left:50%"></i><i style="left:75%"></i></span>
           <span class="thr-l" aria-hidden="true"><b>0</b><b>25</b><b>50</b><b>75</b><b>100 %</b></span>
           <span class="thr-t" id="thr-t">スロットル</span>
         </div>
-        <button type="button" class="tg thr-lk" id="lockBtn" aria-pressed="false" title="離してもスロットルの開きを保つ。もう一度押すと閉じる"><span class="led" id="lockLed" aria-hidden="true"></span>固定</button>
+        <button type="button" class="tg thr-lk" id="lockBtn" aria-pressed="false" title="離しても開きを保持。もう一度押すと閉じる"><span class="led" id="lockLed" aria-hidden="true"></span>固定</button>
         </div>
-        <div class="thr brk" id="brk" tabindex="0" role="slider" aria-label="ブレーキのパッド。押している間だけ、押した位置の強さで止める" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-valuetext="かけていない">
+        <div class="thr brk" id="brk" tabindex="0" role="slider" aria-label="ブレーキのパッド。押している間だけ、押した位置の強さで止める" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-valuetext="なし">
           <span class="thr-f" id="brk-f" aria-hidden="true"></span>
           <span class="thr-t" id="brk-t">ブレーキ</span>
         </div>
@@ -81,7 +81,7 @@ const name = 'エンジン音響モデル';
       <Panel hid="hd-cfg" title="エンジンとマフラー" class="a-cfg">
         <div class="ptab">
           <ChoiceRow k="eng" name="エンジン" sub="JA65E は 2022 年 12 月からのロングストロークのエンジン、JA55E は 2020〜2022 年のもの。マフラーは同じものを付ける" choices={[['ja65', 'JA65E', '123 cm³、内径 50.0 mm × 行程 63.1 mm、圧縮比 10.0'], ['ja55', 'JA55E', '124 cm³、内径 52.4 mm × 行程 57.9 mm、圧縮比 9.3']]} value="ja65" />
-          <ChoiceRow k="muf" name="マフラー" sub="純正は 2 室の反射型、社外品はパンチングの芯とグラスウールのストレートの吸音型。どちらも内部の寸法は録音に合わせて決めた。純正は、スロットルを開けている間の低音を補正で足す" choices={[['stock', '純正'], ['delta', '社外品']]} value="stock" />
+          <ChoiceRow k="muf" name="マフラー" sub="純正は 2 室の反射型、社外品はパンチングの芯とグラスウールのストレートの吸音型。内部の寸法はどちらも録音に合わせた値" choices={[['stock', '純正'], ['delta', '社外品']]} value="stock" />
         </div>
         <More id="g-cfg"><div class="ptab">
           <ParamRow d={IDLE} />

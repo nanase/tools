@@ -250,7 +250,7 @@ function calc(): void {
   const t = S.tgt as Ch,
     nm = CN[t];
   tgtEl.innerHTML = miss
-    .map((c) => `<button type="button" data-v="${c}" aria-pressed="${c === t}">${CN[c]} を求める</button>`)
+    .map((c) => `<button type="button" data-v="${c}" aria-pressed="${c === t}">${CN[c]} の計算</button>`)
     .join('');
   $('#o-px').textContent = `(${px}, ${py}) · ${CN[own]} の画素`;
   const at = (dx: number, dy: number) => {

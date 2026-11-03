@@ -318,7 +318,7 @@ function pick(c: number): void {
   b?.scrollIntoView({ block: 'nearest' });
 }
 
-/** 説明の「もう一度見る」: 中身を入れ直して、現れる動きを始めからにする */
+/** 説明の「もう一度再生」: 中身を入れ直して、現れる動きを始めからにする */
 $('#q-insp').addEventListener('click', (e) => {
   if (!(e.target as Element).closest('.q-replay')) return;
   const el = $('#q-insp'),
@@ -467,7 +467,7 @@ function outputs(): void {
   txt('#o-data', `${q.bk.data - pads} / ${q.bk.data} 語`);
   txt('#o-datas', `埋め草 ${pads} 語`);
   txt('#o-ec', `${q.bk.ec * nb} 語`);
-  txt('#o-ecs', nb > 1 ? `ブロックごとに ${q.bk.ec / 2} 語まで訂正できる` : `${q.bk.ec / 2} 語まで訂正できる`);
+  txt('#o-ecs', nb > 1 ? `ブロックごとに ${q.bk.ec / 2} 語まで訂正可` : `${q.bk.ec / 2} 語まで訂正可`);
   txt('#o-mask', String(q.mask));
   txt(
     '#o-masks',
@@ -542,7 +542,7 @@ function readPanel(): void {
   txt('#q-readst', changed ? `変わったモジュール ${changed} 個` : '');
   if (!d) {
     html('#q-meters', '');
-    html('#q-out', '<span class="q-ng">読み取り失敗（形式情報が 2 か所とも 4 ビット以上ずれた）</span>');
+    html('#q-out', '<span class="q-ng">読み取れません。形式情報が 2 か所とも 4 ビット以上ずれました。</span>');
     return;
   }
   /* ブロックごとの誤りの数（元と違う符号語）と上限 */
@@ -581,10 +581,10 @@ function readPanel(): void {
   if (d.ok && d.parsed.text === q.text)
     out += `<span class="k">リード・ソロモン符号で訂正すると</span><span class="v">${show(d.parsed, fixedPos, 'em')}</span><span class="q-ok">${nFix ? `読み取り成功（${nFix} 語を訂正）` : '読み取り成功（誤りなし）'}</span>`;
   else if (d.ok)
-    out += `<span class="k">リード・ソロモン符号で訂正すると</span><span class="v">${esc(d.parsed.text)}</span><span class="q-ng">読み取り失敗（誤りが多すぎて、別の正しい符号語に訂正してしまった）</span>`;
+    out += `<span class="k">リード・ソロモン符号で訂正すると</span><span class="v">${esc(d.parsed.text)}</span><span class="q-ng">読み取れません。誤りが多すぎて、別の正しい符号語に訂正しました。</span>`;
   else {
     const bad = d.rs.map((r, i) => (r.ok ? -1 : i + 1)).filter((i) => i > 0);
-    out += `<span class="q-ng">読み取り失敗（訂正できる上限を超えた${nb > 1 ? `: ブロック ${bad.join('・')}` : ''}）</span>`;
+    out += `<span class="q-ng">読み取れません。訂正できる上限を超えました${nb > 1 ? `（ブロック ${bad.join('・')}）` : ''}。</span>`;
   }
   html('#q-out', out);
 }

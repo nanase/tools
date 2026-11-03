@@ -23,7 +23,7 @@ const desc =
 
   <div class="tgrid">
     <Panel hid="hd-fig" title="道路と波面" class="a-fig" fixed>
-      <div slot="aux" class="seg"><button type="button" id="runBtn" aria-pressed="true" title="音源を走らせる・止める"><span class="led on" id="runLed" aria-hidden="true"></span><span id="runT">RUN</span></button></div>
+      <div slot="aux" class="seg"><button type="button" id="runBtn" aria-pressed="true" title="音源の走行・停止"><span class="led on" id="runLed" aria-hidden="true"></span><span id="runT">RUN</span></button></div>
       <div class="sbar">
         <span class="stag"><i class="sw c2" aria-hidden="true"></i>波面</span>
         <span class="stag"><i class="sw" aria-hidden="true"></i>マッハコーン</span>
@@ -71,7 +71,7 @@ const desc =
 
     <div class="col c2">
       <Panel hid="hd-snd" title="音" class="a-snd">
-        <div slot="aux" class="seg"><button type="button" id="playBtn" aria-pressed="false" title="聞き手の位置の音を鳴らす・止める"><span class="led" id="playLed" aria-hidden="true"></span><span id="playT">再生</span></button></div>
+        <div slot="aux" class="seg"><button type="button" id="playBtn" aria-pressed="false" title="聞き手の位置の音"><span class="led" id="playLed" aria-hidden="true"></span><span id="playT">再生</span></button></div>
         <div class="ptab"><ParamRow d={VOL} /></div>
         <p class="msg er snd-msg" id="snd-msg" aria-live="polite"></p>
       </Panel>
@@ -100,7 +100,7 @@ const desc =
           <ParamRow d={TEMP} />
           <ParamRow d={RH} />
           <ChoiceRow k="abs" name="空気の吸収" sub="ISO 9613-1。高い音ほど遠くで弱まる" choices={[['1', 'あり'], ['0', 'なし']]} value="1" />
-          <ChoiceRow k="gnd" name="地面の反射" sub="硬い地面（アスファルト）。音だけに入れる" choices={[['1', 'あり'], ['0', 'なし']]} value="1" />
+          <ChoiceRow k="gnd" name="地面の反射" sub="硬い地面（アスファルト）。音だけに反映" choices={[['1', 'あり'], ['0', 'なし']]} value="1" />
         </div></More>
       </Panel>
 

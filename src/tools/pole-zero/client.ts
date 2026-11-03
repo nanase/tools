@@ -387,14 +387,14 @@ function showResults(): void {
   html('#o-maxf', ro(fw(A.pk.w), 'Hz', 4));
   txt('#o-maxw', `ω = ${wPi(A.pk.w)}`);
   txt('#o-st', stabText[A.st.s]);
-  txt('#o-stn', A.st.s === 'unstable' ? '単位円の外に極がある' : A.st.s === 'marginal' ? '単位円の上に極がある' : '');
+  txt('#o-stn', A.st.s === 'unstable' ? '単位円の外に極' : A.st.s === 'marginal' ? '単位円の上に極' : '');
   txt('#o-ord', String(Math.max(N, M)));
   txt('#o-ordn', `極 ${N}・零点 ${M}`);
   html('#o-dc', dBh(A.dc * LN2DB + k));
   html('#o-ny', dBh(A.ny * LN2DB + k));
   txt('#o-rmax', N ? sig(A.st.rmax, 4, true) : '—');
   txt('#o-k', sig(A.k, 4, true));
-  txt('#o-kn', A.kok ? '' : gm === 'peak' ? '最大が ∞ のため 1 にした' : '直流の振幅が 0 か ∞ のため 1 にした');
+  txt('#o-kn', A.kok ? '' : gm === 'peak' ? '最大が ∞ のため 1 にしました' : '直流の振幅が 0 か ∞ のため 1 にしました');
   txt('#mst', stabText[A.st.s]);
   txt('#mmx', `${fixed(mx, 2)} dB`);
   txt('#mord', String(Math.max(N, M)));

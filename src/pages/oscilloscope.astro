@@ -44,7 +44,7 @@ const pct = (v: number) => `${v * 100} %`;
       <Panel hid="hd-wave" title="波形" class="a-wave">
         <div slot="aux" class="pbar">
           <div class="seg" id="p-view" role="group" aria-label="表示"><button type="button" data-v="yt" aria-pressed="true" title="時間に対する波形">波形</button><button type="button" data-v="xy" aria-pressed="false" title="CH1 と CH2 を X-Y に描く">リサジュー</button></div>
-          <div class="seg"><button type="button" id="runO" aria-pressed="true" title="表示を止める・再び動かす"><span class="led on" id="runOLed" aria-hidden="true"></span><span id="runOT">RUN</span></button></div>
+          <div class="seg"><button type="button" id="runO" aria-pressed="true" title="表示の停止・再開"><span class="led on" id="runOLed" aria-hidden="true"></span><span id="runOT">RUN</span></button></div>
         </div>
 
         <div id="v-yt">
@@ -70,7 +70,7 @@ const pct = (v: number) => `${v * 100} %`;
             <div class="ptab">
               <ParamRow d={P.hd} />
               <ParamRow d={P.vd} />
-              <ChoiceRow k="lay" name="CH1 と CH2" sub="分けると CH1 を上に、CH2 を下に 2 div ずつずらします" choices={[['ov', '重ねる'], ['sp', '分ける']]} value="ov" />
+              <ChoiceRow k="lay" name="CH1 と CH2" sub="分けると CH1 を上、CH2 を下へ 2 div ずつ" choices={[['ov', '重ね'], ['sp', '分割']]} value="ov" />
               <ChoiceRow k="tp" name="トリガの位置" sub="トリガの時刻（▼）を表示窓の左から何 % に置くか" choices={POS.map((v) => [v, pct(v)] as const)} value={0.1} layout="chips" />
             </div>
             <div class="ptab">

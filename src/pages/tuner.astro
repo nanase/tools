@@ -61,8 +61,8 @@ const PCS = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯
   <div class="tgrid">
     <Panel hid="hd-fig" title="メータ" class="a-fig" fixed>
       <div slot="aux" class="pbar">
-        <div class="seg" id="p-view" role="group" aria-label="表示"><button type="button" data-v="meter" aria-pressed="true" title="ずれを針の位置で示す">メータ</button><button type="button" data-v="strobe" aria-pressed="false" title="12 の音名の窓に縞を出し、鳴っている音の窓の縞の動きでずれを示す">ストロボ</button></div>
-        <div class="seg"><button type="button" id="runBtn" aria-pressed="false" title="マイクから取り込む・止める"><span class="led" id="runLed" aria-hidden="true"></span><span id="runT">開始</span></button></div>
+        <div class="seg" id="p-view" role="group" aria-label="表示"><button type="button" data-v="meter" aria-pressed="true" title="ずれを針の位置で示す">メータ</button><button type="button" data-v="strobe" aria-pressed="false" title="12 の音名の窓の縞の動きでずれを表示">ストロボ</button></div>
+        <div class="seg"><button type="button" id="runBtn" aria-pressed="false" title="マイク入力の開始・停止"><span class="led" id="runLed" aria-hidden="true"></span><span id="runT">開始</span></button></div>
       </div>
       <div class="sbar">
         <span class="stag"><i class="sw" aria-hidden="true"></i><span id="s-view">針</span></span>
@@ -112,12 +112,12 @@ const PCS = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯
       <p class="sr" id="live" aria-live="polite"></p>
       <More id="g-fig" title="表示の設定"><div class="ana2">
         <div class="ptab">
-          <ChoiceRow k="spd" name="縞の速さ" sub="周波数の差: 機械式のストロボと同じく、ずれ（Hz）に比例して流れ、高い音ほど速い。セント: 音域によらず、ずれ（セント）に比例して流れる" choices={[['hz', '周波数の差'], ['cent', 'セント']]} value="hz" class="st-only" />
-          <ChoiceRow k="scale" name="目盛り" sub="針の振れ幅いっぱいを何セントにするか。±20 にすると中央付近が広がります" choices={[['50', '±50'], ['20', '±20']]} value="50" class="mt-only" />
-          <ChoiceRow k="tol" name="合格の幅" sub="この幅に入ると中央の印が点き、左右の矢印が両方点きます（セント）" choices={TOLS.map((t) => [String(t), `±${t}`] as const)} value="2" />
+          <ChoiceRow k="spd" name="縞の速さ" sub="周波数の差: ずれ（Hz）に比例、高い音ほど速い。セント: ずれ（セント）に比例" choices={[['hz', '周波数の差'], ['cent', 'セント']]} value="hz" class="st-only" />
+          <ChoiceRow k="scale" name="目盛り" sub="針の振れ幅いっぱいのセント数" choices={[['50', '±50'], ['20', '±20']]} value="50" class="mt-only" />
+          <ChoiceRow k="tol" name="合格の幅" sub="中央の印と左右の矢印が点く幅（セント）" choices={TOLS.map((t) => [String(t), `±${t}`] as const)} value="2" />
         </div>
         <div class="ptab">
-          <ChoiceRow k="resp" name="針の動き" sub="測った値をならす強さ。ゆっくりにすると針が揺れにくくなり、速くすると弾いた直後の変化も追います" choices={[['fast', '速い'], ['std', '標準'], ['slow', 'ゆっくり']]} value="std" class="mt-only" />
+          <ChoiceRow k="resp" name="針の動き" sub="測った値をならす強さ" choices={[['fast', '速い'], ['std', '標準'], ['slow', 'ゆっくり']]} value="std" class="mt-only" />
         </div>
       </div></More>
     </Panel>
@@ -125,7 +125,7 @@ const PCS = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯
     <div class="col c1">
       <Panel hid="hd-ins" title="楽器" class="a-ins">
         <div class="ptab">
-          <ChoiceRow k="inst" name="楽器" sub="クロマチック: 12 音のうち最も近い音に合わせる。楽器を選ぶと、その楽器の弦の音だけを探します" choices={INSTS} value="chr" layout="chips" />
+          <ChoiceRow k="inst" name="楽器" sub="クロマチック: 12 音のうち最も近い音。楽器: その楽器の弦の音だけ" choices={INSTS} value="chr" layout="chips" />
           {INSTRUMENTS.filter((i) => i.tunings.length > 1).map((i) => (
             <ChoiceRow k={`tun-${i.v}`} name="調弦" choices={i.tunings.map((t) => [t.v, t.name] as const)} value={i.tunings[0].v} layout="chips" class="tunr" />
           ))}
@@ -139,12 +139,12 @@ const PCS = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯
       <InputPanel mono>
         <div class="prow wide">
           <div class="c-sym" aria-hidden="true"></div>
-          <div class="c-name"><span class="pn">明瞭度</span><p class="desc tip" role="tooltip" hidden>音の周期のはっきりさ（0〜1）。0.90（縦線）を下回る間は音高を出しません</p></div>
+          <div class="c-name"><span class="pn">明瞭度</span><p class="desc tip" role="tooltip" hidden>音の周期のはっきりさ（0〜1）。0.90（縦線）未満は音高なし</p></div>
           <div class="c-sub"><div class="lvs"><div class="lvr"><span>NSDF</span><span class="lvb cl" aria-hidden="true"><i id="cl-bar"></i></span><b id="cl-t">—</b></div></div></div>
         </div>
         <div class="prow wide">
           <div class="c-sym" aria-hidden="true"></div>
-          <div class="c-name"><span class="pn">マイクの処理</span><p class="desc tip" role="tooltip" hidden>ブラウザに 3 つとも切るよう頼み、実際に効いた設定を出します。Safari は雑音抑圧と自動ゲインの指定に対応していません</p></div>
+          <div class="c-name"><span class="pn">マイクの処理</span><p class="desc tip" role="tooltip" hidden>実際に効いた設定。Safari は雑音抑圧と自動ゲインの指定に非対応</p></div>
           <div class="c-sub"><p class="flg" id="flg">—</p></div>
         </div>
       </InputPanel>
@@ -156,13 +156,13 @@ const PCS = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯
         <div class="ptab">
           <ParamRow d={REF} />
           <ChoiceRow k="nm" name="音名" sub="英米式（C D E）、ドイツ式（B♭ を B、B を H と書く）、イタリア式（ドレミ）、日本式（ハニホ。オクターブは一点・二点…）" choices={[['en', 'C D E'], ['de', 'C D E … H'], ['do', 'ドレミ'], ['ja', 'ハニホ']]} value="en" layout="chips" />
-          <ChoiceRow k="oc" name="オクターブの番号" sub="国際式は中央のドを C4（A4 = 440 Hz）、ヤマハなどは C3 と書きます" choices={[['4', '中央ド C4'], ['3', '中央ド C3']]} value="4" msg />
+          <ChoiceRow k="oc" name="オクターブの番号" sub="国際式は中央のド C4（A4 = 440 Hz）、ヤマハなどは C3" choices={[['4', '中央ド C4'], ['3', '中央ド C3']]} value="4" msg />
           <ChoiceRow k="acc" name="黒鍵の書き方" choices={[['s', '♯（C♯）'], ['f', '♭（D♭）']]} value="s" />
         </div>
         <More id="g-set"><div class="ptab">
-          <ChoiceRow k="tem" name="音律" sub="平均律以外は、音ごとに平均律からずらした高さを目標にします。A は基準ピッチのまま" choices={TEMPERAMENTS.map(([v, n]) => [v, n] as const)} value="et" layout="chips" />
+          <ChoiceRow k="tem" name="音律" sub="平均律以外は音ごとに平均律からずらした高さが目標。A は基準ピッチのまま" choices={TEMPERAMENTS.map(([v, n]) => [v, n] as const)} value="et" layout="chips" />
           <ChoiceRow k="ton" name="主音" sub="音律を当てはめる調の主音" choices={TONICS.map((n, i) => [String(i), n] as const)} value="0" layout="chips" msg />
-          <ChoiceRow k="trn" name="移調" sub="移調楽器では、鳴っている音（実音）ではなく楽譜の音名で出します" choices={TRANSPOSE.map(([v, n, t]) => [String(v), n, t] as const)} value="0" layout="chips" />
+          <ChoiceRow k="trn" name="移調" sub="鳴っている音（実音）ではなく楽譜の音名で表示" choices={TRANSPOSE.map(([v, n, t]) => [String(v), n, t] as const)} value="0" layout="chips" />
         </div></More>
       </Panel>
 

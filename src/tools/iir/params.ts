@@ -30,8 +30,8 @@ export const RESPS: readonly { v: Resp; ab: string; t: string }[] = [
 export const respAb = (v: string): string => RESPS.find((r) => r.v === v)?.ab ?? 'LPF';
 
 export const MODES: readonly [Mode, string, string][] = [
-  ['order', '次数を指定', '次数と基準の周波数から設計する'],
-  ['spec', '仕様から', '通過域・阻止域の端と減衰量を満たす最小の次数を求める'],
+  ['order', '次数を指定', '次数と基準の周波数から設計'],
+  ['spec', '仕様から', '通過域・阻止域の端と減衰量を満たす最小の次数'],
 ];
 
 /** 比べるもの（周波数特性・極と零点・時間応答の CH2） */
@@ -214,7 +214,7 @@ export function edgeLabel(k: EdgeKey, kind: Kind, resp: Resp, mode: Mode): Label
   if (k === 's1' || k === 's2' || (mode === 'order' && kind === 'cheby2')) {
     s = 'st';
     name = '阻止域端';
-    sub = '阻止域の端。ここから先の減衰を阻止域の減衰量以上にする';
+    sub = 'ここから先の減衰は阻止域の減衰量以上';
   } else if (mode === 'order' && (kind === 'butter' || kind === 'bessel')) {
     s = 'c';
     name = 'カットオフ周波数';
@@ -224,8 +224,8 @@ export function edgeLabel(k: EdgeKey, kind: Kind, resp: Resp, mode: Mode): Label
     name = '通過域端';
     sub =
       kind === 'cheby1' || kind === 'ellip'
-        ? '通過域の端。ここまで振幅の変動を通過域のリップル以内に収める'
-        : '通過域の端。ここまで減衰を通過域端の減衰以内に収める';
+        ? 'ここまで振幅の変動は通過域のリップル以内'
+        : 'ここまで減衰は通過域端の減衰以内';
   }
   return { sym: `<i>f</i><sub>${s}${idx}</sub>`, nm: `f${s}${idx}`, name: name + pos, sub };
 }

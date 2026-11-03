@@ -26,7 +26,7 @@ export const FOCAL: ParamDef = {
   nm: 'f',
   sym: '<i>f</i>',
   name: '焦点距離',
-  sub: 'レンズデータを相似に拡大・縮小して合わせる。長いほど画角が狭く、ボケが大きい。月や惑星は長い焦点距離で大きく写る',
+  sub: 'レンズデータの相似の拡大・縮小（長いほど画角が狭くボケが大きい）',
   unit: 'mm',
   min: 8,
   max: 3000,
@@ -61,7 +61,7 @@ export const FNUM: ParamDef = {
   nm: 'N',
   sym: '<i>N</i>',
   name: '絞り',
-  sub: '焦点距離 ÷ 入射瞳の径。大きいほど絞りが小さく、被写界深度が深い。下限はレンズの開放 F 値',
+  sub: '焦点距離 ÷ 入射瞳の径。下限はレンズの開放 F 値',
   unit: '',
   min: 2,
   max: 32,
@@ -87,7 +87,7 @@ export const FOCUS: ParamDef = {
   nm: 's',
   sym: '<i>s</i>',
   name: '撮影距離',
-  sub: 'センサーの面から、ピントを合わせる面まで。映像を押すと、その点に合わせる',
+  sub: 'センサーの面からピントを合わせる面まで（映像を押すとその点）',
   unit: 'm',
   min: 0.2,
   max: INF,
@@ -146,7 +146,7 @@ export const COC: ParamDef = {
   nm: 'c',
   sym: '<i>c</i>',
   name: '許容錯乱円',
-  sub: 'ボケがこの径より小さければピントが合って見なすときの径。被写界深度の計算だけに使う。35 mm 判では 0.03 mm が多い',
+  sub: 'ピントが合っていると見なすボケの径（被写界深度の計算だけに使用）。35 mm 判では 0.03 mm が多い',
   unit: 'mm',
   min: 0.005,
   max: 0.1,
@@ -195,8 +195,8 @@ const angle = (k: 'pan' | 'tilt', name: string, sub: string, lim: number): Param
     return [w, ''];
   },
 });
-export const PAN = angle('pan', '方位', '撮影者の向き（右が正）。映像をドラッグしても変わる', 60);
-export const TILT = angle('tilt', '仰角', '撮影者の向き（上が正）。映像をドラッグしても変わる', 30);
+export const PAN = angle('pan', '方位', '撮影者の向き（右が正、映像のドラッグでも変更）', 60);
+export const TILT = angle('tilt', '仰角', '撮影者の向き（上が正、映像のドラッグでも変更）', 30);
 
 export const PARAMS: ParamDef[] = [FOCAL, FNUM, FOCUS, COC, PAN, TILT];
 

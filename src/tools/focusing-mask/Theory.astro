@@ -4,7 +4,7 @@
 const rf = (...ns: number[]) => ns.map((n) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`).join('');
 ---
 <h3>星の像</h3>
-<p>星は十分に遠いので、望遠鏡には平らな波面の光が入ります。焦点面の像は、開口を通った光の場のフーリエ変換の強度です（フラウンホーファー回折）<Fragment set:html={rf(1, 2)} />。マスクは、開口の光の場に掛ける透過率の模様として入ります。</p>
+<p>星は十分に遠いので、望遠鏡には平らな波面の光が入ります。焦点面の像は、開口を通った光の場のフーリエ変換の強度です（フラウンホーファー回折）<Fragment set:html={rf(1, 2)} />。マスクは開口の光の場に掛ける透過率の模様として入ります。</p>
 <ol class="flow" aria-label="星の像を作る流れ">
   <li><b>開口とマスク</b><span>透過率 <math><mi>t</mi></math>（0〜1）を格子に描く</span></li>
   <li><b>ピントのずれの位相</b><span>波長ごとに掛ける</span></li>
@@ -25,7 +25,7 @@ const rf = (...ns: number[]) => ns.map((n) => `<a class="rf" href="#thy-r${n}">[
   <math display="block"><mi>W</mi><mo>=</mo><msub><mi>W</mi><mn>020</mn></msub><msup><mi>ρ</mi><mn>2</mn></msup><mo>,</mo><mspace width="1em"/><msub><mi>W</mi><mn>020</mn></msub><mo>=</mo><mfrac><mrow><mi>Δ</mi><mi>z</mi></mrow><mrow><mn>8</mn><msup><mi>N</mi><mn>2</mn></msup></mrow></mfrac></math>
   <math display="block"><mi>I</mi><mo stretchy="false">(</mo><mi>u</mi><mo>,</mo><mi>v</mi><mo stretchy="false">)</mo><mo>=</mo><msup><mrow><mo>|</mo><mi mathvariant="script">F</mi><mo stretchy="false">[</mo><mi>P</mi><mo stretchy="false">]</mo><mrow><mo>(</mo><mfrac><mi>u</mi><mrow><mi>λ</mi><mi>f</mi></mrow></mfrac><mo>,</mo><mfrac><mi>v</mi><mrow><mi>λ</mi><mi>f</mi></mrow></mfrac><mo>)</mo></mrow><mo>|</mo></mrow><mn>2</mn></msup></math>
 </div>
-<p>ピントのずれは、開口の縁で <math><msub><mi>W</mi><mn>020</mn></msub></math> になる放物面の波面のずれとして入れます<Fragment set:html={rf(3)} />。λ = 550 nm で 1 波長分のずれは、f/5 で 110 µm、f/10 で 440 µm に当たります。</p>
+<p>ピントのずれは開口の縁で <math><msub><mi>W</mi><mn>020</mn></msub></math> になる放物面の波面のずれとして入れます<Fragment set:html={rf(3)} />。λ = 550 nm で 1 波長分のずれは、f/5 で 110 µm、f/10 で 440 µm に当たります。</p>
 
 <h3>波長と色</h3>
 <p>格子で曲がる光の角度は波長に比例します。そのため白い星の光条は、内側が青く外側が赤い虹色の筋になります。400〜700 nm を 16 の帯に分けて波長ごとに計算し、星の色の重みで足し合わせます<Fragment set:html={rf(2)} />。</p>
@@ -39,7 +39,7 @@ const rf = (...ns: number[]) => ns.map((n) => `<a class="rf" href="#thy-r${n}">[
   <math display="block"><mi>Δ</mi><mi>ξ</mi><mo>=</mo><mfrac><mi>λ</mi><mrow><mi>K</mi><mi>α</mi></mrow></mfrac></math>
   <math display="block"><msub><mi>s</mi><mi>m</mi></msub><mo>=</mo><mi>m</mi><mfrac><mrow><mi>λ</mi><mi>f</mi></mrow><mi>p</mi></mfrac><mo>=</mo><mi>m</mi><mi>λ</mi><mi>B</mi><mo>,</mo><mspace width="1em"/><mi>B</mi><mo>=</mo><mfrac><mi>f</mi><mi>p</mi></mfrac></math>
 </div>
-<p><math><msub><mi>s</mi><mi>m</mi></msub></math> は、周期 <math><mi>p</mi></math> の格子の <math><mi>m</mi></math> 次の回折光がセンサーの上で中心から離れる距離です。<math><mi>B</mi></math> を決めると、焦点距離にも口径にもよらず同じ距離に出ます。B = 150、λ = 550 nm なら 1 次の光は 82.5 µm です。スリットと桟の幅が同じなら、2 次・4 次の光は消えます。</p>
+<p><math><msub><mi>s</mi><mi>m</mi></msub></math> は周期 <math><mi>p</mi></math> の格子の <math><mi>m</mi></math> 次の回折光がセンサーの上で中心から離れる距離です。<math><mi>B</mi></math> を決めると、焦点距離にも口径にもよらず同じ距離に出ます。B = 150、λ = 550 nm なら 1 次の光は 82.5 µm です。スリットと桟の幅が同じなら、2 次・4 次の光は消えます。</p>
 
 <h3>マスクの形</h3>
 <div class="tt-w">
@@ -54,7 +54,7 @@ const rf = (...ns: number[]) => ns.map((n) => `<a class="rf" href="#thy-r${n}">[
     </tbody>
   </table>
 </div>
-<p>バーティノフマスクは P. Bahtinov が 2005 年に考えました。斜めのスリットの角度は、本人が「約 20°」と書いています<Fragment set:html={rf(5)} />。周期（スリットと桟を合わせた幅）を焦点距離の 1/150〜1/200 にする目安は、2008 年に英語圏へ紹介した D. Sakva によります<Fragment set:html={rf(6)} />。</p>
+<p>バーティノフマスクは P. Bahtinov が 2005 年に考えました。斜めのスリットの角度は本人が「約 20°」と書いています<Fragment set:html={rf(5)} />。周期（スリットと桟を合わせた幅）を焦点距離の 1/150〜1/200 にする目安は、2008 年に英語圏へ紹介した D. Sakva によります<Fragment set:html={rf(6)} />。</p>
 
 <h3>光条のずれとピントのずれ</h3>
 <p>開口の一部 <math><msub><mi>S</mi><mi>j</mi></msub></math> を通った光の像は、ピントがずれると、その部分の重心 <math><msub><mi mathvariant="bold">c</mi><mi>j</mi></msub></math> に比例してずれます。格子の回折光は格子の向きに並ぶので、区画ごとの光条は「ずれた点を通り、格子の向きに伸びる直線」になります。</p>
@@ -71,7 +71,7 @@ const rf = (...ns: number[]) => ns.map((n) => `<a class="rf" href="#thy-r${n}">[
 <div class="eqs">
   <math display="block"><mi>e</mi><mo>=</mo><mfrac><mn>9</mn><mn>32</mn></mfrac><mo>·</mo><mfrac><mi>D</mi><mi>f</mi></mfrac><mrow><mo>[</mo><mn>1</mn><mo>+</mo><mi>cos</mi><mo>⁡</mo><mn>45</mn><mo>°</mo><mrow><mo>(</mo><mn>1</mn><mo>+</mo><mi>tan</mi><mo>⁡</mo><mi>θ</mi><mo>)</mo></mrow><mo>]</mo></mrow><mi>Δ</mi><mi>z</mi></math>
 </div>
-<p>ハルトマンとシャイナーのマスクでは、穴の像の間隔が、穴の中心の間隔 <math><mi>d</mi></math> に比例します。</p>
+<p>ハルトマンとシャイナーのマスクでは、穴の像の間隔が穴の中心の間隔 <math><mi>d</mi></math> に比例します。</p>
 <div class="eqs">
   <math display="block"><mi>s</mi><mo>=</mo><mfrac><mrow><mi>d</mi><mspace width="0.17em"/><mo>|</mo><mi>Δ</mi><mi>z</mi><mo>|</mo></mrow><mi>f</mi></mfrac></math>
 </div>
@@ -84,7 +84,7 @@ const rf = (...ns: number[]) => ns.map((n) => `<a class="rf" href="#thy-r${n}">[
   <li>副鏡の支柱: 幅 0.1 m の 3 本（上・右下・左下）</li>
   <li>口径: 外接円の径。中央遮蔽とスパイダーは使わない</li>
 </ul>
-<p>画像のマスクは、画像の明るさをしきい値で白と黒に分け、光を通す側の透過率を 1 にします。「円の中だけ」は鏡筒の円い口の中に重ね、「画像のまま」は画像の正方形をそのまま開口にします。</p>
+<p>画像のマスクは画像の明るさをしきい値で白と黒に分け、光を通す側の透過率を 1 にします。「円の中だけ」は鏡筒の円い口の中に重ね、「画像のまま」は画像の正方形をそのまま開口にします。</p>
 
 <h3>ピントが合っているとみなす範囲</h3>
 <p>波面のずれが 1/4 波長（レイリーの基準）までなら、ピントが合っているとみなします<Fragment set:html={rf(3)} />。この範囲は臨界焦点範囲とも呼ばれます。出典によって定数が 2〜3 倍違うので、計算結果にはどの定数を使ったかを添えます。</p>

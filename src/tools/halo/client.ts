@@ -234,7 +234,7 @@ try {
   msg.textContent =
     String(e).includes('float') || String(e).includes('webgl2')
       ? 'このブラウザでは WebGL2（浮動小数点の描画）が使えないため、空を描けません。光路の図と計算結果は使えます。'
-      : `空のシェーダを用意できませんでした（${String(e).slice(0, 120)}）`;
+      : `空を描く準備ができませんでした（${String(e).slice(0, 120)}）。`;
   hv.classList.add('nogl');
 }
 canvas.addEventListener('webglcontextlost', (e) => {
@@ -395,7 +395,7 @@ function stats(): void {
   const [a, u] = fmtN(R.rays);
   txt('#v-rays', `${a} ${u.replace(' 本', '')}`);
   html('#o-r', rv(a, u));
-  txt('#o-rs', R.rays >= R.maxRays ? 'ためる上限に達した' : 'ためながら描き直している');
+  txt('#o-rs', R.rays >= R.maxRays ? 'ためる上限に到達' : 'ためながら描き直し中');
   if (rate) html('#o-sp', rv(sig(rate / 1000, 3, true), 'M 本/s'));
   txt('#o-sps', R.float32 ? 'この端末の GPU（WebGL2）' : 'この端末の GPU（WebGL2、16 bit でためる）');
 }
@@ -459,7 +459,7 @@ function drawLabels(): void {
     b.style.left = `${lx}px`;
     b.style.top = `${ly}px`;
     if (hasFig) {
-      b.title = 'この光の通り道を光路の図に出す';
+      b.title = '光路の図に表示';
       b.addEventListener('click', () => {
         hsel$.set(l.k);
         store('c:p-hsel', l.k);
@@ -501,7 +501,7 @@ function drawFigure(): void {
     xs.innerHTML = '';
     xs.style.display = 'none';
     xn.hidden = false;
-    xn.textContent = none ?? `この高度では、${name}へ向かう光線を見つけられなかった。`;
+    xn.textContent = none ?? `この高度では${name}へ向かう光線を見つけられませんでした。`;
     txt('#ray-path', '');
     txt('#xcap', '');
     txt('#fs-cap', name);
@@ -533,8 +533,8 @@ function updateResults(): void {
   const p = parDist(e);
   txt('#o-pt', `幻${sp}の離角`);
   if (Number.isNaN(p)) {
-    html('#o-p', '出ない');
-    txt('#o-ps', `高度 ${fix(PAR_MAX, 1)}° 以上では出ない（次の側面で全反射する）`);
+    html('#o-p', 'なし');
+    txt('#o-ps', `高度 ${fix(PAR_MAX, 1)}° 以上（次の側面で全反射）`);
   } else {
     html('#o-p', deg(p));
     txt(
@@ -545,14 +545,14 @@ function updateResults(): void {
   const cz = czaAlt(e),
     ch = chaAlt(e);
   if (Number.isNaN(cz)) {
-    html('#o-cz', '出ない');
+    html('#o-cz', 'なし');
     txt('#o-czs', e < 0 ? '光源が地平線の下' : `高度 ${fix(CZA_MAX, 1)}° 以上`);
   } else {
     html('#o-cz', deg(cz));
     txt('#o-czs', `光源の上 ${fix(cz - e)}°`);
   }
   if (Number.isNaN(ch)) {
-    html('#o-ch', '出ない');
+    html('#o-ch', 'なし');
     txt('#o-chs', `高度 ${fix(CHA_MIN, 1)}° 以下`);
   } else {
     html('#o-ch', deg(ch));

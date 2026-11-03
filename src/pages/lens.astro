@@ -16,7 +16,7 @@ import Theory from '../tools/lens/Theory.astro';
 const name = 'カメラレンズ';
 /* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
 ---
-<SiteLayout title={name} tool={{ id: 'lens', name }} note="映像は、公開されたレンズデータのとおりに光線を幾何光学で追跡したものです（回折は近似）。">
+<SiteLayout title={name} tool={{ id: 'lens', name }} note="映像は公開されたレンズデータのとおりに光線を幾何光学で追跡したものです（回折は近似）。">
   <PageTitle title={name}>写真用のレンズの断面の形（面の曲率・間隔・ガラスの種類）のとおりに、センサーの各点から光線をレンズへ逆にたどって 3D の被写体に当て、レンズ越しの映像を作ります。ボケ、被写界深度、球面収差やコマ、像面の湾曲、歪曲、色のにじみ、周辺の暗さが、実際のレンズと同じしくみで現れます。収差のない理想のレンズとも比べられます。</PageTitle>
   <div class="mini" data-mini="op" aria-hidden="true"><span>画角<b id="mA"></b></span><span>被写界深度<b id="mD"></b></span><span>実効 F<b id="mN"></b></span></div>
 
@@ -24,7 +24,7 @@ const name = 'カメラレンズ';
 
     <div class="col c1">
       <Panel hid="hd-view" title="レンズ越しの映像" class="a-view">
-        <div slot="aux" class="seg" id="p-cmp" role="group" aria-label="レンズ"><button type="button" data-v="rx" aria-pressed="true" title="レンズデータのとおりに光線を追跡する">設計どおり</button><button type="button" data-v="ideal" aria-pressed="false" title="同じ焦点距離・F 値・ピントの、収差のない薄いレンズ">収差なし</button></div>
+        <div slot="aux" class="seg" id="p-cmp" role="group" aria-label="レンズ"><button type="button" data-v="rx" aria-pressed="true" title="レンズデータのとおりの光線追跡">設計どおり</button><button type="button" data-v="ideal" aria-pressed="false" title="同じ焦点距離・F 値・ピントの収差のない薄いレンズ">収差なし</button></div>
         <div class="sbar">
           <span class="stag">LENS <b id="v-lens"></b></span>
           <span class="stag">f <b id="v-f"></b></span>
@@ -42,19 +42,19 @@ const name = 'カメラレンズ';
         </div>
         <More id="g-view" title="表示の設定"><div class="ana2">
           <div class="ptab">
-            <ChoiceRow k="zm" name="拡大" sub="ピントを合わせた点（枠）を中心に、センサーの一部を拡大して描く" choices={ZOOMS.map((z) => [z, `×${z}`] as const)} value={1} />
-            <ChoiceRow k="tod" name="時間帯" sub="空と地上の明るさを変え、露出も景色に合わせる。天体そのものの明るさは変わらないので、暗いほど空の天体が目立つ。太陽と影は描かない" choices={[['day', '昼'], ['dusk', '夕暮れ'], ['night', '夜']]} value="dusk" />
+            <ChoiceRow k="zm" name="拡大" sub="ピントを合わせた点（枠）を中心にセンサーの一部を拡大" choices={ZOOMS.map((z) => [z, `×${z}`] as const)} value={1} />
+            <ChoiceRow k="tod" name="時間帯" sub="空と地上の明るさと露出（暗いほど空の天体が目立つ）" choices={[['day', '昼'], ['dusk', '夕暮れ'], ['night', '夜']]} value="dusk" />
           </div>
           <div class="ptab">
-            <ChoiceRow k="ch" name="色収差" sub="含めないと、すべての波長に d 線（587.6 nm）の屈折率を使う" choices={[['on', '含める'], ['off', '含めない']]} value="on" />
-            <ChoiceRow k="df" name="回折" sub="実効 F 値で決まるエアリー円盤の広がりを、像の点をずらして近似的に足す" choices={[['on', '含める'], ['off', '含めない']]} value="on" />
-            <ChoiceRow k="gd" name="天体のガイド" sub="月のほかの天体（金星・火星・木星・土星・天王星）の位置に、月と同じ大きさのオレンジ色の円を描く" choices={[['on', '表示'], ['off', 'なし']]} value="on" />
+            <ChoiceRow k="ch" name="色収差" sub="含めないときは全波長が d 線（587.6 nm）の屈折率" choices={[['on', '含める'], ['off', '含めない']]} value="on" />
+            <ChoiceRow k="df" name="回折" sub="実効 F 値で決まるエアリー円盤の広がり（近似）" choices={[['on', '含める'], ['off', '含めない']]} value="on" />
+            <ChoiceRow k="gd" name="天体のガイド" sub="金星・火星・木星・土星・天王星の位置に月と同じ大きさのオレンジ色の円" choices={[['on', '表示'], ['off', 'なし']]} value="on" />
           </div>
         </div></More>
       </Panel>
 
       <Panel hid="hd-sec" title="レンズの断面と光線" class="a-sec">
-        <div slot="aux" class="seg" id="p-sw" role="group" aria-label="光線の波長"><button type="button" data-v="spec" aria-pressed="true" title="400〜700 nm の可視光（20 nm ごとの 16 波長）を、光として足し合わせて描く">可視光</button><button type="button" data-v="d" aria-pressed="false" title="d 線（587.6 nm）だけで描く">d 線</button></div>
+        <div slot="aux" class="seg" id="p-sw" role="group" aria-label="光線の波長"><button type="button" data-v="spec" aria-pressed="true" title="400〜700 nm の可視光（20 nm ごとの 16 波長）">可視光</button><button type="button" data-v="d" aria-pressed="false" title="d 線（587.6 nm）だけ">d 線</button></div>
         <div class="sbar">
           <span class="stag sec-d" hidden><i class="sw" aria-hidden="true"></i>CH1 軸上の光束</span>
           <span class="stag sec-d" hidden><i class="sw c2" aria-hidden="true"></i>CH2 隅への光束</span>
@@ -98,8 +98,8 @@ const name = 'カメラレンズ';
           <ParamRow d={FOCAL} />
           <ParamRow d={FNUM} />
           <ParamRow d={FOCUS} />
-          <ChoiceRow k="fm" name="ピント合わせ" sub="AF は、向き・焦点距離・レンズを変えるたびに、枠の点に写る物体へ合わせ直す。MF は撮影距離のまま（映像を押したときだけ、その点に合わせる）。枠の点が被写界深度に入っていると、枠が緑になる" choices={[['af', 'AF', 'オートフォーカス'], ['mf', 'MF', 'マニュアルフォーカス']]} value="af" />
-          <ChoiceRow k="bl" name="絞り羽根" sub="絞りの形（正多角形）。開放では羽根が引っ込んで円になる" choices={BLADES.map((b) => [b, b ? `${b} 枚` : '円'] as const)} value={7} layout="chips" msg />
+          <ChoiceRow k="fm" name="ピント合わせ" sub="AF: 向き・焦点距離・レンズを変えるたびに合わせ直し。MF: 映像を押したときだけ。枠が緑なら被写界深度の中" choices={[['af', 'AF', 'オートフォーカス'], ['mf', 'MF', 'マニュアルフォーカス']]} value="af" />
+          <ChoiceRow k="bl" name="絞り羽根" sub="絞りの形（正多角形、開放では円）" choices={BLADES.map((b) => [b, b ? `${b} 枚` : '円'] as const)} value={7} layout="chips" msg />
         </div>
         <More id="g-lens"><div class="ptab"><ParamRow d={COC} /></div></More>
       </Panel>

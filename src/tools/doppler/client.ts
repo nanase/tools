@@ -616,7 +616,7 @@ function setOut(rs: Emission[]): void {
   $('#o-l').innerHTML = e ? u(level(e).toFixed(1), 'dB') : '—';
   $('#mF').textContent = e ? `${fs[0]} Hz` : '—';
   $('#mL').textContent = e ? `${level(e).toFixed(0)} dB` : '—';
-  $('#o-n').textContent = rs.length >= 2 ? '2 つ（マッハコーンの内側）' : rs.length ? '1 つ' : 'まだ届かない';
+  $('#o-n').textContent = rs.length >= 2 ? '2 つ（マッハコーンの内側）' : rs.length ? '1 つ' : '未到達';
 }
 
 /* ---------- 毎フレーム ---------- */

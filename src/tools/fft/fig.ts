@@ -306,11 +306,11 @@ function explain(R: Run, i: number, row = -1): string {
     k = twKind(N, p),
     tk =
       k === 'one'
-        ? '掛けなくてよい'
+        ? '掛け算なし'
         : k === 'mi'
           ? '実部と虚部を入れ替えるだけ'
           : k === 'eighth'
-            ? '実数の掛け算 2 回で済む'
+            ? '実数の掛け算 2 回'
             : '',
     W = `<span class="ew">${Wh(N, p)}</span>`,
     ea = '<span class="ea">a</span>',

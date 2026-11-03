@@ -435,10 +435,10 @@ function pvAxes(): void {
     pvAx.append(el('path', { class: 'opl', d: `M0 ${fx(PY(1.013), 1)}H${SW}`, opacity: 0.5 }));
   } else {
     for (const [d, lb] of [
-      [0, '吸気 TDC'],
-      [180, 'BDC'],
-      [360, '燃焼 TDC'],
-      [540, 'BDC'],
+      [0, '吸気 上死点'],
+      [180, '下死点'],
+      [360, '燃焼 上死点'],
+      [540, '下死点'],
     ] as const)
       pvAx.append(el('text', { x: PX(0, d), y: H6 + 14, 'text-anchor': d === 0 ? 'start' : 'middle' }, lb));
     for (let k = 0; k <= 6; k += 2)
@@ -629,7 +629,7 @@ function showStat(): void {
     !s.fuel
       ? '<span class="cut-tag">カット（減速）</span>'
       : s.limit > 0
-        ? `噴射（上限で ${Math.round(s.limit * 100)} % 抑える）`
+        ? `噴射（上限で ${Math.round(s.limit * 100)} % 抑制）`
         : '噴射',
   );
   set('o-spl', u(fx(20 * Math.log10(Math.max(1e-6, s.prms) / 2e-5), 1), 'dB'));
@@ -659,7 +659,7 @@ function frame(t: number): void {
   thCur = goal > thCur ? Math.min(goal, thCur + (100 / 0.15) * dt) : Math.max(goal, thCur - (100 / 0.1) * dt);
   thrF.style.width = `${thCur}%`;
   thr.setAttribute('aria-valuenow', String(Math.round(thCur)));
-  thr.setAttribute('aria-valuetext', thCur < 0.5 ? '閉じている' : `${Math.round(thCur)} %`);
+  thr.setAttribute('aria-valuetext', thCur < 0.5 ? '全閉' : `${Math.round(thCur)} %`);
   thrT.textContent = locked
     ? `固定 ${Math.round(held ? target : lockVal)} %`
     : held || thCur >= 0.5
@@ -674,7 +674,7 @@ function frame(t: number): void {
   brCur = bGoal > brCur ? Math.min(bGoal, brCur + dt / 0.1) : Math.max(bGoal, brCur - dt / 0.05);
   brkF.style.width = `${brCur * 100}%`;
   brk.setAttribute('aria-valuenow', String(Math.round(brCur * 100)));
-  brk.setAttribute('aria-valuetext', brCur < 0.005 ? 'かけていない' : `${Math.round(brCur * 100)} %`);
+  brk.setAttribute('aria-valuetext', brCur < 0.005 ? 'なし' : `${Math.round(brCur * 100)} %`);
   brkT.textContent = brHeld || brCur >= 0.005 ? `ブレーキ ${Math.round(brCur * 100)} %` : BHINT;
   if (brCur !== bPrev && running) audio.set({ brake: brCur });
   /* 図の模型: 音の回転数に合わせ、スローなら 1/slow の速さで進める */

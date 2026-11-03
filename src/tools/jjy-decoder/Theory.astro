@@ -3,11 +3,11 @@
 import { EQG } from './math';
 ---
 <h3>受信の処理</h3>
-<p>JJY は搬送波の振幅を毎秒の正秒で高出力（100 %）に上げ、符号ごとに決まった時間 <math><mi>τ</mi></math> のあと低出力（10 %）に下げます<a class="rf" href="#thy-r1">[1]</a>。受信側では、次の順に処理します。</p>
+<p>JJY は搬送波の振幅を毎秒の正秒で高出力（100 %）に上げ、符号ごとに決まった時間 <math><mi>τ</mi></math> のあと低出力（10 %）に下げます<a class="rf" href="#thy-r1">[1]</a>。受信側では次の順に処理します。</p>
 <ol class="flow" aria-label="受信の処理">
   <li><b>直交検波</b><span>音から振幅の変化（包絡線）だけを取り出す</span></li>
   <li><b>しきい値</b><span>高出力と低出力に分ける</span></li>
-  <li><b>符号</b><span>高出力が続いた時間 <math><mi>τ</mi></math> から 1 秒ぶんを決める</span></li>
+  <li><b>符号</b><span>高出力が続いた時間 <math><mi>τ</mi></math> から 1 秒ぶんの符号を決める</span></li>
   <li><b>分への同期</b><span>M を 0 秒とする</span></li>
   <li><b>時計</b><span>すべて合った分だけで合わせる</span></li>
 </ol>
@@ -18,12 +18,12 @@ import { EQG } from './math';
 <div class="eqs"><Fragment set:html={EQG.env} /></div>
 
 <h3>しきい値と符号</h3>
-<p>しきい値 <math><mi>θ</mi></math> は、直近 3 秒の包絡線の上位 10 % と下位 10 % の点の中間に置きます。</p>
+<p>しきい値 <math><mi>θ</mi></math> は直近 3 秒の包絡線の上位 10 % と下位 10 % の点の中間に置きます。</p>
 <ul class="tl">
   <li>上下に 1/10 幅のヒステリシスを付ける</li>
   <li>20 ms 未満の変化は雑音として捨てる</li>
 </ul>
-<p><math><mi>τ</mi></math> は、規定の 0.2・0.5・0.8 秒<a class="rf" href="#thy-r1">[1]</a>の中間で区切って符号に分けます。</p>
+<p><math><mi>τ</mi></math> は規定の 0.2・0.5・0.8 秒<a class="rf" href="#thy-r1">[1]</a>の中間で区切って符号に分けます。</p>
 <div class="eqs"><Fragment set:html={EQG.code} /></div>
 
 <h3>分への同期</h3>
@@ -40,7 +40,7 @@ import { EQG } from './math';
 </table></div>
 
 <h3>時刻の確定</h3>
-<p>パリティ、値の範囲、年と通算日から求めた曜日がすべて合った分だけで、時計を合わせます。最初の分がそろうまでは、受信中の分の時と分から仮に表示します。</p>
+<p>パリティ、値の範囲、年と通算日から求めた曜日がすべて合った分だけで時計を合わせます。最初の分がそろうまでは、受信中の分の時と分から仮に表示します。</p>
 <p>コールサインの分は年を送らないため、前の分の年を引き継ぎます。</p>
 <div class="eqs">
   <Fragment set:html={EQG.time} />

@@ -254,7 +254,7 @@ function syncPrec(): void {
     ? `N′ = ${job.N} で計算しています`
     : np === lastN
       ? `N′ = ${np} で計算済み`
-      : `N′ = ${np} で計算結果を求め直す`;
+      : `N′ = ${np} で再計算`;
 }
 function done(j: Job & { ver: number }, r: Summary | null): void {
   job = null;

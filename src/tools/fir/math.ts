@@ -158,7 +158,7 @@ export function iirSubst({ k, k1 }: IirOrder, t: Spec['t']): string {
       x2,
       mo(','),
       '<mspace width="0.6em"/>',
-      sub(mi('n'), '<mtext>バタワース</mtext>'),
+      sub(mi('n'), '<mtext>バターワース</mtext>'),
       mo('≥'),
       numR(nb),
       x2,

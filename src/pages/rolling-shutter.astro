@@ -14,7 +14,7 @@ import Theory from '../tools/rolling-shutter/Theory.astro';
 const name = 'ローリングシャッター';
 ---
 <SiteLayout title={name} tool={{ id: 'rolling-shutter', name }} note="題材は式と絵で描いた模型です。走査時間の例は第三者の計測です。">
-  <PageTitle title={name}>イメージセンサーの多くは、画面の行を上から順に少しずつ遅らせて露光し、読み出します。速く動くものは行ごとに違う瞬間が写り、プロペラが曲がったり電車が傾いたりします。走査線がゆっくり下りる様子で、どの行がいつ写ったかを確かめられます。</PageTitle>
+  <PageTitle title={name}>行ごとに露光の時刻がずれるので、速く動くものはゆがんで写ります。走査線がゆっくり下りる様子で確かめられます。</PageTitle>
 
   <div class="tgrid">
     <Panel hid="hd-img" title="画像" class="a-img" fixed>
@@ -28,7 +28,7 @@ const name = 'ローリングシャッター';
         <p class="rs-msg" id="st-msg" hidden></p>
       </div>
       <div class="tp rs-tp">
-        <button type="button" class="tp-pp" id="pp" aria-label="走査を再生する" title="走査をゆっくり再生する"><svg class="i-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.2l7.6 4.8L3 10.8z"/></svg><svg class="i-pause" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="2.8" height="9"/><rect x="7.2" y="1.5" width="2.8" height="9"/></svg></button>
+        <button type="button" class="tp-pp" id="pp" aria-label="走査の再生" title="走査のスロー再生"><svg class="i-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.2l7.6 4.8L3 10.8z"/></svg><svg class="i-pause" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="2.8" height="9"/><rect x="7.2" y="1.5" width="2.8" height="9"/></svg></button>
         <div class="tp-tl">
           <div class="tp-trk" id="trk" role="slider" tabindex="0" aria-label="読み出した行" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100">
             <div class="tp-rail"></div>

@@ -22,9 +22,9 @@ export const TYPES: readonly TypeDef[] = [
 export const typeOf = (v: string): TypeDef => TYPES.find((t) => t.v === v) ?? TYPES[0];
 
 export const METHODS: readonly { v: Method; ab: string; t: string }[] = [
-  { v: 'window', ab: '窓関数法', t: '理想の応答に窓を掛ける' },
-  { v: 'remez', ab: '等リップル', t: 'Parks–McClellan 法（Remez の交換法）で最大誤差を最小にする' },
-  { v: 'ls', ab: '最小二乗', t: '帯域ごとの二乗誤差の積分を最小にする' },
+  { v: 'window', ab: '窓関数法', t: '窓を掛けた理想の応答' },
+  { v: 'remez', ab: '等リップル', t: 'Parks–McClellan 法（Remez の交換法）で最大誤差を最小化' },
+  { v: 'ls', ab: '最小二乗', t: '帯域ごとの二乗誤差の積分を最小化' },
 ];
 export const methodOf = (v: string) => METHODS.find((m) => m.v === v) ?? METHODS[0];
 

@@ -14,7 +14,7 @@ const PRE = [10, 100, 220, 470, 1e3, 4.7e3, 10e3, 47e3, 100e3, 1e6];
 export const seriesPatch = (s: Series): ParamPatch => ({
   series: s,
   stepLabel: `E${s} で`,
-  hint: `↑↓: E${s} で隣の値　PgUp/PgDn: 10 倍・1/10　Enter: 確定　Esc: 戻す`,
+  hint: `↑↓: E${s} で隣の値　PgUp/PgDn: 10 倍・1/10　Enter: 確定　Esc: 取り消し`,
 });
 
 /**

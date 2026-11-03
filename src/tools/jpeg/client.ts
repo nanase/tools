@@ -663,7 +663,7 @@ function fillZigzag(b: BlockInfo): void {
   txt(
     '#cap9',
     b.last >= 63
-      ? '最後の係数まで 0 でないため、EOB を使わない'
+      ? '最後の係数まで 0 でないため EOB なし'
       : b.last < 0
         ? 'すべて 0。DC の差分の後はすぐ EOB'
         : `0 でない最後の係数はジグザグ ${b.last} 番。残りの ${b.last + 1}〜63 番の ${63 - b.last} 個は EOB 1 つで表す`,
@@ -955,7 +955,7 @@ async function loadFile(f: File | undefined): Promise<void> {
   if (!f) return;
   const m = $('#m-file');
   m.className = 'msg';
-  m.textContent = '読み込んでいます…';
+  m.textContent = '読み込み中…';
   try {
     const bmp = await createImageBitmap(f),
       W = bmp.width,

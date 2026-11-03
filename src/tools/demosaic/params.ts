@@ -24,7 +24,7 @@ export const VIEWS: readonly (readonly [View, string, string])[] = [
 export type SrcName = 'chart' | 'own';
 export const SRCS: readonly (readonly [SrcName, string, string])[] = [
   ['chart', 'テスト画像', '柵・ゾーンプレート・ジーメンススター・色の境界・文字・布目'],
-  ['own', 'ファイル', 'この端末の画像を読み込む（送信しない）'],
+  ['own', 'ファイル', 'この端末の画像（送信なし）'],
 ];
 
 /** 光学ローパスフィルタの代わりのぼかしの標準偏差（画素） */

@@ -245,7 +245,7 @@ function status(): void {
   const lp = tLoop(room),
     slow = S.run ? Math.round(4 / lp) : 0;
   txt('#s-t', ms(S.t));
-  txt('#s-spd', slow ? `1/${slow}` : '止めています');
+  txt('#s-spd', slow ? `1/${slow}` : '停止中');
   const pk = $('#s-pick');
   if (S.pick >= 0 && S.pick < IMV.n) {
     const i = S.pick,
