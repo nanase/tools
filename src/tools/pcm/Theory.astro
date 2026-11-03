@@ -1,0 +1,112 @@
+---
+// 動作原理と式
+const sub = (b: string, s: string) => `<msub>${b}<mrow>${s}</mrow></msub>`;
+const fr = (a: string, b: string) => `<mfrac><mrow>${a}</mrow><mrow>${b}</mrow></mfrac>`;
+const fs = sub('<mi>f</mi>', '<mi>s</mi>');
+const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
+---
+<h3>全体の流れ</h3>
+<ol class="flow"><li>入力のローパス</li><li>標本化</li><li>量子化</li><li>符号化</li><li>再生</li><li>出力のローパス</li></ol>
+<ul class="tl">
+  <li>波の高さを一定の間隔で測り、値を 2 進数で表す方式<Fragment set:html={rf(1)} /></li>
+  <li>音の良さは標本化周波数とビット数で決まる</li>
+</ul>
+
+<h3>標本化</h3>
+<div class="eqs">
+  <math display="block" set:html={`<mi>s</mi><mo stretchy="false">[</mo><mi>n</mi><mo stretchy="false">]</mo><mo>=</mo><mi>x</mi><mo stretchy="false">(</mo>${fr('<mi>n</mi>', fs)}<mo stretchy="false">)</mo>`} />
+  <math display="block" set:html={`<mi>f</mi><mo>&lt;</mo>${fr(fs, '<mn>2</mn>')}`} />
+  <math display="block" set:html={`${sub('<mi>f</mi>', '<mi>a</mi>')}<mo>=</mo><mo>|</mo><mi>f</mi><mo>−</mo><mi>k</mi>${fs}<mo>|</mo>`} />
+</div>
+<dl class="syms">
+  <dt><math set:html={fs} /></dt><dd>標本化周波数</dd>
+  <dt><math set:html={`${fs}<mo>/</mo><mn>2</mn>`} /></dt><dd>ナイキスト周波数</dd>
+  <dt><math set:html={sub('<mi>f</mi>', '<mi>a</mi>')} /></dt><dd>折り返したあとの周波数（k は最も近い整数）</dd>
+</dl>
+<ul class="tl">
+  <li>ナイキスト周波数より低い音は、標本から元の波へ戻せる<Fragment set:html={`${rf(2)}${rf(3)}`} /></li>
+  <li>高い音は別の低い音と同じ標本になり、区別できない（折り返し）</li>
+  <li>入力のローパス（アンチエイリアスフィルタ）は標本化の前に高い音を落とす</li>
+</ul>
+
+<h3>量子化</h3>
+<div class="eqs">
+  <math display="block" set:html={`<mi>Δ</mi><mo>=</mo>${fr('<mn>2</mn>', '<msup><mn>2</mn><mi>N</mi></msup>')}`} />
+  <math display="block" set:html={`<mo stretchy="false">⟨</mo><msup><mi>e</mi><mn>2</mn></msup><mo stretchy="false">⟩</mo><mo>=</mo>${fr('<msup><mi>Δ</mi><mn>2</mn></msup>', '<mn>12</mn>')}`} />
+  <math display="block" set:html={`<mtext>SN 比</mtext><mo>≈</mo><mn>6.02</mn><mi>N</mi><mo>+</mo><mn>1.76</mn><mspace width="0.3em"/><mtext>dB</mtext>`} />
+</div>
+<dl class="syms">
+  <dt><math><mi>N</mi></math></dt><dd>ビット数</dd>
+  <dt><math><mi>Δ</mi></math></dt><dd>量子化ステップ（フルスケールは ±1）</dd>
+  <dt><math><mi>e</mi></math></dt><dd>量子化誤差</dd>
+</dl>
+<ul class="tl">
+  <li>誤差は ±Δ/2 の間に一様に分布するとみなす<Fragment set:html={rf(4)} /></li>
+  <li>SN 比の式はフルスケールの正弦波のとき。入力が小さいと、下げた分だけ SN 比も下がる</li>
+  <li>1 ビットで段階の数は 2 倍になり、SN 比は約 6 dB 上がる</li>
+  <li>段階の数が少なく入力と誤差が関係すると、雑音ではなくひずみとして聞こえる</li>
+  <li>ディザは丸める前に足す乱数</li>
+  <li>幅 ±Δ の三角分布（TPDF）のディザで、誤差の平均と分散が入力によらなくなる<Fragment set:html={rf(5)} /></li>
+</ul>
+
+<h3>μ-law と A-law</h3>
+<ul class="tl">
+  <li>電話の PCM の規格 G.711 は 8 kHz・8 bit<Fragment set:html={rf(6)} /></li>
+  <li>小さい音ほど細かく丸める折れ線の圧縮</li>
+  <li>同じ 8 bit でも、小さい音の SN 比は線形より高い</li>
+</ul>
+
+<h3>再生とビットレート</h3>
+<div class="eqs">
+  <math display="block" set:html={`<mover><mi>x</mi><mo>^</mo></mover><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mo>=</mo><munder><mo>∑</mo><mi>n</mi></munder><mi>y</mi><mo stretchy="false">[</mo><mi>n</mi><mo stretchy="false">]</mo><mspace width="0.2em"/><mtext>sinc</mtext><mo stretchy="false">(</mo>${fs}<mi>t</mi><mo>−</mo><mi>n</mi><mo stretchy="false">)</mo>`} />
+  <math display="block" set:html={`<mi>R</mi><mo>=</mo>${fs}<mo>×</mo><mi>N</mi><mo>×</mo><mi>C</mi>`} />
+</div>
+<dl class="syms">
+  <dt><math><mi>y</mi></math></dt><dd>丸めた値</dd>
+  <dt><math><mi>R</mi></math></dt><dd>ビットレート</dd>
+  <dt><math><mi>C</mi></math></dt><dd>チャンネル数</dd>
+</dl>
+<ul class="tl">
+  <li>値を次の標本まで保つと階段状の波になる（0 次ホールド）</li>
+  <li>出力のローパス（再構成フィルタ）で階段の角を落とす<Fragment set:html={rf(3)} /></li>
+  <li>CD は 44.1 kHz・16 bit・2 チャンネルで 1,411.2 kbps<Fragment set:html={rf(7)} /></li>
+</ul>
+
+<h3>このツールで決めたこと</h3>
+<ul class="tl">
+  <li>「1. PCM のしくみ」の図は 8 kHz・4 bit・440 Hz の正弦波に固定（細かい値では点と線が見えなくなるため）</li>
+  <li>標本化だけはビット数の影響を入れず、量子化だけは音源の標本化周波数のまま丸める</li>
+  <li>入力と出力のローパスはハン窓の sinc で ±12 標本</li>
+  <li>−6 dB の点は、入力が標本化周波数の 0.46 倍、出力が 0.5 倍</li>
+  <li>2 bit 以上の線形は 0 を含む 2 の補数で、正の側が 1 段少ない</li>
+  <li>1 bit は ±0.5 の 2 値</li>
+  <li>G.711 の変換は 16 ビットの線形との間で行い、フルスケールを 32768 とする</li>
+  <li>標本化周波数が音源以上のときは音源の値を線形補間で読むので、音は変わらない</li>
+  <li>SN 比は標本の 2 乗和と誤差の 2 乗和の比</li>
+  <li>スペクトルは 4096 点のハン窓の FFT で、振幅 1 の正弦波が 0 dB</li>
+  <li>電話のプリセットは G.711 の 2 つの方式で、使う地域が分かれる<Fragment set:html={rf(8)} /></li>
+  <li>初代 Sound Blaster は再生の上限の 22 kHz・8 bit を 22.05 kHz で代用（資料により 22〜23 kHz）<Fragment set:html={rf(9)} /></li>
+  <li>DAT は標準モードの 48 kHz・16 bit<Fragment set:html={rf(10)} /></li>
+  <li>DVD-Video と Blu-ray は規格で選べる値の 1 つ<Fragment set:html={`${rf(11)}${rf(12)}`} /></li>
+  <li>ハイレゾは 96 kHz・24 bit<Fragment set:html={rf(13)} /></li>
+  <li>サンプル音源は 4 秒で、くり返しても切れ目が出ない</li>
+  <li>ファイルは先頭 10 秒をモノラルにし、マイクは最大 10 秒を録る</li>
+  <li>音はこの端末の中だけで処理し、送らない</li>
+</ul>
+
+<h3>出典</h3>
+<ol class="refs">
+  <li id="thy-r1"><span class="rf-for">PCM の考え方</span><span class="rf-src">B. M. Oliver, J. R. Pierce, and C. E. Shannon, “The philosophy of PCM,” <i>Proceedings of the IRE</i>, vol. 36, no. 11, pp. 1324–1331, 1948, <a href="https://doi.org/10.1109/JRPROC.1948.231941">doi:10.1109/JRPROC.1948.231941</a></span></li>
+  <li id="thy-r2"><span class="rf-for">ナイキスト周波数</span><span class="rf-src">H. Nyquist, “Certain topics in telegraph transmission theory,” <i>Transactions of the AIEE</i>, vol. 47, no. 2, pp. 617–644, 1928, <a href="https://doi.org/10.1109/T-AIEE.1928.5055024">doi:10.1109/T-AIEE.1928.5055024</a></span></li>
+  <li id="thy-r3"><span class="rf-for">標本化定理、sinc による再生</span><span class="rf-src">C. E. Shannon, “Communication in the presence of noise,” <i>Proceedings of the IRE</i>, vol. 37, no. 1, pp. 10–21, 1949, <a href="https://doi.org/10.1109/JRPROC.1949.232969">doi:10.1109/JRPROC.1949.232969</a></span></li>
+  <li id="thy-r4"><span class="rf-for">量子化誤差の電力 Δ²/12</span><span class="rf-src">W. R. Bennett, “Spectra of quantized signals,” <i>Bell System Technical Journal</i>, vol. 27, no. 3, pp. 446–472, 1948, <a href="https://doi.org/10.1002/j.1538-7305.1948.tb01340.x">doi:10.1002/j.1538-7305.1948.tb01340.x</a></span></li>
+  <li id="thy-r5"><span class="rf-for">ディザ</span><span class="rf-src">S. P. Lipshitz, R. A. Wannamaker, and J. Vanderkooy, “Quantization and dither: A theoretical survey,” <i>Journal of the Audio Engineering Society</i>, vol. 40, no. 5, pp. 355–375, 1992</span></li>
+  <li id="thy-r6"><span class="rf-for">μ-law・A-law</span><span class="rf-src">ITU-T, <i>Recommendation G.711: Pulse code modulation (PCM) of voice frequencies</i>, 1988, <a href="https://www.itu.int/rec/T-REC-G.711">itu.int</a></span></li>
+  <li id="thy-r7"><span class="rf-for">CD の形式</span><span class="rf-src">IEC 60908, <i>Audio recording — Compact disc digital audio system</i></span></li>
+  <li id="thy-r8"><span class="rf-for">μ-law と A-law を使う地域</span><span class="rf-src">“G.711,” Wikipedia, <a href="https://en.wikipedia.org/wiki/G.711">en.wikipedia.org</a></span></li>
+  <li id="thy-r9"><span class="rf-for">初代 Sound Blaster の再生の上限</span><span class="rf-src">“Sound Blaster,” DOS Days, <a href="https://dosdays.co.uk/topics/sb.php">dosdays.co.uk</a></span></li>
+  <li id="thy-r10"><span class="rf-for">DAT の形式</span><span class="rf-src">IEC 61119, <i>Digital audio tape cassette system (DAT)</i></span></li>
+  <li id="thy-r11"><span class="rf-for">DVD-Video の PCM</span><span class="rf-src">“DVD-Video,” Wikipedia, <a href="https://en.wikipedia.org/wiki/DVD-Video">en.wikipedia.org</a></span></li>
+  <li id="thy-r12"><span class="rf-for">Blu-ray の PCM</span><span class="rf-src">“Specifications of Blu-ray primary audio streams,” AV NIRVANA, <a href="https://www.avnirvana.com/threads/specifications-of-blu-ray-primary-audio-streams.14693/">avnirvana.com</a></span></li>
+  <li id="thy-r13"><span class="rf-for">ハイレゾの定義（JEITA・日本オーディオ協会）</span><span class="rf-src">「多様化するハイレゾ音源（前編）――ハイレゾの定義と新しいパッケージ」, ITmedia, 2014, <a href="https://www.itmedia.co.jp/lifestyle/articles/1406/27/news098.html">itmedia.co.jp</a></span></li>
+</ol>

@@ -1535,6 +1535,23 @@ export const ART: Record<string, Art> = {
       P('a', fx(g, Math.max(4, xc - w), Math.min(116, xc + w), 60))
     );
   },
+  /* PCM: 波を決まった位置で測って丸めた階段。波が流れると階段の高さが変わる */
+  pcm(t) {
+    const w = (x: number) => Math.sin(TAU * (x / 56 - t / 3)),
+      y = (v: number) => r1(24 - 18 * v);
+    let st = '';
+    for (let k = 0; k <= 16; k++) {
+      const x = 4 + 7 * k,
+        Y = y(Math.round(w(x) * 4) / 4);
+      st += k ? `H${x}V${Y}` : `M${x} ${Y}`;
+    }
+    return (
+      P(
+        'b t',
+        fx((x) => y(w(x)), 4, 116, 56),
+      ) + P('a', st)
+    );
+  },
   /* 雑音除去と圧縮: 走査線の左は雑音の消えた波形、右は雑音入り。下の係数は閾値の帯より小さいものが左から消える */
   wd(t) {
     /* 止まっているときは走査線が真ん中 */
@@ -1810,6 +1827,7 @@ export const LOOP: Record<string, number> = {
   wd: 4,
   so: 3,
   ls: 3,
+  pcm: 3,
 };
 
 /** 止まっているときの図柄（ビルド時に HTML へ出す） */
