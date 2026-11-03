@@ -35,7 +35,7 @@ import {
   type ScoreNote,
   TempoMap,
 } from './score';
-import { divOf, STOPS, type Stop, stopOf } from './stops';
+import { DIVS, divOf, STOPS, type Stop, shownStop, stopOf, VIEW0 } from './stops';
 import type { TuneIn, TuneOut } from './tuner';
 import { noteName } from './tuning';
 import type { Job, Reply } from './worker';
@@ -68,10 +68,25 @@ const voicing: Record<string, { scale?: number; cut?: number }> = (() => {
   return v && typeof v === 'object' ? (v as Record<string, { scale?: number; cut?: number }>) : {};
 })();
 
-const view = choice<string>('view', (v) => {
-  showRank(v);
-  syncVoice();
-});
+/** 鍵盤ごとに選んだ、図に表示するストップ（保存する）と、整音の枠に出すストップ（最後に選んだもの） */
+const chosen: Record<Div, string> = { ...VIEW0 };
+let voStop = VIEW0.I;
+{
+  const v = stored('views');
+  if (v && typeof v === 'object')
+    for (const [d, id] of Object.entries(v))
+      if (STOPS.some((s) => s.id === id && s.div === d)) chosen[d as Div] = id as string;
+  /* 以前の保存（図に表示するストップ 1 つ）は、その鍵盤の選択と整音の枠へ移す */
+  const old = stored('c:p-view');
+  if (typeof old === 'string' && STOPS.some((s) => s.id === old)) {
+    chosen[stopOf(old).div] = old;
+    store('views', chosen);
+    store('vo', old);
+  }
+  forget('c:p-view');
+  const vo = stored('vo');
+  if (typeof vo === 'string' && STOPS.some((s) => s.id === vo)) voStop = vo;
+}
 const trem = choice<'off' | 'on'>('trem', () => syncWind());
 const sag = choice<string>('sag', () => syncWind());
 const temp = choice<string>('temp', () => retune());
@@ -111,12 +126,33 @@ const nowS = () => performance.now() / 1000;
 const stopBtns = $$<HTMLButtonElement>('button.stop');
 function syncStops(): void {
   for (const b of stopBtns) b.setAttribute('aria-pressed', String(on.has(b.dataset.stop as string)));
-  rankTitle();
+  for (const b of cdBtns) {
+    const d = b.dataset.v as Div,
+      n = STOPS.filter((s) => s.div === d && on.has(s.id)).length,
+      c = b.querySelector('.cd-n');
+    if (c) c.textContent = String(n);
+    b.setAttribute('aria-label', `${divOf(d).name}、入っているストップ ${n}`);
+  }
 }
+/* 狭い画面では、ストップを 1 鍵盤ずつ出す */
+const cdivs = $('.cdivs');
+const cdBtns = $$<HTMLButtonElement>('#p-cd button');
+const cd = choice<Div>('cd', (v) => {
+  cdivs.dataset.cd = v;
+});
+cdivs.dataset.cd = cd.value;
 $('#stops').addEventListener('click', (e) => {
-  const b = (e.target as Element).closest<HTMLButtonElement>('button.stop, button.cpl');
+  const b = (e.target as Element).closest<HTMLButtonElement>('button.stop, button.cpl, button.drw');
   if (!b) return;
-  if (b.dataset.stop) {
+  if (b.classList.contains('drw')) {
+    const id = b.dataset.v as string;
+    chosen[stopOf(id).div] = id;
+    voStop = id;
+    store('views', chosen);
+    store('vo', id);
+    syncRanks();
+    syncVoice();
+  } else if (b.dataset.stop) {
     setStop(b.dataset.stop, !on.has(b.dataset.stop));
     store('stops', [...on]);
   } else {
@@ -163,14 +199,7 @@ function setStop(id: string, v: boolean, at = 0): void {
     if (v) openStop(h, id, t);
     else closeStop(h, id, t);
   }
-  /* 図に表示しているストップなら、押している鍵の管の振動も出す・止める */
-  if (id === view.value)
-    for (const k of vis.keys()) {
-      const [d, key] = splitKey(k);
-      if (!sourcesOf(d).includes(s.div)) continue;
-      if (v) keys.set(key, soundingOf(key, nowS()));
-      else keys.release(key, nowS());
-    }
+  syncRanks();
 }
 /** カプラーを入れる・切る。鍵を押している間なら、つないだ鍵盤の入っているストップの弁も開く・閉じる（at は setStop と同じ） */
 function setCoupler(c: Coupler, v: boolean, at = 0): void {
@@ -191,11 +220,15 @@ function setCoupler(c: Coupler, v: boolean, at = 0): void {
       else if (a && !b) closeStop(h, st.id, t);
     }
   }
+  syncRanks();
 }
-/** レジストレーションに切り替える（at は setStop と同じ） */
+/** レジストレーションに切り替える（at は setStop と同じ）。図は切り替え終えてから 1 度だけ描き直す */
 function setRegistration(r: Registration, at = 0): void {
+  holdRanks = true;
   for (const s of STOPS) setStop(s.id, r.stops.includes(s.id), at);
   for (const c of COUPLERS) setCoupler(c, r.couplers.includes(c), at);
+  holdRanks = false;
+  syncRanks();
   store('stops', [...on]);
   store('couplers', [...couplers]);
 }
@@ -303,7 +336,7 @@ function keyOff(d: Div, k: number, at: number): void {
   closePipes([...h.ids.values()].flat(), Math.max(at, h.at));
 }
 
-/** 押している鍵の見た目（赤い鍵と、表示している管の振動）。手と曲の音で同じ鍵を押していれば数える */
+/** 押している鍵の見た目（赤い鍵と、列の管の振動）。手と曲の音で同じ鍵を押していれば数える */
 const vis = new Map<string, number>();
 function show(d: Div, k: number, down: boolean, t: number): void {
   const key = keyOf(d, k),
@@ -313,21 +346,79 @@ function show(d: Div, k: number, down: boolean, t: number): void {
   else vis.delete(key);
   if (c > 0 === was > 0) return;
   keys.setDown(d, k, c > 0);
-  const s = stopOf(view.value);
-  if (!sourcesOf(d).includes(s.div)) return;
-  if (c > 0 && on.has(s.id)) keys.set(k, soundingOf(k, t));
-  else if (!c) keys.release(k, t);
+  syncRanks(t);
 }
 /** 押している鍵の見た目をすべて消す */
 function clearShow(): void {
   vis.clear();
   keys.clear();
+  for (const d of RANK_DIVS) vibrating[d].clear();
 }
+
+/* ---------- 図の管の列 ---------- */
+const RANK_DIVS = DIVS.map((d) => d.v);
+/** 列に描いているストップ */
+const shown: Record<Div, string> = { ...chosen };
+/** 列で振動を出している鍵 */
+const vibrating: Record<Div, Set<number>> = { I: new Set(), II: new Set(), P: new Set() };
+/** レジストレーションの切り替えの途中か（図を描き直さない） */
+let holdRanks = false;
+/** 列の管を描き直す（押している鍵の振動は syncRanks で出し直す） */
+function drawRank(d: Div): void {
+  const id = shown[d],
+    dv = divOf(d),
+    geo = [];
+  for (let k = dv.lo; k <= dv.hi; k++) geo.push((pipesOf(id, k) ?? []).map(geoOf));
+  keys.setRank(d, geo);
+  vibrating[d].clear();
+}
+/**
+ * 図を今の状態に合わせる: 列に描くストップを決め直し、振動は押している鍵（カプラーでつないだ鍵盤の鍵も）のうち、
+ * 入っているストップの管にだけ出す。t は振動を始める・止める時刻
+ */
+function syncRanks(t = nowS()): void {
+  if (holdRanks) return;
+  for (const d of RANK_DIVS) {
+    const id = shownStop(d, chosen[d], on);
+    if (id !== shown[d]) {
+      shown[d] = id;
+      drawRank(d);
+    }
+    keys.setTitle(d, `${stopOf(id).name}・${divOf(d).name}${on.has(id) ? '' : '（ストップは切）'}`, !on.has(id));
+    const want = new Set<number>();
+    if (on.has(id))
+      for (const k of vis.keys()) {
+        const [src, key] = splitKey(k);
+        if (sourcesOf(src).includes(d)) want.add(key);
+      }
+    const cur = vibrating[d];
+    for (const k of cur)
+      if (!want.has(k)) {
+        keys.release(d, k, t);
+        cur.delete(k);
+      }
+    for (const k of want)
+      if (!cur.has(k)) {
+        keys.set(d, k, soundingOf(id, k, t));
+        cur.add(k);
+      }
+  }
+  for (const b of drwBtns) {
+    const id = b.dataset.v as string,
+      d = stopOf(id).div,
+      now = shown[d] === id && on.has(id);
+    b.setAttribute('aria-pressed', String(chosen[d] === id));
+    b.classList.toggle('now', now);
+    if (now) b.setAttribute('aria-current', 'true');
+    else b.removeAttribute('aria-current');
+  }
+}
+const drwBtns = $$<HTMLButtonElement>('button.drw');
 
 /* ---------- 管の設定と調律（Worker） ---------- */
 const S = {
-  /** 計算結果に出す管（最後に弾いた鍵と、その鍵盤の表示しているストップ） */
-  last: { stop: 'p8', key: 60 },
+  /** 計算結果に出す管（最後に弾いた鍵と、その鍵盤の列のストップ） */
+  last: { stop: VIEW0.I, key: 60 },
 };
 /** 調律した管（ストップ → 鍵 → 列） */
 let tuned = new Map<string, (Tuned[] | undefined)[]>();
@@ -354,8 +445,10 @@ function retune(): void {
     txt('#pp-tune', '');
     return;
   }
-  /* 表示しているストップと入っているストップを先に調律する */
-  const order = [view.value, ...on, ...STOPS.map((s) => s.id)].filter((v, i, a) => a.indexOf(v) === i);
+  /* 列に描くストップと入っているストップを先に調律する */
+  const order = [...RANK_DIVS.map((d) => shown[d]), ...on, ...STOPS.map((s) => s.id)].filter(
+    (v, i, a) => a.indexOf(v) === i,
+  );
   tuner.onmessage = (e: MessageEvent<TuneOut>) => {
     if (gen !== specGen) return;
     const m = e.data;
@@ -368,10 +461,12 @@ function retune(): void {
       for (const h of held.values())
         if (sourcesOf(h.div).includes(d) && !h.ids.has(m.stop)) openStop(h, m.stop, h.at > now ? h.at : 0);
     }
-    if (m.stop === view.value) {
-      showRank(view.value);
-      syncVoice();
+    const d = stopOf(m.stop).div;
+    if (m.stop === shown[d]) {
+      drawRank(d);
+      syncRanks();
     }
+    if (m.stop === voStop) syncVoice();
     if (m.stop === S.last.stop) {
       results();
       renderOut();
@@ -395,33 +490,20 @@ const keys = new Keys($<SVGSVGElement>('#ppd'), {
 keys.setMode(nv.value);
 keys.setExag(Number(ex.value));
 keys.setSlow(Number(sl.value));
+/* 狭い画面では管を短くする（ページの CSS の狭い画面と同じ幅） */
+{
+  const narrow = matchMedia('(max-width:559px)');
+  keys.setCompact(narrow.matches);
+  narrow.addEventListener('change', (e) => keys.setCompact(e.matches));
+}
 function ppBar(): void {
   $('#sl-row').hidden = nv.value !== 'slow';
   txt('#pp-ex', `×${ex.value}`);
   txt('#pp-tm', nv.value === 'slow' ? `スロー 1/${sl.value}` : '実時間（残像）');
 }
-/** 表示する管を並べる（ストップ id の管を、そのストップの鍵盤の鍵の上に）。押している鍵の管は振動も出す */
-function showRank(id: string): void {
-  const s = stopOf(id),
-    d = divOf(s.div),
-    pipes = [];
-  for (let k = d.lo; k <= d.hi; k++) pipes.push((pipesOf(id, k) ?? []).map(geoOf));
-  keys.setRank(s.div, pipes);
-  rankTitle();
-  if (on.has(id))
-    for (const k of vis.keys()) {
-      const [dv, key] = splitKey(k);
-      if (dv === s.div) keys.set(key, soundingOf(key, nowS()));
-    }
-}
-/** 図の上に、表示している管のストップと鍵盤（ストップが切ってあればそれも）を書く */
-function rankTitle(): void {
-  const s = stopOf(view.value);
-  keys.setTitle(`${s.name}・${divOf(s.div).name}${on.has(s.id) ? '' : '（ストップは切）'}`);
-}
-/** 鍵 k を押したときの、表示している管の振動 */
-function soundingOf(k: number, t0: number): Sounding[] {
-  return (pipesOf(view.value, k) ?? []).map((t, i) => ({
+/** 鍵 k を押したときの、ストップ id の管の振動 */
+function soundingOf(id: string, k: number, t0: number): Sounding[] {
+  return (pipesOf(id, k) ?? []).map((t, i) => ({
     slot: i,
     f: t.fMeas,
     amp: t.amp,
@@ -439,7 +521,7 @@ const P1 = new ParamGroup<string>([WIND, SCALE, CUT, DIST], (v, k) => {
   if (k === 'wind') syncWind();
   else if (k === 'dist') roomView();
   else if (k === 'scale' || k === 'cut') {
-    const s = stopOf(view.value);
+    const s = stopOf(voStop);
     if (s.kind !== 'flue') return;
     /* 既定と同じ値は上書きしない（既定の整音なら調律の表を使える） */
     const o = { ...voicing[s.id] },
@@ -452,9 +534,9 @@ const P1 = new ParamGroup<string>([WIND, SCALE, CUT, DIST], (v, k) => {
     retune();
   }
 });
-/** 整音の行を、表示しているストップの値に合わせる */
+/** 整音の行を、最後に選んだストップの値に合わせる */
 function syncVoice(): void {
-  const s = stopOf(view.value),
+  const s = stopOf(voStop),
     o = voicing[s.id] ?? {},
     reed = s.kind === 'reed';
   txt('#vo-aux', s.name);
@@ -707,11 +789,8 @@ async function press(d: Div, k: number): Promise<void> {
   audio.setWind(windDesc());
   keyOn(d, k, 0);
   txt('#pp-live', `${divOf(d).short} ${noteName(k)}`);
-  const first =
-    STOPS.find((s) => s.div === d && on.has(s.id) && s.id === view.value) ??
-    STOPS.find((s) => s.div === d && on.has(s.id));
-  if (first) {
-    S.last = { stop: first.id, key: k };
+  if (on.has(shown[d])) {
+    S.last = { stop: shown[d], key: k };
     results();
     renderOut();
   }
@@ -1080,7 +1159,11 @@ ppBar();
 showOut();
 roomView();
 syncWind();
-showRank(view.value);
+for (const d of RANK_DIVS) {
+  shown[d] = shownStop(d, chosen[d], on);
+  drawRank(d);
+}
+syncRanks();
 syncVoice();
 retune();
 void showLine();

@@ -531,6 +531,18 @@ export const STOPS: readonly Stop[] = [
 export const stopOf = (id: string): Stop => STOPS.find((x) => x.id === id) ?? STOPS[0];
 export const stopName = (id: string): string => stopOf(id).name;
 
+/** 鍵盤ごとに、初めに図に表示するストップ */
+export const VIEW0: Readonly<Record<Div, string>> = { II: 'g8', I: 'p8', P: 'sb16' };
+
+/**
+ * 鍵盤 d の列に描くストップ。選んだストップ chosen が切れている間は、同じ鍵盤で入っている最初のストップを描く。
+ * 鍵盤のストップがすべて切れていれば chosen を描く
+ */
+export function shownStop(d: Div, chosen: string, on: ReadonlySet<string>): string {
+  if (on.has(chosen)) return chosen;
+  return STOPS.find((s) => s.div === d && on.has(s.id))?.id ?? chosen;
+}
+
 /** 管 1 本の設定と目標の周波数 */
 export type PipeDef = { kind: 'flue'; spec: FlueSpec; f: number } | { kind: 'reed'; spec: ReedSpec; f: number };
 

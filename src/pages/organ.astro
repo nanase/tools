@@ -18,7 +18,7 @@ import '../tools/organ/style.css';
 import Credits from '../tools/organ/Credits.astro';
 import { A4S, CUT, DIST, EXAG, FMAX, SCALE, SLOW, SPANS, SWELL, VOL0, WIND } from '../tools/organ/params';
 import { PIECES } from '../tools/organ/score';
-import { DIVS, divOf, STOPS } from '../tools/organ/stops';
+import { DIVS, divOf, STOPS, VIEW0 } from '../tools/organ/stops';
 import Theory from '../tools/organ/Theory.astro';
 import { TEMPERAMENTS } from '../tools/organ/tuning';
 
@@ -46,7 +46,7 @@ const COUPLERS = [
         <span class="stag pp-note" id="pp-note"></span>
       </div>
       <div class="ppw" id="ppw">
-        <svg class="ppd" id="ppd" tabindex="0" role="group" aria-roledescription="鍵盤" aria-label="上から第 2 手鍵盤・第 1 手鍵盤・ペダルの 3 つの鍵盤と、図に表示するストップの管。鍵か管を押すと、その鍵盤の入っているストップの管が鳴る。左右の矢印キーで半音、上下の矢印キーで鍵盤、Page Up と Page Down でオクターブを選び、Enter で弾く"></svg>
+        <svg class="ppd" id="ppd" tabindex="0" role="group" aria-roledescription="鍵盤" aria-label="上から第 2 手鍵盤・第 1 手鍵盤・ペダルの 3 つの鍵盤と、鍵盤ごとに 1 列の管。鍵か管を押すと、その鍵盤の入っているストップの管が鳴る。左右の矢印キーで半音、上下の矢印キーで鍵盤、Page Up と Page Down でオクターブを選び、Enter で弾く"></svg>
       </div>
       <p class="sr" id="pp-live" aria-live="polite"></p>
       <div class="cons" id="stops">
@@ -54,8 +54,12 @@ const COUPLERS = [
           <h3 class="cons-t">ストップ</h3>
           <span class="aux s-key"><span class="led on" aria-hidden="true"></span>発音中</span>
           <span class="aux s-key"><span class="s-v" aria-hidden="true"><svg class="ic-v" viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="2.5" width="13" height="11" rx="2"/><path d="M3.5 8c1.2-3.6 2.8-3.6 4 0s2.8 3.6 4 0"/></svg></span>図に表示</span>
+          <span class="aux s-key"><span class="s-v wait" aria-hidden="true"><svg class="ic-v" viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="2.5" width="13" height="11" rx="2"/><path d="M3.5 8c1.2-3.6 2.8-3.6 4 0s2.8 3.6 4 0"/></svg></span>選択中・切</span>
         </div>
-        <div class="cdivs" id="p-view" role="group" aria-label="ストップ。名前のボタンで入・切、右の小さなボタンで図に表示するストップを選ぶ">
+        <div class="seg cd-tabs" id="p-cd" role="group" aria-label="表示する鍵盤">
+          {CONSOLE.map((d) => <button type="button" data-v={d.v} aria-pressed={d.v === 'I' ? 'true' : 'false'}>{d.short}<span class="cd-n"></span></button>)}
+        </div>
+        <div class="cdivs" role="group" aria-label="ストップ。名前のボタンで入・切、右の小さなボタンで鍵盤ごとに図に表示するストップを選ぶ">
           {CONSOLE.map((d) => (
             <div class="cdiv" data-div={d.v}>
               <div class="cdh">
@@ -68,7 +72,7 @@ const COUPLERS = [
                 {STOPS.filter((s) => s.div === d.v).map((s) => (
                   <span class="st">
                     <button type="button" class="chip stop" data-stop={s.id} aria-pressed="false" title={`${s.note}。管が鳴っている間は印が点く`}><span class="led" aria-hidden="true"></span>{s.name}</button>
-                    <button type="button" class="drw" data-v={s.id} aria-pressed={s.id === 'p8' ? 'true' : 'false'} aria-label={`${s.name}（${d.name}）を図に表示`} title="管と管の中の音圧を鍵盤の図の上に表示"><svg class="ic-v" viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="2.5" width="13" height="11" rx="2"/><path d="M3.5 8c1.2-3.6 2.8-3.6 4 0s2.8 3.6 4 0"/></svg></button>
+                    <button type="button" class="drw" data-v={s.id} aria-pressed={s.id === VIEW0[s.div] ? 'true' : 'false'} aria-label={`${s.name}（${d.name}）を図に表示`} title="この鍵盤の列に管と管の中の音圧を表示。切の間は同じ鍵盤の入っているストップを表示"><svg class="ic-v" viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="2.5" width="13" height="11" rx="2"/><path d="M3.5 8c1.2-3.6 2.8-3.6 4 0s2.8 3.6 4 0"/></svg></button>
                   </span>
                 ))}
               </div>
