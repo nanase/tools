@@ -1,6 +1,6 @@
 /**
- * PCM のページの入口。上は「1. PCM のしくみ」（固定の値で 5 つの工程を順に動かす）、下は標本化周波数とビット数を変えて、
- * 標本化だけ・量子化だけ・両方の波形とスペクトルと音を確かめる。音の計算はワーカーで行う
+ * PCM のページの入口。上は標本化周波数とビット数を変えて、標本化だけ・量子化だけ・両方の波形とスペクトルと音を確かめる。
+ * 下は「PCM のしくみ」（固定の値で 5 つの工程を順に動かす）。音の計算はワーカーで行う
  */
 import { Choice } from '../../lib/choice';
 import { $, $$ } from '../../lib/dom';
@@ -13,7 +13,7 @@ import { Deck } from './deck';
 import { COL, drawOverview, drawScope, drawSpec, readCols, trigger } from './fig';
 import { PARAMS, type PKey, PRESETS } from './params';
 import { type Law, type Rc, specAt } from './pcm';
-import { hasFreq, type SrcName } from './sources';
+import { hasFreq, type SrcName, TEST_FS } from './sources';
 import { CAPTIONS, drawStory, drawThumb, STEPS } from './story';
 import { kHzLabel, pcmLabel, snrLabel } from './text';
 import type { Job, Out } from './worker';
@@ -22,13 +22,13 @@ initToolPage();
 
 type SrcKind = 'test' | 'file' | 'mic';
 interface Rec {
-  x: Float32Array;
+  /** チャンネルごとの列 */
+  x: Float32Array[];
   F: number;
 }
-/** ファイルとマイクの長さの上限 [s]、スペクトルの点数、開いたときの位置 [s]（音の立ち上がりを避ける）、図の時間の幅 [ms] */
+/** ファイルとマイクの長さの上限 [s]、スペクトルの点数、図の時間の幅 [ms] */
 const MAX = 10,
   M = 4096,
-  START = 0.62,
   WIN = 5;
 
 const root = $('#pcm'),
@@ -37,7 +37,7 @@ const root = $('#pcm'),
 
 const S = {
   kind: 'test' as SrcKind,
-  src: 'saw' as SrcName,
+  src: 'mix' as SrcName,
   f: 440,
   lv: -3,
   fs: 8000,
@@ -64,11 +64,11 @@ function post(): void {
   const rec = S.kind === 'file' ? S.file : S.kind === 'mic' ? S.mic : null;
   if (S.kind !== 'test' && !rec) {
     res = null;
-    deck.set([], 48000);
+    deck.set([], TEST_FS);
     show();
     return;
   }
-  const key = rec ? `r${rec.x.length}/${rec.F}/${S.kind}` : `g${S.src}/${hasFreq(S.src) ? S.f : 0}`;
+  const key = rec ? `r${rec.x[0].length}/${rec.F}/${S.kind}` : `g${S.src}/${hasFreq(S.src) ? S.f : 0}`;
   if (key !== srcKey) {
     srcKey = key;
     worker.postMessage(
@@ -91,7 +91,6 @@ function run(): void {
     else post();
   }, 20);
 }
-let first = true;
 worker.onmessage = (e: MessageEvent<Out>) => {
   busy = false;
   if (again) {
@@ -102,10 +101,6 @@ worker.onmessage = (e: MessageEvent<Out>) => {
   $('#ls-busy').hidden = true;
   res = e.data;
   deck.set([res.x, res.so, res.qy, res.bo], res.F);
-  if (first) {
-    first = false;
-    deck.seek(START);
-  }
   show();
 };
 
@@ -117,7 +112,7 @@ const txt = (id: string, s: string) => {
 function show(): void {
   const N = bitsNow(),
     ny = kHzLabel(S.fs / 2);
-  const F = res?.F ?? 48000;
+  const F = res?.F ?? TEST_FS;
   txt('#s-eff', S.fs >= F ? '音の変化なし' : S.aa ? `${ny} kHz より上をカット` : `${ny} kHz より上は折り返し`);
   txt('#k-0', `${minusDb(S.lv)} dB`);
   txt('#k-1', `${kHzLabel(S.fs)} kHz`);
@@ -148,27 +143,31 @@ function drawBottom(): void {
     for (const c of [cvS, cvQ, spS, spQ]) c.getContext('2d')?.clearRect(0, 0, c.width, c.height);
     return;
   }
-  const pos = deck.pos(),
-    t = trigger(r.x, r.F, pos),
+  /* 図は先頭のチャンネルで描く */
+  const x = r.x[0],
+    so = r.so[0],
+    qy = r.qy[0],
+    pos = deck.pos(),
+    t = trigger(x, r.F, pos),
     N = r.bits,
     stair = r.fs >= r.F || S.rc === 'stair';
-  drawScope(cvS, { F: r.F, fs: r.fs, t, ms: WIN, x: r.x, s: r.ss, ...(stair ? { stair: r.ss } : { o: r.so }) });
-  drawScope(cvQ, { F: r.F, fs: r.F, t, ms: WIN, x: r.x, stair: r.qy, bits: N, law: S.law, e: r.qe });
+  drawScope(cvS, { F: r.F, fs: r.fs, t, ms: WIN, x, s: r.ss, ...(stair ? { stair: r.ss } : { o: so }) });
+  drawScope(cvQ, { F: r.F, fs: r.F, t, ms: WIN, x, stair: qy, bits: N, law: S.law, e: r.qe });
   const c0 = pos * r.F,
     bin = r.F / M,
-    sx = specAt(r.x, c0, M);
+    sx = specAt(x, c0, M);
   drawSpec(spS, r.F, r.fs / 2, [
-    { sp: specAt(r.so, c0, M), bin, col: COL.ch1, lw: 1.2, fill: true },
+    { sp: specAt(so, c0, M), bin, col: COL.ch1, lw: 1.2, fill: true },
     { sp: sx, bin, col: COL.ch2, lw: 1 },
   ]);
   drawSpec(spQ, r.F, null, [
-    { sp: specAt(r.qy, c0, M), bin, col: COL.ch1, lw: 1.2, fill: true },
+    { sp: specAt(qy, c0, M), bin, col: COL.ch1, lw: 1.2, fill: true },
     { sp: specAt(r.qe, c0, M), bin, col: COL.err, lw: 1 },
     { sp: sx, bin, col: COL.ch2, lw: 1 },
   ]);
 }
 
-/* ---------- 聴く ---------- */
+/* ---------- 試聴 ---------- */
 const pp = $<HTMLButtonElement>('#ls-pp'),
   wv = $('#ls-wv'),
   keys = $$<HTMLButtonElement>('#ls-keys .pcm-key');
@@ -278,7 +277,7 @@ $('#ls-pre').addEventListener('click', (e) => {
 
 /* ファイル: 選ぶ・枠へ落とす */
 const fin = $<HTMLInputElement>('#ls-file'),
-  pnl = $('.a-ls');
+  pnl = $('.a-set');
 async function open(f: File | undefined): Promise<void> {
   if (!f) return;
   const a = deck.ctx(),
@@ -290,13 +289,11 @@ async function open(f: File | undefined): Promise<void> {
   msg.textContent = '読み込み中…';
   try {
     const b = await a.decodeAudioData(await f.arrayBuffer()),
-      n = Math.min(b.length, Math.round(b.sampleRate * MAX)),
-      x = new Float32Array(n);
-    for (let ch = 0; ch < b.numberOfChannels; ch++) {
-      const d = b.getChannelData(ch);
-      for (let i = 0; i < n; i++) x[i] += d[i] / b.numberOfChannels;
-    }
-    S.file = { x, F: b.sampleRate };
+      n = Math.min(b.length, Math.round(b.sampleRate * MAX));
+    S.file = {
+      x: Array.from({ length: Math.min(2, b.numberOfChannels) }, (_, c) => b.getChannelData(c).slice(0, n)),
+      F: b.sampleRate,
+    };
     srcKey = '';
     msg.textContent = `${f.name}・${b.duration <= MAX ? `${b.duration.toFixed(1)} 秒` : `先頭 ${MAX} 秒`}`;
     msg.classList.remove('er');
@@ -338,12 +335,12 @@ rec.onChange = () => {
       (rec.on
         ? `録音中 ${rec.sec.toFixed(1)} / ${MAX} 秒`
         : S.mic
-          ? `${(S.mic.x.length / S.mic.F).toFixed(1)} 秒`
+          ? `${(S.mic.x[0].length / S.mic.F).toFixed(1)} 秒`
           : 'まだ録音がありません'),
   );
 };
 rec.onDone = (x, F) => {
-  S.mic = { x, F };
+  S.mic = { x: [x], F };
   srcKey = '';
   rec.onChange();
   if (S.kind === 'mic') run();
@@ -362,7 +359,7 @@ document.addEventListener('visibilitychange', () => {
   rec.stop();
 });
 
-/* ---------- 1. PCM のしくみ ---------- */
+/* ---------- PCM のしくみ ---------- */
 /** 1 工程の動く時間と止めて見せる時間 [s] */
 const DURA = 3.4,
   HOLD = 1.8;
