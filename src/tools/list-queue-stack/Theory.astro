@@ -1,0 +1,92 @@
+---
+// 動作原理と式
+import { DEFS, KEYS } from './model';
+
+type Ref = { for: string; src: string };
+const REFS: readonly Ref[] = [
+  {
+    for: 'スタック・キュー・両端キュー（2.2.1）、順次割り当て（2.2.2）、連結割り当て（2.2.3）',
+    src: 'D. E. Knuth, The Art of Computer Programming, Vol. 1: Fundamental Algorithms, 3rd ed., Addison-Wesley, 1997, Sections 2.2.1–2.2.3',
+  },
+  {
+    for: '配列によるスタックとキュー（10.1）、連結リスト（10.2）、動的テーブルの償却計算量（16.4）',
+    src: 'T. H. Cormen, C. E. Leiserson, R. L. Rivest, C. Stein, Introduction to Algorithms, 4th ed., MIT Press, 2022, Sections 10.1, 10.2, 16.4',
+  },
+  {
+    for: 'キャッシュとメモリを読む順序による速さの違い',
+    src: 'U. Drepper, What Every Programmer Should Know About Memory, Red Hat, 2007',
+  },
+];
+const Rf = (i: number) => `<a class="rf" href="#thy-r${i}">[${i}]</a>`;
+const O1 = '<math><mi>O</mi><mo>(</mo><mn>1</mn><mo>)</mo></math>';
+const ON = '<math><mi>O</mi><mo>(</mo><mi>n</mi><mo>)</mo></math>';
+---
+<h3>スタックとキュー</h3>
+<ul class="tl">
+  <li>スタック: 同じ端で追加と取り出しを行う。最後に追加したバーが最初に出る <Fragment set:html={Rf(1)} /></li>
+  <li>キュー: 一方の端で追加し、反対の端から取り出す。最初に追加したバーが最初に出る <Fragment set:html={Rf(1)} /></li>
+  <li>両端キュー: 両方の端で追加と取り出しを行う <Fragment set:html={Rf(1)} /></li>
+</ul>
+<p>この 3 つは追加と取り出しの位置を決めたもので、メモリ上の並べ方は決めていません。配列でもリストでも実装できます <Fragment set:html={Rf(2)} />。</p>
+
+<h3>配列とリスト</h3>
+<ul class="tl">
+  <li>配列: 連続した領域に並べる。n 番目の位置は計算で求まる。途中に追加すると後ろのバーをすべてずらす</li>
+  <li>片方向リスト: 各要素が次の要素の位置を持つ。ポインタのつなぎ替えだけで追加できるが、n 番目へは先頭からたどる</li>
+  <li>双方向リスト: 前の要素の位置も持つ。末尾を削除するときに 1 つ前をたどらなくてよい</li>
+  <li>リングバッファ: 配列の両端をつないで輪として使う。バーをずらさず、先頭と末尾の位置だけを進める <Fragment set:html={Rf(1)} /></li>
+</ul>
+<div class="eqs"><math display="block"><mrow><mi>h</mi><mo>←</mo><mo>(</mo><mi>h</mi><mo>+</mo><mn>1</mn><mo>)</mo><mspace width="0.3em"/><mi>mod</mi><mspace width="0.3em"/><mi>c</mi></mrow></math></div>
+<p>記号: <math><mi>h</mi></math> は先頭の位置、<math><mi>c</mi></math> は容量です。</p>
+
+<h3>計算量</h3>
+<p>要素数 <math><mi>n</mi></math> が増えたときに、1 回の操作の読み書きがどう増えるかを表します。<Fragment set:html={O1} /> は要素数によらず一定で、<Fragment set:html={ON} /> は要素数に比例します <Fragment set:html={Rf(2)} />。「–」はその操作がないことを表します。</p>
+<div class="tt-w"><table class="tt ls-cx">
+  <thead><tr><th></th>{KEYS.map(([, t]) => <th scope="col">{t}</th>)}</tr></thead>
+  <tbody>
+    {DEFS.map((d) => (
+      <tr>
+        <th scope="row">{d.name}</th>
+        {KEYS.map(([k]) => <td>{d.ops.find((o) => o.key === k)?.o ?? '–'}</td>)}
+      </tr>
+    ))}
+  </tbody>
+</table></div>
+
+<h3>配列の再確保</h3>
+<p>配列が満杯になると、2 倍の容量の領域を確保してすべての要素をコピーします。この 1 回は要素数に比例します。ただし容量が倍々に増えるので、末尾への追加を <math><mi>n</mi></math> 回続けても、コピーする要素数の合計は <math><mn>2</mn><mi>n</mi></math> 未満に収まります。1 回あたりは一定なので、償却 <Fragment set:html={O1} /> と書きます <Fragment set:html={Rf(2)} />。</p>
+<div class="eqs"><math display="block"><mrow><mn>4</mn><mo>+</mo><mn>8</mn><mo>+</mo><mo>⋯</mo><mo>+</mo><mi>c</mi><mo>&lt;</mo><mn>2</mn><mi>c</mi><mo>&lt;</mo><mn>2</mn><mi>n</mi></mrow></math></div>
+<p>記号: <math><mi>c</mi></math> は最後にコピーした要素数で、<math><mi>n</mi></math> より小さい値です。</p>
+
+<h3>同じ計算量でも速さは違う</h3>
+<p>先頭から順に読むだけなら、配列もリストも <Fragment set:html={ON} /> です。ただし CPU はメモリをキャッシュラインという単位で読むので、連続した配列では続きの要素がすでにキャッシュにあります。要素が散らばったリストではその効果が小さく、実際の時間は長くなりがちです <Fragment set:html={Rf(3)} />。</p>
+
+<h3>音</h3>
+<p>音の高さはバーの高さで決めます。<math><mi>v</mi></math> はバーの値（1〜1000）です。</p>
+<div class="eqs"><math display="block"><mrow><mi>f</mi><mo>=</mo><mn>110</mn><mo>×</mo><msup><mn>2</mn><mrow><mn>4</mn><mo>(</mo><mi>v</mi><mo>−</mo><mn>1</mn><mo>)</mo><mo>/</mo><mn>999</mn></mrow></msup><mspace width="0.3em"/><mtext>Hz</mtext></mrow></math></div>
+
+<h3>出典</h3>
+<ol class="refs">
+  {REFS.map((r, i) => (
+    <li id={`thy-r${i + 1}`}>
+      <span class="rf-for">{r.for}</span>
+      <span class="rf-src">{r.src}</span>
+    </li>
+  ))}
+</ol>
+
+<h3>このツールで決めたこと</h3>
+<ul class="tl">
+  <li>読み書きの回数は、値の読み書きとポインタの書き込みを数える</li>
+  <li>片方向リストの書き込みは追加 2 回、削除 1 回</li>
+  <li>双方向リストの書き込みは追加 4 回、削除 2 回</li>
+  <li>リストの先頭と末尾の位置の更新は数えない</li>
+  <li>スタック・キュー・両端キューは実装を決めず、追加と取り出しをそれぞれ 1 回と数える</li>
+  <li>キューのバーが詰まって見えるのは図の表現で、回数には数えない</li>
+  <li>配列の容量の初期値は 4。削除しても縮めない</li>
+  <li>リングバッファの容量は要素数＋4 で固定。満杯のときは追加できない</li>
+  <li>待ち回数は、追加してから取り出すまでに実行した操作の回数</li>
+  <li>追加順の維持率は、続けて取り出した 2 本のうち追加順を保っている組の割合</li>
+  <li>一覧の表から操作を選ぶと、要素数の 2/3 を追加した状態から始める</li>
+  <li>値の探索は末尾の要素を探す場合を数える</li>
+</ul>

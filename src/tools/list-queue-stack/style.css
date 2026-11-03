@@ -1,0 +1,94 @@
+/* リスト・キュー・スタックのページだけのスタイル（共通は src/styles/site.css） */
+:root{--ls-ok:#1d8a45}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--ls-ok:#49d17f}}
+:root[data-theme="dark"]{--ls-ok:#49d17f}
+
+/* 枠の並び。スマホは図 → 表 → 操作 → データ構造 → データ → 計算結果 → 音。PC は図の下に 2 列 */
+#ls .a-fig{order:1}#ls .a-mat{order:2}#ls .col{order:3}#ls .a-ops{order:3}#ls .a-str{order:4}#ls .a-data{order:5}#ls .a-out{order:6}#ls .a-cmp{order:2}#ls .a-snd{order:7}#ls .a-thy{order:8}
+@media (min-width:1000px){
+  #ls{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start}
+  #ls .a-fig,#ls .a-mat,#ls .a-cmp,#ls .a-thy{grid-column:1/-1}
+}
+#ls:not([data-mode="list"]) .a-mat{display:none}
+#ls[data-mode="cmp"] .a-ops,#ls[data-mode="list"] .a-ops,#ls[data-mode="cmp"] .a-out,#ls:not([data-mode="cmp"]) .a-cmp{display:none}
+#ls .a-fig{scroll-margin-top:calc(var(--rail-h) + 20px)}
+.ls-row .prow{--sw:0px}
+.ls-row .c-sym{display:none}
+
+/* 枠線の上の右端 */
+#ls .a-fig>.ph>.pha .seg button{font-family:var(--sans)}
+#ls .a-fig .tp-st{font-family:var(--sans)}
+.led.ls-ok{background:var(--ls-ok);box-shadow:0 0 5px var(--ls-ok)}
+#ls .pha .prst{font-family:var(--sans)}
+@media (max-width:720px){
+  #ls .a-fig{padding-top:24px}
+  #ls .a-fig>.ph>.pha{position:static;transform:none;width:100%;margin:0 0 8px;padding:0;background:none;justify-content:flex-end}
+}
+
+/* 図 */
+.ls-lg{justify-content:space-between;min-height:28px;font-family:var(--sans)}
+.ls-lgl{display:flex;flex-wrap:wrap;gap:4px 14px}
+.ls-sw{display:inline-block;width:10px;height:10px;border-radius:1px;background:var(--screen-ink)}
+.ls-end{display:flex;align-items:center;gap:8px}
+.ls-end b{font-size:13px}
+.ls-scr{padding:0;overflow:hidden}
+.ls-scr canvas{display:block;width:100%}
+#ls[data-mode="cmp"] .ls-scr canvas{cursor:pointer}
+#ls .a-fig .tp{margin-top:10px}
+#ls .a-fig .ptab{margin-top:2px}
+
+/* データ構造の選択 */
+#ls-str .chip{font-family:var(--sans)}
+
+/* バー */
+#ls-shape .chip{display:inline-flex;align-items:center;gap:5px;font-family:var(--sans)}
+#ls-shape svg{display:block;width:26px;height:12px;fill:currentColor}
+
+/* 操作の表 */
+.ls-ow{overflow-x:auto}
+.ls-ot{width:100%;border-collapse:collapse}
+.ls-ot th{padding:0 6px 6px;border-bottom:1px solid var(--line-2);font:500 12px/1.3 var(--sans);color:var(--ink-2);text-align:right;white-space:nowrap}
+.ls-ot th:first-child{text-align:left}
+.ls-ot td{padding:4px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
+.ls-ot tr:last-child td{border-bottom:0}
+.ls-ot button{width:100%;min-width:7em;min-height:30px;padding:0 8px;border:1px solid var(--line);border-radius:4px;background:none;color:var(--ink);font:500 12.5px/1 var(--sans);text-align:left;cursor:pointer}
+.ls-ot button:hover:not(:disabled){border-color:var(--ink-3)}
+.ls-ot button:disabled{color:var(--ink-3);opacity:.5;cursor:default}
+.ls-oo{font:700 13px var(--mono);text-align:right}
+.ls-on{font:500 12.5px var(--mono);text-align:right;color:var(--ink-2)}
+
+/* 計算結果 */
+.ls-res{grid-template-columns:repeat(3,minmax(0,1fr))}
+.ls-res .m-sub dd{font:500 13.5px/1.45 var(--sans)}
+.ls-res .m-w{grid-column:1/-1}
+.ls-res [hidden]{display:none}
+.ls-rw{overflow-x:auto}
+.ls-rt{width:100%;border-collapse:collapse;font:500 12.5px/1.3 var(--mono);font-variant-numeric:tabular-nums}
+.ls-rt thead th{padding:4px 8px;font:700 12px/1.3 var(--sans);color:var(--ink-2);text-align:right;border-bottom:1px solid var(--line-2);white-space:nowrap}
+.ls-rt td,.ls-rt tbody th{padding:5px 8px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+.ls-rt tr:last-child td,.ls-rt tr:last-child th{border-bottom:0}
+.ls-rt .l{text-align:left}
+.ls-hear{display:inline-flex;align-items:center;gap:6px;padding:0;border:0;background:none;color:var(--ink);font:700 12.5px/1.3 var(--sans);cursor:pointer}
+.ls-hear .led{width:7px;height:7px}
+
+/* 計算量の表 */
+.ls-mx{overflow-x:auto}
+.ls-mt{width:100%;min-width:860px;border-collapse:collapse;font-size:12.5px}
+.ls-mt thead th{padding:5px;border-bottom:1px solid var(--line-2);font:500 12px/1.25 var(--sans);color:var(--ink-2)}
+.ls-mt tbody th{position:sticky;left:0;z-index:1;background:var(--bg);font-weight:700}
+.ls-mt td,.ls-mt tbody th{padding:2px;border-bottom:1px solid var(--line);text-align:center;white-space:nowrap}
+.ls-mt tr:last-child td,.ls-mt tr:last-child th{border-bottom:0}
+.ls-mt tbody th{text-align:left}
+.ls-mr,.ls-mh{padding:3px 5px;border:0;border-radius:3px;background:none;color:inherit;font:inherit;cursor:pointer}
+.ls-mr{white-space:nowrap}
+.ls-mr:hover,.ls-mh:hover{background:var(--inset)}
+.ls-c{display:block;width:100%;min-height:30px;padding:0 4px;border:1px solid transparent;border-radius:3px;background:color-mix(in srgb,var(--ink) 4%,transparent);color:var(--ink);font:700 12.5px var(--mono);cursor:pointer}
+.ls-c.on{background:color-mix(in srgb,var(--ink) 26%,transparent)}
+.ls-c:hover{border-color:var(--ink-3)}
+.ls-c.sel{outline:2px solid var(--accent);outline-offset:-2px}
+.ls-no{color:var(--ink-3);font:500 12.5px var(--mono)}
+.ls-tx{padding:2px 6px!important;font:500 12px var(--sans);color:var(--ink-2)}
+
+/* 動作原理と式の表 */
+.ls-cx td{white-space:nowrap;font-family:var(--mono);font-size:12.5px}
+.ls-cx th[scope="row"]{white-space:nowrap}
