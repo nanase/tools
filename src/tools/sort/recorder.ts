@@ -42,7 +42,7 @@ export const pack = (t: number, x: number, y: number): number => ((t << 28) | ((
 export class Rec {
   readonly a: Int32Array;
   readonly n: number;
-  /** 棒の高さの最大 */
+  /** バーの高さの最大 */
   readonly vm: number;
   /** 比較に使うキーの最大（keyShift を除いた値） */
   readonly km: number;

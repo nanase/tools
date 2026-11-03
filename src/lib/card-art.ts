@@ -1149,7 +1149,7 @@ export const ART: Record<string, Art> = {
     for (let i = last; N[i][2] >= 0; i = N[i][2]) path += edge(i);
     return P('c t', lines) + P('fc', old) + (path ? P('a', path) : '') + P('fb', box(last));
   },
-  /* ソート: 棒をバブルソートで並べる。比べている 2 本を色で示し、位置の決まった棒は濃く描く */
+  /* ソート: バーをバブルソートで並べる。比べている 2 本を色で示し、位置の決まったバーは濃く描く */
   so(t) {
     if (!SO_FRAMES.length) soFrames();
     const f = SO_FRAMES[t ? Math.min(SO_FRAMES.length - 1, Math.floor((mod(t, 3) / 3) * SO_FRAMES.length)) : 0],
@@ -1166,7 +1166,7 @@ export const ART: Record<string, Art> = {
     });
     return P('fc', base) + (hit ? P(f.sw ? 'fa' : 'fb', hit) : '');
   },
-  /* リスト・キュー・スタック: 左は棒を積むスタック、右は棒が流れるキュー */
+  /* リスト・キュー・スタック: 左はバーを積むスタック、右はバーが流れるキュー */
   ls(t) {
     const u = mod(t, 3) / 3,
       count = 1 + Math.round(5 * Math.abs(2 * u - 1)),

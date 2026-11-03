@@ -512,7 +512,7 @@ export const TOOLS: Tool[] = [
     id: 'sort',
     c: 'アルゴリズム',
     t: 'ソート',
-    d: '棒が小さい順に並ぶ様子を音で追い、アルゴリズムを比べます。',
+    d: 'バーが小さい順に並ぶ様子を音で追い、アルゴリズムを比べます。',
     ic: 'so',
     r: ['list-queue-stack', 'fft', 'gif', 'qr-code'],
     k: 'sort sorting 並べ替え 並び替え 整列 アルゴリズム algorithm バブル bubble シェーカー cocktail shaker コム comb ノーム gnome 奇偶転置 odd-even 選択 selection ヒープ heap スムース smooth サイクル cycle パンケーキ pancake 挿入 insertion 二分挿入 binary シェル shell マージ merge ボトムアップ bottom-up ティム timsort パワー powersort インプレース symmerge クイック quick ピボット pivot 3 分割 three-way デュアルピボット dual-pivot イントロ introsort pdqsort 計数 counting 基数 radix lsd msd アメリカンフラッグ american flag バケット bucket フラッシュ flash ビーズ bead 比較 計算量 安定 stable バイトニック bitonic バッチャー batcher ペアワイズ pairwise ソーティングネットワーク sorting network ストゥージ stooge スロー slow ボゴ bogo ボゾ bozo 音 sound of sorting',
