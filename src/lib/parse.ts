@@ -50,6 +50,7 @@ export type Unit =
   | '回'
   | '回/秒'
   | '個'
+  | 'bit'
   | '倍'
   | (typeof COMPOUND)[number];
 

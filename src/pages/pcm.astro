@@ -1,0 +1,120 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/pcm/style.css';
+import { AA, DITH, KEYS, LAW, PARAMS, PRESETS, RC } from '../tools/pcm/params';
+import { SOURCES } from '../tools/pcm/sources';
+import { STEPS } from '../tools/pcm/story';
+import Theory from '../tools/pcm/Theory.astro';
+
+const name = 'PCM';
+const P = Object.fromEntries(PARAMS.map((d) => [d.k, d]));
+const playIcon =
+  '<svg class="i-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.2l7.6 4.8L3 10.8z"/></svg><svg class="i-pause" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="2.8" height="9"/><rect x="7.2" y="1.5" width="2.8" height="9"/></svg>';
+---
+<SiteLayout title={name} tool={{ id: 'pcm', name }} note="音声はこの端末の中だけで処理し、送信しません。">
+  <PageTitle title={name}>標本化と量子化で音がどう変わるかを聴き比べます。</PageTitle>
+
+  <div class="tgrid" id="pcm">
+    <Panel hid="hd-how" title="1. PCM のしくみ" class="a-how">
+      <div class="pcm-steps" id="how-steps" role="group" aria-label="工程">
+        {STEPS.map(([n, d], i) => (
+          <button type="button" class="pcm-st" data-i={i} aria-pressed={i === 0 ? 'true' : 'false'}><b>{i + 1}: {n}</b><canvas aria-hidden="true"></canvas><small>{d}</small></button>
+        ))}
+      </div>
+      <p class="pcm-cap" id="how-cap" aria-live="off"></p>
+      <div class="scope pcm-scr"><canvas class="pcm-cv pcm-how" id="how-cv" role="img" aria-labelledby="how-name"></canvas></div>
+      <span class="sr" id="how-name"></span>
+      <div class="tp pcm-tp pcm-tp3">
+        <button type="button" class="tp-ib" id="how-prev" title="前の工程" aria-label="前の工程"><svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1.5" y="1.5" width="1.8" height="9"/><path d="M10.5 1.5v9L4 6z"/></svg></button>
+        <button type="button" class="tp-pp" id="how-pp" title="一時停止" aria-label="一時停止" set:html={playIcon} />
+        <div class="tp-tl"><div class="tp-trk" id="how-trk" role="slider" tabindex="0" aria-label="工程の位置" aria-valuemin="1" aria-valuemax={STEPS.length} aria-valuenow="1"><div class="tp-rail"></div><div class="tp-fill" id="how-fill"></div><div class="tp-th" id="how-th"></div></div></div>
+      </div>
+    </Panel>
+
+    <Panel hid="hd-s" title="2. 標本化: 時間で区切る" class="a-s">
+      <div class="ptab"><ParamRow d={P.fs} /></div>
+      <div class="scope pcm-scr pcm-mt"><canvas class="pcm-cv pcm-w" id="s-w" role="img" aria-label="標本化の波形"></canvas></div>
+      <div class="sbar pcm-lg"><span class="stag"><i class="sw c2"></i>原音</span><span class="stag"><i class="pcm-dot"></i>標本</span><span class="stag"><i class="sw"></i>再生した波</span></div>
+      <div class="scope pcm-scr"><canvas class="pcm-cv pcm-s" id="s-s" role="img" aria-label="標本化のスペクトル"></canvas></div>
+      <p class="pcm-eff" id="s-eff"></p>
+      <div class="ptab">
+        <ChoiceRow k="aa" name="入力のローパス" sub="アンチエイリアスフィルタ" choices={AA} value="1" />
+        <ChoiceRow k="rc" name="出力のローパス" sub="再構成フィルタ" choices={RC} value="smooth" />
+      </div>
+    </Panel>
+
+    <Panel hid="hd-q" title="3. 量子化: 振幅で区切る" class="a-q">
+      <div class="ptab"><ParamRow d={P.bits} /></div>
+      <div class="scope pcm-scr pcm-mt"><canvas class="pcm-cv pcm-w" id="q-w" role="img" aria-label="量子化の波形"></canvas></div>
+      <div class="sbar pcm-lg"><span class="stag"><i class="sw c2"></i>原音</span><span class="stag"><i class="sw"></i>丸めた波</span><span class="stag"><i class="sw pcm-sw-e"></i>誤差</span></div>
+      <div class="scope pcm-scr"><canvas class="pcm-cv pcm-s" id="q-s" role="img" aria-label="量子化のスペクトル"></canvas></div>
+      <p class="pcm-eff" id="q-eff"></p>
+      <div class="ptab">
+        <ChoiceRow k="law" name="量子化の方式" sub="μ-law と A-law は電話の方式（G.711）" choices={LAW} value="lin" />
+        <ChoiceRow k="dith" name="ディザ" sub="丸める前に足す小さな乱数" choices={DITH} value="0" offIn />
+      </div>
+    </Panel>
+
+    <Panel hid="hd-ls" title="聴く" class="a-ls">
+      <div class="pcm-ls">
+        <div>
+          <div class="pcm-bar"><span class="pcm-bl" id="ls-src-l">入力</span><div class="seg" id="ls-src" data-nosave role="group" aria-labelledby="ls-src-l"><button type="button" data-v="test" aria-pressed="true" title="この端末の中で作る 4 秒の音">サンプル音源</button><button type="button" data-v="file" aria-pressed="false" title="WAV・MP3・FLAC など。先頭 10 秒">ファイル</button><button type="button" data-v="mic" aria-pressed="false" title="押している間（最大 10 秒）の録音">マイク</button></div></div>
+          <div class="ptab" id="ls-tab" data-src="test" data-freq="true">
+            <ChoiceRow k="src" name="サンプル音源" choices={SOURCES} value="saw" layout="chips" wide />
+            <div class="prow" id="p-file">
+              <div class="c-sym" aria-hidden="true"></div>
+              <div class="c-name"><span class="pn">ファイル</span><p class="desc tip" role="tooltip" hidden>WAV・MP3・FLAC など。先頭 10 秒をモノラルで使用。この枠へドラッグ可</p></div>
+              <div class="c-val"><div class="seg"><button type="button" id="ls-fileBtn">ファイルを選択</button></div><input type="file" id="ls-file" accept="audio/*,.wav,.mp3,.m4a,.ogg,.flac" hidden></div>
+              <div class="c-sub"><p class="msg" id="ls-fileMsg" aria-live="polite">まだ選んでいません</p></div>
+            </div>
+            <div class="prow" id="p-mic">
+              <div class="c-sym" aria-hidden="true"></div>
+              <div class="c-name"><span class="pn">マイク</span><p class="desc tip" role="tooltip" hidden>押すと録り始め、もう一度押すか 10 秒で止めます。録っている間は鳴らしません</p></div>
+              <div class="c-val"><div class="seg"><button type="button" id="ls-rec" aria-pressed="false"><span class="led" id="ls-recLed" aria-hidden="true"></span><span id="ls-recT">録音</span></button></div></div>
+              <div class="c-sub"><p class="msg" id="ls-micMsg" aria-live="polite">まだ録音がありません</p></div>
+            </div>
+            <ParamRow d={P.f} />
+            <ParamRow d={P.lv} />
+            <div class="prow wide">
+              <div class="c-sym" aria-hidden="true"></div>
+              <div class="c-name"><span class="pn">プリセット</span></div>
+              <div class="c-sub"><div class="chips" id="ls-pre" role="group" aria-label="プリセット">
+                {PRESETS.map((p, i) => <button type="button" class="chip" data-i={i} aria-pressed="false" title={p.tip}>{p.name}</button>)}
+              </div></div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="pcm-keys" id="ls-keys" role="group" aria-label="聴く音">
+            {KEYS.map(([l, c], i) => (
+              <button type="button" class:list={['pcm-key', c]} data-i={i} aria-pressed={i === 3 ? 'true' : 'false'}><b>{l}</b><small id={`k-${i}`}>&nbsp;</small></button>
+            ))}
+          </div>
+          <div class="tp pcm-tp">
+            <button type="button" class="tp-pp" id="ls-pp" title="再生" aria-label="再生" set:html={playIcon} />
+            <div class="tp-tl">
+              <div class="pcm-wv" id="ls-wv" role="slider" tabindex="0" aria-label="再生の位置" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0"><canvas id="ls-wc"></canvas><span class="pcm-ph" id="ls-ph"></span></div>
+              <div class="tp-tm"><span id="ls-tm">0.00 / 0.00 s</span><span id="ls-busy" class="pcm-busy" hidden>計算中…</span></div>
+            </div>
+          </div>
+          <div class="ptab"><ParamRow d={P.vol} /></div>
+        </div>
+      </div>
+    </Panel>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools current="pcm" />
+  <script>
+    import '../tools/pcm/client';
+  </script>
+</SiteLayout>

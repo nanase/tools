@@ -28,6 +28,7 @@ export const CATS = [
   '音響',
   '音響モデル',
   '楽器・調律',
+  '音声形式',
   '画像・光学',
   '画像形式',
   'CG',
@@ -142,7 +143,7 @@ export const TOOLS: Tool[] = [
     t: 'オシロスコープ',
     d: 'マイクや音楽ファイルの音を波形やリサジューで表示します。',
     ic: 'os',
-    r: ['spectrum', 'tuner', 'fm-synth', 'noise'],
+    r: ['spectrum', 'pcm', 'tuner', 'fm-synth'],
     k: 'oscilloscope 波形 トリガ リサジュー lissajous マイク 音声 オーディオ audio',
   },
   {
@@ -151,7 +152,7 @@ export const TOOLS: Tool[] = [
     t: 'スペクトラムアナライザ',
     d: 'マイクや音楽ファイルの音の周波数成分を表示します。',
     ic: 'sp',
-    r: ['oscilloscope', 'fft', 'wavelet', 'tuner'],
+    r: ['oscilloscope', 'fft', 'pcm', 'wavelet'],
     k: 'spectrum analyzer fft スペクトル スペクトログラム spectrogram 周波数 窓関数 メル mel マイク 音声 オーディオ audio',
   },
   {
@@ -279,6 +280,15 @@ export const TOOLS: Tool[] = [
     ic: 'pc',
     r: ['passive-combination', 'timer555', 'jjy', 'colorcode'],
     k: 'pcb 共振 コンデンサ スパイラル うずまき アンテナ インダクタンス nfc rfid spiral coil antenna inductor',
+  },
+  {
+    id: 'pcm',
+    c: '音声形式',
+    t: 'PCM',
+    d: '標本化と量子化で音がどう変わるかを聴き比べます。',
+    ic: 'pcm',
+    r: ['spectrum', 'oscilloscope', 'wavelet-denoise', 'noise'],
+    k: 'pcm pulse code modulation パルス符号変調 lpcm リニア pcm wav wave 標本化 サンプリング sampling 標本化周波数 サンプリング周波数 サンプルレート sample rate sampling rate 量子化 quantization ビット数 ビット深度 bit depth 量子化誤差 量子化雑音 量子化ノイズ quantization noise 符号化 復元 ナイキスト nyquist 標本化定理 sampling theorem 折り返し エイリアシング aliasing アンチエイリアス anti-aliasing ローパス 再構成フィルタ reconstruction filter 0 次ホールド ディザ dither tpdf μ-law u-law a-law g.711 電話 cd 44.1 khz 16 bit ハイレゾ hi-res ビットレート bitrate sn 比 snr 音質 聴き比べ オーディオ audio',
   },
   {
     id: 'png',
@@ -505,7 +515,7 @@ export const TOOLS: Tool[] = [
     t: '雑音除去と圧縮',
     d: 'ウェーブレットの係数を捨てた音を元の音と聴き比べます。',
     ic: 'wd',
-    r: ['wavelet', 'jpeg', 'noise', 'fft'],
+    r: ['wavelet', 'pcm', 'jpeg', 'noise'],
     k: 'wavelet ウェーブレット 雑音除去 ノイズ除去 denoise denoising noise reduction 圧縮 compression 閾値 threshold 硬い閾値 柔らかい閾値 hard soft shrinkage 縮小 visushrink sureshrink bayesshrink sure 普遍閾値 universal threshold donoho johnstone cycle spinning 量子化 quantization ビット bit エントロピー entropy jpeg 2000 dct dft mdct aac mp3 フーリエ fourier sn 比 snr スカログラム scalogram 聴き比べ 音 audio マイク 録音 数学 math',
   },
   {
