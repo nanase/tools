@@ -12,8 +12,8 @@ import Theory from '../tools/gif/Theory.astro';
 
 const name = 'GIF';
 ---
-<SiteLayout title={name} tool={{ id: 'gif', name }} note="画像はこの端末の中だけで処理し、送信しません。符号化と復号は、このツールの実装によるものです。">
-  <PageTitle title={name}>GIF の LZW 圧縮で辞書が育つ様子を、パレットからファイルまで 1 符号ずつ追います。</PageTitle>
+<SiteLayout title={name} tool={{ id: 'gif', name }} note="画像はこの端末の中だけで処理し、送信しません。符号化と復号はこのツールの実装によるものです。">
+  <PageTitle title={name}>GIF の LZW 圧縮で辞書が育つ様子を 1 符号ずつ追います。</PageTitle>
 
   <div class="gf-root" id="gf-root">
     <div class="gf-src" id="src">
@@ -22,7 +22,7 @@ const name = 'GIF';
         <div class="gf-seg" id="p-smp" role="group" aria-labelledby="src-l">
           {SAMPLE_CHOICES.map(([v, l, t], i) => <button type="button" data-v={v} aria-pressed={i === 0 ? 'true' : 'false'} title={t}>{l}</button>)}
         </div>
-        <button type="button" id="fileBtn" aria-pressed="false" title="GIF はそのまま読み、ほかの画像は減色して符号化する">ファイル</button>
+        <button type="button" id="fileBtn" aria-pressed="false" title="GIF はそのまま、ほかの画像は減色して符号化">ファイル</button>
       </div>
       <input type="file" id="fileIn" accept="image/*" hidden>
       <p class="msg" id="m-file" aria-live="polite"></p>

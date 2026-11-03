@@ -351,7 +351,7 @@ const isGif = (b: Uint8Array): boolean => b.length >= 3 && b[0] === 0x47 && b[1]
 async function loadFile(f: File): Promise<void> {
   const ms = $('#m-file');
   ms.className = 'msg';
-  ms.textContent = '読み込んでいます…';
+  ms.textContent = '読み込み中…';
   const name = f.name.replace(/\.[^.]*$/, '') || 'image';
   const open = (): void => {
     setPlay(false);

@@ -10,13 +10,13 @@ const T = TY.R;
 ---
 <div class="prow num" id="p-ex" data-nm="使わない値">
   <div class="c-sym" aria-hidden="true"><i>{T.s}</i><sub>ex</sub></div>
-  <div class="c-name"><label class="pn" for="in-ex"><span class="nm">使わない{T.q}</span></label><p class="desc tip" id="t-ex" role="tooltip" hidden>組み合わせに使わない値。目標と同じ値は常に除きます</p></div>
+  <div class="c-name"><label class="pn" for="in-ex"><span class="nm">使わない{T.q}</span></label><p class="desc tip" id="t-ex" role="tooltip" hidden>組み合わせに使わない値（目標と同じ値は常に除外）</p></div>
   <div class="c-val"><div class="exf">
     <input id="in-ex" type="text" inputmode="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done" placeholder={T.ph} aria-describedby="t-ex u-ex m-ex">
     <button type="button" class="exa" id="exAdd" aria-label="除外に追加"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M5 1V9M1 5H9"/></svg>追加</button>
   </div></div>
   <div class="c-unit" id="u-ex">{T.u}</div>
-  <RowReset label="使わない値をすべて外す" title="すべて外す（既定値に戻す）" />
+  <RowReset label="使わない値をすべて外す" title="すべて解除（既定値）" />
   <div class="c-sub">
     <p class="msg" id="m-ex" aria-live="polite"></p>
     <div class="chips" id="exChips" role="group" aria-label="除外している値"></div>

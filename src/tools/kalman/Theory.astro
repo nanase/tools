@@ -34,14 +34,14 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
 </div>
 
 <h3>1 次元: 予測と観測を掛け合わせる</h3>
-<p>まず位置だけを考えます。観測する前の見込み（予測）が平均 <math><msup><mi>μ</mi><mo>−</mo></msup></math>・分散 <math set:html={sg2('−')} /> の正規分布で、距離計の値 <math><mi>z</mi></math> の雑音の分散が <math set:html={sz2} /> のとき、2 つの分布を掛け合わせると、また正規分布になります<Fragment set:html={rf(2)} />。これが観測した後の推定です。</p>
+<p>まず位置だけを考えます。観測する前の見込み（予測）が平均 <math><msup><mi>μ</mi><mo>−</mo></msup></math>・分散 <math set:html={sg2('−')} /> の正規分布で、距離計の値 <math><mi>z</mi></math> の雑音の分散が <math set:html={sz2} /> のとき、2 つの分布を掛け合わせるとまた正規分布になります<Fragment set:html={rf(2)} />。これが観測した後の推定です。</p>
 <div class="eqs">
   <math display="block" set:html={`<mi>K</mi><mo>=</mo>${fr(sg2('−'), `${sg2('−')}<mo>+</mo>${sz2}`)}`} />
   <math display="block" set:html={`<msup><mi>μ</mi><mo>+</mo></msup><mo>=</mo><msup><mi>μ</mi><mo>−</mo></msup><mo>+</mo><mi>K</mi><mo stretchy="false">(</mo><mi>z</mi><mo>−</mo><msup><mi>μ</mi><mo>−</mo></msup><mo stretchy="false">)</mo>`} />
   <math display="block" set:html={`${sg2('+')}<mo>=</mo><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><mi>K</mi><mo stretchy="false">)</mo>${sg2('−')}<mo>,</mo><mspace width="1em"/>${fr('<mn>1</mn>', sg2('+'))}<mo>=</mo>${fr('<mn>1</mn>', sg2('−'))}<mo>+</mo>${fr('<mn>1</mn>', sz2)}`} />
 </div>
 <ul class="tl">
-  <li><math><mi>K</mi></math> はカルマンゲインで、0 から 1 の間の値。推定は予測から観測へ <math><mi>K</mi></math> の割合だけ寄る。位置の分布の図の下の目盛りが、この割合を示す</li>
+  <li><math><mi>K</mi></math> はカルマンゲイン（0 から 1 の間の値）</li><li>推定は予測から観測へ <math><mi>K</mi></math> の割合だけ寄る</li><li>位置の分布の図の下の目盛りがこの割合を示す</li>
   <li>観測が予測より確か（<math set:html={`${sz2}<mo>&lt;</mo>${sg2('−')}`} />）なほど <math><mi>K</mi></math> は 1 に近く、推定は観測に寄る</li>
   <li>推定の分散の逆数は、予測と観測の分散の逆数の和。推定は予測と観測のどちらよりも確かになる</li>
 </ul>
@@ -74,12 +74,12 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
 <ul class="tl">
   <li>予測の <math><mi>F</mi><mi>P</mi><msup><mi>F</mi><mi mathvariant="normal">T</mi></msup></math> は、速さの分だけ位置がずれるので楕円を傾ける。<math><mi>F</mi></math> の行列式は 1 なので、面積は変えない</li>
   <li>面積を増やすのは <math set:html={hat('Q')} /> を足す分。加速度のゆらぎがあるので、先の位置と速度はそのぶん不確かになる</li>
-  <li>観測は位置の向きにだけ楕円を縮める。速度は測っていないが、楕円の傾き（位置と速度の相関）を通して、速度の幅も縮む。<math><msub><mi>K</mi><mi>v</mi></msub></math> が位置のずれから速度を直す割合</li>
+  <li>観測は位置の向きにだけ楕円を縮める</li><li>速度は測っていないが、楕円の傾き（位置と速度の相関）を通して速度の幅も縮む</li><li><math><msub><mi>K</mi><mi>v</mi></msub></math> が位置のずれから速度を直す割合</li>
 </ul>
-<p>位置の分布の図は、楕円を位置の軸に映したものです。予測の山と観測の山を掛け合わせると推定の山になる、1 次元と同じことが起きています。</p>
+<p>位置の分布の図は、楕円を位置の軸に映したものです。予測の山と観測の山を掛け合わせると推定の山になります。1 次元と同じです。</p>
 
 <h3>雑音の設定を誤ると</h3>
-<p>フィルタは、<math set:html={hat('Q')} />・<math set:html={hat('R')} /> が本当の値に合っていると仮定して不確かさ <math><mi>P</mi></math> を見積ります。見積りが外れると、<math><mi>P</mi></math> は本当の誤差の大きさを表さなくなります<Fragment set:html={rf(4)} /><Fragment set:html={rf(3)} />。</p>
+<p>フィルタは <math set:html={hat('Q')} />・<math set:html={hat('R')} /> が本当の値に合っていると仮定して不確かさ <math><mi>P</mi></math> を見積ります。見積りが外れると、<math><mi>P</mi></math> は本当の誤差の大きさを表さなくなります<Fragment set:html={rf(4)} /><Fragment set:html={rf(3)} />。</p>
 <div class="tt-w"><table class="tt">
   <thead><tr><th>場面</th><th>見積り</th><th>起きること</th></tr></thead>
   <tbody>
@@ -88,7 +88,7 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
     <tr><td>観測を疑いすぎ</td><td><math set:html={hat('R')} /> が大きすぎる</td><td><math><mi>K</mi></math> が小さく、推定が鈍い。帯は誤差より広い</td></tr>
   </tbody>
 </table></div>
-<p>見積りが合っているかは、観測だけから確かめられます。イノベーションを、フィルタが見積った分散で割った 2 乗が正規化イノベーション 2 乗（NIS）です<Fragment set:html={rf(5)} /><Fragment set:html={rf(4)} />。</p>
+<p>見積りが合っているかは、観測だけから確かめられます。イノベーションの 2 乗をフィルタが見積った分散で割った値が正規化イノベーション 2 乗（NIS）です<Fragment set:html={rf(5)} /><Fragment set:html={rf(4)} />。</p>
 <div class="eqs">
   <math display="block" set:html={`${k_('<mi>ε</mi>')}<mo>=</mo>${fr(sq(k_('<mi>y</mi>')), k_('<mi>S</mi>'))}`} />
 </div>
@@ -103,7 +103,7 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
 </div>
 
 <h3>今の値を代入した式</h3>
-<p>観測の間隔と、フィルタが使う見積りを代入した行列と、予測と更新をくり返して落ち着いたカルマンゲイン <math><msub><mi>K</mi><mi>∞</mi></msub></math> です。</p>
+<p>観測の間隔とフィルタが使う見積りを代入した行列と、予測と更新をくり返して落ち着いたカルマンゲイン <math><msub><mi>K</mi><mi>∞</mi></msub></math> です。</p>
 <div class="subst" id="subst" role="group" aria-label="今の値を代入した式"></div>
 
 <h3>このツールで決めたこと</h3>

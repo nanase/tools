@@ -128,9 +128,9 @@ let blowTimer: ReturnType<typeof setTimeout> | undefined;
 const manualNote = () => openNote(M.n) - semiOf(M.v);
 function blowRows(): void {
   const man = lipMode.value === 'man';
-  PB.setOff('pm', !man, man ? '' : '自動の間は、強弱と音から決まる値');
-  PB.setOff('fl', !man, man ? '' : '自動の間は、鳴らす音に合わせた値');
-  dyn.setOff(man, man ? '手動の間は使わない' : '');
+  PB.setOff('pm', !man, man ? '' : '自動の間は強弱と音から決まります');
+  PB.setOff('fl', !man, man ? '' : '自動の間は鳴らす音に合わせます');
+  dyn.setOff(man, man ? '手動の間は使いません' : '');
 }
 function sendManual(): void {
   if (!started) return;
@@ -297,7 +297,7 @@ function ladderNames(): void {
     (c.querySelector('.nm') as HTMLElement).textContent = nm(m);
     (c.querySelector('.dv') as HTMLElement).textContent = `${dv > 0 ? '+' : dv < 0 ? '−' : '±'}${Math.abs(dv)}c`;
     c.className = `cell${n === 7 ? ' skip' : std ? ' std' : ' alt'}${dv < -10 ? ' flat' : dv > 10 ? ' sharp' : ''}`;
-    c.title = `${nm(m)}（第 ${n} 倍音・${g.name}）${n === 7 ? '。第 7 倍音は低すぎるのでふつう使わない' : std ? '。ふつうの指使い' : '。替え指'}`;
+    c.title = `${nm(m)}（第 ${n} 倍音・${g.name}）${n === 7 ? '。低すぎてふつう使わない音' : std ? '。ふつうの指使い' : '。替え指'}`;
   }
 }
 /** ふつうの指使いか（notes.ts の fingering と同じ選び方） */
@@ -367,7 +367,7 @@ function zDraw(v: readonly boolean[], n: number, f0: number, fl: number): void {
   );
   html('#z-axes', zAxes(db));
   txt('#z-div', db ? '10 dB' : '20 MPa·s/m³');
-  txt('#z-aux', `${vName(v)} の管を、カップの縁から見た値（管の中の温度 ${PT.get('temp')} °C）`);
+  txt('#z-aux', `${vName(v)} の管をカップの縁から見た値（管の中の温度 ${PT.get('temp')} °C）`);
   let h1 = '',
     hn = '';
   if (f0 > 0) {
@@ -672,7 +672,7 @@ function results(f: Frame | null, c: Cycle | null, sounding: boolean, m: number)
     '#o-f0s',
     sounding && f
       ? `${nm(near)}（平均律から ${minus((1200 * Math.log2(f.f0 / mtof(near))).toFixed(0))} セント）${near !== m && m >= 0 ? `・狙いは ${nm(m)}` : ''}`
-      : '吹いていない',
+      : '吹いていません',
   );
   html('#o-pm', f ? ro(f.pm < 1 ? 0 : f.pm, 'Pa', 3) : '—');
   html('#o-fl', f ? ro(f.fl, 'Hz', 3) : '—');

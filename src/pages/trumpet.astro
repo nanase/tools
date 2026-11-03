@@ -29,13 +29,13 @@ const name = 'トランペット音響モデル';
 /** はしご の段（高い倍音から） */
 const ROWS = [...PARTIALS].reverse().filter((n) => n <= 8);
 ---
-<SiteLayout title={name} tool={{ id: 'trumpet', name }} note="音と計算結果は、論文の模型を簡略化した物理モデルによるものです。">
+<SiteLayout title={name} tool={{ id: 'trumpet', name }} note="音と計算結果は論文の模型を簡略化した物理モデルによるものです。">
   <PageTitle title={name}>唇の振動（外へ開く弁）、マウスピースからリードパイプ・3 本のピストン・ベルまでの管の中を行き来する波、強く吹いたときに波が切り立つ非線形の伝搬、ベルからの放射を計算して、トランペットの音を作ります。ピストンを押して倍音を選び、「吹く」で鳴らせます。倍音のはしごで、同じ指使いのまま唇の張りで鳴る音が変わる様子を確かめられます。曲の演奏もできます。</PageTitle>
 
   <div class="tgrid">
     <Panel hid="hd-fig" title="トランペット" class="a-fig" fixed>
       <Fragment slot="aux">
-        <div class="seg" id="p-nv" role="group" aria-label="気柱の見せ方"><button type="button" data-v="amp" aria-pressed="true" title="管の中の各点の圧力の振れ幅（定在波の腹と節）を描く">振れ幅</button><button type="button" data-v="slow" aria-pressed="false" title="振動をゆっくりにして、圧力が管の中を行き来する様子を描く">スロー</button></div>
+        <div class="seg" id="p-nv" role="group" aria-label="気柱の見せ方"><button type="button" data-v="amp" aria-pressed="true" title="管の中の各点の圧力の振れ幅（定在波の腹と節）">振れ幅</button><button type="button" data-v="slow" aria-pressed="false" title="ゆっくりにした管の中の圧力の行き来">スロー</button></div>
         <div class="seg" id="p-names" role="group" aria-label="音名"><button type="button" data-v="con" aria-pressed="true" title="実際に鳴る音の名前（ピアノと同じ）">実音</button><button type="button" data-v="wri" aria-pressed="false" title="B♭ 管の楽譜に書く音の名前（実音より全音高い）">記譜</button></div>
       </Fragment>
       <div class="sbar">
@@ -44,7 +44,7 @@ const ROWS = [...PARTIALS].reverse().filter((n) => n <= 8);
         <span class="stag right hw" id="f-note" data-ph="C♯5（記譜 D♯5）· 第 10 倍音 · 1+2+3"></span>
       </div>
       <div class="vw" id="vw-side">
-        <svg class="vf" id="tside" viewBox={SIDE_VIEW} role="img" aria-label="横から見たトランペット。管の中の空気を、圧力の色で描く。押したピストンの抜差しを空気が通る">
+        <svg class="vf" id="tside" viewBox={SIDE_VIEW} role="img" aria-label="横から見たトランペット。管の中の空気を圧力の色で描く。押したピストンの抜差しを空気が通る">
           {SIDE_ITEMS.map((it) => ('air' in it ? AIR_FILLS.map((f, i) => <path style={`fill:${f}`} id={`air-${it.air}-${i}`}></path>) : <path class={it.cls} d={it.d}></path>))}
           <path class="t-silver" id="k-stems"></path>
           {[0, 1, 2].map((i) => (
@@ -89,7 +89,7 @@ const ROWS = [...PARTIALS].reverse().filter((n) => n <= 8);
           </svg></div>
         </div>
         <div>
-          <p class="vcap">倍音のはしご<span>唇の張りで段が変わる。数字は平均律からのずれ</span></p>
+          <p class="vcap">倍音のはしご<span>段は唇の張りで変化・数字は平均律からのずれ</span></p>
           <div class="lad" id="ladder">
             <div class="lr lhd"><span class="rh">倍音</span>{FINGERS.map((g) => <span class="lh" title={g.semi ? `下げる半音 ${g.semi}` : 'ピストンを押さない'}>{g.name}</span>)}</div>
             {ROWS.map((n) => (
@@ -100,14 +100,14 @@ const ROWS = [...PARTIALS].reverse().filter((n) => n <= 8);
       </div>
       <div class="vkeys">
         <span class="lbl">ピストン</span>
-        {[0, 1, 2].map((i) => <button type="button" class="vkey" id={`vk-${i}`} aria-pressed="false" title={`第 ${i + 1} ピストン（押している間だけ下がる。キーボードは ${'JKL'[i]}）`}>{i + 1}<kbd>{'JKL'[i]}</kbd></button>)}
+        {[0, 1, 2].map((i) => <button type="button" class="vkey" id={`vk-${i}`} aria-pressed="false" title={`第 ${i + 1} ピストン（キーは ${'JKL'[i]}）`}>{i + 1}<kbd>{'JKL'[i]}</kbd></button>)}
         <span class="lbl lbl2">倍音（唇の張り）</span>
         <div class="chips" id="parts" role="group" aria-label="倍音">{PARTIALS.filter((n) => n <= 8).map((n) => <button type="button" class="chip" data-n={n} aria-pressed={n === 4 ? 'true' : 'false'}>{n}</button>)}</div>
         <span class="sp"></span>
         <button type="button" class="tg" id="blowBtn" title="押している間だけ吹く（キーボードはスペース。↑↓ で倍音）">吹く<kbd>Space</kbd></button>
       </div>
       <More id="g-fig" title="表示の設定"><div class="ptab">
-        <ChoiceRow k="sl" name="スローの速さ" sub="スローの見せ方と唇の断面で、振動を何分の 1 の速さで描くか" choices={SLOW.map((v) => [v, `1/${v}`] as const)} value={800} />
+        <ChoiceRow k="sl" name="スローの速さ" sub="スローの見せ方と唇の断面の速さ" choices={SLOW.map((v) => [v, `1/${v}`] as const)} value={800} />
       </div></More>
     </Panel>
 
@@ -117,15 +117,15 @@ const ROWS = [...PARTIALS].reverse().filter((n) => n <= 8);
         <div class="ptab">
           <div class="prow pick" id="p-piece">
             <div class="c-sym" aria-hidden="true"></div>
-            <div class="c-name"><label class="pn" id="n-piece" for="piece">曲</label><p class="desc tip" id="t-piece" role="tooltip" hidden>著作権の切れた曲（メサイアは CC BY 3.0 の電子楽譜）。強弱・舌・息継ぎは、このツールが楽譜から決める</p></div>
+            <div class="c-name"><label class="pn" id="n-piece" for="piece">曲</label><p class="desc tip" id="t-piece" role="tooltip" hidden>著作権の切れた曲（メサイアは CC BY 3.0 の電子楽譜）。強弱・舌・息継ぎはこのツールで決定</p></div>
             <div class="c-val sel"><select id="piece" autocomplete="off" aria-describedby="t-piece">{PIECES.map((p) => <option value={p.v} title={p.by}>{p.name}</option>)}</select></div>
           </div>
         </div>
         <Transport>
-          <TransportButton id="muteBtn" icon="mute" label="消音" title="鳴っている音を止める（曲の演奏中は使えない）" />
+          <TransportButton id="muteBtn" icon="mute" label="消音" title="鳴っている音の停止（曲の演奏中は使用不可）" />
         </Transport>
         <div class="ptab">
-          <ChoiceRow k="expr" name="表情" sub="楽譜どおり: 決めたテンポと強弱の目安だけで吹く。楽句の弧と揺らぎ: 楽句の中ほどで少し速く大きく、終わりで延ばし、出だしを少しばらつかせる" choices={[['plain', '楽譜どおり'], ['phrase', '楽句の弧と揺らぎ']]} value="phrase" />
+          <ChoiceRow k="expr" name="表情" sub="楽譜どおり: 決めたテンポと強弱の目安だけ。楽句の弧と揺らぎ: 中ほどで少し速く大きく、終わりの延ばし、出だしのばらつき" choices={[['plain', '楽譜どおり'], ['phrase', '楽句の弧と揺らぎ']]} value="phrase" />
           <ParamRow d={TEMPO} />
           <ParamRow d={outVol(VOL0)} />
         </div>
@@ -135,13 +135,13 @@ const ROWS = [...PARTIALS].reverse().filter((n) => n <= 8);
       <MidiPanel />
 
       <Panel hid="hd-blow" title="吹き方" class="a-blow">
-        <div slot="aux" class="seg" id="p-lip" role="group" aria-label="唇の張り"><button type="button" data-v="auto" aria-pressed="true" title="鳴らしたい音に合わせて、唇の張りと口の圧力を自動で決める">唇は自動</button><button type="button" data-v="man" aria-pressed="false" title="唇の張り（共振周波数）と口の圧力を手で決める。合わないと別の倍音が鳴るか、鳴らない">手動</button></div>
+        <div slot="aux" class="seg" id="p-lip" role="group" aria-label="唇の張り"><button type="button" data-v="auto" aria-pressed="true" title="鳴らしたい音に合わせた唇の張りと口の圧力">唇は自動</button><button type="button" data-v="man" aria-pressed="false" title="唇の張り（共振周波数）と口の圧力を手で設定（合わないと別の倍音か無音）">手動</button></div>
         <div class="ptab">
-          <ChoiceRow k="dyn" name="強弱" sub="手で吹くときの強さ。その音が鳴る口の圧力の範囲の中で、弱い側から強い側へ割り振る（曲では楽譜の強弱を使う）" choices={DYNS.map(([v, l]) => [v, l] as const)} value="mf" layout="chips" />
+          <ChoiceRow k="dyn" name="強弱" sub="手で吹くときの強さ（曲では楽譜の強弱）" choices={DYNS.map(([v, l]) => [v, l] as const)} value="mf" layout="chips" />
           <ParamRow d={PM} />
           <ParamRow d={FLIP} />
-          <ChoiceRow k="tg" name="舌" sub="タンギング: 音ごとに舌で息を止めて鋭く離す（タ）。やわらかく: ゆっくり離す（ダ）。スラー: 舌を使わず、唇だけで次の音へ移る" choices={[['ta', 'タンギング'], ['da', 'やわらかく'], ['slur', 'スラー']]} value="ta" />
-          <ChoiceRow k="vib" name="ビブラート" sub="長い音で、唇の張りを毎秒 5.5 回、±14 セントほど揺らす（トランペット固有の実測はなく、このツールで決めた値）" choices={[['0', 'なし'], ['1', '長い音だけ']]} value="0" />
+          <ChoiceRow k="tg" name="舌" sub="タンギング: 音ごとに舌で鋭く（タ）。やわらかく: 舌でゆっくり（ダ）。スラー: 舌なしで唇だけ" choices={[['ta', 'タンギング'], ['da', 'やわらかく'], ['slur', 'スラー']]} value="ta" />
+          <ChoiceRow k="vib" name="ビブラート" sub="長い音の唇の張りの揺れ（毎秒 5.5 回、±14 セントほど。このツールで決めた値）" choices={[['0', 'なし'], ['1', '長い音だけ']]} value="0" />
         </div>
         <dl class="metrics bmet">
           <div class="m"><dt>鳴り始める口の圧力</dt><dd id="b-thr"></dd></div>
@@ -153,8 +153,8 @@ const ROWS = [...PARTIALS].reverse().filter((n) => n <= 8);
 
       <Panel hid="hd-inst" title="楽器" class="a-inst">
         <div class="ptab">
-          <ChoiceRow k="nl" name="非線形の伝搬" sub="あり: 圧力の高い部分ほど速く進み、強く吹くと波が切り立つ（金属的な音）。なし: 管の中の波を線形として計算する" choices={[['0', 'なし'], ['1', 'あり']]} value="1" />
-          <ChoiceRow k="corr" name="音程の直し方" sub="抜差しと唇: 1+2 は第 1 抜差し、2+3・1+3・1+2+3 は第 3 抜差しを出し、残りを唇で直す。直さない: ピストンの組み合わせが高くなる分（最大約 +50 セント）をそのまま鳴らす" choices={[['slide', '抜差しと唇'], ['none', '直さない']]} value="slide" />
+          <ChoiceRow k="nl" name="非線形の伝搬" sub="あり: 強く吹いたときの波の切り立ち（金属的な音）。なし: 管の中の波は線形" choices={[['0', 'なし'], ['1', 'あり']]} value="1" />
+          <ChoiceRow k="corr" name="音程の直し方" sub="抜差しと唇: 1+2 は第 1 抜差し、2+3・1+3・1+2+3 は第 3 抜差し、残りは唇。直さない: 組み合わせで高くなる分（最大約 +50 セント）のまま" choices={[['slide', '抜差しと唇'], ['none', '直さない']]} value="slide" />
           <ParamRow d={TEMP} />
         </div>
         <dl class="metrics bmet">
@@ -164,15 +164,15 @@ const ROWS = [...PARTIALS].reverse().filter((n) => n <= 8);
           <div class="m"><dt>実効円筒長 <i>z</i></dt><dd id="i-z"></dd></div>
         </dl>
         <More id="g-inst"><div class="ptab">
-          <ChoiceRow k="noise" name="息の雑音" sub="口の圧力の、ゆっくりした揺れの大きさ（標準偏差）" choices={[['0', 'なし'], ['0.01', '1 %'], ['0.03', '3 %']]} value="0.01" />
-          <ChoiceRow k="dir" name="聴く方向" sub="ベルの正面: ベルの軸の上で聴く（約 1 kHz より上の音が強い）。斜め: 向きで平均した音（ベルから出るパワーを全方向に均した大きさ）" choices={[['front', 'ベルの正面'], ['side', '斜め']]} value="front" />
+          <ChoiceRow k="noise" name="息の雑音" sub="口の圧力のゆっくりした揺れの大きさ（標準偏差）" choices={[['0', 'なし'], ['0.01', '1 %'], ['0.03', '3 %']]} value="0.01" />
+          <ChoiceRow k="dir" name="聴く方向" sub="ベルの正面: ベルの軸の上（約 1 kHz より上が強い）。斜め: 向きで平均した音" choices={[['front', 'ベルの正面'], ['side', '斜め']]} value="front" />
         </div></More>
       </Panel>
     </div>
 
     <div class="col c2">
       <Panel hid="hd-z" title="管の共鳴" class="a-z">
-        <div slot="aux" class="seg" id="p-zs" role="group" aria-label="縦軸"><button type="button" data-v="lin" aria-pressed="true" title="入力インピーダンスの大きさ（線形）">大きさ</button><button type="button" data-v="db" aria-pressed="false" title="デシベルで（1 MPa·s/m³ を 0 dB）">dB</button></div>
+        <div slot="aux" class="seg" id="p-zs" role="group" aria-label="縦軸"><button type="button" data-v="lin" aria-pressed="true" title="入力インピーダンスの大きさ（線形）">大きさ</button><button type="button" data-v="db" aria-pressed="false" title="1 MPa·s/m³ を 0 dB">dB</button></div>
         <p class="aux res-aux" id="z-aux"></p>
         <div class="sbar bsbar">
           <span class="stag"><i class="sw" aria-hidden="true"></i>CH1 入力インピーダンス <b id="z-div"></b>/div</span>
@@ -198,7 +198,7 @@ const ROWS = [...PARTIALS].reverse().filter((n) => n <= 8);
 
       <Panel hid="hd-room" title="残響" class="a-room">
         <div class="ptab">
-          <ChoiceRow k="room" name="部屋" sub="響きを付ける部屋。寸法と吸音率から残響時間を求める（再生の音だけに付け、音の波形と計算結果には含めない）" choices={ROOMS.map((r) => [r.v, r.name, r.v === 'off' ? '残響なし' : `${r.dim.join(' × ')} m、平均吸音率 ${r.a}`] as const)} value="small" layout="chips" wide />
+          <ChoiceRow k="room" name="部屋" sub="響きを付ける部屋。再生の音だけで、音の波形と計算結果は対象外" choices={ROOMS.map((r) => [r.v, r.name, r.v === 'off' ? '残響なし' : `${r.dim.join(' × ')} m、平均吸音率 ${r.a}`] as const)} value="small" layout="chips" wide />
           <ParamRow d={DIST} />
         </div>
         <dl class="metrics rmet">

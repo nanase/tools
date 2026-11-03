@@ -38,7 +38,7 @@ const pick = (L: readonly ParamDef[], ks: readonly string[]) =>
   });
 ---
 <SiteLayout title={name} tool={{ id: 'pendulum', name }} note="振子と台車を剛体とし、モータの巻線のインダクタンスと歯車のがたを無視した模型による参考値です。">
-  <PageTitle title={name}>レールの上を動く台車に立てた振子（倒立振子）を、PID・極配置・LQR のいずれかの制御で倒れないように支えるシミュレーションです。真下に垂れた振子はエネルギー法で振り上げてから立てます。制御周期、エンコーダの分解能、差分からの速度の推定、モータの電圧の上限といった実機の制約も入れてあり、ゲインや装置の値を変えると、立ち方や倒れ方、開ループと閉ループの極がすぐに変わります。振子や台車を押すこともできます。</PageTitle>
+  <PageTitle title={name}>レールの上を動く台車に立てた振子（倒立振子）を、PID・極配置・LQR のいずれかの制御で倒れないように支えるシミュレーションです。真下に垂れた振子はエネルギー法で振り上げてから立てます。振子や台車を押すこともできます。</PageTitle>
   <div class="mini" data-mini="op" aria-hidden="true"><span><i>t</i><sub>s</sub><b id="mts"></b></span><span><i>t</i><sub>up</sub><b id="mtu"></b></span><span>|<i>F</i>|<sub>max</sub><b id="mfm"></b></span></div>
 
   <div class="tgrid">
@@ -46,7 +46,7 @@ const pick = (L: readonly ParamDef[], ks: readonly string[]) =>
       <Panel hid="hd-fig" title="台車と振子" class="a-fig">
         <div slot="aux" class="seg"><button type="button" id="runBtn" aria-pressed="false" title="シミュレーションを動かす・止める"><span class="led" id="runLed" aria-hidden="true"></span><span id="runT">開始</span></button></div>
         <div class="sbar">
-          <span class="stag"><b class="hw" id="st-mode" data-ph="倒れた（制御を止めた）"></b></span>
+          <span class="stag"><b class="hw" id="st-mode" data-ph="転倒（制御停止）"></b></span>
           <span class="stag">t <b class="hw" id="st-t" data-ph="000.00 s"></b></span>
           <span class="stag"><i class="sw" aria-hidden="true"></i><i class="v">θ</i> <b class="hw" id="st-th" data-ph="−000.0°"></b></span>
           <span class="stag"><i class="sw c2" aria-hidden="true"></i><i class="v">x</i> <b class="hw" id="st-x" data-ph="−000.0 mm"></b></span>
@@ -64,14 +64,14 @@ const pick = (L: readonly ParamDef[], ks: readonly string[]) =>
           <button type="button" class="tg rst-sim" id="resetSim" title="初めの状態（振り上げるなら真下、振り上げないなら初めの傾き）から始め直す">最初から</button>
         </div>
         <More id="g-fig" title="表示と押す強さの設定"><div class="ptab">
-          <ChoiceRow k="spd" name="再生の速さ" sub="図と波形を何分の 1 の速さで動かすか。計算の刻みは変わらない" choices={SPEEDS.map((v) => [v, v === 1 ? '実時間' : `1/${Math.round(1 / v)}`] as const)} value={1} />
+          <ChoiceRow k="spd" name="再生の速さ" sub="図と波形の速さ。計算の刻みは変わらない" choices={SPEEDS.map((v) => [v, v === 1 ? '実時間' : `1/${Math.round(1 / v)}`] as const)} value={1} />
           <ParamRow d={PUSH} />
         </div></More>
       </Panel>
 
       <Panel hid="hd-ctl" title="制御" class="a-ctl">
         <div slot="aux" class="seg" id="p-kind" role="group" aria-label="安定化の制御"><button type="button" data-v="pid" aria-pressed="false" title="角度と位置の 2 つのループの PID">PID</button><button type="button" data-v="place" aria-pressed="false" title="状態フィードバック（アッカーマンの式で極を置く）">極配置</button><button type="button" data-v="lqr" aria-pressed="true" title="状態フィードバック（リカッチ方程式で重み付きの 2 乗の和を最小にする）">LQR</button></div>
-        <div class="ptab"><ChoiceRow k="swing" name="振り上げ" sub="振り上げるなら真下から始め、エネルギー法で振り上げてから安定化の制御へ切り替える（倒れたらまた振り上げる）。振り上げないなら、真上の近くで手を離したところから始め、倒れたら制御を止める" choices={[['on', '振り上げる'], ['off', '振り上げない']]} value="on" /></div>
+        <div class="ptab"><ChoiceRow k="swing" name="振り上げ" sub="あり: 真下からエネルギー法で振り上げる。なし: 真上の近くで手を離す" choices={[['on', 'あり'], ['off', 'なし']]} value="on" /></div>
         <!-- 選んだ制御の行と、振り上げるかどうかで使う行だけを出す（client.ts の showGroups） -->
         <div class="ptab" data-kind="lqr">{pick(LQR, ['qx', 'qt', 'r']).map((d) => <ParamRow d={d} />)}</div>
         <div class="ptab" data-kind="place" hidden>{PLACE.map((d) => <ParamRow d={d} />)}</div>
@@ -86,7 +86,7 @@ const pick = (L: readonly ParamDef[], ks: readonly string[]) =>
 
       <Panel hid="hd-pl" title="振子と台車" class="a-pl">
         <div class="ptab">
-          <ChoiceRow k="pre" name="教材" sub="公開された資料にある教材の値を入れる（振子・台車・摩擦・駆動）。クーロン摩擦と計測の値は変えない" choices={PRESETS.map((p) => [p.v, p.name, p.title] as const)} value="ip02w" layout="chips" />
+          <ChoiceRow k="pre" name="教材" sub="公開された資料にある教材の値（振子・台車・摩擦・駆動）" choices={PRESETS.map((p) => [p.v, p.name, p.title] as const)} value="ip02w" layout="chips" />
           {pick(PLANT, ['m', 'l', 'M', 'rail']).map((d) => <ParamRow d={d} />)}
         </div>
         <More id="g-pl"><div class="ptab">{pick(PLANT, ['J', 'bc', 'fc', 'bp']).map((d) => <ParamRow d={d} />)}</div></More>
@@ -100,7 +100,7 @@ const pick = (L: readonly ParamDef[], ks: readonly string[]) =>
 
       <Panel hid="hd-se" title="計測と制御周期" class="a-se">
         <div class="ptab">
-          <ChoiceRow k="ts" name="制御周期" sub="計測して入力を決める間隔。入力は次の周期まで同じ値に保つ" choices={TS_MS.map((v) => [v, `${v} ms`] as const)} value={1} layout="chips" />
+          <ChoiceRow k="ts" name="制御周期" sub="計測して入力を決める間隔" choices={TS_MS.map((v) => [v, `${v} ms`] as const)} value={1} layout="chips" />
           {pick(SENSE, ['fv']).map((d) => <ParamRow d={d} />)}
         </div>
         <More id="g-se"><div class="ptab">

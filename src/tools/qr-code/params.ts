@@ -8,7 +8,7 @@ export const TEXT0 = 'https://nanase.cc/tools/qr-code/';
 export const MAX_LEN = 8000;
 
 export const ECC_CHOICES: readonly [Ecc, string, string][] = [
-  ['L', 'L 7%', '符号語の約 7 % まで直せる'],
+  ['L', 'L 7%', '符号語の約 7 % まで訂正'],
   ['M', 'M 15%', '符号語の約 15 % まで直せる'],
   ['Q', 'Q 25%', '符号語の約 25 % まで直せる'],
   ['H', 'H 30%', '符号語の約 30 % まで直せる'],
@@ -21,8 +21,8 @@ export const MODE_CHOICES: readonly [Mode | 'auto', string, string][] = [
   ['kanji', '漢字', 'Shift_JIS の 2 バイト文字だけ。1 文字を 13 ビットにする'],
 ];
 export const BOOST_CHOICES: readonly [string, string, string][] = [
-  ['0', '上げない', '選んだレベルのまま'],
-  ['1', '上げる', '同じバージョンに入る範囲で、誤り訂正のレベルを上げる'],
+  ['0', 'なし', '選んだレベルのまま'],
+  ['1', 'あり', '同じバージョンに入る範囲で、誤り訂正のレベルを上げる'],
 ];
 
 /** 自動で選んだバージョン（欄の「自動（3）」の表示に使う。client.ts が入れる） */

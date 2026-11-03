@@ -59,12 +59,12 @@ function chunkDesc(m: Model, c: ChunkInfo, k: number, nIdat: number): string {
       return m.layout.colorType === 3 ? `パレットの先頭 ${c.length} 色の不透明度` : '透明にする 1 色';
     case 'IDAT':
       return k === 0
-        ? `zlib の頭 ${h2(m.zlib[0])} ${h2(m.zlib[1])}${nIdat > 1 ? ` · ${nIdat} 個に分けた 1 個目` : ''}`
+        ? `zlib のヘッダ ${h2(m.zlib[0])} ${h2(m.zlib[1])}${nIdat > 1 ? ` · ${nIdat} 個に分けた 1 個目` : ''}`
         : `続き（${k + 1} / ${nIdat}）`;
     case 'IEND':
       return '画像の終わり';
     default:
-      return `${AUX[c.type] ?? '知らない補助チャンク'}${c.critical ? '（必須）' : ''}`;
+      return `${AUX[c.type] ?? '未知の補助チャンク'}${c.critical ? '（必須）' : ''}`;
   }
 }
 
@@ -250,8 +250,8 @@ export class FileMap {
     let tail = '';
     if (z >= 0 && z < 2)
       h += `<dt>zlib の頭</dt><dd>${h2(m.zlib[0])} ${h2(m.zlib[1])} · 窓 ${1 << ((m.zlib[0] >> 4) + 8)} バイト</dd>`;
-    else if (z >= m.zlib.length - 4) h += '<dt>Adler-32</dt><dd>戻したデータの検査</dd>';
-    else if (tok < 0 && z >= 0) h += '<dt>Deflate</dt><dd>ブロックの頭・符号長の表</dd>';
+    else if (z >= m.zlib.length - 4) h += '<dt>Adler-32</dt><dd>展開したデータの検査</dd>';
+    else if (tok < 0 && z >= 0) h += '<dt>Deflate</dt><dd>ブロックのヘッダ・符号長の表</dd>';
     if (tok >= 0) {
       const T = m.trace.tokens,
         k = T.kind[tok],

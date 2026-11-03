@@ -230,7 +230,7 @@ function strings(): void {
     strBox.innerHTML = '';
     return;
   }
-  let h = `<button type="button" class="sbtn auto" data-i="-1" aria-pressed="${S.str < 0}" title="いちばん近い弦を自動で選ぶ"><span>弦</span><b>自動</b><span class="d">—</span></button>`;
+  let h = `<button type="button" class="sbtn auto" data-i="-1" aria-pressed="${S.str < 0}" title="いちばん近い弦を自動で選択"><span>弦</span><b>自動</b><span class="d">—</span></button>`;
   st.forEach((n, i) => {
     h += `<button type="button" class="sbtn" data-i="${i}" aria-pressed="${S.str === i}" title="${esc(`${strLabel(i)} ${noteText(n, nameOpts())}（${hz(hzOf(n, S.ref, devOf(n)))}）に固定する`)}"><span>${esc(strLabel(i))}</span><b>${esc(noteText(n, nameOpts()))}</b><span class="d">—</span><span class="bar" aria-hidden="true"><i class="none"></i></span></button>`;
   });

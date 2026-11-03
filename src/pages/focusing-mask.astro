@@ -41,7 +41,7 @@ const name = 'フォーカシングマスク';
 
     <div class="col c1">
       <Panel hid="hd-view" title="カメラの映像" class="a-view">
-        <div slot="aux" class="seg" id="p-ov" role="group" aria-label="重ねる線"><button type="button" data-v="on" aria-pressed="true" title="光条の位置を測って線を重ねる（穴のマスクは、像の位置の予測）">解析を重ねる</button><button type="button" data-v="off" aria-pressed="false" title="映像だけ">映像だけ</button></div>
+        <div slot="aux" class="seg" id="p-ov" role="group" aria-label="重ねる線"><button type="button" data-v="on" aria-pressed="true" title="光条の位置を測って線を重ねる（穴のマスクは像の位置の予測）">解析を重ねる</button><button type="button" data-v="off" aria-pressed="false">映像だけ</button></div>
         <div class="sbar">
           <span class="stag">MASK <b id="v-mask"></b></span>
           <span class="stag">D <b id="v-D"></b></span>
@@ -65,8 +65,8 @@ const name = 'フォーカシングマスク';
         </div>
         <More id="g-view" title="表示の設定"><div class="ptab">
           <ParamRow d={EXP} />
-          <ChoiceRow k="st" name="明るさの伸ばし方" sub="リニアはカメラの撮って出し（芯が飽和する）。asinh は暗い所を持ち上げ、芯と光条を 1 枚で見せる（Lupton ほか 2004）" choices={[['lin', 'リニア'], ['asinh', 'asinh']]} value="lin" />
-          <ChoiceRow k="cm" name="カメラ" sub="カラーは星の色のまま、モノクロは明るさだけで描く" choices={[['color', 'カラー'], ['mono', 'モノクロ']]} value="color" />
+          <ChoiceRow k="st" name="明るさの伸ばし方" sub="リニア: カメラの撮って出し。asinh: 暗い所の持ち上げ（Lupton ほか 2004）" choices={[['lin', 'リニア'], ['asinh', 'asinh']]} value="lin" />
+          <ChoiceRow k="cm" name="カメラ" sub="カラー: 星の色のまま。モノクロ: 明るさだけ" choices={[['color', 'カラー'], ['mono', 'モノクロ']]} value="color" />
         </div></More>
       </Panel>
 
@@ -90,7 +90,7 @@ const name = 'フォーカシングマスク';
           <div class="mf-w"><canvas id="mf-c" role="img" aria-label="マスクの正面"></canvas><p class="mf-drop" id="mf-drop" hidden>ここへ画像をドロップ</p></div>
           <div class="mf-t">
             <p id="mf-d" class="hh" data-ph="キャリー・マスク（2009）。四分円 4 つの斜めの格子が、開きの違う 2 つの X 字の光条を作ります。ピントが合うと 2 つの X が対称に重なります。"></p>
-            <div class="mf-f" id="mf-f" hidden><label class="tg" for="mf-in">画像を選ぶ…</label><input type="file" id="mf-in" accept="image/*"><span class="mf-n" id="mf-n"></span></div>
+            <div class="mf-f" id="mf-f" hidden><label class="tg" for="mf-in">画像を選択…</label><input type="file" id="mf-in" accept="image/*"><span class="mf-n" id="mf-n"></span></div>
             <p class="msg" id="mf-m" aria-live="polite"></p>
           </div>
         </div>

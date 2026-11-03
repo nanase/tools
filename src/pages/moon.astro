@@ -22,12 +22,12 @@ const WD = ['日', '月', '火', '水', '木', '金', '土'];
   <div class="tgrid">
 
     <Panel hid="hd-moon" title="東京から見た月" class="a-moon" fixed>
-      <div slot="aux" class="seg" id="p-or" role="group" aria-label="画面の向き"><button type="button" data-v="zenith" aria-pressed="false" title="観測地の天頂を上にする（空で見える向き）">天頂<span class="w">が上</span></button><button type="button" data-v="moon" aria-pressed="true" title="月の北極を上にする">月の北<span class="w">が上</span></button><button type="button" data-v="sky" aria-pressed="false" title="天の北極を上にする（望遠鏡の写真の向き）">天の北<span class="w">が上</span></button></div>
+      <div slot="aux" class="seg" id="p-or" role="group" aria-label="画面の向き"><button type="button" data-v="zenith" aria-pressed="false" title="空で見える向き">天頂<span class="w">が上</span></button><button type="button" data-v="moon" aria-pressed="true">月の北<span class="w">が上</span></button><button type="button" data-v="sky" aria-pressed="false" title="望遠鏡の写真の向き">天の北<span class="w">が上</span></button></div>
       <div slot="aux" class="seg" id="p-play" data-nosave><button type="button" id="play" aria-pressed="false" title="時刻を進める（表示の設定の速さで）"><span class="led" id="playLed" aria-hidden="true"></span><span id="playT">再生</span></button></div>
       <div class="bigclock">
-        <button type="button" class="nowbtn" id="nowbtn" aria-pressed="true" title="現在の日時に戻し、時計に合わせて進める"><span class="led on" id="nowLed" aria-hidden="true"></span>現在</button>
+        <button type="button" class="nowbtn" id="nowbtn" aria-pressed="true" title="現在の日時へ（時計に合わせて進行）"><span class="led on" id="nowLed" aria-hidden="true"></span>現在</button>
         <span class="clk"><span id="clk">—</span><small id="clkz">JST</small></span>
-        <span class="st">日付<span class="dtrow"><b id="o-date">—</b><span class="dtpick"><button type="button" class="calbtn" id="dtbtn" aria-label="日時を選ぶ" title="日時を選ぶ"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"></rect><path d="M3.5 10h17M8 3v4M16 3v4"></path></svg></button><input type="datetime-local" id="dt" step="60" tabindex="-1" aria-hidden="true"></span></span></span>
+        <span class="st">日付<span class="dtrow"><b id="o-date">—</b><span class="dtpick"><button type="button" class="calbtn" id="dtbtn" aria-label="日時の選択" title="日時の選択"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"></rect><path d="M3.5 10h17M8 3v4M16 3v4"></path></svg></button><input type="datetime-local" id="dt" step="60" tabindex="-1" aria-hidden="true"></span></span></span>
         <span class="st">月齢<b id="o-age">—</b></span>
         <span class="st">輝面比<b id="o-k">—</b></span>
         <span class="st">距離<b id="o-dist">—</b></span>
@@ -47,21 +47,21 @@ const WD = ['日', '月', '火', '水', '木', '金', '土'];
         <div class="lab" id="v-lab"></div>
         <div class="lab b" id="v-lab2"></div>
         <p class="vmsg" id="v-msg" hidden></p>
-        <div class="vctl" role="group" aria-label="表示の拡大・縮小"><button type="button" class="vbtn" id="vout" aria-label="縮小" title="縮小（ホイール・2 本指でも）">−</button><span class="vz" id="vzoom">×1.00</span><button type="button" class="vbtn" id="vin" aria-label="拡大" title="拡大（ホイール・2 本指でも）">＋</button><button type="button" class="vbtn" id="vreset" title="拡大と位置をもとに戻す" hidden>もとに戻す</button></div>
+        <div class="vctl" role="group" aria-label="表示の拡大・縮小"><button type="button" class="vbtn" id="vout" aria-label="縮小" title="縮小（ホイール・2 本指でも）">−</button><span class="vz" id="vzoom">×1.00</span><button type="button" class="vbtn" id="vin" aria-label="拡大" title="拡大（ホイール・2 本指でも）">＋</button><button type="button" class="vbtn" id="vreset" hidden>もとに戻す</button></div>
       </div>
       <div class="month">
         <div class="phrow" id="phrow"></div>
         <svg class="tsv" id="band" viewBox="0 -24 1000 146" role="slider" tabindex="0" aria-label="日時（1 か月の帯の上を押して動かす）" aria-valuemin="0" aria-valuemax="1000" aria-valuenow="0"></svg>
       </div>
       <div class="tstep">
-        <div class="tchips" id="keys" role="group" aria-label="主な日時へ移る"></div>
-        <div class="seg" id="tstep" role="group" aria-label="日時を少し動かす"><button type="button" data-s="-86400">−1 日</button><button type="button" data-s="-3600">−1 時間</button><button type="button" data-s="-600">−10 分</button><button type="button" data-s="600">+10 分</button><button type="button" data-s="3600">+1 時間</button><button type="button" data-s="86400">+1 日</button></div>
+        <div class="tchips" id="keys" role="group" aria-label="主な日時"></div>
+        <div class="seg" id="tstep" role="group" aria-label="日時の微調整"><button type="button" data-s="-86400">−1 日</button><button type="button" data-s="-3600">−1 時間</button><button type="button" data-s="-600">−10 分</button><button type="button" data-s="600">+10 分</button><button type="button" data-s="3600">+1 時間</button><button type="button" data-s="86400">+1 日</button></div>
       </div>
       <More id="g-view" title="表示の設定"><div class="ana2">
         <div class="ptab">
-          <ChoiceRow k="lab" name="地名" sub="欠け際の近く: 日の当たる側で、欠け際から 20° 以内のクレーターと海の名前（NASA SVS の Dial-A-Moon の決め方）。夜の側の名前は出さない" choices={[['near', '欠け際の近く'], ['all', '大きなもの'], ['off', 'なし']]} value="near" />
-          <ChoiceRow k="br" name="明るさ" sub="肉眼: 明るい縁を満月の明るさに合わせ、月食で暗くなると少し慣れる。カメラ: 月食でも同じ明るさに合わせる。物理: 満月の明るさに固定し、欠けると暗くなる" choices={[['eye', '肉眼'], ['camera', 'カメラ'], ['phys', '物理']]} value="eye" />
-          <ChoiceRow k="es" name="地球照" sub="欠けた側を照らす地球の光。肉眼とカメラでは見えるように 30 倍に持ち上げる" choices={[['on', 'あり'], ['off', 'なし']]} value="on" />
+          <ChoiceRow k="lab" name="地名" sub="欠け際の近く: 日の当たる側で欠け際から 20° 以内のクレーターと海（NASA SVS の Dial-A-Moon の決め方） · 夜の側はなし" choices={[['near', '欠け際の近く'], ['all', '大きなもの'], ['off', 'なし']]} value="near" />
+          <ChoiceRow k="br" name="明るさ" sub="肉眼: 明るい縁を満月に合わせ、月食で少し慣れた明るさ · カメラ: 月食でも同じ明るさ · 物理: 満月の明るさに固定（欠けると暗い）" choices={[['eye', '肉眼'], ['camera', 'カメラ'], ['phys', '物理']]} value="eye" />
+          <ChoiceRow k="es" name="地球照" sub="欠けた側を照らす地球の光 · 肉眼とカメラでは 30 倍に強調" choices={[['on', 'あり'], ['off', 'なし']]} value="on" />
         </div>
         <div class="ptab">
           <ChoiceRow k="tz" name="時刻" sub="日本時間（UTC+9）か世界時（UT）" choices={[['jst', '日本時間'], ['ut', '世界時']]} value="jst" />
@@ -84,7 +84,7 @@ const WD = ['日', '月', '火', '水', '木', '金', '土'];
             <ul class="sugg" id="sugg" aria-label="候補" hidden></ul>
           </div>
           <button type="button" class="evbtn" id="here"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v4M12 18v4M2 12h4M18 12h4"></path></svg>現在地</button>
-          <button type="button" class="evbtn" id="mapbtn" aria-expanded="false" aria-controls="mapbox"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2z"></path><path d="M9 4v14M15 6v14"></path></svg>地図から選ぶ</button>
+          <button type="button" class="evbtn" id="mapbtn" aria-expanded="false" aria-controls="mapbox"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2z"></path><path d="M9 4v14M15 6v14"></path></svg>地図で選択</button>
         </div>
         <p class="msg" id="loc-msg" aria-live="polite"></p>
         <div class="mapbox" id="mapbox" hidden><canvas id="map" width="720" height="360" role="img" aria-label="世界地図。押した地点を観測地にする"></canvas></div>

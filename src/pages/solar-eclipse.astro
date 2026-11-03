@@ -46,16 +46,16 @@ const name = '日食';
         <g id="c-tk"></g>
         <path class="cur" id="c-cur"></path>
       </svg>
-      <div class="legend"><span><i></i>光の量 F（周辺減光を入れた太陽の残り）</span><span><i class="dash"></i>同じ量の対数（10⁻⁴·⁵〜1）</span><span><i class="band"></i><span id="lg-band">皆既</span></span><span id="lg-tz">横軸の時刻は日本時間</span></div>
-      <div class="tchips" id="keys" role="group" aria-label="主な時刻へ移る"></div>
+      <div class="legend"><span><i></i>光の量 F（周辺減光込み）</span><span><i class="dash"></i>同じ量の対数（10⁻⁴·⁵〜1）</span><span><i class="band"></i><span id="lg-band">皆既</span></span><span id="lg-tz">横軸の時刻は日本時間</span></div>
+      <div class="tchips" id="keys" role="group" aria-label="主な時刻"></div>
       <div class="tstep">
-        <span class="aux">時刻を少し動かす</span>
-        <div class="seg" id="tstep" role="group" aria-label="時刻を少し動かす"><button type="button" data-s="-60">−1 分</button><button type="button" data-s="-10">−10 秒</button><button type="button" data-s="-1">−1 秒</button><button type="button" data-s="1">+1 秒</button><button type="button" data-s="10">+10 秒</button><button type="button" data-s="60">+1 分</button></div>
+        <span class="aux">時刻の微調整</span>
+        <div class="seg" id="tstep" role="group" aria-label="時刻の微調整"><button type="button" data-s="-60">−1 分</button><button type="button" data-s="-10">−10 秒</button><button type="button" data-s="-1">−1 秒</button><button type="button" data-s="1">+1 秒</button><button type="button" data-s="10">+10 秒</button><button type="button" data-s="60">+1 分</button></div>
       </div>
       <More id="g-sky" title="表示の設定"><div class="ana2">
         <div class="ptab">
-          <ChoiceRow k="tz" name="時刻" sub="日本時間（UTC+9）か世界時（UT）。時刻は ΔT を引いた UT1 から出す" choices={[['jst', '日本時間'], ['ut', '世界時']]} value="jst" />
-          <ChoiceRow k="zm" name="望遠の視野" sub="小窓の短い辺が表す角度。太陽の見かけの直径は約 0.53°" choices={ZOOMS} value="0.75" />
+          <ChoiceRow k="tz" name="時刻" sub="日本時間（UTC+9）か世界時（UT） · ΔT を引いた UT1 から計算" choices={[['jst', '日本時間'], ['ut', '世界時']]} value="jst" />
+          <ChoiceRow k="zm" name="望遠の視野" sub="小窓の短い辺の角度 · 太陽の見かけの直径は約 0.53°" choices={ZOOMS} value="0.75" />
         </div>
         <div class="ptab">
           <ChoiceRow k="sp" name="再生の速さ" sub="実際の時間の何倍で進めるか" choices={SPEEDS} value="60" />
@@ -65,7 +65,7 @@ const name = '日食';
 
     <div class="col c1">
       <Panel hid="hd-site" title="観測地のまわり" class="a-site">
-        <span slot="aux" class="aux">押すと観測地が移る · ドラッグで動かす</span>
+        <span slot="aux" class="aux">押して観測地を移動 · ドラッグで地図を移動</span>
         <div class="vw regw">
           <canvas id="reg" width="560" height="460" role="img" aria-label="観測地のまわりの地図。皆既帯と、その時刻の月の影。押すと観測地が移り、ドラッグで地図が動く"></canvas>
           <div class="lab" id="reg-lab"></div>
@@ -75,9 +75,9 @@ const name = '日食';
       </Panel>
 
       <Panel hid="hd-space" title="宇宙から" class="a-space">
-        <div slot="aux" class="seg" id="p-view" role="group" aria-label="視点"><button type="button" data-v="l1" aria-pressed="true" title="太陽と地球の間の L1（DSCOVR の位置）から">L1</button><button type="button" data-v="geo" aria-pressed="false" title="静止軌道 東経 140.7°（ひまわりの位置）から">ひまわり</button><button type="button" data-v="moon" aria-pressed="false" title="月から">月</button></div>
+        <div slot="aux" class="seg" id="p-view" role="group" aria-label="視点"><button type="button" data-v="l1" aria-pressed="true" title="太陽と地球の間の L1（DSCOVR の位置）から">L1</button><button type="button" data-v="geo" aria-pressed="false" title="静止軌道 東経 140.7°（ひまわりの位置）から">ひまわり</button><button type="button" data-v="moon" aria-pressed="false">月</button></div>
         <div class="spw">
-          <div class="vw sq globew"><canvas id="globe" width="300" height="300" role="img" aria-label="宇宙から見た地球と月の影。ドラッグで地球が回る"></canvas><button type="button" class="vbtn" id="globe-home" hidden>視点に戻す</button></div>
+          <div class="vw sq globew"><canvas id="globe" width="300" height="300" role="img" aria-label="宇宙から見た地球と月の影。ドラッグで地球が回る"></canvas><button type="button" class="vbtn" id="globe-home" hidden>元の視点</button></div>
           <p class="vcap" id="globe-cap"></p>
         </div>
       </Panel>
@@ -92,7 +92,7 @@ const name = '日食';
             <ul class="sugg" id="sugg" aria-label="候補" hidden></ul>
           </div>
           <button type="button" class="evbtn" id="here"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v4M12 18v4M2 12h4M18 12h4"></path></svg>現在地</button>
-          <a class="evbtn" href="#hd-site"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2z"></path><path d="M9 4v14M15 6v14"></path></svg>地図で選ぶ</a>
+          <a class="evbtn" href="#hd-site"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2z"></path><path d="M9 4v14M15 6v14"></path></svg>地図で選択</a>
         </div>
         <p class="msg" id="loc-msg" aria-live="polite"></p>
         <div class="locnow"><b id="loc-name"></b><span id="loc-coord"></span><em id="loc-note"></em></div>
@@ -119,7 +119,7 @@ const name = '日食';
             <tbody id="list"></tbody>
           </table>
         </div>
-        <More id="g-find" title="ほかの日食を探す"><div class="find">
+        <More id="g-find" title="ほかの日食の検索"><div class="find">
           <div class="fbar">
             <div class="seg" id="p-fk" role="group" aria-label="探し方" data-nosave><button type="button" data-v="y" aria-pressed="true">年</button><button type="button" data-v="s" aria-pressed="false">サロス番号</button></div>
             <input type="number" id="fq" inputmode="numeric" aria-label="年かサロス番号" placeholder="例 2035">
@@ -131,7 +131,7 @@ const name = '日食';
     </div>
 
     <Panel hid="hd-saros" title="サロス" class="a-saros">
-      <div slot="aux" class="seg" id="p-sm" role="group" aria-label="描き方"><button type="button" data-v="all" aria-pressed="true">重ねる</button><button type="button" data-v="one" aria-pressed="false">1 回ずつ</button></div>
+      <div slot="aux" class="seg" id="p-sm" role="group" aria-label="描き方"><button type="button" data-v="all" aria-pressed="true">重ね描き</button><button type="button" data-v="one" aria-pressed="false">1 回ずつ</button></div>
       <div class="sbar"><span class="stag">投影 <b>Equal Earth</b></span><span class="stag">灰 <b>過去</b></span><span class="stag">茶 <b>未来</b></span><span class="stag">枠付きの年 <b id="s-here">観測地で欠けて見える回</b></span></div>
       <div class="smap">
         <canvas id="sbase" width="1160" height="565" aria-hidden="true"></canvas>

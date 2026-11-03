@@ -3,7 +3,7 @@ import type { ParamDef } from '../../lib/param-def';
 export type Key = 'kp' | 'ki' | 'kd' | 'x0' | 'r' | 'v0' | 'w' | 'al';
 type Def = ParamDef & { k: Key };
 
-const LOG_HINT = '↑↓: E12 刻みで隣の値　PgUp/PgDn: 10 倍・1/10　Enter: 確定　Esc: 戻す';
+const LOG_HINT = '↑↓: E12 刻みで隣の値　PgUp/PgDn: 10 倍・1/10　Enter: 確定　Esc: 取り消し';
 const BAD_SIGNED = '読めない値です（例 −20・12.5）';
 
 /** ゲイン: 0 と E12（0.0001〜20） */

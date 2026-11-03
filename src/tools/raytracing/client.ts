@@ -307,8 +307,8 @@ const pp = $('#pp');
 function setPlaying(on: boolean): void {
   playing = on;
   pp.classList.toggle('on', on);
-  pp.setAttribute('aria-label', on ? '一時停止' : 'ためる');
-  pp.title = on ? '一時停止' : 'ためる';
+  pp.setAttribute('aria-label', on ? '一時停止' : '再開');
+  pp.title = on ? '一時停止' : '再開';
   $('#o-state').hidden = !on;
 }
 pp.addEventListener('click', () => {

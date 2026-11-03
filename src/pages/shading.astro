@@ -24,7 +24,7 @@ const INTS = [
 ] as const;
 ---
 <SiteLayout title={name} tool={{ id: 'shading', name }}>
-  <PageTitle title={name}>同じ光と材質で反射モデルを並べ、ハイライトの形・ローブ・エネルギー保存の違いを見比べます。</PageTitle>
+  <PageTitle title={name}>同じ光と材質で反射モデルを並べて見比べます。</PageTitle>
 
   <div class="tgrid">
     <Panel hid="hd-sph" title="反射モデル" class="a-sph" fixed>
@@ -69,7 +69,7 @@ const INTS = [
         <ParamRow d={METAL} />
         <ParamRow d={F0} />
         <ChoiceRow k="expo" name="Phong の指数" sub="同じ指数だと Phong の方が太くなる" value="q" choices={[['q', 'Blinn の 1/4'], ['s', 'Blinn と同じ']]} />
-        <ChoiceRow k="norm" name="正規化" sub="切ると Phong・Blinn-Phong は元の式になり、エネルギーを保存しない" value="1" choices={[['1', '入'], ['0', '切']]} />
+        <ChoiceRow k="norm" name="正規化" sub="切: Phong・Blinn-Phong は元の式でエネルギー保存なし" value="1" choices={[['1', '入'], ['0', '切']]} />
       </div>
     </Panel>
 
@@ -132,7 +132,7 @@ const INTS = [
         ))}
       </div>
       <div class="ptab">
-        <ChoiceRow k="ms" name="多重散乱の補正" sub="マイクロファセットの間で跳ね返る光を足す。ほかの枠の GGX にも効く" value="0" choices={[['0', '切'], ['1', '入']]} />
+        <ChoiceRow k="ms" name="多重散乱の補正" sub="マイクロファセットの間で跳ね返る光。ほかの枠の GGX にも適用" value="0" choices={[['0', '切'], ['1', '入']]} />
       </div>
     </Panel>
 

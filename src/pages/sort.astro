@@ -19,7 +19,7 @@ const wrapHead = (s: string) => s.replace(/(に偏り|並び替え|済み|が少
 const firstOfGroup = new Set(GROUPS.map((g) => ALGS.find((a) => a.g === g)?.id));
 ---
 <SiteLayout title={name} tool={{ id: 'sort', name }}>
-  <PageTitle title={name}>棒グラフが小さい順に並ぶ様子を、音とともに追います。アルゴリズムどうし、データどうしを並べて比べられます。</PageTitle>
+  <PageTitle title={name}>棒グラフが小さい順に並ぶ様子を音とともに追います。アルゴリズムどうし、データどうしを並べて比べられます。</PageTitle>
 
   <div class="tgrid" id="so" data-mode="one">
     <Panel hid="hd-fig" title={DEF.f} class="a-fig" fixed>
@@ -50,7 +50,7 @@ const firstOfGroup = new Set(GROUPS.map((g) => ALGS.find((a) => a.g === g)?.id))
       </div>
       <div class="so-race" id="so-race"></div>
       <div class="tp">
-        <button type="button" class="tp-ib" id="tp-home" title="最初へ戻す" aria-label="最初へ戻す"><svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1.5" y="1.5" width="1.8" height="9"/><path d="M10.5 1.5v9L4 6z"/></svg></button>
+        <button type="button" class="tp-ib" id="tp-home" title="最初へ" aria-label="最初へ"><svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1.5" y="1.5" width="1.8" height="9"/><path d="M10.5 1.5v9L4 6z"/></svg></button>
         <button type="button" class="tp-pp" id="tp-pp" title="再生" aria-label="再生"><svg class="i-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.2l7.6 4.8L3 10.8z"/></svg><svg class="i-pause" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="2.8" height="9"/><rect x="7.2" y="1.5" width="2.8" height="9"/></svg></button>
         <div class="tp-tl">
           <div class="tp-trk" id="tp-trk" role="slider" tabindex="0" aria-label="進み具合" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0">
@@ -61,8 +61,8 @@ const firstOfGroup = new Set(GROUPS.map((g) => ALGS.find((a) => a.g === g)?.id))
           <div class="tp-tm"><span><b id="tp-a">0</b> / <span id="tp-b">0</span> 回</span><span id="tp-t"></span></div>
         </div>
         <div class="tp-side">
-          <button type="button" class="tp-sq" id="tp-back" title="1 回戻す" aria-label="1 回戻す"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M12 3L6 8l6 5M4 3v10"/></svg></button>
-          <button type="button" class="tp-sq" id="tp-step" title="1 回進める" aria-label="1 回進める"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 3l6 5-6 5M12 3v10"/></svg></button>
+          <button type="button" class="tp-sq" id="tp-back" title="前の操作" aria-label="前の操作"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M12 3L6 8l6 5M4 3v10"/></svg></button>
+          <button type="button" class="tp-sq" id="tp-step" title="次の操作" aria-label="次の操作"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 3l6 5-6 5M12 3v10"/></svg></button>
         </div>
       </div>
       <div class="ptab so-row"><ParamRow d={SPEED} /></div>
@@ -129,7 +129,7 @@ const firstOfGroup = new Set(GROUPS.map((g) => ALGS.find((a) => a.g === g)?.id))
         <div class="so-rank"><table class="so-rt" id="so-rt"></table></div>
       </Panel>
       <Panel hid="hd-snd" title="音" class="a-snd">
-        <div slot="aux" class="seg"><button type="button" id="so-snd" aria-pressed="true"><span class="led on" id="so-sndL" aria-hidden="true"></span> 鳴らす</button></div>
+        <div slot="aux" class="seg"><button type="button" id="so-snd" aria-pressed="true"><span class="led on" id="so-sndL" aria-hidden="true"></span> 音あり</button></div>
         <div class="ptab so-row">
           <ParamRow d={VOL} />
           <div class="prow chr wide">

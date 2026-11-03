@@ -29,19 +29,19 @@ const SC = [
 ];
 ---
 <SiteLayout title={name} tool={{ id: 'wavelet-denoise', name }} note="音声はこの端末の中だけで処理し、送信しません。">
-  <PageTitle title={name}>ウェーブレットの小さい係数を捨てて戻し、雑音を除いた音と圧縮した音を原音と聴き比べます。</PageTitle>
+  <PageTitle title={name}>ウェーブレットの係数を捨てた音を元の音と聴き比べます。</PageTitle>
   <div class="mini" data-mini="op" aria-hidden="true"><span>SN 比<b id="m-snr">—</b></span><span>残した<b id="m-kept">—</b></span><span id="m-xl">改善<b id="m-x">—</b></span></div>
 
   <div class="tgrid" id="wd" data-m="dn">
     <Panel hid="hd-ab" title="聴き比べ" class="a-ab" fixed>
-      <div slot="aux" class="seg" id="ab-mode" role="group" aria-label="目的"><button type="button" data-v="dn" aria-pressed="true" title="雑音を足して、小さい係数を閾値で捨てる">雑音除去</button><button type="button" data-v="cp" aria-pressed="false" title="大きい順に係数を残して量子化する">圧縮</button></div>
-      <div class="bar"><span class="bl" id="ab-src-l">入力</span><div class="seg" id="ab-src" data-nosave role="group" aria-labelledby="ab-src-l"><button type="button" data-v="test" aria-pressed="true" title="この端末の中で作る 4 秒の音（そのまま繰り返せる長さ）">サンプル音源</button><button type="button" data-v="file" aria-pressed="false" title="WAV・MP3・FLAC など。先頭 10 秒">ファイル</button><button type="button" data-v="mic" aria-pressed="false" title="押している間（最大 10 秒）録る">マイク</button></div></div>
+      <div slot="aux" class="seg" id="ab-mode" role="group" aria-label="目的"><button type="button" data-v="dn" aria-pressed="true" title="雑音を足し、閾値で小さい係数を除去">雑音除去</button><button type="button" data-v="cp" aria-pressed="false" title="大きい順に係数を残して量子化">圧縮</button></div>
+      <div class="bar"><span class="bl" id="ab-src-l">入力</span><div class="seg" id="ab-src" data-nosave role="group" aria-labelledby="ab-src-l"><button type="button" data-v="test" aria-pressed="true" title="この端末の中で作る 4 秒の音（そのまま繰り返せる長さ）">サンプル音源</button><button type="button" data-v="file" aria-pressed="false" title="WAV・MP3・FLAC など。先頭 10 秒">ファイル</button><button type="button" data-v="mic" aria-pressed="false" title="押している間（最大 10 秒）の録音">マイク</button></div></div>
       <div class="ptab" id="ab-tab" data-src="test">
         <ChoiceRow k="clip" name="サンプル音源" choices={CLIPS} value="drums" layout="chips" wide />
         <div class="prow" id="p-file">
           <div class="c-sym" aria-hidden="true"></div>
-          <div class="c-name"><span class="pn">ファイル</span><p class="desc tip" role="tooltip" hidden>WAV・MP3・FLAC など。先頭 10 秒をモノラルにして使います。この枠へ落としても読み込めます</p></div>
-          <div class="c-val"><div class="seg"><button type="button" id="ab-fileBtn">ファイルを選ぶ</button></div><input type="file" id="ab-file" accept="audio/*,.wav,.mp3,.m4a,.ogg,.flac" hidden></div>
+          <div class="c-name"><span class="pn">ファイル</span><p class="desc tip" role="tooltip" hidden>WAV・MP3・FLAC など。先頭 10 秒をモノラルで使用。この枠へドラッグ可</p></div>
+          <div class="c-val"><div class="seg"><button type="button" id="ab-fileBtn">ファイルを選択</button></div><input type="file" id="ab-file" accept="audio/*,.wav,.mp3,.m4a,.ogg,.flac" hidden></div>
           <div class="c-sub"><p class="msg" id="ab-fileMsg" aria-live="polite">まだ選んでいません</p></div>
         </div>
         <div class="prow" id="p-mic">
@@ -59,7 +59,7 @@ const SC = [
       <div class="bar cp-only"><span class="bl" id="ab-b-l">圧縮後の基底</span><div class="seg" id="ab-b" role="group" aria-labelledby="ab-b-l">{BASES.map(([v, l], i) => <button type="button" data-v={v} aria-pressed={i === 0 ? 'true' : 'false'}>{l}</button>)}</div></div>
       <div class="tp">
         <button type="button" class="tp-ib" id="ab-home" title="頭へ戻す" aria-label="頭へ戻す"><svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1.5" y="1.5" width="1.8" height="9"/><path d="M10.5 1.5v9L4 6z"/></svg></button>
-        <button type="button" class="tp-pp" id="ab-pp" title="再生・一時停止（スペース）" aria-label="再生する"><svg class="i-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.2l7.6 4.8L3 10.8z"/></svg><svg class="i-pause" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="2.8" height="9"/><rect x="7.2" y="1.5" width="2.8" height="9"/></svg></button>
+        <button type="button" class="tp-pp" id="ab-pp" title="再生・一時停止（スペース）" aria-label="再生"><svg class="i-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.2l7.6 4.8L3 10.8z"/></svg><svg class="i-pause" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="2.8" height="9"/><rect x="7.2" y="1.5" width="2.8" height="9"/></svg></button>
         <div class="tp-tl">
           <div class="wv" id="ab-wv" role="slider" tabindex="0" aria-label="再生の位置" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0"><canvas id="ab-wc"></canvas><span class="qz" id="ab-qz" hidden></span><span class="wph" id="ab-ph"></span></div>
           <div class="tp-tm"><span id="ab-tm">0.00 / 0.00 s</span><span id="ab-busy" class="busy" hidden>計算しています…</span></div>

@@ -197,8 +197,8 @@ function setRun(on: boolean): void {
   running = on;
   const pp = $('#tp-pp');
   pp.classList.toggle('on', on);
-  pp.title = on ? '止める' : '動かす';
-  pp.setAttribute('aria-label', on ? '止める' : '動かす');
+  pp.title = on ? '一時停止' : '再生';
+  pp.setAttribute('aria-label', on ? '一時停止' : '再生');
   if (on && !raf) {
     last = performance.now();
     raf = requestAnimationFrame(loop);

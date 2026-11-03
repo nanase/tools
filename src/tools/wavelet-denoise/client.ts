@@ -219,7 +219,7 @@ function levelTable(d: DnOut, fs: number): string {
     rows += `<tr><td>d${j + 1}</td><td class="n">${kLab(fs / 2 ** (j + 2))}〜${kLab(fs / 2 ** (j + 1))}</td><td class="n">${fx(d.sig[j] * 1000, 2)}</td><td class="n">${fx(d.lam[j] * 1000, 2)}</td><td class="n"><span class="pbar" style="--p:${p.toFixed(1)}%"></span>${fx(p)}</td></tr>`;
   }
   const J = d.sig.length;
-  rows += `<tr><td>a${J}</td><td class="n">〜${kLab(fs / 2 ** (J + 1))}</td><td class="n" colspan="2">処理しない</td><td class="n"><span class="pbar" style="--p:100%"></span>100</td></tr>`;
+  rows += `<tr><td>a${J}</td><td class="n">〜${kLab(fs / 2 ** (J + 1))}</td><td class="n" colspan="2">処理なし</td><td class="n"><span class="pbar" style="--p:100%"></span>100</td></tr>`;
   return `<table class="tt"><thead><tr><th>段</th><th class="n">帯域 Hz</th><th class="n">σ ×10⁻³</th><th class="n">λ ×10⁻³</th><th class="n">残した %</th></tr></thead><tbody>${rows}</tbody></table>`;
 }
 /** 基底ごとの SN 比とビット数（行を押すとその基底を聴く） */
@@ -318,7 +318,7 @@ const pp = $<HTMLButtonElement>('#ab-pp'),
   wv = $('#ab-wv');
 deck.onState = () => {
   pp.classList.toggle('on', deck.playing);
-  const t = deck.playing ? '一時停止' : '再生する';
+  const t = deck.playing ? '一時停止' : '再生';
   pp.setAttribute('aria-label', t);
   syncKeys();
   drawWave();
@@ -422,7 +422,7 @@ async function open(f: File | undefined): Promise<void> {
     msg.textContent = 'この環境では音声を扱えません';
     return;
   }
-  msg.textContent = '読み込んでいます…';
+  msg.textContent = '読み込み中…';
   try {
     const b = await a.decodeAudioData(await f.arrayBuffer()),
       n = Math.min(b.length, Math.round(b.sampleRate * MAX)),
@@ -466,15 +466,15 @@ rec.onChange = () => {
   const b = $('#ab-rec');
   b.setAttribute('aria-pressed', String(rec.on));
   $('#ab-recLed').classList.toggle('on', rec.on);
-  txt('#ab-recT', rec.on ? '止める' : '録る');
+  txt('#ab-recT', rec.on ? '停止' : '録音');
   txt(
     '#ab-micMsg',
     rec.msg ||
       (rec.on
-        ? `録っています ${fx(rec.sec)} / ${MAX} 秒`
+        ? `録音中 ${fx(rec.sec)} / ${MAX} 秒`
         : S.mic
           ? `${fx(S.mic.x.length / S.mic.fs)} 秒`
-          : 'まだ録っていません'),
+          : 'まだ録音がありません'),
   );
 };
 rec.onDone = (x, fs) => {

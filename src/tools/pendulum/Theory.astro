@@ -35,10 +35,10 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
 </div>
 
 <h3>駆動</h3>
-<p>台車は DC モータが減速の歯車とピニオンで動かします。巻線のインダクタンスを無視すると、電圧 <math><mi>V</mi></math> から力 <math><mi>F</mi></math> は下の式になります。</p>
+<p>台車は DC モータが減速の歯車とピニオンで動かします。巻線のインダクタンスを無視すると、電圧 <math><mi>V</mi></math> から力 <math><mi>F</mi></math> を下の式で求めます。</p>
 <ul class="tl">
-  <li>逆起電力は、速さに比例する制動として働く</li>
-  <li>回転子の慣性は、台車の質量に足した等価質量 <math><msub><mi>M</mi><mi mathvariant="normal">e</mi></msub></math> として入る</li>
+  <li>逆起電力は速さに比例する制動として働く</li>
+  <li>回転子の慣性は台車の質量に足した等価質量 <math><msub><mi>M</mi><mi mathvariant="normal">e</mi></msub></math> として入る</li>
 </ul>
 <div class="eqs">
   <math display="block" set:html={`<mi>F</mi><mo>=</mo><mi>α</mi><mi>V</mi><mo>−</mo><mi>β</mi>${d('x')}`} />
@@ -46,7 +46,7 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
   <math display="block" set:html={`<mi>β</mi><mo>=</mo>${fr(`<msubsup><mi>K</mi><mi mathvariant="normal">g</mi><mn>2</mn></msubsup><msubsup><mi>k</mi><mi mathvariant="normal">t</mi><mn>2</mn></msubsup>`, `${sub('R', 'm')}<msup><mi>r</mi><mn>2</mn></msup>`)}`} />
   <math display="block" set:html={`${Me}<mo>=</mo><mi>M</mi><mo>+</mo>${fr(`<msubsup><mi>K</mi><mi mathvariant="normal">g</mi><mn>2</mn></msubsup>${sub('J', 'm')}`, '<msup><mi>r</mi><mn>2</mn></msup>')}`} />
 </div>
-<p>入力 <math><mi>u</mi></math> は電圧か力です。力で駆動するときは <math><mi>F</mi><mo>=</mo><mi>u</mi></math> です。どちらも、入力は上限で切ります。</p>
+<p>入力 <math><mi>u</mi></math> は電圧か力です。力で駆動するときは <math><mi>F</mi><mo>=</mo><mi>u</mi></math> です。どちらも入力は上限で切ります。</p>
 
 <h3>線形の模型</h3>
 <p>真上（<math><mi>θ</mi><mo>=</mo><mn>0</mn></math>）の近くで <math><mi>sin</mi><mo>⁡</mo><mi>θ</mi><mo>≈</mo><mi>θ</mi></math>、<math><mi>cos</mi><mo>⁡</mo><mi>θ</mi><mo>≈</mo><mn>1</mn></math> とし、<math><msup><mover><mi>θ</mi><mo>˙</mo></mover><mn>2</mn></msup></math> とクーロン摩擦を落とします。すると、状態 <math><mi mathvariant="bold">x</mi><mo>=</mo><msup><mrow><mo stretchy="false">[</mo><mi>x</mi><mspace width="0.3em"/><mi>θ</mi><mspace width="0.3em"/><mover><mi>x</mi><mo>˙</mo></mover><mspace width="0.3em"/><mover><mi>θ</mi><mo>˙</mo></mover><mo stretchy="false">]</mo></mrow><mi mathvariant="normal">T</mi></msup></math> の線形の模型になります<Fragment set:html={rf(1)} />。</p>
@@ -63,7 +63,7 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
   <math display="block" set:html={`<mi>b</mi><mo>=</mo><mi>β</mi><mo>+</mo>${sub('b', 'c')}`} />
   <math display="block" set:html={`${subi('p', '+')}<mo>≈</mo><msqrt><mfrac><mrow>${Mm}<mi>m</mi><mi>g</mi><mi>l</mi></mrow><mi>D</mi></mfrac></msqrt>`} />
 </div>
-<p><math><mi>A</mi></math> の固有値のうち正の 1 つ <math><msub><mi>p</mi><mi>+</mi></msub></math> が、振子が倒れていく速さです。これが開ループの不安定な極です。台車が振子よりずっと重く <math><mi>J</mi><mo>=</mo><mn>0</mn></math> なら、<math><msqrt><mrow><mi>g</mi><mo>/</mo><mi>l</mi></mrow></msqrt></math> に近づきます。固有値は、ヘッセンベルク化と QR 法で求めます<Fragment set:html={rf(2)} />。</p>
+<p><math><mi>A</mi></math> の固有値のうち正の 1 つ <math><msub><mi>p</mi><mi>+</mi></msub></math> が、振子が倒れていく速さです。これが開ループの不安定な極です。台車が振子よりずっと重く <math><mi>J</mi><mo>=</mo><mn>0</mn></math> なら、<math><msqrt><mrow><mi>g</mi><mo>/</mo><mi>l</mi></mrow></msqrt></math> に近づきます。固有値はヘッセンベルク化と QR 法で求めます<Fragment set:html={rf(2)} />。</p>
 
 <h3>状態フィードバック</h3>
 <p>入力 1 つで 4 つの状態をすべて動かせる（可制御）のは、可制御性行列 <math><mi mathvariant="script">C</mi></math> の階数が 4 のときです<Fragment set:html={rf(1)} />。振子と台車ではいつも可制御です。そのため、状態フィードバック <math><mi>u</mi><mo>=</mo><mo>−</mo><mi>K</mi><mi mathvariant="bold">x</mi></math> によって閉ループの極、つまり <math><mi>A</mi><mo>−</mo><mi>B</mi><mi>K</mi></math> の固有値をどこへでも置けます。</p>
@@ -120,7 +120,7 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
   <li><b>外の位置のループ</b>: 台車の位置のずれから、振子の角度の目標 <math><msub><mi>θ</mi><mi mathvariant="normal">r</mi></msub></math> を作る。<math><msub><mi>θ</mi><mi mathvariant="normal">r</mi></msub></math> は ±10° で切る</li>
   <li><b>内の角度のループ</b>: 振子をその角度に保つ入力を出す</li>
 </ul>
-<p>台車を右へ運ぶには、まず振子を右へ傾ける必要があるからです。初めに台車が逆へ動く、不安定な零点の性質です。積分がなければ、これは状態フィードバックと同じ形です。</p>
+<p>台車を右へ運ぶには、まず振子を右へ傾ける必要があります。初めに台車が逆へ動くのは、不安定な零点の性質です。積分がなければ、これは状態フィードバックと同じ形です。</p>
 <figure class="fig">
   <svg viewBox="0 0 380 132" width="380" role="img" aria-label="PID の 2 つのループのブロック線図。位置のループが角度の目標 θr を作り、角度のループが入力 u を台車と振子に出す。計測した位置 x̂ は位置のループへ、角度 θ̂ は角度のループへ戻る">
     <rect class="b" x="6" y="12" width="96" height="44" rx="3" />
@@ -209,10 +209,10 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
   <math display="block" set:html={`<mi mathvariant="bold">M</mi><mo stretchy="false">(</mo><mi>θ</mi><mo stretchy="false">)</mo><mo>=</mo>${mat([[`${Me}<mo>+</mo><mi>m</mi>`, '<mi>m</mi><mi>l</mi><mi>cos</mi><mo>⁡</mo><mi>θ</mi>'], ['<mi>m</mi><mi>l</mi><mi>cos</mi><mo>⁡</mo><mi>θ</mi>', '<mi>J</mi><mo>+</mo><mi>m</mi><msup><mi>l</mi><mn>2</mn></msup>']])}`} />
 </div>
 <h4>整定時間</h4>
-<p>出来事から、角度 ±1° と位置 ±10 mm の範囲に入って 1 s 留まるまでの時間です。出来事は、振り上げて切り替えた、押した、初めの状態から離した、のどれかです。</p>
+<p>振り上げて切り替えた、押した、初めの状態から離した、のどれかの後に、角度 ±1° と位置 ±10 mm の範囲に入って 1 s 留まるまでの時間です。</p>
 
 <h3>教材の値</h3>
-<p>教材の値は、次の 2 つから取りました。</p>
+<p>教材の値は次の 2 つから取りました。</p>
 <ul class="tl">
   <li><b>Quanser の IP02 と SIP の設定ファイル</b><Fragment set:html={rf(8)} />: 台車・おもり・粘性摩擦・モータ・歯車・ピニオン・台車が動ける範囲 814 mm・エンコーダの分解能・D/A の上限 10 V・振子・LQR の重みの初期値</li>
   <li><b>Control Tutorials for MATLAB and Simulink の Inverted Pendulum: System Modeling</b><Fragment set:html={rf(9)} /></li>

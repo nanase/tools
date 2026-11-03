@@ -64,7 +64,7 @@ const H8_PH = '平均 (00 + 00) / 2 = 00  差 (00 − 00) / 2 = −0.0  復元 0
         <figure><figcaption class="vh"><span><b>フーリエ変換（1 s 全体）</b> 順番を入れ替えても同じ</span></figcaption><div class="scope"><svg viewBox="-50 -6 462 146" id="or-f" role="img" aria-label="周波数ごとの強さ"></svg></div></figure>
         <figure><figcaption class="vh"><span><b>スカログラム（1 s 全体）</b> 鳴った時刻も残る</span></figcaption><div class="scope dk"><div class="cv"><canvas id="or-m" width="800" height="480"></canvas><svg viewBox="-50 -14 462 282" id="or-s" role="img" aria-label="スカログラム。横は時間、縦は周波数"></svg></div></div></figure>
       </div>
-      <p class="note">窓で短く区切る STFT なら、フーリエ変換でも時刻はわかる。ただし窓の長さは周波数によらず 1 つ（3 で比較）</p>
+      <p class="note">窓で短く区切る STFT なら、フーリエ変換でも時刻はわかります。ただし窓の長さは周波数によらず 1 つです（3 で比較）。</p>
     </Panel>
 
     <Panel hid="hd-sl" title="2 短い波を重ねて、掛けて足す" class="a-sl" fixed>
@@ -74,7 +74,7 @@ const H8_PH = '平均 (00 + 00) / 2 = 00  差 (00 − 00) / 2 = −0.0  復元 0
       </div>
       <div class="w2">
         <div class="sl-l">
-          <figure><figcaption class="vh"><span><b>信号とウェーブレット</b> 左右に引いて位置を移動</span></figcaption><div class="scope"><svg viewBox="-50 -2 462 60" id="sl-x" role="img" aria-label="信号とウェーブレット。左右に引くと位置が動く"></svg></div></figure>
+          <figure><figcaption class="vh"><span><b>信号とウェーブレット</b> 左右にドラッグして位置を移動</span></figcaption><div class="scope"><svg viewBox="-50 -2 462 60" id="sl-x" role="img" aria-label="信号とウェーブレット。左右に引くと位置が動く"></svg></div></figure>
           <figure><figcaption class="vh"><span><b>掛け算</b> 形が合うと山 × 山・谷 × 谷で、積はどこも正（上側）</span></figcaption><div class="scope"><svg viewBox="-50 -2 462 60" id="sl-p" role="img" aria-label="信号とウェーブレットの積"></svg></div></figure>
           <figure><figcaption class="vh"><span><b>合計</b> 形が合うほど大きな値。合わなければ正と負が打ち消し合って 0 近く</span></figcaption><div class="scope"><svg viewBox="-50 -1 462 26" id="sl-g" role="img" aria-label="積の合計"></svg></div></figure>
           <div class="wrow"><span class="bl">幅</span><span class="sm">短い</span><div class="sl"><input type="range" id="sl-w" min="0" max="72" step="1" value="40" aria-label="ウェーブレットの幅"></div><span class="sm">長い</span></div>
@@ -116,12 +116,12 @@ const H8_PH = '平均 (00 + 00) / 2 = 00  差 (00 − 00) / 2 = −0.0  復元 0
         <b class="lev" id="h8-lev">段 3 / 3</b>
         <span class="seg" id="h8-cut" role="group" aria-label="小さい差"><button type="button" data-v="off" aria-pressed="true">そのまま</button><button type="button" data-v="on" aria-pressed="false" title="|差| ≤ 1 を 0 にして復元">小さい差を 0 に</button></span>
       </div>
-      <div class="scope"><svg viewBox="-48 0 452 266" id="h8-svg" role="img" aria-label="8 つの数を平均と差に分ける。棒は上下に引いて変更"></svg></div>
+      <div class="scope"><svg viewBox="-48 0 452 266" id="h8-svg" role="img" aria-label="8 つの数を平均と差に分ける。棒は上下にドラッグして変更"></svg></div>
       <div class="sbar lg">
         <span class="stag"><i class="sw c2" aria-hidden="true"></i>平均</span>
         <span class="stag"><i class="sw" aria-hidden="true"></i>差</span>
         <span class="stag"><i class="sw w-sw-h8g" aria-hidden="true"></i>復元した数</span>
-        <span class="stag">棒は上下に引いて変更</span>
+        <span class="stag">棒は上下にドラッグして変更</span>
       </div>
       <div class="sbar rdbar" data-ph={H8_PH}><span class="rd" id="h8-rd"></span></div>
     </Panel>
@@ -144,7 +144,7 @@ const H8_PH = '平均 (00 + 00) / 2 = 00  差 (00 − 00) / 2 = −0.0  復元 0
           <div class="phs" id="st-phs"></div>
           <div class="tp-tm"><span>係数 <b id="st-n">0</b> 組</span><span id="st-len"></span></div>
         </div>
-        <div class="tp-side"><button type="button" class="tp-sq" id="st-step" title="1 段進める" aria-label="1 段進める"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 3l6 5-6 5M12 3v10"/></svg></button></div>
+        <div class="tp-side"><button type="button" class="tp-sq" id="st-step" title="次の段" aria-label="次の段"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 3l6 5-6 5M12 3v10"/></svg></button></div>
       </div>
     </Panel>
 

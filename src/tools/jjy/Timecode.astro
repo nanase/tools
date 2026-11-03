@@ -14,7 +14,7 @@ interface Props {
   /** 3 つ目の項目 [id, 見出し, 文章なら true] */
   third?: readonly [string, string, boolean];
 }
-const { legend = [], follow = '現在の秒に戻す', third = ['b-sig', '信号', true] } = Astro.props;
+const { legend = [], follow = '現在の秒へ', third = ['b-sig', '信号', true] } = Astro.props;
 ---
 <div class="tc-top">
   <ul class="lgd" aria-label="凡例">

@@ -29,7 +29,7 @@ const name = '受動素子組み合わせ計算機';
       </div>
       <More id="g-in"><div class="ptab">
         <ExcludeRow />
-        <ChoiceRow k="stop" sym="<i>ε</i>" nm="ε" name="探索を終える誤差" sub="この誤差以内が見つかった本数は、そこで探索を終えます" layout="chips" choices={STOPS.map(([, l], i) => [i, l] as const)} value={2} />
+        <ChoiceRow k="stop" sym="<i>ε</i>" nm="ε" name="探索を終える誤差" sub="この誤差以内が見つかった本数で探索を終了" layout="chips" choices={STOPS.map(([, l], i) => [i, l] as const)} value={2} />
       </div></More>
     </Panel>
 

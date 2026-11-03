@@ -299,9 +299,9 @@ function results(): void {
   html('#o-bpp', `${sig((n * 8) / px)}<span class="u">bit/px</span>`);
   txt('#o-bpps', `元は ${L.bitsPerPixel} ビット`);
   html('#o-ratio', `${sig(L.rawSize / n, 3)} : 1`);
-  txt('#o-ratios', `生 ${cnt(L.rawSize)} バイト`);
+  txt('#o-ratios', `圧縮前 ${cnt(L.rawSize)} バイト`);
   html('#o-lit', `${cnt(nl)}<span class="u">個</span>`);
-  txt('#o-lits', `ビットの ${sig((lb / 8 / Math.max(1, idat)) * 100, 3)} %`);
+  txt('#o-lits', `IDAT の ${sig((lb / 8 / Math.max(1, idat)) * 100, 3)} %`);
   html('#o-mat', `${cnt(nm)}<span class="u">個</span>`);
   txt('#o-mats', `元の ${sig((mb / Math.max(1, L.filteredSize)) * 100, 3)} % 分`);
   html('#o-crc', m.crcOk && m.adlerOk ? '<span class="ok">✓ 一致</span>' : '<span class="ng">✗ 不一致</span>');
@@ -319,7 +319,7 @@ async function browserZlib(m: Model): Promise<void> {
     const n = (await new Response(s).arrayBuffer()).byteLength;
     if (m !== M) return;
     html('#o-zl', bytesH(n));
-    txt('#o-zls', `自前との差 ${minus(sig(((n - m.zlib.length) / m.zlib.length) * 100, 2))} %`);
+    txt('#o-zls', `このツールとの差 ${minus(sig(((n - m.zlib.length) / m.zlib.length) * 100, 2))} %`);
   } catch {
     /* 使えないブラウザでは出さない */
   }
@@ -711,7 +711,7 @@ function setImage(i: Img, at: [number, number]): void {
   pendingSel = at;
   palette(countColors(i.rgba) <= 256);
   tg$.disable('file', false);
-  /* 前のファイルを読めずに切り替えた「符号化し直す」は、次の画像に持ち越さない */
+  /* 前のファイルを読めずに切り替えた「再符号化」は、次の画像に持ち越さない */
   if (tgForced) tg$.set('file');
   tgForced = false;
   $<HTMLButtonElement>('#saveBtn').disabled = true;
@@ -729,10 +729,10 @@ function countColors(d: Uint8ClampedArray): number {
 function palette(ok: boolean): void {
   ct$.disable('3', !ok);
   const b = $<HTMLButtonElement>('#p-ct button[data-v="3"]');
-  b.title = ok ? COLOR_TYPES[3][2] : '色が 256 を超えるため選べない';
+  b.title = ok ? COLOR_TYPES[3][2] : '色が 256 を超えるため選べません';
   if (!ok && ct$.value === '3') ct$.set('6');
 }
-/** 元のファイルのままでは読めず、対象を「符号化し直す」に切り替えたか */
+/** 元のファイルのままでは読めず、対象を「再符号化」に切り替えたか */
 let tgForced = false;
 /** 新しい画像の最初の結果で選ぶ画素 */
 let pendingSel: [number, number] | null = null;
@@ -750,7 +750,7 @@ const isPng = (b: Uint8Array): boolean =>
 async function loadFile(f: File): Promise<void> {
   const ms = $('#m-file');
   ms.className = 'msg';
-  ms.textContent = '読み込んでいます…';
+  ms.textContent = '読み込み中…';
   try {
     const r = await loadImage(f, { maxSide: MAX_SIDE });
     const png = isPng(r.bytes) ? r.bytes : null;

@@ -31,11 +31,11 @@ const name = '分岐図';
         <div class="zchips" id="b-zoom" role="group" aria-label="拡大">
           {ZOOMS.map(([n, , t], i) => <button type="button" class="chip" data-i={i} title={t} aria-pressed={i === 0 ? 'true' : 'false'}>{n}</button>)}
         </div>
-        <button type="button" class="chip" id="b-feig" title="Feigenbaum の段を 1 つ進め、分岐図を δ 倍に拡大する">δ 倍 ▸</button>
-        <button type="button" class="chip" id="b-back" title="1 つ前の範囲へ戻す" disabled>◂ 戻す</button>
+        <button type="button" class="chip" id="b-feig" title="Feigenbaum の段を 1 つ進めて δ 倍に拡大">δ 倍 ▸</button>
+        <button type="button" class="chip" id="b-back" title="1 つ前の範囲へ" disabled>◂ 1 つ前</button>
         <div class="seg zmode" id="b-mode" data-nosave role="group" aria-label="分岐図のドラッグ">
-          <button type="button" data-v="r" aria-pressed="true" title="ドラッグで r を動かす">r</button>
-          <button type="button" data-v="z" aria-pressed="false" title="ドラッグで囲んだ範囲を拡大する">範囲</button>
+          <button type="button" data-v="r" aria-pressed="true" title="ドラッグで r を変更">r</button>
+          <button type="button" data-v="z" aria-pressed="false" title="ドラッグで囲んだ範囲を拡大">範囲</button>
         </div>
       </div>
       <div class="quad">
@@ -54,8 +54,8 @@ const name = '分岐図';
         </div>
       </div>
       <div class="tp">
-        <button type="button" class="tp-ib" id="b-home" title="左端へ戻す" aria-label="左端へ戻す"><svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1.5" y="1.5" width="1.8" height="9"/><path d="M10.5 1.5v9L4 6z"/></svg></button>
-        <button type="button" class="tp-pp" id="b-pp" title="r を左から右へ動かす" aria-label="掃引"><svg class="i-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.2l7.6 4.8L3 10.8z"/></svg><svg class="i-pause" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="2.8" height="9"/><rect x="7.2" y="1.5" width="2.8" height="9"/></svg></button>
+        <button type="button" class="tp-ib" id="b-home" title="左端へ" aria-label="左端へ"><svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1.5" y="1.5" width="1.8" height="9"/><path d="M10.5 1.5v9L4 6z"/></svg></button>
+        <button type="button" class="tp-pp" id="b-pp" title="r を左から右へ" aria-label="掃引"><svg class="i-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.2l7.6 4.8L3 10.8z"/></svg><svg class="i-pause" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="2.8" height="9"/><rect x="7.2" y="1.5" width="2.8" height="9"/></svg></button>
         <div class="tp-tl">
           <div class="tp-trk" id="b-trk" tabindex="0" role="slider" aria-label="掃引の位置"><span class="tp-rail"></span><span class="tp-fill" id="b-fill"></span><span class="tp-th" id="b-th"></span></div>
           <div class="tp-tm"><span id="b-rr"></span><span id="b-t"></span></div>
@@ -78,7 +78,7 @@ const name = '分岐図';
       </Panel>
 
       <Panel hid="hd-snd" title="音" class="a-snd">
-        <div slot="aux" class="seg"><button type="button" id="playBtn" aria-pressed="false" title="値の列を音で鳴らす・止める"><span class="led" id="sndLed" aria-hidden="true"></span><span>鳴らす</span></button></div>
+        <div slot="aux" class="seg"><button type="button" id="playBtn" aria-pressed="false" title="値の列の音"><span class="led" id="sndLed" aria-hidden="true"></span><span>再生</span></button></div>
         <p class="msg er snd-msg" id="snd-msg" aria-live="polite"></p>
         <div class="ptab">
           <ChoiceRow k="mode" name="鳴らし方" sub="波形: 周期が倍になるたびに 1 オクターブ下がり、カオスで雑音になる／旋律: 値 0〜1 を 220〜880 Hz へ" choices={SND_MODES} value="wave" />

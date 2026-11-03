@@ -442,7 +442,7 @@ export function spotSvg(sp: Spot[], Nw: number): { svg: string; label: string; s
     });
     const rms = s.rms * 1000;
     g += `<text class="ab-t" x="${x0 + c}" y="${y0 + BOX + 12}" text-anchor="middle">${names[i]} ${num(s.h)} mm</text>`;
-    g += `<text class="ab-t2" x="${x0 + c}" y="${y0 + BOX + 24}" text-anchor="middle">${s.pass > 0 ? `RMS ${num(rms)} µm` : '光が届かない'}</text>`;
+    g += `<text class="ab-t2" x="${x0 + c}" y="${y0 + BOX + 24}" text-anchor="middle">${s.pass > 0 ? `RMS ${num(rms)} µm` : '届く光なし'}</text>`;
   });
   return {
     svg: g,

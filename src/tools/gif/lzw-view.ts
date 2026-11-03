@@ -47,21 +47,21 @@ function drawNow(v: FrameView, t: LzwTrace, i: number, dir: Dir): void {
     w = t.width[i],
     big = (s: string | number): string => `<span class="big">${s}</span>`;
   let h = '';
-  if (c === clear) h = box(`符号 · ${w} ビット`, big(c)) + box('辞書を作り直す', big('Clear'));
+  if (c === clear) h = box(`符号 · ${w} ビット`, big(c)) + box('辞書の作り直し', big('Clear'));
   else if (c === clear + 1) h = box(`符号 · ${w} ビット`, big(c)) + box('終わり', big('EOI'));
   else if (dir === 'e') {
     h =
       box('いまの列 + 次の画素', swatches(v, t.start[i], t.len[i] + (a >= 0 ? 1 : 0), 12, a >= 0)) +
       box(`出す符号 · ${w} ビット`, big(c)) +
-      (a >= 0 ? box('辞書に足す', big(a), 'new') : '');
+      (a >= 0 ? box('辞書への追加', big(a), 'new') : '');
   } else {
     const p = prevData(t, i);
     h =
       box(`読む符号 · ${w} ビット`, big(c)) +
-      box('画素を出す', swatches(v, t.start[i], t.len[i], 12)) +
+      box('出す画素', swatches(v, t.start[i], t.len[i], 12)) +
       (a >= 0 && p >= 0
         ? box(
-            c === a ? '辞書に足す · KwKwK' : '辞書に足す',
+            c === a ? '辞書への追加 · KwKwK' : '辞書への追加',
             `<span class="gf-ad">${big(a)}${swatches(v, t.start[p], t.len[p] + 1, 8, true)}</span>`,
             'new',
           )

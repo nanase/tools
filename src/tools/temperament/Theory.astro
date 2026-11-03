@@ -106,7 +106,7 @@ const ST_TEN = pair(setup('et', 'piano', 'concert', true), 60, 16).b;
 const CENTS = TEMPERAMENTS.map((t) => ({ name: t.name, c: cents(t) }));
 ---
 <h3>音律とは</h3>
-<p>2 つの音の高さの比は、セントで表します。1 オクターブが 1200 セント、平均律の半音が 100 セントです<Fragment set:html={rf(1)} />。</p>
+<p>2 つの音の高さの比はセントで表します。1 オクターブが 1200 セント、平均律の半音が 100 セントです<Fragment set:html={rf(1)} />。</p>
 <div class="eqs">
   <math display="block"><mi>c</mi><mo>=</mo><mn>1200</mn><mspace width="0.1em"/><msub><mi>log</mi><mn>2</mn></msub><mo>&#x2061;</mo><mfrac><msub><mi>f</mi><mn>2</mn></msub><msub><mi>f</mi><mn>1</mn></msub></mfrac></math>
   <math display="block"><msub><mi>c</mi><mtext>P5</mtext></msub><mo>=</mo><mn>1200</mn><mspace width="0.1em"/><msub><mi>log</mi><mn>2</mn></msub><mo>&#x2061;</mo><mfrac><mn>3</mn><mn>2</mn></mfrac><mo>=</mo><mn>701.955</mn></math>
@@ -124,7 +124,7 @@ const CENTS = TEMPERAMENTS.map((t) => ({ name: t.name, c: cents(t) }));
   <dt><math><msub><mi>κ</mi><mi mathvariant="normal">S</mi></msub></math></dt><dd>シントニック・コンマ。5 度を 4 個積んだ 3 度（81:64）と純正の長 3 度の差</dd>
   <dt><math><msub><mi>κ</mi><mtext>sch</mtext></msub></math></dt><dd>スキスマ。2 つのコンマの差</dd>
 </dl>
-<p>鍵盤の 12 音は、E♭–B♭–F–C–G–D–A–E–B–F♯–C♯–G♯ と 11 個の 5 度でつなぎます。連鎖の <math><mi>i</mi></math> 番目の音から次の音への 5 度を、純正より <math><msub><mi>ε</mi><mi>i</mi></msub></math> だけ狭めます（負なら広げる）。12 個目の G♯–E♭ まで含めて輪が閉じる条件から、狭める量の合計はピタゴラス・コンマになります<Fragment set:html={rf(2)} />。音律の違いは、このコンマを 12 個の 5 度にどう配るかの違いです。</p>
+<p>鍵盤の 12 音は、E♭–B♭–F–C–G–D–A–E–B–F♯–C♯–G♯ と 11 個の 5 度でつなぎます。連鎖の <math><mi>i</mi></math> 番目の音から次の音への 5 度を純正より <math><msub><mi>ε</mi><mi>i</mi></msub></math> だけ狭めます（負なら広げる）。12 個目の G♯–E♭ まで含めて輪が閉じる条件から、狭める量の合計はピタゴラス・コンマになります<Fragment set:html={rf(2)} />。音律の違いは、このコンマを 12 個の 5 度にどう配るかの違いです。</p>
 <div class="eqs">
   <math display="block"><msub><mi>c</mi><mrow><mn>5</mn><mo>,</mo><mi>i</mi></mrow></msub><mo>=</mo><msub><mi>c</mi><mtext>P5</mtext></msub><mo>−</mo><msub><mi>ε</mi><mi>i</mi></msub><mo>,</mo><mspace width="1em"/><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>0</mn></mrow><mn>11</mn></munderover><msub><mi>ε</mi><mi>i</mi></msub><mo>=</mo><msub><mi>κ</mi><mi mathvariant="normal">P</mi></msub></math>
 </div>
@@ -156,17 +156,17 @@ const CENTS = TEMPERAMENTS.map((t) => ({ name: t.name, c: cents(t) }));
   </tbody>
 </table></div>
 <ul class="tl">
-  <li><b>和音</b>: 2 音ずつの組（3 和音なら 3 組、4 音なら 6 組）ごとに、一致する部分音とうなりを求める。長三和音では長 3 度・完全 5 度・短 3 度の 3 組</li>
+  <li><b>和音</b>: 2 音ずつの組（3 音なら 3 組、4 音なら 6 組）ごとに、一致する部分音とうなりを求める。長三和音では長 3 度・完全 5 度・短 3 度の 3 組</li>
   <li><b>10 度・17 度</b>: 長 3 度をオクターブ広げた音程。下の第 5 部分音が、上の第 2・第 1 部分音と一致する。整数倍の部分音なら長 3 度と同じ速さでうなる</li>
   <li><b>正弦波</b>: 部分音が第 1 だけなので、一致する部分音がない。それでも比が純正からずれた音程では、同じ速さ <math><mi>β</mi></math> の 2 次のうなりが聞こえる（下の「2 次のうなり」）</li>
 </ul>
 <h4>純正の目盛り</h4>
-<p>上の図は、周波数を等間隔に並べます。部分音は第 1 部分音の整数倍なので、どの音の部分音も等間隔に並びます。和音を純正にしたときの周波数の比（長三和音なら 4:5:6）を <math><msub><mi>r</mi><mi>k</mi></msub></math> とすると、音 <math><mi>k</mi></math> の第 <math><mi>n</mi></math> 部分音は、純正なら <math><msub><mi>F</mi><mn>0</mn></msub></math> の <math><mi>n</mi><msub><mi>r</mi><mi>k</mi></msub></math> 倍の目盛りに来ます。2 つの音の部分音が同じ目盛りに来る所が、一致する部分音です。点は実際の部分音で、目盛りからのずれを {KX} 倍にして描きます。</p>
+<p>上の図は周波数を等間隔に並べます。部分音は第 1 部分音の整数倍なので、どの音の部分音も等間隔に並びます。和音を純正にしたときの周波数の比（長三和音なら 4:5:6）を <math><msub><mi>r</mi><mi>k</mi></msub></math> とすると、音 <math><mi>k</mi></math> の第 <math><mi>n</mi></math> 部分音は、純正なら <math><msub><mi>F</mi><mn>0</mn></msub></math> の <math><mi>n</mi><msub><mi>r</mi><mi>k</mi></msub></math> 倍の目盛りに来ます。2 つの音の部分音が同じ目盛りに来る所が、一致する部分音です。点は実際の部分音で、目盛りからのずれを {KX} 倍にして描きます。</p>
 <div class="eqs">
   <math display="block"><msub><mi>F</mi><mn>0</mn></msub><mo>=</mo><mfrac><msub><mi>f</mi><mn>1</mn></msub><msub><mi>r</mi><mn>1</mn></msub></mfrac><mo>,</mo><mspace width="1em"/><msub><mi>u</mi><mrow><mi>k</mi><mo>,</mo><mi>n</mi></mrow></msub><mo>=</mo><mi>n</mi><msub><mi>r</mi><mi>k</mi></msub><mo>+</mo><mn>{KX}</mn><mrow><mo>(</mo><mfrac><msub><mi>f</mi><mrow><mi>k</mi><mo>,</mo><mi>n</mi></mrow></msub><msub><mi>F</mi><mn>0</mn></msub></mfrac><mo>−</mo><mi>n</mi><msub><mi>r</mi><mi>k</mi></msub><mo>)</mo></mrow></math>
 </div>
 <dl class="syms">
-  <dt><math><msub><mi>r</mi><mi>k</mi></msub></math></dt><dd>和音の音 <math><mi>k</mi></math> の純正な比（根音が <math><msub><mi>r</mi><mn>1</mn></msub></math>）。一致する部分音を持つ組をたどって決める。属七の和音は 20:25:30:36（B♭ は G の短 3 度上）</dd>
+  <dt><math><msub><mi>r</mi><mi>k</mi></msub></math></dt><dd>和音の音 <math><mi>k</mi></math> の純正な比（根音が <math><msub><mi>r</mi><mn>1</mn></msub></math>）。部分音が一致する組をたどって決める。属七の和音は 20:25:30:36（B♭ は G の短 3 度上）</dd>
   <dt><math><msub><mi>F</mi><mn>0</mn></msub></math></dt><dd>目盛りの間隔 [Hz]。根音の第 1 部分音 <math><msub><mi>f</mi><mn>1</mn></msub></math> を <math><msub><mi>r</mi><mn>1</mn></msub></math> で割った値</dd>
   <dt><math><msub><mi>u</mi><mrow><mi>k</mi><mo>,</mo><mi>n</mi></mrow></msub></math></dt><dd>音 <math><mi>k</mi></math> の第 <math><mi>n</mi></math> 部分音 <math><msub><mi>f</mi><mrow><mi>k</mi><mo>,</mo><mi>n</mi></mrow></msub></math> を描く位置（<math><msub><mi>F</mi><mn>0</mn></msub></math> の何倍か）</dd>
 </dl>
@@ -180,7 +180,7 @@ const CENTS = TEMPERAMENTS.map((t) => ({ name: t.name, c: cents(t) }));
 <p><math><mi>E</mi></math> は 1 と <math><mrow><mo>|</mo><mi>a</mi><mo>−</mo><mi>b</mi><mo>|</mo></mrow><mo>/</mo><mo stretchy="false">(</mo><mi>a</mi><mo>+</mo><mi>b</mi><mo stretchy="false">)</mo></math> の間を行き来します。2 つの振幅が近いほど、深くうなります。</p>
 <h4>2 次のうなり</h4>
 <p>一致する部分音がなくても、2 つの音の比が簡単な整数比から少しずれると、うなりが聞こえます。正弦波（純音）どうしでも聞こえ、2 次のうなり（second-order beats、beats of mistuned consonances）と呼ばれます。速さは上の <math><mi>β</mi></math> と同じ式で、下の音の <math><mi>n</mi></math> 倍と上の音の <math><mi>m</mi></math> 倍の差です<Fragment set:html={rf(17, 18)} />。平均律の C4–E4 なら、正弦波でもオルガンと同じ <math set:html={mn(bt(SINE_M3))} /> 回/秒です。</p>
-<p>2 つの正弦波を足した音は、音の大きさ（実効値）が揺れません。波の形が <math><mn>1</mn><mo>/</mo><mi>β</mi></math> 秒ごとに同じ移り変わりをくり返し、耳の神経の処理がそれをうなりとして捉えます<Fragment set:html={rf(18)} />。Plomp は、耳の中の歪みでできる倍音や結合音の周波数を雑音で隠しても聞こえることを確かめ、基底膜の振動の形の周期的な変化が、神経の発火の時間のパターンに表れるためと考えました<Fragment set:html={rf(17)} />。下の音がおよそ 1500 Hz より低いときに聞こえます<Fragment set:html={rf(18)} />。</p>
+<p>2 つの正弦波を足した音は、音の大きさ（実効値）が揺れません。波の形が <math><mn>1</mn><mo>/</mo><mi>β</mi></math> 秒ごとに同じ移り変わりをくり返し、耳の神経の処理がそれをうなりとして捉えます<Fragment set:html={rf(18)} />。Plomp は耳の中の歪みでできる倍音や結合音の周波数を雑音で隠しても聞こえることを確かめました。基底膜の振動の形の周期的な変化が神経の発火の時間のパターンに表れるためと考えました<Fragment set:html={rf(17)} />。下の音がおよそ 1500 Hz より低いときに聞こえます<Fragment set:html={rf(18)} />。</p>
 <p>このツールでは、一致する部分音のどちらかが鳴らない組（正弦波ではすべての組）を 2 次のうなりとし、速さに「2 次」と添えます。灯りは同じ速さで浅く明滅させます。</p>
 <h4>全体の音の揺れ</h4>
 <p>グラフは、鳴っているすべての部分音を足した波の山の高さです。部分音 <math><mi>j</mi></math> の周波数を <math><msub><mi>F</mi><mn>0</mn></msub></math> の <math><msub><mi>k</mi><mi>j</mi></msub></math> 倍とずれ <math><msub><mi>δ</mi><mi>j</mi></msub></math> に分けると、共通の周期の中の波形は <math><msub><mi>δ</mi><mi>j</mi></msub></math> の分だけ少しずつ形を変えます。時刻 <math><mi>t</mi></math> の山 <math><mi>P</mi><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo></math> は、その波形の最大を振幅の和で割った値です。</p>
@@ -212,7 +212,7 @@ const CENTS = TEMPERAMENTS.map((t) => ({ name: t.name, c: cents(t) }));
   <li><b>1/4 コンマ・ミーントーン</b>: 4 つで <math><msub><mi>κ</mi><mi mathvariant="normal">S</mi></msub></math> を狭めるので、長 3 度が純正になる</li>
   <li><b>循環音律</b>: 狭めた 5 度が C のまわり（F–C–G–D–A–E–B）に集まる。C・G・F など近い調の 3 度は純正に近く、4 つの 5 度がすべて純正の F♯・C♯・A♭ の調では、ピタゴラスの 3 度（+21.5 セント）になる</li>
 </ul>
-<p>下の表は、主和音の長 3 度の純正からのずれ [セント] です。循環音律の目的は、よく使う調ほど協和させることでした<Fragment set:html={rf(2)} />。ヤングは、C からの転調の順に近い調ほど和声を完全にする、と書いています<Fragment set:html={rf(4)} />。たとえばヴェルクマイスター III の C4 の長 3 度は <math set:html={mn(bt(WM3_C))} /> 回/秒で、平均律の約 1/3 の速さでうなります。</p>
+<p>下の表は、主和音の長 3 度の純正からのずれ [セント] です。循環音律の目的は、よく使う調ほど協和させることでした<Fragment set:html={rf(2)} />。ヤングは C からの転調の順に近い調ほど和声を完全にすると書いています<Fragment set:html={rf(4)} />。たとえばヴェルクマイスター III の C4 の長 3 度は <math set:html={mn(bt(WM3_C))} /> 回/秒で、平均律の約 1/3 の速さでうなります。</p>
 <div class="tt-w"><table class="tt">
   <thead><tr><th scope="col">音律</th>{FIFTHS.map((p) => <th scope="col" class="num">{NAMES[p]}</th>)}</tr></thead>
   <tbody>
@@ -249,7 +249,7 @@ const CENTS = TEMPERAMENTS.map((t) => ({ name: t.name, c: cents(t) }));
   </tbody>
 </table></div>
 <h4>うなりがどう変わるか</h4>
-<p>下の音の高い部分音ほど上へずれるので、一致する部分音の組は、整数倍のときより広い側へずれます。</p>
+<p>下の音の高い部分音ほど上へずれるので、一致する部分音の組は整数倍のときより広い側へずれます。</p>
 <ul class="tl">
   <li><b>広い音程</b>（平均律の長 3 度・4 度・6 度）: うなりが遅くなる。4 度は、<math><mi>B</mi></math> が大きいとほとんどうならない</li>
   <li><b>狭い音程</b>（平均律の 5 度）: うなりが速くなる</li>
@@ -279,13 +279,13 @@ const CENTS = TEMPERAMENTS.map((t) => ({ name: t.name, c: cents(t) }));
 <p>耳で合わせたピアノは、高音ほど高く、低音ほど低くずれています。Railsback が測ったこの曲線の原因は、弦の非調和性です<Fragment set:html={rf(9)} />。このツールのストレッチは、ピアノ音響モデルと同じ調律です。</p>
 <ul class="tl">
   <li><b>A3〜A4</b>: 第 1 部分音を平均律にする</li>
-  <li><b>それより上</b>: 第 1 部分音を、1 オクターブ下の第 2 部分音に合わせる（2:1）</li>
-  <li><b>それより下</b>: 自分の第 4 部分音を、1 オクターブ上の第 2 部分音に合わせる（4:2）</li>
+  <li><b>それより上</b>: 第 1 部分音を 1 オクターブ下の第 2 部分音に合わせる（2:1）</li>
+  <li><b>それより下</b>: 自分の第 4 部分音を 1 オクターブ上の第 2 部分音に合わせる（4:2）</li>
 </ul>
 <p>コンサートグランドでは、平均律から A0 が <math set:html={mn(sg(stOf(21)))} /> セント、C8 が <math set:html={mn(sg(stOf(108)))} /> セントずれます。低音側は、弦の非調和性だけでは −3 セントほどしか説明できず、実際のピアノはもっと低く合わせられています<Fragment set:html={rf(6)} />。ストレッチでは E5–E6 も 2:1 になるので、C4–E5 の長 10 度と C4–E6 の長 17 度は、同じ <math set:html={mn(bt(ST_TEN))} /> 回/秒でうなります。</p>
 
 <h3>各音律の定義</h3>
-<p>どの 5 度を何セント狭めるかで、音律を決めます。純正律だけは、C からの比で決めます。値は Barbour の表<Fragment set:html={rf(2)} />と Scala の音階集<Fragment set:html={rf(10)} />で照合しました。</p>
+<p>どの 5 度を何セント狭めるかで、音律を決めます。純正律だけは C からの比で決めます。値は Barbour の表<Fragment set:html={rf(2)} />と Scala の音階集<Fragment set:html={rf(10)} />で照合しました。</p>
 <div class="tt-w"><table class="tt">
   <thead><tr><th scope="col">音律</th><th scope="col">狭める 5 度</th><th scope="col">狭める量</th><th scope="col">出典</th></tr></thead>
   <tbody>
@@ -346,9 +346,9 @@ const CENTS = TEMPERAMENTS.map((t) => ({ name: t.name, c: cents(t) }));
   <li>ピアノの減衰: 部分音ごとの指数の減衰で、時定数は <math><msub><mi>τ</mi><mi>n</mi></msub><mo>=</mo><msub><mi>τ</mi><mn>0</mn></msub><mo>/</mo><mo stretchy="false">(</mo><mn>1</mn><mo>+</mo><mn>0.18</mn><mi>n</mi><mo stretchy="false">)</mo></math>。<math><msub><mi>τ</mi><mn>0</mn></msub></math> は C5 以下で 4 s、C5 より上で 2.2 s</li>
   <li>ピアノは {(REHIT_MS / 1000).toFixed(1)} 秒ごとに打ち直す</li>
   <li>すべての部分音を同じ時刻に位相 0 で鳴らし始める。うなりの包絡は鳴り始めで最大になる</li>
-  <li>うなりの灯りは、一致する 2 つの部分音の振幅（ピアノは減衰の前の値）で求めた <math><mi>E</mi><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo></math> で描く。灯りは <math><msup><mi>E</mi><mn>2</mn></msup></math> で明るさを変え、一致する部分音を持たない組は暗く、純正の組は点けたままにする。2 次のうなりの灯りは 0.2〜1 の間で明滅させる</li>
-  <li>全体の音の揺れのグラフは、鳴り始めから 2 秒を 300 点で描く。ピアノは 600 点で求め、その時刻の振幅の和で割って減衰を除き、非調和性で高い部分音の位相が速く回る細かな震えを 30 ms の移動平均でならす。縦軸は値の範囲に合わせて 0.1 刻みで広げる</li>
-  <li>純正の目盛りの色は、一致する部分音を持つ組が 3 つまでなら組ごとに分ける。4 つ以上の和音（属七の和音・開いた長三和音）では、表や拡大図で選んだ組だけに色をつけ、ほかの組は灰色の帯にする</li>
+  <li>うなりの灯りは、一致する 2 つの部分音の振幅（ピアノは減衰の前の値）で求めた <math><mi>E</mi><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo></math> で描く。灯りは <math><msup><mi>E</mi><mn>2</mn></msup></math> で明るさを変え、部分音が一致しない組は暗く、純正の組は点けたままにする。2 次のうなりの灯りは 0.2〜1 の間で明滅させる</li>
+  <li>全体の音の揺れのグラフは、鳴り始めから 2 秒を 300 点で描く。ピアノは 600 点で求め、その時刻の振幅の和で割って減衰を除く。非調和性で高い部分音の位相が速く回る細かな震えは 30 ms の移動平均でならす。縦軸は値の範囲に合わせて 0.1 刻みで広げる</li>
+  <li>純正の目盛りの色は、部分音が一致する組が 3 つまでなら組ごとに分ける。4 つ以上の和音（属七の和音・開いた長三和音）では、表や拡大図で選んだ組だけに色をつけ、ほかの組は灰色の帯にする</li>
   <li>ピアノの <math><mi>B</mi></math> とストレッチは、ピアノ音響モデルの弦と調律（コンサートグランド・グランド・アップライト）をそのまま使う</li>
   <li>調ごとの表は、選んだオクターブに主音を置いた主和音の 3 度（短調は短 3 度）と 5 度</li>
   <li>音律の表の右の 2 列は、今の根音の主和音の 3 度（短調は短 3 度）と 5 度の、純正からのずれ</li>

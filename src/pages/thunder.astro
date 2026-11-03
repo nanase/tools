@@ -40,11 +40,11 @@ const name = '雷鳴';
         <span class="stag"><i class="th-dot th-dk" aria-hidden="true"></i>聞き手</span>
         <span class="stag"><i class="sw th-sw-d th-dk" aria-hidden="true"></i>直接音</span>
         <span class="stag"><i class="sw th-sw-e th-dk" aria-hidden="true"></i>反射音</span>
-        <span class="stag th-hint">地面や山をドラッグして動かす</span>
+        <span class="stag th-hint">地面や山はドラッグで移動</span>
       </div>
       <div class="th-cv th-dk"><canvas id="th-sec" class="th-sec" role="img" aria-label="横から見た放電路と聞き手"></canvas><div class="th-busy" aria-hidden="true"><i></i>計算しています</div></div>
       <h3 class="vh">音圧の波形<span>横軸は光ってからの時間</span></h3>
-      <div class="th-cv th-tr"><canvas id="th-wave" role="img" aria-label="聞き手に届く音圧の波形"></canvas><canvas id="th-hist" role="img" aria-label="N 波の量: 50 ms ごとの、届く N 波の山の高さの和（直接音と反射音）"></canvas></div>
+      <div class="th-cv th-tr"><canvas id="th-wave" role="img" aria-label="聞き手に届く音圧の波形"></canvas><canvas id="th-hist" role="img" aria-label="N 波の量: 50 ms ごとに届く N 波の山の高さの和（直接音と反射音）"></canvas></div>
       <div class="tp">
         <div class="th-lead"><button type="button" class="tp-sq" id="th-seed" title="別の雷（放電路を作り直す）" aria-label="別の雷"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M9.5 1.5L4 9h4l-1.5 5.5L12 7H8z"/></svg></button></div>
         <button type="button" class="tp-ib" id="th-home" title="最初から（光る前へ戻す）" aria-label="最初から"><svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1.5" y="1.5" width="1.8" height="9"/><path d="M10.5 1.5v9L4 6z"/></svg></button>
@@ -61,17 +61,17 @@ const name = '雷鳴';
       <Panel hid="hd-src" title="雷と聞き手" class="a-src">
         <div class="ptab">
           <ParamRow d={DIST} />
-          <ChoiceRow k="side" name="聞き手の方向" sub="落雷点から見た聞き手の方向。図の地面で落雷点の反対側へドラッグしても変わる" choices={SIDES} value="1" />
-          <ChoiceRow k="n" name="放電の回数" sub="1 回の雷で同じ放電路に電流が流れる回数。2 回目からは雲の中で分かれて先へ伸びる" choices={STROKES} value="4" />
-          <ChoiceRow k="e" sym="<i>E</i>" name="放電路のエネルギー" sub="放電路 1 m あたりに出るエネルギー [J/m]。大きいほど N 波が長く、音が低い" choices={ENERGIES} value="1e6" />
+          <ChoiceRow k="side" name="聞き手の方向" sub="落雷点から見た聞き手の方向" choices={SIDES} value="1" />
+          <ChoiceRow k="n" name="放電の回数" sub="1 回の雷で同じ放電路に電流が流れる回数" choices={STROKES} value="4" />
+          <ChoiceRow k="e" sym="<i>E</i>" name="放電路のエネルギー" sub="放電路 1 m あたりに出るエネルギー [J/m]" choices={ENERGIES} value="1e6" />
         </div>
       </Panel>
       <Panel hid="hd-env" title="地面と周囲" class="a-env">
         <div class="ptab">
-          <ChoiceRow k="gnd" name="地面の反射" sub="地面で返る音を足すか" choices={GROUNDS} value="1" />
-          <ChoiceRow k="env" name="周囲の反響" sub="聞き手の近くの家・木・建物で散った音が遅れて重なる" choices={SURROUNDS} value="town" />
-          <ChoiceRow k="ter" name="地形の反響" sub="数 km 先の丘・山・林で散って戻る音。高い音は途中で吸われ、低い音ほど長く残る" choices={TERRAINS} value="hills" />
-          <ChoiceRow k="hill" name="山" sub="崖を置き、そこで返る音（こだま）を足す。崖の面は聞き手の側を向き、雷との間にあると崖の向こうの低い所の音が弱まる" choices={HILLS} value="0" />
+          <ChoiceRow k="gnd" name="地面の反射" sub="地面で返る音" choices={GROUNDS} value="1" />
+          <ChoiceRow k="env" name="周囲の反響" sub="聞き手の近くの家・木・建物で散った音" choices={SURROUNDS} value="town" />
+          <ChoiceRow k="ter" name="地形の反響" sub="数 km 先の丘・山・林で散って戻る音" choices={TERRAINS} value="hills" />
+          <ChoiceRow k="hill" name="山" sub="崖で返る音（こだま）" choices={HILLS} value="0" />
           <ChoiceRow k="hside" name="山の方向" sub="落雷点から見た山の方向" choices={SIDES} value="1" msg />
           <ParamRow d={HILL_X} />
           <ParamRow d={HILL_H} />

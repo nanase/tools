@@ -16,7 +16,7 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
 
 <h3>周波数</h3>
 <p>Doppler が 1842 年に唱え<Fragment set:html={rf(9)} />、Buys Ballot が 1845 年に列車の上で吹いたラッパの音で確かめました<Fragment set:html={rf(10)} />。</p>
-<p>上の式を <math><mi>t</mi></math> で微分すると、放射時刻の進む速さが出ます。音源が出した周波数 <math><msub><mi>f</mi><mn>0</mn></msub></math> の音は、この比だけ高く（低く）聞こえます<Fragment set:html={rf(1)} />。</p>
+<p>上の式を <math><mi>t</mi></math> で微分すると、放射時刻の進む速さが出ます。音源が出した周波数 <math><msub><mi>f</mi><mn>0</mn></msub></math> の音はこの比だけ高く（低く）聞こえます<Fragment set:html={rf(1)} />。</p>
 <div class="eqs">
   <math display="block" set:html={`${fr('<mi>f</mi>', '<msub><mi>f</mi><mn>0</mn></msub>')}<mo>=</mo>${fr(`<mi>d</mi>${e_('<mi>t</mi>')}`, '<mi>d</mi><mi>t</mi>')}<mo>=</mo>${fr(`<mi>c</mi><mo>−</mo>${bx('n')}<mo>·</mo>${bx('U')}`, `<mi>c</mi><mo>−</mo>${bx('n')}<mo>·</mo>${bx('V')}`)}`} />
   <math display="block" set:html={`<mtext>真っすぐ近づく</mtext><mspace width="0.5em"/>${fr('<mn>1</mn>', '<mn>1</mn><mo>−</mo><mi>M</mi>')}<mo>,</mo><mspace width="1em"/><mtext>遠ざかる</mtext><mspace width="0.5em"/>${fr('<mn>1</mn>', '<mn>1</mn><mo>+</mo><mi>M</mi>')}`} />
@@ -51,16 +51,16 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
   <li>先に出た音（近づいていたときの音）は <math set:html={`${fr(`<mi>d</mi>${e_('<mi>t</mi>')}`, '<mi>d</mi><mi>t</mi>')}<mo>&lt;</mo><mn>0</mn>`} /> で、逆回しに聞こえる</li>
   <li>本物のソニックブームは、機体が空気を押しのけてできる N 字形の圧力の波で、音が強すぎて線形の式から外れる。このツールは音源（サイレンなど）の音を線形の式で伝えるだけで、ブームは作らない</li>
 </ul>
-<p>マッハ角の式は NASA の解説による<Fragment set:html={rf(3)} />。</p>
+<p>マッハ角の式は NASA の解説によります<Fragment set:html={rf(3)} />。</p>
 
 <h3>音の作り方</h3>
 <ol class="flow">
-  <li>音源の音を放射時刻の目盛りでためる</li>
+  <li>音源の音を放射時刻ごとにためる</li>
   <li>聞き手の時刻ごとに放射時刻の解を探す</li>
   <li>その時刻の音を補間して読む</li>
   <li>距離・吸収・反射を掛けて足す</li>
 </ol>
-<p>読む速さが <math set:html={fr(`<mi>d</mi>${e_('<mi>t</mi>')}`, '<mi>d</mi><mi>t</mi>')} /> になるので、周波数の式を使わずに音が高く低く変わります（可変の遅延線<Fragment set:html={rf(4)} />）。音源が動いても聞き手が動いても、ドラッグで不規則に動かしても同じ計算です。</p>
+<p>読む速さが <math set:html={fr(`<mi>d</mi>${e_('<mi>t</mi>')}`, '<mi>d</mi><mi>t</mi>')} /> になるので、周波数の式を使わずに音の高さが変わります（可変の遅延線<Fragment set:html={rf(4)} />）。音源が動いても聞き手が動いても、ドラッグで不規則に動かしても同じ計算です。</p>
 <ul class="tl">
   <li>速く読むと高い倍音がナイキスト周波数を超えて折り返すので、帯域を半分ずつ狭めた写しもためておき、読む速さに合う写しを読む</li>
 </ul>

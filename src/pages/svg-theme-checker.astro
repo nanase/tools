@@ -19,7 +19,7 @@ const view = 'ドラッグで移動、ホイールで拡大縮小';
 const first = SAMPLES[0]?.svg ?? '';
 ---
 <SiteLayout title={name} tool={{ id, name }} note="SVG コードは外部には送信されません。">
-  <PageTitle title={name} titleHtml="SVG テーマスキーマ<wbr>チェッカー">ライトテーマとダークテーマで、SVG の外観が意図したとおりになるかを並べて確かめます。コードを書き換えると、両方のプレビューがすぐに変わります。</PageTitle>
+  <PageTitle title={name} titleHtml="SVG テーマスキーマ<wbr>チェッカー">SVG の見た目をライトとダークのテーマで比べます。</PageTitle>
 
   <div class="tgrid">
     <Panel hid="hd-view" title="プレビュー" class="a-view">
@@ -46,7 +46,7 @@ const first = SAMPLES[0]?.svg ?? '';
 
     <Panel hid="hd-code" title="SVG コード" class="a-code">
       <div slot="aux" class="ldr" role="group" aria-label="コードの読み込み">
-        <div class="seg"><button type="button" id="openBtn" title="SVG ファイルを開く（ここへドロップしても開けます）">開く</button></div>
+        <div class="seg"><button type="button" id="openBtn" title="SVG ファイルを開く（ドロップも可）">開く</button></div>
         <label class="exs" title="例の SVG を読み込む"><span>例</span><select id="exSel" autocomplete="off" aria-label="例の SVG">
           <option value="" hidden>—</option>
           {SAMPLE_GROUPS.map((g) => <optgroup label={g}>{SAMPLES.filter((s) => s.group === g).map((s) => <option value={s.id} selected={s === SAMPLES[0]}>{s.name}</option>)}</optgroup>)}

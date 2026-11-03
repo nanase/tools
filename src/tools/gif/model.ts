@@ -165,13 +165,13 @@ export function progressive(data: Uint8Array, m: number, w: number, h: number): 
 export function stopLabel(s: LzwStop): string {
   switch (s) {
     case 'end':
-      return 'データの途中で終わり';
+      return 'データの途中で終わっています。';
     case 'bad-code':
-      return '辞書にない符号で停止';
+      return '辞書にない符号で止まりました。';
     case 'full':
-      return '画素が多すぎる';
+      return '画素が多すぎます。';
     case 'bad-min':
-      return '最小符号サイズが不正';
+      return '最小符号サイズが正しくありません。';
     default:
       return '';
   }

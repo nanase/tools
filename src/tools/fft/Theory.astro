@@ -98,8 +98,8 @@ const big = (v: number) => v.toLocaleString('ja-JP');
   </tbody>
 </table></div>
 <ul class="tl">
-  <li>実数の数は、複素数の掛け算を実数 4 回と足し算 2 回とし、<math set:html={`${W(N, '<mn>0</mn>')}<mo>=</mo><mn>1</mn>`} /> と <math set:html={`${W(N, `<mi>N</mi><mo>/</mo><mn>4</mn>`)}<mo>=</mo><mo>−</mo><mi>i</mi>`} /> は掛けず、<math set:html={W(N, `<mi>N</mi><mo>/</mo><mn>8</mn>`)} /> の向きは 2 回で済ませた数。<math><mn>2</mn><mi>N</mi><msub><mi>log</mi><mn>2</mn></msub><mi>N</mi><mo>−</mo><mn>7</mn><mi>N</mi><mo>+</mo><mn>12</mn></math> と <math><mn>3</mn><mi>N</mi><msub><mi>log</mi><mn>2</mn></msub><mi>N</mi><mo>−</mo><mn>3</mn><mi>N</mi><mo>+</mo><mn>4</mn></math>（表 8.5.1）<Fragment set:html={rf(6)} /></li>
-  <li>複素数の掛け算を 3 回と 3 回で数えると <math><mfrac><mn>3</mn><mn>2</mn></mfrac><mi>N</mi><msub><mi>log</mi><mn>2</mn></msub><mi>N</mi><mo>−</mo><mn>5</mn><mi>N</mi><mo>+</mo><mn>8</mn></math> と <math><mfrac><mn>7</mn><mn>2</mn></mfrac><mi>N</mi><msub><mi>log</mi><mn>2</mn></msub><mi>N</mi><mo>−</mo><mn>5</mn><mi>N</mi><mo>+</mo><mn>8</mn></math>（式 (25)、表 1・2）<Fragment set:html={rf(4)} /></li>
+  <li>実数の演算の数は、複素数の掛け算を実数の掛け算 4 回と足し算 2 回とし、<math set:html={`${W(N, '<mn>0</mn>')}<mo>=</mo><mn>1</mn>`} /> と <math set:html={`${W(N, `<mi>N</mi><mo>/</mo><mn>4</mn>`)}<mo>=</mo><mo>−</mo><mi>i</mi>`} /> は掛けず、<math set:html={W(N, `<mi>N</mi><mo>/</mo><mn>8</mn>`)} /> の向きは 2 回で済ませた数。<math><mn>2</mn><mi>N</mi><msub><mi>log</mi><mn>2</mn></msub><mi>N</mi><mo>−</mo><mn>7</mn><mi>N</mi><mo>+</mo><mn>12</mn></math> と <math><mn>3</mn><mi>N</mi><msub><mi>log</mi><mn>2</mn></msub><mi>N</mi><mo>−</mo><mn>3</mn><mi>N</mi><mo>+</mo><mn>4</mn></math>（表 8.5.1）<Fragment set:html={rf(6)} /></li>
+  <li>複素数の掛け算を実数の掛け算 3 回と足し算 3 回で数えると <math><mfrac><mn>3</mn><mn>2</mn></mfrac><mi>N</mi><msub><mi>log</mi><mn>2</mn></msub><mi>N</mi><mo>−</mo><mn>5</mn><mi>N</mi><mo>+</mo><mn>8</mn></math> と <math><mfrac><mn>7</mn><mn>2</mn></mfrac><mi>N</mi><msub><mi>log</mi><mn>2</mn></msub><mi>N</mi><mo>−</mo><mn>5</mn><mi>N</mi><mo>+</mo><mn>8</mn></math>（式 (25)、表 1・2）<Fragment set:html={rf(4)} /></li>
   <li>すべて掛けると <math><mn>5</mn><mi>N</mi><msub><mi>log</mi><mn>2</mn></msub><mi>N</mi></math>。FFTW は速さの目安にこの数を使う<Fragment set:html={rf(8)} /></li>
   <li>100 MHz の Pentium で 1,024 点の DFT は約 25 s、FFT は約 70 ms<Fragment set:html={rf(5)} /></li>
 </ul>
@@ -121,12 +121,12 @@ const big = (v: number) => v.toLocaleString('ja-JP');
 <div class="eqs">
   <math display="block" set:html={`${sq('x', it('n'))}<mo>=</mo>${fr('<mn>1</mn>', '<mi>N</mi>')}<msup><mrow><mo>(</mo>${sum('<mi>k</mi><mo>=</mo><mn>0</mn>', '<mi>N</mi><mo>−</mo><mn>1</mn>')}${sq('X', it('k'))}<msup><mrow></mrow><mo>∗</mo></msup>${W(N, '<mi>k</mi><mi>n</mi>')}<mo>)</mo></mrow><mo>∗</mo></msup>`} />
 </div>
-<p>共役（<math><msup><mrow></mrow><mo>∗</mo></msup></math>）をとって同じ FFT に通し、共役をとって <math><mi>N</mi></math> で割る。</p>
+<p>共役（<math><msup><mrow></mrow><mo>∗</mo></msup></math>）をとって同じ FFT に通し、共役をとって <math><mi>N</mi></math> で割ります。</p>
 
 <h3>歴史</h3>
 <ul class="tl">
   <li>1805 年ごろ、Gauss が小惑星の軌道の計算で同じ分け方を使った。死後 1866 年に出版<Fragment set:html={rf(3)} /></li>
-  <li>1965 年、Cooley と Tukey が計算機の算法として発表<Fragment set:html={rf(1)} /></li>
+  <li>1965 年、Cooley と Tukey が計算機のアルゴリズムとして発表<Fragment set:html={rf(1)} /></li>
   <li>1966 年、Gentleman と Sande が回転因子を後で掛ける形を示した<Fragment set:html={rf(2)} /></li>
 </ul>
 
@@ -141,13 +141,13 @@ const big = (v: number) => v.toLocaleString('ja-JP');
 <ul class="tl">
   <li>FFT はスペクトラムアナライザと同じ実装（並べ替えの表と回転因子の表）。図はそれを段ごとに止めて記録したもの</li>
   <li>節点の矢印は、列ごとに最大の大きさで割って描く</li>
-  <li>拡大の図は今のバタフライ 1 つを複素平面に描く。時間間引きは b を回してから足し引き、周波数間引きは足し引きしてから差を回す。縮尺は 5 つの点（a・b・回した値・和・差）が入る大きさ</li>
-  <li>「複素数の掛け算」は回転因子が 1 でも数える。実数の数は自明な回転因子を除く</li>
+  <li>拡大の図は今のバタフライ 1 つを複素平面に描く</li><li>時間間引きは b を回してから足し引き、周波数間引きは足し引きしてから差を回す</li><li>縮尺は 5 つの点（a・b・回した値・和・差）が入る大きさ</li>
+  <li>「複素数の掛け算」は回転因子が 1 でも数える。実数の演算の数は自明な回転因子を除く</li>
 </ul>
 
 <h3>出典</h3>
 <ol class="refs">
-  <li id="thy-r1"><span class="rf-for">直接の計算は N² 回、この算法は 2N log₂ N 回未満（297 頁）、基数 r の手間（式 (12)・299 頁の表）、ビットの反転（300 頁）</span><span class="rf-src">J. W. Cooley and J. W. Tukey, “An algorithm for the machine calculation of complex Fourier series,” <i>Mathematics of Computation</i>, vol. 19, no. 90, pp. 297–301, 1965, <a href="https://doi.org/10.1090/S0025-5718-1965-0178586-1" target="_blank" rel="noopener">doi:10.1090/S0025-5718-1965-0178586-1</a></span></li>
+  <li id="thy-r1"><span class="rf-for">直接の計算は N² 回、このアルゴリズムは 2N log₂ N 回未満（297 頁）、基数 r の手間（式 (12)・299 頁の表）、ビットの反転（300 頁）</span><span class="rf-src">J. W. Cooley and J. W. Tukey, “An algorithm for the machine calculation of complex Fourier series,” <i>Mathematics of Computation</i>, vol. 19, no. 90, pp. 297–301, 1965, <a href="https://doi.org/10.1090/S0025-5718-1965-0178586-1" target="_blank" rel="noopener">doi:10.1090/S0025-5718-1965-0178586-1</a></span></li>
   <li id="thy-r2"><span class="rf-for">回転因子（565 頁）、Cooley の版と Sande の版（566〜567 頁）</span><span class="rf-src">W. M. Gentleman and G. Sande, “Fast Fourier transforms: for fun and profit,” <i>Proc. AFIPS Fall Joint Computer Conference</i>, pp. 563–578, 1966, <a href="https://doi.org/10.1145/1464291.1464352" target="_blank" rel="noopener">doi:10.1145/1464291.1464352</a></span></li>
   <li id="thy-r3"><span class="rf-for">Gauss の 1805 年の計算と 1866 年の出版（再録版 266・269・271 頁）</span><span class="rf-src">M. T. Heideman, D. H. Johnson, and C. S. Burrus, “Gauss and the history of the fast Fourier transform,” <i>IEEE ASSP Magazine</i>, vol. 1, no. 4, pp. 14–21, 1984, <a href="https://doi.org/10.1109/MASSP.1984.1162257" target="_blank" rel="noopener">doi:10.1109/MASSP.1984.1162257</a>。再録 <i>Archive for History of Exact Sciences</i>, vol. 34, pp. 265–277, 1985</span></li>
   <li id="thy-r4"><span class="rf-for">演算の数え方（270 頁）、基数 2 と分割基数の式（式 (25)・(31)）、表 1・2</span><span class="rf-src">P. Duhamel and M. Vetterli, “Fast Fourier transforms: a tutorial review and a state of the art,” <i>Signal Processing</i>, vol. 19, no. 4, pp. 259–299, 1990, <a href="https://doi.org/10.1016/0165-1684(90)90158-U" target="_blank" rel="noopener">doi:10.1016/0165-1684(90)90158-U</a></span></li>

@@ -13,7 +13,7 @@
 </ol>
 
 <h3>弦</h3>
-<p>弦は両端で支えた、曲げ剛性のある弦として扱います<a class="rf" href="#thy-r1">[1]</a>。両端は、押さえたフレットと駒のサドルです。押さえたフレットからナット側は指で止まり、振動しません。</p>
+<p>弦は両端で支えた曲げ剛性のある弦として扱います<a class="rf" href="#thy-r1">[1]</a>。両端は、押さえたフレットと駒のサドルです。押さえたフレットからナット側は指で止まり、振動しません。</p>
 <dl class="syms">
   <dt><math><mi>T</mi></math></dt><dd>張力</dd>
   <dt><math><mi>μ</mi></math></dt><dd>線密度</dd>
@@ -31,7 +31,7 @@
 </div>
 
 <h3>弦の損失</h3>
-<p>弦が自分で失うエネルギーは、損失係数 <math><msub><mi>η</mi><mi>n</mi></msub></math> で表します。振幅は <math><msup><mi>e</mi><mrow><mo>−</mo><msub><mi>η</mi><mi>n</mi></msub><msub><mi>ω</mi><mi>n</mi></msub><mi>t</mi><mo>/</mo><mn>2</mn></mrow></msup></math> で減ります。<math><msub><mi>η</mi><mi>n</mi></msub></math> は次の 4 つの和です。</p>
+<p>弦が自分で失うエネルギーは損失係数 <math><msub><mi>η</mi><mi>n</mi></msub></math> で表します。振幅は <math><msup><mi>e</mi><mrow><mo>−</mo><msub><mi>η</mi><mi>n</mi></msub><msub><mi>ω</mi><mi>n</mi></msub><mi>t</mi><mo>/</mo><mn>2</mn></mrow></msup></math> で減ります。<math><msub><mi>η</mi><mi>n</mi></msub></math> は次の 4 つの和です。</p>
 <ul class="tl">
   <li>空気の粘性による損失（Valette）<a class="rf" href="#thy-r5">[5]</a></li>
   <li>低い周波数で増える損失</li>
@@ -45,8 +45,8 @@
 </div>
 
 <h3>駒</h3>
-<p>弦は駒で胴につながっています。駒のアドミタンス <math><mi>Y</mi><mo stretchy="false">(</mo><mi>ω</mi><mo stretchy="false">)</mo></math> は、力に対する速度です。</p>
-<p><math><mi>Y</mi></math> があると、弦のモードの複素角周波数が下の式の根に移ります<a class="rf" href="#thy-r6">[6]</a>。実部が多い周波数、つまり胴が動きやすい周波数ほど、エネルギーが胴へ逃げて早く減衰し、そのぶん大きな音を出します。</p>
+<p>弦は駒で胴につながっています。駒のアドミタンス <math><mi>Y</mi><mo stretchy="false">(</mo><mi>ω</mi><mo stretchy="false">)</mo></math> は力に対する速度です。</p>
+<p><math><mi>Y</mi></math> があると、弦のモードの複素角周波数が下の式の根に移ります<a class="rf" href="#thy-r6">[6]</a>。実部が大きい周波数、つまり胴が動きやすい周波数ほど、エネルギーが胴へ逃げて早く減衰し、そのぶん大きな音を出します。</p>
 <p>表板に垂直な振動と平行な振動で <math><mi>Y</mi></math> が違うため、2 つの偏波は別の速さで減衰します。</p>
 <div class="eqs">
   <math display="block"><mi>ω</mi><mo>=</mo><msub><mi>ω</mi><mi>n</mi></msub><mo>+</mo><mi>i</mi><mfrac><mrow><msub><mi>η</mi><mi>n</mi></msub><msub><mi>ω</mi><mi>n</mi></msub></mrow><mn>2</mn></mfrac><mo>+</mo><mi>i</mi><mfrac><mi>T</mi><mi>L</mi></mfrac><mi>Y</mi><mo stretchy="false">(</mo><mi>ω</mi><mo stretchy="false">)</mo></math>
@@ -61,14 +61,14 @@
 </div>
 
 <h3>胴の低い周波数</h3>
-<p>胴の低い周波数は、表板の第 1 モードとサウンドホールの空気が、胴の空気のばねでつながった 2 自由度の振動系です（Christensen・Vistisen）<a class="rf" href="#thy-r7">[7]</a>。表板の第 1 モードは、ピストンとして扱います。</p>
+<p>胴の低い周波数では、表板の第 1 モードとサウンドホールの空気が胴の空気のばねでつながり、2 自由度の振動系になります（Christensen・Vistisen）<a class="rf" href="#thy-r7">[7]</a>。表板の第 1 モードは、ピストンとして扱います。</p>
 <dl class="syms">
   <dt><math><msub><mi>m</mi><mi mathvariant="normal">p</mi></msub></math></dt><dd>表板の第 1 モードの等価質量</dd>
   <dt><math><mi>A</mi></math></dt><dd>ピストンの面積</dd>
   <dt><math><mi>S</mi></math></dt><dd>サウンドホールの面積</dd>
   <dt><math><mi>V</mi></math></dt><dd>胴の空気の容積</dd>
 </dl>
-<p>2 つが結合して、ヘルムホルツ共振 <math><msub><mi>f</mi><mi mathvariant="normal">h</mi></msub></math> の下と上に 2 つの共振 <math><msub><mi>f</mi><mo>−</mo></msub></math>・<math><msub><mi>f</mi><mo>+</mo></msub></math> ができます。音圧は、表板とサウンドホールの体積速度の和で決まります。</p>
+<p>2 つが結合して、ヘルムホルツ共振 <math><msub><mi>f</mi><mi mathvariant="normal">h</mi></msub></math> の下と上に 2 つの共振 <math><msub><mi>f</mi><mo>−</mo></msub></math>・<math><msub><mi>f</mi><mo>+</mo></msub></math> ができます。音圧は表板とサウンドホールの体積速度の和で決まります。</p>
 <div class="eqs">
   <math display="block"><msub><mi>m</mi><mi mathvariant="normal">p</mi></msub><msub><mover><mi>x</mi><mo>¨</mo></mover><mi mathvariant="normal">p</mi></msub><mo>+</mo><msub><mi>R</mi><mi mathvariant="normal">p</mi></msub><msub><mover><mi>x</mi><mo>˙</mo></mover><mi mathvariant="normal">p</mi></msub><mo>+</mo><mrow><mo>(</mo><msub><mi>k</mi><mi mathvariant="normal">p</mi></msub><mo>+</mo><mfrac><mrow><mi>ρ</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><mi>V</mi></mfrac><msup><mi>A</mi><mn>2</mn></msup><mo>)</mo></mrow><msub><mi>x</mi><mi mathvariant="normal">p</mi></msub><mo>+</mo><mfrac><mrow><mi>ρ</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><mi>V</mi></mfrac><mi>A</mi><mi>S</mi><msub><mi>x</mi><mi mathvariant="normal">h</mi></msub><mo>=</mo><mi>F</mi></math>
   <math display="block"><msub><mi>m</mi><mi mathvariant="normal">h</mi></msub><msub><mover><mi>x</mi><mo>¨</mo></mover><mi mathvariant="normal">h</mi></msub><mo>+</mo><msub><mi>R</mi><mi mathvariant="normal">h</mi></msub><msub><mover><mi>x</mi><mo>˙</mo></mover><mi mathvariant="normal">h</mi></msub><mo>+</mo><mfrac><mrow><mi>ρ</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><mi>V</mi></mfrac><mrow><mo>(</mo><msup><mi>S</mi><mn>2</mn></msup><msub><mi>x</mi><mi mathvariant="normal">h</mi></msub><mo>+</mo><mi>A</mi><mi>S</mi><msub><mi>x</mi><mi mathvariant="normal">p</mi></msub><mo>)</mo></mrow><mo>=</mo><mn>0</mn></math>
@@ -125,7 +125,7 @@
 </ul>
 
 <h3>弾き方と強弱</h3>
-<p>駒の側の胴の上を押したまま動かすと、横切った弦を、横切った順に弾きます。弾く強さは、動かす速さの平方根に比例させます。図の縮尺で 0.3 m/s のとき、入力の「強さ」になります。</p>
+<p>駒の側の胴の上を押したまま動かすと、横切った弦を横切った順に弾きます。弾く強さは、動かす速さの平方根に比例させます。図の縮尺で 0.3 m/s のとき、入力の「強さ」になります。</p>
 <p>曲の強弱は、MIDI にベロシティがあればそれを使います。ない曲は、次の倍率を掛けて決めます。</p>
 <ul class="tl">
   <li>拍子: 小節の頭を強く、拍の裏を弱く</li>
@@ -135,14 +135,14 @@
 <p>曲の中央の値を 1 とし、少しの揺らぎを足します。</p>
 
 <h3>コードの押さえ方</h3>
-<p>コードの押さえ方は、調弦とフレットの数から探します。指板の 4 フレットの幅ごとに、弦ごとに「鳴らさない・開放・コードの音のフレット」を組み合わせ、次をすべて満たすものを残します。</p>
+<p>コードの押さえ方は調弦とフレットの数から探します。指板の 4 フレットの幅ごとに、弦ごとに「鳴らさない・開放・コードの音のフレット」を組み合わせ、次をすべて満たすものを残します。</p>
 <ul class="tl">
   <li>鳴らす弦が 4 本以上。鳴らさない弦は太い側に続けて並ぶ</li>
   <li>最も低い音が根音</li>
   <li>コードの音をすべて含む。4 和音などの完全 5 度は省いてよい</li>
   <li>指 4 本で押さえられる。足りなければ、人差し指で最も低いフレットをセーハする</li>
 </ul>
-<p>残った形には、鳴る弦の多さ、低い位置、狭い幅、ローコードの開放弦を良しとする点を付けます。押さえる位置ごとに最も良い形を 1 つ選び、全体で最も良い形から始めます。</p>
+<p>残った形に点を付けます。鳴る弦の多さ、低い位置、狭い幅、ローコードの開放弦で点が上がります。押さえる位置ごとに最も良い形を 1 つ選び、全体で最も良い形から始めます。</p>
 <p>押さえ方を変えると、フレットが変わる弦と鳴らさない弦は指が離れて音が止まります。同じフレットのままの弦は鳴り続けます。</p>
 <p>「次によく続くコード」は、調を決めずに、今のコードの働きから選びます。和声の教本とポピュラー音楽によくある進行を目安に、重みを付けました。</p>
 <ul class="tl">
@@ -214,7 +214,7 @@
 </ol>
 
 <h3>このツールで決めたこと</h3>
-<p>次の値は、このツールで選んだ概数です。</p>
+<p>次の値はこのツールで選んだ概数です。</p>
 <ul class="tl">
   <li>木材の値</li>
   <li>胴の面積と力木の倍率</li>

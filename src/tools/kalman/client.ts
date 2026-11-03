@@ -204,12 +204,12 @@ function outputs(): void {
       low = st.nis < st.band[0];
     html(
       '#o-nis',
-      `${num(st.nis, 3)}<span class="vd${bad ? ' bad' : ''}">${bad ? '過信（誤差が見積りの範囲をはみ出す）' : low ? '慎重すぎ（見積りの範囲が広すぎる）' : '見積りと合っている'}</span>`,
+      `${num(st.nis, 3)}<span class="vd${bad ? ' bad' : ''}">${bad ? '過信（誤差が見積りの範囲をはみ出す）' : low ? '慎重すぎ（見積りの範囲が広すぎる）' : '見積りどおり'}</span>`,
     );
-    txt('#o-niss', `合っていれば ${num(st.band[0], 3)}〜${num(st.band[1], 3)} に入る（95 %、直近 ${st.n} 回）`);
+    txt('#o-niss', `合っていれば ${num(st.band[0], 3)}〜${num(st.band[1], 3)}（95 %、直近 ${st.n} 回）`);
   } else {
     html('#o-nis', DASH);
-    txt('#o-niss', '15 回観測すると判定する');
+    txt('#o-niss', '15 回観測してから判定');
   }
   html('#k-st', running ? '<span class="led on" aria-hidden="true"></span>動作中' : '');
 }
@@ -287,8 +287,8 @@ function setRun(on: boolean): void {
   acc = 0;
   const pp = $('#k-pp');
   pp.classList.toggle('on', on);
-  pp.title = on ? '止める' : '動かす';
-  pp.setAttribute('aria-label', on ? '止める' : '動かす');
+  pp.title = on ? '一時停止' : '再生';
+  pp.setAttribute('aria-label', on ? '一時停止' : '再生');
   outputs();
   kick();
 }

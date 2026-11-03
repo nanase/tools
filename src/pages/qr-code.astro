@@ -24,8 +24,8 @@ const STAGES = [
   ['完成', 'q-s6'],
 ];
 const TOOLS_SOIL = [
-  ['ink', 'しみ', '押した所のまわりを黒くする', '<path d="M12 3c3 4 6 7.5 6 11a6 6 0 0 1-12 0c0-3.5 3-7 6-11z"/>'],
-  ['rub', 'こすれ', '押した所のまわりを白くする', '<path d="M4 18L18 4M8 20L20 8"/>'],
+  ['ink', 'しみ', '押した所のまわりを黒く', '<path d="M12 3c3 4 6 7.5 6 11a6 6 0 0 1-12 0c0-3.5 3-7 6-11z"/>'],
+  ['rub', 'こすれ', '押した所のまわりを白く', '<path d="M4 18L18 4M8 20L20 8"/>'],
   [
     'flip',
     '1 つずつ',
@@ -34,15 +34,15 @@ const TOOLS_SOIL = [
   ],
 ];
 ---
-<SiteLayout title={name} tool={{ id: 'qr-code', name }} note="符号化と復号は、このツールの実装によるものです。画像から格子を読み取る処理はしません。QRコードは株式会社デンソーウェーブの登録商標です。">
-  <PageTitle title={name}>文字列から QR コードができるまでを、モード・ビット列・符号語・リード・ソロモン符号の誤り訂正語・配置・マスク・形式情報の段に分けて追います。図のモジュールと符号語の表は結びついていて、押した符号語のビットがどの文字のどの部分か、どこに置かれたかが分かります。「誤り訂正実験」に切り替えて図をなぞると、しみやこすれで壊れた符号語をリード・ソロモン符号で訂正して読み取り、訂正できる上限を超えると読み取れなくなります。</PageTitle>
+<SiteLayout title={name} tool={{ id: 'qr-code', name }} note="符号化と復号はこのツールの実装によるものです。画像から格子を読み取る処理はしません。QRコードは株式会社デンソーウェーブの登録商標です。">
+  <PageTitle title={name}>文字列から QR コードができるまでを段に分けて追います。押した符号語のビットがどの文字のどの部分か、どこに置かれたかが分かります。「誤り訂正実験」で図をなぞると、壊れた符号語をリード・ソロモン符号で訂正して読み取ります。訂正できる上限を超えると読み取れなくなります。</PageTitle>
 
   <div class="tgrid">
     <Panel hid="hd-map" title="QR コードの構造" class="a-map" fixed>
       <div slot="aux" class="seg" id="p-act" role="group" aria-label="図で行うこと" data-nosave>
-        <button type="button" data-v="look" aria-pressed="true" title="押した符号語の中身と配置した場所を調べる">調べる</button><button type="button" data-v="soil" aria-pressed="false" title="図にしみやこすれを付け、読み取って誤り訂正する">誤り訂正実験</button>
+        <button type="button" data-v="look" aria-pressed="true" title="押した符号語の中身と配置した場所">調べる</button><button type="button" data-v="soil" aria-pressed="false" title="図にしみやこすれを付け、読み取って誤り訂正する">誤り訂正実験</button>
       </div>
-      <div slot="aux" class="seg"><button type="button" id="saveBtn" title="今の図の QR コードを PNG で保存する">保存</button></div>
+      <div slot="aux" class="seg"><button type="button" id="saveBtn" title="今の図の QR コードを PNG で保存">保存</button></div>
 
       <div class="q-stagerow" id="q-stagerow">
         <ol class="q-stage" id="q-stage" aria-label="符号化の段">
@@ -101,7 +101,7 @@ const TOOLS_SOIL = [
           <div class="m"><dt>誤り訂正語</dt><dd><span id="o-ec"></span><span class="m-sub" id="o-ecs"></span></dd></div>
           <div class="m"><dt>マスク</dt><dd><span id="o-mask"></span><span class="m-sub" id="o-masks"></span></dd></div>
           <div class="m"><dt>暗いモジュール</dt><dd><span id="o-dark"></span><span class="m-sub" id="o-darks"></span></dd></div>
-          <div class="m"><dt>余り</dt><dd><span id="o-room"></span><span class="m-sub" id="o-rooms"></span></dd></div>
+          <div class="m"><dt>容量の余り</dt><dd><span id="o-room"></span><span class="m-sub" id="o-rooms"></span></dd></div>
           <div class="m"><dt>余りのビット</dt><dd><span id="o-rem"></span><span class="m-sub" id="o-rems"></span></dd></div>
         </dl>
       </Panel>
@@ -110,7 +110,7 @@ const TOOLS_SOIL = [
     <div class="col c2">
       <Panel hid="hd-mask" title="マスクの比較" class="a-mask">
         <div slot="aux" class="seg" id="p-mauto" role="group" aria-label="マスクの選び方" data-nosave>
-          <button type="button" data-v="auto" aria-pressed="true" title="ペナルティがいちばん小さいマスクを使う">自動</button><button type="button" data-v="fix" aria-pressed="false" title="下で選んだマスクを使う">固定</button>
+          <button type="button" data-v="auto" aria-pressed="true" title="ペナルティがいちばん小さいマスク">自動</button><button type="button" data-v="fix" aria-pressed="false" title="下で選んだマスク">固定</button>
         </div>
         <div class="q-masks-c"><div class="q-masks" id="q-masks" role="group" aria-label="マスク">
           {Array.from({ length: 8 }, (_, i) => <button type="button" class="q-mask" data-m={i} aria-pressed="false"><canvas width="58" height="58" aria-hidden="true"></canvas><span class="t"><b>{i}</b><span></span></span></button>)}

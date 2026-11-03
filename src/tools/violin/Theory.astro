@@ -12,10 +12,10 @@
   <li><b>放射</b><span>1 m 先の音圧</span></li>
   <li><b>残響</b><span>再生の音だけ</span></li>
 </ol>
-<p>弓と弦の摩擦は、音の標本ごとに解きます。高い音では、1 標本をさらに細かい刻みに分けます。4 本の弦は別々に計算し、駒の上で力を足して胴へ入れます。</p>
+<p>弓と弦の摩擦は音の標本ごとに解きます。高い音では 1 標本をさらに細かい刻みに分けます。4 本の弦は別々に計算し、駒の上で力を足して胴へ入れます。</p>
 
 <h3>弦</h3>
-<p>弦は、両端で支えた曲げ剛性のある弦として扱います<a class="rf" href="#thy-r1">[1]</a>。両端は駒と、押さえた指（開放弦では上駒）です。開放弦の振動する長さは 328 mm です<a class="rf" href="#thy-r2">[2]</a>。押さえた音では、音の高さに合わせて短くします。</p>
+<p>弦は両端で支えた曲げ剛性のある弦として扱います<a class="rf" href="#thy-r1">[1]</a>。両端は駒と押さえた指（開放弦では上駒）です。開放弦の振動する長さは 328 mm です<a class="rf" href="#thy-r2">[2]</a>。押さえた音では音の高さに合わせて短くします。</p>
 <dl class="syms">
   <dt><math><mi>T</mi></math></dt><dd>張力</dd>
   <dt><math><mi>μ</mi></math></dt><dd>線密度</dd>
@@ -53,7 +53,7 @@
   </tbody>
 </table></div>
 <h4>弦の損失</h4>
-<p>弦が自分で失うエネルギーは、損失係数 <math><msub><mi>η</mi><mi>n</mi></msub></math> で表します。振幅は <math><msup><mi>e</mi><mrow><mo>−</mo><msub><mi>η</mi><mi>n</mi></msub><msub><mi>ω</mi><mi>n</mi></msub><mi>t</mi><mo>/</mo><mn>2</mn></mrow></msup></math> で減ります。<math><msub><mi>η</mi><mi>n</mi></msub></math> は、Woodhouse の式の形<a class="rf" href="#thy-r6">[6]</a>に、空気の粘性による損失（Valette）<a class="rf" href="#thy-r7">[7]</a>と押さえた指の損失を足したものです。</p>
+<p>弦が自分で失うエネルギーは損失係数 <math><msub><mi>η</mi><mi>n</mi></msub></math> で表します。振幅は <math><msup><mi>e</mi><mrow><mo>−</mo><msub><mi>η</mi><mi>n</mi></msub><msub><mi>ω</mi><mi>n</mi></msub><mi>t</mi><mo>/</mo><mn>2</mn></mrow></msup></math> で減ります。<math><msub><mi>η</mi><mi>n</mi></msub></math> は、Woodhouse の式の形<a class="rf" href="#thy-r6">[6]</a>に、空気の粘性による損失（Valette）<a class="rf" href="#thy-r7">[7]</a>と押さえた指の損失を足したものです。</p>
 <ul class="tl">
   <li>空気の粘性による損失。<math><mi>d</mi></math> は外径、<math><msub><mi>η</mi><mi mathvariant="normal">a</mi></msub></math> と <math><msub><mi>ρ</mi><mi mathvariant="normal">a</mi></msub></math> は空気の粘性率と密度</li>
   <li>低い周波数で増える損失 <math><msub><mi>η</mi><mi mathvariant="normal">X</mi></msub></math></li>
@@ -64,14 +64,14 @@
   <math display="block"><msub><mi>η</mi><mi>n</mi></msub><mo>=</mo><mfrac><mrow><msub><mi>η</mi><mi mathvariant="normal">a</mi></msub><mo>+</mo><mi>d</mi><msqrt><mrow><mi>π</mi><msub><mi>η</mi><mi mathvariant="normal">a</mi></msub><msub><mi>ρ</mi><mi mathvariant="normal">a</mi></msub><msub><mi>f</mi><mi>n</mi></msub></mrow></msqrt></mrow><mrow><mi>μ</mi><msub><mi>f</mi><mi>n</mi></msub></mrow></mfrac><mo>+</mo><mfrac><msub><mi>η</mi><mi mathvariant="normal">X</mi></msub><msub><mi>ω</mi><mi>n</mi></msub></mfrac><mo>+</mo><mfrac><mrow><mi>T</mi><msub><mi>η</mi><mi mathvariant="normal">F</mi></msub><mo>+</mo><mi>E</mi><mi>I</mi><msubsup><mi>k</mi><mi>n</mi><mn>2</mn></msubsup><msub><mi>η</mi><mi mathvariant="normal">B</mi></msub></mrow><mrow><mi>T</mi><mo>+</mo><mi>E</mi><mi>I</mi><msubsup><mi>k</mi><mi>n</mi><mn>2</mn></msubsup></mrow></mfrac><mo>+</mo><mfrac><msub><mi>η</mi><mtext>指</mtext></msub><mi>n</mi></mfrac></math>
   <math display="block"><msub><mi>k</mi><mi>n</mi></msub><mo>=</mo><mfrac><mrow><mi>n</mi><mi>π</mi></mrow><mi>L</mi></mfrac></math>
 </div>
-<p><math><msub><mi>η</mi><mi mathvariant="normal">F</mi></msub></math> と <math><msub><mi>η</mi><mi mathvariant="normal">B</mi></msub></math> は、E 線が Galluzzo らの測定<a class="rf" href="#thy-r4">[4]</a>、巻線の 3 本が Mansour らのチェロ弦の測定<a class="rf" href="#thy-r8">[8]</a>の値です。高い倍音ほど、曲げの損失で早く消えます。</p>
+<p><math><msub><mi>η</mi><mi mathvariant="normal">F</mi></msub></math> と <math><msub><mi>η</mi><mi mathvariant="normal">B</mi></msub></math> は、E 線が Galluzzo らの測定<a class="rf" href="#thy-r4">[4]</a>、巻線の 3 本が Mansour らのチェロ弦の測定<a class="rf" href="#thy-r8">[8]</a>の値です。高い倍音ほど曲げの損失で早く消えます。</p>
 <p>Schoonderwaldt らが撥弦の減衰から求めた D 線の基本モードの Q は、楽器の上の開放弦で 410、モノコードで 480 です。剛な台の上では、その約 2 倍になるとされます<a class="rf" href="#thy-r9">[9]</a>。<math><msub><mi>η</mi><mi mathvariant="normal">X</mi></msub></math> は、剛な台の上での基本モードの Q が約 900 になる値にしました。</p>
 <p>押さえた指の損失は、弦の端に置いた抵抗で波が反射するときの損失とみなし、高いモードほど <math><mn>1</mn><mo>/</mo><mi>n</mi></math> で小さくします。弦が駒から胴へ失う損失の式<a class="rf" href="#thy-r10">[10]</a>の <math><mi>Y</mi></math> に、端の抵抗の逆数を入れた形です。</p>
 <div class="eqs">
   <math display="block"><msub><mi>η</mi><mtext>胴</mtext></msub><mo>≈</mo><mfrac><mrow><mn>2</mn><msub><mi>Z</mi><mn>0</mn></msub><mi>Re</mi><mo>⁡</mo><mi>Y</mi></mrow><mrow><mi>π</mi><mi>n</mi></mrow></mfrac></math>
 </div>
 <h4>ねじり</h4>
-<p>弓は弦の表面に触れるので、弦がねじれて表面が動く分も、弓の位置の速度に入ります。ねじりは両端を固定した調和なモードで表し、Q はどのモードも同じとします<a class="rf" href="#thy-r11">[11]</a>。</p>
+<p>弓は弦の表面に触れるので、弦がねじれて表面が動く分も弓の位置の速度に入ります。ねじりは両端を固定した調和なモードで表し、Q はどのモードも同じとします<a class="rf" href="#thy-r11">[11]</a>。</p>
 <dl class="syms">
   <dt><math><msub><mi>c</mi><mi mathvariant="normal">t</mi></msub></math></dt><dd>ねじり波の速さ</dd>
   <dt><math><msub><mi>Z</mi><mi mathvariant="normal">t</mi></msub></math></dt><dd>弦の表面で見たねじりのインピーダンス</dd>
@@ -176,14 +176,14 @@
 </div>
 <p><math><msub><mi>u</mi><mi>k</mi></msub></math> は分散 1 の一様乱数です。</p>
 <h4>計算の刻み</h4>
-<p>高い音では、滑りの時間（周期の約 <math><mi>β</mi></math> 倍）が数標本しかなく、固着と滑りの切り替わりを追えません。そこで、滑りの間が 24 刻み以上になるように、1 標本を <math><mi>N</mi></math> 刻み（最大 10）に分けます。熱の模型は、20 µs の刻みで十分に収束するとされます<a class="rf" href="#thy-r17">[17]</a>。</p>
+<p>高い音では、滑りの時間（周期の約 <math><mi>β</mi></math> 倍）が数標本しかなく、固着と滑りの切り替わりを追えません。そこで、滑りの間が 24 刻み以上になるように、1 標本を <math><mi>N</mi></math> 刻み（最大 10）に分けます。熱の模型は 20 µs の刻みで十分に収束するとされます<a class="rf" href="#thy-r17">[17]</a>。</p>
 <div class="eqs">
   <math display="block"><mi>N</mi><mo>=</mo><mrow><mo>⌈</mo><mfrac><mrow><mn>24</mn><msub><mi>f</mi><mn>1</mn></msub></mrow><mrow><mi>β</mi><msub><mi>f</mi><mi mathvariant="normal">s</mi></msub></mrow></mfrac><mo>⌉</mo></mrow></math>
 </div>
 
 <h3>弓圧の範囲と弦の振れ</h3>
 <p>Helmholtz の運動では、弓の位置の弦は 1 周期のうち <math><mn>1</mn><mo>−</mo><mi>β</mi></math> の間は弓と同じ速さで固着し、<math><mi>β</mi></math> の間だけ逆向きに滑ります<a class="rf" href="#thy-r19">[19]</a>。計算結果の「1 周期の滑りの割合」は <math><mi>β</mi></math> です。</p>
-<p>弓圧が強すぎると、固着を保てずに音がつぶれます。弱すぎると、1 周期に何度も滑ります。弓の枠の上限と下限は、次の式で求めます。</p>
+<p>弓圧が強すぎると、固着を保てずに音がつぶれます。弱すぎると、1 周期に何度も滑ります。弓の枠の上限と下限は次の式で求めます。</p>
 <dl class="syms">
   <dt><math><msub><mi>F</mi><mi>max</mi></msub></math></dt><dd>弓圧の上限（Schelleng の式）</dd>
   <dt><math><msub><mi>F</mi><mi>min</mi></msub></math></dt><dd>弓圧の下限の目安</dd>
@@ -195,7 +195,7 @@
   <math display="block"><msub><mi>F</mi><mi>min</mi></msub><mo>=</mo><mfrac><msub><mi>c</mi><mtext>lower</mtext></msub><msup><mi>β</mi><mn>2</mn></msup></mfrac></math>
   <math display="block"><msub><mi>x</mi><mi mathvariant="normal">b</mi></msub><mo>=</mo><mi>β</mi><mi>L</mi></math>
 </div>
-<p>上限は Schelleng の式で<a class="rf" href="#thy-r19">[19]</a>、ヴァイオリンの弦の実測とよく合います<a class="rf" href="#thy-r9">[9]</a>。下限は、Schelleng の式では実測の 1/6〜1/11 にしかならず、実測は弓の速さにもよりません<a class="rf" href="#thy-r9">[9]</a>。そこで下限は、Schoonderwaldt らが測った <math><msub><mi>c</mi><mtext>lower</mtext></msub></math> を <math><msup><mi>β</mi><mn>2</mn></msup></math> で割った値を目安にします。</p>
+<p>上限は Schelleng の式で<a class="rf" href="#thy-r19">[19]</a>、ヴァイオリンの弦の実測とよく合います<a class="rf" href="#thy-r9">[9]</a>。下限は Schelleng の式では実測の 1/6〜1/11 にしかならず、実測は弓の速さにもよりません<a class="rf" href="#thy-r9">[9]</a>。そこで下限は、Schoonderwaldt らが測った <math><msub><mi>c</mi><mtext>lower</mtext></msub></math> を <math><msup><mi>β</mi><mn>2</mn></msup></math> で割った値を目安にします。</p>
 <div class="tt-w"><table class="tt">
   <thead><tr><th scope="col">条件</th><th scope="col" class="num"><math><msub><mi>c</mi><mtext>lower</mtext></msub></math></th><th scope="col">使う弦</th></tr></thead>
   <tbody>
@@ -207,7 +207,7 @@
 <p>押さえた E 線の測定はないので、E 線の値に、D 線の押さえた音と開放弦の比（約 2.3）を掛けた 0.38 mN を使います。</p>
 <h4>駒の力と弦の振れ</h4>
 <p>理想の Helmholtz の運動では、駒にかかる力はのこぎり波で、跳びの大きさは <math><mn>2</mn><msub><mi>Z</mi><mn>0</mn></msub><msub><mi>v</mi><mi mathvariant="normal">b</mi></msub><mo>/</mo><mi>β</mi></math> です<a class="rf" href="#thy-r19">[19]</a>。計算結果の「駒の力の振幅」はその半分です。</p>
-<p>弓の位置の弦の全振幅は、弓が固着している間に進む距離です<a class="rf" href="#thy-r9">[9]</a>。振れの包絡を両端を結ぶ放物線とすると、弦の中ほどの全振幅が求まります。</p>
+<p>弓の位置の弦の全振幅は弓が固着している間に進む距離です<a class="rf" href="#thy-r9">[9]</a>。振れの包絡を両端を結ぶ放物線とすると、弦の中ほどの全振幅が求まります。</p>
 <div class="eqs">
   <math display="block"><msub><mover><mi>F</mi><mo>^</mo></mover><mtext>駒</mtext></msub><mo>=</mo><mfrac><mrow><msub><mi>Z</mi><mn>0</mn></msub><msub><mi>v</mi><mi mathvariant="normal">b</mi></msub></mrow><mi>β</mi></mfrac></math>
   <math display="block"><msub><mi>A</mi><mi mathvariant="normal">b</mi></msub><mo>=</mo><mfrac><mrow><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><mi>β</mi><mo stretchy="false">)</mo><msub><mi>v</mi><mi mathvariant="normal">b</mi></msub></mrow><msub><mi>f</mi><mn>1</mn></msub></mfrac></math>
@@ -236,7 +236,7 @@
 </div>
 <p>足を固定したときの共振は、揺れが約 3 kHz、上下が約 6 kHz です（Reinicke の測定）<a class="rf" href="#thy-r21">[21]</a>。慣性モーメントは Woodhouse が測定に当てはめた <math><mn>4.3</mn><mo>×</mo><msup><mn>10</mn><mrow><mo>−</mo><mn>7</mn></mrow></msup></math> kg·m² です<a class="rf" href="#thy-r20">[20]</a>。上下の質量 1.5 g は、Woodhouse の図の 7 kHz より上の垂直のアドミタンスから求めました<a class="rf" href="#thy-r20">[20]</a>。</p>
 <p>胴が動くと、揺れの共振は 2〜3 kHz の幅の広い山（bridge hill）になります<a class="rf" href="#thy-r20">[20]</a>。上下の動きも同じ形の式で表せます。</p>
-<p>このツールは上の式をそのまま使いません。胴のモードに駒の揺れと上下の動きを 1 つずつ足し、ばねでつないだ系の固有モードを先に求めます。音を作る側は、これを独立な共振器の和として回します。</p>
+<p>このツールは上の式をそのまま使いません。胴のモードに駒の揺れと上下の動きを 1 つずつ足し、ばねでつないだ系の固有モードを先に求めます。音を作る計算では、これを独立な共振器の和として扱います。</p>
 <h4>弦の向き</h4>
 <p>駒の上端は曲線（半径 42 mm）なので、4 本の弦を擦る向きは少しずつ傾いています。弓の向きの力を、水平（E 線を擦る向き）と垂直の成分に分けて駒に入れます。</p>
 <ul class="tl">
@@ -281,9 +281,9 @@
   <math display="block"><mfrac><msub><mi>p</mi><mtext>山</mtext></msub><msub><mi>F</mi><mtext>駒</mtext></msub></mfrac><mo>=</mo><mfrac><msub><mi>L</mi><mi mathvariant="normal">b</mi></msub><mi>d</mi></mfrac><mfrac><mrow><msub><mi>ρ</mi><mi mathvariant="normal">a</mi></msub><mi>V</mi><mi>Δ</mi><mi>u</mi></mrow><mrow><mn>8</mn><mi>π</mi><mi>r</mi><mi>ζ</mi></mrow></mfrac></math>
   <math display="block"><munder><mo>∑</mo><mi>j</mi></munder><mfrac><mrow><msub><mi>V</mi><mi>j</mi></msub><mi>Δ</mi><msub><mi>u</mi><mi>j</mi></msub></mrow><msubsup><mi>ω</mi><mi>j</mi><mn>2</mn></msubsup></mfrac><mo>=</mo><mn>0</mn></math>
 </div>
-<p><math><mi>r</mi></math> = 1.2 m は音圧を求める距離です。A0 の体積の変化は、周波数 0 で胴の体積の変化の和が 0 になる条件（3 つ目の式）から決めます。f 孔の空気の出入りが、胴の体積の変化を打ち消すためです。Weinreich の和の規則です<a class="rf" href="#thy-r27">[27]</a>。</p>
+<p><math><mi>r</mi></math> = 1.2 m は音圧を求める距離です。A0 の体積の変化は、周波数 0 で胴の体積の変化の和が 0 になる条件（3 つ目の式）から決めます。f 孔の空気の出入りが胴の体積の変化を打ち消すためです。Weinreich の和の規則です<a class="rf" href="#thy-r27">[27]</a>。</p>
 <h4>多数のモード</h4>
-<p>760 Hz から 10 kHz には、乱数で多数のモードを置きます。ギターの「統計的なギター」と同じ方法です<a class="rf" href="#thy-r6">[6]</a>。モードの平均の間隔 <math><mi>Δ</mi><mi>f</mi></math> は 55 Hz で、Weinreich の見積り 44 Hz<a class="rf" href="#thy-r28">[28]</a>と Bissinger が数えた値<a class="rf" href="#thy-r25">[25]</a>の間にとりました。間隔は 0.6〜1.4 倍の範囲でばらつかせます。</p>
+<p>760 Hz から 10 kHz には、乱数で多数のモードを置きます。「統計的なギター」と同じ方法です<a class="rf" href="#thy-r6">[6]</a>。モードの平均の間隔 <math><mi>Δ</mi><mi>f</mi></math> は 55 Hz で、Weinreich の見積り 44 Hz<a class="rf" href="#thy-r28">[28]</a>と Bissinger が数えた値<a class="rf" href="#thy-r25">[25]</a>の間にとりました。間隔は 0.6〜1.4 倍の範囲でばらつかせます。</p>
 <p>足の位置のモードの形は、平均のアドミタンスに合う正規分布の乱数です。1 つのモードの <math><mi>Re</mi><mo>⁡</mo><mi>Y</mi></math> を周波数で積分すると <math><msup><mi>u</mi><mn>2</mn></msup><mo>/</mo><mn>4</mn></math> なので、間隔 <math><mi>Δ</mi><mi>f</mi></math> で並ぶモードの平均の実部は <math><mo>⟨</mo><msup><mi>u</mi><mn>2</mn></msup><mo>⟩</mo><mo>/</mo><mo stretchy="false">(</mo><mn>4</mn><mi>Δ</mi><mi>f</mi><mo stretchy="false">)</mo></math> になります。2 本の足の平均のアドミタンス [s/kg] は、Woodhouse の図から読んだ傾きです<a class="rf" href="#thy-r20">[20]</a>（<math><mi>f</mi></math> は Hz）。</p>
 <div class="eqs">
   <math display="block"><mo>⟨</mo><msubsup><mi>u</mi><mi>j</mi><mn>2</mn></msubsup><mo>⟩</mo><mo>=</mo><mn>4</mn><mi>Δ</mi><mi>f</mi><mo>⟨</mo><mi>Re</mi><mo>⁡</mo><mi>Y</mi><mo>⟩</mo></math>
@@ -298,7 +298,7 @@
   <math display="block"><msub><mi>ζ</mi><mtext>支えなし</mtext></msub><mo>=</mo><mn>0.015</mn><mi>min</mi><mo>⁡</mo><mrow><mo>(</mo><mn>1</mn><mo>,</mo><msup><mrow><mo>(</mo><mfrac><mi>f</mi><mn>1500</mn></mfrac><mo>)</mo></mrow><mrow><mo>−</mo><mn>0.34</mn></mrow></msup><mo>)</mo></mrow></math>
   <math display="block"><msub><mi>ζ</mi><mtext>構え</mtext></msub><mo>=</mo><mi>max</mi><mo>⁡</mo><mrow><mo>(</mo><msub><mi>ζ</mi><mtext>支えなし</mtext></msub><mo>,</mo><mn>0.03</mn><msup><mrow><mo>(</mo><mfrac><mi>f</mi><mn>500</mn></mfrac><mo>)</mo></mrow><mrow><mo>−</mo><mn>0.88</mn></mrow></msup><mo>)</mo></mrow></math>
 </div>
-<p>胴の枠の計算結果のシグネチャモードの周波数は、駒とつなぐ前の値です。</p>
+<p>胴の枠に出るシグネチャモードの周波数は、駒とつなぐ前の値です。</p>
 
 <h3>放射</h3>
 <p>音圧は、Bissinger が放射を測った球面の半径と同じ 1.2 m 先で求めます<a class="rf" href="#thy-r24">[24]</a>。</p>
@@ -318,7 +318,7 @@
   <math display="block"><mo>⟨</mo><msubsup><mi>g</mi><mi>j</mi><mn>2</mn></msubsup><mo>⟩</mo><mo>=</mo><msup><mrow><mo>(</mo><mfrac><mrow><msub><mi>ρ</mi><mi mathvariant="normal">a</mi></msub><msub><mi>c</mi><mi mathvariant="normal">a</mi></msub></mrow><mi>r</mi></mfrac><mo>)</mo></mrow><mn>2</mn></msup><mfrac><mrow><mi>σ</mi><mi>S</mi></mrow><mrow><mn>4</mn><mi>π</mi><mi>M</mi></mrow></mfrac></math>
   <math display="block"><mi>σ</mi><mo>=</mo><mi>min</mi><mo>⁡</mo><mrow><mo>(</mo><mn>1</mn><mo>,</mo><msup><mrow><mo>(</mo><mfrac><mi>f</mi><msub><mi>f</mi><mi mathvariant="normal">c</mi></msub></mfrac><mo>)</mo></mrow><mn>0.9</mn></msup><mo>)</mo></mrow></math>
 </div>
-<p>2 つ目の式は、Bissinger の放射効率の定義（球面で平均した音圧の 2 乗と、表面で平均した速度の 2 乗の比）を、モード 1 つに当てはめたものです<a class="rf" href="#thy-r25">[25]</a>。臨界周波数より下の傾きは、Bissinger の帯域の平均の比（音圧 ÷ 力と速度 ÷ 力の比）が 625 Hz から 3.9 kHz で約 2 倍になることに合わせました<a class="rf" href="#thy-r24">[24]</a>。平板の式の <math><msup><mi>f</mi><mn>2</mn></msup></math> よりゆるやかです。</p>
+<p>2 つ目の式は、Bissinger の放射効率の定義（球面で平均した音圧の 2 乗と表面で平均した速度の 2 乗の比）をモード 1 つに当てはめたものです<a class="rf" href="#thy-r25">[25]</a>。臨界周波数より下の傾きは、Bissinger の帯域の平均の比（音圧 ÷ 力と速度 ÷ 力の比）が 625 Hz から 3.9 kHz で約 2 倍になることに合わせました<a class="rf" href="#thy-r24">[24]</a>。平板の式の <math><msup><mi>f</mi><mn>2</mn></msup></math> よりゆるやかです。</p>
 <p>胴の枠の図は、駒の上端の水平のアドミタンスと、1.2 m 先の音圧 ÷ 力（左右の 2 点の 2 乗平均）です。</p>
 
 <h3>弓の動かし方</h3>
@@ -355,7 +355,7 @@
 </ul>
 <p>弓の速さ・弓圧・<math><mi>β</mi></math> には、ゆっくりした揺らぎ（人の手の揺れ）を足します。時定数 0.05・0.3・1.5 s の 3 つの Ornstein–Uhlenbeck 過程の和で、相対の標準偏差は弓の速さ 4 %、弓圧 6 %、<math><mi>β</mi></math> 5 % です。入力の「揺らぎ」で 0〜2 倍にします。</p>
 <h4>弓の使い方</h4>
-<p>弓の毛は 0.65 m しかありません。奏者は、弓の端で音が途切れないように、弓をどこからどれだけ使うかを前もって考えます（弓の配分）。このツールも、曲を始めるときに全部のひと弾きの弓の使い方を決めます。図の弓の位置はこの計画に従って動き、弓が弦から離れている間は浮かせて薄く描きます。</p>
+<p>弓の毛は 0.65 m しかありません。奏者は弓の端で音が途切れないように、弓をどこからどれだけ使うかを前もって考えます（弓の配分）。このツールも曲を始めるときに全部のひと弾きの弓の使い方を決めます。図の弓の位置はこの計画に従って動き、弓が弦から離れている間は浮かせて薄く描きます。</p>
 <ol class="flow" aria-label="弓の使い方の決め方">
   <li><b>弓を離すところ</b><span>休み・和音の前・楽句の終わり</span></li>
   <li><b>長すぎるひと弾きを分ける</b><span>途中で弓を返す</span></li>
@@ -387,7 +387,7 @@
 <div class="eqs">
   <math display="block"><mfrac><mrow><mo>⟨</mo><msup><mrow><mo>(</mo><msub><mi>F</mi><mi>B</mi></msub><mo>(</mo><mi>t</mi><mo>)</mo><mo>−</mo><msub><mi>F</mi><mi>B</mi></msub><mo>(</mo><mi>t</mi><mo>−</mo><mi>T</mi><mo>)</mo><mo>)</mo></mrow><mn>2</mn></msup><mo>⟩</mo><mo>/</mo><mn>2</mn></mrow><mrow><mo>⟨</mo><msubsup><mi>F</mi><mi>B</mi><mn>2</mn></msubsup><mo>⟩</mo></mrow></mfrac><mo>&gt;</mo><mn>0.12</mn></math>
 </div>
-<p><math><mi>T</mi></math> は弦の周期です。音の始まりと弓を返したときから 60 ms より後に（返すと駒の力の向きが逆になり、1 周期前との差が大きく出るため）、この比が 0.12（−9 dB）を超えている間は、弓圧の倍率を時定数 50 ms で 0.75 倍まで下げ、収まったら 0.3 s で戻します。乱れている間は、二重の滑りとは数えません。</p>
+<p><math><mi>T</mi></math> は弦の周期です。音の始まりと弓を返したときから 60 ms より後は、この比が 0.12（−9 dB）を超えている間、弓圧の倍率を時定数 50 ms で 0.75 倍まで下げます。収まったら 0.3 s で戻します。60 ms 待つのは、弓を返すと駒の力の向きが逆になり 1 周期前との差が大きく出るためです。乱れている間は、二重の滑りとは数えません。</p>
 <h4>左手</h4>
 <p>押さえる音が変わると、弦の振動する長さに合わせてモードの周波数・減衰・形を作り直します。各モードの振幅はそのまま引き継ぎます。弦の長さと <math><mi>β</mi></math> は 32 標本ごとに入れ替えます。</p>
 <p>音の高さは、スラーで同じ弦の音へ移るときは 30 ms、弓を返すときは 10 ms かけて移します。</p>
@@ -406,7 +406,7 @@
 </ul>
 
 <h3>楽譜から音符へ</h3>
-<p>曲は、声部ごとの楽譜の音を、弦ごとの音符の列と強弱の曲線に直してから弾きます。</p>
+<p>曲は声部ごとの楽譜の音を、弦ごとの音符の列と強弱の曲線に直してから弾きます。</p>
 <h4>時刻</h4>
 <p>全声部の音の出だしを「出来事」とします。出来事ごとの長さに次の倍率を掛けて秒にします。KTH の演奏規則の Phrase arch・Punctuation・Final ritardando にあたります<a class="rf" href="#thy-r33">[33]</a>。楽句は、曲ごとに決めた小節数で区切ります。</p>
 <ul class="tl">
@@ -445,7 +445,7 @@
 </ul>
 <p>和音を 2 つの重音に分けて続けて弾く形は標準的な弾き方で、Demoucron・Rasamimanana の実装では下の重音から上の重音へ約 100 ms で移ります<a class="rf" href="#thy-r34">[34]</a>。</p>
 <h4>シャコンヌの分散和音</h4>
-<p>シャコンヌの 89〜120 小節と 201〜207 小節（楽譜に arpeggio とある区間）では、8 分音符ごとに、鳴っている和音を 32 分音符 4 つに分けて弾きます。順は中・低・高・低で、楽譜に書き出された最初の形と同じです。2 音ずつスラーにします。4 音の和音では、中の音を 8 分音符ごとに入れ替えます。</p>
+<p>シャコンヌの 89〜120 小節と 201〜207 小節（楽譜に arpeggio とある区間）では、8 分音符ごとに鳴っている和音を 32 分音符 4 つに分けて弾きます。順は中・低・高・低で、楽譜に書き出された最初の形と同じです。2 音ずつスラーにします。4 音の和音では、中の音を 8 分音符ごとに入れ替えます。</p>
 <h4>トリル</h4>
 <ul class="tl">
   <li>掛ける音: いちばん高い音で、0.15 s より長い音だけ</li>
@@ -525,7 +525,7 @@
 </ol>
 
 <h3>このツールで決めたこと</h3>
-<p>次の値と方法は、文献に基づかず、このツールで選んだものです。</p>
+<p>次の値と方法は文献に基づかず、このツールで選んだものです。</p>
 <ul class="tl">
   <li>E 線の外径（0.25 mm）</li>
   <li>低い周波数で増える弦の損失（剛な台の上での基本モードの Q を約 900 に）</li>

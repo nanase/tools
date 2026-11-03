@@ -111,7 +111,7 @@ const kv = (v: number) => (v === 0 ? '' : Number.isInteger(v) ? String(v) : `${v
 <ol class="flow"><li>横だけで G → R・B／縦だけで G → R・B</li><li>CIELAB へ</li><li>均質さを数える</li><li>3 × 3 で足して多い方</li></ol>
 <ul class="tl">
   <li>均質さ: 上下左右の 4 画素のうち、明るさの差と色の差が両方とも許す差以下の数<Fragment set:html={rf(8)} /></li>
-  <li>許す差: 横の画像の左右の差・縦の画像の上下の差の大きい方の、小さい方（画素ごとに変わる）<Fragment set:html={rf(8)} /></li>
+  <li>許す差: 横の画像の左右の差の大きい方と、縦の画像の上下の差の大きい方のうち、小さい方（画素ごとに変わる）<Fragment set:html={rf(8)} /></li>
 </ul>
 
 <h3>色差メディアン</h3>

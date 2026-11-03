@@ -27,17 +27,17 @@ const name = 'オルガン音響モデル';
 /* 鍵盤は実際のコンソールと同じく、上から第 2 手鍵盤・第 1 手鍵盤・ペダルの順に並べる */
 const CONSOLE = (['II', 'I', 'P'] as const).map(divOf);
 const COUPLERS = [
-  ['II/I', '第 2 手鍵盤のストップを、第 1 手鍵盤の鍵でも鳴らす'],
-  ['I/P', '第 1 手鍵盤のストップを、ペダルの鍵でも鳴らす'],
-  ['II/P', '第 2 手鍵盤のストップを、ペダルの鍵でも鳴らす'],
+  ['II/I', '第 1 手鍵盤の鍵で第 2 手鍵盤のストップ'],
+  ['I/P', 'ペダルの鍵で第 1 手鍵盤のストップ'],
+  ['II/P', 'ペダルの鍵で第 2 手鍵盤のストップ'],
 ] as const;
 ---
-<SiteLayout title={name} tool={{ id: 'organ', name }} note="音と計算結果は、論文の模型を簡略化した物理モデルによるものです。">
+<SiteLayout title={name} tool={{ id: 'organ', name }} note="音と計算結果は論文の模型を簡略化した物理モデルによるものです。">
   <PageTitle title={name}>フルー管（唇管）は、口から吹き出す空気の薄い流れ（ジェット）が管の中の音で揺れ、唇の内と外へ振り分けられて音を保つ自励振動として、リード管（舌管）は、真鍮の舌がシャロットに当たって風を断続させる自励振動として計算します。管の長さと太さ、口の寸法、風圧から、管ごとの音が決まります。ストップを選んで鍵を押すと、その管が鳴ります。教会の残響を付けて、曲の演奏もできます。</PageTitle>
 
   <div class="tgrid">
     <Panel hid="hd-pp" title="管と鍵盤" class="a-pp" fixed>
-      <div slot="aux" class="seg" id="p-nv" role="group" aria-label="振動の見せ方"><button type="button" data-v="blur" aria-pressed="true" title="実際の速さで、管の中の音圧の振れる範囲を描く">残像</button><button type="button" data-v="slow" aria-pressed="false" title="振動をゆっくりにして、管の中の音圧の分布を描く">スロー</button></div>
+      <div slot="aux" class="seg" id="p-nv" role="group" aria-label="振動の見せ方"><button type="button" data-v="blur" aria-pressed="true" title="実際の速さの管の中の音圧の振れる範囲">残像</button><button type="button" data-v="slow" aria-pressed="false" title="ゆっくりにした管の中の音圧の分布">スロー</button></div>
       <div class="sbar">
         <span class="stag"><i class="sw" aria-hidden="true"></i>管の中の音圧 <b id="pp-ex"></b></span>
         <span class="stag" id="pp-tm"></span>
@@ -52,7 +52,7 @@ const COUPLERS = [
       <div class="cons" id="stops">
         <div class="cons-h">
           <h3 class="cons-t">ストップ</h3>
-          <span class="aux s-key"><span class="led on" aria-hidden="true"></span>鳴っている</span>
+          <span class="aux s-key"><span class="led on" aria-hidden="true"></span>発音中</span>
           <span class="aux s-key"><span class="s-v" aria-hidden="true"><svg class="ic-v" viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="2.5" width="13" height="11" rx="2"/><path d="M3.5 8c1.2-3.6 2.8-3.6 4 0s2.8 3.6 4 0"/></svg></span>図に表示</span>
         </div>
         <div class="cdivs" id="p-view" role="group" aria-label="ストップ。名前のボタンで入・切、右の小さなボタンで図に表示するストップを選ぶ">
@@ -68,7 +68,7 @@ const COUPLERS = [
                 {STOPS.filter((s) => s.div === d.v).map((s) => (
                   <span class="st">
                     <button type="button" class="chip stop" data-stop={s.id} aria-pressed="false" title={`${s.note}。管が鳴っている間は印が点く`}><span class="led" aria-hidden="true"></span>{s.name}</button>
-                    <button type="button" class="drw" data-v={s.id} aria-pressed={s.id === 'p8' ? 'true' : 'false'} aria-label={`${s.name}（${d.name}）を図に表示`} title="図に表示（管と管の中の音圧を、鍵盤の図の上に表示する）"><svg class="ic-v" viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="2.5" width="13" height="11" rx="2"/><path d="M3.5 8c1.2-3.6 2.8-3.6 4 0s2.8 3.6 4 0"/></svg></button>
+                    <button type="button" class="drw" data-v={s.id} aria-pressed={s.id === 'p8' ? 'true' : 'false'} aria-label={`${s.name}（${d.name}）を図に表示`} title="管と管の中の音圧を鍵盤の図の上に表示"><svg class="ic-v" viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="2.5" width="13" height="11" rx="2"/><path d="M3.5 8c1.2-3.6 2.8-3.6 4 0s2.8 3.6 4 0"/></svg></button>
                   </span>
                 ))}
               </div>
@@ -104,7 +104,7 @@ const COUPLERS = [
         </div>
         <Transport>
           <TransportButton id="relBtn" icon="up" label="リリース" title="押しているすべての鍵から手を離す（演奏は続ける）" />
-          <TransportButton id="muteBtn" icon="mute" label="消音" title="すべての弁を閉じる（演奏と位置はそのまま）" />
+          <TransportButton id="muteBtn" icon="mute" label="消音" title="すべての弁の閉鎖（演奏と位置はそのまま）" />
         </Transport>
         <div class="ptab">
           <ParamRow d={TEMPO} />
@@ -122,8 +122,8 @@ const COUPLERS = [
         <div class="ptab">
           <ParamRow d={WIND} />
           <ChoiceRow k="trem" name="トレモラント" sub="風箱の圧力を周期的に揺らして、音に揺れを付ける装置" choices={[['off', 'なし'], ['on', 'あり']]} value="off" />
-          <ChoiceRow k="sag" name="風の揺れ" sub="多くの管が鳴ると、送風が追いつかずに風箱の圧力が少し下がる。安定なら下がらない" choices={[['0', '安定'], ['1', '柔らかい']]} value="1" />
-          <ChoiceRow k="temp" name="調律法" sub="平均律と、バロック時代の不等分の調律。管の長さを変えて合わせる" choices={TEMPERAMENTS.map((t) => [t.v, t.name] as const)} value="equal" layout="chips" />
+          <ChoiceRow k="sag" name="風の揺れ" sub="多くの管が鳴るときの風箱の圧力の低下（安定なら低下なし）" choices={[['0', '安定'], ['1', '柔らかい']]} value="1" />
+          <ChoiceRow k="temp" name="調律法" sub="平均律とバロック時代の不等分の調律" choices={TEMPERAMENTS.map((t) => [t.v, t.name] as const)} value="equal" layout="chips" />
           <ChoiceRow k="a4" name="基準の高さ" sub="A4 の周波数" choices={A4S.map((v) => [v, `${v} Hz`] as const)} value={440} />
         </div>
       </Panel>
@@ -146,7 +146,7 @@ const COUPLERS = [
 
       <Panel hid="hd-room" title="残響" class="a-room">
         <div class="ptab">
-          <ChoiceRow k="room" name="部屋" sub="響きを付ける部屋。寸法と吸音率から残響時間を求める（再生の音だけに付け、音の波形と計算結果には含めない）" choices={ROOMS.map((r) => [r.v, r.name, r.v === 'off' ? '残響なし' : `${r.dim.join(' × ')} m、平均吸音率 ${r.a}`] as const)} value="church" layout="chips" />
+          <ChoiceRow k="room" name="部屋" sub="響きを付ける部屋。再生の音だけで、音の波形と計算結果は対象外" choices={ROOMS.map((r) => [r.v, r.name, r.v === 'off' ? '残響なし' : `${r.dim.join(' × ')} m、平均吸音率 ${r.a}`] as const)} value="church" layout="chips" />
           <ParamRow d={DIST} />
         </div>
         <dl class="metrics rmet">

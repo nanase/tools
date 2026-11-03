@@ -47,7 +47,7 @@ export const ELEV: ParamDef = {
   nm: 'h',
   sym: '<i>h</i>',
   name: '標高',
-  sub: '楕円体からの高さとして扱う。接触の時刻は 1000 m で 1 秒ほど変わる',
+  sub: '楕円体からの高さ · 1000 m で接触の時刻に約 1 秒の差',
   unit: 'm',
   min: -400,
   max: 9000,

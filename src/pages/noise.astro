@@ -27,7 +27,7 @@ const name = 'ノイズジェネレータ';
     <div class="col c1">
       <Panel hid="hd-gen" title="ノイズ" class="a-gen">
         <div class="ptab">
-          <ChoiceRow k="kind" name="種類" sub="色の名前は、パワースペクトル密度の傾き（周波数が 2 倍になるごとの dB）で決まる" choices={KINDS.map(([v, l, t]) => [v, l, t] as const)} value="pink" layout="chips" />
+          <ChoiceRow k="kind" name="種類" sub="色の名前はパワースペクトル密度の傾き（周波数が 2 倍になるごとの dB）で決まる" choices={KINDS.map(([v, l, t]) => [v, l, t] as const)} value="pink" layout="chips" />
           <ParamRow d={P.den} />
         </div>
         <!-- ピンクのときだけ -->
@@ -47,9 +47,9 @@ const name = 'ノイズジェネレータ';
       <Panel hid="hd-lfsr" title="LFSR" class="a-lfsr">
         <div slot="aux" class="seg" id="p-form" role="group" aria-label="帰還の形"><button type="button" data-v="fib" aria-pressed="true" title="フィボナッチ形: タップのビットを外で排他的論理和し、左端（ビット n−1）に入れる">フィボナッチ</button><button type="button" data-v="gal" aria-pressed="false" title="ガロア形: 右端（ビット 0）の出力を、途中のタップのビットへ排他的論理和で足す">ガロア</button></div>
         <div class="ptab">
-          <ChoiceRow k="pre" name="実在の音源" sub="ゲーム機などの音源 IC のノイズのシフトレジスタ。ビット長・タップ・帰還・初期値・クロックをまとめて変える" choices={PRESETS.map((p) => [p.v, p.l, p.t] as const)} value="" layout="chips" />
+          <ChoiceRow k="pre" name="実在の音源" sub="ゲーム機などの音源 IC のノイズのシフトレジスタ" choices={PRESETS.map((p) => [p.v, p.l, p.t] as const)} value="" layout="chips" />
           <ParamRow d={P.n} />
-          <ChoiceRow k="tapm" name="タップ" sub="最大周期の表: ビット長ごとの原始多項式（Xilinx XAPP052）。任意: 図のビットを押してタップを入れ切りする" choices={[['table', '最大周期の表'], ['custom', '任意']]} value="table" />
+          <ChoiceRow k="tapm" name="タップ" sub="最大周期の表: ビット長ごとの原始多項式（Xilinx XAPP052）。任意: 図のビットを押してタップを切り替える" choices={[['table', '最大周期の表'], ['custom', '任意']]} value="table" />
           <ParamRow d={P.clk} />
         </div>
         <More id="g-lf"><div class="ptab">
@@ -64,7 +64,7 @@ const name = 'ノイズジェネレータ';
         </div>
         <svg class="reg" id="lf-svg" viewBox={`0 0 ${DW} ${DH}`} role="group" aria-label="シフトレジスタの図"></svg>
         <More id="g-reg" title="表示の設定"><div class="ptab">
-          <ChoiceRow k="spd" name="図の速さ" sub="図のレジスタを 1 秒に何ステップ進めるか（音のクロックとは別に、ゆっくり動かす）" choices={SPEEDS.map((v) => [v, v ? `${v} /s` : '止める'] as const)} value={4} />
+          <ChoiceRow k="spd" name="図の速さ" sub="図のレジスタの 1 秒あたりのステップ数（音のクロックとは別）" choices={SPEEDS.map((v) => [v, v ? `${v} /s` : '停止'] as const)} value={4} />
         </div></More>
       </Panel>
 
@@ -87,7 +87,7 @@ const name = 'ノイズジェネレータ';
       <Panel hid="hd-wave" title="波形" class="a-wave">
         <div slot="aux" class="pbar">
           <div class="seg" id="p-wv" role="group" aria-label="表示"><button type="button" data-v="yt" aria-pressed="true" title="時間に対する波形">波形</button><button type="button" data-v="hist" aria-pressed="false" title="振幅の分布（ヒストグラム）">分布</button></div>
-          <div class="seg"><button type="button" id="runBtn" aria-pressed="true" title="表示を止める・再び動かす（音は止めない）"><span class="led on" id="runLed" aria-hidden="true"></span><span id="runT">RUN</span></button></div>
+          <div class="seg"><button type="button" id="runBtn" aria-pressed="true" title="表示の停止・再開（音は止めない）"><span class="led on" id="runLed" aria-hidden="true"></span><span id="runT">RUN</span></button></div>
         </div>
 
         <div id="v-yt">
@@ -127,7 +127,7 @@ const name = 'ノイズジェネレータ';
         <More id="g-wv" title="表示の設定"><div class="ana2">
           <div class="ptab">
             <ParamRow d={P.hd} />
-            <ChoiceRow k="hy" name="縦軸" sub="対数にすると、分布の裾（まれな大きな値）の違いが見える" choices={[['lin', 'リニア'], ['log', '対数']]} value="lin" />
+            <ChoiceRow k="hy" name="縦軸" sub="対数: 分布の裾（まれな大きな値）の違いが見える" choices={[['lin', 'リニア'], ['log', '対数']]} value="lin" />
           </div>
           <div class="ptab">
             <ChoiceRow k="rng" name="表示範囲" sub="中心から端までの振幅（フルスケールを 1 とする）" choices={RANGES.map((v) => [v, `±${v}`] as const)} value={0.5} />

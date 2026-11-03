@@ -56,7 +56,7 @@ export const PARAMS: (ParamDef & { k: Key })[] = [
     nm: 'TRIG',
     sym: '',
     name: 'トリガのレベル',
-    sub: '表示窓の右端の ◀ をドラッグしても変えられます',
+    sub: '表示窓の右端の ◀ のドラッグでも変更',
     unit: 'FS',
     min: -1,
     max: 1,

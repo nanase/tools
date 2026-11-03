@@ -59,17 +59,17 @@ const pc = (v: number) => `${Math.round(v * 100)} %`;
 </ul>
 
 <h3>音の大きさ</h3>
-<p>放電路のエネルギーのうち音になるのは 0.42〜0.47 %<Fragment set:html={rf(2)} />（測定からは 0.18 %<Fragment set:html={rf(7)} />）。このページでは {(ETA0 * 100).toFixed(2)} % とし、まっすぐな長い放電路の音のエネルギーが単位長さあたり <math><mi>η</mi><mi>E</mi></math> になるように、要素の N 波の高さを決めます。</p>
+<p>放電路のエネルギーのうち音になるのは 0.42〜0.47 %<Fragment set:html={rf(2)} />（測定からは 0.18 %<Fragment set:html={rf(7)} />）です。このページでは {(ETA0 * 100).toFixed(2)} % とし、まっすぐな長い放電路の音のエネルギーが単位長さあたり <math><mi>η</mi><mi>E</mi></math> になるように、要素の N 波の高さを決めます。</p>
 <div class="eqs">
   <math display="block" set:html={`<mi>p</mi><mo>=</mo>${fr('<mi>a</mi><mspace width="0.1em"/><mi>d</mi><mi>l</mi>', '<mi>r</mi><mi>T</mi>')}<mo>,</mo><mspace width="1em"/><mi>a</mi><mo>=</mo><msqrt>${fr('<mi>η</mi><mi>E</mi><msub><mi>ρ</mi><mn>0</mn></msub>', '<mn>4</mn><mi>π</mi><mi>G</mi>')}</msqrt><mo>,</mo><mspace width="1em"/><mi>G</mi><mo>=</mo><mn>1/4</mn>`} />
 </div>
 <ul class="tl">
   <li><math><mi>G</mi></math> は、まっすぐな線の要素の N 波を足した円筒波の形の 2 乗の積分（このツールで導いた）</li>
-  <li><math><mi>E</mi></math> を Few の 10⁶ J/m にすると、数 km 先で 120 dB を超える。測った大きさとは照らしていない</li>
+  <li><math><mi>E</mi></math> を Few の 10⁶ J/m にすると、数 km 先で 120 dB を超える。測った大きさとは照合していない</li>
 </ul>
 
 <h3>曲がりくねった放電路</h3>
-<p>放電路は数 m ごとに向きを変える折れ線です。写真から求めた向きの変化の平均は約 16°<Fragment set:html={rf(4)} />、区間の平均は約 8 m<Fragment set:html={rf(9)} />。このページでは区間の長さを {CH0.lmin}〜{CH0.lmax} m の一様、向きの変化を平均 {CH0.turn}° の半正規分布の乱数で作ります。</p>
+<p>放電路は数 m ごとに向きを変える折れ線です。写真から求めた向きの変化の平均は約 16°<Fragment set:html={rf(4)} />、区間の平均は約 8 m<Fragment set:html={rf(9)} />です。このページでは区間の長さを {CH0.lmin}〜{CH0.lmax} m の一様分布、向きの変化を平均 {CH0.turn}° の半正規分布の乱数で作ります。</p>
 <ul class="tl">
   <li>まっすぐな区間の N 波は、区間に垂直な向きへ強く出る。区間の各点からの音が同時に届くので重なって鋭くなる<Fragment set:html={rf(6)} /></li>
   <li>区間の向きに近い向きでは、端から端までの距離の差だけ届く時刻がずれ、N 波の山と谷が打ち消し合って弱く低くなる</li>
@@ -102,7 +102,7 @@ const pc = (v: number) => `${Math.round(v * 100)} %`;
 </ul>
 
 <h3>多重雷</h3>
-<p>落雷の多くは、同じ放電路に数十 ms おきに何回も電流が流れます。光が瞬いて見え、雷鳴もそのたびに出て重なります<Fragment set:html={rf(11, 12)} />。</p>
+<p>落雷の多くでは同じ放電路に数十 ms おきに何回も電流が流れます。光が瞬いて見え、雷鳴もそのたびに出て重なります<Fragment set:html={rf(11, 12)} />。</p>
 <ul class="tl">
   <li>回数は多くが 3〜5 回。間隔の幾何平均は 61 ms で、ここでは対数正規分布の乱数で決める<Fragment set:html={rf(11, 12)} /></li>
   <li>2 回目からは枝を通らない。雲の中では、前の回より遠い所の電荷をほぼ同じ高さで引く（最大 8 km）<Fragment set:html={rf(13)} />。ここでは前の回の雲の中の放電路から分かれ、外へ {CH0.grow / 1000} km 伸ばす（仮）。雲の中へ進まない雷は、同じ放電路を何回も通る</li>
@@ -119,14 +119,14 @@ const pc = (v: number) => `${Math.round(v * 100)} %`;
 <h3>地面と山の反射</h3>
 <ul class="tl">
   <li>地面での反射は、地面に映した放電路（鏡像）から届く音とみなす。耳の高さが低いので、直接の音とほぼ同時に届いて重なる。雷鳴の測定でも硬い地面として音圧を 2 倍に扱う<Fragment set:html={rf(2, 9)} /></li>
-  <li>山は鉛直の崖とし、面は聞き手の側を向く。崖に映した放電路から届く。聞き手の側にあり、崖を横切る点が崖の高さより下の部分だけが返る。直接の音より、往復の距離の分だけ遅れる（やまびこ。部屋の中の反射は <a href="../reverb/">残響</a>）</li>
-  <li>崖の向こうの放電路で、聞き手への線が崖より低い所を通る部分の音は、崖の上端を回り込む分だけ弱める。道の長さの差 δ からフレネル数 <math><mi>N</mi><mo>=</mo><mn>2</mn><mi>δ</mi><mo>/</mo><mi>λ</mi></math> を出し、<math><mn>10</mn><msub><mi>log</mi><mn>10</mn></msub><mo stretchy="false">(</mo><mn>3</mn><mo>+</mo><mn>20</mn><mi>N</mi><mo stretchy="false">)</mo></math> dB（上限 24 dB）<Fragment set:html={rf(14)} />。波長はその要素の N 波のスペクトルの山で代表させる（仮）</li>
+  <li>山は鉛直の崖とし、面は聞き手の側を向く。反射音は崖に映した放電路から届く。放電路のうち聞き手の側にあり、崖を横切る点が崖の高さより下の部分だけが返る。直接の音より、往復の距離の分だけ遅れる（やまびこ。部屋の中の反射は <a href="../reverb/">残響</a>）</li>
+  <li>崖の向こうの放電路で、聞き手への線が崖より低い所を通る部分の音は、崖の上端を回り込む分だけ弱まる。道の長さの差 δ からフレネル数 <math><mi>N</mi><mo>=</mo><mn>2</mn><mi>δ</mi><mo>/</mo><mi>λ</mi></math> を出し、<math><mn>10</mn><msub><mi>log</mi><mn>10</mn></msub><mo stretchy="false">(</mo><mn>3</mn><mo>+</mo><mn>20</mn><mi>N</mi><mo stretchy="false">)</mo></math> dB（上限 24 dB）<Fragment set:html={rf(14)} />。波長はその要素の N 波のスペクトルの山で代表させる（仮）</li>
   <li>周囲の反響: 聞き手の近くの家・木・建物で散った音を、部屋の残響と同じフィードバック遅延網で足す。残響時間（500 Hz）は木々 1.2 s・家と木 1.8 s・建物 2.6 s で仮の値。左右の耳で響きを変える</li>
   <li>地形の反響: 数 km 先の丘・山・林で散った音は、何秒もかけて戻る。戻るまでに地面と草木で高い音が吸われ、低い音だけが残る。{BANDS.map((b) => `${b.f}`).join('・')} Hz までの 3 つの帯で、残響時間を低い方から {BANDS.map((b) => b.k).join(' : ')}、響きのエネルギーを同じ比にした（どれも仮）。標本化周波数を 1/16 に落として、雑音で作った応答とたたみ込む</li>
 </ul>
 
 <h3>聞こえない遠い雷</h3>
-<p>気温は高いほど下がり、音速も下がるので、地面近くを進む音は上へ曲がります。高さ <math><mi>z</mi></math> から出た音が地面に届くのは、曲がりの半径 <math><mi>R</mi></math> で決まる距離までです。それより遠くは影の領域で、ほとんど聞こえません<Fragment set:html={rf(8, 3)} />。Fleagle の例（地上 30 °C・9.8 K/km・高さ 5 km）では 25 km です。</p>
+<p>気温は上空ほど下がり、音速も下がるので、地面近くを進む音は上へ曲がります。高さ <math><mi>z</mi></math> から出た音が地面に届くのは、曲がりの半径 <math><mi>R</mi></math> で決まる距離までです。それより遠くは影の領域で、ほとんど聞こえません<Fragment set:html={rf(8, 3)} />。Fleagle の例（地上 30 °C・9.8 K/km・高さ 5 km）では 25 km です。</p>
 <div class="eqs">
   <math display="block" set:html={`<mi>R</mi><mo>=</mo>${fr('<mi>c</mi>', '<mo>|</mo><mi>d</mi><mi>c</mi><mo>/</mo><mi>d</mi><mi>z</mi><mo>|</mo>')}<mo>=</mo>${fr('<mn>2</mn><mi>T</mi>', '<mi>Γ</mi>')}<mo>,</mo><mspace width="1em"/><msub><mi>x</mi><mi>max</mi></msub><mo>≈</mo><msqrt><mn>2</mn><mi>R</mi><mi>z</mi></msqrt>`} />
 </div>

@@ -16,7 +16,7 @@ export interface TestParams {
 
 export const WAVES: readonly (readonly [Wave, string])[] = [
   ['sine', '正弦波'],
-  ['square', '方形波'],
+  ['square', '矩形波'],
   ['tri', '三角波'],
   ['saw', 'のこぎり波'],
   ['sweep', 'スイープ'],

@@ -86,9 +86,11 @@ describe('555 の行（E 系列はグループに従う・一様な刻み）', (
 
   it('title と ‹ › の読み上げ', () => {
     expect(titleText(R1, 12, formatter(R1))).toBe(
-      '100 Ω – 1 MΩ　↑↓: E12 の隣の値　PgUp/PgDn: 10 倍・1/10　Enter: 確定　Esc: 戻す',
+      '100 Ω – 1 MΩ　↑↓: E12 の隣の値　PgUp/PgDn: 10 倍・1/10　Enter: 確定　Esc: 取り消し',
     );
-    expect(titleText(VCC, 12, formatter(VCC))).toBe('1 V – 18 V　↑↓: ±0.1 V（Shift で ±1 V）　Enter: 確定　Esc: 戻す');
+    expect(titleText(VCC, 12, formatter(VCC))).toBe(
+      '1 V – 18 V　↑↓: ±0.1 V（Shift で ±1 V）　Enter: 確定　Esc: 取り消し',
+    );
     expect(stepLabel(R1, 24)).toBe('E24 で');
     expect(stepLabel(VCC, 12)).toBe('0.1 V');
   });
@@ -207,7 +209,7 @@ describe('負の値を含む一様な刻み（PID の流速）', () => {
     const f = formatter(W);
     expect(f.input(-1)).toBe('−1');
     expect(f.text(-12.5)).toBe('−12.5 m/s');
-    expect(titleText(W, 12, f)).toBe('−100 m/s – 100 m/s　↑↓: ±0.1 m/s（Shift で ±1 m/s）　Enter: 確定　Esc: 戻す');
+    expect(titleText(W, 12, f)).toBe('−100 m/s – 100 m/s　↑↓: ±0.1 m/s（Shift で ±1 m/s）　Enter: 確定　Esc: 取り消し');
     expect(resolve(W, L, f, -150).why).toBe('−150 m/s は範囲外のため下限 −100 m/s にしました');
     expect(stepValue(W, L, -1, -1, false)).toBe(-1.1);
     expect(stepValue(W, L, -99.5, -1, true)).toBe(-100);

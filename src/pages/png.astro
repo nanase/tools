@@ -23,7 +23,7 @@ import Theory from '../tools/png/Theory.astro';
 const name = 'PNG';
 const CMP = ['None', 'Sub', 'Up', 'Average', 'Paeth', '適応'];
 ---
-<SiteLayout title={name} tool={{ id: 'png', name }} note="画像はこの端末の中だけで処理し、送信しません。符号化と復号は、このツールの実装によるものです。">
+<SiteLayout title={name} tool={{ id: 'png', name }} note="画像はこの端末の中だけで処理し、送信しません。符号化と復号はこのツールの実装によるものです。">
   <PageTitle title={name}>PNG の行ごとのフィルタと Deflate の圧縮を、画像の上で 1 行ずつ追います。</PageTitle>
 
   <div class="tgrid pgrid">
@@ -36,8 +36,8 @@ const CMP = ['None', 'Sub', 'Up', 'Average', 'Paeth', '適応'];
           <ChoiceRow k="smp" name="見本" choices={SAMPLE_CHOICES} value="chart" />
           <div class="prow" id="p-file">
             <div class="c-sym" aria-hidden="true"></div>
-            <div class="c-name"><span class="pn">ファイル</span><p class="desc tip" role="tooltip" hidden>{`PNG・JPEG・WebP など。この枠か画像の枠へ落としても読み込める。符号化し直すときは長い辺を ${MAX_SIDE} 画素までに縮める`}</p></div>
-            <div class="c-val"><div class="seg"><button type="button" id="fileBtn">ファイルを選ぶ</button></div><input type="file" id="fileIn" accept="image/*" hidden></div>
+            <div class="c-name"><span class="pn">ファイル</span><p class="desc tip" role="tooltip" hidden>{`PNG・JPEG・WebP など。この枠か画像の枠へドロップも可。再符号化は長い辺を ${MAX_SIDE} 画素まで`}</p></div>
+            <div class="c-val"><div class="seg"><button type="button" id="fileBtn">ファイルを選択</button></div><input type="file" id="fileIn" accept="image/*" hidden></div>
             <div class="c-sub"><p class="msg" id="m-file" aria-live="polite">まだ選んでいません</p></div>
           </div>
           <ChoiceRow k="tg" name="対象" choices={TARGETS} value="file" class="r-tg" />

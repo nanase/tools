@@ -32,7 +32,7 @@ const MX = {
   rec: mx('mx-rec', '復号した画素'),
 };
 ---
-<SiteLayout title={name} tool={{ id: 'jpeg', name }} note="画像はこの端末の中だけで処理し、送信しません。符号化と復号は、このツールの実装によるものです。">
+<SiteLayout title={name} tool={{ id: 'jpeg', name }} note="画像はこの端末の中だけで処理し、送信しません。符号化と復号はこのツールの実装によるものです。">
   <PageTitle title={name}>画像を JPEG（ベースライン）に符号化する過程を、色の変換と色差の間引き、8×8 のブロックの DCT と量子化、ジグザグ走査とランレングス、ハフマン符号のビット列まで順に見せます。画像の上でブロックを選ぶと、そのブロックの途中の値が並びます。符号化した画像の画質と大きさを比べ、JPEG ファイルとして保存もできます。</PageTitle>
 
   <div class="tgrid">
@@ -44,8 +44,8 @@ const MX = {
         <div class="ptab" id="in-tab" data-src="sample">
           <div class="prow" id="p-file">
             <div class="c-sym" aria-hidden="true"></div>
-            <div class="c-name"><span class="pn">ファイル</span><p class="desc tip" role="tooltip" hidden>{`PNG・JPEG・WebP など。この枠か画像の枠へ落としても読み込める。長い辺が ${MAX_SIDE} 画素を超える画像は縮小し、透明な所は白にする`}</p></div>
-            <div class="c-val"><div class="seg"><button type="button" id="fileBtn">ファイルを選ぶ</button></div><input type="file" id="fileIn" accept="image/*" hidden></div>
+            <div class="c-name"><span class="pn">ファイル</span><p class="desc tip" role="tooltip" hidden>{`PNG・JPEG・WebP など。この枠か画像の枠へドラッグ可。長い辺が ${MAX_SIDE} 画素を超える画像は縮小、透明な所は白`}</p></div>
+            <div class="c-val"><div class="seg"><button type="button" id="fileBtn">ファイルを選択</button></div><input type="file" id="fileIn" accept="image/*" hidden></div>
             <div class="c-sub"><p class="msg" id="m-file" aria-live="polite">まだ選んでいません</p></div>
           </div>
           <ParamRow d={QUALITY} />

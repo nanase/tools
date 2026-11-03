@@ -130,10 +130,9 @@ export const eRowsHtml = (rows: readonly ERow[], R: number): string =>
   rows
     .map(({ s, tol, hit, near }) => {
       const head = `<span class="en">E${s}<small>${pct(tol)}</small></span>`;
-      if (hit)
-        return `<div class="erow">${head}<span class="ev"><span class="ok">${CHECK}載っている</span></span></div>`;
+      if (hit) return `<div class="erow">${head}<span class="ev"><span class="ok">${CHECK}掲載あり</span></span></div>`;
       return (
-        `<div class="erow">${head}<span class="ev"><span class="nx">載っていない · 近い値</span>` +
+        `<div class="erow">${head}<span class="ev"><span class="nx">掲載なし · 近い値</span>` +
         near
           .map(
             (x) =>

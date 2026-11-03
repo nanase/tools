@@ -29,22 +29,22 @@ const chain = (a: number) =>
     ? `${ALGS[a].e.map(([j, k]) => `${j + 1}→${k + 1}`).join('、')}、出力 ${ALGS[a].c.map((k) => k + 1).join('・')}`
     : '変調なし、すべて出力';
 ---
-<SiteLayout title={name} tool={{ id: 'fm-synth', name }} note="エンベロープと LFO を持たない、簡略化したモデルによる波形です。">
+<SiteLayout title={name} tool={{ id: 'fm-synth', name }} note="エンベロープと LFO のない簡略化したモデルの波形です。">
   <PageTitle title={name}>ヤマハの FM 音源 IC（OPN 系）のように、4 つのオペレータを 8 通りのアルゴリズムでつないで音を作ります。オペレータの波形・周波数比・変調指数を変えると、波形とスペクトラムがすぐに変わります。鍵盤を押すと音で聞けます。作った音色で曲も演奏できます。</PageTitle>
 
   <div class="tgrid">
     <div class="col c1">
       <Panel hid="hd-alg" title="アルゴリズム" class="a-alg">
         <div class="ptab">
-          <ChoiceRow k="alg" name="アルゴリズム" sub="オペレータのつなぎ方。右端の列にあるオペレータ（キャリア）の和が出力になり、ほかのオペレータ（モジュレータ）は矢印の先の位相を変調する" choices={ALGS.map((_, a) => [a, String(a), chain(a)] as const)} value={ALG0} layout="chips" wide />
+          <ChoiceRow k="alg" name="アルゴリズム" sub="オペレータのつなぎ方。右端の列（キャリア）の和が出力、ほか（モジュレータ）は矢印の先の位相を変調" choices={ALGS.map((_, a) => [a, String(a), chain(a)] as const)} value={ALG0} layout="chips" wide />
           <ChoiceRow k="fb" name="帰還量" sub="OP1 の出力を自身の位相へ戻す量（位相のずれの最大値）。OPN の FB 0〜7 と同じ値" choices={FB_LABEL.map((l, i) => [i, l, `FB ${i}`] as const)} value={FB0} layout="chips" wide />
-          <ChoiceRow k="norm" name="音量の調整" sub="キャリアの振幅の合計が 1 を超えたら、出力を合計で割ってピークをフルスケール以内に収める。キャリアが増えても音が大きくなりすぎない。しないを選ぶと、キャリアをそのまま足す" choices={[['on', 'する'], ['off', 'しない']]} value={NORM0} />
+          <ChoiceRow k="norm" name="音量の調整" sub="振幅の合計が 1 を超えると出力を合計で割る" choices={[['on', 'あり'], ['off', 'なし']]} value={NORM0} />
         </div>
         <svg class="sch alg" id="alg-svg" viewBox={`0 0 ${DW} ${algH(ALG0)}`} role="img" aria-label={algText(ALG0)} set:html={algSvg(ALG0, FB0)} />
       </Panel>
 
       <Panel hid="hd-snd" title="音" class="a-snd">
-        <div slot="aux" class="seg"><button type="button" id="playBtn" aria-pressed="false" title="鳴らし続ける（止めている間は、鍵盤を押している間だけ鳴らす）"><span class="led" id="sndLed" aria-hidden="true"></span><span id="playT">再生</span></button></div>
+        <div slot="aux" class="seg"><button type="button" id="playBtn" aria-pressed="false" title="連続で再生（止めている間は鍵盤を押す間だけ）"><span class="led" id="sndLed" aria-hidden="true"></span><span id="playT">再生</span></button></div>
         <p class="msg er snd-msg" id="snd-msg" aria-live="polite"></p>
         <Keyboard />
         <div class="ptab">
@@ -57,7 +57,7 @@ const chain = (a: number) =>
         <div class="ptab">
           <div class="prow pick" id="p-piece">
             <div class="c-sym" aria-hidden="true"></div>
-            <div class="c-name"><label class="pn" id="n-piece" for="piece">曲</label><p class="desc tip" id="t-piece" role="tooltip" hidden>著作権の切れた曲の電子楽譜から変換したもの。すべてのパートを今の音色で弾く。演奏中に音色を変えると、鳴っている音もすぐ変わる</p></div>
+            <div class="c-name"><label class="pn" id="n-piece" for="piece">曲</label><p class="desc tip" id="t-piece" role="tooltip" hidden>著作権の切れた曲の電子楽譜から変換。全パートを今の音色で演奏</p></div>
             <div class="c-val sel"><select id="piece" autocomplete="off" aria-describedby="t-piece">{PIECES.map((p) => <option value={p.v} title={p.by}>{p.name}</option>)}</select></div>
           </div>
         </div>

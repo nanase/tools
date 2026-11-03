@@ -288,11 +288,11 @@ function results(): void {
   html('#o-x0', `1/${(1 / ratio).toFixed(2)}`);
   txt('#o-x0s', `端から ${(km.x0 * 1000).toFixed(1)} mm`);
   html('#o-t1', ro(ta, 's', 3));
-  txt('#o-t1s', s.ns > 1 ? '弦がそろって揺れ、響板へ強く逃げる' : '第 1 部分音');
+  txt('#o-t1s', s.ns > 1 ? '弦がそろった揺れ' : '第 1 部分音');
   html('#o-t2', ro(tb, 's', 3));
-  txt('#o-t2s', s.ns > 1 ? '弦が互い違いに揺れ、響板へ逃げにくい' : '水平の偏波');
+  txt('#o-t2s', s.ns > 1 ? '弦が互い違いの揺れ' : '水平の偏波');
   html('#o-td', td ? ro(td, 's', 3) : '—');
-  txt('#o-tds', td ? '鍵を離したあとの第 1 部分音の T60' : 'この鍵にはダンパーがない');
+  txt('#o-tds', td ? '鍵を離したあとの第 1 部分音の T60' : 'ダンパーなし');
   html('#o-y', `${(cabs(y) * 1000).toFixed(3)}<span class="u">mm/(s·N)</span>`);
   txt('#o-ys', `第 1 部分音の周波数で、実部 ${(y.re * 1000).toFixed(3)} mm/(s·N)`);
   txt('#kb-note', `${noteName(k)}  ${fmtR(f1, 'Hz', 4)}`);

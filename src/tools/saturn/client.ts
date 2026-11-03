@@ -739,7 +739,7 @@ function drawKeys(): void {
     );
   };
   chip(nextOpp, '衝');
-  chip(tiltReady ? (tiltWide.find((p) => p[0] > jd)?.[0] ?? null) : undefined, '環が最も開く');
+  chip(tiltReady ? (tiltWide.find((p) => p[0] > jd)?.[0] ?? null) : undefined, '環の開きが最大');
   chip(tiltReady ? (tiltCross.find((c) => c.who === 'earth' && c.t > jd)?.t ?? null) : undefined, '次に環が真横');
   chip(nextTitan, 'タイタンの影');
   const html = ch.join('');

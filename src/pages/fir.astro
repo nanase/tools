@@ -40,13 +40,13 @@ const t0 = TYPES[0],
         </div>
         <div class="ptab">
           <ChoiceRow k="win" sym="<i>w</i>" nm="w" name="窓" sub="理想の応答に掛ける窓。阻止域の深さと遷移帯域の幅が決まる" choices={WINS.map((w) => [w.v, w.ab] as const)} value="kaiser" layout="chips" />
-          <ChoiceRow k="auto" sym="<i>N</i>" nm="N" name="タップ数の決め方" sub="仕様から: 仕様を満たすタップ数・β・重みを求める。指定: 自分で決める" choices={[['1', '仕様から'], ['0', '指定']]} value="1" msg />
+          <ChoiceRow k="auto" sym="<i>N</i>" nm="N" name="タップ数の決め方" sub="仕様から: 仕様を満たすタップ数・β・重み。指定: 手入力" choices={[['1', '仕様から'], ['0', '指定']]} value="1" msg />
           {row(['n', 'beta', 'wp', 'ws']).map((d) => <ParamRow d={d} />)}
         </div>
       </Panel>
 
       <Panel hid="hd-snd" title="試聴" class="a-snd">
-        <div slot="aux" class="seg"><button type="button" id="playBtn" aria-pressed="false" title="ホワイトノイズにこのフィルタを掛けて鳴らす"><span class="led" aria-hidden="true"></span><span id="playT">再生</span></button></div>
+        <div slot="aux" class="seg"><button type="button" id="playBtn" aria-pressed="false" title="ホワイトノイズにこのフィルタを掛けた音"><span class="led" aria-hidden="true"></span><span id="playT">再生</span></button></div>
         <div class="sbar">
           <span class="stag">IN <b>WHITE NOISE</b></span>
           <span class="stag"><i class="sw" aria-hidden="true"></i>OUT <b id="lv-t">---</b> dBFS</span>
@@ -83,7 +83,7 @@ const t0 = TYPES[0],
         </div>
         <div class="sbar rdbar" data-ph="CUR 22.05 kHz −120.00 dB −1234.5°"><span class="rd" id="fr-rd"></span></div>
         <More id="g-fr" title="表示の設定"><div class="ana2">
-          <div class="ptab"><ChoiceRow k="ys" sym="<i>A</i>" nm="A" name="振幅の縦軸" sub="通過域: 0 dB のまわりを拡大してリップルを見る" choices={[['db', 'dB'], ['lin', '線形'], ['pass', '通過域']]} value="db" /></div>
+          <div class="ptab"><ChoiceRow k="ys" sym="<i>A</i>" nm="A" name="振幅の縦軸" sub="通過域: 0 dB のまわりの拡大" choices={[['db', 'dB'], ['lin', '線形'], ['pass', '通過域']]} value="db" /></div>
           <div class="ptab"><ChoiceRow k="c2" sym="" nm="CH2" name="CH2 の表示" sub="直線位相なので、群遅延はどの周波数でも (N − 1)/2 サンプル" choices={[['ph', '位相'], ['gd', '群遅延']]} value="ph" /></div>
         </div></More>
       </Panel>
@@ -147,9 +147,9 @@ const t0 = TYPES[0],
       </div>
       <div class="cbar">
         <div class="seg" id="p-ct" role="group" aria-label="数値の型">
-          <button type="button" data-v="f64" aria-pressed="true" title="倍精度（有効数字 17 桁）">double</button><button type="button" data-v="f32" aria-pressed="false" title="単精度に丸める（有効数字 9 桁）">float</button>
+          <button type="button" data-v="f64" aria-pressed="true" title="倍精度（有効数字 17 桁）">double</button><button type="button" data-v="f32" aria-pressed="false" title="単精度（有効数字 9 桁）">float</button>
         </div>
-        <div class="seg"><button type="button" id="copyBtn" title="係数をクリップボードへ写す">コピー</button></div>
+        <div class="seg"><button type="button" id="copyBtn" title="係数をクリップボードへコピー">コピー</button></div>
       </div>
       <pre class="coefs" id="coefs" tabindex="0" aria-label="係数"></pre>
     </Panel>

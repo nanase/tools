@@ -37,7 +37,7 @@ export class Recorder {
       this.onChange();
       return;
     }
-    this.msg = 'マイクを準備しています…';
+    this.msg = 'マイクを準備中…';
     this.onChange();
     try {
       await ac.resume();
@@ -97,7 +97,7 @@ export class Recorder {
     this.onChange();
     if (x.length > fs * 0.5) this.onDone(x, fs);
     else {
-      this.msg = '短すぎました（0.5 秒以上録ってください）';
+      this.msg = '短すぎます。0.5 秒以上録ってください';
       this.onChange();
     }
   }

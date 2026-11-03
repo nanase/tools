@@ -33,7 +33,7 @@ const pb = sub('p', '<mi>b</mi>');
   <math display="block" set:html={`<mi>RMSE</mi><mo>∝</mo>${frac('<mn>1</mn>', '<msqrt><mi>N</mi></msqrt>')}`} />
 </div>
 <ul class="tl">
-  <li>向きを 1 本ずつ乱数で選び、確率密度 <math><mi>p</mi></math> で割って平均する。ノイズを半分にするには 4 倍のサンプルが要る</li>
+  <li>向きを 1 つずつ乱数で選び、確率密度 <math><mi>p</mi></math> で割って平均する。ノイズを半分にするには 4 倍のサンプルが要る</li>
   <li><math><mi>p</mi></math> を被積分関数に近づけるほどノイズが減る（重点的サンプリング）。拡散は cos に比例、GGX は見える法線の分布から選ぶ<Fragment set:html={rf(5) + rf(6)} /></li>
   <li>RMSE は偶数番と奇数番のサンプルの平均の差から見積もる。正解の画像は使わない。測れるのはノイズの量だけで、ウィッテッド式のように偏った結果の誤差は測れない</li>
 </ul>
@@ -47,7 +47,7 @@ const pb = sub('p', '<mi>b</mi>');
   <thead><tr><th>手法</th><th>次の向きの選び方</th><th>得意</th><th>苦手</th></tr></thead>
   <tbody>
     <tr><td>BRDF</td><td>反射の分布だけ。光源に当たるのを待つ</td><td>空・鏡に近い面</td><td>小さな光源。点の光源は真っ黒</td></tr>
-    <tr><td>NEE</td><td>毎回の点で光源を直接サンプリングし、影の光線で確かめる</td><td>小さな光源</td><td>空・光沢のある面</td></tr>
+    <tr><td>NEE</td><td>当たった点ごとに光源を直接サンプリングし、影の光線で確かめる</td><td>小さな光源</td><td>空・光沢のある面</td></tr>
     <tr><td>MIS</td><td>両方を上の重みで混ぜる（バランスヒューリスティック）<Fragment set:html={rf(3)} /></td><td>どちらの場合も</td><td>—</td></tr>
     <tr><td>ウィッテッド式</td><td>影の光線は光源の中心だけ。追うのは鏡とガラスだけ<Fragment set:html={rf(2)} /></td><td>速い。ノイズがほとんどない</td><td>やわらかい影・間接光が出ない</td></tr>
   </tbody>
@@ -63,7 +63,7 @@ const pb = sub('p', '<mi>b</mi>');
   <li>GGX の分布 <math><mi>D</mi></math><Fragment set:html={rf(4)} />、高さに相関のある Smith の遮蔽 <math><mi>G</mi></math><Fragment set:html={rf(5)} />、Schlick のフレネル <math><mi>F</mi></math><Fragment set:html={rf(7)} /></li>
   <li>金属の <math set:html={sub('F', '<mn>0</mn>')} /> は複素屈折率から<Fragment set:html={rf(8)} /></li>
   <li>ガラスは厳密なフレネルの式で、反射か屈折かを確率で選ぶ。屈折も反射の回数に数える</li>
-  <li>ガラス越しに光源が集まる明るい模様（コースティクス）は、NEE では影の光線がガラスに遮られるので BRDF の経路だけが運び、ノイズが残りやすい</li>
+  <li>ガラス越しに光源が集まる明るい模様（コースティクス）は、NEE では影の光線がガラスに遮られる。BRDF の経路だけが運ぶのでノイズが残りやすい</li>
 </ul>
 
 <h3>そのほかの工夫</h3>
@@ -75,7 +75,7 @@ const pb = sub('p', '<mi>b</mi>');
 
 <h3>このツールで決めたこと</h3>
 <ul class="tl">
-  <li>部屋の寸法と色・球の配置は、Cornell box に倣って決めた。手前は開いている</li>
+  <li>部屋の寸法と色・球の配置は Cornell box に倣って決めた。手前は開いている</li>
   <li>光の総量は光源の大きさに依らない。点の光源は四角と同じ総量、空の放射輝度は 0.7</li>
   <li>非金属の鏡面は <math set:html={`${sub('F', '<mn>0</mn>')}<mo>=</mo><mn>0.08</mn><mo>×</mo><mi>spec</mi>`} />。壁は拡散だけ</li>
   <li>金属の複素屈折率の波長は 617・521・451 nm を R・G・B に当てた。粗さは <math><mi>α</mi><mo>=</mo><msup><mi>r</mi><mn>2</mn></msup></math></li>
