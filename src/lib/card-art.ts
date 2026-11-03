@@ -1166,6 +1166,34 @@ export const ART: Record<string, Art> = {
     });
     return P('fc', base) + (hit ? P(f.sw ? 'fa' : 'fb', hit) : '');
   },
+  /* リスト・キュー・スタック: 左は棒を積むスタック、右は棒が流れるキュー */
+  ls(t) {
+    const u = mod(t, 3) / 3,
+      count = 1 + Math.round(5 * Math.abs(2 * u - 1)),
+      W = [30, 26, 22, 18, 14, 10];
+    let pile = '',
+      top = '',
+      bars = '',
+      head = '';
+    for (let i = 0; i < count; i++) {
+      const d = `M${r1(24 - W[i] / 2)} ${42 - i * 5}h${W[i]}v3.6h-${W[i]}Z`;
+      if (i === count - 1) top = d;
+      else pile += d;
+    }
+    const H = [14, 26, 10, 32, 20, 28, 12, 22];
+    H.forEach((h, i) => {
+      const x = 58 + mod(i * 7.5 + u * 60, 60),
+        d = `M${r1(x - 2.6)} ${44 - h}h5.2v${h}h-5.2Z`;
+      if (x > 110) head += d;
+      else bars += d;
+    });
+    return (
+      P('c', 'M6 8V45H42V8M58 8H118M58 45H118') +
+      P('fc', pile + bars) +
+      P(u < 0.5 ? 'fb' : 'fa', top) +
+      (head ? P('fb', head) : '')
+    );
+  },
   /* オルガン音響モデル: 口と円錐の足があるパイプの正面。和音を鳴らし、鳴っている管に定在波を描く */
   og(t) {
     let body = '',
@@ -1781,6 +1809,7 @@ export const LOOP: Record<string, number> = {
   ff: 3,
   wd: 4,
   so: 3,
+  ls: 3,
 };
 
 /** 止まっているときの図柄（ビルド時に HTML へ出す） */

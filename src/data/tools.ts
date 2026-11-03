@@ -34,6 +34,7 @@ export const CATS = [
   '天文',
   '数学',
   'アルゴリズム',
+  'データ構造',
 ];
 export const TOOLS: Tool[] = [
   {
@@ -513,8 +514,17 @@ export const TOOLS: Tool[] = [
     t: 'ソート',
     d: '棒が小さい順に並ぶ様子を音で追い、アルゴリズムを比べます。',
     ic: 'so',
-    r: ['fft', 'gif', 'qr-code', 'bifurcation'],
+    r: ['list-queue-stack', 'fft', 'gif', 'qr-code'],
     k: 'sort sorting 並べ替え 並び替え 整列 アルゴリズム algorithm バブル bubble シェーカー cocktail shaker コム comb ノーム gnome 奇偶転置 odd-even 選択 selection ヒープ heap スムース smooth サイクル cycle パンケーキ pancake 挿入 insertion 二分挿入 binary シェル shell マージ merge ボトムアップ bottom-up ティム timsort パワー powersort インプレース symmerge クイック quick ピボット pivot 3 分割 three-way デュアルピボット dual-pivot イントロ introsort pdqsort 計数 counting 基数 radix lsd msd アメリカンフラッグ american flag バケット bucket フラッシュ flash ビーズ bead 比較 計算量 安定 stable バイトニック bitonic バッチャー batcher ペアワイズ pairwise ソーティングネットワーク sorting network ストゥージ stooge スロー slow ボゴ bogo ボゾ bozo 音 sound of sorting',
+  },
+  {
+    id: 'list-queue-stack',
+    c: 'データ構造',
+    t: 'リスト・キュー・スタック',
+    d: 'データ構造ごとの順序と計算量をバーの動きで比べます。',
+    ic: 'ls',
+    r: ['sort', 'gif', 'fft', 'qr-code'],
+    k: 'データ構造 data structure list queue stack リスト キュー スタック 片方向 双方向 連結リスト linked list 配列 array 両端キュー deque リングバッファ ring buffer 循環バッファ circular push pop enqueue dequeue lifo fifo 計算量 オーダー ビッグオー big o 償却',
   },
 ];
 /** 準備中を後ろへ */
