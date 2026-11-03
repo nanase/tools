@@ -4,7 +4,7 @@ import { Engine, type PipeMsg, type WindDesc } from '../src/tools/organ/engine';
 import { pipeId } from '../src/tools/organ/model';
 import { FluePipe, type FlueSpec, ReedPipe, type ReedSpec, tanhP } from '../src/tools/organ/pipes';
 import { barOf, barStarts, PIECES, pieceOf, TempoMap } from '../src/tools/organ/score';
-import { divOf, OPT0, pipesOf, STOPS, stopOf, topfer } from '../src/tools/organ/stops';
+import { divOf, OPT0, pipesOf, STOPS, shownStop, stopOf, topfer, VIEW0 } from '../src/tools/organ/stops';
 import { measSec, measureF0, sound } from '../src/tools/organ/tune';
 import { TUNED } from '../src/tools/organ/tuned';
 import { tuneStop } from '../src/tools/organ/tuner';
@@ -34,6 +34,21 @@ describe('調律法', () => {
     expect(v[11]).toBeCloseTo(-3.91, 1);
     expect(TEMPERAMENTS.length).toBe(3);
     expect(pitchHz(69, 415, w)).toBeCloseTo(415, 9);
+  });
+});
+
+describe('図に表示するストップ', () => {
+  it('初めのストップはその鍵盤のもの', () => {
+    for (const [d, id] of Object.entries(VIEW0)) expect(stopOf(id).div).toBe(d);
+  });
+  it('選んだストップが入っていれば、それを描く', () => {
+    expect(shownStop('I', 'p4', new Set(['p8', 'p4']))).toBe('p4');
+  });
+  it('切れている間は、同じ鍵盤で入っている最初のストップを描く', () => {
+    expect(shownStop('I', 'p8', new Set(['g8', 'p2', 'p4']))).toBe('p4');
+  });
+  it('鍵盤のストップがすべて切れていれば、選んだストップを描く', () => {
+    expect(shownStop('I', 'p8', new Set(['g8', 'sb16']))).toBe('p8');
   });
 });
 
