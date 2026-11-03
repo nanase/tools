@@ -19,7 +19,7 @@ const wrapHead = (s: string) => s.replace(/(に偏り|並び替え|済み|が少
 const firstOfGroup = new Set(GROUPS.map((g) => ALGS.find((a) => a.g === g)?.id));
 ---
 <SiteLayout title={name} tool={{ id: 'sort', name }}>
-  <PageTitle title={name}>棒グラフが小さい順に並ぶ様子を音とともに追います。アルゴリズムどうし、データどうしを並べて比べられます。</PageTitle>
+  <PageTitle title={name}>バーが小さい順に並ぶ様子を音とともに追います。アルゴリズムどうし、データどうしを並べて比べられます。</PageTitle>
 
   <div class="tgrid" id="so" data-mode="one">
     <Panel hid="hd-fig" title={DEF.f} class="a-fig" fixed>
@@ -129,7 +129,7 @@ const firstOfGroup = new Set(GROUPS.map((g) => ALGS.find((a) => a.g === g)?.id))
         <div class="so-rank"><table class="so-rt" id="so-rt"></table></div>
       </Panel>
       <Panel hid="hd-snd" title="音" class="a-snd">
-        <div slot="aux" class="seg"><button type="button" id="so-snd" aria-pressed="true"><span class="led on" id="so-sndL" aria-hidden="true"></span> 音あり</button></div>
+        <div slot="aux" class="seg"><button type="button" id="so-snd" aria-pressed="true"><span class="led on" id="so-sndL" aria-hidden="true"></span> <span id="so-sndT">オン</span></button></div>
         <div class="ptab so-row">
           <ParamRow d={VOL} />
           <div class="prow chr wide">

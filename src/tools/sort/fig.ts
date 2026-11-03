@@ -59,7 +59,7 @@ function fitCanvas(cv: HTMLCanvasElement): { c: CanvasRenderingContext2D; W: num
   return { c, W, H };
 }
 
-/** 棒の左端と幅（画素の境目にそろえ、幅が 4 px 以上なら間を 1 px 空ける） */
+/** バーの左端と幅（画素の境目にそろえ、幅が 4 px 以上なら間を 1 px 空ける） */
 function columns(n: number, W: number): { x: (i: number) => number; w: (i: number) => number; bw: number } {
   const bw = W / n,
     gap = bw >= 4 ? 1 : 0;
@@ -133,7 +133,7 @@ export function drawBars(cv: HTMLCanvasElement, r: Run, s: Shown, small: boolean
       h = hOf(a[i]);
     c.fillStyle = kd ? C.ch1 : C.ch2;
     c.fillRect(x(i), H - h, w(i), h);
-    /* 棒が細いと色が見えないので、足もとに印を付ける */
+    /* バーが細いと色が見えないので、足もとに印を付ける */
     if (bw < 3) {
       c.fillStyle = C.ac;
       c.fillRect(x(i) - 1, H - 4, w(i) + 2, 4);

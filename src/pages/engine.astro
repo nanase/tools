@@ -44,7 +44,7 @@ const name = 'エンジン音響モデル';
 
     <div class="col c1">
       <Panel hid="hd-run" title="運転" class="a-run">
-        <div slot="aux" class="seg"><button type="button" id="runBtn" aria-pressed="false" title="エンジンの始動・停止（音あり）"><span class="led" id="runLed" aria-hidden="true"></span><span id="runT">運転</span></button></div>
+        <div slot="aux" class="seg"><button type="button" id="runBtn" aria-pressed="false" title="エンジンの始動・停止（音が出る）"><span class="led" id="runLed" aria-hidden="true"></span><span id="runT">運転</span></button></div>
         <div class="ptab">
           <ChoiceRow k="load" name="走らせ方" sub="走行: 車体を走らせる（N なら空ぶかし）。回転数固定: 台上の動力計のように回転数を一定に" choices={[['drive', '走行'], ['hold', '回転数固定']]} value="drive" />
           <ParamRow d={SPEED} />
