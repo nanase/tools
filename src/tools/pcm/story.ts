@@ -1,6 +1,6 @@
 /**
- * 「1. PCM のしくみ」の図: 1 つの波を 5 つの工程で順に動かす。値は固定（8 kHz・4 bit・440 Hz の正弦波）で、
- * 下の入力では変わらない。u は工程の中の進み（0〜1）で、1 のときは工程を終えた絵になる
+ * 「PCM のしくみ」の図: 1 つの波を 5 つの工程で順に動かす。値は固定（8 kHz・4 bit・440 Hz の正弦波）で、
+ * 設定の入力では変わらない。u は工程の中の進み（0〜1）で、1 のときは工程を終えた絵になる
  */
 import { bitStr, COL, levelList, readAt, surface, timeLabel, trigger, yAxisLabel } from './fig';
 import { mod, type Quant, quantize, restore, sample, sine, stepOf } from './pcm';

@@ -18,7 +18,7 @@ import {
   stepOf,
   sweep,
 } from '../src/tools/pcm/pcm';
-import { makeSource, SOURCES } from '../src/tools/pcm/sources';
+import { makeSource, SOURCES, TEST_FS } from '../src/tools/pcm/sources';
 import { CAPTIONS, STEPS } from '../src/tools/pcm/story';
 
 const F = 48000;
@@ -176,13 +176,34 @@ describe('標本化と再生', () => {
 describe('音源', () => {
   it('どの音源も 4 秒で振幅の最大が 1', () => {
     for (const [n] of SOURCES) {
-      const x = makeSource(n, 440);
-      expect(x.length, n).toBe(F * 4);
-      expect(
-        x.reduce((m, v) => Math.max(m, Math.abs(v)), 0),
-        n,
-      ).toBeCloseTo(1, 2);
+      const ch = makeSource(n, 440);
+      for (const c of ch) expect(c.length, n).toBe(TEST_FS * 4);
+      expect(Math.max(...ch.map((c) => c.reduce((m, v) => Math.max(m, Math.abs(v)), 0))), n).toBeCloseTo(1, 2);
     }
+  });
+  it('混ぜた音はステレオで、左右が違う', () => {
+    const ch = makeSource('mix', 440);
+    expect(ch.length).toBe(2);
+    expect(ch[0]).not.toEqual(ch[1]);
+  });
+  it('どの音源もくり返しの切れ目で音が跳ばない', () => {
+    for (const [n] of SOURCES)
+      for (const c of makeSource(n, 440)) {
+        let big = 0;
+        for (let i = 1; i < c.length; i++) big = Math.max(big, Math.abs(c[i] - c[i - 1]));
+        /* のこぎり波の急な段差のように、音の中にある差より大きくしない */
+        expect(Math.abs(c[0] - c[c.length - 1]), n).toBeLessThanOrEqual(big);
+      }
+  });
+  it('持続音は 4 kHz より上にも音がある（標本化周波数を下げると音が変わる）', () => {
+    const x = makeSource('pad', 440)[0],
+      sp = specAt(x, TEST_FS, 8192),
+      top = (lo: number, hi: number) => {
+        let m = -999;
+        for (let f = lo; f < hi; f += TEST_FS / 8192) m = Math.max(m, sp[Math.round((f * 8192) / TEST_FS)]);
+        return m;
+      };
+    expect(top(4000, 8000)).toBeGreaterThan(-60);
   });
   it('周期の音は 1 周の切れ目でつながる', () => {
     for (const x of [sine(440, F, 4), saw(441.7, F, 4)]) {
