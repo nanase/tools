@@ -31,6 +31,11 @@ export function countOps(alg: Alg, src: ArrayLike<number>, limit = LIM_PLAY): Re
   return { c: r.c, total: r.real, trunc };
 }
 
+/** 回数の少ない順の順位。同じ回数は同着にし、次の順位はその数だけ飛ばす（1, 1, 3） */
+export function ranks(totals: readonly number[]): number[] {
+  return totals.map((t) => 1 + totals.filter((o) => o < t).length);
+}
+
 interface Snap {
   rp: number;
   pos: number;

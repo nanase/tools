@@ -2,10 +2,21 @@ import { describe, expect, it } from 'vitest';
 import { ALGS, algOf } from '../src/tools/sort/algorithms';
 import { DISTS, gen, resample } from '../src/tools/sort/data';
 import { Rec, STOP } from '../src/tools/sort/recorder';
-import { countOps, Run } from '../src/tools/sort/run';
+import { countOps, Run, ranks } from '../src/tools/sort/run';
 
 const LIM = 400000;
 const NS = [2, 3, 8, 9, 16, 33, 64, 128, 256];
+
+describe('順位', () => {
+  it('回数の少ない順に付く', () => {
+    expect(ranks([30, 10, 20])).toEqual([3, 1, 2]);
+  });
+  it('同じ回数は同じ順位で、次の順位はその数だけ飛ぶ', () => {
+    expect(ranks([10, 10, 20])).toEqual([1, 1, 3]);
+    expect(ranks([20, 10, 20, 30])).toEqual([2, 1, 2, 4]);
+    expect(ranks([5, 5, 5])).toEqual([1, 1, 1]);
+  });
+});
 
 describe('データ', () => {
   it('値は 1〜n で、同じ引数なら同じ', () => {

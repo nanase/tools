@@ -14,7 +14,7 @@ import { type Scale, SortAudio, TONE_MAX, type Wave } from './audio';
 import { type DataKind, DISTS, type Dist, distName, gen, resample } from './data';
 import { drawAux, drawBars, readColors, type Shown } from './fig';
 import { type Key, SIZE, SPEED, VOL } from './params';
-import { countOps, LIM_CMP, LIM_PLAY, type Result, Run, type ToneKind } from './run';
+import { countOps, LIM_CMP, LIM_PLAY, type Result, Run, ranks, type ToneKind } from './run';
 
 initToolPage();
 
@@ -360,19 +360,22 @@ function buildCells(): void {
     host.append(b);
   });
 }
-const rankOrder = () => runs.map((r, i) => ({ r, i })).sort((a, b) => a.r.total - b.r.total);
+const runRanks = () => ranks(runs.map((r) => r.total));
 function buildRank(): void {
-  const rows = rankOrder()
-    .map(({ r }, k) => {
-      const c = r.final;
-      return `<tr><td>${k + 1}</td><td class="l">${r.label}</td><td><b>${fmt(r.total)}${r.trunc ? '+' : ''}</b></td><td>${fmt(c.cmp)}</td><td>${fmt(c.swap)}</td><td>${fmt(c.read)}</td><td>${fmt(c.write)}</td></tr>`;
-    })
-    .join('');
+  const rk = runRanks(),
+    rows = runs
+      .map((r, i) => ({ r, rank: rk[i] }))
+      .sort((a, b) => a.rank - b.rank)
+      .map(({ r, rank }) => {
+        const c = r.final;
+        return `<tr><td>${rank}</td><td class="l">${r.label}</td><td><b>${fmt(r.total)}${r.trunc ? '+' : ''}</b></td><td>${fmt(c.cmp)}</td><td>${fmt(c.swap)}</td><td>${fmt(c.read)}</td><td>${fmt(c.write)}</td></tr>`;
+      })
+      .join('');
   $('#so-rt').innerHTML =
     `<thead><tr><th>順位</th><th class="l">名前</th><th>全操作</th><th>比較</th><th>交換</th><th>読み取り</th><th>書き込み</th></tr></thead><tbody>${rows}</tbody>`;
 }
 function syncRanks(): void {
-  const order = rankOrder();
+  const rank = runRanks();
   $$('.so-cell').forEach((el, i) => {
     const head = $('.so-ch', el),
       ok = runs[i]?.ok;
@@ -382,7 +385,7 @@ function syncRanks(): void {
       rk.className = 'so-rk';
       head.insertBefore(rk, $('em', head));
     } else if (!ok && rk) rk.remove();
-    if (ok && rk) rk.textContent = String(order.findIndex((o) => o.i === i) + 1);
+    if (ok && rk) rk.textContent = String(rank[i]);
   });
 }
 
