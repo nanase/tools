@@ -1,0 +1,77 @@
+/* MP3 のページだけのスタイル（共通は src/styles/site.css）。閾値を超えた雑音の赤はこのページの色 */
+:root{--mp3-o:#b3123f}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--mp3-o:#ff6f8c}}
+:root[data-theme="dark"]{--mp3-o:#ff6f8c}
+
+/* 枠の並び: 図と操作 → しくみ → 式 */
+@media (min-width:1000px){
+  #mp3{grid-template-columns:minmax(0,1.9fr) minmax(300px,1fr);align-items:start}
+  .a-how,#mp3 .a-thy{grid-column:1/-1}
+}
+
+/* 図 */
+.mp3-rd{justify-content:flex-start;min-height:20px;margin:0 2px 8px;font-family:var(--sans)}
+.mp3-rd b{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.mp3-msg{color:var(--warn)}
+.mp3-tag{margin:8px 2px 4px;font-size:12.5px;font-weight:700;color:var(--ink)}
+.mp3-rd+.mp3-pane>.mp3-tag{margin-top:0}
+/* 試聴で選んだ音の図を強調し、ほかを薄くする */
+.mp3-pane:not(.on)>.mp3-tag{font-weight:500;color:var(--ink-2)}
+.mp3-pane.on>.scope{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.mp3-pane:not(.on) .mp3-cv{opacity:.78}
+@media (prefers-reduced-motion:no-preference){.mp3-cv{transition:opacity .18s}}
+.mp3-scr{position:relative;padding:0;overflow:hidden}
+.mp3-cv{display:block;width:100%}
+.mp3-sg{height:150px;touch-action:pan-y;cursor:pointer}
+.mp3-how{height:340px}
+@media (max-width:620px){.mp3-sg{height:124px}.mp3-how{height:290px}}
+.mp3-lg{justify-content:flex-start;margin:6px 2px 0;font-family:var(--sans)}
+.mp3-sw-i{background:var(--ink)}
+.mp3-sw-o{background:var(--mp3-o)}
+.mp3-link{margin-left:auto;padding:0;border:0;background:none;color:var(--ink);font:500 12.5px/1.3 var(--sans);text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+.mp3-link:hover{color:var(--focus)}
+.mp3-link:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:2px}
+/* 計算中: 一番上の図の右上に回る輪。すぐ終わるときはちらつかないよう少し待ってから出す */
+.mp3-prog{position:absolute;left:0;top:0;height:3px;width:0;background:var(--ink-2)}
+.mp3-busy{position:absolute;right:8px;top:7px;display:inline-flex;align-items:center;gap:6px;padding:2px 7px;border-radius:3px;background:var(--surface);font:12px/1.5 var(--sans);color:var(--ink-2);animation:mp3-in .15s .12s both}
+.mp3-busy[hidden]{display:none}
+.mp3-busy i{flex:none;width:12px;height:12px;border:2px solid var(--grid-2);border-top-color:var(--accent);border-radius:50%;animation:mp3-spin .8s linear infinite}
+@keyframes mp3-spin{to{transform:rotate(1turn)}}
+@keyframes mp3-in{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){.mp3-busy{animation:none}.mp3-busy i{animation-duration:2.4s}}
+
+/* 入力 */
+.mp3-bar{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin-bottom:4px}
+.mp3-bl{font-size:12.5px;color:var(--ink-3)}
+.a-set.drop{border-color:var(--focus);box-shadow:inset 0 0 0 1px var(--focus)}
+#ls-tab:not([data-src="test"]) #p-src,#ls-tab:not([data-src="file"]) #p-file{display:none}
+@media (max-width:620px){#mp3 .prow{--fw:136px}}
+
+/* 聴く */
+.mp3-keys{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.mp3-key{--kc:var(--ink-3);position:relative;display:grid;align-content:start;gap:1px;min-width:0;min-height:52px;padding:6px 6px 6px 12px;border:1px solid var(--line-2);border-radius:var(--r);background:var(--inset);color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.mp3-key::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:var(--r) 0 0 var(--r);background:var(--kc);opacity:.35}
+.mp3-key b{font-size:13px;line-height:1.3}
+.mp3-key small{font:12px/1.3 var(--mono);color:var(--ink-3);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mp3-key[aria-pressed="true"]{background:var(--surface);border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.mp3-key[aria-pressed="true"]::before{opacity:1}
+.mp3-key:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.mp3-key.k1{--kc:var(--ch1)}.mp3-key.k2{--kc:var(--mp3-o)}
+.mp3-tp{grid-template-columns:auto minmax(0,1fr);padding:10px 2px 8px;border-top:0;border-bottom:0}
+.mp3-tp3{grid-template-columns:auto auto minmax(0,1fr);padding-bottom:0}
+.mp3-wv{position:relative;height:48px;border:1px solid var(--line);border-radius:var(--r);background:var(--inset);cursor:pointer;touch-action:none;overflow:hidden}
+.mp3-wv:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.mp3-wv canvas{position:absolute;inset:0;width:100%;height:100%}
+.mp3-ph{position:absolute;top:0;bottom:0;left:0;width:1.5px;background:var(--ink);pointer-events:none}
+.mp3-save{margin-top:8px}
+.mp3-save button{font-family:var(--sans)}
+
+/* しくみ */
+.mp3-cap{min-height:1.5em;margin:0 2px 8px;font-size:14px;font-weight:700;line-height:1.5;color:var(--ink);overflow-wrap:anywhere}
+.mp3-steps{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(118px,1fr);gap:6px;margin-bottom:10px;padding:2px 2px 6px;overflow-x:auto;scrollbar-width:thin}
+.mp3-st{position:relative;display:grid;gap:3px;min-width:0;padding:6px 7px;border:1px solid var(--line-2);border-radius:var(--r);background:var(--inset);color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.mp3-st[aria-pressed="true"]{background:var(--surface);border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.mp3-st:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.mp3-st b{font-size:12.5px;line-height:1.3;white-space:nowrap}
+.mp3-st small{font-size:12px;line-height:1.3;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mp3-st canvas{display:block;width:100%;height:52px;border-radius:3px}

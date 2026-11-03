@@ -1,0 +1,120 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/mp3/style.css';
+import { KEYS, PARAMS } from '../tools/mp3/params';
+import { SOURCES } from '../tools/mp3/sources';
+import { STEPS } from '../tools/mp3/story';
+import Theory from '../tools/mp3/Theory.astro';
+
+const name = 'MP3';
+const P = Object.fromEntries(PARAMS.map((d) => [d.k, d]));
+const playIcon =
+  '<svg class="i-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.2l7.6 4.8L3 10.8z"/></svg><svg class="i-pause" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="2.8" height="9"/><rect x="7.2" y="1.5" width="2.8" height="9"/></svg>';
+---
+<SiteLayout title={name} tool={{ id: 'mp3', name }} note="音声はこの端末の中だけで処理し、送信しません。">
+  <PageTitle title={name}>ビットレートとローパスで音がどう変わるかを聴き比べます。</PageTitle>
+
+  <div class="tgrid" id="mp3">
+    <Panel hid="hd-fig" title="時間と周波数" class="a-fig" fixed>
+      <div class="sbar mp3-rd">
+        <span class="stag">原音の <b id="rd-ratio">—</b></span>
+        <span class="stag">閾値を超えた雑音 <b id="rd-over">—</b> %</span>
+        <span class="stag" title="雑音とマスキングの閾値の比。小さいほど雑音が目立たない">NMR <b id="rd-nmr">—</b> dB</span>
+        <span class="mp3-msg" id="mp3-msg" aria-live="polite"></span>
+      </div>
+      <div class="mp3-pane">
+        <p class="mp3-tag">原音</p>
+        <div class="scope mp3-scr"><canvas class="mp3-cv mp3-sg" id="sg-o" role="img" aria-label="原音のスペクトログラム" title="押すとこの音を選択・選択中は再生位置を移動"></canvas><span class="mp3-prog" id="mp3-prog"></span><span class="mp3-busy" id="mp3-busy" hidden><i aria-hidden="true"></i>計算中…</span></div>
+      </div>
+      <div class="mp3-pane on">
+        <p class="mp3-tag">MP3</p>
+        <div class="scope mp3-scr"><canvas class="mp3-cv mp3-sg" id="sg-m" role="img" aria-label="MP3 のスペクトログラム" title="押すとこの音を選択・選択中は再生位置を移動・破線はドラッグでローパス"></canvas></div>
+      </div>
+      <div class="mp3-pane">
+        <p class="mp3-tag">閾値を超えた雑音</p>
+        <div class="scope mp3-scr"><canvas class="mp3-cv mp3-sg" id="sg-n" role="img" aria-label="閾値を超えた雑音の時間と周波数" title="押すと原音との差を選択・選択中は再生位置を移動・破線はドラッグでローパス"></canvas></div>
+      </div>
+      <div class="sbar mp3-lg">
+        <span class="stag"><i class="sw mp3-sw-i"></i>濃いほど大きい音</span>
+        <span class="stag"><i class="sw mp3-sw-o"></i>雑音が閾値を超えた所</span>
+        <span class="stag"><i class="sw c2"></i>短いブロック</span>
+        <span class="stag"><i class="sw"></i>ローパス</span>
+        <button type="button" class="mp3-link" id="to-mask">閾値とは</button>
+      </div>
+    </Panel>
+
+    <div class="col">
+      <Panel hid="hd-set" title="設定" class="a-set">
+        <div class="mp3-bar"><span class="mp3-bl" id="ls-src-l">入力</span><div class="seg" id="ls-src" data-nosave role="group" aria-labelledby="ls-src-l"><button type="button" data-v="test" aria-pressed="true" title="この端末の中で作る 4 秒の音">サンプル音源</button><button type="button" data-v="file" aria-pressed="false" title="WAV・MP3・FLAC など。先頭 10 秒">ファイル</button></div></div>
+        <div class="ptab" id="ls-tab" data-src="test">
+          <ChoiceRow k="src" name="サンプル音源" choices={SOURCES} value="mix" layout="chips" wide />
+          <div class="prow" id="p-file">
+            <div class="c-sym" aria-hidden="true"></div>
+            <div class="c-name"><span class="pn">ファイル</span><p class="desc tip" role="tooltip" hidden>WAV・MP3・FLAC など。先頭 10 秒を使用。この枠へドラッグ可</p></div>
+            <div class="c-val"><div class="seg"><button type="button" id="ls-fileBtn">ファイルを選択</button></div><input type="file" id="ls-file" accept="audio/*,.wav,.mp3,.m4a,.ogg,.flac" hidden></div>
+            <div class="c-sub"><p class="msg" id="ls-fileMsg" aria-live="polite">まだ選んでいません</p></div>
+          </div>
+          <ParamRow d={P.kbps} />
+          <ParamRow d={P.lp} />
+          <div class="prow wide">
+            <div class="c-sym" aria-hidden="true"></div>
+            <div class="c-name"><span class="pn">プリセット</span></div>
+            <div class="c-sub"><div class="chips" id="lp-pre" role="group" aria-label="ローパスのプリセット">
+              <button type="button" class="chip" data-v="none" aria-pressed="false">なし</button>
+              <button type="button" class="chip" data-v="lame" aria-pressed="false" title="エンコーダ LAME がビットレートごとに決めている値">LAME の既定</button>
+            </div></div>
+          </div>
+        </div>
+      </Panel>
+
+      <Panel hid="hd-ls" title="試聴" class="a-ls">
+        <div class="mp3-keys" id="ls-keys" role="group" aria-label="試聴する音">
+          {KEYS.map(([l, c], i) => (
+            <button type="button" class:list={['mp3-key', c]} data-i={i} aria-pressed={i === 1 ? 'true' : 'false'}><b>{l}</b><small id={`k-${i}`}>&nbsp;</small></button>
+          ))}
+        </div>
+        <div class="tp mp3-tp">
+          <button type="button" class="tp-pp" id="ls-pp" title="再生" aria-label="再生" set:html={playIcon} />
+          <div class="tp-tl">
+            <div class="mp3-wv" id="ls-wv" role="slider" tabindex="0" aria-label="再生の位置" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0"><canvas id="ls-wc"></canvas><span class="mp3-ph" id="ls-ph"></span></div>
+            <div class="tp-tm"><span id="ls-tm">0.00 / 0.00 s</span></div>
+          </div>
+        </div>
+        <div class="ptab"><ParamRow d={P.vol} /></div>
+        <div class="seg mp3-save"><button type="button" id="ls-save">MP3 を保存</button></div>
+      </Panel>
+    </div>
+
+    <Panel hid="hd-how" title="MP3 のしくみ" class="a-how">
+      <span slot="aux" class="aux" id="how-set"></span>
+      <div class="mp3-steps" id="how-steps" role="group" aria-label="工程">
+        {STEPS.map(([n, d], i) => (
+          <button type="button" class="mp3-st" data-i={i} aria-pressed={i === 0 ? 'true' : 'false'}><b>{i + 1}: {n}</b><canvas aria-hidden="true"></canvas><small>{d}</small></button>
+        ))}
+      </div>
+      <p class="mp3-cap" id="how-cap" aria-live="off"></p>
+      <div class="scope mp3-scr"><canvas class="mp3-cv mp3-how" id="how-cv" role="img" aria-labelledby="how-name"></canvas></div>
+      <span class="sr" id="how-name"></span>
+      <div class="tp mp3-tp mp3-tp3">
+        <button type="button" class="tp-ib" id="how-prev" title="前の工程" aria-label="前の工程"><svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1.5" y="1.5" width="1.8" height="9"/><path d="M10.5 1.5v9L4 6z"/></svg></button>
+        <button type="button" class="tp-pp" id="how-pp" title="一時停止" aria-label="一時停止" set:html={playIcon} />
+        <div class="tp-tl"><div class="tp-trk" id="how-trk" role="slider" tabindex="0" aria-label="工程の位置" aria-valuemin="1" aria-valuemax={STEPS.length} aria-valuenow="1"><div class="tp-rail"></div><div class="tp-fill" id="how-fill"></div><div class="tp-th" id="how-th"></div></div></div>
+      </div>
+    </Panel>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools current="mp3" />
+  <script>
+    import '../tools/mp3/client';
+  </script>
+</SiteLayout>
