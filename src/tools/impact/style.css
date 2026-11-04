@@ -1,0 +1,65 @@
+/* 天体衝突のページだけのスタイル（共通は src/styles/site.css）。断面の図はテーマに依らず同じ色で描く */
+
+/* 枠の並び: 図 → 条件と結果 → 式 */
+@media (min-width:1000px){
+  #impact{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
+  #impact .a-fig,#impact .a-thy{grid-column:1/-1}
+}
+
+/* 凡例 */
+.ip-lg{justify-content:flex-start;margin:0 2px 8px;font-family:var(--sans)}
+.ip-sq{width:12px;height:12px;border-radius:2px;background:#ff5438}
+.ip-bar{width:44px;height:10px;border-radius:2px}
+.ip-pr{background:linear-gradient(90deg,#285abe,#5ac8ff,#fff)}
+.ip-tm{background:linear-gradient(90deg,#961e0a,#ff6e14,#ffbe46,#fff5d2)}
+.ip-tr{background:#52c4dd}
+.ip-law{background:#f2c230}
+.ip-only{display:none}
+#ip-fig.lines .ip-only{display:inline-flex}
+.ip-hint{margin-left:auto;color:var(--ink-3)}
+@media (max-width:760px){.ip-hint{display:none}}
+
+/* 断面 */
+.ip-wrap{position:relative;overflow:hidden;border-radius:4px;background:#06070b;line-height:0}
+#ip-cv{display:block;width:100%;aspect-ratio:1/.56;cursor:grab;touch-action:none}
+#ip-cv.drag{cursor:grabbing}
+.ip-tag{position:absolute;left:10px;top:8px;padding:2px 7px;border-radius:3px;background:rgb(13 16 22 / .6);color:#e8e6df;font:600 12.5px/1.4 var(--sans)}
+.ip-msg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:12px;color:#e8e6df;font:600 15px/1.5 var(--sans);text-align:center}
+.ip-msg[hidden],.ip-tag[hidden]{display:none}
+
+/* 表示の切り替え */
+.ip-tog{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:10px;font-size:13px;color:var(--ink-2)}
+.ip-tog>div{display:flex;align-items:center;gap:8px}
+
+/* 工程の帯 */
+.ip-st{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin-top:10px}
+.ip-st button{display:block;min-width:0;padding:7px 9px;border:1px solid var(--line-2);border-radius:4px;background:none;color:var(--ink-2);font:500 13px/1.3 var(--sans);text-align:left;cursor:pointer}
+.ip-st b{display:block;font-weight:700;color:inherit}
+.ip-st span{font:500 12px/1.3 var(--mono);color:var(--ink-3)}
+.ip-st button:hover{border-color:var(--ink-3)}
+.ip-st button[aria-pressed="true"]{border-color:var(--ink);background:var(--ink);color:var(--surface)}
+.ip-st button[aria-pressed="true"] span{color:inherit}
+@media (max-width:640px){.ip-st{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* 再生の枠 */
+.ip-tp{grid-template-columns:auto auto minmax(0,1fr) auto;border-bottom:0;padding-bottom:0}
+.ip-tp .seg button{font:500 12.5px/1 var(--sans)}
+@media (max-width:640px){
+  .ip-tp{grid-template-columns:auto auto minmax(0,1fr)}
+  .ip-tp .seg{grid-column:1/-1}
+}
+
+/* 計算結果 */
+#impact .m-sub{display:block;margin-top:2px;font:400 12.5px/1.4 var(--sans);color:var(--ink-3)}
+
+/* 実在の例 */
+.ip-pre{padding:6px 8px 10px;border-bottom:1px solid var(--line)}
+.ip-pre .pn{display:block;margin-bottom:6px;font-size:13.5px;font-weight:700}
+
+/* 計算中の灯り（LED と同じオレンジ）と回る輪 */
+.ip-led{display:inline-block;width:8px;height:8px;margin-right:6px;border-radius:50%;background:var(--led-off);vertical-align:1px}
+.ip-led.on{background:var(--accent);box-shadow:0 0 6px var(--accent)}
+.ip-busy{position:absolute;right:10px;bottom:10px;display:none;width:16px;height:16px;border:2px solid rgb(232 230 223 / .4);border-top-color:#ff8a4c;border-radius:50%;animation:ip-spin .8s linear infinite}
+#ip-fig.busy .ip-busy{display:block}
+@keyframes ip-spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.ip-busy{animation-duration:2.4s}}

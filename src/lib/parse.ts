@@ -52,6 +52,7 @@ export type Unit =
   | '個'
   | 'bit'
   | 'kbps'
+  | 'km/s'
   | '倍'
   | (typeof COMPOUND)[number];
 
@@ -112,6 +113,7 @@ const STRIP: Partial<Record<Unit, [RegExp, string]>> = {
   '%': [/%$/, ''],
   /* 4.7m は 4.7 メートル（ミリではない） */
   m: [/([\d.])m$/, '$1'],
+  'km/s': [/km\/s$/i, ''],
   'm/s': [/m\/s$/i, ''],
   /* 圧力（パスカル）。k などの接頭辞を読む */
   Pa: [/pa$/i, ''],

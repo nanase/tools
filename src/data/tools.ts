@@ -443,7 +443,7 @@ export const TOOLS: Tool[] = [
     t: '月',
     d: '選んだ日時の月を満ち欠けから地形の影まで再現します。',
     ic: 'mn',
-    r: ['solar-eclipse', 'jupiter', 'saturn', 'lens'],
+    r: ['solar-eclipse', 'impact', 'jupiter', 'saturn'],
     k: 'moon 月 満ち欠け 月齢 月相 phase 輝面比 illumination 秤動 libration 地球直下点 sub-earth 視直径 apparent diameter 近地点 遠地点 perigee apogee スーパームーン supermoon 月の出 月の入り 南中 moonrise moonset 欠け際 明暗境界 terminator クレーター crater 月の海 mare 余経度 colongitude 地球照 earthshine 月食 皆既月食 lunar eclipse 本影 半影 赤銅色 danjon 中秋の名月 十三夜 カレンダー lro lola nasa meeus 天文 astronomy',
   },
   {
@@ -463,6 +463,15 @@ export const TOOLS: Tool[] = [
     ic: 'st',
     r: ['jupiter', 'moon', 'solar-eclipse', 'lens'],
     k: 'saturn 土星 惑星 planet 環 rings 環の傾き ring tilt 環の消失 ring plane crossing a環 b環 c環 カッシーニの間隙 cassini division エンケの間隙 encke gap 光学的厚さ optical depth タイタン titan レア rhea ディオネ dione テティス tethys エンケラドゥス enceladus ミマス mimas ヒペリオン hyperion イアペトゥス iapetus フェーベ phoebe ヤヌス janus エピメテウス epimetheus 衛星の影 shadow transit タイタンの影 通過 掩蔽 occultation 食 eclipse 衝 opposition 衝効果 opposition effect 北極の六角形 hexagon hubble opal cassini minnaert 周縁減光 limb darkening vsop87 meeus horizons 天文 astronomy',
+  },
+  {
+    id: 'impact',
+    c: '天文',
+    t: '天体衝突',
+    d: '衝突の条件からクレーターと噴出物の行方を計算します。',
+    ic: 'imp',
+    r: ['moon', 'solar-eclipse', 'jupiter', 'thunder'],
+    k: '天体衝突 impact crater クレーター 衝突クレーター cratering giant impact 巨大衝突 衝突盆地 basin 軌道 脱出速度 escape 隕石 小惑星 asteroid meteorite 衝突体 impactor 断面 cross section 衝撃波 shock wave 掘削 excavation 崩壊 collapse 噴出物 ejecta 中央丘 central peak ピークリング peak ring 単純クレーター 複雑クレーター simple complex 入射角 大気圏突入 atmospheric entry 空中爆発 airburst スケーリング則 pi scaling チクシュルーブ chicxulub リース ries バリンジャー barringer meteor crater ティコ tycho tillotson 状態方程式 mpm material point method 粒子法 音響流動化 acoustic fluidization 天文 astronomy シミュレーション simulation',
   },
   {
     id: 'bifurcation',
