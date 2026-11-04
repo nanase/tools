@@ -1632,6 +1632,45 @@ export const ART: Record<string, Art> = {
     return P('b t', wave) + P('c t', tick) + P('a', st);
   },
   /*
+   * VVVF: 基本波とキャリアを比べて、出力のオン・オフを左から順に作る。止まっているときは 1 周期を描き終えた絵。
+   * 図柄が小さいので倍率は 9 倍に固定し、速度で変えない。1 周は 4 秒で、36 コマで描く（12 コマ/秒）
+   */
+  vv(t) {
+    const w = mod(t, 4),
+      end = w < 0.6 ? 1 : Math.min(1, Math.floor((w - 0.6) * 12) / 36),
+      tr = (x: number): number => {
+        const q = x - Math.floor(x);
+        return q < 0.25 ? 4 * q : q < 0.75 ? 2 - 4 * q : 4 * q - 4;
+      },
+      y = (v: number): number => 15 - 11 * v,
+      X0 = 4,
+      W = 112;
+    let out = '',
+      prev: boolean | null = null;
+    const lim = Math.floor(480 * end);
+    for (let k = 0; k <= lim; k++) {
+      const u = k / 480,
+        on = 0.8 * Math.sin(TAU * u) >= -tr(9 * u),
+        x = r1(X0 + W * u),
+        yy = on ? 31 : 44;
+      if (prev === null) out += `M${x} ${yy}`;
+      else if (on !== prev) out += `H${x}V${yy}`;
+      prev = on;
+    }
+    if (lim > 0) out += `H${r1(X0 + (W * lim) / 480)}`;
+    return (
+      P(
+        'c t',
+        fx((x) => y(-tr((9 * (x - X0)) / W)), X0, X0 + W, 144),
+      ) +
+      P(
+        'b',
+        fx((x) => y(0.8 * Math.sin((TAU * (x - X0)) / W)), X0, X0 + W, 48),
+      ) +
+      P('a', out)
+    );
+  },
+  /*
    * 天体衝突: 丸い天体の縁へ衝突体が落ち、穴が 4 段で開く。破片は遠くへ去る筋と、地表へ落ちる粒に分かれる。
    * 止まっているときは落下の途中で、地表はまだ変わっていない。1 周は 53 コマ（12 コマ/秒）
    */
@@ -1988,6 +2027,7 @@ export const LOOP: Record<string, number> = {
   adp: 26 / 8,
   mp3: 4,
   imp: 53 / 12,
+  vv: 4,
 };
 
 /** 止まっているときの図柄（ビルド時に HTML へ出す） */

@@ -359,8 +359,17 @@ export const TOOLS: Tool[] = [
     t: 'エンジン音響モデル',
     d: 'CT125 をもとにした単気筒エンジンの排気音とトルク・出力を再現します。',
     ic: 'en',
-    r: ['doppler', 'spectrum', 'trumpet', 'organ'],
+    r: ['vvvf', 'doppler', 'spectrum', 'trumpet'],
     k: 'engine エンジン honda ホンダ 空冷 単気筒 single cylinder 4 stroke 4 ストローク ハンターカブ hunter cub ct125 スーパーカブ super cub ja65 ja55 排気音 exhaust マフラー muffler silencer 触媒 吸気 intake トルク torque 出力 power 回転数 rpm 空ぶかし アイドリング idle 燃焼 combustion wiebe 筒内圧 p-v 体積効率 導波管 waveguide 物理モデル physical model オーディオ audio',
+  },
+  {
+    id: 'vvvf',
+    c: '音響モデル',
+    t: 'VVVF',
+    d: '電車のモーター音を鳴らし、同期と非同期のしくみを確かめます。',
+    ic: 'vv',
+    r: ['engine', 'spectrum', 'oscilloscope', 'doppler'],
+    k: 'vvvf インバータ inverter 電車 鉄道 train railway モーター音 磁励音 走行音 誘導電動機 induction motor pwm パルス幅変調 同期 非同期 synchronous asynchronous キャリア carrier 基本波 1 パルス 3 パルス gto igbt シーメンス siemens ドレミファインバータ 歌う電車 東急 5000系 9000系 田園都市線 京急 新1000形 回生ブレーキ 全電気ブレーキ 物理モデル オーディオ audio',
   },
   {
     id: 'lens',
