@@ -1,0 +1,108 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/pcm/style.css';
+import '../tools/vvvf/style.css';
+import { CARS } from '../tools/vvvf/cars';
+import { CAR_IDS, ECHO_OPT, LEVERS, PARAMS, RAIL_OPT, ROAD, SEAT_OPT, SRC, ST_OPT } from '../tools/vvvf/params';
+import { STEPS } from '../tools/vvvf/story';
+import Theory from '../tools/vvvf/Theory.astro';
+
+const name = 'VVVF';
+const P = Object.fromEntries(PARAMS.map((d) => [d.k, d]));
+const playIcon =
+  '<svg class="i-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.2l7.6 4.8L3 10.8z"/></svg><svg class="i-pause" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="2.8" height="9"/><rect x="7.2" y="1.5" width="2.8" height="9"/></svg>';
+---
+<SiteLayout title={name} tool={{ id: 'vvvf', name }} note="車種ごとの音は公開の推定値をもとにした再現で、実車の録音に合わせたものではありません。">
+  <PageTitle title={name}>電車のモーター音を鳴らし、同期と非同期のしくみを確かめます。</PageTitle>
+
+  <div class="tgrid" id="vvvf">
+    <div class="pcm-main">
+    <div class="col">
+      <Panel hid="hd-wave" title="波形">
+        <Fragment slot="aux"><span class="led" id="vv-led" aria-hidden="true"></span><span class="aux" id="vv-st" aria-live="polite">停止</span></Fragment>
+        <div class="scope pcm-scr"><canvas class="pcm-cv vv-cy" id="vv-cy" role="img" aria-label="基本波とキャリアと出力の波形"></canvas></div>
+        <p class="vv-ratio" id="vv-ratio"></p>
+      </Panel>
+
+      <Panel hid="hd-map" title="モード図">
+        <div class="scope pcm-scr"><canvas class="pcm-cv vv-map" id="vv-map" role="img" aria-label="速度とキャリアの周波数の図"></canvas></div>
+        <div class="sbar pcm-lg"><span class="stag"><i class="sw c2"></i>非同期（基本波と無関係なキャリア）</span><span class="stag"><i class="sw"></i>同期（基本波の整数倍のキャリア）</span></div>
+      </Panel>
+
+      <Panel hid="hd-sp" title="スペクトログラム">
+        <div class="vv-spec"><canvas class="pcm-cv vv-sp" id="vv-sp" role="img" aria-label="音の高さの変化"></canvas></div>
+      </Panel>
+    </div>
+
+    <div class="col pcm-side">
+      <Panel hid="hd-run" title="運転">
+        <div class="chips vv-cars" id="vv-car" role="group" aria-label="車種">
+          {CAR_IDS.map((k, i) => <button type="button" class="chip" data-v={k} aria-pressed={i === 0 ? 'true' : 'false'} title={CARS[k].sub}>{CARS[k].name}</button>)}
+        </div>
+        <div class="vv-cmd">
+          <button type="button" id="vv-auto" aria-pressed="false" title="発車から停止までの自動運転"><span class="led" id="vv-autoLed" aria-hidden="true"></span>自動</button>
+          <button type="button" id="vv-stop" title="速度 0 km/h と消音">緊急停止</button>
+        </div>
+        <div class="vv-drive">
+          <div class="vv-lev" id="vv-lev" role="group" aria-label="手動の運転">
+            {LEVERS.map(([l, n, c]) => <button type="button" data-l={l} class={c} aria-pressed="false">{n}</button>)}
+          </div>
+          <dl class="vv-mt">
+            <div class="vv-main"><dt>速度</dt><dd><span id="m-v">0</span> <small>km/h</small></dd></div>
+            <div><dt>基本波</dt><dd id="m-f">0.0 Hz</dd></div>
+            <div><dt>キャリア</dt><dd id="m-c">—</dd></div>
+            <div class="vv-wide"><dt>モード</dt><dd id="m-m">停止</dd></div>
+          </dl>
+        </div>
+      </Panel>
+
+      <Panel hid="hd-snd" title="音">
+        <div class="ptab">
+          <ChoiceRow k="src" name="音源" choices={SRC} value="v" />
+          <ParamRow d={P.vol} />
+        </div>
+        <h3 class="vv-gh">臨場感</h3>
+        <div class="ptab" id="vv-snd" data-road="1" data-rail="25">
+          <ChoiceRow k="road" name="走行音" sub="歯車と転がりの音" choices={ROAD} value="1" />
+          <ParamRow d={P.roadDb} />
+          <ChoiceRow k="echo" name="反響" sub="車両のまわりの壁や地面の反射" choices={ECHO_OPT} value="ground" />
+          <ChoiceRow k="rail" name="レールの音" sub="継ぎ目の間隔。速度と車軸の間隔で鳴る時刻が決まる" choices={RAIL_OPT} value="25" />
+          <ChoiceRow k="seat" name="席" sub="レールの音を聞く場所" choices={SEAT_OPT} value="end" />
+          <ChoiceRow k="st" name="ステレオ" sub="インバータを左右へ振り、継ぎ目の音は前から後ろへ移る" choices={ST_OPT} value="1" />
+        </div>
+      </Panel>
+    </div>
+    </div>
+
+    <Panel hid="hd-how" title="VVVF のしくみ" class="a-how">
+      <div class="pcm-steps" id="how-steps" role="group" aria-label="工程">
+        {STEPS.map(([n, d], i) => (
+          <button type="button" class="pcm-st" data-i={i} aria-pressed={i === 0 ? 'true' : 'false'}><b>{i + 1}: {n}</b><canvas aria-hidden="true"></canvas><small>{d}</small></button>
+        ))}
+      </div>
+      <p class="pcm-cap" id="how-cap" aria-live="off"></p>
+      <div class="scope pcm-scr"><canvas class="pcm-cv pcm-how vv-how" id="how-cv" role="img" aria-labelledby="how-name"></canvas></div>
+      <span class="sr" id="how-name"></span>
+      <div class="tp pcm-tp pcm-tp3">
+        <button type="button" class="tp-ib" id="how-prev" title="前の工程" aria-label="前の工程"><svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1.5" y="1.5" width="1.8" height="9"/><path d="M10.5 1.5v9L4 6z"/></svg></button>
+        <button type="button" class="tp-pp" id="how-pp" title="一時停止" aria-label="一時停止" set:html={playIcon} />
+        <div class="tp-tl"><div class="tp-trk" id="how-trk" role="slider" tabindex="0" aria-label="工程の位置" aria-valuemin="1" aria-valuemax={STEPS.length} aria-valuenow="1"><div class="tp-rail"></div><div class="tp-fill" id="how-fill"></div><div class="tp-th" id="how-th"></div></div></div>
+      </div>
+    </Panel>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools current="vvvf" />
+  <script>
+    import '../tools/vvvf/client';
+  </script>
+</SiteLayout>

@@ -1,0 +1,138 @@
+---
+// 動作原理と式
+const sub = (b: string, s: string) => `<msub>${b}<mrow>${s}</mrow></msub>`;
+const fr = (a: string, b: string) => `<mfrac><mrow>${a}</mrow><mrow>${b}</mrow></mfrac>`;
+const f1 = sub('<mi>f</mi>', '<mn>1</mn>');
+const fc = sub('<mi>f</mi>', '<mi>c</mi>');
+const fs = sub('<mi>f</mi>', '<mi>s</mi>');
+const rf = (i: number) => `<a class="rf" href="#thy-r${i}">[${i}]</a>`;
+---
+<h3>全体の流れ</h3>
+<ol class="flow"><li>架線の直流</li><li>インバータのスイッチ</li><li>3 本の交流</li><li>モーター</li><li>車輪</li></ol>
+<ul class="tl">
+  <li>VVVF は電圧と周波数を変える制御（Variable Voltage Variable Frequency）で、インバータのスイッチのオン・オフで交流を作る<Fragment set:html={rf(1)} /></li>
+  <li>図の出力は 3 相のうちの 1 相で、音の線間電圧は 2 相の差</li>
+  <li>オン・オフの細かい揺れで磁力が変わり、モーターの鉄心が振動して音になる<Fragment set:html={`${rf(2)}${rf(3)}`} /></li>
+</ul>
+
+<h3>速度と基本波</h3>
+<div class="eqs">
+  <math display="block" set:html={`${f1}<mo>=</mo>${fr('<mi>p</mi><mi>G</mi><mi>v</mi>', '<mi>π</mi><mi>D</mi>')}<mo>±</mo>${fs}`} />
+</div>
+<dl class="syms">
+  <dt><math set:html={f1} /></dt><dd>基本波の周波数</dd>
+  <dt><math><mi>p</mi></math></dt><dd>モーターの極対数</dd>
+  <dt><math><mi>G</mi></math></dt><dd>歯車比</dd>
+  <dt><math><mi>v</mi></math></dt><dd>速度</dd>
+  <dt><math><mi>D</mi></math></dt><dd>車輪の直径</dd>
+  <dt><math set:html={fs} /></dt><dd>すべり周波数（加速で足し、ブレーキで引く）</dd>
+</dl>
+
+<h3>PWM</h3>
+<div class="eqs">
+  <math display="block" set:html={`<mi>u</mi><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mo>=</mo><mrow><mo>{</mo><mtable><mtr><mtd><mo>+</mo><mn>1</mn></mtd><mtd><mi>m</mi><mspace width="0.15em"/><mi>sin</mi><mspace width="0.15em"/><mi>θ</mi><mo>≥</mo><mi>c</mi><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo></mtd></mtr><mtr><mtd><mo>−</mo><mn>1</mn></mtd><mtd><mtext>それ以外</mtext></mtd></mtr></mtable></mrow>`} />
+</div>
+<dl class="syms">
+  <dt><math><mi>m</mi></math></dt><dd>変調率（基本波とキャリアの大きさの比）</dd>
+  <dt><math><mi>θ</mi></math></dt><dd>基本波の角度</dd>
+  <dt><math><mi>c</mi></math></dt><dd>キャリア（±1 の三角波）</dd>
+</dl>
+
+<h3>同期と非同期</h3>
+<div class="eqs">
+  <math display="block" set:html={`${fc}<mo>=</mo><mi>N</mi>${f1}`} />
+</div>
+<ul class="tl">
+  <li>同期: キャリアを基本波の整数 <math><mi>N</mi></math> 倍に固定する</li>
+  <li>非同期: キャリアの周波数を基本波と無関係に決める</li>
+  <li>倍率が小さいまま非同期を続けると、うなりが出る<Fragment set:html={rf(4)} /></li>
+  <li>スイッチの回数に上限があるので、速くなると倍率を下げ、同期へ移る<Fragment set:html={rf(1)} /></li>
+  <li>1 パルスは最も高い電圧を出すモードで、基本波 1 周期にオン・オフが 1 回</li>
+</ul>
+
+<h3>音の高さ</h3>
+<div class="eqs">
+  <math display="block" set:html={`<mi>f</mi><mo>=</mo><mi>k</mi>${fc}<mo>±</mo><mi>l</mi>${f1}`} />
+</div>
+<ul class="tl">
+  <li>線間電圧の成分は、キャリアの整数倍の両脇に基本波の整数倍の間隔で並ぶ<Fragment set:html={`${rf(5)}${rf(6)}`} /></li>
+  <li>変調率が小さい低速は <math set:html={`<mn>2</mn>${fc}<mo>±</mo>${f1}`} /> が強い</li>
+  <li>変調率が上がると <math set:html={`${fc}<mo>±</mo><mn>2</mn>${f1}`} /> が強くなり、音の幅が広がる</li>
+  <li>1 パルスの成分は基本波の 5・7・11・13 倍…</li>
+  <li>京急の音階は、発車直後にキャリアを段階的に変えて作られている<Fragment set:html={rf(7)} /></li>
+  <li>キャリアの選び方でモーターの共振に当たるかが変わり、音の大きさが大きく変わる<Fragment set:html={rf(3)} /></li>
+</ul>
+
+<h3>レールの音</h3>
+<div class="eqs">
+  <math display="block" set:html={`<mi>t</mi><mo>=</mo>${fr('<mi>L</mi>', '<mi>v</mi>')}`} />
+</div>
+<dl class="syms">
+  <dt><math><mi>t</mi></math></dt><dd>同じ車軸が継ぎ目を踏む間隔</dd>
+  <dt><math><mi>L</mi></math></dt><dd>継ぎ目の間隔（定尺レールは 25 m、ロングレールは 200 m 以上）<Fragment set:html={rf(13)} /></dd>
+</dl>
+<ul class="tl">
+  <li>25 m のレールで 90 km/h なら、1 秒に 1 回踏む<Fragment set:html={rf(13)} /></li>
+  <li>編成の全車軸が、1 つの継ぎ目を前から順に踏む</li>
+  <li>録音では、連結部をはさむ 2 つの台車の 4 本が 2.1・4.1・2.1 m の間隔で 1 組に聞こえる<Fragment set:html={rf(14)} /></li>
+  <li>台車の真上の車内は音が大きく、台車から床へ伝わる振動の寄与が大きい<Fragment set:html={rf(16)} /></li>
+  <li>遠い車両の音は小さく、遅れて届く</li>
+</ul>
+
+<h3>車種</h3>
+<ul class="tl">
+  <li>東急 5000系: 日立の IGBT。2011 年度以降の装置はスペクトラム拡散で磁励音が静か<Fragment set:html={rf(8)} /></li>
+  <li>東急 5000系と 5050系は全電気ブレーキで、停止直前に独特の音が出る<Fragment set:html={rf(9)} /></li>
+  <li>東急 9000系: 日立の GTO<Fragment set:html={rf(10)} /></li>
+  <li>京急 新1000形: 1・2 次車がシーメンスの GTO。音階が流れた編成は 2021 年 7 月に運用を終えた<Fragment set:html={rf(11)} /></li>
+</ul>
+
+<h3>このツールで決めたこと</h3>
+<ul class="tl">
+  <li>車種ごとのモードの切り替えとキャリアの値は、公開されている推定値をそのまま使う<Fragment set:html={rf(12)} /></li>
+  <li>メーカーの公表値でも実車の録音でもないので、実車と違う可能性がある</li>
+  <li>推定値にある特別な波形は普通の同期 PWM に近似する（3 パルスの変種、シーメンスの電流の高調波を抑える波形）</li>
+  <li>同じ理由で、線間電圧の音は電圧の波形をそのまま鳴らしたもので、車内で聞こえる音の測定ではない</li>
+  <li>車輪の直径は 860 mm、モーターは 4 極（極対数 2）と仮定する</li>
+  <li>すべり周波数は加速が全負荷で 2.6 Hz（1.4 Hz/秒で立ち上がる）、ブレーキが 1.2 Hz と仮定する</li>
+  <li>加速度とブレーキの変化の速さ、65 km/h より上の加速度の低下は仮定で、自動運転は 80 km/h まで加速して 2.5 秒惰行する</li>
+  <li>加速度は最大の 1/3 ずつ 3 段で、手動の上限は 110 km/h</li>
+  <li>磁力の音は固定子の 1 点の磁束の 2 乗から作り、モーターの固有振動は 1000・2300・3700 Hz と仮定し、音量の差を縮める</li>
+  <li>インバータは 2 台で、2 台目は速度を 0.4 % 変えて半分の大きさで重ねる</li>
+  <li>走行音は歯車のかみ合いの音、雑音、低いうなりで作る。速いほど大きく、高速ではスイッチの音より大きくする</li>
+  <li>レールの音の音色と 1 組の並びは、秩父鉄道の車内の録音を約 70 km/h の区間で解析して決める。録音の音そのものは使わない<Fragment set:html={rf(14)} /></li>
+  <li>打音は雑音を 185・380・700・2700 Hz の帯域に分け、速い減衰と弱い余韻で鳴らす</li>
+  <li>録音にない 72 Hz の音と 185 Hz の +4 dB は、体に伝わる振動の代わりに試聴で足す</li>
+  <li>距離による減りは、近い範囲の 3 dB/m と、−9 dB から始まる 0.3 dB/m の和とする。録音の 1 か所から推定し、遠い車両の強さは試聴で決める</li>
+  <li>打音の大きさは録音の走行音との比から決め、−3 dB の走行音を基準にする。車種によって音色は変えない</li>
+  <li>打音は速度の 1.25 乗で大きくする。解析した速度は 68〜75 km/h だけで、ほかの速度は測っていない。分岐器の衝撃音の文献では山がほぼ 20 log<sub>10</sub> V で増える<Fragment set:html={rf(15)} /></li>
+  <li>聞く車両は編成の真ん中あたりとする。連結部寄りの席は車端から 0.5 m で、録音の打音の大きさから推定した</li>
+  <li>編成は東急 5000系が 10 両、東急 9000系と京急 新1000形が 8 両<Fragment set:html={`${rf(8)}${rf(10)}${rf(11)}`} /></li>
+  <li>車体の長さは 20 m（京急 新1000形は 18 m）で、台車の中心の間隔 13.8 m（同 12 m）と車軸の間隔 2.1 m は仮定する。録音の打音の間隔はこの値に合うが、秩父鉄道の車両での話で、東急と京急の値の確認にはならない</li>
+  <li>反響の値は実測ではない。地上は残響時間 0.45 秒、トンネルは 2.4 秒で、トンネルでは走行音を 1.35 倍にする</li>
+  <li>ステレオは 2 台のインバータを左右へ振り、継ぎ目の音を席より前（左）から後ろ（右）へ移す。遠い音ほど中央へ寄せる</li>
+  <li>京急の音階の切り替えは、自動運転で 0.14 秒ごとの等間隔になるよう推定値から変え、約 1.1 秒で上がり切るようにした（キャリアの値は推定値のまま）</li>
+  <li>緊急停止は図と音を止めるための操作で、実車の非常ブレーキの再現ではない</li>
+  <li>切り替えの折り返しを減らすため、音は 8 倍の標本化周波数で計算する</li>
+  <li>「VVVF のしくみ」の図は固定の値で、車種や運転では変わらない</li>
+</ul>
+
+<h3>出典</h3>
+<ol class="refs">
+  <li id="thy-r1"><span class="rf-for">VVVF の制御・スイッチの素子</span><span class="rf-src">「鉄道車両のVVVFインバータ制御」、Wikipedia、<a href="https://ja.wikipedia.org/wiki/鉄道車両のVVVFインバータ制御">ja.wikipedia.org</a></span></li>
+  <li id="thy-r2"><span class="rf-for">磁励音のしくみ</span><span class="rf-src">「京急『歌う電車』なぜ生まれた？ 最近は歌わないどころか『静かな電車』ばかりのワケ」、乗りものニュース、<a href="https://trafficnews.jp/post/108487">trafficnews.jp</a></span></li>
+  <li id="thy-r3"><span class="rf-for">PWM の磁気騒音とキャリアの選び方</span><span class="rf-src">J. Le Besnerais, V. Lanfranchi, M. Hecquet, and P. Brochet, “Characterization and Reduction of Audible Magnetic Noise Due to PWM Supply in Induction Machines,” <i>IEEE Transactions on Industrial Electronics</i>, vol. 57, no. 4, pp. 1288–1295, 2010, <a href="https://doi.org/10.1109/TIE.2009.2029529">doi:10.1109/TIE.2009.2029529</a></span></li>
+  <li id="thy-r4"><span class="rf-for">倍率の小さい非同期のうなり</span><span class="rf-src">Y. Iwaji, T. Sukegawa, T. Okuyama, T. Ikimi, M. Shigyo, and M. Tobise, “A new PWM method to reduce beat phenomenon in large-capacity inverters with low switching frequency,” <i>IEEE Transactions on Industry Applications</i>, vol. 35, no. 3, pp. 606–612, 1999, <a href="https://doi.org/10.1109/28.767011">doi:10.1109/28.767011</a></span></li>
+  <li id="thy-r5"><span class="rf-for">PWM の周波数成分の解析</span><span class="rf-src">S. R. Bowes and B. M. Bird, “Novel approach to the analysis and synthesis of modulation processes in power convertors,” <i>Proceedings of the Institution of Electrical Engineers</i>, vol. 122, no. 5, p. 507, 1975, <a href="https://doi.org/10.1049/piee.1975.0141">doi:10.1049/piee.1975.0141</a></span></li>
+  <li id="thy-r6"><span class="rf-for">PWM の教科書</span><span class="rf-src">D. G. Holmes and T. A. Lipo, <i>Pulse Width Modulation for Power Converters</i>, IEEE Press, 2003, <a href="https://doi.org/10.1109/9780470546284">doi:10.1109/9780470546284</a></span></li>
+  <li id="thy-r7"><span class="rf-for">京急の音階</span><span class="rf-src">「京急『歌う電車』なぜ生まれた？」、乗りものニュース、<a href="https://trafficnews.jp/post/108487">trafficnews.jp</a>。段階の値は [12] の推定</span></li>
+  <li id="thy-r8"><span class="rf-for">東急 5000系の装置と諸元</span><span class="rf-src">「東急5000系電車 (2代)」、Wikipedia、<a href="https://ja.wikipedia.org/wiki/東急5000系電車_(2代)">ja.wikipedia.org</a></span></li>
+  <li id="thy-r9"><span class="rf-for">5000系の停止直前の音</span><span class="rf-src">「通勤電車図鑑」、<a href="https://www.asahi-net.or.jp/~eg6f-tkhs/tetu/tokyu_20m.htm">asahi-net.or.jp</a></span></li>
+  <li id="thy-r10"><span class="rf-for">東急 9000系の諸元</span><span class="rf-src">「東急9000系電車」、Wikipedia、<a href="https://ja.wikipedia.org/wiki/東急9000系電車">ja.wikipedia.org</a></span></li>
+  <li id="thy-r11"><span class="rf-for">京急 新1000形の諸元と音階</span><span class="rf-src">「京急新1000形電車」、Wikipedia、<a href="https://ja.wikipedia.org/wiki/京急新1000形電車">ja.wikipedia.org</a></span></li>
+  <li id="thy-r12"><span class="rf-for">モードの切り替えとキャリアの推定値</span><span class="rf-src">VvvfGeeks, “YAML-Files”（VVVF Simulator のサンプル）, <a href="https://github.com/VvvfGeeks/YAML-Files">github.com/VvvfGeeks/YAML-Files</a>。数値だけを参照し、コードは使っていない</span></li>
+  <li id="thy-r13"><span class="rf-for">レールの長さと継ぎ目の音</span><span class="rf-src">「列車の『ガタンゴトン』、なぜあまり聞けなくなった？ 鍵は『ロング』と『斜め』」、乗りものニュース、<a href="https://trafficnews.jp/post/79702">trafficnews.jp</a></span></li>
+  <li id="thy-r14"><span class="rf-for">レールの音の解析に使った車内の録音</span><span class="rf-src">Heigh-hoo, “chichibu.wav”, Freesound（CC0）, <a href="https://freesound.org/s/88409/">freesound.org/s/88409</a>。解析にだけ使い、音は含めていない</span></li>
+  <li id="thy-r15"><span class="rf-for">衝撃音の速度による変化（分岐器）</span><span class="rf-src">P. T. Torstensson, G. Squicciarini, M. Krüger, B. A. Pålsson, J. C. O. Nielsen, and D. J. Thompson, “Wheel–rail impact loads and noise generated at railway crossings – Influence of vehicle speed and crossing dip angle,” <i>Journal of Sound and Vibration</i>, vol. 456, pp. 119–136, 2019, <a href="https://doi.org/10.1016/j.jsv.2019.04.034">doi:10.1016/j.jsv.2019.04.034</a></span></li>
+  <li id="thy-r16"><span class="rf-for">台車から車内へ伝わる音</span><span class="rf-src">M. Asahina, T. Tomioka, S. Matsuo, and T. Yoshimura,「伝達経路解析の鉄道車両の車内騒音・振動への適用検討」, <i>Transactions of the JSME</i>, vol. 90, no. 929, 23-00030, 2024, <a href="https://doi.org/10.1299/transjsme.23-00030">doi:10.1299/transjsme.23-00030</a></span></li>
+</ol>
