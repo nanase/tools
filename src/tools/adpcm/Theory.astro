@@ -1,0 +1,114 @@
+---
+// 動作原理と式
+const sub = (b: string, s: string) => `<msub>${b}<mrow>${s}</mrow></msub>`;
+const fr = (a: string, b: string) => `<mfrac><mrow>${a}</mrow><mrow>${b}</mrow></mfrac>`;
+const n = '<mo stretchy="false">[</mo><mi>n</mi><mo stretchy="false">]</mo>';
+const n1 = '<mo stretchy="false">[</mo><mi>n</mi><mo>−</mo><mn>1</mn><mo stretchy="false">]</mo>';
+const n2 = '<mo stretchy="false">[</mo><mi>n</mi><mo>+</mo><mn>1</mn><mo stretchy="false">]</mo>';
+const rf = (i: number) => `<a class="rf" href="#thy-r${i}">[${i}]</a>`;
+---
+<h3>全体の流れ</h3>
+<ol class="flow"><li>予測</li><li>差</li><li>量子化</li><li>間隔の更新</li><li>再生</li></ol>
+<ul class="tl">
+  <li>隣の標本との差だけを記録する方式が DPCM<Fragment set:html={rf(1)} /></li>
+  <li>段階の間隔（ステップサイズ）を音に合わせて変えると ADPCM<Fragment set:html={`${rf(2)}${rf(3)}`} /></li>
+  <li>このページの計算は IMA ADPCM<Fragment set:html={rf(4)} /></li>
+</ul>
+
+<h3>予測と差</h3>
+<div class="eqs">
+  <math display="block" set:html={`<mi>p</mi>${n}<mo>=</mo><mi>y</mi>${n1}`} />
+  <math display="block" set:html={`<mi>d</mi>${n}<mo>=</mo><mi>s</mi>${n}<mo>−</mo><mi>p</mi>${n}`} />
+</div>
+<dl class="syms">
+  <dt><math><mi>s</mi></math></dt><dd>標本</dd>
+  <dt><math><mi>p</mi></math></dt><dd>予測値</dd>
+  <dt><math><mi>d</mi></math></dt><dd>予測との差</dd>
+  <dt><math><mi>y</mi></math></dt><dd>再生した値</dd>
+</dl>
+<ul class="tl">
+  <li>予測には元の標本ではなく再生した値を使う</li>
+  <li>再生する側も同じ値を持てるので、丸めの誤差がたまらない</li>
+</ul>
+
+<h3>量子化</h3>
+<div class="eqs">
+  <math display="block" set:html={`<mi>y</mi>${n}<mo>=</mo><mi>p</mi>${n}<mo>±</mo>${fr('<mo stretchy="false">(</mo><mn>2</mn><mi>m</mi><mo>+</mo><mn>1</mn><mo stretchy="false">)</mo><mspace width="0.15em"/><mi>Δ</mi>' + n, '<msup><mn>2</mn><mrow><mi>N</mi><mo>−</mo><mn>1</mn></mrow></msup>')}`} />
+</div>
+<dl class="syms">
+  <dt><math><mi>N</mi></math></dt><dd>ビット数（1 ビットが正負、残りが大きさ）</dd>
+  <dt><math><mi>m</mi></math></dt><dd>大きさ（0 から <math><msup><mn>2</mn><mrow><mi>N</mi><mo>−</mo><mn>1</mn></mrow></msup><mo>−</mo><mn>1</mn></math>）</dd>
+  <dt><math><mi>Δ</mi></math></dt><dd>段階の間隔</dd>
+</dl>
+<ul class="tl">
+  <li>段階は予測値を中心に上下へ並び、ちょうど予測値の段階はない</li>
+  <li>段階の全体の幅は 4 bit で約 ±1.9Δ</li>
+</ul>
+
+<h3>適応</h3>
+<div class="eqs">
+  <math display="block" set:html={`<mi>i</mi>${n2}<mo>=</mo><mi>i</mi>${n}<mo>+</mo><mi>M</mi><mo stretchy="false">(</mo><mi>m</mi><mo stretchy="false">)</mo>`} />
+  <math display="block" set:html={`<mi>Δ</mi>${n2}<mo>=</mo><mi>T</mi><mo stretchy="false">(</mo><mi>i</mi>${n2}<mo stretchy="false">)</mo>`} />
+</div>
+<dl class="syms">
+  <dt><math><mi>T</mi></math></dt><dd>間隔の表（7 から 32767 の 89 個、次の値は約 1.1 倍）</dd>
+  <dt><math><mi>i</mi></math></dt><dd>表の番号（0〜88 に収める）</dd>
+  <dt><math><mi>M</mi></math></dt><dd>番号の増減（4 bit は −1, −1, −1, −1, 2, 4, 6, 8）</dd>
+</dl>
+<ul class="tl">
+  <li>次の間隔は今の結果だけで決まり、別に記録しなくてよい<Fragment set:html={rf(3)} /></li>
+  <li>大きさが小さければ間隔を狭め、大きければ広げる</li>
+  <li>4 bit は 1 回で最大 8 番上がり、約 2.1 倍に広がる</li>
+</ul>
+
+<h3>得意な音と苦手な音</h3>
+<ul class="tl">
+  <li>入力が小さくても間隔が縮むので、PCM のように SN 比が下がらない</li>
+  <li>波の傾きが最も外側の段階を超えると追いつけない（スロープ過負荷）<Fragment set:html={rf(5)} /></li>
+  <li>のこぎり波の段差や、音の立ち上がりで起きる</li>
+  <li>標本化周波数が高いほど隣の標本が近くなり、予測がよく当たる</li>
+</ul>
+
+<h3>ビットレートと誤り</h3>
+<div class="eqs">
+  <math display="block" set:html={`<mi>R</mi><mo>=</mo>${sub('<mi>f</mi>', '<mi>s</mi>')}<mo>×</mo><mi>N</mi><mo>×</mo><mi>C</mi>`} />
+</div>
+<dl class="syms">
+  <dt><math><mi>R</mi></math></dt><dd>ビットレート</dd>
+  <dt><math><mi>C</mi></math></dt><dd>チャンネル数</dd>
+</dl>
+<ul class="tl">
+  <li>44.1 kHz・4 bit・2 チャンネルは 352.8 kbps で、CD の 1/4</li>
+  <li>ビットが 1 つ壊れると再生する側の値がずれ、次の区切りまで残る</li>
+  <li>WAV の IMA ADPCM は区切りごとに予測値と番号を記録する<Fragment set:html={rf(6)} /></li>
+</ul>
+
+<h3>このツールで決めたこと</h3>
+<ul class="tl">
+  <li>「ADPCM のしくみ」の図は 8 kHz・4 bit・440 Hz に固定し、途中で音を大きくする</li>
+  <li>2・3・5 bit の番号の増減は Flash の ADPCM の表<Fragment set:html={rf(7)} /></li>
+  <li>4 bit の増減は IMA の表<Fragment set:html={rf(4)} /></li>
+  <li>段階は全部を比べて最も近いものを選ぶ</li>
+  <li>始めの予測値と表の番号は 0 で、WAV のような区切りは入れない</li>
+  <li>予測なしは予測値を 0 に固定する</li>
+  <li>適応なしは間隔を表の値の 1 つに固定する</li>
+  <li>PCM は同じ標本を同じビット数で丸め、入力のローパスと再生の計算も PCM のページと同じ</li>
+  <li>原音の線は入力のローパスを通したあとの波</li>
+  <li>SN 比は標本の 2 乗和と誤差の 2 乗和の比</li>
+  <li>全体の図の間隔は対数、誤差は電力の dB で下端が −80 dB</li>
+  <li>プリセットの標本化周波数は選べる値の 1 つ</li>
+  <li>サンプル音源は 4 秒で、くり返しても切れ目が出ない</li>
+  <li>ファイルは先頭 10 秒を使い、マイクは最大 10 秒を録る</li>
+  <li>音はこの端末の中だけで処理し、送らない</li>
+</ul>
+
+<h3>出典</h3>
+<ol class="refs">
+  <li id="thy-r1"><span class="rf-for">差を記録する方式</span><span class="rf-src">C. C. Cutler, “Differential quantization of communication signals,” U.S. Patent 2,605,361, 1952, <a href="https://patents.google.com/patent/US2605361">patents.google.com</a></span></li>
+  <li id="thy-r2"><span class="rf-for">段階の間隔を変える差の記録</span><span class="rf-src">P. Cummiskey, N. S. Jayant, and J. L. Flanagan, “Adaptive quantization in differential PCM coding of speech,” <i>Bell System Technical Journal</i>, vol. 52, no. 7, pp. 1105–1118, 1973, <a href="https://doi.org/10.1002/j.1538-7305.1973.tb02007.x">doi:10.1002/j.1538-7305.1973.tb02007.x</a></span></li>
+  <li id="thy-r3"><span class="rf-for">今の結果から次の間隔を決める</span><span class="rf-src">N. S. Jayant, “Adaptive quantization with a one-word memory,” <i>Bell System Technical Journal</i>, vol. 52, no. 7, pp. 1119–1144, 1973, <a href="https://doi.org/10.1002/j.1538-7305.1973.tb02008.x">doi:10.1002/j.1538-7305.1973.tb02008.x</a></span></li>
+  <li id="thy-r4"><span class="rf-for">IMA ADPCM の表と計算</span><span class="rf-src">Interactive Multimedia Association, <i>Recommended Practices for Enhancing Digital Audio Compatibility in Multimedia Systems</i>, Rev. 3.0, 1992, <a href="https://www.cs.columbia.edu/~hgs/audio/dvi/">cs.columbia.edu</a></span></li>
+  <li id="thy-r5"><span class="rf-for">スロープ過負荷</span><span class="rf-src">E. N. Protonotarios, “Slope overload noise in differential pulse code modulation systems,” <i>Bell System Technical Journal</i>, vol. 46, no. 9, pp. 2119–2161, 1967, <a href="https://doi.org/10.1002/j.1538-7305.1967.tb04247.x">doi:10.1002/j.1538-7305.1967.tb04247.x</a></span></li>
+  <li id="thy-r6"><span class="rf-for">WAV の IMA ADPCM の区切り</span><span class="rf-src">“Microsoft IMA ADPCM,” MultimediaWiki, <a href="https://wiki.multimedia.cx/index.php/Microsoft_IMA_ADPCM">wiki.multimedia.cx</a></span></li>
+  <li id="thy-r7"><span class="rf-for">Flash の ADPCM のビット数と表</span><span class="rf-src">“Flash IMA ADPCM,” MultimediaWiki, <a href="https://wiki.multimedia.cx/index.php/Flash_IMA_ADPCM">wiki.multimedia.cx</a></span></li>
+</ol>

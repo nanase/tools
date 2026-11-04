@@ -287,8 +287,17 @@ export const TOOLS: Tool[] = [
     t: 'PCM',
     d: '標本化と量子化で音がどう変わるかを聴き比べます。',
     ic: 'pcm',
-    r: ['mp3', 'spectrum', 'oscilloscope', 'wavelet-denoise'],
+    r: ['adpcm', 'mp3', 'spectrum', 'oscilloscope'],
     k: 'pcm pulse code modulation パルス符号変調 lpcm リニア pcm wav wave 標本化 サンプリング sampling 標本化周波数 サンプリング周波数 サンプルレート sample rate sampling rate 量子化 quantization ビット数 ビット深度 bit depth 量子化誤差 量子化雑音 量子化ノイズ quantization noise 符号化 復元 ナイキスト nyquist 標本化定理 sampling theorem 折り返し エイリアシング aliasing アンチエイリアス anti-aliasing ローパス 再構成フィルタ reconstruction filter 0 次ホールド ディザ dither tpdf μ-law u-law a-law g.711 電話 cd 44.1 khz 16 bit ハイレゾ hi-res ビットレート bitrate sn 比 snr 音質 聴き比べ オーディオ audio',
+  },
+  {
+    id: 'adpcm',
+    c: '音声形式',
+    t: 'ADPCM',
+    d: '予測と適応で音がどう変わるかを PCM と聴き比べます。',
+    ic: 'adp',
+    r: ['pcm', 'mp3', 'oscilloscope', 'wavelet-denoise'],
+    k: 'adpcm 適応差分パルス符号変調 adaptive differential pulse code modulation dpcm 差分 予測 prediction 適応 adaptive 量子化 quantization ステップサイズ step size 段階の間隔 ima dvi wav flash swf 圧縮 compression スロープ過負荷 slope overload sn 比 snr 音質 聴き比べ 標本化 サンプリング ビット誤り オーディオ audio',
   },
   {
     id: 'mp3',
@@ -296,7 +305,7 @@ export const TOOLS: Tool[] = [
     t: 'MP3',
     d: 'ビットレートとローパスで音がどう変わるかを聴き比べます。',
     ic: 'mp3',
-    r: ['pcm', 'spectrum', 'wavelet-denoise', 'fft'],
+    r: ['pcm', 'adpcm', 'spectrum', 'wavelet-denoise'],
     k: 'mp3 mpeg-1 audio layer iii layer 3 圧縮 非可逆 lossy compression ビットレート bitrate kbps cbr ローパス lowpass low-pass 音質 聴き比べ スペクトログラム spectrogram マスキング masking 閾値 心理音響 psychoacoustics nmr mdct フィルタバンク 量子化 quantization ハフマン huffman フレーム frame グラニュール granule ビットリザーバ bit reservoir プリエコー pre-echo ジョイントステレオ joint stereo m/s lame エンコーダ encoder オーディオ audio',
   },
   {

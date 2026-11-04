@@ -348,6 +348,37 @@ const PNG_ROWS = PNG_PIC.map((row, r) => {
   };
 });
 
+/**
+ * ADPCM の図柄の波と段階。小さい音が急に大きくなる波を小さな ADPCM で追う。
+ * 16 段階は線が重なるので 5 段に割り切り、間隔は表の代わりに 2 倍と 0.88 倍で変える
+ */
+const ADP = (() => {
+  const LEN = 72,
+    FROM = 19,
+    COLS = 19,
+    x = Array.from(
+      { length: LEN },
+      (_, n) => (n < 24 ? 0.1 : 0.95 * Math.exp(-(n - 24) / 40)) * Math.sin((TAU * n) / 12),
+    ),
+    p = new Array<number>(LEN),
+    y = new Array<number>(LEN),
+    g = new Array<number>(LEN);
+  let last = 0,
+    gap = 0.03;
+  /* 間隔が落ち着くまで 3 周流す */
+  for (let pass = 0; pass < 3; pass++)
+    for (let n = 0; n < LEN; n++) {
+      const q = Math.max(-2, Math.min(2, Math.round((x[n] - last) / gap)));
+      p[n] = last;
+      g[n] = gap;
+      last += q * gap;
+      y[n] = last;
+      gap = Math.abs(q) === 2 ? Math.min(0.22, gap * 2) : Math.max(0.018, gap * 0.88);
+    }
+  const cut = (a: number[]) => a.slice(FROM, FROM + COLS);
+  return { x: cut(x), p: cut(p), y: cut(y), g: cut(g) };
+})();
+
 export const ART: Record<string, Art> = {
   /* タイマIC 555: 出力（周期 36、High 24）と C1 の電圧。時間が流れる */
   sq(t) {
@@ -1578,6 +1609,24 @@ export const ART: Record<string, Art> = {
       ) + P('a', st)
     );
   },
+  /* ADPCM: 左から 1 標本ずつ進み、小さい音が急に大きくなると段階の束が一気に広がる。止まっているときは描き終えた絵 */
+  adp(t) {
+    const y = (v: number) => r1(24 - 19 * v),
+      last = ADP.x.length - 1,
+      w = mod(t, 5),
+      u = w < 1 ? last : Math.min(last, Math.floor((w - 1) * 8));
+    let wave = '',
+      tick = '',
+      st = '';
+    for (let k = 0; k <= last; k++) {
+      const x = 4 + 6 * k;
+      wave += `${k ? 'L' : 'M'}${x} ${y(ADP.x[k])}`;
+      if (k > u) continue;
+      for (let m = -2; m <= 2; m++) tick += `M${r1(x - 2.25)} ${y(ADP.p[k] + m * ADP.g[k])}H${r1(x + 2.25)}`;
+      st += k ? `H${x}V${y(ADP.y[k])}` : `M${x} ${y(ADP.y[k])}`;
+    }
+    return P('b t', wave) + P('c t', tick) + P('a', st);
+  },
   /*
    * 天体衝突: 丸い天体の縁へ衝突体が落ち、穴が 4 段で開く。破片は遠くへ去る筋と、地表へ落ちる粒に分かれる。
    * 止まっているときは落下の途中で、地表はまだ変わっていない。1 周は 53 コマ（12 コマ/秒）
@@ -1932,6 +1981,7 @@ export const LOOP: Record<string, number> = {
   so: 3,
   ls: 3,
   pcm: 3,
+  adp: 5,
   mp3: 4,
   imp: 53 / 12,
 };
