@@ -1613,7 +1613,8 @@ export const ART: Record<string, Art> = {
   adp(t) {
     const y = (v: number) => r1(24 - 19 * v),
       last = ADP.x.length - 1,
-      u = t < 1 ? last : Math.min(last, Math.floor((t - 1) * 8));
+      w = mod(t, 5),
+      u = w < 1 ? last : Math.min(last, Math.floor((w - 1) * 8));
     let wave = '',
       tick = '',
       st = '';
