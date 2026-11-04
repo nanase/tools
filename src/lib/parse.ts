@@ -51,6 +51,7 @@ export type Unit =
   | '回/秒'
   | '個'
   | 'bit'
+  | 'ms'
   | 'kbps'
   | 'km/s'
   | '倍'

@@ -1,0 +1,16 @@
+/* ADPCM のページだけのスタイル。枠の並び・試聴・工程のカードは PCM のページの CSS をそのまま使う */
+.adp-whole{height:250px;cursor:ew-resize;touch-action:pan-y}
+.adp-zoom{height:280px}
+.adp-gap{height:92px}
+.adp-whole:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+
+/* 凡例 */
+.adp-sw-l{background:var(--ink-3)}
+.adp-dot-e{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--pcm-e)}
+
+/* 移動先 */
+.adp-jump{display:flex;flex-wrap:wrap;gap:4px;margin:8px 2px 2px}
+
+/* 設定 */
+#ls-tab:not([data-adapt="false"]) #p-gap{display:none}
+@media (max-width:620px){#adpcm .prow{--fw:136px}}
