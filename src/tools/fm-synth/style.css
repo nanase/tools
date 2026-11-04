@@ -23,30 +23,6 @@
 .snd-msg{margin:0 8px 6px}
 .snd-msg:empty{display:none}
 
-/* 鍵盤: 左右のボタンでオクターブを動かす。選んでいる鍵に印（現在地の印と同じ色） */
-.kbar{display:flex;align-items:center;gap:10px;margin:0 0 8px}
-.kbar .seg button{display:inline-grid;place-items:center;width:34px;padding:0}
-.kbar .seg button:disabled{opacity:.4;cursor:default}
-.kbar .seg svg{width:8px;height:12px;fill:currentColor}
-.kb-rng{font:500 12px/1 var(--mono);color:var(--ink-3)}
-.kb-now{margin-left:auto;font:500 12.5px/1 var(--mono);color:var(--ink-2);font-variant-numeric:tabular-nums}
-.kb-now b{margin-right:.6em;font-size:16px;color:var(--ink)}
-.kb{position:relative;height:92px;margin-bottom:6px;touch-action:none;user-select:none;-webkit-user-select:none}
-.kk{position:absolute;top:0;padding:0;border:1px solid var(--line-2);cursor:pointer;-webkit-tap-highlight-color:transparent}
-.kk.w{height:100%;border-right-width:0;border-radius:0 0 4px 4px;background:var(--surface)}
-.kk.w[data-i="24"]{border-right-width:1px}
-.kk.b{z-index:1;height:58%;border-color:var(--rail);border-radius:0 0 3px 3px;background:var(--rail)}
-.kk.w:hover{background:var(--inset)}
-.kk.w:active{background:var(--line)}
-.kk.b:hover,.kk.b:active{background:var(--rail-2)}
-.kk.w span{position:absolute;left:0;right:0;bottom:5px;font:500 9.5px/1 var(--mono);color:var(--ink-3);text-align:center;pointer-events:none}
-.kk[aria-pressed="true"]::after{content:"";position:absolute;left:50%;bottom:20px;width:7px;height:7px;margin-left:-3.5px;border-radius:50%;background:var(--accent);box-shadow:0 0 5px var(--accent)}
-.kk.b[aria-pressed="true"]::after{bottom:8px}
-/* 曲で鳴っている鍵 */
-.kk.w.on{background:color-mix(in srgb,var(--accent) 28%,var(--surface))}
-.kk.b.on{background:color-mix(in srgb,var(--accent) 55%,var(--rail))}
-.kk:focus-visible{z-index:2;outline-offset:-3px}
-
 /* オペレータ: 1 行に 波形 | 周波数比 | 強さ。狭い枠では 2 段にする */
 .ops{container-type:inline-size}
 .op{display:grid;grid-template-columns:5.6rem auto minmax(0,1fr);grid-template-areas:"h w c";align-items:center;column-gap:14px;row-gap:8px;padding:9px 4px;border-bottom:1px solid var(--line)}

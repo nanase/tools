@@ -1,16 +1,25 @@
 ---
 /**
- * 音の高さを選ぶ鍵盤（2 オクターブと上の C）。左右のボタンでオクターブを動かす。
- * 鍵の音名・周波数・押下状態は client.ts が入れる（data-i は左端の C からの半音の数）
+ * 2 オクターブと上の C（25 鍵）の鍵盤。左右のボタンでオクターブを動かす。
+ * 鍵の音名・押下状態はページの client.ts が入れる（data-i は左端の C からの半音の数）。
+ * 既定のスロットはオクターブの範囲の右に並ぶ
  */
-import { KEYS } from './params';
+import '../styles/octave-keyboard.css';
+
+interface Props {
+  /** 鍵の数 */
+  keys?: number;
+  /** 鍵盤の群の aria-label */
+  label: string;
+}
+const { keys: count = 25, label } = Astro.props;
 
 const BLACK = new Set([1, 3, 6, 8, 10]);
-const nW = Array.from({ length: KEYS }, (_, i) => i).filter((i) => !BLACK.has(i % 12)).length;
+const nW = Array.from({ length: count }, (_, i) => i).filter((i) => !BLACK.has(i % 12)).length;
 const W = 100 / nW,
   BW = W * 0.62;
 let wi = 0;
-const keys = Array.from({ length: KEYS }, (_, i) => {
+const keys = Array.from({ length: count }, (_, i) => {
   const black = BLACK.has(i % 12);
   /* 黒鍵は左右の白鍵の境目に置く */
   const k = { i, black, left: black ? wi * W - BW / 2 : wi * W };
@@ -19,13 +28,14 @@ const keys = Array.from({ length: KEYS }, (_, i) => {
 });
 ---
 <div class="kbar">
-  <div class="seg" role="group" aria-label="鍵盤のオクターブ">
+  <div class="seg kb-oct" role="group" aria-label="鍵盤のオクターブ">
     <button type="button" id="octDn" aria-label="1 オクターブ下へ" title="1 オクターブ下へ"><svg viewBox="0 0 8 12" aria-hidden="true"><path d="M7 1L1 6L7 11Z" /></svg></button><button type="button" id="octUp" aria-label="1 オクターブ上へ" title="1 オクターブ上へ"><svg viewBox="0 0 8 12" aria-hidden="true"><path d="M1 1L7 6L1 11Z" /></svg></button>
   </div>
   <span class="kb-rng" id="kb-rng"></span>
+  <slot />
   <span class="kb-now"><b id="kb-note"></b><span id="kb-hz"></span></span>
 </div>
-<div class="kb" id="kb" role="group" aria-label="鍵盤（音の高さ）">
+<div class="kb" id="kb" role="group" aria-label={label}>
   {keys.filter((k) => !k.black).map((k) => <button type="button" class="kk w" data-i={k.i} style={`left:${k.left.toFixed(3)}%;width:${W.toFixed(3)}%`} aria-pressed="false"><span></span></button>)}
   {keys.filter((k) => k.black).map((k) => <button type="button" class="kk b" data-i={k.i} style={`left:${k.left.toFixed(3)}%;width:${BW.toFixed(3)}%`} aria-pressed="false"></button>)}
 </div>
