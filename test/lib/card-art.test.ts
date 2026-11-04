@@ -55,6 +55,22 @@ describe('カードの図柄', () => {
     expect(sum(dif)).toBeLessThan(sum(raw) / 2);
   });
 
+  it('ADPCM は動かし始めるとすぐ描き直し、描き終えると止まってから次の周へ進む', () => {
+    const FRAME = 1 / 8,
+      still = ART.adp(0),
+      /* コマの途中の時刻で描く */
+      at = (k: number): string => ART.adp(FRAME * (k + 0.5));
+    /* 最初の 1 コマのあと、右端を描き終えるまで毎コマ変わる */
+    expect(at(0)).toBe(still);
+    for (let k = 0; k < 19; k++) expect(at(k + 1), `k=${k}`).not.toBe(at(k));
+    expect(at(19)).toBe(still);
+    /* 描き終えた絵は、次の周の最初のコマまで続けて 1 秒 */
+    const n = Math.round(LOOP.adp / FRAME);
+    expect(Array.from({ length: n }, (_, k) => at(k)).filter((s) => s === still).length).toBe(8);
+    expect(at(n - 1)).toBe(still);
+    expect(at(n + 1)).toBe(at(1));
+  });
+
   it('天体衝突の止まっている絵は衝突の前で、動かすと地表がへこむ', () => {
     const ground = (s: string): string => s.match(/<path class="a" d="([^"]*)"/)?.[1] ?? '';
     const still = ART.imp(0),

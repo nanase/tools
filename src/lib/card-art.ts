@@ -1609,12 +1609,16 @@ export const ART: Record<string, Art> = {
       ) + P('a', st)
     );
   },
-  /* ADPCM: 左から 1 標本ずつ進み、小さい音が急に大きくなると段階の束が一気に広がる。止まっているときは描き終えた絵 */
+  /*
+   * ADPCM: 左から 1 標本ずつ進み、小さい音が急に大きくなると段階の束が一気に広がる。
+   * 止まっているときは描き終えた絵で、動かすと 1 コマで描き直す。描き終えると 1 秒止まって次の周へ進む。
+   * 周の頭の 1 コマまで描き終えた絵なので、止まる 1 秒はそのコマを含む。1 周は 26 コマ（8 コマ/秒）
+   */
   adp(t) {
     const y = (v: number) => r1(24 - 19 * v),
       last = ADP.x.length - 1,
-      w = mod(t, 5),
-      u = w < 1 ? last : Math.min(last, Math.floor((w - 1) * 8));
+      f = mod(Math.floor(t * 8), 26),
+      u = f ? Math.min(last, f - 1) : last;
     let wave = '',
       tick = '',
       st = '';
@@ -1981,7 +1985,7 @@ export const LOOP: Record<string, number> = {
   so: 3,
   ls: 3,
   pcm: 3,
-  adp: 5,
+  adp: 26 / 8,
   mp3: 4,
   imp: 53 / 12,
 };
