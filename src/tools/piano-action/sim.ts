@@ -10,18 +10,18 @@ import { Action, headGap, pose, type Reg, type Rig, rigOf } from './model';
 export type TouchKind = 'forte' | 'piano' | 'rep';
 
 /** 積分の刻み [s] と記録の間隔 [s] */
-const DT = 2e-5;
+export const DT = 2e-5;
 export const FRAME = 1e-4;
-const EVERY = Math.round(FRAME / DT);
+export const EVERY = Math.round(FRAME / DT);
 
 /* 実験の力は、押す前と離したあとにも load cell の 0.2〜0.4 N が残る。押す前の値を引いて、押していない間を 0 にする */
 const clean = (F: readonly number[]) => {
   const b = (F[0] + F[5] + F[10]) / 3;
   return F.map((v) => Math.max(0, v - b));
 };
-const FF = clean(FORTE),
+export const FF = clean(FORTE),
   FP = clean(PIANO);
-const at = (F: readonly number[], t: number) => {
+export const at = (F: readonly number[], t: number) => {
   if (t < 0) return 0;
   const k = Math.min(F.length - 2, Math.floor(t / FORCE_DT)),
     f = Math.min(1, t / FORCE_DT - k);

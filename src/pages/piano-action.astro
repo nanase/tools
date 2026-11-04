@@ -1,6 +1,6 @@
 ---
-import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import OctaveKeyboard from '../components/OctaveKeyboard.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
@@ -8,7 +8,7 @@ import RelatedTools from '../components/RelatedTools.astro';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import { outVol } from '../lib/play';
 import '../tools/piano-action/style.css';
-import { NOTES, REGS, SPEEDS, TOUCHES, VOL0 } from '../tools/piano-action/params';
+import { KEY_SPEEDS, REGS, SPEEDS, TOUCHES, VOL0 } from '../tools/piano-action/params';
 import Theory from '../tools/piano-action/Theory.astro';
 
 const name = 'ピアノのアクション';
@@ -23,14 +23,9 @@ const LEGEND = [
 ] as const;
 ---
 <SiteLayout title={name} tool={{ id: 'piano-action', name }} note="動きは Hirschkorn (2004) の多体の模型による計算で、ダンパーは仮の形です。">
-  <PageTitle title={name}>グランドピアノの鍵を押してからハンマーが弦を打ち、バックチェックに受け止められ、鍵を戻して連打するまでの機構（アクション）の動きを計算します。段階ごとの絵を押すとスローで見られます。整調を変えると動きを計算し直します。打弦の速さでピアノ音響モデルの弦を鳴らせます。</PageTitle>
+  <PageTitle title={name}>鍵盤を押すと、グランドピアノの鍵からハンマーまでの機構（アクション）がその場で動きます。弾いた動きは段階ごとにスローで見直せます。</PageTitle>
 
   <div class="tgrid">
-    <Panel hid="hd-stg" title="段階" class="a-stg" fixed>
-      <div slot="aux" class="seg" id="p-touch" role="group" aria-label="打鍵">{TOUCHES.map(([v, l, t], i) => <button type="button" data-v={v} aria-pressed={i === 0 ? 'true' : 'false'} title={t}>{l}</button>)}</div>
-      <div class="frames" id="frames" role="group" aria-label="段階ごとの絵"></div>
-    </Panel>
-
     <Panel hid="hd-act" title="アクション" class="a-act" fixed>
       <div slot="aux" class="seg" id="p-spd" role="group" aria-label="再生の速さ">{SPEEDS.map(([v, l, t], i) => <button type="button" data-v={v} aria-pressed={i === 0 ? 'true' : 'false'} title={t}>{l}</button>)}</div>
       <div class="ag">
@@ -45,6 +40,13 @@ const LEGEND = [
             <div class="a-info" aria-live="off"><span>時刻 <b id="cap-t"></b></span><span>ハンマー <b id="cap-h"></b></span></div>
             <div class="a-tip" id="a-tip" role="tooltip" hidden></div>
             <p class="busy" id="busy" hidden>計算しています…</p>
+          </div>
+          <div class="akb">
+            <OctaveKeyboard label="鍵盤">
+              <div class="seg" id="p-touch" role="group" aria-label="打鍵">{TOUCHES.map(([v, l, t], i) => <button type="button" data-v={v} aria-pressed={i === 0 ? 'true' : 'false'} title={t}>{l}</button>)}</div>
+              <span class="akb-l">鍵盤の速さ</span>
+              <div class="seg" id="p-kspd" role="group" aria-label="鍵盤の速さ">{KEY_SPEEDS.map(([v, l, t], i) => <button type="button" data-v={v} aria-pressed={i === 0 ? 'true' : 'false'} title={t}>{l}</button>)}</div>
+            </OctaveKeyboard>
           </div>
         </div>
         <div class="cap" aria-live="polite">
@@ -72,11 +74,14 @@ const LEGEND = [
       </div>
     </Panel>
 
+    <Panel hid="hd-stg" title="段階" class="a-stg" fixed>
+      <div class="frames" id="frames" role="group" aria-label="段階ごとの絵"></div>
+    </Panel>
+
     <div class="col c1">
       <Panel hid="hd-snd" title="音" class="a-snd">
-        <div slot="aux" class="seg"><button type="button" id="sndBtn" aria-pressed="false" title="打弦の速さで鳴るピアノ音響モデルの弦"><span class="led" id="sndLed" aria-hidden="true"></span>打弦の音</button></div>
+        <div slot="aux" class="seg"><button type="button" id="sndBtn" aria-pressed="true" title="打弦の速さで鳴るピアノ音響モデルの弦"><span class="led on" id="sndLed" aria-hidden="true"></span>打弦の音</button></div>
         <div class="ptab">
-          <ChoiceRow k="note" name="鍵" sub="鳴らす鍵（ピアノ音響モデルのグランド）" choices={NOTES.map(([v, l]) => [v, l] as const)} value={60} />
           <ParamRow d={outVol(VOL0)} />
         </div>
         <p class="msg er snd-msg" id="snd-msg" aria-live="polite"></p>

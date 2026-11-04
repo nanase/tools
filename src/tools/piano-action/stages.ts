@@ -56,16 +56,14 @@ export function events(R: Run): Events {
       move = T(i);
       break;
     }
-  /* 力の山と、離した（山の 20 % を下回った）時刻 */
-  let pk = 0,
-    ipk = 0;
-  for (let i = 0; i < R.n; i++)
-    if (R.force[i] > pk) {
-      pk = R.force[i];
-      ipk = i;
-    }
+  /* 力の山と、離した（山の 20 % を下回った）時刻。押し直すと山が 2 つできて、どちらが高いかは記録の間隔で変わるので、
+     初めて山の半分を超えた所から探す */
+  let pk = 0;
+  for (let i = 0; i < R.n; i++) pk = Math.max(pk, R.force[i]);
+  let up = 0;
+  while (up < R.n - 1 && R.force[up] < pk * 0.5) up++;
   let irel = R.n - 1;
-  for (let i = ipk; i < R.n; i++)
+  for (let i = up; i < R.n; i++)
     if (R.force[i] < pk * 0.2) {
       irel = i;
       break;
@@ -115,7 +113,7 @@ export function events(R: Run): Events {
   };
 }
 
-const D: Record<StageId, string> = {
+export const D: Record<StageId, string> = {
   rest: '鍵の前はフェルトから浮き、後ろはバックレールに載っている。ハンマーはナックルの下のジャックとハンマーレールに支えられている',
   acc: 'キャプスタンがウィッペンを押し上げ、ウィッペンの上のジャックがナックルを押してハンマーを回す。ハンマーの頭はてこで鍵の前の約 5 倍の距離を動く',
   let: 'ジャックのつま先がレットオフボタンに当たり、ジャックが回ってナックルの下から抜ける。ハンマーはここから自分の勢いで弦まで飛ぶ',
@@ -131,7 +129,7 @@ const D: Record<StageId, string> = {
   ret: '鍵が上がるとレペティションレバーがハンマーを持ち上げ、ジャックがナックルの下へ戻る。ハンマーはハンマーレールに下りる',
   rest2: '元の姿勢に戻る',
 };
-const NAME: Record<StageId, string> = {
+export const NAME: Record<StageId, string> = {
   rest: '静止',
   acc: '加速',
   let: 'レットオフ',

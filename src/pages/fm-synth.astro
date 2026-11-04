@@ -3,6 +3,7 @@ import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
 import MidiPanel from '../components/MidiPanel.astro';
 import More from '../components/More.astro';
+import OctaveKeyboard from '../components/OctaveKeyboard.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
@@ -15,9 +16,8 @@ import { gridSvg } from '../lib/scope';
 import '../tools/fm-synth/style.css';
 import Credits from '../tools/fm-synth/Credits.astro';
 import { algH, algSvg, algText, DW } from '../tools/fm-synth/diagram';
-import Keyboard from '../tools/fm-synth/Keyboard.astro';
 import Operators from '../tools/fm-synth/Operators.astro';
-import { ALG0, FB0, HMAX, NORM0, PERIODS, RANGES, VOL } from '../tools/fm-synth/params';
+import { ALG0, FB0, HMAX, KEYS, NORM0, PERIODS, RANGES, VOL } from '../tools/fm-synth/params';
 import { PIECES } from '../tools/fm-synth/score';
 import { ALGS, FB_LABEL } from '../tools/fm-synth/synth';
 import Theory from '../tools/fm-synth/Theory.astro';
@@ -46,7 +46,7 @@ const chain = (a: number) =>
       <Panel hid="hd-snd" title="音" class="a-snd">
         <div slot="aux" class="seg"><button type="button" id="playBtn" aria-pressed="false" title="連続で再生（止めている間は鍵盤を押す間だけ）"><span class="led" id="sndLed" aria-hidden="true"></span><span id="playT">再生</span></button></div>
         <p class="msg er snd-msg" id="snd-msg" aria-live="polite"></p>
-        <Keyboard />
+        <OctaveKeyboard keys={KEYS} label="鍵盤（音の高さ）" />
         <div class="ptab">
           <ParamRow d={VOL} />
         </div>
