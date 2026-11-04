@@ -1578,43 +1578,69 @@ export const ART: Record<string, Art> = {
       ) + P('a', st)
     );
   },
-  /* 天体衝突: 落ちてきた衝突体が地面に穴を開け、噴出物が左右へ飛ぶ。止まっているときは穴が開いていく途中 */
+  /*
+   * 天体衝突: 丸い天体の縁へ衝突体が落ち、穴が 4 段で開く。破片は遠くへ去る筋と、地表へ落ちる粒に分かれる。
+   * 止まっているときは落下の途中で、地表はまだ変わっていない。1 周は 53 コマ（12 コマ/秒）
+   */
   imp(t) {
-    const u = mod(t / 6 + 0.42, 1),
-      g = Math.max(0, Math.min(1, (u - 0.2) / 0.35)),
-      gr = 1 - (1 - g) ** 3,
-      R = 26 * gr,
-      dep = 13 * gr,
-      rim = 3 * gr,
+    const u = mod(Math.floor(t * 12) + 5, 53) / 53,
+      hit = 0.2,
+      g = clamp(Math.ceil((u - hit) / 0.06) / 4, 0, 1),
+      R = 22 * g,
+      dep = 9 * g,
+      rim = 3 * g,
+      arc = (r: number, x: number): number => 124 - Math.sqrt(r * r - (x - 60) ** 2),
       gy = (x: number): number => {
         const a = Math.abs(x - 60);
-        return 28 - rim * Math.exp(-(((a - R) / 7) ** 2)) + (a < R ? dep * (1 - (a / Math.max(R, 1)) ** 2) : 0);
+        return (
+          arc(96, x) - rim * Math.exp(-(((a - R) / 4.5) ** 2)) + (a < R ? dep * (1 - (a / Math.max(R, 1)) ** 2) : 0)
+        );
       };
     let s =
       P(
         'c t g',
-        fx((x) => gy(x) * 0.55 + 18, 4, 116, 56),
+        fx((x) => arc(88, x), 4, 116, 40),
       ) +
       P(
         'c t g',
-        fx((x) => gy(x) * 0.3 + 30, 4, 116, 56),
+        fx((x) => arc(81, x), 4, 116, 40),
       ) +
       P('a', fx(gy, 4, 116, 56));
-    if (u < 0.2) {
-      const k = u / 0.2;
-      s += `<circle class="fb" cx="${r1(104 - 44 * k)}" cy="${r1(4 + 22 * k)}" r="3.2"/>`;
+    if (u < hit) {
+      const k = 1 - u / hit,
+        x = 60 + 34 * k,
+        y = 24 - 18 * k;
+      s +=
+        P('a', `M${r1(x + 5)} ${r1(y - 3.3)}L${r1(x + 13)} ${r1(y - 8.5)}`) +
+        `<circle class="fa" cx="${r1(x)}" cy="${r1(y)}" r="3.6"/>`;
+    } else if (u < hit + 0.06) {
+      /* 当たった瞬間の放射の線 */
+      let d = '';
+      for (let i = 0; i < 7; i++) {
+        const a = Math.PI * (1 + (i + 0.5) / 7),
+          c = Math.cos(a),
+          e = Math.sin(a);
+        d += `M${r1(60 + 6 * c)} ${r1(28 + 6 * e)}L${r1(60 + 17 * c)} ${r1(28 + 17 * e)}`;
+      }
+      s += P('a', d);
     }
-    /* 噴出物: 放物線を飛んで落ちる */
-    for (let i = 0; i < 10; i++) {
-      const side = i % 2 ? 1 : -1,
-        d = 0.2 + hn(i + 40) * 0.12,
-        k = (u - d) / (0.5 + hn(i + 60) * 0.25);
-      if (k <= 0 || k >= 1) continue;
-      const x = 60 + side * (10 + (22 + hn(i + 20) * 26) * k),
-        y = 28 - (20 + hn(i + 80) * 12) * 4 * k * (1 - k);
-      s += `<circle class="fc" cx="${r1(x)}" cy="${r1(y)}" r="1.3"/>`;
+    let far = '';
+    for (let i = 0; i < 18; i++) {
+      const out = i % 3 === 0,
+        side = i % 2 ? 1 : -1,
+        tau = u - hit - hn(i + 3) * 0.1;
+      if (tau <= 0) continue;
+      const ang = (((out ? 22 : 38) + hn(i + 11) * (out ? 26 : 28)) * Math.PI) / 180,
+        sp = out ? 105 + hn(i + 31) * 45 : 70 + hn(i + 21) * 70,
+        vx = sp * Math.cos(ang) * side,
+        vy = sp * Math.sin(ang),
+        x = 60 + side * 4 + vx * tau,
+        y = 28 - vy * tau + (out ? 0 : 200) * tau * tau;
+      if (x < 3 || x > 117 || y < 1) continue;
+      if (out) far += `M${r1(x)} ${r1(y)}L${r1(x - vx * 0.05)} ${r1(y + vy * 0.05)}`;
+      else if (y <= gy(clamp(x, 4, 116))) s += `<circle class="fa" cx="${r1(x)}" cy="${r1(y)}" r="1.3"/>`;
     }
-    return s;
+    return far ? s + P('b', far) : s;
   },
   /* MP3: 周波数の棒をローパスが右から削る。捨てた高音は細い線になり、残りの棒が伸びる */
   mp3(t) {
@@ -1907,7 +1933,7 @@ export const LOOP: Record<string, number> = {
   ls: 3,
   pcm: 3,
   mp3: 4,
-  imp: 6,
+  imp: 53 / 12,
 };
 
 /** 止まっているときの図柄（ビルド時に HTML へ出す） */

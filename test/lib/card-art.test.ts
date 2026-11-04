@@ -54,4 +54,14 @@ describe('カードの図柄', () => {
     expect(bars(ART.png(3), 'b')).toEqual([]);
     expect(sum(dif)).toBeLessThan(sum(raw) / 2);
   });
+
+  it('天体衝突の止まっている絵は衝突の前で、動かすと地表がへこむ', () => {
+    const ground = (s: string): string => s.match(/<path class="a" d="([^"]*)"/)?.[1] ?? '';
+    const still = ART.imp(0),
+      after = ART.imp(2);
+    expect(still).toContain('r="3.6"');
+    expect(ground(still)).toContain('L60 28L');
+    expect(after).not.toContain('r="3.6"');
+    expect(ground(after)).toContain('L60 37L');
+  });
 });
