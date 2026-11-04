@@ -1,0 +1,109 @@
+---
+// 動作原理と式
+const sub = (b: string, s: string) => `<msub>${b}<mrow>${s}</mrow></msub>`;
+const sup = (b: string, s: string) => `<msup>${b}<mrow>${s}</mrow></msup>`;
+const fr = (a: string, b: string) => `<mfrac><mrow>${a}</mrow><mrow>${b}</mrow></mfrac>`;
+const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
+---
+<h3>全体の流れ</h3>
+<ol class="flow"><li>大気圏突入</li><li>衝撃波</li><li>掘削</li><li>崩壊</li><li>噴出物の落下</li></ol>
+<ul class="tl">
+  <li>大気圏は式で解き、地面での速度を求める<Fragment set:html={rf(1)} /></li>
+  <li>衝突から崩壊までは、断面の岩を粒子で解く<Fragment set:html={rf(2)} /></li>
+  <li>岩の動きが止まったら、飛んでいる物だけを天体の重力と大気の抵抗で追う</li>
+  <li>天体は円で、重力は中心を向く。天体の中の重力は中心からの距離に比例するとする</li>
+</ul>
+
+<h3>大気圏突入</h3>
+<div class="eqs">
+  <math display="block" set:html={`${fr('<mi>d</mi><mi>v</mi>', '<mi>d</mi><mi>t</mi>')}<mo>=</mo><mo>−</mo>${fr(`<mn>3</mn><mi>ρ</mi>${sub('<mi>C</mi>', '<mtext>D</mtext>')}`, `<mn>4</mn>${sub('<mi>ρ</mi>', '<mi>i</mi>')}<mi>L</mi>`)}${sup('<mi>v</mi>', '<mn>2</mn>')}`} />
+  <math display="block" set:html={`${sub('<mi>Y</mi>', '<mi>i</mi>')}<mo>=</mo>${sup('<mn>10</mn>', `<mn>2.107</mn><mo>+</mo><mn>0.0624</mn><msqrt>${sub('<mi>ρ</mi>', '<mi>i</mi>')}</msqrt>`)}<mspace width="0.3em"/><mtext>Pa</mtext>`} />
+</div>
+<dl class="syms">
+  <dt><math set:html={sub('<mi>ρ</mi>', '<mi>i</mi>')} /></dt><dd>衝突体の密度</dd>
+  <dt><math set:html={sub('<mi>Y</mi>', '<mi>i</mi>')} /></dt><dd>衝突体の強度。大気の圧力がこれを超えると砕ける</dd>
+</dl>
+<ul class="tl">
+  <li>砕けた破片は横へ広がり、幅が元の 7 倍になる前に地面へ届かなければ空中で爆発する<Fragment set:html={rf(1)} /></li>
+  <li>空中で爆発する条件は計算しない</li>
+</ul>
+
+<h3>岩の計算</h3>
+<div class="eqs">
+  <math display="block" set:html={`<mi>P</mi><mo>=</mo><mo stretchy="false">(</mo><mi>a</mi><mo>+</mo>${fr('<mi>b</mi>', '<mi>ω</mi>')}<mo stretchy="false">)</mo><mi>ρ</mi><mi>e</mi><mo>+</mo><mi>A</mi><mi>μ</mi><mo>+</mo><mi>B</mi>${sup('<mi>μ</mi>', '<mn>2</mn>')}`} />
+  <math display="block" set:html={`<mi>Y</mi><mo>=</mo>${sub('<mi>Y</mi>', '<mn>0</mn>')}<mo>+</mo>${fr(`${sub('<mi>μ</mi>', '<mi>f</mi>')}<mi>P</mi>`, `<mn>1</mn><mo>+</mo>${sub('<mi>μ</mi>', '<mi>f</mi>')}<mi>P</mi><mo>/</mo><mo stretchy="false">(</mo>${sub('<mi>Y</mi>', '<mtext>lim</mtext>')}<mo>−</mo>${sub('<mi>Y</mi>', '<mn>0</mn>')}<mo stretchy="false">)</mo>`)}`} />
+</div>
+<dl class="syms">
+  <dt><math><mi>P</mi></math></dt><dd>圧力。Tillotson の状態方程式で求め、深さの地圧を足す（式は圧縮された側）</dd>
+  <dt><math><mi>Y</mi></math></dt><dd>岩の強度。砕けると粘着力がほぼなくなり、摩擦だけが残る</dd>
+</dl>
+<ul class="tl">
+  <li>粒子が質量を運び、格子で力を解く MPM を使う<Fragment set:html={rf(2)} /></li>
+  <li>状態方程式は Tillotson<Fragment set:html={rf(3)} /><Fragment set:html={rf(4)} />、強度は Collins らの形<Fragment set:html={rf(5)} /></li>
+  <li>衝撃波が通った岩は振動で一時的に流れやすくなり、複雑クレーターの崩壊が起こる<Fragment set:html={rf(6)} /></li>
+  <li>熱による軟化も入れる。溶けた岩は強度がない</li>
+  <li>天体の密度は一様で、体積弾性率は地圧とともに大きくなるとする。図の核やマントルの色は目安で、計算には入らない</li>
+</ul>
+
+<h3>範囲の外の波</h3>
+<ul class="tl">
+  <li>岩を粒子で解くのはクレーターの周りだけで、外側は粒子を 4 分の 1 に減らす</li>
+  <li>その外へ出た衝撃波は、粗い格子の線形の波で追う。圧力の表示だけに使い、岩は動かさない</li>
+  <li>実際の波は球面に広がるので、断面の波より早く弱まる分を減らす</li>
+</ul>
+
+<h3>断面の近似</h3>
+<ul class="tl">
+  <li>衝突は 3 次元だが、飛んでくる向きを含む断面だけを解く。この断面では奥行き方向に一様とみなすので、球ではなく円柱が当たることになる</li>
+  <li>同じ直径の円柱はクレーターが大きくなりすぎるので、直径が文献の式に近づく細い円柱を使う。図の円柱は衝突体の本当の大きさではない</li>
+  <li>そのため直径は計算だけで決まる値ではなく、深さと形のほうが計算の結果である</li>
+  <li>深さは大きいクレーターほど文献の式より深く出る。計算結果の枠に両方を出す</li>
+</ul>
+
+<h3>文献の式</h3>
+<div class="eqs">
+  <math display="block" set:html={`${sub('<mi>D</mi>', '<mtext>tc</mtext>')}<mo>=</mo><mn>1.161</mn>${sup(`<mo stretchy="false">(</mo>${fr(sub('<mi>ρ</mi>', '<mi>i</mi>'), sub('<mi>ρ</mi>', '<mi>t</mi>'))}<mo stretchy="false">)</mo>`, '<mn>1</mn><mo>/</mo><mn>3</mn>')}${sup('<mi>L</mi>', '<mn>0.78</mn>')}${sup('<mi>v</mi>', '<mn>0.44</mn>')}${sup('<mi>g</mi>', '<mo>−</mo><mn>0.22</mn>')}${sup('<mtext>sin</mtext>', '<mn>1</mn><mo>/</mo><mn>3</mn>')}<mi>θ</mi>`} />
+  <math display="block" set:html={`${sub('<mi>D</mi>', '<mtext>fr</mtext>')}<mo>=</mo><mn>1.25</mn>${sub('<mi>D</mi>', '<mtext>tc</mtext>')}<mspace width="0.6em"/><mtext>または</mtext><mspace width="0.6em"/><mn>1.17</mn>${fr(sup(sub('<mi>D</mi>', '<mtext>tc</mtext>'), '<mn>1.13</mn>'), sup(sub('<mi>D</mi>', '<mi>c</mi>'), '<mn>0.13</mn>'))}`} />
+</div>
+<dl class="syms">
+  <dt><math set:html={sub('<mi>D</mi>', '<mtext>tc</mtext>')} /></dt><dd>一時的なクレーターの直径。崩壊する前の穴</dd>
+  <dt><math set:html={sub('<mi>D</mi>', '<mtext>fr</mtext>')} /></dt><dd>完成したクレーターの直径（縁から縁）</dd>
+  <dt><math set:html={sub('<mi>D</mi>', '<mi>c</mi>')} /></dt><dd>単純クレーターと複雑クレーターの境の直径。重力で決まる<Fragment set:html={rf(7)} /></dd>
+</dl>
+<ul class="tl">
+  <li>式は天体より十分小さいクレーターのもので、直径が天体の半径を超えると範囲外である</li>
+  <li>式は Collins らによる<Fragment set:html={rf(1)} />。水は 1.161 を 1.365 に替える</li>
+  <li>複雑クレーターの深さは Collins らの金星の式を、月の値<Fragment set:html={rf(10)} />に合うよう重力で直す</li>
+  <li>砂と、小さい衝突での強度の効果は Richardson の式による<Fragment set:html={rf(8)} /></li>
+</ul>
+
+<h3>噴出物</h3>
+<div class="eqs">
+  <math display="block" set:html={`<mi>v</mi><mo>=</mo>${sub('<mi>C</mi>', '<mn>1</mn>')}${sup(sub('<mi>H</mi>', '<mn>1</mn>'), `<mo>−</mo>${fr('<mn>2</mn><mo>+</mo><mi>μ</mi>', '<mn>2</mn><mi>μ</mi>')}`)}<msqrt><mi>g</mi>${sub('<mi>R</mi>', '<mi>c</mi>')}</msqrt>${sup(`<mo stretchy="false">(</mo>${fr('<mi>x</mi>', sub('<mi>R</mi>', '<mi>c</mi>'))}<mo stretchy="false">)</mo>`, '<mo>−</mo><mn>1</mn><mo>/</mo><mi>μ</mi>')}${sup(`<mo stretchy="false">(</mo><mn>1</mn><mo>−</mo>${fr('<mi>x</mi>', `${sub('<mi>n</mi>', '<mn>2</mn>')}${sub('<mi>R</mi>', '<mi>c</mi>')}`)}<mo stretchy="false">)</mo>`, '<mi>p</mi>')}`} />
+</div>
+<dl class="syms">
+  <dt><math><mi>x</mi></math></dt><dd>放出の位置（衝突点からの距離）</dd>
+  <dt><math set:html={sub('<mi>R</mi>', '<mi>c</mi>')} /></dt><dd>クレーターの半径</dd>
+</dl>
+<ul class="tl">
+  <li>粒子だけでは空を飛ぶ物が少ないので、この式で放出する細かい噴出物を 14000 個足す<Fragment set:html={rf(9)} />。質量を持たず、地面に積もらない</li>
+  <li>計算結果の距離は、この粒の 99% が落ちた距離である</li>
+  <li>放出の角度は約 45°。飛んできた側と進む側で速さと数を変えるのは、この模型の簡略な扱いである</li>
+  <li>噴出物は放出の速さに応じた衝撃の熱を持ち、放射で冷める。大きい塊ほど冷めにくいので、大きいクレーターの破片は宇宙でも高温のまま飛ぶ</li>
+  <li>飛んでいる物の抵抗は高度で変わる大気の密度で求める。脱出速度を超えた物は戻らない</li>
+  <li>戻ってくる物が最大のときの 1% 未満になったら、完成とする。計算は低い軌道の周期の 10 倍まで続ける</li>
+</ul>
+
+<h3>出典</h3>
+<ol class="srcs">
+  <li id="thy-r1">G. S. Collins, H. J. Melosh, R. A. Marcus: “Earth Impact Effects Program”, <i>Meteoritics &amp; Planetary Science</i> 40 (2005)</li>
+  <li id="thy-r2">Y. Hu et al.: “A Moving Least Squares Material Point Method with Displacement Discontinuity and Two-Way Rigid Body Coupling”, <i>ACM Trans. Graphics</i> 37 (2018)</li>
+  <li id="thy-r3">J. H. Tillotson: “Metallic Equations of State for Hypervelocity Impact”, General Atomic Report GA-3216 (1962)</li>
+  <li id="thy-r4">H. J. Melosh: <i>Impact Cratering: A Geologic Process</i>, Oxford University Press (1989)。W. Benz, E. Asphaug: “Catastrophic Disruptions Revisited”, <i>Icarus</i> 142 (1999)</li>
+  <li id="thy-r5">G. S. Collins, H. J. Melosh, B. A. Ivanov: “Modeling damage and deformation in impact simulations”, <i>Meteoritics &amp; Planetary Science</i> 39 (2004)</li>
+  <li id="thy-r6">K. Wünnemann, B. A. Ivanov: “Numerical modelling of the impact crater depth–diameter dependence in an acoustically fluidized target”, <i>Planetary and Space Science</i> 51 (2003)</li>
+  <li id="thy-r7">P. Schenk et al.: “Compositional control on impact crater formation on mid-sized planetary bodies”, <i>Icarus</i> 359 (2021)</li>
+  <li id="thy-r8">J. E. Richardson: “Cratering saturation and equilibrium”, <i>Icarus</i> 204 (2009)</li>
+  <li id="thy-r9">K. R. Housen, K. A. Holsapple: “Ejecta from impact craters”, <i>Icarus</i> 211 (2011)</li>
+  <li id="thy-r10">R. J. Pike: “Size-dependence in the shape of fresh impact craters on the moon”, <i>Impact and Explosion Cratering</i>, Pergamon (1977)</li>
+</ol>

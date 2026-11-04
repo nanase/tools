@@ -1,0 +1,120 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import {
+  AIR_CHOICES,
+  BODY_CHOICES,
+  IMP_CHOICES,
+  PARAMS,
+  PRESETS,
+  Q_CHOICES,
+  RATE_CHOICES,
+  TGT_CHOICES,
+} from '../tools/impact/params';
+import '../tools/impact/style.css';
+import Theory from '../tools/impact/Theory.astro';
+
+const name = '天体衝突';
+const P = Object.fromEntries(PARAMS.map((d) => [d.k, d]));
+const STAGES = ['接触', '掘削', '崩壊', '噴出物の落下', '完成'];
+---
+<SiteLayout title={name} tool={{ id: 'impact', name }} note="天体の断面だけを解く簡略な模型です。球を円柱に置き換えて大きさを文献の式に合わせ、細かい噴出物は式から足しています。">
+  <PageTitle title={name}>衝突の条件からクレーターと噴出物の行方を計算します。</PageTitle>
+
+  <div class="tgrid" id="impact">
+    <Panel hid="hd-fig" title="断面" class="a-fig" fixed>
+      <span slot="aux" class="aux"><i class="ip-led" id="ip-led" aria-hidden="true"></i><span id="ip-state" aria-live="off"></span></span>
+      <div id="ip-fig">
+        <div class="sbar ip-lg">
+          <span class="stag"><i class="ip-sq" aria-hidden="true"></i>衝突体</span>
+          <span class="stag"><i class="ip-bar ip-pr" aria-hidden="true"></i>圧力 0.03〜30 GPa</span>
+          <span class="stag"><i class="ip-bar ip-tm" aria-hidden="true"></i>温度 800〜4000 K</span>
+          <span class="stag ip-only"><i class="sw ip-tr" aria-hidden="true"></i>一時的なクレーター</span>
+          <span class="stag ip-only"><i class="sw ip-law" aria-hidden="true"></i>文献の式の形</span>
+          <span class="stag ip-hint">ホイールで拡大・縮小、ドラッグで移動</span>
+        </div>
+        <div class="ip-wrap">
+          <canvas id="ip-cv" role="img" aria-label="天体の断面と衝突の様子"></canvas>
+          <div class="ip-tag" id="ip-tag" hidden></div>
+          <div class="ip-msg" id="ip-msg" hidden>地面に届く前に爆発するので、クレーターはできません。</div>
+          <i class="ip-busy" aria-hidden="true"></i>
+        </div>
+        <div class="ip-tog">
+          <div><span id="ip-p-l">圧力の色</span><div class="seg" id="ip-p" role="group" aria-labelledby="ip-p-l"><button type="button" data-v="1" aria-pressed="true">オン</button><button type="button" data-v="0" aria-pressed="false">オフ</button></div></div>
+          <div><span id="ip-l-l">補助線</span><div class="seg" id="ip-l" role="group" aria-labelledby="ip-l-l"><button type="button" data-v="1" aria-pressed="false">オン</button><button type="button" data-v="0" aria-pressed="true">オフ</button></div></div>
+          <div><span id="ip-range-l">表示の範囲</span><div class="chips" id="ip-range" role="group" aria-labelledby="ip-range-l"><button type="button" class="chip" data-v="crater">クレーター</button><button type="button" class="chip" data-v="near">周辺</button><button type="button" class="chip" data-v="body">天体全体</button></div></div>
+        </div>
+        <div class="ip-st" id="ip-st" role="group" aria-label="工程">
+          {STAGES.map((s, i) => <button type="button" data-i={i} aria-pressed="false"><b>{i + 1}. {s}</b><span>—</span></button>)}
+        </div>
+        <div class="tp ip-tp">
+          <button type="button" class="tp-ib" id="ip-home" title="最初から" aria-label="最初から"><svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1.5" y="1.5" width="1.8" height="9"/><path d="M10.5 1.5v9L4 6z"/></svg></button>
+          <button type="button" class="tp-pp" id="ip-pp" title="再生" aria-label="再生"><svg class="i-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.2l7.6 4.8L3 10.8z"/></svg><svg class="i-pause" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="2.8" height="9"/><rect x="7.2" y="1.5" width="2.8" height="9"/></svg></button>
+          <div class="tp-tl">
+            <div class="tp-trk" id="ip-trk" role="slider" tabindex="0" aria-label="衝突からの時間" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0"><div class="tp-rail"></div><div class="tp-fill" id="ip-fill"></div><div class="tp-th" id="ip-th"></div></div>
+            <div class="tp-tm"><span id="ip-now"></span><span id="ip-end"></span></div>
+          </div>
+          <div class="seg" id="ip-rate" role="group" aria-label="再生の速さ">
+            {RATE_CHOICES.map(([v, l]) => <button type="button" data-v={v} aria-pressed={v === '1' ? 'true' : 'false'}>{l}</button>)}
+          </div>
+        </div>
+      </div>
+    </Panel>
+
+    <Panel hid="hd-in" title="衝突の条件" class="a-in">
+      <div class="ip-pre">
+        <span class="pn">実在の例</span>
+        <div class="chips" id="ip-pre" role="group" aria-label="実在のクレーターの例">
+          {PRESETS.map((p, i) => <button type="button" class="chip" data-i={i} aria-pressed="false" title={p.title}>{p.nm}</button>)}
+        </div>
+      </div>
+      <div class="ptab">
+        <ParamRow d={P.L} />
+        <ParamRow d={P.v} />
+        <ParamRow d={P.th} />
+        <ChoiceRow k="imp" name="衝突体" choices={IMP_CHOICES} value="stone" />
+        <ChoiceRow k="body" name="天体" choices={BODY_CHOICES} value="earth" />
+        <ChoiceRow k="air" name="大気" choices={AIR_CHOICES} value="1" offIn />
+        <ChoiceRow k="tgt" name="地面" choices={TGT_CHOICES} value="rock" />
+        <ChoiceRow k="q" name="計算の細かさ" choices={Q_CHOICES} value="70" />
+      </div>
+    </Panel>
+
+    <Panel hid="hd-out" title="計算結果" class="a-out">
+      <dl class="metrics c3">
+        <div class="m m-main"><dt>直径</dt><dd><span id="o-d">—</span><span class="m-sub" id="o-ds"></span></dd></div>
+        <div class="m"><dt>深さ（縁から底）</dt><dd><span id="o-dp">—</span><span class="m-sub" id="o-dps"></span></dd></div>
+        <div class="m"><dt>形</dt><dd><span id="o-kind">—</span><span class="m-sub" id="o-kinds"></span></dd></div>
+        <div class="m"><dt>地面での速度</dt><dd><span id="o-v">—</span><span class="m-sub" id="o-vs"></span></dd></div>
+        <div class="m"><dt>噴出物の 99% が落ちた距離</dt><dd><span id="o-far">—</span><span class="m-sub" id="o-fars"></span></dd></div>
+        <div class="m"><dt>噴出物がほぼ落ちるまで</dt><dd><span id="o-t">—</span><span class="m-sub" id="o-ts"></span></dd></div>
+        <div class="m"><dt>飛び去った物</dt><dd><span id="o-esc">—</span><span class="m-sub" id="o-escs"></span></dd></div>
+        <div class="m"><dt>衝突のエネルギー</dt><dd><span id="o-e">—</span><span class="m-sub" id="o-es"></span></dd></div>
+      </dl>
+    </Panel>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+
+    <Collapsible hid="hd-issues" title="未解決の課題">
+      <ul class="tl">
+        <li>1 km の衝突で、7 秒ごろの地下に薄い青の縦の筋が残る。原因は不明</li>
+        <li>小さいクレーターは文献の式より浅く、大きいクレーターは深い。バリンジャーは 130 m（式は 208 m）、チクシュルーブは 5.67 km（式は 1.93 km）</li>
+        <li>噴出物の飛ぶ距離が長すぎる可能性がある。1 km の衝突で、99% が落ちる距離は約 3,900 km</li>
+        <li>中央丘が弱い</li>
+        <li>巨大な衝突でも天体は壊れない。大きい直径の結果は目安</li>
+      </ul>
+    </Collapsible>
+  </div>
+
+  <RelatedTools current="impact" />
+  <script>
+    import '../tools/impact/client';
+  </script>
+</SiteLayout>
