@@ -55,6 +55,47 @@ function QR(): Encoded {
   return qr0;
 }
 
+/** 二分ヒープの図柄のコマ: 配列・光らせる添字・動かしたか。空から全部追加して全部取り出す */
+const HP_FRAMES: { a: readonly number[]; i: readonly number[]; w: boolean }[] = [];
+function hpFrames(): void {
+  const a: number[] = [],
+    push = (i: readonly number[], w: boolean) => HP_FRAMES.push({ a: [...a], i, w });
+  for (const v of [3, 6, 2, 7, 5, 1, 4]) {
+    a.push(v);
+    push([a.length - 1], true);
+    for (let i = a.length - 1; i > 0; ) {
+      const p = (i - 1) >> 1;
+      push([i, p], false);
+      if (a[i] <= a[p]) break;
+      [a[i], a[p]] = [a[p], a[i]];
+      push([i, p], true);
+      i = p;
+    }
+  }
+  push([], false);
+  push([], false);
+  while (a.length) {
+    push([0], false);
+    const last = a.pop() as number;
+    if (a.length) a[0] = last;
+    push(a.length ? [0] : [], true);
+    for (let i = 0; ; ) {
+      const l = 2 * i + 1,
+        b = l + 1 < a.length && a[l + 1] > a[l] ? l + 1 : l;
+      if (l >= a.length) break;
+      push([i, b], false);
+      if (a[b] <= a[i]) break;
+      [a[i], a[b]] = [a[b], a[i]];
+      push([i, b], true);
+      i = b;
+    }
+  }
+  push([], false);
+  push([], false);
+}
+/** 二分ヒープの図柄の 1 秒あたりのコマ数 */
+const HP_FPS = 5;
+
 const TAU = 2 * Math.PI;
 const r1 = (v: number): number => Math.round(v * 10) / 10;
 const mod = (a: number, n: number): number => ((a % n) + n) % n;
@@ -1358,6 +1399,35 @@ export const ART: Record<string, Art> = {
       (head ? P('fb', head) : '')
     );
   },
+  /* 二分ヒープ: 左に 7 個の木、右に同じ値の配列を置き、同じ要素を両方で光らせる */
+  hp(t) {
+    if (!HP_FRAMES.length) hpFrames();
+    /* 止まった絵は 1 個を取り出したあと、交換している所 */
+    const start = HP_FRAMES.findIndex((f) => f.a.length === 6 && f.w && f.i.length === 2),
+      f = HP_FRAMES[(start + Math.floor(t * HP_FPS)) % HP_FRAMES.length],
+      node = (i: number): [number, number] => {
+        const l = Math.floor(Math.log2(i + 1));
+        return [4 + ((i + 1.5 - 2 ** l) / 2 ** l) * 50, 8 + l * 16];
+      };
+    let lines = '',
+      base = '',
+      hit = '';
+    f.a.forEach((v, i) => {
+      const [x, y] = node(i),
+        r = r1(1.8 + (v / 7) * 2.6),
+        h = r1(4 + (v / 7) * 34),
+        d =
+          `M${r1(x - r)} ${y}a${r} ${r} 0 1 0 ${r1(2 * r)} 0a${r} ${r} 0 1 0 ${r1(-2 * r)} 0Z` +
+          `M${r1(63.3 + i * 7.4)} ${r1(45 - h)}h5.4v${h}h-5.4Z`;
+      if (i) {
+        const [px, py] = node((i - 1) >> 1);
+        lines += `M${r1(px)} ${py}L${r1(x)} ${y}`;
+      }
+      if (f.i.includes(i)) hit += d;
+      else base += d;
+    });
+    return P('c t', lines) + P('fc', base) + (hit ? P(f.w ? 'fa' : 'fb', hit) : '');
+  },
   /* オルガン音響モデル: 口と円錐の足があるパイプの正面。和音を鳴らし、鳴っている管に定在波を描く */
   og(t) {
     let body = '',
@@ -2131,6 +2201,7 @@ export const LOOP: Record<string, number> = {
   so: 3,
   gm: 3.6,
   ls: 3,
+  hp: 50 / HP_FPS,
   pcm: 3,
   adp: 26 / 8,
   mp3: 4,
