@@ -1,0 +1,84 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/shepard-tone/style.css';
+import { CHORD_OPT, DIR_OPT, PARAMS, REVERB_OPT, STEP_OPT, TIMBRE_OPT } from '../tools/shepard-tone/params';
+
+const name = '無限音階';
+const P = Object.fromEntries(PARAMS.map((d) => [d.k, d]));
+---
+<SiteLayout title={name} tool={{ id: 'shepard-tone', name }}>
+  <PageTitle title={name}>どこまでも上がり続けて聞こえる音を鳴らします。</PageTitle>
+
+  <div class="tgrid" id="shepard-tone">
+    <div class="sht-view" id="sht-view">
+      <Panel hid="hd-ring" title="音名の環" class="sht-ringp" fixed hidden><canvas class="sht-ring" id="sht-ring" role="img" aria-label="12 の音名と今の和音"></canvas></Panel>
+      <Panel hid="hd-sp" title="スペクトログラム" class="sht-specp" fixed>
+        <Fragment slot="aux"><span class="led" id="sht-led" aria-hidden="true"></span><span class="aux" id="sht-st" aria-live="polite"></span></Fragment>
+        <div class="sht-specw" id="sht-specw">
+          <canvas class="sht-sp" id="sht-sp" role="img" aria-label="スペクトログラム。横が時間、縦が音の高さ"></canvas>
+          <canvas class="sht-levels" id="sht-levels" role="img" aria-label="音域ごとの音量と今の音"></canvas>
+        </div>
+        <div class="sht-opts" id="sht-opts" role="group" aria-label="追加の表示">
+          <button type="button" class="tg" data-view="levels" aria-pressed="false" title="スペクトログラムの右に今の音と音量"><span class="led" aria-hidden="true"></span>音域ごとの音量</button>
+          <button type="button" class="tg" data-view="ring" aria-pressed="false" title="12 の音名の上で回る今の和音"><span class="led" aria-hidden="true"></span>音名の環</button>
+          <span class="sht-lg" id="sht-lg" hidden><span class="stag"><i class="sw" aria-hidden="true"></i>根音</span><span class="stag"><i class="sw c2" aria-hidden="true"></i>ほかの音</span></span>
+        </div>
+      </Panel>
+    </div>
+
+    <Panel hid="hd-move" title="音程の変化">
+      <div class="sht-bar">
+        <div>
+          <div class="sht-cmd">
+            <button type="button" id="sht-play" aria-pressed="false"><svg class="i-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.2l7.6 4.8L3 10.8z"/></svg><svg class="i-stop" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="2" width="8" height="8"/></svg><span id="sht-playT">再生</span></button>
+            <button type="button" id="sht-hold" aria-pressed="false"><svg class="i-hold" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="2.8" height="9"/><rect x="7.2" y="1.5" width="2.8" height="9"/></svg><svg class="i-resume" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.2l7.6 4.8L3 10.8z"/></svg><span id="sht-holdT">音程の変化を停止</span></button>
+          </div>
+          <dl class="sht-mt">
+            <div><dt>今の和音</dt><dd id="m-name">—</dd></div>
+            <div><dt>半音とのずれ</dt><dd><span id="m-cent">0</span> <small>セント</small></dd></div>
+            <div><dt>ここまでの移動</dt><dd><span id="m-oct">+0.00</span> <small>オクターブ</small></dd></div>
+          </dl>
+        </div>
+        <div class="ptab">
+          <ChoiceRow k="dir" name="方向" choices={DIR_OPT} value="1" />
+          <ChoiceRow k="step" name="動き" choices={STEP_OPT} value="0" />
+          <ParamRow d={P.rate} />
+        </div>
+      </div>
+    </Panel>
+
+    <div class="sht-2">
+      <Panel hid="hd-snd" title="音">
+        <div class="ptab">
+          <ChoiceRow k="chord" name="和音" layout="chips" choices={CHORD_OPT} value="major" />
+          <ChoiceRow k="timbre" name="音色" layout="chips" choices={TIMBRE_OPT} value="sine" />
+        </div>
+      </Panel>
+      <div class="sht-col">
+        <Panel hid="hd-rev" title="響き">
+          <div class="ptab">
+            <ChoiceRow k="reverb" name="残響" choices={REVERB_OPT} value="hall" />
+            <ParamRow d={P.wet} />
+            <ParamRow d={P.vol} />
+          </div>
+        </Panel>
+        <Panel hid="hd-range" title="音域">
+          <div class="ptab">
+            <ParamRow d={P.center} />
+            <ParamRow d={P.width} />
+          </div>
+        </Panel>
+      </div>
+    </div>
+  </div>
+
+  <RelatedTools current="shepard-tone" />
+  <script>
+    import '../tools/shepard-tone/client';
+  </script>
+</SiteLayout>

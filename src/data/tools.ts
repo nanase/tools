@@ -188,7 +188,7 @@ export const TOOLS: Tool[] = [
     t: '残響',
     d: '部屋の反射を鏡像法で求め、インパルス応答を畳み込んで響きを聞きます。',
     ic: 'rv',
-    r: ['convolution', 'thunder', 'doppler', 'guitar'],
+    r: ['convolution', 'thunder', 'doppler', 'shepard-tone'],
     k: 'reverb reverberation 残響 反響 エコー echo やまびこ 鏡像法 image source method インパルス応答 impulse response rir 残響時間 rt60 t60 sabine セイビン eyring アイリング 吸音率 absorption coefficient 初期反射 early reflection 後部残響 late reverberation 臨界距離 critical distance 平均自由行程 edt t20 t30 c80 d50 schroeder シュレーダー 畳み込み convolution convolver 部屋 ホール 教会 屋外 オーディオ audio',
   },
   {
@@ -199,6 +199,15 @@ export const TOOLS: Tool[] = [
     ic: 'th',
     r: ['reverb', 'doppler', 'noise', 'spectrum'],
     k: 'thunder 雷鳴 雷 かみなり 稲妻 稲光 lightning 落雷 放電路 衝撃波 shock wave n波 n-wave ゴロゴロ バリバリ rumble clap 光ってから 3秒 1km 距離 空気の吸収 air absorption iso 9613 反射 こだま 影の領域 shadow zone few ribner tortuosity オーディオ audio',
+  },
+  {
+    id: 'shepard-tone',
+    c: '音響',
+    t: '無限音階',
+    d: 'どこまでも上がり続けて聞こえる音を鳴らします。',
+    ic: 'shp',
+    r: ['spectrum', 'reverb', 'temperament', 'fm-synth'],
+    k: 'shepard tone シェパードトーン shepard risset glissando リセットのグリッサンド 無限音階 無限 音階 上がり続ける 下がり続ける 錯覚 聴覚の錯覚 auditory illusion 和音 コード chord スペクトログラム spectrogram 残響 reverb 音色 オクターブ octave オーディオ audio',
   },
   {
     id: 'guitar',
@@ -524,7 +533,7 @@ export const TOOLS: Tool[] = [
     t: '音律とうなり',
     d: '音律ごとに和音を鳴らし、うなりの速さを比べます。',
     ic: 'tm',
-    r: ['tuner', 'piano', 'organ', 'guitar'],
+    r: ['tuner', 'piano', 'organ', 'shepard-tone'],
     k: 'temperament tuning 音律 調律 うなり beat beats 平均律 equal temperament 純正律 just intonation ピタゴラス pythagorean ミーントーン meantone ヴェルクマイスター werckmeister キルンベルガー kirnberger ヴァロッティ vallotti ヤング young 古典調律 well temperament 和音 chord 長三和音 3 度 5 度 部分音 倍音 partial harmonic コンマ comma ウルフ wolf 非調和性 inharmonicity ストレッチ stretch ピアノ piano オルガン organ セント cent',
   },
   {
