@@ -560,8 +560,17 @@ export const TOOLS: Tool[] = [
     t: 'ソート',
     d: 'バーが小さい順に並ぶ様子を音で追い、アルゴリズムを比べます。',
     ic: 'so',
-    r: ['list-queue-stack', 'fft', 'gif', 'qr-code'],
+    r: ['list-queue-stack', 'clustering', 'fft', 'gif'],
     k: 'sort sorting 並べ替え 並び替え 整列 アルゴリズム algorithm バブル bubble シェーカー cocktail shaker コム comb ノーム gnome 奇偶転置 odd-even 選択 selection ヒープ heap スムース smooth サイクル cycle パンケーキ pancake 挿入 insertion 二分挿入 binary シェル shell マージ merge ボトムアップ bottom-up ティム timsort パワー powersort インプレース symmerge クイック quick ピボット pivot 3 分割 three-way デュアルピボット dual-pivot イントロ introsort pdqsort 計数 counting 基数 radix lsd msd アメリカンフラッグ american flag バケット bucket フラッシュ flash ビーズ bead 比較 計算量 安定 stable バイトニック bitonic バッチャー batcher ペアワイズ pairwise ソーティングネットワーク sorting network ストゥージ stooge スロー slow ボゴ bogo ボゾ bozo 音 sound of sorting',
+  },
+  {
+    id: 'clustering',
+    c: 'アルゴリズム',
+    t: 'クラスタリング',
+    d: '点のまとまりを見つける手法を動かして比べます。',
+    ic: 'gm',
+    r: ['sort', 'kalman', 'image-convolution', 'list-queue-stack'],
+    k: 'clustering cluster クラスタ 分類 教師なし学習 unsupervised 機械学習 machine learning k-means kmeans k平均 k-means++ ミニバッチ mini-batch k-medoids pam メドイド k-medians fuzzy c-means ファジィ 二分 bisecting x-means bic カーネル kernel 階層 hierarchical 凝集 agglomerative デンドログラム 樹形図 dendrogram ウォード ward 最短距離 single linkage 最長距離 complete 群平均 average diana birch cf cure dbscan optics hdbscan 密度 density mean shift ミーンシフト quick shift density peaks denclue 混合ガウス gmm gaussian mixture em 変分ベイズ variational bayes スペクトラル spectral 固有ベクトル affinity propagation 最小全域木 mst ラベル伝播 label propagation markov mcl louvain ルーバン モジュラリティ 自己組織化マップ som kohonen neural gas growing neural gas gng clique 調整ランド指数 ari 散布図',
   },
   {
     id: 'list-queue-stack',
