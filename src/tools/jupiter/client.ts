@@ -5,6 +5,8 @@
 import { calToJd, jdToCal } from '../../lib/astro/time';
 import { dot, len, mul, sub, unit, type Vec3 } from '../../lib/astro/vec';
 import { Choice } from '../../lib/choice';
+import { DatePicker } from '../../lib/date-picker';
+import { dateTimeToJd, secOfDay, toDateTime } from '../../lib/date-picker-core';
 import { $, esc } from '../../lib/dom';
 import { cmFromNodeOfDate, Ephem, type Geo, type PlanetState, planetState } from '../../lib/planet/ephem';
 import {
@@ -493,7 +495,7 @@ function drawStrip(): void {
 /* ---------- 数値 ---------- */
 function drawNumbers(): void {
   const c = local(jd);
-  const s = Math.floor(c.hour * 3600 + 1e-6);
+  const s = secOfDay(c.hour);
   txt('#clk', `${p2(Math.floor(s / 3600))}:${p2(Math.floor((s % 3600) / 60))}:${p2(s % 60)}`);
   txt('#clkz', tzName());
   txt('#o-date', dateStr(jd));
@@ -502,20 +504,12 @@ function drawNumbers(): void {
   const [i, ii, iii] = cmNow();
   txt('#o-cm', `${i.toFixed(1)} · ${ii.toFixed(1)} · ${iii.toFixed(1)}°`);
   txt('#o-altaz', `${minus(st.alt.toFixed(1))}° · ${st.az.toFixed(1)}°`);
-  ($('#dt') as HTMLInputElement).value =
-    `${c.year}-${p2(c.month)}-${p2(c.day)}T${p2(Math.floor(s / 3600))}:${p2(Math.floor((s % 3600) / 60))}`;
+  datePicker.sync();
 }
-$('#dtbtn').addEventListener('click', () => {
-  const i = $<HTMLInputElement>('#dt');
-  try {
-    i.showPicker();
-  } catch {
-    i.focus();
-  }
-});
-$('#dt').addEventListener('change', (e) => {
-  const m = /^(\d{4})-(\d\d)-(\d\d)T(\d\d):(\d\d)/.exec((e.target as HTMLInputElement).value);
-  if (m) setJd(calToJd(+m[1], +m[2], +m[3]) + (+m[4] + +m[5] / 60 - tzh()) / 24);
+const datePicker = new DatePicker($('#dp'), {
+  get: () => toDateTime(local(jd)),
+  set: (v) => setJd(dateTimeToJd(v, tzh())),
+  today: () => local(nowJd()),
 });
 
 /* ---------- 夜 ---------- */

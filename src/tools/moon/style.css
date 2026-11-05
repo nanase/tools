@@ -90,13 +90,7 @@
 .tchips .chip small{font:500 11.5px var(--sans)}
 .tstep{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-top:8px}
 .tstep .seg button{min-width:52px}
-/* 日付の右の日時を選ぶボタン。入力欄はボタンの下に隠し、選択の窓だけを開く */
 .dtrow{display:inline-flex;align-items:center;gap:6px}
-.dtpick{position:relative;display:inline-flex}
-.calbtn{display:inline-flex;align-items:center;justify-content:center;width:28px;height:26px;padding:0;border:1px solid var(--line-2);border-radius:4px;background:var(--surface);color:var(--ink-2);cursor:pointer}
-.calbtn:hover{border-color:var(--ink-3);color:var(--ink)}
-.calbtn svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
-.dtpick input{position:absolute;left:0;bottom:0;width:28px;height:1px;padding:0;border:0;opacity:0;pointer-events:none}
 
 /* 月のカレンダー */
 .calh{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}

@@ -1,6 +1,7 @@
 ---
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import DatePicker from '../components/DatePicker.astro';
 import More from '../components/More.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
@@ -27,7 +28,7 @@ const WD = ['日', '月', '火', '水', '木', '金', '土'];
       <div class="bigclock">
         <button type="button" class="nowbtn" id="nowbtn" aria-pressed="true" title="現在の日時へ（時計に合わせて進行）"><span class="led on" id="nowLed" aria-hidden="true"></span>現在</button>
         <span class="clk"><span id="clk">—</span><small id="clkz">JST</small></span>
-        <span class="st">日付<span class="dtrow"><b id="o-date">—</b><span class="dtpick"><button type="button" class="calbtn" id="dtbtn" aria-label="日時の選択" title="日時の選択"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"></rect><path d="M3.5 10h17M8 3v4M16 3v4"></path></svg></button><input type="datetime-local" id="dt" step="60" tabindex="-1" aria-hidden="true"></span></span></span>
+        <span class="st">日付<span class="dtrow"><b id="o-date">—</b><DatePicker /></span></span>
         <span class="st">月齢<b id="o-age">—</b></span>
         <span class="st">輝面比<b id="o-k">—</b></span>
         <span class="st">距離<b id="o-dist">—</b></span>

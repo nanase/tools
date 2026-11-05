@@ -6,6 +6,8 @@ import type { Obs } from '../../lib/astro/observer';
 import { calToJd, jdToCal } from '../../lib/astro/time';
 import type { Vec3 } from '../../lib/astro/vec';
 import { Choice } from '../../lib/choice';
+import { DatePicker } from '../../lib/date-picker';
+import { dateTimeToJd, secOfDay, toDateTime } from '../../lib/date-picker-core';
 import { $, esc, norm } from '../../lib/dom';
 import { ParamGroup } from '../../lib/param';
 import { store, stored } from '../../lib/store';
@@ -507,7 +509,7 @@ let rst: ReturnType<typeof riseSet> | null = null;
 let nextFull = 0;
 function drawNumbers(): void {
   const c = local(jd);
-  const s = Math.floor(c.hour * 3600 + 1e-6);
+  const s = secOfDay(c.hour);
   txt('#clk', `${p2(Math.floor(s / 3600))}:${p2(Math.floor((s % 3600) / 60))}:${p2(s % 60)}`);
   txt('#clkz', tzName());
   const age = ageAt(jd);
@@ -541,23 +543,12 @@ function drawNumbers(): void {
   txt('#o-llon', `${sgn(st.subObs.lon)}°`);
   txt('#o-llat', `${sgn(st.subObs.lat)}°`);
   txt('#o-pa', `${st.paBright.toFixed(1)}°`);
-  ($('#dt') as HTMLInputElement).value =
-    `${c.year}-${p2(c.month)}-${p2(c.day)}T${p2(Math.floor(s / 3600))}:${p2(Math.floor((s % 3600) / 60))}`;
+  datePicker.sync();
 }
-/* 日時を選ぶ: 隠した入力欄の日時の選択を、日付の右のボタンから開く */
-$('#dtbtn').addEventListener('click', () => {
-  const i = $<HTMLInputElement>('#dt');
-  try {
-    i.showPicker();
-  } catch {
-    i.focus();
-  }
-});
-$('#dt').addEventListener('change', (e) => {
-  const v = (e.target as HTMLInputElement).value;
-  const m = /^(\d{4})-(\d\d)-(\d\d)T(\d\d):(\d\d)/.exec(v);
-  if (!m) return;
-  setJd(calToJd(+m[1], +m[2], +m[3]) + (+m[4] + +m[5] / 60 - tzh()) / 24);
+const datePicker = new DatePicker($('#dp'), {
+  get: () => toDateTime(local(jd)),
+  set: (v) => setJd(dateTimeToJd(v, tzh())),
+  today: () => local(nowJd()),
 });
 
 /* ---------- 1 か月の帯 ---------- */

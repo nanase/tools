@@ -1,0 +1,38 @@
+/* 日時の選択（月・木星・土星のページ）。クラスは dp- で始める。
+   親（.st など）の文字の指定を受けないよう、枠の中の文字は .dp-pop で決め直す */
+.dp-open{display:inline-flex;align-items:center;justify-content:center;width:28px;height:26px;padding:0;border:1px solid var(--line-2);border-radius:4px;background:var(--surface);color:var(--ink-2);cursor:pointer}
+.dp-open:hover{border-color:var(--ink-3);color:var(--ink)}
+.dp-open svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+
+.dp-pop{position:absolute;inset:auto;box-sizing:border-box;width:min(344px,calc(100vw - 16px));margin:0;padding:14px;border:1px solid var(--line-2);border-radius:var(--r);background:var(--surface);color:var(--ink);font:500 14px/1.3 var(--sans);box-shadow:0 10px 28px rgb(0 0 0 / .3)}
+
+/* 年月日と時分は間を空けて 2 組に見せる */
+.dp-fields{display:flex;gap:6px;margin-bottom:14px}
+.dp-f{display:grid;flex:1 1 0;min-width:0;gap:3px;color:var(--ink-2);font-size:12.5px;text-align:center}
+.dp-f.y{flex:1.6 1 0}
+.dp-f.h{margin-left:10px}
+.dp-f input{box-sizing:border-box;width:100%;height:38px;padding:0;border:1px solid var(--line-2);border-radius:4px;background:var(--inset);color:var(--ink);font:700 18px/1 var(--mono);font-variant-numeric:tabular-nums;text-align:center}
+.dp-f input:hover{border-color:var(--ink-3)}
+.dp-f input:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+
+.dp-nav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.dp-title{font:700 17px/1.2 var(--sans);font-variant-numeric:tabular-nums}
+.dp-nav button{display:inline-flex;align-items:center;justify-content:center;width:44px;height:34px;padding:0;border:1px solid var(--line-2);border-radius:4px;background:none;color:var(--ink);cursor:pointer}
+.dp-nav button:hover{border-color:var(--ink);background:var(--inset)}
+.dp-nav svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+
+.dp-week,.dp-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px}
+.dp-week{margin-bottom:2px;color:var(--ink-2);font-size:12.5px;font-weight:600;text-align:center}
+.dp-days button{position:relative;height:38px;padding:0;border:0;border-radius:4px;background:none;color:var(--ink);font:600 15px/1 var(--mono);font-variant-numeric:tabular-nums;cursor:pointer}
+.dp-days button:hover{background:var(--inset)}
+.dp-days .dp-out{color:var(--ink-3);font-weight:400}
+.dp-days .dp-on,.dp-days .dp-on:hover{background:var(--ink);color:var(--surface);font-weight:700}
+/* 今日の印。オレンジは現在地の印だけに使う決まりに従う */
+.dp-days [aria-current="date"]::after{content:"";position:absolute;left:50%;bottom:4px;width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:var(--accent)}
+.dp-pop button:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+
+@media (pointer:coarse){
+  .dp-open{width:36px;height:32px}
+  .dp-days button{height:42px}
+  .dp-nav button{width:52px;height:40px}
+}
