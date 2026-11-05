@@ -255,6 +255,8 @@ const EP_FRAMES: {
 ];
 /** 式の構文解析の図柄の 1 秒あたりのコマ数 */
 const EP_FPS = 4;
+/** 画像の拡大縮小の図柄のドット絵（屋根 a・壁 b・戸 c） */
+const RZ_SPRITE = ['...aa...', '..aaaa..', '.aaaaaa.', 'aaaaaaaa', '.bbbbbb.', '.bbccbb.', '.bbccbb.', '.bbccbb.'];
 
 const TAU = 2 * Math.PI;
 const r1 = (v: number): number => Math.round(v * 10) / 10;
@@ -1299,6 +1301,35 @@ export const ART: Record<string, Art> = {
       s +
       `<rect class="c t" x="4" y="4" width="${CW * 8}" height="${RH * 8}"/>` +
       (wx > 0 && wx < CW ? P('a', `M${4 + wx * 8} 2V46`) : '')
+    );
+  },
+  /*
+   * 画像の拡大縮小: 左の小さいドット絵が右で大きくなる。画素の 1 辺をコマ送りで変える
+   */
+  rz(t) {
+    const S = [2, 3, 4, 5, 4, 3],
+      s = S[t ? (2 + Math.floor(t / 0.5)) % S.length : 2],
+      sprite = (x0: number, y0: number, u: number): string => {
+        let a = '',
+          b = '',
+          c = '';
+        RZ_SPRITE.forEach((row, j) => {
+          [...row].forEach((k, i) => {
+            const d = `M${x0 + i * u} ${y0 + j * u}h${u}v${u}h-${u}Z`;
+            if (k === 'a') a += d;
+            else if (k === 'b') b += d;
+            else if (k === 'c') c += d;
+          });
+        });
+        const crisp = ' shape-rendering="crispEdges"';
+        return P('fa', a, crisp) + P('fb', b, crisp) + P('fc', c, crisp);
+      };
+    return (
+      sprite(8, 16, 2) +
+      P('c t', 'M4 12H28V36H4Z') +
+      P('c', 'M36 24H46M42 20L46 24L42 28') +
+      sprite(84 - s * 4, 44 - s * 8, s) +
+      P('c t', 'M56 44H114')
     );
   },
   /*
@@ -2439,6 +2470,7 @@ export const LOOP: Record<string, number> = {
   tp: 4.8,
   pc: 16 / 30,
   jp: 3,
+  rz: 3,
   png: 3.4,
   gif: 3,
   crp: 3,
