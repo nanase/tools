@@ -10,7 +10,7 @@ import { MidiBox, touchOf } from '../../lib/midi';
 import { ParamGroup } from '../../lib/param';
 import { autoPause } from '../../lib/pause';
 import { movePlayStore, outVol, type PlayKey, TEMPO } from '../../lib/play';
-import { acoustics, reverbSpec, roomOf } from '../../lib/reverb';
+import { acoustics, ROOM_OFF_NOTE, reverbSpec, roomOf } from '../../lib/reverb';
 import { store, stored } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
 import { type Line, Transport, tableLine } from '../../lib/transport';
@@ -401,6 +401,7 @@ function roomView(): void {
     off = r.v === 'off',
     a = acoustics(r),
     dist = PR.get('dist');
+  PR.setOff('dist', off, off ? ROOM_OFF_NOTE : '');
   html('#r-t', off ? '—' : ro(a.t60, 's', 3));
   html('#r-th', off ? '—' : ro(a.t60Hi, 's', 3));
   html('#r-rc', off ? '—' : ro(a.rc, 'm', 3));

@@ -34,6 +34,8 @@ export const ROOMS: readonly Room[] = [
   { v: 'church', name: '教会', dim: [60, 25, 18], a: 0.12, aHi: 0.18, r: 15 },
 ];
 export const roomOf = (v: string): Room => ROOMS.find((x) => x.v === v) ?? ROOMS[0];
+/** 部屋が「なし」のときに、聴く位置の欄へ出す文言 */
+export const ROOM_OFF_NOTE = '残響なしでは使いません';
 
 /** 部屋から求めた値 */
 export interface RoomAcoustics {
