@@ -1,0 +1,52 @@
+/* 無限音階のページだけのスタイル */
+.sht-view{display:grid;gap:26px 16px}
+.sht-sp{display:block;width:100%;height:400px}
+.sht-specw{display:grid;grid-template-columns:minmax(0,1fr);background:#000;border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.sht-specw.levels{grid-template-columns:minmax(0,1fr) 150px}
+.sht-specw:not(.levels) .sht-levels{display:none}
+.sht-levels{display:block;width:150px;height:400px;border-left:1px solid #2b3237}
+.sht-ring{display:block;width:100%;height:400px}
+/* 追加の表示のトグルと凡例 */
+.sht-opts{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:8px}
+.sht-opts .tg{font:500 12.5px/1 var(--sans)}
+.sht-lg{display:inline-flex;gap:12px;margin-left:auto;font-size:12.5px;color:var(--ink-2)}
+.sht-lg .stag{display:inline-flex;align-items:center;gap:5px}
+
+/* 音程の変化 */
+.sht-bar{display:grid;grid-template-columns:minmax(0,1fr);gap:6px 20px;align-items:center}
+.sht-cmd{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:8px}
+.sht-cmd button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:42px;padding:4px 10px;border:1px solid var(--line-2);border-radius:4px;background:var(--surface);color:var(--ink);font:700 14px/1.2 var(--sans);cursor:pointer}
+.sht-cmd button:hover{border-color:var(--ink-3)}
+.sht-cmd svg{width:13px;height:13px;fill:currentColor;flex:none}
+.sht-cmd .i-stop,.sht-cmd .on .i-play,.sht-cmd .i-resume,.sht-cmd .on .i-hold{display:none}
+.sht-cmd .on .i-stop,.sht-cmd .on .i-resume{display:block}
+#sht-play{background:var(--ink);border-color:var(--ink);color:var(--surface)}
+#sht-play.on{background:var(--surface);color:var(--ink);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 35%,transparent)}
+#sht-hold.on{border-color:var(--accent);color:var(--accent)}
+.sht-mt{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.6fr);gap:8px;margin:10px 0 4px}
+.sht-mt dt{font-size:12px;color:var(--ink-3)}
+.sht-mt dd{margin:0;font:600 17px/1.25 var(--mono);white-space:nowrap;font-variant-numeric:tabular-nums}
+.sht-mt small{font:500 12.5px/1 var(--sans)}
+
+/* 音と響き */
+.sht-2,.sht-col{display:grid;gap:26px 16px;grid-template-columns:minmax(0,1fr)}
+/* 記号の欄を使わないので詰める。単位が長いので単位の欄を広げる */
+#shepard-tone .prow{--sw:0px;--uw:72px;--fw:150px}
+@media (min-width:900px){
+  .sht-view.ring{grid-template-columns:330px minmax(0,1fr)}
+  .sht-ring{margin-top:20px}
+  .sht-bar{grid-template-columns:minmax(300px,1fr) minmax(0,1.5fr)}
+  .sht-2{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start}
+}
+@media (max-width:899px){
+  /* 図を先に出し、環はその下 */
+  .sht-specp{order:-1}
+}
+@media (max-width:620px){
+  .sht-sp,.sht-levels{height:260px}
+  .sht-levels{width:96px}
+  .sht-specw.levels{grid-template-columns:minmax(0,1fr) 96px}
+  .sht-ring{height:320px}
+  .sht-mt dd{font-size:16px}
+  #shepard-tone .prow{--sw:0px;--uw:68px;--fw:116px}
+}

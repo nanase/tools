@@ -2111,6 +2111,33 @@ export const ART: Record<string, Art> = {
    * VVVF: 基本波とキャリアを比べて、出力のオン・オフを左から順に作る。止まっているときは 1 周期を描き終えた絵。
    * 図柄が小さいので倍率は 9 倍に固定し、速度で変えない。1 周は 4 秒で、36 コマで描く（12 コマ/秒）
    */
+  shp(t) {
+    /* スペクトログラムの線: 根音は ch1、ほかの音は ch2。上がり続け、山の外に近い上下の端は細い線で描く */
+    const X0 = 4,
+      X1 = 116,
+      Y0 = 4,
+      Y1 = 44,
+      k = 0.3,
+      S = 15,
+      sh = mod(Math.floor(t * 12 + 1e-9) / 12, 3) / 3,
+      line = (c: number, cls: string): string => {
+        const part = (ya: number, yb: number, cl: string): string => {
+          const a = Math.max(X0, X0 + (c - ya) / k),
+            b = Math.min(X1, X0 + (c - yb) / k);
+          return b > a ? P(cl, `M${r1(a)} ${r1(c - k * (a - X0))}L${r1(b)} ${r1(c - k * (b - X0))}`) : '';
+        };
+        return part(Y1, 36, `${cls} t`) + part(36, 12, cls) + part(12, Y0, `${cls} t`);
+      };
+    let s = '';
+    for (let o = -1; o < 6; o++)
+      for (const [f, cls] of [
+        [0, 'a'],
+        [4 / 12, 'b'],
+        [7 / 12, 'b'],
+      ] as const)
+        s += line(14 + (o - sh - f + 1) * S, cls);
+    return s;
+  },
   vv(t) {
     const w = mod(t, 4),
       end = w < 0.6 ? 1 : Math.min(1, Math.floor((w - 0.6) * 12) / 36),
@@ -2509,6 +2536,7 @@ export const LOOP: Record<string, number> = {
   mp3: 4,
   imp: 53 / 12,
   vv: 4,
+  shp: 3,
 };
 
 /** 止まっているときの図柄（ビルド時に HTML へ出す） */

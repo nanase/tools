@@ -53,6 +53,8 @@ export type Unit =
   | 'bit'
   | 'ms'
   | 'kbps'
+  | '半音/秒'
+  | 'オクターブ'
   | 'km/s'
   | '倍'
   | (typeof COMPOUND)[number];
