@@ -9,7 +9,7 @@ import { logMap, MidiBox, pedalOn, type Touch, touchOf } from '../../lib/midi';
 import { ParamGroup } from '../../lib/param';
 import { autoPause, lookahead } from '../../lib/pause';
 import { movePlayStore, outVol, type PlayKey, TEMPO } from '../../lib/play';
-import { acoustics, reverbSpec, roomOf } from '../../lib/reverb';
+import { acoustics, ROOM_OFF_NOTE, reverbSpec, roomOf } from '../../lib/reverb';
 import { SW } from '../../lib/scope';
 import { store, stored } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
@@ -189,7 +189,7 @@ function strikeOf(key: number, v: number, free: (k: number) => boolean = () => f
 }
 
 /* ---------- 入力 ---------- */
-new ParamGroup<string>([VEL, UNI, THICK, DIST], (v, k) => {
+const P1 = new ParamGroup<string>([VEL, UNI, THICK, DIST], (v, k) => {
   V.vel = v.vel;
   V.uni = v.uni;
   V.h = v.h;
@@ -357,6 +357,7 @@ function roomView(): void {
   const r = roomOf(room.value),
     off = r.v === 'off',
     a = acoustics(r);
+  P1.setOff('dist', off, off ? ROOM_OFF_NOTE : '');
   html('#r-t', off ? '—' : ro(a.t60, 's', 3));
   html('#r-th', off ? '—' : ro(a.t60Hi, 's', 3));
   html('#r-rc', off ? '—' : ro(a.rc, 'm', 3));
