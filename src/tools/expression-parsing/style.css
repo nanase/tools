@@ -1,0 +1,148 @@
+/* 式の構文解析のページだけのスタイル（共通は src/styles/site.css）。図の色の値は二分ヒープと同じ */
+:root{--ep-done:#3fb36b;--ep-cmp:#0a6e8a;--ep-mov:#c27e00;--ep-mov-t:#8a5c00;--ep-node:#e4e7e1;--ep-line:#8a948d;--ep-on-mov:#15191c;--ep-on-cmp:#fff;--ep-on-done:#15191c;--ep-ok:#1d8a45;--ep-sym:#b9a3ea}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--ep-done:#49d17f;--ep-cmp:#52c4dd;--ep-mov:#f2c230;--ep-mov-t:#f2c230;--ep-node:#262e33;--ep-line:#5d6a72;--ep-on-mov:#08090a;--ep-on-cmp:#08090a;--ep-on-done:#08090a;--ep-ok:#49d17f;--ep-sym:#5b4590}}
+:root[data-theme="dark"]{--ep-sym:#5b4590;--ep-done:#49d17f;--ep-cmp:#52c4dd;--ep-mov:#f2c230;--ep-mov-t:#f2c230;--ep-node:#262e33;--ep-line:#5d6a72;--ep-on-mov:#08090a;--ep-on-cmp:#08090a;--ep-on-done:#08090a;--ep-ok:#49d17f}
+
+/* 枠の並び。スマホは図 → 表 → 式 → 手法 → 決まり → 計算結果 → 音。PC は図の下に 2 列 */
+#ep .a-fig{order:1}#ep .a-mat{order:2}#ep .a-cmp{order:2}#ep .col{order:3}#ep .a-expr{order:3}#ep .a-met{order:4}#ep .a-rule{order:5}#ep .a-out{order:6}#ep .a-snd{order:7}#ep .a-thy{order:8}
+@media (min-width:1000px){
+  #ep{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start}
+  #ep .a-fig,#ep .a-cmp,#ep .a-thy{grid-column:1/-1}
+  #ep .a-mat{grid-column:1/-1}
+  /* 一覧は図の横に表を置く。押した結果が隣で見える */
+  #ep[data-mode="list"]{grid-template-columns:minmax(0,.78fr) minmax(0,1fr)}
+  #ep[data-mode="list"] .a-fig{grid-column:1;grid-row:1}
+  #ep[data-mode="list"] .a-mat{grid-column:2;grid-row:1}
+}
+#ep:not([data-mode="list"]) .a-mat{display:none}
+#ep[data-mode="cmp"] .a-out,#ep:not([data-mode="cmp"]) .a-cmp{display:none}
+#ep .a-fig,#ep .a-mat{scroll-margin-top:calc(var(--rail-h) + 20px)}
+.ep-row .prow{--sw:0px}
+.ep-row .c-sym{display:none}
+#ep-byw{margin-top:6px}
+#ep-byw[hidden]{display:none}
+
+/* 枠線の上の右端 */
+#ep .a-fig>.ph>.pha .seg button{font-family:var(--sans)}
+#ep .a-fig .tp-st{font-family:var(--sans)}
+.led.ep-ok{background:var(--ep-ok);box-shadow:0 0 5px var(--ep-ok)}
+#ep .pha .prst{font-family:var(--sans)}
+#ep .a-mat .pha .seg button{font-family:var(--sans)}
+@media (max-width:720px){
+  #ep .a-fig{padding-top:24px}
+  #ep .a-fig>.ph>.pha{position:static;transform:none;width:100%;margin:0 0 8px;padding:0;background:none;justify-content:flex-end}
+}
+
+/* 凡例 */
+.ep-lg{justify-content:space-between;min-height:24px;font-family:var(--sans)}
+.ep-lgl{display:flex;flex-wrap:wrap;gap:4px 14px}
+.ep-sw{display:inline-block;box-sizing:border-box;width:12px;height:12px;border-radius:2px;background:var(--ep-node);border:1px solid var(--ep-line)}
+.ep-sw.ep-cmp{background:var(--ep-cmp);border:0}
+.ep-sw.ep-mov{background:var(--ep-mov);border:0}
+.ep-sw.ep-bad{background:var(--warn);border:0}
+.ep-sw.ep-wait{background:none;border:1.5px solid var(--ep-line)}
+.ep-sw.ep-done{background:var(--ep-done);border:0}
+
+/* 工程の切り替え */
+.ep-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:0 0 8px}
+.ep-steps button{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:baseline;gap:2px 10px;min-width:0;padding:8px 10px;border:1px solid var(--line);border-radius:4px;background:none;color:var(--ink-2);font:12.5px/1.3 var(--sans);text-align:left;cursor:pointer}
+.ep-steps button:hover:not(:disabled){border-color:var(--ink-3);color:var(--ink)}
+.ep-steps button:disabled{opacity:.45;cursor:default}
+.ep-steps b{font-size:13.5px;color:var(--ink)}
+.ep-steps span{grid-column:1/-1;grid-row:2}
+.ep-steps em{font:500 12px var(--mono);font-style:normal;white-space:nowrap}
+.ep-steps button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--surface)}
+.ep-steps button[aria-pressed="true"] b{color:var(--surface)}
+.ep-steps button.next{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);color:var(--ink)}
+@media (max-width:600px){
+  .ep-steps button{padding:7px}
+  .ep-steps span,.ep-steps em{display:none}
+  .ep-steps b{white-space:nowrap;font-size:12.5px}
+}
+
+/* 図 */
+#ep[data-mode="cmp"] .ep-solo,#ep:not([data-mode="cmp"]) .ep-race{display:none}
+.ep-scr{padding:0;overflow:hidden}
+.ep-scr canvas{display:block;width:100%}
+#ep .a-fig .tp{margin-top:10px}
+#ep .a-fig .ptab{margin-top:2px}
+
+/* 比較の枠: 音を聞いている枠は線を太くする */
+.ep-race{display:grid;gap:8px;grid-template-columns:repeat(var(--cols,3),minmax(0,1fr))}
+@media (max-width:760px){.ep-race{grid-template-columns:minmax(0,1fr)}}
+.ep-cell{display:block;width:100%;min-width:0;padding:0;border:1px solid var(--line);border-radius:var(--r);background:var(--screen);color:var(--ink);text-align:left;cursor:pointer;overflow:hidden}
+.ep-cell:hover{border-color:var(--line-2)}
+.ep-cell[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.ep-cell canvas{display:block;width:100%}
+.ep-ch{display:flex;align-items:center;gap:6px;min-height:28px;padding:3px 9px;font-size:13px;line-height:1.25;font-weight:700}
+.ep-ch .led{width:7px;height:7px}
+.ep-cn{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ep-ch em{margin-left:auto;font:700 15px/1 var(--mono);font-style:normal;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ep-ch em.diff{color:var(--ep-mov-t)}
+.ep-cb{display:block;height:4px;margin:0 9px;background:var(--grid)}
+.ep-cb b{display:block;width:0;height:100%;background:var(--ep-mov)}
+.ep-dn{display:none;flex:none;align-items:center;gap:4px;height:20px;padding:0 7px 0 5px;border-radius:3px;background:var(--ep-ok);color:var(--surface);font:700 12px/1 var(--sans)}
+.ep-dn svg{display:block;width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.ep-cell[data-done] .ep-dn{display:inline-flex}
+.ep-cell[data-done]{border-color:var(--ep-ok)}
+.ep-cell[data-done][aria-pressed="true"]{border-color:var(--ink)}
+.ep-cell[data-done] .ep-cb b{background:var(--ep-ok)}
+
+/* 式 */
+.ep-in{box-sizing:border-box;display:block;width:100%;height:44px;padding:0 12px;border:1px solid var(--line-2);border-radius:4px;background:var(--screen);color:var(--ink);font:700 18px var(--mono)}
+.ep-in:focus-visible{outline:2px solid var(--accent);outline-offset:-1px}
+.ep-smp{margin-top:8px}
+.ep-smp .chip{font:500 13px var(--mono)}
+
+/* 手法 */
+#ep-met .chip,#ep-rule .chip{font-family:var(--sans)}
+#ep-met .chip:disabled{opacity:.45;cursor:default}
+
+/* 決まりの表 */
+.ep-rw{overflow-x:auto}
+.ep-rt{width:100%;margin-top:10px;border-collapse:collapse;font-size:13px}
+.ep-rt th{padding:0 6px 6px;border-bottom:1px solid var(--line-2);font:500 12px/1.3 var(--sans);color:var(--ink-2);text-align:left;white-space:nowrap}
+.ep-rt td{padding:4px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
+.ep-rt tr:last-child td{border-bottom:0}
+.ep-rt .n{font:700 13px var(--mono);color:var(--ink-2);width:2em}
+.ep-rt .o{font:700 16px var(--sans)}
+.ep-rt .seg button{height:26px;padding:0 8px;font:500 12px/1 var(--sans)}
+.ep-rt .mv{display:inline-grid;place-items:center;width:28px;height:26px;margin-left:3px;padding:0;border:1px solid var(--line);border-radius:4px;background:none;color:var(--ink);font:700 12px/1 var(--sans);cursor:pointer}
+.ep-rt .mv:hover:not(:disabled){border-color:var(--ink-3)}
+.ep-rt .mv:disabled{opacity:.35;cursor:default}
+.ep-rt .r{text-align:right}
+.ep-out{color:var(--ink-3)}
+
+/* 計算結果 */
+.ep-res{grid-template-columns:repeat(3,minmax(0,1fr))}
+.ep-res .m-main{grid-column:1/-1}
+.ep-rtw{overflow-x:auto}
+.ep-rk{width:100%;border-collapse:collapse;font:500 12.5px/1.3 var(--mono);font-variant-numeric:tabular-nums}
+.ep-rk thead th{padding:4px 8px;font:700 12px/1.3 var(--sans);color:var(--ink-2);text-align:right;border-bottom:1px solid var(--line-2);white-space:nowrap}
+.ep-rk td,.ep-rk tbody th{padding:5px 8px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+.ep-rk tr:last-child td,.ep-rk tr:last-child th{border-bottom:0}
+.ep-rk .l{text-align:left}
+.ep-hear{display:inline-flex;align-items:center;gap:6px;padding:0;border:0;background:none;color:var(--ink);font:700 12.5px/1.3 var(--sans);cursor:pointer}
+.ep-hear .led{width:7px;height:7px}
+
+/* 一覧の表 */
+.ep-mw{overflow-x:auto}
+.ep-mt{width:100%;min-width:560px;border-collapse:collapse;font-size:12.5px}
+.ep-mt thead th{padding:5px 3px;border-bottom:1px solid var(--line-2);font:500 12px/1.25 var(--sans);color:var(--ink-2)}
+.ep-mt tbody th{position:sticky;left:0;z-index:1;padding:2px;background:var(--bg);border-bottom:1px solid var(--line);text-align:left}
+.ep-mt td{padding:2px;border-bottom:1px solid var(--line);text-align:center;white-space:nowrap}
+.ep-mt tr:last-child td,.ep-mt tr:last-child th{border-bottom:0}
+.ep-mr,.ep-mh{padding:3px 5px;border:0;border-radius:3px;background:none;color:inherit;font:inherit;cursor:pointer}
+.ep-mr{font:700 12.5px var(--mono);white-space:nowrap}
+.ep-mr:hover,.ep-mh:hover{background:var(--inset)}
+.ep-c{display:block;width:100%;min-height:30px;padding:0 4px;border:1px solid transparent;border-radius:3px;background:color-mix(in srgb,var(--ink) 4%,transparent);color:var(--ink);font:700 12.5px var(--mono);cursor:pointer}
+.ep-c.on{background:var(--ep-mov);color:var(--ep-on-mov)}
+.ep-c.er{color:var(--ink-3)}
+.ep-c.on.er{color:var(--ep-on-mov)}
+.ep-c:hover{border-color:var(--ink-3)}
+.ep-c.sel{outline:2px solid var(--accent);outline-offset:-2px}
+.ep-note{margin:8px 2px 0;font-size:12.5px;color:var(--ink-2)}
+
+/* 動作原理と式の表 */
+.ep-cx td{white-space:nowrap;font-family:var(--mono);font-size:12.5px}
+.ep-cx th[scope="row"]{white-space:nowrap}

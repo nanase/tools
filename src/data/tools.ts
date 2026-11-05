@@ -573,12 +573,21 @@ export const TOOLS: Tool[] = [
     k: 'clustering cluster クラスタ 分類 教師なし学習 unsupervised 機械学習 machine learning k-means kmeans k平均 k-means++ ミニバッチ mini-batch k-medoids pam メドイド k-medians fuzzy c-means ファジィ 二分 bisecting x-means bic カーネル kernel 階層 hierarchical 凝集 agglomerative デンドログラム 樹形図 dendrogram ウォード ward 最短距離 single linkage 最長距離 complete 群平均 average diana birch cf cure dbscan optics hdbscan 密度 density mean shift ミーンシフト quick shift density peaks denclue 混合ガウス gmm gaussian mixture em 変分ベイズ variational bayes スペクトラル spectral 固有ベクトル affinity propagation 最小全域木 mst ラベル伝播 label propagation markov mcl louvain ルーバン モジュラリティ 自己組織化マップ som kohonen neural gas growing neural gas gng clique 調整ランド指数 ari 散布図',
   },
   {
+    id: 'expression-parsing',
+    c: 'アルゴリズム',
+    t: '式の構文解析',
+    d: '式が木になる手順と、決まりで変わる答えを見ます。',
+    ic: 'ep',
+    r: ['sort', 'binary-heap', 'list-queue-stack', 'clustering'],
+    k: '構文解析 parser parsing 式 expression 数式 字句解析 lexer tokenizer トークン 構文木 抽象構文木 ast 木 tree スタック stack 優先順位 precedence 結合 associativity 左結合 右結合 操車場 shunting yard ダイクストラ dijkstra 逆ポーランド シフト還元 shift reduce lr 再帰下降 recursive descent pratt バックトラック backtracking パックラット packrat peg 括弧 電卓 calculator excel apl コンパイラ compiler アルゴリズム algorithm',
+  },
+  {
     id: 'list-queue-stack',
     c: 'データ構造',
     t: 'リスト・キュー・スタック',
     d: 'データ構造ごとの順序と計算量をバーの動きで比べます。',
     ic: 'ls',
-    r: ['binary-heap', 'b-tree', 'sort', 'gif'],
+    r: ['binary-heap', 'b-tree', 'sort', 'expression-parsing'],
     k: 'データ構造 data structure list queue stack リスト キュー スタック 片方向 双方向 連結リスト linked list 配列 array 両端キュー deque リングバッファ ring buffer 循環バッファ circular push pop enqueue dequeue lifo fifo 計算量 オーダー ビッグオー big o 償却',
   },
   {
@@ -587,7 +596,7 @@ export const TOOLS: Tool[] = [
     t: '二分ヒープ',
     d: '追加と取り出しで木の中の値が動く様子を見ます。',
     ic: 'hp',
-    r: ['list-queue-stack', 'b-tree', 'sort', 'fft'],
+    r: ['list-queue-stack', 'b-tree', 'sort', 'expression-parsing'],
     k: 'binary heap ヒープ バイナリヒープ 優先度付きキュー priority queue ヒープソート heapsort 最大ヒープ 最小ヒープ max heap min heap 完全二分木 木 tree 配列 array d 分ヒープ 4 分ヒープ 左傾ヒープ leftist スキューヒープ skew 二項ヒープ binomial ペアリングヒープ pairing フィボナッチヒープ fibonacci マージ 構築 heapify 格納 取り出し 計算量 オーダー',
   },
   {
