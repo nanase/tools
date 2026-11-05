@@ -273,8 +273,9 @@ function initRelated(): void {
     const w = box.clientWidth;
     if (!w) return;
     const n = w < 480 ? 3 : Math.max(1, Math.floor((w + 12) / (240 + 12)));
-    [...box.children].forEach((c, i) => {
-      (c as HTMLElement).hidden = i >= n;
+    /* 子には ToolCard の script も混ざるので、カードだけを数える */
+    $$('.unit', box).forEach((c, i) => {
+      c.hidden = i >= n;
     });
   };
   new ResizeObserver(fit).observe(box);
