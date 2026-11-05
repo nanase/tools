@@ -1,0 +1,177 @@
+/* B木のページだけのスタイル（共通は src/styles/site.css）。枠の並びと比較の枠は二分ヒープにそろえる */
+/*
+ * 図の色。二分ヒープと同じ考え方で、キーは薄い灰、読み込みは濃い青、書き込みは黄にする。
+ * --bt-on-* は塗りの上の文字の色
+ */
+:root{--bt-ok:#1d8a45;--bt-done:#3fb36b;--bt-bar:#b9c0ba;--bt-wait:#7d877f;--bt-cmp:#0a6e8a;--bt-mov:#c27e00;--bt-node:#e4e7e1;--bt-line:#8a948d;--bt-on-mov:#15191c;--bt-on-cmp:#fff;--bt-on-done:#15191c}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bt-ok:#49d17f;--bt-done:#49d17f;--bt-bar:#aab3b8;--bt-wait:#aab3b8;--bt-cmp:#52c4dd;--bt-mov:#f2c230;--bt-node:#262e33;--bt-line:#5d6a72;--bt-on-mov:#08090a;--bt-on-cmp:#08090a;--bt-on-done:#08090a}}
+:root[data-theme="dark"]{--bt-ok:#49d17f;--bt-done:#49d17f;--bt-bar:#aab3b8;--bt-wait:#aab3b8;--bt-cmp:#52c4dd;--bt-mov:#f2c230;--bt-node:#262e33;--bt-line:#5d6a72;--bt-on-mov:#08090a;--bt-on-cmp:#08090a;--bt-on-done:#08090a}
+
+/* 枠の並び。スマホは図 → 表 → 操作 → データ構造 → データ → 段数 → 計算結果 → 音。PC は図の下に 2 列 */
+#bt .a-fig{order:1}#bt .a-mat{order:2}#bt .a-cmp{order:2}#bt .col{order:3}#bt .a-ops{order:3}#bt .a-str{order:4}#bt .a-data{order:5}#bt .a-lv{order:6}#bt .a-out{order:7}#bt .a-snd{order:8}#bt .a-thy{order:9}
+@media (min-width:1000px){
+  #bt{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start}
+  #bt .a-fig,#bt .a-mat,#bt .a-cmp,#bt .a-thy{grid-column:1/-1}
+  /* 一覧は図の横に表を置く。押したボタンのすぐ下に表が出て、表を押した結果も隣で見える */
+  #bt[data-mode="list"]{grid-template-columns:minmax(0,.78fr) minmax(0,1fr)}
+  #bt[data-mode="list"] .col{display:contents}
+  #bt[data-mode="list"] .a-fig{grid-column:1;grid-row:1/span 3}
+  #bt[data-mode="list"] .a-mat{grid-column:2;grid-row:1}
+  #bt[data-mode="list"] .a-ops{grid-column:2;grid-row:2}
+  #bt[data-mode="list"] .a-data{grid-column:2;grid-row:3}
+  #bt[data-mode="list"] .a-lv{grid-column:2;grid-row:4}
+  #bt[data-mode="list"] .a-out{grid-column:1;grid-row:4/span 2}
+  #bt[data-mode="list"] .a-snd{grid-column:2;grid-row:5}
+  #bt[data-mode="list"] .a-thy{grid-row:6}
+}
+#bt[data-mode="list"] .a-str{display:none}
+#bt:not([data-mode="list"]) .a-mat{display:none}
+#bt[data-mode="cmp"] .a-ops,#bt[data-mode="cmp"] .a-out,#bt:not([data-mode="cmp"]) .a-cmp{display:none}
+#bt .a-fig,#bt .a-mat{scroll-margin-top:calc(var(--rail-h) + 20px)}
+.bt-row .prow{--sw:0px}
+.bt-row .c-sym{display:none}
+#bt-byw{margin-top:6px}
+#bt-byw[hidden]{display:none}
+
+/* 枠線の上の右端 */
+#bt .a-fig>.ph>.pha .seg button{font-family:var(--sans)}
+#bt .a-fig .tp-st{font-family:var(--sans)}
+.led.bt-ok{background:var(--bt-ok);box-shadow:0 0 5px var(--bt-ok)}
+#bt .pha .prst{font-family:var(--sans)}
+@media (max-width:720px){
+  #bt .a-fig{padding-top:24px}
+  #bt .a-fig>.ph>.pha{position:static;transform:none;width:100%;margin:0 0 8px;padding:0;background:none;justify-content:flex-end}
+}
+
+/* 凡例 */
+.bt-lg{justify-content:space-between;min-height:28px;font-family:var(--sans)}
+.bt-lgl{display:flex;flex-wrap:wrap;gap:4px 14px}
+.bt-sw{display:inline-block;box-sizing:border-box;width:12px;height:12px;border-radius:2px;background:var(--bt-bar)}
+.bt-sw.bt-cmp{background:var(--bt-cmp)}
+.bt-sw.bt-mov{background:var(--bt-mov)}
+.bt-sw.bt-bad{background:var(--warn)}
+.bt-sw.bt-wait{background:none;border:1.5px solid var(--bt-wait)}
+.bt-sw.bt-done{background:var(--bt-done)}
+.bt-end{display:flex;align-items:center;gap:8px}
+
+/* 工程の切り替え */
+.bt-steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:0 0 8px}
+.bt-steps button{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:baseline;gap:2px 10px;min-width:0;padding:8px 10px;border:1px solid var(--line);border-radius:4px;background:none;color:var(--ink-2);font:12.5px/1.3 var(--sans);text-align:left;cursor:pointer}
+.bt-steps button:hover{border-color:var(--ink-3);color:var(--ink)}
+.bt-steps b{font-size:13.5px;color:var(--ink)}
+.bt-steps em{font:500 12px var(--mono);font-style:normal;white-space:nowrap}
+.bt-steps span{grid-column:1/-1;grid-row:2}
+.bt-steps button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--surface)}
+.bt-steps button[aria-pressed="true"] b{color:var(--surface)}
+.bt-steps button.next{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);color:var(--ink)}
+@media (max-width:620px){.bt-steps{grid-template-columns:repeat(2,minmax(0,1fr))}}
+#bt[data-mode="list"] .bt-steps{grid-template-columns:repeat(2,minmax(0,1fr))}
+
+/* 図 */
+#bt[data-mode="cmp"] .bt-solo,#bt:not([data-mode="cmp"]) .bt-race{display:none}
+.bt-scr{padding:0;overflow:hidden}
+.bt-scr canvas{display:block;width:100%;touch-action:pan-y}
+#bt[data-mode="cmp"] .bt-scr canvas{cursor:pointer}
+#bt .a-fig .tp{margin-top:10px}
+#bt .a-fig .ptab{margin-top:2px}
+
+/* 比較の枠: 音を聞いている枠は線を太くする */
+.bt-race{display:grid;gap:8px;grid-template-columns:repeat(var(--cols,2),minmax(0,1fr))}
+@media (max-width:620px){.bt-race{grid-template-columns:minmax(0,1fr)}}
+.bt-cell{display:block;width:100%;min-width:0;padding:0;border:1px solid var(--line);border-radius:var(--r);background:var(--screen);color:var(--ink);text-align:left;cursor:pointer;overflow:hidden}
+.bt-cell:hover{border-color:var(--line-2)}
+.bt-cell[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.bt-cell canvas{display:block;width:100%}
+.bt-ch{display:flex;align-items:center;gap:6px;min-height:28px;padding:3px 9px;font-size:13px;line-height:1.25;font-weight:700}
+.bt-cn{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bt-ch em{margin-left:auto;font:700 13.5px/1 var(--mono);font-style:normal;font-variant-numeric:tabular-nums;white-space:nowrap}
+.bt-ch .led{width:7px;height:7px}
+.bt-cb{display:block;height:4px;margin:0 9px;background:var(--grid)}
+.bt-cb b{display:block;width:0;height:100%;background:var(--bt-mov)}
+/* 完了した枠: 緑の札・緑の枠・緑の回数のバー。音を聞いている枠の線は太いまま */
+.bt-dn{display:none;flex:none;align-items:center;gap:4px;height:20px;padding:0 7px 0 5px;border-radius:3px;background:var(--bt-ok);color:var(--surface);font:700 12px/1 var(--sans)}
+.bt-dn svg{display:block;width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.bt-cell[data-done] .bt-dn{display:inline-flex}
+.bt-cell[data-done] .bt-cb b{background:var(--bt-ok)}
+.bt-cell[data-done]{border-color:var(--bt-ok)}
+.bt-cell[data-done][aria-pressed="true"]{border-color:var(--ink)}
+
+/* データ構造の選択 */
+#bt-str .chip{font-family:var(--sans)}
+#bt-str .chip:disabled{opacity:.45;cursor:default}
+
+/* キーの順番 */
+#bt-shape .chip{display:inline-flex;align-items:center;gap:5px;font-family:var(--sans)}
+#bt-shape svg{display:block;width:26px;height:12px;fill:currentColor}
+
+/* データベースの段数 */
+.bt-lv{display:grid;gap:6px;padding:10px 0 2px}
+.bt-lvr{display:grid;grid-template-columns:8em minmax(0,1fr) 3.4em;align-items:center;gap:8px;font-size:13px}
+.bt-lvb{height:18px;background:var(--grid)}
+.bt-lvb b{display:block;height:100%;background:var(--bt-bar)}
+.bt-lvr.on .bt-lvb b{background:var(--bt-cmp)}
+.bt-lvr em{font:700 14px var(--mono);font-style:normal;text-align:right;white-space:nowrap}
+.bt-lvn{margin:4px 0 0;font-size:12px;line-height:1.5;color:var(--ink-2)}
+
+/* 操作の表 */
+.bt-ow{overflow-x:auto}
+.bt-ot{width:100%;border-collapse:collapse}
+.bt-ot th{padding:0 6px 6px;border-bottom:1px solid var(--line-2);font:500 12px/1.3 var(--sans);color:var(--ink-2);text-align:left;white-space:nowrap}
+.bt-ot th.r{text-align:right}
+.bt-ot td{padding:4px 6px;border-bottom:1px solid var(--line)}
+.bt-ot tr:last-child td{border-bottom:0}
+.bt-ob{width:6.4em}
+.bt-ot td.bt-how{font-size:12px;line-height:1.35;color:var(--ink-2)}
+.bt-ot button{width:100%;min-width:5.4em;min-height:30px;padding:0 8px;border:1px solid var(--line);border-radius:4px;background:none;color:var(--ink);font:500 12.5px/1 var(--sans);text-align:left;cursor:pointer;white-space:nowrap}
+.bt-ot button:hover:not(:disabled){border-color:var(--ink-3)}
+.bt-ot button:disabled{color:var(--ink-3);opacity:.5;cursor:default}
+.bt-oo{font:700 13px var(--mono);text-align:right;white-space:nowrap}
+.bt-on{font:500 12.5px var(--mono);text-align:right;color:var(--ink-2);white-space:nowrap}
+/* 狭い幅では、内容を操作の名前の下の段へ送る */
+@media (max-width:600px){
+  .bt-ot thead tr,.bt-ot tbody tr{display:grid;grid-template-columns:minmax(0,1fr) auto 4.6em;align-items:center;border-bottom:1px solid var(--line)}
+  .bt-ot tbody tr:last-child{border-bottom:0}
+  .bt-ot thead tr{border-bottom-color:var(--line-2)}
+  .bt-ot th,.bt-ot td{border-bottom:0}
+  .bt-ot th.bt-how{display:none}
+  .bt-ot th.r{white-space:normal}
+  .bt-ot td.bt-how{grid-column:1/-1;grid-row:2;padding-top:0}
+  .bt-ob{width:auto}
+}
+/* 計算量の添字 */
+.bt-oo sub,.bt-c sub,.bt-cx sub{font-size:.72em;vertical-align:-.15em;line-height:0}
+
+/* 計算結果 */
+.bt-res{grid-template-columns:repeat(3,minmax(0,1fr))}
+.bt-res .m-sub dd{font:500 13.5px/1.45 var(--sans)}
+.bt-res .m-w{grid-column:1/-1}
+.bt-res [hidden]{display:none}
+.bt-rw{overflow-x:auto}
+.bt-rt{width:100%;border-collapse:collapse;font:500 12.5px/1.3 var(--mono);font-variant-numeric:tabular-nums}
+.bt-rt thead th{padding:4px 8px;font:700 12px/1.3 var(--sans);color:var(--ink-2);text-align:right;border-bottom:1px solid var(--line-2);white-space:nowrap}
+.bt-rt td,.bt-rt tbody th{padding:5px 8px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+.bt-rt tr:last-child td,.bt-rt tr:last-child th{border-bottom:0}
+.bt-rt .l{text-align:left}
+.bt-hear{display:inline-flex;align-items:center;gap:6px;padding:0;border:0;background:none;color:var(--ink);font:700 12.5px/1.3 var(--sans);cursor:pointer}
+.bt-hear .led{width:7px;height:7px}
+
+/* 計算量の表 */
+.bt-mx{overflow-x:auto}
+.bt-mt{width:100%;min-width:600px;border-collapse:collapse;font-size:12px}
+.bt-mt thead th{padding:5px;border-bottom:1px solid var(--line-2);font:500 12px/1.25 var(--sans);color:var(--ink-2)}
+.bt-mt tbody th{position:sticky;left:0;z-index:1;background:var(--bg);font-weight:700;text-align:left}
+.bt-mt td,.bt-mt tbody th{padding:2px;border-bottom:1px solid var(--line);text-align:center;white-space:nowrap}
+.bt-mt tbody th{text-align:left}
+.bt-mt tr:last-child td,.bt-mt tr:last-child th{border-bottom:0}
+.bt-mr,.bt-mh{padding:3px 5px;border:0;border-radius:3px;background:none;color:inherit;font:inherit;cursor:pointer}
+.bt-mr{white-space:nowrap}
+.bt-mr:hover,.bt-mh:hover{background:var(--inset)}
+.bt-c{display:block;width:100%;min-height:30px;padding:0 2px;border:1px solid transparent;border-radius:3px;background:color-mix(in srgb,var(--ink) 4%,transparent);color:var(--ink);font:700 12px var(--mono);cursor:pointer}
+.bt-c.on{background:color-mix(in srgb,var(--ink) 26%,transparent)}
+.bt-c:hover{border-color:var(--ink-3)}
+.bt-c.sel{outline:2px solid var(--accent);outline-offset:-2px}
+.bt-st{font:700 12.5px var(--mono);padding:0 4px}
+
+/* 動作原理と式の表 */
+.bt-cx td{white-space:nowrap;font-family:var(--mono);font-size:12.5px}
+.bt-cx th[scope="row"]{white-space:nowrap}

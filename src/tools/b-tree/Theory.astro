@@ -1,0 +1,133 @@
+---
+// 動作原理と式
+import { BIG_O, DEFS, ENTRY, FILL, STAGES } from './model';
+
+type Ref = { for: string; src: string };
+const REFS: readonly Ref[] = [
+  {
+    for: 'B木',
+    src: 'R. Bayer, E. McCreight, Organization and maintenance of large ordered indexes, Acta Informatica, Vol. 1, No. 3, pp. 173–189, 1972',
+  },
+  {
+    for: 'B+木と B*木の整理',
+    src: 'D. Comer, The Ubiquitous B-Tree, ACM Computing Surveys, Vol. 11, No. 2, pp. 121–137, 1979',
+  },
+  {
+    for: 'B*木の定義',
+    src: 'D. E. Knuth, The Art of Computer Programming, Vol. 3: Sorting and Searching, Addison-Wesley, 1973, Section 6.2.4',
+  },
+  {
+    for: 'B木の操作とトップダウンの分割',
+    src: 'T. H. Cormen, C. E. Leiserson, R. L. Rivest, C. Stein, Introduction to Algorithms, 4th ed., MIT Press, 2022, Chapter 18',
+  },
+  {
+    for: '赤黒木へのつながり',
+    src: 'R. Bayer, Symmetric binary B-Trees: Data structure and maintenance algorithms, Acta Informatica, Vol. 1, No. 4, pp. 290–306, 1972',
+  },
+  {
+    for: 'ランダムな追加での充填率',
+    src: 'A. C.-C. Yao, On random 2–3 trees, Acta Informatica, Vol. 9, pp. 159–170, 1978',
+  },
+  {
+    for: '半分で併合と空で解放',
+    src: 'T. Johnson, D. Shasha, B-trees with inserts and deletes: Why free-at-empty is better than merge-at-half, Journal of Computer and System Sciences, Vol. 47, No. 1, pp. 45–76, 1993',
+  },
+  {
+    for: 'コピーオンライト',
+    src: 'O. Rodeh, B-trees, shadowing, and clones, ACM Transactions on Storage, Vol. 3, No. 4, pp. 1–27, 2008',
+  },
+  {
+    for: 'Bε木',
+    src: 'M. A. Bender, M. Farach-Colton, W. Jannen, R. Johnson, B. C. Kuszmaul, D. E. Porter, J. Yuan, Y. Zhan, An Introduction to Bε-trees and Write-Optimization, ;login:, Vol. 40, No. 5, 2015',
+  },
+  {
+    for: 'まとめて構築',
+    src: 'G. Graefe, Modern B-Tree Techniques, Foundations and Trends in Databases, Vol. 3, No. 4, pp. 203–402, 2011',
+  },
+];
+const Rf = (i: number) => `<a class="rf" href="#thy-r${i}">[${i}]</a>`;
+const LOGM = '<math><msub><mi>log</mi><mi>m</mi></msub><mspace width="0.2em"/><mi>n</mi></math>';
+const FAN = `<div class="eqs"><math display="block"><mrow><mi>m</mi><mo>=</mo><mo>⌊</mo><mfrac><mtext>ページの大きさ</mtext><mn>${ENTRY}</mn></mfrac><mo>⌋</mo><mspace width="1.2em"/><mi>h</mi><mo>=</mo><mo>⌈</mo><msub><mi>log</mi><mrow><mn>${FILL}</mn><mi>m</mi></mrow></msub><mi>n</mi><mo>⌉</mo></mrow></math></div>`;
+---
+<h3>ノードの条件</h3>
+<p>次数 <math><mi>m</mi></math> の B木は、1 つのノードに最大 <math><mi>m</mi><mo>−</mo><mn>1</mn></math> 個のキーと <math><mi>m</mi></math> 本の枝を持ちます。根以外のノードは枠の半分以上を埋め、全部の葉を同じ段に置きます <Fragment set:html={Rf(1)} />。ノードの中のキーは昇順で、枝はキーの間から下の段へ伸びます。</p>
+<div class="eqs"><math display="block"><mrow><mo>⌈</mo><mi>m</mi><mo>/</mo><mn>2</mn><mo>⌉</mo><mo>−</mo><mn>1</mn><mo>≤</mo><mtext>キーの数</mtext><mo>≤</mo><mi>m</mi><mo>−</mo><mn>1</mn></mrow></math></div>
+
+<h3>段数</h3>
+<p>1 段下りるごとに、探す範囲は枝の数だけ狭まります。段数は <Fragment set:html={LOGM} /> に比例するので、枝が多いほど木は浅くなります <Fragment set:html={Rf(4)} />。ディスクではノード 1 つを 1 ページに入れるので、読み込みの回数は段数と同じです。</p>
+<div class="eqs"><math display="block"><mrow><mi>h</mi><mo>≤</mo><msub><mi>log</mi><mrow><mo>⌈</mo><mi>m</mi><mo>/</mo><mn>2</mn><mo>⌉</mo></mrow></msub><mfrac><mrow><mi>n</mi><mo>+</mo><mn>1</mn></mrow><mn>2</mn></mfrac><mo>+</mo><mn>1</mn></mrow></math></div>
+<p>記号: <math><mi>h</mi></math> は段数、<math><mi>n</mi></math> はキーの数です。</p>
+
+<h3>ページの大きさと次数</h3>
+<p>次数はページに入るキーとポインタの組の数で決まります。「データベースの段数」の枠は組の大きさを {ENTRY} バイトとし、枠の {Math.round(FILL * 100)} % が埋まるとして求めています。ランダムな順に追加すると、次数の大きい B木の充填率は <math><mi>ln</mi><mspace width="0.2em"/><mn>2</mn><mo>≈</mo><mn>0.69</mn></math> に近づきます <Fragment set:html={Rf(6)} />。</p>
+<Fragment set:html={FAN} />
+
+<h3>追加と分割</h3>
+<p>根から葉へ下り、葉にキーを入れます。枠を超えたら中央のキーを親へ上げ、ノードを 2 つに分けます。親があふれたら同じことを繰り返し、根が分かれたときだけ段数が 1 増えます。木は根の側へ伸びるので、全部の葉は同じ段のままです <Fragment set:html={Rf(1)} />。</p>
+
+<h3>削除と併合</h3>
+<p>途中のノードのキーは左の部分木の最大と入れ替え、葉から消します。キーが下限を割ったら、隣に余裕があれば親を通して 1 個借ります。余裕がなければ親のキーを下ろして 2 つを 1 つへ併合します <Fragment set:html={Rf(4)} />。根のキーがなくなると段数が 1 減ります。</p>
+
+<h3>種類ごとの違い</h3>
+<ul class="tl">
+  <li>2-3 木・2-3-4 木: 次数 3・4 の B木。2-3-4 木は赤黒木と同じ形を表せる <Fragment set:html={Rf(5)} /></li>
+  <li>B+木: 値を葉だけに置き、途中のノードは道案内のキーの複製だけを持つ。葉を横につなぐので、範囲を親へ戻らずに読める <Fragment set:html={Rf(2)} /></li>
+  <li>B*木: あふれたらまず隣へ分け、隣も満杯なら 2 つを 3 つへ分ける。根以外のノードの枠を 2/3 以上埋める <Fragment set:html={Rf(3)} /></li>
+  <li>トップダウン分割: 下りる途中で満杯のノードを先に分ける。親に空きが残るので、葉から親へ戻らない <Fragment set:html={Rf(4)} /></li>
+  <li>コピーオンライト: ページを書き換えず別のページへ書く。親のポインタも変わるので根まで書き直し、古い版を読み続けられる <Fragment set:html={Rf(8)} /></li>
+  <li>Bε木: 途中のノードにバッファを置き、追加と削除の印をためてまとめて下へ流す。1 回の書き込みで多くのキーが動く <Fragment set:html={Rf(9)} /></li>
+</ul>
+<p>B*木の根は分けたときに両方が下限を満たすよう、他のノードより多いキーを持ちます。枠の下限と根の上限は次の式です <Fragment set:html={Rf(3)} />。</p>
+<div class="eqs"><math display="block"><mrow><mo>⌈</mo><mfrac><mrow><mn>2</mn><mi>m</mi><mo>−</mo><mn>1</mn></mrow><mn>3</mn></mfrac><mo>⌉</mo><mo>−</mo><mn>1</mn><mo>≤</mo><mtext>キーの数</mtext><mo>≤</mo><mi>m</mi><mo>−</mo><mn>1</mn><mspace width="1.2em"/><mtext>根</mtext><mo>≤</mo><mn>2</mn><mo>⌊</mo><mfrac><mrow><mn>2</mn><mi>m</mi><mo>−</mo><mn>2</mn></mrow><mn>3</mn></mfrac><mo>⌋</mo></mrow></math></div>
+
+<h3>追加と削除の方法</h3>
+<ul class="tl">
+  <li>まとめて構築: キーを整列してから葉を左から詰める。分割がなく、ページがほぼ埋まる <Fragment set:html={Rf(10)} /></li>
+  <li>半分で併合: キーが下限を割ったら借りるか併合する。充填率は保たれるが、構造の変更が増える</li>
+  <li>空で解放: 葉が空になるまで放っておき、空になったら親から外す。追加が削除より多ければ充填率はあまり下がらず、構造の変更は少ない <Fragment set:html={Rf(7)} /></li>
+</ul>
+
+<h3>計算量</h3>
+<p>ノードを読み書きする回数で表します。<math><mi>k</mi></math> は範囲で読むキーの数です。* は償却で、操作を続けたときの 1 回あたりを表します。Bε木はバッファをページの大きさ <math><msup><mi>m</mi><mn>2</mn></msup></math> ほどまで広げたときの値です <Fragment set:html={Rf(9)} />。二分探索木は整列したデータで 1 本に伸びるので、最も遅い場合を載せています。</p>
+<div class="tt-w"><table class="tt bt-cx">
+  <thead><tr><th></th>{STAGES.map(([, t]) => <th scope="col">{t}</th>)}</tr></thead>
+  <tbody>
+    {DEFS.map((d) => (
+      <tr>
+        <th scope="row">{d.name}</th>
+        {STAGES.map(([k]) => <td set:html={BIG_O[d.id][k]} />)}
+      </tr>
+    ))}
+  </tbody>
+</table></div>
+
+<h3>音</h3>
+<p>音の高さはキーの値で決めます。動かしたキーと比べているキーを鳴らします。<math><mi>v</mi></math> はキーの値、<math><msub><mi>v</mi><mi>max</mi></msub></math> はキーの最大値です。</p>
+<div class="eqs"><math display="block"><mrow><mi>f</mi><mo>=</mo><mn>110</mn><mo>×</mo><msup><mn>2</mn><mrow><mn>4</mn><mo>(</mo><mi>v</mi><mo>−</mo><mn>1</mn><mo>)</mo><mo>/</mo><mo>(</mo><msub><mi>v</mi><mi>max</mi></msub><mo>−</mo><mn>1</mn><mo>)</mo></mrow></msup><mspace width="0.3em"/><mtext>Hz</mtext></mrow></math></div>
+
+<h3>出典</h3>
+<ol class="refs">
+  {REFS.map((r, i) => (
+    <li id={`thy-r${i + 1}`}>
+      <span class="rf-for">{r.for}</span>
+      <span class="rf-src">{r.src}</span>
+    </li>
+  ))}
+</ol>
+
+<h3>このツールで決めたこと</h3>
+<ul class="tl">
+  <li>読み込みはノードを読んだ回数で、根も毎回数える</li>
+  <li>書き込みはノードを書き換えた回数で、分割は 3 回、2 つを 3 つへは 4 回と数える</li>
+  <li>比較はノードの中を二分探索してキーを比べた回数</li>
+  <li>範囲で親へ戻るときは、読み終えたノードを読み直さない</li>
+  <li>回数は工程ごとに 0 から数える</li>
+  <li>B+木の途中のキーは、葉から消えても道案内として残す</li>
+  <li>2-3 木と 2-3-4 木は次数 3・4 の B木として動かす</li>
+  <li>トップダウン分割は次数が奇数なら 1 つ上の偶数で動かす</li>
+  <li>Bε木の根のバッファはメモリの上にあるものとし、入れるだけなら読み書きに数えない</li>
+  <li>Bε木のバッファの大きさは次数と同じにする。計算量の表の値より書き込みは多くなる</li>
+  <li>Bε木の削除は消す印を流すだけで、葉の併合はしない</li>
+  <li>二分探索木は木の形を整えない</li>
+  <li>操作の表の回数は、31 個で 8 通りのデータを試した 1 回の平均</li>
+</ul>
