@@ -1,0 +1,18 @@
+---
+/**
+ * 図の上に出す、回る輪と短い文言。置く先の要素は position:relative にする。
+ * 初めから待つ図は HTML に出しておき、スクリプトが動く前から見えるようにする。動きは site.css の .busy-mark。
+ * 開いてすぐの輪はすぐ終わることが多いので、操作のあとの輪より長く待ってから出す
+ */
+interface Props {
+  id: string;
+  /** 「読み込み中…」か「計算中…」 */
+  text: string;
+  /** 真っ黒な図では中央に出す（仮の絵が見えている図では右上） */
+  center?: boolean;
+  /** 初めは隠す（操作のあとだけ待つ図） */
+  hidden?: boolean;
+}
+const { id, text, center, hidden } = Astro.props;
+---
+<span class:list={['busy-mark', { center, start: !hidden }]} id={id} hidden={hidden}><i aria-hidden="true"></i>{text}</span>

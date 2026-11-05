@@ -1,4 +1,5 @@
 ---
+import Busy from '../components/Busy.astro';
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
 import MidiPanel from '../components/MidiPanel.astro';
@@ -46,6 +47,7 @@ const COUPLERS = [
         <span class="stag pp-note" id="pp-note"></span>
       </div>
       <div class="ppw" id="ppw">
+        <Busy id="pp-busy" text="読み込み中…" center />
         <svg class="ppd" id="ppd" tabindex="0" role="group" aria-roledescription="鍵盤" aria-label="上から第 2 手鍵盤・第 1 手鍵盤・ペダルの 3 つの鍵盤と、鍵盤ごとに 1 列の管。鍵か管を押すと、その鍵盤の入っているストップの管が鳴る。左右の矢印キーで半音、上下の矢印キーで鍵盤、Page Up と Page Down でオクターブを選び、Enter で弾く"></svg>
       </div>
       <p class="sr" id="pp-live" aria-live="polite"></p>

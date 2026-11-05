@@ -1,4 +1,5 @@
 ---
+import Busy from '../components/Busy.astro';
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
 import More from '../components/More.astro';
@@ -42,6 +43,7 @@ const ORIENTS = [
           <div class="hls" id="hls"><svg id="hls-g" aria-hidden="true"></svg></div>
           <button type="button" class="hv-fs" id="hv-fs" aria-label="全画面で表示" title="全画面で表示"><svg class="i-open" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/></svg><svg class="i-close" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 2v4H2M14 6h-4V2M10 14v-4h4M2 10h4v4"/></svg></button>
           <p class="hv-msg" id="hv-msg" hidden></p>
+          <Busy id="hv-busy" text="計算中…" center />
         </div>
         <More id="g-view" title="表示の設定"><div class="ptab">
           <ChoiceRow k="proj" name="投影" sub="魚眼: 等立体角（画素の明るさが光線の数に比例）。全天: 天頂が中心。カメラ: ふつうのレンズ（透視）" choices={[['fish', '魚眼'], ['sky', '全天'], ['rect', 'カメラ']]} value="fish" />

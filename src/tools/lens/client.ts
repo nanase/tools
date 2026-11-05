@@ -121,21 +121,32 @@ queueMicrotask(() => {
 /* ---------- 映像 ---------- */
 const canvas = $<HTMLCanvasElement>('#lvc'),
   lv = $('#lv'),
-  msg = $('#lv-msg');
-let R: Renderer | null = null;
-try {
-  R = new Renderer(canvas);
-  R.onProgress = (n, w, h) => {
-    txt('#v-spp', String(n));
-    txt('#v-px', `${w}×${h}`);
-  };
-} catch (e) {
+  msg = $('#lv-msg'),
+  busy = $('#lv-busy');
+function noGl(e: unknown): void {
+  busy.hidden = true;
   msg.hidden = false;
   msg.textContent =
     String(e).includes('float') || String(e).includes('webgl2')
       ? 'このブラウザでは WebGL2（浮動小数点の描画）が使えないため、映像を描けません。図と計算結果は使えます。'
       : `映像を描く準備ができませんでした（${String(e).slice(0, 120)}）。`;
   lv.classList.add('nogl');
+}
+let R: Renderer | null = null;
+try {
+  R = new Renderer(canvas);
+  R.onProgress = (n, w, h) => {
+    txt('#v-spp', String(n));
+    txt('#v-px', `${w}×${h}`);
+    /* 一度描いたら、次に待つときは絵を隠さない右上に出す */
+    busy.classList.remove('center');
+  };
+  R.onWait = (on) => {
+    busy.hidden = !on;
+  };
+  R.onFail = noGl;
+} catch (e) {
+  noGl(e);
 }
 canvas.addEventListener('webglcontextlost', (e) => {
   e.preventDefault();

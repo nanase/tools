@@ -2,6 +2,7 @@
  * WebGL2 の描画: 光線を全天図（等立体角の円盤 2 枚、浮動小数のテクスチャ）に加算でためる。空と雲の照らされ方は
  * 光源の高度・雲の高さが変わったときだけ表に計算し直し、表示のたびに全天図と表を引いて合成する
  */
+import { programReady, startProgram } from '../../lib/gl-program';
 import { cmf, toRgb } from '../lens/light';
 import { AOD, apparent, groundT, MAX_POP, moonRatio } from './scene';
 import { FULL_VERT, MS_FRAG, MS_H, MS_W, SHOW_FRAG, SKY_FRAG, TRACE_FRAG, TRACE_VERT } from './shader';
@@ -86,6 +87,8 @@ export class HaloRenderer {
   /** ためた光線の数 */
   rays = 0;
   private px = new Float32Array(4);
+  /** シェーダーの準備が終わると解決する。それまで描かない */
+  readonly ready: Promise<void>;
 
   constructor(
     private readonly canvas: HTMLCanvasElement,
@@ -99,8 +102,6 @@ export class HaloRenderer {
     this.gl = gl;
     this.N = N;
     this.trace = this.program(TRACE_VERT, TRACE_FRAG);
-    gl.useProgram(this.trace.p);
-    gl.uniform1i(this.loc(this.trace, 'uNB'), 17);
     this.sky = this.program(FULL_VERT, SKY_FRAG);
     this.show = this.program(FULL_VERT, SHOW_FRAG);
     const tex = (w: number, h: number, fmt: number, filt: number) => {
@@ -134,27 +135,17 @@ export class HaloRenderer {
     gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
     this.quad = vao;
     this.empty = gl.createVertexArray();
-    this.multiScatter();
-    this.clear();
+    const ms = this.program(FULL_VERT, MS_FRAG);
+    this.ready = Promise.all([this.trace, this.sky, this.show, ms].map((pr) => programReady(gl, pr.p))).then(() => {
+      gl.useProgram(this.trace.p);
+      gl.uniform1i(this.loc(this.trace, 'uNB'), 17);
+      this.multiScatter(ms);
+      this.clear();
+    });
   }
 
   private program(vs: string, fs: string): Prog {
-    const gl = this.gl,
-      p = gl.createProgram();
-    for (const [type, src] of [
-      [gl.VERTEX_SHADER, vs],
-      [gl.FRAGMENT_SHADER, fs],
-    ] as const) {
-      const s = gl.createShader(type);
-      if (!s) throw new Error('shader');
-      gl.shaderSource(s, src);
-      gl.compileShader(s);
-      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s) ?? 'compile');
-      gl.attachShader(p, s);
-    }
-    gl.linkProgram(p);
-    if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p) ?? 'link');
-    return { p, u: new Map() };
+    return { p: startProgram(this.gl, vs, fs), u: new Map() };
   }
   private loc(pr: Prog, name: string): WebGLUniformLocation | null {
     if (!pr.u.has(name)) pr.u.set(name, this.gl.getUniformLocation(pr.p, name));
@@ -162,9 +153,8 @@ export class HaloRenderer {
   }
 
   /** 多重散乱の表（大気が変わらないので最初に 1 回だけ） */
-  private multiScatter(): void {
+  private multiScatter(pr: Prog): void {
     const gl = this.gl,
-      pr = this.program(FULL_VERT, MS_FRAG),
       fb = gl.createFramebuffer();
     gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.msTex, 0);

@@ -1,4 +1,5 @@
 ---
+import Busy from '../components/Busy.astro';
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
 import PageTitle from '../components/PageTitle.astro';
@@ -32,6 +33,7 @@ const INTS = [
         <button type="button" data-v="sphere" aria-pressed="true">球</button><button type="button" data-v="floor" aria-pressed="false">床</button>
       </div>
       <div class="sh-four">
+        <Busy id="sh-busy" text="計算中…" center />
         {MODELS.map((m) => (
           <figure>
             <div class="sh-st" data-light><canvas data-sph={m.id} role="img" aria-label={`${m.name} で描いた形`}></canvas></div>

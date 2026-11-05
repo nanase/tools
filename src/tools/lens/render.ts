@@ -2,6 +2,7 @@
  * WebGL2 の描画: 浮動小数点のテクスチャ 2 枚を交互に使って光線の和をためていき、表示の画面に平均を出す。
  * 設定が変わったらやり直す。操作している間は解像度を下げ、止まったら全解像度で目標の本数までためる
  */
+import { programReady, startProgram } from '../../lib/gl-program';
 import { DISPLAY_FRAG, traceFrag, VERT } from './shader';
 
 /** レンズとピントで決まる値（変わったらやり直す） */
@@ -42,10 +43,13 @@ const GOAL = 1024,
   LOW = 0.5,
   IDLE_MS = 280;
 
+type Prog = { p: WebGLProgram; u: Map<string, WebGLUniformLocation | null> };
+
 export class Renderer {
   readonly gl: WebGL2RenderingContext;
-  private progs = new Map<number, { p: WebGLProgram; u: Map<string, WebGLUniformLocation | null> }>();
-  private disp: { p: WebGLProgram; u: Map<string, WebGLUniformLocation | null> };
+  /** 面の数ごとの追跡のシェーダー。null は準備中 */
+  private progs = new Map<number, Prog | null>();
+  private disp: Prog | null = null;
   private vao: WebGLVertexArrayObject;
   private tg: Target[] = [];
   private w = 0;
@@ -62,6 +66,10 @@ export class Renderer {
   private visible = true;
   /** ためた本数を知らせる */
   onProgress?: (spp: number, w: number, h: number, done: boolean) => void;
+  /** シェーダーの準備を待っているかを知らせる */
+  onWait?: (on: boolean) => void;
+  /** シェーダーを用意できなかった */
+  onFail?: (e: unknown) => void;
 
   constructor(private readonly canvas: HTMLCanvasElement) {
     const gl = canvas.getContext('webgl2', { antialias: false, depth: false, alpha: false, premultipliedAlpha: false });
@@ -76,7 +84,9 @@ export class Renderer {
     gl.enableVertexAttribArray(0);
     gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
     this.vao = vao;
-    this.disp = this.program(DISPLAY_FRAG, ['uAcc', 'uSrc', 'uDst', 'uExp']);
+    this.program(DISPLAY_FRAG, ['uAcc', 'uSrc', 'uDst', 'uExp'], (pr) => {
+      this.disp = pr;
+    });
     new IntersectionObserver(([e]) => {
       this.visible = e.isIntersecting;
       if (this.visible) this.kick();
@@ -84,29 +94,27 @@ export class Renderer {
     document.addEventListener('visibilitychange', () => this.kick());
   }
 
-  private program(frag: string, names: string[]) {
+  /** シェーダーの準備を始める。終わったら渡して描き直す */
+  private program(frag: string, names: string[], done: (pr: Prog) => void): void {
     const gl = this.gl;
-    const sh = (type: number, src: string) => {
-      const s = gl.createShader(type);
-      if (!s) throw new Error('shader');
-      gl.shaderSource(s, src);
-      gl.compileShader(s);
-      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s) ?? 'compile');
-      return s;
-    };
-    const p = gl.createProgram();
-    gl.attachShader(p, sh(gl.VERTEX_SHADER, VERT));
-    gl.attachShader(p, sh(gl.FRAGMENT_SHADER, frag));
-    gl.bindAttribLocation(p, 0, 'aPos');
-    gl.linkProgram(p);
-    if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p) ?? 'link');
-    return { p, u: new Map(names.map((n) => [n, gl.getUniformLocation(p, n)])) };
+    const p = startProgram(gl, VERT, frag, 'aPos');
+    programReady(gl, p).then(
+      () => {
+        done({ p, u: new Map(names.map((n) => [n, gl.getUniformLocation(p, n)])) });
+        this.kick();
+      },
+      (e) => this.onFail?.(e),
+    );
   }
 
-  private traceProg(ns: number) {
-    let pr = this.progs.get(ns);
-    if (!pr) {
-      pr = this.program(traceFrag(ns), [
+  /** 面の数に合う追跡のシェーダー。準備中は null（初めての面の数なら準備を始める） */
+  private traceProg(ns: number): Prog | null {
+    const pr = this.progs.get(ns);
+    if (pr !== undefined) return pr;
+    this.progs.set(ns, null);
+    this.program(
+      traceFrag(ns),
+      [
         'uPrev',
         'uReset',
         'uS',
@@ -128,10 +136,10 @@ export class Renderer {
         'uIdeal',
         'uChrom',
         'uTod',
-      ]);
-      this.progs.set(ns, pr);
-    }
-    return pr;
+      ],
+      (next) => this.progs.set(ns, next),
+    );
+    return null;
   }
 
   /** 描く大きさ（ためるテクスチャ）を合わせる */
@@ -178,6 +186,10 @@ export class Renderer {
   private tick = (t: number): void => {
     this.raf = 0;
     if (!this.lens || !this.vw || !this.visible || document.hidden) return;
+    /* 準備中は前の絵を残して待つ（終わると program が描き直しを頼む） */
+    const wait = !this.traceProg(this.lens.ns) || !this.disp;
+    this.onWait?.(wait);
+    if (wait) return;
     const busy = performance.now() - this.lastChange < IDLE_MS;
     const sc = busy ? LOW : 1;
     if (sc !== this.scale) {
@@ -213,8 +225,9 @@ export class Renderer {
       L = this.lens,
       V = this.vw;
     if (!L || !V) return;
-    const pr = this.traceProg(L.ns),
-      u = (n: string) => pr.u.get(n) ?? null;
+    const pr = this.traceProg(L.ns);
+    if (!pr) return;
+    const u = (n: string) => pr.u.get(n) ?? null;
     const src = this.tg[this.cur],
       dst = this.tg[1 - this.cur];
     gl.useProgram(pr.p);
@@ -250,6 +263,7 @@ export class Renderer {
   }
 
   private show(): void {
+    if (!this.disp) return;
     const gl = this.gl,
       { p, u } = this.disp;
     gl.useProgram(p);

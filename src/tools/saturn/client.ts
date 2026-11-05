@@ -1378,6 +1378,12 @@ new ResizeObserver(() => later()).observe(view);
 
 /* ---------- 始める ---------- */
 txt('#hd-sat', `${picker.place.name}から見た土星`);
+const busy = $('#v-busy');
+/** 読み終えていないもの（模様と環の表） */
+let loading = 2;
+const loaded = () => {
+  busy.hidden = --loading === 0;
+};
 try {
   renderer = new PlanetRenderer(canvas, { rings: true });
   const r = renderer;
@@ -1387,7 +1393,8 @@ try {
       const v = $('#v-msg');
       v.hidden = false;
       v.textContent = '模様を読み込めませんでした。';
-    });
+    })
+    .finally(loaded);
   fetch(`${BASE}saturn/rings.bin`)
     .then((x) => x.arrayBuffer())
     .then((b) => {
@@ -1399,9 +1406,11 @@ try {
       const v = $('#v-msg');
       v.hidden = false;
       v.textContent = '環の表を読み込めませんでした。';
-    });
+    })
+    .finally(loaded);
 } catch {
   renderer = null;
+  busy.hidden = true;
   const m = $('#v-msg');
   m.hidden = false;
   m.textContent = 'このブラウザでは土星を描けません。WebGL2 が必要です。';

@@ -1,4 +1,5 @@
 ---
+import Busy from '../components/Busy.astro';
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
 import PageTitle from '../components/PageTitle.astro';
@@ -27,6 +28,7 @@ const MINIS = ['0 回', '1 回', '2 回', '3 回', '4 回', '5 回〜'];
         <canvas id="cv" role="img" aria-label="パストレーシングの画像"></canvas>
         <span class="rt-tag" id="o-tag" hidden></span>
         <p class="rt-msg" id="st-msg" hidden></p>
+        <Busy id="st-busy" text="計算中…" center />
       </div>
       <div class="tp rt-tp">
         <button type="button" class="tp-ib" id="rs" aria-label="最初からやり直し" title="最初からやり直し"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 1.5h2v9H2zM10.5 1.5v9L4.5 6z"/></svg></button>

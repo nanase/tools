@@ -1,6 +1,7 @@
 /**
  * WebGL2 の描画: 題材の絵（背景・車体・車輪など）を初めて使うときにテクスチャにし、シェーダで 1 枚を描く
  */
+import { programReady, startProgram } from '../../lib/gl-program';
 import {
   BIKE_MID,
   CAR_MID,
@@ -73,36 +74,25 @@ export class RsRenderer {
   private readonly u = new Map<string, WebGLUniformLocation | null>();
   private readonly tex = new Map<Subject, WebGLTexture[]>();
   private readonly empty: WebGLTexture;
+  /** シェーダーの準備が終わると解決する。それまで draw を呼ばない */
+  readonly ready: Promise<void>;
 
   constructor(readonly canvas: HTMLCanvasElement) {
     const gl = canvas.getContext('webgl2', { antialias: false, alpha: false, preserveDrawingBuffer: false });
     if (!gl) throw new Error('webgl2');
     this.gl = gl;
-    const sh = (type: number, src: string) => {
-      const s = gl.createShader(type);
-      if (!s) throw new Error('shader');
-      gl.shaderSource(s, src);
-      gl.compileShader(s);
-      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s) ?? 'compile');
-      return s;
-    };
-    const p = gl.createProgram();
-    if (!p) throw new Error('program');
-    gl.attachShader(p, sh(gl.VERTEX_SHADER, VERT));
-    gl.attachShader(p, sh(gl.FRAGMENT_SHADER, FRAG));
-    gl.bindAttribLocation(p, 0, 'aPos');
-    gl.linkProgram(p);
-    if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p) ?? 'link');
-    this.prog = p;
-    gl.useProgram(p);
+    this.prog = startProgram(gl, VERT, FRAG, 'aPos');
     const buf = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, buf);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
     gl.enableVertexAttribArray(0);
     gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
-    for (let i = 0; i < 6; i++) gl.uniform1i(this.loc(`uTex${i}`), i);
     gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
     this.empty = this.upload(blank());
+    this.ready = programReady(gl, this.prog).then(() => {
+      gl.useProgram(this.prog);
+      for (let i = 0; i < 6; i++) gl.uniform1i(this.loc(`uTex${i}`), i);
+    });
   }
 
   private loc(n: string): WebGLUniformLocation | null {

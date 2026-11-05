@@ -1,4 +1,5 @@
 ---
+import Busy from '../components/Busy.astro';
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
 import DatePicker from '../components/DatePicker.astro';
@@ -48,6 +49,7 @@ const WD = ['日', '月', '火', '水', '木', '金', '土'];
         <div class="lab" id="v-lab"></div>
         <div class="lab b" id="v-lab2"></div>
         <p class="vmsg" id="v-msg" hidden></p>
+        <Busy id="v-busy" text="読み込み中…" center />
         <div class="vctl" role="group" aria-label="表示の拡大・縮小"><button type="button" class="vbtn" id="vout" aria-label="縮小" title="縮小（ホイール・2 本指でも）">−</button><span class="vz" id="vzoom">×1.00</span><button type="button" class="vbtn" id="vin" aria-label="拡大" title="拡大（ホイール・2 本指でも）">＋</button><button type="button" class="vbtn" id="vreset" hidden>もとに戻す</button></div>
       </div>
       <div class="month">

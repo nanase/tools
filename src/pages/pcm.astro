@@ -1,4 +1,5 @@
 ---
+import Busy from '../components/Busy.astro';
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
 import PageTitle from '../components/PageTitle.astro';
@@ -24,7 +25,7 @@ const playIcon =
     <div class="pcm-main">
     <div class="col">
       <Panel hid="hd-s" title="標本化: 時間で区切る" class="a-s">
-        <div class="scope pcm-scr"><canvas class="pcm-cv pcm-w" id="s-w" role="img" aria-label="標本化の波形"></canvas><span class="pcm-busy" id="ls-busy" hidden><i aria-hidden="true"></i>計算中…</span></div>
+        <div class="scope pcm-scr"><canvas class="pcm-cv pcm-w" id="s-w" role="img" aria-label="標本化の波形"></canvas><Busy id="ls-busy" text="計算中…" hidden /></div>
         <div class="sbar pcm-lg"><span class="stag"><i class="sw c2"></i>原音</span><span class="stag"><i class="pcm-dot"></i>標本</span><span class="stag"><i class="sw"></i>再生した波</span></div>
         <div class="scope pcm-scr"><canvas class="pcm-cv pcm-s" id="s-s" role="img" aria-label="標本化のスペクトル"></canvas></div>
         <p class="pcm-eff" id="s-eff"></p>

@@ -601,6 +601,15 @@ ol.refs>li::before{content:"[" counter(rf) "]";font:12px/1.95 var(--mono);color:
 .srcs .tl .tl{list-style:circle}
 .srcs .tl+p{margin-top:10px}
 
+/* 待っている間の表示（Busy.astro）: 図の右上か中央に回る輪。すぐ終わるときはちらつかないよう少し待ってから出す */
+.busy-mark{position:absolute;right:8px;top:7px;z-index:3;display:inline-flex;align-items:center;gap:6px;padding:2px 7px;border-radius:3px;background:var(--surface);font:12px/1.5 var(--sans);color:var(--ink-2);pointer-events:none;animation:busy-in .15s .12s both}
+.busy-mark[hidden]{display:none}
+.busy-mark.start{animation-delay:.3s}
+.busy-mark.center{left:50%;right:auto;top:50%;translate:-50% -50%;padding:5px 10px;font-size:13px}
+.busy-mark i{flex:none;width:12px;height:12px;border:2px solid var(--grid-2);border-top-color:var(--accent);border-radius:50%;animation:busy-spin .8s linear infinite}
+@keyframes busy-spin{to{transform:rotate(1turn)}}
+@keyframes busy-in{from{opacity:0}to{opacity:1}}
+
 /* footer */
 .foot{margin-top:40px;background:var(--rail);color:var(--rail-ink-2)}
 .foot .wrap{display:flex;align-items:center;justify-content:space-between;gap:8px 20px;padding-top:12px;padding-bottom:12px;font-size:12.5px}

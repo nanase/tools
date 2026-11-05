@@ -1283,6 +1283,7 @@ mapC.addEventListener('click', async (e) => {
 
 /* ---------- 始める ---------- */
 setSite(site);
+const busy = $('#v-busy');
 try {
   renderer = new MoonRenderer(canvas);
   renderer
@@ -1297,9 +1298,13 @@ try {
       const m = $('#v-msg');
       m.hidden = false;
       m.textContent = '月面のデータを読み込めませんでした';
+    })
+    .finally(() => {
+      busy.hidden = true;
     });
 } catch {
   renderer = null;
+  busy.hidden = true;
   const m = $('#v-msg');
   m.hidden = false;
   m.textContent = 'このブラウザでは WebGL2 を使えないため、月を描けません';

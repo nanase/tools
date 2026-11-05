@@ -1,4 +1,5 @@
 ---
+import Busy from '../components/Busy.astro';
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
 import PageTitle from '../components/PageTitle.astro';
@@ -26,6 +27,7 @@ const name = 'ローリングシャッター';
         <canvas id="cv" role="img" aria-label="撮れた像"></canvas>
         <span class="rs-tag" id="o-tag"></span>
         <p class="rs-msg" id="st-msg" hidden></p>
+        <Busy id="st-busy" text="計算中…" center />
       </div>
       <div class="tp rs-tp">
         <button type="button" class="tp-pp" id="pp" aria-label="走査の再生" title="走査のスロー再生"><svg class="i-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.2l7.6 4.8L3 10.8z"/></svg><svg class="i-pause" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="2.8" height="9"/><rect x="7.2" y="1.5" width="2.8" height="9"/></svg></button>

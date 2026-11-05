@@ -225,17 +225,26 @@ queueMicrotask(() => {
 /* ---------- 映像 ---------- */
 const canvas = $<HTMLCanvasElement>('#hvc'),
   hv = $('#hv'),
-  msg = $('#hv-msg');
+  msg = $('#hv-msg'),
+  busy = $('#hv-busy');
 let R: HaloRenderer | null = null;
-try {
-  R = new HaloRenderer(canvas, 1024);
-} catch (e) {
+function noGl(e: unknown): void {
+  busy.hidden = true;
   msg.hidden = false;
   msg.textContent =
     String(e).includes('float') || String(e).includes('webgl2')
       ? 'このブラウザでは WebGL2（浮動小数点の描画）が使えないため、空を描けません。光路の図と計算結果は使えます。'
       : `空を描く準備ができませんでした（${String(e).slice(0, 120)}）。`;
   hv.classList.add('nogl');
+}
+try {
+  const r = new HaloRenderer(canvas, 1024);
+  r.ready.then(() => {
+    R = r;
+    later('scene', 'cloud', 'view', 'lab');
+  }, noGl);
+} catch (e) {
+  noGl(e);
 }
 canvas.addEventListener('webglcontextlost', (e) => {
   e.preventDefault();
@@ -374,6 +383,7 @@ function frame(): void {
       dirty.view = false;
       const v = view();
       R.draw({ proj: v.proj, fov: v.fov, az: v.az, alt: v.alt, ev: G.get('ev'), only: mode$.value === 'only' });
+      busy.hidden = true;
     }
     stats();
     if (R.rays < R.maxRays) raf = requestAnimationFrame(frame);

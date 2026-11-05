@@ -833,3 +833,6 @@ new MutationObserver(() => {
 imgButtons();
 mountMech($('#rz-how'));
 setMode(modeCh.value);
+requestAnimationFrame(() => {
+  $('#rz-busy').hidden = true;
+});

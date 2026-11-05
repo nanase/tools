@@ -288,6 +288,7 @@ function phaseOf(g: Geom): string {
 /* 空（広角）と望遠の太陽 */
 const skyC = $<HTMLCanvasElement>('#sky');
 const sunC = $<HTMLCanvasElement>('#sun');
+const skyBusy = $('#sky-busy');
 function drawSkyAndSun(g: Geom, dk: ReturnType<typeof disksOf>, flux: number, total: boolean): void {
   if (!L) return;
   // 空の向きは、食の最大のときの太陽の方位を中心に固定する（時刻を動かしても景色が回らないように）
@@ -315,6 +316,7 @@ function drawSkyAndSun(g: Geom, dk: ReturnType<typeof disksOf>, flux: number, to
     total,
     seed: 7,
   });
+  skyBusy.hidden = true;
   const a0 = Math.round((((azC - half) * R2D) % 360) + 360) % 360;
   const a1 = Math.round((((azC + half) * R2D) % 360) + 360) % 360;
   txt('#sky-lab', `空全体 · 方位 ${a0}〜${a1}° · 高度 −4〜${Math.round(alt1 * R2D)}°`);
@@ -1204,6 +1206,11 @@ void (async () => {
   later();
 })();
 const sv = stored('ecl');
-void selectEclipse(typeof sv === 'string' ? sv : '2035-9-2').then(async () => {
-  if (!ecl) await selectEclipse('2035-9-2');
-});
+void selectEclipse(typeof sv === 'string' ? sv : '2035-9-2')
+  .then(async () => {
+    if (!ecl) await selectEclipse('2035-9-2');
+  })
+  .finally(() => {
+    /* 読めたときは空を描いたときに消す */
+    if (!ecl) skyBusy.hidden = true;
+  });
