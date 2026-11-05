@@ -15,11 +15,20 @@
 #vv-stop:hover{background:var(--warn);color:var(--surface)}
 .vv-drive{display:grid;grid-template-columns:110px minmax(0,1fr);gap:14px;align-items:start;margin-top:10px}
 @media (max-width:620px){.vv-drive{grid-template-columns:90px minmax(0,1fr)}}
-.vv-lev{display:grid;gap:3px}
-.vv-lev button{height:30px;padding:0 6px;border:1px solid var(--line-2);border-radius:4px;background:var(--inset);color:var(--ink-2);font:500 12.5px/1 var(--sans);cursor:pointer}
+/* 加速は緑、ブレーキは赤。ふだんは文字に少し色が付くだけで、乗せる・押す・今の段で強くなる */
+.vv-lev{display:grid;gap:3px;--vv-go:#1a7d47;--vv-br:#c42b2b}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .vv-lev{--vv-go:#4cc98a;--vv-br:#ff7f7a}}
+:root[data-theme="dark"] .vv-lev{--vv-go:#4cc98a;--vv-br:#ff7f7a}
+.vv-lev button{--c:var(--ink);height:30px;padding:0 6px;border:1px solid var(--line-2);border-radius:4px;background:var(--inset);color:color-mix(in srgb,var(--c) 45%,var(--ink-2));font:500 12.5px/1 var(--sans);cursor:pointer}
+.vv-lev button.p{--c:var(--vv-go)}
+.vv-lev button.b{--c:var(--vv-br)}
 .vv-lev button.n{background:var(--surface);color:var(--ink)}
-.vv-lev button:hover{border-color:var(--ink-3);color:var(--ink)}
-.vv-lev button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--surface)}
+@media (hover:hover){.vv-lev button:hover{border-color:var(--c);background:color-mix(in srgb,var(--c) 12%,var(--surface));color:var(--c)}}
+.vv-lev button:active{border-color:var(--c);background:color-mix(in srgb,var(--c) 28%,var(--surface));color:var(--c)}
+/* 押した段: 今の段が着くまで枠で示す */
+.vv-lev button[aria-pressed="true"]{border-color:var(--c);box-shadow:inset 0 0 0 1px var(--c);color:var(--c)}
+/* 今の段 */
+.vv-lev button.on,.vv-lev button.on:hover,.vv-lev button.on:active{background:var(--c);border-color:var(--c);color:var(--surface)}
 .vv-mt{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:12px;margin:0}
 .vv-mt>div{padding:6px 0;border-top:1px solid var(--line)}
 .vv-mt>.vv-main{grid-column:1/-1;border-top:0;padding-top:0}

@@ -12,7 +12,7 @@ import { readCols } from '../pcm/fig';
 import { VvvfAudio } from './audio';
 import { CARS, type CarId, modeOf } from './cars';
 import type { DriveKind } from './drive';
-import type { EchoKind } from './echo';
+import type { EchoKind, MotorEcho } from './echo';
 import { drawCycle, drawMap, LiveSpec, modeName, ratioText } from './fig';
 import { PARAMS, type PKey } from './params';
 import { CAPTIONS, drawStory, drawThumb, STEPS } from './story';
@@ -31,6 +31,7 @@ const S = {
   slip: 0,
   kind: 'stop' as DriveKind,
   lever: 0,
+  notch: 0,
   drift: 0,
 };
 let dirtyMap = true;
@@ -47,12 +48,17 @@ const autoBtn = $<HTMLButtonElement>('#vv-auto'),
 function syncUi(): void {
   autoBtn.setAttribute('aria-pressed', String(S.kind === 'auto'));
   $('#vv-autoLed').classList.toggle('on', S.kind === 'auto');
-  for (const b of levBtns) b.setAttribute('aria-pressed', String(S.kind === 'hand' && Number(b.dataset.l) === S.lever));
+  /* aria-pressed は押した段（目標）で、on は今の段。手動で途中の段を通る間だけ 2 つが分かれる */
+  for (const b of levBtns) {
+    const l = Number(b.dataset.l);
+    b.setAttribute('aria-pressed', String(S.kind === 'hand' && l === S.lever));
+    b.classList.toggle('on', S.kind !== 'stop' && l === S.notch);
+  }
   $('#vv-led').classList.toggle('on', S.kind !== 'stop');
   txt('#vv-st', S.kind === 'auto' ? '自動運転中' : S.kind === 'hand' ? '手動運転中' : '停止');
 }
 audio.onRun = (m) => {
-  const change = m.kind !== S.kind || m.lever !== S.lever || m.brake !== S.brake;
+  const change = m.kind !== S.kind || m.lever !== S.lever || m.notch !== S.notch || m.brake !== S.brake;
   S.v = m.v;
   S.a = m.a;
   S.power = m.power;
@@ -60,6 +66,7 @@ audio.onRun = (m) => {
   S.slip = m.slip;
   S.kind = m.kind;
   S.lever = m.lever;
+  S.notch = m.notch;
   dirtyMap = true;
   if (change) syncUi();
 };
@@ -83,7 +90,6 @@ new Choice<CarId>($('#vv-car'), (v) => {
 });
 
 /* ---------- 音 ---------- */
-new Choice<string>($('#p-src'), (v) => audio.post({ type: 'force', on: v === 'f' }));
 const snd = $('#vv-snd');
 new Choice<string>($('#p-road'), (v) => {
   audio.post({ type: 'road', on: v === '1' });
@@ -92,8 +98,10 @@ new Choice<string>($('#p-road'), (v) => {
 });
 new ParamGroup<PKey>(PARAMS, (v) => {
   audio.vol(v.vol);
+  audio.post({ type: 'forceMix', q: v.forceMix / 100 });
   audio.post({ type: 'roadDb', db: v.roadDb });
 });
+new Choice<MotorEcho>($('#p-motorEcho'), (v) => audio.motorEcho(v));
 const Snd = { echo: 'ground' as EchoKind, stereo: true };
 new Choice<EchoKind>($('#p-echo'), (v) => {
   Snd.echo = v;
@@ -231,7 +239,7 @@ function loop(now: number): void {
     lastV = S.v;
     drawCycle(cvC, M, S, S.car, S.drift);
     txt('#vv-ratio', ratioText(M, S));
-    txt('#m-v', S.v.toFixed(0));
+    txt('#m-v', S.v.toFixed(1));
     txt('#m-f', `${M.f1.toFixed(1)} Hz`);
     txt('#m-c', !M.on ? '—' : M.one ? 'なし' : `${M.fc >= 100 ? M.fc.toFixed(0) : M.fc.toFixed(1)} Hz`);
     txt('#m-m', modeName(M, S));

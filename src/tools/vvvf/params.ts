@@ -6,9 +6,35 @@ import { CARS, type CarId } from './cars';
 const sig = (v: number, s: number) => String(Number(v.toPrecision(s)));
 const dB = (v: number) => (v > 0 ? `+${sig(v, 3)}` : sig(v, 3).replace('-', '−'));
 
-export type PKey = 'vol' | 'roadDb';
+export type PKey = 'forceMix' | 'vol' | 'roadDb';
 
 export const PARAMS: (ParamDef & { k: PKey })[] = [
+  {
+    k: 'forceMix',
+    nm: '磁力の割合',
+    sym: '',
+    name: '磁力の割合',
+    sub: '線間電圧の音と磁力の音の混ぜ方。0 % は線間電圧だけ、100 % は磁力だけ',
+    unit: '%',
+    min: 0,
+    max: 100,
+    v: 50,
+    ph: '例 50',
+    list: linList(0, 100, 5),
+    jump: 2,
+    sign: 'nonneg',
+    notation: 'plain',
+    inputmode: 'decimal',
+    format: { input: (v) => sig(v, 3), step: (v) => sig(v, 3), text: (v) => `${sig(v, 3)} %` },
+    bad: '数を入れてください（例 50）',
+    pre: [
+      [0, '0'],
+      [25, '25'],
+      [50, '50'],
+      [75, '75'],
+      [100, '100'],
+    ],
+  },
   {
     k: 'vol',
     nm: '音量',
@@ -63,10 +89,6 @@ export const PARAMS: (ParamDef & { k: PKey })[] = [
 
 type Opt = readonly (readonly [string, string] | readonly [string, string, string])[];
 export const CAR_IDS = Object.keys(CARS) as CarId[];
-export const SRC: Opt = [
-  ['v', '線間電圧', '電圧の波形そのままの音'],
-  ['f', '磁力', '鉄心を揺らす磁力から作る音'],
-];
 export const ROAD: Opt = [
   ['1', 'あり'],
   ['0', 'なし'],
@@ -81,6 +103,11 @@ export const LEVERS = [
   [-2, 'ブレーキ 2', 'b'],
   [-3, 'ブレーキ 3', 'b'],
 ] as const;
+export const MOTOR_OPT: Opt = [
+  ['off', 'なし'],
+  ['soft', '弱い'],
+  ['strong', '強い'],
+];
 export const ECHO_OPT: Opt = [
   ['off', 'なし'],
   ['ground', '地上', '短く薄い反射'],

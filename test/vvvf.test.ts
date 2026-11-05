@@ -11,8 +11,8 @@ import {
   seatAt,
   V_MAX,
 } from '../src/tools/vvvf/cars';
-import { Drive, V_TOP } from '../src/tools/vvvf/drive';
-import { ECHO, makeIr } from '../src/tools/vvvf/echo';
+import { coastDecel, Drive, NOTCH_STEP, V_TOP } from '../src/tools/vvvf/drive';
+import { ECHO, MOTOR_MIX, makeIr, makeMotorIr } from '../src/tools/vvvf/echo';
 import { Inverter, railLevel, tri } from '../src/tools/vvvf/inverter';
 
 const FS = 48000;
@@ -28,7 +28,7 @@ function sound(
 ): Float32Array {
   const inv = new Inverter(CARS[id], FS);
   inv.road = opt.road ?? false;
-  inv.force = opt.force ?? false;
+  inv.forceMix = opt.force ? 1 : 0;
   inv.rail = opt.rail ?? 0;
   const n = Math.floor(sec * FS),
     x = new Float32Array(n);
@@ -103,6 +103,24 @@ describe('モードの表', () => {
     expect(CARS.tokyu5000.gear).toBeCloseTo(6.21, 2);
     expect(CARS.tokyu9000.gear).toBeCloseTo(6.07, 2);
     expect(CARS.keikyu.gear).toBeCloseTo(5.93, 2);
+    expect(CARS.e233.gear).toBeCloseTo(6.06, 2);
+    expect(CARS.jrw207.gear).toBeCloseTo(7.07, 2);
+    expect(CARS.hankyu8300.gear).toBeCloseTo(5.25, 2);
+    expect(CARS.hanshin5500.gear).toBeCloseTo(7.07, 2);
+    expect(CARS.nagoya6000.gear).toBeCloseTo(6.19, 2);
+  });
+  it('車種ごとの違い: E233 系は発車から一定のキャリア、名古屋の 6000 形は発車から同期', () => {
+    expect(pick(CARS.e233.acc, 5).fc).toBe(750);
+    expect(pick(CARS.e233.acc, 40).fc).toBe(750);
+    expect(pick(CARS.nagoya6000.acc, 2).s.sync).toBe(true);
+    expect(pick(CARS.hankyu8300.acc, 5).fc).toBe(180);
+    expect(pick(CARS.hanshin5500.acc, 20).fc).toBe(400);
+  });
+  it('電気ブレーキの切れる速度はブレーキの表の最初のモードに合う', () => {
+    /* 推定値の表で電気ブレーキが始まる基本波 [Hz]。速度に直すと vEnd の近く */
+    const from = { jrw207: 8, hankyu8300: 7, hanshin5500: 6, nagoya6000: 9.4 } as const;
+    for (const [id, f] of Object.entries(from) as [keyof typeof from, number][])
+      expect(Math.abs(f / hzPerKmh(CARS[id]) - CARS[id].vEnd)).toBeLessThan(1);
   });
   it('京急のキャリアはファソラシドレミファソに近い', () => {
     const notes = [175, 196, 223, 233, 262, 294, 311, 350, 400];
@@ -202,6 +220,98 @@ describe('運転', () => {
     expect(d.slip).toBe(0);
     d.halt();
     expect(d.slip).toBe(0);
+  });
+  /** 今の段が変わる時刻と段を記録する */
+  function notchLog(d: Drive, sec: number): [number, number][] {
+    const dt = 1 / 750,
+      log: [number, number][] = [];
+    let last = d.notch;
+    for (let t = 0; t < sec; t += dt) {
+      d.tick(dt);
+      if (d.notch !== last) log.push([t, d.notch]);
+      last = d.notch;
+    }
+    return log;
+  }
+  it('マスコン: 加速 3 を押すと 1→2→3 と一定の間隔で入る', () => {
+    const d = new Drive(CARS.tokyu5000);
+    d.hand(3);
+    const log = notchLog(d, 1);
+    expect(log.map(([, n]) => n)).toEqual([1, 2, 3]);
+    expect(log[0][0]).toBeLessThan(0.01);
+    expect(log[1][0] - log[0][0]).toBeCloseTo(NOTCH_STEP, 2);
+    expect(log[2][0] - log[1][0]).toBeCloseTo(NOTCH_STEP, 2);
+  });
+  it('マスコン: ブレーキから加速へは惰行を通る', () => {
+    const d = new Drive(CARS.tokyu5000);
+    d.hand(3);
+    timeUntil(d, (x) => x.v >= 30);
+    d.hand(-2);
+    expect(notchLog(d, 1).map(([, n]) => n)).toEqual([2, 1, 0, -1, -2]);
+    d.hand(1);
+    expect(notchLog(d, 1).map(([, n]) => n)).toEqual([-1, 0, 1]);
+  });
+  it('マスコン: 途中の段では力も途中で、惰行の段ではスイッチが止まる', () => {
+    const d = new Drive(CARS.tokyu5000);
+    d.hand(3);
+    timeUntil(d, (x) => x.v >= 30);
+    d.hand(-3);
+    d.tick(1 / 750);
+    expect(d.notch).toBe(2);
+    expect(d.power).toBe(true);
+    expect(d.brake).toBe(false);
+    timeUntil(d, (x) => x.notch === 0, 1);
+    expect(d.power || d.brake).toBe(false);
+    timeUntil(d, (x) => x.notch === -1, 1);
+    expect(d.brake).toBe(true);
+  });
+  it('マスコン: 動いている途中に別の段を押すと、そこから向きを変える', () => {
+    const d = new Drive(CARS.tokyu5000);
+    d.hand(3);
+    timeUntil(d, (x) => x.notch === 2, 1);
+    d.hand(1);
+    expect(notchLog(d, 1).map(([, n]) => n)).toEqual([1]);
+  });
+  it('マスコン: 自動でも段を踏み、加速・惰行・ブレーキの順に進む', () => {
+    const d = new Drive(CARS.tokyu5000);
+    d.auto();
+    timeUntil(d, (x) => x.notch === 3, 1);
+    timeUntil(d, (x) => x.v >= V_TOP);
+    const seen = notchLog(d, 8).map(([, n]) => n);
+    expect(seen.slice(0, 6)).toEqual([2, 1, 0, -1, -2, -3]);
+  });
+  it('マスコン: 緊急停止で段が 0 に戻る', () => {
+    const d = new Drive(CARS.tokyu5000);
+    d.hand(3);
+    timeUntil(d, (x) => x.notch === 3, 1);
+    d.halt();
+    expect(d.notch).toBe(0);
+    expect(d.lever).toBe(0);
+  });
+  it('惰行: 少しずつ減速し、速いほど減速が大きい', () => {
+    expect(coastDecel(80)).toBeGreaterThan(coastDecel(40));
+    expect(coastDecel(0)).toBeGreaterThan(0);
+    expect(coastDecel(110)).toBeLessThan(0.5);
+    const d = new Drive(CARS.tokyu5000);
+    d.hand(3);
+    timeUntil(d, (x) => x.v >= 80);
+    d.hand(0);
+    /* 加速度が抜けるまで待つ */
+    timeUntil(d, (x) => x.a < 0, 3);
+    const v0 = d.v;
+    for (let i = 0; i < 1000; i++) d.tick(0.01);
+    expect(d.a).toBeCloseTo(-coastDecel(d.v), 2);
+    /* 10 秒で 1〜3 km/h ほど落ちる */
+    expect(v0 - d.v).toBeGreaterThan(1);
+    expect(v0 - d.v).toBeLessThan(3);
+  });
+  it('惰行: いずれ止まり、止まると停止になる', () => {
+    const d = new Drive(CARS.tokyu5000);
+    d.hand(3);
+    timeUntil(d, (x) => x.v >= 5);
+    d.hand(0);
+    expect(timeUntil(d, (x) => x.kind === 'stop', 120)).toBeLessThan(120);
+    expect(d.v).toBe(0);
   });
   it('緊急停止: どの状態からでもすぐ 0 km/h になる', () => {
     const d = new Drive(CARS.tokyu5000);
@@ -431,6 +541,66 @@ describe('臨場感', () => {
     expect(part(tL, 2, 2.1)).toBeLessThan(part(tL, 0.5, 0.6));
     expect(tL.every(Number.isFinite)).toBe(true);
   });
+  it('VVVF の反響: エネルギーは 1 で、地上より長くトンネルより短く、左右で違う', () => {
+    const [L, R] = makeMotorIr(FS, true),
+      [mL, mR] = makeMotorIr(FS, false);
+    expect(rms(L) * Math.sqrt(L.length)).toBeCloseTo(1, 3);
+    expect(L).not.toEqual(R);
+    expect(mL).toBe(mR);
+    expect(L.length).toBeLessThan(makeIr('tunnel', FS, false)[0].length);
+    expect(L.every(Number.isFinite)).toBe(true);
+  });
+  it('VVVF の反響: 音の出だしと消え際がなめらかになる', () => {
+    /* 低い標本化周波数で直接畳み込む */
+    const fs = 8000,
+      [ir] = makeMotorIr(fs, false),
+      { dry, wet } = MOTOR_MIX.strong,
+      N = fs * 2,
+      on = fs / 2,
+      off = fs,
+      x = new Float32Array(N);
+    /* 音 1 つだと反響との干渉で大きさが偏るので、いくつか重ねる */
+    for (let i = on; i < off; i++)
+      for (const f of [470, 790, 1130, 1490, 1870, 2310]) x[i] += Math.sin((2 * Math.PI * f * i) / fs) / 2;
+    const y = new Float32Array(N);
+    for (let i = on; i < off; i++) {
+      for (let k = 0; k < ir.length && i + k < N; k++) y[i + k] += x[i] * ir[k] * wet;
+      y[i] += x[i] * dry;
+    }
+    const part = (ms: number, len: number) => rms(y.subarray(((ms / 1000) * fs) | 0, (((ms + len) / 1000) * fs) | 0)),
+      steady = part(800, 150);
+    /* 鳴り始めの 5 ms は定常より小さい */
+    expect(part(500, 5)).toBeLessThan(steady * 0.8);
+    /* 消えて 30〜50 ms 後もはっきり残り、500 ms 後にはほぼ消える */
+    expect(part(1030, 20)).toBeGreaterThan(steady * 0.2);
+    expect(part(1500, 50)).toBeLessThan(steady * 0.02);
+  });
+  it('VVVF の音だけの出力は走行音とレールの音を含まず、直接音の倍率で本体だけが変わる', () => {
+    const run = (dry: number, r: Run) => {
+      const inv = new Inverter(CARS.tokyu5000, FS);
+      inv.motorDry = dry;
+      const n = FS,
+        L = new Float32Array(n),
+        R = new Float32Array(n),
+        mL = new Float32Array(n),
+        mR = new Float32Array(n);
+      for (let i = 0; i < n; i += 256) {
+        const m = Math.min(256, n - i);
+        inv.render(r, L, i, m, R, mL, mR);
+      }
+      const tail = (x: Float32Array) => rms(x.subarray(0.5 * FS));
+      return { main: tail(L), motor: tail(mL), motorR: tail(mR) };
+    };
+    const coast = run(1, { v: 60, a: 0, power: false, brake: false });
+    expect(coast.main).toBeGreaterThan(0.01);
+    expect(coast.motor).toBeLessThan(1e-3);
+    const hi = run(1, power(30)),
+      lo = run(0.5, power(30));
+    expect(hi.motor).toBeGreaterThan(0.05);
+    expect(lo.motor).toBeCloseTo(hi.motor, 6);
+    expect(lo.motorR).toBeCloseTo(hi.motorR, 6);
+    expect(lo.main).toBeLessThan(hi.main);
+  });
   it('走行音の音量の倍率で走行音だけが変わる', () => {
     const c: Run = { v: 60, a: 0, power: false, brake: false },
       run = (lv: number) => {
@@ -535,6 +705,155 @@ describe('インバータの音', () => {
       rms = (x: Float32Array) => Math.sqrt(x.reduce((s, v) => s + v * v, 0) / x.length);
     expect(rms(sound('tokyu5000', coast, 0.6))).toBeLessThan(1e-3);
     expect(rms(sound('tokyu5000', coast, 0.6, { road: true }))).toBeGreaterThan(0.01);
+  });
+  describe('走行中の音源の切り替え', () => {
+    /** 切り替える前後の 20 ms ごとの山の大きさ */
+    function peaks(from: boolean, r: Run, id: CarId = 'tokyu5000') {
+      const inv = new Inverter(CARS[id], FS);
+      inv.road = false;
+      inv.rail = 0;
+      inv.forceMix = from ? 1 : 0;
+      const n = FS * 2,
+        L = new Float32Array(n),
+        R = new Float32Array(n),
+        at = FS,
+        win = FS / 50;
+      for (let i = 0; i < n; i += 128) {
+        if (i === at) inv.forceMix = from ? 0 : 1;
+        inv.render(r, L, i, Math.min(128, n - i), R);
+      }
+      const peak = (a: number, b: number) => {
+        let p = 0;
+        for (let i = a; i < b; i++) p = Math.max(p, Math.abs(L[i]));
+        return p;
+      };
+      return {
+        before: peak(at - 10 * win, at),
+        during: peak(at, at + 15 * win),
+        after: peak(at + 25 * win, at + 35 * win),
+      };
+    }
+    it.each([
+      ['線間電圧→磁力', false],
+      ['磁力→線間電圧', true],
+    ])('%s: 破裂音も無音の間もない', (_n, from) => {
+      for (const id of ids)
+        for (const r of [power(5), power(40), power(70), { v: 40, a: -3, power: false, brake: true }]) {
+          const p = peaks(from, r, id);
+          expect(p.during).toBeLessThan(Math.max(p.before, p.after) * 1.5);
+          /* 切り替えたあとも、すぐ同じくらいの大きさで鳴る */
+          expect(p.after).toBeGreaterThan(p.before * 0.2);
+        }
+    });
+    it('すぐに戻しても破裂音は出ない', () => {
+      const inv = new Inverter(CARS.tokyu5000, FS);
+      inv.road = false;
+      inv.rail = 0;
+      const n = FS * 2,
+        L = new Float32Array(n);
+      let q = 0;
+      for (let i = 0; i < n; i += 128) {
+        /* 音を入れ替えている最中や、準備の途中で切り替える */
+        if (i === FS || i === FS + 2560 || i === FS + 7680 || i === FS + 8960) {
+          q = 1 - q;
+          inv.forceMix = q;
+        }
+        inv.render(power(40), L, i, Math.min(128, n - i));
+      }
+      let base = 0,
+        p = 0;
+      for (let i = FS / 2; i < FS; i++) base = Math.max(base, Math.abs(L[i]));
+      for (let i = FS; i < n; i++) p = Math.max(p, Math.abs(L[i]));
+      expect(p).toBeLessThan(base * 1.5);
+    });
+    it('惰行中に切り替えて加速しても破裂音は出ない', () => {
+      const inv = new Inverter(CARS.tokyu5000, FS);
+      inv.road = false;
+      inv.rail = 0;
+      const n = FS * 2,
+        L = new Float32Array(n),
+        coast: Run = { v: 40, a: 0, power: false, brake: false };
+      for (let i = 0; i < n; i += 128) {
+        if (i === FS / 2) inv.forceMix = 1;
+        inv.render(i < FS ? coast : power(40), L, i, Math.min(128, n - i));
+      }
+      let p = 0;
+      for (let i = FS; i < n; i++) p = Math.max(p, Math.abs(L[i]));
+      expect(p).toBeLessThan(1);
+    });
+  });
+  describe('2 つの音源を同時に鳴らす', () => {
+    const rmsOf = (x: ArrayLike<number>) => {
+      let e = 0;
+      for (let i = 0; i < x.length; i++) e += x[i] * x[i];
+      return Math.sqrt(e / x.length);
+    };
+    const motorOnly = (q: number, r: Run): Float32Array => {
+      const inv = new Inverter(CARS.tokyu5000, FS);
+      inv.road = false;
+      inv.rail = 0;
+      inv.forceMix = q;
+      const n = FS,
+        x = new Float32Array(n);
+      for (let i = 0; i < n; i += 128) inv.render(r, x, i, Math.min(128, n - i));
+      return x;
+    };
+    it('割合の音は、それぞれの音を重ねたものになる', () => {
+      for (const q of [0.25, 0.5, 0.75]) {
+        const r = power(50),
+          a = motorOnly(0, r),
+          b = motorOnly(1, r),
+          m = motorOnly(q, r),
+          gV = Math.cos((q * Math.PI) / 2),
+          gF = Math.sin((q * Math.PI) / 2),
+          diff = new Float32Array(m.length);
+        for (let i = 0; i < m.length; i++) diff[i] = m[i] - (a[i] * gV + b[i] * gF);
+        /* 出力の飽和の分だけ差が残る */
+        expect(rmsOf(diff)).toBeLessThan(rmsOf(m) * 0.02);
+      }
+    });
+    it('割合を増やすと、磁力の音が増えて線間電圧の音が減る', () => {
+      const r = power(50),
+        a = motorOnly(0, r),
+        b = motorOnly(1, r),
+        share = (x: Float32Array, y: Float32Array) => {
+          let d = 0;
+          for (let i = 0; i < x.length; i++) d += x[i] * y[i];
+          return d / (y.length * rmsOf(y) ** 2);
+        },
+        lo = motorOnly(0.25, r),
+        hi = motorOnly(0.75, r);
+      expect(share(hi, b)).toBeGreaterThan(share(lo, b));
+      expect(share(hi, a)).toBeLessThan(share(lo, a));
+    });
+    it('走行中に割合を動かしても破裂音は出ず、指定の割合で止まる', () => {
+      const inv = new Inverter(CARS.tokyu5000, FS);
+      inv.road = false;
+      inv.rail = 0;
+      const n = FS * 3,
+        L = new Float32Array(n),
+        steps = new Map([
+          [FS, 0.3],
+          [FS + 1280, 0.6],
+          [FS + 3840, 0],
+          [FS + 6400, 1],
+          [FS * 2, 0.5],
+        ]);
+      for (let i = 0; i < n; i += 128) {
+        const q = steps.get(i);
+        if (q !== undefined) inv.forceMix = q;
+        inv.render(power(40), L, i, Math.min(128, n - i));
+      }
+      let base = 0,
+        p = 0;
+      for (let i = FS / 2; i < FS; i++) base = Math.max(base, Math.abs(L[i]));
+      for (let i = FS; i < n; i++) p = Math.max(p, Math.abs(L[i]));
+      expect(p).toBeLessThan(base * 1.6);
+      const tail = L.subarray(n - FS / 2),
+        want = motorOnly(0.5, power(40)).subarray(FS / 2);
+      expect(rmsOf(tail)).toBeGreaterThan(rmsOf(want) * 0.8);
+      expect(rmsOf(tail)).toBeLessThan(rmsOf(want) * 1.2);
+    });
   });
   it('どの車種・音源でも発散せず、音の大きさが 2 を超えない', () => {
     for (const id of ids)

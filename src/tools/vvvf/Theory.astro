@@ -85,6 +85,11 @@ const rf = (i: number) => `<a class="rf" href="#thy-r${i}">[${i}]</a>`;
   <li>東急 5000系と 5050系は全電気ブレーキで、停止直前に独特の音が出る<Fragment set:html={rf(9)} /></li>
   <li>東急 9000系: 日立の GTO<Fragment set:html={rf(10)} /></li>
   <li>京急 新1000形: 1・2 次車がシーメンスの GTO。音階が流れた編成は 2021 年 7 月に運用を終えた<Fragment set:html={rf(11)} /></li>
+  <li>E233系 1000番台: 三菱などの IGBT で 2 レベル。発車から一定のキャリアで走る<Fragment set:html={`${rf(12)}${rf(17)}`} /></li>
+  <li>207系 1000番台: 東芝の GTO。一部に三菱製もあるが磁励音は同じ<Fragment set:html={rf(18)} /></li>
+  <li>阪急 8300系: 東洋電機製造の GTO。製造時期で磁励音が異なる<Fragment set:html={rf(19)} /></li>
+  <li>阪神 5500系: 三菱の GTO。加速と減速の大きいジェットカー<Fragment set:html={rf(20)} /></li>
+  <li>名古屋市営 6000形: 更新前は東芝・三菱・日立の GTO。発車から同期で走る<Fragment set:html={`${rf(12)}${rf(21)}`} /></li>
 </ul>
 
 <h3>このツールで決めたこと</h3>
@@ -97,7 +102,10 @@ const rf = (i: number) => `<a class="rf" href="#thy-r${i}">[${i}]</a>`;
   <li>すべり周波数は加速が全負荷で 2.6 Hz（1.4 Hz/秒で立ち上がる）、ブレーキが 1.2 Hz と仮定する</li>
   <li>加速度とブレーキの変化の速さ、65 km/h より上の加速度の低下は仮定で、自動運転は 80 km/h まで加速して 2.5 秒惰行する</li>
   <li>加速度は最大の 1/3 ずつ 3 段で、手動の上限は 110 km/h</li>
+  <li>マスコンは 0.15 秒ごとに 1 段ずつ進み、途中の段の力とスイッチの動きをそのまま使うと仮定する</li>
+  <li>惰行の減速度は 0.1 km/h/s に速度の 2 乗の項を足し、80 km/h で約 0.23 km/h/s と仮定する。線路の傾斜は一定とみなす</li>
   <li>磁力の音は固定子の 1 点の磁束の 2 乗から作り、モーターの固有振動は 1000・2300・3700 Hz と仮定し、音量の差を縮める</li>
+  <li>線間電圧の音と磁力の音は割合を決めて同時に鳴らす。実車で両方が聞こえるという試聴の印象に基づくもので、割合の既定の 50 % は測定ではない</li>
   <li>インバータは 2 台で、2 台目は速度を 0.4 % 変えて半分の大きさで重ねる</li>
   <li>走行音は歯車のかみ合いの音、雑音、低いうなりで作る。速いほど大きく、高速ではスイッチの音より大きくする</li>
   <li>レールの音の音色と 1 組の並びは、秩父鉄道の車内の録音を約 70 km/h の区間で解析して決める。録音の音そのものは使わない<Fragment set:html={rf(14)} /></li>
@@ -107,9 +115,11 @@ const rf = (i: number) => `<a class="rf" href="#thy-r${i}">[${i}]</a>`;
   <li>打音の大きさは録音の走行音との比から決め、−3 dB の走行音を基準にする。車種によって音色は変えない</li>
   <li>打音は速度の 1.25 乗で大きくする。解析した速度は 68〜75 km/h だけで、ほかの速度は測っていない。分岐器の衝撃音の文献では山がほぼ 20 log<sub>10</sub> V で増える<Fragment set:html={rf(15)} /></li>
   <li>聞く車両は編成の真ん中あたりとする。連結部寄りの席は車端から 0.5 m で、録音の打音の大きさから推定した</li>
-  <li>編成は東急 5000系が 10 両、東急 9000系と京急 新1000形が 8 両<Fragment set:html={`${rf(8)}${rf(10)}${rf(11)}`} /></li>
-  <li>車体の長さは 20 m（京急 新1000形は 18 m）で、台車の中心の間隔 13.8 m（同 12 m）と車軸の間隔 2.1 m は仮定する。録音の打音の間隔はこの値に合うが、秩父鉄道の車両での話で、東急と京急の値の確認にはならない</li>
+  <li>編成は東急 5000系と E233系が 10 両、東急 9000系・京急 新1000形・阪急 8300系が 8 両、207系が 7 両、名古屋市営 6000形が 5 両、阪神 5500系が 4 両<Fragment set:html={`${rf(8)}${rf(10)}${rf(11)}${rf(17)}${rf(18)}${rf(19)}${rf(20)}${rf(21)}`} /></li>
+  <li>車体の長さは 20 m（京急 新1000形は 18 m、阪急 8300系と阪神 5500系は 19 m）で、台車の中心の間隔 13.8 m（同 12 m、12.6 m）と車軸の間隔 2.1 m は仮定する。録音の打音の間隔はこの値に合うが、秩父鉄道の車両での話で、各車種の値の確認にはならない</li>
+  <li>阪急 8300系の推定値は装置を日立としているが、諸元の出典では東洋電機製造なので、東洋電機製造と書く</li>
   <li>反響の値は実測ではない。地上は残響時間 0.45 秒、トンネルは 2.4 秒で、トンネルでは走行音を 1.35 倍にする</li>
+  <li>VVVF の反響はスイッチの音だけに付け、残響時間 0.5 秒。音が急に出たり消えたりせず聞こえるのは反響のためという考えを試すもので、実測ではない。強いは直接音 0.6 倍・反響 0.9 倍、弱いは 0.85 倍・0.5 倍</li>
   <li>ステレオは 2 台のインバータを左右へ振り、継ぎ目の音を席より前（左）から後ろ（右）へ移す。遠い音ほど中央へ寄せる</li>
   <li>京急の音階の切り替えは、自動運転で 0.14 秒ごとの等間隔になるよう推定値から変え、約 1.1 秒で上がり切るようにした（キャリアの値は推定値のまま）</li>
   <li>緊急停止は図と音を止めるための操作で、実車の非常ブレーキの再現ではない</li>
@@ -135,4 +145,9 @@ const rf = (i: number) => `<a class="rf" href="#thy-r${i}">[${i}]</a>`;
   <li id="thy-r14"><span class="rf-for">レールの音の解析に使った車内の録音</span><span class="rf-src">Heigh-hoo, “chichibu.wav”, Freesound（CC0）, <a href="https://freesound.org/s/88409/">freesound.org/s/88409</a>。解析にだけ使い、音は含めていない</span></li>
   <li id="thy-r15"><span class="rf-for">衝撃音の速度による変化（分岐器）</span><span class="rf-src">P. T. Torstensson, G. Squicciarini, M. Krüger, B. A. Pålsson, J. C. O. Nielsen, and D. J. Thompson, “Wheel–rail impact loads and noise generated at railway crossings – Influence of vehicle speed and crossing dip angle,” <i>Journal of Sound and Vibration</i>, vol. 456, pp. 119–136, 2019, <a href="https://doi.org/10.1016/j.jsv.2019.04.034">doi:10.1016/j.jsv.2019.04.034</a></span></li>
   <li id="thy-r16"><span class="rf-for">台車から車内へ伝わる音</span><span class="rf-src">M. Asahina, T. Tomioka, S. Matsuo, and T. Yoshimura,「伝達経路解析の鉄道車両の車内騒音・振動への適用検討」, <i>Transactions of the JSME</i>, vol. 90, no. 929, 23-00030, 2024, <a href="https://doi.org/10.1299/transjsme.23-00030">doi:10.1299/transjsme.23-00030</a></span></li>
+  <li id="thy-r17"><span class="rf-for">E233系の装置と諸元</span><span class="rf-src">「JR東日本E233系電車」、Wikipedia、<a href="https://ja.wikipedia.org/wiki/JR東日本E233系電車">ja.wikipedia.org</a></span></li>
+  <li id="thy-r18"><span class="rf-for">207系の装置と諸元</span><span class="rf-src">「JR西日本207系電車」、Wikipedia、<a href="https://ja.wikipedia.org/wiki/JR西日本207系電車">ja.wikipedia.org</a></span></li>
+  <li id="thy-r19"><span class="rf-for">阪急 8300系の装置と諸元</span><span class="rf-src">「阪急8300系電車」、Wikipedia、<a href="https://ja.wikipedia.org/wiki/阪急8300系電車">ja.wikipedia.org</a></span></li>
+  <li id="thy-r20"><span class="rf-for">阪神 5500系の装置と諸元</span><span class="rf-src">「阪神5500系電車」、Wikipedia、<a href="https://ja.wikipedia.org/wiki/阪神5500系電車">ja.wikipedia.org</a></span></li>
+  <li id="thy-r21"><span class="rf-for">名古屋市営 6000形の装置と諸元</span><span class="rf-src">「名古屋市交通局6000形電車」、Wikipedia、<a href="https://ja.wikipedia.org/wiki/名古屋市交通局6000形電車">ja.wikipedia.org</a></span></li>
 </ol>

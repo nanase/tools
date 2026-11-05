@@ -20,7 +20,8 @@ export type VvMsg =
   | { type: 'auto' }
   | { type: 'hand'; lever: number }
   | { type: 'halt' }
-  | { type: 'force'; on: boolean }
+  /** 磁力の音の割合（0〜1） */
+  | { type: 'forceMix'; q: number }
   | { type: 'road'; on: boolean }
   /** 走行音の音量 [dB] */
   | { type: 'roadDb'; db: number }
@@ -29,7 +30,9 @@ export type VvMsg =
   /** 連結部寄りの席で聞くか */
   | { type: 'seat'; end: boolean }
   | { type: 'stereo'; on: boolean }
-  | { type: 'tunnel'; on: boolean };
+  | { type: 'tunnel'; on: boolean }
+  /** VVVF の直接音の倍率 */
+  | { type: 'motorDry'; dry: number };
 
 /** 主スレッドへ送るもの */
 export interface RunMsg {
@@ -40,6 +43,7 @@ export interface RunMsg {
   slip: number;
   kind: DriveKind;
   lever: number;
+  notch: number;
 }
 
 /** 運転と音を更新する間隔 [標本] */
@@ -64,12 +68,13 @@ registerProcessor(
         else if (m.type === 'halt') {
           this.drive.halt();
           this.inv.hush();
-        } else if (m.type === 'force') this.inv.force = m.on;
+        } else if (m.type === 'forceMix') this.inv.forceMix = m.q;
         else if (m.type === 'road') this.inv.road = m.on;
         else if (m.type === 'roadDb') this.inv.roadLevel = 10 ** (m.db / 20);
         else if (m.type === 'rail') this.inv.rail = m.len;
         else if (m.type === 'seat') this.inv.seatEnd = m.end;
         else if (m.type === 'stereo') this.inv.stereo = m.on;
+        else if (m.type === 'motorDry') this.inv.motorDry = m.dry;
         else this.inv.tunnel = m.on;
         this.send();
       };
@@ -84,25 +89,31 @@ registerProcessor(
         slip: d.slip,
         kind: d.kind,
         lever: d.lever,
+        notch: d.notch,
       } satisfies RunMsg);
     }
     process(_in: Float32Array[][], outputs: Float32Array[][]): boolean {
       const out = outputs[0];
       if (!out.length) return true;
+      /* 2 つ目の出力は VVVF の音だけで、反響へ送る */
       const ch = out[0],
         ch2 = out[1] ?? ch,
+        mL = outputs[1]?.[0],
+        mR = outputs[1]?.[1],
         d = this.drive,
         was = d.kind;
       if (d.kind === 'stop' && this.inv.idle(d)) {
         ch.fill(0);
         ch2.fill(0);
+        mL?.fill(0);
+        mR?.fill(0);
         this.quiet = true;
       } else {
         this.quiet = false;
         for (let i = 0; i < ch.length; i += STEP) {
           const n = Math.min(STEP, ch.length - i);
           d.tick(n / sampleRate);
-          this.inv.render(d, ch, i, n, ch2);
+          this.inv.render(d, ch, i, n, ch2, mL, mR);
         }
       }
       this.since += ch.length;

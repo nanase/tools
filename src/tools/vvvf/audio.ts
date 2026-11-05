@@ -1,16 +1,28 @@
 /**
  * VVVF の音を Web Audio API で鳴らす: AudioWorklet（worklet.ts）→ 反響を足す → 音量 → 出力。
- * スペクトログラムは音量の前から取る。
+ * ワークレットの出力は 2 つで、1 つ目が全部の音、2 つ目が VVVF の音だけ。2 つ目は VVVF の反響へ送る。
+ * VVVF の反響は全部の音と一緒に地上・トンネルの反響にも入る。スペクトログラムは音量の前から取る。
  * AudioContext は「自動」か運転のボタンを押した操作の中で作る（自動再生の制限）
  */
 import type { CarId } from './cars';
-import { ECHO, type EchoKind, makeIr } from './echo';
+import { ECHO, type EchoKind, MOTOR_MIX, type MotorEcho, makeIr, makeMotorIr } from './echo';
 import type { RunMsg, VvMsg } from './worklet';
 import workletUrl from './worklet.ts?worker&url';
 
 type Ctor = typeof AudioContext;
 const AC: Ctor | undefined =
   globalThis.AudioContext ?? (globalThis as unknown as { webkitAudioContext?: Ctor }).webkitAudioContext;
+
+/** インパルス応答から畳み込みを作る */
+function convolver(ac: AudioContext, [L, R]: [Float32Array, Float32Array]): ConvolverNode {
+  const buf = ac.createBuffer(2, L.length, ac.sampleRate),
+    c = ac.createConvolver();
+  buf.copyToChannel(new Float32Array(L), 0);
+  buf.copyToChannel(new Float32Array(R), 1);
+  c.normalize = false;
+  c.buffer = buf;
+  return c;
+}
 
 export class VvvfAudio {
   private ac: AudioContext | null = null;
@@ -21,10 +33,13 @@ export class VvvfAudio {
   private wet: GainNode | null = null;
   private conv: ConvolverNode | null = null;
   private echoKind: EchoKind = 'ground';
+  private motorWet: GainNode | null = null;
+  private motorConv: ConvolverNode | null = null;
+  private motorKind: MotorEcho = 'strong';
   private stereoOn = true;
   analyser: AnalyserNode | null = null;
   onRun: ((m: RunMsg) => void) | null = null;
-  /** ワークレットへ最初に送るもの（読み込む前に選んだ車種と音源） */
+  /** ワークレットへ最初に送るもの（読み込む前に選んだ車種と音源の割合） */
   private first: VvMsg[] = [];
 
   /** 使える状態にする。鳴らせなければ false */
@@ -35,9 +50,14 @@ export class VvvfAudio {
     this.loading ??= ac.audioWorklet
       .addModule(workletUrl)
       .then(() => {
-        const node = new AudioWorkletNode(ac, 'vvvf-model', { numberOfInputs: 0, outputChannelCount: [2] }),
+        const node = new AudioWorkletNode(ac, 'vvvf-model', {
+            numberOfInputs: 0,
+            numberOfOutputs: 2,
+            outputChannelCount: [2, 2],
+          }),
           bus = ac.createGain(),
           wet = ac.createGain(),
+          motorWet = ac.createGain(),
           master = ac.createGain(),
           an = ac.createAnalyser();
         an.fftSize = 4096;
@@ -45,16 +65,19 @@ export class VvvfAudio {
         master.gain.value = 10 ** (this.db / 20);
         node.connect(bus);
         wet.connect(bus);
+        motorWet.connect(bus);
         bus.connect(an);
         bus.connect(master).connect(ac.destination);
         node.port.onmessage = (e: MessageEvent<RunMsg>) => this.onRun?.(e.data);
         this.node = node;
         this.wet = wet;
+        this.motorWet = motorWet;
         this.master = master;
         this.analyser = an;
         for (const m of this.first) node.port.postMessage(m);
         this.first = [];
         this.applyEcho();
+        this.applyMotor();
         return true;
       })
       .catch(() => false);
@@ -78,31 +101,51 @@ export class VvvfAudio {
 
   /** 反響の畳み込みを作り直す（中に残っている音も消える） */
   private applyEcho(): void {
-    const { ac, node, wet } = this;
-    if (!ac || !node || !wet) return;
+    const { ac, node, wet, motorWet } = this;
+    if (!ac || !node || !wet || !motorWet) return;
     if (this.conv) {
       node.disconnect(this.conv);
+      motorWet.disconnect(this.conv);
       this.conv.disconnect();
       this.conv = null;
     }
     const k = this.echoKind;
     if (k === 'off') return;
-    const [L, R] = makeIr(k, ac.sampleRate, this.stereoOn),
-      buf = ac.createBuffer(2, L.length, ac.sampleRate),
-      c = ac.createConvolver();
-    buf.copyToChannel(new Float32Array(L), 0);
-    buf.copyToChannel(new Float32Array(R), 1);
-    c.normalize = false;
-    c.buffer = buf;
+    const c = convolver(ac, makeIr(k, ac.sampleRate, this.stereoOn));
     wet.gain.value = ECHO[k].wet;
     node.connect(c).connect(wet);
+    motorWet.connect(c);
     this.conv = c;
+  }
+  /** VVVF の反響の畳み込みを作り直す（中に残っている音も消える） */
+  private applyMotor(): void {
+    const { ac, node, motorWet } = this;
+    if (!ac || !node || !motorWet) return;
+    if (this.motorConv) {
+      node.disconnect(this.motorConv);
+      this.motorConv.disconnect();
+      this.motorConv = null;
+    }
+    const k = this.motorKind,
+      mix = MOTOR_MIX[k];
+    this.post({ type: 'motorDry', dry: mix.dry });
+    if (k === 'off') return;
+    const c = convolver(ac, makeMotorIr(ac.sampleRate, this.stereoOn));
+    motorWet.gain.value = mix.wet;
+    node.connect(c, 1).connect(motorWet);
+    this.motorConv = c;
   }
   /** 反響とステレオを選ぶ */
   echo(kind: EchoKind, stereo: boolean): void {
     this.echoKind = kind;
     this.stereoOn = stereo;
     this.applyEcho();
+    this.applyMotor();
+  }
+  /** VVVF の反響を選ぶ */
+  motorEcho(kind: MotorEcho): void {
+    this.motorKind = kind;
+    this.applyMotor();
   }
 
   /** 緊急停止: すぐに 0 km/h にして音を消す。走行音が急に切れて鳴らないよう音量を一瞬だけ絞り、反響の残りも消す */
@@ -115,7 +158,10 @@ export class VvvfAudio {
     g.cancelScheduledValues(T);
     g.setTargetAtTime(0, T, 0.008);
     g.setTargetAtTime(10 ** (this.db / 20), T + 0.12, 0.01);
-    setTimeout(() => this.applyEcho(), 60);
+    setTimeout(() => {
+      this.applyEcho();
+      this.applyMotor();
+    }, 60);
   }
 
   /** 画面が隠れたスマートフォンで AudioContext を止める */
