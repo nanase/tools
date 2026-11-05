@@ -1168,3 +1168,4 @@ syncRanks();
 syncVoice();
 retune();
 void showLine();
+$('#pp-busy').hidden = true;

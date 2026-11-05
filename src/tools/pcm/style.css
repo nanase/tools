@@ -44,14 +44,6 @@
 .pcm-tp{grid-template-columns:auto minmax(0,1fr);padding:10px 2px 8px;border-top:0;border-bottom:0}
 .pcm-tp3{grid-template-columns:auto auto minmax(0,1fr);padding-bottom:0}
 
-/* 計算中: 標本化の図の右上に回る輪。すぐ終わるときはちらつかないよう少し待ってから出す */
-.pcm-busy{position:absolute;right:8px;top:7px;display:inline-flex;align-items:center;gap:6px;padding:2px 7px;border-radius:3px;background:var(--surface);font:12px/1.5 var(--sans);color:var(--ink-2);animation:pcm-in .15s .12s both}
-.pcm-busy[hidden]{display:none}
-.pcm-busy i{flex:none;width:12px;height:12px;border:2px solid var(--grid-2);border-top-color:var(--accent);border-radius:50%;animation:pcm-spin .8s linear infinite}
-@keyframes pcm-spin{to{transform:rotate(1turn)}}
-@keyframes pcm-in{from{opacity:0}to{opacity:1}}
-@media (prefers-reduced-motion:reduce){.pcm-busy{animation:none}.pcm-busy i{animation-duration:2.4s}}
-
 /* 設定 */
 .pcm-bar{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin-bottom:4px}
 .pcm-bl{font-size:12.5px;color:var(--ink-3)}

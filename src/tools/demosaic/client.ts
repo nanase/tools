@@ -559,3 +559,4 @@ new ResizeObserver(([e]) => {
 }).observe(stage);
 
 changed();
+$('#cv-busy').hidden = true;

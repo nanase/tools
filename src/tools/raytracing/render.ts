@@ -2,6 +2,7 @@
  * WebGL2 の描画: 浮動小数点のテクスチャを 2 組交互に使ってサンプルの和をため、平均を画面に出す。
  * 画面（表には出さないキャンバス）を区画に分け、区画ごとに別の設定でためる
  */
+import { programReady, startProgram } from '../../lib/gl-program';
 import { type Camera, cross, norm, type PackedScene, sub } from './scene';
 import { DIFF_FRAG, DISPLAY_FRAG, TRACE_FRAG, VERT } from './shader';
 
@@ -45,6 +46,8 @@ export class PathRenderer {
   /** 積分のやり方とロシアンルーレット */
   integ = 2;
   rr = true;
+  /** シェーダーの準備が終わると解決する。それまで描かない */
+  readonly ready: Promise<void>;
 
   constructor(readonly canvas: HTMLCanvasElement) {
     const gl = canvas.getContext('webgl2', {
@@ -69,31 +72,22 @@ export class PathRenderer {
     this.diff = this.program(DIFF_FRAG);
     this.diffTex = gl.createTexture();
     this.diffFb = gl.createFramebuffer();
+    this.ready = Promise.all([this.trace, this.disp, this.diff].map((pr) => this.link(pr))).then(() => {});
   }
 
   private program(frag: string): Prog {
+    return { p: startProgram(this.gl, VERT, frag, 'aPos'), u: new Map() };
+  }
+
+  /** リンクの終わりを待ち、uniform の場所を控える */
+  private async link({ p, u }: Prog): Promise<void> {
     const gl = this.gl;
-    const sh = (type: number, src: string) => {
-      const s = gl.createShader(type);
-      if (!s) throw new Error('shader');
-      gl.shaderSource(s, src);
-      gl.compileShader(s);
-      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s) ?? 'compile');
-      return s;
-    };
-    const p = gl.createProgram();
-    gl.attachShader(p, sh(gl.VERTEX_SHADER, VERT));
-    gl.attachShader(p, sh(gl.FRAGMENT_SHADER, frag));
-    gl.bindAttribLocation(p, 0, 'aPos');
-    gl.linkProgram(p);
-    if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p) ?? 'link');
-    const u = new Map<string, WebGLUniformLocation | null>();
+    await programReady(gl, p);
     const n = gl.getProgramParameter(p, gl.ACTIVE_UNIFORMS) as number;
     for (let i = 0; i < n; i++) {
       const name = gl.getActiveUniform(p, i)?.name.replace(/\[0\]$/, '');
       if (name) u.set(name, gl.getUniformLocation(p, name));
     }
-    return { p, u };
   }
 
   /** 全体の大きさを決めて、ためるテクスチャを作り直す */

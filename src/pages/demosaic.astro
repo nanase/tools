@@ -1,4 +1,5 @@
 ---
+import Busy from '../components/Busy.astro';
 import Collapsible from '../components/Collapsible.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
@@ -59,6 +60,7 @@ const OFFON = [
       </div>
       <div class="dm-stage" id="st" tabindex="0" role="group" aria-roledescription="画像" aria-label="画像。押した画素を拡大する。矢印キーで 1 画素ずつ動かす">
         <canvas id="cv" width={CHART_W} height={CHART_H}></canvas>
+        <Busy id="cv-busy" text="計算中…" center />
         <div class="dm-loupe" id="lp" aria-hidden="true"><canvas id="lc" width="160" height="160"></canvas></div>
       </div>
     </Panel>

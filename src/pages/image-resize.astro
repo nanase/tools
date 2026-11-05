@@ -1,4 +1,5 @@
 ---
+import Busy from '../components/Busy.astro';
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
 import PageTitle from '../components/PageTitle.astro';
@@ -42,7 +43,7 @@ const ZOOMS = [1, 2, 4];
       </div>
 
       <div class="rz-one" id="rz-one">
-        <div class="scope rz-scr"><canvas id="rz-cv" tabindex="0" role="img" aria-label="拡大縮小の結果。矢印キーで移動"></canvas><span class="rz-tag" id="rz-tag"></span></div>
+        <div class="scope rz-scr"><canvas id="rz-cv" tabindex="0" role="img" aria-label="拡大縮小の結果。矢印キーで移動"></canvas><span class="rz-tag" id="rz-tag"></span><Busy id="rz-busy" text="計算中…" center /></div>
         <div class="rz-side">
           <div class="rz-sbx"><span class="rz-cap">拡大鏡　8 倍</span><div class="scope rz-scr"><canvas id="rz-lens" role="img" aria-label="拡大鏡"></canvas></div></div>
           <div class="rz-sbx"><span class="rz-cap">元の画像と表示の範囲</span><div class="scope rz-scr"><canvas id="rz-ov" role="img" aria-label="元の画像"></canvas></div></div>

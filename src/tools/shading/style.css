@@ -15,7 +15,7 @@
 }
 
 /* 球。テーマに依らず黒い地 */
-.sh-four{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.sh-four{position:relative;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 @media (min-width:720px){.sh-four{grid-template-columns:repeat(4,minmax(0,1fr))}}
 .sh-four figure,.sh-int figure,.sh-fur figure,.sh-tm{margin:0;min-width:0}
 .sh-st{position:relative;background:#000;border-radius:3px;overflow:hidden;line-height:0;cursor:grab;touch-action:pan-y;user-select:none;-webkit-user-select:none}

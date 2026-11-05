@@ -35,12 +35,24 @@ const ctx = cv.getContext('2d');
 const minis = $$<HTMLButtonElement>('.rt-mini');
 const miniCtx = minis.map((b) => $<HTMLCanvasElement>('canvas', b).getContext('2d'));
 const msg = $('#st-msg');
+const wait = $('#st-busy');
 let R: PathRenderer | null = null;
-try {
-  R = new PathRenderer(glCanvas);
-} catch {
+/** 描けないことの案内を、ほかの案内で消さない */
+let noWebGl = false;
+function noGl(): void {
+  noWebGl = true;
+  wait.hidden = true;
   msg.textContent = 'このブラウザでは WebGL2 の浮動小数点テクスチャが使えないため、画像を描けません。';
   msg.hidden = false;
+}
+try {
+  const r = new PathRenderer(glCanvas);
+  r.ready.then(() => {
+    R = r;
+    begin();
+  }, noGl);
+} catch {
+  noGl();
 }
 
 /* ---------- 状態 ---------- */
@@ -183,6 +195,7 @@ function syncRows(): void {
     b.disabled = MINI_B[i] > V.mb;
   });
   if (pick >= 0 && MINI_B[pick] > V.mb) setPick(-1);
+  if (noWebGl) return;
   const dark = integ === INTEG.BRDF && kind === 'point';
   msg.textContent = dark ? 'BRDF だけでは点の光源に当たりません' : '';
   msg.hidden = !dark;
@@ -204,12 +217,14 @@ function tick(ts: number): void {
       R.step([[main, main.samples === 0 ? 2 : 4]]);
       R.show();
       blitMain();
+      wait.hidden = true;
     }
     raf = requestAnimationFrame(tick);
     return;
   }
   const done = main.samples >= goal && small.every((t) => t.samples >= goal);
   if (!playing || done) {
+    wait.hidden = true;
     if (done && playing) finish();
     return;
   }
@@ -236,6 +251,8 @@ function tick(ts: number): void {
   if (main.samples >= nextErr) {
     rmse = R.measure(main).rmse;
     nextErr = Math.ceil(nextErr * Math.SQRT2);
+    /* 初めての読み出しは GPU の処理を待つので長くかかる。終わるまで輪を残す */
+    wait.hidden = true;
   }
   if (now - shareT > SHARE_MS) {
     shareT = now;
@@ -416,14 +433,17 @@ document.addEventListener('visibilitychange', () => {
   kick();
 });
 
-/* 最初の絵は枠を描いてから */
 ready = true;
-pushScene();
 syncRows();
 setPlaying(true);
 setPick(-1);
-requestAnimationFrame(() => {
-  layout();
-  showOut();
-  kick();
-});
+
+/** シェーダーの準備ができたら始める。最初の絵は枠を描いてから */
+function begin(): void {
+  pushScene();
+  requestAnimationFrame(() => {
+    layout();
+    showOut();
+    kick();
+  });
+}

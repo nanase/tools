@@ -1,4 +1,5 @@
 ---
+import Busy from '../components/Busy.astro';
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
 import More from '../components/More.astro';
@@ -39,6 +40,7 @@ const name = 'カメラレンズ';
           <div class="af" id="af" aria-hidden="true"></div>
           <button type="button" class="lv-fs" id="lv-fs" aria-label="全画面で表示" title="全画面で表示"><svg class="i-open" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/></svg><svg class="i-close" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 2v4H2M14 6h-4V2M10 14v-4h4M2 10h4v4"/></svg></button>
           <p class="lv-msg" id="lv-msg" hidden></p>
+          <Busy id="lv-busy" text="計算中…" center />
         </div>
         <More id="g-view" title="表示の設定"><div class="ana2">
           <div class="ptab">

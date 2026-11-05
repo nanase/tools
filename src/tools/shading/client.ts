@@ -584,4 +584,7 @@ queueMicrotask(() => {
   ready = true;
   syncRows();
   relayout();
+  requestAnimationFrame(() => {
+    $('#sh-busy').hidden = true;
+  });
 });

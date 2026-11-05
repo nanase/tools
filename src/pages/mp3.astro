@@ -1,4 +1,5 @@
 ---
+import Busy from '../components/Busy.astro';
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
 import PageTitle from '../components/PageTitle.astro';
@@ -30,7 +31,7 @@ const playIcon =
       </div>
       <div class="mp3-pane">
         <p class="mp3-tag">原音</p>
-        <div class="scope mp3-scr"><canvas class="mp3-cv mp3-sg" id="sg-o" role="img" aria-label="原音のスペクトログラム" title="押すとこの音を選択・選択中は再生位置を移動"></canvas><span class="mp3-prog" id="mp3-prog"></span><span class="mp3-busy" id="mp3-busy" hidden><i aria-hidden="true"></i>計算中…</span></div>
+        <div class="scope mp3-scr"><canvas class="mp3-cv mp3-sg" id="sg-o" role="img" aria-label="原音のスペクトログラム" title="押すとこの音を選択・選択中は再生位置を移動"></canvas><span class="mp3-prog" id="mp3-prog"></span><Busy id="mp3-busy" text="計算中…" hidden /></div>
       </div>
       <div class="mp3-pane on">
         <p class="mp3-tag">MP3</p>

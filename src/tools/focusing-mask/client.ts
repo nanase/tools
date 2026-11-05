@@ -359,6 +359,7 @@ function run(): void {
       lastPsf = { img, c };
       frame = expose(img, c.f, camOf(c, needN(c)));
       draw();
+      $('#sv-busy').hidden = true;
       if (nb === NB_QUICK && !dirty) {
         full = true;
         run();

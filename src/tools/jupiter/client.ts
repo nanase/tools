@@ -217,12 +217,14 @@ function grsPass(t: number): { a: number; t: number; b: number } {
 let renderer: PlanetRenderer | null = null;
 let mapOn: MapInfo | null = null;
 let mapWant = '';
+const mapBusy = $('#v-busy');
 function wantMap(): MapInfo {
   return map$.value === 'latest' ? MAPS[MAPS.length - 1] : nearestMap(jd);
 }
 function loadMap(m: MapInfo): void {
   if (!renderer || mapWant === m.file) return;
   mapWant = m.file;
+  mapBusy.hidden = false;
   renderer
     .load(`${BASE}jupiter/${m.file}.webp`)
     .then(() => {
@@ -234,6 +236,10 @@ function loadMap(m: MapInfo): void {
       const v = $('#v-msg');
       v.hidden = false;
       v.textContent = '模様の地図を読み込めませんでした。';
+    })
+    .finally(() => {
+      /* 読み終える前に別の地図へ変わったら、そちらを待つ */
+      if (mapWant === m.file || !mapWant) mapBusy.hidden = true;
     });
 }
 
@@ -1343,6 +1349,7 @@ try {
   loadMap(MAPS[MAPS.length - 1]);
 } catch {
   renderer = null;
+  mapBusy.hidden = true;
   const m = $('#v-msg');
   m.hidden = false;
   m.textContent = 'このブラウザでは木星を描けません。WebGL2 が必要です。';

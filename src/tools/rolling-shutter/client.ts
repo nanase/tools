@@ -114,13 +114,28 @@ const t0 = (): number => {
 
 /* ---------- 描画 ---------- */
 const cv = $<HTMLCanvasElement>('#cv');
+const busy = $('#st-busy');
 let R: RsRenderer | null = null;
-try {
-  R = new RsRenderer(cv);
-} catch {
+/** シェーダーの準備を待っている間は、走査を進めない */
+let waiting = true;
+function noGl(): void {
+  waiting = false;
+  busy.hidden = true;
   const m = $('#st-msg');
   m.textContent = 'このブラウザでは WebGL2 が使えないため、像を描けません。計算結果は使えます。';
   m.hidden = false;
+  later();
+}
+try {
+  const r = new RsRenderer(cv);
+  r.ready.then(() => {
+    R = r;
+    waiting = false;
+    busy.hidden = true;
+    later();
+  }, noGl);
+} catch {
+  noGl();
 }
 
 function size(): void {
@@ -194,7 +209,8 @@ function frame(ts: number): void {
   const dt = last ? Math.min(0.1, (ts - last) / 1000) : 0;
   last = ts;
   const p = inputs();
-  if (S.play && visible && !document.hidden) {
+  const run = S.play && visible && !document.hidden && !waiting;
+  if (run) {
     const W = scanWall(p);
     S.phase += dt / W;
     if (S.phase > 1 + HOLD / W) {
@@ -204,7 +220,7 @@ function frame(ts: number): void {
   } else last = 0;
   showMetrics();
   draw();
-  if (S.play && visible && !document.hidden) later();
+  if (run) later();
 }
 /** 次のコマへ進める。題材の時刻を入力で決める題材は、その入力を進めて範囲の端で頭へ戻す */
 function next(): void {

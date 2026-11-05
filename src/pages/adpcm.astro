@@ -1,4 +1,5 @@
 ---
+import Busy from '../components/Busy.astro';
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
 import PageTitle from '../components/PageTitle.astro';
@@ -25,7 +26,7 @@ const playIcon =
     <div class="pcm-main">
     <div class="col">
       <Panel hid="hd-all" title="全体" class="a-all">
-        <div class="scope pcm-scr"><canvas class="pcm-cv adp-whole" id="all-cv" role="slider" tabindex="0" aria-label="拡大する位置" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0"></canvas><span class="pcm-busy" id="ls-busy" hidden><i aria-hidden="true"></i>計算中…</span></div>
+        <div class="scope pcm-scr"><canvas class="pcm-cv adp-whole" id="all-cv" role="slider" tabindex="0" aria-label="拡大する位置" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0"></canvas><Busy id="ls-busy" text="計算中…" hidden /></div>
         <div class="sbar pcm-lg"><span class="stag"><i class="sw c2"></i>波形</span><span class="stag"><i class="sw"></i>段階の間隔</span><span class="stag"><i class="sw pcm-sw-e"></i>ADPCM の誤差</span><span class="stag"><i class="sw adp-sw-l"></i>PCM の誤差</span></div>
         <div class="adp-jump" id="all-jump" role="group" aria-label="移動先">
           <button type="button" class="chip" data-m="up">音の立ち上がり</button>
