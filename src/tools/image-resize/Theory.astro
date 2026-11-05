@@ -1,0 +1,113 @@
+---
+import { TOOLS } from '../../data/tools';
+
+/* 本文の出典番号 */
+const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
+/** ほかのページへのリンク（まだ公開していないページは名前だけ） */
+const to = (id: string, t: string) => (TOOLS.some((x) => x.id === id && !x.s) ? `<a href="../${id}/">${t}</a>` : t);
+const abs = (x: string) => `<mo stretchy="false">|</mo>${x}<mo stretchy="false">|</mo>`;
+const frac = (a: string, b: string) => `<mfrac><mrow>${a}</mrow><mrow>${b}</mrow></mfrac>`;
+const sinc = (x: string) => `<mi>sinc</mi><mo stretchy="false">(</mo>${x}<mo stretchy="false">)</mo>`;
+---
+<h3>出力の画素の値</h3>
+<div class="eqs">
+  <math display="block" set:html={`<msub><mi>c</mi><mi>i</mi></msub><mo>=</mo>${frac('<mi>i</mi><mo>+</mo><mn>1</mn><mo>/</mo><mn>2</mn>', '<mi>s</mi>')}<mo>−</mo>${frac('<mn>1</mn>', '<mn>2</mn>')}`} />
+  <math display="block" set:html={`<msub><mi>y</mi><mi>i</mi></msub><mo>=</mo>${frac(`<munder><mo>∑</mo><mi>j</mi></munder><msub><mi>x</mi><mi>j</mi></msub><mspace width="0.2em"/><mi>k</mi><mo stretchy="false">(</mo>(<mi>j</mi><mo>−</mo><msub><mi>c</mi><mi>i</mi></msub>)<mo>/</mo><mi>w</mi><mo stretchy="false">)</mo>`, `<munder><mo>∑</mo><mi>j</mi></munder><mi>k</mi><mo stretchy="false">(</mo>(<mi>j</mi><mo>−</mo><msub><mi>c</mi><mi>i</mi></msub>)<mo>/</mo><mi>w</mi><mo stretchy="false">)</mo>`)}`} />
+</div>
+<dl class="syms">
+  <dt><math><mi>s</mi></math></dt><dd>倍率</dd>
+  <dt><math><msub><mi>x</mi><mi>j</mi></msub></math></dt><dd>元の画素の値</dd>
+  <dt><math><msub><mi>c</mi><mi>i</mi></msub></math></dt><dd>出力の画素 <math><mi>i</mi></math> の中心の、元の画素の座標</dd>
+  <dt><math><mi>k</mi></math></dt><dd>カーネル</dd>
+  <dt><math><mi>w</mi></math></dt><dd>カーネルの幅の倍率（アンチエイリアスの節）</dd>
+</dl>
+<ul class="tl">
+  <li>横に計算してから縦に計算（分離可能なカーネル）<Fragment set:html={rf(6)} /></li>
+  <li>重みの和で割り、明るさを保つ</li>
+  <li>端の外は端の画素を使う</li>
+  <li>重み付きの和の原理: <Fragment set:html={to('image-convolution', '画像の畳み込み')} /></li>
+</ul>
+
+<h3>カーネル</h3>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th>手法</th><th>カーネル</th><th>半径</th><th>出典</th></tr></thead>
+  <tbody>
+    <tr><td>最近傍</td><td><math set:html={`<mn>1</mn><mspace width="0.5em"/><mo stretchy="false">(</mo>${abs('<mi>x</mi>')}<mo>&lt;</mo><mn>1</mn><mo>/</mo><mn>2</mn><mo stretchy="false">)</mo>`} /></td><td>1/2</td><td><Fragment set:html={rf(5)} /></td></tr>
+    <tr><td>平均画素法</td><td>出力の画素と元の画素の重なりの長さ</td><td>1/2 + 1/(2<math><mi>s</mi></math>)</td><td><Fragment set:html={rf(5)} /></td></tr>
+    <tr><td>バイリニア</td><td><math set:html={`<mn>1</mn><mo>−</mo>${abs('<mi>x</mi>')}`} /></td><td>1</td><td><Fragment set:html={rf(5)} /></td></tr>
+    <tr><td>B スプライン</td><td>下の式で <math><mi>B</mi><mo>=</mo><mn>1</mn></math>、<math><mi>C</mi><mo>=</mo><mn>0</mn></math></td><td>2</td><td><Fragment set:html={rf(1) + rf(2)} /></td></tr>
+    <tr><td>Mitchell</td><td>下の式で <math><mi>B</mi><mo>=</mo><mi>C</mi><mo>=</mo><mn>1</mn><mo>/</mo><mn>3</mn></math></td><td>2</td><td><Fragment set:html={rf(1)} /></td></tr>
+    <tr><td>Catmull-Rom</td><td>下の式で <math><mi>B</mi><mo>=</mo><mn>0</mn></math>、<math><mi>C</mi><mo>=</mo><mn>1</mn><mo>/</mo><mn>2</mn></math></td><td>2</td><td><Fragment set:html={rf(1) + rf(3) + rf(4)} /></td></tr>
+    <tr><td>Lanczos2・Lanczos3</td><td><math set:html={`${sinc('<mi>x</mi>')}<mspace width="0.2em"/>${sinc('<mi>x</mi><mo>/</mo><mi>a</mi>')}`} />（<math><mi>a</mi><mo>=</mo><mn>2</mn></math>・<math><mn>3</mn></math>）</td><td><math><mi>a</mi></math></td><td><Fragment set:html={rf(5) + rf(7)} /></td></tr>
+  </tbody>
+</table></div>
+<div class="eqs">
+  <math display="block" set:html={`<mi>k</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo><mo>=</mo>${frac('<mn>1</mn>', '<mn>6</mn>')}<mrow><mo>{</mo><mtable columnalign="left"><mtr><mtd><mo stretchy="false">(</mo><mn>12</mn><mo>−</mo><mn>9</mn><mi>B</mi><mo>−</mo><mn>6</mn><mi>C</mi><mo stretchy="false">)</mo>${abs('<mi>x</mi>')}<msup><mrow></mrow><mn>3</mn></msup><mo>+</mo><mo stretchy="false">(</mo><mo>−</mo><mn>18</mn><mo>+</mo><mn>12</mn><mi>B</mi><mo>+</mo><mn>6</mn><mi>C</mi><mo stretchy="false">)</mo>${abs('<mi>x</mi>')}<msup><mrow></mrow><mn>2</mn></msup><mo>+</mo><mo stretchy="false">(</mo><mn>6</mn><mo>−</mo><mn>2</mn><mi>B</mi><mo stretchy="false">)</mo></mtd><mtd>${abs('<mi>x</mi>')}<mo>&lt;</mo><mn>1</mn></mtd></mtr><mtr><mtd><mo stretchy="false">(</mo><mo>−</mo><mi>B</mi><mo>−</mo><mn>6</mn><mi>C</mi><mo stretchy="false">)</mo>${abs('<mi>x</mi>')}<msup><mrow></mrow><mn>3</mn></msup><mo>+</mo><mo stretchy="false">(</mo><mn>6</mn><mi>B</mi><mo>+</mo><mn>30</mn><mi>C</mi><mo stretchy="false">)</mo>${abs('<mi>x</mi>')}<msup><mrow></mrow><mn>2</mn></msup><mo>+</mo><mo stretchy="false">(</mo><mo>−</mo><mn>12</mn><mi>B</mi><mo>−</mo><mn>48</mn><mi>C</mi><mo stretchy="false">)</mo>${abs('<mi>x</mi>')}<mo>+</mo><mo stretchy="false">(</mo><mn>8</mn><mi>B</mi><mo>+</mo><mn>24</mn><mi>C</mi><mo stretchy="false">)</mo></mtd><mtd><mn>1</mn><mo>≤</mo>${abs('<mi>x</mi>')}<mo>&lt;</mo><mn>2</mn></mtd></mtr></mtable></mrow>`} />
+</div>
+<ul class="tl">
+  <li><math><mi>B</mi><mo>=</mo><mn>0</mn></math>: 整数の位置で 0 か 1 になり、1 倍で元の値に一致<Fragment set:html={rf(1)} /></li>
+  <li><math><mi>B</mi><mo>&gt;</mo><mn>0</mn></math>: 元の値を通らず、1 倍でもぼける</li>
+  <li>負の裾: 段差の両側に行き過ぎ（リンギング）。Mitchell と Netravali はぼけ・リンギング・異方性の兼ね合いを <math><mo stretchy="false">(</mo><mi>B</mi><mo>,</mo><mi>C</mi><mo stretchy="false">)</mo></math> の平面で分類<Fragment set:html={rf(1)} /></li>
+</ul>
+
+<h3>縮小とアンチエイリアス</h3>
+<div class="eqs">
+  <math display="block" set:html={`<mi>w</mi><mo>=</mo><mrow><mo>{</mo><mtable columnalign="left"><mtr><mtd><mn>1</mn><mo>/</mo><mi>s</mi></mtd><mtd><mi>s</mi><mo>&lt;</mo><mn>1</mn></mtd></mtr><mtr><mtd><mn>1</mn></mtd><mtd><mi>s</mi><mo>≥</mo><mn>1</mn></mtd></mtr></mtable></mrow>`} />
+</div>
+<ul class="tl">
+  <li>縮小ではカーネルを <math><mn>1</mn><mo>/</mo><mi>s</mi></math> 倍に広げ、出力のナイキスト周波数を超える成分を落とす<Fragment set:html={rf(6)} /></li>
+  <li>広げないと、その成分が低い周波数へ折り返してモアレになる</li>
+  <li>オフでは <math><mi>w</mi><mo>=</mo><mn>1</mn></math></li>
+  <li>最近傍はオンでも間引きのまま</li>
+  <li>平均画素法はもともと重なりで計算するので、設定によらず同じ結果</li>
+</ul>
+
+<h3>計算の色空間</h3>
+<div class="eqs">
+  <math display="block" set:html={`<msub><mi>V</mi><mi>L</mi></msub><mo>=</mo><mrow><mo>{</mo><mtable columnalign="left"><mtr><mtd><mi>V</mi><mo>/</mo><mn>12.92</mn></mtd><mtd><mi>V</mi><mo>≤</mo><mn>0.04045</mn></mtd></mtr><mtr><mtd><msup><mrow><mo stretchy="false">(</mo><mo stretchy="false">(</mo><mi>V</mi><mo>+</mo><mn>0.055</mn><mo stretchy="false">)</mo><mo>/</mo><mn>1.055</mn><mo stretchy="false">)</mo></mrow><mn>2.4</mn></msup></mtd><mtd><mi>V</mi><mo>&gt;</mo><mn>0.04045</mn></mtd></mtr></mtable></mrow>`} />
+</div>
+<ul class="tl">
+  <li>sRGB の値は光の量に比例しない<Fragment set:html={rf(9)} /></li>
+  <li>白と黒の 1 画素の縞を 1/2 に縮めると、sRGB のままの平均は 128、光の量の平均は 188</li>
+</ul>
+
+<h3>ドット絵向けの手法</h3>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th>手法</th><th>左上の角の規則</th><th>出典</th></tr></thead>
+  <tbody>
+    <tr><td>Scale2x（EPX）</td><td>上 = 左、上 ≠ 下、左 ≠ 右 のとき左の色</td><td><Fragment set:html={rf(8)} /></td></tr>
+    <tr><td>Scale3x</td><td>Scale2x の規則を 3 × 3 の 9 画素へ広げたもの</td><td><Fragment set:html={rf(8)} /></td></tr>
+    <tr><td>Eagle</td><td>左 = 左上 = 上 のとき、その色</td><td><Fragment set:html={rf(10)} /></td></tr>
+  </tbody>
+</table></div>
+<ul class="tl">
+  <li>色が完全に同じかだけを比較、写真では規則がほとんど働かず最近傍に近い結果</li>
+  <li>倍率以上になるまで 2 倍か 3 倍をくり返し、最後は最も近い画素を写す</li>
+  <li>1 倍以下は最近傍と同じ</li>
+</ul>
+
+<h3>このツールで決めたこと</h3>
+<ul class="tl">
+  <li>正解との PSNR は画像の中央 240 × 180 画素で計算</li>
+  <li>拡大の正解: 平均画素法で 1/<math><mi>s</mi></math> に縮めた画像を <math><mi>s</mi></math> 倍に戻し、元の画像と比較</li>
+  <li>縮小の正解: アンチエイリアスありの Lanczos8 の結果。基準に近い Lanczos は高い値になりやすい</li>
+  <li>1 倍の PSNR は表示なし</li>
+  <li>PSNR の値は見た目の良さと一致しない。リンギングの目立つ手法が高い値になることもある</li>
+  <li>ファイルは長辺 1024 画素に縮めて使用</li>
+  <li>見本: 月面は NASA の画像<Fragment set:html={rf(11)} />、ほかは自作</li>
+</ul>
+
+<h3>出典</h3>
+<ol class="refs">
+  <li id="thy-r1"><span class="rf-for">3 次のカーネルの式・<math><mo stretchy="false">(</mo><mi>B</mi><mo>,</mo><mi>C</mi><mo stretchy="false">)</mo></math> の分類・Mitchell の値</span><span class="rf-src">D. P. Mitchell and A. N. Netravali, “Reconstruction filters in computer-graphics,” <i>ACM SIGGRAPH Computer Graphics</i>, vol. 22, no. 4, pp. 221–228, 1988, <a href="https://doi.org/10.1145/378456.378514" target="_blank" rel="noopener">doi:10.1145/378456.378514</a></span></li>
+  <li id="thy-r2"><span class="rf-for">3 次の B スプラインの補間</span><span class="rf-src">H. S. Hou and H. C. Andrews, “Cubic splines for image interpolation and digital filtering,” <i>IEEE Trans. Acoustics, Speech, and Signal Processing</i>, vol. 26, no. 6, pp. 508–517, 1978, <a href="https://doi.org/10.1109/TASSP.1978.1163154" target="_blank" rel="noopener">doi:10.1109/TASSP.1978.1163154</a></span></li>
+  <li id="thy-r3"><span class="rf-for">Catmull-Rom のスプライン</span><span class="rf-src">E. Catmull and R. Rom, “A class of local interpolating splines,” <i>Computer Aided Geometric Design</i>, pp. 317–326, 1974, <a href="https://doi.org/10.1016/B978-0-12-079050-0.50020-5" target="_blank" rel="noopener">doi:10.1016/B978-0-12-079050-0.50020-5</a></span></li>
+  <li id="thy-r4"><span class="rf-for">3 次の補間（畳み込みの形）</span><span class="rf-src">R. G. Keys, “Cubic convolution interpolation for digital image processing,” <i>IEEE Trans. Acoustics, Speech, and Signal Processing</i>, vol. 29, no. 6, pp. 1153–1160, 1981, <a href="https://doi.org/10.1109/TASSP.1981.1163711" target="_blank" rel="noopener">doi:10.1109/TASSP.1981.1163711</a></span></li>
+  <li id="thy-r5"><span class="rf-for">拡大縮小のフィルタの比較（箱・三角・Lanczos など）</span><span class="rf-src">K. Turkowski, “Filters for common resampling tasks,” <i>Graphics Gems</i>, Academic Press, pp. 147–165, 1990, <a href="https://doi.org/10.1016/B978-0-08-050753-8.50042-5" target="_blank" rel="noopener">doi:10.1016/B978-0-08-050753-8.50042-5</a></span></li>
+  <li id="thy-r6"><span class="rf-for">縮小でカーネルを広げる・横と縦の 2 回の計算</span><span class="rf-src">D. Schumacher, “General filtered image rescaling,” <i>Graphics Gems III</i>, Academic Press, pp. 8–16, 1992, <a href="https://doi.org/10.1016/B978-0-08-050755-2.50012-9" target="_blank" rel="noopener">doi:10.1016/B978-0-08-050755-2.50012-9</a></span></li>
+  <li id="thy-r7"><span class="rf-for">Lanczos の窓</span><span class="rf-src">C. E. Duchon, “Lanczos filtering in one and two dimensions,” <i>Journal of Applied Meteorology</i>, vol. 18, no. 8, pp. 1016–1022, 1979, <a href="https://doi.org/10.1175/1520-0450(1979)018%3C1016:LFIOAT%3E2.0.CO;2" target="_blank" rel="noopener">doi:10.1175/1520-0450(1979)018&lt;1016:LFIOAT&gt;2.0.CO;2</a></span></li>
+  <li id="thy-r8"><span class="rf-for">Scale2x・Scale3x の規則</span><span class="rf-src">A. Mazzoleni, <a href="https://www.scale2x.it/algorithm" target="_blank" rel="noopener">Scale2x Algorithm</a></span></li>
+  <li id="thy-r9"><span class="rf-for">sRGB の変換の式</span><span class="rf-src">IEC 61966-2-1:1999, Multimedia systems and equipment – Colour measurement and management – Part 2-1: Default RGB colour space – sRGB</span></li>
+  <li id="thy-r10"><span class="rf-for">Eagle の規則・EPX の由来</span><span class="rf-src">Wikipedia, <a href="https://en.wikipedia.org/wiki/Pixel-art_scaling_algorithms" target="_blank" rel="noopener">Pixel-art scaling algorithms</a></span></li>
+  <li id="thy-r11"><span class="rf-for">月面の画像</span><span class="rf-src">E. Wright, <a href="https://svs.gsfc.nasa.gov/4720/" target="_blank" rel="noopener">CGI Moon Kit</a>, NASA's Scientific Visualization Studio, 2019</span></li>
+</ol>

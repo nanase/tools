@@ -1,0 +1,99 @@
+/* 画像の拡大縮小のページ。カーネルの紫はこのページだけの色 */
+:root{--rz-k:#a03c8c}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--rz-k:#e58ad6}}
+:root[data-theme="dark"]{--rz-k:#e58ad6}
+
+@media (min-width:760px){
+  #rz{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start}
+  #rz>.a-fig,#rz>.a-st,#rz>.clps,#rz>[data-fold="hd-thy"]{grid-column:1/-1}
+}
+.rz-col{display:grid;gap:26px 16px;align-content:start;min-width:0}
+#rz[data-mode="list"] .a-m,#rz[data-mode="list"] .a-i,#rz[data-mode="list"] #rz-bar{display:none}
+#rz[data-mode="cmp"] #rz-k{display:none}
+
+.rz-bar{font-family:var(--sans);min-height:30px}
+.rz-lab{font-size:12px;color:var(--ink-2)}
+#rz-hint{margin-left:auto;font-size:12px;color:var(--ink-3)}
+.rz-scr{position:relative;padding:0;overflow:hidden;line-height:0}
+.rz-scr canvas{display:block;width:100%}
+#rz-cv{height:460px;touch-action:none;cursor:grab}
+#rz-cv.drag,.rz-cell canvas.drag{cursor:grabbing}
+.rz-one{display:grid;grid-template-columns:minmax(0,1fr) 240px;gap:10px;align-items:start}
+.rz-one[hidden]{display:none}
+.rz-side{display:grid;gap:8px}
+.rz-sbx{display:grid;gap:3px}
+.rz-cap{display:block;font-size:12px;line-height:1.5;color:var(--ink-2)}
+#rz-lens{height:240px;image-rendering:pixelated}
+#rz-ov{height:160px;cursor:crosshair}
+.rz-tag{position:absolute;left:8px;top:8px;padding:2px 7px;border-radius:3px;background:rgb(0 0 0 / .72);color:#f2f2ee;font:500 13px/1.5 var(--mono);pointer-events:none}
+@media (max-width:760px){
+  .rz-one{grid-template-columns:minmax(0,1fr)}
+  .rz-side{grid-template-columns:1fr 1fr}
+  #rz-cv{height:320px}
+  #rz-lens,#rz-ov{height:150px}
+}
+
+/* 比較 */
+.rz-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.rz-grid[hidden]{display:none}
+@media (max-width:760px){.rz-grid{grid-template-columns:minmax(0,1fr)}}
+.rz-cell{min-width:0;border:1px solid var(--line);border-radius:3px;overflow:hidden;background:var(--surface)}
+.rz-cell canvas{display:block;width:100%;height:210px;touch-action:pan-y;cursor:grab;background:#000}
+.rz-cl{display:flex;align-items:baseline;gap:8px;padding:4px 8px;font-size:13px;line-height:1.5}
+.rz-cl b{font-weight:700}
+.rz-cl .r{min-width:1.2em;font:700 13px var(--mono);color:var(--ink-3)}
+.rz-cl .r.top{color:var(--accent)}
+.rz-cl .v{margin-left:auto;font:500 13px var(--mono);color:var(--ink-2);font-variant-numeric:tabular-nums}
+
+/* 一覧 */
+.rz-cap2{display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 14px;margin-bottom:8px;font-size:12px;color:var(--ink-3)}
+.rz-tw{overflow-x:auto}
+.rz-t{border-collapse:collapse;width:100%;font-size:12.5px}
+.rz-t th{padding:3px 6px;font-weight:700;white-space:nowrap}
+.rz-t thead th{text-align:center}
+.rz-t tbody th{position:sticky;left:0;z-index:1;background:var(--bg);text-align:left}
+.rz-t th button{padding:2px 5px;border:0;border-radius:3px;background:none;color:var(--ink);font:inherit;cursor:pointer}
+.rz-t th button:hover{background:var(--ink);color:var(--surface)}
+.rz-t td{padding:2px;text-align:center}
+.rz-c{display:block;width:100%;min-width:104px;padding:0;border:1px solid var(--line);border-radius:2px;background:#000;line-height:0;cursor:pointer}
+.rz-c:hover{border-color:var(--ink-3)}
+.rz-c canvas{display:block;width:100%;height:72px;image-rendering:pixelated}
+.rz-c i{display:block;min-height:17px;padding:1px 0;background:var(--surface);color:var(--ink-2);font:500 12px/1.25 var(--mono);font-style:normal;font-variant-numeric:tabular-nums}
+.rz-c i.top{color:var(--accent);font-weight:700}
+
+/* 手法 */
+.rz-mg{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:start;gap:4px 10px;padding:4px 6px}
+.rz-mg h3{margin:0;font-size:12px;font-weight:500;line-height:28px;color:var(--ink-2);white-space:nowrap}
+.rz-mg .chips{margin:0}
+.rz-mg .chip{font-family:var(--sans)}
+#rz-k{display:block;width:100%;height:150px;margin-top:6px}
+
+/* 画像の選択 */
+.rz-is{display:flex;flex-wrap:wrap;gap:6px;padding:2px 6px}
+.rz-ib{display:grid;gap:3px;width:76px;padding:3px;border:1px solid var(--line);border-radius:4px;background:none;color:var(--ink-2);font:500 12px/1.2 var(--sans);text-align:center;cursor:pointer}
+.rz-ib:hover{border-color:var(--line-2);color:var(--ink)}
+.rz-ib canvas{display:block;width:100%;height:46px;background:#000}
+.rz-ib[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--surface)}
+.rz-ib.file{place-content:center;min-height:68px;border-style:dashed}
+#rz-msg:empty{display:none}
+
+/* 倍率のバー */
+.rz-tp{grid-template-columns:auto auto minmax(0,1fr)}
+.pnl .rz-tp{margin-top:10px}
+.rz-tk{position:relative;height:17px;font:500 12.5px/1.4 var(--mono);color:var(--ink-3)}
+.rz-tk button{position:absolute;top:0;transform:translateX(-50%);padding:0 3px;border:0;background:none;color:inherit;font:inherit;cursor:pointer}
+.rz-tk button:first-child{transform:none}
+.rz-tk button:last-child{transform:translateX(-100%)}
+.rz-tk button:hover{color:var(--ink)}
+.rz-tk button.on{color:var(--ink);font-weight:700}
+@media (max-width:620px){.rz-tk button:nth-child(even){display:none}}
+.rz-ro{display:flex;flex-wrap:wrap;justify-content:space-between;gap:0 12px;margin-top:3px;font:500 13px/1.5 var(--mono);color:var(--ink-2);font-variant-numeric:tabular-nums}
+.rz-ro b{color:var(--ink);font-size:15px}
+
+/* しくみ */
+.rz-steps{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));gap:8px}
+.rz-st{display:grid;grid-template-columns:172px minmax(0,1fr);gap:10px;align-items:start;padding:6px;border:1px solid var(--line);border-radius:4px;background:var(--surface)}
+.rz-st canvas{display:block;width:172px;height:104px;border-radius:2px;background:var(--screen)}
+.rz-st h3{margin:0 0 3px;font-size:13.5px;line-height:1.45}
+.rz-st h3 i{margin-right:5px;font:700 12px var(--mono);font-style:normal;color:var(--ink-3)}
+.rz-st p{margin:0;font-size:12.5px;line-height:1.6;color:var(--ink-2)}

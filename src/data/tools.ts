@@ -404,8 +404,17 @@ export const TOOLS: Tool[] = [
     t: '画像の畳み込み',
     d: 'ぼかしやエッジ検出の出力をカーネルの積和で 1 画素ずつ作ります。',
     ic: 'icv',
-    r: ['convolution', 'demosaic', 'fir', 'jpeg'],
+    r: ['convolution', 'demosaic', 'image-resize', 'fir'],
     k: 'image convolution 画像 畳み込み たたみこみ 2次元 2d kernel 核 カーネル フィルタ filter ぼかし blur 平均 box ガウス gaussian ピンぼけ defocus ぶれ motion blur 鮮鋭化 sharpen アンシャープマスク unsharp mask エッジ検出 edge detection ラプラシアン laplacian sobel ソーベル 勾配 gradient 浮き彫り emboss 点像分布関数 psf mtf 分離 separable 相関 correlation cnn メディアン median 端 padding',
+  },
+  {
+    id: 'image-resize',
+    c: '画像・光学',
+    t: '画像の拡大縮小',
+    d: '拡大と縮小の結果を 11 の手法で見比べます。',
+    ic: 'rz',
+    r: ['image-convolution', 'demosaic', 'fir', 'jpeg'],
+    k: 'image resize resizing scaling rescale 画像 拡大 縮小 リサイズ リサンプリング resampling 解像度 補間 interpolation 最近傍 nearest neighbor 平均画素法 box area バイリニア bilinear バイキュービック bicubic cubic B スプライン b-spline mitchell netravali catmull-rom lanczos ランチョス sinc カーネル kernel ドット絵 ピクセルアート pixel art scale2x scale3x epx eagle ジャギー jaggies ぼけ blur リンギング ringing モアレ moire エイリアシング aliasing アンチエイリアス anti-aliasing ナイキスト nyquist 折り返し ガンマ gamma リニア linear srgb psnr',
   },
   {
     id: 'demosaic',
@@ -413,7 +422,7 @@ export const TOOLS: Tool[] = [
     t: 'デモザイク',
     d: 'ベイヤー配列から RGB を復元する 6 つの手法を比べます。',
     ic: 'dm',
-    r: ['image-convolution', 'lens', 'rolling-shutter', 'jpeg'],
+    r: ['image-convolution', 'image-resize', 'lens', 'rolling-shutter'],
     k: 'demosaic demosaicing デモザイク デモザイキング ベイヤー bayer cfa color filter array カラーフィルタ raw 現像 イメージセンサー image sensor 補間 interpolation 最近傍 nearest バイリニア bilinear malvar he cutler mhc hamilton adams vng variable number of gradients ahd adaptive homogeneity 偽色 false color モアレ moire ジャギー jaggies ジッパー zipper 光学ローパスフィルタ olpf ローパス 色差 メディアン median psnr cpsnr cielab ΔE',
   },
   {

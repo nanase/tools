@@ -1,0 +1,126 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/image-resize/style.css';
+import { METHODS } from '../tools/image-resize/resample';
+import { SAMPLES } from '../tools/image-resize/samples';
+import { STEPS } from '../tools/image-resize/steps';
+import Theory from '../tools/image-resize/Theory.astro';
+
+const name = '画像の拡大縮小';
+const GROUPS = [
+  { h: 'フィルタ', ms: METHODS.filter((m) => m.g === 'f') },
+  { h: 'ドット絵向け', ms: METHODS.filter((m) => m.g === 'p') },
+];
+const TICKS = [1 / 8, 1 / 4, 1 / 2, 1, 2, 4, 8].map((t) => ({
+  t,
+  l: t < 1 ? `1/${1 / t}` : String(t),
+  p: ((Math.log2(t) + 3) / 6) * 100,
+}));
+const ZOOMS = [1, 2, 4];
+---
+<SiteLayout title={name} tool={{ id: 'image-resize', name }} note="画像は端末の中だけで処理して送信しません。長辺 1024 画素に縮めます。">
+  <PageTitle title={name}>拡大と縮小の結果を 11 の手法で見比べます。新しい画素の値を周りの画素からどう決めるかで、ジャギー・ぼけ・リンギング・モアレの出方が変わります。</PageTitle>
+
+  <div class="tgrid" id="rz" data-mode="one">
+    <Panel hid="hd-fig" title="結果" class="a-fig" fixed>
+      <div slot="aux" class="seg" id="rz-mode" role="group" aria-label="表示">
+        <button type="button" data-v="one" aria-pressed="true">単独</button>
+        <button type="button" data-v="cmp" aria-pressed="false">比較</button>
+        <button type="button" data-v="list" aria-pressed="false">一覧</button>
+      </div>
+      <div class="sbar rz-bar" id="rz-bar">
+        <span class="rz-lab" id="l-zoom">表示</span>
+        <div class="seg" id="rz-zoom" role="group" aria-labelledby="l-zoom">
+          {ZOOMS.map((z) => <button type="button" data-v={String(z)} aria-pressed={z === 1 ? 'true' : 'false'}>{z} 倍</button>)}
+        </div>
+        <span id="rz-hint"></span>
+      </div>
+
+      <div class="rz-one" id="rz-one">
+        <div class="scope rz-scr"><canvas id="rz-cv" tabindex="0" role="img" aria-label="拡大縮小の結果。矢印キーで移動"></canvas><span class="rz-tag" id="rz-tag"></span></div>
+        <div class="rz-side">
+          <div class="rz-sbx"><span class="rz-cap">拡大鏡　8 倍</span><div class="scope rz-scr"><canvas id="rz-lens" role="img" aria-label="拡大鏡"></canvas></div></div>
+          <div class="rz-sbx"><span class="rz-cap">元の画像と表示の範囲</span><div class="scope rz-scr"><canvas id="rz-ov" role="img" aria-label="元の画像"></canvas></div></div>
+        </div>
+      </div>
+      <div class="rz-grid" id="rz-cmp" hidden></div>
+      <div id="rz-list" hidden>
+        <div class="rz-cap2"><span>マスの数字　正解との PSNR　大きいほど正解に近い</span><span>列で最大の値をオレンジで表示</span></div>
+        <div class="rz-tw"><table class="rz-t" id="rz-t"></table></div>
+      </div>
+
+      <div class="tp rz-tp" id="tp">
+        <button type="button" class="tp-ib" id="tp-home" title="1 倍へ" aria-label="1 倍へ"><svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1.5" y="1.5" width="1.8" height="9"/><path d="M10.5 1.5v9L4 6z"/></svg></button>
+        <button type="button" class="tp-pp" id="tp-pp" title="倍率を再生" aria-label="倍率を再生"><svg class="i-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.2l7.6 4.8L3 10.8z"/></svg><svg class="i-pause" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="2.8" height="9"/><rect x="7.2" y="1.5" width="2.8" height="9"/></svg></button>
+        <div class="tp-tl">
+          <div class="tp-trk" id="tp-trk" role="slider" tabindex="0" aria-label="倍率" aria-valuemin="0.125" aria-valuemax="8" aria-valuenow="4">
+            <div class="tp-rail"></div>
+            <div class="tp-fill" id="tp-fill"></div>
+            <div class="tp-th" id="tp-th"></div>
+          </div>
+          <div class="rz-tk" id="rz-tk">
+            {TICKS.map(({ t, l, p }) => <button type="button" data-t={String(t)} style={`left:${p}%`} aria-label={`${l} 倍`}>{l}</button>)}
+          </div>
+          <div class="rz-ro"><span id="rz-size"></span><b id="rz-sv"></b></div>
+        </div>
+      </div>
+    </Panel>
+
+    <Panel hid="hd-m" title="手法" class="a-m">
+      <span slot="aux" class="aux" id="rz-mx"></span>
+      <div id="rz-m">
+        {GROUPS.map(({ h, ms }) => (
+          <div class="rz-mg">
+            <h3>{h}</h3>
+            <div class="chips">
+              {ms.map((m) => <button type="button" class="chip" data-v={m.id} aria-pressed={m.id === 'lanczos3' ? 'true' : 'false'} title={m.t}>{m.n}</button>)}
+            </div>
+          </div>
+        ))}
+      </div>
+      <canvas id="rz-k" role="img" aria-label="カーネルの形"></canvas>
+    </Panel>
+
+    <div class="rz-col">
+      <Panel hid="hd-i" title="画像" class="a-i">
+        <div class="rz-is" id="rz-i" role="group" aria-label="画像">
+          {SAMPLES.map((s) => <button type="button" class="rz-ib" data-i={s.id} aria-pressed={s.id === 'scene' ? 'true' : 'false'}><canvas width="140" height="92"></canvas>{s.n}</button>)}
+          <button type="button" class="rz-ib file" id="rz-fb">ファイル</button>
+        </div>
+        <input type="file" id="rz-file" accept="image/*" hidden>
+        <p class="msg" id="rz-msg" aria-live="polite"></p>
+      </Panel>
+      <Panel hid="hd-s" title="計算の設定" class="a-s">
+        <div class="ptab">
+          <ChoiceRow k="aa" name="アンチエイリアス" sub="縮小時にカーネルを広げる。オフは間引きと同じ結果" choices={[['on', 'オン'], ['off', 'オフ']]} value="on" />
+          <ChoiceRow k="lin" name="計算の色空間" sub="sRGB では細かい白黒の縞が暗く表示" choices={[['srgb', 'sRGB'], ['lin', 'リニア RGB']]} value="srgb" />
+        </div>
+      </Panel>
+    </div>
+
+    <Panel hid="hd-how" title="しくみ" class="a-st">
+      <div class="rz-steps" id="rz-how">
+        {STEPS.map((m, i) => (
+          <div class="rz-st">
+            <canvas role="img" aria-label={m.h}></canvas>
+            <div><h3><i>{i + 1}</i>{m.h}</h3><p>{m.p}</p></div>
+          </div>
+        ))}
+      </div>
+    </Panel>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools current="image-resize" />
+  <script>
+    import '../tools/image-resize/client';
+  </script>
+</SiteLayout>
