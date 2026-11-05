@@ -1,0 +1,136 @@
+---
+// 動作原理と式
+type Ref = { for: string; src: string };
+const REFS: readonly Ref[] = [
+  {
+    for: '字句解析と構文解析の役割、再帰下降、シフト還元',
+    src: 'A. V. Aho, M. S. Lam, R. Sethi, J. D. Ullman, Compilers: Principles, Techniques, and Tools, 2nd ed., Addison-Wesley, 2006, Chapters 3–4',
+  },
+  {
+    for: '操車場アルゴリズム',
+    src: 'E. W. Dijkstra, Algol 60 translation: An Algol 60 translator for the X1 and making a translator for Algol 60, MR 35/61, Mathematisch Centrum, Amsterdam, 1961',
+  },
+  {
+    for: '演算子の順位による構文解析',
+    src: 'R. W. Floyd, Syntactic Analysis and Operator Precedence, Journal of the ACM, Vol. 10, No. 3, pp. 316–333, 1963',
+  },
+  {
+    for: 'シフトと還元で左から読む構文解析（LR）',
+    src: 'D. E. Knuth, On the translation of languages from left to right, Information and Control, Vol. 8, No. 6, pp. 607–639, 1965',
+  },
+  {
+    for: 'Pratt の方法',
+    src: "V. R. Pratt, Top down operator precedence, Proceedings of the 1st Annual ACM SIGACT-SIGPLAN Symposium on Principles of Programming Languages (POPL '73), pp. 41–51, 1973",
+  },
+  {
+    for: '順序付きの選択で読む文法',
+    src: "B. Ford, Parsing expression grammars: a recognition-based syntactic foundation, Proceedings of the 31st ACM SIGPLAN-SIGACT Symposium on Principles of Programming Languages (POPL '04), pp. 111–122, 2004",
+  },
+  {
+    for: 'パックラット',
+    src: "B. Ford, Packrat parsing: simple, powerful, lazy, linear time, Proceedings of the 7th ACM SIGPLAN International Conference on Functional Programming (ICFP '02), pp. 36–47, 2002",
+  },
+  {
+    for: 'Excel の順位',
+    src: 'Microsoft, Calculation operators and precedence in Excel, Microsoft Support',
+  },
+  {
+    for: '標準の電卓の計算順',
+    src: 'Microsoft, Windows Calculator, README, GitHub',
+  },
+  {
+    for: 'APL の計算順',
+    src: 'K. E. Iverson, A Programming Language, Wiley, 1962',
+  },
+];
+const Rf = (i: number) => `<a class="rf" href="#thy-r${i}">[${i}]</a>`;
+const METHOD_ROWS = [
+  ['操車場', '記号のスタックと木の列', 'n に比例', Rf(2)],
+  ['シフト還元', '数も記号も 1 本のスタック', 'n に比例', Rf(4)],
+  ['再帰下降', '順位の数だけ処理を呼ぶ', 'n × 順位の数に比例', Rf(1)],
+  ['Pratt', '順位の下限を渡して呼ぶ', 'n に比例', Rf(5)],
+  ['バックトラック', '失敗すると戻って読み直す', '括弧の深さに対して指数的', Rf(6)],
+  ['パックラット', '読んだ結果を覚える', 'n に比例', Rf(7)],
+];
+---
+<h3>式から答えまで</h3>
+<p>式は 3 つの工程で計算します <Fragment set:html={Rf(1)} />。</p>
+<ul class="tl">
+  <li>字句解析: 文字の並びを数と記号に分ける。<code>12</code> は 2 文字でも 1 つの数</li>
+  <li>構文解析: 字句の並びから木を組む。下の丸ほど先に計算する</li>
+  <li>計算: 葉から順に、子の値を親の演算子で計算する。根の値が答え</li>
+</ul>
+<p>括弧は木の形を決めたら役目を終えるので、木には残りません。</p>
+
+<h3>順位と結合</h3>
+<p>木の形は、隣り合う 2 つの演算子のどちらを先に計算するかで決まります <Fragment set:html={Rf(3)} />。</p>
+<ul class="tl">
+  <li>順位が違う: 順位の高い演算子を先に計算する。<code>1 + 2 × 3</code> は × が先で 7</li>
+  <li>順位が同じで左結合: 左を先に計算する。<code>8 − 3 − 2</code> は (8 − 3) − 2 で 3</li>
+  <li>順位が同じで右結合: 右を先に計算する。<code>2 ^ 3 ^ 2</code> は 2 ^ (3 ^ 2) で 512</li>
+</ul>
+
+<h3>決まりが変わると答えが変わる</h3>
+<p>順位と結合は式を書く側の約束なので、道具ごとに違います。</p>
+<div class="tt-w"><table class="tt ep-cx">
+  <thead><tr><th></th><th scope="col">内容</th><th scope="col">例</th></tr></thead>
+  <tbody>
+    <tr><th scope="row">数学の慣習</th><td>^ → 符号 → × ÷ → + −</td><td>-2 ^ 2 = −4</td></tr>
+    <tr><th scope="row">省略した × を優先</th><td>2(3) の × を ÷ より先に計算</td><td>6 / 2(1 + 2) = 1</td></tr>
+    <tr><th scope="row">Excel <Fragment set:html={Rf(8)} /></th><td>符号 → ^ → × ÷ → + −、同じ順位は左から</td><td>-2 ^ 2 = 4、2 ^ 3 ^ 2 = 64</td></tr>
+    <tr><th scope="row">標準の電卓 <Fragment set:html={Rf(9)} /></th><td>入力した順に計算</td><td>1 + 2 * 3 = 9</td></tr>
+    <tr><th scope="row">APL <Fragment set:html={Rf(10)} /></th><td>順位なし、右から計算</td><td>8 - 3 - 2 = 7</td></tr>
+  </tbody>
+</table></div>
+
+<h3>手法</h3>
+<p>同じ決まりなら、どの手法でも同じ木になります。違うのは読み方と手順の数です。n は字句の数です。</p>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th></th><th scope="col">読み方</th><th scope="col">手順の増え方</th><th scope="col">出典</th></tr></thead>
+  <tbody>
+    {METHOD_ROWS.map(([a, b, c, d]) => (
+      <tr><th scope="row">{a}</th><td>{b}</td><td>{c}</td><td set:html={d}></td></tr>
+    ))}
+  </tbody>
+</table></div>
+<ul class="tl">
+  <li>操車場: 来た演算子とスタックの一番上を比べる。一番上が先なら木に足し、来た演算子が先なら積む</li>
+  <li>シフト還元: 字句を積むのがシフト、一番上の組を 1 つの式 E にまとめるのが還元</li>
+  <li>再帰下降: 順位の低い処理から呼ぶので、数を 1 つ読むにも順位の数だけ呼び出しが深くなる</li>
+  <li>Pratt: 「この順位以上だけ読む」と伝えて呼ぶので、演算子があるときだけ深くなる</li>
+  <li>バックトラック: 「A 演算子 A」を試し、だめなら戻って「A」を読み直す。読み直す間にも同じ式を読むので、括弧が深いと手順が急に増える</li>
+  <li>パックラット: バックトラックと同じ順に試し、位置ごとの結果を覚えて再利用する</li>
+</ul>
+
+<h3>音</h3>
+<p>音の高さは深さで決めます。深いほど高い音です。音階はペンタトニックです。</p>
+<ul class="tl">
+  <li>字句解析: 字句ができた位置が右へ行くほど高い</li>
+  <li>構文解析: スタックが深いほど高い。比較は 2 音、木に足すと下がる 2 音、読み直しとエラーは最も低い音</li>
+  <li>計算: 木の中で深い演算子ほど高い。根に近づくと下がる</li>
+</ul>
+
+<h3>出典</h3>
+<ol class="refs">
+  {REFS.map((r, i) => (
+    <li id={`thy-r${i + 1}`}>
+      <span class="rf-for">{r.for}</span>
+      <span class="rf-src">{r.src}</span>
+    </li>
+  ))}
+</ol>
+
+<h3>このツールで決めたこと</h3>
+<ul class="tl">
+  <li>使える演算子は + − × ÷ ^ と符号の −、括弧。関数と変数は扱わない</li>
+  <li>数と括弧、括弧と括弧の間の × は補う。Excel の決まりでは省略を書けないのでエラーにする</li>
+  <li>標準の電卓に ^ と括弧はないが、ほかの決まりと比べるために同じ順位で扱う</li>
+  <li>APL は本来 × ÷ ^ に別の記号を使うが、同じ記号で順序だけを再現する</li>
+  <li>「数学の慣習」は省略した × を ÷ と同じ順位とする。「省略した × を優先」は ÷ より先にする。どちらも使われる書き方の例で、正解を決めるものではない</li>
+  <li>「+ − を先に」は順位の違いを見るための決まりで、実在の道具の決まりではない</li>
+  <li>手順は図の 1 コマで数える。手順の数は手法の実装の速さではない</li>
+  <li>比較は順位を確かめた回数で、再帰下降とバックトラックでは次の字句が今の処理の演算子かを調べた回数を含める</li>
+  <li>読み直した字句は、戻した字句の数の合計</li>
+  <li>再生できるのは最初の 2,500 手順までで、数えるのは 300,000 手順まで。超えると打ち切り</li>
+  <li>÷ 0 はエラーにする</li>
+</ul>

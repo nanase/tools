@@ -154,6 +154,107 @@ function btFrames(): void {
 }
 /** B木の図柄の 1 秒あたりのコマ数 */
 const BT_FPS = 5;
+/** 式の構文解析の図柄の字句の線: 幅 5・高さ 8 の箱の中心が原点 */
+const EP_GLYPH: Record<string, [number, number][][]> = {
+  '1': [
+    [
+      [-1, -2.5],
+      [0.5, -4],
+      [0.5, 4],
+    ],
+  ],
+  '2': [
+    [
+      [-2.5, -4],
+      [2.5, -4],
+      [2.5, 0],
+      [-2.5, 0],
+      [-2.5, 4],
+      [2.5, 4],
+    ],
+  ],
+  '3': [
+    [
+      [-2.5, -4],
+      [2.5, -4],
+      [2.5, 4],
+      [-2.5, 4],
+    ],
+    [
+      [-2.5, 0],
+      [2.5, 0],
+    ],
+  ],
+  '4': [
+    [
+      [-2.5, -4],
+      [-2.5, 0.5],
+      [2.5, 0.5],
+    ],
+    [
+      [2.5, -4],
+      [2.5, 4],
+    ],
+  ],
+  '+': [
+    [
+      [-2.6, 0],
+      [2.6, 0],
+    ],
+    [
+      [0, -2.6],
+      [0, 2.6],
+    ],
+  ],
+  '-': [
+    [
+      [-2.6, 0],
+      [2.6, 0],
+    ],
+  ],
+  x: [
+    [
+      [-2.2, -2.2],
+      [2.2, 2.2],
+    ],
+    [
+      [2.2, -2.2],
+      [-2.2, 2.2],
+    ],
+  ],
+};
+/** 2 + 3 × 4 − 1 の字句。番号は左から 0〜6 */
+const EP_TOK = ['2', '+', '3', 'x', '4', '-', '1'];
+/** 木の親 → 子 */
+const EP_KIDS: Record<number, readonly number[]> = { 1: [0, 3], 3: [2, 4], 5: [1, 6] };
+/** 式の構文解析の図柄のコマ: 読んだ字句の数・木にした演算子・スタック・光らせる字句・木に足したか */
+const EP_FRAMES: {
+  read: number;
+  made: readonly number[];
+  stk: readonly number[];
+  hot: readonly number[];
+  w: boolean;
+}[] = [
+  { read: 0, made: [], stk: [], hot: [], w: false },
+  { read: 1, made: [], stk: [], hot: [0], w: true },
+  { read: 2, made: [], stk: [1], hot: [1], w: true },
+  { read: 3, made: [], stk: [1], hot: [2], w: true },
+  { read: 4, made: [], stk: [1], hot: [1, 3], w: false },
+  { read: 4, made: [], stk: [1, 3], hot: [3], w: true },
+  { read: 5, made: [], stk: [1, 3], hot: [4], w: true },
+  { read: 6, made: [], stk: [1, 3], hot: [3, 5], w: false },
+  { read: 6, made: [3], stk: [1], hot: [3], w: true },
+  { read: 6, made: [3], stk: [1], hot: [1, 5], w: false },
+  { read: 6, made: [3, 1], stk: [], hot: [1], w: true },
+  { read: 6, made: [3, 1], stk: [5], hot: [5], w: true },
+  { read: 7, made: [3, 1], stk: [5], hot: [6], w: true },
+  { read: 7, made: [3, 1, 5], stk: [], hot: [5], w: true },
+  { read: 7, made: [3, 1, 5], stk: [], hot: [], w: false },
+  { read: 7, made: [3, 1, 5], stk: [], hot: [], w: false },
+  { read: 7, made: [3, 1, 5], stk: [], hot: [], w: false },
+];
+/** 式の構文解析の図柄の 1 秒あたりのコマ数 */
+const EP_FPS = 4;
 
 const TAU = 2 * Math.PI;
 const r1 = (v: number): number => Math.round(v * 10) / 10;
@@ -1539,6 +1640,62 @@ export const ART: Record<string, Art> = {
     place(f.root, 0);
     return P('c t', lines) + P('c t', box) + (wrote ? P('a', wrote) : '') + P('fc', base) + (hit ? P('fa', hit) : '');
   },
+  /* 式の構文解析: 上に式、左に木、右にスタックを置き、演算子が積まれて木へ移る */
+  ep(t) {
+    /* 止まった絵は × を木にした直後 */
+    const f = EP_FRAMES[(8 + Math.floor(t * EP_FPS)) % EP_FRAMES.length],
+      parent = new Map<number, number>(),
+      slot: Record<number, number> = { 0: 0, 2: 1, 4: 2, 6: 3 };
+    for (const m of f.made) for (const k of EP_KIDS[m]) parent.set(k, m);
+    const xOf = (i: number): number => (i in slot ? 6 + slot[i] * 19 : (xOf(EP_KIDS[i][0]) + xOf(EP_KIDS[i][1])) / 2);
+    const yOf = (i: number): number => {
+      let d = 0;
+      for (let q = i; parent.has(q); q = parent.get(q) as number) d++;
+      return 20 + d * 8.6;
+    };
+    const nodes = [...[0, 2, 4, 6].filter((i) => i < f.read), ...f.made];
+    let done = '',
+      rest = '',
+      hit = '',
+      lines = '',
+      base = '',
+      mark = '',
+      st = '',
+      top = '';
+    EP_TOK.forEach((c, i) => {
+      const x = 8 + i * 15.5,
+        d = EP_GLYPH[c].map((l) => `M${l.map(([a, b]) => `${r1(x + a)} ${r1(7 + b)}`).join('L')}`).join('');
+      if (f.hot.includes(i)) hit += d;
+      else if (i < f.read) done += d;
+      else rest += d;
+    });
+    for (const i of nodes) {
+      const x = xOf(i),
+        y = yOf(i),
+        d = `M${r1(x - 2.8)} ${r1(y)}a2.8 2.8 0 1 0 5.6 0a2.8 2.8 0 1 0 -5.6 0Z`,
+        p = parent.get(i);
+      if (p !== undefined) lines += `M${r1(xOf(p))} ${r1(yOf(p))}L${r1(x)} ${r1(y)}`;
+      if (f.hot.includes(i)) mark += d;
+      else base += d;
+    }
+    f.stk.forEach((tok, k) => {
+      const d = `M90 ${41 - k * 8}h22v-6h-22Z`;
+      if (f.hot.includes(tok)) top += d;
+      else st += d;
+    });
+    const fill = f.w ? 'fa' : 'fb';
+    return (
+      P('c', done) +
+      P('c t', rest) +
+      P(f.w ? 'a' : 'b', hit) +
+      P('c t', lines) +
+      P('fc', base) +
+      P(fill, mark) +
+      P('c', 'M86 20V45H116V20') +
+      P('fc', st) +
+      P(fill, top)
+    );
+  },
   /* オルガン音響モデル: 口と円錐の足があるパイプの正面。和音を鳴らし、鳴っている管に定在波を描く */
   og(t) {
     let body = '',
@@ -2314,6 +2471,7 @@ export const LOOP: Record<string, number> = {
   ls: 3,
   hp: 50 / HP_FPS,
   bt: 52 / BT_FPS,
+  ep: EP_FRAMES.length / EP_FPS,
   pcm: 3,
   adp: 26 / 8,
   mp3: 4,

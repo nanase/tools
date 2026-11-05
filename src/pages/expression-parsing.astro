@@ -1,0 +1,135 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/expression-parsing/style.css';
+import { METHODS, RULES, SAMPLES } from '../tools/expression-parsing/model';
+import { SPEED, VOL } from '../tools/expression-parsing/params';
+import Theory from '../tools/expression-parsing/Theory.astro';
+
+const name = '式の構文解析';
+const METHOD_LIST = METHODS.map((m) => ({ id: m.id, name: m.name, ex: m.ex }));
+const RULE_LIST = RULES.map((r) => ({ id: r.id, name: r.name }));
+---
+<SiteLayout title={name} tool={{ id: 'expression-parsing', name }}>
+  <PageTitle title={name}>文字で書いた式を、計算する順序がわかる木に組み立てる処理です。同じ式でも演算子の順位の決まりが変わると、木の形と答えが変わります。</PageTitle>
+
+  <div class="tgrid" id="ep" data-mode="one">
+    <Panel hid="hd-fig" title={name} class="a-fig" fixed>
+      <span slot="aux" class="aux tp-st" id="ep-st" hidden><span class="led" id="ep-led" aria-hidden="true"></span><span id="ep-stT"></span></span>
+      <div slot="aux" class="seg" id="ep-mode" role="group" aria-label="表示">
+        <button type="button" data-v="one" aria-pressed="true">単独</button>
+        <button type="button" data-v="cmp" aria-pressed="false">比較</button>
+        <button type="button" data-v="list" aria-pressed="false">一覧</button>
+      </div>
+      <div class="sbar ep-lg">
+        <span class="ep-lgl">
+          <span class="stag"><i class="ep-sw ep-cmp" aria-hidden="true"></i>比較</span>
+          <span class="stag"><i class="ep-sw ep-mov" aria-hidden="true"></i>木に追加</span>
+          <span class="stag"><i class="ep-sw ep-bad" aria-hidden="true"></i>エラー</span>
+          <span class="stag"><i class="ep-sw" aria-hidden="true"></i>読み取り済み</span>
+          <span class="stag"><i class="ep-sw ep-wait" aria-hidden="true"></i>未読</span>
+          <span class="stag"><i class="ep-sw ep-done" aria-hidden="true"></i>計算済み</span>
+        </span>
+        <span class="sr" id="ep-say"></span>
+      </div>
+      <div class="ep-steps" id="ep-steps" role="group" aria-label="工程">
+        <button type="button" data-s="lex" aria-pressed="false"><b>1 字句解析</b><span>文字を数と記号に分ける</span><em></em></button>
+        <button type="button" data-s="parse" aria-pressed="true"><b>2 構文解析</b><span>記号の順位で木を組む</span><em></em></button>
+        <button type="button" data-s="calc" aria-pressed="false"><b>3 計算</b><span>葉から順に値を求める</span><em></em></button>
+      </div>
+      <div class="scope ep-scr ep-solo"><canvas id="ep-cv" role="img" aria-label={name}></canvas></div>
+      <div class="ep-race" id="ep-race"></div>
+      <div class="tp">
+        <button type="button" class="tp-ib" id="tp-home" title="最初へ" aria-label="最初へ"><svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1.5" y="1.5" width="1.8" height="9"/><path d="M10.5 1.5v9L4 6z"/></svg></button>
+        <button type="button" class="tp-pp" id="tp-pp" title="再生" aria-label="再生"><svg class="i-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.2l7.6 4.8L3 10.8z"/></svg><svg class="i-pause" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="2.8" height="9"/><rect x="7.2" y="1.5" width="2.8" height="9"/></svg></button>
+        <div class="tp-tl">
+          <div class="tp-trk" id="tp-trk" role="slider" tabindex="0" aria-label="進み具合" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0">
+            <div class="tp-rail"></div>
+            <div class="tp-fill" id="tp-fill"></div>
+            <div class="tp-th" id="tp-th"></div>
+          </div>
+          <div class="tp-tm"><span><b id="tp-a">0</b> / <span id="tp-b">0</span> 手順</span><span id="tp-t"></span></div>
+        </div>
+        <div class="tp-side">
+          <button type="button" class="tp-sq" id="tp-back" title="前の手順" aria-label="前の手順"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M12 3L6 8l6 5M4 3v10"/></svg></button>
+          <button type="button" class="tp-sq" id="tp-step" title="次の手順" aria-label="次の手順"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 3l6 5-6 5M12 3v10"/></svg></button>
+        </div>
+      </div>
+      <div class="ptab ep-row"><ParamRow d={SPEED} /></div>
+    </Panel>
+
+    <Panel hid="hd-mat" title="式と決まりの答え" class="a-mat">
+      <div slot="aux" class="seg" id="ep-tbl" role="group" aria-label="表の内容">
+        <button type="button" data-v="ans" aria-pressed="true">答え</button>
+        <button type="button" data-v="steps" aria-pressed="false">手順の数</button>
+      </div>
+      <div class="ep-mw"><table class="ep-mt" id="ep-mx"></table></div>
+      <p class="ep-note" id="ep-matN"></p>
+    </Panel>
+
+    <Panel hid="hd-cmp" title="計算結果" class="a-cmp">
+      <div class="ep-rtw"><table class="ep-rk">
+        <thead><tr><th class="l" id="ep-rkh">決まり</th><th>答え</th><th>手順</th><th>比較</th><th>スタックの最大</th><th>読み直した字句</th><th>木の段数</th></tr></thead>
+        <tbody id="ep-rkb"></tbody>
+      </table></div>
+    </Panel>
+
+    <div class="col">
+      <Panel hid="hd-expr" title="式" class="a-expr">
+        <input class="ep-in" id="ep-in" type="text" spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="式" />
+        <div class="chips ep-smp" id="ep-smp">
+          {SAMPLES.map(([s, t]) => <button type="button" class="chip" data-v={s} aria-pressed="false" title={t}>{s}</button>)}
+        </div>
+      </Panel>
+      <Panel hid="hd-met" title="手法" class="a-met">
+        <span slot="aux" class="aux" id="ep-man"></span>
+        <div class="chips" id="ep-met">
+          {METHOD_LIST.map((m) => <button type="button" class="chip" data-v={m.id} aria-pressed="false" title={m.ex}>{m.name}</button>)}
+        </div>
+        <div class="ptab ep-row" id="ep-byw" hidden>
+          <ChoiceRow k="by" name="比較の対象" choices={[['rule', '決まり'], ['method', '手法']]} value="rule" />
+        </div>
+      </Panel>
+    </div>
+    <div class="col">
+      <Panel hid="hd-rule" title="決まり" class="a-rule">
+        <div class="chips" id="ep-rule">
+          {RULE_LIST.map((r) => <button type="button" class="chip" data-v={r.id} aria-pressed="false">{r.name}</button>)}
+        </div>
+        <div class="ep-rw"><table class="ep-rt">
+          <thead><tr><th scope="col">順位</th><th scope="col">演算子</th><th scope="col">結合</th><th scope="col" class="r">入れ替え</th></tr></thead>
+          <tbody id="ep-rb"></tbody>
+        </table></div>
+      </Panel>
+      <Panel hid="hd-out" title="計算結果" class="a-out">
+        <dl class="metrics ep-res">
+          <div class="m m-main"><dt>答え</dt><dd id="o-a">–</dd></div>
+          <div class="m"><dt>手順</dt><dd id="o-s">0</dd></div>
+          <div class="m"><dt>比較</dt><dd id="o-c">0</dd></div>
+          <div class="m"><dt>スタックの最大</dt><dd id="o-m">0</dd></div>
+          <div class="m"><dt>読み直した字句</dt><dd id="o-b">0</dd></div>
+          <div class="m"><dt>字句</dt><dd id="o-t">0</dd></div>
+          <div class="m"><dt>木の段数</dt><dd id="o-d">–</dd></div>
+        </dl>
+      </Panel>
+      <Panel hid="hd-snd" title="音" class="a-snd">
+        <div slot="aux" class="seg"><button type="button" id="ep-snd" aria-pressed="true"><span class="led on" id="ep-sndL" aria-hidden="true"></span> <span id="ep-sndT">オン</span></button></div>
+        <div class="ptab ep-row"><ParamRow d={VOL} /></div>
+      </Panel>
+    </div>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools current="expression-parsing" />
+  <script>
+    import '../tools/expression-parsing/client';
+  </script>
+</SiteLayout>
