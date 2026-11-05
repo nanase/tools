@@ -16,10 +16,25 @@ interface EchoSpec {
   fade: number;
   /** 乾いた音に足す大きさ */
   wet: number;
+  /** 残響の立ち上がりの時間 [ms]。省略は 12 ms */
+  rise?: number;
 }
 export const ECHO: Record<Exclude<EchoKind, 'off'>, EchoSpec> = {
   ground: { t60: 0.45, early: [18, 31, 52], bright: 0.6, fade: 2, wet: 0.3 },
   tunnel: { t60: 2.4, early: [23, 47, 71, 95, 142], bright: 0.55, fade: 0.8, wet: 0.85 },
+};
+
+/**
+ * VVVF の音だけに付ける反響。地上・トンネルとは別で、直接音を弱めて反響を強くすると、
+ * スイッチの音の出だしと消え際がなめらかに聞こえる
+ */
+export type MotorEcho = 'off' | 'soft' | 'strong';
+const MOTOR_SPEC: EchoSpec = { t60: 0.5, early: [7, 13, 22, 34], bright: 0.75, fade: 2, wet: 1, rise: 25 };
+/** 直接音と反響の大きさ */
+export const MOTOR_MIX: Record<MotorEcho, { dry: number; wet: number }> = {
+  off: { dry: 1, wet: 0 },
+  soft: { dry: 0.85, wet: 0.5 },
+  strong: { dry: 0.6, wet: 0.9 },
 };
 
 /** 繰り返しても同じになる乱数 */
@@ -46,7 +61,7 @@ function channel(sp: EchoSpec, fs: number, seed: number): Float32Array {
     x[i] = lp * Math.exp(-decay * t);
   }
   /* 残響の立ち上がりをなめらかにし、初期反射を上に載せる */
-  const rise = Math.floor(0.012 * fs);
+  const rise = Math.floor(((sp.rise ?? 12) / 1000) * fs);
   for (let i = 0; i < rise; i++) x[i] *= i / rise;
   let e = 0;
   for (let i = 0; i < n; i++) e += x[i] * x[i];
@@ -68,4 +83,10 @@ export function makeIr(kind: Exclude<EchoKind, 'off'>, fs: number, stereo: boole
   const sp = ECHO[kind],
     L = channel(sp, fs, 1234);
   return [L, stereo ? channel(sp, fs, 98765) : L];
+}
+
+/** VVVF の音だけに付ける反響の左右のインパルス応答 */
+export function makeMotorIr(fs: number, stereo: boolean): [Float32Array, Float32Array] {
+  const L = channel(MOTOR_SPEC, fs, 4321);
+  return [L, stereo ? channel(MOTOR_SPEC, fs, 56789) : L];
 }

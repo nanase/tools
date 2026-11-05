@@ -2,7 +2,7 @@
  * VVVF の音を 1 ブロックずつ作る。3 相 2 レベルのインバータのオン・オフを標本ごとに決め、次の 2 通りで音にする。
  * - 線間電圧: U 相と V 相の差をそのまま鳴らす
  * - 磁力: 固定子の 1 点の磁束の 2 乗（マクスウェルの応力に比例）を、仮の固有振動に通して鳴らす
- * 走行音（歯車と転がり）とレールの継ぎ目の音は別に足す。ステレオでは 2 台のインバータを左右へ振り、
+ * 2 つは割合を決めて同時に鳴らせる。走行音（歯車と転がり）とレールの継ぎ目の音は別に足す。ステレオでは 2 台のインバータを左右へ振り、
  * 継ぎ目の音は聞く席より前の車軸（左）から後ろの車軸（右）へ移る。切り替えの折り返しを減らすため 8 倍の標本化周波数で計算して落とす
  */
 import { axleOffsets, type Car, f1Of, gateOn, pick, type Run, seatAt, WHEEL } from './cars';
@@ -58,7 +58,8 @@ class Unit {
   private pa = 0;
   private env = 0;
   private ff = 0;
-  private readonly lp: Biquad[];
+  private readonly lpV: Biquad[];
+  private readonly lpF: Biquad[];
   private readonly dtO: number;
   private readonly leak: number;
   constructor(
@@ -69,14 +70,21 @@ class Unit {
   ) {
     const fO = fs * OS;
     /* 6 次のバターワース: 下の標本化周波数へ落とす前に高い成分を切る */
-    this.lp = [0.518, Math.SQRT1_2, 1.932].map((q) => Biquad.make('lp', Math.min(16000, fs / 3), fO, q));
+    const low = () => [0.518, Math.SQRT1_2, 1.932].map((q) => Biquad.make('lp', Math.min(16000, fs / 3), fO, q));
+    this.lpV = low();
+    this.lpF = low();
     this.dtO = 1 / fO;
     this.leak = 1 - TAU * 10 * this.dtO;
   }
-  /** n 標本を out に足す */
-  run(car: Car, r: Run, n: number, force: boolean, out: Float32Array, gain: number): void {
+  /** 止めていた音の計算を始める前に、線間電圧か磁力のフィルタを空にする */
+  reset(force: boolean): void {
+    for (const b of force ? this.lpF : this.lpV) b.reset();
+  }
+  /** n 標本を volt（線間電圧）と mag（磁力）に足す。null の音は計算しない */
+  run(car: Car, r: Run, n: number, volt: Float32Array | null, mag: Float32Array | null, gain: number): void {
     const dtO = this.dtO,
-      lp = this.lp,
+      lpV = this.lpV,
+      lpF = this.lpF,
       leak = this.leak,
       f1 = f1Of(car, r, this.scale),
       { s, m, fc } = pick(r.brake ? car.brk : car.acc, f1),
@@ -93,7 +101,8 @@ class Unit {
     for (let i = 0; i < n; i++) {
       env += (envT - env) * 0.004;
       ff += (fT - ff) * 0.01;
-      let y = 0;
+      let yV = 0,
+        yF = 0;
       for (let o = 0; o < OS; o++) {
         th += w;
         if (th > TAU) th -= TAU;
@@ -120,15 +129,17 @@ class Unit {
           V = m * b >= k ? 1 : -1;
           W = m * c >= k ? 1 : -1;
         }
-        if (force) {
-          pa = pa * leak + ((2 * U - V - W) / 3) * dtO;
+        /* 磁束はいつも追う。止めておくと、磁力へ切り替えた瞬間に大きくずれて破裂音になる */
+        pa = pa * leak + ((2 * U - V - W) / 3) * dtO;
+        if (volt) yV = lpV[2].p(lpV[1].p(lpV[0].p(env * (U - V) * 0.5)));
+        if (mag) {
           /* 基本波の磁束 −flux cos と、それ以外の磁束 ph の積が PWM の磁力になる */
           const ph = pa + ff * cs;
-          y = env * (-2 * flux * cs * ph + ph * ph);
-        } else y = env * (U - V) * 0.5;
-        y = lp[2].p(lp[1].p(lp[0].p(y)));
+          yF = lpF[2].p(lpF[1].p(lpF[0].p(env * (-2 * flux * cs * ph + ph * ph))));
+        }
       }
-      out[i] += y * gain;
+      if (volt) volt[i] += yV * gain;
+      if (mag) mag[i] += yF * gain;
     }
     this.th = th;
     this.cph = cph;
@@ -159,6 +170,11 @@ const HIT_SD = 2;
 const VOLT_GAIN = 0.24;
 /** トンネルで走行音が大きくなる倍率 */
 const TUNNEL_ROAD = 1.35;
+/** 音源の割合の変更: 止めていた音の計算を先に動かしておく時間と、割合を端から端まで動かす時間 [s] */
+const SRC_WARM = 0.12,
+  SRC_FADE = 0.04;
+/** VVVF の直接音の大きさが変わるときの時間 [s] */
+const DRY_TIME = 0.02;
 
 /** 1 チャンネル分の音の仕上げ: 線間電圧はそのまま、磁力は仮の固有振動に通す */
 class Chain {
@@ -180,6 +196,18 @@ class Chain {
     ].map(([f, q, g]) => ({ b: Biquad.make('bp', f, fs, q), g }));
     this.body = Biquad.make('lp', 6000, fs, 0.7);
     this.levK = 1 - Math.exp(-1 / (0.15 * fs));
+  }
+  /** 止めていた音の計算を始める前に、線間電圧か磁力のフィルタを空にする */
+  reset(force: boolean): void {
+    if (force) {
+      for (const b of this.hpF) b.reset();
+      for (const m of this.modes) m.b.reset();
+      this.body.reset();
+      this.lev = 0;
+    } else {
+      this.hpV.reset();
+      this.lpV.reset();
+    }
   }
   voltage(x: number): number {
     return this.lpV.p(this.hpV.p(x)) * VOLT_GAIN;
@@ -351,8 +379,8 @@ class Roll {
 
 export class Inverter {
   car: Car;
-  /** 磁力の音にするか（false は線間電圧） */
-  force = false;
+  /** VVVF の直接音の倍率。残りは主スレッドの反響が受け持つ */
+  motorDry = 1;
   road = true;
   /** 走行音の音量の倍率（ページの既定の −6 dB） */
   roadLevel = 10 ** (-6 / 20);
@@ -363,8 +391,22 @@ export class Inverter {
   stereo = true;
   tunnel = false;
   private readonly units: Unit[];
-  private readonly bufA = new Float32Array(1024);
-  private readonly bufB = new Float32Array(1024);
+  private readonly bufVa = new Float32Array(1024);
+  private readonly bufVb = new Float32Array(1024);
+  private readonly bufFa = new Float32Array(1024);
+  private readonly bufFb = new Float32Array(1024);
+  /** 磁力の音の割合の目標: 0 が線間電圧だけ、1 が磁力だけ */
+  private mixTo = 0;
+  /** 今の磁力の音の割合 */
+  private mix = 0;
+  private gainV = 1;
+  private gainF = 0;
+  /** 割合を動かし始めるまでの残りの標本数 */
+  private warm = 0;
+  private runV = true;
+  private runF = false;
+  private dryNow = 1;
+  private readonly dryK: number;
   private readonly chL: Chain;
   private readonly chR: Chain;
   private readonly rl: Roll;
@@ -387,6 +429,52 @@ export class Inverter {
     this.rl = new Roll(fs, 12345);
     this.rr = new Roll(fs, 54321);
     this.th = new Thumps(fs);
+    this.dryK = 1 - Math.exp(-1 / (DRY_TIME * fs));
+  }
+  /**
+   * 磁力の音の割合を決める（0 が線間電圧だけ、1 が磁力だけ）。スイッチが動いている間に止めていた音を足すときは、
+   * 計算を先に動かして落ち着かせてから混ぜる。磁力の音量の調整とフィルタが冷えたまま鳴らすと破裂音になる
+   */
+  set forceMix(q: number) {
+    if (q === this.mixTo) return;
+    this.mixTo = q;
+    if (this.units.every((u) => u.silent)) {
+      this.setMix(q);
+      this.warm = 0;
+    } else if ((q < 1 && !this.runV) || (q > 0 && !this.runF)) this.warm = Math.round(SRC_WARM * this.fs);
+  }
+  private setMix(q: number): void {
+    this.mix = q;
+    this.gainV = Math.cos((q * Math.PI) / 2);
+    this.gainF = Math.sin((q * Math.PI) / 2);
+  }
+  /** 1 標本分、音源の混ざり具合を進める */
+  private stepMix(): void {
+    const to = this.mixTo;
+    if (this.mix === to) return;
+    if (this.warm > 0) {
+      this.warm--;
+      return;
+    }
+    const d = 1 / (SRC_FADE * this.fs);
+    this.setMix(to > this.mix ? Math.min(to, this.mix + d) : Math.max(to, this.mix - d));
+  }
+  /** 1 チャンネル分の VVVF の音 */
+  private motor(ch: Chain, v: number, f: number): number {
+    return (this.runV ? ch.voltage(v) * this.gainV : 0) + (this.runF ? ch.force(f) * this.gainF : 0);
+  }
+  /** 今の音源に要る計算を決める。止めていた計算はフィルタを空にして始める */
+  private planPaths(): void {
+    const v = this.mix < 1 || this.mixTo < 1,
+      f = this.mix > 0 || this.mixTo > 0;
+    if ((v && !this.runV) || (f && !this.runF)) {
+      const force = f && !this.runF;
+      for (const u of this.units) u.reset(force);
+      this.chL.reset(force);
+      this.chR.reset(force);
+    }
+    this.runV = v;
+    this.runF = f;
   }
   /** 音を出すものがないか（止まっていて、スイッチの音が消え切った） */
   idle(r: Run): boolean {
@@ -435,17 +523,32 @@ export class Inverter {
   }
   /**
    * n 標本（1024 まで）を L[off] から書く。R を渡すと右も書く（ステレオでなければ左と同じ）。
-   * R がなければ左だけを書く
+   * R がなければ左だけを書く。ML・MR を渡すと、走行音とレールの音を含まない VVVF の音だけ（motorDry を掛ける前）も書く
    */
-  render(r: Run, L: Float32Array, off: number, n: number, R?: Float32Array): void {
-    const A = this.bufA.fill(0, 0, n),
-      B = this.bufB.fill(0, 0, n),
+  render(
+    r: Run,
+    L: Float32Array,
+    off: number,
+    n: number,
+    R?: Float32Array,
+    ML?: Float32Array,
+    MR?: Float32Array,
+  ): void {
+    this.planPaths();
+    const { bufVa: Va, bufVb: Vb, bufFa: Fa, bufFb: Fb, runV, runF } = this,
       car = this.car,
-      force = this.force,
       fs = this.fs,
       st = this.stereo && !!R;
-    this.units[0].run(car, r, n, force, A, 1);
-    this.units[1].run(car, r, n, force, B, 0.5);
+    if (runV) {
+      Va.fill(0, 0, n);
+      Vb.fill(0, 0, n);
+    }
+    if (runF) {
+      Fa.fill(0, 0, n);
+      Fb.fill(0, 0, n);
+    }
+    this.units[0].run(car, r, n, runV ? Va : null, runF ? Fa : null, 1);
+    this.units[1].run(car, r, n, runV ? Vb : null, runF ? Fb : null, 0.5);
     this.joints(r, n);
     const nv = r.v / V_TOP,
       /* 車輪の回転周波数 [Hz] */
@@ -461,20 +564,24 @@ export class Inverter {
       const tone = (Math.sin(this.gear) + 0.35 * Math.sin(2 * this.gear)) * nv ** 1.5 * load * 0.035 * 0.75,
         a = this.rl.next(rollG, lowG);
       this.th.next();
+      this.stepMix();
+      this.dryNow += (this.motorDry - this.dryNow) * this.dryK;
+      const dry = this.dryNow;
       if (st && R) {
         const b = this.rr.next(rollG, lowG),
-          inL = A[i] * 0.85 + B[i] * 0.5,
-          inR = A[i] * 0.52 + B[i] * 0.86,
-          x = force ? this.chL.force(inL) : this.chL.voltage(inL),
-          y = force ? this.chR.force(inR) : this.chR.voltage(inR);
-        L[off + i] = soft(x + (a + tone) * roadG + this.th.L);
-        R[off + i] = soft(y + (b + tone) * roadG + this.th.Rv);
+          x = this.motor(this.chL, Va[i] * 0.85 + Vb[i] * 0.5, Fa[i] * 0.85 + Fb[i] * 0.5),
+          y = this.motor(this.chR, Va[i] * 0.52 + Vb[i] * 0.86, Fa[i] * 0.52 + Fb[i] * 0.86);
+        L[off + i] = soft(x * dry + (a + tone) * roadG + this.th.L);
+        R[off + i] = soft(y * dry + (b + tone) * roadG + this.th.Rv);
+        if (ML) ML[off + i] = x;
+        if (MR) MR[off + i] = y;
       } else {
-        const m = A[i] + B[i],
-          x = force ? this.chL.force(m) : this.chL.voltage(m),
-          v = soft(x + (a + tone) * roadG + this.th.L);
+        const x = this.motor(this.chL, Va[i] + Vb[i], Fa[i] + Fb[i]),
+          v = soft(x * dry + (a + tone) * roadG + this.th.L);
         L[off + i] = v;
         if (R) R[off + i] = v;
+        if (ML) ML[off + i] = x;
+        if (MR) MR[off + i] = x;
       }
     }
   }

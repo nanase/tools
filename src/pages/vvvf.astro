@@ -9,7 +9,7 @@ import SiteLayout from '../layouts/SiteLayout.astro';
 import '../tools/pcm/style.css';
 import '../tools/vvvf/style.css';
 import { CARS } from '../tools/vvvf/cars';
-import { CAR_IDS, ECHO_OPT, LEVERS, PARAMS, RAIL_OPT, ROAD, SEAT_OPT, SRC, ST_OPT } from '../tools/vvvf/params';
+import { CAR_IDS, ECHO_OPT, LEVERS, MOTOR_OPT, PARAMS, RAIL_OPT, ROAD, SEAT_OPT, ST_OPT } from '../tools/vvvf/params';
 import { STEPS } from '../tools/vvvf/story';
 import Theory from '../tools/vvvf/Theory.astro';
 
@@ -54,7 +54,7 @@ const playIcon =
             {LEVERS.map(([l, n, c]) => <button type="button" data-l={l} class={c} aria-pressed="false">{n}</button>)}
           </div>
           <dl class="vv-mt">
-            <div class="vv-main"><dt>速度</dt><dd><span id="m-v">0</span> <small>km/h</small></dd></div>
+            <div class="vv-main"><dt>速度</dt><dd><span id="m-v">0.0</span> <small>km/h</small></dd></div>
             <div><dt>基本波</dt><dd id="m-f">0.0 Hz</dd></div>
             <div><dt>キャリア</dt><dd id="m-c">—</dd></div>
             <div class="vv-wide"><dt>モード</dt><dd id="m-m">停止</dd></div>
@@ -64,13 +64,14 @@ const playIcon =
 
       <Panel hid="hd-snd" title="音">
         <div class="ptab">
-          <ChoiceRow k="src" name="音源" choices={SRC} value="v" />
+          <ParamRow d={P.forceMix} />
           <ParamRow d={P.vol} />
         </div>
         <h3 class="vv-gh">臨場感</h3>
         <div class="ptab" id="vv-snd" data-road="1" data-rail="25">
           <ChoiceRow k="road" name="走行音" sub="歯車と転がりの音" choices={ROAD} value="1" />
           <ParamRow d={P.roadDb} />
+          <ChoiceRow k="motorEcho" name="VVVF の反響" sub="スイッチの音だけに付く短い反響" choices={MOTOR_OPT} value="strong" />
           <ChoiceRow k="echo" name="反響" sub="車両のまわりの壁や地面の反射" choices={ECHO_OPT} value="ground" />
           <ChoiceRow k="rail" name="レールの音" sub="継ぎ目の間隔。速度と車軸の間隔で鳴る時刻が決まる" choices={RAIL_OPT} value="25" />
           <ChoiceRow k="seat" name="席" sub="レールの音を聞く場所" choices={SEAT_OPT} value="end" />
