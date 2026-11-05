@@ -1,0 +1,189 @@
+---
+import Collapsible from '../components/Collapsible.astro';
+import More from '../components/More.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/clustering/style.css';
+import { DATA, makeData } from '../tools/clustering/data';
+import { FAMILIES, METHODS } from '../tools/clustering/methods';
+import { METHOD_PARAMS, OUTLIER, SIZE } from '../tools/clustering/params';
+import Theory from '../tools/clustering/Theory.astro';
+
+const name = 'クラスタリング';
+/** データの選択肢の小さな絵 */
+const dataSvg = (id: (typeof DATA)[number]['id']): string => {
+  const d = makeData(id, 150, 1);
+  let s = '';
+  for (let i = 0; i < d.n; i += 2)
+    s += `<rect x="${(d.x[i] * 25 - 0.7).toFixed(1)}" y="${(d.y[i] * 16 - 0.7).toFixed(1)}" width="1.4" height="1.4"/>`;
+  return `<svg viewBox="0 0 40 16" aria-hidden="true">${s}</svg>`;
+};
+const DATA_CHIPS = DATA.map((d) => ({ id: d.id, name: d.name, svg: dataSvg(d.id) }));
+const GROUPS = FAMILIES.map((g) => ({ g, ms: METHODS.filter((m) => m.g === g) }));
+const NUM_ROWS = [...METHOD_PARAMS];
+const DATA_ROWS = [SIZE, OUTLIER];
+const CHOICES = [
+  {
+    k: 'init',
+    name: '初期配置',
+    opts: [
+      ['0', 'ランダム'],
+      ['1', 'k-means++'],
+    ],
+  },
+  {
+    k: 'cov',
+    name: '楕円の形',
+    opts: [
+      ['0', '傾きあり'],
+      ['1', '軸に平行'],
+      ['2', '円'],
+    ],
+  },
+];
+---
+<SiteLayout title={name} tool={{ id: 'clustering', name }}>
+  <PageTitle title={name}>2 次元の点を手法ごとにまとまりへ分けます。手法とデータを並べて比べられます。</PageTitle>
+
+  <div class="tgrid" id="cl" data-mode="one">
+    <Panel hid="hd-fig" title="k-means" class="a-fig" fixed>
+      <span slot="aux" class="aux tp-st" id="cl-st" hidden><span class="led" id="cl-led" aria-hidden="true"></span><span id="cl-stT"></span></span>
+      <div slot="aux" class="seg" id="cl-mode" role="group" aria-label="表示">
+        <button type="button" data-v="one" aria-pressed="true">単独</button>
+        <button type="button" data-v="cmp" aria-pressed="false">比較</button>
+        <button type="button" data-v="list" aria-pressed="false">一覧</button>
+      </div>
+
+      <div class="sbar cl-bar">
+        <span class="cl-lgs">
+          <span id="cl-lg"></span>
+          <span class="stag cl-samp" id="cl-samp" hidden></span>
+          <button type="button" class="tg" id="cl-reg" aria-pressed="true" hidden><i class="cl-k tint" aria-hidden="true"></i><span>領域</span></button>
+          <div class="seg cl-axis" id="cl-axis" role="group" aria-label="比較の対象" hidden>
+            <button type="button" data-v="method" aria-pressed="true">手法を比較</button>
+            <button type="button" data-v="data" aria-pressed="false">データを比較</button>
+          </div>
+        </span>
+        <b id="cl-say"></b>
+      </div>
+
+      <div class="cl-tools" id="cl-tools" hidden>
+        <div class="seg" id="cl-tool" role="group" aria-label="描画と再生" data-nosave>
+          <button type="button" data-v="draw" aria-pressed="true">描画</button>
+          <button type="button" data-v="play" aria-pressed="false">再生</button>
+        </div>
+        <div id="cl-brush">
+          <div class="seg" id="cl-br" role="group" aria-label="ブラシ" data-nosave>
+            {[0, 1, 2, 3].map((c) => <button type="button" data-v={String(c)} data-c={String(c)} aria-pressed={c === 0 ? 'true' : 'false'} title={`グループ ${c + 1}`} aria-label={`グループ ${c + 1}`}></button>)}
+            <button type="button" data-v="-1" aria-pressed="false">消しゴム</button>
+          </div>
+          <label class="cl-size">太さ<span class="sl"><input type="range" id="cl-size" min="0.03" max="0.16" step="0.01" value="0.07"></span></label>
+          <span id="cl-cnt"></span>
+          <button type="button" class="prst" id="cl-clear">全消去</button>
+        </div>
+      </div>
+
+      <div class="scope cl-scr" id="cl-one"><canvas id="cl-cv" role="img" aria-label="散布図"></canvas></div>
+      <div id="cl-cmp" hidden></div>
+      <div id="cl-list" hidden>
+        <div class="cl-lbar">
+          <div class="chips" id="cl-fam" role="group" aria-label="分類">
+            <button type="button" class="chip" data-v="all" aria-pressed="true">すべて</button>
+            {GROUPS.map(({ g }) => <button type="button" class="chip" data-v={g} aria-pressed="false">{g}</button>)}
+          </div>
+          <button type="button" class="prst" id="cl-new2">新しいデータ</button>
+        </div>
+        <div class="cl-lcap"><span>マスの数字　正解との一致度　1.00 で完全に一致</span><b id="cl-lsay"></b></div>
+        <div id="cl-gw"><table id="cl-g"></table></div>
+      </div>
+
+      <div class="tp" id="tp">
+        <button type="button" class="tp-ib" id="tp-home" title="最初へ" aria-label="最初へ"><svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1.5" y="1.5" width="1.8" height="9"/><path d="M10.5 1.5v9L4 6z"/></svg></button>
+        <button type="button" class="tp-pp" id="tp-pp" title="再生" aria-label="再生"><svg class="i-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.2l7.6 4.8L3 10.8z"/></svg><svg class="i-pause" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="2.8" height="9"/><rect x="7.2" y="1.5" width="2.8" height="9"/></svg></button>
+        <div class="tp-tl">
+          <div class="tp-trk" id="tp-trk" role="slider" tabindex="0" aria-label="進み具合" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0">
+            <div class="tp-rail"></div>
+            <div class="tp-fill" id="tp-fill"></div>
+            <div class="tp-th" id="tp-th"></div>
+          </div>
+          <div class="tp-tm">
+            <span id="tp-a"></span>
+            <span class="seg cl-sp" id="cl-sp" role="group" aria-label="速さ">
+              <button type="button" data-v="0.5" aria-pressed="false">遅い</button>
+              <button type="button" data-v="1" aria-pressed="true">標準</button>
+              <button type="button" data-v="2.5" aria-pressed="false">速い</button>
+            </span>
+          </div>
+        </div>
+        <div class="tp-side">
+          <button type="button" class="tp-sq" id="tp-back" title="前の手順" aria-label="前の手順"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M12 3L6 8l6 5M4 3v10"/></svg></button>
+          <button type="button" class="tp-sq" id="tp-step" title="次の手順" aria-label="次の手順"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 3l6 5-6 5M12 3v10"/></svg></button>
+        </div>
+      </div>
+      <More id="cl-how" title="しくみ" class="a-st"><div id="cl-steps"></div></More>
+    </Panel>
+
+    <Panel hid="hd-m" title="手法" class="a-m">
+      <span slot="aux" class="aux" id="cl-man"></span>
+      <div id="cl-ms">
+        {GROUPS.map(({ g, ms }) => (
+          <div class="cl-grp">
+            <h3>{g}</h3>
+            <div class="chips">
+              {ms.map((m) => <button type="button" class="chip" data-v={m.id} aria-pressed={m.id === 'kmeans' ? 'true' : 'false'}>{m.name}</button>)}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div class="ptab cl-row" id="cl-par">
+        {NUM_ROWS.map((d) => <ParamRow d={d} />)}
+        {CHOICES.map((c) => (
+          <div class="prow segr" id={`p-${c.k}`} data-nosave hidden>
+            <div class="c-sym" aria-hidden="true"></div>
+            <div class="c-name"><span class="pn">{c.name}</span></div>
+            <div class="c-val"><div class="seg" role="group" aria-label={c.name}>{c.opts.map(([v, t]) => <button type="button" data-v={v} aria-pressed={v === '0' ? 'true' : 'false'}>{t}</button>)}</div></div>
+            <div class="c-rst"></div>
+          </div>
+        ))}
+      </div>
+    </Panel>
+
+    <div class="cl-col2">
+      <Panel hid="hd-d" title="データ" class="a-d">
+        <button slot="aux" type="button" class="prst" id="cl-new">新しいデータ</button>
+        <div class="cl-dists" id="cl-ds" role="group" aria-label="データ">
+          {DATA_CHIPS.map((d) => <button type="button" class="cl-d" data-v={d.id} aria-pressed={d.id === 'blobs' ? 'true' : 'false'}><Fragment set:html={d.svg} />{d.name}</button>)}
+          <button type="button" class="cl-d" data-v="draw" aria-pressed="false"><svg class="pen" viewBox="0 0 40 16" aria-hidden="true"><path d="M8 13c4-1 6-9 10-9s2 8 6 8 6-7 9-8"/></svg>描画</button>
+        </div>
+        <div class="ptab cl-row" id="cl-dpar">{DATA_ROWS.map((d) => <ParamRow d={d} />)}</div>
+      </Panel>
+      <Panel hid="hd-out" title="計算結果" class="a-out">
+        <div class="cl-res" id="cl-res">
+          <dl class="metrics">
+            <div class="m m-main"><dt>正解との一致度</dt><dd id="o-ari">–</dd></div>
+            <div class="m"><dt>クラスタ数</dt><dd id="o-nc">–</dd></div>
+            <div class="m"><dt>ノイズ</dt><dd><span id="o-nz">–</span><span class="u">点</span></dd></div>
+            <div class="m"><dt>反復回数</dt><dd><span id="o-it">–</span><span class="u">回</span></dd></div>
+            <div class="m"><dt>距離の計算</dt><dd><span id="o-di">–</span><span class="u">回</span></dd></div>
+            <div class="m" id="m-sse" hidden><dt>誤差平方和</dt><dd id="o-sse"></dd></div>
+            <div class="m" id="m-ll" hidden><dt>対数尤度</dt><dd id="o-ll"></dd></div>
+          </dl>
+          <div id="o-sz"></div>
+        </div>
+        <div class="cl-rankw"><table id="o-rt" hidden></table></div>
+      </Panel>
+    </div>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools current="clustering" />
+  <script>
+    import '../tools/clustering/client';
+  </script>
+</SiteLayout>

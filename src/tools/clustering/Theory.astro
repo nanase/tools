@@ -1,0 +1,273 @@
+---
+// 動作原理と式
+import { FAMILIES, METHODS } from './methods';
+
+type Ref = { for: string; src: string; url?: string };
+const doi = (d: string) => `https://doi.org/${d}`;
+const R: Record<string, Ref> = {
+  hubert: {
+    for: '調整ランド指数',
+    src: 'L. Hubert, P. Arabie, “Comparing Partitions,” Journal of Classification, vol. 2, no. 1, pp. 193–218, 1985',
+    url: doi('10.1007/BF01908075'),
+  },
+  lloyd: {
+    for: 'k-means の反復',
+    src: 'S. P. Lloyd, “Least Squares Quantization in PCM,” IEEE Transactions on Information Theory, vol. 28, no. 2, pp. 129–137, 1982',
+    url: doi('10.1109/TIT.1982.1056489'),
+  },
+  macqueen: {
+    for: 'k-means の名前',
+    src: 'J. MacQueen, “Some Methods for Classification and Analysis of Multivariate Observations,” Proc. 5th Berkeley Symposium on Mathematical Statistics and Probability, vol. 1, pp. 281–297, 1967',
+  },
+  arthur: {
+    for: 'k-means++',
+    src: 'D. Arthur, S. Vassilvitskii, “k-means++: The Advantages of Careful Seeding,” Proc. SODA 2007, pp. 1027–1035',
+  },
+  sculley: {
+    for: 'ミニバッチ k-means',
+    src: 'D. Sculley, “Web-Scale k-Means Clustering,” Proc. WWW 2010, pp. 1177–1178',
+    url: doi('10.1145/1772690.1772862'),
+  },
+  kaufman: {
+    for: 'k-medoids（PAM）・DIANA',
+    src: 'L. Kaufman, P. J. Rousseeuw, Finding Groups in Data: An Introduction to Cluster Analysis, Wiley, 1990',
+    url: doi('10.1002/9780470316801'),
+  },
+  bradley: {
+    for: 'k-medians',
+    src: 'P. S. Bradley, O. L. Mangasarian, W. N. Street, “Clustering via Concave Minimization,” NIPS 9, pp. 368–374, 1996',
+  },
+  bezdek: {
+    for: 'Fuzzy c-means',
+    src: 'J. C. Bezdek, Pattern Recognition with Fuzzy Objective Function Algorithms, Plenum Press, 1981',
+    url: doi('10.1007/978-1-4757-0450-1'),
+  },
+  steinbach: {
+    for: '二分 k-means',
+    src: 'M. Steinbach, G. Karypis, V. Kumar, “A Comparison of Document Clustering Techniques,” KDD Workshop on Text Mining, 2000',
+  },
+  pelleg: {
+    for: 'X-means',
+    src: 'D. Pelleg, A. Moore, “X-means: Extending K-means with Efficient Estimation of the Number of Clusters,” Proc. ICML 2000, pp. 727–734',
+  },
+  scholkopf: {
+    for: 'カーネル k-means',
+    src: 'B. Schölkopf, A. Smola, K.-R. Müller, “Nonlinear Component Analysis as a Kernel Eigenvalue Problem,” Neural Computation, vol. 10, no. 5, pp. 1299–1319, 1998',
+    url: doi('10.1162/089976698300017467'),
+  },
+  ward: {
+    for: 'ウォード法',
+    src: 'J. H. Ward, “Hierarchical Grouping to Optimize an Objective Function,” JASA, vol. 58, no. 301, pp. 236–244, 1963',
+    url: doi('10.1080/01621459.1963.10500845'),
+  },
+  lance: {
+    for: '結合の距離の更新式',
+    src: 'G. N. Lance, W. T. Williams, “A General Theory of Classificatory Sorting Strategies: 1. Hierarchical Systems,” The Computer Journal, vol. 9, no. 4, pp. 373–380, 1967',
+    url: doi('10.1093/comjnl/9.4.373'),
+  },
+  zhang: {
+    for: 'BIRCH',
+    src: 'T. Zhang, R. Ramakrishnan, M. Livny, “BIRCH: An Efficient Data Clustering Method for Very Large Databases,” Proc. SIGMOD 1996, pp. 103–114',
+    url: doi('10.1145/233269.233324'),
+  },
+  guha: {
+    for: 'CURE',
+    src: 'S. Guha, R. Rastogi, K. Shim, “CURE: An Efficient Clustering Algorithm for Large Databases,” Proc. SIGMOD 1998, pp. 73–84',
+    url: doi('10.1145/276304.276312'),
+  },
+  ester: {
+    for: 'DBSCAN',
+    src: 'M. Ester, H.-P. Kriegel, J. Sander, X. Xu, “A Density-Based Algorithm for Discovering Clusters in Large Spatial Databases with Noise,” Proc. KDD-96, pp. 226–231',
+  },
+  ankerst: {
+    for: 'OPTICS',
+    src: 'M. Ankerst, M. M. Breunig, H.-P. Kriegel, J. Sander, “OPTICS: Ordering Points to Identify the Clustering Structure,” Proc. SIGMOD 1999, pp. 49–60',
+    url: doi('10.1145/304182.304187'),
+  },
+  campello: {
+    for: 'HDBSCAN',
+    src: 'R. J. G. B. Campello, D. Moulavi, J. Sander, “Density-Based Clustering Based on Hierarchical Density Estimates,” Proc. PAKDD 2013, LNCS 7819, pp. 160–172',
+    url: doi('10.1007/978-3-642-37456-2_14'),
+  },
+  comaniciu: {
+    for: 'Mean Shift',
+    src: 'D. Comaniciu, P. Meer, “Mean Shift: A Robust Approach Toward Feature Space Analysis,” IEEE TPAMI, vol. 24, no. 5, pp. 603–619, 2002',
+    url: doi('10.1109/34.1000236'),
+  },
+  vedaldi: {
+    for: 'Quick Shift',
+    src: 'A. Vedaldi, S. Soatto, “Quick Shift and Kernel Methods for Mode Seeking,” Proc. ECCV 2008, LNCS 5305, pp. 705–718',
+    url: doi('10.1007/978-3-540-88693-8_52'),
+  },
+  rodriguez: {
+    for: 'Density Peaks',
+    src: 'A. Rodriguez, A. Laio, “Clustering by Fast Search and Find of Density Peaks,” Science, vol. 344, no. 6191, pp. 1492–1496, 2014',
+    url: doi('10.1126/science.1242072'),
+  },
+  hinneburg: {
+    for: 'DENCLUE',
+    src: 'A. Hinneburg, D. A. Keim, “An Efficient Approach to Clustering in Large Multimedia Databases with Noise,” Proc. KDD-98, pp. 58–65',
+  },
+  dempster: {
+    for: '混合ガウス分布の EM',
+    src: 'A. P. Dempster, N. M. Laird, D. B. Rubin, “Maximum Likelihood from Incomplete Data via the EM Algorithm,” JRSS Series B, vol. 39, no. 1, pp. 1–22, 1977',
+    url: doi('10.1111/j.2517-6161.1977.tb01600.x'),
+  },
+  bishop: {
+    for: '変分ベイズ混合ガウス分布（10.2 節）',
+    src: 'C. M. Bishop, Pattern Recognition and Machine Learning, Springer, 2006',
+  },
+  ng: {
+    for: 'スペクトラル',
+    src: 'A. Y. Ng, M. I. Jordan, Y. Weiss, “On Spectral Clustering: Analysis and an Algorithm,” NIPS 14, pp. 849–856, 2001',
+  },
+  luxburg: {
+    for: 'スペクトラルの解説',
+    src: 'U. von Luxburg, “A Tutorial on Spectral Clustering,” Statistics and Computing, vol. 17, no. 4, pp. 395–416, 2007',
+    url: doi('10.1007/s11222-007-9033-z'),
+  },
+  frey: {
+    for: 'Affinity Propagation',
+    src: 'B. J. Frey, D. Dueck, “Clustering by Passing Messages Between Data Points,” Science, vol. 315, no. 5814, pp. 972–976, 2007',
+    url: doi('10.1126/science.1136800'),
+  },
+  zahn: {
+    for: '最小全域木',
+    src: 'C. T. Zahn, “Graph-Theoretical Methods for Detecting and Describing Gestalt Clusters,” IEEE Transactions on Computers, vol. C-20, no. 1, pp. 68–86, 1971',
+    url: doi('10.1109/T-C.1971.223083'),
+  },
+  raghavan: {
+    for: 'ラベル伝播',
+    src: 'U. N. Raghavan, R. Albert, S. Kumara, “Near Linear Time Algorithm to Detect Community Structures in Large-Scale Networks,” Physical Review E, vol. 76, 036106, 2007',
+    url: doi('10.1103/PhysRevE.76.036106'),
+  },
+  dongen: {
+    for: 'Markov Clustering',
+    src: 'S. van Dongen, Graph Clustering by Flow Simulation, PhD thesis, University of Utrecht, 2000',
+  },
+  blondel: {
+    for: 'Louvain',
+    src: 'V. D. Blondel, J.-L. Guillaume, R. Lambiotte, E. Lefebvre, “Fast Unfolding of Communities in Large Networks,” Journal of Statistical Mechanics, P10008, 2008',
+    url: doi('10.1088/1742-5468/2008/10/P10008'),
+  },
+  kohonen: {
+    for: '自己組織化マップ',
+    src: 'T. Kohonen, “Self-Organized Formation of Topologically Correct Feature Maps,” Biological Cybernetics, vol. 43, no. 1, pp. 59–69, 1982',
+    url: doi('10.1007/BF00337288'),
+  },
+  martinetz: {
+    for: 'Neural Gas',
+    src: 'T. Martinetz, K. Schulten, “A “Neural-Gas” Network Learns Topologies,” Artificial Neural Networks (ICANN-91), pp. 397–402, 1991',
+  },
+  fritzke: {
+    for: 'Growing Neural Gas',
+    src: 'B. Fritzke, “A Growing Neural Gas Network Learns Topologies,” NIPS 7, pp. 625–632, 1995',
+  },
+  agrawal: {
+    for: 'CLIQUE',
+    src: 'R. Agrawal, J. Gehrke, D. Gunopulos, P. Raghavan, “Automatic Subspace Clustering of High Dimensional Data for Data Mining Applications,” Proc. SIGMOD 1998, pp. 94–105',
+    url: doi('10.1145/276304.276314'),
+  },
+};
+const order: string[] = ['hubert'];
+for (const m of METHODS) for (const k of m.refs) if (!order.includes(k)) order.push(k);
+const num = (k: string) => order.indexOf(k) + 1;
+const Rf = (k: string) => `<a class="rf" href="#thy-r${num(k)}">[${num(k)}]</a>`;
+---
+<h3>正解との一致度</h3>
+<p>2 点の組ごとに「同じクラスタか」を正解と比べる調整ランド指数です<Fragment set:html={Rf('hubert')} />。偶然の一致を引くので、完全に一致すれば 1、でたらめなら 0 付近になります。クラスタの番号の付け方にはよりません。</p>
+<div class="eqs"><math display="block"><mrow><mi>ARI</mi><mo>=</mo><mfrac><mrow><msub><mo>∑</mo><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>(</mo><mfrac linethickness="0"><msub><mi>n</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mn>2</mn></mfrac><mo>)</mo><mo>−</mo><mi>E</mi></mrow><mrow><mfrac><mn>1</mn><mn>2</mn></mfrac><mo>(</mo><msub><mo>∑</mo><mi>i</mi></msub><mo>(</mo><mfrac linethickness="0"><msub><mi>a</mi><mi>i</mi></msub><mn>2</mn></mfrac><mo>)</mo><mo>+</mo><msub><mo>∑</mo><mi>j</mi></msub><mo>(</mo><mfrac linethickness="0"><msub><mi>b</mi><mi>j</mi></msub><mn>2</mn></mfrac><mo>)</mo><mo>)</mo><mo>−</mo><mi>E</mi></mrow></mfrac><mo>,</mo><mspace width="1em"/><mi>E</mi><mo>=</mo><mfrac><mrow><msub><mo>∑</mo><mi>i</mi></msub><mo>(</mo><mfrac linethickness="0"><msub><mi>a</mi><mi>i</mi></msub><mn>2</mn></mfrac><mo>)</mo><msub><mo>∑</mo><mi>j</mi></msub><mo>(</mo><mfrac linethickness="0"><msub><mi>b</mi><mi>j</mi></msub><mn>2</mn></mfrac><mo>)</mo></mrow><mrow><mo>(</mo><mfrac linethickness="0"><mi>n</mi><mn>2</mn></mfrac><mo>)</mo></mrow></mfrac></mrow></math></div>
+<p><math><msub><mi>n</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></math> は正解 <math><mi>i</mi></math> で結果 <math><mi>j</mi></math> の点の数、<math><msub><mi>a</mi><mi>i</mi></msub></math> と <math><msub><mi>b</mi><mi>j</mi></msub></math> はその行と列の和です。</p>
+
+<h3>代表点ベース</h3>
+<p>k-means は点と重心の距離の 2 乗の和を減らします<Fragment set:html={Rf('lloyd')} />。割り当てと重心の移動のどちらでも和は増えないので必ず止まりますが、最小とは限りません。</p>
+<div class="eqs"><math display="block"><mrow><mi>J</mi><mo>=</mo><munderover><mo>∑</mo><mrow><mi>c</mi><mo>=</mo><mn>1</mn></mrow><mi>k</mi></munderover><munder><mo>∑</mo><mrow><mi>x</mi><mo>∈</mo><msub><mi>C</mi><mi>c</mi></msub></mrow></munder><msup><mrow><mo>‖</mo><mi>x</mi><mo>−</mo><msub><mi>μ</mi><mi>c</mi></msub><mo>‖</mo></mrow><mn>2</mn></msup></mrow></math></div>
+<p>塊が丸くて大きさのそろったデータに向きます。三日月や同心円では、形によらず平面を直線で分けてしまいます。</p>
+
+<h3>階層</h3>
+<p>凝集型は、結合した後の距離を Lance-Williams の更新式で求めます<Fragment set:html={Rf('lance')} />。結合法はクラスタどうしの距離の定義の違いです。</p>
+<ul class="tl">
+  <li><b>最短距離法</b>: 最も近い 2 点の距離。細長くつながった形を拾うが、外れ値の橋で 1 つにつながりやすい</li>
+  <li><b>最長距離法</b>: 最も遠い 2 点の距離。大きさのそろった丸いクラスタになりやすい</li>
+  <li><b>群平均法</b>: 全ての組の距離の平均</li>
+  <li><b>ウォード法</b>: 結合で増える誤差平方和<Fragment set:html={Rf('ward')} /></li>
+</ul>
+<p>樹形図の高さは結合したときの距離です。ウォード法は誤差平方和の増加の平方根を高さにしています。</p>
+
+<h3>密度ベース</h3>
+<p>DBSCAN は、半径 <math><mi>ε</mi></math> の円の中に最小点数以上の点がある点をコア点とし、コア点の円でつながる点を 1 つのクラスタにします<Fragment set:html={Rf('ester')} />。形によらず分けられますが、密度の違うクラスタを 1 つの半径で扱えません。OPTICS と HDBSCAN は半径をいくつも見るので、この弱点を減らせます。</p>
+<p>Mean Shift はガウス関数で重み付けした平均へ点を動かす反復で、密度の勾配を登ります<Fragment set:html={Rf('comaniciu')} />。</p>
+<div class="eqs"><math display="block"><mrow><msup><mi>x</mi><mo>′</mo></msup><mo>=</mo><mfrac><mrow><msub><mo>∑</mo><mi>i</mi></msub><msub><mi>x</mi><mi>i</mi></msub><mi>exp</mi><mo>(</mo><mo>−</mo><msup><mrow><mo>‖</mo><mi>x</mi><mo>−</mo><msub><mi>x</mi><mi>i</mi></msub><mo>‖</mo></mrow><mn>2</mn></msup><mo>/</mo><mn>2</mn><msup><mi>h</mi><mn>2</mn></msup><mo>)</mo></mrow><mrow><msub><mo>∑</mo><mi>i</mi></msub><mi>exp</mi><mo>(</mo><mo>−</mo><msup><mrow><mo>‖</mo><mi>x</mi><mo>−</mo><msub><mi>x</mi><mi>i</mi></msub><mo>‖</mo></mrow><mn>2</mn></msup><mo>/</mo><mn>2</mn><msup><mi>h</mi><mn>2</mn></msup><mo>)</mo></mrow></mfrac></mrow></math></div>
+
+<h3>分布ベース</h3>
+<p>混合ガウス分布は、点が <math><mi>k</mi></math> 個のガウス分布のどれかから生まれたと考えます。EM 法で所属確率と分布の更新を交互に行い、対数尤度を増やします<Fragment set:html={Rf('dempster')} />。楕円は 1σ と 2σ の等確率線です。</p>
+<div class="eqs"><math display="block"><mrow><msub><mi>r</mi><mrow><mi>i</mi><mi>c</mi></mrow></msub><mo>=</mo><mfrac><mrow><msub><mi>π</mi><mi>c</mi></msub><mi>𝒩</mi><mo>(</mo><msub><mi>x</mi><mi>i</mi></msub><mo>∣</mo><msub><mi>μ</mi><mi>c</mi></msub><mo>,</mo><msub><mi>Σ</mi><mi>c</mi></msub><mo>)</mo></mrow><mrow><msub><mo>∑</mo><mi>q</mi></msub><msub><mi>π</mi><mi>q</mi></msub><mi>𝒩</mi><mo>(</mo><msub><mi>x</mi><mi>i</mi></msub><mo>∣</mo><msub><mi>μ</mi><mi>q</mi></msub><mo>,</mo><msub><mi>Σ</mi><mi>q</mi></msub><mo>)</mo></mrow></mfrac></mrow></math></div>
+<p>変分ベイズは混合比に事前分布を置くので、要らない成分の重みが 0 へ近づき、クラスタ数が決まります<Fragment set:html={Rf('bishop')} />。</p>
+
+<h3>グラフベース</h3>
+<p>スペクトラルは、近傍グラフの正規化した隣接行列の固有ベクトルを新しい座標にします<Fragment set:html={Rf('ng') + Rf('luxburg')} />。つながりの弱い所で分けるので、三日月や同心円も分けられます。図の座標は第 2 と第 3 の固有ベクトルで、k-means は第 1 から第 k までを行ごとに正規化した座標で行います。</p>
+<div class="eqs"><math display="block"><mrow><mi>A</mi><mo>=</mo><msup><mi>D</mi><mrow><mo>−</mo><mn>1</mn><mo>/</mo><mn>2</mn></mrow></msup><mi>W</mi><msup><mi>D</mi><mrow><mo>−</mo><mn>1</mn><mo>/</mo><mn>2</mn></mrow></msup></mrow></math></div>
+<p>最小全域木の切断は最短距離法と同じ分け方になります。長い辺の切り方が同じだからです。</p>
+
+<h3>ニューラルネットワークとグリッドベース</h3>
+<p>自己組織化マップ・Neural Gas・Growing Neural Gas は、点を 1 つずつ見てノードを近づける学習です。CLIQUE は平面をセルに分け、点の多いセルをつなぎます。セルの大きさだけで決まるので速い代わりに、境界が階段状になります。</p>
+
+<h3>手法の一覧</h3>
+<p><math><mi>n</mi></math> は点の数、<math><mi>k</mi></math> はクラスタ数、<math><mi>i</mi></math> は反復回数、<math><mi>b</mi></math> はバッチの点の数、<math><mi>M</mi></math> はノードの数です。計算量はこのツールの実装の距離の計算の目安で、速い実装の値ではありません。</p>
+<div class="tt-w"><table class="tt cl-cx">
+  <thead><tr><th scope="col">手法</th><th scope="col">分類</th><th scope="col">計算量</th><th scope="col">クラスタ数</th><th scope="col">点の上限</th><th scope="col">出典</th></tr></thead>
+  <tbody>
+    {FAMILIES.flatMap((g) => METHODS.filter((m) => m.g === g)).map((m) => (
+      <tr>
+        <th scope="row">{m.name}</th>
+        <td class="tx">{m.g}</td>
+        <td>{m.o}</td>
+        <td class="tx">{m.auto ? '自動' : '指定'}</td>
+        <td>{(m.lim ?? 3000).toLocaleString('en-US')}</td>
+        <td set:html={m.refs.map(Rf).join('')} />
+      </tr>
+    ))}
+  </tbody>
+</table></div>
+
+<h3>出典</h3>
+<ol class="refs">
+  {order.map((k, i) => {
+    const r = R[k];
+    return (
+      <li id={`thy-r${i + 1}`}>
+        <span class="rf-for">{r.for}</span>
+        <span class="rf-src">{r.url ? <a href={r.url} target="_blank" rel="noopener">{r.src}</a> : r.src}</span>
+      </li>
+    );
+  })}
+</ol>
+
+<h3>このツールで決めたこと</h3>
+<ul class="tl">
+  <li>座標は幅 1.6・高さ 1 の箱。点の数は 400 まで、描画は 3,000 まで</li>
+  <li>手法の一覧の「点の上限」を超えると、その数の点をランダムに抽出して計算し、残りの点は最も近い抽出点のクラスタへ入れる</li>
+  <li>描いた点は、比較では 1,000 点、一覧では 300 点を抽出して使う。パラメータは抽出した点の間隔から決める</li>
+  <li>再生はコマを 420 まで、長さを 24 秒までに縮める</li>
+  <li>外れ値は箱の中に一様に足す。一致度の計算から正解の外れ値は除き、ノイズの点は 1 点ずつ別のクラスタとして数える</li>
+  <li>クラスタの色は、大きいクラスタから順に正解と最も重なる色にする。9 個目以降は画面の線の色</li>
+  <li>一覧は点の数 150、1 マスのコマは 48 まで。k-means は初期配置の運を除くため k-means++</li>
+  <li>k-means の既定の初期配置はランダム。k-means++ だとすぐ収束して動きが見えないため</li>
+  <li>既定のパラメータはデータごとに手で選んだ値。半径は点の数の平方根に反比例、近傍数は比例させる</li>
+  <li>スペクトラルの近傍グラフは、全体の 1 割未満の破片を最も近い点へつなぐ。全ての点の組に 10⁻⁶ の重みを足す</li>
+  <li>k-medoids は PAM の BUILD と SWAP</li>
+  <li>BIRCH の CF 木は枝分かれと葉の項目数を 8 まで。最後の統合はウォード法。点の再割り当てはしない</li>
+  <li>CURE は標本化と分割をしない</li>
+  <li>X-means の BIC の分散は 1 次元あたりの値</li>
+  <li>OPTICS は生成距離を無限大とし、クラスタは論文の ExtractDBSCAN と同じく閾値で切り出す</li>
+  <li>HDBSCAN は凝縮した木を過剰質量で選ぶ。根のクラスタは選ばない</li>
+  <li>Mean Shift と DENCLUE は同じ山登りの式を使う。ウィンドウは半径の 3 倍で打ち切り、半径の半分より近い到達点を同じピークとする</li>
+  <li>DENCLUE のノイズの閾値は最も高い極大との比</li>
+  <li>変分ベイズの事前分布の平均は全点の平均、自由度は 4</li>
+  <li>Affinity Propagation の選好度は類似度の中央値の倍率。減衰は 0.75 で、代表点が 15 回変わらなければ止める</li>
+  <li>最小全域木は Zahn の不整合の判定を使わず、長い順に切る</li>
+  <li>Markov Clustering は 0.002 未満の遷移確率を捨てる</li>
+  <li>自己組織化マップと Neural Gas は最後にノードをウォード法で k 個に統合する</li>
+  <li>CLIQUE は 2 次元だけを扱うので部分空間の探索はない</li>
+  <li>DOI のある出典は Crossref で書誌を確認した。本文は読み合わせていない。DOI のない出典は未確認</li>
+</ul>

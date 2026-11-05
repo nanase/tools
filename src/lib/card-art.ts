@@ -91,6 +91,99 @@ function partial(pts: [number, number][], r: number): string {
   return out.length > 1 ? pl(out) : '';
 }
 
+/** クラスタリングの図柄の点: 傾いた 2 つの塊 */
+const GM_PTS: [number, number][] = [];
+{
+  const C = [
+    [32, 26, 16, 6, 0.5],
+    [84, 22, 15, 5, -0.55],
+  ];
+  for (let i = 0; i < 30; i++) {
+    const q = C[i % 2],
+      a = (hn(i * 11) * 2 - 1) * 1.6,
+      b = (hn(i * 13 + 5) * 2 - 1) * 1.4;
+    GM_PTS.push([
+      q[0] + a * q[2] * Math.cos(q[4]) - b * q[3] * Math.sin(q[4]),
+      q[1] + a * q[2] * Math.sin(q[4]) + b * q[3] * Math.cos(q[4]),
+    ]);
+  }
+}
+interface GmFrame {
+  mu: [number, number][];
+  S: [number, number, number][];
+  lab: number[];
+}
+let gmF: GmFrame[] | null = null;
+/** クラスタリングの図柄のコマ: 2 成分の EM を実際に回す（初めて描くときに作る） */
+function gmFrames(): GmFrame[] {
+  if (gmF) return gmF;
+  let mu: [number, number][] = [
+      [52, 18],
+      [66, 30],
+    ],
+    S: [number, number, number][] = [
+      [260, 0, 150],
+      [260, 0, 150],
+    ],
+    w = [0.5, 0.5];
+  const out: GmFrame[] = [];
+  for (let it = 0; it < 14; it++) {
+    const lab: number[] = [],
+      R = GM_PTS.map((p) => {
+        const v = mu.map((m, c) => {
+            const [a, b, e] = S[c],
+              det = a * e - b * b,
+              u = p[0] - m[0],
+              t = p[1] - m[1];
+            return (w[c] / Math.sqrt(det)) * Math.exp(-0.5 * ((e * u * u - 2 * b * u * t + a * t * t) / det));
+          }),
+          sum = v[0] + v[1] || 1;
+        lab.push(v[0] >= v[1] ? 0 : 1);
+        return [v[0] / sum, v[1] / sum];
+      });
+    out.push({ mu: mu.map((m) => [m[0], m[1]]), S: S.map((s) => [s[0], s[1], s[2]]), lab });
+    const N = [0, 1].map((c) => R.reduce((s, r) => s + r[c], 0));
+    mu = [0, 1].map((c) => {
+      let x = 0,
+        y = 0;
+      GM_PTS.forEach((p, i) => {
+        x += R[i][c] * p[0];
+        y += R[i][c] * p[1];
+      });
+      return [x / N[c], y / N[c]];
+    }) as [number, number][];
+    S = [0, 1].map((c) => {
+      let a = 0,
+        b = 0,
+        e = 0;
+      GM_PTS.forEach((p, i) => {
+        const u = p[0] - mu[c][0],
+          t = p[1] - mu[c][1];
+        a += R[i][c] * u * u;
+        b += R[i][c] * u * t;
+        e += R[i][c] * t * t;
+      });
+      return [a / N[c] + 1, b / N[c], e / N[c] + 1];
+    }) as [number, number, number][];
+    w = N.map((v) => v / GM_PTS.length);
+  }
+  gmF = out;
+  return out;
+}
+/** 共分散の楕円（1.6σ）の SVG パス */
+function gmEllipse(m: [number, number], s: [number, number, number]): string {
+  const [a, b, e] = s,
+    t = (a + e) / 2,
+    q = Math.sqrt(((a - e) / 2) ** 2 + b * b),
+    l1 = 1.6 * Math.sqrt(t + q),
+    l2 = 1.6 * Math.sqrt(Math.max(0.01, t - q)),
+    ang = 0.5 * Math.atan2(2 * b, a - e),
+    deg = r1((ang * 180) / Math.PI),
+    x1 = m[0] - l1 * Math.cos(ang),
+    y1 = m[1] - l1 * Math.sin(ang);
+  return `M${r1(x1)} ${r1(y1)}A${r1(l1)} ${r1(l2)} ${deg} 1 0 ${r1(2 * m[0] - x1)} ${r1(2 * m[1] - y1)}A${r1(l1)} ${r1(l2)} ${deg} 1 0 ${r1(x1)} ${r1(y1)}Z`;
+}
+
 /* ---------- JJY: 1・0・マーカの秒（高出力の長さ 0.5・0.8・0.2 秒） ---------- */
 const hiLen = (c: string): number => (c === 'P' ? 0.2 : c === '1' ? 0.5 : 0.8);
 /** 符号の列 code を 1 秒 = S で並べたとき、位置 u が高出力か */
@@ -1223,6 +1316,20 @@ export const ART: Record<string, Art> = {
     });
     return P('fc', base) + (hit ? P(f.sw ? 'fa' : 'fb', hit) : '');
   },
+  /* クラスタリング: 混合ガウス分布の EM。大きな楕円がコマ送りで点の広がりに合っていく */
+  gm(t) {
+    const F = gmFrames(),
+      f = F[t ? Math.min(F.length - 1, Math.floor((mod(t, 3.6) / 3) * F.length)) : 1],
+      r = 2;
+    let a = '',
+      b = '';
+    GM_PTS.forEach(([x, y], i) => {
+      const d = `M${r1(x - r)} ${r1(y)}a${r} ${r} 0 1 0 ${2 * r} 0a${r} ${r} 0 1 0 ${-2 * r} 0Z`;
+      if (f.lab[i]) b += d;
+      else a += d;
+    });
+    return P('a', gmEllipse(f.mu[0], f.S[0])) + P('b', gmEllipse(f.mu[1], f.S[1])) + P('fa', a) + P('fb', b);
+  },
   /* リスト・キュー・スタック: 左はバーを積むスタック、右はバーが流れるキュー */
   ls(t) {
     const u = mod(t, 3) / 3,
@@ -2022,6 +2129,7 @@ export const LOOP: Record<string, number> = {
   ff: 3,
   wd: 4,
   so: 3,
+  gm: 3.6,
   ls: 3,
   pcm: 3,
   adp: 26 / 8,
