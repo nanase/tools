@@ -1,6 +1,7 @@
 ---
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import DatePicker from '../components/DatePicker.astro';
 import More from '../components/More.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
@@ -25,7 +26,7 @@ const name = '木星';
       <div class="pn-clock">
         <button type="button" class="pn-nowbtn" id="nowbtn" aria-pressed="true" title="現在の日時へ"><span class="led on" id="nowLed" aria-hidden="true"></span>現在</button>
         <span class="pn-clk"><span id="clk">—</span><small id="clkz">JST</small></span>
-        <span class="pn-st"><span class="pn-dtrow"><b id="o-date">—</b><span class="pn-dtpick"><button type="button" class="pn-calbtn" id="dtbtn" aria-label="日時の選択" title="日時の選択"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"></rect><path d="M3.5 10h17M8 3v4M16 3v4"></path></svg></button><input type="datetime-local" id="dt" step="60" tabindex="-1" aria-hidden="true"></span></span></span>
+        <span class="pn-st"><span class="pn-dtrow"><b id="o-date">—</b><DatePicker /></span></span>
         <span class="pn-st">視直径<b id="o-diam">—</b></span>
         <span class="pn-st">等級<b id="o-mag">—</b></span>
         <span class="pn-st">中央子午線 I · II · III<b id="o-cm">—</b></span>

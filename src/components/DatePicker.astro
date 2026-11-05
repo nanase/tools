@@ -1,0 +1,30 @@
+---
+/**
+ * 日時の選択（日付の右のボタンと、開く枠）。動作は lib/date-picker.ts
+ */
+import '../lib/date-picker.css';
+
+const WEEK = ['日', '月', '火', '水', '木', '金', '土'];
+const FIELDS = [
+  { k: 'year', label: '年', len: 4, cls: 'y' },
+  { k: 'month', label: '月', len: 2, cls: '' },
+  { k: 'day', label: '日', len: 2, cls: '' },
+  { k: 'hour', label: '時', len: 2, cls: 'h' },
+  { k: 'minute', label: '分', len: 2, cls: '' },
+];
+---
+<span class="dp" id="dp">
+  <button type="button" class="dp-open" popovertarget="dp-pop" aria-label="日時の選択" title="日時の選択"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"></rect><path d="M3.5 10h17M8 3v4M16 3v4"></path></svg></button>
+  <div class="dp-pop" id="dp-pop" popover="auto" role="dialog" aria-label="日時の選択">
+    <div class="dp-fields">
+      {FIELDS.map((f) => <label class:list={['dp-f', f.cls]}>{f.label}<input type="text" inputmode="numeric" maxlength={f.len} autocomplete="off" data-k={f.k} /></label>)}
+    </div>
+    <div class="dp-nav">
+      <button type="button" data-step="-1" aria-label="前の月" title="前の月"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg></button>
+      <span class="dp-title" aria-live="polite"></span>
+      <button type="button" data-step="1" aria-label="次の月" title="次の月"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"></path></svg></button>
+    </div>
+    <div class="dp-week" aria-hidden="true">{WEEK.map((w) => <span>{w}</span>)}</div>
+    <div class="dp-days"></div>
+  </div>
+</span>

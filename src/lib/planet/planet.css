@@ -24,11 +24,6 @@
 .pn-nowbtn:hover{background:var(--inset)}
 .pn-nowbtn[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
 .pn-dtrow{display:inline-flex;align-items:center;gap:6px}
-.pn-dtpick{position:relative;display:inline-flex}
-.pn-calbtn{display:inline-flex;align-items:center;justify-content:center;width:28px;height:26px;padding:0;border:1px solid var(--line-2);border-radius:4px;background:var(--surface);color:var(--ink-2);cursor:pointer}
-.pn-calbtn:hover{border-color:var(--ink-3);color:var(--ink)}
-.pn-calbtn svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
-.pn-dtpick input{position:absolute;left:0;bottom:0;width:28px;height:1px;padding:0;border:0;opacity:0;pointer-events:none}
 
 /* 望遠の窓: 光の量そのものを描くので、テーマに依らず黒い地 */
 .pn-view{position:relative;aspect-ratio:2.2/1;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:#000;touch-action:manipulation}
