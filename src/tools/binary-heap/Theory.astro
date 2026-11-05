@@ -1,0 +1,128 @@
+---
+// 動作原理と式
+import { BIG_O, DEFS, KEYS } from './model';
+
+type Ref = { for: string; src: string };
+const REFS: readonly Ref[] = [
+  {
+    for: 'ヒープとヒープソート',
+    src: 'J. W. J. Williams, Algorithm 232: Heapsort, Communications of the ACM, Vol. 7, No. 6, pp. 347–348, 1964',
+  },
+  {
+    for: '下の段から直す構築',
+    src: 'R. W. Floyd, Algorithm 245: Treesort, Communications of the ACM, Vol. 7, No. 12, p. 701, 1964',
+  },
+  {
+    for: 'ヒープの性質、構築の計算量、優先度付きキュー',
+    src: 'T. H. Cormen, C. E. Leiserson, R. L. Rivest, C. Stein, Introduction to Algorithms, 4th ed., MIT Press, 2022, Chapter 6',
+  },
+  {
+    for: 'd 分ヒープ',
+    src: 'D. B. Johnson, Priority queues with update and finding minimum spanning trees, Information Processing Letters, Vol. 4, No. 3, pp. 53–57, 1975',
+  },
+  {
+    for: '左傾ヒープ',
+    src: 'C. A. Crane, Linear Lists and Priority Queues as Balanced Binary Trees, Ph.D. thesis, Stanford University, 1972, STAN-CS-72-259',
+  },
+  {
+    for: 'スキューヒープ',
+    src: 'D. D. Sleator, R. E. Tarjan, Self-Adjusting Heaps, SIAM Journal on Computing, Vol. 15, No. 1, pp. 52–69, 1986',
+  },
+  {
+    for: '二項ヒープ',
+    src: 'J. Vuillemin, A data structure for manipulating priority queues, Communications of the ACM, Vol. 21, No. 4, pp. 309–315, 1978',
+  },
+  {
+    for: 'ペアリングヒープ',
+    src: 'M. L. Fredman, R. Sedgewick, D. D. Sleator, R. E. Tarjan, The pairing heap: A new form of self-adjusting heap, Algorithmica, Vol. 1, pp. 111–129, 1986',
+  },
+  {
+    for: 'ペアリングヒープの値の変更の計算量',
+    src: "S. Pettie, Towards a Final Analysis of Pairing Heaps, 46th Annual IEEE Symposium on Foundations of Computer Science (FOCS'05), pp. 174–183, 2005",
+  },
+  {
+    for: 'フィボナッチヒープ',
+    src: 'M. L. Fredman, R. E. Tarjan, Fibonacci heaps and their uses in improved network optimization algorithms, Journal of the ACM, Vol. 34, No. 3, pp. 596–615, 1987',
+  },
+];
+const Rf = (i: number) => `<a class="rf" href="#thy-r${i}">[${i}]</a>`;
+const ON = '<math><mi>O</mi><mo>(</mo><mi>n</mi><mo>)</mo></math>';
+const OL = '<math><mi>O</mi><mo>(</mo><mi>log</mi><mspace width="0.2em"/><mi>n</mi><mo>)</mo></math>';
+const ONL =
+  '<math><mi>O</mi><mo>(</mo><mi>n</mi><mspace width="0.2em"/><mi>log</mi><mspace width="0.2em"/><mi>n</mi><mo>)</mo></math>';
+---
+<h3>ヒープの条件</h3>
+<p>最大ヒープは、どの親の値も子の値以上になっている木です。最大値はいつも根にあります。左右の子のどちらが大きいかは決めません。上の段から左詰めで埋めるので、段数は要素数の対数で済みます <Fragment set:html={Rf(1)} />。</p>
+<div class="eqs"><math display="block"><mrow><mi>A</mi><mo>[</mo><mi>parent</mi><mo>(</mo><mi>i</mi><mo>)</mo><mo>]</mo><mo>≥</mo><mi>A</mi><mo>[</mo><mi>i</mi><mo>]</mo></mrow></math></div>
+
+<h3>木を配列に入れる</h3>
+<p>上の段から順に配列へ並べると、親と子の位置は添字の計算で求まります。子へのポインタは要りません <Fragment set:html={Rf(3)} />。</p>
+<div class="eqs"><math display="block"><mrow><mi>parent</mi><mo>(</mo><mi>i</mi><mo>)</mo><mo>=</mo><mo>⌊</mo><mo>(</mo><mi>i</mi><mo>−</mo><mn>1</mn><mo>)</mo><mo>/</mo><mn>2</mn><mo>⌋</mo><mspace width="1.2em"/><mi>left</mi><mo>(</mo><mi>i</mi><mo>)</mo><mo>=</mo><mn>2</mn><mi>i</mi><mo>+</mo><mn>1</mn><mspace width="1.2em"/><mi>right</mi><mo>(</mo><mi>i</mi><mo>)</mo><mo>=</mo><mn>2</mn><mi>i</mi><mo>+</mo><mn>2</mn></mrow></math></div>
+<p>記号: <math><mi>i</mi></math> は 0 から数える添字です。</p>
+
+<h3>格納</h3>
+<ul class="tl">
+  <li>1 個ずつ追加: 末尾に入れ、親より大きい間は親と交換する。1 個あたり最大で段数ぶん上がるので <Fragment set:html={OL} /> <Fragment set:html={Rf(1)} /></li>
+  <li>まとめて構築: 全部を配列へ入れてから、子を持つ要素を下の段から順に直す <Fragment set:html={Rf(2)} /></li>
+</ul>
+<p>まとめて構築では、大半の要素が下の段にあって短い距離しか動きません。高さ <math><mi>h</mi></math> の要素は約 <math><mi>n</mi><mo>/</mo><msup><mn>2</mn><mrow><mi>h</mi><mo>+</mo><mn>1</mn></mrow></msup></math> 個で、それぞれ最大 <math><mi>h</mi></math> 回下がります。合計は要素数に比例し、全体で <Fragment set:html={ON} /> です <Fragment set:html={Rf(3)} />。</p>
+<div class="eqs"><math display="block"><mrow><munderover><mo>∑</mo><mrow><mi>h</mi><mo>=</mo><mn>0</mn></mrow><mi>∞</mi></munderover><mfrac><mi>n</mi><msup><mn>2</mn><mrow><mi>h</mi><mo>+</mo><mn>1</mn></mrow></msup></mfrac><mi>h</mi><mo>=</mo><mi>n</mi></mrow></math></div>
+
+<h3>ソート</h3>
+<p>根を取り出すと最大値が得られます。空いた根へ末尾の要素を移し、大きいほうの子と交換しながら下げると、条件が元に戻ります。これを全要素に行うと値の大きい順に出て、全体で <Fragment set:html={ONL} /> です <Fragment set:html={Rf(1)} />。図の配列のように、取り出した値を末尾から順に置けば、追加の領域なしで並べ替えられます。これがヒープソートです。</p>
+
+<h3>d 分ヒープ</h3>
+<p>子の数を <math><mi>d</mi></math> 個に増やすと段数が減り、追加は速くなります。取り出しでは 1 段ごとに子をすべて比べるので、比較は増えます <Fragment set:html={Rf(4)} />。計算量の記号はどちらも <Fragment set:html={OL} /> です。</p>
+<div class="eqs"><math display="block"><mrow><mi>parent</mi><mo>(</mo><mi>i</mi><mo>)</mo><mo>=</mo><mo>⌊</mo><mo>(</mo><mi>i</mi><mo>−</mo><mn>1</mn><mo>)</mo><mo>/</mo><mi>d</mi><mo>⌋</mo><mspace width="1.2em"/><mi>child</mi><mo>(</mo><mi>i</mi><mo>,</mo><mi>k</mi><mo>)</mo><mo>=</mo><mi>d</mi><mi>i</mi><mo>+</mo><mi>k</mi><mspace width="1.2em"/><mo>(</mo><mn>1</mn><mo>≤</mo><mi>k</mi><mo>≤</mo><mi>d</mi><mo>)</mo></mrow></math></div>
+
+<h3>ポインタでつなぐヒープ</h3>
+<p>配列に入れず、子へのポインタで木をつなぐヒープです。木どうしのマージが速いので、追加も取り出しもマージで作れます。</p>
+<ul class="tl">
+  <li>左傾ヒープ: どの要素でも左の子のほうが右の子より高い。右の枝が短いので、右の枝どうしをマージする <Fragment set:html={Rf(5)} /></li>
+  <li>スキューヒープ: 高さを覚えず、マージのたびに左右の子を入れ替える。1 回は遅くても、続けると対数に収まる <Fragment set:html={Rf(6)} /></li>
+  <li>二項ヒープ: 大きさが 2 のべきの木を、大きさごとに 1 本ずつ持つ。追加は 2 進数の繰り上がりと同じ動きになる <Fragment set:html={Rf(7)} /></li>
+  <li>ペアリングヒープ: 根どうしを比べて負けたほうを子にするだけ。取り出しのときに、子を 2 個ずつつないでまとめる <Fragment set:html={Rf(8)} /></li>
+  <li>フィボナッチヒープ: 追加は根の列に足すだけで、つなぐ作業を取り出しまで遅らせる。値の変更は切り離すだけで済む <Fragment set:html={Rf(10)} /></li>
+</ul>
+
+<h3>計算量</h3>
+<p>配列は追加が速く取り出しが遅い構造です。ヒープは追加と取り出しの両方を対数以下に抑えます <Fragment set:html={Rf(3)} />。* は償却で、操作を続けたときの 1 回あたりを表します。ペアリングヒープの値の変更は厳密な増え方がまだ定まっておらず、上限だけがわかっています <Fragment set:html={Rf(9)} />。</p>
+<div class="tt-w"><table class="tt hp-cx">
+  <thead><tr><th></th>{KEYS.map(([, t]) => <th scope="col">{t}</th>)}</tr></thead>
+  <tbody>
+    {DEFS.map((d) => (
+      <tr>
+        <th scope="row">{d.name}</th>
+        {KEYS.map(([k]) => <td>{BIG_O[d.id][k]}</td>)}
+      </tr>
+    ))}
+  </tbody>
+</table></div>
+
+<h3>音</h3>
+<p>音の高さはバーの高さで決めます。<math><mi>v</mi></math> はバーの値（1〜99）です。</p>
+<div class="eqs"><math display="block"><mrow><mi>f</mi><mo>=</mo><mn>110</mn><mo>×</mo><msup><mn>2</mn><mrow><mn>4</mn><mo>(</mo><mi>v</mi><mo>−</mo><mn>1</mn><mo>)</mo><mo>/</mo><mn>98</mn></mrow></msup><mspace width="0.3em"/><mtext>Hz</mtext></mrow></math></div>
+
+<h3>出典</h3>
+<ol class="refs">
+  {REFS.map((r, i) => (
+    <li id={`thy-r${i + 1}`}>
+      <span class="rf-for">{r.for}</span>
+      <span class="rf-src">{r.src}</span>
+    </li>
+  ))}
+</ol>
+
+<h3>このツールで決めたこと</h3>
+<ul class="tl">
+  <li>比較は値を比べた回数で、子の中から選ぶ比較も数える</li>
+  <li>移動は要素かポインタを書き込んだ回数で、交換は 1 回と数える</li>
+  <li>確認は根か末尾を読む 1 回を比較に含める</li>
+  <li>値の変更は根に近づく向きに変える。変える場所はわかっているものとし、探す回数は数えない</li>
+  <li>二項ヒープの確認は最良の根を覚えず、根を全部見る</li>
+  <li>格納とソートの回数は工程ごとに 0 から数える</li>
+  <li>二項・ペアリング・フィボナッチヒープのまとめて構築は 1 個ずつ追加と同じ手順にする</li>
+  <li>操作の表の回数は、31 要素の状態から 1 回実行したときの 24 通りのデータの平均。償却の操作は 31 回続けた 1 回あたり</li>
+  <li>一覧の表から操作を選ぶと、要素数の 2/3 を追加した状態から始める</li>
+  <li>配列の図では、取り出した値を末尾から順に置く</li>
+</ul>

@@ -560,7 +560,7 @@ export const TOOLS: Tool[] = [
     t: 'ソート',
     d: 'バーが小さい順に並ぶ様子を音で追い、アルゴリズムを比べます。',
     ic: 'so',
-    r: ['list-queue-stack', 'clustering', 'fft', 'gif'],
+    r: ['list-queue-stack', 'binary-heap', 'clustering', 'fft'],
     k: 'sort sorting 並べ替え 並び替え 整列 アルゴリズム algorithm バブル bubble シェーカー cocktail shaker コム comb ノーム gnome 奇偶転置 odd-even 選択 selection ヒープ heap スムース smooth サイクル cycle パンケーキ pancake 挿入 insertion 二分挿入 binary シェル shell マージ merge ボトムアップ bottom-up ティム timsort パワー powersort インプレース symmerge クイック quick ピボット pivot 3 分割 three-way デュアルピボット dual-pivot イントロ introsort pdqsort 計数 counting 基数 radix lsd msd アメリカンフラッグ american flag バケット bucket フラッシュ flash ビーズ bead 比較 計算量 安定 stable バイトニック bitonic バッチャー batcher ペアワイズ pairwise ソーティングネットワーク sorting network ストゥージ stooge スロー slow ボゴ bogo ボゾ bozo 音 sound of sorting',
   },
   {
@@ -578,8 +578,17 @@ export const TOOLS: Tool[] = [
     t: 'リスト・キュー・スタック',
     d: 'データ構造ごとの順序と計算量をバーの動きで比べます。',
     ic: 'ls',
-    r: ['sort', 'gif', 'fft', 'qr-code'],
+    r: ['binary-heap', 'sort', 'gif', 'fft'],
     k: 'データ構造 data structure list queue stack リスト キュー スタック 片方向 双方向 連結リスト linked list 配列 array 両端キュー deque リングバッファ ring buffer 循環バッファ circular push pop enqueue dequeue lifo fifo 計算量 オーダー ビッグオー big o 償却',
+  },
+  {
+    id: 'binary-heap',
+    c: 'データ構造',
+    t: '二分ヒープ',
+    d: '追加と取り出しで木の中の値が動く様子を見ます。',
+    ic: 'hp',
+    r: ['list-queue-stack', 'sort', 'fft', 'qr-code'],
+    k: 'binary heap ヒープ バイナリヒープ 優先度付きキュー priority queue ヒープソート heapsort 最大ヒープ 最小ヒープ max heap min heap 完全二分木 木 tree 配列 array d 分ヒープ 4 分ヒープ 左傾ヒープ leftist スキューヒープ skew 二項ヒープ binomial ペアリングヒープ pairing フィボナッチヒープ fibonacci マージ 構築 heapify 格納 取り出し 計算量 オーダー',
   },
 ];
 /** 準備中を後ろへ */

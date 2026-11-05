@@ -1,0 +1,175 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/binary-heap/style.css';
+import { BIG_O, DEFS, KEYS } from '../tools/binary-heap/model';
+import { SIZE, SPEED, VOL } from '../tools/binary-heap/params';
+import Theory from '../tools/binary-heap/Theory.astro';
+import { rng, SHAPES, shapeAt } from '../tools/list-queue-stack/model';
+
+const name = '二分ヒープ';
+/** バーの選択肢の小さな絵 */
+const shapeSvg = (k: (typeof SHAPES)[number][0]): string => {
+  const r = rng(5),
+    bars = Array.from({ length: 8 }, (_, i) => {
+      const h = shapeAt(k, i / 7, r) * 11;
+      return `<rect x="${(i * 3.2).toFixed(1)}" y="${(12 - h).toFixed(1)}" width="2.3" height="${h.toFixed(1)}"/>`;
+    }).join('');
+  return `<svg viewBox="0 0 26 12" aria-hidden="true">${bars}</svg>`;
+};
+/* 初めはランダムを先頭に置く */
+const BARS = [...SHAPES]
+  .sort((a, b) => Number(b[0] === 'rand') - Number(a[0] === 'rand'))
+  .map(([k, t]) => ({ k, t, svg: shapeSvg(k) }));
+---
+<SiteLayout title={name} tool={{ id: 'binary-heap', name }}>
+  <PageTitle title={name}>親の値が子の値以上になるように並べた木を、配列 1 本で持つデータ構造です。最大値がいつも根にあるので、すぐに取り出せます。</PageTitle>
+
+  <div class="tgrid" id="hp" data-mode="one">
+    <Panel hid="hd-fig" title="二分ヒープ" class="a-fig" fixed>
+      <span slot="aux" class="aux tp-st" id="hp-st" hidden><span class="led" id="hp-led" aria-hidden="true"></span><span id="hp-stT"></span></span>
+      <div slot="aux" class="seg" id="hp-mode" role="group" aria-label="表示">
+        <button type="button" data-v="one" aria-pressed="true">単独</button>
+        <button type="button" data-v="cmp" aria-pressed="false">比較</button>
+        <button type="button" data-v="list" aria-pressed="false">一覧</button>
+      </div>
+      <div class="sbar hp-lg">
+        <span class="hp-lgl">
+          <span class="stag"><i class="hp-sw hp-cmp" aria-hidden="true"></i>比較</span>
+          <span class="stag"><i class="hp-sw hp-mov" aria-hidden="true"></i>移動</span>
+          <span class="stag"><i class="hp-sw hp-bad" aria-hidden="true"></i>条件違反</span>
+          <span class="stag"><i class="hp-sw" aria-hidden="true"></i>格納済み</span>
+          <span class="stag"><i class="hp-sw hp-wait" aria-hidden="true"></i>待機中</span>
+          <span class="stag"><i class="hp-sw hp-done" aria-hidden="true"></i>ソート済み</span>
+        </span>
+        <span class="hp-end"><span class="sr" id="hp-say"></span><button type="button" class="prst" id="hp-reset2" hidden>リセット</button></span>
+      </div>
+      <div class="hp-steps" id="hp-steps" role="group" aria-label="工程">
+        <button type="button" data-s="store" aria-pressed="true"><b>1 格納</b><span>全部を木に入れる</span><em></em></button>
+        <button type="button" data-s="sort" aria-pressed="false"><b>2 ソート</b><span>根から順に取り出す</span><em></em></button>
+      </div>
+      <div class="scope hp-scr hp-solo"><canvas id="hp-cv" role="img" aria-label="二分ヒープ"></canvas></div>
+      <div class="hp-race" id="hp-race"></div>
+      <div class="tp">
+        <button type="button" class="tp-ib" id="tp-home" title="最初へ" aria-label="最初へ"><svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1.5" y="1.5" width="1.8" height="9"/><path d="M10.5 1.5v9L4 6z"/></svg></button>
+        <button type="button" class="tp-pp" id="tp-pp" title="再生" aria-label="再生"><svg class="i-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.2l7.6 4.8L3 10.8z"/></svg><svg class="i-pause" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="2.8" height="9"/><rect x="7.2" y="1.5" width="2.8" height="9"/></svg></button>
+        <div class="tp-tl">
+          <div class="tp-trk" id="tp-trk" role="slider" tabindex="0" aria-label="進み具合" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0">
+            <div class="tp-rail"></div>
+            <div class="tp-fill" id="tp-fill"></div>
+            <div class="tp-th" id="tp-th"></div>
+          </div>
+          <div class="tp-tm"><span><b id="tp-a">0</b> / <span id="tp-b">0</span> 手順</span><span id="tp-t"></span></div>
+        </div>
+        <div class="tp-side">
+          <button type="button" class="tp-sq" id="tp-back" title="前の手順" aria-label="前の手順"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M12 3L6 8l6 5M4 3v10"/></svg></button>
+          <button type="button" class="tp-sq" id="tp-step" title="次の手順" aria-label="次の手順"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 3l6 5-6 5M12 3v10"/></svg></button>
+        </div>
+      </div>
+      <div class="ptab hp-row"><ParamRow d={SPEED} /></div>
+    </Panel>
+
+    <Panel hid="hd-mat" title="操作と計算量" class="a-mat">
+      <span slot="aux" class="aux">n = 要素数　* 償却</span>
+      <div class="hp-mx">
+        <table class="hp-mt" id="hp-mx">
+          <thead><tr><th></th>{KEYS.map(([k, t]) => <th scope="col"><button type="button" class="hp-mh" data-k={k} title="データ構造を比較">{t}</button></th>)}</tr></thead>
+          <tbody>
+            {DEFS.map((d) => (
+              <tr>
+                <th scope="row"><button type="button" class="hp-mr" data-a={d.id}>{d.name}</button></th>
+                {KEYS.map(([k, t]) => {
+                  const o = BIG_O[d.id][k];
+                  return <td><button type="button" class:list={['hp-c', { on: !/^[Oo]\((1|log n)\)\*?$/.test(o) }]} data-a={d.id} data-k={k} title={`${d.name}: ${t}`}>{o}</button></td>;
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </Panel>
+
+    <Panel hid="hd-cmp" title="計算結果" class="a-cmp">
+      <div class="hp-rw"><table class="hp-rt" id="hp-rt"></table></div>
+    </Panel>
+
+    <div class="col">
+      <Panel hid="hd-str" title="データ構造" class="a-str">
+        <span slot="aux" class="aux" id="hp-an"></span>
+        <div id="hp-str">
+          <div class="chips">
+            {DEFS.map((d) => <button type="button" class="chip" data-v={d.id} aria-pressed={d.id === 'bin' ? 'true' : 'false'}>{d.name}</button>)}
+          </div>
+        </div>
+        <div class="ptab hp-row" id="hp-byw" hidden>
+          <ChoiceRow k="by" name="比較の対象" choices={[['build', '格納の方法'], ['str', 'データ構造']]} value="build" />
+        </div>
+      </Panel>
+      <Panel hid="hd-data" title="データ" class="a-data">
+        <button slot="aux" type="button" class="prst" id="hp-new">新しいデータ</button>
+        <div class="ptab hp-row">
+          <div class="prow chr wide">
+            <div class="c-sym" aria-hidden="true"></div>
+            <div class="c-name"><span class="pn" id="n-shape">バー</span></div>
+            <div class="c-rst"></div>
+            <div class="c-sub"><div class="chips" id="hp-shape" role="group" aria-labelledby="n-shape">
+              {BARS.map(({ k, t, svg }) => <button type="button" class="chip" data-v={k} aria-pressed={k === 'rand' ? 'true' : 'false'}><Fragment set:html={svg} />{t}</button>)}
+            </div></div>
+          </div>
+          <ParamRow d={SIZE} />
+          <ChoiceRow k="method" name="格納の方法" choices={[['add', '1 個ずつ追加'], ['build', 'まとめて構築']]} value="add" />
+          <ChoiceRow k="dir" name="根の値" choices={[['max', '最大'], ['min', '最小']]} value="max" />
+        </div>
+      </Panel>
+    </div>
+    <div class="col">
+      <Panel hid="hd-ops" title="操作" class="a-ops">
+        <button slot="aux" type="button" class="prst" id="hp-reset" hidden>リセット</button>
+        <div class="hp-ow">
+          <table class="hp-ot">
+            <thead><tr><th scope="col">実行</th><th scope="col" class="hp-how">内容</th><th scope="col" class="r">計算量</th><th scope="col" class="r" title="31 要素で 24 通りのデータを試した平均。償却の操作は 31 回続けた 1 回あたり">n = 31 の平均</th></tr></thead>
+            <tbody id="hp-ops"></tbody>
+          </table>
+        </div>
+      </Panel>
+      <Panel hid="hd-out" title="計算結果" class="a-out">
+        <dl class="metrics hp-res">
+          <div class="m m-main"><dt>比較と移動</dt><dd><span id="o-t">0</span><span class="u">回</span></dd></div>
+          <div class="m"><dt>比較</dt><dd id="o-c">0</dd></div>
+          <div class="m"><dt>移動</dt><dd id="o-m">0</dd></div>
+          <div class="m"><dt>要素数</dt><dd id="o-l">0</dd></div>
+          <div class="m"><dt>木の段数</dt><dd id="o-v">–</dd></div>
+          <div class="m"><dt>条件違反の枝</dt><dd id="o-b">–</dd></div>
+          <div class="m"><dt id="o-pkL">最大値</dt><dd id="o-pk">–</dd></div>
+          <div class="m"><dt>格納の合計</dt><dd id="o-s1">0</dd></div>
+          <div class="m"><dt>ソートの合計</dt><dd id="o-s2">0</dd></div>
+          <div class="m"><dt>合計</dt><dd id="o-s">0</dd></div>
+          {DEFS.map((d) => (
+            <>
+              <div class="m m-sub" data-for={d.id}><dt>1 要素のメモリ</dt><dd>{d.mem}</dd></div>
+              <div class="m m-sub m-w" data-for={d.id}><dt>利用例</dt><dd>{d.ex}</dd></div>
+            </>
+          ))}
+        </dl>
+      </Panel>
+      <Panel hid="hd-snd" title="音" class="a-snd">
+        <div slot="aux" class="seg"><button type="button" id="hp-snd" aria-pressed="true"><span class="led on" id="hp-sndL" aria-hidden="true"></span> <span id="hp-sndT">オン</span></button></div>
+        <div class="ptab hp-row"><ParamRow d={VOL} /></div>
+      </Panel>
+    </div>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools current="binary-heap" />
+  <script>
+    import '../tools/binary-heap/client';
+  </script>
+</SiteLayout>
