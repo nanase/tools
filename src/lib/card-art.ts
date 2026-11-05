@@ -96,6 +96,65 @@ function hpFrames(): void {
 /** 二分ヒープの図柄の 1 秒あたりのコマ数 */
 const HP_FPS = 5;
 
+/** B木の図柄のノード */
+interface BtNode {
+  k: number[];
+  c: BtNode[];
+}
+/** B木の図柄の 1 コマ: hot は動かしたキー、w は書いたノードかあふれたノード */
+interface BtFrame {
+  root: BtNode;
+  hot: readonly number[];
+  w: readonly BtNode[];
+}
+const BT_FRAMES: BtFrame[] = [];
+/** 次数 4 の B木へキーを順に入れる。全部入れたあと、同じコマを逆に再生して空へ戻す */
+function btFrames(): void {
+  const copy = (n: BtNode, map: Map<BtNode, BtNode>): BtNode => {
+    const v: BtNode = { k: [...n.k], c: n.c.map((x) => copy(x, map)) };
+    map.set(n, v);
+    return v;
+  };
+  let root: BtNode = { k: [], c: [] };
+  const push = (hot: readonly number[], w: readonly BtNode[]): void => {
+    const map = new Map<BtNode, BtNode>(),
+      r = copy(root, map);
+    BT_FRAMES.push({ root: r, hot, w: w.map((x) => map.get(x) as BtNode) });
+  };
+  for (const key of [8, 3, 13, 6, 11, 1, 15, 9, 4, 14, 2, 12, 7, 10, 5]) {
+    const path: BtNode[] = [];
+    let n = root;
+    while (n.c.length) {
+      path.push(n);
+      n = n.c[n.k.filter((v) => v < key).length];
+    }
+    n.k.splice(n.k.filter((v) => v < key).length, 0, key);
+    push([key], [n]);
+    while (n.k.length > 3) {
+      push([], [n]);
+      const mid = n.k.length >> 1,
+        sep = n.k[mid],
+        r: BtNode = { k: n.k.slice(mid + 1), c: n.c.slice(mid + 1) };
+      n.k = n.k.slice(0, mid);
+      n.c = n.c.slice(0, mid + 1);
+      let p = path.pop();
+      if (!p) {
+        p = { k: [], c: [n] };
+        root = p;
+      }
+      const i = p.c.indexOf(n);
+      p.k.splice(i, 0, sep);
+      p.c.splice(i + 1, 0, r);
+      push([sep], [n, r, p]);
+      n = p;
+    }
+  }
+  push([], []);
+  BT_FRAMES.push(...[...BT_FRAMES].reverse());
+}
+/** B木の図柄の 1 秒あたりのコマ数 */
+const BT_FPS = 5;
+
 const TAU = 2 * Math.PI;
 const r1 = (v: number): number => Math.round(v * 10) / 10;
 const mod = (a: number, n: number): number => ((a % n) + n) % n;
@@ -1428,6 +1487,58 @@ export const ART: Record<string, Art> = {
     });
     return P('c t', lines) + P('fc', base) + (hit ? P(f.w ? 'fa' : 'fb', hit) : '');
   },
+  /* B木: 枠のある箱の木。キーで箱が埋まり、あふれると分かれて中央のキーが親へ上がる */
+  bt(t) {
+    if (!BT_FRAMES.length) btFrames();
+    /* 止まった絵は 3 段の木で、キーが親へ上がった所 */
+    const deep = (n: BtNode): number => (n.c.length ? 1 + deep(n.c[0]) : 1),
+      start = BT_FRAMES.findIndex((q) => q.w.length === 3 && deep(q.root) === 3),
+      f = BT_FRAMES[(start + Math.floor(t * BT_FPS)) % BT_FRAMES.length],
+      SLOTS = 3,
+      GAP = 2.5,
+      GY = 16.5,
+      CH = 8,
+      leaves: BtNode[] = [],
+      walk = (n: BtNode): void => {
+        if (n.c.length) n.c.forEach(walk);
+        else leaves.push(n);
+      };
+    walk(f.root);
+    const L = leaves.length,
+      cw = Math.min(6.5, (114 - GAP * (L - 1)) / (L * SLOTS)),
+      lw = cw * SLOTS,
+      x0 = 3 + (114 - L * lw - (L - 1) * GAP) / 2,
+      rect = (x: number, y: number, w: number, h: number): string => `M${r1(x)} ${r1(y)}h${r1(w)}v${r1(h)}h${r1(-w)}Z`;
+    let i = 0,
+      lines = '',
+      box = '',
+      wrote = '',
+      base = '',
+      hit = '';
+    const place = (n: BtNode, l: number): number => {
+      let x: number;
+      if (n.c.length) {
+        const xs = n.c.map((c) => place(c, l + 1));
+        x = (xs[0] + xs[xs.length - 1]) / 2;
+        xs.forEach((cx, j) => {
+          lines += `M${r1(x - lw / 2 + j * cw)} ${r1(3 + l * GY + CH)}L${r1(cx)} ${r1(3 + (l + 1) * GY)}`;
+        });
+      } else x = x0 + i++ * (lw + GAP) + lw / 2;
+      const left = x - lw / 2,
+        y = 3 + l * GY,
+        d = rect(left, y, Math.max(SLOTS, n.k.length) * cw, CH);
+      if (f.w.includes(n)) wrote += d;
+      else box += d;
+      n.k.forEach((v, j) => {
+        const q = rect(left + j * cw + 0.8, y + 0.8, cw - 1.6, CH - 1.6);
+        if (f.hot.includes(v)) hit += q;
+        else base += q;
+      });
+      return x;
+    };
+    place(f.root, 0);
+    return P('c t', lines) + P('c t', box) + (wrote ? P('a', wrote) : '') + P('fc', base) + (hit ? P('fa', hit) : '');
+  },
   /* オルガン音響モデル: 口と円錐の足があるパイプの正面。和音を鳴らし、鳴っている管に定在波を描く */
   og(t) {
     let body = '',
@@ -2202,6 +2313,7 @@ export const LOOP: Record<string, number> = {
   gm: 3.6,
   ls: 3,
   hp: 50 / HP_FPS,
+  bt: 52 / BT_FPS,
   pcm: 3,
   adp: 26 / 8,
   mp3: 4,

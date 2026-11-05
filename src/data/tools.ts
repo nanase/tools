@@ -578,7 +578,7 @@ export const TOOLS: Tool[] = [
     t: 'リスト・キュー・スタック',
     d: 'データ構造ごとの順序と計算量をバーの動きで比べます。',
     ic: 'ls',
-    r: ['binary-heap', 'sort', 'gif', 'fft'],
+    r: ['binary-heap', 'b-tree', 'sort', 'gif'],
     k: 'データ構造 data structure list queue stack リスト キュー スタック 片方向 双方向 連結リスト linked list 配列 array 両端キュー deque リングバッファ ring buffer 循環バッファ circular push pop enqueue dequeue lifo fifo 計算量 オーダー ビッグオー big o 償却',
   },
   {
@@ -587,8 +587,17 @@ export const TOOLS: Tool[] = [
     t: '二分ヒープ',
     d: '追加と取り出しで木の中の値が動く様子を見ます。',
     ic: 'hp',
-    r: ['list-queue-stack', 'sort', 'fft', 'qr-code'],
+    r: ['list-queue-stack', 'b-tree', 'sort', 'fft'],
     k: 'binary heap ヒープ バイナリヒープ 優先度付きキュー priority queue ヒープソート heapsort 最大ヒープ 最小ヒープ max heap min heap 完全二分木 木 tree 配列 array d 分ヒープ 4 分ヒープ 左傾ヒープ leftist スキューヒープ skew 二項ヒープ binomial ペアリングヒープ pairing フィボナッチヒープ fibonacci マージ 構築 heapify 格納 取り出し 計算量 オーダー',
+  },
+  {
+    id: 'b-tree',
+    c: 'データ構造',
+    t: 'B木',
+    d: 'ノードが分かれて木が育つ様子を種類ごとに比べます。',
+    ic: 'bt',
+    r: ['binary-heap', 'list-queue-stack', 'sort', 'png'],
+    k: 'b-tree b tree btree b木 B木 ビー木 b+木 b+tree bプラス木 b*木 b*tree bスター木 2-3 木 2-3-4 木 トップダウン top-down コピーオンライト copy-on-write cow シャドウイング bε木 be-tree フラクタル木 fractal tree 探索木 二分探索木 binary search tree 分割 併合 split merge ノード 葉 根 次数 order ページ ディスク データベース database 索引 インデックス index ファイルシステム file system sqlite postgresql mysql innodb lmdb btrfs 範囲検索 range scan 充填率 計算量 オーダー',
   },
 ];
 /** 準備中を後ろへ */
