@@ -24,9 +24,9 @@ const root = $('#shepard-tone'),
   spec = new ShepardSpec($<HTMLCanvasElement>('#sht-sp'));
 
 const S = {
-  chord: 'major' as ChordId,
-  reverb: 'hall' as ReverbId,
-  wet: 0.45,
+  chord: 'fifth' as ChordId,
+  reverb: 'church' as ReverbId,
+  wet: 1,
   playing: false,
   /** まだ 1 度も再生していない */
   preview: true,
@@ -99,15 +99,18 @@ new Choice<string>($('#p-step'), (v) => {
   model.stepped = v === '1';
   audio.post({ type: 'stepped', on: model.stepped });
 });
-new Choice<ChordId>($('#p-chord'), (v) => {
+function applyChord(v: ChordId): void {
   S.chord = v;
   model.setChord(CHORDS[v].s);
   audio.post({ type: 'chord', s: CHORDS[v].s });
-});
-new Choice<TimbreId>($('#p-timbre'), (v) => {
+}
+function applyTimbre(v: TimbreId): void {
   model.setTimbre(v);
   audio.post({ type: 'timbre', id: v });
-});
+}
+/* 音の計算の既定（長三和音・正弦波）とページの既定が違うので、初めの値も送る */
+applyChord(new Choice<ChordId>($('#p-chord'), applyChord).value);
+applyTimbre(new Choice<TimbreId>($('#p-timbre'), applyTimbre).value);
 /** 1 オクターブの秒数の表記 */
 const octSec = (r: number): string => {
   const t = 12 / r;

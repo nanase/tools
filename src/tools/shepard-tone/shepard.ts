@@ -12,6 +12,8 @@ export const N_OCT = 9;
 const SLOTS = 16;
 /** 音量と周波数を更新する間隔 [標本] */
 const BLOCK = 128;
+/** 鳴り始めに音量を上げる時間 [s] */
+const FADE_IN = 0.5;
 /** 正弦波の表の長さ */
 const TBL_N = 4096;
 const TBL = new Float32Array(TBL_N + 1);
@@ -132,6 +134,8 @@ export class Shepard {
   width: number = N_OCT;
 
   private gain = 0;
+  /** start のあと、音量を FADE_IN 秒かけて上げている間 */
+  private rising = false;
   private noteEnv = 1;
   private timbre: readonly Partial[] = TIMBRES.sine.p;
   private pending: readonly Partial[] | null = null;
@@ -162,6 +166,12 @@ export class Shepard {
       this.pending = null;
       this.amp.fill(0);
     }
+  }
+  /** pos から鳴らし始める。音量は FADE_IN 秒かけて上げる */
+  start(pos: number): void {
+    this.pos = pos;
+    this.on = true;
+    this.rising = true;
   }
   /** 鳴っている音が消え切ったか */
   get silent(): boolean {
@@ -229,8 +239,10 @@ export class Shepard {
         this.amp.fill(0);
       }
       const want = this.pending || !this.on ? 0 : 1,
-        g0 = this.gain,
-        g1 = g0 + (want - g0) * Math.min(1, dtB / 0.015);
+        g0 = this.gain;
+      if (!this.on) this.rising = false;
+      const g1 = want && this.rising ? Math.min(1, g0 + dtB / FADE_IN) : g0 + (want - g0) * Math.min(1, dtB / 0.015);
+      if (g1 >= 1) this.rising = false;
       this.gain = g1;
       const e0 = this.noteEnv,
         e1 = this.gate();
