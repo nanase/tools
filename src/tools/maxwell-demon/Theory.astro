@@ -1,0 +1,78 @@
+---
+// 動作原理と式
+type Ref = { for: string; src: string };
+const REFS: readonly Ref[] = [
+  { for: '悪魔の思考実験', src: 'J. C. Maxwell, Theory of Heat, Longmans, Green, and Co., London, 1871' },
+  {
+    for: '1 分子のエンジンと測定の代償',
+    src: 'L. Szilard, Über die Entropieverminderung in einem thermodynamischen System bei Eingriffen intelligenter Wesen, Zeitschrift für Physik, Vol. 53, No. 11–12, pp. 840–856, 1929',
+  },
+  {
+    for: '消去で出る熱（ランダウアーの原理）',
+    src: 'R. Landauer, Irreversibility and Heat Generation in the Computing Process, IBM Journal of Research and Development, Vol. 5, No. 3, pp. 183–191, 1961',
+  },
+  {
+    for: '測定ではなく消去が代償であること',
+    src: 'C. H. Bennett, The thermodynamics of computation—a review, International Journal of Theoretical Physics, Vol. 21, No. 12, pp. 905–940, 1982',
+  },
+  {
+    for: '悪魔の知識から数えるエントロピー',
+    src: 'J. M. R. Parrondo, J. M. Horowitz, T. Sagawa, Thermodynamics of information, Nature Physics, Vol. 11, No. 2, pp. 131–139, 2015',
+  },
+];
+const Rf = (i: number) => `<a class="rf" href="#thy-r${i}">[${i}]</a>`;
+---
+<h3>悪魔の思考実験</h3>
+<p>同じ温度の気体を仕切りで 2 部屋に分け、仕切りの扉を分子 1 個ずつ見分けて開け閉めする存在を考えます。速い分子だけを右へ、遅い分子だけを左へ通すと、右が熱く左が冷たくなります <Fragment set:html={Rf(1)} />。扉を開けて元の位置に閉じれば、扉の重さにかかわらず、扉にした仕事の収支は 0 です。熱が低温から高温へひとりでに移ることになり、熱力学第二法則に反します。この温度差で熱機関を回せば、周りの熱だけを仕事に変え続ける第二種永久機関になります。</p>
+
+<h3>気体のモデル</h3>
+<p>分子は平面を動く同じ大きさの円板で、分子どうしと壁に弾性衝突します。全体の運動エネルギーは変わりません。部屋の温度は、その部屋の分子 1 個あたりの運動エネルギーから決めます。平面の分子は運動の向きが 2 つなので、1 個あたりの平均は <math><mi>k</mi><mi>T</mi></math> です。</p>
+<div class="eqs"><math display="block"><mrow><mi>k</mi><msub><mi>T</mi><mi>i</mi></msub><mo>=</mo><mfrac><mn>1</mn><msub><mi>N</mi><mi>i</mi></msub></mfrac><munder><mo>∑</mo><mrow><mi>j</mi><mo>∈</mo><mi>i</mi></mrow></munder><mfrac><mn>1</mn><mn>2</mn></mfrac><mi>m</mi><msubsup><mi>v</mi><mi>j</mi><mn>2</mn></msubsup></mrow></math></div>
+<p>記号: <math><msub><mi>N</mi><mi>i</mi></msub></math> は部屋 <math><mi>i</mi></math>（左か右）の分子の数、<math><mi>m</mi></math> は分子の質量、<math><mi>k</mi></math> はボルツマン定数です。</p>
+
+<h3>速さの分布としきい値</h3>
+<p>衝突をくり返すと、速さは平面のマクスウェル分布に近づきます。初めの 300 K では速さの中央値が約 350 m/s で、しきい値の既定はこの値です。しきい値より速い分子と遅い分子がほぼ半分ずつになります。</p>
+<div class="eqs"><math display="block"><mrow><mi>f</mi><mo stretchy="false">(</mo><mi>v</mi><mo stretchy="false">)</mo><mo>=</mo><mfrac><mrow><mi>m</mi><mi>v</mi></mrow><mrow><mi>k</mi><mi>T</mi></mrow></mfrac><mspace width="0.17em"/><mi>exp</mi><mo>(</mo><mo>−</mo><mfrac><mrow><mi>m</mi><msup><mi>v</mi><mn>2</mn></msup></mrow><mrow><mn>2</mn><mi>k</mi><mi>T</mi></mrow></mfrac><mo>)</mo><mspace width="1.2em"/><msub><mi>v</mi><mtext>中央値</mtext></msub><mo>=</mo><msqrt><mfrac><mrow><mn>2</mn><mspace width="0.17em"/><mi>ln</mi><mspace width="0.1em"/><mn>2</mn><mspace width="0.15em"/><mi>k</mi><mi>T</mi></mrow><mi>m</mi></mfrac></msqrt></mrow></math></div>
+
+<h3>気体のエントロピー</h3>
+<p>気体のエントロピーは、悪魔が気体について知っていることから数えます <Fragment set:html={Rf(5)} />。基準は扉を閉じた時点で、初めの状態は 0 です。このとき悪魔は、左右に何個ずつあるかを知りません。温度の項と、左右の数の項の和です。</p>
+<div class="eqs"><math display="block"><mrow><mfrac><msub><mi>S</mi><mtext>気体</mtext></msub><mi>k</mi></mfrac><mo>=</mo><mi>Δ</mi><mo>[</mo><munder><mo>∑</mo><mi>i</mi></munder><msub><mi>N</mi><mi>i</mi></msub><mspace width="0.17em"/><mi>ln</mi><mspace width="0.1em"/><mfrac><msub><mi>T</mi><mi>i</mi></msub><mover><mi>T</mi><mo>¯</mo></mover></mfrac><mo>]</mo><mo>+</mo><mi>H</mi><mo>(</mo><msub><mi>N</mi><mn>0</mn></msub><mo>)</mo><mo>+</mo><mi>E</mi><mo>[</mo><mspace width="0.17em"/><mi>ln</mi><mspace width="0.1em"/><mfrac><mrow><mi>N</mi><mo>!</mo></mrow><mrow><msub><mi>N</mi><mtext>左</mtext></msub><mo>!</mo><mspace width="0.15em"/><msub><mi>N</mi><mtext>右</mtext></msub><mo>!</mo></mrow></mfrac><mo>]</mo><mo>−</mo><mi>N</mi><mspace width="0.17em"/><mi>ln</mi><mspace width="0.1em"/><mn>2</mn></mrow></math></div>
+<p>記号: <math><mi>Δ</mi></math> は扉を閉じた時点からの変化、<math><mover><mi>T</mi><mo>¯</mo></mover></math> は全体の平均の温度、<math><mi>N</mi></math> は分子の総数です。<math><msub><mi>N</mi><mn>0</mn></msub></math> は閉じた時点の左の数で、悪魔から見ると確率 <math><mfrac><mrow><mi>N</mi><mo>!</mo></mrow><mrow><msub><mi>N</mi><mn>0</mn></msub><mo>!</mo><mo>(</mo><mi>N</mi><mo>−</mo><msub><mi>N</mi><mn>0</mn></msub><mo>)</mo><mo>!</mo></mrow></mfrac><msup><mn>2</mn><mrow><mo>−</mo><mi>N</mi></mrow></msup></math> のどれかです。<math><mi>H</mi></math> はその不確かさ（シャノンエントロピー）、<math><mi>E</mi></math> はその確率での平均です。</p>
+<ul class="tl">
+  <li>悪魔は通した数の差し引きを知っており、今の左の数は閉じた時点の数にそれを足した値</li>
+  <li>扉に分子が来ると、来た側に 1 個以上いることがわかる。ありうる <math><msub><mi>N</mi><mn>0</mn></msub></math> の範囲が狭まり、左右の数の項が下がる</li>
+  <li>何も知らない間、左右の数の項は 0。左右の数がかたよったと知るほど負になる</li>
+  <li>扉が開いている間は、分子が見られずに行き来するので悪魔は何も知らない。気体は 0 と数え、扉を閉じたらその時点を新しい基準にする</li>
+</ul>
+
+<h3>記録と消去</h3>
+<p>悪魔は判断のたびに、通したか通さなかったかの 1 ビットを記録します。1 ビットの記録のエントロピーは最大で <math><mi>k</mi><mspace width="0.17em"/><mi>ln</mi><mspace width="0.1em"/><mn>2</mn></math> です。記憶は有限なので、いずれ消して空ける必要があります。1 ビットを消すと、周りに少なくとも <math><mi>k</mi><mi>T</mi><mspace width="0.17em"/><mi>ln</mi><mspace width="0.1em"/><mn>2</mn></math> の熱が出ます <Fragment set:html={Rf(3)} />。測定そのものは原理上、熱を出さずに行えます。悪魔が払う代償は記録の消去です <Fragment set:html={Rf(4)} />。</p>
+<div class="eqs"><math display="block"><mrow><msub><mi>Q</mi><mtext>消去</mtext></msub><mo>≥</mo><mi>n</mi><mspace width="0.15em"/><mi>k</mi><mi>T</mi><mspace width="0.17em"/><mi>ln</mi><mspace width="0.1em"/><mn>2</mn><mspace width="1.6em"/><msub><mi>S</mi><mtext>気体</mtext></msub><mo>+</mo><msub><mi>S</mi><mtext>記録</mtext></msub><mo>+</mo><mfrac><msub><mi>Q</mi><mtext>消去</mtext></msub><mi>T</mi></mfrac><mo>≥</mo><mn>0</mn></mrow></math></div>
+<p>記号: <math><mi>n</mi></math> は消したビット数です。</p>
+<p>図の収支の「合計」は、気体と消去の熱だけの和です。記録は、消すときに払う熱として点線の枠で別に描き、合計には入れません。1 ビットの記録は、消すときに少なくとも <math><mi>k</mi><mspace width="0.17em"/><mi>ln</mi><mspace width="0.1em"/><mn>2</mn></math> の熱に変わります。そのため記録を消すまでの間は、合計が負になることがあります。悪魔は消去の熱というツケを払うまでの間だけ、第二法則を破って見えます。記録を消すと熱が出て、合計は取り戻されます。記録まで含めた合計は、どの瞬間も負になりません <Fragment set:html={Rf(5)} />。</p>
+
+<h3>分子 1 個のとき</h3>
+<p>分子が 1 個なら、扉に初めて来たときに左右どちらにいるかがわかり、悪魔から見た分子の動ける広さが半分になります。気体のエントロピーは <math><mo>−</mo><mi>k</mi><mspace width="0.17em"/><mi>ln</mi><mspace width="0.1em"/><mn>2</mn></math>、記録は 1 ビットで、合計は 0 のままです。これはシラードの 1 分子のエンジンと同じ状況です <Fragment set:html={Rf(2)} />。このページで記憶の容量を 1 ビットにすると、悪魔は次の判断の前に毎回記録を消すことになり、シラードの設定と同じになります。仕切りをピストンにして分子に押させると、1 回に <math><mi>k</mi><mi>T</mi><mspace width="0.17em"/><mi>ln</mi><mspace width="0.1em"/><mn>2</mn></math> の仕事を取り出せます。ただし次の回のために記録を消すと、同じ <math><mi>k</mi><mi>T</mi><mspace width="0.17em"/><mi>ln</mi><mspace width="0.1em"/><mn>2</mn></math> 以上の熱が出ます。差し引きで仕事は残りません。</p>
+<div class="eqs"><math display="block"><mrow><mi>W</mi><mo>=</mo><mi>k</mi><mi>T</mi><mspace width="0.17em"/><mi>ln</mi><mspace width="0.1em"/><mfrac><msub><mi>V</mi><mtext>全体</mtext></msub><msub><mi>V</mi><mtext>半分</mtext></msub></mfrac><mo>=</mo><mi>k</mi><mi>T</mi><mspace width="0.17em"/><mi>ln</mi><mspace width="0.1em"/><mn>2</mn><mspace width="1.2em"/><mo>≤</mo><mspace width="0.6em"/><msub><mi>Q</mi><mtext>消去</mtext></msub></mrow></math></div>
+
+<h3>出典</h3>
+<ol class="refs">
+  {REFS.map((r, i) => (
+    <li id={`thy-r${i + 1}`}>
+      <span class="rf-for">{r.for}</span>
+      <span class="rf-src">{r.src}</span>
+    </li>
+  ))}
+</ol>
+
+<h3>このツールで決めたこと</h3>
+<ul class="tl">
+  <li>分子の質量は窒素の分子とし、初めの温度は左右とも 300 K</li>
+  <li>分子は平面の円板で、仕切りをはさんだ分子どうしはぶつからない</li>
+  <li>扉は摩擦なく動き、開けたあと元の位置に閉じる。扉にした仕事は 0</li>
+  <li>温度の差の悪魔は、左から来たしきい値より速い分子と、右から来た遅い分子だけを通す</li>
+  <li>圧力の差の悪魔は、左から来た分子だけを通す</li>
+  <li>判断 1 回を 1 ビットと数え、手で操作するときは開けると閉じるを 1 回ずつ数える</li>
+  <li>悪魔が扉に来た分子から知るのは、来た側と、通したかどうかだけとする</li>
+  <li>記憶が満杯のまま次のビットを書くときは、そのとき記録にあるビットを全部消してから書く。容量が 1 ビットなら判断のたびに消す</li>
+</ul>

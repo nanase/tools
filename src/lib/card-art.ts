@@ -675,6 +675,93 @@ const ADP = (() => {
   return { x: cut(x), p: cut(p), y: cut(y), g: cut(g) };
 })();
 
+/* ---------- マクスウェルの悪魔: 箱の中の分子を悪魔がより分けるコマ ---------- */
+const MX = { x0: 4, x1: 116, y0: 16, y1: 46, gap: 14, n: 12, r: 2, L: 5, fps: 12 };
+interface MxFrame {
+  /** 分子 [x, y, 速いか] */
+  p: [number, number, boolean][];
+  /** 扉: 0 閉、1 右へ開く、-1 左へ開く */
+  open: number;
+}
+/**
+ * 分子どうしはぶつからない。速い分子は右へ、遅い分子は左へだけ扉を通す。最後の 0.5 秒は止める。
+ * 乱数の種 34 は、最後のコマで 12 個中 11 個が正しい側に並ぶものを選んだ
+ */
+const MX_FRAMES: MxFrame[] = (() => {
+  const { x0, x1, y0, y1, gap, n, r, L, fps } = MX,
+    mid = (x0 + x1) / 2,
+    yc = (y0 + y1) / 2;
+  let sd = 34;
+  const R = (): number => {
+    sd ^= sd << 13;
+    sd >>>= 0;
+    sd ^= sd >>> 17;
+    sd ^= sd << 5;
+    sd >>>= 0;
+    return sd / 4294967296;
+  };
+  const ps: { x: number; y: number; vx: number; vy: number; fast: boolean; side: number }[] = [];
+  for (let i = 0; i < n; i++) {
+    const fast = i % 2 === 0,
+      side = (i >> 1) % 2,
+      sp = fast ? 46 + 10 * R() : 15 + 6 * R(),
+      a = 2 * Math.PI * R();
+    ps.push({
+      x: side ? mid + r + 1 + R() * (x1 - mid - 2 * r - 2) : x0 + r + 1 + R() * (mid - x0 - 2 * r - 2),
+      y: y0 + r + R() * (y1 - y0 - 2 * r),
+      vx: sp * Math.cos(a),
+      vy: sp * Math.sin(a),
+      fast,
+      side,
+    });
+  }
+  const out: MxFrame[] = [],
+    sub = 8,
+    dt = 1 / fps / sub,
+    nf = Math.round(L * fps),
+    still = Math.round(0.5 * fps);
+  let open = 0;
+  for (let f = 0; f < nf; f++) {
+    out.push({ p: ps.map((q) => [q.x, q.y, q.fast]), open });
+    open = 0;
+    if (f >= nf - still - 1) continue;
+    for (let k = 0; k < sub; k++)
+      for (const q of ps) {
+        q.x += q.vx * dt;
+        q.y += q.vy * dt;
+        if (q.x < x0 + r) {
+          q.x = x0 + r;
+          q.vx = Math.abs(q.vx);
+        } else if (q.x > x1 - r) {
+          q.x = x1 - r;
+          q.vx = -Math.abs(q.vx);
+        }
+        if (q.y < y0 + r) {
+          q.y = y0 + r;
+          q.vy = Math.abs(q.vy);
+        } else if (q.y > y1 - r) {
+          q.y = y1 - r;
+          q.vy = -Math.abs(q.vy);
+        }
+        const hit = q.side === 0 ? q.x > mid - r && q.vx > 0 : q.x < mid + r && q.vx < 0;
+        if (!hit) continue;
+        const ok = Math.abs(q.y - yc) < gap / 2 - r * 0.6 && (q.side === 0 ? q.fast : !q.fast);
+        if (ok) {
+          q.side = 1 - q.side;
+          open = q.side === 1 ? 1 : -1;
+          q.x = q.side ? mid + r : mid - r;
+        } else {
+          q.vx = -q.vx;
+          q.x = q.side ? mid + r : mid - r;
+        }
+      }
+  }
+  return out;
+})();
+/** 円のパス（塗り用） */
+const mxDot = (x: number, y: number, r: number): string =>
+  `M${r1(x - r)} ${r1(y)}a${r} ${r} 0 1 0 ${2 * r} 0a${r} ${r} 0 1 0 ${-2 * r} 0Z`;
+
 export const ART: Record<string, Art> = {
   /* タイマIC 555: 出力（周期 36、High 24）と C1 の電圧。時間が流れる */
   sq(t) {
@@ -2465,6 +2552,47 @@ export const ART: Record<string, Art> = {
       for (let r = 0; r < 8; r++) nd += `M${x - 1.6} ${r1(Y(r))}a1.6 1.6 0 1 0 3.2 0a1.6 1.6 0 1 0 -3.2 0`;
     return P('c t g', base) + P('b t', past) + P('a', cur) + P('fc', nd);
   },
+  /* マクスウェルの悪魔: 扉の上の悪魔が、扉を通った分子の来た側を見る。速い分子は右、遅い分子は左にたまる */
+  mxd(t) {
+    const { x0, x1, y0, y1, gap, r, L, fps } = MX,
+      k = Math.floor(mod(t, L) * fps + 1e-9),
+      f = MX_FRAMES[k],
+      mid = (x0 + x1) / 2,
+      yc = (y0 + y1) / 2,
+      gt = yc - gap / 2,
+      gb = yc + gap / 2;
+    let look = 0;
+    for (let j = k; j > k - 4 && j >= 0; j--)
+      if (MX_FRAMES[j].open) {
+        look = -MX_FRAMES[j].open;
+        break;
+      }
+    const door = f.open
+        ? `M${mid} ${r1(gt)}L${r1(mid + f.open * gap * 0.7)} ${r1(gt - gap * 0.45)}`
+        : `M${mid} ${r1(gt)}V${r1(gb)}`,
+      cx = 60,
+      cy = 8.6,
+      e = look * 1.6;
+    let a = '',
+      b = '';
+    for (const [x, y, fast] of f.p) {
+      if (fast) a += mxDot(x, y, r);
+      else b += mxDot(x, y, r);
+    }
+    return (
+      P('c', `M${x0} ${y0}H${x1}V${y1}H${x0}Z`) +
+      P('c w', `M${mid} ${y0}V${r1(gt)}M${mid} ${r1(gb)}V${y1}`) +
+      P('c t', door) +
+      P('fa', a) +
+      P('fb', b) +
+      P(
+        'c',
+        `M${cx - 4.6} ${cy - 2.6}L${cx - 6.6} ${cy - 7.6}L${cx - 2.2} ${cy - 4.6}M${cx + 4.6} ${cy - 2.6}L${cx + 6.6} ${cy - 7.6}L${cx + 2.2} ${cy - 4.6}`,
+      ) +
+      P('c', mxDot(cx, cy, 5.4)) +
+      P('fc', mxDot(cx - 2 + e, cy - 0.4, 1.1) + mxDot(cx + 2 + e, cy - 0.4, 1.1))
+    );
+  },
 };
 
 /**
@@ -2537,6 +2665,7 @@ export const LOOP: Record<string, number> = {
   imp: 53 / 12,
   vv: 4,
   shp: 3,
+  mxd: MX.L,
 };
 
 /** 止まっているときの図柄（ビルド時に HTML へ出す） */

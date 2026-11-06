@@ -1,0 +1,90 @@
+/* マクスウェルの悪魔のページだけのスタイル */
+/* 悪魔の色 */
+:root{--mxd-dm:#7a3fc0}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--mxd-dm:#c39bff}}
+:root[data-theme="dark"]{--mxd-dm:#c39bff}
+.mxd-top{display:grid;gap:26px 16px;grid-template-columns:minmax(0,1fr)}
+.mxd-box{display:block;width:100%;height:420px}
+.mxd-temp{display:block;width:100%;height:220px}
+.mxd-led{display:block;width:100%;height:236px}
+.mxd-tape{display:block;width:100%;height:120px}
+
+/* 再生と手の操作 */
+.mxd-cmd{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-width:460px}
+.mxd-cmd:has(#mxd-hand:not([hidden])){grid-template-columns:repeat(3,minmax(0,1fr));max-width:690px}
+.mxd-cmd button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:42px;padding:4px 10px;border:1px solid var(--line-2);border-radius:4px;background:var(--surface);color:var(--ink);font:700 14px/1.2 var(--sans);cursor:pointer}
+.mxd-cmd button:hover{border-color:var(--ink-3)}
+.mxd-cmd svg{width:13px;height:13px;fill:currentColor;flex:none}
+.mxd-cmd .i-stop,.mxd-cmd .on .i-play{display:none}
+.mxd-cmd .on .i-stop{display:block}
+#mxd-play{background:var(--ink);border-color:var(--ink);color:var(--surface)}
+#mxd-play.on{background:var(--surface);color:var(--ink);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 35%,transparent)}
+#mxd-hand{flex-direction:column;gap:2px;user-select:none;-webkit-user-select:none;touch-action:none}
+#mxd-hand[hidden]{display:none}
+#mxd-hand small{font:500 11.5px/1.2 var(--sans);color:var(--ink-3)}
+#mxd-hand.on{background:var(--ink);border-color:var(--ink);color:var(--surface)}
+#mxd-hand.on small{color:var(--surface)}
+
+/* 値 */
+.mxd-mt{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:12px 0 4px}
+.mxd-mt dt{font-size:12px;color:var(--ink-3)}
+.mxd-mt dd{margin:0;font:600 17px/1.25 var(--mono);white-space:nowrap;font-variant-numeric:tabular-nums}
+.mxd-mt small{font:500 12.5px/1 var(--sans);margin-left:3px}
+.mxd-mt small.c{margin-left:8px;color:var(--ink-3)}
+
+/* 凡例と収支のトグル */
+.mxd-lg{margin:8px 0 0;font-family:var(--sans)}
+.mxd-dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--ch1)}
+.mxd-dot.c2{background:var(--ch2)}
+.mxd-ring{display:inline-block;width:12px;height:12px;border:2px solid var(--ink);border-radius:50%}
+.mxd-tg{margin-left:auto;font:500 12.5px/1 var(--sans)}
+/* 記憶のマス: 1 は濃い塗り、0 は枠だけ、空きは薄い塗り */
+.mxd-cell{display:inline-block;box-sizing:border-box;width:11px;height:11px;background:var(--ink)}
+.mxd-cell.c0{background:none;border:1.5px solid var(--ink-2)}
+.mxd-cell.e{background:var(--line)}
+
+/* エントロピーの収支 */
+.mxd-gh{display:flex;justify-content:space-between;gap:8px;margin:16px 2px 6px;font-size:12.5px;font-weight:500;color:var(--ink-3)}
+.mxd-gh span{font:500 12.5px var(--mono);color:var(--ink)}
+.mxd-erase{display:flex;align-items:center;flex-wrap:wrap;gap:8px 14px;margin-top:10px;font-size:13px;color:var(--ink-2)}
+
+/* 悪魔の枠 */
+.mxd-hint{margin:0;padding:6px 2px 8px;font-size:13px;color:var(--ink-2);border-bottom:1px solid var(--line)}
+.mxd-2{display:grid;gap:26px 16px;grid-template-columns:minmax(0,1fr)}
+#mxd .prow{--sw:0px;--uw:56px}
+
+/* きっかけ・しくみ */
+.mxd-st{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+.mxd-st li{display:flex;gap:10px;align-items:flex-start;padding:10px;border:1px solid var(--line);border-radius:4px;background:var(--surface)}
+.mxd-st svg{flex:none;width:60px;height:54px;overflow:visible}
+.mxd-st svg *{fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.mxd-st .w{stroke:var(--screen-ink);stroke-width:3.5;stroke-linecap:butt}
+.mxd-st .bx{stroke:var(--screen-ink);stroke-width:1.5}
+.mxd-st .dr{stroke:var(--ink-3);stroke-width:3}
+.mxd-st .ar,.mxd-st .ax{stroke:var(--ink-2)}
+.mxd-st .tm{stroke:var(--screen-ink)}
+.mxd-st .hd{stroke:var(--mxd-dm)}
+.mxd-st .ht,.mxd-st .no{stroke:var(--warn)}
+.mxd-st .fa{fill:var(--ch1);stroke:none}
+.mxd-st .fb{fill:var(--ch2);stroke:none}
+.mxd-st .fh{fill:var(--warn);stroke:none}
+.mxd-st .fs{fill:var(--ink-2);stroke:none}
+.mxd-st .c1{fill:var(--ink);stroke:none}
+.mxd-st .c0{fill:none;stroke:var(--ink-2);stroke-width:1.5}
+.mxd-st .ce{fill:var(--line);stroke:none}
+.mxd-st h3{margin:0 0 4px;font-size:13.5px}
+.mxd-st p{margin:0;font-size:13px;line-height:1.55;color:var(--ink-2)}
+.mxd-st p+p{margin-top:4px}
+
+@media (min-width:900px){
+  .mxd-top{grid-template-columns:minmax(0,1.7fr) minmax(300px,1fr);align-items:start}
+  .mxd-top.one{grid-template-columns:minmax(0,1fr)}
+  .mxd-2{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start}
+}
+@media (max-width:620px){
+  .mxd-mt{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .mxd-mt dd{font-size:16px}
+  .mxd-cmd:has(#mxd-hand:not([hidden])){grid-template-columns:repeat(2,minmax(0,1fr))}
+  #mxd-hand{grid-column:1/-1}
+  .mxd-tg{margin-left:0}
+}
