@@ -1,0 +1,109 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/maxwell-demon/style.css';
+import { MODE_HINT, MODE_OPT, PARAMS } from '../tools/maxwell-demon/params';
+import { STEPS_HOW, STEPS_WHY } from '../tools/maxwell-demon/steps';
+import Theory from '../tools/maxwell-demon/Theory.astro';
+
+const name = 'マクスウェルの悪魔';
+const P = Object.fromEntries(PARAMS.map((d) => [d.k, d]));
+---
+<SiteLayout title={name} tool={{ id: 'maxwell-demon', name }}>
+  <PageTitle title={name}>仕切りの扉を開け閉めして、速い分子と遅い分子をより分ける悪魔を動かします。悪魔の記録を消すときの熱まで数えると、エントロピーは減りません。</PageTitle>
+
+  <div class="tgrid" id="mxd">
+    <div class="mxd-top" id="mxd-top">
+      <Panel hid="hd-box" title="2 つの部屋と扉" class="mxd-boxp" fixed>
+        <Fragment slot="aux"><span class="led" id="mxd-led" aria-hidden="true"></span><span class="aux" id="mxd-st" aria-live="polite"></span></Fragment>
+        <div class="mxd-cmd">
+          <button type="button" id="mxd-play" aria-pressed="false"><svg class="i-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.2l7.6 4.8L3 10.8z"/></svg><svg class="i-stop" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="2" width="8" height="8"/></svg><span id="mxd-playT">再生</span></button>
+          <button type="button" id="mxd-reset"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.2 6a3.8 3.8 0 1 0 1.2-2.8" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M1.6 1.4v3.2h3.2z"/></svg>最初から</button>
+          <button type="button" id="mxd-hand" aria-pressed="false" hidden>扉を開ける<small>押している間・スペースキー</small></button>
+        </div>
+        <dl class="mxd-mt">
+          <div><dt>左の温度</dt><dd id="m-tl">—</dd></div>
+          <div><dt>右の温度</dt><dd id="m-tr">—</dd></div>
+          <div><dt>分子の数 左 / 右</dt><dd id="m-nn">—</dd></div>
+          <div><dt>悪魔の判断</dt><dd id="m-bits">—</dd></div>
+        </dl>
+        <canvas class="mxd-box" id="mxd-box" role="img" aria-label="仕切りで分けた箱の中を動く分子と、扉を開け閉めする悪魔"></canvas>
+        <div class="sbar mxd-lg">
+          <span class="stag"><i class="mxd-dot" aria-hidden="true"></i>速い分子</span>
+          <span class="stag"><i class="mxd-dot c2" aria-hidden="true"></i>遅い分子</span>
+          <span class="stag"><i class="mxd-ring" aria-hidden="true"></i>悪魔が見ている分子</span>
+          <button type="button" class="tg mxd-tg" id="mxd-ledT" aria-pressed="true" title="気体と記録と消去の熱のエントロピー"><span class="led on" aria-hidden="true"></span>エントロピーの収支</button>
+        </div>
+      </Panel>
+
+      <Panel hid="hd-led" title="エントロピーの収支" class="mxd-ledp" fixed>
+        <span slot="aux" class="aux">単位 k（ボルツマン定数）</span>
+        <canvas class="mxd-led" id="mxd-ledg" role="img" aria-label="気体と消去の熱のエントロピーとその合計、記録を消すときに払う熱"></canvas>
+        <h3 class="mxd-gh">悪魔の記憶<span id="m-tape"></span></h3>
+        <canvas class="mxd-tape" id="mxd-tape" role="img" aria-label="判断ごとに 1 ビットずつたまる記録。満杯で消える"></canvas>
+        <div class="sbar mxd-lg">
+          <span class="stag"><i class="mxd-cell" aria-hidden="true"></i>1 通した</span>
+          <span class="stag"><i class="mxd-cell c0" aria-hidden="true"></i>0 通さない</span>
+          <span class="stag"><i class="mxd-cell e" aria-hidden="true"></i>空き</span>
+        </div>
+        <div class="mxd-erase">
+          <button type="button" class="prst" id="mxd-erase">記録の消去</button>
+          <span id="m-erased"></span>
+        </div>
+      </Panel>
+    </div>
+
+    <Panel hid="hd-temp" title="温度の変化" class="mxd-tempp">
+      <span slot="aux" class="aux">直近 60 秒</span>
+      <canvas class="mxd-temp" id="mxd-temp" role="img" aria-label="左右の部屋の温度の時間変化"></canvas>
+    </Panel>
+
+    <div class="mxd-2">
+      <Panel hid="hd-dm" title="悪魔">
+        <div class="ptab">
+          <ChoiceRow k="mode" name="悪魔の種類" layout="chips" choices={MODE_OPT} value="temp" />
+          <p class="mxd-hint" id="mxd-hint">{MODE_HINT.temp}</p>
+          <ParamRow d={P.vth} />
+          <ParamRow d={P.gap} />
+          <ParamRow d={P.cap} />
+        </div>
+      </Panel>
+      <Panel hid="hd-gas" title="気体">
+        <div class="ptab">
+          <ParamRow d={P.n} />
+          <ParamRow d={P.speed} />
+        </div>
+      </Panel>
+    </div>
+
+    <Panel hid="hd-why" title="きっかけ" class="mxd-steps">
+      <ol class="mxd-st">
+        {STEPS_WHY.map((s, i) => (
+          <li><svg viewBox="0 0 60 54" aria-hidden="true" set:html={s.svg} /><div><h3>{i + 1} {s.t}</h3>{s.p.map((p) => <p>{p}</p>)}</div></li>
+        ))}
+      </ol>
+    </Panel>
+
+    <Panel hid="hd-how" title="しくみ" class="mxd-steps">
+      <ol class="mxd-st">
+        {STEPS_HOW.map((s, i) => (
+          <li><svg viewBox="0 0 60 54" aria-hidden="true" set:html={s.svg} /><div><h3>{i + 1} {s.t}</h3>{s.p.map((p) => <p>{p}</p>)}</div></li>
+        ))}
+      </ol>
+    </Panel>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools current="maxwell-demon" />
+  <script>
+    import '../tools/maxwell-demon/client';
+  </script>
+</SiteLayout>
