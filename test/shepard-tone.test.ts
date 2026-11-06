@@ -196,6 +196,17 @@ describe('無限音階の音', () => {
     expect(s.pos).toBeGreaterThan(p);
   });
 
+  it('start で鳴らすと 0.5 秒ほどかけて大きくなる', () => {
+    const s = make({ on: false, moving: false });
+    s.start(0);
+    const x = run(s, 1),
+      w = FS / 20,
+      at = (t: number) => rms(x, t * FS, t * FS + w);
+    expect(at(0)).toBeLessThan(at(0.2) * 0.5);
+    expect(at(0.2)).toBeLessThan(at(0.6) * 0.8);
+    expect(at(0.6)).toBeCloseTo(at(0.9), 2);
+  });
+
   it('和音を替えた直後に音が飛ばない', () => {
     const s = make({ moving: false });
     run(s, 0.5);

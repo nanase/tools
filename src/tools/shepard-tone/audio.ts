@@ -26,8 +26,8 @@ export class ShepardAudio {
   private conv: ConvolverNode | null = null;
   private loading: Promise<boolean> | null = null;
   private db = -12;
-  private kind: ReverbId = 'hall';
-  private amount = 0.45;
+  private kind: ReverbId = 'church';
+  private amount = 1;
   private swap: ReturnType<typeof setTimeout> | undefined;
   private readonly irs = new Map<ReverbId, AudioBuffer>();
   /** 読み込む前に選んだ設定。読み込んだときに送る */

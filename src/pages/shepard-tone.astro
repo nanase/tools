@@ -24,8 +24,8 @@ const P = Object.fromEntries(PARAMS.map((d) => [d.k, d]));
           <canvas class="sht-levels" id="sht-levels" role="img" aria-label="音域ごとの音量と今の音"></canvas>
         </div>
         <div class="sht-opts" id="sht-opts" role="group" aria-label="追加の表示">
-          <button type="button" class="tg" data-view="levels" aria-pressed="false" title="スペクトログラムの右に今の音と音量"><span class="led" aria-hidden="true"></span>音域ごとの音量</button>
           <button type="button" class="tg" data-view="ring" aria-pressed="false" title="12 の音名の上で回る今の和音"><span class="led" aria-hidden="true"></span>音名の環</button>
+          <button type="button" class="tg" data-view="levels" aria-pressed="false" title="スペクトログラムの右に今の音と音量"><span class="led" aria-hidden="true"></span>音域ごとの音量</button>
           <span class="sht-lg" id="sht-lg" hidden><span class="stag"><i class="sw" aria-hidden="true"></i>根音</span><span class="stag"><i class="sw c2" aria-hidden="true"></i>ほかの音</span></span>
         </div>
       </Panel>
@@ -55,14 +55,14 @@ const P = Object.fromEntries(PARAMS.map((d) => [d.k, d]));
     <div class="sht-2">
       <Panel hid="hd-snd" title="音">
         <div class="ptab">
-          <ChoiceRow k="chord" name="和音" layout="chips" choices={CHORD_OPT} value="major" />
-          <ChoiceRow k="timbre" name="音色" layout="chips" choices={TIMBRE_OPT} value="sine" />
+          <ChoiceRow k="chord" name="和音" layout="chips" choices={CHORD_OPT} value="fifth" />
+          <ChoiceRow k="timbre" name="音色" layout="chips" choices={TIMBRE_OPT} value="saw" />
         </div>
       </Panel>
       <div class="sht-col">
         <Panel hid="hd-rev" title="響き">
           <div class="ptab">
-            <ChoiceRow k="reverb" name="残響" choices={REVERB_OPT} value="hall" />
+            <ChoiceRow k="reverb" name="残響" choices={REVERB_OPT} value="church" />
             <ParamRow d={P.wet} />
             <ParamRow d={P.vol} />
           </div>

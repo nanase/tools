@@ -41,8 +41,8 @@ registerProcessor(
         const m = ev.data,
           s = this.s;
         if (m.type === 'play') {
-          if (m.on) s.pos = m.pos;
-          s.on = m.on;
+          if (m.on) s.start(m.pos);
+          else s.on = false;
         } else if (m.type === 'chord') s.setChord(m.s);
         else if (m.type === 'timbre') s.setTimbre(m.id);
         else if (m.type === 'rate') s.rate = m.v;
