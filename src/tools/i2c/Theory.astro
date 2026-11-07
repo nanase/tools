@@ -1,0 +1,60 @@
+---
+// 動作原理と式
+type Ref = { for: string; src: string };
+const REFS: readonly Ref[] = [
+  {
+    for: '開始と終了・ACK・クロックの同期・調停・クロックストレッチ（3.1 節）、入出力と線の特性（表 10・表 11）、プルアップ抵抗の範囲（7.1 節）',
+    src: 'NXP Semiconductors, UM10204 I2C-bus specification and user manual, Rev. 7.0, 2021',
+  },
+];
+---
+<h3>線の電圧</h3>
+<p>機器の出力は線を Low に下げるか放すかだけです（オープンドレイン）。1 台でも下げていれば線は Low になり、誰も下げなければプルアップ抵抗 <math><msub><mi>R</mi><mi>p</mi></msub></math> を通して <math><msub><mi>V</mi><mi>DD</mi></msub></math> へ戻ります。戻る速さは抵抗と配線の容量 <math><msub><mi>C</mi><mi>b</mi></msub></math> の積で決まります。</p>
+<div class="eqs">
+  <math display="block"><mrow><mi>V</mi><mo>(</mo><mi>t</mi><mo>)</mo><mo>=</mo><msub><mi>V</mi><mi>DD</mi></msub><mo>(</mo><mn>1</mn><mo>−</mo><msup><mi>e</mi><mrow><mo>−</mo><mi>t</mi><mo>/</mo><msub><mi>R</mi><mi>p</mi></msub><msub><mi>C</mi><mi>b</mi></msub></mrow></msup><mo>)</mo></mrow></math>
+  <math display="block"><mrow><msub><mi>t</mi><mi>r</mi></msub><mo>=</mo><mi>ln</mi><mfrac><mn>0.7</mn><mn>0.3</mn></mfrac><mo>·</mo><msub><mi>R</mi><mi>p</mi></msub><msub><mi>C</mi><mi>b</mi></msub><mo>≈</mo><mn>0.8473</mn><msub><mi>R</mi><mi>p</mi></msub><msub><mi>C</mi><mi>b</mi></msub></mrow></math>
+</div>
+<p>立ち上がり時間 <math><msub><mi>t</mi><mi>r</mi></msub></math> は 0.3 <math><msub><mi>V</mi><mi>DD</mi></msub></math> から 0.7 <math><msub><mi>V</mi><mi>DD</mi></msub></math> までの時間です。機器は 0.3 <math><msub><mi>V</mi><mi>DD</mi></msub></math>（VIL）より下を Low、0.7 <math><msub><mi>V</mi><mi>DD</mi></msub></math>（VIH）より上を High と読み、その間では直前の値を保ちます。</p>
+
+<h3>プルアップ抵抗の範囲</h3>
+<p>下げている機器は Low の電圧 0.4 V で <math><msub><mi>I</mi><mi>OL</mi></msub></math>（標準・ファストで 3 mA、ファストプラスで 20 mA）を流せます。抵抗が小さすぎると Low が下がりきらず、大きすぎると立ち上がりが上限（1000・300・120 ns）に間に合いません。</p>
+<div class="eqs">
+  <math display="block"><mrow><msub><mi>R</mi><mrow><mi>p</mi><mo>(</mo><mi>min</mi><mo>)</mo></mrow></msub><mo>=</mo><mfrac><mrow><msub><mi>V</mi><mi>DD</mi></msub><mo>−</mo><msub><mi>V</mi><mrow><mi>OL</mi><mo>(</mo><mi>max</mi><mo>)</mo></mrow></msub></mrow><msub><mi>I</mi><mi>OL</mi></msub></mfrac></mrow></math>
+  <math display="block"><mrow><msub><mi>R</mi><mrow><mi>p</mi><mo>(</mo><mi>max</mi><mo>)</mo></mrow></msub><mo>=</mo><mfrac><msub><mi>t</mi><mi>r</mi></msub><mrow><mn>0.8473</mn><mo>·</mo><msub><mi>C</mi><mi>b</mi></msub></mrow></mfrac></mrow></math>
+</div>
+<p>Low の電圧は、下げている機器の出力を抵抗 <math><msub><mi>R</mi><mi>on</mi></msub><mo>=</mo><mn>0.4</mn><mtext>&nbsp;V</mtext><mo>/</mo><msub><mi>I</mi><mi>OL</mi></msub></math> とみて、<math><msub><mi>R</mi><mi>p</mi></msub></math> との分圧で求めます。</p>
+
+<h3>通信の手順</h3>
+<ul class="tl">
+  <li>開始: SCL が High のまま SDA を Low へ</li>
+  <li>ビット: SDA は SCL が Low の間に変え、SCL が High の間に読む</li>
+  <li>最初の 8 ビット: 宛先の 7 ビットのアドレスと読み書きの 1 ビット（0 が書き込み）</li>
+  <li>9 ビット目: 受け手が SDA を Low にすれば ACK、High のままなら NACK</li>
+  <li>読み出しでは、マスタが最後のバイトに NACK を返す</li>
+  <li>終了: SCL が High のまま SDA を High へ</li>
+  <li>クロックストレッチ: スレーブが SCL を Low のまま保持し、マスタは High になるまで待つ</li>
+  <li>調停: 1 を送ったのに SDA が Low なら、ほかのマスタが送っている。負けた側は送信をやめ、終了の後に送り直す</li>
+</ul>
+
+<h3>出典</h3>
+<ol class="refs">
+  {REFS.map((r, i) => (
+    <li id={`thy-r${i + 1}`}>
+      <span class="rf-for">{r.for}</span>
+      <span class="rf-src">{r.src}</span>
+    </li>
+  ))}
+</ol>
+
+<h3>このツールで決めたこと</h3>
+<ul class="tl">
+  <li>仕様書の Rev. 7.0 はマスタ・スレーブをコントローラ・ターゲットと呼ぶ。画面では広く使われているマスタ・スレーブを使う</li>
+  <li>マスタの SCL の Low は周期の 53 %、データを変えるのは SCL の立ち下がりから周期の 12 % 後</li>
+  <li>スレーブは SCL の立ち下がりから周期の 10 % 後に SDA を変える</li>
+  <li>マスタは SCL を放したあと High になるまで待つ（クロックの同期）。立ち上がりが遅いとクロックが遅くなる</li>
+  <li>しきい値のヒステリシスは VIL と VIH の間とし、その間では直前の値を保つ</li>
+  <li>クロックストレッチは、宛先のスレーブがアドレスの ACK の後に 3.2 周期だけ保持する</li>
+  <li>2 台目のマスタは同時に送り始め、1 台目と違う宛先へ書き込む</li>
+  <li>スレーブは 2 バイトを持ち、書き込むと置き換わり、読み出しで返す。アドレス 0x3C の機器はない</li>
+  <li>時間刻みは周期の 1/200</li>
+</ul>
