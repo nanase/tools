@@ -3,6 +3,8 @@
  * 工程は追加・検索・範囲・削除の 4 つで、切り替えるとその工程を初めから再生する。
  * 表示は 単独（1 行）・比較（複数の行を同時に）・一覧（1 行と計算量の表）の 3 つ
  */
+
+import { bigO } from '../../lib/big-o';
 import { Choice } from '../../lib/choice';
 import { $, $$ } from '../../lib/dom';
 import { RM } from '../../lib/motion';
@@ -439,7 +441,7 @@ function buildOps(): void {
     a = avgOf(d);
   $('#bt-ops').innerHTML = STAGES.map(
     ([k, t]) =>
-      `<tr data-k="${k}"><td class="bt-ob"><button type="button">${t}</button></td><td class="bt-how">${howOf(d, k)}</td><td class="bt-oo">${BIG_O[d.id][k]}</td><td class="bt-on">${countText(a[k])}</td></tr>`,
+      `<tr data-k="${k}"><td class="bt-ob"><button type="button">${t}</button></td><td class="bt-how">${howOf(d, k)}</td><td class="bt-oo">${bigO(BIG_O[d.id][k])}</td><td class="bt-on">${countText(a[k])}</td></tr>`,
   ).join('');
 }
 function syncOps(): void {
@@ -659,7 +661,7 @@ function buildMatrix(): void {
   const head = `<thead><tr><th></th>${COLS.map(([k, t]) => `<th scope="col"><button type="button" class="bt-mh" data-k="${k}" title="データ構造を比較">${t}</button></th>`).join('')}<th scope="col" title="1 回の追加で書くページの数。キー 31 個の実測">書く<br>ページ</th><th scope="col" title="ノードの枠に入っているキーの割合。キー 31 個の実測">充填率</th><th scope="col" title="キー 31 個の実測">段数</th></tr></thead>`,
     body = DEFS.map((d) => {
       const a = avgOf(d);
-      return `<tr><th scope="row"><button type="button" class="bt-mr" data-a="${d.id}">${d.name}</button></th>${COLS.map(([k]) => `<td><button type="button" class="bt-c${BIG_O[d.id][k] === 'O(n)' ? ' on' : ''}" data-a="${d.id}" data-k="${k}" title="${d.name}: ${k}">${BIG_O[d.id][k]}</button></td>`).join('')}<td class="bt-st">${a.wr.toFixed(1)}</td><td class="bt-st">${Math.round(a.fill * 100)} %</td><td class="bt-st">${a.depth.toFixed(1)}</td></tr>`;
+      return `<tr><th scope="row"><button type="button" class="bt-mr" data-a="${d.id}">${d.name}</button></th>${COLS.map(([k]) => `<td><button type="button" class="bt-c${BIG_O[d.id][k] === 'O(n)' ? ' on' : ''}" data-a="${d.id}" data-k="${k}" title="${d.name}: ${k}">${bigO(BIG_O[d.id][k])}</button></td>`).join('')}<td class="bt-st">${a.wr.toFixed(1)}</td><td class="bt-st">${Math.round(a.fill * 100)} %</td><td class="bt-st">${a.depth.toFixed(1)}</td></tr>`;
     }).join('');
   $('#bt-mx').innerHTML = `${head}<tbody>${body}</tbody>`;
 }

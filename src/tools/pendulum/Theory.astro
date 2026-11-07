@@ -83,20 +83,20 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
   <figcaption>状態フィードバック <math><mi>u</mi><mo>=</mo><mo>−</mo><mi>K</mi><mi mathvariant="bold">x</mi></math></figcaption>
 </figure>
 <div class="eqs">
-  <math display="block"><mi mathvariant="script">C</mi><mo>=</mo><mrow><mo>[</mo><mi>B</mi><mspace width="0.4em"/><mi>A</mi><mi>B</mi><mspace width="0.4em"/><msup><mi>A</mi><mn>2</mn></msup><mi>B</mi><mspace width="0.4em"/><msup><mi>A</mi><mn>3</mn></msup><mi>B</mi><mo>]</mo></mrow></math>
+  <math display="block"><mi mathvariant="script">C</mi><mo>=</mo><mrow><mo stretchy="false">[</mo><mi>B</mi><mspace width="0.4em"/><mi>A</mi><mi>B</mi><mspace width="0.4em"/><msup><mi>A</mi><mn>2</mn></msup><mi>B</mi><mspace width="0.4em"/><msup><mi>A</mi><mn>3</mn></msup><mi>B</mi><mo stretchy="false">]</mo></mrow></math>
 </div>
 
 <h3>極配置</h3>
 <p>固有角周波数 <math><msub><mi>ω</mi><mi>i</mi></msub></math> と減衰比 <math><msub><mi>ζ</mi><mi>i</mi></msub></math> の 2 組で、4 つの極を決めます。その特性多項式 <math><mi>φ</mi><mo stretchy="false">(</mo><mi>s</mi><mo stretchy="false">)</mo></math> から、アッカーマンの式でゲインを求めます<Fragment set:html={rf(3)} />。</p>
 <div class="eqs">
-  <math display="block"><mi>φ</mi><mo stretchy="false">(</mo><mi>s</mi><mo stretchy="false">)</mo><mo>=</mo><munderover><mo>∏</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mn>2</mn></munderover><mrow><mo>(</mo><msup><mi>s</mi><mn>2</mn></msup><mo>+</mo><mn>2</mn><msub><mi>ζ</mi><mi>i</mi></msub><msub><mi>ω</mi><mi>i</mi></msub><mi>s</mi><mo>+</mo><msubsup><mi>ω</mi><mi>i</mi><mn>2</mn></msubsup><mo>)</mo></mrow></math>
-  <math display="block"><mi>K</mi><mo>=</mo><mrow><mo>[</mo><mn>0</mn><mspace width="0.4em"/><mn>0</mn><mspace width="0.4em"/><mn>0</mn><mspace width="0.4em"/><mn>1</mn><mo>]</mo></mrow><msup><mi mathvariant="script">C</mi><mrow><mo>−</mo><mn>1</mn></mrow></msup><mi>φ</mi><mo stretchy="false">(</mo><mi>A</mi><mo stretchy="false">)</mo></math>
+  <math display="block"><mi>φ</mi><mo stretchy="false">(</mo><mi>s</mi><mo stretchy="false">)</mo><mo>=</mo><munderover><mo>∏</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mn>2</mn></munderover><mrow><mo stretchy="false">(</mo><msup><mi>s</mi><mn>2</mn></msup><mo>+</mo><mn>2</mn><msub><mi>ζ</mi><mi>i</mi></msub><msub><mi>ω</mi><mi>i</mi></msub><mi>s</mi><mo>+</mo><msubsup><mi>ω</mi><mi>i</mi><mn>2</mn></msubsup><mo stretchy="false">)</mo></mrow></math>
+  <math display="block"><mi>K</mi><mo>=</mo><mrow><mo stretchy="false">[</mo><mn>0</mn><mspace width="0.4em"/><mn>0</mn><mspace width="0.4em"/><mn>0</mn><mspace width="0.4em"/><mn>1</mn><mo stretchy="false">]</mo></mrow><msup><mi mathvariant="script">C</mi><mrow><mo>−</mo><mn>1</mn></mrow></msup><mi>φ</mi><mo stretchy="false">(</mo><mi>A</mi><mo stretchy="false">)</mo></math>
 </div>
 
 <h3>LQR</h3>
 <p>LQR は、状態のずれと入力の大きさの重み付きの和 <math><mi>𝒥</mi></math> を最小にするゲインです<Fragment set:html={rf(1) + rf(4)} />。重み <math><mi>Q</mi><mo>=</mo><mi>diag</mi><mo stretchy="false">(</mo><msub><mi>q</mi><mi>x</mi></msub><mo>,</mo><msub><mi>q</mi><mi>θ</mi></msub><mo>,</mo><msub><mi>q</mi><mover><mi>x</mi><mo>˙</mo></mover></msub><mo>,</mo><msub><mi>q</mi><mover><mi>θ</mi><mo>˙</mo></mover></msub><mo stretchy="false">)</mo></math> と <math><mi>R</mi></math> から、代数リカッチ方程式の解 <math><mi>P</mi></math> を求めます。</p>
 <div class="eqs">
-  <math display="block"><mi>𝒥</mi><mo>=</mo><msubsup><mo>∫</mo><mn>0</mn><mi>∞</mi></msubsup><mrow><mo>(</mo><msup><mi mathvariant="bold">x</mi><mi mathvariant="normal">T</mi></msup><mi>Q</mi><mi mathvariant="bold">x</mi><mo>+</mo><mi>R</mi><msup><mi>u</mi><mn>2</mn></msup><mo>)</mo></mrow><mspace width="0.17em"/><mi>d</mi><mi>t</mi></math>
+  <math display="block"><mi>𝒥</mi><mo>=</mo><msubsup><mo>∫</mo><mn>0</mn><mi>∞</mi></msubsup><mrow><mo stretchy="false">(</mo><msup><mi mathvariant="bold">x</mi><mi mathvariant="normal">T</mi></msup><mi>Q</mi><mi mathvariant="bold">x</mi><mo>+</mo><mi>R</mi><msup><mi>u</mi><mn>2</mn></msup><mo stretchy="false">)</mo></mrow><mspace width="0.17em"/><mi>d</mi><mi>t</mi></math>
   <math display="block"><msup><mi>A</mi><mi mathvariant="normal">T</mi></msup><mi>P</mi><mo>+</mo><mi>P</mi><mi>A</mi><mo>−</mo><mi>P</mi><mi>B</mi><msup><mi>R</mi><mrow><mo>−</mo><mn>1</mn></mrow></msup><msup><mi>B</mi><mi mathvariant="normal">T</mi></msup><mi>P</mi><mo>+</mo><mi>Q</mi><mo>=</mo><mn>0</mn></math>
   <math display="block"><mi>K</mi><mo>=</mo><msup><mi>R</mi><mrow><mo>−</mo><mn>1</mn></mrow></msup><msup><mi>B</mi><mi mathvariant="normal">T</mi></msup><mi>P</mi></math>
 </div>

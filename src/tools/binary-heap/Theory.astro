@@ -1,5 +1,6 @@
 ---
 // 動作原理と式
+import { bigO } from '../../lib/big-o';
 import { BIG_O, DEFS, KEYS } from './model';
 
 type Ref = { for: string; src: string };
@@ -46,18 +47,19 @@ const REFS: readonly Ref[] = [
   },
 ];
 const Rf = (i: number) => `<a class="rf" href="#thy-r${i}">[${i}]</a>`;
-const ON = '<math><mi>O</mi><mo>(</mo><mi>n</mi><mo>)</mo></math>';
-const OL = '<math><mi>O</mi><mo>(</mo><mi>log</mi><mspace width="0.2em"/><mi>n</mi><mo>)</mo></math>';
+const ON = '<math><mi>O</mi><mo stretchy="false">(</mo><mi>n</mi><mo stretchy="false">)</mo></math>';
+const OL =
+  '<math><mi>O</mi><mo stretchy="false">(</mo><mi>log</mi><mspace width="0.2em"/><mi>n</mi><mo stretchy="false">)</mo></math>';
 const ONL =
-  '<math><mi>O</mi><mo>(</mo><mi>n</mi><mspace width="0.2em"/><mi>log</mi><mspace width="0.2em"/><mi>n</mi><mo>)</mo></math>';
+  '<math><mi>O</mi><mo stretchy="false">(</mo><mi>n</mi><mspace width="0.2em"/><mi>log</mi><mspace width="0.2em"/><mi>n</mi><mo stretchy="false">)</mo></math>';
 ---
 <h3>ヒープの条件</h3>
 <p>最大ヒープは、どの親の値も子の値以上になっている木です。最大値はいつも根にあります。左右の子のどちらが大きいかは決めません。上の段から左詰めで埋めるので、段数は要素数の対数で済みます <Fragment set:html={Rf(1)} />。</p>
-<div class="eqs"><math display="block"><mrow><mi>A</mi><mo>[</mo><mi>parent</mi><mo>(</mo><mi>i</mi><mo>)</mo><mo>]</mo><mo>≥</mo><mi>A</mi><mo>[</mo><mi>i</mi><mo>]</mo></mrow></math></div>
+<div class="eqs"><math display="block"><mrow><mi>A</mi><mo stretchy="false">[</mo><mi>parent</mi><mo stretchy="false">(</mo><mi>i</mi><mo stretchy="false">)</mo><mo stretchy="false">]</mo><mo>≥</mo><mi>A</mi><mo stretchy="false">[</mo><mi>i</mi><mo stretchy="false">]</mo></mrow></math></div>
 
 <h3>木を配列に入れる</h3>
 <p>上の段から順に配列へ並べると、親と子の位置は添字の計算で求まります。子へのポインタは要りません <Fragment set:html={Rf(3)} />。</p>
-<div class="eqs"><math display="block"><mrow><mi>parent</mi><mo>(</mo><mi>i</mi><mo>)</mo><mo>=</mo><mo>⌊</mo><mo>(</mo><mi>i</mi><mo>−</mo><mn>1</mn><mo>)</mo><mo>/</mo><mn>2</mn><mo>⌋</mo><mspace width="1.2em"/><mi>left</mi><mo>(</mo><mi>i</mi><mo>)</mo><mo>=</mo><mn>2</mn><mi>i</mi><mo>+</mo><mn>1</mn><mspace width="1.2em"/><mi>right</mi><mo>(</mo><mi>i</mi><mo>)</mo><mo>=</mo><mn>2</mn><mi>i</mi><mo>+</mo><mn>2</mn></mrow></math></div>
+<div class="eqs"><math display="block"><mrow><mi>parent</mi><mo stretchy="false">(</mo><mi>i</mi><mo stretchy="false">)</mo><mo>=</mo><mo stretchy="false">⌊</mo><mo stretchy="false">(</mo><mi>i</mi><mo>−</mo><mn>1</mn><mo stretchy="false">)</mo><mo>/</mo><mn>2</mn><mo stretchy="false">⌋</mo><mspace width="1.2em"/><mi>left</mi><mo stretchy="false">(</mo><mi>i</mi><mo stretchy="false">)</mo><mo>=</mo><mn>2</mn><mi>i</mi><mo>+</mo><mn>1</mn><mspace width="1.2em"/><mi>right</mi><mo stretchy="false">(</mo><mi>i</mi><mo stretchy="false">)</mo><mo>=</mo><mn>2</mn><mi>i</mi><mo>+</mo><mn>2</mn></mrow></math></div>
 <p>記号: <math><mi>i</mi></math> は 0 から数える添字です。</p>
 
 <h3>格納</h3>
@@ -73,7 +75,7 @@ const ONL =
 
 <h3>d 分ヒープ</h3>
 <p>子の数を <math><mi>d</mi></math> 個に増やすと段数が減り、追加は速くなります。取り出しでは 1 段ごとに子をすべて比べるので、比較は増えます <Fragment set:html={Rf(4)} />。計算量の記号はどちらも <Fragment set:html={OL} /> です。</p>
-<div class="eqs"><math display="block"><mrow><mi>parent</mi><mo>(</mo><mi>i</mi><mo>)</mo><mo>=</mo><mo>⌊</mo><mo>(</mo><mi>i</mi><mo>−</mo><mn>1</mn><mo>)</mo><mo>/</mo><mi>d</mi><mo>⌋</mo><mspace width="1.2em"/><mi>child</mi><mo>(</mo><mi>i</mi><mo>,</mo><mi>k</mi><mo>)</mo><mo>=</mo><mi>d</mi><mi>i</mi><mo>+</mo><mi>k</mi><mspace width="1.2em"/><mo>(</mo><mn>1</mn><mo>≤</mo><mi>k</mi><mo>≤</mo><mi>d</mi><mo>)</mo></mrow></math></div>
+<div class="eqs"><math display="block"><mrow><mi>parent</mi><mo stretchy="false">(</mo><mi>i</mi><mo stretchy="false">)</mo><mo>=</mo><mo stretchy="false">⌊</mo><mo stretchy="false">(</mo><mi>i</mi><mo>−</mo><mn>1</mn><mo stretchy="false">)</mo><mo>/</mo><mi>d</mi><mo stretchy="false">⌋</mo><mspace width="1.2em"/><mi>child</mi><mo stretchy="false">(</mo><mi>i</mi><mo>,</mo><mi>k</mi><mo stretchy="false">)</mo><mo>=</mo><mi>d</mi><mi>i</mi><mo>+</mo><mi>k</mi><mspace width="1.2em"/><mo stretchy="false">(</mo><mn>1</mn><mo>≤</mo><mi>k</mi><mo>≤</mo><mi>d</mi><mo stretchy="false">)</mo></mrow></math></div>
 
 <h3>ポインタでつなぐヒープ</h3>
 <p>配列に入れず、子へのポインタで木をつなぐヒープです。木どうしのマージが速いので、追加も取り出しもマージで作れます。</p>
@@ -93,7 +95,7 @@ const ONL =
     {DEFS.map((d) => (
       <tr>
         <th scope="row">{d.name}</th>
-        {KEYS.map(([k]) => <td>{BIG_O[d.id][k]}</td>)}
+        {KEYS.map(([k]) => <td set:html={bigO(BIG_O[d.id][k])} />)}
       </tr>
     ))}
   </tbody>
@@ -101,7 +103,7 @@ const ONL =
 
 <h3>音</h3>
 <p>音の高さはバーの高さで決めます。<math><mi>v</mi></math> はバーの値（1〜99）です。</p>
-<div class="eqs"><math display="block"><mrow><mi>f</mi><mo>=</mo><mn>110</mn><mo>×</mo><msup><mn>2</mn><mrow><mn>4</mn><mo>(</mo><mi>v</mi><mo>−</mo><mn>1</mn><mo>)</mo><mo>/</mo><mn>98</mn></mrow></msup><mspace width="0.3em"/><mtext>Hz</mtext></mrow></math></div>
+<div class="eqs"><math display="block"><mrow><mi>f</mi><mo>=</mo><mn>110</mn><mo>×</mo><msup><mn>2</mn><mrow><mn>4</mn><mo stretchy="false">(</mo><mi>v</mi><mo>−</mo><mn>1</mn><mo stretchy="false">)</mo><mo>/</mo><mn>98</mn></mrow></msup><mspace width="0.3em"/><mtext>Hz</mtext></mrow></math></div>
 
 <h3>出典</h3>
 <ol class="refs">

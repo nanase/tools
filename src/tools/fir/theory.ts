@@ -256,7 +256,22 @@ const EQ_WINN = blk(
 );
 /** 等リップルと最小二乗 */
 const EQ_OPT =
-  blk(row(mi('E'), par(w), EQ, mi('W'), par(w), '<mo>[</mo>', mi('D'), par(w), MI, mi('A'), par(w), '<mo>]</mo>')) +
+  blk(
+    row(
+      mi('E'),
+      par(w),
+      EQ,
+      mi('W'),
+      par(w),
+      '<mo stretchy="false">[</mo>',
+      mi('D'),
+      par(w),
+      MI,
+      mi('A'),
+      par(w),
+      '<mo stretchy="false">]</mo>',
+    ),
+  ) +
   blk(
     row(
       mi('E'),

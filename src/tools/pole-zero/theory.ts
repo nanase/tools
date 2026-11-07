@@ -37,7 +37,7 @@ const zm = sub(mi('z'), mi('m')),
   Re = `<mi mathvariant="normal">Re</mi>${TH}`,
   ln = `<mi>ln</mi>${FN}${TH}`,
   cos = `<mi>cos</mi>${FN}${TH}`,
-  brk = (x: string) => row('<mo>[</mo>', x, '<mo>]</mo>');
+  brk = (x: string) => row('<mo stretchy="false">[</mo>', x, '<mo stretchy="false">]</mo>');
 const PM = prod('m', one, mi('M')),
   PN = prod('n', one, mi('N')),
   SM = sum('m', one, mi('M')),

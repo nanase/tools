@@ -18,8 +18,8 @@ const REFS: readonly Ref[] = [
   },
 ];
 const Rf = (i: number) => `<a class="rf" href="#thy-r${i}">[${i}]</a>`;
-const O1 = '<math><mi>O</mi><mo>(</mo><mn>1</mn><mo>)</mo></math>';
-const ON = '<math><mi>O</mi><mo>(</mo><mi>n</mi><mo>)</mo></math>';
+const O1 = '<math><mi>O</mi><mo stretchy="false">(</mo><mn>1</mn><mo stretchy="false">)</mo></math>';
+const ON = '<math><mi>O</mi><mo stretchy="false">(</mo><mi>n</mi><mo stretchy="false">)</mo></math>';
 ---
 <h3>スタックとキュー</h3>
 <ul class="tl">
@@ -36,7 +36,7 @@ const ON = '<math><mi>O</mi><mo>(</mo><mi>n</mi><mo>)</mo></math>';
   <li>双方向リスト: 前の要素の位置も持つ。末尾を削除するときに 1 つ前をたどらなくてよい</li>
   <li>リングバッファ: 配列の両端をつないで輪として使う。バーをずらさず、先頭と末尾の位置だけを進める <Fragment set:html={Rf(1)} /></li>
 </ul>
-<div class="eqs"><math display="block"><mrow><mi>h</mi><mo>←</mo><mo>(</mo><mi>h</mi><mo>+</mo><mn>1</mn><mo>)</mo><mspace width="0.3em"/><mi>mod</mi><mspace width="0.3em"/><mi>c</mi></mrow></math></div>
+<div class="eqs"><math display="block"><mrow><mi>h</mi><mo>←</mo><mo stretchy="false">(</mo><mi>h</mi><mo>+</mo><mn>1</mn><mo stretchy="false">)</mo><mspace width="0.3em"/><mi>mod</mi><mspace width="0.3em"/><mi>c</mi></mrow></math></div>
 <p>記号: <math><mi>h</mi></math> は先頭の位置、<math><mi>c</mi></math> は容量です。</p>
 
 <h3>計算量</h3>
@@ -63,7 +63,7 @@ const ON = '<math><mi>O</mi><mo>(</mo><mi>n</mi><mo>)</mo></math>';
 
 <h3>音</h3>
 <p>音の高さはバーの高さで決めます。<math><mi>v</mi></math> はバーの値（1〜1000）です。</p>
-<div class="eqs"><math display="block"><mrow><mi>f</mi><mo>=</mo><mn>110</mn><mo>×</mo><msup><mn>2</mn><mrow><mn>4</mn><mo>(</mo><mi>v</mi><mo>−</mo><mn>1</mn><mo>)</mo><mo>/</mo><mn>999</mn></mrow></msup><mspace width="0.3em"/><mtext>Hz</mtext></mrow></math></div>
+<div class="eqs"><math display="block"><mrow><mi>f</mi><mo>=</mo><mn>110</mn><mo>×</mo><msup><mn>2</mn><mrow><mn>4</mn><mo stretchy="false">(</mo><mi>v</mi><mo>−</mo><mn>1</mn><mo stretchy="false">)</mo><mo>/</mo><mn>999</mn></mrow></msup><mspace width="0.3em"/><mtext>Hz</mtext></mrow></math></div>
 
 <h3>出典</h3>
 <ol class="refs">

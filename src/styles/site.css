@@ -36,7 +36,7 @@
   --rail-h:52px;
   --mono:"Fira Mono",ui-monospace,"Cascadia Mono",Consolas,Menlo,monospace;
   --sans:system-ui,-apple-system,"Segoe UI","Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic UI",Meiryo,sans-serif;
-  --math:"Cambria Math","STIX Two Math","Latin Modern Math","Times New Roman",serif;
+  --math:"LM Math Web","Cambria Math","STIX Two Math","Latin Modern Math","Times New Roman",serif;
 }
 /* ===== tokens (dark) ===== */
 @media (prefers-color-scheme:dark){
@@ -76,6 +76,8 @@ h1,h2,h3,p{margin:0}
 :focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 [tabindex="-1"]:focus{outline:none}
 .c-sym i,dt i,.mini i{font-family:var(--math);font-style:italic;font-size:1.08em}
+math{font-family:var(--math)}
+.bo{font:400 1.12em/1 var(--math);font-variant-numeric:normal;letter-spacing:0}
 sub{font-size:.7em;line-height:0}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .wrap{max-width:1180px;margin:0 auto;padding:0 16px}

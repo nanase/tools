@@ -6,6 +6,7 @@ import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
 import RelatedTools from '../components/RelatedTools.astro';
 import SiteLayout from '../layouts/SiteLayout.astro';
+import { bigO } from '../lib/big-o';
 import '../tools/list-queue-stack/style.css';
 import { DEFS, KEYS, rng, SHAPES, shapeAt } from '../tools/list-queue-stack/model';
 import { SIZE, SPEED, VOL } from '../tools/list-queue-stack/params';
@@ -84,7 +85,7 @@ const short = (s: string) => s.replace(/（.*）/, '');
                 <th scope="row"><button type="button" class="ls-mr" data-a={d.id}>{d.name}</button></th>
                 {KEYS.map(([k]) => {
                   const o = d.ops.find((x) => x.key === k);
-                  return <td>{o ? <button type="button" class:list={['ls-c', { on: o.o === 'O(n)' }]} data-a={d.id} data-k={k} title={`${d.name}: ${o.label}`}>{o.o.replace('償却 ', '')}{o.amort ? '*' : ''}</button> : <span class="ls-no">–</span>}</td>;
+                  return <td>{o ? <button type="button" class:list={['ls-c', { on: o.o === 'O(n)' }]} data-a={d.id} data-k={k} title={`${d.name}: ${o.label}`} set:html={bigO(o.o.replace('償却 ', '') + (o.amort ? '*' : ''))} /> : <span class="ls-no">–</span>}</td>;
                 })}
                 <td class="ls-tx">{short(d.order)}</td>
                 <td class="ls-tx">{short(d.mem)}</td>

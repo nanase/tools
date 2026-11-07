@@ -63,13 +63,13 @@ const rf = (...ns: number[]) => ns.map((n) => `<a class="rf" href="#thy-r${n}">[
 </div>
 <p>半円の重心は中心から 2<i>D</i>/(3π)、四分円の重心はその点を斜めに置いた所にあります。これから、中央の光条と X の交点の距離 <math><mi>e</mi></math> が求まります。</p>
 <div class="eqs">
-  <math display="block"><mi>e</mi><mo>=</mo><mfrac><mrow><mi>Δ</mi><mi>z</mi></mrow><mi>N</mi></mfrac><mo>·</mo><mfrac><mn>2</mn><mrow><mn>3</mn><mi>π</mi></mrow></mfrac><mrow><mo>(</mo><mn>2</mn><mo>+</mo><mi>tan</mi><mo>⁡</mo><mi>θ</mi><mo>)</mo></mrow></math>
+  <math display="block"><mi>e</mi><mo>=</mo><mfrac><mrow><mi>Δ</mi><mi>z</mi></mrow><mi>N</mi></mfrac><mo>·</mo><mfrac><mn>2</mn><mrow><mn>3</mn><mi>π</mi></mrow></mfrac><mrow><mo stretchy="false">(</mo><mn>2</mn><mo>+</mo><mi>tan</mi><mo>⁡</mo><mi>θ</mi><mo stretchy="false">)</mo></mrow></math>
   <math display="block"><mi>Δ</mi><mi>z</mi><mo>=</mo><mfrac><mrow><mn>3</mn><mi>π</mi><mi>N</mi></mrow><mn>2</mn></mfrac><mo>·</mo><mfrac><mi>e</mi><mrow><mn>2</mn><mo>+</mo><mi>tan</mi><mo>⁡</mo><mi>θ</mi></mrow></mfrac></math>
 </div>
 <p>桟のないマスクでは、この式は像を計算して光条の位置を測った値と 1 割以内で合います（このツールのテストで確かめています）。桟があると区画の重心が外へ寄るので、ずれは少し大きくなります。中央遮蔽も同じで、遮蔽率 <math><mi>ε</mi></math> の円環の半分では重心が <math><mo stretchy="false">(</mo><mn>1</mn><mo>+</mo><mi>ε</mi><mo>+</mo><msup><mi>ε</mi><mn>2</mn></msup><mo stretchy="false">)</mo><mo>/</mo><mo stretchy="false">(</mo><mn>1</mn><mo>+</mo><mi>ε</mi><mo stretchy="false">)</mo></math> 倍の所に移り、ε = 0.35 でずれは約 9 % 大きくなります。斜めのスリットを逆向き（「&gt;」の形）に傾けると、<math><mi>tan</mi><mo>⁡</mo><mi>θ</mi></math> の符号が変わり、感度が下がります。</p>
 <p>解析ソフトで広く使われている式は、N. Noordhoek の Bahtinov Grabber のものです<Fragment set:html={rf(11)} />。θ = 20° で、上の式より約 1 割大きい値になります。</p>
 <div class="eqs">
-  <math display="block"><mi>e</mi><mo>=</mo><mfrac><mn>9</mn><mn>32</mn></mfrac><mo>·</mo><mfrac><mi>D</mi><mi>f</mi></mfrac><mrow><mo>[</mo><mn>1</mn><mo>+</mo><mi>cos</mi><mo>⁡</mo><mn>45</mn><mo>°</mo><mrow><mo>(</mo><mn>1</mn><mo>+</mo><mi>tan</mi><mo>⁡</mo><mi>θ</mi><mo>)</mo></mrow><mo>]</mo></mrow><mi>Δ</mi><mi>z</mi></math>
+  <math display="block"><mi>e</mi><mo>=</mo><mfrac><mn>9</mn><mn>32</mn></mfrac><mo>·</mo><mfrac><mi>D</mi><mi>f</mi></mfrac><mrow><mo stretchy="false">[</mo><mn>1</mn><mo>+</mo><mi>cos</mi><mo>⁡</mo><mn>45</mn><mo>°</mo><mrow><mo stretchy="false">(</mo><mn>1</mn><mo>+</mo><mi>tan</mi><mo>⁡</mo><mi>θ</mi><mo stretchy="false">)</mo></mrow><mo stretchy="false">]</mo></mrow><mi>Δ</mi><mi>z</mi></math>
 </div>
 <p>ハルトマンとシャイナーのマスクでは、穴の像の間隔が穴の中心の間隔 <math><mi>d</mi></math> に比例します。</p>
 <div class="eqs">
@@ -97,7 +97,7 @@ const rf = (...ns: number[]) => ns.map((n) => `<a class="rf" href="#thy-r${n}">[
 <h3>大気のゆらぎとカメラ</h3>
 <p>長い露出の星像の広がり（シーイング）は、モファット分布で畳み込みます。β = 4.765 で、大気の乱れの理論から求まる長時間露出の像に近くなります<Fragment set:html={rf(12, 13)} />。</p>
 <div class="eqs">
-  <math display="block"><mi>I</mi><mo stretchy="false">(</mo><mi>r</mi><mo stretchy="false">)</mo><mo>∝</mo><msup><mrow><mo>(</mo><mn>1</mn><mo>+</mo><msup><mrow><mo>(</mo><mi>r</mi><mo>/</mo><mi>a</mi><mo>)</mo></mrow><mn>2</mn></msup><mo>)</mo></mrow><mrow><mo>−</mo><mi>β</mi></mrow></msup><mo>,</mo><mspace width="1em"/><mtext>半値幅</mtext><mo>=</mo><mn>2</mn><mi>a</mi><msqrt><mrow><msup><mn>2</mn><mrow><mn>1</mn><mo>/</mo><mi>β</mi></mrow></msup><mo>−</mo><mn>1</mn></mrow></msqrt></math>
+  <math display="block"><mi>I</mi><mo stretchy="false">(</mo><mi>r</mi><mo stretchy="false">)</mo><mo>∝</mo><msup><mrow><mo stretchy="false">(</mo><mn>1</mn><mo>+</mo><msup><mrow><mo stretchy="false">(</mo><mi>r</mi><mo>/</mo><mi>a</mi><mo stretchy="false">)</mo></mrow><mn>2</mn></msup><mo stretchy="false">)</mo></mrow><mrow><mo>−</mo><mi>β</mi></mrow></msup><mo>,</mo><mspace width="1em"/><mtext>半値幅</mtext><mo>=</mo><mn>2</mn><mi>a</mi><msqrt><mrow><msup><mn>2</mn><mrow><mn>1</mn><mo>/</mo><mi>β</mi></mrow></msup><mo>−</mo><mn>1</mn></mrow></msqrt></math>
 </div>
 <p>計算した像は、カメラの画素の大きさに合わせて面積で積分します。明るい星の芯はすぐに飽和し、飽和させるほど暗い光条が見えてきます。</p>
 

@@ -2,6 +2,7 @@
  * ソートのページの入口。データとアルゴリズムの手順を先に記録し、再生で 1 回ずつ棒グラフと音へ出す。
  * 表示は 単独（棒グラフ 1 枚）・比較（最大 9 個を同時に）・一覧（棒グラフと組み合わせの表）の 3 つ
  */
+import { bigO } from '../../lib/big-o';
 import { Choice } from '../../lib/choice';
 import { $, $$ } from '../../lib/dom';
 import { RM } from '../../lib/motion';
@@ -318,10 +319,10 @@ function syncLegend(): void {
 }
 function syncAlgInfo(): void {
   const a = algOf(alg);
-  $('#o-b').innerHTML = a.b;
-  $('#o-av').innerHTML = a.a;
-  $('#o-wc').innerHTML = a.w;
-  $('#o-mm').innerHTML = a.m;
+  $('#o-b').innerHTML = bigO(a.b);
+  $('#o-av').innerHTML = bigO(a.a);
+  $('#o-wc').innerHTML = bigO(a.w);
+  $('#o-mm').innerHTML = bigO(a.m);
   $('#o-st').textContent = a.st ? '安定' : '不安定';
 }
 

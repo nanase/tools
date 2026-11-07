@@ -1,5 +1,6 @@
 ---
 // 動作原理と式
+import { bigO } from '../../lib/big-o';
 import { ALGS } from './algorithms';
 
 type Ref = { for: string; src: string; url?: string };
@@ -214,13 +215,13 @@ const Rf = (k: K) => `<a class="rf" href="#thy-r${num(k)}">[${num(k)}]</a>`;
 
 <h3>比較の回数の下限</h3>
 <p>比較だけで並べ替えるには、<math><mi>n</mi><mo>!</mo></math> 通りの並びを見分ける必要があります<Fragment set:html={Rf('knuth')} />。</p>
-<div class="eqs"><math display="block"><mrow><msub><mi>C</mi><mi>min</mi></msub><mo>≥</mo><mo>⌈</mo><msub><mi>log</mi><mn>2</mn></msub><mi>n</mi><mo>!</mo><mo>⌉</mo><mo>≈</mo><mi>n</mi><msub><mi>log</mi><mn>2</mn></msub><mi>n</mi><mo>−</mo><mn>1.44</mn><mi>n</mi></mrow></math></div>
+<div class="eqs"><math display="block"><mrow><msub><mi>C</mi><mi>min</mi></msub><mo>≥</mo><mo stretchy="false">⌈</mo><msub><mi>log</mi><mn>2</mn></msub><mi>n</mi><mo>!</mo><mo stretchy="false">⌉</mo><mo>≈</mo><mi>n</mi><msub><mi>log</mi><mn>2</mn></msub><mi>n</mi><mo>−</mo><mn>1.44</mn><mi>n</mi></mrow></math></div>
 <p>計数・基数などの非比較のソートは、値そのものを使うのでこの下限を受けません。</p>
 
 <h3>データとの相性</h3>
 <ul class="tl">
   <li><b>挿入</b>: 移動の回数は順序が逆の組（転倒）の数に等しい。ほぼ並び替え済みなら少ない</li>
-  <li><b>末尾をピボットにするクイック</b>: 並び替え済みでは毎回 1 個しか分かれず、比較は <math><mi>n</mi><mo>(</mo><mi>n</mi><mo>−</mo><mn>1</mn><mo>)</mo><mo>/</mo><mn>2</mn></math> 回</li>
+  <li><b>末尾をピボットにするクイック</b>: 並び替え済みでは毎回 1 個しか分かれず、比較は <math><mi>n</mi><mo stretchy="false">(</mo><mi>n</mi><mo>−</mo><mn>1</mn><mo stretchy="false">)</mo><mo>/</mo><mn>2</mn></math> 回</li>
   <li><b>3 分割クイック</b>: ピボットと等しい値をまとめて除くので、値の種類が少ないと速い</li>
   <li><b>ティム・パワー・スムース</b>: すでに並んだ部分を活かす</li>
   <li><b>ソーティングネットワーク</b>: 比べる位置が初めから決まっていて、比較の回数はデータによらない</li>
@@ -228,7 +229,7 @@ const Rf = (k: K) => `<a class="rf" href="#thy-r${num(k)}">[${num(k)}]</a>`;
 
 <h3>音</h3>
 <p>値 <math><mi>v</mi></math> の音の高さを次の式で決めます。比較では 2 つの値、交換では入れ替えた 2 つの値を鳴らします。値を音にする発想は The Sound of Sorting にならいました<Fragment set:html={Rf('bingmann')} />。</p>
-<div class="eqs"><math display="block"><mrow><mi>f</mi><mo>=</mo><mn>110</mn><mo>×</mo><msup><mn>2</mn><mrow><mn>4</mn><mo>(</mo><mi>v</mi><mo>−</mo><mn>1</mn><mo>)</mo><mo>/</mo><mo>(</mo><msub><mi>v</mi><mi>max</mi></msub><mo>−</mo><mn>1</mn><mo>)</mo></mrow></msup><mtext> Hz</mtext></mrow></math></div>
+<div class="eqs"><math display="block"><mrow><mi>f</mi><mo>=</mo><mn>110</mn><mo>×</mo><msup><mn>2</mn><mrow><mn>4</mn><mo stretchy="false">(</mo><mi>v</mi><mo>−</mo><mn>1</mn><mo stretchy="false">)</mo><mo>/</mo><mo stretchy="false">(</mo><msub><mi>v</mi><mi>max</mi></msub><mo>−</mo><mn>1</mn><mo stretchy="false">)</mo></mrow></msup><mtext> Hz</mtext></mrow></math></div>
 
 <h3>計算量</h3>
 <p><math><mi>n</mi></math> は要素数、<math><mi>k</mi></math> は値の範囲、<math><mi>d</mi></math> は桁数です。「不明」は一般の式が知られていないものです。</p>
@@ -238,10 +239,10 @@ const Rf = (k: K) => `<a class="rf" href="#thy-r${num(k)}">[${num(k)}]</a>`;
     {ALGS.map((a) => (
       <tr>
         <th scope="row">{a.f}</th>
-        <td set:html={a.b} />
-        <td set:html={a.a} />
-        <td set:html={a.w} />
-        <td set:html={a.m} />
+        <td set:html={bigO(a.b)} />
+        <td set:html={bigO(a.a)} />
+        <td set:html={bigO(a.w)} />
+        <td set:html={bigO(a.m)} />
         <td>{a.st ? '安定' : '不安定'}</td>
         <td set:html={(REFS_OF[a.id] ?? []).map(Rf).join('')} />
       </tr>
