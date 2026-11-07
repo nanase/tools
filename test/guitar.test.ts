@@ -13,7 +13,17 @@ import {
   voicings,
 } from '../src/tools/guitar/chords';
 import { bodyDesc, Engine, type VibSpec } from '../src/tools/guitar/engine';
-import { bendRatio, coefAt, type Guitar, modesOf, pluckOf, shapeOf, t60, tuneCoupled } from '../src/tools/guitar/model';
+import {
+  bendRatio,
+  coefAt,
+  type Guitar,
+  modesOf,
+  pluckOf,
+  shapeOf,
+  symOf,
+  t60,
+  tuneCoupled,
+} from '../src/tools/guitar/model';
 import { slideNoise } from '../src/tools/guitar/noise';
 import { DIST } from '../src/tools/guitar/params';
 import { accents, dynamics, finger, midiOf, PIECES, parts, seq } from '../src/tools/guitar/score';
@@ -198,6 +208,18 @@ describe('弦と胴のモード', () => {
     expect(shapeOf(c, m.L, 0.13)).toBeCloseTo(1.5e-3, 4);
     expect(shapeOf(c, m.L, 0.065)).toBeCloseTo(0.75e-3, 4);
   });
+  it('ナイロン芯の巻弦は、高い部分音ほど早く減衰する（録音に合わせた損失）。低い部分音は長く残る', () => {
+    const g = guitar('nylon'),
+      m = modesOf(g, 5, 0, FS),
+      at = (f: number) => {
+        let k = 0;
+        for (let i = 0; i < m.N; i++)
+          if (Math.abs(m.w[i] / (2 * Math.PI) - f) < Math.abs(m.w[k] / (2 * Math.PI) - f)) k = i;
+        return t60(m.s0[k]);
+      };
+    expect(at(2400)).toBeLessThan(1.5);
+    expect(at(250)).toBeGreaterThan(4);
+  });
   it('指の腹（広く柔らかい）は爪より高い倍音が弱い', () => {
     const g = guitar('steel'),
       m = modesOf(g, 0, 0, FS),
@@ -205,6 +227,80 @@ describe('弦と胴のモード', () => {
       nail = pluckOf(g, 0, m, { ...sp, width: 3e-3, soft: 3e-3 }),
       flesh = pluckOf(g, 0, m, { ...sp, width: 12e-3, soft: 7.5e-3 });
     expect(Math.abs(flesh.a[40])).toBeLessThan(Math.abs(nail.a[40]) * 0.5);
+  });
+});
+
+describe('弦の共鳴', () => {
+  const sp = { pos: 0.14, amp: 1.2e-3, width: 12e-3, soft: 7.5e-3, angle: Math.PI / 4 },
+    f64 = (a: number[]) => Float64Array.from(a);
+  it('相手がなければ今までのモードのまま。結合しても、初めの駒の力の和は変わらない', () => {
+    const g = guitar('nylon'),
+      m = modesOf(g, 5, 5, FS),
+      pl = pluckOf(g, 5, m, sp),
+      alone = symOf(g, 5, pl, []);
+    expect(alone.sym.size).toBe(0);
+    expect(alone.main.w).toEqual([...m.w]);
+    expect(alone.main.fr).toEqual([...pl.f]);
+    const ps = [0, 1, 2, 3, 4].map((j) => ({ si: j, m: modesOf(g, j, 0, FS) })),
+      { main, sym } = symOf(g, 5, pl, ps),
+      sum = (a: number[]) => a.reduce((x, v) => x + v, 0);
+    let fr = sum(main.fr),
+      fi = sum(main.fi);
+    for (const o of sym.values()) {
+      fr += sum(o.fr);
+      fi += sum(o.fi);
+    }
+    expect(fr).toBeCloseTo(sum([...pl.f]), 9);
+    expect(fi).toBeCloseTo(0, 9);
+    /* 同じ高さ（A2）の 5 弦の開放が共鳴する */
+    expect(sym.get(4)?.w.some((w) => Math.abs(w / (2 * Math.PI) - 110) < 1)).toBe(true);
+  });
+  it('6 弦 5 フレットを弾いて止めても、5 弦の開放が鳴り続ける（共鳴なしなら消える）。共鳴だけの弦は鳴っている弦に数えない', () => {
+    const g = guitar('nylon'),
+      m = modesOf(g, 5, 5, FS),
+      pl = pluckOf(g, 5, m, sp),
+      ps = [0, 1, 2, 3, 4].map((j) => ({ si: j, m: modesOf(g, j, 0, FS) })),
+      { main, sym } = symOf(g, 5, pl, ps),
+      run = (on: boolean) => {
+        const e = new Engine(FS),
+          y = new Float32Array(FS);
+        e.setBody(bodyDesc(g.body));
+        e.pluck(
+          on
+            ? {
+                si: 5,
+                N: 0,
+                w: f64(main.w),
+                s: f64(main.s),
+                f: f64(main.fr),
+                fi: f64(main.fi),
+                pol: Uint8Array.from(main.pol),
+                sym: [...sym].map(([j, o]) => ({
+                  si: j,
+                  w: f64(o.w),
+                  s: f64(o.s),
+                  f: f64(o.fr),
+                  fi: f64(o.fi),
+                  pol: Uint8Array.from(o.pol),
+                  pan: 0,
+                })),
+              }
+            : { si: 5, N: m.N, w: m.w, s: m.s, f: pl.f },
+          0,
+          1,
+        );
+        expect([...e.active()]).toEqual([5]);
+        for (let i = 0; i < y.length; i += 128) {
+          if (i === 128 * 100) e.damp(5, 0.01, 1);
+          e.render(y, i, 128);
+        }
+        let s = 0;
+        for (let i = FS / 2; i < FS; i++) s += y[i] * y[i];
+        return Math.sqrt((2 * s) / FS);
+      };
+    /* 共鳴なしで残るのは、離す前の力をゆっくり抜く分だけ */
+    expect(run(true)).toBeGreaterThan(20 * run(false));
+    expect(run(true)).toBeGreaterThan(1e-3);
   });
 });
 

@@ -31,16 +31,18 @@
 </div>
 
 <h3>弦の損失</h3>
-<p>弦が自分で失うエネルギーは損失係数 <math><msub><mi>η</mi><mi>n</mi></msub></math> で表します。振幅は <math><msup><mi>e</mi><mrow><mo>−</mo><msub><mi>η</mi><mi>n</mi></msub><msub><mi>ω</mi><mi>n</mi></msub><mi>t</mi><mo>/</mo><mn>2</mn></mrow></msup></math> で減ります。<math><msub><mi>η</mi><mi>n</mi></msub></math> は次の 4 つの和です。</p>
+<p>弦が自分で失うエネルギーは損失係数 <math><msub><mi>η</mi><mi>n</mi></msub></math> で表します。振幅は <math><msup><mi>e</mi><mrow><mo>−</mo><msub><mi>η</mi><mi>n</mi></msub><msub><mi>ω</mi><mi>n</mi></msub><mi>t</mi><mo>/</mo><mn>2</mn></mrow></msup></math> で減ります。<math><msub><mi>η</mi><mi>n</mi></msub></math> は次の 5 つの和です。</p>
 <ul class="tl">
   <li>空気の粘性による損失（Valette）<a class="rf" href="#thy-r5">[5]</a></li>
   <li>低い周波数で増える損失</li>
   <li>張力の側の内部摩擦 <math><msub><mi>η</mi><mi mathvariant="normal">F</mi></msub></math></li>
   <li>曲げの側の粘弾性 <math><msub><mi>η</mi><mi mathvariant="normal">B</mi></msub></math></li>
+  <li>巻弦の巻線の摩擦 <math><msub><mi>η</mi><mi mathvariant="normal">W</mi></msub></math>（周波数に比例して増える）</li>
 </ul>
 <p>ナイロン弦とナイロン芯の巻弦の係数は、Woodhouse の測定に合わせました<a class="rf" href="#thy-r2">[2]</a><a class="rf" href="#thy-r3">[3]</a>。高い倍音ほど曲げの損失で早く消えます。</p>
+<p>Woodhouse の係数は張ったばかりの新しい弦の値で、ナイロン芯の巻弦では 1 kHz より上の倍音が無響室の録音より長く残ります<a class="rf" href="#thy-r14">[14]</a>。<math><msub><mi>η</mi><mi mathvariant="normal">X</mi></msub></math> を半分にし、<math><msub><mi>η</mi><mi mathvariant="normal">W</mi></msub></math> を足して録音の減衰に合わせました。</p>
 <div class="eqs">
-  <math display="block"><msub><mi>η</mi><mi>n</mi></msub><mo>=</mo><mfrac><mrow><msub><mi>η</mi><mi mathvariant="normal">a</mi></msub><mo>+</mo><mi>d</mi><msqrt><mrow><mi>π</mi><msub><mi>η</mi><mi mathvariant="normal">a</mi></msub><msub><mi>ρ</mi><mi mathvariant="normal">a</mi></msub><msub><mi>f</mi><mi>n</mi></msub></mrow></msqrt></mrow><mrow><mi>μ</mi><msub><mi>f</mi><mi>n</mi></msub></mrow></mfrac><mo>+</mo><mfrac><msub><mi>η</mi><mi mathvariant="normal">X</mi></msub><msub><mi>ω</mi><mi>n</mi></msub></mfrac><mo>+</mo><mfrac><mrow><mi>T</mi><msub><mi>η</mi><mi mathvariant="normal">F</mi></msub><mo>+</mo><mi>E</mi><mi>I</mi><msubsup><mi>k</mi><mi>n</mi><mn>2</mn></msubsup><msub><mi>η</mi><mi mathvariant="normal">B</mi></msub></mrow><mrow><mi>T</mi><mo>+</mo><mi>E</mi><mi>I</mi><msubsup><mi>k</mi><mi>n</mi><mn>2</mn></msubsup></mrow></mfrac></math>
+  <math display="block"><msub><mi>η</mi><mi>n</mi></msub><mo>=</mo><mfrac><mrow><msub><mi>η</mi><mi mathvariant="normal">a</mi></msub><mo>+</mo><mi>d</mi><msqrt><mrow><mi>π</mi><msub><mi>η</mi><mi mathvariant="normal">a</mi></msub><msub><mi>ρ</mi><mi mathvariant="normal">a</mi></msub><msub><mi>f</mi><mi>n</mi></msub></mrow></msqrt></mrow><mrow><mi>μ</mi><msub><mi>f</mi><mi>n</mi></msub></mrow></mfrac><mo>+</mo><mfrac><msub><mi>η</mi><mi mathvariant="normal">X</mi></msub><msub><mi>ω</mi><mi>n</mi></msub></mfrac><mo>+</mo><mfrac><mrow><mi>T</mi><msub><mi>η</mi><mi mathvariant="normal">F</mi></msub><mo>+</mo><mi>E</mi><mi>I</mi><msubsup><mi>k</mi><mi>n</mi><mn>2</mn></msubsup><msub><mi>η</mi><mi mathvariant="normal">B</mi></msub></mrow><mrow><mi>T</mi><mo>+</mo><mi>E</mi><mi>I</mi><msubsup><mi>k</mi><mi>n</mi><mn>2</mn></msubsup></mrow></mfrac><mo>+</mo><msub><mi>η</mi><mi mathvariant="normal">W</mi></msub><msub><mi>f</mi><mi>n</mi></msub></math>
   <math display="block"><msub><mi>k</mi><mi>n</mi></msub><mo>=</mo><mfrac><mrow><mi>n</mi><mi>π</mi></mrow><mi>L</mi></mfrac></math>
 </div>
 
@@ -52,6 +54,17 @@
   <math display="block"><mi>ω</mi><mo>=</mo><msub><mi>ω</mi><mi>n</mi></msub><mo>+</mo><mi>i</mi><mfrac><mrow><msub><mi>η</mi><mi>n</mi></msub><msub><mi>ω</mi><mi>n</mi></msub></mrow><mn>2</mn></mfrac><mo>+</mo><mi>i</mi><mfrac><mi>T</mi><mi>L</mi></mfrac><mi>Y</mi><mo stretchy="false">(</mo><mi>ω</mi><mo stretchy="false">)</mo></math>
   <math display="block"><msub><mi>η</mi><mtext>胴</mtext></msub><mo>≈</mo><mfrac><mrow><mn>2</mn><mi>T</mi><mi>Re</mi><mo>⁡</mo><mi>Y</mi></mrow><mrow><msub><mi>ω</mi><mi>n</mi></msub><mi>L</mi></mrow></mfrac></math>
 </div>
+
+<h3>ほかの弦の共鳴</h3>
+<p>弾いていない弦も駒につながっていて、部分音の近い弦が共鳴します。押さえている弦はその高さで、ほかは開放弦で共鳴します。</p>
+<p>弾いた弦の部分音ごとに、2.5 Hz 以内にあるほかの弦の部分音を 3 つまで選び、駒で結合したモードを解きます（Weinreich）<a class="rf" href="#thy-r15">[15]</a>。結合したモードは、成分の最も大きい弦の音として鳴らします。弾いた弦を止めても、共鳴した弦は鳴り続けます。</p>
+<div class="eqs">
+  <math display="block"><mn>1</mn><mo>=</mo><mi>i</mi><munder><mo>∑</mo><mi>j</mi></munder><mfrac><mrow><mo stretchy="false">(</mo><msub><mi>T</mi><mi>j</mi></msub><mo>/</mo><msub><mi>L</mi><mi>j</mi></msub><mo stretchy="false">)</mo><mi>Y</mi></mrow><mrow><mi>λ</mi><mo>−</mo><msub><mi>d</mi><mi>j</mi></msub></mrow></mfrac></math>
+</div>
+<dl class="syms">
+  <dt><math><msub><mi>d</mi><mi>j</mi></msub></math></dt><dd>弦 <math><mi>j</mi></math> の部分音の、弦だけの複素角周波数</dd>
+  <dt><math><mi>λ</mi></math></dt><dd>結合したモードの複素角周波数</dd>
+</dl>
 
 <h3>撥弦</h3>
 <p>弦を弾く点で三角形に引いて離すとし、指や爪の触れる幅 <math><mi>w</mi></math> で角を丸めます。指先の柔らかさは幅 <math><msub><mi>w</mi><mi mathvariant="normal">s</mi></msub></math> のガウス関数で表し、高い倍音を弱めます<a class="rf" href="#thy-r13">[13]</a>。駒にかかる力 <math><mi>F</mi><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo></math> は、各モードの傾きの和です<a class="rf" href="#thy-r2">[2]</a><a class="rf" href="#thy-r3">[3]</a>。</p>
@@ -185,6 +198,7 @@
   <li>音: 1 m 先の音圧。1 Pa を出力のフルスケールとする</li>
   <li>弦のモード: 16 kHz（またはサンプリング周波数の 0.45 倍）まで計算</li>
   <li>胴のモード: 11 kHz まで計算</li>
+  <li>ほかの弦の共鳴: 5 kHz までの部分音</li>
 </ul>
 <p>スピーカーから出す音だけはステレオにして、定位を少しずらしています。図の向きは左がヘッド、右が駒で、これに合わせて寄せます。</p>
 <ul class="tl">
@@ -215,6 +229,8 @@
   <li id="thy-r11"><span class="rf-for">空気の吸収</span><span class="rf-src">ISO 9613-1</span></li>
   <li id="thy-r12"><span class="rf-for">押し上げによる張力と音の高さの変化</span><span class="rf-src">D. R. Grimes, “String theory – the physics of string-bending and other electric guitar techniques,” <i>PLOS ONE</i>, vol. 9, no. 7, e102088, 2014</span></li>
   <li id="thy-r13"><span class="rf-for">指先の柔らかさの幅</span><span class="rf-src">J. Woodhouse, E. K. Y. Manuel, L. A. Smith, A. J. C. Wheble and C. Fritz, “Perceptual thresholds for acoustical guitar models,” <i>Acta Acustica united with Acustica</i>, vol. 98, pp. 475–486, 2012</span></li>
+  <li id="thy-r14"><span class="rf-for">巻弦の損失を合わせた録音（クラシックギター、mf）</span><span class="rf-src">University of Iowa Electronic Music Studios, “Musical Instrument Samples: Guitar,” 2011, <a href="https://theremin.music.uiowa.edu/MISguitar.html">theremin.music.uiowa.edu/MISguitar.html</a></span></li>
+  <li id="thy-r15"><span class="rf-for">弦どうしの駒での結合</span><span class="rf-src">G. Weinreich, “Coupled piano strings,” <i>J. Acoust. Soc. Am.</i>, vol. 62, no. 6, pp. 1474–1484, 1977</span></li>
 </ol>
 
 <h3>このツールで決めたこと</h3>
@@ -224,6 +240,7 @@
   <li>胴の面積と力木の倍率</li>
   <li>平均のアドミタンスを下げる割合</li>
   <li>爪とピックの柔らかさの幅</li>
+  <li>ほかの弦の共鳴を探す幅と相手の数</li>
   <li>放射の強さ</li>
   <li>スチール弦の損失係数</li>
   <li>こすれる音の大きさ</li>

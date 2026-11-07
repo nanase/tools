@@ -3,6 +3,7 @@
  * 弦のモードは両端を単純支持した硬い弦（Fletcher 1964）で、駒のアドミタンスによる周波数と減衰の変化は
  * ω = ω₀ + i (T/L) Y(ω) を解いて求める（Gough 1981・Woodhouse 2004 の駒での結合。e^{iωt} の表し方）
  */
+import { coupled, csqrt, cvec, project } from '../piano/eig';
 import { admittance, type Body, C, type Cx, cabs } from './body';
 import { etaString, fretX, type StringPhys } from './strings';
 
@@ -25,7 +26,8 @@ export interface Modes {
   /** 角周波数 [rad/s] と減衰率 [1/s]（長さ 2N） */
   w: Float64Array;
   s: Float64Array;
-  /** 弦だけの減衰率 [1/s]（長さ N。胴の分を除いたもの） */
+  /** 弦だけの角周波数 [rad/s] と減衰率 [1/s]（長さ N。胴の分を除いたもの） */
+  w0: Float64Array;
   s0: Float64Array;
 }
 
@@ -79,12 +81,14 @@ export function modesOf(g: Guitar, si: number, fret: number, fs: number, nMax = 
   }
   const w = new Float64Array(2 * N),
     s = new Float64Array(2 * N),
+    w0 = new Float64Array(N),
     s0 = new Float64Array(N);
   for (let i = 0; i < N; i++) {
     const n = i + 1,
       f = ((n * c) / (2 * L)) * Math.sqrt(1 + beta * n * n),
       wn = 2 * Math.PI * f,
       sg = (etaString(p, L, n, f) * wn) / 2;
+    w0[i] = wn;
     s0[i] = sg;
     for (const pol of [0, 1] as const) {
       const r = couple(g.body, C.cx(wn, sg), k, pol);
@@ -92,7 +96,7 @@ export function modesOf(g: Guitar, si: number, fret: number, fs: number, nMax = 
       s[pol * N + i] = Math.max(sg, r.im);
     }
   }
-  return { L, N, w, s, s0 };
+  return { L, N, w, s, w0, s0 };
 }
 
 /**
@@ -181,6 +185,127 @@ export function pluckOf(g: Guitar, si: number, m: Modes, sp: PluckSpec): Pluck {
     f0[1] += f[N + i];
   }
   return { modes: m, a, f, f0 };
+}
+
+/** ほかの弦の共鳴を探す幅 [Hz]・部分音ごとの相手の数の上限・調べる部分音の上限 [Hz]（ピアノ音響モデルと同じ値） */
+const SYM_BW = 2.5,
+  SYM_N = 3,
+  SYM_FMAX = 5000;
+
+/** 共鳴の相手: 弾いていない弦（0 = 1 弦）と、今の押さえ方のモード */
+export interface Partner {
+  si: number;
+  m: Modes;
+}
+
+/** 結合したモードの並び: 複素角周波数（実部 [rad/s]・減衰率 [1/s]）、駒の力の複素振幅 [N]、偏波（0 が垂直） */
+export interface ModeSet {
+  w: number[];
+  s: number[];
+  fr: number[];
+  fi: number[];
+  pol: number[];
+}
+const modeSet = (): ModeSet => ({ w: [], s: [], fr: [], fi: [], pol: [] });
+
+/**
+ * 撥弦の部分音を、部分音の近いほかの弦（partners）と駒で結合したモードに分ける（共鳴）。
+ * 同じ駒の点につながる弦の部分音は、行列 D + i v vᵀ の固有値のモードになる（Gough 1981、piano/eig.ts）。
+ * d_j は弦だけの複素角周波数、v_j² は 1 本ずつ胴と結合したときの移り −i (λ_j − d_j)（= (T_j / L_j) Y_j）で、
+ * 相手がなければ今までのモードと同じになる。結合したモードは成分の最も大きい弦が持ち、
+ * main は弾いた弦、sym はほかの弦が持つモード（弦ごと）
+ */
+export function symOf(
+  g: Guitar,
+  si: number,
+  pl: Pluck,
+  partners: readonly Partner[],
+): { main: ModeSet; sym: Map<number, ModeSet> } {
+  const m = pl.modes,
+    N = m.N,
+    main = modeSet(),
+    sym = new Map<number, ModeSet>(),
+    push = (o: ModeSet, w: number, s: number, fr: number, fi: number, pol: number) => {
+      o.w.push(w);
+      o.s.push(s);
+      o.fr.push(fr);
+      o.fi.push(fi);
+      o.pol.push(pol);
+    };
+  for (const pol of [0, 1]) {
+    for (let i = 0; i < N; i++) {
+      const k0 = pol * N + i,
+        F = pl.f[k0],
+        lw = m.w[k0],
+        ls = m.s[k0],
+        f = lw / (2 * Math.PI);
+      /* 部分音の近いほかの弦の部分音（近い順に SYM_N 個まで） */
+      const near: { p: Partner; k: number; df: number }[] = [];
+      if (f < SYM_FMAX && F !== 0)
+        for (const p of partners) {
+          const pm = p.m,
+            f1 = pm.w[pol * pm.N] / (2 * Math.PI),
+            c = Math.round(f / f1) - 1;
+          for (let k = Math.max(0, c - 2); k <= Math.min(pm.N - 1, c + 2); k++) {
+            const df = Math.abs(pm.w[pol * pm.N + k] / (2 * Math.PI) - f);
+            if (df <= SYM_BW) near.push({ p, k, df });
+          }
+        }
+      if (!near.length) {
+        push(main, lw, ls, F, 0, pol);
+        continue;
+      }
+      near.sort((a, b) => a.df - b.df);
+      const osc = [
+          { si, w: lw, s: ls, w0: m.w0[i], s0: m.s0[i], g: g.str[si].T / m.L },
+          ...near.slice(0, SYM_N).map(({ p, k }) => ({
+            si: p.si,
+            w: p.m.w[pol * p.m.N + k],
+            s: p.m.s[pol * p.m.N + k],
+            w0: p.m.w0[k],
+            s0: p.m.s0[k],
+            g: g.str[p.si].T / p.m.L,
+          })),
+        ],
+        n = osc.length,
+        d = cvec(n),
+        v = cvec(n),
+        x0 = cvec(n);
+      osc.forEach((o, j) => {
+        /* 重なると固有ベクトルが求まらないので、ごくわずかにずらす */
+        d.re[j] = o.w0 + 1e-7 * o.w0 * (j + 1);
+        d.im[j] = o.s0;
+        /* i v² = λ − d */
+        [v.re[j], v.im[j]] = csqrt(o.s - o.s0, -(o.w - o.w0));
+      });
+      /* 初めは弾いた弦だけが力を持つ: F_j = √g_j x_j */
+      x0.re[0] = F / Math.sqrt(osc[0].g);
+      const c = coupled(d, v),
+        cc = project(c, x0);
+      for (let q = 0; q < n; q++) {
+        const u = c.u[q];
+        let fr = 0,
+          fi = 0,
+          best = 0,
+          own = 0;
+        for (let j = 0; j < n; j++) {
+          const sg = Math.sqrt(osc[j].g),
+            ur = u.re[j] * cc.re[q] - u.im[j] * cc.im[q],
+            ui = u.re[j] * cc.im[q] + u.im[j] * cc.re[q];
+          fr += sg * ur;
+          fi += sg * ui;
+          const a = Math.hypot(u.re[j], u.im[j]);
+          if (a > best) {
+            best = a;
+            own = j;
+          }
+        }
+        const o = own ? (sym.get(osc[own].si) ?? sym.set(osc[own].si, modeSet()).get(osc[own].si)) : main;
+        if (o) push(o, c.lam.re[q], Math.max(1e-3, c.lam.im[q]), fr, fi, pol);
+      }
+    }
+  }
+  return { main, sym };
 }
 
 /**

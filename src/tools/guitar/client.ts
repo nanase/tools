@@ -40,8 +40,11 @@ import {
   type Guitar,
   type Modes,
   modesOf,
+  type Partner,
+  type Pluck,
   type PluckSpec,
   pluckOf,
+  symOf,
   t60,
   toolOf,
   tuneCoupled,
@@ -160,6 +163,8 @@ const mat = choice<string>('mat', (v) => {
 const wood = choice<string>('wood', () => rebuild());
 const tool = choice<string>('tool', () => renderOut());
 const nz = choice<string>('nz', () => {});
+/* 弦の共鳴（次に弾いた音から効く。音の波形は描き直す） */
+const symc = choice<string>('sym', () => renderOut());
 /* 曲のビブラート（まだ予約していない音から効く） */
 const vib = choice<string>('vib', () => {});
 const room = choice<string>('room', () => roomView());
@@ -266,14 +271,38 @@ const pluckSpec = (si: number, amp = V.amp): PluckSpec => ({
   soft: toolOf(tool.value).soft,
   angle: (V.ang * Math.PI) / 180,
 });
-const msgOf = (si: number, m: Modes, f: Float64Array, vib?: VibSpec): PluckMsg => ({
-  si,
-  N: m.N,
-  w: m.w,
-  s: m.s,
-  f,
-  vib,
-});
+const f64 = (a: number[]) => Float64Array.from(a);
+/**
+ * 撥弦を音を作る部分へ渡す形にする。frets は弦ごとの今の押さえ方（null は鳴らさない弦）。
+ * 弦の共鳴がありなら、弾いていない弦の部分音の近いモードと駒で結合する
+ */
+function msgOf(si: number, m: Modes, pl: Pluck, frets: readonly (number | null)[], vib?: VibSpec): PluckMsg {
+  const ps: Partner[] =
+    symc.value === '1' ? frets.flatMap((f, j) => (j === si || f === null ? [] : [{ si: j, m: modes(j, f) }])) : [];
+  if (!ps.length) return { si, N: m.N, w: m.w, s: m.s, f: pl.f, vib };
+  const { main, sym } = symOf(G, si, pl, ps);
+  return {
+    si,
+    N: 0,
+    w: f64(main.w),
+    s: f64(main.s),
+    f: f64(main.fr),
+    fi: f64(main.fi),
+    pol: Uint8Array.from(main.pol),
+    vib,
+    sym: [...sym].map(([j, o]) => ({
+      si: j,
+      w: f64(o.w),
+      s: f64(o.s),
+      f: f64(o.fr),
+      fi: f64(o.fi),
+      pol: Uint8Array.from(o.pol),
+      pan: panOf(j, frets[j] ?? 0),
+    })),
+  };
+}
+/** 手で弾くときの弦ごとの押さえ方（コードで鳴らさない弦は null） */
+const handFrets = () => S.left.map((f, j) => (S.mute[j] ? null : f));
 
 /*
  * ステレオの定位（再生だけ。−1 が左、1 が右）。模型ではなく聞こえ方の目安で、図の向き（左がヘッド、右が駒）に合わせる。
@@ -626,7 +655,7 @@ function renderOut(): void {
       m = modes(si, fret),
       pl = pluckOf(G, si, m, pluckSpec(si)),
       fs = audio.fs,
-      j: Job = { id: ++jobId, body: BD, p: msgOf(si, m, pl.f), noise: null, fs, dur: OUT_S };
+      j: Job = { id: ++jobId, body: BD, p: msgOf(si, m, pl, handFrets()), noise: null, fs, dur: OUT_S };
     outFs = fs;
     worker ??= mkWorker();
     if (worker) worker.postMessage(j);
@@ -770,7 +799,7 @@ async function pluck(si: number, fret: number | null, gain = 1): Promise<void> {
     }
   }
   const an = audio.now();
-  audio.pluck(msgOf(si, m, pl.f), delay && an !== null ? an + delay : 0, panOf(si, f));
+  audio.pluck(msgOf(si, m, pl, handFrets()), delay && an !== null ? an + delay : 0, panOf(si, f));
   neck.set(si, { pl, t0: t + delay, damp: Infinity, fret: f, dir: (V.ang * Math.PI) / 180, xb: posOf(si) });
   txt('#nk-live', `${si + 1} 弦 ${f ? `${f} フレット` : '開放'}`);
   if (P) return;
@@ -1168,6 +1197,9 @@ interface Play {
   piece: Piece;
   /** 曲の途中のテンポの変化（小節の表示で、拍へ戻すのに使う） */
   tm: TempoMap;
+  /** 弦ごとの最後の音のフレットと、指を離す時刻（弦の共鳴の相手の押さえ方） */
+  fr: number[];
+  offAt: number[];
 }
 let P: Play | null = null;
 const fingerCache = new Map<string, PieceData>();
@@ -1303,6 +1335,8 @@ async function startPiece(from: number): Promise<void> {
     timer: setInterval(tick, 40),
     piece: pc,
     tm: tmap,
+    fr: [0, 0, 0, 0, 0, 0],
+    offAt: [0, 0, 0, 0, 0, 0],
   };
   syncPlay();
   tick();
@@ -1390,7 +1424,11 @@ function tick(): void {
     }
     /* 指を離すのは、この音だけ（離す前に同じ弦をずらした和音で弾き直していても、その音は止めない） */
     const off = e.off !== null ? atOf(p, e.off) + 0.02 : null,
-      id = audio.pluck(msgOf(e.si, m, pl.f, vibOf(e, atOf(p, e.end) - at)), at, panOf(e.si, e.f));
+      /* ほかの弦は、指を離す前なら最後の音のフレット、離したあとは開放弦 */
+      frets = p.fr.map((f, j) => (p.offAt[j] > at ? f : 0)),
+      id = audio.pluck(msgOf(e.si, m, pl, frets, vibOf(e, atOf(p, e.end) - at)), at, panOf(e.si, e.f));
+    p.fr[e.si] = e.f;
+    p.offAt[e.si] = off ?? Infinity;
     if (off !== null) audio.damp(e.si, off, id);
     neck.set(e.si, {
       pl,
