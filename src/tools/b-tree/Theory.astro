@@ -1,5 +1,6 @@
 ---
 // 動作原理と式
+import { bigO } from '../../lib/big-o';
 import { BIG_O, DEFS, ENTRY, FILL, STAGES } from './model';
 
 type Ref = { for: string; src: string };
@@ -51,11 +52,11 @@ const FAN = `<div class="eqs"><math display="block"><mrow><mi>m</mi><mo>=</mo><m
 ---
 <h3>ノードの条件</h3>
 <p>次数 <math><mi>m</mi></math> の B木は、1 つのノードに最大 <math><mi>m</mi><mo>−</mo><mn>1</mn></math> 個のキーと <math><mi>m</mi></math> 本の枝を持ちます。根以外のノードは枠の半分以上を埋め、全部の葉を同じ段に置きます <Fragment set:html={Rf(1)} />。ノードの中のキーは昇順で、枝はキーの間から下の段へ伸びます。</p>
-<div class="eqs"><math display="block"><mrow><mo>⌈</mo><mi>m</mi><mo>/</mo><mn>2</mn><mo>⌉</mo><mo>−</mo><mn>1</mn><mo>≤</mo><mtext>キーの数</mtext><mo>≤</mo><mi>m</mi><mo>−</mo><mn>1</mn></mrow></math></div>
+<div class="eqs"><math display="block"><mrow><mo stretchy="false">⌈</mo><mi>m</mi><mo>/</mo><mn>2</mn><mo stretchy="false">⌉</mo><mo>−</mo><mn>1</mn><mo>≤</mo><mtext>キーの数</mtext><mo>≤</mo><mi>m</mi><mo>−</mo><mn>1</mn></mrow></math></div>
 
 <h3>段数</h3>
 <p>1 段下りるごとに、探す範囲は枝の数だけ狭まります。段数は <Fragment set:html={LOGM} /> に比例するので、枝が多いほど木は浅くなります <Fragment set:html={Rf(4)} />。ディスクではノード 1 つを 1 ページに入れるので、読み込みの回数は段数と同じです。</p>
-<div class="eqs"><math display="block"><mrow><mi>h</mi><mo>≤</mo><msub><mi>log</mi><mrow><mo>⌈</mo><mi>m</mi><mo>/</mo><mn>2</mn><mo>⌉</mo></mrow></msub><mfrac><mrow><mi>n</mi><mo>+</mo><mn>1</mn></mrow><mn>2</mn></mfrac><mo>+</mo><mn>1</mn></mrow></math></div>
+<div class="eqs"><math display="block"><mrow><mi>h</mi><mo>≤</mo><msub><mi>log</mi><mrow><mo stretchy="false">⌈</mo><mi>m</mi><mo>/</mo><mn>2</mn><mo stretchy="false">⌉</mo></mrow></msub><mfrac><mrow><mi>n</mi><mo>+</mo><mn>1</mn></mrow><mn>2</mn></mfrac><mo>+</mo><mn>1</mn></mrow></math></div>
 <p>記号: <math><mi>h</mi></math> は段数、<math><mi>n</mi></math> はキーの数です。</p>
 
 <h3>ページの大きさと次数</h3>
@@ -95,7 +96,7 @@ const FAN = `<div class="eqs"><math display="block"><mrow><mi>m</mi><mo>=</mo><m
     {DEFS.map((d) => (
       <tr>
         <th scope="row">{d.name}</th>
-        {STAGES.map(([k]) => <td set:html={BIG_O[d.id][k]} />)}
+        {STAGES.map(([k]) => <td set:html={bigO(BIG_O[d.id][k])} />)}
       </tr>
     ))}
   </tbody>
@@ -103,7 +104,7 @@ const FAN = `<div class="eqs"><math display="block"><mrow><mi>m</mi><mo>=</mo><m
 
 <h3>音</h3>
 <p>音の高さはキーの値で決めます。動かしたキーと比べているキーを鳴らします。<math><mi>v</mi></math> はキーの値、<math><msub><mi>v</mi><mi>max</mi></msub></math> はキーの最大値です。</p>
-<div class="eqs"><math display="block"><mrow><mi>f</mi><mo>=</mo><mn>110</mn><mo>×</mo><msup><mn>2</mn><mrow><mn>4</mn><mo>(</mo><mi>v</mi><mo>−</mo><mn>1</mn><mo>)</mo><mo>/</mo><mo>(</mo><msub><mi>v</mi><mi>max</mi></msub><mo>−</mo><mn>1</mn><mo>)</mo></mrow></msup><mspace width="0.3em"/><mtext>Hz</mtext></mrow></math></div>
+<div class="eqs"><math display="block"><mrow><mi>f</mi><mo>=</mo><mn>110</mn><mo>×</mo><msup><mn>2</mn><mrow><mn>4</mn><mo stretchy="false">(</mo><mi>v</mi><mo>−</mo><mn>1</mn><mo stretchy="false">)</mo><mo>/</mo><mo stretchy="false">(</mo><msub><mi>v</mi><mi>max</mi></msub><mo>−</mo><mn>1</mn><mo stretchy="false">)</mo></mrow></msup><mspace width="0.3em"/><mtext>Hz</mtext></mrow></math></div>
 
 <h3>出典</h3>
 <ol class="refs">

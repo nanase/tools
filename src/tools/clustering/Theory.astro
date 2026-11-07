@@ -1,5 +1,6 @@
 ---
 // 動作原理と式
+import { bigO } from '../../lib/big-o';
 import { FAMILIES, METHODS } from './methods';
 
 type Ref = { for: string; src: string; url?: string };
@@ -197,11 +198,11 @@ const Rf = (k: string) => `<a class="rf" href="#thy-r${num(k)}">[${num(k)}]</a>`
 <h3>密度ベース</h3>
 <p>DBSCAN は、半径 <math><mi>ε</mi></math> の円の中に最小点数以上の点がある点をコア点とし、コア点の円でつながる点を 1 つのクラスタにします<Fragment set:html={Rf('ester')} />。形によらず分けられますが、密度の違うクラスタを 1 つの半径で扱えません。OPTICS と HDBSCAN は半径をいくつも見るので、この弱点を減らせます。</p>
 <p>Mean Shift はガウス関数で重み付けした平均へ点を動かす反復で、密度の勾配を登ります<Fragment set:html={Rf('comaniciu')} />。</p>
-<div class="eqs"><math display="block"><mrow><msup><mi>x</mi><mo>′</mo></msup><mo>=</mo><mfrac><mrow><msub><mo>∑</mo><mi>i</mi></msub><msub><mi>x</mi><mi>i</mi></msub><mi>exp</mi><mo>(</mo><mo>−</mo><msup><mrow><mo>‖</mo><mi>x</mi><mo>−</mo><msub><mi>x</mi><mi>i</mi></msub><mo>‖</mo></mrow><mn>2</mn></msup><mo>/</mo><mn>2</mn><msup><mi>h</mi><mn>2</mn></msup><mo>)</mo></mrow><mrow><msub><mo>∑</mo><mi>i</mi></msub><mi>exp</mi><mo>(</mo><mo>−</mo><msup><mrow><mo>‖</mo><mi>x</mi><mo>−</mo><msub><mi>x</mi><mi>i</mi></msub><mo>‖</mo></mrow><mn>2</mn></msup><mo>/</mo><mn>2</mn><msup><mi>h</mi><mn>2</mn></msup><mo>)</mo></mrow></mfrac></mrow></math></div>
+<div class="eqs"><math display="block"><mrow><msup><mi>x</mi><mo>′</mo></msup><mo>=</mo><mfrac><mrow><msub><mo>∑</mo><mi>i</mi></msub><msub><mi>x</mi><mi>i</mi></msub><mi>exp</mi><mo stretchy="false">(</mo><mo>−</mo><msup><mrow><mo>‖</mo><mi>x</mi><mo>−</mo><msub><mi>x</mi><mi>i</mi></msub><mo>‖</mo></mrow><mn>2</mn></msup><mo>/</mo><mn>2</mn><msup><mi>h</mi><mn>2</mn></msup><mo stretchy="false">)</mo></mrow><mrow><msub><mo>∑</mo><mi>i</mi></msub><mi>exp</mi><mo stretchy="false">(</mo><mo>−</mo><msup><mrow><mo>‖</mo><mi>x</mi><mo>−</mo><msub><mi>x</mi><mi>i</mi></msub><mo>‖</mo></mrow><mn>2</mn></msup><mo>/</mo><mn>2</mn><msup><mi>h</mi><mn>2</mn></msup><mo stretchy="false">)</mo></mrow></mfrac></mrow></math></div>
 
 <h3>分布ベース</h3>
 <p>混合ガウス分布は、点が <math><mi>k</mi></math> 個のガウス分布のどれかから生まれたと考えます。EM 法で所属確率と分布の更新を交互に行い、対数尤度を増やします<Fragment set:html={Rf('dempster')} />。楕円は 1σ と 2σ の等確率線です。</p>
-<div class="eqs"><math display="block"><mrow><msub><mi>r</mi><mrow><mi>i</mi><mi>c</mi></mrow></msub><mo>=</mo><mfrac><mrow><msub><mi>π</mi><mi>c</mi></msub><mi>𝒩</mi><mo>(</mo><msub><mi>x</mi><mi>i</mi></msub><mo>∣</mo><msub><mi>μ</mi><mi>c</mi></msub><mo>,</mo><msub><mi>Σ</mi><mi>c</mi></msub><mo>)</mo></mrow><mrow><msub><mo>∑</mo><mi>q</mi></msub><msub><mi>π</mi><mi>q</mi></msub><mi>𝒩</mi><mo>(</mo><msub><mi>x</mi><mi>i</mi></msub><mo>∣</mo><msub><mi>μ</mi><mi>q</mi></msub><mo>,</mo><msub><mi>Σ</mi><mi>q</mi></msub><mo>)</mo></mrow></mfrac></mrow></math></div>
+<div class="eqs"><math display="block"><mrow><msub><mi>r</mi><mrow><mi>i</mi><mi>c</mi></mrow></msub><mo>=</mo><mfrac><mrow><msub><mi>π</mi><mi>c</mi></msub><mi>𝒩</mi><mo stretchy="false">(</mo><msub><mi>x</mi><mi>i</mi></msub><mo>∣</mo><msub><mi>μ</mi><mi>c</mi></msub><mo>,</mo><msub><mi>Σ</mi><mi>c</mi></msub><mo stretchy="false">)</mo></mrow><mrow><msub><mo>∑</mo><mi>q</mi></msub><msub><mi>π</mi><mi>q</mi></msub><mi>𝒩</mi><mo stretchy="false">(</mo><msub><mi>x</mi><mi>i</mi></msub><mo>∣</mo><msub><mi>μ</mi><mi>q</mi></msub><mo>,</mo><msub><mi>Σ</mi><mi>q</mi></msub><mo stretchy="false">)</mo></mrow></mfrac></mrow></math></div>
 <p>変分ベイズは混合比に事前分布を置くので、要らない成分の重みが 0 へ近づき、クラスタ数が決まります<Fragment set:html={Rf('bishop')} />。</p>
 
 <h3>グラフベース</h3>
@@ -221,7 +222,7 @@ const Rf = (k: string) => `<a class="rf" href="#thy-r${num(k)}">[${num(k)}]</a>`
       <tr>
         <th scope="row">{m.name}</th>
         <td class="tx">{m.g}</td>
-        <td>{m.o}</td>
+        <td set:html={bigO(m.o)} />
         <td class="tx">{m.auto ? '自動' : '指定'}</td>
         <td>{(m.lim ?? 3000).toLocaleString('en-US')}</td>
         <td set:html={m.refs.map(Rf).join('')} />

@@ -2,6 +2,8 @@
  * リスト・キュー・スタックのページの入口。追加と取り出しの手順を先に記録し、再生で 1 手ずつ図と音へ出す。
  * 表示は 単独（1 行）・比較（複数の行を同時に）・一覧（1 行と計算量の表）の 3 つ
  */
+
+import { bigO } from '../../lib/big-o';
 import { Choice } from '../../lib/choice';
 import { $, $$ } from '../../lib/dom';
 import { RM } from '../../lib/motion';
@@ -356,7 +358,7 @@ function buildOps(): void {
   $('#ls-ops').innerHTML = d.ops
     .map(
       (o) =>
-        `<tr data-k="${o.key}"><td><button type="button">${o.label}</button></td><td class="ls-oo">${o.o}</td><td class="ls-on">${countText(countOf(d, o))}</td></tr>`,
+        `<tr data-k="${o.key}"><td><button type="button">${o.label}</button></td><td class="ls-oo">${bigO(o.o)}</td><td class="ls-on">${countText(countOf(d, o))}</td></tr>`,
     )
     .join('');
 }

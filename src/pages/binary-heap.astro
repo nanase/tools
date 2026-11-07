@@ -6,6 +6,7 @@ import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
 import RelatedTools from '../components/RelatedTools.astro';
 import SiteLayout from '../layouts/SiteLayout.astro';
+import { bigO } from '../lib/big-o';
 import '../tools/binary-heap/style.css';
 import { BIG_O, DEFS, KEYS } from '../tools/binary-heap/model';
 import { SIZE, SPEED, VOL } from '../tools/binary-heap/params';
@@ -85,7 +86,7 @@ const BARS = [...SHAPES]
                 <th scope="row"><button type="button" class="hp-mr" data-a={d.id}>{d.name}</button></th>
                 {KEYS.map(([k, t]) => {
                   const o = BIG_O[d.id][k];
-                  return <td><button type="button" class:list={['hp-c', { on: !/^[Oo]\((1|log n)\)\*?$/.test(o) }]} data-a={d.id} data-k={k} title={`${d.name}: ${t}`}>{o}</button></td>;
+                  return <td><button type="button" class:list={['hp-c', { on: !/^[Oo]\((1|log n)\)\*?$/.test(o) }]} data-a={d.id} data-k={k} title={`${d.name}: ${t}`} set:html={bigO(o)} /></td>;
                 })}
               </tr>
             ))}

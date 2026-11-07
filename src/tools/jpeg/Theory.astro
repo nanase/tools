@@ -25,7 +25,7 @@ import { EQS } from './theory';
 <div class="eqs"><Fragment set:html={EQS.color} /></div>
 
 <h3>DCT</h3>
-<p>DCT（離散コサイン変換）はブロックの 64 個の標本を、64 個の基底の模様の重み <math><mrow><mi>F</mi><mo>(</mo><mi>u</mi><mo>,</mo><mi>v</mi><mo>)</mo></mrow></math> に置き換えます<a class="rf" href="#thy-r2">[2]</a>。</p>
+<p>DCT（離散コサイン変換）はブロックの 64 個の標本を、64 個の基底の模様の重み <math><mrow><mi>F</mi><mo stretchy="false">(</mo><mi>u</mi><mo>,</mo><mi>v</mi><mo stretchy="false">)</mo></mrow></math> に置き換えます<a class="rf" href="#thy-r2">[2]</a>。</p>
 <ul class="tl">
   <li><b>DC 係数</b>: 左上の係数。平均の明るさから 128 を引いたものの 8 倍</li>
   <li><b>AC 係数</b>: ほかの係数</li>
@@ -34,7 +34,7 @@ import { EQS } from './theory';
 <div class="eqs"><Fragment set:html={EQS.dct} /></div>
 
 <h3>量子化</h3>
-<p>量子化は係数を量子化テーブルの値 <math><mrow><mi>Q</mi><mo>(</mo><mi>u</mi><mo>,</mo><mi>v</mi><mo>)</mo></mrow></math> で割って丸めます<a class="rf" href="#thy-r2">[2]</a>。高い周波数ほど <math><mrow><mi>Q</mi><mo>(</mo><mi>u</mi><mo>,</mo><mi>v</mi><mo>)</mo></mrow></math> が大きく、細かい模様の小さな係数の多くが 0 になります。</p>
+<p>量子化は係数を量子化テーブルの値 <math><mrow><mi>Q</mi><mo stretchy="false">(</mo><mi>u</mi><mo>,</mo><mi>v</mi><mo stretchy="false">)</mo></mrow></math> で割って丸めます<a class="rf" href="#thy-r2">[2]</a>。高い周波数ほど <math><mrow><mi>Q</mi><mo stretchy="false">(</mo><mi>u</mi><mo>,</mo><mi>v</mi><mo stretchy="false">)</mo></mrow></math> が大きく、細かい模様の小さな係数の多くが 0 になります。</p>
 <p>品質は IJG（libjpeg）の決め方で、基準の表<a class="rf" href="#thy-r2">[2]</a>を倍率 <math><mi>s</mi></math> [%] で拡大縮小し、1〜255 に収めます<a class="rf" href="#thy-r3">[3]</a>。品質 50 で基準の表のまま、100 ですべて 1 です。</p>
 <p>量子化テーブルはファイルに入れて送るため、復号器は同じ値を掛けて係数を戻せます。</p>
 <div class="eqs">

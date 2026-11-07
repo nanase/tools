@@ -3,6 +3,8 @@
  * 格納とソートは別の工程で、切り替えるとその工程を初めから再生する。
  * 表示は 単独（1 行）・比較（複数の行を同時に）・一覧（1 行と計算量の表）の 3 つ
  */
+
+import { bigO } from '../../lib/big-o';
 import { Choice } from '../../lib/choice';
 import { $, $$ } from '../../lib/dom';
 import { RM } from '../../lib/motion';
@@ -443,7 +445,7 @@ function buildOps(): void {
   const d = def(cur);
   $('#hp-ops').innerHTML = KEYS.map(
     ([k]) =>
-      `<tr data-k="${k}"><td class="hp-ob"><button type="button">${opName(k, isMax())}</button></td><td class="hp-how">${howOf(d, k)}</td><td class="hp-oo">${BIG_O[d.id][k]}</td><td class="hp-on">${countText(countOf(d, k))}</td></tr>`,
+      `<tr data-k="${k}"><td class="hp-ob"><button type="button">${opName(k, isMax())}</button></td><td class="hp-how">${howOf(d, k)}</td><td class="hp-oo">${bigO(BIG_O[d.id][k])}</td><td class="hp-on">${countText(countOf(d, k))}</td></tr>`,
   ).join('');
 }
 function syncOps(): void {
