@@ -170,6 +170,7 @@ const PIANO = ROOTS.map((_, i) => {
           <ParamRow d={VIB_W} />
           <ParamRow d={VIB_HZ} />
           <ChoiceRow k="nz" name="フレットノイズ" sub="押さえる位置を変えたときに指が巻弦の上をすべる音の大きさ" choices={NOISE} value="1" />
+          <ChoiceRow k="sym" name="弦の共鳴" sub="弾いていない弦が駒を通して鳴る · 押さえている弦はその高さで · コードで鳴らさない弦は鳴らない" choices={[['0', 'なし'], ['1', 'あり']]} value="1" />
         </div>
       </Panel>
 

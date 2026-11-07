@@ -47,12 +47,29 @@ export interface PluckMsg {
   si: number;
   /** 偏波ごとのモードの数 */
   N: number;
-  /** 角周波数 [rad/s]・減衰率 [1/s]・駒の力の振幅 [N]（長さ 2N、垂直が先） */
+  /** 角周波数 [rad/s]・減衰率 [1/s]・駒の力の振幅 [N]（pol がなければ長さ 2N で垂直が先） */
   w: Float64Array;
   s: Float64Array;
   f: Float64Array;
+  /** 駒の力の振幅の虚部 [N]（ほかの弦と結合したモード。なければ 0） */
+  fi?: Float64Array;
+  /** モードごとの偏波（0 が垂直、1 が平行。なければ前の N 個が垂直） */
+  pol?: Uint8Array;
   /** 曲のビブラート（なければ掛けない） */
   vib?: VibSpec;
+  /** ほかの弦が持つ、結合したモード（共鳴。弦ごと） */
+  sym?: SymMsg[];
+}
+
+/** 共鳴: ほかの弦（si）が持つ、結合したモード。pan はその弦の定位 */
+export interface SymMsg {
+  si: number;
+  w: Float64Array;
+  s: Float64Array;
+  f: Float64Array;
+  fi: Float64Array;
+  pol: Uint8Array;
+  pan: number;
 }
 
 /** 撥弦に掛けるビブラート。時刻は弾いてからの秒 */
@@ -103,6 +120,8 @@ class Voice {
   /** 弾いてからの標本の数 */
   age = 0;
   vib: VibSpec | null;
+  /** 共鳴で鳴っている（弾いた弦ではない）なら true */
+  sym = false;
   constructor(
     p: PluckMsg,
     fs: number,
@@ -112,7 +131,7 @@ class Voice {
     readonly id: number,
   ) {
     this.si = p.si;
-    const n2 = 2 * p.N,
+    const n2 = p.w.length,
       T = 1 / fs;
     this.zr = new Float64Array(n2);
     this.zi = new Float64Array(n2);
@@ -124,13 +143,14 @@ class Voice {
     this.vib = p.vib ?? null;
     let k = 0;
     for (let i = 0; i < n2; i++) {
-      if (Math.abs(p.f[i]) < FLOOR || p.w[i] * T > Math.PI * 0.95) continue;
+      const fi = p.fi?.[i] ?? 0;
+      if (Math.hypot(p.f[i], fi) < FLOOR || p.w[i] * T > Math.PI * 0.95) continue;
       const e = Math.exp(-p.s[i] * T);
       this.zr[k] = p.f[i];
-      this.zi[k] = 0;
+      this.zi[k] = fi;
       this.mr[k] = e * Math.cos(p.w[i] * T);
       this.mi[k] = e * Math.sin(p.w[i] * T);
-      this.pol[k] = i < p.N ? 0 : 1;
+      this.pol[k] = p.pol ? p.pol[i] : i < p.N ? 0 : 1;
       this.wt[k] = p.w[i] * T;
       this.et[k] = e;
       k++;
@@ -334,7 +354,22 @@ export class Engine {
    */
   pluck(p: PluckMsg, pan = 0, id = 0): void {
     this.damp(p.si, FADE_S);
-    const v = new Voice(p, this.fs, this.gains(pan), id);
+    this.add(new Voice(p, this.fs, this.gains(pan), id));
+    /* 共鳴するほかの弦のモード（鳴っているその弦の音は止めない） */
+    for (const q of p.sym ?? []) {
+      const v = new Voice(
+        { si: q.si, N: 0, w: q.w, s: q.s, f: q.f, fi: q.fi, pol: q.pol },
+        this.fs,
+        this.gains(q.pan),
+        0,
+      );
+      v.sym = true;
+      this.add(v);
+    }
+  }
+
+  /** 鳴らす音を足し、離す前に駒にかかっていた力を覚える */
+  private add(v: Voice): void {
     let sv = 0,
       sh = 0;
     for (let i = 0; i < v.n; i++)
@@ -371,9 +406,9 @@ export class Engine {
     this.noises.push({ si, buf, pos: 0, g: this.gains(pan) });
   }
 
-  /** 鳴っている弦（0 = 1 弦）の集合 */
+  /** 弾いて鳴っている弦（0 = 1 弦）の集合（共鳴だけで鳴っている弦は含めない） */
   active(): Set<number> {
-    return new Set(this.voices.map((v) => v.si));
+    return new Set(this.voices.filter((v) => !v.sym).map((v) => v.si));
   }
 
   /** out[off] から len 標本を書く（上書き）。len は 128 以下。ステレオなら左を out、右を outR に書く */

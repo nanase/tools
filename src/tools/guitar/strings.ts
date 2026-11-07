@@ -28,13 +28,17 @@ export interface Material {
   etaX: number;
   /** 曲げの側の損失係数（粘弾性） */
   etaB: number;
+  /** 周波数に比例して増える損失の係数 [1/Hz]（巻弦の巻線どうしの摩擦の目安。録音の減衰に合わせた値） */
+  etaW: number;
   /** 縦波の速さを決めるヤング率 [Pa]（芯線の断面で張力を受け持つ。こすれる音の静的な共振に使う） */
   Eax: number;
 }
 
 /**
  * 材質。ナイロンとナイロン芯の巻弦の損失係数は Woodhouse (2004) の Table I（D'Addario Pro Arte、
- * 1〜3 弦と 4〜6 弦の平均）から、空気の粘性の分を除いて決めた。スチールの損失は Cuesta・Valette の値の範囲から選んだ
+ * 1〜3 弦と 4〜6 弦の平均）から、空気の粘性の分を除いて決めた。スチールの損失は Cuesta・Valette の値の範囲から選んだ。
+ * ナイロン芯の巻弦は、Woodhouse の値（張ったばかりの新しい弦）では 1 kHz より上の部分音が無響室の録音
+ * （アイオワ大学 MIS）より 1.5〜3 倍長く残り、低い部分音は少し早く消える。etaX を半分にし、etaW を足して録音の減衰に合わせた
  */
 export const MATERIALS: readonly Material[] = [
   {
@@ -48,6 +52,7 @@ export const MATERIALS: readonly Material[] = [
     etaF: 3.1e-4,
     etaX: 0.7,
     etaB: 1.5e-2,
+    etaW: 0,
     Eax: 4e9,
   },
   {
@@ -59,8 +64,9 @@ export const MATERIALS: readonly Material[] = [
     core: 0.5,
     E: 9e9,
     etaF: 4.7e-5,
-    etaX: 2.0,
+    etaX: 1.0,
     etaB: 1.1e-2,
+    etaW: 3.5e-7,
     Eax: 4e9,
   },
   {
@@ -74,6 +80,7 @@ export const MATERIALS: readonly Material[] = [
     etaF: 5.6e-5,
     etaX: 0,
     etaB: 1e-3,
+    etaW: 0,
     Eax: 2e11,
   },
   {
@@ -87,6 +94,7 @@ export const MATERIALS: readonly Material[] = [
     etaF: 1e-4,
     etaX: 0.3,
     etaB: 1e-3,
+    etaW: 0,
     Eax: 2e11,
   },
 ];
@@ -214,11 +222,11 @@ export const etaAir = (d: number, mu: number, f: number): number =>
 
 /**
  * 弦だけの損失係数 η（モードの減衰率は η ω / 2）。
- * η = η_air(f) + η_X / ω + (T η_F + B k² η_B) / (T + B k²)、k = nπ / L
+ * η = η_air(f) + η_X / ω + (T η_F + B k² η_B) / (T + B k²) + η_W f、k = nπ / L
  */
 export function etaString(p: StringPhys, L: number, n: number, f: number): number {
   const k = (n * Math.PI) / L,
     bk = p.B * k * k,
     m = p.mat;
-  return etaAir(p.d, p.mu, f) + m.etaX / (2 * Math.PI * f) + (p.T * m.etaF + bk * m.etaB) / (p.T + bk);
+  return etaAir(p.d, p.mu, f) + m.etaX / (2 * Math.PI * f) + (p.T * m.etaF + bk * m.etaB) / (p.T + bk) + m.etaW * f;
 }
