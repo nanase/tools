@@ -404,7 +404,7 @@ describe('ギターの物理モデルの音', () => {
       const e = new Engine(FS);
       e.setBody(bodyDesc(g.body));
       const m = modesOf(g, si, 0, FS),
-        pl = pluckOf(g, si, m, { pos: 0.13, amp: 1.2e-3, width: 12e-3, rel: 8e-5, angle: Math.PI / 4 }),
+        pl = pluckOf(g, si, m, { pos: 0.13, amp: 1.2e-3, width: 12e-3, soft: 7.5e-3, angle: Math.PI / 4 }),
         y = new Float32Array(FS * 1.1);
       e.pluck({ si, N: m.N, w: m.w, s: m.s, f: pl.f });
       for (let i = FS / 10; i < y.length; i += 128) e.render(y, i, 128);

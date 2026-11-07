@@ -30,6 +30,7 @@ import {
   tensionFor,
   tuningOf,
 } from '../src/tools/guitar/strings';
+import { fft, plan } from '../src/tools/spectrum/fft';
 
 const FS = 48000;
 const bodyOf = (v: 'classical' | 'dread') => {
@@ -115,6 +116,28 @@ describe('胴', () => {
     const c = bodyOf('classical');
     expect(c.stat.map((m) => m.f)).toEqual(b.stat.map((m) => m.f));
   });
+  it('統計的なモードは Woodhouse にならい 11 kHz まで、Q は 30〜80、平均の有効質量は周波数によらない', () => {
+    const b = bodyOf('classical'),
+      top = Math.max(...b.stat.map((m) => m.f)),
+      invM = (lo: number, hi: number) => {
+        const s = b.stat.filter((m) => m.f >= lo && m.f < hi);
+        return s.reduce((a, m) => a + 1 / m.m, 0) / s.length;
+      };
+    expect(top).toBeGreaterThan(10500);
+    expect(top).toBeLessThanOrEqual(11000);
+    for (const m of b.stat) {
+      expect(1 / m.eta).toBeGreaterThanOrEqual(30);
+      expect(1 / m.eta).toBeLessThanOrEqual(80);
+    }
+    const r = invM(6000, 11000) / invM(1000, 4000);
+    expect(r).toBeGreaterThan(0.6);
+    expect(r).toBeLessThan(1.6);
+  });
+  it('表板の木目方向の一致周波数は、厚さ 2.5 mm のスプルースで 4.5〜5.6 kHz', () => {
+    const b = bodyOf('classical');
+    expect(b.fc).toBeGreaterThan(4500);
+    expect(b.fc).toBeLessThan(5600);
+  });
   it('容積を大きくするとヘルムホルツ共振が下がり、穴を大きくすると上がる', () => {
     const base = bodyOf('classical'),
       big = makeBody({ ...base.spec, V: 2 * base.spec.V }),
@@ -160,7 +183,7 @@ describe('弦と胴のモード', () => {
   it('弦の長さの 1/5 の点で弾くと、5 倍音（とその倍数）は出ない', () => {
     const g = guitar('nylon'),
       m = modesOf(g, 0, 0, FS),
-      pl = pluckOf(g, 0, m, { pos: m.L / 5, amp: 1e-3, width: 0, rel: 0, angle: Math.PI / 2 });
+      pl = pluckOf(g, 0, m, { pos: m.L / 5, amp: 1e-3, width: 0, soft: 0, angle: Math.PI / 2 });
     expect(Math.abs(pl.a[4])).toBeLessThan(1e-12);
     expect(Math.abs(pl.a[9])).toBeLessThan(1e-12);
     expect(Math.abs(pl.a[0])).toBeGreaterThan(1e-4);
@@ -170,28 +193,51 @@ describe('弦と胴のモード', () => {
   it('離す瞬間の形は、弾く点を頂点とする三角形（変位 A）', () => {
     const g = guitar('nylon'),
       m = modesOf(g, 2, 0, FS),
-      pl = pluckOf(g, 2, m, { pos: 0.13, amp: 1.5e-3, width: 0, rel: 0, angle: Math.PI / 4 }),
+      pl = pluckOf(g, 2, m, { pos: 0.13, amp: 1.5e-3, width: 0, soft: 0, angle: Math.PI / 4 }),
       c = coefAt(pl, 0, 0, Math.PI / 4, m.N);
     expect(shapeOf(c, m.L, 0.13)).toBeCloseTo(1.5e-3, 4);
     expect(shapeOf(c, m.L, 0.065)).toBeCloseTo(0.75e-3, 4);
   });
-  it('指の腹（広く、ゆっくり離れる）は爪より高い倍音が弱い', () => {
+  it('指の腹（広く柔らかい）は爪より高い倍音が弱い', () => {
     const g = guitar('steel'),
       m = modesOf(g, 0, 0, FS),
       sp = { pos: 0.1, amp: 1e-3, angle: Math.PI / 2 },
-      nail = pluckOf(g, 0, m, { ...sp, width: 3e-3, rel: 3e-5 }),
-      flesh = pluckOf(g, 0, m, { ...sp, width: 12e-3, rel: 8e-5 });
-    expect(Math.abs(flesh.a[20])).toBeLessThan(Math.abs(nail.a[20]) * 0.5);
+      nail = pluckOf(g, 0, m, { ...sp, width: 3e-3, soft: 3e-3 }),
+      flesh = pluckOf(g, 0, m, { ...sp, width: 12e-3, soft: 7.5e-3 });
+    expect(Math.abs(flesh.a[40])).toBeLessThan(Math.abs(nail.a[40]) * 0.5);
   });
 });
 
 describe('音', () => {
+  it('1 弦を指で弾くと、2.8〜5.6 kHz の帯は 0.1〜1 kHz の帯の −35 dB より大きい（無響室の録音は約 −23 dB）', () => {
+    const g = guitar('nylon'),
+      e = new Engine(FS),
+      N = 16384,
+      y = new Float32Array(N);
+    e.setBody(bodyDesc(g.body));
+    const m = modesOf(g, 0, 0, FS),
+      pl = pluckOf(g, 0, m, { pos: 0.14, amp: 1.2e-3, width: 12e-3, soft: 7.5e-3, angle: Math.PI / 4 });
+    e.pluck({ si: 0, N: m.N, w: m.w, s: m.s, f: pl.f });
+    for (let i = 0; i < N; i += 128) e.render(y, i, 128);
+    const p = plan(N);
+    for (let i = 0; i < N; i++) {
+      p.re[i] = y[i] * (0.5 - 0.5 * Math.cos((2 * Math.PI * i) / N));
+      p.im[i] = 0;
+    }
+    fft(p);
+    const band = (lo: number, hi: number) => {
+      let s = 0;
+      for (let k = Math.ceil((lo * N) / FS); k < (hi * N) / FS; k++) s += p.re[k] ** 2 + p.im[k] ** 2;
+      return s;
+    };
+    expect(10 * Math.log10(band(2800, 5600) / band(100, 1000))).toBeGreaterThan(-35);
+  });
   it('弾くと音が出て、減衰し、止めると消える', () => {
     const g = guitar('nylon'),
       e = new Engine(FS);
     e.setBody(bodyDesc(g.body));
     const m = modesOf(g, 4, 2, FS),
-      pl = pluckOf(g, 4, m, { pos: 0.13, amp: 1.2e-3, width: 12e-3, rel: 8e-5, angle: Math.PI / 4 });
+      pl = pluckOf(g, 4, m, { pos: 0.13, amp: 1.2e-3, width: 12e-3, soft: 7.5e-3, angle: Math.PI / 4 });
     e.pluck({ si: 4, N: m.N, w: m.w, s: m.s, f: pl.f });
     const y = new Float32Array(FS);
     for (let i = 0; i < y.length; i += 128) e.render(y, i, 128);
@@ -211,7 +257,7 @@ describe('音', () => {
   it('指を離すのは、その撥弦だけ（先に同じ弦を弾き直した音は止めない）', () => {
     const g = guitar('nylon'),
       m = modesOf(g, 2, 2, FS),
-      pl = pluckOf(g, 2, m, { pos: 0.13, amp: 1.2e-3, width: 12e-3, rel: 8e-5, angle: Math.PI / 4 }),
+      pl = pluckOf(g, 2, m, { pos: 0.13, amp: 1.2e-3, width: 12e-3, soft: 7.5e-3, angle: Math.PI / 4 }),
       msg = { si: 2, N: m.N, w: m.w, s: m.s, f: pl.f },
       e = new Engine(FS),
       y = new Float32Array(FS / 4),
@@ -231,7 +277,7 @@ describe('音', () => {
   it('ステレオの定位は再生だけに効き、モノラルの音は変わらない', () => {
     const g = guitar('nylon'),
       m = modesOf(g, 1, 3, FS),
-      pl = pluckOf(g, 1, m, { pos: 0.13, amp: 1.2e-3, width: 12e-3, rel: 8e-5, angle: Math.PI / 4 }),
+      pl = pluckOf(g, 1, m, { pos: 0.13, amp: 1.2e-3, width: 12e-3, soft: 7.5e-3, angle: Math.PI / 4 }),
       msg = { si: 1, N: m.N, w: m.w, s: m.s, f: pl.f },
       run = (stereo: boolean, pan: number) => {
         const e = new Engine(FS, stereo),
@@ -276,7 +322,7 @@ describe('音', () => {
       /* E の和音（1 弦から 6 弦のフレット）を、6 弦から 20 ms ずつずらして弾き、1 秒で指を離す */
       msgs = [0, 0, 1, 2, 2, 0].map((f, si) => {
         const m = modesOf(g, si, f, FS),
-          pl = pluckOf(g, si, m, { pos: 0.13, amp: 1.2e-3, width: 12e-3, rel: 8e-5, angle: Math.PI / 4 });
+          pl = pluckOf(g, si, m, { pos: 0.13, amp: 1.2e-3, width: 12e-3, soft: 7.5e-3, angle: Math.PI / 4 });
         return { si, N: m.N, w: m.w, s: m.s, f: pl.f };
       }),
       run = (room: string | null) => {

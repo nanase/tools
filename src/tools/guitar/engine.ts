@@ -19,6 +19,11 @@ export interface BodyDesc {
 }
 /** BodyDesc.st の 1 モードの長さ */
 const ST = 7;
+/**
+ * この周波数 [Hz] より上の胴の統計的なモードは、左右の力の平均で 1 回だけ回し、定位の重みだけを左右で変える
+ * （弦ごとの定位の差は小さく、高いモードは数が多いので、計算を減らす。モノラルでは結果は変わらない）
+ */
+const F_SHARED = 4000;
 
 /** 胴の模型を、音を作る部分へ渡す形にする */
 export function bodyDesc(b: Body): BodyDesc {
@@ -221,8 +226,11 @@ export class Engine {
   private cvRi = new Float64Array(2);
   /* 2 次の低域通過（双 1 次変換） */
   private lb = [0, 0, 0, 0, 0];
-  /* 胴: 統計的なモード */
+  /* 胴: 統計的なモード（nLo より後は左右で共通の状態） */
   private nst = 0;
+  private nLo = 0;
+  private hQr = new Float64Array(0);
+  private hQi = new Float64Array(0);
   private sEr = new Float64Array(0);
   private sEi = new Float64Array(0);
   private sBr = new Float64Array(0);
@@ -234,9 +242,11 @@ export class Engine {
   private sG = new Float64Array(0);
   private readonly ch: Chan[];
   private readonly preK: number;
-  /* 作業用（1 つの弦の力） */
+  /* 作業用（1 つの弦の力・左右の力の平均） */
   private vf = new Float64Array(128);
   private hf = new Float64Array(128);
+  private mv = new Float64Array(128);
+  private mh = new Float64Array(128);
   /** 弦ごとの、左手で動かした音の高さの比（目標と、ならした今の値） */
   private readonly bendT = [1, 1, 1, 1, 1, 1];
   private readonly bendC = [1, 1, 1, 1, 1, 1];
@@ -284,11 +294,16 @@ export class Engine {
     this.lb = [K * K * n, 2 * K * K * n, K * K * n, 2 * (K * K - 1) * n, (1 - q * K + K * K) * n];
     const m = d.st.length / ST;
     this.nst = m;
+    let lo = 0;
+    while (lo < m && d.st[lo * ST + 1] / (2 * Math.PI) < F_SHARED) lo++;
+    this.nLo = lo;
+    this.hQr = new Float64Array(m);
+    this.hQi = new Float64Array(m);
     for (const k of ['sEr', 'sEi', 'sBr', 'sBi', 'sRr', 'sRi', 'sCv', 'sCh', 'sG'] as const)
       this[k] = new Float64Array(m);
-    /* モードごとの定位は乱数で決める（同じ胴なら同じ） */
+    /* モードごとの定位は乱数で決める（同じ胴なら同じ）。隣り合うモードは左右交互に置き、全体が片側へ偏らないようにする */
     const r = rng(11),
-      pan = Array.from({ length: m }, (_, k) => panSpread(d.st[k * ST + 1] / (2 * Math.PI)) * (2 * r() - 1));
+      pan = Array.from({ length: m }, (_, k) => panSpread(d.st[k * ST + 1] / (2 * Math.PI)) * r() * (k % 2 ? 1 : -1));
     this.ch.forEach((c, n) => {
       c.cvQr.fill(0);
       c.cvQi.fill(0);
@@ -420,24 +435,70 @@ export class Engine {
       nz.pos += n;
     }
     this.noises = this.noises.filter((nz) => nz.pos < nz.buf.length);
+    for (const c of ch) this.pre(c, len);
+    this.shared(len);
     this.body(ch[0], out, off, len);
     if (ch[1]) this.body(ch[1], outR ?? out, off, len);
   }
 
-  /** 1 チャンネルの駒の力から胴を回して、音圧を out[off] から len 標本書く */
-  private body(c: Chan, out: Float32Array | Float64Array, off: number, len: number): void {
-    const { fv, fh, pr } = c;
-    /* 離す前の力を引く */
+  /** 1 チャンネルの駒の力から、離す前の力を引く */
+  private pre(c: Chan, len: number): void {
+    const { fv, fh } = c;
     for (let i = 0; i < len; i++) {
       fv[i] -= c.preV;
       fh[i] -= c.preH;
       c.preV *= this.preK;
       c.preH *= this.preK;
     }
+  }
+
+  /** 高い統計的なモードを左右の力の平均で回し、定位の重みを掛けて各チャンネルの音圧に足す */
+  private shared(len: number): void {
+    const { ch, mv, mh, sEr, sEi, sBr, sBi, sRr, sRi, sCv, sCh, sG, hQr, hQi } = this,
+      w = 1 / ch.length;
+    mv.fill(0, 0, len);
+    mh.fill(0, 0, len);
+    for (const c of ch)
+      for (let i = 0; i < len; i++) {
+        mv[i] += w * c.fv[i];
+        mh[i] += w * c.fh[i];
+      }
+    for (let k = this.nLo; k < this.nst; k++) {
+      let qr = hQr[k],
+        qi = hQi[k];
+      const er = sEr[k],
+        ei = sEi[k],
+        br = sBr[k],
+        bi = sBi[k],
+        cv = sCv[k],
+        chh = sCh[k],
+        gr = 2 * sG[k] * sRr[k],
+        gi = 2 * sG[k] * sRi[k],
+        w0 = ch[0].sW[k],
+        w1 = ch[1]?.sW[k] ?? 0,
+        p0 = ch[0].pr,
+        p1 = ch[1]?.pr;
+      for (let i = 0; i < len; i++) {
+        const d = cv * mv[i] + chh * mh[i],
+          t = qr * er - qi * ei + br * d;
+        qi = qr * ei + qi * er + bi * d;
+        qr = t;
+        const y = gr * qr - gi * qi;
+        p0[i] += w0 * y;
+        if (p1) p1[i] += w1 * y;
+      }
+      hQr[k] = qr;
+      hQi[k] = qi;
+    }
+  }
+
+  /** 1 チャンネルの駒の力から胴を回して、音圧を out[off] から len 標本書く（高いモードは shared で足してある） */
+  private body(c: Chan, out: Float32Array | Float64Array, off: number, len: number): void {
+    const { fv, fh, pr } = c;
     /* 胴: 統計的なモード（速度 × 音圧の重み × 定位の重み） */
     const { sEr, sEi, sBr, sBi, sRr, sRi, sCv, sCh, sG } = this,
       { sQr, sQi, sW } = c;
-    for (let k = 0; k < this.nst; k++) {
+    for (let k = 0; k < this.nLo; k++) {
       let qr = sQr[k],
         qi = sQi[k];
       const er = sEr[k],

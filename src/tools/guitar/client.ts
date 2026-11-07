@@ -263,7 +263,7 @@ const pluckSpec = (si: number, amp = V.amp): PluckSpec => ({
   pos: posOf(si),
   amp: amp / 1000,
   width: toolOf(tool.value).w,
-  rel: toolOf(tool.value).rel,
+  soft: toolOf(tool.value).soft,
   angle: (V.ang * Math.PI) / 180,
 });
 const msgOf = (si: number, m: Modes, f: Float64Array, vib?: VibSpec): PluckMsg => ({

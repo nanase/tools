@@ -79,12 +79,13 @@ const KP = 1870;
 /** 表板（胴の空気なし）と、サウンドホールの空気の Q */
 const QP = 25,
   QH = 20;
-/** 平均の駆動点アドミタンスのうち、駒と力木で下がる分（無限板の値に掛ける） */
+/** 平均の駆動点アドミタンスのうち、駒と力木で下がる分（無限板の値に掛ける）。周波数によらず一定（Woodhouse 2004・2012） */
 const KAPPA = 0.25;
-/** 平均のアドミタンスが半分になる周波数 [Hz] */
-const FB = 2000;
-/** 統計的なモードの上限 [Hz] */
-export const F_TOP = 6000;
+/** 統計的なモードの上限 [Hz]（Woodhouse 2004 の合成と同じ 11 kHz） */
+export const F_TOP = 11000;
+/** 統計的なモードの Q の範囲（一様な乱数。Woodhouse 2004 の 30〜80） */
+const Q_MIN = 30,
+  Q_MAX = 80;
 /** 音圧を求める距離 [m] */
 export const R_MIC = 1;
 /** 統計的なモードの放射: 駒の速度に対する表板の平均の速度の割合と、放射効率の下限 */
@@ -139,7 +140,7 @@ export interface Body {
   rhoh: number;
   df: number;
   yInf: number;
-  /** 表板の一致周波数（板の曲げ波の速さが音速と等しくなる周波数） [Hz] */
+  /** 表板の木目方向の一致周波数（板の曲げ波の速さが音速と等しくなる周波数） [Hz]。直交異方性の板は、硬い木目方向の一致周波数から効率よく放射する */
   fc: number;
 }
 
@@ -213,7 +214,7 @@ export function makeBody(spec: BodySpec): Body {
     rhoh,
     df: 2 / (ty.area * Math.sqrt(rhoh / D)),
     yInf: 1 / (8 * Math.sqrt(D * rhoh)),
-    fc: ((AIR.c * AIR.c) / TAU) * Math.sqrt(rhoh / D),
+    fc: (((AIR.c * AIR.c) / TAU) * Math.sqrt((12 * w.rho) / w.EL)) / h,
   };
 
   /* 結合した 2 つのモード: 減衰のない周波数から Newton 法で D(s) = 0 の根を求め、U/F の留数を出す */
@@ -232,16 +233,16 @@ export function makeBody(spec: BodySpec): Body {
     b.cv.push({ lam: s, r: div(num, dpoly(b, s)[1]) });
   }
 
-  /* 統計的なモード: 間隔は板のモード密度、有効質量の逆数は平均のアドミタンスに合わせた χ² 分布 */
-  const r = rng(SEED);
+  /* 統計的なモード: 間隔は板のモード密度、有効質量の逆数は平均のアドミタンスに合わせた χ² 分布、Q は一様な乱数 */
+  const r = rng(SEED),
+    rq = rng(SEED + 1);
   let f = 1.15 * b.fpl;
   while (true) {
     f += b.df * (0.65 + 0.7 * r());
     if (f > F_TOP) break;
     const g = gauss(r),
-      yMean = (KAPPA * b.yInf) / (1 + f / FB),
-      invM = 4 * yMean * b.df * Math.max(0.02, g * g),
-      eta = 0.025 * (1 + f / FB),
+      invM = 4 * KAPPA * b.yInf * b.df * Math.max(0.02, g * g),
+      eta = 1 / (Q_MIN + (Q_MAX - Q_MIN) * rq()),
       th = 0.4 * gauss(r),
       x = (f / b.fc) ** 1.5,
       sig = SIG0 + x / (1 + x),
