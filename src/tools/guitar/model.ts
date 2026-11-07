@@ -113,13 +113,13 @@ export function tuneCoupled(g: Guitar, si: number, f: number): number {
 }
 
 /**
- * 弾くもの: 弦に触れる幅 [m] と、弦が離れていく時間 [s]（指の腹は柔らかく、ゆっくり離れる。
- * 指先の丸みと柔らかさが高い倍音を弱める: Woodhouse 2004）
+ * 弾くもの: 弦に触れる幅 w [m] と、指先の柔らかさで角をならす幅 soft [m]。どちらも高い倍音を弱める。
+ * 指の soft は Woodhouse ら (2012) の 7.5 mm。爪とピックの soft は、触れる幅に合わせた目安
  */
 export const TOOLS = [
-  { v: 'finger', name: '指', w: 12e-3, rel: 8e-5 },
-  { v: 'nail', name: '爪', w: 3e-3, rel: 3e-5 },
-  { v: 'pick', name: 'ピック', w: 1e-3, rel: 1.5e-5 },
+  { v: 'finger', name: '指', w: 12e-3, soft: 7.5e-3 },
+  { v: 'nail', name: '爪', w: 3e-3, soft: 3e-3 },
+  { v: 'pick', name: 'ピック', w: 1e-3, soft: 1.5e-3 },
 ] as const;
 export type Tool = (typeof TOOLS)[number]['v'];
 export const toolOf = (v: string) => TOOLS.find((t) => t.v === v) ?? TOOLS[0];
@@ -132,8 +132,8 @@ export interface PluckSpec {
   amp: number;
   /** 弦に触れる幅 [m] */
   width: number;
-  /** 弦が離れていく時間 [s] */
-  rel: number;
+  /** 指先の柔らかさで角をならす幅 [m] */
+  soft: number;
   /** 弾く向き（表板からの角度。0 は表板に平行、π/2 は垂直） [rad] */
   angle: number;
 }
@@ -149,7 +149,7 @@ export interface Pluck {
 
 /**
  * 弾く位置を頂点とする三角形に弦を引き、静かに離す。指の幅 w で角を丸め（sinc を掛ける）、
- * 離れていく時間 τ で高い周波数を弱める（exp(−(ωτ)²/2) を掛ける）。
+ * 指先の柔らかさの幅 w_s で高い倍音を弱める（exp(−(k_n w_s)²) を掛ける: Woodhouse ら 2012）。
  * a_n = 2 A L² / (n² π² x (L − x)) · sin(nπx/L) · sinc(nπw / 2L)、駒の力 F_n = T (nπ/L) (−1)^{n+1} a_n
  */
 export function pluckOf(g: Guitar, si: number, m: Modes, sp: PluckSpec): Pluck {
@@ -166,12 +166,12 @@ export function pluckOf(g: Guitar, si: number, m: Modes, sp: PluckSpec): Pluck {
       k = (n * Math.PI) / L,
       u = (k * sp.width) / 2,
       sinc = u < 1e-9 ? 1 : Math.sin(u) / u,
-      wt = m.w[i] * sp.rel,
+      ks = k * sp.soft,
       an =
         ((2 * sp.amp * L * L) / (n * n * Math.PI * Math.PI * x * (L - x))) *
         Math.sin(k * x) *
         sinc *
-        Math.exp((-wt * wt) / 2),
+        Math.exp(-ks * ks),
       fn = T * k * (n % 2 ? 1 : -1) * an;
     a[i] = an * cv;
     a[N + i] = an * ch;

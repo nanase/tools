@@ -54,9 +54,9 @@
 </div>
 
 <h3>撥弦</h3>
-<p>弦を弾く点で三角形に引いて離すとし、指や爪の触れる幅 <math><mi>w</mi></math> で角を丸めます。駒にかかる力 <math><mi>F</mi><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo></math> は、各モードの傾きの和です<a class="rf" href="#thy-r2">[2]</a><a class="rf" href="#thy-r3">[3]</a>。</p>
+<p>弦を弾く点で三角形に引いて離すとし、指や爪の触れる幅 <math><mi>w</mi></math> で角を丸めます。指先の柔らかさは幅 <math><msub><mi>w</mi><mi mathvariant="normal">s</mi></msub></math> のガウス関数で表し、高い倍音を弱めます<a class="rf" href="#thy-r13">[13]</a>。駒にかかる力 <math><mi>F</mi><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo></math> は、各モードの傾きの和です<a class="rf" href="#thy-r2">[2]</a><a class="rf" href="#thy-r3">[3]</a>。</p>
 <div class="eqs">
-  <math display="block"><msub><mi>a</mi><mi>n</mi></msub><mo>=</mo><mfrac><mrow><mn>2</mn><mi>A</mi><msup><mi>L</mi><mn>2</mn></msup></mrow><mrow><msup><mi>n</mi><mn>2</mn></msup><msup><mi>π</mi><mn>2</mn></msup><msub><mi>x</mi><mi mathvariant="normal">p</mi></msub><mo stretchy="false">(</mo><mi>L</mi><mo>−</mo><msub><mi>x</mi><mi mathvariant="normal">p</mi></msub><mo stretchy="false">)</mo></mrow></mfrac><mi>sin</mi><mo>⁡</mo><mfrac><mrow><mi>n</mi><mi>π</mi><msub><mi>x</mi><mi mathvariant="normal">p</mi></msub></mrow><mi>L</mi></mfrac><mi>sinc</mi><mo>⁡</mo><mfrac><mrow><mi>n</mi><mi>π</mi><mi>w</mi></mrow><mrow><mn>2</mn><mi>L</mi></mrow></mfrac></math>
+  <math display="block"><msub><mi>a</mi><mi>n</mi></msub><mo>=</mo><mfrac><mrow><mn>2</mn><mi>A</mi><msup><mi>L</mi><mn>2</mn></msup></mrow><mrow><msup><mi>n</mi><mn>2</mn></msup><msup><mi>π</mi><mn>2</mn></msup><msub><mi>x</mi><mi mathvariant="normal">p</mi></msub><mo stretchy="false">(</mo><mi>L</mi><mo>−</mo><msub><mi>x</mi><mi mathvariant="normal">p</mi></msub><mo stretchy="false">)</mo></mrow></mfrac><mi>sin</mi><mo>⁡</mo><mfrac><mrow><mi>n</mi><mi>π</mi><msub><mi>x</mi><mi mathvariant="normal">p</mi></msub></mrow><mi>L</mi></mfrac><mi>sinc</mi><mo>⁡</mo><mfrac><mrow><mi>n</mi><mi>π</mi><mi>w</mi></mrow><mrow><mn>2</mn><mi>L</mi></mrow></mfrac><mi>exp</mi><mo>⁡</mo><mrow><mo>(</mo><mo>−</mo><msup><mrow><mo>(</mo><mfrac><mrow><mi>n</mi><mi>π</mi><msub><mi>w</mi><mi mathvariant="normal">s</mi></msub></mrow><mi>L</mi></mfrac><mo>)</mo></mrow><mn>2</mn></msup><mo>)</mo></mrow></math>
   <math display="block"><mi>F</mi><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mo>=</mo><munder><mo>∑</mo><mi>n</mi></munder><mi>T</mi><mfrac><mrow><mi>n</mi><mi>π</mi></mrow><mi>L</mi></mfrac><msup><mrow><mo stretchy="false">(</mo><mo>−</mo><mn>1</mn><mo stretchy="false">)</mo></mrow><mrow><mi>n</mi><mo>+</mo><mn>1</mn></mrow></msup><msub><mi>a</mi><mi>n</mi></msub><msup><mi>e</mi><mrow><mo>−</mo><msub><mi>σ</mi><mi>n</mi></msub><mi>t</mi></mrow></msup><mi>cos</mi><mo>⁡</mo><msub><mi>ω</mi><mi>n</mi></msub><mi>t</mi></math>
 </div>
 
@@ -80,8 +80,10 @@
 <p>それより高い周波数には、乱数で多数のモードを置きます。Woodhouse の「統計的なギター」にならい<a class="rf" href="#thy-r2">[2]</a><a class="rf" href="#thy-r3">[3]</a>、表板の曲げ剛性 <math><mi>D</mi></math> と面密度 <math><mi>ρ</mi><mi>h</mi></math> から求めたモードの間隔と平均のアドミタンスに合わせます。</p>
 <ul class="tl">
   <li>モードの有効質量: <math><msup><mi>χ</mi><mn>2</mn></msup></math> 分布の乱数</li>
+  <li>平均のアドミタンス: 周波数によらず一定</li>
+  <li>Q: 30〜80 の一様な乱数</li>
   <li>振動の向きと放射の強さ: 乱数</li>
-  <li>放射の効率: 表板の一致周波数に近づくほど上がる</li>
+  <li>放射の効率: 木目方向の一致周波数に近づくほど上がる</li>
 </ul>
 <p>乱数の種は決まっているので、同じ設定なら同じ胴になります。</p>
 <div class="eqs">
@@ -182,7 +184,7 @@
 <ul class="tl">
   <li>音: 1 m 先の音圧。1 Pa を出力のフルスケールとする</li>
   <li>弦のモード: 16 kHz（またはサンプリング周波数の 0.45 倍）まで計算</li>
-  <li>胴のモード: 6 kHz まで計算</li>
+  <li>胴のモード: 11 kHz まで計算</li>
 </ul>
 <p>スピーカーから出す音だけはステレオにして、定位を少しずらしています。図の向きは左がヘッド、右が駒で、これに合わせて寄せます。</p>
 <ul class="tl">
@@ -190,6 +192,7 @@
   <li>左へ寄せる: フレットノイズ。左手のある側</li>
   <li>左右へ散らす: 胴の高いモード。表板のあちこちから鳴るように</li>
 </ul>
+<p>4 kHz より上の胴のモードは計算を減らすため、左右の力の平均で回し、散らす重みだけを左右で変えます。</p>
 <p>この定位は聞こえ方の目安で、模型には基づきません。残響も再生の音だけに付けます。計算結果と音の波形は、ステレオにする前の 1 m 先の音圧で、残響を含みません。</p>
 
 <h3>最後に弾いた音の値</h3>
@@ -211,6 +214,7 @@
   <li id="thy-r10"><span class="rf-for">残響</span><span class="rf-src">J.-M. Jot and A. Chaigne, “Digital delay networks for designing artificial reverberators,” AES 90th Convention, Preprint 3030, 1991</span></li>
   <li id="thy-r11"><span class="rf-for">空気の吸収</span><span class="rf-src">ISO 9613-1</span></li>
   <li id="thy-r12"><span class="rf-for">押し上げによる張力と音の高さの変化</span><span class="rf-src">D. R. Grimes, “String theory – the physics of string-bending and other electric guitar techniques,” <i>PLOS ONE</i>, vol. 9, no. 7, e102088, 2014</span></li>
+  <li id="thy-r13"><span class="rf-for">指先の柔らかさの幅</span><span class="rf-src">J. Woodhouse, E. K. Y. Manuel, L. A. Smith, A. J. C. Wheble and C. Fritz, “Perceptual thresholds for acoustical guitar models,” <i>Acta Acustica united with Acustica</i>, vol. 98, pp. 475–486, 2012</span></li>
 </ol>
 
 <h3>このツールで決めたこと</h3>
@@ -219,6 +223,7 @@
   <li>木材の値</li>
   <li>胴の面積と力木の倍率</li>
   <li>平均のアドミタンスを下げる割合</li>
+  <li>爪とピックの柔らかさの幅</li>
   <li>放射の強さ</li>
   <li>スチール弦の損失係数</li>
   <li>こすれる音の大きさ</li>

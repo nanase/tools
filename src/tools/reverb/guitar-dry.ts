@@ -5,6 +5,7 @@
 import { BODY_TYPES, makeBody } from '../guitar/body';
 import { bodyDesc, Engine } from '../guitar/engine';
 import { type Guitar, modesOf, pluckOf, TOOLS } from '../guitar/model';
+import { POS } from '../guitar/params';
 import { setOf, stringPhys } from '../guitar/strings';
 
 /** 弾く順（弦 0 = 1 弦）とフレット、弾く時刻 [s] */
@@ -33,7 +34,7 @@ export function guitar(fs: number): Float32Array {
     y = new Float32Array(Math.round((NOTES[NOTES.length - 1][2] + RING) * fs));
   for (const [si, fret, at] of NOTES) {
     const m = modesOf(g, si, fret, fs),
-      pl = pluckOf(g, si, m, { pos: 0.13, amp: 1.2e-3, width: tool.w, rel: tool.rel, angle: Math.PI / 4 }),
+      pl = pluckOf(g, si, m, { pos: POS.v / 1000, amp: 1.2e-3, width: tool.w, soft: tool.soft, angle: Math.PI / 4 }),
       e = new Engine(fs),
       k0 = Math.round(at * fs),
       n = Math.min(Math.round(RING * fs), y.length - k0),
