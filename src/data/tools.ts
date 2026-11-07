@@ -45,7 +45,7 @@ export const TOOLS: Tool[] = [
     t: 'タイマIC 555',
     d: '抵抗器とコンデンサを使ったタイマIC555の出力をシミュレートします。',
     ic: 'sq',
-    r: ['passive-combination', 'colorcode', 'pcb-coil', 'oscilloscope'],
+    r: ['passive-combination', 'colorcode', 'i2c', 'pcb-coil'],
     k: 'ne555 発振 非安定 マルチバイブレータ timer シミュレータ simulator',
   },
   {
@@ -108,7 +108,7 @@ export const TOOLS: Tool[] = [
     t: 'JJY シミュレータ',
     d: '電波時計などで利用されているJJYの信号をシミュレートします。',
     ic: 'jjy',
-    r: ['jjy-decoder', 'qr-code', 'oscilloscope', 'pcb-coil'],
+    r: ['jjy-decoder', 'i2c', 'qr-code', 'oscilloscope'],
     k: '電波時計 標準電波 タイムコード',
   },
   {
@@ -128,6 +128,15 @@ export const TOOLS: Tool[] = [
     ic: 'qr',
     r: ['jpeg', 'noise', 'jjy', 'jjy-decoder'],
     k: 'qr code qrコード 二次元コード 2次元バーコード barcode 誤り訂正 error correction リード・ソロモン reed solomon bch ガロア体 有限体 galois field gf(256) シンドローム syndrome berlekamp massey chien forney マスク mask 形式情報 format information バージョン version 符号語 codeword 漢字 shift_jis utf-8 デンソーウェーブ denso wave iso/iec 18004 jis x 0510',
+  },
+  {
+    id: 'i2c',
+    c: '信号・通信',
+    t: 'I2C',
+    d: '2 本の線で機器がやり取りする I2C の信号を追います。',
+    ic: 'i2c',
+    r: ['jjy', 'timer555', 'qr-code', 'oscilloscope'],
+    k: 'i2c iic i²c twi smbus シリアル通信 serial bus バス sda scl プルアップ抵抗 pull-up オープンドレイン open drain ack nack 調停 arbitration クロックストレッチ clock stretching マスタ スレーブ コントローラ ターゲット controller target ロジックアナライザ logic analyzer um10204',
   },
   {
     id: 'fir',

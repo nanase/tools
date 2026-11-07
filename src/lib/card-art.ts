@@ -761,6 +761,55 @@ const MX_FRAMES: MxFrame[] = (() => {
 /** 円のパス（塗り用） */
 const mxDot = (x: number, y: number, r: number): string =>
   `M${r1(x - r)} ${r1(y)}a${r} ${r} 0 1 0 ${2 * r} 0a${r} ${r} 0 1 0 ${-2 * r} 0Z`;
+/**
+ * I2C の図柄の列: 1 回の通信を 1/4 ビット刻みの High・Low にする（開始・アドレス 0x48 書き込み・ACK・データ・ACK・終了）。
+ * who は SDA を下げている機器（0 マスタ、2 宛先のスレーブ、-1 誰も）
+ */
+const I2C = (() => {
+  const scl: number[] = [],
+    sda: number[] = [],
+    who: number[] = [];
+  const push = (c: number, d: number, w = 0) => {
+    scl.push(c);
+    sda.push(d);
+    who.push(d ? -1 : w);
+  };
+  for (let k = 0; k < 6; k++) push(1, 1);
+  push(1, 0);
+  push(1, 0);
+  let prev = 0;
+  const bit = (b: number, w = 0) => {
+    push(0, prev, w);
+    push(0, b, w);
+    push(1, b, w);
+    push(1, b, w);
+    prev = b;
+  };
+  for (const v of [0x90, 0x2a]) {
+    for (let k = 7; k >= 0; k--) bit((v >> k) & 1);
+    bit(0, 2);
+  }
+  push(0, prev);
+  push(0, 0);
+  push(1, 0);
+  push(1, 0);
+  for (let k = 0; k < 8; k++) push(1, 1);
+  return { scl, sda, who };
+})();
+/** 1 秒に進む 1/4 ビットの数と、見えている数 */
+const I2C_QPS = 12,
+  I2C_N = 40;
+/** 列を階段の線にする（i0 から n 個） */
+const i2cLine = (a: readonly number[], i0: number, yH: number, yL: number): string => {
+  const dx = 112 / I2C_N;
+  let d = '';
+  for (let k = 0; k < I2C_N; k++) {
+    const y = a[mod(i0 + k, a.length)] ? yH : yL,
+      x = 4 + k * dx;
+    d += `${k ? 'L' : 'M'}${r1(x)} ${y}L${r1(x + dx)} ${y}`;
+  }
+  return d;
+};
 
 export const ART: Record<string, Art> = {
   /* タイマIC 555: 出力（周期 36、High 24）と C1 の電圧。時間が流れる */
@@ -2593,6 +2642,24 @@ export const ART: Record<string, Art> = {
       P('fc', mxDot(cx - 2 + e, cy - 0.4, 1.1) + mxDot(cx + 2 + e, cy - 0.4, 1.1))
     );
   },
+  /* I2C: 上に流れる SCL と SDA、下に 2 本の線と 4 台の機器。右端（今）で SDA を下げている機器を塗る */
+  i2c(t) {
+    const i0 = Math.floor(t * I2C_QPS + 1e-9) + 2,
+      now = I2C.who[mod(i0 + I2C_N - 1, I2C.who.length)];
+    let s =
+      P('a', i2cLine(I2C.scl, i0, 3, 10)) +
+      P('b', i2cLine(I2C.sda, i0, 13, 20)) +
+      P('b t', 'M4 26H116') +
+      P('a t', 'M4 29H116');
+    [4, 34, 64, 94].forEach((x, j) => {
+      s += P('c t', `M${x + 7} 26V34M${x + 15} 29V34`);
+      const fill = (j === 0 && now === 0) || (j === 1 && now === 2);
+      s += fill
+        ? `<rect class="${j ? 'fa' : 'fc'}" x="${x}" y="34" width="22" height="11"/>`
+        : P('c', `M${x} 34h22v11h-22z`);
+    });
+    return s;
+  },
 };
 
 /**
@@ -2666,6 +2733,7 @@ export const LOOP: Record<string, number> = {
   vv: 4,
   shp: 3,
   mxd: MX.L,
+  i2c: I2C.scl.length / I2C_QPS,
 };
 
 /** 止まっているときの図柄（ビルド時に HTML へ出す） */
