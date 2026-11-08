@@ -12,6 +12,7 @@ import { initToolPage } from '../../lib/tool-page';
 import { type Data, frameAt, type Params, type Run, range, rng, shuffle } from './core';
 import { BOX, ctxOf, DATA, type DataId, dataOf, drawnData, makeData } from './data';
 import {
+  boxMap,
   cutHeight,
   dendroCut,
   dendroY,
@@ -860,8 +861,45 @@ const toolCh = new Choice<'draw' | 'play'>($('#cl-tool'), (v) => {
       draw.size = Number(size.value);
       size.style.setProperty('--p', String((draw.size - Number(size.min)) / (Number(size.max) - Number(size.min))));
     };
-  size.addEventListener('input', setSize);
+  /* ブラシの大きさを円で示す。マウスでは指す位置に出し、タッチでは描く間だけ出す。太さを変える間は図の中央に出す */
+  const ring = $('#cl-ring');
+  let hover: [number, number] | null = null,
+    sizing = 0;
+  const showRing = (px: number, py: number): void => {
+    const d = 2 * draw.size * boxMap(mainCv.clientWidth, mainCv.clientHeight, 14).s;
+    ring.style.width = ring.style.height = `${d}px`;
+    ring.style.transform = `translate(${mainCv.offsetLeft + px - d / 2}px,${mainCv.offsetTop + py - d / 2}px)`;
+    ring.style.setProperty('--ring', draw.brush < 0 ? '' : `var(--cl-${draw.brush})`);
+    ring.classList.toggle('er', draw.brush < 0);
+    ring.hidden = false;
+  };
+  const ringAt = (e: PointerEvent): void => {
+    const b = mainCv.getBoundingClientRect();
+    hover = [e.clientX - b.left, e.clientY - b.top];
+    if (isDrawing()) showRing(...hover);
+    else ring.hidden = true;
+  };
+  const hideRing = (): void => {
+    hover = null;
+    if (!sizing) ring.hidden = true;
+  };
+  size.addEventListener('input', () => {
+    setSize();
+    if (!booted || !isDrawing()) return;
+    if (hover) showRing(...hover);
+    else {
+      showRing(mainCv.clientWidth / 2, mainCv.clientHeight / 2);
+      clearTimeout(sizing);
+      sizing = window.setTimeout(() => {
+        sizing = 0;
+        if (!hover) ring.hidden = true;
+      }, 900);
+    }
+  });
   setSize();
+  mainCv.addEventListener('pointermove', ringAt);
+  mainCv.addEventListener('pointerdown', ringAt);
+  mainCv.addEventListener('pointerleave', hideRing);
   $('#cl-clear').addEventListener('click', () => {
     draw.x = [];
     draw.y = [];
@@ -1009,6 +1047,7 @@ function apply(restart: boolean): void {
   $('#hd-fig').textContent = title();
   $('#cl-tools').hidden = !drawn;
   $('#cl-brush').hidden = !drawing;
+  if (!drawing) $('#cl-ring').hidden = true;
   toolCh.set(draw.tool);
   $('#cl-one').hidden = mode !== 'one';
   $('#cl-cmp').hidden = mode !== 'cmp';
