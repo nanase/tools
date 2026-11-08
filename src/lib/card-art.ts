@@ -3,7 +3,7 @@
  * 図柄は時刻 t [s] の関数で、t = 0 が止まっているときの絵である。ビルド時に t = 0 を HTML に出し、
  * マウスを乗せている間だけブラウザで t を進めて描き直す（scripts/card-motion.ts）。
  * 線の class は site.css の .ic にある: a = ch1、b = ch2、c = 画面の線、d = 破線、t = 細線、g = 残像、
- * w = 黒鍵の太線、fa・fb・fc = 塗り、pl・pd・il・ih = SVG テーマの図柄の明るい地と暗い地とその線、
+ * w = 黒鍵の太線、fa・fb・fc = 塗り、fr・fk = 赤黒木の赤と黒の塗り、pl・pd・il・ih = SVG テーマの図柄の明るい地と暗い地とその線、
  * sn・sr・ml・md・mn・sk = 同じく太陽・光・昼の山・夜の山・月・星
  */
 import { czaAlt, parDist, R22 } from '../tools/halo/labels';
@@ -11,6 +11,12 @@ import { fanPath } from '../tools/jjy/fan';
 import { FEAT, PG2, PG3, PW2, PW3, Q_FIG } from '../tools/piano-action/geom';
 import { OUTLINE as PA_OUT } from '../tools/piano-action/outline';
 import { type Encoded, encode } from '../tools/qr-code/encode';
+import {
+  DEFS as RB_DEFS,
+  type Frame as RbFrame,
+  inspect as rbInspect,
+  runTrace as rbRun,
+} from '../tools/red-black-tree/model';
 import {
   BODY_LEN,
   BRIDGE_M,
@@ -154,6 +160,21 @@ function btFrames(): void {
 }
 /** B木の図柄の 1 秒あたりのコマ数 */
 const BT_FPS = 5;
+/**
+ * 赤黒木の図柄のコマ。1〜15 を順に入れ、比べるだけのコマを省く。
+ * 全部入れたら少し止め、同じコマを逆に再生して空へ戻す
+ */
+const RB_FRAMES: RbFrame[] = [];
+function rbFrames(): RbFrame[] {
+  if (RB_FRAMES.length) return RB_FRAMES;
+  const t = rbRun(RB_DEFS[0], [Array.from({ length: 15 }, (_, i) => ({ t: 'add' as const, k: i + 1 })), [], []]),
+    a = t.frames.filter((f) => f.s === 0 && f.say && (!f.cmp.length || f.mov.length || f.bad.length)),
+    hold = (f: RbFrame): RbFrame[] => Array(6).fill(f);
+  RB_FRAMES.push(...a, ...hold(a[a.length - 1]), ...[...a].reverse(), ...hold(a[0]));
+  return RB_FRAMES;
+}
+/** 赤黒木の図柄の 1 秒あたりのコマ数 */
+const RB_FPS = 5;
 /** 式の構文解析の図柄の字句の線: 幅 5・高さ 8 の箱の中心が原点 */
 const EP_GLYPH: Record<string, [number, number][][]> = {
   '1': [
@@ -1828,6 +1849,40 @@ export const ART: Record<string, Art> = {
     place(f.root, 0);
     return P('c t', lines) + P('c t', box) + (wrote ? P('a', wrote) : '') + P('fc', base) + (hit ? P('fa', hit) : '');
   },
+  /* 赤黒木: 赤と黒の丸の木。1〜15 を順に入れ、回転で根が入れ替わる。赤が続く枝は破線 */
+  rb(t) {
+    const F = rbFrames(),
+      /* 止まった絵は 10 個以上入った木で、祖父で回転した直後 */
+      start = F.findIndex((q) => q.rule === 'i3' && Object.keys(q.N).length >= 10),
+      f = F[(start + Math.floor(t * RB_FPS)) % F.length],
+      s = rbInspect(f),
+      dx = 114 / Math.max(s.order.length, 1),
+      dy = 38 / 5,
+      r = 2.9,
+      pos = new Map(s.order.map((k, i) => [k, [3 + (i + 0.5) * dx, 5 + s.depth[k] * dy] as const])),
+      dot = (x: number, y: number, q: number): string =>
+        `M${r1(x - q)} ${r1(y)}a${q} ${q} 0 1 0 ${r1(2 * q)} 0a${q} ${q} 0 1 0 ${r1(-2 * q)} 0Z`;
+    let lines = '',
+      bad = '',
+      red = '',
+      blk = '',
+      ring = '';
+    for (const k of s.order) {
+      const n = f.N[k],
+        [x, y] = pos.get(k) as readonly [number, number];
+      for (const c of [n.l, n.r]) {
+        if (c === null) continue;
+        const [cx, cy] = pos.get(c) as readonly [number, number],
+          d = `M${r1(x)} ${r1(y)}L${r1(cx)} ${r1(cy)}`;
+        if (n.c === 1 && f.N[c].c === 1) bad += d;
+        else lines += d;
+      }
+      if (n.c === 1) red += dot(x, y, r);
+      else blk += dot(x, y, r);
+      if (f.mov.includes(k)) ring += dot(x, y, r + 1.6);
+    }
+    return P('c t', lines) + P('d a', bad) + P('fk', blk) + P('fr', red) + P('a', ring);
+  },
   /* 式の構文解析: 上に式、左に木、右にスタックを置き、演算子が積まれて木へ移る */
   ep(t) {
     /* 止まった絵は × を木にした直後 */
@@ -2761,6 +2816,7 @@ export const LOOP: Record<string, number> = {
   ls: 3,
   hp: 50 / HP_FPS,
   bt: 52 / BT_FPS,
+  rb: rbFrames().length / RB_FPS,
   ep: EP_FRAMES.length / EP_FPS,
   pcm: 3,
   adp: 26 / 8,

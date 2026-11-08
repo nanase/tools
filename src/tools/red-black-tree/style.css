@@ -1,0 +1,170 @@
+/* 赤黒木のページだけのスタイル（共通は src/styles/site.css）。枠の並びと比較の枠は B木にそろえる */
+/*
+ * 図の色。B木と同じ考え方で、比較は濃い青、回転と色の変更は黄、見つけたキーは緑にする。
+ * 赤と黒のノードは --rb-red と --rb-blk。暗いテーマの黒は地に沈むので灰の縁を付ける。
+ * --rb-on-* は塗りの上の文字の色
+ */
+:root{--rb-ok:#1d8a45;--rb-done:#3fb36b;--rb-wait:#7d877f;--rb-cmp:#0a6e8a;--rb-mov:#c27e00;--rb-node:#e4e7e1;--rb-line:#8a948d;--rb-on-mov:#15191c;--rb-on-done:#15191c;--rb-red:#d0342c;--rb-blk:#1c2226;--rb-blk-line:#1c2226;--rb-on-red:#fff;--rb-on-blk:#fff}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--rb-ok:#49d17f;--rb-done:#49d17f;--rb-wait:#aab3b8;--rb-cmp:#52c4dd;--rb-mov:#f2c230;--rb-node:#262e33;--rb-line:#5d6a72;--rb-on-mov:#08090a;--rb-on-done:#08090a;--rb-red:#e5483f;--rb-blk:#2a3236;--rb-blk-line:#aab3b8;--rb-on-red:#fff;--rb-on-blk:#e6e8e4}}
+:root[data-theme="dark"]{--rb-ok:#49d17f;--rb-done:#49d17f;--rb-wait:#aab3b8;--rb-cmp:#52c4dd;--rb-mov:#f2c230;--rb-node:#262e33;--rb-line:#5d6a72;--rb-on-mov:#08090a;--rb-on-done:#08090a;--rb-red:#e5483f;--rb-blk:#2a3236;--rb-blk-line:#aab3b8;--rb-on-red:#fff;--rb-on-blk:#e6e8e4}
+
+/* 枠の並び。スマホは図 → 表 → 操作 → データ構造 → データ → 計算結果 → 音。PC は図の下に 2 列 */
+#rb .a-fig{order:1}#rb .a-mat{order:2}#rb .a-cmp{order:2}#rb .col{order:3}#rb .a-ops{order:3}#rb .a-str{order:4}#rb .a-data{order:5}#rb .a-out{order:7}#rb .a-snd{order:8}#rb .a-thy{order:9}
+@media (min-width:1000px){
+  #rb{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start}
+  #rb .a-fig,#rb .a-mat,#rb .a-cmp,#rb .a-thy{grid-column:1/-1}
+  /* 一覧は図の横に表を置く。押したボタンのすぐ下に表が出て、表を押した結果も隣で見える */
+  #rb[data-mode="list"]{grid-template-columns:minmax(0,.78fr) minmax(0,1fr)}
+  #rb[data-mode="list"] .col{display:contents}
+  #rb[data-mode="list"] .a-fig{grid-column:1;grid-row:1/span 3}
+  #rb[data-mode="list"] .a-mat{grid-column:2;grid-row:1}
+  #rb[data-mode="list"] .a-ops{grid-column:2;grid-row:2}
+  #rb[data-mode="list"] .a-data{grid-column:2;grid-row:3}
+  #rb[data-mode="list"] .a-out{grid-column:1;grid-row:4/span 2}
+  #rb[data-mode="list"] .a-snd{grid-column:2;grid-row:4}
+  #rb[data-mode="list"] .a-thy{grid-row:6}
+}
+#rb[data-mode="list"] .a-str{display:none}
+#rb:not([data-mode="list"]) .a-mat{display:none}
+#rb[data-mode="cmp"] .a-ops,#rb[data-mode="cmp"] .a-out,#rb:not([data-mode="cmp"]) .a-cmp{display:none}
+#rb .a-fig,#rb .a-mat{scroll-margin-top:calc(var(--rail-h) + 20px)}
+.rb-row .prow{--sw:0px}
+.rb-row .c-sym{display:none}
+#rb-byw{margin-top:6px}
+#rb-byw[hidden]{display:none}
+
+/* 枠線の上の右端 */
+#rb .a-fig>.ph>.pha .seg button{font-family:var(--sans)}
+#rb .a-fig .tp-st{font-family:var(--sans)}
+.led.rb-ok{background:var(--rb-ok);box-shadow:0 0 5px var(--rb-ok)}
+#rb .pha .prst{font-family:var(--sans)}
+@media (max-width:720px){
+  #rb .a-fig{padding-top:24px}
+  #rb .a-fig>.ph>.pha{position:static;transform:none;width:100%;margin:0 0 8px;padding:0;background:none;justify-content:flex-end}
+}
+
+/* 凡例 */
+.rb-lg{justify-content:space-between;min-height:28px;font-family:var(--sans)}
+.rb-lgl{display:flex;flex-wrap:wrap;gap:4px 14px}
+.rb-sw{display:inline-block;box-sizing:border-box;width:12px;height:12px;border-radius:50%}
+.rb-sw.rb-r{background:var(--rb-red)}
+.rb-sw.rb-k{background:var(--rb-blk);border:1px solid var(--rb-blk-line)}
+.rb-sw.rb-cmp{border:2.5px solid var(--rb-cmp)}
+.rb-sw.rb-mov{border:2.5px solid var(--rb-mov)}
+.rb-sw.rb-bad{border:2.5px dashed var(--warn)}
+.rb-sw.rb-done{background:var(--rb-done)}
+.rb-end{display:flex;align-items:center;gap:8px}
+
+/* 工程の切り替え */
+.rb-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:0 0 8px}
+.rb-steps button{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:baseline;gap:2px 10px;min-width:0;padding:8px 10px;border:1px solid var(--line);border-radius:4px;background:none;color:var(--ink-2);font:12.5px/1.3 var(--sans);text-align:left;cursor:pointer}
+.rb-steps button:hover{border-color:var(--ink-3);color:var(--ink)}
+.rb-steps b{font-size:13.5px;color:var(--ink)}
+.rb-steps em{font:500 12px var(--mono);font-style:normal;white-space:nowrap}
+.rb-steps span{grid-column:1/-1;grid-row:2}
+.rb-steps button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--surface)}
+.rb-steps button[aria-pressed="true"] b{color:var(--surface)}
+.rb-steps button.next{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);color:var(--ink)}
+/* 狭い幅と一覧では回数を隠し、名前と説明だけにする */
+@media (max-width:620px){.rb-steps em{display:none}}
+#rb[data-mode="list"] .rb-steps em{display:none}
+
+/* 図 */
+#rb[data-mode="cmp"] .rb-solo,#rb:not([data-mode="cmp"]) .rb-race{display:none}
+.rb-scr{padding:0;overflow:hidden}
+.rb-scr canvas{display:block;width:100%;touch-action:pan-y}
+#rb[data-mode="cmp"] .rb-scr canvas{cursor:pointer}
+#rb .a-fig .tp{margin-top:10px}
+#rb .a-fig .ptab{margin-top:2px}
+
+/* 比較の枠: 音を聞いている枠は線を太くする */
+.rb-race{display:grid;gap:8px;grid-template-columns:repeat(var(--cols,2),minmax(0,1fr))}
+@media (max-width:620px){.rb-race{grid-template-columns:minmax(0,1fr)}}
+.rb-cell{display:block;width:100%;min-width:0;padding:0;border:1px solid var(--line);border-radius:var(--r);background:var(--screen);color:var(--ink);text-align:left;cursor:pointer;overflow:hidden}
+.rb-cell:hover{border-color:var(--line-2)}
+.rb-cell[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.rb-cell canvas{display:block;width:100%}
+.rb-ch{display:flex;align-items:center;gap:6px;min-height:28px;padding:3px 9px;font-size:13px;line-height:1.25;font-weight:700}
+.rb-cn{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rb-ch em{margin-left:auto;font:700 13.5px/1 var(--mono);font-style:normal;font-variant-numeric:tabular-nums;white-space:nowrap}
+.rb-ch .led{width:7px;height:7px}
+.rb-cb{display:block;height:4px;margin:0 9px;background:var(--grid)}
+.rb-cb b{display:block;width:0;height:100%;background:var(--rb-mov)}
+/* 完了した枠: 緑の札・緑の枠・緑の回数のバー。音を聞いている枠の線は太いまま */
+.rb-dn{display:none;flex:none;align-items:center;gap:4px;height:20px;padding:0 7px 0 5px;border-radius:3px;background:var(--rb-ok);color:var(--surface);font:700 12px/1 var(--sans)}
+.rb-dn svg{display:block;width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.rb-cell[data-done] .rb-dn{display:inline-flex}
+.rb-cell[data-done] .rb-cb b{background:var(--rb-ok)}
+.rb-cell[data-done]{border-color:var(--rb-ok)}
+.rb-cell[data-done][aria-pressed="true"]{border-color:var(--ink)}
+
+/* データ構造の選択 */
+#rb-str .chip{font-family:var(--sans)}
+#rb-str .chip:disabled{opacity:.45;cursor:default}
+
+/* キーの順番 */
+#rb-shape .chip{display:inline-flex;align-items:center;gap:5px;font-family:var(--sans)}
+#rb-shape svg{display:block;width:26px;height:12px;fill:currentColor}
+
+/* 操作の表 */
+.rb-ow{overflow-x:auto}
+.rb-ot{width:100%;border-collapse:collapse}
+.rb-ot th{padding:0 6px 6px;border-bottom:1px solid var(--line-2);font:500 12px/1.3 var(--sans);color:var(--ink-2);text-align:left;white-space:nowrap}
+.rb-ot th.r{text-align:right}
+.rb-ot td{padding:4px 6px;border-bottom:1px solid var(--line)}
+.rb-ot tr:last-child td{border-bottom:0}
+.rb-ob{width:6.4em}
+.rb-ot td.rb-how{font-size:12px;line-height:1.35;color:var(--ink-2)}
+.rb-ot button{width:100%;min-width:5.4em;min-height:30px;padding:0 8px;border:1px solid var(--line);border-radius:4px;background:none;color:var(--ink);font:500 12.5px/1 var(--sans);text-align:left;cursor:pointer;white-space:nowrap}
+.rb-ot button:hover:not(:disabled){border-color:var(--ink-3)}
+.rb-ot button:disabled{color:var(--ink-3);opacity:.5;cursor:default}
+.rb-oo{font:700 13px var(--mono);text-align:right;white-space:nowrap}
+.rb-on{font:500 12.5px var(--mono);text-align:right;color:var(--ink-2);white-space:nowrap}
+/* 狭い幅では、内容を操作の名前の下の段へ送る */
+@media (max-width:600px){
+  .rb-ot thead tr,.rb-ot tbody tr{display:grid;grid-template-columns:minmax(0,1fr) auto 4.6em;align-items:center;border-bottom:1px solid var(--line)}
+  .rb-ot tbody tr:last-child{border-bottom:0}
+  .rb-ot thead tr{border-bottom-color:var(--line-2)}
+  .rb-ot th,.rb-ot td{border-bottom:0}
+  .rb-ot th.rb-how{display:none}
+  .rb-ot th.r{white-space:normal}
+  .rb-ot td.rb-how{grid-column:1/-1;grid-row:2;padding-top:0}
+  .rb-ob{width:auto}
+}
+/* 計算量の添字 */
+.rb-oo sub,.rb-c sub,.rb-cx sub{font-size:.72em;vertical-align:-.15em;line-height:0}
+
+/* 計算結果 */
+.rb-res{grid-template-columns:repeat(3,minmax(0,1fr))}
+.rb-res .m-sub dd{font:500 13.5px/1.45 var(--sans)}
+.rb-res .m-w{grid-column:1/-1}
+.rb-res [hidden]{display:none}
+.rb-rw{overflow-x:auto}
+.rb-rt{width:100%;border-collapse:collapse;font:500 12.5px/1.3 var(--mono);font-variant-numeric:tabular-nums}
+.rb-rt thead th{padding:4px 8px;font:700 12px/1.3 var(--sans);color:var(--ink-2);text-align:right;border-bottom:1px solid var(--line-2);white-space:nowrap}
+.rb-rt td,.rb-rt tbody th{padding:5px 8px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+.rb-rt tr:last-child td,.rb-rt tr:last-child th{border-bottom:0}
+.rb-rt .l{text-align:left}
+.rb-hear{display:inline-flex;align-items:center;gap:6px;padding:0;border:0;background:none;color:var(--ink);font:700 12.5px/1.3 var(--sans);cursor:pointer}
+.rb-hear .led{width:7px;height:7px}
+
+/* 計算量の表 */
+.rb-mx{overflow-x:auto}
+.rb-mt{width:100%;min-width:600px;border-collapse:collapse;font-size:12px}
+.rb-mt thead th{padding:5px;border-bottom:1px solid var(--line-2);font:500 12px/1.25 var(--sans);color:var(--ink-2)}
+.rb-mt tbody th{position:sticky;left:0;z-index:1;background:var(--bg);font-weight:700;text-align:left}
+.rb-mt td,.rb-mt tbody th{padding:2px;border-bottom:1px solid var(--line);text-align:center;white-space:nowrap}
+.rb-mt tbody th{text-align:left}
+.rb-mt tr:last-child td,.rb-mt tr:last-child th{border-bottom:0}
+.rb-mr,.rb-mh{padding:3px 5px;border:0;border-radius:3px;background:none;color:inherit;font:inherit;cursor:pointer}
+.rb-mr{white-space:nowrap}
+.rb-mr:hover,.rb-mh:hover{background:var(--inset)}
+.rb-c{display:block;width:100%;min-height:30px;padding:0 2px;border:1px solid transparent;border-radius:3px;background:color-mix(in srgb,var(--ink) 4%,transparent);color:var(--ink);font:700 12px var(--mono);cursor:pointer}
+.rb-c.on{background:color-mix(in srgb,var(--ink) 26%,transparent)}
+.rb-c:hover{border-color:var(--ink-3)}
+.rb-c.sel{outline:2px solid var(--accent);outline-offset:-2px}
+.rb-st{font:700 12.5px var(--mono);padding:0 4px}
+
+/* 動作原理と式の表 */
+.rb-cx td{white-space:nowrap;font-family:var(--mono);font-size:12.5px}
+.rb-cx th[scope="row"]{white-space:nowrap}

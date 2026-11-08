@@ -651,8 +651,17 @@ export const TOOLS: Tool[] = [
     t: 'B木',
     d: 'ノードが分かれて木が育つ様子を種類ごとに比べます。',
     ic: 'bt',
-    r: ['binary-heap', 'list-queue-stack', 'sort', 'png'],
+    r: ['red-black-tree', 'binary-heap', 'list-queue-stack', 'sort'],
     k: 'b-tree b tree btree b木 B木 ビー木 b+木 b+tree bプラス木 b*木 b*tree bスター木 2-3 木 2-3-4 木 トップダウン top-down コピーオンライト copy-on-write cow シャドウイング bε木 be-tree フラクタル木 fractal tree 探索木 二分探索木 binary search tree 分割 併合 split merge ノード 葉 根 次数 order ページ ディスク データベース database 索引 インデックス index ファイルシステム file system sqlite postgresql mysql innodb lmdb btrfs 範囲検索 range scan 充填率 計算量 オーダー',
+  },
+  {
+    id: 'red-black-tree',
+    c: 'データ構造',
+    t: '赤黒木',
+    d: '回転と色の変更で木が傾かない様子を種類ごとに比べます。',
+    ic: 'rb',
+    r: ['b-tree', 'binary-heap', 'list-queue-stack', 'sort'],
+    k: 'red-black tree red black tree rbtree rb tree 赤黒木 レッドブラック木 2 色木 平衡二分探索木 平衡木 balanced binary search tree self-balancing 二分探索木 binary search tree bst 左傾赤黒木 left-leaning llrb aa木 aa tree avl木 avl tree 回転 rotation 色の変更 recolor 2-3-4 木 2-3 木 b木 nil 黒の高さ black height treemap std::map linux rbtree 探索 検索 追加 削除 計算量 オーダー',
   },
 ];
 /** 準備中を後ろへ */
