@@ -1568,49 +1568,49 @@ export const ART: Record<string, Art> = {
       (done < PNG_H ? P('c t', `M2 ${4 + done * 4}H116`) : '')
     );
   },
-  /* ローリングシャッター: 2 枚羽のプロペラを上の行から順に読み出す。走査線より上は行ごとに違う瞬間の羽で曲がって写り、
-     下は今の羽。1 走査の間に 0.8 回転する */
+  /* ローリングシャッター: 左はグローバル、右はローリングで同じ 2 枚羽のプロペラを撮る。実物の羽は両方に半透明の細線で描く。
+     左は撮り始めの一瞬の羽を全部の行に写す。右は上の行から順に読み出し、走査線までの行に読んだ瞬間の羽を写すので曲がる。
+     1 枚を撮る 3 s の間に 1.5 回転する。2 枚羽は半回転で同じ形なので、1 周でつながる。止まった絵は走査が 75 % まで進んだところ */
   rs(t) {
-    const cx = 60,
+    const L = 3,
+      Y0 = 3,
+      H = 42,
       cy = 24,
-      R = 19,
-      ys = t ? 4 + (mod(t, 3) / 3) * 40 : 44;
-    const th0 = (y: number): number => 0.4 + TAU * 0.8 * ((y - 4) / 40);
-    let s = '';
+      R = 19.5,
+      gx = 30,
+      rx = 90,
+      u = mod(t / L + 0.75, 1),
+      ts = t - u * L,
+      ys = Y0 + u * H;
+    /* 羽の角度。2 枚羽なので半回転で割った余りにし、1 周後に 2 枚の描く順が入れ替わらないようにする */
+    const th = (tau: number): number => mod(0.4 + (TAU * 1.5 * tau) / L, Math.PI);
+    const blade = (cx: number, a: number, c: string): string => {
+      const dx = R * Math.cos(a),
+        dy = R * Math.sin(a);
+      return P(c, `M${r1(cx - dx)} ${r1(cy + dy)}L${r1(cx + dx)} ${r1(cy - dy)}`);
+    };
+    let s =
+      P('c t', 'M2 3H58V45H2ZM62 3H118V45H62Z') +
+      blade(gx, th(t), 'a t g') +
+      blade(rx, th(t), 'a t g') +
+      blade(gx, th(ts), 'a');
     for (let k = 0; k < 2; k++) {
       let run: [number, number][] = [];
       const flush = () => {
         if (run.length > 1) s += P('a', pl(run));
         run = [];
       };
-      for (let y = 4; y <= ys + 1e-9; y += 0.5) {
-        const th = th0(y) + k * Math.PI,
-          sn = Math.sin(th),
+      for (let y = Y0; y <= ys + 1e-9; y += 0.5) {
+        const a = th(ts) + (TAU * 1.5 * (y - Y0)) / H + k * Math.PI,
+          sn = Math.sin(a),
           rho = Math.abs(sn) < 1e-3 ? -1 : (cy - y) / sn;
         if (rho < 0 || rho > R) flush();
-        else run.push([cx + rho * Math.cos(th), y]);
+        else run.push([rx + rho * Math.cos(a), y]);
       }
       flush();
     }
-    if (ys < 44) {
-      const th = th0(ys);
-      /* 今の羽は走査線より下だけ描く */
-      for (const g of [0, Math.PI]) {
-        const ex = cx + R * Math.cos(th + g),
-          ey = cy - R * Math.sin(th + g);
-        if (Math.max(cy, ey) <= ys) continue;
-        /* 中心から先端までのうち、走査線より下の区間 */
-        const cut = (ys - cy) / (ey - cy || 1),
-          a = cy >= ys ? 0 : cut,
-          b = ey >= ys ? 1 : cut;
-        s += P(
-          'g',
-          `M${r1(cx + (ex - cx) * a)} ${r1(cy + (ey - cy) * a)}L${r1(cx + (ex - cx) * b)} ${r1(cy + (ey - cy) * b)}`,
-        );
-      }
-      s += P('b', `M4 ${r1(ys)}H116`);
-    }
-    return `${s}<circle class="c" cx="${cx}" cy="${cy}" r="2.4"/>`;
+    s += P('b', `M62 ${r1(ys)}H118`);
+    return `${s}<circle class="c" cx="${gx}" cy="${cy}" r="2"/><circle class="c" cx="${rx}" cy="${cy}" r="2"/>`;
   },
   /* レイトレーシング: 箱の部屋の中を光線が反射して天井の光源へ届く。先の点が進み、通った所を線で残す */
   rt(t) {
