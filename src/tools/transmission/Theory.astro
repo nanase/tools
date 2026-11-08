@@ -1,0 +1,159 @@
+---
+// 動作原理と式
+type Ref = { for: string; src: string };
+const REFS: readonly Ref[] = [
+  {
+    for: '歯数・軸の上の並び・ブッシュ・シフトフォーク・シフトドラム・ストッパーアーム・ドラムロックプレート・遠心クラッチ・ワンウェイクラッチ・多板クラッチの部品（GEARBOX E17・ONE-WAY CLUTCH E7・CLUTCH E8・GEARSHIFT DRUM E19・RIGHT CRANKCASE COVER E6・KICKSTARTER E20・ファイナルドライブ）',
+    src: 'Honda, CT125 (2023, CT125AP_J) parts list（bike-parts-honda.com で閲覧）',
+  },
+  {
+    for: 'JA55 の 1 次減速 67/20 とドリブンスプロケット 39T',
+    src: 'Honda, CT125 (2021, CT125AL_J) parts list（bike-parts-honda.com で閲覧）',
+  },
+  {
+    for: '変速比・1 次減速比 3.421・2 次減速比 2.714、常時噛合式 4 段リターン（停車時のみロータリー）',
+    src: 'Honda, CT125 ハンターカブ 主要諸元, https://www.honda.co.jp/CT125/',
+  },
+  {
+    for: 'クラッチアウター 65T と 1 次減速 65/19、遠心クラッチと多板クラッチの部品',
+    src: 'キタコ, 5 ディスククラッチ KIT 取扱説明書 307-1471500',
+  },
+  {
+    for: '自動遠心クラッチで発進し、変速のときは多板クラッチを切る',
+    src: 'Honda, Dax125 ファクトブック, https://www.honda.co.jp/factbook/motor/dax125/220324/P07.pdf',
+  },
+  {
+    for: 'ドラムより先にクラッチを切る遊び、星形のシフトカムとストッパーアーム、走行中に 4→N を止めるカウンターシャフトの部品',
+    src: 'Honda, WO2019/186967（BR112020019342B1）',
+  },
+  {
+    for: 'ウェイトとばねの遠心シュークラッチ、クランク軸とプライマリドライブギアの間のワンウェイクラッチ',
+    src: 'Honda, JP2016183756A・JP5863610B2',
+  },
+  {
+    for: 'クラッチアーム・リフターカム・リリースのボール',
+    src: 'Honda, JP2017155800A',
+  },
+  {
+    for: '出力軸の回転に摩擦ばねで引きずられるロータリーの止め（一般の仕組み）',
+    src: 'Yamaha, EP2639479A2',
+  },
+  {
+    for: '遠心クラッチのつながり方の当てはめ',
+    src: '実車の録音（CT125 JA65・純正マフラー・発進）',
+  },
+];
+---
+<h3>動力の流れ</h3>
+<ol class="flow" aria-label="動力の流れ">
+  <li><b>クランク軸</b><span>エンジンの回転</span></li>
+  <li><b>遠心クラッチ</b><span>シュー 3 個とドラム</span></li>
+  <li><b>1 次減速</b><span>19T → 65T</span></li>
+  <li><b>多板クラッチ</b><span>摩擦板 4 枚・クラッチ板 3 枚</span></li>
+  <li><b>変速機</b><span>常時噛合の 4 段</span></li>
+  <li><b>チェーン</b><span>14T → 38T</span></li>
+  <li><b>後輪</b></li>
+</ol>
+<p>クランク軸のドライブプレートに、ばねで引かれたシューが 3 個あります。回転が上がるとシューが遠心力で開き、ドラムの内側に触れます<a class="rf" href="#thy-r7">[7]</a>。ドラムはプライマリドライブギア 19T と一体で、メインシャフトのクラッチアウター 65T を回します<a class="rf" href="#thy-r1">[1]</a><a class="rf" href="#thy-r4">[4]</a>。19T には音を抑えるシザーズギアが付いています。</p>
+<p>発進は遠心クラッチが受け持ち、多板クラッチは変速のときだけ切れます<a class="rf" href="#thy-r5">[5]</a>。カウンターシャフトの先のスプロケット 14T からチェーン（428・108 リンク）で後輪の 38T を回します<a class="rf" href="#thy-r1">[1]</a>。JA55 は 1 次減速が 67/20 = 3.350、後輪のスプロケットが 39T です<a class="rf" href="#thy-r2">[2]</a>。</p>
+
+<h3>減速比と速さ</h3>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th>段</th><th>メイン</th><th>カウンター</th><th>変速比</th><th>総減速比</th><th>3,000 rpm の速さ</th></tr></thead>
+  <tbody>
+    <tr><th>1 速</th><td class="num">14T</td><td class="num">35T</td><td class="num">2.500</td><td class="num">23.21</td><td class="num">13.8 km/h</td></tr>
+    <tr><th>2 速</th><td class="num">20T</td><td class="num">31T</td><td class="num">1.550</td><td class="num">14.39</td><td class="num">22.3 km/h</td></tr>
+    <tr><th>3 速</th><td class="num">20T</td><td class="num">23T</td><td class="num">1.150</td><td class="num">10.68</td><td class="num">30.1 km/h</td></tr>
+    <tr><th>4 速</th><td class="num">26T</td><td class="num">24T</td><td class="num">0.923</td><td class="num">8.571</td><td class="num">37.5 km/h</td></tr>
+  </tbody>
+</table></div>
+<p>歯数は部品表<a class="rf" href="#thy-r1">[1]</a>、比は諸元<a class="rf" href="#thy-r3">[3]</a>の値です。総減速比 <math><mi>i</mi></math> はクランク軸と後輪の回転の比で、後輪の半径 <math><mi>r</mi></math> から車速 <math><mi>v</mi></math> が決まります。</p>
+<div class="eqs">
+  <math display="block"><mi>i</mi><mo>=</mo><msub><mi>i</mi><mn>1</mn></msub><msub><mi>i</mi><mi mathvariant="normal">g</mi></msub><msub><mi>i</mi><mn>2</mn></msub><mo>=</mo><mfrac><mn>65</mn><mn>19</mn></mfrac><mo>·</mo><mfrac><msub><mi>z</mi><mi mathvariant="normal">c</mi></msub><msub><mi>z</mi><mi mathvariant="normal">m</mi></msub></mfrac><mo>·</mo><mfrac><mn>38</mn><mn>14</mn></mfrac></math>
+  <math display="block"><mi>v</mi><mo>=</mo><mfrac><mrow><mn>2</mn><mi>π</mi><mi>r</mi><mi>n</mi></mrow><mrow><mn>60</mn><mi>i</mi></mrow></mfrac></math>
+</div>
+<p><math><mi>n</mi></math> はクランク軸の回転数 [rpm] です。1 速の 3,000 rpm は <math><mn>2</mn><mi>π</mi><mo>·</mo><mn>0.284</mn><mo>·</mo><mn>3000</mn><mo>/</mo><mo stretchy="false">(</mo><mn>60</mn><mo>·</mo><mn>23.21</mn><mo stretchy="false">)</mo><mo>=</mo><mn>3.84</mn></math> m/s で、約 14 km/h です。</p>
+
+<h3>常時噛合とドグ</h3>
+<p>4 組の歯車はいつも噛み合っていて、どれが動力を伝えるかをドグで選びます。軸の上の並びはクラッチの側から M1 M3 M2 M4 と C1 C3 C2 C4 です<a class="rf" href="#thy-r1">[1]</a>。</p>
+<ul class="tl">
+  <li>M1 はメインシャフトと一体、C4 はカウンターシャフトに固定</li>
+  <li>M3・M4・C1・C2 はブッシュの上で空転</li>
+  <li>M2・C3 はスプラインの上を滑り、両側のドグで隣の空転する歯車をつかむ</li>
+  <li>1 速は C3 が C1、2 速は C3 が C2、3 速は M2 が M3、4 速は M2 が M4 をつかむ</li>
+</ul>
+
+<h3>ワンウェイクラッチ</h3>
+<p>遠心クラッチと並んで、ローラーのワンウェイクラッチがクランク軸とドラムの間にあります<a class="rf" href="#thy-r1">[1]</a><a class="rf" href="#thy-r7">[7]</a>。ドラムがクランク軸より速いときだけつながり、後輪の側からエンジンを回します。シューが閉じる低い回転でも、エンジンブレーキ・押しがけ・キックが効くのはこのためです。</p>
+
+<h3>チェンジペダルとシフトドラム</h3>
+<p>シフトスピンドルには遊びがあります。踏み始めはクラッチレバーとリフターカムだけが回り、ボールがリフターを押して多板クラッチを切ります<a class="rf" href="#thy-r8">[8]</a>。その先でマスターアームがドラムを回します<a class="rf" href="#thy-r6">[6]</a>。</p>
+<ul class="tl">
+  <li>ドラムの溝 2 本がフォーク 2 本を動かす</li>
+  <li>星形のシフトカムに止まる所が 5 か所（N・1・2・3・4）あり、ストッパーアームが押さえる<a class="rf" href="#thy-r6">[6]</a></li>
+  <li>停車中だけ、4 速からさらに踏むと N へ、N から逆に踏むと 4 速へ回る（ロータリー）<a class="rf" href="#thy-r3">[3]</a></li>
+  <li>カウンターシャフトのドラムロックプレートは摩擦ばねで軸に引きずられ、軸が回っている間は 4 速と N の間の道をふさぐ<a class="rf" href="#thy-r1">[1]</a><a class="rf" href="#thy-r6">[6]</a><a class="rf" href="#thy-r9">[9]</a></li>
+</ul>
+
+<h3>2→1 の噛み合いの遅れ</h3>
+<p>実車では、止まる直前に 2 速から 1 速へ落とすと、ペダルを踏み終えてから噛み合うまでに 0.5〜3 秒ほどの遅れがあります。1→2・3→2・4→3 ではほとんど遅れません。このツールでは、次の理由だと考えて計算に入れました。</p>
+<ul class="tl">
+  <li>溝が C3 のフォークを押しきっても、ドグと C1 の穴の位置が合わなければ、ドグは C1 の面に当たったまま止まる</li>
+  <li>スロットルを閉じた低い回転では遠心クラッチが開き、クラッチドラムがクランクより遅ければワンウェイクラッチも空転する。ドラム・クラッチアウター・メインシャフト・C1 は、エンジンにも後輪にもつながらない軽い塊になる</li>
+  <li>この塊はドグの面の摩擦で C3 と同じ速さにそろい、ドグと穴の位置が動かなくなる。油などの引きずりで少しずつずれ、穴に来たところで噛み合う</li>
+  <li>1 速でクラッチドラムがアイドリングの 1,400 rpm になる車速は約 6.5 km/h。これより速いとワンウェイクラッチでエンジンを背負うので、摩擦では速さがそろわず、すぐ噛み合う</li>
+  <li>1→2 はスロットルを開けていて遠心クラッチがつながり、3→2・4→3 は速い所で落とすので、どちらも塊がエンジンにつながっていて遅れない</li>
+</ul>
+
+<h3>計算の模型</h3>
+<p>遠心クラッチが伝えられるトルクの上限は、シューが触れ始める回転数 <math><msub><mi>n</mi><mi>in</mi></msub></math> からの回転数の 2 乗の差に比例させます。エンジンのトルクは全開の曲線 <math><msub><mi>T</mi><mi>full</mi></msub></math> にスロットルの開き <math><mi>θ</mi></math> の効きを掛け、摩擦 <math><msub><mi>T</mi><mi mathvariant="normal">f</mi></msub></math> を引きます。</p>
+<div class="eqs">
+  <math display="block"><msub><mi>T</mi><mi>cf</mi></msub><mo>=</mo><mi>min</mi><mrow><mo>[</mo><mi>k</mi><mo stretchy="false">(</mo><msup><mi>n</mi><mn>2</mn></msup><mo>−</mo><msubsup><mi>n</mi><mi>in</mi><mn>2</mn></msubsup><mo stretchy="false">)</mo><mo>,</mo><mspace width="0.3em"/><mn>45</mn><mtext>&nbsp;N·m</mtext><mo>]</mo></mrow></math>
+  <math display="block"><msub><mi>T</mi><mi mathvariant="normal">e</mi></msub><mo>=</mo><mrow><mo>[</mo><mn>1</mn><mo>−</mo><msup><mrow><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><mi>θ</mi><mo stretchy="false">)</mo></mrow><mn>2.2</mn></msup><mo>]</mo></mrow><msub><mi>T</mi><mi>full</mi></msub><mo stretchy="false">(</mo><mi>n</mi><mo stretchy="false">)</mo><mo>−</mo><msub><mi>T</mi><mi mathvariant="normal">f</mi></msub></math>
+</div>
+<p>3 つのつなぎ目（遠心クラッチ・ワンウェイクラッチ・多板クラッチ）は、両側の回転をそろえる拘束です。0.5 ms の刻みごとに、回転の差を消す力積 <math><mi>λ</mi></math> を求め、足し合わせた値を伝えられる範囲に収めます。これを 10 回くり返します（射影 Gauss–Seidel 法の形）。</p>
+<div class="eqs">
+  <math display="block"><mi>λ</mi><mo>=</mo><mfrac><mrow><msub><mi>ω</mi><mi mathvariant="normal">a</mi></msub><mo>−</mo><msub><mi>ω</mi><mi mathvariant="normal">b</mi></msub></mrow><mrow><mi>Δ</mi><mi>t</mi><mo stretchy="false">(</mo><mn>1</mn><mo>/</mo><msub><mi>J</mi><mi mathvariant="normal">a</mi></msub><mo>+</mo><mn>1</mn><mo>/</mo><msub><mi>J</mi><mi mathvariant="normal">b</mi></msub><mo stretchy="false">)</mo></mrow></mfrac></math>
+  <math display="block"><mi>L</mi><mo>←</mo><mi>clamp</mi><mo stretchy="false">(</mo><mi>L</mi><mo>+</mo><mi>λ</mi><mo>,</mo><mspace width="0.2em"/><mo>−</mo><msub><mi>T</mi><mi>max</mi></msub><mo>,</mo><mspace width="0.2em"/><msub><mi>T</mi><mi>max</mi></msub><mo stretchy="false">)</mo></math>
+</div>
+<p>上限に届かなければ両側は同じ回転で回り、届けば滑ります。ワンウェイクラッチは範囲を片側だけにします。車体の重さ・転がり抵抗・空気抵抗は、メインシャフトの側の慣性と負荷に換算して入れます。</p>
+
+<h3>録音への当てはめ</h3>
+<p>遠心クラッチの係数は、実車の発進の録音<a class="rf" href="#thy-r10">[10]</a>から回転数を読み、次の 3 つが合うように決めました。</p>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th></th><th>録音</th><th>模型</th></tr></thead>
+  <tbody>
+    <tr><th>滑っている間の回転数</th><td class="num">2,750〜2,990 rpm</td><td class="num">2,870〜2,890 rpm</td></tr>
+    <tr><th>開けてからつながるまで</th><td class="num">約 2 s</td><td class="num">2.16 s</td></tr>
+    <tr><th>つながった後の回転の上がり方</th><td class="num">約 1,300 rpm/s</td><td class="num">約 1,270 rpm/s</td></tr>
+  </tbody>
+</table></div>
+
+<h3>図の描き方</h3>
+<ul class="tl">
+  <li>「回転を止めて見た図」は、クランク軸と一緒に回る座標で描く</li>
+  <li>動きのぶれは、1 フレームの間に通った位置を重ねて描く</li>
+</ul>
+
+<h3>出典</h3>
+<ol class="refs">
+  {REFS.map((r, i) => (
+    <li id={`thy-r${i + 1}`}>
+      <span class="rf-for">{r.for}</span>
+      <span class="rf-src">{r.src}</span>
+    </li>
+  ))}
+</ol>
+
+<h3>このツールで決めたこと</h3>
+<ul class="tl">
+  <li>スライドする歯車を M2・C3 とした割り当て。部品表の並び・ブッシュ・フォーク 2 本から推定し、Honda は示していない</li>
+  <li>歯数の和が組ごとに違う（49・51・43・50）ので、実物は転位かモジュールの違いで軸間をそろえているはず。図は軸間 50 mm として噛み合いのピッチ円を描く</li>
+  <li>遠心クラッチ: 触れ始め 2,000 rpm、<math><mi>k</mi><mo>=</mo><mn>1.24</mn><mo>×</mo><msup><mn>10</mn><mrow><mo>−</mo><mn>6</mn></mrow></msup></math> N·m/rpm²、上限 45 N·m（録音への当てはめ）</li>
+  <li>多板クラッチの上限 45 N·m、ワンウェイクラッチの上限 60 N·m</li>
+  <li>全開のトルクの曲線（公表の 10.9 N·m/4,750 rpm と 6.5 kW/6,250 rpm に合わせた目安）、スロットルの効きの指数 2.2、摩擦 <math><msub><mi>T</mi><mi mathvariant="normal">f</mi></msub><mo>=</mo><mn>0.5</mn><mo>+</mo><mn>0.18</mn><mi>n</mi><mo>/</mo><mn>1000</mn></math> N·m</li>
+  <li>車体: 総質量 195 kg、タイヤの半径 0.284 m、転がり抵抗係数 0.015、空気抵抗 <math><msub><mi>C</mi><mi mathvariant="normal">d</mi></msub><mi>A</mi></math> 0.55 m²、各部の慣性モーメント</li>
+  <li>ペダル: 踏み込みの 0.08〜0.32 で多板クラッチを切り、0.35〜0.95 でドラムを 1 か所回す</li>
+  <li>ドグの噛み合い: ドグの数 4、穴に入れる幅はドグの間隔の 2 割、面の摩擦の上限 5 N·m（滑りの目安 5 rad/s）。止まっている間はすぐ入れ、1.5 秒待っても合わなければ入れる。遅れの長さが実車の 0.5〜3 秒に入るよう選んだ値で、文献の値ではない</li>
+  <li>計算の刻み 0.5 ms、拘束のくり返し 10 回</li>
+</ul>
