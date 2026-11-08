@@ -129,6 +129,9 @@ export interface Snap {
   Tmp: number;
   Te: number;
   ang: Angles;
+  /** 噛み合いを待っているギア（0 は待っていない）と待った時間 [s] */
+  wait: number;
+  waitT: number;
   /** 場面の何段階目か（場面の記録だけ） */
   stage?: number;
 }
@@ -167,6 +170,9 @@ export class Model {
   gear = 0;
   /** 多板クラッチのつながり（1 で接触、0 で切断） */
   eng = 1;
+  /** 溝がフォークを押しきったのに、ドグと穴の位置が合わず面で当たって待っているギア（0 は待っていない） */
+  wait = 0;
+  waitT = 0;
   Tcf = 0;
   Tow = 0;
   Tmp = 0;
@@ -192,6 +198,8 @@ export class Model {
     this.committed = false;
     this.blocked = '';
     this.eng = 1;
+    this.wait = 0;
+    this.waitT = 0;
     this.Tcf = this.Tow = this.Tmp = this.Te = 0;
     this.ang = { e: 0, d: 0, m: 0, c: 0, w: 0, M3: 0, M4: 0, C1: 0, C2: 0, ch: 0 };
     this.fm = groove(FM, this.th);
@@ -215,6 +223,26 @@ export class Model {
     return this.fc < -0.6 ? 1 : this.fc > 0.6 ? 2 : this.fm < -0.6 ? 3 : this.fm > 0.6 ? 4 : 0;
   }
   /** 4 速と N の間はロータリーで、停車中だけどちら向きにも回れる。走行中はドラムロックプレートが止める */
+  /**
+   * ギア g のドグの組: スライドする歯車と空転する歯車の相対の角度（ドグの間隔を 1 とした値）と相対の速さ [rad/s]。
+   * 1・2 速は C3 がカウンターシャフトとともに回り、C1・C2 はメインシャフトに回される。3・4 速は M2 がメインシャフトとともに回り、
+   * M3・M4 はカウンターシャフトに回される
+   */
+  private dogOf(g: number): { ph: number; rel: number } {
+    const a = this.ang,
+      wc = (this.v / SPEC.r) * SPEC.fin,
+      wm = this.wm;
+    const [as, af, ws, wf] =
+      g === 1
+        ? [a.c, a.C1, wc, (wm * 14) / 35]
+        : g === 2
+          ? [a.c, a.C2, wc, (wm * 20) / 31]
+          : g === 3
+            ? [a.m, a.M3, wm, (wc * 23) / 20]
+            : [a.m, a.M4, wm, (wc * 24) / 26];
+    const u = ((as - af) * DOGS) / (2 * Math.PI) + DOG_OFF[g];
+    return { ph: u - Math.floor(u), rel: ws - wf };
+  }
   private canGo(dir: number): Block {
     if (dir < 0 && this.base === 0 && this.v > 0.3) return 'lock';
     if (dir > 0 && this.base === 4 && this.v > 0.3) return 'lock';
@@ -260,11 +288,26 @@ export class Model {
     this.fm = groove(FM, thM);
     this.fc = groove(FC, thM);
     const g = this.selGear();
-    if (g !== this.gear) {
-      this.gear = g;
-      /* ドグが入った瞬間: 多板クラッチは切れていて、メインシャフトの側は軽いので後輪の速さにそろう */
-      if (g > 0) this.wm = (this.v / S.r) * S.fin * gearRatio(g);
+    if (g === 0) {
+      this.gear = 0;
+      this.wait = 0;
+    } else if (g !== this.gear) {
+      if (this.wait !== g) {
+        this.gear = 0;
+        this.wait = g;
+        this.waitT = 0;
+      }
+      /* 止まっている間はドグの位置が動かないので、すぐ入れる（実車でも停車中のギアはふつう入る） */
+      if (this.dogOf(g).ph < DOG_WIN || this.v < 0.3 || this.waitT >= DOG_MAX) {
+        /* ドグが穴に落ちた瞬間: メインシャフトの側は後輪の速さにそろう */
+        this.gear = g;
+        this.wait = 0;
+        this.wm = (this.v / S.r) * S.fin * gearRatio(g);
+      } else this.waitT += dt;
     }
+    /* 待っている間は、スライドする歯車をドグが面に当たる所で止める */
+    if (this.wait === 1 || this.wait === 2) this.fc = Math.sign(this.fc) * Math.min(Math.abs(this.fc), 0.42);
+    if (this.wait === 3 || this.wait === 4) this.fm = Math.sign(this.fm) * Math.min(Math.abs(this.fm), 0.42);
     const rpm = this.rpm;
     const idleThr = clamp(0.05 + (S.idle - rpm) * 0.0002, 0, 0.3);
     const thrE = rpm > S.limit ? 0 : Math.max(this.thr, idleThr);
@@ -284,6 +327,13 @@ export class Model {
     else {
       this.wm += ((-0.08 * Math.tanh(this.wm / 5)) / Jmain) * dt;
       this.v = Math.max(0, this.v - (res / S.M) * dt);
+      if (this.wait) {
+        /* ドグの面どうしの摩擦は相対の速さを縮める向き。1・2 速では空転する C1・C2 がメインシャフトの側、3・4 速では M2 がメインシャフトの側 */
+        const d = this.dogOf(this.wait),
+          T = DOG_TF * Math.tanh(d.rel / DOG_EPS),
+          k = this.wait === 1 ? 14 / 35 : this.wait === 2 ? 20 / 31 : -1;
+        this.wm += ((T * k) / Jmain) * dt;
+      }
     }
     /* つなぎ目: 遠心クラッチ（クランク↔ドラム）・ワンウェイ（ドラムがクランクを回す向きだけ）・多板（ドラム↔メインシャフト） */
     const ccf = rpm > S.cfIn ? Math.min(S.cfMax, S.cfK * (rpm * rpm - S.cfIn * S.cfIn)) : 0;
@@ -365,6 +415,8 @@ export class Model {
       fm: this.fm,
       fc: this.fc,
       gear: this.gear,
+      wait: this.wait,
+      waitT: this.waitT,
       Tcf: this.Tcf,
       Tow: this.Tow,
       Tmp: this.Tmp,
@@ -373,6 +425,17 @@ export class Model {
     };
   }
 }
+/**
+ * ドグの噛み合い（このツールで決めた値）: ドグの数、穴に入れる幅（ドグの間隔に対する比）、ドグの面どうしの摩擦の
+ * トルクの上限 [N·m]（歯車の軸で）と、滑りの速さの目安 [rad/s]。ギアごとのドグの位置のずれ（間隔に対する比）
+ */
+const DOGS = 4,
+  DOG_WIN = 0.2,
+  DOG_TF = 5,
+  DOG_EPS = 5,
+  /** 待つ時間の上限 [s]（実車の体感に合わせる） */
+  DOG_MAX = 1.5;
+const DOG_OFF = [0, 0.37, 0.71, 0.13, 0.52];
 /** 計算の刻み [s] */
 export const DT = 0.0005;
 
@@ -382,6 +445,8 @@ export const DT = 0.0005;
  */
 /** 自動運転でシフトアップする速さ [km/h]（添字が今のギア） */
 const UP_KMH = [0, 21, 39, 50];
+/** 自動運転でブレーキ中にシフトダウンする速さ [km/h]（添字が今のギア） */
+const DOWN_KMH = [0, 0, 11, 28, 41];
 export class Driver {
   private ph = 'wait';
   private t = 0;
@@ -453,7 +518,7 @@ export class Driver {
       case 'coast':
         this.thrT = 0;
         this.brkT = kmh > 25 ? 0.06 : 0.1;
-        if (m.gear > 1 && m.rpm < 2300) {
+        if (m.gear > 1 && kmh < DOWN_KMH[m.gear]) {
           this.brkT = 0;
           this.thrT = 0.15;
           m.press(-1);
@@ -551,6 +616,24 @@ export const SCENES = {
       ['2 速のドグの噛み合い', 'クラッチは切断のまま', (f) => f.ped > 0.5],
       ['多板クラッチの接触', '後輪からエンジンへの力', (f) => f.ped > 0 || slip(f)],
       ['2 速でのエンジンブレーキ', '遠心クラッチも逆向きに伝達', () => true],
+    ],
+  },
+  down21: {
+    name: '2→1 の遅れ',
+    dur: 3.4,
+    init: { base: 2, v: 6 / 3.6, we: 1400 / RPM, wd: 1400 / RPM },
+    script(m, t) {
+      m.thr = 0;
+      m.brake = 0;
+      if (t >= 0.2 && t < 0.45) m.press(-1);
+      else m.release();
+    },
+    stages: [
+      ['2 速で減速', 'スロットルは全閉', (f) => f.pedDir === 0 && f.t < 0.3],
+      ['多板クラッチの切断', 'ペダルの遊びの範囲', (f) => f.th > 1.95 && f.pedDir !== 0],
+      ['ドラムの回転', 'C3 が C2 を離れて C1 へ', (f) => f.wait === 0 && f.gear !== 1],
+      ['ドグの滑走', 'C3 のドグが C1 の面の上で滑る', (f) => f.wait !== 0],
+      ['1 速のドグの噛み合い', 'C3 のドグが C1 の穴へ', () => true],
     ],
   },
   brake: {

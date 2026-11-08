@@ -741,8 +741,11 @@ export function drawSection(cv: HTMLCanvasElement, f: Snap, prev: Snap | null, C
     [ROW.m, MAIN, 'メインシャフト'],
     [ROW.c, CNT, 'カウンターシャフト'],
   ];
+  /** 歯車をすべて描いた後に重ねる絵（空転する歯車の穴の塗りに隠れないように） */
+  const late: (() => void)[] = [];
+  /* スライドする歯車を先に描く。噛み合ったドグは相手の歯車の中に入るので、相手の歯車に隠れる */
   for (const [row, list, sh] of rows)
-    for (const g of list) {
+    for (const g of [...list].sort((a, b) => +(a.kind !== 'slide') - +(b.kind !== 'slide'))) {
       const off = fo[g.k] ?? 0,
         x0 = g.x[0] + off,
         x1 = g.x[1] + off;
@@ -765,24 +768,19 @@ export function drawSection(cv: HTMLCanvasElement, f: Snap, prev: Snap | null, C
         ctx.rect(X(x0 + 1), Y(row - 5.5), sx * (x1 - x0 - 2), s * 11);
         ctx.stroke();
         ctx.setLineDash([]);
-        const sl = row === ROW.m ? MAIN[1] : CNT[2],
-          side = g.x[0] > sl.x[0] ? -1 : 1,
-          xf = side < 0 ? x0 : x1 - 3;
-        ctx.fillStyle = C.bg;
-        for (const yy of [-0.5, 0.5]) {
-          ctx.beginPath();
-          ctx.rect(X(xf), Y(row + yy * g.r - 2.8), sx * 3, s * 5.6);
-          ctx.fill();
-        }
       }
       if (g.kind === 'slide') {
-        ctx.fillStyle = st === 'pow' ? C.pow : C.ink2;
+        const ds = style(C, st);
+        ctx.fillStyle = ds.f;
+        ctx.strokeStyle = ds.s;
+        ctx.lineWidth = 1;
         for (const sg of [-1, 1])
           for (const yy of [-0.5, 0.5]) {
             const xd = sg < 0 ? x0 - 4 : x1;
             ctx.beginPath();
             ctx.rect(X(xd), Y(row + yy * g.r - 2.5), sx * 4, s * 5);
             ctx.fill();
+            ctx.stroke();
           }
         ctx.strokeStyle = C.ink2;
         ctx.lineWidth = s * 2.2;
@@ -802,6 +800,36 @@ export function drawSection(cv: HTMLCanvasElement, f: Snap, prev: Snap | null, C
         ctx.arc(X(xm), Y(top - 10), s * 2, 0, TAU);
         ctx.fill();
         hR(`シフトフォーク（${g.k} 用）`, 'ドラムの溝に沿って動く', xm - 4, top - 13, xm + 4, top + 2);
+        /* ドグが相手の面に当たって滑っている間（噛み合う前）は、ドグの先に滑走の斜線を出す */
+        const side =
+          g.k === 'C3' ? (f.wait === 1 ? 1 : f.wait === 2 ? -1 : 0) : f.wait === 3 ? 1 : f.wait === 4 ? -1 : 0;
+        if (side) {
+          const xa = side > 0 ? x1 + 2 : x0 - 6;
+          late.push(() => {
+            ctx.save();
+            ctx.strokeStyle = C.slip;
+            ctx.lineWidth = 2;
+            for (const yy of [-0.5, 0.5]) {
+              const yc = row + yy * g.r;
+              ctx.beginPath();
+              ctx.rect(X(xa), Y(yc - 4.5), sx * 6, s * 9);
+              ctx.save();
+              ctx.clip();
+              ctx.globalAlpha = 0.3;
+              ctx.fillStyle = C.slip;
+              ctx.fill();
+              ctx.globalAlpha = 1;
+              for (let k = -2; k < 5; k++) {
+                ctx.beginPath();
+                ctx.moveTo(X(xa + k * 2.4), Y(yc + 4.5));
+                ctx.lineTo(X(xa + k * 2.4 + 5), Y(yc - 4.5));
+                ctx.stroke();
+              }
+              ctx.restore();
+            }
+            ctx.restore();
+          });
+        }
       }
       if (o.labels !== false)
         text(
@@ -818,6 +846,7 @@ export function drawSection(cv: HTMLCanvasElement, f: Snap, prev: Snap | null, C
           },
         );
     }
+  for (const d of late) d();
   /* スプロケット 14T とチェーン */
   const spSt = pw(spinC ? (path.length ? 'pow' : 'spin') : 'stop');
   gearSide(c, 8, 15, ROW.c, 28.5, 14, -f.ang.c, -dA('c'), spSt, C, o.blur);
@@ -1385,7 +1414,7 @@ export function drawSide(cv: HTMLCanvasElement, f: Snap, prev: Snap | null, C: C
       C,
     });
     text(ctx, '遠心クラッチ', X(-48), Y(-48), { size: 12, col: C.ink2, align: 'right', C });
-    text(ctx, f.gear ? `${f.gear} 速 ${pr.m}/${pr.c}` : 'N', X(P_C[0] + 40), Y(P_C[1] + 30), {
+    text(ctx, f.gear ? `${f.gear} 速 ${pr.m}/${pr.c}` : f.wait ? '--' : 'N', X(P_C[0] + 40), Y(P_C[1] + 30), {
       size: 13,
       w: 700,
       col: prSt === 'pow' ? C.pow : C.ink2,

@@ -58,6 +58,9 @@
 .thr-l b{font-weight:500}
 .thr-t{position:absolute;left:0;right:0;top:12px;text-align:center;font:500 12.5px var(--mono);color:var(--ink-2);pointer-events:none}
 .thr.on .thr-t{color:var(--ink)}
+.thr-v{display:none;position:absolute;left:0;right:0;top:10px;text-align:center;font:700 15px var(--mono);color:var(--ink);pointer-events:none}
+.thr.on .thr-v{display:block}
+.thr.on .thr-t{visibility:hidden}
 .tm-opts{display:flex;gap:6px;margin:10px 8px 0}
 .tm-met{margin-top:10px}
 
@@ -112,5 +115,7 @@
 .tm-fl .thr{flex:2;height:42px;margin:0}
 .tm-fl .thr.brk{flex:1;height:42px}
 .tm-fl .thr .thr-t,.tm-fl .thr.brk .thr-t{top:12px}
+.tm-fl .thr .thr-v{top:10px}
+.tm-fl .thr-lk{flex:none;padding:0 8px}
 
 .tm-fl-x{margin-left:auto}

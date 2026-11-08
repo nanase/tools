@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ART, LOOP } from '../src/lib/card-art';
-import { gearRatio, Model, record, SPEC } from '../src/tools/transmission/model';
+import { gearRatio, Model, RPM, record, SPEC } from '../src/tools/transmission/model';
 import { makeSfx } from '../src/tools/transmission/sfx';
 
 describe('歯数と減速比', () => {
@@ -114,5 +114,35 @@ describe('ペダルとギアの音', () => {
       expect(a).toEqual(b);
       expect(Math.max(...a.map(Math.abs))).toBeCloseTo(1, 5);
     }
+  });
+});
+
+describe('ドグの噛み合いの遅れ', () => {
+  /** ペダルを 0.25 s 踏んで離し、次のギアに入るまでの時間（離してから）[s] */
+  const lag = (from: number, kmh: number, off: number) => {
+    const m = new Model({ base: from, v: kmh / 3.6, we: 1400 / RPM, wd: 1400 / RPM });
+    m.ang.c = (off * Math.PI) / 2;
+    m.press(-1);
+    let t = 0;
+    while (t < 8 && m.gear !== from - 1) {
+      if (t > 0.25) m.release();
+      m.step(0.0005);
+      t += 0.0005;
+    }
+    return t - 0.25;
+  };
+  it('止まる直前の 2→1 は、ドグが面に当たったまま 0.5 s より長く待つことがある', () => {
+    expect(Math.max(...[0, 0.25, 0.5, 0.75].map((o) => lag(2, 3, o)))).toBeGreaterThan(0.5);
+  });
+  it('待つ時間は長くても 1.5 s ほど', () => {
+    for (const kmh of [1, 3, 5, 6.5, 8]) for (let o = 0; o < 1; o += 0.125) expect(lag(2, kmh, o)).toBeLessThan(1.6);
+  });
+  it('速いときの 4→3 はすぐ噛み合う', () => {
+    for (const o of [0, 0.25, 0.5, 0.75]) expect(lag(4, 30, o)).toBeLessThan(0.1);
+  });
+  it('場面「2→1 の遅れ」ではドグの滑走の段階がある', () => {
+    const r = record('down21');
+    expect(r.frames.some((f) => f.wait === 1)).toBe(true);
+    expect(r.frames.at(-1)?.gear).toBe(1);
   });
 });

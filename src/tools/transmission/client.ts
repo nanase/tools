@@ -156,7 +156,7 @@ function toScene(): void {
   S.play = !RM.matches;
 }
 const autoBtn = $<HTMLButtonElement>('#tm-auto'),
-  lockBtn = $<HTMLButtonElement>('#tm-lock'),
+  lockBtns = $$<HTMLButtonElement>('#tm-lock, #tm-fl-lock'),
   flBtn = $<HTMLButtonElement>('#tm-flb'),
   fl = $('#tm-fl');
 /** 指を離すまで同じ要素で受ける（取れないときは受けないまま続ける） */
@@ -199,11 +199,13 @@ const toggleAuto = () => {
 };
 autoBtn.addEventListener('click', toggleAuto);
 flAuto.addEventListener('click', toggleAuto);
-lockBtn.addEventListener('click', () => {
-  S.lock = !S.lock;
-  syncTg(lockBtn, S.lock);
-  if (!S.lock) m.thr = 0;
-});
+/* スロットルの固定: 運転の枠と操作盤のボタンは同じ状態 */
+for (const b of lockBtns)
+  b.addEventListener('click', () => {
+    S.lock = !S.lock;
+    for (const x of lockBtns) syncTg(x, S.lock);
+    if (!S.lock) m.thr = 0;
+  });
 /* 操作盤: 運転の枠を小さくした窓を右下に浮かべる。開閉は保存する（初めは広い画面で開く） */
 function setFloat(on: boolean, save = true): void {
   fl.hidden = !on;
@@ -430,7 +432,7 @@ const cvSec = $<HTMLCanvasElement>('[data-cv=sec]'),
   cvDrum = $<HTMLCanvasElement>('[data-cv=drum]'),
   cvGraph = $<HTMLCanvasElement>('#tm-graph'),
   thrPads = $$('[data-pad=thr]'),
-  brkFs = $$('[data-pad=brk] .thr-f');
+  brkPads = $$('[data-pad=brk]');
 const setAll = (k: string, v: string) => {
   for (const el of $$(`[data-o="${k}"]`)) if (el.textContent !== v) el.textContent = v;
 };
@@ -474,7 +476,8 @@ function render(f: Snap): void {
   drawDrum(cvDrum, f, C, o);
   prevSnap = f;
   refreshTips();
-  setAll('gear', f.gear ? String(f.gear) : 'N');
+  /* ドグが噛み合うのを待っている間は、ふつうの N と分けて -- */
+  setAll('gear', f.gear ? String(f.gear) : f.wait ? '--' : 'N');
   setAll('kmh', (f.v * 3.6).toFixed(1));
   setAll('rpm', fmt(f.rpm));
   setText('#o-cf', cfLabel(f));
@@ -482,11 +485,19 @@ function render(f: Snap): void {
   setText('#o-drpm', `${fmt(f.drpm)} rpm`);
   setText('#o-wrpm', `${fmt(f.wrpm)} rpm`);
   const thr = S.src === 'live' ? m.thr : f.thr;
-  for (const pad of thrPads) {
-    $('.thr-f', pad).style.width = `${(thr * 100).toFixed(1)}%`;
-    pad.setAttribute('aria-valuenow', String(Math.round(thr * 100)));
-  }
-  for (const b of brkFs) b.style.width = `${((m.brake / 0.6) * 100).toFixed(1)}%`;
+  /* 押している間だけ、名前の代わりに開き具合を % で出す（.thr-v は CSS で .on のときだけ見える） */
+  const brk = m.brake / 0.6;
+  for (const [pads, u] of [
+    [thrPads, thr],
+    [brkPads, brk],
+  ] as const)
+    for (const pad of pads) {
+      $('.thr-f', pad).style.width = `${(u * 100).toFixed(1)}%`;
+      const pc = String(Math.round(u * 100));
+      if (pad.getAttribute('aria-valuenow') !== pc) pad.setAttribute('aria-valuenow', pc);
+      const v = $('.thr-v', pad);
+      if (v.textContent !== `${pc} %`) v.textContent = `${pc} %`;
+    }
 }
 function showStage(sc: { rec: Rec; map: StageMap }, f: Snap): void {
   const i = f.stage ?? 0;

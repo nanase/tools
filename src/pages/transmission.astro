@@ -138,11 +138,11 @@ const playIcon =
           <div class="thr" data-pad="thr" tabindex="0" role="slider" aria-label="スロットル" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
             <span class="thr-f"></span>
             <span class="thr-l" aria-hidden="true"><b>0</b><b>25</b><b>50</b><b>75</b><b>100 %</b></span>
-            <span class="thr-t">スロットル</span>
+            <span class="thr-t">スロットル</span><span class="thr-v" aria-hidden="true"></span>
           </div>
           <button type="button" class="tg thr-lk" id="tm-lock" aria-pressed="false"><span class="led" aria-hidden="true"></span>固定</button>
         </div>
-        <div class="thr brk" data-pad="brk" tabindex="0" role="slider" aria-label="ブレーキ" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span class="thr-f"></span><span class="thr-t">ブレーキ</span></div>
+        <div class="thr brk" data-pad="brk" tabindex="0" role="slider" aria-label="ブレーキ" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span class="thr-f"></span><span class="thr-t">ブレーキ</span><span class="thr-v" aria-hidden="true"></span></div>
       </Panel>
 
       <Panel hid="hd-snd" title="音">
@@ -205,8 +205,9 @@ const playIcon =
       <div class="drv-d"><span class="drv-l">エンジン</span><b data-o="rpm">0</b><span class="u">rpm</span></div>
     </div>
     <div class="tm-fl-pads">
-      <div class="thr" data-pad="thr" tabindex="0" role="slider" aria-label="スロットル" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span class="thr-f"></span><span class="thr-t">スロットル</span></div>
-      <div class="thr brk" data-pad="brk" tabindex="0" role="slider" aria-label="ブレーキ" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span class="thr-f"></span><span class="thr-t">ブレーキ</span></div>
+      <div class="thr" data-pad="thr" tabindex="0" role="slider" aria-label="スロットル" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span class="thr-f"></span><span class="thr-t">スロットル</span><span class="thr-v" aria-hidden="true"></span></div>
+      <button type="button" class="tg thr-lk" id="tm-fl-lock" aria-pressed="false"><span class="led" aria-hidden="true"></span>固定</button>
+      <div class="thr brk" data-pad="brk" tabindex="0" role="slider" aria-label="ブレーキ" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span class="thr-f"></span><span class="thr-t">ブレーキ</span><span class="thr-v" aria-hidden="true"></span></div>
     </div>
   </div>
 
