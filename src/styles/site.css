@@ -26,7 +26,7 @@
   --grid:#dde1d8;
   --grid-2:#b3baad;
   --screen-ink:#4a535a;
-  --ic-red:#d0342c;--ic-blk:#1c2226;--ic-blk-line:#1c2226;  /* カードの図柄の赤と黒（赤黒木） */
+  --ic-red:#d0342c;  /* カードの図柄の赤（赤黒木） */
   --rail:#23292e;
   --rail-2:#343c42;
   --rail-ink:#eef0eb;
@@ -48,7 +48,7 @@
     --accent:#ff8a4c;
     --ch1:#f2c230;--ch2:#52c4dd;--warn:#ff6f8c;--led-off:#3e454a;
     --screen:#08090a;--grid:#1c2428;--grid-2:#3b474e;--screen-ink:#aab3b8;
-    --ic-red:#e5483f;--ic-blk:#2a3236;--ic-blk-line:#aab3b8;
+    --ic-red:#e5483f;
     --rail:#0a0c0d;--rail-2:#20262a;--focus:#80acee;
   }
 }
@@ -59,7 +59,7 @@
   --accent:#ff8a4c;
   --ch1:#f2c230;--ch2:#52c4dd;--warn:#ff6f8c;--led-off:#3e454a;
   --screen:#08090a;--grid:#1c2428;--grid-2:#3b474e;--screen-ink:#aab3b8;
-  --ic-red:#e5483f;--ic-blk:#2a3236;--ic-blk-line:#aab3b8;
+  --ic-red:#e5483f;
   --rail:#0a0c0d;--rail-2:#20262a;--focus:#80acee;
 }
 
@@ -211,7 +211,7 @@ a.unit:hover h3{text-decoration:underline;text-decoration-color:var(--ink-3);tex
 .ic .a{stroke:var(--ch1)}.ic .b{stroke:var(--ch2)}.ic .c{stroke:var(--screen-ink)}.ic .d{stroke-dasharray:3 3;opacity:.7}
 .ic .t{stroke-width:1}.ic .w{stroke-width:3.5;stroke-linecap:butt}.ic .g{opacity:.45}
 .ic .fa{fill:var(--ch1);stroke:none}.ic .fb{fill:var(--ch2);stroke:none}.ic .fc{fill:var(--screen-ink);stroke:none;opacity:.75}
-.ic .fr{fill:var(--ic-red);stroke:none}.ic .fk{fill:var(--ic-blk);stroke:var(--ic-blk-line);stroke-width:1}
+.ic .fr{fill:var(--ic-red);stroke:none}
 /* SVG テーマスキーマチェッカーの図柄は、サイトのテーマによらず明るい地と暗い地を並べる */
 .ic .pl{fill:#f4f5f1}.ic .pd{fill:#121517}.ic .il{stroke:#15191c}.ic .ih{stroke:#e6e8e4}
 .ic .sn{fill:#e8a020;stroke:none}.ic .sr{stroke:#e8a020}.ic .ml{fill:#dde2da;stroke:#15191c}.ic .md{fill:#283035;stroke:#e6e8e4}
