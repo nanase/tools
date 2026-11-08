@@ -54,6 +54,10 @@
 .cl-scr{padding:0;overflow:hidden}
 .cl-scr canvas{display:block;width:100%;height:460px}
 .cl-drawing #cl-cv{cursor:crosshair;touch-action:none}
+#cl-one{position:relative}
+#cl-ring{position:absolute;top:0;left:0;border:1.5px solid var(--ring,var(--screen-ink));border-radius:50%;box-shadow:0 0 0 1px var(--screen);pointer-events:none}
+#cl-ring.er{border-style:dashed}
+#cl-ring[hidden]{display:none}
 @media (max-width:620px){.cl-scr canvas{height:300px}}
 .a-fig .tp{margin-top:10px}
 .cl-sp button{font-family:var(--sans)}
