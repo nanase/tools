@@ -3,7 +3,7 @@
  * 図柄は時刻 t [s] の関数で、t = 0 が止まっているときの絵である。ビルド時に t = 0 を HTML に出し、
  * マウスを乗せている間だけブラウザで t を進めて描き直す（scripts/card-motion.ts）。
  * 線の class は site.css の .ic にある: a = ch1、b = ch2、c = 画面の線、d = 破線、t = 細線、g = 残像、
- * w = 黒鍵の太線、fa・fb・fc = 塗り、fr・fk = 赤黒木の赤と黒の塗り、pl・pd・il・ih = SVG テーマの図柄の明るい地と暗い地とその線、
+ * w = 黒鍵の太線、fa・fb・fc = 塗り、fr = 赤黒木の赤の塗り、pl・pd・il・ih = SVG テーマの図柄の明るい地と暗い地とその線、
  * sn・sr・ml・md・mn・sk = 同じく太陽・光・昼の山・夜の山・月・星
  */
 import { czaAlt, parDist, R22 } from '../tools/halo/labels';
@@ -1870,7 +1870,7 @@ export const ART: Record<string, Art> = {
     place(f.root, 0);
     return P('c t', lines) + P('c t', box) + (wrote ? P('a', wrote) : '') + P('fc', base) + (hit ? P('fa', hit) : '');
   },
-  /* 赤黒木: 赤と黒の丸の木。1〜15 を順に入れ、回転で根が入れ替わる。赤が続く枝は破線 */
+  /* 赤黒木: 赤と黒の丸の木。黒は他のカードの丸と同じ灰で描く。1〜15 を順に入れ、回転で根が入れ替わる。赤が続く枝は破線 */
   rb(t) {
     const F = rbFrames(),
       /* 止まった絵は 10 個以上入った木で、祖父で回転した直後 */
@@ -1902,7 +1902,7 @@ export const ART: Record<string, Art> = {
       else blk += dot(x, y, r);
       if (f.mov.includes(k)) ring += dot(x, y, r + 1.6);
     }
-    return P('c t', lines) + P('d a', bad) + P('fk', blk) + P('fr', red) + P('a', ring);
+    return P('c t', lines) + P('d a', bad) + P('fc', blk) + P('fr', red) + P('a', ring);
   },
   /* 式の構文解析: 上に式、左に木、右にスタックを置き、演算子が積まれて木へ移る */
   ep(t) {
