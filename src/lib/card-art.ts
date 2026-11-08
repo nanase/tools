@@ -276,6 +276,27 @@ const EP_FRAMES: {
 ];
 /** 式の構文解析の図柄の 1 秒あたりのコマ数 */
 const EP_FPS = 4;
+/** 正規表現の図柄の点の道すじ（入口 → 1 つ目の箱 → 分かれ道の上 → 回り道を 1 周 → 終わり）と箱の左上 */
+const RX_PTS: readonly [number, number][] = [
+  [5, 24],
+  [20, 24],
+  [36, 24],
+  [44, 11],
+  [53, 11],
+  [62, 11],
+  [70, 24],
+  [83, 24],
+  [92, 40],
+  [74, 40],
+  [76, 24],
+  [83, 24],
+  [98, 24],
+  [109, 24],
+  [109, 24],
+  [109, 24],
+];
+const RX_BOX: Record<string, [number, number]> = { a: [13, 17], b: [46, 4], c: [46, 30], d: [76, 17] };
+const RX_FPS = 3;
 /** 画像の拡大縮小の図柄のドット絵（屋根 a・壁 b・戸 c） */
 const RZ_SPRITE = ['...aa...', '..aaaa..', '.aaaaaa.', 'aaaaaaaa', '.bbbbbb.', '.bbccbb.', '.bbccbb.', '.bbccbb.'];
 
@@ -1939,6 +1960,31 @@ export const ART: Record<string, Art> = {
       P(fill, top)
     );
   },
+  /* 正規表現: パターンの鉄道図。分かれ道（上の箱）と回り道（右の箱）の線路を点が進み、通っている箱を塗る */
+  rx(t) {
+    /* 止まった絵は分かれ道の上の箱を通っているところ */
+    const k = (4 + Math.floor(t * RX_FPS)) % RX_PTS.length,
+      [x, y] = RX_PTS[k],
+      hot = k === 1 ? 'a' : k >= 3 && k <= 5 ? 'b' : k === 7 || k === 11 ? 'd' : '';
+    let boxes = '',
+      fill = '';
+    for (const [id, [bx, by]] of Object.entries(RX_BOX)) {
+      const d = `M${bx} ${by}h14v14h-14Z`;
+      if (id === hot) fill += d;
+      else boxes += d;
+    }
+    const end = 'M103.5 24a5.5 5.5 0 1 0 11 0a5.5 5.5 0 1 0 -11 0Z';
+    return (
+      P(
+        'c t',
+        'M3 24H13M27 24H76M90 24H103M34 24C40 24 38 11 44 11H46M60 11H62C68 11 66 24 72 24M34 24C40 24 38 37 44 37H46M60 37H62C68 37 66 24 72 24M90 24C96 24 96 40 90 40H76C70 40 70 24 76 24',
+      ) +
+      P('c', boxes + end) +
+      (fill ? P('fb', fill) : '') +
+      P('fa', `M${r1(x - 3.2)} ${y}a3.2 3.2 0 1 0 6.4 0a3.2 3.2 0 1 0 -6.4 0Z`) +
+      (k >= 13 ? P('fa', end) : '')
+    );
+  },
   /* オルガン音響モデル: 口と円錐の足があるパイプの正面。和音を鳴らし、鳴っている管に定在波を描く */
   og(t) {
     let body = '',
@@ -2818,6 +2864,7 @@ export const LOOP: Record<string, number> = {
   bt: 52 / BT_FPS,
   rb: rbFrames().length / RB_FPS,
   ep: EP_FRAMES.length / EP_FPS,
+  rx: RX_PTS.length / RX_FPS,
   pcm: 3,
   adp: 26 / 8,
   mp3: 4,

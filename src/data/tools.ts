@@ -624,8 +624,17 @@ export const TOOLS: Tool[] = [
     t: '式の構文解析',
     d: '式が木になる手順と、決まりで変わる答えを見ます。',
     ic: 'ep',
-    r: ['sort', 'binary-heap', 'list-queue-stack', 'clustering'],
+    r: ['sort', 'regex', 'binary-heap', 'list-queue-stack'],
     k: '構文解析 parser parsing 式 expression 数式 字句解析 lexer tokenizer トークン 構文木 抽象構文木 ast 木 tree スタック stack 優先順位 precedence 結合 associativity 左結合 右結合 操車場 shunting yard ダイクストラ dijkstra 逆ポーランド シフト還元 shift reduce lr 再帰下降 recursive descent pratt バックトラック backtracking パックラット packrat peg 括弧 電卓 calculator excel apl コンパイラ compiler アルゴリズム algorithm',
+  },
+  {
+    id: 'regex',
+    c: 'アルゴリズム',
+    t: '正規表現',
+    d: '文字列を探すパターンの照合手順を方式ごとに比べます。',
+    ic: 'rx',
+    r: ['expression-parsing', 'sort', 'list-queue-stack', 'b-tree'],
+    k: '正規表現 regular expression regex regexp パターン pattern 検索 search 置換 replace 一致 match マッチ 照合 グループ キャプチャ capture 後方参照 backreference 最長一致 最短一致 貪欲 greedy lazy 文字クラス バックトラック backtracking メモ化 memoization redos 破滅的バックトラック catastrophic nfa dfa 有限オートマトン automaton オートマトン thompson pike vm 部分集合構成 subset construction 遅延 dfa lazy dfa re2 pcre perl javascript ruby grep lex flex kleene',
   },
   {
     id: 'list-queue-stack',
