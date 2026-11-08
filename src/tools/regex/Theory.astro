@@ -1,0 +1,181 @@
+---
+// 動作原理と式
+import { bigO } from '../../lib/big-o';
+import { ENGINES, type EngineId } from './model';
+
+type Ref = { for: string; src: string; url?: string };
+const doi = (d: string) => `https://doi.org/${d}`;
+const R = {
+  kleene: {
+    for: '正規表現と有限オートマトンの対応',
+    src: 'S. C. Kleene, “Representation of Events in Nerve Nets and Finite Automata,” in C. E. Shannon, J. McCarthy (eds.), Automata Studies, Annals of Mathematics Studies 34, Princeton University Press, pp. 3–42, 1956',
+    url: doi('10.1515/9781400882618-002'),
+  },
+  rabin: {
+    for: 'NFA と部分集合構成',
+    src: 'M. O. Rabin, D. Scott, “Finite Automata and Their Decision Problems,” IBM Journal of Research and Development, vol. 3, no. 2, pp. 114–125, 1959',
+    url: doi('10.1147/rd.32.0114'),
+  },
+  thompson: {
+    for: 'NFA の組み方と同時シミュレーション',
+    src: 'K. Thompson, “Programming Techniques: Regular expression search algorithm,” Communications of the ACM, vol. 11, no. 6, pp. 419–422, 1968',
+    url: doi('10.1145/363347.363387'),
+  },
+  cox1: {
+    for: 'バックトラックと NFA の比較、DFA の状態のキャッシュ',
+    src: 'R. Cox, Regular Expression Matching Can Be Simple And Fast, 2007',
+    url: 'https://swtch.com/~rsc/regexp/regexp1.html',
+  },
+  cox2: {
+    for: 'Pike VM とキャプチャ',
+    src: 'R. Cox, Regular Expression Matching: the Virtual Machine Approach, 2009',
+    url: 'https://swtch.com/~rsc/regexp/regexp2.html',
+  },
+  cox3: {
+    for: 'RE2 の DFA のキャッシュ',
+    src: 'R. Cox, Regular Expression Matching in the Wild, 2010',
+    url: 'https://swtch.com/~rsc/regexp/regexp3.html',
+  },
+  davis18: {
+    for: 'ReDoS の実態',
+    src: 'J. C. Davis, C. A. Coghlan, F. Servant, D. Lee, “The impact of regular expression denial of service (ReDoS) in practice: an empirical study at the ecosystem scale,” ESEC/FSE 2018, pp. 246–256',
+    url: doi('10.1145/3236024.3236027'),
+  },
+  ruby: {
+    for: 'Ruby 3.2 のメモ化とタイムアウト',
+    src: 'Ruby, Ruby 3.2.0 Released, ruby-lang.org, 2022',
+    url: 'https://www.ruby-lang.org/en/news/2022/12/25/ruby-3-2-0-released/',
+  },
+  davis21: {
+    for: 'メモ化で ReDoS を防ぐ',
+    src: 'J. C. Davis, F. Servant, D. Lee, “Using Selective Memoization to Defeat Regular Expression Denial of Service (ReDoS),” 2021 IEEE Symposium on Security and Privacy',
+    url: doi('10.1109/SP40001.2021.00032'),
+  },
+  re2: {
+    for: 'RE2',
+    src: 'Google, RE2, README, GitHub',
+    url: 'https://github.com/google/re2',
+  },
+  rust: {
+    for: 'Rust の regex',
+    src: 'regex crate documentation, docs.rs',
+    url: 'https://docs.rs/regex/latest/regex/',
+  },
+  netTimeout: {
+    for: '.NET のタイムアウト',
+    src: 'Microsoft, Best Practices for Regular Expressions in .NET, Microsoft Learn',
+    url: 'https://learn.microsoft.com/en-us/dotnet/standard/base-types/best-practices-regex',
+  },
+  netNb: {
+    for: '.NET の NonBacktracking',
+    src: 'Microsoft, Options for regular expression, Microsoft Learn',
+    url: 'https://learn.microsoft.com/en-us/dotnet/standard/base-types/regular-expression-options',
+  },
+  v8: {
+    for: 'V8 の線形時間のエンジン',
+    src: 'M. Bidlingmaier, An additional non-backtracking RegExp engine, V8 blog, 2021',
+    url: 'https://v8.dev/blog/non-backtracking-regexp',
+  },
+  aho: {
+    for: '後方参照つきの照合は NP 完全',
+    src: 'A. V. Aho, “Algorithms for Finding Patterns in Strings,” in J. van Leeuwen (ed.), Handbook of Theoretical Computer Science, Vol. A: Algorithms and Complexity, Elsevier, pp. 255–300, 1990',
+    url: doi('10.1016/B978-0-444-88071-0.50010-2'),
+  },
+} satisfies Record<string, Ref>;
+type K = keyof typeof R;
+const order = Object.keys(R) as K[];
+const num = (k: K) => order.indexOf(k) + 1;
+const Rf = (...ks: K[]) => ks.map((k) => `<a class="rf" href="#thy-r${num(k)}">[${num(k)}]</a>`).join('');
+
+/* 計算量の表。照合は文章を 1 回調べる手間の最悪、前処理は照合の前に作るもの */
+const COST: Record<EngineId, { run: string; pre: string; ref: string; src: K[] }> = {
+  bt: { run: 'O(2<sup>n</sup>) など指数', pre: 'O(m)', ref: '使える', src: ['cox1'] },
+  memo: { run: 'O(mn)、メモリも O(mn)', pre: 'O(m)', ref: 'あるとメモ化を止める', src: ['ruby', 'davis21'] },
+  nfa: { run: 'O(mn)', pre: 'O(m)', ref: '使えない', src: ['thompson', 'cox2'] },
+  ldfa: { run: 'O(mn)、状態がそろえば O(n)', pre: 'O(m)', ref: '使えない', src: ['cox3', 'rust'] },
+  dfa: { run: 'O(n)', pre: 'O(2<sup>m</sup>)', ref: '使えない', src: ['rabin'] },
+};
+---
+<h3>正規表現と有限オートマトン</h3>
+<p>正規表現は文字列の集合（言語）を表します。連接・選択・繰り返しの 3 つで組める言語を正規言語と呼びます。</p>
+<div class="eqs"><math display="block"><mrow><mi>L</mi><mo stretchy="false">(</mo><mi>r</mi><mi>s</mi><mo stretchy="false">)</mo><mo>=</mo><mi>L</mi><mo stretchy="false">(</mo><mi>r</mi><mo stretchy="false">)</mo><mi>L</mi><mo stretchy="false">(</mo><mi>s</mi><mo stretchy="false">)</mo><mspace width="1.2em"/><mi>L</mi><mo stretchy="false">(</mo><mi>r</mi><mo>|</mo><mi>s</mi><mo stretchy="false">)</mo><mo>=</mo><mi>L</mi><mo stretchy="false">(</mo><mi>r</mi><mo stretchy="false">)</mo><mo>∪</mo><mi>L</mi><mo stretchy="false">(</mo><mi>s</mi><mo stretchy="false">)</mo><mspace width="1.2em"/><mi>L</mi><mo stretchy="false">(</mo><msup><mi>r</mi><mo>*</mo></msup><mo stretchy="false">)</mo><mo>=</mo><munder><mo>⋃</mo><mrow><mi>k</mi><mo>≥</mo><mn>0</mn></mrow></munder><mi>L</mi><msup><mrow><mo stretchy="false">(</mo><mi>r</mi><mo stretchy="false">)</mo></mrow><mi>k</mi></msup></mrow></math></div>
+<p>Kleene の定理によると、正規表現で書ける言語と有限オートマトンが受理する言語は一致します <Fragment set:html={Rf('kleene')} />。有限オートマトンには有限個の状態があり、1 文字読むごとに状態を移ります。同じ文字で行き先が複数ある NFA も、行き先が 1 つに決まる DFA も、受理できる言語は同じです <Fragment set:html={Rf('rabin')} />。</p>
+
+<h3>パターンから NFA を組む</h3>
+<p>Thompson の構成では、パターンの部品ごとに入口と出口が 1 つずつの小さな NFA を作り、つなぎ合わせます <Fragment set:html={Rf('thompson')} />。ε は文字を読まずに進む矢印です。</p>
+<ul class="tl">
+  <li>文字 a: 2 つの状態を a の矢印でつなぐ</li>
+  <li>連接 rs: r の出口を s の入口につなぐ</li>
+  <li>選択 r|s: 新しい入口から r と s へ ε で分かれ、両方の出口を新しい出口へまとめる</li>
+  <li>繰り返し r*: 入口から r と出口へ分かれ、r の出口から入口へ戻る</li>
+  <li>r+ は rr*、r? は r|ε、r{'{'}2,3{'}'} は rr(r|ε) と同じ形</li>
+</ul>
+<p>1 つの部品で増える状態は 2 個までなので、パターンの長さを <math><mi>m</mi></math> とすると状態は <math><mn>2</mn><mi>m</mi></math> 個以下です。{'{m,n}'} は部品を複製するので、そのぶん長くなります。</p>
+
+<h3>NFA の同時シミュレーション</h3>
+<p>今いる状態の集合 <math><msub><mi>S</mi><mi>i</mi></msub></math> を持ち、文字 <math><msub><mi>c</mi><mi>i</mi></msub></math> を読むたびに全部の状態を同時に進めます <Fragment set:html={Rf('thompson')} />。<math><mi>E</mi></math> は ε の矢印だけでたどれる状態を足す操作です。</p>
+<div class="eqs"><math display="block"><mrow><msub><mi>S</mi><mrow><mi>i</mi><mo>+</mo><mn>1</mn></mrow></msub><mo>=</mo><mi>E</mi><mo stretchy="false">(</mo><mo stretchy="false">{</mo><mi>δ</mi><mo stretchy="false">(</mo><mi>q</mi><mo>,</mo><msub><mi>c</mi><mi>i</mi></msub><mo stretchy="false">)</mo><mo>∣</mo><mi>q</mi><mo>∈</mo><msub><mi>S</mi><mi>i</mi></msub><mo stretchy="false">}</mo><mo stretchy="false">)</mo></mrow></math></div>
+<p>集合の大きさは <math><mn>2</mn><mi>m</mi></math> 以下で、文章は 1 回しか読みません。文章の長さを <math><mi>n</mi></math> とすると手間は <Fragment set:html={bigO('O(mn)')} /> で、後戻りはありません <Fragment set:html={Rf('cox1')} />。</p>
+<p>Pike VM は集合の各状態にキャプチャの位置を持たせます <Fragment set:html={Rf('cox2')} />。集合を優先順に並べ、同じ状態に 2 本たどり着いたら先のほうだけ残します。これでバックトラックと同じく、左に書いた選択肢を優先した一致が得られます。</p>
+
+<h3>NFA から DFA へ</h3>
+<p>部分集合構成では、NFA の状態の集合 1 つを DFA の状態 1 つにします <Fragment set:html={Rf('rabin')} />。DFA は 1 文字につき表を 1 回引くだけで進みます。ただし集合の数だけ状態ができうるので、最悪で指数個になります。</p>
+<div class="eqs"><math display="block"><mrow><mo stretchy="false">|</mo><msub><mi>Q</mi><mi>DFA</mi></msub><mo stretchy="false">|</mo><mo>≤</mo><msup><mn>2</mn><mrow><mo stretchy="false">|</mo><msub><mi>Q</mi><mi>NFA</mi></msub><mo stretchy="false">|</mo></mrow></msup></mrow></math></div>
+<p><code>(a|b)*a(a|b){'{'}k{'}'}</code> は最後の <math><mi>k</mi><mo>+</mo><mn>1</mn></math> 文字を覚えておく必要があり、a と b だけの文章でも <math><msup><mn>2</mn><mrow><mi>k</mi><mo>+</mo><mn>1</mn></mrow></msup></math> 個の状態が要ります。</p>
+<p>遅延 DFA は文章で実際にたどった状態だけを作り、キャッシュに残します。1 回の検索で新しくできる状態は <math><mi>n</mi><mo>+</mo><mn>1</mn></math> 個までです。RE2 はキャッシュがあふれると全部捨てて作り直し、それが続くと NFA に切り替えます <Fragment set:html={Rf('cox3')} />。</p>
+
+<h3>バックトラックの手間</h3>
+<p>バックトラックは分かれ道で 1 つを選んで進み、失敗すると後戻りして次を試します <Fragment set:html={Rf('cox1')} />。<code>(a+)+b</code> を a が <math><mi>n</mi></math> 個の文章に当てると、外側の + が a の並びをいくつに分けるかを全部試します。隣り合う a の間ごとに「切る・切らない」があるので、分け方は次の数です。</p>
+<div class="eqs"><math display="block"><mrow><msup><mn>2</mn><mrow><mi>n</mi><mo>−</mo><mn>1</mn></mrow></msup><mspace width="1.2em"/><munderover><mo>∑</mo><mrow><mi>k</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></munderover><msup><mn>2</mn><mrow><mi>k</mi><mo>−</mo><mn>1</mn></mrow></msup><mo>=</mo><msup><mn>2</mn><mi>n</mi></msup><mo>−</mo><mn>1</mn></mrow></math></div>
+<p>b がないのでどれも失敗し、開始位置を 1 つずらして同じことを繰り返します。右の式が開始位置すべての合計です。a が 12 個では文字の比較が約 24,547 回になります。メモ化と NFA は同じ (状態, 位置) を 1 回しか調べないので約 60 回です。</p>
+
+<h3>破滅的バックトラック（ReDoS）への対策</h3>
+<p>手間が指数的に増えるパターンに長い文章を渡すと、サーバーが長く応答しなくなります。これが ReDoS で、公開のパッケージにも多く見つかっています <Fragment set:html={Rf('davis18')} />。</p>
+<ul class="tl">
+  <li>Ruby 3.2: 分かれ道で (命令, 位置) の組を覚え、同じ組を 2 度調べない <Fragment set:html={Rf('ruby', 'davis21')} /></li>
+  <li>Ruby 3.2 のメモ化の範囲: 後方参照・先読み・後読みを含むパターンでは使わない。それ以外の備えとして Regexp.timeout を足した <Fragment set:html={Rf('ruby')} /></li>
+  <li>RE2・Rust の regex: 後方参照と先読み・後読みを捨て、文章の長さに比例する時間を保証する <Fragment set:html={Rf('re2', 'rust')} /></li>
+  <li>.NET: 照合に時間の上限を付けられ、超えると RegexMatchTimeoutException を出す。既定は上限なし <Fragment set:html={Rf('netTimeout')} /></li>
+  <li>.NET 7 以降: RegexOptions.NonBacktracking で線形時間の照合を選べる。後方参照・先読み・後読み・アトミックグループは使えない <Fragment set:html={Rf('netNb')} /></li>
+  <li>V8: 試験的な線形時間のエンジンがあり、フラグを付けたときだけ動く。後戻りが 50,000 回を超えたら切り替える設定もある <Fragment set:html={Rf('v8')} /></li>
+</ul>
+<p>メモ化の表は命令の数と位置の数の積で、時間もメモリも <Fragment set:html={bigO('O(mn)')} /> です。</p>
+
+<h3>後方参照が NFA・DFA で扱えない理由</h3>
+<p>後方参照 <code>\1</code> は、キャプチャした文字列と同じものをもう一度求めます。<code>^(a*)b\1$</code> に一致する文章は次の集合です。</p>
+<div class="eqs"><math display="block"><mrow><mo stretchy="false">{</mo><msup><mi>a</mi><mi>k</mi></msup><mi>b</mi><msup><mi>a</mi><mi>k</mi></msup><mo>∣</mo><mi>k</mi><mo>≥</mo><mn>0</mn><mo stretchy="false">}</mo></mrow></math></div>
+<p>b の前の a の数を覚えるには無限個の状態が要るので、この言語は正規言語ではありません。有限個の状態しか持たない NFA と DFA では表せません。後方参照つきの照合は NP 完全で <Fragment set:html={Rf('aho')} />、効率のよい方法は知られていません。</p>
+
+<h3>計算量</h3>
+<p><math><mi>n</mi></math> は文章の長さ、<math><mi>m</mi></math> はパターンの長さです。照合は文章を 1 回調べる最悪の手間、前処理は照合の前に作るものの大きさです。</p>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th></th><th scope="col">照合</th><th scope="col">前処理</th><th scope="col">後方参照</th><th scope="col">使われている所</th><th scope="col">出典</th></tr></thead>
+  <tbody>
+    {ENGINES.map((e) => {
+      const c = COST[e.id];
+      return (
+        <tr>
+          <th scope="row">{e.name}</th>
+          <td set:html={bigO(c.run)} />
+          <td set:html={bigO(c.pre)} />
+          <td>{c.ref}</td>
+          <td>{e.who}</td>
+          <td set:html={Rf(...c.src)} />
+        </tr>
+      );
+    })}
+  </tbody>
+</table></div>
+
+<h3>出典</h3>
+<ol class="refs">
+  {order.map((k, i) => {
+    const r: Ref = R[k];
+    return (
+      <li id={`thy-r${i + 1}`}>
+        <span class="rf-for">{r.for}</span>
+        <span class="rf-src">{r.url ? <a href={r.url} target="_blank" rel="noopener">{r.src}</a> : r.src}</span>
+      </li>
+    );
+  })}
+</ol>

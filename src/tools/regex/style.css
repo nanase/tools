@@ -1,0 +1,151 @@
+/* 正規表現のページだけのスタイル（共通は src/styles/site.css）。図の色の値は二分ヒープ・式の構文解析に合わせる */
+:root{--rx-done:#3fb36b;--rx-cmp:#0a6e8a;--rx-mov:#e0a21a;--rx-node:#e4e7e1;--rx-line:#8a948d;--rx-past:#efdcae;--rx-on-mov:#15191c;--rx-on-cmp:#fff;--rx-on-done:#15191c;--rx-ok:#1d8a45;--rx-g1:#0a6e8a;--rx-g2:#c27e00;--rx-g3:#8a4fc0;--rx-mbg:#cdebd6}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--rx-done:#49d17f;--rx-cmp:#52c4dd;--rx-mov:#f2c230;--rx-node:#262e33;--rx-line:#5d6a72;--rx-past:#4a4126;--rx-on-mov:#08090a;--rx-on-cmp:#08090a;--rx-on-done:#08090a;--rx-ok:#49d17f;--rx-g1:#52c4dd;--rx-g2:#f2c230;--rx-g3:#c69bf0;--rx-mbg:#1d4a2e}}
+:root[data-theme="dark"]{--rx-done:#49d17f;--rx-cmp:#52c4dd;--rx-mov:#f2c230;--rx-node:#262e33;--rx-line:#5d6a72;--rx-past:#4a4126;--rx-on-mov:#08090a;--rx-on-cmp:#08090a;--rx-on-done:#08090a;--rx-ok:#49d17f;--rx-g1:#52c4dd;--rx-g2:#f2c230;--rx-g3:#c69bf0;--rx-mbg:#1d4a2e}
+
+/* 枠の並び。上にパターンと一致、その下に照合の手順。PC は 2 列で、図・表・しくみは幅いっぱい */
+#rx .a-try{order:1}#rx .a-out{order:2}#rx .a-fig{order:3}#rx .a-mat{order:4}#rx .a-cmp{order:4}#rx .a-eng{order:5}#rx .a-res{order:6}#rx .a-how{order:7}#rx .a-thy{order:8}
+@media (min-width:1000px){
+  #rx{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start}
+  #rx .a-fig,#rx .a-cmp,#rx .a-how,#rx .a-thy,#rx .a-mat{grid-column:1/-1}
+  /* 一覧は図の横に表を置く。押した結果が隣で見える */
+  #rx[data-mode="list"] .a-fig{grid-column:1}
+  #rx[data-mode="list"] .a-mat{grid-column:2}
+}
+#rx:not([data-mode="list"]) .a-mat{display:none}
+#rx[data-mode="cmp"] .a-res,#rx[data-mode="cmp"] .a-eng,#rx:not([data-mode="cmp"]) .a-cmp{display:none}
+#rx .a-fig,#rx .a-mat{scroll-margin-top:calc(var(--rail-h) + 20px)}
+.rx-prow .prow{--sw:0px}
+.rx-prow .c-sym{display:none}
+
+/* 枠線の上の右端 */
+#rx .pha .seg button,#rx .a-fig .tp-st,#rx .pha .prst{font-family:var(--sans)}
+.led.rx-ok{background:var(--rx-ok);box-shadow:0 0 5px var(--rx-ok)}
+@media (max-width:720px){
+  #rx .a-fig{padding-top:24px}
+  #rx .a-fig>.ph>.pha{position:static;transform:none;width:100%;margin:0 0 8px;padding:0;background:none;justify-content:flex-end}
+}
+
+/* パターンと文章 */
+.rx-pat{display:flex;align-items:center;gap:2px;height:46px;padding:0 10px;border:1px solid var(--line-2);border-radius:4px;background:var(--screen)}
+.rx-pat:focus-within{outline:2px solid var(--accent);outline-offset:-1px}
+.rx-pat.bad{border-color:var(--warn)}
+.rx-sl,.rx-fl{flex:none;font:700 18px var(--mono);color:var(--ink-3)}
+.rx-fl{min-width:1.6em}
+.rx-in{flex:1 1 auto;min-width:0;height:100%;padding:0 4px;border:0;outline:0;background:none;color:var(--ink);font:700 18px var(--mono)}
+.rx-err{margin:6px 2px 0;color:var(--warn);font-size:13px}
+.rx-err[hidden]{display:none}
+.rx-row{display:grid;grid-template-columns:5.6em minmax(0,1fr);gap:6px 8px;padding:7px 2px;border-bottom:1px solid var(--line);align-items:center}
+.rx-row>h3{margin:0;font-size:12.5px;font-weight:700;line-height:1.3;color:var(--ink-2)}
+.rx-top{align-items:start}
+.rx-top>h3{padding-top:7px}
+#rx-flags .chip,#rx-smp .chip,#rx-eng .chip{font-family:var(--sans)}
+.rx-lab{display:block;margin:10px 2px 4px;font-size:12.5px;font-weight:700;color:var(--ink-2)}
+.rx-tx,.rx-rep{box-sizing:border-box;width:100%;padding:8px 10px;border:1px solid var(--line-2);border-radius:4px;background:var(--screen);color:var(--ink);font:500 15px/1.6 var(--mono);resize:vertical}
+.rx-rep{height:36px;padding:0 10px}
+.rx-tx:focus-visible,.rx-rep:focus-visible{outline:2px solid var(--accent);outline-offset:-1px}
+
+/* 一致 */
+.rx-hl{min-height:44px;padding:8px 10px;border:1px solid var(--line);border-radius:4px;background:var(--inset);font:500 15px/1.9 var(--mono);white-space:pre-wrap;word-break:break-all}
+.rx-hl mark{padding:1px 0;border-radius:2px;background:var(--rx-mbg);color:var(--ink);cursor:pointer}
+.rx-hl mark.sel{outline:2px solid var(--rx-done)}
+.rx-hl .g1{box-shadow:inset 0 -3px 0 var(--rx-g1)}
+.rx-hl .g2{box-shadow:inset 0 -3px 0 var(--rx-g2)}
+.rx-hl .g3{box-shadow:inset 0 -3px 0 var(--rx-g3)}
+.rx-ro{margin-top:6px}
+.rx-ro[hidden]{display:none}
+.rx-ro b{font-weight:500;background:var(--rx-mbg);border-radius:2px}
+.rx-mw{overflow-x:auto}
+.rx-mt{width:100%;margin-top:8px;border-collapse:collapse;font-size:13px}
+.rx-mt th{padding:4px 6px;border-bottom:1px solid var(--line-2);font:500 12px/1.3 var(--sans);color:var(--ink-2);text-align:left;white-space:nowrap}
+.rx-mt th i{display:inline-block;width:9px;height:3px;margin-right:4px;vertical-align:middle}
+.rx-mt td{padding:4px 6px;border-bottom:1px solid var(--line);font:500 13.5px/1.35 var(--mono);white-space:nowrap}
+.rx-mt tbody tr{cursor:pointer}
+.rx-mt tbody tr:hover td{background:var(--inset)}
+.rx-mt tr.sel td{background:color-mix(in srgb,var(--rx-done) 14%,transparent)}
+.rx-mt .n{color:var(--ink-3);width:2em}
+.rx-nil{color:var(--ink-3)}
+
+/* 凡例と図の描き方 */
+.rx-lg{justify-content:space-between;min-height:24px;font-family:var(--sans)}
+.rx-lgl{display:flex;flex-wrap:wrap;gap:4px 14px}
+.rx-sw{display:inline-block;box-sizing:border-box;width:12px;height:12px;border-radius:2px;background:var(--rx-node);border:1px solid var(--rx-line)}
+.rx-sw.rx-cmp{background:var(--rx-cmp);border:0}
+.rx-sw.rx-mov{background:var(--rx-mov);border:0}
+.rx-sw.rx-bad{background:var(--warn);border:0}
+.rx-sw.rx-done{background:var(--rx-done);border:0}
+.rx-vw button{display:inline-flex;align-items:center;gap:6px;font-family:var(--sans)}
+.rx-vw svg{width:20px;height:14px;fill:none;stroke:currentColor;stroke-width:1.4;stroke-linejoin:round}
+@media (max-width:720px){.rx-vw{margin-left:auto}}
+
+/* 図 */
+#rx[data-mode="cmp"] .rx-solo,#rx:not([data-mode="cmp"]) .rx-race{display:none}
+.rx-scr{padding:0;overflow:hidden}
+.rx-scr canvas{display:block;width:100%}
+#rx .a-fig .tp{margin-top:10px}
+#rx .a-fig .ptab{margin-top:2px}
+
+/* 比較の枠 */
+.rx-race{display:grid;gap:8px;grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (max-width:900px){.rx-race{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:620px){.rx-race{grid-template-columns:minmax(0,1fr)}}
+.rx-cell{min-width:0;border:1px solid var(--line);border-radius:var(--r);background:var(--screen);color:var(--ink);overflow:hidden}
+.rx-cell canvas{display:block;width:100%}
+.rx-ch{display:flex;align-items:center;gap:6px;min-height:28px;padding:3px 9px;font-size:13px;line-height:1.25;font-weight:700}
+.rx-cn{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rx-ch em{margin-left:auto;font:700 15px/1 var(--mono);font-style:normal;font-variant-numeric:tabular-nums;white-space:nowrap}
+.rx-cb{display:block;height:4px;margin:0 9px;background:var(--grid)}
+.rx-cb b{display:block;width:0;height:100%;background:var(--rx-mov)}
+.rx-dn{display:none;flex:none;align-items:center;gap:4px;height:20px;padding:0 7px 0 5px;border-radius:3px;background:var(--rx-ok);color:var(--surface);font:700 12px/1 var(--sans)}
+.rx-dn svg{display:block;width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.rx-cell[data-done] .rx-dn{display:inline-flex}
+.rx-cell[data-done]{border-color:var(--rx-ok)}
+.rx-cell[data-done] .rx-cb b{background:var(--rx-ok)}
+.rx-cell[data-na]{opacity:.6}
+
+/* 方式 */
+.rx-who{margin:8px 2px 0;font-size:12.5px;color:var(--ink-2)}
+
+/* 計算結果 */
+.rx-res{grid-template-columns:repeat(3,minmax(0,1fr))}
+.rx-res .m-main{grid-column:1/-1}
+.rx-rk{width:100%;border-collapse:collapse;font:500 12.5px/1.3 var(--mono);font-variant-numeric:tabular-nums}
+.rx-rk thead th{padding:4px 8px;font:700 12px/1.3 var(--sans);color:var(--ink-2);text-align:right;border-bottom:1px solid var(--line-2);white-space:nowrap}
+.rx-rk td,.rx-rk tbody th{padding:5px 8px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+.rx-rk tr:last-child td,.rx-rk tr:last-child th{border-bottom:0}
+.rx-rk .l{text-align:left}
+.rx-rk tbody th{font:700 12.5px/1.3 var(--sans)}
+.rx-rk td.w{font:500 12px/1.3 var(--sans);color:var(--ink-2)}
+.rx-rk td.na{text-align:left;font-family:var(--sans);color:var(--ink-3)}
+
+/* 一覧の表 */
+.rx-lt{width:100%;min-width:560px;border-collapse:collapse;font-size:12.5px}
+.rx-lt thead th{padding:5px 3px;border-bottom:1px solid var(--line-2);font:500 12px/1.25 var(--sans);color:var(--ink-2);vertical-align:bottom}
+.rx-lt tbody th{position:sticky;left:0;z-index:1;padding:2px;background:var(--bg);border-bottom:1px solid var(--line);text-align:left}
+.rx-lt td{padding:2px;border-bottom:1px solid var(--line);text-align:center;white-space:nowrap}
+.rx-lt tr:last-child td,.rx-lt tr:last-child th{border-bottom:0}
+.rx-lr,.rx-lh{padding:3px 5px;border:0;border-radius:3px;background:none;color:inherit;font:inherit;white-space:nowrap;cursor:pointer}
+.rx-lr{font:700 12.5px var(--sans)}
+.rx-lr:hover,.rx-lh:hover{background:var(--inset)}
+.rx-c{display:block;width:100%;min-height:30px;padding:0 4px;border:1px solid transparent;border-radius:3px;background:var(--rx-c-bg,transparent);color:var(--ink);font:700 12.5px var(--mono);cursor:pointer}
+.rx-c.na{color:var(--ink-3);font-weight:500}
+.rx-c.hot{background:var(--warn);color:var(--surface)}
+.rx-c:hover{border-color:var(--ink-3)}
+.rx-c.sel{outline:2px solid var(--accent);outline-offset:-2px}
+.rx-ft td{padding:6px;font:500 12.5px/1.35 var(--sans);text-align:left;white-space:nowrap}
+.rx-ft td:last-child{min-width:200px;white-space:normal}
+.rx-ft td.o{font:700 13px var(--mono);white-space:nowrap}
+.rx-ft td.nb{color:var(--ink-3)}
+
+/* しくみ */
+.rx-how{display:grid;gap:12px;grid-template-columns:repeat(4,minmax(0,1fr))}
+@media (max-width:1000px){.rx-how{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){.rx-how{grid-template-columns:minmax(0,1fr)}}
+.rx-hc{display:block;width:100%;min-width:0;padding:0;border:1px solid var(--line);border-radius:var(--r);background:var(--screen);color:var(--ink);font:inherit;text-align:left;overflow:hidden;cursor:pointer}
+.rx-hc:hover{border-color:var(--line-2)}
+.rx-hc[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.rx-hc:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.rx-hc canvas{display:block;width:100%}
+.rx-ht{display:block;padding:8px 10px 0;font-size:13.5px;font-weight:700}
+.rx-hs{display:block;padding:2px 10px 9px;font-size:12.5px;line-height:1.45;color:var(--ink-2)}
+.rx-hc code{font:700 13px var(--mono);color:var(--ink)}

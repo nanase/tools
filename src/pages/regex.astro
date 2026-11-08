@@ -1,0 +1,142 @@
+---
+import Collapsible from '../components/Collapsible.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/regex/style.css';
+import { ENGINES, PAT_MAX, PRESETS, TEXT_MAX } from '../tools/regex/model';
+import { SPEED } from '../tools/regex/params';
+import Theory from '../tools/regex/Theory.astro';
+
+const name = '正規表現';
+const ENGINE_LIST = ENGINES.map((e) => ({ id: e.id, name: e.name, who: e.who }));
+const PRESET_NAMES = PRESETS.map((p) => p.name);
+---
+<SiteLayout title={name} tool={{ id: 'regex', name }}>
+  <PageTitle title={name}>文章の中から決まった形の文字列を探す書き方です。同じパターンでも、照合の方式で手間が大きく変わります。</PageTitle>
+
+  <div class="tgrid" id="rx" data-mode="one">
+    <Panel hid="hd-try" title="パターンと文章" class="a-try">
+      <div class="rx-pat">
+        <span class="rx-sl" aria-hidden="true">/</span>
+        <input class="rx-in" id="rx-in" type="text" maxlength={PAT_MAX} spellcheck="false" autocomplete="off" autocapitalize="off" aria-label="パターン" aria-describedby="rx-err" />
+        <span class="rx-sl" aria-hidden="true">/</span><span class="rx-fl" id="rx-flv" aria-hidden="true">g</span>
+      </div>
+      <p class="rx-err" id="rx-err" role="alert" hidden></p>
+      <div class="rx-row">
+        <h3>オプション</h3>
+        <div class="chips" id="rx-flags">
+          <button type="button" class="chip" data-f="i" aria-pressed="false">i 大文字と小文字の区別なし</button>
+          <button type="button" class="chip" data-f="m" aria-pressed="false" title="^ と $ を行ごとに">m 複数行</button>
+        </div>
+      </div>
+      <div class="rx-row rx-top">
+        <h3>例</h3>
+        <div class="chips" id="rx-smp">
+          {PRESET_NAMES.map((n, k) => <button type="button" class="chip" data-p={k} aria-pressed="false">{n}</button>)}
+        </div>
+      </div>
+      <label class="rx-lab" for="rx-tx">文章</label>
+      <textarea class="rx-tx" id="rx-tx" rows="3" maxlength={TEXT_MAX} spellcheck="false" autocapitalize="off"></textarea>
+    </Panel>
+
+    <Panel hid="hd-out" title="一致" class="a-out">
+      <span slot="aux" class="aux" id="rx-cnt"></span>
+      <div class="rx-hl" id="rx-hl"></div>
+      <div class="rx-mw"><table class="rx-mt" id="rx-mt"></table></div>
+      <div class="rx-row rx-top">
+        <h3><label for="rx-rep">置換</label></h3>
+        <input class="rx-rep" id="rx-rep" type="text" spellcheck="false" autocomplete="off" autocapitalize="off" placeholder="$1 $&amp;" />
+      </div>
+      <div class="rx-hl rx-ro" id="rx-ro" hidden></div>
+    </Panel>
+
+    <Panel hid="hd-fig" title="照合の手順" class="a-fig" fixed>
+      <span slot="aux" class="aux tp-st" id="rx-st" hidden><span class="led" id="rx-led" aria-hidden="true"></span><span id="rx-stT"></span></span>
+      <div slot="aux" class="seg" id="rx-mode" role="group" aria-label="表示">
+        <button type="button" data-v="one" aria-pressed="true">単独</button>
+        <button type="button" data-v="cmp" aria-pressed="false">比較</button>
+        <button type="button" data-v="list" aria-pressed="false">一覧</button>
+      </div>
+      <div class="sbar rx-lg">
+        <span class="rx-lgl">
+          <span class="stag"><i class="rx-sw rx-cmp" aria-hidden="true"></i>比較中</span>
+          <span class="stag"><i class="rx-sw rx-bad" aria-hidden="true"></i>不一致・後戻り</span>
+          <span class="stag"><i class="rx-sw rx-mov" aria-hidden="true"></i>追跡中の状態</span>
+          <span class="stag"><i class="rx-sw" aria-hidden="true"></i>照合中の範囲</span>
+          <span class="stag"><i class="rx-sw rx-done" aria-hidden="true"></i>一致</span>
+        </span>
+        <div class="seg rx-vw" id="rx-view" role="group" aria-label="図の描き方">
+          <button type="button" data-v="state" aria-pressed="true"><svg viewBox="0 0 24 16" aria-hidden="true"><circle cx="5" cy="8" r="3.4"/><circle cx="19" cy="8" r="3.4"/><path d="M8.4 8h7.2M13.6 6l2 2-2 2"/></svg>状態図</button>
+          <button type="button" data-v="line" aria-pressed="false"><svg viewBox="0 0 24 16" aria-hidden="true"><path d="M3 1.5h6v4H3zM15 1.5h6v4h-6zM2 11h4v4H2zM10 11h4v4h-4zM18 11h4v4h-4zM6 5.5C6 8 4 8.5 4 11M18 5.5C18 8 12 8.5 12 11"/></svg>対応の線</button>
+          <button type="button" data-v="table" aria-pressed="false"><svg viewBox="0 0 24 16" aria-hidden="true"><path d="M2 1.5h20v13H2zM2 6h20M2 10.5h20M7 1.5v13M12 1.5v13M17 1.5v13M4.5 3.7h5l5 4.5"/></svg>表</button>
+        </div>
+        <span class="sr" id="rx-say" aria-live="polite"></span>
+      </div>
+      <div class="scope rx-scr rx-solo"><canvas id="rx-cv" role="img" aria-label="照合の手順"></canvas></div>
+      <div class="rx-race" id="rx-race"></div>
+      <div class="tp">
+        <button type="button" class="tp-ib" id="tp-home" title="最初へ" aria-label="最初へ"><svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1.5" y="1.5" width="1.8" height="9"/><path d="M10.5 1.5v9L4 6z"/></svg></button>
+        <button type="button" class="tp-pp" id="tp-pp" title="再生" aria-label="再生"><svg class="i-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.2l7.6 4.8L3 10.8z"/></svg><svg class="i-pause" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="2.8" height="9"/><rect x="7.2" y="1.5" width="2.8" height="9"/></svg></button>
+        <div class="tp-tl">
+          <div class="tp-trk" id="tp-trk" role="slider" tabindex="0" aria-label="進み具合" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0">
+            <div class="tp-rail"></div>
+            <div class="tp-fill" id="tp-fill"></div>
+            <div class="tp-th" id="tp-th"></div>
+          </div>
+          <div class="tp-tm"><span><b id="tp-a">0</b> / <span id="tp-b">0</span> <span id="tp-u">手順</span></span><span id="tp-t"></span></div>
+        </div>
+        <div class="tp-side">
+          <button type="button" class="tp-sq" id="tp-back" title="前の手順" aria-label="前の手順"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M12 3L6 8l6 5M4 3v10"/></svg></button>
+          <button type="button" class="tp-sq" id="tp-step" title="次の手順" aria-label="次の手順"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 3l6 5-6 5M12 3v10"/></svg></button>
+        </div>
+      </div>
+      <div class="ptab rx-prow"><ParamRow d={SPEED} /></div>
+    </Panel>
+
+    <Panel hid="hd-mat" title="方式と例の比較の回数" class="a-mat">
+      <div slot="aux" class="seg" id="rx-tbl" role="group" aria-label="表の内容">
+        <button type="button" data-v="steps" aria-pressed="true">比較の回数</button>
+        <button type="button" data-v="feat" aria-pressed="false">記法と手間</button>
+      </div>
+      <div class="rx-mw"><table class="rx-lt" id="rx-lt"></table></div>
+    </Panel>
+
+    <Panel hid="hd-cmp" title="計算結果" class="a-cmp">
+      <div class="rx-mw"><table class="rx-rk">
+        <thead><tr><th class="l">方式</th><th>文字の比較</th><th>後戻り</th><th>同時に追跡した状態の最大</th><th>DFA の状態</th><th>一致</th><th class="l">使われている所</th></tr></thead>
+        <tbody id="rx-rkb"></tbody>
+      </table></div>
+    </Panel>
+
+    <Panel hid="hd-eng" title="方式" class="a-eng">
+      <div class="chips" id="rx-eng">
+        {ENGINE_LIST.map((e) => <button type="button" class="chip" data-v={e.id} aria-pressed="false">{e.name}</button>)}
+      </div>
+      <p class="rx-who" id="rx-who"></p>
+    </Panel>
+    <Panel hid="hd-res" title="計算結果" class="a-res">
+      <dl class="metrics rx-res">
+        <div class="m m-main"><dt>文字の比較</dt><dd id="o-s">0</dd></div>
+        <div class="m"><dt>一致</dt><dd id="o-m">0 件</dd></div>
+        <div class="m"><dt id="o-aT">後戻り</dt><dd id="o-a">0</dd></div>
+        <div class="m"><dt id="o-bT">スタックの深さ</dt><dd id="o-b">0</dd></div>
+      </dl>
+    </Panel>
+
+    <Panel hid="hd-how" title="しくみ" class="a-how">
+      <div class="rx-how" id="rx-how"></div>
+    </Panel>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools current="regex" />
+  <script>
+    import '../tools/regex/client';
+  </script>
+</SiteLayout>
