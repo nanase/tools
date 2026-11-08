@@ -1256,18 +1256,17 @@ export function drawSide(cv: HTMLCanvasElement, f: Snap, prev: Snap | null, C: C
     blur,
   );
   hC('遠心クラッチのドラム', subOf(dSt, f.drpm), 0, 0, 54, 46.5);
-  const open = clamp((f.rpm - 1500) / 500, 0, 1),
-    shSt = pw(cfOn ? 'pow' : spinE ? 'spin' : 'stop'),
+  const shSt = pw(cfOn ? 'pow' : spinE ? 'spin' : 'stop'),
     sy = style(C, shSt),
-    sw = 0.09 * open,
-    rp = 37;
+    sw = shoeSw(f.rpm),
+    rp = SHOE_RP;
   const shoes = (ph: number) => {
     for (let k = 0; k < 3; k++) {
       const t0 = ph + (k * TAU) / 3,
         pv = [rp * Math.cos(t0), rp * Math.sin(t0)];
       ctx.save();
       ctx.translate(X(pv[0]), Y(pv[1]));
-      ctx.rotate(t0 + sw);
+      ctx.rotate(t0 - sw);
       ctx.beginPath();
       for (let i = 0; i <= 12; i++) {
         const u = (i / 12) * 1.55,
@@ -1304,10 +1303,10 @@ export function drawSide(cv: HTMLCanvasElement, f: Snap, prev: Snap | null, C: C
       ctx.beginPath();
       ctx.arc(X(pv[0]), Y(pv[1]), s * 2.2, 0, TAU);
       ctx.fill();
-      const t1 = t0 + 1.55 + sw,
-        q0 = [35 * Math.cos(t1), 35 * Math.sin(t1)],
-        t2 = ph + ((k + 1) * TAU) / 3 - 0.25,
-        q1 = [33 * Math.cos(t2), 33 * Math.sin(t2)];
+      /* ばねはシューの先端と、隣のシューの支点のピンを結ぶ */
+      const q0 = shoePt(t0, sw, 41.5, 1.4),
+        t2 = ph + ((k + 1) * TAU) / 3,
+        q1 = [SHOE_RP * Math.cos(t2), SHOE_RP * Math.sin(t2)];
       ctx.strokeStyle = C.ink3;
       ctx.lineWidth = 1;
       ctx.beginPath();
@@ -1324,6 +1323,18 @@ export function drawSide(cv: HTMLCanvasElement, f: Snap, prev: Snap | null, C: C
         else ctx.moveTo(X(x), Y(y));
       }
       ctx.stroke();
+      ctx.fillStyle = C.ink2;
+      ctx.beginPath();
+      ctx.arc(X(q0[0]), Y(q0[1]), s * 1.3, 0, TAU);
+      ctx.fill();
+    }
+    /* 支点のピンはばねの端より手前に描く */
+    ctx.fillStyle = C.ink2;
+    for (let k = 0; k < 3; k++) {
+      const t0 = ph + (k * TAU) / 3;
+      ctx.beginPath();
+      ctx.arc(X(rp * Math.cos(t0)), Y(rp * Math.sin(t0)), s * 2.2, 0, TAU);
+      ctx.fill();
     }
   };
   spun(
@@ -1431,6 +1442,23 @@ export function drawSide(cv: HTMLCanvasElement, f: Snap, prev: Snap | null, C: C
   }
   drawHL(cv, ctx, o.hl, C);
 }
+/** シューの支点の半径 */
+const SHOE_RP = 37;
+/**
+ * シューの開き [rad]。止まっているときは先端が内へ引かれてドラムから離れ、回転が上がると遠心力で外へ開いてドラムに当たる。
+ * 負は閉じる向き、正は開く向き
+ */
+const shoeSw = (rpm: number) => 0.09 * clamp((rpm - 1500) / 500, 0, 1) - 0.045;
+/** 支点の角 t0・開き sw のシューの上の点（ドラムと同心の半径 r・支点からの角 u）。原点はクランクの中心 */
+function shoePt(t0: number, sw: number, r: number, u: number): [number, number] {
+  const lx = r * Math.cos(u) - SHOE_RP,
+    ly = r * Math.sin(u),
+    a = t0 - sw;
+  return [
+    SHOE_RP * Math.cos(t0) + lx * Math.cos(a) - ly * Math.sin(a),
+    SHOE_RP * Math.sin(t0) + lx * Math.sin(a) + ly * Math.cos(a),
+  ];
+}
 function drawCut(c: Fit, f: Snap, prev: Snap | null, C: Colors, o: View): void {
   const { ctx, X, Y, hits } = c;
   const bx = X(-300),
@@ -1504,8 +1532,8 @@ function drawCut(c: Fit, f: Snap, prev: Snap | null, C: Colors, o: View): void {
   hits.push({ id: 'drum', name: '遠心クラッチのドラム', sub: subOf(dSt, f.drpm), t: 'c', a: [cx, cy, k * 56, k * 47] });
   /* シュー 3 個（止まって見える）・ばね・ハブ */
   const open = clamp((f.rpm - 1500) / 500, 0, 1),
-    sw = 0.09 * open,
-    rp = 37,
+    sw = shoeSw(f.rpm),
+    rp = SHOE_RP,
     sSt: St = on && PW ? 'pow' : f.rpm > 5 ? 'spin' : 'stop',
     sy = style(C, sSt);
   for (let i = 0; i < 3; i++) {
@@ -1513,7 +1541,7 @@ function drawCut(c: Fit, f: Snap, prev: Snap | null, C: Colors, o: View): void {
       pv = P(rp, t0);
     ctx.save();
     ctx.translate(pv[0], pv[1]);
-    ctx.rotate(t0 + sw);
+    ctx.rotate(t0 - sw);
     const arcPts = (r: number) => {
       const q: [number, number][] = [];
       for (let j = 0; j <= 14; j++) {
@@ -1549,10 +1577,10 @@ function drawCut(c: Fit, f: Snap, prev: Snap | null, C: Colors, o: View): void {
     ctx.beginPath();
     ctx.arc(pv[0], pv[1], k * 2.4, 0, TAU);
     ctx.fill();
-    const t1 = t0 + 1.55 + sw,
-      q0 = P(35, t1),
-      t2 = t0 + TAU / 3 - 0.25,
-      q1 = P(33, t2);
+    /* ばねはシューの先端と、隣のシューの支点のピンを結ぶ */
+    const [sx0, sy0] = shoePt(t0, sw, 41.5, 1.4),
+      q0: [number, number] = [cx + k * sx0, cy + k * sy0],
+      q1 = P(rp, t0 + TAU / 3);
     ctx.strokeStyle = C.ink3;
     ctx.lineWidth = 1.2;
     ctx.beginPath();
@@ -1567,6 +1595,18 @@ function drawCut(c: Fit, f: Snap, prev: Snap | null, C: Colors, o: View): void {
     }
     ctx.lineTo(q1[0], q1[1]);
     ctx.stroke();
+    ctx.fillStyle = C.ink2;
+    ctx.beginPath();
+    ctx.arc(q0[0], q0[1], k * 1.5, 0, TAU);
+    ctx.fill();
+  }
+  /* 支点のピンはばねの端より手前に描く */
+  ctx.fillStyle = C.ink2;
+  for (let i = 0; i < 3; i++) {
+    const pv = P(rp, -Math.PI * 0.95 + (i * TAU) / 3);
+    ctx.beginPath();
+    ctx.arc(pv[0], pv[1], k * 2.4, 0, TAU);
+    ctx.fill();
   }
   hits.push({
     id: 'shoe',
