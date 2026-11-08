@@ -811,6 +811,27 @@ const i2cLine = (a: readonly number[], i0: number, yH: number, yL: number): stri
   return d;
 };
 
+/** 変速機の図柄の歯車の輪郭（台形の歯）。中心 (cx, cy)・ピッチ円の半径 r・歯数 z・回転角 ph */
+function gbGear(cx: number, cy: number, r: number, z: number, ph: number): string {
+  const m = (2 * r) / z,
+    ra = r + m * 0.9,
+    rr = r - m,
+    pa = TAU / z;
+  const pts: [number, number][] = [];
+  for (let k = 0; k < z; k++)
+    for (const [rad, u] of [
+      [rr, -0.5],
+      [rr, -0.27],
+      [ra, -0.14],
+      [ra, 0.14],
+      [rr, 0.27],
+    ] as const)
+      pts.push([cx + rad * Math.cos(ph + (k + u) * pa), cy + rad * Math.sin(ph + (k + u) * pa)]);
+  return `${pl(pts)}Z`;
+}
+const gbDot = (c: string, x: number, y: number, r: number): string =>
+  `<circle class="${c}" cx="${r1(x)}" cy="${r1(y)}" r="${r}"/>`;
+
 export const ART: Record<string, Art> = {
   /* タイマIC 555: 出力（周期 36、High 24）と C1 の電圧。時間が流れる */
   sq(t) {
@@ -2660,6 +2681,21 @@ export const ART: Record<string, Art> = {
     });
     return s;
   },
+  /* 変速機: 噛み合う 2 枚の歯車から軸でスプロケットへ伝え、チェーンが右へ流れる。
+     1 周（12 コマ/s で 24 コマ）で、歯車はどちらも 4 歯、スプロケットとチェーンは 3 歯ずつ進む */
+  gb(t) {
+    const k = mod(Math.floor(t * 12 + 1e-9), 24),
+      u = k / 24,
+      a1 = (u * 4 * TAU) / 10,
+      a2 = (-u * 4 * TAU) / 17 + Math.PI + Math.PI / 17,
+      a3 = (-u * 3 * TAU) / 9;
+    let s = P('c', gbGear(18, 25, 10, 10, a1)) + gbDot('c', 18, 25, 2.5);
+    s += P('a', gbGear(46, 25, 17, 17, a2)) + gbDot('a', 46, 25, 3);
+    s += P('a t', 'M49 25H84') + P('a', gbGear(88, 25, 8, 9, a3)) + gbDot('a', 88, 25, 2);
+    s += P('b', 'M88 16.5H118M88 33.5H118');
+    for (let x = 92 + (k % 8); x < 118; x += 8) s += gbDot('fb', x, 16.5, 1.3) + gbDot('fb', 210 - x, 33.5, 1.3);
+    return s;
+  },
 };
 
 /**
@@ -2734,6 +2770,7 @@ export const LOOP: Record<string, number> = {
   shp: 3,
   mxd: MX.L,
   i2c: I2C.scl.length / I2C_QPS,
+  gb: 2,
 };
 
 /** 止まっているときの図柄（ビルド時に HTML へ出す） */

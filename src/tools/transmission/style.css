@@ -1,0 +1,116 @@
+/* 変速機のページだけのスタイル（共通は src/styles/site.css）。--tm-pow は動力の伝達、--tm-pow-bg はその塗り、--tm-slip は滑走、--tm-fric は摩擦材 */
+:root{--tm-pow:#b8322a;--tm-pow-bg:#f4dcd6;--tm-slip:#9a6c00;--tm-fric:#8a6a4a}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--tm-pow:#ff7a6b;--tm-pow-bg:#3d2220;--tm-slip:#f2c230;--tm-fric:#b8946a}}
+:root[data-theme="dark"]{--tm-pow:#ff7a6b;--tm-pow-bg:#3d2220;--tm-slip:#f2c230;--tm-fric:#b8946a}
+
+/* 枠の並び: 駆動系（全幅）→ 場面（全幅）→ 運転と回転数（PC は 2 列）→ しくみ → 動作原理と式 */
+.tm-2{display:grid;gap:26px 16px;min-width:0}
+@media (min-width:1000px){.tm-2{grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);align-items:start}}
+
+/* 駆動系の図: 狭い画面は縦に 3 つ、広い画面は左に展開図、右に側面図とシフトドラムの溝 */
+.tm-tri{display:grid;gap:10px 14px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:900px){.tm-tri{grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);grid-template-areas:"sec side" "sec drum"}.tm-v-sec{grid-area:sec}.tm-v-side{grid-area:side}.tm-v-drum{grid-area:drum}}
+.tm-v{position:relative;min-width:0}
+.tm-cap{position:absolute;left:4px;bottom:0;font-size:11.5px;color:var(--ink-3)}
+.tm-cv{display:block;width:100%}
+.tm-h-sec{height:580px}.tm-h-side{height:auto;aspect-ratio:360/266}.tm-h-drum{height:236px}.tm-hg{height:200px}
+@media (max-width:899px){.tm-h-sec{height:auto;aspect-ratio:246/252}.tm-h-drum{height:236px}}
+.tm-scope{border:1px solid var(--line);border-radius:var(--r);background:var(--screen);padding:4px}
+
+/* 凡例 */
+.tm-leg{margin-bottom:6px}
+.tm-sq{display:inline-block;width:12px;height:12px;border-radius:2px;border:1.5px solid}
+.tm-sq.pow{background:var(--tm-pow-bg);border-color:var(--tm-pow)}
+.tm-sq.spin{background:var(--surface);border-color:var(--ink-3)}
+.tm-sq.stop{background:var(--inset);border-color:var(--line-2)}
+.tm-sq.tm-sl{background:color-mix(in srgb,var(--tm-slip) 25%,transparent);border-color:transparent}
+.tm-hat{display:inline-block;width:14px;height:10px;background:repeating-linear-gradient(120deg,var(--tm-slip) 0 1.5px,transparent 1.5px 4px)}
+.tm-dash{display:inline-block;width:14px;height:8px;border:1px dashed var(--ink-3)}
+.sw.tm-c3{background:none;border-top:2px dashed var(--ink-2);height:0}
+.tm-src{margin-left:auto;color:var(--ink-3)}
+
+/* 部品名の吹き出し */
+.tm-tip{position:absolute;z-index:5;display:flex;flex-direction:column;gap:2px;width:max-content;max-width:min(240px,calc(100% - 8px));padding:6px 9px;border:1px solid var(--line-2);border-radius:4px;background:var(--surface);box-shadow:0 2px 8px rgb(0 0 0 / .18);font-size:12px;color:var(--ink-2);pointer-events:none}
+.tm-tip[hidden]{display:none}
+.tm-tip b{font-size:13px;color:var(--ink)}
+
+/* 運転: ギア・変速のボタン・速度・エンジンの回転数（engine/style.css から写した） */
+.drv{display:grid;grid-template-columns:auto auto 1fr 1fr;align-items:center;gap:6px 14px;margin:10px 8px 0;padding:8px 10px;border:1px solid var(--line);border-radius:6px}
+.drv-l{display:block;font-size:11.5px;color:var(--ink-3)}
+.drv b{font:700 24px/1.1 var(--mono);color:var(--ink)}
+.drv-g b{display:inline-block;min-width:1.4em;text-align:center}
+.drv-s{display:flex;gap:4px}
+.drv-s .tg{min-width:40px;justify-content:center}
+.drv .u{margin-left:4px;font:500 12px var(--mono);color:var(--ink-3)}
+.tm-drv{grid-template-columns:auto auto minmax(0,1fr) minmax(0,1fr)}
+@media (max-width:480px){.tm-drv b{font-size:19px}.tm-drv .u{display:none}}
+/* スロットルとブレーキのパッド: 押している間だけ、押した位置（右ほど大きく）まで開く。右に「固定」 */
+.thr-row{display:flex;align-items:stretch;gap:6px;margin:10px 8px 0}
+.thr-row .thr{flex:1;margin:0}
+.thr-lk{display:inline-flex;align-items:center;gap:6px}
+.thr.brk{height:44px}
+.thr.brk .thr-t{top:13px}
+.thr{position:relative;height:64px;margin:10px 8px 0;border:1px solid var(--line-2);border-radius:6px;background:var(--inset);overflow:hidden;cursor:pointer;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
+.thr:hover,.thr.on{border-color:var(--ink-3)}
+.thr:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.thr-f{position:absolute;top:0;bottom:0;left:0;width:0;background:color-mix(in srgb,var(--ink-2) 22%,transparent);pointer-events:none}
+.thr-l{position:absolute;left:6px;right:6px;bottom:10px;display:flex;justify-content:space-between;font:500 10.5px var(--mono);color:var(--ink-3);pointer-events:none}
+.thr-l b{font-weight:500}
+.thr-t{position:absolute;left:0;right:0;top:12px;text-align:center;font:500 12.5px var(--mono);color:var(--ink-2);pointer-events:none}
+.thr.on .thr-t{color:var(--ink)}
+.tm-opts{display:flex;gap:6px;margin:10px 8px 0}
+.tm-met{margin-top:10px}
+
+/* 場面: 選択・再生の操作・今の段階・段階の一覧・再生の速さ */
+.tm-scn .seg{flex-wrap:wrap}
+#tm-scene{margin-bottom:10px}
+.tm-tp .tp-tk path{stroke:var(--ink-2);opacity:1;stroke-width:1.4}
+.tm-now{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px;margin:12px 2px 6px}
+.tm-now b{font:700 17px/1.4 var(--sans)}
+.tm-now span{font-size:14px;color:var(--ink-2)}
+.tm-st{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:6px;margin:6px 0 0;padding:0;list-style:none;counter-reset:st}
+.tm-st li{counter-increment:st;display:flex}
+.tm-st li[hidden]{display:none}
+.tm-st button{display:flex;flex:1;flex-direction:column;align-items:flex-start;gap:2px;padding:6px 8px;border:1px solid var(--line);border-radius:4px;background:none;font:400 12.5px/1.4 var(--sans);color:var(--ink-3);text-align:left;cursor:pointer}
+.tm-st button:hover{border-color:var(--line-2)}
+.tm-st b{font-size:13px;color:var(--ink-2)}
+.tm-st b::before{content:counter(st) ". "}
+.tm-st button[aria-current="true"]{border-color:var(--ink);background:var(--surface);color:var(--ink-2)}
+.tm-st button[aria-current="true"] b{color:var(--ink)}
+.tm-rate{margin:0}
+.tm-scrow{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 16px;margin-top:10px}
+.tm-aux{display:flex;align-items:center;gap:6px}
+.tm-col{display:flex;flex-direction:column;gap:26px;min-width:0}
+
+/* しくみ */
+.tm-how{display:grid;gap:10px 16px;grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}
+.tm-hw{display:flex;gap:10px;align-items:flex-start}
+.tm-hw>b{flex:none;display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--ink);color:var(--surface);font:700 12px var(--mono)}
+.tm-hw h3{margin:0;font-size:14px}
+.tm-hw p{margin:2px 0 0;font-size:13px;color:var(--ink-2)}
+.tm-hw .tm-sub{font-size:12px;color:var(--ink-3)}
+.tm-tab{width:100%;margin-top:16px;border-collapse:collapse;font:500 13px var(--mono)}
+.tm-tab th{font:700 12px var(--sans);color:var(--ink-3);text-align:left;padding:4px 8px;border-bottom:1px solid var(--line-2)}
+.tm-tab td{padding:5px 8px;border-bottom:1px solid var(--line)}
+.tm-tab tr:last-child td{border-bottom:0}
+@media (max-width:480px){.tm-tab th,.tm-tab td{padding:4px 4px}}
+
+.tm-flb{padding:0 7px}
+.tm-flb svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.3}
+.tm-flb svg .tm-fi{fill:currentColor;stroke:none}
+.tm-fl{position:fixed;right:16px;bottom:16px;z-index:18;width:min(340px,calc(100vw - 32px));padding:6px 8px 10px;border:1px solid var(--line-2);border-radius:6px;background:var(--surface);box-shadow:0 10px 28px rgb(0 0 0 / .3)}
+.tm-fl[hidden]{display:none}
+.tm-fl-h{display:flex;align-items:center;justify-content:flex-start;gap:6px;padding:0 0 2px;font-size:13px;font-weight:700;color:var(--ink-2)}
+.tm-fl-x{display:grid;place-items:center;width:28px;height:28px;padding:0;border:0;border-radius:4px;background:none;color:var(--ink-3);cursor:pointer}
+.tm-fl-x:hover{color:var(--ink);background:var(--inset)}
+.tm-fl-x svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round}
+.tm-fl .drv{grid-template-columns:auto auto minmax(0,1fr) minmax(0,1fr);margin:4px 0 0;padding:6px 8px;gap:4px 8px}
+.tm-fl .drv b{font-size:15px}
+.tm-fl .drv .u{margin-left:2px;font-size:10.5px}
+.tm-fl .drv-s .tg{min-width:34px}
+.tm-fl-pads{display:flex;gap:6px;margin-top:8px}
+.tm-fl .thr{flex:2;height:42px;margin:0}
+.tm-fl .thr.brk{flex:1;height:42px}
+.tm-fl .thr .thr-t,.tm-fl .thr.brk .thr-t{top:12px}
+
+.tm-fl-x{margin-left:auto}

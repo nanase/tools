@@ -378,7 +378,7 @@ export const TOOLS: Tool[] = [
     t: 'エンジン音響モデル',
     d: 'CT125 をもとにした単気筒エンジンの排気音とトルク・出力を再現します。',
     ic: 'en',
-    r: ['vvvf', 'doppler', 'spectrum', 'trumpet'],
+    r: ['vvvf', 'doppler', 'spectrum', 'transmission'],
     k: 'engine エンジン honda ホンダ 空冷 単気筒 single cylinder 4 stroke 4 ストローク ハンターカブ hunter cub ct125 スーパーカブ super cub ja65 ja55 排気音 exhaust マフラー muffler silencer 触媒 吸気 intake トルク torque 出力 power 回転数 rpm 空ぶかし アイドリング idle 燃焼 combustion wiebe 筒内圧 p-v 体積効率 導波管 waveguide 物理モデル physical model オーディオ audio',
   },
   {
@@ -527,6 +527,15 @@ export const TOOLS: Tool[] = [
     ic: 'mxd',
     r: ['impact', 'bifurcation', 'pendulum', 'sort'],
     k: "maxwell's demon maxwell demon マクスウェル 悪魔 デーモン 熱力学 thermodynamics 第二法則 second law エントロピー entropy 情報 information ビット bit 記憶 消去 erasure ランダウアー landauer ベネット bennett シラード szilard エンジン engine 永久機関 perpetual motion 第二種永久機関 気体 分子 gas molecule マクスウェル分布 maxwell-boltzmann 温度 temperature 圧力 pressure 統計力学 statistical mechanics 物理 physics",
+  },
+  {
+    id: 'transmission',
+    c: '物理',
+    t: '変速機',
+    d: 'CT125 の遠心クラッチと 4 段の変速機の動きを追います。',
+    ic: 'gb',
+    r: ['engine', 'piano-action', 'maxwell-demon', 'pendulum'],
+    k: '変速機 トランスミッション transmission gearbox ギアボックス ミッション 遠心クラッチ centrifugal clutch 自動遠心クラッチ 多板クラッチ multi-plate clutch 湿式 ワンウェイクラッチ one-way clutch ドグ dog clutch 常時噛合 constant mesh シフトドラム shift drum シフトフォーク shift fork チェンジペダル ロータリー rotary スプロケット sprocket チェーン chain 1 次減速 2 次減速 減速比 gear ratio 歯車 歯数 gear エンジンブレーキ engine brake ハンターカブ hunter cub ct125 スーパーカブ super cub cub ja65 honda ホンダ バイク オートバイ motorcycle',
   },
   {
     id: 'bifurcation',
