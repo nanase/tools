@@ -1,0 +1,130 @@
+---
+// 動作原理と式
+import { bigO } from '../../lib/big-o';
+import { BIG_O, DEFS, STAGES } from './model';
+
+type Ref = { for: string; src: string };
+const REFS: readonly Ref[] = [
+  {
+    for: '赤黒木',
+    src: 'L. J. Guibas, R. Sedgewick, A dichromatic framework for balanced trees, 19th Annual Symposium on Foundations of Computer Science, pp. 8–21, 1978',
+  },
+  {
+    for: '赤黒木のもとになった木',
+    src: 'R. Bayer, Symmetric binary B-Trees: Data structure and maintenance algorithms, Acta Informatica, Vol. 1, No. 4, pp. 290–306, 1972',
+  },
+  {
+    for: '追加と削除の手順',
+    src: 'T. H. Cormen, C. E. Leiserson, R. L. Rivest, C. Stein, Introduction to Algorithms, 4th ed., MIT Press, 2022, Chapter 13',
+  },
+  {
+    for: '左傾赤黒木',
+    src: 'R. Sedgewick, Left-leaning Red-Black Trees, Princeton University, 2008',
+  },
+  {
+    for: 'AA木',
+    src: 'A. Andersson, Balanced search trees made simple, Algorithms and Data Structures (WADS 1993), Lecture Notes in Computer Science, Vol. 709, pp. 60–71, 1993',
+  },
+  {
+    for: 'AVL木',
+    src: 'G. M. Adelson-Velsky, E. M. Landis, An algorithm for the organization of information, Soviet Mathematics Doklady, Vol. 3, pp. 1259–1263, 1962',
+  },
+  {
+    for: '二分探索木と AVL木の高さ',
+    src: 'D. E. Knuth, The Art of Computer Programming, Vol. 3: Sorting and Searching, 2nd ed., Addison-Wesley, 1998, Sections 6.2.2–6.2.3',
+  },
+];
+const Rf = (i: number) => `<a class="rf" href="#thy-r${i}">[${i}]</a>`;
+const LOG2 = (x: string) =>
+  `<msub><mi>log</mi><mn>2</mn></msub><mo stretchy="false">(</mo>${x}<mo stretchy="false">)</mo>`;
+---
+<h3>4 つの条件</h3>
+<p>赤黒木はどのノードも赤か黒に塗った二分探索木です。空いた枝の先には黒の NIL の葉があるとみなします。次の条件を保つと、木は低いままです <Fragment set:html={Rf(1)} /><Fragment set:html={Rf(3)} />。</p>
+<ul class="tl">
+  <li>根は黒</li>
+  <li>赤のノードの子は黒（赤が続かない）</li>
+  <li>根からどの NIL の葉までも、通る黒の数が同じ</li>
+  <li>NIL の葉は黒</li>
+</ul>
+<p>根から NIL の葉までの黒の数を黒の高さと呼びます。「NIL の葉」を表示にすると、図に小さな黒の四角で出ます。</p>
+
+<h3>高さの上限</h3>
+<p>赤は続かないので、どの道でも赤は黒より多くなりません。高さ <math><mi>h</mi></math> の木の黒の高さは <math><mi>h</mi><mo>/</mo><mn>2</mn></math> 以上です。黒の高さが <math><mi>b</mi></math> の部分木には <math><msup><mn>2</mn><mi>b</mi></msup><mo>−</mo><mn>1</mn></math> 個以上のキーがあるので、次の式が成り立ちます <Fragment set:html={Rf(3)} />。</p>
+<div class="eqs"><math display="block"><mrow><mi>h</mi><mo>≤</mo><mn>2</mn><mspace width="0.15em"/><Fragment set:html={LOG2('<mi>n</mi><mo>+</mo><mn>1</mn>')} /></mrow></math></div>
+<p>記号: <math><mi>n</mi></math> はキーの数です。どのキーも <math><mi>h</mi></math> 回以下の比較で見つかります。</p>
+
+<h3>回転</h3>
+<p>親と子を入れ替えて、片側に寄った部分木をもう片側へ移します。真ん中の部分木は子から親へつなぎ替わります。中順の並びは変わらないので、二分探索木のままです。1 回の回転で書き換えるポインタは 3 本です。</p>
+
+<h3>追加の直し方</h3>
+<p>葉に赤でつなぎます。黒の高さは変わりませんが、親も赤だと赤が続きます。おじ（親の兄弟）の色で直し方が決まります <Fragment set:html={Rf(3)} />。</p>
+<ul class="tl">
+  <li>おじが赤: 親とおじを黒、祖父を赤にする。祖父とその親で赤が続けば、祖父から同じことを繰り返す</li>
+  <li>おじが黒・内側: 親で回転して、外側の形にする</li>
+  <li>おじが黒・外側: 親を黒、祖父を赤にして、祖父で回転する。ここで終わる</li>
+</ul>
+<p>色の変更は根へ向かって続くことがありますが、回転は 1 回の追加で 2 回までです。最後に根を黒にします。</p>
+
+<h3>削除の直し方</h3>
+<p>子が 2 つあるノードは、右の部分木の最小と入れ替えてから消します。消したノードが黒なら、その道の黒が 1 つ不足します。兄弟の色と兄弟の子の色で直し方が決まります <Fragment set:html={Rf(3)} />。</p>
+<ul class="tl">
+  <li>兄弟が赤: 親で回転して、兄弟を黒にする</li>
+  <li>兄弟の子が両方黒: 兄弟を赤にして、不足を親へ送る</li>
+  <li>兄弟の遠い子が黒: 兄弟で回転して、遠い子を赤にする</li>
+  <li>兄弟の遠い子が赤: 親で回転して、遠い子を黒にする。ここで終わる</li>
+</ul>
+<p>回転は 1 回の削除で 3 回までです。</p>
+
+<h3>2-3-4木との対応</h3>
+<p>黒のノードと、その赤の子を 1 つの箱にまとめると、キー 1〜3 個の箱の木になります。これは次数 4 の B木（2-3-4木）で、黒の高さは箱の木の段数です <Fragment set:html={Rf(2)} /><Fragment set:html={Rf(1)} />。追加の「おじが赤」は箱があふれて分かれる操作で、回転は箱の中の並べ替えです。</p>
+
+<h3>種類ごとの違い</h3>
+<ul class="tl">
+  <li>左傾赤黒木: 赤の子を左だけに置く。直し方は 3 つの規則（右だけが赤なら左回転、左と左の左が赤なら右回転、左右が赤なら色の反転）で、回転は赤黒木より多い <Fragment set:html={Rf(4)} /></li>
+  <li>AA木: 赤の子を右だけに置き、色の代わりに段の数を持つ。直し方は右回転と左回転の 2 つ <Fragment set:html={Rf(5)} /></li>
+  <li>AVL木: 色を持たず、どのノードでも左右の部分木の高さの差を 1 以下に保つ。高さの上限は赤黒木より低いが、1 回の削除の回転は最悪で <math><mi>O</mi><mo stretchy="false">(</mo><mi>log</mi><mspace width="0.2em"/><mi>n</mi><mo stretchy="false">)</mo></math> 回になる <Fragment set:html={Rf(6)} /><Fragment set:html={Rf(7)} /></li>
+  <li>二分探索木（参考）: 形を直さない。右上がりのキーを入れると 1 本の線に伸び、検索の比較はキーの数と同じになる <Fragment set:html={Rf(7)} /></li>
+</ul>
+<p>AVL木の高さの上限は次の式です <Fragment set:html={Rf(7)} />。</p>
+<div class="eqs"><math display="block"><mrow><mi>h</mi><mo>&lt;</mo><mn>1.4405</mn><mspace width="0.15em"/><Fragment set:html={LOG2('<mi>n</mi><mo>+</mo><mn>2</mn>')} /><mo>−</mo><mn>0.3277</mn></mrow></math></div>
+
+<h3>計算量</h3>
+<p>比較の回数で表します。回転の列は 1 回の追加・削除での回転の数です。二分探索木は整列したキーで 1 本に伸びるので、最も遅い場合を載せています。</p>
+<div class="tt-w"><table class="tt rb-cx">
+  <thead><tr><th></th>{STAGES.map(([, t]) => <th scope="col">{t}</th>)}<th scope="col">高さの上限</th><th scope="col">回転</th></tr></thead>
+  <tbody>
+    {DEFS.map((d) => (
+      <tr>
+        <th scope="row">{d.name}</th>
+        {STAGES.map(([k]) => <td set:html={bigO(BIG_O[d.id][k])} />)}
+        <td set:html={bigO(BIG_O[d.id].h)} />
+        <td set:html={bigO(BIG_O[d.id].rot)} />
+      </tr>
+    ))}
+  </tbody>
+</table></div>
+
+<h3>音</h3>
+<p>音の高さはキーの値で決めます。比べているキーと、回転や色の変更をしたキーを鳴らします。<math><mi>v</mi></math> はキーの値、<math><msub><mi>v</mi><mi>max</mi></msub></math> はキーの最大値です。</p>
+<div class="eqs"><math display="block"><mrow><mi>f</mi><mo>=</mo><mn>110</mn><mo>×</mo><msup><mn>2</mn><mrow><mn>4</mn><mo stretchy="false">(</mo><mi>v</mi><mo>−</mo><mn>1</mn><mo stretchy="false">)</mo><mo>/</mo><mo stretchy="false">(</mo><msub><mi>v</mi><mi>max</mi></msub><mo>−</mo><mn>1</mn><mo stretchy="false">)</mo></mrow></msup><mspace width="0.3em"/><mtext>Hz</mtext></mrow></math></div>
+
+<h3>出典</h3>
+<ol class="refs">
+  {REFS.map((r, i) => (
+    <li id={`thy-r${i + 1}`}>
+      <span class="rf-for">{r.for}</span>
+      <span class="rf-src">{r.src}</span>
+    </li>
+  ))}
+</ol>
+
+<h3>このツールで決めたこと</h3>
+<ul class="tl">
+  <li>比較はキーどうしを比べた回数で、等しいかどうかの確認も 1 回と数える</li>
+  <li>色の変更は色が変わったノードの数。AA木は親と同じ段の右の子を赤とみなして数える</li>
+  <li>赤黒木の削除で子が 2 つあるときは、右の部分木の最小で置き換える</li>
+  <li>左傾赤黒木は 2-3木と対応する形（色の反転を戻りながら行う形）で動かす</li>
+  <li>AA木の削除は、葉になるまで隣のキーを上へずらしてから葉を消す</li>
+  <li>回数は工程ごとに 0 から数える</li>
+  <li>操作の表の回数は、31 個で 8 通りのデータを試した 1 回の平均</li>
+</ul>
