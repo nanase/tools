@@ -15,16 +15,23 @@ import {
   BF,
   COMA,
   DIA,
+  DM,
   EXP,
   FOC,
   HD,
+  MAG,
   MASKS,
   OBS,
   PIX,
   ROT,
+  SB,
   SCOPES,
   SEE,
+  SEP,
+  SRCS,
+  SW,
   TEMP,
+  TEMP2,
   TH,
   THR,
 } from '../tools/focusing-mask/params';
@@ -35,14 +42,14 @@ const name = 'フォーカシングマスク';
 /* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
 ---
 <SiteLayout title={name} tool={{ id: 'focusing-mask', name }} note="星の像は、フラウンホーファー回折を波長ごとに計算して足し合わせたものです（大気のゆらぎは近似）。">
-  <PageTitle title={name}>望遠鏡の前にピント合わせのマスク（バーティノフマスクなど）を付けたときの星の像を、開口とマスクの形のとおりに波長ごとの回折で計算します。ピントをずらすと、光条や穴の像がどれだけずれるかを、カメラの映像・グラフ・横から見た光の通り道で確かめられます。</PageTitle>
+  <PageTitle title={name}>望遠鏡の前にピント合わせのマスク（バーティノフマスクなど）を付けたときの星の像を、開口とマスクの形のとおりに波長ごとの回折で計算します。ピントをずらすと、光条や穴の像がどれだけずれるかを、カメラの映像・グラフ・横から見た光の通り道で確かめられます。二重星・星団・好きな画像も光源にできます。</PageTitle>
   <div class="mini" data-mini="op" aria-hidden="true"><span>Δz<b id="mZ"></b></span><span id="mEl">e<b id="mE"></b></span><span id="mXl">推定<b id="mX"></b></span></div>
 
   <div class="tgrid">
 
     <div class="col c1">
       <Panel hid="hd-view" title="カメラの映像" class="a-view">
-        <div slot="aux" class="seg" id="p-ov" role="group" aria-label="重ねる線"><button type="button" data-v="on" aria-pressed="true" title="光条の位置を測って線を重ねる（穴のマスクは像の位置の予測）">解析を重ねる</button><button type="button" data-v="off" aria-pressed="false">映像だけ</button></div>
+        <div slot="aux" class="seg" id="p-ov" role="group" aria-label="重ねる線"><button type="button" data-v="on" aria-pressed="true" title="光条の位置を測って線を重ねる（穴のマスクは像の位置の予測）">解析を重ねる</button><button type="button" data-v="off" aria-pressed="false">映像だけ</button></div><span slot="aux" class="ov-off" id="ov-off" hidden>解析は光源が星のときだけ</span>
         <div class="sbar">
           <span class="stag">MASK <b id="v-mask"></b></span>
           <span class="stag">D <b id="v-D"></b></span>
@@ -56,8 +63,9 @@ const name = 'フォーカシングマスク';
           <svg class="ov" id="sv-ov" aria-hidden="true" preserveAspectRatio="none"></svg>
           <div class="lab" id="sv-lab"></div>
           <div class="sv-z" role="group" aria-label="拡大"><button type="button" id="zm-out" aria-label="縮小" title="縮小"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 8h8"/></svg></button><button type="button" id="zm-v" class="hw" data-ph="×16.0" title="×1 に戻す"></button><button type="button" id="zm-in" aria-label="拡大" title="拡大"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 8h8M8 4v8"/></svg></button></div>
-          <div class="zoom"><canvas id="zm-c" aria-hidden="true"></canvas><span>中心 ×4</span></div>
+          <div class="zoom" id="sv-zm"><canvas id="zm-c" aria-hidden="true"></canvas><span>中心 ×4</span></div>
           <p class="sv-msg" id="sv-msg" hidden></p>
+          <p class="sv-drop" id="sv-drop" hidden>画像を選ぶか、ここへドロップ</p>
           <Busy id="sv-busy" text="計算中…" center />
         </div>
         <div class="foc">
@@ -92,7 +100,7 @@ const name = 'フォーカシングマスク';
           <div class="mf-w"><canvas id="mf-c" role="img" aria-label="マスクの正面"></canvas><p class="mf-drop" id="mf-drop" hidden>ここへ画像をドロップ</p></div>
           <div class="mf-t">
             <p id="mf-d" class="hh" data-ph="キャリー・マスク（2009）。四分円 4 つの斜めの格子が、開きの違う 2 つの X 字の光条を作ります。ピントが合うと 2 つの X が対称に重なります。"></p>
-            <div class="mf-f" id="mf-f" hidden><label class="tg" for="mf-in">画像を選択…</label><input type="file" id="mf-in" accept="image/*"><span class="mf-n" id="mf-n"></span></div>
+            <div class="mf-f" id="mf-f" hidden><label class="tg" for="mf-in">画像を選択…</label><input type="file" id="mf-in" accept="image/png,image/jpeg,image/webp,image/gif,image/bmp,image/avif"><span class="mf-n" id="mf-n"></span></div>
             <p class="msg" id="mf-m" aria-live="polite"></p>
           </div>
         </div>
@@ -136,9 +144,22 @@ const name = 'フォーカシングマスク';
         </div></More>
       </Panel>
 
-      <Panel hid="hd-star" title="星と空とカメラ" class="a-star">
+      <Panel hid="hd-src" title="光源" class="a-src">
         <div class="ptab">
+          <ChoiceRow k="src" name="光源の種類" choices={SRCS} value="star" layout="chips" />
+          <div class="src-f" id="src-f" hidden><label class="tg" for="src-in">画像を選択…</label><input type="file" id="src-in" accept="image/png,image/jpeg,image/webp,image/gif,image/bmp,image/avif"><span class="mf-n" id="src-n"></span><p class="msg" id="src-m" aria-live="polite"></p></div>
+          <ParamRow d={MAG} />
+          <ParamRow d={SB} />
+          <ParamRow d={SW} />
+          <ParamRow d={SEP} />
+          <ParamRow d={DM} />
           <ParamRow d={TEMP} />
+          <ParamRow d={TEMP2} />
+        </div>
+      </Panel>
+
+      <Panel hid="hd-star" title="空とカメラ" class="a-star">
+        <div class="ptab">
           <ParamRow d={SEE} />
           <ParamRow d={PIX} />
         </div>

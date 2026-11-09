@@ -9,14 +9,17 @@ import { mark } from '../../lib/reset';
 import { forget, store, stored } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
 import { toRgba } from './camera';
+import { starBands } from './color';
 import { type Cam, expose, type Scene } from './engine';
 import { reading, type Section, sections, spot } from './geometry';
 import { keyOf, type Mask, type MaskImage, type MaskKind, rasterize, type Scope } from './mask';
 import { fitBahtinov, hfd } from './measure';
 import type { Aberr, Img } from './optics';
-import { type Key, MASKS, OBS0, PARAMS, type ScopeKind, sig, TH0 } from './params';
+import { type Key, MAG0, MASKS, OBS0, PARAMS, type ScopeKind, type SrcKind, SW0, sig, TH0 } from './params';
 import { type Beam, type Curve, FSC, fscSvg, fscValue, gpSvg, niceMax, raySvg, scaleRange, sgn } from './plot';
 import { Pool } from './pool';
+import { cluster, doubleStar, type Plane, type Raster, type Star } from './source';
+import type { Msg } from './worker';
 
 const txt = (id: string, s: string) => {
   const e = $(id);
@@ -32,6 +35,7 @@ const DASH = '—';
 /** 有効数字 3 桁、符号つき */
 const sg3 = (v: number) => (v > 0 ? '+' : '') + sig(v, 3, true);
 const RAD = Math.PI / 180;
+const RAD_AS = RAD / 3600;
 const LAMBDA = 0.55;
 
 initToolPage();
@@ -54,6 +58,7 @@ const st$ = new Choice<'lin' | 'asinh'>($('#p-st'), () => draw());
 const cm$ = new Choice<'color' | 'mono'>($('#p-cm'), () => draw());
 const ic$ = new Choice<'white' | 'black'>($('#p-ic'), later);
 const im$ = new Choice<'circle' | 'whole'>($('#p-im'), later);
+const src$ = new Choice<SrcKind>($('#p-src'), (v) => setSrc(v));
 
 /* ---------- 画像のマスク ---------- */
 /** 読み込んだ画像の明るさ（1 辺 SRC_N の正方形、0〜1、行は上から） */
@@ -135,7 +140,7 @@ async function loadFile(f: File): Promise<void> {
     if (mk$.value !== 'image') mk$.set('image');
     schedule();
   } catch {
-    txt('#mf-m', '画像を読めませんでした。PNG・JPEG・WebP・GIF・SVG などを選んでください。');
+    txt('#mf-m', '画像を読めませんでした。PNG・JPEG・WebP・GIF などを選んでください。');
   }
 }
 /** 保存した画像を戻す */
@@ -172,6 +177,105 @@ function restoreImage(): void {
   });
 }
 
+/* ---------- 光源の画像 ---------- */
+/** 光源の画像の長い辺の上限（画素） */
+const SRC_MAX = 1024;
+let srcImg: { img: Raster; name: string; id: number } | null = null;
+/** 画像を長い辺 m 画素までに縮め、線形 sRGB にする。透明な所は黒とみなす */
+function toRaster(img: CanvasImageSource, w: number, h: number, m = SRC_MAX): Raster {
+  const k = Math.min(1, m / Math.max(w, h)),
+    W = Math.max(1, Math.round(w * k)),
+    H = Math.max(1, Math.round(h * k)),
+    cv = document.createElement('canvas');
+  cv.width = W;
+  cv.height = H;
+  const ctx = cv.getContext('2d'),
+    r = new Float32Array(W * H),
+    g = new Float32Array(W * H),
+    b = new Float32Array(W * H);
+  if (!ctx) return { w: W, h: H, r, g, b };
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, W, H);
+  ctx.drawImage(img, 0, 0, W, H);
+  const d = ctx.getImageData(0, 0, W, H).data,
+    lin = new Float32Array(256);
+  for (let i = 0; i < 256; i++) {
+    const x = i / 255;
+    lin[i] = x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4;
+  }
+  for (let i = 0; i < W * H; i++) {
+    r[i] = lin[d[i * 4]];
+    g[i] = lin[d[i * 4 + 1]];
+    b[i] = lin[d[i * 4 + 2]];
+  }
+  return { w: W, h: H, r, g, b };
+}
+/** 開き直したときに戻すため、長い辺 512 画素の JPEG にして保存する */
+function keepSrc(bm: ImageBitmap, name: string): void {
+  const k = Math.min(1, 512 / Math.max(bm.width, bm.height)),
+    cv = document.createElement('canvas');
+  cv.width = Math.max(1, Math.round(bm.width * k));
+  cv.height = Math.max(1, Math.round(bm.height * k));
+  const ctx = cv.getContext('2d');
+  if (!ctx) return;
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, cv.width, cv.height);
+  ctx.drawImage(bm, 0, 0, cv.width, cv.height);
+  try {
+    store('srcimg', { name, url: cv.toDataURL('image/jpeg', 0.9) });
+  } catch {
+    /* 保存できなくても、このページを開いている間は使える */
+  }
+}
+async function loadSrcFile(f: File): Promise<void> {
+  txt('#src-m', '');
+  try {
+    const bm = await createImageBitmap(f);
+    srcImg = { img: toRaster(bm, bm.width, bm.height), name: f.name, id: ++srcId };
+    keepSrc(bm, f.name);
+    bm.close();
+    if (src$.value !== 'image') {
+      src$.choose('image');
+      setSrc('image');
+    } else schedule();
+  } catch {
+    txt('#src-m', '画像を読めませんでした。PNG・JPEG・WebP・GIF などを選んでください。');
+  }
+}
+/** 保存した光源の画像を戻す */
+function restoreSrc(): void {
+  const v = stored('srcimg') as { name?: string; url?: string } | undefined;
+  if (!v?.url) return;
+  const im = new Image();
+  im.onload = () => {
+    srcImg = { img: toRaster(im, im.naturalWidth, im.naturalHeight), name: v.name ?? '', id: ++srcId };
+    if (ready) schedule();
+  };
+  im.src = v.url;
+}
+{
+  const inp = $<HTMLInputElement>('#src-in'),
+    sv = $('#sv');
+  inp.addEventListener('change', () => {
+    const f = inp.files?.[0];
+    if (f) void loadSrcFile(f);
+    inp.value = '';
+  });
+  sv.addEventListener('dragover', (e) => {
+    if (src$.value !== 'image') return;
+    e.preventDefault();
+    sv.classList.add('drag');
+  });
+  sv.addEventListener('dragleave', () => sv.classList.remove('drag'));
+  sv.addEventListener('drop', (e) => {
+    sv.classList.remove('drag');
+    const f = e.dataTransfer?.files?.[0];
+    if (src$.value !== 'image' || !f) return;
+    e.preventDefault();
+    void loadSrcFile(f);
+  });
+}
+
 /** ピントの位置（µm）。入力なので保存する */
 let dz = 100;
 {
@@ -201,8 +305,40 @@ function setScope(v: ScopeKind): void {
   }
   later();
 }
+/**
+ * 光源を選んだとき: 幅の既定値を光源ごとの値にし、押して選んだときは光源の全体が映るまで引く
+ * （保存した値を戻している間は、幅を保存していればその値を残し、拡大も変えない）
+ */
+function setSrc(v: SrcKind): void {
+  for (const [k, d] of [
+    ['sw', SW0[v]],
+    ['mag', MAG0[v]],
+  ] as const) {
+    if (d == null) continue;
+    G.update(k, { v: d });
+    if (!boot || stored(`p:${k}`) === undefined) G.set(k, d, { silent: true });
+  }
+  labelMag(v);
+  if (!ready) return;
+  schedule();
+  if (!boot) {
+    const h = objHalf(C);
+    vx = vy = 0;
+    if (h > 0) setZoom(Math.min(1, BASE / (2.3 * h)));
+  }
+}
+
+/** 等級と色温度の行の名前（二重星は主星、星団は最も明るい星） */
+function labelMag(v: SrcKind): void {
+  const name = v === 'double' ? '主星の等級' : v === 'cluster' ? '最も明るい星の等級' : '等級';
+  if (G.def('mag').name !== name) G.update('mag', { name });
+  const tn = v === 'double' ? '主星の色温度' : '星の色温度';
+  if (G.def('T').name !== tn) G.update('T', { name: tn });
+}
 
 /* ---------- 条件 ---------- */
+/** 光源（星 1 つのほか）: 星の並びか、画像と幅（rad） */
+type Obj = { kind: 'stars'; stars: Star[] } | { kind: 'raster'; img: Raster; W: number };
 interface Cond {
   kind: MaskKind;
   D: number;
@@ -214,8 +350,15 @@ interface Cond {
   T: number;
   cam: Cam;
   ex: number;
+  /** 星の等級と、画像の白い所の 1 平方秒角あたりの等級 */
+  mag: number;
+  sb: number;
   cfz: number;
   R: number;
+  src: SrcKind;
+  /** 光源（星 1 つと、画像を選んでいないときは null）と、その鍵 */
+  obj: Obj | null;
+  objKey: string;
 }
 
 function cond(): Cond {
@@ -234,6 +377,33 @@ function cond(): Cond {
   for (const id of ['#p-thr', '#p-ic', '#p-im', '#mf-f']) $(id).hidden = !isImg;
   $('#mf-drop').hidden = !isImg || !!src;
   txt('#mf-n', isImg && src ? src.name : '');
+  /* 光源 */
+  const sk = src$.value,
+    star = sk === 'star' || sk === 'double';
+  $('#p-sw').hidden = star;
+  $('#p-mag').hidden = sk === 'image';
+  $('#p-sb').hidden = sk !== 'image';
+  for (const id of ['#p-sep', '#p-dm', '#p-T2']) $(id).hidden = sk !== 'double';
+  $('#src-f').hidden = sk !== 'image';
+  txt('#src-n', sk === 'image' && srcImg ? srcImg.name : '');
+  G.setOff('T', !star, 'この光源では使いません');
+  ov$.setOff(sk !== 'star');
+  /* 解析が使えないときは、ボタンの代わりに破線の枠で理由を出す */
+  $('#p-ov').hidden = sk !== 'star';
+  $('#ov-off').hidden = sk === 'star';
+  const W = v.sw * 60 * RAD_AS;
+  let obj: Obj | null = null,
+    objKey = sk;
+  if (sk === 'double') {
+    obj = { kind: 'stars', stars: doubleStar(v.sep, v.dm, v.T, v.T2) };
+    objKey += ` ${v.sep} ${v.dm} ${v.T} ${v.T2}`;
+  } else if (sk === 'cluster') {
+    obj = { kind: 'stars', stars: cluster(W) };
+    objKey += ` ${v.sw}`;
+  } else if (sk === 'image' && srcImg) {
+    obj = { kind: 'raster', img: srcImg.img, W };
+    objKey += ` ${v.sw} ${srcImg.id}`;
+  }
   mark();
   const sc: Scope = {
     obs: tp === 'refr' ? 0 : v.obs / 100,
@@ -271,30 +441,48 @@ function cond(): Cond {
     T: v.T,
     cam: { pitch: v.px, n: 224, see: v.see },
     ex: v.ex,
+    mag: v.mag,
+    sb: v.sb,
     cfz,
     R: scaleRange(cfz),
+    src: sk,
+    obj,
+    objKey,
   };
 }
 
 /* ---------- 計算（Worker） ---------- */
 const pool = new Pool();
-/** FFT の大きさと、操作中・止めたあとの波長の帯の数 */
+/** FFT の大きさ（ふだんと、×1 の点像の範囲より引いたとき）と、操作中・止めたあとの波長の帯の数 */
 const NFFT = 1024,
+  NFFT_WIDE = 2048,
   NB_QUICK = 6,
   NB_FULL = 16;
+/** 拡大の範囲 */
+const ZMIN = 0.1,
+  ZMAX = 16;
 let C = cond();
 let S: Section[] = [];
 let secKey = '';
-let frame: Img | null = null;
-/** 最後に計算した点像（拡大・縮小でカメラの像の大きさだけ変えるときに使う） */
-let lastPsf: { img: Img; c: Cond } | null = null;
+/** カメラの像（格子）: s はカメラの画素いくつを 1 画素にまとめたか、ox・oy は左上の角の光軸からの位置（カメラの画素） */
+interface Frame extends Img {
+  s: number;
+  ox: number;
+  oy: number;
+  /** 光源の像を作ったときの点像と光源（星 1 つの像は ''） */
+  key: string;
+}
+let frame: Frame | null = null;
+/** 最後に計算した点像（拡大・縮小でカメラの像を作り直すときに使う）と、その通し番号 */
+let lastPsf: { img: Img; c: Cond; N: number; id: number } | null = null;
+let psfSeq = 0;
 /** 映像の拡大（×1 で BASE 画素）と、表示の中心（光軸からの画素、下が正） */
 let zoom = 1,
   vx = 0,
   vy = 0;
 {
   const z = stored('zoom');
-  if (typeof z === 'number' && Number.isFinite(z) && z > 0) zoom = z;
+  if (typeof z === 'number' && Number.isFinite(z) && z > 0) zoom = Math.max(ZMIN, Math.min(ZMAX, z));
 }
 /** マスクなしで合焦した星像（露出の基準と HFD の基準） */
 let ref: { key: string; peak: number; hfd: number } | null = null;
@@ -304,31 +492,66 @@ let busy = false,
   full = false,
   version = 0;
 
-const sceneOf = (c: Cond, nb: number, N = NFFT): Scene => ({
+/** ×1 で映像の幅に出すカメラの画素の数 */
+const BASE = 224;
+/** カメラの 1 画素の角度（rad） */
+const betaOf = (c: Cond): number => (c.cam.pitch * 1e-6) / (c.f * 1e-3);
+/** 点像の範囲（FFT の大きさ N、点像は N/2 の画素）に収まるカメラの画素の数 */
+const nFov = (c: Cond, N = nfftOf(c)): number => {
+  const alpha = 400e-9 / (1.1 * c.D * 1e-3);
+  return Math.max(32, Math.min(1024, 2 * Math.floor(((N / 2) * alpha) / betaOf(c) / 2)));
+};
+/**
+ * 今の拡大で使う FFT の大きさ: 星 1 つの像で、×1 の点像の範囲より引いたときだけ広げる
+ * （光源の像は畳み込みが重くなるので広げない）
+ */
+function nfftOf(c: Cond): number {
+  return !c.obj && BASE / zoom > nFov(c, NFFT) + 1e-6 ? NFFT_WIDE : NFFT;
+}
+/** 星 1 つの像の 1 辺（×1 より縮小すると点像の範囲まで広げる） */
+const needN = (c: Cond): number => Math.min(nFov(c), Math.max(BASE, 2 * Math.ceil(BASE / zoom / 2)));
+const camOf = (c: Cond, n = Math.min(BASE, nFov(c, NFFT))): Cam => ({ ...c.cam, n });
+/** 点像の条件。広げた FFT は重いので、操作中（少ない帯）はふだんの大きさで作る */
+const sceneOf = (c: Cond, nb: number, N = nb < NB_FULL ? NFFT : nfftOf(c)): Scene => ({
   D: c.D,
   f: c.f,
   dz,
   sc: c.sc,
   m: c.m,
   ab: c.ab,
-  T: c.T,
+  /* 光源が星 1 つでないときは白い光の点像を作り、星の色や画像の色を後で掛ける */
+  T: c.obj ? 6500 : c.T,
   nb,
   N,
 });
-/** ×1 で映像の幅に出すカメラの画素の数 */
-const BASE = 224;
-/** カメラの像の 1 辺の上限: 点像の範囲（N/2 の画素）に収まる数 */
-const nFov = (c: Cond): number => {
-  const alpha = 400e-9 / (1.1 * c.D * 1e-3),
-    beta = (c.cam.pitch * 1e-6) / (c.f * 1e-3);
-  return Math.max(32, Math.min(512, 2 * Math.floor(((NFFT / 2) * alpha) / beta / 2)));
-};
-/** 今の拡大で要るカメラの像の 1 辺（×1 より縮小すると広げる） */
-const needN = (c: Cond): number => Math.min(nFov(c), Math.max(BASE, 2 * Math.ceil(BASE / zoom / 2)));
-const camOf = (c: Cond, n = Math.min(BASE, nFov(c))): Cam => ({ ...c.cam, n });
 
+/** 光源の中心から端までの長さ（カメラの画素、星 1 つは 0） */
+function objHalf(c: Cond): number {
+  const o = c.obj,
+    b = betaOf(c);
+  if (!o) return 0;
+  if (o.kind === 'raster') return Math.max(o.W, (o.W * o.img.h) / o.img.w) / 2 / b;
+  let m = 0;
+  for (const s of o.stars) m = Math.max(m, Math.abs(s.x), Math.abs(s.y));
+  return m / b;
+}
+/** 映像の中心を動かせる範囲（光軸からの画素） */
+function extent(): number {
+  if (C.obj) return objHalf(C) + nFov(C) / 2;
+  return frame && !frame.key ? frame.n / 2 : BASE / 2;
+}
+
+/** 像の計算に効く条件の鍵（露出・等級だけの変更では計算し直さない） */
+let calcKey = '';
 function schedule(): void {
   C = cond();
+  const ck = keyOf([C.D, C.f, C.sc, C.m, C.ab ?? null, C.obj ? 0 : C.T, C.cam, C.objKey]);
+  if (ck === calcKey && lastPsf) {
+    drawStatic();
+    draw();
+    return;
+  }
+  calcKey = ck;
   version++;
   full = false;
   const k = keyOf([C.sc, C.m, C.ab ?? null]);
@@ -339,11 +562,19 @@ function schedule(): void {
   }
   drawStatic();
   refStar();
-  run();
+  const noImg = C.src === 'image' && !C.obj;
+  $('#sv-drop').hidden = !noImg;
+  if (noImg) {
+    frame = null;
+    $('#sv-busy').hidden = true;
+    draw();
+    return;
+  }
+  void run();
 }
 
-/** 計算を 1 つずつ流す（操作中は少ない帯、止まったら全部の帯） */
-function run(): void {
+/** 計算を 1 つずつ流す（操作中は少ない帯、止まったら全部の帯）。点像のあとにカメラの像を作る */
+async function run(): Promise<void> {
   if (busy) {
     dirty = true;
     return;
@@ -352,22 +583,168 @@ function run(): void {
   dirty = false;
   const v = version,
     nb = full ? NB_FULL : NB_QUICK,
-    c = C;
-  void pool.render(sceneOf(c, nb), 'main').then((img) => {
-    busy = false;
-    if (img && v === version) {
-      lastPsf = { img, c };
-      frame = expose(img, c.f, camOf(c, needN(c)));
-      draw();
-      $('#sv-busy').hidden = true;
-      if (nb === NB_QUICK && !dirty) {
-        full = true;
-        run();
-        return;
-      }
+    c = C,
+    sc = sceneOf(c, nb),
+    img = await pool.render(sc, 'main');
+  if (img && v === version) {
+    lastPsf = { img, c, N: sc.N, id: ++psfSeq };
+    kern = null;
+    await post();
+  }
+  busy = false;
+  if (img && v === version && nb === NB_QUICK && !dirty) {
+    full = true;
+    void run();
+    return;
+  }
+  if (dirty || v !== version) void run();
+}
+
+/** 最後の点像から、今の拡大でのカメラの像を作る */
+async function post(): Promise<void> {
+  if (C.obj) await renderObj();
+  else await renderStar();
+}
+
+/** 星 1 つの像: 点像をカメラの画素に積分し、シーイングで広げる */
+async function renderStar(): Promise<void> {
+  const L = lastPsf;
+  if (!L || L.c.obj) return;
+  const c = L.c,
+    n = Math.min(needN(c), nFov(c, L.N)),
+    r = await pool.run<Img>('exp', [{ m: { t: 'exp', img: L.img, px: betaOf(c), n, see: c.cam.see * RAD_AS } }]);
+  if (!r || lastPsf !== L || C.obj) return;
+  frame = { ...r[0], s: 1, ox: -n / 2, oy: -n / 2, key: '' };
+  $('#sv-busy').hidden = true;
+  draw();
+}
+
+/** 格子の大きさの点像（核）: 通し番号と格子ごとに 1 つ */
+let kern: { key: string; K: Img } | null = null;
+/** 光源の像を作る範囲: 格子 s、左上の角 ox・oy（カメラの画素）、1 辺 R、核の 1 辺 nk */
+function regionOf(c: Cond, N: number): { s: number; ox: number; oy: number; R: number; nk: number } {
+  const sw = BASE / zoom,
+    E = extent(),
+    W = Math.max(256, svc.width || 0);
+  let s = 1;
+  while (sw / s > W) s *= 2;
+  for (;;) {
+    const nk = 2 * Math.ceil(nFov(c, N) / s / 2),
+      side = Math.min(sw * 1.3, 2 * E),
+      R = 2 * Math.ceil(side / s / 2);
+    if (R + nk <= 1024 || s >= 64) {
+      const cx = Math.max(-E, Math.min(E, vx)),
+        cy = Math.max(-E, Math.min(E, vy));
+      return { s, R, nk, ox: Math.floor((cx - (R * s) / 2) / s) * s, oy: Math.floor((cy - (R * s) / 2) / s) * s };
     }
-    if (dirty || v !== version) run();
-  });
+    s *= 2;
+  }
+}
+const objKeyOf = (c: Cond, id: number, s: number) => `${id} ${s} ${c.objKey}`;
+/** 今の像が、今の拡大で見える範囲を覆っているか */
+function covered(): boolean {
+  const fr = frame,
+    L = lastPsf;
+  if (!fr || !L || !C.obj) return false;
+  const g = regionOf(C, L.N),
+    sw = BASE / zoom,
+    E = extent(),
+    x0 = Math.max(vx - sw / 2, -E),
+    y0 = Math.max(vy - sw / 2, -E),
+    x1 = Math.min(vx + sw / 2, E),
+    y1 = Math.min(vy + sw / 2, E),
+    e = fr.n * fr.s;
+  return (
+    fr.key === objKeyOf(C, L.id, g.s) &&
+    x0 >= fr.ox - 1e-6 &&
+    y0 >= fr.oy - 1e-6 &&
+    x1 <= fr.ox + e + 1e-6 &&
+    y1 <= fr.oy + e + 1e-6
+  );
+}
+
+/** 光源の像: 光源を格子に標本にし、格子の大きさに積分した点像と畳み込む（色ごとに Worker で） */
+async function renderObj(): Promise<void> {
+  const L = lastPsf,
+    c = C,
+    o = c.obj;
+  if (!L || !o || L.c.objKey !== c.objKey) return;
+  const g = regionOf(c, L.N),
+    b = betaOf(c),
+    key = objKeyOf(c, L.id, g.s);
+  if (!frame || frame.key.split(' ').slice(2).join(' ') !== c.objKey) $('#sv-busy').hidden = false;
+  if (kern?.key !== `${L.id} ${g.s}`) {
+    const r = await pool.run<Img>('kern', [
+      { m: { t: 'exp', img: L.img, px: b * g.s, n: g.nk, see: c.cam.see * RAD_AS } },
+    ]);
+    if (!r || lastPsf !== L) return;
+    kern = { key: `${L.id} ${g.s}`, K: r[0] };
+  }
+  const K = kern.K,
+    /* 光源を標本にする範囲は、像の範囲の外へ核の半分ずつ広い */
+    x0 = g.ox - (g.nk / 2) * g.s,
+    y0 = g.oy - (g.nk / 2) * g.s,
+    planes: Plane[] = [0, 1, 2].map((ch) => {
+      if (o.kind === 'stars') {
+        const pts = new Float64Array(o.stars.length * 3);
+        o.stars.forEach((st, i) => {
+          pts[i * 3] = (st.x / b - x0) / g.s;
+          pts[i * 3 + 1] = (st.y / b - y0) / g.s;
+          pts[i * 3 + 2] = (st.F * colorOf(st.T)[ch]) / (g.s * g.s);
+        });
+        return { kind: 'stars', pts };
+      }
+      const im = o.img,
+        pp = o.W / im.w,
+        du = (g.s * b) / pp;
+      return {
+        kind: 'raster',
+        w: im.w,
+        h: im.h,
+        a: [im.r, im.g, im.b][ch],
+        u0: (x0 * b) / pp + im.w / 2,
+        v0: (y0 * b) / pp + im.h / 2,
+        du,
+      };
+    }),
+    ks = [K.r, K.g, K.b],
+    r = await pool.run<Float64Array>(
+      'obj',
+      planes.map((p, ch) => ({ m: { t: 'conv', p, K: ks[ch], nk: g.nk, R: g.R } as Msg })),
+    );
+  if (!r || lastPsf !== L || C.objKey !== c.objKey) return;
+  frame = { n: g.R, px: b * g.s, r: r[0], g: r[1], b: r[2], s: g.s, ox: g.ox, oy: g.oy, key };
+  $('#sv-busy').hidden = true;
+  draw();
+}
+
+/** 色温度 T の星の色（線形 sRGB、輝度 1。6500 K で白）。白い光の点像の色ごとに掛ける */
+const colors = new Map<number, [number, number, number]>();
+function colorOf(T: number): [number, number, number] {
+  const k = Math.round(T);
+  let c = colors.get(k);
+  if (!c) {
+    const sum: [number, number, number] = [0, 0, 0];
+    for (const bd of starBands(k, NB_FULL)) for (let i = 0; i < 3; i++) sum[i] += bd.rgb[i];
+    c = sum;
+    colors.set(k, c);
+  }
+  return c;
+}
+
+/** 拡大・移動で見える範囲が変わったとき、光源の像を作り直す（少し待って、まとめて） */
+let reTimer = 0;
+function refresh(): void {
+  if (!lastPsf) return;
+  if (!C.obj) {
+    if (frame && !frame.key && frame.n !== needN(C)) void renderStar();
+    return;
+  }
+  if (covered()) return;
+  clearTimeout(reTimer);
+  reTimer = window.setTimeout(() => {
+    if (!covered()) void renderObj();
+  }, 60);
 }
 
 /** マスクなしで合焦した星像: 露出の基準（最も明るい画素）と HFD の基準。望遠鏡・カメラ・星が変わったときだけ */
@@ -409,7 +786,7 @@ function setDz(v: number, commit = true): void {
   version++;
   full = false;
   drawStatic();
-  run();
+  void run();
 }
 const xOf = (e: PointerEvent) => {
   const b = fsc.getBoundingClientRect();
@@ -606,13 +983,26 @@ function drawRay(): void {
 function draw(): void {
   const c = C,
     fr = frame;
-  if (!fr) return;
+  const noImg = c.src === 'image' && !c.obj;
+  $('#sv-zm').hidden = !!c.obj || noImg;
+  /* 画像を選ぶまでは拡大の操作と画素の表示を隠し、ドロップの枠と重ねない */
+  $('#sv .sv-z').hidden = noImg;
+  $('#sv-lab').hidden = noImg;
+  if (!fr || noImg) {
+    fc.width = fc.height = 1;
+    levels = [];
+    view();
+    if (noImg) results(null, null, 0);
+    return;
+  }
   const n = fr.n;
-  /* 露出: マスクなしで合焦した星像の最も明るい画素を、リニアで 2500 倍飽和させる明るさを ×1 とする */
+  /* 露出: マスクなしで合焦した 0 等の星像の最も明るい画素を、リニアで 2500 倍飽和させる明るさを ×1 とする。
+     画像は、白い所の 1 平方秒角あたりの等級から、カメラの 1 画素に入る明るさにする */
   const pk = ref?.peak || 1e-3,
     lin = st$.value === 'lin',
-    gain = c.ex * (lin ? 2500 / pk : 40 / pk);
-  let img = fr;
+    bright = c.obj?.kind === 'raster' ? 10 ** (-0.4 * c.sb) * (betaOf(c) / RAD_AS) ** 2 : 10 ** (-0.4 * c.mag),
+    gain = c.ex * bright * (lin ? 2500 / pk : 40 / pk);
+  let img: Img = fr;
   if (cm$.value === 'mono') {
     const Y = lum(fr);
     img = { ...fr, r: Y, g: Y, b: Y };
@@ -620,6 +1010,14 @@ function draw(): void {
   const px = toRgba(img, gain, lin ? 'lin' : 'asinh');
   if (fc.width !== n) fc.width = fc.height = n;
   fc.getContext('2d')?.putImageData(new ImageData(px, n, n), 0, 0);
+  levels = [fc];
+  ovl.length = 0;
+  if (fr.key) {
+    /* 光源の像では、光条の解析と中心の拡大を使わない */
+    view();
+    results(null, null, n);
+    return;
+  }
   /* 中心の拡大（×4 の範囲を画素のまま） */
   const zn = Math.max(8, Math.round(n / 4 / 2) * 2),
     z0 = (n - zn) / 2,
@@ -652,7 +1050,6 @@ function draw(): void {
     r0 = Math.max(6, (1.6 * half) / Math.sin(th)),
     r1 = n * 0.45;
   let meas: number | null = null;
-  ovl.length = 0;
   const ln = (a: number, q: number, cls: string) => {
     /* 向き a（y は上）、法線の向きの位置 q（画素）の直線を、像の端まで */
     const d = [Math.cos(a), Math.sin(a)],
@@ -694,32 +1091,76 @@ function draw(): void {
 const ovl: { k: 'l' | 'c'; cls: string; x0: number; y0: number; x1?: number; y1?: number }[] = [];
 /** トーンを掛けたカメラの像（拡大・移動ではこれを描き直すだけ） */
 const fc = document.createElement('canvas');
+/** fc を 1/2 ずつ縮めた像（引いて 1 画素が表示の 1 画素より小さくなったときに使う。初めの要素が fc） */
+let levels: HTMLCanvasElement[] = [];
+function level(i: number): HTMLCanvasElement {
+  while (levels.length <= i) {
+    const a = levels[levels.length - 1],
+      b = document.createElement('canvas');
+    b.width = Math.max(1, Math.ceil(a.width / 2));
+    b.height = Math.max(1, Math.ceil(a.height / 2));
+    const ctx = b.getContext('2d');
+    if (ctx) {
+      /* ちょうど 1/2 の双一次は、2×2 の画素の平均になる */
+      ctx.imageSmoothingEnabled = true;
+      ctx.drawImage(a, 0, 0, a.width / 2, a.height / 2);
+    }
+    levels.push(b);
+  }
+  return levels[i];
+}
 
-/** 今の拡大と中心で、映像と重ねる線を描く */
+/** 今の拡大と中心で、映像と重ねる線を描く。像の外は黒 */
 function view(): void {
   const fr = frame,
     ctx = svc.getContext('2d');
-  if (!fr || !ctx) return;
-  const n = fr.n,
-    zmin = BASE / nFov(C),
-    W = Math.max(1, Math.round(svc.clientWidth * Math.min(2, devicePixelRatio || 1)));
-  zoom = Math.max(zmin, Math.min(16, zoom));
-  const sw = Math.min(n, BASE / zoom),
-    sx = Math.max(0, Math.min(n - sw, n / 2 + vx - sw / 2)),
-    sy = Math.max(0, Math.min(n - sw, n / 2 + vy - sw / 2));
+  if (!ctx) return;
+  const W = Math.max(1, Math.round(svc.clientWidth * Math.min(2, devicePixelRatio || 1)));
+  zoom = Math.max(ZMIN, Math.min(ZMAX, zoom));
+  const sw = BASE / zoom,
+    lim = Math.max(0, extent() - sw / 2);
   /* 中心を、像の外へ出ない範囲に戻す */
-  vx = sx + sw / 2 - n / 2;
-  vy = sy + sw / 2 - n / 2;
+  vx = Math.max(-lim, Math.min(lim, vx));
+  vy = Math.max(-lim, Math.min(lim, vy));
   if (svc.width !== W) svc.width = svc.height = W;
-  /* カメラの 1 画素が 3 表示画素より大きいときは、画素のまま（ぼかさない） */
-  ctx.imageSmoothingEnabled = W / sw < 3;
   ctx.fillStyle = '#000';
   ctx.fillRect(0, 0, W, W);
-  ctx.drawImage(fc, sx, sy, sw, sw, 0, 0, W, W);
-  ov.setAttribute('viewBox', `${sx.toFixed(3)} ${sy.toFixed(3)} ${sw.toFixed(3)} ${sw.toFixed(3)}`);
+  const wx = vx - sw / 2,
+    wy = vy - sw / 2,
+    k = W / sw;
+  if (fr && levels.length) {
+    const e = fr.n * fr.s,
+      x0 = Math.max(wx, fr.ox),
+      y0 = Math.max(wy, fr.oy),
+      x1 = Math.min(wx + sw, fr.ox + e),
+      y1 = Math.min(wy + sw, fr.oy + e);
+    if (x1 > x0 && y1 > y0) {
+      /* 像の 1 画素が表示の 1 画素より小さいときは、縮めた像から引く */
+      let lv = 0;
+      while (fr.s * k * 2 ** lv < 1 && lv < 10) lv++;
+      const im = level(lv),
+        q = fr.s * 2 ** lv;
+      /* カメラの 1 画素が 3 表示画素より大きいときは、画素のまま（ぼかさない） */
+      ctx.imageSmoothingEnabled = q * k < 3;
+      ctx.drawImage(
+        im,
+        (x0 - fr.ox) / q,
+        (y0 - fr.oy) / q,
+        (x1 - x0) / q,
+        (y1 - y0) / q,
+        (x0 - wx) * k,
+        (y0 - wy) * k,
+        (x1 - x0) * k,
+        (y1 - y0) * k,
+      );
+    }
+  }
+  const ox = fr ? fr.ox : -sw / 2,
+    oy = fr ? fr.oy : -sw / 2;
+  ov.setAttribute('viewBox', `${(wx - ox).toFixed(3)} ${(wy - oy).toFixed(3)} ${sw.toFixed(3)} ${sw.toFixed(3)}`);
   const r = (4 * sw) / Math.max(1, svc.clientWidth);
   ov.innerHTML =
-    ov$.value === 'on'
+    ov$.value === 'on' && fr && !fr.key
       ? ovl
           .map((o) =>
             o.k === 'l'
@@ -728,27 +1169,27 @@ function view(): void {
           )
           .join('')
       : '';
-  const arcs = (fr.px * 206264.806).toPrecision(3),
+  const arcs = (betaOf(C) / RAD_AS).toPrecision(3),
     vis = Math.round(sw);
   txt('#sv-lab', `${vis} × ${vis} px（${sig(C.cam.pitch, 3)} µm）· ${arcs}″/px`);
-  txt('#zm-v', `×${zoom < 10 ? zoom.toFixed(1) : zoom.toFixed(0)}`);
-  $<HTMLButtonElement>('#zm-in').disabled = zoom >= 16 - 1e-9;
-  $<HTMLButtonElement>('#zm-out').disabled = zoom <= zmin + 1e-9;
-  svc.classList.toggle('pan', sw < n - 0.5);
-  svc.setAttribute('aria-label', `カメラの映像。ピントの位置 ${sgn(dz)} µm、拡大 ×${zoom.toFixed(1)}`);
+  txt('#zm-v', `×${zoomText(zoom)}`);
+  $<HTMLButtonElement>('#zm-in').disabled = zoom >= ZMAX - 1e-9;
+  $<HTMLButtonElement>('#zm-out').disabled = zoom <= ZMIN + 1e-9;
+  svc.classList.toggle('pan', lim > 0.5);
+  svc.setAttribute('aria-label', `カメラの映像。ピントの位置 ${sgn(dz)} µm、拡大 ×${zoomText(zoom)}`);
 }
+/** 拡大の倍率の表示（1 未満は有効数字 2 桁） */
+const zoomText = (z: number) => (z < 1 ? sig(z, 2) : z < 10 ? z.toFixed(1) : z.toFixed(0));
 
 /**
  * 拡大を z にする。(fx, fy) は映像の上の割合（0〜1）で、その点が動かないように中心をずらす。
- * ×1 より縮小してカメラの像の大きさが変わるときは、最後の点像から像を作り直す
+ * 見える範囲が変わったら、カメラの像を作り直す（×1 の点像の範囲より引くと、点像も広い範囲で作り直す）
  */
 function setZoom(z: number, fx = 0.5, fy = 0.5): void {
-  const fr = frame;
-  if (!fr) return;
-  const zmin = BASE / nFov(C),
-    z1 = Math.max(zmin, Math.min(16, z)),
-    sw0 = Math.min(fr.n, BASE / zoom),
-    sw1 = BASE / z1;
+  const z1 = Math.max(ZMIN, Math.min(ZMAX, z)),
+    sw0 = BASE / zoom,
+    sw1 = BASE / z1,
+    n0 = nfftOf(C);
   /* 指した点の、光軸からの位置（画素）を保つ */
   const px = vx + (fx - 0.5) * sw0,
     py = vy + (fy - 0.5) * sw0;
@@ -757,11 +1198,13 @@ function setZoom(z: number, fx = 0.5, fy = 0.5): void {
   zoom = z1;
   if (Math.abs(zoom - 1) < 1e-9) forget('zoom');
   else store('zoom', zoom);
-  const n = needN(C);
-  if (lastPsf && n !== fr.n) {
-    frame = expose(lastPsf.img, lastPsf.c.f, camOf(lastPsf.c, n));
-    draw();
-  } else view();
+  view();
+  if (nfftOf(C) !== n0) {
+    /* 点像の範囲だけが変わるので、少ない帯の計算を飛ばす */
+    version++;
+    full = true;
+    void run();
+  } else refresh();
 }
 
 /* 拡大・縮小と移動: ホイール（指した点を中心に）、ボタン、ドラッグ、キー、ダブルクリック */
@@ -790,10 +1233,11 @@ function setZoom(z: number, fx = 0.5, fy = 0.5): void {
   });
   svc.addEventListener('pointermove', (e) => {
     if (!drag || !frame) return;
-    const k = Math.min(frame.n, BASE / zoom) / svc.getBoundingClientRect().width;
+    const k = BASE / zoom / svc.getBoundingClientRect().width;
     vx = drag.vx - (e.clientX - drag.x) * k;
     vy = drag.vy - (e.clientY - drag.y) * k;
     view();
+    refresh();
   });
   for (const n of ['pointerup', 'pointercancel'] as const)
     svc.addEventListener(n, () => {
@@ -804,7 +1248,7 @@ function setZoom(z: number, fx = 0.5, fy = 0.5): void {
     setZoom(1);
   });
   svc.addEventListener('keydown', (e) => {
-    const step = Math.min(frame?.n ?? BASE, BASE / zoom) / 10;
+    const step = BASE / zoom / 10;
     if (e.key === '+' || e.key === '=') setZoom(zoom * 1.25);
     else if (e.key === '-' || e.key === '_') setZoom(zoom / 1.25);
     else if (e.key === '0') {
@@ -816,6 +1260,7 @@ function setZoom(z: number, fx = 0.5, fy = 0.5): void {
       else if (e.key === 'ArrowUp') vy -= step;
       else vy += step;
       view();
+      refresh();
     } else return;
     e.preventDefault();
   });
@@ -825,17 +1270,21 @@ function setZoom(z: number, fx = 0.5, fy = 0.5): void {
     vx = vy = 0;
     setZoom(1);
   });
-  if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => view()).observe(svc);
+  if (typeof ResizeObserver !== 'undefined')
+    new ResizeObserver(() => {
+      view();
+      refresh();
+    }).observe(svc);
 }
 
-function results(meas: number | null, Y: Float64Array, n: number): void {
+function results(meas: number | null, Y: Float64Array | null, n: number): void {
   const c = C,
     pitch = c.cam.pitch,
     r = readAt(dz),
     /* 1 µm のピントのずれあたりの読み値の変化（収差による一定のずれを除く） */
     g = (readAt(100)[0] ?? 0) / 100 - (readAt(0)[0] ?? 0) / 100,
     h0 = ref?.hfd ?? 0,
-    hfdNow = c.kind === 'none' ? hfd(Y, n) * pitch : Math.sqrt(h0 * h0 + (Math.abs(dz) / (c.N * Math.SQRT2)) ** 2);
+    hfdNow = c.kind === 'none' && Y ? hfd(Y, n) * pitch : Math.sqrt(h0 * h0 + (Math.abs(dz) / (c.N * Math.SQRT2)) ** 2);
   let mt = '',
     mv = '',
     ms = '',
@@ -855,7 +1304,12 @@ function results(meas: number | null, Y: Float64Array, n: number): void {
       const est = meas != null && g ? meas / g : null;
       mt = 'ピントのずれ（光条から推定）';
       mv = est == null ? DASH : rv(sgn(est), 'µm');
-      ms = est == null ? '光条が像の外へ出ていて測れません' : where(est);
+      ms =
+        est != null
+          ? where(est)
+          : c.obj || c.src === 'image'
+            ? '光源が星のときだけ測ります'
+            : '光条が像の外へ出ていて測れません';
       et = '中央の光条のずれ e';
       ev = meas == null ? DASH : rv(sg3(meas / pitch), 'px');
       es = meas == null ? '' : `${sg3(meas)} µm（幾何光学の予測 ${sg3(r[0])} µm）`;
@@ -937,6 +1391,7 @@ function results(meas: number | null, Y: Float64Array, n: number): void {
 
 ready = true;
 restoreImage();
+restoreSrc();
 schedule();
 queueMicrotask(() => {
   boot = false;

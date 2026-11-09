@@ -101,6 +101,18 @@ const rf = (...ns: number[]) => ns.map((n) => `<a class="rf" href="#thy-r${n}">[
 </div>
 <p>計算した像は、カメラの画素の大きさに合わせて面積で積分します。明るい星の芯はすぐに飽和し、飽和させるほど暗い光条が見えてきます。</p>
 
+<h3>星のほかの光源</h3>
+<p>二重星・星団・画像の像は、光源の明るさの分布 <math><mi>O</mi></math> と点像 <math><mi>h</mi></math> の畳み込みです<Fragment set:html={rf(1)} />。点像は視野のどこでも同じとみなします。</p>
+<div class="eqs">
+  <math display="block"><mi>I</mi><mo stretchy="false">(</mo><mi mathvariant="bold">θ</mi><mo stretchy="false">)</mo><mo>=</mo><mo>∫</mo><mi>O</mi><mo stretchy="false">(</mo><mi mathvariant="bold">θ</mi><mo>′</mo><mo stretchy="false">)</mo><mspace width="0.17em"/><mi>h</mi><mo stretchy="false">(</mo><mi mathvariant="bold">θ</mi><mo>−</mo><mi mathvariant="bold">θ</mi><mo>′</mo><mo stretchy="false">)</mo><mspace width="0.17em"/><mi>d</mi><mi mathvariant="bold">θ</mi><mo>′</mo></math>
+</div>
+<ul class="tl">
+  <li>点像: 6500 K の白い光で計算し、星や画像の色を RGB ごとに掛ける</li>
+  <li>星の色: 色温度の黒体放射の色</li>
+  <li>星の明るさ: 等級 <math><mi>m</mi></math> の星の光は 0 等の <math><msup><mn>10</mn><mrow><mo>−</mo><mn>0.4</mn><mi>m</mi></mrow></msup></math> 倍</li>
+  <li>引いたとき: カメラの画素をいくつかまとめた格子で光源を標本にし、点像もその格子で積分する</li>
+</ul>
+
 <h3>計算の方法</h3>
 <ul class="tl">
   <li>開口の格子: 最短の波長で口径を約 930 標本、FFT は 1024 × 1024</li>
@@ -108,6 +120,8 @@ const rf = (...ns: number[]) => ns.map((n) => `<a class="rf" href="#thy-r${n}">[
   <li>開口の縁とスリット: 標本の広さでぼかし、ぎざぎざが偽の回折を生まないようにする</li>
   <li>波長の帯: 帯の幅の分だけ像を半径方向に引き伸ばして足し、光条の色を連続にする</li>
   <li>計算の分担: 波長の帯を複数の Worker に分ける。操作中は 6 帯で計算し、止まってから 16 帯で描き直す</li>
+  <li>引いたときの点像: 星 1 つの像で ×1 の点像の範囲より引くと、FFT を 2048 × 2048 にして範囲を 2 倍に広げる。その外は黒</li>
+  <li>光源との畳み込み: 1024 × 1024 までの FFT。光源と点像を 1 つの複素数の場にまとめて変換する</li>
   <li>光の当たる所のずれ（グラフ・横から見た図・穴の像の位置）: 区画の重心と、収差の波面の勾配の平均から、幾何光学で求める</li>
 </ul>
 
@@ -117,6 +131,8 @@ const rf = (...ns: number[]) => ns.map((n) => `<a class="rf" href="#thy-r${n}">[
   <li>マスクの板の厚みと、スリットの縁での反射</li>
   <li>短い露出での像の揺れ（スペックル）</li>
   <li>星の光子の数による雑音と、カメラの読み出しの雑音</li>
+  <li>視野の場所による点像の違い（光軸から離れた所のコマ収差など）</li>
+  <li>点像の範囲の外へ伸びる光条</li>
 </ul>
 
 <h3>このツールで決めたこと</h3>
@@ -127,12 +143,17 @@ const rf = (...ns: number[]) => ns.map((n) => `<a class="rf" href="#thy-r${n}">[
   <li>トライ・バーティノフの扇の中で、外寄りと中心寄りの区画を分ける半径: 0.55 <i>R</i></li>
   <li>光条の位置の測り方: 光条に直交する断面の明るさの重心。窓の中心を推定した位置に合わせ直して繰り返す</li>
   <li>星像の大きさ（HFD）: 光の半分が入る円の直径。グラフでは、合焦の HFD とボケの円（径 |Δz|/N の HFD）の 2 乗和で近似</li>
-  <li>露出 ×1: マスクなしで合焦した星像の最も明るい画素が、リニアで 2500 倍飽和する明るさ</li>
+  <li>露出 ×1: マスクなしで合焦した 0 等の星像の最も明るい画素が、リニアで 2500 倍飽和する明るさ</li>
+  <li>等級の既定値: 星と二重星の主星は 2 等、星団の最も明るい星は 3 等、画像の白い所は 11 等/平方秒角</li>
   <li>ピントの位置の目盛りの範囲: 臨界焦点範囲の約 7.5 倍を切りのよい値にしたもの</li>
   <li>ニュートン式のスパイダー: 幅 2 mm を 4 本</li>
   <li>収差の大きさ: ゼルニケ多項式の係数（RMS、λ = 550 nm を単位）</li>
   <li>画像のマスク: 画像を 512 × 512 の正方形に収め（縦横比は保ち、余りと透明な所は黒）、しきい値の前後 ±4 % の明るさで境目をぼかす。開き直したときのため、256 × 256 にした明るさをブラウザに保存する</li>
   <li>JWST の形: セグメントの形の誤差は入れず、支柱は中心を通る直線とした。副鏡の影は中央の穴に収まるので描かない</li>
+  <li>二重星: 主星を光軸に、伴星を位置角 60°（上から右回り）に置く</li>
+  <li>星団: 決まった乱数で 90 個。中心に集まるプラマーの分布（半径は幅の 1/8）で、0〜7 等、3500〜15000 K<Fragment set:html={rf(17)} /></li>
+  <li>光源の画像: 長い辺を 1024 画素までに縮め、透明な所は黒とする。開き直したときのため、長い辺 512 画素の JPEG をブラウザに保存する</li>
+  <li>光源の画像の明るさ: 白い所の 1 平方秒角あたりの等級。カメラの 1 画素には、その等級の星の光に画素の面積（平方秒角）を掛けた光が入る</li>
 </ul>
 
 <h3>出典</h3>
@@ -153,4 +174,5 @@ const rf = (...ns: number[]) => ns.map((n) => `<a class="rf" href="#thy-r${n}">[
   <li id="thy-r14"><span class="rf-for">JWST の主鏡のセグメント</span><span class="rf-src">M. W. McElwain et al., “The James Webb Space Telescope Mission: Optical Telescope Element Design, Development, and Performance,” <i>Publ. Astron. Soc. Pac.</i>, vol. 135, 058001, 2023, doi:10.1088/1538-3873/acada0</span></li>
   <li id="thy-r15"><span class="rf-for">JWST の星の像の光条（6 本と、縦の支柱による横の 2 本）</span><span class="rf-src">J. Rigby et al., “The Science Performance of JWST as Characterized in Commissioning,” <i>Publ. Astron. Soc. Pac.</i>, vol. 135, 048001, 2023, doi:10.1088/1538-3873/acb293</span></li>
   <li id="thy-r16"><span class="rf-for">JWST の開口の模型（セグメントの大きさ・隙間・支柱の幅と向き）</span><span class="rf-src">prysm documentation, “Segmented Systems”（prysm.readthedocs.io）</span></li>
+  <li id="thy-r17"><span class="rf-for">星団の星の分布（プラマーの分布）</span><span class="rf-src">H. C. Plummer, “On the problem of distribution in globular star clusters,” <i>Mon. Not. R. Astron. Soc.</i>, vol. 71, no. 5, pp. 460–470, 1911, doi:10.1093/mnras/71.5.460</span></li>
 </ol>
