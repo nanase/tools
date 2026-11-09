@@ -62,6 +62,10 @@ export type Unit =
   | 'ビット'
   | 'km/s'
   | '倍'
+  | 'cm'
+  | 'mL/s'
+  | 'L/s'
+  | 'm³/s'
   | (typeof COMPOUND)[number];
 
 /**
@@ -128,6 +132,12 @@ const STRIP: Partial<Record<Unit, [RegExp, string]>> = {
   /* 圧力（キロパスカル）。接頭辞は読まない */
   kPa: [/kpa$/i, ''],
   mm: [/mm$/i, ''],
+  /* 長さ（センチメートル）。サイフォンの台の高さなど */
+  cm: [/cm$/i, ''],
+  /* 流量（サイフォン） */
+  'mL/s': [/m[lℓ]\/s$/i, ''],
+  'L/s': [/[lℓ]\/s$/i, ''],
+  'm³/s': [/m(³|\^?3)\/s$/i, ''],
   µm: [/[uμ]m$/i, ''],
   /* 張力（ニュートン）。小文字の n はナノなので外さない */
   N: [/N$/, ''],
@@ -176,6 +186,10 @@ const STRIP: Partial<Record<Unit, [RegExp, string]>> = {
 const NO_PREFIX = new Set<Unit>([
   'kPa',
   'mm',
+  'cm',
+  'mL/s',
+  'L/s',
+  'm³/s',
   'µm',
   'N',
   'L',

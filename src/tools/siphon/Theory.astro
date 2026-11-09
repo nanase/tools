@@ -1,0 +1,115 @@
+---
+// 動作原理と式
+type Ref = { for: string; src: string };
+const REFS: readonly Ref[] = [
+  {
+    for: '滑らかな管の乱流の摩擦係数（Blasius の式）',
+    src: 'H. Blasius, Das Aehnlichkeitsgesetz bei Reibungsvorgängen in Flüssigkeiten, Mitteilungen über Forschungsarbeiten auf dem Gebiete des Ingenieurwesens, Heft 131, pp. 1–41, VDI, 1913',
+  },
+  {
+    for: '標高と気圧（標準大気の対流圏）',
+    src: 'NOAA, NASA, USAF, U.S. Standard Atmosphere, 1976, NOAA-S/T 76-1562, U.S. Government Printing Office, 1976',
+  },
+  {
+    for: '水の蒸気圧（Tetens の式の指数の形）',
+    src: 'F. W. Murray, On the Computation of Saturation Vapor Pressure, Journal of Applied Meteorology, Vol. 6, No. 1, pp. 203–204, 1967',
+  },
+  {
+    for: '減圧室のサイフォン',
+    src: 'S. Hughes, S. Gurung, Exploring the boundary between a siphon and barometer in a hypobaric chamber, Scientific Reports, Vol. 4, 4741, 2014',
+  },
+  {
+    for: '脱気した水の 15 m のサイフォン',
+    src: 'A. Boatwright, S. Hughes, J. Barry, The height limit of a siphon, Scientific Reports, Vol. 5, 16790, 2015',
+  },
+  {
+    for: '草間の間歇冷泉の天然記念物の指定',
+    src: '文化庁, 国指定文化財等データベース「草間の間歇冷泉」, https://kunishitei.bunka.go.jp/heritage/detail/401/2264',
+  },
+  { for: '草間の間歇冷泉の周期と流量', src: '草間の間歇冷泉, Wikipedia 日本語版（2026 年 11 月 8 日 閲覧）' },
+  {
+    for: '草間の間歇冷泉（潮滝）の観測とサイフォンの数値模型',
+    src: '藤井厚志, カルスト性間歇冷泉の水理学的解析とその水文地質学的意義, 北九州市立自然史博物館研究報告, 第 17 号, pp. 111–198, 1998',
+  },
+  {
+    for: 'ピリオディック・スプリングのサイフォンの模型',
+    src: 'P. Huntoon, J. Coogan, The Strange Hydrodynamics of Periodic Spring, Salt River Range, Wyoming, Wyoming Geological Association 38th Annual Field Conference Guidebook, pp. 337–345, 1987',
+  },
+  {
+    for: 'ピリオディック・スプリングの季節ごとの湧き方',
+    src: 'Geology of Wyoming, Periodic Spring, https://www.geowyo.com/periodic-spring.html',
+  },
+];
+const Rf = (i: number) => `<a class="rf" href="#thy-r${i}">[${i}]</a>`;
+---
+<h3>流れの速さ</h3>
+<p>管が水で満ちていれば、管の中の水はひとかたまりで動きます。上の水面と出口の高さの差 <math><mi>H</mi></math> が水を押し出し、管の損失が流れを弱めます。出口が受け側の水に沈んでいるときは、水面どうしの差を <math><mi>H</mi></math> とします。</p>
+<div class="eqs">
+  <math display="block"><mrow><mi>L</mi><mfrac><mrow><mi mathvariant="normal">d</mi><mi>v</mi></mrow><mrow><mi mathvariant="normal">d</mi><mi>t</mi></mrow></mfrac><mo>=</mo><mi>g</mi><mi>H</mi><mo>−</mo><mi>K</mi><mfrac><msup><mi>v</mi><mn>2</mn></msup><mn>2</mn></mfrac><mspace width="1.2em"/><msub><mi>v</mi><mtext>定常</mtext></msub><mo>=</mo><msqrt><mfrac><mrow><mn>2</mn><mi>g</mi><mi>H</mi></mrow><mi>K</mi></mfrac></msqrt></mrow></math>
+  <math display="block"><mrow><mi>K</mi><mo>=</mo><mn>0.5</mn><mo>+</mo><mi>f</mi><mfrac><mi>L</mi><mi>d</mi></mfrac><mo>+</mo><msub><mi>k</mi><mtext>曲がり</mtext></msub><mo>+</mo><mn>1</mn></mrow></math>
+  <math display="block"><mrow><mi>f</mi><mo>=</mo><mfrac><mn>64</mn><mi>Re</mi></mfrac><mspace width="0.4em"/><mtext>（</mtext><mi>Re</mi><mo>&lt;</mo><mn>2300</mn><mtext>）</mtext><mspace width="1.2em"/><mi>f</mi><mo>=</mo><mn>0.3164</mn><mspace width="0.15em"/><msup><mi>Re</mi><mrow><mo>−</mo><mn>1</mn><mo>/</mo><mn>4</mn></mrow></msup><mspace width="0.4em"/><mtext>（</mtext><mi>Re</mi><mo>≥</mo><mn>2300</mn><mtext>）</mtext><mspace width="1.2em"/><mi>Re</mi><mo>=</mo><mfrac><mrow><mi>v</mi><mi>d</mi></mrow><mi>ν</mi></mfrac></mrow></math>
+</div>
+<p>記号: <math><mi>v</mi></math> は管の中の流速、<math><mi>g</mi></math> は重力加速度、<math><mi>L</mi></math> は管の長さ、<math><mi>d</mi></math> は管の内径、<math><mi>ν</mi></math> は動粘度です。<math><mi>K</mi></math> の 0.5 は入口で、1 は出口で失う分です。<math><msub><mi>k</mi><mtext>曲がり</mtext></msub></math> は曲がりの損失係数です。</p>
+<p>摩擦係数 <math><mi>f</mi></math> は滑らかな管の値で、乱流では Blasius の式を使います <Fragment set:html={Rf(1)} />。岩の水路は粗いので <math><mi>f</mi><mo>=</mo><mn>0.03</mn></math> に固定します。</p>
+
+<h3>頂上の圧力</h3>
+<p>管の頂上は上の水面より高いので、頂上の圧力は大気圧より低くなります（負圧）。流れが速いほど、頂上までの損失と流れの勢いの分だけさらに下がります。</p>
+<div class="eqs">
+  <math display="block"><mrow><msub><mi>p</mi><mtext>頂上</mtext></msub><mo>=</mo><msub><mi>p</mi><mtext>大気</mtext></msub><mo>−</mo><mi>ρ</mi><mi>g</mi><mo stretchy="false">(</mo><msub><mi>z</mi><mtext>頂上</mtext></msub><mo>−</mo><msub><mi>h</mi><mn>1</mn></msub><mo stretchy="false">)</mo><mo>−</mo><mo stretchy="false">(</mo><mn>1</mn><mo>+</mo><msub><mi>K</mi><mtext>上り</mtext></msub><mo stretchy="false">)</mo><mfrac><mrow><mi>ρ</mi><msup><mi>v</mi><mn>2</mn></msup></mrow><mn>2</mn></mfrac><mspace width="1.2em"/><msub><mi>K</mi><mtext>上り</mtext></msub><mo>=</mo><mn>0.5</mn><mo>+</mo><mi>f</mi><mfrac><msub><mi>s</mi><mtext>頂上</mtext></msub><mi>d</mi></mfrac><mo>+</mo><mfrac><msub><mi>k</mi><mtext>曲がり</mtext></msub><mn>2</mn></mfrac></mrow></math>
+</div>
+<p>記号: <math><msub><mi>h</mi><mn>1</mn></msub></math> は上の水面の高さ、<math><msub><mi>z</mi><mtext>頂上</mtext></msub></math> は頂上の高さ、<math><msub><mi>s</mi><mtext>頂上</mtext></msub></math> は入口から頂上までの管の長さ、<math><mi>ρ</mi></math> は液体の密度です。曲がりの損失は頂上までに半分を数えます。</p>
+<p>頂上の圧力は水の蒸気圧より下がれません。蒸気圧に届くと流速は頭打ちになります。静水でも蒸気圧に届く高さ <math><msub><mi>h</mi><mtext>限界</mtext></msub></math> を超えると、頂上で水が沸騰して水柱が 2 本に分かれ、流れが止まります。</p>
+<div class="eqs">
+  <math display="block"><mrow><mi>v</mi><mo>≤</mo><msqrt><mfrac><mrow><mn>2</mn><mi>g</mi><mo stretchy="false">(</mo><msub><mi>h</mi><mtext>限界</mtext></msub><mo>−</mo><msub><mi>z</mi><mtext>頂上</mtext></msub><mo>+</mo><msub><mi>h</mi><mn>1</mn></msub><mo stretchy="false">)</mo></mrow><mrow><mn>1</mn><mo>+</mo><msub><mi>K</mi><mtext>上り</mtext></msub></mrow></mfrac></msqrt><mspace width="1.2em"/><msub><mi>h</mi><mtext>限界</mtext></msub><mo>=</mo><mfrac><mrow><msub><mi>p</mi><mtext>大気</mtext></msub><mo>−</mo><msub><mi>p</mi><mtext>蒸気</mtext></msub></mrow><mrow><mi>ρ</mi><mi>g</mi></mrow></mfrac></mrow></math>
+  <math display="block"><mrow><msub><mi>p</mi><mtext>大気</mtext></msub><mo>=</mo><mn>101325</mn><mspace width="0.15em"/><msup><mrow><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><mn>2.25577</mn><mo>×</mo><msup><mn>10</mn><mrow><mo>−</mo><mn>5</mn></mrow></msup><mspace width="0.1em"/><msub><mi>z</mi><mtext>標高</mtext></msub><mo stretchy="false">)</mo></mrow><mn>5.25588</mn></msup><mspace width="1.2em"/><msub><mi>p</mi><mtext>蒸気</mtext></msub><mo>=</mo><mn>610.78</mn><mspace width="0.17em"/><mi>exp</mi><mfrac><mrow><mn>17.27</mn><mi>T</mi></mrow><mrow><mi>T</mi><mo>+</mo><mn>237.3</mn></mrow></mfrac></mrow></math>
+</div>
+<p>記号: <math><msub><mi>z</mi><mtext>標高</mtext></msub></math> は標高 [m]、<math><mi>T</mi></math> は水温 [℃] で、圧力の単位は Pa です。気圧は標準大気の対流圏の式 <Fragment set:html={Rf(2)} />、蒸気圧は Tetens の式です <Fragment set:html={Rf(3)} />。<math><msub><mi>h</mi><mtext>限界</mtext></msub></math> は海面・20 ℃ で約 10.1 m、富士山頂で約 6.2 m、90 ℃ の湯で約 3 m です。</p>
+
+<h3>大気圧か、水のつながりか</h3>
+<p>サイフォンが動くわけには 2 つの説明があります。1 つは、大気圧が上の水面を押して水を頂上まで持ち上げるという説明です。もう 1 つは、重力で落ちる下りの水柱が、水どうしのつながり（凝集力）で上りの水を引くという説明です。</p>
+<p>どちらの説明でも、普通の水では高さの限界は気圧で決まると考えられています。高さ 1.5 m のサイフォンを減圧室に置いて気圧を下げると、頂上の下流に滝のような形が現れ、さらに下げると水柱が 2 本に分かれました <Fragment set:html={Rf(4)} />。</p>
+<p>一方、前もって脱気した水では、海面で高さ 15 m のサイフォンが動いた実験があります <Fragment set:html={Rf(5)} />。頂上の圧力が蒸気圧より低くなっても泡ができず、水柱が切れませんでした。このページの模型は脱気していない普通の水を考え、頂上の圧力が蒸気圧に届くと水柱が分かれます。</p>
+
+<h3>自動で始まるサイフォン</h3>
+<p>教訓茶碗・サイフォン式トイレ・間欠冷泉は、呼び水をしなくても水位が頂上を越えると流れ始めます。頂上を越えた水が下りの管の空気を運び出し、管が水で満ちるとサイフォンになります。模型ではこれを管の満ち具合 <math><mi>φ</mi></math>（0 は空気、1 は水）で表します。</p>
+<div class="eqs">
+  <math display="block"><mrow><mi>H</mi><mo>=</mo><mo stretchy="false">(</mo><msub><mi>h</mi><mn>1</mn></msub><mo>−</mo><msub><mi>z</mi><mtext>頂上</mtext></msub><mo stretchy="false">)</mo><mo>+</mo><mi>φ</mi><mo stretchy="false">(</mo><msub><mi>z</mi><mtext>頂上</mtext></msub><mo>−</mo><msub><mi>z</mi><mtext>出口</mtext></msub><mo stretchy="false">)</mo><mspace width="1.2em"/><mfrac><mrow><mi mathvariant="normal">d</mi><mi>φ</mi></mrow><mrow><mi mathvariant="normal">d</mi><mi>t</mi></mrow></mfrac><mo>=</mo><mi>e</mi><mfrac><mrow><mi>q</mi><mo>−</mo><msub><mi>q</mi><mtext>膜</mtext></msub></mrow><msub><mi>V</mi><mtext>管</mtext></msub></mfrac><mspace width="0.4em"/><mtext>（</mtext><mi>q</mi><mo>&gt;</mo><msub><mi>q</mi><mtext>膜</mtext></msub><mtext>）</mtext></mrow></math>
+</div>
+<p>記号: <math><msub><mi>z</mi><mtext>出口</mtext></msub></math> は出口の高さ（沈んでいれば受け側の水面の高さ）、<math><mi>q</mi></math> は管を流れる量、<math><msub><mi>V</mi><mtext>管</mtext></msub></math> は管の容積です。<math><mi>e</mi></math> は空気を運び出す効率、<math><msub><mi>q</mi><mtext>膜</mtext></msub></math> は管の壁を膜のように伝うだけで空気を運ばない流量です。<math><mi>φ</mi><mo>=</mo><mn>0</mn></math> では頂上を越えた分だけが押し、<math><mi>φ</mi><mo>=</mo><mn>1</mn></math> で前の節の落差になります。</p>
+<p>流量が <math><msub><mi>q</mi><mtext>膜</mtext></msub></math> 以下なら管は満ちず、頂上を越えた水が少しずつ流れ落ちるだけです。水位が下がって入口が水面から出ると空気が入り、下りの管の水が抜けるまで流れは止まります。</p>
+<p><math><mi>e</mi></math> と <math><msub><mi>q</mi><mtext>膜</mtext></msub></math> は、例ごとに観測や実物の動きに合うように決めた値です。文献の値ではありません。</p>
+
+<h3>間欠冷泉の周期</h3>
+<p>地下の空洞に地下水が流入 <math><mi>q</mi></math> で溜まり、水位が頂上を越えるとサイフォンが湧き出します。水位が入口まで下がると空気が入って止まり、また溜まり始めます。</p>
+<div class="eqs">
+  <math display="block"><mrow><msub><mi>t</mi><mtext>溜まる</mtext></msub><mo>≈</mo><mfrac><mi>V</mi><mi>q</mi></mfrac><mspace width="1.2em"/><msub><mi>t</mi><mtext>湧く</mtext></msub><mo>≈</mo><mfrac><mi>V</mi><mrow><mi>Q</mi><mo>−</mo><mi>q</mi></mrow></mfrac></mrow></math>
+</div>
+<p>記号: <math><mi>V</mi></math> は入口から頂上までの空洞の容量、<math><mi>Q</mi></math> はサイフォンの排水量です。<math><mi>Q</mi></math> は空洞の水位とともに変わります。</p>
+<p><math><mi>q</mi></math> が <math><mi>Q</mi></math> の最小値を超えると、水位が入口まで下がらず湧き続けます。<math><mi>q</mi></math> が <math><msub><mi>q</mi><mtext>膜</mtext></msub></math> 以下なら、頂上からあふれるだけで湧き出しは起きません。</p>
+
+<h3>観測と比べる</h3>
+<p>岡山県新見市の草間の間歇冷泉は国の天然記念物です <Fragment set:html={Rf(6)} />。少雨の時期は 4〜10 時間ごとに湧き、約 9 分で最大 約 10 L/s に達し、約 50 分で元に戻ります。雨の多い時期は周期が 2.5〜3.5 時間に縮み、雨が非常に多いと約 4 L/s 以上が湧き続けます。1 回に流れ出る量は約 13 m³ です <Fragment set:html={Rf(7)} />。地下の空洞の水がサイフォンで流れ出すことは、観測と数値模型で調べられています <Fragment set:html={Rf(8)} />。</p>
+<p>模型は空洞を 13 m³、水路の内径を 72 mm とします。水路は地層の面と縦の割れ目をつないだ角ばった道で、頂上は空洞の底から約 2 m です。流入 0.4〜0.9 L/s で周期は 9.9〜4.8 時間、1.5 L/s で 3.2 時間です。湧き始めから約 9 分で最大 約 10 L/s に達し、5 L/s では湧き続けます。</p>
+<p>米国ワイオミング州のピリオディック・スプリングも、洞窟と湧き口をつなぐサイフォンで説明されています <Fragment set:html={Rf(9)} />。冬は約 4 分湧いて約 26 分止まります <Fragment set:html={Rf(10)} />。模型は周期 約 30 分のうち 3〜4 分湧きます。秋の 15 分ずつ湧いて止まる周期は、空洞 1 つの模型では合いません。</p>
+<p>どちらの冷泉も地下の形は見えません。図の空洞と水路は、観測に合わせて推した模式図です。</p>
+
+<h3>出典</h3>
+<ol class="refs">
+  {REFS.map((r, i) => (
+    <li id={`thy-r${i + 1}`}>
+      <span class="rf-for">{r.for}</span>
+      <span class="rf-src">{r.src}</span>
+    </li>
+  ))}
+</ol>
+
+<h3>このツールで決めたこと</h3>
+<ul class="tl">
+  <li>空気を運び出す効率 <math><mi>e</mi></math>・膜の流量 <math><msub><mi>q</mi><mtext>膜</mtext></msub></math>・下りの管の水が抜ける時間は例ごとに観測や実物の動きに合わせた値で、文献の値ではない</li>
+  <li>水の密度は水温で変え、動粘度は 1.0×10⁻⁶ m²/s に固定</li>
+  <li>灯油は密度 790 kg/m³・動粘度 2.0×10⁻⁶ m²/s</li>
+  <li>岩の水路は摩擦係数 0.03 に固定</li>
+  <li>草間の水温は 12 ℃、空洞は 13 m³、水路の内径は 72 mm</li>
+  <li>間欠冷泉の脇道（分かれてまた合わさる割れ目）は図に描くだけで、模型の流れには入れない</li>
+  <li>間欠冷泉の空洞と水路の形は推定の模式図</li>
+</ul>
