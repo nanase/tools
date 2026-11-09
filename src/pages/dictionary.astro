@@ -1,0 +1,138 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/dictionary/style.css';
+import { DEFS, HASHES, SETS, STAGES } from '../tools/dictionary/model';
+import { SIZE, SPEED, VOL } from '../tools/dictionary/params';
+import Theory from '../tools/dictionary/Theory.astro';
+
+const name = 'ディクショナリ';
+---
+<SiteLayout title={name} tool={{ id: 'dictionary', name }}>
+  <PageTitle title={name}>キーと値の組を入れておき、キーから値を引くデータ構造です。辞書・連想配列とも呼びます。多くはハッシュ関数でキーを表の番号に変え、その場所へ入れます。</PageTitle>
+
+  <div class="tgrid" id="dc" data-mode="one">
+    <Panel hid="hd-fig" title="チェイン法" class="a-fig" fixed>
+      <span slot="aux" class="aux tp-st" id="dc-st" hidden><span class="led" id="dc-led" aria-hidden="true"></span><span id="dc-stT"></span></span>
+      <div slot="aux" class="seg" id="dc-mode" role="group" aria-label="表示">
+        <button type="button" data-v="one" aria-pressed="true">単独</button>
+        <button type="button" data-v="cmp" aria-pressed="false">比較</button>
+        <button type="button" data-v="list" aria-pressed="false">一覧</button>
+      </div>
+      <div class="sbar dc-lg">
+        <span class="dc-lgl">
+          <span class="stag"><i class="dc-sw" aria-hidden="true"></i>キー</span>
+          <span class="stag"><i class="dc-sw dc-cmp" aria-hidden="true"></i>調べている場所</span>
+          <span class="stag"><i class="dc-sw dc-mov" aria-hidden="true"></i>書いた場所</span>
+          <span class="stag"><i class="dc-sw dc-done" aria-hidden="true"></i>発見</span>
+          <span class="stag"><i class="dc-sw dc-tomb" aria-hidden="true">×</i>削除済み</span>
+          <span class="stag"><i class="dc-sw dc-miss" aria-hidden="true"></i>該当なし</span>
+        </span>
+        <span class="dc-end"><span class="sr" id="dc-say"></span><button type="button" class="prst" id="dc-reset2" hidden>リセット</button></span>
+      </div>
+      <div class="dc-steps" id="dc-steps" role="group" aria-label="工程">
+        {STAGES.map(([, t, d], i) => (
+          <button type="button" data-s={i} aria-pressed={i === 0 ? 'true' : 'false'}><b>{i + 1} {t}</b><em></em><span>{d}</span></button>
+        ))}
+      </div>
+      <div class="scope dc-scr dc-solo"><canvas id="dc-cv" role="img" aria-label="ディクショナリ"></canvas></div>
+      <div class="dc-race" id="dc-race"></div>
+      <div class="tp">
+        <button type="button" class="tp-ib" id="tp-home" title="最初へ" aria-label="最初へ"><svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1.5" y="1.5" width="1.8" height="9"/><path d="M10.5 1.5v9L4 6z"/></svg></button>
+        <button type="button" class="tp-pp" id="tp-pp" title="再生" aria-label="再生"><svg class="i-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.2l7.6 4.8L3 10.8z"/></svg><svg class="i-pause" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="2.8" height="9"/><rect x="7.2" y="1.5" width="2.8" height="9"/></svg></button>
+        <div class="tp-tl">
+          <div class="tp-trk" id="tp-trk" role="slider" tabindex="0" aria-label="進み具合" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0">
+            <div class="tp-rail"></div>
+            <div class="tp-fill" id="tp-fill"></div>
+            <div class="tp-th" id="tp-th"></div>
+          </div>
+          <div class="tp-tm"><span><b id="tp-a">0</b> / <span id="tp-b">0</span> 手順</span><span id="tp-t"></span></div>
+        </div>
+        <div class="tp-side">
+          <button type="button" class="tp-sq" id="tp-back" title="前の手順" aria-label="前の手順"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M12 3L6 8l6 5M4 3v10"/></svg></button>
+          <button type="button" class="tp-sq" id="tp-step" title="次の手順" aria-label="次の手順"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 3l6 5-6 5M12 3v10"/></svg></button>
+        </div>
+      </div>
+      <div class="ptab dc-row"><ParamRow d={SPEED} /></div>
+    </Panel>
+
+    <Panel hid="hd-mat" title="操作と計算量" class="a-mat">
+      <span slot="aux" class="aux">平均と最悪、n = キーの数</span>
+      <div class="dc-mx"><table class="dc-mt" id="dc-mx"></table></div>
+    </Panel>
+
+    <Panel hid="hd-cmp" title="計算結果" class="a-cmp">
+      <div class="dc-rw"><table class="dc-rt" id="dc-rt"></table></div>
+    </Panel>
+
+    <div class="col">
+      <Panel hid="hd-str" title="データ構造" class="a-str">
+        <span slot="aux" class="aux" id="dc-an"></span>
+        <div id="dc-str">
+          <div class="chips">
+            {DEFS.map((d) => <button type="button" class="chip" data-v={d.id} aria-pressed={d.id === 'chain' ? 'true' : 'false'}>{d.name}</button>)}
+          </div>
+        </div>
+        {DEFS.map((d) => <p class="dc-ex" data-for={d.id} hidden={d.id !== 'chain'}><span>利用例</span>{d.ex}</p>)}
+        <div class="ptab dc-row" id="dc-byw" hidden>
+          <ChoiceRow k="by" name="比較の対象" choices={[['str', 'データ構造'], ['hash', 'キーとハッシュ関数']]} value="str" />
+        </div>
+      </Panel>
+      <Panel hid="hd-data" title="データ" class="a-data">
+        <button slot="aux" type="button" class="prst" id="dc-new">新しいデータ</button>
+        <div class="ptab dc-row">
+          <ParamRow d={SIZE} />
+          <ChoiceRow k="set" name="キー" choices={SETS.map(([v, t]) => [v, t, v === 'word' ? 'cat・dog・sun …（値は和訳）' : 'k01・k02・k03 …'] as const)} value="word" />
+          <ChoiceRow k="hash" name="ハッシュ関数" choices={HASHES} value="fnv" />
+          <ChoiceRow k="grow" name="表の拡張" sub="あり: 場所 8 から 2 倍ずつ。なし: 初めから大きな表" choices={[['1', 'あり'], ['0', 'なし']]} value="1" />
+        </div>
+      </Panel>
+    </div>
+    <div class="col">
+      <Panel hid="hd-ops" title="操作" class="a-ops">
+        <button slot="aux" type="button" class="prst" id="dc-reset" hidden>リセット</button>
+        <div class="dc-in">
+          <label><span>キー</span><input type="text" id="dc-k" maxlength="8" autocomplete="off" autocapitalize="off" spellcheck="false" title="英小文字と数字 8 文字まで"></label>
+          <label><span>値</span><input type="text" id="dc-v" maxlength="12" autocomplete="off"></label>
+        </div>
+        <div class="dc-ow">
+          <table class="dc-ot">
+            <thead><tr><th scope="col">実行</th><th scope="col" class="dc-how">内容</th><th scope="col" class="r">計算量</th><th scope="col" class="r" title="英単語 24 個で 8 通りのデータを試した 1 回の平均">n = 24 の平均</th></tr></thead>
+            <tbody id="dc-ops"></tbody>
+          </table>
+        </div>
+      </Panel>
+      <Panel hid="hd-out" title="計算結果" class="a-out">
+        <dl class="metrics dc-res">
+          <div class="m m-main"><dt>調べた回数</dt><dd><span id="o-p">0</span><span class="u">回</span></dd></div>
+          <div class="m"><dt>移動</dt><dd id="o-mv">0</dd></div>
+          <div class="m"><dt>キー</dt><dd id="o-n">0</dd></div>
+          <div class="m"><dt>場所</dt><dd id="o-m">–</dd></div>
+          <div class="m"><dt>負荷率</dt><dd id="o-lf">–</dd></div>
+          <div class="m"><dt>負荷率の上限</dt><dd id="o-lm">–</dd></div>
+          <div class="m"><dt>調べる回数の平均</dt><dd id="o-mean">–</dd></div>
+          <div class="m"><dt>調べる回数の最大</dt><dd id="o-max">–</dd></div>
+          <div class="m"><dt>削除済みの印</dt><dd id="o-tb">–</dd></div>
+        </dl>
+      </Panel>
+      <Panel hid="hd-snd" title="音" class="a-snd">
+        <div slot="aux" class="seg"><button type="button" id="dc-snd" aria-pressed="true"><span class="led on" id="dc-sndL" aria-hidden="true"></span> <span id="dc-sndT">オン</span></button></div>
+        <div class="ptab dc-row"><ParamRow d={VOL} /></div>
+      </Panel>
+    </div>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools current="dictionary" />
+  <script>
+    import '../tools/dictionary/client';
+  </script>
+</SiteLayout>

@@ -1,0 +1,198 @@
+---
+// 動作原理と式
+import { bigO } from '../../lib/big-o';
+import { BIG_O, DEFS, defOf, loadText, STAGES } from './model';
+
+type Ref = { for: string; src: string };
+const REFS: readonly Ref[] = [
+  {
+    for: 'FNV-1a',
+    src: 'L. Noll, K. Vo, D. Eastlake 3rd, T. Hansen, The FNV Non-Cryptographic Hash Algorithm, RFC 9923, 2026',
+  },
+  {
+    for: '開番地法と線形探査法',
+    src: 'W. W. Peterson, Addressing for Random-Access Storage, IBM Journal of Research and Development, Vol. 1, No. 2, pp. 130–146, 1957',
+  },
+  {
+    for: '調べる回数の式と塊',
+    src: 'D. E. Knuth, The Art of Computer Programming, Vol. 3: Sorting and Searching, 2nd ed., Addison-Wesley, 1998, Section 6.4',
+  },
+  {
+    for: '削除済みの印、ダブルハッシュ法の歩幅、拡張の償却',
+    src: 'T. H. Cormen, C. E. Leiserson, R. L. Rivest, C. Stein, Introduction to Algorithms, 4th ed., MIT Press, 2022, Chapters 11 and 16',
+  },
+  {
+    for: 'ロビンフッド・ハッシュ法',
+    src: 'P. Celis, P.-Å. Larson, J. I. Munro, Robin Hood hashing, 26th Annual Symposium on Foundations of Computer Science, pp. 281–288, 1985',
+  },
+  {
+    for: 'ロビンフッド・ハッシュ法（学位論文）',
+    src: 'P. Celis, Robin Hood Hashing, Ph.D. thesis, University of Waterloo, 1986, Technical Report CS-86-14',
+  },
+  {
+    for: 'カッコウ・ハッシュ法',
+    src: 'R. Pagh, F. F. Rodler, Cuckoo hashing, Journal of Algorithms, Vol. 51, No. 2, pp. 122–144, 2004',
+  },
+  {
+    for: '入れた順を保つ dict の作り',
+    src: "Python Software Foundation, What's New In Python 3.6, https://docs.python.org/3/whatsnew/3.6.html",
+  },
+  {
+    for: '入れた順を言語の仕様に',
+    src: "Python Software Foundation, What's New In Python 3.7, https://docs.python.org/3/whatsnew/3.7.html",
+  },
+  {
+    for: 'dict の探す順番',
+    src: 'CPython, Objects/dictobject.c, https://github.com/python/cpython/blob/main/Objects/dictobject.c',
+  },
+  {
+    for: '2 つ目のハッシュの混ぜ方',
+    src: 'A. Appleby, MurmurHash3（SMHasher）, https://github.com/aappleby/smhasher',
+  },
+];
+const Rf = (i: number) => `<a class="rf" href="#thy-r${i}">[${i}]</a>`;
+const MOD = '<mspace width="0.4em"/><mo>mod</mo><mspace width="0.4em"/>';
+const P = (x: string) => `<mo stretchy="false">(</mo>${x}<mo stretchy="false">)</mo>`;
+const ONE_A = '<mn>1</mn><mo>−</mo><mi>α</mi>';
+const INV = `<mfrac><mn>1</mn><mrow>${ONE_A}</mrow></mfrac>`;
+const INV2 = `<mfrac><mn>1</mn><msup><mrow>${P(ONE_A)}</mrow><mn>2</mn></msup></mfrac>`;
+const HALF = (x: string) =>
+  `<mfrac><mn>1</mn><mn>2</mn></mfrac><mrow><mo>(</mo><mn>1</mn><mo>+</mo>${x}<mo>)</mo></mrow>`;
+
+/** 平均の調べる回数の式。[名前, 見つかる, 見つからない, 見つかる α, 見つからない α] */
+const A = defOf('lin')?.load ?? 0.75;
+const PROBES: readonly (readonly [string, string, string, number, number])[] = [
+  [
+    'チェイン法',
+    '<mn>1</mn><mo>+</mo><mfrac><mi>α</mi><mn>2</mn></mfrac>',
+    '<mi>α</mi><mo>+</mo><msup><mi>e</mi><mrow><mo>−</mo><mi>α</mi></mrow></msup>',
+    1 + A / 2,
+    A + Math.exp(-A),
+  ],
+  ['線形探査法', HALF(INV), HALF(INV2), (1 + 1 / (1 - A)) / 2, (1 + 1 / (1 - A) ** 2) / 2],
+  [
+    '一様ハッシュ',
+    `<mfrac><mn>1</mn><mi>α</mi></mfrac><mspace width="0.15em"/><mi>ln</mi><mspace width="0.15em"/>${INV}`,
+    INV,
+    Math.log(1 / (1 - A)) / A,
+    1 / (1 - A),
+  ],
+];
+---
+<h3>ハッシュ関数</h3>
+<p>キーの文字列から 32 ビットの数を作ります。FNV-1a は 1 文字ずつ XOR してから決まった素数を掛けます <Fragment set:html={Rf(1)} />。</p>
+<div class="eqs"><math display="block"><mrow><msub><mi>h</mi><mn>0</mn></msub><mo>=</mo><mn>0x811c9dc5</mn><mspace width="1.2em"/><msub><mi>h</mi><mi>i</mi></msub><mo>=</mo><mo stretchy="false">(</mo><msub><mi>h</mi><mrow><mi>i</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>⊕</mo><msub><mi>c</mi><mi>i</mi></msub><mo stretchy="false">)</mo><mo>×</mo><mn>0x01000193</mn><Fragment set:html={MOD} /><msup><mn>2</mn><mn>32</mn></msup></mrow></math></div>
+<p>記号: <math><msub><mi>c</mi><mi>i</mi></msub></math> は <math><mi>i</mi></math> 文字目の文字コード、<math><mo>⊕</mo></math> は XOR です。</p>
+<p>文字コードの和は悪い例です。文字の並べ替えで同じ値になるので、tea と eat や k01 と k10 がぶつかります。連番は値が 1 ずつずれるので、隣り合う場所に並んで塊を作ります。</p>
+<div class="eqs"><math display="block"><mrow><mi>h</mi><mo>=</mo><munder><mo>∑</mo><mi>i</mi></munder><msub><mi>c</mi><mi>i</mi></msub></mrow></math></div>
+
+<h3>番号の決め方</h3>
+<p>場所の数は 2 のべき乗にします。番号はハッシュの下位 <math><mi>b</mi></math> ビットで、割り算が要りません。</p>
+<div class="eqs"><math display="block"><mrow><mi>m</mi><mo>=</mo><msup><mn>2</mn><mi>b</mi></msup><mspace width="1.2em"/><mi>s</mi><mo>=</mo><mi>h</mi><Fragment set:html={MOD} /><mi>m</mi><mo>=</mo><mi>h</mi><mspace width="0.3em"/><mi>AND</mi><mspace width="0.3em"/><mo stretchy="false">(</mo><mi>m</mi><mo>−</mo><mn>1</mn><mo stretchy="false">)</mo></mrow></math></div>
+<p>上のビットは番号に効かないので、下位のビットがよく混ざっている必要があります。FNV-1a の一番下のビットは全部の文字の一番下のビットの XOR で、下から 2〜7 ビット目にも似た弱さがあります。ハッシュを右へずらして XOR すると上のビットも混ざります <Fragment set:html={Rf(1)} />。</p>
+
+<h3>負荷率と調べる回数</h3>
+<p>負荷率はキーの数を場所の数で割った値です。ハッシュが均一にばらつくとき、1 回の検索で調べる回数の平均は負荷率だけで決まります <Fragment set:html={Rf(3)} /><Fragment set:html={Rf(4)} />。見つからないときは空きの場所や空の列を見た 1 回も数えます。</p>
+<div class="eqs"><math display="block"><mrow><mi>α</mi><mo>=</mo><mfrac><mi>n</mi><mi>m</mi></mfrac></mrow></math></div>
+<div class="tt-w"><table class="tt dc-pr">
+  <thead>
+    <tr><th rowspan="2"></th><th scope="colgroup" colspan="2">式</th><th scope="colgroup" colspan="2">負荷率 {A}</th></tr>
+    <tr><th scope="col">見つかる</th><th scope="col">見つからない</th><th scope="col">見つかる</th><th scope="col">見つからない</th></tr>
+  </thead>
+  <tbody>
+    {PROBES.map(([name, ok, ng, vo, vn]) => (
+      <tr>
+        <th scope="row">{name}</th>
+        <td set:html={`<math>${ok}</math>`} />
+        <td set:html={`<math>${ng}</math>`} />
+        <td class="num">{vo.toFixed(2)}</td>
+        <td class="num">{vn.toFixed(2)}</td>
+      </tr>
+    ))}
+  </tbody>
+</table></div>
+<p>記号: <math><mi>n</mi></math> はキーの数、<math><mi>m</mi></math> は場所の数です。一様ハッシュはキーごとに全部の場所を乱数の順に調べる模型で、ダブルハッシュ法はこれに近い回数になります <Fragment set:html={Rf(3)} />。線形探査法は負荷率が 1 に近づくと、見つからないときの回数が急に増えます。</p>
+
+<h3>衝突の解き方</h3>
+<ul class="tl">
+  <li>チェイン法: 場所ごとに列を持ち、同じ番号のキーを列につなぐ。負荷率は 1 を超えてもよい</li>
+  <li>開番地法: キーを場所に直接置く。埋まっていれば決まった順番でほかの場所を調べる <Fragment set:html={Rf(2)} /></li>
+</ul>
+<p>開番地法の 3 つの方法は、<math><mi>i</mi></math> 回目に調べる場所の決め方が違います。</p>
+<div class="eqs"><math display="block"><mrow><msub><mi>s</mi><mi>i</mi></msub><mo>=</mo><mo stretchy="false">(</mo><msub><mi>s</mi><mn>0</mn></msub><mo>+</mo><mi>i</mi><mo stretchy="false">)</mo><Fragment set:html={MOD} /><mi>m</mi></mrow></math><math display="block"><mrow><msub><mi>s</mi><mi>i</mi></msub><mo>=</mo><mrow><mo>(</mo><msub><mi>s</mi><mn>0</mn></msub><mo>+</mo><mfrac><mrow><mi>i</mi><mo stretchy="false">(</mo><mi>i</mi><mo>+</mo><mn>1</mn><mo stretchy="false">)</mo></mrow><mn>2</mn></mfrac><mo>)</mo></mrow><Fragment set:html={MOD} /><mi>m</mi></mrow></math><math display="block"><mrow><msub><mi>s</mi><mi>i</mi></msub><mo>=</mo><mo stretchy="false">(</mo><msub><mi>s</mi><mn>0</mn></msub><mo>+</mo><mi>i</mi><mi>d</mi><mo stretchy="false">)</mo><Fragment set:html={MOD} /><mi>m</mi></mrow></math></div>
+<p>記号: <math><msub><mi>s</mi><mn>0</mn></msub></math> はハッシュで決まる番号、<math><mi>d</mi></math> は 2 つ目のハッシュで決める歩幅です。</p>
+<ul class="tl">
+  <li>線形探査法: 隣へ進むので、埋まった場所が続く塊ができる。塊に当たったキーは塊の端に付くので、塊はさらに伸びる <Fragment set:html={Rf(3)} /></li>
+  <li>二次探査法: 間を 1・2・3 … と広げるので、近くの塊を飛び越える。<math><mi>m</mi></math> が 2 のべき乗なら、三角数の順で全部の場所を 1 回ずつ通る。同じ番号から始まるキーどうしは同じ順に進む</li>
+  <li>ダブルハッシュ法: 同じ番号から始まるキーでも歩幅が違うので、別の順に進む。歩幅を奇数にすると <math><mi>m</mi></math> と互いに素になり、全部の場所を通る <Fragment set:html={Rf(4)} /></li>
+</ul>
+
+<h3>削除</h3>
+<p>開番地法で場所を空きに戻すと、その先へ進んだキーの道が途切れて見つからなくなります。そこで削除済みの印を置きます。検索は印を飛ばして進み、追加は印の場所を使えます <Fragment set:html={Rf(4)} />。印が増えると調べる回数も増えるので、拡張のときに印を捨てて入れ直します。</p>
+<p>ロビンフッド・ハッシュ法は印を置かず、後ろのキーを 1 つずつ前へ詰めます。空きか、自分の番号にいるキーに当たったら止めます。</p>
+
+<h3>ロビンフッド・ハッシュ法</h3>
+<p>線形探査法と同じ順に進み、手に持ったキーより自分の番号に近いキーに会うと入れ替えます。遠くから来たキーを優先するので、距離のばらつきが小さくなります <Fragment set:html={Rf(5)} /><Fragment set:html={Rf(6)} />。検索はいまの距離より短い距離のキーに当たったら打ち切れます。</p>
+<div class="eqs"><math display="block"><mrow><mtext>距離</mtext><mo>=</mo><mo stretchy="false">(</mo><mi>s</mi><mo>−</mo><msub><mi>s</mi><mn>0</mn></msub><mo stretchy="false">)</mo><Fragment set:html={MOD} /><mi>m</mi></mrow></math></div>
+<p>記号: <math><mi>s</mi></math> はキーのいる場所、<math><msub><mi>s</mi><mn>0</mn></msub></math> はそのキーの番号です。</p>
+
+<h3>カッコウ・ハッシュ法</h3>
+<p>表を 2 つに分け、2 つのハッシュで表 1 と表 2 に 1 か所ずつ場所を決めます。検索と削除は 2 か所だけ見ます <Fragment set:html={Rf(7)} />。</p>
+<p>追加は空いている方へ入れます。両方埋まっていれば前のキーを追い出し、追い出したキーをもう一方の表の場所へ移します。追い出しが輪になって終わらないことがあり、回数の上限を超えたら表を作り直します。負荷率が 1/2 より小さければ、追加は償却した期待値で <math><mi>O</mi><mo stretchy="false">(</mo><mn>1</mn><mo stretchy="false">)</mo></math> です <Fragment set:html={Rf(7)} />。</p>
+
+<h3>入れた順を保つ辞書</h3>
+<p>番号の表と項目の配列に分けます。項目は追加の順に配列の最後へ置き、番号の表には項目の番号だけを入れます。順に取り出すときは項目の配列を前から読みます。Python の dict は 3.6 でこの作りになり、記憶は 3.5 より 20〜25 % 減りました <Fragment set:html={Rf(8)} />。3.7 からは入れた順を保つことが言語の仕様です <Fragment set:html={Rf(9)} />。</p>
+<p>番号の表の探す順番は次の式です。perturb はハッシュから始めて 5 ビットずつ右へずらすので、ハッシュの上のビットも順に番号へ入ります <Fragment set:html={Rf(10)} />。</p>
+<div class="eqs"><math display="block"><mrow><mi>perturb</mi><mo>←</mo><mrow><mo>⌊</mo><mfrac><mi>perturb</mi><msup><mn>2</mn><mn>5</mn></msup></mfrac><mo>⌋</mo></mrow><mspace width="1.2em"/><mi>s</mi><mo>←</mo><mo stretchy="false">(</mo><mn>5</mn><mi>s</mi><mo>+</mo><mi>perturb</mi><mo>+</mo><mn>1</mn><mo stretchy="false">)</mo><Fragment set:html={MOD} /><mi>m</mi></mrow></math></div>
+<p>削除は番号の表に削除済みの印を置き、項目を空けます。項目の配列は拡張のときに詰めます。</p>
+
+<h3>拡張</h3>
+<p>負荷率が上限を超えたら場所の数を 2 倍にして、全部のキーを入れ直します。1 回の拡張では全部のキーが動きますが、次の拡張まで同じくらいの数の追加ができます。入れ直す数の合計はキーの数の 2 倍より少ないので、1 回の追加あたりは償却で <math><mi>O</mi><mo stretchy="false">(</mo><mn>1</mn><mo stretchy="false">)</mo></math> です <Fragment set:html={Rf(4)} />。</p>
+<div class="eqs"><math display="block"><mrow><mo>…</mo><mo>+</mo><mfrac><mi>n</mi><mn>4</mn></mfrac><mo>+</mo><mfrac><mi>n</mi><mn>2</mn></mfrac><mo>+</mo><mi>n</mi><mo>&lt;</mo><mn>2</mn><mi>n</mi></mrow></math></div>
+
+<h3>計算量</h3>
+<p>調べる回数で表します。平均は負荷率を上限より下に保ち、ハッシュが均一にばらつくときの値です。最悪は多くのキーが同じ番号に集まったときです。* は確率の上での値です。カッコウ・ハッシュ法の追加は償却した期待値です <Fragment set:html={Rf(7)} />。</p>
+<div class="tt-w"><table class="tt dc-cx">
+  <thead>
+    <tr><th rowspan="2"></th>{STAGES.map(([, t]) => <th scope="colgroup" colspan="2">{t}</th>)}<th scope="col" rowspan="2">負荷率の上限</th><th scope="col" rowspan="2">入れた順</th></tr>
+    <tr>{STAGES.map(() => <Fragment><th scope="col">平均</th><th scope="col">最悪</th></Fragment>)}</tr>
+  </thead>
+  <tbody>
+    {DEFS.map((d) => (
+      <tr>
+        <th scope="row">{d.name}</th>
+        {STAGES.map(([k]) => BIG_O[d.kind][k].map((v) => <td set:html={bigO(v)} />))}
+        <td>{loadText(d)}</td>
+        <td>{BIG_O[d.kind].ord}</td>
+      </tr>
+    ))}
+  </tbody>
+</table></div>
+
+<h3>出典</h3>
+<ol class="refs">
+  {REFS.map((r, i) => (
+    <li id={`thy-r${i + 1}`}>
+      <span class="rf-for">{r.for}</span>
+      <span class="rf-src">{r.src}</span>
+    </li>
+  ))}
+</ol>
+
+<h3>このツールで決めたこと</h3>
+<ul class="tl">
+  <li>調べる回数は読んだ場所・列のノード・項目の数</li>
+  <li>FNV-1a の値は XOR で畳まずにそのまま番号に使う</li>
+  <li>移動はキーを書き直した数で、拡張の入れ直しも数える</li>
+  <li>回数は工程ごとに 0 から数える</li>
+  <li>拡張しないときの場所の数は、負荷率が 0.75 以下になる最小の 2 のべき乗（8 以上）。カッコウ・ハッシュ法はその 2 倍を 2 つの表に分ける</li>
+  <li>拡張するときは 8 個の場所から始める</li>
+  <li>チェイン法以外は、拡張しない設定でも空きがなくなる追加の前に 2 倍にする</li>
+  <li>負荷率には削除済みの印も数える。拡張のときに印を捨てる</li>
+  <li>2 つ目のハッシュは、FNV-1a に 0x9e3779b9 を XOR して MurmurHash3 の最後の混ぜ方（fmix32）を通した値 <Fragment set:html={Rf(11)} />。文字コードの和を選んでも FNV-1a から作る</li>
+  <li>2 つ目のハッシュはダブルハッシュ法の歩幅とカッコウ・ハッシュ法の表 2 の番号に使う</li>
+  <li>ダブルハッシュ法の歩幅は、2 つ目のハッシュの下位 <math><mi>b</mi></math> ビットの一番下を 1 にした奇数</li>
+  <li>カッコウ・ハッシュ法の追い出しは <math><mn>2</mn><mspace width="0.1em"/><msub><mi>log</mi><mn>2</mn></msub><mi>m</mi><mo>+</mo><mn>2</mn></math> 回まで（<math><mi>m</mi></math> は 2 つの表の場所の合計）。超えたら 2 倍の表に入れ直し、ハッシュ関数は変えない</li>
+  <li>入れた順を保つ辞書の perturb は 32 ビットのハッシュから始める。CPython は 64 ビットのハッシュを使う</li>
+  <li>操作の表の回数は、英単語 24 個で 8 通りのデータを試した 1 回の平均</li>
+</ul>
