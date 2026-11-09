@@ -651,7 +651,7 @@ export const TOOLS: Tool[] = [
     t: 'リスト・キュー・スタック',
     d: 'データ構造ごとの順序と計算量をバーの動きで比べます。',
     ic: 'ls',
-    r: ['binary-heap', 'b-tree', 'sort', 'expression-parsing'],
+    r: ['binary-heap', 'dictionary', 'b-tree', 'sort'],
     k: 'データ構造 data structure list queue stack リスト キュー スタック 片方向 双方向 連結リスト linked list 配列 array 両端キュー deque リングバッファ ring buffer 循環バッファ circular push pop enqueue dequeue lifo fifo 計算量 オーダー ビッグオー big o 償却',
   },
   {
@@ -678,8 +678,17 @@ export const TOOLS: Tool[] = [
     t: '赤黒木',
     d: '回転と色の変更で木が傾かない様子を種類ごとに比べます。',
     ic: 'rb',
-    r: ['b-tree', 'binary-heap', 'list-queue-stack', 'sort'],
+    r: ['b-tree', 'dictionary', 'binary-heap', 'list-queue-stack'],
     k: 'red-black tree red black tree rbtree rb tree 赤黒木 レッドブラック木 2 色木 平衡二分探索木 平衡木 balanced binary search tree self-balancing 二分探索木 binary search tree bst 左傾赤黒木 left-leaning llrb aa木 aa tree avl木 avl tree 回転 rotation 色の変更 recolor 2-3-4 木 2-3 木 b木 nil 黒の高さ black height treemap std::map linux rbtree 探索 検索 追加 削除 計算量 オーダー',
+  },
+  {
+    id: 'dictionary',
+    c: 'データ構造',
+    t: 'ディクショナリ',
+    d: 'キーが表のどこに入るかを方式ごとに比べます。',
+    ic: 'dc',
+    r: ['red-black-tree', 'b-tree', 'list-queue-stack', 'sort'],
+    k: 'dictionary dict ディクショナリ 辞書 連想配列 associative array map マップ hash table hashtable hashmap ハッシュテーブル ハッシュ表 ハッシュマップ hash function ハッシュ関数 fnv fnv-1a 衝突 collision バケット bucket スロット slot チェイン法 連鎖法 separate chaining 開番地法 オープンアドレス法 open addressing 線形探査 linear probing 二次探査 quadratic probing ダブルハッシュ double hashing ロビンフッド robin hood カッコウ cuckoo hashing 負荷率 load factor 再ハッシュ rehash 拡張 削除済み tombstone クラスタ clustering python dict java hashmap unordered_map 計算量 オーダー',
   },
 ];
 /** 準備中を後ろへ */

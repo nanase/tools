@@ -6,6 +6,14 @@
  * w = 黒鍵の太線、fa・fb・fc = 塗り、fr = 赤黒木の赤の塗り、pl・pd・il・ih = SVG テーマの図柄の明るい地と暗い地とその線、
  * sn・sr・ml・md・mn・sk = 同じく太陽・光・昼の山・夜の山・月・星
  */
+
+import {
+  DEFS as DC_DEFS,
+  type Addr as DcAddr,
+  type Frame as DcFrame,
+  makeKeys as dcKeys,
+  runTrace as dcRun,
+} from '../tools/dictionary/model';
 import { czaAlt, parDist, R22 } from '../tools/halo/labels';
 import { fanPath } from '../tools/jjy/fan';
 import { FEAT, PG2, PG3, PW2, PW3, Q_FIG } from '../tools/piano-action/geom';
@@ -175,6 +183,19 @@ function rbFrames(): RbFrame[] {
 }
 /** 赤黒木の図柄の 1 秒あたりのコマ数 */
 const RB_FPS = 5;
+/** ディクショナリの図柄のコマ: チェイン法の 8 個の番号へ英単語 14 個を入れ、逆に再生して空へ戻す */
+const DC_FRAMES: DcFrame[] = [];
+function dcFrames(): DcFrame[] {
+  if (DC_FRAMES.length) return DC_FRAMES;
+  const keys = dcKeys('word', 14, 13),
+    t = dcRun(DC_DEFS[0], [keys.map((k) => ({ t: 'add' as const, k })), [], []], { n: 6, hash: 'fnv', grow: false }),
+    a = t.frames.slice(t.starts[0], t.starts[1]),
+    hold = (f: DcFrame): DcFrame[] => Array(6).fill(f);
+  DC_FRAMES.push(...a, ...hold(a[a.length - 1]), ...[...a].reverse(), ...hold(a[0]));
+  return DC_FRAMES;
+}
+/** ディクショナリの図柄の 1 秒あたりのコマ数 */
+const DC_FPS = 4;
 /** 式の構文解析の図柄の字句の線: 幅 5・高さ 8 の箱の中心が原点 */
 const EP_GLYPH: Record<string, [number, number][][]> = {
   '1': [
@@ -1898,6 +1919,42 @@ export const ART: Record<string, Art> = {
     place(f.root, 0);
     return P('c t', lines) + P('c t', box) + (wrote ? P('a', wrote) : '') + P('fc', base) + (hit ? P('fa', hit) : '');
   },
+  /* ディクショナリ: チェイン法。8 個の番号の箱から、同じ番号のキーの列が下へ伸びる。新しいキーは黄、比べているキーは青 */
+  dc(t) {
+    const F = dcFrames(),
+      /* 止まった絵は 10 個以上入り、列の 2 個目以降へ入れた直後 */
+      start = Math.max(
+        0,
+        F.findIndex((q) => q.put.length > 0 && Number(q.put[0][2]) >= 1 && (q.T[0] as string[][]).flat().length >= 10),
+      ),
+      f = F[(start + Math.floor(t * DC_FPS)) % F.length],
+      T = f.T[0] as string[][],
+      n = T.length,
+      w = 11,
+      g = (112 - n * w) / (n - 1),
+      X = (s: number): number => 4 + s * (w + g),
+      same = (a: DcAddr, b: DcAddr): boolean => a.length === b.length && a.every((v, i) => v === b[i]),
+      has = (L: readonly DcAddr[], a: DcAddr): boolean => L.some((b) => same(a, b)),
+      rect = (x: number, y: number, rw: number, rh: number): string =>
+        `M${r1(x)} ${r1(y)}h${r1(rw)}v${r1(rh)}h${r1(-rw)}Z`;
+    let box = '',
+      key = '',
+      hot = '',
+      look = '';
+    T.forEach((B, s) => {
+      box += rect(X(s), 3, w, 6);
+      B.forEach((_, j) => {
+        const y = 13 + j * 8.5,
+          d = rect(X(s) + 1, y, w - 2, 5.5);
+        box += `M${r1(X(s) + w / 2)} ${r1(j ? y - 3 : 9)}V${r1(y)}`;
+        if (has(f.put, [0, s, j])) hot += d;
+        else if (has(f.look, [0, s, j])) look += d;
+        else key += d;
+      });
+      if (has(f.look, [0, s])) look += rect(X(s) + 1, 4, w - 2, 4);
+    });
+    return P('c t', box) + (key ? P('fc', key) : '') + (look ? P('fb', look) : '') + (hot ? P('fa', hot) : '');
+  },
   /* 赤黒木: 赤と黒の丸の木。黒は他のカードの丸と同じ灰で描く。1〜15 を順に入れ、回転で根が入れ替わる。赤が続く枝は破線 */
   rb(t) {
     const F = rbFrames(),
@@ -2903,6 +2960,7 @@ export const LOOP: Record<string, number> = {
   hp: 50 / HP_FPS,
   bt: 52 / BT_FPS,
   rb: rbFrames().length / RB_FPS,
+  dc: dcFrames().length / DC_FPS,
   ep: EP_FRAMES.length / EP_FPS,
   rx: RX_PTS.length / RX_FPS,
   pcm: 3,
