@@ -6,6 +6,7 @@ import { reading, sections } from '../src/tools/focusing-mask/geometry';
 import { type Mask, type Scope, transmit } from '../src/tools/focusing-mask/mask';
 import { fitBahtinov } from '../src/tools/focusing-mask/measure';
 import { alphaFor, type Band, type Img, psf, pupil } from '../src/tools/focusing-mask/optics';
+import { cluster, convolve, doubleStar, sample } from '../src/tools/focusing-mask/source';
 
 const OPEN: Scope = { obs: 0, vanes: 0, vw: 0 };
 const NONE: Mask = { kind: 'none', p: 0.1, th: 0, duty: 0.5, bar: 0, rot: 0, holes: 3, hd: 0.3, hr: 0.6 };
@@ -266,5 +267,59 @@ describe('カメラ', () => {
     for (let x = 0; x < 64; x++) if (row[x] >= pk / 2) w++;
     expect(w).toBeGreaterThanOrEqual(5);
     expect(w).toBeLessThanOrEqual(7);
+  });
+});
+
+describe('光源', () => {
+  it('畳み込みは、直接の和と一致する', () => {
+    const R = 6,
+      nk = 4,
+      n = R + nk,
+      o = new Float64Array(n * n),
+      K = new Float64Array(nk * nk);
+    for (let i = 0; i < o.length; i++) o[i] = Math.abs(Math.sin(i * 1.7));
+    for (let i = 0; i < K.length; i++) K[i] = Math.abs(Math.cos(i * 0.9));
+    const out = convolve(o, K, nk, R);
+    for (const [x, y] of [
+      [0, 0],
+      [3, 2],
+      [5, 5],
+    ]) {
+      /* 出力 (x, y) = Σ o[(x, y) + nk/2 − d] K[nk/2 + d] */
+      let v = 0;
+      for (let ky = 0; ky < nk; ky++)
+        for (let kx = 0; kx < nk; kx++) v += K[ky * nk + kx] * o[(y + nk - ky) * n + (x + nk - kx)];
+      expect(out[y * R + x]).toBeCloseTo(v, 9);
+    }
+  });
+  it('点の光源を畳み込むと、核がそのまま出る', () => {
+    const R = 16,
+      nk = 8,
+      p = sample({ kind: 'stars', pts: new Float64Array([R / 2 + nk / 2 + 0.5, R / 2 + nk / 2 + 0.5, 1]) }, R + nk),
+      K = new Float64Array(nk * nk).map((_, i) => i + 1),
+      out = convolve(p, K, nk, R);
+    expect(sum(out)).toBeCloseTo(sum(K), 9);
+    expect(out[(R / 2) * R + R / 2]).toBeCloseTo(K[(nk / 2) * nk + nk / 2], 9);
+  });
+  it('画像の標本は、縮めても広げても明るさの平均を保つ', () => {
+    const g = new Float32Array(128 * 128).map((_, i) => ((i % 128) * (i >> 7)) / 128 ** 2),
+      mean = sum(Float64Array.from(g)) / (128 * 128);
+    for (const du of [0.5, 1, 4]) {
+      const n = Math.round(128 / du),
+        a = sample({ kind: 'raster', w: 128, h: 128, a: g, u0: 0, v0: 0, du }, n);
+      expect(sum(a) / (n * n)).toBeCloseTo(mean, 2);
+    }
+  });
+  it('二重星の伴星は、間隔と等級差のとおりに置く', () => {
+    const [a, b] = doubleStar(20, 5, 5800, 12000),
+      r = Math.hypot(b.x - a.x, b.y - a.y) / (Math.PI / 180 / 3600);
+    expect(r).toBeCloseTo(20, 9);
+    expect(b.F).toBeCloseTo(0.01, 9);
+  });
+  it('星団の星は、幅の正方形の中にある', () => {
+    const W = 1e-3,
+      s = cluster(W);
+    expect(s.length).toBe(90);
+    for (const t of s) expect(Math.max(Math.abs(t.x), Math.abs(t.y))).toBeLessThanOrEqual(W / 2);
   });
 });

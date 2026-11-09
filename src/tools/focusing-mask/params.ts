@@ -28,6 +28,12 @@ export type Key =
   | 'coma'
   | 'ast'
   | 'T'
+  | 'mag'
+  | 'sb'
+  | 'sw'
+  | 'sep'
+  | 'dm'
+  | 'T2'
   | 'see'
   | 'px'
   | 'ex';
@@ -284,6 +290,133 @@ export const TEMP: ParamDef = {
   format: plainF('K', 4),
 };
 
+export const MAG: ParamDef = {
+  k: 'mag',
+  nm: '等級',
+  sym: '<i>m</i>',
+  name: '等級',
+  sub: '星の明るさ。1 等暗くなるごとに約 1/2.5 の明るさ',
+  unit: '等',
+  min: -2,
+  max: 12,
+  v: 2,
+  ph: '例 2',
+  pre: [
+    [0, '0'],
+    [2, '2'],
+    [4, '4'],
+    [6, '6'],
+    [8, '8'],
+  ],
+  lin: { step: 0.1, big: 1 },
+  sign: 'any',
+  notation: 'plain',
+  format: plainF('等', 3),
+};
+
+export const SB: ParamDef = {
+  k: 'sb',
+  nm: '明るさ',
+  sym: '<i>μ</i>',
+  name: '白い所の明るさ',
+  sub: '画像の白い所の、1 平方秒角あたりの等級。満月は約 3.5、都市の夜空は約 18',
+  unit: '等/″²',
+  min: 0,
+  max: 24,
+  v: 11,
+  ph: '例 11',
+  pre: [
+    [4, '4'],
+    [8, '8'],
+    [11, '11'],
+    [14, '14'],
+  ],
+  lin: { step: 0.1, big: 1 },
+  sign: 'nonneg',
+  notation: 'plain',
+  format: plainF('等/″²', 3),
+};
+
+export const SW: ParamDef = {
+  k: 'sw',
+  nm: '光源の幅',
+  sym: '',
+  name: '光源の幅',
+  sub: '画像・星団の横の幅（空の上の角度）。月は約 31′',
+  unit: '′',
+  min: 0.2,
+  max: 60,
+  v: 10,
+  ph: '例 10',
+  pre: [
+    [1, '1'],
+    [4, '4'],
+    [10, '10'],
+    [30, '30'],
+  ],
+  list: [0.2, 0.3, 0.5, 0.75, 1, 1.5, 2, 3, 4, 5, 7, 10, 15, 20, 30, 45, 60],
+  log: true,
+  notation: 'plain',
+  format: plainF('′', 3),
+};
+
+export const SEP: ParamDef = {
+  k: 'sep',
+  nm: '間隔',
+  sym: '',
+  name: '間隔',
+  sub: '主星と伴星の角距離',
+  unit: '″',
+  min: 1,
+  max: 120,
+  v: 20,
+  ph: '例 20',
+  pre: [
+    [5, '5'],
+    [10, '10'],
+    [20, '20'],
+    [35, '35'],
+  ],
+  list: [1, 1.5, 2, 3, 4, 5, 7, 10, 15, 20, 25, 35, 50, 70, 100, 120],
+  log: true,
+  notation: 'plain',
+  format: plainF('″', 3),
+};
+
+export const DM: ParamDef = {
+  k: 'dm',
+  nm: '等級差',
+  sym: '',
+  name: '等級差',
+  sub: '伴星が主星より暗い等級の差。5 等で明るさは 1/100',
+  unit: '等',
+  min: 0,
+  max: 8,
+  v: 1.5,
+  ph: '例 1.5',
+  pre: [
+    [0, '0'],
+    [1.5, '1.5'],
+    [3, '3'],
+    [5, '5'],
+  ],
+  lin: { step: 0.1, big: 1 },
+  sign: 'nonneg',
+  notation: 'plain',
+  format: plainF('等', 3),
+};
+
+export const TEMP2: ParamDef = {
+  ...TEMP,
+  k: 'T2',
+  nm: 'T₂',
+  sym: '<i>T</i><sub>2</sub>',
+  name: '伴星の色温度',
+  sub: '伴星の光を黒体放射とみなしたときの温度',
+  v: 12000,
+  ph: '例 12000',
+};
+
 export const SEE: ParamDef = {
   k: 'see',
   nm: 'シーイング',
@@ -360,7 +493,29 @@ export const EXP: ParamDef = {
   },
 };
 
-export const PARAMS: ParamDef[] = [THR, TH, BF, ROT, BAR, HD, DIA, FOC, OBS, COMA, AST, TEMP, SEE, PIX, EXP];
+export const PARAMS: ParamDef[] = [
+  THR,
+  TH,
+  BF,
+  ROT,
+  BAR,
+  HD,
+  DIA,
+  FOC,
+  OBS,
+  COMA,
+  AST,
+  TEMP,
+  MAG,
+  SB,
+  SW,
+  SEP,
+  DM,
+  TEMP2,
+  SEE,
+  PIX,
+  EXP,
+];
 
 /** マスクの種類: [値, 表示, title] */
 export const MASKS: readonly (readonly [MaskKind, string, string])[] = [
@@ -385,3 +540,16 @@ export const SCOPES: readonly (readonly [ScopeKind, string, string])[] = [
   ['sct', 'シュミカセ', '副鏡の中央遮蔽（補正板に付くのでスパイダーはない）'],
 ];
 export const OBS0: Record<ScopeKind, number> = { refr: 0, newt: 25, sct: 35 };
+
+/** 光源の種類 */
+export type SrcKind = 'star' | 'double' | 'cluster' | 'image';
+export const SRCS: readonly (readonly [SrcKind, string, string])[] = [
+  ['star', '星', '星 1 つ（点光源）'],
+  ['double', '二重星', '色と明るさの違う星 2 つ'],
+  ['cluster', '星団', '中心に集まった星 90 個'],
+  ['image', '画像', '用意した画像を光源にする'],
+];
+/** 光源ごとの幅の既定値（′） */
+export const SW0: Partial<Record<SrcKind, number>> = { cluster: 10, image: 10 };
+/** 光源ごとの等級の既定値（星団はいちばん明るい星） */
+export const MAG0: Partial<Record<SrcKind, number>> = { star: 2, double: 2, cluster: 3 };
