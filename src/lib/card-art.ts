@@ -874,6 +874,34 @@ function gbGear(cx: number, cy: number, r: number, z: number, ph: number): strin
 const gbDot = (c: string, x: number, y: number, r: number): string =>
   `<circle class="${c}" cx="${r1(x)}" cy="${r1(y)}" r="${r}"/>`;
 
+/* サイフォン: 上の容器が減り、下の容器が増える。管の中を点が流れる（8 コマ/秒で 32 コマ、25 コマ目から止まる） */
+const SF_TUBE: [number, number][] = [
+  [30, 40],
+  [30, 5],
+  [35, 2],
+  [79, 2],
+  [85, 6],
+  [92, 38],
+];
+/** 折れ線に沿って間隔 sp の点（位相 ph は 0〜1） */
+function sfAlong(pts: [number, number][], sp: number, ph: number): string {
+  let d = '',
+    off = ph * sp;
+  for (let i = 1; i < pts.length; i++) {
+    const [x0, y0] = pts[i - 1],
+      [x1, y1] = pts[i],
+      L = Math.hypot(x1 - x0, y1 - y0);
+    let s = off;
+    for (; s < L; s += sp) {
+      const x = x0 + ((x1 - x0) * s) / L,
+        y = y0 + ((y1 - y0) * s) / L;
+      d += `M${r1(x - 1.1)} ${r1(y)}a1.1 1.1 0 1 0 2.2 0a1.1 1.1 0 1 0 -2.2 0Z`;
+    }
+    off = s - L;
+  }
+  return d;
+}
+
 export const ART: Record<string, Art> = {
   /* タイマIC 555: 出力（周期 36、High 24）と C1 の電圧。時間が流れる */
   sq(t) {
@@ -2784,6 +2812,18 @@ export const ART: Record<string, Art> = {
   },
   /* 変速機: 噛み合う 2 枚の歯車から軸でスプロケットへ伝え、チェーンが右へ流れる。
      1 周（12 コマ/s で 24 コマ）で、歯車はどちらも 4 歯、スプロケットとチェーンは 3 歯ずつ進む */
+  sf(t) {
+    const k = mod(Math.floor(t * 8 + 1e-9), 32),
+      u = Math.min(1, k / 24),
+      h1 = r1(14 + 22 * u),
+      h2 = r1(44 - 14 * u);
+    let s = P('c', 'M8 10V42H40V10M80 24V45H112V24');
+    if (h1 < 41.4) s += P('fb', `M9 ${h1}H39V41.5H9Z`);
+    if (h2 < 44.4) s += P('fb', `M81 ${h2}H111V44.5H81Z`);
+    s += P('c', `M${SF_TUBE.map(([x, y]) => `${x} ${y}`).join('L')}`);
+    if (k < 25) s += P('fb', sfAlong(SF_TUBE, 6, (k % 3) / 3));
+    return s;
+  },
   gb(t) {
     const k = mod(Math.floor(t * 12 + 1e-9), 24),
       u = k / 24,
@@ -2874,6 +2914,7 @@ export const LOOP: Record<string, number> = {
   mxd: MX.L,
   i2c: I2C.scl.length / I2C_QPS,
   gb: 2,
+  sf: 4,
 };
 
 /** 止まっているときの図柄（ビルド時に HTML へ出す） */

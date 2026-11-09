@@ -1,0 +1,94 @@
+---
+import Collapsible from '../components/Collapsible.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/siphon/style.css';
+import { HOW } from '../tools/siphon/how';
+import { PARAMS } from '../tools/siphon/params';
+import { GROUPS, SCENES } from '../tools/siphon/scenes';
+import Theory from '../tools/siphon/Theory.astro';
+
+const name = 'サイフォン';
+const playIcon =
+  '<svg class="i-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.2l7.6 4.8L3 10.8z"/></svg><svg class="i-pause" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="2.8" height="9"/><rect x="7.2" y="1.5" width="2.8" height="9"/></svg>';
+---
+<SiteLayout title={name} tool={{ id: 'siphon', name }}>
+  <PageTitle title={name}>管でいったん高い所へ上げてから、低い所へ水を流す仕組みです。身近な道具と、数時間おきに湧き出す冷泉を同じ模型で動かします。</PageTitle>
+
+  <div class="tgrid sf-grid" id="sf">
+    <div class="sf-main">
+      <Panel hid="hd-fig" title="断面図" fixed>
+        <span slot="aux" class="aux tp-st"><span class="led" id="sf-led" aria-hidden="true"></span><span id="sf-st" aria-live="polite"></span></span>
+        <div class="sf-ex" id="sf-ex" role="group" aria-label="例">
+          {GROUPS.map(([g, gn]) => (
+            <div class="sf-exg">
+              <span class="sf-exh">{gn}</span>
+              <div class="sf-exr">
+                {SCENES.filter((s) => s.group === g).map((s, i) => (
+                  <button type="button" class="sf-exb" data-v={s.id} aria-pressed={g === 'home' && i === 0 ? 'true' : 'false'}><canvas width="70" height="44" aria-hidden="true"></canvas><span>{s.name}</span></button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div class="sbar sf-sb">
+          <span class="sf-note" id="sf-note"></span>
+          <span class="sf-lg">
+            <span class="stag"><i class="sf-sw" aria-hidden="true"></i><span id="sf-liq">水</span></span>
+            <span class="stag"><i class="sf-dot" aria-hidden="true"></i>流れ</span>
+            <span class="stag"><i class="sf-dash" aria-hidden="true"></i>落差</span>
+          </span>
+        </div>
+        <div class="scope sf-scr"><canvas class="sf-cv" id="sf-cv" role="img" aria-label="例の断面図。容器の水・管・流れ"></canvas></div>
+        <div class="sf-tp">
+          <button type="button" class="tp-ib" id="sf-home" title="最初から" aria-label="最初から"><svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1.5" y="1.5" width="1.8" height="9"/><path d="M10.5 1.5v9L4 6z"/></svg></button>
+          <button type="button" class="tp-pp on" id="sf-pp" title="一時停止" aria-label="一時停止" set:html={playIcon} />
+          <span class="sf-clock" id="sf-t" aria-live="off"></span>
+          <div class="sf-acts" id="sf-acts"></div>
+          <div class="seg sf-sp" id="sf-sp" role="group" aria-label="再生の速さ" data-nosave></div>
+        </div>
+      </Panel>
+
+      <Panel hid="hd-time" title="水位と流量">
+        <span slot="aux" class="aux" id="sf-win"></span>
+        <div class="sbar sf-tl">
+          <span class="stag"><i class="sw c2" aria-hidden="true"></i>水位</span>
+          <span class="stag"><i class="sw" aria-hidden="true"></i>流量</span>
+          <span class="stag" id="sf-tl-in"><i class="sf-dash sf-ink" aria-hidden="true"></i>流入</span>
+        </div>
+        <div class="scope sf-scr"><canvas class="sf-cv sf-tv" id="sf-tv" role="img" aria-label="水位と流量の時間変化"></canvas></div>
+      </Panel>
+    </div>
+
+    <div class="sf-side">
+      <Panel hid="hd-res" title="計算結果">
+        <dl class="metrics sf-m" id="sf-m"></dl>
+      </Panel>
+      <Panel hid="hd-cond" title="条件">
+        <div class="ptab" id="sf-rows">
+          {PARAMS.map((d) => <ParamRow d={d} />)}
+        </div>
+      </Panel>
+    </div>
+
+    <Panel hid="hd-how" title="しくみ" class="sf-howp">
+      <ol class="sf-how">
+        {HOW.map(([h, fig, d], i) => (
+          <li><h3><b>{i + 1}</b>{h}</h3><Fragment set:html={fig} /><p>{d}</p></li>
+        ))}
+      </ol>
+    </Panel>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools current="siphon" />
+  <script>
+    import '../tools/siphon/client';
+  </script>
+</SiteLayout>

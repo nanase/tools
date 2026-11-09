@@ -525,8 +525,17 @@ export const TOOLS: Tool[] = [
     t: 'マクスウェルの悪魔',
     d: '熱力学法則に反するとされた悪魔の破綻を再現します。',
     ic: 'mxd',
-    r: ['impact', 'bifurcation', 'pendulum', 'sort'],
+    r: ['impact', 'siphon', 'pendulum', 'bifurcation'],
     k: "maxwell's demon maxwell demon マクスウェル 悪魔 デーモン 熱力学 thermodynamics 第二法則 second law エントロピー entropy 情報 information ビット bit 記憶 消去 erasure ランダウアー landauer ベネット bennett シラード szilard エンジン engine 永久機関 perpetual motion 第二種永久機関 気体 分子 gas molecule マクスウェル分布 maxwell-boltzmann 温度 temperature 圧力 pressure 統計力学 statistical mechanics 物理 physics",
+  },
+  {
+    id: 'siphon',
+    c: '物理',
+    t: 'サイフォン',
+    d: '水を管で持ち上げて流す仕組みを身近な物と冷泉で見ます。',
+    ic: 'sf',
+    r: ['maxwell-demon', 'transmission', 'impact', 'pendulum'],
+    k: 'サイフォン サイホン siphon syphon 間欠冷泉 間歇冷泉 間欠泉 intermittent spring periodic spring rhythmic spring 草間 新見 ピリオディック・スプリング wyoming 教訓茶碗 ピタゴラスカップ pythagorean cup tantalus cup 灯油ポンプ 灯油 ポリタンク 水槽 水換え アクアリウム トイレ 便器 サイフォン式 洗浄 呼び水 落差 負圧 大気圧 蒸気圧 沸騰 キャビテーション cavitation ベルヌーイ bernoulli 流体 fluid 水 物理 physics',
   },
   {
     id: 'transmission',
@@ -534,7 +543,7 @@ export const TOOLS: Tool[] = [
     t: '変速機',
     d: 'CT125 の遠心クラッチと 4 段の変速機の動きを追います。',
     ic: 'gb',
-    r: ['engine', 'piano-action', 'maxwell-demon', 'pendulum'],
+    r: ['engine', 'piano-action', 'maxwell-demon', 'siphon'],
     k: '変速機 トランスミッション transmission gearbox ギアボックス ミッション 遠心クラッチ centrifugal clutch 自動遠心クラッチ 多板クラッチ multi-plate clutch 湿式 ワンウェイクラッチ one-way clutch ドグ dog clutch 常時噛合 constant mesh シフトドラム shift drum シフトフォーク shift fork チェンジペダル ロータリー rotary スプロケット sprocket チェーン chain 1 次減速 2 次減速 減速比 gear ratio 歯車 歯数 gear エンジンブレーキ engine brake ハンターカブ hunter cub ct125 スーパーカブ super cub cub ja65 honda ホンダ バイク オートバイ motorcycle',
   },
   {
