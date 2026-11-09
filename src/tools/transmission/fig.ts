@@ -352,6 +352,7 @@ function faceLines(
 }
 
 /* ============ 展開図: 軸に沿って部品を並べる（右がクラッチ側で、車体の右） ============ */
+/* 側面図で時計回りの軸（クランク・カウンターシャフト）は面が上へ流れ、反時計回りのメインシャフトは下へ流れる */
 const ROW = { e: 0, m: 73.5, c: 123.5 };
 type Kind = 'free' | 'slide' | 'fix';
 interface GearDef {
@@ -559,9 +560,9 @@ export function drawSection(cv: HTMLCanvasElement, f: Snap, prev: Snap | null, C
   hR('クランクウェブ', subOf(eSt, f.rpm), 50, -24, 86, 24);
   /* 発電機のロータとクランクウェブの面の模様（回っているのが分かるように） */
   const bl = o.blur !== false;
-  faceLines(c, 0, 20, 0, 40, 8, f.ang.e, dA('e'), es.s, bl);
-  faceLines(c, 50, 60, 0, 20, 4, f.ang.e, dA('e'), es.s, bl);
-  faceLines(c, 76, 86, 0, 20, 4, f.ang.e, dA('e'), es.s, bl);
+  faceLines(c, 0, 20, 0, 40, 8, -f.ang.e, -dA('e'), es.s, bl);
+  faceLines(c, 50, 60, 0, 20, 4, -f.ang.e, -dA('e'), es.s, bl);
+  faceLines(c, 76, 86, 0, 20, 4, -f.ang.e, -dA('e'), es.s, bl);
   ctx.restore();
   hR('クランク軸', subOf(pw(engPow ? 'pow' : spinE ? 'spin' : 'stop'), f.rpm), -2, -3, 176, 3);
   {
@@ -575,7 +576,7 @@ export function drawSection(cv: HTMLCanvasElement, f: Snap, prev: Snap | null, C
   }
   /* 1 次減速 19T と遠心クラッチ */
   const pSt = pw(drumPow && spinD ? (mpOn ? 'pow' : 'spin') : spinD ? 'spin' : 'stop');
-  gearSide(c, 113, 123, ROW.e, 16.6, 19, f.ang.d, dA('d'), pSt, C, o.blur);
+  gearSide(c, 113, 123, ROW.e, 16.6, 19, -f.ang.d, -dA('d'), pSt, C, o.blur);
   hR('プライマリドライブギア 19T', subOf(pSt, f.drpm), 113, -18, 123, 18);
   const dSt = pw(spinD ? (drumPow ? 'pow' : 'spin') : 'stop'),
     ds = style(C, dSt);
@@ -644,7 +645,7 @@ export function drawSection(cv: HTMLCanvasElement, f: Snap, prev: Snap | null, C
   ctx.rect(X(167), Y(-40), sx * 5, s * 80);
   ctx.fill();
   ctx.stroke();
-  faceLines(c, 167, 172, 0, 36, 6, f.ang.e, dA('e'), style(C, eSt).s, o.blur !== false);
+  faceLines(c, 167, 172, 0, 36, 6, -f.ang.e, -dA('e'), style(C, eSt).s, o.blur !== false);
   hR('ドライブプレート', `クランクと一体・${fmt(f.rpm)} rpm`, 167, -40, 172, 40);
   for (const sg of [-1, 1]) {
     const on = owOn && PW;
@@ -658,7 +659,7 @@ export function drawSection(cv: HTMLCanvasElement, f: Snap, prev: Snap | null, C
   }
   /* クラッチアウター 65T・多板クラッチ */
   const coSt = pw(spinD ? (mpOn ? 'pow' : 'spin') : 'stop');
-  gearSide(c, 112, 124, ROW.m, 56.9, 65, -f.ang.d / p, -dA('d') / p, coSt, C, o.blur);
+  gearSide(c, 112, 124, ROW.m, 56.9, 65, f.ang.d / p, dA('d') / p, coSt, C, o.blur);
   hR('クラッチアウター 65T', subOf(coSt, f.drpm / p), 112, ROW.m - 58, 124, ROW.m + 58);
   const cs = style(C, coSt);
   ctx.strokeStyle = cs.s;
@@ -929,8 +930,8 @@ export function drawSection(cv: HTMLCanvasElement, f: Snap, prev: Snap | null, C
       text(ctx, num, X(-60), Y(y) + 8, { size: 15, w: 700, mono: true, C });
       ctx.font = `700 15px ${C.mono}`;
       text(ctx, 'rpm', X(-60) + ctx.measureText(num).width + 4, Y(y) + 9, { size: 11, col: C.ink3, C, mono: true });
-      /* メインシャフトはクランク・カウンターシャフトと逆の向きに回るので、印も逆に回す */
-      const sg = k === 'm' ? -1 : 1;
+      /* 印は側面図と同じ向きに回す。クランクとカウンターシャフトは時計回りで、メインシャフトは反時計回りになる */
+      const sg = k === 'm' ? 1 : -1;
       rotMark(ctx, C, X(-60) + 11, Y(y) + 32, sg * f.ang[k], sg * dA(k), o.blur !== false);
     };
     lab(ROW.e - 18, 'クランク', f.rpm, 'e');
