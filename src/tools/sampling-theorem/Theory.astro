@@ -1,0 +1,89 @@
+---
+// 動作原理と式
+const sub = (b: string, s: string) => `<msub>${b}<mrow>${s}</mrow></msub>`;
+const fs = sub('<mi>f</mi>', '<mi>s</mi>');
+const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
+const p = (s: string) => `<mo stretchy="false">(</mo>${s}<mo stretchy="false">)</mo>`;
+---
+<h3>全体の流れ</h3>
+<ol class="flow"><li>入力のローパス</li><li>標本化</li><li>復元</li></ol>
+<ul class="tl">
+  <li>標本化は、決まった間隔で波の値を測ること</li>
+  <li>復元は、標本から元の波を作り直すこと</li>
+  <li>標本化周波数が入力の周波数の 2 倍より高ければ、標本から元の波を作り直せる（標本化定理）<Fragment set:html={`${rf(1)}${rf(3)}${rf(4)}`} /></li>
+</ul>
+
+<h3>標本化と複製</h3>
+<div class="eqs">
+  <math display="block" set:html={`<mi>s</mi><mo stretchy="false">[</mo><mi>n</mi><mo stretchy="false">]</mo><mo>=</mo><mi>x</mi>${p(`<mfrac><mi>n</mi>${fs}</mfrac>`)}`} />
+  <math display="block" set:html={`<mi>f</mi><mo>,</mo><mspace width="0.4em"/>${fs}<mo>±</mo><mi>f</mi><mo>,</mo><mspace width="0.4em"/><mn>2</mn>${fs}<mo>±</mo><mi>f</mi><mo>,</mo><mspace width="0.4em"/><mo>…</mo>`} />
+</div>
+<dl class="syms">
+  <dt><math set:html={fs} /></dt><dd>標本化周波数</dd>
+  <dt><math><mi>f</mi></math></dt><dd>入力の成分の周波数</dd>
+</dl>
+<ul class="tl">
+  <li>周波数 <i>f</i> の正弦波と <i>k</i>f<sub>s</sub> ± <i>f</i> の正弦波は、標本の位置で同じ値になる</li>
+  <li>そのため標本化したあとのスペクトルには、f<sub>s</sub> の倍数の両側に同じ成分の複製が並ぶ<Fragment set:html={rf(5)} /></li>
+</ul>
+
+<h3>2 倍の条件</h3>
+<div class="eqs">
+  <math display="block" set:html={`<mi>f</mi><mo>&lt;</mo>${fs}<mo>−</mo><mi>f</mi><mspace width="1em"/><mo>⇔</mo><mspace width="1em"/>${fs}<mo>&gt;</mo><mn>2</mn><mi>f</mi>`} />
+</div>
+<ul class="tl">
+  <li>復元では、複製のうち 0 にいちばん近い成分を元の波とみなす</li>
+  <li>f<sub>s</sub> を下げると、いちばん近い複製 f<sub>s</sub> − <i>f</i> が下りてきて、f<sub>s</sub> = 2<i>f</i> で <i>f</i> と重なる</li>
+  <li>さらに下げると f<sub>s</sub> − <i>f</i> のほうが低くなり、別の周波数の波として復元される</li>
+  <li>f<sub>s</sub> = 2<i>f</i> ちょうどでは、標本が正弦波の 0 の所に来ると値がすべて 0 になる</li>
+  <li>周波数の側から言うと、復元できるのは f<sub>s</sub> の半分より低い成分。この値をナイキスト周波数と呼ぶ<Fragment set:html={rf(2)} /></li>
+</ul>
+
+<h3>復元</h3>
+<div class="eqs">
+  <math display="block" set:html={`<mover><mi>x</mi><mo>^</mo></mover>${p('<mi>t</mi>')}<mo>=</mo><munder><mo>∑</mo><mi>n</mi></munder><mi>s</mi><mo stretchy="false">[</mo><mi>n</mi><mo stretchy="false">]</mo><mspace width="0.2em"/><mtext>sinc</mtext>${p(`${fs}<mi>t</mi><mo>−</mo><mi>n</mi>`)}`} />
+  <math display="block" set:html={`<mtext>sinc</mtext>${p('<mi>u</mi>')}<mo>=</mo><mfrac><mrow><mi>sin</mi><mo>⁡</mo><mi>π</mi><mi>u</mi></mrow><mrow><mi>π</mi><mi>u</mi></mrow></mfrac>`} />
+</div>
+<ul class="tl">
+  <li>標本ごとに sinc の山を置いて足すと、条件を満たす波は元どおりになる<Fragment set:html={`${rf(1)}${rf(4)}`} /></li>
+  <li>sinc の山は、ほかの標本の位置でちょうど 0 になる</li>
+</ul>
+
+<h3>折り返し</h3>
+<div class="eqs">
+  <math display="block" set:html={`${sub('<mi>f</mi>', '<mi>a</mi>')}<mo>=</mo><mo>|</mo><mi>f</mi><mo>−</mo><mi>k</mi>${fs}<mo>|</mo>`} />
+</div>
+<dl class="syms">
+  <dt><math set:html={sub('<mi>f</mi>', '<mi>a</mi>')} /></dt><dd>復元される周波数（<i>k</i> は <i>f</i> / f<sub>s</sub> に最も近い整数）</dd>
+</dl>
+<ul class="tl">
+  <li>2 倍の条件を満たさない成分は、元と違う低い周波数で聞こえる（エイリアシング）</li>
+  <li>矩形波は倍音が限りなく続くので、ローパスなしではどの f<sub>s</sub> でも一部が折り返す</li>
+  <li>入力のローパス（アンチエイリアスフィルタ）で、標本化の前に f<sub>s</sub> の半分より高い成分を除く<Fragment set:html={rf(6)} /></li>
+</ul>
+
+<h3>このツールで決めたこと</h3>
+<ul class="tl">
+  <li>振幅 0.7 の正弦波をスペクトルの 0 dB とし、縦は −42 dB まで</li>
+  <li>矩形波はローパスなしでは理想の矩形。図には 96 kHz までの倍音を描く</li>
+  <li>和音は根音・5/4・3/2 の 3 音で、それぞれ 8 倍音まで</li>
+  <li>スイープは 50 Hz から 16 kHz まで 8 秒で直線に上がり、くり返す</li>
+  <li>復元はブラックマン窓をかけた sinc で、両側 16 標本<Fragment set:html={rf(7)} /></li>
+  <li>入力のローパスは理想のローパス。スイープは遮断の手前 300 Hz で弱める</li>
+  <li>標本化周波数を変えると、次の標本から間隔が変わる。決めた標本は動かさず、f<sub>s</sub> は 40 ms の時定数で目標へ寄せるので、音は途切れない</li>
+  <li>「自動」: 標本化周波数を 16 kHz で 0.6 秒、8 秒かけて 700 Hz まで下げ、1.4 秒保つ、をくり返す</li>
+  <li>波形は入力の位相 0 から描く。幅は正弦波で 6 周期、ほかで 4 周期（スイープは 4 ms）で、標本が 8 個未満なら 2 倍ずつ広げる</li>
+  <li>スペクトルの横軸は入力の 10 倍まで（スイープは 20 kHz）</li>
+  <li>原音の試聴は 20 kHz より上の成分を除いた音</li>
+</ul>
+
+<h3>出典</h3>
+<ol class="refs">
+  <li id="thy-r1"><span class="rf-for">sinc の和による補間</span><span class="rf-src">E. T. Whittaker, “On the functions which are represented by the expansions of the interpolation-theory,” <i>Proceedings of the Royal Society of Edinburgh</i>, vol. 35, pp. 181–194, 1915, <a href="https://doi.org/10.1017/S0370164600017806">doi:10.1017/S0370164600017806</a></span></li>
+  <li id="thy-r2"><span class="rf-for">ナイキスト周波数</span><span class="rf-src">H. Nyquist, “Certain topics in telegraph transmission theory,” <i>Transactions of the AIEE</i>, vol. 47, no. 2, pp. 617–644, 1928, <a href="https://doi.org/10.1109/T-AIEE.1928.5055024">doi:10.1109/T-AIEE.1928.5055024</a></span></li>
+  <li id="thy-r3"><span class="rf-for">標本化定理（1933 年の論文の英訳）</span><span class="rf-src">V. A. Kotel’nikov, “On the transmission capacity of ‘ether’ and wire in electric communications,” <i>Physics-Uspekhi</i>, vol. 49, no. 7, p. 736, 2006, <a href="https://doi.org/10.1070/PU2006v049n07ABEH006160">doi:10.1070/PU2006v049n07ABEH006160</a></span></li>
+  <li id="thy-r4"><span class="rf-for">標本化定理</span><span class="rf-src">C. E. Shannon, “Communication in the presence of noise,” <i>Proceedings of the IRE</i>, vol. 37, no. 1, pp. 10–21, 1949, <a href="https://doi.org/10.1109/JRPROC.1949.232969">doi:10.1109/JRPROC.1949.232969</a></span></li>
+  <li id="thy-r5"><span class="rf-for">標本化したスペクトルの複製</span><span class="rf-src">A. J. Jerri, “The Shannon sampling theorem—Its various extensions and applications: A tutorial review,” <i>Proceedings of the IEEE</i>, vol. 65, no. 11, pp. 1565–1596, 1977, <a href="https://doi.org/10.1109/PROC.1977.10771">doi:10.1109/PROC.1977.10771</a></span></li>
+  <li id="thy-r6"><span class="rf-for">標本化の前のローパス</span><span class="rf-src">M. Unser, “Sampling—50 years after Shannon,” <i>Proceedings of the IEEE</i>, vol. 88, no. 4, pp. 569–587, 2000, <a href="https://doi.org/10.1109/5.843002">doi:10.1109/5.843002</a></span></li>
+  <li id="thy-r7"><span class="rf-for">ブラックマン窓</span><span class="rf-src">F. J. Harris, “On the use of windows for harmonic analysis with the discrete Fourier transform,” <i>Proceedings of the IEEE</i>, vol. 66, no. 1, pp. 51–83, 1978, <a href="https://doi.org/10.1109/PROC.1978.10837">doi:10.1109/PROC.1978.10837</a></span></li>
+</ol>

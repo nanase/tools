@@ -1,0 +1,83 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/sampling-theorem/style.css';
+import { HOW } from '../tools/sampling-theorem/how';
+import { AA, PARAMS, SRC } from '../tools/sampling-theorem/params';
+import Theory from '../tools/sampling-theorem/Theory.astro';
+
+const name = '標本化定理';
+const P = Object.fromEntries(PARAMS.map((d) => [d.k, d]));
+const playIcon =
+  '<svg class="i-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.2l7.6 4.8L3 10.8z"/></svg><svg class="i-pause" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="2.8" height="9"/><rect x="7.2" y="1.5" width="2.8" height="9"/></svg>';
+---
+<SiteLayout title={name} tool={{ id: 'sampling-theorem', name }}>
+  <PageTitle title={name}>波を復元できる標本化周波数の下限を確かめます。</PageTitle>
+
+  <div class="tgrid" id="smp">
+    <div class="smp-main">
+      <div class="col">
+        <Panel hid="hd-w" title="波形" class="a-w" fixed>
+          <div class="scope smp-scr"><canvas class="smp-cv smp-hw" id="smp-w" role="img" aria-label="原音と標本と復元した波"></canvas></div>
+          <div class="sbar smp-lg"><span class="stag"><i class="sw c2"></i>原音</span><span class="stag"><i class="smp-dot"></i>標本</span><span class="stag"><i class="sw"></i>復元した波</span></div>
+        </Panel>
+        <Panel hid="hd-s" title="スペクトル" class="a-s" fixed>
+          <div class="scope smp-scr"><canvas class="smp-cv smp-hs" id="smp-s" role="slider" tabindex="0" aria-label="スペクトル。横に動かすと標本化周波数" aria-valuemin="300" aria-valuemax="48000" aria-valuenow="8000"></canvas></div>
+          <div class="sbar smp-lg"><span class="stag"><i class="sw c2"></i>原音の成分</span><span class="stag"><i class="sw smp-sw-g"></i>標本化で並ぶ複製</span><span class="stag"><i class="smp-tri"></i>標本化周波数</span><span class="stag"><i class="sw"></i>復元される成分</span><span class="stag"><i class="sw smp-sw-w"></i>折り返した成分</span></div>
+        </Panel>
+      </div>
+
+      <div class="col smp-side">
+        <Panel hid="hd-set" title="設定" class="a-set">
+          <div class="ptab">
+            <ChoiceRow k="src" name="入力" choices={SRC} value="sine" layout="chips" />
+            <ParamRow d={P.f} />
+            <ParamRow d={P.fs} />
+            <ChoiceRow k="aa" name="入力のローパス" sub="標本化の前に、標本化周波数の半分より上を除去" choices={AA} value="0" />
+          </div>
+        </Panel>
+
+        <Panel hid="hd-ls" title="試聴" class="a-ls">
+          <Fragment slot="aux"><span class="aux tp-st"><span class="led" id="smp-led"></span><span id="smp-st">停止中</span></span></Fragment>
+          <div class="smp-keys" id="smp-keys" role="group" aria-label="聴く音">
+            <button type="button" class="smp-key k1" data-v="orig" aria-pressed="false">原音</button>
+            <button type="button" class="smp-key k2" data-v="rec" aria-pressed="true">復元した音</button>
+          </div>
+          <div class="tp smp-tp">
+            <button type="button" class="tp-pp" id="smp-pp" title="再生" aria-label="再生" set:html={playIcon} />
+            <div class="tp-tl">
+              <button type="button" class="tg" id="smp-auto" aria-pressed="false" title="標本化周波数を 16 kHz から 700 Hz まで 8 秒で下降、くり返し"><span class="led" aria-hidden="true"></span>自動</button>
+              <div class="smp-pos" id="smp-pos" hidden>
+                <div class="tp-trk" id="smp-trk" role="slider" tabindex="0" aria-label="再生位置" aria-valuemin="0" aria-valuemax="8" aria-valuenow="0"><div class="tp-rail"></div><div class="tp-fill" id="smp-fill"></div><div class="tp-th" id="smp-th"></div></div>
+                <div class="tp-tm"><span id="smp-tm"></span></div>
+              </div>
+            </div>
+          </div>
+          <div class="ptab"><ParamRow d={P.vol} /></div>
+        </Panel>
+      </div>
+    </div>
+
+    <Panel hid="hd-how" title="標本化定理のしくみ" class="a-how">
+      <ol class="smp-how">
+        {HOW.map((s, k) => (
+          <li><h3><b>{k + 1}</b>{s.t}</h3><Fragment set:html={s.svg} />{s.p.map((p) => <p>{p}</p>)}</li>
+        ))}
+      </ol>
+    </Panel>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools current="sampling-theorem" />
+  <script>
+    import '../tools/sampling-theorem/client';
+  </script>
+</SiteLayout>
