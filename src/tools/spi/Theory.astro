@@ -1,0 +1,87 @@
+---
+// 動作原理と式
+type Ref = { for: string; src: string };
+const REFS: readonly Ref[] = [
+  {
+    for: '信号名 SCK・MOSI・MISO・SS（2.2 節）、CPOL・CPHA の定義と 2 つの転送の形（3.3.1 節・4.4 節）',
+    src: 'Motorola, SPI Block User Guide S12SPIV2/D, V02.07, 2002',
+  },
+  {
+    for: 'モード 0〜3 と CPOL・CPHA の対応（22.4 節 表 22-2）',
+    src: 'Microchip Technology, ATmega324PB データシート, Data Modes',
+  },
+  {
+    for: 'フラッシュメモリ: モード 0 と 3（6.1 節）、tCLQV 最大 6 ns（9.6 節）',
+    src: 'Winbond, W25Q64JV Datasheet, Revision M, 2024',
+  },
+  {
+    for: '加速度センサ: CPOL 1・CPHA 1、SCLK の立ち下がりから SDO まで tSDO 最大 40 ns、最大 5 MHz（表 10）',
+    src: 'Analog Devices, ADXL345 Data Sheet, Rev. E',
+  },
+  {
+    for: 'AD 変換器: SPI モード 1（10.1.1 節）、SCLK の立ち上がりから DOUT まで tDOPD 最大 50 ns（7.7 節）',
+    src: 'Texas Instruments, ADS1118 データシート SBAS457F, 2019',
+  },
+  {
+    for: 'LED ドライバ: 立ち上がりで取り込み立ち下がりで DOUT に出す、デイジーチェーン、tDO 最大 25 ns、最大 10 MHz',
+    src: 'Maxim Integrated, MAX7219/MAX7221 データシート 19-4452, Rev. 6, 2021',
+  },
+  {
+    for: 'LAN ケーブルを伝わる遅れ 538 ns/100 m',
+    src: 'Belden, 1583A DataTwist 350 技術データ, Revision 2, 2004',
+  },
+];
+---
+<h3>線と役割</h3>
+<p>SPI は 4 本の線でつなぎます。マスタが出すクロック SCK、マスタからスレーブへのデータ MOSI、スレーブからマスタへのデータ MISO、相手を選ぶ CS（SS とも呼ぶ）です。CS は機器ごとに 1 本あり、Low にした機器だけが応答します。選ばれていない機器は MISO を放し（ハイインピーダンス）、線に何も出しません。</p>
+<p>どの線も機器が直接 High・Low に駆動します（プッシュプル）。I2C のようなプルアップ抵抗の立ち上がりの遅れはなく、速さを決めるのは主に信号が届くまでの遅れです。</p>
+
+<h3>シフトレジスタの交換</h3>
+<p>マスタと機器はどちらも 8 ビットのシフトレジスタを持ち、MOSI と MISO で輪につながります。SCK の 1 クロックごとに、両方のレジスタが 1 ビットずつ相手へ送り出し、空いた所に相手のビットを受け取ります。8 クロックでマスタのバイトとスレーブのバイトが入れ替わります。送るだけ・受け取るだけの通信も、中ではいつも交換です。</p>
+
+<h3>4 つのモード</h3>
+<p>CPOL は待機中の SCK の向き、CPHA は読み取るエッジを決めます。</p>
+<ul class="tl">
+  <li>モード 0（CPOL 0・CPHA 0）: 待機は Low。立ち上がりで読み、立ち下がりで次のビットを出す</li>
+  <li>モード 1（CPOL 0・CPHA 1）: 待機は Low。立ち上がりで出し、立ち下がりで読む</li>
+  <li>モード 2（CPOL 1・CPHA 0）: 待機は High。立ち下がりで読み、立ち上がりで出す</li>
+  <li>モード 3（CPOL 1・CPHA 1）: 待機は High。立ち下がりで出し、立ち上がりで読む</li>
+  <li>CPHA 0 では、CS を下げた時点で最初のビットを出しておく</li>
+</ul>
+<p>マスタと機器で読むエッジが逆だと、相手がビットを変えるのと同じエッジで読むことになり、値は定まりません。モード 0 と 3 はどちらも立ち上がりで読むので、両方に対応する機器が多くあります。</p>
+
+<h3>MISO の遅れ</h3>
+<p>マスタが出した SCK は配線を通って機器に届き、機器は出力の遅れ <math><msub><mi>t</mi><mi>v</mi></msub></math> の後に MISO を変えます。その MISO がまた配線を通ってマスタへ戻るので、マスタから見た遅れは往復分です。マスタは次の読み取りまでの半周期のうちに、セットアップ時間 <math><msub><mi>t</mi><mi>su</mi></msub></math> を残して受け取る必要があります。</p>
+<div class="eqs">
+  <math display="block"><mrow><msub><mi>t</mi><mi>rt</mi></msub><mo>=</mo><mn>2</mn><mi>L</mi><msub><mi>t</mi><mi>pd</mi></msub><mo>+</mo><msub><mi>t</mi><mi>v</mi></msub></mrow></math>
+  <math display="block"><mrow><mtext>余裕</mtext><mo>=</mo><mfrac><mn>1</mn><mrow><mn>2</mn><mi>f</mi></mrow></mfrac><mo>−</mo><msub><mi>t</mi><mi>rt</mi></msub><mo>−</mo><msub><mi>t</mi><mi>su</mi></msub></mrow></math>
+</div>
+<p><math><mi>L</mi></math> は配線の長さ、<math><msub><mi>t</mi><mi>pd</mi></msub></math> は 1 m あたりの伝わる遅れです。余裕が負になると、マスタは機器が次のビットを出す前の値、つまり 1 つ前のビットを読みます。MOSI は SCK と同じ向きに同じ距離を進むので、配線の長さでは崩れません。</p>
+
+<h3>デイジーチェーン</h3>
+<p>CS を 1 本にまとめ、前の機器の出力を次の機器の入力へつなぐと、全体が 1 本の長いシフトレジスタになります。3 台なら 24 クロック送り、最初に送ったバイトがいちばん奥の機器に届きます。CS を上げた時点で、各機器は手元のバイトを受け取った値とします。</p>
+
+{REFS.length > 0 && (
+  <>
+    <h3>出典</h3>
+    <ol class="refs">
+      {REFS.map((r, i) => (
+        <li id={`thy-r${i + 1}`}>
+          <span class="rf-for">{r.for}</span>
+          <span class="rf-src">{r.src}</span>
+        </li>
+      ))}
+    </ol>
+  </>
+)}
+
+<h3>このツールで決めたこと</h3>
+<ul class="tl">
+  <li>用語は I2C のページに合わせてマスタ・スレーブとする。線の名前は SCK・MOSI・MISO・CS とする（COPI・CIPO・SDO・SDI・SS とも呼ぶ）</li>
+  <li>マスタの出力の遅れは 3 ns、セットアップ時間とホールド時間はどれも 4 ns。この間に入力が変わると値は不定とする</li>
+  <li>配線を伝わる遅れは 1 m あたり 5.4 ns（LAN ケーブルの値を丸めた）</li>
+  <li>機器のモードと出力の遅れは、出典の 4 つのデータシートの値を使う。機器ごとの最大クロック（加速度センサの 5 MHz など）は制限しない</li>
+  <li>機器はモード・出力の遅れ・返す 2 バイトだけを持つ。デイジーチェーンの機器は LED ドライバで、CS を上げると受け取った値で LED が光る</li>
+  <li>機器はどれも MSB から送る。マスタだけ LSB からに変えられる</li>
+  <li>CPHA 1 の機器は、最初の出すエッジまで意味のない値（1）を出す</li>
+</ul>

@@ -1,0 +1,126 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/spi/style.css';
+import { HOW } from '../tools/spi/how';
+import { iconSvg } from '../tools/spi/icons';
+import { CONN_OPT, DEST_OPT, MODE_OPT, ORDER_OPT, PARAMS } from '../tools/spi/params';
+import Theory from '../tools/spi/Theory.astro';
+
+const name = 'SPI';
+const P = Object.fromEntries(PARAMS.map((d) => [d.k, d]));
+const playIcon =
+  '<svg class="i-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.2l7.6 4.8L3 10.8z"/></svg><svg class="i-pause" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="2.8" height="9"/><rect x="7.2" y="1.5" width="2.8" height="9"/></svg>';
+---
+<SiteLayout title={name} tool={{ id: 'spi', name }}>
+  <PageTitle title={name}>4 本の線で機器がデータを交換する SPI の信号を追います。</PageTitle>
+
+  <div class="tgrid sp-grid" id="spi">
+    <div class="sp-main">
+      <Panel hid="hd-bus" title="バス" fixed>
+        <span slot="aux" class="aux tp-st"><span class="led" id="sp-led" aria-hidden="true"></span><span id="sp-st" aria-live="polite"></span></span>
+        <div class="scope sp-scr"><canvas class="sp-cv sp-hB" id="sp-bus" role="img" aria-label="マスタと機器の配線図とシフトレジスタ"></canvas></div>
+        <p class="sp-say" id="sp-say" aria-live="off"></p>
+        <div class="tp">
+          <button type="button" class="tp-ib" id="tp-home" title="最初へ" aria-label="最初へ"><svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1.5" y="1.5" width="1.8" height="9"/><path d="M10.5 1.5v9L4 6z"/></svg></button>
+          <button type="button" class="tp-pp on" id="tp-pp" title="一時停止" aria-label="一時停止" set:html={playIcon} />
+          <div class="tp-tl">
+            <div class="tp-trk" id="tp-trk" role="slider" tabindex="0" aria-label="再生位置" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+              <div class="tp-rail"></div>
+              <div class="tp-fill" id="tp-fill"></div>
+              <div class="tp-th" id="tp-th"></div>
+            </div>
+            <div class="tp-tm"><span><b id="tp-a">0</b> / <span id="tp-b">0</span> クロック</span><span id="tp-t"></span></div>
+          </div>
+          <div class="tp-side">
+            <button type="button" class="tp-sq" id="tp-back" title="前のエッジ" aria-label="前のエッジ"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M12 3L6 8l6 5M4 3v10"/></svg></button>
+            <button type="button" class="tp-sq" id="tp-step" title="次のエッジ" aria-label="次のエッジ"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 3l6 5-6 5M12 3v10"/></svg></button>
+          </div>
+        </div>
+        <div class="ptab"><ParamRow d={P.rate} /></div>
+      </Panel>
+
+      <Panel hid="hd-wave" title="波形" fixed>
+        <h3 class="sp-gh">全体</h3>
+        <div class="scope sp-scr"><canvas class="sp-cv sp-hO" id="sp-whole" role="slider" tabindex="-1" aria-label="通信全体の波形と解読。押すとその位置へ"></canvas></div>
+        <h3 class="sp-gh">拡大</h3>
+        <div class="scope sp-scr"><canvas class="sp-cv sp-hZ" id="sp-zoom" role="img" aria-label="今の位置の前後の波形と読み取りの位置"></canvas></div>
+        <div class="sbar sp-lg">
+          <span class="stag"><i class="sw cs" aria-hidden="true"></i>CS 選択</span>
+          <span class="stag"><i class="sw" aria-hidden="true"></i>SCK クロック</span>
+          <span class="stag"><i class="sw mo" aria-hidden="true"></i>MOSI マスタ → スレーブ</span>
+          <span class="stag"><i class="sw mi" aria-hidden="true"></i>MISO スレーブ → マスタ</span>
+          <span class="stag"><i class="sp-dot" aria-hidden="true"></i>読み取り</span>
+        </div>
+      </Panel>
+    </div>
+
+    <div class="sp-side">
+      <Panel hid="hd-res" title="結果">
+        <dl class="metrics sp-res">
+          <div class="m m-wide sp-res0"><dt class="sr">結果</dt><dd id="o-res">–</dd></div>
+          <div class="m"><dt>マスタの受信</dt><dd id="o-gm">–</dd></div>
+          <div class="m"><dt>スレーブの受信</dt><dd id="o-gs">–</dd></div>
+          <div class="m"><dt>MISO の余裕</dt><dd id="o-mg">–</dd></div>
+          <div class="m"><dt>所要時間</dt><dd id="o-dur">–</dd></div>
+        </dl>
+      </Panel>
+
+      <Panel hid="hd-com" title="通信">
+        <div class="ptab">
+          <ChoiceRow k="conn" name="つなぎ方" choices={CONN_OPT} value="cs" />
+          <div class="prow chr wide" id="p-dest" data-nm="宛先">
+            <div class="c-sym" aria-hidden="true"></div>
+            <div class="c-name"><span class="pn" id="n-dest">宛先</span></div>
+            <div class="c-rst"></div>
+            <div class="c-sub"><div class="chips sp-dest" role="group" aria-labelledby="n-dest">
+              {DEST_OPT.map(([k, ic, t], i) => <button type="button" class="chip" data-v={String(k)} aria-pressed={i === 0 ? 'true' : 'false'} title={t}><Fragment set:html={iconSvg(ic)} /><span class="sr">{t} </span>CS{k + 1}</button>)}
+            </div><p class="msg" aria-live="polite"></p></div>
+          </div>
+          <ParamRow d={P.d0} />
+          <ParamRow d={P.d1} />
+          <ParamRow d={P.d2} />
+          <ChoiceRow k="mode" name="モード" choices={MODE_OPT} value="0" />
+          <ChoiceRow k="order" name="ビットの順" choices={ORDER_OPT} value="msb" />
+          <div class="prow chr wide">
+            <div class="c-sym" aria-hidden="true"></div>
+            <div class="c-name"><span class="pn" id="n-scene">場面</span></div>
+            <div class="c-rst"></div>
+            <div class="c-sub"><div class="sp-tgs" role="group" aria-labelledby="n-scene">
+              <button type="button" class="tg" id="tg-both" aria-pressed="false" title="宛先と次の機器の CS を同時に Low"><span class="led" aria-hidden="true"></span>2 台を同時に選択</button>
+            </div></div>
+          </div>
+        </div>
+      </Panel>
+
+      <Panel hid="hd-ele" title="電気">
+        <div class="ptab">
+          <ParamRow d={P.f} />
+          <ParamRow d={P.len} />
+        </div>
+      </Panel>
+    </div>
+
+    <Panel hid="hd-how" title="SPI のしくみ" class="sp-howp">
+      <ol class="sp-how">
+        {HOW.map(([h, fig, d], i) => (
+          <li><h3><b>{i + 1}</b>{h}</h3><Fragment set:html={fig} /><p>{d}</p></li>
+        ))}
+      </ol>
+    </Panel>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools current="spi" />
+  <script>
+    import '../tools/spi/client';
+  </script>
+</SiteLayout>
