@@ -2412,6 +2412,24 @@ export const ART: Record<string, Art> = {
     );
   },
   /* PCM: 波を決まった位置で測って丸めた階段。波が流れると階段の高さが変わる */
+  /*
+   * 標本化定理: 同じ標本の点を通る速い波（原音）と遅い波（復元した波）。
+   * 位相が進むと遅い波が大きく滑り、点は上下するだけ。1 周 4 秒を 12 コマ/秒で描く
+   */
+  smp(t) {
+    const th = (TAU * Math.floor(t * 12 + 1e-9)) / 48,
+      dx = 8,
+      y = (v: number) => 24 - 17 * v,
+      fast = (x: number) => y(Math.sin((TAU * 1.125 * (x - 4)) / dx + th)),
+      slow = (x: number) => y(Math.sin((TAU * 0.125 * (x - 4)) / dx + th));
+    let st = '';
+    for (let n = 0; n < 15; n++) {
+      const x = 4 + n * dx,
+        v = slow(x);
+      st += `${P('c t', `M${x} 24V${r1(v)}`)}<circle class="c" cx="${x}" cy="${r1(v)}" r="0.9"/>`;
+    }
+    return P('b t', fx(fast, 4, 116, 240)) + P('a', fx(slow, 4, 116, 120)) + st;
+  },
   pcm(t) {
     const w = (x: number) => Math.sin(TAU * (x / 56 - t / 3)),
       y = (v: number) => r1(24 - 18 * v);
@@ -2964,6 +2982,7 @@ export const LOOP: Record<string, number> = {
   ep: EP_FRAMES.length / EP_FPS,
   rx: RX_PTS.length / RX_FPS,
   pcm: 3,
+  smp: 4,
   adp: 26 / 8,
   mp3: 4,
   imp: 53 / 12,

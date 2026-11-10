@@ -139,6 +139,15 @@ export const TOOLS: Tool[] = [
     k: 'i2c iic i²c twi smbus シリアル通信 serial bus バス sda scl プルアップ抵抗 pull-up オープンドレイン open drain ack nack 調停 arbitration クロックストレッチ clock stretching マスタ スレーブ コントローラ ターゲット controller target ロジックアナライザ logic analyzer um10204',
   },
   {
+    id: 'sampling-theorem',
+    c: '信号・通信',
+    t: '標本化定理',
+    d: '波を復元できる標本化周波数の下限を確かめます。',
+    ic: 'smp',
+    r: ['pcm', 'fft', 'rolling-shutter', 'convolution'],
+    k: 'sampling theorem 標本化定理 サンプリング定理 シャノン shannon ナイキスト nyquist コテルニコフ kotelnikov ホイッタカー whittaker 標本化 サンプリング sampling 標本化周波数 サンプリング周波数 サンプルレート sample rate 2 倍 エイリアシング aliasing 折り返し 折り返し雑音 アンチエイリアス anti-aliasing ローパス 復元 再構成 reconstruction sinc 補間 interpolation スペクトル spectrum 複製 イメージ image 正弦波 矩形波 和音 スイープ sweep 試聴 音 audio',
+  },
+  {
     id: 'fir',
     c: 'デジタルフィルタ',
     t: 'FIR フィルタ',
@@ -306,7 +315,7 @@ export const TOOLS: Tool[] = [
     t: 'PCM',
     d: '標本化と量子化で音がどう変わるかを聴き比べます。',
     ic: 'pcm',
-    r: ['adpcm', 'mp3', 'spectrum', 'oscilloscope'],
+    r: ['sampling-theorem', 'adpcm', 'mp3', 'spectrum'],
     k: 'pcm pulse code modulation パルス符号変調 lpcm リニア pcm wav wave 標本化 サンプリング sampling 標本化周波数 サンプリング周波数 サンプルレート sample rate sampling rate 量子化 quantization ビット数 ビット深度 bit depth 量子化誤差 量子化雑音 量子化ノイズ quantization noise 符号化 復元 ナイキスト nyquist 標本化定理 sampling theorem 折り返し エイリアシング aliasing アンチエイリアス anti-aliasing ローパス 再構成フィルタ reconstruction filter 0 次ホールド ディザ dither tpdf μ-law u-law a-law g.711 電話 cd 44.1 khz 16 bit ハイレゾ hi-res ビットレート bitrate sn 比 snr 音質 聴き比べ オーディオ audio',
   },
   {
