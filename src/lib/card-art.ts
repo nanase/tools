@@ -2885,6 +2885,28 @@ export const ART: Record<string, Art> = {
     });
     return s;
   },
+  /* SPI: 左のマスタから 3 本の線（SCK・MOSI・MISO）と 3 本の CS。選ぶ機器が順に替わり、選んだ機器を塗る。
+     MOSI のビットは右へ、MISO のビットは左へ、4 コマで 1 ビット進む（8 コマ/s、1 台に 16 コマ） */
+  spi(t) {
+    const f = Math.floor(t * 8 + 1e-9),
+      sel = mod(Math.floor(f / 16), 3),
+      p = mod(f, 4) / 4;
+    let s =
+      '<rect class="fa" x="4" y="6" width="20" height="36"/>' +
+      P('a t', 'M24 9H116') +
+      P('b t', 'M24 13H116') +
+      P('c t', 'M24 17H116');
+    [34, 62, 90].forEach((x, j) => {
+      s +=
+        P(j === sel ? 'b' : 'c t', `M24 ${21 + j * 3}H${x + 18}V30`) +
+        P('c t', `M${x + 4} 9V30M${x + 9} 13V30M${x + 14} 17V30`);
+      s += j === sel ? `<rect class="fb" x="${x}" y="30" width="22" height="14"/>` : P('c t', `M${x} 30h22v14h-22z`);
+    });
+    const x = 34 + sel * 28;
+    s += `<rect class="fa" x="${r1(26 + (x + 9 - 26) * p)}" y="11" width="4" height="4"/>`;
+    s += `<rect class="fb" x="${r1(x + 14 - (x + 14 - 26) * p)}" y="15" width="4" height="4"/>`;
+    return s;
+  },
   /* 変速機: 噛み合う 2 枚の歯車から軸でスプロケットへ伝え、チェーンが右へ流れる。
      1 周（12 コマ/s で 24 コマ）で、歯車はどちらも 4 歯、スプロケットとチェーンは 3 歯ずつ進む */
   sf(t) {
@@ -2990,6 +3012,7 @@ export const LOOP: Record<string, number> = {
   shp: 3,
   mxd: MX.L,
   i2c: I2C.scl.length / I2C_QPS,
+  spi: 6,
   gb: 2,
   sf: 4,
 };

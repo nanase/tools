@@ -135,8 +135,17 @@ export const TOOLS: Tool[] = [
     t: 'I2C',
     d: '2 本の線で機器がやり取りする I2C の信号を追います。',
     ic: 'i2c',
-    r: ['jjy', 'timer555', 'qr-code', 'oscilloscope'],
+    r: ['spi', 'jjy', 'timer555', 'oscilloscope'],
     k: 'i2c iic i²c twi smbus シリアル通信 serial bus バス sda scl プルアップ抵抗 pull-up オープンドレイン open drain ack nack 調停 arbitration クロックストレッチ clock stretching マスタ スレーブ コントローラ ターゲット controller target ロジックアナライザ logic analyzer um10204',
+  },
+  {
+    id: 'spi',
+    c: '信号・通信',
+    t: 'SPI',
+    d: '4 本の線で機器がデータを交換する SPI の信号を追います。',
+    ic: 'spi',
+    r: ['i2c', 'jjy', 'timer555', 'oscilloscope'],
+    k: 'spi serial peripheral interface シリアル通信 serial bus バス sck sclk mosi miso ss cs chip select チップセレクト copi cipo sdo sdi シフトレジスタ shift register cpol cpha spiモード spi mode 全二重 full duplex デイジーチェーン daisy chain マスタ スレーブ コントローラ ペリフェラル controller peripheral ロジックアナライザ logic analyzer',
   },
   {
     id: 'sampling-theorem',
