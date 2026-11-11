@@ -308,17 +308,63 @@ function fingeringIs(m: number, n: number, semi: number): boolean {
   }
   return false;
 }
-for (const c of cells)
-  c.addEventListener('click', async () => {
-    const g = FINGERS[Number(c.dataset.f)];
-    M.v = [...g.v];
-    setPartial(Number(c.dataset.n));
-    /* 押した音を 0.8 秒吹く（吹いている間は音だけ変える） */
-    if (!M.blow) {
-      await blow(true);
-      blowTimer = setTimeout(() => void blow(false), 800);
-    }
+function ladderPick(c: HTMLButtonElement): void {
+  M.v = [...FINGERS[Number(c.dataset.f)].v];
+  setPartial(Number(c.dataset.n));
+}
+/*
+ * 押している間だけ吹く。押したまま別の音名へ動かすと、息を止めずに指使いと倍音だけ変える（スラー）。
+ * スペースなどで吹いている最中に押したときは音だけ変え、離しても吹き続ける
+ */
+{
+  const lad = $('#ladder');
+  let ptr: number | null = null,
+    cur: HTMLButtonElement | null = null,
+    own = false;
+  const cellAt = (x: number, y: number) =>
+    document.elementFromPoint(x, y)?.closest<HTMLButtonElement>('#ladder .cell') ?? null;
+  lad.addEventListener('pointerdown', (e) => {
+    const c = (e.target as HTMLElement).closest<HTMLButtonElement>('.cell');
+    if (!c || ptr !== null || e.button !== 0) return;
+    e.preventDefault();
+    ptr = e.pointerId;
+    lad.setPointerCapture(e.pointerId);
+    cur = c;
+    ladderPick(c);
+    own = !M.blow;
+    /* 音の準備の間に離していたら、吹き始めてすぐ止める */
+    if (own)
+      void blow(true).then(() => {
+        if (ptr === null) void blow(false);
+      });
   });
+  lad.addEventListener('pointermove', (e) => {
+    if (e.pointerId !== ptr) return;
+    const c = cellAt(e.clientX, e.clientY);
+    if (!c || c === cur) return;
+    cur = c;
+    ladderPick(c);
+  });
+  const up = (e: PointerEvent) => {
+    if (e.pointerId !== ptr) return;
+    ptr = null;
+    cur = null;
+    if (own) void blow(false);
+  };
+  lad.addEventListener('pointerup', up);
+  lad.addEventListener('pointercancel', up);
+  lad.addEventListener('lostpointercapture', up);
+  /* キーボードで押したときは 0.8 秒吹く */
+  for (const c of cells)
+    c.addEventListener('click', async (e) => {
+      if (e.detail !== 0) return;
+      ladderPick(c);
+      if (!M.blow) {
+        await blow(true);
+        blowTimer = setTimeout(() => void blow(false), 800);
+      }
+    });
+}
 function ladderOn(v: readonly boolean[], n: number): void {
   const f = semiOf(v);
   const fi = FINGERS.findIndex((g) => g.v.every((x, i) => x === v[i]));
