@@ -1,6 +1,6 @@
 # 木星のデータの出典とライセンス
 
-木星のページで使うデータとコードのうち、外から取り込んだものを挙げます。これらには、リポジトリの MIT ライセンスではなく、それぞれの許諾が付きます。
+木星のページで使うデータとコードのうち、外から取り込んだものを挙げます。これらにはリポジトリの MIT ライセンスではなく、それぞれの許諾が付きます。
 
 | データ | ファイル | ライセンス |
 | --- | --- | --- |
@@ -10,7 +10,7 @@
 | [大赤斑の経度](#大赤斑の経度) | [grs.ts](grs.ts) | 読み取った値 |
 | [すべての衛星](#すべての衛星) | [public/jupiter/moons.json](../../../public/jupiter/moons.json)・[model.ts](model.ts) の `INNER` | 位置は JPL Horizons、名前と群は CC BY-SA 4.0 |
 
-ページのフッターには、OPAL の謝辞（Hubble の OPAL、PI と提案番号、STScI、DOI）、Astronomy Engine の著作権表示、ウィキペディア日本語版から取ったことを出します。
+ページのフッターには OPAL の謝辞（Hubble の OPAL、PI と提案番号、STScI、DOI）、Astronomy Engine の著作権表示、ウィキペディア日本語版から取ったことを出します。
 
 ## 模様の地図（OPAL）
 
@@ -20,7 +20,7 @@ Hubble 宇宙望遠鏡の Outer Planet Atmospheres Legacy（OPAL）の全球の�
 bun run jupiter-maps [置き場]
 ```
 
-置き場は、元のファイルを置くリポジトリの外のディレクトリです。ファイルがなければ MAST からダウンロードします。WebP への変換に ImageMagick（`magick`）を使います。
+置き場は元のファイルを置くリポジトリの外のディレクトリです。ファイルがなければ MAST からダウンロードします。WebP への変換に ImageMagick（`magick`）を使います。
 
 - 元のファイル: `hlsp_opal_hst_wfc3-uvis_jupiter-<年><回>_f395n-f502n-f631n_v1_globalmap.tif`（2024a だけ f658n）
   - 置き場所: <https://archive.stsci.edu/hlsps/opal/>

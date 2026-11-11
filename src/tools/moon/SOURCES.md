@@ -1,6 +1,6 @@
 # 月のデータの出典とライセンス
 
-月のページで使うデータのうち、公開されているデータから作ったものを挙げます。これらには、リポジトリの MIT ライセンスではなく、データごとに次のライセンスが付きます。
+月のページで使うデータのうち、公開されているデータから作ったものを挙げます。これらにはリポジトリの MIT ライセンスではなく、データごとに次のライセンスが付きます。
 
 | データ | ファイル | ライセンス |
 | --- | --- | --- |
@@ -9,7 +9,7 @@
 | [地名](#地名) | [features.json](features.json)・[features.meta.json](features.meta.json) | CC BY-SA 4.0 |
 | [月食の一覧](#月食の一覧nasa-の五千年月食目録) | [eclipses.json](../../../public/moon/eclipses.json) | NASA の利用条件（謝辞を添えれば複製可） |
 
-ページのフッターには、次の出典表記を出します。
+ページのフッターには次の出典表記を出します。
 
 - "NASA's Scientific Visualization Studio"（高さと模様の色）
 - "Eclipse Predictions by Fred Espenak, NASA's GSFC"（月食の一覧）
@@ -20,10 +20,10 @@
 どちらも NASA Scientific Visualization Studio（SVS）の [CGI Moon Kit](https://svs.gsfc.nasa.gov/4720/)（Ernie Wright、2019 年公開）のファイルから作ります。[scripts/moon-textures.ts](../../../scripts/moon-textures.ts) で作ります。
 
 ```sh
-bun scripts/moon-textures.ts [置き場]
+bun run moon-textures [置き場]
 ```
 
-置き場は、元のファイルを置くリポジトリの外のディレクトリです。ファイルがなければ SVS からダウンロードします。
+置き場は元のファイルを置くリポジトリの外のディレクトリです。ファイルがなければ SVS からダウンロードします。
 
 - 取得日: 2026-10-22
 - ライセンス: パブリックドメイン
@@ -68,12 +68,12 @@ SVS の[ヘルプ](https://svs.gsfc.nasa.gov/help/)の原文（抜粋）:
 地名のラベルのデータです。[features.json](features.json) にあり、[scripts/moon-features.ts](../../../scripts/moon-features.ts) で作ります。使った版は [features.meta.json](features.meta.json) にも書いてあります。
 
 ```sh
-bun scripts/moon-features.ts [置き場]
+bun run moon-features [置き場]
 ```
 
 features.json は、ウィキペディアの日本語名を含むため、全体を [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/deed.ja) で配布します。
 
-- 使うとき・再配布するときは、下の「日本語名」の出典表記を付ける
+- 使うとき・再配布するときは下の「日本語名」の出典表記を付ける
 - 改変したものも CC BY-SA 4.0 で配布する（継承）
 
 ### データの形
@@ -116,9 +116,9 @@ features.json は、ウィキペディアの日本語名を含むため、全体
 加工:
 
 - 表の名前とラテン語名（英語名）を、IAU の地名と照らし合わせた
-  - 照合は、ダイアクリティカルマークを外し、英数字だけを小文字で比べる
+  - 照合はダイアクリティカルマークを外し、英数字だけを小文字で比べる
 - 同じ地名が複数のページにあるときは、月の海の一覧 → 月のクレーターの一覧 → 月の地形一覧 の順に先のものを使った
-- 次の 2 つは、月の海の一覧の名前ではなく記事名を使った。月の海の一覧のリンクが転送で、記事名と月の地形一覧の表記がこちらのため
+- 次の 2 つは月の海の一覧の名前ではなく記事名を使った。月の海の一覧のリンクが転送で、記事名と月の地形一覧の表記がこちらのため
   - Mare Frigoris: 寒さの海（月の海の一覧は「氷の海」）
   - Sinus Iridum: 虹の入江（月の海の一覧は「虹の入り江」）
 - 月の地形一覧の「峡谷」の表にはラテン語名がない。12 件をスクリプトの中の表で Vallis の名前に対応させた（アルプス峡谷 → Vallis Alpes など）
@@ -135,7 +135,7 @@ features.json は、ウィキペディアの日本語名を含むため、全体
 1900〜2100 年の 459 件の月食です。[eclipses.json](../../../public/moon/eclipses.json) にあり、[scripts/moon-eclipses.ts](../../../scripts/moon-eclipses.ts) で作ります。
 
 ```sh
-bun scripts/moon-eclipses.ts [置き場]
+bun run moon-eclipses [置き場]
 ```
 
 - 出典: [5MKLEcatalog.txt](https://eclipse.gsfc.nasa.gov/5MCLE/5MKLEcatalog.txt)（NASA Goddard Space Flight Center、Fred Espenak）

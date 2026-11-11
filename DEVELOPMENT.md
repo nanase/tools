@@ -13,9 +13,9 @@ Astro と TypeScript で作っています。UI のフレームワークは使�
 | `bun run lint` | Biome で検査する。`lint:fix` で直す |
 | `bun run test` | Vitest でテストする |
 
-Astro と Vitest は、mise が入れた Node で動きます。版は `.mise.toml` で決まります。PATH にほかの版の Node があっても使わず、版が違えば止まります。仕組みは [scripts/node.ts](scripts/node.ts) にあります。
+Astro と Vitest は mise が入れた Node で動きます。版は `.mise.toml` で決まります。PATH にほかの版の Node があっても使わず、版が違えば止まります。仕組みは [scripts/node.ts](scripts/node.ts) にあります。
 
-曲のデータを作り直すコマンドは [SCORES.md](SCORES.md) にあります。
+曲・地図・衛星などのデータを作り直すコマンドは、各ページの `src/tools/<id>/SOURCES.md` にあります。曲を直す手順は [docs/scores.md](docs/scores.md) にあります。
 
 ## CI と公開
 
@@ -49,7 +49,7 @@ GitHub Actions（[.github/workflows/ci.yml](.github/workflows/ci.yml)）が、PR
 
 ## 音の大きさ
 
-音の出るページは、既定のまま鳴らしたときの大きさを −26 LUFS ± 2 LU にそろえます。新しいページを足したら測り、外れていれば音量の行の既定値をずらします。
+音の出るページは既定のまま鳴らしたときの大きさを −26 LUFS ± 2 LU にそろえます。新しいページを足したら測り、外れていれば音量の行の既定値をずらします。
 
 ```sh
 bun run dev                  # 別の端末で起動しておく
@@ -63,7 +63,7 @@ bun run loudness thunder     # ページ名を並べる。省けば全ページ
   - 大きさは ITU-R BS.1770 の積分の大きさで、音のない区間は数えない
 - そろえ方
   - 音量の行の既定値だけをずらす
-  - 低い音が主のページは、LUFS が耳で感じるより小さめに出る
+  - 低い音が主のページは LUFS が耳で感じるより小さめに出る
     - 耳で合わせ、ずらした量を `SCENES` の `ear` に書く（エンジンと変速機は +8 LU）
   - ページの中の音量の差は残す
     - 距離による減衰や低出力の音では、その差が見せたい中身
@@ -73,7 +73,7 @@ bun run loudness thunder     # ページ名を並べる。省けば全ページ
 
 ## 共有の画像
 
-次の 2 つは、カードの図柄から作ります。図柄か副題を変えたら `bun run og-image` で作り直します。
+次の 2 つはカードの図柄から作ります。図柄か副題を変えたら `bun run og-image` で作り直します。
 
 - 共有したときに出る画像（`public/og.png`）
 - README の冒頭の画像（`.github/banner.svg`）
