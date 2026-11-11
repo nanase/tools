@@ -10,7 +10,7 @@
  * ヘッドレスの Edge（なければ環境変数 BROWSER のブラウザ）を CDP で動かす。開いて待つ・再生する・数値の欄を端から端まで
  * 動かす・選択肢とボタンを順に押す。そのたびに枠（.pnl）の高さが変わったら、原因の要素と前後の文字を出す。
  * 数えないもの
- * - ボタンや選択で行・枠が出る・消える、文字は同じまま幅が変わって折り返す（表示の切り替え）。文字が変わって折り返すものは、どの操作でも数える
+ * - ボタンや選択で行・枠が出る・消える、幅が変わって折り返す（表示の切り替え）。同じ幅のまま文字が変わって折り返すものは、どの操作でも数える
  * - 図（canvas・svg・img・video）の大きさ、動作原理と式の枠、「その他」の開閉
  * - data-shift="ok" を付けた要素の中（入力した文字の長さで決まる欄、切り替えで中身ごと入れ替わる表など。付けるときは理由をコメントに書く）
  */
@@ -30,6 +30,8 @@ interface Rec {
   t0: string | null;
   t1: string | null;
   show: boolean;
+  /** 原因の要素の幅も変わった（並びの切り替えで枠が狭く・広くなった） */
+  wide: boolean;
 }
 
 /** ページの中で動く。window.__ls に操作と計測の関数を置く */
@@ -93,10 +95,13 @@ function probe(): void {
     const r = el.getBoundingClientRect();
     return r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden';
   };
-  type Snap = Map<number, { el: Element; h: number; t: string | null }>;
+  type Snap = Map<number, { el: Element; h: number; w: number; t: string | null }>;
   const snap = (): Snap => {
     const s: Snap = new Map();
-    for (const el of els()) s.set(idOf(el), { el, h: el.getBoundingClientRect().height, t: txt(el) });
+    for (const el of els()) {
+      const r = el.getBoundingClientRect();
+      s.set(idOf(el), { el, h: r.height, w: r.width, t: txt(el) });
+    }
     return s;
   };
   let prev: Snap | null = null;
@@ -104,10 +109,11 @@ function probe(): void {
     const cur = snap(),
       out: Rec[] = [];
     if (prev) {
-      const ch: { el: Element; h0: number; h1: number; t0: string | null; t1: string | null }[] = [];
+      const ch: { el: Element; h0: number; h1: number; t0: string | null; t1: string | null; wide: boolean }[] = [];
       for (const [id, c] of cur) {
         const p = prev.get(id);
-        if (p && Math.abs(c.h - p.h) >= 1) ch.push({ el: c.el, h0: p.h, h1: c.h, t0: p.t, t1: c.t });
+        if (p && Math.abs(c.h - p.h) >= 1)
+          ch.push({ el: c.el, h0: p.h, h1: c.h, t0: p.t, t1: c.t, wide: Math.abs(c.w - p.w) >= 1 });
       }
       const anchors = new Set(ch.filter((c) => c.el.matches(ANCH)).map((c) => c.el));
       if (anchors.size) {
@@ -141,6 +147,7 @@ function probe(): void {
             t0: c.t0,
             t1: c.t1,
             show,
+            wide: c.wide,
           });
         }
       }
@@ -210,10 +217,11 @@ function probe(): void {
 }
 
 /**
- * 数える揺れか。開いて待つ・再生・数値の操作ではすべて数える。ボタン・選択では、文字が変わって折り返したものだけを数える。
- * ボタン・選択で出る・消えるものと、文字は同じまま幅が変わって折り返すもの（単独・比較・一覧の切り替えなど）は、表示の切り替えとして数えない
+ * 数える揺れか。開いて待つ・再生・数値の操作ではすべて数える。ボタン・選択では、同じ幅のまま文字が変わって折り返したものだけを数える。
+ * ボタン・選択で出る・消えるもの、幅が変わって折り返すもの（単独・比較・一覧の切り替えなど）は、表示の切り替えとして数えない
  */
-const counts = (r: Rec) => r.trig === 'idle' || r.trig === 'play' || r.trig === 'num' || (!r.show && r.t0 !== r.t1);
+const counts = (r: Rec) =>
+  r.trig === 'idle' || r.trig === 'play' || r.trig === 'num' || (!r.show && !r.wide && r.t0 !== r.t1);
 
 /* ---------- 引数 ---------- */
 const args = process.argv.slice(2);
