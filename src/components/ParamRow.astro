@@ -2,7 +2,8 @@
 /**
  * 数値入力の 1 行: 記号 | 項目名 | 数値欄 | 単位 | ↺。数値欄そのものがスライダーで、左右にドラッグすると値の並びを移り、
  * 押すと入力欄に変わる（下に範囲・プリセット・既定値の吹き出し）。値・地の位置・‹ › の行き先はブラウザ側
- * （lib/param.ts の ParamGroup）が入れる。補足（d.sub）は項目名の吹き出しに出す
+ * （lib/param.ts の ParamGroup）が入れる。補足（d.sub）は項目名の吹き出しに出す。
+ * メッセージは値の欄の角の印（.nt）と吹き出し（lib/bubble.ts）に出し、行の下の .msg は読み上げだけに使う
  */
 import type { ParamDef } from '../lib/param-def';
 import RowReset from './RowReset.astro';
@@ -17,6 +18,7 @@ const k = d.k;
   <div class="c-sym" aria-hidden="true" set:html={d.sym} />
   <div class="c-name"><span class="pn" id={`n-${k}`}><span class="sr">{d.nm} </span>{d.name}</span><p class="desc tip" id={`t-${k}`} role="tooltip" hidden>{d.sub}</p></div>
   <div class="c-val">
+    <span class="nt" aria-hidden="true"></span>
     <div class="sc" tabindex="0" role="slider" aria-labelledby={`n-${k}`} aria-describedby={`t-${k} u-${k} m-${k}`}>
       <span class="sc-f" aria-hidden="true"></span><span class="sc-c" aria-hidden="true"></span><span class="sc-p" aria-hidden="true"></span>
       <button type="button" class="sc-a" data-d="-1" tabindex="-1"><svg viewBox="0 0 6 10" aria-hidden="true"><path d="M5 1L1 5L5 9"/></svg></button>

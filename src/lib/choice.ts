@@ -6,6 +6,7 @@
  * 行（.prow）なら、初めに選んでいる値を既定値とし、違う間は印と行末の ↺ を出す（lib/reset.ts）。
  * 保存しない行（ほかの状態で決まる行）と data-noreset の行は数えない
  */
+import { rowNote } from './bubble';
 import { $$ } from './dom';
 import type { MsgKind } from './param';
 import { addRow, mark } from './reset';
@@ -15,6 +16,7 @@ export class Choice<V extends string = string> {
   readonly root: HTMLElement;
   private readonly btns: HTMLButtonElement[];
   private readonly msgEl: HTMLElement | null;
+  private readonly offEl: HTMLElement | null;
   private cur: V;
   /** 既定値（初めに選んでいる値。setDefault で変えられる） */
   private def: V;
@@ -31,7 +33,8 @@ export class Choice<V extends string = string> {
   ) {
     this.root = root;
     this.btns = $$<HTMLButtonElement>('button[data-v]', root);
-    this.msgEl = root.querySelector('.msg, .c-off');
+    this.msgEl = root.querySelector(':scope > .c-sub > .msg');
+    this.offEl = root.querySelector(':scope > .c-val > .c-off');
     this.cur = (this.btns.find((b) => b.getAttribute('aria-pressed') === 'true')?.dataset.v ?? '') as V;
     this.def = this.cur;
     const save = !!root.id && !root.hasAttribute('data-nosave');
@@ -98,11 +101,14 @@ export class Choice<V extends string = string> {
     mark();
   }
 
-  /** 行を無効にする・戻す。note を行の下に出す（msg を置いた行だけ。戻すときは消す） */
+  /** 行を無効にする・戻す。区切りボタンの行は note を破線の枠に、チップの行はメッセージに出す（戻すときは消す） */
   setOff(off: boolean, note = ''): void {
     this.root.classList.toggle('off', off);
     for (const b of this.btns) b.disabled = off || b.dataset.dis === '1';
-    this.note(off ? note : '');
+    const t = off ? note : '';
+    if (this.offEl) {
+      if (this.offEl.textContent !== t) this.offEl.textContent = t;
+    } else this.note(t);
     mark();
   }
 
@@ -115,12 +121,12 @@ export class Choice<V extends string = string> {
       }
   }
 
-  /** 行の下にメッセージを出す（ChoiceRow の msg を置いた行だけ） */
+  /** メッセージを印と吹き出しに出す（ChoiceRow の msg を置いた行だけ）。行の下の .msg は読み上げに使う */
   note(text: string, kind: MsgKind = ''): void {
     if (!this.msgEl) return;
-    /* 破線の枠（ChoiceRow の offIn）は、無効の理由だけを出す */
-    if (!this.msgEl.classList.contains('c-off')) this.msgEl.className = `msg${kind ? ` ${kind}` : ''}`;
+    this.msgEl.className = `msg${kind ? ` ${kind}` : ''}`;
     if (this.msgEl.textContent !== text) this.msgEl.textContent = text;
+    rowNote(this.root, text, kind);
   }
 
   /** 項目名の吹き出しの補足を変える */

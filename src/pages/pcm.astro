@@ -26,7 +26,7 @@ const playIcon =
     <div class="col">
       <Panel hid="hd-s" title="標本化: 時間で区切る" class="a-s">
         <div class="scope pcm-scr"><canvas class="pcm-cv pcm-w" id="s-w" role="img" aria-label="標本化の波形"></canvas><Busy id="ls-busy" text="計算中…" hidden /></div>
-        <div class="sbar pcm-lg"><span class="stag"><i class="sw c2"></i>原音</span><span class="stag"><i class="pcm-dot"></i>標本</span><span class="stag"><i class="sw"></i>再生した波</span></div>
+        <div class="sbar lg pcm-lg"><span class="stag"><i class="sw c2"></i>原音</span><span class="stag"><i class="pcm-dot"></i>標本</span><span class="stag"><i class="sw"></i>再生した波</span></div>
         <div class="scope pcm-scr"><canvas class="pcm-cv pcm-s" id="s-s" role="img" aria-label="標本化のスペクトル"></canvas></div>
         <p class="pcm-eff" id="s-eff"></p>
         <div class="ptab">
@@ -37,12 +37,12 @@ const playIcon =
 
       <Panel hid="hd-q" title="量子化: 振幅で区切る" class="a-q">
         <div class="scope pcm-scr"><canvas class="pcm-cv pcm-w" id="q-w" role="img" aria-label="量子化の波形"></canvas></div>
-        <div class="sbar pcm-lg"><span class="stag"><i class="sw c2"></i>原音</span><span class="stag"><i class="sw"></i>丸めた波</span><span class="stag"><i class="sw pcm-sw-e"></i>誤差</span></div>
+        <div class="sbar lg pcm-lg"><span class="stag"><i class="sw c2"></i>原音</span><span class="stag"><i class="sw"></i>丸めた波</span><span class="stag"><i class="sw pcm-sw-e"></i>誤差</span></div>
         <div class="scope pcm-scr"><canvas class="pcm-cv pcm-s" id="q-s" role="img" aria-label="量子化のスペクトル"></canvas></div>
         <p class="pcm-eff" id="q-eff"></p>
         <div class="ptab">
           <ChoiceRow k="law" name="量子化の方式" sub="μ-law と A-law は電話の方式（G.711）" choices={LAW} value="lin" />
-          <ChoiceRow k="dith" name="ディザ" sub="丸める前に足す小さな乱数" choices={DITH} value="0" offIn />
+          <ChoiceRow k="dith" name="ディザ" sub="丸める前に足す小さな乱数" choices={DITH} value="0" />
         </div>
       </Panel>
     </div>

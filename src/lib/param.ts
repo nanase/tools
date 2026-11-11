@@ -4,6 +4,7 @@
  * 入力中は値を動かさず、Enter か欄の外で確定する。既定値と違う行は印を付け、行末の ↺ で戻す（lib/reset.ts）。
  * 描画は components/ParamRow.astro
  */
+import { rowNote } from './bubble';
 import { $, $$, esc } from './dom';
 import { type Series, same } from './eseries';
 import { fx, POP_IN } from './motion';
@@ -103,11 +104,12 @@ class Param {
     addRow(r, { isMod: () => this.isMod(), reset: () => this.resetDefault() });
   }
 
-  /** メッセージ。入力中は吹き出しに、ほかは行の下に出す */
+  /** メッセージ。入力中は入力欄の吹き出しに、ほかは値の欄の角の印と吹き出しに出す（行の下の .msg は読み上げに使う） */
   msg(cls: MsgKind, text: string): void {
     const el = this.editing ? this.popMsg : this.msgEl;
     el.className = `msg${cls ? ` ${cls}` : ''}${this.editing ? ' sc-m' : ''}`;
     el.textContent = text;
+    if (!this.editing) rowNote(this.row, text, cls);
   }
   private idle(): void {
     this.msg(

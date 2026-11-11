@@ -77,16 +77,16 @@ const name = 'ピアノ音響モデル';
 
       <MidiPanel pedals>
         <ChoiceRow k="mv" name="ベロシティ" sub="鍵盤どおり: MIDI のベロシティ（1〜127）をハンマーの速さ（0.3〜7 m/s）に変換。固定: 打鍵の枠のベロシティ" choices={[['key', '鍵盤どおり'], ['fix', '固定']]} value="key" />
-        <ChoiceRow k="mt" name="タッチ" sub="ベロシティをハンマーの速さに直す曲線。軽いほど弱く弾いても強い音" choices={[['light', '軽い'], ['std', '標準'], ['heavy', '重い']]} value="std" offIn />
+        <ChoiceRow k="mt" name="タッチ" sub="ベロシティをハンマーの速さに直す曲線。軽いほど弱く弾いても強い音" choices={[['light', '軽い'], ['std', '標準'], ['heavy', '重い']]} value="std" />
       </MidiPanel>
 
       <Panel hid="hd-hit" title="打鍵" class="a-hit">
         <div class="ptab">
           <ParamRow d={VEL} />
           <ChoiceRow k="hard" name="ハンマーの硬さ" sub="フェルトの硬さ（整音）。硬いほど高い倍音の強い明るい音" choices={HARD.map(([v, l]) => [v, l] as const)} value="1" />
-          <ChoiceRow k="ped" name="ダンパーペダル" sub="すべてのダンパーを弦から離すペダル。自動: 曲は低音が変わるところで踏みかえ（記録のある曲は記録のとおり）、鍵盤はなし" choices={[['auto', '自動'], ['on', '踏む'], ['off', '踏まない']]} value="auto" offIn />
+          <ChoiceRow k="ped" name="ダンパーペダル" sub="すべてのダンパーを弦から離すペダル。自動: 曲は低音が変わるところで踏みかえ（記録のある曲は記録のとおり）、鍵盤はなし" choices={[['auto', '自動'], ['on', '踏む'], ['off', '踏まない']]} value="auto" />
           <ChoiceRow k="th" name="鍵盤の音" sub="鍵が底に当たって響板を叩く音（コトンという音）の大きさ" choices={THUMP} value="1" />
-          <ChoiceRow k="soft" name="ソフトペダル" sub="踏むと鍵盤とハンマーが横にずれ、3 本弦の鍵は 2 本、2 本弦の鍵は 1 本だけを、フェルトの柔らかい所で打つ。打たない弦も駒を通して揺れる" choices={[['off', '踏まない'], ['on', '踏む']]} value="off" offIn />
+          <ChoiceRow k="soft" name="ソフトペダル" sub="踏むと鍵盤とハンマーが横にずれ、3 本弦の鍵は 2 本、2 本弦の鍵は 1 本だけを、フェルトの柔らかい所で打つ。打たない弦も駒を通して揺れる" choices={[['off', '踏まない'], ['on', '踏む']]} value="off" />
         </div>
       </Panel>
 
