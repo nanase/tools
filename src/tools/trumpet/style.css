@@ -128,6 +128,8 @@
 .lh{font:700 11.5px var(--sans);color:var(--ink-2);text-align:center;white-space:nowrap}
 .lad .cell{min-height:38px}
 .lad .cell .nm{white-space:nowrap}
+/* なぞって音を変えるので、音名の上ではスクロールしない */
+.lad .cell{touch-action:none;user-select:none;-webkit-user-select:none}
 .vkeys .lbl2{margin-left:14px}
 .vkeys kbd,.tg kbd{margin-left:6px;font:500 10px var(--mono);color:var(--ink-3)}
 .sw.c3{background:var(--accent)}
