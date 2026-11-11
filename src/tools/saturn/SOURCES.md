@@ -1,6 +1,6 @@
 # 土星のデータの出典とライセンス
 
-土星のページで使うデータとコードのうち、外から取り込んだものを挙げます。これらには、リポジトリの MIT ライセンスではなく、それぞれの許諾が付きます。
+土星のページで使うデータとコードのうち、外から取り込んだものを挙げます。これらにはリポジトリの MIT ライセンスではなく、それぞれの許諾が付きます。
 
 | データ | ファイル | ライセンス |
 | --- | --- | --- |
@@ -10,7 +10,7 @@
 | [土星の位置](#土星の位置vsop87d) | [vsop.ts](vsop.ts) | 論文と IMCCE の公開データ |
 | [すべての衛星](#すべての衛星) | [public/saturn/moons.json](../../../public/saturn/moons.json)・[model.ts](model.ts) の `INNER`・[phoebe.ts](phoebe.ts) | 位置は JPL Horizons、名前と群は CC BY-SA 4.0 |
 
-ページのフッターには、OPAL の謝辞（Hubble の OPAL、PI と提案番号、STScI、DOI）、環のデータの出典、astronomia の著作権表示、ウィキペディア日本語版から取ったことを出します。
+ページのフッターには OPAL の謝辞（Hubble の OPAL、PI と提案番号、STScI、DOI）、環のデータの出典、astronomia の著作権表示、ウィキペディア日本語版から取ったことを出します。
 
 ## 模様の帯（OPAL）
 
@@ -20,7 +20,7 @@ Hubble 宇宙望遠鏡の Outer Planet Atmospheres Legacy（OPAL）の全球の�
 bun run saturn-rings [置き場]
 ```
 
-置き場は、元のファイルを置くリポジトリの外のディレクトリです。ファイルがなければダウンロードします。画像の読み書きに ImageMagick（`magick`）を使います。
+置き場は元のファイルを置くリポジトリの外のディレクトリです。ファイルがなければダウンロードします。画像の読み書きに ImageMagick（`magick`）を使います。
 
 - 元のファイル: `hlsp_opal_hst_wfc3-uvis_saturn-2025a_f395n-f502n-f631n_v1_globalmap.tif`
   - 置き場所: <https://archive.stsci.edu/hlsps/opal/cycle32/saturn/>
