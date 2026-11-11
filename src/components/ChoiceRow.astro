@@ -3,7 +3,9 @@
  * 選択肢だけの行（パラメータ表の 1 行）。動作は lib/choice.ts の Choice（new Choice($('#p-{k}'), fn)）。
  * layout="seg": 項目名の右に区切りボタン（1 行）、"chips": 項目名の下の段にチップを並べる。
  * 行末に既定値（初めに選んでいる値）へ戻す ↺ を置く（既定値と違う間だけ見える）。
- * 補足（sub）は項目名の吹き出しに出す。項目名の直後に置くもの（「?」ボタンなど）は slot="help"
+ * 補足（sub）は項目名の吹き出しに出す。項目名の直後に置くもの（「?」ボタンなど）は slot="help"。
+ * 無効の間（Choice の setOff）は、区切りボタンの代わりに破線の枠で理由を 1 行に出す。
+ * メッセージ（msg の行）は印（区切りボタンの角、チップの行は項目名の横）と吹き出し（lib/bubble.ts）に出し、行の下の .msg は読み上げだけに使う
  */
 import RowReset from './RowReset.astro';
 
@@ -25,10 +27,8 @@ interface Props {
   layout?: 'seg' | 'chips';
   /** 項目名を行の幅いっぱいに出す（chips はいつもこの形） */
   wide?: boolean;
-  /** メッセージの欄を置く（Choice の note・setOff で使う） */
+  /** メッセージを出す行にする（Choice の note で使う。印を置く） */
   msg?: boolean;
-  /** 無効にしたとき（Choice の setOff）、区切りボタンの代わりに破線の枠で理由を出す（数値の行と同じ形。msg の代わり） */
-  offIn?: boolean;
   class?: string;
 }
 const {
@@ -43,7 +43,6 @@ const {
   layout = 'seg',
   wide,
   msg,
-  offIn,
   class: cls,
 } = Astro.props;
 const nid = `n-${k}`,
@@ -53,11 +52,11 @@ const chips = layout === 'chips';
 ---
 <div class:list={['prow', 'chr', chips || wide ? 'wide' : 'segr', cls]} id={`p-${k}`} data-nm={nm ?? name}>
   <div class:list={['c-sym', symClass]} aria-hidden="true" set:html={sym} />
-  <div class="c-name"><span class="pn" id={nid}>{nm && <span class="sr">{nm} </span>}{name}</span><p class="desc tip" id={tid} role="tooltip" hidden>{sub}</p><slot name="help" /></div>
+  <div class="c-name"><span class="pn" id={nid}>{nm && <span class="sr">{nm} </span>}{name}</span>{msg && chips && <span class="nt" aria-hidden="true"></span>}<p class="desc tip" id={tid} role="tooltip" hidden>{sub}</p><slot name="help" /></div>
   {!chips && (
-    <div class="c-val"><div class="seg" role="group" aria-labelledby={nid} aria-describedby={tid}>
+    <div class="c-val">{msg && <span class="nt" aria-hidden="true"></span>}<div class="seg" role="group" aria-labelledby={nid} aria-describedby={tid}>
       {btns.map((b) => <button type="button" data-v={b.v} aria-pressed={b.on ? 'true' : 'false'} title={b.t}>{b.l}</button>)}
-    </div>{offIn && <p class="c-off" aria-live="polite"></p>}</div>
+    </div><p class="c-off" aria-live="polite"></p></div>
   )}
   <RowReset label={`${name}を既定値に戻す`} />
   {(msg || chips) && (

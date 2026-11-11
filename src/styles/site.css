@@ -238,6 +238,9 @@ a.unit:hover h3{text-decoration:underline;text-decoration-color:var(--ink-3);tex
 .rst svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .desc{position:absolute;z-index:25;top:calc(100% - 8px);left:var(--bx,0px);width:min(340px,100%);margin:0;padding:10px 12px;border-radius:var(--r);background:var(--ink);color:var(--surface);font-size:13.5px;line-height:1.7;box-shadow:0 6px 20px rgb(0 0 0 / .18)}
 .desc::before{content:"";position:absolute;top:-6px;left:var(--ax,12px);width:12px;height:12px;background:inherit;transform:translateX(-50%) rotate(45deg);border-radius:2px}
+/* 行のメッセージと、… で省いた文字の全文の吹き出し（lib/bubble.ts）。ページに重ねるので、開いても下の行は動かない */
+.desc.fl{position:absolute;top:0;left:0;width:max-content;max-width:min(340px,calc(100vw - 32px));font-size:13px;font-weight:400;line-height:1.6;overflow-wrap:anywhere;pointer-events:none}
+.desc.fl.er{background:var(--warn)}
 .mini{position:sticky;top:var(--rail-h);z-index:20;display:flex;gap:24px;margin:0 -16px 14px;padding:6px 16px;background:var(--rail-2);color:var(--rail-ink-2);font:500 12.5px/1.5 var(--mono);white-space:nowrap;overflow:hidden}
 .mini b{color:var(--rail-ink);font-weight:700;font-size:14px;margin-left:.6em}
 .mini>b{margin-left:0}
@@ -278,8 +281,19 @@ a.unit:hover h3{text-decoration:underline;text-decoration-color:var(--ink-3);tex
 .c-unit{grid-area:unit;font:500 13.5px/1 var(--mono);color:var(--ink-2);white-space:nowrap}
 .c-rst{grid-area:rst;display:flex;justify-content:center}
 .c-sub{grid-area:sub;min-width:0;padding:2px 0}
+/* 行のメッセージ（Choice.note・ParamGroup.note）は印（.nt）と吹き出しに出し、行の下の .msg は読み上げだけに使う。
+   印は値の欄の左上の角に重ね（チップの行は項目名の横）、出ても消えても行の高さと項目名の折り返しを変えない */
+.prow:has(.nt)>.c-sub>.msg{position:absolute;width:1px;height:1px;min-height:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.prow:has(.nt)>.c-sub:has(> .msg:only-child){display:block;padding:0}
+/* 印のない手作りの行では、今までどおり行の下に出す */
 .c-sub:has(> .msg:only-child:empty){display:none}
 .c-sub>.msg:empty{min-height:0}
+.nt{flex:none;display:inline-grid;place-items:center;width:15px;height:15px;border:1.5px solid var(--ink-3);border-radius:50%;background:var(--bg);color:var(--ink-3);font:700 10px/1 var(--mono);visibility:hidden;cursor:help}
+.c-val>.nt{position:absolute;z-index:2;top:-6px;left:-6px}
+.nt::before{content:"i"}
+.nt.on{visibility:visible}
+.nt.er{border-color:var(--warn);color:var(--warn)}
+.nt.er::before{content:"!"}
 @container (max-width:400px){.prow{--sw:22px;--fw:150px;--uw:28px;column-gap:6px;padding:4px 6px}}
 /* 選択肢の行（ChoiceRow）: 区切りボタンは項目名の右（値と単位の幅。長い選択肢は広げる）、チップは下の段 */
 .prow.segr{grid-template-columns:var(--sw) minmax(4.5em,1fr) minmax(calc(var(--fw) + var(--uw) + 8px),max-content) 24px;grid-template-areas:"sym name val rst" ". sub sub sub"}
@@ -324,12 +338,12 @@ a.unit:hover h3{text-decoration:underline;text-decoration-color:var(--ink-3);tex
 /* 無効にした行（ParamGroup.setOff・Choice.setOff）: 数値欄は破線にして理由を出す */
 .prow.off .c-unit,.prow.off .seg,.prow.off .chip{opacity:.4}
 .prow.off .seg,.prow.off .chips{pointer-events:none}
-.prow.off .sc{grid-template-columns:minmax(0,1fr);height:auto;min-height:30px;padding:3px 6px;border-style:dashed;border-color:var(--line-2);background:none;cursor:default}
+.prow.off .sc{grid-template-columns:minmax(0,1fr);padding:0 6px;border-style:dashed;border-color:var(--line-2);background:none;cursor:default}
 .prow.off .sc-a,.prow.off .sc-f,.prow.off .sc-c,.prow.off .sc-p{display:none}
-.prow.off .sc-v{font:12px/1.3 var(--sans);color:var(--ink-3);white-space:normal;text-align:center}
-/* 選択肢の行（ChoiceRow の offIn）も、無効の間は区切りボタンの代わりに破線の枠で理由を出す */
+.prow.off .sc-v{font:12px/14px var(--sans);color:var(--ink-3);text-align:center}
+/* 選択肢の行（区切りボタン）も、無効の間は区切りボタンの代わりに同じ高さの破線の枠で理由を 1 行に出す */
 .c-off{display:none;margin:0}
-.prow.off .c-off:not(:empty){display:flex;align-items:center;justify-content:center;text-align:center;min-height:30px;padding:3px 8px;border:1px dashed var(--line-2);border-radius:4px;font:12px/1.3 var(--sans);color:var(--ink-3)}
+.prow.off .c-off:not(:empty){display:block;height:30px;padding:0 8px;border:1px dashed var(--line-2);border-radius:4px;font:12px/28px var(--sans);color:var(--ink-3);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .prow.off .c-val:has(.c-off:not(:empty)) .seg{display:none}
 .msg{min-height:18px;margin:0;font:500 12px/18px var(--mono);color:var(--ink-3);overflow-wrap:anywhere}
 .msg.pv{color:var(--ink)}
@@ -366,7 +380,7 @@ a.unit:hover h3{text-decoration:underline;text-decoration-color:var(--ink-3);tex
 .tp-pp .i-pause,.tp-pp.on .i-play{display:none}
 .tp-pp.on .i-pause{display:block}
 .tp-pp.on{box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 35%,transparent)}
-.tp-tl{min-width:0}
+.tp-tl{min-width:0;container-type:inline-size}
 .tp-trk{position:relative;height:24px;cursor:pointer;touch-action:pan-y;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
 .tp-trk[aria-disabled="true"]{cursor:default}
 .tp-trk:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:3px}
@@ -376,7 +390,10 @@ a.unit:hover h3{text-decoration:underline;text-decoration-color:var(--ink-3);tex
 .tp-tk path{fill:none;stroke:var(--ink-3);stroke-width:1;opacity:.6}
 .tp-th{position:absolute;top:5px;left:0;width:14px;height:14px;margin-left:-7px;border-radius:50%;background:var(--surface);box-shadow:inset 0 0 0 2px var(--ink);pointer-events:none}
 .tp-trk[aria-disabled="true"] .tp-th{display:none}
-.tp-tm{display:flex;flex-wrap:wrap;justify-content:space-between;column-gap:10px;margin-top:2px;font:500 12px/1.4 var(--mono);color:var(--ink-3);font-variant-numeric:tabular-nums;white-space:nowrap}
+/* 小節と時刻。中身の長さで行数を変えないよう、折り返すかどうかは枠の幅だけで決める（狭い枠ではいつも 2 行） */
+.tp-tm{display:flex;justify-content:space-between;column-gap:10px;margin-top:2px;font:500 12px/1.4 var(--mono);color:var(--ink-3);font-variant-numeric:tabular-nums;white-space:nowrap}
+.tp-tm>*{min-width:0;overflow:hidden;text-overflow:ellipsis}
+@container (max-width:300px){.tp-tm{flex-direction:column}}
 /* 小節の数字は小節の数の桁の幅を取り（lib/transport.ts）、数字が変わっても「/ 35 小節」を動かさない */
 .tp-tm b{display:inline-block;text-align:right;color:var(--ink);font-weight:700}
 .tp-side{display:flex;gap:4px;padding-left:10px;border-left:1px solid var(--line)}
@@ -424,6 +441,7 @@ a.unit:hover h3{text-decoration:underline;text-decoration-color:var(--ink-3);tex
   .sc,.sc-in{height:36px}
   .sc{grid-template-columns:28px minmax(0,1fr) 28px}
   .prow.off .sc{grid-template-columns:minmax(0,1fr)}
+  .prow.off .c-off:not(:empty){height:36px;line-height:34px}
   .chip{min-height:36px}
   .seg button{height:36px}
   .c-val .seg button{height:36px}
@@ -436,17 +454,32 @@ a.unit:hover h3{text-decoration:underline;text-decoration-color:var(--ink-3);tex
 .m{min-width:0;margin:0;padding:10px 0 8px;border-top:1px solid var(--line)}
 .m-main{grid-column:1/-1;padding:0 0 10px;border-top:0}
 .m dt{font-size:12.5px;color:var(--ink-2)}
-.m dd{margin:0;font:500 19px/1.35 var(--mono);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.m dd{margin:0;font:500 19px/1.35 var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .m .u{margin-left:.28em;font-size:.74em;color:var(--ink-2)}
 .m-wide{grid-column:1/-1}
 .m-main dd{font-size:clamp(30px,9cqi,46px);font-weight:700;line-height:1.15;letter-spacing:-.01em}
-.m-note{display:block;margin-top:2px;font:12px/1.5 var(--sans);color:var(--warn)}
+/* 値の下の補足（.m-sub）と注意（.m-note）は 1 行。はみ出す分は … で省き、指すか押すと全文（lib/bubble.ts）。
+   空の間も 1 行を取っておく。中身が変わらない文は .static を付けて折り返す */
+.m-sub{display:block;min-height:1lh;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.m-note{display:block;min-height:1lh;margin-top:2px;font:12px/1.5 var(--sans);color:var(--warn);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.m dd.static,.m-sub.static,.m-note.static{white-space:normal;overflow-wrap:anywhere}
 /* 枠の幅に合わせて 2・3・4 列。.c3 は 3 列まで（補足の行が長い結果） */
 @container (min-width:360px){.metrics{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @container (min-width:560px){.metrics:not(.c3){grid-template-columns:repeat(4,minmax(0,1fr))}}
 
 /* scope（表示窓） */
-.sbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin-bottom:8px;font:500 12px/1.3 var(--mono);color:var(--ink-2)}
+/* 図の上下の表示の行。動いても高さを変えないよう 1 行に収め、はみ出す分は … で省く（指すか押すと全文。lib/bubble.ts）。
+   縮めるのは最後の表示だけ（前の表示は読めるまま）。大事な表示から順に並べる。中身の変わらない行（凡例の .lg と .static）は折り返す */
+.sbar{display:flex;flex-wrap:nowrap;align-items:center;gap:6px 14px;min-width:0;overflow:hidden;margin-bottom:8px;font:500 12px/1.3 var(--mono);color:var(--ink-2)}
+.sbar>*{flex:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sbar>:last-child{flex:0 1 auto;min-width:0}
+.sbar>.stag{display:block}
+.sbar>.stag>.sw{vertical-align:middle;margin-right:6px}
+/* 折り返す行は前の形のまま（表示の中も折り返す） */
+.sbar.lg,.sbar.static{flex-wrap:wrap;overflow:visible}
+.sbar.lg>*,.sbar.static>*{flex:0 1 auto;min-width:auto;white-space:normal;overflow:visible}
+.sbar.lg>.stag,.sbar.static>.stag{display:inline-flex}
+.sbar.lg>.stag>.sw,.sbar.static>.stag>.sw{margin-right:0}
 .sbar b{color:var(--ink);font-weight:700}
 .stag{display:inline-flex;align-items:center;gap:6px}
 /* カーソル位置の読み値: 表示窓の下に右寄せ（<div class="sbar rdbar" data-ph="…"><span class="rd">）。

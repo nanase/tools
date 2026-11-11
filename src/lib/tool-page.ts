@@ -1,7 +1,9 @@
 /**
- * ツールのページに共通の動き: 「?」の吹き出し、項目名の吹き出し、「その他」のまとまり、枠の開閉と保存、関連ツールの件数。
+ * ツールのページに共通の動き: 「?」の吹き出し、項目名の吹き出し、「その他」のまとまり、枠の開閉と保存、関連ツールの件数、
+ * 行のメッセージと … で省いた文字の吹き出し（lib/bubble.ts）。
  * 各ツールの入口スクリプトから initToolPage() を 1 度だけ呼ぶ。見出し以外の「?」は addTip で足す
  */
+import { initClip } from './bubble';
 import { $, $$ } from './dom';
 import { FADE_IN, fx, POP_IN, POP_OUT, RM } from './motion';
 import { initSite } from './site';
@@ -357,4 +359,5 @@ export function initToolPage(): void {
   initFold();
   initRelated();
   initMini();
+  initClip();
 }

@@ -30,7 +30,7 @@ const STAGES = ['接触', '掘削', '崩壊', '噴出物の落下', '完成'];
     <Panel hid="hd-fig" title="断面" class="a-fig" fixed>
       <span slot="aux" class="aux"><i class="ip-led" id="ip-led" aria-hidden="true"></i><span id="ip-state" aria-live="off"></span></span>
       <div id="ip-fig">
-        <div class="sbar ip-lg">
+        <div class="sbar lg ip-lg">
           <span class="stag"><i class="ip-sq" aria-hidden="true"></i>衝突体</span>
           <span class="stag"><i class="ip-bar ip-pr" aria-hidden="true"></i>圧力 0.03〜30 GPa</span>
           <span class="stag"><i class="ip-bar ip-tm" aria-hidden="true"></i>温度 800〜4000 K</span>
@@ -79,7 +79,7 @@ const STAGES = ['接触', '掘削', '崩壊', '噴出物の落下', '完成'];
         <ParamRow d={P.th} />
         <ChoiceRow k="imp" name="衝突体" choices={IMP_CHOICES} value="stone" />
         <ChoiceRow k="body" name="天体" choices={BODY_CHOICES} value="earth" />
-        <ChoiceRow k="air" name="大気" choices={AIR_CHOICES} value="1" offIn />
+        <ChoiceRow k="air" name="大気" choices={AIR_CHOICES} value="1" />
         <ChoiceRow k="tgt" name="地面" choices={TGT_CHOICES} value="rock" />
         <ChoiceRow k="q" name="計算の細かさ" choices={Q_CHOICES} value="70" />
       </div>

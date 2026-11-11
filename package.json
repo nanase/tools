@@ -18,6 +18,7 @@
     "redirects": "bun scripts/redirects-csv.ts",
     "og-image": "bun scripts/og-image.ts",
     "loudness": "bun scripts/loudness.ts",
+    "layout-shift": "bun scripts/layout-shift.ts",
     "chaconne": "bun scripts/chaconne.ts",
     "piano-scores": "bun scripts/piano-scores.ts",
     "violin-scores": "bun scripts/violin-scores.ts",

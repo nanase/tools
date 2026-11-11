@@ -65,7 +65,7 @@ const MINIS = ['0 回', '1 回', '2 回', '3 回', '4 回', '5 回〜'];
       <div class="ptab">
         <ChoiceRow k="integ" name="手法" layout="chips" value="2" choices={[['0', 'BRDF', '跳ね返った先で光源に当たるのを待つ'], ['1', 'NEE', '当たった点ごとに光源へ影の光線'], ['2', 'MIS', 'BRDF と NEE を重みで混ぜる'], ['3', 'ウィッテッド式', '影は光源の中心だけ、鏡とガラスだけを追う']]} />
         <ParamRow d={MB} />
-        <ChoiceRow k="rr" name="ロシアンルーレット" sub="暗くなった経路を確率で打ち切り" value="1" offIn choices={[['1', '入'], ['0', '切']]} />
+        <ChoiceRow k="rr" name="ロシアンルーレット" sub="暗くなった経路を確率で打ち切り" value="1" choices={[['1', '入'], ['0', '切']]} />
       </div>
     </Panel>
 

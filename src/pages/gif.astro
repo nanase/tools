@@ -34,8 +34,8 @@ const name = 'GIF';
 
     <Panel hid="hd-pal" title="パレット" class="gf-ch gc-pal" fixed>
       <div class="ptab gf-ctl">
-        <ChoiceRow k="cl" name="色数の上限" choices={COLOR_CHOICES} value={256} offIn />
-        <ChoiceRow k="di" name="ディザ" choices={DITHER_CHOICES} value="0" offIn />
+        <ChoiceRow k="cl" name="色数の上限" choices={COLOR_CHOICES} value={256} />
+        <ChoiceRow k="di" name="ディザ" choices={DITHER_CHOICES} value="0" />
       </div>
       <div class="gf-palb">
         <div class="gf-chk gf-palimg"><canvas id="cv-pal" width="1" height="1"></canvas></div>
