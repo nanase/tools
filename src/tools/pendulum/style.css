@@ -71,6 +71,10 @@
 .m-main .m-sub{margin-top:4px}
 .m-wide dd{font-size:16px}
 .kv{display:inline-block;margin-right:1em;white-space:nowrap}
+/* ゲインの 4 つの値は 1 行に収まらない。枠の幅で決まる列に並べ、いつも 2 行を取る（値で折り返しが変わらない） */
+#o-k{display:grid;grid-template-columns:repeat(auto-fill,minmax(8em,1fr));min-height:calc(2em * 1.35)}
+/* 閉ループの極は 2 対で 1 行に収まるよう、少し小さくする */
+#o-cl{font-size:14px}
 .sep{color:var(--ink-3)}
 
 /* 極の配置図 */

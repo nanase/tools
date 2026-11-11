@@ -6,6 +6,7 @@ import { Choice } from '../../lib/choice';
 import { $, $$ } from '../../lib/dom';
 import { RM } from '../../lib/motion';
 import { ParamGroup } from '../../lib/param';
+import { reserveHeight } from '../../lib/reserve';
 import { initToolPage } from '../../lib/tool-page';
 import { drawScene, drawTime, dur, len, qConv, readCols, status } from './fig';
 import type { Siphon } from './model';
@@ -78,7 +79,6 @@ function buildActs(): void {
         `<button type="button" class="chip sf-act" data-k="${k}"${k === 'pour' ? ` aria-pressed="${st.pour}"` : ''}>${n}</button>`,
     )
     .join('');
-  acts.hidden = !st.sc.acts.length;
 }
 acts.addEventListener('click', (e) => {
   const b = (e.target as Element).closest<HTMLButtonElement>('button[data-k]');
@@ -154,6 +154,19 @@ function select(id: string): void {
   draw();
 }
 const ex = new Choice<string>(exBox, (id) => select(id));
+/* 例の説明と凡例の行は折り返して全文を見せる。例を選んでも行の数を変えないよう、いちばん高い組み合わせの高さを取っておく */
+{
+  const sb = $('.sf-sb');
+  reserveHeight(
+    sb,
+    SCENES.map((sc) => {
+      $('#sf-note').textContent = sc.note;
+      $('#sf-liq').textContent = sc.id === 'kerosene' ? '灯油' : '水';
+      return sb.innerHTML;
+    }),
+    { html: true },
+  );
+}
 
 /* ---------- 計算結果 ---------- */
 type Row = [string, string, string];
@@ -190,14 +203,20 @@ function metricRows(): Row[] {
   else rows.push(['移した量', num(S.out * 1000), 'L']);
   return rows;
 }
-function metricsFrame(): void {
-  $('#sf-m').innerHTML = metricRows()
+const metricHtml = (names: string[]) =>
+  names
     .map(
-      ([n], i) =>
+      (n, i) =>
         `<div class="m${i ? '' : ' m-main'}"><dt>${n}</dt><dd><span class="sf-v"></span><span class="u"></span></dd></div>`,
     )
     .join('');
+function metricsFrame(): void {
+  $('#sf-m').innerHTML = metricHtml(metricRows().map(([n]) => n));
 }
+/* 例ごとに項目の数が変わる（4〜6 個）。いちばん多い 6 個の高さを取っておき、例を選んでも下の枠を動かさない */
+reserveHeight($('#sf-m'), [metricHtml(['流量', '頂上の負圧', '落差', '周期', '1 回に抜けた量', '最大の流量'])], {
+  html: true,
+});
 function metrics(): void {
   const rows = metricRows(),
     box = $('#sf-m');

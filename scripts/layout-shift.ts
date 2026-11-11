@@ -34,6 +34,14 @@ interface Rec {
 
 /** ページの中で動く。window.__ls に操作と計測の関数を置く */
 function probe(): void {
+  /* 開発サーバの自動再読み込み（Vite の HMR）を止める。検査の途中でページが読み直されると、偽の揺れが出るため */
+  window.WebSocket = new Proxy(window.WebSocket, {
+    construct(T, [url, protocols]: [string | URL, (string | string[])?]) {
+      if ([protocols].flat().some((p) => p === 'vite-hmr' || p === 'vite-ping'))
+        return Object.assign(new EventTarget(), { readyState: 0, send() {}, close() {} });
+      return new T(url, protocols);
+    },
+  });
   /** 高さが変わると下が動く枠 */
   const ANCH = '.pnl, main > *, .tp';
   /** 数えない所 */
@@ -110,8 +118,16 @@ function probe(): void {
           /* 出る・消えるものは、親の高さが変わったときだけ数える（1 行の表示の行の中など、親が動かなければ揺れない） */
           if (show && c.el.parentElement && (Z.has(c.el.parentElement) || !R.has(c.el.parentElement))) continue;
           if (!show && [...R, ...Z].some((o) => o !== c.el && c.el.contains(o))) continue;
+          /* 枠まで高さの変わった箱が続くときだけ数える（高さを決めたスクロール枠の中などは、外が動かない） */
           let inA = false;
-          for (let e: Element | null = c.el; e; e = e.parentElement) if (anchors.has(e)) inA = true;
+          for (let e = c.el.parentElement; e; e = e.parentElement) {
+            if (!R.has(e) && !Z.has(e)) break;
+            if (anchors.has(e)) {
+              inA = true;
+              break;
+            }
+          }
+          if (c.el.matches(ANCH) && anchors.has(c.el)) inA = true;
           if (!inA || c.el.closest(SKIP) || c.el.matches('canvas, svg, img, video')) continue;
           if (outOfFlow(c.el, c.el.closest(ANCH))) continue;
           const pt = (c.el.closest('.pnl')?.querySelector('h2')?.textContent ?? '').trim().slice(0, 20);

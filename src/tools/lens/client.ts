@@ -6,11 +6,12 @@ import { $, esc } from '../../lib/dom';
 import { fmtR } from '../../lib/format';
 import { ParamGroup } from '../../lib/param';
 import type { ParamPatch } from '../../lib/param-def';
+import { reserveHeight } from '../../lib/reserve';
 import { store, stored } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
 import { distortion, dof, halfAngle, illum, type PupilTable, pupilTable, spot } from './analysis';
 import { LD } from './glass';
-import { type LensId, lensOf, type Rx } from './lenses';
+import { LENSES, type LensId, lensOf, type Rx } from './lenses';
 import { drawLight, type Light } from './light';
 import {
   aimChief,
@@ -372,15 +373,21 @@ function drawAbr(): void {
   }
 }
 
+/** レンズデータの出典と拡大の説明 */
+const rxSrc = (rx: Rx, f: string, k: string): string =>
+  `出典: ${rx.src}。表は焦点距離 ${f} mm に相似拡大した値（出典の値の ${k} 倍）で、有効径は${rx.dia ? '出典の値' : '設計の F 値と画角の光線から求めた値'}です。最後の面からセンサーまでは撮影距離から求めます。`;
+/* 出典の文はレンズで長さが違う。いちばん長いものの高さを取っておき、レンズを替えても表を動かさない */
+reserveHeight(
+  $('#rx-src'),
+  LENSES.map((rx) => rxSrc(rx, '1000', '0.1234')),
+  { html: true },
+);
 /** レンズデータの表（今の焦点距離に拡大した値） */
 function prescription(): void {
   if (!st) return;
   const s = st.sys,
     rx = s.rx;
-  html(
-    '#rx-src',
-    `出典: ${rx.src}。表は焦点距離 ${sig(s.f, 4)} mm に相似拡大した値（出典の値の ${sig(s.k, 4)} 倍）で、有効径は${rx.dia ? '出典の値' : '設計の F 値と画角の光線から求めた値'}です。最後の面からセンサーまでは撮影距離から求めます。`,
-  );
+  html('#rx-src', rxSrc(rx, sig(s.f, 4), sig(s.k, 4)));
   let no = 0;
   const rows = s.s
     .map((x, i) => {

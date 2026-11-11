@@ -150,10 +150,11 @@ const BARS = [...SHAPES]
           <div class="m"><dt>格納の合計</dt><dd id="o-s1">0</dd></div>
           <div class="m"><dt>ソートの合計</dt><dd id="o-s2">0</dd></div>
           <div class="m"><dt>合計</dt><dd id="o-s">0</dd></div>
+          {/* ヒープの種類ごとの説明は中身が変わらないので、1 行に詰めずに折り返す（.static） */}
           {DEFS.map((d) => (
             <>
-              <div class="m m-sub" data-for={d.id}><dt>1 要素のメモリ</dt><dd>{d.mem}</dd></div>
-              <div class="m m-sub m-w" data-for={d.id}><dt>利用例</dt><dd>{d.ex}</dd></div>
+              <div class="m m-sub" data-for={d.id}><dt>1 要素のメモリ</dt><dd class="static">{d.mem}</dd></div>
+              <div class="m m-sub m-w" data-for={d.id}><dt>利用例</dt><dd class="static">{d.ex}</dd></div>
             </>
           ))}
         </dl>

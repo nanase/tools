@@ -45,6 +45,8 @@
 .egrid figure[aria-pressed="true"] canvas{outline:2px solid var(--ink);outline-offset:1px}
 .egrid figcaption{display:grid;grid-template-columns:auto 1fr;gap:2px 6px;margin-top:5px;font:500 12px/1.3 var(--mono);color:var(--ink-2)}
 .egrid figcaption b{text-align:right;color:var(--ink);font-variant-numeric:tabular-nums}
+/* 3 列では名前とサイズが同じ行に入らず折り返すことがあるので、初めから 2 行に分ける */
+@media (max-width:760px){.egrid figcaption{grid-template-columns:minmax(0,1fr)}}
 .egrid figcaption i{grid-column:1/-1;display:block;height:4px;border-radius:2px;background:var(--line)}
 .egrid figcaption i u{display:block;width:0;height:100%;border-radius:2px;background:var(--ink-2)}
 .egrid .u{margin-left:.2em;color:var(--ink-2)}
@@ -52,7 +54,8 @@
 
 /* ---------- 行の符号化: バイトの位置をそろえた段 ---------- */
 .ladw{overflow-x:auto;container-type:inline-size}
-.lad{--n:32;display:grid;grid-template-columns:5.4em repeat(var(--n),minmax(1.9em,1fr)) 8.5em;gap:1px;min-width:min-content;font:500 11.5px/1 var(--mono);font-variant-numeric:tabular-nums}
+/* 右端の列は最も長い合計（バー 3em と「123,456 ✓」）が入る幅。はみ出すと横のスクロールバーが出て高さが変わる */
+.lad{--n:32;display:grid;grid-template-columns:5.4em repeat(var(--n),minmax(1.9em,1fr)) 10em;gap:1px;min-width:min-content;font:500 11.5px/1 var(--mono);font-variant-numeric:tabular-nums}
 .lad .ln{display:flex;align-items:center;gap:5px;padding-right:6px;font:500 12px/1.2 var(--sans);color:var(--ink-2);white-space:nowrap}
 .lad .ln i{flex:none;width:9px;height:9px;border-radius:2px}
 .lad .ln.on{color:var(--ink);font-weight:700}
@@ -107,7 +110,8 @@
 /* ---------- ファイルの構成 ---------- */
 .strip{display:flex;height:26px;margin-bottom:12px;border:1px solid var(--line);overflow:hidden}
 .strip span{display:grid;place-items:center;min-width:3px;font:700 11px/1 var(--mono);color:#fff;overflow:hidden;white-space:nowrap;border-right:1px solid var(--surface)}
-.segw{overflow-x:auto;margin-bottom:14px}
+/* チャンクの数は画像で変わるので、高さを決めて中をスクロールさせる */
+.segw{height:200px;overflow:auto;overscroll-behavior:contain;margin-bottom:14px}
 .segs{width:100%;border-collapse:collapse;font:500 12.5px/1.4 var(--mono);font-variant-numeric:tabular-nums}
 .segs th{padding:7px 8px 5px;font:700 11.5px/1.3 var(--sans);color:var(--ink-3);text-align:right;white-space:nowrap}
 .segs td{padding:4px 8px;border-top:1px solid var(--line);text-align:right;white-space:nowrap}

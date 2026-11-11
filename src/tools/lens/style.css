@@ -119,7 +119,8 @@
 .a-rx{font-size:14.5px}
 .thy-body>p.rx-src{max-width:none;margin-bottom:10px;font-size:13px;line-height:1.8}
 .rx-src i{font-style:italic}
-.rxw{overflow-x:auto}
+/* 面の数はレンズで 3〜20 ほどに変わるので、高さを決めて中をスクロールさせる */
+.rxw{height:360px;overflow:auto;overscroll-behavior:contain}
 .rxt{width:100%;border-collapse:collapse;font:500 13px/1.4 var(--mono);font-variant-numeric:tabular-nums}
 .rxt th{padding:8px 8px 5px;font:700 12px/1.3 var(--sans);color:var(--ink-3);text-align:right;white-space:nowrap}
 .rxt td{padding:5px 8px;border-top:1px solid var(--line);text-align:right;white-space:nowrap}

@@ -51,5 +51,9 @@
 .cv-fq .op{font:700 16px var(--math);color:var(--ink-3);text-align:center}
 .cv-fq .scope+.scope{margin-top:0}
 
+/* 凡例の核の名前は反転の有無で変わる。長いほうの幅を取り（.hw）、左に寄せる */
+#lg-h{text-align:left}
+
 /* 計算結果 */
-#o-len,#o-mu,#o-var{font-size:14px}
+/* 長さ・重心・分散の補足（入力と核の値の足し算） */
+#o-lens,#o-mus,#o-vars{margin-top:2px;font:500 12px/1.5 var(--mono);color:var(--ink-3)}

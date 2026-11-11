@@ -3,6 +3,7 @@
  * バイトの位置をそろえて縦に積む。バイトに指を乗せると、予測に使う a・b・c と、そのバイトを含む記号の符号を下に出す
  */
 import { bitStr } from '../../lib/imgfmt/bits';
+import { reserveHeight } from '../../lib/reserve';
 import { paeth } from './filter';
 import {
   bytePixels,
@@ -21,6 +22,18 @@ const FC = ['var(--f0)', 'var(--f1)', 'var(--f2)', 'var(--f3)', 'var(--f4)'];
 const h2 = (v: number): string => v.toString(16).toUpperCase().padStart(2, '0');
 const ms = (v: number): string => (v < 0 ? `−${-v}` : String(v));
 const cnt = (v: number): string => v.toLocaleString('en');
+
+/** 下の説明でいちばん長くなる例（数字の桁と符号の長さが最大）。この高さを取っておく */
+function longestDetail(): string {
+  const fr = ['0', 'a = 255', 'b = 255', '⌊(a + b) / 2⌋ = 255', 'p = a + b − c = −255 → c = 255'];
+  let d =
+    '<div><h3>フィルタ · 画素 1023–1023 の A</h3><p class="eq">x = <b>255</b> · a 左 = 255 · b 上 = 255 · c 左上 = 255</p><dl class="kv">';
+  for (let f = 0; f < 5; f++) d += `<dt>${filterName(f)}</dt><dd>予測 ${fr[f]}</dd><dd class="r">−255</dd>`;
+  d += '</dl></div><div><h3>記号とハフマン符号 · ブロック 999</h3><dl class="kv">';
+  d += '<dt>記号</dt><dd>一致 長さ 258 · 距離 32768</dd><dd></dd><dt>距離</dt><dd>距離 32768</dd><dd></dd>';
+  d += `<dt>符号</dt><dd><b>${'1'.repeat(15)}</b> + 11111 ${'1'.repeat(15)} ${'1'.repeat(13)}</dd><dd class="r">48 ビット</dd>`;
+  return `${d}<dt>1 バイトあたり</dt><dd>48.00 ビット</dd><dd class="r">元は 8</dd></dl></div>`;
+}
 
 /** 行の符号化で見ている所 */
 export interface LadderSel {
@@ -63,6 +76,8 @@ export class Ladder {
     /** 指を乗せた記号が変わった（ハフマン表に印を付ける） */
     private readonly onToken: (i: number) => void,
   ) {
+    /* 指を乗せたバイトで数字の桁と符号の長さが変わり、折り返しの行数が変わる。いちばん長い例の高さを取っておく */
+    reserveHeight(det, [longestDetail()], { html: true });
     el.addEventListener('pointerover', (e) => {
       const c = (e.target as Element).closest<HTMLElement>('[data-j]');
       if (c) this.hover(Number(c.dataset.j));

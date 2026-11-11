@@ -10,6 +10,7 @@ import { DatePicker } from '../../lib/date-picker';
 import { dateTimeToJd, secOfDay, toDateTime } from '../../lib/date-picker-core';
 import { $, esc, norm } from '../../lib/dom';
 import { ParamGroup } from '../../lib/param';
+import { reserveHeight } from '../../lib/reserve';
 import { store, stored } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
 import {
@@ -813,6 +814,17 @@ function drawCal(): void {
     else b.removeAttribute('aria-current');
   });
 }
+/* 月によって週の数が 4〜6 と変わり、下の枠が動く。6 週ぶんの高さを取っておく */
+reserveHeight(
+  $('#cal'),
+  [
+    ['日', '月', '火', '水', '木', '金', '土'].map((w) => `<span class="dh">${w}</span>`).join('') +
+      '<button type="button" class="d"><span>31</span><canvas width="68" height="68"></canvas><small>上弦</small><span class="ag">29.5</span></button>'.repeat(
+        42,
+      ),
+  ],
+  { html: true },
+);
 $('#cal').addEventListener('click', (e) => {
   const b = (e.target as Element).closest<HTMLElement>('.d');
   if (b) setJd(calToJd(calY, calM, Number(b.dataset.d)) + (20 - tzh()) / 24);

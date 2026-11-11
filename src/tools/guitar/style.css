@@ -46,7 +46,15 @@
   .cq .chip .ky,.cnx .chip .ky{min-width:18px;padding:3px 4px;font-size:12.5px}
 }
 /* コードの名前 */
-.a-chd .pbtns .pl-bar{font-size:16px;font-weight:700;color:var(--ink)}
+/* コードの名前は 1 行にし、はみ出す分は … で省く（指すと全文）。名前の長さで行を折り返さない。
+   狭い画面は名前だけで 1 行を取り、ボタンをその下に並べる。名前がない間も 1 行を取る */
+.a-chd .pbtns{flex-wrap:nowrap}
+.a-chd .pbtns .pl-bar{flex:1 1 auto;min-width:0;min-height:1.5em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:16px;font-weight:700;color:var(--ink)}
+.a-chd .pbtns .tg{flex:none}
+@media (max-width:559px){
+  .a-chd .pbtns{flex-wrap:wrap}
+  .a-chd .pbtns .pl-bar{flex-basis:100%}
+}
 .cv-seg{align-items:center}
 .c-val .cv-seg button{flex:0 0 40px}
 .cv-shape{flex:1 1 auto;min-width:0;padding:0 8px;border-left:1px solid var(--line);border-right:1px solid var(--line);font:500 13px/30px var(--mono);text-align:center;color:var(--ink)}
@@ -122,9 +130,10 @@
 
 /* 弦の一覧 */
 .stw{margin-top:14px;overflow-x:auto;border-top:1px solid var(--line)}
+/* 升の左右の余白は 4 px。PC の幅で弦のセットや材質を変えても横のスクロールバーが出たり消えたりしない（枠の高さが変わらない）幅に収める */
 .stab{width:100%;border-collapse:collapse;font:500 12.5px/1.4 var(--mono);font-variant-numeric:tabular-nums}
-.stab th{padding:9px 6px 5px;font:700 11.5px/1.3 var(--sans);color:var(--ink-3);text-align:right;white-space:nowrap}
-.stab td{padding:5px 6px;border-top:1px solid var(--line);text-align:right;white-space:nowrap}
+.stab th{padding:9px 4px 5px;font:700 11.5px/1.3 var(--sans);color:var(--ink-3);text-align:right;white-space:nowrap}
+.stab td{padding:5px 4px;border-top:1px solid var(--line);text-align:right;white-space:nowrap}
 .stab th:nth-child(-n+3),.stab td:nth-child(-n+3){text-align:left}
 .stab td:nth-child(3){font:12px var(--sans);color:var(--ink-2)}
 .stab tbody tr{cursor:pointer}

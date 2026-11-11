@@ -35,7 +35,7 @@ const name = '雷鳴';
   <div class="tgrid">
     <Panel hid="hd-fig" title="断面" class="a-fig" fixed>
       <span slot="aux" class="aux th-st" id="th-st"></span>
-      <div class="sbar">
+      <div class="sbar static">
         <span class="stag"><i class="sw th-sw-t th-dk" aria-hidden="true"></i>音が届く早さ</span>
         <span class="stag"><i class="th-dot th-dk" aria-hidden="true"></i>聞き手</span>
         <span class="stag"><i class="sw th-sw-d th-dk" aria-hidden="true"></i>直接音</span>
@@ -92,7 +92,7 @@ const name = '雷鳴';
           <div class="m m-main"><dt>光ってから音まで</dt><dd><span id="o-wait">—</span><span class="m-sub hh" id="o-waits" data-ph="÷ 3 で 0.0 km（聞き手まで 0.00 km）"></span></dd></div>
           <div class="m"><dt>鳴り続ける時間</dt><dd><span id="o-len">—</span><span class="m-sub" id="o-lens"></span></dd></div>
           <div class="m"><dt>スペクトルの山</dt><dd><span id="o-pk">—</span><span class="m-sub" id="o-pks"></span></dd></div>
-          <div class="m"><dt>大きさ</dt><dd><span id="o-db">—</span><span class="m-sub" id="o-dbs">1 km 先で聞いたときとの差</span></dd></div>
+          <div class="m"><dt>大きさ</dt><dd><span id="o-db">—</span><span class="m-sub static" id="o-dbs">1 km 先で聞いたときとの差</span></dd></div>
           <div class="m m-wide"><dt>雲の底の音が届く距離</dt><dd><span id="o-rng">—</span><span class="m-sub" id="o-rngs"></span></dd></div>
         </dl>
         <h3 class="vh th-sph">スペクトル<span>最大を 0 dB、横軸は Hz</span></h3>

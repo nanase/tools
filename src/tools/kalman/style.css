@@ -68,7 +68,8 @@
 .m-sub{display:block;margin-top:2px;font:12px/1.5 var(--sans);color:var(--ink-3)}
 .m-main .m-sub{margin-top:4px}
 .m-wide dd{font-size:16px}
-.vd{display:inline-block;margin-left:6px;padding:0 7px;border:1px solid var(--line-2);border-radius:4px;font-weight:700;color:var(--ink)}
+/* 枠線の分だけ行が高くならないよう、行の高さを詰める（判定が出ても消えても値の行の高さを変えない） */
+.vd{display:inline-block;margin-left:6px;padding:0 7px;border:1px solid var(--line-2);border-radius:4px;font-weight:700;line-height:1.15;color:var(--ink)}
 .vd.bad{border-color:var(--warn);color:var(--warn)}
 
 /* 記号と単位の列の幅（σp0・m/s²・×1/1000 が入る幅） */

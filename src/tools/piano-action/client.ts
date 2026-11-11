@@ -8,6 +8,7 @@ import { Choice } from '../../lib/choice';
 import { $, $$, esc } from '../../lib/dom';
 import { ParamGroup } from '../../lib/param';
 import { outVol } from '../../lib/play';
+import { reserveHeight } from '../../lib/reserve';
 import { ROOMS, reverbSpec } from '../../lib/reverb';
 import { store, stored } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
@@ -31,6 +32,18 @@ const txt = (id: string, s: string) => {
   if (el.textContent !== s) el.textContent = s;
 };
 const ms = (t: number, d = 1) => `${(t * 1000).toFixed(d)} ms`;
+
+/* 段階が変わるたびに説明の行数が変わり、下の枠が動く。いちばん長い説明の高さを取っておく。
+   見出しは番号の有無で 1 px 変わるので、番号ありとなしの両方で測る */
+reserveHeight($('#cap-d'), Object.values(D));
+reserveHeight(
+  $('.cap h3'),
+  Object.values(NAME).flatMap((n) => [
+    `<span class="no">13</span><span>${esc(n)}</span>`,
+    `<span class="no"></span><span>${esc(n)}</span>`,
+  ]),
+  { html: true },
+);
 
 /* ---------- 段階ごとの部品 ---------- */
 /** 図で強調する部品 */

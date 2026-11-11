@@ -14,6 +14,8 @@
 @media (max-width:479px){.srcbar .seg button{padding:0 6px}}
 /* 受信の開始・停止（LED は信号の有無） */
 #runSeg button{display:inline-flex;align-items:center;justify-content:center;gap:8px}
+/* 受信の状態の文は出る・消えるので、空の間も 1 行を取る。長い文（ファイル名など）は … で省き、押すと全文（.clip） */
+#m-run{min-height:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* ファイルを枠へ落としているとき */
 .a-in.drop{border-color:var(--focus);box-shadow:inset 0 0 0 1px var(--focus)}
 
@@ -34,10 +36,11 @@
 
 /* 表示窓: 包絡線と、しきい値（破線） */
 .a-rx .sw.c2{height:0;border-top:2px dashed var(--ch2);background:none}
-.rd{margin-left:auto;font-variant-numeric:tabular-nums}
+/* 同期の状態はマークアップでは先頭（狭い幅で切らさないため）。広い幅では右端へ置く */
+.rd{order:1;margin-left:auto;font-variant-numeric:tabular-nums}
 .mkl{stroke:var(--screen-ink);stroke-width:1;stroke-dasharray:5 4;opacity:.45}
 .scope text.rg{opacity:.75}
-@media (max-width:559px){.rd{margin-left:0}}
+@media (max-width:559px){.rd{order:0;margin-left:0}}
 
 /* タイムコード: 受け取っていない秒は枠だけ、読めない秒は警告色の斜線。ファイルの中の分の選択 */
 .tc-x{background:repeating-linear-gradient(135deg,var(--warn) 0 2px,transparent 2px 7px);border-color:var(--warn)!important}

@@ -25,13 +25,14 @@ for (let j = 0; j <= 5; j++)
   axes += `<text x="-10" y="${GY - j * DV + 4}" text-anchor="end">${j ? `${j * 20} %` : '0'}</text>`;
 axes += `<path class="mk1" d="M-8 ${GY - 5}L-1 ${GY}L-8 ${GY + 5}Z"/><path class="mk1" d="M${DV - 5} -12L${DV + 5} -12L${DV} -5Z"/>`;
 ---
+<!-- 狭い幅では 1 行に入らず後ろの表示が切れるので、変わる表示（同期の状態から）を先に、変わらない目盛りを後ろに置く -->
 <div class="sbar">
-  <span class="stag" title="包絡線（高出力を 100 % とする）"><i class="sw" aria-hidden="true"></i>CH1 ENV <b>20 %</b>/div</span>
-  <span class="stag" title="しきい値"><i class="sw c2" aria-hidden="true"></i>θ <b id="s-th">---</b></span>
-  <span class="stag">H <b>100 ms</b>/div</span>
-  <span class="stag">TRIG <b id="s-trig">FREE</b> ↑</span>
-  <span class="stag">τ <b id="s-tau">---</b></span>
   <span class="stag rd">SYNC <b id="s-sync">IDLE</b></span>
+  <span class="stag">TRIG <b id="s-trig">FREE</b> ↑</span>
+  <span class="stag" title="しきい値"><i class="sw c2" aria-hidden="true"></i>θ <b id="s-th">---</b></span>
+  <span class="stag">τ <b id="s-tau">---</b></span>
+  <span class="stag" title="包絡線（高出力を 100 % とする）"><i class="sw" aria-hidden="true"></i>CH1 ENV <b>20 %</b>/div</span>
+  <span class="stag">H <b>100 ms</b>/div</span>
 </div>
 <div class="scope">
   <svg viewBox="-50 -14 462 280" id="scope-svg" role="img" aria-label="包絡線">

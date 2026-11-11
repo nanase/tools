@@ -157,11 +157,12 @@ const short = (s: string) => s.replace(/（.*）/, '');
           <div class="m"><dt>平均の待ち回数</dt><dd id="o-a">–</dd></div>
           <div class="m"><dt>最長の待ち回数</dt><dd id="o-x">–</dd></div>
           <div class="m"><dt>追加順の維持率</dt><dd id="o-k">–</dd></div>
+          {/* データ構造ごとの説明は中身が変わらないので、1 行に詰めずに折り返す（.static） */}
           {DEFS.map((d) => (
             <>
-              <div class="m m-sub" data-for={d.id}><dt>取り出す順</dt><dd>{d.order}</dd></div>
-              <div class="m m-sub" data-for={d.id}><dt>1 要素のメモリ</dt><dd>{d.mem}</dd></div>
-              <div class="m m-sub m-w" data-for={d.id}><dt>利用例</dt><dd>{d.ex}</dd></div>
+              <div class="m m-sub" data-for={d.id}><dt>取り出す順</dt><dd class="static">{d.order}</dd></div>
+              <div class="m m-sub" data-for={d.id}><dt>1 要素のメモリ</dt><dd class="static">{d.mem}</dd></div>
+              <div class="m m-sub m-w" data-for={d.id}><dt>利用例</dt><dd class="static">{d.ex}</dd></div>
             </>
           ))}
         </dl>

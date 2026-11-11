@@ -7,6 +7,7 @@ import { $ } from '../../lib/dom';
 import { same } from '../../lib/eseries';
 import { fmt, fmtR, parts, ro } from '../../lib/format';
 import { ParamGroup } from '../../lib/param';
+import { reserveHeight } from '../../lib/reserve';
 import { DV, SW } from '../../lib/scope';
 import { storeToggle } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
@@ -51,9 +52,12 @@ import {
   FMIN,
   hzT,
   type Key,
+  KINDS,
   kindOf,
+  MODES,
   PARAMS,
   QUANTS,
+  RESPS,
   respAb,
 } from './params';
 import { type FView, fixed, freqAxis, frPlot, pzPlot, sig, sRange, TH, timePlot } from './plot';
@@ -848,6 +852,17 @@ G.on('fs', (fs) => {
   reconcile();
   patchEdges();
 });
+/* 端の行の項目名は近似・応答・設計の方法で変わる。いちばん高くなる名前の分の高さを取っておく */
+for (const k of EDGES) {
+  const names = new Set<string>();
+  for (const { v: kd } of KINDS)
+    for (const { v: rs } of RESPS)
+      for (const [md] of MODES) {
+        const l = edgeLabel(k, kd, rs, md);
+        names.add(`<span class="sr">${l.nm} </span>${l.name}`);
+      }
+  reserveHeight($(`#n-${k}`), [...names], { html: true });
+}
 applyState();
 compute();
 drawLv(-Infinity);

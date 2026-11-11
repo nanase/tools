@@ -7,6 +7,7 @@ import { $, $$ } from '../../lib/dom';
 import { RM } from '../../lib/motion';
 import { ParamGroup } from '../../lib/param';
 import { handheld } from '../../lib/pause';
+import { reserveHeight } from '../../lib/reserve';
 import { initToolPage } from '../../lib/tool-page';
 import { readCols } from '../pcm/fig';
 import { VvvfAudio } from './audio';
@@ -133,6 +134,8 @@ const cvH = $<HTMLCanvasElement>('#how-cv'),
   thumbs = cards.map((b) => $<HTMLCanvasElement>('canvas', b)),
   hpp = $<HTMLButtonElement>('#how-pp'),
   trk = $('#how-trk');
+/* 工程を進めても下の図を動かさないよう、いちばん長い説明の高さを取っておく */
+reserveHeight($('#how-cap'), CAPTIONS);
 function syncStep(): void {
   cards.forEach((b, i) => {
     const on = i === St.i;

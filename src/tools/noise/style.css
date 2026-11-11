@@ -10,6 +10,9 @@
 
 /* 隠した行の後ろに残った行（見えている最後の行）は、下の線をなくす */
 .ptab>.prow:not(:has(~ .prow:not([hidden]))){border-bottom:0}
+/* 密度の行（ベルベットのときだけ）との境は密度の行の上の線にし、種類の行の高さを変えない */
+.a-gen #p-kind{border-bottom:0}
+.a-gen #p-den{border-top:1px solid var(--line)}
 
 /* 音の枠の知らせ */
 .snd-msg{margin:0 8px 6px}
@@ -17,7 +20,6 @@
 
 /* 計算結果の補足 */
 .a-out .m-sub{display:block;margin-top:2px;font:500 12px/1.5 var(--mono);color:var(--ink-3);letter-spacing:0}
-.a-out .m-sub:empty{display:none}
 .m-main .m-sub{margin-top:4px}
 .a-out .m-sub math{font-size:1.05em}
 

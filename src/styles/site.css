@@ -394,8 +394,9 @@ a.unit:hover h3{text-decoration:underline;text-decoration-color:var(--ink-3);tex
 .tp-tm{display:flex;justify-content:space-between;column-gap:10px;margin-top:2px;font:500 12px/1.4 var(--mono);color:var(--ink-3);font-variant-numeric:tabular-nums;white-space:nowrap}
 .tp-tm>*{min-width:0;overflow:hidden;text-overflow:ellipsis}
 @container (max-width:300px){.tp-tm{flex-direction:column}}
-/* 隠した時刻も場所を残す（出し入れで行数を変えない） */
-.tp-tm>[hidden]{display:block;visibility:hidden}
+/* 隠した時刻・空の時刻も場所を残す（出し入れで行数を変えない） */
+.tp-tm>[hidden]{display:block!important;visibility:hidden}
+.tp-tm>:empty::before{content:"\a0"}
 /* 小節の数字は小節の数の桁の幅を取り（lib/transport.ts）、数字が変わっても「/ 35 小節」を動かさない */
 .tp-tm b{display:inline-block;text-align:right;color:var(--ink);font-weight:700}
 .tp-side{display:flex;gap:4px;padding-left:10px;border-left:1px solid var(--line)}
@@ -496,8 +497,9 @@ a.unit:hover h3{text-decoration:underline;text-decoration-color:var(--ink-3);tex
 .hw::after{content:attr(data-ph);display:block;height:0;overflow:hidden;visibility:hidden}
 /* 空のときも 1 行の高さを持たせる（幅 0 の箱で行を作る。U+200B は字体によって幅を持つので使わない） */
 .hw::before{content:'';display:inline-block}
-/* .m-sub.hh: ページごとの .m-sub{display:block} より強くする */
+/* .m-sub.hh: ページごとの .m-sub{display:block} より強くする。高さを取ってあるので 1 行に収めず折り返す */
 .hh,.m-sub.hh{display:flow-root}
+.m-sub.hh{white-space:normal}
 .hh::before{content:attr(data-ph);float:left;width:100%;margin-right:-100%;visibility:hidden}
 .sw{display:inline-block;width:14px;height:3px;border-radius:1px;background:var(--ch1)}
 .sw.c2{background:var(--ch2)}

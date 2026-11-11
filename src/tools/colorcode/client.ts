@@ -4,10 +4,12 @@ import { $, $$ } from '../../lib/dom';
 import type { Series } from '../../lib/eseries';
 import { fmt, ro } from '../../lib/format';
 import { ParamGroup } from '../../lib/param';
+import { reserveHeight } from '../../lib/reserve';
 import { addRow } from '../../lib/reset';
 import { store, stored } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
 import {
+  BAND_COUNTS,
   type Bands,
   type Code,
   digitsOf,
@@ -77,7 +79,8 @@ const tolBtns = $$<HTMLButtonElement>('#tolC [data-k]'),
   tcBtns = $$<HTMLButtonElement>('#tcC [data-k]');
 function renderRows(): void {
   for (const b of tolBtns) {
-    b.hidden = b.dataset.k === 'no' && code.n > 4;
+    /* 帯なしは 4 本帯だけ。消しても行の高さが変わらないよう場所は残す */
+    b.style.visibility = b.dataset.k === 'no' && code.n > 4 ? 'hidden' : '';
     b.setAttribute('aria-pressed', String(b.dataset.k === code.tol));
   }
   const on = code.n === 6;
@@ -218,4 +221,19 @@ function update(): void {
 }
 
 update();
+/*
+ * E 系列の一覧: 載っていない行は近い値のチップの分だけ高い。すべての行が載っていないときの高さを取っておく。
+ * 色の並び: 帯の数と乗数・許容差の表記で折り返しが変わる。いちばん長い並びの高さを取っておく。
+ * 数字の書体が読み込まれると幅が変わるので、読み込んだあとに測り直す
+ */
+function reserve(): void {
+  const miss = eRows(1).map((r) => ({ ...r, hit: false, near: [0.95, 1.05] }));
+  reserveHeight($('#elist'), [eRowsHtml(miss, 1)], { html: true });
+  reserveHeight(
+    $('#o-c'),
+    BAND_COUNTS.map((n) => colorSeq({ n, d: [0, 0, 0], m: -3, tol: 'o', tc: 'k' })),
+    { html: true },
+  );
+}
+reserve();
 document.querySelector<HTMLElement>(`#esel [data-s="${stored('esel')}"]:not([aria-pressed="true"])`)?.click();

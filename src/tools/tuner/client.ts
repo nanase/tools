@@ -6,10 +6,20 @@ import { Choice } from '../../lib/choice';
 import { $, $$, esc } from '../../lib/dom';
 import { fmtR } from '../../lib/format';
 import { ParamGroup } from '../../lib/param';
+import { reserveHeight } from '../../lib/reserve';
 import { initToolPage } from '../../lib/tool-page';
 import { NB } from '../audio/capture';
 import { initInput } from '../audio/input';
-import { hzOf, instrumentOf, type NameOpts, type Naming, noteLabel, noteText } from './notes';
+import {
+  hzOf,
+  INSTRUMENTS,
+  type Instrument,
+  instrumentOf,
+  type NameOpts,
+  type Naming,
+  noteLabel,
+  noteText,
+} from './notes';
 import {
   deviations,
   type Key,
@@ -247,14 +257,27 @@ strBox.addEventListener('click', (e) => {
   retarget();
   sync();
 });
+const strText = (ins: Instrument, st: readonly number[], o = nameOpts()) =>
+  `${st.map((n, i) => `${ins.numbered ? `${st.length - i} ` : ''}${noteText(n, o)} ${hzOf(n, S.ref, devOf(n)).toFixed(2)}`).join(' · ')} Hz`;
+/** 弦の音の行の高さを取った条件（基準ピッチ・音律・主音） */
+let strKey = '';
 function strList(): void {
   const ins = instrumentOf(S.inst),
     st = strs();
   if (!ins || !st) return;
-  txt(
-    $('#strl'),
-    `${st.map((n, i) => `${ins.numbered ? `${st.length - i} ` : ''}${noteText(n, nameOpts())} ${hzOf(n, S.ref, devOf(n)).toFixed(2)}`).join(' · ')} Hz`,
-  );
+  txt($('#strl'), strText(ins, st));
+  /* 楽器・調弦・音名の書き方を変えても行の数を変えないよう、どの組み合わせでもいちばん高い高さを取っておく。
+     測る数を減らすため、字数の多い候補だけを測る */
+  const key = `${S.ref}|${S.tem}|${S.ton}`;
+  if (key === strKey) return;
+  strKey = key;
+  const wide = (t: string) => [...t].reduce((n, c) => n + (c.charCodeAt(0) > 0xff ? 2 : 1), 0),
+    all: string[] = [];
+  for (const nm of ['en', 'de', 'do', 'ja'] as const)
+    for (const flat of [false, true])
+      for (const i of INSTRUMENTS) for (const t of i.tunings) all.push(strText(i, t.notes, { nm, flat, c3: S.c3 }));
+  all.sort((a, b) => wide(b) - wide(a));
+  reserveHeight($('#strl'), all.slice(0, 8));
 }
 
 /* ---------- 12 音のストロボの窓 ---------- */

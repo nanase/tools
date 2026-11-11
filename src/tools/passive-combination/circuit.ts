@@ -120,9 +120,9 @@ function lay(x: Node, ty: Ty): Lay {
 const DEFS = `<defs>${BAND_GRADIENTS}</defs>`;
 
 /* 図の枠（縦横比を固定する）の幅・高さと、拡大の上限。幅は 5 本の直列が等倍で収まる大きさ */
-const BOX_W = 5 * LW + 4 * GAP + 2 * (TW + 5),
-  BOX_H = 200,
-  MAX_S = 1.6;
+export const BOX_W = 5 * LW + 4 * GAP + 2 * (TW + 5),
+  BOX_H = 200;
+const MAX_S = 1.6;
 
 /**
  * 候補 c の回路図。枠の縦横比は本数・つなぎ方によらず同じで、図は枠に収まるように拡大・縮小して中央に置く。

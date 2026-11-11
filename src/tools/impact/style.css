@@ -51,6 +51,8 @@
 
 /* 計算結果 */
 #impact .m-sub{display:block;margin-top:2px;font:400 12.5px/1.4 var(--sans);color:var(--ink-3)}
+/* 2 列の狭い枠では「中央丘クレーター」が値の欄に入らず … で切れる。形の名前だけ字を小さくする */
+@container (max-width:359.98px){#impact #o-kind{font-size:16px}}
 
 /* 実在の例 */
 .ip-pre{padding:6px 8px 10px;border-bottom:1px solid var(--line)}

@@ -741,7 +741,11 @@ function drawOut(): void {
   txt('#o-mg', L.kind === 'none' ? '—' : mx.mag.toFixed(3));
   $('#o-oc').innerHTML = L.kind === 'none' ? '—' : `${pct(mx.obs)}<span class="u">%</span>`;
   txt('#o-bdt', ecl.entry.type === 'A' ? '金環帯から' : '皆既帯から');
-  txt('#o-bd', bandDistance());
+  /* 値の欄は狭い幅で半分しかなく「外（南限の 28 km 南）」が … で切れる。括弧の中は補足の行に出す */
+  const bd = bandDistance(),
+    bm = /^(.*?)（(.*)）$/.exec(bd);
+  txt('#o-bd', bm ? bm[1] : bd);
+  txt('#o-bds', bm ? bm[2] : '');
   txt('#loc-note', bandDistance(true));
 }
 

@@ -109,7 +109,7 @@ const name = '日食';
           <div class="m"><dt>部分食の終わり C4</dt><dd id="o-c4">—</dd></div>
           <div class="m"><dt>食分（最大）</dt><dd id="o-mg">—</dd></div>
           <div class="m"><dt>面積比（最大）</dt><dd id="o-oc">—</dd></div>
-          <div class="m"><dt id="o-bdt">皆既帯から</dt><dd id="o-bd">—</dd></div>
+          <div class="m"><dt id="o-bdt">皆既帯から</dt><dd><span id="o-bd">—</span><span class="m-sub" id="o-bds"></span></dd></div>
         </dl>
       </Panel>
 
@@ -134,7 +134,8 @@ const name = '日食';
 
     <Panel hid="hd-saros" title="サロス" class="a-saros">
       <div slot="aux" class="seg" id="p-sm" role="group" aria-label="描き方"><button type="button" data-v="all" aria-pressed="true">重ね描き</button><button type="button" data-v="one" aria-pressed="false">1 回ずつ</button></div>
-      <div class="sbar"><span class="stag">投影 <b>Equal Earth</b></span><span class="stag">灰 <b>過去</b></span><span class="stag">茶 <b>未来</b></span><span class="stag">枠付きの年 <b id="s-here">観測地で欠けて見える回</b></span></div>
+      {/* 凡例（観測地を変えたときだけ変わる）なので折り返す */}
+      <div class="sbar lg"><span class="stag">投影 <b>Equal Earth</b></span><span class="stag">灰 <b>過去</b></span><span class="stag">茶 <b>未来</b></span><span class="stag">枠付きの年 <b id="s-here">観測地で欠けて見える回</b></span></div>
       <div class="smap">
         <canvas id="sbase" width="1160" height="565" aria-hidden="true"></canvas>
         <svg viewBox="0 0 1160 565" preserveAspectRatio="none" aria-hidden="true"><path class="old" id="s-old"></path><path class="fut" id="s-fut"></path><path class="hb" id="s-band"></path><path class="hc" id="s-sel"></path><path class="hc2" id="s-sel2"></path></svg>

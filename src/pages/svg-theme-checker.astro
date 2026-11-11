@@ -52,7 +52,8 @@ const first = SAMPLES[0]?.svg ?? '';
           {SAMPLE_GROUPS.map((g) => <optgroup label={g}>{SAMPLES.filter((s) => s.group === g).map((s) => <option value={s.id} selected={s === SAMPLES[0]}>{s.name}</option>)}</optgroup>)}
         </select></label>
       </div>
-      <div class="ed" id="ed">
+      {/* 欄の高さは入力した（例から読み込んだ）コードの行数で決まるので、揺れの検査から外す */}
+      <div class="ed" id="ed" data-shift="ok">
         <div class="gut" id="gut" aria-hidden="true" set:html={gutterHtml(lineCount(first))} />
         <div class="cz">
           <pre id="hl" aria-hidden="true" set:html={hlHtml(first)} />

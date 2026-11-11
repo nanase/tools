@@ -9,7 +9,7 @@ interface Held {
   html: boolean;
   width: number;
 }
-const held = new WeakMap<HTMLElement, Held>();
+const held = new Map<HTMLElement, Held>();
 let ro: ResizeObserver | null = null;
 
 /** el の写しに候補を順に入れ、いちばん高いものを min-height にする */
@@ -63,6 +63,11 @@ export function reserveHeight(el: HTMLElement, variants: readonly string[], opt:
   held.set(el, h);
   measure(el, h);
   if (!first) return;
+  if (!ro)
+    /* Web フォントの読み込み前に測ると低く取るので、読み込んだら測り直す */
+    document.fonts?.addEventListener('loadingdone', () => {
+      for (const [e, s] of held) measure(e, s);
+    });
   ro ??= new ResizeObserver((es) => {
     for (const e of es) {
       const t = e.target as HTMLElement,

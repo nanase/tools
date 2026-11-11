@@ -4,6 +4,7 @@ import { $ } from '../../lib/dom';
 import { same } from '../../lib/eseries';
 import { fmt, fmtR, plain, ro } from '../../lib/format';
 import { ParamGroup } from '../../lib/param';
+import { reserveHeight } from '../../lib/reserve';
 import { SW } from '../../lib/scope';
 import { forget, store, stored, storeToggle } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
@@ -727,6 +728,12 @@ G.on('fs', () => {
   fitFreqs(`fs/2 = ${hzT(val('fs') / 2)} に収めるため `);
   void reopen();
 });
+/* 下側のカットオフ周波数の行は、応答の種類で項目名が長くなる。長い名前の分の高さを取っておく */
+reserveHeight(
+  $('#n-f1'),
+  ['<span class="sr">fc </span>カットオフ周波数', '<span class="sr">fc1 </span>下側のカットオフ周波数'],
+  { html: true },
+);
 applyType();
 applyMode();
 request();

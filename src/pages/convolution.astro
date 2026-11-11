@@ -36,9 +36,9 @@ const SH = SHAPES.map(([v, l, t]) => [v, l, t] as const);
         </div>
       </div>
       <div id="v-out">
-        <div class="sbar">
+        <div class="sbar lg">
           <span class="stag"><i class="sw cv-sw-x" aria-hidden="true"></i>入力 x</span>
-          <span class="stag"><i class="sw cv-sw-h" aria-hidden="true"></i><span id="lg-h">核 h（反転して t へ）</span></span>
+          <span class="stag"><i class="sw cv-sw-h" aria-hidden="true"></i><span id="lg-h" class="hw" data-ph="核 h（反転せずに t へ）">核 h（反転して t へ）</span></span>
           <span class="stag"><i class="sw cv-sw-p" aria-hidden="true"></i>積</span>
           <span class="stag"><i class="sw" aria-hidden="true"></i>出力 y</span>
         </div>
@@ -75,9 +75,9 @@ const SH = SHAPES.map(([v, l, t]) => [v, l, t] as const);
         <div class="m"><dt>入力の面積 ∫<i>x</i></dt><dd id="o-ax"></dd></div>
         <div class="m"><dt>核の面積 ∫<i>h</i></dt><dd id="o-ah"></dd></div>
         <div class="m"><dt>出力の面積 ∫<i>y</i></dt><dd id="o-ay"></dd></div>
-        <div class="m"><dt>出力の長さ</dt><dd id="o-len"></dd></div>
-        <div class="m"><dt>出力の重心</dt><dd id="o-mu"></dd></div>
-        <div class="m"><dt>出力の分散</dt><dd id="o-var"></dd></div>
+        <div class="m"><dt>出力の長さ</dt><dd><span id="o-len"></span><span class="m-sub" id="o-lens"></span></dd></div>
+        <div class="m"><dt>出力の重心</dt><dd><span id="o-mu"></span><span class="m-sub" id="o-mus"></span></dd></div>
+        <div class="m"><dt>出力の分散</dt><dd><span id="o-var"></span><span class="m-sub" id="o-vars"></span></dd></div>
       </dl>
     </Panel>
 

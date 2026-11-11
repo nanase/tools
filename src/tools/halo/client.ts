@@ -5,6 +5,7 @@ import { Choice } from '../../lib/choice';
 import { $, $$, esc } from '../../lib/dom';
 import { minus } from '../../lib/format';
 import { ParamGroup } from '../../lib/param';
+import { reserveHeight } from '../../lib/reserve';
 import { addRow, mark } from '../../lib/reset';
 import { forget, store, stored } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
@@ -414,6 +415,14 @@ function stats(): void {
 /** 探して見つけた名前の位置（パリーアーク・ローウィッツアーク） */
 let extra: Record<string, V3> = {},
   extraKey = '';
+/* 光路の説明はハロと光路で長さが違う。いちばん長い形の高さを取っておき、ハロや高度を替えても下を動かさない */
+reserveHeight(
+  $('#xcap'),
+  FIG.flatMap((h) => [
+    `${h.cry}。太陽の光は錐面 13から入り、錐面 14から出ます。2 つの面のなす角は 120.0° で、プリズムと同じように光を曲げます。`,
+    `${h.cry}。太陽の光は錐面 13から入り、中で 錐面 15・底面 2 に反射してから、錐面 14から出ます。`,
+  ]),
+);
 const LOWITZ: FigHalo = {
   k: 'lowitz',
   name: 'ローウィッツアーク',
@@ -508,16 +517,18 @@ function drawFigure(): void {
   const xs = $('#xs'),
     xn = $('#xnone');
   if (!R2) {
+    /* 図と説明は隠しても場所を残す（光線のない高度へ動かしても下を動かさない）。知らせは図の場所に重ねる */
     xs.innerHTML = '';
-    xs.style.display = 'none';
+    xs.style.visibility = 'hidden';
     xn.hidden = false;
     xn.textContent = none ?? `この高度では${name}へ向かう光線を見つけられませんでした。`;
     txt('#ray-path', '');
-    txt('#xcap', '');
+    $('#xcap').style.visibility = 'hidden';
     txt('#fs-cap', name);
     for (const id of ['#r-a', '#r-d', '#r-dev']) txt(id, '—');
   } else {
-    xs.style.display = '';
+    xs.style.visibility = '';
+    $('#xcap').style.visibility = '';
     xn.hidden = true;
     xs.innerHTML = figureSvg(R2, document.body.contains($('#fs')) && !$('#fs').hidden);
     xs.setAttribute('aria-label', `${name}の光の通り道`);

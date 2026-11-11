@@ -75,7 +75,7 @@ const PIANO = ROOTS.map((_, i) => {
       <div class="sbar">
         <span class="stag"><i class="sw" aria-hidden="true"></i>弦の変位 <b id="nk-ex"></b></span>
         <span class="stag" id="nk-tm"></span>
-        <span class="stag" id="nk-chd" hidden></span>
+        <span class="stag" id="nk-chd" style="visibility:hidden">&nbsp;</span>
         <span class="stag nk-note" id="nk-note"></span>
       </div>
       <div class="nkw" id="nkw">
@@ -129,7 +129,7 @@ const PIANO = ROOTS.map((_, i) => {
         </div>
       </div>
       <div class="pbtns">
-        <p class="pl-bar hw" id="chd-name" data-ph="F♯m7♭5  10 / 10" aria-live="polite"></p>
+        <p class="pl-bar clip" id="chd-name" aria-live="polite"></p>
         <button type="button" class="tg" id="chdSnd" aria-pressed="false" title="押さえたときのかき鳴らし（太い弦から順）"><span class="led" id="chdLed" aria-hidden="true"></span>コードを鳴らす</button>
         <button type="button" class="tg" id="chdRel" title="左手を弦から離してすべて開放弦に（Esc キー）" disabled>リリース</button>
       </div>
@@ -215,7 +215,7 @@ const PIANO = ROOTS.map((_, i) => {
           <div class="m"><dt>表板の等価質量 <i>m</i><sub>p</sub></dt><dd id="b-mp"></dd></div>
           <div class="m"><dt>高いモードの間隔 Δ<i>f</i></dt><dd id="b-df"></dd></div>
         </dl>
-        <div class="sbar bsbar">
+        <div class="sbar static bsbar">
           <span class="stag"><i class="sw" aria-hidden="true"></i>CH1 駒のアドミタンス <b>10 dB</b>/div</span>
           <span class="stag"><i class="sw c2" aria-hidden="true"></i>CH2 音圧 ÷ 力 <b>10 dB</b>/div</span>
           <span class="stag">X LOG <b>50 Hz – 5 kHz</b></span>

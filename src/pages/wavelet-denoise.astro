@@ -62,7 +62,7 @@ const SC = [
         <button type="button" class="tp-pp" id="ab-pp" title="再生・一時停止（スペース）" aria-label="再生"><svg class="i-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.2l7.6 4.8L3 10.8z"/></svg><svg class="i-pause" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="2.8" height="9"/><rect x="7.2" y="1.5" width="2.8" height="9"/></svg></button>
         <div class="tp-tl">
           <div class="wv" id="ab-wv" role="slider" tabindex="0" aria-label="再生の位置" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0"><canvas id="ab-wc"></canvas><span class="qz" id="ab-qz" hidden></span><span class="wph" id="ab-ph"></span></div>
-          <div class="tp-tm"><span id="ab-tm">0.00 / 0.00 s</span><span id="ab-busy" class="busy" hidden>計算しています…</span></div>
+          <div class="tp-tm"><span id="ab-tm">0.00 / 0.00 s</span><span id="ab-busy" class="busy off">計算しています…</span></div>
         </div>
       </div>
     </Panel>
@@ -94,7 +94,9 @@ const SC = [
         <ChoiceRow k="w" name="ウェーブレット" sub="音を係数に分けるときに使う波の形。右ほど長くて滑らかで、滑らかな音を少ない係数で表せる。どれも 8 段に分ける" choices={WAV} value="db4" />
       </div>
       <dl class="metrics" id="pr-out"></dl>
+      {/* 表は雑音除去と圧縮で行の数が違うので別々に置き、目的の切り替えで出し分ける（計算を待つ間も高さを変えない） */}
       <div class="tt-w" id="pr-tab"></div>
+      <div class="tt-w cp-only" id="pr-tab-cp"></div>
     </Panel>
 
     <Collapsible hid="hd-thy" title="動作原理と式">

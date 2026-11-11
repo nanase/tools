@@ -8,6 +8,13 @@
   .c1{grid-area:c1}.c2{grid-area:c2}.a-out{grid-area:out}.a-thy{grid-area:thy}
 }
 .a-out .m-sub{display:block;font:12px/1.5 var(--sans);color:var(--ink-3)}
+/* 主な結果の下の案内（ピントを送る向きと量）は省かずに折り返す。高さは data-ph の最も長い文で取っておく（.hh） */
+.a-out .m-sub.hh{white-space:normal}
+/* 光源の行の名前（「最も明るい星の等級」など）は光源で変わり、その最長の高さを取っておく（client.ts）。
+   狭い枠では名前の列が 1〜2 字幅になり 5 行に積まれるので、値の欄を少し狭めて名前の列を広げる */
+@container (max-width:400px){.a-src .prow{--fw:120px}}
+/* 高さは名前の列の幅で測るので、名前を列いっぱいに広げる（中身の幅のままだと短い名前の幅で測ってしまう） */
+#n-mag,#n-T{flex:1 1 0}
 
 /* カメラの映像（地はテーマによらず黒。重ねる線と文字は暗いテーマの色） */
 .sv{position:relative;aspect-ratio:1/1;border:1px solid var(--line);border-radius:var(--r);background:#000;overflow:hidden}

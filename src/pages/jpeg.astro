@@ -137,7 +137,7 @@ const MX = {
         ].map(([no, t, m, kind]) => (
           <section class="jc" aria-labelledby={`st${no}`}>
             <h3 id={`st${no}`}><span class="no">{no}</span>{t}</h3>
-            <p class="cap" id={`cap${no}`}></p>
+            <p class={no === '7' ? 'cap hh' : 'cap'} id={`cap${no}`} data-ph={no === '7' ? '逆量子化と逆 DCT で戻したもの。元との差は最大 255' : undefined}></p>
             <div class="mxw">
               <div class="mx" id={(m as { id: string }).id} data-kind={kind} role="img" aria-label={(m as { label: string }).label}>{C64.map(() => <span></span>)}</div>
             </div>
@@ -152,7 +152,7 @@ const MX = {
         </section>
         <section class="jc wide" aria-labelledby="st9">
           <h3 id="st9"><span class="no">9</span>ジグザグ走査</h3>
-          <p class="cap" id="cap9"></p>
+          <p class="cap hh" id="cap9" data-ph="0 でない最後の係数はジグザグ 10 番。残りの 11〜63 番の 53 個は EOB 1 つで表す"></p>
           <div class="zzw">
             <svg class="zzm" id="zzm" viewBox="-0.1 -0.1 8.2 8.2" role="img" aria-label="ジグザグの順路（0 でない最後の係数まで実線）"><g id="zzm-c">{C64.map((i) => <rect x={i % 8} y={i >> 3} width="1" height="1"/>)}</g><path class="pb" id="zz-b"/><path class="pa" id="zz-a"/><circle class="p0" cx="0.5" cy="0.5" r="0.14"/></svg>
             <div class="zzs" id="zzs" role="img" aria-label="ジグザグ順の係数">{C64.map((k) => <span><small>{k}</small><b></b></span>)}</div>
@@ -161,7 +161,7 @@ const MX = {
         </section>
         <section class="jc wide" aria-labelledby="st10">
           <h3 id="st10"><span class="no">10</span>記号とハフマン符号</h3>
-          <p class="cap" id="cap10"></p>
+          <p class="cap hh" id="cap10" data-ph="DC の予測 −1024（走査の順で 1 つ前の Cb のブロックの DC。先頭なので 0）・色差の表・合計 1024 ビット。符号の太字はハフマン符号、細字は付加ビット"></p>
           <div class="symw">
             <table class="sym" id="sym">
               <thead><tr><th scope="col">位置</th><th scope="col">種類</th><th scope="col">値</th><th scope="col">ラン/大きさ</th><th scope="col">符号</th><th scope="col">ビット</th></tr></thead>

@@ -27,6 +27,10 @@
 .m-main .m-sub{font-family:var(--sans);font-size:12.5px;letter-spacing:0;font-weight:400}
 .m-main .m-note{font-size:12.5px;letter-spacing:0;font-weight:400}
 .m dd.rng{font-size:16px}
+/* BPF・BSF では下と上の 2 つの値を 2 行に出す。応答を変えても高さが変わらないよう、いつも 2 行を取る */
+.m dd#o-f3,.m dd#o-fst{min-height:calc(2em * 1.35)}
+/* 端の行の項目名: 取っておく高さを枠の幅で測るため、名前の欄を幅いっぱいにする */
+.iin .c-name>.pn{flex-grow:1}
 .m dd.rng .u{white-space:nowrap}
 .m .ok{color:var(--ink)}
 .m .ng{color:var(--warn)}
@@ -78,6 +82,9 @@
 .ctab th i{font-family:var(--math);font-size:1.12em}
 .ctab td{padding:5px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
 .ctab tr:last-child td{border-bottom:0}
+/* 縦続と直接形の係数の表は次数で行の数が変わる（最大 20 段・41 行）。高さを決めて、中を縦にスクロールさせる */
+.iir-sc{height:212px;overflow:auto}
+.iir-sc thead th{position:sticky;top:0;z-index:1;background:var(--bg)}
 .ctab th:first-child,.ctab td:first-child{text-align:left;padding-left:2px}
 .ctab td.pz{color:var(--ink-2)}
 .ctab .ng{color:var(--warn)}

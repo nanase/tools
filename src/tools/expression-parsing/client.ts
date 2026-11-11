@@ -322,6 +322,19 @@ function buildRule(): void {
     $('.o', tr).textContent = syms;
     body.append(tr);
   });
+  holdRuleRows(body);
+}
+/** 表の段の数（決まりで 1〜5）で下の枠が動かないよう、いちばん多い段の数の高さを取っておく */
+const RANK_MAX = Math.max(...RULES.map((r) => r.rank.length));
+function holdRuleRows(body: HTMLTableSectionElement | HTMLElement): void {
+  const rw = body.closest<HTMLElement>('.ep-rw'),
+    head = rw?.querySelector('thead');
+  if (!rw || !head) return;
+  const rowH = Math.max(0, ...[...body.children].map((r) => r.getBoundingClientRect().height));
+  if (!rowH) return;
+  /* 10 は表の上の余白（.ep-rt の margin-top） */
+  const h = Math.ceil(head.getBoundingClientRect().height + rowH * RANK_MAX + 10);
+  if (h > (Number.parseFloat(rw.style.minHeight) || 0)) rw.style.minHeight = `${h}px`;
 }
 function buildRace(): void {
   const host = $('#ep-race'),

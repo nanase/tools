@@ -7,6 +7,7 @@ import { $, $$ } from '../../lib/dom';
 import { RM } from '../../lib/motion';
 import { ParamGroup } from '../../lib/param';
 import { handheld } from '../../lib/pause';
+import { reserveHeight } from '../../lib/reserve';
 import { initToolPage } from '../../lib/tool-page';
 import { Recorder } from '../wavelet-denoise/rec';
 import { Deck } from './deck';
@@ -171,6 +172,12 @@ function drawBottom(): void {
 const pp = $<HTMLButtonElement>('#ls-pp'),
   wv = $('#ls-wv'),
   keys = $$<HTMLButtonElement>('#ls-keys .pcm-key');
+/* キーの値は方式とビット数で長さが変わる。いちばん長い値の高さを取っておき、折り返しで行を動かさない */
+const KEY_PH = [pcmLabel(11025, 8, 'mu'), pcmLabel(11025, 24, 'lin'), pcmLabel(192000, 8, 'a')];
+for (const k of keys) {
+  const sm = k.querySelector<HTMLElement>('small');
+  if (sm) reserveHeight(sm, KEY_PH);
+}
 let overview = true,
   seen: Float32Array | null = null;
 deck.onState = () => {
@@ -369,6 +376,8 @@ const cvH = $<HTMLCanvasElement>('#how-cv'),
   thumbs = cards.map((b) => $<HTMLCanvasElement>('canvas', b)),
   hpp = $<HTMLButtonElement>('#how-pp'),
   trk = $('#how-trk');
+/* 工程の説明は長さが違うので、いちばん長い説明の高さを取っておく */
+reserveHeight($('#how-cap'), CAPTIONS);
 function syncStep(): void {
   cards.forEach((b, i) => {
     const on = i === St.i;

@@ -42,15 +42,19 @@
 /* レベルメーター（表示窓の横長版） */
 .lv-hot{fill:var(--warn)}
 
+/* カットオフ周波数の行の項目名: 取っておく高さを枠の幅で測るため、名前の欄を幅いっぱいにする */
+#n-f1{flex-grow:1}
+
 /* 計算結果 */
 .m-sub{display:block;margin-top:2px;font:500 12px/1.5 var(--mono);color:var(--ink-3)}
 .m-sub.ng{font-family:var(--sans);color:var(--warn)}
 
 /* 係数の書き出し */
 .cbar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}
-.coefs{margin:0;max-height:340px;overflow:auto;padding:10px 12px;background:var(--inset);border-radius:var(--r);font:500 12.5px/1.6 var(--mono);color:var(--ink);white-space:pre;tab-size:4}
+/* タップ数で行の数が変わるので、上限ではなく高さを決めて中をスクロールさせる */
+.coefs{height:340px;margin:0;overflow:auto;padding:10px 12px;background:var(--inset);border-radius:var(--r);font:500 12.5px/1.6 var(--mono);color:var(--ink);white-space:pre;tab-size:4}
 /* PC では隣の零点の枠の高さに合わせる */
-@media (min-width:1000px){.coefs{max-height:452px}}
+@media (min-width:1000px){.coefs{height:452px}}
 
 /* 動作原理と式 */
 .eqs mtd{text-align:left;padding:2px 10px 2px 0}

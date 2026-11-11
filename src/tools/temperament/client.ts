@@ -6,6 +6,7 @@ import { Choice } from '../../lib/choice';
 import { $, $$ } from '../../lib/dom';
 import { fmtR } from '../../lib/format';
 import { ParamGroup } from '../../lib/param';
+import { reserveHeight } from '../../lib/reserve';
 import { addRow } from '../../lib/reset';
 import { forget, store, stored } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
@@ -13,10 +14,12 @@ import { Synth } from './audio';
 import { A4, AB_MS, type Key, REHIT_MS, VOL } from './params';
 import {
   analyze,
+  CHORDS,
   type Coin,
   chordOf,
   coins,
   firstOrder,
+  INTERVALS,
   intervalName,
   isMinor,
   justRatios,
@@ -225,11 +228,12 @@ function draw(): void {
 
   /* 状態の帯 */
   txt($('#s-a'), temperamentOf(S.tem).name);
-  $('#s-bw').hidden = S.cmp === 'none';
+  /* 出る・消える表示は場所を残して隠す（状態の帯の行の数を変えない） */
+  $('#s-bw').style.visibility = S.cmp === 'none' ? 'hidden' : '';
   txt($('#s-b'), S.cmp === 'none' ? '' : temperamentOf(S.cmp).name);
   txt($('#s-ch'), `${noteName(rootMidi())} の${ch.name}`);
   txt($('#s-tb'), { sine: '正弦波', organ: 'オルガン（第 1〜8 部分音）', piano: 'ピアノ（非調和性あり）' }[S.tb]);
-  $('#s-now').hidden = !S.play;
+  $('#s-now').style.visibility = S.play ? '' : 'hidden';
   txt($('#s-cur'), (S.ab && S.cmp !== 'none' ? (sideB ? 'B ' : 'A ') : '') + tn);
   playBtn.setAttribute('aria-pressed', String(S.play));
   $('#playLed').classList.toggle('on', S.play);
@@ -250,7 +254,7 @@ function draw(): void {
     'aria-label',
     `${noteName(rootMidi())} の${ch.name}（${tn}）の部分音を、純正 ${ratios.join(' : ')} の目盛りに並べた図と、同じ目盛りに来る部分音のうなり`,
   );
-  $('#lg-e').hidden = !cs.some((c) => !firstOrder(c));
+  $('#lg-e').style.visibility = cs.some((c) => !firstOrder(c)) ? '' : 'hidden';
 
   /* 拡大図 */
   $('#zms').innerHTML = pairs
@@ -386,5 +390,34 @@ function loop(now: number): void {
 queueMicrotask(() => {
   ready = true;
   draw();
+  holdHeights();
   requestAnimationFrame(loop);
 });
+
+/**
+ * 和音・音律・音色を変えても枠の高さを変えないよう、いちばん高い中身の高さを取っておく。
+ * 状態の帯は各表示にいちばん長い文を入れた形、表は行の数がいちばん多い形（音の組 6 つ・音 4 つ）
+ */
+function holdHeights(): void {
+  const wide = (a: string[]) => a.reduce((x, y) => (len(y) > len(x) ? y : x), ''),
+    len = (t: string) => [...t].reduce((n, c) => n + (c.charCodeAt(0) > 0xff ? 2 : 1), 0),
+    all = [...CHORDS, ...INTERVALS],
+    tem = wide(TEMPERAMENTS.map((t) => t.name)),
+    bar = $('.a-fig .sbar');
+  txt($('#s-a'), tem);
+  txt($('#s-b'), tem);
+  txt($('#s-ch'), wide(all.map((c) => `F♯4 の${c.name}`)));
+  txt($('#s-tb'), 'オルガン（第 1〜8 部分音）');
+  txt($('#s-rt'), wide(all.map((c) => `純正 ${justRatios(c.iv).join(' : ')} の目盛り`)));
+  txt($('#s-cur'), `B ${tem}`);
+  const longest = bar.innerHTML;
+  draw();
+  reserveHeight(bar, [longest], { html: true });
+  const rows = (el: HTMLElement, n: number) => (el.firstElementChild?.outerHTML ?? '').repeat(n);
+  for (const [id, n] of [
+    ['#zms', 6],
+    ['#prs-b', 6],
+    ['#nts-b', 4],
+  ] as const)
+    reserveHeight($(id), [rows($(id), n)], { html: true });
+}

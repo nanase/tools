@@ -12,6 +12,8 @@
 .a-dim .prow{--sw:2rem}
 
 /* 計算結果 */
+/* 2 列の狭い枠では、補足の長い共振コンデンサと自己共振を全幅にする（値が … で隠れないように） */
+@container (max-width:359.98px){.pc-w2{grid-column:1/-1}}
 .m-sub{display:block;margin-top:2px;font:500 12px/1.5 var(--mono);color:var(--ink-3)}
 .m-main .m-note{font-size:12.5px;letter-spacing:0}
 
@@ -65,7 +67,8 @@
 .a-find{container-type:inline-size}
 .find-note{margin:0 0 4px;font-size:13px;line-height:1.8;color:var(--ink-2)}
 .fgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:28px;align-items:start}
-.fl{display:grid;margin:14px -6px 0;border-top:1px solid var(--line-2);transition:opacity .15s}
+/* 候補の一覧は条件で件数と折り返しが変わる。高さを決めて中をスクロールさせる */
+.fl{display:grid;align-content:start;height:480px;margin:14px -6px 0;border-top:1px solid var(--line-2);overflow-y:auto;transition:opacity .15s}
 .fl.busy{opacity:.45}
 .fr{display:grid;grid-template-columns:minmax(0,2.3fr) repeat(5,minmax(0,1fr));column-gap:12px;align-items:baseline;width:100%;margin:0;padding:8px 6px;border:0;border-top:1px solid var(--line);border-radius:0;background:none;color:var(--ink);text-align:left;font:500 14px/1.45 var(--mono);font-variant-numeric:tabular-nums;cursor:pointer}
 .fr:first-child,.fr-h+.fr{border-top:0}
@@ -73,7 +76,7 @@
 .fr.best b{font-weight:700}
 .fr small{display:block;font:12px/1.45 var(--sans);color:var(--ink-3)}
 .fr .c1 b{font-family:var(--sans)}
-.fr-h{cursor:default;padding-top:6px;padding-bottom:4px}
+.fr-h{position:sticky;top:0;z-index:1;background:var(--bg);cursor:default;padding-top:6px;padding-bottom:4px}
 .fr-h span{font:12px/1.4 var(--sans);color:var(--ink-3)}
 button.fr:hover{background:var(--inset)}
 button.fr:focus-visible{outline-offset:-2px}

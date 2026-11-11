@@ -7,6 +7,7 @@ import { $, $$ } from '../../lib/dom';
 import { minus } from '../../lib/format';
 import { ParamGroup } from '../../lib/param';
 import { handheld } from '../../lib/pause';
+import { reserveHeight } from '../../lib/reserve';
 import { initToolPage } from '../../lib/tool-page';
 import { MapAudio } from './audio';
 import { BifFig, type BifState, type Col, drawCob, drawTs, LyFig, lamAt, readCol } from './fig';
@@ -232,6 +233,23 @@ function paintFt(): void {
   h += `<tr class="lim"><td>∞</td><td></td><td><b>${minus(C.rInf.toFixed(9))}</b></td><td>${dl.toFixed(5)}</td><td>${al.toFixed(5)}</td></tr></tbody>`;
   ft.innerHTML = h;
 }
+/* 写像によって表がなく 1 行の文だけになり、下の枠が動く。段がいちばん多い表（9 段と極限）の高さを取っておく */
+{
+  const row = (a: string) => `<tr><td>${a}</td><td>512</td><td>−0.000000000</td><td>0.00000</td><td>−0.00000</td></tr>`;
+  reserveHeight(
+    $('.ftw'),
+    [
+      `<table class="ft"><thead><tr><th><i>n</i></th><th>周期</th><th>超安定な <i>r</i></th><th><i>δ</i><sub><i>n</i></sub></th><th><i>α</i><sub><i>n</i></sub></th></tr></thead><tbody>${Array.from({ length: 9 }, (_, i) => row(String(i + 1))).join('')}${row('∞')}</tbody></table>`,
+    ],
+    { html: true },
+  );
+}
+/* 写像の式は上付き・下付きの有無で高さが 20〜27 px と変わり、図の枠が動く。いちばん高い式に合わせる */
+reserveHeight(
+  $('#b-eq'),
+  Object.values(MAP_INFO).map((i) => i.eq),
+  { html: true },
+);
 ft.addEventListener('click', (e) => {
   const tr = (e.target as Element).closest<HTMLElement>('tr[data-n]');
   if (!tr) return;

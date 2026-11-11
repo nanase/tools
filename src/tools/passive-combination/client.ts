@@ -5,12 +5,13 @@ import { eList, inSeries, type Series, same } from '../../lib/eseries';
 import { fmt, fmtR, parts, ro } from '../../lib/format';
 import { ParamGroup } from '../../lib/param';
 import { parse } from '../../lib/parse';
+import { reserveHeight } from '../../lib/reserve';
 import { addRow, mark } from '../../lib/reset';
 import { store, stored } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
-import { circuitSvg } from './circuit';
+import { BOX_H, BOX_W, circuitSvg } from './circuit';
 import { type Cand, cand, errTxt, type TyState, usable } from './model';
-import { K, type N, NS, NUM_KEYS, type NumKey, numDef, numPatch, STOPS, TY, type Ty } from './params';
+import { K, type N, NS, NUM_KEYS, type NumKey, numDef, numPatch, STOPS, TY, TYPES, type Ty } from './params';
 import type { Found } from './search';
 import type { FromWorker, ToWorker } from './worker';
 
@@ -56,6 +57,16 @@ const g = new ParamGroup<NumKey>(
   null,
   { save: false },
 );
+/* 項目名は素子の種類で変わる（求める抵抗値・求めるインダクタンスなど）。いちばん高くなる名前の分の高さを取っておく */
+for (const k of NUM_KEYS)
+  reserveHeight(
+    $(`#n-${k}`),
+    TYPES.map((t) => {
+      const d = numDef(k, t);
+      return `<span class="sr">${esc(d.nm)} </span>${esc(d.name)}`;
+    }),
+    { html: true },
+  );
 g.on('min', (v) => {
   if (v > g.get('max')) {
     g.set('max', v, { silent: true });
@@ -356,7 +367,8 @@ function render(): void {
   txt('#o-s', stTxt(r));
   const anyRun = busy(),
     anyAbort = NS.some((n) => RES[n].st === 'abort' || RES[n].st === 'err');
-  runBtn.hidden = !anyRun && !anyAbort;
+  /* 出ても消えても探索の行の高さが変わらないよう、場所は残す */
+  runBtn.style.visibility = anyRun || anyAbort ? '' : 'hidden';
   runBtn.textContent = anyRun ? '中止' : 'もう一度探索';
   runBtn.dataset.a = anyRun ? 'stop' : 'run';
   /* 候補 */
@@ -373,7 +385,13 @@ function render(): void {
             .join('')
       : `<p class="empty-c">${r.st === 'run' || r.st === 'wait' ? '探索しています…' : r.st === 'none' ? '使える値がありません。範囲か E 系列を変えてください' : 'まだ候補がありません'}</p>`,
   );
-  html('#cmbw', c ? circuitSvg(c, RUN.ty) : '<p class="empty-c">組み合わせが見つかると、ここに回路を描きます</p>');
+  /* 回路がないときも、回路図と同じ縦横比の枠を取っておく */
+  html(
+    '#cmbw',
+    c
+      ? circuitSvg(c, RUN.ty)
+      : `<p class="empty-c" style="aspect-ratio:${BOX_W} / ${BOX_H}">組み合わせが見つかると、ここに回路を描きます</p>`,
+  );
   /* 代入した式 */
   const X = `<msub><mi>${T.s}</mi><mi mathvariant="normal">T</mi></msub>`,
     t = RUN.t;

@@ -5,6 +5,7 @@
 import { Choice } from '../../lib/choice';
 import { $ } from '../../lib/dom';
 import { ParamGroup } from '../../lib/param';
+import { reserveHeight } from '../../lib/reserve';
 import { mark } from '../../lib/reset';
 import { forget, store, stored } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
@@ -58,6 +59,9 @@ const st$ = new Choice<'lin' | 'asinh'>($('#p-st'), () => draw());
 const cm$ = new Choice<'color' | 'mono'>($('#p-cm'), () => draw());
 const ic$ = new Choice<'white' | 'black'>($('#p-ic'), later);
 const im$ = new Choice<'circle' | 'whole'>($('#p-im'), later);
+/** 等級と色温度の行の名前（二重星は主星、星団は最も明るい星） */
+const MAG_NAMES = ['等級', '主星の等級', '最も明るい星の等級'],
+  T_NAMES = ['星の色温度', '主星の色温度'];
 const src$ = new Choice<SrcKind>($('#p-src'), (v) => setSrc(v));
 
 /* ---------- 画像のマスク ---------- */
@@ -328,11 +332,21 @@ function setSrc(v: SrcKind): void {
   }
 }
 
-/** 等級と色温度の行の名前（二重星は主星、星団は最も明るい星） */
+/* 光源を替えると行の名前の長さが変わる。いちばん長い名前の高さを取っておき、行を動かさない */
+reserveHeight(
+  $('#n-mag'),
+  MAG_NAMES.map((n) => `<span class="sr">等級 </span>${n}`),
+  { html: true },
+);
+reserveHeight(
+  $('#n-T'),
+  T_NAMES.map((n) => `<span class="sr">T </span>${n}`),
+  { html: true },
+);
 function labelMag(v: SrcKind): void {
-  const name = v === 'double' ? '主星の等級' : v === 'cluster' ? '最も明るい星の等級' : '等級';
+  const name = v === 'double' ? MAG_NAMES[1] : v === 'cluster' ? MAG_NAMES[2] : MAG_NAMES[0];
   if (G.def('mag').name !== name) G.update('mag', { name });
-  const tn = v === 'double' ? '主星の色温度' : '星の色温度';
+  const tn = v === 'double' ? T_NAMES[1] : T_NAMES[0];
   if (G.def('T').name !== tn) G.update('T', { name: tn });
 }
 
@@ -908,6 +922,27 @@ function drawStatic(): void {
   drawRay();
 }
 
+/** グラフの CH1 の凡例（マスクごと。空ならその凡例を隠す） */
+const GP_L1: Record<MaskKind, string> = {
+  none: '',
+  bahtinov: 'CH1 中央の光条のずれ e（µm）',
+  tri: 'CH1 3 組の光条のずれ（µm、実線・破線・点線）',
+  carey: 'CH1 2 つの X の間隔（µm）',
+  hartmann: 'CH1 穴の像の間隔（µm）',
+  scheiner: 'CH1 穴の像の間隔（µm）',
+  jwst: '',
+  image: '',
+};
+/* グラフの上の凡例は折り返す。CH1 の文はマスクで変わるので、いちばん高くなる文の高さを取っておく */
+reserveHeight(
+  $('#gp-lg'),
+  Object.values(GP_L1).map(
+    (t) =>
+      (t ? `<span class="stag"><i class="sw"></i><span>${t}</span></span>` : '') +
+      '<span class="stag"><i class="sw c2"></i>CH2 星像の大きさ HFD（マスクなし）</span><span class="stag">X <b>1000 µm/div</b></span>',
+  ),
+  { html: true },
+);
 function drawGraph(): void {
   const c = C,
     n = 81,
@@ -928,18 +963,8 @@ function drawGraph(): void {
   y1 = niceMax(y1 * 1.05 || 1);
   html('#gp', gpSvg(c.R, c.cfz, y1, y2, curves, dz));
   $('#gp').parentElement?.classList.toggle('one', gv$.value === 'one');
-  const L: Record<MaskKind, string> = {
-    none: '',
-    bahtinov: 'CH1 中央の光条のずれ e（µm）',
-    tri: 'CH1 3 組の光条のずれ（µm、実線・破線・点線）',
-    carey: 'CH1 2 つの X の間隔（µm）',
-    hartmann: 'CH1 穴の像の間隔（µm）',
-    scheiner: 'CH1 穴の像の間隔（µm）',
-    jwst: '',
-    image: '',
-  };
-  txt('#gp-t1', L[c.kind]);
-  $('#gp-l1').hidden = !L[c.kind];
+  txt('#gp-t1', GP_L1[c.kind]);
+  $('#gp-l1').hidden = !GP_L1[c.kind];
   txt('#gp-x', `Δz ${sig(c.R / 4, 3)} µm/div`);
   const r = readAt(dz);
   txt(

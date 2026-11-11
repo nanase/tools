@@ -7,6 +7,7 @@ import { $, $$, esc } from '../../lib/dom';
 import { RM } from '../../lib/motion';
 import { ParamGroup } from '../../lib/param';
 import { handheld } from '../../lib/pause';
+import { reserveHeight } from '../../lib/reserve';
 import { store, stored } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
 import { EngineAudio } from '../engine/audio';
@@ -112,6 +113,24 @@ function tOf(sc: { rec: Rec; map: StageMap }, u: number): number {
 const trk = $('#tp-trk'),
   pp = $<HTMLButtonElement>('#tp-pp'),
   list = $('#tm-list');
+const stageHtml = (stages: readonly { n: string; d: string }[], skip: (i: number) => boolean) =>
+  stages
+    .map(
+      (s, i) =>
+        `<li${skip(i) ? ' hidden' : ''}><button type="button" data-i="${i}"><b>${esc(s.n)}</b><span>${esc(s.d)}</span></button></li>`,
+    )
+    .join('');
+/* 場面ごとに段階の数が違う。場面を選んでも下の枠を動かさないよう、段階のいちばん多い場面の高さを取っておく */
+reserveHeight(
+  list,
+  Object.values(SCENES).map((sc) =>
+    stageHtml(
+      sc.stages.map(([n, d]) => ({ n, d })),
+      () => false,
+    ),
+  ),
+  { html: true },
+);
 function buildScene(): void {
   const sc = sceneOf(S.scene),
     { rec } = sc;
@@ -123,12 +142,7 @@ function buildScene(): void {
     if (sc.map.w[i]) d += `M${(acc * 100).toFixed(2)} 0V7`;
   }
   $('#tp-tk path.mj').setAttribute('d', d);
-  list.innerHTML = rec.stages
-    .map(
-      (s, i) =>
-        `<li${rec.bounds[i] == null ? ' hidden' : ''}><button type="button" data-i="${i}"><b>${esc(s.n)}</b><span>${esc(s.d)}</span></button></li>`,
-    )
-    .join('');
+  list.innerHTML = stageHtml(rec.stages, (i) => rec.bounds[i] == null);
   $('#tp-n').textContent = String(rec.stages.filter((_, i) => rec.bounds[i] != null).length);
 }
 list.addEventListener('click', (e) => {

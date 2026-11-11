@@ -102,7 +102,7 @@ const name = 'エンジン音響モデル';
     <div class="col c2">
       <Panel hid="hd-tq" title="トルクと出力" class="a-tq">
         <p slot="aux" class="aux">全開・回転数固定</p>
-        <div class="sbar">
+        <div class="sbar static">
           <span class="stag"><i class="sw" aria-hidden="true"></i>CH1 トルク <b>2 N·m</b>/div</span>
           <span class="stag"><i class="sw c2" aria-hidden="true"></i>CH2 出力 <b>1 kW</b>/div</span>
           <span class="stag">X <b>1,000 rpm</b>/div</span>
@@ -136,7 +136,7 @@ const name = 'エンジン音響モデル';
       <Collapsible hid="hd-wave" title="音の波形" class="a-wave">
         <div class="seg wv-sw" id="p-ov" role="group" aria-label="表示"><button type="button" data-v="yt" aria-pressed="true" title="排気口から 0.5 m の音圧の時間変化">波形</button><button type="button" data-v="sp" aria-pressed="false" title="周波数ごとの大きさ">スペクトラム</button></div>
         <div id="v-yt">
-          <div class="sbar">
+          <div class="sbar static">
             <span class="stag"><i class="sw" aria-hidden="true"></i>CH1 音圧 <b class="hw" id="w-vd" data-ph="0.05 Pa"></b>/div</span>
             <span class="stag">H <b id="w-hd"></b>/div</span>
             <span class="stag">トリガ <b>燃焼の上死点</b></span>

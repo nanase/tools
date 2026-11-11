@@ -421,7 +421,13 @@ function syncStrRows(): void {
   P2.update('T', { v: Number(Ta.toFixed(1)) });
   P2.set('d', Number((sp.d * 1000).toFixed(3)), { silent: true });
   P2.set('T', Number(sp.T.toFixed(1)), { silent: true });
-  P2.note('T', tm.value === 'auto' ? `${tuningOf(tun.value).name}の調弦に合わせた値` : '');
+  /* 手で決める間の注意は行の印に出す（演奏の枠に文を出し入れしない） */
+  P2.note(
+    'T',
+    tm.value === 'auto'
+      ? `${tuningOf(tun.value).name}の調弦に合わせた値`
+      : '張力を手で決めているため、音程がずれることがあります',
+  );
 }
 
 const P1 = new ParamGroup<string>([POS, SLANT, AMP, ANGLE, SCALE, THICK, VOLUME, HOLE, DIST], (v, k) => {
@@ -921,9 +927,9 @@ function chordView(): void {
         ? `${name}（演奏から推定）`
         : '',
   );
-  const tag = $('#nk-chd');
-  tag.hidden = !cur;
-  txt('#nk-chd', CH && n ? `${name}  ${shapeText(CH.f)}` : EST && !CH ? `${name}（推定）` : name);
+  /* コードがない間も 1 行の高さを残す（出る・消えるで表示の行を動かさない） */
+  $('#nk-chd').style.visibility = cur ? '' : 'hidden';
+  txt('#nk-chd', CH && n ? `${name}  ${shapeText(CH.f)}` : EST && !CH ? `${name}（推定）` : name || ' ');
 }
 
 /** 次によく続くコードの行で、大きく出す候補の数（それより後は小さく） */
@@ -1295,7 +1301,6 @@ async function startPiece(from: number): Promise<void> {
     rebuild();
     chordRetune();
   }
-  if (tm.value === 'man') sndMsg('張力を手で決めているため、音程がずれることがあります');
   let pl: PieceData;
   try {
     pl = await placedOf(pc);

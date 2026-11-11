@@ -205,12 +205,9 @@ function drawStatic(): void {
   txt($('#o-ah'), fmt3(ah));
   txt($('#o-ay'), fmt3(ay));
   txt($('#m-ay'), fmt3(ay));
-  txt(
-    $('#o-len'),
-    mode === 'd'
-      ? `${nz(F.x)} + ${nz(F.hh)} − 1 = ${nz(F.x) + nz(F.hh) - 1} 点`
-      : `${sec(span(F.x))} + ${sec(span(F.hh))} = ${sec(span(F.x) + span(F.hh))}`,
-  );
+  /* 結果を値の行に、足し算を補足に出す（値の行は 1 行で、長い式では結果が … で隠れるため） */
+  txt($('#o-len'), mode === 'd' ? `${nz(F.x) + nz(F.hh) - 1} 点` : sec(span(F.x) + span(F.hh)));
+  txt($('#o-lens'), mode === 'd' ? `${nz(F.x)} + ${nz(F.hh)} − 1` : `${sec(span(F.x))} + ${sec(span(F.hh))}`);
   /* 重心と分散は、負の値がなく面積のあるときだけ（確率の分布として足し算になる） */
   const pos = (s: Sig) => s.v.every((v) => v > -1e-12) && area(s) > 1e-9;
   if (pos(F.x) && pos(F.hh)) {
@@ -218,11 +215,13 @@ function drawStatic(): void {
       mh = moments(F.hh),
       my = moments(F.y),
       f = (v: number) => (+v.toFixed(3)).toString().replace(/^-/, '−');
-    txt($('#o-mu'), `${f(mx.mean)} + ${f(mh.mean)} = ${f(my.mean)}`);
-    txt($('#o-var'), `${f(mx.vari)} + ${f(mh.vari)} = ${f(my.vari)}`);
+    txt($('#o-mu'), f(my.mean));
+    txt($('#o-mus'), `${f(mx.mean)} + ${f(mh.mean)}`);
+    txt($('#o-var'), f(my.vari));
+    txt($('#o-vars'), `${f(mx.vari)} + ${f(mh.vari)}`);
   } else {
-    txt($('#o-mu'), '—');
-    txt($('#o-var'), '—');
+    for (const id of ['#o-mu', '#o-var']) txt($(id), '—');
+    for (const id of ['#o-mus', '#o-vars']) txt($(id), '');
   }
   $('#lg-h').textContent = flipOn ? '核 h（反転して t へ）' : '核 h（反転せずに t へ）';
 }

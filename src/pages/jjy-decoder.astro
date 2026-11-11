@@ -37,7 +37,7 @@ const name = 'JJY デコーダ';
               <div class="seg" id="fileSeg" hidden><button type="button" id="fileBtn" aria-describedby="t-run">ファイルを選択</button></div>
               <input type="file" id="fileIn" accept="audio/*,.wav,.mp3,.m4a,.ogg,.flac" hidden>
             </div>
-            <div class="c-sub"><p class="msg" id="m-run" aria-live="polite"></p><button type="button" class="tg" id="wavBtn" hidden>WAV を保存（3 分）</button></div>
+            <div class="c-sub"><p class="msg clip" id="m-run" aria-live="polite"></p><button type="button" class="tg" id="wavBtn" hidden>WAV を保存（3 分）</button></div>
           </div>
           <ChoiceRow k="fm" sym="<i>f</i><sub>0</sub>" name="搬送波" sub="周波数の決め方。自動は入力から最も振幅の大きい周波数を使います" choices={[['auto', '自動'], ['manual', '手動']]} value="auto" msg />
           <ParamRow d={F_PARAM} />

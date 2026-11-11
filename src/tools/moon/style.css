@@ -100,7 +100,8 @@
 .cal .d{display:grid;justify-items:center;gap:2px;padding:4px 2px 5px;border:1px solid var(--line);border-radius:4px;background:none;color:var(--ink-2);font:500 11px/1.2 var(--mono);min-width:0;cursor:pointer}
 .cal .d:hover{border-color:var(--line-2)}
 .cal .d canvas{width:34px;height:34px;max-width:100%;border-radius:50%;background:#000}
-.cal .d small{font:600 10.5px var(--sans);color:var(--ink);min-height:1.2em;white-space:nowrap;overflow:hidden;max-width:100%}
+/* 印（上弦・遠地点など）のない週も同じ高さにする（行の高さを決めないと、印のある行だけ 3 px 高くなる） */
+.cal .d small{font:600 10.5px/1.5 var(--sans);color:var(--ink);min-height:1.5em;white-space:nowrap;overflow:hidden;max-width:100%}
 .cal .d .ag{font:500 10px var(--mono);color:var(--ink-3)}
 .cal .d[aria-current="date"]{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink);color:var(--ink);font-weight:700}
 .cal .x{border:1px dashed var(--line);border-radius:4px;opacity:.45}

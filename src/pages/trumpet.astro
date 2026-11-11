@@ -174,8 +174,8 @@ const ROWS = [...PARTIALS].reverse().filter((n) => n <= 8);
       <Panel hid="hd-z" title="管の共鳴" class="a-z">
         <div slot="aux" class="seg" id="p-zs" role="group" aria-label="縦軸"><button type="button" data-v="lin" aria-pressed="true" title="入力インピーダンスの大きさ（線形）">大きさ</button><button type="button" data-v="db" aria-pressed="false" title="1 MPa·s/m³ を 0 dB">dB</button></div>
         <p class="aux res-aux" id="z-aux"></p>
-        <div class="sbar bsbar">
-          <span class="stag"><i class="sw" aria-hidden="true"></i>CH1 入力インピーダンス <b id="z-div"></b>/div</span>
+        <div class="sbar static bsbar">
+          <span class="stag"><i class="sw" aria-hidden="true"></i>CH1 入力インピーダンス <b class="hw" id="z-div" data-ph="20 MPa·s/m³"></b>/div</span>
           <span class="stag"><i class="sw c3" aria-hidden="true"></i>鳴っている音の倍音</span>
           <span class="stag"><i class="sw c2" aria-hidden="true"></i>唇の共振</span>
           <span class="stag">X LOG <b>60 Hz – 2 kHz</b></span>

@@ -6,6 +6,7 @@ import type { Vec3 } from '../../lib/brdf';
 import { Choice } from '../../lib/choice';
 import { $, $$ } from '../../lib/dom';
 import { ParamGroup } from '../../lib/param';
+import { reserveHeight } from '../../lib/reserve';
 import { addRow, mark } from '../../lib/reset';
 import { forget, store, stored } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
@@ -356,6 +357,20 @@ $$<HTMLCanvasElement>('[data-fur]').forEach((cv) => {
 
 /* 項 */
 const termsEl = $('#terms');
+/* 反射モデルで項の数が違い、折り返しの段数が変わる。いちばん段の多いモデルの高さを取っておく */
+reserveHeight(
+  termsEl,
+  Object.values(TERMS).map((list) =>
+    list
+      .map((x) =>
+        typeof x === 'string'
+          ? `<span class="sh-op">${x}</span>`
+          : `<figure class="sh-tm"><div class="sh-st"><div style="aspect-ratio:1"></div></div><figcaption>${x[1]}</figcaption></figure>`,
+      )
+      .join(''),
+  ),
+  { html: true },
+);
 function buildTerms(): void {
   const list = TERMS[termM$.value];
   termsEl.replaceChildren(
