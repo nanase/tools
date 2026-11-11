@@ -189,7 +189,7 @@ export const VOL: ParamDef = row({
   unit: 'dB',
   min: -60,
   max: 10,
-  v: -10,
+  v: -14,
   ph: '例 −10',
   list: linList(-60, 10, 1),
   jump: 6,

@@ -10,7 +10,7 @@ import { handheld } from '../../lib/pause';
 import { store, stored } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
 import { EngineAudio } from '../engine/audio';
-import { VOL } from '../engine/params';
+import { VOL as ENGINE_VOL } from '../engine/params';
 import type { MufflerId } from '../engine/spec';
 import {
   cfLabel,
@@ -679,6 +679,8 @@ S.muf =
   }).value as MufflerId) === 'delta'
     ? 'delta'
     : 'stock';
+/* 音量の行はエンジンと同じで、既定値だけ変える */
+const VOL = { ...ENGINE_VOL, v: -9 };
 new ParamGroup<'vol'>([VOL], (v) => {
   volDb = v.vol;
   audio.vol(v.vol);

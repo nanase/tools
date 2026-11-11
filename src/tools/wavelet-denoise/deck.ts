@@ -9,6 +9,8 @@ const AC: Ctor | undefined =
 
 /** 鳴らし始めるまでの余裕 [s] */
 const LEAD = 0.03;
+/** 聴いている音に掛ける倍率。ほかのページと同じ聞こえの大きさ（−26 LUFS）に合わせる */
+const OUT = 10 ** (-4 / 20);
 
 export class Deck {
   private a: AudioContext | null = null;
@@ -68,7 +70,7 @@ export class Deck {
         g = a.createGain();
       s.buffer = b;
       s.loop = true;
-      g.gain.value = i === this.sel ? 1 : 0;
+      g.gain.value = i === this.sel ? OUT : 0;
       s.connect(g).connect(a.destination);
       s.start(at, Math.min(from, b.duration));
       this.gains[i] = g;
@@ -110,7 +112,7 @@ export class Deck {
     const a = this.a;
     if (a && this.playing)
       this.gains.forEach((g, j) => {
-        g.gain.setTargetAtTime(j === i ? 1 : 0, a.currentTime, 0.003);
+        g.gain.setTargetAtTime(j === i ? OUT : 0, a.currentTime, 0.003);
       });
     this.onState();
   }

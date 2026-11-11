@@ -167,7 +167,7 @@ export const PARAMS: (ParamDef & { k: Key })[] = [
     unit: 'dB',
     min: -80,
     max: 30,
-    v: -30,
+    v: -27,
     ph: '例 −30',
     list: linList(-80, 30, 1),
     jump: 10,

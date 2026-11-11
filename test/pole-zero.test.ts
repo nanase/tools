@@ -350,6 +350,6 @@ describe('入力の定義', () => {
   it('角度は 0 … 180°', () => {
     const d = SEL[1];
     expect(resolve(d, valueList(d, 12), formatter(d), 200)).toMatchObject({ w: 180 });
-    expect(PARAMS.find((x) => x.k === 'vol')?.v).toBe(-30);
+    expect(PARAMS.find((x) => x.k === 'vol')?.v).toBe(-27);
   });
 });

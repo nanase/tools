@@ -174,7 +174,7 @@ export const VOL: ParamDef = lin({
   unit: 'dB',
   min: -60,
   max: 20,
-  v: -10,
+  v: -12,
   ph: '例 −20',
   step: 1,
   big: 6,

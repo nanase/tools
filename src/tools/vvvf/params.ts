@@ -44,7 +44,7 @@ export const PARAMS: (ParamDef & { k: PKey })[] = [
     unit: 'dB',
     min: -60,
     max: 0,
-    v: -12,
+    v: -14,
     ph: '例 -12',
     list: linList(-60, 0, 1),
     jump: 6,
