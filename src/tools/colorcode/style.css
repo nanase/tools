@@ -7,8 +7,9 @@
   .a-thy{grid-column:1/-1}
 }
 
-/* 温度係数の行: 6 本帯でないときだけ注記を出す */
-#s-tc:empty{display:none}
+/* 温度係数の行: 6 本帯でないときはチップの代わりに知らせを出す。2 つを同じ升に重ね、帯の数で行の高さを変えない */
+#p-tc>.c-sub{display:grid}
+#p-tc>.c-sub>*{grid-area:1/1;align-self:start}
 
 /* results */
 .m-q{margin-left:.5em;font:500 12.5px var(--sans);color:var(--ink-2)}

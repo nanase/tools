@@ -68,7 +68,8 @@ const RULE_LIST = RULES.map((r) => ({ id: r.id, name: r.name }));
         <button type="button" data-v="ans" aria-pressed="true">答え</button>
         <button type="button" data-v="steps" aria-pressed="false">手順の数</button>
       </div>
-      <div class="ep-mw"><table class="ep-mt" id="ep-mx"></table></div>
+      {/* 表の中身は右上のボタンで入れ替える（表示の切り替え）ので検査から外す（design/page.md） */}
+      <div class="ep-mw" data-shift="ok"><table class="ep-mt" id="ep-mx"></table></div>
       <p class="ep-note" id="ep-matN"></p>
     </Panel>
 

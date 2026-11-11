@@ -97,7 +97,8 @@ const short = (s: string) => s.replace(/（.*）/, '');
     </Panel>
 
     <Panel hid="hd-cmp" title="計算結果" class="a-cmp">
-      <div class="ls-rw"><table class="ls-rt" id="ls-rt"></table></div>
+      {/* 行は比較に選んだデータ構造で、ボタンで出し入れする（表示の切り替え）ので検査から外す（design/page.md） */}
+      <div class="ls-rw" data-shift="ok"><table class="ls-rt" id="ls-rt"></table></div>
     </Panel>
 
     <div class="col">

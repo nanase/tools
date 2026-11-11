@@ -1060,6 +1060,8 @@ function drawTiles(): void {
     y.textContent = yearStr(m.e.entry.year);
     const s = document.createElement('small');
     s.textContent = m.here ? `${site.name}で見える` : TYPE_S[m.e.entry.type];
+    /* 札は 2 行で省くので、全文は指すと出す */
+    s.title = s.textContent;
     b.append(y, s);
     box.append(b);
   }

@@ -102,7 +102,8 @@ const PRESET_NAMES = PRESETS.map((p) => p.name);
         <button type="button" data-v="steps" aria-pressed="true">比較の回数</button>
         <button type="button" data-v="feat" aria-pressed="false">記法と手間</button>
       </div>
-      <div class="rx-mw"><table class="rx-lt" id="rx-lt"></table></div>
+      {/* 表の中身は右上のボタンで入れ替える（表示の切り替え）ので検査から外す（design/page.md） */}
+      <div class="rx-mw" data-shift="ok"><table class="rx-lt" id="rx-lt"></table></div>
     </Panel>
 
     <Panel hid="hd-cmp" title="計算結果" class="a-cmp">

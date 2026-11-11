@@ -85,8 +85,9 @@ function renderRows(): void {
   }
   const on = code.n === 6;
   $('#p-tc').classList.toggle('off', !on);
-  txt('#s-tc', on ? '' : '6 本帯のときに使います');
-  $('#tcC').hidden = !on;
+  /* 知らせとチップは同じ升に重ねてあり（style.css）、見える方だけを切り替える。行の高さは変わらない */
+  $('#s-tc').style.visibility = on ? 'hidden' : '';
+  $('#tcC').style.visibility = on ? '' : 'hidden';
   for (const b of tcBtns) {
     b.setAttribute('aria-pressed', String(on && b.dataset.k === code.tc));
     b.tabIndex = on ? 0 : -1;

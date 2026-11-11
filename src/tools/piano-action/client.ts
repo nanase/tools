@@ -164,15 +164,28 @@ function setRun(R: Run): void {
 }
 
 /* ---------- 段階のコマ ---------- */
+/** 高さを取っておく段階の数（ふつうの打鍵の段階の数） */
+const STAGE_HOLD = 7;
 function frames(): void {
   if (!run) return;
   const R = run,
     box = $('#frames');
-  box.style.setProperty('--nf', String(L.length));
-  box.innerHTML = L.map((s, i) => {
+  /* 段階の数（打鍵と整調で 4〜7 以上）でコマの幅と段の数が変わり、下が動く。列は 7 つ以上にし、7 コマの高さを取っておく */
+  box.style.setProperty('--nf', String(Math.max(STAGE_HOLD, L.length)));
+  const html = L.map((s, i) => {
     const q = qAt(R, Math.round(repT(s) / FRAME));
     return `<button type="button" class="fr${BAD.has(s.id) ? ' bad' : ''}" data-k="${i}" aria-pressed="false"><span class="no">${i + 1}</span><span class="fth">${thumbSvg(q, R.q0, R.rig, FOCUS[s.id])}</span><b>${esc(s.name)}</b><small>${ms(s.t0)}</small></button>`;
-  }).join('');
+  });
+  box.innerHTML = html.join('');
+  reserveHeight(
+    box,
+    [
+      Array(STAGE_HOLD)
+        .fill(html[0] ?? '')
+        .join(''),
+    ],
+    { html: true },
+  );
 }
 $('#frames').addEventListener('click', (e) => {
   const b = (e.target as Element).closest<HTMLElement>('.fr');
@@ -303,11 +316,14 @@ function setPlaying(on: boolean): void {
 /* ---------- 段階の時間・計算結果 ---------- */
 function timeline(): void {
   const lg = (t: number) => Math.log10(Math.max(1e-4, t));
-  $('#tl').innerHTML = L.map((s, i) => {
+  const rows = L.map((s, i) => {
     const len = s.t1 - s.t0,
       w = Math.max(1.5, ((lg(len) + 4) / 4) * 85);
     return `<span class="nm" data-k="${i}">${i + 1} ${esc(s.name)}</span><span class="row"><span class="bar" data-k="${i}" style="width:${w.toFixed(1)}%"></span><span class="len">${len < 0.01 ? (len * 1000).toFixed(1) : Math.round(len * 1000)} ms</span></span>`;
-  }).join('');
+  });
+  $('#tl').innerHTML = rows.join('');
+  /* 段階の数で行の数が変わり、下が動く。7 段階の高さを取っておく */
+  reserveHeight($('#tl'), [(rows[0] ?? '').repeat(STAGE_HOLD)], { html: true });
 }
 function results(): void {
   if (!run || !E) return;

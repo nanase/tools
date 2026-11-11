@@ -26,6 +26,7 @@ import {
   shadowPoint,
 } from '../../lib/planet/view';
 import { PanZoom } from '../../lib/planet/zoom';
+import { reserveHeight } from '../../lib/reserve';
 import { initToolPage } from '../../lib/tool-page';
 import { orbitSat, TILT, tiltChart, tiltYear } from './figs';
 import { GM_SAT, INNER, innerPos, SATURN_MODEL as M, MOONS, RE, RP, ringTilt } from './model';
@@ -800,6 +801,16 @@ $('#nowbtn').addEventListener('click', () => {
   setJd(nowJd(), true);
   setLive(true);
 });
+/* 主な日時のボタンは、日付の桁や探している間の「…」で幅が変わり折り返しが変わる。4 つとも最も長い日付で並んだ高さを取っておく */
+reserveHeight(
+  $('#keys'),
+  [
+    ['衝', '環の開きが最大', '次に環が真横', 'タイタンの影']
+      .map((l) => `<button type="button" class="chip">${l} <small>2099/12/31</small></button>`)
+      .join(''),
+  ],
+  { html: true },
+);
 $('#keys').addEventListener('click', (e) => {
   const b = (e.target as Element).closest<HTMLElement>('.chip');
   if (!b) return;

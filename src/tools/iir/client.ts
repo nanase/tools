@@ -7,7 +7,6 @@ import { $ } from '../../lib/dom';
 import { same } from '../../lib/eseries';
 import { fmt, fmtR, parts, ro } from '../../lib/format';
 import { ParamGroup } from '../../lib/param';
-import { reserveHeight } from '../../lib/reserve';
 import { DV, SW } from '../../lib/scope';
 import { storeToggle } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
@@ -852,16 +851,19 @@ G.on('fs', (fs) => {
   reconcile();
   patchEdges();
 });
-/* 端の行の項目名は近似・応答・設計の方法で変わる。いちばん高くなる名前の分の高さを取っておく */
+/*
+ * 端の行の項目名は近似・応答・設計の方法で変わる。入りうる名前をすべて見えない形で項目名と同じ升に重ね、
+ * いちばん高い名前の分の高さを取っておく（測らずに組むので、欄の幅が変わっても崩れない。style.css の .iir-gh）
+ */
 for (const k of EDGES) {
   const names = new Set<string>();
   for (const { v: kd } of KINDS)
-    for (const { v: rs } of RESPS)
-      for (const [md] of MODES) {
-        const l = edgeLabel(k, kd, rs, md);
-        names.add(`<span class="sr">${l.nm} </span>${l.name}`);
-      }
-  reserveHeight($(`#n-${k}`), [...names], { html: true });
+    for (const { v: rs } of RESPS) for (const [md] of MODES) names.add(edgeLabel(k, kd, rs, md).name);
+  const gh = document.createElement('span');
+  gh.className = 'iir-gh';
+  gh.setAttribute('aria-hidden', 'true');
+  for (const n of names) gh.append(Object.assign(document.createElement('span'), { textContent: n }));
+  $(`#n-${k}`).after(gh);
 }
 applyState();
 compute();
