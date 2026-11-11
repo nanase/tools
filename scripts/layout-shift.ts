@@ -107,7 +107,8 @@ function probe(): void {
           R = new Set(ch.filter((c) => !Z.has(c.el)).map((c) => c.el));
         for (const c of ch) {
           const show = Z.has(c.el);
-          if (show && c.el.parentElement && Z.has(c.el.parentElement)) continue;
+          /* 出る・消えるものは、親の高さが変わったときだけ数える（1 行の表示の行の中など、親が動かなければ揺れない） */
+          if (show && c.el.parentElement && (Z.has(c.el.parentElement) || !R.has(c.el.parentElement))) continue;
           if (!show && [...R, ...Z].some((o) => o !== c.el && c.el.contains(o))) continue;
           let inA = false;
           for (let e: Element | null = c.el; e; e = e.parentElement) if (anchors.has(e)) inA = true;
