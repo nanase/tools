@@ -1,4 +1,4 @@
-/** 二分ヒープのページの入力の定義（速さ・要素数・音量）。音量はリスト・キュー・スタックと同じ */
+/** 二分ヒープのページの入力の定義（速さ・要素数・音量）。音量の行はリスト・キュー・スタックと同じで、既定値だけ変える */
 import type { ParamDef } from '../../lib/param-def';
 import { VOL as LS_VOL } from '../list-queue-stack/params';
 
@@ -29,7 +29,7 @@ export const SPEED: ParamDef & { k: Key } = {
     [10, '10'],
   ],
 };
-export const VOL: ParamDef & { k: Key } = LS_VOL;
+export const VOL: ParamDef & { k: Key } = { ...LS_VOL, v: -6 };
 
 /** 段がちょうど埋まる数だけを選ぶ */
 export const SIZE: ParamDef & { k: Key } = {

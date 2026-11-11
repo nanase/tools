@@ -146,7 +146,7 @@ export const SWELL: ParamDef = {
 
 /* ---------- 演奏と音 ---------- */
 /** 音量の初期値 [dB]（0 dB で、1 m 先の音圧 1 Pa をフルスケールにする）。プレヌムの和音は 1 m 先で数 Pa になる */
-export const VOL0 = -20;
+export const VOL0 = -25;
 
 /* ---------- 選択肢 ---------- */
 /** A4 の周波数 [Hz] */

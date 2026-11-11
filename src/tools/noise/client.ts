@@ -12,7 +12,7 @@ import { ParamGroup } from '../../lib/param';
 import { DV } from '../../lib/scope';
 import { store, stored } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
-import { VOL } from '../fm-synth/params';
+import { VOL as FM_VOL } from '../fm-synth/params';
 import {
   type Axis,
   type AxisFn,
@@ -94,6 +94,8 @@ const audio = new NoiseAudio();
 const seed = () => Math.floor(Math.random() * 2 ** 32);
 
 /* ---------- 入力 ---------- */
+/* 音量の行は FM 音源と同じで、既定値だけ変える */
+const VOL = { ...FM_VOL, v: -6 };
 const g = new ParamGroup<Key | 'vol'>([VOL, ...PARAMS], (v, k) => {
   if (!k) {
     Object.assign(S, { den: v.den, clk: v.clk, hd: v.hd, N: v.fft, top: v.top, bot: v.bot });

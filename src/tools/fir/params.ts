@@ -247,7 +247,7 @@ const DEFS: Def[] = [
     unit: 'dB',
     min: -80,
     max: 30,
-    v: -30,
+    v: -20,
     ph: '例 −30',
     list: linList(-80, 30, 1),
     jump: 10,

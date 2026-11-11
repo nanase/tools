@@ -108,7 +108,7 @@ export const VOL: ParamDef = {
   unit: 'dB',
   min: -40,
   max: 0,
-  v: -6,
+  v: -7,
   ph: '例 −12',
   list: linList(-40, 0, 1),
   jump: 6,

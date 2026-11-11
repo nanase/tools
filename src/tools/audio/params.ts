@@ -31,7 +31,7 @@ export const TF_PARAM: ParamDef & { k: InKey } = {
   ],
 };
 
-/** モニターの音量（JJY シミュレータの音量と同じ範囲・初期値） */
+/** モニターの音量（JJY シミュレータの音量と同じ範囲） */
 export const VOL_PARAM: ParamDef & { k: InKey } = {
   k: 'vol',
   nm: 'A',

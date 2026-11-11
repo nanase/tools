@@ -279,7 +279,7 @@ export const DIST: ParamDef = lin({
 
 /* ---------- 演奏と音 ---------- */
 /** 音量の初期値 [dB]（0 dB で、1 m 先の音圧 1 Pa をフルスケールにする） */
-export const VOL0 = -10;
+export const VOL0 = -8;
 
 /* ---------- 選択肢 ---------- */
 /** フレットノイズの大きさ */

@@ -178,7 +178,7 @@ export const DIST: ParamDef = lin({
 
 /* ---------- 演奏と音 ---------- */
 /** 音量の初期値 [dB]（0 dB で、1 m 先の音圧 1 Pa をフルスケールにする） */
-export const VOL0 = -10;
+export const VOL0 = -16;
 /** 曲で使う弓圧の、標準に対する割合 [%] */
 export const PRESS: ParamDef = lin({
   k: 'bowp',
