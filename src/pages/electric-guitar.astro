@@ -47,7 +47,8 @@ const presetSub = (p: (typeof PRESETS)[number]) =>
           <div class="eg-lg"><span>機材を押す: 設定</span><span>＋: 機材を追加</span><span>ドラッグ: 並べ替え</span><span>丸いスイッチ: オンとスルー</span><span><Fragment set:html={EAR} />: 試聴中</span></div>
         </div>
         <div id="v-list" hidden>
-          <div class="eg-ls" id="list"></div>
+          {/* 行の数はペダルの台数で決まり、プリセットや追加・削除で中身ごと入れ替わる（揺れの検査から外す） */}
+          <div class="eg-ls" id="list" data-shift="ok"></div>
         </div>
 
         <div class="eg-pop" id="pop" hidden role="dialog" aria-labelledby="pop-name">
