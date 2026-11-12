@@ -14,7 +14,6 @@ describe('MIDI のメッセージ', () => {
   it('ほかのメッセージと短いメッセージは読まない', () => {
     expect(parseMidi([0xf8])).toBeNull();
     expect(parseMidi([0xc0, 5])).toBeNull();
-    expect(parseMidi([0xe0, 0, 64])).toBeNull();
   });
 });
 

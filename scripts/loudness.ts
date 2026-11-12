@@ -29,7 +29,7 @@ const SCENES: Record<string, Scene> = {};
 const put = (pages: string[], s: Scene) => {
   for (const p of pages) SCENES[p] = s;
 };
-put(['piano', 'organ', 'guitar', 'violin', 'trumpet', 'fm-synth'], { click: ['#tp-pp'], dur: 30 });
+put(['piano', 'organ', 'guitar', 'violin', 'trumpet', 'fm-synth', 'electric-guitar'], { click: ['#tp-pp'], dur: 30 });
 put(['piano-action'], { click: ['#tp-pp'], dur: 20 });
 /* ヘッドレスでは開いたときに止まっていることがあるので、止まっていれば押す */
 put(['sort', 'list-queue-stack', 'binary-heap', 'b-tree', 'red-black-tree', 'dictionary', 'expression-parsing'], {

@@ -1,0 +1,202 @@
+/* エレキギターのページだけのスタイル（共通は src/styles/site.css）。クラスは eg- で始める */
+
+/* 枠の並び。スマホは 機材 → 指板 → 波形とスペクトル → 音色 → 演奏 → MIDI → しくみ → 式。
+   PC は左の列に 機材・指板・波形とスペクトル、右の列に 音色・演奏・MIDI、その下に しくみ・式（全幅） */
+.c1,.c2{display:contents}
+.a-rig{order:1}.a-fret{order:2}.a-out{order:3}.a-tone{order:4}.a-play,.a-midi{order:5}.a-how{order:7}.a-thy{order:8}
+@media (min-width:1000px){
+  .tgrid{grid-template-columns:minmax(0,1.9fr) minmax(340px,1fr);grid-template-areas:"c1 c2" "how how" "thy thy";align-items:start}
+  .c1,.c2{display:flex;flex-direction:column;gap:26px;min-width:0}
+  .c1{grid-area:c1}.c2{grid-area:c2}.a-how{grid-area:how}.a-thy{grid-area:thy}
+}
+
+.eg-cv{display:block;width:100%;border-radius:var(--r);background:var(--screen)}
+.eg-hW{height:150px}.eg-hS{height:110px}.eg-hF{height:170px}.eg-hC{height:170px}
+.eg-sp{margin-top:10px}
+.eg-charw{margin-bottom:8px}
+.eg-lg{display:flex;flex-wrap:wrap;gap:4px 14px;margin:8px 2px 0;font:500 12px/1.4 var(--sans);color:var(--ink-3)}
+.eg-lg svg,.eg-lsn svg,.eg-hear>svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linejoin:round;vertical-align:-2px}
+.eg-lsn{display:inline-flex;align-items:center;gap:6px}
+.eg-lsn[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--surface)}
+
+/* 機材の図 */
+.eg-rigw{border-radius:var(--r);background:var(--inset)}
+.eg-rig{display:block;width:100%;height:auto;user-select:none;-webkit-user-select:none}
+.eg-dev{cursor:pointer}
+.eg-dev:focus-visible{outline:none}
+.eg-dev:focus-visible .eg-pd,.eg-dev:focus-visible .eg-amp,.eg-dev:focus-visible .eg-body{stroke:var(--focus);stroke-width:3}
+.eg-hit{fill:transparent}
+.eg-body,.eg-pd,.eg-amp{fill:var(--surface);stroke:var(--ink-3);stroke-width:1.5}
+.eg-neck,.eg-head{fill:var(--inset);stroke:var(--ink-3);stroke-width:1.5}
+.eg-str{fill:none;stroke:var(--ink-3);stroke-width:.8}
+.eg-br{fill:var(--ink-3)}
+.eg-puR{fill:var(--inset);stroke:var(--ink-3);stroke-width:1.5}
+.eg-puR.on{fill:color-mix(in srgb,var(--ch2) 35%,var(--surface));stroke:var(--ch2)}
+.eg-kb{fill:var(--inset);stroke:var(--ink-3);stroke-width:1.5}
+.eg-kp{stroke:var(--ink);stroke-width:2;stroke-linecap:round}
+.eg-led{fill:var(--led-off)}
+.eg-led.on{fill:var(--accent);filter:drop-shadow(0 0 4px var(--accent))}
+.eg-fs{fill:var(--inset);stroke:var(--ink-3);stroke-width:1.5}
+.eg-fsh{fill:transparent}
+[data-fs]:hover .eg-fs{stroke:var(--ink)}
+.eg-dl{font:700 14px/1 var(--sans);fill:var(--ink-2);text-anchor:middle}
+.eg-dls{font-size:11px;font-weight:500;fill:var(--ink-3)}
+.eg-sec{font:500 12px/1 var(--sans);fill:var(--ink-3)}
+.eg-spk{fill:var(--inset);stroke:var(--ink-3);stroke-width:1.5}
+.eg-spkc{fill:var(--surface);stroke:var(--ink-3)}
+.eg-mic{fill:var(--ink-2);stroke:none}
+.eg-out{fill:none;stroke:var(--ink-3);stroke-width:1.5;stroke-linejoin:round}
+.eg-sel .eg-out{stroke:var(--ch1);stroke-width:2.5}
+.eg-cab{fill:none;stroke:var(--ink-3);stroke-width:2}
+.eg-ahf{fill:var(--ink-3)}
+.eg-dev:hover .eg-pd,.eg-dev:hover .eg-amp,.eg-dev:hover .eg-body{stroke:var(--ink)}
+.eg-sel .eg-pd,.eg-sel .eg-amp,.eg-sel .eg-body{stroke:var(--ch1);stroke-width:3}
+.eg-sel .eg-dl{fill:var(--ch1)}
+.eg-earb circle{fill:var(--ch1)}
+.eg-earb path{fill:none;stroke:var(--screen);stroke-width:1.6;stroke-linejoin:round}
+
+/* 一覧: 左に種類の色の帯、名前、オンとスルー、波形、特性、並べ替え、試聴 */
+.eg-ls{position:relative;display:flex;flex-direction:column}
+.eg-st{display:grid;grid-template-columns:10px minmax(110px,1fr) 74px minmax(0,1.5fr) minmax(0,1fr) 62px 58px;gap:8px;align-items:center;padding:6px;border:1px solid var(--line-2);border-radius:var(--r);cursor:pointer}
+.eg-st.fx{background:var(--inset)}
+.eg-st:hover{border-color:var(--ink-3)}
+.eg-st.sel{border-color:var(--ch1);box-shadow:inset 0 0 0 1px var(--ch1)}
+.eg-st.sel .eg-stn b{color:var(--ch1)}
+.eg-st.byp .eg-stn,.eg-st.byp .eg-mw,.eg-st.byp .eg-mc{opacity:.55}
+.ls-st{align-self:stretch;border-radius:3px;background:var(--pc,var(--line-2))}
+/* つかんで並べ替える帯: 点の模様 */
+.ls-grip{background-image:radial-gradient(circle,rgb(255 255 255/.8) 1.1px,transparent 1.5px);background-size:5px 5px;background-position:center;cursor:grab;touch-action:none}
+.ls-grip:hover{filter:brightness(1.15)}
+.ls-dragging{opacity:.5}
+.ls-dragging .ls-grip{cursor:grabbing}
+.ls-drop{position:absolute;left:0;right:0;height:3px;margin-top:-1.5px;border-radius:2px;background:var(--ch1);pointer-events:none}
+.eg-ob{display:flex;align-items:center;gap:6px}
+.eg-spkI{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linejoin:round;stroke-linecap:round}
+.eg-stn{display:flex;flex-direction:column;gap:3px;min-height:44px;justify-content:center;padding:2px 4px}
+.eg-stn b{font:700 14px/1.2 var(--sans)}
+.eg-sub{font:500 11.5px/1.2 var(--sans);color:var(--ink-3)}
+.eg-on2{min-width:0;padding:0 8px}
+.eg-mv button{flex:1 1 0;min-width:0;padding:0 8px}
+.eg-mv button:disabled{opacity:.35;cursor:default}
+.eg-mw,.eg-mc{height:56px}
+.eg-ear{display:flex;flex-direction:column;align-items:center;gap:2px;width:58px;padding:4px 0;border:1px solid var(--line);border-radius:4px;background:none;color:var(--ink-3);font:500 10.5px/1 var(--sans);cursor:pointer}
+.eg-ear svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linejoin:round}
+.eg-ear:hover{border-color:var(--ink-3);color:var(--ink)}
+.eg-ear[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--surface)}
+.eg-arw{display:flex;justify-content:center;height:16px}
+.eg-arw svg{width:12px;height:14px}
+.eg-arw path{stroke:var(--ink-3);stroke-width:1.5;fill:none}
+.eg-arw .eg-ah{fill:var(--ink-3);stroke:none}
+.ls-add{align-self:center;min-height:32px;padding:0 14px;border:1px dashed var(--line-2);border-radius:4px;background:none;color:var(--ink-3);font:500 12.5px/1 var(--sans);cursor:pointer}
+.ls-add:hover,.ls-add.on{color:var(--ink);border-color:var(--ink-3)}
+@media (max-width:620px){
+  .eg-st{grid-template-columns:10px minmax(0,1fr) auto auto;grid-template-areas:"s n o e" "s w w w" "s c c m"}
+  .ls-st{grid-area:s}.eg-stn{grid-area:n}.eg-on2{grid-area:o}.eg-ear{grid-area:e}.eg-mw{grid-area:w}.eg-mc{grid-area:c}.eg-mv{grid-area:m}
+  .eg-st>span:empty{display:none}
+}
+
+/* ペダルの種類の色（筐体の上の帯・一覧の帯・足す窓の印） */
+.g-dyn{--pc:#3fa36b}.g-flt{--pc:#c08a2b}.g-drv{--pc:#d0582f}.g-mod{--pc:#4a84d8}.g-amb{--pc:#8a63c8}.g-fix{--pc:var(--line-2)}
+.eg-stripe{fill:var(--pc)}
+.eg-dl-s{font-size:11.5px}
+.eg-byp .eg-pd,.eg-byp .eg-pdp{opacity:.55}
+.eg-byt{font:700 11px/1 var(--sans);fill:var(--ink-3);text-anchor:middle}
+/* 足す所（＋）・ドラッグ */
+.eg-plus{cursor:pointer}
+.eg-plus circle{fill:var(--surface);stroke:var(--ink-3);stroke-width:1.5;stroke-dasharray:3 2}
+.eg-plus path{stroke:var(--ink-2);stroke-width:2;stroke-linecap:round}
+.eg-plus:hover circle,.eg-plus.on circle{stroke:var(--ch1);stroke-dasharray:none}
+.eg-plus.on circle{fill:var(--ch1)}
+.eg-plus.on path{stroke:var(--screen)}
+.eg-plus:focus-visible{outline:none}
+.eg-plus:focus-visible circle{stroke:var(--focus);stroke-width:3}
+.eg-drop{stroke:var(--ch1);stroke-width:4;stroke-linecap:round}
+.eg-drag{opacity:.85;pointer-events:none}
+.eg-dev[data-dev^="p"]{touch-action:none}
+
+/* 設定の窓・ペダルを足す窓。全体図では機材の下に浮かせ、一覧と狭い画面では行の下に入れる */
+.eg-rigw{position:relative;overflow:visible}
+.eg-pop{z-index:12;padding:10px 12px 12px;border:1px solid var(--line-2);border-radius:8px;background:var(--surface)}
+.eg-pop.pp-f{position:absolute;box-shadow:0 10px 28px rgb(0 0 0 / .32)}
+.eg-pop.pp-f::before{content:"";position:absolute;top:-7px;left:calc(var(--ax) - 7px);width:12px;height:12px;background:var(--surface);border-left:1px solid var(--line-2);border-top:1px solid var(--line-2);transform:rotate(45deg)}
+.eg-pop.pp-in{position:relative;margin:8px 0}
+.pp-h{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.pp-h b{margin-right:auto;font-size:15px}
+.pp-on{min-width:72px}
+.pp-x{width:30px;height:30px;padding:0;border:1px solid var(--line);border-radius:4px;background:none;color:var(--ink-2);font-size:16px;line-height:1;cursor:pointer}
+.pp-x:hover{border-color:var(--ink-3);color:var(--ink)}
+.pp-tools{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px}
+.pp-tools .seg button{min-width:34px}
+.pp-tools .seg button:disabled{opacity:.35;cursor:default}
+.pp-del{margin-left:auto;color:var(--warn)!important}
+.eg-pop .ptab .prow{padding-left:0;padding-right:0}
+.mn-g{display:grid;grid-template-columns:5.5em 1fr;gap:6px;align-items:start;margin-top:6px}
+.mn-g>span{padding-top:8px;font:500 11.5px/1.2 var(--sans);color:var(--ink-3)}
+.mn-l{display:flex;flex-wrap:wrap;gap:5px}
+.mn-b{display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:0 9px;border:1px solid var(--line-2);border-radius:4px;background:var(--inset);color:var(--ink);font:500 12.5px/1 var(--sans);cursor:pointer}
+.mn-b i{width:8px;height:14px;border-radius:2px;background:var(--pc)}
+.mn-b:hover{border-color:var(--ink-3)}
+
+/* 音色 */
+.eg-pre{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
+.eg-pk{display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-height:48px;padding:7px 10px;border:1px solid var(--line-2);border-radius:var(--r);background:var(--inset);color:var(--ink);text-align:left;cursor:pointer}
+.eg-pk b{font:700 13.5px/1.2 var(--sans)}
+.eg-pk small{font:500 11px/1.3 var(--sans);color:var(--ink-3)}
+.eg-pk:hover{border-color:var(--ink-3)}
+.eg-pk[aria-pressed="true"]{background:var(--surface);border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+
+/* 演奏: フレーズは 伴奏・リフ・単音 の組に分けて並べる */
+.eg-phs{display:flex;flex-direction:column;gap:6px}
+.eg-phg{display:grid;grid-template-columns:3.2em minmax(0,1fr);align-items:start;gap:6px}
+.eg-phg>span{padding-top:7px;font:500 11.5px/1.2 var(--sans);color:var(--ink-3)}
+.eg-phg .chips{margin-top:0}
+.eg-hear{display:flex;align-items:center;flex-wrap:wrap;gap:6px 8px;min-height:44px;padding:6px 8px;border-bottom:1px solid var(--line);font:500 12.5px/1.3 var(--sans);color:var(--ink-3)}
+.eg-hear b{margin-right:auto;font-size:13.5px;color:var(--ink)}
+
+
+/* しくみ */
+.eg-how{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px}
+.eg-how li{border:1px solid var(--line);border-radius:var(--r);padding:10px 12px}
+.eg-how h3{display:flex;gap:8px;align-items:center;margin:0 0 8px;font-size:14px}
+.eg-how h3 b{display:inline-grid;place-items:center;flex:none;width:20px;height:20px;border-radius:50%;background:var(--ink);color:var(--surface);font-size:12px}
+.eg-how p{margin:6px 0 0;font-size:13px;line-height:1.5;color:var(--ink-2)}
+.eg-mini{display:block;width:100%;max-width:220px;height:66px;background:var(--screen);border-radius:4px}
+.eg-mini path{fill:none;stroke-width:2;stroke-linejoin:round}
+.eg-l1{stroke:var(--ch1)}.eg-l2{stroke:var(--ch2)}.eg-l0{stroke:var(--grid-2)}
+.eg-lt{stroke:var(--screen-ink);stroke-width:1!important;stroke-dasharray:3 3}
+.eg-thin{stroke-width:1.2!important}
+.eg-fp{fill:var(--ch2);opacity:.5}
+.eg-mt{font:700 10px/1 var(--mono);fill:var(--screen-ink);text-anchor:middle}
+
+/* 機材の図の細部 */
+.eg-guard{fill:color-mix(in srgb,var(--ink-3) 18%,var(--surface));stroke:var(--ink-3);stroke-width:1}
+.eg-fret{fill:none;stroke:var(--ink-3);stroke-width:1}
+.eg-inlay,.eg-pole{fill:var(--ink-3)}
+.eg-peg{fill:var(--surface);stroke:var(--ink-3);stroke-width:1.2}
+.eg-sad{fill:var(--ink-2)}
+.eg-sw{stroke:var(--ink-2);stroke-width:2.5;stroke-linecap:round}
+.eg-jack{fill:var(--inset);stroke:var(--ink-3);stroke-width:1.5}
+.eg-jk{fill:var(--ink-3)}
+.eg-pdp{fill:var(--inset);stroke:none}
+.eg-nut{fill:var(--surface);stroke:var(--ink-3);stroke-width:1.5}
+.eg-fsw{cursor:pointer}
+.eg-fsw:hover .eg-nut,.eg-fsw:hover .eg-fs{stroke:var(--ink)}
+.eg-tread{fill:var(--inset);stroke:var(--ink-3);stroke-width:1.2}
+.eg-grip{stroke:var(--ink-3);stroke-width:1.5;stroke-linecap:round}
+.eg-handle{fill:none;stroke:var(--ink-3);stroke-width:3;stroke-linejoin:round}
+.eg-panel{fill:var(--inset);stroke:none}
+.eg-grill{fill:url(#eg-grill);stroke:var(--ink-3);stroke-width:1}
+.eg-gl{stroke:var(--line-2);stroke-width:1}
+.eg-grill~.eg-spk{fill:none;stroke-dasharray:3 3}
+.eg-stand{stroke:var(--ink-2);stroke-width:2}
+.eg-mic{fill:var(--ink-2)}
+.eg-mich{fill:var(--ink-3);stroke:var(--ink-2)}
+
+/* MIDI の枠の選択（ほかの楽器のページと同じ見た目） */
+.prow.pick{grid-template-columns:var(--sw) auto minmax(0,1fr);grid-template-areas:"sym name val"}
+.c-val.sel{position:relative}
+.c-val.sel select{appearance:none;width:100%;height:30px;padding:0 30px 0 10px;border:1px solid var(--line-2);border-radius:4px;background:var(--inset);color:var(--ink);font:500 13px/1.2 var(--mono);text-overflow:ellipsis;cursor:pointer}
+@media (pointer:coarse){.c-val.sel select{height:36px}}
+.c-val.sel select:hover{border-color:var(--ink-3)}
+.c-val.sel select option{background:var(--surface);color:var(--ink)}
+.c-val.sel::after{content:"";position:absolute;top:50%;right:12px;width:7px;height:7px;border-right:1.6px solid var(--ink-2);border-bottom:1.6px solid var(--ink-2);transform:translateY(-70%) rotate(45deg);pointer-events:none}
