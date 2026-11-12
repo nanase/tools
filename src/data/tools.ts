@@ -315,8 +315,17 @@ export const TOOLS: Tool[] = [
     t: 'PCBコイル',
     d: '基板の配線で作るコイルのインダクタンス・抵抗・Q を求めます。',
     ic: 'pc',
-    r: ['passive-combination', 'timer555', 'jjy', 'colorcode'],
+    r: ['wire-heating', 'passive-combination', 'timer555', 'colorcode'],
     k: 'pcb 共振 コンデンサ スパイラル うずまき アンテナ インダクタンス nfc rfid spiral coil antenna inductor',
+  },
+  {
+    id: 'wire-heating',
+    c: '電子回路',
+    t: '配線の発熱',
+    d: '電流を流した導線の発熱と熱の広がりを計算します。',
+    ic: 'wh',
+    r: ['pcb-coil', 'passive-combination', 'maxwell-demon', 'timer555'],
+    k: 'ジュール熱 温度上昇 許容電流 溶断 ヒューズ 表皮効果 対流 放射 プルーム 銅線 電線 パターン 基板 プリント基板 ipc-2152 joule heating ampacity fusing current trace temperature',
   },
   {
     id: 'pcm',
