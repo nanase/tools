@@ -1,0 +1,92 @@
+---
+// 動作原理と式
+type Ref = { for: string; src: string };
+const REFS: readonly Ref[] = [
+  {
+    for: '横置きの円柱の自然対流',
+    src: 'S. W. Churchill, H. H. S. Chu, “Correlating equations for laminar and turbulent free convection from a horizontal cylinder,” Int. J. Heat Mass Transfer, vol. 18, no. 9, pp. 1049–1053, 1975',
+  },
+  {
+    for: '円柱に直角に当たる風の強制対流',
+    src: 'S. W. Churchill, M. Bernstein, “A correlating equation for forced convection from gases and liquids to a circular cylinder in crossflow,” J. Heat Transfer, vol. 99, no. 2, pp. 300–306, 1977',
+  },
+  {
+    for: '表皮の深さと、電流が片側の面から指数関数的に減るとみなした実効厚さ',
+    src: 'C. P. Yue, S. S. Wong, “Physical Modeling of Spiral Inductors on Silicon,” IEEE Trans. Electron Devices, vol. 47, no. 3, pp. 560–568, 2000',
+  },
+  {
+    for: '横置きの線の熱源の上の層流のプルームの相似解',
+    src: 'B. Gebhart, L. Pera, A. W. Schorr, “Steady laminar natural convection plumes above a horizontal line heat source,” Int. J. Heat Mass Transfer, vol. 13, no. 1, pp. 161–171, 1970',
+  },
+  {
+    for: '点の熱源の上の層流のプルーム',
+    src: 'T. Fujii, “Theory of the steady laminar natural convection above a horizontal line heat source and a point heat source,” Int. J. Heat Mass Transfer, vol. 6, no. 7, pp. 597–606, 1963',
+  },
+];
+---
+<h3>発熱と抵抗</h3>
+<p>電流 <math><mi>I</mi></math> が抵抗 <math><mi>R</mi></math> を流れると、毎秒 <math><msup><mi>I</mi><mn>2</mn></msup><mi>R</mi></math> の熱が出ます（ジュール熱）。抵抗は材料の抵抗率 <math><mi>ρ</mi></math>、長さ <math><mi>L</mi></math>、断面積 <math><mi>A</mi></math> で決まり、抵抗率は温度とともに増えます。</p>
+<div class="eqs">
+  <math display="block"><mrow><mi>R</mi><mo>=</mo><mfrac><mrow><mi>ρ</mi><mi>L</mi></mrow><mi>A</mi></mfrac><mo>,</mo><mspace width="1em"/><mi>ρ</mi><mo stretchy="false">(</mo><mi>T</mi><mo stretchy="false">)</mo><mo>=</mo><msub><mi>ρ</mi><mn>20</mn></msub><mrow><mo>(</mo><mn>1</mn><mo>+</mo><mi>α</mi><mo stretchy="false">(</mo><mi>T</mi><mo>−</mo><mn>20</mn><mo stretchy="false">)</mo><mo>)</mo></mrow></mrow></math>
+</div>
+<p>銅の <math><mi>α</mi></math> は 0.39 %/K で、100 K 上がると抵抗はおよそ 1.4 倍です。熱くなるほど発熱が増えるので、放熱が追いつかない電流では温度が上がり続け、融点に届くと溶断します。</p>
+
+<h3>表皮効果</h3>
+<p>交流では、電流が導体の表面に集まり、中ほどにはあまり流れません。電流が表面から <math><mi>e</mi></math> 分の 1 に減る深さが表皮の深さ <math><mi>δ</mi></math> です。</p>
+<div class="eqs">
+  <math display="block"><mrow><mi>δ</mi><mo>=</mo><msqrt><mfrac><mi>ρ</mi><mrow><mi>π</mi><mi>f</mi><msub><mi>μ</mi><mn>0</mn></msub></mrow></mfrac></msqrt></mrow></math>
+</div>
+<p>丸線は Bessel 関数の厳密解で、交流抵抗と直流抵抗の比を求めます。半径 <math><mi>a</mi></math> が <math><mi>δ</mi></math> よりずっと大きいと、比は <math><mfrac><mi>a</mi><mrow><mn>2</mn><mi>δ</mi></mrow></mfrac><mo>+</mo><mfrac><mn>1</mn><mn>4</mn></mfrac></math> に近づきます。角線と基板の銅箔は、各面から指数関数的に減るとみなした実効厚さ <math><mi>δ</mi><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><msup><mi>e</mi><mrow><mo>−</mo><mi>t</mi><mo>/</mo><mi>δ</mi></mrow></msup><mo stretchy="false">)</mo></math> で電流の通り道を狭めます<a href="#thy-r3">[3]</a>。</p>
+
+<h3>放熱</h3>
+<p>線の表面からは、対流と放射で熱が逃げます。対流は温まった空気が昇って運ぶ熱で、横置きの円柱の式で熱伝達率 <math><mi>h</mi></math> を求めます<a href="#thy-r1">[1]</a>。風があるときは強制対流の式<a href="#thy-r2">[2]</a>と合わせます。角線は外周の等しい丸線とみなします。</p>
+<div class="eqs">
+  <math display="block"><mrow><msup><mi>q</mi><mo>′</mo></msup><mo>=</mo><mi>p</mi><mrow><mo>[</mo><mi>h</mi><mo stretchy="false">(</mo><msub><mi>T</mi><mi>s</mi></msub><mo>−</mo><msub><mi>T</mi><mi>a</mi></msub><mo stretchy="false">)</mo><mo>+</mo><mi>ε</mi><mi>σ</mi><mo stretchy="false">(</mo><msubsup><mi>T</mi><mi>s</mi><mn>4</mn></msubsup><mo>−</mo><msubsup><mi>T</mi><mi>a</mi><mn>4</mn></msubsup><mo stretchy="false">)</mo><mo>]</mo></mrow></mrow></math>
+</div>
+<p><math><mi>p</mi></math> は外周、<math><msub><mi>T</mi><mi>s</mi></msub></math> は表面の温度、<math><msub><mi>T</mi><mi>a</mi></msub></math> は気温、<math><mi>ε</mi></math> は放射率です。放射は絶対温度の 4 乗で効くので、高温ほど急に大きくなります。被覆があるときは、被覆の熱抵抗の分だけ表面の温度が導体より低くなります。</p>
+
+<h3>線の中の熱の伝わり</h3>
+<p>線を長さ方向に 60 に分け、それぞれの区間で熱の出入りを数えます。区間の温度は、発熱から放熱と隣への伝導を引いた分だけ上がります。</p>
+<div class="eqs">
+  <math display="block"><mrow><mi>d</mi><mi>c</mi><mi>A</mi><mfrac><mrow><mo>∂</mo><mi>T</mi></mrow><mrow><mo>∂</mo><mi>t</mi></mrow></mfrac><mo>=</mo><mfrac><mrow><msup><mi>I</mi><mn>2</mn></msup><mi>ρ</mi><mo stretchy="false">(</mo><mi>T</mi><mo stretchy="false">)</mo><msub><mi>k</mi><mi>ac</mi></msub></mrow><mi>A</mi></mfrac><mo>−</mo><msup><mi>q</mi><mo>′</mo></msup><mo stretchy="false">(</mo><mi>T</mi><mo stretchy="false">)</mo><mo>+</mo><mi>k</mi><mi>A</mi><mfrac><mrow><msup><mo>∂</mo><mn>2</mn></msup><mi>T</mi></mrow><mrow><mo>∂</mo><msup><mi>x</mi><mn>2</mn></msup></mrow></mfrac></mrow></math>
+</div>
+<p><math><mi>d</mi></math> は密度、<math><mi>c</mi></math> は比熱、<math><mi>k</mi></math> は熱伝導率、<math><msub><mi>k</mi><mi>ac</mi></msub></math> は交流抵抗の倍率です。端子を気温に固定すると、端の近くは熱が端子へ逃げて冷えます。時間は陰解法で進め、刻みは温度の変わり方に合わせて伸び縮みさせます。</p>
+<p>「行き着く温度」は、端子の影響が届かない長い線の中ほどで、発熱と放熱が釣り合う温度です。「温度上昇 30 K の電流」と「溶断する電流」も同じ釣り合いから求めます。</p>
+
+<h3>周りの空気</h3>
+<p>熱い線の上には、温まった空気が細い筋になって昇ります（プルーム）。流れを数値で解く代わりに、層流のプルームの相似解で温度と速さを求めます。横置きの線の上では、中心の温度上昇は高さの −3/5 乗で下がり、幅は 2/5 乗で広がります<a href="#thy-r4">[4]</a>。</p>
+<div class="eqs">
+  <math display="block"><mrow><mi>Δ</mi><msub><mi>T</mi><mi>c</mi></msub><mo>∝</mo><msup><mi>B</mi><mrow><mn>4</mn><mo>/</mo><mn>5</mn></mrow></msup><msup><mi>y</mi><mrow><mo>−</mo><mn>3</mn><mo>/</mo><mn>5</mn></mrow></msup><mo>,</mo><mspace width="1em"/><mi>B</mi><mo>=</mo><mfrac><mrow><mi>g</mi><mi>β</mi><msubsup><mi>q</mi><mi>c</mi><mo>′</mo></msubsup></mrow><mrow><mi>ρ</mi><msub><mi>c</mi><mi>p</mi></msub></mrow></mfrac></mrow></math>
+</div>
+<p>経路では、区間ごとに点の熱源のプルーム<a href="#thy-r5">[5]</a>を考えて重ねます。下の区間が温めた空気に包まれた区間は、対流で逃がせる熱が減ります。</p>
+
+<h3>基板</h3>
+<p>30 × 18 mm の基板を 0.25 mm 角の升に分けます。まず銅箔の電位を解き、電流の分布と升ごとの発熱を求めます。細い所や直角の内側の角では電流が集まり、発熱も集中します。次に、銅箔と基材（FR-4）の面内の熱伝導と、両面からの対流と放射で温度を進めます。</p>
+
+{REFS.length > 0 && (
+  <>
+    <h3>出典</h3>
+    <ol class="refs">
+      {REFS.map((r, i) => (
+        <li id={`thy-r${i + 1}`}>
+          <span class="rf-for">{r.for}</span>
+          <span class="rf-src">{r.src}</span>
+        </li>
+      ))}
+    </ol>
+  </>
+)}
+
+<h3>このツールで決めたこと</h3>
+<ul class="tl">
+  <li>材料の値は 20 °C の代表値。抵抗率は温度係数で直線に伸ばし、密度・比熱・熱伝導率は温度で変えない</li>
+  <li>放射率は光沢 0.05・酸化 0.6・被覆 0.9。被覆は厚さ 0.4 mm の PVC で、耐熱は 105 °C とする</li>
+  <li>交流は実効値で発熱を数え、1 周期の中の温度の揺れは見ない</li>
+  <li>空気の粒の動きは実際の 1/10 の速さで描く。経路の空気は、重なったプルームの温度の足し合わせを半分に抑えた近似</li>
+  <li>経路は縦に立てた面に描くとみなす。近くの区間との放射のやり取りも近似で入れる</li>
+  <li>基板は FR-4（熱伝導率 0.3 W/(m·K)）の片面に銅箔があるとみなし、厚さ方向の温度差は見ない。面の自然対流は空気の簡略式（上面 1.32、下面 0.59 の係数）、放射率は両面とも 0.9</li>
+  <li>融点に届いた所で切れて電流が止まる。線はいちばん熱い区間の隣で切れ、基板は溶けた升から銅箔が外れて、パッドの間が切れた所で止まる。溶けるときの潜熱は数えない</li>
+  <li>観察時間が自動のときは、止める条件を満たした時刻の 1.5 倍まで計算する。止める条件は、電流が止まった後なら気温に戻ったとき（線は時定数の 8 倍、基板は 30 分まで）、電流を流し続けるなら最高温度がほぼ変わらなくなったとき</li>
+  <li>時間軸は、短い時間ほど引き伸ばした対数に近い目盛り。溶断の一瞬と長い冷却を 1 本に収める</li>
+  <li>丸線の計算は、断熱で溶けるまでの時間を Onderdonk の式と、定常の溶断電流を Preece の式と比べて確かめた</li>
+</ul>

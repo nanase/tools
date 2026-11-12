@@ -2934,6 +2934,26 @@ export const ART: Record<string, Art> = {
     for (let x = 92 + (k % 8); x < 118; x += 8) s += gbDot('fb', x, 16.5, 1.3) + gbDot('fb', 210 - x, 33.5, 1.3);
     return s;
   },
+  /* 配線の発熱: 基板のくびれた配線のまわりを、温度で大きさの変わる点で熱画像のように描く。
+     8 コマで温まって 4 コマ保つ（4 コマ/s）。止まった絵は保っている途中 */
+  wh(t) {
+    const k = mod(Math.floor(t * 4 + 1e-9) + 10, 12),
+      u = 1 - Math.exp((-3 * Math.min(k, 8)) / 8),
+      spread = 6 + 16 * u;
+    let s = P('c t', 'M3 3H117V45H3z');
+    for (let y = 7; y <= 41; y += 4)
+      for (let x = 7; x <= 113; x += 4) {
+        const along = Math.max(0, Math.abs(x - 60) - 10),
+          dy = Math.abs(y - 24);
+        const v =
+          u *
+          Math.exp(-(dy * dy) / (2 * (2.5 + spread * 0.35) ** 2)) *
+          (0.25 + 0.75 * Math.exp(-(along * along) / (2 * spread * spread)));
+        const r = 1.8 * v;
+        if (r > 0.45) s += `<circle class="fa" cx="${x}" cy="${y}" r="${r1(r)}"/>`;
+      }
+    return s + P('c t', 'M8 17h12v14H8zM100 17h12v14h-12zM20 22H50V26H20zM70 22H100V26H70zM50 23.2H70V24.8H50z');
+  },
 };
 
 /**
@@ -3015,6 +3035,7 @@ export const LOOP: Record<string, number> = {
   spi: 6,
   gb: 2,
   sf: 4,
+  wh: 3,
 };
 
 /** 止まっているときの図柄（ビルド時に HTML へ出す） */
