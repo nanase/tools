@@ -3,11 +3,18 @@
  * 空を計算し、写真の隣に並べる。描画は本体とは別の WebGL2 の画面で、枠を開いている間だけ動かす
  */
 import { $, esc } from '../../lib/dom';
+import { reserveHeight } from '../../lib/reserve';
 import { store, stored } from '../../lib/store';
 import { PHOTOS, type Photo } from './photos';
 import { HaloRenderer } from './render';
 
 const BASE = import.meta.env.BASE_URL;
+/** 写真の下の説明と出典 */
+const metaOf = (p: Photo) => `${p.date}、${p.place}。${p.lens}。写っているハロ: ${p.halos.join('・')}`;
+const attrOf = (p: Photo) =>
+  `写真: ${esc(p.author)}「${esc(p.title)}」<a href="${esc(p.page)}" rel="noopener">Wikimedia Commons</a>、` +
+  (p.licenseUrl ? `<a href="${esc(p.licenseUrl)}" rel="noopener">${esc(p.license)}</a>` : esc(p.license)) +
+  '。縮めて載せています。';
 
 export function initCompare(): void {
   const box = $('#phs'),
@@ -21,6 +28,9 @@ export function initCompare(): void {
     '<div class="ph-pair"><figure><img id="ph-img" alt="" decoding="async"><figcaption id="ph-cap"></figcaption></figure>' +
     '<figure><div class="ph-sim"><canvas id="ph-sim" aria-label="同じ条件で計算した空"></canvas></div><figcaption id="ph-scap"></figcaption></figure></div>' +
     '<p class="ph-meta" id="ph-meta"></p><p class="ph-meta" id="ph-attr"></p>';
+  /* 写真ごとに説明と出典の長さが違う。いちばん長いものの高さを取っておき、写真を替えても下を動かさない */
+  reserveHeight($('#ph-meta'), PHOTOS.map(metaOf));
+  reserveHeight($('#ph-attr'), PHOTOS.map(attrOf), { html: true });
   const cv = $<HTMLCanvasElement>('#ph-sim'),
     img = $<HTMLImageElement>('#ph-img');
   let R: HaloRenderer | null = null,
@@ -37,11 +47,8 @@ export function initCompare(): void {
     img.alt = `写真: ${p.halos.join('・')}`;
     $('#ph-cap').textContent = '写真';
     $('#ph-scap').textContent = `計算（${p.moon ? '月' : '太陽'}の高度 ${p.elev}°、結晶は写真から見積もった例）`;
-    $('#ph-meta').textContent = `${p.date}、${p.place}。${p.lens}。写っているハロ: ${p.halos.join('・')}`;
-    $('#ph-attr').innerHTML =
-      `写真: ${esc(p.author)}「${esc(p.title)}」<a href="${esc(p.page)}" rel="noopener">Wikimedia Commons</a>、` +
-      (p.licenseUrl ? `<a href="${esc(p.licenseUrl)}" rel="noopener">${esc(p.license)}</a>` : esc(p.license)) +
-      '。縮めて載せています。';
+    $('#ph-meta').textContent = metaOf(p);
+    $('#ph-attr').innerHTML = attrOf(p);
     cv.style.aspectRatio = `${p.w} / ${p.h}`;
     if (R) {
       R.setSource({ elev: p.elev, moon: p.moon, age: 14.8 });

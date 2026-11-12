@@ -51,15 +51,17 @@
 @media (prefers-reduced-motion:no-preference){.kov,.kov span{transition:transform .7s cubic-bezier(.3,.7,.3,1)}}
 
 /* 窓の計算: 積の表と和 */
-#mag{display:grid;gap:10px}
-.terms{display:grid;gap:2px;max-width:340px;width:100%;margin-inline:auto;font:500 10.5px/1 var(--mono);font-variant-numeric:tabular-nums}
+/* 窓の図・積の表・和の行は、カーネルと見方で大きさが変わる。それぞれ最も大きいときの高さを取っておく
+   （窓の図は 9 段、積の表は 5 段、和の行は 2 行） */
+#mag{display:grid;grid-template-rows:minmax(var(--mg-h,0px),auto);align-items:center;gap:10px}
+.terms{display:grid;gap:2px;align-content:center;min-height:118px;max-width:340px;width:100%;margin-inline:auto;font:500 10.5px/1 var(--mono);font-variant-numeric:tabular-nums}
 .terms span{display:grid;place-items:center;min-width:0;height:22px;padding:0 2px;border-radius:3px;background:var(--inset);color:var(--ink-2);white-space:nowrap;overflow:hidden}
 .terms span.z{opacity:.35}
 .terms.med{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;max-width:none}
 .terms.med span{min-width:40px}
 .terms.med span.on{outline:2px solid var(--accent);color:var(--ink)}
 .terms em{font-style:normal;color:var(--ink-3);padding:0 4px}
-.sumline{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px 10px;font:500 12.5px/1.4 var(--mono);color:var(--ink-2)}
+.sumline{display:flex;flex-wrap:wrap;align-items:center;align-content:center;justify-content:center;min-height:60px;gap:6px 10px;font:500 12.5px/1.4 var(--mono);color:var(--ink-2)}
 .sumline b{color:var(--ink)}
 .sumline i{font-family:var(--math)}
 .sumline .eq{font:700 20px/1 var(--mono);color:var(--ink)}
@@ -72,6 +74,9 @@
 .chip.nc[aria-pressed="true"]{border-style:solid}
 .a-ker .prow{--sw:1.6rem;--uw:2.6rem}
 .kbox{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:12px 16px;padding:12px 0 6px}
+/* 係数の表はカーネルで 1〜7 段に変わる。いちばん大きい 7 × 7（小さい升目）の幅と高さを取っておく。
+   幅も取るのは、表の幅で |H| の図が横に並ぶか下に回るかが変わるため */
+.kwrap{display:grid;place-items:center;min-width:264px;min-height:208px}
 .kg{display:grid;gap:2px}
 .kc{display:grid;place-items:center;width:46px;height:36px;border:1px solid var(--line);border-radius:3px;font:600 11.5px/1 var(--mono);font-variant-numeric:tabular-nums;cursor:ns-resize;user-select:none;-webkit-user-select:none;touch-action:none;color:var(--ink)}
 .kc.sm{width:36px;height:28px;font-size:10px}

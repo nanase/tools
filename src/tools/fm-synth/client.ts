@@ -194,7 +194,8 @@ function update(): void {
   for (let k = 0; k < 4; k++) syncOp(k);
   const ng = normGain(p),
     nt = $('#w-norm');
-  nt.hidden = ng === 1;
+  /* 隠す間も場所を残す（表示の行の高さを変えない） */
+  nt.style.visibility = ng === 1 ? 'hidden' : '';
   txt('#w-norm b', `×${plain(ng, 3, true)}`);
   const svg = $('#alg-svg');
   svg.innerHTML = algSvg(O.alg, O.fb, notes());

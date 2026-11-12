@@ -438,6 +438,10 @@ function windowPanel(): void {
     cols = Math.min(k.w, 7) + 2,
     avail = (magBox.clientWidth || 360) - 4,
     cs = Math.max(20, Math.min(40, Math.floor(avail / cols) - 1));
+  /* 窓の図はカーネルの大きさで 3〜9 段に変わる。この幅でいちばん高くなる段数の高さを取っておく（CSS の --mg-h） */
+  let mgH = 0;
+  for (let n = 3; n <= 9; n++) mgH = Math.max(mgH, n * (Math.max(20, Math.min(40, Math.floor(avail / n) - 1)) + 1) + 3);
+  magBox.style.setProperty('--mg-h', `${mgH}px`);
   magnifier(magBox, cs, false);
   let t = magBox.querySelector<HTMLElement>('.terms'),
     s = magBox.querySelector<HTMLElement>('.sumline');
@@ -453,14 +457,15 @@ function windowPanel(): void {
     pxb = (b: number) => `<span class="px" style="background:${gray(b)}"></span>`;
   if (scatter()) {
     const v = px(r, c);
-    t.hidden = true;
+    /* 積の表は消しても場所を残す（配る見方に替えても下を動かさない） */
+    t.style.visibility = 'hidden';
     html(
       s,
       `<span>入力 (${c}, ${r})</span>${pxb(Math.round(Math.min(1, Math.max(0, v)) * 255))}<b>${f2(v)}</b><span>× カーネル${S.corr ? '（反転）' : ''}</span><span class="eq">→</span><span>出力に足す</span>`,
     );
     return;
   }
-  t.hidden = false;
+  t.style.visibility = '';
   if (isMedian()) {
     const vals: number[] = [],
       h = (V.m - 1) / 2;

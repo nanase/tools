@@ -55,7 +55,8 @@ function showResults(r: Summary, N: number): void {
   html('#o-minf', ro(r.minF, 'Hz', 5));
   html('#o-sum', fixed(r.sum, 6));
   txt('#o-n', N >= 65536 ? `${N}（2${sup(Math.log2(N))}）` : String(N));
-  txt('#o-df', `Δf = fs/N = ${fmtR(val('fs') / N, 'Hz', 5)}`);
+  /* 狭い枠でも値まで 1 行に収まるよう、式（fs/N）は書かない */
+  txt('#o-df', `Δf = ${fmtR(val('fs') / N, 'Hz', 5)}`);
 }
 
 function compute(): void {

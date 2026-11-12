@@ -5,6 +5,7 @@
  */
 import { Choice } from '../../lib/choice';
 import { $, $$ } from '../../lib/dom';
+import { reserveHeight } from '../../lib/reserve';
 import { initToolPage } from '../../lib/tool-page';
 import { CHART_H as H, makeChart, TILE, CHART_W as W } from './chart';
 import {
@@ -32,7 +33,7 @@ import {
   srgbToLab,
   vngPixel,
 } from './demosaic';
-import { LOUPE, LP_SIGMA, MED_TIMES, methodTitle, type SrcName, type View } from './params';
+import { LOUPE, LP_SIGMA, MED_TIMES, METHOD_L, methodTitle, type SrcName, type View } from './params';
 
 initToolPage();
 
@@ -212,6 +213,15 @@ function placeLoupe(): void {
 
 /* ---------- 結果の帯 ---------- */
 const fmt = (v: number) => (v === Infinity ? '∞' : v.toFixed(1));
+/* 手法の説明は長さが違い、短いと CPSNR と同じ行に入る。いちばん高くなる組み合わせの高さを帯に取っておく */
+reserveHeight(
+  $('.dm-sbar'),
+  METHOD_L.map(
+    ([, , t]) =>
+      `<span class="dm-st-n">${t}</span><span>CPSNR <b class="hw" data-ph="00.0 dB">00.0 dB</b></span><span>ΔE <b class="hw" data-ph="0.00">0.00</b></span>`,
+  ),
+  { html: true },
+);
 function status(): void {
   const s = sc(S.method);
   $('#s-name').textContent = methodTitle(S.method);
@@ -227,6 +237,20 @@ const tgtEl = $('#p-tgt'),
   ex = $('#ex'),
   cmpSvg = $<SVGSVGElement>('#cmpss'),
   cmpW = $('#cmpw');
+/* 狭い画面では計算の行が格子の下に回り、手法と色差メディアンで行の数が変わる。いちばん多い AHD の行数を取っておく */
+{
+  const g = sw([0.5, 0.5, 0.5]),
+    e = (s: string) => `<span class="eq">${s}</span>`,
+    tail = `${e('色差メディアン → <b>255</b>')}<span class="eq dm-res">元 ${g} 復元 ${g} ΔE <b>99.9</b></span>`;
+  reserveHeight(
+    ex,
+    [
+      e(`横 ${g} 均質 <b>18</b>`) + e(`縦 ${g} 均質 <b>18</b>`) + e('→ 平均　R = <b>255</b>') + tail,
+      e('G = (255 + 255 + 255 + 255) / 4 = <b>255</b>') + tail,
+    ],
+    { html: true },
+  );
+}
 sten.innerHTML = Array.from(
   { length: 25 },
   () => '<div class="dm-c"><span class="cn"></span><span class="cv"></span><span class="cw"></span></div>',

@@ -1,5 +1,6 @@
 /** LZW の項目: いまの 1 手、画素の格子、辞書の木 */
 import { $ } from '../../lib/dom';
+import { reserveHeight } from '../../lib/reserve';
 import { dictAt, type LzwTrace } from './lzw';
 import { buildTree, type FrameView, stopLabel } from './model';
 
@@ -40,7 +41,28 @@ function box(label: string, body: string, cls = ''): string {
   return `<div${cls ? ` class="${cls}"` : ''}><small>${label}</small>${body}</div>`;
 }
 
+/* いまの 1 手の箱は、画素の列の長さで折り返しの段数が変わる。いちばん長い列と大きい符号の段数を取っておく */
+let nowHeld = false;
+function holdNow(): void {
+  /* 隠れている間は測れないので、見えてから測る */
+  if (nowHeld || !$('#now').getClientRects().length) return;
+  nowHeld = true;
+  const sw = (n: number) => `<span class="gf-swr">${'<i></i>'.repeat(n)}<small>+9,999</small></span>`,
+    big = '<span class="big">4095</span>';
+  reserveHeight(
+    $('#now'),
+    [
+      box('いまの列 + 次の画素', sw(12)) + box('出す符号 · 12 ビット', big) + box('辞書への追加', big, 'new'),
+      box('読む符号 · 12 ビット', big) +
+        box('出す画素', sw(12)) +
+        box('辞書への追加 · KwKwK', `<span class="gf-ad">${big}${sw(8)}</span>`, 'new'),
+    ],
+    { html: true },
+  );
+}
+
 function drawNow(v: FrameView, t: LzwTrace, i: number, dir: Dir): void {
+  holdNow();
   const c = t.code[i],
     clear = 1 << v.m,
     a = t.added[i],

@@ -7,6 +7,7 @@ import { Choice } from '../../lib/choice';
 import { $, $$ } from '../../lib/dom';
 import { RM } from '../../lib/motion';
 import { ParamGroup } from '../../lib/param';
+import { reserveHeight } from '../../lib/reserve';
 import { store, stored, storeToggle } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
 import { type Data, frameAt, type Params, type Run, range, rng, shuffle } from './core';
@@ -401,16 +402,18 @@ function syncResult(r: Run): void {
     rest = rows.filter(([c]) => c >= 8).reduce((s, x) => s + x[1], 0),
     max = Math.max(1, ...rows.map((x) => x[1]));
   $('#o-sz').innerHTML =
-    show
-      .map(
-        ([c, n]) =>
-          `<div class="cl-szr">${markerSvg(c)}<span>クラスタ ${c + 1}</span><i style="width:${(n / max) * 100}%;background:var(--cl-${c})"></i><span>${fmtN(n)}</span></div>`,
-      )
-      .join('') +
-    (rest
-      ? `<div class="cl-szr"><span class="cl-k dot" aria-hidden="true"></span><span>その他</span><i style="width:${(rest / max) * 100}%;background:var(--screen-ink)"></i><span>${fmtN(rest)}</span></div>`
-      : '');
+    show.map(([c, n]) => szRow(c, n / max, fmtN(n))).join('') + (rest ? szRow(-1, rest / max, fmtN(rest)) : '');
 }
+/** クラスタの大きさの 1 行（c < 0 はその他） */
+function szRow(c: number, f: number, n: string): string {
+  return c < 0
+    ? `<div class="cl-szr"><span class="cl-k dot" aria-hidden="true"></span><span>その他</span><i style="width:${f * 100}%;background:var(--screen-ink)"></i><span>${n}</span></div>`
+    : `<div class="cl-szr">${markerSvg(c)}<span>クラスタ ${c + 1}</span><i style="width:${f * 100}%;background:var(--cl-${c})"></i><span>${n}</span></div>`;
+}
+/* 大きさの行の数はクラスタの数で変わり、下の枠が動く。出せる最大（8 個とその他）の高さを取っておく */
+reserveHeight($('#o-sz'), [Array.from({ length: 9 }, (_, i) => szRow(i < 8 ? i : -1, 1, '100,000')).join('')], {
+  html: true,
+});
 function syncSteps(r: Run): void {
   const host = $('#cl-steps'),
     steps = methodOf(S.m).steps,

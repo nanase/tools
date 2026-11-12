@@ -26,19 +26,19 @@ const KEYS = keyboard();
       <div slot="aux" class="seg">
         <button type="button" id="playBtn" aria-pressed="false"><span class="led" id="playLed" aria-hidden="true"></span><span id="playT">再生</span></button>
       </div>
-      <div class="sbar">
+      <div class="sbar static">
         <span class="stag">A <b id="s-a">平均律</b></span>
         <span class="stag" id="s-bw">B <b id="s-b"></b></span>
         <span class="stag" id="s-ch">—</span>
         <span class="stag" id="s-tb">—</span>
         <span class="stag" id="s-rt">—</span>
-        <span class="stag right ab" id="s-now" hidden>鳴っている音律 <b id="s-cur"></b></span>
+        <span class="stag right ab" id="s-now" style="visibility:hidden">鳴っている音律 <b id="s-cur"></b></span>
       </div>
       <div class="lgd">
         <span><i class="tk" aria-hidden="true"></i>純正の位置</span>
         <span><i class="dt" aria-hidden="true"></i>部分音（ずれ ×{KX}）</span>
         <span><i class="sw" aria-hidden="true"></i>うなり [回/秒]</span>
-        <span id="lg-e" hidden><i class="ring" aria-hidden="true"></i>2 次のうなり</span>
+        <span id="lg-e" style="visibility:hidden"><i class="ring" aria-hidden="true"></i>2 次のうなり</span>
       </div>
       <div class="scope lad"><svg viewBox={`0 0 ${LW} ${LH}`} id="lad" role="img" aria-label="和音の部分音を純正な比の目盛りに並べた図"><g id="lad-g"></g></svg></div>
       <div class="zms" id="zms"></div>

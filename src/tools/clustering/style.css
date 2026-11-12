@@ -61,6 +61,19 @@
 @media (max-width:620px){.cl-scr canvas{height:300px}}
 .a-fig .tp{margin-top:10px}
 .cl-sp button{font-family:var(--sans)}
+/* 速さのボタンは … で切らない（.tp-tm の子は 1 行で省くため） */
+#cl .tp-tm>.cl-sp{flex:none;overflow:visible}
+@media (max-width:420px){
+  /* 狭い幅では位置の欄が細く、速さのボタンが入らない。間を詰めて欄を広げる */
+  #cl .a-fig .tp{column-gap:6px;padding-inline:4px}
+  #cl .a-fig .tp-side{gap:2px;padding-left:6px}
+  #cl .cl-sp button{padding:0 6px}
+}
+@media (max-width:620px){
+  /* 今の手順の文は凡例の横に入らず … で切れる。いつも次の行に置き、行の数を変えない */
+  #cl .cl-bar{flex-wrap:wrap}
+  #cl #cl-say{flex:1 0 100%;min-height:1.3em}
+}
 
 /* 描画の道具 */
 .cl-tools{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;min-height:32px;margin-bottom:8px}
@@ -100,8 +113,8 @@
 .cl-res .m-main{grid-column:auto;padding:6px 0 5px}
 .cl-res .m-main dd{font-size:30px;line-height:1.1}
 .cl-res .u{font-family:var(--sans)}
-#o-sz{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:3px 16px;margin-top:6px;padding-top:6px;border-top:1px solid var(--line)}
-#o-sz:empty{display:none}
+/* 大きさの一覧は空の間も消さない（client.ts の reserveHeight で最大の行の数の高さを取る。写しで測るので id ではなくクラスで書く） */
+.cl-sz{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:3px 16px;margin-top:6px;padding-top:6px;border-top:1px solid var(--line)}
 .cl-szr{display:grid;grid-template-columns:14px 5em minmax(0,1fr) 2.4em;gap:5px;align-items:center;font-size:12px;color:var(--ink-2)}
 .cl-szr i{display:block;height:6px;border-radius:1px}
 .cl-szr span:last-child{font:500 12px var(--mono);text-align:right;color:var(--ink)}

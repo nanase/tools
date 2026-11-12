@@ -97,7 +97,8 @@ const CHOICES = [
           <button type="button" class="prst" id="cl-new2">新しいデータ</button>
         </div>
         <div class="cl-lcap"><span>マスの数字　正解との一致度　1.00 で完全に一致</span><b id="cl-lsay"></b></div>
-        <div id="cl-gw"><table id="cl-g"></table></div>
+        {/* 行は分類のボタンで絞り込む（表示の切り替え）ので検査から外す（design/page.md） */}
+        <div id="cl-gw" data-shift="ok"><table id="cl-g"></table></div>
       </div>
 
       <div class="tp" id="tp">
@@ -171,7 +172,7 @@ const CHOICES = [
             <div class="m" id="m-sse" hidden><dt>誤差平方和</dt><dd id="o-sse"></dd></div>
             <div class="m" id="m-ll" hidden><dt>対数尤度</dt><dd id="o-ll"></dd></div>
           </dl>
-          <div id="o-sz"></div>
+          <div id="o-sz" class="cl-sz"></div>
         </div>
         <div class="cl-rankw"><table id="o-rt" hidden></table></div>
       </Panel>

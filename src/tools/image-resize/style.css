@@ -14,6 +14,9 @@
 .rz-bar{font-family:var(--sans);min-height:30px}
 .rz-lab{font-size:12px;color:var(--ink-2)}
 #rz-hint{margin-left:auto;font-size:12px;color:var(--ink-3)}
+/* 操作の案内は表示の切り替えでしか変わらないので、省かずに折り返す */
+.rz-bar{flex-wrap:wrap;overflow:visible}
+#rz-hint{white-space:normal;overflow:visible}
 .rz-scr{position:relative;padding:0;overflow:hidden;line-height:0}
 .rz-scr canvas{display:block;width:100%}
 #rz-cv{height:460px;touch-action:none;cursor:grab}
@@ -89,6 +92,8 @@
 @media (max-width:620px){.rz-tk button:nth-child(even){display:none}}
 .rz-ro{display:flex;flex-wrap:wrap;justify-content:space-between;gap:0 12px;margin-top:3px;font:500 13px/1.5 var(--mono);color:var(--ink-2);font-variant-numeric:tabular-nums}
 .rz-ro b{color:var(--ink);font-size:15px}
+/* 狭い画面では大きさの文が倍率によって 2 行に折り返す。初めから 2 行分の高さを取っておく */
+@media (max-width:600px){.rz-ro{min-height:3em}}
 
 /* しくみ */
 .rz-steps{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));gap:8px}

@@ -7,6 +7,7 @@ import { Choice } from '../../lib/choice';
 import { $, $$ } from '../../lib/dom';
 import { ParamGroup } from '../../lib/param';
 import { handheld } from '../../lib/pause';
+import { reserveHeight } from '../../lib/reserve';
 import { initToolPage } from '../../lib/tool-page';
 import type { Wav } from '../wavelet/dwt';
 import { type Clip, clip, type Noise, quietest, rms } from './clips';
@@ -44,6 +45,14 @@ const root = $('#wd'),
   worker = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' }),
   lut = lutOf('#wd'),
   keys = $$<HTMLButtonElement>('#ab-keys .key');
+/* キーの名前と値は雑音除去と圧縮で長さが違う。いちばん長いものの高さを取っておき、切り替えや計算で行を動かさない */
+const KEY_PH = ['PCM 16 ビット 1536 kbps', 'SN 比 −10.0 dB・1536 kbps', '実効値 −120.0 dBFS'];
+for (const k of keys) {
+  const b = k.querySelector<HTMLElement>('b'),
+    sm = k.querySelector<HTMLElement>('small');
+  if (b) reserveHeight(b, [b.dataset.dn ?? '', b.dataset.cp ?? '']);
+  if (sm) reserveHeight(sm, KEY_PH);
+}
 
 const S = {
   mode: 'dn' as Mode,
@@ -89,7 +98,7 @@ function post(): void {
     return;
   }
   busy = true;
-  $('#ab-busy').hidden = false;
+  $('#ab-busy').classList.remove('off');
   const id = ++jobN;
   worker.postMessage(
     (S.mode === 'dn'
@@ -112,7 +121,7 @@ worker.onmessage = (e: MessageEvent<Out>) => {
     post();
     return;
   }
-  $('#ab-busy').hidden = true;
+  $('#ab-busy').classList.add('off');
   if (e.data.id !== jobN) return;
   res = e.data;
   show();
@@ -134,6 +143,7 @@ const kLab = (f: number) => (f >= 1000 ? `${Number((f / 1000).toFixed(1))}k` : S
 /** 結果がそろったら、音・キー・波形・スカログラム・数値を入れ替える */
 function show(): void {
   root.dataset.m = S.mode;
+  holdCp();
   const dn = S.mode === 'dn',
     r = res,
     s = cur;
@@ -150,6 +160,7 @@ function show(): void {
       for (const k of ['b', 'a']) paintGrid($(`#sc-c${k}`), lut, new Float32Array(0), R, 0, LO);
       html('#pr-out', '');
       html('#pr-tab', '');
+      html('#pr-tab-cp', '');
       for (let i = 0; i < 4; i++) txt(`#ab-km${i}`, '');
       drawWave();
     }
@@ -192,7 +203,7 @@ function show(): void {
         m('おおよそ', fx(row.kbps, 0), 'kbps') +
         m('残した係数', pct(c.kept / s.x.length), '%'),
     );
-    html('#pr-tab', basisTable(c, pcm));
+    html('#pr-tab-cp', basisTable(c, pcm));
     txt('#m-snr', `${fx(row.snr)} dB`);
     txt('#m-kept', `${pct(c.kept / s.x.length)} %`);
     setMiniX('kbps', fx(row.kbps, 0));
@@ -231,6 +242,25 @@ function basisTable(c: CpOut, pcm: number): string {
     })
     .join('');
   return `<table class="tt"><thead><tr><th>基底</th><th class="n">SN 比 dB</th><th class="n" title="係数の値を丸めない（量子化しない）ときの SN 比">値を丸める前 dB</th><th class="n">kbps</th><th class="n" title="PCM 16 ビットに対するビット数の比">圧縮率</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+/* 圧縮の表は、初めて圧縮を選んだときは計算を待って出る。行の数は基底の数で決まるので、仮の値の表で高さを取っておく */
+let cpHeld = false;
+function holdCp(): void {
+  const el = $('#pr-tab-cp');
+  /* 雑音除去の間は隠れていて測れないので、見えてから測る */
+  if (cpHeld || !el.getClientRects().length) return;
+  cpHeld = true;
+  reserveHeight(
+    el,
+    [
+      basisTable(
+        { rows: BASES.map(([b]) => ({ b, snr: -99.9, snrKeep: -99.9, kbps: 1536 })) } as unknown as CpOut,
+        1536,
+      ),
+    ],
+    { html: true },
+  );
 }
 
 /* 波形: 原音（灰）の上に聴いている音 */
@@ -386,7 +416,7 @@ new Choice<Basis>($('#ab-b'), (v) => {
   S.basis = v;
   run();
 });
-$('#pr-tab').addEventListener('click', (e) => {
+$('#pr-tab-cp').addEventListener('click', (e) => {
   const b = (e.target as Element).closest<HTMLElement>('button[data-b]');
   if (!b?.dataset.b) return;
   const v = b.dataset.b as Basis;

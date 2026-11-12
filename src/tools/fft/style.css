@@ -25,7 +25,8 @@
 
 /* バタフライ図と拡大 */
 .ff-figw{display:grid;gap:12px;grid-template-columns:minmax(0,1fr)}
-@media (min-width:1000px){.ff-figw{grid-template-columns:minmax(0,1fr) 300px}}
+/* PC では横に並べる。拡大はバタフライ図（点の数で高さが変わる）の高さに引き伸ばさない */
+@media (min-width:1000px){.ff-figw{grid-template-columns:minmax(0,1fr) 300px}.ff-zp{align-self:start}}
 .ff-bf{border:1px solid var(--line);border-radius:var(--r);background:var(--screen);box-shadow:inset 0 1px 3px rgb(0 0 0 / .19);overflow-x:auto;overscroll-behavior-x:contain}
 .ff-bf svg{display:block;width:100%;height:auto;touch-action:manipulation}
 /* 押したりドラッグしたりする図の文字は選ばない */

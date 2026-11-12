@@ -133,7 +133,8 @@ const BARS = [...SHAPES]
           <div class="m"><dt>最小の高さ</dt><dd id="o-lo">–</dd></div>
           <div class="m"><dt>黒の高さ</dt><dd id="o-bh">–</dd></div>
           <div class="m"><dt>キー</dt><dd id="o-n">0</dd></div>
-          {DEFS.map((d) => <div class="m m-sub m-w" data-for={d.id}><dt>利用例</dt><dd>{d.ex}</dd></div>)}
+          {/* 木の種類ごとの説明は中身が変わらないので、1 行に詰めずに折り返す（.static） */}
+          {DEFS.map((d) => <div class="m m-sub m-w" data-for={d.id}><dt>利用例</dt><dd class="static">{d.ex}</dd></div>)}
         </dl>
       </Panel>
       <Panel hid="hd-snd" title="音" class="a-snd">

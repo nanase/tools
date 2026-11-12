@@ -51,9 +51,12 @@ import {
   FMIN,
   hzT,
   type Key,
+  KINDS,
   kindOf,
+  MODES,
   PARAMS,
   QUANTS,
+  RESPS,
   respAb,
 } from './params';
 import { type FView, fixed, freqAxis, frPlot, pzPlot, sig, sRange, TH, timePlot } from './plot';
@@ -848,6 +851,20 @@ G.on('fs', (fs) => {
   reconcile();
   patchEdges();
 });
+/*
+ * 端の行の項目名は近似・応答・設計の方法で変わる。入りうる名前をすべて見えない形で項目名と同じ升に重ね、
+ * いちばん高い名前の分の高さを取っておく（測らずに組むので、欄の幅が変わっても崩れない。style.css の .iir-gh）
+ */
+for (const k of EDGES) {
+  const names = new Set<string>();
+  for (const { v: kd } of KINDS)
+    for (const { v: rs } of RESPS) for (const [md] of MODES) names.add(edgeLabel(k, kd, rs, md).name);
+  const gh = document.createElement('span');
+  gh.className = 'iir-gh';
+  gh.setAttribute('aria-hidden', 'true');
+  for (const n of names) gh.append(Object.assign(document.createElement('span'), { textContent: n }));
+  $(`#n-${k}`).after(gh);
+}
 applyState();
 compute();
 drawLv(-Infinity);

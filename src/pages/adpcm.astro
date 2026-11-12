@@ -40,7 +40,7 @@ const playIcon =
         <div class="sbar lg pcm-lg"><span class="stag"><i class="sw c2"></i>原音</span><span class="stag"><i class="sw adp-sw-l"></i>選べる段階</span><span class="stag"><i class="sw"></i>ADPCM</span><span class="stag"><i class="sw pcm-sw-e"></i>誤差</span></div>
         <div class="scope pcm-scr"><canvas class="pcm-cv adp-gap" id="zm-g" role="img" aria-label="段階の間隔"></canvas></div>
         <div class="sbar lg pcm-lg"><span class="stag"><i class="sw"></i>段階の間隔</span><span class="stag"><i class="adp-dot-e"></i>予測との差</span></div>
-        <p class="pcm-eff" id="zm-eff"></p>
+        <p class="pcm-eff hh" id="zm-eff" data-ph="SN 比 −99.9 dB（同じビット数の PCM は −99.9 dB）"></p>
         <div class="ptab">
           <ParamRow d={P.ms} />
           <ChoiceRow k="pred" name="予測" sub="次の標本の値の予想" choices={PRED} value="1" />

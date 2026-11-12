@@ -24,7 +24,7 @@ const desc =
   <div class="tgrid">
     <Panel hid="hd-fig" title="道路と波面" class="a-fig" fixed>
       <div slot="aux" class="seg"><button type="button" id="runBtn" aria-pressed="true" title="音源の走行・停止"><span class="led on" id="runLed" aria-hidden="true"></span><span id="runT">RUN</span></button></div>
-      <div class="sbar">
+      <div class="sbar static">
         <span class="stag"><i class="sw c2" aria-hidden="true"></i>波面</span>
         <span class="stag"><i class="sw" aria-hidden="true"></i>マッハコーン</span>
         <span class="stag"><i class="sw dash" aria-hidden="true"></i>いま聞こえる音の出どころ</span>
@@ -106,14 +106,14 @@ const desc =
 
       <Panel hid="hd-out" title="計算結果" class="a-out">
         <dl class="metrics c3">
-          <div class="m m-main"><dt>いま聞こえる周波数</dt><dd id="o-f"></dd></div>
-          <div class="m"><dt>近づくとき</dt><dd id="o-fb"></dd></div>
-          <div class="m"><dt>遠ざかるとき</dt><dd id="o-fa"></dd></div>
-          <div class="m"><dt>マッハ数 <i>M</i></dt><dd id="o-m"></dd></div>
-          <div class="m"><dt>距離</dt><dd id="o-r"></dd></div>
-          <div class="m"><dt>音の遅れ</dt><dd id="o-dl"></dd></div>
-          <div class="m"><dt>音圧レベル</dt><dd id="o-l"></dd></div>
-          <div class="m wide"><dt>聞こえる音</dt><dd id="o-n" class="sm"></dd></div>
+          <div class="m m-main"><dt>いま聞こえる周波数</dt><dd id="o-f">—</dd></div>
+          <div class="m"><dt>近づくとき</dt><dd id="o-fb">—</dd></div>
+          <div class="m"><dt>遠ざかるとき</dt><dd id="o-fa">—</dd></div>
+          <div class="m"><dt>マッハ数 <i>M</i></dt><dd id="o-m">—</dd></div>
+          <div class="m"><dt>距離</dt><dd id="o-r">—</dd></div>
+          <div class="m"><dt>音の遅れ</dt><dd id="o-dl">—</dd></div>
+          <div class="m"><dt>音圧レベル</dt><dd id="o-l">—</dd></div>
+          <div class="m wide"><dt>聞こえる音</dt><dd id="o-n" class="sm">—</dd></div>
         </dl>
       </Panel>
 

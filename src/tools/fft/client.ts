@@ -5,6 +5,7 @@
 import { Choice } from '../../lib/choice';
 import { $ } from '../../lib/dom';
 import { RM } from '../../lib/motion';
+import { reserveHeight } from '../../lib/reserve';
 import { initToolPage } from '../../lib/tool-page';
 import { fftOps } from './count';
 import {
@@ -21,9 +22,9 @@ import {
   type View,
   zoomSvg,
 } from './fig';
-import { BASE } from './params';
+import { BASE, NS } from './params';
 import { dft, flow, type Kind } from './radix2';
-import { type Sig, signal } from './signals';
+import { SIGS, type Sig, signal } from './signals';
 
 initToolPage();
 
@@ -65,6 +66,22 @@ function setSig(): void {
 /* ---------- 計算 ---------- */
 const bfSvg = $<SVGSVGElement>('#ff-bf'),
   bfw = $('#ff-bfw');
+/**
+ * 図の下の式は操作ごとに行の数が変わる。信号・点の数・間引きを変えても下が動かないよう、
+ * どの組み合わせの式でも収まる高さを取っておく（手で動かした入力も、値の桁は同じ範囲に収まる）。
+ * 数字の書体が読み込まれると幅が変わるので、読み込んだあとに測り直す
+ */
+function reserveFx(): void {
+  const v = new Set<string>();
+  for (const [sg] of SIGS)
+    for (const n of NS)
+      for (const k of ['dit', 'dif'] as const) {
+        const [r, i] = signal(sg, n, 3),
+          run = record(flow(r, i, k), dft(r, i));
+        for (let pos = 0; pos <= run.ops.length; pos++) v.add(fxHtml(run, { pos, sel: null }));
+      }
+  reserveHeight($('#ff-fx'), [...v], { html: true });
+}
 function recompute(): void {
   R = record(flow(re, im, kindCh.value), dft(re, im));
   V.pos = Math.min(V.pos, len());
@@ -255,6 +272,7 @@ new ResizeObserver(() => {
 /* ---------- 起動 ---------- */
 setSig();
 recompute();
+reserveFx();
 /* 保存した値を戻したあと（マイクロタスク）に入力を作り直し、動きを減らす設定でなければ動かす */
 queueMicrotask(() => {
   if (!sigCh.value) sigCh.set('rand');

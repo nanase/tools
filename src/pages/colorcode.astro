@@ -36,7 +36,7 @@ const name = '抵抗カラーコード';
             <div class="c-sym" aria-hidden="true"><i>α</i></div>
             <div class="c-name"><span class="pn" id="n-tc">温度係数</span><p class="desc tip" id="t-tc" role="tooltip" hidden>温度係数の帯（6 本目）の色（ppm/K）</p></div>
             <RowReset label="温度係数を既定値に戻す" />
-            <div class="c-sub"><p class="msg" id="s-tc">6 本帯のときに使います</p><div class="chips" id="tcC" role="group" aria-labelledby="n-tc" aria-describedby="t-tc" hidden set:html={TC_KEYS.map((k) => ccChip('tc', k, false)).join('')} /></div>
+            <div class="c-sub"><p class="msg" id="s-tc">6 本帯のときに使います</p><div class="chips" id="tcC" role="group" aria-labelledby="n-tc" aria-describedby="t-tc" style="visibility:hidden" set:html={TC_KEYS.map((k) => ccChip('tc', k, false)).join('')} /></div>
           </div>
         </div>
       </Panel>

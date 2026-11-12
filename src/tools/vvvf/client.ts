@@ -7,6 +7,7 @@ import { $, $$ } from '../../lib/dom';
 import { RM } from '../../lib/motion';
 import { ParamGroup } from '../../lib/param';
 import { handheld } from '../../lib/pause';
+import { reserveHeight } from '../../lib/reserve';
 import { initToolPage } from '../../lib/tool-page';
 import { readCols } from '../pcm/fig';
 import { VvvfAudio } from './audio';
@@ -133,6 +134,16 @@ const cvH = $<HTMLCanvasElement>('#how-cv'),
   thumbs = cards.map((b) => $<HTMLCanvasElement>('canvas', b)),
   hpp = $<HTMLButtonElement>('#how-pp'),
   trk = $('#how-trk');
+/* 走り方で変わる図の下の文は、いちばん長くなる形（数値の桁がいちばん多い形）の高さを取っておく */
+reserveHeight($('#vv-ratio'), [
+  '停止中: 「自動」か「加速」で発車',
+  '空気ブレーキ: スイッチ停止',
+  '1 パルス: 基本波 99.9 Hz の 1 周期に 1 回のオン・オフ',
+  '同期: キャリア 1050 Hz ÷ 基本波 99.9 Hz = ちょうど 45 倍',
+  '非同期: キャリア 1050 Hz ÷ 基本波 99.9 Hz = 999.99 倍',
+]);
+/* 工程を進めても下の図を動かさないよう、いちばん長い説明の高さを取っておく */
+reserveHeight($('#how-cap'), CAPTIONS);
 function syncStep(): void {
   cards.forEach((b, i) => {
     const on = i === St.i;

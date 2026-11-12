@@ -587,8 +587,9 @@ function roomView(): void {
 }
 
 /* ---------- 計算結果 ---------- */
-const mrow = (dt: string, dd: string, sub = '') =>
-  `<div class="m"><dt>${dt}</dt><dd><span>${dd}</span>${sub ? `<span class="m-sub">${sub}</span>` : ''}</dd></div>`;
+/** 計算結果の 1 項目。fixed は補足が変わらない文（折り返して全文を見せる） */
+const mrow = (dt: string, dd: string, sub = '', fixed = false) =>
+  `<div class="m"><dt>${dt}</dt><dd><span>${dd}</span>${sub ? `<span class="m-sub${fixed ? ' static' : ''}">${sub}</span>` : ''}</dd></div>`;
 function results(): void {
   const { stop, key } = S.last,
     s = stopOf(stop),
@@ -611,7 +612,12 @@ function results(): void {
     h += mrow('足の圧力', ro(v.pFoot, 'Pa', 3), `風箱の ${plain(fl.toe, 3, true)} 倍`);
     h += mrow('ジェットの速さ <i>U</i><sub>j</sub>', ro(v.Uj, 'm/s', 3));
     h += mrow('走行時間 <i>τ</i>', ro(v.tau, 's', 3), `周期の ${plain(v.tau * t.fMeas, 3, true)} 倍`);
-    h += mrow('<i>θ</i> = <i>U</i><sub>j</sub>/<i>fW</i>', plain(v.theta, 3, true), '大きすぎると上のモードへ跳びます');
+    h += mrow(
+      '<i>θ</i> = <i>U</i><sub>j</sub>/<i>fW</i>',
+      plain(v.theta, 3, true),
+      '大きすぎると上のモードへ跳びます',
+      true,
+    );
     h += mrow('口の端補正 <i>M</i>', ro(v.M, 'm', 3), `音響的な長さ ${fmtR(v.Lac, 'm', 4)}`);
   } else {
     const v = reedView(t),
@@ -630,7 +636,7 @@ function results(): void {
     h += mrow('閉じる圧力 <i>p</i><sub>c</sub>', ro(v.pc, 'Pa', 3), `風箱の ${plain(v.pc / chestOf(s), 3, true)} 倍`);
     h += mrow('先の開き <i>y</i><sub>0</sub>', ro(rd.y0, 'm', 3), `流れの幅 ${(rd.w * 1000).toFixed(1)} mm、Q ${rd.Q}`);
   }
-  h += mrow('立ち上がり', ro(t.rise, 's', 3), '定常の −3 dB まで');
+  h += mrow('立ち上がり', ro(t.rise, 's', 3), '定常の −3 dB まで', true);
   h += mrow('音圧（1 m 先）', ro(t.rms, 'Pa', 3), `${(20 * Math.log10(t.rms / 2e-5)).toFixed(1)} dB SPL`);
   h += mrow(
     '調律のずれ',

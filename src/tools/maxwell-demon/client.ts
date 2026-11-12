@@ -6,6 +6,7 @@ import { Choice } from '../../lib/choice';
 import { $, $$ } from '../../lib/dom';
 import { RM } from '../../lib/motion';
 import { ParamGroup } from '../../lib/param';
+import { reserveHeight } from '../../lib/reserve';
 import { storeToggle } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
 import { drawBox, drawLedger, drawTape, drawTemp, fitBox, J_PER_BIT, kelvin, readCols } from './fig';
@@ -91,6 +92,8 @@ const syncMode = (m: Mode) => {
   syncUi();
 };
 syncMode(new Choice<Mode>($('#p-mode'), syncMode).value);
+/* 悪魔の種類で説明の行数が変わらないよう、いちばん長い説明の高さを取っておく */
+reserveHeight($('#mxd-hint'), Object.values(MODE_HINT));
 
 /* エントロピーの収支の表示 */
 const ledT = $<HTMLButtonElement>('#mxd-ledT'),

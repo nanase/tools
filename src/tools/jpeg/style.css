@@ -97,7 +97,8 @@
 .zzs span.z b{color:var(--ink-3);font-weight:400}
 .zzs span.eob{background:var(--inset)}
 /* 記号の表とビット列。ハフマン符号は太字、付加ビットは細字 */
-.symw{max-height:28em;overflow-y:auto;border-top:1px solid var(--line-2)}
+/* 記号の数はブロックと品質で 2〜60 行ほどに変わるので、高さを決めて中をスクロールさせる */
+.symw{height:20em;overflow-y:auto;overscroll-behavior:contain;border-top:1px solid var(--line-2)}
 @container (max-width:479px){.sym th,.sym td{padding-left:4px;padding-right:4px}.sym td small{display:block}.sym th:nth-child(6),.sym td:nth-child(6){display:none}}
 .sym,.segs{width:100%;border-collapse:collapse;font:500 12.5px/1.4 var(--mono);font-variant-numeric:tabular-nums}
 .sym th,.segs th{position:sticky;top:0;padding:7px 8px 5px;background:var(--bg);font:700 11.5px/1.3 var(--sans);color:var(--ink-3);text-align:right;white-space:nowrap}
@@ -108,7 +109,8 @@
 .sym th:nth-child(5){text-align:left}
 .sym td small{color:var(--ink-3);font-size:11.5px}
 .sym tr.hv td{background:var(--inset)}
-.bs{margin-top:4px;font:400 13px/1.9 var(--mono);color:var(--ink-2);word-break:break-all}
+/* ビット列も長さが変わるので 3 行分の高さに決め、長いときは中をスクロールさせる */
+.bs{height:calc(3 * 1.9em);margin-top:4px;overflow-y:auto;overscroll-behavior:contain;font:400 13px/1.9 var(--mono);color:var(--ink-2);word-break:break-all}
 .bs span{padding:1px 0;border-radius:2px}
 .bs span+span{margin-left:.5em}
 .bs b{font-weight:700;color:var(--ink)}

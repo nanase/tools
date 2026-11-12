@@ -44,13 +44,14 @@ const PRESET_NAMES = PRESETS.map((p) => p.name);
 
     <Panel hid="hd-out" title="一致" class="a-out">
       <span slot="aux" class="aux" id="rx-cnt"></span>
-      <div class="rx-hl" id="rx-hl"></div>
-      <div class="rx-mw"><table class="rx-mt" id="rx-mt"></table></div>
+      {/* 色付きの文章・一致の表・置換の結果は、入力した文章とパターンで大きさが決まるので検査から外す（design/page.md） */}
+      <div class="rx-hl" id="rx-hl" data-shift="ok"></div>
+      <div class="rx-mw" data-shift="ok"><table class="rx-mt" id="rx-mt"></table></div>
       <div class="rx-row rx-top">
         <h3><label for="rx-rep">置換</label></h3>
         <input class="rx-rep" id="rx-rep" type="text" spellcheck="false" autocomplete="off" autocapitalize="off" placeholder="$1 $&amp;" />
       </div>
-      <div class="rx-hl rx-ro" id="rx-ro" hidden></div>
+      <div class="rx-hl rx-ro" id="rx-ro" data-shift="ok" hidden></div>
     </Panel>
 
     <Panel hid="hd-fig" title="照合の手順" class="a-fig" fixed>
@@ -101,7 +102,8 @@ const PRESET_NAMES = PRESETS.map((p) => p.name);
         <button type="button" data-v="steps" aria-pressed="true">比較の回数</button>
         <button type="button" data-v="feat" aria-pressed="false">記法と手間</button>
       </div>
-      <div class="rx-mw"><table class="rx-lt" id="rx-lt"></table></div>
+      {/* 表の中身は右上のボタンで入れ替える（表示の切り替え）ので検査から外す（design/page.md） */}
+      <div class="rx-mw" data-shift="ok"><table class="rx-lt" id="rx-lt"></table></div>
     </Panel>
 
     <Panel hid="hd-cmp" title="計算結果" class="a-cmp">

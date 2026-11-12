@@ -49,6 +49,9 @@
 .nts .hd{border-bottom:1px solid var(--line)}
 .nts .hd>*{font:700 11px/1.3 var(--sans);color:var(--ink-3)}
 .nts .r>*:first-child{text-align:left;color:var(--ink);font-weight:700}
+/* 値は折り返さない（音によって行の高さを変えない）。周波数と非調和性の列を広くする */
+.nts .r{grid-template-columns:minmax(0,.55fr) minmax(0,1.1fr) minmax(0,.75fr) minmax(0,1.1fr)}
+.nts .r:not(.hd)>*{white-space:nowrap}
 
 /* ===== 純正の目盛り ===== */
 /* 音の組の色: 1 つ目・2 つ目は信号色、3 つ目はこのページだけの紫。組が 4 つ以上の和音では、選んだ組だけ k0 で、ほかは灰色（g） */
@@ -104,6 +107,8 @@
 .a-chd .cg{display:block;margin:2px 0 4px;font:700 12px/1.4 var(--sans);color:var(--ink-3)}
 .a-chd .cg~.cg{margin-top:10px}
 .zms{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-top:10px}
+/* 狭い画面は拡大図を横に並べて横へスクロールする（音の組の数で縦の長さを変えない） */
+@media (max-width:559px){.zms{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:220px;overflow-x:auto;overscroll-behavior-x:contain}}
 .zm{display:grid;gap:4px;padding:8px 10px;border:1px solid var(--line);border-radius:var(--r);background:var(--screen);cursor:pointer;text-align:left;color:var(--ink);font:inherit}
 .zm.on{border-color:var(--ink-2);box-shadow:inset 0 0 0 1px var(--ink-2)}
 .zm .zh{display:flex;justify-content:space-between;align-items:center;gap:6px;font:700 12.5px/1.3 var(--sans)}

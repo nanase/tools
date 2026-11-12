@@ -52,8 +52,8 @@ const pzSvg = (id: string, label: string) =>
           <div class="m"><dt>通過域の振幅の変動</dt><dd id="o-rip"></dd></div>
           <div class="m"><dt>阻止域の減衰量</dt><dd id="o-att"></dd></div>
           <div class="m"><dt>実際の阻止域端</dt><dd class="rng" id="o-fst"></dd></div>
-          <div class="m"><dt>通過域の群遅延</dt><dd class="rng"><span id="o-gd"></span><span class="m-sub" id="o-gds"></span></dd></div>
           <div class="m"><dt>直接形の係数（<span id="o-qn"></span>）</dt><dd id="o-dq"></dd></div>
+          <div class="m m-wide"><dt>通過域の群遅延</dt><dd class="rng"><span id="o-gd"></span><span class="m-sub" id="o-gds"></span></dd></div>
         </dl>
       </Panel>
 
@@ -155,7 +155,7 @@ const pzSvg = (id: string, label: string) =>
       </div>
       <div id="v-sos">
         <div class="hz" set:html={EQ_SOS} />
-        <div class="tblw"><table class="ctab" id="sos-t">
+        <div class="tblw iir-sc"><table class="ctab" id="sos-t">
           <caption class="sr">双2次の段ごとの極・零点・係数</caption>
           <thead><tr><th scope="col">段</th><th scope="col">極 |<i>p</i>|∠<i>f</i></th><th scope="col">零点 |<i>z</i>|∠<i>f</i></th><th scope="col"><i>b</i><sub>0</sub></th><th scope="col"><i>b</i><sub>1</sub></th><th scope="col"><i>b</i><sub>2</sub></th><th scope="col"><i>a</i><sub>1</sub></th><th scope="col"><i>a</i><sub>2</sub></th><th scope="col" title="入力からこの段の出力までの振幅の最大">最大</th></tr></thead>
           <tbody id="sos-b"></tbody>
@@ -173,7 +173,7 @@ const pzSvg = (id: string, label: string) =>
             <thead><tr><th scope="col">係数の丸め</th><th scope="col">極の最大 |<i>p</i>|</th><th scope="col">安定</th></tr></thead>
             <tbody id="dq-b"></tbody>
           </table></div>
-          <div class="tblw"><table class="ctab batab">
+          <div class="tblw iir-sc"><table class="ctab batab">
             <caption class="sr">直接形の係数</caption>
             <thead><tr><th scope="col"><i>k</i></th><th scope="col"><i>b</i><sub><i>k</i></sub></th><th scope="col"><i>a</i><sub><i>k</i></sub></th></tr></thead>
             <tbody id="ba-b"></tbody>

@@ -24,7 +24,6 @@
 /* 読み値は項目ごとに折り返す */
 .rdbar .stag{white-space:nowrap}
 .rdbar .stag+.stag{margin-left:14px}
-.z-msg:empty,.snd-msg:empty{display:none}
 
 /* z 平面（正方形の表示窓）。点の上で始めたドラッグはスクロールさせない（client.ts） */
 .zpl{max-width:480px;margin:0 auto;padding:6px}
@@ -89,6 +88,9 @@
 .stab tr.imp{color:var(--ink-3)}
 .stab td[colspan]{text-align:left;color:var(--ink-3);font-family:var(--sans)}
 .ptw{margin-top:14px}
+/* 点の数で行の数が変わる表（最大 48 行）。高さを決めて中をスクロールさせる */
+.pz-sc{height:206px;overflow:auto}
+.pz-sc thead th{position:sticky;top:0;z-index:1;background:var(--bg)}
 @media (max-width:479px){.stab{font-size:12px}.stab th,.stab td{padding-left:3px;padding-right:3px}}
 
 /* 計算結果 */

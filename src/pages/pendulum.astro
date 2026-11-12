@@ -47,10 +47,10 @@ const pick = (L: readonly ParamDef[], ks: readonly string[]) =>
         <div slot="aux" class="seg"><button type="button" id="runBtn" aria-pressed="false" title="シミュレーションを動かす・止める"><span class="led" id="runLed" aria-hidden="true"></span><span id="runT">開始</span></button></div>
         <div class="sbar">
           <span class="stag"><b class="hw" id="st-mode" data-ph="転倒（制御停止）"></b></span>
-          <span class="stag">t <b class="hw" id="st-t" data-ph="000.00 s"></b></span>
           <span class="stag"><i class="sw" aria-hidden="true"></i><i class="v">θ</i> <b class="hw" id="st-th" data-ph="−000.0°"></b></span>
           <span class="stag"><i class="sw c2" aria-hidden="true"></i><i class="v">x</i> <b class="hw" id="st-x" data-ph="−000.0 mm"></b></span>
           <span class="stag wn" id="st-hit" style="visibility:hidden">レールの端</span>
+          <span class="stag">t <b class="hw" id="st-t" data-ph="000.00 s"></b></span>
         </div>
         <div class="pfw">
           <svg class="pfig" id="pfig" tabindex="0" role="img" aria-roledescription="倒立振子の図" aria-label="レールの上の台車と振子。振子か台車の近くを押すと、押した側からその向きへ押す。左右の矢印キーで振子を、Shift と矢印キーで台車を押す"></svg>
@@ -121,10 +121,10 @@ const pick = (L: readonly ParamDef[], ks: readonly string[]) =>
 
       <Panel hid="hd-out" title="計算結果" class="a-out">
         <dl class="metrics c3">
-          <div class="m m-main"><dt>整定時間 <i>t</i><sub>s</sub></dt><dd><span id="o-ts"></span><span class="m-sub hh" id="o-tss" data-ph="振り上げて切り替えてから、角度 ±2°・位置 ±10 mm に入って 0.5 s 留まるまで"></span></dd></div>
-          <div class="m"><dt>振り上げの時間 <i>t</i><sub>up</sub></dt><dd><span id="o-tu"></span><span class="m-sub hh" id="o-tus" data-ph="真下から切り替えるまで（最後の振り上げ）"></span></dd></div>
-          <div class="m"><dt>最大の力 |<i>F</i>|<sub>max</sub></dt><dd><span id="o-fm"></span><span class="m-sub hh" id="o-fms" data-ph="振り上げて切り替えてから。電圧の最大 100.0 V"></span></dd></div>
-          <div class="m"><dt>台車の最大の変位</dt><dd><span id="o-xm"></span><span class="m-sub hh" id="o-xms" data-ph="振り上げて切り替えてから。レールの端まで 1000 mm"></span></dd></div>
+          <div class="m m-main"><dt>整定時間 <i>t</i><sub>s</sub></dt><dd><span id="o-ts"></span><span class="m-sub hh static" id="o-tss" data-ph="振り上げて切り替えてから、角度 ±2°・位置 ±10 mm に入って 0.5 s 留まるまで"></span></dd></div>
+          <div class="m"><dt>振り上げの時間 <i>t</i><sub>up</sub></dt><dd><span id="o-tu"></span><span class="m-sub hh static" id="o-tus" data-ph="真下から切り替えるまで（最後の振り上げ）"></span></dd></div>
+          <div class="m"><dt>最大の力 |<i>F</i>|<sub>max</sub></dt><dd><span id="o-fm"></span><span class="m-sub hh static" id="o-fms" data-ph="振り上げて切り替えてから。電圧の最大 100.0 V"></span></dd></div>
+          <div class="m"><dt>台車の最大の変位</dt><dd><span id="o-xm"></span><span class="m-sub hh static" id="o-xms" data-ph="振り上げて切り替えてから。レールの端まで 1000 mm"></span></dd></div>
           <div class="m m-wide"><dt>開ループの不安定な極 <i>p</i><sub>+</sub></dt><dd><span id="o-p"></span><span class="m-sub" id="o-ps"></span></dd></div>
           <div class="m m-wide"><dt>閉ループの極</dt><dd><span id="o-cl"></span><span class="m-sub" id="o-cls"></span></dd></div>
           <div class="m m-wide"><dt>状態フィードバックのゲイン <i>K</i></dt><dd><span id="o-k"></span><span class="m-sub" id="o-ks"></span></dd></div>
@@ -136,8 +136,8 @@ const pick = (L: readonly ParamDef[], ks: readonly string[]) =>
         <div class="sbar">
           <span class="stag"><i class="pm ol" aria-hidden="true">×</i>開ループ</span>
           <span class="stag"><i class="pm cl" aria-hidden="true">○</i>閉ループ</span>
-          <span class="stag"><b id="sp-d"></b>/div</span>
           <span class="stag wn" id="sp-out" hidden></span>
+          <span class="stag"><b id="sp-d"></b>/div</span>
         </div>
         <div class="scope">
           <svg viewBox="-46 -14 458 280" id="sp-svg" role="img" aria-label="開ループと閉ループの極">

@@ -3,6 +3,7 @@
  * （文字 0〜255・終わり 256・一致の長さ 257〜285、または距離の符号 0〜29）。棒に指を乗せると、出た回数と符号を出す
  */
 import { bitStr } from '../../lib/imgfmt/bits';
+import { reserveHeight } from '../../lib/reserve';
 import { canonicalCodes } from './huffman';
 import type { Model } from './model';
 import { LEN_BASE, LEN_EXTRA } from './tables';
@@ -14,6 +15,11 @@ const X0 = 56,
   Y1 = 14;
 const cnt = (v: number): string => v.toLocaleString('en');
 const h2 = (v: number): string => v.toString(16).toUpperCase().padStart(2, '0');
+/** 凡例（l: 文字・長さ、d: 距離） */
+const LEG = {
+  l: '<span class="leg"><i style="background:var(--lit)"></i>文字<i style="background:var(--ink)"></i>終わり<i style="background:var(--mat)"></i>一致の長さ · 多く出る記号ほど短い符号</span>',
+  d: '<span class="leg"><i style="background:var(--mat)"></i>距離 · 多く出る記号ほど短い符号</span>',
+};
 
 export class Huff {
   private m: Model | null = null;
@@ -41,6 +47,14 @@ export class Huff {
       const r = (e.target as Element).closest<SVGRectElement>('rect[data-i]');
       if (r) this.read(Number(r.dataset.i));
     });
+    /* 凡例は表で長さが違い、狭い画面では折り返す。長い方の高さを取っておき、表を替えても下を動かさない */
+    const row = el.lg.parentElement;
+    if (row)
+      reserveHeight(
+        row,
+        [LEG.l, LEG.d].map((h) => `<span class="stag">${h}</span>`),
+        { html: true },
+      );
     el.prev.addEventListener('click', () => this.go(this.blk - 1));
     el.next.addEventListener('click', () => this.go(this.blk + 1));
   }
@@ -160,9 +174,7 @@ export class Huff {
       s += `<text class="tl b" x="${X0 + 128 * w}" y="${Y0 + 46}" text-anchor="middle">文字 0〜255（バイトの値）</text><text class="tl b" x="${X0 + 271 * w}" y="${Y0 + 46}" text-anchor="middle">長さ 257〜285</text>`;
     }
     this.svg.innerHTML = s;
-    this.el.lg.innerHTML = d
-      ? '<span class="leg"><i style="background:var(--mat)"></i>距離 · 多く出る記号ほど短い符号</span>'
-      : '<span class="leg"><i style="background:var(--lit)"></i>文字<i style="background:var(--ink)"></i>終わり<i style="background:var(--mat)"></i>一致の長さ · 多く出る記号ほど短い符号</span>';
+    this.el.lg.innerHTML = d ? LEG.d : LEG.l;
     if (this.mark >= 0) this.setMark(this.mark);
   }
 

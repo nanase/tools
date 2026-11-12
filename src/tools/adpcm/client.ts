@@ -7,6 +7,7 @@ import { $, $$ } from '../../lib/dom';
 import { RM } from '../../lib/motion';
 import { ParamGroup } from '../../lib/param';
 import { handheld } from '../../lib/pause';
+import { reserveHeight } from '../../lib/reserve';
 import { initToolPage } from '../../lib/tool-page';
 import { Deck } from '../pcm/deck';
 import { COL, drawOverview, readCols, trigger } from '../pcm/fig';
@@ -376,6 +377,8 @@ const cvH = $<HTMLCanvasElement>('#how-cv'),
   thumbs = cards.map((b) => $<HTMLCanvasElement>('canvas', b)),
   hpp = $<HTMLButtonElement>('#how-pp'),
   trk = $('#how-trk');
+/* 工程の説明は長さが違うので、いちばん長い説明の高さを取っておく */
+reserveHeight($('#how-cap'), CAPTIONS);
 function syncStep(): void {
   cards.forEach((b, i) => {
     const on = i === St.i;

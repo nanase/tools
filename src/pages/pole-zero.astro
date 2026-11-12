@@ -95,7 +95,7 @@ const prm = (k: string) => {
           <div class="m"><dt>極の最大の半径</dt><dd id="o-rmax"></dd></div>
           <div class="m"><dt>利得 <i>k</i></dt><dd><span id="o-k"></span><span class="m-note" id="o-kn"></span></dd></div>
         </dl>
-        <div class="stw ptw">
+        <div class="stw ptw pz-sc">
           <table class="stab ptab2" id="pt-tab">
             <caption class="sr">極と零点の位置と、極の共振の周波数・Q・時定数</caption>
             <thead><tr><th scope="col">点</th><th scope="col">半径 <i>r</i></th><th scope="col">角度 <i>θ</i></th><th scope="col">周波数 <i>f</i></th><th scope="col"><i>Q</i></th><th scope="col">時定数 <i>τ</i></th></tr></thead>
@@ -134,7 +134,7 @@ const prm = (k: string) => {
       <Panel hid="hd-geo" title="距離と角度" class="a-geo">
         <span slot="aux" class="aux" id="geo-aux"></span>
         <div class="geq" id="geo-eq"></div>
-        <div class="stw">
+        <div class="stw pz-sc">
           <table class="stab gtab" id="geo-tab">
             <caption class="sr">e の jω 乗から各根への線の長さと角度</caption>
             <thead><tr><th scope="col">根</th><th scope="col">位置</th><th scope="col">長さ <i>d</i></th><th scope="col">角度 <i>φ</i></th></tr></thead>
@@ -171,7 +171,7 @@ const prm = (k: string) => {
         </div>
         <div id="v-tf">
           <div class="hz" id="tf-hz"></div>
-          <div class="stw"><table class="stab ctab" id="tf-tab">
+          <div class="stw pz-sc"><table class="stab ctab" id="tf-tab">
             <caption class="sr">伝達関数の分子 b と分母 a の係数</caption>
             <thead><tr><th scope="col"><i>i</i></th><th scope="col"><i>b</i><sub><i>i</i></sub></th><th scope="col"><i>a</i><sub><i>i</i></sub></th></tr></thead>
             <tbody></tbody>
@@ -180,7 +180,7 @@ const prm = (k: string) => {
         <div id="v-sos" hidden>
           <div class="hz" id="sos-hz"></div>
           <p class="cap">極が単位円から遠い段から順に並べる。利得 <i>k</i> は 1 段目の分子に掛けた</p>
-          <div class="stw"><table class="stab ctab" id="sos-tab">
+          <div class="stw pz-sc"><table class="stab ctab" id="sos-tab">
             <caption class="sr">双2次の段ごとの係数</caption>
             <thead><tr><th scope="col"><i>i</i></th><th scope="col"><i>b</i><sub>0<i>i</i></sub></th><th scope="col"><i>b</i><sub>1<i>i</i></sub></th><th scope="col"><i>b</i><sub>2<i>i</i></sub></th><th scope="col"><i>a</i><sub>1<i>i</i></sub></th><th scope="col"><i>a</i><sub>2<i>i</i></sub></th></tr></thead>
             <tbody></tbody>

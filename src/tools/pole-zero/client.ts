@@ -6,6 +6,7 @@ import { Choice } from '../../lib/choice';
 import { $ } from '../../lib/dom';
 import { fmt, fmtR, minus, parts, ro } from '../../lib/format';
 import { ParamGroup } from '../../lib/param';
+import { reserveHeight } from '../../lib/reserve';
 import { DV, SH, SW } from '../../lib/scope';
 import { store, stored, storeToggle } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
@@ -79,6 +80,15 @@ function toast(msg: string): void {
 const D = Math.PI / 180;
 /** 極・零点それぞれの根の個数の上限（共役の対は 2） */
 const MAXO = 24;
+/** 安定でないときの知らせ（z 平面の下と、音の枠） */
+const Z_MSG = {
+  unstable: '単位円の外に極があるため不安定です',
+  marginal: '単位円の上に極があるため、出力が減衰しません（安定限界）',
+};
+const SND_MSG = {
+  unstable: '単位円の外に極があり不安定なため、音を止めています',
+  marginal: '単位円の上に極があり出力が減衰しないため、音を止めています',
+};
 const KIND: Record<Kind, string> = { p: '極', z: '零点' };
 const dBh = (v: number) => `${fixed(v, 2)}<span class="u">dB</span>`;
 /** ω を π の倍数で */
@@ -204,14 +214,7 @@ function drawPlane(): void {
     'aria-label',
     `z 平面。極 ${N} 個、零点 ${M} 個、${stabText[st]}。点を選んで矢印キーで動かし、Delete で消せます。`,
   );
-  txt(
-    '#z-msg',
-    st === 'unstable'
-      ? '単位円の外に極があるため不安定です'
-      : st === 'marginal'
-        ? '単位円の上に極があるため、出力が減衰しません（安定限界）'
-        : '',
-  );
+  txt('#z-msg', st === 'unstable' || st === 'marginal' ? Z_MSG[st] : '');
 }
 /** 点がすべて入る表示の範囲にする（ドラッグ中は変えない） */
 function fitView(): void {
@@ -427,6 +430,26 @@ function showCoef(): void {
       .join(''),
   );
 }
+/* 安定でないときの知らせ。出ても消えても下の行が動かないよう、長いほうの高さを取っておく */
+reserveHeight($('#z-msg'), Object.values(Z_MSG));
+reserveHeight($('#snd-msg'), Object.values(SND_MSG));
+/*
+ * 伝達関数と縦続の式は、分子・分母の項の数で添字の有無が変わり高さが変わる。高くなる形の分を取っておく。
+ * 数式の書体が読み込まれると高さが変わるので、読み込んだあとに測り直す
+ */
+function reserveEq(): void {
+  reserveHeight(
+    $('#tf-hz'),
+    [0, 1, MAXO].flatMap((m) => [0, 1, MAXO].map((n) => tfMath(m, n))),
+    { html: true },
+  );
+  reserveHeight(
+    $('#sos-hz'),
+    [0, 1, MAXO / 2].map((n) => sosMath(n)),
+    { html: true },
+  );
+}
+reserveEq();
 new Choice($('#cview'), (v) => {
   $('#v-tf').hidden = v !== 'tf';
   $('#v-sos').hidden = v !== 'sos';
@@ -697,14 +720,7 @@ function sendAudio(): void {
   if (!A) return;
   const on = A.st.s === 'stable' && Number.isFinite(A.pk.lm);
   au.filter(pts, Math.exp(-A.pk.lm), on);
-  txt(
-    '#snd-msg',
-    on
-      ? ''
-      : A.st.s === 'unstable'
-        ? '単位円の外に極があり不安定なため、音を止めています'
-        : '単位円の上に極があり出力が減衰しないため、音を止めています',
-  );
+  txt('#snd-msg', on ? '' : SND_MSG[A.st.s === 'unstable' ? 'unstable' : 'marginal']);
 }
 function sendSrc(): void {
   au.source(src, G.get('sf'));

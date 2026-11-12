@@ -6,6 +6,10 @@
 
 /* 記号の列（R_min が入る幅） */
 .a-in .prow{--sw:2.2rem}
+/* 項目名: 取っておく高さを枠の幅で測るため、名前の欄を幅いっぱいにする */
+.a-in .c-name>.pn{flex-grow:1}
+/* 狭い枠では記号と値の欄を詰め、項目名が 1 文字ずつ折り返さないようにする */
+@container (max-width:400px){.a-in .prow{--sw:2rem;--fw:132px}}
 /* 追加欄: 入力欄 | ＋追加（数値欄と同じ高さ） */
 .exf{display:grid;grid-template-columns:minmax(0,1fr) auto;height:30px;border:1px solid var(--line-2);border-radius:4px;background:var(--inset);overflow:hidden}
 .exf:focus-within{border-color:var(--focus);box-shadow:0 0 0 1px var(--focus)}
@@ -34,10 +38,13 @@
 .m-wide dt{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:.5em}
 .cmb-aux{margin-left:auto!important;color:var(--ink-3)}
 .m-st .tg{font:500 12.5px/1 var(--sans)}
+/* 中止ともう一度探索で幅を変えず、探索の行の折り返しを変えない */
+#runBtn{min-width:calc(6em + 22px)}
 
 /* candidates（候補の一覧） */
 .a-sch{container-type:inline-size}
-.clist{display:grid;margin:0 -6px}
+/* 候補は最大 10 件で、組み合わせが長いと 2 行になる。高さを決めて中をスクロールさせる */
+.clist{display:grid;align-content:start;height:440px;margin:0 -6px;overflow-y:auto}
 .cr{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"v e" "x k";column-gap:12px;row-gap:1px;align-items:baseline;width:100%;margin:0;padding:8px 6px;border:0;border-top:1px solid var(--line);border-radius:0;background:none;color:var(--ink);text-align:left;cursor:pointer}
 .cr:first-child,.cr-h+.cr{border-top:0}
 .cr .v{grid-area:v;font:500 15px/1.4 var(--mono);font-variant-numeric:tabular-nums}
@@ -49,7 +56,7 @@ button.cr:hover{background:var(--inset)}
 button.cr:focus-visible{outline-offset:-2px}
 .cr[aria-pressed="true"],.cr[aria-pressed="true"]:hover{background:var(--ink);color:var(--surface)}
 .cr[aria-pressed="true"] .e,.cr[aria-pressed="true"] .x,.cr[aria-pressed="true"] .k{color:var(--surface);opacity:.8}
-.cr-h{display:none;cursor:default;padding-top:0;padding-bottom:4px;border-bottom:1px solid var(--line-2)}
+.cr-h{display:none;position:sticky;top:0;z-index:1;background:var(--bg);cursor:default;padding-top:0;padding-bottom:4px;border-bottom:1px solid var(--line-2)}
 .cr-h span{font:12px/1.4 var(--sans)!important;color:var(--ink-3)!important}
 @container (min-width:560px){
   .cr{grid-template-columns:9.5rem 7rem minmax(0,1fr) 3rem;grid-template-areas:"v e x k";align-items:baseline}

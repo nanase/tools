@@ -86,6 +86,11 @@
 /* 段階の境の目盛り（長い目盛りの線を、段階の境にだけ引く） */
 .tp-tk path.mj{stroke-width:1.5px}
 .tp-tm{margin-top:6px}
+/* 狭い幅では位置の欄が細く、「段階 2 / 7」の末尾が … で切れる。間を詰めて欄を広げる */
+@media (max-width:420px){
+  .tp{column-gap:6px;padding-inline:4px}
+  .tp-side{gap:2px;padding-left:6px}
+}
 #tp-loop[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
 
 /* 計算結果 */

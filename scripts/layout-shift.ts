@@ -10,9 +10,9 @@
  * ヘッドレスの Edge（なければ環境変数 BROWSER のブラウザ）を CDP で動かす。開いて待つ・再生する・数値の欄を端から端まで
  * 動かす・選択肢とボタンを順に押す。そのたびに枠（.pnl）の高さが変わったら、原因の要素と前後の文字を出す。
  * 数えないもの
- * - ボタンや選択で行・枠が出る・消える（表示の切り替え）。文字が変わって折り返すものは、どの操作でも数える
+ * - ボタンや選択で行・枠が出る・消える、幅が変わって折り返す（表示の切り替え）。同じ幅のまま文字が変わって折り返すものは、どの操作でも数える
  * - 図（canvas・svg・img・video）の大きさ、動作原理と式の枠、「その他」の開閉
- * - data-shift="ok" を付けた要素の中（入力した文字の長さで決まる欄など。付けるときは理由をコメントに書く）
+ * - data-shift="ok" を付けた要素の中（入力した文字の長さで決まる欄、切り替えで中身ごと入れ替わる表など。付けるときは理由をコメントに書く）
  */
 import { spawn } from 'node:child_process';
 import { existsSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
@@ -30,10 +30,20 @@ interface Rec {
   t0: string | null;
   t1: string | null;
   show: boolean;
+  /** 原因の要素の幅も変わった（並びの切り替えで枠が狭く・広くなった） */
+  wide: boolean;
 }
 
 /** ページの中で動く。window.__ls に操作と計測の関数を置く */
 function probe(): void {
+  /* 開発サーバの自動再読み込み（Vite の HMR）を止める。検査の途中でページが読み直されると、偽の揺れが出るため */
+  window.WebSocket = new Proxy(window.WebSocket, {
+    construct(T, [url, protocols]: [string | URL, (string | string[])?]) {
+      if ([protocols].flat().some((p) => p === 'vite-hmr' || p === 'vite-ping'))
+        return Object.assign(new EventTarget(), { readyState: 0, send() {}, close() {} });
+      return new T(url, protocols);
+    },
+  });
   /** 高さが変わると下が動く枠 */
   const ANCH = '.pnl, main > *, .tp';
   /** 数えない所 */
@@ -85,10 +95,13 @@ function probe(): void {
     const r = el.getBoundingClientRect();
     return r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden';
   };
-  type Snap = Map<number, { el: Element; h: number; t: string | null }>;
+  type Snap = Map<number, { el: Element; h: number; w: number; t: string | null }>;
   const snap = (): Snap => {
     const s: Snap = new Map();
-    for (const el of els()) s.set(idOf(el), { el, h: el.getBoundingClientRect().height, t: txt(el) });
+    for (const el of els()) {
+      const r = el.getBoundingClientRect();
+      s.set(idOf(el), { el, h: r.height, w: r.width, t: txt(el) });
+    }
     return s;
   };
   let prev: Snap | null = null;
@@ -96,10 +109,11 @@ function probe(): void {
     const cur = snap(),
       out: Rec[] = [];
     if (prev) {
-      const ch: { el: Element; h0: number; h1: number; t0: string | null; t1: string | null }[] = [];
+      const ch: { el: Element; h0: number; h1: number; t0: string | null; t1: string | null; wide: boolean }[] = [];
       for (const [id, c] of cur) {
         const p = prev.get(id);
-        if (p && Math.abs(c.h - p.h) >= 1) ch.push({ el: c.el, h0: p.h, h1: c.h, t0: p.t, t1: c.t });
+        if (p && Math.abs(c.h - p.h) >= 1)
+          ch.push({ el: c.el, h0: p.h, h1: c.h, t0: p.t, t1: c.t, wide: Math.abs(c.w - p.w) >= 1 });
       }
       const anchors = new Set(ch.filter((c) => c.el.matches(ANCH)).map((c) => c.el));
       if (anchors.size) {
@@ -107,10 +121,19 @@ function probe(): void {
           R = new Set(ch.filter((c) => !Z.has(c.el)).map((c) => c.el));
         for (const c of ch) {
           const show = Z.has(c.el);
-          if (show && c.el.parentElement && Z.has(c.el.parentElement)) continue;
+          /* 出る・消えるものは、親の高さが変わったときだけ数える（1 行の表示の行の中など、親が動かなければ揺れない） */
+          if (show && c.el.parentElement && (Z.has(c.el.parentElement) || !R.has(c.el.parentElement))) continue;
           if (!show && [...R, ...Z].some((o) => o !== c.el && c.el.contains(o))) continue;
+          /* 枠まで高さの変わった箱が続くときだけ数える（高さを決めたスクロール枠の中などは、外が動かない） */
           let inA = false;
-          for (let e: Element | null = c.el; e; e = e.parentElement) if (anchors.has(e)) inA = true;
+          for (let e = c.el.parentElement; e; e = e.parentElement) {
+            if (!R.has(e) && !Z.has(e)) break;
+            if (anchors.has(e)) {
+              inA = true;
+              break;
+            }
+          }
+          if (c.el.matches(ANCH) && anchors.has(c.el)) inA = true;
           if (!inA || c.el.closest(SKIP) || c.el.matches('canvas, svg, img, video')) continue;
           if (outOfFlow(c.el, c.el.closest(ANCH))) continue;
           const pt = (c.el.closest('.pnl')?.querySelector('h2')?.textContent ?? '').trim().slice(0, 20);
@@ -124,6 +147,7 @@ function probe(): void {
             t0: c.t0,
             t1: c.t1,
             show,
+            wide: c.wide,
           });
         }
       }
@@ -192,8 +216,12 @@ function probe(): void {
   });
 }
 
-/** 数える揺れか。表示の切り替え（ボタン・選択で出る・消える）は数えない */
-const counts = (r: Rec) => !r.show || r.trig === 'idle' || r.trig === 'play' || r.trig === 'num';
+/**
+ * 数える揺れか。開いて待つ・再生・数値の操作ではすべて数える。ボタン・選択では、同じ幅のまま文字が変わって折り返したものだけを数える。
+ * ボタン・選択で出る・消えるもの、幅が変わって折り返すもの（単独・比較・一覧の切り替えなど）は、表示の切り替えとして数えない
+ */
+const counts = (r: Rec) =>
+  r.trig === 'idle' || r.trig === 'play' || r.trig === 'num' || (!r.show && !r.wide && r.t0 !== r.t1);
 
 /* ---------- 引数 ---------- */
 const args = process.argv.slice(2);

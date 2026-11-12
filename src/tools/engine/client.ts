@@ -169,7 +169,8 @@ let pvLast: [number, number, number][] = [],
 function showSpec(): void {
   const vd = (Math.PI / 4) * spec.bore ** 2 * spec.stroke * 1e6;
   $('#c-vd').innerHTML = u(fx(vd, 1), 'cm³');
-  $('#c-bs').innerHTML = u(`${fx(spec.bore * 1000, 1)} × ${fx(spec.stroke * 1000, 1)}`, 'mm');
+  /* × の前後を詰めて、狭い画面でも単位まで 1 行に収める */
+  $('#c-bs').innerHTML = u(`${fx(spec.bore * 1000, 1)}×${fx(spec.stroke * 1000, 1)}`, 'mm');
   $('#c-cr').textContent = fx(spec.cr, 1);
   $('#c-tq').innerHTML =
     `${u(String(spec.rated.torque), 'N·m')} <span class="m-sub">${grp(spec.rated.torqueRpm)} rpm</span>`;

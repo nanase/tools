@@ -29,7 +29,7 @@ const name = 'FFT';
           {NS.map((n) => <button type="button" data-v={n} aria-pressed={n === 8 ? 'true' : 'false'}>{n}</button>)}
         </div>
       </div>
-      <div class="sbar">
+      <div class="sbar lg">
         <span class="stag">矢印は値（実部 →・虚部 ↑）</span>
         <span class="stag"><i class="sw ff-sw-a" aria-hidden="true"></i>a</span>
         <span class="stag"><i class="sw c2" aria-hidden="true"></i>b（W を掛ける）</span>
@@ -40,7 +40,7 @@ const name = 'FFT';
         <div class="ff-zp">
           <div class="ff-zh">拡大<span id="ff-zt"></span></div>
           <div class="scope"><svg id="ff-zp" viewBox="0 0 300 300" role="img" aria-label="今のバタフライを複素平面で"></svg></div>
-          <div class="sbar">
+          <div class="sbar lg">
             <span class="stag"><i class="sw ff-sw-a" aria-hidden="true"></i>a</span>
             <span class="stag"><i class="sw ff-sw-g" aria-hidden="true"></i>b</span>
             <span class="stag"><i class="sw c2" aria-hidden="true"></i>W·b</span>
