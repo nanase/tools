@@ -440,6 +440,11 @@ function scaleTop(T: ArrayLike<number>, all = false): number {
   for (const f of S.wire?.frames ?? []) for (const v of f) if (v > m) m = v;
   return m;
 }
+const meanOf = (T: ArrayLike<number>): number => {
+  let m = 0;
+  for (let k = 0; k < T.length; k++) m += T[k];
+  return m / T.length;
+};
 const maxOf = (T: ArrayLike<number>, idx?: Int32Array): number => {
   let m = Number.NEGATIVE_INFINITY;
   if (idx) for (const k of idx) m = Math.max(m, T[k]);
@@ -509,6 +514,14 @@ function showResult(T?: Float32Array, i = 0): void {
         m(
           '最大の電流密度',
           `${I > 0 ? `${Number((jMax(b, I) * 1e-6).toPrecision(3))} A/mm²` : '0'}<small>平均 ${Number((val('bI') / (val('bw') * val('tcu') * 1e-3)).toPrecision(3))} A/mm²</small>`,
+        ) +
+        /* 線の形と同じ 6 項目にそろえ、形を切り替えても枠の高さを変えない */
+        m('基板の平均温度', `${fmtC(meanOf(fr))}<small>30 × 18 mm 全体</small>`) +
+        m(
+          '溶断',
+          b.tOpen !== null
+            ? `<span class="ng">${fmtT(b.tOpen)}</span><small>パッドの間が切れた時刻</small>`
+            : `なし<small>${b.done ? '融点 1085 °C に届かない' : '計算中'}</small>`,
         ),
     );
     params.note('f', C.ac === 'ac' ? `表皮の深さ ${lenText(b.dl)}` : '');
