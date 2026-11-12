@@ -243,8 +243,17 @@ export const TOOLS: Tool[] = [
     t: 'ギター音響モデル',
     d: 'ギターの弦と胴の振動を物理モデルで計算して鳴らします。',
     ic: 'gt',
-    r: ['violin', 'piano', 'tuner', 'temperament'],
+    r: ['electric-guitar', 'violin', 'piano', 'tuner'],
     k: 'guitar acoustic アコースティック physical model 物理モデル 弦 string 張力 tension フレット fret 響板 表板 soundboard ヘルムホルツ helmholtz 撥弦 pluck 非調和性 inharmonicity 残響 reverb モード合成 modal synthesis 演奏 バッハ bach クラシック ナイロン スチール オーディオ audio',
+  },
+  {
+    id: 'electric-guitar',
+    c: '音響モデル',
+    t: 'エレキギター',
+    d: '弦とピックアップとエフェクターを計算して鳴らします。',
+    ic: 'eg',
+    r: ['guitar', 'reverb', 'fm-synth', 'tuner'],
+    k: 'electric guitar エレキ エレクトリックギター ピックアップ pickup シングルコイル ハムバッカー humbucker エフェクター effects pedal 歪み distortion オーバードライブ overdrive ファズ fuzz アンプ amplifier 真空管 tube キャビネット cabinet スピーカー コンプレッサー compressor ワウ wah コーラス chorus フェイザー phaser フランジャー flanger トレモロ tremolo ディレイ delay リバーブ reverb スプリング spring チョーキング bend ビブラート vibrato フィードバック feedback ハーモニクス harmonics 物理モデル physical model モード合成 modal synthesis midi 演奏 オーディオ audio',
   },
   {
     id: 'piano',

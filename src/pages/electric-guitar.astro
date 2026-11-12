@@ -1,0 +1,138 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import MidiPanel from '../components/MidiPanel.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import Transport from '../components/Transport.astro';
+import TransportButton from '../components/TransportButton.astro';
+import TransportState from '../components/TransportState.astro';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import { outVol, TEMPO } from '../lib/play';
+import '../tools/electric-guitar/style.css';
+import How from '../tools/electric-guitar/How.astro';
+import { ANY, KEY, KNOB_ROWS, keyOf, PICK_ROWS, VOL0 } from '../tools/electric-guitar/params';
+import { GROUPS as KIND_GROUPS, KINDS } from '../tools/electric-guitar/pedals';
+import { GROUPS, PHRASES, PRESETS } from '../tools/electric-guitar/phrases';
+import Theory from '../tools/electric-guitar/Theory.astro';
+
+const name = 'エレキギター';
+const PHRASE0 = 'arp';
+/* テンプレートだけで使う値（型だけの import に書き換えられないよう、ここで受ける） */
+const presets = PRESETS,
+  kinds = Object.entries(KINDS),
+  any = ANY;
+const EAR =
+  '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 9a5 5 0 0 1 10 0v4h-2.5V9.5H13M3 9v4h2.5V9.5H3"/></svg>';
+const AMP_NAME = { clean: 'クリーン', crunch: 'クランチ', high: 'ハイゲイン' } as const;
+/** プリセットの下の小さな文字: アンプの種類と、並べるペダル */
+const presetSub = (p: (typeof PRESETS)[number]) =>
+  [
+    AMP_NAME[p.set.amp?.type ?? 'clean'],
+    ...[...p.pre, ...p.post].map(([k]) => KINDS[k].short),
+    ...((p.set.cab?.fb ?? 0) > 0 ? ['フィードバック'] : []),
+  ].join(' · ');
+---
+<SiteLayout title={name} tool={{ id: 'electric-guitar', name }} note="音は論文の模型を簡略化した物理モデルと、機材の回路の目安によるものです。">
+  <PageTitle title={name}>弦とピックアップとエフェクターを計算して鳴らします。ペダルを足して並べ替え、機材を通った音を試聴できます。</PageTitle>
+
+  <div class="tgrid">
+    <div class="col c1">
+      <Panel hid="hd-rig" title="機材" class="a-rig" fixed>
+        <div slot="aux" class="seg" id="p-view" role="group" aria-label="表示"><button type="button" data-v="rig" aria-pressed="true">全体図</button><button type="button" data-v="list" aria-pressed="false">一覧</button></div>
+        <div id="v-rig">
+          <div class="eg-rigw" id="rigw"><svg class="eg-rig" id="rig" viewBox="0 0 1000 440" role="group" aria-label="ギターから出力までの機材。押すと設定、＋で機材を追加、ドラッグで並べ替え"></svg></div>
+          <div class="eg-lg"><span>機材を押す: 設定</span><span>＋: 機材を追加</span><span>ドラッグ: 並べ替え</span><span>丸いスイッチ: オンとスルー</span><span><Fragment set:html={EAR} />: 試聴中</span></div>
+        </div>
+        <div id="v-list" hidden>
+          <div class="eg-ls" id="list"></div>
+        </div>
+
+        <div class="eg-pop" id="pop" hidden role="dialog" aria-labelledby="pop-name">
+          <div class="pp-h"><b id="pop-name">アンプ</b><button type="button" class="tg pp-on" id="pop-on" aria-pressed="true"><span class="led on" aria-hidden="true"></span><span class="eg-ont">オン</span></button><button type="button" class="pp-x" id="pop-x" title="閉じる" aria-label="閉じる">×</button></div>
+          <div class="pp-tools">
+            <span class="seg" id="pop-mv"><button type="button" id="pop-l" title="左へ（信号の前へ）" aria-label="左へ">◀</button><button type="button" id="pop-r" title="右へ（信号の後ろへ）" aria-label="右へ">▶</button></span>
+            <button type="button" class="tg eg-lsn" id="pop-ls" aria-pressed="false" title="この機材を通った音を試聴"><Fragment set:html={EAR} /><span id="pop-lsT">試聴</span></button>
+            <button type="button" class="tg pp-del" id="pop-del" title="ペダルを外す">外す</button>
+          </div>
+          <div class="scope eg-charw"><canvas class="eg-cv eg-hC" id="pop-char" role="img" aria-label="機材の特性"></canvas></div>
+          {any.map((a) => (
+            <div class="ptab" data-rows={a} hidden>
+              {PICK_ROWS[a].map((p) => <ChoiceRow k={keyOf(a, p.k)} name={p.name} sub={p.sub} choices={p.choices.map((c) => [c[0], c[1]] as [string, string])} value={p.v} layout={p.layout ?? 'seg'} />)}
+              {KNOB_ROWS[a].map((d) => <ParamRow d={d} />)}
+            </div>
+          ))}
+        </div>
+
+        <div class="eg-pop eg-menu" id="eg-menu" hidden role="dialog" aria-labelledby="eg-menu-h">
+          <div class="pp-h"><b id="eg-menu-h">機材を追加</b><button type="button" class="pp-x" id="eg-menu-x" title="閉じる" aria-label="閉じる">×</button></div>
+          {KIND_GROUPS.map(([g, t]) => (
+            <div class="mn-g"><span>{t}</span><div class="mn-l">{kinds.filter(([, d]) => d.g === g).map(([k, d]) => <button type="button" class={`mn-b g-${g}`} data-add={k}><i aria-hidden="true"></i>{d.name}</button>)}</div></div>
+          ))}
+        </div>
+      </Panel>
+
+      <Panel hid="hd-fret" title="指板" class="a-fret">
+        <div class="scope"><canvas class="eg-cv eg-hF" id="fret" role="img" aria-label="指板。押すとその弦とフレットを弾く。縦になぞると和音。右の四角は弦を止める"></canvas></div>
+        <div class="eg-lg"><span>押す: 弾く</span><span>縦になぞる: 和音</span><span>右の四角: 弦を止める</span></div>
+      </Panel>
+
+      <Panel hid="hd-out" title="波形とスペクトル" class="a-out">
+        <button slot="aux" type="button" class="tg eg-lsn" id="lsnBtn" aria-pressed="false" title="選んだ機材を通った音を試聴"><Fragment set:html={EAR} /><span id="lsnT">試聴</span></button>
+        <div class="sbar"><span class="stag"><i class="sw" aria-hidden="true"></i><b id="out-name">アンプ</b><span id="out-suf">を通った音</span></span></div>
+        <div class="scope"><canvas class="eg-cv eg-hW" id="wave" role="img" aria-label="選んだ機材を通った音の波形"></canvas></div>
+        <div class="scope eg-sp"><canvas class="eg-cv eg-hS" id="spec" role="img" aria-label="選んだ機材を通った音のスペクトル"></canvas></div>
+      </Panel>
+    </div>
+
+    <div class="col c2">
+      <Panel hid="hd-tone" title="プリセット" class="a-tone">
+        <div class="eg-pre" id="tone" role="group" aria-label="プリセット">
+          {presets.map((p) => <button type="button" class="eg-pk" data-preset={p.v} aria-pressed="false"><b>{p.name}</b><small>{presetSub(p)}</small></button>)}
+        </div>
+      </Panel>
+
+      <Panel hid="hd-play" title="演奏" class="a-play">
+        <TransportState slot="aux" />
+        <div class="ptab">
+          <div class="prow chr wide" id="p-phr">
+            <div class="c-sym" aria-hidden="true"></div>
+            <div class="c-name"><span class="pn" id="n-phr">フレーズ</span><p class="desc tip" role="tooltip" hidden>このツールのために作った短いフレーズ · くり返して弾く</p></div>
+            <div class="c-sub eg-phs">
+              {GROUPS.map(([g, t]) => (
+                <div class="eg-phg"><span>{t}</span><div class="chips" role="group" aria-label={t}>{PHRASES.filter((p) => p.g === g).map((p) => <button type="button" class="chip" data-v={p.v} aria-pressed={p.v === PHRASE0 ? 'true' : 'false'}>{p.name}</button>)}</div></div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <Transport>
+          <TransportButton id="muteBtn" icon="mute" label="消音" title="鳴っている弦をすべて止める（演奏は続ける）" />
+        </Transport>
+        <div class="eg-hear"><Fragment set:html={EAR} /><span>試聴</span><b id="hear-name">出力</b><button type="button" class="chip" id="hearBack" hidden>出力に戻す</button></div>
+        <div class="ptab">
+          <ParamRow d={TEMPO} />
+          <ParamRow d={KEY} />
+          <ParamRow d={outVol(VOL0)} />
+        </div>
+        <p class="msg er snd-msg" id="snd-msg" aria-live="polite"></p>
+      </Panel>
+
+      <MidiPanel />
+    </div>
+
+    <Panel hid="hd-how" title="しくみ" class="a-how">
+      <How />
+    </Panel>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools current="electric-guitar" />
+  <script>
+    import '../tools/electric-guitar/client';
+  </script>
+</SiteLayout>

@@ -14,6 +14,8 @@ export interface MidiSink {
   off(note: number): void;
   /** コントロールチェンジ（64 ダンパーペダル・67 ソフトペダルなど）。v は 0〜127 */
   cc?(num: number, v: number): void;
+  /** ピッチベンド。v は −1〜1（中央が 0） */
+  bend?(v: number): void;
 }
 
 /** タッチ（ベロシティの曲線）: 軽いほど弱く弾いても強い音になる */
@@ -34,12 +36,13 @@ export const midiOk = (): boolean =>
 
 /**
  * MIDI のメッセージ 1 つを読む。打鍵は vel > 0 の 0x9n、離鍵は 0x8n と vel = 0 の 0x9n。
- * CC 120（すべての音を止める）と 123（すべての鍵を離す）は 'all' にする。ch はチャンネル 1〜16
+ * CC 120（すべての音を止める）と 123（すべての鍵を離す）は 'all' にする。ピッチベンド（0xEn）は −1〜1。ch はチャンネル 1〜16
  */
 export type MidiMsg = { ch: number } & (
   | { t: 'on'; note: number; vel: number }
   | { t: 'off'; note: number }
   | { t: 'cc'; num: number; v: number }
+  | { t: 'bend'; v: number }
   | { t: 'all' }
 );
 export function parseMidi(d: ArrayLike<number>): MidiMsg | null {
@@ -51,6 +54,7 @@ export function parseMidi(d: ArrayLike<number>): MidiMsg | null {
   if (st === 0x90 && b > 0) return { ch, t: 'on', note: a, vel: b };
   if (st === 0x80 || st === 0x90) return { ch, t: 'off', note: a };
   if (st === 0xb0) return a === 120 || a === 123 ? { ch, t: 'all' } : { ch, t: 'cc', num: a, v: b };
+  if (st === 0xe0) return { ch, t: 'bend', v: Math.max(-1, (((b << 7) | a) - 8192) / 8191) };
   return null;
 }
 /** 押している鍵の覚え方: チャンネルと音の番号をまとめた 1 つの数 */
@@ -151,6 +155,7 @@ export class MidiIn {
     } else if (m.t === 'off') {
       if (h.delete(keyOf(m.ch, m.note))) this.sink.off(m.note);
     } else if (m.t === 'cc') this.sink.cc?.(m.num, m.v);
+    else if (m.t === 'bend') this.sink.bend?.(m.v);
     else this.lift(id, m.ch);
   }
 

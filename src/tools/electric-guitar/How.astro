@@ -1,0 +1,75 @@
+---
+/** しくみの枠: 弦から出力までを 6 つの工程の小さな図と短い説明で順に見せる */
+const W = 150,
+  path = (f: (x: number) => number, x0 = 6, x1 = 144, y0 = 33) => {
+    let d = '';
+    for (let x = x0; x <= x1; x += 1.5) d += `${d ? 'L' : 'M'}${x.toFixed(1)} ${(y0 - f(x)).toFixed(1)}`;
+    return d;
+  },
+  /** 対数の横軸（50 Hz〜20 kHz）の x を周波数に */
+  fq = (x: number) => 10 ** (1.7 + ((x - 6) / 138) * 2.6);
+const STEPS: { h: string; svg: string; p: string }[] = [
+  {
+    h: '弦の振動',
+    svg: `<path class="eg-l0" d="M8 40L118 40"/><path class="eg-l1" d="M8 40L40 18L118 40"/>${[1, 2, 3].map((n) => `<path class="eg-l2 eg-thin" d="${path((x) => (9 / n) * Math.sin(((x - 8) * n * Math.PI) / 110), 8, 118, 40)}"/>`).join('')}<text class="eg-mt" x="40" y="12">弾く点</text>`,
+    p: '弾いた点が角の形から、倍音を重ねた振動',
+  },
+  {
+    h: 'ピックアップ',
+    svg: `<rect class="eg-fp" x="84" y="36" width="12" height="20" rx="2"/><path class="eg-l0" d="M6 30L144 30"/><path class="eg-l1" d="${path((x) => 10 * Math.sin(((x - 6) * 2 * Math.PI) / 92), 6, 144, 30)}"/><path class="eg-lt" d="M90 12V56"/><text class="eg-mt" x="90" y="64">磁石</text><text class="eg-mt" x="52" y="10">節</text>`,
+    p: '磁石の上の弦の速さを電圧に。真上が節の倍音は出ない',
+  },
+  {
+    h: 'コイルの共振',
+    svg: `<path class="eg-l0" d="M6 56H144"/><path class="eg-l1" d="${path(
+      (x) => {
+        const r = fq(x) / 3500;
+        return 8 + 14 * Math.log10(1 / Math.hypot(1 - r * r, r / 2.2));
+      },
+      6,
+      144,
+      46,
+    )}"/><path class="eg-l2 eg-thin" d="${path(
+      (x) => {
+        const r = fq(x) / 1800;
+        return 8 + 14 * Math.log10(1 / Math.hypot(1 - r * r, r / 0.7));
+      },
+      6,
+      144,
+      46,
+    )}"/><text class="eg-mt" x="110" y="10">共振</text><text class="eg-mt" x="30" y="64">低い</text><text class="eg-mt" x="124" y="64">高い</text>`,
+    p: 'コイルとケーブルの容量で 2〜5 kHz に山。トーンで高い音を削る',
+  },
+  {
+    h: '歪み',
+    svg: `<path class="eg-l0" d="M75 6V60M10 33H140"/><path class="eg-l2 eg-thin" d="M30 60L120 6"/><path class="eg-l1" d="${path((x) => 22 * Math.tanh((x - 75) / 14), 10, 140)}"/><text class="eg-mt" x="128" y="62">入力</text><text class="eg-mt" x="98" y="8">出力</text>`,
+    p: '大きく増幅して頭を丸める。倍音が増え、音が伸びる',
+  },
+  {
+    h: 'アンプとキャビネット',
+    svg: `<path class="eg-l0" d="M6 56H144"/><path class="eg-l1" d="${path(
+      (x) => {
+        const f = fq(x),
+          r = f / 90,
+          hp = (r * r) / Math.hypot(1 - r * r, r / 1.3),
+          lp = 1 / (1 + (f / 4500) ** 4);
+        return 10 + 12 * Math.log10(Math.max(1e-3, hp * lp));
+      },
+      6,
+      144,
+      40,
+    )}"/><text class="eg-mt" x="126" y="62">5k</text><text class="eg-mt" x="22" y="62">80</text>`,
+    p: 'トーンで中ほどの音を削り、スピーカーが 5 kHz より上を落とす',
+  },
+  {
+    h: '空間系',
+    svg: `<path class="eg-l0" d="M6 56H144"/>${[0, 1, 2, 3, 4].map((k) => `<path class="${k ? 'eg-l2' : 'eg-l1'}" d="M${14 + k * 28} 56V${(56 - 44 * 0.6 ** k).toFixed(1)}"/>`).join('')}<text class="eg-mt" x="75" y="10">くり返す音</text>`,
+    p: '遅らせた音を重ねる。揺らすとコーラス、くり返すとディレイ',
+  },
+];
+---
+<ol class="eg-how">
+  {STEPS.map((s, i) => (
+    <li><h3><b>{i + 1}</b>{s.h}</h3><svg class="eg-mini" viewBox={`0 0 ${W} 66`} aria-hidden="true" set:html={s.svg} /><p>{s.p}</p></li>
+  ))}
+</ol>
