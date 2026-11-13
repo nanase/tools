@@ -56,7 +56,7 @@ function kick(A: Arts['ART']): void {
   raf = requestAnimationFrame((n) => step(n, A));
 }
 
-function play(svg: SVGSVGElement): void {
+export function play(svg: SVGSVGElement): void {
   if (RM.matches) return;
   if (!still.has(svg)) still.set(svg, svg.innerHTML);
   const m = live.get(svg),
@@ -70,7 +70,7 @@ function play(svg: SVGSVGElement): void {
   });
 }
 
-function stop(svg: SVGSVGElement): void {
+export function stop(svg: SVGSVGElement): void {
   const m = live.get(svg);
   if (!m || m.back) return;
   const now = performance.now(),
@@ -85,9 +85,18 @@ function stop(svg: SVGSVGElement): void {
   }
 }
 
+/** 図柄を動かすのをやめて忘れる（図柄の要素を捨てるとき） */
+export function drop(svg: SVGSVGElement): void {
+  live.delete(svg);
+  still.delete(svg);
+}
+
 for (const svg of $$<SVGSVGElement>('a.unit svg[data-art]')) {
   const card = svg.closest('a') as HTMLAnchorElement;
-  /* タッチでは指を置いたときに pointerenter、離すか画面を動かしたときに pointerleave が届く */
-  card.addEventListener('pointerenter', () => play(svg));
+  /* タッチでは指を置いたときに pointerenter、離すか画面を動かしたときに pointerleave が届く。
+     トップの一覧では行の小さな図柄を止めたままにし、浮かべたカード（scripts/home.ts）で動かす */
+  card.addEventListener('pointerenter', () => {
+    if (!card.closest('[data-view="list"]')) play(svg);
+  });
   card.addEventListener('pointerleave', () => stop(svg));
 }
