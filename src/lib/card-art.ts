@@ -986,6 +986,42 @@ const EG_GUARD: [number, number][] = [
   [25.5, 7],
   [26, 3.4],
 ];
+/* ===== 振り子時計（pcl）: 輪列・がんぎ車とアンクル・振り子・文字盤。12 コマ/秒、1 往復 1 秒、1 周 2 秒 ===== */
+const PCL_FPS = 12;
+const pclAt = (cx: number, cy: number, r: number, a: number): [number, number] => [
+  cx + r * Math.cos(a),
+  cy + r * Math.sin(a),
+];
+/** がんぎ車の進み（歯の数）: 振り子が真ん中を過ぎた直後に半歯ずつ進み、落ちた直後のコマで少し戻る。1 周で 2 歯 */
+function pclSteps(k: number): number {
+  const half = PCL_FPS / 2,
+    q = Math.floor((k + half / 2) / half),
+    u = mod(k + half / 2, half);
+  return mod(q * 0.5 + (u === 0 ? -0.15 : 0), 2);
+}
+/** のこぎり歯のがんぎ車（先端が回る向きに傾く） */
+function pclSaw(cx: number, cy: number, r: number, z: number, a0: number): string {
+  const pts: [number, number][] = [];
+  for (let k = 0; k < z; k++) {
+    const a = a0 + (k * TAU) / z,
+      pa = TAU / z;
+    pts.push(pclAt(cx, cy, r - 3, a - 0.12 * pa), pclAt(cx, cy, r, a), pclAt(cx, cy, r - 3, a - 0.85 * pa));
+  }
+  return `${pl(pts)}Z`;
+}
+/** アンクル: 支点 (px, py) から、がんぎ車（中心 (cx, cy)・半径 r）の上の 2 か所の爪へ。th だけ傾ける */
+function pclAnchor(px: number, py: number, cx: number, cy: number, r: number, th: number): string {
+  const rot = ([x, y]: [number, number]): [number, number] => [
+    px + (x - px) * Math.cos(th) - (y - py) * Math.sin(th),
+    py + (x - px) * Math.sin(th) + (y - py) * Math.cos(th),
+  ];
+  let d = '';
+  for (const s of [-1, 1]) {
+    const [ex, ey] = pclAt(cx, cy, r + 0.5, -Math.PI / 2 + s * 0.8);
+    d += pl([[px, py], rot([ex, ey]), rot([ex + s * 2.4, ey + 3.4])]);
+  }
+  return d;
+}
 
 export const ART: Record<string, Art> = {
   /* タイマIC 555: 出力（周期 36、High 24）と C1 の電圧。時間が流れる */
@@ -3073,6 +3109,32 @@ export const ART: Record<string, Art> = {
       }
     return s + P('c t', 'M8 17h12v14H8zM100 17h12v14h-12zM20 22H50V26H20zM70 22H100V26H70zM50 23.2H70V24.8H50z');
   },
+  pcl(t) {
+    const k = Math.floor(t * PCL_FPS + 1e-9),
+      th = 0.22 * Math.cos((TAU * k) / PCL_FPS),
+      step = pclSteps(k),
+      g = step / 2;
+    let s = P('b', gbGear(22, 30, 14, 28, (-g * TAU) / 28 + 0.05)) + gbDot('b', 22, 30, 2);
+    s += P('b', gbGear(45, 18, 8, 16, (g * TAU) / 16 + 0.2)) + gbDot('b', 45, 18, 1.5);
+    s += P('a', pclSaw(64, 26, 10, 15, -Math.PI / 2 + (step * TAU) / 15)) + gbDot('a', 64, 26, 1.8);
+    s += P('a', pclAnchor(64, 9, 64, 26, 10, -th));
+    const [bx, by] = pclAt(64, 9, 36, Math.PI / 2 - th);
+    s +=
+      P(
+        'c t',
+        pl([
+          [64, 9],
+          [bx, by],
+        ]),
+      ) + gbDot('fc', bx, by, 4);
+    s += gbDot('c', 100, 24, 16);
+    for (let i = 0; i < 12; i++)
+      s += P('c t', pl([pclAt(100, 24, 13, (i * TAU) / 12), pclAt(100, 24, 15, (i * TAU) / 12)]));
+    s +=
+      P('c', pl([[100, 24], pclAt(100, 24, 13, -Math.PI / 2 - 0.6)])) +
+      P('c w', pl([[100, 24], pclAt(100, 24, 8, -Math.PI / 2 + 1.9)]));
+    return s;
+  },
 };
 
 /**
@@ -3156,6 +3218,7 @@ export const LOOP: Record<string, number> = {
   gb: 2,
   sf: 4,
   wh: 3,
+  pcl: 2,
 };
 
 /** 止まっているときの図柄（ビルド時に HTML へ出す） */

@@ -1,0 +1,197 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/pendulum-clock/style.css';
+import { type EscType, rateOf, springF, TABLES, TYPES } from '../tools/pendulum-clock/model';
+import { VOL } from '../tools/pendulum-clock/params';
+import { PC_ROOMS } from '../tools/pendulum-clock/room';
+import Theory from '../tools/pendulum-clock/Theory.astro';
+
+const name = '振り子時計';
+const SPEEDS = [
+  ['0.1', '1/10'],
+  ['1', '実際の速さ'],
+  ['60', '1 分/秒'],
+  ['3600', '1 時間/秒'],
+  ['86400', '1 日/秒'],
+] as const;
+const FOCUS = [
+  ['full', '全体'],
+  ['auto', '動いている所'],
+  ['esc', '脱進機'],
+  ['strike', '時打ち'],
+  ['spring', 'ゼンマイ'],
+  ['motion', '表輪列'],
+] as const;
+const GALS = [
+  ['0.25', '25 gal'],
+  ['0.8', '80 gal'],
+  ['2.5', '250 gal'],
+] as const;
+const HOW = [
+  ['ゼンマイと香箱', '巻いたゼンマイが香箱を回す力', '香箱は 1 日に 1 回転、巻き切りで約 8 日'],
+  ['輪列', '香箱 → 中間車 → 2 番車 → 3 番車 → がんぎ車', 'がんぎ車は香箱の 2,880 倍の速さ'],
+  ['脱進機', 'アンクルががんぎ車を 1 振りに半歯ずつ通す', '通すたびに振り子をひと押し'],
+  ['振り子', '長さ 25 cm・1 振り 0.5 秒', '押す力が弱まると振り角が縮む'],
+  ['表輪列', '筒かな → 日の裏車 → 筒車', '分針の 12 回転で時針が 1 回転'],
+  ['時打ち', '正時の 3 分前に予告、正時に打ち始め', '数取り車の溝で止まる'],
+] as const;
+const PAL: Record<EscType, [string, string]> = {
+  recoil: ['斜めの面', '押し戻される'],
+  graham: ['円弧と斜面', '止まったまま'],
+  brocot: ['半円のピン', 'ほぼ止まったまま'],
+};
+const drift = (t: EscType) => {
+  const d = rateOf(t, springF(2)) - rateOf(t, 1);
+  return `${d >= 0 ? '+' : '−'}${Math.abs(d).toFixed(0)} s/日`;
+};
+const WIND = [
+  ['T', '時計'],
+  ['S', '時打ち'],
+] as const;
+---
+<SiteLayout title={name} tool={{ id: 'pendulum-clock', name }}>
+  <PageTitle title={name}>8 日巻きの置時計の中を、がんぎ車の歯と爪の当たりまで計算して動かします。ゼンマイは実際の時刻で緩みます。</PageTitle>
+
+  <div class="tgrid pc-g" id="pc">
+    <Panel hid="hd-fig" title="機械" fixed class="pc-fig">
+      <div slot="aux" class="pc-aux">
+        <button type="button" class="tg" id="pc-pause" aria-pressed="false" title="時計の動きを止める。もう一度押すと続ける">一時停止</button>
+        <div class="seg" id="pc-speed" role="group" aria-label="速さ">
+          {SPEEDS.map(([v, t]) => <button type="button" data-v={v} aria-pressed={v === '1' ? 'true' : 'false'}>{t}</button>)}
+        </div>
+        <button type="button" class="tg" id="pc-snd" aria-pressed="false"><span class="led" aria-hidden="true"></span>音</button>
+      </div>
+      <div class="sbar lg pc-leg">
+        <span class="stag"><i class="pc-sq go" aria-hidden="true"></i>時計の輪列</span>
+        <span class="stag"><i class="pc-sq st" aria-hidden="true"></i>時打ちの輪列</span>
+        <span class="stag"><i class="pc-sq mw" aria-hidden="true"></i>表輪列（前板の前）</span>
+        <span class="stag"><i class="pc-sq hot" aria-hidden="true"></i>当たっている爪</span>
+        <span class="stag"><i class="pc-dash" aria-hidden="true"></i>裏板の外</span>
+        <span class="stag"><i class="pc-dot" aria-hidden="true"></i>後ろに隠れた輪郭</span>
+        <span class="stag"><i class="pc-sq lens" aria-hidden="true"></i>表示中の範囲</span>
+      </div>
+      <div class="pc-a">
+        <div class="pc-main">
+          <div class="pc-v pc-v-front">
+            <canvas data-cv="front" class="pc-cv pc-h-front" role="img" aria-label="時計の機械の正面図（板を外した図）"></canvas>
+            <div class="pc-tip" hidden></div>
+          </div>
+          <div class="pc-zb">
+            <button type="button" class="tg" id="pc-zin" title="拡大" aria-label="拡大">＋</button>
+            <button type="button" class="tg" id="pc-zout" title="縮小" aria-label="縮小">−</button>
+            <span class="pc-hint">ホイールで拡大・ドラッグで移動・おもりはドラッグでつかむ</span>
+          </div>
+        </div>
+        <div class="pc-side">
+          <div class="pc-sg">
+            <span class="pc-sl">脱進機</span>
+            <div class="seg" id="pc-type" role="group" aria-label="脱進機の型">
+              {(Object.keys(TYPES) as EscType[]).map((k) => <button type="button" data-v={k} aria-pressed={k === 'recoil' ? 'true' : 'false'}>{TYPES[k].name}</button>)}
+            </div>
+          </div>
+          <div class="seg pc-focus" id="pc-focus" role="group" aria-label="見る場所">
+            {FOCUS.map(([v, t]) => <button type="button" data-v={v} aria-pressed={v === 'full' ? 'true' : 'false'}>{t}</button>)}
+          </div>
+          <div class="pc-v">
+            <canvas data-cv="mini" class="pc-cv pc-h-mini" role="img" aria-label="機械の全体と表示中の範囲"></canvas>
+            <span class="pc-cap">全体</span>
+          </div>
+          <div class="pc-v">
+            <canvas data-cv="dial" class="pc-cv pc-h-dial" role="img" aria-label="文字盤（分針をドラッグで時刻合わせ）"></canvas>
+            <span class="pc-cap">文字盤</span>
+          </div>
+          <div class="pc-tset">
+            <button type="button" class="tg" id="pc-pre">次の時打ちの 1 秒前へ</button>
+            <button type="button" class="tg" id="pc-now">実際の時刻に合わせる</button>
+          </div>
+          <div class="pc-sg pc-shake">
+            <span class="pc-sl">振り子と台</span>
+            <div class="pc-row">
+              <button type="button" class="tg" id="pc-hold" aria-pressed="false" title="おもりを真ん中で押さえて止める。もう一度押すと離す">おもりを押さえる</button>
+              <button type="button" class="tg" id="pc-push" disabled>振り子を押す</button>
+            </div>
+            <div class="pc-row">
+              <div class="seg" id="pc-gal" role="group" aria-label="揺れの強さ">
+                {GALS.map(([v, t]) => <button type="button" data-v={v} aria-pressed={v === '0.8' ? 'true' : 'false'}>{t}</button>)}
+              </div>
+              <button type="button" class="tg" id="pc-kick">押す（0.3 秒）</button>
+              <button type="button" class="tg" id="pc-quake">地震（20 秒）</button>
+            </div>
+            <div class="pc-row"><span class="pc-note" id="pc-shk">振り子の振れる向きに台を揺らす</span><span class="pc-note" id="pc-pnote"></span></div>
+          </div>
+        </div>
+      </div>
+      <div class="pc-v pc-v-sec">
+        <canvas data-cv="sec" class="pc-cv pc-h-sec" role="img" aria-label="軸に沿って並べた展開図"></canvas>
+        <span class="pc-cap">展開図（上が前板・下が裏板、丸は回転の印）</span>
+        <div class="pc-tip" hidden></div>
+      </div>
+    </Panel>
+
+    <div class="pc-3">
+      <Panel hid="hd-spr" title="ゼンマイ" class="pc-ctrl">
+        <p slot="aux" class="aux" id="pc-mode">実際の時刻で動作中</p>
+        {WIND.map(([k, t]) => (
+          <div class="pc-wind" data-w={k}>
+            <span class="pc-wn">{t}</span>
+            <div class="pc-bar" data-bar={k} role="slider" tabindex="0" aria-label={`${t}のゼンマイの巻き`} aria-valuemin="0" aria-valuemax="8.4" aria-valuenow="8.4" title="押した所まで巻く・緩める"><i id={`pc-bar${k}`}></i></div>
+            <b id={`pc-d${k}`}>—</b>
+            <button type="button" class="tg pc-key" data-wind={k} aria-pressed="false"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 2h6v3H9v9H7V5H5z"/></svg>巻く</button>
+          </div>
+        ))}
+      </Panel>
+
+      <Panel hid="hd-time" title="時刻と時打ち" class="pc-time">
+        <dl class="metrics pc-met">
+          <div class="m"><dt>時計の時刻</dt><dd id="pc-tc">—</dd></div>
+          <div class="m"><dt>実際の時刻</dt><dd id="pc-tr">—</dd></div>
+          <div class="m"><dt>時刻のずれ</dt><dd id="pc-err">—</dd></div>
+          <div class="m"><dt>1 日あたり</dt><dd id="pc-rate">—</dd></div>
+          <div class="m"><dt>振り角</dt><dd id="pc-amp">—</dd></div>
+          <div class="m"><dt>時打ち</dt><dd id="pc-strk">—</dd></div>
+        </dl>
+      </Panel>
+
+      <Panel hid="hd-snd" title="音" class="pc-snd">
+        <div class="ptab">
+          <ParamRow d={VOL} />
+          <ChoiceRow k="case" name="箱の響き" sub="機械を収めた木の箱の板と中の空気が響く。低い音ほど強く響く" choices={[['on', 'あり'], ['off', 'なし']]} value="on" />
+          <ChoiceRow k="room" name="部屋の響き" sub="時計から 2 m で聴く部屋の残響（居間 5×4×2.4 m・広間 10×8×3.5 m）" choices={PC_ROOMS.map((r) => [r.v, r.name] as const)} value="off" />
+        </div>
+      </Panel>
+    </div>
+
+    <Panel hid="hd-how" title="しくみ">
+      <div class="pc-how">
+        {HOW.map(([h, a, b], i) => (
+          <div class="pc-hw"><b>{i + 1}</b><div><h3>{h}</h3><p>{a}</p><p class="pc-sub">{b}</p></div></div>
+        ))}
+      </div>
+      <div class="pc-tabw">
+        <table class="pc-tab">
+          <thead><tr><th>脱進機</th><th>爪</th><th>ロック中のがんぎ車</th><th>巻き切り → 残り 2 日</th><th>止まる振り角</th></tr></thead>
+          <tbody>
+            {(Object.keys(TYPES) as EscType[]).map((k) => (
+              <tr><td>{TYPES[k].name}</td><td>{PAL[k][0]}</td><td>{PAL[k][1]}</td><td>{drift(k)}</td><td>{TABLES[k].Aon.toFixed(1)}° 未満</td></tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </Panel>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools current="pendulum-clock" />
+  <script>
+    import '../tools/pendulum-clock/client';
+  </script>
+</SiteLayout>
