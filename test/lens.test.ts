@@ -20,7 +20,18 @@ import {
   traceFwd,
 } from '../src/tools/lens/optics';
 import { curveSvg, mapDynamic, sectionSvg, spotSvg } from '../src/tools/lens/plot';
-import { angRadius, BOARDS, basis, bodyFrame, EYE, intersect, SKY, sceneGlsl } from '../src/tools/lens/scene';
+import {
+  angRadius,
+  BOARDS,
+  basis,
+  bodyFrame,
+  EYE,
+  intersect,
+  mapUv,
+  SKY,
+  sceneGlsl,
+  spheroid,
+} from '../src/tools/lens/scene';
 import { traceFrag } from '../src/tools/lens/shader';
 
 const rel = (a: number, b: number) => Math.abs(a - b) / Math.abs(b);
@@ -290,6 +301,35 @@ describe('被写体', () => {
       expect(b.el).toBeLessThan(30);
       expect(Math.abs(b.az)).toBeLessThan(60);
     }
+  });
+});
+
+describe('天体の地図', () => {
+  it('月は経度 0°・緯度 0° が正面で、東（右）の縁が経度 +90°', () => {
+    expect(mapUv('moon', 0, 0)).toEqual({ u: 0.5, v: 0.5, mu: 1 });
+    const e = mapUv('moon', 0.999999, 0);
+    expect(e?.u).toBeCloseTo(0.95, 2);
+    expect(mapUv('moon', 0, 0.999999)?.v).toBeCloseTo(0, 2);
+    expect(mapUv('moon', 0.8, 0.8)).toBeNull();
+  });
+  it('火星は東経 60° が正面で、右へ東経が増える', () => {
+    expect(mapUv('mars', 0, 0)?.u).toBeCloseTo(240 / 360, 9);
+    const c = mapUv('mars', 0, 0),
+      r = mapUv('mars', 0.5, 0);
+    expect(c && r && r.u - c.u).toBeGreaterThan(0);
+  });
+  it('木星は右へ西経が減る（東へ進む）', () => {
+    const c = mapUv('jupiter', 0, 0),
+      r = mapUv('jupiter', 0.5, 0);
+    expect(c && r && r.u - c.u).toBeCloseTo(30 / 360, 6);
+  });
+  it('極を傾けた楕円体の面の点の法線は単位ベクトル、中心は B より高い惑星図緯度', () => {
+    const g = spheroid(0, 0, 20, 0.09796);
+    expect(g?.[2]).toBeGreaterThan(0.99);
+    expect(((g?.[1] ?? 0) * 180) / Math.PI).toBeGreaterThan(20);
+    /* 扁平な縁: 極の向きの縁より外は当たらない */
+    expect(spheroid(0, 0.95, 20, 0.09796)).toBeNull();
+    expect(spheroid(0, 0.9, 20, 0.09796)).not.toBeNull();
   });
 });
 

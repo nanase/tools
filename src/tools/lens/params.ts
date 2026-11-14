@@ -19,14 +19,14 @@ const plainF = (u: string, s = 4): ParamFormat => ({
   text: (v) => `${sig(v, s)}${u ? ` ${u}` : ''}`,
 });
 
-export type Key = 'f' | 'N' | 'fd' | 'coc' | 'pan' | 'tilt';
+export type Key = 'f' | 'N' | 'fd' | 'coc' | 'ev' | 'pan' | 'tilt';
 
 export const FOCAL: ParamDef = {
   k: 'f',
   nm: 'f',
   sym: '<i>f</i>',
   name: '焦点距離',
-  sub: 'レンズデータの相似の拡大・縮小（長いほど画角が狭くボケが大きい）',
+  sub: 'レンズデータの相似の拡大・縮小（長いほど画角が狭くボケが大きい）。映像の上のホイールでも変更（枠の点を中央へ寄せながら拡大・縮小）',
   unit: 'mm',
   min: 8,
   max: 3000,
@@ -163,6 +163,35 @@ export const COC: ParamDef = {
   format: plainF('mm', 3),
 };
 
+/** 露出の刻み: 1/3 段。表記は小数 1 桁（+0.3・+0.7） */
+const evS = (v: number): string => minus(String(Math.round(v * 10) / 10));
+const evV = (v: number): string => (v > 0.01 ? `+${evS(v)}` : evS(v));
+export const EXPOSURE: ParamDef = {
+  k: 'ev',
+  nm: '露出',
+  sym: '',
+  name: '露出',
+  sub: '映像の明るさだけの補正（+1 で 2 倍）。ボケと被写界深度はそのまま',
+  unit: 'EV',
+  min: -5,
+  max: 5,
+  v: 0,
+  ph: '例 +1',
+  pre: [
+    [-4, '−4'],
+    [-2, '−2'],
+    [0, '0'],
+    [2, '+2'],
+    [4, '+4'],
+  ],
+  list: Array.from({ length: 31 }, (_, i) => (i - 15) / 3),
+  snap: true,
+  jump: 3,
+  sign: 'any',
+  notation: 'plain',
+  format: { input: evS, step: evS, view: evV, text: (v) => `${evV(v)} EV` },
+};
+
 /** 向きの角度の刻み [°]。長い焦点距離で拡大しても狙えるよう 0.001° */
 export const ANG_STEP = 0.001;
 export const angR = (v: number): number => Math.round(v / ANG_STEP) * ANG_STEP;
@@ -198,7 +227,7 @@ const angle = (k: 'pan' | 'tilt', name: string, sub: string, lim: number): Param
 export const PAN = angle('pan', '方位', '撮影者の向き（右が正、映像のドラッグでも変更）', 60);
 export const TILT = angle('tilt', '仰角', '撮影者の向き（上が正、映像のドラッグでも変更）', 30);
 
-export const PARAMS: ParamDef[] = [FOCAL, FNUM, FOCUS, COC, PAN, TILT];
+export const PARAMS: ParamDef[] = [FOCAL, FNUM, FOCUS, COC, EXPOSURE, PAN, TILT];
 
 /** 絞り羽根の枚数（0 は円） */
 export const BLADES = [0, 5, 6, 7, 8, 9] as const;

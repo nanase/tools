@@ -34,6 +34,7 @@ import { angR, FNUM, FOCUS, FSTOPS, INF, type Key, mT, PARAMS, sig } from './par
 import { curveSvg, mapDynamic, mapLabel, sectionSvg, spotSvg } from './plot';
 import { type LensU, Renderer, type ViewU } from './render';
 import { angRadius, basis, bodyFrame, EYE, intersect, SKY, type V3 } from './scene';
+import { loadSky } from './sky-tex';
 
 const txt = (id: string, s: string) => {
   const e = $(id);
@@ -149,6 +150,14 @@ try {
 } catch (e) {
   noGl(e);
 }
+/* 月・木星・土星の地図。読み込めなければ平均の色のまま描く（利用者にできることはないので知らせない） */
+if (R) {
+  const r = R;
+  loadSky(import.meta.env.BASE_URL).then(
+    (sky) => r.setSky(sky),
+    (e) => console.warn('lens: sky textures', e),
+  );
+}
 canvas.addEventListener('webglcontextlost', (e) => {
   e.preventDefault();
   msg.hidden = false;
@@ -200,13 +209,18 @@ function update(): void {
     rx = lensOf(lens$.value);
   const k1 = `${rx.v}|${v.f}`;
   if (k1 !== sysKey || !sys) {
+    const prev = sysKey ? st : null;
     sys = build(rx, v.f);
     sysKey = k1;
+    if (prev) keepTarget(prev, sys, v);
+    retarget = false;
     stKey = '';
     /* 下限は最短撮影距離（撮影倍率 1/2）。既定値（2 m）より遠ければ、下限を既定値にする */
     const mf = Math.max(0.2, Math.ceil(minFocus(sys) / 10) / 100);
     G.update('fd', { min: mf, v: Math.max(FOCUS.v, mf) });
   }
+  if (retarget && st) keepTarget(st, sys, v);
+  retarget = false;
   if (fm$.value === 'af') {
     const ak = JSON.stringify([k1, v.pan, v.tilt, cmp$.value, afPt]);
     if (ak !== afKey) {
@@ -508,6 +522,7 @@ function render(): void {
     eye: [0, EYE, 0],
     tod: ['day', 'dusk', 'night'].indexOf(tod$.value),
   };
+  R.setExposure(v.ev);
   /* 映像に関わる値が同じなら、ためた分を捨てない（許容錯乱円だけを変えたときなど） */
   const key = JSON.stringify([stKey, L.mode, L.chrom, L.opt[3], V.view, v.pan, v.tilt, V.tod]);
   if (key === lastKey) return;
@@ -527,12 +542,11 @@ function placeAf(): void {
 }
 
 /**
- * 表示の点（センサーの上、mm）に写る物体までの、撮影者の前方向の距離 [mm]（空は Infinity）。
+ * 表示の点（センサーの上、mm）に写る向きの光線（m、撮影者の座標）。向きは方位 pan・仰角 tilt [°]。
  * 光線はピントの状態 s のレンズ（収差なしなら薄いレンズ）を逆にたどる
  */
-function depthAt(s: State, x: number, y: number): number {
-  const v = G.values(),
-    b = basis(v.pan, v.tilt);
+function worldRay(s: State, x: number, y: number, pan: number, tilt: number): { o: V3; d: V3; f: V3 } {
+  const b = basis(pan, tilt);
   let o: V3, d: V3;
   const r: Ray = { x: -x, y: -y, z: s.zs, dx: 0, dy: 0, dz: 0 };
   {
@@ -558,13 +572,69 @@ function depthAt(s: State, x: number, y: number): number {
     (b.r[1] * a[0] + b.u[1] * a[1] + b.f[1] * a[2]) * k,
     (b.r[2] * a[0] + b.u[2] * a[1] + b.f[2] * a[2]) * k,
   ];
-  const ow = w(o, 1e-3),
-    dw = w(d, 1);
+  const ow = w(o, 1e-3);
   ow[1] += EYE;
-  const t = intersect(ow, dw);
+  return { o: ow, d: w(d, 1), f: b.f };
+}
+
+/** 表示の点に写る物体までの、撮影者の前方向の距離 [mm]（空は Infinity） */
+function depthAt(s: State, x: number, y: number): number {
+  const v = G.values(),
+    { o, d, f } = worldRay(s, x, y, v.pan, v.tilt);
+  const t = intersect(o, d);
   if (!Number.isFinite(t)) return Infinity;
-  const p: V3 = [ow[0] + dw[0] * t, ow[1] + dw[1] * t - EYE, ow[2] + dw[2] * t];
-  return (p[0] * b.f[0] + p[1] * b.f[1] + p[2] * b.f[2]) * 1000;
+  const p: V3 = [o[0] + d[0] * t, o[1] + d[1] * t - EYE, o[2] + d[2] * t];
+  return (p[0] * f[0] + p[1] * f[1] + p[2] * f[2]) * 1000;
+}
+
+/**
+ * 焦点距離・レンズを変えたとき、枠の点に写っていた物体が枠の点に残るよう向きを変える（枠の点を中心に拡大・縮小する）。
+ * ホイールで枠の点を中央へ寄せたときも、同じ物体が新しい枠の点に来るよう向きを変える。
+ * 狙う物体は、向きをこちらで変えている間は最初に求めたものを使う（向きを丸めた誤差をためない）
+ */
+let anchor: { pan: number; tilt: number; cmp: string; p: V3; sky: boolean } | null = null;
+/** 枠の点が変わるか、向きを変えるとやり直す */
+let retarget = false;
+/** 今の枠の点に写る物体（空なら向き）を狙いにする。向きが前に合わせたときのままなら、前の狙いを使う */
+function aim(s: State, pan: number, tilt: number): NonNullable<typeof anchor> {
+  if (anchor && anchor.pan === pan && anchor.tilt === tilt && anchor.cmp === cmp$.value) return anchor;
+  const r = worldRay(s, afPt[0], afPt[1], pan, tilt),
+    t = intersect(r.o, r.d);
+  anchor = {
+    pan,
+    tilt,
+    cmp: cmp$.value,
+    p: Number.isFinite(t) ? [r.o[0] + r.d[0] * t, r.o[1] + r.d[1] * t, r.o[2] + r.d[2] * t] : r.d,
+    sky: !Number.isFinite(t),
+  };
+  return anchor;
+}
+function keepTarget(prev: State, next: Sys, v: Record<Key, number>): void {
+  const a = aim(prev, v.pan, v.tilt);
+  const s = solveFocus(next, v.fd >= INF * 0.999 ? Infinity : v.fd * 1000, v.N, 0);
+  const az = (d: V3) => (Math.atan2(d[0], d[2]) * 180) / Math.PI,
+    el = (d: V3) => (Math.asin(Math.max(-1, Math.min(1, d[1]))) * 180) / Math.PI;
+  let pan = v.pan,
+    tilt = v.tilt;
+  for (let i = 0; i < 4; i++) {
+    const r = worldRay(s, afPt[0], afPt[1], pan, tilt);
+    let t = a.p;
+    if (!a.sky) {
+      const q: V3 = [t[0] - r.o[0], t[1] - r.o[1], t[2] - r.o[2]],
+        L = Math.hypot(...q);
+      t = [q[0] / L, q[1] / L, q[2] / L];
+    }
+    pan += az(t) - az(r.d);
+    tilt += el(t) - el(r.d);
+  }
+  pan = angR(Math.max(-60, Math.min(60, pan)));
+  tilt = angR(Math.max(-30, Math.min(30, tilt)));
+  if (pan !== v.pan) G.set('pan', pan, { silent: true });
+  if (tilt !== v.tilt) G.set('tilt', tilt, { silent: true });
+  v.pan = pan;
+  v.tilt = tilt;
+  a.pan = pan;
+  a.tilt = tilt;
 }
 
 /**
@@ -595,6 +665,7 @@ function autofocus(x: number, y: number): void {
   afPt = [Math.max(-SENSOR.w / 2, Math.min(SENSOR.w / 2, x)), Math.max(-SENSOR.h / 2, Math.min(SENSOR.h / 2, y))];
   store('af', afPt);
   afKey = '';
+  anchor = null;
   if (fm$.value === 'mf' && sys) applyFd(afDistance(sys, G.get('fd'), G.get('N')));
   later();
 }
@@ -642,6 +713,33 @@ function afState(): void {
     down = null;
     if (!d.moved && e.type === 'pointerup') autofocus(...toMm(e.clientX, e.clientY));
   };
+  /*
+   * ホイールで焦点距離（1 段で 2^(1/3) 倍）。丸める前の値をためて、細かく回すトラックパッドでも動くようにする。
+   * 枠の点は 1 段ごとに中央との間を 0.6 倍に縮め、写っていた物体ごと中央へ寄せる
+   */
+  let wheelF = 0;
+  canvas.addEventListener(
+    'wheel',
+    (e) => {
+      e.preventDefault();
+      const px = e.deltaY * (e.deltaMode === 1 ? 33 : e.deltaMode === 2 ? 400 : 1),
+        d = G.def('f'),
+        cur = G.get('f');
+      if (Number(wheelF.toPrecision(4)) !== cur) wheelF = cur;
+      wheelF = Math.max(d.min, Math.min(d.max, wheelF * 2 ** (-px / 300)));
+      const f = Number(wheelF.toPrecision(4));
+      if (st && (afPt[0] || afPt[1])) {
+        aim(st, G.get('pan'), G.get('tilt'));
+        const k = 0.6 ** Math.abs(px / 100);
+        afPt = Math.hypot(afPt[0], afPt[1]) * k < 0.05 ? [0, 0] : [afPt[0] * k, afPt[1] * k];
+        store('af', afPt);
+        retarget = true;
+        later();
+      }
+      if (f !== cur) G.set('f', f);
+    },
+    { passive: false },
+  );
   canvas.addEventListener('pointerup', end);
   canvas.addEventListener('pointercancel', end);
   canvas.addEventListener('keydown', (e) => {
@@ -671,7 +769,20 @@ function afState(): void {
   const fs = $('#fs'),
     btn = $<HTMLButtonElement>('#lv-fs');
   /** 全画面へ移す要素: 映像、右の入力の行、左下の見取り図 */
-  const ROWS = ['#p-lens', '#p-f', '#p-N', '#p-fd', '#p-fm', '#p-bl', '#p-zm', '#p-tod', '#p-ch', '#p-df', '#p-gd'];
+  const ROWS = [
+    '#p-lens',
+    '#p-f',
+    '#p-N',
+    '#p-ev',
+    '#p-fd',
+    '#p-fm',
+    '#p-bl',
+    '#p-zm',
+    '#p-tod',
+    '#p-ch',
+    '#p-df',
+    '#p-gd',
+  ];
   let back: [Comment, HTMLElement][] = [],
     sy = 0;
   const move = (el: HTMLElement, to: HTMLElement) => {
