@@ -6,13 +6,13 @@
  */
 import { lookahead } from '../../lib/pause';
 import { type ChordEntry, type Item, playOrder, type Step, type Timeline } from './song';
-import { PATS, voicing } from './theory';
+import { PATS, type VoiceId, voicing } from './theory';
 
 type Ctor = typeof AudioContext;
 const AC: Ctor | undefined =
   globalThis.AudioContext ?? (globalThis as unknown as { webkitAudioContext?: Ctor }).webkitAudioContext;
 
-export type Voice = 'gtr' | 'ep' | 'org' | 'str' | 'bass' | 'clk';
+export type Voice = VoiceId | 'bass' | 'clk';
 /** 1 つの音。t・end はコードの頭からの秒、m は MIDI のノート番号（メトロノームは周波数 [Hz]） */
 export interface NoteEv {
   t: number;
@@ -54,6 +54,25 @@ export function notesOf(e: ChordEntry, acc: Accomp): NoteEv[] {
 }
 
 const mtof = (m: number): number => 440 * 2 ** ((m - 69) / 12);
+/**
+ * 音色ごとの大きさの倍率。同じ和音（上下のアルペジオ 1 小節と全音符）を鳴らしたときの実効値が
+ * −20 dBFS 前後にそろうよう、書き出して測って決めた
+ */
+const LEVEL: Record<Voice, number> = {
+  gtr: 1.43,
+  harp: 1.64,
+  pf: 0.83,
+  ep: 0.575,
+  org: 0.79,
+  str: 1.15,
+  pad: 1.6,
+  brs: 1.36,
+  mar: 0.73,
+  vib: 0.73,
+  bell: 0.84,
+  bass: 1,
+  clk: 1,
+};
 
 export class CpAudio {
   /** AudioContext が止まったときに呼ぶ（ブラウザや OS が止めたとき） */
@@ -61,7 +80,11 @@ export class CpAudio {
   ac: AudioContext | null = null;
   private master: GainNode | null = null;
   private db = -12;
-  private readonly ks = new Map<number, { buf: AudioBuffer; rate: number }>();
+  private readonly ks = new Map<string, { buf: AudioBuffer; rate: number }>();
+  /** ピアノの 2 つの波形（明るい成分と柔らかい成分） */
+  private waves: [PeriodicWave, PeriodicWave] | null = null;
+  /** メトロノームの音量（倍率） */
+  click = 1;
 
   now(): number | null {
     return this.ac?.state === 'running' ? this.ac.currentTime : null;
@@ -118,8 +141,10 @@ export class CpAudio {
     setTimeout(() => g.disconnect(), 300);
   }
 
-  private ksBuf(m: number): { buf: AudioBuffer; rate: number } {
-    const hit = this.ks.get(m);
+  /** 撥弦の音。harp は弦の真ん中寄りを指ではじき、長く響く */
+  private ksBuf(m: number, harp = false): { buf: AudioBuffer; rate: number } {
+    const key = `${harp ? 'h' : 'g'}${m}`,
+      hit = this.ks.get(key);
     if (hit) return hit;
     const ac = this.ac as AudioContext,
       sr = ac.sampleRate,
@@ -141,9 +166,9 @@ export class CpAudio {
       a2 += 0.45 * (a1 - a2);
       ex[i] = a2;
     }
-    const P = Math.max(1, Math.round(N * 0.18));
+    const P = Math.max(1, Math.round(N * (harp ? 0.4 : 0.18)));
     for (let i = 0; i < N; i++) ring[i] = ex[i] - 0.9 * ex[(i - P + N) % N];
-    const rho = 0.9985 - Math.min(0.003, f / 500000);
+    const rho = (harp ? 0.9992 : 0.9985) - Math.min(0.003, f / 500000);
     for (let i = 0, ix = 0; i < len; i++) {
       const a = ring[ix],
         b = ring[(ix + 1) % N],
@@ -153,8 +178,21 @@ export class CpAudio {
       ix = (ix + 1) % N;
     }
     const o = { buf, rate: (f * (N + 1)) / sr };
-    this.ks.set(m, o);
+    this.ks.set(key, o);
     return o;
+  }
+
+  private pianoWaves(): [PeriodicWave, PeriodicWave] {
+    if (this.waves) return this.waves;
+    const ac = this.ac as AudioContext,
+      mk = (amp: (n: number) => number, n: number) => {
+        const re = new Float32Array(n + 1),
+          im = new Float32Array(n + 1);
+        for (let k = 1; k <= n; k++) im[k] = amp(k);
+        return ac.createPeriodicWave(re, im);
+      };
+    this.waves = [mk((k) => 1 / k ** 1.1, 12), mk((k) => [0, 1, 0.45, 0.2, 0.1][k] ?? 0, 4)];
+    return this.waves;
   }
 
   /** 音を 1 つ予約する。w・end は AudioContext の時刻 */
@@ -164,7 +202,7 @@ export class CpAudio {
     const f = mtof(x.m),
       g = ac.createGain(),
       stopAt = end + 0.8,
-      vel = x.vel;
+      vel = x.vel * LEVEL[x.v];
     g.connect(dest);
     const env = (a: number, peak: number, rel: number) => {
       g.gain.setValueAtTime(0, w);
@@ -182,13 +220,14 @@ export class CpAudio {
       return o;
     };
     switch (x.v) {
-      case 'gtr': {
-        const k = this.ksBuf(x.m),
+      case 'gtr':
+      case 'harp': {
+        const k = this.ksBuf(x.m, x.v === 'harp'),
           s = ac.createBufferSource(),
           lp = ac.createBiquadFilter();
         s.buffer = k.buf;
         s.playbackRate.value = k.rate;
-        lp.frequency.value = 2400;
+        lp.frequency.value = x.v === 'harp' ? 3200 : 2400;
         s.connect(lp).connect(g);
         g.gain.setValueAtTime(0, w);
         g.gain.linearRampToValueAtTime(vel * 0.42, w + 0.003);
@@ -233,6 +272,100 @@ export class CpAudio {
         env(0.16, vel * 0.075, 0.18);
         break;
       }
+      case 'pf': {
+        /* 明るい成分は早く、柔らかい成分は遅く消える。少しずらした 2 本でうなりを作る */
+        const [wb, wm] = this.pianoWaves(),
+          tl = Math.min(4, 2.4 * (262 / f) ** 0.5),
+          gb = ac.createGain(),
+          gm = ac.createGain();
+        gb.connect(g);
+        gm.connect(g);
+        osc('sine', f, gb).setPeriodicWave(wb);
+        osc('sine', f, gm).setPeriodicWave(wm);
+        osc('sine', f, gm, 1.8).setPeriodicWave(wm);
+        gb.gain.setValueAtTime(0, w);
+        gb.gain.linearRampToValueAtTime(vel * 0.1, w + 0.003);
+        gb.gain.setTargetAtTime(0, w + 0.003, 0.12);
+        gm.gain.setValueAtTime(0, w);
+        gm.gain.linearRampToValueAtTime(vel * 0.09, w + 0.004);
+        gm.gain.setTargetAtTime(0, w + 0.004, tl);
+        g.gain.setValueAtTime(1, w);
+        g.gain.setTargetAtTime(0, end, 0.12);
+        break;
+      }
+      case 'pad': {
+        const lp = ac.createBiquadFilter(),
+          lfo = ac.createOscillator(),
+          lg = ac.createGain();
+        lp.frequency.value = 1300;
+        lp.Q.value = 1;
+        lfo.frequency.value = 0.3;
+        lg.gain.value = 350;
+        lfo.connect(lg).connect(lp.frequency);
+        lfo.start(w);
+        lfo.stop(stopAt);
+        lp.connect(g);
+        for (const ct of [-10, 0, 10]) osc('sawtooth', f, lp, ct);
+        env(0.45, vel * 0.05, 0.4);
+        break;
+      }
+      case 'brs': {
+        /* 吹き始めに明るくなり、少し落ち着くフィルタ */
+        const lp = ac.createBiquadFilter();
+        lp.Q.value = 2;
+        lp.frequency.setValueAtTime(400, w);
+        lp.frequency.linearRampToValueAtTime(2600, w + 0.06);
+        lp.frequency.setTargetAtTime(1500, w + 0.06, 0.15);
+        lp.connect(g);
+        osc('sawtooth', f, lp, -4);
+        osc('sawtooth', f, lp, 4);
+        env(0.035, vel * 0.065, 0.06);
+        break;
+      }
+      case 'mar':
+      case 'vib': {
+        /* 板の 1 次と 4 倍の振動。ビブラフォンは長く響き、回る羽で音量が揺れる */
+        const vib = x.v === 'vib',
+          tau = vib ? Math.min(3, 2.6 * (262 / f) ** 0.3) : Math.min(0.9, 0.5 * (262 / f) ** 0.5),
+          g1 = ac.createGain(),
+          g4 = ac.createGain();
+        g1.connect(g);
+        g4.connect(g);
+        osc('sine', f, g1);
+        osc('sine', f * 4, g4);
+        g1.gain.setValueAtTime(0, w);
+        g1.gain.linearRampToValueAtTime(vel * (vib ? 0.2 : 0.3), w + 0.004);
+        g1.gain.setTargetAtTime(0, w + 0.004, tau);
+        g4.gain.setValueAtTime(0, w);
+        g4.gain.linearRampToValueAtTime(vel * (vib ? 0.04 : 0.1), w + 0.002);
+        g4.gain.setTargetAtTime(0, w + 0.002, vib ? 0.25 : 0.05);
+        if (vib) {
+          const lfo = ac.createOscillator(),
+            lg = ac.createGain();
+          lfo.frequency.value = 5.5;
+          lg.gain.value = 0.3;
+          lfo.connect(lg).connect(g.gain);
+          lfo.start(w);
+          lfo.stop(stopAt);
+          g.gain.setValueAtTime(0.7, w);
+        } else g.gain.setValueAtTime(1, w);
+        g.gain.setTargetAtTime(0, end, vib ? 0.3 : 0.1);
+        break;
+      }
+      case 'bell': {
+        /* 周波数比 3.5 の周波数変調。打った直後ほど金属らしい成分が多い */
+        const mg = ac.createGain(),
+          c = osc('sine', f, g);
+        mg.gain.setValueAtTime(f * 4, w);
+        mg.gain.setTargetAtTime(f * 0.4, w, 0.5);
+        osc('sine', f * 3.5, mg);
+        mg.connect(c.frequency);
+        g.gain.setValueAtTime(0, w);
+        g.gain.linearRampToValueAtTime(vel * 0.18, w + 0.002);
+        g.gain.setTargetAtTime(0, w + 0.002, 1.1);
+        g.gain.setTargetAtTime(0, end, 0.3);
+        break;
+      }
       case 'bass': {
         const lp = ac.createBiquadFilter();
         lp.frequency.value = 700;
@@ -245,8 +378,8 @@ export class CpAudio {
         const o = ac.createOscillator();
         o.frequency.value = x.m;
         o.connect(g);
-        g.gain.setValueAtTime(vel * 0.25, w);
-        g.gain.exponentialRampToValueAtTime(0.0001, w + 0.04);
+        g.gain.setValueAtTime(Math.max(1e-4, vel * 0.5 * this.click), w);
+        g.gain.exponentialRampToValueAtTime(0.0001, w + 0.05);
         o.start(w);
         o.stop(w + 0.06);
         break;

@@ -26,7 +26,7 @@ export const SAMPLES: readonly Sample[] = [
   {
     id: 'komuro',
     name: '小室進行',
-    src: '[key A min] [met 4/4] [tmp 132] [pat up] [vce str] |: i VI VII III :|*',
+    src: '[key A min] [met 4/4] [tmp 132] [pat up] [vce pad] |: i VI VII III :|*',
   },
   {
     id: 'marusa',
@@ -36,17 +36,17 @@ export const SAMPLES: readonly Sample[] = [
   {
     id: 'cycle',
     name: '循環進行',
-    src: '[key F maj] [met 4/4] [tmp 112] [pat three] [vce gtr] |: I vi ii V7 :|*',
+    src: '[key F maj] [met 4/4] [tmp 112] [pat three] [vce mar] |: I vi ii V7 :|*',
   },
   {
     id: 'two-five',
     name: 'ツーファイブワン',
-    src: '[key Bb maj] [met 4/4] [tmp 132] [pat strum] [vce ep] |: ii7 V7 IM7 IM7 :|2 [key G min] |: iiø V7 i7 i7 :|2',
+    src: '[key Bb maj] [met 4/4] [tmp 132] [pat strum] [vce vib] |: ii7 V7 IM7 IM7 :|2 [key G min] |: iiø V7 i7 i7 :|2',
   },
   {
     id: 'blues',
     name: '12 小節のブルース',
-    src: '[key A maj] [met 4/4] [tmp 104] [pat strum] [vce gtr] |: I7 IV7 I7 I7 IV7 IV7 I7 I7 V7 IV7 I7 V7 :|*',
+    src: '[key A maj] [met 4/4] [tmp 104] [pat strum] [vce brs] |: I7 IV7 I7 I7 IV7 IV7 I7 I7 V7 IV7 I7 V7 :|*',
   },
   {
     id: 'cadence',
@@ -56,12 +56,12 @@ export const SAMPLES: readonly Sample[] = [
   {
     id: 'waltz',
     name: 'ワルツ',
-    src: '[key F maj] [met 3/4] [tmp 144] [pat alberti] [vce ep] |: I I V7 V7 V7 V7 I I IV IV I I V7 V7 I I :|2',
+    src: '[key F maj] [met 3/4] [tmp 144] [pat alberti] [vce pf] |: I I V7 V7 V7 V7 I I IV IV I I V7 V7 I I :|2',
   },
   {
     id: 'ballad',
     name: '6/8 のバラード',
-    src: '[key G maj] [met 6/8] [tmp 60] [pat up] [vce gtr] |: I iii vi IV I/2 IV Vsus4:3 V:3 :|2 I@whole',
+    src: '[key G maj] [met 6/8] [tmp 60] [pat up] [vce harp] |: I iii vi IV I/2 IV Vsus4:3 V:3 :|2 I@whole',
   },
   {
     id: 'minor',

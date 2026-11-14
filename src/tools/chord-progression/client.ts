@@ -10,7 +10,7 @@ import { store, stored } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
 import { type Accomp, CpAudio, Player } from './audio';
 import { ICON, keySig } from './icons';
-import { VOL0 } from './params';
+import { CLICK, VOL0 } from './params';
 import { SAMPLE0, SAMPLES } from './samples';
 import {
   type ChordEntry,
@@ -216,6 +216,10 @@ $('#cp-home').addEventListener('click', () => {
 });
 autoPause(audio, { pause: () => player.playing && pause(), hidden: () => player.tick() });
 new ParamGroup<PlayKey>([outVol(VOL0)], (v) => audio.vol(v.vol));
+const clickGroup = new ParamGroup<'clk'>([CLICK], (v) => {
+  audio.click = 10 ** (v.clk / 20);
+});
+const syncClick = () => clickGroup.setOff('clk', !S.acc.click, 'メトロノームを止めている間は使いません');
 for (const b of $$<HTMLButtonElement>('[data-acc]')) {
   const k = b.dataset.acc as keyof Accomp,
     set = () => {
@@ -227,6 +231,7 @@ for (const b of $$<HTMLButtonElement>('[data-acc]')) {
     S.acc[k] = !S.acc[k];
     store('acc', S.acc);
     set();
+    syncClick();
     player.resync();
   });
 }
@@ -964,6 +969,7 @@ fileIn.addEventListener('change', async () => {
   }
 });
 
+syncClick();
 renderSaved();
 say('');
 syncPlay();

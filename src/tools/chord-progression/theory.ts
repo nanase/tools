@@ -399,9 +399,33 @@ export const PATS: Record<PatId, { name: string; g: (n: number, S: number) => Pa
 };
 export const PAT_ORDER: readonly PatId[] = ['whole', 'strum', 'up', 'down', 'updown', 'alberti', 'three'];
 
-export type VoiceId = 'gtr' | 'ep' | 'org' | 'str';
-export const VOICES: Record<VoiceId, string> = { gtr: 'ギター', ep: 'エレピ', org: 'オルガン', str: 'ストリングス' };
-export const VOICE_ORDER: readonly VoiceId[] = ['gtr', 'ep', 'org', 'str'];
+export type VoiceId = 'gtr' | 'harp' | 'pf' | 'ep' | 'org' | 'str' | 'pad' | 'brs' | 'mar' | 'vib' | 'bell';
+export const VOICES: Record<VoiceId, string> = {
+  gtr: 'ギター',
+  harp: 'ハープ',
+  pf: 'ピアノ',
+  ep: 'エレピ',
+  org: 'オルガン',
+  str: 'ストリングス',
+  pad: 'シンセパッド',
+  brs: 'ブラス',
+  mar: 'マリンバ',
+  vib: 'ビブラフォン',
+  bell: 'ベル',
+};
+export const VOICE_ORDER: readonly VoiceId[] = [
+  'gtr',
+  'harp',
+  'pf',
+  'ep',
+  'org',
+  'str',
+  'pad',
+  'brs',
+  'mar',
+  'vib',
+  'bell',
+];
 
 /** 奏法の小さな図（1 小節 8 歩・5 音） */
 export function patGlyph(p: PatId, cls = ''): string {

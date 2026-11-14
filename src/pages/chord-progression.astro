@@ -9,7 +9,7 @@ import { outVol } from '../lib/play';
 import '../tools/chord-progression/style.css';
 import How from '../tools/chord-progression/How.astro';
 import { ICON } from '../tools/chord-progression/icons';
-import { VOL0 } from '../tools/chord-progression/params';
+import { CLICK, VOL0 } from '../tools/chord-progression/params';
 import { SAMPLES } from '../tools/chord-progression/samples';
 import Theory from '../tools/chord-progression/Theory.astro';
 
@@ -40,7 +40,7 @@ const samples = SAMPLES;
           <button type="button" class="tg" data-acc="bass" aria-pressed="true" title="ベース" aria-label="ベース"><span class="led on" aria-hidden="true"></span><Fragment set:html={ICON.bass} /></button>
           <button type="button" class="tg" data-acc="click" aria-pressed="false" title="メトロノーム" aria-label="メトロノーム"><span class="led" aria-hidden="true"></span><Fragment set:html={ICON.click} /></button>
         </div>
-        <div class="ptab"><ParamRow d={outVol(VOL0)} /></div>
+        <div class="ptab"><ParamRow d={outVol(VOL0)} /><ParamRow d={CLICK} /></div>
       </Panel>
 
       <Panel hid="hd-hl" title="強調">
