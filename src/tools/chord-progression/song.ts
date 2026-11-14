@@ -321,7 +321,14 @@ const NOTE: Record<string, number> = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11
 const SUFFIX: Record<string, { M: Qual; m: Qual }> = {
   '': { M: 'M', m: 'm' },
   7: { M: '7', m: 'm7' },
-  M7: { M: 'M7', m: 'M7' },
+  M7: { M: 'M7', m: 'mM7' },
+  6: { M: '6', m: 'm6' },
+  9: { M: '9', m: 'm9' },
+  M9: { M: 'M9', m: 'M9' },
+  add9: { M: 'add9', m: 'add9' },
+  sus2: { M: 'sus2', m: 'sus2' },
+  '7sus4': { M: '7sus4', m: '7sus4' },
+  o7: { M: 'dim7', m: 'dim7' },
   o: { M: 'dim', m: 'dim' },
   ø: { M: 'm7b5', m: 'm7b5' },
   sus4: { M: 'sus4', m: 'sus4' },
@@ -361,7 +368,9 @@ export function parseSong(src: string): Item[] {
       out.push({ k: 're', n: n === '*' ? 0 : Number(n || 2) });
       continue;
     }
-    const m = /^([b#]?)([IViv]+)(M7|7|o|ø|sus4|\+)?(?::(\d+))?(?:\/(\d))?(?:@(\w+))?$/.exec(tk);
+    const m = /^([b#]?)([IViv]+)(M9|M7|7sus4|7|6|9|add9|sus2|sus4|o7|o|ø|\+)?(?::(\d+))?(?:\/(\d))?(?:@(\w+))?$/.exec(
+      tk,
+    );
     if (!m) throw new Error(`bad chord: ${tk}`);
     const [, acc, num, suf = '', len, inv, pat] = m,
       up = num.toUpperCase();

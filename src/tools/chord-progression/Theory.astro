@@ -55,20 +55,24 @@ const ROWS: [string, string, string, string][] = [
 </div>
 <dl class="syms">
   <dt><math><mi>N</mi></math></dt><dd>遅延の長さ [サンプル]</dd>
-  <dt><math><mi>ρ</mi></math></dt><dd>1 周ごとの減衰（0.997〜0.9985。高い音ほど小さい）</dd>
+  <dt><math><mi>ρ</mi></math></dt><dd>1 周ごとの減衰（0.9988〜0.9996。高い音ほど小さい）</dd>
   <dt><math set:html={sub('<mi>f</mi>', '<mi>s</mi>')} /></dt><dd>標本化周波数</dd>
   <dt><math><mi>I</mi></math></dt><dd>変調の深さ（鳴らした直後 2.2 から 0.25 へ減る）</dd>
 </dl>
 <ul class="tl">
-  <li>ギター: 雑音を詰めた遅延線を 3 点の低域通過で回す撥弦の合成<Fragment set:html={rf(2)} />。低域通過で遅れが 1 サンプル増えるので、再生の速さで高さを合わせる<Fragment set:html={rf(3)} /></li>
-  <li>弾く音は雑音を 2 段の低域通過で丸め、弾く位置（弦の 18 % の所）で消える倍音を引く<Fragment set:html={rf(3)} />。出口で 2.4 kHz より上を落とす</li>
+  <li>アコースティックギターとクラシックギター: <a href="../guitar/">ギター音響モデル</a>のページの物理モデル（弦の固有振動と胴の響き）で鳴らす。スチール弦はドレッドノートの胴とピック、ナイロン弦はクラシックの胴と指</li>
+  <li>和音の音は標準の調弦の弦とフレットに割り当てる。低い音ほど低い弦に置き、押さえる幅が狭い押さえ方を選ぶ。コードの終わりで指を離す</li>
+  <li>ハープ: 上の式の撥弦の合成<Fragment set:html={rf(2)} />。遅延線の中の 3 点の低域通過で遅れが 1 サンプル増えるので、再生の速さで高さを合わせる<Fragment set:html={rf(3)} /></li>
+  <li>ハープの弾き始めの形は、指の腹で弦の 40 % の所を引いた、角の丸い三角形。響板の山（250 Hz・900 Hz）を通し、指を離しても長く響かせる</li>
   <li>エレピ: 同じ周波数の 2 つの正弦波の周波数変調<Fragment set:html={rf(4)} />。打った直後ほど倍音が多い</li>
-  <li>オルガン: 1〜4 倍の正弦波の和。ストリングス: 少しずらした 2 本ののこぎり波を 1.9 kHz の低域通過に通す</li>
-  <li>ハープ: ギターと同じ撥弦で、弦の真ん中寄りをはじき、長く響かせる</li>
   <li>ピアノ: 早く消える明るい成分と、遅く消える柔らかい成分を重ね、少しずらした 2 本でうなりを作る</li>
-  <li>シンセパッド: 3 本ののこぎり波を、ゆっくり動く低域通過に通す。ブラス: 吹き始めに低域通過を開いてから少し閉じる</li>
+  <li>オルガン: 1〜4 倍の正弦波の和</li>
+  <li>ストリングス: 少しずつずらした 3 本ののこぎり波に、遅れて掛かるビブラートと胴の響きの山（300 Hz・1 kHz・2.8 kHz）</li>
+  <li>シンセパッド: 3 本ののこぎり波を、ゆっくり動く低域通過に通す。ブラス: 吹き始めに低域通過を開いてから少し閉じ、遅れてビブラートを掛ける</li>
   <li>マリンバとビブラフォン: 板の 1 次と 4 倍の振動。ビブラフォンは長く響き、5.5 Hz で音量が揺れる</li>
   <li>ベル: 周波数比 3.5 の周波数変調<Fragment set:html={rf(4)} /></li>
+  <li>メトロノーム: 短い雑音を帯域通過に通した当たりと、すぐ消える正弦波</li>
+  <li>残響: サイト共通の遅延線の網<Fragment set:html={rf(5)} />で部屋の響きを作り、すべての音に畳み込む。聴く位置は 3 m</li>
   <li>音色ごとの大きさは、同じ和音を鳴らしたときの実効値がそろうように合わせる</li>
 </ul>
 
@@ -78,7 +82,8 @@ const ROWS: [string, string, string, string][] = [
   <li>機能の分け方: Ⅰ・Ⅲ・Ⅵ（調の中の和音）はトニック、Ⅴ と Ⅶ の減三和音と属七の形はドミナント、ほかはサブドミナント</li>
   <li>名前のある進行（カノン進行・王道進行・小室進行・丸サ進行・循環進行・ツーファイブワン・12 小節のブルース）は、日本で広く使われている呼び名</li>
   <li>サンプルの進行・テンポ・奏法・音色は、このツールのために選んだ。特定の曲を写したものではない</li>
-  <li>音色の値（減衰・弾く位置・変調の深さ・倍音の大きさ・フィルタ）と、和音を置く高さ</li>
+  <li>音色の値（減衰・弾く位置・変調の深さ・倍音の大きさ・フィルタ・ビブラート）と、和音を置く高さ</li>
+  <li>ギターの弦とフレットの割り当て方（12 フレットまで、押さえる幅と高いフレットを減点）</li>
   <li>くり返しは入れ子にしない。終わりのブロックは手前の始めまで戻る</li>
 </ul>
 
@@ -88,4 +93,5 @@ const ROWS: [string, string, string, string][] = [
   <li id="thy-r2"><span class="rf-for">撥弦の合成</span><span class="rf-src">K. Karplus, A. Strong, “Digital synthesis of plucked-string and drum timbres,” <i>Computer Music Journal</i>, vol. 7, no. 2, pp. 43–55, 1983, <a href="https://doi.org/10.2307/3680062">doi:10.2307/3680062</a></span></li>
   <li id="thy-r3"><span class="rf-for">撥弦の合成の高さの合わせ方</span><span class="rf-src">D. A. Jaffe, J. O. Smith, “Extensions of the Karplus-Strong plucked-string algorithm,” <i>Computer Music Journal</i>, vol. 7, no. 2, pp. 56–69, 1983, <a href="https://doi.org/10.2307/3680063">doi:10.2307/3680063</a></span></li>
   <li id="thy-r4"><span class="rf-for">周波数変調による音の合成</span><span class="rf-src">J. M. Chowning, “The synthesis of complex audio spectra by means of frequency modulation,” <i>J. Audio Eng. Soc.</i>, vol. 21, no. 7, pp. 526–534, 1973</span></li>
+  <li id="thy-r5"><span class="rf-for">遅延線の網による残響</span><span class="rf-src">J.-M. Jot, A. Chaigne, “Digital delay networks for designing artificial reverberators,” <i>90th AES Convention</i>, preprint 3030, 1991</span></li>
 </ol>

@@ -5,6 +5,8 @@
  * コードごとに 1 つの GainNode を通し、編集や移動のときは先に予約した分だけを消す
  */
 import { lookahead } from '../../lib/pause';
+import { Reverb, reverbSpec, roomOf } from '../../lib/reverb';
+import { type GtKind, GtrVoices } from './gtr';
 import { type ChordEntry, type Item, playOrder, type Step, type Timeline } from './song';
 import { PATS, type VoiceId, voicing } from './theory';
 
@@ -20,6 +22,8 @@ export interface NoteEv {
   v: Voice;
   end: number;
   vel: number;
+  /** 和音の音（ギターで弦とフレットを割り当てるのに使う） */
+  tones?: readonly number[];
 }
 export interface Accomp {
   bass: boolean;
@@ -32,15 +36,17 @@ export function notesOf(e: ChordEntry, acc: Accomp): NoteEv[] {
     S = Math.max(1, Math.round(e.durQ * 2)),
     stepT = e.dur / S,
     out: NoteEv[] = [];
-  for (const x of PATS[e.pat].g(n, S)) {
-    const ms = x.i === 'all' ? tones : [tones[x.i]];
+  const bs = 8 / e.dn;
+  for (const x of PATS[e.pat].g(n, S, bs, e.n * bs)) {
+    const ms = x.i === 'all' ? tones : x.i === 'up' ? tones.slice(1) : [tones[x.i]];
     ms.forEach((m, k) => {
       out.push({
-        t: x.s * stepT + (x.i === 'all' ? k * 0.011 : 0),
+        t: x.s * stepT + (x.i === 'all' || x.i === 'up' ? k * 0.011 : 0),
         m,
         v: e.vce,
         end: e.dur + 0.04,
-        vel: x.i === 'all' ? 0.62 : x.i === 0 ? 0.9 : 0.75,
+        vel: x.i === 'all' || x.i === 'up' ? 0.62 : x.i === 0 ? 0.9 : 0.75,
+        tones,
       });
     });
   }
@@ -54,13 +60,16 @@ export function notesOf(e: ChordEntry, acc: Accomp): NoteEv[] {
 }
 
 const mtof = (m: number): number => 440 * 2 ** ((m - 69) / 12);
+/** ギターのページの模型の出力に掛ける倍率（ほかの音色と実効値をそろえる。書き出して測って決めた） */
+const GT_GAIN = 1;
 /**
  * 音色ごとの大きさの倍率。同じ和音（上下のアルペジオ 1 小節と全音符）を鳴らしたときの実効値が
  * −20 dBFS 前後にそろうよう、書き出して測って決めた
  */
 const LEVEL: Record<Voice, number> = {
-  gtr: 1.43,
-  harp: 1.64,
+  gtr: 0.97,
+  cgt: 2.35,
+  harp: 0.27,
   pf: 0.83,
   ep: 0.575,
   org: 0.79,
@@ -74,12 +83,33 @@ const LEVEL: Record<Voice, number> = {
   clk: 1,
 };
 
+/** ギターの撥弦の予定（送るまで手元に置き、編集や一時停止で先の分を消せるようにする） */
+interface GtEv {
+  k: GtKind;
+  tones: readonly number[];
+  m: number;
+  at: number;
+  end: number;
+  vel: number;
+  bus: GainNode;
+}
+/** ギターの撥弦を送る先の時間 [s] */
+const GT_AHEAD = 0.15;
+
 export class CpAudio {
   /** AudioContext が止まったときに呼ぶ（ブラウザや OS が止めたとき） */
   onLost: (() => void) | null = null;
-  ac: AudioContext | null = null;
+  ac: BaseAudioContext | null = null;
   private master: GainNode | null = null;
+  private roomIn: GainNode | null = null;
+  private conv: ConvolverNode | null = null;
+  private lim: DynamicsCompressorNode | null = null;
+  private gtr: GtrVoices | null = null;
+  private gq: GtEv[] = [];
+  /** 書き出し（OfflineAudioContext）では撥弦をすぐ送る */
+  private offline = false;
   private db = -12;
+  private room = 'small';
   private readonly ks = new Map<string, { buf: AudioBuffer; rate: number }>();
   /** ピアノの 2 つの波形（明るい成分と柔らかい成分） */
   private waves: [PeriodicWave, PeriodicWave] | null = null;
@@ -90,34 +120,79 @@ export class CpAudio {
     return this.ac?.state === 'running' ? this.ac.currentTime : null;
   }
   suspend(): void {
-    void this.ac?.suspend();
+    void (this.ac as AudioContext | null)?.suspend();
   }
   /** AudioContext を作って動かす（押した操作の中で呼ぶ）。鳴らせなければ false */
   async ready(): Promise<boolean> {
     if (!AC) return false;
     if (!this.ac) {
-      const ac = new AC({ latencyHint: 'interactive' }),
-        master = ac.createGain(),
-        lim = ac.createDynamicsCompressor();
-      lim.threshold.value = -6;
-      lim.knee.value = 0;
-      lim.ratio.value = 20;
-      lim.attack.value = 0.002;
-      lim.release.value = 0.15;
-      master.gain.value = 10 ** (this.db / 20);
-      master.connect(lim).connect(ac.destination);
+      const ac = new AC({ latencyHint: 'interactive' });
       ac.addEventListener('statechange', () => {
         if (ac.state !== 'running') this.onLost?.();
       });
-      this.ac = ac;
-      this.master = master;
+      await this.init(ac);
+      setInterval(() => this.flush(), 25);
     }
+    const ac = this.ac as AudioContext;
     try {
-      await this.ac.resume();
+      await ac.resume();
     } catch {
       /* 再生できない環境 */
     }
-    return this.ac.state === 'running';
+    return ac.state === 'running';
+  }
+  /** 音の経路を作る: 音色 → 音量 → 部屋の残響 → リミッタ → 出力。ギターはワークレットを読み込む */
+  async init(ac: BaseAudioContext): Promise<void> {
+    const master = ac.createGain(),
+      roomIn = ac.createGain(),
+      conv = ac.createConvolver(),
+      lim = ac.createDynamicsCompressor(),
+      gtrIn = ac.createGain();
+    lim.threshold.value = -6;
+    lim.knee.value = 0;
+    lim.ratio.value = 20;
+    lim.attack.value = 0.002;
+    lim.release.value = 0.15;
+    conv.normalize = false;
+    master.gain.value = 10 ** (this.db / 20);
+    master.connect(roomIn);
+    lim.connect(ac.destination);
+    /* ギターのページの模型は 1 m 先の音圧 [Pa]。ほかの音色と同じ実効値になる倍率 */
+    gtrIn.gain.value = GT_GAIN;
+    gtrIn.connect(master);
+    this.offline = !(ac instanceof AudioContext);
+    Object.assign(this, { ac, master, roomIn, conv, lim });
+    this.gtr = new GtrVoices(ac, gtrIn);
+    this.setRoom(this.room);
+    await this.gtr.load();
+  }
+  /** 部屋の残響（lib/reverb.ts の部屋。聴く位置は 3 m）。off は残響なし */
+  setRoom(v: string): void {
+    this.room = v;
+    const { ac, roomIn, conv, lim } = this;
+    if (!ac || !roomIn || !conv || !lim) return;
+    roomIn.disconnect();
+    conv.disconnect();
+    const r = roomOf(v);
+    if (r.v === 'off') {
+      roomIn.connect(lim);
+      return;
+    }
+    const sr = ac.sampleRate,
+      spec = reverbSpec(r, 3),
+      len = Math.min(6, spec.t60 * 1.2 + 0.2) * sr,
+      L = new Float32Array(len),
+      R = new Float32Array(len),
+      rv = new Reverb(sr);
+    rv.set(spec);
+    L[0] = 1;
+    R[0] = 1;
+    rv.process(L, R, 0, len);
+    const buf = ac.createBuffer(2, len, sr);
+    buf.copyToChannel(L, 0);
+    buf.copyToChannel(R, 1);
+    conv.buffer = buf;
+    roomIn.connect(conv).connect(lim);
   }
   vol(db: number): void {
     this.db = db;
@@ -132,13 +207,29 @@ export class CpAudio {
     g.connect(master);
     return g;
   }
-  /** bus を少しで消して外す */
+  /** bus を少しで消して外す。まだ送っていないギターの撥弦も消す */
   drop(g: GainNode): void {
     const ac = this.ac;
     if (!ac) return;
     g.gain.cancelScheduledValues(ac.currentTime);
     g.gain.setTargetAtTime(0, ac.currentTime, 0.03);
     setTimeout(() => g.disconnect(), 300);
+    this.gq = this.gq.filter((e) => e.bus !== g);
+  }
+  /** ギターの弦をすべて止める（演奏の場所を移したとき） */
+  hush(): void {
+    this.gq = [];
+    this.gtr?.stop();
+  }
+  /** 近づいたギターの撥弦をワークレットへ送る */
+  private flush(): void {
+    const now = this.now();
+    if (now === null || !this.gtr) return;
+    const until = now + lookahead(GT_AHEAD);
+    const due = this.gq.filter((e) => e.at < until);
+    if (!due.length) return;
+    this.gq = this.gq.filter((e) => e.at >= until);
+    for (const e of due) this.gtr.pluck(e.k, e.tones, e.m, Math.max(e.at, now), e.end, e.vel);
   }
 
   /** 撥弦の音。harp は弦の真ん中寄りを指ではじき、長く響く */
@@ -146,12 +237,12 @@ export class CpAudio {
     const key = `${harp ? 'h' : 'g'}${m}`,
       hit = this.ks.get(key);
     if (hit) return hit;
-    const ac = this.ac as AudioContext,
+    const ac = this.ac as BaseAudioContext,
       sr = ac.sampleRate,
       f = mtof(m),
       /* 3 点の低域通過（1/4・1/2・1/4）で遅れが 1 サンプル増えるので、整数の遅延より 1 サンプル長い周期になる。再生の速さで合わせる */
       N = Math.max(3, Math.floor(sr / f - 1)),
-      len = Math.floor(sr * 2.6),
+      len = Math.floor(sr * (harp ? 5 : 2.6)),
       buf = ac.createBuffer(1, len, sr),
       d = buf.getChannelData(0),
       ring = new Float32Array(N),
@@ -167,8 +258,20 @@ export class CpAudio {
       ex[i] = a2;
     }
     const P = Math.max(1, Math.round(N * (harp ? 0.4 : 0.18)));
-    for (let i = 0; i < N; i++) ring[i] = ex[i] - 0.9 * ex[(i - P + N) % N];
-    const rho = (harp ? 0.9992 : 0.9985) - Math.min(0.003, f / 500000);
+    if (harp) {
+      /* ハープ: 指の腹で弦の 40 % の所を引いて離す。初めの形は角を丸めた三角形 */
+      const tri = new Float32Array(N);
+      for (let i = 0; i < N; i++) tri[i] = i < P ? i / P : (N - i) / (N - P);
+      let b1 = 0;
+      for (let pass = 0; pass < 3; pass++)
+        for (let i = 0; i < N; i++) {
+          b1 += 0.35 * (tri[i] - b1);
+          tri[i] = b1;
+        }
+      const mean = tri.reduce((a, v) => a + v, 0) / N;
+      for (let i = 0; i < N; i++) ring[i] = (tri[i] - mean) * 1.6 + ex[i] * 0.05;
+    } else for (let i = 0; i < N; i++) ring[i] = ex[i] - 0.9 * ex[(i - P + N) % N];
+    const rho = (harp ? 0.9996 : 0.9985) - Math.min(harp ? 0.0012 : 0.003, f / (harp ? 900000 : 500000));
     for (let i = 0, ix = 0; i < len; i++) {
       const a = ring[ix],
         b = ring[(ix + 1) % N],
@@ -182,9 +285,25 @@ export class CpAudio {
     return o;
   }
 
+  private nz: AudioBuffer | null = null;
+  /** メトロノームの当たりに使う短い雑音 */
+  private noiseBuf(): AudioBuffer {
+    if (this.nz) return this.nz;
+    const ac = this.ac as BaseAudioContext,
+      b = ac.createBuffer(1, Math.floor(ac.sampleRate * 0.03), ac.sampleRate),
+      d = b.getChannelData(0);
+    let seed = 12345;
+    for (let i = 0; i < d.length; i++) {
+      seed = (seed * 16807) % 2147483647;
+      d[i] = (seed / 2147483647) * 2 - 1;
+    }
+    this.nz = b;
+    return b;
+  }
+
   private pianoWaves(): [PeriodicWave, PeriodicWave] {
     if (this.waves) return this.waves;
-    const ac = this.ac as AudioContext,
+    const ac = this.ac as BaseAudioContext,
       mk = (amp: (n: number) => number, n: number) => {
         const re = new Float32Array(n + 1),
           im = new Float32Array(n + 1);
@@ -199,6 +318,20 @@ export class CpAudio {
   note(x: NoteEv, w: number, end: number, dest: AudioNode): void {
     const ac = this.ac;
     if (!ac) return;
+    if (x.v === 'gtr' || x.v === 'cgt') {
+      const ev: GtEv = {
+        k: x.v === 'gtr' ? 'steel' : 'nylon',
+        tones: x.tones ?? [x.m],
+        m: x.m,
+        at: w,
+        end,
+        vel: x.vel * LEVEL[x.v],
+        bus: dest as GainNode,
+      };
+      if (this.offline) this.gtr?.pluck(ev.k, ev.tones, ev.m, ev.at, ev.end, ev.vel);
+      else this.gq.push(ev);
+      return;
+    }
     const f = mtof(x.m),
       g = ac.createGain(),
       stopAt = end + 0.8,
@@ -220,20 +353,30 @@ export class CpAudio {
       return o;
     };
     switch (x.v) {
-      case 'gtr':
       case 'harp': {
-        const k = this.ksBuf(x.m, x.v === 'harp'),
+        /* 響板の山（250 Hz と 900 Hz あたり）と、高い音を落とすフィルタ。指を離しても長く響く */
+        const k = this.ksBuf(x.m, true),
           s = ac.createBufferSource(),
+          p1 = ac.createBiquadFilter(),
+          p2 = ac.createBiquadFilter(),
           lp = ac.createBiquadFilter();
         s.buffer = k.buf;
         s.playbackRate.value = k.rate;
-        lp.frequency.value = x.v === 'harp' ? 3200 : 2400;
-        s.connect(lp).connect(g);
+        p1.type = 'peaking';
+        p1.frequency.value = 250;
+        p1.Q.value = 1;
+        p1.gain.value = 4;
+        p2.type = 'peaking';
+        p2.frequency.value = 900;
+        p2.Q.value = 1.4;
+        p2.gain.value = 2.5;
+        lp.frequency.value = 2800;
+        s.connect(p1).connect(p2).connect(lp).connect(g);
         g.gain.setValueAtTime(0, w);
-        g.gain.linearRampToValueAtTime(vel * 0.42, w + 0.003);
-        g.gain.setTargetAtTime(0, end, 0.08);
+        g.gain.linearRampToValueAtTime(vel * 0.42, w + 0.006);
+        g.gain.setTargetAtTime(0, end + 1.5, 0.6);
         s.start(w);
-        s.stop(Math.min(stopAt, w + 2.6));
+        s.stop(w + 5);
         break;
       }
       case 'ep': {
@@ -264,12 +407,34 @@ export class CpAudio {
         env(0.012, vel * 0.09, 0.03);
         break;
       case 'str': {
-        const lp = ac.createBiquadFilter();
-        lp.frequency.value = 1900;
-        lp.connect(g);
-        osc('sawtooth', f, lp, -7);
-        osc('sawtooth', f, lp, 7);
-        env(0.16, vel * 0.075, 0.18);
+        /* 合奏: 少しずつずれた 3 本ののこぎり波に、遅れて掛かるビブラートと胴の響きの山（300 Hz・1 kHz・2.8 kHz） */
+        const lp = ac.createBiquadFilter(),
+          vib = ac.createOscillator(),
+          vg = ac.createGain();
+        lp.frequency.value = 3200;
+        let node: AudioNode = lp;
+        for (const [fr, q, gn] of [
+          [300, 1.2, 4],
+          [1000, 1.5, 3],
+          [2800, 2, 2],
+        ]) {
+          const pk = ac.createBiquadFilter();
+          pk.type = 'peaking';
+          pk.frequency.value = fr;
+          pk.Q.value = q;
+          pk.gain.value = gn;
+          node.connect(pk);
+          node = pk;
+        }
+        node.connect(g);
+        vib.frequency.value = 5.2;
+        vg.gain.setValueAtTime(0, w);
+        vg.gain.linearRampToValueAtTime(f * 0.004, w + 0.5);
+        vib.connect(vg);
+        vib.start(w);
+        vib.stop(stopAt);
+        for (const ct of [-9, 0, 8]) vg.connect(osc('sawtooth', f, lp, ct).frequency);
+        env(0.2, vel * 0.05, 0.22);
         break;
       }
       case 'pf': {
@@ -317,8 +482,16 @@ export class CpAudio {
         lp.frequency.linearRampToValueAtTime(2600, w + 0.06);
         lp.frequency.setTargetAtTime(1500, w + 0.06, 0.15);
         lp.connect(g);
-        osc('sawtooth', f, lp, -4);
-        osc('sawtooth', f, lp, 4);
+        const vib = ac.createOscillator(),
+          vg = ac.createGain();
+        vib.frequency.value = 5;
+        vg.gain.setValueAtTime(0, w);
+        vg.gain.linearRampToValueAtTime(f * 0.003, w + 0.6);
+        vib.connect(vg);
+        vib.start(w);
+        vib.stop(stopAt);
+        vg.connect(osc('sawtooth', f, lp, -4).frequency);
+        vg.connect(osc('sawtooth', f, lp, 4).frequency);
         env(0.035, vel * 0.065, 0.06);
         break;
       }
@@ -375,13 +548,27 @@ export class CpAudio {
         break;
       }
       case 'clk': {
-        const o = ac.createOscillator();
+        /* 木を打つ音: 短い雑音を帯域通過に通した当たりと、すぐ消える正弦波 */
+        const o = ac.createOscillator(),
+          n = ac.createBufferSource(),
+          bp = ac.createBiquadFilter(),
+          gn = ac.createGain(),
+          a = Math.max(1e-4, vel * 1.4 * this.click);
+        n.buffer = this.noiseBuf();
+        bp.type = 'bandpass';
+        bp.frequency.value = x.m * 1.6;
+        bp.Q.value = 3;
+        n.connect(bp).connect(gn).connect(g);
+        gn.gain.setValueAtTime(a * 1.5, w);
+        gn.gain.exponentialRampToValueAtTime(1e-4, w + 0.015);
         o.frequency.value = x.m;
         o.connect(g);
-        g.gain.setValueAtTime(Math.max(1e-4, vel * 0.5 * this.click), w);
-        g.gain.exponentialRampToValueAtTime(0.0001, w + 0.05);
+        g.gain.setValueAtTime(a, w);
+        g.gain.exponentialRampToValueAtTime(1e-4, w + 0.06);
         o.start(w);
-        o.stop(w + 0.06);
+        o.stop(w + 0.07);
+        n.start(w);
+        n.stop(w + 0.03);
         break;
       }
     }
@@ -444,6 +631,7 @@ export class Player {
   jump(from: number): void {
     if (!this.playing) return;
     for (const o of this.occ) this.audio.drop(o.bus);
+    this.audio.hush();
     this.occ = [];
     this.passes = new Map();
     this.restart(from, (this.audio.now() ?? 0) + 0.04);
@@ -514,6 +702,7 @@ export class Player {
     this.timer = undefined;
     const now = this.audio.now() ?? 0;
     for (const o of this.occ) if (fade || o.at > now) this.audio.drop(o.bus);
+    if (fade) this.audio.hush();
     this.occ = [];
     this.gen = null;
   }

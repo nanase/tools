@@ -2,6 +2,8 @@
  * コード進行のページの入口: ブロックの並び（曲）を持ち、3 つの表示・編集の窓・下のパレット・ドラッグ・演奏・保存をつなぐ。
  * 曲は開き直しても戻るようにブラウザに保存し、名前を付けた保存は別のキーに持つ（設定をもとに戻しても消さない）
  */
+
+import { Choice } from '../../lib/choice';
 import { $, $$, esc } from '../../lib/dom';
 import { ParamGroup } from '../../lib/param';
 import { autoPause } from '../../lib/pause';
@@ -219,6 +221,7 @@ new ParamGroup<PlayKey>([outVol(VOL0)], (v) => audio.vol(v.vol));
 const clickGroup = new ParamGroup<'clk'>([CLICK], (v) => {
   audio.click = 10 ** (v.clk / 20);
 });
+new Choice<string>($('#p-room'), (v) => audio.setRoom(v));
 const syncClick = () => clickGroup.setOff('clk', !S.acc.click, 'メトロノームを止めている間は使いません');
 for (const b of $$<HTMLButtonElement>('[data-acc]')) {
   const k = b.dataset.acc as keyof Accomp,

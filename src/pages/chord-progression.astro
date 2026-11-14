@@ -1,4 +1,5 @@
 ---
+import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
@@ -6,6 +7,7 @@ import ParamRow from '../components/ParamRow.astro';
 import RelatedTools from '../components/RelatedTools.astro';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import { outVol } from '../lib/play';
+import { ROOMS } from '../lib/reverb';
 import '../tools/chord-progression/style.css';
 import How from '../tools/chord-progression/How.astro';
 import { ICON } from '../tools/chord-progression/icons';
@@ -15,6 +17,7 @@ import Theory from '../tools/chord-progression/Theory.astro';
 
 const name = 'コード進行';
 const samples = SAMPLES;
+const rooms = ROOMS.map((r) => [r.v, r.name] as [string, string]);
 ---
 <SiteLayout title={name} tool={{ id: 'chord-progression', name }}>
   <PageTitle title={name}>コードのブロックを並べて進行を鳴らします。</PageTitle>
@@ -40,7 +43,7 @@ const samples = SAMPLES;
           <button type="button" class="tg" data-acc="bass" aria-pressed="true" title="ベース" aria-label="ベース"><span class="led on" aria-hidden="true"></span><Fragment set:html={ICON.bass} /></button>
           <button type="button" class="tg" data-acc="click" aria-pressed="false" title="メトロノーム" aria-label="メトロノーム"><span class="led" aria-hidden="true"></span><Fragment set:html={ICON.click} /></button>
         </div>
-        <div class="ptab"><ParamRow d={outVol(VOL0)} /><ParamRow d={CLICK} /></div>
+        <div class="ptab"><ParamRow d={outVol(VOL0)} /><ParamRow d={CLICK} /><ChoiceRow k="room" name="残響" choices={rooms} value="small" /></div>
       </Panel>
 
       <Panel hid="hd-hl" title="強調">

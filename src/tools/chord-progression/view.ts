@@ -275,8 +275,9 @@ function laneRoll(tl: Timeline, w: number): string {
     const tones = voicingOf(e),
       S = Math.max(1, Math.round(e.durQ * 2)),
       w1 = (e.durQ * PX) / S;
-    for (const x of PATS[e.pat].g(tones.length, S)) {
-      const ms = x.i === 'all' ? tones : [tones[x.i]],
+    const bs = 8 / e.dn;
+    for (const x of PATS[e.pat].g(tones.length, S, bs, e.n * bs)) {
+      const ms = x.i === 'all' ? tones : x.i === 'up' ? tones.slice(1) : [tones[x.i]],
         x0 = xq(e.q) + x.s * w1,
         len = Math.max(3, (S - x.s) * w1 - 1);
       for (const m of ms)

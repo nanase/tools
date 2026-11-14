@@ -47,6 +47,26 @@ describe('名前と綴り', () => {
     expect(roman(ch(3), Am)).toBe('Ⅲ');
     expect(chordName(ch(3), Am)).toBe('C');
   });
+  it('6・9 などのコード', () => {
+    const Bb: Key = { t: 10, m: 'maj' };
+    expect(chordName(ch(0, '6'), Bb)).toBe('B♭6');
+    expect(chordName(ch(9, 'm7'), C)).toBe('Am7');
+    expect(chordName(ch(2, 'm9'), C)).toBe('Dm9');
+    expect(chordName(ch(7, '7sus4'), C)).toBe('G7sus4');
+    expect(chordName(ch(11, 'dim7'), C)).toBe('Bdim7');
+    expect(voicing(ch(0, '9'), C)).toHaveLength(6);
+    const items = parseSong('[key Bb maj] I6 ii9 IM9 vM7 V7sus4 Iadd9 Isus2 viio7');
+    expect(compute(items).chords.map((e) => chordName(e.it, e.key))).toEqual([
+      'B♭6',
+      'Cm9',
+      'B♭M9',
+      'FmM7',
+      'F7sus4',
+      'B♭add9',
+      'B♭sus2',
+      'Adim7',
+    ]);
+  });
   it('機能', () => {
     expect(func(ch(0), C)).toBe('T');
     expect(func(ch(5), C)).toBe('S');
@@ -99,16 +119,32 @@ describe('和音と奏法', () => {
   });
   it('奏法は和音の中の音だけを弾く', () => {
     for (const p of PAT_ORDER)
-      for (const n of [4, 5])
-        for (const S of [4, 6, 8, 12])
-          for (const x of PATS[p].g(n, S)) {
-            expect(x.s).toBeGreaterThanOrEqual(0);
-            expect(x.s).toBeLessThan(S);
-            if (x.i !== 'all') {
-              expect(x.i).toBeGreaterThanOrEqual(0);
-              expect(x.i).toBeLessThan(n);
+      for (const n of [4, 5, 6])
+        for (const [bs, bar] of [
+          [2, 8],
+          [2, 6],
+          [1, 6],
+        ])
+          for (const S of [4, 6, 8, 12])
+            for (const x of PATS[p].g(n, S, bs, bar)) {
+              expect(x.s).toBeGreaterThanOrEqual(0);
+              expect(x.s).toBeLessThan(S);
+              expect(x.l).toBeGreaterThan(0);
+              if (typeof x.i === 'number') {
+                expect(x.i).toBeGreaterThanOrEqual(0);
+                expect(x.i).toBeLessThan(n);
+              }
             }
-          }
+  });
+  it('ベースと和音は拍子に合わせてベースを置く', () => {
+    const bassAt = (bs: number, bar: number) =>
+      PATS.oom
+        .g(5, bar, bs, bar)
+        .filter((x) => typeof x.i === 'number')
+        .map((x) => x.s);
+    expect(bassAt(2, 8)).toEqual([0, 4]);
+    expect(bassAt(2, 6)).toEqual([0]);
+    expect(bassAt(1, 6)).toEqual([0, 3]);
   });
 });
 

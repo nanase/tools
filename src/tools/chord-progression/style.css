@@ -260,3 +260,10 @@ body:has(#cp-pal){padding-bottom:var(--cp-palh,0px)}
 .cp-bx .cp-ic{width:15px;height:15px}
 .cp-lr-ch .cp-cn{top:24px;font-size:11.5px}
 .cp-lr-ch .cp-gl{bottom:5px;height:11px;width:34px}
+.cp-i24{stroke-width:1.15}
+.cp-ic .t{stroke-width:.7}
+.cp-mk .cp-i24{width:30px;height:30px}
+.chip .cp-i24,.cp-bx .cp-i24{width:20px;height:20px;vertical-align:-5px}
+.cp-pm .cp-i24{width:26px;height:26px}
+.cp-ts b:first-child{padding-bottom:1px;border-bottom:1.5px solid currentColor}
+.cp-ts b{min-width:14px;text-align:center}
