@@ -1,0 +1,297 @@
+---
+// 動作原理と式
+import { Clock, type EscType, rateOf, springF, TABLES, TYPES } from './model';
+
+type Ref = { for: string; src: string };
+/** 型ごとの、巻き切りから残り 2 日までの進み遅れの変化・止まる振り角・止まるまでの日数（表から求める） */
+const ROWS = (Object.keys(TYPES) as EscType[]).map((t) => {
+  const d = rateOf(t, springF(2)) - rateOf(t, 1),
+    c = new Clock(t, Date.UTC(2026, 0, 1, 3));
+  c.setMode('avg');
+  let h = 0;
+  for (; h < 24 * 12 && !c.stopped; h++) c.stepAvg(3600);
+  return {
+    t,
+    name: TYPES[t].name,
+    drift: `${d >= 0 ? '+' : '−'}${Math.abs(d).toFixed(0)} s/日`,
+    stop: `${TABLES[t].Aon.toFixed(1)}° 未満`,
+    days: `${(h / 24).toFixed(1)} 日`,
+  };
+});
+const REFS: readonly Ref[] = [
+  {
+    for: '機械の裏板に振り子の長さを cm で刻むこと',
+    src: 'Clockworks, Hermle Clock Pendulum Measuring, https://www.clockworks.com/posts/hermle-clock-pendulum-measuring',
+  },
+  {
+    for: '同じ機械に振り子の長さ 25〜45 cm の型があること',
+    src: 'Hermle Clock Movement 341-020 Gearing 25, 33.5, 35, 38.5 or 45cm（販売ページ）, https://reach.dog/shop/timely-timeless/products/hermle-clock-movement-341-020-25-33-5-35-38-5-45',
+  },
+  {
+    for: '円弧誤差・脱進機の誤差・1 周期で平均した振り角と位相の式・止まる条件',
+    src: 'P. Hoyng, Dynamics and performance of clock pendulums, American Journal of Physics, Vol. 82, pp. 1053–1061, 2014（arXiv:1501.03673）',
+  },
+  {
+    for: '脱進機を衝撃のある微分方程式として解く方法',
+    src: 'J. Wagner, D. Moline, E. Vold, Model of a Mechanical Clock Escapement, American Journal of Physics, Vol. 80, No. 7, p. 599, 2012, doi:10.1119/1.4705517',
+  },
+  { for: '単純支持の長方形板と円板の固有振動数', src: 'A. W. Leissa, Vibration of Plates, NASA SP-160, 1969' },
+  {
+    for: '片持ちの棒の固有振動数と型の形',
+    src: 'R. D. Blevins, Formulas for Natural Frequency and Mode Shape, Van Nostrand Reinhold, 1979',
+  },
+  {
+    for: '1857 年のナポリ地震で振れる向きの違う振り子時計の一方だけが止まった記録',
+    src: 'R. Mallet, Great Neapolitan Earthquake of 1857: The First Principles of Observational Seismology, Chapman and Hall, London, 1862',
+  },
+  {
+    for: '1884 年のエセックス地震で止まった時計と振り子の振れる向き',
+    src: 'R. Meldola, W. White, Report on the East Anglian Earthquake of April 22nd, 1884, Essex Field Club Special Memoirs, Vol. 1, 1885, https://www.essexfieldclub.org.uk/archivetext.php/s/047/o/0146',
+  },
+  {
+    for: '1999 年の Hector Mine 地震で止まった振り子時計',
+    src: 'B. Mumford, Viewing Earthquake Effects in Pendulum Clocks, 1999, https://www.bmumford.com/clocks/?p=76',
+  },
+  {
+    for: 'グラハム式の作図（30 歯で 7.5 歯をまたぐ、支点を中心とする円弧のロックの面と斜めのインパルスの面、ロックとドロップ 1〜2°）',
+    src: 'Abbey Clock, Ch. 3 Drawing the Graham Pallets・Ch. 5, https://abbeyclock.com/aeb3.html',
+  },
+  {
+    for: 'リコイル式の作図（ロックの面がなく、ドロップだけを取る）とブロコ式の半円のピン',
+    src: 'Abbey Clock, Ch. 6 The Recoil Escapements・Ch. 7, https://abbeyclock.com/aeb6.html',
+  },
+  {
+    for: 'アンカー脱進機で爪が 7.5 歯をまたぎ支点を半径の √2 倍の所に置くこと、リコイル式の歯は回る向きと逆へ、デッドビートの歯は前へ傾くこと',
+    src: 'Wikipedia, Anchor escapement, https://en.wikipedia.org/wiki/Anchor_escapement',
+  },
+  {
+    for: 'ブロコ式のがんぎ車の歯の形（前の面は中心へ向かい、背を深くえぐった細い歯）、アンクルの竿・腕・ピンのボス、ピンの直径（歯先の直径 120 mm に対して 10.5 mm）、30 歯で 7.5 歯をまたぐ寸法',
+    src: 'K. Kuo, Brocot Escapement（動画）, 2013, https://www.youtube.com/watch?v=vh1rH6WGv60',
+  },
+  {
+    for: 'ブロコ式（Brocot escapement）の名前と考案者（1823 年に Louis-Gabriel Brocot が考案し、子の Achille Brocot が改良）',
+    src: 'Wikipedia, Pin-pallet escapement, https://en.wikipedia.org/wiki/Pin-pallet_escapement',
+  },
+  {
+    for: 'リコイル式の爪の位置と向き（入爪は下面で歯を受ける鉤、出爪はほぼ縦の面）と細いとげの歯',
+    src: 'Wikimedia Commons, File:Anchor escapement.png, https://commons.wikimedia.org/wiki/File:Anchor_escapement.png',
+  },
+  {
+    for: 'リコイル式の爪の位置と向き（同じ形を別の図で確かめた）',
+    src: 'Wikimedia Commons, File:Chambers 1908 Escapement.png, https://commons.wikimedia.org/wiki/File:Chambers_1908_Escapement.png',
+  },
+  {
+    for: 'リコイル式のアンクルの形（支点から「へ」の字に開く板と両端の鉤）、歯の傾き、動き（72 コマを測った）',
+    src: 'Wikimedia Commons, File:Anchor escapement animation 217x328px.gif, https://commons.wikimedia.org/wiki/File:Anchor_escapement_animation_217x328px.gif',
+  },
+  {
+    for: 'フランスの置時計で文字盤の前に見せたブロコ式の実物の動き',
+    src: 'B. Stoddard, Brocot Escapement in a French Mantel Clock（動画）, 2009, https://www.youtube.com/watch?v=AMo67o1OBjM',
+  },
+  { for: '当たりの長さとヘルツの接触', src: 'K. L. Johnson, Contact Mechanics, Cambridge University Press, 1985' },
+  {
+    for: '単純支持の板の型から遠くへ出る音（放射）',
+    src: 'C. E. Wallace, Radiation resistance of a rectangular panel, JASA 51, 946, 1972',
+  },
+  {
+    for: '曲げた鋼の棒の型が面の中と外の組に分かれること',
+    src: 'N. H. Fletcher, Tuning a pentangle, Applied Acoustics, 1993, https://www.phys.unsw.edu.au/music/people/publications/Fletcher1993a.pdf',
+  },
+  {
+    for: '革・フェルトのハンマーの非線形の当たり',
+    src: 'A. Stulov, Hysteretic model of the grand piano hammer felt, JASA 97, 1995',
+  },
+];
+const Rf = (i: number) => `<a class="rf" href="#thy-r${i}">[${i}]</a>`;
+---
+<h3>力の流れ</h3>
+<ol class="flow" aria-label="力の流れ">
+  <li><b>ゼンマイ</b><span>香箱 1 日 1 回転</span></li>
+  <li><b>輪列</b><span>2,880 倍に速める</span></li>
+  <li><b>がんぎ車</b><span>30 歯・1 時間 120 回転</span></li>
+  <li><b>アンクル</b><span>1 振りに半歯通す</span></li>
+  <li><b>振り子</b><span>1 振り 0.5 s</span></li>
+</ol>
+<p>ゼンマイの力は輪列を通ってがんぎ車を回します。アンクルの爪は振り子と一緒に振れ、1 振りごとに歯を半歯だけ通します。歯は爪を押し返して振り子に力を足し、減衰で失う分を補います。</p>
+
+<h3>振り子</h3>
+<p>竿の長さ <math><mi>L</mi><mo>=</mo><mn>0.248</mn></math> m の単振り子で、1 振りは 0.5 s（1 時間に 7,200 振動）です。市販の機械は振り子の長さを cm で裏板に刻み <Fragment set:html={Rf(1)} />、同じ機械に 25〜45 cm の型があります <Fragment set:html={Rf(2)} />。このツールは 25 cm の型に近い長さです。</p>
+<div class="eqs">
+  <math display="block"><mover><mi>θ</mi><mo>¨</mo></mover><mo>=</mo><mo>−</mo><mfrac><mi>g</mi><mi>L</mi></mfrac><mi>sin</mi><mo>⁡</mo><mi>θ</mi><mo>−</mo><mfrac><msub><mi>ω</mi><mn>0</mn></msub><mi>Q</mi></mfrac><mover><mi>θ</mi><mo>˙</mo></mover><mo>+</mo><mfrac><mi>τ</mi><mrow><mi>m</mi><msup><mi>L</mi><mn>2</mn></msup></mrow></mfrac><mo>−</mo><mfrac><msub><mi>a</mi><mi mathvariant="normal">g</mi></msub><mi>L</mi></mfrac><mi>cos</mi><mo>⁡</mo><mi>θ</mi></math>
+  <math display="block"><msub><mi>ω</mi><mn>0</mn></msub><mo>=</mo><msqrt><mfrac><mi>g</mi><mi>L</mi></mfrac></msqrt><mspace width="1.2em"/><msub><mi>P</mi><mn>0</mn></msub><mo>=</mo><mfrac><mrow><mn>2</mn><mi>π</mi></mrow><msub><mi>ω</mi><mn>0</mn></msub></mfrac><mo>≈</mo><mn>1.000</mn><mtext>&nbsp;s</mtext></math>
+</div>
+<p>記号: <math><mi>θ</mi></math> は振れ角、<math><mi>m</mi></math> はおもりの質量、<math><mi>Q</mi></math> は空気などによる減衰の Q 値、<math><mi>τ</mi></math> は爪が歯から受けるトルク、<math><msub><mi>a</mi><mi mathvariant="normal">g</mi></msub></math> は台の加速度です。振れ角が ±8° を超えると竿が枠に当たります。</p>
+<p>振り子の周期は振れ角 <math><msub><mi>θ</mi><mn>0</mn></msub></math> が大きいほど長くなります（円弧誤差）<Fragment set:html={Rf(3)} />。振れ角 4° では <math><mn>3.0</mn><mo>×</mo><msup><mn>10</mn><mrow><mo>−</mo><mn>4</mn></mrow></msup></math> で、1 日に約 26 秒遅れる大きさです。</p>
+<div class="eqs"><math display="block"><mfrac><mrow><mi>Δ</mi><mi>P</mi></mrow><mi>P</mi></mfrac><mo>≈</mo><mfrac><msubsup><mi>θ</mi><mn>0</mn><mn>2</mn></msubsup><mn>16</mn></mfrac></math></div>
+
+<h3>脱進機</h3>
+<p>がんぎ車は 30 歯で、1 振りに半歯（6°）進みます。アンクルは 7.5 歯をまたぎ、支点はがんぎ車の中心の真上にあります。アンクルが反時計回りに傾くと左の爪（入爪）が歯の間へ深く入り右の爪（出爪）が抜け、時計回りではその逆になります <Fragment set:html={Rf(10)} /><Fragment set:html={Rf(12)} />。グラハム式の爪の面は「アンクルの角が <math><mi>θ</mi></math> のとき歯先が居るべき位置」をアンクルの座標へ写した点の列です。</p>
+<div class="eqs"><math display="block"><mi mathvariant="bold">p</mi><mo stretchy="false">(</mo><mi>θ</mi><mo stretchy="false">)</mo><mo>=</mo><mi mathvariant="bold">R</mi><mo stretchy="false">(</mo><mo>−</mo><mi>θ</mi><mo stretchy="false">)</mo><mo stretchy="false">[</mo><msub><mi mathvariant="bold">x</mi><mtext>歯先</mtext></msub><mo stretchy="false">(</mo><mi>Φ</mi><mo stretchy="false">(</mo><mi>θ</mi><mo stretchy="false">)</mo><mo stretchy="false">)</mo><mo>−</mo><msub><mi mathvariant="bold">x</mi><mtext>支点</mtext></msub><mo stretchy="false">]</mo></math></div>
+<p>記号: <math><mi>Φ</mi></math> はがんぎ車の進み、<math><mi mathvariant="bold">R</mi></math> は回転です。グラハム式は <math><mi>Φ</mi><mo stretchy="false">(</mo><mi>θ</mi><mo stretchy="false">)</mo></math> をロックとインパルスの区間に分けて決めます。リコイル式とブロコ式は参考の図と動画から形を測り、その形どうしの当たりで動きます。</p>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th>型</th><th>爪</th><th>振り子が振れきるまでの間</th></tr></thead>
+  <tbody>
+    <tr><th>リコイル式</th><td>支点から「へ」の字に開く板。入爪は左端の鉤で、下へふくらむ下面が歯を受ける。出爪は右端を下へ折ったほぼ縦の面。歯は細いとげで、回る向きと逆へ倒れる <Fragment set:html={Rf(17)} /><Fragment set:html={Rf(15)} /><Fragment set:html={Rf(16)} /></td><td>歯を押し戻す</td></tr>
+    <tr><th>グラハム式</th><td>支点を中心とする円弧の板。円弧の面（ロック）と先の斜面（インパルス）。歯は前へ傾く</td><td>がんぎ車は止まる</td></tr>
+    <tr><th>ブロコ式</th><td>支点から下りる竿と、歯車の外をまたぐ弓の腕。腕の先のボスに半径 1.05 mm の半円のピン。歯は前の面が中心へ向かい、先は細いまま少し降りてから背を深くえぐった形 <Fragment set:html={Rf(11)} /><Fragment set:html={Rf(13)} /><Fragment set:html={Rf(18)} /></td><td>丸い面の上でほぼ止まる</td></tr>
+  </tbody>
+</table></div>
+<p>ブロコ式は英語で Brocot escapement と呼ばれ、フランスの時計師ブロコ父子（Louis-Gabriel Brocot と Achille Brocot）の名を取った方式です <Fragment set:html={Rf(14)} />。19 世紀のフランスの置時計で、文字盤の前に見せる形によく使われました。日本語の定まった名前は見当たらないため、このツールでは人名の読みから「ブロコ式」と呼びます。</p>
+<p>歯が爪の先を離れると、がんぎ車は次の爪に当たるまで空回りします（ドロップ）。ドロップはグラハム式で 1°、リコイル式で 1.2〜1.5° です。</p>
+
+<h3>歯と爪の接触</h3>
+<p>Wagner らは脱進機を衝撃のある微分方程式として解きました <Fragment set:html={Rf(4)} />。このツールは衝撃を短い間のばねの力に置き換え、歯の角が爪の多角形に、または爪の角が歯の多角形にめり込んだ深さ <math><mi>d</mi></math> から力を決めます（罰則法）。歯先だけでなく歯と爪の形どうしの当たりも解くので、噛み合わない形は動きません。</p>
+<div class="eqs">
+  <math display="block"><msub><mi>F</mi><mi mathvariant="normal">n</mi></msub><mo>=</mo><mi>max</mi><mo stretchy="false">(</mo><mn>0</mn><mo>,</mo><mspace width="0.2em"/><msub><mi>k</mi><mi mathvariant="normal">c</mi></msub><mi>d</mi><mo>−</mo><msub><mi>c</mi><mi mathvariant="normal">c</mi></msub><msub><mi>v</mi><mi mathvariant="normal">n</mi></msub><mo stretchy="false">)</mo></math>
+  <math display="block"><msub><mi>F</mi><mi mathvariant="normal">t</mi></msub><mo>=</mo><mo>−</mo><mi>μ</mi><msub><mi>F</mi><mi mathvariant="normal">n</mi></msub><mi>tanh</mi><mo>⁡</mo><mfrac><msub><mi>v</mi><mi mathvariant="normal">t</mi></msub><msub><mi>v</mi><mi mathvariant="normal">s</mi></msub></mfrac></math>
+</div>
+<p>記号: <math><msub><mi>v</mi><mi mathvariant="normal">n</mi></msub></math> は法線の向きに離れる速さ、<math><msub><mi>v</mi><mi mathvariant="normal">t</mi></msub></math> は滑りの速さです。tanh で滑りの向きが変わる所を滑らかにします。振り子とがんぎ車を刻み 80 µs の半陰的オイラー法で進めます。</p>
+
+<h3>振り角と進み遅れ</h3>
+<p>駆動が強いほど脱進機の誤差で進み、振れ角が大きいほど円弧誤差で遅れます。Hoyng は 1 周期で平均した振り角 <math><mi>λ</mi></math> と位相 <math><mi>ψ</mi></math> の式でこの 2 つを分けました <Fragment set:html={Rf(3)} />。どちらが勝つかは、動かす点と脱進機の型で変わります。</p>
+<div class="eqs"><math display="block"><mover><mi>ψ</mi><mo>˙</mo></mover><mo>−</mo><mn>1</mn><mo>=</mo><mo>−</mo><mfrac><msup><mi>λ</mi><mn>2</mn></msup><mn>16</mn></mfrac><mo>−</mo><mfrac><mn>1</mn><mi>λ</mi></mfrac><mo>∮</mo><mi>M</mi><mo stretchy="false">(</mo><mi>θ</mi><mo stretchy="false">)</mo><mi>sin</mi><mo>⁡</mo><mi>ψ</mi><mspace width="0.17em"/><mi>d</mi><mi>ψ</mi></math></div>
+<p>記号: 時間は <math><mn>1</mn><mo>/</mo><msub><mi>ω</mi><mn>0</mn></msub></math> を単位にとり、左辺は進み遅れの割合です。第 1 項が円弧誤差、第 2 項が脱進機の誤差で、<math><mi>M</mi></math> は駆動のトルクです。振り角が爪の切り替わる角を下回ると、振り子は止まります <Fragment set:html={Rf(3)} />。</p>
+<p>このツールでは、ゼンマイの力の割合 <math><mi>f</mi></math> ごとに上の接触の計算を 500 秒回し、定常の振り角と周期を表にしました。ページはこの表を引きます。竿の長さは <math><mi>f</mi><mo>=</mo><mn>0.7</mn></math> で進み遅れが 0 になるよう調整済みとみなします。</p>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th>型</th><th>巻き切りから残り 2 日までの変化</th><th>止まる振り角</th><th>止まるまで</th></tr></thead>
+  <tbody>
+    {ROWS.map((r) => (
+      <tr><th>{r.name}</th><td class="num">{r.drift}</td><td class="num">{r.stop}</td><td class="num">{r.days}</td></tr>
+    ))}
+  </tbody>
+</table></div>
+<p>リコイル式は力が弱まると遅れ、グラハム式は振れ角が小さくなってわずかに進みます。早送りでは Hoyng の平均した式と同じ考えで、振り角 <math><msub><mi>θ</mi><mn>0</mn></msub></math> を定常値 <math><msub><mi>θ</mi><mi mathvariant="normal">s</mi></msub></math> へ近づけ、表の周期で針を進めます。</p>
+<div class="eqs"><math display="block"><mfrac><mrow><mi>d</mi><msub><mi>θ</mi><mn>0</mn></msub></mrow><mrow><mi>d</mi><mi>t</mi></mrow></mfrac><mo>=</mo><mfrac><mrow><msub><mi>θ</mi><mi mathvariant="normal">s</mi></msub><mo stretchy="false">(</mo><mi>f</mi><mo stretchy="false">)</mo><mo>−</mo><msub><mi>θ</mi><mn>0</mn></msub></mrow><msub><mi>τ</mi><mi mathvariant="normal">a</mi></msub></mfrac><mspace width="1.2em"/><msub><mi>τ</mi><mi mathvariant="normal">a</mi></msub><mo>=</mo><mn>45</mn><mtext>&nbsp;s</mtext></math></div>
+
+<h3>ゼンマイ</h3>
+<p>香箱は 1 日に 1 回転し、巻き切りで 8.4 回転分を蓄えます。止め輪がないので、ほどけきる近くで力が急に落ちます。力の割合は巻き切りで 1 です。</p>
+<div class="eqs"><math display="block"><mi>f</mi><mo stretchy="false">(</mo><mi>n</mi><mo stretchy="false">)</mo><mo>=</mo><mfrac><mrow><mi>g</mi><mo stretchy="false">(</mo><mi>n</mi><mo stretchy="false">)</mo></mrow><mrow><mi>g</mi><mo stretchy="false">(</mo><mi>N</mi><mo stretchy="false">)</mo></mrow></mfrac><mspace width="1.2em"/><mi>g</mi><mo stretchy="false">(</mo><mi>n</mi><mo stretchy="false">)</mo><mo>=</mo><mrow><mo>(</mo><mn>0.42</mn><mo>+</mo><mn>0.58</mn><mfrac><mi>n</mi><mi>N</mi></mfrac><mo>)</mo></mrow><mrow><mo>(</mo><mn>1</mn><mo>−</mo><msup><mi>e</mi><mrow><mo>−</mo><mi>n</mi><mo>/</mo><mn>0.35</mn></mrow></msup><mo>)</mo></mrow></math></div>
+<p>記号: <math><mi>n</mi></math> は残りの回転、<math><mi>N</mi><mo>=</mo><mn>8.4</mn></math> です。</p>
+
+<h3>輪列</h3>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th>車</th><th>歯数</th><th>かな</th><th>回転</th></tr></thead>
+  <tbody>
+    <tr><th>香箱</th><td class="num">72</td><td></td><td class="num">1 回転/日</td></tr>
+    <tr><th>中間車</th><td class="num">48</td><td class="num">12</td><td class="num">6 回転/日</td></tr>
+    <tr><th>2 番車（分針）</th><td class="num">80</td><td class="num">12</td><td class="num">1 回転/時</td></tr>
+    <tr><th>3 番車</th><td class="num">72</td><td class="num">8</td><td class="num">10 回転/時</td></tr>
+    <tr><th>がんぎ車</th><td class="num">30</td><td class="num">6</td><td class="num">120 回転/時</td></tr>
+  </tbody>
+</table></div>
+<p>がんぎ車は香箱の <math><mfrac><mn>72</mn><mn>12</mn></mfrac><mo>·</mo><mfrac><mn>48</mn><mn>12</mn></mfrac><mo>·</mo><mfrac><mn>80</mn><mn>8</mn></mfrac><mo>·</mo><mfrac><mn>72</mn><mn>6</mn></mfrac><mo>=</mo><mn>2880</mn></math> 倍で回ります。表輪列は筒かな 12 → 日の裏車 36、日の裏かな 10 → 筒車 40 で、時針は分針の <math><mfrac><mn>12</mn><mn>36</mn></mfrac><mo>·</mo><mfrac><mn>10</mn><mn>40</mn></mfrac><mo>=</mo><mn>1</mn><mo>/</mo><mn>12</mn></math> で回ります。</p>
+
+<h3>時打ち</h3>
+<ol class="flow" aria-label="時打ちの流れ">
+  <li><b>予告</b><span>正時の約 3 分前</span></li>
+  <li><b>打ち始め</b><span>正時にレバーが落ちる</span></li>
+  <li><b>打つ</b><span>1 打ちで止め車 1 回転</span></li>
+  <li><b>止まる</b><span>数取り車の溝</span></li>
+</ol>
+<ul class="tl">
+  <li>正時の約 4 分前から、筒かなのピンが持ち上げレバーの先を押し上げる</li>
+  <li>約 3 分前に、持ち上げレバーのピンが止めレバーを押し上げ、止めの爪が止め車の切り欠きから出る。輪列は少し回り、予告ピンが持ち上げレバーの旗に当たって止まる</li>
+  <li>正時ちょうどに筒かなのピンが先から外れ、持ち上げレバーが落ちる。旗が予告ピンの通り道から出て打ち始める</li>
+  <li>止めレバーの尾は数取り車の縁に乗り、止めの爪を止め車のカムの外に保つ</li>
+  <li>ピン車のピン 8 本がハンマーの尾を順に押し上げ、外れたハンマーが落ちて渦巻きのゴングを外から打つ。1 打ちで止め車は 1 回転、風切りは 64 回転</li>
+  <li>数取り車（90 歯）はピン車の軸のかな 8 で 1 打ちに 1 歯ずつ進み、12 時間で 1 回転する。溝の並びは 30 分ごとの 1 打ちと正時の 1〜12 打ち</li>
+  <li>止めレバーが数取り車の溝に落ちると、止め車の切り欠きで止まる</li>
+</ul>
+<p>打つ数を覚えているのは数取り車です。縁の溝と溝の間隔が、次に打つ数になっています（30 分の 1 打ち、正時の 1〜12 打ちが順に並ぶ）。数取り車は 1 打ちごとに 1 歯ずつ進むので、止めレバーの尾は打っている間は縁に乗り、決まった数を打ったところで次の溝に落ちます。</p>
+<p>止めるときに力を受けるのは止めレバーの爪です。時打ちの輪列はゼンマイに回され続けているので、止め車も時計回りに回ろうとします。尾が溝に落ちると、爪も止め車の切り欠きに入ります。止め車が少し回ると、切り欠きの後ろの壁が爪に当たり、そこで輪列が止まります。止めレバーが止め車を止める形で、爪には止め車が回ろうとする力が掛かり続けます。</p>
+<p>持ち上げレバーは止めレバーの手前の面にあり、裏へ出したピンで止めレバーの腕を押します。正面から見ると 2 本のレバーは重なって見えますが、触れているのはこのピンだけです。</p>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th>車</th><th>歯数</th><th>かな</th><th>1 打ちの回転</th></tr></thead>
+  <tbody>
+    <tr><th>香箱</th><td class="num">72</td><td></td><td class="num">1/180</td></tr>
+    <tr><th>中間車</th><td class="num">40</td><td class="num">8</td><td class="num">1/20</td></tr>
+    <tr><th>ピン車</th><td class="num">64</td><td class="num">16</td><td class="num">1/8</td></tr>
+    <tr><th>止め車</th><td class="num">56</td><td class="num">8</td><td class="num">1</td></tr>
+    <tr><th>予告車</th><td class="num">48</td><td class="num">7</td><td class="num">8</td></tr>
+    <tr><th>風切り</th><td></td><td class="num">6</td><td class="num">64</td></tr>
+  </tbody>
+</table></div>
+<p>1 日の 180 打ちで香箱が 1 回転します。打つ速さは止め車の角の速さ <math><mi>ω</mi></math>（打ち/秒）で表します。風切りの空気の抵抗は速さの 2 乗です。</p>
+<div class="eqs"><math display="block"><mi>J</mi><mover><mi>ω</mi><mo>˙</mo></mover><mo>=</mo><mi>f</mi><mo>−</mo><msub><mi>F</mi><mi mathvariant="normal">h</mi></msub><mo stretchy="false">(</mo><mi>φ</mi><mo stretchy="false">)</mo><mo>−</mo><mn>0.04</mn><mo>−</mo><mn>0.78</mn><mspace width="0.1em"/><mi>ω</mi><mo stretchy="false">|</mo><mi>ω</mi><mo stretchy="false">|</mo></math></div>
+<p>記号: <math><msub><mi>F</mi><mi mathvariant="normal">h</mi></msub></math> はハンマーを持ち上げる荷重、<math><mi>φ</mi></math> は止め車の角です。ゼンマイが弱ると打つ間隔が延び、<math><mi>f</mi></math> が持ち上げの荷重を下回ると途中で止まります。</p>
+
+<h3>揺れ</h3>
+<p>台を振り子の振れる向きに動かし、その加速度 <math><msub><mi>a</mi><mi mathvariant="normal">g</mi></msub></math> を運動方程式に入れます。振り子の周期 1 秒は地震の揺れの周期に近く、共振で大きく振れて当たり止めに当たります。</p>
+<ul class="tl">
+  <li>押す: 0.3 秒で 1 往復する正弦</li>
+  <li>地震: 0.5〜5 Hz の正弦 14 本を重ねた 20 秒。最大加速度は 25・80・250 gal</li>
+  <li>おもりをつかむ: 正面図でおもりをドラッグするか「おもりを押さえる」を押すと、手を硬いばね（8 Hz、減衰比 0.7）として目標の角へ引きます。脱進機の当たりは計算のまま続くので、ゆっくり振れば刻み、押さえれば止まります。離すとその角から振れ始めます</li>
+</ul>
+<p>振れる向きに揺れた振り子時計が止まりやすいという観察は古くからあります。1857 年のナポリ地震 <Fragment set:html={Rf(7)} />・1884 年のエセックス地震 <Fragment set:html={Rf(8)} />・1999 年の Hector Mine 地震 <Fragment set:html={Rf(9)} /> の記録です。</p>
+
+<h3>音</h3>
+<ol class="flow" aria-label="刻む音の作り方">
+  <li><b>当たり</b><span>計算した速さ</span></li>
+  <li><b>力の山</b><span>計算の力積とヘルツの接触</span></li>
+  <li><b>伝わり</b><span>軸・ほぞ・機械の取り付け・箱</span></li>
+  <li><b>放射</b><span>聞く向きの板の音</span></li>
+</ol>
+<p>録音は使わず、当たりの力が部品を通って空気へ出るまでを、部品の振動の型（モード）の連なりで解きます。刻む音は脱進機の計算で出た当たりの力を源にします。</p>
+
+<h4>刻む音</h4>
+<p>源は脱進機の計算そのものです。当たりごとに、始まりから 2 ms の力積 <math><mi>J</mi></math>、近づく速さ <math><mi>v</mi></math>、押した点と向きを受け取り、計算で起きた時刻に鳴らします。リコイル式の 1 振りは、爪が歯を放す小さな音、6.7 ms 後に歯が次の爪へ落ちる当たり、そのあと 2.5〜6.5 ms おきの跳ね返りの当たりと並びます。計算の接触はやわらかいばねなので、力の山の形だけを真鍮の歯と鋼の爪のヘルツの接触に置き換えます <Fragment set:html={Rf(19)} />。</p>
+<div class="eqs">
+  <math display="block"><mi>τ</mi><mo>=</mo><mn>2.87</mn><msup><mrow><mo>(</mo><mfrac><msup><mi>m</mi><mn>2</mn></msup><mrow><mi>R</mi><msup><msup><mi>E</mi><mo>*</mo></msup><mn>2</mn></msup><mi>v</mi></mrow></mfrac><mo>)</mo></mrow><mrow><mn>1</mn><mo>/</mo><mn>5</mn></mrow></msup><mspace width="1.2em"/><mi>J</mi><mo>≤</mo><mo stretchy="false">(</mo><mn>1</mn><mo>+</mo><mi>e</mi><mo stretchy="false">)</mo><mi>m</mi><mi>v</mi></math>
+</div>
+<p>記号: <math><mi>τ</mi></math> は当たりの長さ、<math><mi>m</mi></math> は当たりの点と向きから求めたがんぎ車の換算質量、<math><mi>R</mi></math> は歯先の丸み（0.1 mm）、<math><msup><mi>E</mi><mo>*</mo></msup></math> は接触のヤング率（75 GPa）、<math><mi>e</mi></math> は跳ね返りの係数（0.4）です。当たりは 60〜95 µs になります。</p>
+<p>歯に掛かる力はがんぎ車の軸へ、反作用はアンクルの軸へ入り、軸の横の曲げの型（がんぎ車 900 Hz・アンクル 620〜780 Hz）を通ってほぞへ伝わります。2 つのほぞの力は低い音で打ち消し合い、残る偶力と型のずれの分が、ねじ 4 本で前板に、足で底板に留めた機械を揺らします。地板は軸の傾きと柱の曲げで鳴ります。地板と木の板の音は、聞く向き（前 1 m）での音圧として求めます <Fragment set:html={Rf(5)} /><Fragment set:html={Rf(20)} />。</p>
+<div class="eqs">
+  <math display="block"><msub><mi>f</mi><mrow><mi>m</mi><mi>n</mi></mrow></msub><mo>=</mo><mfrac><mi>π</mi><mn>2</mn></mfrac><msqrt><mfrac><mi>D</mi><mrow><mi>ρ</mi><mi>h</mi></mrow></mfrac></msqrt><mrow><mo>[</mo><msup><mrow><mo>(</mo><mfrac><mi>m</mi><mi>a</mi></mfrac><mo>)</mo></mrow><mn>2</mn></msup><mo>+</mo><msup><mrow><mo>(</mo><mfrac><mi>n</mi><mi>b</mi></mfrac><mo>)</mo></mrow><mn>2</mn></msup><mo>]</mo></mrow><mspace width="1.2em"/><mi>D</mi><mo>=</mo><mfrac><mrow><mi>E</mi><msup><mi>h</mi><mn>3</mn></msup></mrow><mrow><mn>12</mn><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><msup><mi>ν</mi><mn>2</mn></msup><mo stretchy="false">)</mo></mrow></mfrac></math>
+</div>
+<p>記号: <math><mi>a</mi></math>・<math><mi>b</mi></math> は板の縦横、<math><mi>h</mi></math> は厚さ、<math><mi>E</mi></math> はヤング率、<math><mi>ρ</mi></math> は密度、<math><mi>ν</mi></math> はポアソン比です。地板のいちばん低い型は約 600 Hz です。</p>
+<p>型ごとの違いは計算した力から生まれます。リコイル式は入爪の力が 2 つの軸を結ぶ縦の向きで箱が鳴りにくく、出爪の力は横で箱が鳴るので、チクとタクで約 6 dB 違います。グラハム式は力が歯先の円に沿うので換算質量が小さく、静かで左右の差も小さく、落ちる約 0.1 秒前にロックの面から斜面へ移る小さな当たりがあります。ブロコ式は落ちる速さが大きく、いちばん大きく鳴ります。</p>
+
+<h4>ゴング</h4>
+<p>渦巻きのゴングは根元を台に留めた鋼線で、片持ちの棒として解きます <Fragment set:html={Rf(6)} />。巻いてあるため、型は巻きの面の中で振れる組と面の外へ振れる組に分かれ、高さが少しずれてうなります <Fragment set:html={Rf(21)} />。</p>
+<div class="eqs">
+  <math display="block"><msub><mi>f</mi><mi>n</mi></msub><mo>=</mo><mfrac><msup><mrow><mo stretchy="false">(</mo><msub><mi>β</mi><mi>n</mi></msub><mi>L</mi><mo stretchy="false">)</mo></mrow><mn>2</mn></msup><mrow><mn>2</mn><mi>π</mi><msup><mi>L</mi><mn>2</mn></msup></mrow></mfrac><msqrt><mfrac><mrow><mi>E</mi><mi>I</mi></mrow><mrow><mi>ρ</mi><mi>A</mi></mrow></mfrac></msqrt><mspace width="1.2em"/><msub><mi>β</mi><mi>n</mi></msub><mi>L</mi><mo>=</mo><mn>1.8751</mn><mo>,</mo><mspace width="0.2em"/><mn>4.6941</mn><mo>,</mo><mspace width="0.2em"/><mn>7.8548</mn><mo>,</mo><mspace width="0.2em"/><mo>…</mo></math>
+  <math display="block"><mi>F</mi><mo>=</mo><mi>K</mi><msup><mi>δ</mi><mn>1.5</mn></msup><mo stretchy="false">(</mo><mn>1</mn><mo>+</mo><mi>λ</mi><mover><mi>δ</mi><mo>˙</mo></mover><mo stretchy="false">)</mo></math>
+</div>
+<p>記号: <math><mi>I</mi></math> は断面二次モーメント、<math><mi>A</mi></math> は断面積、<math><mi>F</mi></math> は革のハンマーの力、<math><mi>δ</mi></math> は革のつぶれです。ハンマーと棒の型 100 本を一緒に時間を刻んで解き、当たりは約 1.4 ms になります <Fragment set:html={Rf(22)} />。音は棒から直接出る分と、根元の力が台から箱を鳴らす分を足します。強く鳴る型は 627・715・393・1726・2613 Hz で、主な型は 4〜6 秒で 60 dB 減ります。</p>
+
+<h4>箱と部屋の響き</h4>
+<p>「音」の枠で選ぶと、出口で 2 つの応答を畳み込みます。箱の響きは、機械を収めた木の箱の裏板と前板の振動の型（単純支持の板）と、中の空気のヘルムホルツの共鳴（170 Hz）を足した応答です。小さな部品からじかに出る音は低い音が弱いのに対し、箱の型は 2.5 kHz より下に集まって長く鳴るので、低い音ほど強く響きます（80〜500 Hz でおよそ +20 dB）。部屋の響きは、ほかの楽器のページと同じ残響の計算（Eyring の式とフィードバック遅延網）に、居間か広間の寸法と吸音率を入れた応答です。時計から 2 m で聴きます。どちらを選んでも、リコイル式の刻む音の大きさが変わらないように補正します。</p>
+
+<h4>風切りの音</h4>
+<p>風切りの羽 2 枚が通る数 <math><mn>2</mn><mo>×</mo><mn>64</mn><mi>ω</mi></math>（回/秒）を中心とした帯域の雑音です。</p>
+
+<h3>出典</h3>
+<ol class="refs">
+  {REFS.map((r, i) => (
+    <li id={`thy-r${i + 1}`}>
+      <span class="rf-for">{r.for}</span>
+      <span class="rf-src">{r.src}</span>
+    </li>
+  ))}
+</ol>
+
+<h3>このツールで決めたこと</h3>
+<ul class="tl">
+  <li>振り子は点の質量の単振り子とし、長さ 0.248 m・おもり 0.12 kg・<math><mi>Q</mi><mo>=</mo><mn>1500</mn></math>・<math><mi>g</mi><mo>=</mo><mn>9.798</mn></math> m/s²</li>
+  <li>当たり止め ±8°。図の竿は 130 mm に縮めて描き、計算は 248 mm</li>
+  <li>がんぎ車は 30 歯・半径 12 mm・慣性 <math><mn>5</mn><mo>×</mo><msup><mn>10</mn><mrow><mo>−</mo><mn>8</mn></mrow></msup></math> kg·m²。アンクルの支点は中心から <math><mn>12</mn><mo>/</mo><mi>cos</mi><mo>⁡</mo><mn>45</mn><mo>°</mo><mo>=</mo><mn>16.97</mn></math> mm 上</li>
+  <li>がんぎ車の回転に、速さに比例する抵抗（減衰の速さ 30 /s）を入れる</li>
+  <li>リコイル式の形は Commons の動く図から測った点と円弧。左右の振れで刻みの間隔がそろうよう、アンクルを振り子に対して 0.41° 回す。グラハム式のインパルスの範囲 +0.75°〜−1.25° と爪の幅 5°。ブロコ式のピンの半径 1.05 mm（Kuo の図の直径 10.5 mm を歯先の直径 120 mm に対して縮めた）</li>
+  <li>歯の高さ 2.6 mm（ブロコ式は Kuo の図より 1 割あまり浅い）と傾き（リコイル式は前の面が半径から 26°、背が 5.5° 倒れる。グラハム式は前の面の根元が先端から 3.2° 後ろ。ブロコ式は前の面が中心へ向かい、歯先の平らは 0.85°、背の角は先端から 6.3° 後ろ）</li>
+  <li>Kuo の図のアンクルの腕はがんぎ車の裏を回る三日月形。この図はアンクルを歯車の手前に描くので、腕は歯の外をまたぐ弓にし、ピンのボスは歯が通る所を削った</li>
+  <li>接触: <math><msub><mi>k</mi><mi mathvariant="normal">c</mi></msub><mo>=</mo><mn>1.2</mn><mo>×</mo><msup><mn>10</mn><mn>4</mn></msup></math> N/m、<math><msub><mi>c</mi><mi mathvariant="normal">c</mi></msub><mo>=</mo><mn>1.2</mn></math> N·s/m、<math><mi>μ</mi><mo>=</mo><mn>0.15</mn></math>、<math><msub><mi>v</mi><mi mathvariant="normal">s</mi></msub><mo>=</mo><mn>2</mn></math> mm/s、刻み 80 µs</li>
+  <li>駆動ごとの振り角と周期の表は 500 秒の計算の定常値。<math><mi>f</mi><mo>=</mo><mn>0.7</mn></math> で進み遅れ 0 に合わせる。早送りの時定数 45 s</li>
+  <li>ゼンマイの曲線の係数 0.42・0.58・0.35、巻き切り 8.4 回転、止め輪なし。巻き上げは 1 秒に 0.9 回転、こはぜは 1 回転に 12 回</li>
+  <li>輪列・表輪列・時打ちの歯数</li>
+  <li>時打ちの式の係数 0.04 と 0.78。レバーとピンの形（持ち上げレバーは 4 分かけて約 11° 上がる、止めレバーの溝の深さ 2.2 mm など）。部品の角は、押す相手のピンや縁に重ならない最小の角として計算する</li>
+  <li>揺れは振り子の振れる向きだけで、直角の向きは計算に入れない</li>
+  <li>地震の揺れ: 正弦 14 本の周波数と位相は乱数、立ち上がり 2 秒・強い揺れ 6 秒・その後は時定数 3.5 s で減る</li>
+  <li>地板: 真鍮 104×106×2 mm、損失係数 0.006。箱: 木の板 6 枚（座板 200×110×8 mm・裏蓋 230×200×4 mm など）、損失係数 0.025</li>
+  <li>刻む音: 力積を積む長さ 2 ms、歯先の丸み 0.1 mm、跳ね返りの係数 0.4、軸の曲げの型の損失係数 0.05、機械の取り付け（並進 600 Hz・回転 950 Hz・足 550 Hz）、面外へ移る割合 3〜4 %、聞く位置は前 1 m・横 30°・上 15°</li>
+  <li>刻む音の型どうしの差は、聞き比べやすいよう、リコイル式との差を dB で半分にした（物理のままだと 15 dB 開く）</li>
+  <li>アンクル・軸・ほぞ・箱・ゴングの台（80 g）の寸法と質量の多くは見積もり。振り子時計の刻む音を測った文献は見つからず、実物の音とは比べていない</li>
+  <li>ゴング: 鋼線 直径 2.3 mm・長さ 1.4 m・巻きの半径 60 mm、面の外へ振れる組は 0.15 倍。革のハンマー 5 g・0.6 m/s、<math><mi>K</mi><mo>=</mo><mn>5</mn><mo>×</mo><msup><mn>10</mn><mn>6</mn></msup></math>、<math><mi>λ</mi><mo>=</mo><mn>1.2</mn></math> s/m</li>
+  <li>大きさ: ページの大きさをリコイル式の刻む音で −26 LUFS にそろえ、時打ちはそれより約 6 LU 大きくする</li>
+  <li>箱: 裏板 230×200×4 mm・前板 260×220×6 mm の木（ヤング率 10 GPa・密度 600 kg/m³・Q 30）、ヘルムホルツの共鳴 170 Hz・Q 8、型の音のエネルギーを直接の音の 3 倍。部屋: 居間 5×4×2.4 m（吸音率 0.3・高音 0.38）、広間 10×8×3.5 m（0.18・0.26）。切り替えたときの大きさの補正は、リコイル式の刻む音で測った値</li>
+  <li>風切りの音の帯域の幅</li>
+</ul>

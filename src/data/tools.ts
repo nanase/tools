@@ -579,8 +579,17 @@ export const TOOLS: Tool[] = [
     t: '変速機',
     d: 'CT125 の遠心クラッチと 4 段の変速機の動きを追います。',
     ic: 'gb',
-    r: ['engine', 'piano-action', 'maxwell-demon', 'siphon'],
+    r: ['engine', 'piano-action', 'pendulum-clock', 'maxwell-demon'],
     k: '変速機 トランスミッション transmission gearbox ギアボックス ミッション 遠心クラッチ centrifugal clutch 自動遠心クラッチ 多板クラッチ multi-plate clutch 湿式 ワンウェイクラッチ one-way clutch ドグ dog clutch 常時噛合 constant mesh シフトドラム shift drum シフトフォーク shift fork チェンジペダル ロータリー rotary スプロケット sprocket チェーン chain 1 次減速 2 次減速 減速比 gear ratio 歯車 歯数 gear エンジンブレーキ engine brake ハンターカブ hunter cub ct125 スーパーカブ super cub cub ja65 honda ホンダ バイク オートバイ motorcycle',
+  },
+  {
+    id: 'pendulum-clock',
+    c: '物理',
+    t: '振り子時計',
+    d: '置時計の歯車と振り子を、歯の当たりまで動かします。',
+    ic: 'pcl',
+    r: ['transmission', 'piano-action', 'jjy', 'pendulum'],
+    k: '振り子時計 振子時計 pendulum clock 置時計 置き時計 mantel clock 掛け時計 柱時計 ボンボン時計 機械式時計 mechanical clock 脱進機 escapement アンクル anchor がんぎ車 escape wheel リコイル recoil グラハム graham デッドビート deadbeat ブロコ brocot 振り子 pendulum 振り角 円弧誤差 circular error ゼンマイ mainspring 香箱 barrel 8 日巻き eight-day 輪列 gear train 歯車 時打ち strike 数取り車 count wheel ゴング gong ハンマー 風切り fly 地震 earthquake 物理 physics',
   },
   {
     id: 'bifurcation',
