@@ -4,6 +4,10 @@
  */
 import { programReady, startProgram } from '../../lib/gl-program';
 import { DISPLAY_FRAG, traceFrag, VERT } from './shader';
+import { placeholder, type Raw, type Sky } from './sky-tex';
+
+/** 天体の地図の uniform の名前（テクスチャの 1〜5 番） */
+const SKY_TEX = ['uTexMoon', 'uTexJup', 'uTexSat', 'uTexRing', 'uTexMars'] as const;
 
 /** レンズとピントで決まる値（変わったらやり直す） */
 export interface LensU {
@@ -64,6 +68,11 @@ export class Renderer {
   private raf = 0;
   private lastT = 0;
   private visible = true;
+  /** 天体の地図（月・木星・土星・環）と明るさの倍率 */
+  private skyTex: WebGLTexture[] = [];
+  private skyK: Sky['k'] = [1, 1, 1, 1, 1];
+  /** 表示の明るさ（2 の露出の乗） */
+  private exposure = 1;
   /** ためた本数を知らせる */
   onProgress?: (spp: number, w: number, h: number, done: boolean) => void;
   /** シェーダーの準備を待っているかを知らせる */
@@ -84,6 +93,7 @@ export class Renderer {
     gl.enableVertexAttribArray(0);
     gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
     this.vao = vao;
+    this.setSky(placeholder());
     this.program(DISPLAY_FRAG, ['uAcc', 'uSrc', 'uDst', 'uExp'], (pr) => {
       this.disp = pr;
     });
@@ -136,10 +146,51 @@ export class Renderer {
         'uIdeal',
         'uChrom',
         'uTod',
+        ...SKY_TEX,
+        'uTexK',
+        'uTexKM',
       ],
       (next) => this.progs.set(ns, next),
     );
     return null;
+  }
+
+  /** 天体の地図を入れ替えて描き直す */
+  setSky(sky: Sky): void {
+    const gl = this.gl;
+    const srcs = [sky.moon, sky.jupiter, sky.saturn, sky.ring, sky.mars];
+    srcs.forEach((src, i) => {
+      if (!this.skyTex[i]) this.skyTex[i] = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, this.skyTex[i]);
+      if ('data' in src) {
+        const r = src as Raw;
+        gl.texImage2D(
+          gl.TEXTURE_2D,
+          0,
+          gl.SRGB8_ALPHA8,
+          r.w,
+          r.h,
+          0,
+          gl.RGBA,
+          gl.UNSIGNED_BYTE,
+          new Uint8Array(r.data),
+        );
+      } else gl.texImage2D(gl.TEXTURE_2D, 0, gl.SRGB8_ALPHA8, gl.RGBA, gl.UNSIGNED_BYTE, src);
+      for (const k of [gl.TEXTURE_MIN_FILTER, gl.TEXTURE_MAG_FILTER]) gl.texParameteri(gl.TEXTURE_2D, k, gl.LINEAR);
+      /* 木星と火星の地図は経度の向きにつなぐ */
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, i === 1 || i === 4 ? gl.REPEAT : gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    });
+    this.skyK = sky.k;
+    this.redraw();
+  }
+
+  /** 表示の明るさ（EV）。ためた光はそのままで、表示だけを描き直す */
+  setExposure(ev: number): void {
+    const e = 2 ** ev;
+    if (e === this.exposure) return;
+    this.exposure = e;
+    if (this.samples > 0 && this.lens && this.vw) this.show();
   }
 
   /** 描く大きさ（ためるテクスチャ）を合わせる */
@@ -256,6 +307,14 @@ export class Renderer {
     gl.uniform4fv(u('uIdeal'), L.ideal);
     gl.uniform1f(u('uChrom'), L.chrom ? 1 : 0);
     gl.uniform1i(u('uTod'), V.tod);
+    SKY_TEX.forEach((n, i) => {
+      gl.activeTexture(gl.TEXTURE1 + i);
+      gl.bindTexture(gl.TEXTURE_2D, this.skyTex[i]);
+      gl.uniform1i(u(n), 1 + i);
+    });
+    gl.activeTexture(gl.TEXTURE0);
+    gl.uniform4fv(u('uTexK'), this.skyK.slice(0, 4));
+    gl.uniform1f(u('uTexKM'), this.skyK[4]);
     gl.bindVertexArray(this.vao);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
     this.cur = 1 - this.cur;
@@ -274,7 +333,7 @@ export class Renderer {
     gl.uniform1i(u.get('uAcc') ?? null, 0);
     gl.uniform2f(u.get('uSrc') ?? null, this.w, this.h);
     gl.uniform2f(u.get('uDst') ?? null, this.canvas.width, this.canvas.height);
-    gl.uniform1f(u.get('uExp') ?? null, 1.25);
+    gl.uniform1f(u.get('uExp') ?? null, 1.25 * this.exposure);
     gl.bindVertexArray(this.vao);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }

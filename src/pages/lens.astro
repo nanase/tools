@@ -10,14 +10,14 @@ import RelatedTools from '../components/RelatedTools.astro';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import '../tools/lens/style.css';
 import { LENSES } from '../tools/lens/lenses';
-import { BLADES, COC, FNUM, FOCAL, FOCUS, PAN, TILT, ZOOMS } from '../tools/lens/params';
+import { BLADES, COC, EXPOSURE, FNUM, FOCAL, FOCUS, PAN, TILT, ZOOMS } from '../tools/lens/params';
 import { ABR, MAP, mapStatic, SEC } from '../tools/lens/plot';
 import Theory from '../tools/lens/Theory.astro';
 
 const name = 'カメラレンズ';
 /* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
 ---
-<SiteLayout title={name} tool={{ id: 'lens', name }} note="映像は公開されたレンズデータのとおりに光線を幾何光学で追跡したものです（回折は近似）。">
+<SiteLayout title={name} tool={{ id: 'lens', name }} note="映像は公開されたレンズデータのとおりに光線を幾何光学で追跡したものです（回折は近似）。月の模様: NASA's Scientific Visualization Studio の CGI Moon Kit（LRO LROC WAC）· 火星の模様: NASA/USGS Astrogeology Science Center の Viking Global Color Mosaic を加工 · 木星と土星の模様: NASA/ESA Hubble OPAL（PI: Simon, GO13937, STScI, DOI 10.17909/T9G593, CC BY 4.0）を加工 · 土星の環の透け具合: NASA PDS Cassini VIMS · 環の色: NASA/JPL/Space Science Institute（PIA11142）">
   <PageTitle title={name}>写真用のレンズの断面の形（面の曲率・間隔・ガラスの種類）のとおりに、センサーの各点から光線をレンズへ逆にたどって 3D の被写体に当て、レンズ越しの映像を作ります。ボケ、被写界深度、球面収差やコマ、像面の湾曲、歪曲、色のにじみ、周辺の暗さが、実際のレンズと同じしくみで現れます。収差のない理想のレンズとも比べられます。</PageTitle>
   <div class="mini" data-mini="op" aria-hidden="true"><span>画角<b id="mA"></b></span><span>被写界深度<b id="mD"></b></span><span>実効 F<b id="mN"></b></span></div>
 
@@ -99,6 +99,7 @@ const name = 'カメラレンズ';
           <ChoiceRow k="lens" name="レンズの種類" sub="公開されたレンズデータ。出典はレンズデータの枠にある。選ぶと焦点距離を、35 mm 判で設計の画角になる値にする" choices={LENSES.map((l) => [l.v, l.ab, l.sub] as const)} value="dgauss" layout="chips" msg />
           <ParamRow d={FOCAL} />
           <ParamRow d={FNUM} />
+          <ParamRow d={EXPOSURE} />
           <ParamRow d={FOCUS} />
           <ChoiceRow k="fm" name="ピント合わせ" sub="AF: 向き・焦点距離・レンズを変えるたびに合わせ直し。MF: 映像を押したときだけ。枠が緑なら被写界深度の中" choices={[['af', 'AF', 'オートフォーカス'], ['mf', 'MF', 'マニュアルフォーカス']]} value="af" />
           <ChoiceRow k="bl" name="絞り羽根" sub="絞りの形（正多角形、開放では円）" choices={BLADES.map((b) => [b, b ? `${b} 枚` : '円'] as const)} value={7} layout="chips" msg />

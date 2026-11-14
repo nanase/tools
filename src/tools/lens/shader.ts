@@ -48,9 +48,9 @@ uniform int uMode;
 uniform vec4 uIdeal;
 uniform float uChrom;
 out vec4 outColor;
-${sceneGlsl()}
 const float LD = 0.5875618;
 const float PI = 3.14159265;
+${sceneGlsl()}
 
 /* 波長 [µm] から RGB への重み（平均が 1） */
 vec3 wrgb(float l) {

@@ -4,6 +4,9 @@
  * 前へ 0.5〜16 m の面に置く。同じデータから、ブラウザの光線追跡（GLSL）とピント合わせの交差判定（TS）を作る
  */
 
+import { MAPS } from '../jupiter/grs';
+import { R0, R1, ringSurge } from '../saturn/rings';
+
 export type V3 = [number, number, number];
 
 /** センサーの中心の高さ [m] */
@@ -158,32 +161,100 @@ const GALILEAN = [
   { x: 12.3, y: 0.15, r: 2631.2, a: 0.44, col: [0.95, 0.93, 0.9] },
   { x: -22.8, y: -0.3, r: 2410.3, a: 0.19, col: [0.86, 0.82, 0.78] },
 ] as const;
-/**
- * 土星の扁平率と環（土星の赤道半径を単位にした内・外の半径、土星の本体に対する明るさ、不透明度）。
- * 半径は C 環 74,658〜91,975 km、B 環〜117,507 km、カッシーニの間隙〜122,340 km、A 環〜136,780 km。
- * 明るさは反射率（C 0.12〜0.30、B・A 0.4〜0.6、間隙 0.2〜0.4）と、環の開き 20° での光学的厚さから
- */
+/** 土星・火星の扁平率 */
 const SAT = { flat: 0.09796 } as const;
-/** 火星の扁平率 */
 const MARS = { flat: 0.00589 } as const;
-const SAT_RINGS = [
-  [74658, 91975, 0.14, 0.36],
-  [91975, 117507, 0.99, 0.99],
-  [117507, 122340, 0.08, 0.14],
-  [122340, 136780, 0.83, 0.83],
-] as const;
 /**
  * 天体の円盤の平均の明るさ: 幾何アルベド p を太陽からの距離 r [AU]（軌道長半径）の 2 乗で割った値。
- * 昼の、日光に正面から照らされた反射率 1 の面を 1 とする。模様と周縁減光の平均（およそ）で割って、面の明るさの倍率にする
+ * 昼の、日光に正面から照らされた反射率 1 の面を 1 とする
  */
-const DISK = {
-  moon: 0.12 / 0.83,
-  venus: 0.689 / 0.72333 ** 2 / 0.88,
-  mars: 0.17 / 1.52366 ** 2 / 0.45,
-  jupiter: 0.538 / 5.2034 ** 2 / 0.74,
-  saturn: 0.499 / 9.5726 ** 2 / 0.7,
-  uranus: 0.488 / 19.165 ** 2 / 0.66,
+export const ALBEDO = {
+  moon: 0.12,
+  venus: 0.689 / 0.72333 ** 2,
+  mars: 0.17 / 1.52366 ** 2,
+  jupiter: 0.538 / 5.2034 ** 2,
+  saturn: 0.499 / 9.5726 ** 2,
+  uranus: 0.488 / 19.165 ** 2,
 } as const;
+/** 模様を式で描く天体の面の明るさの倍率（模様と周縁減光の平均（およそ）で割る） */
+const DISK = {
+  venus: ALBEDO.venus / 0.88,
+  uranus: ALBEDO.uranus / 0.66,
+} as const;
+
+/* ---------- 模様の地図（月・火星・木星・土星） ---------- */
+/**
+ * 月・木星・土星はそれぞれのページと同じ地図を使う（出典は各ページの SOURCES.md）。月は満月で、経度 0°・緯度 0° を正面にする。
+ * 木星は最新の地図で大赤斑が中央の少し右に来る中央経線にし、土星は模様の帯と環の表を使う。
+ * 火星は USGS の Viking の全球の色の地図（出典は SOURCES.md）で、大シルチスとヘラスが見える向きにする
+ */
+const JMAP = MAPS[MAPS.length - 1];
+export const TEX = {
+  moon: 'moon/color8.jpg',
+  jupiter: `jupiter/${JMAP.file}.webp`,
+  saturn: 'saturn/s2025a.webp',
+  ring: 'saturn/rings.bin',
+  mars: 'lens/mars.webp',
+} as const;
+export type MapId = 'moon' | 'mars' | 'jupiter' | 'saturn';
+/** 月の地図の範囲: 経度 −100°〜+100°、緯度 +90°〜−90° */
+const MOON_LON = 100;
+/** 木星の中央経線（System III の西経 [°]）。地図は左端が西経 0°で、右へ西経が減る */
+const JUP_CM = JMAP.grsL3 + 20;
+/** 火星の中央経線（東経 [°]）。地図は左端が東経 −180°で、右へ東経が増える */
+const MARS_CM = 60;
+/**
+ * 周縁減光（Minnaert 則、衝なので μ₀ = μ で μ^(2k−1)）の k: 木星・土星はそのページと同じ値、火星はおよその値。
+ * 環と本体の明るさの比も土星のページの倍率（1.25 と 1.2）にそろえ、衝のころの位相角 0.3° の増光を掛ける
+ */
+export const MINN = { mars: [0.7, 0.7, 0.7], jupiter: [0.999, 0.95, 0.85], saturn: [0.8, 0.72, 0.62] } as const;
+export const RING_K = (1.25 / 1.2) * ringSurge(0.3);
+/** 環の表の範囲（土星の赤道半径が単位） */
+const RING = { r0: R0 / 60268, r1: R1 / 60268 } as const;
+
+/**
+ * 扁平な天体の円盤の点 (x, y)（赤道半径が 1、右・上）を、こちらへ sin B だけ極を傾けた回転楕円体に当てる。
+ * 当たれば [中央経線からの経度（右が正）, 惑星図緯度, μ（法線と視線の余弦）, 手前への距離] [rad] を返す。GLSL の spheroid と同じ
+ */
+export function spheroid(x: number, y: number, tilt: number, flat: number): [number, number, number, number] | null {
+  const sB = Math.sin(tilt * deg),
+    cB = Math.cos(tilt * deg),
+    ib = 1 / (1 - flat) ** 2;
+  const A = cB * cB + sB * sB * ib,
+    B = 2 * y * sB * cB * (ib - 1),
+    C = x * x + y * y * (sB * sB + cB * cB * ib) - 1,
+    D = B * B - 4 * A * C;
+  if (D < 0) return null;
+  const t = (-B + Math.sqrt(D)) / (2 * A);
+  const x2 = -sB * y + cB * t,
+    x3 = (cB * y + sB * t) * ib;
+  const nz = cB * x2 + sB * x3,
+    n = Math.hypot(x, x2, x3);
+  return [Math.atan2(x, x2), Math.atan2(x3, Math.hypot(x, x2)), Math.max(nz / n, 1e-3), t];
+}
+
+/** 地図の座標（u は右、v は下へ増える）。月・火星・木星・土星の円盤の点 (x, y) から。当たらなければ null */
+export function mapUv(id: MapId, x: number, y: number): { u: number; v: number; mu: number } | null {
+  const b = SKY.find((k) => k.id === id) as SkyBody;
+  const g = spheroid(x, y, b.tilt, { moon: 0, mars: MARS.flat, jupiter: JUP.flat, saturn: SAT.flat }[id]);
+  if (!g) return null;
+  const lon = g[0] / deg,
+    v = 0.5 - g[1] / Math.PI;
+  if (id === 'moon') return { u: (lon + MOON_LON) / (2 * MOON_LON), v, mu: g[2] };
+  if (id === 'mars') return { u: (MARS_CM + 180 + lon) / 360, v, mu: g[2] };
+  if (id === 'jupiter') return { u: (360 - JUP_CM + lon) / 360, v, mu: g[2] };
+  return { u: 0.5, v, mu: g[2] };
+}
+
+/** 面の明るさの周縁減光（RGB） */
+export function limb(id: MapId, mu: number): [number, number, number] {
+  if (id === 'moon') {
+    const m = 0.88 + 0.12 * mu;
+    return [m, m, m];
+  }
+  const k = MINN[id];
+  return [mu ** (2 * k[0] - 1), mu ** (2 * k[1] - 1), mu ** (2 * k[2] - 1)];
+}
 
 /**
  * 時間帯（昼・夕暮れ・夜）: 地上の物体の明るさ、天体の倍率（景色に合わせて上げた露出）、電飾、町の灯。
@@ -327,6 +398,8 @@ export function sceneGlsl(): string {
   const minor = (flat: number, tilt: number) =>
     Math.sqrt(Math.sin(tilt * deg) ** 2 + ((1 - flat) * Math.cos(tilt * deg)) ** 2);
   const sat = SKY[byId('saturn')],
+    jup = SKY[byId('jupiter')],
+    mars = SKY[byId('mars')],
     ura = SKY[byId('uranus')];
   const arr = (k: 'hor' | 'mid' | 'top' | 'mnt') => `vec3[3](${TOD.map((t) => v3([...t[k]] as V3)).join(',')})`;
   return `
@@ -350,13 +423,12 @@ const vec3 KC[NK] = vec3[NK](${fr.map((x) => v3(x.c)).join(',')});
 const vec3 KE1[NK] = vec3[NK](${fr.map((x) => v3(x.e1)).join(',')});
 const vec3 KE2[NK] = vec3[NK](${fr.map((x) => v3(x.e2)).join(',')});
 const float KR[NK] = float[NK](${SKY.map((b) => f(angRadius(b))).join(',')});
-const vec4 MARE[12] = vec4[12](
-  vec4(-0.28, 0.48, 0.24, 0.2), vec4(0.18, 0.43, 0.14, 0.13), vec4(0.38, 0.18, 0.17, 0.14), vec4(0.72, 0.3, 0.09, 0.08),
-  vec4(0.62, -0.12, 0.1, 0.15), vec4(0.4, -0.26, 0.08, 0.08), vec4(-0.6, 0.1, 0.22, 0.38), vec4(-0.2, -0.35, 0.15, 0.12),
-  vec4(-0.55, -0.38, 0.09, 0.08), vec4(-0.05, 0.78, 0.45, 0.06), vec4(0.05, 0.22, 0.08, 0.07), vec4(-0.38, 0.1, 0.12, 0.1));
 const vec4 GAL[4] = vec4[4](${GALILEAN.map((g) => v4([g.x, g.y, g.r / rUnit('jupiter'), g.a / JUP.albedo])).join(',')});
 const vec3 GALC[4] = vec3[4](${GALILEAN.map((g) => v3([...g.col] as V3)).join(',')});
-const vec4 SRING[4] = vec4[4](${SAT_RINGS.map(([a, b, l, o]) => v4([a / sat.r, b / sat.r, l, o])).join(',')});
+/* 模様の地図（月・木星・土星）と環の表。倍率は地図の円盤の平均が幾何アルベドになる値（sky-tex.ts） */
+uniform sampler2D uTexMoon, uTexJup, uTexSat, uTexRing, uTexMars;
+uniform vec4 uTexK;
+uniform float uTexKM;
 
 /* 天体 i の面の座標（赤道半径を 1、右・上）。後ろ向きなら遠い値 */
 vec2 bodyUV(vec3 d, int i) {
@@ -365,67 +437,57 @@ vec2 bodyUV(vec3 d, int i) {
   return vec2(dot(d, KE1[i]), dot(d, KE2[i])) / (w * KR[i]);
 }
 
-/* 満月: 明るい高地に、海（暗い楕円）と明るいクレーター（ティコ・コペルニクス）。模様は見た目の近似 */
-vec3 moonAt(vec2 p) {
-  float r2 = dot(p, p), mu = sqrt(max(1.0 - r2, 0.0));
-  float dark = 0.0;
-  for (int i = 0; i < 12; i++) {
-    vec4 m = MARE[i];
-    vec2 q = (p - m.xy) / m.zw;
-    dark = max(dark, 1.0 - smoothstep(0.75, 1.15, length(q)));
-  }
-  float a = mix(1.0, 0.56, dark);
-  a *= 0.93 + 0.07 * hash12(floor(p * 90.0));
-  a += 0.5 * (1.0 - smoothstep(0.02, 0.035, length(p - vec2(-0.13, -0.72))));
-  a += 0.3 * (1.0 - smoothstep(0.015, 0.028, length(p - vec2(-0.3, 0.16))));
-  return vec3(1.03, 1.0, 0.93) * ${f(DISK.moon)} * a * (0.88 + 0.12 * mu);
+/* 円盤の点 p（赤道半径が 1）を、極を sin B だけこちらへ傾けた回転楕円体（極半径の比 b）に当てる。
+   中央経線からの経度（右が正）・惑星図緯度・μ・手前への距離を返す。TS の spheroid と同じ */
+bool spheroid(vec2 p, float sB, float cB, float b, out vec4 g) {
+  float ib = 1.0 / (b * b);
+  float A = cB * cB + sB * sB * ib, B = 2.0 * p.y * sB * cB * (ib - 1.0);
+  float C = p.x * p.x + p.y * p.y * (sB * sB + cB * cB * ib) - 1.0, D = B * B - 4.0 * A * C;
+  if (D < 0.0) return false;
+  float t = (-B + sqrt(D)) / (2.0 * A);
+  float x2 = -sB * p.y + cB * t, x3 = (cB * p.y + sB * t) * ib;
+  g = vec4(atan(p.x, x2), atan(x3, length(vec2(p.x, x2))), max((cB * x2 + sB * x3) / length(vec3(p.x, x2, x3)), 1e-3), t);
+  return true;
 }
 
-/* 木星: 帯と縞（緯度で決める）、大赤斑、周縁減光。周りにガリレオ衛星 */
+/* 満月: LROC WAC の色の地図。経度 0°・緯度 0° が正面 */
+vec3 moonAt(vec2 p) {
+  vec4 g;
+  if (!spheroid(p, 0.0, 1.0, 1.0, g)) return vec3(0.0);
+  vec2 uv = vec2(degrees(g.x) / ${f(2 * MOON_LON)} + 0.5, 0.5 - g.y / PI);
+  return textureLod(uTexMoon, uv, 0.0).rgb * uTexK.x * (0.88 + 0.12 * g.z);
+}
+
+/* 木星: OPAL の地図と Minnaert 則の周縁減光。周りにガリレオ衛星 */
 vec3 jupiterAt(vec2 p, vec3 bg) {
   for (int i = 0; i < 4; i++) {
     vec4 g = GAL[i];
     vec2 q = (p - g.xy) / g.z;
     float r2 = dot(q, q);
-    if (r2 < 1.0) return GALC[i] * g.w * ${f(DISK.jupiter)} * (0.6 + 0.4 * sqrt(1.0 - r2));
+    if (r2 < 1.0) return GALC[i] * g.w * ${f(ALBEDO.jupiter / 0.87)} * (0.6 + 0.4 * sqrt(1.0 - r2));
   }
-  vec2 q = vec2(p.x, p.y / ${f(1 - JUP.flat)});
-  float r2 = dot(q, q);
-  if (r2 >= 1.0) return bg;
-  float mu = sqrt(1.0 - r2), lat = degrees(asin(clamp(q.y, -1.0, 1.0))), al = abs(lat);
-  vec3 zone = vec3(0.96, 0.9, 0.78), belt = vec3(0.7, 0.5, 0.37), c = zone;
-  if ((lat > 7.0 && lat < 18.0) || (lat < -7.0 && lat > -20.0)) c = belt;
-  else if (lat > 24.0 && lat < 30.0) c = mix(zone, belt, 0.6);
-  else if (lat < -26.0 && lat > -32.0) c = mix(zone, belt, 0.45);
-  c = mix(c, vec3(0.62, 0.6, 0.58), smoothstep(45.0, 62.0, al));
-  vec2 gr = (q - vec2(0.35, -0.375)) / vec2(0.11, 0.075);
-  if (dot(gr, gr) < 1.0) c = vec3(0.86, 0.5, 0.36);
-  return c * ${f(DISK.jupiter)} * (0.35 + 0.65 * pow(mu, 0.5));
+  vec4 g;
+  if (!spheroid(p, ${f(Math.sin(jup.tilt * deg))}, ${f(Math.cos(jup.tilt * deg))}, ${f(1 - JUP.flat)}, g)) return bg;
+  vec2 uv = vec2(${f((360 - JUP_CM) / 360)} + g.x / (2.0 * PI), 0.5 - g.y / PI);
+  return textureLod(uTexJup, uv, 0.0).rgb * uTexK.y * pow(vec3(g.z), ${v3(MINN.jupiter.map((k) => 2 * k - 1) as V3)});
 }
 
-/* 土星: 本体（扁平）と環（C・B・カッシーニの間隙・A）。手前の環は本体の前、奥の環は本体の後ろ */
+/* 土星: OPAL の模様の帯と、Cassini の掩蔽から作った環の表。手前の環は本体の前、奥の環は本体の後ろ */
 vec3 saturnAt(vec2 p, vec3 bg) {
-  float b = ${f(minor(SAT.flat, sat.tilt))}, sb = ${f(Math.sin(sat.tilt * deg))};
-  float r2 = p.x * p.x + (p.y / b) * (p.y / b);
+  float sB = ${f(Math.sin(sat.tilt * deg))}, cB = ${f(Math.cos(sat.tilt * deg))};
+  vec4 g;
+  float tp = -1e9;
   vec3 behind = bg;
-  bool inG = r2 < 1.0;
-  if (inG) {
-    float mu = sqrt(1.0 - r2), y = p.y / b;
-    vec3 c = vec3(0.92, 0.82, 0.6);
-    if (abs(y + 0.05) < 0.12) c *= 1.05;
-    else if (abs(y - 0.22) < 0.08 || abs(y + 0.3) < 0.07) c *= 0.88;
-    c = mix(c, vec3(0.72, 0.7, 0.62), smoothstep(0.7, 0.9, y));
-    behind = c * ${f(DISK.saturn)} * (0.4 + 0.6 * pow(mu, 0.6));
+  if (spheroid(p, sB, cB, ${f(1 - SAT.flat)}, g)) {
+    tp = g.w;
+    behind = textureLod(uTexSat, vec2(0.5, 0.5 - g.y / PI), 0.0).rgb * uTexK.z * pow(vec3(g.z), ${v3(MINN.saturn.map((k) => 2 * k - 1) as V3)});
   }
-  float rr = length(vec2(p.x, p.y / sb));
-  for (int i = 0; i < 4; i++) {
-    vec4 s = SRING[i];
-    if (rr >= s.x && rr < s.y) {
-      if (inG && p.y > 0.0) return behind;
-      return vec3(0.93, 0.87, 0.75) * ${f(DISK.saturn)} * s.z + (1.0 - s.w) * behind;
-    }
-  }
-  return behind;
+  float rr = length(vec2(p.x, p.y / sB)), tr = -p.y * cB / sB;
+  if (rr < ${f(RING.r0)} || rr >= ${f(RING.r1)} || tr < tp) return behind;
+  vec4 t = textureLod(uTexRing, vec2((rr - ${f(RING.r0)}) / ${f(RING.r1 - RING.r0)}, 0.5), 0.0);
+  float tau = -log(1.0 - min(t.a, 0.998));
+  /* 単散乱（衝なので μ₀ = μ = sin B）。後ろの光は透けた分だけ通す */
+  return t.rgb * uTexK.w * 0.5 * (1.0 - exp(-2.0 * tau / sB)) + exp(-tau / sB) * behind;
 }
 
 /* 天王星: 青緑の本体と ε 環。環は実際の幅（約 ${URA.width} km）と明るさのまま、画素より細い幅を広げた帯に光の量を保って薄める */
@@ -449,18 +511,12 @@ vec3 venusAt(vec2 p) {
   return vec3(1.0, 0.97, 0.86) * ${f(DISK.venus)} * (0.8 + 0.2 * mu);
 }
 
-/* 火星: 赤茶色の地に暗い模様（大シルチスなど、見た目の近似）と北極冠。扁平率 ${MARS.flat} */
+/* 火星: Viking の色の地図（極冠を含む）と Minnaert 則の周縁減光 */
 vec3 marsAt(vec2 p) {
-  vec2 q = vec2(p.x, p.y / ${f(1 - MARS.flat)});
-  float mu = sqrt(max(1.0 - dot(q, q), 0.0));
-  vec3 c = vec3(0.86, 0.5, 0.3);
-  float dark = 0.0;
-  dark = max(dark, 1.0 - smoothstep(0.7, 1.1, length((q - vec2(0.25, 0.12)) / vec2(0.16, 0.3))));
-  dark = max(dark, 1.0 - smoothstep(0.7, 1.1, length((q - vec2(-0.2, -0.22)) / vec2(0.45, 0.12))));
-  dark = max(dark, 1.0 - smoothstep(0.7, 1.1, length((q - vec2(-0.5, 0.25)) / vec2(0.18, 0.14))));
-  c *= mix(1.0, 0.62, dark);
-  if (q.y > 0.82) c = vec3(0.95, 0.94, 0.92) * 1.6;
-  return c * ${f(DISK.mars)} * (0.75 + 0.25 * mu);
+  vec4 g;
+  if (!spheroid(p, ${f(Math.sin(mars.tilt * deg))}, ${f(Math.cos(mars.tilt * deg))}, ${f(1 - MARS.flat)}, g)) return vec3(0.0);
+  vec2 uv = vec2(${f((MARS_CM + 180) / 360)} + g.x / (2.0 * PI), 0.5 - g.y / PI);
+  return textureLod(uTexMars, uv, 0.0).rgb * uTexKM * pow(vec3(g.z), ${v3(MINN.mars.map((k) => 2 * k - 1) as V3)});
 }
 
 /* 天体の放射輝度（宇宙の背景は 0）。空の光は天体の手前の大気から来るので、呼ぶ側で足す */
