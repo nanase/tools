@@ -49,6 +49,7 @@ put(['pcm', 'mp3', 'adpcm'], { click: ['#ls-pp'], dur: 15 });
 put(['wavelet-denoise'], { click: ['#ab-pp'], dur: 15 });
 put(['sampling-theorem'], { click: ['#smp-pp'], dur: 15 });
 put(['vvvf'], { click: ['#vv-auto'], dur: 40 });
+put(['chord-progression'], { click: ['#cp-pp'], dur: 30 });
 
 /* ---------- ページへ入れる計測 ---------- */
 const PROC = `${kWeight.toString()}

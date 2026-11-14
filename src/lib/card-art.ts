@@ -3073,6 +3073,45 @@ export const ART: Record<string, Art> = {
       }
     return s + P('c t', 'M8 17h12v14H8zM100 17h12v14h-12zM20 22H50V26H20zM70 22H100V26H70zM50 23.2H70V24.8H50z');
   },
+  /* コード進行: 機能の帯の付いた 4 つのブロックを矢印でつなぎ、上に進行の名前の括弧。
+     再生の位置がブロックを順に進み、中のアルペジオの点が 1 歩ずつ光る（1 ブロック 0.75 s）。止まった絵は 2 つ目の途中 */
+  cp(t) {
+    const FNS = ['fb', 'fr', 'fb', 'fc'],
+      X = [5, 34, 63, 92],
+      W = 23,
+      Y = 15,
+      H = 26,
+      BT = 0.75,
+      u = mod(t + 1.05, 3),
+      ci = Math.floor(u / BT),
+      st = Math.floor(((u % BT) / BT) * 8) + 1,
+      UD = [0, 1, 2, 3, 2, 1, 0, 1],
+      box = (x: number, w: number) => `M${x} ${Y}h${w}v${H}h${-w}Z`;
+    let s = P('c t', 'M6 11V7H114V11'),
+      al = '',
+      ah = '';
+    X.forEach((x, i) => {
+      const cur = i === ci;
+      let on = '',
+        off = '';
+      UD.forEach((v, k) => {
+        const cx = r1(x + 4.5 + (k * (W - 7)) / 7),
+          cy = r1(Y + H - 3.5 - (v * (H - 9)) / 3),
+          d = `M${r1(cx - 1.1)} ${cy}a1.1 1.1 0 1 0 2.2 0a1.1 1.1 0 1 0 -2.2 0Z`;
+        if (cur && k < st) on += d;
+        else off += d;
+      });
+      s += P(cur ? 'a' : 'c', box(x, W)) + P(FNS[i], box(x, 3)) + P('fc', off) + (on ? P('fa', on) : '');
+      if (i < 3) {
+        const x0 = x + W + 1.2,
+          x1 = X[i + 1] - 1.2,
+          y = Y + H / 2;
+        al += `M${r1(x0)} ${y}H${r1(x1 - 2.6)}`;
+        ah += `M${r1(x1)} ${y}l-3.2 -2.3v4.6Z`;
+      }
+    });
+    return s + P('a', al) + P('fa', ah);
+  },
 };
 
 /**
@@ -3156,6 +3195,7 @@ export const LOOP: Record<string, number> = {
   gb: 2,
   sf: 4,
   wh: 3,
+  cp: 3,
 };
 
 /** 止まっているときの図柄（ビルド時に HTML へ出す） */

@@ -1,0 +1,84 @@
+---
+// 動作原理と式
+const sub = (b: string, s: string) => `<msub>${b}<mrow>${s}</mrow></msub>`;
+const p = (s: string) => `<mo stretchy="false">(</mo>${s}<mo stretchy="false">)</mo>`;
+const rf = (...n: number[]) => n.map((k) => `<a class="rf" href="#thy-r${k}">[${k}]</a>`).join('');
+const yn = (s: string) => `<mi>y</mi><mo stretchy="false">[</mo>${s}<mo stretchy="false">]</mo>`;
+const ROWS: [string, string, string, string][] = [
+  ['Ⅰ', 'Ⅳ・Ⅴ', 'Ⅵ', 'Ⅱ・Ⅲ'],
+  ['Ⅱ', 'Ⅴ', 'Ⅳ・Ⅵ', 'Ⅰ・Ⅲ'],
+  ['Ⅲ', 'Ⅵ', 'Ⅳ', 'Ⅰ・Ⅱ・Ⅴ'],
+  ['Ⅳ', 'Ⅴ', 'Ⅰ・Ⅱ', 'Ⅲ・Ⅵ'],
+  ['Ⅴ', 'Ⅰ', 'Ⅳ・Ⅵ', 'Ⅱ・Ⅲ'],
+  ['Ⅵ', 'Ⅱ・Ⅴ', 'Ⅲ・Ⅳ', 'Ⅰ'],
+  ['Ⅶ', 'Ⅲ', 'Ⅰ', '—'],
+];
+---
+<h3>全体の流れ</h3>
+<ol class="flow"><li>ブロックの並び</li><li>調・拍子・テンポ・奏法・音色</li><li>コードの音の高さ</li><li>奏法で時間に並べる</li><li>音色で鳴らす</li></ol>
+<ul class="tl">
+  <li>ブロックを左から読み、転調・拍子などのブロックはその後ろのコードに効く</li>
+  <li>コードは調の主音からの半音の数（度数）と種類で持つ。転調のブロックの後ろは、同じ度数のまま高さだけが移る</li>
+  <li>くり返しの終わりで回数が残っていれば、くり返しの始め（なければ曲の頭か前のくり返しの終わり）へ戻る。回数を無制限にすると止めるまで続く</li>
+</ul>
+
+<h3>つながりの強さ</h3>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th>前の度数</th><th>定番</th><th>よく使う</th><th>ときどき</th></tr></thead>
+  <tbody>{ROWS.map(([a, b, c, d]) => <tr><td>{a}</td><td>{b}</td><td>{c}</td><td>{d}</td></tr>)}</tbody>
+</table></div>
+<ul class="tl">
+  <li>根音の度数どうしの進み方を、和声の教科書の表（usually・sometimes・less often）から 3 段に分ける<Fragment set:html={rf(1)} /></li>
+  <li>長調と短調で同じ表を使う。♭・♯ の付いた根音は文字の度数で引く（♭Ⅶ は Ⅶ）</li>
+  <li>属七の形（長 3 度と短 7 度を持つ）のコードから 5 度下への進行は定番。Ⅴ 以外の属七（セカンダリードミナント）がほかへ進むときは、ときどきまでに下げる</li>
+  <li>調の外のコードが前か後ろにあれば 1 段下げる</li>
+</ul>
+
+<h3>終止と名前のある進行</h3>
+<ul class="tl">
+  <li>完全終止: Ⅴ（Ⅴ7）→ Ⅰ。変格終止: Ⅳ → Ⅰ。偽終止: Ⅴ → Ⅵm（短調では Ⅴ → Ⅵ）<Fragment set:html={rf(1)} /></li>
+  <li>ツーファイブ: Ⅱm（Ⅱm7・Ⅱm7(♭5)）→ Ⅴ。ドミナント進行: 属七の形から 5 度下へ</li>
+  <li>名前のある進行は、度数と長短の並びが同じ所を左から探す。短調は平行長調の度数に直して比べる（Ⅰm → Ⅵm）</li>
+</ul>
+
+<h3>和音の並べ方</h3>
+<ul class="tl">
+  <li>上の声部は根音（転回形では指定の構成音）から積み、最も低い音を E3〜D♯4 に置く。3 和音には根音のオクターブ上を足して 4 音にする</li>
+  <li>ベースは最も低い構成音を E2〜D♯3 に置く。伴奏のベースはその 1 オクターブ下</li>
+  <li>奏法は 8 分音符を 1 歩として、何歩目に何番目の音を弾くかを並べる。ギターとエレピの音はコードの終わりまで鳴らしたままにする</li>
+</ul>
+
+<h3>音色</h3>
+<div class="eqs">
+  <math display="block" set:html={`${yn('<mi>n</mi>')}<mo>=</mo><mfrac><mi>ρ</mi><mn>2</mn></mfrac>${p(`${yn('<mi>n</mi><mo>−</mo><mi>N</mi>')}<mo>+</mo>${yn('<mi>n</mi><mo>−</mo><mi>N</mi><mo>−</mo><mn>1</mn>')}`)}<mo>,</mo><mspace width="0.6em"/>${sub('<mi>f</mi>', '<mn>0</mn>')}<mo>=</mo><mfrac>${sub('<mi>f</mi>', '<mi>s</mi>')}<mrow><mi>N</mi><mo>+</mo><mn>1</mn><mo>/</mo><mn>2</mn></mrow></mfrac>`} />
+  <math display="block" set:html={`<mi>x</mi>${p('<mi>t</mi>')}<mo>=</mo><mi>A</mi>${p('<mi>t</mi>')}<mspace width="0.15em"/><mi>sin</mi><mo>⁡</mo>${p(`<mn>2</mn><mi>π</mi><mi>f</mi><mi>t</mi><mo>+</mo><mi>I</mi>${p('<mi>t</mi>')}<mspace width="0.15em"/><mi>sin</mi><mo>⁡</mo><mn>2</mn><mi>π</mi><mi>f</mi><mi>t</mi>`)}`} />
+</div>
+<dl class="syms">
+  <dt><math><mi>N</mi></math></dt><dd>遅延の長さ [サンプル]</dd>
+  <dt><math><mi>ρ</mi></math></dt><dd>1 周ごとの減衰（0.995〜0.9965。高い音ほど小さい）</dd>
+  <dt><math set:html={sub('<mi>f</mi>', '<mi>s</mi>')} /></dt><dd>標本化周波数</dd>
+  <dt><math><mi>I</mi></math></dt><dd>変調の深さ（鳴らした直後 2.2 から 0.25 へ減る）</dd>
+</dl>
+<ul class="tl">
+  <li>ギター: 雑音を詰めた遅延線を 2 点の平均で回す撥弦の合成<Fragment set:html={rf(2)} />。平均で遅れが半サンプル増えるので、再生の速さで高さを合わせる<Fragment set:html={rf(3)} /></li>
+  <li>エレピ: 同じ周波数の 2 つの正弦波の周波数変調<Fragment set:html={rf(4)} />。打った直後ほど倍音が多い</li>
+  <li>オルガン: 1〜4 倍の正弦波の和。ストリングス: 少しずらした 2 本ののこぎり波を 1.9 kHz の低域通過に通す</li>
+</ul>
+
+<h3>このツールで決めたこと</h3>
+<ul class="tl">
+  <li>つながりの強さの段の名前（定番・よく使う・ときどき）と、調の外のコードやセカンダリードミナントで段を下げる決まり</li>
+  <li>機能の分け方: Ⅰ・Ⅲ・Ⅵ（調の中の和音）はトニック、Ⅴ と Ⅶ の減三和音と属七の形はドミナント、ほかはサブドミナント</li>
+  <li>名前のある進行（カノン進行・王道進行・小室進行・丸サ進行・循環進行・ツーファイブワン・12 小節のブルース）は、日本で広く使われている呼び名</li>
+  <li>サンプルの進行・テンポ・奏法・音色は、このツールのために選んだ。特定の曲を写したものではない</li>
+  <li>音色の値（減衰・変調の深さ・倍音の大きさ・フィルタ）と、和音を置く高さ</li>
+  <li>くり返しは入れ子にしない。終わりのブロックは手前の始めまで戻る</li>
+</ul>
+
+<h3>出典</h3>
+<ol class="refs">
+  <li id="thy-r1"><span class="rf-for">根音の進み方の表（Table of Usual Root Progressions）と終止</span><span class="rf-src">W. Piston, <i>Harmony</i>, 5th ed., revised and expanded by M. DeVoto, W. W. Norton, 1987</span></li>
+  <li id="thy-r2"><span class="rf-for">撥弦の合成</span><span class="rf-src">K. Karplus, A. Strong, “Digital synthesis of plucked-string and drum timbres,” <i>Computer Music Journal</i>, vol. 7, no. 2, pp. 43–55, 1983, <a href="https://doi.org/10.2307/3680062">doi:10.2307/3680062</a></span></li>
+  <li id="thy-r3"><span class="rf-for">撥弦の合成の高さの合わせ方</span><span class="rf-src">D. A. Jaffe, J. O. Smith, “Extensions of the Karplus-Strong plucked-string algorithm,” <i>Computer Music Journal</i>, vol. 7, no. 2, pp. 56–69, 1983, <a href="https://doi.org/10.2307/3680063">doi:10.2307/3680063</a></span></li>
+  <li id="thy-r4"><span class="rf-for">周波数変調による音の合成</span><span class="rf-src">J. M. Chowning, “The synthesis of complex audio spectra by means of frequency modulation,” <i>J. Audio Eng. Soc.</i>, vol. 21, no. 7, pp. 526–534, 1973</span></li>
+</ol>

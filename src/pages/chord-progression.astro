@@ -1,0 +1,106 @@
+---
+import Collapsible from '../components/Collapsible.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import { outVol } from '../lib/play';
+import '../tools/chord-progression/style.css';
+import How from '../tools/chord-progression/How.astro';
+import { VOL0 } from '../tools/chord-progression/params';
+import { SAMPLES } from '../tools/chord-progression/samples';
+import Theory from '../tools/chord-progression/Theory.astro';
+
+const name = 'コード進行';
+const samples = SAMPLES;
+---
+<SiteLayout title={name} tool={{ id: 'chord-progression', name }}>
+  <PageTitle title={name}>コードのブロックを並べて進行を鳴らします。</PageTitle>
+
+  <div class="tgrid" id="cp-page">
+    <Panel hid="hd-prog" title="進行" class="cp-prog" fixed>
+      <div slot="aux" class="seg" id="cp-vw" role="group" aria-label="表示">
+        <button type="button" data-v="score" aria-pressed="true">譜面</button><button type="button" data-v="lanes" aria-pressed="false">レーン</button><button type="button" data-v="wheel" aria-pressed="false">五度圏</button>
+      </div>
+      {/* 譜面・レーン・五度圏の切り替えとブロックの数で中身ごと入れ替わる */}
+      <div class="cp-stage" id="cp-stage"><div id="cp-view" data-shift="ok"></div></div>
+    </Panel>
+
+    <div class="cp-2">
+      <Panel hid="hd-play" title="演奏">
+        <span slot="aux" class="aux tp-st" id="cp-st" hidden><span class="led" id="cp-led" aria-hidden="true"></span><span id="cp-stT"></span></span>
+        <div class="tp cp-tp">
+          <button type="button" class="tp-ib" id="cp-home" title="曲の頭へ" aria-label="曲の頭へ"><svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1.5" y="1.5" width="1.8" height="9"/><path d="M10.5 1.5v9L4 6z"/></svg></button>
+          <button type="button" class="tp-pp" id="cp-pp" title="選んだ位置から演奏" aria-label="演奏"><svg class="i-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.2l7.6 4.8L3 10.8z"/></svg><svg class="i-pause" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="2.8" height="9"/><rect x="7.2" y="1.5" width="2.8" height="9"/></svg></button>
+          <div class="cp-posw"><b class="cp-pos" id="cp-pos">–</b><span class="cp-len" id="cp-len"></span></div>
+        </div>
+        <div class="cp-row"><span class="cp-rl">伴奏</span>
+          <button type="button" class="tg" data-acc="bass" aria-pressed="true"><span class="led on" aria-hidden="true"></span>ベース</button>
+          <button type="button" class="tg" data-acc="click" aria-pressed="false"><span class="led" aria-hidden="true"></span>メトロノーム</button>
+        </div>
+        <div class="ptab"><ParamRow d={outVol(VOL0)} /></div>
+      </Panel>
+
+      <Panel hid="hd-hl" title="強調">
+        <div class="cp-row">
+          <button type="button" class="tg" data-hl="fn" aria-pressed="true"><span class="led on" aria-hidden="true"></span>機能の色</button>
+          <button type="button" class="tg" data-hl="lv" aria-pressed="true"><span class="led on" aria-hidden="true"></span>つながりの強さ</button>
+          <button type="button" class="tg" data-hl="cad" aria-pressed="true"><span class="led on" aria-hidden="true"></span>終止の名前</button>
+          <button type="button" class="tg" data-hl="nm" aria-pressed="true"><span class="led on" aria-hidden="true"></span>進行の名前</button>
+        </div>
+        <div class="cp-lg static">
+          <span><i class="cp-l3"></i>定番</span><span><i class="cp-l2"></i>よく使う</span><span><i class="cp-l1"></i>ときどき</span>
+          <span class="cp-fT"><i class="cp-sw"></i>トニック</span><span class="cp-fS"><i class="cp-sw"></i>サブドミナント</span><span class="cp-fD"><i class="cp-sw"></i>ドミナント</span>
+        </div>
+      </Panel>
+    </div>
+
+    <Panel hid="hd-song" title="曲">
+      <div class="cp-er2"><span class="cp-rl">サンプル</span>
+        <div class="chips" id="cp-samples">{samples.map((s) => <button type="button" class="chip" data-s={s.id}>{s.name}</button>)}</div>
+      </div>
+      <div class="cp-er2"><span class="cp-rl">保存した進行</span><ul class="cp-saved" id="cp-saved"></ul></div>
+      <div class="cp-row cp-file">
+        <input type="text" id="cp-name" maxlength="60" placeholder="進行の名前" aria-label="進行の名前" />
+        <button type="button" class="tg" id="cp-save">保存</button>
+        <button type="button" class="tg" id="cp-new">新規</button>
+        <button type="button" class="tg" id="cp-export">書き出し</button>
+        <button type="button" class="tg" id="cp-import">読み込み</button>
+        <input type="file" id="cp-file" accept="application/json,.json" hidden />
+      </div>
+      <p class="cp-msg" id="cp-msg" role="status" aria-live="polite"></p>
+    </Panel>
+
+    <Panel hid="hd-how" title="しくみ">
+      <How />
+    </Panel>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools current="chord-progression" />
+
+  <div class="cp-pal" id="cp-pal" role="region" aria-label="ブロックのパレット">
+    <div class="cp-ph">
+      <div class="seg" id="pal-tab" role="group" aria-label="ブロックの種類"><button type="button" data-t="ch" aria-pressed="true">コード</button><button type="button" data-t="mk" aria-pressed="false">転調・拍子など</button></div>
+      <div class="seg" id="pal-n" role="group" aria-label="和音の音の数"><button type="button" data-n="3" aria-pressed="true">3 和音</button><button type="button" data-n="4" aria-pressed="false">4 和音</button></div>
+      <span class="cp-ref" id="pal-ref"></span>
+      <span class="cp-sp"></span>
+      <button type="button" class="cp-pi" id="pal-undo" title="元に戻す（Ctrl+Z）" aria-label="元に戻す"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 3.5L2.5 6.5L5.5 9.5"/><path d="M2.5 6.5H10a3.5 3.5 0 0 1 0 7H7"/></svg></button>
+      <button type="button" class="cp-pi" id="pal-redo" title="やり直し（Ctrl+Y）" aria-label="やり直し"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10.5 3.5L13.5 6.5L10.5 9.5"/><path d="M13.5 6.5H6a3.5 3.5 0 0 0 0 7h3"/></svg></button>
+      <button type="button" class="tp-pp cp-ppm" id="pal-pp" title="演奏と一時停止" aria-label="演奏"><svg class="i-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.2l7.6 4.8L3 10.8z"/></svg><svg class="i-pause" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="2.8" height="9"/><rect x="7.2" y="1.5" width="2.8" height="9"/></svg></button>
+      <button type="button" class="cp-pi" id="pal-min" aria-expanded="true" title="パレットをたたむ・開く" aria-label="パレットをたたむ"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg></button>
+    </div>
+    <div class="cp-pb">
+      {/* 画面に重ねて浮かべる枠で、タブで中身ごと入れ替わる */}
+      <div id="pal-b" data-shift="ok"></div>
+      <div class="cp-pdel">ここで離すと削除</div>
+    </div>
+  </div>
+  <script>
+    import '../tools/chord-progression/client';
+  </script>
+</SiteLayout>
