@@ -4,6 +4,7 @@
  */
 import { esc } from '../../lib/dom';
 import type { Occ } from './audio';
+import { ICON, keySig } from './icons';
 import { type ChordEntry, type Item, isChord, type MarkEntry, repeatStart, type Timeline } from './song';
 import {
   type Chord,
@@ -64,47 +65,57 @@ const trTitle = (e: ChordEntry): string => {
 };
 const repLabel = (n: number): string => (n === 0 ? '∞' : `×${n}`);
 /** 目印のブロックの中身 */
+export const keyShort = (k: Key): string => `${keyTonic(k)}${k.m === 'min' ? 'm' : ''}`;
+/** 目印のブロックの中身（文字を減らし、記号とアイコンで描く。名前は title に出す） */
 function markInner(e: MarkEntry): string {
   const it = e.it;
   switch (it.k) {
     case 'key':
-      return `<span class="cp-ml">${e.first ? '調' : '転調'}</span><b>${keyTonic(e.key)}</b><span class="cp-ms">${modeName(e.key)}</span>`;
+      return `<b class="cp-kt">${keyShort(e.key)}</b><span class="cp-ks">${keySig(e.key.t, e.key.m) || '&nbsp;'}</span>`;
     case 'met':
-      return `<span class="cp-ml">拍子</span><b>${it.n}/${it.dn}</b>`;
+      return `<span class="cp-ts"><b>${it.n}</b><b>${it.dn}</b></span>`;
     case 'tmp':
-      return `<span class="cp-ml">テンポ</span><b>♩=${it.v}</b>`;
+      return `${ICON.click}<b>${it.v}</b>`;
     case 'pat':
-      return `<span class="cp-ml">奏法</span>${patGlyph(it.v)}<span class="cp-ms">${PATS[it.v].name}</span>`;
+      return patGlyph(it.v, 'cp-mg');
     case 'vce':
-      return `<span class="cp-ml">音色</span><b class="cp-vn">${VOICES[it.v]}</b>`;
+      return ICON[it.v].replace('class="cp-ic"', 'class="cp-ic cp-big"');
     case 'rs':
-      return '<b class="cp-rp">𝄆</b><span class="cp-ms">くり返し</span>';
+      return '<b class="cp-rp">𝄆</b>';
     case 're':
-      return `<b class="cp-rp">𝄇</b><span class="cp-ms"><span class="cp-pass"></span>${repLabel(it.n)}</span>`;
+      return `<b class="cp-rp">𝄇</b><span class="cp-ms cp-pass" data-l="${repLabel(it.n)}">${repLabel(it.n)}</span>`;
   }
 }
-const markTitle: Record<Item['k'], string> = {
-  ch: '',
-  key: '調',
-  met: '拍子',
-  tmp: 'テンポ',
-  pat: '奏法',
-  vce: '音色',
-  rs: 'くり返しの始め',
-  re: 'くり返しの終わり',
-};
+/** 目印のブロックの名前（指したときの吹き出しと読み上げ） */
+export function markTitle(e: MarkEntry): string {
+  const it = e.it;
+  switch (it.k) {
+    case 'key':
+      return `${e.first ? '調' : '転調'} ${keyTonic(e.key)} ${modeName(e.key)}`;
+    case 'met':
+      return `拍子 ${it.n}/${it.dn}`;
+    case 'tmp':
+      return `テンポ ♩=${it.v}`;
+    case 'pat':
+      return `奏法 ${PATS[it.v].name}`;
+    case 'vce':
+      return `音色 ${VOICES[it.v]}`;
+    case 'rs':
+      return 'くり返しの始め';
+    case 're':
+      return `くり返しの終わり ${it.n === 0 ? '無制限' : `${it.n} 回`}`;
+  }
+}
 function markHTML(e: MarkEntry, c: Ctx, extra = ''): string {
-  return `<div class="cp-it cp-mk cp-mk-${e.it.k}${c.sel === e.it.id ? ' sel' : ''}" data-id="${e.it.id}" title="${markTitle[e.it.k]}" role="button" tabindex="0"${extra}>${markInner(e)}</div>`;
+  return `<div class="cp-it cp-mk cp-mk-${e.it.k}${c.sel === e.it.id ? ' sel' : ''}" data-id="${e.it.id}" title="${esc(markTitle(e))}" aria-label="${esc(markTitle(e))}" role="button" tabindex="0"${extra}>${markInner(e)}</div>`;
 }
 const blockW = (beats: number, cmp: boolean): number =>
   Math.max(cmp ? 52 : 58, cmp ? 16 + beats * 16 : 22 + beats * 21);
-function chordHTML(e: ChordEntry, c: Ctx, cmp: boolean, style = ''): string {
+function chordHTML(e: ChordEntry, c: Ctx, cmp: boolean, style = '', g = -1): string {
   const it = e.it,
     name = chordName(it, e.key),
     rm = roman(it, e.key);
-  let h = `<div class="cp-it cp-ch cp-f${func(it, e.key)}${c.sel === it.id ? ' sel' : ''}${c.cue === it.id ? ' cue' : ''}" data-id="${it.id}" style="${style || `width:${blockW(e.beats, cmp)}px`}" title="${esc(`${rm} · ${name} · ${e.beats} 拍`)}" role="button" tabindex="0">`;
-  if (e.grp)
-    h += `<div class="cp-nm${e.grp.first ? ' first' : ''}${e.grp.last ? ' last' : ''}">${e.grp.first ? `<span>${e.grp.n}</span>` : ''}</div>`;
+  let h = `<div class="cp-it cp-ch cp-f${func(it, e.key)}${c.sel === it.id ? ' sel' : ''}${c.cue === it.id ? ' cue' : ''}" data-id="${it.id}" style="${style || `width:${blockW(e.beats, cmp)}px`}" title="${esc(`${rm} · ${name} · ${e.beats} 拍`)}" role="button" tabindex="0"${g >= 0 && e.grp ? ` data-g="${g}" data-gn="${esc(e.grp.n)}"` : ''}>`;
   h += `<div class="cp-rm">${rm}</div><div class="cp-cn">${name}</div>${patGlyph(e.pat, `cp-gl${e.patOwn ? ' own' : ''}`)}`;
   h += `<div class="cp-bts">${'<i></i>'.repeat(e.beats)}</div>`;
   for (const b of e.bars) {
@@ -116,24 +127,68 @@ function chordHTML(e: ChordEntry, c: Ctx, cmp: boolean, style = ''): string {
 }
 /** ブロックを並びの順に（譜面と五度圏の下の帯） */
 function seqHTML(c: Ctx, cmp: boolean): string {
-  let h = '';
+  let h = '',
+    g = -1;
   for (const e of c.tl.all) {
     if (isChord(e)) {
+      if (e.grp?.first) g++;
       if (e.adj && e.tr) {
-        const g = e.grp && !e.grp.first ? '<div class="cp-nm"></div>' : '';
-        h += `<div class="cp-jn" title="${esc(trTitle(e))}">${g}${arrow(e.tr.lv)}${e.tr.name ? `<span class="cp-cad">${e.tr.name}</span>` : ''}</div>`;
+        h += `<div class="cp-jn" title="${esc(trTitle(e))}">${arrow(e.tr.lv)}${e.tr.name ? `<span class="cp-cad">${e.tr.name}</span>` : ''}</div>`;
       } else if (e.prev) h += '<div class="cp-jn"></div>';
-      h += chordHTML(e, c, cmp);
+      h += chordHTML(e, c, cmp, '', e.grp ? g : -1);
     } else h += markHTML(e, c);
   }
   return h || '<p class="cp-empty">下のパレットからブロックを置いてください。</p>';
+}
+
+/**
+ * 名前のある進行の括弧を、描いたあとのブロックの位置から行ごとに 1 本の線で引く（譜面と五度圏の帯）。
+ * ブロックと矢印で別々に引くと、枠線の分だけ高さがずれる
+ */
+export function drawBands(box: HTMLElement | null): void {
+  if (!box) return;
+  for (const el of box.querySelectorAll('.cp-nmb')) el.remove();
+  const br = box.getBoundingClientRect(),
+    groups = new Map<string, { n: string; rs: DOMRect[] }>();
+  for (const el of box.querySelectorAll<HTMLElement>('.cp-ch[data-g]')) {
+    const k = el.dataset.g as string,
+      gr = groups.get(k) ?? { n: el.dataset.gn ?? '', rs: [] };
+    gr.rs.push(el.getBoundingClientRect());
+    groups.set(k, gr);
+  }
+  for (const { n, rs } of groups.values()) {
+    const rows: DOMRect[][] = [];
+    for (const r of rs) {
+      const row = rows.at(-1);
+      if (row && Math.abs(row[0].top - r.top) < 4) row.push(r);
+      else rows.push([r]);
+    }
+    rows.forEach((row, j) => {
+      const el = document.createElement('div'),
+        l = row[0].left,
+        rt = (row.at(-1) as DOMRect).right;
+      el.className = `cp-nmb${j === 0 ? ' first' : ''}${j === rows.length - 1 ? ' last' : ''}`;
+      el.style.left = `${l - br.left + box.scrollLeft}px`;
+      el.style.top = `${row[0].top - br.top + box.scrollTop - 24}px`;
+      el.style.width = `${rt - l}px`;
+      if (j === 0) {
+        const sp = document.createElement('span');
+        sp.textContent = n;
+        el.appendChild(sp);
+      }
+      box.appendChild(el);
+    });
+  }
 }
 
 /** 鳴っているコードに印を付ける（譜面と五度圏の帯） */
 function markNow(root: ParentNode, occ: Occ | null, frac: number): void {
   for (const el of root.querySelectorAll<HTMLElement>('.cp-it.now'))
     if (Number(el.dataset.id) !== occ?.id) el.classList.remove('now');
-  for (const el of root.querySelectorAll<HTMLElement>('.cp-mk-re .cp-pass')) el.textContent = '';
+  for (const el of root.querySelectorAll<HTMLElement>('.cp-pass.on')) {
+    el.textContent = el.dataset.l ?? '';
+    el.classList.remove('on');
+  }
   if (!occ) return;
   const el = root.querySelector<HTMLElement>(`.cp-ch[data-id="${occ.id}"]`);
   if (el) {
@@ -142,8 +197,11 @@ function markNow(root: ParentNode, occ: Occ | null, frac: number): void {
     if (l) l.style.left = `${Math.min(1, frac) * 100}%`;
   }
   if (occ.rep) {
-    const p = root.querySelector<HTMLElement>(`.cp-mk-re[data-id="${occ.rep.id}"] .cp-pass`);
-    if (p) p.textContent = `${occ.rep.pass} 回目 `;
+    for (const p of root.querySelectorAll<HTMLElement>(`[data-id="${occ.rep.id}"] .cp-pass`)) {
+      const n = p.dataset.l ?? '';
+      p.textContent = `${occ.rep.pass}/${n.replace('×', '')}`;
+      p.classList.add('on');
+    }
   }
 }
 /** 並びの順の要素から、入れる位置を決める（譜面と五度圏の帯） */
@@ -186,7 +244,7 @@ export interface View {
 /* ---------- 譜面 ---------- */
 const score: View = {
   html: (c) => `<div class="cp-sc" id="cp-sc">${seqHTML(c, false)}<div class="cp-caret" id="cp-caret"></div></div>`,
-  mount: () => {},
+  mount: (root) => drawBands(root.querySelector('#cp-sc')),
   playhead: (root, _c, occ, f) => markNow(root, occ, f),
   target: (root, x, y, d, c) => domTarget(root.querySelector('#cp-sc'), x, y, d, c.items),
 };
@@ -251,20 +309,20 @@ const lanes: View = {
       return ms
         .map((e, j) => {
           const end = j + 1 < ms.length ? ms[j + 1].q : tq - 4;
-          return `<div class="cp-bx cp-span k${j % 2}${c.sel === e.it.id ? ' sel' : ''}" data-id="${e.it.id}" style="left:${xq(e.q)}px;width:${Math.max(52, (end - e.q) * PX - 2)}px" role="button" tabindex="0">${label(e)}</div>`;
+          return `<div class="cp-bx cp-span k${j % 2}${c.sel === e.it.id ? ' sel' : ''}" data-id="${e.it.id}" style="left:${xq(e.q)}px;width:${Math.max(52, (end - e.q) * PX - 2)}px" role="button" tabindex="0" title="${esc(markTitle(e))}">${label(e)}</div>`;
         })
         .join('');
     };
-    body.key = spans('key', (e) => `<b>${keyTonic(e.key)}</b> ${modeName(e.key)}${e.first ? '' : ' · 転調'}`);
+    body.key = spans('key', (e) => `<b>${keyShort(e.key)}</b> ${keySig(e.key.t, e.key.m)}`);
     body.pat = spans('pat', (e) => (e.it.k === 'pat' ? `${patGlyph(e.it.v)}${PATS[e.it.v].name}` : ''));
-    body.vce = spans('vce', (e) => (e.it.k === 'vce' ? VOICES[e.it.v] : ''));
+    body.vce = spans('vce', (e) => (e.it.k === 'vce' ? `${ICON[e.it.v]}${VOICES[e.it.v]}` : ''));
     const at: Record<number, number> = {};
     for (const e of tl.all) {
       if (e.it.k !== 'met' && e.it.k !== 'tmp') continue;
       const me = e as MarkEntry,
         o = at[me.q] ?? 0;
       at[me.q] = o + 1;
-      body.met += `<div class="cp-bx cp-flag${c.sel === e.it.id ? ' sel' : ''}" data-id="${e.it.id}" style="left:${xq(me.q) + o * 62}px;width:58px" role="button" tabindex="0">${e.it.k === 'met' ? `${e.it.n}/${e.it.dn}` : `♩=${e.it.v}`}</div>`;
+      body.met += `<div class="cp-bx cp-flag${c.sel === e.it.id ? ' sel' : ''}" data-id="${e.it.id}" style="left:${xq(me.q) + o * 62}px;width:58px" role="button" tabindex="0" title="${esc(markTitle(me))}">${e.it.k === 'met' ? `${e.it.n}/${e.it.dn}` : `♩=${e.it.v}`}</div>`;
     }
     for (const e of tl.all) {
       if (e.it.k === 'rs')
@@ -274,7 +332,7 @@ const lanes: View = {
           first = tl.all.find((x) => x.i >= s0),
           q0 = first ? ('q' in first ? first.q : 0) : 0,
           q1 = (e as MarkEntry).q;
-        body.rep += `<div class="cp-bx cp-span cp-res${c.sel === e.it.id ? ' sel' : ''}" data-id="${e.it.id}" style="left:${xq(q0) + 32}px;width:${Math.max(56, (q1 - q0) * PX - 34)}px" role="button" tabindex="0" title="くり返しの終わり"><span class="cp-pass"></span>${repLabel(e.it.n)} 𝄇</div>`;
+        body.rep += `<div class="cp-bx cp-span cp-res${c.sel === e.it.id ? ' sel' : ''}" data-id="${e.it.id}" style="left:${xq(q0) + 32}px;width:${Math.max(56, (q1 - q0) * PX - 34)}px" role="button" tabindex="0" title="くり返しの終わり"><span class="cp-pass" data-l="${repLabel(e.it.n)}">${repLabel(e.it.n)}</span> 𝄇</div>`;
       }
     }
     for (const e of tl.chords) {
@@ -461,6 +519,7 @@ const wheel: View & { last: number; draw(root: HTMLElement, c: Ctx, occ: Occ | n
     `<div class="cp-wtop"><div id="cp-wh"></div><div class="cp-cand" id="cp-cand"></div></div><div class="cp-sc cmp" id="cp-sc">${seqHTML(c, true)}<div class="cp-caret" id="cp-caret"></div></div>`,
   mount(root, c) {
     this.draw(root, c, null);
+    drawBands(root.querySelector('#cp-sc'));
     const el = root.querySelector<HTMLElement>('.cp-ch.cue, .cp-ch.sel'),
       sc = root.querySelector<HTMLElement>('#cp-sc');
     if (el && sc) sc.scrollLeft = Math.max(0, el.offsetLeft - sc.clientWidth / 2);

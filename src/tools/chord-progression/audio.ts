@@ -124,28 +124,35 @@ export class CpAudio {
     const ac = this.ac as AudioContext,
       sr = ac.sampleRate,
       f = mtof(m),
-      /* 平均の低域通過で遅れが 0.5 サンプル増えるので、整数の遅延より半サンプル長い周期になる。再生の速さで合わせる */
-      N = Math.max(2, Math.floor(sr / f - 0.5)),
+      /* 3 点の低域通過（1/4・1/2・1/4）で遅れが 1 サンプル増えるので、整数の遅延より 1 サンプル長い周期になる。再生の速さで合わせる */
+      N = Math.max(3, Math.floor(sr / f - 1)),
       len = Math.floor(sr * 2.6),
       buf = ac.createBuffer(1, len, sr),
       d = buf.getChannelData(0),
-      ring = new Float32Array(N);
-    let prev = 0,
+      ring = new Float32Array(N),
+      ex = new Float32Array(N);
+    /* 弾く音: 雑音を 2 段の 1 次低域通過で丸め、弾く位置（弦の 18 % の所）で消える倍音を引く。尖った音を和らげる */
+    let a1 = 0,
+      a2 = 0,
       seed = m * 7919 + 1;
     for (let i = 0; i < N; i++) {
       seed = (seed * 16807) % 2147483647;
-      prev = prev * 0.45 + ((seed / 2147483647) * 2 - 1) * 0.55;
-      ring[i] = prev;
+      a1 += 0.45 * ((seed / 2147483647) * 2 - 1 - a1);
+      a2 += 0.45 * (a1 - a2);
+      ex[i] = a2;
     }
-    const rho = 0.9965 - Math.min(0.004, f / 400000);
+    const P = Math.max(1, Math.round(N * 0.18));
+    for (let i = 0; i < N; i++) ring[i] = ex[i] - 0.9 * ex[(i - P + N) % N];
+    const rho = 0.9985 - Math.min(0.003, f / 500000);
     for (let i = 0, ix = 0; i < len; i++) {
       const a = ring[ix],
-        b = ring[(ix + 1) % N];
+        b = ring[(ix + 1) % N],
+        c = ring[(ix + 2) % N];
       d[i] = a;
-      ring[ix] = rho * 0.5 * (a + b);
+      ring[ix] = rho * (0.25 * a + 0.5 * b + 0.25 * c);
       ix = (ix + 1) % N;
     }
-    const o = { buf, rate: (f * (N + 0.5)) / sr };
+    const o = { buf, rate: (f * (N + 1)) / sr };
     this.ks.set(m, o);
     return o;
   }
@@ -181,9 +188,10 @@ export class CpAudio {
           lp = ac.createBiquadFilter();
         s.buffer = k.buf;
         s.playbackRate.value = k.rate;
-        lp.frequency.value = 3800;
+        lp.frequency.value = 2400;
         s.connect(lp).connect(g);
-        g.gain.setValueAtTime(vel * 0.55, w);
+        g.gain.setValueAtTime(0, w);
+        g.gain.linearRampToValueAtTime(vel * 0.42, w + 0.003);
         g.gain.setTargetAtTime(0, end, 0.08);
         s.start(w);
         s.stop(Math.min(stopAt, w + 2.6));

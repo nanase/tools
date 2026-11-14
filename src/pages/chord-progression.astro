@@ -8,6 +8,7 @@ import SiteLayout from '../layouts/SiteLayout.astro';
 import { outVol } from '../lib/play';
 import '../tools/chord-progression/style.css';
 import How from '../tools/chord-progression/How.astro';
+import { ICON } from '../tools/chord-progression/icons';
 import { VOL0 } from '../tools/chord-progression/params';
 import { SAMPLES } from '../tools/chord-progression/samples';
 import Theory from '../tools/chord-progression/Theory.astro';
@@ -21,7 +22,7 @@ const samples = SAMPLES;
   <div class="tgrid" id="cp-page">
     <Panel hid="hd-prog" title="進行" class="cp-prog" fixed>
       <div slot="aux" class="seg" id="cp-vw" role="group" aria-label="表示">
-        <button type="button" data-v="score" aria-pressed="true">譜面</button><button type="button" data-v="lanes" aria-pressed="false">レーン</button><button type="button" data-v="wheel" aria-pressed="false">五度圏</button>
+        <button type="button" class="cp-vb" data-v="score" aria-pressed="true" title="譜面" aria-label="譜面" set:html={ICON.score} /><button type="button" class="cp-vb" data-v="lanes" aria-pressed="false" title="レーン" aria-label="レーン" set:html={ICON.lanes} /><button type="button" class="cp-vb" data-v="wheel" aria-pressed="false" title="五度圏" aria-label="五度圏" set:html={ICON.wheel} />
       </div>
       {/* 譜面・レーン・五度圏の切り替えとブロックの数で中身ごと入れ替わる */}
       <div class="cp-stage" id="cp-stage"><div id="cp-view" data-shift="ok"></div></div>
@@ -36,8 +37,8 @@ const samples = SAMPLES;
           <div class="cp-posw"><b class="cp-pos" id="cp-pos">–</b><span class="cp-len" id="cp-len"></span></div>
         </div>
         <div class="cp-row"><span class="cp-rl">伴奏</span>
-          <button type="button" class="tg" data-acc="bass" aria-pressed="true"><span class="led on" aria-hidden="true"></span>ベース</button>
-          <button type="button" class="tg" data-acc="click" aria-pressed="false"><span class="led" aria-hidden="true"></span>メトロノーム</button>
+          <button type="button" class="tg" data-acc="bass" aria-pressed="true" title="ベース" aria-label="ベース"><span class="led on" aria-hidden="true"></span><Fragment set:html={ICON.bass} /></button>
+          <button type="button" class="tg" data-acc="click" aria-pressed="false" title="メトロノーム" aria-label="メトロノーム"><span class="led" aria-hidden="true"></span><Fragment set:html={ICON.click} /></button>
         </div>
         <div class="ptab"><ParamRow d={outVol(VOL0)} /></div>
       </Panel>
@@ -63,10 +64,10 @@ const samples = SAMPLES;
       <div class="cp-er2"><span class="cp-rl">保存した進行</span><ul class="cp-saved" id="cp-saved"></ul></div>
       <div class="cp-row cp-file">
         <input type="text" id="cp-name" maxlength="60" placeholder="進行の名前" aria-label="進行の名前" />
-        <button type="button" class="tg" id="cp-save">保存</button>
-        <button type="button" class="tg" id="cp-new">新規</button>
-        <button type="button" class="tg" id="cp-export">書き出し</button>
-        <button type="button" class="tg" id="cp-import">読み込み</button>
+        <button type="button" class="cp-pi" id="cp-save" title="保存" aria-label="保存" set:html={ICON.save} />
+        <button type="button" class="cp-pi" id="cp-new" title="新規" aria-label="新規" set:html={ICON.new} />
+        <button type="button" class="cp-pi" id="cp-export" title="書き出し" aria-label="書き出し" set:html={ICON.export} />
+        <button type="button" class="cp-pi" id="cp-import" title="読み込み" aria-label="読み込み" set:html={ICON.import} />
         <input type="file" id="cp-file" accept="application/json,.json" hidden />
       </div>
       <p class="cp-msg" id="cp-msg" role="status" aria-live="polite"></p>

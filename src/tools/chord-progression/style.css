@@ -11,7 +11,7 @@ body:has(#cp-pal){padding-bottom:var(--cp-palh,0px)}
 #cp-page.cp-no-fn .cp-ch,#cp-page.cp-no-fn .cp-clist button,.cp-pal.cp-no-fn .cp-pc{--fn:var(--line-2)}
 #cp-page.cp-no-lv .cp-ar,#cp-page.cp-no-lv .cp-bj,#cp-page.cp-no-lv .cp-war{visibility:hidden}
 #cp-page.cp-no-cad .cp-cad{visibility:hidden}
-#cp-page.cp-no-nm .cp-nm{visibility:hidden}
+#cp-page.cp-no-nm .cp-nm,#cp-page.cp-no-nm .cp-nmb{visibility:hidden}
 
 .cp-stage{position:relative}
 .cp-2{display:grid;grid-template-columns:minmax(0,1fr);gap:26px 16px}
@@ -61,7 +61,8 @@ body:has(#cp-pal){padding-bottom:var(--cp-palh,0px)}
 .cp-mk-key{border:1.5px solid var(--ink-3)}
 .cp-mk-rs,.cp-mk-re{width:46px;border-style:solid;border-color:var(--ink-3)}
 .cp-rp{font:400 26px/1 var(--sans)!important}
-.cp-pass{color:var(--cp-lv);font-weight:700}
+.cp-pass{font-weight:700}
+.cp-pass.on{color:var(--cp-lv)}
 .cp-mk-re .cp-ms{max-width:none;overflow:visible}
 .cp-sc.cmp .cp-it{height:60px}
 .cp-sc.cmp .cp-rm{font-size:14.5px}
@@ -79,7 +80,10 @@ body:has(#cp-pal){padding-bottom:var(--cp-palh,0px)}
 .cp-nm.first{border-left:2px solid var(--ink-3)}
 .cp-nm.last{border-right:2px solid var(--ink-3)}
 .cp-nm span{position:absolute;left:4px;top:-9px;padding:0 4px;background:var(--bg);font-size:11.5px;font-weight:700;color:var(--ink-2);white-space:nowrap}
-.cp-jn .cp-nm{left:0;right:0}
+.cp-nmb{position:absolute;height:8px;border-top:2px solid var(--ink-3);pointer-events:none}
+.cp-nmb.first{border-left:2px solid var(--ink-3)}
+.cp-nmb.last{border-right:2px solid var(--ink-3)}
+.cp-nmb span{position:absolute;left:4px;top:-9px;padding:0 4px;background:var(--bg);font-size:11.5px;font-weight:700;color:var(--ink-2);white-space:nowrap}
 .cp-caret{position:absolute;width:3px;margin-left:-1.5px;border-radius:2px;background:var(--cp-sel);pointer-events:none;z-index:5;display:none}
 .cp-ghost{position:fixed;z-index:60;pointer-events:none;opacity:.9;box-shadow:0 8px 22px rgb(0 0 0 / .3);transform:translate(-50%,-60%)}
 
@@ -232,3 +236,27 @@ body:has(#cp-pal){padding-bottom:var(--cp-palh,0px)}
 .cp-hl.d{stroke-dasharray:3 2}
 .cp-hh{fill:var(--cp-lv)}
 .cp-hg{stroke:var(--line);fill:none}
+
+/* ===== アイコン ===== */
+.cp-ic{width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px}
+.cp-ic .f{fill:currentColor;stroke:none}
+.cp-ic .w{stroke-width:3}
+.cp-big{width:26px;height:26px}
+.cp-vb{display:inline-grid!important;place-items:center;width:34px;padding:0!important}
+.cp-mk .cp-ic{width:20px;height:20px}
+.cp-mk .cp-big{width:28px;height:28px}
+.cp-mk .cp-mg{width:44px;height:18px}
+.cp-kt{font:700 17px/1.1 var(--mono)!important}
+.cp-ks{font-size:12px;line-height:1;color:var(--ink-2);letter-spacing:-1px}
+.cp-ts{display:flex;flex-direction:column;align-items:center;line-height:.95}
+.cp-ts b{font:700 16px/1 var(--mono)!important}
+.cp-pm .cp-ts b{font-size:13px!important}
+.cp-pm .cp-ic{width:20px;height:20px}
+.cp-pm .cp-rp{font-size:22px!important}
+.cp-gc{padding:0 6px}
+.cp-gc svg{margin:0;width:36px;height:14px}
+.chip .cp-ic{margin-right:4px}
+.cp-eh .cp-pi{width:30px;height:30px}
+.cp-bx .cp-ic{width:15px;height:15px}
+.cp-lr-ch .cp-cn{top:24px;font-size:11.5px}
+.cp-lr-ch .cp-gl{bottom:5px;height:11px;width:34px}

@@ -9,6 +9,7 @@ import { outVol, type PlayKey } from '../../lib/play';
 import { store, stored } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
 import { type Accomp, CpAudio, Player } from './audio';
+import { ICON, keySig } from './icons';
 import { VOL0 } from './params';
 import { SAMPLE0, SAMPLES } from './samples';
 import {
@@ -39,7 +40,6 @@ import {
   KEY_NAMES,
   type Key,
   keyName,
-  keyTonic,
   lvName,
   md,
   namedNext,
@@ -60,7 +60,7 @@ import {
   VOICE_ORDER,
   VOICES,
 } from './theory';
-import { type Ctx, type Drag, redrawWheel, type Target, VIEWS, type ViewId } from './view';
+import { type Ctx, type Drag, drawBands, keyShort, redrawWheel, type Target, VIEWS, type ViewId } from './view';
 
 initToolPage();
 
@@ -285,18 +285,21 @@ $('#cp-vw').addEventListener('click', (ev) => {
 });
 
 /* ---------- 編集の窓 ---------- */
-const chipRow = (lb: string, a: string, opts: readonly (readonly [string | number, string])[], cur: unknown) =>
+/** 選択肢の行。3 つ目の要素は吹き出しと読み上げの名前（中身が図柄だけのとき） */
+const chipRow = (lb: string, a: string, opts: readonly (readonly [string | number, string, string?])[], cur: unknown) =>
   `<div class="cp-er"><span class="cp-el">${lb}</span><div class="chips">${opts
     .map(
-      ([v, t]) =>
-        `<button type="button" class="chip" data-a="${a}" data-v="${v}" aria-pressed="${String(v) === String(cur)}">${t}</button>`,
+      ([v, t, tt]) =>
+        `<button type="button" class="chip" data-a="${a}" data-v="${v}" aria-pressed="${String(v) === String(cur)}"${tt ? ` title="${tt}" aria-label="${tt}"` : ''}>${t}</button>`,
     )
     .join('')}</div></div>`;
+const iconBtn = (a: string, icon: string, name: string) =>
+  `<button type="button" class="cp-pi" data-a="${a}" title="${name}" aria-label="${name}">${icon}</button>`;
 const lenLabel = (b: number) => (b === 0 ? '拍子どおり' : `${b} 拍`);
 function edHTML(e: (typeof S.tl.all)[number]): string {
   const it = e.it;
   const head = (t: string, aud = false) =>
-    `<div class="cp-eh"><b>${t}</b>${aud ? '<button type="button" class="tg" data-a="aud">試聴</button>' : ''}<button type="button" class="tg" data-a="dup">複製</button><button type="button" class="tg" data-a="del">削除</button><button type="button" class="cp-ex" data-a="close" aria-label="閉じる" title="閉じる">×</button></div>`;
+    `<div class="cp-eh"><b>${t}</b>${aud ? iconBtn('aud', ICON.aud, '試聴') : ''}${iconBtn('dup', ICON.dup, '複製')}${iconBtn('del', ICON.del, '削除')}<button type="button" class="cp-ex" data-a="close" aria-label="閉じる" title="閉じる">×</button></div>`;
   if (isChord(e)) {
     const c = e.it,
       k = e.key,
@@ -308,19 +311,15 @@ function edHTML(e: (typeof S.tl.all)[number]): string {
         lv = pv ? trans(pv.it, pv.key, { d, q: dq ?? c.q, inv: 0 }, k).lv : -1;
       rt += `<button type="button" class="${dq ? 'dia' : ''}" data-a="d" data-v="${d}" aria-pressed="${d === c.d}"><b>${romanBase(d, k)}</b><span>${rootName(d, k)}</span><i class="cp-lvb${lv > 0 ? ` l${lv}` : ''}"></i></button>`;
     }
-    const invs: [number, string][] = [
-      [0, '基本形'],
-      [1, '第 1 転回形'],
-      [2, '第 2 転回形'],
-    ];
-    if (QUALS[c.q].iv.length > 3) invs.push([3, '第 3 転回形']);
+    const INV = ['基本形', '第 1 転回形', '第 2 転回形', '第 3 転回形'],
+      invs = QUALS[c.q].iv.map((_, i) => [i, chordName({ ...c, inv: i }, k), INV[i]] as const);
     return (
       head(`${roman(c, k)} · ${chordName(c, k)}`, true) +
       `<div class="cp-er"><span class="cp-el">根音</span><div class="cp-rt">${rt}</div></div>` +
       chipRow(
         '種類',
         'q',
-        QUAL_ORDER.map((q) => [q, QUALS[q].name]),
+        QUAL_ORDER.map((q) => [q, chordName({ d: c.d, q, inv: 0 }, k), QUALS[q].name]),
         c.q,
       ) +
       chipRow('転回', 'inv', invs, c.inv) +
@@ -330,7 +329,7 @@ function edHTML(e: (typeof S.tl.all)[number]): string {
         LENGTHS.map((b) => [b, b === 0 ? `拍子どおり（${e.n} 拍）` : lenLabel(b)]),
         c.b,
       ) +
-      `<div class="cp-er"><span class="cp-el">奏法</span><div class="chips"><button type="button" class="chip" data-a="p" data-v="" aria-pressed="${!c.p}">奏法ブロックどおり（${PATS[e.defPat].name}）</button>${PAT_ORDER.map((p) => `<button type="button" class="chip" data-a="p" data-v="${p}" aria-pressed="${c.p === p}">${patGlyph(p)}${PATS[p].name}</button>`).join('')}</div></div>`
+      `<div class="cp-er"><span class="cp-el">奏法</span><div class="chips"><button type="button" class="chip" data-a="p" data-v="" aria-pressed="${!c.p}" title="奏法ブロックどおり（${PATS[e.defPat].name}）">ブロックどおり</button>${PAT_ORDER.map((p) => `<button type="button" class="chip cp-gc" data-a="p" data-v="${p}" aria-pressed="${c.p === p}" title="${PATS[p].name}" aria-label="${PATS[p].name}">${patGlyph(p)}</button>`).join('')}</div></div>`
     );
   }
   const m = e as MarkEntry;
@@ -387,7 +386,7 @@ function edHTML(e: (typeof S.tl.all)[number]): string {
       return `${head('奏法')}${chipRow(
         '奏法',
         'pv',
-        PAT_ORDER.map((p) => [p, patGlyph(p) + PATS[p].name]),
+        PAT_ORDER.map((p) => [p, patGlyph(p), PATS[p].name]),
         it.v,
       )}<p class="cp-en">次の奏法ブロックまでのコードに効く · 押すと次のコードで試聴</p>`;
     case 'vce':
@@ -396,7 +395,7 @@ function edHTML(e: (typeof S.tl.all)[number]): string {
         chipRow(
           '音色',
           'vv',
-          VOICE_ORDER.map((v) => [v, VOICES[v]]),
+          VOICE_ORDER.map((v) => [v, `${ICON[v]}${VOICES[v]}`]),
           it.v,
         )
       );
@@ -562,19 +561,38 @@ function insertCtx(): { index: number; key: Key; prev: ChordEntry | null; upto: 
   }
   return { index: S.items.length, key: S.tl.end.key, prev: S.tl.chords.at(-1) ?? null, upto: S.tl.chords };
 }
-const MARKS: { k: Kind; name: string; sub: (k: Key) => string; spec: (k: Key) => ItemSpec }[] = [
+/** パレットの目印のブロック: 名前（吹き出し）・見た目・置くときの中身。置く位置の調から決める */
+const MARKS: { k: Kind; name: (k: Key) => string; face: (k: Key) => string; spec: (k: Key) => ItemSpec }[] = [
   {
     k: 'key',
-    name: '転調',
-    sub: (k) => keyTonic({ t: md(k.t + 2), m: k.m }),
+    name: (k) => `転調 ${keyName({ t: md(k.t + 2), m: k.m })}`,
+    face: (k) => {
+      const nk: Key = { t: md(k.t + 2), m: k.m };
+      return `<b>${keyShort(nk)}</b><span>${keySig(nk.t, nk.m) || '&nbsp;'}</span>`;
+    },
     spec: (k) => ({ k: 'key', t: md(k.t + 2), m: k.m }),
   },
-  { k: 'met', name: '拍子', sub: () => '3/4', spec: () => ({ k: 'met', n: 3, dn: 4 }) },
-  { k: 'tmp', name: 'テンポ', sub: () => '♩=120', spec: () => ({ k: 'tmp', v: 120 }) },
-  { k: 'pat', name: '奏法', sub: () => '', spec: () => ({ k: 'pat', v: 'up' }) },
-  { k: 'vce', name: '音色', sub: () => 'オルガン', spec: () => ({ k: 'vce', v: 'org' }) },
-  { k: 'rs', name: '𝄆', sub: () => 'くり返しの始め', spec: () => ({ k: 'rs' }) },
-  { k: 're', name: '𝄇', sub: () => 'くり返しの終わり', spec: () => ({ k: 're', n: 2 }) },
+  {
+    k: 'met',
+    name: () => '拍子 3/4',
+    face: () => '<span class="cp-ts"><b>3</b><b>4</b></span>',
+    spec: () => ({ k: 'met', n: 3, dn: 4 }),
+  },
+  {
+    k: 'tmp',
+    name: () => 'テンポ ♩=120',
+    face: () => `${ICON.click}<span>120</span>`,
+    spec: () => ({ k: 'tmp', v: 120 }),
+  },
+  { k: 'pat', name: () => `奏法 ${PATS.up.name}`, face: () => patGlyph('up'), spec: () => ({ k: 'pat', v: 'up' }) },
+  { k: 'vce', name: () => `音色 ${VOICES.org}`, face: () => ICON.org, spec: () => ({ k: 'vce', v: 'org' }) },
+  { k: 'rs', name: () => 'くり返しの始め', face: () => '<b class="cp-rp">𝄆</b>', spec: () => ({ k: 'rs' }) },
+  {
+    k: 're',
+    name: () => 'くり返しの終わり',
+    face: () => '<b class="cp-rp">𝄇</b><span>×2</span>',
+    spec: () => ({ k: 're', n: 2 }),
+  },
 ];
 function renderPal(): void {
   const c = insertCtx(),
@@ -600,7 +618,7 @@ function renderPal(): void {
   palBody.innerHTML =
     S.tab === 'ch'
       ? `<div class="cp-pr"><span class="cp-pl">ダイアトニック</span>${DIATONIC[k.m][S.nOf].map(([d, q]) => chip(d, q)).join('')}</div><div class="cp-pr"><span class="cp-pl">その他</span>${OTHER[k.m].map(([d, q]) => chip(d, q)).join('')}</div>`
-      : `<div class="cp-pr">${MARKS.map((m) => `<button type="button" class="cp-pc cp-pm" data-new="${m.k}"><b>${m.name}</b>${m.k === 'pat' ? patGlyph('up') : `<span>${m.sub(k)}</span>`}</button>`).join('')}</div>`;
+      : `<div class="cp-pr">${MARKS.map((m) => `<button type="button" class="cp-pc cp-pm" data-new="${m.k}" title="${m.name(k)}" aria-label="${m.name(k)}">${m.face(k)}</button>`).join('')}</div>`;
 }
 function newItem(el: HTMLElement): Item {
   const k = el.dataset.new as Kind,
@@ -816,7 +834,11 @@ document.addEventListener('keydown', (ev) => {
     render();
   }
 });
-addEventListener('resize', () => showEd());
+/* 幅が変わると折り返しが変わるので、括弧と設定の窓を置き直す */
+new ResizeObserver(() => {
+  drawBands(viewEl.querySelector('#cp-sc'));
+  showEd();
+}).observe(viewEl);
 
 /* ---------- 曲の保存・新規・サンプル ---------- */
 const SAVE_KEY = 'chord-progression:saved';

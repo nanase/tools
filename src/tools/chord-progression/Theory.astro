@@ -50,17 +50,18 @@ const ROWS: [string, string, string, string][] = [
 
 <h3>音色</h3>
 <div class="eqs">
-  <math display="block" set:html={`${yn('<mi>n</mi>')}<mo>=</mo><mfrac><mi>ρ</mi><mn>2</mn></mfrac>${p(`${yn('<mi>n</mi><mo>−</mo><mi>N</mi>')}<mo>+</mo>${yn('<mi>n</mi><mo>−</mo><mi>N</mi><mo>−</mo><mn>1</mn>')}`)}<mo>,</mo><mspace width="0.6em"/>${sub('<mi>f</mi>', '<mn>0</mn>')}<mo>=</mo><mfrac>${sub('<mi>f</mi>', '<mi>s</mi>')}<mrow><mi>N</mi><mo>+</mo><mn>1</mn><mo>/</mo><mn>2</mn></mrow></mfrac>`} />
+  <math display="block" set:html={`${yn('<mi>n</mi>')}<mo>=</mo><mi>ρ</mi>${p(`<mfrac><mn>1</mn><mn>4</mn></mfrac>${yn('<mi>n</mi><mo>−</mo><mi>N</mi>')}<mo>+</mo><mfrac><mn>1</mn><mn>2</mn></mfrac>${yn('<mi>n</mi><mo>−</mo><mi>N</mi><mo>−</mo><mn>1</mn>')}<mo>+</mo><mfrac><mn>1</mn><mn>4</mn></mfrac>${yn('<mi>n</mi><mo>−</mo><mi>N</mi><mo>−</mo><mn>2</mn>')}`)}<mo>,</mo><mspace width="0.6em"/>${sub('<mi>f</mi>', '<mn>0</mn>')}<mo>=</mo><mfrac>${sub('<mi>f</mi>', '<mi>s</mi>')}<mrow><mi>N</mi><mo>+</mo><mn>1</mn></mrow></mfrac>`} />
   <math display="block" set:html={`<mi>x</mi>${p('<mi>t</mi>')}<mo>=</mo><mi>A</mi>${p('<mi>t</mi>')}<mspace width="0.15em"/><mi>sin</mi><mo>⁡</mo>${p(`<mn>2</mn><mi>π</mi><mi>f</mi><mi>t</mi><mo>+</mo><mi>I</mi>${p('<mi>t</mi>')}<mspace width="0.15em"/><mi>sin</mi><mo>⁡</mo><mn>2</mn><mi>π</mi><mi>f</mi><mi>t</mi>`)}`} />
 </div>
 <dl class="syms">
   <dt><math><mi>N</mi></math></dt><dd>遅延の長さ [サンプル]</dd>
-  <dt><math><mi>ρ</mi></math></dt><dd>1 周ごとの減衰（0.995〜0.9965。高い音ほど小さい）</dd>
+  <dt><math><mi>ρ</mi></math></dt><dd>1 周ごとの減衰（0.997〜0.9985。高い音ほど小さい）</dd>
   <dt><math set:html={sub('<mi>f</mi>', '<mi>s</mi>')} /></dt><dd>標本化周波数</dd>
   <dt><math><mi>I</mi></math></dt><dd>変調の深さ（鳴らした直後 2.2 から 0.25 へ減る）</dd>
 </dl>
 <ul class="tl">
-  <li>ギター: 雑音を詰めた遅延線を 2 点の平均で回す撥弦の合成<Fragment set:html={rf(2)} />。平均で遅れが半サンプル増えるので、再生の速さで高さを合わせる<Fragment set:html={rf(3)} /></li>
+  <li>ギター: 雑音を詰めた遅延線を 3 点の低域通過で回す撥弦の合成<Fragment set:html={rf(2)} />。低域通過で遅れが 1 サンプル増えるので、再生の速さで高さを合わせる<Fragment set:html={rf(3)} /></li>
+  <li>弾く音は雑音を 2 段の低域通過で丸め、弾く位置（弦の 18 % の所）で消える倍音を引く<Fragment set:html={rf(3)} />。出口で 2.4 kHz より上を落とす</li>
   <li>エレピ: 同じ周波数の 2 つの正弦波の周波数変調<Fragment set:html={rf(4)} />。打った直後ほど倍音が多い</li>
   <li>オルガン: 1〜4 倍の正弦波の和。ストリングス: 少しずらした 2 本ののこぎり波を 1.9 kHz の低域通過に通す</li>
 </ul>
@@ -71,7 +72,7 @@ const ROWS: [string, string, string, string][] = [
   <li>機能の分け方: Ⅰ・Ⅲ・Ⅵ（調の中の和音）はトニック、Ⅴ と Ⅶ の減三和音と属七の形はドミナント、ほかはサブドミナント</li>
   <li>名前のある進行（カノン進行・王道進行・小室進行・丸サ進行・循環進行・ツーファイブワン・12 小節のブルース）は、日本で広く使われている呼び名</li>
   <li>サンプルの進行・テンポ・奏法・音色は、このツールのために選んだ。特定の曲を写したものではない</li>
-  <li>音色の値（減衰・変調の深さ・倍音の大きさ・フィルタ）と、和音を置く高さ</li>
+  <li>音色の値（減衰・弾く位置・変調の深さ・倍音の大きさ・フィルタ）と、和音を置く高さ</li>
   <li>くり返しは入れ子にしない。終わりのブロックは手前の始めまで戻る</li>
 </ul>
 

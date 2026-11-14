@@ -3073,44 +3073,43 @@ export const ART: Record<string, Art> = {
       }
     return s + P('c t', 'M8 17h12v14H8zM100 17h12v14h-12zM20 22H50V26H20zM70 22H100V26H70zM50 23.2H70V24.8H50z');
   },
-  /* コード進行: 機能の帯の付いた 4 つのブロックを矢印でつなぎ、上に進行の名前の括弧。
-     再生の位置がブロックを順に進み、中のアルペジオの点が 1 歩ずつ光る（1 ブロック 0.75 s）。止まった絵は 2 つ目の途中 */
+  /* コード進行: 2 行に折り返した譜面。機能の帯の付いたブロックを矢印でつなぎ、2 行目の頭に転調の破線のブロック。
+     再生の位置がブロックを順に進み、ブロックの中の縦線が 4 コマで進む（1 ブロック 0.45 s）。止まった絵は 1 行目の終わり */
   cp(t) {
-    const FNS = ['fb', 'fr', 'fb', 'fc'],
-      X = [5, 34, 63, 92],
-      W = 23,
-      Y = 15,
-      H = 26,
-      BT = 0.75,
-      u = mod(t + 1.05, 3),
+    const W = 22,
+      H = 14,
+      FN: Record<string, string> = { T: 'fb', S: 'fc', D: 'fr' },
+      all: [number, number, string][] = [
+        [5, 10, 'T'],
+        [32, 10, 'D'],
+        [59, 10, 'T'],
+        [86, 10, 'S'],
+        [19, 30, 'T'],
+        [46, 30, 'S'],
+        [73, 30, 'D'],
+        [100, 30, 'T'],
+      ],
+      BT = 0.45,
+      u = mod(t + 2.0, all.length * BT),
       ci = Math.floor(u / BT),
-      st = Math.floor(((u % BT) / BT) * 8) + 1,
-      UD = [0, 1, 2, 3, 2, 1, 0, 1],
-      box = (x: number, w: number) => `M${x} ${Y}h${w}v${H}h${-w}Z`;
-    let s = P('c t', 'M6 11V7H114V11'),
+      fr = (u % BT) / BT,
+      R = (x: number, y: number, w: number, h: number) => `M${r1(x)} ${r1(y)}h${r1(w)}v${r1(h)}h${r1(-w)}Z`;
+    let s = P('c t', 'M6 8V5H113V8'),
       al = '',
       ah = '';
-    X.forEach((x, i) => {
-      const cur = i === ci;
-      let on = '',
-        off = '';
-      UD.forEach((v, k) => {
-        const cx = r1(x + 4.5 + (k * (W - 7)) / 7),
-          cy = r1(Y + H - 3.5 - (v * (H - 9)) / 3),
-          d = `M${r1(cx - 1.1)} ${cy}a1.1 1.1 0 1 0 2.2 0a1.1 1.1 0 1 0 -2.2 0Z`;
-        if (cur && k < st) on += d;
-        else off += d;
-      });
-      s += P(cur ? 'a' : 'c', box(x, W)) + P(FNS[i], box(x, 3)) + P('fc', off) + (on ? P('fa', on) : '');
-      if (i < 3) {
-        const x0 = x + W + 1.2,
-          x1 = X[i + 1] - 1.2,
-          y = Y + H / 2;
-        al += `M${r1(x0)} ${y}H${r1(x1 - 2.6)}`;
-        ah += `M${r1(x1)} ${y}l-3.2 -2.3v4.6Z`;
+    all.forEach(([x, y, f], i) => {
+      const w = i === 7 ? 16 : W;
+      s += P(i === ci ? 'a' : 'c', R(x, y, w, H)) + P(FN[f], R(x, y, 2.6, H));
+      if (i === ci) s += P('a t', `M${r1(x + 3 + (Math.floor(fr * 4) / 4) * (w - 4))} ${y + 2}V${y + H - 2}`);
+      if (i % 4 !== 3) {
+        const x0 = x + w + 0.8,
+          x1 = all[i + 1][0] - 0.8,
+          ym = y + H / 2;
+        al += `M${r1(x0)} ${ym}H${r1(x1 - 2.6)}`;
+        ah += `M${r1(x1)} ${ym}l-3.2 -2.3v4.6Z`;
       }
     });
-    return s + P('a', al) + P('fa', ah);
+    return s + P('c d', R(5, 30, 9, H)) + P('c t', al) + P('fc', ah);
   },
 };
 
@@ -3195,7 +3194,7 @@ export const LOOP: Record<string, number> = {
   gb: 2,
   sf: 4,
   wh: 3,
-  cp: 3,
+  cp: 3.6,
 };
 
 /** 止まっているときの図柄（ビルド時に HTML へ出す） */
