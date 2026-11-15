@@ -8,7 +8,7 @@ import { lookahead } from '../../lib/pause';
 import { Reverb, reverbSpec, roomOf } from '../../lib/reverb';
 import { type GtKind, GtrVoices } from './gtr';
 import { type ChordEntry, type Item, playOrder, type Step, type Timeline } from './song';
-import { PATS, type VoiceId, voicing } from './theory';
+import { patOf, type VoiceId, voicing } from './theory';
 
 type Ctor = typeof AudioContext;
 const AC: Ctor | undefined =
@@ -37,7 +37,7 @@ export function notesOf(e: ChordEntry, acc: Accomp): NoteEv[] {
     stepT = e.dur / S,
     out: NoteEv[] = [];
   const bs = 8 / e.dn;
-  for (const x of PATS[e.pat].g(n, S, bs, e.n * bs)) {
+  for (const x of patOf(e.pat).g(n, S, bs, e.n * bs)) {
     const ms = x.i === 'all' ? tones : x.i === 'up' ? tones.slice(1) : [tones[x.i]];
     ms.forEach((m, k) => {
       out.push({

@@ -11,7 +11,7 @@ export const SAMPLES: readonly Sample[] = [
   {
     id: 'mix',
     name: '転調と拍子の変化',
-    src: '[key C maj] [met 4/4] [tmp 96] [pat updown] [vce gtr] I V vi iii IV I IV V IV V iii vi ii7:2 V7:2@strum [key D maj] vi IV V I [met 3/4] [pat alberti] [vce ep] ii7 V7 IM7:6@whole',
+    src: '[key C maj] [met 4/4] [tmp 96] [pat updown] [vce gtr] [lbl Aメロ] I V vi iii IV I IV V [lbl Bメロ br] IV V iii vi ii7:2 V7:2@strum [lbl サビ br] [key D maj] vi IV V I [lbl 終わり br] [met 3/4] [pat alberti] [vce ep] ii7 V7 IM7:6@whole',
   },
   {
     id: 'canon',

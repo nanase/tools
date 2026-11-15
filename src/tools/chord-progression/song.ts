@@ -4,12 +4,14 @@
  */
 import {
   type Chord,
+  type CustomPat,
   findNamed,
   type Group,
   type Key,
   type Lv,
   md,
   PAT_ORDER,
+  PAT_ROWS,
   type PatId,
   QUAL_ORDER,
   type Qual,
@@ -29,7 +31,9 @@ export type Item =
   /** くり返しの始め */
   | { k: 'rs'; id: number }
   /** くり返しの終わり。n は演奏する回数（0 は無制限） */
-  | { k: 're'; id: number; n: number };
+  | { k: 're'; id: number; n: number }
+  /** 小節の間のラベル（A メロ・サビなど）。br なら譜面でここから次の行にする */
+  | { k: 'lbl'; id: number; t: string; br: boolean };
 export type Kind = Item['k'];
 export type ChordItem = Extract<Item, { k: 'ch' }>;
 type NoId<T> = T extends unknown ? Omit<T, 'id'> : never;
@@ -231,12 +235,41 @@ export interface SongFile {
   v: 1;
   name: string;
   items: ItemSpec[];
+  /** 自分で作った奏法 */
+  pats?: CustomPat[];
 }
-export const toFile = (name: string, items: readonly Item[]): SongFile => ({
+export const toFile = (name: string, items: readonly Item[], pats: readonly CustomPat[] = []): SongFile => ({
   v: 1,
   name,
   items: items.map(({ id: _id, ...rest }) => rest as ItemSpec),
+  ...(pats.length
+    ? { pats: pats.map((x) => ({ ...x, cells: x.cells.map((c) => [c[0], c[1]] as [number, number]) })) }
+    : {}),
 });
+/** 作った奏法の id */
+export const CUSTOM_ID = /^u\d{1,4}$/;
+/** ラベルの文字数の上限 */
+export const LABEL_MAX = 24;
+/** 作った奏法を読む。形が違えば null */
+function readPat(o: unknown): CustomPat | null {
+  if (!o || typeof o !== 'object') return null;
+  const x = o as Record<string, unknown>,
+    len = int(x.len, 1, 64);
+  if (typeof x.id !== 'string' || !CUSTOM_ID.test(x.id) || (x.res !== 1 && x.res !== 0.5) || len === null) return null;
+  if (!Array.isArray(x.cells) || x.cells.length > 64 * PAT_ROWS) return null;
+  const cells: [number, number][] = [];
+  for (const c of x.cells) {
+    if (!Array.isArray(c)) return null;
+    const k = int(c[0], 0, len - 1),
+      r = int(c[1], 0, PAT_ROWS - 1);
+    if (k === null || r === null) return null;
+    cells.push([k, r]);
+  }
+  return { id: x.id, name: typeof x.name === 'string' ? x.name.slice(0, 20) : x.id, res: x.res, len, cells };
+}
+/** 組み込みか作った奏法の id。違えば null */
+const patId = (v: unknown): PatId | null =>
+  typeof v === 'string' && ((PAT_ORDER as readonly string[]).includes(v) || CUSTOM_ID.test(v)) ? v : null;
 const int = (v: unknown, lo: number, hi: number): number | null =>
   typeof v === 'number' && Number.isInteger(v) && v >= lo && v <= hi ? v : null;
 const oneOf = <T extends string>(v: unknown, list: readonly T[]): T | null =>
@@ -259,9 +292,9 @@ function readItem(o: unknown): ItemSpec | null {
     case 'ch': {
       const d = int(x.d, 0, 11),
         q = oneOf<Qual>(x.q, QUAL_ORDER),
-        inv = int(x.inv ?? 0, 0, 3),
+        inv = int(x.inv ?? 0, 0, 4),
         b = int(x.b, 0, 16),
-        p = x.p === null || x.p === undefined ? null : oneOf<PatId>(x.p, PAT_ORDER);
+        p = x.p === null || x.p === undefined ? null : patId(x.p);
       if (d === null || !q || inv === null || b === null || p === undefined) return null;
       if (x.p != null && !p) return null;
       return { k: 'ch', d, q, inv, b, p };
@@ -281,13 +314,17 @@ function readItem(o: unknown): ItemSpec | null {
       return v === null ? null : { k: 'tmp', v };
     }
     case 'pat': {
-      const v = oneOf<PatId>(x.v, PAT_ORDER);
+      const v = patId(x.v);
       return v ? { k: 'pat', v } : null;
     }
     case 'vce': {
       const v = oneOf<VoiceId>(x.v, VOICE_ORDER);
       return v ? { k: 'vce', v } : null;
     }
+    case 'lbl':
+      return typeof x.t === 'string' && typeof x.br === 'boolean'
+        ? { k: 'lbl', t: x.t.slice(0, LABEL_MAX), br: x.br }
+        : null;
     case 'rs':
       return { k: 'rs' };
     case 're': {
@@ -299,18 +336,31 @@ function readItem(o: unknown): ItemSpec | null {
   }
 }
 /** 保存した曲を読む。形が違えば null */
-export function fromFile(o: unknown): { name: string; items: Item[] } | null {
+export function fromFile(o: unknown): { name: string; items: Item[]; pats: CustomPat[] } | null {
   if (!o || typeof o !== 'object') return null;
   const x = o as Record<string, unknown>;
   if (x.v !== 1 || !Array.isArray(x.items) || x.items.length > 2000) return null;
-  const items: Item[] = [];
+  const pats: CustomPat[] = [];
+  if (x.pats !== undefined) {
+    if (!Array.isArray(x.pats) || x.pats.length > 50) return null;
+    for (const r of x.pats) {
+      const pt = readPat(r);
+      if (!pt) return null;
+      pats.push(pt);
+    }
+  }
+  const known = new Set(pats.map((pt) => pt.id)),
+    items: Item[] = [];
   for (const r of x.items) {
     const s = readItem(r);
     if (!s) return null;
+    /* 曲にない作った奏法を指していれば、組み込みの奏法へ戻す */
+    if (s.k === 'ch' && s.p && CUSTOM_ID.test(s.p) && !known.has(s.p)) s.p = null;
+    if (s.k === 'pat' && CUSTOM_ID.test(s.v) && !known.has(s.v)) s.v = 'updown';
     items.push(withId(s));
   }
   const name = typeof x.name === 'string' ? x.name.slice(0, 60) : '';
-  return { name, items };
+  return { name, items, pats };
 }
 
 /* ---------- サンプルの記法 ---------- */
@@ -356,6 +406,7 @@ export function parseSong(src: string): Item[] {
       } else if (cmd === 'tmp') out.push({ k: 'tmp', v: Number(a) });
       else if (cmd === 'pat') out.push({ k: 'pat', v: a as PatId });
       else if (cmd === 'vce') out.push({ k: 'vce', v: a as VoiceId });
+      else if (cmd === 'lbl') out.push({ k: 'lbl', t: a, br: b === 'br' });
       else throw new Error(`unknown block: ${tk}`);
       continue;
     }

@@ -19,8 +19,8 @@ import {
   modeName,
   namedNext,
   OTHER,
-  PATS,
   patGlyph,
+  patOf,
   QUALS,
   roman,
   sigOf,
@@ -84,6 +84,8 @@ function markInner(e: MarkEntry): string {
       return '<b class="cp-rp">𝄆</b>';
     case 're':
       return `<b class="cp-rp">𝄇</b><span class="cp-ms cp-pass" data-l="${repLabel(it.n)}">${repLabel(it.n)}</span>`;
+    case 'lbl':
+      return `<b class="cp-lt">${esc(it.t) || '&nbsp;'}</b>`;
   }
 }
 /** 目印のブロックの名前（指したときの吹き出しと読み上げ） */
@@ -97,13 +99,15 @@ export function markTitle(e: MarkEntry): string {
     case 'tmp':
       return `テンポ ♩=${it.v}`;
     case 'pat':
-      return `奏法 ${PATS[it.v].name}`;
+      return `奏法 ${patOf(it.v).name}`;
     case 'vce':
       return `音色 ${VOICES[it.v]}`;
     case 'rs':
       return 'くり返しの始め';
     case 're':
       return `くり返しの終わり ${it.n === 0 ? '無制限' : `${it.n} 回`}`;
+    case 'lbl':
+      return `ラベル ${it.t}${it.br ? '（ここから次の行）' : ''}`;
   }
 }
 function markHTML(e: MarkEntry, c: Ctx, extra = ''): string {
@@ -125,19 +129,51 @@ function chordHTML(e: ChordEntry, c: Ctx, cmp: boolean, style = '', g = -1): str
   }
   return `${h}<i class="cp-phl"></i><i class="cp-cuem" aria-hidden="true"></i></div>`;
 }
-/** ブロックを並びの順に（譜面と五度圏の下の帯） */
+/** コードが小節の頭から始まるか */
+const barStart = (e: ChordEntry): boolean => e.bars[0]?.o === 0;
+/**
+ * ブロックを並びの順に（譜面と五度圏の下の帯）。同じ小節のブロックは 1 つの枠にまとめて間を詰め、
+ * 小節の頭の前の目印（転調・拍子など）とラベルは枠の外に置く。行を改めるラベルの前で行を改める
+ */
 function seqHTML(c: Ctx, cmp: boolean): string {
+  const all = c.tl.all;
   let h = '',
-    g = -1;
-  for (const e of c.tl.all) {
+    g = -1,
+    open = false;
+  const close = () => {
+    if (open) h += '</div>';
+    open = false;
+  };
+  /** i 番目から先の目印の並びのあとのコードが小節の頭から始まるか（なければ true） */
+  const nextStarts = (i: number): boolean => {
+    for (let j = i; j < all.length; j++) {
+      const x = all[j];
+      if (isChord(x)) return barStart(x);
+    }
+    return true;
+  };
+  all.forEach((e, i) => {
     if (isChord(e)) {
       if (e.grp?.first) g++;
-      if (e.adj && e.tr) {
-        h += `<div class="cp-jn" title="${esc(trTitle(e))}">${arrow(e.tr.lv)}${e.tr.name ? `<span class="cp-cad">${e.tr.name}</span>` : ''}</div>`;
-      } else if (e.prev) h += '<div class="cp-jn"></div>';
+      const head = barStart(e) || !open;
+      if (head) close();
+      if (e.adj && e.tr)
+        h += `<div class="cp-jn${head ? '' : ' in'}" title="${esc(trTitle(e))}">${arrow(e.tr.lv)}${e.tr.name ? `<span class="cp-cad">${e.tr.name}</span>` : ''}</div>`;
+      else if (e.prev && !head) h += '<div class="cp-jn in"></div>';
+      else if (e.prev) h += '<div class="cp-jn"></div>';
+      if (head) {
+        h += '<div class="cp-barg">';
+        open = true;
+      }
       h += chordHTML(e, c, cmp, '', e.grp ? g : -1);
-    } else h += markHTML(e, c);
-  }
+      return;
+    }
+    const m = e as MarkEntry;
+    if (m.it.k === 'lbl' || nextStarts(i + 1)) close();
+    if (m.it.k === 'lbl' && m.it.br && !cmp && i > 0) h += '<div class="cp-brk" aria-hidden="true"></div>';
+    h += markHTML(m, c);
+  });
+  close();
   return h || '<p class="cp-empty">下のパレットからブロックを置いてください。</p>';
 }
 
@@ -256,6 +292,7 @@ const LANES: readonly (readonly [string, string, number])[] = [
   ['ruler', '', 16],
   ['key', '調', 26],
   ['met', '拍子・テンポ', 26],
+  ['lbl', 'ラベル', 24],
   ['rep', 'くり返し', 24],
   ['nm', '進行の名前', 18],
   ['ch', 'コード', 66],
@@ -276,7 +313,7 @@ function laneRoll(tl: Timeline, w: number): string {
       S = Math.max(1, Math.round(e.durQ * 2)),
       w1 = (e.durQ * PX) / S;
     const bs = 8 / e.dn;
-    for (const x of PATS[e.pat].g(tones.length, S, bs, e.n * bs)) {
+    for (const x of patOf(e.pat).g(tones.length, S, bs, e.n * bs)) {
       const ms = x.i === 'all' ? tones : x.i === 'up' ? tones.slice(1) : [tones[x.i]],
         x0 = xq(e.q) + x.s * w1,
         len = Math.max(3, (S - x.s) * w1 - 1);
@@ -315,7 +352,10 @@ const lanes: View = {
         .join('');
     };
     body.key = spans('key', (e) => `<b>${keyShort(e.key)}</b> ${keySig(e.key.t, e.key.m)}`);
-    body.pat = spans('pat', (e) => (e.it.k === 'pat' ? `${patGlyph(e.it.v)}${PATS[e.it.v].name}` : ''));
+    for (const e of tl.all)
+      if (e.it.k === 'lbl')
+        body.lbl += `<div class="cp-bx cp-flag cp-lbf${c.sel === e.it.id ? ' sel' : ''}" data-id="${e.it.id}" style="left:${xq((e as MarkEntry).q)}px" role="button" tabindex="0" title="${esc(markTitle(e as MarkEntry))}">${esc(e.it.t) || '&nbsp;'}</div>`;
+    body.pat = spans('pat', (e) => (e.it.k === 'pat' ? `${patGlyph(e.it.v)}${patOf(e.it.v).name}` : ''));
     body.vce = spans('vce', (e) => (e.it.k === 'vce' ? `${ICON[e.it.v]}${VOICES[e.it.v]}` : ''));
     const at: Record<number, number> = {};
     for (const e of tl.all) {
@@ -341,7 +381,7 @@ const lanes: View = {
         w = e.durQ * PX - 3;
       body.ch += chordHTML(e, c, false, `left:${x + 1}px;width:${w}px`);
       if (e.patOwn)
-        body.pat += `<div class="cp-bx cp-own" data-sel="${e.it.id}" style="left:${x + 1}px;width:${w}px">${patGlyph(e.pat)}${w > 110 ? PATS[e.pat].name : ''}</div>`;
+        body.pat += `<div class="cp-bx cp-own" data-sel="${e.it.id}" style="left:${x + 1}px;width:${w}px">${patGlyph(e.pat)}${w > 110 ? patOf(e.pat).name : ''}</div>`;
       if (e.adj && e.tr) {
         body.jn += `<span class="cp-bj" style="left:${x}px" title="${esc(trTitle(e))}">${arrow(e.tr.lv)}</span>`;
         if (e.tr.name) body.jn += `<span class="cp-cad cp-cadb" style="left:${x + 11}px">${e.tr.name}</span>`;

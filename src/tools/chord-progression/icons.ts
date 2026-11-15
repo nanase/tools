@@ -74,12 +74,12 @@ export const ICON = {
   ),
   /* ビブラフォン: 穴のある金属の板・共鳴管の上の羽・ペダル */
   vib: svg24(
-    [2.5, 6.4, 10.3, 14.2, 18.1]
+    `${[2.5, 6.4, 10.3, 14.2, 18.1]
       .map(
         (x, k) =>
           `<path d="M${x} ${6 + k * 0.5}h3.2v${5 - k * 0.5}H${x}z"/><circle class="f" cx="${x + 1.6}" cy="${7.2 + k * 0.5}" r=".5"/><path class="t" d="M${x + 1.6} 13v${7 - k}"/><circle cx="${x + 1.6}" cy="13.4" r=".9"/>`,
       )
-      .join('') + '<path d="M2 21.5h20M9 21.5l-2.5-1.6"/>',
+      .join('')}<path d="M2 21.5h20M9 21.5l-2.5-1.6"/>`,
   ),
   /* ベル: 取っ手の付いたハンドベルと舌 */
   bell: svg24(
@@ -104,6 +104,7 @@ export const ICON = {
     '<rect x="5" y="5" width="9" height="9" rx="1"/><path d="M11 5V3a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h2"/>',
   ),
   del: svg('<path d="M2.5 4h11M6 4V2.5h4V4M4 4l.8 9.5h6.4L12 4"/><path d="M6.8 6.5v5M9.2 6.5v5"/>'),
+  edit: svg('<path d="M10.8 2.6l2.6 2.6L5.6 13H3v-2.6z"/><path d="M9.4 4l2.6 2.6"/>'),
   /* 曲 */
   save: svg('<path d="M2.5 2.5h9l2 2v9h-11z"/><path d="M5 2.5v3.5h5.5V2.5M5 13.5V9.5h6v4"/>'),
   new: svg('<path d="M3.5 1.5h6l3 3v10h-9z"/><path d="M9.5 1.5v3h3M8 7.5v5M5.5 10h5"/>'),

@@ -24,6 +24,7 @@ import {
   type ItemSpec,
   isChord,
   type Kind,
+  LABEL_MAX,
   LENGTHS,
   type MarkEntry,
   METERS,
@@ -35,10 +36,12 @@ import {
 } from './song';
 import {
   type Chord,
+  type CustomPat,
   chordName,
   DIATONIC,
   diatonicQ,
   func,
+  isBuiltin,
   KEY_NAMES,
   type Key,
   keyName,
@@ -47,9 +50,10 @@ import {
   namedNext,
   OTHER,
   PAT_ORDER,
-  PATS,
+  PAT_ROWS,
   type PatId,
   patGlyph,
+  patOf,
   QUAL_ORDER,
   QUALS,
   type Qual,
@@ -57,7 +61,9 @@ import {
   romanBase,
   rootName,
   sameKey,
+  setCustomPats,
   sigOf,
+  toGrid,
   trans,
   VOICE_ORDER,
   VOICES,
@@ -82,12 +88,15 @@ const S = {
   acc: { bass: true, click: false } as Accomp,
   /** 開くか保存してから変えたか */
   dirty: false,
+  /** 自分で作った奏法（曲と一緒に保存する） */
+  pats: [] as CustomPat[],
 };
 {
   const f = fromFile(stored('song'));
   if (f?.items.length) {
     S.items = f.items;
     S.name = f.name;
+    S.pats = f.pats;
     S.dirty = stored('dirty') === true;
   } else {
     S.items = sampleItems(SAMPLE0);
@@ -99,6 +108,7 @@ const S = {
   const a = stored('acc') as Partial<Accomp> | undefined;
   if (a && typeof a === 'object') S.acc = { bass: a.bass !== false, click: a.click === true };
 }
+setCustomPats(S.pats);
 S.tl = compute(S.items);
 
 const ctx = (): Ctx => ({ tl: S.tl, items: S.items, sel: S.sel, cue: S.cue, nOf: S.nOf });
@@ -281,7 +291,7 @@ function changed(): void {
   render();
 }
 function saveCurrent(): void {
-  store('song', toFile(S.name, S.items));
+  store('song', toFile(S.name, S.items, S.pats));
   store('dirty', S.dirty);
 }
 $('#cp-vw').addEventListener('click', (ev) => {
@@ -303,6 +313,20 @@ const chipRow = (lb: string, a: string, opts: readonly (readonly [string | numbe
     .join('')}</div></div>`;
 const iconBtn = (a: string, icon: string, name: string) =>
   `<button type="button" class="cp-pi" data-a="${a}" title="${name}" aria-label="${name}">${icon}</button>`;
+/** 奏法の選択肢: 組み込みの奏法（図だけ）・作った奏法（図と名前）・新しい奏法・作った奏法の編集 */
+function patChips(a: string, cur: PatId | null, block?: PatId): string {
+  const chip = (id: PatId, inner: string, name: string) =>
+    `<button type="button" class="chip cp-gc" data-a="${a}" data-v="${id}" aria-pressed="${cur === id}" title="${esc(name)}" aria-label="${esc(name)}">${inner}</button>`;
+  let h = '';
+  if (block !== undefined)
+    h += `<button type="button" class="chip" data-a="${a}" data-v="" aria-pressed="${!cur}" title="${esc(`奏法ブロックどおり（${patOf(block).name}）`)}">ブロックどおり</button>`;
+  h += PAT_ORDER.map((id) => chip(id, patGlyph(id), patOf(id).name)).join('');
+  h += S.pats.map((x) => chip(x.id, `${patGlyph(x.id)}<span class="cp-cpn">${esc(x.name)}</span>`, x.name)).join('');
+  h += `<button type="button" class="chip cp-pnew" data-a="pnew" title="今の奏法を下書きに、新しい奏法を作る" aria-label="新しい奏法を作る">${ICON.new}作る</button>`;
+  if (cur && !isBuiltin(cur))
+    h += `<button type="button" class="chip" data-a="pedit" data-v="${cur}" title="この奏法を編集" aria-label="この奏法を編集">${ICON.edit}編集</button>`;
+  return `<div class="chips">${h}</div>`;
+}
 const lenLabel = (b: number) => (b === 0 ? '拍子どおり' : `${b} 拍`);
 function edHTML(e: (typeof S.tl.all)[number]): string {
   const it = e.it;
@@ -337,7 +361,7 @@ function edHTML(e: (typeof S.tl.all)[number]): string {
         LENGTHS.map((b) => [b, b === 0 ? `拍子どおり（${e.n} 拍）` : lenLabel(b)]),
         c.b,
       ) +
-      `<div class="cp-er"><span class="cp-el">奏法</span><div class="chips"><button type="button" class="chip" data-a="p" data-v="" aria-pressed="${!c.p}" title="奏法ブロックどおり（${PATS[e.defPat].name}）">ブロックどおり</button>${PAT_ORDER.map((p) => `<button type="button" class="chip cp-gc" data-a="p" data-v="${p}" aria-pressed="${c.p === p}" title="${PATS[p].name}" aria-label="${PATS[p].name}">${patGlyph(p)}</button>`).join('')}</div></div>`
+      `<div class="cp-er"><span class="cp-el">奏法</span>${patChips('p', c.p, e.defPat)}</div>`
     );
   }
   const m = e as MarkEntry;
@@ -391,12 +415,7 @@ function edHTML(e: (typeof S.tl.all)[number]): string {
         it.v,
       )}`;
     case 'pat':
-      return `${head('奏法')}${chipRow(
-        '奏法',
-        'pv',
-        PAT_ORDER.map((p) => [p, patGlyph(p), PATS[p].name]),
-        it.v,
-      )}<p class="cp-en">次の奏法ブロックまでのコードに効く · 押すと次のコードで試聴</p>`;
+      return `${head('奏法')}<div class="cp-er"><span class="cp-el">奏法</span>${patChips('pv', it.v)}</div><p class="cp-en">次の奏法ブロックまでのコードに効く · 押すと次のコードで試聴</p>`;
     case 'vce':
       return (
         head('音色') +
@@ -407,6 +426,16 @@ function edHTML(e: (typeof S.tl.all)[number]): string {
           it.v,
         )
       );
+    case 'lbl':
+      return `${head('ラベル')}<div class="cp-er"><span class="cp-el">名前</span><input type="text" class="cp-lin" maxlength="${LABEL_MAX}" value="${esc(it.t)}" data-a="lblT" aria-label="ラベルの名前" placeholder="例 サビ"></div>${chipRow(
+        '行',
+        'lbr',
+        [
+          ['0', '続ける'],
+          ['1', 'ここから次の行'],
+        ],
+        it.br ? '1' : '0',
+      )}`;
     case 'rs':
       return `${head('くり返しの始め')}<p class="cp-en">ここから後ろのくり返しの終わりまでをくり返す</p>`;
     case 're':
@@ -529,6 +558,14 @@ stage.addEventListener('click', (ev) => {
     const it = S.items.find((x) => x.id === S.sel);
     if (it) audition(nextChord(indexOf(it.id)));
   } else if (a === 'rn') edit((it) => it.k === 're' && Object.assign(it, { n: Number(v) }));
+  else if (a === 'lbr') edit((it) => it.k === 'lbl' && Object.assign(it, { br: v === '1' }));
+  else if (a === 'pnew') newPat();
+  else if (a === 'pedit') openPd(v);
+});
+stage.addEventListener('change', (ev) => {
+  const t = ev.target as HTMLInputElement;
+  if (t.dataset.a !== 'lblT') return;
+  edit((it) => it.k === 'lbl' && Object.assign(it, { t: t.value.trim().slice(0, LABEL_MAX) }));
 });
 stage.addEventListener('input', (ev) => {
   const t = ev.target as HTMLInputElement;
@@ -554,6 +591,120 @@ function del(id: number | null): void {
   if (S.sel === id) S.sel = null;
   changed();
 }
+
+/* ---------- 奏法を作る窓 ---------- */
+const pd = $<HTMLDialogElement>('#cp-pd');
+let pdId = '';
+const patById = (id: string) => S.pats.find((x) => x.id === id);
+/** 作った奏法を変えた: 登録し直して描き直す（元に戻すの対象にはしない） */
+function patChanged(): void {
+  setCustomPats(S.pats);
+  changed();
+  renderPd();
+}
+/** 選んだブロックの、今の奏法と 1 小節の歩数 */
+function patCtx(): { cur: PatId; bar: number; bs: number; e: ChordEntry | undefined } {
+  const e = entryOf(S.sel),
+    ch = e && isChord(e) ? e : e ? nextChord(e.i) : S.tl.chords[0],
+    st = e ?? ch,
+    bs = st ? 8 / st.dn : 2,
+    cur = e?.it.k === 'pat' ? e.it.v : ch ? ch.pat : 'updown';
+  return { cur, bar: (st?.n ?? 4) * bs, bs, e: ch };
+}
+/** 今の奏法を下書きにして新しい奏法を作り、選んだブロックに使う */
+function newPat(): void {
+  const { cur, bar, bs } = patCtx(),
+    n = S.pats.reduce((m, x) => Math.max(m, Number(x.id.slice(1))), 0) + 1,
+    id = `u${n}`;
+  S.pats.push({ id, name: `作った奏法 ${n}`, res: 0.5, len: bar / 0.5, cells: toGrid(cur, 0.5, bar, bs) });
+  setCustomPats(S.pats);
+  edit((it) => {
+    if (it.k === 'ch') it.p = id;
+    if (it.k === 'pat') it.v = id;
+  });
+  openPd(id);
+}
+function openPd(id: string): void {
+  if (!patById(id)) return;
+  pdId = id;
+  renderPd();
+  if (!pd.open) pd.showModal();
+}
+function renderPd(): void {
+  const x = patById(pdId);
+  if (!x) {
+    if (pd.open) pd.close();
+    return;
+  }
+  const per = 2 / x.res,
+    beats = (x.len * x.res) / 2;
+  let grid = '';
+  for (let r = PAT_ROWS - 1; r >= 0; r--) {
+    grid += `<span class="cp-gr">${r === 0 ? 'ベース' : r}</span>`;
+    for (let k = 0; k < x.len; k++) {
+      const on = x.cells.some((c) => c[0] === k && c[1] === r);
+      grid += `<button type="button" class="cp-gcell${k % per === 0 ? ' bt' : ''}" data-pd="cell" data-k="${k}" data-r="${r}" aria-pressed="${on}" aria-label="${r === 0 ? 'ベース' : `${r} 段目`}・${k + 1} 歩目"></button>`;
+    }
+  }
+  pd.innerHTML = `<div class="cp-eh"><input type="text" class="cp-pdn" id="cp-pdn" maxlength="20" value="${esc(x.name)}" aria-label="奏法の名前"><button type="button" class="cp-pi" data-pd="aud" title="試聴" aria-label="試聴">${ICON.aud}</button><button type="button" class="cp-pi" data-pd="del" title="この奏法を削除" aria-label="この奏法を削除">${ICON.del}</button><button type="button" class="cp-ex" data-pd="close" title="閉じる" aria-label="閉じる">×</button></div>
+  <div class="cp-er"><span class="cp-el">刻み</span><div class="seg"><button type="button" data-pd="res" data-v="1" aria-pressed="${x.res === 1}">8 分</button><button type="button" data-pd="res" data-v="0.5" aria-pressed="${x.res === 0.5}">16 分</button></div>
+  <span class="cp-el">長さ</span><div class="seg"><button type="button" data-pd="len" data-v="-1" aria-label="1 拍短く" ${beats <= 1 ? 'disabled' : ''}>−</button><button type="button" disabled class="cp-pdl">${beats} 拍</button><button type="button" data-pd="len" data-v="1" aria-label="1 拍長く" ${beats >= 8 ? 'disabled' : ''}>＋</button></div></div>
+  <div class="cp-gw"><div class="cp-gg" style="grid-template-columns:44px repeat(${x.len},minmax(18px,1fr))">${grid}</div></div>
+  <p class="cp-en">押して音を置く · 段は下からベース・和音の低い音の順 · コードの長さまでくり返す</p>`;
+}
+pd.addEventListener('click', (ev) => {
+  const b = (ev.target as Element).closest<HTMLElement>('[data-pd]'),
+    x = patById(pdId);
+  if (!b || !x) {
+    if (ev.target === pd) pd.close();
+    return;
+  }
+  const a = b.dataset.pd;
+  if (a === 'close') pd.close();
+  else if (a === 'aud') {
+    const { e } = patCtx();
+    audition(e, x.id);
+  } else if (a === 'del') {
+    if (!confirm(`「${x.name}」を削除しますか？使っているブロックは元の奏法に戻ります。`)) return;
+    S.pats = S.pats.filter((y) => y !== x);
+    for (const it of S.items) {
+      if (it.k === 'ch' && it.p === x.id) it.p = null;
+      if (it.k === 'pat' && it.v === x.id) it.v = 'updown';
+    }
+    pd.close();
+    patChanged();
+  } else if (a === 'cell') {
+    const k = Number(b.dataset.k),
+      r = Number(b.dataset.r),
+      j = x.cells.findIndex((c) => c[0] === k && c[1] === r);
+    if (j >= 0) x.cells.splice(j, 1);
+    else x.cells.push([k, r]);
+    patChanged();
+  } else if (a === 'res') {
+    const res = Number(b.dataset.v) as 1 | 0.5;
+    if (res === x.res) return;
+    const f = x.res / res;
+    x.cells = x.cells.flatMap(([k, r]) => (Number.isInteger(k * f) ? [[k * f, r] as [number, number]] : []));
+    x.len = Math.max(1, Math.round(x.len * f));
+    x.res = res;
+    patChanged();
+  } else if (a === 'len') {
+    const step = 2 / x.res;
+    x.len = Math.max(step, Math.min(16 / x.res, x.len + Number(b.dataset.v) * step));
+    x.cells = x.cells.filter((c) => c[0] < x.len);
+    patChanged();
+  }
+});
+pd.addEventListener('input', (ev) => {
+  const t = ev.target as HTMLInputElement,
+    x = patById(pdId);
+  if (t.id !== 'cp-pdn' || !x) return;
+  x.name = t.value.slice(0, 20) || x.id;
+  setCustomPats(S.pats);
+  S.dirty = true;
+  saveCurrent();
+});
+pd.addEventListener('close', () => render());
 
 /* ---------- パレット ---------- */
 const pal = $('#cp-pal'),
@@ -592,8 +743,14 @@ const MARKS: { k: Kind; name: (k: Key) => string; face: (k: Key) => string; spec
     face: () => `${ICON.click}<span>120</span>`,
     spec: () => ({ k: 'tmp', v: 120 }),
   },
-  { k: 'pat', name: () => `奏法 ${PATS.up.name}`, face: () => patGlyph('up'), spec: () => ({ k: 'pat', v: 'up' }) },
+  { k: 'pat', name: () => `奏法 ${patOf('up').name}`, face: () => patGlyph('up'), spec: () => ({ k: 'pat', v: 'up' }) },
   { k: 'vce', name: () => `音色 ${VOICES.org}`, face: () => ICON.org, spec: () => ({ k: 'vce', v: 'org' }) },
+  {
+    k: 'lbl',
+    name: () => 'ラベル',
+    face: () => '<b class="cp-lt">Aメロ</b>',
+    spec: () => ({ k: 'lbl', t: 'Aメロ', br: false }),
+  },
   { k: 'rs', name: () => 'くり返しの始め', face: () => '<b class="cp-rp">𝄆</b>', spec: () => ({ k: 'rs' }) },
   {
     k: 're',
@@ -885,13 +1042,16 @@ function renderSaved(): void {
     : '<li class="cp-none">まだ保存した進行はありません。</li>';
 }
 /** 曲を入れ替える。変更が残っていれば確かめる */
-function load(items: Item[], name: string, dirty = false): boolean {
+function load(items: Item[], name: string, dirty = false, pats: CustomPat[] = []): boolean {
   if (S.dirty && !confirm(`保存していない変更は失われます。「${name || '新しい進行'}」を開きますか？`)) return false;
   player.halt(true);
   undo.length = 0;
   redo.length = 0;
   S.items = items;
   S.name = name;
+  S.pats = pats;
+  setCustomPats(pats);
+  if (pd.open) pd.close();
   S.sel = null;
   S.cue = null;
   S.tl = compute(S.items);
@@ -920,7 +1080,7 @@ $('#cp-new').addEventListener('click', () => {
 $('#cp-save').addEventListener('click', () => {
   const name = nameIn.value.trim() || '無題の進行',
     list = readSaved().filter((x) => x.name !== name);
-  list.unshift({ name, at: Date.now(), file: toFile(name, S.items) });
+  list.unshift({ name, at: Date.now(), file: toFile(name, S.items, S.pats) });
   if (!writeSaved(list.slice(0, 50))) return say('このブラウザでは保存できません。');
   S.name = name;
   nameIn.value = name;
@@ -938,7 +1098,7 @@ $('#cp-saved').addEventListener('click', (ev) => {
     const x = list[Number(o.dataset.open)],
       f = x && fromFile(x.file);
     if (!f) return say('この保存は読み込めません。');
-    if (load(f.items, x.name)) say('');
+    if (load(f.items, x.name, false, f.pats)) say('');
   } else if (r) {
     const j = Number(r.dataset.rm),
       x = list[j];
@@ -950,7 +1110,7 @@ $('#cp-saved').addEventListener('click', (ev) => {
 });
 $('#cp-export').addEventListener('click', () => {
   const name = nameIn.value.trim() || 'コード進行',
-    blob = new Blob([JSON.stringify(toFile(name, S.items), null, 1)], { type: 'application/json' }),
+    blob = new Blob([JSON.stringify(toFile(name, S.items, S.pats), null, 1)], { type: 'application/json' }),
     a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = `${name.replace(/[\\/:*?"<>|]/g, '_')}.json`;
@@ -966,7 +1126,7 @@ fileIn.addEventListener('change', async () => {
   try {
     const r = fromFile(JSON.parse(await f.text()));
     if (!r) return say('このファイルは読み込めません。');
-    if (load(r.items, r.name || f.name.replace(/\.json$/i, ''))) say('');
+    if (load(r.items, r.name || f.name.replace(/\.json$/i, ''), false, r.pats)) say('');
   } catch {
     say('このファイルは読み込めません。');
   }

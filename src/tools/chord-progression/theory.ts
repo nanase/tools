@@ -414,7 +414,7 @@ export interface PatNote {
   l: number;
   st?: boolean;
 }
-export type PatId =
+export type BuiltinPat =
   | 'whole'
   | 'strum'
   | 'beat8'
@@ -430,96 +430,98 @@ export type PatId =
   | 'three';
 const rng = (n: number): number[] => Array.from({ length: Math.max(0, n) }, (_, i) => i);
 /** 奏法。g(n, S, bs, bar) は n 音の和音を S 歩で弾く音の並び。bs は 1 拍の歩数（4 分の拍子で 2、8 分の拍子で 1）、bar は 1 小節の歩数 */
-export const PATS: Record<PatId, { name: string; g: (n: number, S: number, bs?: number, bar?: number) => PatNote[] }> =
-  {
-    whole: { name: '全音符', g: (_n, S) => [{ s: 0, i: 'all', l: S }] },
-    strum: {
-      name: '4 分のストローク',
-      g: (_n, S) => rng(Math.ceil(S / 2)).map((k) => ({ s: k * 2, i: 'all', l: 2, st: true })),
+export const PATS: Record<
+  BuiltinPat,
+  { name: string; g: (n: number, S: number, bs?: number, bar?: number) => PatNote[] }
+> = {
+  whole: { name: '全音符', g: (_n, S) => [{ s: 0, i: 'all', l: S }] },
+  strum: {
+    name: '4 分のストローク',
+    g: (_n, S) => rng(Math.ceil(S / 2)).map((k) => ({ s: k * 2, i: 'all', l: 2, st: true })),
+  },
+  beat8: {
+    name: '8 ビート',
+    g: (_n, S) =>
+      rng(S)
+        .filter((s) => [0, 2, 3, 5, 6, 7].includes(s % 8))
+        .map((s) => ({ s, i: 'all', l: 1, st: true })),
+  },
+  eighth: {
+    name: '8 分の刻み',
+    g: (_n, S, _bs = 2, bar = 8) => [
+      ...rng(Math.ceil(S / bar)).map((k) => ({ s: k * bar, i: 0, l: Math.min(bar, S - k * bar) })),
+      ...rng(S).map((s) => ({ s, i: 'up' as const, l: 1 })),
+    ],
+  },
+  oom: {
+    name: 'ベースと和音',
+    g: (n, S, bs = 2, bar = 8) => {
+      /* 3 拍子と 8 分の拍子は小節の頭（6/8 は 1・4 拍目）にベース、2 拍子系は 1・3 拍目にベース（2 回目は 5 度） */
+      const nb = bar / bs,
+        out: PatNote[] = [];
+      for (let s = 0; s < S; s += bs) {
+        const b = Math.round((s % bar) / bs),
+          bass = bs === 1 ? b % 3 === 0 : nb % 2 === 1 ? b === 0 : b % 2 === 0;
+        out.push(bass ? { s, i: b === 0 ? 0 : Math.min(3, n - 1), l: bs } : { s, i: 'up', l: bs });
+      }
+      return out;
     },
-    beat8: {
-      name: '8 ビート',
-      g: (_n, S) =>
-        rng(S)
-          .filter((s) => [0, 2, 3, 5, 6, 7].includes(s % 8))
-          .map((s) => ({ s, i: 'all', l: 1, st: true })),
-    },
-    eighth: {
-      name: '8 分の刻み',
-      g: (_n, S, _bs = 2, bar = 8) => [
-        ...rng(Math.ceil(S / bar)).map((k) => ({ s: k * bar, i: 0, l: Math.min(bar, S - k * bar) })),
-        ...rng(S).map((s) => ({ s, i: 'up' as const, l: 1 })),
-      ],
-    },
-    oom: {
-      name: 'ベースと和音',
-      g: (n, S, bs = 2, bar = 8) => {
-        /* 3 拍子と 8 分の拍子は小節の頭（6/8 は 1・4 拍目）にベース、2 拍子系は 1・3 拍目にベース（2 回目は 5 度） */
-        const nb = bar / bs,
+  },
+  offbeat: {
+    name: '裏拍',
+    g: (_n, S, _bs = 2, bar = 8) => [
+      ...rng(Math.ceil(S / bar)).map((k) => ({ s: k * bar, i: 0, l: Math.min(bar, S - k * bar) })),
+      ...rng(S)
+        .filter((s) => s % 2 === 1)
+        .map((s) => ({ s, i: 'up' as const, l: 1 })),
+    ],
+  },
+  bossa: {
+    name: 'ボサノバ',
+    g: (n, S) =>
+      rng(S).flatMap((s): PatNote[] => {
+        const k = s % 8,
           out: PatNote[] = [];
-        for (let s = 0; s < S; s += bs) {
-          const b = Math.round((s % bar) / bs),
-            bass = bs === 1 ? b % 3 === 0 : nb % 2 === 1 ? b === 0 : b % 2 === 0;
-          out.push(bass ? { s, i: b === 0 ? 0 : Math.min(3, n - 1), l: bs } : { s, i: 'up', l: bs });
-        }
+        if (k === 0) out.push({ s, i: 0, l: 3 });
+        if (k === 3 || k === 4) out.push({ s, i: Math.min(3, n - 1), l: k === 3 ? 1 : 4 });
+        if (k === 0 || k === 3 || k === 6) out.push({ s, i: 'up', l: 1 });
         return out;
-      },
+      }),
+  },
+  up: { name: '上行', g: (n, S) => rng(S).map((s) => ({ s, i: s % n, l: 1 })) },
+  down: { name: '下行', g: (n, S) => rng(S).map((s) => ({ s, i: s % n === 0 ? 0 : n - (s % n), l: 1 })) },
+  updown: {
+    name: '上下',
+    g: (n, S) => {
+      const c = [...rng(n), ...rng(n - 2).map((k) => n - 2 - k)];
+      return rng(S).map((s) => ({ s, i: c[s % c.length], l: 1 }));
     },
-    offbeat: {
-      name: '裏拍',
-      g: (_n, S, _bs = 2, bar = 8) => [
-        ...rng(Math.ceil(S / bar)).map((k) => ({ s: k * bar, i: 0, l: Math.min(bar, S - k * bar) })),
-        ...rng(S)
-          .filter((s) => s % 2 === 1)
-          .map((s) => ({ s, i: 'up' as const, l: 1 })),
-      ],
+  },
+  updown16: {
+    name: '16 分の上下',
+    g: (n, S) => {
+      const c = [...rng(n), ...rng(n - 2).map((k) => n - 2 - k)];
+      return rng(S * 2).map((h) => ({ s: h / 2, i: c[h % c.length], l: 0.5 }));
     },
-    bossa: {
-      name: 'ボサノバ',
-      g: (n, S) =>
-        rng(S).flatMap((s): PatNote[] => {
-          const k = s % 8,
-            out: PatNote[] = [];
-          if (k === 0) out.push({ s, i: 0, l: 3 });
-          if (k === 3 || k === 4) out.push({ s, i: Math.min(3, n - 1), l: k === 3 ? 1 : 4 });
-          if (k === 0 || k === 3 || k === 6) out.push({ s, i: 'up', l: 1 });
-          return out;
-        }),
+  },
+  alberti: {
+    name: 'アルベルティ・バス',
+    g: (n, S) => {
+      const a = [1, n - 1, Math.min(2, n - 1), n - 1];
+      return [{ s: 0, i: 0, l: S }, ...rng(S).map((s) => ({ s, i: a[s % 4], l: 1 }))];
     },
-    up: { name: '上行', g: (n, S) => rng(S).map((s) => ({ s, i: s % n, l: 1 })) },
-    down: { name: '下行', g: (n, S) => rng(S).map((s) => ({ s, i: s % n === 0 ? 0 : n - (s % n), l: 1 })) },
-    updown: {
-      name: '上下',
-      g: (n, S) => {
-        const c = [...rng(n), ...rng(n - 2).map((k) => n - 2 - k)];
-        return rng(S).map((s) => ({ s, i: c[s % c.length], l: 1 }));
-      },
-    },
-    updown16: {
-      name: '16 分の上下',
-      g: (n, S) => {
-        const c = [...rng(n), ...rng(n - 2).map((k) => n - 2 - k)];
-        return rng(S * 2).map((h) => ({ s: h / 2, i: c[h % c.length], l: 0.5 }));
-      },
-    },
-    alberti: {
-      name: 'アルベルティ・バス',
-      g: (n, S) => {
-        const a = [1, n - 1, Math.min(2, n - 1), n - 1];
-        return [{ s: 0, i: 0, l: S }, ...rng(S).map((s) => ({ s, i: a[s % 4], l: 1 }))];
-      },
-    },
-    three: {
-      name: 'スリーフィンガー',
-      g: (n, S) =>
-        rng(S).map((s) =>
-          s % 2 === 0
-            ? { s, i: (s >> 1) % 2 ? Math.min(3, n - 1) : 0, l: 2 }
-            : { s, i: (s >> 1) % 2 ? n - 2 : n - 1, l: 1 },
-        ),
-    },
-  };
-export const PAT_ORDER: readonly PatId[] = [
+  },
+  three: {
+    name: 'スリーフィンガー',
+    g: (n, S) =>
+      rng(S).map((s) =>
+        s % 2 === 0
+          ? { s, i: (s >> 1) % 2 ? Math.min(3, n - 1) : 0, l: 2 }
+          : { s, i: (s >> 1) % 2 ? n - 2 : n - 1, l: 1 },
+      ),
+  },
+};
+export const PAT_ORDER: readonly BuiltinPat[] = [
   'whole',
   'strum',
   'beat8',
@@ -534,6 +536,65 @@ export const PAT_ORDER: readonly PatId[] = [
   'alberti',
   'three',
 ];
+
+/** 奏法の id: 組み込み（PAT_ORDER）か、自分で作った奏法（u1・u2 …） */
+export type PatId = string;
+/**
+ * 自分で作った奏法。1 周 len 歩（res は 1 歩の長さで、1 は 8 分音符・0.5 は 16 分音符）の格子に、
+ * 弾く所 [歩, 段] を並べる。段 0 はベース、1 から上は和音の上の声部を低い順に。和音の音が足りない段は弾かない
+ */
+export interface CustomPat {
+  id: string;
+  name: string;
+  res: 1 | 0.5;
+  len: number;
+  cells: [number, number][];
+}
+/** 作った奏法の段の数（ベースと上の 5 声） */
+export const PAT_ROWS = 6;
+const CUSTOM = new Map<string, CustomPat>();
+/** 曲の作った奏法を登録する（読み込み・編集のたび） */
+export function setCustomPats(list: readonly CustomPat[]): void {
+  CUSTOM.clear();
+  for (const p of list) CUSTOM.set(p.id, p);
+}
+export const customPats = (): CustomPat[] => [...CUSTOM.values()];
+export const isBuiltin = (id: string): id is BuiltinPat => (PAT_ORDER as readonly string[]).includes(id);
+/** 作った奏法を音の並びに: 1 周を S 歩までくり返す */
+function customG(p: CustomPat): (n: number, S: number) => PatNote[] {
+  return (n, S) => {
+    const out: PatNote[] = [],
+      cyc = p.len * p.res;
+    if (cyc <= 0) return out;
+    for (let base = 0; base < S; base += cyc)
+      for (const [k, r] of p.cells) {
+        const s = base + k * p.res;
+        if (s < S && r < n) out.push({ s, i: r, l: p.res });
+      }
+    return out.sort((a, b) => a.s - b.s);
+  };
+}
+/** 奏法を id から引く。見つからなければ上下 */
+export function patOf(id: PatId): { name: string; g: (n: number, S: number, bs?: number, bar?: number) => PatNote[] } {
+  if (isBuiltin(id)) return PATS[id];
+  const c = CUSTOM.get(id);
+  return c ? { name: c.name, g: customG(c) } : PATS.updown;
+}
+/**
+ * 奏法を格子へ写す（作った奏法の下書き）。1 小節 bar 歩を res の刻みで、ベースを除く上の声部は段 1 から。
+ * 和音全部は全段、上の声部すべては段 1 から上
+ */
+export function toGrid(id: PatId, res: 1 | 0.5, bar: number, bs = 2): [number, number][] {
+  const cells = new Set<string>(),
+    S = bar;
+  for (const x of patOf(id).g(PAT_ROWS, S, bs, bar)) {
+    const k = Math.round(x.s / res);
+    if (k * res >= S) continue;
+    const rows = x.i === 'all' ? [0, 1, 2, 3, 4, 5] : x.i === 'up' ? [1, 2, 3, 4, 5] : [x.i];
+    for (const r of rows) cells.add(`${k},${r}`);
+  }
+  return [...cells].map((c) => c.split(',').map(Number) as [number, number]).sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+}
 
 export type VoiceId = 'gtr' | 'cgt' | 'harp' | 'pf' | 'ep' | 'org' | 'str' | 'pad' | 'brs' | 'mar' | 'vib' | 'bell';
 export const VOICES: Record<VoiceId, string> = {
@@ -568,7 +629,7 @@ export const VOICE_ORDER: readonly VoiceId[] = [
 /** 奏法の小さな図（1 小節 8 歩・5 音） */
 export function patGlyph(p: PatId, cls = ''): string {
   let s = `<svg class="${cls}" viewBox="0 0 42 16" aria-hidden="true">`;
-  for (const v of PATS[p].g(5, 8, 2, 8)) {
+  for (const v of patOf(p).g(5, 8, 2, 8)) {
     const x = 3 + v.s * 5.1;
     if (v.i === 'up') s += `<path class="cp-gs" d="M${x} 2V9"/>`;
     else if (v.i === 'all')

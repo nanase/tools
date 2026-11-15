@@ -11,13 +11,17 @@ import {
 } from '../src/tools/chord-progression/song';
 import {
   type Chord,
+  type CustomPat,
   chordName,
   func,
   type Key,
   namedNext,
   PAT_ORDER,
   PATS,
+  patOf,
   roman,
+  setCustomPats,
+  toGrid,
   trans,
   voicing,
 } from '../src/tools/chord-progression/theory';
@@ -205,6 +209,56 @@ describe('くり返し', () => {
   });
   it('コードのない区間はくり返さない', () => {
     expect(order('I |: [tmp 90] :|* V')).toEqual(['C', 'G']);
+  });
+});
+
+describe('ラベルと作った奏法', () => {
+  it('ラベルは小節を改め、演奏では飛ばす', () => {
+    const items = parseSong('[met 4/4] I:2 [lbl サビ br] V:2 IV'),
+      tl = compute(items);
+    expect(tl.chords.map((e) => e.bars[0]?.no)).toEqual([1, 2, 3]);
+    expect(take(playOrder(items), 10).map((x) => items[x.i].k)).toEqual(['ch', 'ch', 'ch']);
+    const lb = items.find((x) => x.k === 'lbl');
+    expect(lb).toMatchObject({ t: 'サビ', br: true });
+  });
+  it('作った奏法は格子どおりに弾き、1 周をくり返す', () => {
+    const p: CustomPat = {
+      id: 'u1',
+      name: 'テスト',
+      res: 0.5,
+      len: 4,
+      cells: [
+        [0, 0],
+        [1, 2],
+        [3, 5],
+      ],
+    };
+    setCustomPats([p]);
+    const ev = patOf('u1').g(5, 4);
+    expect(ev.map((x) => [x.s, x.i])).toEqual([
+      [0, 0],
+      [0.5, 2],
+      [2, 0],
+      [2.5, 2],
+    ]);
+    expect(patOf('u9').name).toBe(PATS.updown.name);
+    setCustomPats([]);
+  });
+  it('組み込みの奏法を格子へ写す', () => {
+    expect(toGrid('whole', 1, 8)).toEqual([0, 1, 2, 3, 4, 5].map((r) => [0, r]));
+    expect(toGrid('up', 0.5, 4).map((c) => c[0])).toEqual([0, 2, 4, 6]);
+  });
+  it('作った奏法を曲と一緒に保存し、ない奏法への参照は戻す', () => {
+    const items = parseSong('[pat updown] I V');
+    (items[1] as Extract<Item, { k: 'ch' }>).p = 'u1';
+    const pats: CustomPat[] = [{ id: 'u1', name: 'A', res: 1, len: 8, cells: [[0, 0]] }];
+    const back = fromFile(JSON.parse(JSON.stringify(toFile('x', items, pats))));
+    expect(back?.pats).toEqual(pats);
+    expect((back?.items[1] as Extract<Item, { k: 'ch' }> | undefined)?.p).toBe('u1');
+    const lost = fromFile(JSON.parse(JSON.stringify(toFile('x', items))));
+    expect((lost?.items[1] as Extract<Item, { k: 'ch' }> | undefined)?.p).toBeNull();
+    expect(fromFile({ v: 1, items: [], pats: [{ id: 'x', name: 'a', res: 1, len: 8, cells: [] }] })).toBeNull();
+    expect(fromFile({ v: 1, items: [], pats: [{ id: 'u2', name: 'a', res: 1, len: 8, cells: [[8, 0]] }] })).toBeNull();
   });
 });
 

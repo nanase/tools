@@ -87,6 +87,8 @@ const rooms = ROOMS.map((r) => [r.v, r.name] as [string, string]);
 
   <RelatedTools current="chord-progression" />
 
+  <dialog class="cp-pd" id="cp-pd" aria-label="奏法を作る"></dialog>
+
   <div class="cp-pal" id="cp-pal" role="region" aria-label="ブロックのパレット">
     <div class="cp-ph">
       <div class="seg" id="pal-tab" role="group" aria-label="ブロックの種類"><button type="button" data-t="ch" aria-pressed="true">コード</button><button type="button" data-t="mk" aria-pressed="false">転調・拍子など</button></div>
