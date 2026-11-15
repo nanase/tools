@@ -355,7 +355,7 @@ const lanes: View = {
     for (const e of tl.all)
       if (e.it.k === 'lbl')
         body.lbl += `<div class="cp-bx cp-flag cp-lbf${c.sel === e.it.id ? ' sel' : ''}" data-id="${e.it.id}" style="left:${xq((e as MarkEntry).q)}px" role="button" tabindex="0" title="${esc(markTitle(e as MarkEntry))}">${esc(e.it.t) || '&nbsp;'}</div>`;
-    body.pat = spans('pat', (e) => (e.it.k === 'pat' ? `${patGlyph(e.it.v)}${patOf(e.it.v).name}` : ''));
+    body.pat = spans('pat', (e) => (e.it.k === 'pat' ? `${patGlyph(e.it.v)}${esc(patOf(e.it.v).name)}` : ''));
     body.vce = spans('vce', (e) => (e.it.k === 'vce' ? `${ICON[e.it.v]}${VOICES[e.it.v]}` : ''));
     const at: Record<number, number> = {};
     for (const e of tl.all) {
@@ -381,7 +381,7 @@ const lanes: View = {
         w = e.durQ * PX - 3;
       body.ch += chordHTML(e, c, false, `left:${x + 1}px;width:${w}px`);
       if (e.patOwn)
-        body.pat += `<div class="cp-bx cp-own" data-sel="${e.it.id}" style="left:${x + 1}px;width:${w}px">${patGlyph(e.pat)}${w > 110 ? patOf(e.pat).name : ''}</div>`;
+        body.pat += `<div class="cp-bx cp-own" data-sel="${e.it.id}" style="left:${x + 1}px;width:${w}px">${patGlyph(e.pat)}${w > 110 ? esc(patOf(e.pat).name) : ''}</div>`;
       if (e.adj && e.tr) {
         body.jn += `<span class="cp-bj" style="left:${x}px" title="${esc(trTitle(e))}">${arrow(e.tr.lv)}</span>`;
         if (e.tr.name) body.jn += `<span class="cp-cad cp-cadb" style="left:${x + 11}px">${e.tr.name}</span>`;
