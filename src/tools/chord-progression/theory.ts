@@ -584,16 +584,31 @@ export function patOf(id: PatId): { name: string; g: (n: number, S: number, bs?:
  * 奏法を格子へ写す（作った奏法の下書き）。1 小節 bar 歩を res の刻みで、ベースを除く上の声部は段 1 から。
  * 和音全部は全段、上の声部すべては段 1 から上
  */
-export function toGrid(id: PatId, res: 1 | 0.5, bar: number, bs = 2): [number, number][] {
+export function toGrid(id: PatId, res: 1 | 0.5, bar: number, bs = 2, n = 5): [number, number][] {
   const cells = new Set<string>(),
-    S = bar;
-  for (const x of patOf(id).g(PAT_ROWS, S, bs, bar)) {
+    S = bar,
+    all = Array.from({ length: n }, (_, r) => r);
+  for (const x of patOf(id).g(n, S, bs, bar)) {
     const k = Math.round(x.s / res);
     if (k * res >= S) continue;
-    const rows = x.i === 'all' ? [0, 1, 2, 3, 4, 5] : x.i === 'up' ? [1, 2, 3, 4, 5] : [x.i];
+    const rows = x.i === 'all' ? all : x.i === 'up' ? all.slice(1) : [x.i];
     for (const r of rows) cells.add(`${k},${r}`);
   }
   return [...cells].map((c) => c.split(',').map(Number) as [number, number]).sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+}
+
+/**
+ * 鳴らす音の高さ。作った奏法では格子の段（ベースと上の 5 声）に合わせ、足りない分は上の声部をオクターブ上へ重ねて 6 音にする
+ */
+export function tonesOf(c: Chord, k: Key, pat: PatId): number[] {
+  const t = voicing(c, k);
+  if (isBuiltin(pat)) return t;
+  /* 上の声部をオクターブ上げた音のうち、今の一番上より高いものを順に足す */
+  for (let j = 1; t.length < PAT_ROWS && j < 20; j++) {
+    const c = t[j] + 12;
+    if (c > (t.at(-1) as number)) t.push(c);
+  }
+  return t;
 }
 
 export type VoiceId = 'gtr' | 'cgt' | 'harp' | 'pf' | 'ep' | 'org' | 'str' | 'pad' | 'brs' | 'mar' | 'vib' | 'bell';

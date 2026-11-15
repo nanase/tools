@@ -22,6 +22,7 @@ import {
   roman,
   setCustomPats,
   toGrid,
+  tonesOf,
   trans,
   voicing,
 } from '../src/tools/chord-progression/theory';
@@ -242,10 +243,15 @@ describe('ラベルと作った奏法', () => {
       [2.5, 2],
     ]);
     expect(patOf('u9').name).toBe(PATS.updown.name);
+    expect(tonesOf(ch(0), C, 'u1')).toEqual([48, 60, 64, 67, 72, 76]);
+    expect(tonesOf(ch(0), C, 'updown')).toHaveLength(5);
     setCustomPats([]);
   });
   it('組み込みの奏法を格子へ写す', () => {
-    expect(toGrid('whole', 1, 8)).toEqual([0, 1, 2, 3, 4, 5].map((r) => [0, r]));
+    expect(toGrid('whole', 1, 8)).toEqual([0, 1, 2, 3, 4].map((r) => [0, r]));
+    expect(toGrid('whole', 1, 8, 2, 6)).toEqual([0, 1, 2, 3, 4, 5].map((r) => [0, r]));
+    /* 上下は実際の音の数（3 和音は 5 音）で 1 周 8 歩 */
+    expect(toGrid('updown', 1, 8).map((c) => c[1])).toEqual([0, 1, 2, 3, 4, 3, 2, 1]);
     expect(toGrid('up', 0.5, 4).map((c) => c[0])).toEqual([0, 2, 4, 6]);
   });
   it('作った奏法を曲と一緒に保存し、ない奏法への参照は戻す', () => {

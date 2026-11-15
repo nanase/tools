@@ -64,9 +64,11 @@ import {
   setCustomPats,
   sigOf,
   toGrid,
+  tonesOf,
   trans,
   VOICE_ORDER,
   VOICES,
+  voicing,
 } from './theory';
 import { type Ctx, type Drag, drawBands, keyShort, redrawWheel, type Target, VIEWS, type ViewId } from './view';
 
@@ -212,6 +214,32 @@ function frame(): void {
   VIEWS[S.view].playhead(viewEl, ctx(), occ, f);
   posText(occ);
   requestAnimationFrame(frame);
+}
+/**
+ * 前・次の小節の頭へ移る（演奏中はすぐそこから弾く）。小節の途中から始まるコードは、そのコードの頭へ。
+ * 基準は演奏中なら鳴っているコード、止まっていれば弾き始めのコード
+ */
+function barJump(dir: -1 | 1): void {
+  const ch = S.tl.chords;
+  if (!ch.length) return;
+  const starts: number[] = [];
+  let last = 1;
+  for (const e of ch) {
+    starts.push(e.bars[0]?.o === 0 ? e.bars[0].no : last);
+    last = e.bars.at(-1)?.no ?? last;
+  }
+  const curE = player.playing ? player.current()?.e : undefined,
+    cue = entryOf(S.cue),
+    cur = curE ?? (cue && isChord(cue) ? cue : ch[0]),
+    target = starts[cur.ci] + dir;
+  let j = ch.findIndex((e, k) => starts[k] >= target || e.bars.some((b) => b.no === target));
+  if (dir < 0 && target < 1) j = 0;
+  if (j < 0) return;
+  cueTo(ch[j].it.id);
+  if (!player.playing) {
+    syncPlay();
+    render();
+  }
 }
 /** 弾き始めの位置を変える（演奏中はすぐそこへ移る） */
 function cueTo(id: number | null): void {
@@ -427,7 +455,7 @@ function edHTML(e: (typeof S.tl.all)[number]): string {
         )
       );
     case 'lbl':
-      return `${head('ラベル')}<div class="cp-er"><span class="cp-el">名前</span><input type="text" class="cp-lin" maxlength="${LABEL_MAX}" value="${esc(it.t)}" data-a="lblT" aria-label="ラベルの名前" placeholder="例 サビ"></div>${chipRow(
+      return `${head(it.t ? 'ラベル' : '区切り')}<div class="cp-er"><span class="cp-el">名前</span><input type="text" class="cp-lin" maxlength="${LABEL_MAX}" value="${esc(it.t)}" data-a="lblT" aria-label="ラベルの名前" placeholder="空なら区切りの線だけ"></div>${chipRow(
         '行',
         'lbr',
         [
@@ -616,13 +644,31 @@ function newPat(): void {
   const { cur, bar, bs } = patCtx(),
     n = S.pats.reduce((m, x) => Math.max(m, Number(x.id.slice(1))), 0) + 1,
     id = `u${n}`;
-  S.pats.push({ id, name: `作った奏法 ${n}`, res: 0.5, len: bar / 0.5, cells: toGrid(cur, 0.5, bar, bs) });
+  const ctxE = patCtx().e,
+    nt = ctxE ? voicing(ctxE.it, ctxE.key).length : 5;
+  S.pats.push({ id, name: `作った奏法 ${n}`, res: 0.5, len: bar / 0.5, cells: toGrid(cur, 0.5, bar, bs, nt) });
   setCustomPats(S.pats);
   edit((it) => {
     if (it.k === 'ch') it.p = id;
     if (it.k === 'pat') it.v = id;
   });
   openPd(id);
+}
+/** 作った奏法の段 r の音を、選んだコードと音色で短く鳴らす */
+function toneAt(r: number): void {
+  const { e } = patCtx();
+  if (!e || player.playing) return;
+  void audio.ready().then((ok) => {
+    const ac = audio.ac,
+      g = audio.bus();
+    if (!ok || !ac || !g) return;
+    const tones = tonesOf(e.it, e.key, pdId),
+      m = tones[r],
+      w = ac.currentTime + 0.02;
+    if (m === undefined) return;
+    audio.note({ t: 0, m, v: e.vce, end: 0, vel: r === 0 ? 0.9 : 0.75, tones }, w, w + 0.7, g);
+    setTimeout(() => audio.drop(g), 1600);
+  });
 }
 function openPd(id: string): void {
   if (!patById(id)) return;
@@ -678,7 +724,10 @@ pd.addEventListener('click', (ev) => {
       r = Number(b.dataset.r),
       j = x.cells.findIndex((c) => c[0] === k && c[1] === r);
     if (j >= 0) x.cells.splice(j, 1);
-    else x.cells.push([k, r]);
+    else {
+      x.cells.push([k, r]);
+      toneAt(r);
+    }
     patChanged();
   } else if (a === 'res') {
     const res = Number(b.dataset.v) as 1 | 0.5;
@@ -747,6 +796,12 @@ const MARKS: { k: Kind; name: (k: Key) => string; face: (k: Key) => string; spec
   { k: 'vce', name: () => `音色 ${VOICES.org}`, face: () => ICON.org, spec: () => ({ k: 'vce', v: 'org' }) },
   {
     k: 'lbl',
+    name: () => '区切り',
+    face: () => '<i class="cp-sepl" aria-hidden="true"></i>',
+    spec: () => ({ k: 'lbl', t: '', br: false }),
+  },
+  {
+    k: 'lbl',
     name: () => 'ラベル',
     face: () => '<b class="cp-lt">Aメロ</b>',
     spec: () => ({ k: 'lbl', t: 'Aメロ', br: false }),
@@ -783,13 +838,13 @@ function renderPal(): void {
   palBody.innerHTML =
     S.tab === 'ch'
       ? `<div class="cp-pr"><span class="cp-pl">ダイアトニック</span>${DIATONIC[k.m][S.nOf].map(([d, q]) => chip(d, q)).join('')}</div><div class="cp-pr"><span class="cp-pl">その他</span>${OTHER[k.m].map(([d, q]) => chip(d, q)).join('')}</div>`
-      : `<div class="cp-pr">${MARKS.map((m) => `<button type="button" class="cp-pc cp-pm" data-new="${m.k}" title="${m.name(k)}" aria-label="${m.name(k)}">${m.face(k)}</button>`).join('')}</div>`;
+      : `<div class="cp-pr">${MARKS.map((m, j) => `<button type="button" class="cp-pc cp-pm" data-new="${m.k}" data-mi="${j}" title="${m.name(k)}" aria-label="${m.name(k)}">${m.face(k)}</button>`).join('')}</div>`;
 }
 function newItem(el: HTMLElement): Item {
   const k = el.dataset.new as Kind,
     c = insertCtx();
   if (k === 'ch') return withId({ k: 'ch', d: Number(el.dataset.d), q: el.dataset.q as Qual, inv: 0, b: 0, p: null });
-  const m = MARKS.find((x) => x.k === k);
+  const m = el.dataset.mi !== undefined ? MARKS[Number(el.dataset.mi)] : MARKS.find((x) => x.k === k);
   return withId((m as (typeof MARKS)[number]).spec(c.key));
 }
 function insert(it: Item, index: number): void {
@@ -801,7 +856,9 @@ function insert(it: Item, index: number): void {
   if (e && isChord(e)) audition(e);
 }
 pal.addEventListener('click', (ev) => {
-  const t = (ev.target as Element).closest<HTMLElement>('[data-t],[data-n],#pal-pp,#pal-min,#pal-undo,#pal-redo');
+  const t = (ev.target as Element).closest<HTMLElement>(
+    '[data-t],[data-n],#pal-pp,#pal-prev,#pal-next,#pal-min,#pal-undo,#pal-redo',
+  );
   if (!t) return;
   if (t.dataset.t) S.tab = t.dataset.t as 'ch' | 'mk';
   else if (t.dataset.n) {
@@ -809,6 +866,8 @@ pal.addEventListener('click', (ev) => {
     store('n4', S.nOf === 4);
     if (S.view === 'wheel') redrawWheel(viewEl, ctx(), player.current());
   } else if (t.id === 'pal-pp') return void play();
+  else if (t.id === 'pal-prev') return barJump(-1);
+  else if (t.id === 'pal-next') return barJump(1);
   else if (t.id === 'pal-undo') return travel(undo, redo);
   else if (t.id === 'pal-redo') return travel(redo, undo);
   else if (t.id === 'pal-min') {

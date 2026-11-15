@@ -50,7 +50,9 @@ body:has(#cp-pal){padding-bottom:var(--cp-palh,0px)}
 .cp-bn{position:absolute;top:-14px;font:500 11px/1 var(--mono);color:var(--ink-3)}
 .cp-phl{position:absolute;top:0;bottom:0;width:2px;background:var(--cp-lv);display:none}
 .cp-it.now .cp-phl{display:block}
-.cp-cuem{position:absolute;left:-1px;top:-1px;width:0;height:0;border-style:solid;border-width:10px 10px 0 0;border-color:var(--cp-sel) transparent transparent;display:none}
+/* 次に弾き始める所: ブロックの左に縦の線と、上に下向きの三角（再生位置の線と同じ形） */
+.cp-cuem{position:absolute;left:-6px;top:-8px;bottom:-8px;width:3px;border-radius:2px;background:var(--cp-sel);display:none;pointer-events:none}
+.cp-cuem::before{content:"";position:absolute;left:-5.5px;top:-9px;border:7px solid transparent;border-top:9px solid var(--cp-sel);border-bottom:0}
 .cp-ch.cue .cp-cuem{display:block}
 .cp-mk{width:58px;margin:0 4px;border-style:dashed;background:var(--inset);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px}
 .cp-ml{font-size:11px;color:var(--ink-3)}
@@ -272,7 +274,10 @@ body:has(#cp-pal){padding-bottom:var(--cp-palh,0px)}
 .cp-barg{position:relative;display:flex;flex:none;align-items:flex-start;padding:0 3px;border-radius:6px;background:color-mix(in srgb,var(--ink) 5%,transparent);box-shadow:inset 2px 0 0 var(--ink-3)}
 .cp-jn.in{width:10px}
 .cp-jn.in .cp-ar{width:10px}
-.cp-brk{flex-basis:100%;height:0;margin-bottom:-56px}
+.cp-brk{flex-basis:100%;height:0}
+/* 行の間は行の隙間ではなく各ブロックの上の余白で取る（行を改める要素の空の行が隙間を倍にしないように） */
+.cp-sc:not(.cmp){row-gap:0;padding-top:0}
+.cp-sc:not(.cmp)>:not(.cp-brk):not(.cp-caret):not(.cp-nmb){margin-top:52px}
 .cp-mk-lbl{width:auto;min-width:46px;max-width:160px;padding:0 10px;border-style:solid;border-color:var(--ink-3);border-left-width:4px;border-left-style:double;background:var(--surface)}
 .cp-lt{font:700 13px/1.2 var(--sans)!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px}
 .cp-lbf{min-width:40px;width:auto;font-weight:700;border-left:4px double var(--ink-3)}
@@ -295,3 +300,11 @@ body:has(#cp-pal){padding-bottom:var(--cp-palh,0px)}
 .cp-cpn{margin-left:2px;font:500 12px var(--sans)}
 .cp-pnew .cp-ic,.chip .cp-ic{margin-right:3px}
 .cp-lin{flex:1;min-width:0;height:30px;padding:0 8px;border:1px solid var(--line-2);border-radius:4px;background:var(--inset);color:var(--ink);font:500 13px var(--sans)}
+
+/* ===== 区切り・小節の移動 ===== */
+.cp-mk-lbl.sep{width:18px;min-width:0;padding:0;margin:0 2px;border:0;background:none}
+.cp-sepl{display:block;width:6px;height:60px;border-left:2px solid var(--ink-2);border-right:2px solid var(--ink-2)}
+.cp-pm .cp-sepl{height:30px}
+.cp-nav{display:flex;align-items:center;gap:4px;margin-right:4px}
+.cp-pi svg .f{fill:currentColor;stroke:none}
+.cp-phv.cue{background:var(--cp-sel)}

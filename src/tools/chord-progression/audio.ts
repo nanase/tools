@@ -8,7 +8,7 @@ import { lookahead } from '../../lib/pause';
 import { Reverb, reverbSpec, roomOf } from '../../lib/reverb';
 import { type GtKind, GtrVoices } from './gtr';
 import { type ChordEntry, type Item, playOrder, type Step, type Timeline } from './song';
-import { patOf, type VoiceId, voicing } from './theory';
+import { patOf, tonesOf, type VoiceId } from './theory';
 
 type Ctor = typeof AudioContext;
 const AC: Ctor | undefined =
@@ -31,7 +31,7 @@ export interface Accomp {
 }
 /** コードの音の並び。弦をかき鳴らす音は 11 ms ずつずらす */
 export function notesOf(e: ChordEntry, acc: Accomp): NoteEv[] {
-  const tones = voicing(e.it, e.key),
+  const tones = tonesOf(e.it, e.key, e.pat),
     n = tones.length,
     S = Math.max(1, Math.round(e.durQ * 2)),
     stepT = e.dur / S,
@@ -215,6 +215,14 @@ export class CpAudio {
     g.gain.setTargetAtTime(0, ac.currentTime, 0.03);
     setTimeout(() => g.disconnect(), 300);
     this.gq = this.gq.filter((e) => e.bus !== g);
+  }
+  /** bus の音を、鍵を離したように少しの時間で消す（一時停止） */
+  release(g: GainNode): void {
+    const ac = this.ac;
+    if (!ac) return;
+    g.gain.cancelScheduledValues(ac.currentTime);
+    g.gain.setTargetAtTime(0, ac.currentTime, 0.12);
+    setTimeout(() => g.disconnect(), 1500);
   }
   /** ギターの弦をすべて止める（演奏の場所を移したとき） */
   hush(): void {
@@ -594,6 +602,8 @@ export interface Occ {
   at: number;
   rep: Step['rep'];
   bus: GainNode;
+  /** まだ予約していない音（コードの頭からの秒の順） */
+  pending: NoteEv[];
 }
 /** 先に予約する時間 [s] */
 const AHEAD = 0.25;
@@ -685,10 +695,15 @@ export class Player {
       const ce = e as ChordEntry,
         bus = this.audio.bus();
       if (!bus) return;
-      for (const x of notesOf(ce, acc)) this.audio.note(x, this.nextAt + x.t, this.nextAt + x.end, bus);
-      this.occ.push({ id: ce.it.id, e: ce, at: this.nextAt, rep: r.value.rep, bus });
+      this.occ.push({ id: ce.it.id, e: ce, at: this.nextAt, rep: r.value.rep, bus, pending: notesOf(ce, acc) });
       this.nextAt += ce.dur;
     }
+    /* 音は鳴る直前に予約する（一時停止や編集で、先の音を残さない） */
+    for (const o of this.occ)
+      while (o.pending.length && o.at + o.pending[0].t < horizon) {
+        const x = o.pending.shift() as NoteEv;
+        this.audio.note(x, o.at + x.t, o.at + x.end, o.bus);
+      }
     /* 鳴り終えたコードは一覧から外す（音は自然に消える） */
     while (this.occ.length > 1 && this.occ[1].at + 3 < now) this.occ.shift();
     if (this.done && now >= this.nextAt) {
@@ -701,7 +716,12 @@ export class Player {
     clearInterval(this.timer);
     this.timer = undefined;
     const now = this.audio.now() ?? 0;
-    for (const o of this.occ) if (fade || o.at > now) this.audio.drop(o.bus);
+    /* 予約していない音は捨て、鳴っている音は鍵を離すように消す（ギターの弦は鳴らしたまま） */
+    for (const o of this.occ) {
+      o.pending = [];
+      if (fade || o.at > now) this.audio.drop(o.bus);
+      else this.audio.release(o.bus);
+    }
     if (fade) this.audio.hush();
     this.occ = [];
     this.gen = null;

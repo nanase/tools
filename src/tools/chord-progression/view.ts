@@ -24,9 +24,9 @@ import {
   QUALS,
   roman,
   sigOf,
+  tonesOf,
   trans,
   VOICES,
-  voicing,
 } from './theory';
 
 export type ViewId = 'score' | 'lanes' | 'wheel';
@@ -85,7 +85,7 @@ function markInner(e: MarkEntry): string {
     case 're':
       return `<b class="cp-rp">𝄇</b><span class="cp-ms cp-pass" data-l="${repLabel(it.n)}">${repLabel(it.n)}</span>`;
     case 'lbl':
-      return `<b class="cp-lt">${esc(it.t) || '&nbsp;'}</b>`;
+      return it.t ? `<b class="cp-lt">${esc(it.t)}</b>` : '<i class="cp-sepl" aria-hidden="true"></i>';
   }
 }
 /** 目印のブロックの名前（指したときの吹き出しと読み上げ） */
@@ -107,11 +107,11 @@ export function markTitle(e: MarkEntry): string {
     case 're':
       return `くり返しの終わり ${it.n === 0 ? '無制限' : `${it.n} 回`}`;
     case 'lbl':
-      return `ラベル ${it.t}${it.br ? '（ここから次の行）' : ''}`;
+      return `${it.t ? `ラベル ${it.t}` : '区切り'}${it.br ? '（ここから次の行）' : ''}`;
   }
 }
 function markHTML(e: MarkEntry, c: Ctx, extra = ''): string {
-  return `<div class="cp-it cp-mk cp-mk-${e.it.k}${c.sel === e.it.id ? ' sel' : ''}" data-id="${e.it.id}" title="${esc(markTitle(e))}" aria-label="${esc(markTitle(e))}" role="button" tabindex="0"${extra}>${markInner(e)}</div>`;
+  return `<div class="cp-it cp-mk cp-mk-${e.it.k}${e.it.k === 'lbl' && !e.it.t ? ' sep' : ''}${c.sel === e.it.id ? ' sel' : ''}" data-id="${e.it.id}" title="${esc(markTitle(e))}" aria-label="${esc(markTitle(e))}" role="button" tabindex="0"${extra}>${markInner(e)}</div>`;
 }
 const blockW = (beats: number, cmp: boolean): number =>
   Math.max(cmp ? 52 : 58, cmp ? 16 + beats * 16 : 22 + beats * 21);
@@ -309,7 +309,7 @@ function laneRoll(tl: Timeline, w: number): string {
     ym = (m: number) => 3 + ((hi - m) / (hi - lo)) * H;
   let s = `<svg class="cp-roll" width="${w}" height="110" aria-hidden="true">`;
   for (const e of tl.chords) {
-    const tones = voicingOf(e),
+    const tones = tonesOf(e.it, e.key, e.pat),
       S = Math.max(1, Math.round(e.durQ * 2)),
       w1 = (e.durQ * PX) / S;
     const bs = 8 / e.dn;
@@ -323,7 +323,6 @@ function laneRoll(tl: Timeline, w: number): string {
   }
   return `${s}</svg>`;
 }
-const voicingOf = (e: ChordEntry): number[] => voicing(e.it, e.key);
 const lanes: View = {
   html(c) {
     const { tl, items } = c,
@@ -354,7 +353,7 @@ const lanes: View = {
     body.key = spans('key', (e) => `<b>${keyShort(e.key)}</b> ${keySig(e.key.t, e.key.m)}`);
     for (const e of tl.all)
       if (e.it.k === 'lbl')
-        body.lbl += `<div class="cp-bx cp-flag cp-lbf${c.sel === e.it.id ? ' sel' : ''}" data-id="${e.it.id}" style="left:${xq((e as MarkEntry).q)}px" role="button" tabindex="0" title="${esc(markTitle(e as MarkEntry))}">${esc(e.it.t) || '&nbsp;'}</div>`;
+        body.lbl += `<div class="cp-bx cp-flag cp-lbf${c.sel === e.it.id ? ' sel' : ''}" data-id="${e.it.id}" style="left:${xq((e as MarkEntry).q)}px" role="button" tabindex="0" title="${esc(markTitle(e as MarkEntry))}">${esc(e.it.t) || '‖'}</div>`;
     body.pat = spans('pat', (e) => (e.it.k === 'pat' ? `${patGlyph(e.it.v)}${esc(patOf(e.it.v).name)}` : ''));
     body.vce = spans('vce', (e) => (e.it.k === 'vce' ? `${ICON[e.it.v]}${VOICES[e.it.v]}` : ''));
     const at: Record<number, number> = {};
@@ -398,6 +397,7 @@ const lanes: View = {
     return `${h}<i class="cp-phv" id="cp-phv"></i><div class="cp-caret" id="cp-caret"></div></div></div>`;
   },
   mount(root, c) {
+    this.playhead(root, c, null, 0);
     if (c.cue === null) return;
     const e = c.tl.chords.find((x) => x.it.id === c.cue),
       w = root.querySelector<HTMLElement>('#cp-lnw');
@@ -412,9 +412,14 @@ const lanes: View = {
       w = root.querySelector<HTMLElement>('#cp-lnw');
     if (!phv || !w) return;
     if (!occ) {
-      phv.style.display = 'none';
+      /* 止まっている間は、次に弾き始める所に線を引く */
+      const cue = _c.tl.chords.find((x) => x.it.id === _c.cue);
+      phv.classList.toggle('cue', !!cue);
+      phv.style.display = cue ? 'block' : 'none';
+      if (cue) phv.style.left = `${xq(cue.q)}px`;
       return;
     }
+    phv.classList.remove('cue');
     const x = xq(occ.e.q + Math.min(1, f) * occ.e.durQ);
     phv.style.display = 'block';
     phv.style.left = `${x}px`;
