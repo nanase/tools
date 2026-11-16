@@ -7,7 +7,7 @@
  */
 import { alpha } from './map';
 import type { Entry } from './song';
-import { roman } from './theory';
+import { keyTonic, roman } from './theory';
 
 const css = (n: string): string => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 export interface CoasterState {
@@ -202,6 +202,29 @@ export class Coaster {
       ctx.textBaseline = 'middle';
       ctx.fillText(roman(e.ch, e.key), xa + 5, sy + STRIP / 2);
       ctx.restore();
+      /* 転調する所: 上の端に新しい調の札を立て、駅まで点線で下ろす */
+      if (e.c.mod && (k > 0 || st.loop)) {
+        const lb = `転調 ${keyTonic(e.c.mod)}${e.c.mod.m === 'min' ? 'm' : ''}`;
+        ctx.font = `700 10px ${sans}`;
+        const tw = ctx.measureText(lb).width + 8;
+        ctx.strokeStyle = sel;
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([2, 2]);
+        ctx.beginPath();
+        ctx.moveTo(xa + 1, 17);
+        ctx.lineTo(xa + 1, sy);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = sel;
+        ctx.fillRect(xa, sy - 1, 3, STRIP - 1);
+        ctx.beginPath();
+        ctx.roundRect(xa, 3, tw, 14, 3);
+        ctx.fill();
+        ctx.fillStyle = surf;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(lb, xa + 4, 10.5);
+      }
       /* くり返しで曲の頭へ戻る所 */
       if (k === 0 && st.loop && st.entries.length > 1) {
         ctx.strokeStyle = ink3;
