@@ -200,6 +200,26 @@ describe('ゼンマイの巻きと振り子をつかむ', () => {
   });
 });
 
+describe('画面が隠れていた間', () => {
+  it('隠れていた 1 時間を進め、実際の時刻とのずれは変わらず、振り子は動き続ける', () => {
+    const now = new Date(2026, 0, 1, 2, 10, 0).getTime(),
+      c = new Clock('recoil', now);
+    for (let i = 0; i < 30; i++) c.advance(1 / 30, 1);
+    const err0 = c.clockMs() - c.real;
+    c.catchUp(3600);
+    expect(c.mode).toBe('live');
+    expect(c.live).not.toBeNull();
+    expect(c.real - now).toBeCloseTo(3601 * 1000, -1);
+    expect(Math.abs(c.clockMs() - c.real - err0)).toBeLessThan(2000);
+    let mx = 0;
+    for (let i = 0; i < 90; i++) {
+      c.advance(1 / 30, 1);
+      mx = Math.max(mx, Math.abs(c.snap().th));
+    }
+    expect(mx).toBeGreaterThan(2.5 * DEG);
+  });
+});
+
 describe('箱と部屋の響き', () => {
   it('箱は低い音ほど強く響かせる。部屋の応答は残響の長さを持つ', () => {
     const fs = 24000,
