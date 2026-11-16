@@ -1,28 +1,28 @@
 import { describe, expect, it } from 'vitest';
-import { SAMPLES } from '../src/tools/chord-progression/samples';
+import { bandNotes, MEMBERS, type MemberId, memberOf, previewNotes, STYLES } from '../src/tools/chord-progression/band';
+import { SAMPLES, sampleSong } from '../src/tools/chord-progression/samples';
 import {
+  ALL_PLACES,
+  adjacent,
   compute,
-  endless,
   fromFile,
-  type Item,
-  parseSong,
-  playOrder,
+  inLattice,
+  keyAt,
+  nearestPlace,
+  parseChords,
+  parseKey,
+  type Song,
+  STYLE_ORDER,
   toFile,
+  triadOf,
 } from '../src/tools/chord-progression/song';
 import {
   type Chord,
-  type CustomPat,
   chordName,
   func,
   type Key,
   namedNext,
-  PAT_ORDER,
-  PATS,
-  patOf,
   roman,
-  setCustomPats,
-  toGrid,
-  tonesOf,
   trans,
   voicing,
 } from '../src/tools/chord-progression/theory';
@@ -31,14 +31,19 @@ const C: Key = { t: 0, m: 'maj' },
   D: Key = { t: 2, m: 'maj' },
   Am: Key = { t: 9, m: 'min' };
 const ch = (d: number, q: Chord['q'] = 'M', inv = 0): Chord => ({ d, q, inv });
-const take = <T>(g: Generator<T>, n: number): T[] => {
-  const out: T[] = [];
-  for (const x of g) {
-    out.push(x);
-    if (out.length >= n) break;
-  }
-  return out;
-};
+const song = (src: string, o: Partial<Song> = {}): Song => ({
+  name: '',
+  key: C,
+  meter: 4,
+  bpm: 120,
+  style: 'pop',
+  keys: 'pf',
+  gtr: 'gtr',
+  chords: parseChords(src),
+  ...o,
+});
+const names = (s: Song): string[] => compute(s).entries.map((e) => chordName(e.ch, e.key));
+const ALL_ON: Record<MemberId, boolean> = { drums: true, bass: true, keys: true, gtr: true };
 
 describe('名前と綴り', () => {
   it('度数と音名', () => {
@@ -53,15 +58,7 @@ describe('名前と綴り', () => {
     expect(chordName(ch(3), Am)).toBe('C');
   });
   it('6・9 などのコード', () => {
-    const Bb: Key = { t: 10, m: 'maj' };
-    expect(chordName(ch(0, '6'), Bb)).toBe('B♭6');
-    expect(chordName(ch(9, 'm7'), C)).toBe('Am7');
-    expect(chordName(ch(2, 'm9'), C)).toBe('Dm9');
-    expect(chordName(ch(7, '7sus4'), C)).toBe('G7sus4');
-    expect(chordName(ch(11, 'dim7'), C)).toBe('Bdim7');
-    expect(voicing(ch(0, '9'), C)).toHaveLength(6);
-    const items = parseSong('[key Bb maj] I6 ii9 IM9 vM7 V7sus4 Iadd9 Isus2 viio7');
-    expect(compute(items).chords.map((e) => chordName(e.it, e.key))).toEqual([
+    expect(names(song('Bb6 Cm9 BbM9 FmM7 F7sus4 Bbadd9 Bbsus2 Adim7', { key: { t: 10, m: 'maj' } }))).toEqual([
       'B♭6',
       'Cm9',
       'B♭M9',
@@ -71,6 +68,7 @@ describe('名前と綴り', () => {
       'B♭sus2',
       'Adim7',
     ]);
+    expect(voicing(ch(0, '9'), C)).toHaveLength(6);
   });
   it('機能', () => {
     expect(func(ch(0), C)).toBe('T');
@@ -107,9 +105,6 @@ describe('つながりの強さと終止', () => {
     expect(trans(ch(0), C, ch(0), C).lv).toBe(0);
     expect(trans(ch(0), C, ch(0), D).lv).toBe(-1);
   });
-});
-
-describe('和音と奏法', () => {
   it('音の高さの範囲', () => {
     for (let t = 0; t < 12; t++)
       for (const q of ['M', 'm', '7', 'm7b5'] as const)
@@ -122,52 +117,87 @@ describe('和音と奏法', () => {
           expect(v.length).toBe(5);
         }
   });
-  it('奏法は和音の中の音だけを弾く', () => {
-    for (const p of PAT_ORDER)
-      for (const n of [4, 5, 6])
-        for (const [bs, bar] of [
-          [2, 8],
-          [2, 6],
-          [1, 6],
-        ])
-          for (const S of [4, 6, 8, 12])
-            for (const x of PATS[p].g(n, S, bs, bar)) {
-              expect(x.s).toBeGreaterThanOrEqual(0);
-              expect(x.s).toBeLessThan(S);
-              expect(x.l).toBeGreaterThan(0);
-              if (typeof x.i === 'number') {
-                expect(x.i).toBeGreaterThanOrEqual(0);
-                expect(x.i).toBeLessThan(n);
-              }
-            }
+});
+
+describe('和音の地図', () => {
+  it('上向きは長三和音、下向きは短三和音', () => {
+    expect(triadOf({ i: 0, j: 0, up: true })).toEqual({ r: 0, q: 'M' });
+    expect(triadOf({ i: 0, j: 0, up: false })).toEqual({ r: 4, q: 'm' });
+    expect(triadOf({ i: 1, j: 0, up: true })).toEqual({ r: 7, q: 'M' });
+    expect(triadOf({ i: -1, j: 0, up: false })).toEqual({ r: 9, q: 'm' });
   });
-  it('ベースと和音は拍子に合わせてベースを置く', () => {
-    const bassAt = (bs: number, bar: number) =>
-      PATS.oom
-        .g(5, bar, bs, bar)
-        .filter((x) => typeof x.i === 'number')
-        .map((x) => x.s);
-    expect(bassAt(2, 8)).toEqual([0, 4]);
-    expect(bassAt(2, 6)).toEqual([0]);
-    expect(bassAt(1, 6)).toEqual([0, 3]);
+  it('どの長三和音・短三和音も 2 か所以上に出る', () => {
+    for (const q of ['M', 'm'] as const)
+      for (let r = 0; r < 12; r++)
+        expect(
+          ALL_PLACES.filter((p) => triadOf(p).r === r && triadOf(p).q === q).length,
+          `${r}${q}`,
+        ).toBeGreaterThanOrEqual(2);
+  });
+  it('隣の三角形は 2 音を共有し、どれも 3 つまで', () => {
+    const tones = (p: (typeof ALL_PLACES)[number]) => {
+      const t = triadOf(p),
+        third = t.q === 'M' ? 4 : 3;
+      return new Set([t.r, (t.r + third) % 12, (t.r + 7) % 12]);
+    };
+    for (const a of ALL_PLACES) {
+      const ns = ALL_PLACES.filter((b) => adjacent(a, b));
+      expect(ns.length).toBeLessThanOrEqual(3);
+      for (const b of ns) {
+        const ta = tones(a),
+          shared = [...tones(b)].filter((x) => ta.has(x));
+        expect(shared).toHaveLength(2);
+        expect(b.up).toBe(!a.up);
+      }
+    }
+  });
+  it('C の隣は Am・Em・Cm（P・L・R）', () => {
+    const c = { i: 0, j: 0, up: true },
+      ns = ALL_PLACES.filter((b) => adjacent(c, b)).map((b) => {
+        const t = triadOf(b);
+        return `${t.r}${t.q}`;
+      });
+    expect(ns.sort()).toEqual(['0m', '4m', '9m'].sort());
+  });
+  it('置く場所は前の和音に近い所', () => {
+    const c = nearestPlace(0, 'M', null);
+    expect(inLattice(c)).toBe(true);
+    const am = nearestPlace(9, 'm7', c);
+    expect(adjacent(c, am)).toBe(true);
+    expect(nearestPlace(7, '7', c).up).toBe(true);
+    expect(nearestPlace(11, 'dim', c).up).toBe(false);
   });
 });
 
 describe('曲の計算', () => {
-  it('拍子どおりの長さは拍子の分子', () => {
-    const tl = compute(parseSong('[met 4/4] I [met 3/4] V IV:2 [met 6/8] I'));
-    expect(tl.chords.map((e) => e.beats)).toEqual([4, 3, 2, 6]);
-    expect(tl.chords.map((e) => e.durQ)).toEqual([4, 3, 2, 3]);
-    expect(tl.chords.map((e) => e.bars[0]?.no)).toEqual([1, 2, 3, 4]);
+  it('拍子どおりの長さと小節', () => {
+    const tl = compute(song('C G:2 Am:2 F'));
+    expect(tl.entries.map((e) => e.beats)).toEqual([4, 2, 2, 4]);
+    expect(tl.entries.map((e) => e.bar)).toEqual([1, 2, 2, 3]);
+    expect(tl.beats).toBe(12);
+    expect(tl.bars).toBe(3);
+    const w = compute(song('F C7 F', { meter: 3 }));
+    expect(w.entries.map((e) => e.beats)).toEqual([3, 3, 3]);
+    expect(w.bars).toBe(3);
   });
-  it('転調のあとは度数のまま', () => {
-    const tl = compute(parseSong('[key C maj] I V [key D maj] I V'));
-    expect(tl.chords.map((e) => chordName(e.it, e.key))).toEqual(['C', 'G', 'D', 'A']);
-    expect(tl.chords[2].tr?.lv).toBe(-1);
+  it('転調すると度数が変わり、つながりは −1', () => {
+    const s = song('C G >D D A');
+    const tl = compute(s);
+    expect(tl.entries.map((e) => roman(e.ch, e.key))).toEqual(['Ⅰ', 'Ⅴ', 'Ⅰ', 'Ⅴ']);
+    expect(tl.entries[2].tr?.lv).toBe(-1);
+    expect(keyAt(s, 1)).toEqual(C);
+    expect(keyAt(s, 3)).toEqual(D);
+  });
+  it('緊張はドミナントで高く、トニックで低い', () => {
+    const tl = compute(song('C F G7 C'));
+    const t = tl.entries.map((e) => e.tension);
+    expect(t[2]).toBeGreaterThan(t[1]);
+    expect(t[1]).toBeGreaterThan(t[0]);
+    expect(t[3]).toBe(t[0]);
   });
   it('名前のある進行を見つける', () => {
-    const tl = compute(parseSong('[key C maj] I IV V iii vi I'));
-    expect(tl.chords.map((e) => e.grp?.n ?? null)).toEqual([
+    const tl = compute(song('C F G Em Am C'));
+    expect(tl.entries.map((e) => e.grp?.n ?? null)).toEqual([
       null,
       '王道進行',
       '王道進行',
@@ -175,123 +205,113 @@ describe('曲の計算', () => {
       '王道進行',
       null,
     ]);
-    const tl2 = compute(parseSong('[key A min] i VI VII III'));
-    expect(tl2.chords[0].grp?.n).toBe('小室進行');
-    const s = tl.chords.slice(0, 3).map((e) => ({ c: e.it, key: e.key, i: e.i }));
+    expect(compute(song('Am F G C', { key: Am })).entries[0].grp?.n).toBe('小室進行');
+    const s = tl.entries.slice(0, 3).map((e) => ({ c: e.ch, key: e.key, i: e.k }));
     expect(namedNext(s).map((x) => x.n)).toContain('王道進行');
   });
 });
 
-describe('くり返し', () => {
-  const order = (src: string, n = 50) => {
-    const items = parseSong(src);
-    return take(playOrder(items), n).map((s) => chordName(items[s.i] as Extract<Item, { k: 'ch' }> as Chord, C));
-  };
-  it('回数どおりに戻る', () => {
-    expect(order('I |: IV V :|3 I')).toEqual(['C', 'F', 'G', 'F', 'G', 'F', 'G', 'C']);
-  });
-  it('始めがなければ曲の頭へ', () => {
-    expect(order('I V :|2 IV')).toEqual(['C', 'G', 'C', 'G', 'F']);
-  });
-  it('続けて置いたくり返し', () => {
-    expect(order('|: I :|2 |: V :|2')).toEqual(['C', 'C', 'G', 'G']);
-  });
-  it('無制限は止めるまで続く', () => {
-    const items = parseSong('I |: V IV :|*');
-    expect(endless(items)).toBe(true);
-    expect(take(playOrder(items), 9).map((s) => s.i)).toHaveLength(9);
-    expect(endless(parseSong('I :|* V'))).toBe(true);
-    expect(endless(parseSong('[tmp 90] |: :|*'))).toBe(false);
-  });
-  it('回目を数える', () => {
-    const items = parseSong('|: I :|3'),
-      reps = take(playOrder(items), 5).map((s) => s.rep?.pass);
-    expect(reps).toEqual([1, 2, 3]);
-  });
-  it('コードのない区間はくり返さない', () => {
-    expect(order('I |: [tmp 90] :|* V')).toEqual(['C', 'G']);
-  });
-});
-
-describe('ラベルと作った奏法', () => {
-  it('ラベルは小節を改め、演奏では飛ばす', () => {
-    const items = parseSong('[met 4/4] I:2 [lbl サビ br] V:2 IV'),
-      tl = compute(items);
-    expect(tl.chords.map((e) => e.bars[0]?.no)).toEqual([1, 2, 3]);
-    expect(take(playOrder(items), 10).map((x) => items[x.i].k)).toEqual(['ch', 'ch', 'ch']);
-    const lb = items.find((x) => x.k === 'lbl');
-    expect(lb).toMatchObject({ t: 'サビ', br: true });
-  });
-  it('作った奏法は格子どおりに弾き、1 周をくり返す', () => {
-    const p: CustomPat = {
-      id: 'u1',
-      name: 'テスト',
-      res: 0.5,
-      len: 4,
-      cells: [
-        [0, 0],
-        [1, 2],
-        [3, 5],
-      ],
-    };
-    setCustomPats([p]);
-    const ev = patOf('u1').g(5, 4);
-    expect(ev.map((x) => [x.s, x.i])).toEqual([
-      [0, 0],
-      [0.5, 2],
-      [2, 0],
-      [2.5, 2],
+describe('サンプルの記法', () => {
+  it('調と和音', () => {
+    expect(parseKey('F#m')).toEqual({ t: 6, m: 'min' });
+    expect(parseKey('Bb')).toEqual({ t: 10, m: 'maj' });
+    const cs = parseChords('C Am7:2 >Gm D7');
+    expect(cs.map((c) => [c.r, c.q, c.b])).toEqual([
+      [0, 'M', 0],
+      [9, 'm7', 2],
+      [2, '7', 0],
     ]);
-    expect(patOf('u9').name).toBe(PATS.updown.name);
-    expect(tonesOf(ch(0), C, 'u1')).toEqual([48, 60, 64, 67, 72, 76]);
-    expect(tonesOf(ch(0), C, 'updown')).toHaveLength(5);
-    setCustomPats([]);
-  });
-  it('組み込みの奏法を格子へ写す', () => {
-    expect(toGrid('whole', 1, 8)).toEqual([0, 1, 2, 3, 4].map((r) => [0, r]));
-    expect(toGrid('whole', 1, 8, 2, 6)).toEqual([0, 1, 2, 3, 4, 5].map((r) => [0, r]));
-    /* 上下は実際の音の数（3 和音は 5 音）で 1 周 8 歩 */
-    expect(toGrid('updown', 1, 8).map((c) => c[1])).toEqual([0, 1, 2, 3, 4, 3, 2, 1]);
-    expect(toGrid('up', 0.5, 4).map((c) => c[0])).toEqual([0, 2, 4, 6]);
-  });
-  it('作った奏法を曲と一緒に保存し、ない奏法への参照は戻す', () => {
-    const items = parseSong('[pat updown] I V');
-    (items[1] as Extract<Item, { k: 'ch' }>).p = 'u1';
-    const pats: CustomPat[] = [{ id: 'u1', name: 'A', res: 1, len: 8, cells: [[0, 0]] }];
-    const back = fromFile(JSON.parse(JSON.stringify(toFile('x', items, pats))));
-    expect(back?.pats).toEqual(pats);
-    expect((back?.items[1] as Extract<Item, { k: 'ch' }> | undefined)?.p).toBe('u1');
-    const lost = fromFile(JSON.parse(JSON.stringify(toFile('x', items))));
-    expect((lost?.items[1] as Extract<Item, { k: 'ch' }> | undefined)?.p).toBeNull();
-    expect(fromFile({ v: 1, items: [], pats: [{ id: 'x', name: 'a', res: 1, len: 8, cells: [] }] })).toBeNull();
-    expect(fromFile({ v: 1, items: [], pats: [{ id: 'u2', name: 'a', res: 1, len: 8, cells: [[8, 0]] }] })).toBeNull();
+    expect(cs[2].mod).toEqual({ t: 7, m: 'min' });
+    expect(() => parseChords('Cx')).toThrow();
+    expect(() => parseKey('H')).toThrow();
   });
 });
 
 describe('保存の形式', () => {
   it('書いて読むと同じ', () => {
-    const items = parseSong('[key Eb min] [met 6/8] [tmp 70] [pat three] [vce str] |: i iv7:3/1@up V7 :|* ');
-    const back = fromFile(JSON.parse(JSON.stringify(toFile('テスト', items))));
-    expect(back?.name).toBe('テスト');
-    expect(back?.items.map(({ id: _i, ...r }) => r)).toEqual(items.map(({ id: _i, ...r }) => r));
+    const s = song('Ebm Abm7:3 >F# Bb7 F#', {
+      name: 'テスト',
+      key: { t: 3, m: 'min' },
+      meter: 3,
+      bpm: 70,
+      style: 'bossa',
+      keys: 'str',
+      gtr: 'cgt',
+    });
+    const back = fromFile(JSON.parse(JSON.stringify(toFile(s))));
+    expect(back).not.toBeNull();
+    expect(back && toFile(back)).toEqual(toFile(s));
   });
   it('形の違うものは読まない', () => {
+    const ok = toFile(song('C G'));
     expect(fromFile(null)).toBeNull();
-    expect(fromFile({ v: 2, items: [] })).toBeNull();
-    expect(fromFile({ v: 1, items: [{ k: 'ch', d: 12, q: 'M', inv: 0, b: 0, p: null }] })).toBeNull();
-    expect(fromFile({ v: 1, items: [{ k: 'ch', d: 0, q: 'X', inv: 0, b: 0, p: null }] })).toBeNull();
-    expect(fromFile({ v: 1, items: [{ k: 're', n: 1 }] })).toBeNull();
-    expect(fromFile({ v: 1, items: [{ k: 'met', n: 3, dn: 5 }] })).toBeNull();
-    expect(fromFile({ v: 1, items: [{ k: 'hack' }] })).toBeNull();
+    expect(fromFile({ ...ok, v: 1 })).toBeNull();
+    expect(fromFile({ ...ok, meter: 5 })).toBeNull();
+    expect(fromFile({ ...ok, bpm: 999 })).toBeNull();
+    expect(fromFile({ ...ok, style: 'hack' })).toBeNull();
+    expect(fromFile({ ...ok, chords: [{ ...ok.chords[0], r: 12 }] })).toBeNull();
+    expect(fromFile({ ...ok, chords: [{ ...ok.chords[0], q: 'X' }] })).toBeNull();
+    expect(fromFile({ ...ok, chords: [{ ...ok.chords[0], i: 99 }] })).toBeNull();
+    expect(fromFile({ ...ok, chords: [{ ...ok.chords[0], mod: { t: 0, m: 'dor' } }] })).toBeNull();
+    expect(fromFile({ ...ok, name: 'x'.repeat(100) })?.name).toHaveLength(60);
+  });
+});
+
+describe('バンド', () => {
+  it('型の長さは 1 小節の歩の数', () => {
+    for (const st of STYLE_ORDER)
+      for (const m of [3, 4] as const)
+        for (const [k, v] of Object.entries(STYLES[st][m]))
+          if (typeof v === 'string' && v) expect(v.length, `${st} ${m} ${k}`).toBe(m * 4);
+  });
+  it('和音の頭で鍵盤とベースが鳴り、音は和音の中に収まる', () => {
+    for (const st of STYLE_ORDER)
+      for (const meter of [3, 4] as const) {
+        const s = song('C G:2 Am:1 F', { style: st, meter }),
+          { entries } = compute(s),
+          spb = 60 / s.bpm / 4;
+        for (const e of entries) {
+          const ns = bandNotes(e, s, ALL_ON, spb),
+            dur = e.beats * 4 * spb;
+          expect(
+            ns.some((n) => n.t === 0 && n.v === 'bass'),
+            `${st} ${meter} ${e.k}`,
+          ).toBe(true);
+          expect(ns.some((n) => n.t < 0.02 && memberOf(n.v) === 'keys')).toBe(true);
+          for (const n of ns) {
+            expect(n.t).toBeGreaterThanOrEqual(0);
+            expect(n.t).toBeLessThan(dur);
+            expect(n.end).toBeGreaterThanOrEqual(n.t);
+          }
+        }
+      }
+  });
+  it('ミュートしたメンバーは鳴らない', () => {
+    const s = song('C'),
+      e = compute(s).entries[0];
+    for (const m of MEMBERS) {
+      const ns = bandNotes(e, s, { ...ALL_ON, [m]: false }, 0.125);
+      expect(ns.some((n) => memberOf(n.v) === m)).toBe(false);
+      expect(ns.length).toBeGreaterThan(0);
+    }
+  });
+  it('音色の切り替えに従う', () => {
+    const s = song('C', { keys: 'ep', gtr: 'cgt' }),
+      ns = bandNotes(compute(s).entries[0], s, ALL_ON, 0.125);
+    expect(ns.some((n) => n.v === 'ep')).toBe(true);
+    expect(ns.some((n) => n.v === 'cgt')).toBe(true);
+    expect(ns.some((n) => n.v === 'pf' || n.v === 'gtr')).toBe(false);
+    expect(previewNotes(compute(s).entries[0], s).map((n) => n.v)).toEqual(['bass', 'ep', 'ep', 'ep', 'ep']);
   });
 });
 
 describe('サンプル', () => {
-  it.each(SAMPLES.map((s) => [s.name, s.src]))('%s', (_n, src) => {
-    const items = parseSong(src),
-      tl = compute(items);
-    expect(tl.chords.length).toBeGreaterThan(0);
-    expect(take(playOrder(items), 40).length).toBeGreaterThan(0);
+  it.each(SAMPLES.map((s) => [s.name, s.id]))('%s', (_n, id) => {
+    const s = sampleSong(id),
+      tl = compute(s);
+    expect(tl.entries.length).toBeGreaterThan(0);
+    for (const c of s.chords) expect(inLattice(c.at)).toBe(true);
+    expect(fromFile(JSON.parse(JSON.stringify(toFile(s))))).not.toBeNull();
   });
   it('名前の付いたサンプルはその進行を含む', () => {
     for (const [id, n] of [
@@ -302,12 +322,10 @@ describe('サンプル', () => {
       ['cycle', '循環進行'],
       ['two-five', 'ツーファイブワン'],
       ['blues', '12 小節のブルース'],
-    ]) {
-      const s = SAMPLES.find((x) => x.id === id);
+    ])
       expect(
-        compute(parseSong(s?.src ?? '')).chords.some((e) => e.grp?.n === n),
-        `${id}`,
+        compute(sampleSong(id)).entries.some((e) => e.grp?.n === n),
+        id,
       ).toBe(true);
-    }
   });
 });

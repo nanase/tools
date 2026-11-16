@@ -1,72 +1,143 @@
 /**
- * サンプルのコード進行（このツールのために書いたもの。記法は song.ts の parseSong）。
+ * サンプルのコード進行（このツールのために書いたもの。記法は song.ts の parseChords）。
  * どれも一般に知られた進行の型で、特定の曲を写したものではない
  */
+import { type GtrId, type KeysId, type Meter, parseChords, parseKey, type Song, type StyleId } from './song';
+
 export interface Sample {
   id: string;
   name: string;
+  key: string;
+  meter: Meter;
+  bpm: number;
+  style: StyleId;
+  keys: KeysId;
+  gtr: GtrId;
   src: string;
 }
 export const SAMPLES: readonly Sample[] = [
   {
-    id: 'mix',
-    name: '転調と拍子の変化',
-    src: '[key C maj] [met 4/4] [tmp 96] [pat updown] [vce gtr] [lbl Aメロ] I V vi iii IV I IV V [lbl Bメロ br] IV V iii vi ii7:2 V7:2@strum [lbl サビ br] [key D maj] vi IV V I [lbl 終わり br] [met 3/4] [pat alberti] [vce ep] ii7 V7 IM7:6@whole',
-  },
-  {
     id: 'canon',
     name: 'カノン進行',
-    src: '[key D maj] [met 4/4] [tmp 84] [pat updown] [vce str] |: I V vi iii IV I IV V :|2 I@whole',
+    key: 'C',
+    meter: 4,
+    bpm: 92,
+    style: 'pop',
+    keys: 'pf',
+    gtr: 'gtr',
+    src: 'C G Am Em F C F G',
   },
   {
     id: 'oudou',
     name: '王道進行',
-    src: '[key Eb maj] [met 4/4] [tmp 120] [pat strum] [vce gtr] |: IV V iii vi :|*',
+    key: 'C',
+    meter: 4,
+    bpm: 120,
+    style: 'rock',
+    keys: 'ep',
+    gtr: 'gtr',
+    src: 'F G Em Am F G Em Am',
   },
   {
     id: 'komuro',
     name: '小室進行',
-    src: '[key A min] [met 4/4] [tmp 132] [pat up] [vce pad] |: i VI VII III :|*',
+    key: 'Am',
+    meter: 4,
+    bpm: 128,
+    style: 'pop',
+    keys: 'pad',
+    gtr: 'gtr',
+    src: 'Am F G C',
   },
   {
     id: 'marusa',
     name: '丸サ進行',
-    src: '[key D maj] [met 4/4] [tmp 96] [pat three] [vce ep] |: IVM7 III7 vi7 I7 :|*',
+    key: 'D',
+    meter: 4,
+    bpm: 96,
+    style: 'bossa',
+    keys: 'ep',
+    gtr: 'cgt',
+    src: 'GM7 F#7 Bm7 D7',
   },
   {
     id: 'cycle',
     name: '循環進行',
-    src: '[key F maj] [met 4/4] [tmp 112] [pat three] [vce mar] |: I vi ii V7 :|*',
+    key: 'F',
+    meter: 4,
+    bpm: 112,
+    style: 'pop',
+    keys: 'mar',
+    gtr: 'gtr',
+    src: 'F Dm Gm C7',
   },
   {
     id: 'two-five',
     name: 'ツーファイブワン',
-    src: '[key Bb maj] [met 4/4] [tmp 132] [pat strum] [vce vib] |: ii7 V7 IM7 IM7 :|2 [key G min] |: iiø V7 i7 i7 :|2',
+    key: 'Bb',
+    meter: 4,
+    bpm: 132,
+    style: 'bossa',
+    keys: 'vib',
+    gtr: 'cgt',
+    src: 'Cm7 F7 BbM7 BbM7 >Gm Am7b5 D7 Gm7 Gm7',
   },
   {
     id: 'blues',
     name: '12 小節のブルース',
-    src: '[key A maj] [met 4/4] [tmp 104] [pat strum] [vce brs] |: I7 IV7 I7 I7 IV7 IV7 I7 I7 V7 IV7 I7 V7 :|*',
+    key: 'A',
+    meter: 4,
+    bpm: 104,
+    style: 'rock',
+    keys: 'org',
+    gtr: 'gtr',
+    src: 'A7 D7 A7 A7 D7 D7 A7 A7 E7 D7 A7 E7',
   },
   {
     id: 'cadence',
     name: '3 つの終止',
-    src: '[key C maj] [met 4/4] [tmp 72] [pat whole] [vce org] I IV V7 I I vi IV V I IV I:8 ii V vi:8',
+    key: 'C',
+    meter: 4,
+    bpm: 72,
+    style: 'ballad',
+    keys: 'org',
+    gtr: 'cgt',
+    src: 'C F G7 C C Am F G C F C:8',
   },
   {
     id: 'waltz',
     name: 'ワルツ',
-    src: '[key F maj] [met 3/4] [tmp 144] [pat alberti] [vce pf] |: I I V7 V7 V7 V7 I I IV IV I I V7 V7 I I :|2',
+    key: 'F',
+    meter: 3,
+    bpm: 144,
+    style: 'pop',
+    keys: 'pf',
+    gtr: 'cgt',
+    src: 'F F C7 C7 C7 C7 F F Bb Bb F F C7 C7 F F',
   },
   {
-    id: 'ballad',
-    name: '6/8 のバラード',
-    src: '[key G maj] [met 6/8] [tmp 60] [pat up] [vce harp] |: I iii vi IV I/2 IV Vsus4:3 V:3 :|2 I@whole',
-  },
-  {
-    id: 'minor',
-    name: '短調の下行',
-    src: '[key E min] [met 4/4] [tmp 100] [pat down] [vce org] |: i VII VI V7 :|*',
+    id: 'modulation',
+    name: '全音上へ転調',
+    key: 'C',
+    meter: 4,
+    bpm: 116,
+    style: 'pop',
+    keys: 'str',
+    gtr: 'gtr',
+    src: 'F G Em Am F G E7 Am >D G A F#m Bm G A D:8',
   },
 ];
-export const SAMPLE0 = 'mix';
+export const SAMPLE0 = 'canon';
+export function sampleSong(id: string): Song {
+  const s = SAMPLES.find((x) => x.id === id) ?? SAMPLES[0];
+  return {
+    name: s.name,
+    key: parseKey(s.key),
+    meter: s.meter,
+    bpm: s.bpm,
+    style: s.style,
+    keys: s.keys,
+    gtr: s.gtr,
+    chords: parseChords(s.src),
+  };
+}

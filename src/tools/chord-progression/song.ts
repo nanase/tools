@@ -1,434 +1,305 @@
 /**
- * コード進行のページの曲（ブロックの列。DOM に依存しない）: ブロックの種類、並びから各ブロックの調・拍子・テンポ・奏法・音色と
- * 小節を決める計算、くり返しを展開した演奏の順、保存の形式（JSON）、サンプルを書くための短い記法
+ * コード進行のページの曲（DOM に依存しない）: 和音の地図（トネッツ）の格子、和音の並び、調・拍子・小節の計算、
+ * 緊張の高さ、保存の形式（JSON）、サンプルを書くための短い記法。
+ * 和音は根音の音名（C = 0）と種類で持ち、地図のどの三角形に置いたかも覚えておく（同じ和音が地図に何か所もあるため）
  */
 import {
   type Chord,
-  type CustomPat,
+  type Fn,
   findNamed,
+  func,
   type Group,
   type Key,
   type Lv,
   md,
-  PAT_ORDER,
-  PAT_ROWS,
-  type PatId,
   QUAL_ORDER,
+  QUALS,
   type Qual,
   trans,
   VOICE_ORDER,
   type VoiceId,
 } from './theory';
 
-/** ブロック。コードの b は拍の数（0 は拍子どおりの 1 小節）、p はこのコードだけの奏法（null は奏法ブロックに従う） */
-export type Item =
-  | ({ k: 'ch'; id: number; b: number; p: PatId | null } & Chord)
-  | { k: 'key'; id: number; t: number; m: Key['m'] }
-  | { k: 'met'; id: number; n: number; dn: number }
-  | { k: 'tmp'; id: number; v: number }
-  | { k: 'pat'; id: number; v: PatId }
-  | { k: 'vce'; id: number; v: VoiceId }
-  /** くり返しの始め */
-  | { k: 'rs'; id: number }
-  /** くり返しの終わり。n は演奏する回数（0 は無制限） */
-  | { k: 're'; id: number; n: number }
-  /** 小節の間のラベル（A メロ・サビなど）。br なら譜面でここから次の行にする */
-  | { k: 'lbl'; id: number; t: string; br: boolean };
-export type Kind = Item['k'];
-export type ChordItem = Extract<Item, { k: 'ch' }>;
-type NoId<T> = T extends unknown ? Omit<T, 'id'> : never;
-export type ItemSpec = NoId<Item>;
+/* ---------- 地図の格子 ---------- */
+/** 地図の三角形。格子の点 (i, j) と、上向き（長三和音）か下向き（短三和音）か */
+export interface Place {
+  i: number;
+  j: number;
+  up: boolean;
+}
+/** 地図に描く格子の範囲。どの長三和音・短三和音も少なくとも 2 か所に出る */
+export const LAT = { i0: -3, i1: 4, j0: -2, j1: 2 } as const;
+/** 格子の点の音名: 右へ 1 つで完全 5 度、右上へ 1 つで長 3 度 */
+export const pcAt = (i: number, j: number): number => md(7 * i + 4 * j);
+/** 三角形の三和音（上向きは左下の点が根音の長三和音、下向きは長 3 度上が根音の短三和音） */
+export function triadOf(p: Place): { r: number; q: 'M' | 'm' } {
+  const a = pcAt(p.i, p.j);
+  return p.up ? { r: a, q: 'M' } : { r: md(a + 4), q: 'm' };
+}
+/** 格子の点の位置（横 1 が隣の点。上の段は半分右へずれる） */
+export const pointAt = (i: number, j: number): [number, number] => [i + j / 2, (j * Math.sqrt(3)) / 2];
+/** 三角形の頂点 */
+export function cornersOf(p: Place): [number, number][] {
+  return p.up
+    ? [pointAt(p.i, p.j), pointAt(p.i + 1, p.j), pointAt(p.i, p.j + 1)]
+    : [pointAt(p.i + 1, p.j), pointAt(p.i + 1, p.j + 1), pointAt(p.i, p.j + 1)];
+}
+export function centroidOf(p: Place): [number, number] {
+  const c = cornersOf(p);
+  return [(c[0][0] + c[1][0] + c[2][0]) / 3, (c[0][1] + c[1][1] + c[2][1]) / 3];
+}
+const dist = (a: Place, b: Place): number => {
+  const p = centroidOf(a),
+    q = centroidOf(b);
+  return Math.hypot(p[0] - q[0], p[1] - q[1]);
+};
+/** 辺を共有する隣の三角形か（2 音を共有する） */
+export const adjacent = (a: Place, b: Place): boolean => {
+  const d = dist(a, b);
+  return d > 0.01 && d < 0.6;
+};
+export const inLattice = (p: Place): boolean => p.i >= LAT.i0 && p.i <= LAT.i1 && p.j >= LAT.j0 && p.j <= LAT.j1;
+export const ALL_PLACES: readonly Place[] = (() => {
+  const out: Place[] = [];
+  for (let j = LAT.j0; j <= LAT.j1; j++)
+    for (let i = LAT.i0; i <= LAT.i1; i++) for (const up of [true, false]) out.push({ i, j, up });
+  return out;
+})();
+export const samePlace = (a: Place, b: Place): boolean => a.i === b.i && a.j === b.j && a.up === b.up;
+/** 和音を置く三角形の向き: 長三和音の系統は上向き、短三和音と減三和音の系統は下向き */
+const upFor = (q: Qual): boolean => QUALS[q].b === 'M';
+/** 根音 r・種類 q の和音を置く三角形のうち、from に最も近いもの（なければ地図の真ん中に近いもの） */
+export function nearestPlace(r: number, q: Qual, from: Place | null): Place {
+  const up = upFor(q),
+    cands = ALL_PLACES.filter((p) => p.up === up && triadOf(p).r === md(r)),
+    o = from ? centroidOf(from) : pointAt((LAT.i0 + LAT.i1) / 2 - 0.5, (LAT.j0 + LAT.j1) / 2);
+  let best = cands[0],
+    bd = Number.POSITIVE_INFINITY;
+  for (const p of cands) {
+    const c = centroidOf(p),
+      d = Math.hypot(c[0] - o[0], c[1] - o[1]);
+    if (d < bd) {
+      bd = d;
+      best = p;
+    }
+  }
+  return best;
+}
 
-let uid = 1;
-export const withId = (s: ItemSpec): Item => ({ ...s, id: uid++ }) as Item;
-export const copyItem = (it: Item): Item => ({ ...it, id: uid++ });
+/* ---------- 曲 ---------- */
+export type StyleId = 'pop' | 'rock' | 'bossa' | 'ballad';
+export const STYLE_ORDER: readonly StyleId[] = ['pop', 'rock', 'bossa', 'ballad'];
+export const STYLE_NAMES: Record<StyleId, string> = {
+  pop: 'ポップ',
+  rock: 'ロック',
+  bossa: 'ボサノバ',
+  ballad: 'バラード',
+};
+export type GtrId = 'gtr' | 'cgt';
+export type KeysId = Exclude<VoiceId, GtrId>;
+export const KEYS_ORDER = VOICE_ORDER.filter((v): v is KeysId => v !== 'gtr' && v !== 'cgt');
+export const GTR_ORDER: readonly GtrId[] = ['gtr', 'cgt'];
+export type Meter = 3 | 4;
 
-export interface State {
+/** 和音 1 つ。b は拍の数（0 は 1 小節）、at は地図の三角形、mod はここからの調（転調。なければ null） */
+export interface SChord {
+  id: number;
+  r: number;
+  q: Qual;
+  b: number;
+  at: Place;
+  mod: Key | null;
+}
+export interface Song {
+  name: string;
   key: Key;
-  n: number;
-  dn: number;
+  meter: Meter;
   bpm: number;
-  pat: PatId;
-  vce: VoiceId;
+  style: StyleId;
+  keys: KeysId;
+  gtr: GtrId;
+  chords: SChord[];
 }
-/** 何も置いていないときの状態 */
-export const INIT: Readonly<State> = { key: { t: 0, m: 'maj' }, n: 4, dn: 4, bpm: 96, pat: 'updown', vce: 'gtr' };
+let uid = 1;
+export const newId = (): number => uid++;
 
-export interface MarkEntry extends State {
-  it: Exclude<Item, ChordItem>;
-  i: number;
-  /** 曲の頭からの位置（4 分音符の数） */
-  q: number;
-  /** このブロックの前の調 */
-  prevKey: Key;
-  /** 最初のコードより前にある、その種類で最初のブロック（「転調」ではなく「調」と出す） */
-  first: boolean;
-}
-export interface ChordEntry extends State {
-  it: ChordItem;
-  i: number;
-  /** コードの並びの何番目か */
-  ci: number;
-  q: number;
-  /** 拍の数（拍子どおりなら拍子の分子） */
+/** 1 つの和音の計算結果 */
+export interface Entry {
+  c: SChord;
+  k: number;
+  /** この和音での調 */
+  key: Key;
+  /** 調からの度数で表した和音（theory.ts の関数に渡す形） */
+  ch: Chord;
   beats: number;
-  /** 長さ（4 分音符の数） */
-  durQ: number;
-  /** 長さ [s] */
-  dur: number;
-  /** 奏法ブロックの奏法 */
-  defPat: PatId;
-  /** このコードだけの奏法か */
-  patOwn: boolean;
-  /** 小節の頭: o はコードの頭からの拍、no は小節の番号 */
-  bars: { o: number; no: number }[];
-  prev: ChordEntry | null;
-  /** 前のコードとの間にほかのブロックがない */
-  adj: boolean;
+  /** 曲の頭からの拍 */
+  start: number;
+  /** 始まる小節（1 から） */
+  bar: number;
+  fn: Fn;
+  /** 前の和音からのつながり（転調をまたぐと lv −1） */
   tr: { lv: Lv; name: string } | null;
   grp: Group | null;
+  /** 緊張の高さ（0〜1） */
+  tension: number;
 }
-export type Entry = MarkEntry | ChordEntry;
-export const isChord = (e: Entry): e is ChordEntry => e.it.k === 'ch';
-
-export interface Timeline {
-  all: Entry[];
-  chords: ChordEntry[];
-  /** 曲の長さ（4 分音符の数。くり返しは展開しない） */
-  totalQ: number;
-  end: State;
+export const degreeChord = (c: Pick<SChord, 'r' | 'q'>, key: Key): Chord => ({ d: md(c.r - key.t), q: c.q, inv: 0 });
+/** 緊張の高さ: トニック 0.18・サブドミナント 0.5・ドミナント 0.86 に、短三和音・減三和音・属七の形を少し加減 */
+export function tensionOf(ch: Chord, key: Key): number {
+  const f = func(ch, key),
+    q = QUALS[ch.q];
+  let t = f === 'T' ? 0.18 : f === 'S' ? 0.5 : 0.86;
+  if (q.b === 'm') t -= 0.04;
+  if (q.b === 'd') t += 0.06;
+  if (q.iv.includes(4) && q.iv.includes(10) && ch.d !== 7) t += 0.04;
+  return Math.max(0.05, Math.min(1, t));
 }
-
-export function compute(items: readonly Item[]): Timeline {
-  const st: State = { ...INIT, key: { ...INIT.key } };
-  let q = 0,
-    pos = 0,
-    bar = 1;
-  const all: Entry[] = [],
-    chords: ChordEntry[] = [],
-    seen = new Set<Kind>();
-  const newBar = () => {
-    if (pos > 0) {
-      pos = 0;
-      bar++;
-    }
-  };
-  items.forEach((it, i) => {
-    if (it.k !== 'ch') {
-      const prevKey = { ...st.key };
-      if (it.k === 'key') st.key = { t: it.t, m: it.m };
-      else if (it.k === 'met') {
-        st.n = it.n;
-        st.dn = it.dn;
-        newBar();
-      } else if (it.k === 'tmp') st.bpm = it.v;
-      else if (it.k === 'pat') st.pat = it.v;
-      else if (it.k === 'vce') st.vce = it.v;
-      else newBar();
-      all.push({ ...st, key: { ...st.key }, it, i, q, prevKey, first: !seen.has(it.k) && !chords.length });
-      seen.add(it.k);
-      return;
-    }
-    const beats = it.b > 0 ? it.b : st.n,
-      durQ = beats * (4 / st.dn),
-      bars: { o: number; no: number }[] = [];
-    for (let k = 0; k < beats; k++) {
-      if (pos === 0) bars.push({ o: k, no: bar });
-      if (++pos >= st.n) {
-        pos = 0;
-        bar++;
-      }
-    }
-    const e: ChordEntry = {
-      ...st,
-      key: { ...st.key },
-      it,
-      i,
-      ci: chords.length,
-      q,
-      beats,
-      durQ,
-      dur: (durQ * 60) / st.bpm,
-      pat: it.p ?? st.pat,
-      defPat: st.pat,
-      patOwn: it.p !== null,
-      bars,
-      prev: null,
-      adj: false,
-      tr: null,
-      grp: null,
-    };
-    q += durQ;
-    all.push(e);
-    chords.push(e);
+export function compute(song: Song): { entries: Entry[]; beats: number; bars: number } {
+  let key = song.key,
+    start = 0;
+  const entries: Entry[] = song.chords.map((c, k) => {
+    if (c.mod) key = c.mod;
+    const ch = degreeChord(c, key),
+      beats = c.b > 0 ? c.b : song.meter,
+      e: Entry = {
+        c,
+        k,
+        key,
+        ch,
+        beats,
+        start,
+        bar: Math.floor(start / song.meter) + 1,
+        fn: func(ch, key),
+        tr: null,
+        grp: null,
+        tension: tensionOf(ch, key),
+      };
+    start += beats;
+    return e;
   });
-  chords.forEach((e, j) => {
-    const p = j ? chords[j - 1] : null;
-    e.prev = p;
-    e.adj = !!p && p.i === e.i - 1;
-    e.tr = p ? trans(p.it, p.key, e.it, e.key) : null;
+  entries.forEach((e, k) => {
+    const p = entries[k - 1];
+    if (p) e.tr = trans(p.ch, p.key, e.ch, e.key);
   });
-  findNamed(chords.map((e) => ({ c: e.it, key: e.key, i: e.i }))).forEach((g, j) => {
-    chords[j].grp = g;
+  findNamed(entries.map((e) => ({ c: e.ch, key: e.key, i: e.k }))).forEach((g, k) => {
+    entries[k].grp = g;
   });
-  return { all, chords, totalQ: q, end: { ...st, key: { ...st.key } } };
+  return { entries, beats: start, bars: Math.ceil(start / song.meter) };
 }
-
-/* ---------- くり返しを展開した演奏の順 ---------- */
-/** くり返しの始めの位置（i は終わりの位置）。手前の終わりか曲の頭まで戻る */
-export function repeatStart(items: readonly Item[], i: number): number {
-  for (let j = i - 1; j >= 0; j--) {
-    if (items[j].k === 'rs') return j + 1;
-    if (items[j].k === 're') return j + 1;
-  }
-  return 0;
+/** k 番目の和音での調 */
+export function keyAt(song: Song, k: number): Key {
+  let key = song.key;
+  for (let j = 0; j <= Math.min(k, song.chords.length - 1); j++)
+    if (song.chords[j].mod) key = song.chords[j].mod as Key;
+  return key;
 }
-/** 演奏するコードの位置と、そのコードを含むくり返しの何回目か */
-export interface Step {
-  i: number;
-  /** くり返しの終わりの id と回目（くり返しの中でなければ null） */
-  rep: { id: number; pass: number } | null;
-}
-/** 区間の中のくり返しの終わり（i を含む最初の終わり） */
-function enclosing(items: readonly Item[], i: number): number {
-  for (let j = i + 1; j < items.length; j++) {
-    const it = items[j];
-    if (it.k === 'rs') return -1;
-    if (it.k === 're') return repeatStart(items, j) <= i ? j : -1;
-  }
-  return -1;
-}
-/**
- * 位置 from から演奏する順にコードを出す。くり返しの終わりで回数が残っていれば始めへ戻る（回数 0 は無制限）。
- * 戻った先にコードがなければくり返さない。passes はくり返しの終わりの id ごとの今の回目（並べ直しても数え直さないよう外から渡せる）
- */
-export function* playOrder(items: readonly Item[], from = 0, passes = new Map<number, number>()): Generator<Step> {
-  let i = from;
-  while (i < items.length) {
-    const it = items[i];
-    if (it.k === 'ch') {
-      const at = enclosing(items, i);
-      yield { i, rep: at < 0 ? null : { id: items[at].id, pass: passes.get(items[at].id) ?? 1 } };
-      i++;
-      continue;
-    }
-    if (it.k === 're') {
-      const s = repeatStart(items, i),
-        done = passes.get(it.id) ?? 1,
-        hasChord = items.slice(s, i).some((x) => x.k === 'ch');
-      if (hasChord && (it.n === 0 || done < it.n)) {
-        passes.set(it.id, done + 1);
-        i = s;
-        continue;
-      }
-      passes.delete(it.id);
-    }
-    i++;
-  }
-}
-/** 無制限のくり返しを含むか（演奏の長さを決められない） */
-export const endless = (items: readonly Item[]): boolean =>
-  items.some((it, i) => it.k === 're' && it.n === 0 && items.slice(repeatStart(items, i), i).some((x) => x.k === 'ch'));
 
 /* ---------- 保存の形式 ---------- */
 export interface SongFile {
-  v: 1;
+  v: 2;
   name: string;
-  items: ItemSpec[];
-  /** 自分で作った奏法 */
-  pats?: CustomPat[];
+  key: Key;
+  meter: Meter;
+  bpm: number;
+  style: StyleId;
+  keys: KeysId;
+  gtr: GtrId;
+  chords: { r: number; q: Qual; b: number; i: number; j: number; up: boolean; mod?: Key }[];
 }
-export const toFile = (name: string, items: readonly Item[], pats: readonly CustomPat[] = []): SongFile => ({
-  v: 1,
-  name,
-  items: items.map(({ id: _id, ...rest }) => rest as ItemSpec),
-  ...(pats.length
-    ? { pats: pats.map((x) => ({ ...x, cells: x.cells.map((c) => [c[0], c[1]] as [number, number]) })) }
-    : {}),
+export const toFile = (s: Song): SongFile => ({
+  v: 2,
+  name: s.name,
+  key: { ...s.key },
+  meter: s.meter,
+  bpm: s.bpm,
+  style: s.style,
+  keys: s.keys,
+  gtr: s.gtr,
+  chords: s.chords.map((c) => ({
+    r: c.r,
+    q: c.q,
+    b: c.b,
+    i: c.at.i,
+    j: c.at.j,
+    up: c.at.up,
+    ...(c.mod ? { mod: { ...c.mod } } : {}),
+  })),
 });
-/** 作った奏法の id */
-export const CUSTOM_ID = /^u\d{1,4}$/;
-/** ラベルの文字数の上限 */
-export const LABEL_MAX = 24;
-/** 作った奏法を読む。形が違えば null */
-function readPat(o: unknown): CustomPat | null {
-  if (!o || typeof o !== 'object') return null;
-  const x = o as Record<string, unknown>,
-    len = int(x.len, 1, 64);
-  if (typeof x.id !== 'string' || !CUSTOM_ID.test(x.id) || (x.res !== 1 && x.res !== 0.5) || len === null) return null;
-  if (!Array.isArray(x.cells) || x.cells.length > 64 * PAT_ROWS) return null;
-  const cells: [number, number][] = [];
-  for (const c of x.cells) {
-    if (!Array.isArray(c)) return null;
-    const k = int(c[0], 0, len - 1),
-      r = int(c[1], 0, PAT_ROWS - 1);
-    if (k === null || r === null) return null;
-    cells.push([k, r]);
-  }
-  return { id: x.id, name: typeof x.name === 'string' ? x.name.slice(0, 20) : x.id, res: x.res, len, cells };
-}
-/** 組み込みか作った奏法の id。違えば null */
-const patId = (v: unknown): PatId | null =>
-  typeof v === 'string' && ((PAT_ORDER as readonly string[]).includes(v) || CUSTOM_ID.test(v)) ? v : null;
 const int = (v: unknown, lo: number, hi: number): number | null =>
   typeof v === 'number' && Number.isInteger(v) && v >= lo && v <= hi ? v : null;
-const oneOf = <T extends string>(v: unknown, list: readonly T[]): T | null =>
-  typeof v === 'string' && (list as readonly string[]).includes(v) ? (v as T) : null;
-export const METERS: readonly (readonly [number, number])[] = [
-  [2, 4],
-  [3, 4],
-  [4, 4],
-  [5, 4],
-  [6, 8],
-  [12, 8],
-];
-export const LENGTHS = [0, 1, 2, 3, 4, 6, 8] as const;
-export const REPEATS = [2, 3, 4, 0] as const;
-/** 1 つのブロックを読む。読めなければ null */
-function readItem(o: unknown): ItemSpec | null {
+const oneOf = <T extends string | number>(v: unknown, list: readonly T[]): T | null =>
+  (list as readonly unknown[]).includes(v) ? (v as T) : null;
+function readKey(o: unknown): Key | null {
   if (!o || typeof o !== 'object') return null;
-  const x = o as Record<string, unknown>;
-  switch (x.k) {
-    case 'ch': {
-      const d = int(x.d, 0, 11),
-        q = oneOf<Qual>(x.q, QUAL_ORDER),
-        inv = int(x.inv ?? 0, 0, 4),
-        b = int(x.b, 0, 16),
-        p = x.p === null || x.p === undefined ? null : patId(x.p);
-      if (d === null || !q || inv === null || b === null || p === undefined) return null;
-      if (x.p != null && !p) return null;
-      return { k: 'ch', d, q, inv, b, p };
-    }
-    case 'key': {
-      const t = int(x.t, 0, 11),
-        m = oneOf<Key['m']>(x.m, ['maj', 'min']);
-      return t === null || !m ? null : { k: 'key', t, m };
-    }
-    case 'met': {
-      const n = int(x.n, 1, 16),
-        dn = int(x.dn, 2, 16);
-      return n === null || dn === null || ![2, 4, 8, 16].includes(dn) ? null : { k: 'met', n, dn };
-    }
-    case 'tmp': {
-      const v = int(x.v, 30, 240);
-      return v === null ? null : { k: 'tmp', v };
-    }
-    case 'pat': {
-      const v = patId(x.v);
-      return v ? { k: 'pat', v } : null;
-    }
-    case 'vce': {
-      const v = oneOf<VoiceId>(x.v, VOICE_ORDER);
-      return v ? { k: 'vce', v } : null;
-    }
-    case 'lbl':
-      return typeof x.t === 'string' && typeof x.br === 'boolean'
-        ? { k: 'lbl', t: x.t.slice(0, LABEL_MAX), br: x.br }
-        : null;
-    case 'rs':
-      return { k: 'rs' };
-    case 're': {
-      const n = int(x.n, 0, 99);
-      return n === null || n === 1 ? null : { k: 're', n };
-    }
-    default:
-      return null;
-  }
+  const x = o as Record<string, unknown>,
+    t = int(x.t, 0, 11),
+    m = oneOf<Key['m']>(x.m, ['maj', 'min']);
+  return t === null || !m ? null : { t, m };
 }
+export const LENGTHS = [0, 1, 2, 3, 4, 6, 8] as const;
+export const BPM_MIN = 40,
+  BPM_MAX = 220;
 /** 保存した曲を読む。形が違えば null */
-export function fromFile(o: unknown): { name: string; items: Item[]; pats: CustomPat[] } | null {
+export function fromFile(o: unknown): Song | null {
   if (!o || typeof o !== 'object') return null;
-  const x = o as Record<string, unknown>;
-  if (x.v !== 1 || !Array.isArray(x.items) || x.items.length > 2000) return null;
-  const pats: CustomPat[] = [];
-  if (x.pats !== undefined) {
-    if (!Array.isArray(x.pats) || x.pats.length > 50) return null;
-    for (const r of x.pats) {
-      const pt = readPat(r);
-      if (!pt) return null;
-      pats.push(pt);
-    }
+  const x = o as Record<string, unknown>,
+    key = readKey(x.key),
+    meter = oneOf<Meter>(x.meter, [3, 4]),
+    bpm = int(x.bpm, BPM_MIN, BPM_MAX),
+    style = oneOf<StyleId>(x.style, STYLE_ORDER),
+    keys = oneOf<KeysId>(x.keys, KEYS_ORDER),
+    gtr = oneOf<GtrId>(x.gtr, GTR_ORDER);
+  if (x.v !== 2 || !key || !meter || bpm === null || !style || !keys || !gtr) return null;
+  if (!Array.isArray(x.chords) || x.chords.length > 500) return null;
+  const chords: SChord[] = [];
+  for (const r of x.chords) {
+    if (!r || typeof r !== 'object') return null;
+    const c = r as Record<string, unknown>,
+      root = int(c.r, 0, 11),
+      q = oneOf<Qual>(c.q, QUAL_ORDER),
+      b = int(c.b, 0, 16),
+      i = int(c.i, LAT.i0, LAT.i1),
+      j = int(c.j, LAT.j0, LAT.j1),
+      mod = c.mod === undefined ? null : readKey(c.mod);
+    if (root === null || !q || b === null || i === null || j === null || typeof c.up !== 'boolean') return null;
+    if (c.mod !== undefined && !mod) return null;
+    chords.push({ id: newId(), r: root, q, b, at: { i, j, up: c.up }, mod });
   }
-  const known = new Set(pats.map((pt) => pt.id)),
-    items: Item[] = [];
-  for (const r of x.items) {
-    const s = readItem(r);
-    if (!s) return null;
-    /* 曲にない作った奏法を指していれば、組み込みの奏法へ戻す */
-    if (s.k === 'ch' && s.p && CUSTOM_ID.test(s.p) && !known.has(s.p)) s.p = null;
-    if (s.k === 'pat' && CUSTOM_ID.test(s.v) && !known.has(s.v)) s.v = 'updown';
-    items.push(withId(s));
-  }
-  const name = typeof x.name === 'string' ? x.name.slice(0, 60) : '';
-  return { name, items, pats };
+  return { name: typeof x.name === 'string' ? x.name.slice(0, 60) : '', key, meter, bpm, style, keys, gtr, chords };
 }
 
 /* ---------- サンプルの記法 ---------- */
-const NUM = ['VII', 'VI', 'V', 'IV', 'III', 'II', 'I'] as const;
-const NUM_STEP: Record<string, number> = { I: 0, II: 1, III: 2, IV: 3, V: 4, VI: 5, VII: 6 };
-const SCALE: Record<Key['m'], readonly number[]> = { maj: [0, 2, 4, 5, 7, 9, 11], min: [0, 2, 3, 5, 7, 8, 10] };
 const NOTE: Record<string, number> = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
-const SUFFIX: Record<string, { M: Qual; m: Qual }> = {
-  '': { M: 'M', m: 'm' },
-  7: { M: '7', m: 'm7' },
-  M7: { M: 'M7', m: 'mM7' },
-  6: { M: '6', m: 'm6' },
-  9: { M: '9', m: 'm9' },
-  M9: { M: 'M9', m: 'M9' },
-  add9: { M: 'add9', m: 'add9' },
-  sus2: { M: 'sus2', m: 'sus2' },
-  '7sus4': { M: '7sus4', m: '7sus4' },
-  o7: { M: 'dim7', m: 'dim7' },
-  o: { M: 'dim', m: 'dim' },
-  ø: { M: 'm7b5', m: 'm7b5' },
-  sus4: { M: 'sus4', m: 'sus4' },
-  '+': { M: 'aug', m: 'aug' },
-};
+/** 音名（C・F#・Bb）を音名の数に */
+const pcOf = (s: string): number => md(NOTE[s[0]] + (s[1] === '#' ? 1 : s[1] === 'b' ? -1 : 0));
+/** 調の記法（C・Am・F#m） */
+export function parseKey(s: string): Key {
+  const m = /^([A-G][#b]?)(m?)$/.exec(s);
+  if (!m) throw new Error(`bad key: ${s}`);
+  return { t: pcOf(m[1]), m: m[2] ? 'min' : 'maj' };
+}
 /**
- * 短い記法をブロックに: 「I V vi IV」のように度数を空白で区切る。大文字は長三和音、小文字は短三和音。
- * 前に b・#、後ろに 7・M7・o（dim）・ø（m7(♭5)）・sus4・+（aug）、:n で拍の数、/n で転回。
- * [key Eb min]・[met 3/4]・[tmp 120]・[pat up]・[vce ep]・|:・:|n（n 回、* は無制限）
+ * 和音を空白で区切って並べる: 「C G Am Em」。後ろに :n で拍の数。「>D」「>Bm」で次の和音から転調。
+ * 種類は theory.ts の QUALS の記号（なしは長三和音）
  */
-export function parseSong(src: string): Item[] {
-  const out: ItemSpec[] = [];
-  let mode: Key['m'] = 'maj';
-  const toks = src.match(/\[[^\]]*\]|\S+/g) ?? [];
-  for (const tk of toks) {
-    if (tk.startsWith('[')) {
-      const [cmd, a = '', b = ''] = tk.slice(1, -1).trim().split(/\s+/);
-      if (cmd === 'key') {
-        const t = md(NOTE[a[0]] + (a.includes('b') ? -1 : 0) + (a.includes('#') ? 1 : 0));
-        mode = b === 'min' ? 'min' : 'maj';
-        out.push({ k: 'key', t, m: mode });
-      } else if (cmd === 'met') {
-        const [n, dn] = a.split('/').map(Number);
-        out.push({ k: 'met', n, dn });
-      } else if (cmd === 'tmp') out.push({ k: 'tmp', v: Number(a) });
-      else if (cmd === 'pat') out.push({ k: 'pat', v: a as PatId });
-      else if (cmd === 'vce') out.push({ k: 'vce', v: a as VoiceId });
-      else if (cmd === 'lbl') out.push({ k: 'lbl', t: a, br: b === 'br' });
-      else throw new Error(`unknown block: ${tk}`);
+export function parseChords(src: string, start: Place | null = null): SChord[] {
+  const out: SChord[] = [];
+  let prev = start,
+    mod: Key | null = null;
+  for (const tk of src.trim().split(/\s+/)) {
+    if (tk.startsWith('>')) {
+      mod = parseKey(tk.slice(1));
       continue;
     }
-    if (tk === '|:') {
-      out.push({ k: 'rs' });
-      continue;
-    }
-    if (tk.startsWith(':|')) {
-      const n = tk.slice(2);
-      out.push({ k: 're', n: n === '*' ? 0 : Number(n || 2) });
-      continue;
-    }
-    const m = /^([b#]?)([IViv]+)(M9|M7|7sus4|7|6|9|add9|sus2|sus4|o7|o|ø|\+)?(?::(\d+))?(?:\/(\d))?(?:@(\w+))?$/.exec(
-      tk,
-    );
+    const m = /^([A-G][#b]?)([^:]*)(?::(\d+))?$/.exec(tk);
     if (!m) throw new Error(`bad chord: ${tk}`);
-    const [, acc, num, suf = '', len, inv, pat] = m,
-      up = num.toUpperCase();
-    if (!NUM.includes(up as (typeof NUM)[number])) throw new Error(`bad numeral: ${tk}`);
-    const d = md(SCALE[mode][NUM_STEP[up]] + (acc === 'b' ? -1 : acc === '#' ? 1 : 0)),
-      q = SUFFIX[suf][num === up ? 'M' : 'm'];
-    out.push({ k: 'ch', d, q, inv: Number(inv ?? 0), b: Number(len ?? 0), p: (pat as PatId) ?? null });
+    const q = (m[2] === '' ? 'M' : m[2]) as Qual;
+    if (!(q in QUALS)) throw new Error(`bad quality: ${tk}`);
+    const r = pcOf(m[1]),
+      at = nearestPlace(r, q, prev);
+    out.push({ id: newId(), r, q, b: Number(m[3] ?? 0), at, mod });
+    mod = null;
+    prev = at;
   }
-  return out.map(withId);
+  return out;
 }

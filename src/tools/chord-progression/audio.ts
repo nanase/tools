@@ -1,21 +1,19 @@
 /**
- * コード進行のページの音: Web Audio API のノードで 4 つの音色・ベース・メトロノームを鳴らし、
- * くり返しを展開した順（song.ts の playOrder）にコードを先へ予約していく。
- * 音色は、ギターが Karplus-Strong の撥弦、エレピが 2 オペレータの FM、オルガンが倍音の和、ストリングスがのこぎり波 2 本と低域通過。
- * コードごとに 1 つの GainNode を通し、編集や移動のときは先に予約した分だけを消す
+ * コード進行のページの音: Web Audio API のノードでバンド（ドラム・ベース・鍵盤・ギター）の音を鳴らす。
+ * ギターはギター音響モデルのページの物理モデル（gtr.ts）、鍵盤は音色ごとの合成、ドラムは雑音と正弦波。
+ * すべての音を部屋の残響（lib/reverb.ts）に通す。予約の順と時刻は band.ts が決める
  */
 import { lookahead } from '../../lib/pause';
 import { Reverb, reverbSpec, roomOf } from '../../lib/reverb';
 import { type GtKind, GtrVoices } from './gtr';
-import { type ChordEntry, type Item, playOrder, type Step, type Timeline } from './song';
-import { patOf, tonesOf, type VoiceId } from './theory';
+import type { VoiceId } from './theory';
 
 type Ctor = typeof AudioContext;
 const AC: Ctor | undefined =
   globalThis.AudioContext ?? (globalThis as unknown as { webkitAudioContext?: Ctor }).webkitAudioContext;
 
-export type Voice = VoiceId | 'bass' | 'clk';
-/** 1 つの音。t・end はコードの頭からの秒、m は MIDI のノート番号（メトロノームは周波数 [Hz]） */
+export type Voice = VoiceId | 'bass' | 'kick' | 'snare' | 'hat' | 'rim';
+/** 1 つの音。t・end はコードの頭からの秒、m は MIDI のノート番号（ドラムでは使わない） */
 export interface NoteEv {
   t: number;
   m: number;
@@ -25,40 +23,6 @@ export interface NoteEv {
   /** 和音の音（ギターで弦とフレットを割り当てるのに使う） */
   tones?: readonly number[];
 }
-export interface Accomp {
-  bass: boolean;
-  click: boolean;
-}
-/** コードの音の並び。弦をかき鳴らす音は 11 ms ずつずらす */
-export function notesOf(e: ChordEntry, acc: Accomp): NoteEv[] {
-  const tones = tonesOf(e.it, e.key, e.pat),
-    n = tones.length,
-    S = Math.max(1, Math.round(e.durQ * 2)),
-    stepT = e.dur / S,
-    out: NoteEv[] = [];
-  const bs = 8 / e.dn;
-  for (const x of patOf(e.pat).g(n, S, bs, e.n * bs)) {
-    const ms = x.i === 'all' ? tones : x.i === 'up' ? tones.slice(1) : [tones[x.i]];
-    ms.forEach((m, k) => {
-      out.push({
-        t: x.s * stepT + (x.i === 'all' || x.i === 'up' ? k * 0.011 : 0),
-        m,
-        v: e.vce,
-        end: e.dur + 0.04,
-        vel: x.i === 'all' || x.i === 'up' ? 0.62 : x.i === 0 ? 0.9 : 0.75,
-        tones,
-      });
-    });
-  }
-  if (acc.bass) out.push({ t: 0, m: tones[0] - 12, v: 'bass', end: e.dur * 0.96, vel: 0.9 });
-  if (acc.click) {
-    const bs = (60 / e.bpm) * (4 / e.dn);
-    for (let k = 0; k < e.beats; k++)
-      out.push({ t: k * bs, m: e.bars.some((b) => b.o === k) ? 1760 : 1180, v: 'clk', end: 0, vel: 1 });
-  }
-  return out.sort((a, b) => a.t - b.t);
-}
-
 const mtof = (m: number): number => 440 * 2 ** ((m - 69) / 12);
 /** ギターのページの模型の出力に掛ける倍率（ほかの音色と実効値をそろえる。書き出して測って決めた） */
 const GT_GAIN = 1;
@@ -80,7 +44,10 @@ const LEVEL: Record<Voice, number> = {
   vib: 0.73,
   bell: 0.84,
   bass: 1,
-  clk: 1,
+  kick: 1,
+  snare: 1,
+  hat: 1,
+  rim: 1,
 };
 
 /** ギターの撥弦の予定（送るまで手元に置き、編集や一時停止で先の分を消せるようにする） */
@@ -113,8 +80,6 @@ export class CpAudio {
   private readonly ks = new Map<string, { buf: AudioBuffer; rate: number }>();
   /** ピアノの 2 つの波形（明るい成分と柔らかい成分） */
   private waves: [PeriodicWave, PeriodicWave] | null = null;
-  /** メトロノームの音量（倍率） */
-  click = 1;
 
   now(): number | null {
     return this.ac?.state === 'running' ? this.ac.currentTime : null;
@@ -294,11 +259,11 @@ export class CpAudio {
   }
 
   private nz: AudioBuffer | null = null;
-  /** メトロノームの当たりに使う短い雑音 */
+  /** ドラムに使う雑音 */
   private noiseBuf(): AudioBuffer {
     if (this.nz) return this.nz;
     const ac = this.ac as BaseAudioContext,
-      b = ac.createBuffer(1, Math.floor(ac.sampleRate * 0.03), ac.sampleRate),
+      b = ac.createBuffer(1, Math.floor(ac.sampleRate * 0.5), ac.sampleRate),
       d = b.getChannelData(0);
     let seed = 12345;
     for (let i = 0; i < d.length; i++) {
@@ -555,175 +520,56 @@ export class CpAudio {
         env(0.008, vel * 0.42, 0.05);
         break;
       }
-      case 'clk': {
-        /* 木を打つ音: 短い雑音を帯域通過に通した当たりと、すぐ消える正弦波 */
-        const o = ac.createOscillator(),
-          n = ac.createBufferSource(),
-          bp = ac.createBiquadFilter(),
-          gn = ac.createGain(),
-          a = Math.max(1e-4, vel * 1.4 * this.click);
-        n.buffer = this.noiseBuf();
-        bp.type = 'bandpass';
-        bp.frequency.value = x.m * 1.6;
-        bp.Q.value = 3;
-        n.connect(bp).connect(gn).connect(g);
-        gn.gain.setValueAtTime(a * 1.5, w);
-        gn.gain.exponentialRampToValueAtTime(1e-4, w + 0.015);
-        o.frequency.value = x.m;
+      case 'kick': {
+        /* バスドラム: 130 Hz から 45 Hz へ下がる正弦波 */
+        const o = ac.createOscillator();
+        o.frequency.setValueAtTime(130, w);
+        o.frequency.exponentialRampToValueAtTime(45, w + 0.12);
         o.connect(g);
-        g.gain.setValueAtTime(a, w);
-        g.gain.exponentialRampToValueAtTime(1e-4, w + 0.06);
+        g.gain.setValueAtTime(vel * 0.9, w);
+        g.gain.exponentialRampToValueAtTime(1e-4, w + 0.32);
         o.start(w);
-        o.stop(w + 0.07);
+        o.stop(w + 0.34);
+        break;
+      }
+      case 'snare':
+      case 'hat':
+      case 'rim': {
+        /* スネアは帯域通過の雑音と 190 Hz の胴、ハイハットは高域通過の雑音、リムは短い 1.7 kHz */
+        if (x.v === 'rim') {
+          const o = ac.createOscillator();
+          o.frequency.value = 1700;
+          o.connect(g);
+          g.gain.setValueAtTime(vel * 0.25, w);
+          g.gain.exponentialRampToValueAtTime(1e-4, w + 0.04);
+          o.start(w);
+          o.stop(w + 0.05);
+          break;
+        }
+        const n = ac.createBufferSource(),
+          fl = ac.createBiquadFilter(),
+          snare = x.v === 'snare',
+          len = snare ? 0.18 : end - w > 0.1 ? 0.22 : 0.05;
+        n.buffer = this.noiseBuf();
+        fl.type = snare ? 'bandpass' : 'highpass';
+        fl.frequency.value = snare ? 1800 : 7000;
+        n.connect(fl).connect(g);
+        g.gain.setValueAtTime(vel * (snare ? 0.5 : 0.18), w);
+        g.gain.exponentialRampToValueAtTime(1e-4, w + len);
         n.start(w);
-        n.stop(w + 0.03);
+        n.stop(w + len + 0.02);
+        if (snare) {
+          const o = ac.createOscillator(),
+            og = ac.createGain();
+          o.frequency.value = 190;
+          o.connect(og).connect(g);
+          og.gain.setValueAtTime(0.6, w);
+          og.gain.exponentialRampToValueAtTime(1e-4, w + 0.08);
+          o.start(w);
+          o.stop(w + 0.1);
+        }
         break;
       }
     }
-  }
-
-  /** 1 つのコードを今すぐ鳴らす（試聴）。bus を返す */
-  play(e: ChordEntry, acc: Accomp, at = 0.03): GainNode | null {
-    const ac = this.ac,
-      g = this.bus();
-    if (!ac || !g) return null;
-    const w = ac.currentTime + at;
-    for (const x of notesOf(e, acc)) this.note(x, w + x.t, w + x.end, g);
-    return g;
-  }
-}
-
-/** 予約したコード */
-export interface Occ {
-  /** ブロックの id */
-  id: number;
-  e: ChordEntry;
-  /** 鳴り始め（AudioContext の時刻） */
-  at: number;
-  rep: Step['rep'];
-  bus: GainNode;
-  /** まだ予約していない音（コードの頭からの秒の順） */
-  pending: NoteEv[];
-}
-/** 先に予約する時間 [s] */
-const AHEAD = 0.25;
-
-/** 曲の演奏。くり返しの回数は id ごとに持ち、編集しても数え直さない */
-export class Player {
-  occ: Occ[] = [];
-  private gen: Generator<Step> | null = null;
-  private nextAt = 0;
-  private passes = new Map<number, number>();
-  private timer: ReturnType<typeof setInterval> | undefined;
-  private done = false;
-  onEnd: (() => void) | null = null;
-
-  constructor(
-    private readonly audio: CpAudio,
-    private readonly song: () => { items: readonly Item[]; tl: Timeline; acc: Accomp },
-  ) {}
-
-  get playing(): boolean {
-    return this.timer !== undefined;
-  }
-
-  /** 位置 from（ブロックの並びの位置）から弾く。鳴らせなければ false */
-  async start(from: number): Promise<boolean> {
-    this.halt();
-    if (!(await this.audio.ready())) return false;
-    this.passes = new Map();
-    this.restart(from, (this.audio.now() ?? 0) + 0.06);
-    this.timer = setInterval(() => this.tick(), 25);
-    this.tick();
-    return true;
-  }
-  /** 演奏中に、位置 from から弾き直す（今のコードも止める） */
-  jump(from: number): void {
-    if (!this.playing) return;
-    for (const o of this.occ) this.audio.drop(o.bus);
-    this.audio.hush();
-    this.occ = [];
-    this.passes = new Map();
-    this.restart(from, (this.audio.now() ?? 0) + 0.04);
-    this.tick();
-  }
-  /** 編集した: 今のコードは鳴らしたまま、次のコードから並べ直す */
-  resync(): void {
-    if (!this.playing) return;
-    const now = this.audio.now() ?? 0,
-      cur = this.current(),
-      { items } = this.song();
-    const later = this.occ.filter((o) => o.at > now + 0.005);
-    for (const o of later) this.audio.drop(o.bus);
-    this.occ = this.occ.filter((o) => !later.includes(o));
-    let from: number;
-    if (cur) {
-      const ix = items.findIndex((x) => x.id === cur.id);
-      from = ix >= 0 ? ix + 1 : Math.min(cur.e.i, items.length);
-      this.restart(from, Math.max(now, cur.at + cur.e.dur));
-    } else this.restart(later.length ? Math.min(later[0].e.i, items.length) : 0, now + 0.04);
-  }
-  private restart(from: number, at: number): void {
-    const { items } = this.song();
-    this.gen = playOrder(items, from, this.passes);
-    this.nextAt = at;
-    this.done = false;
-  }
-  /** 鳴っているコード */
-  current(): Occ | null {
-    const now = this.audio.now();
-    if (now === null) return null;
-    let c: Occ | null = null;
-    for (const o of this.occ) if (o.at <= now + 0.001) c = o;
-    return c;
-  }
-  tick(): void {
-    const now = this.audio.now();
-    if (now === null || !this.gen) return;
-    /* タイマーが止まっていた間に過ぎた分は飛ばす（遅れた音をまとめて鳴らさない） */
-    if (this.nextAt < now - 0.1) this.nextAt = now + 0.02;
-    const { tl, acc } = this.song(),
-      horizon = now + lookahead(AHEAD);
-    while (!this.done && this.nextAt < horizon) {
-      const r = this.gen.next();
-      if (r.done) {
-        this.done = true;
-        break;
-      }
-      const e = tl.all[r.value.i];
-      if (e?.it.k !== 'ch') continue;
-      const ce = e as ChordEntry,
-        bus = this.audio.bus();
-      if (!bus) return;
-      this.occ.push({ id: ce.it.id, e: ce, at: this.nextAt, rep: r.value.rep, bus, pending: notesOf(ce, acc) });
-      this.nextAt += ce.dur;
-    }
-    /* 音は鳴る直前に予約する（一時停止や編集で、先の音を残さない） */
-    for (const o of this.occ)
-      while (o.pending.length && o.at + o.pending[0].t < horizon) {
-        const x = o.pending.shift() as NoteEv;
-        this.audio.note(x, o.at + x.t, o.at + x.end, o.bus);
-      }
-    /* 鳴り終えたコードは一覧から外す（音は自然に消える） */
-    while (this.occ.length > 1 && this.occ[1].at + 3 < now) this.occ.shift();
-    if (this.done && now >= this.nextAt) {
-      this.halt();
-      this.onEnd?.();
-    }
-  }
-  /** 演奏を止める。fade なら鳴っている音も消す */
-  halt(fade = false): void {
-    clearInterval(this.timer);
-    this.timer = undefined;
-    const now = this.audio.now() ?? 0;
-    /* 予約していない音は捨て、鳴っている音は鍵を離すように消す（ギターの弦は鳴らしたまま） */
-    for (const o of this.occ) {
-      o.pending = [];
-      if (fade || o.at > now) this.audio.drop(o.bus);
-      else this.audio.release(o.bus);
-    }
-    if (fade) this.audio.hush();
-    this.occ = [];
-    this.gen = null;
   }
 }

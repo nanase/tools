@@ -1,0 +1,302 @@
+/**
+ * コード進行のページのバンド: スタイルごとの 16 分音符の型（4 拍子は 16 歩、3 拍子は 12 歩で 1 小節）で、
+ * ドラム・ベース・鍵盤・ギターの音を和音ごとに並べ、演奏の順に鳴る直前に予約する。
+ * 型の文字: x は打つ・. は休み。ベースの 1 は根音、5 は 5 度上、8 はオクターブ上
+ */
+import { lookahead } from '../../lib/pause';
+import type { CpAudio, NoteEv, Voice } from './audio';
+import { compute, type Entry, type Meter, type Song, type StyleId } from './song';
+import { voicing } from './theory';
+
+export type MemberId = 'drums' | 'bass' | 'keys' | 'gtr';
+export const MEMBERS: readonly MemberId[] = ['drums', 'bass', 'keys', 'gtr'];
+export const MEMBER_NAMES: Record<MemberId, string> = { drums: 'ドラム', bass: 'ベース', keys: '鍵盤', gtr: 'ギター' };
+
+interface Pat {
+  k: string;
+  s: string;
+  h: string;
+  r?: string;
+  b: string;
+  c: string;
+  g: string;
+  /** 鍵盤の 1 打の長さ（歩） */
+  cl: number;
+}
+export const STYLES: Record<StyleId, Record<Meter, Pat>> = {
+  pop: {
+    4: {
+      k: 'x.......x.x.....',
+      s: '....x.......x...',
+      h: 'x.x.x.x.x.x.x.x.',
+      b: '1...1...5...1.1.',
+      c: 'x.....x...x.....',
+      g: '..x...x...x...x.',
+      cl: 2,
+    },
+    3: {
+      k: 'x...........',
+      s: '....x...x...',
+      h: 'x.x.x.x.x.x.',
+      b: '1.......5...',
+      c: '....x...x...',
+      g: 'x...x...x...',
+      cl: 2,
+    },
+  },
+  rock: {
+    4: {
+      k: 'x.....x.x.......',
+      s: '....x.......x...',
+      h: 'xxxxxxxxxxxxxxxx',
+      b: '1.1.1.1.1.1.1.1.',
+      c: 'x...............',
+      g: 'x.x.x.x.x.x.x.x.',
+      cl: 16,
+    },
+    3: {
+      k: 'x.....x.....',
+      s: '....x.......',
+      h: 'xxxxxxxxxxxx',
+      b: '1.1.1.1.1.1.',
+      c: 'x...........',
+      g: 'x.x.x.x.x.x.',
+      cl: 12,
+    },
+  },
+  bossa: {
+    4: {
+      k: 'x..x..x.x..x..x.',
+      s: '',
+      r: 'x..x..x...x..x..',
+      h: 'x.x.x.x.x.x.x.x.',
+      b: '1..5..5.1..5..5.',
+      c: 'x..x..x...x..x..',
+      g: '',
+      cl: 2,
+    },
+    3: {
+      k: 'x..x..x.....',
+      s: '',
+      r: 'x..x....x...',
+      h: 'x.x.x.x.x.x.',
+      b: '1..5..5.....',
+      c: 'x..x....x...',
+      g: '',
+      cl: 2,
+    },
+  },
+  ballad: {
+    4: {
+      k: 'x.......x.......',
+      s: '........x.......',
+      h: 'x...x...x...x...',
+      b: '1.......5.......',
+      c: 'x.......x.......',
+      g: 'x...x...x...x...',
+      cl: 8,
+    },
+    3: {
+      k: 'x...........',
+      s: '........x...',
+      h: 'x...x...x...',
+      b: '1.......5...',
+      c: 'x...........',
+      g: 'x...x...x...',
+      cl: 12,
+    },
+  },
+};
+const MEMBER_OF: Partial<Record<Voice, MemberId>> = {
+  kick: 'drums',
+  snare: 'drums',
+  hat: 'drums',
+  rim: 'drums',
+  bass: 'bass',
+};
+export const memberOf = (v: Voice): MemberId => MEMBER_OF[v] ?? (v === 'gtr' || v === 'cgt' ? 'gtr' : 'keys');
+
+/**
+ * 和音 1 つ分の音。t・end は和音の頭からの秒。spb は 16 分音符 1 つの秒。
+ * 和音の頭が小節の途中でも、型は小節の頭から数える。和音の頭に鍵盤とベースの音がなければ足す（和音が変わったのが聞こえるように）
+ */
+export function bandNotes(e: Entry, song: Song, on: Record<MemberId, boolean>, spb: number): NoteEv[] {
+  const P = STYLES[song.style][song.meter],
+    bar = song.meter * 4,
+    tones = voicing(e.ch, e.key),
+    up = tones.slice(1),
+    steps = e.beats * 4,
+    dur = e.beats * 4 * spb,
+    out: NoteEv[] = [];
+  const at = (s: number, ch: string | undefined) => ch?.[(e.start * 4 + s) % bar] === 'x';
+  for (let s = 0; s < steps; s++) {
+    const t = s * spb,
+      g = (e.start * 4 + s) % bar;
+    if (on.drums) {
+      if (at(s, P.k)) out.push({ t, m: 0, v: 'kick', end: t, vel: 1 });
+      if (at(s, P.s)) out.push({ t, m: 0, v: 'snare', end: t, vel: 1 });
+      if (at(s, P.r)) out.push({ t, m: 0, v: 'rim', end: t, vel: 1 });
+      if (at(s, P.h)) out.push({ t, m: 0, v: 'hat', end: t, vel: g % 4 === 0 ? 1 : 0.6 });
+    }
+    const b = P.b[g];
+    if (on.bass && ((b && b !== '.') || (s === 0 && b === '.'))) {
+      const m = tones[0] - 12 + (b === '5' ? 7 : b === '8' ? 12 : 0);
+      out.push({ t, m, v: 'bass', end: Math.min(dur, t + 4 * spb), vel: 0.9 });
+    }
+    if (on.keys && (at(s, P.c) || (s === 0 && !at(0, P.c))))
+      up.forEach((m, k) => {
+        out.push({ t: t + k * 0.006, m, v: song.keys, end: Math.min(dur + 0.04, t + P.cl * spb), vel: 0.6 });
+      });
+    if (on.gtr && at(s, P.g))
+      up.forEach((m, k) => {
+        out.push({
+          t: t + k * 0.009,
+          m: m - 12,
+          v: song.gtr,
+          end: Math.min(dur + 0.04, t + 3 * spb),
+          vel: 0.55,
+          tones: up.map((x) => x - 12),
+        });
+      });
+  }
+  return out.sort((a, b) => a.t - b.t);
+}
+
+/** 予約した和音 */
+export interface Occ {
+  k: number;
+  id: number;
+  e: Entry;
+  /** 鳴り始め（AudioContext の時刻） */
+  at: number;
+  dur: number;
+  bus: GainNode;
+  pending: NoteEv[];
+}
+/** 先に予約する時間 [s] */
+const AHEAD = 0.25;
+
+/** 曲の演奏。最後まで弾いたら、くり返しなら頭へ戻る */
+export class Player {
+  occ: Occ[] = [];
+  private next = 0;
+  private nextAt = 0;
+  private timer: ReturnType<typeof setInterval> | undefined;
+  private done = false;
+  onEnd: (() => void) | null = null;
+  /** 音を鳴らした（バンドのメンバーの絵を動かす）。at は AudioContext の時刻 */
+  onHit: ((m: MemberId, at: number) => void) | null = null;
+
+  constructor(
+    private readonly audio: CpAudio,
+    private readonly ctx: () => { song: Song; on: Record<MemberId, boolean>; loop: boolean },
+  ) {}
+
+  get playing(): boolean {
+    return this.timer !== undefined;
+  }
+  /** k 番目の和音から弾く。鳴らせなければ false */
+  async start(k: number): Promise<boolean> {
+    this.halt();
+    if (!this.ctx().song.chords.length || !(await this.audio.ready())) return false;
+    this.restart(k, (this.audio.now() ?? 0) + 0.06);
+    this.timer = setInterval(() => this.tick(), 25);
+    this.tick();
+    return true;
+  }
+  /** 演奏中に k 番目の和音から弾き直す */
+  jump(k: number): void {
+    if (!this.playing) return;
+    for (const o of this.occ) this.audio.drop(o.bus);
+    this.audio.hush();
+    this.occ = [];
+    this.restart(k, (this.audio.now() ?? 0) + 0.04);
+    this.tick();
+  }
+  /** 編集した: 鳴っている和音はそのまま、次の和音から並べ直す */
+  resync(): void {
+    if (!this.playing) return;
+    const now = this.audio.now() ?? 0,
+      cur = this.current(),
+      later = this.occ.filter((o) => o.at > now + 0.005);
+    for (const o of later) this.audio.drop(o.bus);
+    this.occ = this.occ.filter((o) => !later.includes(o));
+    const { song } = this.ctx();
+    if (cur) {
+      const ix = song.chords.findIndex((c) => c.id === cur.id);
+      this.restart(ix >= 0 ? ix + 1 : cur.k, Math.max(now, cur.at + cur.dur));
+    } else this.restart(0, now + 0.04);
+  }
+  private restart(k: number, at: number): void {
+    this.next = k;
+    this.nextAt = at;
+    this.done = false;
+  }
+  /** 鳴っている和音 */
+  current(): Occ | null {
+    const now = this.audio.now();
+    if (now === null) return null;
+    let c: Occ | null = null;
+    for (const o of this.occ) if (o.at <= now + 0.001) c = o;
+    return c;
+  }
+  tick(): void {
+    const now = this.audio.now();
+    if (now === null) return;
+    if (this.nextAt < now - 0.1) this.nextAt = now + 0.02;
+    const { song, on, loop } = this.ctx(),
+      { entries } = compute(song),
+      spb = 60 / song.bpm / 4,
+      horizon = now + lookahead(AHEAD);
+    while (!this.done && this.nextAt < horizon) {
+      if (this.next >= entries.length) {
+        if (!loop || !entries.length) {
+          this.done = true;
+          break;
+        }
+        this.next = 0;
+      }
+      const e = entries[this.next],
+        bus = this.audio.bus();
+      if (!bus) return;
+      const dur = e.beats * 4 * spb;
+      this.occ.push({ k: this.next, id: e.c.id, e, at: this.nextAt, dur, bus, pending: bandNotes(e, song, on, spb) });
+      this.nextAt += dur;
+      this.next++;
+    }
+    for (const o of this.occ)
+      while (o.pending.length && o.at + o.pending[0].t < horizon) {
+        const x = o.pending.shift() as NoteEv;
+        this.audio.note(x, o.at + x.t, o.at + x.end, o.bus);
+        this.onHit?.(memberOf(x.v), o.at + x.t);
+      }
+    while (this.occ.length > 1 && this.occ[1].at + 3 < now) this.occ.shift();
+    if (this.done && now >= this.nextAt) {
+      this.halt();
+      this.onEnd?.();
+    }
+  }
+  /** 演奏を止める。予約していない音は捨て、鳴っている音は鍵を離すように消す（ギターの弦は鳴らしたまま）。fade なら全部消す */
+  halt(fade = false): void {
+    clearInterval(this.timer);
+    this.timer = undefined;
+    const now = this.audio.now() ?? 0;
+    for (const o of this.occ) {
+      o.pending = [];
+      if (fade || o.at > now) this.audio.drop(o.bus);
+      else this.audio.release(o.bus);
+    }
+    if (fade) this.audio.hush();
+    this.occ = [];
+  }
+}
+
+/** 1 つの和音を今すぐ鳴らす（地図や駅を押したときの試聴）: 鍵盤とベースで 1 拍半 */
+export function previewNotes(e: Entry, song: Song): NoteEv[] {
+  const tones = voicing(e.ch, e.key),
+    up = tones.slice(1);
+  return [
+    { t: 0, m: tones[0] - 12, v: 'bass', end: 0.7, vel: 0.85 },
+    ...up.map((m, k): NoteEv => ({ t: k * 0.012, m, v: song.keys, end: 0.9, vel: 0.6 })),
+  ];
+}

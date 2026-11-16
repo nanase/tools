@@ -1,487 +1,356 @@
 /**
- * コード進行のページの入口: ブロックの並び（曲）を持ち、3 つの表示・編集の窓・下のパレット・ドラッグ・演奏・保存をつなぐ。
+ * コード進行のページの入口: 和音の地図で和音を並べ、緊張のレールとバンドで鳴らす。
+ * 地図の三角形を押すと選んだ和音の後ろ（なければ最後）に足し、マウスでなぞると続けて足す。道の番号か駅を押すと選ぶ。
  * 曲は開き直しても戻るようにブラウザに保存し、名前を付けた保存は別のキーに持つ（設定をもとに戻しても消さない）
  */
-
 import { Choice } from '../../lib/choice';
-import { $, $$, esc } from '../../lib/dom';
+import { $, esc } from '../../lib/dom';
 import { ParamGroup } from '../../lib/param';
 import { autoPause } from '../../lib/pause';
 import { outVol, type PlayKey } from '../../lib/play';
 import { store, stored } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
-import { type Accomp, CpAudio, Player } from './audio';
-import { ICON, keySig } from './icons';
-import { CLICK, VOL0 } from './params';
-import { SAMPLE0, SAMPLES } from './samples';
+import { CpAudio } from './audio';
+import { MEMBER_NAMES, MEMBERS, type MemberId, Player, previewNotes } from './band';
+import { Coaster } from './coaster';
+import { ICON } from './icons';
+import { type MapState, MapView } from './map';
+import { BPM, VOL0 } from './params';
+import { SAMPLE0, sampleSong } from './samples';
 import {
-  type ChordEntry,
   compute,
-  copyItem,
-  endless,
+  type Entry,
   fromFile,
-  type Item,
-  type ItemSpec,
-  isChord,
-  type Kind,
-  LABEL_MAX,
+  type GtrId,
+  type KeysId,
+  keyAt,
   LENGTHS,
-  type MarkEntry,
-  METERS,
-  parseSong,
-  REPEATS,
-  type Timeline,
+  type Meter,
+  nearestPlace,
+  newId,
+  type Place,
+  type SChord,
+  type Song,
+  STYLE_NAMES,
+  type StyleId,
+  samePlace,
   toFile,
-  withId,
+  triadOf,
 } from './song';
-import {
-  type Chord,
-  type CustomPat,
-  chordName,
-  DIATONIC,
-  diatonicQ,
-  func,
-  isBuiltin,
-  KEY_NAMES,
-  type Key,
-  keyName,
-  lvName,
-  md,
-  namedNext,
-  OTHER,
-  PAT_ORDER,
-  PAT_ROWS,
-  type PatId,
-  patGlyph,
-  patOf,
-  QUAL_ORDER,
-  QUALS,
-  type Qual,
-  roman,
-  romanBase,
-  rootName,
-  sameKey,
-  setCustomPats,
-  sigOf,
-  toGrid,
-  tonesOf,
-  trans,
-  VOICE_ORDER,
-  VOICES,
-  voicing,
-} from './theory';
-import { type Ctx, type Drag, drawBands, keyShort, redrawWheel, type Target, VIEWS, type ViewId } from './view';
+import { chordName, KEY_NAMES, type Key, keyName, md, QUAL_ORDER, QUALS, type Qual, roman, VOICES } from './theory';
 
 initToolPage();
 
-const sampleItems = (id: string): Item[] => parseSong((SAMPLES.find((s) => s.id === id) ?? SAMPLES[0]).src);
-const sampleName = (id: string): string => (SAMPLES.find((s) => s.id === id) ?? SAMPLES[0]).name;
-
 /* ---------- 状態 ---------- */
 const S = {
-  items: [] as Item[],
-  tl: null as unknown as Timeline,
-  name: '',
+  song: sampleSong(SAMPLE0),
   sel: null as number | null,
-  cue: null as number | null,
-  view: 'score' as ViewId,
-  nOf: 3 as 3 | 4,
-  tab: 'ch' as 'ch' | 'mk',
-  acc: { bass: true, click: false } as Accomp,
-  /** 開くか保存してから変えたか */
+  /** 止まっている間に次に弾き始める和音 */
+  cue: 0,
+  on: { drums: true, bass: true, keys: true, gtr: true } as Record<MemberId, boolean>,
+  loop: true,
   dirty: false,
-  /** 自分で作った奏法（曲と一緒に保存する） */
-  pats: [] as CustomPat[],
 };
 {
-  const f = fromFile(stored('song'));
-  if (f?.items.length) {
-    S.items = f.items;
-    S.name = f.name;
-    S.pats = f.pats;
+  const f = fromFile(stored('song2'));
+  if (f) {
+    S.song = f;
     S.dirty = stored('dirty') === true;
-  } else {
-    S.items = sampleItems(SAMPLE0);
-    S.name = sampleName(SAMPLE0);
   }
-  const v = stored('view');
-  if (v === 'score' || v === 'lanes' || v === 'wheel') S.view = v;
-  if (stored('n4') === true) S.nOf = 4;
-  const a = stored('acc') as Partial<Accomp> | undefined;
-  if (a && typeof a === 'object') S.acc = { bass: a.bass !== false, click: a.click === true };
+  const on = stored('on') as Partial<Record<MemberId, boolean>> | undefined;
+  if (on && typeof on === 'object') for (const m of MEMBERS) S.on[m] = on[m] !== false;
+  if (stored('loop') === false) S.loop = false;
 }
-setCustomPats(S.pats);
-S.tl = compute(S.items);
-
-const ctx = (): Ctx => ({ tl: S.tl, items: S.items, sel: S.sel, cue: S.cue, nOf: S.nOf });
-const entryOf = (id: number | null) => (id === null ? undefined : S.tl.all.find((e) => e.it.id === id));
-const indexOf = (id: number) => S.items.findIndex((x) => x.id === id);
+let entries: Entry[] = [],
+  beats = 0;
+function recompute(): void {
+  ({ entries, beats } = compute(S.song));
+  if (S.sel !== null && S.sel >= S.song.chords.length) S.sel = null;
+  if (S.cue >= S.song.chords.length) S.cue = 0;
+}
+recompute();
 
 /* ---------- 元に戻す ---------- */
-const undo: Item[][] = [],
-  redo: Item[][] = [];
-const snap = () => S.items.map((x) => ({ ...x }));
-/** 変える前に呼ぶ */
+const undo: string[] = [],
+  redo: string[] = [];
+const snap = () => JSON.stringify(toFile(S.song));
 function remember(): void {
   undo.push(snap());
   if (undo.length > 100) undo.shift();
   redo.length = 0;
 }
-function travel(from: Item[][], to: Item[][]): void {
+function travel(from: string[], to: string[]): void {
   const prev = from.pop();
   if (!prev) return;
   to.push(snap());
-  S.items = prev;
-  if (S.sel !== null && indexOf(S.sel) < 0) S.sel = null;
+  const f = fromFile(JSON.parse(prev));
+  if (!f) return;
+  S.song = f;
+  S.sel = null;
   changed();
+  syncControls();
 }
 
 /* ---------- 音と演奏 ---------- */
 const audio = new CpAudio(),
-  player = new Player(audio, () => ({ items: S.items, tl: S.tl, acc: S.acc }));
-let auditionBus: GainNode | null = null;
-/** 止まっている間の試聴（コード 1 つ。長いコードは 3 秒で消す） */
-function audition(e: ChordEntry | undefined, pat?: PatId): void {
+  player = new Player(audio, () => ({ song: S.song, on: S.on, loop: S.loop }));
+let previewBus: GainNode | null = null;
+/** 止まっている間の試聴（和音 1 つ） */
+function preview(k: number): void {
+  const e = entries[k];
   if (!e || player.playing) return;
   void audio.ready().then((ok) => {
-    if (!ok) return;
-    if (auditionBus) audio.drop(auditionBus);
-    const x = pat ? { ...e, pat } : e,
-      g = audio.play(x, { bass: S.acc.bass, click: false });
-    auditionBus = g;
-    if (g)
-      setTimeout(
-        () => {
-          if (auditionBus === g) audio.drop(g);
-        },
-        Math.min(x.dur, 3) * 1000 + 600,
-      );
+    const ac = audio.ac,
+      g = audio.bus();
+    if (!ok || !ac || !g) return;
+    if (previewBus) audio.drop(previewBus);
+    previewBus = g;
+    const w = ac.currentTime + 0.02;
+    for (const x of previewNotes(e, S.song)) audio.note(x, w + x.t, w + x.end, g);
+    setTimeout(() => {
+      if (previewBus === g) audio.drop(g);
+    }, 1800);
   });
 }
-const playBtn = $<HTMLButtonElement>('#cp-pp');
+const pp = $<HTMLButtonElement>('#cp-pp');
 function syncPlay(): void {
   const on = player.playing;
-  playBtn.classList.toggle('on', on);
-  playBtn.setAttribute('aria-label', on ? '一時停止' : '演奏');
-  playBtn.title = on ? '一時停止' : '選んだ位置から演奏';
-  const st = $('#cp-st');
-  st.hidden = !on && S.cue === null;
-  $('#cp-led').className = on ? 'led on' : 'led half';
-  $('#cp-stT').textContent = on ? '演奏中' : '一時停止中';
-  $('#pal-pp').classList.toggle('on', on);
-  $('#pal-pp').setAttribute('aria-label', on ? '一時停止' : '演奏');
-  posText(null);
+  pp.classList.toggle('on', on);
+  pp.setAttribute('aria-label', on ? '一時停止' : '演奏');
+  pp.title = on ? '一時停止' : '選んだ和音から演奏';
+  $('#cp-st').hidden = false;
+  $('#cp-led').className = on ? 'led on' : 'led';
+  $('#cp-stT').textContent = on ? '演奏中' : '待機中';
+  posText(on ? (player.current()?.k ?? S.cue) : S.cue);
 }
-/** 位置の表示: 小節・コード・くり返しの回目 */
-function posText(occ: { e: ChordEntry; rep: { pass: number } | null } | null): void {
-  let e: ChordEntry | undefined = occ?.e;
-  if (!e) {
-    const c = entryOf(S.cue);
-    e = c && isChord(c) ? c : S.tl.chords[0];
-  }
-  const t = e
-    ? `${e.bars[0]?.no ?? '–'} 小節 · ${roman(e.it, e.key)}${occ?.rep ? ` · ${occ.rep.pass} 回目` : ''}`
-    : '–';
+function posText(k: number): void {
+  const e = entries[k],
+    t = e ? `${e.bar} 小節 · ${roman(e.ch, e.key)}` : '–';
   const el = $('#cp-pos');
   if (el.textContent !== t) el.textContent = t;
-  $('#cp-len').textContent = endless(S.items) ? 'くり返しは無制限' : `${S.tl.chords.at(-1)?.bars.at(-1)?.no ?? 0} 小節`;
 }
 async function play(): Promise<void> {
   if (player.playing) return pause();
-  if (auditionBus) audio.drop(auditionBus);
-  const ix = S.cue === null ? 0 : Math.max(0, indexOf(S.cue));
-  if (!(await player.start(ix))) return;
+  if (previewBus) audio.drop(previewBus);
+  if (!(await player.start(S.sel ?? S.cue))) return;
   syncPlay();
   requestAnimationFrame(frame);
 }
 function pause(): void {
   const cur = player.current();
   player.halt();
-  if (cur) S.cue = cur.id;
+  if (cur) S.cue = cur.k;
   syncPlay();
-  render();
+  draw();
 }
 player.onEnd = () => {
-  S.cue = null;
+  S.cue = 0;
   syncPlay();
-  render();
+  draw();
 };
-function frame(): void {
-  if (!player.playing) return;
-  const occ = player.current(),
-    now = audio.now() ?? 0,
-    f = occ ? (now - occ.at) / occ.e.dur : 0;
-  VIEWS[S.view].playhead(viewEl, ctx(), occ, f);
-  posText(occ);
-  requestAnimationFrame(frame);
-}
-/**
- * 前・次の小節の頭へ移る（演奏中はすぐそこから弾く）。小節の途中から始まるコードは、そのコードの頭へ。
- * 基準は演奏中なら鳴っているコード、止まっていれば弾き始めのコード
- */
-function barJump(dir: -1 | 1): void {
-  const ch = S.tl.chords;
-  if (!ch.length) return;
-  const starts: number[] = [];
-  let last = 1;
-  for (const e of ch) {
-    starts.push(e.bars[0]?.o === 0 ? e.bars[0].no : last);
-    last = e.bars.at(-1)?.no ?? last;
-  }
-  const curE = player.playing ? player.current()?.e : undefined,
-    cue = entryOf(S.cue),
-    cur = curE ?? (cue && isChord(cue) ? cue : ch[0]),
-    target = starts[cur.ci] + dir;
-  let j = ch.findIndex((e, k) => starts[k] >= target || e.bars.some((b) => b.no === target));
-  if (dir < 0 && target < 1) j = 0;
-  if (j < 0) return;
-  cueTo(ch[j].it.id);
-  if (!player.playing) {
-    syncPlay();
-    render();
-  }
-}
 /** 弾き始めの位置を変える（演奏中はすぐそこへ移る） */
-function cueTo(id: number | null): void {
-  S.cue = id;
-  if (player.playing) player.jump(id === null ? 0 : Math.max(0, indexOf(id)));
+function cueTo(k: number): void {
+  S.cue = k;
+  if (player.playing) player.jump(k);
+  else posText(k);
 }
-playBtn.addEventListener('click', () => void play());
-$('#cp-home').addEventListener('click', () => {
-  cueTo(null);
-  if (!player.playing) {
-    syncPlay();
-    render();
-  }
-});
+function barJump(dir: -1 | 1): void {
+  if (!entries.length) return;
+  const cur = player.playing ? (player.current()?.k ?? S.cue) : S.cue,
+    target = entries[cur].bar + dir;
+  let k = entries.findIndex((e) => e.bar >= target);
+  if (target < 1) k = 0;
+  if (k < 0) return;
+  S.sel = k;
+  cueTo(k);
+  draw();
+  showEd();
+}
+pp.addEventListener('click', () => void play());
+$('#cp-prev').addEventListener('click', () => barJump(-1));
+$('#cp-next').addEventListener('click', () => barJump(1));
+$('#cp-undo').addEventListener('click', () => travel(undo, redo));
+$('#cp-redo').addEventListener('click', () => travel(redo, undo));
 autoPause(audio, { pause: () => player.playing && pause(), hidden: () => player.tick() });
 new ParamGroup<PlayKey>([outVol(VOL0)], (v) => audio.vol(v.vol));
-const clickGroup = new ParamGroup<'clk'>([CLICK], (v) => {
-  audio.click = 10 ** (v.clk / 20);
-});
+const bpmGroup = new ParamGroup<'bpm'>(
+  [BPM],
+  (v, k) => {
+    if (!k) return;
+    remember();
+    S.song.bpm = v.bpm;
+    changed();
+  },
+  null,
+  { save: false },
+);
 new Choice<string>($('#p-room'), (v) => audio.setRoom(v));
-const syncClick = () => clickGroup.setOff('clk', !S.acc.click, 'メトロノームを止めている間は使いません');
-for (const b of $$<HTMLButtonElement>('[data-acc]')) {
-  const k = b.dataset.acc as keyof Accomp,
-    set = () => {
-      b.setAttribute('aria-pressed', String(S.acc[k]));
-      b.querySelector('.led')?.classList.toggle('on', S.acc[k]);
-    };
-  set();
-  b.addEventListener('click', () => {
-    S.acc[k] = !S.acc[k];
-    store('acc', S.acc);
-    set();
-    syncClick();
-    player.resync();
-  });
-}
 
-/* ---------- 強調の切り替え ---------- */
-const pageRoot = $('#cp-page');
-for (const b of $$<HTMLButtonElement>('[data-hl]')) {
-  const k = b.dataset.hl as string,
-    set = (on: boolean) => {
-      b.setAttribute('aria-pressed', String(on));
-      b.querySelector('.led')?.classList.toggle('on', on);
-      pageRoot.classList.toggle(`cp-no-${k}`, !on);
-      $('#cp-pal').classList.toggle(`cp-no-${k}`, !on);
-    };
-  set(stored(`hl-${k}`) !== false);
-  b.addEventListener('click', () => {
-    const on = b.getAttribute('aria-pressed') !== 'true';
-    set(on);
-    store(`hl-${k}`, on);
-  });
+/* ---------- 地図 ---------- */
+const mapCv = $<HTMLCanvasElement>('#cp-map'),
+  mapView = new MapView(mapCv),
+  mapw = $('#cp-mapw');
+let hover: Place | null = null,
+  frac = 0;
+const mapState = (): MapState => ({
+  song: S.song,
+  entries,
+  sel: S.sel,
+  play: player.playing ? (player.current()?.k ?? -1) : -1,
+  frac,
+  hover,
+});
+/** 選んだ和音の後ろ（なければ最後）に三角形の和音を足す */
+function addAt(p: Place, after: number | null): number {
+  const t = triadOf(p),
+    ix = after === null ? S.song.chords.length : after + 1,
+    c: SChord = { id: newId(), r: t.r, q: t.q, b: 0, at: p, mod: null };
+  S.song.chords.splice(ix, 0, c);
+  return ix;
 }
-
-/* ---------- 描画 ---------- */
-const viewEl = $('#cp-view'),
-  stage = $('#cp-stage');
-function render(): void {
-  const v = VIEWS[S.view],
-    c = ctx();
-  viewEl.innerHTML = v.html(c);
-  v.mount(viewEl, c);
-  if (player.playing) frame();
-  for (const b of $$<HTMLButtonElement>('#cp-vw button'))
-    b.setAttribute('aria-pressed', String(b.dataset.v === S.view));
-  showEd();
-  renderPal();
-  posText(null);
-}
-function changed(): void {
-  S.tl = compute(S.items);
-  if (S.cue !== null && indexOf(S.cue) < 0) S.cue = null;
-  S.dirty = true;
-  saveCurrent();
-  player.resync();
-  render();
-}
-function saveCurrent(): void {
-  store('song', toFile(S.name, S.items, S.pats));
-  store('dirty', S.dirty);
-}
-$('#cp-vw').addEventListener('click', (ev) => {
-  const b = (ev.target as Element).closest<HTMLElement>('[data-v]');
-  if (!b) return;
-  S.view = b.dataset.v as ViewId;
-  store('view', S.view);
-  render();
+let drawing: { last: Place } | null = null;
+const local = (ev: PointerEvent, el: HTMLElement): [number, number] => {
+  const r = el.getBoundingClientRect();
+  return [ev.clientX - r.left, ev.clientY - r.top];
+};
+mapCv.addEventListener('pointerdown', (ev) => {
+  if (ev.button > 0) return;
+  const [x, y] = local(ev, mapCv),
+    st = mapState(),
+    k = mapView.nodeAt(st, x, y);
+  if (k >= 0) {
+    S.sel = S.sel === k ? null : k;
+    if (S.sel !== null) {
+      cueTo(k);
+      preview(k);
+    }
+    draw();
+    showEd();
+    return;
+  }
+  const p = mapView.hit(x, y);
+  if (!p) return;
+  remember();
+  S.sel = addAt(p, S.sel);
+  changed();
+  preview(S.sel);
+  /* マウスとペンはなぞると続けて足す（タッチはスクロールのため押すだけ） */
+  if (ev.pointerType !== 'touch') {
+    drawing = { last: p };
+    mapCv.setPointerCapture(ev.pointerId);
+  }
+});
+mapCv.addEventListener('pointermove', (ev) => {
+  const [x, y] = local(ev, mapCv),
+    p = mapView.hit(x, y);
+  if (drawing && p && !samePlace(p, drawing.last)) {
+    drawing.last = p;
+    S.sel = addAt(p, S.sel);
+    changed();
+    preview(S.sel);
+    return;
+  }
+  if (!(p === hover || (p && hover && samePlace(p, hover)))) {
+    hover = p;
+    if (!player.playing) mapView.draw(mapState());
+  }
+});
+addEventListener('pointerup', () => {
+  drawing = null;
+});
+mapCv.addEventListener('pointerleave', () => {
+  hover = null;
+  if (!player.playing) mapView.draw(mapState());
 });
 
-/* ---------- 編集の窓 ---------- */
-/** 選択肢の行。3 つ目の要素は吹き出しと読み上げの名前（中身が図柄だけのとき） */
-const chipRow = (lb: string, a: string, opts: readonly (readonly [string | number, string, string?])[], cur: unknown) =>
-  `<div class="cp-er"><span class="cp-el">${lb}</span><div class="chips">${opts
-    .map(
-      ([v, t, tt]) =>
-        `<button type="button" class="chip" data-a="${a}" data-v="${v}" aria-pressed="${String(v) === String(cur)}"${tt ? ` title="${tt}" aria-label="${tt}"` : ''}>${t}</button>`,
-    )
-    .join('')}</div></div>`;
+/* ---------- 緊張のレール ---------- */
+const rcCv = $<HTMLCanvasElement>('#cp-rc'),
+  coaster = new Coaster(rcCv);
+let rdrag: { k: number; x0: number; moved: boolean; slot: number; cx: number } | null = null;
+let cartBeat: number | null = null;
+const coasterState = () => ({
+  entries,
+  beats,
+  sel: S.sel,
+  play: player.playing ? (player.current()?.k ?? -1) : -1,
+  cart: cartBeat,
+  caret: rdrag?.moved ? rdrag.cx : null,
+});
+rcCv.addEventListener('pointerdown', (ev) => {
+  const [x] = local(ev, rcCv),
+    k = coaster.stationAt(coasterState(), x);
+  if (k < 0) return;
+  rdrag = { k, x0: x, moved: false, slot: k, cx: x };
+  rcCv.setPointerCapture(ev.pointerId);
+});
+rcCv.addEventListener('pointermove', (ev) => {
+  if (!rdrag) return;
+  const [x] = local(ev, rcCv);
+  if (Math.abs(x - rdrag.x0) > 6) rdrag.moved = true;
+  [rdrag.slot, rdrag.cx] = coaster.slotAt(coasterState(), x);
+  if (rdrag.moved) coaster.draw(coasterState());
+});
+rcCv.addEventListener('pointerup', () => {
+  const d = rdrag;
+  rdrag = null;
+  if (!d) return;
+  if (!d.moved) {
+    S.sel = S.sel === d.k ? null : d.k;
+    if (S.sel !== null) {
+      cueTo(d.k);
+      preview(d.k);
+      reveal(d.k);
+    }
+    draw();
+    showEd();
+    return;
+  }
+  let to = d.slot;
+  if (to === d.k || to === d.k + 1) return draw();
+  remember();
+  const [c] = S.song.chords.splice(d.k, 1);
+  if (d.k < to) to--;
+  S.song.chords.splice(to, 0, c);
+  S.sel = to;
+  changed();
+});
+
+/* ---------- 選んだ和音の小窓 ---------- */
+const NEAR_KEYS: [string, string][] = [
+  ['', 'そのまま'],
+  ['h1', '半音上'],
+  ['w1', '全音上'],
+  ['dom', '属調'],
+  ['sub', '下属調'],
+  ['rel', '平行調'],
+  ['par', '同主調'],
+];
+function modKey(prev: Key, v: string): Key {
+  const to: Record<string, [number, Key['m']]> = {
+    dom: [7, prev.m],
+    sub: [5, prev.m],
+    h1: [1, prev.m],
+    w1: [2, prev.m],
+    rel: prev.m === 'maj' ? [9, 'min'] : [3, 'maj'],
+    par: [0, prev.m === 'maj' ? 'min' : 'maj'],
+  };
+  const [dt, m] = to[v];
+  return { t: md(prev.t + dt), m };
+}
 const iconBtn = (a: string, icon: string, name: string) =>
   `<button type="button" class="cp-pi" data-a="${a}" title="${name}" aria-label="${name}">${icon}</button>`;
-/** 奏法の選択肢: 組み込みの奏法（図だけ）・作った奏法（図と名前）・新しい奏法・作った奏法の編集 */
-function patChips(a: string, cur: PatId | null, block?: PatId): string {
-  const chip = (id: PatId, inner: string, name: string) =>
-    `<button type="button" class="chip cp-gc" data-a="${a}" data-v="${id}" aria-pressed="${cur === id}" title="${esc(name)}" aria-label="${esc(name)}">${inner}</button>`;
-  let h = '';
-  if (block !== undefined)
-    h += `<button type="button" class="chip" data-a="${a}" data-v="" aria-pressed="${!cur}" title="${esc(`奏法ブロックどおり（${patOf(block).name}）`)}">ブロックどおり</button>`;
-  h += PAT_ORDER.map((id) => chip(id, patGlyph(id), patOf(id).name)).join('');
-  h += S.pats.map((x) => chip(x.id, `${patGlyph(x.id)}<span class="cp-cpn">${esc(x.name)}</span>`, x.name)).join('');
-  h += `<button type="button" class="chip cp-pnew" data-a="pnew" title="今の奏法を下書きに、新しい奏法を作る" aria-label="新しい奏法を作る">${ICON.new}作る</button>`;
-  if (cur && !isBuiltin(cur))
-    h += `<button type="button" class="chip" data-a="pedit" data-v="${cur}" title="この奏法を編集" aria-label="この奏法を編集">${ICON.edit}編集</button>`;
-  return `<div class="chips">${h}</div>`;
-}
-const lenLabel = (b: number) => (b === 0 ? '拍子どおり' : `${b} 拍`);
-function edHTML(e: (typeof S.tl.all)[number]): string {
-  const it = e.it;
-  const head = (t: string, aud = false) =>
-    `<div class="cp-eh"><b>${t}</b>${aud ? iconBtn('aud', ICON.aud, '試聴') : ''}${iconBtn('dup', ICON.dup, '複製')}${iconBtn('del', ICON.del, '削除')}<button type="button" class="cp-ex" data-a="close" aria-label="閉じる" title="閉じる">×</button></div>`;
-  if (isChord(e)) {
-    const c = e.it,
-      k = e.key,
-      pv = e.prev && sameKey(e.prev.key, k) ? e.prev : null,
-      n = QUALS[c.q].iv.length > 3 ? 4 : 3;
-    let rt = '';
-    for (let d = 0; d < 12; d++) {
-      const dq = diatonicQ(d, k, n),
-        lv = pv ? trans(pv.it, pv.key, { d, q: dq ?? c.q, inv: 0 }, k).lv : -1;
-      rt += `<button type="button" class="${dq ? 'dia' : ''}" data-a="d" data-v="${d}" aria-pressed="${d === c.d}"><b>${romanBase(d, k)}</b><span>${rootName(d, k)}</span><i class="cp-lvb${lv > 0 ? ` l${lv}` : ''}"></i></button>`;
-    }
-    const INV = ['基本形', '第 1 転回形', '第 2 転回形', '第 3 転回形'],
-      invs = QUALS[c.q].iv.map((_, i) => [i, chordName({ ...c, inv: i }, k), INV[i]] as const);
-    return (
-      head(`${roman(c, k)} · ${chordName(c, k)}`, true) +
-      `<div class="cp-er"><span class="cp-el">根音</span><div class="cp-rt">${rt}</div></div>` +
-      chipRow(
-        '種類',
-        'q',
-        QUAL_ORDER.map((q) => [q, chordName({ d: c.d, q, inv: 0 }, k), QUALS[q].name]),
-        c.q,
-      ) +
-      chipRow('転回', 'inv', invs, c.inv) +
-      chipRow(
-        '長さ',
-        'b',
-        LENGTHS.map((b) => [b, b === 0 ? `拍子どおり（${e.n} 拍）` : lenLabel(b)]),
-        c.b,
-      ) +
-      `<div class="cp-er"><span class="cp-el">奏法</span>${patChips('p', c.p, e.defPat)}</div>`
-    );
-  }
-  const m = e as MarkEntry;
-  switch (it.k) {
-    case 'key': {
-      const near: [string, string][] = [
-        ['dom', '属調'],
-        ['sub', '下属調'],
-        ['rel', '平行調'],
-        ['par', '同主調'],
-        ['h1', '半音上'],
-        ['w1', '全音上'],
-      ];
-      return (
-        head(m.first ? '調' : '転調') +
-        chipRow(
-          '主音',
-          't',
-          KEY_NAMES.map((n, i) => [i, n]),
-          it.t,
-        ) +
-        chipRow(
-          '種類',
-          'm',
-          [
-            ['maj', 'メジャー'],
-            ['min', 'マイナー'],
-          ],
-          it.m,
-        ) +
-        (m.first
-          ? ''
-          : `<div class="cp-er"><span class="cp-el">前の調から</span><div class="chips">${near.map(([v, t]) => `<button type="button" class="chip" data-a="near" data-v="${v}">${t}</button>`).join('')}</div></div><p class="cp-en">前の調 ${keyName(m.prevKey)} · 後ろのコードは度数のまま移る</p>`)
-      );
-    }
-    case 'met':
-      return (
-        head('拍子') +
-        chipRow(
-          '拍子',
-          'met',
-          METERS.map(([n, d]) => [`${n}/${d}`, `${n}/${d}`]),
-          `${it.n}/${it.dn}`,
-        )
-      );
-    case 'tmp':
-      return `${head('テンポ')}<div class="cp-er"><span class="cp-el">♩</span><input type="range" min="40" max="200" step="1" value="${it.v}" data-a="tmpR" aria-label="テンポ"><b class="cp-tv">♩=${it.v}</b></div>${chipRow(
-        '',
-        'tmp',
-        [60, 80, 96, 120, 144].map((v) => [v, String(v)]),
-        it.v,
-      )}`;
-    case 'pat':
-      return `${head('奏法')}<div class="cp-er"><span class="cp-el">奏法</span>${patChips('pv', it.v)}</div><p class="cp-en">次の奏法ブロックまでのコードに効く · 押すと次のコードで試聴</p>`;
-    case 'vce':
-      return (
-        head('音色') +
-        chipRow(
-          '音色',
-          'vv',
-          VOICE_ORDER.map((v) => [v, `${ICON[v]}${VOICES[v]}`]),
-          it.v,
-        )
-      );
-    case 'lbl':
-      return `${head(it.t ? 'ラベル' : '区切り')}<div class="cp-er"><span class="cp-el">名前</span><input type="text" class="cp-lin" maxlength="${LABEL_MAX}" value="${esc(it.t)}" data-a="lblT" aria-label="ラベルの名前" placeholder="空なら区切りの線だけ"></div>${chipRow(
-        '行',
-        'lbr',
-        [
-          ['0', '続ける'],
-          ['1', 'ここから次の行'],
-        ],
-        it.br ? '1' : '0',
-      )}`;
-    case 'rs':
-      return `${head('くり返しの始め')}<p class="cp-en">ここから後ろのくり返しの終わりまでをくり返す</p>`;
-    case 're':
-      return `${head('くり返しの終わり')}${chipRow(
-        '回数',
-        'rn',
-        REPEATS.map((n) => [n, n === 0 ? '無制限' : `${n} 回`]),
-        it.n,
-      )}<p class="cp-en">始めがなければ曲の頭か前のくり返しの終わりまで戻る</p>`;
-    default:
-      return '';
-  }
-}
+const chipRow = (lb: string, a: string, opts: readonly (readonly [string | number, string])[], cur: unknown) =>
+  `<div class="cp-er"><span class="cp-el">${lb}</span><div class="chips">${opts
+    .map(
+      ([v, t]) =>
+        `<button type="button" class="chip" data-a="${a}" data-v="${v}" aria-pressed="${String(v) === String(cur)}">${t}</button>`,
+    )
+    .join('')}</div></div>`;
 function showEd(): void {
   let ed = document.getElementById('cp-ed');
-  const e = entryOf(S.sel),
-    a = S.sel === null ? null : viewEl.querySelector<HTMLElement>(`[data-id="${S.sel}"]`);
-  if (!e || !a) {
+  const k = S.sel,
+    e = k === null ? undefined : entries[k];
+  if (k === null || !e) {
     ed?.remove();
     return;
   }
@@ -490,552 +359,256 @@ function showEd(): void {
     ed.id = 'cp-ed';
     ed.className = 'cp-ed';
     ed.setAttribute('role', 'dialog');
-    ed.setAttribute('aria-label', 'ブロックの設定');
-    stage.appendChild(ed);
+    ed.setAttribute('aria-label', '選んだ和音');
+    mapw.appendChild(ed);
   }
-  ed.innerHTML = edHTML(e);
-  const sr = stage.getBoundingClientRect(),
-    ar = a.getBoundingClientRect(),
-    w = ed.offsetWidth;
-  const left = Math.max(0, Math.min(ar.left - sr.left + ar.width / 2 - 40, sr.width - w));
-  ed.style.left = `${left}px`;
-  ed.style.top = `${ar.bottom - sr.top + 10}px`;
-  ed.style.setProperty('--ax', `${Math.max(14, Math.min(w - 14, ar.left - sr.left + ar.width / 2 - left))}px`);
+  const c = e.c,
+    prevKey = k > 0 ? keyAt(S.song, k - 1) : S.song.key,
+    modV = c.mod
+      ? (NEAR_KEYS.find(([v]) => v && modKey(prevKey, v).t === c.mod?.t && modKey(prevKey, v).m === c.mod?.m)?.[0] ??
+        'x')
+      : '';
+  ed.innerHTML = `<div class="cp-eh"><b>${k + 1} · ${roman(e.ch, e.key)} · ${chordName(e.ch, e.key)}</b>${iconBtn('aud', ICON.aud, '試聴')}${iconBtn('del', ICON.del, '削除')}<button type="button" class="cp-ex" data-a="close" aria-label="閉じる" title="閉じる">×</button></div>
+    ${chipRow(
+      '種類',
+      'q',
+      QUAL_ORDER.map((q) => [q, chordName({ ...e.ch, q }, e.key)]),
+      c.q,
+    )}
+    ${chipRow(
+      '長さ',
+      'b',
+      LENGTHS.map((b) => [b, b === 0 ? `1 小節（${S.song.meter} 拍）` : `${b} 拍`]),
+      c.b,
+    )}
+    ${chipRow('転調', 'mod', NEAR_KEYS, modV)}
+    <p class="cp-en">${c.mod ? `ここから ${keyName(c.mod)}` : `調は ${keyName(e.key)}`} · 三角形を押すとこの後ろに足す</p>`;
+  /* 地図は狭い画面で横にスクロールするので、枠からの位置に直す */
+  const st = mapState(),
+    cr = mapCv.getBoundingClientRect(),
+    wr = mapw.getBoundingClientRect(),
+    [px, py] = mapView.nodePos(st, k),
+    nx = px + cr.left - wr.left,
+    ny = py + cr.top - wr.top,
+    w = ed.offsetWidth,
+    h = ed.offsetHeight,
+    mw = mapw.clientWidth,
+    mh = mapCv.clientHeight;
+  ed.style.left = `${Math.max(4, Math.min(mw - w - 4, nx - w / 2))}px`;
+  ed.style.top = `${ny + 22 + h > mh ? Math.max(4, ny - h - 22) : ny + 22}px`;
 }
-/** 選んだブロックを変える */
-function edit(fn: (it: Item) => void, aud?: PatId | true): void {
-  const it = S.items.find((x) => x.id === S.sel);
-  if (!it) return;
-  remember();
-  fn(it);
-  changed();
-  if (aud) {
-    const e = entryOf(it.id);
-    if (e && isChord(e)) audition(e, aud === true ? undefined : aud);
-  }
-}
-/** 奏法ブロックの試聴に使う、そのブロックの次のコード */
-const nextChord = (i: number): ChordEntry | undefined => S.tl.chords.find((c) => c.i > i);
-stage.addEventListener('click', (ev) => {
+mapw.addEventListener('click', (ev) => {
   const b = (ev.target as Element).closest<HTMLElement>('#cp-ed [data-a]');
-  if (!b) return;
-  const a = b.dataset.a,
+  if (!b || S.sel === null) return;
+  const k = S.sel,
+    c = S.song.chords[k],
+    a = b.dataset.a,
     v = b.dataset.v ?? '';
-  if (a === 'close') {
-    S.sel = null;
-    render();
-  } else if (a === 'aud') audition(entryOf(S.sel) as ChordEntry);
-  else if (a === 'del') del(S.sel);
-  else if (a === 'dup') {
-    const i = indexOf(S.sel as number);
+  if (a === 'close') S.sel = null;
+  else if (a === 'aud') return preview(k);
+  else if (a === 'del') {
     remember();
-    const c = copyItem(S.items[i]);
-    S.items.splice(i + 1, 0, c);
-    S.sel = c.id;
-    changed();
-  } else if (a === 'd')
-    edit((it) => {
-      if (it.k !== 'ch') return;
-      it.d = Number(v);
-      const e = entryOf(it.id) as ChordEntry,
-        dq = diatonicQ(it.d, e.key, QUALS[it.q].iv.length > 3 ? 4 : 3);
-      if (dq) it.q = dq;
-      if (it.inv >= QUALS[it.q].iv.length) it.inv = 0;
-    }, true);
-  else if (a === 'q')
-    edit((it) => {
-      if (it.k !== 'ch') return;
-      it.q = v as Qual;
-      if (it.inv >= QUALS[it.q].iv.length) it.inv = 0;
-    }, true);
-  else if (a === 'inv') edit((it) => it.k === 'ch' && Object.assign(it, { inv: Number(v) }), true);
-  else if (a === 'b') edit((it) => it.k === 'ch' && Object.assign(it, { b: Number(v) }));
-  else if (a === 'p') edit((it) => it.k === 'ch' && Object.assign(it, { p: v || null }), true);
-  else if (a === 't') edit((it) => it.k === 'key' && Object.assign(it, { t: Number(v) }));
-  else if (a === 'm') edit((it) => it.k === 'key' && Object.assign(it, { m: v }));
-  else if (a === 'near')
-    edit((it) => {
-      if (it.k !== 'key') return;
-      const pk = (entryOf(it.id) as MarkEntry).prevKey,
-        to: Record<string, [number, Key['m']]> = {
-          dom: [7, pk.m],
-          sub: [5, pk.m],
-          h1: [1, pk.m],
-          w1: [2, pk.m],
-          rel: pk.m === 'maj' ? [9, 'min'] : [3, 'maj'],
-          par: [0, pk.m === 'maj' ? 'min' : 'maj'],
-        },
-        [dt, m] = to[v];
-      it.t = md(pk.t + dt);
-      it.m = m;
-    });
-  else if (a === 'met')
-    edit((it) => {
-      if (it.k !== 'met') return;
-      const [n, dn] = v.split('/').map(Number);
-      it.n = n;
-      it.dn = dn;
-    });
-  else if (a === 'tmp') edit((it) => it.k === 'tmp' && Object.assign(it, { v: Number(v) }));
-  else if (a === 'pv') {
-    edit((it) => it.k === 'pat' && Object.assign(it, { v }));
-    const it = S.items.find((x) => x.id === S.sel);
-    if (it) audition(nextChord(indexOf(it.id)), v as PatId);
-  } else if (a === 'vv') {
-    edit((it) => it.k === 'vce' && Object.assign(it, { v }));
-    const it = S.items.find((x) => x.id === S.sel);
-    if (it) audition(nextChord(indexOf(it.id)));
-  } else if (a === 'rn') edit((it) => it.k === 're' && Object.assign(it, { n: Number(v) }));
-  else if (a === 'lbr') edit((it) => it.k === 'lbl' && Object.assign(it, { br: v === '1' }));
-  else if (a === 'pnew') newPat();
-  else if (a === 'pedit') openPd(v);
-});
-stage.addEventListener('change', (ev) => {
-  const t = ev.target as HTMLInputElement;
-  if (t.dataset.a !== 'lblT') return;
-  edit((it) => it.k === 'lbl' && Object.assign(it, { t: t.value.trim().slice(0, LABEL_MAX) }));
-});
-stage.addEventListener('input', (ev) => {
-  const t = ev.target as HTMLInputElement;
-  if (t.dataset.a !== 'tmpR') return;
-  const it = S.items.find((x) => x.id === S.sel);
-  if (it?.k !== 'tmp') return;
-  const v = Number(t.value);
-  (t.nextElementSibling as HTMLElement).textContent = `♩=${v}`;
-  clearTimeout(tmpT);
-  tmpT = setTimeout(() => {
+    S.song.chords.splice(k, 1);
+    S.sel = k > 0 ? k - 1 : S.song.chords.length ? 0 : null;
+  } else if (a === 'q') {
     remember();
-    it.v = v;
+    const q = v as Qual,
+      flip = QUALS[q].b !== QUALS[c.q].b;
+    c.q = q;
+    /* 長短が変わったら、同じ根音の向きの違う三角形へ移す */
+    if (flip) c.at = nearestPlace(c.r, q, c.at);
     changed();
-  }, 150);
-});
-let tmpT: ReturnType<typeof setTimeout> | undefined;
-function del(id: number | null): void {
-  if (id === null) return;
-  const i = indexOf(id);
-  if (i < 0) return;
-  remember();
-  S.items.splice(i, 1);
-  if (S.sel === id) S.sel = null;
+    return preview(k);
+  } else if (a === 'b') {
+    remember();
+    c.b = Number(v);
+  } else if (a === 'mod') {
+    remember();
+    c.mod = v ? modKey(k > 0 ? keyAt(S.song, k - 1) : S.song.key, v) : null;
+  }
   changed();
+});
+
+/* ---------- 曲の調（移調） ---------- */
+const keyBtn = $<HTMLButtonElement>('#cp-key'),
+  keyPop = $('#cp-keypop');
+function renderKeyPop(): void {
+  const k = S.song.key;
+  keyPop.innerHTML = `${chipRow(
+    '主音',
+    'kt',
+    KEY_NAMES.map((n, i) => [i, n]),
+    k.t,
+  )}${chipRow(
+    '種類',
+    'km',
+    [
+      ['maj', 'メジャー'],
+      ['min', 'マイナー'],
+    ],
+    k.m,
+  )}<p class="cp-en">主音を変えると和音ごと移る（移調）</p>`;
+}
+keyBtn.addEventListener('click', () => {
+  const open = keyPop.hidden;
+  keyPop.hidden = !open;
+  keyBtn.setAttribute('aria-expanded', String(open));
+  if (open) renderKeyPop();
+});
+keyPop.addEventListener('click', (ev) => {
+  const b = (ev.target as Element).closest<HTMLElement>('[data-a]');
+  if (!b) return;
+  remember();
+  if (b.dataset.a === 'kt') transpose(md(Number(b.dataset.v) - S.song.key.t));
+  else S.song.key = { ...S.song.key, m: b.dataset.v as Key['m'] };
+  renderKeyPop();
+  changed();
+});
+/** 曲全体を n 半音移す。地図の上は、前の和音に近い三角形へ置き直す */
+function transpose(n: number): void {
+  if (!n) return;
+  S.song.key = { ...S.song.key, t: md(S.song.key.t + n) };
+  let prev: Place | null = null;
+  for (const c of S.song.chords) {
+    c.r = md(c.r + n);
+    if (c.mod) c.mod = { ...c.mod, t: md(c.mod.t + n) };
+    c.at = nearestPlace(c.r, c.q, prev);
+    prev = c.at;
+  }
 }
 
-/* ---------- 奏法を作る窓 ---------- */
-const pd = $<HTMLDialogElement>('#cp-pd');
-let pdId = '';
-const patById = (id: string) => S.pats.find((x) => x.id === id);
-/** 作った奏法を変えた: 登録し直して描き直す（元に戻すの対象にはしない） */
-function patChanged(): void {
-  setCustomPats(S.pats);
+/* ---------- バンド ---------- */
+const BAND_ICON: Record<MemberId, () => string> = {
+  drums: () => ICON.drums,
+  bass: () => ICON.ebass,
+  keys: () => ICON[S.song.keys],
+  gtr: () => ICON[S.song.gtr],
+};
+const memberSub: Record<MemberId, () => string> = {
+  drums: () => STYLE_NAMES[S.song.style],
+  bass: () => '根音と 5 度',
+  keys: () => VOICES[S.song.keys],
+  gtr: () => VOICES[S.song.gtr],
+};
+const bandEl = $('#cp-band'),
+  memberEl = {} as Record<MemberId, HTMLButtonElement>;
+for (const m of MEMBERS) {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'cp-mem';
+  b.dataset.m = m;
+  b.addEventListener('click', () => {
+    S.on[m] = !S.on[m];
+    store('on', S.on);
+    syncBand();
+    player.resync();
+  });
+  bandEl.appendChild(b);
+  memberEl[m] = b;
+}
+function syncBand(): void {
+  for (const m of MEMBERS) {
+    const b = memberEl[m];
+    b.setAttribute('aria-pressed', String(S.on[m]));
+    b.title = `${MEMBER_NAMES[m]}（押すと${S.on[m] ? 'ミュート' : '戻す'}）`;
+    b.innerHTML = `${BAND_ICON[m]()}<span>${MEMBER_NAMES[m]}</span><small>${memberSub[m]()}</small>`;
+  }
+}
+player.onHit = (m, at) => {
+  const now = audio.now() ?? 0;
+  setTimeout(
+    () => {
+      memberEl[m].classList.add('hit');
+      setTimeout(() => memberEl[m].classList.remove('hit'), 90);
+    },
+    Math.max(0, (at - now) * 1000),
+  );
+};
+/* 曲ごとの選択肢（保存は曲と一緒にするので、選択肢としては保存しない） */
+for (const id of ['#p-style', '#p-meter', '#p-keys', '#p-gtr']) $(id).setAttribute('data-nosave', '');
+const styleCh = new Choice<StyleId>($('#p-style'), (v) => songSet(() => (S.song.style = v)));
+const meterCh = new Choice<string>($('#p-meter'), (v) => songSet(() => (S.song.meter = Number(v) as Meter)));
+const keysCh = new Choice<KeysId>($('#p-keys'), (v) => songSet(() => (S.song.keys = v)));
+const gtrCh = new Choice<GtrId>($('#p-gtr'), (v) => songSet(() => (S.song.gtr = v)));
+function songSet(fn: () => void): void {
+  remember();
+  fn();
   changed();
-  renderPd();
+  syncBand();
 }
-/** 選んだブロックの、今の奏法と 1 小節の歩数 */
-function patCtx(): { cur: PatId; bar: number; bs: number; e: ChordEntry | undefined } {
-  const e = entryOf(S.sel),
-    ch = e && isChord(e) ? e : e ? nextChord(e.i) : S.tl.chords[0],
-    st = e ?? ch,
-    bs = st ? 8 / st.dn : 2,
-    cur = e?.it.k === 'pat' ? e.it.v : ch ? ch.pat : 'updown';
-  return { cur, bar: (st?.n ?? 4) * bs, bs, e: ch };
+const loopBtn = $<HTMLButtonElement>('#cp-loop');
+function syncLoop(): void {
+  loopBtn.setAttribute('aria-pressed', String(S.loop));
+  loopBtn.querySelector('.led')?.classList.toggle('on', S.loop);
 }
-/** 今の奏法を下書きにして新しい奏法を作り、選んだブロックに使う */
-function newPat(): void {
-  const { cur, bar, bs } = patCtx(),
-    n = S.pats.reduce((m, x) => Math.max(m, Number(x.id.slice(1))), 0) + 1,
-    id = `u${n}`;
-  const ctxE = patCtx().e,
-    nt = ctxE ? voicing(ctxE.it, ctxE.key).length : 5;
-  S.pats.push({ id, name: `作った奏法 ${n}`, res: 0.5, len: bar / 0.5, cells: toGrid(cur, 0.5, bar, bs, nt) });
-  setCustomPats(S.pats);
-  edit((it) => {
-    if (it.k === 'ch') it.p = id;
-    if (it.k === 'pat') it.v = id;
-  });
-  openPd(id);
-}
-/** 作った奏法の段 r の音を、選んだコードと音色で短く鳴らす */
-function toneAt(r: number): void {
-  const { e } = patCtx();
-  if (!e || player.playing) return;
-  void audio.ready().then((ok) => {
-    const ac = audio.ac,
-      g = audio.bus();
-    if (!ok || !ac || !g) return;
-    const tones = tonesOf(e.it, e.key, pdId),
-      m = tones[r],
-      w = ac.currentTime + 0.02;
-    if (m === undefined) return;
-    audio.note({ t: 0, m, v: e.vce, end: 0, vel: r === 0 ? 0.9 : 0.75, tones }, w, w + 0.7, g);
-    setTimeout(() => audio.drop(g), 1600);
-  });
-}
-function openPd(id: string): void {
-  if (!patById(id)) return;
-  pdId = id;
-  renderPd();
-  if (!pd.open) pd.showModal();
-}
-function renderPd(): void {
-  const x = patById(pdId);
-  if (!x) {
-    if (pd.open) pd.close();
-    return;
-  }
-  const per = 2 / x.res,
-    beats = (x.len * x.res) / 2;
-  let grid = '';
-  for (let r = PAT_ROWS - 1; r >= 0; r--) {
-    grid += `<span class="cp-gr">${r === 0 ? 'ベース' : r}</span>`;
-    for (let k = 0; k < x.len; k++) {
-      const on = x.cells.some((c) => c[0] === k && c[1] === r);
-      grid += `<button type="button" class="cp-gcell${k % per === 0 ? ' bt' : ''}" data-pd="cell" data-k="${k}" data-r="${r}" aria-pressed="${on}" aria-label="${r === 0 ? 'ベース' : `${r} 段目`}・${k + 1} 歩目"></button>`;
-    }
-  }
-  pd.innerHTML = `<div class="cp-eh"><input type="text" class="cp-pdn" id="cp-pdn" maxlength="20" value="${esc(x.name)}" aria-label="奏法の名前"><button type="button" class="cp-pi" data-pd="aud" title="試聴" aria-label="試聴">${ICON.aud}</button><button type="button" class="cp-pi" data-pd="del" title="この奏法を削除" aria-label="この奏法を削除">${ICON.del}</button><button type="button" class="cp-ex" data-pd="close" title="閉じる" aria-label="閉じる">×</button></div>
-  <div class="cp-er"><span class="cp-el">刻み</span><div class="seg"><button type="button" data-pd="res" data-v="1" aria-pressed="${x.res === 1}">8 分</button><button type="button" data-pd="res" data-v="0.5" aria-pressed="${x.res === 0.5}">16 分</button></div>
-  <span class="cp-el">長さ</span><div class="seg"><button type="button" data-pd="len" data-v="-1" aria-label="1 拍短く" ${beats <= 1 ? 'disabled' : ''}>−</button><button type="button" disabled class="cp-pdl">${beats} 拍</button><button type="button" data-pd="len" data-v="1" aria-label="1 拍長く" ${beats >= 8 ? 'disabled' : ''}>＋</button></div></div>
-  <div class="cp-gw"><div class="cp-gg" style="grid-template-columns:44px repeat(${x.len},minmax(18px,1fr))">${grid}</div></div>
-  <p class="cp-en">押して音を置く · 段は下からベース・和音の低い音の順 · コードの長さまでくり返す</p>`;
-}
-pd.addEventListener('click', (ev) => {
-  const b = (ev.target as Element).closest<HTMLElement>('[data-pd]'),
-    x = patById(pdId);
-  if (!b || !x) {
-    if (ev.target === pd) pd.close();
-    return;
-  }
-  const a = b.dataset.pd;
-  if (a === 'close') pd.close();
-  else if (a === 'aud') {
-    const { e } = patCtx();
-    audition(e, x.id);
-  } else if (a === 'del') {
-    if (!confirm(`「${x.name}」を削除しますか？使っているブロックは元の奏法に戻ります。`)) return;
-    S.pats = S.pats.filter((y) => y !== x);
-    for (const it of S.items) {
-      if (it.k === 'ch' && it.p === x.id) it.p = null;
-      if (it.k === 'pat' && it.v === x.id) it.v = 'updown';
-    }
-    pd.close();
-    patChanged();
-  } else if (a === 'cell') {
-    const k = Number(b.dataset.k),
-      r = Number(b.dataset.r),
-      j = x.cells.findIndex((c) => c[0] === k && c[1] === r);
-    if (j >= 0) x.cells.splice(j, 1);
-    else {
-      x.cells.push([k, r]);
-      toneAt(r);
-    }
-    patChanged();
-  } else if (a === 'res') {
-    const res = Number(b.dataset.v) as 1 | 0.5;
-    if (res === x.res) return;
-    const f = x.res / res;
-    x.cells = x.cells.flatMap(([k, r]) => (Number.isInteger(k * f) ? [[k * f, r] as [number, number]] : []));
-    x.len = Math.max(1, Math.round(x.len * f));
-    x.res = res;
-    patChanged();
-  } else if (a === 'len') {
-    const step = 2 / x.res;
-    x.len = Math.max(step, Math.min(16 / x.res, x.len + Number(b.dataset.v) * step));
-    x.cells = x.cells.filter((c) => c[0] < x.len);
-    patChanged();
-  }
+loopBtn.addEventListener('click', () => {
+  S.loop = !S.loop;
+  store('loop', S.loop);
+  syncLoop();
 });
-pd.addEventListener('input', (ev) => {
-  const t = ev.target as HTMLInputElement,
-    x = patById(pdId);
-  if (t.id !== 'cp-pdn' || !x) return;
-  x.name = t.value.slice(0, 20) || x.id;
-  setCustomPats(S.pats);
+/** 曲を入れ替えたあと、選択肢と数値の行を曲に合わせる */
+function syncControls(): void {
+  styleCh.set(S.song.style);
+  meterCh.set(String(S.song.meter));
+  keysCh.set(S.song.keys);
+  gtrCh.set(S.song.gtr);
+  bpmGroup.set('bpm', S.song.bpm, { silent: true });
+  syncBand();
+}
+
+/* ---------- 描画 ---------- */
+function draw(): void {
+  mapView.draw(mapState());
+  coaster.draw(coasterState());
+  keyBtn.textContent = keyName(S.song.key);
+}
+function changed(): void {
+  recompute();
   S.dirty = true;
   saveCurrent();
-});
-pd.addEventListener('close', () => render());
-
-/* ---------- パレット ---------- */
-const pal = $('#cp-pal'),
-  palBody = $('#pal-b'),
-  palRef = $('#pal-ref');
-/** 置く位置と、その位置の調・前のコード */
-function insertCtx(): { index: number; key: Key; prev: ChordEntry | null; upto: ChordEntry[] } {
-  const e = entryOf(S.sel);
-  if (e) {
-    const j = S.tl.all.indexOf(e),
-      prev = isChord(e) ? e : ([...S.tl.all.slice(0, j + 1)].reverse().find(isChord) ?? null);
-    return { index: indexOf(e.it.id) + 1, key: e.key, prev, upto: S.tl.chords.slice(0, prev ? prev.ci + 1 : 0) };
-  }
-  return { index: S.items.length, key: S.tl.end.key, prev: S.tl.chords.at(-1) ?? null, upto: S.tl.chords };
+  player.resync();
+  draw();
+  showEd();
+  posText(player.playing ? (player.current()?.k ?? S.cue) : (S.sel ?? S.cue));
 }
-/** パレットの目印のブロック: 名前（吹き出し）・見た目・置くときの中身。置く位置の調から決める */
-const MARKS: { k: Kind; name: (k: Key) => string; face: (k: Key) => string; spec: (k: Key) => ItemSpec }[] = [
-  {
-    k: 'key',
-    name: (k) => `転調 ${keyName({ t: md(k.t + 2), m: k.m })}`,
-    face: (k) => {
-      const nk: Key = { t: md(k.t + 2), m: k.m };
-      return `<b>${keyShort(nk)}</b><span>${keySig(nk.t, nk.m) || '&nbsp;'}</span>`;
-    },
-    spec: (k) => ({ k: 'key', t: md(k.t + 2), m: k.m }),
-  },
-  {
-    k: 'met',
-    name: () => '拍子 3/4',
-    face: () => '<span class="cp-ts"><b>3</b><b>4</b></span>',
-    spec: () => ({ k: 'met', n: 3, dn: 4 }),
-  },
-  {
-    k: 'tmp',
-    name: () => 'テンポ ♩=120',
-    face: () => `${ICON.click}<span>120</span>`,
-    spec: () => ({ k: 'tmp', v: 120 }),
-  },
-  { k: 'pat', name: () => `奏法 ${patOf('up').name}`, face: () => patGlyph('up'), spec: () => ({ k: 'pat', v: 'up' }) },
-  { k: 'vce', name: () => `音色 ${VOICES.org}`, face: () => ICON.org, spec: () => ({ k: 'vce', v: 'org' }) },
-  {
-    k: 'lbl',
-    name: () => '区切り',
-    face: () => '<i class="cp-sepl" aria-hidden="true"></i>',
-    spec: () => ({ k: 'lbl', t: '', br: false }),
-  },
-  {
-    k: 'lbl',
-    name: () => 'ラベル',
-    face: () => '<b class="cp-lt">Aメロ</b>',
-    spec: () => ({ k: 'lbl', t: 'Aメロ', br: false }),
-  },
-  { k: 'rs', name: () => 'くり返しの始め', face: () => '<b class="cp-rp">𝄆</b>', spec: () => ({ k: 'rs' }) },
-  {
-    k: 're',
-    name: () => 'くり返しの終わり',
-    face: () => '<b class="cp-rp">𝄇</b><span>×2</span>',
-    spec: () => ({ k: 're', n: 2 }),
-  },
-];
-function renderPal(): void {
-  const c = insertCtx(),
-    k = c.key,
-    pv = c.prev && sameKey(c.prev.key, k) ? c.prev : null,
-    sug = pv ? namedNext(c.upto.map((x) => ({ c: x.it, key: x.key, i: x.i }))) : [];
-  palRef.innerHTML = pv ? `<b>${roman(pv.it, pv.key)}</b> の次 · ${keyName(k)}` : `${keyName(k)}`;
-  for (const b of $$<HTMLButtonElement>('#pal-tab button'))
-    b.setAttribute('aria-pressed', String(b.dataset.t === S.tab));
-  const nb = $('#pal-n');
-  nb.style.visibility = S.tab === 'ch' ? '' : 'hidden';
-  for (const b of $$<HTMLButtonElement>('#pal-n button'))
-    b.setAttribute('aria-pressed', String(Number(b.dataset.n) === S.nOf));
-  $<HTMLButtonElement>('#pal-undo').disabled = !undo.length;
-  $<HTMLButtonElement>('#pal-redo').disabled = !redo.length;
-  const chip = (d: number, q: Qual) => {
-    const ch: Chord = { d, q, inv: 0 },
-      lv = pv ? trans(pv.it, pv.key, ch, k).lv : -1,
-      g = sigOf(ch, k),
-      s = sug.find((x) => x.s[0] === g[0] && x.s[1] === g[1]);
-    return `<button type="button" class="cp-pc cp-f${func(ch, k)}" data-new="ch" data-d="${d}" data-q="${q}" title="${esc(`${roman(ch, k)} · ${chordName(ch, k)}${lv >= 0 ? ` · ${lvName(lv)}` : ''}`)}"><b>${roman(ch, k)}</b><span>${chordName(ch, k)}</span><i class="cp-lvb${lv > 0 ? ` l${lv}` : ''}"></i>${s ? `<em class="cp-sug">${s.n}</em>` : ''}</button>`;
-  };
-  palBody.innerHTML =
-    S.tab === 'ch'
-      ? `<div class="cp-pr"><span class="cp-pl">ダイアトニック</span>${DIATONIC[k.m][S.nOf].map(([d, q]) => chip(d, q)).join('')}</div><div class="cp-pr"><span class="cp-pl">その他</span>${OTHER[k.m].map(([d, q]) => chip(d, q)).join('')}</div>`
-      : `<div class="cp-pr">${MARKS.map((m, j) => `<button type="button" class="cp-pc cp-pm" data-new="${m.k}" data-mi="${j}" title="${m.name(k)}" aria-label="${m.name(k)}">${m.face(k)}</button>`).join('')}</div>`;
-}
-function newItem(el: HTMLElement): Item {
-  const k = el.dataset.new as Kind,
-    c = insertCtx();
-  if (k === 'ch') return withId({ k: 'ch', d: Number(el.dataset.d), q: el.dataset.q as Qual, inv: 0, b: 0, p: null });
-  const m = el.dataset.mi !== undefined ? MARKS[Number(el.dataset.mi)] : MARKS.find((x) => x.k === k);
-  return withId((m as (typeof MARKS)[number]).spec(c.key));
-}
-function insert(it: Item, index: number): void {
-  remember();
-  S.items.splice(index, 0, it);
-  S.sel = it.id;
-  changed();
-  const e = entryOf(it.id);
-  if (e && isChord(e)) audition(e);
-}
-pal.addEventListener('click', (ev) => {
-  const t = (ev.target as Element).closest<HTMLElement>(
-    '[data-t],[data-n],#pal-pp,#pal-prev,#pal-next,#pal-min,#pal-undo,#pal-redo',
-  );
-  if (!t) return;
-  if (t.dataset.t) S.tab = t.dataset.t as 'ch' | 'mk';
-  else if (t.dataset.n) {
-    S.nOf = Number(t.dataset.n) as 3 | 4;
-    store('n4', S.nOf === 4);
-    if (S.view === 'wheel') redrawWheel(viewEl, ctx(), player.current());
-  } else if (t.id === 'pal-pp') return void play();
-  else if (t.id === 'pal-prev') return barJump(-1);
-  else if (t.id === 'pal-next') return barJump(1);
-  else if (t.id === 'pal-undo') return travel(undo, redo);
-  else if (t.id === 'pal-redo') return travel(redo, undo);
-  else if (t.id === 'pal-min') {
-    const min = !pal.classList.contains('min');
-    pal.classList.toggle('min', min);
-    t.setAttribute('aria-expanded', String(!min));
-    store('palMin', min);
-    padPal();
+function frame(): void {
+  if (!player.playing) {
+    cartBeat = null;
+    draw();
     return;
   }
-  renderPal();
-});
-if (stored('palMin') === true) {
-  pal.classList.add('min');
-  $('#pal-min').setAttribute('aria-expanded', 'false');
-}
-/** パレットの高さだけページの下を空ける */
-function padPal(): void {
-  document.documentElement.style.setProperty('--cp-palh', `${pal.offsetHeight + 24}px`);
-}
-new ResizeObserver(padPal).observe(pal);
-
-/* ---------- 選ぶ・ドラッグ ---------- */
-interface DragState {
-  el: HTMLElement;
-  src: 'view' | 'pal';
-  x0: number;
-  y0: number;
-  t0: number;
-  touch: boolean;
-  on: boolean;
-  d: Drag;
-  ghost?: HTMLElement;
-  tg?: Target | null;
-  overPal?: boolean;
-}
-let D: DragState | null = null;
-document.addEventListener('pointerdown', (ev) => {
-  if (ev.button > 0) return;
-  const t = ev.target as Element;
-  if (t.closest('#cp-ed')) return;
-  const el = t.closest<HTMLElement>('#cp-view [data-id], #cp-view [data-sel], #pal-b [data-new]');
-  if (!el) return;
-  const src = el.closest('#pal-b') ? 'pal' : 'view',
-    id = Number(el.dataset.id ?? el.dataset.sel ?? 0);
-  D = {
-    el,
-    src,
-    x0: ev.clientX,
-    y0: ev.clientY,
-    t0: performance.now(),
-    touch: ev.pointerType === 'touch',
-    on: false,
-    d: {
-      id: src === 'view' ? id : 0,
-      kind: src === 'view' ? (S.items.find((x) => x.id === id)?.k ?? 'ch') : (el.dataset.new as Kind),
-    },
-  };
-});
-const caret = () => viewEl.querySelector<HTMLElement>('#cp-caret');
-document.addEventListener('pointermove', (ev) => {
-  if (!D) return;
-  if (!D.on) {
-    if (Math.hypot(ev.clientX - D.x0, ev.clientY - D.y0) < 6) return;
-    /* タッチは少し押さえてから動かしたときだけドラッグにする（すぐ動かすのはスクロール） */
-    if (D.touch && performance.now() - D.t0 < 260) {
-      D = null;
-      return;
-    }
-    D.on = true;
-    const g = D.el.cloneNode(true) as HTMLElement;
-    g.classList.add('cp-ghost');
-    g.classList.remove('sel');
-    g.style.width = `${D.el.offsetWidth}px`;
-    g.style.height = `${D.el.offsetHeight}px`;
-    document.body.appendChild(g);
-    D.ghost = g;
-    if (D.src === 'view') {
-      pal.classList.add('drag-del');
-      D.el.classList.add('cp-lift');
-    }
+  const occ = player.current(),
+    now = audio.now() ?? 0;
+  if (occ) {
+    frac = Math.min(1, (now - occ.at) / occ.dur);
+    cartBeat = occ.e.start + frac * occ.e.beats;
+    posText(occ.k);
   }
-  const g = D.ghost as HTMLElement;
-  g.style.left = `${ev.clientX}px`;
-  g.style.top = `${ev.clientY}px`;
-  const pr = pal.getBoundingClientRect();
-  D.overPal =
-    D.src === 'view' && ev.clientX > pr.left && ev.clientX < pr.right && ev.clientY > pr.top && ev.clientY < pr.bottom;
-  pal.classList.toggle('over', D.overPal);
-  D.tg = D.overPal ? null : VIEWS[S.view].target(viewEl, ev.clientX, ev.clientY, D.d, ctx());
-  const ca = caret();
-  if (ca) {
-    ca.style.display = D.tg ? 'block' : 'none';
-    if (D.tg) Object.assign(ca.style, { left: `${D.tg.cx}px`, top: `${D.tg.cy}px`, height: `${D.tg.ch}px` });
-  }
-});
-document.addEventListener(
-  'touchmove',
-  (ev) => {
-    if (D?.on) ev.preventDefault();
-  },
-  { passive: false },
-);
-function endDrag(): DragState | null {
-  const d = D;
-  D = null;
-  pal.classList.remove('drag-del', 'over');
-  d?.ghost?.remove();
-  d?.el.classList.remove('cp-lift');
-  const ca = caret();
-  if (ca) ca.style.display = 'none';
-  return d;
+  draw();
+  requestAnimationFrame(frame);
 }
-document.addEventListener('pointerup', () => {
-  const d = endDrag();
-  if (!d) return;
-  if (!d.on) {
-    if (d.src === 'view') pick(d.d.id);
-    else insert(newItem(d.el), insertCtx().index);
-    return;
-  }
-  if (d.src === 'view') {
-    const from = indexOf(d.d.id);
-    if (d.overPal) return del(d.d.id);
-    if (!d.tg || from < 0) return;
-    let to = d.tg.index;
-    if (to === from || to === from + 1) return;
-    remember();
-    const [it] = S.items.splice(from, 1);
-    if (from < to) to--;
-    S.items.splice(to, 0, it);
-    changed();
-  } else if (d.tg) insert(newItem(d.el), d.tg.index);
-});
-document.addEventListener('pointercancel', () => endDrag());
-/** ブロックを押した: 選ぶ。コードなら弾き始めの位置にもする */
-function pick(id: number): void {
-  const e = entryOf(id);
-  if (!e) return;
-  S.sel = S.sel === id ? null : id;
-  if (isChord(e)) {
-    cueTo(id);
-    audition(e);
-  }
-  syncPlay();
-  render();
+/** 狭い画面で地図を横にスクロールしているとき、k 番目の和音（なければ最後）が見えるようにする */
+function reveal(k: number | null): void {
+  const sc = $('#cp-mapsc'),
+    n = S.song.chords.length;
+  if (sc.scrollWidth <= sc.clientWidth || !n) return;
+  const [x] = mapView.nodePos(mapState(), Math.min(k ?? n - 1, n - 1)),
+    m = 60;
+  if (x < sc.scrollLeft + m || x > sc.scrollLeft + sc.clientWidth - m) sc.scrollLeft = x - sc.clientWidth / 2;
 }
-viewEl.addEventListener('click', (ev) => {
-  const t = ev.target as Element,
-    seg = t.closest<SVGGElement>('.cp-wseg'),
-    add = t.closest<HTMLElement>('[data-add]');
-  if (seg) addAfter(Number(seg.dataset.d), seg.dataset.q as Qual);
-  else if (add) {
-    const [d, q] = (add.dataset.add as string).split(',');
-    addAfter(Number(d), q as Qual);
-  }
-});
-/** 選んだブロックの後ろ（なければ最後）にコードを足す */
-function addAfter(d: number, q: Qual): void {
-  insert(withId({ k: 'ch', d, q, inv: 0, b: 0, p: null }), insertCtx().index);
+function layout(): void {
+  mapView.layout();
+  coaster.layout();
+  draw();
+  reveal(S.sel);
+  showEd();
 }
-viewEl.addEventListener('keydown', (ev) => {
-  const el = (ev.target as Element).closest<HTMLElement>('[data-id]');
-  if (el && (ev.key === 'Enter' || ev.key === ' ')) {
-    ev.preventDefault();
-    pick(Number(el.dataset.id));
-  }
+$('#cp-mapsc').addEventListener('scroll', () => {
+  if (S.sel !== null) showEd();
 });
+new ResizeObserver(layout).observe(mapw);
+new MutationObserver(draw).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', draw);
 document.addEventListener('keydown', (ev) => {
   const t = ev.target as Element;
   if (t.closest('input, textarea')) return;
@@ -1046,28 +619,27 @@ document.addEventListener('keydown', (ev) => {
   } else if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'y') {
     ev.preventDefault();
     travel(redo, undo);
-  } else if (
-    (ev.key === 'Delete' || ev.key === 'Backspace') &&
-    S.sel !== null &&
-    (t.closest('#cp-view') || t === document.body)
-  ) {
+  } else if ((ev.key === 'Delete' || ev.key === 'Backspace') && S.sel !== null) {
     ev.preventDefault();
-    del(S.sel);
+    remember();
+    S.song.chords.splice(S.sel, 1);
+    S.sel = null;
+    changed();
   } else if (ev.key === 'Escape' && S.sel !== null) {
     S.sel = null;
-    render();
+    draw();
+    showEd();
   }
 });
-/* 幅が変わると折り返しが変わるので、括弧と設定の窓を置き直す */
-new ResizeObserver(() => {
-  drawBands(viewEl.querySelector('#cp-sc'));
-  showEd();
-}).observe(viewEl);
 
 /* ---------- 曲の保存・新規・サンプル ---------- */
-const SAVE_KEY = 'chord-progression:saved';
+const SAVE_KEY = 'chord-progression:saved2';
 const nameIn = $<HTMLInputElement>('#cp-name'),
   msg = $('#cp-msg');
+function saveCurrent(): void {
+  store('song2', toFile(S.song));
+  store('dirty', S.dirty);
+}
 function readSaved(): { name: string; at: number; file: unknown }[] {
   try {
     const v = JSON.parse(localStorage.getItem(SAVE_KEY) ?? '[]');
@@ -1089,9 +661,8 @@ function say(s: string): void {
   msg.style.visibility = s ? 'visible' : 'hidden';
 }
 function renderSaved(): void {
-  const list = readSaved(),
-    box = $('#cp-saved');
-  box.innerHTML = list.length
+  const list = readSaved();
+  $('#cp-saved').innerHTML = list.length
     ? list
         .map(
           (x, j) =>
@@ -1101,47 +672,45 @@ function renderSaved(): void {
     : '<li class="cp-none">まだ保存した進行はありません。</li>';
 }
 /** 曲を入れ替える。変更が残っていれば確かめる */
-function load(items: Item[], name: string, dirty = false, pats: CustomPat[] = []): boolean {
-  if (S.dirty && !confirm(`保存していない変更は失われます。「${name || '新しい進行'}」を開きますか？`)) return false;
+function load(song: Song): boolean {
+  if (S.dirty && !confirm(`保存していない変更は失われます。「${song.name || '新しい進行'}」を開きますか？`))
+    return false;
   player.halt(true);
   undo.length = 0;
   redo.length = 0;
-  S.items = items;
-  S.name = name;
-  S.pats = pats;
-  setCustomPats(pats);
-  if (pd.open) pd.close();
+  S.song = song;
   S.sel = null;
-  S.cue = null;
-  S.tl = compute(S.items);
-  S.dirty = dirty;
-  nameIn.value = name;
+  S.cue = 0;
+  recompute();
+  S.dirty = false;
+  nameIn.value = song.name;
   saveCurrent();
+  syncControls();
   syncPlay();
-  render();
+  draw();
+  showEd();
   return true;
 }
-nameIn.value = S.name;
+nameIn.value = S.song.name;
 nameIn.addEventListener('input', () => {
-  S.name = nameIn.value.slice(0, 60);
+  S.song.name = nameIn.value.slice(0, 60);
   S.dirty = true;
   saveCurrent();
 });
 $('#cp-samples').addEventListener('click', (ev) => {
   const b = (ev.target as Element).closest<HTMLElement>('[data-s]');
-  if (!b) return;
-  const id = b.dataset.s as string;
-  if (load(sampleItems(id), sampleName(id))) say('');
+  if (b && load(sampleSong(b.dataset.s as string))) say('');
 });
 $('#cp-new').addEventListener('click', () => {
-  if (load(parseSong('[key C maj] [met 4/4] [tmp 96] [pat updown] [vce gtr]'), '')) say('');
+  const s = sampleSong(SAMPLE0);
+  if (load({ ...s, name: '', chords: [] })) say('');
 });
 $('#cp-save').addEventListener('click', () => {
   const name = nameIn.value.trim() || '無題の進行',
     list = readSaved().filter((x) => x.name !== name);
-  list.unshift({ name, at: Date.now(), file: toFile(name, S.items, S.pats) });
+  S.song.name = name;
+  list.unshift({ name, at: Date.now(), file: toFile(S.song) });
   if (!writeSaved(list.slice(0, 50))) return say('このブラウザでは保存できません。');
-  S.name = name;
   nameIn.value = name;
   S.dirty = false;
   saveCurrent();
@@ -1157,7 +726,7 @@ $('#cp-saved').addEventListener('click', (ev) => {
     const x = list[Number(o.dataset.open)],
       f = x && fromFile(x.file);
     if (!f) return say('この保存は読み込めません。');
-    if (load(f.items, x.name, false, f.pats)) say('');
+    if (load({ ...f, name: x.name })) say('');
   } else if (r) {
     const j = Number(r.dataset.rm),
       x = list[j];
@@ -1169,7 +738,7 @@ $('#cp-saved').addEventListener('click', (ev) => {
 });
 $('#cp-export').addEventListener('click', () => {
   const name = nameIn.value.trim() || 'コード進行',
-    blob = new Blob([JSON.stringify(toFile(name, S.items, S.pats), null, 1)], { type: 'application/json' }),
+    blob = new Blob([JSON.stringify({ ...toFile(S.song), name }, null, 1)], { type: 'application/json' }),
     a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = `${name.replace(/[\\/:*?"<>|]/g, '_')}.json`;
@@ -1185,14 +754,15 @@ fileIn.addEventListener('change', async () => {
   try {
     const r = fromFile(JSON.parse(await f.text()));
     if (!r) return say('このファイルは読み込めません。');
-    if (load(r.items, r.name || f.name.replace(/\.json$/i, ''), false, r.pats)) say('');
+    if (load({ ...r, name: r.name || f.name.replace(/\.json$/i, '') })) say('');
   } catch {
     say('このファイルは読み込めません。');
   }
 });
 
-syncClick();
 renderSaved();
 say('');
+syncControls();
+syncLoop();
 syncPlay();
-render();
+layout();

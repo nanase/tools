@@ -3073,43 +3073,48 @@ export const ART: Record<string, Art> = {
       }
     return s + P('c t', 'M8 17h12v14H8zM100 17h12v14h-12zM20 22H50V26H20zM70 22H100V26H70zM50 23.2H70V24.8H50z');
   },
-  /* コード進行: 2 行に折り返した譜面。機能の帯の付いたブロックを矢印でつなぎ、2 行目の頭に転調の破線のブロック。
-     再生の位置がブロックを順に進み、ブロックの中の縦線が 4 コマで進む（1 ブロック 0.45 s）。止まった絵は 1 行目の終わり */
+  /* コード進行: 和音の地図（三角形の格子）。1 つの音を囲む 6 つの三角形を道が順に回り、
+     今の三角形を塗る。0.6 s ごとのコマ送りで、止まった絵は 1 つ目の三角形 */
   cp(t) {
-    const W = 22,
-      H = 14,
-      FN: Record<string, string> = { T: 'fb', S: 'fc', D: 'fr' },
-      all: [number, number, string][] = [
-        [5, 10, 'T'],
-        [32, 10, 'D'],
-        [59, 10, 'T'],
-        [86, 10, 'S'],
-        [19, 30, 'T'],
-        [46, 30, 'S'],
-        [73, 30, 'D'],
-        [100, 30, 'T'],
+    const pt = (i: number, r: number): [number, number] => [24 * i + 12 * r, 45 - 20.8 * r],
+      corners = (i: number, r: number, up: boolean): [number, number][] =>
+        up ? [pt(i, r), pt(i + 1, r), pt(i, r + 1)] : [pt(i + 1, r), pt(i + 1, r + 1), pt(i, r + 1)],
+      tri = (c: [number, number][]) =>
+        `M${r1(c[0][0])} ${r1(c[0][1])}L${r1(c[1][0])} ${r1(c[1][1])}L${r1(c[2][0])} ${r1(c[2][1])}Z`,
+      mid = (c: [number, number][]): [number, number] => [
+        (c[0][0] + c[1][0] + c[2][0]) / 3,
+        (c[0][1] + c[1][1] + c[2][1]) / 3,
       ],
-      BT = 0.45,
-      u = mod(t + 2.0, all.length * BT),
-      ci = Math.floor(u / BT),
-      fr = (u % BT) / BT,
-      R = (x: number, y: number, w: number, h: number) => `M${r1(x)} ${r1(y)}h${r1(w)}v${r1(h)}h${r1(-w)}Z`;
-    let s = P('c t', 'M6 8V5H113V8'),
-      al = '',
-      ah = '';
-    all.forEach(([x, y, f], i) => {
-      const w = i === 7 ? 16 : W;
-      s += P(i === ci ? 'a' : 'c', R(x, y, w, H)) + P(FN[f], R(x, y, 2.6, H));
-      if (i === ci) s += P('a t', `M${r1(x + 3 + (Math.floor(fr * 4) / 4) * (w - 4))} ${y + 2}V${y + H - 2}`);
-      if (i % 4 !== 3) {
-        const x0 = x + w + 0.8,
-          x1 = all[i + 1][0] - 0.8,
-          ym = y + H / 2;
-        al += `M${r1(x0)} ${ym}H${r1(x1 - 2.6)}`;
-        ah += `M${r1(x1)} ${ym}l-3.2 -2.3v4.6Z`;
-      }
+      ROUTE: [number, number, boolean][] = [
+        [1, 1, true],
+        [1, 0, false],
+        [2, 0, true],
+        [2, 0, false],
+        [2, 1, true],
+        [1, 1, false],
+      ],
+      cur = Math.floor(mod(t, 3.6) / 0.6) % ROUTE.length;
+    let grid = '';
+    for (let r = 0; r < 2; r++)
+      for (let i = -2; i < 6; i++)
+        for (const up of [true, false]) {
+          const c = corners(i, r, up);
+          if (c.every(([x]) => x >= 0 && x <= 120)) grid += tri(c);
+        }
+    const cs = ROUTE.map(([i, r, up]) => mid(corners(i, r, up)));
+    let line = '',
+      head = '';
+    cs.forEach(([x0, y0], k) => {
+      const [x1, y1] = cs[(k + 1) % cs.length],
+        a = Math.atan2(y1 - y0, x1 - x0),
+        mx = (x0 + x1) / 2 + Math.cos(a) * 2,
+        my = (y0 + y1) / 2 + Math.sin(a) * 2,
+        h = 3.6;
+      line += `M${r1(x0)} ${r1(y0)}L${r1(x1)} ${r1(y1)}`;
+      head += `M${r1(mx)} ${r1(my)}L${r1(mx + Math.cos(a + 2.5) * h)} ${r1(my + Math.sin(a + 2.5) * h)}L${r1(mx + Math.cos(a - 2.5) * h)} ${r1(my + Math.sin(a - 2.5) * h)}Z`;
     });
-    return s + P('c d', R(5, 30, 9, H)) + P('c t', al) + P('fc', ah);
+    const [ci, cr, cu] = ROUTE[cur];
+    return P('c t', grid) + P('fa', tri(corners(ci, cr, cu))) + P('a', line) + P('fc', head);
   },
 };
 

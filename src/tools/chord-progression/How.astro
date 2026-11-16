@@ -1,25 +1,41 @@
 ---
-/** しくみの枠: コード進行の決まりを 7 つの小さな図と短い説明で順に見せる */
+/** しくみの枠: 和音の地図の読み方とバンドの鳴らし方を 6 つの小さな図と短い説明で順に見せる */
+import { STYLES } from './band';
+
 const W = 150;
 const box = (x: number, y: number, w: number, h: number, fn: string, t: string, s = '') =>
   `<rect class="cp-hb cp-h${fn}" x="${x}" y="${y}" width="${w}" height="${h}" rx="3"/><rect class="cp-hf cp-h${fn}" x="${x}" y="${y}" width="3.5" height="${h}"/><text class="cp-ht" x="${x + 8}" y="${y + 15}">${t}</text>${s ? `<text class="cp-hs" x="${x + 8}" y="${y + 28}">${s}</text>` : ''}`;
 const arr = (x0: number, x1: number, y: number, w = 2) =>
   `<path class="cp-hl" d="M${x0} ${y}H${x1 - 5}" stroke-width="${w}"/><path class="cp-hh" d="M${x1} ${y}l-6 -4v8z"/>`;
-const ROM = ['Ⅰ', 'Ⅱ', 'Ⅲ', 'Ⅳ', 'Ⅴ', 'Ⅵ', 'Ⅶ'];
-const FN = ['T', 'S', 'T', 'S', 'D', 'T', 'D'];
+const tri = (pts: number[], fn: string, t: string, cx: number, cy: number) =>
+  `<path class="cp-htri cp-h${fn}" d="M${pts[0]} ${pts[1]}L${pts[2]} ${pts[3]}L${pts[4]} ${pts[5]}z"/><text class="cp-ht" x="${cx}" y="${cy + 4}" text-anchor="middle">${t}</text>`;
+const note = (x: number, y: number, t: string) =>
+  `<text class="cp-hs" x="${x}" y="${y}" text-anchor="middle">${t}</text>`;
+/* バンドの図はポップの 4 拍子の型そのもの */
+const POP = STYLES.pop[4],
+  hits = (s: string) => [...s].map((c) => c !== '.'),
+  drums = hits(POP.k).map((v, i) => v || POP.s[i] === 'x'),
+  ROWS: [string, boolean[]][] = [
+    ['ドラム', drums],
+    ['ベース', hits(POP.b)],
+    ['鍵盤', hits(POP.c)],
+    ['ギター', hits(POP.g)],
+  ];
 const STEPS: { h: string; svg: string; p: string }[] = [
   {
-    h: 'ダイアトニックコード',
-    svg: ROM.map((r, i) => {
-      const x = 12 + i * 19.5;
-      return `${[0, 2, 4].map((k) => `<circle class="cp-hd cp-h${FN[i]}" cx="${x}" cy="${44 - (i + k) * 3.2}" r="3"/>`).join('')}<text class="cp-hs" x="${x}" y="62" text-anchor="middle">${r}</text>`;
-    }).join(''),
-    p: '音階の音に 1 つおきに 2 音を重ねた 7 つの和音。根音の度数で Ⅰ〜Ⅶ と呼ぶ',
+    h: '和音の地図',
+    svg: `${tri([8, 50, 46, 50, 27, 17], 'S', 'F', 27, 39)}${tri([46, 50, 65, 17, 27, 17], 'T', 'Am', 46, 28)}${tri([46, 50, 84, 50, 65, 17], 'T', 'C', 65, 39)}${tri([84, 50, 103, 17, 65, 17], 'T', 'Em', 84, 28)}${tri([84, 50, 122, 50, 103, 17], 'D', 'G', 103, 39)}${['F', 'C', 'G', 'D'].map((t, i) => note(8 + i * 38, 62, t)).join('')}${['A', 'E', 'B'].map((t, i) => note(27 + i * 38, 10, t)).join('')}`,
+    p: '格子の点は音。右へ完全 5 度、右上へ長 3 度。上向きの三角形は長三和音、下向きは短三和音',
+  },
+  {
+    h: '隣の和音',
+    svg: `${tri([56, 34, 75, 4, 37, 4], 'T', 'Am', 56, 14)}${tri([94, 34, 113, 4, 75, 4], 'T', 'Em', 94, 14)}${tri([56, 34, 94, 34, 75, 64], 'S', 'Cm', 75, 44)}<path class="cp-htri cp-hT cp-hcur" d="M56 34L94 34L75 4z"/><text class="cp-ht" x="75" y="28" text-anchor="middle">C</text>`,
+    p: '辺でとなり合う和音は 2 音が同じ。1 音だけ動かして移る',
   },
   {
     h: '機能',
     svg: `${box(4, 22, 40, 22, 'T', 'T')}${box(55, 22, 40, 22, 'S', 'S')}${box(106, 22, 40, 22, 'D', 'D')}${arr(44, 55, 33)}${arr(95, 106, 33)}<path class="cp-hl" d="M126 44V54H24V49" stroke-width="2"/><path class="cp-hh" d="M24 44l-4 6h8z"/><text class="cp-hs" x="10" y="16">落ち着く</text><text class="cp-hs" x="108" y="16">戻りたい</text>`,
-    p: 'トニック・サブドミナント・ドミナントの 3 つの役割。ドミナントはトニックへ戻りたがる',
+    p: 'トニック・サブドミナント・ドミナントの 3 つの役割。地図の色はこの役割',
   },
   {
     h: 'つながりの強さ',
@@ -33,33 +49,20 @@ const STEPS: { h: string; svg: string; p: string }[] = [
           `<path class="cp-hl${lv === 1 ? ' d' : ''}" d="M34 33L${100 - 5} ${Number(y) + 9}" stroke-width="${[0, 1.2, 2.2, 3.6][Number(lv)]}"/>${box(100, Number(y), 34, 18, String(f), String(t))}`,
       )
       .join('')}`,
-    p: '和声の教科書の表から 3 段。定番ほど太い矢印',
+    p: '和声の教科書の表から 3 段。地図では定番ほど太い枠で光る',
   },
   {
-    h: '終止',
-    svg: `${box(4, 4, 26, 18, 'D', 'Ⅴ')}${arr(30, 42, 13)}${box(42, 4, 26, 18, 'T', 'Ⅰ')}<text class="cp-hc" x="76" y="17">完全終止</text>${box(4, 25, 26, 18, 'S', 'Ⅳ')}${arr(30, 42, 34)}${box(42, 25, 26, 18, 'T', 'Ⅰ')}<text class="cp-hc" x="76" y="38">変格終止</text>${box(4, 46, 26, 18, 'D', 'Ⅴ')}${arr(30, 42, 55)}${box(42, 46, 30, 18, 'T', 'Ⅵm')}<text class="cp-hc" x="80" y="59">偽終止</text>`,
-    p: '区切りを作るつながりの名前。偽終止は Ⅰ の代わりに Ⅵm へ進んで続ける',
+    h: '緊張と解決',
+    svg: `<path class="cp-hg" d="M4 40H146"/><path class="cp-hrail" d="M4 36H30C38 36 36 24 44 24H66C74 24 72 10 80 10H104C112 10 110 36 118 36H146"/>${box(4, 46, 34, 18, 'T', 'Ⅰ')}${box(40, 46, 34, 18, 'S', 'Ⅳ')}${box(76, 46, 34, 18, 'D', 'Ⅴ')}${box(112, 46, 34, 18, 'T', 'Ⅰ')}<path class="cp-hl" d="M116 34V18" stroke-width="1.5"/><rect class="cp-hh" x="116" y="12" width="26" height="12" rx="2"/><text class="cp-hfl" x="129" y="21" text-anchor="middle">解決</text>`,
+    p: 'ドミナントで高く、トニックで低い。ドミナントからトニックへ落ちる所が解決（終止）',
   },
   {
-    h: '五度圏',
-    svg: `${Array.from({ length: 12 }, (_, i) => {
-      const a = ((i * 30 - 90) * Math.PI) / 180,
-        lit = i === 0 || i === 1 || i === 11;
-      return `<circle class="${lit ? 'cp-hd cp-hT' : 'cp-ho'}" cx="${(75 + Math.cos(a) * 27).toFixed(1)}" cy="${(34 + Math.sin(a) * 27).toFixed(1)}" r="${lit ? 4 : 3}"/>`;
-    }).join(
-      '',
-    )}<text class="cp-hs" x="66" y="6" text-anchor="end">C</text><text class="cp-hs" x="106" y="18">G</text><text class="cp-hs" x="38" y="18" text-anchor="end">F</text><path class="cp-hl" d="M80 12Q95 12 95 22" stroke-width="2"/><path class="cp-hh" d="M98 18l-4 7l-3 -6z"/>`,
-    p: '隣どうしが 5 度違いの 12 の調の輪。同じ調の和音は隣り合う 3 つにまとまる',
-  },
-  {
-    h: '奏法',
-    svg: `${[0, 1, 2, 3, 4, 3, 2, 1, 0, 1, 2, 3, 4, 3, 2, 1].map((v, s) => `<circle class="cp-hd cp-hT" cx="${10 + s * 8.6}" cy="${52 - v * 9}" r="2.6"/>`).join('')}<path class="cp-hg" d="M6 58H146"/><text class="cp-hs" x="6" y="10">高い音</text>`,
-    p: '和音の音を時間に並べる弾き方。全音符・ストローク・アルペジオなど',
-  },
-  {
-    h: '転調とくり返し',
-    svg: `${box(4, 8, 32, 22, 'T', 'Ⅰ', '')}${box(40, 8, 32, 22, 'D', 'Ⅴ')}<rect class="cp-hm" x="78" y="8" width="20" height="22" rx="3"/><text class="cp-hs" x="88" y="23" text-anchor="middle">D</text>${box(102, 8, 32, 22, 'T', 'Ⅰ')}<text class="cp-hs" x="20" y="44" text-anchor="middle">C</text><text class="cp-hs" x="56" y="44" text-anchor="middle">G</text><text class="cp-hs" x="118" y="44" text-anchor="middle">D</text><path class="cp-hg" d="M4 54H146"/><text class="cp-hs" x="6" y="64">度数のまま高さだけ移る</text>`,
-    p: 'コードは調からの度数で持つので、転調のブロックの後ろは同じ形のまま移る',
+    h: 'バンド',
+    svg: ROWS.map(
+      ([n, v], r) =>
+        `<text class="cp-hs" x="2" y="${12 + r * 15}">${n}</text>${v.map((on, i) => `<circle class="${on ? `cp-hd cp-h${['D', 'S', 'T', 'T'][r]}` : 'cp-ho'}" cx="${40 + i * 6.8}" cy="${8 + r * 15}" r="${on ? 2.6 : 1.4}"/>`).join('')}`,
+    ).join(''),
+    p: 'スタイルの型（1 小節 16 歩）に和音の音を当てて 4 人で弾く',
   },
 ];
 ---

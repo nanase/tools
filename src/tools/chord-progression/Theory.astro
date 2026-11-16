@@ -15,11 +15,36 @@ const ROWS: [string, string, string, string][] = [
 ];
 ---
 <h3>全体の流れ</h3>
-<ol class="flow"><li>ブロックの並び</li><li>調・拍子・テンポ・奏法・音色</li><li>コードの音の高さ</li><li>奏法で時間に並べる</li><li>音色で鳴らす</li></ol>
+<ol class="flow"><li>地図で和音を選ぶ</li><li>調からの度数・機能・つながり</li><li>緊張の高さ</li><li>スタイルの型で 4 人に配る</li><li>音色で鳴らす</li></ol>
 <ul class="tl">
-  <li>ブロックを左から読み、転調・拍子などのブロックはその後ろのコードに効く</li>
-  <li>コードは調の主音からの半音の数（度数）と種類で持つ。転調のブロックの後ろは、同じ度数のまま高さだけが移る</li>
-  <li>くり返しの終わりで回数が残っていれば、くり返しの始め（なければ曲の頭か前のくり返しの終わり）へ戻る。回数を無制限にすると止めるまで続く</li>
+  <li>和音は根音の音名と種類で持ち、地図のどの三角形に置いたかも覚える。同じ和音が地図に何か所も出るため</li>
+  <li>転調はその和音から後ろに効く。度数・機能・つながりは、その和音の時点の調で数える</li>
+  <li>調のボタンで主音を変えると、すべての和音と転調の先を同じ半音の数だけ移す（移調）</li>
+</ul>
+
+<h3>和音の地図</h3>
+<div class="eqs">
+  <math display="block" set:html={`<mi>pc</mi>${p('<mi>i</mi><mo>,</mo><mi>j</mi>')}<mo>=</mo>${p('<mn>7</mn><mi>i</mi><mo>+</mo><mn>4</mn><mi>j</mi>')}<mspace width="0.3em"/><mo lspace="0.3em" rspace="0.3em">mod</mo><mn>12</mn>`} />
+</div>
+<dl class="syms">
+  <dt><math><mi>i</mi></math></dt><dd>横の位置。1 つ右で完全 5 度（半音 7 つ）上</dd>
+  <dt><math><mi>j</mi></math></dt><dd>斜めの段。1 段右上で長 3 度（半音 4 つ）上</dd>
+  <dt><math><mi>pc</mi></math></dt><dd>格子の点の音名（C = 0）</dd>
+</dl>
+<ul class="tl">
+  <li>この格子はトネッツ（Tonnetz）と呼ばれ、ネオ・リーマン理論で和音のつながりを見る図として使われる<Fragment set:html={rf(1)} /></li>
+  <li>上向きの三角形は左下の点を根音とする長三和音、下向きの三角形は短三和音。辺を共有する隣の三角形とは 2 音が同じになる</li>
+  <li>長三和音の 3 つの隣は、根音と 5 度を残す同主短調の和音（P: C → Cm）、根音と 3 度を残す平行調の和音（R: C → Am）、3 度と 5 度を残す導音交換の和音（L: C → Em）<Fragment set:html={rf(1)} /></li>
+  <li>描く範囲は横 8 列・5 段。どの長三和音・短三和音も 2 か所以上に出る</li>
+  <li>7 の和音や sus などの種類は、長三和音の系統は上向き、短三和音と減三和音の系統は下向きの三角形に置く</li>
+  <li>サンプルを読むときと種類の長短を変えたときは、同じ和音の三角形のうち前の和音に最も近いものに置く</li>
+</ul>
+
+<h3>候補の光り方</h3>
+<ul class="tl">
+  <li>選んだ和音（なければ最後の和音、演奏中は鳴っている和音）を基準にする</li>
+  <li>基準から 2.3 マス以内の三角形のうち、隣の三角形か、つながりの強さが「よく使う」以上の和音の縁を光らせる。定番ほど太い</li>
+  <li>色を塗るのは基準の調の中の 7 つの和音（ダイアトニックコード）。色は機能</li>
 </ul>
 
 <h3>つながりの強さ</h3>
@@ -28,25 +53,28 @@ const ROWS: [string, string, string, string][] = [
   <tbody>{ROWS.map(([a, b, c, d]) => <tr><td>{a}</td><td>{b}</td><td>{c}</td><td>{d}</td></tr>)}</tbody>
 </table></div>
 <ul class="tl">
-  <li>根音の度数どうしの進み方を、和声の教科書の表（usually・sometimes・less often）から 3 段に分ける<Fragment set:html={rf(1)} /></li>
+  <li>根音の度数どうしの進み方を、和声の教科書の表（usually・sometimes・less often）から 3 段に分ける<Fragment set:html={rf(2)} /></li>
   <li>長調と短調で同じ表を使う。♭・♯ の付いた根音は文字の度数で引く（♭Ⅶ は Ⅶ）</li>
-  <li>属七の形（長 3 度と短 7 度を持つ）のコードから 5 度下への進行は定番。Ⅴ 以外の属七（セカンダリードミナント）がほかへ進むときは、ときどきまでに下げる</li>
-  <li>調の外のコードが前か後ろにあれば 1 段下げる</li>
+  <li>属七の形（長 3 度と短 7 度を持つ）の和音から 5 度下への進行は定番。Ⅴ 以外の属七（セカンダリードミナント）がほかへ進むときは、ときどきまでに下げる</li>
+  <li>調の外の和音が前か後ろにあれば 1 段下げる</li>
 </ul>
 
-<h3>終止と名前のある進行</h3>
+<h3>緊張と解決</h3>
 <ul class="tl">
-  <li>完全終止: Ⅴ（Ⅴ7）→ Ⅰ。変格終止: Ⅳ → Ⅰ。偽終止: Ⅴ → Ⅵm（短調では Ⅴ → Ⅵ）<Fragment set:html={rf(1)} /></li>
-  <li>ツーファイブ: Ⅱm（Ⅱm7・Ⅱm7(♭5)）→ Ⅴ。ドミナント進行: 属七の形から 5 度下へ</li>
-  <li>名前のある進行は、度数と長短の並びが同じ所を左から探す。短調は平行長調の度数に直して比べる（Ⅰm → Ⅵm）</li>
+  <li>レールの高さはトニック 0.18・サブドミナント 0.5・ドミナント 0.86 を基準にする。短三和音の系統は 0.04 下げ、減三和音の系統は 0.06 上げ、Ⅴ 以外の属七の形は 0.04 上げる</li>
+  <li>駅の幅は和音の拍の数。駅の 6 割までは平らで、残りで次の駅の高さへなめらかに移る</li>
+  <li>ドミナントからトニックへ進む所に「解決」の旗を立てる</li>
+  <li>完全終止: Ⅴ（Ⅴ7）→ Ⅰ。変格終止: Ⅳ → Ⅰ。偽終止: Ⅴ → Ⅵm（短調では Ⅴ → Ⅵ）<Fragment set:html={rf(2)} /></li>
+  <li>名前のある進行は、度数と長短の並びが同じ所を前から探して括弧で囲む。短調は平行長調の度数に直して比べる（Ⅰm → Ⅵm）</li>
 </ul>
 
-<h3>和音の並べ方</h3>
+<h3>バンド</h3>
 <ul class="tl">
-  <li>上の声部は根音（転回形では指定の構成音）から積み、最も低い音を E3〜D♯4 に置く。3 和音には根音のオクターブ上を足して 4 音にする</li>
-  <li>ベースは最も低い構成音を E2〜D♯3 に置く。伴奏のベースはその 1 オクターブ下</li>
-  <li>奏法は 8 分音符を 1 歩として、何歩目に何番目の音を弾くかを並べる。ギターとエレピの音はコードの終わりまで鳴らしたままにする</li>
-  <li>自分で作る奏法は、8 分か 16 分の刻みの格子に、ベースと上の 5 声のどれを弾くかを置く。1 周をコードの長さまでくり返し、和音の音が足りない段は弾かない。作った奏法は曲と一緒に保存する</li>
+  <li>スタイルごとに、1 小節を 16 分音符で刻んだ型（4 拍子は 16 歩、3 拍子は 12 歩）をメンバーごとに持つ。型は小節の頭から数え、和音が小節の途中で変わってもずれない</li>
+  <li>和音の頭に鍵盤とベースの音が型になければ足す。和音が変わったのが聞こえるようにするため</li>
+  <li>鍵盤の上の声部は根音から積み、最も低い音を E3〜D♯4 に置く。3 和音には根音のオクターブ上を足して 4 音にする。ベースは最も低い構成音を E2〜D♯3 に置いた 1 オクターブ下で、型の数字で根音・5 度上・オクターブ上を弾く</li>
+  <li>ギターは鍵盤と同じ音の 1 オクターブ下を、少しずつずらして弾く（ストローク）</li>
+  <li>音は鳴る直前に予約する。編集すると、鳴っている和音はそのままにして次の和音から並べ直す</li>
 </ul>
 
 <h3>音色</h3>
@@ -62,37 +90,40 @@ const ROWS: [string, string, string, string][] = [
 </dl>
 <ul class="tl">
   <li>アコースティックギターとクラシックギター: <a href="../guitar/">ギター音響モデル</a>のページの物理モデル（弦の固有振動と胴の響き）で鳴らす。スチール弦はドレッドノートの胴とピック、ナイロン弦はクラシックの胴と指</li>
-  <li>和音の音は標準の調弦の弦とフレットに割り当てる。低い音ほど低い弦に置き、押さえる幅が狭い押さえ方を選ぶ。コードの終わりで指を離す</li>
-  <li>ハープ: 上の式の撥弦の合成<Fragment set:html={rf(2)} />。遅延線の中の 3 点の低域通過で遅れが 1 サンプル増えるので、再生の速さで高さを合わせる<Fragment set:html={rf(3)} /></li>
+  <li>和音の音は標準の調弦の弦とフレットに割り当てる。低い音ほど低い弦に置き、押さえる幅が狭い押さえ方を選ぶ。和音の終わりで指を離す</li>
+  <li>ハープ: 上の式の撥弦の合成<Fragment set:html={rf(3)} />。遅延線の中の 3 点の低域通過で遅れが 1 サンプル増えるので、再生の速さで高さを合わせる<Fragment set:html={rf(4)} /></li>
   <li>ハープの弾き始めの形は、指の腹で弦の 40 % の所を引いた、角の丸い三角形。響板の山（250 Hz・900 Hz）を通し、指を離しても長く響かせる</li>
-  <li>エレピ: 同じ周波数の 2 つの正弦波の周波数変調<Fragment set:html={rf(4)} />。打った直後ほど倍音が多い</li>
+  <li>エレピ: 同じ周波数の 2 つの正弦波の周波数変調<Fragment set:html={rf(5)} />。打った直後ほど倍音が多い</li>
   <li>ピアノ: 早く消える明るい成分と、遅く消える柔らかい成分を重ね、少しずらした 2 本でうなりを作る</li>
   <li>オルガン: 1〜4 倍の正弦波の和</li>
   <li>ストリングス: 少しずつずらした 3 本ののこぎり波に、遅れて掛かるビブラートと胴の響きの山（300 Hz・1 kHz・2.8 kHz）</li>
   <li>シンセパッド: 3 本ののこぎり波を、ゆっくり動く低域通過に通す。ブラス: 吹き始めに低域通過を開いてから少し閉じ、遅れてビブラートを掛ける</li>
   <li>マリンバとビブラフォン: 板の 1 次と 4 倍の振動。ビブラフォンは長く響き、5.5 Hz で音量が揺れる</li>
-  <li>ベル: 周波数比 3.5 の周波数変調<Fragment set:html={rf(4)} /></li>
-  <li>メトロノーム: 短い雑音を帯域通過に通した当たりと、すぐ消える正弦波</li>
-  <li>残響: サイト共通の遅延線の網<Fragment set:html={rf(5)} />で部屋の響きを作り、すべての音に畳み込む。聴く位置は 3 m</li>
+  <li>ベル: 周波数比 3.5 の周波数変調<Fragment set:html={rf(5)} /></li>
+  <li>ベース: 三角波を 700 Hz の低域通過に通す</li>
+  <li>ドラム: バスドラムは 130 Hz から 45 Hz へ下がる正弦波、スネアは 1.8 kHz の帯域通過の雑音と 190 Hz の胴、ハイハットは 7 kHz の高域通過の雑音、リム（ボサノバ）は短い 1.7 kHz の正弦波</li>
+  <li>残響: サイト共通の遅延線の網<Fragment set:html={rf(6)} />で部屋の響きを作り、すべての音に畳み込む。聴く位置は 3 m</li>
   <li>音色ごとの大きさは、同じ和音を鳴らしたときの実効値がそろうように合わせる</li>
 </ul>
 
 <h3>このツールで決めたこと</h3>
 <ul class="tl">
-  <li>つながりの強さの段の名前（定番・よく使う・ときどき）と、調の外のコードやセカンダリードミナントで段を下げる決まり</li>
+  <li>地図の範囲・候補を光らせる距離（2.3 マス）・7 の和音などを置く三角形の向き</li>
+  <li>緊張の高さの値。機能から決める目安で、聴いた感じを測ったものではない</li>
+  <li>つながりの強さの段の名前（定番・よく使う・ときどき）と、調の外の和音やセカンダリードミナントで段を下げる決まり</li>
   <li>機能の分け方: Ⅰ・Ⅲ・Ⅵ（調の中の和音）はトニック、Ⅴ と Ⅶ の減三和音と属七の形はドミナント、ほかはサブドミナント</li>
   <li>名前のある進行（カノン進行・王道進行・小室進行・丸サ進行・循環進行・ツーファイブワン・12 小節のブルース）は、日本で広く使われている呼び名</li>
-  <li>サンプルの進行・テンポ・奏法・音色は、このツールのために選んだ。特定の曲を写したものではない</li>
+  <li>バンドの 4 つのスタイルの型と、サンプルの進行・テンポ・音色。このツールのために選び、特定の曲を写したものではない</li>
   <li>音色の値（減衰・弾く位置・変調の深さ・倍音の大きさ・フィルタ・ビブラート）と、和音を置く高さ</li>
   <li>ギターの弦とフレットの割り当て方（12 フレットまで、押さえる幅と高いフレットを減点）</li>
-  <li>くり返しは入れ子にしない。終わりのブロックは手前の始めまで戻る</li>
 </ul>
 
 <h3>出典</h3>
 <ol class="refs">
-  <li id="thy-r1"><span class="rf-for">根音の進み方の表（Table of Usual Root Progressions）と終止</span><span class="rf-src">W. Piston, <i>Harmony</i>, 5th ed., revised and expanded by M. DeVoto, W. W. Norton, 1987</span></li>
-  <li id="thy-r2"><span class="rf-for">撥弦の合成</span><span class="rf-src">K. Karplus, A. Strong, “Digital synthesis of plucked-string and drum timbres,” <i>Computer Music Journal</i>, vol. 7, no. 2, pp. 43–55, 1983, <a href="https://doi.org/10.2307/3680062">doi:10.2307/3680062</a></span></li>
-  <li id="thy-r3"><span class="rf-for">撥弦の合成の高さの合わせ方</span><span class="rf-src">D. A. Jaffe, J. O. Smith, “Extensions of the Karplus-Strong plucked-string algorithm,” <i>Computer Music Journal</i>, vol. 7, no. 2, pp. 56–69, 1983, <a href="https://doi.org/10.2307/3680063">doi:10.2307/3680063</a></span></li>
-  <li id="thy-r4"><span class="rf-for">周波数変調による音の合成</span><span class="rf-src">J. M. Chowning, “The synthesis of complex audio spectra by means of frequency modulation,” <i>J. Audio Eng. Soc.</i>, vol. 21, no. 7, pp. 526–534, 1973</span></li>
-  <li id="thy-r5"><span class="rf-for">遅延線の網による残響</span><span class="rf-src">J.-M. Jot, A. Chaigne, “Digital delay networks for designing artificial reverberators,” <i>90th AES Convention</i>, preprint 3030, 1991</span></li>
+  <li id="thy-r1"><span class="rf-for">トネッツと P・L・R の変換</span><span class="rf-src">R. Cohn, “Introduction to neo-Riemannian theory: a survey and a historical perspective,” <i>Journal of Music Theory</i>, vol. 42, no. 2, pp. 167–180, 1998, <a href="https://doi.org/10.2307/843871">doi:10.2307/843871</a></span></li>
+  <li id="thy-r2"><span class="rf-for">根音の進み方の表（Table of Usual Root Progressions）と終止</span><span class="rf-src">W. Piston, <i>Harmony</i>, 5th ed., revised and expanded by M. DeVoto, W. W. Norton, 1987</span></li>
+  <li id="thy-r3"><span class="rf-for">撥弦の合成</span><span class="rf-src">K. Karplus, A. Strong, “Digital synthesis of plucked-string and drum timbres,” <i>Computer Music Journal</i>, vol. 7, no. 2, pp. 43–55, 1983, <a href="https://doi.org/10.2307/3680062">doi:10.2307/3680062</a></span></li>
+  <li id="thy-r4"><span class="rf-for">撥弦の合成の高さの合わせ方</span><span class="rf-src">D. A. Jaffe, J. O. Smith, “Extensions of the Karplus-Strong plucked-string algorithm,” <i>Computer Music Journal</i>, vol. 7, no. 2, pp. 56–69, 1983, <a href="https://doi.org/10.2307/3680063">doi:10.2307/3680063</a></span></li>
+  <li id="thy-r5"><span class="rf-for">周波数変調による音の合成</span><span class="rf-src">J. M. Chowning, “The synthesis of complex audio spectra by means of frequency modulation,” <i>J. Audio Eng. Soc.</i>, vol. 21, no. 7, pp. 526–534, 1973</span></li>
+  <li id="thy-r6"><span class="rf-for">遅延線の網による残響</span><span class="rf-src">J.-M. Jot, A. Chaigne, “Digital delay networks for designing artificial reverberators,” <i>90th AES Convention</i>, preprint 3030, 1991</span></li>
 </ol>
