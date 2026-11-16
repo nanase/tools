@@ -47,7 +47,7 @@ const S = {
   sel: null as number | null,
   /** 止まっている間に次に弾き始める和音 */
   cue: 0,
-  on: { drums: true, bass: true, keys: true, gtr: true } as Record<MemberId, boolean>,
+  on: { drums: true, bass: true, keys: true, gtr: true, cho: true } as Record<MemberId, boolean>,
   loop: true,
   /** メトロノームを鳴らすか */
   met: false,
@@ -569,12 +569,14 @@ const BAND_ICON: Record<MemberId, () => string> = {
   bass: () => ICON.ebass,
   keys: () => ICON[S.song.keys],
   gtr: () => ICON[S.song.gtr],
+  cho: () => ICON.cho,
 };
 const memberSub: Record<MemberId, () => string> = {
   drums: () => STYLE_NAMES[S.song.style],
   bass: () => 'エレキベース',
   keys: () => VOICES[S.song.keys],
   gtr: () => VOICES[S.song.gtr],
+  cho: () => '持続音',
 };
 const bandEl = $('#cp-band'),
   memberEl = {} as Record<MemberId, HTMLButtonElement>;

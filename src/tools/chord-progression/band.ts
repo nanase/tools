@@ -9,9 +9,15 @@ import type { CpAudio, NoteEv, Voice } from './audio';
 import { compute, type Entry, type Meter, type Song, type StyleId } from './song';
 import { QUALS, voicing } from './theory';
 
-export type MemberId = 'drums' | 'bass' | 'keys' | 'gtr';
-export const MEMBERS: readonly MemberId[] = ['drums', 'bass', 'keys', 'gtr'];
-export const MEMBER_NAMES: Record<MemberId, string> = { drums: 'ドラム', bass: 'ベース', keys: '鍵盤', gtr: 'ギター' };
+export type MemberId = 'drums' | 'bass' | 'keys' | 'gtr' | 'cho';
+export const MEMBERS: readonly MemberId[] = ['drums', 'bass', 'keys', 'gtr', 'cho'];
+export const MEMBER_NAMES: Record<MemberId, string> = {
+  drums: 'ドラム',
+  bass: 'ベース',
+  keys: '鍵盤',
+  gtr: 'ギター',
+  cho: 'コーラス',
+};
 
 interface Pat {
   k: string;
@@ -242,7 +248,10 @@ const MEMBER_OF: Partial<Record<Voice, MemberId>> = {
   snare: 'drums',
   hat: 'drums',
   rim: 'drums',
+  tom: 'drums',
+  crash: 'drums',
   bass: 'bass',
+  cho: 'cho',
 };
 /** 音を弾くメンバー（メトロノームはどのメンバーでもない） */
 export const memberOf = (v: Voice): MemberId | null =>
@@ -251,9 +260,34 @@ export const memberOf = (v: Voice): MemberId | null =>
 /**
  * 和音 1 つ分の音。t・end は和音の頭からの秒。spb は 16 分音符 1 つの秒。
  * 和音の頭が小節の途中でも、型は小節の頭から数える。和音の頭に鍵盤とベースの音がなければ足す（和音が変わったのが聞こえるように）。
- * met ならメトロノームを拍ごとに鳴らす（小節の頭は高い音）
+ * コーラスは和音の間ずっと上の 3 声を伸ばす
  */
-export function bandNotes(e: Entry, song: Song, on: Record<MemberId, boolean>, spb: number, met = false): NoteEv[] {
+export interface BandOpt {
+  /** メトロノームを拍ごとに鳴らす（小節の頭は高い音） */
+  met?: boolean;
+  /** 曲の長さ [拍]。あれば曲の終わりの 2 拍でドラムがフィルを叩く（くり返して頭へ戻る前） */
+  fillAt?: number;
+  /** 和音の頭でクラッシュシンバル（くり返して頭へ戻った所） */
+  crash?: boolean;
+}
+/** フィルの 8 歩（2 拍）: スネア 2 つのあと、高いタムから低いタムへ。数字はタムの周波数 [Hz] */
+const FILL: readonly (readonly ['snare' | 'tom', number, number])[] = [
+  ['snare', 0, 1],
+  ['snare', 0, 0.5],
+  ['tom', 220, 0.9],
+  ['tom', 220, 0.7],
+  ['tom', 160, 0.9],
+  ['tom', 160, 0.7],
+  ['tom', 115, 1],
+  ['tom', 115, 0.8],
+];
+export function bandNotes(
+  e: Entry,
+  song: Song,
+  on: Record<MemberId, boolean>,
+  spb: number,
+  opt: BandOpt = {},
+): NoteEv[] {
   const P = STYLES[song.style][song.meter],
     bar = song.meter * 4,
     tones = voicing(e.ch, e.key),
@@ -267,11 +301,23 @@ export function bandNotes(e: Entry, song: Song, on: Record<MemberId, boolean>, s
     chAt = (s: number, ch: string | undefined) => ch?.[(e.start * 4 + s) % bar] ?? '.',
     at = (s: number, ch: string | undefined) => chAt(s, ch) !== '.',
     VEL: Record<string, number> = { x: 1, g: 0.35, o: 0.8 };
+  /* フィルは曲が 2 小節以上あるときだけ、最後の 8 歩 */
+  const fill0 = opt.fillAt && opt.fillAt >= song.meter * 2 ? opt.fillAt * 4 - FILL.length : Number.POSITIVE_INFINITY;
+  if (on.drums && opt.crash) out.push({ t: 0, m: 0, v: 'crash', end: 0, vel: 1 });
+  if (on.cho)
+    up.slice(0, 3).forEach((m) => {
+      out.push({ t: 0, m, v: 'cho', end: dur + 0.05, vel: 0.5 });
+    });
   for (let s = 0; s < steps; s++) {
     const g = (e.start * 4 + s) % bar,
       /* 跳ねるスタイルは拍の裏の 8 分を 3 連符の 3 つ目へ */
-      t = (s + (P.sw && g % 4 === 2 ? 2 / 3 : 0)) * spb;
-    if (on.drums) {
+      t = (s + (P.sw && g % 4 === 2 ? 2 / 3 : 0)) * spb,
+      fj = e.start * 4 + s - fill0;
+    if (on.drums && fj >= 0) {
+      const [v, m, vel] = FILL[fj];
+      out.push({ t, m, v, end: t, vel });
+      if (fj % 4 === 0) out.push({ t, m: 0, v: 'kick', end: t, vel: 0.8 });
+    } else if (on.drums) {
       if (at(s, P.k)) out.push({ t, m: 0, v: 'kick', end: t, vel: VEL[chAt(s, P.k)] ?? 1 });
       if (at(s, P.s)) out.push({ t, m: 0, v: 'snare', end: t, vel: VEL[chAt(s, P.s)] ?? 1 });
       if (at(s, P.r)) out.push({ t, m: 0, v: 'rim', end: t, vel: 1 });
@@ -301,7 +347,7 @@ export function bandNotes(e: Entry, song: Song, on: Record<MemberId, boolean>, s
         });
       });
   }
-  if (met)
+  if (opt.met)
     for (let k = 0; k < e.beats; k++)
       out.push({
         t: k * 4 * spb,
@@ -396,16 +442,18 @@ export class Player {
     if (now === null) return;
     if (this.nextAt < now - 0.1) this.nextAt = now + 0.02;
     const { song, on, loop, met } = this.ctx(),
-      { entries } = compute(song),
+      { entries, beats: total } = compute(song),
       spb = 60 / song.bpm / 4,
       horizon = now + lookahead(AHEAD);
     while (!this.done && this.nextAt < horizon) {
+      let wrapped = false;
       if (this.next >= entries.length) {
         if (!loop || !entries.length) {
           this.done = true;
           break;
         }
         this.next = 0;
+        wrapped = true;
       }
       const e = entries[this.next],
         bus = this.audio.bus();
@@ -418,7 +466,7 @@ export class Player {
         at: this.nextAt,
         dur,
         bus,
-        pending: bandNotes(e, song, on, spb, met),
+        pending: bandNotes(e, song, on, spb, { met, fillAt: loop ? total : undefined, crash: wrapped }),
       });
       this.nextAt += dur;
       this.next++;

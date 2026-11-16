@@ -12,7 +12,7 @@ type Ctor = typeof AudioContext;
 const AC: Ctor | undefined =
   globalThis.AudioContext ?? (globalThis as unknown as { webkitAudioContext?: Ctor }).webkitAudioContext;
 
-export type Voice = VoiceId | 'bass' | 'kick' | 'snare' | 'hat' | 'rim' | 'clk';
+export type Voice = VoiceId | 'bass' | 'cho' | 'kick' | 'snare' | 'hat' | 'rim' | 'tom' | 'crash' | 'clk';
 /** 1 つの音。t・end はコードの頭からの秒、m は MIDI のノート番号（ドラムでは使わない） */
 export interface NoteEv {
   t: number;
@@ -47,6 +47,9 @@ const LEVEL: Record<Voice, number> = {
   snare: 1,
   hat: 1,
   rim: 1,
+  tom: 1,
+  crash: 1,
+  cho: 1,
   clk: 1,
 };
 
@@ -530,6 +533,74 @@ export class CpAudio {
         o.stop(w + 0.07);
         n.start(w);
         n.stop(w + 0.03);
+        break;
+      }
+      case 'cho': {
+        /* コーラス: 少しずつずらした 3 本ののこぎり波を、母音「あ」の 2 つの山（700 Hz・1150 Hz）に通し、ゆっくり立ち上げて伸ばす */
+        const f1 = ac.createBiquadFilter(),
+          f2 = ac.createBiquadFilter(),
+          lp = ac.createBiquadFilter(),
+          vib = ac.createOscillator(),
+          vg = ac.createGain();
+        f1.type = 'peaking';
+        f1.frequency.value = 700;
+        f1.Q.value = 2.5;
+        f1.gain.value = 9;
+        f2.type = 'peaking';
+        f2.frequency.value = 1150;
+        f2.Q.value = 3;
+        f2.gain.value = 7;
+        lp.frequency.value = 2400;
+        f1.connect(f2).connect(lp).connect(g);
+        vib.frequency.value = 4.8;
+        vg.gain.value = 9;
+        vib.connect(vg);
+        vib.start(w);
+        vib.stop(stopAt);
+        for (const ct of [-12, 0, 12]) vg.connect(osc('sawtooth', f, f1, ct).detune);
+        env(0.35, vel * 0.028, 0.35);
+        break;
+      }
+      case 'tom': {
+        /* タム: m の周波数から 6 割へ下がる正弦波と、短い当たりの雑音 */
+        const o = ac.createOscillator(),
+          n = ac.createBufferSource(),
+          bp = ac.createBiquadFilter(),
+          ng = ac.createGain();
+        o.frequency.setValueAtTime(x.m, w);
+        o.frequency.exponentialRampToValueAtTime(x.m * 0.6, w + 0.18);
+        o.connect(g);
+        g.gain.setValueAtTime(vel * 0.8, w);
+        g.gain.exponentialRampToValueAtTime(1e-4, w + 0.4);
+        o.start(w);
+        o.stop(w + 0.42);
+        n.buffer = this.noiseBuf();
+        bp.type = 'bandpass';
+        bp.frequency.value = x.m * 6;
+        n.connect(bp).connect(ng).connect(g);
+        ng.gain.setValueAtTime(0.5, w);
+        ng.gain.exponentialRampToValueAtTime(1e-4, w + 0.03);
+        n.start(w);
+        n.stop(w + 0.04);
+        break;
+      }
+      case 'crash': {
+        /* クラッシュシンバル: 高域通過と帯域通過の雑音を長めに減らす */
+        const n = ac.createBufferSource(),
+          hp = ac.createBiquadFilter(),
+          bp = ac.createBiquadFilter();
+        n.buffer = this.noiseBuf();
+        n.loop = true;
+        hp.type = 'highpass';
+        hp.frequency.value = 4500;
+        bp.type = 'peaking';
+        bp.frequency.value = 7500;
+        bp.gain.value = 6;
+        n.connect(hp).connect(bp).connect(g);
+        g.gain.setValueAtTime(vel * 0.32, w);
+        g.gain.exponentialRampToValueAtTime(1e-4, w + 1.6);
+        n.start(w);
+        n.stop(w + 1.65);
         break;
       }
       case 'kick': {

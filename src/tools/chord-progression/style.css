@@ -59,7 +59,7 @@
 .cp-rc{display:block;cursor:grab;touch-action:pan-y}
 
 /* ===== バンド ===== */
-.cp-band{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:10px}
+.cp-band{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-bottom:10px}
 .cp-mem{display:grid;justify-items:center;gap:2px;padding:10px 6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);cursor:pointer;transition:transform .08s,border-color .08s;font:inherit}
 .cp-mem:hover{border-color:var(--ink-3)}
 .cp-mem .cp-ic{width:40px;height:40px}
@@ -67,7 +67,7 @@
 .cp-mem small{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11.5px;color:var(--ink-3)}
 .cp-mem[aria-pressed="false"]{opacity:.38}
 .cp-mem.hit{transform:translateY(-3px);border-color:var(--cp-lv)}
-@media (max-width:560px){.cp-band{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){.cp-band{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.cp-mem{padding:8px 4px 6px}}
 @media (prefers-reduced-motion:reduce){.cp-mem{transition:none}.cp-mem.hit{transform:none}}
 .cp-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin:10px 0 4px}
 .cp-rl{min-width:56px;font-size:12.5px;color:var(--ink-3)}

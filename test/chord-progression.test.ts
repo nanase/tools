@@ -43,7 +43,7 @@ const song = (src: string, o: Partial<Song> = {}): Song => ({
   ...o,
 });
 const names = (s: Song): string[] => compute(s).entries.map((e) => chordName(e.ch, e.key));
-const ALL_ON: Record<MemberId, boolean> = { drums: true, bass: true, keys: true, gtr: true };
+const ALL_ON: Record<MemberId, boolean> = { drums: true, bass: true, keys: true, gtr: true, cho: true };
 
 describe('名前と綴り', () => {
   it('度数と音名', () => {
@@ -301,12 +301,34 @@ describe('バンド', () => {
   it('メトロノームは拍ごとに鳴り、小節の頭は高い音', () => {
     const s = song('C:2 G:4 Am:2'),
       es = compute(s).entries,
-      clk = (k: number) => bandNotes(es[k], s, ALL_ON, 0.125, true).filter((n) => n.v === 'clk');
+      clk = (k: number) => bandNotes(es[k], s, ALL_ON, 0.125, { met: true }).filter((n) => n.v === 'clk');
     expect(clk(0).map((n) => n.m)).toEqual([1760, 1180]);
     expect(clk(1).map((n) => n.m)).toEqual([1180, 1180, 1760, 1180]);
     expect(clk(1).map((n) => n.t)).toEqual([0, 0.5, 1, 1.5]);
     expect(bandNotes(es[0], s, ALL_ON, 0.125).some((n) => n.v === 'clk')).toBe(false);
     expect(memberOf('clk')).toBeNull();
+  });
+  it('コーラスは和音の間ずっと上の 3 声を伸ばす', () => {
+    const s = song('C G:2'),
+      es = compute(s).entries,
+      cho = bandNotes(es[1], s, ALL_ON, 0.125).filter((n) => n.v === 'cho');
+    expect(cho).toHaveLength(3);
+    expect(cho.every((n) => n.t === 0 && n.end >= 1)).toBe(true);
+  });
+  it('くり返す前の 2 拍でフィル、頭へ戻るとクラッシュ', () => {
+    const s = song('C F G C'),
+      es = compute(s).entries,
+      drums = (k: number, o = {}) => bandNotes(es[k], s, ALL_ON, 0.125, o).filter((n) => memberOf(n.v) === 'drums');
+    const last = drums(3, { fillAt: 16 }),
+      toms = last.filter((n) => n.v === 'tom');
+    expect(toms.map((n) => n.m)).toEqual([220, 220, 160, 160, 115, 115]);
+    expect(toms[0].t).toBeCloseTo(10 * 0.125);
+    expect(last.some((n) => n.v === 'hat' && n.t >= 8 * 0.125)).toBe(false);
+    expect(drums(2, { fillAt: 16 }).some((n) => n.v === 'tom')).toBe(false);
+    expect(drums(3).some((n) => n.v === 'tom')).toBe(false);
+    expect(drums(0, { crash: true })[0].v).toBe('crash');
+    expect(memberOf('tom')).toBe('drums');
+    expect(memberOf('cho')).toBe('cho');
   });
   it('音色の切り替えに従う', () => {
     const s = song('C', { keys: 'ep', gtr: 'cgt' }),
