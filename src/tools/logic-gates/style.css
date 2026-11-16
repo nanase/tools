@@ -1,0 +1,164 @@
+/* 論理ゲートのページ。--lg-on 1 の線とランプ・--lg-on-soft 1 の地・--lg-off 0 の線・--lg-tbg チャートの地・--lg-tgrid チャートの罫線 */
+:root{--lg-on:#d9480f;--lg-on-soft:#fbe3d3;--lg-off:#8d959c;--lg-tbg:#fff;--lg-tgrid:#e4e7e1;--lg-bench:#fff;--lg-rule:#edf0ea;--lg-rule-2:#d9ded6}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--lg-on:#ff8a4c;--lg-on-soft:#4a2a18;--lg-off:#5d666d;--lg-tbg:var(--screen);--lg-tgrid:#1c2428;--lg-bench:transparent;--lg-rule:transparent;--lg-rule-2:transparent}}
+:root[data-theme="dark"]{--lg-on:#ff8a4c;--lg-on-soft:#4a2a18;--lg-off:#5d666d;--lg-tbg:var(--screen);--lg-tgrid:#1c2428;--lg-bench:transparent;--lg-rule:transparent;--lg-rule-2:transparent}
+
+/* 並び: PC は回路の右に真理値表、下にタイミングチャートと使われる所。真理値表は回路の枠の高さに合わせて中をスクロール */
+.lg-grid{grid-template-areas:"ckt" "tc" "tt" "use" "how" "thy"}
+.lg-a-ckt{grid-area:ckt}.lg-a-tt{grid-area:tt}.lg-a-tc{grid-area:tc}.lg-a-use{grid-area:use}.lg-a-how{grid-area:how}
+.lg-grid>.a-thy{grid-area:thy}
+.lg-ttw{max-height:360px;overflow:auto;background:var(--lg-tbg);border:1px solid var(--line);border-radius:3px}
+@media (min-width:1000px){
+  .lg-grid{grid-template-columns:minmax(0,2.3fr) minmax(250px,1fr);grid-template-areas:"ckt tt" "tc use" "how how" "thy thy";align-items:start}
+  .lg-a-tt{align-self:stretch;display:flex;flex-direction:column}
+  .lg-a-tt.shut{align-self:start}
+  .lg-a-tt .lg-ttw{flex:1 1 0;min-height:160px;max-height:none;contain:size}
+}
+
+/* 回路の選択: ‹ 選択欄 › と回路の説明を 1 行に */
+.lg-pick{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin:0 0 10px}
+.lg-pv{display:inline-grid;place-items:center;width:30px;height:30px;padding:0;border:1px solid var(--line-2);border-radius:4px;background:var(--surface);color:var(--ink-2);cursor:pointer}
+.lg-pv:hover{border-color:var(--ink-3);color:var(--ink)}
+.lg-pv svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.lg-selw{position:relative;width:min(240px,calc(100% - 76px))}
+.lg-selw select{appearance:none;width:100%;height:30px;padding:0 30px 0 10px;border:1px solid var(--line-2);border-radius:4px;background:var(--inset);color:var(--ink);font:700 14px/1.2 var(--sans);text-overflow:ellipsis;cursor:pointer}
+.lg-selw select:hover{border-color:var(--ink-3)}
+.lg-selw select option,.lg-selw select optgroup{background:var(--surface);color:var(--ink)}
+.lg-selw::after{content:"";position:absolute;top:50%;right:12px;width:7px;height:7px;border-right:1.6px solid var(--ink-2);border-bottom:1.6px solid var(--ink-2);transform:translateY(-70%) rotate(45deg);pointer-events:none}
+@media (pointer:coarse){.lg-pv{width:36px;height:36px}.lg-selw select{height:36px}}
+.lg-sub{font-size:12.5px;color:var(--ink-3)}
+.lg-rp{margin-left:auto;padding:1px 8px;border-radius:10px;background:var(--focus);color:var(--surface);font-size:12px;font-weight:700;visibility:hidden}
+.lg-rp.on{visibility:visible}
+
+/* 作業台: ライトテーマは白地に細かい罫線と 5 マスごとの太い罫線（部品は罫線にそろえない） */
+.lg-bench{display:flex;justify-content:center;overflow:hidden;padding:12px 8px;border:1px solid var(--line);border-radius:4px;background-color:var(--lg-bench);
+  background-image:linear-gradient(var(--lg-rule-2) 1px,transparent 1px),linear-gradient(90deg,var(--lg-rule-2) 1px,transparent 1px),linear-gradient(var(--lg-rule) 1px,transparent 1px),linear-gradient(90deg,var(--lg-rule) 1px,transparent 1px);
+  background-size:60px 60px,60px 60px,12px 12px,12px 12px;background-position:-1px -1px}
+/* 押して操作する図なので、中の文字を選択させない */
+.lg-bench,.lg-chart{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.lg-bench.replay{outline:2px dashed var(--focus);outline-offset:3px}
+.lg-ckt{display:block;max-width:100%;height:auto;overflow:visible}
+.lg-ckt .w{fill:none;stroke:var(--lg-off);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.lg-ckt .w.on{stroke:var(--lg-on);stroke-width:2.6}
+.lg-ckt .dot{fill:var(--lg-off)}
+.lg-ckt .dot.on{fill:var(--lg-on)}
+.lg-ckt .gb{fill:var(--surface);stroke:var(--ink);stroke-width:1.6;stroke-linejoin:round}
+.lg-ckt .gb2{fill:none;stroke:var(--ink);stroke-width:1.6}
+.lg-ckt .lg-gl{font:700 15px var(--sans);fill:var(--ink)}
+.lg-ckt .lb{font:600 14px var(--sans);fill:var(--ink)}
+.lg-ckt .lb-s{font-size:12px;font-weight:500;fill:var(--ink-3)}
+.lg-ckt .lg-sw{cursor:pointer}
+.lg-ckt .swb{fill:var(--inset);stroke:var(--ink-3);stroke-width:1.4}
+.lg-ckt .swv{font:700 15px var(--mono);fill:var(--ink-2)}
+.lg-ckt .lg-sw.on .swb{fill:var(--lg-on-soft);stroke:var(--lg-on)}
+.lg-ckt .lg-sw.on .swv{fill:var(--lg-on)}
+.lg-ckt .lg-sw:hover .swb{stroke-width:2.2}
+.lg-ckt .lg-sw:focus{outline:none}
+.lg-ckt .lg-sw:focus-visible .swb{stroke:var(--focus);stroke-width:2.4}
+.lg-ckt .ledc{fill:var(--led-off);stroke:var(--ink-3);stroke-width:1.2}
+.lg-ckt .lg-led.on .ledc{fill:var(--lg-on);stroke:var(--lg-on);filter:drop-shadow(0 0 5px var(--lg-on))}
+.lg-ckt .hzr{fill:none;stroke:var(--warn);stroke-width:2;stroke-dasharray:4 3;visibility:hidden}
+.lg-ckt .lg-led.hz .hzr{visibility:visible}
+:root:not([data-theme="dark"]) .lg-ckt .gb{fill:#fff}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .lg-ckt .gb{fill:var(--surface)}}
+
+.lg-foot{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 16px;margin-top:10px;font:500 14px/1.5 var(--mono)}
+.lg-ex{display:flex;flex-wrap:wrap;gap:2px 16px}
+.lg-xtr{font-weight:700;color:var(--lg-on)}
+.lg-stat{margin-left:auto;font:500 12px var(--sans);color:var(--ink-3)}
+.lg-note{margin:6px 0 0;min-height:1.5em;font-size:12.5px;color:var(--ink-3)}
+.lg-note.warn{color:var(--warn)}
+.ov{text-decoration:overline}
+
+/* 真理値表 */
+.lg-tt{border-collapse:collapse;margin:0 auto;font:500 14px/1 var(--mono)}
+.lg-tt th{position:sticky;top:0;z-index:1;background:var(--lg-tbg);padding:7px 8px;font:700 13px var(--sans);border-bottom:1.5px solid var(--ink-3);white-space:nowrap}
+.lg-tt td{padding:6px 8px;text-align:center;border-bottom:1px solid var(--line)}
+.lg-tt .to{color:var(--ink-3)}
+.lg-tt th.to{color:var(--ink)}
+.lg-tt .ti+.to{border-left:1.5px solid var(--ink-3)}
+.lg-tt td.one{color:var(--lg-on);font-weight:700}
+.lg-tt .tn{font:500 12px var(--sans);color:var(--ink-3);text-align:left;white-space:nowrap}
+.lg-tt tbody tr{cursor:pointer}
+.lg-tt tbody tr:hover td{background:var(--inset)}
+.lg-tt tr.now td{background:var(--lg-on-soft)}
+.lg-tt tr.now td.ti{font-weight:700;color:var(--ink)}
+.lg-tt tr.wr .tn{color:var(--warn)}
+.lg-tt.seq td.to:not(.one){font-family:var(--sans);font-size:12.5px}
+.lg-tt td.mis{outline:2px dashed var(--warn);outline-offset:-3px;color:var(--warn)}
+
+/* タイミングチャート */
+.lg-chart{overflow:hidden;background:var(--lg-tbg);border:1px solid var(--line);border-radius:3px;cursor:crosshair;touch-action:none}
+.lg-chart:focus{outline:none}
+.lg-chart:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+.lg-chart svg{display:block}
+.lg-chart .cg{stroke:var(--lg-tgrid);stroke-width:1}
+.lg-chart .cs{stroke:var(--line-2);stroke-width:1}
+.lg-chart .ca{font:500 11px var(--mono);fill:var(--ink-3)}
+.lg-chart .cl{font:600 12.5px var(--sans);fill:var(--ink-2)}
+.lg-chart .cl.out{fill:var(--ink)}
+.lg-chart .cv{font:700 13px var(--mono);fill:var(--ink-2)}
+.lg-chart .cv.in{fill:var(--ch2)}
+.lg-chart .cv.out{fill:var(--lg-on)}
+.lg-chart .cw{fill:none;stroke:var(--ink-3);stroke-width:1.6;stroke-linejoin:round}
+.lg-chart .cw.in{stroke:var(--ch2)}
+.lg-chart .cw.out{stroke:var(--lg-on);stroke-width:2}
+.lg-chart .cf.in{fill:color-mix(in srgb,var(--ch2) 20%,var(--lg-tbg))}
+.lg-chart .cf.mid{fill:color-mix(in srgb,var(--ink-3) 18%,var(--lg-tbg))}
+.lg-chart .cf.out{fill:color-mix(in srgb,var(--lg-on) 22%,var(--lg-tbg))}
+.lg-chart .bus{fill:var(--lg-tbg);stroke:var(--ink-3);stroke-width:1.3;stroke-linejoin:round}
+.lg-chart .bus.in{stroke:var(--ch2)}
+.lg-chart .bus.out{stroke:var(--lg-on)}
+.lg-chart .bus.in.hi{fill:color-mix(in srgb,var(--ch2) 18%,var(--lg-tbg))}
+.lg-chart .bus.mid.hi{fill:color-mix(in srgb,var(--ink-3) 16%,var(--lg-tbg))}
+.lg-chart .bus.out.hi{fill:color-mix(in srgb,var(--lg-on) 20%,var(--lg-tbg))}
+.lg-chart .bv{font:600 10.5px var(--mono);fill:var(--ink-2)}
+.lg-chart .bv.out.hi{fill:var(--lg-on)}
+.lg-chart .hz{fill:none;stroke:var(--warn);stroke-width:1.6;stroke-dasharray:3 2}
+.lg-chart .hov{fill:var(--ink);opacity:.06}
+.lg-chart .sel{fill:var(--focus);opacity:.16}
+.lg-tinfo{display:flex;flex-wrap:wrap;align-items:center;gap:2px 14px;min-height:30px;margin-top:8px;font-size:12.5px;color:var(--ink-3)}
+.lg-tinfo .lg-hz{color:var(--warn);font-weight:700}
+.lg-tinfo .lg-rpi{color:var(--focus);font-weight:700}
+
+/* 使われる所 */
+.lg-uses{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
+.lg-uses li{display:flex;gap:8px;font-size:13.5px}
+.lg-uses li::before{content:"";flex:none;width:6px;height:6px;margin-top:8px;border-radius:50%;background:var(--lg-on)}
+
+/* しくみ */
+.lg-how{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+.lg-how li{border:1px solid var(--line);border-radius:var(--r);padding:10px 12px}
+.lg-how h3{display:flex;gap:8px;align-items:center;margin:0 0 8px;font-size:14px}
+.lg-how h3 b{display:inline-grid;place-items:center;flex:none;width:20px;height:20px;border-radius:50%;background:var(--ink);color:var(--surface);font-size:12px}
+.lg-how p{margin:6px 0 0;font-size:13px;line-height:1.5;color:var(--ink-2)}
+.lg-mini{display:block;width:100%;max-width:150px;height:auto;margin:0 auto}
+.lg-mini .lg-hw{fill:none;stroke:var(--ink-3);stroke-width:2;stroke-linejoin:round}
+.lg-mini .lg-hw.on{stroke:var(--lg-on)}
+.lg-mini .hg{fill:none;stroke:var(--line-2);stroke-width:1.2}
+.lg-mini .ht{font:600 11px var(--mono);fill:var(--ink-2)}
+.lg-mini .ht.on{fill:var(--lg-on)}
+.lg-mini .hb{font:600 16px var(--mono);fill:var(--ink)}
+.lg-mini .gb{fill:var(--surface);stroke:var(--ink);stroke-width:1.6;stroke-linejoin:round}
+.lg-mini .gb2{fill:none;stroke:var(--ink);stroke-width:1.6}
+.lg-mini .lg-gl{font:700 15px var(--sans);fill:var(--ink)}
+.lg-mini .hz{fill:none;stroke:var(--warn);stroke-width:1.6;stroke-dasharray:3 2}
+
+/* 動作原理と式の否定の上線 */
+math .lg-ov{border-top:.065em solid currentColor;padding-top:.1em;margin-inline:.05em}
+
+/* しくみの図の地（ライトテーマで白） */
+.lg-mini-paper{background:var(--lg-tbg);border:1px solid var(--line);border-radius:3px}
+.lg-mini-bench{border:1px solid var(--line);border-radius:3px;background-color:var(--lg-bench);
+  background-image:linear-gradient(var(--lg-rule) 1px,transparent 1px),linear-gradient(90deg,var(--lg-rule) 1px,transparent 1px);background-size:8px 8px;background-position:-1px -1px}
+:root:not([data-theme="dark"]) .lg-mini .gb{fill:#fff}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .lg-mini .gb{fill:var(--surface)}}
+
+/* ゲートのツールチップ */
+.lg-ckt .lg-ghit{fill:transparent;stroke:none}
+.lg-ckt .gate{cursor:help}
+.lg-ckt .gate.hov .gb,.lg-ckt .gate.hov .gb2{stroke:var(--focus);stroke-width:2.4}
+.lg-tip{position:absolute;z-index:16;display:flex;flex-direction:column;gap:1px;max-width:240px;padding:7px 10px;border:1px solid var(--line-2);border-radius:5px;background:var(--surface);box-shadow:0 4px 14px rgb(0 0 0 / .16);font-size:12.5px;line-height:1.45;color:var(--ink-2);pointer-events:none}
+.lg-tip b{font:700 14px var(--mono);color:var(--ink)}
+.lg-tip .lg-tip-j{font-size:12px;color:var(--ink-3)}
+.lg-tip .lg-tip-v{margin-top:3px;font:500 12.5px var(--mono);color:var(--ink)}
