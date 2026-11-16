@@ -37,8 +37,9 @@ const PAD = 6,
   PXB = 20,
   /** トロッコを置く位置（左からの割合） */
   AT = 0.35,
-  /** 「緊張！」を出す高さの上がり方 */
-  JUMP = 0.45;
+  /** 「緊張！」を出す高さの上がり方（ドミナントへ上がるときは RISE_D から） */
+  JUMP = 0.45,
+  RISE_D = 0.25;
 
 export class Coaster {
   private W = 240;
@@ -47,8 +48,11 @@ export class Coaster {
   constructor(private readonly cv: HTMLCanvasElement) {
     this.ctx = cv.getContext('2d') as CanvasRenderingContext2D;
   }
-  layout(w: number, h: number): void {
+  /** 右の端を地図に溶かす幅（文字をその手前に置く） */
+  private fadeR = PAD;
+  layout(w: number, h: number, fadeR = PAD): void {
     const dpr = Math.min(2, devicePixelRatio || 1);
+    this.fadeR = fadeR;
     this.W = w;
     this.H = h;
     this.cv.width = Math.round(w * dpr);
@@ -103,7 +107,7 @@ export class Coaster {
   }
   /** 緊張の高さ t（0〜1）の y */
   private hy(t: number): number {
-    const top = 24,
+    const top = 36,
       bot = this.H - STRIP - 10;
     return bot - t * (bot - top);
   }
@@ -134,17 +138,18 @@ export class Coaster {
       { items, V, s0 } = this.view(st),
       sy = H - STRIP - 2;
     ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = ink3;
-    ctx.font = `700 11px ${sans}`;
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'alphabetic';
-    ctx.fillText('緊張', PAD + 2, 13);
-    if (!items.length) return;
-    /* トロッコのいる和音が名前のある進行の中なら、見出しの横に名前 */
-    const here = items.find((q) => st.cart - s0 >= q.b && st.cart - s0 < q.b + q.e.beats)?.e.grp;
-    if (here) {
-      ctx.font = `500 11px ${sans}`;
-      ctx.fillText(`· ${here.n}`, PAD + 30, 13);
+    /* 見出しは右上（左の端は地図に溶かすので）。トロッコのいる和音が名前のある進行の中なら、その名前も。吹き出しを出す間は描かない */
+    const title = (): void => {
+      const here = items.find((q) => st.cart - s0 >= q.b && st.cart - s0 < q.b + q.e.beats)?.e.grp;
+      ctx.fillStyle = ink3;
+      ctx.font = `700 11px ${sans}`;
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillText(here ? `${here.n} · 緊張` : '緊張', W - this.fadeR, 13);
+    };
+    if (!items.length) {
+      title();
+      return;
     }
     const last = items.at(-1) as Item,
       xa0 = Math.max(PAD, this.xOf(items[0].b, V)),
@@ -193,6 +198,7 @@ export class Coaster {
       ctx.clip();
       ctx.fillStyle = on ? surf : ink;
       ctx.font = `700 11px ${mono}`;
+      ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
       ctx.fillText(roman(e.ch, e.key), xa + 5, sy + STRIP / 2);
       ctx.restore();
@@ -249,19 +255,29 @@ export class Coaster {
     ctx.fill();
     ctx.restore();
     /* 急に高くなる所: 上りの手前から上り切った少しあとまで「緊張！」 */
-    if (!st.playing) return;
+    if (!st.playing) {
+      title();
+      return;
+    }
     const cur = items.find((q) => x >= this.xOf(q.b, V) && x < this.xOf(q.b + q.e.beats, V));
-    if (!cur) return;
+    if (!cur) {
+      title();
+      return;
+    }
     const f = (st.cart - s0 - cur.b) / cur.e.beats,
       nx = this.nextOf(st, cur.k),
       pv = this.prevOf(st, cur.k),
-      rising = nx && f >= 0.5 && nx.tension - cur.e.tension >= JUMP,
-      risen = pv && f < 0.25 && cur.e.tension - pv.tension >= JUMP;
-    if (!rising && !risen) return;
+      tense = (a: Entry, b: Entry) => b.tension - a.tension >= (b.fn === 'D' ? RISE_D : JUMP),
+      rising = nx && f >= 0.5 && tense(cur.e, nx),
+      risen = pv && f < 0.25 && tense(pv, cur.e);
+    if (!rising && !risen) {
+      title();
+      return;
+    }
     const bw = 46,
       bh = 18,
       bx = Math.min(W - PAD - bw, Math.max(PAD, x - 10)),
-      by = Math.max(2, y - 12 - bh - 8);
+      by = Math.max(2, y - 12 - bh - 20);
     ctx.fillStyle = surf;
     ctx.strokeStyle = dcol;
     ctx.lineWidth = 1.5;
@@ -272,7 +288,7 @@ export class Coaster {
     /* 吹き出しの口（トロッコへ向ける） */
     ctx.beginPath();
     ctx.moveTo(x - 3, by + bh - 0.5);
-    ctx.lineTo(x, by + bh + 6);
+    ctx.lineTo(x, Math.min(y - 13, by + bh + 16));
     ctx.lineTo(x + 4, by + bh - 0.5);
     ctx.fill();
     ctx.stroke();

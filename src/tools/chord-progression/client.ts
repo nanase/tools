@@ -16,7 +16,7 @@ import { Coaster, type CoasterState } from './coaster';
 import { ICON } from './icons';
 import { type MapState, MapView } from './map';
 import { BPM, CLICK, VOL0 } from './params';
-import { SAMPLE0, sampleSong } from './samples';
+import { SAMPLE0, SAMPLES, sampleSong } from './samples';
 import {
   compute,
   type Entry,
@@ -528,11 +528,18 @@ function renderKeyPop(): void {
     k.m,
   )}<p class="cp-en">主音を変えると和音ごと移る（移調）</p>`;
 }
+/** 地図の上の小窓（調・曲）を開け閉めする。開くときはもう一方を閉じる */
+function popOpen(btn: HTMLElement, pop: HTMLElement, open: boolean): void {
+  pop.hidden = !open;
+  btn.setAttribute('aria-expanded', String(open));
+}
 keyBtn.addEventListener('click', () => {
-  const open = keyPop.hidden;
-  keyPop.hidden = !open;
-  keyBtn.setAttribute('aria-expanded', String(open));
-  if (open) renderKeyPop();
+  const open = keyPop.hidden === true;
+  popOpen(keyBtn, keyPop, open);
+  if (open) {
+    popOpen(songBtn, songPop, false);
+    renderKeyPop();
+  }
 });
 keyPop.addEventListener('click', (ev) => {
   const b = (ev.target as Element).closest<HTMLElement>('[data-a]');
@@ -565,7 +572,7 @@ const BAND_ICON: Record<MemberId, () => string> = {
 };
 const memberSub: Record<MemberId, () => string> = {
   drums: () => STYLE_NAMES[S.song.style],
-  bass: () => '根音と 5 度',
+  bass: () => 'エレキベース',
   keys: () => VOICES[S.song.keys],
   gtr: () => VOICES[S.song.gtr],
 };
@@ -688,7 +695,10 @@ function reveal(k: number | null): void {
     m = 60;
   if (x < sc.scrollLeft + m || x > sc.scrollLeft + sc.clientWidth - m) sc.scrollLeft = x - sc.clientWidth / 2;
 }
-const rcw = $('#cp-rcw');
+const rcw = $('#cp-rcw'),
+  /** 緊張のレールの左右の端を地図に溶かす幅 [px]（style.css の .cp-rcw と合わせる） */
+  FADE_L = 40,
+  FADE_R = 18;
 function layout(): void {
   mapView.layout();
   /* 緊張のレールは地図の右下の空いた所に重ねる。入らなければ地図の下に置く */
@@ -696,10 +706,11 @@ function layout(): void {
     box = sc.scrollWidth > sc.clientWidth + 1 ? null : mapView.freeBox(104, 150);
   rcw.classList.toggle('below', !box);
   if (box) {
-    const w = Math.round(Math.min(box.w, 360));
+    /* 左の端は地図に溶かすので、その分だけ三角形の上へ広げる */
+    const w = Math.round(Math.min(box.w + FADE_L, 400));
     rcw.style.left = `${box.x + box.w - w}px`;
     rcw.style.top = `${box.y}px`;
-    coaster.layout(w, box.h);
+    coaster.layout(w, box.h, FADE_R + 4);
   } else {
     rcw.style.left = rcw.style.top = '';
     coaster.layout(rcw.clientWidth || mapw.clientWidth, 112);
@@ -778,6 +789,61 @@ function renderSaved(): void {
         .join('')
     : '<li class="cp-none">まだ保存した進行はありません。</li>';
 }
+/* ---------- 地図の上の曲の選択（サンプル・保存した進行・新規） ---------- */
+const songBtn = $<HTMLButtonElement>('#cp-songb'),
+  songPop = $('#cp-songpop');
+function syncSongBtn(): void {
+  $('#cp-songn').textContent = S.song.name || '新しい進行';
+}
+function renderSongPop(): void {
+  const saved = readSaved(),
+    row = (lb: string, body: string) =>
+      `<div class="cp-er"><span class="cp-el">${lb}</span><div class="chips">${body}</div></div>`;
+  songPop.innerHTML =
+    row(
+      'サンプル',
+      SAMPLES.map(
+        (x) =>
+          `<button type="button" class="chip" data-s="${x.id}" aria-pressed="${x.name === S.song.name}">${x.name}</button>`,
+      ).join(''),
+    ) +
+    (saved.length
+      ? row(
+          '保存',
+          saved
+            .map(
+              (x, j) =>
+                `<button type="button" class="chip" data-open="${j}" aria-pressed="${x.name === S.song.name}">${esc(x.name)}</button>`,
+            )
+            .join(''),
+        )
+      : '') +
+    row('', '<button type="button" class="chip" data-new="">新規</button>');
+}
+songBtn.addEventListener('click', () => {
+  const open = songPop.hidden === true;
+  popOpen(songBtn, songPop, open);
+  if (open) {
+    popOpen(keyBtn, keyPop, false);
+    renderSongPop();
+  }
+});
+songPop.addEventListener('click', (ev) => {
+  const b = (ev.target as Element).closest<HTMLElement>('button');
+  if (!b) return;
+  let ok = false;
+  if (b.dataset.s) ok = load(sampleSong(b.dataset.s));
+  else if (b.dataset.open !== undefined) {
+    const x = readSaved()[Number(b.dataset.open)],
+      f = x && fromFile(x.file);
+    if (!f) return say('この保存は読み込めません。');
+    ok = load({ ...f, name: x.name });
+  } else if (b.dataset.new !== undefined) ok = load({ ...sampleSong(SAMPLE0), name: '', chords: [] });
+  if (ok) {
+    say('');
+    popOpen(songBtn, songPop, false);
+  }
+});
 /** 曲を入れ替える。変更が残っていれば確かめる */
 function load(song: Song): boolean {
   if (S.dirty && !confirm(`保存していない変更は失われます。「${song.name || '新しい進行'}」を開きますか？`))
@@ -791,6 +857,7 @@ function load(song: Song): boolean {
   recompute();
   S.dirty = false;
   nameIn.value = song.name;
+  syncSongBtn();
   saveCurrent();
   syncControls();
   syncPlay();
@@ -803,7 +870,9 @@ nameIn.addEventListener('input', () => {
   S.song.name = nameIn.value.slice(0, 60);
   S.dirty = true;
   saveCurrent();
+  syncSongBtn();
 });
+syncSongBtn();
 $('#cp-samples').addEventListener('click', (ev) => {
   const b = (ev.target as Element).closest<HTMLElement>('[data-s]');
   if (b && load(sampleSong(b.dataset.s as string))) say('');
@@ -822,6 +891,7 @@ $('#cp-save').addEventListener('click', () => {
   S.dirty = false;
   saveCurrent();
   renderSaved();
+  syncSongBtn();
   say(`「${name}」を保存しました。`);
 });
 $('#cp-saved').addEventListener('click', (ev) => {

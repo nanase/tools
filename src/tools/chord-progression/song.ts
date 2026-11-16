@@ -87,13 +87,30 @@ export function nearestPlace(r: number, q: Qual, from: Place | null): Place {
 }
 
 /* ---------- 曲 ---------- */
-export type StyleId = 'pop' | 'rock' | 'bossa' | 'ballad';
-export const STYLE_ORDER: readonly StyleId[] = ['pop', 'rock', 'bossa', 'ballad'];
+export type StyleId = 'pop' | 'rock' | 'ballad' | 'funk' | 'disco' | 'reggae' | 'shuffle' | 'jazz' | 'bossa' | 'samba';
+export const STYLE_ORDER: readonly StyleId[] = [
+  'pop',
+  'rock',
+  'ballad',
+  'funk',
+  'disco',
+  'reggae',
+  'shuffle',
+  'jazz',
+  'bossa',
+  'samba',
+];
 export const STYLE_NAMES: Record<StyleId, string> = {
   pop: 'ポップ',
   rock: 'ロック',
-  bossa: 'ボサノバ',
   ballad: 'バラード',
+  funk: 'ファンク',
+  disco: 'ディスコ',
+  reggae: 'レゲエ',
+  shuffle: 'シャッフル',
+  jazz: 'ジャズ',
+  bossa: 'ボサノバ',
+  samba: 'サンバ',
 };
 export type GtrId = 'gtr' | 'cgt';
 export type KeysId = Exclude<VoiceId, GtrId>;

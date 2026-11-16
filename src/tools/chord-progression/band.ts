@@ -1,12 +1,13 @@
 /**
  * コード進行のページのバンド: スタイルごとの 16 分音符の型（4 拍子は 16 歩、3 拍子は 12 歩で 1 小節）で、
  * ドラム・ベース・鍵盤・ギターの音を和音ごとに並べ、演奏の順に鳴る直前に予約する。
- * 型の文字: x は打つ・. は休み。ベースの 1 は根音、5 は 5 度上、8 はオクターブ上
+ * 型の文字: x は打つ・. は休み・g は小さく打つ（ゴーストノート）・o はハイハットを開いて打つ。
+ * ベースの 1 は根音、3 は 3 度、5 は 5 度、6 は長 6 度、7 は 7 度（なければ短 7 度）、8 はオクターブ上
  */
 import { lookahead } from '../../lib/pause';
 import type { CpAudio, NoteEv, Voice } from './audio';
 import { compute, type Entry, type Meter, type Song, type StyleId } from './song';
-import { voicing } from './theory';
+import { QUALS, voicing } from './theory';
 
 export type MemberId = 'drums' | 'bass' | 'keys' | 'gtr';
 export const MEMBERS: readonly MemberId[] = ['drums', 'bass', 'keys', 'gtr'];
@@ -22,7 +23,10 @@ interface Pat {
   g: string;
   /** 鍵盤の 1 打の長さ（歩） */
   cl: number;
+  /** 跳ねる（拍の裏の 8 分を 3 連符の 3 つ目へ遅らせる） */
+  sw?: boolean;
 }
+/* 4 拍子は 16 歩、3 拍子は 12 歩で 1 小節 */
 export const STYLES: Record<StyleId, Record<Meter, Pat>> = {
   pop: {
     4: {
@@ -64,6 +68,130 @@ export const STYLES: Record<StyleId, Record<Meter, Pat>> = {
       cl: 12,
     },
   },
+  ballad: {
+    4: {
+      k: 'x.......x.......',
+      s: '........x.......',
+      h: 'x...x...x...x...',
+      b: '1.......5.......',
+      c: 'x.......x.......',
+      g: 'x...x...x...x...',
+      cl: 8,
+    },
+    3: {
+      k: 'x...........',
+      s: '........x...',
+      h: 'x...x...x...',
+      b: '1.......5...',
+      c: 'x...........',
+      g: 'x...x...x...',
+      cl: 12,
+    },
+  },
+  funk: {
+    4: {
+      k: 'x..x......x..x..',
+      s: '....x..g.g..x..g',
+      h: 'xxxxxxxxxxxxxxxx',
+      b: '1..1...8..1.5.8.',
+      c: '..x..x....x..x..',
+      g: 'x.xxx.xxx.xxx.xx',
+      cl: 1,
+    },
+    3: {
+      k: 'x..x......x.',
+      s: '....x..g.g..',
+      h: 'xxxxxxxxxxxx',
+      b: '1..1...8..5.',
+      c: '..x..x....x.',
+      g: 'x.xxx.xxx.xx',
+      cl: 1,
+    },
+  },
+  disco: {
+    4: {
+      k: 'x...x...x...x...',
+      s: '....x.......x...',
+      h: '..o...o...o...o.',
+      b: '1.8.1.8.1.8.1.8.',
+      c: '....x.......x...',
+      g: 'x.x.x.x.x.x.x.x.',
+      cl: 2,
+    },
+    3: {
+      k: 'x...x...x...',
+      s: '....x...x...',
+      h: '..o...o...o.',
+      b: '1.8.1.8.1.8.',
+      c: '....x...x...',
+      g: 'x.x.x.x.x.x.',
+      cl: 2,
+    },
+  },
+  reggae: {
+    4: {
+      k: '........x.......',
+      s: '........x.......',
+      h: 'x.x.x.x.x.x.x.x.',
+      b: '1.....5.1...5...',
+      c: '..x...x...x...x.',
+      g: '..x...x...x...x.',
+      cl: 1,
+    },
+    3: {
+      k: '........x...',
+      s: '........x...',
+      h: 'x.x.x.x.x.x.',
+      b: '1.....5.1...',
+      c: '..x...x...x.',
+      g: '..x...x...x.',
+      cl: 1,
+    },
+  },
+  shuffle: {
+    4: {
+      k: 'x.......x.......',
+      s: '....x.......x...',
+      h: 'x.x.x.x.x.x.x.x.',
+      b: '1.3.5.6.8.6.5.3.',
+      c: '....x.......x...',
+      g: 'x.x.x.x.x.x.x.x.',
+      cl: 2,
+      sw: true,
+    },
+    3: {
+      k: 'x...........',
+      s: '....x...x...',
+      h: 'x.x.x.x.x.x.',
+      b: '1.3.5.6.5.3.',
+      c: '....x...x...',
+      g: 'x.x.x.x.x.x.',
+      cl: 2,
+      sw: true,
+    },
+  },
+  jazz: {
+    4: {
+      k: 'x...............',
+      s: '....g.......g...',
+      h: 'x...x.x.x...x.x.',
+      b: '1...3...5...6...',
+      c: '......x.....x...',
+      g: 'x...x...x...x...',
+      cl: 2,
+      sw: true,
+    },
+    3: {
+      k: 'x...........',
+      s: '....g...g...',
+      h: 'x...x.x.x.x.',
+      b: '1...3...5...',
+      c: '....x.....x.',
+      g: 'x...x...x...',
+      cl: 2,
+      sw: true,
+    },
+  },
   bossa: {
     4: {
       k: 'x..x..x.x..x..x.',
@@ -86,24 +214,26 @@ export const STYLES: Record<StyleId, Record<Meter, Pat>> = {
       cl: 2,
     },
   },
-  ballad: {
+  samba: {
     4: {
-      k: 'x.......x.......',
-      s: '........x.......',
-      h: 'x...x...x...x...',
-      b: '1.......5.......',
-      c: 'x.......x.......',
-      g: 'x...x...x...x...',
-      cl: 8,
+      k: 'x..xx..xx..xx..x',
+      s: '',
+      r: 'x.x..x.x.x..x.x.',
+      h: 'xxxxxxxxxxxxxxxx',
+      b: '1..5.1.51..5.1.5',
+      c: 'x.x..x.x.x..x.x.',
+      g: '',
+      cl: 1,
     },
     3: {
-      k: 'x...........',
-      s: '........x...',
-      h: 'x...x...x...',
-      b: '1.......5...',
-      c: 'x...........',
-      g: 'x...x...x...',
-      cl: 12,
+      k: 'x..xx..xx..x',
+      s: '',
+      r: 'x.x..x.x.x..',
+      h: 'xxxxxxxxxxxx',
+      b: '1..5.1.51..5',
+      c: 'x.x..x.x.x..',
+      g: '',
+      cl: 1,
     },
   },
 };
@@ -131,19 +261,28 @@ export function bandNotes(e: Entry, song: Song, on: Record<MemberId, boolean>, s
     steps = e.beats * 4,
     dur = e.beats * 4 * spb,
     out: NoteEv[] = [];
-  const at = (s: number, ch: string | undefined) => ch?.[(e.start * 4 + s) % bar] === 'x';
+  const iv = QUALS[e.ch.q].iv,
+    /* ベースの数字から根音からの半音の数 */
+    BASS: Record<string, number> = { 1: 0, 3: iv[1], 5: iv[2], 6: 9, 7: iv[3] ?? 10, 8: 12 },
+    chAt = (s: number, ch: string | undefined) => ch?.[(e.start * 4 + s) % bar] ?? '.',
+    at = (s: number, ch: string | undefined) => chAt(s, ch) !== '.',
+    VEL: Record<string, number> = { x: 1, g: 0.35, o: 0.8 };
   for (let s = 0; s < steps; s++) {
-    const t = s * spb,
-      g = (e.start * 4 + s) % bar;
+    const g = (e.start * 4 + s) % bar,
+      /* 跳ねるスタイルは拍の裏の 8 分を 3 連符の 3 つ目へ */
+      t = (s + (P.sw && g % 4 === 2 ? 2 / 3 : 0)) * spb;
     if (on.drums) {
-      if (at(s, P.k)) out.push({ t, m: 0, v: 'kick', end: t, vel: 1 });
-      if (at(s, P.s)) out.push({ t, m: 0, v: 'snare', end: t, vel: 1 });
+      if (at(s, P.k)) out.push({ t, m: 0, v: 'kick', end: t, vel: VEL[chAt(s, P.k)] ?? 1 });
+      if (at(s, P.s)) out.push({ t, m: 0, v: 'snare', end: t, vel: VEL[chAt(s, P.s)] ?? 1 });
       if (at(s, P.r)) out.push({ t, m: 0, v: 'rim', end: t, vel: 1 });
-      if (at(s, P.h)) out.push({ t, m: 0, v: 'hat', end: t, vel: g % 4 === 0 ? 1 : 0.6 });
+      if (at(s, P.h)) {
+        const open = chAt(s, P.h) === 'o';
+        out.push({ t, m: 0, v: 'hat', end: open ? t + 0.2 : t, vel: open ? 0.8 : g % 4 === 0 ? 1 : 0.6 });
+      }
     }
     const b = P.b[g];
     if (on.bass && ((b && b !== '.') || (s === 0 && b === '.'))) {
-      const m = tones[0] - 12 + (b === '5' ? 7 : b === '8' ? 12 : 0);
+      const m = tones[0] - 12 + (BASS[b] ?? 0);
       out.push({ t, m, v: 'bass', end: Math.min(dur, t + 4 * spb), vel: 0.9 });
     }
     if (on.keys && (at(s, P.c) || (s === 0 && !at(0, P.c))))

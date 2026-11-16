@@ -42,8 +42,12 @@ const gtrOpt = GTR_ORDER.map((v) => [v, VOICES[v].replace('ギター', '')] as [
           <button type="button" class="cp-pi" id="cp-undo" title="元に戻す（Ctrl+Z）" aria-label="元に戻す"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 3.5L2.5 6.5L5.5 9.5"/><path d="M2.5 6.5H10a3.5 3.5 0 0 1 0 7H7"/></svg></button>
           <button type="button" class="cp-pi" id="cp-redo" title="やり直し（Ctrl+Y）" aria-label="やり直し"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10.5 3.5L13.5 6.5L10.5 9.5"/><path d="M13.5 6.5H6a3.5 3.5 0 0 0 0 7h3"/></svg></button>
         </div>
-        <button type="button" class="cp-keyb" id="cp-key" aria-expanded="false" aria-controls="cp-keypop" title="曲の調">C メジャー</button>
+        <div class="cp-meta">
+          <button type="button" class="cp-keyb" id="cp-key" aria-expanded="false" aria-controls="cp-keypop" title="曲の調">C メジャー</button>
+          <button type="button" class="cp-keyb cp-songb" id="cp-songb" aria-expanded="false" aria-controls="cp-songpop" title="曲を選ぶ"><span id="cp-songn">カノン進行</span><i aria-hidden="true">▾</i></button>
+        </div>
         <div class="cp-keypop" id="cp-keypop" hidden></div>
+        <div class="cp-keypop" id="cp-songpop" role="dialog" aria-label="曲を選ぶ" hidden></div>
       </div>
       <div class="cp-lg static">
         <span class="cp-fT"><i class="cp-sw"></i>トニック</span><span class="cp-fS"><i class="cp-sw"></i>サブドミナント</span><span class="cp-fD"><i class="cp-sw"></i>ドミナント</span>
