@@ -232,8 +232,8 @@ export class Coaster {
         ctx.textBaseline = 'middle';
         ctx.fillText(lb, xa + 4, 10.5);
       }
-      /* くり返しで曲の頭へ戻る所 */
-      if (k === 0 && st.loop && st.entries.length > 1) {
+      /* くり返しで曲の頭へ戻る所（転調の札を立てた所は、その点線と重なるので引かない） */
+      if (k === 0 && st.loop && st.entries.length > 1 && !to) {
         ctx.strokeStyle = ink3;
         ctx.lineWidth = 1.2;
         ctx.setLineDash([3, 3]);
