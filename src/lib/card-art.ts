@@ -3178,6 +3178,44 @@ export const ART: Record<string, Art> = {
       }
     return s + P('c t', 'M8 17h12v14H8zM100 17h12v14h-12zM20 22H50V26H20zM70 22H100V26H70zM50 23.2H70V24.8H50z');
   },
+  /* コード進行: 緊張のトロッコ。T・S・D・T の駅（下の色の帯）の上のレールをトロッコがコマ送りで進み、
+     D から T へ落ちる所に解決の旗。1 周 3.6 s を 24 コマ。止まった絵は最初の駅の上 */
+  cp(t) {
+    const x0 = 6,
+      w = 27,
+      ys = [32, 22, 10, 32],
+      FNS = ['fb', 'fc', 'fr', 'fb'],
+      /* 駅の 55 % までは平ら、残りで次の駅の高さへなめらかに移る */
+      yAt = (x: number) => {
+        const k = Math.max(0, Math.min(3, Math.floor((x - x0) / w))),
+          f = (x - x0 - k * w) / w,
+          a = ys[k],
+          b = ys[Math.min(3, k + 1)],
+          e = f < 0.55 ? 0 : (f - 0.55) / 0.45;
+        return a + (b - a) * e * e * (3 - 2 * e);
+      },
+      u = mod(t + 0.3, 3.6) / 3.6,
+      x = x0 + 4 + Math.floor(u * 24) * ((w * 4 - 8) / 24),
+      y = yAt(x),
+      wheel = (cx: number) => `M${r1(cx - 1.5)} ${r1(y - 1.4)}a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0 -3 0Z`;
+    let posts = '',
+      rail = '',
+      s = '';
+    for (let xx = x0 + 4; xx < x0 + w * 4; xx += 9) posts += `M${xx} ${r1(yAt(xx) + 2)}V40`;
+    for (let xx = x0; xx <= x0 + w * 4; xx += 2) rail += `${xx === x0 ? 'M' : 'L'}${xx} ${r1(yAt(xx))}`;
+    FNS.forEach((c, k) => {
+      s += P(c, `M${x0 + k * w + 1} 41h${w - 2}v4h${-(w - 2)}Z`);
+    });
+    return (
+      P('c t', posts) +
+      P('c', rail) +
+      s +
+      P('a t', `M${x0 + 3 * w + 2} 30V18`) +
+      P('fa', `M${x0 + 3 * w + 2} 18h9v5h-9Z`) +
+      P('fa', `M${r1(x - 6)} ${r1(y - 7.4)}h12v5h-12Z`) +
+      P('c', wheel(x - 3.4) + wheel(x + 3.4))
+    );
+  },
   pcl(t) {
     const k = Math.floor(t * PCL_FPS + 1e-9),
       th = 0.22 * Math.cos((TAU * k) / PCL_FPS),
@@ -3289,6 +3327,7 @@ export const LOOP: Record<string, number> = {
   gb: 2,
   sf: 4,
   wh: 3,
+  cp: 3.6,
   pcl: 2,
 };
 

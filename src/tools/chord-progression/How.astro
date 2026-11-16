@@ -1,0 +1,73 @@
+---
+/** しくみの枠: 和音の地図の読み方とバンドの鳴らし方を 6 つの小さな図と短い説明で順に見せる */
+import { STYLES } from './band';
+
+const W = 150;
+const box = (x: number, y: number, w: number, h: number, fn: string, t: string, s = '') =>
+  `<rect class="cp-hb cp-h${fn}" x="${x}" y="${y}" width="${w}" height="${h}" rx="3"/><rect class="cp-hf cp-h${fn}" x="${x}" y="${y}" width="3.5" height="${h}"/><text class="cp-ht" x="${x + 8}" y="${y + 15}">${t}</text>${s ? `<text class="cp-hs" x="${x + 8}" y="${y + 28}">${s}</text>` : ''}`;
+const arr = (x0: number, x1: number, y: number, w = 2) =>
+  `<path class="cp-hl" d="M${x0} ${y}H${x1 - 5}" stroke-width="${w}"/><path class="cp-hh" d="M${x1} ${y}l-6 -4v8z"/>`;
+const tri = (pts: number[], fn: string, t: string, cx: number, cy: number) =>
+  `<path class="cp-htri cp-h${fn}" d="M${pts[0]} ${pts[1]}L${pts[2]} ${pts[3]}L${pts[4]} ${pts[5]}z"/><text class="cp-ht" x="${cx}" y="${cy + 4}" text-anchor="middle">${t}</text>`;
+const note = (x: number, y: number, t: string) =>
+  `<text class="cp-hs" x="${x}" y="${y}" text-anchor="middle">${t}</text>`;
+/* バンドの図はポップの 4 拍子の型そのもの */
+const POP = STYLES.pop[4],
+  hits = (s: string) => [...s].map((c) => c !== '.'),
+  drums = hits(POP.k).map((v, i) => v || POP.s[i] === 'x'),
+  ROWS: [string, boolean[]][] = [
+    ['ドラム', drums],
+    ['ベース', hits(POP.b)],
+    ['鍵盤', hits(POP.c)],
+    ['ギター', hits(POP.g)],
+  ];
+const STEPS: { h: string; svg: string; p: string }[] = [
+  {
+    h: '和音の地図',
+    svg: `${tri([8, 50, 46, 50, 27, 17], 'S', 'F', 27, 39)}${tri([46, 50, 65, 17, 27, 17], 'T', 'Am', 46, 28)}${tri([46, 50, 84, 50, 65, 17], 'T', 'C', 65, 39)}${tri([84, 50, 103, 17, 65, 17], 'T', 'Em', 84, 28)}${tri([84, 50, 122, 50, 103, 17], 'D', 'G', 103, 39)}${['F', 'C', 'G', 'D'].map((t, i) => note(8 + i * 38, 62, t)).join('')}${['A', 'E', 'B'].map((t, i) => note(27 + i * 38, 10, t)).join('')}`,
+    p: '格子の点は音。右へ完全 5 度、右上へ長 3 度。上向きの三角形は長三和音、下向きは短三和音',
+  },
+  {
+    h: '隣の和音',
+    svg: `${tri([56, 34, 75, 4, 37, 4], 'T', 'Am', 56, 14)}${tri([94, 34, 113, 4, 75, 4], 'T', 'Em', 94, 14)}${tri([56, 34, 94, 34, 75, 64], 'S', 'Cm', 75, 44)}<path class="cp-htri cp-hT cp-hcur" d="M56 34L94 34L75 4z"/><text class="cp-ht" x="75" y="28" text-anchor="middle">C</text>`,
+    p: '辺でとなり合う和音は 2 音が同じ。1 音だけ動かして移る',
+  },
+  {
+    h: '機能',
+    svg: `${box(4, 22, 40, 22, 'T', 'T')}${box(55, 22, 40, 22, 'S', 'S')}${box(106, 22, 40, 22, 'D', 'D')}${arr(44, 55, 33)}${arr(95, 106, 33)}<path class="cp-hl" d="M126 44V54H24V49" stroke-width="2"/><path class="cp-hh" d="M24 44l-4 6h8z"/><text class="cp-hs" x="10" y="16">落ち着く</text><text class="cp-hs" x="108" y="16">戻りたい</text>`,
+    p: 'トニック・サブドミナント・ドミナントの 3 つの役割。地図の色はこの役割',
+  },
+  {
+    h: 'つながりの強さ',
+    svg: `${box(4, 22, 30, 22, 'D', 'Ⅴ')}${[
+      ['Ⅰ', 3, 6, 'T'],
+      ['Ⅵm', 2, 27, 'T'],
+      ['Ⅱm', 1, 48, 'S'],
+    ]
+      .map(
+        ([t, lv, y, f]) =>
+          `<path class="cp-hl${lv === 1 ? ' d' : ''}" d="M34 33L${100 - 5} ${Number(y) + 9}" stroke-width="${[0, 1.2, 2.2, 3.6][Number(lv)]}"/>${box(100, Number(y), 34, 18, String(f), String(t))}`,
+      )
+      .join('')}`,
+    p: '和声の教科書の表から 3 段。地図では定番ほど太い枠で光る',
+  },
+  {
+    h: '緊張と解決',
+    svg: `<path class="cp-hg" d="M4 40H146"/><path class="cp-hrail" d="M4 36H30C38 36 36 24 44 24H66C74 24 72 10 80 10H104C112 10 110 36 118 36H146"/>${box(4, 46, 34, 18, 'T', 'Ⅰ')}${box(40, 46, 34, 18, 'S', 'Ⅳ')}${box(76, 46, 34, 18, 'D', 'Ⅴ')}${box(112, 46, 34, 18, 'T', 'Ⅰ')}<path class="cp-hl" d="M116 34V18" stroke-width="1.5"/><rect class="cp-hh" x="116" y="12" width="26" height="12" rx="2"/><text class="cp-hfl" x="129" y="21" text-anchor="middle">解決</text>`,
+    p: 'ドミナントで高く、トニックで低い。ドミナントからトニックへ落ちる所が解決（終止）',
+  },
+  {
+    h: 'バンド',
+    svg: ROWS.map(
+      ([n, v], r) =>
+        `<text class="cp-hs" x="2" y="${12 + r * 15}">${n}</text>${v.map((on, i) => `<circle class="${on ? `cp-hd cp-h${['D', 'S', 'T', 'T'][r]}` : 'cp-ho'}" cx="${40 + i * 6.8}" cy="${8 + r * 15}" r="${on ? 2.6 : 1.4}"/>`).join('')}`,
+    ).join(''),
+    p: 'スタイルの型（1 小節 16 歩）に和音の音を当てて 4 人で弾く',
+  },
+];
+---
+<ol class="cp-how">
+  {STEPS.map((s, i) => (
+    <li><h3><b>{i + 1}</b>{s.h}</h3><svg class="cp-mini" viewBox={`0 0 ${W} 66`} aria-hidden="true" set:html={s.svg} /><p>{s.p}</p></li>
+  ))}
+</ol>

@@ -252,7 +252,7 @@ export const TOOLS: Tool[] = [
     t: 'エレキギター',
     d: '弦とピックアップとエフェクターを計算して鳴らします。',
     ic: 'eg',
-    r: ['guitar', 'reverb', 'fm-synth', 'tuner'],
+    r: ['guitar', 'chord-progression', 'reverb', 'fm-synth'],
     k: 'electric guitar エレキ エレクトリックギター ピックアップ pickup シングルコイル ハムバッカー humbucker エフェクター effects pedal 歪み distortion オーバードライブ overdrive ファズ fuzz アンプ amplifier 真空管 tube キャビネット cabinet スピーカー コンプレッサー compressor ワウ wah コーラス chorus フェイザー phaser フランジャー flanger トレモロ tremolo ディレイ delay リバーブ reverb スプリング spring チョーキング bend ビブラート vibrato フィードバック feedback ハーモニクス harmonics 物理モデル physical model モード合成 modal synthesis midi 演奏 オーディオ audio',
   },
   {
@@ -634,8 +634,17 @@ export const TOOLS: Tool[] = [
     t: '音律とうなり',
     d: '音律ごとに和音を鳴らし、うなりの速さを比べます。',
     ic: 'tm',
-    r: ['tuner', 'piano', 'organ', 'shepard-tone'],
+    r: ['tuner', 'chord-progression', 'piano', 'organ'],
     k: 'temperament tuning 音律 調律 うなり beat beats 平均律 equal temperament 純正律 just intonation ピタゴラス pythagorean ミーントーン meantone ヴェルクマイスター werckmeister キルンベルガー kirnberger ヴァロッティ vallotti ヤング young 古典調律 well temperament 和音 chord 長三和音 3 度 5 度 部分音 倍音 partial harmonic コンマ comma ウルフ wolf 非調和性 inharmonicity ストレッチ stretch ピアノ piano オルガン organ セント cent',
+  },
+  {
+    id: 'chord-progression',
+    c: '楽器・調律',
+    t: 'コード進行',
+    d: '和音の地図を歩いて進行を作り、バンドで鳴らします。',
+    ic: 'cp',
+    r: ['temperament', 'electric-guitar', 'fm-synth', 'piano'],
+    k: 'chord progression コード進行 和音 コード 和声 harmony ダイアトニック diatonic 機能和声 トニック tonic サブドミナント subdominant ドミナント dominant 終止 cadence 完全終止 偽終止 変格終止 ツーファイブ ii-v-i カノン進行 王道進行 小室進行 丸サ進行 循環進行 ブルース blues トネッツ tonnetz ネオ・リーマン理論 neo-riemannian 和音の地図 緊張 解決 転調 modulation 移調 拍子 作曲 composition ローマ数字 度数 セカンダリードミナント 借用和音 バンド band ドラム drums ベース bass コーラス フィル fill ファンク funk ディスコ disco レゲエ reggae シャッフル shuffle ジャズ jazz ボサノバ bossa nova サンバ samba メトロノーム metronome オーディオ audio',
   },
   {
     id: 'convolution',

@@ -1,0 +1,118 @@
+/*
+ * コード進行のページだけのスタイル（共通は src/styles/site.css）。
+ * --cp-t・--cp-s・--cp-d は機能（トニック・サブドミナント・ドミナント）の色、--cp-lv は歩いた道、--cp-cand は行きやすい和音、--cp-sel は選んだ和音。
+ * 地図とレールの色はキャンバスがこの値を読む
+ */
+:root{--cp-t:#0a6e8a;--cp-s:#3d7f2a;--cp-d:#c0450f;--cp-lv:#9a6c00;--cp-cand:#8b3fc9;--cp-sel:#2a64b0;--cp-map:#f3f5f0}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--cp-t:#52c4dd;--cp-s:#86cf6a;--cp-d:#ff8a4c;--cp-lv:#f2c230;--cp-cand:#c08cff;--cp-sel:#80acee;--cp-map:#101417}}
+:root[data-theme="dark"]{--cp-t:#52c4dd;--cp-s:#86cf6a;--cp-d:#ff8a4c;--cp-lv:#f2c230;--cp-cand:#c08cff;--cp-sel:#80acee;--cp-map:#101417}
+
+.cp-fT{--fn:var(--cp-t)}.cp-fS{--fn:var(--cp-s)}.cp-fD{--fn:var(--cp-d)}
+
+/* ===== 地図 ===== */
+.cp-mapw{position:relative}
+.cp-mapsc{overflow-x:auto;overscroll-behavior-x:contain;border-radius:6px;background:var(--cp-map)}
+.cp-map{display:block;width:100%;cursor:pointer;touch-action:pan-x pan-y pinch-zoom}
+.cp-tools{position:absolute;left:10px;top:10px;display:flex;align-items:center;gap:6px;padding:5px 8px;border:1px solid var(--line);border-radius:28px;background:color-mix(in srgb,var(--surface) 90%,transparent)}
+.cp-tools .tp-pp{width:42px;height:42px}
+.cp-sep{width:1px;height:22px;margin:0 2px;background:var(--line)}
+.cp-meta{position:absolute;left:10px;top:72px;display:flex;flex-direction:column;align-items:flex-start;gap:6px;max-width:calc(100% - 20px)}
+.cp-keyb{min-height:30px;padding:0 12px;border:1px solid var(--line-2);border-radius:15px;background:var(--surface);color:var(--ink);font:700 13px var(--sans);cursor:pointer}
+.cp-keyb:hover,.cp-keyb[aria-expanded="true"]{border-color:var(--ink-3)}
+.cp-songb{display:inline-flex;align-items:center;gap:6px;max-width:220px}
+.cp-songb span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cp-songb i{font-style:normal;font-size:14px;line-height:1;color:var(--ink-2)}
+.cp-keypop{position:absolute;left:10px;top:144px;z-index:14;width:min(420px,calc(100% - 20px));padding:10px 12px;border:1px solid var(--line-2);border-radius:8px;background:var(--surface);box-shadow:0 10px 28px rgb(0 0 0 / .3)}
+.cp-posw b{font:700 13px var(--mono);color:var(--ink)}
+.cp-lg{display:flex;flex-wrap:wrap;align-items:center;gap:4px 16px;margin-top:8px;font-size:12px;color:var(--ink-3)}
+.cp-lg i{display:inline-block;vertical-align:middle;margin-right:5px}
+.cp-sw{width:10px;height:10px;border-radius:2px;background:var(--fn)}
+.cp-road{width:22px;border-top:4px solid var(--cp-lv);border-radius:2px}
+.cp-cand{width:14px;height:12px;border:3px solid var(--cp-cand);border-radius:2px}
+/* 狭い画面では地図の下に演奏の操作・調・小窓を順に並べる */
+@media (max-width:560px){.cp-mapw{display:flex;flex-wrap:wrap;align-items:center;gap:8px}.cp-mapsc,.cp-rcw{flex:1 0 100%}.cp-tools{position:static;max-width:100%;border-radius:8px}.cp-meta{position:static;flex-direction:row;flex-wrap:wrap}.cp-keypop{position:static;flex:1 0 100%;width:auto}.cp-ed{flex:1 0 100%}}
+
+/* ===== 選んだ和音の小窓 ===== */
+.cp-ed{position:absolute;z-index:14;width:max-content;max-width:min(580px,calc(100% - 8px));padding:6px 8px;border:1px solid var(--line-2);border-radius:8px;background:var(--surface);box-shadow:0 6px 18px rgb(0 0 0 / .25)}
+.cp-eh{display:flex;flex-wrap:wrap;align-items:center;gap:5px}
+.cp-eh b{display:inline-grid;place-items:center;min-width:24px;height:24px;padding:0 4px;border:2px solid var(--cp-sel);border-radius:12px;font:700 12.5px var(--mono)}
+.cp-et{display:inline-flex;align-items:center;gap:5px;min-height:30px;padding:0 8px;border:1px solid var(--line);border-radius:6px;background:none;color:var(--ink);font:700 13px var(--sans);cursor:pointer}
+.cp-et span{font-weight:500;font-size:11.5px;color:var(--ink-3)}
+.cp-et i{font-style:normal;font-size:10px;color:var(--ink-3)}
+.cp-et:hover,.cp-et[aria-expanded="true"]{border-color:var(--ink-3)}
+.cp-ed .cp-er{max-width:440px;margin:7px 0 2px}
+.cp-ex{width:30px;height:30px;padding:0;border:1px solid var(--line);border-radius:4px;background:none;color:var(--ink-2);font-size:16px;line-height:1;cursor:pointer}
+.cp-ex:hover{border-color:var(--ink-3);color:var(--ink)}
+.cp-er{display:flex;align-items:flex-start;gap:8px;margin:7px 0}
+.cp-el{flex:none;min-width:40px;padding-top:6px;font-size:12px;color:var(--ink-3)}
+.cp-er .chips{flex:1;min-width:0}
+.cp-en{margin:6px 0 0;font-size:12px;color:var(--ink-3)}
+/* 狭い画面では地図を覆わないように地図の下へ並べる */
+@media (max-width:560px){.cp-ed{position:static;width:auto;box-shadow:none}}
+.cp-pi{display:inline-grid;place-items:center;width:32px;height:32px;padding:0;border:1px solid var(--line);border-radius:6px;background:none;color:var(--ink-2);cursor:pointer}
+.cp-pi:hover:not(:disabled){border-color:var(--ink-3);color:var(--ink)}
+.cp-pi svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+
+/* ===== 緊張（地図の右下に重ねる。入らなければ地図の下） ===== */
+.cp-rcw{position:absolute;z-index:2;background:var(--cp-map);overflow:hidden;-webkit-mask-image:linear-gradient(to right,transparent,#000 40px,#000 calc(100% - 18px),transparent);mask-image:linear-gradient(to right,transparent,#000 40px,#000 calc(100% - 18px),transparent)}
+.cp-rcw.below{position:static;margin-top:8px;border:1px solid var(--line);border-radius:8px;background:var(--surface);-webkit-mask-image:none;mask-image:none}
+.cp-rc{display:block;cursor:grab;touch-action:pan-y}
+
+/* ===== バンド ===== */
+.cp-band{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-bottom:10px}
+.cp-mem{display:grid;justify-items:center;gap:2px;padding:10px 6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);cursor:pointer;transition:transform .08s,border-color .08s;font:inherit}
+.cp-mem:hover{border-color:var(--ink-3)}
+.cp-mem .cp-ic{width:40px;height:40px}
+.cp-mem span{font-size:13px;font-weight:700}
+.cp-mem small{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11.5px;color:var(--ink-3)}
+.cp-mem[aria-pressed="false"]{opacity:.38}
+.cp-mem.hit{transform:translateY(-3px);border-color:var(--cp-lv)}
+@media (max-width:560px){.cp-band{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.cp-mem{padding:8px 4px 6px}}
+@media (prefers-reduced-motion:reduce){.cp-mem{transition:none}.cp-mem.hit{transform:none}}
+.cp-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin:10px 0 4px}
+.cp-rl{min-width:56px;font-size:12.5px;color:var(--ink-3)}
+
+/* ===== 曲 ===== */
+.cp-er2{display:grid;grid-template-columns:minmax(0,1fr);gap:4px;margin:4px 0 12px}
+@media (min-width:640px){.cp-er2{grid-template-columns:96px minmax(0,1fr)}.cp-er2 .cp-rl{padding-top:6px}}
+.cp-saved{display:flex;flex-wrap:wrap;gap:4px;margin:0;padding:0;list-style:none}
+.cp-saved li{display:flex}
+.cp-sv{min-height:28px;padding:0 8px;border:1px solid var(--line);border-right:0;border-radius:4px 0 0 4px;background:none;color:var(--ink);font:500 12.5px var(--sans);cursor:pointer}
+.cp-sx{width:26px;min-height:28px;padding:0;border:1px solid var(--line);border-radius:0 4px 4px 0;background:none;color:var(--ink-3);cursor:pointer}
+.cp-sv:hover,.cp-sx:hover{border-color:var(--ink-3);color:var(--ink)}
+.cp-none{padding-top:5px;font-size:12.5px;color:var(--ink-3)}
+.cp-file input[type=text]{flex:1 1 180px;min-width:0;height:32px;padding:0 8px;border:1px solid var(--line-2);border-radius:4px;background:var(--inset);color:var(--ink);font:500 13px var(--sans)}
+.cp-songpop{width:min(560px,calc(100% - 20px));max-height:calc(100% - 154px);overflow:auto}
+.cp-songpop .cp-er2:first-child{margin-top:0}
+.cp-msg{min-height:1.5em;margin:6px 0 0;font-size:12.5px;color:var(--ink-2);visibility:hidden}
+
+/* ===== アイコン ===== */
+.cp-ic{width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px}
+.cp-ic .f{fill:currentColor;stroke:none}
+.cp-ic .t{stroke-width:.7}
+.cp-ic .w{stroke-width:3}
+.cp-i24{stroke-width:1.15}
+
+/* ===== しくみ ===== */
+.cp-how{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+.cp-how li{border:1px solid var(--line);border-radius:var(--r);padding:10px 12px}
+.cp-how h3{display:flex;gap:8px;align-items:center;margin:0 0 8px;font-size:14px}
+.cp-how h3 b{display:inline-grid;place-items:center;flex:none;width:20px;height:20px;border-radius:50%;background:var(--ink);color:var(--surface);font-size:12px}
+.cp-how p{margin:6px 0 0;font-size:13px;line-height:1.5;color:var(--ink-2)}
+.cp-mini{display:block;width:100%;max-width:240px;height:auto;overflow:visible}
+.cp-hT{--fn:var(--cp-t)}.cp-hS{--fn:var(--cp-s)}.cp-hD{--fn:var(--cp-d)}
+.cp-hb{fill:var(--surface);stroke:var(--line-2)}
+.cp-hf{fill:var(--fn)}
+.cp-hd{fill:var(--fn)}
+.cp-ho{fill:none;stroke:var(--line-2)}
+.cp-htri{fill:color-mix(in srgb,var(--fn) 22%,transparent);stroke:var(--line-2)}
+.cp-ht{font:700 12px var(--sans);fill:var(--ink)}
+.cp-hs{font:500 10.5px var(--sans);fill:var(--ink-3)}
+.cp-hc{font:700 11px var(--sans);fill:var(--cp-lv)}
+.cp-hl{fill:none;stroke:var(--cp-lv)}
+.cp-hl.d{stroke-dasharray:3 2}
+.cp-hh{fill:var(--cp-lv)}
+.cp-hg{stroke:var(--line);fill:none}
+.cp-hcur{stroke:var(--cp-lv);stroke-width:2}
+.cp-hrail{fill:none;stroke:var(--ink);stroke-width:2}
+.cp-hfl{font:700 9px var(--sans);fill:var(--surface)}
