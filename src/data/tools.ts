@@ -613,10 +613,10 @@ export const TOOLS: Tool[] = [
     id: 'chord-progression',
     c: '楽器・調律',
     t: 'コード進行',
-    d: 'コードのブロックを並べて進行を鳴らします。',
+    d: '和音の地図を歩いて進行を作り、バンドで鳴らします。',
     ic: 'cp',
     r: ['temperament', 'electric-guitar', 'fm-synth', 'piano'],
-    k: 'chord progression コード進行 和音 コード 和声 harmony ダイアトニック diatonic 機能和声 トニック tonic サブドミナント subdominant ドミナント dominant 終止 cadence 完全終止 偽終止 変格終止 ツーファイブ ii-v-i カノン進行 王道進行 小室進行 丸サ進行 循環進行 ブルース blues 五度圏 circle of fifths 転調 modulation 移調 拍子 アルペジオ arpeggio ストローク 作曲 composition ローマ数字 度数 セカンダリードミナント 借用和音 オーディオ audio',
+    k: 'chord progression コード進行 和音 コード 和声 harmony ダイアトニック diatonic 機能和声 トニック tonic サブドミナント subdominant ドミナント dominant 終止 cadence 完全終止 偽終止 変格終止 ツーファイブ ii-v-i カノン進行 王道進行 小室進行 丸サ進行 循環進行 ブルース blues トネッツ tonnetz ネオ・リーマン理論 neo-riemannian 和音の地図 緊張 解決 転調 modulation 移調 拍子 作曲 composition ローマ数字 度数 セカンダリードミナント 借用和音 バンド band ドラム drums ベース bass コーラス フィル fill ファンク funk ディスコ disco レゲエ reggae シャッフル shuffle ジャズ jazz ボサノバ bossa nova サンバ samba メトロノーム metronome オーディオ audio',
   },
   {
     id: 'convolution',
