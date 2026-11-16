@@ -3073,48 +3073,43 @@ export const ART: Record<string, Art> = {
       }
     return s + P('c t', 'M8 17h12v14H8zM100 17h12v14h-12zM20 22H50V26H20zM70 22H100V26H70zM50 23.2H70V24.8H50z');
   },
-  /* コード進行: 和音の地図（三角形の格子）。1 つの音を囲む 6 つの三角形を道が順に回り、
-     今の三角形を塗る。0.6 s ごとのコマ送りで、止まった絵は 1 つ目の三角形 */
+  /* コード進行: 緊張のトロッコ。T・S・D・T の駅（下の色の帯）の上のレールをトロッコがコマ送りで進み、
+     D から T へ落ちる所に解決の旗。1 周 3.6 s を 24 コマ。止まった絵は最初の駅の上 */
   cp(t) {
-    const pt = (i: number, r: number): [number, number] => [24 * i + 12 * r, 45 - 20.8 * r],
-      corners = (i: number, r: number, up: boolean): [number, number][] =>
-        up ? [pt(i, r), pt(i + 1, r), pt(i, r + 1)] : [pt(i + 1, r), pt(i + 1, r + 1), pt(i, r + 1)],
-      tri = (c: [number, number][]) =>
-        `M${r1(c[0][0])} ${r1(c[0][1])}L${r1(c[1][0])} ${r1(c[1][1])}L${r1(c[2][0])} ${r1(c[2][1])}Z`,
-      mid = (c: [number, number][]): [number, number] => [
-        (c[0][0] + c[1][0] + c[2][0]) / 3,
-        (c[0][1] + c[1][1] + c[2][1]) / 3,
-      ],
-      ROUTE: [number, number, boolean][] = [
-        [1, 1, true],
-        [1, 0, false],
-        [2, 0, true],
-        [2, 0, false],
-        [2, 1, true],
-        [1, 1, false],
-      ],
-      cur = Math.floor(mod(t, 3.6) / 0.6) % ROUTE.length;
-    let grid = '';
-    for (let r = 0; r < 2; r++)
-      for (let i = -2; i < 6; i++)
-        for (const up of [true, false]) {
-          const c = corners(i, r, up);
-          if (c.every(([x]) => x >= 0 && x <= 120)) grid += tri(c);
-        }
-    const cs = ROUTE.map(([i, r, up]) => mid(corners(i, r, up)));
-    let line = '',
-      head = '';
-    cs.forEach(([x0, y0], k) => {
-      const [x1, y1] = cs[(k + 1) % cs.length],
-        a = Math.atan2(y1 - y0, x1 - x0),
-        mx = (x0 + x1) / 2 + Math.cos(a) * 2,
-        my = (y0 + y1) / 2 + Math.sin(a) * 2,
-        h = 3.6;
-      line += `M${r1(x0)} ${r1(y0)}L${r1(x1)} ${r1(y1)}`;
-      head += `M${r1(mx)} ${r1(my)}L${r1(mx + Math.cos(a + 2.5) * h)} ${r1(my + Math.sin(a + 2.5) * h)}L${r1(mx + Math.cos(a - 2.5) * h)} ${r1(my + Math.sin(a - 2.5) * h)}Z`;
+    const x0 = 6,
+      w = 27,
+      ys = [32, 22, 10, 32],
+      FNS = ['fb', 'fc', 'fr', 'fb'],
+      /* 駅の 55 % までは平ら、残りで次の駅の高さへなめらかに移る */
+      yAt = (x: number) => {
+        const k = Math.max(0, Math.min(3, Math.floor((x - x0) / w))),
+          f = (x - x0 - k * w) / w,
+          a = ys[k],
+          b = ys[Math.min(3, k + 1)],
+          e = f < 0.55 ? 0 : (f - 0.55) / 0.45;
+        return a + (b - a) * e * e * (3 - 2 * e);
+      },
+      u = mod(t + 0.3, 3.6) / 3.6,
+      x = x0 + 4 + Math.floor(u * 24) * ((w * 4 - 8) / 24),
+      y = yAt(x),
+      wheel = (cx: number) => `M${r1(cx - 1.5)} ${r1(y - 1.4)}a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0 -3 0Z`;
+    let posts = '',
+      rail = '',
+      s = '';
+    for (let xx = x0 + 4; xx < x0 + w * 4; xx += 9) posts += `M${xx} ${r1(yAt(xx) + 2)}V40`;
+    for (let xx = x0; xx <= x0 + w * 4; xx += 2) rail += `${xx === x0 ? 'M' : 'L'}${xx} ${r1(yAt(xx))}`;
+    FNS.forEach((c, k) => {
+      s += P(c, `M${x0 + k * w + 1} 41h${w - 2}v4h${-(w - 2)}Z`);
     });
-    const [ci, cr, cu] = ROUTE[cur];
-    return P('c t', grid) + P('fa', tri(corners(ci, cr, cu))) + P('a', line) + P('fc', head);
+    return (
+      P('c t', posts) +
+      P('c', rail) +
+      s +
+      P('a t', `M${x0 + 3 * w + 2} 30V18`) +
+      P('fa', `M${x0 + 3 * w + 2} 18h9v5h-9Z`) +
+      P('fa', `M${r1(x - 6)} ${r1(y - 7.4)}h12v5h-12Z`) +
+      P('c', wheel(x - 3.4) + wheel(x + 3.4))
+    );
   },
 };
 

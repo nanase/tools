@@ -202,9 +202,16 @@ export class Coaster {
       ctx.textBaseline = 'middle';
       ctx.fillText(roman(e.ch, e.key), xa + 5, sy + STRIP / 2);
       ctx.restore();
-      /* 転調する所: 上の端に新しい調の札を立て、駅まで点線で下ろす */
-      if (e.c.mod && (k > 0 || st.loop)) {
-        const lb = `転調 ${keyTonic(e.c.mod)}${e.c.mod.m === 'min' ? 'm' : ''}`;
+      /* 転調する所: 上の端に新しい調の札を立て、駅まで点線で下ろす。くり返して頭へ戻る所も、調が変わるなら転調とみる */
+      const last = st.entries[st.entries.length - 1],
+        to =
+          k > 0
+            ? e.c.mod
+            : st.loop && st.entries.length > 1 && (last.key.t !== e.key.t || last.key.m !== e.key.m)
+              ? e.key
+              : null;
+      if (to) {
+        const lb = `転調 ${keyTonic(to)}${to.m === 'min' ? 'm' : ''}`;
         ctx.font = `700 10px ${sans}`;
         const tw = ctx.measureText(lb).width + 8;
         ctx.strokeStyle = sel;
