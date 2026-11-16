@@ -269,6 +269,8 @@ export interface BandOpt {
   fillAt?: number;
   /** 和音の頭でクラッシュシンバル（くり返して頭へ戻った所） */
   crash?: boolean;
+  /** 転調する和音の頭 [拍]。その直前の 1 拍でドラムが弱いフィルを叩く */
+  modAt?: readonly number[];
 }
 /** フィルの 8 歩（2 拍）: スネア 2 つのあと、高いタムから低いタムへ。数字はタムの周波数 [Hz] */
 const FILL: readonly (readonly ['snare' | 'tom', number, number])[] = [
@@ -281,6 +283,8 @@ const FILL: readonly (readonly ['snare' | 'tom', number, number])[] = [
   ['tom', 115, 1],
   ['tom', 115, 0.8],
 ];
+/** 転調の前の弱いフィルの 4 歩（1 拍）: だんだん強くなるスネア */
+const SOFT_FILL: readonly number[] = [0.3, 0.42, 0.55, 0.7];
 export function bandNotes(
   e: Entry,
   song: Song,
@@ -312,11 +316,16 @@ export function bandNotes(
     const g = (e.start * 4 + s) % bar,
       /* 跳ねるスタイルは拍の裏の 8 分を 3 連符の 3 つ目へ */
       t = (s + (P.sw && g % 4 === 2 ? 2 / 3 : 0)) * spb,
-      fj = e.start * 4 + s - fill0;
+      fj = e.start * 4 + s - fill0,
+      /* 転調の頭までの歩の数（1〜4 なら弱いフィルの中） */
+      mj = (opt.modAt ?? []).map((b) => b * 4 - (e.start * 4 + s)).find((d) => d >= 1 && d <= SOFT_FILL.length);
     if (on.drums && fj >= 0) {
       const [v, m, vel] = FILL[fj];
       out.push({ t, m, v, end: t, vel });
       if (fj % 4 === 0) out.push({ t, m: 0, v: 'kick', end: t, vel: 0.8 });
+    } else if (on.drums && mj !== undefined) {
+      out.push({ t, m: 0, v: 'snare', end: t, vel: SOFT_FILL[SOFT_FILL.length - mj] });
+      if (mj === SOFT_FILL.length) out.push({ t, m: 0, v: 'kick', end: t, vel: 0.7 });
     } else if (on.drums) {
       if (at(s, P.k)) out.push({ t, m: 0, v: 'kick', end: t, vel: VEL[chAt(s, P.k)] ?? 1 });
       if (at(s, P.s)) out.push({ t, m: 0, v: 'snare', end: t, vel: VEL[chAt(s, P.s)] ?? 1 });
@@ -443,6 +452,7 @@ export class Player {
     if (this.nextAt < now - 0.1) this.nextAt = now + 0.02;
     const { song, on, loop, met } = this.ctx(),
       { entries, beats: total } = compute(song),
+      modAt = entries.filter((x) => x.k > 0 && x.c.mod).map((x) => x.start),
       spb = 60 / song.bpm / 4,
       horizon = now + lookahead(AHEAD);
     while (!this.done && this.nextAt < horizon) {
@@ -466,7 +476,7 @@ export class Player {
         at: this.nextAt,
         dur,
         bus,
-        pending: bandNotes(e, song, on, spb, { met, fillAt: loop ? total : undefined, crash: wrapped }),
+        pending: bandNotes(e, song, on, spb, { met, fillAt: loop ? total : undefined, crash: wrapped, modAt }),
       });
       this.nextAt += dur;
       this.next++;

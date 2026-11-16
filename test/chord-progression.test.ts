@@ -330,6 +330,19 @@ describe('バンド', () => {
     expect(memberOf('tom')).toBe('drums');
     expect(memberOf('cho')).toBe('cho');
   });
+  it('転調の直前の 1 拍で弱いフィル', () => {
+    const s = song('C G >D D A'),
+      es = compute(s).entries,
+      modAt = [es[2].start],
+      sn = bandNotes(es[1], s, ALL_ON, 0.125, { modAt }).filter((n) => n.v === 'snare' && n.t >= 12 * 0.125);
+    expect(sn.map((n) => n.vel)).toEqual([0.3, 0.42, 0.55, 0.7]);
+    expect(
+      bandNotes(es[1], s, ALL_ON, 0.125)
+        .filter((n) => n.v === 'snare' && n.t >= 12 * 0.125)
+        .map((n) => n.vel),
+    ).toEqual([1]);
+    expect(bandNotes(es[2], s, ALL_ON, 0.125, { modAt }).filter((n) => n.v === 'snare' && n.vel < 0.8)).toHaveLength(0);
+  });
   it('音色の切り替えに従う', () => {
     const s = song('C', { keys: 'ep', gtr: 'cgt' }),
       ns = bandNotes(compute(s).entries[0], s, ALL_ON, 0.125);
