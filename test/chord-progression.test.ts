@@ -254,6 +254,9 @@ describe('保存の形式', () => {
     expect(fromFile({ ...ok, chords: [{ ...ok.chords[0], i: 99 }] })).toBeNull();
     expect(fromFile({ ...ok, chords: [{ ...ok.chords[0], mod: { t: 0, m: 'dor' } }] })).toBeNull();
     expect(fromFile({ ...ok, name: 'x'.repeat(100) })?.name).toHaveLength(60);
+    /* 外した音色のベルはビブラフォンで開く */
+    expect(fromFile({ ...ok, keys: 'bell' })?.keys).toBe('vib');
+    expect(fromFile({ ...ok, keys: 'xx' })).toBeNull();
   });
 });
 
@@ -294,6 +297,16 @@ describe('バンド', () => {
       expect(ns.some((n) => memberOf(n.v) === m)).toBe(false);
       expect(ns.length).toBeGreaterThan(0);
     }
+  });
+  it('メトロノームは拍ごとに鳴り、小節の頭は高い音', () => {
+    const s = song('C:2 G:4 Am:2'),
+      es = compute(s).entries,
+      clk = (k: number) => bandNotes(es[k], s, ALL_ON, 0.125, true).filter((n) => n.v === 'clk');
+    expect(clk(0).map((n) => n.m)).toEqual([1760, 1180]);
+    expect(clk(1).map((n) => n.m)).toEqual([1180, 1180, 1760, 1180]);
+    expect(clk(1).map((n) => n.t)).toEqual([0, 0.5, 1, 1.5]);
+    expect(bandNotes(es[0], s, ALL_ON, 0.125).some((n) => n.v === 'clk')).toBe(false);
+    expect(memberOf('clk')).toBeNull();
   });
   it('音色の切り替えに従う', () => {
     const s = song('C', { keys: 'ep', gtr: 'cgt' }),

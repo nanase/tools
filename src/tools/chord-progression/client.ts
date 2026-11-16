@@ -12,10 +12,10 @@ import { store, stored } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
 import { CpAudio } from './audio';
 import { MEMBER_NAMES, MEMBERS, type MemberId, Player, previewNotes } from './band';
-import { Coaster } from './coaster';
+import { Coaster, type CoasterState } from './coaster';
 import { ICON } from './icons';
 import { type MapState, MapView } from './map';
-import { BPM, VOL0 } from './params';
+import { BPM, CLICK, VOL0 } from './params';
 import { SAMPLE0, sampleSong } from './samples';
 import {
   compute,
@@ -49,6 +49,8 @@ const S = {
   cue: 0,
   on: { drums: true, bass: true, keys: true, gtr: true } as Record<MemberId, boolean>,
   loop: true,
+  /** メトロノームを鳴らすか */
+  met: false,
   dirty: false,
 };
 {
@@ -60,6 +62,7 @@ const S = {
   const on = stored('on') as Partial<Record<MemberId, boolean>> | undefined;
   if (on && typeof on === 'object') for (const m of MEMBERS) S.on[m] = on[m] !== false;
   if (stored('loop') === false) S.loop = false;
+  if (stored('met') === true) S.met = true;
 }
 let entries: Entry[] = [],
   beats = 0;
@@ -93,7 +96,7 @@ function travel(from: string[], to: string[]): void {
 
 /* ---------- 音と演奏 ---------- */
 const audio = new CpAudio(),
-  player = new Player(audio, () => ({ song: S.song, on: S.on, loop: S.loop }));
+  player = new Player(audio, () => ({ song: S.song, on: S.on, loop: S.loop, met: S.met }));
 let previewBus: GainNode | null = null;
 /** 止まっている間の試聴（和音 1 つ） */
 function preview(k: number): void {
@@ -184,6 +187,9 @@ const bpmGroup = new ParamGroup<'bpm'>(
   null,
   { save: false },
 );
+const clickGroup = new ParamGroup<'clk'>([CLICK], (v) => {
+  audio.click = 10 ** (v.clk / 20);
+});
 new Choice<string>($('#p-room'), (v) => audio.setRoom(v));
 
 /* ---------- 地図 ---------- */
@@ -192,14 +198,28 @@ const mapCv = $<HTMLCanvasElement>('#cp-map'),
   mapw = $('#cp-mapw');
 let hover: Place | null = null,
   frac = 0;
-const mapState = (): MapState => ({
-  song: S.song,
-  entries,
-  sel: S.sel,
-  play: player.playing ? (player.current()?.k ?? -1) : -1,
-  frac,
-  hover,
-});
+/** 道の点のドラッグ（動かした先の三角形の和音に変える） */
+let ndrag: { k: number; x0: number; y0: number; moved: boolean; at: Place | null } | null = null;
+const playing = (): number => (player.playing ? (player.current()?.k ?? -1) : -1);
+/** 演奏中に次に鳴る和音 */
+function nextOf(k: number): number {
+  const n = S.song.chords.length;
+  if (k < 0 || !n) return -1;
+  return k + 1 < n ? k + 1 : S.loop ? 0 : -1;
+}
+const mapState = (): MapState => {
+  const k = playing();
+  return {
+    song: S.song,
+    entries,
+    sel: S.sel,
+    play: k,
+    next: nextOf(k),
+    drag: ndrag?.moved ? { k: ndrag.k, at: ndrag.at } : null,
+    frac,
+    hover,
+  };
+};
 /** 選んだ和音の後ろ（なければ最後）に三角形の和音を足す */
 function addAt(p: Place, after: number | null): number {
   const t = triadOf(p),
@@ -207,6 +227,26 @@ function addAt(p: Place, after: number | null): number {
     c: SChord = { id: newId(), r: t.r, q: t.q, b: 0, at: p, mod: null };
   S.song.chords.splice(ix, 0, c);
   return ix;
+}
+/** 和音を別の三角形へ移す。長短の系統が同じなら 7 などの種類はそのまま */
+function moveTo(c: SChord, p: Place): void {
+  const t = triadOf(p),
+    fam = QUALS[c.q].b;
+  c.r = t.r;
+  if (t.q === 'M' ? fam !== 'M' : fam === 'M') c.q = t.q;
+  c.at = p;
+}
+/** 和音を選ぶ。小窓は道の点か駅を押したときだけ開き、同じ和音をもう一度押すと閉じる */
+function pick(k: number): void {
+  if (S.sel === k && edOpen) edOpen = false;
+  else {
+    S.sel = k;
+    edOpen = true;
+    cueTo(k);
+    preview(k);
+  }
+  draw();
+  showEd();
 }
 let drawing: { last: Place } | null = null;
 const local = (ev: PointerEvent, el: HTMLElement): [number, number] => {
@@ -216,22 +256,17 @@ const local = (ev: PointerEvent, el: HTMLElement): [number, number] => {
 mapCv.addEventListener('pointerdown', (ev) => {
   if (ev.button > 0) return;
   const [x, y] = local(ev, mapCv),
-    st = mapState(),
-    k = mapView.nodeAt(st, x, y);
+    k = mapView.nodeAt(mapState(), x, y);
   if (k >= 0) {
-    S.sel = S.sel === k ? null : k;
-    if (S.sel !== null) {
-      cueTo(k);
-      preview(k);
-    }
-    draw();
-    showEd();
+    ndrag = { k, x0: x, y0: y, moved: false, at: null };
+    mapCv.setPointerCapture(ev.pointerId);
     return;
   }
   const p = mapView.hit(x, y);
   if (!p) return;
   remember();
   S.sel = addAt(p, S.sel);
+  edOpen = false;
   changed();
   preview(S.sel);
   /* マウスとペンはなぞると続けて足す（タッチはスクロールのため押すだけ） */
@@ -243,6 +278,18 @@ mapCv.addEventListener('pointerdown', (ev) => {
 mapCv.addEventListener('pointermove', (ev) => {
   const [x, y] = local(ev, mapCv),
     p = mapView.hit(x, y);
+  if (ndrag) {
+    if (!ndrag.moved && Math.hypot(x - ndrag.x0, y - ndrag.y0) > 6) {
+      ndrag.moved = true;
+      edOpen = false;
+      showEd();
+    }
+    if (ndrag.moved && !(p && ndrag.at && samePlace(p, ndrag.at))) {
+      ndrag.at = p;
+      draw();
+    }
+    return;
+  }
   if (drawing && p && !samePlace(p, drawing.last)) {
     drawing.last = p;
     S.sel = addAt(p, S.sel);
@@ -254,6 +301,23 @@ mapCv.addEventListener('pointermove', (ev) => {
     hover = p;
     if (!player.playing) mapView.draw(mapState());
   }
+});
+mapCv.addEventListener('pointerup', () => {
+  const d = ndrag;
+  ndrag = null;
+  if (!d) return;
+  if (!d.moved) return pick(d.k);
+  const c = S.song.chords[d.k];
+  if (!c || !d.at || samePlace(c.at, d.at)) return draw();
+  remember();
+  moveTo(c, d.at);
+  S.sel = d.k;
+  changed();
+  preview(d.k);
+});
+mapCv.addEventListener('pointercancel', () => {
+  ndrag = null;
+  draw();
 });
 addEventListener('pointerup', () => {
   drawing = null;
@@ -268,14 +332,20 @@ const rcCv = $<HTMLCanvasElement>('#cp-rc'),
   coaster = new Coaster(rcCv);
 let rdrag: { k: number; x0: number; moved: boolean; slot: number; cx: number } | null = null;
 let cartBeat: number | null = null;
-const coasterState = () => ({
-  entries,
-  beats,
-  sel: S.sel,
-  play: player.playing ? (player.current()?.k ?? -1) : -1,
-  cart: cartBeat,
-  caret: rdrag?.moved ? rdrag.cx : null,
-});
+const coasterState = (): CoasterState => {
+  const cue = entries[S.sel ?? S.cue]?.start ?? 0;
+  return {
+    entries,
+    beats,
+    meter: S.song.meter,
+    sel: S.sel,
+    play: playing(),
+    cart: cartBeat ?? entries[S.cue]?.start ?? 0,
+    focus: cartBeat ?? cue,
+    loop: S.loop,
+    caret: rdrag?.moved ? rdrag.cx : null,
+  };
+};
 rcCv.addEventListener('pointerdown', (ev) => {
   const [x] = local(ev, rcCv),
     k = coaster.stationAt(coasterState(), x);
@@ -295,15 +365,8 @@ rcCv.addEventListener('pointerup', () => {
   rdrag = null;
   if (!d) return;
   if (!d.moved) {
-    S.sel = S.sel === d.k ? null : d.k;
-    if (S.sel !== null) {
-      cueTo(d.k);
-      preview(d.k);
-      reveal(d.k);
-    }
-    draw();
-    showEd();
-    return;
+    reveal(d.k);
+    return pick(d.k);
   }
   let to = d.slot;
   if (to === d.k || to === d.k + 1) return draw();
@@ -340,17 +403,21 @@ function modKey(prev: Key, v: string): Key {
 const iconBtn = (a: string, icon: string, name: string) =>
   `<button type="button" class="cp-pi" data-a="${a}" title="${name}" aria-label="${name}">${icon}</button>`;
 const chipRow = (lb: string, a: string, opts: readonly (readonly [string | number, string])[], cur: unknown) =>
-  `<div class="cp-er"><span class="cp-el">${lb}</span><div class="chips">${opts
+  `<div class="cp-er">${lb ? `<span class="cp-el">${lb}</span>` : ''}<div class="chips">${opts
     .map(
       ([v, t]) =>
         `<button type="button" class="chip" data-a="${a}" data-v="${v}" aria-pressed="${String(v) === String(cur)}">${t}</button>`,
     )
     .join('')}</div></div>`;
+/** 小窓を開いているか、開いている項目（種類・長さ・転調） */
+let edOpen = false,
+  edTab: 'q' | 'b' | 'mod' | null = null;
+const lenName = (b: number) => (b === 0 ? `1 小節（${S.song.meter} 拍）` : `${b} 拍`);
 function showEd(): void {
   let ed = document.getElementById('cp-ed');
   const k = S.sel,
     e = k === null ? undefined : entries[k];
-  if (k === null || !e) {
+  if (!edOpen || k === null || !e) {
     ed?.remove();
     return;
   }
@@ -367,22 +434,28 @@ function showEd(): void {
     modV = c.mod
       ? (NEAR_KEYS.find(([v]) => v && modKey(prevKey, v).t === c.mod?.t && modKey(prevKey, v).m === c.mod?.m)?.[0] ??
         'x')
-      : '';
-  ed.innerHTML = `<div class="cp-eh"><b>${k + 1} · ${roman(e.ch, e.key)} · ${chordName(e.ch, e.key)}</b>${iconBtn('aud', ICON.aud, '試聴')}${iconBtn('del', ICON.del, '削除')}<button type="button" class="cp-ex" data-a="close" aria-label="閉じる" title="閉じる">×</button></div>
-    ${chipRow(
-      '種類',
-      'q',
-      QUAL_ORDER.map((q) => [q, chordName({ ...e.ch, q }, e.key)]),
-      c.q,
-    )}
-    ${chipRow(
-      '長さ',
-      'b',
-      LENGTHS.map((b) => [b, b === 0 ? `1 小節（${S.song.meter} 拍）` : `${b} 拍`]),
-      c.b,
-    )}
-    ${chipRow('転調', 'mod', NEAR_KEYS, modV)}
-    <p class="cp-en">${c.mod ? `ここから ${keyName(c.mod)}` : `調は ${keyName(e.key)}`} · 三角形を押すとこの後ろに足す</p>`;
+      : '',
+    tab = (v: 'q' | 'b' | 'mod', lb: string, cur: string) =>
+      `<button type="button" class="cp-et" data-a="tab" data-v="${v}" aria-expanded="${edTab === v}"><span>${lb}</span>${cur}<i aria-hidden="true">▾</i></button>`;
+  const body =
+    edTab === 'q'
+      ? chipRow(
+          '',
+          'q',
+          QUAL_ORDER.map((q) => [q, chordName({ ...e.ch, q }, e.key)]),
+          c.q,
+        )
+      : edTab === 'b'
+        ? chipRow(
+            '',
+            'b',
+            LENGTHS.map((b) => [b, lenName(b)]),
+            c.b,
+          )
+        : edTab === 'mod'
+          ? chipRow('', 'mod', NEAR_KEYS, modV)
+          : '';
+  ed.innerHTML = `<div class="cp-eh"><b>${k + 1}</b>${tab('q', '種類', chordName(e.ch, e.key))}${tab('b', '長さ', lenName(c.b))}${tab('mod', '転調', c.mod ? `→ ${keyName(c.mod)}` : 'なし')}${iconBtn('aud', ICON.aud, '試聴')}${iconBtn('del', ICON.del, '削除')}<button type="button" class="cp-ex" data-a="close" aria-label="閉じる" title="閉じる">×</button></div>${body}`;
   /* 地図は狭い画面で横にスクロールするので、枠からの位置に直す */
   const st = mapState(),
     cr = mapCv.getBoundingClientRect(),
@@ -404,12 +477,20 @@ mapw.addEventListener('click', (ev) => {
     c = S.song.chords[k],
     a = b.dataset.a,
     v = b.dataset.v ?? '';
-  if (a === 'close') S.sel = null;
-  else if (a === 'aud') return preview(k);
-  else if (a === 'del') {
+  if (a === 'tab') {
+    edTab = edTab === v ? null : (v as typeof edTab);
+    return showEd();
+  }
+  if (a === 'close') {
+    edOpen = false;
+    return showEd();
+  }
+  if (a === 'aud') return preview(k);
+  if (a === 'del') {
     remember();
     S.song.chords.splice(k, 1);
     S.sel = k > 0 ? k - 1 : S.song.chords.length ? 0 : null;
+    edOpen = false;
   } else if (a === 'q') {
     remember();
     const q = v as Qual,
@@ -545,6 +626,19 @@ loopBtn.addEventListener('click', () => {
   S.loop = !S.loop;
   store('loop', S.loop);
   syncLoop();
+  draw();
+});
+const metBtn = $<HTMLButtonElement>('#cp-met');
+function syncMet(): void {
+  metBtn.setAttribute('aria-pressed', String(S.met));
+  metBtn.querySelector('.led')?.classList.toggle('on', S.met);
+  clickGroup.setOff('clk', !S.met, 'メトロノームを止めている間は使いません');
+}
+metBtn.addEventListener('click', () => {
+  S.met = !S.met;
+  store('met', S.met);
+  syncMet();
+  player.resync();
 });
 /** 曲を入れ替えたあと、選択肢と数値の行を曲に合わせる */
 function syncControls(): void {
@@ -626,7 +720,9 @@ document.addEventListener('keydown', (ev) => {
     S.sel = null;
     changed();
   } else if (ev.key === 'Escape' && S.sel !== null) {
-    S.sel = null;
+    /* 小窓が開いていれば閉じ、閉じていれば選ぶのをやめる */
+    if (edOpen) edOpen = false;
+    else S.sel = null;
     draw();
     showEd();
   }
@@ -764,5 +860,6 @@ renderSaved();
 say('');
 syncControls();
 syncLoop();
+syncMet();
 syncPlay();
 layout();

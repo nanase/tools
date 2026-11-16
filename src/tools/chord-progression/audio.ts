@@ -12,7 +12,7 @@ type Ctor = typeof AudioContext;
 const AC: Ctor | undefined =
   globalThis.AudioContext ?? (globalThis as unknown as { webkitAudioContext?: Ctor }).webkitAudioContext;
 
-export type Voice = VoiceId | 'bass' | 'kick' | 'snare' | 'hat' | 'rim';
+export type Voice = VoiceId | 'bass' | 'kick' | 'snare' | 'hat' | 'rim' | 'clk';
 /** 1 つの音。t・end はコードの頭からの秒、m は MIDI のノート番号（ドラムでは使わない） */
 export interface NoteEv {
   t: number;
@@ -33,7 +33,7 @@ const GT_GAIN = 1;
 const LEVEL: Record<Voice, number> = {
   gtr: 0.97,
   cgt: 2.35,
-  harp: 0.27,
+  harp: 0.49,
   pf: 0.83,
   ep: 0.575,
   org: 0.79,
@@ -42,12 +42,12 @@ const LEVEL: Record<Voice, number> = {
   brs: 1.36,
   mar: 0.73,
   vib: 0.73,
-  bell: 0.84,
   bass: 1,
   kick: 1,
   snare: 1,
   hat: 1,
   rim: 1,
+  clk: 1,
 };
 
 /** ギターの撥弦の予定（送るまで手元に置き、編集や一時停止で先の分を消せるようにする） */
@@ -76,7 +76,9 @@ export class CpAudio {
   /** 書き出し（OfflineAudioContext）では撥弦をすぐ送る */
   private offline = false;
   private db = -12;
-  private room = 'small';
+  private room = 'off';
+  /** メトロノームの音量の倍率 */
+  click = 1;
   private readonly ks = new Map<string, { buf: AudioBuffer; rate: number }>();
   /** ピアノの 2 つの波形（明るい成分と柔らかい成分） */
   private waves: [PeriodicWave, PeriodicWave] | null = null;
@@ -205,7 +207,7 @@ export class CpAudio {
     for (const e of due) this.gtr.pluck(e.k, e.tones, e.m, Math.max(e.at, now), e.end, e.vel);
   }
 
-  /** 撥弦の音。harp は弦の真ん中寄りを指ではじき、長く響く */
+  /** 撥弦の音。harp は弦の 3 割の所を指ではじき、高い倍音から先に消える */
   private ksBuf(m: number, harp = false): { buf: AudioBuffer; rate: number } {
     const key = `${harp ? 'h' : 'g'}${m}`,
       hit = this.ks.get(key);
@@ -215,7 +217,7 @@ export class CpAudio {
       f = mtof(m),
       /* 3 点の低域通過（1/4・1/2・1/4）で遅れが 1 サンプル増えるので、整数の遅延より 1 サンプル長い周期になる。再生の速さで合わせる */
       N = Math.max(3, Math.floor(sr / f - 1)),
-      len = Math.floor(sr * (harp ? 5 : 2.6)),
+      len = Math.floor(sr * (harp ? 3.5 : 2.6)),
       buf = ac.createBuffer(1, len, sr),
       d = buf.getChannelData(0),
       ring = new Float32Array(N),
@@ -230,21 +232,21 @@ export class CpAudio {
       a2 += 0.45 * (a1 - a2);
       ex[i] = a2;
     }
-    const P = Math.max(1, Math.round(N * (harp ? 0.4 : 0.18)));
+    const P = Math.max(1, Math.round(N * (harp ? 0.3 : 0.18)));
     if (harp) {
-      /* ハープ: 指の腹で弦の 40 % の所を引いて離す。初めの形は角を丸めた三角形 */
+      /* ハープ: 指で弦の 30 % の所を引いて離す。初めの形は角を少し丸めた三角形に、指が弦に触れる雑音を足す */
       const tri = new Float32Array(N);
       for (let i = 0; i < N; i++) tri[i] = i < P ? i / P : (N - i) / (N - P);
       let b1 = 0;
-      for (let pass = 0; pass < 3; pass++)
-        for (let i = 0; i < N; i++) {
-          b1 += 0.35 * (tri[i] - b1);
-          tri[i] = b1;
-        }
+      for (let i = 0; i < N; i++) {
+        b1 += 0.6 * (tri[i] - b1);
+        tri[i] = b1;
+      }
       const mean = tri.reduce((a, v) => a + v, 0) / N;
-      for (let i = 0; i < N; i++) ring[i] = (tri[i] - mean) * 1.6 + ex[i] * 0.05;
+      for (let i = 0; i < N; i++) ring[i] = (tri[i] - mean) * 1.6 + ex[i] * 0.25;
     } else for (let i = 0; i < N; i++) ring[i] = ex[i] - 0.9 * ex[(i - P + N) % N];
-    const rho = (harp ? 0.9996 : 0.9985) - Math.min(harp ? 0.0012 : 0.003, f / (harp ? 900000 : 500000));
+    /* 1 周ごとの減衰。ハープは C4 で約 3 s で 60 dB 下がる */
+    const rho = (harp ? 0.993 : 0.9985) - Math.min(harp ? 0.006 : 0.003, f / (harp ? 400000 : 500000));
     for (let i = 0, ix = 0; i < len; i++) {
       const a = ring[ix],
         b = ring[(ix + 1) % N],
@@ -327,7 +329,7 @@ export class CpAudio {
     };
     switch (x.v) {
       case 'harp': {
-        /* 響板の山（250 Hz と 900 Hz あたり）と、高い音を落とすフィルタ。指を離しても長く響く */
+        /* 響板の山（250 Hz と 900 Hz あたり）と、高い音を落とすフィルタ。弦は止めず、自然に消えるまで鳴らす */
         const k = this.ksBuf(x.m, true),
           s = ac.createBufferSource(),
           p1 = ac.createBiquadFilter(),
@@ -343,13 +345,13 @@ export class CpAudio {
         p2.frequency.value = 900;
         p2.Q.value = 1.4;
         p2.gain.value = 2.5;
-        lp.frequency.value = 2800;
+        lp.frequency.value = 6000;
         s.connect(p1).connect(p2).connect(lp).connect(g);
         g.gain.setValueAtTime(0, w);
         g.gain.linearRampToValueAtTime(vel * 0.42, w + 0.006);
         g.gain.setTargetAtTime(0, end + 1.5, 0.6);
         s.start(w);
-        s.stop(w + 5);
+        s.stop(w + 3.5);
         break;
       }
       case 'ep': {
@@ -498,26 +500,36 @@ export class CpAudio {
         g.gain.setTargetAtTime(0, end, vib ? 0.3 : 0.1);
         break;
       }
-      case 'bell': {
-        /* 周波数比 3.5 の周波数変調。打った直後ほど金属らしい成分が多い */
-        const mg = ac.createGain(),
-          c = osc('sine', f, g);
-        mg.gain.setValueAtTime(f * 4, w);
-        mg.gain.setTargetAtTime(f * 0.4, w, 0.5);
-        osc('sine', f * 3.5, mg);
-        mg.connect(c.frequency);
-        g.gain.setValueAtTime(0, w);
-        g.gain.linearRampToValueAtTime(vel * 0.18, w + 0.002);
-        g.gain.setTargetAtTime(0, w + 0.002, 1.1);
-        g.gain.setTargetAtTime(0, end, 0.3);
-        break;
-      }
       case 'bass': {
         const lp = ac.createBiquadFilter();
         lp.frequency.value = 700;
         lp.connect(g);
         osc('triangle', f, lp);
         env(0.008, vel * 0.42, 0.05);
+        break;
+      }
+      case 'clk': {
+        /* メトロノーム: 木を打つような当たり。短い雑音を帯域通過に通した音と、すぐ消える正弦波。m は周波数 [Hz] */
+        const o = ac.createOscillator(),
+          n = ac.createBufferSource(),
+          bp = ac.createBiquadFilter(),
+          gn = ac.createGain(),
+          a = Math.max(1e-4, vel * 1.4 * this.click);
+        n.buffer = this.noiseBuf();
+        bp.type = 'bandpass';
+        bp.frequency.value = x.m * 1.6;
+        bp.Q.value = 3;
+        n.connect(bp).connect(gn).connect(g);
+        gn.gain.setValueAtTime(a * 1.5, w);
+        gn.gain.exponentialRampToValueAtTime(1e-4, w + 0.015);
+        o.frequency.value = x.m;
+        o.connect(g);
+        g.gain.setValueAtTime(a, w);
+        g.gain.exponentialRampToValueAtTime(1e-4, w + 0.06);
+        o.start(w);
+        o.stop(w + 0.07);
+        n.start(w);
+        n.stop(w + 0.03);
         break;
       }
       case 'kick': {

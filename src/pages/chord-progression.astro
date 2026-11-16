@@ -11,7 +11,7 @@ import { ROOMS } from '../lib/reverb';
 import '../tools/chord-progression/style.css';
 import How from '../tools/chord-progression/How.astro';
 import { ICON } from '../tools/chord-progression/icons';
-import { BPM, VOL0 } from '../tools/chord-progression/params';
+import { BPM, CLICK, VOL0 } from '../tools/chord-progression/params';
 import { SAMPLES } from '../tools/chord-progression/samples';
 import { GTR_ORDER, KEYS_ORDER, STYLE_NAMES, STYLE_ORDER } from '../tools/chord-progression/song';
 import Theory from '../tools/chord-progression/Theory.astro';
@@ -65,9 +65,10 @@ const gtrOpt = GTR_ORDER.map((v) => [v, VOICES[v].replace('ギター', '')] as [
         <ChoiceRow k="gtr" name="ギター" choices={gtrOpt} value="gtr" />
         <ParamRow d={BPM} />
         <ParamRow d={outVol(VOL0)} />
-        <ChoiceRow k="room" name="残響" layout="chips" choices={rooms} value="small" />
+        <ParamRow d={CLICK} />
+        <ChoiceRow k="room" name="残響" layout="chips" choices={rooms} value="off" />
       </div>
-      <div class="cp-row"><button type="button" class="tg" id="cp-loop" aria-pressed="true"><span class="led on" aria-hidden="true"></span>くり返し</button></div>
+      <div class="cp-row"><button type="button" class="tg" id="cp-loop" aria-pressed="true"><span class="led on" aria-hidden="true"></span>くり返し</button><button type="button" class="tg" id="cp-met" aria-pressed="false"><span class="led" aria-hidden="true"></span>メトロノーム</button></div>
     </Panel>
 
     <Panel hid="hd-song" title="曲">

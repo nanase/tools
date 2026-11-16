@@ -247,7 +247,8 @@ export function fromFile(o: unknown): Song | null {
     meter = oneOf<Meter>(x.meter, [3, 4]),
     bpm = int(x.bpm, BPM_MIN, BPM_MAX),
     style = oneOf<StyleId>(x.style, STYLE_ORDER),
-    keys = oneOf<KeysId>(x.keys, KEYS_ORDER),
+    /* ベルは外した音色。近いビブラフォンで開く */
+    keys = x.keys === 'bell' ? 'vib' : oneOf<KeysId>(x.keys, KEYS_ORDER),
     gtr = oneOf<GtrId>(x.gtr, GTR_ORDER);
   if (x.v !== 2 || !key || !meter || bpm === null || !style || !keys || !gtr) return null;
   if (!Array.isArray(x.chords) || x.chords.length > 500) return null;

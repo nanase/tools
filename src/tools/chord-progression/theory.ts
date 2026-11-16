@@ -404,7 +404,7 @@ export function voicing(c: Chord, k: Key): number[] {
 }
 
 /* ---------- 音色 ---------- */
-export type VoiceId = 'gtr' | 'cgt' | 'harp' | 'pf' | 'ep' | 'org' | 'str' | 'pad' | 'brs' | 'mar' | 'vib' | 'bell';
+export type VoiceId = 'gtr' | 'cgt' | 'harp' | 'pf' | 'ep' | 'org' | 'str' | 'pad' | 'brs' | 'mar' | 'vib';
 export const VOICES: Record<VoiceId, string> = {
   gtr: 'アコースティックギター',
   cgt: 'クラシックギター',
@@ -417,7 +417,6 @@ export const VOICES: Record<VoiceId, string> = {
   brs: 'ブラス',
   mar: 'マリンバ',
   vib: 'ビブラフォン',
-  bell: 'ベル',
 };
 export const VOICE_ORDER: readonly VoiceId[] = [
   'gtr',
@@ -431,5 +430,4 @@ export const VOICE_ORDER: readonly VoiceId[] = [
   'brs',
   'mar',
   'vib',
-  'bell',
 ];

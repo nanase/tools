@@ -114,13 +114,16 @@ const MEMBER_OF: Partial<Record<Voice, MemberId>> = {
   rim: 'drums',
   bass: 'bass',
 };
-export const memberOf = (v: Voice): MemberId => MEMBER_OF[v] ?? (v === 'gtr' || v === 'cgt' ? 'gtr' : 'keys');
+/** 音を弾くメンバー（メトロノームはどのメンバーでもない） */
+export const memberOf = (v: Voice): MemberId | null =>
+  v === 'clk' ? null : (MEMBER_OF[v] ?? (v === 'gtr' || v === 'cgt' ? 'gtr' : 'keys'));
 
 /**
  * 和音 1 つ分の音。t・end は和音の頭からの秒。spb は 16 分音符 1 つの秒。
- * 和音の頭が小節の途中でも、型は小節の頭から数える。和音の頭に鍵盤とベースの音がなければ足す（和音が変わったのが聞こえるように）
+ * 和音の頭が小節の途中でも、型は小節の頭から数える。和音の頭に鍵盤とベースの音がなければ足す（和音が変わったのが聞こえるように）。
+ * met ならメトロノームを拍ごとに鳴らす（小節の頭は高い音）
  */
-export function bandNotes(e: Entry, song: Song, on: Record<MemberId, boolean>, spb: number): NoteEv[] {
+export function bandNotes(e: Entry, song: Song, on: Record<MemberId, boolean>, spb: number, met = false): NoteEv[] {
   const P = STYLES[song.style][song.meter],
     bar = song.meter * 4,
     tones = voicing(e.ch, e.key),
@@ -159,6 +162,15 @@ export function bandNotes(e: Entry, song: Song, on: Record<MemberId, boolean>, s
         });
       });
   }
+  if (met)
+    for (let k = 0; k < e.beats; k++)
+      out.push({
+        t: k * 4 * spb,
+        m: (e.start + k) % song.meter === 0 ? 1760 : 1180,
+        v: 'clk',
+        end: k * 4 * spb,
+        vel: 1,
+      });
   return out.sort((a, b) => a.t - b.t);
 }
 
@@ -189,7 +201,7 @@ export class Player {
 
   constructor(
     private readonly audio: CpAudio,
-    private readonly ctx: () => { song: Song; on: Record<MemberId, boolean>; loop: boolean },
+    private readonly ctx: () => { song: Song; on: Record<MemberId, boolean>; loop: boolean; met: boolean },
   ) {}
 
   get playing(): boolean {
@@ -244,7 +256,7 @@ export class Player {
     const now = this.audio.now();
     if (now === null) return;
     if (this.nextAt < now - 0.1) this.nextAt = now + 0.02;
-    const { song, on, loop } = this.ctx(),
+    const { song, on, loop, met } = this.ctx(),
       { entries } = compute(song),
       spb = 60 / song.bpm / 4,
       horizon = now + lookahead(AHEAD);
@@ -260,7 +272,15 @@ export class Player {
         bus = this.audio.bus();
       if (!bus) return;
       const dur = e.beats * 4 * spb;
-      this.occ.push({ k: this.next, id: e.c.id, e, at: this.nextAt, dur, bus, pending: bandNotes(e, song, on, spb) });
+      this.occ.push({
+        k: this.next,
+        id: e.c.id,
+        e,
+        at: this.nextAt,
+        dur,
+        bus,
+        pending: bandNotes(e, song, on, spb, met),
+      });
       this.nextAt += dur;
       this.next++;
     }
@@ -268,7 +288,8 @@ export class Player {
       while (o.pending.length && o.at + o.pending[0].t < horizon) {
         const x = o.pending.shift() as NoteEv;
         this.audio.note(x, o.at + x.t, o.at + x.end, o.bus);
-        this.onHit?.(memberOf(x.v), o.at + x.t);
+        const m = memberOf(x.v);
+        if (m) this.onHit?.(m, o.at + x.t);
       }
     while (this.occ.length > 1 && this.occ[1].at + 3 < now) this.occ.shift();
     if (this.done && now >= this.nextAt) {

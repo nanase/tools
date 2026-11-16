@@ -1,7 +1,8 @@
 /**
  * コード進行のページの和音の地図（トネッツ）: 三角形 1 つが 1 つの三和音で、辺を共有する隣どうしは 2 音を共有する。
  * 調の中の和音を機能の色で塗り、曲の和音の並びを番号付きの道として引く。
- * 選んだ和音（なければ最後の和音）から行きやすい和音を、隣（縁の細い光）と進み方の強さ（太い光）で示す
+ * 選んだ和音（なければ最後の和音）から行きやすい和音を、隣（縁の細い光）と進み方の強さ（太い光）で示す。
+ * 演奏中は道を描かず、鳴っている和音と次の和音とその間の矢印だけを描く
  */
 import {
   ALL_PLACES,
@@ -24,6 +25,10 @@ export interface MapState {
   sel: number | null;
   /** 鳴っている和音（なければ −1） */
   play: number;
+  /** 演奏中に次に鳴る和音（なければ −1） */
+  next: number;
+  /** ドラッグ中の道の点と、その下の三角形 */
+  drag: { k: number; at: Place | null } | null;
   /** 鳴っている和音の中の進み（0〜1） */
   frac: number;
   hover: Place | null;
@@ -103,6 +108,7 @@ export class MapView {
   }
   /** 道の k 番目の点の位置（同じ三角形に何度も来たら、重ならないように輪に並べる） */
   nodePos(st: MapState, k: number): [number, number] {
+    if (st.drag?.k === k && st.drag.at) return this.px(centroidOf(st.drag.at));
     const at = st.song.chords[k].at,
       same = st.song.chords.filter((c) => samePlace(c.at, at)),
       m = same.length,
@@ -115,11 +121,17 @@ export class MapView {
   }
   /** 道の点（番号）に当たれば、その番号 */
   nodeAt(st: MapState, x: number, y: number): number {
-    for (let k = st.song.chords.length - 1; k >= 0; k--) {
-      const [nx, ny] = this.nodePos(st, k);
-      if (Math.hypot(nx - x, ny - y) < Math.max(11, this.s * 0.17)) return k;
+    const vis = this.visible(st);
+    for (let j = vis.length - 1; j >= 0; j--) {
+      const [nx, ny] = this.nodePos(st, vis[j]);
+      if (Math.hypot(nx - x, ny - y) < Math.max(11, this.s * 0.17)) return vis[j];
     }
     return -1;
+  }
+  /** 描く道の点: 演奏中は鳴っている和音と次の和音だけ */
+  private visible(st: MapState): number[] {
+    if (st.play < 0) return st.song.chords.map((_, k) => k);
+    return st.next >= 0 && st.next !== st.play ? [st.play, st.next] : [st.play];
   }
   /** 選んだ和音（なければ最後）: 調と候補の基準 */
   private base(st: MapState): number {
@@ -130,6 +142,7 @@ export class MapView {
     const { ctx, W, H, s } = this,
       col = { T: css('--cp-t'), S: css('--cp-s'), D: css('--cp-d') },
       lv = css('--cp-lv'),
+      cand = css('--cp-cand'),
       sel = css('--cp-sel'),
       ink = css('--ink'),
       ink3 = css('--ink-3'),
@@ -167,8 +180,8 @@ export class MapView {
       ctx.strokeStyle = line;
       ctx.lineWidth = 1;
       ctx.stroke();
-      /* 候補: 隣は細い縁、進み方の強さ 2・3 は太い縁 */
-      if (bc && bch && !samePlace(bc.at, p)) {
+      /* 候補: 隣は細い縁、進み方の強さ 2・3 は太い縁。演奏中は描かない */
+      if (bc && bch && st.play < 0 && !samePlace(bc.at, p)) {
         const c0 = centroidOf(bc.at),
           c1 = centroidOf(p),
           near = Math.hypot(c0[0] - c1[0], c0[1] - c1[1]) < NEAR,
@@ -177,7 +190,7 @@ export class MapView {
         if (near && (nb || l >= 2)) {
           ctx.save();
           ctx.clip();
-          ctx.strokeStyle = lv;
+          ctx.strokeStyle = cand;
           ctx.lineWidth = l >= 3 ? 7 : l >= 2 ? 4.5 : 2.5;
           ctx.globalAlpha = l >= 2 ? 0.95 : 0.6;
           ctx.stroke();
@@ -209,13 +222,17 @@ export class MapView {
       n = st.song.chords.length;
     if (!n) return;
     const pos = st.song.chords.map((_, k) => this.nodePos(st, k)),
-      focus = st.play >= 0 ? st.play : (st.sel ?? n - 1);
+      vis = this.visible(st),
+      focus = st.sel ?? n - 1,
+      /* 演奏中は鳴っている和音から次の和音への 1 本だけ */
+      segs: [number, number][] =
+        st.play >= 0 ? (vis.length > 1 ? [[st.play, st.next]] : []) : st.song.chords.slice(1).map((_, j) => [j, j + 1]);
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    for (let k = 1; k < n; k++) {
-      const [x0, y0] = pos[k - 1],
+    for (const [k0, k] of segs) {
+      const [x0, y0] = pos[k0],
         [x1, y1] = pos[k],
-        on = k === focus,
+        on = st.play >= 0 || k === focus,
         a = Math.atan2(y1 - y0, x1 - x0),
         mx = (x0 + x1) / 2,
         my = (y0 + y1) / 2,
@@ -237,8 +254,9 @@ export class MapView {
     }
     ctx.globalAlpha = 1;
     const r0 = this.r0;
-    st.song.chords.forEach((ch, k) => {
-      const [x, y] = pos[k],
+    for (const k of vis) {
+      const ch = st.song.chords[k],
+        [x, y] = pos[k],
         on = k === st.play,
         r = on ? r0 + 3 + 2 * Math.sin(st.frac * Math.PI * 2) : r0;
       ctx.beginPath();
@@ -260,6 +278,6 @@ export class MapView {
         ctx.textAlign = 'left';
         ctx.fillText(`→${keyTonic(ch.mod)}${ch.mod.m === 'min' ? 'm' : ''}`, x + r + 3, y - r);
       }
-    });
+    }
   }
 }

@@ -1,11 +1,11 @@
 /*
  * コード進行のページだけのスタイル（共通は src/styles/site.css）。
- * --cp-t・--cp-s・--cp-d は機能（トニック・サブドミナント・ドミナント）の色、--cp-lv は歩いた道とつながりの強さ、--cp-sel は選んだ和音。
+ * --cp-t・--cp-s・--cp-d は機能（トニック・サブドミナント・ドミナント）の色、--cp-lv は歩いた道、--cp-cand は行きやすい和音、--cp-sel は選んだ和音。
  * 地図とレールの色はキャンバスがこの値を読む
  */
-:root{--cp-t:#0a6e8a;--cp-s:#3d7f2a;--cp-d:#c0450f;--cp-lv:#9a6c00;--cp-sel:#2a64b0;--cp-map:#f3f5f0}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--cp-t:#52c4dd;--cp-s:#86cf6a;--cp-d:#ff8a4c;--cp-lv:#f2c230;--cp-sel:#80acee;--cp-map:#101417}}
-:root[data-theme="dark"]{--cp-t:#52c4dd;--cp-s:#86cf6a;--cp-d:#ff8a4c;--cp-lv:#f2c230;--cp-sel:#80acee;--cp-map:#101417}
+:root{--cp-t:#0a6e8a;--cp-s:#3d7f2a;--cp-d:#c0450f;--cp-lv:#9a6c00;--cp-cand:#8b3fc9;--cp-sel:#2a64b0;--cp-map:#f3f5f0}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--cp-t:#52c4dd;--cp-s:#86cf6a;--cp-d:#ff8a4c;--cp-lv:#f2c230;--cp-cand:#c08cff;--cp-sel:#80acee;--cp-map:#101417}}
+:root[data-theme="dark"]{--cp-t:#52c4dd;--cp-s:#86cf6a;--cp-d:#ff8a4c;--cp-lv:#f2c230;--cp-cand:#c08cff;--cp-sel:#80acee;--cp-map:#101417}
 
 .cp-fT{--fn:var(--cp-t)}.cp-fS{--fn:var(--cp-s)}.cp-fD{--fn:var(--cp-d)}
 
@@ -24,14 +24,19 @@
 .cp-lg i{display:inline-block;vertical-align:middle;margin-right:5px}
 .cp-sw{width:10px;height:10px;border-radius:2px;background:var(--fn)}
 .cp-road{width:22px;border-top:4px solid var(--cp-lv);border-radius:2px}
-.cp-cand{width:14px;height:12px;border:3px solid var(--cp-lv);border-radius:2px}
+.cp-cand{width:14px;height:12px;border:3px solid var(--cp-cand);border-radius:2px}
 /* 狭い画面では地図の下に演奏の操作・調・小窓を順に並べる */
 @media (max-width:560px){.cp-mapw{display:flex;flex-wrap:wrap;align-items:center;gap:8px}.cp-mapsc{flex:1 0 100%}.cp-tools{position:static;max-width:100%;border-radius:8px}.cp-keyb{position:static}.cp-keypop{position:static;flex:1 0 100%;width:auto}.cp-ed{flex:1 0 100%}}
 
 /* ===== 選んだ和音の小窓 ===== */
-.cp-ed{position:absolute;z-index:14;width:min(440px,calc(100% - 8px));padding:10px 12px 12px;border:1px solid var(--line-2);border-radius:8px;background:var(--surface);box-shadow:0 10px 28px rgb(0 0 0 / .32)}
-.cp-eh{display:flex;align-items:center;gap:6px;margin-bottom:6px}
-.cp-eh b{margin-right:auto;font-size:15px}
+.cp-ed{position:absolute;z-index:14;width:max-content;max-width:min(580px,calc(100% - 8px));padding:6px 8px;border:1px solid var(--line-2);border-radius:8px;background:var(--surface);box-shadow:0 6px 18px rgb(0 0 0 / .25)}
+.cp-eh{display:flex;flex-wrap:wrap;align-items:center;gap:5px}
+.cp-eh b{display:inline-grid;place-items:center;min-width:24px;height:24px;padding:0 4px;border:2px solid var(--cp-sel);border-radius:12px;font:700 12.5px var(--mono)}
+.cp-et{display:inline-flex;align-items:center;gap:5px;min-height:30px;padding:0 8px;border:1px solid var(--line);border-radius:6px;background:none;color:var(--ink);font:700 13px var(--sans);cursor:pointer}
+.cp-et span{font-weight:500;font-size:11.5px;color:var(--ink-3)}
+.cp-et i{font-style:normal;font-size:10px;color:var(--ink-3)}
+.cp-et:hover,.cp-et[aria-expanded="true"]{border-color:var(--ink-3)}
+.cp-ed .cp-er{max-width:440px;margin:7px 0 2px}
 .cp-ex{width:30px;height:30px;padding:0;border:1px solid var(--line);border-radius:4px;background:none;color:var(--ink-2);font-size:16px;line-height:1;cursor:pointer}
 .cp-ex:hover{border-color:var(--ink-3);color:var(--ink)}
 .cp-er{display:flex;align-items:flex-start;gap:8px;margin:7px 0}
