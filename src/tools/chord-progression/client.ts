@@ -197,7 +197,8 @@ const mapCv = $<HTMLCanvasElement>('#cp-map'),
   mapView = new MapView(mapCv),
   mapw = $('#cp-mapw');
 let hover: Place | null = null,
-  frac = 0;
+  /** 鳴っている和音が鳴り始めてからの秒 */
+  age = 0;
 /** 道の点のドラッグ（動かした先の三角形の和音に変える） */
 let ndrag: { k: number; x0: number; y0: number; moved: boolean; at: Place | null } | null = null;
 const playing = (): number => (player.playing ? (player.current()?.k ?? -1) : -1);
@@ -216,7 +217,7 @@ const mapState = (): MapState => {
     play: k,
     next: nextOf(k),
     drag: ndrag?.moved ? { k: ndrag.k, at: ndrag.at } : null,
-    frac,
+    age,
     hover,
   };
 };
@@ -332,20 +333,17 @@ const rcCv = $<HTMLCanvasElement>('#cp-rc'),
   coaster = new Coaster(rcCv);
 let rdrag: { k: number; x0: number; moved: boolean; slot: number; cx: number } | null = null;
 let cartBeat: number | null = null;
-const coasterState = (): CoasterState => {
-  const cue = entries[S.sel ?? S.cue]?.start ?? 0;
-  return {
-    entries,
-    beats,
-    meter: S.song.meter,
-    sel: S.sel,
-    play: playing(),
-    cart: cartBeat ?? entries[S.cue]?.start ?? 0,
-    focus: cartBeat ?? cue,
-    loop: S.loop,
-    caret: rdrag?.moved ? rdrag.cx : null,
-  };
-};
+/** 止まっている間のトロッコは、次に弾き始める和音の頭に置く */
+const coasterState = (): CoasterState => ({
+  entries,
+  beats,
+  sel: S.sel,
+  play: playing(),
+  cart: cartBeat ?? entries[S.cue]?.start ?? 0,
+  playing: player.playing,
+  loop: S.loop,
+  caret: rdrag?.moved ? rdrag.cx : null,
+});
 rcCv.addEventListener('pointerdown', (ev) => {
   const [x] = local(ev, rcCv),
     k = coaster.stationAt(coasterState(), x);
@@ -674,8 +672,8 @@ function frame(): void {
   const occ = player.current(),
     now = audio.now() ?? 0;
   if (occ) {
-    frac = Math.min(1, (now - occ.at) / occ.dur);
-    cartBeat = occ.e.start + frac * occ.e.beats;
+    age = now - occ.at;
+    cartBeat = occ.e.start + Math.min(1, age / occ.dur) * occ.e.beats;
     posText(occ.k);
   }
   draw();
@@ -690,9 +688,22 @@ function reveal(k: number | null): void {
     m = 60;
   if (x < sc.scrollLeft + m || x > sc.scrollLeft + sc.clientWidth - m) sc.scrollLeft = x - sc.clientWidth / 2;
 }
+const rcw = $('#cp-rcw');
 function layout(): void {
   mapView.layout();
-  coaster.layout();
+  /* 緊張のレールは地図の右下の空いた所に重ねる。入らなければ地図の下に置く */
+  const sc = $('#cp-mapsc'),
+    box = sc.scrollWidth > sc.clientWidth + 1 ? null : mapView.freeBox(104, 150);
+  rcw.classList.toggle('below', !box);
+  if (box) {
+    const w = Math.round(Math.min(box.w, 360));
+    rcw.style.left = `${box.x + box.w - w}px`;
+    rcw.style.top = `${box.y}px`;
+    coaster.layout(w, box.h);
+  } else {
+    rcw.style.left = rcw.style.top = '';
+    coaster.layout(rcw.clientWidth || mapw.clientWidth, 112);
+  }
   draw();
   reveal(S.sel);
   showEd();

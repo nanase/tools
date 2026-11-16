@@ -12,12 +12,13 @@ import {
   degreeChord,
   type Entry,
   keyAt,
+  LAT,
   type Place,
   type Song,
   samePlace,
   triadOf,
 } from './song';
-import { chordName, func, inKey, type Key, keyName, keyTonic, roman, trans } from './theory';
+import { chordName, func, inKey, type Key, keyTonic, roman, trans } from './theory';
 
 export interface MapState {
   song: Song;
@@ -29,8 +30,8 @@ export interface MapState {
   next: number;
   /** ドラッグ中の道の点と、その下の三角形 */
   drag: { k: number; at: Place | null } | null;
-  /** 鳴っている和音の中の進み（0〜1） */
-  frac: number;
+  /** 鳴っている和音が鳴り始めてからの秒（波紋に使う） */
+  age: number;
   hover: Place | null;
 }
 const css = (n: string): string => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
@@ -45,6 +46,9 @@ export function alpha(c: string, a: number): string {
 const NEAR = 2.3;
 /** 三角形の 1 辺の最小 [px] */
 const MIN_S = 50;
+/** 波紋が消えるまで [s] */
+const RIPPLE = 0.8;
+const REDUCE = matchMedia('(prefers-reduced-motion: reduce)');
 
 export class MapView {
   private W = 600;
@@ -210,12 +214,20 @@ export class MapView {
       }
     }
     this.route(st, { lv, sel, ink, surf, mono });
-    /* 調の名前は道の邪魔にならない右下へ */
-    ctx.font = `700 12px ${sans}`;
-    ctx.textAlign = 'right';
-    ctx.textBaseline = 'alphabetic';
-    ctx.fillStyle = ink3;
-    ctx.fillText(keyName(key), W - 10, H - 10);
+  }
+  /**
+   * 右下の三角形のない所に収まる箱（緊張のレールを重ねる）。幅が minW に足りなければ null。
+   * 格子の右の縁は高さ j の所で x = 5 + j / 2（格子の単位）なので、箱の上の辺の高さで縁より右に置く
+   */
+  freeBox(h: number, minW: number): { x: number; y: number; w: number; h: number } | null {
+    const { W, H, s, ox, oy } = this,
+      bottom = H - 8,
+      top = bottom - h,
+      j = (oy - top) / (s * (Math.sqrt(3) / 2)),
+      edge = LAT.i1 + 1 + j / 2,
+      left = ox + (edge + 0.05) * s,
+      w = W - 8 - left;
+    return w >= minW ? { x: left, y: top, w, h } : null;
   }
   private route(st: MapState, c: { lv: string; sel: string; ink: string; surf: string; mono: string }): void {
     const { ctx } = this,
@@ -234,23 +246,30 @@ export class MapView {
         [x1, y1] = pos[k],
         on = st.play >= 0 || k === focus,
         a = Math.atan2(y1 - y0, x1 - x0),
-        mx = (x0 + x1) / 2,
-        my = (y0 + y1) / 2,
-        h = on ? 8 : 6;
+        L = Math.hypot(x1 - x0, y1 - y0),
+        h = on ? 14 : 10,
+        /* 矢じりの先は次の点の縁の手前 */
+        tip = L - this.r0 - 2,
+        tx = x0 + Math.cos(a) * tip,
+        ty = y0 + Math.sin(a) * tip,
+        head = tip > this.r0 + h;
       ctx.globalAlpha = on ? 1 : 0.4;
       ctx.strokeStyle = c.lv;
       ctx.lineWidth = on ? 5 : 3;
       ctx.beginPath();
       ctx.moveTo(x0, y0);
-      ctx.lineTo(x1, y1);
+      ctx.lineTo(head ? tx - Math.cos(a) * h * 0.7 : x1, head ? ty - Math.sin(a) * h * 0.7 : y1);
       ctx.stroke();
       /* 向きのある線なので矢じり */
-      ctx.fillStyle = c.lv;
-      ctx.beginPath();
-      ctx.moveTo(mx + Math.cos(a) * h, my + Math.sin(a) * h);
-      ctx.lineTo(mx + Math.cos(a + 2.5) * h, my + Math.sin(a + 2.5) * h);
-      ctx.lineTo(mx + Math.cos(a - 2.5) * h, my + Math.sin(a - 2.5) * h);
-      ctx.fill();
+      if (head) {
+        ctx.fillStyle = c.lv;
+        ctx.beginPath();
+        ctx.moveTo(tx, ty);
+        ctx.lineTo(tx + Math.cos(a + 2.65) * h, ty + Math.sin(a + 2.65) * h);
+        ctx.lineTo(tx + Math.cos(a - 2.65) * h, ty + Math.sin(a - 2.65) * h);
+        ctx.closePath();
+        ctx.fill();
+      }
     }
     ctx.globalAlpha = 1;
     const r0 = this.r0;
@@ -258,7 +277,21 @@ export class MapView {
       const ch = st.song.chords[k],
         [x, y] = pos[k],
         on = k === st.play,
-        r = on ? r0 + 3 + 2 * Math.sin(st.frac * Math.PI * 2) : r0;
+        r = on ? r0 + 3 : r0;
+      /* 鳴り始めた和音の点から波紋が広がる */
+      if (on && !REDUCE.matches)
+        for (const d of [0, 0.22]) {
+          const t = st.age - d;
+          if (t < 0 || t > RIPPLE) continue;
+          const u = t / RIPPLE;
+          ctx.globalAlpha = (1 - u) * 0.85;
+          ctx.strokeStyle = c.lv;
+          ctx.lineWidth = 1 + 3 * (1 - u);
+          ctx.beginPath();
+          ctx.arc(x, y, r + u * r0 * 3.2, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.globalAlpha = 1;
+        }
       ctx.beginPath();
       ctx.arc(x, y, r, 0, Math.PI * 2);
       ctx.fillStyle = on ? c.lv : c.surf;

@@ -33,6 +33,7 @@ const gtrOpt = GTR_ORDER.map((v) => [v, VOICES[v].replace('ギター', '')] as [
       <div class="cp-mapw" id="cp-mapw">
         {/* 地図と小窓は操作で中身ごと描き直す */}
         <div class="cp-mapsc" id="cp-mapsc"><canvas id="cp-map" class="cp-map" role="img" aria-label="和音の地図。三角形 1 つが 1 つの和音で、隣どうしは 2 音を共有する" data-shift="ok"></canvas></div>
+        <div class="cp-rcw" id="cp-rcw"><canvas id="cp-rc" class="cp-rc" role="img" aria-label="緊張の高さのレールと和音の駅。高いほど戻りたく、落ちる所が解決。駅を押すと選び、横へドラッグすると並べ替え" data-shift="ok"></canvas></div>
         <div class="cp-tools" role="group" aria-label="演奏">
           <button type="button" class="tp-ib" id="cp-prev" title="前の小節へ" aria-label="前の小節へ"><svg viewBox="0 0 12 12" aria-hidden="true"><rect x="1.5" y="1.5" width="1.8" height="9"/><path d="M10.5 1.5v9L4 6z"/></svg></button>
           <button type="button" class="tp-pp" id="cp-pp" title="選んだ和音から演奏" aria-label="演奏"><svg class="i-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.2l7.6 4.8L3 10.8z"/></svg><svg class="i-pause" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="2.8" height="9"/><rect x="7.2" y="1.5" width="2.8" height="9"/></svg></button>
@@ -48,11 +49,6 @@ const gtrOpt = GTR_ORDER.map((v) => [v, VOICES[v].replace('ギター', '')] as [
         <span class="cp-fT"><i class="cp-sw"></i>トニック</span><span class="cp-fS"><i class="cp-sw"></i>サブドミナント</span><span class="cp-fD"><i class="cp-sw"></i>ドミナント</span>
         <span><i class="cp-road"></i>歩いた道</span><span><i class="cp-cand"></i>行きやすい和音（太いほど定番）</span>
       </div>
-    </Panel>
-
-    <Panel hid="hd-ten" title="緊張" class="cp-tenp">
-      <span slot="aux" class="aux">高いほど戻りたい · 落ちる所が解決</span>
-      <canvas id="cp-rc" class="cp-rc" role="img" aria-label="緊張の高さのレールと和音の駅。駅を押すと選び、横へドラッグすると並べ替え" data-shift="ok"></canvas>
     </Panel>
 
     <Panel hid="hd-band" title="バンド">
