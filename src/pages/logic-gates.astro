@@ -1,0 +1,97 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import More from '../components/More.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/logic-gates/style.css';
+import { GROUPS, SAMPLE, SAMPLES } from '../tools/logic-gates/circuits';
+import { HOW } from '../tools/logic-gates/how';
+import { circuitSvg } from '../tools/logic-gates/svg';
+import Theory from '../tools/logic-gates/Theory.astro';
+
+const name = '論理ゲート';
+const DEF = SAMPLE.xor;
+const WAVES = [
+  ['sq', '矩形波'],
+  ['tr', '台形波'],
+  ['fill', '塗りつぶし'],
+  ['num', '数値'],
+] as const;
+---
+<SiteLayout title={name} tool={{ id: 'logic-gates', name }}>
+  <PageTitle title={name}>AND・OR・NOT などのゲートと、組み合わせた回路の入力を切り替えて動きを確かめます。入力を変えた後の信号の変化はタイミングチャートに残り、押すとその時刻の状態を回路に出します。</PageTitle>
+
+  <div class="tgrid lg-grid" id="lg">
+    <Panel hid="hd-ckt" title="回路" class="lg-a-ckt" fixed>
+      <div slot="aux" class="seg" id="lg-sym" role="group" aria-label="記号">
+        <button type="button" data-v="mil" aria-pressed="true" title="形で表す記号（ANSI/IEEE Std 91）">MIL 記号</button>
+        <button type="button" data-v="jis" aria-pressed="false" title="四角に働きの記号を書く記号（JIS C 0617）">JIS 記号</button>
+      </div>
+      <div slot="aux" class="seg" id="lg-nt" role="group" aria-label="値の表し方">
+        <button type="button" data-v="01" aria-pressed="true">0・1</button>
+        <button type="button" data-v="LH" aria-pressed="false" title="L: 低い電圧、H: 高い電圧">L・H</button>
+      </div>
+      <div class="lg-pick">
+        <button type="button" class="lg-pv" id="lg-prev" title="前の回路" aria-label="前の回路"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M7.5 2.5L4 6l3.5 3.5"/></svg></button>
+        <div class="sel lg-selw"><select id="lg-sel" aria-label="回路" autocomplete="off">
+          {GROUPS.map(([g, nm]) => (
+            <optgroup label={nm}>{SAMPLES.filter((c) => c.g === g).map((c) => <option value={c.id} selected={c.id === DEF.id}>{c.name}</option>)}</optgroup>
+          ))}
+        </select></div>
+        <button type="button" class="lg-pv" id="lg-next" title="次の回路" aria-label="次の回路"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M4.5 2.5L8 6l-3.5 3.5"/></svg></button>
+        <span class="lg-sub" id="lg-sub">{DEF.sub}</span>
+        <span class="lg-rp" id="lg-rp" aria-live="polite"></span>
+      </div>
+      {/* 回路を切り替えると図の大きさが変わる（図そのものの大きさ） */}
+      <div class="lg-tip" id="lg-tip" role="tooltip" hidden></div>
+      <div class="lg-bench" id="lg-bench" data-shift="ok" set:html={circuitSvg(DEF, 'mil')} />
+      <div class="lg-foot">
+        <span class="lg-ex" id="lg-ex">{DEF.expr.map((e) => <span set:html={e} />)}</span>
+        <span class="lg-xtr" id="lg-xtr"></span>
+        <span class="lg-stat" id="lg-stat"></span>
+      </div>
+      {/* 回路ごとの補足。回路を切り替えたときだけ行数が変わる。発振などの知らせは 1 行に収まる */}
+      <p class="lg-note" id="lg-note" aria-live="polite" data-shift="ok"></p>
+    </Panel>
+
+    <Panel hid="hd-tt" title="真理値表" class="lg-a-tt">
+      <span slot="aux" class="aux" id="lg-ttn"></span>
+      <div class="lg-ttw" id="lg-tt" data-shift="ok"></div>
+    </Panel>
+
+    <Panel hid="hd-tc" title="タイミングチャート" class="lg-a-tc">
+      <button slot="aux" type="button" class="tg" id="lg-mid" aria-pressed="false" title="中のゲートの出力の行も出す"><span class="led" aria-hidden="true"></span>途中の信号</button>
+      {/* 行は回路の入力と出力の数。回路を切り替えると中身ごと替わる */}
+      <div class="lg-chart" id="lg-chart" data-shift="ok" tabindex="0" role="slider" aria-label="タイミングチャートの時刻（押すとその時刻の状態を回路に出す）" aria-valuemin={-27} aria-valuemax={0} aria-valuenow={0}></div>
+      <div class="lg-tinfo" id="lg-tinfo" aria-live="polite"></div>
+      <More id="lg-view" title="表示の設定">
+        <div class="ptab"><ChoiceRow k="wave" name="波形" choices={WAVES} value="sq" /></div>
+      </More>
+    </Panel>
+
+    <Panel hid="hd-use" title="使われる所" class="lg-a-use">
+      {/* 回路を切り替えると中身ごと替わる */}
+      <ul class="lg-uses" id="lg-uses" data-shift="ok">{DEF.uses.map((u) => <li>{u}</li>)}</ul>
+    </Panel>
+
+    <Panel hid="hd-how" title="論理ゲートのしくみ" class="lg-a-how">
+      <ol class="lg-how">
+        {HOW.map(([h, fig, d], i) => (
+          <li><h3><b>{i + 1}</b>{h}</h3><Fragment set:html={fig} /><p>{d}</p></li>
+        ))}
+      </ol>
+    </Panel>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools current="logic-gates" />
+  <script>
+    import '../tools/logic-gates/client';
+  </script>
+</SiteLayout>

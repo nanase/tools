@@ -50,6 +50,7 @@ put(['wavelet-denoise'], { click: ['#ab-pp'], dur: 15 });
 put(['sampling-theorem'], { click: ['#smp-pp'], dur: 15 });
 put(['vvvf'], { click: ['#vv-auto'], dur: 40 });
 put(['chord-progression'], { click: ['#cp-pp'], dur: 30 });
+put(['pendulum-clock'], { click: ['#pc-snd'], dur: 15 });
 
 /* ---------- ページへ入れる計測 ---------- */
 const PROC = `${kWeight.toString()}

@@ -45,7 +45,7 @@ export const TOOLS: Tool[] = [
     t: 'タイマIC 555',
     d: '抵抗器とコンデンサを使ったタイマIC555の出力をシミュレートします。',
     ic: 'sq',
-    r: ['passive-combination', 'colorcode', 'i2c', 'pcb-coil'],
+    r: ['passive-combination', 'colorcode', 'logic-gates', 'i2c'],
     k: 'ne555 発振 非安定 マルチバイブレータ timer シミュレータ simulator',
   },
   {
@@ -144,7 +144,7 @@ export const TOOLS: Tool[] = [
     t: 'SPI',
     d: '4 本の線で機器がデータを交換する SPI の信号を追います。',
     ic: 'spi',
-    r: ['i2c', 'jjy', 'timer555', 'oscilloscope'],
+    r: ['i2c', 'logic-gates', 'jjy', 'timer555'],
     k: 'spi serial peripheral interface シリアル通信 serial bus バス sck sclk mosi miso ss cs chip select チップセレクト copi cipo sdo sdi シフトレジスタ shift register cpol cpha spiモード spi mode 全二重 full duplex デイジーチェーン daisy chain マスタ スレーブ コントローラ ペリフェラル controller peripheral ロジックアナライザ logic analyzer',
   },
   {
@@ -336,6 +336,25 @@ export const TOOLS: Tool[] = [
     r: ['pcb-coil', 'passive-combination', 'maxwell-demon', 'timer555'],
     k: 'ジュール熱 温度上昇 許容電流 溶断 ヒューズ 表皮効果 対流 放射 プルーム 銅線 電線 パターン 基板 プリント基板 ipc-2152 joule heating ampacity fusing current trace temperature',
   },
+  {
+    id: 'logic-gates',
+    c: '電子回路',
+    t: '論理ゲート',
+    d: 'ゲートと回路の入力を切り替えて真理値表と見比べます。',
+    ic: 'lg',
+    r: ['karnaugh', 'timer555', 'i2c', 'spi'],
+    k: 'logic gate ロジック 論理回路 デジタル回路 digital and or not nand nor xor xnor 論理積 論理和 否定 排他的論理和 真理値表 truth table 論理式 ブール代数 boolean ド・モルガン de morgan 万能ゲート 半加算器 全加算器 加算器 adder マルチプレクサ multiplexer デコーダ decoder 比較器 comparator パリティ parity 多数決 majority ラッチ latch sr ラッチ d ラッチ フリップフロップ flip-flop リングオシレータ ring oscillator タイミングチャート timing chart 伝搬遅延 propagation delay ハザード hazard グリッチ glitch mil 記号 jis 記号 ieee 91',
+  },
+  {
+    id: 'karnaugh',
+    c: '電子回路',
+    t: 'カルノー図',
+    d: '真理値表から最小の論理式と回路を求めます。',
+    ic: 'km',
+    r: ['logic-gates', 'expression-parsing', 'regex', 'timer555'],
+    k: 'karnaugh map k-map カルノーマップ ベイチ図 veitch 真理値表 truth table 論理式 簡単化 最小化 minimization 論理圧縮 ブール代数 boolean 論理回路 デジタル回路 積和形 和積形 sop pos 主加法標準形 主乗法標準形 最小項 最大項 minterm maxterm 主項 必須主項 prime implicant クワイン・マクラスキー quine-mccluskey ペトリック petrick ドントケア dont care 不定 グレイコード gray code nand nor ハザード hazard 7 セグメント 全加算器',
+  },
+
   {
     id: 'pcm',
     c: '音声形式',
@@ -579,8 +598,17 @@ export const TOOLS: Tool[] = [
     t: '変速機',
     d: 'CT125 の遠心クラッチと 4 段の変速機の動きを追います。',
     ic: 'gb',
-    r: ['engine', 'piano-action', 'maxwell-demon', 'siphon'],
+    r: ['engine', 'piano-action', 'pendulum-clock', 'maxwell-demon'],
     k: '変速機 トランスミッション transmission gearbox ギアボックス ミッション 遠心クラッチ centrifugal clutch 自動遠心クラッチ 多板クラッチ multi-plate clutch 湿式 ワンウェイクラッチ one-way clutch ドグ dog clutch 常時噛合 constant mesh シフトドラム shift drum シフトフォーク shift fork チェンジペダル ロータリー rotary スプロケット sprocket チェーン chain 1 次減速 2 次減速 減速比 gear ratio 歯車 歯数 gear エンジンブレーキ engine brake ハンターカブ hunter cub ct125 スーパーカブ super cub cub ja65 honda ホンダ バイク オートバイ motorcycle',
+  },
+  {
+    id: 'pendulum-clock',
+    c: '物理',
+    t: '振り子時計',
+    d: '置時計の歯車と振り子を、歯の当たりまで動かします。',
+    ic: 'pcl',
+    r: ['transmission', 'piano-action', 'jjy', 'pendulum'],
+    k: '振り子時計 振子時計 pendulum clock 置時計 置き時計 mantel clock 掛け時計 柱時計 ボンボン時計 機械式時計 mechanical clock 脱進機 escapement アンクル anchor がんぎ車 escape wheel リコイル recoil グラハム graham デッドビート deadbeat ブロコ brocot 振り子 pendulum 振り角 円弧誤差 circular error ゼンマイ mainspring 香箱 barrel 8 日巻き eight-day 輪列 gear train 歯車 時打ち strike 数取り車 count wheel ゴング gong ハンマー 風切り fly 地震 earthquake 物理 physics',
   },
   {
     id: 'bifurcation',
@@ -678,7 +706,7 @@ export const TOOLS: Tool[] = [
     t: '式の構文解析',
     d: '式が木になる手順と、決まりで変わる答えを見ます。',
     ic: 'ep',
-    r: ['sort', 'regex', 'binary-heap', 'list-queue-stack'],
+    r: ['sort', 'regex', 'logic-gates', 'binary-heap'],
     k: '構文解析 parser parsing 式 expression 数式 字句解析 lexer tokenizer トークン 構文木 抽象構文木 ast 木 tree スタック stack 優先順位 precedence 結合 associativity 左結合 右結合 操車場 shunting yard ダイクストラ dijkstra 逆ポーランド シフト還元 shift reduce lr 再帰下降 recursive descent pratt バックトラック backtracking パックラット packrat peg 括弧 電卓 calculator excel apl コンパイラ compiler アルゴリズム algorithm',
   },
   {

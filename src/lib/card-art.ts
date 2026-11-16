@@ -986,6 +986,42 @@ const EG_GUARD: [number, number][] = [
   [25.5, 7],
   [26, 3.4],
 ];
+/* ===== 振り子時計（pcl）: 輪列・がんぎ車とアンクル・振り子・文字盤。12 コマ/秒、1 往復 1 秒、1 周 2 秒 ===== */
+const PCL_FPS = 12;
+const pclAt = (cx: number, cy: number, r: number, a: number): [number, number] => [
+  cx + r * Math.cos(a),
+  cy + r * Math.sin(a),
+];
+/** がんぎ車の進み（歯の数）: 振り子が真ん中を過ぎた直後に半歯ずつ進み、落ちた直後のコマで少し戻る。1 周で 2 歯 */
+function pclSteps(k: number): number {
+  const half = PCL_FPS / 2,
+    q = Math.floor((k + half / 2) / half),
+    u = mod(k + half / 2, half);
+  return mod(q * 0.5 + (u === 0 ? -0.15 : 0), 2);
+}
+/** のこぎり歯のがんぎ車（先端が回る向きに傾く） */
+function pclSaw(cx: number, cy: number, r: number, z: number, a0: number): string {
+  const pts: [number, number][] = [];
+  for (let k = 0; k < z; k++) {
+    const a = a0 + (k * TAU) / z,
+      pa = TAU / z;
+    pts.push(pclAt(cx, cy, r - 3, a - 0.12 * pa), pclAt(cx, cy, r, a), pclAt(cx, cy, r - 3, a - 0.85 * pa));
+  }
+  return `${pl(pts)}Z`;
+}
+/** アンクル: 支点 (px, py) から、がんぎ車（中心 (cx, cy)・半径 r）の上の 2 か所の爪へ。th だけ傾ける */
+function pclAnchor(px: number, py: number, cx: number, cy: number, r: number, th: number): string {
+  const rot = ([x, y]: [number, number]): [number, number] => [
+    px + (x - px) * Math.cos(th) - (y - py) * Math.sin(th),
+    py + (x - px) * Math.sin(th) + (y - py) * Math.cos(th),
+  ];
+  let d = '';
+  for (const s of [-1, 1]) {
+    const [ex, ey] = pclAt(cx, cy, r + 0.5, -Math.PI / 2 + s * 0.8);
+    d += pl([[px, py], rot([ex, ey]), rot([ex + s * 2.4, ey + 3.4])]);
+  }
+  return d;
+}
 
 export const ART: Record<string, Art> = {
   /* タイマIC 555: 出力（周期 36、High 24）と C1 の電圧。時間が流れる */
@@ -3004,6 +3040,75 @@ export const ART: Record<string, Art> = {
     });
     return s;
   },
+  /* 論理ゲート: NOR 2 個の SR ラッチ。S と R に交互にパルスを入れ、Q と Q̄ が入れ替わって次のパルスまで残る。
+     1 の線とランプは ch1、0 は細い灰（4 コマ/s、16 コマで 1 周） */
+  lg(t) {
+    const f = mod(Math.floor(t * 4 + 1e-9), 16),
+      S = f >= 1 && f < 3,
+      R = f >= 9 && f < 11,
+      q = f >= 1 && f < 9;
+    const W = (on: boolean, d: string) => P(on ? 'a' : 'c t', d);
+    const sw = (y: number, on: boolean) =>
+      on ? `<rect class="fa" x="4" y="${y - 4}" width="8" height="8"/>` : P('c', `M4 ${y - 4}h8v8h-8Z`);
+    const lamp = (y: number, on: boolean) => P(on ? 'fa' : 'c', `M101.5 ${y}a4 4 0 1 0 8 0a4 4 0 1 0 -8 0Z`);
+    /* OR の形（左端 44、高さ 14、幅 18.2）と反転の丸（中心 64） */
+    const nor = (y: number) =>
+      P('c', `M44 ${y - 7}Q54.6 ${y - 7} 62.2 ${y}Q54.6 ${y + 7} 44 ${y + 7}Q47.5 ${y} 44 ${y - 7}Z`) +
+      P('c', `M62.2 ${y}a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0 -3.6 0Z`);
+    return (
+      sw(9, R) +
+      sw(39, S) +
+      W(R, 'M12 9H44') +
+      W(S, 'M12 39H44') +
+      W(!q, 'M65.8 35H84V26H34V17H44') +
+      W(q, 'M65.8 13H80V22H38V31H44') +
+      nor(13) +
+      nor(35) +
+      W(q, 'M84 13H100') +
+      W(!q, 'M80 35H100') +
+      lamp(13, q) +
+      lamp(35, !q)
+    );
+  },
+  /* カルノー図: 4×4 の図の中央の 4 マス（ch1）と四隅の 4 マス（ch2）の囲みと、同じ色の AND 2 個・OR・ランプ。
+     押したマスの太い枠が動き、そのマスを覆う囲みの AND の出力とランプが光る（2 コマ/s、8 コマで 1 周） */
+  km(t) {
+    const x0 = 4,
+      y0 = 4,
+      cs = 10,
+      V = ['1001', '0110', '0110', '1001'];
+    const PATH: readonly [number, number][] = [
+      [1, 1],
+      [0, 1],
+      [3, 3],
+      [1, 2],
+      [2, 0],
+      [0, 0],
+      [2, 2],
+      [3, 1],
+    ];
+    const [r, c] = PATH[mod(Math.floor(t * 2 + 1e-9), 8)];
+    const inA = r >= 1 && r <= 2 && c >= 1 && c <= 2,
+      inB = (r === 0 || r === 3) && (c === 0 || c === 3),
+      y = inA || inB;
+    let g = '';
+    for (let i = 1; i < 4; i++) g += `M${x0} ${y0 + i * cs}h40M${x0 + i * cs} ${y0}v40`;
+    let s = P('c t', g) + P('c', `M${x0} ${y0}h40v40h-40Z`);
+    for (let ri = 0; ri < 4; ri++)
+      for (let ci = 0; ci < 4; ci++)
+        if (V[ri][ci] === '1')
+          s += `<rect class="fc" x="${x0 + ci * cs + 2.6}" y="${y0 + ri * cs + 2.6}" width="4.8" height="4.8"/>`;
+    /* 中央の囲みと、端で開いた四隅の囲み */
+    s += `<rect class="a" x="15.6" y="15.6" width="16.8" height="16.8" rx="2.5"/>`;
+    s += P('b', 'M1.5 12.4H12.4V1.5M46.5 12.4H35.6V1.5M1.5 35.6H12.4V46.5M46.5 35.6H35.6V46.5');
+    s += P('c w', `M${x0 + c * cs + 1} ${y0 + r * cs + 1}h8v8h-8Z`);
+    /* AND（左端 62、高さ 12）・OR・ランプ */
+    const and = (yy: number) => `M62 ${yy - 6}H71A6 6 0 0 1 71 ${yy + 6}H62Z`;
+    s += P('c t', 'M56 10H62M56 16H62M56 32H62M56 38H62') + P('a', and(13)) + P('b', and(35));
+    s += P(inA ? 'a' : 'c t', 'M77 13H82V21H88') + P(inB ? 'b' : 'c t', 'M77 35H82V27H88');
+    s += P('c', 'M88 18Q97 18 103.6 24Q97 30 88 30Q91 24 88 18Z') + P(y ? 'a' : 'c t', 'M103.6 24H108.5');
+    return s + P(y ? 'fa' : 'c', 'M109.4 24a3.6 3.6 0 1 0 7.2 0a3.6 3.6 0 1 0 -7.2 0Z');
+  },
   /* SPI: 左のマスタから 3 本の線（SCK・MOSI・MISO）と 3 本の CS。選ぶ機器が順に替わり、選んだ機器を塗る。
      MOSI のビットは右へ、MISO のビットは左へ、4 コマで 1 ビット進む（8 コマ/s、1 台に 16 コマ） */
   spi(t) {
@@ -3111,6 +3216,32 @@ export const ART: Record<string, Art> = {
       P('c', wheel(x - 3.4) + wheel(x + 3.4))
     );
   },
+  pcl(t) {
+    const k = Math.floor(t * PCL_FPS + 1e-9),
+      th = 0.22 * Math.cos((TAU * k) / PCL_FPS),
+      step = pclSteps(k),
+      g = step / 2;
+    let s = P('b', gbGear(22, 30, 14, 28, (-g * TAU) / 28 + 0.05)) + gbDot('b', 22, 30, 2);
+    s += P('b', gbGear(45, 18, 8, 16, (g * TAU) / 16 + 0.2)) + gbDot('b', 45, 18, 1.5);
+    s += P('a', pclSaw(64, 26, 10, 15, -Math.PI / 2 + (step * TAU) / 15)) + gbDot('a', 64, 26, 1.8);
+    s += P('a', pclAnchor(64, 9, 64, 26, 10, -th));
+    const [bx, by] = pclAt(64, 9, 36, Math.PI / 2 - th);
+    s +=
+      P(
+        'c t',
+        pl([
+          [64, 9],
+          [bx, by],
+        ]),
+      ) + gbDot('fc', bx, by, 4);
+    s += gbDot('c', 100, 24, 16);
+    for (let i = 0; i < 12; i++)
+      s += P('c t', pl([pclAt(100, 24, 13, (i * TAU) / 12), pclAt(100, 24, 15, (i * TAU) / 12)]));
+    s +=
+      P('c', pl([[100, 24], pclAt(100, 24, 13, -Math.PI / 2 - 0.6)])) +
+      P('c w', pl([[100, 24], pclAt(100, 24, 8, -Math.PI / 2 + 1.9)]));
+    return s;
+  },
 };
 
 /**
@@ -3191,10 +3322,13 @@ export const LOOP: Record<string, number> = {
   mxd: MX.L,
   i2c: I2C.scl.length / I2C_QPS,
   spi: 6,
+  lg: 4,
+  km: 4,
   gb: 2,
   sf: 4,
   wh: 3,
   cp: 3.6,
+  pcl: 2,
 };
 
 /** 止まっているときの図柄（ビルド時に HTML へ出す） */

@@ -1,0 +1,83 @@
+/* 振り子時計のページだけのスタイル（共通は src/styles/site.css）。--pc-go は時計の輪列、--pc-st は時打ちの輪列、--pc-mw は表輪列、--pc-steel は鋼の部品、--pc-hot は当たっている爪とゴング */
+:root{--pc-go:#0a6e8a;--pc-go-bg:#dcebee;--pc-st:#9a6c00;--pc-st-bg:#f2e7cd;--pc-mw:#5a4f8a;--pc-mw-bg:#e6e2f2;--pc-steel:#4a535a;--pc-steel-2:#8a939b;--pc-hot:#c0392b;--pc-hot-bg:#f6d5cf}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--pc-go:#5ec4dc;--pc-go-bg:#16323a;--pc-st:#f2c230;--pc-st-bg:#3a3018;--pc-mw:#b2a6ec;--pc-mw-bg:#2a2640;--pc-steel:#aab3ba;--pc-steel-2:#6c757d;--pc-hot:#ff7a6b;--pc-hot-bg:#3d2220}}
+:root[data-theme="dark"]{--pc-go:#5ec4dc;--pc-go-bg:#16323a;--pc-st:#f2c230;--pc-st-bg:#3a3018;--pc-mw:#b2a6ec;--pc-mw-bg:#2a2640;--pc-steel:#aab3ba;--pc-steel-2:#6c757d;--pc-hot:#ff7a6b;--pc-hot-bg:#3d2220}
+
+/* 枠の並び: 機械（全幅）→ ゼンマイと振り子・揺れ・時刻と時打ち → しくみ → 動作原理と式 */
+.pc-3{display:grid;gap:26px 16px;min-width:0}
+@media (min-width:900px){.pc-3{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+@media (min-width:1100px){.pc-3{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr) minmax(0,1.2fr)}}
+.pc-aux{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+/* 一時停止と音は速さの群と別の操作なので、あいだを空けて分ける */
+#pc-pause{margin-right:14px}
+#pc-snd{margin-left:14px}
+.pc-sg{display:grid;gap:6px}
+.pc-sl{font-size:12px;font-weight:700;color:var(--ink-3)}
+.pc-sg .pc-row{margin-top:0}
+.pc-fig .pha{flex-wrap:wrap;justify-content:flex-end}
+@media (max-width:899px){.pc-fig>.ph>.pha{position:static;transform:none;justify-content:flex-start;padding:0;margin:0 0 10px;background:none}}
+
+/* 機械の図: 左に正面図、右に全体図と文字盤、下に展開図 */
+.pc-a{display:grid;gap:10px 14px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:900px){.pc-a{grid-template-columns:minmax(0,1.55fr) minmax(0,1fr)}}
+.pc-main,.pc-side{position:relative;min-width:0}
+.pc-side{display:flex;flex-direction:column;gap:10px}
+.pc-v{position:relative;min-width:0}
+.pc-cap{position:absolute;left:4px;top:2px;font-size:12px;font-weight:700;color:var(--ink-3);pointer-events:none}
+.pc-cv{display:block;width:100%;touch-action:none}
+.pc-h-front{height:700px;cursor:grab}.pc-h-mini{height:300px;cursor:pointer}.pc-h-dial{height:170px;cursor:grab}.pc-h-sec{height:290px}
+@media (max-width:899px){.pc-h-front{height:520px}.pc-h-mini{height:240px}.pc-h-dial{height:160px}.pc-v-sec{overflow-x:auto}.pc-v-sec canvas{min-width:760px}}
+.pc-v-sec{margin-top:12px;border-top:1px solid var(--line);padding-top:6px}
+.pc-focus{flex-wrap:wrap}
+@media (max-width:899px){.pc-side{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));align-items:start}.pc-side>.pc-focus,.pc-side>.pc-tset{grid-column:1/-1}}
+.pc-zb{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:6px}
+.pc-zb .tg{min-width:34px;justify-content:center}
+.pc-hint{font-size:12px;color:var(--ink-3)}
+.pc-tset{display:flex;flex-wrap:wrap;justify-content:center;gap:6px}
+
+/* 凡例 */
+.pc-leg{margin-bottom:8px}
+.pc-sq{display:inline-block;width:12px;height:12px;border-radius:50%;border:1.5px solid}
+.pc-sq.go{background:var(--pc-go-bg);border-color:var(--pc-go)}
+.pc-sq.st{background:var(--pc-st-bg);border-color:var(--pc-st)}
+.pc-sq.mw{background:none;border-color:var(--pc-mw)}
+.pc-sq.hot{border-radius:2px;background:var(--pc-hot);border-color:var(--pc-hot)}
+.pc-sq.lens{border-radius:2px;background:none;border-color:var(--accent)}
+.pc-dash{display:inline-block;width:14px;height:8px;border:1px dashed var(--ink-3);border-radius:50%}
+.pc-dot{display:inline-block;width:14px;height:8px;border:1px dotted var(--ink-2);border-radius:50%}
+
+/* 部品名の吹き出し */
+.pc-tip{position:absolute;z-index:5;display:flex;flex-direction:column;gap:2px;width:max-content;max-width:min(260px,calc(100% - 8px));padding:6px 9px;border:1px solid var(--line-2);border-radius:4px;background:var(--surface);box-shadow:0 2px 8px rgb(0 0 0 / .18);font-size:12px;color:var(--ink-2);pointer-events:none}
+.pc-tip[hidden]{display:none}
+.pc-tip b{font-size:13px;color:var(--ink)}
+
+/* ゼンマイ */
+.pc-wind{display:grid;grid-template-columns:54px minmax(0,1fr) 92px auto;align-items:center;gap:10px;min-height:44px;border-bottom:1px solid var(--line)}
+.pc-wn{font-size:13.5px;font-weight:700}
+.pc-bar{height:16px;border:1px solid var(--line-2);border-radius:3px;background:var(--inset);overflow:hidden;cursor:pointer;touch-action:none}
+.pc-bar:hover,.pc-bar:focus-visible{border-color:var(--ink-3)}
+.pc-bar i{display:block;height:100%;background:var(--ink-3)}
+.pc-wind[data-w="T"] .pc-bar i{background:var(--pc-go)}
+.pc-wind[data-w="S"] .pc-bar i{background:var(--pc-st)}
+.pc-wind b{font:500 14px var(--mono);text-align:right;white-space:nowrap}
+.pc-key{min-height:34px;padding:0 12px;touch-action:none;user-select:none}
+.pc-key svg{width:14px;height:14px;fill:currentColor}
+.pc-key[aria-pressed="true"]{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.pc-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-top:12px}
+.pc-row .tg[disabled]{opacity:.45;cursor:default}
+.pc-note{min-width:0;overflow:hidden;font-size:13px;color:var(--ink-3);white-space:nowrap;text-overflow:ellipsis}
+.pc-met dd{font:500 17px var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* しくみ */
+.pc-how{display:grid;gap:10px 16px;grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}
+.pc-hw{display:flex;gap:10px;align-items:flex-start}
+.pc-hw>b{flex:none;display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--ink);color:var(--surface);font:700 12px var(--mono)}
+.pc-hw h3{margin:0;font-size:14px}
+.pc-hw p{margin:2px 0 0;font-size:13px;color:var(--ink-2)}
+.pc-hw .pc-sub{font-size:12px;color:var(--ink-3)}
+.pc-tab{width:100%;margin-top:16px;border-collapse:collapse;font:500 13px var(--sans)}
+.pc-tab th{font:700 12px var(--sans);color:var(--ink-3);text-align:left;padding:4px 8px;border-bottom:1px solid var(--line-2)}
+.pc-tab td{padding:5px 8px;border-bottom:1px solid var(--line)}
+.pc-tab td:nth-child(4),.pc-tab td:nth-child(5){font-family:var(--mono)}
+.pc-tab tr:last-child td{border-bottom:0}
+@media (max-width:600px){.pc-tabw{overflow-x:auto}}

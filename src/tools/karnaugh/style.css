@@ -1,0 +1,164 @@
+/* カルノー図のページ。--km-on 1 の線とランプ・--km-on-soft 1 の地・--km-off 0 の線・--km-dc Don't Care・--km-tbg 表と図の地・--km-k0〜7 項の色 */
+:root{--km-on:#d9480f;--km-on-soft:#fbe3d3;--km-off:#8d959c;--km-dc:#7a5fa8;--km-tbg:#fff;--km-bench:#fff;--km-rule:#edf0ea;--km-rule-2:#d9ded6;
+  --km-k0:#1c6fd1;--km-k1:#2b8a3e;--km-k2:#9c36b5;--km-k3:#0b7285;--km-k4:#c2255c;--km-k5:#5f3dc4;--km-k6:#5c940d;--km-k7:#946200}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--km-on:#ff8a4c;--km-on-soft:#4a2a18;--km-off:#5d666d;--km-dc:#b9a3e8;--km-tbg:var(--screen);--km-bench:transparent;--km-rule:transparent;--km-rule-2:transparent;
+  --km-k0:#5fa8ff;--km-k1:#5fd37a;--km-k2:#d68ff0;--km-k3:#3fc6dc;--km-k4:#ff7aa8;--km-k5:#a08bff;--km-k6:#a6dd50;--km-k7:#e3b341}}
+:root[data-theme="dark"]{--km-on:#ff8a4c;--km-on-soft:#4a2a18;--km-off:#5d666d;--km-dc:#b9a3e8;--km-tbg:var(--screen);--km-bench:transparent;--km-rule:transparent;--km-rule-2:transparent;
+  --km-k0:#5fa8ff;--km-k1:#5fd37a;--km-k2:#d68ff0;--km-k3:#3fc6dc;--km-k4:#ff7aa8;--km-k5:#a08bff;--km-k6:#a6dd50;--km-k7:#e3b341}
+
+/* 並び: PC は左に真理値表（右の列の高さに合わせて中をスクロール）、右にカルノー図と式、その下に回路 */
+.km-grid{grid-template-areas:"tt" "map" "ex" "ckt" "how" "thy"}
+.km-a-tt{grid-area:tt}.km-a-map{grid-area:map}.km-a-ex{grid-area:ex}.km-a-ckt{grid-area:ckt}.km-a-how{grid-area:how}
+.km-grid>.a-thy{grid-area:thy}
+.km-ttw{max-height:380px;overflow:auto;background:var(--km-tbg);border:1px solid var(--line);border-radius:3px}
+@media (min-width:1000px){
+  .km-grid{grid-template-columns:minmax(260px,320px) auto minmax(0,1fr);grid-template-areas:"tt map ex" "tt ckt ckt" "how how how" "thy thy thy";align-items:start}
+  .km-a-tt{align-self:stretch;display:flex;flex-direction:column}
+  .km-a-tt .km-ttw{flex:1 1 0;min-height:200px;max-height:none;contain:size}
+}
+
+/* サンプルの選択と入力・出力の数 */
+.km-pick{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 4px}
+.km-pick .tg{white-space:nowrap}
+.km-pv{display:inline-grid;place-items:center;flex:none;width:30px;height:30px;padding:0;border:1px solid var(--line-2);border-radius:4px;background:var(--surface);color:var(--ink-2);cursor:pointer}
+.km-pv.sm{width:24px;height:24px}
+.km-pv:hover:not(:disabled){border-color:var(--ink-3);color:var(--ink)}
+.km-pv:disabled{opacity:.4;cursor:default}
+.km-pv svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.km-selw{position:relative;flex:1 1 auto;min-width:0;max-width:220px}
+.km-selw select{appearance:none;width:100%;height:30px;padding:0 30px 0 10px;border:1px solid var(--line-2);border-radius:4px;background:var(--inset);color:var(--ink);font:700 14px/1.2 var(--sans);text-overflow:ellipsis;cursor:pointer}
+.km-selw select:hover{border-color:var(--ink-3)}
+.km-selw select option,.km-selw select optgroup{background:var(--surface);color:var(--ink)}
+.km-selw::after{content:"";position:absolute;top:50%;right:12px;width:7px;height:7px;border-right:1.6px solid var(--ink-2);border-bottom:1.6px solid var(--ink-2);transform:translateY(-70%) rotate(45deg);pointer-events:none}
+@media (pointer:coarse){.km-pv{width:36px;height:36px}.km-pv.sm{width:32px;height:32px}.km-selw select{height:36px}}
+.km-sub{margin:0 0 8px;min-height:1.5em;font-size:12.5px;color:var(--ink-3)}
+.km-cnt{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin:0 0 10px}
+.km-cnt .seg button{min-width:28px}
+.km-step{display:inline-flex;align-items:center;gap:6px}
+.km-step b{min-width:16px;text-align:center;font:700 14px var(--mono)}
+.km-cap{margin:6px 0 0;font-size:12px;color:var(--ink-3)}
+
+/* 真理値表 */
+.km-tt{border-collapse:collapse;margin:0 auto;font:500 14px/1 var(--mono)}
+.km-tt th{position:sticky;top:0;z-index:1;background:var(--km-tbg);padding:7px 6px;font:700 13px var(--sans);border-bottom:1.5px solid var(--ink-3);white-space:nowrap}
+.km-tt th[data-o]{cursor:pointer}
+.km-tt th.sel{color:var(--focus)}
+.km-tt td{padding:2px 6px;height:30px;text-align:center;border-bottom:1px solid var(--line)}
+.km-tt .km-tn{font:500 12px var(--mono);color:var(--ink-3)}
+.km-tt th.km-tn,.km-tt th.km-td{font:500 11.5px var(--sans);color:var(--ink-3)}
+.km-tt .km-ti+.km-to{border-left:1.5px solid var(--ink-3)}
+.km-tt td.sel{background:color-mix(in srgb,var(--focus) 7%,transparent)}
+.km-tt tbody tr{cursor:pointer}
+.km-tt tbody tr:hover td{background:var(--inset)}
+.km-tt tr.now td{background:var(--km-on-soft)}
+.km-tt tr.now td.km-ti{font-weight:700}
+.km-tt .km-td{text-align:left;min-width:52px;white-space:nowrap}
+.km-yv{min-width:32px;height:24px;padding:0 4px;border:1px solid var(--line-2);border-radius:4px;background:var(--surface);font:700 14px var(--mono);color:var(--ink-3);cursor:pointer}
+.km-yv:hover{border-color:var(--ink-2)}
+.km-yv.v1{color:var(--km-on);border-color:var(--km-on)}
+.km-yv.v2{color:var(--km-dc);border-style:dashed;border-color:var(--km-dc)}
+.km-dt{display:inline-block;width:10px;height:10px;margin-right:3px;border-radius:50%;background:var(--kc);vertical-align:-1px}
+.km-dt.hz{background:none;border:1.6px dashed var(--kc)}
+
+/* 項の色（囲み・式・ゲート・表の印） */
+.km-grid .k0{--kc:var(--km-k0)}.km-grid .k1{--kc:var(--km-k1)}.km-grid .k2{--kc:var(--km-k2)}.km-grid .k3{--kc:var(--km-k3)}
+.km-grid .k4{--kc:var(--km-k4)}.km-grid .k5{--kc:var(--km-k5)}.km-grid .k6{--kc:var(--km-k6)}.km-grid .k7{--kc:var(--km-k7)}
+.km-dim{opacity:.22}
+
+/* カルノー図 */
+.km-outs{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin:0 0 10px}
+.km-outs[hidden]{display:none}
+.km-outs .seg button{min-width:32px}
+.km-mapw{display:flex;justify-content:center;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.km-map{display:block;max-width:100%;height:auto;overflow:visible}
+.km-map .km-dg{stroke:var(--ink-3);stroke-width:1.2}
+.km-map .km-vn{font:700 14px var(--sans);fill:var(--ink)}
+.km-map .km-tl{font:700 13px var(--sans);fill:var(--ink-2)}
+.km-map .km-hd{font:600 13px var(--mono);fill:var(--ink-2)}
+.km-map .km-c rect{fill:var(--km-tbg);stroke:var(--line-2);stroke-width:1}
+.km-map .km-c{cursor:pointer}
+.km-map .km-c:hover rect{fill:var(--inset)}
+.km-map .km-cv{font:700 17px var(--mono);fill:var(--ink-3);pointer-events:none}
+.km-map .km-c.v1 .km-cv{fill:var(--km-on)}
+.km-map .km-c.v2 .km-cv{fill:var(--km-dc)}
+.km-map .km-c.v2 rect{fill:color-mix(in srgb,var(--km-dc) 9%,var(--km-tbg))}
+.km-map .km-ci{font:500 11px var(--mono);fill:var(--ink-3);pointer-events:none}
+.km-map .km-fr{fill:none;stroke:var(--ink-2);stroke-width:1.4}
+.km-map .km-lp{fill:color-mix(in srgb,var(--kc) 11%,transparent);stroke:var(--kc);stroke-width:2.6;pointer-events:none}
+.km-map .km-lp.hz{fill:none;stroke-dasharray:6 4}
+.km-map .km-arr{fill:none;stroke:var(--km-on);stroke-width:2}
+.km-lgd{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:8px;font-size:12px;color:var(--ink-3)}
+.km-lgd>span{display:inline-flex;align-items:center;gap:5px}
+.km-lv{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 3px;border:1px solid var(--line-2);border-radius:3px;background:var(--km-tbg);font:700 13px var(--mono);color:var(--ink-3)}
+.km-lv.v1{color:var(--km-on);border-color:var(--km-on)}
+.km-lv.v2{color:var(--km-dc);border-style:dashed;border-color:var(--km-dc)}
+
+/* 式 */
+.km-sol{display:flex;align-items:center;gap:6px}
+.km-soln{font:700 13px var(--mono);min-width:38px;text-align:center}
+.km-exs{display:flex;flex-direction:column;gap:2px}
+.km-exr{display:block;width:100%;padding:3px 8px;border:1px solid transparent;border-radius:4px;background:none;color:var(--ink-3);font:500 14px/1.7 var(--mono);text-align:left;word-break:break-word;cursor:pointer}
+.km-exr:disabled{cursor:default}
+.km-exr:not(:disabled):hover{border-color:var(--line-2)}
+.km-exr.on{color:var(--ink);font-size:17px}
+.km-exs .km-exr[aria-pressed="true"]{border-color:var(--line);background:var(--surface)}
+.km-yq{color:var(--ink-3)}
+.km-exr sub,.km-tt sub,.km-outs sub{font-size:.7em}
+.km-tm{padding:0 1px;border-bottom:3px solid var(--kc,transparent)}
+.km-tm.hz{border-bottom-style:dashed}
+.km-op{color:var(--ink-3)}
+.km-kv{display:flex;flex-wrap:wrap;gap:4px 16px;margin-top:10px;font-size:13px;color:var(--ink-2)}
+.km-kv b{font:700 15px var(--mono);color:var(--ink)}
+.km-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-top:10px}
+.km-note{font-size:12.5px;color:var(--ink-3)}
+.km-note.warn{color:var(--warn)}
+
+/* 回路: ライトテーマは白地に罫線の作業台（論理ゲートのページと同じ） */
+.km-bench{display:flex;justify-content:center;overflow:hidden;padding:12px 8px;border:1px solid var(--line);border-radius:4px;background-color:var(--km-bench);
+  background-image:linear-gradient(var(--km-rule-2) 1px,transparent 1px),linear-gradient(90deg,var(--km-rule-2) 1px,transparent 1px),linear-gradient(var(--km-rule) 1px,transparent 1px),linear-gradient(90deg,var(--km-rule) 1px,transparent 1px);
+  background-size:60px 60px,60px 60px,12px 12px,12px 12px;background-position:-1px -1px;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+@media (max-width:600px){.km-bench{overflow-x:auto;justify-content:flex-start}.km-bench .km-ckt{max-width:none}}
+.km-ckt{display:block;max-width:100%;height:auto;overflow:visible}
+.km-ckt .w{fill:none;stroke:var(--km-off);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.km-ckt .w.on{stroke:var(--km-on);stroke-width:2.6}
+.km-ckt .dot{fill:var(--km-off)}
+.km-ckt .dot.on{fill:var(--km-on)}
+.km-ckt .gb{fill:var(--surface);stroke:var(--ink);stroke-width:1.6;stroke-linejoin:round}
+.km-ckt .gb2{fill:none;stroke:var(--ink);stroke-width:1.6}
+.km-ckt .km-tc .gb{stroke:var(--kc);stroke-width:2.4}
+.km-ckt .lg-gl{font:700 15px var(--sans);fill:var(--ink)}
+.km-ckt .km-tgb{fill:var(--km-bench);stroke:var(--kc);stroke-width:2}
+.km-ckt .km-tgt{font:700 13px var(--sans);fill:var(--kc)}
+.km-ckt .km-lb{font:600 15px var(--sans);fill:var(--ink)}
+.km-ckt .km-lbs{font-size:11px}
+.km-ckt .km-lbn{font:600 13px var(--sans);fill:var(--ink-2)}
+.km-ckt .km-cst{font:600 14px var(--sans);fill:var(--ink-2)}
+.km-ckt .km-sw{cursor:pointer}
+.km-ckt .km-swb{fill:var(--inset);stroke:var(--ink-3);stroke-width:1.4}
+.km-ckt .km-swv{font:700 15px var(--mono);fill:var(--ink-2)}
+.km-ckt .km-sw.on .km-swb{fill:var(--km-on-soft);stroke:var(--km-on)}
+.km-ckt .km-sw.on .km-swv{fill:var(--km-on)}
+.km-ckt .km-sw:hover .km-swb{stroke-width:2.2}
+.km-ckt .km-sw:focus{outline:none}
+.km-ckt .km-sw:focus-visible .km-swb{stroke:var(--focus);stroke-width:2.4}
+.km-ckt .km-ledc{fill:var(--led-off);stroke:var(--ink-3);stroke-width:1.2}
+.km-ckt .km-led.on .km-ledc{fill:var(--km-on);stroke:var(--km-on);filter:drop-shadow(0 0 5px var(--km-on))}
+:root:not([data-theme="dark"]) .km-ckt .gb{fill:#fff}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .km-ckt .gb{fill:var(--surface)}}
+
+/* しくみ */
+.km-how{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,170px),1fr));gap:12px}
+@media (max-width:600px){.km-how{grid-template-columns:repeat(auto-fill,minmax(min(100%,140px),1fr))}}
+.km-how li{border:1px solid var(--line);border-radius:var(--r);padding:10px 12px}
+.km-how h3{display:flex;gap:8px;align-items:center;margin:0 0 8px;font-size:14px}
+.km-how h3 b{display:inline-grid;place-items:center;flex:none;width:20px;height:20px;border-radius:50%;background:var(--ink);color:var(--surface);font-size:12px}
+.km-how p{margin:6px 0 0;font-size:13px;line-height:1.5;color:var(--ink-2)}
+.km-how .km-map{width:100%;max-width:170px;margin:0 auto}
+.km-how .km-map .km-cv{font-size:12px}
+.km-how .km-map .km-hd,.km-how .km-map .km-vn{font-size:9px}
+.km-how .km-map .km-c{cursor:default}
+.km-how .km-map .km-lp{stroke-width:2}
+.ov{text-decoration:overline}
+
+/* 動作原理と式の否定の上線 */
+math .km-ovm{border-top:.065em solid currentColor;padding-top:.1em;margin-inline:.05em}
