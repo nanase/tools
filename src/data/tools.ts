@@ -342,9 +342,19 @@ export const TOOLS: Tool[] = [
     t: '論理ゲート',
     d: 'ゲートと回路の入力を切り替えて真理値表と見比べます。',
     ic: 'lg',
-    r: ['timer555', 'i2c', 'spi', 'expression-parsing'],
+    r: ['karnaugh', 'timer555', 'i2c', 'spi'],
     k: 'logic gate ロジック 論理回路 デジタル回路 digital and or not nand nor xor xnor 論理積 論理和 否定 排他的論理和 真理値表 truth table 論理式 ブール代数 boolean ド・モルガン de morgan 万能ゲート 半加算器 全加算器 加算器 adder マルチプレクサ multiplexer デコーダ decoder 比較器 comparator パリティ parity 多数決 majority ラッチ latch sr ラッチ d ラッチ フリップフロップ flip-flop リングオシレータ ring oscillator タイミングチャート timing chart 伝搬遅延 propagation delay ハザード hazard グリッチ glitch mil 記号 jis 記号 ieee 91',
   },
+  {
+    id: 'karnaugh',
+    c: '電子回路',
+    t: 'カルノー図',
+    d: '真理値表から最小の論理式と回路を求めます。',
+    ic: 'km',
+    r: ['logic-gates', 'expression-parsing', 'regex', 'timer555'],
+    k: 'karnaugh map k-map カルノーマップ ベイチ図 veitch 真理値表 truth table 論理式 簡単化 最小化 minimization 論理圧縮 ブール代数 boolean 論理回路 デジタル回路 積和形 和積形 sop pos 主加法標準形 主乗法標準形 最小項 最大項 minterm maxterm 主項 必須主項 prime implicant クワイン・マクラスキー quine-mccluskey ペトリック petrick ドントケア dont care 不定 グレイコード gray code nand nor ハザード hazard 7 セグメント 全加算器',
+  },
+
   {
     id: 'pcm',
     c: '音声形式',

@@ -1,0 +1,98 @@
+---
+// 動作原理と式
+const rf = (i: number) => `<a class="rf" href="#thy-r${i}">[${i}]</a>`;
+const mi = (s: string) => `<mi>${s}</mi>`;
+/** 上線（否定）。同梱の数式の書体では上線の文字が伸びないので、行の上に罫線を引く（style.css の .km-ovm） */
+const ov = (inner: string) => `<mrow class="km-ovm">${inner}</mrow>`;
+const A = mi('A'),
+  B = mi('B'),
+  C = mi('C'),
+  Y = mi('Y'),
+  dot = '<mo>·</mo>',
+  plus = '<mo>+</mo>',
+  eq = '<mo>=</mo>';
+const p = (s: string) => `<mo stretchy="false">(</mo>${s}<mo stretchy="false">)</mo>`;
+type Ref = { for: string; src: string };
+const REFS: readonly Ref[] = [
+  {
+    for: 'カルノー図',
+    src: 'M. Karnaugh, The map method for synthesis of combinational logic circuits, Transactions of the AIEE, Part I, 72(5), 593–599, 1953',
+  },
+  {
+    for: '図で真理値表をまとめる方法（ベイチ図）',
+    src: 'E. W. Veitch, A chart method for simplifying truth functions, Proceedings of the ACM National Meeting, 127–133, 1952',
+  },
+  {
+    for: '主項と、主項で式を覆う考え方',
+    src: 'W. V. Quine, The problem of simplifying truth functions, The American Mathematical Monthly, 59(8), 521–531, 1952',
+  },
+  {
+    for: '主項を表の上で機械的に求める方法',
+    src: 'E. J. McCluskey, Minimization of Boolean functions, Bell System Technical Journal, 35(6), 1417–1444, 1956',
+  },
+  {
+    for: '主項の組を論理式で数え上げる方法',
+    src: 'S. R. Petrick, A direct determination of the irredundant forms of a Boolean function from the set of prime implicants, AFCRC-TR-56-110, Air Force Cambridge Research Center, 1956',
+  },
+  {
+    for: 'ハザードと、それを消す項',
+    src: 'D. A. Huffman, The design and use of hazard-free switching networks, Journal of the ACM, 4(1), 47–62, 1957',
+  },
+];
+---
+<h3>真理値表と標準形</h3>
+<p>出力が 1 になる行ごとに、入力をすべて並べた積の項（最小項）を作り、それらを OR でまとめると、どんな真理値表も式になります（主加法標準形）。0 になる行ごとに和の項（最大項）を作って AND でまとめた形が主乗法標準形です。どちらも正しい式ですが、項と変数が多く、回路も大きくなります。</p>
+<div class="eqs">
+  <math display="block" set:html={`${Y}${eq}${ov(A)}${dot}${B}${dot}${C}${plus}${A}${dot}${ov(B)}${dot}${C}${plus}${A}${dot}${B}${dot}${ov(C)}${plus}${A}${dot}${B}${dot}${C}`} />
+</div>
+
+<h3>まとめると変数が減る</h3>
+<div class="eqs">
+  <math display="block" set:html={`${A}${dot}${B}${dot}${ov(C)}${plus}${A}${dot}${B}${dot}${C}${eq}${A}${dot}${B}${dot}${p(`${ov(C)}${plus}${C}`)}${eq}${A}${dot}${B}`} />
+</div>
+<p>1 変数だけ違う 2 つの項は、その変数が消えた 1 つの項になります。2 つずつ、4 つずつとまとめるたびに変数が 1 つずつ減ります。まとまりの大きさは 2 のべき乗です。</p>
+
+<h3>カルノー図</h3>
+<p>真理値表の行をマスに並べた図です<Fragment set:html={rf(1)} /><Fragment set:html={rf(2)} />。行と列をグレイコードの順（00・01・11・10）に並べるので、となりのマスは 1 変数だけ違います。右の端と左の端、上の端と下の端もとなりです。1 のマスを、縦と横が 1・2・4 マスの四角でなるべく大きく、なるべく少なく囲むと、囲み 1 つが積の項 1 つになります。0 のマスを囲むと和積形になります。</p>
+<ul class="tl">
+  <li>5 入力は A = 0 と A = 1 の 4×4 の図を左右に並べる。2 枚の同じ位置のマスもとなり</li>
+  <li>6 入力は A で上下、B で左右に 4 枚を並べる</li>
+  <li>Don't Care（X）は、その入力の組が起きないか、出力をどちらにしてもよい行。囲みを大きくできるときだけ 1（和積形では 0）として使う</li>
+</ul>
+
+<h3>主項と最小の解</h3>
+<p>これ以上大きくできないまとまりを主項と呼びます<Fragment set:html={rf(3)} />。最小の式は主項だけで作れます。ある 1 を覆う主項が 1 つしかなければ、その主項は必ず使います（必須主項）。残りの 1 をどの主項で覆うかには、選び方が複数あることがあります。</p>
+<ul class="tl">
+  <li>このページは、クワイン・マクラスキー法で主項を求める。1 か所だけ違う 2 つの項をまとめる操作を、まとまらなくなるまでくり返す<Fragment set:html={rf(4)} /></li>
+  <li>残りの 1 を覆う主項の組は、ペトリック法で数え上げる。「この 1 を覆うのは P1 か P2」を AND でつなぎ、展開した積の項が覆い方の候補になる<Fragment set:html={rf(5)} /></li>
+  <li>最小は、項の数が少なく、同じなら変数の数が少ない解。同じ大きさの解はすべて挙げる</li>
+</ul>
+
+<h3>ハザードを消す項</h3>
+<div class="eqs">
+  <math display="block" set:html={`${Y}${eq}${ov(A)}${dot}${B}${plus}${A}${dot}${C}${plus}${B}${dot}${C}`} />
+</div>
+<p>最小の式では、となりどうしの 1 が別々の項に入ることがあります。その 2 マスの間で入力を変えると、一方の項が 0 になってから他方が 1 になるまでの一瞬、出力が 0 になります（静的ハザード）。2 マスを両方覆う項（上の式の <math set:html={`${B}${dot}${C}`} />）を足すと消えます<Fragment set:html={rf(6)} />。「ハザード対策の項」はこの項を破線で足します。</p>
+
+<h3>NAND だけ・NOR だけ</h3>
+<p>積和形の AND と OR をどちらも NAND に替えても、同じ働きの回路になります。和積形の OR と AND は NOR に替えられます。</p>
+
+<h3>出典</h3>
+<ol class="refs">
+  {REFS.map((r, i) => (
+    <li id={`thy-r${i + 1}`}>
+      <span class="rf-for">{r.for}</span>
+      <span class="rf-src">{r.src}</span>
+    </li>
+  ))}
+</ol>
+
+<h3>このツールで決めたこと</h3>
+<ul class="tl">
+  <li>入力は 2〜6 個。出力は複数でも、出力ごとに別々に簡単化する（出力の間で項を共有する最適化はしない）</li>
+  <li>主項が多い表では、ペトリック法の途中で項の少ない組を 400 個だけ残して進める。最小を見落とすことがある</li>
+  <li>最小の解は 8 通りまで挙げる</li>
+  <li>回路は 2 段で描く。否定は入力の後ろの NOT で作り、1 変数だけの項はゲートを通さない</li>
+  <li>ゲートの数には NOT を含める。段数は入力からランプまでに通るゲートの数の最大</li>
+  <li>ハザード対策の項は、となりどうしの 2 マスを両方覆う主項のうち大きいもの</li>
+</ul>
