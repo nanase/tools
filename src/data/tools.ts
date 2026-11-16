@@ -45,7 +45,7 @@ export const TOOLS: Tool[] = [
     t: 'タイマIC 555',
     d: '抵抗器とコンデンサを使ったタイマIC555の出力をシミュレートします。',
     ic: 'sq',
-    r: ['passive-combination', 'colorcode', 'i2c', 'pcb-coil'],
+    r: ['passive-combination', 'colorcode', 'logic-gates', 'i2c'],
     k: 'ne555 発振 非安定 マルチバイブレータ timer シミュレータ simulator',
   },
   {
@@ -144,7 +144,7 @@ export const TOOLS: Tool[] = [
     t: 'SPI',
     d: '4 本の線で機器がデータを交換する SPI の信号を追います。',
     ic: 'spi',
-    r: ['i2c', 'jjy', 'timer555', 'oscilloscope'],
+    r: ['i2c', 'logic-gates', 'jjy', 'timer555'],
     k: 'spi serial peripheral interface シリアル通信 serial bus バス sck sclk mosi miso ss cs chip select チップセレクト copi cipo sdo sdi シフトレジスタ shift register cpol cpha spiモード spi mode 全二重 full duplex デイジーチェーン daisy chain マスタ スレーブ コントローラ ペリフェラル controller peripheral ロジックアナライザ logic analyzer',
   },
   {
@@ -335,6 +335,15 @@ export const TOOLS: Tool[] = [
     ic: 'wh',
     r: ['pcb-coil', 'passive-combination', 'maxwell-demon', 'timer555'],
     k: 'ジュール熱 温度上昇 許容電流 溶断 ヒューズ 表皮効果 対流 放射 プルーム 銅線 電線 パターン 基板 プリント基板 ipc-2152 joule heating ampacity fusing current trace temperature',
+  },
+  {
+    id: 'logic-gates',
+    c: '電子回路',
+    t: '論理ゲート',
+    d: 'ゲートと回路の入力を切り替えて真理値表と見比べます。',
+    ic: 'lg',
+    r: ['timer555', 'i2c', 'spi', 'expression-parsing'],
+    k: 'logic gate ロジック 論理回路 デジタル回路 digital and or not nand nor xor xnor 論理積 論理和 否定 排他的論理和 真理値表 truth table 論理式 ブール代数 boolean ド・モルガン de morgan 万能ゲート 半加算器 全加算器 加算器 adder マルチプレクサ multiplexer デコーダ decoder 比較器 comparator パリティ parity 多数決 majority ラッチ latch sr ラッチ d ラッチ フリップフロップ flip-flop リングオシレータ ring oscillator タイミングチャート timing chart 伝搬遅延 propagation delay ハザード hazard グリッチ glitch mil 記号 jis 記号 ieee 91',
   },
   {
     id: 'pcm',
@@ -678,7 +687,7 @@ export const TOOLS: Tool[] = [
     t: '式の構文解析',
     d: '式が木になる手順と、決まりで変わる答えを見ます。',
     ic: 'ep',
-    r: ['sort', 'regex', 'binary-heap', 'list-queue-stack'],
+    r: ['sort', 'regex', 'logic-gates', 'binary-heap'],
     k: '構文解析 parser parsing 式 expression 数式 字句解析 lexer tokenizer トークン 構文木 抽象構文木 ast 木 tree スタック stack 優先順位 precedence 結合 associativity 左結合 右結合 操車場 shunting yard ダイクストラ dijkstra 逆ポーランド シフト還元 shift reduce lr 再帰下降 recursive descent pratt バックトラック backtracking パックラット packrat peg 括弧 電卓 calculator excel apl コンパイラ compiler アルゴリズム algorithm',
   },
   {

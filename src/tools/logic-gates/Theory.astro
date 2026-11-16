@@ -1,0 +1,114 @@
+---
+// 動作原理と式
+const rf = (i: number) => `<a class="rf" href="#thy-r${i}">[${i}]</a>`;
+const mi = (s: string) => `<mi>${s}</mi>`;
+/** 上線（否定）。同梱の数式の書体では上線の文字が伸びないので、行の上に罫線を引く（style.css の .lg-ov） */
+const ov = (inner: string) => `<mrow class="lg-ov">${inner}</mrow>`;
+const A = mi('A'),
+  B = mi('B'),
+  Y = mi('Y'),
+  dot = '<mo>·</mo>',
+  plus = '<mo>+</mo>',
+  xo = '<mo>⊕</mo>',
+  eq = '<mo>=</mo>';
+const sub = (b: string, s: string) => `<msub>${b}<mi>${s}</mi></msub>`;
+const Cin = sub(mi('C'), 'in'),
+  Cout = sub(mi('C'), 'out');
+const p = (s: string) => `<mo stretchy="false">(</mo>${s}<mo stretchy="false">)</mo>`;
+const GATES: readonly (readonly [string, string, string])[] = [
+  ['NOT', `${Y}${eq}${ov(A)}`, '入力の反転'],
+  ['AND', `${Y}${eq}${A}${dot}${B}`, 'すべて 1 のときだけ 1'],
+  ['OR', `${Y}${eq}${A}${plus}${B}`, 'どれか 1 つでも 1 なら 1'],
+  ['NAND', `${Y}${eq}${ov(`${A}${dot}${B}`)}`, 'AND の反転'],
+  ['NOR', `${Y}${eq}${ov(`${A}${plus}${B}`)}`, 'OR の反転'],
+  ['XOR', `${Y}${eq}${A}${xo}${B}${eq}${A}${dot}${ov(B)}${plus}${ov(A)}${dot}${B}`, '入力が違うときだけ 1'],
+  ['XNOR', `${Y}${eq}${ov(`${A}${xo}${B}`)}`, '入力が同じときだけ 1'],
+];
+type Ref = { for: string; src: string };
+const REFS: readonly Ref[] = [
+  {
+    for: 'MIL 記号（形で区別する記号）',
+    src: 'IEEE Std 91-1984, IEEE Standard Graphic Symbols for Logic Functions, IEEE, 1984（IEEE Std 91a-1991 を含む）',
+  },
+  {
+    for: 'JIS 記号（四角の中の限定記号 &・≥1・=1・1）',
+    src: 'JIS C 0617-12 電気用図記号 第 12 部：二値論理素子（IEC 60617-12 に対応）',
+  },
+  {
+    for: '加算器・ラッチ・フリップフロップ・伝搬遅延とハザード',
+    src: 'D. M. Harris, S. L. Harris, Digital Design and Computer Architecture, 2nd ed., Morgan Kaufmann, 2013',
+  },
+  {
+    for: 'ハザードと、それを消す項',
+    src: 'D. A. Huffman, The design and use of hazard-free switching networks, Journal of the ACM, 4(1), 47–62, 1957',
+  },
+];
+---
+<h3>ゲートと論理式</h3>
+<p>電圧の高い状態（H）を 1、低い状態（L）を 0 として扱います<Fragment set:html={rf(3)} />。「·」は AND、「+」は OR、上の線は NOT、「⊕」は XOR を表します。</p>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th>ゲート</th><th>論理式</th><th>働き</th></tr></thead>
+  <tbody>
+    {GATES.map(([g, f, d]) => <tr><th>{g}</th><td><math set:html={f} /></td><td>{d}</td></tr>)}
+  </tbody>
+</table></div>
+<p>記号には、形でゲートを区別する MIL 記号<Fragment set:html={rf(1)} />と、四角に限定記号を書く JIS 記号<Fragment set:html={rf(2)} />があります。出力の小さな丸は反転を表します。</p>
+
+<h3>ド・モルガンの法則</h3>
+<div class="eqs">
+  <math display="block" set:html={`${ov(`${A}${dot}${B}`)}${eq}${ov(A)}${plus}${ov(B)}`} />
+  <math display="block" set:html={`${ov(`${A}${plus}${B}`)}${eq}${ov(A)}${dot}${ov(B)}`} />
+</div>
+<p>NAND は「反転してから OR」と同じです。NOT は入力をつないだ NAND で作れるので、NAND だけでどのゲートも作れます。NOR も同じです。</p>
+
+<h3>加算器</h3>
+<div class="eqs">
+  <math display="block" set:html={`<mi>S</mi>${eq}${A}${xo}${B}${xo}${Cin}`} />
+  <math display="block" set:html={`${Cout}${eq}${A}${dot}${B}${plus}${p(`${A}${xo}${B}`)}${dot}${Cin}`} />
+</div>
+<p>半加算器は <math><mi>S</mi><mo>=</mo><mi>A</mi><mo>⊕</mo><mi>B</mi></math> と <math><mi>C</mi><mo>=</mo><mi>A</mi><mo>·</mo><mi>B</mi></math> です。全加算器は下の桁からの桁上げ <math set:html={Cin} /> も足し、全加算器を桁の数だけつなぐと多桁の加算器になります<Fragment set:html={rf(3)} />。</p>
+
+<h3>ラッチとフリップフロップ</h3>
+<div class="eqs">
+  <math display="block" set:html={`<mi>Q</mi>${eq}${ov(`<mi>R</mi>${plus}${ov('<mi>Q</mi>')}`)}`} />
+  <math display="block" set:html={`${ov('<mi>Q</mi>')}${eq}${ov(`<mi>S</mi>${plus}<mi>Q</mi>`)}`} />
+</div>
+<ul class="tl">
+  <li>SR ラッチ: 2 個の NOR の出力を互いの入力へ戻す。S = 1 で Q = 1、R = 1 で Q = 0、どちらも 0 なら前のまま<Fragment set:html={rf(3)} /></li>
+  <li>NAND の SR ラッチ: 入力は 0 で働く（負論理）。<math><mrow class="lg-ov"><mi>S</mi></mrow></math> を 0 にすると Q = 1、<math><mrow class="lg-ov"><mi>R</mi></mrow></math> を 0 にすると Q = 0</li>
+  <li>ゲート付き SR ラッチ: S と R の前に AND を置き、E = 1 の間だけ受け付ける</li>
+  <li>S と R を同時に 1 にすると Q と <math><mrow class="lg-ov"><mi>Q</mi></mrow></math> がどちらも 0 になる。その後に 2 つを同時に 0 へ戻すと、どちらに落ち着くかは決まらない（禁止）</li>
+  <li>D ラッチ: E = 1 の間は Q が D に従い、E = 0 にすると値を保つ</li>
+  <li>D フリップフロップ: D ラッチを 2 段にし、1 段目は CLK = 0 の間、2 段目は CLK = 1 の間だけ通す。CLK が 0 から 1 になる瞬間の D を保つ</li>
+  <li>JK フリップフロップ: CLK の立ち上がりで、J = 1 なら 1、K = 1 なら 0、どちらも 1 なら反転、どちらも 0 なら前のまま<Fragment set:html={rf(3)} /></li>
+  <li>T フリップフロップ: T = 1 なら CLK の立ち上がりごとに反転する。出力の周波数は CLK の半分になる</li>
+  <li>リングオシレータ: 反転を奇数段の輪にすると、出力は 1 周の遅れの 2 倍の周期でくり返す</li>
+</ul>
+
+<h3>伝搬遅延とハザード</h3>
+<p>ゲートは入力が変わってから出力が変わるまでに少し遅れます（伝搬遅延）。同じ入力から出力までの経路で遅れが違うと、出力が一瞬だけ誤った値になることがあります（ハザード）<Fragment set:html={rf(3)} />。</p>
+<div class="eqs">
+  <math display="block" set:html={`${Y}${eq}${A}${dot}${B}${plus}${ov(A)}${dot}<mi>C</mi>`} />
+</div>
+<p>B = C = 1 のとき Y は A によらず 1 ですが、A を 1 から 0 にすると、A · B が 0 になってから <math set:html={`${ov(A)}${dot}<mi>C</mi>`} /> が 1 になるまでの間、Y が 0 になります。<math><mi>B</mi><mo>·</mo><mi>C</mi></math> の項を足すとこの 0 は出ません<Fragment set:html={rf(4)} />。</p>
+
+<h3>出典</h3>
+<ol class="refs">
+  {REFS.map((r, i) => (
+    <li id={`thy-r${i + 1}`}>
+      <span class="rf-for">{r.for}</span>
+      <span class="rf-src">{r.src}</span>
+    </li>
+  ))}
+</ol>
+
+<h3>このツールで決めたこと</h3>
+<ul class="tl">
+  <li>どのゲートも遅れは同じ 1 段とし、すべてのゲートを同時に 1 段ずつ進める。配線の遅れは 0</li>
+  <li>入力を変えた後、どのゲートの出力も変わらなくなるまでを記録する。タイミングチャートには新しい 28 段を出す</li>
+  <li>出力が 1〜2 段だけ反対の値になって戻ったものをハザードとする</li>
+  <li>SR ラッチなどで発振が続いたら、8 段の後にどちらかを無作為に選んで落ち着かせる。実際の回路ではわずかな遅れの差でどちらかに落ち着く</li>
+  <li>リングオシレータの発振は 0.26 秒に 1 段で見せる</li>
+  <li>JK と T は、D フリップフロップの入力に <math set:html={`<mi>J</mi>${dot}${ov('<mi>Q</mi>')}${plus}${ov('<mi>K</mi>')}${dot}<mi>Q</mi>`} /> と <math><mi>T</mi><mo>⊕</mo><mi>Q</mi></math> をつないで作る</li>
+  <li>MIL 記号は IEEE Std 91 の形で描く。JIS 記号の否定は小さな丸で描く</li>
+</ul>

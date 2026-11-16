@@ -3040,6 +3040,36 @@ export const ART: Record<string, Art> = {
     });
     return s;
   },
+  /* 論理ゲート: NOR 2 個の SR ラッチ。S と R に交互にパルスを入れ、Q と Q̄ が入れ替わって次のパルスまで残る。
+     1 の線とランプは ch1、0 は細い灰（4 コマ/s、16 コマで 1 周） */
+  lg(t) {
+    const f = mod(Math.floor(t * 4 + 1e-9), 16),
+      S = f >= 1 && f < 3,
+      R = f >= 9 && f < 11,
+      q = f >= 1 && f < 9;
+    const W = (on: boolean, d: string) => P(on ? 'a' : 'c t', d);
+    const sw = (y: number, on: boolean) =>
+      on ? `<rect class="fa" x="4" y="${y - 4}" width="8" height="8"/>` : P('c', `M4 ${y - 4}h8v8h-8Z`);
+    const lamp = (y: number, on: boolean) => P(on ? 'fa' : 'c', `M101.5 ${y}a4 4 0 1 0 8 0a4 4 0 1 0 -8 0Z`);
+    /* OR の形（左端 44、高さ 14、幅 18.2）と反転の丸（中心 64） */
+    const nor = (y: number) =>
+      P('c', `M44 ${y - 7}Q54.6 ${y - 7} 62.2 ${y}Q54.6 ${y + 7} 44 ${y + 7}Q47.5 ${y} 44 ${y - 7}Z`) +
+      P('c', `M62.2 ${y}a1.8 1.8 0 1 0 3.6 0a1.8 1.8 0 1 0 -3.6 0Z`);
+    return (
+      sw(9, R) +
+      sw(39, S) +
+      W(R, 'M12 9H44') +
+      W(S, 'M12 39H44') +
+      W(!q, 'M65.8 35H84V26H34V17H44') +
+      W(q, 'M65.8 13H80V22H38V31H44') +
+      nor(13) +
+      nor(35) +
+      W(q, 'M84 13H100') +
+      W(!q, 'M80 35H100') +
+      lamp(13, q) +
+      lamp(35, !q)
+    );
+  },
   /* SPI: 左のマスタから 3 本の線（SCK・MOSI・MISO）と 3 本の CS。選ぶ機器が順に替わり、選んだ機器を塗る。
      MOSI のビットは右へ、MISO のビットは左へ、4 コマで 1 ビット進む（8 コマ/s、1 台に 16 コマ） */
   spi(t) {
@@ -3215,6 +3245,7 @@ export const LOOP: Record<string, number> = {
   mxd: MX.L,
   i2c: I2C.scl.length / I2C_QPS,
   spi: 6,
+  lg: 4,
   gb: 2,
   sf: 4,
   wh: 3,
