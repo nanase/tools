@@ -16,7 +16,7 @@ import { Coaster, type CoasterState } from './coaster';
 import { ICON } from './icons';
 import { type MapState, MapView } from './map';
 import { BPM, CLICK, VOL0 } from './params';
-import { SAMPLE0, SAMPLES, sampleSong } from './samples';
+import { SAMPLE0, sampleSong } from './samples';
 import {
   compute,
   type Entry,
@@ -256,6 +256,8 @@ const local = (ev: PointerEvent, el: HTMLElement): [number, number] => {
 };
 mapCv.addEventListener('pointerdown', (ev) => {
   if (ev.button > 0) return;
+  /* 調や曲の小窓が開いていれば、地図を押しても和音は足さずに閉じるだけ */
+  if (closePops()) return;
   const [x, y] = local(ev, mapCv),
     k = mapView.nodeAt(mapState(), x, y);
   if (k >= 0) {
@@ -528,6 +530,19 @@ function renderKeyPop(): void {
     k.m,
   )}<p class="cp-en">主音を変えると和音ごと移る（移調）</p>`;
 }
+/** 地図の上の小窓（調・曲）をどちらも閉じる。閉じたら true */
+function closePops(): boolean {
+  if (keyPop.hidden && songPop.hidden) return false;
+  popOpen(keyBtn, keyPop, false);
+  popOpen(songBtn, songPop, false);
+  return true;
+}
+/* 小窓の外を押したら閉じる */
+document.addEventListener('pointerdown', (ev) => {
+  const t = ev.target as Element;
+  if (t.closest('#cp-keypop, #cp-songpop, #cp-key, #cp-songb')) return;
+  if (t !== mapCv) closePops();
+});
 /** 地図の上の小窓（調・曲）を開け閉めする。開くときはもう一方を閉じる */
 function popOpen(btn: HTMLElement, pop: HTMLElement, open: boolean): void {
   pop.hidden = !open;
@@ -743,6 +758,8 @@ document.addEventListener('keydown', (ev) => {
     S.song.chords.splice(S.sel, 1);
     S.sel = null;
     changed();
+  } else if (ev.key === 'Escape' && (!keyPop.hidden || !songPop.hidden)) {
+    closePops();
   } else if (ev.key === 'Escape' && S.sel !== null) {
     /* 小窓が開いていれば閉じ、閉じていれば選ぶのをやめる */
     if (edOpen) edOpen = false;
@@ -797,53 +814,14 @@ const songBtn = $<HTMLButtonElement>('#cp-songb'),
 function syncSongBtn(): void {
   $('#cp-songn').textContent = S.song.name || '新しい進行';
 }
-function renderSongPop(): void {
-  const saved = readSaved(),
-    row = (lb: string, body: string) =>
-      `<div class="cp-er"><span class="cp-el">${lb}</span><div class="chips">${body}</div></div>`;
-  songPop.innerHTML =
-    row(
-      'サンプル',
-      SAMPLES.map(
-        (x) =>
-          `<button type="button" class="chip" data-s="${x.id}" aria-pressed="${x.name === S.song.name}">${x.name}</button>`,
-      ).join(''),
-    ) +
-    (saved.length
-      ? row(
-          '保存',
-          saved
-            .map(
-              (x, j) =>
-                `<button type="button" class="chip" data-open="${j}" aria-pressed="${x.name === S.song.name}">${esc(x.name)}</button>`,
-            )
-            .join(''),
-        )
-      : '') +
-    row('', '<button type="button" class="chip" data-new="">新規</button>');
-}
 songBtn.addEventListener('click', () => {
   const open = songPop.hidden === true;
   popOpen(songBtn, songPop, open);
   if (open) {
     popOpen(keyBtn, keyPop, false);
-    renderSongPop();
-  }
-});
-songPop.addEventListener('click', (ev) => {
-  const b = (ev.target as Element).closest<HTMLElement>('button');
-  if (!b) return;
-  let ok = false;
-  if (b.dataset.s) ok = load(sampleSong(b.dataset.s));
-  else if (b.dataset.open !== undefined) {
-    const x = readSaved()[Number(b.dataset.open)],
-      f = x && fromFile(x.file);
-    if (!f) return say('この保存は読み込めません。');
-    ok = load({ ...f, name: x.name });
-  } else if (b.dataset.new !== undefined) ok = load({ ...sampleSong(SAMPLE0), name: '', chords: [] });
-  if (ok) {
-    say('');
-    popOpen(songBtn, songPop, false);
+    /* 今の曲のサンプルを押した形にする */
+    for (const b of songPop.querySelectorAll<HTMLElement>('#cp-samples [data-s]'))
+      b.setAttribute('aria-pressed', String(b.textContent === S.song.name));
   }
 });
 /** 曲を入れ替える。変更が残っていれば確かめる */
@@ -862,6 +840,7 @@ function load(song: Song): boolean {
   syncSongBtn();
   saveCurrent();
   syncControls();
+  popOpen(songBtn, songPop, false);
   syncPlay();
   draw();
   showEd();

@@ -597,7 +597,7 @@ export class CpAudio {
         bp.frequency.value = 7500;
         bp.gain.value = 6;
         n.connect(hp).connect(bp).connect(g);
-        g.gain.setValueAtTime(vel * 0.32, w);
+        g.gain.setValueAtTime(vel * 0.16, w);
         g.gain.exponentialRampToValueAtTime(1e-4, w + 1.6);
         n.start(w);
         n.stop(w + 1.65);
