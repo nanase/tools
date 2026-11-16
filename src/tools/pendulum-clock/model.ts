@@ -721,6 +721,24 @@ export class Clock {
     else this.stepAvg(sim);
     this.real += sim * 1000;
   }
+  /**
+   * 画面が隠れて描けなかった sec [s] を表で進める。歯の接触は解き直し、そのとき針がずれないよう時刻を保つ。
+   * 隠れている間に揺れは終わったものとする
+   */
+  catchUp(sec: number): void {
+    const wasLive = this.mode === 'live';
+    this.live = null;
+    this.mode = 'avg';
+    this.gq = null;
+    this.gx = this.gv = 0;
+    this.stepAvg(Math.min(sec, 400 * 86400));
+    this.real += sec * 1000;
+    if (!wasLive) return;
+    const ms = this.clockMs();
+    this.mode = 'live';
+    this.startLive();
+    this.clock0 += ms - this.clockMs();
+  }
   private stepLive(sim: number): void {
     const s = this.live;
     if (!s) return;

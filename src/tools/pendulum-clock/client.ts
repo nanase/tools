@@ -451,6 +451,8 @@ function buf(a: AudioContext, kind: SfxKind): AudioBuffer {
   }
   return b;
 }
+/** 予約した音。鳴り終わるまで持つ */
+const queued = new Set<AudioBufferSourceNode>();
 /** at: 鳴らす時刻（AudioContext の時刻） */
 function play(kind: SfxKind, gain: number, at: number): void {
   if (!ac || !out || ac.state !== 'running') return;
@@ -460,10 +462,39 @@ function play(kind: SfxKind, gain: number, at: number): void {
   g.gain.value = gain;
   s.connect(g).connect(out);
   s.start(Math.max(ac.currentTime, at));
+  queued.add(s);
+  s.onended = () => queued.delete(s);
+}
+/*
+ * 画面を離れると、音の時計がこまと別に止まることがある。止まっている間に予約した音は、時計が動き出すと一度に鳴る。
+ * 音の時計が実際の時間より 0.15 s 遅れたら、予約した音を捨て、その間は新しく予約しない
+ */
+let aRef: { a: number; w: number } | null = null;
+function audioStalled(w: number): boolean {
+  if (ac?.state !== 'running') {
+    aRef = null;
+    return false;
+  }
+  const a = ac.currentTime;
+  if (!aRef) aRef = { a, w };
+  const lag = w - aRef.w - (a - aRef.a);
+  if (Math.abs(lag) <= 0.15) return false;
+  aRef = { a, w };
+  if (lag < 0) return false;
+  for (const s of queued) {
+    try {
+      s.stop();
+    } catch {
+      /* 鳴り終わった音は止めなくてよい */
+    }
+  }
+  queued.clear();
+  return true;
 }
 const sndBtn = $('#pc-snd');
 function setSnd(on: boolean): void {
   S.snd = on;
+  aRef = null;
   sndBtn.setAttribute('aria-pressed', String(on));
   $('.led', sndBtn).classList.toggle('on', on);
 }
@@ -519,6 +550,8 @@ sndBtn.addEventListener('click', () => {
   setSnd(true);
 });
 document.addEventListener('visibilitychange', () => {
+  /* 隠れたまま閉じられても、開き直したときに続きから進められるよう残す */
+  if (document.hidden) save();
   if (document.hidden && handheld() && S.snd) {
     void ac?.suspend();
     setSnd(false);
@@ -605,8 +638,9 @@ SND.room = roomCh.value;
 
 /** 出来事は 1 こまの間に起きる。こまの終わりからのずれを保って、少し遅らせて鳴らす */
 const LAG = 0.06;
-function sounds(): void {
-  if (!S.snd || !ac) return;
+/** w: こまの時刻 [s] */
+function sounds(w: number): void {
+  if (!S.snd || !ac || audioStalled(w)) return;
   const live = S.speed <= 1,
     now = ac.currentTime,
     tEnd = clock.live?.t ?? 0;
@@ -723,10 +757,17 @@ function render(): void {
 let last = performance.now(),
   saveT = 0;
 function frame(now: number): void {
-  const dt = Math.min(0.05, (now - last) / 1000);
+  const gap = (now - last) / 1000;
   last = now;
+  /* 画面が隠れるとこまが止まる。実際の速さなら、隠れていた間を表で進めて時刻をずらさない */
+  const away = gap > 1 && !paused && S.speed === 1;
+  if (away) {
+    clock.catchUp(gap);
+    clock.events.length = 0;
+  }
+  const dt = away ? 0 : Math.min(0.05, gap);
   clock.advance(paused ? 0 : dt, S.speed);
-  sounds();
+  sounds(now / 1000);
   clock.events.length = 0;
   render();
   saveT += dt;
