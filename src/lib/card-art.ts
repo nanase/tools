@@ -3070,6 +3070,45 @@ export const ART: Record<string, Art> = {
       lamp(35, !q)
     );
   },
+  /* カルノー図: 4×4 の図の中央の 4 マス（ch1）と四隅の 4 マス（ch2）の囲みと、同じ色の AND 2 個・OR・ランプ。
+     押したマスの太い枠が動き、そのマスを覆う囲みの AND の出力とランプが光る（2 コマ/s、8 コマで 1 周） */
+  km(t) {
+    const x0 = 4,
+      y0 = 4,
+      cs = 10,
+      V = ['1001', '0110', '0110', '1001'];
+    const PATH: readonly [number, number][] = [
+      [1, 1],
+      [0, 1],
+      [3, 3],
+      [1, 2],
+      [2, 0],
+      [0, 0],
+      [2, 2],
+      [3, 1],
+    ];
+    const [r, c] = PATH[mod(Math.floor(t * 2 + 1e-9), 8)];
+    const inA = r >= 1 && r <= 2 && c >= 1 && c <= 2,
+      inB = (r === 0 || r === 3) && (c === 0 || c === 3),
+      y = inA || inB;
+    let g = '';
+    for (let i = 1; i < 4; i++) g += `M${x0} ${y0 + i * cs}h40M${x0 + i * cs} ${y0}v40`;
+    let s = P('c t', g) + P('c', `M${x0} ${y0}h40v40h-40Z`);
+    for (let ri = 0; ri < 4; ri++)
+      for (let ci = 0; ci < 4; ci++)
+        if (V[ri][ci] === '1')
+          s += `<rect class="fc" x="${x0 + ci * cs + 2.6}" y="${y0 + ri * cs + 2.6}" width="4.8" height="4.8"/>`;
+    /* 中央の囲みと、端で開いた四隅の囲み */
+    s += `<rect class="a" x="15.6" y="15.6" width="16.8" height="16.8" rx="2.5"/>`;
+    s += P('b', 'M1.5 12.4H12.4V1.5M46.5 12.4H35.6V1.5M1.5 35.6H12.4V46.5M46.5 35.6H35.6V46.5');
+    s += P('c w', `M${x0 + c * cs + 1} ${y0 + r * cs + 1}h8v8h-8Z`);
+    /* AND（左端 62、高さ 12）・OR・ランプ */
+    const and = (yy: number) => `M62 ${yy - 6}H71A6 6 0 0 1 71 ${yy + 6}H62Z`;
+    s += P('c t', 'M56 10H62M56 16H62M56 32H62M56 38H62') + P('a', and(13)) + P('b', and(35));
+    s += P(inA ? 'a' : 'c t', 'M77 13H82V21H88') + P(inB ? 'b' : 'c t', 'M77 35H82V27H88');
+    s += P('c', 'M88 18Q97 18 103.6 24Q97 30 88 30Q91 24 88 18Z') + P(y ? 'a' : 'c t', 'M103.6 24H108.5');
+    return s + P(y ? 'fa' : 'c', 'M109.4 24a3.6 3.6 0 1 0 7.2 0a3.6 3.6 0 1 0 -7.2 0Z');
+  },
   /* SPI: 左のマスタから 3 本の線（SCK・MOSI・MISO）と 3 本の CS。選ぶ機器が順に替わり、選んだ機器を塗る。
      MOSI のビットは右へ、MISO のビットは左へ、4 コマで 1 ビット進む（8 コマ/s、1 台に 16 コマ） */
   spi(t) {
@@ -3246,6 +3285,7 @@ export const LOOP: Record<string, number> = {
   i2c: I2C.scl.length / I2C_QPS,
   spi: 6,
   lg: 4,
+  km: 4,
   gb: 2,
   sf: 4,
   wh: 3,

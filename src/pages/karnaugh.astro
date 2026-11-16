@@ -1,0 +1,120 @@
+---
+import Collapsible from '../components/Collapsible.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/karnaugh/style.css';
+import { HOW } from '../tools/karnaugh/how';
+import { MAX_N } from '../tools/karnaugh/logic';
+import { GROUPS, SAMPLE, SAMPLES } from '../tools/karnaugh/samples';
+import Theory from '../tools/karnaugh/Theory.astro';
+import {
+  capText,
+  exprList,
+  initState,
+  mapHtml,
+  outTabs,
+  solHtml,
+  solve,
+  statHtml,
+  ttHtml,
+} from '../tools/karnaugh/view';
+
+const name = 'カルノー図';
+const st = initState();
+const r = solve(st);
+const NS = Array.from({ length: MAX_N - 1 }, (_, i) => i + 2);
+---
+<SiteLayout title={name} tool={{ id: 'karnaugh', name }}>
+  <PageTitle title={name}>真理値表から最小の論理式と回路を求めます。出力の 0・1・X を押して切り替えると、カルノー図の囲み・式・回路がその場で変わります。</PageTitle>
+
+  <div class="tgrid km-grid" id="km">
+    <Panel hid="hd-tt" title="真理値表" class="km-a-tt" fixed>
+      <span slot="aux" class="aux" id="km-ttn">{1 << st.n} 行</span>
+      <div class="km-pick">
+        <button type="button" class="km-pv" id="km-prev" title="前のサンプル" aria-label="前のサンプル"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M7.5 2.5L4 6l3.5 3.5"/></svg></button>
+        <div class="sel km-selw"><select id="km-sel" aria-label="サンプル" autocomplete="off">
+          {GROUPS.map(([g, fn]) => (
+            <optgroup label={g}>{SAMPLES.filter(fn).map((s) => <option value={s.id} selected={s.id === st.sid}>{s.name}</option>)}</optgroup>
+          ))}
+          <option value="" hidden>（自由）</option>
+        </select></div>
+        <button type="button" class="km-pv" id="km-next" title="次のサンプル" aria-label="次のサンプル"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M4.5 2.5L8 6l-3.5 3.5"/></svg></button>
+        <button type="button" class="tg" id="km-rev" hidden>元に戻す</button>
+      </div>
+      {/* サンプルを替えると説明が替わる（2 行に折り返すものがある） */}
+      <p class="km-sub" id="km-sub" data-shift="ok">{SAMPLE[st.sid].sub}</p>
+      <div class="km-cnt">
+        <span class="ax">入力</span>
+        <div class="seg" id="km-n" role="group" aria-label="入力の数" data-nosave>
+          {NS.map((k) => <button type="button" data-v={String(k)} aria-pressed={k === st.n ? "true" : "false"}>{k}</button>)}
+        </div>
+        <span class="ax">出力</span>
+        <div class="km-step">
+          <button type="button" class="km-pv sm" id="km-om" title="出力を減らす" aria-label="出力を減らす"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 6h7"/></svg></button>
+          <b id="km-on">{st.outs.length}</b>
+          <button type="button" class="km-pv sm" id="km-op" title="出力を増やす" aria-label="出力を増やす"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 6h7M6 2.5v7"/></svg></button>
+        </div>
+      </div>
+      {/* 行の数は入力の数で変わる（表そのものの大きさ） */}
+      <div class="km-ttw" id="km-tt" data-shift="ok" set:html={ttHtml(st, r)} />
+      <p class="km-cap">出力を押して 0 → 1 → X、行を押してその入力を回路へ</p>
+    </Panel>
+
+    <Panel hid="hd-map" title="カルノー図" class="km-a-map" fixed>
+      <div slot="aux" class="seg" id="km-form" role="group" aria-label="形">
+        <button type="button" data-v="sop" aria-pressed="true" title="1 をまとめる">積和形</button>
+        <button type="button" data-v="pos" aria-pressed="false" title="0 をまとめる">和積形</button>
+      </div>
+      {/* 出力が 1 つのときは隠す（出力の数を変えたときだけ出入りする） */}
+      <div class="km-outs" data-shift="ok"><span class="ax">出力</span><div class="seg" id="km-outs" role="group" aria-label="出力" set:html={outTabs(st)} /></div>
+      {/* 図の大きさは入力の数で変わる */}
+      <div class="km-mapw" id="km-map" data-shift="ok" set:html={mapHtml(st, r)} />
+      <div class="km-lgd"><span><b class="km-lv v1">1</b><span id="km-l1">まとめる値</span></span><span><b class="km-lv v0">0</b><span id="km-l0"></span></span><span><b class="km-lv v2">X</b>Don't Care（0 でも 1 でもよい）</span></div>
+    </Panel>
+
+    <Panel hid="hd-ex" title="式" class="km-a-ex">
+      <div slot="aux" class="km-sol" id="km-sol" set:html={solHtml(st, r)} />
+      {/* 出力の数と式の長さで行数が変わる（中身ごと入れ替わる） */}
+      <div class="km-exs" id="km-ex" data-shift="ok" set:html={exprList(st, r)} />
+      <div class="km-kv" id="km-stat" set:html={statHtml(r)} />
+      <p class="km-cap" id="km-capt">{capText(st)}</p>
+      <div class="km-row">
+        <button type="button" class="tg" id="km-hz" aria-pressed="false" title="となりどうしの 1 を覆う項を足し、入力を変えた瞬間の出力の揺れを消す"><span class="led" aria-hidden="true"></span>ハザード対策の項</button>
+        <span class="km-note" id="km-hzn"></span>
+      </div>
+    </Panel>
+
+    <Panel hid="hd-ckt" title="回路" class="km-a-ckt" fixed>
+      <div slot="aux" class="seg" id="km-sym" role="group" aria-label="記号">
+        <button type="button" data-v="mil" aria-pressed="true" title="形で表す記号（ANSI/IEEE Std 91）">MIL 記号</button>
+        <button type="button" data-v="jis" aria-pressed="false" title="四角に働きの記号を書く記号（JIS C 0617）">JIS 記号</button>
+      </div>
+      <div slot="aux" class="seg" id="km-nt" role="group" aria-label="値の表し方">
+        <button type="button" data-v="01" aria-pressed="true">0・1</button>
+        <button type="button" data-v="LH" aria-pressed="false" title="L: 低い電圧、H: 高い電圧">L・H</button>
+      </div>
+      {/* 回路の大きさは式で変わる（図そのものの大きさ） */}
+      <div class="km-bench" id="km-ckt" data-shift="ok" set:html={r.ckt.svg} />
+      <p class="km-cap">入力を押して切り替え</p>
+    </Panel>
+
+    <Panel hid="hd-how" title="カルノー図のしくみ" class="km-a-how">
+      <ol class="km-how">
+        {HOW.map(([h, fig, d], i) => (
+          <li><h3><b>{i + 1}</b>{h}</h3><Fragment set:html={fig} /><p set:html={d} /></li>
+        ))}
+      </ol>
+    </Panel>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools current="karnaugh" />
+  <script>
+    import '../tools/karnaugh/client';
+  </script>
+</SiteLayout>
