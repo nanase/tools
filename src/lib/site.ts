@@ -9,42 +9,56 @@ import { FADE_IN, FADE_OUT, fx, POP_IN, POP_OUT, RM } from './motion';
 const root = document.documentElement;
 
 /* ---------- 配色 ---------- */
-type Theme = 'system' | 'light' | 'dark';
-const TH: Theme[] = ['system', 'light', 'dark'];
-const TL: Record<Theme, string> = { system: '自動', light: 'ライト', dark: 'ダーク' };
+/** 固定した配色。null は端末の設定に合わせる */
+type Pin = 'light' | 'dark' | null;
 /** 選択は localStorage に保存し、描画前に head のインラインスクリプト（SiteLayout.astro）が data-theme を当てる */
 const KEY = 'theme';
-const save = (v: Theme) => {
+const save = (v: Pin) => {
   try {
-    if (v === 'system') localStorage.removeItem(KEY);
-    else localStorage.setItem(KEY, v);
+    if (v) localStorage.setItem(KEY, v);
+    else localStorage.removeItem(KEY);
   } catch {
     /* 保存できない環境では、このページの中だけ切り替える */
   }
 };
 
+/**
+ * 左のボタンで端末の設定に合わせ、右のスイッチでライトとダークを切り替える。どの状態からでも 1 回で目的の配色に届く。
+ * 見た目は CSS が data-theme で決めるので、ここでは data-theme と読み上げ用の状態だけを更新する
+ */
 function initTheme(): void {
-  const btn = $('#themeBtn');
-  const set = (v: Theme) => {
-    if (v === 'system') delete root.dataset.theme;
-    else root.dataset.theme = v;
-    const nx = TH[(TH.indexOf(v) + 1) % 3];
-    btn.dataset.s = v;
-    btn.setAttribute('aria-label', `配色: ${TL[v]}`);
-    btn.title = `配色: ${TL[v]}（押すと${TL[nx]}）`;
+  const sys = $('#themeSys'),
+    sw = $('#themeSw');
+  const dark = matchMedia('(prefers-color-scheme: dark)');
+  const pin = (): Pin => {
+    const v = root.dataset.theme;
+    return v === 'light' || v === 'dark' ? v : null;
+  };
+  const shown = () => pin() ?? (dark.matches ? 'dark' : 'light');
+  const sync = () => {
+    const follow = pin() === null,
+      dk = shown() === 'dark';
+    sys.setAttribute('aria-pressed', String(follow));
+    sys.title = follow ? '端末の設定に合わせています' : '端末の設定に合わせる';
+    sw.setAttribute('aria-checked', String(dk));
+    sw.title = dk ? 'ライトにする' : 'ダークにする';
   };
   /* 押したときだけ色を 0.3 秒かけて切り替える（読み込み時には動かさない） */
   let t: ReturnType<typeof setTimeout> | undefined;
-  btn.addEventListener('click', () => {
+  const set = (v: Pin) => {
     root.classList.add('theming');
     clearTimeout(t);
     t = setTimeout(() => root.classList.remove('theming'), 360);
-    const v = TH[(TH.indexOf(btn.dataset.s as Theme) + 1) % 3];
-    set(v);
+    if (v) root.dataset.theme = v;
+    else delete root.dataset.theme;
     save(v);
-  });
-  const cur = root.dataset.theme;
-  set(cur === 'light' || cur === 'dark' ? cur : 'system');
+    sync();
+  };
+  /* 合わせている間に押すと、今の見た目のまま固定する */
+  sys.addEventListener('click', () => set(pin() === null ? shown() : null));
+  sw.addEventListener('click', () => set(shown() === 'dark' ? 'light' : 'dark'));
+  dark.addEventListener('change', sync);
+  sync();
 }
 
 /* ---------- メニュー（ツール一覧はビルド時に HTML で出し、ここではカテゴリの切り替え・絞り込み・図柄の読み込み） ---------- */

@@ -103,10 +103,31 @@ sub{font-size:.7em;line-height:0}
 .rb{display:inline-flex;align-items:center;gap:6px;height:40px;min-width:40px;justify-content:center;padding:0 10px;border:0;border-radius:4px;background:none;color:var(--rail-ink-2);font-size:14px;text-decoration:none;cursor:pointer}
 .rb:hover{color:var(--rail-ink);background:var(--rail-2)}
 .rb[aria-expanded="true"]{background:var(--rail-2);color:var(--rail-ink)}
-#themeBtn svg{display:none}
-/* アイコンは描画前に head のインラインスクリプトが当てる data-theme で選ぶ（スクリプトを待つと自動のアイコンが一瞬出る） */
-:root:not([data-theme]) #themeBtn .t-sys,:root[data-theme="light"] #themeBtn .t-sun,:root[data-theme="dark"] #themeBtn .t-moon{display:block}
 .rb{padding:0}
+/* 配色の切り替え。土台のカプセルの右端にスイッチの溝が一段浮いて重なり、左に伸びた所が「端末の設定に合わせる」ボタン。
+   つまみの位置と色は、描画前に head のインラインスクリプトが当てる data-theme と prefers-color-scheme だけで決める（スクリプトを待つと位置が一瞬ずれる） */
+.thm{--ext:28px;--sw:48px;position:relative;flex:none;width:calc(var(--ext) + var(--sw));height:30px;margin:0 6px 0 2px;border-radius:15px;background:rgb(0 0 0 / .3);box-shadow:inset 0 1px 2px rgb(0 0 0 / .45),0 1px 0 rgb(255 255 255 / .05)}
+/* 端末に合わせている間は、画面アイコンの部分を明るくし、アイコンの画面を塗りつぶす */
+:root:not([data-theme]) .thm{background:rgb(255 255 255 / .24)}
+:root:not([data-theme]) .thm-scr{fill:currentColor}
+.thm button{position:absolute;top:0;display:grid;place-items:center;height:30px;padding:0;border:0;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent}
+/* 押せる範囲だけ上下に広げる（見た目は 30px のまま） */
+.thm button::before{content:"";position:absolute;inset:-5px 0}
+.thm .thm-sys{left:0;width:calc(var(--ext) + 8px);padding-right:8px;border-radius:15px 0 0 15px;color:rgb(255 255 255 / .45)}
+.thm .thm-sys:hover,:root:not([data-theme]) .thm .thm-sys{color:var(--rail-ink)}
+.thm .thm-sys svg{width:16px;height:16px}
+.thm .thm-sw{right:0;width:var(--sw);border-radius:15px;background:linear-gradient(rgb(255 255 255 / .16),rgb(255 255 255 / .1));box-shadow:inset 0 1px 0 rgb(255 255 255 / .1),-2px 0 6px rgb(0 0 0 / .45)}
+.thm-k{position:absolute;top:3px;left:3px;display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:#f4f5f2;color:#23292e;box-shadow:0 1px 3px rgb(0 0 0 / .45)}
+.thm-k svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.thm-moon{display:none}
+:root[data-theme="dark"] .thm-k{transform:translateX(calc(var(--sw) - 30px));background:#0b0d0e;color:#f4f5f2;box-shadow:0 0 0 1px rgb(255 255 255 / .16),0 1px 3px rgb(0 0 0 / .6)}
+:root[data-theme="dark"] .thm-sun{display:none}
+:root[data-theme="dark"] .thm-moon{display:block}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme]) .thm-k{transform:translateX(calc(var(--sw) - 30px));background:#0b0d0e;color:#f4f5f2;box-shadow:0 0 0 1px rgb(255 255 255 / .16),0 1px 3px rgb(0 0 0 / .6)}
+  :root:not([data-theme]) .thm-sun{display:none}
+  :root:not([data-theme]) .thm-moon{display:block}
+}
 
 /* ===== tool menu ===== */
 .scrim{position:fixed;left:0;right:0;bottom:0;top:var(--rail-h);z-index:25;background:rgb(8 10 12 / .42)}
@@ -591,6 +612,9 @@ a.unit:hover h3{text-decoration:underline;text-decoration-color:var(--ink-3);tex
   .clps>summary::after,.fold::after{transition:transform .22s ease}
   .clps,.pnl[data-fold]{transition:border-color .25s ease,border-radius .25s ease}
   html.theming,html.theming *,html.theming *::before,html.theming *::after{transition:background-color .3s ease,color .3s ease,border-color .3s ease,fill .3s ease,stroke .3s ease,box-shadow .3s ease!important}
+  /* 配色のつまみは少し弾ませて滑らせる。上の一括の指定より強くして transform を残す。端末の配色が変わったときも滑る */
+  .thm-k,html.theming .thm-k{transition:transform .28s cubic-bezier(.3,1.3,.5,1),background-color .2s ease,color .2s ease,box-shadow .2s ease!important}
+  .thm .thm-sys{transition:color .2s ease}
 }
 .thy-body>p:not(.cite){color:var(--ink-2);line-height:1.9}
 .thy-body>p+p:not(.cite){margin-top:10px}
