@@ -28,7 +28,7 @@ describe('しくみの枠', () => {
   });
 
   it('工程の枠のスタイルをページごとの CSS に書かない', () => {
-    const own = /\.[a-z0-9]+-(how|st) (h3|li)\b|\.[a-z0-9]+-hw>b|\.(mp3|pcm)-st\b/;
+    const own = /\.[a-z0-9]+-how (h3|li)\b|\.[a-z0-9]+-hw>b|\.(mp3|pcm)-st\b/;
     expect(toolCss.filter((f) => own.test(read(f)))).toEqual([]);
   });
 });

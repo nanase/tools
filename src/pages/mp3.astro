@@ -7,6 +7,7 @@ import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
 import RelatedTools from '../components/RelatedTools.astro';
 import SiteLayout from '../layouts/SiteLayout.astro';
+import '../styles/how.css';
 import '../tools/mp3/style.css';
 import { KEYS, PARAMS } from '../tools/mp3/params';
 import { SOURCES } from '../tools/mp3/sources';
@@ -92,14 +93,14 @@ const playIcon =
       </Panel>
     </div>
 
-    <Panel hid="hd-how" title="MP3 のしくみ" class="a-how">
+    <Panel hid="hd-how" title="しくみ" class="a-how">
       <span slot="aux" class="aux" id="how-set"></span>
-      <div class="mp3-steps" id="how-steps" role="group" aria-label="工程">
+      <div class="how-pl" id="how-steps" role="group" aria-label="工程">
         {STEPS.map(([n, d], i) => (
-          <button type="button" class="mp3-st" data-i={i} aria-pressed={i === 0 ? 'true' : 'false'}><b>{i + 1}: {n}</b><canvas aria-hidden="true"></canvas><small>{d}</small></button>
+          <button type="button" class="how-c" data-i={i} aria-pressed={i === 0 ? 'true' : 'false'}><span class="how-h"><b class="how-n">{i + 1}</b>{n}</span><canvas aria-hidden="true"></canvas><small>{d}</small></button>
         ))}
       </div>
-      <p class="mp3-cap" id="how-cap" aria-live="off"></p>
+      <p class="how-cap" id="how-cap" aria-live="off"></p>
       <div class="scope mp3-scr"><canvas class="mp3-cv mp3-how" id="how-cv" role="img" aria-labelledby="how-name"></canvas></div>
       <span class="sr" id="how-name"></span>
       <div class="tp mp3-tp mp3-tp3">
