@@ -48,11 +48,6 @@
 .sf-m .m dd small{font:400 12px var(--sans);color:var(--ink-3)}
 
 /* しくみ */
-.sf-how{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
-.sf-how li{border:1px solid var(--line);border-radius:var(--r);padding:10px 12px}
-.sf-how h3{display:flex;gap:8px;align-items:center;margin:0 0 8px;font-size:14px}
-.sf-how h3 b{display:inline-grid;place-items:center;flex:none;width:20px;height:20px;border-radius:50%;background:var(--ink);color:var(--surface);font-size:12px}
-.sf-how p{margin:6px 0 0;font-size:13px;line-height:1.5;color:var(--ink-2)}
 .sf-mini{display:block;width:100%;max-width:230px;height:auto;aspect-ratio:150/96;background:var(--screen);border-radius:4px}
 .sf-mini path{fill:none;stroke-linejoin:round;stroke-linecap:round}
 .sf-hw-w{stroke:var(--sf-wall);stroke-width:2.4}
