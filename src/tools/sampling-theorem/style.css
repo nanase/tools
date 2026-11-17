@@ -43,12 +43,6 @@
 .smp-pos .tp-tm{font:12.5px/1.4 var(--mono);color:var(--ink-3)}
 
 /* しくみ */
-.smp-how{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
-.smp-how li{border:1px solid var(--line);border-radius:4px;padding:10px 12px;background:var(--surface)}
-.smp-how h3{display:flex;gap:8px;align-items:center;margin:0 0 8px;font-size:14px}
-.smp-how h3 b{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--ink);color:var(--surface);font-size:12px}
-.smp-how p{margin:8px 0 0;font-size:13px;line-height:1.55;color:var(--ink-2)}
-.smp-how p+p{margin-top:4px}
 .smp-mini{display:block;width:100%;max-width:220px;height:66px;background:var(--screen);border-radius:4px}
 .smp-mini path{fill:none;stroke-width:2;stroke-linejoin:round}
 .smp-l1{stroke:var(--smp-r)}.smp-l2{stroke:var(--smp-o)}.smp-l0{stroke:var(--screen-ink)}.smp-lw{stroke:var(--smp-a)}.smp-lgr{stroke:var(--smp-cp)}

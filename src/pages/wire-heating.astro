@@ -2,6 +2,7 @@
 import Busy from '../components/Busy.astro';
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import HowSteps from '../components/HowSteps.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
@@ -187,12 +188,8 @@ const playIcon =
       </Panel>
     </div>
 
-    <Panel hid="hd-how" title="発熱のしくみ" class="wh-howp">
-      <ol class="wh-how">
-        {HOW.map(([h, fig, d], i) => (
-          <li><h3><b>{i + 1}</b>{h}</h3><Fragment set:html={fig} /><p>{d}</p></li>
-        ))}
-      </ol>
+    <Panel hid="hd-how" title="しくみ" class="wh-howp">
+      <HowSteps steps={HOW.map(([h, fig, p]) => ({ h, fig, p }))} />
     </Panel>
 
     <Collapsible hid="hd-thy" title="動作原理と式">

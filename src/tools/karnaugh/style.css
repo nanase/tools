@@ -147,17 +147,11 @@
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .km-ckt .gb{fill:var(--surface)}}
 
 /* しくみ */
-.km-how{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,170px),1fr));gap:12px}
-@media (max-width:600px){.km-how{grid-template-columns:repeat(auto-fill,minmax(min(100%,140px),1fr))}}
-.km-how li{border:1px solid var(--line);border-radius:var(--r);padding:10px 12px}
-.km-how h3{display:flex;gap:8px;align-items:center;margin:0 0 8px;font-size:14px}
-.km-how h3 b{display:inline-grid;place-items:center;flex:none;width:20px;height:20px;border-radius:50%;background:var(--ink);color:var(--surface);font-size:12px}
-.km-how p{margin:6px 0 0;font-size:13px;line-height:1.5;color:var(--ink-2)}
-.km-how .km-map{width:100%;max-width:170px;margin:0 auto}
-.km-how .km-map .km-cv{font-size:12px}
-.km-how .km-map .km-hd,.km-how .km-map .km-vn{font-size:9px}
-.km-how .km-map .km-c{cursor:default}
-.km-how .km-map .km-lp{stroke-width:2}
+.km-a-how .km-map{width:100%;max-width:170px;margin:0 auto}
+.km-a-how .km-map .km-cv{font-size:12px}
+.km-a-how .km-map .km-hd,.km-a-how .km-map .km-vn{font-size:9px}
+.km-a-how .km-map .km-c{cursor:default}
+.km-a-how .km-map .km-lp{stroke-width:2}
 .ov{text-decoration:overline}
 
 /* 動作原理と式の否定の上線 */

@@ -127,11 +127,6 @@
 .lg-uses li::before{content:"";flex:none;width:6px;height:6px;margin-top:8px;border-radius:50%;background:var(--lg-on)}
 
 /* しくみ */
-.lg-how{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
-.lg-how li{border:1px solid var(--line);border-radius:var(--r);padding:10px 12px}
-.lg-how h3{display:flex;gap:8px;align-items:center;margin:0 0 8px;font-size:14px}
-.lg-how h3 b{display:inline-grid;place-items:center;flex:none;width:20px;height:20px;border-radius:50%;background:var(--ink);color:var(--surface);font-size:12px}
-.lg-how p{margin:6px 0 0;font-size:13px;line-height:1.5;color:var(--ink-2)}
 .lg-mini{display:block;width:100%;max-width:150px;height:auto;margin:0 auto}
 .lg-mini .lg-hw{fill:none;stroke:var(--ink-3);stroke-width:2;stroke-linejoin:round}
 .lg-mini .lg-hw.on{stroke:var(--lg-on)}
