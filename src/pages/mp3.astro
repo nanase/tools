@@ -97,7 +97,7 @@ const playIcon =
       <span slot="aux" class="aux" id="how-set"></span>
       <div class="how-pl" id="how-steps" role="group" aria-label="工程">
         {STEPS.map(([n, d], i) => (
-          <button type="button" class="how-c" data-i={i} aria-pressed={i === 0 ? 'true' : 'false'}><span class="how-h"><b class="how-n">{i + 1}</b>{n}</span><canvas aria-hidden="true"></canvas><small>{d}</small></button>
+          <button type="button" class="how-c" data-i={i} aria-pressed={i === 0 ? 'true' : 'false'}><span class="how-h"><b class="how-n">{i + 1}</b><span>{n}</span></span><canvas aria-hidden="true"></canvas><small>{d}</small></button>
         ))}
       </div>
       <p class="how-cap" id="how-cap" aria-live="off"></p>

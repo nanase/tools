@@ -167,7 +167,7 @@ function loop(now: number): void {
   meters();
   requestAnimationFrame(loop);
 }
-for (const b of $$('.mxd-st svg')) b.setAttribute('focusable', 'false');
+for (const b of $$('.mxd-steps .how svg')) b.setAttribute('focusable', 'false');
 recolor();
 syncUi();
 syncLedger();
