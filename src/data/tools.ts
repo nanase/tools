@@ -1,4 +1,6 @@
 /** ツール一覧（ビルド時だけ使い、ブラウザへは送らない）。公開中のツールの id はページのパス（/tools/<id>/）を兼ねる */
+import { foldKey } from '../lib/dom';
+
 export interface Tool {
   id: string;
   /** カテゴリ */
@@ -256,7 +258,7 @@ export const TOOLS: Tool[] = [
     d: '弦とピックアップとエフェクターを計算して鳴らします。',
     ic: 'eg',
     r: ['guitar', 'chord-progression', 'reverb', 'fm-synth'],
-    k: 'electric guitar エレキ エレクトリックギター ピックアップ pickup シングルコイル ハムバッカー humbucker エフェクター effects pedal 歪み distortion オーバードライブ overdrive ファズ fuzz アンプ amplifier 真空管 tube キャビネット cabinet スピーカー コンプレッサー compressor ワウ wah コーラス chorus フェイザー phaser フランジャー flanger トレモロ tremolo ディレイ delay リバーブ reverb スプリング spring チョーキング bend ビブラート vibrato フィードバック feedback ハーモニクス harmonics 物理モデル physical model モード合成 modal synthesis midi 演奏 オーディオ audio 音響モデル',
+    k: 'electric guitar エレキ エレクトリックギター ピックアップ pickup シングルコイル ハムバッカー humbucker エフェクター effects pedal 歪み distortion オーバードライブ overdrive ファズ fuzz アンプ amplifier 真空管 tube キャビネット cabinet スピーカ コンプレッサー compressor ワウ wah コーラス chorus フェイザー phaser フランジャー flanger トレモロ tremolo ディレイ delay リバーブ reverb スプリング spring チョーキング bend ビブラート vibrato フィードバック feedback ハーモニクス harmonics 物理モデル physical model モード合成 modal synthesis midi 演奏 オーディオ audio 音響モデル',
   },
   {
     id: 'piano',
@@ -443,10 +445,10 @@ export const TOOLS: Tool[] = [
     id: 'vvvf',
     c: '機械',
     t: 'VVVF',
-    d: '電車のモーター音を鳴らし、同期と非同期のしくみを確かめます。',
+    d: '電車のモータ音を鳴らし、同期と非同期のしくみを確かめます。',
     ic: 'vv',
     r: ['engine', 'doppler', 'oscilloscope', 'transmission'],
-    k: 'vvvf インバータ inverter 電車 鉄道 train railway モーター音 磁励音 走行音 誘導電動機 induction motor pwm パルス幅変調 同期 非同期 synchronous asynchronous キャリア carrier 基本波 1 パルス 3 パルス gto igbt シーメンス siemens ドレミファインバータ 歌う電車 東急 5000系 9000系 田園都市線 京急 新1000形 回生ブレーキ 全電気ブレーキ 物理モデル オーディオ audio 音響モデル',
+    k: 'vvvf インバータ inverter 電車 鉄道 train railway モータ音 磁励音 走行音 誘導電動機 induction motor pwm パルス幅変調 同期 非同期 synchronous asynchronous キャリア carrier 基本波 1 パルス 3 パルス gto igbt シーメンス siemens ドレミファインバータ 歌う電車 東急 5000系 9000系 田園都市線 京急 新1000形 回生ブレーキ 全電気ブレーキ 物理モデル オーディオ audio 音響モデル',
   },
   {
     id: 'lens',
@@ -500,7 +502,7 @@ export const TOOLS: Tool[] = [
     d: 'ベイヤー配列から RGB を復元する 6 つの手法を比べます。',
     ic: 'dm',
     r: ['image-convolution', 'image-resize', 'lens', 'sampling-theorem'],
-    k: 'demosaic demosaicing デモザイク デモザイキング ベイヤー bayer cfa color filter array カラーフィルタ raw 現像 イメージセンサー image sensor 補間 interpolation 最近傍 nearest バイリニア bilinear malvar he cutler mhc hamilton adams vng variable number of gradients ahd adaptive homogeneity 偽色 false color モアレ moire ジャギー jaggies ジッパー zipper 光学ローパスフィルタ olpf ローパス 色差 メディアン median psnr cpsnr cielab ΔE',
+    k: 'demosaic demosaicing デモザイク デモザイキング ベイヤー bayer cfa color filter array カラーフィルタ raw 現像 イメージセンサ image sensor 補間 interpolation 最近傍 nearest バイリニア bilinear malvar he cutler mhc hamilton adams vng variable number of gradients ahd adaptive homogeneity 偽色 false color モアレ moire ジャギー jaggies ジッパー zipper 光学ローパスフィルタ olpf ローパス 色差 メディアン median psnr cpsnr cielab ΔE',
   },
   {
     id: 'rolling-shutter',
@@ -509,7 +511,7 @@ export const TOOLS: Tool[] = [
     d: 'プロペラや電車がゆがんで写る様子を走査線で追います。',
     ic: 'rs',
     r: ['lens', 'sampling-theorem', 'demosaic', 'doppler'],
-    k: 'rolling shutter ローリングシャッター グローバルシャッター global shutter cmos イメージセンサー image sensor 電子シャッター 走査 読み出し readout 露光 exposure シャッター速度 こんにゃく現象 ゆがみ 歪み skew wobble jello プロペラ propeller 電車 自動車 自転車 ゴルフ スイング モトクロス バックフリップ ヘリコプター ローター rotor スマートフォン iphone z9 r6 α7 gfx',
+    k: 'rolling shutter ローリングシャッター グローバルシャッター global shutter cmos イメージセンサ image sensor 電子シャッター 走査 読み出し readout 露光 exposure シャッター速度 こんにゃく現象 ゆがみ 歪み skew wobble jello プロペラ propeller 電車 自動車 自転車 ゴルフ スイング モトクロス バックフリップ ヘリコプター ローター rotor スマートフォン iphone z9 r6 α7 gfx',
   },
 
   {
@@ -772,4 +774,4 @@ export const order = (L: Tool[]): Tool[] => L.slice().sort((a, b) => (a.s || 0) 
 /** ツールのページの URL */
 export const href = (t: Tool): string => `${import.meta.env.BASE_URL}${t.id}/`;
 /** 絞り込み用の検索文字列 */
-export const keys = (t: Tool): string => `${t.t} ${t.d} ${t.c} ${t.k}`.normalize('NFKC').toLowerCase();
+export const keys = (t: Tool): string => foldKey(`${t.t} ${t.d} ${t.c} ${t.k}`);

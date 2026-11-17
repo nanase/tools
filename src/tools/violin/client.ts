@@ -650,7 +650,7 @@ function viewOf(f: Frame | null): View {
   };
 }
 
-/* 弓の状態のメーター（表示だけ） */
+/* 弓の状態のメータ（表示だけ） */
 const meter = (k: string, v: number, lo: number, hi: number, okLo: number, okHi: number, text: string) => {
   const X = (x: number) => (300 * (Math.min(hi, Math.max(lo, x)) - lo)) / (hi - lo);
   $(`#bm-${k}-ok`).setAttribute('x', X(okLo).toFixed(1));

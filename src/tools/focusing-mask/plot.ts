@@ -118,7 +118,7 @@ export interface Beam {
   y1: number;
 }
 
-/** 横から見た光の通り道。センサーの位置は焦点から sx（px）だけ右 */
+/** 横から見た光の通り道。センサの位置は焦点から sx（px）だけ右 */
 export function raySvg(beams: Beam[], sx: number): string {
   const { lens, focus, cy, half } = RAY,
     Ys = (y: number) => cy - y * half,
@@ -138,6 +138,6 @@ export function raySvg(beams: Beam[], sx: number): string {
     s +
     `<path class="fp" d="M${focus} 40V180"/><path class="sen" d="M${f1(xs)} 50V170"/>${hits}` +
     `<text x="${lens}" y="204" text-anchor="middle">対物</text><text x="${focus}" y="30" text-anchor="middle">焦点</text>` +
-    `<text x="${f1(xs)}" y="204" text-anchor="middle">センサー</text>`
+    `<text x="${f1(xs)}" y="204" text-anchor="middle">センサ</text>`
   );
 }

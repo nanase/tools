@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { CATS, TOOLS } from '../../src/data/tools';
+import { CATS, keys, TOOLS } from '../../src/data/tools';
+import { foldKey } from '../../src/lib/dom';
 
 describe('カードの説明', () => {
   /** 半角を 0.5 字に数える（カードでの幅に近づける） */
@@ -11,6 +12,17 @@ describe('カードの説明', () => {
       expect(t.d.match(/。/g)?.length, `${t.id}: ${t.d}`).toBe(1);
       expect(t.d.endsWith('。'), `${t.id}: ${t.d}`).toBe(true);
     }
+  });
+});
+
+describe('絞り込み', () => {
+  const hit = (id: string, q: string) => TOOLS.some((t) => t.id === id && keys(t).includes(foldKey(q)));
+
+  it('語末の長音の有無で外れない', () => {
+    expect(hit('vvvf', 'モーター音')).toBe(true);
+    expect(hit('vvvf', 'モータ音')).toBe(true);
+    expect(hit('biquad', 'フィルター')).toBe(true);
+    expect(hit('guitar', 'ギタ')).toBe(true);
   });
 });
 

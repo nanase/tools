@@ -74,11 +74,11 @@ export class BitWriter {
   }
 }
 
-/** 符号化したデータを 1 ビットずつ読む。0xFF 0x00 は 0xFF として読み、マーカーに当たったら 1 を返し続ける */
+/** 符号化したデータを 1 ビットずつ読む。0xFF 0x00 は 0xFF として読み、マーカに当たったら 1 を返し続ける */
 export class BitReader {
   private acc = 0;
   private nb = 0;
-  /** マーカー（0xFF の後が 0x00 でないもの）に当たった */
+  /** マーカ（0xFF の後が 0x00 でないもの）に当たった */
   marker = -1;
 
   constructor(
@@ -107,11 +107,11 @@ export class BitReader {
     for (let i = 0; i < n; i++) v = (v << 1) | this.bit();
     return v;
   }
-  /** バイトの境目まで読み捨てる（リスタートマーカーの前） */
+  /** バイトの境目まで読み捨てる（リスタートマーカの前） */
   align(): void {
     this.nb = 0;
   }
-  /** 当たったマーカーを読み捨てて続きを読む */
+  /** 当たったマーカを読み捨てて続きを読む */
   skipMarker(): void {
     this.p += 2;
     this.marker = -1;

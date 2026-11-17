@@ -147,7 +147,7 @@ function commit(swap = false): void {
 }
 /**
  * つまみと選択の変更: 保存して音へ送り、図と窓の中身だけを替える。
- * 窓を動かしたり行を入れ直したりしない（ドラッグ中のスライダーが外れるため）
+ * 窓を動かしたり行を入れ直したりしない（ドラッグ中のスライダが外れるため）
  */
 function tweak(): void {
   store('rack', S.R);
@@ -349,7 +349,7 @@ function listHtml(): string {
   s += `${add('pre')}${rowHtml('amp')}${arw}${rowHtml('cab')}${arw}`;
   for (const p of S.R.post) s += rowHtml(`p${p.id}`) + arw;
   const ls = S.listen === 'out';
-  return `${s}${add('post')}<div class="eg-st fx${S.sel === 'out' ? ' sel' : ''}" data-strow="out" data-dev="out"><i class="ls-st" aria-hidden="true"></i><div class="eg-stn"><b class="eg-ob">${SPK}出力</b><small class="eg-sub">スピーカー</small></div><span></span><canvas class="eg-cv eg-mw" data-mwave="out" aria-hidden="true"></canvas><span></span><span></span><button type="button" class="eg-ear" data-listen="out" aria-pressed="${ls}" title="出力を試聴">${EAR}<span>${ls ? '試聴中' : '試聴'}</span></button></div>`;
+  return `${s}${add('post')}<div class="eg-st fx${S.sel === 'out' ? ' sel' : ''}" data-strow="out" data-dev="out"><i class="ls-st" aria-hidden="true"></i><div class="eg-stn"><b class="eg-ob">${SPK}出力</b><small class="eg-sub">スピーカ</small></div><span></span><canvas class="eg-cv eg-mw" data-mwave="out" aria-hidden="true"></canvas><span></span><span></span><button type="button" class="eg-ear" data-listen="out" aria-pressed="${ls}" title="出力を試聴">${EAR}<span>${ls ? '試聴中' : '試聴'}</span></button></div>`;
 }
 /** 一覧の行の特性の小さな図 */
 function drawRowChar(id: StageId): void {

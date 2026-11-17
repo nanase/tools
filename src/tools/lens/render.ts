@@ -17,7 +17,7 @@ export interface LensU {
   C: Float32Array;
   P: Float32Array;
   hmax: number;
-  /** センサーの z、射出瞳の面の z、正規化 1/(π r²)、回折の実効 F 値（0 は入れない） */
+  /** センサの z、射出瞳の面の z、正規化 1/(π r²)、回折の実効 F 値（0 は入れない） */
   opt: [number, number, number, number];
   /** 外接円の半径・羽根の枚数・cos(π/n) */
   stop: [number, number, number];
@@ -51,7 +51,7 @@ type Prog = { p: WebGLProgram; u: Map<string, WebGLUniformLocation | null> };
 
 export class Renderer {
   readonly gl: WebGL2RenderingContext;
-  /** 面の数ごとの追跡のシェーダー。null は準備中 */
+  /** 面の数ごとの追跡のシェーダ。null は準備中 */
   private progs = new Map<number, Prog | null>();
   private disp: Prog | null = null;
   private vao: WebGLVertexArrayObject;
@@ -75,9 +75,9 @@ export class Renderer {
   private exposure = 1;
   /** ためた本数を知らせる */
   onProgress?: (spp: number, w: number, h: number, done: boolean) => void;
-  /** シェーダーの準備を待っているかを知らせる */
+  /** シェーダの準備を待っているかを知らせる */
   onWait?: (on: boolean) => void;
-  /** シェーダーを用意できなかった */
+  /** シェーダを用意できなかった */
   onFail?: (e: unknown) => void;
 
   constructor(private readonly canvas: HTMLCanvasElement) {
@@ -104,7 +104,7 @@ export class Renderer {
     document.addEventListener('visibilitychange', () => this.kick());
   }
 
-  /** シェーダーの準備を始める。終わったら渡して描き直す */
+  /** シェーダの準備を始める。終わったら渡して描き直す */
   private program(frag: string, names: string[], done: (pr: Prog) => void): void {
     const gl = this.gl;
     const p = startProgram(gl, VERT, frag, 'aPos');
@@ -117,7 +117,7 @@ export class Renderer {
     );
   }
 
-  /** 面の数に合う追跡のシェーダー。準備中は null（初めての面の数なら準備を始める） */
+  /** 面の数に合う追跡のシェーダ。準備中は null（初めての面の数なら準備を始める） */
   private traceProg(ns: number): Prog | null {
     const pr = this.progs.get(ns);
     if (pr !== undefined) return pr;

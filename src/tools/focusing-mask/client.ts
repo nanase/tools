@@ -1322,8 +1322,8 @@ function results(meas: number | null, Y: Float64Array | null, n: number): void {
     Math.abs(z) <= c.cfz
       ? '臨界焦点範囲の中。ピントは合っています。'
       : z > 0
-        ? `臨界焦点範囲の外。センサーが焦点より奥にあります。${Math.round(Math.abs(z))} µm 手前へ送ってください。`
-        : `臨界焦点範囲の外。センサーが焦点より手前にあります。${Math.round(Math.abs(z))} µm 奥へ送ってください。`;
+        ? `臨界焦点範囲の外。センサが焦点より奥にあります。${Math.round(Math.abs(z))} µm 手前へ送ってください。`
+        : `臨界焦点範囲の外。センサが焦点より手前にあります。${Math.round(Math.abs(z))} µm 奥へ送ってください。`;
   switch (c.kind) {
     case 'bahtinov': {
       const est = meas != null && g ? meas / g : null;

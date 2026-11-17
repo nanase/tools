@@ -240,7 +240,7 @@ audio.onStops = (ids) => {
 };
 
 /* ---------- スウェル ---------- */
-/* 以前の保存（スライダーの swell）は行の保存（p:swell）へ移す */
+/* 以前の保存（スライダの swell）は行の保存（p:swell）へ移す */
 {
   const v = stored('swell');
   if (typeof v === 'number' && stored('p:swell') === undefined) store('p:swell', v);
@@ -1094,9 +1094,9 @@ function tick(): void {
   if (!p) return;
   const an = audio.now();
   if (an === null) return;
-  /* 画面が隠れている間は、タイマーが間引かれるぶん先まで予約する */
+  /* 画面が隠れている間は、タイマが間引かれるぶん先まで予約する */
   const ahead = lookahead(AHEAD);
-  /* タイマーが止まっていた間（スリープ、重い処理）に過ぎた分は、後ろへずらして続きから弾く（遅れた音をまとめて鳴らさない） */
+  /* タイマが止まっていた間（スリープ、重い処理）に過ぎた分は、後ろへずらして続きから弾く（遅れた音をまとめて鳴らさない） */
   if (an > p.until) p.at0 += an - p.until;
   p.until = Math.max(p.until, an + ahead);
   const spb = spbOf(p.piece);

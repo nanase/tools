@@ -1,5 +1,5 @@
 /**
- * 音の入力（マイク・ファイル・テスト信号）と、モニター（スピーカーへ出す音）。
+ * 音の入力（マイク・ファイル・テスト信号）と、モニタ（スピーカへ出す音）。
  * 表示は毎フレーム pull() で直近 NB 点（CH1 = L、CH2 = R）を受け取る。
  * マイクとファイルは AnalyserNode から、テスト信号はこの端末の中で作って輪のバッファから取り出す。
  * 初めはマイクを止めた状態で開く
@@ -31,7 +31,7 @@ interface Graph {
   sp: ChannelSplitterNode;
   aL: AnalyserNode;
   aR: AnalyserNode;
-  /** モニターの音量 */
+  /** モニタの音量 */
   mon: GainNode;
 }
 
@@ -45,7 +45,7 @@ export class AudioIn {
   readonly L = new Float32Array(NB);
   readonly R = new Float32Array(NB);
   test: TestParams = { wave: 'sine', f: 1000, ra: [2, 3], ph: 0 };
-  /** モニターを鳴らすか、その音量（dB、0 dB で入力と同じ大きさ） */
+  /** モニタを鳴らすか、その音量（dB、0 dB で入力と同じ大きさ） */
   monOn = false;
   vol = -30;
   /** マイクを使えないときの知らせ */
@@ -142,7 +142,7 @@ export class AudioIn {
     this.g = { ac, sp, aL, aR, mon };
     return this.g;
   }
-  /** 表示とモニターへつなぐ。モノラルは CH1 と CH2 に同じ音を入れる */
+  /** 表示とモニタへつなぐ。モノラルは CH1 と CH2 に同じ音を入れる */
   private route(n: AudioNode, ch: number): void {
     const g = this.g;
     if (!g) return;
@@ -164,7 +164,7 @@ export class AudioIn {
   /* ---------- 入力元 ---------- */
   /**
    * 入力元を変える。前の入力元は止め、新しい入力元も止めた状態で始める（開始・再生は押してから）。
-   * マイクではハウリングを避けるためモニターを使わない
+   * マイクではハウリングを避けるためモニタを使わない
    */
   setSrc(v: Src): void {
     if (v === this.src) return;
@@ -294,7 +294,7 @@ export class AudioIn {
     Object.assign(this, { node: null, playing: false, run: false });
   }
 
-  /* ---------- モニター ---------- */
+  /* ---------- モニタ ---------- */
   async setMon(on: boolean): Promise<void> {
     this.monOn = on && this.src !== 'mic';
     if (on && this.graph()) await this.resume();
@@ -309,7 +309,7 @@ export class AudioIn {
   testChanged(): void {
     this.tNode?.port.postMessage({ p: this.test } satisfies TestMsg);
   }
-  /** モニターの音量と、テスト信号を鳴らすノードを今の状態に合わせる */
+  /** モニタの音量と、テスト信号を鳴らすノードを今の状態に合わせる */
   private async syncMon(): Promise<void> {
     const g = this.g;
     if (!g) return;
@@ -335,7 +335,7 @@ export class AudioIn {
       this.tNode = null;
     }
   }
-  /** テスト信号をモニターで鳴らせない環境か（AudioWorklet を読み込めなかった） */
+  /** テスト信号をモニタで鳴らせない環境か（AudioWorklet を読み込めなかった） */
   get testMute(): boolean {
     return this.wk === false || !AC;
   }

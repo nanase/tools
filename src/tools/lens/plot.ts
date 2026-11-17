@@ -119,7 +119,7 @@ export const mapLabel = (m: MapIn): string =>
   `空に ${SKY.map((b) => `${b.name}（方位 ${num(b.az)}°・仰角 ${b.el}°）`).join('、')}`;
 
 /* ---------- レンズの断面と光線 ---------- */
-/** 断面図の全体（上の top までがレンズ、その下にセンサーの付近の拡大図を 2 つ） */
+/** 断面図の全体（上の top までがレンズ、その下にセンサの付近の拡大図を 2 つ） */
 export const SEC = { w: 400, h: 296, top: 200 } as const;
 /** 拡大図の位置と大きさ */
 const INS = { y: 212, w: 192, h: 64, gap: 8 } as const;
@@ -141,7 +141,7 @@ export interface SecIn {
 }
 
 /**
- * センサーの付近の光線（子午面の直線）: センサーの面での高さ y と傾き dy/dz、光の波長の番号（lightWaves の順）、
+ * センサの付近の光線（子午面の直線）: センサの面での高さ y と傾き dy/dz、光の波長の番号（lightWaves の順）、
  * 瞳の中心を通る光線か
  */
 interface Line {
@@ -150,7 +150,7 @@ interface Line {
   w: number;
   c: boolean;
 }
-/** 拡大図の 1 つ: 光線、輝線ごとの印（中心はピントの位置 z、隅はセンサーの上の高さ y。w は SPECTRAL の番号、
+/** 拡大図の 1 つ: 光線、輝線ごとの印（中心はピントの位置 z、隅はセンサの上の高さ y。w は SPECTRAL の番号、
    d 線だけなら -1）、縦の中心 */
 interface Inset {
   lines: Line[];
@@ -220,7 +220,7 @@ export function sectionSvg(p: SecIn): { svg: string; label: string; light: Light
     g += `<path class="ls-ideal" d="M${X(zl)} ${Y(p.a * 1.15)}V${Y(-p.a * 1.15)}"/>`;
     g += `<path class="ls-ideal-h" d="M${X(zl)} ${Y(p.a * 1.15)}l-4 6h8zM${X(zl)} ${Y(-p.a * 1.15)}l-4 -6h8z"/>`;
   }
-  /* センサー（対角の長さ） */
+  /* センサ（対角の長さ） */
   g += `<path class="ls-sen" d="M${X(st.zs)} ${Y(HALF_DIAG)}V${Y(-HALF_DIAG)}"/>`;
   /* 光線: 軸上の光束（ピントの面の中心から）と、隅（対角の端）へ向かう光束。物体側の光線はどの波長も
      同じ（d 線の主光線に合わせる）で、レンズの中で波長ごとに分かれる。光線は SVG ではなく光として描く（light.ts） */
@@ -252,7 +252,7 @@ export function sectionSvg(p: SecIn): { svg: string; label: string; light: Light
       light.fans.push({ rays, rgb: wv.rgb ?? BEAM[b], sp: (2 * st.rep * k) / (NR - 1), clip: 0 });
     }
   });
-  /* センサーの付近の拡大図（中心・隅） */
+  /* センサの付近の拡大図（中心・隅） */
   const cap: string[] = [];
   [0, HALF_DIAG].forEach((h, i) => {
     const r = insetSvg(p, insetOf(p, h, spec, lw), i, i ? '隅の像の付近' : '中心の像の付近', lw, light);
@@ -261,11 +261,11 @@ export function sectionSvg(p: SecIn): { svg: string; label: string; light: Light
   });
   const nl = s.filter((x, i) => !x.stop && x.m.nd !== 1 && i < s.length - 1).length;
   const how = p.ideal ? '' : spec ? `可視光（${SPEC_NM[0]}〜${SPEC_NM.at(-1)} nm）の光として` : 'd 線で';
-  const label = `${p.ideal ? '収差なしの薄いレンズ' : `${st.sys.rx.name}（レンズは ${nl} 枚）`}と光線の断面図。軸上の光束と、像の隅へ向かう光束を${how}描く。下はセンサーの付近の拡大図: ${cap.join('。')}`;
+  const label = `${p.ideal ? '収差なしの薄いレンズ' : `${st.sys.rx.name}（レンズは ${nl} 枚）`}と光線の断面図。軸上の光束と、像の隅へ向かう光束を${how}描く。下はセンサの付近の拡大図: ${cap.join('。')}`;
   return { svg: g, label, light };
 }
 
-/** 拡大図の光線（センサーの面での直線）と、波長ごとの印 */
+/** 拡大図の光線（センサの面での直線）と、波長ごとの印 */
 function insetOf(p: SecIn, h: number, spec: boolean, lw: Wave[]): Inset {
   const { st } = p;
   const lines: Line[] = [],
@@ -289,7 +289,7 @@ function insetOf(p: SecIn, h: number, spec: boolean, lw: Wave[]): Inset {
   });
   for (const [, l, w] of waves(spec)) {
     if (h) {
-      /* 隅: 波長ごとの主光線がセンサーに当たる高さ（倍率色収差） */
+      /* 隅: 波長ごとの主光線がセンサに当たる高さ（倍率色収差） */
       const c = ray(0, l);
       if (c) {
         marks.push({ w, v: c.y });
@@ -345,7 +345,7 @@ function insetSvg(
     const rays = t.lines.filter((l) => l.w === w).map((l) => [x0, Y(l.y - l.s * Lz), x0 + INS.w, Y(l.y + l.s * Lz)]);
     light.fans.push({ rays, rgb: wv.rgb ?? BEAM[i], sp, clip: ci });
   });
-  /* 波長ごとの印（中心は光軸の上のピントの位置、隅はセンサーの上の高さ）と、重ならない所に波長 [nm]（間隔はスマホの大きい字で決める） */
+  /* 波長ごとの印（中心は光軸の上のピントの位置、隅はセンサの上の高さ）と、重ならない所に波長 [nm]（間隔はスマホの大きい字で決める） */
   const at = (v: number) => (i ? Y(v) : X(v));
   const ms = [...t.marks].sort((a, b) => at(a.v) - at(b.v));
   let lab = '',
@@ -379,7 +379,7 @@ function insetSvg(
 function idealRays(p: SecIn, h: number, X: (z: number) => number, Y: (y: number) => number, z0: number): number[][] {
   const { st, si, so, a } = p;
   const zl = st.zs - si;
-  /* 像の点（センサーの上）と、その共役の物点 */
+  /* 像の点（センサの上）と、その共役の物点 */
   const yi = h,
     yo = so > 0 ? (-yi * so) / si : 0;
   const out: number[][] = [];

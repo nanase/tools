@@ -428,7 +428,7 @@ function drawFrames(g: CanvasRenderingContext2D, W: number, H: number, u: number
   const nw = W < 620;
   label(
     g,
-    nw ? 'フレーム' : `フレーム（灰色 = ヘッダーとサイド情報、1 秒に ${(FS / 1152).toFixed(1)} 個）`,
+    nw ? 'フレーム' : `フレーム（灰色 = ヘッダとサイド情報、1 秒に ${(FS / 1152).toFixed(1)} 個）`,
     L + 2,
     yA - 10,
     { w: 700 },

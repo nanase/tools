@@ -1,6 +1,6 @@
 /**
  * 表示窓（10 × 6 div）に描く SVG の組み立て（DOM に依存しない）:
- * 周波数特性（対数周波数軸）、インパルス応答、レベルメーター、ブロック図
+ * 周波数特性（対数周波数軸）、インパルス応答、レベルメータ、ブロック図
  */
 import { minus, parts } from '../../lib/format';
 import { DV, nice, SH, SW } from '../../lib/scope';
@@ -272,7 +272,7 @@ export function impPlot(h: Float64Array, N: number, len: number): ImpPlot {
   };
 }
 
-/* ---------- レベルメーター（−50 … 0 dBFS を横 10 div） ---------- */
+/* ---------- レベルメータ（−50 … 0 dBFS を横 10 div） ---------- */
 export const LV0 = -50;
 /** 赤く塗る始まり [dBFS] */
 export const LV_HOT = -9;

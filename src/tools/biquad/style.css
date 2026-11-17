@@ -41,7 +41,7 @@
 .cur{stroke:var(--screen-ink);stroke-width:1}
 .scope text.p2{fill:var(--ch2)}
 .hide1 .c1x{display:none}
-/* レベルメーター（表示窓の横長版） */
+/* レベルメータ（表示窓の横長版） */
 .lv-hot{fill:var(--warn)}
 
 /* ブロック図と係数（どちらかを出す） */

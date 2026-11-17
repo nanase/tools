@@ -2,7 +2,7 @@
  * 全ページ共通の動き: 配色、ツールメニュー、上部バーのページ名。
  * 各ページの入口スクリプトから initSite() を 1 度だけ呼ぶ
  */
-import { $, $$, norm } from './dom';
+import { $, $$, foldKey } from './dom';
 import { wavePath } from './logo';
 import { FADE_IN, FADE_OUT, fx, POP_IN, POP_OUT, RM } from './motion';
 
@@ -82,7 +82,7 @@ function initMenu(): void {
       });
   };
   const filter = () => {
-    const ws = norm(mq.value.trim()).split(/\s+/).filter(Boolean),
+    const ws = foldKey(mq.value.trim()).split(/\s+/).filter(Boolean),
       on = ws.length > 0;
     menu.classList.toggle('filtering', on);
     let any = false;

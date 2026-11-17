@@ -53,7 +53,7 @@ describe('programReady', () => {
     await expect(programReady(gl, P)).rejects.toThrow('link log');
   });
 
-  it('リンクの記録が空ならシェーダーの記録を使う', async () => {
+  it('リンクの記録が空ならシェーダの記録を使う', async () => {
     const { gl } = fake({ parallel: false, linked: false, shaderLog: 'compile log' });
     await expect(programReady(gl, P)).rejects.toThrow('compile log');
   });

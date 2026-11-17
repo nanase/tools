@@ -114,7 +114,7 @@ export const MUFFLERS: Record<'stock' | 'delta', { label: string; segs: readonly
   delta: { label: '社外品', segs: DELTA_EXHAUST },
 };
 
-/** 吸気管（スロットルボディ → インシュレータ → 吸気ポート） */
+/** 吸気管（スロットルボディ → インシュレーター → 吸気ポート） */
 const INTAKE: SegSpec[] = [{ len: 0.2, d: 0.024, heat: 0 }];
 
 export const JA65: EngineSpec = {

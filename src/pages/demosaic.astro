@@ -37,7 +37,7 @@ const OFFON = [
             {PATTERNS.map((p) => <button type="button" data-v={p} aria-pressed={p === 'RGGB' ? 'true' : 'false'}>{p}</button>)}
           </div>
         </div>
-        <div class="dm-grp"><span class="dm-lbl" id="l-lp" title="センサーの前の光学ローパスフィルタ。σ 0.6 画素のぼかし">ローパス</span>
+        <div class="dm-grp"><span class="dm-lbl" id="l-lp" title="センサの前の光学ローパスフィルタ。σ 0.6 画素のぼかし">ローパス</span>
           <div class="seg" id="p-lp" role="group" aria-labelledby="l-lp">
             {OFFON.map(([v, l]) => <button type="button" data-v={v} aria-pressed={v === 'off' ? 'true' : 'false'}>{l}</button>)}
           </div>

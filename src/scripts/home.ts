@@ -2,7 +2,7 @@
  * トップの入口: 共通の動き、ツール一覧の絞り込み、一覧とカードの切り替え（一覧はビルド時に HTML で出している）。
  * 一覧では行にマウスを乗せると、その行のカードを横に浮かべて図柄を動かす
  */
-import { $, $$, norm } from '../lib/dom';
+import { $, $$, foldKey } from '../lib/dom';
 import { FADE_IN, fx } from '../lib/motion';
 import { initSite } from '../lib/site';
 import { forget, store } from '../lib/store';
@@ -19,7 +19,7 @@ const q = $<HTMLInputElement>('#q'),
 
 /* ---------- 絞り込み ---------- */
 function render(): void {
-  const ws = norm(q.value.trim()).split(/\s+/).filter(Boolean);
+  const ws = foldKey(q.value.trim()).split(/\s+/).filter(Boolean);
   let n = 0;
   for (const s of shelves) {
     let k = 0;

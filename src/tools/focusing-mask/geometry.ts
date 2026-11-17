@@ -147,7 +147,7 @@ export function sections(sc: Scope, m: Mask, ab?: Aberr, n = 400): Section[] {
 }
 
 /**
- * 区画の像の位置（センサーの上、µm）。D・f は mm、dz は µm。ピントのずれで −(Δz/f)·c·R、
+ * 区画の像の位置（センサの上、µm）。D・f は mm、dz は µm。ピントのずれで −(Δz/f)·c·R、
  * 収差で −(f/R)·⟨∇W⟩（光線収差は波面の勾配に比例する）だけずれる
  */
 export const spot = (s: Section, D: number, f: number, dz: number): V2 => {

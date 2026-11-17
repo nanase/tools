@@ -128,7 +128,7 @@ const name = 'フォーカシングマスク';
         <div class="scope ray">
           <svg viewBox={`0 0 ${RAY.w} ${RAY.h}`} id="ray" role="img" aria-label="横から見た光の通り道"></svg>
         </div>
-        <p class="note">横方向は、センサーの位置のずれを拡大しています。区画ごとの光は焦点で 1 点に集まり、センサーが焦点からずれると別々の所に当たります。この当たる所のずれが、光条や穴の像のずれになります。</p>
+        <p class="note">横方向は、センサの位置のずれを拡大しています。区画ごとの光は焦点で 1 点に集まり、センサが焦点からずれると別々の所に当たります。この当たる所のずれが、光条や穴の像のずれになります。</p>
       </Panel>
 
       <Panel hid="hd-scope" title="望遠鏡" class="a-scope">
@@ -168,7 +168,7 @@ const name = 'フォーカシングマスク';
 
     <Panel hid="hd-out" title="計算結果" class="a-out">
       <dl class="metrics c3">
-        <div class="m m-main"><dt id="o-mt"></dt><dd><span id="o-mv"></span><span class="m-sub hh" id="o-ms" data-ph="臨界焦点範囲の外。センサーが焦点より手前にあります。0000 µm 奥へ送ってください。"></span></dd></div>
+        <div class="m m-main"><dt id="o-mt"></dt><dd><span id="o-mv"></span><span class="m-sub hh" id="o-ms" data-ph="臨界焦点範囲の外。センサが焦点より手前にあります。0000 µm 奥へ送ってください。"></span></dd></div>
         <div class="m"><dt id="o-et"></dt><dd><span id="o-ev"></span><span class="m-sub" id="o-es"></span></dd></div>
         <div class="m"><dt>臨界焦点範囲</dt><dd><span id="o-cfz"></span><span class="m-sub static">±2λN²（λ = 550 nm、レイリーの基準）</span></dd></div>
         <div class="m"><dt id="o-st"></dt><dd><span id="o-sv"></span><span class="m-sub" id="o-ss"></span></dd></div>

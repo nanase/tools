@@ -62,7 +62,7 @@ const mark = (id: string, m: Mark) => {
 type Src = 'mic' | 'file' | 'test';
 type Fm = 'auto' | 'manual';
 const ui = { src: 'mic' as Src, fm: 'auto' as Fm, mon: false };
-/** モニター（テスト信号をスピーカーで鳴らす）の音量: −30 dB */
+/** モニタ（テスト信号をスピーカで鳴らす）の音量: −30 dB */
 const MON = 10 ** (-30 / 20);
 const SRC_SUB: Record<Src, string> = {
   mic: 'マイク・ライン入力',
@@ -114,7 +114,7 @@ function syncIn(): void {
   txt('#t-run', SRC_SUB[s]);
   fm.set(ui.fm);
   mon.set(ui.mon ? '1' : '0');
-  /* モニターはテスト信号のときだけ使うので、ほかの入力元では行ごと隠す */
+  /* モニタはテスト信号のときだけ使うので、ほかの入力元では行ごと隠す */
   mon.root.hidden = s !== 'test';
   showCarrier();
 }

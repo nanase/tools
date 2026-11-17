@@ -65,7 +65,7 @@ export function pngParts(bytes: Uint8Array): Part[] {
   return parts;
 }
 
-/** JPEG の区画（マーカーごと） */
+/** JPEG の区画（マーカごと） */
 export function jpegParts(segs: readonly { name: string; off: number; len: number }[]): Part[] {
   return segs.map((s) => ({ name: s.name, start: s.off, end: s.off + s.len, data: s.name === 'ECS' }));
 }
@@ -177,7 +177,7 @@ const JPEG_NAMES: Record<JpegReason, string> = {
   'no-dht': 'DHT なし',
   'bad-code': '読めない符号',
   'bad-run': '範囲外の係数',
-  'stray-marker': '余分なマーカー',
+  'stray-marker': '余分なマーカ',
   'rst-order': 'RST の番号飛び',
   'short-scan': 'データ不足',
 };

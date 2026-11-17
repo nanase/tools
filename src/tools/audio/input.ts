@@ -1,5 +1,5 @@
 /**
- * 入力の枠とモニターの枠（InputPanel.astro・MonitorPanel.astro）の動作。
+ * 入力の枠とモニタの枠（InputPanel.astro・MonitorPanel.astro）の動作。
  * 入力の状態は AudioIn が持ち、ここは画面との受け渡しだけをする
  */
 import { Choice } from '../../lib/choice';
@@ -57,7 +57,7 @@ export function initInput(): InputUi {
     });
   }
 
-  /** モニターを使えない状態（マイク）か。初めは使える状態から合わせる */
+  /** モニタを使えない状態（マイク）か。初めは使える状態から合わせる */
   let monOff = false;
   const snd = $<HTMLDetailsElement>('.a-snd');
   /* 畳んで開けなくしている間は、見出しを押しても開かない（開閉の動き（tool-page.ts）より先に止める） */
@@ -104,7 +104,7 @@ export function initInput(): InputUi {
     tw.set(a.test.wave);
     $('#p-tf').hidden = !test || !per;
     if (ratio) ratio.hidden = $('#p-tph').hidden = !test || !per;
-    /* モニター: マイクの間は枠ごと畳んで開けなくする。ほかの入力元に変えたら開く（閉じて保存していれば閉じたまま） */
+    /* モニタ: マイクの間は枠ごと畳んで開けなくする。ほかの入力元に変えたら開く（閉じて保存していれば閉じたまま） */
     const mic = s === 'mic';
     if (mic !== monOff) {
       monOff = mic;

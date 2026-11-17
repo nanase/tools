@@ -1,5 +1,5 @@
 /**
- * テスト信号をモニターで鳴らす AudioWorklet。capture.ts が ?worker&url で読み込み、'audio-test' として使う。
+ * テスト信号をモニタで鳴らす AudioWorklet。capture.ts が ?worker&url で読み込み、'audio-test' として使う。
  * port で受け取った条件（TestMsg）で、出力の 2 チャンネルに L・R を書く
  */
 import { genTest, type TestParams } from './signal';

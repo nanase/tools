@@ -29,7 +29,7 @@ export interface Sys {
   si: number;
 }
 
-/** 35 mm 判のセンサー [mm] */
+/** 35 mm 判のセンサ [mm] */
 export const SENSOR = { w: 36, h: 24 } as const;
 export const HALF_DIAG = Math.hypot(SENSOR.w, SENSOR.h) / 2;
 
@@ -161,9 +161,9 @@ function apertures(sys: Sys, v = 0.75): void {
 /* ---------- ピントと瞳 ---------- */
 export interface State {
   sys: Sys;
-  /** ピントの距離（センサーから物体の面まで）。Infinity は無限遠 */
+  /** ピントの距離（センサから物体の面まで）。Infinity は無限遠 */
   D: number;
-  /** センサーの位置 */
+  /** センサの位置 */
   zs: number;
   /** ピントの合う物体の面の位置（無限遠は −Infinity） */
   zo: number;
@@ -192,7 +192,7 @@ export interface State {
 export const polyR = (r: number, n: number): number =>
   n >= 3 ? r * Math.sqrt((2 * Math.PI) / (n * Math.sin((2 * Math.PI) / n))) : r;
 
-/** 最短撮影距離: 撮影倍率 1/2 まで（センサーから物体まで） */
+/** 最短撮影距離: 撮影倍率 1/2 まで（センサから物体まで） */
 export function minFocus(sys: Sys): number {
   const c = cardinal(sys.s);
   return 4.5 * c.f + (c.zH1 - c.zH);
@@ -244,7 +244,7 @@ export function focus(sys: Sys, D: number, N: number, blades: number): State {
 }
 
 /**
- * 収差なしの薄いレンズ（比べる用）: ピントの距離 D（センサーから、Infinity は無限遠）での像距離 si・
+ * 収差なしの薄いレンズ（比べる用）: ピントの距離 D（センサから、Infinity は無限遠）での像距離 si・
  * 物体距離 so（無限遠は 0）と、F 値 N の開口の半径 a
  */
 export function thinLens(f: number, D: number, N: number): { si: number; so: number; a: number } {
@@ -332,8 +332,8 @@ export function inStop(x: number, y: number, rc: number, n: number): boolean {
 const nsAt = (s: readonly Surf[], l: number): number[] => s.map((x) => nAt(x.m, l));
 
 /**
- * 物体側からセンサーまで追跡する。each(i, x, y, z) は各面の交点ごとに呼ぶ。
- * 通り抜けたら -1、止まったらその面の番号（ray はその面の交点まで進んでいる）。最後にセンサーの面へ進める
+ * 物体側からセンサまで追跡する。each(i, x, y, z) は各面の交点ごとに呼ぶ。
+ * 通り抜けたら -1、止まったらその面の番号（ray はその面の交点まで進んでいる）。最後にセンサの面へ進める
  */
 export function traceFwd(
   st: State,
@@ -364,7 +364,7 @@ export function traceFwd(
   return -1;
 }
 
-/** センサーの側から物体側へ逆に追跡する（描画と同じ向き）。通り抜けたら true */
+/** センサの側から物体側へ逆に追跡する（描画と同じ向き）。通り抜けたら true */
 export function traceRev(st: State, r: Ray, l: number, rc = st.rc, bl = st.blades): boolean {
   const { s } = st.sys,
     ns = nsAt(s, l);

@@ -308,7 +308,7 @@ const shift = (dir: 1 | -1) => {
 };
 $('#upBtn').addEventListener('click', () => shift(1));
 $('#dnBtn').addEventListener('click', () => shift(-1));
-/* キーボード: Space で全開、1〜9 で 10〜90 %、0 で 100 %（押している間）。入力欄・ボタン・ほかのスライダーにいるときは使わない */
+/* キーボード: Space で全開、1〜9 で 10〜90 %、0 で 100 %（押している間）。入力欄・ボタン・ほかのスライダにいるときは使わない */
 let key = '';
 const keyVal = (e: KeyboardEvent): number | null =>
   e.code === 'Space' ? 100 : /^Digit[0-9]$/.test(e.code) ? Number(e.code.slice(5)) * 10 || 100 : null;

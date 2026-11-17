@@ -64,7 +64,7 @@ import { EQS } from './theory';
   <li><b>標準の表</b>: Annex K の K.3〜K.6</li>
   <li><b>最適化</b>: この画像の記号の出現回数から、長さ 16 ビット以下という制限つきでハフマン木を作る。K.2 の手順<a class="rf" href="#thy-r2">[2]</a><a class="rf" href="#thy-r4">[4]</a></li>
 </ul>
-<p>符号化したデータの中に 0xFF のバイトが現れたら、マーカーと区別するため後に 0x00 を挟みます。最後のバイトの余りは 1 で埋めます。</p>
+<p>符号化したデータの中に 0xFF のバイトが現れたら、マーカと区別するため後に 0x00 を挟みます。最後のバイトの余りは 1 で埋めます。</p>
 
 <h3>ファイルの構成</h3>
 <p>ファイルは次の並びです<a class="rf" href="#thy-r1">[1]</a><a class="rf" href="#thy-r2">[2]</a>。</p>
@@ -87,7 +87,7 @@ import { EQS } from './theory';
 <h3>出典</h3>
 <ol class="refs">
   <li id="thy-r1"><span class="rf-for">色の変換、色差の標本の位置、APP0</span><span class="rf-src">E. Hamilton, <a href="https://www.w3.org/Graphics/JPEG/jfif3.pdf" target="_blank" rel="noopener">JPEG File Interchange Format, Version 1.02</a>, C-Cube Microsystems, 1992</span></li>
-  <li id="thy-r2"><span class="rf-for">DCT・逆 DCT・量子化・ジグザグ順・DC の差分と AC のランレングス・ハフマン符号・マーカー（A.3.3・A.3.4・図 A.6・F.1.2・Annex B・Annex C）、量子化テーブルとハフマン表の標準（Annex K の表 K.1〜K.6）、最適なハフマン表の作り方（K.2）</span><span class="rf-src">ITU-T Recommendation T.81 | ISO/IEC 10918-1, <a href="https://www.w3.org/Graphics/JPEG/itu-t81.pdf" target="_blank" rel="noopener">Digital compression and coding of continuous-tone still images – Requirements and guidelines</a>, 1992</span></li>
+  <li id="thy-r2"><span class="rf-for">DCT・逆 DCT・量子化・ジグザグ順・DC の差分と AC のランレングス・ハフマン符号・マーカ（A.3.3・A.3.4・図 A.6・F.1.2・Annex B・Annex C）、量子化テーブルとハフマン表の標準（Annex K の表 K.1〜K.6）、最適なハフマン表の作り方（K.2）</span><span class="rf-src">ITU-T Recommendation T.81 | ISO/IEC 10918-1, <a href="https://www.w3.org/Graphics/JPEG/itu-t81.pdf" target="_blank" rel="noopener">Digital compression and coding of continuous-tone still images – Requirements and guidelines</a>, 1992</span></li>
   <li id="thy-r3"><span class="rf-for">品質の式</span><span class="rf-src">Independent JPEG Group, <a href="https://ijg.org/" target="_blank" rel="noopener">libjpeg</a>, jcparam.c の jpeg_quality_scaling と jpeg_add_quant_table</span></li>
   <li id="thy-r4"><span class="rf-for">最適なハフマン表</span><span class="rf-src">Independent JPEG Group, <a href="https://ijg.org/" target="_blank" rel="noopener">libjpeg</a> 版 6b, jchuff.c の jpeg_gen_optimal_table</span></li>
   <li id="thy-r5"><span class="rf-for">色差の線形補間</span><span class="rf-src">Independent JPEG Group, <a href="https://ijg.org/" target="_blank" rel="noopener">libjpeg</a> 版 6b, jdsample.c の fancy upsampling。版 7 で DCT による拡大に替わった</span></li>

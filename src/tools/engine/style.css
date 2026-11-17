@@ -50,7 +50,7 @@ kbd{font:500 11px var(--mono);padding:0 4px;border:1px solid var(--line-2);borde
 .eng .lb2{fill:var(--ink-3);font-size:10px}
 .eng.nar text{font-size:13px}
 .eng.nar .lb2{font-size:12px}
-/* 金属（シリンダ・ヘッド・クランク）、ピストンと連接棒、弁まわり、ポート */
+/* 金属（シリンダー・ヘッド・クランク）、ピストンと連接棒、弁まわり、ポート */
 .e-metal{fill:color-mix(in srgb,var(--screen-ink) 20%,var(--screen));stroke:var(--screen-ink);stroke-width:1}
 .e-fin{stroke:color-mix(in srgb,var(--screen-ink) 35%,var(--screen));stroke-width:3;stroke-linecap:round}
 .e-case{fill:color-mix(in srgb,var(--screen-ink) 10%,var(--screen));stroke:var(--screen-ink);stroke-width:1}

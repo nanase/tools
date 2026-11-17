@@ -10,7 +10,7 @@
 | [大赤斑の経度](#大赤斑の経度) | [grs.ts](grs.ts) | 読み取った値 |
 | [すべての衛星](#すべての衛星) | [public/jupiter/moons.json](../../../public/jupiter/moons.json)・[model.ts](model.ts) の `INNER` | 位置は JPL Horizons、名前と群は CC BY-SA 4.0 |
 
-ページのフッターには OPAL の謝辞（Hubble の OPAL、PI と提案番号、STScI、DOI）、Astronomy Engine の著作権表示、ウィキペディア日本語版から取ったことを出します。
+ページのフッタには OPAL の謝辞（Hubble の OPAL、PI と提案番号、STScI、DOI）、Astronomy Engine の著作権表示、ウィキペディア日本語版から取ったことを出します。
 
 ## 模様の地図（OPAL）
 

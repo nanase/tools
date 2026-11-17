@@ -41,7 +41,7 @@ const name = 'JJY デコーダ';
           </div>
           <ChoiceRow k="fm" sym="<i>f</i><sub>0</sub>" name="搬送波" sub="周波数の決め方。自動は入力から最も振幅の大きい周波数を使います" choices={[['auto', '自動'], ['manual', '手動']]} value="auto" msg />
           <ParamRow d={F_PARAM} />
-          <ChoiceRow k="mon" sym="<i>~</i>" name="モニター" sub="テスト信号をスピーカーで鳴らす" choices={[['0', '出さない'], ['1', '出す']]} value="0" msg />
+          <ChoiceRow k="mon" sym="<i>~</i>" name="モニタ" sub="テスト信号をスピーカで鳴らす" choices={[['0', '出さない'], ['1', '出す']]} value="0" msg />
         </div>
         <p class="desc" id="srcTip" role="tooltip" hidden>マイクとライン入力は、エコー除去・ノイズ抑制・自動音量調整を切って取り込みます。JJY のページの可聴音を別の端末で鳴らしてマイクに近づけるか、ケーブルでライン入力へつなぎます。テスト信号は、この端末の時計の時刻をJJY のページと同じ規則で符号にした 440 Hz の音で、マイクを通さずにそのまま解読します。</p>
       </Panel>

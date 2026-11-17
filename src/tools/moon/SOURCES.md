@@ -9,7 +9,7 @@
 | [地名](#地名) | [features.json](features.json)・[features.meta.json](features.meta.json) | CC BY-SA 4.0 |
 | [月食の一覧](#月食の一覧nasa-の五千年月食目録) | [eclipses.json](../../../public/moon/eclipses.json) | NASA の利用条件（謝辞を添えれば複製可） |
 
-ページのフッターには次の出典表記を出します。
+ページのフッタには次の出典表記を出します。
 
 - "NASA's Scientific Visualization Studio"（高さと模様の色）
 - "Eclipse Predictions by Fred Espenak, NASA's GSFC"（月食の一覧）
@@ -142,7 +142,7 @@ bun run moon-eclipses [置き場]
 - 予報の元: F. Espenak & J. Meeus, *Five Millennium Catalog of Lunar Eclipses: −1999 to +3000*, NASA/TP-2009-214173（2009）
 - 取得日: 2026-10-22
 - 利用条件: "Permission is freely granted to reproduce this data when accompanied by an acknowledgment: "Eclipse Predictions by Fred Espenak (NASA's GSFC)""（[Five Millennium Catalog of Lunar Eclipses](https://eclipse.gsfc.nasa.gov/LEcat5/LEcatalog.html)）
-- 出典表記: ページのフッターに "Eclipse Predictions by Fred Espenak, NASA's GSFC" を出す
+- 出典表記: ページのフッタに "Eclipse Predictions by Fred Espenak, NASA's GSFC" を出す
 
 ### データの形
 

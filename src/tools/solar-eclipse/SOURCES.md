@@ -17,7 +17,7 @@
 - 予報の元: F. Espenak & J. Meeus, *Five Millennium Canon of Solar Eclipses: −1999 to +3000*, NASA/TP-2006-214141（2006）
 - 取得日: 2026-10-16
 - 利用条件: "Permission is freely granted to reproduce this data when accompanied by an acknowledgment: Eclipse Predictions by Fred Espenak (NASA's GSFC)"（[NASA SEcatalog](https://eclipse.gsfc.nasa.gov/SEcat5/SEcatalog.html)）
-- 出典表記: ページのフッターに "Eclipse Predictions by Fred Espenak, NASA's GSFC" を出す
+- 出典表記: ページのフッタに "Eclipse Predictions by Fred Espenak, NASA's GSFC" を出す
 - 加工: ブラウザへ送るときに列を絞り（μ2 と tmin・tmax を除く）、数の並びに詰める（[pack.ts](pack.ts)）。値は変えない
 
 ## 陸地（Natural Earth）

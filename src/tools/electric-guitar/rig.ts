@@ -165,7 +165,7 @@ export function toneStackPoly(t: number, m: number, lRaw: number): Poly {
 }
 
 /* ---------- キャビネット ---------- */
-/** スピーカーと箱: 低い共振 [Hz] と Q、中域の山、分割振動の谷 [Hz]、高域の下限 [Hz]、補い（このツールで決めた目安） */
+/** スピーカと箱: 低い共振 [Hz] と Q、中域の山、分割振動の谷 [Hz]、高域の下限 [Hz]、補い（このツールで決めた目安） */
 export const CABS = {
   '1x12': { fr: 95, q: 1.1, mid: 1600, midDb: 3, notch: 3800, lp: 4800, g: 1.1 },
   '4x12': { fr: 80, q: 1.7, mid: 1100, midDb: 4, notch: 3200, lp: 4200, g: 1.0 },
@@ -186,7 +186,7 @@ export function cabFilters(type: Exclude<CabType, 'off'>, mic: 'center' | 'edge'
 }
 
 /* ---------- フィードバック ---------- */
-/** スピーカーから弦までの遅れ [s]（1.2 m と、出力の遅れの目安） */
+/** スピーカから弦までの遅れ [s]（1.2 m と、出力の遅れの目安） */
 const FB_DELAY = 0.006;
 /** キャビネットのレベル（マイクの音量）の幅 [dB]（つまみ 0〜10 で ±LEVEL_DB/2） */
 const LEVEL_DB = 24;
@@ -376,7 +376,7 @@ export class Rig {
       y = this.ampL[k].run(this.ampC[k].run(this.ampSh[k].run(y))) * (k < ty.stages - 1 ? ty.inter : 1);
     x = this.pw.run(this.ts.run(y) * 3 * ty.mk * this.pwG) * 0.9;
     tap[i++] = x;
-    /* キャビネットとマイク。フィードバックはスピーカーの音で、マイクのレベルの前 */
+    /* キャビネットとマイク。フィードバックはスピーカの音で、マイクのレベルの前 */
     if (R.cab.type !== 'off') {
       for (const f of this.cabF) x = f.run(x);
       x *= CABS[R.cab.type].g;

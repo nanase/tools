@@ -115,7 +115,7 @@ export const VOL: ParamDef & { k: Key } = {
   nm: 'A',
   sym: '<i>A</i>',
   name: '音量',
-  sub: 'スピーカーへ出す大きさ（0 dB = 波形と同じ大きさ）',
+  sub: 'スピーカへ出す大きさ（0 dB = 波形と同じ大きさ）',
   unit: 'dB',
   min: -60,
   max: 0,

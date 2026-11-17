@@ -69,7 +69,7 @@ export const PICK_ROWS: Record<Any, readonly PickDef[]> = Object.fromEntries(
 export function knobOff(a: Any, k: string, v: Record<string, number | string>): string {
   if (a === 'wah' && k === 'pedal' && v.mode !== 'manual') return 'オートでは使いません';
   if (a === 'wah' && k === 'sens' && v.mode === 'manual') return 'ペダルでは使いません';
-  if (a === 'cab' && k === 'fb' && v.type === 'off') return 'スピーカーなしでは使いません';
+  if (a === 'cab' && k === 'fb' && v.type === 'off') return 'スピーカなしでは使いません';
   return '';
 }
 
