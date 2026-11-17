@@ -96,9 +96,5 @@
 @media (max-width:600px){.rz-ro{min-height:3em}}
 
 /* しくみ */
-.rz-steps{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));gap:8px}
-.rz-st{display:grid;grid-template-columns:172px minmax(0,1fr);gap:10px;align-items:start;padding:6px;border:1px solid var(--line);border-radius:4px;background:var(--surface)}
-.rz-st canvas{display:block;width:172px;height:104px;border-radius:2px;background:var(--screen)}
-.rz-st h3{margin:0 0 3px;font-size:13.5px;line-height:1.45}
-.rz-st h3 i{margin-right:5px;font:700 12px var(--mono);font-style:normal;color:var(--ink-3)}
-.rz-st p{margin:0;font-size:12.5px;line-height:1.6;color:var(--ink-2)}
+#rz-how{--how-min:340px}
+#rz-how canvas{display:block;width:172px;height:104px;border-radius:2px;background:var(--screen)}

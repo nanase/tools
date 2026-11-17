@@ -69,12 +69,6 @@
 .pc-met dd{font:500 17px var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* しくみ */
-.pc-how{display:grid;gap:10px 16px;grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}
-.pc-hw{display:flex;gap:10px;align-items:flex-start}
-.pc-hw>b{flex:none;display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--ink);color:var(--surface);font:700 12px var(--mono)}
-.pc-hw h3{margin:0;font-size:14px}
-.pc-hw p{margin:2px 0 0;font-size:13px;color:var(--ink-2)}
-.pc-hw .pc-sub{font-size:12px;color:var(--ink-3)}
 .pc-tab{width:100%;margin-top:16px;border-collapse:collapse;font:500 13px var(--sans)}
 .pc-tab th{font:700 12px var(--sans);color:var(--ink-3);text-align:left;padding:4px 8px;border-bottom:1px solid var(--line-2)}
 .pc-tab td{padding:5px 8px;border-bottom:1px solid var(--line)}
