@@ -354,7 +354,7 @@ function paintOne(): void {
     fr = run.frames[fi];
   drawRun(mainCv, run, fi, { regions: S.regions });
   setSay(fr.say);
-  for (const b of $$('.cl-step')) b.classList.toggle('on', Number(b.dataset.st) === fr.st);
+  for (const b of $$('.cl-step')) b.setAttribute('aria-pressed', String(Number(b.dataset.st) === fr.st));
 }
 function setSay(s: string): void {
   const el = $('#cl-say');
@@ -427,14 +427,18 @@ function syncSteps(r: Run): void {
   steps.forEach(([h, t], st) => {
     const b = document.createElement('button'),
       cv = document.createElement('canvas'),
-      tt = document.createElement('b'),
-      em = document.createElement('em'),
+      tt = document.createElement('span'),
+      no = document.createElement('b'),
       sp = document.createElement('span');
     b.type = 'button';
-    b.className = 'cl-step';
+    b.className = 'how-c cl-step';
     b.dataset.st = String(st);
-    em.textContent = String(st + 1);
-    tt.append(em, h);
+    b.setAttribute('aria-pressed', 'false');
+    tt.className = 'how-h';
+    no.className = 'how-n';
+    no.textContent = String(st + 1);
+    sp.className = 'how-p';
+    tt.append(no, h);
     sp.textContent = t;
     b.append(cv, tt, sp);
     host.append(b);
