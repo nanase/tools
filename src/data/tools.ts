@@ -22,6 +22,7 @@ export interface Tool {
 
 export const CATS = [
   '電子回路',
+  '論理回路',
   '通信・符号',
   '制御',
   '信号処理',
@@ -340,7 +341,7 @@ export const TOOLS: Tool[] = [
   },
   {
     id: 'logic-gates',
-    c: '電子回路',
+    c: '論理回路',
     t: '論理ゲート',
     d: 'ゲートと回路の入力を切り替えて真理値表と見比べます。',
     ic: 'lg',
@@ -349,7 +350,7 @@ export const TOOLS: Tool[] = [
   },
   {
     id: 'karnaugh',
-    c: '電子回路',
+    c: '論理回路',
     t: 'カルノー図',
     d: '真理値表から最小の論理式と回路を求めます。',
     ic: 'km',
