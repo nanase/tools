@@ -1,4 +1,4 @@
-/* ピアノ音響モデルのページだけのスタイル（共通は src/styles/site.css） */
+/* ピアノのページだけのスタイル（共通は src/styles/site.css） */
 
 /* 押している鍵の色（site.css の --warn は警告専用なので使わない） */
 :root{--key-on:#d7262e}

@@ -1,4 +1,4 @@
-# ピアノ音響モデル
+# ピアノ
 
 演奏の枠と MIDI の枠の共通の決まりは [instruments.md](../instruments.md) にある。
 

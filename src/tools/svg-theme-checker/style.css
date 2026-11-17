@@ -1,4 +1,4 @@
-/* SVG テーマスキーマチェッカーのページだけのスタイル（共通は src/styles/site.css） */
+/* SVG テーマのページだけのスタイル（共通は src/styles/site.css） */
 
 /* 見出しが折り返しても「?」を最後の語の横に置く。折り返しは語の切れ目（wbr）だけ */
 .ttl-h{display:block;padding-right:26px}

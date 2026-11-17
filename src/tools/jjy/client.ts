@@ -1,4 +1,4 @@
-/** JJY シミュレータの入口: 時刻の進行 → 1 分ぶんの符号 → 時刻・タイムコード・式・音 */
+/** JJY のページの入口: 時刻の進行 → 1 分ぶんの符号 → 時刻・タイムコード・式・音 */
 import { Choice } from '../../lib/choice';
 import { $, $$ } from '../../lib/dom';
 import { fmt } from '../../lib/format';

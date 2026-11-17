@@ -1,5 +1,5 @@
 /* タイムコード（Timecode.astro。旧ページの色分けバー表示を踏襲）。PC は 30 本 × 2 段、狭い枠は 15 本 × 4 段。
-   JJY シミュレータと JJY デコーダで共有する。枠（.a-wave）に container-type を付けて使う */
+   JJY のページと JJY デコーダで共有する。枠（.a-wave）に container-type を付けて使う */
 .tg:disabled{border-color:var(--line);background:none;color:var(--ink-3);opacity:.6;cursor:default}
 .bi{margin-top:12px}
 @container (max-width:359.98px){.bi .m:nth-child(3){grid-column:1/-1}}

@@ -1,4 +1,4 @@
-/** ピアノ音響モデルの入力の定義（数値の行・選択肢・表示の設定） */
+/** ピアノのページの入力の定義（数値の行・選択肢・表示の設定） */
 import { minus } from '../../lib/format';
 import type { ParamDef, ParamFormat } from '../../lib/param-def';
 

@@ -1,6 +1,6 @@
 /**
  * 復号（DOM に依存しない）: 包絡線（1 ms ごと）→ しきい値 → パルス → 分の同期 → 1 分ぶんの符号 → 値とフラグ。
- * 符号の割り当ては JJY シミュレータ（../jjy/code.ts）と共有する
+ * 符号の割り当ては JJY のページ（../jjy/code.ts）と共有する
  */
 import { type Code, FIELDS, type Field, MARKERS, PA1, PA2 } from '../jjy/code';
 import { p2 } from '../jjy/time';

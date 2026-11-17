@@ -380,7 +380,7 @@ describe('表示の形', () => {
 });
 
 describe('ギターの物理モデルの音', () => {
-  /** サイトのギター音響モデルで、標準調弦に合わせたスチール弦のギター（test/guitar.test.ts と同じ組み立て） */
+  /** サイトのギターのページで、標準調弦に合わせたスチール弦のギター（test/guitar.test.ts と同じ組み立て） */
   function steel(): Guitar {
     const set = setOf('steel'),
       notes = tuningOf('std').notes,

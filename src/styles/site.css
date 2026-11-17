@@ -213,7 +213,7 @@ a.unit:hover h3{text-decoration:underline;text-decoration-color:var(--ink-3);tex
 .ic .t{stroke-width:1}.ic .w{stroke-width:3.5;stroke-linecap:butt}.ic .g{opacity:.45}
 .ic .fa{fill:var(--ch1);stroke:none}.ic .fb{fill:var(--ch2);stroke:none}.ic .fc{fill:var(--screen-ink);stroke:none;opacity:.75}
 .ic .fr{fill:var(--ic-red);stroke:none}
-/* SVG テーマスキーマチェッカーの図柄は、サイトのテーマによらず明るい地と暗い地を並べる */
+/* SVG テーマのページの図柄は、サイトのテーマによらず明るい地と暗い地を並べる */
 .ic .pl{fill:#f4f5f1}.ic .pd{fill:#121517}.ic .il{stroke:#15191c}.ic .ih{stroke:#e6e8e4}
 .ic .sn{fill:#e8a020;stroke:none}.ic .sr{stroke:#e8a020}.ic .ml{fill:#dde2da;stroke:#15191c}.ic .md{fill:#283035;stroke:#e6e8e4}
 .ic .mn{fill:#f3d77c;stroke:none}.ic .mn.g0{opacity:.13}.ic .sk{fill:#e6e8e4;stroke:none}

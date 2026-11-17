@@ -64,7 +64,7 @@ const THIRDS = TEMPERAMENTS.map((t) => {
 const WM3_C = keyStats(setup('wm3', 'organ'), 4, false)[0].b3,
   MT4_CS = keyStats(setup('mt4', 'organ'), 4, false)[1].b3;
 
-/* ピアノの非調和性係数（ピアノ音響モデルの弦）と、うなりの変化 */
+/* ピアノの非調和性係数（ピアノのページの弦）と、うなりの変化 */
 const B_KEYS = [21, 36, 48, 60, 69, 84, 108];
 const B_ROWS = PIANO_TYPES.map((t) => ({ name: t.name, B: B_KEYS.map((m) => bOf(setup('et', 'piano', t.v), m)) }));
 const PB_SETUPS = [
@@ -239,7 +239,7 @@ const CENTS = TEMPERAMENTS.map((t) => ({ name: t.name, c: cents(t) }));
   <dt><math><mi>T</mi><mo>,</mo><mspace width="0.3em"/><mi>L</mi></math></dt><dd>張力と、振動する長さ</dd>
 </dl>
 <h4>B の大きさ</h4>
-<p>このツールの <math><mi>B</mi></math> は、ピアノ音響モデルの弦の寸法から鍵ごとに求めます。実測では、グランドの最低音で約 <math><mn>2</mn><mo>×</mo><msup><mn>10</mn><mrow><mo>−</mo><mn>4</mn></mrow></msup></math> です<Fragment set:html={rf(6)} />。中音域の計算には <math><mn>4</mn><mo>×</mo><msup><mn>10</mn><mrow><mo>−</mo><mn>4</mn></mrow></msup></math>〜<math><mn>2</mn><mo>×</mo><msup><mn>10</mn><mrow><mo>−</mo><mn>3</mn></mrow></msup></math> が使われています<Fragment set:html={rf(7)} />。低音の巻弦で小さく、高音へ向けて急に増え、<math><msup><mn>10</mn><mrow><mo>−</mo><mn>2</mn></mrow></msup></math> の桁に達します<Fragment set:html={rf(8)} />。短い弦ほど大きいので、小さいピアノほど中音・低音の <math><mi>B</mi></math> が大きくなります。</p>
+<p>このツールの <math><mi>B</mi></math> は、ピアノのページの弦の寸法から鍵ごとに求めます。実測では、グランドの最低音で約 <math><mn>2</mn><mo>×</mo><msup><mn>10</mn><mrow><mo>−</mo><mn>4</mn></mrow></msup></math> です<Fragment set:html={rf(6)} />。中音域の計算には <math><mn>4</mn><mo>×</mo><msup><mn>10</mn><mrow><mo>−</mo><mn>4</mn></mrow></msup></math>〜<math><mn>2</mn><mo>×</mo><msup><mn>10</mn><mrow><mo>−</mo><mn>3</mn></mrow></msup></math> が使われています<Fragment set:html={rf(7)} />。低音の巻弦で小さく、高音へ向けて急に増え、<math><msup><mn>10</mn><mrow><mo>−</mo><mn>2</mn></mrow></msup></math> の桁に達します<Fragment set:html={rf(8)} />。短い弦ほど大きいので、小さいピアノほど中音・低音の <math><mi>B</mi></math> が大きくなります。</p>
 <div class="tt-w"><table class="tt">
   <thead><tr><th scope="col">ピアノ</th>{B_KEYS.map((m) => <th scope="col" class="num">{noteName(m)}</th>)}</tr></thead>
   <tbody>
@@ -276,7 +276,7 @@ const CENTS = TEMPERAMENTS.map((t) => ({ name: t.name, c: cents(t) }));
   <li><b>6:3</b>: オクターブ L–U の間の音 X で、短 3 度 L–X と長 6 度 X–U（どちらも X の第 5 部分音）</li>
 </ul>
 <h4>ストレッチ</h4>
-<p>耳で合わせたピアノは、高音ほど高く、低音ほど低くずれています。Railsback が測ったこの曲線の原因は、弦の非調和性です<Fragment set:html={rf(9)} />。このツールのストレッチは、ピアノ音響モデルと同じ調律です。</p>
+<p>耳で合わせたピアノは、高音ほど高く、低音ほど低くずれています。Railsback が測ったこの曲線の原因は、弦の非調和性です<Fragment set:html={rf(9)} />。このツールのストレッチは、ピアノのページと同じ調律です。</p>
 <ul class="tl">
   <li><b>A3〜A4</b>: 第 1 部分音を平均律にする</li>
   <li><b>それより上</b>: 第 1 部分音を 1 オクターブ下の第 2 部分音に合わせる（2:1）</li>
@@ -349,7 +349,7 @@ const CENTS = TEMPERAMENTS.map((t) => ({ name: t.name, c: cents(t) }));
   <li>うなりの灯りは、一致する 2 つの部分音の振幅（ピアノは減衰の前の値）で求めた <math><mi>E</mi><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo></math> で描く。灯りは <math><msup><mi>E</mi><mn>2</mn></msup></math> で明るさを変え、部分音が一致しない組は暗く、純正の組は点けたままにする。2 次のうなりの灯りは 0.2〜1 の間で明滅させる</li>
   <li>全体の音の揺れのグラフは、鳴り始めから 2 秒を 300 点で描く。ピアノは 600 点で求め、その時刻の振幅の和で割って減衰を除く。非調和性で高い部分音の位相が速く回る細かな震えは 30 ms の移動平均でならす。縦軸は値の範囲に合わせて 0.1 刻みで広げる</li>
   <li>純正の目盛りの色は、部分音が一致する組が 3 つまでなら組ごとに分ける。4 つ以上の和音（属七の和音・開いた長三和音）では、表や拡大図で選んだ組だけに色をつけ、ほかの組は灰色の帯にする</li>
-  <li>ピアノの <math><mi>B</mi></math> とストレッチは、ピアノ音響モデルの弦と調律（コンサートグランド・グランド・アップライト）をそのまま使う</li>
+  <li>ピアノの <math><mi>B</mi></math> とストレッチは、ピアノのページの弦と調律（コンサートグランド・グランド・アップライト）をそのまま使う</li>
   <li>調ごとの表は、選んだオクターブに主音を置いた主和音の 3 度（短調は短 3 度）と 5 度</li>
   <li>音律の表の右の 2 列は、今の根音の主和音の 3 度（短調は短 3 度）と 5 度の、純正からのずれ</li>
   <li>音律 A と B を {(AB_MS / 1000).toFixed(1)} 秒ごとに入れ替えて鳴らす</li>

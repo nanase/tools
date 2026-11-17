@@ -1,4 +1,4 @@
-/* 受動素子組み合わせ計算機のページだけのスタイル（共通は src/styles/site.css） */
+/* 受動素子の組み合わせのページだけのスタイル（共通は src/styles/site.css） */
 @media (min-width:1000px){
   .tgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr);grid-template-rows:auto 1fr auto;grid-template-areas:"in out" "in sch" "thy thy";align-items:start}
   .a-in{grid-area:in}.a-out{grid-area:out}.a-sch{grid-area:sch}.a-thy{grid-area:thy}

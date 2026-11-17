@@ -609,7 +609,7 @@ document.addEventListener('keydown', (e) => {
   setPause(!S.paused);
 });
 
-/* ---------- 音: エンジン音響モデルの音を、回転数を保つ運転で鳴らし、毎フレーム回転数とスロットルを送る ---------- */
+/* ---------- 音: エンジンのページの音を、回転数を保つ運転で鳴らし、毎フレーム回転数とスロットルを送る ---------- */
 const audio = new EngineAudio(),
   sndBtn = $<HTMLButtonElement>('#tm-snd'),
   sndT = $('#tm-sndT'),

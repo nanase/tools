@@ -187,7 +187,7 @@ export interface Setup {
   st: boolean;
 }
 
-/** ピアノの鍵ごとの非調和性係数 B とストレッチのずれ [セント]（ピアノ音響モデルの弦から求める。機種・A4 ごとに覚える） */
+/** ピアノの鍵ごとの非調和性係数 B とストレッチのずれ [セント]（ピアノのページの弦から求める。機種・A4 ごとに覚える） */
 const pianoCache = new Map<string, { B: number[]; st: number[] }>();
 function piano(t: PianoType, a4: number): { B: number[]; st: number[] } {
   const key = `${t.v}:${a4}`;

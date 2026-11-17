@@ -67,7 +67,7 @@ const MON = 10 ** (-30 / 20);
 const SRC_SUB: Record<Src, string> = {
   mic: 'マイク・ライン入力',
   file: 'WAV・MP3 など（先頭の 10 分まで）',
-  test: 'シミュレータと同じ規則の 440 Hz',
+  test: 'JJY のページと同じ規則の 440 Hz',
 };
 
 /** 手動の搬送波の周波数（自動の間は欄に推定した周波数を出すので、手動の値はここに持つ） */
@@ -359,7 +359,7 @@ function anchor(f: Frame): void {
   live.anc = anchorOf(r, wallOf(f.t0));
 }
 
-/* ---------- テスト信号: シミュレータと同じ規則。画面が裏に回っても途切れないよう 60〜90 秒先まで作り置きする ---------- */
+/* ---------- テスト信号: JJY のページと同じ規則。画面が裏に回っても途切れないよう 60〜90 秒先まで作り置きする ---------- */
 const tsig = new Signal({ ...DEFAULTS });
 const gen = {
   out: null as GainNode | null,

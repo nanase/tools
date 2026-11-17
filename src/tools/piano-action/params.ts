@@ -119,7 +119,7 @@ export const KEY_SPEEDS = [
   ['20', '1/20', '実際の 1/20 の速さ'],
 ] as const;
 
-/** 鍵盤の左端の C のオクターブ（C1〜C6）と、初めに選んでいる音（ピアノ音響モデルの鍵の番号。C4 が 60） */
+/** 鍵盤の左端の C のオクターブ（C1〜C6）と、初めに選んでいる音（ピアノのページの鍵の番号。C4 が 60） */
 export const OCT = { min: 1, max: 6, v: 3 } as const;
 export const NOTE0 = 60;
 export const VOL0 = -8;

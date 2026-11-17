@@ -1,5 +1,5 @@
 /**
- * エンジン音響モデルのページ。音は AudioWorklet（worklet.ts）の EngineSim、図は主スレッドのもう 1 つの EngineSim
+ * エンジンのページ。音は AudioWorklet（worklet.ts）の EngineSim、図は主スレッドのもう 1 つの EngineSim
  * （音と同じ回転数とスロットルで回転数を保ち、スローのときはゆっくり進める）で描く。全開のトルクの曲線は Worker で求める
  */
 import { Choice } from '../../lib/choice';

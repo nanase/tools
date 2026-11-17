@@ -940,7 +940,7 @@ export function drawFret(cv: HTMLCanvasElement, sn: Snap | null, flash: Flash[],
       flash.splice(i, 1);
       continue;
     }
-    /* 弾いた所から輪が 2 重に広がる（ギター音響モデルと同じ見せ方） */
+    /* 弾いた所から輪が 2 重に広がる（ギターのページと同じ見せ方） */
     const x = f.fr ? mid(Math.min(SHOW_FRETS, f.fr)) : F.x0 + 14,
       y = F.sy(f.si);
     g.strokeStyle = C.ch1;

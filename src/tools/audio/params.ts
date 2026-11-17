@@ -5,7 +5,7 @@ import type { ParamDef, ParamFormat } from '../../lib/param-def';
 
 export type InKey = 'tf' | 'vol';
 
-/** dB: 整数（JJY シミュレータの音量と同じ表記） */
+/** dB: 整数（JJY のページの音量と同じ表記） */
 const dbIn = (v: number): string => minus(String(Math.round(v)));
 const DB: ParamFormat = { input: dbIn, step: (v) => (v > 0 ? '+' : '') + dbIn(v), text: (v) => `${dbIn(v)} dB` };
 
@@ -31,7 +31,7 @@ export const TF_PARAM: ParamDef & { k: InKey } = {
   ],
 };
 
-/** モニターの音量（JJY シミュレータの音量と同じ範囲） */
+/** モニターの音量（JJY のページの音量と同じ範囲） */
 export const VOL_PARAM: ParamDef & { k: InKey } = {
   k: 'vol',
   nm: 'A',
