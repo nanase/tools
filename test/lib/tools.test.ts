@@ -29,6 +29,10 @@ describe('関連ツール', () => {
     }
   });
 
+  it('ピアノのアクションの先頭はピアノ', () => {
+    expect(TOOLS.find((t) => t.id === 'piano-action')?.r[0]).toBe('piano');
+  });
+
   /** ほかのツールの r に入っている数 */
   const inbound = (id: string) => TOOLS.filter((t) => t.r.includes(id)).length;
 
@@ -53,6 +57,10 @@ describe('関連ツール', () => {
 describe('カテゴリ', () => {
   it('どのツールのカテゴリも CATS にある', () => {
     for (const t of TOOLS) expect(CATS, t.id).toContain(t.c);
+  });
+
+  it('カテゴリの名前は重ならない', () => {
+    expect(new Set(CATS).size).toBe(CATS.length);
   });
 
   it('空のカテゴリはない', () => {

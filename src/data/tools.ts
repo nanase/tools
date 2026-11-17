@@ -119,7 +119,7 @@ export const TOOLS: Tool[] = [
     t: 'JJY デコーダ',
     d: '音声から JJY の信号を読み取り、信号が表す時刻とフラグに復号します。',
     ic: 'jjyd',
-    r: ['jjy', 'oscilloscope', 'qr-code', 'iir'],
+    r: ['jjy', 'oscilloscope', 'qr-code', 'fir'],
     k: '電波時計 標準電波 タイムコード 復号 デコード 受信 マイク decoder',
   },
   {
@@ -227,7 +227,7 @@ export const TOOLS: Tool[] = [
     t: '雷鳴',
     d: '稲妻の放電路の衝撃波を再現し、雷鳴として試聴できます。',
     ic: 'th',
-    r: ['reverb', 'doppler', 'noise', 'impact'],
+    r: ['reverb', 'doppler', 'impact', 'noise'],
     k: 'thunder 雷鳴 雷 かみなり 稲妻 稲光 lightning 落雷 放電路 衝撃波 shock wave n波 n-wave ゴロゴロ バリバリ rumble clap 光ってから 3秒 1km 距離 空気の吸収 air absorption iso 9613 反射 こだま 影の領域 shadow zone few ribner tortuosity オーディオ audio',
   },
   {
@@ -326,7 +326,7 @@ export const TOOLS: Tool[] = [
     t: 'PCBコイル',
     d: '基板の配線で作るコイルのインダクタンス・抵抗・Q を求めます。',
     ic: 'pc',
-    r: ['wire-heating', 'passive-combination', 'colorcode', 'biquad'],
+    r: ['wire-heating', 'passive-combination', 'colorcode', 'jjy'],
     k: 'pcb 共振 コンデンサ スパイラル うずまき アンテナ インダクタンス nfc rfid spiral coil antenna inductor',
   },
   {
@@ -381,7 +381,7 @@ export const TOOLS: Tool[] = [
     t: 'MP3',
     d: 'ビットレートとローパスで音がどう変わるかを聴き比べます。',
     ic: 'mp3',
-    r: ['pcm', 'adpcm', 'jpeg', 'wavelet-denoise'],
+    r: ['pcm', 'adpcm', 'spectrum', 'jpeg'],
     k: 'mp3 mpeg-1 audio layer iii layer 3 圧縮 非可逆 lossy compression ビットレート bitrate kbps cbr ローパス lowpass low-pass 音質 聴き比べ スペクトログラム spectrogram マスキング masking 閾値 心理音響 psychoacoustics nmr mdct フィルタバンク 量子化 quantization ハフマン huffman フレーム frame グラニュール granule ビットリザーバ bit reservoir プリエコー pre-echo ジョイントステレオ joint stereo m/s lame エンコーダ encoder オーディオ audio',
   },
   {
@@ -517,7 +517,7 @@ export const TOOLS: Tool[] = [
     t: 'レイトレーシング',
     d: '光線の反射と屈折をたどって絵を収束させます。',
     ic: 'rt',
-    r: ['shading', 'lens', 'halo', 'moon'],
+    r: ['shading', 'lens', 'halo', 'image-convolution'],
     k: 'ray tracing raytracing レイトレーシング レイトレ パストレーシング path tracing cg コンピュータグラフィックス レンダリング rendering モンテカルロ monte carlo 光線 反射 屈折 グローバルイルミネーション global illumination 間接光 コースティクス caustics コーネルボックス cornell box brdf ggx nee 次イベント推定 next event estimation mis 重点的サンプリング importance sampling ウィッテッド whitted ロシアンルーレット russian roulette 被写界深度 色温度 rmse spp サンプル数 ノイズ 収束',
   },
 
@@ -573,7 +573,7 @@ export const TOOLS: Tool[] = [
     t: '天体衝突',
     d: '衝突の条件からクレーターと噴出物の行方を計算します。',
     ic: 'imp',
-    r: ['moon', 'solar-eclipse', 'jupiter', 'maxwell-demon'],
+    r: ['moon', 'thunder', 'maxwell-demon', 'jupiter'],
     k: '天体衝突 impact crater クレーター 衝突クレーター cratering giant impact 巨大衝突 衝突盆地 basin 軌道 脱出速度 escape 隕石 小惑星 asteroid meteorite 衝突体 impactor 断面 cross section 衝撃波 shock wave 掘削 excavation 崩壊 collapse 噴出物 ejecta 中央丘 central peak ピークリング peak ring 単純クレーター 複雑クレーター simple complex 入射角 大気圏突入 atmospheric entry 空中爆発 airburst スケーリング則 pi scaling チクシュルーブ chicxulub リース ries バリンジャー barringer meteor crater ティコ tycho tillotson 状態方程式 mpm material point method 粒子法 音響流動化 acoustic fluidization 天文 astronomy シミュレーション simulation',
   },
   {
@@ -672,7 +672,7 @@ export const TOOLS: Tool[] = [
     t: 'ウェーブレット変換',
     d: '短い波を信号に掛けて足し、いつ・どの高さの音が鳴ったかを見ます。',
     ic: 'wv',
-    r: ['wavelet-denoise', 'fft', 'spectrum', 'convolution'],
+    r: ['wavelet-denoise', 'fft', 'convolution', 'mp3'],
     k: 'wavelet ウェーブレット 変換 transform cwt dwt 連続ウェーブレット変換 離散ウェーブレット変換 morlet モルレ haar ハール daubechies ドベシィ スカログラム scalogram 多重解像度 multiresolution mra mallat フィルタバンク filter bank 時間周波数 time-frequency stft 短時間フーリエ変換 不確定性 heisenberg gabor ガボール 内積 inner product 平均と差 位相 phase フーリエ fourier 数学 math',
   },
   {
@@ -690,7 +690,7 @@ export const TOOLS: Tool[] = [
     t: 'ソート',
     d: 'バーが小さい順に並ぶ様子を音で追い、アルゴリズムを比べます。',
     ic: 'so',
-    r: ['binary-heap', 'list-queue-stack', 'clustering', 'fft'],
+    r: ['binary-heap', 'list-queue-stack', 'clustering', 'red-black-tree'],
     k: 'sort sorting 並べ替え 並び替え 整列 アルゴリズム algorithm バブル bubble シェーカー cocktail shaker コム comb ノーム gnome 奇偶転置 odd-even 選択 selection ヒープ heap スムース smooth サイクル cycle パンケーキ pancake 挿入 insertion 二分挿入 binary シェル shell マージ merge ボトムアップ bottom-up ティム timsort パワー powersort インプレース symmerge クイック quick ピボット pivot 3 分割 three-way デュアルピボット dual-pivot イントロ introsort pdqsort 計数 counting 基数 radix lsd msd アメリカンフラッグ american flag バケット bucket フラッシュ flash ビーズ bead 比較 計算量 安定 stable バイトニック bitonic バッチャー batcher ペアワイズ pairwise ソーティングネットワーク sorting network ストゥージ stooge スロー slow ボゴ bogo ボゾ bozo 音 sound of sorting',
   },
   {
@@ -717,7 +717,7 @@ export const TOOLS: Tool[] = [
     t: '正規表現',
     d: '文字列を探すパターンの照合手順を方式ごとに比べます。',
     ic: 'rx',
-    r: ['expression-parsing', 'karnaugh', 'list-queue-stack', 'sort'],
+    r: ['expression-parsing', 'list-queue-stack', 'karnaugh', 'sort'],
     k: '正規表現 regular expression regex regexp パターン pattern 検索 search 置換 replace 一致 match マッチ 照合 グループ キャプチャ capture 後方参照 backreference 最長一致 最短一致 貪欲 greedy lazy 文字クラス バックトラック backtracking メモ化 memoization redos 破滅的バックトラック catastrophic nfa dfa 有限オートマトン automaton オートマトン thompson pike vm 部分集合構成 subset construction 遅延 dfa lazy dfa re2 pcre perl javascript ruby grep lex flex kleene',
   },
   {
