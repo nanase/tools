@@ -1,6 +1,7 @@
 ---
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import HowSteps from '../components/HowSteps.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
@@ -63,12 +64,8 @@ const playIcon =
       </div>
     </div>
 
-    <Panel hid="hd-how" title="標本化定理のしくみ" class="a-how">
-      <ol class="smp-how">
-        {HOW.map((s, k) => (
-          <li><h3><b>{k + 1}</b>{s.t}</h3><Fragment set:html={s.svg} />{s.p.map((p) => <p>{p}</p>)}</li>
-        ))}
-      </ol>
+    <Panel hid="hd-how" title="しくみ" class="a-how">
+      <HowSteps steps={HOW.map((s) => ({ h: s.t, fig: s.svg, p: s.p }))} />
     </Panel>
 
     <Collapsible hid="hd-thy" title="動作原理と式">

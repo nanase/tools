@@ -1,6 +1,7 @@
 ---
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import HowSteps from '../components/HowSteps.astro';
 import More from '../components/More.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
@@ -173,11 +174,7 @@ const playIcon =
     </div>
 
     <Panel hid="hd-how" title="しくみ">
-      <div class="tm-how">
-        {HOW.map(([h, a, b], i) => (
-          <div class="tm-hw"><b>{i + 1}</b><div><h3>{h}</h3><p>{a}</p><p class="tm-sub">{b}</p></div></div>
-        ))}
-      </div>
+      <HowSteps steps={HOW.map(([h, p, sub]) => ({ h, p, sub }))} />
       <table class="tm-tab">
         <thead><tr><th>ギア</th><th>メインシャフト</th><th>カウンターシャフト</th><th>変速比</th><th>ドグの結合</th></tr></thead>
         <tbody>

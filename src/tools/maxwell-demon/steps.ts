@@ -1,5 +1,5 @@
 /**
- * 「きっかけ」と「しくみ」の枠の段。絵は viewBox 0 0 60 54 の SVG の中身で、線の class は style.css の .mxd-st にある:
+ * 「きっかけ」と「しくみ」の枠の段。絵は viewBox 0 0 60 54 の SVG の中身で、線の class は style.css の .mxd-steps .how にある:
  * w 仕切り、dr 扉、ar 矢印、hd 悪魔、ht 熱、fa 速い分子、fb 遅い分子、c1・c0 記録のマス、bx 箱、tm 温度計
  */
 export interface Step {

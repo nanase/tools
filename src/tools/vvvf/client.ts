@@ -130,7 +130,7 @@ document.addEventListener('visibilitychange', () => {
 const DURA = 7;
 const St = { i: 0, t: 0, run: !RM.matches, seen: false, thumbs: true };
 const cvH = $<HTMLCanvasElement>('#how-cv'),
-  cards = $$<HTMLButtonElement>('#how-steps .pcm-st'),
+  cards = $$<HTMLButtonElement>('#how-steps .how-c'),
   thumbs = cards.map((b) => $<HTMLCanvasElement>('canvas', b)),
   hpp = $<HTMLButtonElement>('#how-pp'),
   trk = $('#how-trk');
@@ -166,7 +166,7 @@ function goStep(i: number, t = 0): void {
   syncStep();
 }
 $('#how-steps').addEventListener('click', (e) => {
-  const b = (e.target as Element).closest<HTMLElement>('.pcm-st');
+  const b = (e.target as Element).closest<HTMLElement>('#how-steps .how-c');
   if (b) goStep(Number(b.dataset.i));
 });
 $('#how-prev').addEventListener('click', () => goStep(St.i - 1));

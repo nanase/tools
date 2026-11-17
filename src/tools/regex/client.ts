@@ -413,7 +413,7 @@ function buildHow(): void {
   host.innerHTML = how
     .map(
       (h, k) =>
-        `<button type="button" class="rx-hc" data-k="${k}" aria-pressed="false"><span class="rx-ht">${h.t}</span><span class="rx-hs">${h.s}</span><canvas role="img" aria-label="${h.t}"></canvas></button>`,
+        `<button type="button" class="how-c rx-hc" data-k="${k}" aria-pressed="false"><span class="how-h"><b class="how-n">${k + 1}</b>${h.t}</span><span class="how-p">${h.s}</span><canvas role="img" aria-label="${h.t}"></canvas></button>`,
     )
     .join('');
   $$<HTMLCanvasElement>('canvas', host).forEach((c, k) => {

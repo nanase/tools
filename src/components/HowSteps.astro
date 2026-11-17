@@ -1,0 +1,34 @@
+---
+/**
+ * しくみの枠の工程を番号付きのカードで並べる。side で図を左に置く。
+ * html は文（p）を HTML として入れる（文の中に記号の装飾があるページだけ）
+ */
+import type { HowStep } from '../lib/how';
+import '../styles/how.css';
+
+interface Props {
+  steps: readonly HowStep[];
+  side?: boolean;
+  html?: boolean;
+  id?: string;
+  class?: string;
+}
+const { steps, side, html, id, class: cls } = Astro.props;
+const paras = (p: HowStep['p']) => (typeof p === 'string' ? [p] : p);
+---
+<ol class:list={['how', { 'how-side': side }, cls]} id={id}>
+  {steps.map((s, i) => {
+    const head = <h3 class="how-h"><b class="how-n">{i + 1}</b>{s.h}</h3>;
+    const body = (
+      <Fragment>
+        {paras(s.p).map((p) => (html ? <p set:html={p} /> : <p>{p}</p>))}
+        {s.sub && <p class="how-sub">{s.sub}</p>}
+      </Fragment>
+    );
+    return side ? (
+      <li class="how-c">{s.fig && <Fragment set:html={s.fig} />}<div>{head}{body}</div></li>
+    ) : (
+      <li class="how-c">{head}{s.fig && <Fragment set:html={s.fig} />}{body}</li>
+    );
+  })}
+</ol>

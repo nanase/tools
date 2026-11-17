@@ -1,5 +1,7 @@
 ---
 /** しくみの枠: 弦から出力までを 6 つの工程の小さな図と短い説明で順に見せる */
+import HowSteps from '../../components/HowSteps.astro';
+
 const W = 150,
   path = (f: (x: number) => number, x0 = 6, x1 = 144, y0 = 33) => {
     let d = '';
@@ -68,8 +70,10 @@ const STEPS: { h: string; svg: string; p: string }[] = [
   },
 ];
 ---
-<ol class="eg-how">
-  {STEPS.map((s, i) => (
-    <li><h3><b>{i + 1}</b>{s.h}</h3><svg class="eg-mini" viewBox={`0 0 ${W} 66`} aria-hidden="true" set:html={s.svg} /><p>{s.p}</p></li>
-  ))}
-</ol>
+<HowSteps
+  steps={STEPS.map((s) => ({
+    h: s.h,
+    fig: `<svg class="eg-mini" viewBox="0 0 ${W} 66" aria-hidden="true">${s.svg}</svg>`,
+    p: s.p,
+  }))}
+/>

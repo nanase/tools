@@ -131,15 +131,10 @@
 .a-st .more-b{border-top:0;padding:2px 0 0}
 .a-st .more-h{padding:0 2px}
 #cl-steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(236px,100%),1fr));gap:6px}
-.cl-step{position:relative;display:block;min-width:0;min-height:66px;padding:0 0 0 88px;border:1px solid var(--line);border-radius:var(--r);background:none;color:var(--ink);text-align:left;cursor:pointer;overflow:hidden}
-.cl-step:hover:not(:disabled){border-color:var(--line-2)}
-.cl-step:disabled{cursor:default}
+.how-c.cl-step{position:relative;display:block;min-height:66px;padding:0 0 0 88px;overflow:hidden}
 .cl-step canvas{position:absolute;left:0;top:0;width:88px;height:100%;background:var(--screen);border-right:1px solid var(--line)}
-.cl-step b{display:block;padding:6px 9px 0;font-size:13px;line-height:1.35}
-.cl-step em{margin-right:5px;font:700 12px var(--mono);font-style:normal;color:var(--ink-3)}
-.cl-step span{display:block;padding:1px 9px 6px;font-size:12px;line-height:1.45;color:var(--ink-2)}
-.cl-step.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
-.cl-step.on em{color:var(--accent)}
+.cl-step .how-h{margin:0;padding:6px 9px 0}
+.cl-step .how-p{margin:0;padding:1px 9px 6px}
 
 /* 比較 */
 #cl-cmp{display:grid;grid-template-columns:repeat(var(--cols,3),minmax(0,1fr));gap:8px}

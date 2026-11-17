@@ -2,6 +2,7 @@
 import Busy from '../components/Busy.astro';
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import HowSteps from '../components/HowSteps.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import RelatedTools from '../components/RelatedTools.astro';
@@ -105,14 +106,7 @@ const ZOOMS = [1, 2, 4];
     </div>
 
     <Panel hid="hd-how" title="しくみ" class="a-st">
-      <div class="rz-steps" id="rz-how">
-        {STEPS.map((m, i) => (
-          <div class="rz-st">
-            <canvas role="img" aria-label={m.h}></canvas>
-            <div><h3><i>{i + 1}</i>{m.h}</h3><p>{m.p}</p></div>
-          </div>
-        ))}
-      </div>
+      <HowSteps side id="rz-how" steps={STEPS.map((m) => ({ h: m.h, fig: `<canvas role="img" aria-label="${m.h}"></canvas>`, p: m.p }))} />
     </Panel>
 
     <Collapsible hid="hd-thy" title="動作原理と式">

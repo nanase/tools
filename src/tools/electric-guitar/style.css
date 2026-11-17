@@ -155,11 +155,6 @@
 
 
 /* しくみ */
-.eg-how{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px}
-.eg-how li{border:1px solid var(--line);border-radius:var(--r);padding:10px 12px}
-.eg-how h3{display:flex;gap:8px;align-items:center;margin:0 0 8px;font-size:14px}
-.eg-how h3 b{display:inline-grid;place-items:center;flex:none;width:20px;height:20px;border-radius:50%;background:var(--ink);color:var(--surface);font-size:12px}
-.eg-how p{margin:6px 0 0;font-size:13px;line-height:1.5;color:var(--ink-2)}
 .eg-mini{display:block;width:100%;max-width:220px;height:66px;background:var(--screen);border-radius:4px}
 .eg-mini path{fill:none;stroke-width:2;stroke-linejoin:round}
 .eg-l1{stroke:var(--ch1)}.eg-l2{stroke:var(--ch2)}.eg-l0{stroke:var(--grid-2)}

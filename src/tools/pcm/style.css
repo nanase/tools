@@ -16,18 +16,9 @@
 }
 
 /* 説明の文 */
-.pcm-cap{margin:0 2px 8px;font-size:14px;font-weight:700;line-height:1.5;color:var(--ink);overflow-wrap:anywhere}
 .pcm-eff{min-height:1.5em;margin:6px 2px;font-size:13px;line-height:1.5;color:var(--ink-2)}
 
 /* 工程のカード */
-.pcm-steps{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(110px,1fr);gap:6px;margin-bottom:10px;padding:2px 2px 6px;overflow-x:auto;scrollbar-width:thin}
-.pcm-st{position:relative;display:grid;gap:3px;min-width:0;padding:6px 7px;border:1px solid var(--line-2);border-radius:var(--r);background:var(--inset);color:var(--ink);font:inherit;text-align:left;cursor:pointer}
-.pcm-st[aria-pressed="true"]{background:var(--surface);border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
-.pcm-st:not(:last-child)::after{content:"";position:absolute;right:-7px;top:50%;width:6px;height:1px;background:var(--line-2)}
-.pcm-st:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
-.pcm-st b{font-size:12.5px;line-height:1.3;white-space:nowrap}
-.pcm-st small{font-size:12.5px;line-height:1.3;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pcm-st canvas{display:block;width:100%;height:52px;border-radius:3px}
 
 /* 図 */
 .pcm-scr{position:relative;padding:0;overflow:hidden}

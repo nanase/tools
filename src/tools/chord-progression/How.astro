@@ -1,5 +1,6 @@
 ---
 /** しくみの枠: 和音の地図の読み方とバンドの鳴らし方を 6 つの小さな図と短い説明で順に見せる */
+import HowSteps from '../../components/HowSteps.astro';
 import { STYLES } from './band';
 
 const W = 150;
@@ -66,8 +67,10 @@ const STEPS: { h: string; svg: string; p: string }[] = [
   },
 ];
 ---
-<ol class="cp-how">
-  {STEPS.map((s, i) => (
-    <li><h3><b>{i + 1}</b>{s.h}</h3><svg class="cp-mini" viewBox={`0 0 ${W} 66`} aria-hidden="true" set:html={s.svg} /><p>{s.p}</p></li>
-  ))}
-</ol>
+<HowSteps
+  steps={STEPS.map((s) => ({
+    h: s.h,
+    fig: `<svg class="cp-mini" viewBox="0 0 ${W} 66" aria-hidden="true">${s.svg}</svg>`,
+    p: s.p,
+  }))}
+/>

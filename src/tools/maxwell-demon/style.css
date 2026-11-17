@@ -54,27 +54,24 @@
 #mxd .prow{--sw:0px;--uw:56px}
 
 /* きっかけ・しくみ */
-.mxd-st{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
-.mxd-st li{display:flex;gap:10px;align-items:flex-start;padding:10px;border:1px solid var(--line);border-radius:4px;background:var(--surface)}
-.mxd-st svg{flex:none;width:60px;height:54px;overflow:visible}
-.mxd-st svg *{fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.mxd-st .w{stroke:var(--screen-ink);stroke-width:3.5;stroke-linecap:butt}
-.mxd-st .bx{stroke:var(--screen-ink);stroke-width:1.5}
-.mxd-st .dr{stroke:var(--ink-3);stroke-width:3}
-.mxd-st .ar,.mxd-st .ax{stroke:var(--ink-2)}
-.mxd-st .tm{stroke:var(--screen-ink)}
-.mxd-st .hd{stroke:var(--mxd-dm)}
-.mxd-st .ht,.mxd-st .no{stroke:var(--warn)}
-.mxd-st .fa{fill:var(--ch1);stroke:none}
-.mxd-st .fb{fill:var(--ch2);stroke:none}
-.mxd-st .fh{fill:var(--warn);stroke:none}
-.mxd-st .fs{fill:var(--ink-2);stroke:none}
-.mxd-st .c1{fill:var(--ink);stroke:none}
-.mxd-st .c0{fill:none;stroke:var(--ink-2);stroke-width:1.5}
-.mxd-st .ce{fill:var(--line);stroke:none}
-.mxd-st h3{margin:0 0 4px;font-size:13.5px}
-.mxd-st p{margin:0;font-size:13px;line-height:1.55;color:var(--ink-2)}
-.mxd-st p+p{margin-top:4px}
+/* 工程が 4 つなので、空いた列を残さず幅いっぱいに広げる */
+.mxd-steps .how{grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr))}
+.mxd-steps .how svg{flex:none;width:60px;height:54px;overflow:visible}
+.mxd-steps .how svg *{fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.mxd-steps .how .w{stroke:var(--screen-ink);stroke-width:3.5;stroke-linecap:butt}
+.mxd-steps .how .bx{stroke:var(--screen-ink);stroke-width:1.5}
+.mxd-steps .how .dr{stroke:var(--ink-3);stroke-width:3}
+.mxd-steps .how .ar,.mxd-steps .how .ax{stroke:var(--ink-2)}
+.mxd-steps .how .tm{stroke:var(--screen-ink)}
+.mxd-steps .how .hd{stroke:var(--mxd-dm)}
+.mxd-steps .how .ht,.mxd-steps .how .no{stroke:var(--warn)}
+.mxd-steps .how .fa{fill:var(--ch1);stroke:none}
+.mxd-steps .how .fb{fill:var(--ch2);stroke:none}
+.mxd-steps .how .fh{fill:var(--warn);stroke:none}
+.mxd-steps .how .fs{fill:var(--ink-2);stroke:none}
+.mxd-steps .how .c1{fill:var(--ink);stroke:none}
+.mxd-steps .how .c0{fill:none;stroke:var(--ink-2);stroke-width:1.5}
+.mxd-steps .how .ce{fill:var(--line);stroke:none}
 
 @media (min-width:900px){
   .mxd-top{grid-template-columns:minmax(0,1.7fr) minmax(300px,1fr);align-items:start}

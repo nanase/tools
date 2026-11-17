@@ -438,7 +438,7 @@ const DURA = 3.4,
   HOLD = 1.8;
 const St = { i: 0, t: RM.matches ? DURA : 0, run: !RM.matches, seen: false };
 const cvH = $<HTMLCanvasElement>('#how-cv'),
-  cards = $$<HTMLButtonElement>('#how-steps .mp3-st'),
+  cards = $$<HTMLButtonElement>('#how-steps .how-c'),
   thumbs = cards.map((b) => $<HTMLCanvasElement>('canvas', b)),
   hpp = $<HTMLButtonElement>('#how-pp'),
   trk = $('#how-trk');
@@ -481,7 +481,7 @@ function goStep(i: number, t = St.run ? 0 : DURA): void {
   syncStep();
 }
 $('#how-steps').addEventListener('click', (e) => {
-  const b = (e.target as Element).closest<HTMLElement>('.mp3-st');
+  const b = (e.target as Element).closest<HTMLElement>('#how-steps .how-c');
   if (b) goStep(Number(b.dataset.i));
 });
 $('#how-prev').addEventListener('click', () => goStep(St.i - 1));
