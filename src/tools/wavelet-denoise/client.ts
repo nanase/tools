@@ -378,7 +378,7 @@ wv.addEventListener('keydown', (e) => {
   else return;
   e.preventDefault();
 });
-/* 1〜4 で聴く音、スペースで再生（入力欄・スライダーの中は除く） */
+/* 1〜4 で聴く音、スペースで再生（入力欄・スライダの中は除く） */
 document.addEventListener('keydown', (e) => {
   const t = e.target as Element;
   if (t.closest('input,textarea,select,[contenteditable],.sc,.sc-in') || e.ctrlKey || e.metaKey || e.altKey) return;

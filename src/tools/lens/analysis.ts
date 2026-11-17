@@ -69,7 +69,7 @@ export function spot(st: State, h: number, n = 21): Spot {
 /** 光線が光軸（y = 0）か子午面（x = 0）を横切る z（最後の面の後ろの直線で求める） */
 const crossZ = (r: Ray, k: 'x' | 'y'): number => r.z - (r[k] * r.dz) / (k === 'x' ? r.dx : r.dy);
 
-/** 縦の球面収差: 瞳の高さ ρ（0〜1）ごとに、軸上の光線が光軸を横切る位置のセンサーからのずれ [mm] */
+/** 縦の球面収差: 瞳の高さ ρ（0〜1）ごとに、軸上の光線が光軸を横切る位置のセンサからのずれ [mm] */
 export function sphCurve(st: State, n = 24): [number, number][][] {
   return WAVES.map((l) => {
     const out: [number, number][] = [];
@@ -84,7 +84,7 @@ export function sphCurve(st: State, n = 24): [number, number][][] {
 }
 
 /**
- * 像面湾曲（非点収差）: 像の高さごとに、主光線の近くの子午・球欠の光線が集まる位置のセンサーからのずれ [mm]。
+ * 像面湾曲（非点収差）: 像の高さごとに、主光線の近くの子午・球欠の光線が集まる位置のセンサからのずれ [mm]。
  * 主光線と瞳を少しずらした光線の交わる点で求める（Coddington の式の代わり）
  */
 export function fieldCurve(st: State, n = 16): { h: number; t: number; s: number }[] {
@@ -130,7 +130,7 @@ export function distortion(st: State, h: number): number {
 
 /* ---------- 瞳の範囲の表と周辺光量 ---------- */
 /**
- * センサーの点 (h, 0) から射出瞳の面を見たとき、光が通る範囲を囲む長方形（中心の x、半幅 x・y）。
+ * センサの点 (h, 0) から射出瞳の面を見たとき、光が通る範囲を囲む長方形（中心の x、半幅 x・y）。
  * 描画はこの長方形の中に光線を一様に置く。nh 点の高さ 0〜hmax について求める
  */
 export interface PupilTable {
@@ -145,7 +145,7 @@ export function pupilTable(st: State, hmax = HALF_DIAG * 1.04, nh = 24): PupilTa
   return { hmax, rows };
 }
 
-/** センサーの点 (h, 0) から射出瞳の面の点 (qx, qy) へ向けて逆に追跡できるか */
+/** センサの点 (h, 0) から射出瞳の面の点 (qx, qy) へ向けて逆に追跡できるか */
 function passes(st: State, h: number, qx: number, qy: number): boolean {
   const dx = qx - h,
     dy = qy,
@@ -194,7 +194,7 @@ function scan(st: State, h: number, x0: number, x1: number, y0: number, y1: numb
 }
 
 /**
- * センサーの点 (h, 0) の照度の、中心に対する比（周辺光量）。瞳を n × n の格子で逆に追跡し、
+ * センサの点 (h, 0) の照度の、中心に対する比（周辺光量）。瞳を n × n の格子で逆に追跡し、
  * 射出瞳の面での立体角の重み cos⁴θ を掛けて足す（描画と同じ求め方）
  */
 export function illum(st: State, h: number, tb: PupilTable, n = 48): number {
@@ -222,14 +222,14 @@ export function illum(st: State, h: number, tb: PupilTable, n = 48): number {
 
 /* ---------- 被写界深度と画角 ---------- */
 export interface Dof {
-  /** 近点・遠点（センサーから、Infinity は無限遠）と過焦点距離 [mm] */
+  /** 近点・遠点（センサから、Infinity は無限遠）と過焦点距離 [mm] */
   near: number;
   far: number;
   hyper: number;
 }
 
 /**
- * 被写界深度（近軸）。センサーの位置はそのままで、物体の面を前後に動かしたときのボケの径
+ * 被写界深度（近軸）。センサの位置はそのままで、物体の面を前後に動かしたときのボケの径
  * 2r′·|z_s − z′|/|z′ − z_XP|（射出瞳の径 2r′、像の位置 z′）が許容錯乱円 c になる距離
  */
 export function dof(st: State, c: number): Dof {
@@ -264,7 +264,7 @@ export function dof(st: State, c: number): Dof {
     }
     far = 1 / a;
   }
-  /* 過焦点距離: 無限遠のボケが c になるセンサーの位置に合うピントの距離 */
+  /* 過焦点距離: 無限遠のボケが c になるセンサの位置に合うピントの距離 */
   const zsH = zF1 + (c * Math.abs(zF1 - st.zxp)) / (2 * st.rxp),
     si = zsH - zH1,
     so = 1 / (1 / f - 1 / si);

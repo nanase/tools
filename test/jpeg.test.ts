@@ -292,7 +292,7 @@ describe('ビット列', () => {
 });
 
 describe('符号器と復号器', () => {
-  it('マーカーの並びと JFIF 1.02 のヘッダ', () => {
+  it('マーカの並びと JFIF 1.02 のヘッダ', () => {
     const e = encode(testImage(40, 24), 40, 24, { q: 75, sub: '420', qt: 'k', huff: 'std' });
     expect(e.segs.map((s) => s.name)).toEqual(['SOI', 'APP0', 'DQT', 'SOF0', 'DHT', 'SOS', 'ECS', 'EOI']);
     const b = e.bytes;

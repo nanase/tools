@@ -241,7 +241,7 @@ export const FIXED: Record<Fixed, KindDef> = {
     picks: [
       {
         k: 'type',
-        name: 'スピーカー',
+        name: 'スピーカ',
         sub: 'なしはアンプの出力をそのまま聴く',
         v: '1x12',
         choices: [
@@ -271,7 +271,7 @@ export const FIXED: Record<Fixed, KindDef> = {
       {
         k: 'fb',
         name: 'フィードバック',
-        sub: 'スピーカーの音が弦を揺らす強さ · 歪んだ大きな音で、弦が鳴り続ける',
+        sub: 'スピーカの音が弦を揺らす強さ · 歪んだ大きな音で、弦が鳴り続ける',
         v: 0,
       },
     ],

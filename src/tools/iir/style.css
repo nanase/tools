@@ -52,7 +52,7 @@
 .mskl{fill:none;stroke:var(--screen-ink);stroke-width:1;stroke-dasharray:4 3;opacity:.8}
 .hide1 .c1x{display:none}
 .t2{stroke-width:1.6}
-/* レベルメーター（表示窓の横長版） */
+/* レベルメータ（表示窓の横長版） */
 .lv-hot{fill:var(--warn)}
 
 /* 極と零点: s 平面と z 平面を並べる（狭い枠では縦に） */

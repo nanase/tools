@@ -289,7 +289,7 @@ describe('表示窓', () => {
     expect(bp.width).toBe(1);
   });
 
-  it('レベルメーター: −50 dBFS が左端、0 dBFS が右端', () => {
+  it('レベルメータ: −50 dBFS が左端、0 dBFS が右端', () => {
     expect(lvX(-50)).toBe(0);
     expect(lvX(0)).toBe(400);
     expect(lvX(-100)).toBe(0);

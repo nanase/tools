@@ -6,9 +6,9 @@ const rf = (...ns: number[]) => ns.map((n) => `<a class="rf" href="#thy-r${n}">[
 const alb = (a: string, r: string) => `<math><mn>${a}</mn><mo>÷</mo><msup><mn>${r}</mn><mn>2</mn></msup></math>`;
 ---
 <h3>光線追跡</h3>
-<p>映像はセンサーの各画素から光線をレンズに通して 3D の被写体に当て、当たった所の明るさを足し合わせて作ります<Fragment set:html={rf(1)} />。</p>
+<p>映像はセンサの各画素から光線をレンズに通して 3D の被写体に当て、当たった所の明るさを足し合わせて作ります<Fragment set:html={rf(1)} />。</p>
 <ol class="flow" aria-label="映像を作る光線の流れ">
-  <li><b>センサーの画素</b><span>各画素の点から光線を出す</span></li>
+  <li><b>センサの画素</b><span>各画素の点から光線を出す</span></li>
   <li><b>射出瞳の面</b><span>多数の点へ向ける</span></li>
   <li><b>レンズの面</b><span>後ろから 1 面ずつたどる</span></li>
   <li><b>物体の側へ出る</b></li>
@@ -53,14 +53,14 @@ const alb = (a: string, r: string) => `<math><mn>${a}</mn><mo>÷</mo><msup><mn>$
 <h3>明るさと周辺光量</h3>
 <p>画素の明るさ、つまり照度 <math><mi>E</mi></math> は、光線が来る向きの立体角について放射輝度 <math><mi>L</mi></math> を積分したものです。</p>
 <ul class="tl">
-  <li>射出瞳の面に一様に点を置くと、立体角の重みは <math><msup><mi>cos</mi><mn>3</mn></msup><mi>θ</mi><mo>/</mo><msup><mi>d</mi><mn>2</mn></msup></math> になる。<math><mi>d</mi></math> はセンサーから射出瞳の面までの距離</li>
+  <li>射出瞳の面に一様に点を置くと、立体角の重みは <math><msup><mi>cos</mi><mn>3</mn></msup><mi>θ</mi><mo>/</mo><msup><mi>d</mi><mn>2</mn></msup></math> になる。<math><mi>d</mi></math> はセンサから射出瞳の面までの距離</li>
   <li>受ける面の傾きを掛けると、<math><msup><mi>cos</mi><mn>4</mn></msup><mi>θ</mi></math> の重みで足すことになる（コサイン 4 乗則）<Fragment set:html={rf(1, 4)} /></li>
 </ul>
 <div class="eqs">
   <math display="block"><mi>E</mi><mo>=</mo><mo>∫</mo><mi>L</mi><mi>cos</mi><mo>⁡</mo><mi>θ</mi><mspace width="0.17em"/><mi>d</mi><mi>ω</mi><mo>=</mo><mfrac><mn>1</mn><msup><mi>d</mi><mn>2</mn></msup></mfrac><mo>∫</mo><mi>L</mi><msup><mi>cos</mi><mn>4</mn></msup><mi>θ</mi><mspace width="0.17em"/><mi>d</mi><mi>A</mi></math>
   <math display="block"><mfrac><mi>E</mi><msub><mi>E</mi><mn>0</mn></msub></mfrac><mo>=</mo><mfrac><mn>1</mn><mrow><mi>π</mi><msup><msup><mi>r</mi><mo>′</mo></msup><mn>2</mn></msup></mrow></mfrac><mo>∫</mo><mfrac><mi>L</mi><msub><mi>L</mi><mn>0</mn></msub></mfrac><msup><mi>cos</mi><mn>4</mn></msup><mi>θ</mi><mspace width="0.17em"/><mi>d</mi><mi>A</mi></math>
 </div>
-<p>どの光線が通るかを決めるため、センサーの点ごとに、瞳の面のどこまでを調べればよいかの範囲を前もって実光線で求めておきます。点は、その長方形の中に置きます。</p>
+<p>どの光線が通るかを決めるため、センサの点ごとに、瞳の面のどこまでを調べればよいかの範囲を前もって実光線で求めておきます。点は、その長方形の中に置きます。</p>
 <p>明るさは中心の点が近軸の射出瞳の径 <math><mn>2</mn><msup><mi>r</mi><mo>′</mo></msup></math> で受ける照度で割ります。これで、F 値を変えても中心の明るさがそろいます。カメラの自動露出と同じです。</p>
 <p>「露出」はこの明るさに 2<sup>EV</sup> を掛けます。ためた光はそのままで、表示だけを変えます。ボケと被写界深度は変わりません。</p>
 <p>周辺が暗くなるのは、この重みと、斜めの光束が前後のレンズの縁でけられるためです。</p>
@@ -71,11 +71,11 @@ const alb = (a: string, r: string) => `<math><mn>${a}</mn><mo>÷</mo><msup><mn>$
 <p>実際のレンズでは焦点距離を変えると画面の中心を軸に写る範囲が変わり、中心から離れた枠の点の物体は外へ逃げます。このページでは焦点距離を変えるたびに撮影者の向きを回し、枠の点に写っていた物体を枠の点に残します。枠の点の光線を新しい焦点距離のレンズで逆にたどり、その向きが物体へ向くまで方位と仰角を直します。</p>
 <p>映像の上のホイールで変えるときは、1 段ごとに枠の点と画面の中央の距離を 0.6 倍にします。写っていた物体も枠と一緒に中央へ寄ります。</p>
 <h4>ピント</h4>
-<p>レンズ全体をセンサーから前後に動かして合わせます（全群繰り出し）。焦点距離と主点の間隔から、撮影距離にピントが合う物体距離と像距離を求めます。</p>
+<p>レンズ全体をセンサから前後に動かして合わせます（全群繰り出し）。焦点距離と主点の間隔から、撮影距離にピントが合う物体距離と像距離を求めます。</p>
 <dl class="syms">
   <dt><math><mi>f</mi></math></dt><dd>焦点距離</dd>
   <dt><math><mover><mrow><mi>H</mi><msup><mi>H</mi><mo>′</mo></msup></mrow><mo accent="true">¯</mo></mover></math></dt><dd>前側・後側の主点の間隔</dd>
-  <dt><math><mi>s</mi></math></dt><dd>撮影距離。センサーから物体の面までの距離</dd>
+  <dt><math><mi>s</mi></math></dt><dd>撮影距離。センサから物体の面までの距離</dd>
   <dt><math><msub><mi>s</mi><mi mathvariant="normal">o</mi></msub><mo>,</mo><mspace width="0.3em"/><msub><mi>s</mi><mi mathvariant="normal">i</mi></msub></math></dt><dd>ピントが合う物体距離と像距離</dd>
 </dl>
 <div class="eqs">
@@ -100,8 +100,8 @@ const alb = (a: string, r: string) => `<math><mn>${a}</mn><mo>÷</mo><msup><mn>$
 <p>枠の点に写る物体が被写界深度に入っていると、枠を緑にします。</p>
 
 <h3>被写界深度</h3>
-<p>センサーの位置をそのままにして物体の面を前後に動かしたとき、点の像のボケの径 <math><mi>b</mi></math> が許容錯乱円 <math><mi>c</mi></math> に収まる範囲です。近軸の結像で求めます<Fragment set:html={rf(4)} />。</p>
-<p><math><mi>b</mi></math> は射出瞳の径を像の位置 <math><msup><mi>z</mi><mo>′</mo></msup></math> からセンサー <math><msub><mi>z</mi><mi mathvariant="normal">s</mi></msub></math> までの距離の比で縮めたものです。瞳の倍率を含むので、近い距離や非対称な形のレンズでも使えます。</p>
+<p>センサの位置をそのままにして物体の面を前後に動かしたとき、点の像のボケの径 <math><mi>b</mi></math> が許容錯乱円 <math><mi>c</mi></math> に収まる範囲です。近軸の結像で求めます<Fragment set:html={rf(4)} />。</p>
+<p><math><mi>b</mi></math> は射出瞳の径を像の位置 <math><msup><mi>z</mi><mo>′</mo></msup></math> からセンサ <math><msub><mi>z</mi><mi mathvariant="normal">s</mi></msub></math> までの距離の比で縮めたものです。瞳の倍率を含むので、近い距離や非対称な形のレンズでも使えます。</p>
 <div class="eqs">
   <math display="block"><mi>b</mi><mo>=</mo><mn>2</mn><msup><mi>r</mi><mo>′</mo></msup><mfrac><mrow><mo stretchy="false">|</mo><msub><mi>z</mi><mi mathvariant="normal">s</mi></msub><mo>−</mo><msup><mi>z</mi><mo>′</mo></msup><mo stretchy="false">|</mo></mrow><mrow><mo stretchy="false">|</mo><msup><mi>z</mi><mo>′</mo></msup><mo>−</mo><msub><mi>z</mi><mtext>XP</mtext></msub><mo stretchy="false">|</mo></mrow></mfrac><mo>≤</mo><mi>c</mi></math>
 </div>
@@ -111,7 +111,7 @@ const alb = (a: string, r: string) => `<math><mn>${a}</mn><mo>÷</mo><msup><mn>$
 <p>2 本の近軸光線を各面で追跡し、Welford の式でザイデルの和を求めます<Fragment set:html={rf(5)} />。</p>
 <ul class="tl">
   <li><b>周辺光線</b>: 軸上の物点から入射瞳の縁へ。高さ <math><mi>y</mi></math>・傾き <math><mi>u</mi></math></li>
-  <li><b>主光線</b>: センサーの隅に写る物点から入射瞳の中心へ。高さ <math><mover><mi>y</mi><mo>¯</mo></mover></math>・傾き <math><mover><mi>u</mi><mo>¯</mo></mover></math></li>
+  <li><b>主光線</b>: センサの隅に写る物点から入射瞳の中心へ。高さ <math><mover><mi>y</mi><mo>¯</mo></mover></math>・傾き <math><mover><mi>u</mi><mo>¯</mo></mover></math></li>
 </ul>
 <dl class="syms">
   <dt><math><mi mathvariant="normal">Δ</mi></math></dt><dd>屈折の後と前の差</dd>
@@ -148,9 +148,9 @@ const alb = (a: string, r: string) => `<math><mn>${a}</mn><mo>÷</mo><msup><mn>$
 
 <h3>収差の図</h3>
 <ul class="tl">
-  <li><b>スポットダイアグラム</b>: ピントの面の中心・対角の 0.7・隅の点から入射瞳の格子を通る光線を F・d・C 線で追跡したセンサーの上の点（d 線の重心が中心）</li>
-  <li><b>球面収差の曲線</b>: 軸上の光線が光軸を横切る位置のセンサーからのずれ</li>
-  <li><b>非点収差の曲線</b>: 主光線のそばの子午・球欠の光線が集まる位置のセンサーからのずれ</li>
+  <li><b>スポットダイアグラム</b>: ピントの面の中心・対角の 0.7・隅の点から入射瞳の格子を通る光線を F・d・C 線で追跡したセンサの上の点（d 線の重心が中心）</li>
+  <li><b>球面収差の曲線</b>: 軸上の光線が光軸を横切る位置のセンサからのずれ</li>
+  <li><b>非点収差の曲線</b>: 主光線のそばの子午・球欠の光線が集まる位置のセンサからのずれ</li>
 </ul>
 
 <h3>断面図の光</h3>
@@ -174,15 +174,15 @@ const alb = (a: string, r: string) => `<math><mn>${a}</mn><mo>÷</mo><msup><mn>$
     </tbody>
   </table>
 </div>
-<p>物体の側ではどの波長も同じ光線で、面で屈折するたびに波長で違う屈折率のために分かれます。レンズ全体の図ではこの差が 1 画素に満たないことが多いので、下にセンサーの付近を拡大した図を置きます。拡大の倍率は縦と横で別々です。「d 線」に切り替えると d 線だけで追跡し、軸上の光束を CH1、隅への光束を CH2 の色で描きます。</p>
+<p>物体の側ではどの波長も同じ光線で、面で屈折するたびに波長で違う屈折率のために分かれます。レンズ全体の図ではこの差が 1 画素に満たないことが多いので、下にセンサの付近を拡大した図を置きます。拡大の倍率は縦と横で別々です。「d 線」に切り替えると d 線だけで追跡し、軸上の光束を CH1、隅への光束を CH2 の色で描きます。</p>
 <ul class="tl">
   <li><b>中心の図の印</b>: 波長ごとの近軸のピントの位置（軸上色収差）</li>
-  <li><b>隅の図の印</b>: 波長ごとの主光線がセンサーに当たる高さ（倍率色収差）</li>
+  <li><b>隅の図の印</b>: 波長ごとの主光線がセンサに当たる高さ（倍率色収差）</li>
 </ul>
 
 <h3>被写体</h3>
 <ul class="tl">
-  <li><b>ジーメンススターの板</b>: 撮影者のセンサーから前へ 0.5・1・2・4・8・16 m の面。板の下の数字が距離</li>
+  <li><b>ジーメンススターの板</b>: 撮影者のセンサから前へ 0.5・1・2・4・8・16 m の面。板の下の数字が距離</li>
   <li><b>格子の壁</b>: 奥 30 m</li>
   <li><b>色の付いた柱</b></li>
   <li><b>地面</b>: 0.5 m の市松模様</li>
@@ -264,7 +264,7 @@ const alb = (a: string, r: string) => `<math><mn>${a}</mn><mo>÷</mo><msup><mn>$
   <li>コーティング</li>
   <li>ガラスの吸収</li>
   <li>鏡筒による内面反射</li>
-  <li>センサーのカバーガラス</li>
+  <li>センサのカバーガラス</li>
 </ul>
 
 <h3>このツールで決めたこと</h3>

@@ -66,7 +66,7 @@
 /* ===== base ===== */
 *,*::before,*::after{box-sizing:border-box}
 html{background:var(--bg);-webkit-text-size-adjust:100%}
-/* 中身が画面より短いとき（トップの絞り込みなど）も、main を伸ばしてフッターを画面の下端に置く */
+/* 中身が画面より短いとき（トップの絞り込みなど）も、main を伸ばしてフッタを画面の下端に置く */
 body{display:flex;flex-direction:column;min-height:100dvh;margin:0;background:var(--bg);color:var(--ink);font:15px/1.7 var(--sans);overflow-x:hidden}
 body>main{flex:1 0 auto;width:100%}
 /* 図はスクロールの位置の基準にしない。SVG の text は箱として扱われ、動く文字が基準に選ばれると、ブラウザが文字の動きに合わせてページを上下に送ってしまう */
@@ -213,7 +213,7 @@ a.unit:hover h3{text-decoration:underline;text-decoration-color:var(--ink-3);tex
 .ic .t{stroke-width:1}.ic .w{stroke-width:3.5;stroke-linecap:butt}.ic .g{opacity:.45}
 .ic .fa{fill:var(--ch1);stroke:none}.ic .fb{fill:var(--ch2);stroke:none}.ic .fc{fill:var(--screen-ink);stroke:none;opacity:.75}
 .ic .fr{fill:var(--ic-red);stroke:none}
-/* SVG テーマスキーマチェッカーの図柄は、サイトのテーマによらず明るい地と暗い地を並べる */
+/* SVG テーマのページの図柄は、サイトのテーマによらず明るい地と暗い地を並べる */
 .ic .pl{fill:#f4f5f1}.ic .pd{fill:#121517}.ic .il{stroke:#15191c}.ic .ih{stroke:#e6e8e4}
 .ic .sn{fill:#e8a020;stroke:none}.ic .sr{stroke:#e8a020}.ic .ml{fill:#dde2da;stroke:#15191c}.ic .md{fill:#283035;stroke:#e6e8e4}
 .ic .mn{fill:#f3d77c;stroke:none}.ic .mn.g0{opacity:.13}.ic .sk{fill:#e6e8e4;stroke:none}
@@ -289,7 +289,7 @@ a.unit:hover h3{text-decoration:underline;text-decoration-color:var(--ink-3);tex
    .col は PC で縦に積む列、スマホでは中の枠を .tgrid に直接並べる（order で順を変えられる） */
 .col{display:contents}
 /* PC では画面の下に留め、計算結果（.a-out の大きい値）が画面にない間だけ出す（lib/tool-page.ts が .show を付ける）。
-   出ている間はフッターの下に同じ高さの余白を足し、フッターを隠さない */
+   出ている間はフッタの下に同じ高さの余白を足し、フッタを隠さない */
 @media (min-width:1000px){
   :root{--mini-h:36px}
   .mini{position:fixed;top:auto;bottom:0;left:0;right:0;align-items:center;height:var(--mini-h);margin:0;padding:0 max(16px,calc((100% - 1180px) / 2 + 16px));box-shadow:0 -4px 14px rgb(0 0 0 / .14);transform:translateY(100%);visibility:hidden;transition:transform .2s ease,visibility .2s}
@@ -340,7 +340,7 @@ a.unit:hover h3{text-decoration:underline;text-decoration-color:var(--ink-3);tex
 .prow.mod .rrst{visibility:visible}
 .rrst:hover{color:var(--ink);background:var(--inset)}
 .rrst svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-/* 数値欄（ParamRow）: 欄そのものがスライダー。地の濃い部分が範囲の中の位置（± の量は 0 から）、縦線が今の値、
+/* 数値欄（ParamRow）: 欄そのものがスライダ。地の濃い部分が範囲の中の位置（± の量は 0 から）、縦線が今の値、
    （値の文字に重ならないよう上下の端だけ）、下端の刻みがプリセット。左右にドラッグして値を変え、押すと入力欄（.sc-in）と吹き出し（.sc-pop）に変わる */
 .sc{position:relative;display:grid;grid-template-columns:20px minmax(0,1fr) 20px;align-items:center;height:30px;border:1px solid var(--line-2);border-radius:4px;background:var(--inset);overflow:hidden;cursor:ew-resize;touch-action:pan-y;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
 .sc:hover,.prow.drag .sc{border-color:var(--ink-3)}
@@ -463,7 +463,7 @@ a.unit:hover h3{text-decoration:underline;text-decoration-color:var(--ink-3);tex
 .midi-msg{margin:8px 8px 0}
 .midi-msg:empty{display:none}
 
-/* 数値欄の外に置くスライダー（ファイルの再生位置など） */
+/* 数値欄の外に置くスライダ（ファイルの再生位置など） */
 .sl{position:relative}
 .sl input{-webkit-appearance:none;appearance:none;display:block;width:100%;height:28px;margin:0;background:transparent;cursor:pointer;--p:.5}
 .sl input::-webkit-slider-runnable-track{height:3px;border-radius:2px;background:linear-gradient(90deg,var(--ink-2) calc(7px + (100% - 14px) * var(--p)),var(--line-2) 0)}

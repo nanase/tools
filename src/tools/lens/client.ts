@@ -83,7 +83,7 @@ let tb: PupilTable | null = null;
 let secKey = '';
 /** AF で最後に合わせたときの条件（変わったら合わせ直す） */
 let afKey = '';
-/** ピントを合わせた点（AF の枠）。センサーの上の表示の向きの位置 [mm]。拡大の中心にもなるので保存する。初めは 50 mm で 2 m のチャートに重なる位置 */
+/** ピントを合わせた点（AF の枠）。センサの上の表示の向きの位置 [mm]。拡大の中心にもなるので保存する。初めは 50 mm で 2 m のチャートに重なる位置 */
 let afPt: [number, number] = [-2.6, -3.3];
 {
   const a = stored('af');
@@ -183,12 +183,12 @@ function fit(): void {
 }
 new ResizeObserver(fit).observe(lv);
 
-/** 描く範囲（センサーの上、表示の向き、mm）: 拡大したら AF の枠を中心にする */
+/** 描く範囲（センサの上、表示の向き、mm）: 拡大したら AF の枠を中心にする */
 function view(): { x0: number; y0: number; w: number; h: number } {
   const z = Number(zoom$.value) || 1;
   let w = SENSOR.w / z,
     h = SENSOR.h / z;
-  /* 全画面で表示の枠が 3:2 でなければ、枠を埋めるようにセンサーの端を切る */
+  /* 全画面で表示の枠が 3:2 でなければ、枠を埋めるようにセンサの端を切る */
   const a = canvas.clientHeight ? canvas.clientWidth / canvas.clientHeight : SENSOR.w / SENSOR.h;
   if (a < (w / h) * 0.999) w = h * a;
   else if (a > (w / h) * 1.001) h = w / a;
@@ -294,7 +294,7 @@ function results(c: number): void {
     last = sf[sf.length - 1];
   html('#o-len', mm(last.z));
   txt('#o-lens', `前玉の径 ${sig(2 * sf[0].sd, 3, true)} mm・バックフォーカス ${sig(s.zs - last.z, 3, true)} mm`);
-  /* ザイデル係数（センサーの隅、今の F 値とピント） */
+  /* ザイデル係数（センサの隅、今の F 値とピント） */
   const sd = seidel(s, HALF_DIAG),
     lam = LD * 1e-3;
   const W = [sd.S[0] / 8, sd.S[1] / 2, sd.S[2] / 2, (sd.S[2] + sd.S[3]) / 4, sd.S[4] / 2, sd.C[0] / 2, sd.C[1]];
@@ -315,7 +315,7 @@ function coc(c: number): void {
   lastDof = d;
   const tot = d.far - d.near;
   html('#o-dof', Number.isFinite(tot) ? fmtR(tot / 1000, 'm', 3).replace(/ (\S+)$/, '<span class="u">$1</span>') : '∞');
-  txt('#o-dofs', `近点 ${dist(d.near)}・遠点 ${dist(d.far)}（センサーから、c = ${sig(c, 3)} mm）`);
+  txt('#o-dofs', `近点 ${dist(d.near)}・遠点 ${dist(d.far)}（センサから、c = ${sig(c, 3)} mm）`);
   txt('#mD', Number.isFinite(tot) ? fmtR(tot / 1000, 'm', 3) : '∞');
   html('#o-hyp', fmtR(d.hyper / 1000, 'm', 3).replace(/ (\S+)$/, '<span class="u">$1</span>'));
   txt('#o-hyps', `ピントを合わせると ${dist(d.hyper / 2)} くらいから無限遠まで`);
@@ -389,7 +389,7 @@ function drawAbr(): void {
 
 /** レンズデータの出典と拡大の説明 */
 const rxSrc = (rx: Rx, f: string, k: string): string =>
-  `出典: ${rx.src}。表は焦点距離 ${f} mm に相似拡大した値（出典の値の ${k} 倍）で、有効径は${rx.dia ? '出典の値' : '設計の F 値と画角の光線から求めた値'}です。最後の面からセンサーまでは撮影距離から求めます。`;
+  `出典: ${rx.src}。表は焦点距離 ${f} mm に相似拡大した値（出典の値の ${k} 倍）で、有効径は${rx.dia ? '出典の値' : '設計の F 値と画角の光線から求めた値'}です。最後の面からセンサまでは撮影距離から求めます。`;
 /* 出典の文はレンズで長さが違う。いちばん長いものの高さを取っておき、レンズを替えても表を動かさない */
 reserveHeight(
   $('#rx-src'),
@@ -432,7 +432,7 @@ function status(): void {
 const gdEl = $('#gd');
 const MOON_R = angRadius(SKY.find((b) => b.id === 'moon') ?? SKY[0]);
 let gdKey = '';
-/** 月のほかの天体の位置（表示の向き、センサーの上の mm）に、月と同じ角半径の円を描く */
+/** 月のほかの天体の位置（表示の向き、センサの上の mm）に、月と同じ角半径の円を描く */
 function guides(): void {
   const vw = view();
   gdEl.setAttribute('viewBox', `${vw.x0} ${-(vw.y0 + vw.h)} ${vw.w} ${vw.h}`);
@@ -542,7 +542,7 @@ function placeAf(): void {
 }
 
 /**
- * 表示の点（センサーの上、mm）に写る向きの光線（m、撮影者の座標）。向きは方位 pan・仰角 tilt [°]。
+ * 表示の点（センサの上、mm）に写る向きの光線（m、撮影者の座標）。向きは方位 pan・仰角 tilt [°]。
  * 光線はピントの状態 s のレンズ（収差なしなら薄いレンズ）を逆にたどる
  */
 function worldRay(s: State, x: number, y: number, pan: number, tilt: number): { o: V3; d: V3; f: V3 } {

@@ -706,7 +706,7 @@ export function demosaic(m: Mosaic, method: Method): Rgb {
 
 /* ---------- 光学ローパスフィルタ ---------- */
 
-/** 色ごとに標準偏差 sigma（画素）のガウスでぼかす。センサーの前の光学ローパスフィルタの代わり */
+/** 色ごとに標準偏差 sigma（画素）のガウスでぼかす。センサの前の光学ローパスフィルタの代わり */
 export function blur(im: Rgb, sigma: number): Rgb {
   if (sigma <= 0) return im;
   const rad = Math.max(1, Math.ceil(3 * sigma)),

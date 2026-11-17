@@ -18,7 +18,7 @@ const name = 'カメラレンズ';
 /* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
 ---
 <SiteLayout title={name} tool={{ id: 'lens', name }} note="映像は公開されたレンズデータのとおりに光線を幾何光学で追跡したものです（回折は近似）。月の模様: NASA's Scientific Visualization Studio の CGI Moon Kit（LRO LROC WAC）· 火星の模様: NASA/USGS Astrogeology Science Center の Viking Global Color Mosaic を加工 · 木星と土星の模様: NASA/ESA Hubble OPAL（PI: Simon, GO13937, STScI, DOI 10.17909/T9G593, CC BY 4.0）を加工 · 土星の環の透け具合: NASA PDS Cassini VIMS · 環の色: NASA/JPL/Space Science Institute（PIA11142）">
-  <PageTitle title={name}>写真用のレンズの断面の形（面の曲率・間隔・ガラスの種類）のとおりに、センサーの各点から光線をレンズへ逆にたどって 3D の被写体に当て、レンズ越しの映像を作ります。ボケ、被写界深度、球面収差やコマ、像面の湾曲、歪曲、色のにじみ、周辺の暗さが、実際のレンズと同じしくみで現れます。収差のない理想のレンズとも比べられます。</PageTitle>
+  <PageTitle title={name}>写真用のレンズの断面の形（面の曲率・間隔・ガラスの種類）のとおりに、センサの各点から光線をレンズへ逆にたどって 3D の被写体に当て、レンズ越しの映像を作ります。ボケ、被写界深度、球面収差やコマ、像面の湾曲、歪曲、色のにじみ、周辺の暗さが、実際のレンズと同じしくみで現れます。収差のない理想のレンズとも比べられます。</PageTitle>
   <div class="mini" data-mini="op" aria-hidden="true"><span>画角<b id="mA"></b></span><span>被写界深度<b id="mD"></b></span><span>実効 F<b id="mN"></b></span></div>
 
   <div class="tgrid">
@@ -44,7 +44,7 @@ const name = 'カメラレンズ';
         </div>
         <More id="g-view" title="表示の設定"><div class="ana2">
           <div class="ptab">
-            <ChoiceRow k="zm" name="拡大" sub="ピントを合わせた点（枠）を中心にセンサーの一部を拡大" choices={ZOOMS.map((z) => [z, `×${z}`] as const)} value={1} />
+            <ChoiceRow k="zm" name="拡大" sub="ピントを合わせた点（枠）を中心にセンサの一部を拡大" choices={ZOOMS.map((z) => [z, `×${z}`] as const)} value={1} />
             <ChoiceRow k="tod" name="時間帯" sub="空と地上の明るさと露出（暗いほど空の天体が目立つ）" choices={[['day', '昼'], ['dusk', '夕暮れ'], ['night', '夜']]} value="dusk" />
           </div>
           <div class="ptab">

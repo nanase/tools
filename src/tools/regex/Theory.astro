@@ -130,7 +130,7 @@ const COST: Record<EngineId, { run: string; pre: string; ref: string; src: K[] }
 <p>b がないのでどれも失敗し、開始位置を 1 つずらして同じことを繰り返します。右の式が開始位置すべての合計です。a が 12 個では文字の比較が約 24,547 回になります。メモ化と NFA は同じ (状態, 位置) を 1 回しか調べないので約 60 回です。</p>
 
 <h3>破滅的バックトラック（ReDoS）への対策</h3>
-<p>手間が指数的に増えるパターンに長い文章を渡すと、サーバーが長く応答しなくなります。これが ReDoS で、公開のパッケージにも多く見つかっています <Fragment set:html={Rf('davis18')} />。</p>
+<p>手間が指数的に増えるパターンに長い文章を渡すと、サーバが長く応答しなくなります。これが ReDoS で、公開のパッケージにも多く見つかっています <Fragment set:html={Rf('davis18')} />。</p>
 <ul class="tl">
   <li>Ruby 3.2: 分かれ道で (命令, 位置) の組を覚え、同じ組を 2 度調べない <Fragment set:html={Rf('ruby', 'davis21')} /></li>
   <li>Ruby 3.2 のメモ化の範囲: 後方参照・先読み・後読みを含むパターンでは使わない。それ以外の備えとして Regexp.timeout を足した <Fragment set:html={Rf('ruby')} /></li>

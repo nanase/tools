@@ -1,4 +1,4 @@
-/** エンジン音響モデルの入力の定義（数値の行・選択肢・表示の設定） */
+/** エンジンのページの入力の定義（数値の行・選択肢・表示の設定） */
 import { linList } from '../../lib/eseries';
 import { minus } from '../../lib/format';
 import type { ParamDef, ParamFormat } from '../../lib/param-def';
@@ -170,7 +170,7 @@ export const VOL: ParamDef = lin({
   nm: '音量',
   sym: '',
   name: '音量',
-  sub: 'スピーカーへ出す大きさ。0 dB で、排気口から 0.5 m の音圧 20 Pa（120 dB）をフルスケールにする。大きすぎるときは割れないように抑える',
+  sub: 'スピーカへ出す大きさ。0 dB で、排気口から 0.5 m の音圧 20 Pa（120 dB）をフルスケールにする。大きすぎるときは割れないように抑える',
   unit: 'dB',
   min: -60,
   max: 20,

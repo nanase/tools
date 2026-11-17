@@ -48,9 +48,9 @@ export type JpegReason =
   | 'bad-code'
   /** 係数の位置が 63 を超える */
   | 'bad-run'
-  /** スキャンの途中の知らないマーカー */
+  /** スキャンの途中の知らないマーカ */
   | 'stray-marker'
-  /** リスタートマーカーの番号が順でない */
+  /** リスタートマーカの番号が順でない */
   | 'rst-order'
   /** 全部のブロックを読む前にデータが尽きた */
   | 'short-scan';
@@ -73,7 +73,7 @@ export interface Decoded {
   h: number;
   comps: DecComp[];
   rgba: Uint8ClampedArray;
-  /** 出てきたマーカーの名前の並び */
+  /** 出てきたマーカの名前の並び */
   markers: string[];
   /** JFIF の版（APP0 があれば） */
   jfif: string;
@@ -177,7 +177,7 @@ export function decode(d: Uint8Array, up: Up = 'lin', opts: DecodeOpts = {}): De
     const m = d[p++];
     markers.push(nameOf(m));
     if (m === 0xd9 && (!tol || scans > 0)) break;
-    /* 長さを持たないマーカー */
+    /* 長さを持たないマーカ */
     if (tol && (m === 0 || m === 1 || (m >= 0xd0 && m <= 0xd9))) continue;
     const len = u16(p),
       end = p + len;
@@ -407,14 +407,14 @@ function scanUnits(
   ];
 }
 
-/** 次の区切りのマーカー（RST を除く）まで進めた位置 */
+/** 次の区切りのマーカ（RST を除く）まで進めた位置 */
 function nextMarker(d: Uint8Array, p: number): number {
   let q = p;
   while (q < d.length - 1 && !(d[q] === 0xff && d[q + 1] !== 0 && !(d[q + 1] >= 0xd0 && d[q + 1] <= 0xd7))) q++;
   return q;
 }
 
-/** スキャンを終わらせるマーカー。ほかは壊れたデータの中に偶然できたものとして読み飛ばす */
+/** スキャンを終わらせるマーカ。ほかは壊れたデータの中に偶然できたものとして読み飛ばす */
 const ENDS_SCAN = new Set([0xd9, 0xda, 0xc4, 0xdb, 0xdd, 0xc0]);
 
 /**
@@ -475,7 +475,7 @@ function scanTolerant(
     ended = false;
   while (i < n) {
     if (ri && i > 0 && i % ri === 0) {
-      /* 次の RST を探す。スキャンの終わりのマーカーが先なら止める */
+      /* 次の RST を探す。スキャンの終わりのマーカが先なら止める */
       r.align();
       r.marker = -1;
       let q = r.p;
@@ -501,7 +501,7 @@ function scanTolerant(
       }
       for (const s of sc) s.pred = 0;
     }
-    /* 偶然できたマーカーは読み飛ばす */
+    /* 偶然できたマーカは読み飛ばす */
     while (r.marker >= 0 && !ENDS_SCAN.has(r.marker) && !(ri && r.marker >= 0xd0 && r.marker <= 0xd7)) {
       bad('stray-marker', r.p, '');
       r.skipMarker();

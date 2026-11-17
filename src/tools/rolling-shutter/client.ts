@@ -116,7 +116,7 @@ const t0 = (): number => {
 const cv = $<HTMLCanvasElement>('#cv');
 const busy = $('#st-busy');
 let R: RsRenderer | null = null;
-/** シェーダーの準備を待っている間は、走査を進めない */
+/** シェーダの準備を待っている間は、走査を進めない */
 let waiting = true;
 function noGl(): void {
   waiting = false;

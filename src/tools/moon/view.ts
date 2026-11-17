@@ -30,7 +30,7 @@ export function screenAngle(st: MoonState, mode: Orient, v: Vec3): number {
 
 /**
  * Akimov の関数: 月の円盤の明るさの分布（位相角 a、測光の緯度 b・経度 g [rad]。g は観測者の向きから太陽の側へ）。
- * 満月では一様、細い月では明るい縁が強まり、極の側へ細くなる。シェーダーと同じ式
+ * 満月では一様、細い月では明るい縁が強まり、極の側へ細くなる。シェーダと同じ式
  */
 export function akimov(a: number, b: number, g: number): number {
   if (g <= a - Math.PI / 2 || g >= Math.PI / 2) return 0;

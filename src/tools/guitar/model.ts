@@ -187,7 +187,7 @@ export function pluckOf(g: Guitar, si: number, m: Modes, sp: PluckSpec): Pluck {
   return { modes: m, a, f, f0 };
 }
 
-/** ほかの弦の共鳴を探す幅 [Hz]・部分音ごとの相手の数の上限・調べる部分音の上限 [Hz]（ピアノ音響モデルと同じ値） */
+/** ほかの弦の共鳴を探す幅 [Hz]・部分音ごとの相手の数の上限・調べる部分音の上限 [Hz]（ピアノのページと同じ値） */
 const SYM_BW = 2.5,
   SYM_N = 3,
   SYM_FMAX = 5000;

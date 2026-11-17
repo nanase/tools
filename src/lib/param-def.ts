@@ -88,7 +88,7 @@ export interface ParamDef {
   stepLabel?: string;
 
   /* ---------- 描画 ---------- */
-  /** 使わない（欄そのものがスライダーになった。2026-10-07） */
+  /** 使わない（欄そのものがスライダになった。2026-10-07） */
   slider?: boolean;
   /** 入力欄の inputmode（既定 text） */
   inputmode?: 'text' | 'decimal';

@@ -1,6 +1,6 @@
 /**
  * 音源の音（DOM に依存しない。AudioWorklet とテストで使う）。どれも、音源から r0 [m] の所の音圧 [Pa] を標本ごとに返す。
- * サイレン・警笛・正弦波は帯域を制限した波形表、エンジンはエンジン音響モデル（EngineSim）を回転数を保って回す
+ * サイレン・警笛・正弦波は帯域を制限した波形表、エンジンはエンジンのページ（EngineSim）を回転数を保って回す
  */
 import { EngineSim } from '../engine/engine';
 import { JA65, specOf } from '../engine/spec';
@@ -177,7 +177,7 @@ export class Tone implements Source {
   speed(): void {}
 }
 
-/** タイヤの半径 [m]（エンジン音響モデルの走行と同じ） */
+/** タイヤの半径 [m]（エンジンのページの走行と同じ） */
 const R_WHEEL = 0.284;
 /** 変速の目安: この回転数 [rpm] を超えたら上のギアにする */
 const UPSHIFT = 5500;

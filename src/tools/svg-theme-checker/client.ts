@@ -1,4 +1,4 @@
-/** SVG テーマスキーマチェッカーの入口: コード → 無害化 → ライト・ダークの 2 画面 */
+/** SVG テーマのページの入口: コード → 無害化 → ライト・ダークの 2 画面 */
 import { $ } from '../../lib/dom';
 import { initToolPage } from '../../lib/tool-page';
 import { type Edit, gutterHtml, hlHtml, indentEdit, lineCount, newlineEdit } from './code';

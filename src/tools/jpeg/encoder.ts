@@ -48,7 +48,7 @@ export interface CompOut {
   zeros: number;
 }
 
-/** ファイルの区切り（マーカーごと） */
+/** ファイルの区切り（マーカごと） */
 export interface Seg {
   name: string;
   off: number;

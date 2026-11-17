@@ -558,7 +558,7 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 /*
- * 音の出口: 鳴らす音（out）→ 箱の響き → 部屋の響き → 大きさの補正（comp）→ 音量（vol）→ 抑え → スピーカー。
+ * 音の出口: 鳴らす音（out）→ 箱の響き → 部屋の響き → 大きさの補正（comp）→ 音量（vol）→ 抑え → スピーカ。
  * 箱と部屋は選んだときだけ畳み込む
  */
 const SND = { case: false, room: 'off', vol: 0 };

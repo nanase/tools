@@ -1,6 +1,6 @@
 import type { ParamDef } from '../../lib/param-def';
 
-/** 手動のときの搬送波の周波数（JJY シミュレータの可聴音の周波数と同じ範囲・プリセット） */
+/** 手動のときの搬送波の周波数（JJY のページの可聴音の周波数と同じ範囲・プリセット） */
 export const F_PARAM: ParamDef & { k: 'f' } = {
   k: 'f',
   nm: '搬送波の',

@@ -438,7 +438,7 @@ syncRows();
 setPlaying(true);
 setPick(-1);
 
-/** シェーダーの準備ができたら始める。最初の絵は枠を描いてから */
+/** シェーダの準備ができたら始める。最初の絵は枠を描いてから */
 function begin(): void {
   pushScene();
   requestAnimationFrame(() => {

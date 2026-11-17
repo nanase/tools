@@ -82,11 +82,11 @@ describe('ピントと瞳', () => {
     expect(st.m).toBe(0);
     expect(st.Nw).toBeCloseTo(2, 9);
   });
-  it('有限の距離では、物体の面の近軸の像がセンサーにでき、距離はセンサーから測る', () => {
+  it('有限の距離では、物体の面の近軸の像がセンサにでき、距離はセンサから測る', () => {
     for (const D of [300, 1000, 5000]) {
       const st = focus(sys, D, 2.8, 0);
       expect(st.zs - st.zo).toBeCloseTo(D, 6);
-      /* 物点から出た近軸光線が、センサーの面で光軸に戻る */
+      /* 物点から出た近軸光線が、センサの面で光軸に戻る */
       const u0 = 0.01,
         M = mat(sys.s, 0, sys.s.length);
       const y1 = -u0 * st.zo,
@@ -245,7 +245,7 @@ describe('被写界深度', () => {
     for (const D of [1000, 3000, 8000]) {
       const st = focus(sys, D, N, 0),
         d = dof(st, c);
-      /* 主点から測った近似式（センサーから測る分を足し引きする） */
+      /* 主点から測った近似式（センサから測る分を足し引きする） */
       const off = st.zs - st.card.zH,
         s = D - off;
       const near = (s * (H - f)) / (H + s - 2 * f) + off,

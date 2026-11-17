@@ -1,6 +1,6 @@
 /**
  * エンジンの図: 縦に描いた単気筒の断面と、吸気・排気の管（模型には依存しない）。
- * 断面は空冷 SOHC 2 弁の形（ヘッドとシリンダのフィン、カムとロッカーアーム、弁とばね、点火プラグ、ポート、
+ * 断面は空冷 SOHC 2 弁の形（ヘッドとシリンダーのフィン、カムとロッカーアーム、弁とばね、点火プラグ、ポート、
  * リングの溝のあるピストン、I 断面の連接棒、円盤のクランク、クランクケース）。内径 50.0・行程 63.1・連接棒 100 mm を
  * 1 mm ≒ 1.01 px で描く。形は見た目の目安で、実物の図面ではない。
  * 管は区間の長さを道のり、内径を太さにして並べ、中の圧力の大気との差を色で塗る。作るときに形を描き、update で動かす。
@@ -162,7 +162,7 @@ export class EngineFigure {
       },
       back,
     );
-    /* シリンダのフィン（下ほど短い）と胴 */
+    /* シリンダーのフィン（下ほど短い）と胴 */
     for (let y = 106, i = 0; y <= 200; y += 8, i++) {
       const w = B / 2 + 30 - i * 0.8;
       mk(
@@ -287,7 +287,7 @@ export class EngineFigure {
     this.smallEnd = mk<SVGCircleElement>('circle', { class: 'e-pis', r: 5.5 }, svg);
     this.angle = mk<SVGTextElement>('text', { x: lay.ax, y: lay.ay }, svg);
 
-    /* 吸気: エアクリーナー側からスロットル、インシュレータ */
+    /* 吸気: エアクリーナー側からスロットル、インシュレーター */
     mk('path', { class: 'e-pipe', d: `M24 52H${f1(EXL)}M24 66H${f1(EXL)}` }, svg);
     this.butterfly = mk<SVGPathElement>('path', { class: 'e-valve' }, svg);
     mk('text', { x: 24, y: 42 }, svg, '吸気 →');
@@ -451,7 +451,7 @@ export class EngineFigure {
     this.gas.setAttribute('d', `M${f1(CX - B / 2)} 100Q${CX} 80 ${f1(CX + B / 2)} 100V${f1(crown)}H${f1(CX - B / 2)}Z`);
     this.gas.setAttribute('opacity', f1(0.08 + 0.62 * Math.min(1, Math.max(0, (st.pCyl - 101325) / 6e6)) ** 0.5));
     this.spark.setAttribute('visibility', st.spark ? 'visible' : 'hidden');
-    /* 弁: 軸に沿って下へ。ばねは弁座の上のばね受けと、動くリテーナの間で縮む。ロッカーは支点で回る */
+    /* 弁: 軸に沿って下へ。ばねは弁座の上のばね受けと、動くリテーナーの間で縮む。ロッカーは支点で回る */
     for (const v of this.valves) {
       const lift = (v.side < 0 ? st.liftIn : st.liftEx) * SC,
         ox = -v.ux * lift,

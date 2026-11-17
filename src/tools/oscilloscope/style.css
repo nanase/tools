@@ -1,7 +1,7 @@
-/* オシロスコープのページだけのスタイル（共通は src/styles/site.css、入力とモニターの枠は ../audio/style.css） */
+/* オシロスコープのページだけのスタイル（共通は src/styles/site.css、入力とモニタの枠は ../audio/style.css） */
 
-/* 枠の並び。スマホは 入力 → モニター → 波形 → 測定 → 式。
-   PC は左の列に 入力・モニター・測定、右の列に 波形（リサジューと切り替え） */
+/* 枠の並び。スマホは 入力 → モニタ → 波形 → 測定 → 式。
+   PC は左の列に 入力・モニタ・測定、右の列に 波形（リサジューと切り替え） */
 .a-in{order:1}.a-snd{order:2}.a-wave{order:3}.a-out{order:4}.a-thy{order:5}
 @media (min-width:1000px){
   .tgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr);grid-template-areas:"c1 c2" "thy thy";align-items:start}

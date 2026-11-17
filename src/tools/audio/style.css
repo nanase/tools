@@ -1,4 +1,4 @@
-/* 入力の枠とモニターの枠（オシロスコープ・スペクトラムアナライザで共有。共通は src/styles/site.css） */
+/* 入力の枠とモニタの枠（オシロスコープ・スペクトラムアナライザで共有。共通は src/styles/site.css） */
 
 /* 枠の右上のボタン（LED は入力が動いている間・鳴らしている間） */
 .ph .seg button{display:inline-flex;align-items:center;justify-content:center;gap:7px}
@@ -15,7 +15,7 @@
 #in-tab:not([data-src="file"]) #p-file,
 #in-tab:not([data-src="test"]) :is(#p-tw,#p-tf,#p-tr,#p-tph){display:none}
 
-/* モニターの枠: マイクの間は畳んで開けない。見出しの右に理由を出し、開閉の印は消す */
+/* モニタの枠: マイクの間は畳んで開けない。見出しの右に理由を出し、開閉の印は消す */
 .a-snd>summary .snd-note{font-size:12.5px;font-weight:400;color:var(--ink-3)}
 .a-snd:not(.lock)>summary .snd-note{display:none}
 .a-snd.lock>summary{cursor:default}
@@ -25,7 +25,7 @@
 .seek{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;margin-top:4px}
 .seek .msg{white-space:nowrap;font-variant-numeric:tabular-nums}
 
-/* 入力レベル（メーターの標準の緑。−3 dBFS を超えると警告色。−3 dBFS の位置に線） */
+/* 入力レベル（メータの標準の緑。−3 dBFS を超えると警告色。−3 dBFS の位置に線） */
 :root{--lv-ok:#2f9a46}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--lv-ok:#46c464}}
 :root[data-theme="dark"]{--lv-ok:#46c464}

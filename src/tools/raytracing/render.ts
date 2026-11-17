@@ -46,7 +46,7 @@ export class PathRenderer {
   /** 積分のやり方とロシアンルーレット */
   integ = 2;
   rr = true;
-  /** シェーダーの準備が終わると解決する。それまで描かない */
+  /** シェーダの準備が終わると解決する。それまで描かない */
   readonly ready: Promise<void>;
 
   constructor(readonly canvas: HTMLCanvasElement) {

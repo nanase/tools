@@ -120,7 +120,7 @@ const KEYS = keyboard();
       <Panel hid="hd-snd" title="音" class="a-snd">
         <div class="ptab">
           <ChoiceRow k="tb" name="音色" sub="正弦波は第 1 部分音だけ／ピアノは部分音が高めにずれる" choices={TIMBRES} value="organ" />
-          <ChoiceRow k="pt" name="ピアノ" sub="弦の寸法はピアノ音響モデルと同じ" choices={PIANOS} value="concert" layout="chips" class="pno" />
+          <ChoiceRow k="pt" name="ピアノ" sub="弦の寸法はピアノのページと同じ" choices={PIANOS} value="concert" layout="chips" class="pno" />
           <ChoiceRow k="st" name="ストレッチ" sub="オクターブを部分音に合わせて広げた調律" choices={[['0', 'なし'], ['1', 'あり']]} value="0" class="pno" />
           <ParamRow d={VOL} />
         </div>

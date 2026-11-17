@@ -53,7 +53,7 @@ export const outVol = (v0: number): ParamDef & { k: PlayKey } => ({
   nm: '音量',
   sym: '',
   name: '音量',
-  sub: 'スピーカーへ出す大きさ（0 dB で 1 m 先の音圧 1 Pa がフルスケール）',
+  sub: 'スピーカへ出す大きさ（0 dB で 1 m 先の音圧 1 Pa がフルスケール）',
   unit: 'dB',
   min: -60,
   max: 0,
@@ -68,7 +68,7 @@ export const outVol = (v0: number): ParamDef & { k: PlayKey } => ({
   pre: [],
 });
 
-/** 以前の保存（スライダーの tempo・vol）を、行の保存（p:tempo・p:vol）へ移す。ParamGroup を作る前に呼ぶ */
+/** 以前の保存（スライダの tempo・vol）を、行の保存（p:tempo・p:vol）へ移す。ParamGroup を作る前に呼ぶ */
 export function movePlayStore(): void {
   for (const k of ['tempo', 'vol']) {
     const v = stored(k);

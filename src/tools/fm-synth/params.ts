@@ -105,7 +105,7 @@ const NAMES = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A�
 export const noteName = (n: number): string => `${NAMES[n % 12]}${Math.floor(n / 12) - 1}`;
 
 /* ---------- 音量 ---------- */
-/** dB: 整数（JJY シミュレータの音量と同じ表記） */
+/** dB: 整数（JJY のページの音量と同じ表記） */
 const dbIn = (v: number): string => minus(String(Math.round(v)));
 const DB: ParamFormat = { input: dbIn, step: (v) => (v > 0 ? '+' : '') + dbIn(v), text: (v) => `${dbIn(v)} dB` };
 
@@ -115,7 +115,7 @@ export const VOL: ParamDef & { k: Key } = {
   nm: 'A',
   sym: '<i>A</i>',
   name: '音量',
-  sub: 'スピーカーへ出す大きさ（0 dB = 波形と同じ大きさ）',
+  sub: 'スピーカへ出す大きさ（0 dB = 波形と同じ大きさ）',
   unit: 'dB',
   min: -60,
   max: 0,

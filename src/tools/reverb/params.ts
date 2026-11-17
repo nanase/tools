@@ -84,7 +84,7 @@ export const VOL: ParamDef & { k: Key } = {
   nm: '音量',
   sym: '',
   name: '音量',
-  sub: 'スピーカーへ出す大きさ',
+  sub: 'スピーカへ出す大きさ',
   unit: 'dB',
   min: -60,
   max: 0,

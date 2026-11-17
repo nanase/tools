@@ -87,7 +87,7 @@ export const FOCUS: ParamDef = {
   nm: 's',
   sym: '<i>s</i>',
   name: '撮影距離',
-  sub: 'センサーの面からピントを合わせる面まで（映像を押すとその点）',
+  sub: 'センサの面からピントを合わせる面まで（映像を押すとその点）',
   unit: 'm',
   min: 0.2,
   max: INF,

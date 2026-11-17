@@ -20,7 +20,7 @@ export const VOL: ParamDef & { k: Key } = {
   nm: '音量',
   sym: '',
   name: '音量',
-  sub: 'スピーカーへ出す大きさ（0 dB ＝ 波形の最大がフルスケール）',
+  sub: 'スピーカへ出す大きさ（0 dB ＝ 波形の最大がフルスケール）',
   unit: 'dB',
   min: -60,
   max: 0,
@@ -39,7 +39,7 @@ export const VOL: ParamDef & { k: Key } = {
   pre: [],
 };
 
-/** ピアノの大きさ（ピアノ音響モデルと同じ） */
+/** ピアノの大きさ（ピアノのページと同じ） */
 export const PIANOS = PIANO_TYPES.map((p) => [p.v, p.name] as const);
 /** 音律 A と B を入れ替える間隔 [ms] */
 export const AB_MS = 2200;

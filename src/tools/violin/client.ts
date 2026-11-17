@@ -1,5 +1,5 @@
 /**
- * ヴァイオリン音響モデルのページの入口: 弓・左手・胴・部屋の入力 → 弓と弦と胴の模型（Worker）→ 図・弓の状態・胴の応答・
+ * ヴァイオリンのページの入口: 弓・左手・胴・部屋の入力 → 弓と弦と胴の模型（Worker）→ 図・弓の状態・胴の応答・
  * 音の波形・計算結果・音。弦を押すと、その位置を押さえて弓で弾き続ける（「弓を離す」まで）。曲は Worker が演奏する
  */
 import { Choice } from '../../lib/choice';
@@ -650,7 +650,7 @@ function viewOf(f: Frame | null): View {
   };
 }
 
-/* 弓の状態のメーター（表示だけ） */
+/* 弓の状態のメータ（表示だけ） */
 const meter = (k: string, v: number, lo: number, hi: number, okLo: number, okHi: number, text: string) => {
   const X = (x: number) => (300 * (Math.min(hi, Math.max(lo, x)) - lo)) / (hi - lo);
   $(`#bm-${k}-ok`).setAttribute('x', X(okLo).toFixed(1));

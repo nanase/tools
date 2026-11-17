@@ -74,7 +74,7 @@ export class RsRenderer {
   private readonly u = new Map<string, WebGLUniformLocation | null>();
   private readonly tex = new Map<Subject, WebGLTexture[]>();
   private readonly empty: WebGLTexture;
-  /** シェーダーの準備が終わると解決する。それまで draw を呼ばない */
+  /** シェーダの準備が終わると解決する。それまで draw を呼ばない */
   readonly ready: Promise<void>;
 
   constructor(readonly canvas: HTMLCanvasElement) {

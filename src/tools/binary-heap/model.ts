@@ -27,7 +27,7 @@ export const DEFS: readonly Def[] = [
     kind: 'implicit',
     d: 2,
     mem: '値のみ（配列）',
-    ex: 'タイマーの待ち行列・ダイクストラ法・ヒープソート',
+    ex: 'タイマの待ち行列・ダイクストラ法・ヒープソート',
   },
   {
     id: 'h4',

@@ -178,7 +178,7 @@ const capture = (el: Element, id: number) => {
   try {
     el.setPointerCapture(id);
   } catch {
-    /* 合成のポインターなど */
+    /* 合成のポインタなど */
   }
 };
 const syncTg = (b: HTMLButtonElement, on: boolean) => {
@@ -265,7 +265,7 @@ for (const pad of $$('[data-pad]')) {
       if (!(key === 'thr' && S.lock)) m[key] = 0;
     });
 }
-/* キーボード: ↑ でシフトアップ、↓ でシフトダウン（押している間）。入力欄・ボタン・ほかのスライダーにいるときは使わない */
+/* キーボード: ↑ でシフトアップ、↓ でシフトダウン（押している間）。入力欄・ボタン・ほかのスライダにいるときは使わない */
 document.addEventListener('keydown', (e) => {
   const t = e.target;
   if (e.code !== 'ArrowUp' && e.code !== 'ArrowDown') return;
@@ -599,7 +599,7 @@ for (const b of [pauseBtn, flPause])
     toLive();
     setPause(!S.paused);
   });
-/* Space で運転の一時停止と再開。入力欄・ボタン・スライダーにいるときは使わない */
+/* Space で運転の一時停止と再開。入力欄・ボタン・スライダにいるときは使わない */
 document.addEventListener('keydown', (e) => {
   if (e.code !== 'Space' || e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
   const t = e.target;
@@ -609,7 +609,7 @@ document.addEventListener('keydown', (e) => {
   setPause(!S.paused);
 });
 
-/* ---------- 音: エンジン音響モデルの音を、回転数を保つ運転で鳴らし、毎フレーム回転数とスロットルを送る ---------- */
+/* ---------- 音: エンジンのページの音を、回転数を保つ運転で鳴らし、毎フレーム回転数とスロットルを送る ---------- */
 const audio = new EngineAudio(),
   sndBtn = $<HTMLButtonElement>('#tm-snd'),
   sndT = $('#tm-sndT'),

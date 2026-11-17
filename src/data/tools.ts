@@ -1,4 +1,6 @@
 /** ツール一覧（ビルド時だけ使い、ブラウザへは送らない）。公開中のツールの id はページのパス（/tools/<id>/）を兼ねる */
+import { foldKey } from '../lib/dom';
+
 export interface Tool {
   id: string;
   /** カテゴリ */
@@ -54,11 +56,11 @@ export const TOOLS: Tool[] = [
   {
     id: 'passive-combination',
     c: '電子回路',
-    t: '受動素子組み合わせ計算機',
+    t: '受動素子の組み合わせ',
     d: '抵抗器・コンデンサ・インダクタにおける最適な組み合わせを探索します。',
     ic: 'rr',
     r: ['colorcode', 'timer555', 'pcb-coil', 'biquad'],
-    k: '合成抵抗 直列 並列 e系列 resistor capacitor',
+    k: '合成抵抗 直列 並列 e系列 resistor capacitor 計算機 calculator',
   },
   {
     id: 'pid',
@@ -108,11 +110,11 @@ export const TOOLS: Tool[] = [
   {
     id: 'jjy',
     c: '通信・符号',
-    t: 'JJY シミュレータ',
+    t: 'JJY',
     d: '電波時計などで利用されているJJYの信号をシミュレートします。',
     ic: 'jjy',
     r: ['jjy-decoder', 'pendulum-clock', 'i2c', 'qr-code'],
-    k: '電波時計 標準電波 タイムコード',
+    k: '電波時計 標準電波 タイムコード シミュレータ simulator',
   },
   {
     id: 'jjy-decoder',
@@ -243,11 +245,11 @@ export const TOOLS: Tool[] = [
   {
     id: 'guitar',
     c: '楽器',
-    t: 'ギター音響モデル',
+    t: 'ギター',
     d: 'ギターの弦と胴の振動を物理モデルで計算して鳴らします。',
     ic: 'gt',
     r: ['electric-guitar', 'violin', 'piano', 'tuner'],
-    k: 'guitar acoustic アコースティック physical model 物理モデル 弦 string 張力 tension フレット fret 響板 表板 soundboard ヘルムホルツ helmholtz 撥弦 pluck 非調和性 inharmonicity 残響 reverb モード合成 modal synthesis 演奏 バッハ bach クラシック ナイロン スチール オーディオ audio',
+    k: 'guitar acoustic アコースティック physical model 物理モデル 弦 string 張力 tension フレット fret 響板 表板 soundboard ヘルムホルツ helmholtz 撥弦 pluck 非調和性 inharmonicity 残響 reverb モード合成 modal synthesis 演奏 バッハ bach クラシック ナイロン スチール オーディオ audio 音響モデル',
   },
   {
     id: 'electric-guitar',
@@ -256,16 +258,16 @@ export const TOOLS: Tool[] = [
     d: '弦とピックアップとエフェクターを計算して鳴らします。',
     ic: 'eg',
     r: ['guitar', 'chord-progression', 'reverb', 'fm-synth'],
-    k: 'electric guitar エレキ エレクトリックギター ピックアップ pickup シングルコイル ハムバッカー humbucker エフェクター effects pedal 歪み distortion オーバードライブ overdrive ファズ fuzz アンプ amplifier 真空管 tube キャビネット cabinet スピーカー コンプレッサー compressor ワウ wah コーラス chorus フェイザー phaser フランジャー flanger トレモロ tremolo ディレイ delay リバーブ reverb スプリング spring チョーキング bend ビブラート vibrato フィードバック feedback ハーモニクス harmonics 物理モデル physical model モード合成 modal synthesis midi 演奏 オーディオ audio 音響モデル',
+    k: 'electric guitar エレキ エレクトリックギター ピックアップ pickup シングルコイル ハムバッカー humbucker エフェクター effects pedal 歪み distortion オーバードライブ overdrive ファズ fuzz アンプ amplifier 真空管 tube キャビネット cabinet スピーカ コンプレッサー compressor ワウ wah コーラス chorus フェイザー phaser フランジャー flanger トレモロ tremolo ディレイ delay リバーブ reverb スプリング spring チョーキング bend ビブラート vibrato フィードバック feedback ハーモニクス harmonics 物理モデル physical model モード合成 modal synthesis midi 演奏 オーディオ audio 音響モデル',
   },
   {
     id: 'piano',
     c: '楽器',
-    t: 'ピアノ音響モデル',
+    t: 'ピアノ',
     d: 'グランドピアノのハンマー・弦・響板を物理モデルで計算して鳴らします。',
     ic: 'pn',
     r: ['piano-action', 'temperament', 'organ', 'guitar'],
-    k: 'piano grand acoustic physical model 物理モデル 弦 string ハンマー hammer フェルト felt 響板 soundboard 非調和性 inharmonicity ユニゾン unison 二段減衰 double decay ダンパー damper ペダル pedal 共鳴 sympathetic 残響 reverb モード合成 modal synthesis 演奏 バッハ ベートーヴェン 月光 サティ オーディオ audio',
+    k: 'piano grand acoustic physical model 物理モデル 弦 string ハンマー hammer フェルト felt 響板 soundboard 非調和性 inharmonicity ユニゾン unison 二段減衰 double decay ダンパー damper ペダル pedal 共鳴 sympathetic 残響 reverb モード合成 modal synthesis 演奏 バッハ ベートーヴェン 月光 サティ オーディオ audio 音響モデル',
   },
   {
     id: 'piano-action',
@@ -279,29 +281,29 @@ export const TOOLS: Tool[] = [
   {
     id: 'violin',
     c: '楽器',
-    t: 'ヴァイオリン音響モデル',
+    t: 'ヴァイオリン',
     d: 'ヴァイオリンの弓・弦・胴を物理モデルで計算して鳴らします。',
     ic: 'vn',
     r: ['guitar', 'tuner', 'piano', 'trumpet'],
-    k: 'violin bowed string acoustic physical model 物理モデル 弓 bow 擦弦 弓圧 bow force 弓速 bow speed 駒 bridge ヘルムホルツ運動 helmholtz motion シェレンゲ schelleng 摩擦 friction 松脂 rosin 重音 double stop ビブラート vibrato 胴 body 弱音器 mute 残響 reverb モード合成 modal synthesis 演奏 バッハ bach シャコンヌ chaconne パルティータ partita エクルズ eccles オーディオ audio',
+    k: 'violin bowed string acoustic physical model 物理モデル 弓 bow 擦弦 弓圧 bow force 弓速 bow speed 駒 bridge ヘルムホルツ運動 helmholtz motion シェレンゲ schelleng 摩擦 friction 松脂 rosin 重音 double stop ビブラート vibrato 胴 body 弱音器 mute 残響 reverb モード合成 modal synthesis 演奏 バッハ bach シャコンヌ chaconne パルティータ partita エクルズ eccles オーディオ audio 音響モデル',
   },
   {
     id: 'trumpet',
     c: '楽器',
-    t: 'トランペット音響モデル',
+    t: 'トランペット',
     d: 'トランペットの唇・管・ピストンを物理モデルで計算して鳴らします。',
     ic: 'tp',
     r: ['organ', 'tuner', 'violin', 'temperament'],
-    k: 'trumpet brass lip acoustic physical model 物理モデル 金管 唇 lips マウスピース mouthpiece リードパイプ leadpipe ピストン piston valve 弁 抜差し slide ベル bell 入力インピーダンス input impedance 共鳴 resonance 倍音 自然倍音 harmonic series 導波管 waveguide 伝達行列 transfer matrix 非線形 nonlinear ブラスネス brassiness 衝撃波 shock wave タンギング tonguing スラー slur ビブラート vibrato 残響 reverb 演奏 ヘンデル handel 王宮の花火の音楽 ラ・レジュイサンス メサイア messiah バッハ bach メヌエット minuet グノー gounod アヴェ・マリア ave maria チャイコフスキー tchaikovsky ナポリの踊り 消灯ラッパ taps オーディオ audio',
+    k: 'trumpet brass lip acoustic physical model 物理モデル 金管 唇 lips マウスピース mouthpiece リードパイプ leadpipe ピストン piston valve 弁 抜差し slide ベル bell 入力インピーダンス input impedance 共鳴 resonance 倍音 自然倍音 harmonic series 導波管 waveguide 伝達行列 transfer matrix 非線形 nonlinear ブラスネス brassiness 衝撃波 shock wave タンギング tonguing スラー slur ビブラート vibrato 残響 reverb 演奏 ヘンデル handel 王宮の花火の音楽 ラ・レジュイサンス メサイア messiah バッハ bach メヌエット minuet グノー gounod アヴェ・マリア ave maria チャイコフスキー tchaikovsky ナポリの踊り 消灯ラッパ taps オーディオ audio 音響モデル',
   },
   {
     id: 'svg-theme-checker',
     c: '画像形式',
-    t: 'SVG テーマスキーマチェッカー',
+    t: 'SVG テーマ',
     d: 'SVG の見た目をライトとダークのテーマで比べます。',
     ic: 'svg',
     r: ['png', 'gif', 'jpeg', 'qr-code'],
-    k: 'dark light ダーク ライト テーマ',
+    k: 'dark light ダーク ライト テーマ ダークモード チェッカー checker スキーマ schema',
   },
   {
     id: 'pole-zero',
@@ -424,29 +426,29 @@ export const TOOLS: Tool[] = [
   {
     id: 'organ',
     c: '楽器',
-    t: 'オルガン音響モデル',
+    t: 'オルガン',
     d: 'パイプオルガンの管の発音と共鳴を物理モデルで計算して鳴らします。',
     ic: 'og',
     r: ['trumpet', 'piano', 'temperament', 'reverb'],
-    k: 'organ pipe organ パイプオルガン acoustic physical model 物理モデル フルー管 flue リード管 reed ジェット jet エッジトーン 共鳴管 resonator ストップ stop レジストレーション registration プリンシパル ゲダクト トランペット 風箱 wind トレモラント tremulant 調律 temperament 教会 残響 reverb 演奏 バッハ bach オーディオ audio',
+    k: 'organ pipe organ パイプオルガン acoustic physical model 物理モデル フルー管 flue リード管 reed ジェット jet エッジトーン 共鳴管 resonator ストップ stop レジストレーション registration プリンシパル ゲダクト トランペット 風箱 wind トレモラント tremulant 調律 temperament 教会 残響 reverb 演奏 バッハ bach オーディオ audio 音響モデル',
   },
   {
     id: 'engine',
     c: '機械',
-    t: 'エンジン音響モデル',
+    t: 'エンジン',
     d: 'CT125 をもとにした単気筒エンジンの排気音とトルク・出力を再現します。',
     ic: 'en',
     r: ['vvvf', 'transmission', 'doppler', 'spectrum'],
-    k: 'engine エンジン honda ホンダ 空冷 単気筒 single cylinder 4 stroke 4 ストローク ハンターカブ hunter cub ct125 スーパーカブ super cub ja65 ja55 排気音 exhaust マフラー muffler silencer 触媒 吸気 intake トルク torque 出力 power 回転数 rpm 空ぶかし アイドリング idle 燃焼 combustion wiebe 筒内圧 p-v 体積効率 導波管 waveguide 物理モデル physical model オーディオ audio',
+    k: 'engine エンジン honda ホンダ 空冷 単気筒 single cylinder 4 stroke 4 ストローク ハンターカブ hunter cub ct125 スーパーカブ super cub ja65 ja55 排気音 exhaust マフラー muffler silencer 触媒 吸気 intake トルク torque 出力 power 回転数 rpm 空ぶかし アイドリング idle 燃焼 combustion wiebe 筒内圧 p-v 体積効率 導波管 waveguide 物理モデル physical model オーディオ audio 音響モデル',
   },
   {
     id: 'vvvf',
     c: '機械',
     t: 'VVVF',
-    d: '電車のモーター音を鳴らし、同期と非同期のしくみを確かめます。',
+    d: '電車のモータ音を鳴らし、同期と非同期のしくみを確かめます。',
     ic: 'vv',
     r: ['engine', 'doppler', 'oscilloscope', 'transmission'],
-    k: 'vvvf インバータ inverter 電車 鉄道 train railway モーター音 磁励音 走行音 誘導電動機 induction motor pwm パルス幅変調 同期 非同期 synchronous asynchronous キャリア carrier 基本波 1 パルス 3 パルス gto igbt シーメンス siemens ドレミファインバータ 歌う電車 東急 5000系 9000系 田園都市線 京急 新1000形 回生ブレーキ 全電気ブレーキ 物理モデル オーディオ audio 音響モデル',
+    k: 'vvvf インバータ inverter 電車 鉄道 train railway モータ音 磁励音 走行音 誘導電動機 induction motor pwm パルス幅変調 同期 非同期 synchronous asynchronous キャリア carrier 基本波 1 パルス 3 パルス gto igbt シーメンス siemens ドレミファインバータ 歌う電車 東急 5000系 9000系 田園都市線 京急 新1000形 回生ブレーキ 全電気ブレーキ 物理モデル オーディオ audio 音響モデル',
   },
   {
     id: 'lens',
@@ -500,7 +502,7 @@ export const TOOLS: Tool[] = [
     d: 'ベイヤー配列から RGB を復元する 6 つの手法を比べます。',
     ic: 'dm',
     r: ['image-convolution', 'image-resize', 'lens', 'sampling-theorem'],
-    k: 'demosaic demosaicing デモザイク デモザイキング ベイヤー bayer cfa color filter array カラーフィルタ raw 現像 イメージセンサー image sensor 補間 interpolation 最近傍 nearest バイリニア bilinear malvar he cutler mhc hamilton adams vng variable number of gradients ahd adaptive homogeneity 偽色 false color モアレ moire ジャギー jaggies ジッパー zipper 光学ローパスフィルタ olpf ローパス 色差 メディアン median psnr cpsnr cielab ΔE',
+    k: 'demosaic demosaicing デモザイク デモザイキング ベイヤー bayer cfa color filter array カラーフィルタ raw 現像 イメージセンサ image sensor 補間 interpolation 最近傍 nearest バイリニア bilinear malvar he cutler mhc hamilton adams vng variable number of gradients ahd adaptive homogeneity 偽色 false color モアレ moire ジャギー jaggies ジッパー zipper 光学ローパスフィルタ olpf ローパス 色差 メディアン median psnr cpsnr cielab ΔE',
   },
   {
     id: 'rolling-shutter',
@@ -509,7 +511,7 @@ export const TOOLS: Tool[] = [
     d: 'プロペラや電車がゆがんで写る様子を走査線で追います。',
     ic: 'rs',
     r: ['lens', 'sampling-theorem', 'demosaic', 'doppler'],
-    k: 'rolling shutter ローリングシャッター グローバルシャッター global shutter cmos イメージセンサー image sensor 電子シャッター 走査 読み出し readout 露光 exposure シャッター速度 こんにゃく現象 ゆがみ 歪み skew wobble jello プロペラ propeller 電車 自動車 自転車 ゴルフ スイング モトクロス バックフリップ ヘリコプター ローター rotor スマートフォン iphone z9 r6 α7 gfx',
+    k: 'rolling shutter ローリングシャッター グローバルシャッター global shutter cmos イメージセンサ image sensor 電子シャッター 走査 読み出し readout 露光 exposure シャッター速度 こんにゃく現象 ゆがみ 歪み skew wobble jello プロペラ propeller 電車 自動車 自転車 ゴルフ スイング モトクロス バックフリップ ヘリコプター ローター rotor スマートフォン iphone z9 r6 α7 gfx',
   },
 
   {
@@ -772,4 +774,4 @@ export const order = (L: Tool[]): Tool[] => L.slice().sort((a, b) => (a.s || 0) 
 /** ツールのページの URL */
 export const href = (t: Tool): string => `${import.meta.env.BASE_URL}${t.id}/`;
 /** 絞り込み用の検索文字列 */
-export const keys = (t: Tool): string => `${t.t} ${t.d} ${t.c} ${t.k}`.normalize('NFKC').toLowerCase();
+export const keys = (t: Tool): string => foldKey(`${t.t} ${t.d} ${t.c} ${t.k}`);

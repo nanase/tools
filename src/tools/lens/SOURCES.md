@@ -10,7 +10,7 @@
 | 土星の模様の帯 | [public/saturn/s2025a.webp](../../../public/saturn/s2025a.webp) | [土星のページ](../saturn/SOURCES.md)（CC BY 4.0） |
 | 土星の環の表 | [public/saturn/rings.bin](../../../public/saturn/rings.bin) | [土星のページ](../saturn/SOURCES.md)（NASA のデータ） |
 
-ページのフッターには、月と火星の地図の出典表記、OPAL の謝辞、環のデータの出典を出します。
+ページのフッタには、月と火星の地図の出典表記、OPAL の謝辞、環のデータの出典を出します。
 
 木星の地図を足したときは、[scene.ts](scene.ts) が `MAPS` の最後の地図を使い、中央経線も大赤斑の経度から決め直します。
 

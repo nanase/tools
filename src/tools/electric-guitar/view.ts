@@ -298,7 +298,7 @@ function charOf(a: Any, v: Vals, fs: number): Char {
     };
   }
   if (a === 'cab') {
-    if (v.type === 'off') return { kind: 'resp', f: () => 1, lo: -36, hi: 12, label: 'スピーカーなし' };
+    if (v.type === 'off') return { kind: 'resp', f: () => 1, lo: -36, hi: 12, label: 'スピーカなし' };
     const t = v.type as keyof typeof CABS,
       fl = cabFilters(t, v.mic as 'center' | 'edge', fs),
       g0: number = CABS[t].g;
@@ -307,7 +307,7 @@ function charOf(a: Any, v: Vals, fs: number): Char {
       f: (f) => fl.reduce((s: number, q) => s * zmag(q, f, fs), g0),
       lo: -36,
       hi: 12,
-      label: 'スピーカーとマイクの応答',
+      label: 'スピーカとマイクの応答',
     };
   }
   if (a === 'dly') return { kind: 'taps', label: `くり返す音 · ${Math.round(n(v, 'time') * 1000)} ms ごと` };
@@ -739,7 +739,7 @@ function cabSvg(R: Rack, sel: boolean): string {
     const mx = spk[0][0] + (c.mic === 'edge' ? rr * 0.7 : 0),
       my = spk[0][1];
     s += `<path class="eg-stand" d="M${r1(mx)} ${cy + 104}V${r1(my + 14)}"/><rect class="eg-mic" x="${r1(mx - 4)}" y="${r1(my - 2)}" width="8" height="18" rx="3"/><circle class="eg-mich" cx="${r1(mx)}" cy="${r1(my - 1)}" r="4.5"/>`;
-  } else s += `<text class="eg-dl eg-dls" x="${cx + 98}" y="${cy + 52}">スピーカーなし</text>`;
+  } else s += `<text class="eg-dl eg-dls" x="${cx + 98}" y="${cy + 52}">スピーカなし</text>`;
   return `${s}<text class="eg-dl" x="${cx + 248}" y="${cy + 52}">キャビ</text></g>`;
 }
 
@@ -940,7 +940,7 @@ export function drawFret(cv: HTMLCanvasElement, sn: Snap | null, flash: Flash[],
       flash.splice(i, 1);
       continue;
     }
-    /* 弾いた所から輪が 2 重に広がる（ギター音響モデルと同じ見せ方） */
+    /* 弾いた所から輪が 2 重に広がる（ギターのページと同じ見せ方） */
     const x = f.fr ? mid(Math.min(SHOW_FRETS, f.fr)) : F.x0 + 14,
       y = F.sy(f.si);
     g.strokeStyle = C.ch1;

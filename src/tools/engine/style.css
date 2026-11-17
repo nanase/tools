@@ -1,4 +1,4 @@
-/* エンジン音響モデルのページだけのスタイル（共通は src/styles/site.css） */
+/* エンジンのページだけのスタイル（共通は src/styles/site.css） */
 
 /* 枠の並び。スマホは エンジン → 運転 → エンジンとマフラー → トルクと出力 → 筒内の圧力 → 音の波形 → 計算結果 → 式 → 出典。
    PC は上に エンジン（全幅）、左の列に 運転・エンジンとマフラー、右の列に トルクと出力・筒内の圧力・音の波形・計算結果、その下に 式・出典（全幅） */
@@ -50,7 +50,7 @@ kbd{font:500 11px var(--mono);padding:0 4px;border:1px solid var(--line-2);borde
 .eng .lb2{fill:var(--ink-3);font-size:10px}
 .eng.nar text{font-size:13px}
 .eng.nar .lb2{font-size:12px}
-/* 金属（シリンダ・ヘッド・クランク）、ピストンと連接棒、弁まわり、ポート */
+/* 金属（シリンダー・ヘッド・クランク）、ピストンと連接棒、弁まわり、ポート */
 .e-metal{fill:color-mix(in srgb,var(--screen-ink) 20%,var(--screen));stroke:var(--screen-ink);stroke-width:1}
 .e-fin{stroke:color-mix(in srgb,var(--screen-ink) 35%,var(--screen));stroke-width:3;stroke-linecap:round}
 .e-case{fill:color-mix(in srgb,var(--screen-ink) 10%,var(--screen));stroke:var(--screen-ink);stroke-width:1}

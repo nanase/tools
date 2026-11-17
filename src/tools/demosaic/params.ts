@@ -15,8 +15,8 @@ export const methodTitle = (m: Method): string => METHOD_L.find((x) => x[0] === 
 
 export type View = 'src' | 'mos' | 'out' | 'err';
 export const VIEWS: readonly (readonly [View, string, string])[] = [
-  ['src', '元画像', 'センサーに当たる前の画像（正解）'],
-  ['mos', 'モザイク', 'センサーが測った値。画素ごとにフィルタの色だけ'],
+  ['src', '元画像', 'センサに当たる前の画像（正解）'],
+  ['mos', 'モザイク', 'センサが測った値。画素ごとにフィルタの色だけ'],
   ['out', '結果', '選んだ手法で復元した画像'],
   ['err', '誤差 ×4', '元画像との差の絶対値を 4 倍。色の付いた所が偽色'],
 ];

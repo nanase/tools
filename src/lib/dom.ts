@@ -8,6 +8,8 @@ export const $$ = <T extends Element = HTMLElement>(s: string, r: ParentNode = d
   ...r.querySelectorAll<T>(s),
 ];
 export const norm = (s: string): string => s.normalize('NFKC').toLowerCase();
+/** ツールの絞り込みで比べる形。「モーター」と「モータ」のように長音の有無が違っても当たるよう「ー」を除く */
+export const foldKey = (s: string): string => norm(s).replace(/ー/g, '');
 
 /** HTML に埋め込む文字列のエスケープ */
 export const esc = (s: string): string =>

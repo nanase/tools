@@ -1,5 +1,5 @@
 /**
- * テスト信号（この端末の中で作る音）。表示（capture.ts）とモニターの AudioWorklet（worklet.ts）で同じ式を使う。
+ * テスト信号（この端末の中で作る音）。表示（capture.ts）とモニタの AudioWorklet（worklet.ts）で同じ式を使う。
  * CH1 = L、CH2 = R。標本の番号 n から直接求めるので、どこから書き始めても波形はつながる
  */
 export type Wave = 'sine' | 'square' | 'tri' | 'saw' | 'sweep' | 'melody' | 'noise';

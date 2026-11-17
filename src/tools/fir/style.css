@@ -39,7 +39,7 @@
 .scope text.zpt{fill:var(--ch2)}
 .zsel{fill:none;stroke:var(--screen-ink);stroke-width:1.2}
 .zsw{display:inline-block;width:9px;height:9px;border:2px solid var(--ch1);border-radius:50%}
-/* レベルメーター（表示窓の横長版） */
+/* レベルメータ（表示窓の横長版） */
 .lv-hot{fill:var(--warn)}
 
 /* カットオフ周波数の行の項目名: 取っておく高さを枠の幅で測るため、名前の欄を幅いっぱいにする */

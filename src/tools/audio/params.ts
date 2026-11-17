@@ -1,11 +1,11 @@
-/** 入力の枠（テスト信号）とモニターの枠の入力の定義。オシロスコープとスペクトラムアナライザで共有する */
+/** 入力の枠（テスト信号）とモニタの枠の入力の定義。オシロスコープとスペクトラムアナライザで共有する */
 import { linList } from '../../lib/eseries';
 import { minus } from '../../lib/format';
 import type { ParamDef, ParamFormat } from '../../lib/param-def';
 
 export type InKey = 'tf' | 'vol';
 
-/** dB: 整数（JJY シミュレータの音量と同じ表記） */
+/** dB: 整数（JJY のページの音量と同じ表記） */
 const dbIn = (v: number): string => minus(String(Math.round(v)));
 const DB: ParamFormat = { input: dbIn, step: (v) => (v > 0 ? '+' : '') + dbIn(v), text: (v) => `${dbIn(v)} dB` };
 
@@ -31,13 +31,13 @@ export const TF_PARAM: ParamDef & { k: InKey } = {
   ],
 };
 
-/** モニターの音量（JJY シミュレータの音量と同じ範囲） */
+/** モニタの音量（JJY のページの音量と同じ範囲） */
 export const VOL_PARAM: ParamDef & { k: InKey } = {
   k: 'vol',
   nm: 'A',
   sym: '<i>A</i>',
   name: '音量',
-  sub: 'スピーカーへ出す大きさ（0 dB = 入力と同じ大きさ）',
+  sub: 'スピーカへ出す大きさ（0 dB = 入力と同じ大きさ）',
   unit: 'dB',
   min: -60,
   max: 0,

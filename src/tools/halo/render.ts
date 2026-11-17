@@ -87,7 +87,7 @@ export class HaloRenderer {
   /** ためた光線の数 */
   rays = 0;
   private px = new Float32Array(4);
-  /** シェーダーの準備が終わると解決する。それまで描かない */
+  /** シェーダの準備が終わると解決する。それまで描かない */
   readonly ready: Promise<void>;
 
   constructor(

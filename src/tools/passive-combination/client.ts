@@ -1,4 +1,4 @@
-/** 受動素子組み合わせ計算機の入口: 入力 → 探索（Worker）→ 結果・回路・候補・代入式 */
+/** 受動素子の組み合わせのページの入口: 入力 → 探索（Worker）→ 結果・回路・候補・代入式 */
 import { Choice } from '../../lib/choice';
 import { $, esc } from '../../lib/dom';
 import { eList, inSeries, type Series, same } from '../../lib/eseries';

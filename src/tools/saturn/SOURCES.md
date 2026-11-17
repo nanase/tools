@@ -10,7 +10,7 @@
 | [土星の位置](#土星の位置vsop87d) | [vsop.ts](vsop.ts) | 論文と IMCCE の公開データ |
 | [すべての衛星](#すべての衛星) | [public/saturn/moons.json](../../../public/saturn/moons.json)・[model.ts](model.ts) の `INNER`・[phoebe.ts](phoebe.ts) | 位置は JPL Horizons、名前と群は CC BY-SA 4.0 |
 
-ページのフッターには OPAL の謝辞（Hubble の OPAL、PI と提案番号、STScI、DOI）、環のデータの出典、astronomia の著作権表示、ウィキペディア日本語版から取ったことを出します。
+ページのフッタには OPAL の謝辞（Hubble の OPAL、PI と提案番号、STScI、DOI）、環のデータの出典、astronomia の著作権表示、ウィキペディア日本語版から取ったことを出します。
 
 ## 模様の帯（OPAL）
 

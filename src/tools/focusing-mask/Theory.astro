@@ -16,7 +16,7 @@ const rf = (...ns: number[]) => ns.map((n) => `<a class="rf" href="#thy-r${n}">[
   <dt><math><mi>t</mi><mo stretchy="false">(</mo><mi>x</mi><mo>,</mo><mi>y</mi><mo stretchy="false">)</mo></math></dt><dd>開口の透過率。鏡筒の口・副鏡の影・スパイダー・マスクを掛け合わせたもの</dd>
   <dt><math><mi>W</mi></math></dt><dd>波面のずれ（長さ）</dd>
   <dt><math><mi>ρ</mi></math></dt><dd>開口の中心からの距離。縁で 1</dd>
-  <dt><math><mi>Δ</mi><mi>z</mi></math></dt><dd>ピントのずれ。センサーが焦点より奥なら正</dd>
+  <dt><math><mi>Δ</mi><mi>z</mi></math></dt><dd>ピントのずれ。センサが焦点より奥なら正</dd>
   <dt><math><mi>N</mi><mo>=</mo><mi>f</mi><mo>/</mo><mi>D</mi></math></dt><dd>F 値。<math><mi>f</mi></math> は焦点距離、<math><mi>D</mi></math> は口径</dd>
   <dt><math><mi mathvariant="script">F</mi></math></dt><dd>2 次元のフーリエ変換</dd>
 </dl>
@@ -39,7 +39,7 @@ const rf = (...ns: number[]) => ns.map((n) => `<a class="rf" href="#thy-r${n}">[
   <math display="block"><mi>Δ</mi><mi>ξ</mi><mo>=</mo><mfrac><mi>λ</mi><mrow><mi>K</mi><mi>α</mi></mrow></mfrac></math>
   <math display="block"><msub><mi>s</mi><mi>m</mi></msub><mo>=</mo><mi>m</mi><mfrac><mrow><mi>λ</mi><mi>f</mi></mrow><mi>p</mi></mfrac><mo>=</mo><mi>m</mi><mi>λ</mi><mi>B</mi><mo>,</mo><mspace width="1em"/><mi>B</mi><mo>=</mo><mfrac><mi>f</mi><mi>p</mi></mfrac></math>
 </div>
-<p><math><msub><mi>s</mi><mi>m</mi></msub></math> は周期 <math><mi>p</mi></math> の格子の <math><mi>m</mi></math> 次の回折光がセンサーの上で中心から離れる距離です。<math><mi>B</mi></math> を決めると、焦点距離にも口径にもよらず同じ距離に出ます。B = 150、λ = 550 nm なら 1 次の光は 82.5 µm です。スリットと桟の幅が同じなら、2 次・4 次の光は消えます。</p>
+<p><math><msub><mi>s</mi><mi>m</mi></msub></math> は周期 <math><mi>p</mi></math> の格子の <math><mi>m</mi></math> 次の回折光がセンサの上で中心から離れる距離です。<math><mi>B</mi></math> を決めると、焦点距離にも口径にもよらず同じ距離に出ます。B = 150、λ = 550 nm なら 1 次の光は 82.5 µm です。スリットと桟の幅が同じなら、2 次・4 次の光は消えます。</p>
 
 <h3>マスクの形</h3>
 <div class="tt-w">

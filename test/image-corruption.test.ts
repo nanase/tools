@@ -213,7 +213,7 @@ describe('JPEG', () => {
     expect(worst(0)).toBeGreaterThan(0.3);
     expect(worst(2)).toBeLessThan(0.1);
   });
-  it('マーカーの番号が飛ぶと、その間隔のブロックを読まない', () => {
+  it('マーカの番号が飛ぶと、その間隔のブロックを読まない', () => {
     const b = encodeJpeg(PIC.rgba, PIC.w, PIC.h, { q: 75, sub: '420', qt: 'k', huff: 'std', dri: 2 }).bytes;
     /* 最初の RST0（FF D0）を読めなくする代わりに RST1 に書き換える */
     let at = -1;
@@ -233,7 +233,7 @@ describe('JPEG', () => {
     const e = encodeAs('jpeg', PIC),
       dht = e.parts.find((p) => p.name === 'DHT') as { start: number; end: number },
       dqt = e.parts.find((p) => p.name === 'DQT') as { start: number; end: number };
-    /* マーカーを COM に変えて読み飛ばさせる */
+    /* マーカを COM に変えて読み飛ばさせる */
     const noH = applyOps(e.bytes, [{ kind: 'set', pos: dht.start + 1, value: 0xfe }]),
       noQ = applyOps(e.bytes, [{ kind: 'set', pos: dqt.start + 1, value: 0xfe }]),
       a = decodeJpeg(noH, 'lin', { tolerant: true }),
