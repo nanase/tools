@@ -1,6 +1,7 @@
 ---
 import Busy from '../components/Busy.astro';
 import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
 import DatePicker from '../components/DatePicker.astro';
 import More from '../components/More.astro';
 import PageTitle from '../components/PageTitle.astro';
@@ -13,6 +14,7 @@ import '../tools/sunrise/style.css';
 import { LANDC, rgb } from '../tools/sunrise/map';
 import { SPEEDS, ZONES } from '../tools/sunrise/params';
 import { BANDS } from '../tools/sunrise/sun';
+import Theory from '../tools/sunrise/Theory.astro';
 
 const name = '日の出と日の入り';
 ---
@@ -70,6 +72,9 @@ const name = '日の出と日の入り';
       <p class="sr-read" id="y-read" aria-live="polite">&nbsp;</p>
     </Panel>
 
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
   </div>
 
   <RelatedTools current="sunrise" />
