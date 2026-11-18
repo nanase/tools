@@ -38,4 +38,4 @@
 .sr-fl-x:hover{color:var(--ink);background:var(--inset)}
 .sr-fl-x svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round}
 .sr-fl-st{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:8px}
-.sr-fl-st .tg{justify-content:center;min-height:34px;padding:0 4px;font-size:12.5px}
+.sr-fl-st .tg{justify-content:center;min-height:34px;padding:0 4px;font-size:12.5px;touch-action:manipulation;user-select:none;-webkit-user-select:none}

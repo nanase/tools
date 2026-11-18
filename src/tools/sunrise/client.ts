@@ -6,6 +6,7 @@ import { Choice } from '../../lib/choice';
 import { DatePicker } from '../../lib/date-picker';
 import { $ } from '../../lib/dom';
 import { type Place, SitePicker, TOKYO } from '../../lib/planet/site';
+import { bindRepeat } from '../../lib/repeat';
 import { store, stored } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
 import { type LandMask, landMask, type Rings } from '../solar-eclipse/land';
@@ -195,10 +196,11 @@ function setFloat(on: boolean, save = true): void {
 }
 flBtn.addEventListener('click', () => setFloat(fl.hasAttribute('hidden')));
 $('#sr-fl-x').addEventListener('click', () => setFloat(false));
-fl.addEventListener('click', (e) => {
-  const b = (e.target as Element).closest<HTMLElement>('button[data-step]');
-  if (b) setT(shiftTime(T, Number(b.dataset.step), offLocal));
-});
+/* 押し続けると繰り返す。速すぎないよう 450 ms 後から 1 秒に 5 回 */
+for (const b of fl.querySelectorAll<HTMLElement>('button[data-step]')) {
+  const sec = Number(b.dataset.step);
+  bindRepeat(b, () => setT(shiftTime(T, sec, offLocal)), { delay: 450, every: 200 });
+}
 /** 再生で時刻を進める。10 日/秒は 1 秒に 10 コマ、1 コマで 1 日進めて現地の時刻を保つ */
 function advance(now: number): void {
   const dt = Math.min(200, now - last);
