@@ -85,6 +85,7 @@ const COMPOUND = [
   'mN·m/A',
   'm/s²',
   'rad/s',
+  '1/s',
   'rad/m',
   'rad·s/m',
   'rad/(m·s)',

@@ -1,61 +1,123 @@
 ---
+import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import More from '../components/More.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
 import RelatedTools from '../components/RelatedTools.astro';
 import SiteLayout from '../layouts/SiteLayout.astro';
+import { gridSvg } from '../lib/scope';
 import '../tools/pid/style.css';
 import BlockDiagram from '../tools/pid/BlockDiagram.astro';
+import { HOLD, ROWS, TUNE_OS, TUNE_VMAX } from '../tools/pid/model';
 import { GAINS, PLANT } from '../tools/pid/params';
 import Theory from '../tools/pid/Theory.astro';
-import Trace from '../tools/pid/Trace.astro';
 
 const name = 'PID制御';
+const GRID = gridSvg(ROWS);
+const SVB = `-66 -14 482 ${ROWS * 40 + 40}`;
 /* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
 ---
 <SiteLayout title={name} tool={{ id: 'pid', name }} note="シミュレーション結果は簡略化したモデルによる参考値です。">
-  <PageTitle title={name}>流れのある水の中で、物体を目標の位置へ動かして留める PID 制御を 100 秒間シミュレートします。比例・積分・微分の各ゲインや流速を変えると、位置と速度の応答、整定時間などの指標がすぐに変わります。</PageTitle>
-  <div class="mini" data-mini="op" aria-hidden="true"><span><i>t</i><sub>s</sub><b id="mts"></b></span><span>OS<b id="mos"></b></span><span><i>e</i><sub>end</sub><b id="mee"></b></span></div>
+  <PageTitle title={name}>流れのある川で、ボートを目標のブイへ動かして留める PID 制御のシミュレーションです。計算のモードでは 100 秒のステップ応答をすぐ見比べられ、ライブのモードではブイを動かしたりボートを押したりして、PID が立て直す様子を見られます。</PageTitle>
+  <div class="mini" data-mini="op" aria-hidden="true"><span><i>t</i><sub>s</sub><b id="mts"></b></span><span>OS<b id="mos"></b></span><span><i>e</i><b id="mee"></b></span></div>
 
   <div class="tgrid">
-    <div class="a-in">
+    <Panel hid="hd-riv" title="川" class="a-riv">
+      <Fragment slot="aux">
+        <div class="seg" id="p-mode" role="group" aria-label="モード"><button type="button" data-v="plan" aria-pressed="true" title="100 s のステップ応答を前もって計算して再生する。入力を変えるとすぐ表示窓が変わる">計算</button><button type="button" data-v="live" aria-pressed="false" title="止めずに計算を続け、ブイを動かす・押すと PID が立て直す">ライブ</button></div>
+        <div class="seg"><button type="button" id="rvPid" aria-pressed="true" title="PID の入・切。切ると操作量は 0"><span class="led on" id="rvPidLed" aria-hidden="true"></span><span id="rvPidT">PID 入</span></button></div>
+        <div class="seg"><button type="button" id="rvRun" aria-pressed="false" title="動かす・止める"><span class="led" id="rvRunLed" aria-hidden="true"></span><span id="rvRunT">再生</span></button></div>
+      </Fragment>
+      <div class="sbar">
+        <span class="stag">t <b class="hw" id="rv-t" data-ph="00000.0 s"></b></span>
+        <span class="stag"><i class="sw" aria-hidden="true"></i><i class="v">x</i> <b class="hw" id="rv-x" data-ph="−0000.0 m"></b></span>
+        <span class="stag"><i class="v">e</i> <b class="hw" id="rv-e" data-ph="−0000.0 m"></b></span>
+        <span class="stag wn" id="rv-dv" style="visibility:hidden">DIVERGED</span>
+        <span class="stag wn" id="rv-out" style="visibility:hidden">画面の外</span>
+      </div>
+      <div class="rvw"><canvas id="rv" class="rv" tabindex="0" role="img" aria-roledescription="川の図" aria-label="上から見た川とボート。赤いブイが目標で、ドラッグして動かせる。左右の矢印キーでボートを押し、Shift と矢印キーでブイを動かす"></canvas></div>
+      <p class="sr" id="rv-live" aria-live="polite"></p>
+      <div class="pushbar" role="group" aria-label="押す">
+        <button type="button" class="tg" id="rv-pl" title="ボートを左へ押す"><span aria-hidden="true">←</span> 押す</button>
+        <button type="button" class="tg" id="rv-pr" title="ボートを右へ押す">押す <span aria-hidden="true">→</span></button>
+        <button type="button" class="tg rst-sim" id="rv-rs" title="入力の初期位置・初速から始め直す">最初から</button>
+      </div>
+      <div class="lvs">
+        <div id="lv-x">
+          <div class="sbar">
+            <span class="stag" title="ボートの位置 x と目標 r（破線）"><i class="sw" aria-hidden="true"></i>CH1 POS <b class="hw" id="lv-x-vd" data-ph="500 mm"></b>/div</span>
+            <button type="button" class="tg" id="lv-x-ch2" aria-pressed="false" title="流れに対する速度 v と、位置を保つのに要る速度 −w（破線）"><i class="sw c2" aria-hidden="true"></i>CH2 VEL <b class="hw" id="lv-x-vd2" data-ph="500 mm/s"></b>/div</button>
+            <span class="stag">H <b id="lv-x-h" class="hw" data-ph="10 s">10 s</b>/div</span>
+            <span class="stag" id="lv-x-m">STEP</span>
+          </div>
+          <div class="scope hide2">
+            <svg viewBox={SVB} role="img" aria-label="位置と目標、速度の時間波形。計算のモードでは押すとその時刻へ">
+              <g set:html={GRID} />
+              <path class="lv-w c2x" id="lv-x-w" />
+              <path class="t2 c2x" id="lv-x-v" />
+              <path class="lv-rl" id="lv-x-rl" />
+              <path class="t1" id="lv-x-tr" />
+              <path class="lv-cur" id="lv-x-cur" />
+              <g id="lv-x-ax"></g>
+            </svg>
+          </div>
+        </div>
+        <div id="lv-u">
+          <div class="sbar lvc" role="group" aria-label="表示窓と矢印に出すもの">
+            <button type="button" class="tg" id="lv-c-p" aria-pressed="true" title="比例項 K_P e"><i class="sw lp" aria-hidden="true"></i>P</button>
+            <button type="button" class="tg" id="lv-c-i" aria-pressed="true" title="積分項 K_I ∫e dt"><i class="sw li" aria-hidden="true"></i>I</button>
+            <button type="button" class="tg" id="lv-c-d" aria-pressed="true" title="微分項 K_D de/dt"><i class="sw ld" aria-hidden="true"></i>D</button>
+            <button type="button" class="tg" id="lv-c-u" aria-pressed="false" title="操作量 u（P・I・D の合計）"><i class="sw lu" aria-hidden="true"></i>u</button>
+            <button type="button" class="tg" id="lv-c-t" aria-pressed="false" title="1 次遅れのあとの実際の推力"><i class="sw lt" aria-hidden="true"></i>推力</button>
+            <span class="stag"><b class="hw" id="lv-u-vd" data-ph="500 mm/s²"></b>/div</span>
+          </div>
+          <div class="scope">
+            <svg viewBox={SVB} role="img" aria-label="操作量の内訳と推力の時間波形">
+              <g set:html={GRID} />
+              <path class="lv-th" id="lv-u-t" />
+              <path class="lv-p" id="lv-u-p" />
+              <path class="lv-i" id="lv-u-i" />
+              <path class="lv-d" id="lv-u-d" />
+              <path class="lv-u" id="lv-u-u" />
+              <path class="lv-cur" id="lv-u-cur" />
+              <g id="lv-u-ax"></g>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <More id="g-riv" title="表示の設定"><div class="ptab">
+        <ChoiceRow k="rspd" name="再生の速さ" sub="図と表示窓の速さ。計算の刻みは変わらない" choices={[['1', '実時間'], ['2', '×2'], ['5', '×5'], ['10', '×10']]} value="5" />
+      </div></More>
+    </Panel>
+
+    <div class="a-side">
       <Panel hid="hd-gain" title="PID ゲイン">
+        <button slot="aux" type="button" class="tg" id="autoTune" title={`行き過ぎ ${TUNE_OS} % 以下・速さ ${TUNE_VMAX} m/s 以下で、100 s のステップ応答の ITAE が最小のゲインにする`}>自動調整</button>
         <div class="ptab">{GAINS.map((d) => <ParamRow d={d} />)}</div>
       </Panel>
       <Panel hid="hd-plant" title="制御対象">
         <div class="ptab">{PLANT.map((d) => <ParamRow d={d} />)}</div>
       </Panel>
+      <Panel hid="hd-sch" title="ブロック図" class="a-sch">
+        <BlockDiagram />
+      </Panel>
+      <Panel hid="hd-out" title="計算結果" class="a-out" shut>
+        <dl class="metrics c2">
+          <div class="m m-main"><dt>整定時間 <i>t</i><sub>s</sub></dt><dd><span id="o-ts"></span><span class="m-note" id="o-tsn"></span></dd></div>
+          <div class="m"><dt>立ち上がり時間 <i>t</i><sub>r</sub></dt><dd id="o-tr"></dd></div>
+          <div class="m"><dt>オーバーシュート</dt><dd id="o-os"></dd></div>
+          <div class="m"><dt>ピーク時刻 <i>t</i><sub>p</sub></dt><dd id="o-tp"></dd></div>
+          <div class="m"><dt><span id="o-eel">終了時の偏差</span> <i>e</i></dt><dd id="o-ee"></dd></div>
+          <div class="m"><dt>誤差の積分 IAE</dt><dd id="o-iae"></dd></div>
+          <div class="m"><dt>最大速度 |<i>v</i>|<sub>max</sub></dt><dd id="o-vm"></dd></div>
+        </dl>
+      </Panel>
     </div>
 
-    <Panel hid="hd-pos" title="位置" class="a-pos">
-      <span slot="aux" class="aux">ステップ応答</span>
-      <Trace id="sp" ch={1} name="POS" chTitle="位置 x" refTitle="目標位置 r" label="位置の応答" />
-    </Panel>
-
-    <Panel hid="hd-vel" title="速度" class="a-vel">
-      <span slot="aux" class="aux">流れに対する速さ</span>
-      <Trace id="sv" ch={2} name="VEL" chTitle="速度 v" refTitle="位置を保つのに要る速度 −w" label="速度の応答" />
-    </Panel>
-
-    <Panel hid="hd-sch" title="ブロック図" class="a-sch">
-      <BlockDiagram />
-    </Panel>
-
-    <Panel hid="hd-out" title="計算結果" class="a-out">
-      <dl class="metrics c3">
-        <div class="m m-main"><dt>整定時間 <i>t</i><sub>s</sub>（±2 %）</dt><dd><span id="o-ts"></span><span class="m-note" id="o-tsn"></span></dd></div>
-        <div class="m"><dt>立ち上がり時間 <i>t</i><sub>r</sub></dt><dd id="o-tr"></dd></div>
-        <div class="m"><dt>オーバーシュート</dt><dd id="o-os"></dd></div>
-        <div class="m"><dt>ピーク時刻 <i>t</i><sub>p</sub></dt><dd id="o-tp"></dd></div>
-        <div class="m"><dt>終了時の偏差 <i>e</i><sub>end</sub></dt><dd id="o-ee"></dd></div>
-        <div class="m"><dt>誤差の積分 IAE</dt><dd id="o-iae"></dd></div>
-        <div class="m"><dt>最大速度 |<i>v</i>|<sub>max</sub></dt><dd id="o-vm"></dd></div>
-      </dl>
-    </Panel>
-
     <Collapsible hid="hd-thy" title="動作原理と式">
-      <Theory />
+      <Theory hold={HOLD} os={TUNE_OS} vmax={TUNE_VMAX} />
     </Collapsible>
   </div>
 

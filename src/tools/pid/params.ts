@@ -1,6 +1,6 @@
 import type { ParamDef } from '../../lib/param-def';
 
-export type Key = 'kp' | 'ki' | 'kd' | 'x0' | 'r' | 'v0' | 'w' | 'al';
+export type Key = 'kp' | 'ki' | 'kd' | 'x0' | 'r' | 'v0' | 'w' | 'c' | 'al';
 type Def = ParamDef & { k: Key };
 
 const LOG_HINT = '↑↓: E12 刻みで隣の値　PgUp/PgDn: 10 倍・1/10　Enter: 確定　Esc: 取り消し';
@@ -63,9 +63,9 @@ const POS_PRE: [number, string][] = [
   ];
 
 export const GAINS: Def[] = [
-  gain('kp', 'Kp', 'P', '比例ゲイン', '今の誤差に掛ける', 0.0047),
-  gain('ki', 'Ki', 'I', '積分ゲイン', '誤差の蓄積に掛ける', 0),
-  gain('kd', 'Kd', 'D', '微分ゲイン', '誤差の変化率に掛ける', 0.33),
+  gain('kp', 'Kp', 'P', '比例ゲイン', '今の誤差に掛ける', 0.015),
+  gain('ki', 'Ki', 'I', '積分ゲイン', '誤差の蓄積に掛ける', 0.00022),
+  gain('kd', 'Kd', 'D', '微分ゲイン', '誤差の変化率に掛ける', 0.27),
 ];
 
 export const PLANT: Def[] = [
@@ -117,6 +117,32 @@ export const PLANT: Def[] = [
     ph: '例 −1',
     pre: VEL_PRE,
   }),
+  {
+    k: 'c',
+    nm: 'c',
+    sym: '<i>c</i>',
+    name: '水の抵抗',
+    sub: '流れに対する速さに比例して減速',
+    unit: '1/s',
+    min: 0,
+    max: 1,
+    v: 0.047,
+    series: 12,
+    floor: 1e-3,
+    ends: true,
+    sign: 'nonneg',
+    notation: 'plain',
+    inputmode: 'decimal',
+    hint: LOG_HINT,
+    bad: '0 以上の数を入れてください（例 0.047・0）',
+    ph: '例 0.047',
+    pre: [
+      [0, '0'],
+      [0.01, '0.01'],
+      [0.047, '0.047'],
+      [0.1, '0.1'],
+    ],
+  },
   {
     k: 'al',
     nm: 'α',
