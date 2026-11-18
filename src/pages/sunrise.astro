@@ -1,0 +1,57 @@
+---
+import Busy from '../components/Busy.astro';
+import ChoiceRow from '../components/ChoiceRow.astro';
+import DatePicker from '../components/DatePicker.astro';
+import More from '../components/More.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import PlanetSite from '../components/PlanetSite.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../lib/planet/planet.css';
+import '../tools/sunrise/style.css';
+import { LANDC, rgb } from '../tools/sunrise/map';
+import { SPEEDS, ZONES } from '../tools/sunrise/params';
+import { BANDS } from '../tools/sunrise/sun';
+
+const name = '日の出と日の入り';
+---
+<SiteLayout title={name} tool={{ id: 'sunrise', name }} note="陸地: Natural Earth（パブリックドメイン） · 時間帯の境界: timezone-boundary-builder（© OpenStreetMap contributors, ODbL）を tz-lookup（CC0）で引く">
+  <PageTitle title={name}>世界の昼と夜、選んだ地点の太陽の道すじを描きます。</PageTitle>
+
+  <div class="tgrid">
+
+    <Panel hid="hd-map" title="昼と夜" fixed>
+      <PlanetSite slot="aux" />
+      <div slot="aux" class="seg" id="p-play" data-nosave><button type="button" id="play" aria-pressed="false"><span class="led" id="playLed" aria-hidden="true"></span><span id="playT">再生</span></button></div>
+      <div class="pn-clock">
+        <button type="button" class="pn-nowbtn" id="nowbtn" aria-pressed="true" title="現在の日時へ"><span class="led on" id="nowLed" aria-hidden="true"></span>現在</button>
+        <span class="pn-clk"><span id="clk">—</span><small id="clkz">—</small></span>
+        <span class="pn-st"><span class="pn-dtrow"><b id="o-date">—</b><DatePicker /></span></span>
+      </div>
+      <div class="sr-map" id="mview">
+        <canvas id="mc" role="img" aria-label="昼と夜の世界地図。押すとその地点を選ぶ"></canvas>
+        <Busy id="m-busy" text="読み込み中…" />
+      </div>
+      <div class="sr-key">
+        {BANDS.map((b, i) => <span><i style={`background:${rgb(LANDC[i])}`}></i>{b}</span>)}
+        <span><i class="sr-ksun"></i>太陽が真上の地点</span>
+        <span><i class="sr-kpin"></i>選んだ地点</span>
+      </div>
+      <More id="g-view" title="表示の設定"><div class="ana2">
+        <div class="ptab">
+          <ChoiceRow k="tz" name="時刻" choices={ZONES} value="local" />
+        </div>
+        <div class="ptab">
+          <ChoiceRow k="sp" name="再生の速さ" choices={SPEEDS} value="hour" />
+        </div>
+      </div></More>
+    </Panel>
+
+  </div>
+
+  <RelatedTools current="sunrise" />
+  <script>
+    import '../tools/sunrise/client';
+  </script>
+</SiteLayout>

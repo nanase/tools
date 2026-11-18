@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { dayOf } from '../src/tools/sunrise/day';
+import { lonLatAt } from '../src/tools/sunrise/map';
 import { band, geoAltAz, subsolar, sunEq, sunEqLow } from '../src/tools/sunrise/sun';
 import { approx, localDay, lookupZone, offText, zoneOffset } from '../src/tools/sunrise/tz';
 import { yearGrid } from '../src/tools/sunrise/year';
@@ -135,5 +136,16 @@ describe('時間帯', () => {
     expect(d.N).toBe(276);
     expect(d.rise).not.toBeNull();
     expect(d.set).not.toBeNull();
+  });
+});
+
+describe('地図の座標', () => {
+  it('左上は北西の端、真ん中は経度 0°・緯度 0°', () => {
+    const a = lonLatAt(0, 0, 720, 360);
+    expect(a.lat).toBeCloseTo(89.75, 2);
+    expect(a.lon).toBeCloseTo(-179.75, 2);
+    const c = lonLatAt(359.5, 179.5, 720, 360);
+    expect(c.lat).toBeCloseTo(0, 6);
+    expect(c.lon).toBeCloseTo(0, 6);
   });
 });
