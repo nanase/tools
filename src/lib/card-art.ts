@@ -1030,6 +1030,83 @@ function pclAnchor(px: number, py: number, cx: number, cy: number, r: number, th
   return d;
 }
 
+/* ---------- プリズムとレンズの図柄: 2 次元の光線 ---------- */
+type Pt = [number, number];
+const D2R = Math.PI / 180;
+/** 赤から紫の 6 色の屈折率（カード用に分散を強めた値） */
+const PRL_N = [1.56, 1.585, 1.61, 1.635, 1.66, 1.69];
+/** 正三角のプリズム（頂点が上、中心 cx, cy、辺 s、回転 ang°） */
+function prlPrism(cx: number, cy: number, s: number, ang: number): Pt[] {
+  const h = (s * Math.sqrt(3)) / 2,
+    c = Math.cos(ang * D2R),
+    si = Math.sin(ang * D2R);
+  return (
+    [
+      [0, (-2 * h) / 3],
+      [s / 2, h / 3],
+      [-s / 2, h / 3],
+    ] as Pt[]
+  ).map(([x, y]) => [cx + c * x - si * y, cy + si * x + c * y]);
+}
+function prlHit(Q: Pt[], p: Pt, d: Pt, skip: number): { i: number; p: Pt } | null {
+  let best = Number.POSITIVE_INFINITY,
+    bi = -1;
+  for (let i = 0; i < Q.length; i++) {
+    if (i === skip) continue;
+    const a = Q[i],
+      b = Q[(i + 1) % Q.length],
+      ex = b[0] - a[0],
+      ey = b[1] - a[1],
+      den = d[0] * ey - d[1] * ex;
+    if (Math.abs(den) < 1e-9) continue;
+    const qx = a[0] - p[0],
+      qy = a[1] - p[1],
+      t = (qx * ey - qy * ex) / den,
+      u = (qx * d[1] - qy * d[0]) / den;
+    if (t > 1e-6 && u >= 0 && u <= 1 && t < best) {
+      best = t;
+      bi = i;
+    }
+  }
+  return bi < 0 ? null : { i: bi, p: [p[0] + d[0] * best, p[1] + d[1] * best] };
+}
+/** 辺 i の外向きの法線 */
+function prlOut(Q: Pt[], i: number): Pt {
+  const a = Q[i],
+    b = Q[(i + 1) % Q.length],
+    l = Math.hypot(b[0] - a[0], b[1] - a[1]),
+    n: Pt = [(b[1] - a[1]) / l, -(b[0] - a[0]) / l],
+    cx = (Q[0][0] + Q[1][0] + Q[2][0]) / 3,
+    cy = (Q[0][1] + Q[1][1] + Q[2][1]) / 3;
+  return ((a[0] + b[0]) / 2 - cx) * n[0] + ((a[1] + b[1]) / 2 - cy) * n[1] > 0 ? n : [-n[0], -n[1]];
+}
+/** スネルの法則（n は入ってくる側を向く法線、eta = n1/n2）。全反射なら null */
+function prlRefr(d: Pt, n: Pt, eta: number): Pt | null {
+  const c = -(d[0] * n[0] + d[1] * n[1]),
+    k = 1 - eta * eta * (1 - c * c);
+  if (k < 0) return null;
+  const a = eta * c - Math.sqrt(k);
+  return [eta * d[0] + a * n[0], eta * d[1] + a * n[1]];
+}
+/** プリズムを通す: 入る点 a・出る点 b・出る向き d */
+function prlThru(Q: Pt[], p: Pt, d: Pt, n: number): { a: Pt; b: Pt; d: Pt | null } | null {
+  const h1 = prlHit(Q, p, d, -1);
+  if (!h1) return null;
+  const d1 = prlRefr(d, prlOut(Q, h1.i), 1 / n);
+  if (!d1) return null;
+  const h2 = prlHit(Q, h1.p, d1, h1.i);
+  if (!h2) return null;
+  const o = prlOut(Q, h2.i);
+  return { a: h1.p, b: h2.p, d: prlRefr(d1, [-o[0], -o[1]], n) };
+}
+/** 線を x = X か上下の端まで伸ばす */
+function prlExt(p: Pt, d: Pt, X: number): Pt {
+  let t = (X - p[0]) / d[0];
+  if (d[1] > 0) t = Math.min(t, (47 - p[1]) / d[1]);
+  if (d[1] < 0) t = Math.min(t, (1 - p[1]) / -d[1]);
+  return [p[0] + d[0] * t, p[1] + d[1] * t];
+}
+
 export const ART: Record<string, Art> = {
   /* タイマIC 555: 出力（周期 36、High 24）と C1 の電圧。時間が流れる */
   sq(t) {
@@ -3270,6 +3347,30 @@ export const ART: Record<string, Art> = {
       P('c w', pl([[100, 24], pclAt(100, 24, 8, -Math.PI / 2 + 1.9)]));
     return s;
   },
+  /* プリズムとレンズ: 白い光が正三角のプリズムで 6 色に分かれる。橙のつまみが輪を回り、プリズムと虹が一緒に振れる。
+     分散はカードで見えるよう強めている（屈折率 1.56〜1.69） */
+  prl(t) {
+    const ang = -12 * Math.sin(t * 1.4),
+      Q = prlPrism(52, 17, 26, ang),
+      src: Pt = [4, 30],
+      d0: Pt = [Math.cos(-22 * D2R), Math.sin(-22 * D2R)],
+      rays = PRL_N.map((n) => prlThru(Q, src, d0, n)),
+      mid = rays[2],
+      ka = (ang - 90) * D2R,
+      kx = 52 + Math.cos(ka) * 15,
+      ky = 17 + Math.sin(ka) * 15;
+    let s = `<circle class="kr t d" cx="52" cy="17" r="15"/><path class="fs" d="M${Q.map((q) => `${r1(q[0])} ${r1(q[1])}`).join('L')}Z"/>`;
+    if (mid)
+      s +=
+        P('c', `M${src.join(' ')}L${r1(mid.a[0])} ${r1(mid.a[1])}`) +
+        P('c t', `M${r1(mid.a[0])} ${r1(mid.a[1])}L${r1(mid.b[0])} ${r1(mid.b[1])}`);
+    rays.forEach((r, k) => {
+      if (!r?.d) return;
+      const e = prlExt(r.b, r.d, 112);
+      s += P(`s${k}`, `M${r1(r.b[0])} ${r1(r.b[1])}L${r1(e[0])} ${r1(e[1])}`);
+    });
+    return `${s}${P('kr t', `M52 17L${r1(kx)} ${r1(ky)}`)}<circle class="ka" cx="${r1(kx)}" cy="${r1(ky)}" r="2.6"/>`;
+  },
 };
 
 /**
@@ -3358,6 +3459,7 @@ export const LOOP: Record<string, number> = {
   wh: 3,
   cp: 3.6,
   pcl: 2,
+  prl: TAU / 1.4,
 };
 
 /** 止まっているときの図柄（ビルド時に HTML へ出す） */

@@ -1,0 +1,84 @@
+/* プリズムとレンズのページ */
+.pl-scenes{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.pl-scenes .chip{min-height:30px;padding:0 10px}
+.pl-scenes .pl-clear{margin-left:auto}
+.pl-wrap{position:relative}
+
+/* 図: いつも黒地 */
+.pl-stage{position:relative;overflow:hidden;border-radius:var(--r);background:#000;user-select:none;-webkit-user-select:none}
+#pl-cv{display:block;width:100%;touch-action:none}
+#pl-cv:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+.pl-fs{position:absolute;top:8px;right:8px;z-index:2;display:grid;place-items:center;width:32px;height:32px;padding:0;border:0;border-radius:6px;background:rgb(255 255 255 / .1);color:#e6e8e4;cursor:pointer}
+.pl-fs:hover{background:rgb(255 255 255 / .2)}
+.pl-fs:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+.pl-fs svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.pl-fs .i-close,.full .pl-fs .i-open{display:none}
+.full .pl-fs .i-close{display:block}
+
+/* 道具のトレイ（図の下端に重ねる） */
+.pl-tray{position:absolute;left:50%;bottom:8px;z-index:2;transform:translateX(-50%);display:flex;align-items:stretch;max-width:calc(100% - 16px);padding:2px 4px;overflow-x:auto;border:1px solid #30363e;border-radius:8px;background:#121519;scrollbar-width:none}
+.pl-tray::-webkit-scrollbar{display:none}
+.pl-tray .sep{flex:none;width:1px;margin:6px 3px;background:#3a4048}
+.pl-tool{flex:none;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:54px;padding:5px 5px 4px;white-space:nowrap;border:0;border-radius:6px;background:none;color:#d5dae0;font:500 11px/1.25 var(--sans);cursor:grab;touch-action:none}
+.pl-tool:hover{background:#262b32;color:#fff}
+.pl-tool:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+.pl-tool svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linejoin:round;stroke-linecap:round}
+
+/* 選んだ部品の設定の帯。部品を選ぶとトレイと入れ替わる（図の上なので配色はテーマによらず暗い） */
+.pl-tray[hidden],.pl-ctx[hidden]{display:none}
+.pl-ctx{position:absolute;left:50%;bottom:8px;z-index:2;transform:translateX(-50%);display:flex;align-items:center;gap:6px;max-width:calc(100% - 16px);padding:4px 6px;overflow-x:auto;border:1px solid #30363e;border-radius:8px;background:#121519;color:#d5dae0;font:500 12px/1.2 var(--sans);white-space:nowrap;scrollbar-width:none;touch-action:pan-x}
+.pl-ctx::-webkit-scrollbar{display:none}
+.pl-ctx.over{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 30px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 30px),transparent)}
+.pl-ch,.pl-cb,.pl-ca,.pl-cf{display:flex;flex:none;align-items:center}
+.pl-ch{gap:2px;padding-right:8px;border-right:1px solid #3a4048}
+.pl-ch b{font-size:12.5px;color:#f1f3f5}
+.pl-cb{gap:12px;padding:0 4px}
+.pl-ca{gap:2px;padding-left:6px;border-left:1px solid #3a4048}
+.pl-cf{gap:5px}
+.pl-cf[hidden]{display:none}
+.pl-cl{color:#9aa3ad;font-size:11.5px}
+.pl-cfo b{color:#f1f3f5;font:600 12.5px/1 var(--mono)}
+.pl-ib{display:grid;place-items:center;width:30px;height:30px;padding:0;border:0;border-radius:6px;background:none;color:#c6ccd3;cursor:pointer}
+.pl-ib:hover{background:#262b32;color:#fff}
+.pl-ib.del{color:#ff8f8f}
+.pl-ib.del:hover{color:#ffb0b0}
+.pl-ib svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.pl-ib:focus-visible,.pl-sf:focus-visible,.pl-sel:focus-visible,.pl-seg button:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+/* 数値の欄: 横にドラッグ・‹ ›・押して入力。下の細い線が範囲の中の位置 */
+.pl-sf{position:relative;display:inline-flex;align-items:center;gap:3px;height:28px;padding:0 2px 1px;border:1px solid #3a4048;border-radius:5px;background:#1b1f24;color:#f1f3f5;font:600 12.5px/1 var(--mono);cursor:ew-resize;touch-action:none}
+.pl-sf:hover,.pl-sf.drag{border-color:#59626c}
+.pl-sv{min-width:2.6em;text-align:right}
+.pl-su{color:#9aa3ad;font:500 11px/1 var(--mono)}
+.pl-sa{width:16px;height:24px;padding:0;border:0;background:none;color:#7d8690;font:600 13px/1 var(--mono);cursor:pointer}
+.pl-sa:hover{color:#fff}
+.pl-sb{position:absolute;left:5px;right:5px;bottom:2px;height:2px;border-radius:1px;background:linear-gradient(90deg,#ff8a4c var(--p,50%),#30363e var(--p,50%));pointer-events:none}
+.pl-si{width:4.2em;height:22px;padding:0 4px;border:1px solid #59626c;border-radius:3px;background:#0d0f12;color:#fff;font:600 12.5px/1 var(--mono);text-align:right}
+.pl-sel{height:28px;padding:0 4px;border:1px solid #3a4048;border-radius:5px;background:#1b1f24;color:#f1f3f5;font:600 12px/1 var(--mono);color-scheme:dark}
+.pl-seg{display:inline-flex;border:1px solid #3a4048;border-radius:5px;overflow:hidden}
+.pl-seg button{height:26px;padding:0 9px;border:0;background:#1b1f24;color:#9aa3ad;font:500 11.5px/1 var(--sans);cursor:pointer}
+.pl-seg button+button{border-left:1px solid #3a4048}
+.pl-seg button[aria-pressed="true"]{background:#e6e8e4;color:#121519;font-weight:700}
+/* 狭い図では、複製・削除を名前のすぐ後ろへ（横にスクロールしなくても届くように） */
+.pl-stage{container-type:inline-size}
+@container (max-width:699px){.pl-ca{order:-1;padding:0 6px 0 0;border-left:0;border-right:1px solid #3a4048}.pl-ch{order:-2;border-right:0;padding-right:0}}
+
+.pl-cap{min-height:1.5em;margin:8px 0 2px;font-size:14px;color:var(--ink-2)}
+.pl-view{margin-top:6px}
+
+/* 全画面: 図を画面いっぱいに */
+.pl-wrap.full{position:fixed;inset:0;z-index:50;background:#000}
+.pl-wrap.full .pl-stage{height:100%;border-radius:0}
+
+/* しくみの絵 */
+.pl-steps .how{grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr))}
+.pl-steps .how svg{flex:none;width:60px;height:54px;overflow:visible}
+.pl-steps .how svg *{fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.pl-steps .how .gl{stroke:var(--screen-ink);stroke-width:1.5}
+.pl-steps .how .gf{fill:var(--inset);stroke:none}
+.pl-steps .how .gf.gl{stroke:var(--screen-ink)}
+.pl-steps .how .nl{stroke:var(--ink-3);stroke-width:1;stroke-dasharray:3 3}
+.pl-steps .how .ry{stroke:var(--ch1)}
+.pl-steps .how .ry.t{stroke-width:1}
+.pl-steps .how .wk{stroke:var(--ch1);stroke-width:1;stroke-dasharray:3 2}
+.pl-steps .how .s0{stroke:var(--sp0)}.pl-steps .how .s1{stroke:var(--sp1)}.pl-steps .how .s2{stroke:var(--sp2)}
+.pl-steps .how .s3{stroke:var(--sp3)}.pl-steps .how .s4{stroke:var(--sp4)}.pl-steps .how .s5{stroke:var(--sp5)}
