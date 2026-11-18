@@ -14,7 +14,7 @@ export interface Morph {
 
 export const MORPH_MS = 750;
 /** べきが整数でないときの倍率の上限 */
-export const REAL_P_MAX = 3e4;
+export const REAL_P_MAX = 1e4;
 
 const ease = (k: number): number => (k < 0.5 ? 2 * k * k : 1 - (-2 * k + 2) ** 2 / 2);
 const lerp = (a: number, b: number, t: number): number => a + (b - a) * t;

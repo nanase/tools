@@ -29,6 +29,8 @@ const TAP_PX = 4,
   TAP_MS = 400,
   DBL_MS = 250;
 const CYC_RATE = 0.08;
+/** 粗い絵 1 回の描画の重さの上限（画素数 × 反復の上限） */
+const FRAME_WORK = 3e9;
 
 const clamp = (v: number, a: number, b: number): number => Math.min(b, Math.max(a, v));
 const dpr = (): number => Math.min(2, devicePixelRatio || 1);
@@ -119,7 +121,8 @@ function resize(): void {
   if (W === R.W && H === R.H) return;
   R.size(W, H);
   job = null;
-  dirty = true;
+  /* 大きさを変えるとキャンバスが消えるので、まず粗い絵を出す */
+  moved();
 }
 
 function moved(): void {
@@ -167,23 +170,27 @@ function step(now: number): void {
   if (R) {
     if (dirty && moving) {
       const P = params();
+      /* 基準を待つ間も、前の範囲の細かい絵は作り続けない */
+      job = null;
       if (P) {
-        R.frame(P, lowS);
+        /* 1 回の描画の重さ（画素数 × 反復の上限）を抑え、GPU の監視に止められないようにする */
+        const s = Math.min(lowS, clamp(Math.sqrt(FRAME_WORK / (R.W * R.H * P.max)), 0.1, 1));
+        R.frame(P, s);
         R.color(col);
-        lastS = lowS;
-        job = null;
+        lastS = s;
         dirty = false;
         cdirty = false;
       }
     } else if (dirty || (!moving && lastS < 1 && !job)) {
       const P = params();
+      job = P ? { y: 0, P } : null;
       if (P) {
-        job = { y: 0, P };
         lastS = 1;
         dirty = false;
       }
     }
     if (job) jobStep();
+    else prog.style.width = '0';
     if (cdirty) {
       R.color(col);
       cdirty = false;
@@ -538,6 +545,20 @@ setF(f, false);
 setPanel('fm', open.fm);
 if (open.fm || open.pl) thumbs();
 mountHow($('#mb-how'));
+/* GPU が止めた・取り上げたときは、戻ったら作り直す */
+cv.addEventListener('webglcontextlost', (e) => {
+  e.preventDefault();
+  R = null;
+  job = null;
+});
+cv.addEventListener('webglcontextrestored', () => {
+  void Renderer.create(cv).then((r) => {
+    R = r;
+    shownRef = null;
+    resize();
+    moved();
+  });
+});
 void Renderer.create(cv).then((r) => {
   if (!r) {
     $('#mb-busy').hidden = true;

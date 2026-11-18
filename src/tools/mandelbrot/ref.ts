@@ -68,41 +68,64 @@ interface Reply {
   key: string;
 }
 
+/** Worker を待つ間に古い基準を使い続ける、中心からの離れ具合の上限（span の倍数）。これより遠いと単精度の差が画素の差を消す */
+const WAIT_FAR = 1e3;
+
+interface Job {
+  cx: bigint;
+  cy: bigint;
+  span: number;
+  f: Formula;
+  mi: number;
+}
+
 export class RefSource {
   ref: Ref | null = null;
   /** Worker の結果が届いたら呼ぶ */
   onReady: () => void = () => {};
   private worker: Worker | null = null;
   private seq = 0;
-  private waitKey = '';
+  /** この番号以下の返事は捨てる（その場で計算した基準より古い） */
+  private floor = 0;
+  /** Worker が計算中か。計算中の依頼は 1 件だけにし、新しい依頼は next に置いて最新の 1 件だけ残す */
+  private busy = false;
+  private next: Job | null = null;
 
-  /** 使える基準を返す。作り直しが要り、その場で作れないときは Worker に頼み、届くまでは古い基準（式が同じなら）か null */
+  /** 使える基準を返す。作り直しが要り、その場で作れないときは Worker に頼み、届くまでは近くの古い基準（式が同じなら）か null */
   get(cx: bigint, cy: bigint, span: number, f: Formula, mi: number): Ref | null {
     if (!refStale(this.ref, cx, cy, span, f, mi)) return this.ref;
     if (wantFor(mi) <= SYNC_MAX || typeof Worker === 'undefined') {
-      this.seq++;
-      this.waitKey = '';
+      this.floor = this.seq;
+      this.next = null;
       this.ref = pickRef(cx, cy, span, f, mi);
       return this.ref;
     }
-    const key = `${fkey(f)}|${cx}|${cy}|${span}|${mi}`;
-    if (key !== this.waitKey) {
-      this.waitKey = key;
-      const id = ++this.seq;
-      this.worker ??= this.spawn();
-      this.worker.postMessage({ id, cx, cy, span, f: { ...f }, mi });
-    }
-    return this.ref && this.ref.key === fkey(f) ? this.ref : null;
+    const job: Job = { cx, cy, span, f: { ...f }, mi };
+    if (this.busy) this.next = job;
+    else this.post(job);
+    const r = this.ref;
+    return r && r.key === fkey(f) && Math.hypot(fromFix(cx - r.x), fromFix(cy - r.y)) <= WAIT_FAR * span ? r : null;
+  }
+
+  private post(job: Job): void {
+    this.worker ??= this.spawn();
+    this.busy = true;
+    this.worker.postMessage({ id: ++this.seq, ...job });
   }
 
   private spawn(): Worker {
     const w = new Worker(new URL('./ref-worker.ts', import.meta.url), { type: 'module' });
     w.onmessage = (e: MessageEvent<Reply>) => {
       const r = e.data;
-      if (r.id !== this.seq) return;
-      this.waitKey = '';
-      this.ref = { x: r.x, y: r.y, orbit: { data: r.data, len: r.len }, want: r.want, key: r.key };
-      this.onReady();
+      this.busy = false;
+      /* 途中の依頼の返事も、式が同じで近ければ使える。使えるかは get の refStale が決める */
+      if (r.id > this.floor)
+        this.ref = { x: r.x, y: r.y, orbit: { data: r.data, len: r.len }, want: r.want, key: r.key };
+      const job = this.next;
+      this.next = null;
+      /* 待っている依頼は、届いた基準で足りなければ送る */
+      if (job && refStale(this.ref, job.cx, job.cy, job.span, job.f, job.mi)) this.post(job);
+      if (r.id > this.floor) this.onReady();
     };
     return w;
   }
