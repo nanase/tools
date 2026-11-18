@@ -3,6 +3,7 @@ import { FB, fromDec, fromFix, toFix } from '../src/tools/mandelbrot/fixed';
 import { famOf, type Formula, isInt, maxIter, nu, q1024 } from '../src/tools/mandelbrot/formula';
 import { morphAt, snapMix, snapPower } from '../src/tools/mandelbrot/morph';
 import { orbit } from '../src/tools/mandelbrot/orbit';
+import { pickRef, refStale } from '../src/tools/mandelbrot/ref';
 import { parseView, View } from '../src/tools/mandelbrot/view';
 
 const F = (o: Partial<Formula> = {}): Formula => ({ p: 2, pre: 0, post: 0, conj: false, ...o });
@@ -178,5 +179,24 @@ describe('式の変形', () => {
     expect(snapMix(0.97)).toBe(1);
     expect(snapMix(0.03)).toBe(0);
     expect(snapMix(0.5)).toBe(0.5);
+  });
+});
+
+describe('基準の点', () => {
+  const f = F();
+  it('式・長さ・離れ具合で作り直す', () => {
+    const r = pickRef(fromDec('-0.6'), 0n, 1.5, f, 200);
+    expect(refStale(r, fromDec('-0.6'), 0n, 1.5, f, 200)).toBe(false);
+    expect(refStale(r, fromDec('-0.6'), 0n, 1.5, F({ pre: 1 }), 200)).toBe(true);
+    expect(refStale(r, fromDec('-0.6'), 0n, 1.5, F({ p: 2.5 }), 200)).toBe(true);
+    expect(refStale(r, fromDec('-0.6'), 0n, 1.5, f, 50000)).toBe(true);
+    expect(refStale(r, fromDec('3.5'), 0n, 1.5, f, 200)).toBe(true);
+    expect(refStale(null, 0n, 0n, 1, f, 200)).toBe(true);
+  });
+  it('中心が早く発散したら、長く持つ点を選ぶ', () => {
+    /* 1 = 発散する。0.3 span 左の 0.25 付近は長く持つ */
+    const r = pickRef(fromDec('0.4'), 0n, 0.5, f, 200);
+    expect(r.orbit.len).toBeGreaterThan(50);
+    expect(r.x).not.toBe(fromDec('0.4'));
   });
 });
