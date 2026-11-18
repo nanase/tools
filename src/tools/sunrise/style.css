@@ -3,8 +3,15 @@
 /* 地図はこのページの中心の図なので、地点を選ぶ小窓の地図は使わない */
 #loc-mapbtn{display:none}
 
+/* 地点の数値: 値の長さで折り返しが変わらないよう、固定の列に並べる */
+.sr-facts{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px 12px;margin:0 0 12px}
+.sr-facts b{white-space:nowrap}
+@media (max-width:640px){.sr-facts{grid-template-columns:repeat(3,minmax(0,1fr))}.sr-facts b{white-space:normal}}
+
 /* 地図・空・1 年の図: 色はテーマに依らない */
 .sr-map{position:relative;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:#1e2638}
+.sr-sky{border-radius:var(--r);overflow:hidden;background:#1e2638}
+.sr-sky canvas{display:block;width:100%}
 .sr-map canvas{display:block;width:100%;cursor:crosshair;touch-action:manipulation}
 
 /* 凡例 */
@@ -13,3 +20,5 @@
 .sr-key i{display:inline-block;width:14px;height:10px;border-radius:2px;border:1px solid rgb(0 0 0 / .15)}
 .sr-key i.sr-ksun{width:10px;height:10px;border-radius:50%;background:#ffd23a;border-color:#3a2a00}
 .sr-key i.sr-kpin{width:10px;height:10px;border-radius:50%;background:#bf4308;border:2px solid #fff;box-shadow:0 0 0 1px var(--line-2)}
+.sr-key i.sr-kpath{height:4px;border:0;border-radius:2px;background:#ffd23a}
+.sr-key i.sr-kref{height:0;border:0;border-top:2px dotted var(--ink-2);border-radius:0}

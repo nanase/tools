@@ -143,7 +143,7 @@ export function drawMap(cv: HTMLCanvasElement, o: MapInput): void {
     for (let x = 0; x < W; x++) {
       const v = a + b * cosH[x];
       const k = v >= STHR[0] ? 0 : v >= STHR[1] ? 1 : v >= STHR[2] ? 2 : v >= STHR[3] ? 3 : 4;
-      const c = mask && mask.data[row + mx[x]] ? LANDC[k] : OCEAN[k];
+      const c = mask?.data[row + mx[x]] ? LANDC[k] : OCEAN[k];
       const i = (y * W + x) * 4;
       d[i] = c[0];
       d[i + 1] = c[1];

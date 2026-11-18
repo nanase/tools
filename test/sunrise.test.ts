@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { dayOf } from '../src/tools/sunrise/day';
 import { lonLatAt } from '../src/tools/sunrise/map';
-import { band, geoAltAz, subsolar, sunEq, sunEqLow } from '../src/tools/sunrise/sun';
+import { factsOf, skyCenter, skyX } from '../src/tools/sunrise/sky';
+import { band, geoAltAz, siteSun, subsolar, sunEq, sunEqLow } from '../src/tools/sunrise/sun';
 import { approx, localDay, lookupZone, offText, zoneOffset } from '../src/tools/sunrise/tz';
 import { yearGrid } from '../src/tools/sunrise/year';
 
@@ -147,5 +148,43 @@ describe('地図の座標', () => {
     const c = lonLatAt(359.5, 179.5, 720, 360);
     expect(c.lat).toBeCloseTo(0, 6);
     expect(c.lon).toBeCloseTo(0, 6);
+  });
+});
+
+describe('地点の数値と空の図', () => {
+  it('地点の今の太陽は球面の式と 0.05° 以内（大気差を除く）', () => {
+    const ms = Date.UTC(2026, 10, 18, 2);
+    const a = siteSun(ms, ...TOKYO);
+    const b = geoAltAz(sunEq(ms), ...TOKYO);
+    expect(Math.abs(a.hGeo - b.h)).toBeLessThan(0.05);
+    expect(Math.abs(a.az - b.az)).toBeLessThan(0.05);
+    expect(a.h).toBeGreaterThan(a.hGeo);
+  });
+
+  it('空の図の真ん中は北半球で南、南半球で北', () => {
+    expect([skyCenter(35), skyCenter(-33)]).toEqual([180, 0]);
+    expect(skyX(180, 180, 0, 360)).toBe(180);
+    expect(skyX(0, 0, 0, 360)).toBe(180);
+    expect(skyX(90, 180, 0, 360)).toBe(90);
+  });
+
+  it('数値の 6 つ', () => {
+    const d = dayOf(...TOKYO, ...jstDay(2026, 12, 22));
+    const f = factsOf(d, { h: -12.34, az: 316 }, () => 'x');
+    expect(f.map((r) => r[0])).toEqual(['高度', '方位', '日の出', '南中', '日の入り', '昼の長さ']);
+    expect(f[0][1]).toBe('−12.3°');
+    expect(f[1][1]).toBe('316°（北西）');
+    expect(f[5][1]).toMatch(/^9時間4\d分$/);
+  });
+
+  it('極夜の数値', () => {
+    const d = dayOf(78.2232, 15.6267, Date.UTC(2026, 11, 21) - 36e5, Date.UTC(2026, 11, 22) - 36e5);
+    const f = Object.fromEntries(factsOf(d, { h: -30, az: 0 }, () => 'x'));
+    expect([f['日の出'], f['日の入り'], f['昼の長さ']]).toEqual(['—', '—', '0時間00分（極夜）']);
+  });
+
+  it('白夜の数値', () => {
+    const d = dayOf(78.2232, 15.6267, Date.UTC(2026, 5, 21) - 2 * 36e5, Date.UTC(2026, 5, 22) - 2 * 36e5);
+    expect(Object.fromEntries(factsOf(d, { h: 10, az: 0 }, () => 'x'))['昼の長さ']).toBe('24時間00分（白夜）');
   });
 });

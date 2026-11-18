@@ -3,9 +3,10 @@
  * 地心の赤緯とグリニッジ時角だけを持ち、地点の高度・方位は球面の式で求める（視差 8.8″ は無視する）
  */
 import { eclToEqu, gast, nutation } from '../../lib/astro/frame';
-import { refraction } from '../../lib/astro/observer';
+import { altAz, refraction, site } from '../../lib/astro/observer';
 import { sunEcl } from '../../lib/astro/sun';
 import { deltaT } from '../../lib/astro/time';
+import { sub, unit } from '../../lib/astro/vec';
 
 const D = Math.PI / 180;
 
@@ -76,3 +77,13 @@ export function subsolar(s: SunEq): { lat: number; lon: number } {
 
 /** 大気差を足した見かけの高度 [°] */
 export const apparent = (h: number): number => h + refraction(h);
+
+/** 地点から見た今の太陽（地心でなく地点からの向き）: 見かけの高度 h、大気差なしの高度 hGeo、方位 az [°] */
+export function siteSun(ms: number, lat: number, lon: number): { h: number; hGeo: number; az: number } {
+  const jd = jdOf(ms);
+  const t = (jd + deltaT(jd) / 86400 - 2451545) / 36525;
+  const n = nutation(t);
+  const st = site(jd, n, { lat, lon, h: 0 });
+  const a = altAz(unit(sub(eclToEqu(sunEcl(t), n), st.obs)), st.zenith);
+  return { h: a.alt, hGeo: a.altGeo, az: a.az };
+}

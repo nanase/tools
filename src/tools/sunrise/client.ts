@@ -10,10 +10,12 @@ import { $ } from '../../lib/dom';
 import { type Place, SitePicker } from '../../lib/planet/site';
 import { initToolPage } from '../../lib/tool-page';
 import { type LandMask, landMask, type Rings } from '../solar-eclipse/land';
+import { type Day, dayOf } from './day';
 import { coastPath, drawMap, lonLatAt } from './map';
 import type { Disp, Speed } from './params';
-import { apparent, geoAltAz, sunEq } from './sun';
-import { approx, lookupZone, offText, zoneOffset } from './tz';
+import { drawSky, factsOf } from './sky';
+import { apparent, geoAltAz, siteSun, sunEq } from './sun';
+import { approx, localDay, lookupZone, offText, zoneOffset } from './tz';
 
 const BASE = import.meta.env.BASE_URL;
 const p2 = (n: number) => String(n).padStart(2, '0');
@@ -145,6 +147,7 @@ function advance(now: number): void {
 
 /* ---------- 地図 ---------- */
 const mcv = $<HTMLCanvasElement>('#mc');
+const kcv = $<HTMLCanvasElement>('#kc');
 let mask: LandMask | null = null;
 let coast: Path2D | null = null;
 fetch(`${BASE}solar-eclipse/land110.json`)
@@ -180,6 +183,36 @@ mcv.addEventListener('pointerup', (e) => {
   picker.set(place);
 });
 
+/* ---------- その日と夏至・冬至 ---------- */
+let dayKey = '';
+let day: Day | null = null;
+/** 今の時刻を含む現地の 1 日 */
+function today(): Day {
+  const { lat, lon } = picker.place;
+  const [d0, d1] = localDay(T, offLocal);
+  const key = `${d0}|${d1}|${lat}|${lon}`;
+  if (!day || key !== dayKey) {
+    dayKey = key;
+    day = dayOf(lat, lon, d0, d1);
+  }
+  return day;
+}
+let solKey = '';
+let sol: [Day, Day] | null = null;
+/** 今の現地の年の夏至（6 月 21 日）と冬至（12 月 21 日） */
+function solstice(): [Day, Day] {
+  const { lat, lon } = picker.place;
+  const y = new Date(T + offLocal(T)).getUTCFullYear();
+  const key = `${y}|${lat}|${lon}|${zone}`;
+  if (!sol || key !== solKey) {
+    solKey = key;
+    const at = (m: number) =>
+      dayOf(lat, lon, ...localDay(Date.UTC(y, m, 21, 12) - offLocal(Date.UTC(y, m, 21, 12)), offLocal));
+    sol = [at(5), at(11)];
+  }
+  return sol;
+}
+
 /* ---------- 描く ---------- */
 function drawClock(): void {
   const d = new Date(T + offDisp(T));
@@ -196,6 +229,10 @@ function frame(now: number): void {
   }
   drawClock();
   drawMap(mcv, { sun: sunEq(T), mask, coast, pin: picker.place });
+  const d = today();
+  const here = siteSun(T, picker.place.lat, picker.place.lon);
+  for (const [i, [, v]] of factsOf(d, here, fmt).entries()) txt(`#f${i}`, v);
+  drawSky(kcv, { day: d, solstice: solstice(), now: here, lat: picker.place.lat, fmt });
 }
 new ResizeObserver(() => later()).observe($('#mview'));
 

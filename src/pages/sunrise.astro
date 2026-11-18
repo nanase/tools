@@ -29,6 +29,14 @@ const name = '日の出と日の入り';
         <span class="pn-clk"><span id="clk">—</span><small id="clkz">—</small></span>
         <span class="pn-st"><span class="pn-dtrow"><b id="o-date">—</b><DatePicker /></span></span>
       </div>
+      <div class="sr-facts">
+        <span class="pn-st">高度<b id="f0">—</b></span>
+        <span class="pn-st">方位<b id="f1">—</b></span>
+        <span class="pn-st">日の出<b id="f2">—</b></span>
+        <span class="pn-st">南中<b id="f3">—</b></span>
+        <span class="pn-st">日の入り<b id="f4">—</b></span>
+        <span class="pn-st">昼の長さ<b id="f5">—</b></span>
+      </div>
       <div class="sr-map" id="mview">
         <canvas id="mc" role="img" aria-label="昼と夜の世界地図。押すとその地点を選ぶ"></canvas>
         <Busy id="m-busy" text="読み込み中…" />
@@ -46,6 +54,14 @@ const name = '日の出と日の入り';
           <ChoiceRow k="sp" name="再生の速さ" choices={SPEEDS} value="hour" />
         </div>
       </div></More>
+    </Panel>
+
+    <Panel hid="hd-sky" title="この地点から見た空">
+      <div class="sr-sky"><canvas id="kc" role="img" aria-label="地点から見た太陽の 1 日の道すじ（横は方位、縦は高度）"></canvas></div>
+      <div class="sr-key">
+        <span><i class="sr-kpath"></i>今日の道すじ（矢じりは進む向き、破線は地平線の下）</span>
+        <span><i class="sr-kref"></i>夏至・冬至の道すじ</span>
+      </div>
     </Panel>
 
   </div>
