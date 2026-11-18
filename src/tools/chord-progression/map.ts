@@ -1,8 +1,10 @@
 /**
  * コード進行のページの和音の地図（トネッツ）: 三角形 1 つが 1 つの三和音で、辺を共有する隣どうしは 2 音を共有する。
- * 調の中の和音を機能の色で塗り、曲の和音の並びを番号付きの道として引く。
+ * 調の中の和音を機能の色で塗り、曲の和音の並び（コード進行）を番号の点と矢印で引く。
+ * 番号の点は三角形の頂点の側に小さく置いて和音の名前を隠さず、名前は矢印の上に描く。
  * 選んだ和音（なければ最後の和音）から行きやすい和音を、隣（縁の細い光）と進み方の強さ（太い光）で示す。
- * 演奏中は道を描かず、鳴っている和音と次の和音とその間の矢印だけを描く
+ * 演奏中は鳴っている和音と次の和音の点とその間の矢印だけを描き、2 つの三角形を縁取る。曲で使わない三角形は遠いほど薄くする。
+ * 点のドラッグ中は、動かす和音とその前後の和音だけを描く
  */
 import {
   ALL_PLACES,
@@ -42,13 +44,43 @@ export function alpha(c: string, a: number): string {
   const h = m[1].length === 3 ? [...m[1]].map((x) => x + x).join('') : m[1];
   return `rgba(${Number.parseInt(h.slice(0, 2), 16)}, ${Number.parseInt(h.slice(2, 4), 16)}, ${Number.parseInt(h.slice(4, 6), 16)}, ${a})`;
 }
+/** 色 a の上に色 b を透明度 t で重ねた色。どちらかが読めなければ a */
+export function over(a: string, b: string, t: number): string {
+  const rgb = (c: string): number[] | null => {
+      const m = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(c);
+      if (!m) return null;
+      const h = m[1].length === 3 ? [...m[1]].map((x) => x + x).join('') : m[1];
+      return [0, 2, 4].map((i) => Number.parseInt(h.slice(i, i + 2), 16));
+    },
+    x = rgb(a),
+    y = rgb(b);
+  if (!x || !y) return a;
+  return `#${x
+    .map((v, i) =>
+      Math.round(v + (y[i] - v) * t)
+        .toString(16)
+        .padStart(2, '0'),
+    )
+    .join('')}`;
+}
 /** 候補を光らせる範囲（格子の単位） */
 const NEAR = 2.3;
 /** 三角形の 1 辺の最小 [px] */
 const MIN_S = 50;
 /** 波紋が消えるまで [s] */
 const RIPPLE = 0.8;
+/** 演奏中に三角形を薄くする度合い: 使う和音から格子 1 つ離れるごとに FADE_K ずつ、FADE_MIN まで */
+const FADE_K = 0.3,
+  FADE_MIN = 0.25;
 const REDUCE = matchMedia('(prefers-reduced-motion: reduce)');
+interface Colors {
+  lv: string;
+  sel: string;
+  ink: string;
+  surf: string;
+  mono: string;
+  sans: string;
+}
 
 export class MapView {
   private W = 600;
@@ -106,40 +138,58 @@ export class MapView {
     }
     return null;
   }
-  /** 道の点の半径 */
+  /** 番号の点の半径 */
   private get r0(): number {
-    return Math.max(10, Math.min(13, this.s * 0.17));
+    return Math.max(8, Math.min(10, this.s * 0.1));
   }
-  /** 道の k 番目の点の位置（同じ三角形に何度も来たら、重ならないように輪に並べる） */
+  /** 三角形の中で番号の点を置く所: 和音の名前を避けて頂点の側（上向きは上、下向きは下） */
+  private anchor(p: Place): [number, number] {
+    const { s, r0, fs, fr } = this,
+      [x, y] = this.px(centroidOf(p));
+    /* 上向きは名前（音名）の上端の上、下向きは度数の下端の下に、点の縁を 1 px 離して置く（鳴っている点は 2 px 大きいので、その分も空ける） */
+    return p.up
+      ? [x, y + s * 0.06 - fr * 0.45 - fs * 0.45 - r0 - 3]
+      : [x, y - s * 0.05 + fs * 0.65 + fr * 0.5 + r0 + 3];
+  }
+  /** 和音の名前（音名）と度数の文字の大きさ */
+  private get fs(): number {
+    return Math.max(11, Math.min(16, this.s / 4.4));
+  }
+  private get fr(): number {
+    return Math.max(9, Math.min(13, this.s / 6));
+  }
+  /** k 番目の点の位置。同じ三角形に何度も来たら、2 つずつ横に並べ、頂点の側へ段を重ねる */
   nodePos(st: MapState, k: number): [number, number] {
-    if (st.drag?.k === k && st.drag.at) return this.px(centroidOf(st.drag.at));
+    if (st.drag?.k === k && st.drag.at) return this.anchor(st.drag.at);
     const at = st.song.chords[k].at,
-      same = st.song.chords.filter((c) => samePlace(c.at, at)),
-      m = same.length,
-      n = same.indexOf(st.song.chords[k]),
-      [x, y] = this.px(centroidOf(at));
-    if (m < 2) return [x, y];
-    const a = -Math.PI / 2 + (2 * Math.PI * n) / m,
-      r = Math.min((this.r0 * 1.08) / Math.sin(Math.PI / m), this.s * 0.34);
-    return [x + Math.cos(a) * r, y + Math.sin(a) * r];
+      same = this.visible(st).filter((j) => samePlace(st.song.chords[j].at, at)),
+      n = Math.max(0, same.indexOf(k)),
+      [x, y] = this.anchor(at),
+      d = this.r0 * 2 + 2,
+      row = Math.floor(n / 2),
+      pair = same.length - row * 2 > 1;
+    return [x + (pair ? ((n % 2) - 0.5) * d : 0), y + (at.up ? -1 : 1) * row * d * 0.92];
   }
-  /** 道の点（番号）に当たれば、その番号 */
+  /** 番号の点に当たれば、その番号 */
   nodeAt(st: MapState, x: number, y: number): number {
     const vis = this.visible(st);
     for (let j = vis.length - 1; j >= 0; j--) {
       const [nx, ny] = this.nodePos(st, vis[j]);
-      if (Math.hypot(nx - x, ny - y) < Math.max(11, this.s * 0.17)) return vis[j];
+      if (Math.hypot(nx - x, ny - y) < this.r0 + 4) return vis[j];
     }
     return -1;
   }
-  /** 描く道の点: 演奏中は鳴っている和音と次の和音だけ */
+  /** 描く点: 演奏中は鳴っている和音と次の和音だけ、ドラッグ中は動かす和音と前後の和音だけ */
   private visible(st: MapState): number[] {
-    if (st.play < 0) return st.song.chords.map((_, k) => k);
-    return st.next >= 0 && st.next !== st.play ? [st.play, st.next] : [st.play];
+    if (st.play >= 0) return st.next >= 0 && st.next !== st.play ? [st.play, st.next] : [st.play];
+    const n = st.song.chords.length;
+    if (st.drag) return [st.drag.k - 1, st.drag.k, st.drag.k + 1].filter((k) => k >= 0 && k < n);
+    return st.song.chords.map((_, k) => k);
   }
-  /** 選んだ和音（なければ最後）: 調と候補の基準 */
+  /** 調と候補の基準: 演奏中は鳴っている和音、ドラッグ中は動かす和音の前、ほかは選んだ和音（なければ最後） */
   private base(st: MapState): number {
     if (st.play >= 0) return st.play;
+    if (st.drag) return Math.max(0, st.drag.k - 1);
     return st.sel ?? st.song.chords.length - 1;
   }
   draw(st: MapState): void {
@@ -152,6 +202,7 @@ export class MapView {
       ink3 = css('--ink-3'),
       line = css('--line'),
       surf = css('--surface'),
+      bg = css('--cp-map'),
       mono = css('--mono'),
       sans = css('--sans');
     ctx.clearRect(0, 0, W, H);
@@ -159,15 +210,33 @@ export class MapView {
       key: Key = bk >= 0 ? keyAt(st.song, bk) : st.song.key,
       bc = bk >= 0 ? st.song.chords[bk] : null,
       bch = bc ? degreeChord(bc, key) : null;
-    const fs = Math.max(11, Math.min(16, s / 4.4)),
-      fr = Math.max(9, Math.min(13, s / 6));
+    const { fs, fr } = this,
+      /* 名前は矢印の上に描くので、三角形を塗ったあとにまとめて描く */
+      labels: (() => void)[] = [],
+      halo = (t: string, x: number, y: number, under: string) => {
+        ctx.strokeStyle = under;
+        ctx.lineWidth = 4;
+        ctx.lineJoin = 'round';
+        ctx.strokeText(t, x, y);
+        ctx.fillText(t, x, y);
+      },
+      /* 演奏中は、曲で使う和音の三角形から遠いほど薄く描く（消しはしない） */
+      used = st.play >= 0 ? st.song.chords.map((c) => centroidOf(c.at)) : [],
+      fade = (p: Place): number => {
+        if (!used.length) return 1;
+        const [x, y] = centroidOf(p),
+          d = Math.min(...used.map(([ux, uy]) => Math.hypot(ux - x, uy - y)));
+        return Math.max(FADE_MIN, 1 - d * FADE_K);
+      };
     for (const p of ALL_PLACES) {
       const t = triadOf(p),
         ch = degreeChord(t, key),
         pts = cornersOf(p).map((q) => this.px(q)),
         [cx, cy] = this.px(centroidOf(p)),
         dia = inKey(ch, key),
-        f = func(ch, key);
+        f = func(ch, key),
+        a = fade(p);
+      ctx.globalAlpha = a;
       ctx.beginPath();
       ctx.moveTo(...pts[0]);
       ctx.lineTo(...pts[1]);
@@ -184,6 +253,7 @@ export class MapView {
       ctx.strokeStyle = line;
       ctx.lineWidth = 1;
       ctx.stroke();
+      ctx.globalAlpha = 1;
       /* 候補: 隣は細い縁、進み方の強さ 2・3 は太い縁。演奏中は描かない */
       if (bc && bch && st.play < 0 && !samePlace(bc.at, p)) {
         const c0 = centroidOf(bc.at),
@@ -201,19 +271,50 @@ export class MapView {
           ctx.restore();
         }
       }
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillStyle = dia ? ink : ink3;
-      ctx.font = `${t.q === 'M' ? 700 : 500} ${fs}px ${mono}`;
-      const dy = p.up ? s * 0.06 : -s * 0.05;
-      ctx.fillText(chordName({ d: ch.d, q: t.q, inv: 0 }, key), cx, cy + dy - (dia ? fr * 0.45 : 0));
-      if (dia) {
-        ctx.font = `700 ${fr}px ${sans}`;
-        ctx.fillStyle = col[f];
-        ctx.fillText(roman(ch, key), cx, cy + dy + fs * 0.65);
-      }
+      /* 名前の縁取りは三角形の塗りと同じ色にして、矢印の上でも読めるようにする */
+      let under = dia ? over(bg, col[f], 0.22) : bg;
+      if (st.hover && samePlace(st.hover, p)) under = over(under, col[f], 0.4);
+      labels.push(() => {
+        ctx.globalAlpha = a;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = dia ? ink : ink3;
+        ctx.font = `${t.q === 'M' ? 700 : 500} ${fs}px ${mono}`;
+        const dy = p.up ? s * 0.06 : -s * 0.05;
+        halo(chordName({ d: ch.d, q: t.q, inv: 0 }, key), cx, cy + dy - (dia ? fr * 0.45 : 0), under);
+        if (dia) {
+          ctx.font = `700 ${fr}px ${sans}`;
+          ctx.fillStyle = col[f];
+          halo(roman(ch, key), cx, cy + dy + fs * 0.65, under);
+        }
+        ctx.globalAlpha = 1;
+      });
     }
-    this.route(st, { lv, sel, ink, surf, mono });
+    /* 演奏中は鳴っている三角形を太く、次の三角形を破線で縁取る。矢印（黄土色）と分けるため文字の色で描き、強すぎないように半透明にする */
+    if (st.play >= 0) {
+      const ring = (k: number, w: number, dash: number[]) => {
+        const pts = cornersOf(st.song.chords[k].at).map((q) => this.px(q));
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(...pts[0]);
+        ctx.lineTo(...pts[1]);
+        ctx.lineTo(...pts[2]);
+        ctx.closePath();
+        ctx.clip();
+        ctx.setLineDash(dash);
+        ctx.strokeStyle = ink;
+        ctx.globalAlpha = 0.45;
+        ctx.lineWidth = w;
+        ctx.stroke();
+        ctx.restore();
+      };
+      if (st.next >= 0 && st.next !== st.play) ring(st.next, 4, [6, 5]);
+      ring(st.play, 8, []);
+    }
+    const c: Colors = { lv, sel, ink, surf, mono, sans };
+    this.lines(st, c);
+    for (const f of labels) f();
+    this.nodes(st, c);
   }
   /**
    * 右下の三角形のない所に収まる箱（緊張のレールを重ねる）。幅が minW に足りなければ null。
@@ -229,25 +330,30 @@ export class MapView {
       w = W - 8 - left;
     return w >= minW ? { x: left, y: top, w, h } : null;
   }
-  private route(st: MapState, c: { lv: string; sel: string; ink: string; surf: string; mono: string }): void {
+  /** 点から次の点への矢印 */
+  private lines(st: MapState, c: Colors): void {
     const { ctx } = this,
       n = st.song.chords.length;
     if (!n) return;
-    const pos = st.song.chords.map((_, k) => this.nodePos(st, k)),
-      vis = this.visible(st),
+    const vis = this.visible(st),
       focus = st.sel ?? n - 1,
-      /* 演奏中は鳴っている和音から次の和音への 1 本だけ */
+      /* 演奏中は鳴っている和音から次の和音への 1 本だけ。ほかは描く点のうち続く 2 つの間 */
       segs: [number, number][] =
-        st.play >= 0 ? (vis.length > 1 ? [[st.play, st.next]] : []) : st.song.chords.slice(1).map((_, j) => [j, j + 1]);
+        st.play >= 0
+          ? vis.length > 1
+            ? [[st.play, st.next]]
+            : []
+          : vis.slice(1).flatMap((k, j): [number, number][] => (vis[j] === k - 1 ? [[k - 1, k]] : [])),
+      pos = (k: number) => this.nodePos(st, k);
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     for (const [k0, k] of segs) {
-      const [x0, y0] = pos[k0],
-        [x1, y1] = pos[k],
-        on = st.play >= 0 || k === focus,
+      const [x0, y0] = pos(k0),
+        [x1, y1] = pos(k),
+        on = st.play >= 0 || st.drag !== null || k === focus,
         a = Math.atan2(y1 - y0, x1 - x0),
         L = Math.hypot(x1 - x0, y1 - y0),
-        h = on ? 14 : 10,
+        h = on ? 13 : 9,
         /* 矢じりの先は次の点の縁の手前 */
         tip = L - this.r0 - 2,
         tx = x0 + Math.cos(a) * tip,
@@ -255,7 +361,7 @@ export class MapView {
         head = tip > this.r0 + h;
       ctx.globalAlpha = on ? 1 : 0.4;
       ctx.strokeStyle = c.lv;
-      ctx.lineWidth = on ? 5 : 3;
+      ctx.lineWidth = on ? 4 : 2.5;
       ctx.beginPath();
       ctx.moveTo(x0, y0);
       ctx.lineTo(head ? tx - Math.cos(a) * h * 0.7 : x1, head ? ty - Math.sin(a) * h * 0.7 : y1);
@@ -272,12 +378,17 @@ export class MapView {
       }
     }
     ctx.globalAlpha = 1;
-    const r0 = this.r0;
-    for (const k of vis) {
+  }
+  /** 番号の点。鳴り始めた和音の点からは波紋 */
+  private nodes(st: MapState, c: Colors): void {
+    const { ctx } = this,
+      r0 = this.r0,
+      tags: { x: number; y: number; to: Key }[] = [];
+    for (const k of this.visible(st)) {
       const ch = st.song.chords[k],
-        [x, y] = pos[k],
+        [x, y] = this.nodePos(st, k),
         on = k === st.play,
-        r = on ? r0 + 3 : r0;
+        r = on ? r0 + 2 : r0;
       /* 鳴り始めた和音の点から波紋が広がる */
       if (on && !REDUCE.matches)
         for (const d of [0, 0.22]) {
@@ -300,17 +411,27 @@ export class MapView {
       ctx.strokeStyle = k === st.sel ? c.sel : c.lv;
       ctx.stroke();
       ctx.fillStyle = on ? c.surf : c.ink;
-      ctx.font = `700 ${Math.round(r0 * 0.95)}px ${c.mono}`;
+      ctx.font = `700 ${Math.round(r0 * 1.15)}px ${c.mono}`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(String(k + 1), x, y + 0.5);
-      /* 転調する和音には、新しい調の主音を添える */
-      if (ch.mod) {
-        ctx.font = `700 11px ${c.mono}`;
-        ctx.fillStyle = c.sel;
-        ctx.textAlign = 'left';
-        ctx.fillText(`→${keyTonic(ch.mod)}${ch.mod.m === 'min' ? 'm' : ''}`, x + r + 3, y - r);
-      }
+      if (ch.mod) tags.push({ x: x + r, y, to: ch.mod });
+    }
+    /* 転調する和音には、点の右に新しい調の札を付ける（緊張の図の札と同じ形）。ほかの点に隠れないように最後に描く */
+    for (const g of tags) {
+      const lb = `転調 ${keyTonic(g.to)}${g.to.m === 'min' ? 'm' : ''}`;
+      ctx.font = `700 13px ${c.sans}`;
+      const w = ctx.measureText(lb).width + 10,
+        h = 20,
+        x = Math.min(g.x + 3, this.W - w - 2);
+      ctx.fillStyle = c.sel;
+      ctx.beginPath();
+      ctx.roundRect(x, g.y - h / 2, w, h, 4);
+      ctx.fill();
+      ctx.fillStyle = c.surf;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(lb, x + 5, g.y + 0.5);
     }
   }
 }

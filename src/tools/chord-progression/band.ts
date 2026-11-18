@@ -446,9 +446,10 @@ export class Player {
     for (const o of this.occ) if (o.at <= now + 0.001) c = o;
     return c;
   }
+  /** 先の音を予約する。止めている間は何もしない（画面が隠れたときにも呼ばれる） */
   tick(): void {
     const now = this.audio.now();
-    if (now === null) return;
+    if (now === null || !this.playing) return;
     if (this.nextAt < now - 0.1) this.nextAt = now + 0.02;
     const { song, on, loop, met } = this.ctx(),
       { entries, beats: total } = compute(song),
