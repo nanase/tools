@@ -101,6 +101,22 @@ bun run layout-shift --width 360 pcm # 幅を 1 つにする（既定は 360 と
 
 フォントは Google Fonts から取り、PNG は Edge か Chrome のヘッドレスで撮ります。Windows の Edge 以外を使うときは、環境変数 `BROWSER` でブラウザを指定します。
 
+## 取り残しの片付け
+
+開発サーバやヘッドレスのブラウザが残ると、worktree を消せなくなります。Windows では `bun run reap` で止めます。
+
+```sh
+bun run reap                  # 取り残されたヘッドレスブラウザ
+bun run reap -Worktree .      # この worktree の開発サーバなども
+bun run reap -DryRun          # 止めずに一覧だけ出す
+```
+
+- 止めるのは、使い手の終わったヘッドレスブラウザと、コマンドラインに worktree のパスを含む node・bun・deno
+  - ブラウザは、プロファイルが一時フォルダにあるものだけを見る。ふだん使うブラウザには触れない
+  - 詳しい判定は [scripts/reap.ps1](scripts/reap.ps1) にある
+- スクリプトからブラウザを動かすときは [scripts/headless.ts](scripts/headless.ts) の `launchHeadless` を使う
+  - 例外や Ctrl+C で終わっても、ブラウザを止めてプロファイルを消す
+
 ## 旧 URL の転送
 
 旧 URL（`/tools/electric/timer555.html` など）と新 URL の対応は [src/data/redirects.ts](src/data/redirects.ts) にあります。ビルドすると、旧パスに転送のページができます。

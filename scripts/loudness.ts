@@ -9,10 +9,7 @@
  * ヘッドレスの Edge（なければ環境変数 BROWSER のブラウザ）を CDP で動かす。
  * ページの AudioContext の destination の手前に AudioWorklet を挟み、K 特性の二乗平均を 100 ms ごとに集める
  */
-import { spawn } from 'node:child_process';
-import { existsSync, mkdtempSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { launchHeadless } from './headless';
 import { activeRatio, integrated, kWeight } from './loudness-meter';
 
 /** 新しいページの既定の大きさの目標 [LUFS]。±2 LU に収める */
@@ -151,33 +148,10 @@ for (const p of pages)
 if (!(await fetch(`${base}/tools/`).catch(() => null))?.ok)
   throw new Error(`${base}/tools/ が開けません。bun run dev で開発サーバを起動してください`);
 
-const bin = [
-  process.env.BROWSER,
-  'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
-  'C:/Program Files/Microsoft/Edge/Application/msedge.exe',
-  '/usr/bin/microsoft-edge',
-  '/usr/bin/google-chrome',
-  '/usr/bin/chromium',
-]
-  .filter((p): p is string => !!p)
-  .find((p) => existsSync(p));
-if (!bin) throw new Error('ブラウザが見つかりません。環境変数 BROWSER で Edge か Chrome を指してください');
-const prof = mkdtempSync(join(tmpdir(), 'nanase-tools-loudness-')),
-  port = 9300 + Math.floor(Math.random() * 600);
-const browser = spawn(
-  bin,
-  [
-    '--headless=new',
-    `--remote-debugging-port=${port}`,
-    '--mute-audio',
-    '--autoplay-policy=no-user-gesture-required',
-    `--user-data-dir=${prof}`,
-    '--no-first-run',
-    '--window-size=1400,1000',
-    'about:blank',
-  ],
-  { stdio: 'ignore' },
-);
+const { port, close } = launchHeadless('loudness', [
+  '--autoplay-policy=no-user-gesture-required',
+  '--window-size=1400,1000',
+]);
 const sleep = (ms: number) => new Promise((ok) => setTimeout(ok, ms));
 
 async function cdp(): Promise<{ webSocketDebuggerUrl: string }> {
@@ -280,12 +254,5 @@ for (const p of pages) {
 }
 console.log(`目標 ${f1(TARGET)} LUFS ± ${TOL} LU`);
 
-const ws = new WebSocket((await cdp()).webSocketDebuggerUrl);
-await new Promise((ok) => {
-  ws.onopen = ok;
-});
-ws.send(JSON.stringify({ id: 1, method: 'Browser.close' }));
-await sleep(500);
-browser.kill();
-rmSync(prof, { recursive: true, force: true });
+close();
 process.exit(0);

@@ -15,6 +15,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { ART, LOOP } from '../src/lib/card-art';
+import { browserBin } from './headless';
 
 const W = 1200,
   H = 630,
@@ -149,16 +150,7 @@ function svg(animate: boolean, mono: string, jp: string): string {
  * Windows の Edge は書き終える前に戻るので、ファイルの大きさが落ち着くまで待つ
  */
 async function shoot(src: string, out: string): Promise<void> {
-  const cands = [
-    process.env.BROWSER,
-    'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
-    'C:/Program Files/Microsoft/Edge/Application/msedge.exe',
-    '/usr/bin/microsoft-edge',
-    '/usr/bin/google-chrome',
-    '/usr/bin/chromium',
-  ].filter((p): p is string => !!p);
-  const bin = cands.find((p) => existsSync(p));
-  if (!bin) throw new Error('ブラウザが見つかりません。環境変数 BROWSER で Edge か Chrome を指してください');
+  const bin = browserBin();
   const prof = join(tmpdir(), 'nanase-tools-og-profile');
   const r = spawnSync(
     bin,
@@ -171,7 +163,8 @@ async function shoot(src: string, out: string): Promise<void> {
       `--screenshot=${out}`,
       pathToFileURL(src).href,
     ],
-    { encoding: 'utf8' },
+    /* 作業フォルダを一時フォルダにして、ブラウザが残っても worktree をつかまないようにする */
+    { encoding: 'utf8', cwd: tmpdir() },
   );
   if (r.status !== 0) throw new Error(`撮れませんでした: ${r.stderr}`);
   let last = -1;

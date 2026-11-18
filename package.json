@@ -19,6 +19,7 @@
     "og-image": "bun scripts/og-image.ts",
     "loudness": "bun scripts/loudness.ts",
     "layout-shift": "bun scripts/layout-shift.ts",
+    "reap": "powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File scripts/reap.ps1",
     "chaconne": "bun scripts/chaconne.ts",
     "piano-scores": "bun scripts/piano-scores.ts",
     "violin-scores": "bun scripts/violin-scores.ts",
