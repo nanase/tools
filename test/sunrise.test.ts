@@ -5,6 +5,7 @@ import { factsOf, skyCenter, skyX } from '../src/tools/sunrise/sky';
 import { band, geoAltAz, siteSun, subsolar, sunEq, sunEqLow } from '../src/tools/sunrise/sun';
 import { approx, localDay, lookupZone, offText, zoneOffset } from '../src/tools/sunrise/tz';
 import { yearGrid } from '../src/tools/sunrise/year';
+import { yearPick } from '../src/tools/sunrise/yearview';
 
 const D = Math.PI / 180;
 const TOKYO = [35.6895, 139.6917] as const;
@@ -186,5 +187,18 @@ describe('地点の数値と空の図', () => {
   it('白夜の数値', () => {
     const d = dayOf(78.2232, 15.6267, Date.UTC(2026, 5, 21) - 2 * 36e5, Date.UTC(2026, 5, 22) - 2 * 36e5);
     expect(Object.fromEntries(factsOf(d, { h: 10, az: 0 }, () => 'x'))['昼の長さ']).toBe('24時間00分（白夜）');
+  });
+});
+
+describe('1 年の図', () => {
+  const g = { L: 40, T: 0, pw: 365, ph: 144, nd: 365, year: 2026 };
+  it('押した所の日と分', () => {
+    expect(yearPick(40, 0, g)).toEqual({ day: 0, min: 0 });
+    expect(yearPick(40 + 171.5, 72, g)).toEqual({ day: 171, min: 720 });
+    expect(yearPick(40 + 365, 144, g)).toEqual({ day: 364, min: 1439 });
+  });
+  it('図の外は null', () => {
+    expect(yearPick(10, 10, g)).toBeNull();
+    expect(yearPick(60, 150, g)).toBeNull();
   });
 });

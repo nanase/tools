@@ -22,3 +22,5 @@
 .sr-key i.sr-kpin{width:10px;height:10px;border-radius:50%;background:#bf4308;border:2px solid #fff;box-shadow:0 0 0 1px var(--line-2)}
 .sr-key i.sr-kpath{height:4px;border:0;border-radius:2px;background:#ffd23a}
 .sr-key i.sr-kref{height:0;border:0;border-top:2px dotted var(--ink-2);border-radius:0}
+.sr-year{display:block;width:100%;color:var(--ink-2);cursor:pointer;touch-action:pan-y}
+.sr-read{margin:4px 0 0;min-height:1.5em;font:500 13px/1.5 var(--mono);color:var(--ink-2);font-variant-numeric:tabular-nums}

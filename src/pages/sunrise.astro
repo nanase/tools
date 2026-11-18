@@ -64,6 +64,12 @@ const name = '日の出と日の入り';
       </div>
     </Panel>
 
+    <Panel hid="hd-year" title="この地点の 1 年">
+      <span slot="aux" class="aux">横は日付、縦は時刻</span>
+      <canvas id="yc" class="sr-year" role="img" aria-label="地点の 1 年の昼と夜（横は日付、縦は時刻）。押すとその日時へ移る"></canvas>
+      <p class="sr-read" id="y-read" aria-live="polite">&nbsp;</p>
+    </Panel>
+
   </div>
 
   <RelatedTools current="sunrise" />

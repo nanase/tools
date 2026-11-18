@@ -14,8 +14,10 @@ import { type Day, dayOf } from './day';
 import { coastPath, drawMap, lonLatAt } from './map';
 import type { Disp, Speed } from './params';
 import { drawSky, factsOf } from './sky';
-import { apparent, geoAltAz, siteSun, sunEq } from './sun';
+import { apparent, BANDS, band, geoAltAz, siteSun, sunEq } from './sun';
 import { approx, localDay, lookupZone, offText, zoneOffset } from './tz';
+import { yearGrid } from './year';
+import { drawYear, type YearGeom, yearPick } from './yearview';
 
 const BASE = import.meta.env.BASE_URL;
 const p2 = (n: number) => String(n).padStart(2, '0');
@@ -213,6 +215,72 @@ function solstice(): [Day, Day] {
   return sol;
 }
 
+/* ---------- 1 年の図 ---------- */
+const ycv = $<HTMLCanvasElement>('#yc');
+let gridKey = '';
+let grid: { nd: number; cells: Uint8Array } | null = null;
+let ygeom: YearGeom | null = null;
+/** 現地の年 */
+const yearOf = (ms: number) => new Date(ms + offLocal(ms)).getUTCFullYear();
+/** year 年の day 日目（0 が 1 月 1 日）の現地の 0 時。格子と同じく、その日の正午の差で決める */
+function dayStartOf(year: number, day: number): number {
+  const u = Date.UTC(year, 0, 1 + day);
+  return u - offLocal(u + 12 * 36e5);
+}
+function yearGridNow(year: number): { nd: number; cells: Uint8Array } {
+  const { lat, lon } = picker.place;
+  const key = `${year}|${lat}|${lon}|${zone}`;
+  if (!grid || key !== gridKey) {
+    gridKey = key;
+    grid = yearGrid(lat, lon, year, offLocal);
+  }
+  return grid;
+}
+/** 現地の分を表示の時間帯の目盛りにする（日本時間で見たニューヨークなら 0 時が 14時） */
+function yearLabel(m: number): string {
+  const s = (((m + (offDisp(T) - offLocal(T)) / 6e4) % 1440) + 1440) % 1440;
+  const hh = Math.floor(s / 60);
+  const mm = Math.round(s % 60);
+  return mm ? `${hh}:${p2(mm)}` : `${hh}時`;
+}
+function drawYearNow(): void {
+  const y = yearOf(T);
+  const d = today();
+  const u = Date.UTC(y, 0, 1);
+  const day = Math.round((d.d0 + offLocal(d.d0 + 12 * 36e5) - u) / 864e5);
+  ygeom = drawYear(ycv, { grid: yearGridNow(y), year: y, cur: { day, min: (T - d.d0) / 6e4 }, label: yearLabel });
+}
+function yearAt(e: PointerEvent): number | null {
+  if (!ygeom) return null;
+  const r = ycv.getBoundingClientRect();
+  const p = yearPick(e.clientX - r.left, e.clientY - r.top, ygeom);
+  return p ? dayStartOf(ygeom.year, p.day) + p.min * 6e4 : null;
+}
+let ydown = false;
+ycv.addEventListener('pointerdown', (e) => {
+  const t = yearAt(e);
+  if (t === null) return;
+  ydown = true;
+  ycv.setPointerCapture(e.pointerId);
+  if (playing) stop();
+  setT(t);
+});
+ycv.addEventListener('pointermove', (e) => {
+  const t = yearAt(e);
+  if (t === null) return;
+  const { lat, lon } = picker.place;
+  const h = geoAltAz(sunEq(t), lat, lon).h;
+  const c = new Date(t + offLocal(t));
+  txt(
+    '#y-read',
+    `${c.getUTCMonth() + 1}月${c.getUTCDate()}日 ${fmt(t)} ${BANDS[band(h)]}（高度 ${minus(apparent(h).toFixed(1))}°）`,
+  );
+  if (ydown) setT(t);
+});
+ycv.addEventListener('pointerup', () => {
+  ydown = false;
+});
+
 /* ---------- 描く ---------- */
 function drawClock(): void {
   const d = new Date(T + offDisp(T));
@@ -233,6 +301,7 @@ function frame(now: number): void {
   const here = siteSun(T, picker.place.lat, picker.place.lon);
   for (const [i, [, v]] of factsOf(d, here, fmt).entries()) txt(`#f${i}`, v);
   drawSky(kcv, { day: d, solstice: solstice(), now: here, lat: picker.place.lat, fmt });
+  drawYearNow();
 }
 new ResizeObserver(() => later()).observe($('#mview'));
 
