@@ -12,7 +12,7 @@ import SiteLayout from '../layouts/SiteLayout.astro';
 import '../lib/planet/planet.css';
 import '../tools/sunrise/style.css';
 import { LANDC, rgb } from '../tools/sunrise/map';
-import { SPEEDS, ZONES } from '../tools/sunrise/params';
+import { SPEEDS, STEPS, ZONES } from '../tools/sunrise/params';
 import { BANDS } from '../tools/sunrise/sun';
 import Theory from '../tools/sunrise/Theory.astro';
 
@@ -24,6 +24,7 @@ const name = '日の出と日の入り';
   <div class="tgrid">
 
     <Panel hid="hd-map" title="昼と夜" fixed>
+      <button slot="aux" type="button" class="tg sr-flb" id="sr-flb" aria-pressed="false" title="時刻の操作を右下に浮かべる" aria-label="時刻の操作を右下に浮かべる"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="2.5" width="13" height="11" rx="1.5"/><rect class="sr-fi" x="8" y="8" width="5" height="4" rx=".6"/></svg></button>
       <PlanetSite slot="aux" />
       <div slot="aux" class="seg" id="p-play" data-nosave><button type="button" id="play" aria-pressed="false"><span class="led" id="playLed" aria-hidden="true"></span><span id="playT">再生</span></button></div>
       <div class="pn-clock">
@@ -75,6 +76,19 @@ const name = '日の出と日の入り';
     <Collapsible hid="hd-thy" title="動作原理と式">
       <Theory />
     </Collapsible>
+  </div>
+
+  <div class="sr-fl" id="sr-fl" role="region" aria-label="時刻の操作" hidden>
+    <div class="sr-fl-h">
+      <button type="button" class="tg" id="sr-fl-now" aria-pressed="true" title="現在の日時へ"><span class="led on" aria-hidden="true"></span>現在</button>
+      <button type="button" class="tg" id="sr-fl-play" aria-pressed="false"><span class="led" aria-hidden="true"></span><span id="sr-fl-playT">再生</span></button>
+      <span class="sr-fl-clk"><b id="sr-fl-time">—</b><span id="sr-fl-date">—</span></span>
+      <button type="button" class="sr-fl-x" id="sr-fl-x" title="閉じる" aria-label="時刻の操作を閉じる"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 2.5l7 7M9.5 2.5l-7 7"/></svg></button>
+    </div>
+    <div class="sr-fl-st" role="group" aria-label="時刻を戻す・進める">
+      {STEPS.map(([s, l]) => <button type="button" class="tg" data-step={-s} aria-label={`${l}戻す`}>−{l}</button>)}
+      {STEPS.map(([s, l]) => <button type="button" class="tg" data-step={s} aria-label={`${l}進める`}>＋{l}</button>)}
+    </div>
   </div>
 
   <RelatedTools current="sunrise" />

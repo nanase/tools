@@ -94,3 +94,9 @@ export function fromWall(wall: number, off: (ms: number) => number): number {
   const t = wall - off(wall);
   return wall - off(t);
 }
+
+/** 時刻 ms を sec 秒ずらす。日の倍数のときは現地の時計の読みを保つ（夏時間をまたいでも 12:00 は 12:00） */
+export function shiftTime(ms: number, sec: number, off: (ms: number) => number): number {
+  if (sec % 86400 !== 0) return ms + sec * 1000;
+  return fromWall(ms + off(ms) + sec * 1000, off);
+}

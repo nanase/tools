@@ -24,3 +24,18 @@
 .sr-key i.sr-kref{height:0;border:0;border-top:2px dotted var(--ink-2);border-radius:0}
 .sr-year{display:block;width:100%;color:var(--ink-2);cursor:pointer;touch-action:pan-y}
 .sr-read{margin:4px 0 0;min-height:1.5em;font:500 13px/1.5 var(--mono);color:var(--ink-2);font-variant-numeric:tabular-nums}
+
+/* 時刻の操作: 変速機のページの操作盤と同じく右下に浮かべる */
+.sr-flb{padding:0 7px}
+.sr-flb svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.3}
+.sr-flb svg .sr-fi{fill:currentColor;stroke:none}
+.sr-fl{position:fixed;right:16px;bottom:16px;z-index:18;width:min(340px,calc(100vw - 32px));padding:6px 8px 10px;border:1px solid var(--line-2);border-radius:6px;background:var(--surface);box-shadow:0 10px 28px rgb(0 0 0 / .3)}
+.sr-fl[hidden]{display:none}
+.sr-fl-h{display:flex;align-items:center;gap:6px;padding:0 0 2px}
+.sr-fl-clk{display:grid;margin-left:4px;font:500 11px/1.3 var(--mono);color:var(--ink-2);font-variant-numeric:tabular-nums}
+.sr-fl-clk b{font-size:15px;color:var(--ink)}
+.sr-fl-x{display:grid;place-items:center;width:28px;height:28px;margin-left:auto;padding:0;border:0;border-radius:4px;background:none;color:var(--ink-3);cursor:pointer}
+.sr-fl-x:hover{color:var(--ink);background:var(--inset)}
+.sr-fl-x svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round}
+.sr-fl-st{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:8px}
+.sr-fl-st .tg{justify-content:center;min-height:34px;padding:0 4px;font-size:12.5px}

@@ -14,7 +14,7 @@ import { coastPath, drawMap, lonLatAt } from './map';
 import type { Disp, Speed } from './params';
 import { drawSky, factsOf, num } from './sky';
 import { apparent, BANDS, band, geoAltAz, siteSun, sunEq } from './sun';
-import { approx, fromWall, localDay, lookupZone, offText, wallMs, zoneOffset } from './tz';
+import { approx, fromWall, localDay, lookupZone, offText, shiftTime, wallMs, zoneOffset } from './tz';
 import { yearGrid } from './year';
 import { drawYear, type YearGeom, yearPick } from './yearview';
 
@@ -125,18 +125,22 @@ function setT(v: number, keepLive = false): void {
 }
 function setLive(on: boolean): void {
   live = on;
-  $('#nowbtn').setAttribute('aria-pressed', String(on));
-  $('#nowLed').classList.toggle('on', on);
+  for (const b of [$('#nowbtn'), $('#sr-fl-now')]) {
+    b.setAttribute('aria-pressed', String(on));
+    b.querySelector('.led')?.classList.toggle('on', on);
+  }
 }
 setInterval(() => {
   if (document.hidden) return;
   if (live && !playing) setT(Date.now(), true);
 }, 1000);
-$('#nowbtn').addEventListener('click', () => {
+function goNow(): void {
   if (playing) stop();
   setT(Date.now(), true);
   setLive(true);
-});
+}
+$('#nowbtn').addEventListener('click', goNow);
+$('#sr-fl-now').addEventListener('click', goNow);
 const datePicker = new DatePicker($('#dp'), {
   get: () => wallOf(T),
   set: (v) => setT(fromWall(wallMs(v), offDisp)),
@@ -147,23 +151,53 @@ const datePicker = new DatePicker($('#dp'), {
 let playing = false;
 let last = 0;
 let acc = 0;
+/** 見出しの再生と、時刻の操作の枠の再生は同じ状態 */
+function showPlay(on: boolean): void {
+  for (const b of [$('#play'), $('#sr-fl-play')]) {
+    b.setAttribute('aria-pressed', String(on));
+    b.querySelector('.led')?.classList.toggle('on', on);
+  }
+  txt('#playT', on ? '停止' : '再生');
+  txt('#sr-fl-playT', on ? '停止' : '再生');
+}
 function stop(): void {
   playing = false;
-  $('#play').setAttribute('aria-pressed', 'false');
-  $('#playLed').classList.remove('on');
-  txt('#playT', '再生');
+  showPlay(false);
   later();
 }
-$('#play').addEventListener('click', () => {
-  if (playing) return stop();
+function togglePlay(): void {
+  if (playing) {
+    stop();
+    return;
+  }
   setLive(false);
   playing = true;
   last = performance.now();
   acc = 0;
-  $('#play').setAttribute('aria-pressed', 'true');
-  $('#playLed').classList.add('on');
-  txt('#playT', '停止');
+  showPlay(true);
   later();
+}
+$('#play').addEventListener('click', togglePlay);
+$('#sr-fl-play').addEventListener('click', togglePlay);
+
+/* ---------- 時刻の操作（右下に浮かべる枠） ---------- */
+const fl = $('#sr-fl');
+const flBtn = $('#sr-flb');
+/** 開閉は保存する（初めは広い画面で開く） */
+function setFloat(on: boolean, save = true): void {
+  fl.hidden = !on;
+  flBtn.setAttribute('aria-pressed', String(on));
+  if (save) store('sr-float', on);
+}
+{
+  const sv = stored('sr-float');
+  setFloat(typeof sv === 'boolean' ? sv : matchMedia('(min-width: 1000px)').matches, false);
+}
+flBtn.addEventListener('click', () => setFloat(fl.hasAttribute('hidden')));
+$('#sr-fl-x').addEventListener('click', () => setFloat(false));
+fl.addEventListener('click', (e) => {
+  const b = (e.target as Element).closest<HTMLElement>('button[data-step]');
+  if (b) setT(shiftTime(T, Number(b.dataset.step), offLocal));
 });
 /** 再生で時刻を進める。10 日/秒は 1 秒に 10 コマ、1 コマで 1 日進めて現地の時刻を保つ */
 function advance(now: number): void {
@@ -324,6 +358,8 @@ function drawClock(): void {
   txt('#clk', `${d.getUTCHours()}:${p2(d.getUTCMinutes())}`);
   txt('#clkz', zoneLabel());
   txt('#o-date', `${d.getUTCFullYear()}-${p2(d.getUTCMonth() + 1)}-${p2(d.getUTCDate())}（${WD[d.getUTCDay()]}）`);
+  txt('#sr-fl-time', `${d.getUTCHours()}:${p2(d.getUTCMinutes())}`);
+  txt('#sr-fl-date', `${d.getUTCFullYear()}-${p2(d.getUTCMonth() + 1)}-${p2(d.getUTCDate())}（${WD[d.getUTCDay()]}）`);
   datePicker.sync();
 }
 /** 前に描いた時刻と時計 */

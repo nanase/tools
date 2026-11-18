@@ -15,3 +15,11 @@ export const SPEEDS = [
   ['day', '10 日/秒'],
 ] as const;
 export type Speed = (typeof SPEEDS)[number][0];
+
+/** 時刻の操作の幅 [s]。日の倍数は現地の時刻を保ってずらす */
+export const STEPS = [
+  [600, '10 分'],
+  [3600, '1 時間'],
+  [86400, '1 日'],
+  [259200, '3 日'],
+] as const;

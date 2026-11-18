@@ -3,7 +3,16 @@ import { dayOf } from '../src/tools/sunrise/day';
 import { lonLatAt } from '../src/tools/sunrise/map';
 import { factsOf, num, skyCenter, skyX, solsticeNames } from '../src/tools/sunrise/sky';
 import { apparent, band, geoAltAz, siteSun, subsolar, sunEq, sunEqLow } from '../src/tools/sunrise/sun';
-import { approx, fromWall, localDay, lookupZone, offText, wallMs, zoneOffset } from '../src/tools/sunrise/tz';
+import {
+  approx,
+  fromWall,
+  localDay,
+  lookupZone,
+  offText,
+  shiftTime,
+  wallMs,
+  zoneOffset,
+} from '../src/tools/sunrise/tz';
 import { yearGrid } from '../src/tools/sunrise/year';
 import { yearPick } from '../src/tools/sunrise/yearview';
 
@@ -237,5 +246,22 @@ describe('見直しで見つかった点', () => {
   it('夏至・冬至の札は南半球で入れ替える（6 月の道すじ, 12 月の道すじ）', () => {
     expect(solsticeNames(35)).toEqual(['夏至', '冬至']);
     expect(solsticeNames(-33)).toEqual(['冬至', '夏至']);
+  });
+});
+
+describe('時刻の操作', () => {
+  const ny = (ms: number) => zoneOffset('America/New_York', -74, ms);
+
+  it('分・時間の幅はそのまま足す', () => {
+    const t = Date.UTC(2026, 2, 8, 6, 30);
+    expect(shiftTime(t, 600, ny)).toBe(t + 600e3);
+    expect(shiftTime(t, -3600, ny)).toBe(t - 3600e3);
+  });
+
+  it('日の幅は現地の時刻を保つ（夏時間をまたいでも 12:00 のまま）', () => {
+    const noon7 = Date.UTC(2026, 2, 7, 17); // 3 月 7 日 12:00 EST
+    expect(shiftTime(noon7, 86400, ny)).toBe(Date.UTC(2026, 2, 8, 16)); // 3 月 8 日 12:00 EDT
+    expect(shiftTime(noon7, 3 * 86400, ny)).toBe(Date.UTC(2026, 2, 10, 16));
+    expect(shiftTime(Date.UTC(2026, 2, 8, 16), -86400, ny)).toBe(noon7);
   });
 });
