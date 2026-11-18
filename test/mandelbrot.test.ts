@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { FB, fromDec, fromFix, toFix } from '../src/tools/mandelbrot/fixed';
 import { famOf, type Formula, isInt, maxIter, nu, q1024 } from '../src/tools/mandelbrot/formula';
+import { morphAt, snapMix, snapPower } from '../src/tools/mandelbrot/morph';
 import { orbit } from '../src/tools/mandelbrot/orbit';
+import { parseView, View } from '../src/tools/mandelbrot/view';
 
 const F = (o: Partial<Formula> = {}): Formula => ({ p: 2, pre: 0, post: 0, conj: false, ...o });
 
@@ -89,5 +91,92 @@ describe('基準の軌道', () => {
   it('発散しない点は最後まで、発散する点は早く止まる', () => {
     expect(orbit(0n, fromDec('1'), F(), 500).len).toBe(501);
     expect(orbit(fromDec('1'), 0n, F(), 500).len).toBeLessThan(10);
+  });
+});
+
+describe('視点', () => {
+  it('指した点を動かさずに倍率を追う', () => {
+    const v = new View(fromDec('-0.6'), 0n, 1);
+    const before = v.pointAt(0.4, -0.3);
+    v.zoomBy(4, 0.4, -0.3);
+    for (let i = 0; i < 200 && v.step(1 / 60); i++);
+    expect(v.zoom).toBeCloseTo(4, 9);
+    const after = v.pointAt(0.4, -0.3);
+    expect(fromFix(after[0] - before[0])).toBeCloseTo(0, 12);
+    expect(fromFix(after[1] - before[1])).toBeCloseTo(0, 12);
+  });
+  it('深い所でも指した点がずれない', () => {
+    const v = new View(fromDec('-0.743643887037158704752191506114774'), fromDec('0.131825904205311970493132056385139'), 1e25);
+    const before = v.pointAt(-0.7, 0.2);
+    v.zoomBy(1000, -0.7, 0.2);
+    for (let i = 0; i < 400 && v.step(1 / 60); i++);
+    const after = v.pointAt(-0.7, 0.2);
+    expect(Math.abs(fromFix(after[0] - before[0])) * v.zoom).toBeLessThan(1e-6);
+  });
+  it('移動は中身を指の向きに動かす', () => {
+    const v = new View(0n, 0n, 2);
+    v.pan(0.5, 0);
+    expect(fromFix(v.cx)).toBeCloseTo(-0.375, 12);
+  });
+  it('2 本指でつまんだ点が指の下に残る', () => {
+    const v = new View(0n, 0n, 1);
+    const p = v.pointAt(0.2, 0.1);
+    v.pinch(0.2, 0.1, 0.3, 0.1, 2);
+    expect(v.zoom).toBe(2);
+    const q = v.pointAt(0.3, 0.1);
+    expect(fromFix(q[0] - p[0])).toBeCloseTo(0, 12);
+  });
+  it('すぐ移ると動きが消え、上限で止まる', () => {
+    const v = new View(0n, 0n, 1);
+    v.zoomBy(8);
+    v.jump(fromDec('0.25'), 0n, 100);
+    expect(v.step(0.1)).toBe(false);
+    expect(v.zoom).toBe(100);
+    v.setMax(3e4);
+    v.jump(0n, 0n, 1e10);
+    expect(v.zoom).toBe(3e4);
+    v.zoomBy(1e6);
+    for (let i = 0; i < 300 && v.step(1 / 60); i++);
+    expect(v.zoom).toBeCloseTo(3e4, 6);
+  });
+  it('保存した値を読む。壊れていれば null', () => {
+    const v = new View(fromDec('-0.75'), fromDec('0.1'), 1e12);
+    const back = parseView(JSON.parse(JSON.stringify(v.save())));
+    expect(back?.cx).toBe(v.cx);
+    expect(back?.zoom).toBe(1e12);
+    expect(parseView({ cx: 'abc', cy: '0', z: 1 })).toBeNull();
+    expect(parseView({ cx: '0', cy: '0', z: 1e40 })).toBeNull();
+    expect(parseView(null)).toBeNull();
+  });
+});
+
+describe('式の変形', () => {
+  const m = F(),
+    bs = F({ pre: 1 });
+  it('始まり・半分・終わり', () => {
+    const s = { from: m, to: { ...bs, conj: true }, t0: 0, dur: 750, deep: false };
+    expect(morphAt(s, 0).f).toEqual(m);
+    const mid = morphAt(s, 375).f;
+    expect(mid.pre).toBe(0.5);
+    expect(mid.conj).toBe(true);
+    const end = morphAt(s, 750);
+    expect(end.done).toBe(true);
+    expect(end.f).toEqual({ ...bs, conj: true });
+  });
+  it('べきは浅い所で連続に、深い所では終わりに跳ぶ', () => {
+    const to = F({ p: 3 });
+    expect(morphAt({ from: m, to, t0: 0, dur: 600, deep: false }, 300).f.p).toBe(2.5);
+    expect(morphAt({ from: m, to, t0: 0, dur: 600, deep: true }, 300).f.p).toBe(2);
+    expect(morphAt({ from: m, to, t0: 0, dur: 600, deep: true }, 600).f.p).toBe(3);
+  });
+  it('べきと混ぜる量の吸い付き', () => {
+    expect(snapPower(2.95, false)).toBe(3);
+    expect(snapPower(2.9, false)).toBe(2.9);
+    expect(snapPower(2.5, true)).toBe(3);
+    expect(snapPower(1.5, true)).toBe(2);
+    expect(snapPower(9, false)).toBe(8);
+    expect(snapMix(0.97)).toBe(1);
+    expect(snapMix(0.03)).toBe(0);
+    expect(snapMix(0.5)).toBe(0.5);
   });
 });
