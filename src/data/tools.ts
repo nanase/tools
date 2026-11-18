@@ -69,7 +69,7 @@ export const TOOLS: Tool[] = [
     d: 'フィードバック制御の一種であるPID制御の応答を計算します。',
     ic: 'pid',
     r: ['pendulum', 'kalman', 'pole-zero', 'biquad'],
-    k: 'フィードバック 比例 積分 微分 control',
+    k: 'フィードバック 比例 積分 微分 control ボート 川 自動調整 itae',
   },
   {
     id: 'pendulum',
