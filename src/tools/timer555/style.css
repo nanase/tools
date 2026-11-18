@@ -1,7 +1,59 @@
 /* タイマIC 555 のページだけのスタイル（共通は src/styles/site.css） */
-/* 枠の並び: PC は左の列に入力・計算結果、右の列に出力波形・回路図。スマホは入力・計算結果・出力波形・回路図の順 */
+/* 枠の並び: PC は左の列に回路図（主役）とその下に出力波形、右の列に入力・計算結果。スマホは回路図・出力波形・入力・計算結果の順 */
 @media (min-width:1000px){
-  .tgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr);align-items:start}
+  .t5-grid{grid-template-columns:minmax(0,7fr) minmax(0,4fr);align-items:start}
   .a-thy{grid-column:1/-1}
 }
 .subst math:nth-child(2){margin-bottom:12px}
+/* 計算結果の下の「波形から」 */
+.t5-ms{font:500 12px/1.5 var(--mono);color:var(--ch2);letter-spacing:0}
+
+/* 回路図の色: --t5-v0 は 0 V、--t5-v1 は VCC（灰 → 黄緑）。--t5-pt は電流の粒、--t5-led は点いた LED */
+:root{--t5-v0:#a3abb1;--t5-v1:#5d9e00;--t5-pt:#ffcc00;--t5-ptk:#5a4300;--t5-led:#f0452a}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--t5-v0:#566069;--t5-v1:#a8e04a;--t5-pt:#ffd84a;--t5-ptk:#1d1600;--t5-led:#ff5a3c}}
+:root[data-theme="dark"]{--t5-v0:#566069;--t5-v1:#a8e04a;--t5-pt:#ffd84a;--t5-ptk:#1d1600;--t5-led:#ff5a3c}
+
+.t5-sch{max-width:600px;user-select:none;-webkit-user-select:none;touch-action:pinch-zoom}
+.t5-w{fill:none;stroke:var(--t5-v0);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.t5-pl{stroke-width:3.2}
+.t5-b{stroke:var(--ink);stroke-width:1.4}
+.t5-ln{fill:none;stroke:var(--ink-2);stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.t5-bw{stroke-width:2.2}
+.t5-d{fill:var(--surface);stroke:var(--ink);stroke-width:1.4;stroke-linejoin:round}
+.t5-ah{fill:var(--ink-2)}
+.t5-c{fill:var(--surface);stroke:var(--ink);stroke-width:1.4}
+.t5-j{fill:var(--ink-2)}
+.t5-ic{fill:var(--inset);stroke:var(--ink);stroke-width:1.6}
+.t5-led{fill:var(--t5-led);fill-opacity:0;stroke-width:2.4}
+.t5-pt{fill:var(--t5-pt);stroke:var(--t5-ptk);stroke-width:.8;pointer-events:none}
+.t5-act{fill:var(--accent);font:700 11px var(--sans)}
+.t5-hit{fill:transparent;cursor:pointer;outline:none}
+.t5-hit:hover,.t5-hit:focus-visible{stroke:var(--accent);stroke-width:1.2;stroke-dasharray:3 2}
+.t5-pot{cursor:grab}
+.t5-pot:active{cursor:grabbing}
+
+/* 再生・速さ・電源 */
+.t5-tp{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin-top:10px}
+.t5-rate{margin-left:auto;font-size:12px;color:var(--ink-3);text-align:right}
+.t5-sp button{height:30px;padding:0 10px;font:500 12.5px/1 var(--sans)}
+.t5-sp button:disabled{opacity:.4;cursor:default}
+.t5-pw{min-width:70px;height:30px;font-family:var(--sans)}
+
+/* 回路の選択 */
+.t5-pick{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin:0 0 8px}
+.t5-pv{display:inline-grid;place-items:center;width:30px;height:30px;padding:0;border:1px solid var(--line-2);border-radius:4px;background:var(--surface);color:var(--ink-2);cursor:pointer}
+.t5-pv:hover{border-color:var(--ink-3);color:var(--ink)}
+.t5-pv svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.t5-selw{position:relative;width:min(220px,calc(100% - 76px))}
+.t5-selw select{appearance:none;width:100%;height:30px;padding:0 30px 0 10px;border:1px solid var(--line-2);border-radius:4px;background:var(--inset);color:var(--ink);font:700 14px/1.2 var(--sans);text-overflow:ellipsis;cursor:pointer}
+.t5-selw select:hover{border-color:var(--ink-3)}
+.t5-selw select option,.t5-selw select optgroup{background:var(--surface);color:var(--ink)}
+.t5-selw::after{content:"";position:absolute;top:50%;right:12px;width:7px;height:7px;border-right:1.6px solid var(--ink-2);border-bottom:1.6px solid var(--ink-2);transform:translateY(-70%) rotate(45deg);pointer-events:none}
+.t5-use{flex:1 1 160px;min-width:0;font-size:12.5px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (pointer:coarse){.t5-pv{width:36px;height:36px}.t5-selw select{height:36px}}
+
+/* 凡例 */
+.t5-lg{margin-top:6px}
+.t5-lgv{display:inline-block;width:40px;height:5px;margin-right:6px;border-radius:3px;background:linear-gradient(90deg,var(--t5-v0),var(--t5-v1));vertical-align:middle}
+.t5-lgp{display:inline-block;width:8px;height:8px;margin-right:5px;border-radius:50%;background:var(--t5-pt);box-shadow:0 0 0 1px var(--t5-ptk);vertical-align:middle}
+.t5-lgh{color:var(--ink-3)}

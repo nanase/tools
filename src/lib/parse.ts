@@ -66,6 +66,7 @@ export type Unit =
   | 'mL/s'
   | 'L/s'
   | 'm³/s'
+  | 'lx'
   | (typeof COMPOUND)[number];
 
 /**

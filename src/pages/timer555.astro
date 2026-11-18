@@ -9,46 +9,70 @@ import Scope from '../components/Scope.astro';
 import SeriesSwitch from '../components/SeriesSwitch.astro';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import '../tools/timer555/style.css';
+import { CIRCUITS } from '../tools/timer555/circuits';
 import { PARAMS } from '../tools/timer555/params';
 import Schematic from '../tools/timer555/Schematic.astro';
 import Theory from '../tools/timer555/Theory.astro';
 
 const name = 'タイマIC 555';
+const GROUPS: [string, string[]][] = [
+  ['発振する回路', ['astable', 'diode', 'pwm', 'alt', 'vco', 'dark']],
+  ['押すと動く回路', ['mono', 'bistable']],
+  ['入力で切り替わる回路', ['schmitt']],
+];
+const ORDER = ['r1', 'r2', 'pos', 'c1', 'cv', 'lux', 'vin'];
+const main = ORDER.map((k) => PARAMS.find((d) => d.k === k)).filter((d) => d !== undefined);
+const playIcon =
+  '<svg class="i-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.2l7.6 4.8L3 10.8z"/></svg><svg class="i-pause" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="2.8" height="9"/><rect x="7.2" y="1.5" width="2.8" height="9"/></svg>';
 ---
 <SiteLayout title={name} tool={{ id: 'timer555', name }} note="計算結果は理想素子モデルによる参考値です。">
-  <PageTitle title={name}>555 を非安定マルチバイブレータとして使うときの発振周波数・デューティ比・出力波形を求めます。抵抗 2 本とコンデンサ 1 個の値、電源電圧を変えると、結果と波形がすぐに変わります。</PageTitle>
+  <PageTitle title={name}>555 の応用回路 9 種を動かし、出力波形と回路の電圧・電流を見ます。抵抗とコンデンサの値、電源電圧を変えると、計算結果と波形がすぐに変わります。</PageTitle>
 
-  <div class="tgrid">
+  <div class="tgrid t5-grid">
     <div class="col">
-      <Panel hid="hd-in" title="入力" class="a-in">
-        <SeriesSwitch slot="aux" id="eser" />
-        <div class="ptab">{PARAMS.filter((d) => d.k !== 'vcc').map((d) => <ParamRow d={d} />)}</div>
-        <More id="g-in"><div class="ptab">{PARAMS.filter((d) => d.k === 'vcc').map((d) => <ParamRow d={d} />)}</div></More>
+      <Panel hid="hd-sch" title="回路図" class="a-sch" fixed>
+        <div class="t5-pick">
+          <button type="button" class="t5-pv" id="t5-prev" title="前の回路" aria-label="前の回路"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M7.5 2.5L4 6l3.5 3.5"/></svg></button>
+          <div class="t5-selw"><select id="t5-cir" aria-label="回路" autocomplete="off">
+            {GROUPS.map(([g, ids]) => (
+              <optgroup label={g}>{ids.map((id) => <option value={id} selected={id === 'astable'}>{CIRCUITS.find((c) => c.id === id)?.name}</option>)}</optgroup>
+            ))}
+          </select></div>
+          <button type="button" class="t5-pv" id="t5-next" title="次の回路" aria-label="次の回路"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M4.5 2.5L8 6l-3.5 3.5"/></svg></button>
+          <span class="t5-use" id="t5-use">LED の点滅・ブザー・クロック</span>
+        </div>
+        <Schematic />
+        <div class="t5-tp">
+          <button type="button" class="tp-pp on" id="t5-pp" title="一時停止" aria-label="一時停止" set:html={playIcon} />
+          <span class="t5-rate hw" id="t5-rate" data-ph="実際の 1/88,888 の速さ"></span>
+          <div class="seg t5-sp" id="t5-sp" role="group" aria-label="速さ" data-nosave>
+            <button type="button" data-v="slow" aria-pressed="true">ゆっくり</button><button type="button" data-v="normal" aria-pressed="false">ふつう</button><button type="button" data-v="real" aria-pressed="false">実時間</button>
+          </div>
+          <button type="button" class="chip t5-pw" id="t5-pw" aria-pressed="true">電源</button>
+        </div>
+        <div class="sbar static lg t5-lg">
+          <span class="stag"><i class="t5-lgv" aria-hidden="true"></i>電圧 0 V〜V<sub>CC</sub></span>
+          <span class="stag"><i class="t5-lgp" aria-hidden="true"></i>電流</span>
+          <span class="stag t5-lgh">電源・ボタン・つまみは図で操作</span>
+        </div>
       </Panel>
 
-      <Panel hid="hd-out" title="計算結果" class="a-out">
-        <dl class="metrics">
-          <div class="m m-main"><dt>発振周波数 <i>f</i></dt><dd id="o-f"></dd></div>
-          <div class="m"><dt>H レベル時間 <i>t</i><sub>H</sub></dt><dd id="o-tH"></dd></div>
-          <div class="m"><dt>L レベル時間 <i>t</i><sub>L</sub></dt><dd id="o-tL"></dd></div>
-          <div class="m"><dt>周期 <i>T</i></dt><dd id="o-T"></dd></div>
-          <div class="m"><dt>デューティ比 <i>D</i></dt><dd id="o-D"></dd></div>
-          <div class="m"><dt><i>R</i><sub>1</sub> の最大電流</dt><dd id="o-I"></dd></div>
-          <div class="m"><dt><i>R</i><sub>1</sub> の最大損失</dt><dd><span id="o-P"></span><span class="m-note" id="o-Pn"></span></dd></div>
-        </dl>
+      <Panel hid="hd-wave" title="出力波形" class="a-wave">
+        <Scope id="wave" label="出力波形" ch1="OUT" ch1Title="出力（3 番ピン）" ch2="V<sub>C1</sub>" ch2Title="C1 の電圧（2・6 番ピン）" trig="CH1 ↑" rows={3} zero={0}>
+          <Fragment slot="overlay"><path class="th" id="thr-l"/><text class="tl" id="thr-t2" x="396" text-anchor="end"></text><text class="tl" id="thr-t1" x="396" text-anchor="end"></text></Fragment>
+        </Scope>
       </Panel>
     </div>
 
     <div class="col">
-      <Panel hid="hd-wave" title="出力波形" class="a-wave">
-        <span slot="aux" class="aux">定常状態</span>
-        <Scope id="wave" label="出力波形" ch1="OUT" ch1Title="出力（3 番ピン）" ch2="V<sub>C1</sub>" ch2Title="C1 の電圧（2・6 番ピン）" trig="CH1 ↑">
-          <Fragment slot="overlay"><path class="th" id="thr-l"/><text class="tl" id="thr-t2" x="396" text-anchor="end"></text><text class="tl" id="thr-t1" x="396" text-anchor="end"></text></Fragment>
-        </Scope>
+      <Panel hid="hd-in" title="入力" class="a-in">
+        <SeriesSwitch slot="aux" id="eser" />
+        <div class="ptab">{main.map((d) => <ParamRow d={d} />)}</div>
+        <More id="g-in"><div class="ptab">{PARAMS.filter((d) => d.k === 'vcc').map((d) => <ParamRow d={d} />)}</div></More>
       </Panel>
 
-      <Panel hid="hd-sch" title="回路図" class="a-sch">
-        <Schematic />
+      <Panel hid="hd-out" title="計算結果" class="a-out">
+        <dl class="metrics" id="t5-m"></dl>
       </Panel>
     </div>
 

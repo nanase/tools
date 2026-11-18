@@ -16,10 +16,13 @@ interface Props {
   trig: string;
   /** CH1 の目盛りが動きの中で変わるとき、最も長い値の例（その幅を保つ） */
   vdPh?: string;
+  /** 縦の div の数（既定 6）。0 V は下から zero div（既定 1） */
+  rows?: number;
+  zero?: number;
 }
-const { id, label, ch1, ch1Title, ch2, ch2Title, trig, vdPh } = Astro.props;
+const { id, label, ch1, ch1Title, ch2, ch2Title, trig, vdPh, rows = 6, zero = 1 } = Astro.props;
 ---
-<div id={id}>
+<div id={id} data-rows={rows === 6 ? undefined : rows} data-zero={zero === 1 ? undefined : zero}>
   <div class="sbar">
     <span class="stag" title={ch1Title}><i class="sw" aria-hidden="true"></i>CH1 {ch1} <b class:list={['s-vd', { hw: vdPh }]} data-ph={vdPh}></b>/div</span>
     {ch2 && <button type="button" class="tg" id={`${id}-ch2`} aria-pressed="true" title={ch2Title}><i class="sw c2" aria-hidden="true"></i>CH2 <Fragment set:html={ch2} /></button>}
@@ -27,8 +30,8 @@ const { id, label, ch1, ch1Title, ch2, ch2Title, trig, vdPh } = Astro.props;
     <span class="stag">TRIG {trig}</span>
   </div>
   <div class="scope">
-    <svg viewBox="-50 -14 462 280" role="img" aria-label={label}>
-      <g set:html={gridSvg()} />
+    <svg viewBox={`-50 -14 462 ${rows * 40 + 40}`} role="img" aria-label={label}>
+      <g set:html={gridSvg(rows)} />
       <g class="c2x"><slot name="overlay" /></g>
       {ch2 && <path class="t2 c2x" />}
       <path class="t1" />
