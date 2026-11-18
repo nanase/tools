@@ -321,6 +321,13 @@ const RX_FPS = 3;
 /** 画像の拡大縮小の図柄のドット絵（屋根 a・壁 b・戸 c） */
 const RZ_SPRITE = ['...aa...', '..aaaa..', '.aaaaaa.', 'aaaaaaaa', '.bbbbbb.', '.bbccbb.', '.bbccbb.', '.bbccbb.'];
 
+/**
+ * 日の出と日の入りの図柄の陸地: Natural Earth 110 m の陸地を緯度 78°〜−58° の正距円筒で枠（4〜116・4〜44）に写し、
+ * Douglas-Peucker（許容 0.6）で粗くした輪郭
+ */
+const SUN_LAND =
+  'M76 31L75 34L74 34L74 32ZM105 31L108 35L107 38L104 38L103 37L103 37L102 37L101 36L96 37L96 33L99 31L100 31L101 30L102 30L102 31L104 32L104 30ZM102 27L105 28L107 30L103 29L103 29L101 27ZM93 29L90 25L92 27ZM97 26L96 28L94 27L96 25L97 25ZM104 16L101 17L101 18L100 17L104 15ZM59 10L60 12L58 12L59 11L58 10ZM32 6L35 7L31 9L31 10L31 10L34 11L35 12L36 10L36 9L37 9L39 10L40 9L43 12L38 13L40 12L40 13L41 13L39 14L36 15L36 16L35 18L35 20L34 18L30 19L30 21L33 21L32 22L34 22L35 24L38 23L38 24L38 23L41 24L44 26L44 27L49 29L47 33L45 34L43 37L42 37L42 38L40 39L39 41L38 43L37 42L36 41L37 39L38 33L35 29L36 26L36 24L28 22L25 18L26 20L21 15L22 13L18 10L13 10L13 9L9 11L11 10L8 9L10 8L8 8L10 7L8 7L11 6L26 7L30 7L30 6ZM24 5L29 6L24 7L25 6L23 6ZM33 5L41 7L39 7L40 8L39 8L39 9L36 8L37 7L32 6L32 6ZM78 6L76 6L77 5L81 4L78 5L77 6ZM93 4L96 5L94 5L100 5L101 6L104 6L115 6L116 7L116 8L115 8L116 9L111 9L109 12L109 10L111 9L104 10L102 11L104 12L103 13L100 15L100 17L99 17L99 15L98 16L98 15L97 15L98 16L97 17L98 19L96 20L93 21L94 23L93 24L91 23L91 24L92 27L88 20L85 22L84 25L83 21L81 19L75 18L76 20L78 19L79 20L77 22L74 23L70 18L73 23L76 24L72 28L73 31L71 33L71 34L69 37L66 37L64 32L64 30L63 27L63 26L61 25L58 26L55 23L55 21L58 16L63 16L63 17L66 18L67 17L71 18L71 16L69 16L68 15L73 15L71 14L72 13L71 14L70 13L69 15L67 15L67 16L64 13L66 15L65 16L63 14L61 14L59 16L57 16L57 14L60 14L59 13L63 11L63 10L63 10L63 11L66 11L67 10L69 9L67 9L67 8L66 8L65 10L62 10L62 9L65 7L69 6L73 7L70 7L72 8L74 8L74 7L81 7L81 6L82 5L83 6L83 7L83 7L83 6ZM75 15L75 16L77 16L77 15L76 14L77 13L75 14ZM52 4L56 4L54 4L54 4L53 4L54 5L52 6L53 6L52 6L53 6L48 8L46 9L44 8L43 7L44 6L43 6L44 6L42 5L37 4Z';
+
 const TAU = 2 * Math.PI;
 const r1 = (v: number): number => Math.round(v * 10) / 10;
 const mod = (a: number, n: number): number => ((a % n) + n) % n;
@@ -2689,6 +2696,27 @@ export const ART: Record<string, Art> = {
       P('a', out)
     );
   },
+  /* 日の出と日の入り: 陸地の輪郭に夜の側を塗り、太陽が真上の地点が 1 コマに 15°（1 時間）ずつ西へ進む。赤緯は +20° */
+  sun(t) {
+    const LAT0 = 78,
+      LAT1 = -58,
+      dec = 20 * (Math.PI / 180),
+      X = (lon: number): number => 4 + ((lon + 180) / 360) * 112,
+      Y = (lat: number): number => 4 + ((LAT0 - lat) / (LAT0 - LAT1)) * 40,
+      slon = mod(150 - Math.floor(t / 0.25) * 15 + 180, 360) - 180;
+    const night: [number, number][] = [];
+    for (let lon = -180; lon <= 180; lon += 6) {
+      const lt = Math.atan(-Math.cos(((lon - slon) * Math.PI) / 180) / Math.tan(dec)) / (Math.PI / 180);
+      night.push([X(lon), Y(clamp(lt, LAT1, LAT0))]);
+    }
+    return (
+      `<clipPath id="ca-sun"><rect x="4" y="4" width="112" height="40"/></clipPath>` +
+      `<g clip-path="url(#ca-sun)"><path class="fc" d="${pl(night)}L116 44L4 44Z"/></g>` +
+      P('c t', SUN_LAND) +
+      P('c t', 'M4 4H116V44H4Z') +
+      `<circle class="fa" cx="${r1(X(slon))}" cy="${r1(Y(20))}" r="3.4"/>`
+    );
+  },
   /*
    * 天体衝突: 丸い天体の縁へ衝突体が落ち、穴が 4 段で開く。破片は遠くへ去る筋と、地表へ落ちる粒に分かれる。
    * 止まっているときは落下の途中で、地表はまだ変わっていない。1 周は 53 コマ（12 コマ/秒）
@@ -3288,6 +3316,7 @@ export const LOOP: Record<string, number> = {
   mn: TAU / 0.9,
   jv: 12.8,
   st: 12.8,
+  sun: 6,
   svg: TAU / 2.4,
   tu: 3,
   tm: Math.PI / 1.2,
