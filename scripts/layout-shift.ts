@@ -14,10 +14,8 @@
  * - 図（canvas・svg・img・video）の大きさ、動作原理と式の枠、「その他」の開閉
  * - data-shift="ok" を付けた要素の中（入力した文字の長さで決まる欄、切り替えで中身ごと入れ替わる表など。付けるときは理由をコメントに書く）
  */
-import { spawn } from 'node:child_process';
-import { existsSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { readdirSync } from 'node:fs';
+import { launchHeadless } from './headless';
 
 type Trig = 'idle' | 'play' | 'num' | 'sel' | 'btn';
 interface Rec {
@@ -240,34 +238,11 @@ if (!(await fetch(`${base}/tools/`).catch(() => null))?.ok)
   throw new Error(`${base}/tools/ が開けません。bun run dev で開発サーバを起動してください`);
 
 /* ---------- ブラウザ ---------- */
-const bin = [
-  process.env.BROWSER,
-  'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
-  'C:/Program Files/Microsoft/Edge/Application/msedge.exe',
-  '/usr/bin/microsoft-edge',
-  '/usr/bin/google-chrome',
-  '/usr/bin/chromium',
-]
-  .filter((p): p is string => !!p)
-  .find((p) => existsSync(p));
-if (!bin) throw new Error('ブラウザが見つかりません。環境変数 BROWSER で Edge か Chrome を指してください');
-const prof = mkdtempSync(join(tmpdir(), 'nanase-tools-shift-')),
-  port = 9300 + Math.floor(Math.random() * 600);
-const browser = spawn(
-  bin,
-  [
-    '--headless=new',
-    `--remote-debugging-port=${port}`,
-    '--mute-audio',
-    '--autoplay-policy=no-user-gesture-required',
-    `--user-data-dir=${prof}`,
-    '--no-first-run',
-    '--disable-background-timer-throttling',
-    '--disable-renderer-backgrounding',
-    'about:blank',
-  ],
-  { stdio: 'ignore' },
-);
+const { port, close } = launchHeadless('shift', [
+  '--autoplay-policy=no-user-gesture-required',
+  '--disable-background-timer-throttling',
+  '--disable-renderer-backgrounding',
+]);
 const sleep = (ms: number) => new Promise((ok) => setTimeout(ok, ms));
 
 async function cdp(): Promise<{ webSocketDebuggerUrl: string }> {
@@ -393,7 +368,5 @@ await Promise.all(
     for (const t of tabs.values()) t.ws.close();
   }),
 );
-browser.kill();
-await sleep(500);
-rmSync(prof, { recursive: true, force: true });
+close();
 process.exit(bad ? 1 : 0);
