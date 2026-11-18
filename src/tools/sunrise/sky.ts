@@ -4,7 +4,7 @@
  */
 import { type Day, STEP } from './day';
 import { drawSunMark, fitCanvas, haloText, type RGB, rgb } from './map';
-import { band } from './sun';
+import { apparent, band } from './sun';
 
 const DIR16 = [
   '北',
@@ -40,7 +40,13 @@ const GROUND: readonly RGB[] = [
   [26, 30, 38],
 ];
 const SUN_LINE = '#ffd23a';
-const minus = (s: string) => s.replace(/-/g, '−');
+/** 小数 d 桁の数。−0 を出さず、負の記号は U+2212 */
+export function num(v: number, d: number): string {
+  const s = v.toFixed(d);
+  return Number(s) === 0 ? (0).toFixed(d) : s.replace('-', '−');
+}
+/** 6 月と 12 月の至点の道すじの札。南半球では 12 月が夏至 */
+export const solsticeNames = (lat: number): [string, string] => (lat >= 0 ? ['夏至', '冬至'] : ['冬至', '夏至']);
 const p2 = (n: number) => String(n).padStart(2, '0');
 const dir16 = (az: number): string => DIR16[Math.round(az / 22.5) % 16];
 
@@ -63,10 +69,10 @@ export function factsOf(day: Day, now: { h: number; az: number }, fmt: (ms: numb
   const len =
     day.polar === 'day' ? '24時間00分（白夜）' : day.polar === 'night' ? '0時間00分（極夜）' : duration(day.len);
   return [
-    ['高度', `${minus(now.h.toFixed(1))}°`],
+    ['高度', `${num(now.h, 1)}°`],
     ['方位', `${Math.round(now.az) % 360}°（${dir16(now.az)}）`],
     ['日の出', day.rise === null ? '—' : fmt(day.rise)],
-    ['南中', `${fmt(day.transit)}（${minus(day.maxH.toFixed(0))}°）`],
+    ['南中', `${fmt(day.transit)}（${num(apparent(day.maxH), 0)}°）`],
     ['日の入り', day.set === null ? '—' : fmt(day.set)],
     ['昼の長さ', len],
   ];
@@ -161,13 +167,17 @@ export function drawSky(cv: HTMLCanvasElement, o: SkyInput): void {
     for (let i = 1; i <= d.N; i++) if (d.hs[i] > d.hs[im]) im = i;
     if (d.hs[im] > A0) haloText(ctx, s, X(d.azs[im]), Y(d.hs[im]) + dy, 13, 'center');
   };
-  const [su, wi] = o.solstice;
-  path(su, 'rgba(255,255,255,.75)', 1.2, [3, 4], [3, 4]);
-  path(wi, 'rgba(255,255,255,.75)', 1.2, [3, 4], [3, 4]);
+  const [jun, dec] = o.solstice;
+  const [nJun, nDec] = solsticeNames(o.lat);
+  path(jun, 'rgba(255,255,255,.75)', 1.2, [3, 4], [3, 4]);
+  path(dec, 'rgba(255,255,255,.75)', 1.2, [3, 4], [3, 4]);
   const d = o.day;
   path(d, SUN_LINE, 2.5, [], [5, 4]);
-  peak(su, '夏至', -10);
-  peak(wi, '冬至', 12);
+  /* 高い道すじの札は頂点の上、低い道すじの札は頂点の下に置き、今日の道すじと重ねない */
+  const top = (x: Day) => Math.max(...x.hs);
+  const junHigh = top(jun) >= top(dec);
+  peak(jun, nJun, junHigh ? -10 : 12);
+  peak(dec, nDec, junHigh ? 12 : -10);
   /* 1 時間ごとの点、3 時間ごとの時刻、時刻の間の進む向きの矢じり */
   const per = 36e5 / STEP;
   for (let i = 0; i <= d.N; i += per) {

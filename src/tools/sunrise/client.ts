@@ -2,20 +2,19 @@
  * 日の出と日の入りのページ: 時刻（UTC の瞬間）と地点から、昼と夜の世界地図を描く。
  * 1 日の区切りはいつも地点の現地。時刻の表示だけを現地・日本時間・世界時で切り替える
  */
-import { jdToCal } from '../../lib/astro/time';
 import { Choice } from '../../lib/choice';
 import { DatePicker } from '../../lib/date-picker';
-import { dateTimeToJd, toDateTime } from '../../lib/date-picker-core';
 import { $ } from '../../lib/dom';
-import { type Place, SitePicker } from '../../lib/planet/site';
+import { type Place, SitePicker, TOKYO } from '../../lib/planet/site';
+import { store, stored } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
 import { type LandMask, landMask, type Rings } from '../solar-eclipse/land';
 import { type Day, dayOf } from './day';
 import { coastPath, drawMap, lonLatAt } from './map';
 import type { Disp, Speed } from './params';
-import { drawSky, factsOf } from './sky';
+import { drawSky, factsOf, num } from './sky';
 import { apparent, BANDS, band, geoAltAz, siteSun, sunEq } from './sun';
-import { approx, localDay, lookupZone, offText, zoneOffset } from './tz';
+import { approx, fromWall, localDay, lookupZone, offText, wallMs, zoneOffset } from './tz';
 import { yearGrid } from './year';
 import { drawYear, type YearGeom, yearPick } from './yearview';
 
@@ -25,10 +24,7 @@ const txt = (id: string, s: string) => {
   const e = document.querySelector(id);
   if (e && e.textContent !== s) e.textContent = s;
 };
-const minus = (s: string) => s.replace(/-/g, '−');
 const WD = ['日', '月', '火', '水', '木', '金', '土'];
-const jdOf = (ms: number) => ms / 864e5 + 2440587.5;
-const msOf = (jd: number) => (jd - 2440587.5) * 864e5;
 
 /* ---------- 表示の設定 ---------- */
 const tz$ = new Choice<Disp>($('#p-tz'), () => later());
@@ -44,18 +40,37 @@ const picker = new SitePicker(
     findZone();
     later();
   },
-  (o) => `高度 ${minus(apparent(geoAltAz(sunEq(T), o.lat, o.lon).h).toFixed(0))}°`,
+  (o) => `高度 ${num(apparent(geoAltAz(sunEq(T), o.lat, o.lon).h), 0)}°`,
 );
-/** 地点の時間帯を引き直す。引けるまでは経度から割り出した差で描く */
+/** 時間帯を引いている間（「経度から概算」の札を出さない） */
+let zonePending = false;
+/**
+ * 地点の時間帯を引き直す。引けるまでは経度から割り出した差で描く。
+ * 引けた時間帯は地点と一緒に覚え、開き直したときは表を読まずに使う。既定の東京は表を読まない
+ */
 function findZone(): void {
   const { lat, lon } = picker.place;
   const key = `${lat},${lon}`;
   if (key === zoneKey) return;
   zoneKey = key;
+  const memo = stored('zone') as { key?: string; zone?: string } | undefined;
+  if (memo?.key === key && typeof memo.zone === 'string') {
+    zone = memo.zone;
+    zonePending = false;
+    return;
+  }
+  if (lat === TOKYO.lat && lon === TOKYO.lon) {
+    zone = 'Asia/Tokyo';
+    zonePending = false;
+    return;
+  }
   zone = null;
+  zonePending = true;
   lookupZone(lat, lon).then((z) => {
     if (zoneKey !== key) return;
     zone = z;
+    zonePending = false;
+    if (z) store('zone', { key, zone: z });
     later();
   });
 }
@@ -68,17 +83,39 @@ function fmt(ms: number): string {
   const d = new Date(ms + offDisp(ms));
   return `${d.getUTCHours()}:${p2(d.getUTCMinutes())}`;
 }
+/** 表示の時間帯の暦の日時（カレンダーに渡す） */
+function wallOf(ms: number): {
+  year: number;
+  month: number;
+  day: number;
+  hour: number;
+  minute: number;
+  second: number;
+} {
+  const d = new Date(ms + offDisp(ms));
+  return {
+    year: d.getUTCFullYear(),
+    month: d.getUTCMonth() + 1,
+    day: d.getUTCDate(),
+    hour: d.getUTCHours(),
+    minute: d.getUTCMinutes(),
+    second: d.getUTCSeconds(),
+  };
+}
 function zoneLabel(): string {
   if (tz$.value === 'jst') return 'JST';
   if (tz$.value === 'ut') return 'UT';
-  return `${offText(offLocal(T))}${approx(zone) ? '（経度から概算）' : ''}`;
+  return `${offText(offLocal(T))}${approx(zone) && !zonePending ? '（経度から概算）' : ''}`;
 }
 
 /* ---------- 時刻 ---------- */
 let T = Date.now();
 let live = true;
 let raf = 0;
+/** 操作や地点・表示の変化で描き直しが要る */
+let dirty = true;
 function later(): void {
+  dirty = true;
   if (!raf) raf = requestAnimationFrame(frame);
 }
 function setT(v: number, keepLive = false): void {
@@ -101,9 +138,9 @@ $('#nowbtn').addEventListener('click', () => {
   setLive(true);
 });
 const datePicker = new DatePicker($('#dp'), {
-  get: () => toDateTime(jdToCal(jdOf(T + offDisp(T)))),
-  set: (v) => setT(msOf(dateTimeToJd(v, offDisp(T) / 36e5))),
-  today: () => jdToCal(jdOf(Date.now() + offDisp(Date.now()))),
+  get: () => wallOf(T),
+  set: (v) => setT(fromWall(wallMs(v), offDisp)),
+  today: () => wallOf(Date.now()),
 });
 
 /* ---------- 再生 ---------- */
@@ -273,7 +310,7 @@ ycv.addEventListener('pointermove', (e) => {
   const c = new Date(t + offLocal(t));
   txt(
     '#y-read',
-    `${c.getUTCMonth() + 1}月${c.getUTCDate()}日 ${fmt(t)} ${BANDS[band(h)]}（高度 ${minus(apparent(h).toFixed(1))}°）`,
+    `${c.getUTCMonth() + 1}月${c.getUTCDate()}日 ${fmt(t)} ${BANDS[band(h)]}（高度 ${num(apparent(h), 1)}°）`,
   );
   if (ydown) setT(t);
 });
@@ -289,12 +326,30 @@ function drawClock(): void {
   txt('#o-date', `${d.getUTCFullYear()}-${p2(d.getUTCMonth() + 1)}-${p2(d.getUTCDate())}（${WD[d.getUTCDay()]}）`);
   datePicker.sync();
 }
+/** 前に描いた時刻と時計 */
+let drawnT = Number.NaN;
+let drawnAt = 0;
+/**
+ * 再生中に描くか: 操作のあとはいつも描く。実時間は 1 秒に 1 回、10 日/秒は日が進んだときだけ、
+ * 1 時間/秒は 1 秒に 30 回まで（地図は画素ごとに計算するので毎フレームは重い）
+ */
+function due(now: number): boolean {
+  if (dirty) return true;
+  const sp = sp$.value;
+  if (sp === 'real') return Math.floor(T / 1000) !== Math.floor(drawnT / 1000);
+  if (sp === 'day') return T !== drawnT;
+  return now - drawnAt >= 33;
+}
 function frame(now: number): void {
   raf = 0;
   if (playing) {
     advance(now);
     raf = requestAnimationFrame(frame);
   }
+  if (!due(now)) return;
+  dirty = false;
+  drawnT = T;
+  drawnAt = now;
   drawClock();
   drawMap(mcv, { sun: sunEq(T), mask, coast, pin: picker.place });
   const d = today();

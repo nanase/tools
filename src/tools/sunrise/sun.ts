@@ -75,8 +75,11 @@ export function subsolar(s: SunEq): { lat: number; lon: number } {
   return { lat: s.dec / D, lon };
 }
 
-/** 大気差を足した見かけの高度 [°] */
-export const apparent = (h: number): number => h + refraction(h);
+/**
+ * 大気差を足した見かけの高度 [°]。共通の refraction は −1° より下で一定の値を返すので、
+ * −1°〜−2° で 0 まで減らし、それより下は足さない（薄明の段の境と数値を合わせる）
+ */
+export const apparent = (h: number): number => (h >= -1 ? h + refraction(h) : h + refraction(-1) * Math.max(0, h + 2));
 
 /** 地点から見た今の太陽（地心でなく地点からの向き）: 見かけの高度 h、大気差なしの高度 hGeo、方位 az [°] */
 export function siteSun(ms: number, lat: number, lon: number): { h: number; hGeo: number; az: number } {

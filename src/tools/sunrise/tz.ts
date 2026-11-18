@@ -73,3 +73,24 @@ export function localDay(ms: number, off: (ms: number) => number): [number, numb
   const d0 = midnight(u, off, ms);
   return [d0, midnight(u + 864e5, off, d0 + 864e5)];
 }
+
+/** 暦の日時（壁の時計の読み）を、UTC で数えた値にする。1〜99 年も Date.UTC のように 1900 年代へ寄せない */
+export function wallMs(v: {
+  year: number;
+  month: number;
+  day: number;
+  hour: number;
+  minute: number;
+  second: number;
+}): number {
+  const d = new Date(0);
+  d.setUTCFullYear(v.year, v.month - 1, v.day);
+  d.setUTCHours(v.hour, v.minute, v.second, 0);
+  return d.getTime();
+}
+
+/** 壁の時計の読み wall（UTC で数えた値）にあたる瞬間。その瞬間の時差で引き直すので、夏時間の向こう側でもずれない */
+export function fromWall(wall: number, off: (ms: number) => number): number {
+  const t = wall - off(wall);
+  return wall - off(t);
+}

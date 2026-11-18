@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { dayOf } from '../src/tools/sunrise/day';
 import { lonLatAt } from '../src/tools/sunrise/map';
-import { factsOf, skyCenter, skyX } from '../src/tools/sunrise/sky';
-import { band, geoAltAz, siteSun, subsolar, sunEq, sunEqLow } from '../src/tools/sunrise/sun';
-import { approx, localDay, lookupZone, offText, zoneOffset } from '../src/tools/sunrise/tz';
+import { factsOf, num, skyCenter, skyX, solsticeNames } from '../src/tools/sunrise/sky';
+import { apparent, band, geoAltAz, siteSun, subsolar, sunEq, sunEqLow } from '../src/tools/sunrise/sun';
+import { approx, fromWall, localDay, lookupZone, offText, wallMs, zoneOffset } from '../src/tools/sunrise/tz';
 import { yearGrid } from '../src/tools/sunrise/year';
 import { yearPick } from '../src/tools/sunrise/yearview';
 
@@ -200,5 +200,42 @@ describe('1 年の図', () => {
   it('図の外は null', () => {
     expect(yearPick(10, 10, g)).toBeNull();
     expect(yearPick(60, 150, g)).toBeNull();
+  });
+});
+
+describe('見直しで見つかった点', () => {
+  const ny = (ms: number) => zoneOffset('America/New_York', -74, ms);
+
+  it('夏時間の向こう側の日時を選んでも、その日の時差で瞬間にする', () => {
+    expect(fromWall(Date.UTC(2026, 0, 15, 12), ny)).toBe(Date.UTC(2026, 0, 15, 17));
+    expect(fromWall(Date.UTC(2026, 6, 1, 12), ny)).toBe(Date.UTC(2026, 6, 1, 16));
+  });
+
+  it('暦の日時はミリ秒ちょうどに直る（1 分ずれない）', () => {
+    expect(wallMs({ year: 2026, month: 3, day: 8, hour: 5, minute: 0, second: 0 })).toBe(Date.UTC(2026, 2, 8, 5));
+    expect(new Date(wallMs({ year: 50, month: 1, day: 1, hour: 0, minute: 0, second: 0 })).getUTCFullYear()).toBe(50);
+  });
+
+  it('地平線の下では大気差を足さない', () => {
+    expect(apparent(-6.3)).toBe(-6.3);
+    expect(apparent(-30)).toBe(-30);
+    expect(apparent(0)).toBeGreaterThan(0.4);
+    expect(Math.abs(apparent(-1) - apparent(-1.0001))).toBeLessThan(0.01);
+  });
+
+  it('−0 を出さない', () => {
+    expect(num(-0.04, 1)).toBe('0.0');
+    expect(num(-0.4, 0)).toBe('0');
+    expect(num(-12.34, 1)).toBe('−12.3');
+  });
+
+  it('南中の高度も見かけの値', () => {
+    const d = dayOf(...TOKYO, ...jstDay(2026, 12, 22));
+    expect(factsOf(d, { h: 10, az: 180 }, () => 'x')[3][1]).toBe(`x（${num(apparent(d.maxH), 0)}°）`);
+  });
+
+  it('夏至・冬至の札は南半球で入れ替える（6 月の道すじ, 12 月の道すじ）', () => {
+    expect(solsticeNames(35)).toEqual(['夏至', '冬至']);
+    expect(solsticeNames(-33)).toEqual(['冬至', '夏至']);
   });
 });
