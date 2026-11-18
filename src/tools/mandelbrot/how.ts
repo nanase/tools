@@ -57,7 +57,7 @@ function label(c: G, s: string, x: number, y: number, col: string, al: CanvasTex
 }
 
 /** 色の帯の画像を画素ごとに作る（f32 なら単精度を模す）。putImageData は拡大されないので別の canvas に作る */
-function field(cx: number, cy: number, h: number, N: number, f32: boolean): HTMLCanvasElement {
+function field(cx: number, cy: number, h: number, N: number, f32: boolean, den = 0.55): HTMLCanvasElement {
   const W = CW,
     H = CH,
     cv = document.createElement('canvas');
@@ -94,7 +94,7 @@ function field(cx: number, cy: number, h: number, N: number, f32: boolean): HTML
         img.data.set([0, 0, 0, 255], k);
         continue;
       }
-      const t = (((Math.log(v + 1) * 0.55) % 1) + 1) % 1,
+      const t = (((Math.log(v + 1) * den) % 1) + 1) % 1,
         q = t * st.length,
         a = Math.floor(q),
         b = (a + 1) % st.length,
@@ -119,7 +119,7 @@ const DRAWS: ((c: G, C: Cols) => void)[] = [
     c.setLineDash([]);
     poly(
       c,
-      orbitPts(-0.6, 0.45, 40).map(([x, y]) => P(x, y)),
+      orbitPts(-0.3, 0.5, 40).map(([x, y]) => P(x, y)),
       C.b,
     );
     poly(
@@ -131,14 +131,14 @@ const DRAWS: ((c: G, C: Cols) => void)[] = [
   },
   /* 2 逃げる速さで色 */
   (c) => c.drawImage(field(-0.6, 0, 1.25, 120, false), 0, 0, CW, CH),
-  /* 3 単精度の限界: 左が単精度、右が倍精度。×10⁵ のタツノオトシゴの谷 */
+  /* 3 単精度の限界: 左が単精度、右が倍精度。×10⁶ の二重の渦 */
   (c, C) => {
-    const cx = -0.743643887037158,
-      cy = 0.131825904205312,
-      h = 1.5e-5;
+    const cx = -0.77568377,
+      cy = 0.13646737,
+      h = 5e-7;
     /* 同じ場所を左右に半分ずつ */
-    c.drawImage(field(cx, cy, h, 400, true), 0, 0, CW / 2, CH, 0, 0, CW / 2, CH);
-    c.drawImage(field(cx, cy, h, 400, false), CW / 2, 0, CW / 2, CH, CW / 2, 0, CW / 2, CH);
+    c.drawImage(field(cx, cy, h, 1600, true, 3), 0, 0, CW / 2, CH, 0, 0, CW / 2, CH);
+    c.drawImage(field(cx, cy, h, 1600, false, 3), CW / 2, 0, CW / 2, CH, CW / 2, 0, CW / 2, CH);
     c.fillStyle = C.scr;
     c.fillRect(CW / 2 - 1, 0, 2, CH);
     for (const [s, x] of [
@@ -152,9 +152,9 @@ const DRAWS: ((c: G, C: Cols) => void)[] = [
   },
   /* 4 基準の点と差: 基準の軌道（青）と近くの点の軌道（黄）、差を細い線で */
   (c, C) => {
-    const P = mapper(-0.35, 0.05, 0.75);
-    const A = orbitPts(-0.52, 0.56, 9),
-      B = orbitPts(-0.47, 0.6, 9);
+    const P = mapper(-0.2, 0.32, 0.5);
+    const A = orbitPts(-0.2, 0.62, 14),
+      B = orbitPts(-0.16, 0.66, 14);
     c.strokeStyle = C.grid;
     c.lineWidth = 1;
     for (let k = 1; k < Math.min(A.length, B.length); k++) {

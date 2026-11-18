@@ -65,6 +65,7 @@
   #mb-cv{aspect-ratio:1}
   .mb-tr{top:46px;left:8px;right:8px;justify-content:flex-start}
   .mb-fcol{position:static;width:auto;max-height:none;padding:8px;overflow:visible}
+  .mb-fcol:not(:has(>:not([hidden]))){display:none}
   .mb-ju{position:static;width:auto;max-width:260px;margin:0 8px 8px}
   .mb-stage.mb-plo .mb-ju{bottom:auto}
   .mb-strip{position:static;margin:0 8px 8px}

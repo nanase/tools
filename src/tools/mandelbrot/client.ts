@@ -264,7 +264,11 @@ const padSet = (e: PointerEvent): void => {
   setF({ ...f, pre: snapMix(a), post: snapMix(b) });
 };
 pad.addEventListener('pointerdown', (e) => {
-  pad.setPointerCapture(e.pointerId);
+  try {
+    pad.setPointerCapture(e.pointerId);
+  } catch {
+    /* 合成のイベントなど、捕まえられない指 */
+  }
   padDrag = true;
   padSet(e);
 });
@@ -387,7 +391,8 @@ for (const b of $$<HTMLButtonElement>('.mb-place'))
   });
 for (const b of $$<HTMLButtonElement>('[data-z]')) b.addEventListener('click', () => view.zoomBy(+(b.dataset.z ?? 1)));
 $('#mb-home').addEventListener('click', () => {
-  const m = FAMS.find((q) => q.id === (famOf(f) ?? 'm')) ?? FAMS[0];
+  /* 変形の途中なら行き先の種類の全体へ */
+  const m = FAMS.find((q) => q.id === (famOf(morph?.to ?? f) ?? 'm')) ?? FAMS[0];
   view.jump(fromDec(m.home[0]), fromDec(m.home[1]), m.home[2]);
   moved();
 });
@@ -416,7 +421,11 @@ const ptrs = new Map<number, [number, number]>();
 let pinch: { mid: [number, number]; dist: number } | null = null,
   down: { x: number; y: number; t: number; far: boolean; touch: boolean } | null = null;
 cv.addEventListener('pointerdown', (e) => {
-  cv.setPointerCapture(e.pointerId);
+  try {
+    cv.setPointerCapture(e.pointerId);
+  } catch {
+    /* 合成のイベントなど、捕まえられない指 */
+  }
   ptrs.set(e.pointerId, [e.clientX, e.clientY]);
   cv.classList.add('drag');
   pinch = null;
