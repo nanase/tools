@@ -9,7 +9,7 @@ const RP: [number, string][] = [
   [100e3, '100k'],
 ];
 
-export type Key = 'r1' | 'r2' | 'c1' | 'vcc';
+export type Key = 'r1' | 'r2' | 'c1' | 'vcc' | 'pos' | 'cv' | 'lux' | 'vin';
 
 export const PARAMS: (ParamDef & { k: Key })[] = [
   {
@@ -76,6 +76,83 @@ export const PARAMS: (ParamDef & { k: Key })[] = [
       [5, '5'],
       [9, '9'],
       [18, '18'],
+    ],
+  },
+  {
+    k: 'pos',
+    nm: 'つまみ',
+    sym: '',
+    name: 'VR のつまみ',
+    sub: '充電側の割合',
+    unit: '%',
+    min: 1,
+    max: 99,
+    v: 50,
+    lin: { step: 1, big: 10 },
+    ph: '例 30',
+    pre: [
+      [10, '10'],
+      [50, '50'],
+      [90, '90'],
+    ],
+  },
+  {
+    k: 'cv',
+    nm: 'VCV',
+    sym: '<i>V</i><sub>CV</sub>',
+    name: 'CV の電圧',
+    sub: '5 番ピン',
+    unit: 'V',
+    min: 0.5,
+    max: 18,
+    v: 3.3,
+    lin: { step: 0.1, big: 1 },
+    ph: '例 2.5',
+    pre: [
+      [1, '1'],
+      [2, '2'],
+      [3.3, '3.3'],
+      [4, '4'],
+    ],
+  },
+  {
+    k: 'lux',
+    nm: '明るさ',
+    sym: '',
+    name: '明るさ',
+    sub: 'CdS に当たる光',
+    unit: 'lx',
+    min: 0.1,
+    max: 10000,
+    v: 10,
+    log: true,
+    list: [0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 30, 50, 100, 200, 500, 1000, 2000, 5000, 10000],
+    notation: 'plain',
+    ph: '例 300',
+    pre: [
+      [1, '1', '月明かり程度'],
+      [10, '10', '薄暗い部屋'],
+      [300, '300', '明るい部屋'],
+      [10000, '10000', '曇りの屋外'],
+    ],
+  },
+  {
+    k: 'vin',
+    nm: 'VIN',
+    sym: '<i>V</i><sub>IN</sub>',
+    name: '入力の電圧',
+    sub: '2・6 番ピン',
+    unit: 'V',
+    min: 0,
+    max: 18,
+    v: 2.5,
+    lin: { step: 0.1, big: 1 },
+    sign: 'nonneg',
+    ph: '例 3',
+    pre: [
+      [1, '1'],
+      [2.5, '2.5'],
+      [4, '4'],
     ],
   },
 ];

@@ -48,10 +48,10 @@ export const TOOLS: Tool[] = [
     id: 'timer555',
     c: '電子回路',
     t: 'タイマIC 555',
-    d: '抵抗器とコンデンサを使ったタイマIC555の出力をシミュレートします。',
+    d: 'タイマIC555の応用回路を動かし、波形と電流の流れを見ます。',
     ic: 'sq',
     r: ['passive-combination', 'colorcode', 'oscilloscope', 'logic-gates'],
-    k: 'ne555 発振 非安定 マルチバイブレータ timer シミュレータ simulator',
+    k: 'ne555 発振 非安定 単安定 双安定 マルチバイブレータ シュミットトリガ pwm vco cds timer シミュレータ simulator',
   },
   {
     id: 'passive-combination',
