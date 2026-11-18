@@ -27,6 +27,8 @@
   --grid-2:#b3baad;
   --screen-ink:#4a535a;
   --ic-red:#d0342c;  /* カードの図柄の赤（赤黒木） */
+  /* 虹の 6 色（赤から紫。プリズムとレンズのカードとしくみの絵） */
+  --sp0:#d0342c;--sp1:#e0751a;--sp2:#c9a000;--sp3:#2f9e44;--sp4:#2f6fd0;--sp5:#7a4cc2;
   --rail:#23292e;
   --rail-2:#343c42;
   --rail-ink:#eef0eb;
@@ -49,6 +51,7 @@
     --ch1:#f2c230;--ch2:#52c4dd;--warn:#ff6f8c;--led-off:#3e454a;
     --screen:#08090a;--grid:#1c2428;--grid-2:#3b474e;--screen-ink:#aab3b8;
     --ic-red:#e5483f;
+    --sp0:#ff5a4f;--sp1:#ff9a3c;--sp2:#f2d030;--sp3:#5fd06a;--sp4:#4f9bff;--sp5:#a77bff;
     --rail:#0a0c0d;--rail-2:#20262a;--focus:#80acee;
   }
 }
@@ -60,6 +63,7 @@
   --ch1:#f2c230;--ch2:#52c4dd;--warn:#ff6f8c;--led-off:#3e454a;
   --screen:#08090a;--grid:#1c2428;--grid-2:#3b474e;--screen-ink:#aab3b8;
   --ic-red:#e5483f;
+  --sp0:#ff5a4f;--sp1:#ff9a3c;--sp2:#f2d030;--sp3:#5fd06a;--sp4:#4f9bff;--sp5:#a77bff;
   --rail:#0a0c0d;--rail-2:#20262a;--focus:#80acee;
 }
 
@@ -234,6 +238,9 @@ a.unit:hover h3{text-decoration:underline;text-decoration-color:var(--ink-3);tex
 .ic .t{stroke-width:1}.ic .w{stroke-width:3.5;stroke-linecap:butt}.ic .g{opacity:.45}
 .ic .fa{fill:var(--ch1);stroke:none}.ic .fb{fill:var(--ch2);stroke:none}.ic .fc{fill:var(--screen-ink);stroke:none;opacity:.75}
 .ic .fr{fill:var(--ic-red);stroke:none}
+/* 虹の 6 色の線（s0 赤〜s5 紫）・地で塗る面（fs）・回すつまみ（ka 塗り・kr 線）。プリズムとレンズ */
+.ic .s0{stroke:var(--sp0)}.ic .s1{stroke:var(--sp1)}.ic .s2{stroke:var(--sp2)}.ic .s3{stroke:var(--sp3)}.ic .s4{stroke:var(--sp4)}.ic .s5{stroke:var(--sp5)}
+.ic .fs{fill:var(--screen);stroke:var(--screen-ink)}.ic .ka{fill:var(--accent);stroke:none}.ic .kr{stroke:var(--accent)}
 /* SVG テーマのページの図柄は、サイトのテーマによらず明るい地と暗い地を並べる */
 .ic .pl{fill:#f4f5f1}.ic .pd{fill:#121517}.ic .il{stroke:#15191c}.ic .ih{stroke:#e6e8e4}
 .ic .sn{fill:#e8a020;stroke:none}.ic .sr{stroke:#e8a020}.ic .ml{fill:#dde2da;stroke:#15191c}.ic .md{fill:#283035;stroke:#e6e8e4}

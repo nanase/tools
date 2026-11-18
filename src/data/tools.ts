@@ -456,7 +456,7 @@ export const TOOLS: Tool[] = [
     t: 'カメラレンズ',
     d: '実在のレンズのデータで光線を追跡し、ボケや収差を再現します。',
     ic: 'ln',
-    r: ['focusing-mask', 'demosaic', 'raytracing', 'rolling-shutter'],
+    r: ['focusing-mask', 'prism-lens', 'raytracing', 'rolling-shutter'],
     k: 'lens camera optics レンズ カメラ 光学 光線追跡 ray tracing 絞り aperture f値 焦点距離 focal length ピント focus 被写界深度 depth of field ボケ bokeh 玉ボケ 収差 aberration ザイデル seidel 球面収差 コマ 非点収差 像面湾曲 歪曲 distortion 色収差 chromatic 周辺減光 vignetting ダブルガウス double gauss テッサー tessar トリプレット triplet アクロマート achromat 望遠 広角 webgl',
   },
   {
@@ -465,8 +465,17 @@ export const TOOLS: Tool[] = [
     t: 'ハロ（暈）',
     d: '氷晶に通した光線を追い、日暈や幻日、環天頂アークの空を描きます。',
     ic: 'hl',
-    r: ['lens', 'moon', 'solar-eclipse', 'sunrise'],
+    r: ['lens', 'prism-lens', 'moon', 'sunrise'],
     k: 'halo ハロー 日暈 月暈 暈 かさ 内暈 22度 外暈 46度 幻日 幻月 sun dog parhelion 幻日環 parhelic circle 環天頂アーク circumzenithal 環水平アーク circumhorizontal 太陽柱 sun pillar タンジェントアーク 上端接弧 外接ハロ tangent arc パリーアーク parry ローウィッツアーク lowitz ラテラルアーク 120度幻日 錐面 pyramidal 9度 氷晶 ice crystal 六角柱 巻雲 cirrus ダイヤモンドダスト diamond dust 大気光学 atmospheric optics 大気光象 薄明 夕焼け 地球の影 光線追跡 ray tracing モンテカルロ monte carlo webgl',
+  },
+  {
+    id: 'prism-lens',
+    c: '画像・光学',
+    t: 'プリズムとレンズ',
+    d: 'プリズムやレンズを置き、光の分かれ方を見ます。',
+    ic: 'prl',
+    r: ['lens', 'halo', 'raytracing', 'focusing-mask'],
+    k: 'prism lens optics プリズム レンズ 光学 ペンタプリズム pentaprism 半円形レンズ 半円レンズ semicircular 分光 spectrum スペクトル 虹 rainbow 分散 dispersion 屈折 refraction 屈折率 refractive index スネルの法則 snell 反射 reflection 全反射 total internal reflection 臨界角 critical angle フレネル fresnel 部分反射 凸レンズ 凹レンズ 焦点 焦点距離 focal length 色収差 chromatic aberration 凹面鏡 concave mirror 平面鏡 ハーフミラー beam splitter 水滴 droplet 光ファイバー optical fiber ニュートン newton 白色光 白い光 レーザー laser 波長 wavelength sellmeier セルマイヤー bk7 sf11 クラウンガラス フリントガラス アクリル ダイヤモンド 幾何光学 光線 ray 光学ベンチ',
   },
   {
     id: 'focusing-mask',
@@ -530,7 +539,7 @@ export const TOOLS: Tool[] = [
     t: 'シェーディング',
     d: '同じ光と材質で反射モデルを並べて見比べます。',
     ic: 'sh',
-    r: ['raytracing', 'moon', 'jupiter', 'lens'],
+    r: ['raytracing', 'moon', 'jupiter', 'prism-lens'],
     k: 'shading シェーディング brdf 反射モデル lambert ランバート phong フォン blinn ブリン cook-torrance クック トランス ggx trowbridge-reitz マイクロファセット microfacet pbr 物理ベース physically based レンダリング rendering ローブ lobe ハイライト specular 鏡面 拡散 diffuse フレネル fresnel schlick smith 遮蔽 粗さ roughness 金属 metal メタリック metallic ファーネステスト ホワイトファーネステスト white furnace test 多重散乱 kulla conty グーロー gouraud フラット flat 補間 cg コンピュータグラフィックス',
   },
 

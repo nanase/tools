@@ -1,0 +1,62 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import HowSteps from '../components/HowSteps.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/prism-lens/style.css';
+import { ICON } from '../tools/prism-lens/icons';
+import { NAMES, ORDER } from '../tools/prism-lens/optics';
+import { EV } from '../tools/prism-lens/params';
+import { SCENE_KEYS, SCENES } from '../tools/prism-lens/scenes';
+import { STEPS } from '../tools/prism-lens/steps';
+import Theory from '../tools/prism-lens/Theory.astro';
+
+const name = 'プリズムとレンズ';
+const caps = SCENE_KEYS.map((k) => SCENES[k].cap);
+const longest = caps.reduce((a, b) => (b.length > a.length ? b : a), '');
+---
+<SiteLayout title={name} tool={{ id: 'prism-lens', name }}>
+  <PageTitle title={name}>光源とプリズム・レンズ・鏡を自由に置いて回し、光が曲がり、色ごとに分かれ、跳ね返る様子を見ます。</PageTitle>
+
+  <div class="tgrid" id="pl">
+    <Panel hid="hd-stage" title="光と部品" fixed>
+      <span slot="aux" class="aux hw" id="pl-n" data-ph="光線 999.9 万本" aria-hidden="true"></span>
+      <div class="pl-scenes" id="pl-scenes" role="group" aria-label="場面">
+        {SCENE_KEYS.map((k) => <button type="button" class="chip" data-s={k} aria-pressed="false">{SCENES[k].name}</button>)}
+        <button type="button" class="chip pl-clear" id="pl-clear">すべて削除</button>
+      </div>
+      <div class="pl-wrap" id="pl-wrap">
+        <div class="pl-stage" id="pl-stage">
+          <canvas id="pl-cv" tabindex="0" role="img" aria-label="光源から出た光が部品で曲がり、分かれ、跳ね返る様子。部品はドラッグで移動、橙のつまみで回転"></canvas>
+          <button type="button" class="pl-fs" id="pl-fs" aria-label="全画面で表示" title="全画面で表示"><svg class="i-open" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/></svg><svg class="i-close" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 2v4H2M14 6h-4V2M10 14v-4h4M2 10h4v4"/></svg></button>
+          <div class="pl-tray" id="pl-tray" role="toolbar" aria-label="部品を追加">
+            {ORDER.map((t) => t === '|' ? <span class="sep" aria-hidden="true"></span> : <button type="button" class="pl-tool" data-t={t} title={`${NAMES[t]}を追加`}><svg viewBox="0 0 24 24" aria-hidden="true" set:html={ICON[t]} />{NAMES[t]}</button>)}
+          </div>
+          <div class="pl-ctx" id="pl-ctx" role="toolbar" aria-label="選んだ部品の設定" hidden></div>
+        </div>
+      </div>
+      <p class="pl-cap hh" id="pl-cap" data-ph={longest}></p>
+      <div class="ptab pl-view">
+        <ParamRow d={EV} />
+        <ChoiceRow k="partial" name="部分反射" sub="ガラスの面で一部が跳ね返る光" choices={[['1', '表示'], ['0', '非表示']]} value="1" />
+      </div>
+    </Panel>
+
+    <Panel hid="hd-how" title="しくみ" class="pl-steps">
+      <HowSteps side steps={STEPS.map((s) => ({ h: s.t, fig: `<svg viewBox="0 0 60 54" aria-hidden="true">${s.svg}</svg>`, p: s.p }))} />
+    </Panel>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools current="prism-lens" />
+  <script>
+    import '../tools/prism-lens/client';
+  </script>
+</SiteLayout>
