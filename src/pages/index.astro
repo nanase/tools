@@ -26,7 +26,7 @@ const shelves = CATS.map((c) => [c, order(TOOLS.filter((t) => t.c === c))] as co
   </div>
   <div id="shelves" data-view="list">
     {/* 保存した表示（scripts/home.ts）を描く前に戻す */}
-    <script is:inline>try{if(JSON.parse(localStorage.getItem('settings:'+location.pathname)||'{}')['c:view']==='card'){document.currentScript.parentElement.dataset.view='card';document.querySelectorAll('#views [data-v]').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.v==='card'))})}}catch(e){}</script>
+    <script is:inline data-cfasync="false">try{if(JSON.parse(localStorage.getItem('settings:'+location.pathname)||'{}')['c:view']==='card'){document.currentScript.parentElement.dataset.view='card';document.querySelectorAll('#views [data-v]').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.v==='card'))})}}catch(e){}</script>
     {shelves.map(([c, L]) => (
       <section aria-label={c} data-c={c}>
         <h2 class="shelf-h">{c}<span class="n">{L.length}</span></h2>

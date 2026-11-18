@@ -28,7 +28,8 @@ const base = import.meta.env.BASE_URL;
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
-<script is:inline>try{var t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}</script>
+{/* 描く前に戻すインラインスクリプトには data-cfasync="false" を付ける。付けないと Cloudflare の Rocket Loader が後回しにし、配色のつまみが遷移のたびに滑る */}
+<script is:inline data-cfasync="false">try{var t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}</script>
 <title>{title ? `${title} | ${site}` : site}</title>
 <meta name="description" content={description}>
 <meta property="og:title" content={title ?? site}>
@@ -54,7 +55,7 @@ const base = import.meta.env.BASE_URL;
 <main class="wrap">
   <slot />
   {/* 保存した枠の開閉（lib/store.ts の o:<見出しの id>）を、描く前に戻す。動作は lib/tool-page.ts */}
-  <script is:inline>try{var s=JSON.parse(localStorage.getItem('settings:'+location.pathname)||'{}');document.querySelectorAll('[data-fold]').forEach(function(p){var v=s['o:'+p.dataset.fold];if(typeof v!=='boolean')return;if(p.tagName==='DETAILS')p.open=v;else{p.classList.toggle('shut',!v);p.querySelector('.fold').setAttribute('aria-expanded',String(v))}})}catch(e){}</script>
+  <script is:inline data-cfasync="false">try{var s=JSON.parse(localStorage.getItem('settings:'+location.pathname)||'{}');document.querySelectorAll('[data-fold]').forEach(function(p){var v=s['o:'+p.dataset.fold];if(typeof v!=='boolean')return;if(p.tagName==='DETAILS')p.open=v;else{p.classList.toggle('shut',!v);p.querySelector('.fold').setAttribute('aria-expanded',String(v))}})}catch(e){}</script>
 </main>
 <Footer note={note} />
 </body>
