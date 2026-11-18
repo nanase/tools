@@ -1,5 +1,14 @@
-import { describe, expect, it } from 'vitest';
-import { bandNotes, MEMBERS, type MemberId, memberOf, previewNotes, STYLES } from '../src/tools/chord-progression/band';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { CpAudio } from '../src/tools/chord-progression/audio';
+import {
+  bandNotes,
+  MEMBERS,
+  type MemberId,
+  memberOf,
+  Player,
+  previewNotes,
+  STYLES,
+} from '../src/tools/chord-progression/band';
 import { SAMPLES, sampleSong } from '../src/tools/chord-progression/samples';
 import {
   ALL_PLACES,
@@ -350,6 +359,43 @@ describe('バンド', () => {
     expect(ns.some((n) => n.v === 'cgt')).toBe(true);
     expect(ns.some((n) => n.v === 'pf' || n.v === 'gtr')).toBe(false);
     expect(previewNotes(compute(s).entries[0], s).map((n) => n.v)).toEqual(['bass', 'ep', 'ep', 'ep', 'ep']);
+  });
+});
+
+describe('演奏', () => {
+  /** 音を鳴らした数だけ数える AudioContext の代わり */
+  const fakeAudio = () => {
+    const a = { t: 0, notes: 0 },
+      audio = {
+        now: () => a.t,
+        ready: async () => true,
+        bus: () => ({}) as GainNode,
+        drop: () => {},
+        release: () => {},
+        hush: () => {},
+        note: () => {
+          a.notes++;
+        },
+      } as unknown as CpAudio;
+    return { a, audio };
+  };
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+  it('止めたあとは、画面が隠れたときの予約（tick）でも鳴らさない', async () => {
+    vi.stubGlobal('document', { hidden: false });
+    const { a, audio } = fakeAudio(),
+      p = new Player(audio, () => ({ song: song('C G Am F'), on: ALL_ON, loop: true, met: false }));
+    expect(await p.start(0)).toBe(true);
+    expect(a.notes).toBeGreaterThan(0);
+    p.halt();
+    a.notes = 0;
+    a.t = 5;
+    vi.stubGlobal('document', { hidden: true });
+    p.tick();
+    expect(a.notes).toBe(0);
+    expect(p.occ).toHaveLength(0);
+    expect(p.playing).toBe(false);
   });
 });
 

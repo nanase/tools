@@ -13,16 +13,13 @@ import How from '../tools/chord-progression/How.astro';
 import { ICON } from '../tools/chord-progression/icons';
 import { BPM, CLICK, VOL0 } from '../tools/chord-progression/params';
 import { SAMPLES } from '../tools/chord-progression/samples';
-import { GTR_ORDER, KEYS_ORDER, STYLE_NAMES, STYLE_ORDER } from '../tools/chord-progression/song';
+import { STYLE_NAMES, STYLE_ORDER } from '../tools/chord-progression/song';
 import Theory from '../tools/chord-progression/Theory.astro';
-import { VOICES } from '../tools/chord-progression/theory';
 
 const name = 'コード進行';
 const samples = SAMPLES;
 const rooms = ROOMS.map((r) => [r.v, r.name] as [string, string]);
 const styles = STYLE_ORDER.map((s) => [s, STYLE_NAMES[s]] as [string, string]);
-const keysOpt = KEYS_ORDER.map((v) => [v, VOICES[v]] as [string, string]);
-const gtrOpt = GTR_ORDER.map((v) => [v, VOICES[v].replace('ギター', '')] as [string, string]);
 ---
 <SiteLayout title={name} tool={{ id: 'chord-progression', name }}>
   <PageTitle title={name}>和音の地図を歩いて進行を作り、バンドで鳴らします。</PageTitle>
@@ -43,7 +40,7 @@ const gtrOpt = GTR_ORDER.map((v) => [v, VOICES[v].replace('ギター', '')] as [
           <button type="button" class="cp-pi" id="cp-redo" title="やり直し（Ctrl+Y）" aria-label="やり直し"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10.5 3.5L13.5 6.5L10.5 9.5"/><path d="M13.5 6.5H6a3.5 3.5 0 0 0 0 7h3"/></svg></button>
         </div>
         <div class="cp-meta">
-          <button type="button" class="cp-keyb cp-songb" id="cp-songb" aria-expanded="false" aria-controls="cp-songpop" title="曲の選択と保存"><span id="cp-songn">カノン進行</span><i aria-hidden="true">▾</i></button>
+          <button type="button" class="cp-keyb cp-songb" id="cp-songb" aria-expanded="false" aria-controls="cp-songpop" title="曲の選択と保存"><span id="cp-songn">カノン進行</span><svg viewBox="0 0 10 7" aria-hidden="true"><path d="M0 0H10L5 7z"/></svg></button>
           <button type="button" class="cp-keyb" id="cp-key" aria-expanded="false" aria-controls="cp-keypop" title="曲の調">C メジャー</button>
         </div>
         <div class="cp-keypop" id="cp-keypop" hidden></div>
@@ -65,7 +62,7 @@ const gtrOpt = GTR_ORDER.map((v) => [v, VOICES[v].replace('ギター', '')] as [
       </div>
       <div class="cp-lg static">
         <span class="cp-fT"><i class="cp-sw"></i>トニック</span><span class="cp-fS"><i class="cp-sw"></i>サブドミナント</span><span class="cp-fD"><i class="cp-sw"></i>ドミナント</span>
-        <span><i class="cp-road"></i>歩いた道</span><span><i class="cp-cand"></i>行きやすい和音（太いほど定番）</span>
+        <span><svg class="cp-road" viewBox="0 0 26 10" aria-hidden="true"><path d="M1 5H17"/><path class="h" d="M25 5L15 0.5V9.5z"/></svg>コード進行</span><span><i class="cp-cand"></i>行きやすい和音（太いほど定番）</span>
       </div>
     </Panel>
 
@@ -75,8 +72,6 @@ const gtrOpt = GTR_ORDER.map((v) => [v, VOICES[v].replace('ギター', '')] as [
       <div class="ptab">
         <ChoiceRow k="style" name="スタイル" layout="chips" choices={styles} value="pop" />
         <ChoiceRow k="meter" name="拍子" choices={[['4', '4/4'], ['3', '3/4']]} value="4" />
-        <ChoiceRow k="keys" name="鍵盤の音色" layout="chips" choices={keysOpt} value="pf" />
-        <ChoiceRow k="gtr" name="ギター" choices={gtrOpt} value="gtr" />
         <ParamRow d={BPM} />
         <ParamRow d={outVol(VOL0)} />
         <ParamRow d={CLICK} />

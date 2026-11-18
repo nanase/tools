@@ -1,6 +1,6 @@
 /**
  * コード進行のページの緊張のレール: 和音を駅（幅は拍の数）として並べ、緊張の高さのレールの上をトロッコが走る。
- * 地図の右下に小さく重ね、トロッコの周りだけを見せてトロッコに合わせて流す。トロッコのいる進行の名前を見出しの横に出す。
+ * 地図の右下に小さく重ね、トロッコの周りだけを見せてトロッコに合わせて流す。トロッコのいる名前のある進行の名前を、転調の札より上の段に出す。
  * ドミナントからトニックへ進む所で落ち、旗を立てる。急に高くなる所ではトロッコから「緊張！」の吹き出しを出す。
  * くり返すときは最後の和音の次に最初の和音を続けて描き、最後から最初へ戻る所の解決も見せる。
  * 駅は押して選び、横へドラッグして並べ替える
@@ -39,7 +39,9 @@ const PAD = 6,
   AT = 0.35,
   /** 「緊張！」を出す高さの上がり方（ドミナントへ上がるときは RISE_D から） */
   JUMP = 0.45,
-  RISE_D = 0.25;
+  RISE_D = 0.25,
+  /** 上の端に空ける、進行の名前の段の高さ（転調の札と重ならないように、札より上に置く） */
+  TITLE = 16;
 
 export class Coaster {
   private W = 240;
@@ -54,7 +56,7 @@ export class Coaster {
     const dpr = Math.min(2, devicePixelRatio || 1);
     this.fadeR = fadeR;
     this.W = w;
-    this.H = h;
+    this.H = h - TITLE;
     this.cv.width = Math.round(w * dpr);
     this.cv.height = Math.round(h * dpr);
     this.cv.style.width = `${w}px`;
@@ -123,7 +125,25 @@ export class Coaster {
       sm = e * e * (3 - 2 * e);
     return this.hy(a + (b - a) * sm);
   }
+  /** 上の段にトロッコのいる進行の名前（名前のある進行の中だけ）、その下にレールと駅 */
   draw(st: CoasterState): void {
+    const { ctx, W, H } = this,
+      { items, s0 } = this.view(st),
+      here = items.find((q) => st.cart - s0 >= q.b && st.cart - s0 < q.b + q.e.beats)?.e.grp;
+    ctx.clearRect(0, 0, W, H + TITLE);
+    if (here) {
+      ctx.fillStyle = css('--ink-2');
+      ctx.font = `700 12px ${css('--sans')}`;
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillText(here.n, W - this.fadeR, 12);
+    }
+    ctx.save();
+    ctx.translate(0, TITLE);
+    this.scene(st);
+    ctx.restore();
+  }
+  private scene(st: CoasterState): void {
     const { ctx, W, H } = this,
       ink = css('--ink'),
       ink3 = css('--ink-3'),
@@ -137,20 +157,7 @@ export class Coaster {
       col = { T: css('--cp-t'), S: css('--cp-s'), D: dcol },
       { items, V, s0 } = this.view(st),
       sy = H - STRIP - 2;
-    ctx.clearRect(0, 0, W, H);
-    /* 見出しは右上（左の端は地図に溶かすので）。トロッコのいる和音が名前のある進行の中なら、その名前も。吹き出しを出す間は描かない */
-    const title = (): void => {
-      const here = items.find((q) => st.cart - s0 >= q.b && st.cart - s0 < q.b + q.e.beats)?.e.grp;
-      ctx.fillStyle = ink3;
-      ctx.font = `700 11px ${sans}`;
-      ctx.textAlign = 'right';
-      ctx.textBaseline = 'alphabetic';
-      ctx.fillText(here ? `${here.n} · 緊張` : '緊張', W - this.fadeR, 13);
-    };
-    if (!items.length) {
-      title();
-      return;
-    }
+    if (!items.length) return;
     const last = items.at(-1) as Item,
       xa0 = Math.max(PAD, this.xOf(items[0].b, V)),
       xa1 = Math.min(W - PAD, this.xOf(last.b + last.e.beats, V));
@@ -285,25 +292,16 @@ export class Coaster {
     ctx.fill();
     ctx.restore();
     /* 急に高くなる所: 上りの手前から上り切った少しあとまで「緊張！」 */
-    if (!st.playing) {
-      title();
-      return;
-    }
+    if (!st.playing) return;
     const cur = items.find((q) => x >= this.xOf(q.b, V) && x < this.xOf(q.b + q.e.beats, V));
-    if (!cur) {
-      title();
-      return;
-    }
+    if (!cur) return;
     const f = (st.cart - s0 - cur.b) / cur.e.beats,
       nx = this.nextOf(st, cur.k),
       pv = this.prevOf(st, cur.k),
       tense = (a: Entry, b: Entry) => b.tension - a.tension >= (b.fn === 'D' ? RISE_D : JUMP),
       rising = nx && f >= 0.5 && tense(cur.e, nx),
       risen = pv && f < 0.25 && tense(pv, cur.e);
-    if (!rising && !risen) {
-      title();
-      return;
-    }
+    if (!rising && !risen) return;
     const bw = 46,
       bh = 18,
       bx = Math.min(W - PAD - bw, Math.max(PAD, x - 10)),

@@ -22,7 +22,8 @@ const POP = STYLES.pop[4],
     ['鍵盤', hits(POP.c)],
     ['ギター', hits(POP.g)],
   ];
-const STEPS: { h: string; svg: string; p: string }[] = [
+/* 図の高さは 66。緊張と解決の図だけは、トロッコを載せる分だけ上に 8 足す（vh） */
+const STEPS: { h: string; svg: string; p: string; vh?: number }[] = [
   {
     h: '和音の地図',
     svg: `${tri([8, 50, 46, 50, 27, 17], 'S', 'F', 27, 39)}${tri([46, 50, 65, 17, 27, 17], 'T', 'Am', 46, 28)}${tri([46, 50, 84, 50, 65, 17], 'T', 'C', 65, 39)}${tri([84, 50, 103, 17, 65, 17], 'T', 'Em', 84, 28)}${tri([84, 50, 122, 50, 103, 17], 'D', 'G', 103, 39)}${['F', 'C', 'G', 'D'].map((t, i) => note(8 + i * 38, 62, t)).join('')}${['A', 'E', 'B'].map((t, i) => note(27 + i * 38, 10, t)).join('')}`,
@@ -54,7 +55,8 @@ const STEPS: { h: string; svg: string; p: string }[] = [
   },
   {
     h: '緊張と解決',
-    svg: `<path class="cp-hg" d="M4 40H146"/><path class="cp-hrail" d="M4 36H30C38 36 36 24 44 24H66C74 24 72 10 80 10H104C112 10 110 36 118 36H146"/>${box(4, 46, 34, 18, 'T', 'Ⅰ')}${box(40, 46, 34, 18, 'S', 'Ⅳ')}${box(76, 46, 34, 18, 'D', 'Ⅴ')}${box(112, 46, 34, 18, 'T', 'Ⅰ')}<path class="cp-hl" d="M116 34V18" stroke-width="1.5"/><rect class="cp-hh" x="116" y="12" width="26" height="12" rx="2"/><text class="cp-hfl" x="129" y="21" text-anchor="middle">解決</text>`,
+    vh: 74,
+    svg: `<rect class="cp-hbg" x="0" y="0" width="150" height="74" rx="4"/><g transform="translate(0 8)"><path class="cp-hg" d="M4 40H146"/><path class="cp-hrail" d="M4 36H30C38 36 36 24 44 24H66C74 24 72 10 80 10H104C112 10 110 36 118 36H146"/>${box(4, 46, 34, 18, 'T', 'Ⅰ')}${box(40, 46, 34, 18, 'S', 'Ⅳ')}${box(76, 46, 34, 18, 'D', 'Ⅴ')}${box(112, 46, 34, 18, 'T', 'Ⅰ')}<path class="cp-hl" d="M116 34V18" stroke-width="1.5"/><rect class="cp-hh" x="116" y="12" width="26" height="12" rx="2"/><text class="cp-hfl" x="129" y="21" text-anchor="middle">解決</text><g transform="translate(94 10)"><rect class="cp-hcar" x="-8" y="-9.6" width="16" height="7.2" rx="2.4"/><circle class="cp-hwh" cx="-4.8" cy="-2.1" r="2.1"/><circle class="cp-hwh" cx="4.8" cy="-2.1" r="2.1"/></g></g>`,
     p: 'ドミナントで高く、トニックで低い。ドミナントからトニックへ落ちる所が解決（終止）',
   },
   {
@@ -70,7 +72,7 @@ const STEPS: { h: string; svg: string; p: string }[] = [
 <HowSteps
   steps={STEPS.map((s) => ({
     h: s.h,
-    fig: `<svg class="cp-mini" viewBox="0 0 ${W} 66" aria-hidden="true">${s.svg}</svg>`,
+    fig: `<svg class="cp-mini" viewBox="0 0 ${W} ${s.vh ?? 66}" aria-hidden="true">${s.svg}</svg>`,
     p: s.p,
   }))}
 />

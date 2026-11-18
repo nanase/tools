@@ -21,7 +21,9 @@ import {
   compute,
   type Entry,
   fromFile,
+  GTR_ORDER,
   type GtrId,
+  KEYS_ORDER,
   type KeysId,
   keyAt,
   LENGTHS,
@@ -456,19 +458,35 @@ function showEd(): void {
           ? chipRow('', 'mod', NEAR_KEYS, modV)
           : '';
   ed.innerHTML = `<div class="cp-eh"><b>${k + 1}</b>${tab('q', '種類', chordName(e.ch, e.key))}${tab('b', '長さ', lenName(c.b))}${tab('mod', '転調', c.mod ? `→ ${keyName(c.mod)}` : 'なし')}${iconBtn('aud', ICON.aud, '試聴')}${iconBtn('del', ICON.del, '削除')}<button type="button" class="cp-ex" data-a="close" aria-label="閉じる" title="閉じる">×</button></div>${body}`;
-  /* 地図は狭い画面で横にスクロールするので、枠からの位置に直す */
+  /*
+   * 番号の周りの和音を隠さないように、地図の上端か下端に寄せる（番号が下半分なら上端、上半分なら下端）。
+   * 左右は番号に近づけるが、上端では左上の演奏の操作と調のボタンを、下端では右下の緊張の図を避ける。
+   * 位置は枠（mapw）からの値。狭い画面では小窓を地図の下に並べるので（CSS で static）、この値は効かない
+   */
   const st = mapState(),
-    cr = mapCv.getBoundingClientRect(),
     wr = mapw.getBoundingClientRect(),
+    rel = (el: Element) => {
+      const r = el.getBoundingClientRect();
+      return { l: r.left - wr.left, r: r.right - wr.left, t: r.top - wr.top, b: r.bottom - wr.top };
+    },
+    cv = rel(mapCv),
     [px, py] = mapView.nodePos(st, k),
-    nx = px + cr.left - wr.left,
-    ny = py + cr.top - wr.top,
+    nx = px + cv.l,
+    ny = py + cv.t,
     w = ed.offsetWidth,
     h = ed.offsetHeight,
     mw = mapw.clientWidth,
-    mh = mapCv.clientHeight;
-  ed.style.left = `${Math.max(4, Math.min(mw - w - 4, nx - w / 2))}px`;
-  ed.style.top = `${ny + 22 + h > mh ? Math.max(4, ny - h - 22) : ny + 22}px`;
+    atTop = ny > cv.t + (cv.b - cv.t) / 2;
+  let lo = 4,
+    hi = mw - w - 4;
+  if (atTop) for (const el of [$('.cp-tools'), $('.cp-meta')]) lo = Math.max(lo, rel(el).r + 8);
+  else {
+    const rc = $('#cp-rcw');
+    if (!rc.classList.contains('below')) hi = Math.min(hi, rel(rc).l - w - 8);
+  }
+  const left = hi >= lo ? Math.max(lo, Math.min(hi, nx - w / 2)) : Math.max(4, Math.min(mw - w - 4, nx - w / 2));
+  ed.style.left = `${left}px`;
+  ed.style.top = `${atTop ? cv.t + 8 : Math.max(cv.t + 8, cv.b - h - 8)}px`;
 }
 mapw.addEventListener('click', (ev) => {
   const b = (ev.target as Element).closest<HTMLElement>('#cp-ed [data-a]');
@@ -593,10 +611,20 @@ const memberSub: Record<MemberId, () => string> = {
   gtr: () => VOICES[S.song.gtr],
   cho: () => '持続音',
 };
+/** 音色を選べるメンバーと、その選択肢 */
+const VOICE_OPTS: Partial<Record<MemberId, readonly (KeysId | GtrId)[]>> = { keys: KEYS_ORDER, gtr: GTR_ORDER };
 const bandEl = $('#cp-band'),
-  memberEl = {} as Record<MemberId, HTMLButtonElement>;
+  memberEl = {} as Record<MemberId, HTMLButtonElement>,
+  /** メンバーの枠（鳴ったときに動かす） */
+  cardEl = {} as Record<MemberId, HTMLElement>,
+  /** 枠の下段: 鍵盤とギターは音色のボタン、ほかは文字 */
+  subEl = {} as Record<MemberId, HTMLElement>,
+  voiceBtn: Partial<Record<MemberId, HTMLButtonElement>> = {};
+/* メンバーの枠: 上はミュートのボタン、水平線の下は今の音色。鍵盤とギターの下段は押すと音色のメニューを開く */
 for (const m of MEMBERS) {
-  const b = document.createElement('button');
+  const w = document.createElement('div'),
+    b = document.createElement('button');
+  w.className = 'cp-memw';
   b.type = 'button';
   b.className = 'cp-mem';
   b.dataset.m = m;
@@ -606,33 +634,124 @@ for (const m of MEMBERS) {
     syncBand();
     player.resync();
   });
-  bandEl.appendChild(b);
+  w.appendChild(b);
+  if (VOICE_OPTS[m]) {
+    const v = document.createElement('button');
+    v.type = 'button';
+    v.className = 'cp-vb';
+    v.setAttribute('aria-haspopup', 'menu');
+    v.setAttribute('aria-expanded', 'false');
+    v.addEventListener('click', () => (vmenuFor === m ? closeVoiceMenu() : openVoiceMenu(m)));
+    voiceBtn[m] = v;
+    subEl[m] = v;
+  } else {
+    subEl[m] = document.createElement('div');
+    subEl[m].className = 'cp-msub';
+  }
+  w.appendChild(subEl[m]);
+  bandEl.appendChild(w);
   memberEl[m] = b;
+  cardEl[m] = w;
 }
 function syncBand(): void {
   for (const m of MEMBERS) {
     const b = memberEl[m];
     b.setAttribute('aria-pressed', String(S.on[m]));
     b.title = `${MEMBER_NAMES[m]}（押すと${S.on[m] ? 'ミュート' : '戻す'}）`;
-    b.innerHTML = `${BAND_ICON[m]()}<span>${MEMBER_NAMES[m]}</span><small>${memberSub[m]()}</small>`;
+    b.innerHTML = `${BAND_ICON[m]()}<span>${MEMBER_NAMES[m]}</span>`;
+    cardEl[m].classList.toggle('off', !S.on[m]);
+    const v = voiceBtn[m],
+      sub = memberSub[m]();
+    if (v) {
+      v.setAttribute('aria-label', `${MEMBER_NAMES[m]}の音色: ${sub}`);
+      v.innerHTML = `<span>${sub}</span><svg viewBox="0 0 10 7" aria-hidden="true"><path d="M0 0H10L5 7z"/></svg>`;
+    } else subEl[m].textContent = sub;
   }
 }
+/* ---------- 音色のメニュー ---------- */
+const vmenu = document.createElement('div');
+vmenu.className = 'cp-vmenu';
+vmenu.setAttribute('role', 'menu');
+vmenu.hidden = true;
+bandEl.appendChild(vmenu);
+let vmenuFor: MemberId | null = null;
+const curVoice = (m: MemberId): string => (m === 'keys' ? S.song.keys : S.song.gtr);
+function openVoiceMenu(m: MemberId): void {
+  const opts = VOICE_OPTS[m],
+    btn = voiceBtn[m];
+  if (!opts || !btn) return;
+  closeVoiceMenu();
+  vmenuFor = m;
+  vmenu.setAttribute('aria-label', `${MEMBER_NAMES[m]}の音色`);
+  vmenu.innerHTML = opts
+    .map(
+      (v) =>
+        `<button type="button" role="menuitemradio" data-v="${v}" aria-checked="${v === curVoice(m)}">${ICON[v]}<span>${VOICES[v]}</span></button>`,
+    )
+    .join('');
+  vmenu.hidden = false;
+  btn.setAttribute('aria-expanded', 'true');
+  /* ボタンの下に置き、バンドの枠からはみ出さないように左右を寄せる */
+  const br = bandEl.getBoundingClientRect(),
+    r = btn.getBoundingClientRect(),
+    w = vmenu.offsetWidth;
+  vmenu.style.top = `${r.bottom - br.top + 4}px`;
+  vmenu.style.left = `${Math.max(0, Math.min(br.width - w, r.left - br.left + r.width / 2 - w / 2))}px`;
+  (vmenu.querySelector<HTMLElement>('[aria-checked="true"]') ?? vmenu.querySelector<HTMLElement>('button'))?.focus();
+}
+function closeVoiceMenu(focus = false): void {
+  if (!vmenuFor) return;
+  const btn = voiceBtn[vmenuFor];
+  vmenuFor = null;
+  vmenu.hidden = true;
+  btn?.setAttribute('aria-expanded', 'false');
+  if (focus) btn?.focus();
+}
+vmenu.addEventListener('click', (ev) => {
+  const it = (ev.target as Element).closest<HTMLElement>('[data-v]'),
+    m = vmenuFor;
+  if (!it || !m) return;
+  const v = it.dataset.v ?? '';
+  closeVoiceMenu(true);
+  if (v === curVoice(m)) return;
+  songSet(() => {
+    if (m === 'keys') S.song.keys = v as KeysId;
+    else S.song.gtr = v as GtrId;
+  });
+});
+vmenu.addEventListener('keydown', (ev) => {
+  const items = [...vmenu.querySelectorAll<HTMLElement>('[data-v]')],
+    i = items.indexOf(document.activeElement as HTMLElement);
+  if (ev.key === 'Escape') {
+    ev.preventDefault();
+    closeVoiceMenu(true);
+  } else if (ev.key === 'Tab') closeVoiceMenu();
+  else if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') {
+    ev.preventDefault();
+    items[(i + (ev.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length]?.focus();
+  } else if (ev.key === 'Home' || ev.key === 'End') {
+    ev.preventDefault();
+    items[ev.key === 'Home' ? 0 : items.length - 1]?.focus();
+  }
+});
+document.addEventListener('pointerdown', (ev) => {
+  const t = ev.target as Element;
+  if (vmenuFor && !vmenu.contains(t) && !t.closest('.cp-vb')) closeVoiceMenu();
+});
 player.onHit = (m, at) => {
   const now = audio.now() ?? 0;
   setTimeout(
     () => {
-      memberEl[m].classList.add('hit');
-      setTimeout(() => memberEl[m].classList.remove('hit'), 90);
+      cardEl[m].classList.add('hit');
+      setTimeout(() => cardEl[m].classList.remove('hit'), 90);
     },
     Math.max(0, (at - now) * 1000),
   );
 };
 /* 曲ごとの選択肢（保存は曲と一緒にするので、選択肢としては保存しない） */
-for (const id of ['#p-style', '#p-meter', '#p-keys', '#p-gtr']) $(id).setAttribute('data-nosave', '');
+for (const id of ['#p-style', '#p-meter']) $(id).setAttribute('data-nosave', '');
 const styleCh = new Choice<StyleId>($('#p-style'), (v) => songSet(() => (S.song.style = v)));
 const meterCh = new Choice<string>($('#p-meter'), (v) => songSet(() => (S.song.meter = Number(v) as Meter)));
-const keysCh = new Choice<KeysId>($('#p-keys'), (v) => songSet(() => (S.song.keys = v)));
-const gtrCh = new Choice<GtrId>($('#p-gtr'), (v) => songSet(() => (S.song.gtr = v)));
 function songSet(fn: () => void): void {
   remember();
   fn();
@@ -666,8 +785,6 @@ metBtn.addEventListener('click', () => {
 function syncControls(): void {
   styleCh.set(S.song.style);
   meterCh.set(String(S.song.meter));
-  keysCh.set(S.song.keys);
-  gtrCh.set(S.song.gtr);
   bpmGroup.set('bpm', S.song.bpm, { silent: true });
   syncBand();
 }
@@ -720,7 +837,7 @@ function layout(): void {
   mapView.layout();
   /* 緊張のレールは地図の右下の空いた所に重ねる。入らなければ地図の下に置く */
   const sc = $('#cp-mapsc'),
-    box = sc.scrollWidth > sc.clientWidth + 1 ? null : mapView.freeBox(104, 150);
+    box = sc.scrollWidth > sc.clientWidth + 1 ? null : mapView.freeBox(120, 150);
   rcw.classList.toggle('below', !box);
   if (box) {
     /* 左の端は地図に溶かすので、その分だけ三角形の上へ広げる */
@@ -730,7 +847,7 @@ function layout(): void {
     coaster.layout(w, box.h, FADE_R + 4);
   } else {
     rcw.style.left = rcw.style.top = '';
-    coaster.layout(rcw.clientWidth || mapw.clientWidth, 112);
+    coaster.layout(rcw.clientWidth || mapw.clientWidth, 128);
   }
   draw();
   reveal(S.sel);
