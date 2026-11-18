@@ -145,14 +145,20 @@ function rebaseTrace(cr: number, ci: number, Cr: number, Ci: number, N: number):
   return out;
 }
 
-/* 1 くり返しと発散: 半径 2 の円。円の中に残る軌道（青）と外へ出る軌道（黄）を 1 点ずつ */
-const O1 = { in: orbitPts(-0.12, 0.74, 24), out: orbitPts(0.5, 0.5, 24) };
+/* 1 くり返しと発散: 半径 2 の円。0 と −1 を行き来して円の中に残る軌道（青）と、11 歩さまよってから円をわずかに抜ける軌道（黄）を 1 点ずつ */
+const O1 = { in: orbitPts(-1, 0, 24), out: escapePts(-0.89, 0.28) };
+/** 円 |z| = 2 を最初に抜けた点までの軌道 */
+function escapePts(cr: number, ci: number): [number, number][] {
+  const o = orbitPts(cr, ci, 60),
+    i = o.findIndex(([x, y]) => x * x + y * y > 4);
+  return i < 0 ? o : o.slice(0, i + 1);
+}
 const F1: HowFig = {
   dur: 3,
   draw(c, k) {
-    const P = mapper(-0.3, 0, 2.3),
+    const P = mapper(0, 0, 2.2),
       [ox, oy] = P(0, 0),
-      r = (2 / 2.3) * (CH / 2),
+      r = (2 / 2.2) * (CH / 2),
       n = 1 + Math.round(k * 23);
     c.strokeStyle = C.grid;
     c.setLineDash([3, 3]);
@@ -165,12 +171,18 @@ const F1: HowFig = {
       O1.in.slice(0, n + 1).map(([x, y]) => P(x, y)),
       C.b,
     );
+    const out = O1.out.slice(0, n + 1);
     poly(
       c,
-      O1.out.slice(0, n + 1).map(([x, y]) => P(x, y)),
+      out.map(([x, y]) => P(x, y)),
       C.a,
     );
-    label(c, '|z| = 2', ox + r - 2, oy - r + 12, C.ink, 'right');
+    /* 円を抜けたら、その点に札 */
+    if (out.length === O1.out.length) {
+      const [ex, ey] = P(...out[out.length - 1]);
+      label(c, '発散', ex + (ex < ox ? -5 : 5), ey + 4, C.a, ex < ox ? 'right' : 'left');
+    }
+    label(c, '|z| = 2', CW - 4, 12, C.ink, 'right');
     label(c, `n = ${n}`, 4, CH - 6, C.ink);
   },
 };
