@@ -1,0 +1,45 @@
+/* 日の出と日の入りのページだけのスタイル（共通は src/styles/site.css と src/lib/planet/planet.css） */
+
+/* 地図はこのページの中心の図なので、地点を選ぶ小窓の地図は使わない */
+#loc-mapbtn{display:none}
+
+/* 日付: 時計の横で読みやすいよう、ほかの数値より大きくする */
+#o-date{font-size:22px;line-height:1.2}
+@media (max-width:640px){#o-date{font-size:19px}}
+
+/* 地点の数値: 値の長さで折り返しが変わらないよう、固定の列に並べる */
+.sr-facts{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px 12px;margin:0 0 12px}
+.sr-facts b{white-space:nowrap}
+@media (max-width:640px){.sr-facts{grid-template-columns:repeat(3,minmax(0,1fr))}.sr-facts b{white-space:normal}}
+
+/* 地図・空・1 年の図: 色はテーマに依らない */
+.sr-map{position:relative;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:#1e2638}
+.sr-sky{border-radius:var(--r);overflow:hidden;background:#1e2638}
+.sr-sky canvas{display:block;width:100%}
+.sr-map canvas{display:block;width:100%;cursor:crosshair;touch-action:manipulation}
+
+/* 凡例 */
+.sr-key{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:8px;font-size:13px;color:var(--ink-2)}
+.sr-key span{display:inline-flex;align-items:center;gap:5px}
+.sr-key i{display:inline-block;width:14px;height:10px;border-radius:2px;border:1px solid rgb(0 0 0 / .15)}
+.sr-key i.sr-ksun{width:10px;height:10px;border-radius:50%;background:#ffd23a;border-color:#3a2a00}
+.sr-key i.sr-kpin{width:10px;height:10px;border-radius:50%;background:#bf4308;border:2px solid #fff;box-shadow:0 0 0 1px var(--line-2)}
+.sr-key i.sr-kpath{height:4px;border:0;border-radius:2px;background:#ffd23a}
+.sr-key i.sr-kref{height:0;border:0;border-top:2px dotted var(--ink-2);border-radius:0}
+.sr-year{display:block;width:100%;color:var(--ink-2);cursor:pointer;touch-action:pan-y}
+.sr-read{margin:4px 0 0;min-height:1.5em;font:500 13px/1.5 var(--mono);color:var(--ink-2);font-variant-numeric:tabular-nums}
+
+/* 時刻の操作: 変速機のページの操作盤と同じく右下に浮かべる */
+.sr-flb{padding:0 7px}
+.sr-flb svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.3}
+.sr-flb svg .sr-fi{fill:currentColor;stroke:none}
+.sr-fl{position:fixed;right:16px;bottom:16px;z-index:18;width:min(340px,calc(100vw - 32px));padding:6px 8px 10px;border:1px solid var(--line-2);border-radius:6px;background:var(--surface);box-shadow:0 10px 28px rgb(0 0 0 / .3)}
+.sr-fl[hidden]{display:none}
+.sr-fl-h{display:flex;align-items:center;gap:6px;padding:0 0 2px}
+.sr-fl-clk{display:grid;margin-left:4px;font:500 11px/1.3 var(--mono);color:var(--ink-2);font-variant-numeric:tabular-nums}
+.sr-fl-clk b{font-size:15px;color:var(--ink)}
+.sr-fl-x{display:grid;place-items:center;width:28px;height:28px;margin-left:auto;padding:0;border:0;border-radius:4px;background:none;color:var(--ink-3);cursor:pointer}
+.sr-fl-x:hover{color:var(--ink);background:var(--inset)}
+.sr-fl-x svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round}
+.sr-fl-st{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:8px}
+.sr-fl-st .tg{justify-content:center;min-height:34px;padding:0 4px;font-size:12.5px;touch-action:manipulation;user-select:none;-webkit-user-select:none}

@@ -28,4 +28,5 @@ MIT です。
 - 月のページのデータ: [src/tools/moon/SOURCES.md](src/tools/moon/SOURCES.md)
 - 木星のページのデータとコード: [src/tools/jupiter/SOURCES.md](src/tools/jupiter/SOURCES.md)
 - 土星のページのデータとコード: [src/tools/saturn/SOURCES.md](src/tools/saturn/SOURCES.md)
+- 日の出と日の入りのページのデータ: [src/tools/sunrise/SOURCES.md](src/tools/sunrise/SOURCES.md)
 - 式の書体（`src/assets/fonts/lm-math-web.woff2`）: [src/assets/fonts/SOURCES.md](src/assets/fonts/SOURCES.md)

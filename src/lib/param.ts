@@ -30,6 +30,7 @@ import {
 } from './param-core';
 import type { ParamDef, ParamPatch } from './param-def';
 import { parse } from './parse';
+import { bindRepeat } from './repeat';
 import { addRow, mark } from './reset';
 import { forget, store, stored } from './store';
 
@@ -476,29 +477,6 @@ class Param {
       this.resetDefault();
     });
   }
-}
-
-/** 押し続けると繰り返す（420 ms 後から 90 ms ごと） */
-function bindRepeat(btn: HTMLElement, fn: (big: boolean) => void): void {
-  let t1: ReturnType<typeof setTimeout> | undefined, t2: ReturnType<typeof setInterval> | undefined;
-  const stop = () => {
-    clearTimeout(t1);
-    clearInterval(t2);
-  };
-  btn.addEventListener('pointerdown', (e) => {
-    if (e.button !== 0) return;
-    stop();
-    fn(e.shiftKey);
-    t1 = setTimeout(() => {
-      t2 = setInterval(() => fn(false), 90);
-    }, 420);
-  });
-  for (const n of ['pointerup', 'pointerleave', 'pointercancel']) btn.addEventListener(n, stop);
-  addEventListener('pointerup', stop);
-  btn.addEventListener('click', (e) => {
-    if (e.detail === 0) fn(e.shiftKey);
-  });
-  btn.addEventListener('contextmenu', (e) => e.preventDefault());
 }
 
 /**

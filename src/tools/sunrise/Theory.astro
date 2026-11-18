@@ -1,0 +1,74 @@
+---
+// 動作原理と式
+/* 本文の出典番号 */
+const rf = (...ns: number[]) => ns.map((n) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`).join('');
+/* MathML の部品 */
+const sp = '<mspace width="0.17em"/>';
+const AF = '<mo>⁡</mo>';
+const fn = (f: string, x: string) => `<mi>${f}</mi>${AF}${sp}${x}`;
+const sin = (x: string) => fn('sin', x);
+const cos = (x: string) => fn('cos', x);
+const tan = (x: string) => fn('tan', x);
+const sub = (a: string, b: string) => `<msub><mi>${a}</mi><mn>${b}</mn></msub>`;
+---
+<h3>計算の流れ</h3>
+<ol class="flow" aria-label="計算の流れ">
+  <li><span>日時（UT）に Δ<i>T</i> を足して力学時にし、太陽の赤緯 <i>δ</i> と赤経を求める</span></li>
+  <li><span>恒星時から、経度 0° での太陽の時角（グリニッジ時角）を求める</span></li>
+  <li><span>地点の緯度 <i>φ</i> と経度から、太陽の高度と方位を求める</span></li>
+  <li><span>地図は画素ごと、空の図は 5 分ごと、1 年の図は 10 分ごとに高度を求め、段で塗る（陸地は Natural Earth<Fragment set:html={rf(6)} />）</span></li>
+</ol>
+
+<h3>太陽の位置</h3>
+<p>地球の位置を VSOP87D の級数で求め、Meeus 25 章の手順で FK5 への補正・光行差・章動を入れて、地心から見た太陽の赤緯と赤経にします<Fragment set:html={rf(1, 2)} />。月・日食のページと同じ計算です。1 年の図は点が 5 万あるので、Meeus 25 章の短い式（誤差 0.01° 程度）を使います。</p>
+
+<h3>高度と方位</h3>
+<p>時角 <math><mi>H</mi></math> は、太陽が南中してから回った角度です。経度を東に 15° 進むごとに 1 時間ずつ増えます。</p>
+<div class="eqs">
+  <math display="block" set:html={`${sin('<mi>h</mi>')}<mo>=</mo>${sin('<mi>φ</mi>')}${sp}${sin('<mi>δ</mi>')}<mo>+</mo>${cos('<mi>φ</mi>')}${sp}${cos('<mi>δ</mi>')}${sp}${cos('<mi>H</mi>')}`} />
+  <math display="block" set:html={`<mi>A</mi><mo>=</mo><mi>atan2</mi><mo>(</mo>${sin('<mi>H</mi>')}<mo>,</mo>${cos('<mi>H</mi>')}${sp}${sin('<mi>φ</mi>')}<mo>−</mo>${tan('<mi>δ</mi>')}${sp}${cos('<mi>φ</mi>')}<mo>)</mo><mo>+</mo><mn>180</mn><mo>°</mo>`} />
+</div>
+<p><math><mi>A</mi></math> は北から東へ測った方位です。数値の高度には大気差を足します（Saemundsson の式）<Fragment set:html={rf(1)} />。</p>
+
+<h3>日の出と日の入り</h3>
+<p>太陽の上の縁が地平線に触れる時刻です。地平線の近くでは大気が光を 34′ 曲げ、太陽の半径が 16′ あるので、中心の高度が −0.833° になる時刻を求めます<Fragment set:html={rf(1, 3)} />。標高は考えません。</p>
+<p>昼の長さは、日の出の時角 <math set:html={sub('H', '0')} /> の 2 倍です（大気差を除いた近似）。</p>
+<div class="eqs">
+  <math display="block" set:html={`${cos(sub('H', '0'))}<mo>=</mo><mo>−</mo>${tan('<mi>φ</mi>')}${sp}${tan('<mi>δ</mi>')}`} />
+</div>
+<p>赤緯は夏至に +23.4°、冬至に −23.4° まで変わります。北半球で <math><mi>δ</mi><mo>&gt;</mo><mn>0</mn></math> なら右辺が負になって昼が 12 時間より長く、緯度が高いほど差が開きます。右辺が −1 より小さいと太陽は沈まず（白夜）、1 より大きいと昇りません（極夜）。</p>
+
+<h3>薄明</h3>
+<p>日の入りのあとも、地平線の下の太陽が上空の大気を照らすので空は明るさが残ります。太陽の中心の高度で 3 段に分けます<Fragment set:html={rf(3)} />。</p>
+<ul class="tl">
+  <li>市民薄明: 0°〜−6°。明かりなしで外の作業ができる</li>
+  <li>航海薄明: −6°〜−12°。水平線と明るい星が見える</li>
+  <li>天文薄明: −12°〜−18°。暗い星の観測には空がまだ明るい</li>
+</ul>
+
+<h3>時刻と時間帯</h3>
+<p>地点の時間帯は、座標から境界のデータで引きます<Fragment set:html={rf(4, 5)} />。夏時間を含む UTC との差はブラウザが持つ時間帯の表で求めます。海の上では、経度 15° ごとに 1 時間ずれる時間帯になります。</p>
+
+<h3>答え合わせ</h3>
+<p>東京（都庁）の 2026 年の日の出・日の入りは、国立天文台の値と 1 分以内で合います<Fragment set:html={rf(3)} />。</p>
+<ul class="tl">
+  <li>夏至（6 月 21 日）: 4:25・19:00</li>
+  <li>冬至（12 月 22 日）: 6:47・16:32</li>
+</ul>
+
+<h3>このツールで決めたこと</h3>
+<ul class="tl">
+  <li>1 日の区切りは地点の現地の 0〜24 時。日本時間・世界時を選んでも時刻の書き方だけを変える</li>
+  <li>地図と道すじは地心から見た太陽で描く（地点からの視差 8.8″ は無視する）</li>
+  <li>夏至・冬至の道すじは 6 月 21 日と 12 月 21 日の道すじで代える</li>
+</ul>
+
+<h3>出典</h3>
+<ol class="refs">
+  <li id="thy-r1"><span class="rf-for">太陽の見かけの位置（25 章）、章動・恒星時、大気差（16 章）</span><span class="rf-src">J. Meeus, <i>Astronomical Algorithms</i>, 2nd ed., Willmann-Bell, 1998</span></li>
+  <li id="thy-r2"><span class="rf-for">地球の位置の級数 VSOP87D</span><span class="rf-src">P. Bretagnon and G. Francou, “Planetary theories in rectangular and spherical variables. VSOP 87 solutions,” <i>Astron. Astrophys.</i>, vol. 202, pp. 309–315, 1988; IMCCE, <a href="https://ftp.imcce.fr/pub/ephem/planets/vsop87/VSOP87D.ear" target="_blank" rel="noopener">VSOP87D.ear</a></span></li>
+  <li id="thy-r3"><span class="rf-for">日の出・日の入りの定義、薄明、東京の日の出入り（答え合わせ）</span><span class="rf-src">国立天文台 暦計算室, “<a href="https://eco.mtk.nao.ac.jp/koyomi/" target="_blank" rel="noopener">暦計算室</a>”（日の出入り・暦象年表）</span></li>
+  <li id="thy-r4"><span class="rf-for">時間帯の境界（ODbL）</span><span class="rf-src">E. Siroky, “<a href="https://github.com/evansiroky/timezone-boundary-builder" target="_blank" rel="noopener">timezone-boundary-builder</a>”（© OpenStreetMap contributors）</span></li>
+  <li id="thy-r5"><span class="rf-for">座標から時間帯を引く表（CC0）</span><span class="rf-src">PhotoStructure, “<a href="https://github.com/photostructure/tz-lookup" target="_blank" rel="noopener">tz-lookup</a>” 11.8.0</span></li>
+  <li id="thy-r6"><span class="rf-for">陸地（パブリックドメイン）</span><span class="rf-src">Natural Earth, “<a href="https://www.naturalearthdata.com/" target="_blank" rel="noopener">1:110m Physical Vectors, Land</a>”</span></li>
+</ol>

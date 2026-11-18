@@ -465,7 +465,7 @@ export const TOOLS: Tool[] = [
     t: 'ハロ（暈）',
     d: '氷晶に通した光線を追い、日暈や幻日、環天頂アークの空を描きます。',
     ic: 'hl',
-    r: ['lens', 'moon', 'solar-eclipse', 'raytracing'],
+    r: ['lens', 'moon', 'solar-eclipse', 'sunrise'],
     k: 'halo ハロー 日暈 月暈 暈 かさ 内暈 22度 外暈 46度 幻日 幻月 sun dog parhelion 幻日環 parhelic circle 環天頂アーク circumzenithal 環水平アーク circumhorizontal 太陽柱 sun pillar タンジェントアーク 上端接弧 外接ハロ tangent arc パリーアーク parry ローウィッツアーク lowitz ラテラルアーク 120度幻日 錐面 pyramidal 9度 氷晶 ice crystal 六角柱 巻雲 cirrus ダイヤモンドダスト diamond dust 大気光学 atmospheric optics 大気光象 薄明 夕焼け 地球の影 光線追跡 ray tracing モンテカルロ monte carlo webgl',
   },
   {
@@ -540,7 +540,7 @@ export const TOOLS: Tool[] = [
     t: '日食',
     d: '過去と未来の日食を地上の空と月の影で再現します。',
     ic: 'se',
-    r: ['moon', 'halo', 'jupiter', 'saturn'],
+    r: ['moon', 'halo', 'sunrise', 'saturn'],
     k: 'solar eclipse 日食 皆既日食 金環日食 部分日食 total annular hybrid partial 食分 面積比 magnitude obscuration コロナ corona ダイヤモンドリング diamond ring ベイリー baily 月の影 本影 半影 umbra penumbra 皆既帯 中心線 central line サロス saros ベッセル要素 besselian elements nasa 五千年正典 five millennium canon espenak meeus deltat δt 地方食 local circumstances 天文 astronomy 太陽 月',
   },
   {
@@ -578,6 +578,15 @@ export const TOOLS: Tool[] = [
     ic: 'imp',
     r: ['moon', 'thunder', 'maxwell-demon', 'jupiter'],
     k: '天体衝突 impact crater クレーター 衝突クレーター cratering giant impact 巨大衝突 衝突盆地 basin 軌道 脱出速度 escape 隕石 小惑星 asteroid meteorite 衝突体 impactor 断面 cross section 衝撃波 shock wave 掘削 excavation 崩壊 collapse 噴出物 ejecta 中央丘 central peak ピークリング peak ring 単純クレーター 複雑クレーター simple complex 入射角 大気圏突入 atmospheric entry 空中爆発 airburst スケーリング則 pi scaling チクシュルーブ chicxulub リース ries バリンジャー barringer meteor crater ティコ tycho tillotson 状態方程式 mpm material point method 粒子法 音響流動化 acoustic fluidization 天文 astronomy シミュレーション simulation',
+  },
+  {
+    id: 'sunrise',
+    c: '天文',
+    t: '日の出と日の入り',
+    d: '世界の昼と夜、選んだ地点の太陽の道すじを描きます。',
+    ic: 'sun',
+    r: ['moon', 'solar-eclipse', 'halo', 'lens'],
+    k: '日の出と日の入り sunrise sunset 日の出 日の入り 日没 南中 solar noon culmination 太陽の高度 altitude elevation 方位 azimuth 昼の長さ day length 日照時間 白夜 midnight sun 極夜 polar night 薄明 twilight 市民薄明 civil 航海薄明 nautical 天文薄明 astronomical マジックアワー golden hour blue hour 明暗境界 terminator 昼夜 day night 太陽直下点 subsolar point 夏至 summer solstice 冬至 winter solstice 春分 秋分 equinox 時差 time zone 夏時間 daylight saving 世界地図 world map 大気差 refraction vsop87 meeus 天文 astronomy 太陽 sun',
   },
   {
     id: 'maxwell-demon',

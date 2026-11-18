@@ -1,0 +1,98 @@
+---
+import Busy from '../components/Busy.astro';
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import DatePicker from '../components/DatePicker.astro';
+import More from '../components/More.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import PlanetSite from '../components/PlanetSite.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../lib/planet/planet.css';
+import '../tools/sunrise/style.css';
+import { LANDC, rgb } from '../tools/sunrise/map';
+import { SPEEDS, STEPS, ZONES } from '../tools/sunrise/params';
+import { BANDS } from '../tools/sunrise/sun';
+import Theory from '../tools/sunrise/Theory.astro';
+
+const name = '日の出と日の入り';
+---
+<SiteLayout title={name} tool={{ id: 'sunrise', name }} note="陸地: Natural Earth（パブリックドメイン） · 時間帯の境界: timezone-boundary-builder（© OpenStreetMap contributors, ODbL）を tz-lookup（CC0）で引く">
+  <PageTitle title={name}>世界の昼と夜、選んだ地点の太陽の道すじを描きます。</PageTitle>
+
+  <div class="tgrid">
+
+    <Panel hid="hd-map" title="昼と夜" fixed>
+      <button slot="aux" type="button" class="tg sr-flb" id="sr-flb" aria-pressed="false" title="時刻の操作を右下に浮かべる" aria-label="時刻の操作を右下に浮かべる"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="2.5" width="13" height="11" rx="1.5"/><rect class="sr-fi" x="8" y="8" width="5" height="4" rx=".6"/></svg></button>
+      <PlanetSite slot="aux" />
+      <div slot="aux" class="seg" id="p-play" data-nosave><button type="button" id="play" aria-pressed="false"><span class="led" id="playLed" aria-hidden="true"></span><span id="playT">再生</span></button></div>
+      <div class="pn-clock">
+        <button type="button" class="pn-nowbtn" id="nowbtn" aria-pressed="true" title="現在の日時へ"><span class="led on" id="nowLed" aria-hidden="true"></span>現在</button>
+        <span class="pn-clk"><span id="clk">—</span><small id="clkz">—</small></span>
+        <span class="pn-st"><span class="pn-dtrow"><b id="o-date">—</b><DatePicker /></span></span>
+      </div>
+      <div class="sr-facts">
+        <span class="pn-st">高度<b id="f0">—</b></span>
+        <span class="pn-st">方位<b id="f1">—</b></span>
+        <span class="pn-st">日の出<b id="f2">—</b></span>
+        <span class="pn-st">南中<b id="f3">—</b></span>
+        <span class="pn-st">日の入り<b id="f4">—</b></span>
+        <span class="pn-st">昼の長さ<b id="f5">—</b></span>
+      </div>
+      <div class="sr-map" id="mview">
+        <canvas id="mc" role="img" aria-label="昼と夜の世界地図。押すとその地点を選ぶ"></canvas>
+        <Busy id="m-busy" text="読み込み中…" />
+      </div>
+      <div class="sr-key">
+        {BANDS.map((b, i) => <span><i style={`background:${rgb(LANDC[i])}`}></i>{b}</span>)}
+        <span><i class="sr-ksun"></i>太陽が真上の地点</span>
+        <span><i class="sr-kpin"></i>選んだ地点</span>
+      </div>
+      <More id="g-view" title="表示の設定"><div class="ana2">
+        <div class="ptab">
+          <ChoiceRow k="tz" name="時刻" choices={ZONES} value="local" />
+        </div>
+        <div class="ptab">
+          <ChoiceRow k="sp" name="再生の速さ" choices={SPEEDS} value="hour" />
+        </div>
+      </div></More>
+    </Panel>
+
+    <Panel hid="hd-sky" title="この地点から見た空">
+      <div class="sr-sky"><canvas id="kc" role="img" aria-label="地点から見た太陽の 1 日の道すじ（横は方位、縦は高度）"></canvas></div>
+      <div class="sr-key">
+        <span><i class="sr-kpath"></i>今日の道すじ（矢じりは進む向き、破線は地平線の下）</span>
+        <span><i class="sr-kref"></i>夏至・冬至の道すじ</span>
+      </div>
+    </Panel>
+
+    <Panel hid="hd-year" title="この地点の 1 年">
+      <span slot="aux" class="aux">横は日付、縦は時刻</span>
+      <canvas id="yc" class="sr-year" role="img" aria-label="地点の 1 年の昼と夜（横は日付、縦は時刻）。押すとその日時へ移る"></canvas>
+      <p class="sr-read" id="y-read" aria-live="polite">&nbsp;</p>
+    </Panel>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <div class="sr-fl" id="sr-fl" role="region" aria-label="時刻の操作" hidden>
+    <div class="sr-fl-h">
+      <button type="button" class="tg" id="sr-fl-now" aria-pressed="true" title="現在の日時へ"><span class="led on" aria-hidden="true"></span>現在</button>
+      <button type="button" class="tg" id="sr-fl-play" aria-pressed="false"><span class="led" aria-hidden="true"></span><span id="sr-fl-playT">再生</span></button>
+      <span class="sr-fl-clk"><b id="sr-fl-time">—</b><span id="sr-fl-date">—</span></span>
+      <button type="button" class="sr-fl-x" id="sr-fl-x" title="閉じる" aria-label="時刻の操作を閉じる"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 2.5l7 7M9.5 2.5l-7 7"/></svg></button>
+    </div>
+    <div class="sr-fl-st" role="group" aria-label="時刻を戻す・進める">
+      {STEPS.map(([s, l]) => <button type="button" class="tg" data-step={-s} aria-label={`${l}戻す`}>−{l}</button>)}
+      {STEPS.map(([s, l]) => <button type="button" class="tg" data-step={s} aria-label={`${l}進める`}>＋{l}</button>)}
+    </div>
+  </div>
+
+  <RelatedTools current="sunrise" />
+  <script>
+    import '../tools/sunrise/client';
+  </script>
+</SiteLayout>
