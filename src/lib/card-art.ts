@@ -1106,6 +1106,7 @@ function prlExt(p: Pt, d: Pt, X: number): Pt {
   if (d[1] > 0) t = Math.min(t, (47 - p[1]) / d[1]);
   if (d[1] < 0) t = Math.min(t, (1 - p[1]) / -d[1]);
   return [p[0] + d[0] * t, p[1] + d[1] * t];
+}
 
 /* ---------- マンデルブロ集合: 左に集合と |z_k| = 2 の線、右に c のジュリア集合、左に点 c ---------- */
 const MB_M2 = { p: 2, pre: 0, post: 0, conj: false };
