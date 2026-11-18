@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { dayOf } from '../src/tools/sunrise/day';
 import { band, geoAltAz, subsolar, sunEq, sunEqLow } from '../src/tools/sunrise/sun';
+import { approx, localDay, lookupZone, offText, zoneOffset } from '../src/tools/sunrise/tz';
 import { yearGrid } from '../src/tools/sunrise/year';
 
 const D = Math.PI / 180;
@@ -91,5 +92,48 @@ describe('1 年の格子', () => {
 
   it('閏年は 366 列', () => {
     expect(yearGrid(...TOKYO, 2028, () => JST).nd).toBe(366);
+  });
+});
+
+describe('時間帯', () => {
+  it('座標から時間帯', async () => {
+    expect(await lookupZone(40.7128, -74.006)).toBe('America/New_York');
+    expect(await lookupZone(35.6895, 139.6917)).toBe('Asia/Tokyo');
+  });
+
+  it('夏時間と 30 分・45 分の差', () => {
+    expect(zoneOffset('America/New_York', -74, Date.UTC(2026, 6, 1))).toBe(-4 * 36e5);
+    expect(zoneOffset('America/New_York', -74, Date.UTC(2026, 0, 1))).toBe(-5 * 36e5);
+    expect(offText(zoneOffset('Asia/Kolkata', 72.9, Date.UTC(2026, 0, 1)))).toBe('UTC+5:30');
+    expect(offText(zoneOffset('Asia/Kathmandu', 85.3, Date.UTC(2026, 0, 1)))).toBe('UTC+5:45');
+    expect(offText(-5 * 36e5)).toBe('UTC−5');
+    expect(offText(9 * 36e5)).toBe('UTC+9');
+  });
+
+  it('時間帯がないときは経度から', () => {
+    expect(zoneOffset(null, 139.7, 0)).toBe(9 * 36e5);
+    expect(zoneOffset(null, -74, 0)).toBe(-5 * 36e5);
+    expect([approx(null), approx('Etc/GMT+2'), approx('Asia/Tokyo')]).toEqual([true, true, false]);
+  });
+
+  it('知らない時間帯の名前は経度から', () => {
+    expect(zoneOffset('Nowhere/Nothing', 139.7, 0)).toBe(9 * 36e5);
+  });
+
+  it('夏時間の始まる日は 23 時間、終わる日は 25 時間', () => {
+    const off = (ms: number) => zoneOffset('America/New_York', -74, ms);
+    const [a, b] = localDay(Date.UTC(2026, 2, 8, 17), off);
+    expect(a).toBe(Date.UTC(2026, 2, 8, 5));
+    expect(b - a).toBe(23 * 36e5);
+    const [c, d] = localDay(Date.UTC(2026, 10, 1, 17), off);
+    expect(d - c).toBe(25 * 36e5);
+  });
+
+  it('夏時間の日でも 1 日分の出来事が出る', () => {
+    const off = (ms: number) => zoneOffset('America/New_York', -74, ms);
+    const d = dayOf(40.7128, -74.006, ...localDay(Date.UTC(2026, 2, 8, 17), off));
+    expect(d.N).toBe(276);
+    expect(d.rise).not.toBeNull();
+    expect(d.set).not.toBeNull();
   });
 });
