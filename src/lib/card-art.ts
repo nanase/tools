@@ -16,6 +16,7 @@ import {
 } from '../tools/dictionary/model';
 import { czaAlt, parDist, R22 } from '../tools/halo/labels';
 import { fanPath } from '../tools/jjy/fan';
+import { field as mbField, iso as mbIso } from '../tools/mandelbrot/contour';
 import { FEAT, PG2, PG3, PW2, PW3, Q_FIG } from '../tools/piano-action/geom';
 import { OUTLINE as PA_OUT } from '../tools/piano-action/outline';
 import { type Encoded, encode } from '../tools/qr-code/encode';
@@ -1105,6 +1106,42 @@ function prlExt(p: Pt, d: Pt, X: number): Pt {
   if (d[1] > 0) t = Math.min(t, (47 - p[1]) / d[1]);
   if (d[1] < 0) t = Math.min(t, (1 - p[1]) / -d[1]);
   return [p[0] + d[0] * t, p[1] + d[1] * t];
+
+/* ---------- マンデルブロ集合: 左に集合と |z_k| = 2 の線、右に c のジュリア集合、左に点 c ---------- */
+const MB_M2 = { p: 2, pre: 0, post: 0, conj: false };
+/** ジュリア集合の c。0.9 秒ごとに次へ */
+const MB_CS: readonly (readonly [number, number])[] = [
+  [-1, 0],
+  [-0.12, 0.74],
+  [0.2, 0],
+  [-0.5, 0.3],
+];
+/** 左の図の 1 単位あたりの長さ */
+const MB_S = 2.7 / 46;
+const mbMemo = new Map<string, string>();
+const mbCached = (k: string, f: () => string): string => {
+  let v = mbMemo.get(k);
+  if (v === undefined) {
+    v = f();
+    mbMemo.set(k, v);
+  }
+  return v;
+};
+let mbLeft: ReturnType<typeof mbField> | null = null;
+const mbFill = (d: string): string => (d ? `<path class="fc" fill-rule="evenodd" d="${d}"/>` : '');
+function mbArt(t: number): string {
+  /* 線は 1 秒に 2.5 本増え、8 本そろうと集合を塗る（止まっている絵はそろった形） */
+  const k = t === 0 ? 9 : 1 + (Math.floor(t * 2.5) % 9),
+    q = Math.floor(t / 0.9) % MB_CS.length,
+    c = MB_CS[q];
+  const left = mbCached(`l${k}`, () => {
+    mbLeft ??= mbField(0, 0, 46, 48, -0.62, 0, MB_S, MB_M2, 40);
+    let o = '';
+    for (let j = 1; j <= Math.min(k, 8); j++) o += P(j === k ? 'a' : 'c t', mbIso(mbLeft, j + 1));
+    return `<svg x="0" y="0" width="46" height="48" viewBox="0 0 46 48">${o}${k >= 9 ? mbFill(mbIso(mbLeft, 40)) : ''}</svg>`;
+  });
+  const julia = mbCached(`j${q}`, () => mbFill(mbIso(mbField(48, 0, 120, 48, 0, 0, 3.3 / 72, MB_M2, 60, c), 60)));
+  return `${left}${julia}<circle class="fa" cx="${r1(23 + (c[0] + 0.62) / MB_S)}" cy="${r1(24 + c[1] / MB_S)}" r="2.2"/>`;
 }
 
 export const ART: Record<string, Art> = {
@@ -2952,6 +2989,7 @@ export const ART: Record<string, Art> = {
     );
   },
   /* 分岐図: ロジスティック写像の枝分かれ（周期 1〜8 は線、その先のカオスは点）。r の縦線が左から右へ動き、その r の軌道の点を光らせる */
+  mb: mbArt,
   bf(t) {
     /* r は丸めた位置から決める（カオスの軌道は r のわずかな差で変わるので、1 周後も同じ絵にするため） */
     const X = r1(4 + 112 * mod(t / LOOP.bf + 0.55, 1)),
@@ -3423,6 +3461,7 @@ export const LOOP: Record<string, number> = {
   tm: Math.PI / 1.2,
   wv: 6,
   bf: 4,
+  mb: 3.6,
   rv: 2.4,
   cv: 3,
   icv: 3,

@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { FB, fromDec, fromFix, toFix } from '../src/tools/mandelbrot/fixed';
-import { famOf, type Formula, isInt, maxIter, nu, q1024 } from '../src/tools/mandelbrot/formula';
+import { type Formula, famOf, isInt, maxIter, nu, q1024 } from '../src/tools/mandelbrot/formula';
 import { morphAt, snapMix, snapPower } from '../src/tools/mandelbrot/morph';
 import { orbit } from '../src/tools/mandelbrot/orbit';
 import { pickRef, refStale } from '../src/tools/mandelbrot/ref';
-import { parseView, View } from '../src/tools/mandelbrot/view';
+import { fmtPower, fmtZoom, parseView, View } from '../src/tools/mandelbrot/view';
 
 const F = (o: Partial<Formula> = {}): Formula => ({ p: 2, pre: 0, post: 0, conj: false, ...o });
 
@@ -107,7 +107,11 @@ describe('視点', () => {
     expect(fromFix(after[1] - before[1])).toBeCloseTo(0, 12);
   });
   it('深い所でも指した点がずれない', () => {
-    const v = new View(fromDec('-0.743643887037158704752191506114774'), fromDec('0.131825904205311970493132056385139'), 1e25);
+    const v = new View(
+      fromDec('-0.743643887037158704752191506114774'),
+      fromDec('0.131825904205311970493132056385139'),
+      1e25,
+    );
     const before = v.pointAt(-0.7, 0.2);
     v.zoomBy(1000, -0.7, 0.2);
     for (let i = 0; i < 400 && v.step(1 / 60); i++);
@@ -198,5 +202,16 @@ describe('基準の点', () => {
     const r = pickRef(fromDec('0.4'), 0n, 0.5, f, 200);
     expect(r.orbit.len).toBeGreaterThan(50);
     expect(r.x).not.toBe(fromDec('0.4'));
+  });
+});
+
+describe('表示', () => {
+  it('倍率とべき', () => {
+    expect(fmtZoom(1)).toBe('×1.00');
+    expect(fmtZoom(180)).toBe('×180');
+    expect(fmtZoom(3e13)).toBe('×3.00×10¹³');
+    expect(fmtZoom(9.999e4)).toBe('×1.00×10⁵');
+    expect(fmtPower(3)).toBe('z³');
+    expect(fmtPower(2.5)).toBe('z^2.50');
   });
 });

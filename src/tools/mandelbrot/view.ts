@@ -129,3 +129,27 @@ export function parseView(o: unknown): { cx: bigint; cy: bigint; zoom: number } 
   if (!/^-?\d+$/.test(cx) || !/^-?\d+$/.test(cy) || !(z >= ZOOM_MIN && z <= ZOOM_MAX)) return null;
   return { cx: BigInt(cx), cy: BigInt(cy), zoom: z };
 }
+
+const SUP = '⁰¹²³⁴⁵⁶⁷⁸⁹';
+const sup = (n: number): string =>
+  (n < 0 ? '⁻' : '') +
+  String(Math.abs(n))
+    .split('')
+    .map((d) => SUP[+d])
+    .join('');
+
+/** 倍率の表示（×1.00・×180・×3.00×10¹³） */
+export function fmtZoom(z: number): string {
+  if (z < 1000) return `×${z < 10 ? z.toFixed(2) : z < 100 ? z.toFixed(1) : z.toFixed(0)}`;
+  let e = Math.floor(Math.log10(z)),
+    m = z / 10 ** e;
+  if (m >= 9.995) {
+    m /= 10;
+    e++;
+  }
+  return `×${m.toFixed(2)}×10${sup(e)}`;
+}
+
+/** べきの表示（整数は z の右肩、それ以外は小数 2 桁） */
+export const fmtPower = (p: number): string =>
+  Math.abs(p - Math.round(p)) < 1e-9 ? `z${sup(Math.round(p))}` : `z^${p.toFixed(2)}`;

@@ -239,7 +239,7 @@ export const TOOLS: Tool[] = [
     t: '無限音階',
     d: 'どこまでも上がり続けて聞こえる音を鳴らします。',
     ic: 'shp',
-    r: ['temperament', 'fm-synth', 'reverb', 'chord-progression'],
+    r: ['temperament', 'fm-synth', 'mandelbrot', 'chord-progression'],
     k: 'shepard tone シェパードトーン shepard risset glissando リセットのグリッサンド 無限音階 無限 音階 上がり続ける 下がり続ける 錯覚 聴覚の錯覚 auditory illusion 和音 コード chord スペクトログラム spectrogram 残響 reverb 音色 オクターブ octave オーディオ audio',
   },
   {
@@ -639,8 +639,17 @@ export const TOOLS: Tool[] = [
     t: '分岐図',
     d: 'ロジスティック写像が周期倍分岐をくり返してカオスに至る様子を見ます。',
     ic: 'bf',
-    r: ['pendulum', 'maxwell-demon', 'noise', 'fft'],
+    r: ['mandelbrot', 'pendulum', 'maxwell-demon', 'fft'],
     k: 'bifurcation diagram 分岐図 ロジスティック写像 logistic map 正弦写像 sine map テント写像 tent map エノン写像 henon map カオスニューロン chaotic neuron tanh ガウス写像 gauss map mouse map リッカー写像 ricker map 3 次写像 cubic map クモの巣図 蜘蛛の巣図 cobweb 時系列 周期倍分岐 period doubling カオス chaos リアプノフ指数 lyapunov exponent feigenbaum ファイゲンバウム 定数 普遍性 universality 集積点 窓 周期 3 period three li-yorke sharkovskii 超安定 superstable 力学系 dynamical system 非線形 nonlinear may 数学 math',
+  },
+  {
+    id: 'mandelbrot',
+    c: '数学',
+    t: 'マンデルブロ集合',
+    d: '式を変えながら、フラクタルを深く拡大します。',
+    ic: 'mb',
+    r: ['bifurcation', 'shepard-tone', 'shading', 'fft'],
+    k: 'mandelbrot set マンデルブロ集合 マンデルブロート フラクタル fractal 複素平面 complex plane 拡大 zoom deep zoom 深い拡大 摂動法 perturbation リベース rebasing 参照軌道 reference orbit 多倍長 bigint 単精度 float32 バーニングシップ burning ship トリコーン tricorn mandelbar セルティック celtic バッファロー buffalo マルチブロ multibrot べき power ジュリア集合 julia set 自己相似 self-similarity 脱出時間 escape time 配色 カラーサイクリング color cycling gpu webgl 数学 math',
   },
   {
     id: 'tuner',

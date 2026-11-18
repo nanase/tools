@@ -67,7 +67,7 @@ export class Renderer {
   /** WebGL2 か浮動小数点のテクスチャへの描画がなければ null */
   static async create(cv: HTMLCanvasElement): Promise<Renderer | null> {
     const gl = cv.getContext('webgl2', { antialias: false, alpha: false, depth: false, preserveDrawingBuffer: true });
-    if (!gl || !gl.getExtension('EXT_color_buffer_float')) return null;
+    if (!gl?.getExtension('EXT_color_buffer_float')) return null;
     const vao = gl.createVertexArray(),
       buf = gl.createBuffer();
     gl.bindVertexArray(vao);
@@ -201,7 +201,7 @@ export class Renderer {
     gl.uniform1i(U('uIt'), 0);
     const st = palOf(C.pal).s,
       a = new Float32Array(24);
-    st.forEach((c, i) => a.set([c[0] / 255, c[1] / 255, c[2] / 255], i * 3));
+    for (const [i, c] of st.entries()) a.set([c[0] / 255, c[1] / 255, c[2] / 255], i * 3);
     gl.uniform3fv(U('uSt'), a);
     gl.uniform1i(U('uN'), st.length);
     gl.uniform1f(U('uDen'), C.den);
@@ -211,7 +211,18 @@ export class Renderer {
     gl.drawArrays(gl.TRIANGLES, 0, 3);
     gl.bindFramebuffer(gl.READ_FRAMEBUFFER, co.f);
     gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, null);
-    gl.blitFramebuffer(0, 0, this.w, this.h, 0, 0, this.W, this.H, gl.COLOR_BUFFER_BIT, this.w === this.W ? gl.NEAREST : gl.LINEAR);
+    gl.blitFramebuffer(
+      0,
+      0,
+      this.w,
+      this.h,
+      0,
+      0,
+      this.W,
+      this.H,
+      gl.COLOR_BUFFER_BIT,
+      this.w === this.W ? gl.NEAREST : gl.LINEAR,
+    );
   }
 
   /** GPU の仕事の終わりを待つ（帯の高さを合わせるために時間を測る） */

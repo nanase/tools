@@ -1,0 +1,72 @@
+/* マンデルブロ集合のページ。図とその上に重ねる部品・浮かぶ枠は、図の色に合わせてテーマに依らない暗い地にする */
+.mb-stage{position:relative;border-radius:var(--r);overflow:hidden;background:#000;user-select:none;-webkit-user-select:none;--mb-glass:rgba(14,16,18,.86);--mb-edge:#3a4048;--mb-ink:#e6e8e4;--mb-ink2:#a6aeb4;--mb-led:#e8833a}
+.mb-box{position:relative}
+#mb-cv{display:block;width:100%;aspect-ratio:16/10;touch-action:none;cursor:grab;outline:none}
+#mb-cv.drag{cursor:grabbing}
+#mb-cv:focus-visible{box-shadow:inset 0 0 0 2px var(--focus)}
+.mb-hud{position:absolute;display:flex;gap:6px;align-items:center;flex-wrap:wrap;pointer-events:none;font-size:13px;color:var(--mb-ink)}
+.mb-hud>*{pointer-events:auto}
+.mb-tl{left:8px;top:8px}
+.mb-tr{right:8px;top:8px;justify-content:flex-end}
+.mb-bl{left:8px;bottom:8px}
+.mb-br{right:8px;bottom:8px}
+.mb-sel{font:inherit;font-size:13px;color:var(--mb-ink);background:var(--mb-glass);border:1px solid var(--mb-edge);border-radius:8px;padding:5px 8px;min-width:10em;cursor:pointer}
+.mb-sel option{background:#1d2126;color:var(--mb-ink)}
+.mb-tg{display:inline-flex;align-items:center;gap:6px;min-height:30px;padding:0 10px;border:1px solid var(--mb-edge);border-radius:8px;background:var(--mb-glass);color:var(--mb-ink);font:inherit;font-size:13px;cursor:pointer;white-space:nowrap}
+.mb-tg:hover{border-color:#5a646d}
+.mb-tg .led{background:#4a525a}
+.mb-tg[aria-pressed="true"] .led,.mb-tg .led.on{background:var(--mb-led);box-shadow:0 0 5px var(--mb-led)}
+.mb-deep{cursor:default}
+.mb-deep:hover{border-color:var(--mb-edge)}
+.mb-ib{display:inline-grid;place-items:center;width:34px;height:34px;border:1px solid var(--mb-edge);border-radius:8px;background:var(--mb-glass);color:var(--mb-ink);cursor:pointer}
+.mb-ib svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.mb-zv{display:inline-flex;gap:6px;align-items:baseline;padding:5px 10px;border:1px solid var(--mb-edge);border-radius:8px;background:var(--mb-glass);font:500 14px var(--mono);font-variant-numeric:tabular-nums}
+.mb-cap{color:#ff8a9e;font:12px var(--sans)}
+.mb-prog{position:absolute;left:0;bottom:0;height:2px;width:0;background:var(--mb-ink);pointer-events:none}
+.mb-msg{position:absolute;inset:0;display:grid;place-items:center;margin:0;padding:16px;color:var(--mb-ink);text-align:center}
+.mb-msg[hidden]{display:none}
+.mb-mark{position:absolute;width:15px;height:15px;margin:-8px 0 0 -8px;pointer-events:none}
+.mb-mark[hidden]{display:none}
+.mb-mark::before,.mb-mark::after{content:"";position:absolute;background:var(--mb-led)}
+.mb-mark::before{left:7px;top:0;width:2px;height:15px}
+.mb-mark::after{top:7px;left:0;width:15px;height:2px}
+/* 浮かぶ枠 */
+.mb-flt{background:var(--mb-glass);border:1px solid var(--mb-edge);border-radius:10px;padding:8px 10px;color:var(--mb-ink);font-size:13px;backdrop-filter:blur(4px)}
+.mb-flt[hidden]{display:none}
+.mb-fcol{position:absolute;right:8px;top:50px;display:flex;flex-direction:column;gap:8px;width:244px;max-height:calc(100% - 100px);overflow:auto;scrollbar-width:none;pointer-events:none}
+.mb-fcol>*{pointer-events:auto}
+.mb-fm{font-family:var(--math);font-size:18px;text-align:center;padding:2px 0 6px;white-space:nowrap}
+.mb-fm .q{opacity:var(--a,1)}
+.mb-pad{display:block;width:100%;aspect-ratio:1;touch-action:none;cursor:crosshair}
+.mb-row{display:grid;grid-template-columns:4.6em minmax(0,1fr) 3.4em;gap:8px;align-items:center;min-height:30px}
+.mb-row label{color:var(--mb-ink2)}
+.mb-row input{width:100%;margin:0;accent-color:var(--mb-ink)}
+.mb-v{font:12px var(--mono);font-variant-numeric:tabular-nums;text-align:right}
+.mb-btns{display:flex;gap:6px;justify-content:space-between;margin-top:6px}
+.mb-btns.mb-end{justify-content:flex-end}
+.mb-flt .mb-tg{background:#1d2126}
+.mb-pals{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}
+.mb-pal{width:34px;height:18px;padding:0;border:1px solid var(--mb-edge);border-radius:5px;cursor:pointer}
+.mb-pal[aria-pressed="true"]{outline:2px solid var(--mb-ink);outline-offset:2px}
+.mb-ju{position:absolute;left:8px;bottom:52px;width:210px;padding:6px}
+.mb-stage.mb-plo .mb-ju{bottom:204px}
+#mb-jcv{display:block;width:100%;aspect-ratio:1;border-radius:6px;background:#000}
+.mb-jcap{margin:4px 2px 0;color:var(--mb-ink2);font:12px var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mb-strip{position:absolute;left:8px;right:8px;bottom:52px;display:flex;gap:8px;overflow-x:auto;padding:6px;background:var(--mb-glass);border:1px solid var(--mb-edge);border-radius:10px;scrollbar-width:thin}
+.mb-strip[hidden]{display:none}
+.mb-place{flex:none;display:grid;gap:2px;width:112px;padding:4px;border:1px solid var(--mb-edge);border-radius:8px;background:#1d2126;color:var(--mb-ink);font:inherit;font-size:12px;text-align:left;cursor:pointer}
+.mb-place:hover{border-color:#5a646d}
+.mb-place canvas{display:block;width:102px;height:64px;border-radius:5px;background:#000}
+.mb-place small{color:var(--mb-ink2);font:11px var(--mono)}
+#mb-how{--how-min:340px}
+#mb-how canvas{display:block;width:172px;height:104px;border-radius:2px;background:var(--screen)}
+/* スマートフォン: 図を正方形にし、浮かぶ枠は図の下に並べる */
+@media (max-width:720px){
+  #mb-cv{aspect-ratio:1}
+  .mb-tr{top:46px;left:8px;right:8px;justify-content:flex-start}
+  .mb-fcol{position:static;width:auto;max-height:none;padding:8px;overflow:visible}
+  .mb-ju{position:static;width:auto;max-width:260px;margin:0 8px 8px}
+  .mb-stage.mb-plo .mb-ju{bottom:auto}
+  .mb-strip{position:static;margin:0 8px 8px}
+  .mb-fcol .mb-pad{max-width:300px;margin:0 auto}
+}
