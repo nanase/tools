@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { dayOf } from '../src/tools/sunrise/day';
 import { band, geoAltAz, subsolar, sunEq, sunEqLow } from '../src/tools/sunrise/sun';
+import { yearGrid } from '../src/tools/sunrise/year';
 
 const D = Math.PI / 180;
 const TOKYO = [35.6895, 139.6917] as const;
@@ -32,5 +34,62 @@ describe('太陽の位置', () => {
 
   it('段の境', () => {
     expect([1, -0.833, -1, -6.1, -12.1, -18.1].map(band)).toEqual([0, 0, 1, 2, 3, 4]);
+  });
+});
+
+const JST = 9 * 36e5;
+const jstDay = (y: number, m: number, d: number) =>
+  [Date.UTC(y, m - 1, d) - JST, Date.UTC(y, m - 1, d + 1) - JST] as const;
+/** 時刻 ms の JST の時・分を 0 時からの分にする（秒は切り捨て。暦計算室の表と同じ） */
+const hm = (ms: number | null) => {
+  const t = new Date((ms ?? Number.NaN) + JST);
+  return t.getUTCHours() * 60 + t.getUTCMinutes();
+};
+
+describe('その日の出来事', () => {
+  // 基準は国立天文台 暦計算室の東京。都庁の座標とのずれを見込んで ±1 分
+  it('東京の夏至の日の出 4:25・日の入り 19:00', () => {
+    const d = dayOf(...TOKYO, ...jstDay(2026, 6, 21));
+    expect(Math.abs(hm(d.rise) - (4 * 60 + 25))).toBeLessThanOrEqual(1);
+    expect(Math.abs(hm(d.set) - 19 * 60)).toBeLessThanOrEqual(1);
+    expect(d.polar).toBeNull();
+  });
+
+  it('東京の冬至の日の出 6:47・日の入り 16:32', () => {
+    const d = dayOf(...TOKYO, ...jstDay(2026, 12, 22));
+    expect(Math.abs(hm(d.rise) - (6 * 60 + 47))).toBeLessThanOrEqual(1);
+    expect(Math.abs(hm(d.set) - (16 * 60 + 32))).toBeLessThanOrEqual(1);
+    expect(d.len / 36e5).toBeCloseTo((16 * 60 + 32 - (6 * 60 + 47)) / 60, 1);
+  });
+
+  it('5 分おきの高度と方位を 1 日分持つ', () => {
+    const d = dayOf(...TOKYO, ...jstDay(2026, 6, 21));
+    expect(d.N).toBe(288);
+    expect(d.hs.length).toBe(289);
+    expect(d.azs.length).toBe(289);
+    expect(d.riseAz).toBeGreaterThan(55);
+    expect(d.riseAz).toBeLessThan(65);
+  });
+
+  it('ロングイェールビーンの夏至は白夜、冬至は極夜', () => {
+    const lyr = [78.2232, 15.6267] as const;
+    const s = dayOf(...lyr, Date.UTC(2026, 5, 21) - 2 * 36e5, Date.UTC(2026, 5, 22) - 2 * 36e5);
+    expect([s.polar, s.rise, s.set, s.len]).toEqual(['day', null, null, 864e5]);
+    const w = dayOf(...lyr, Date.UTC(2026, 11, 21) - 36e5, Date.UTC(2026, 11, 22) - 36e5);
+    expect([w.polar, w.rise, w.set, w.len]).toEqual(['night', null, null, 0]);
+  });
+});
+
+describe('1 年の格子', () => {
+  it('365 列 × 144 行で、正午は昼・真夜中は夜', () => {
+    const g = yearGrid(...TOKYO, 2026, () => JST);
+    expect(g.nd).toBe(365);
+    expect(g.cells.length).toBe(365 * 144);
+    expect(g.cells[72 * g.nd + 100]).toBe(0);
+    expect(g.cells[0 * g.nd + 100]).toBe(4);
+  });
+
+  it('閏年は 366 列', () => {
+    expect(yearGrid(...TOKYO, 2028, () => JST).nd).toBe(366);
   });
 });
