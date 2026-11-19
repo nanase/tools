@@ -44,6 +44,10 @@ function bubble(): HTMLElement {
 /** a の下に text を出す。ms を渡すとその時間で閉じる。印（.nt）なら行の下に出し、矢印を印に向ける */
 export function show(a: Element, text: string, kind: MsgKind = '', ms = 0): void {
   const b = bubble();
+  /* 全画面の間は、その枠の中に出す（枠の外はブラウザの全画面では描かれず、fixed の枠にも隠れる） */
+  const host = document.querySelector<HTMLElement>('.fs-on') ?? document.body;
+  if (b.parentElement !== host) host.append(b);
+  b.classList.toggle('fx', host !== document.body);
   clearTimeout(timer);
   anchor = a;
   b.textContent = text;
@@ -59,10 +63,13 @@ function place(a: Element): void {
     r = a.getBoundingClientRect(),
     under = (a.matches('.nt') && a.closest('.prow')) || a,
     w = b.offsetWidth,
-    cx = r.left + r.width / 2 + scrollX;
-  const left = Math.max(scrollX + 16, Math.min(cx - 24, scrollX + document.documentElement.clientWidth - 16 - w));
+    /* 全画面の枠の中では fixed なので、スクロールの量を足さない */
+    sx = b.classList.contains('fx') ? 0 : scrollX,
+    sy = b.classList.contains('fx') ? 0 : scrollY,
+    cx = r.left + r.width / 2 + sx;
+  const left = Math.max(sx + 16, Math.min(cx - 24, sx + document.documentElement.clientWidth - 16 - w));
   b.style.left = `${left}px`;
-  b.style.top = `${under.getBoundingClientRect().bottom + scrollY + 8}px`;
+  b.style.top = `${under.getBoundingClientRect().bottom + sy + 8}px`;
   b.style.setProperty('--ax', `${cx - left}px`);
 }
 

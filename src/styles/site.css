@@ -308,6 +308,7 @@ a.unit:hover h3{text-decoration:underline;text-decoration-color:var(--ink-3);tex
 /* 行のメッセージと、… で省いた文字の全文の吹き出し（lib/bubble.ts）。ページに重ねるので、開いても下の行は動かない */
 .desc.fl{position:absolute;top:0;left:0;width:max-content;max-width:min(340px,calc(100vw - 32px));font-size:13px;font-weight:400;line-height:1.6;overflow-wrap:anywhere;pointer-events:none}
 .desc.fl.er{background:var(--warn)}
+.desc.fl.fx{position:fixed;z-index:60}
 .mini{position:sticky;top:var(--rail-h);z-index:20;display:flex;gap:24px;margin:0 -16px 14px;padding:6px 16px;background:var(--rail-2);color:var(--rail-ink-2);font:500 12.5px/1.5 var(--mono);white-space:nowrap;overflow:hidden}
 .mini b{color:var(--rail-ink);font-weight:700;font-size:14px;margin-left:.6em}
 .mini>b{margin-left:0}

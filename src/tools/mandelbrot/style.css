@@ -58,6 +58,13 @@
 .mb-place:hover{border-color:#5a646d}
 .mb-place canvas{display:block;width:102px;height:64px;border-radius:5px;background:#000}
 .mb-place small{color:var(--mb-ink2);font:11px var(--mono)}
+/* 全画面: 図を画面いっぱいに。全画面のボタンは右上の切り替えの並びに置く */
+.mb-fs{position:static;width:34px;height:34px;border:1px solid var(--mb-edge);border-radius:8px;background:var(--mb-glass);color:var(--mb-ink)}
+.mb-fs:hover{background:var(--mb-glass);border-color:#5a646d}
+.mb-fs svg{width:18px;height:18px;stroke-width:1.8}
+.mb-stage.fs-on{display:flex;flex-direction:column}
+.mb-stage.fs-on .mb-box{flex:1;min-height:0}
+.mb-stage.fs-on #mb-cv{height:100%;aspect-ratio:auto}
 #mb-how{--how-min:340px}
 #mb-how canvas{display:block;width:172px;height:104px;border-radius:2px;background:var(--screen)}
 /* スマートフォン: 図を正方形にし、浮かぶ枠は図の下に並べる */
@@ -70,4 +77,10 @@
   .mb-stage.mb-plo .mb-ju{bottom:auto}
   .mb-strip{position:static;margin:0 8px 8px}
   .mb-fcol .mb-pad{max-width:300px;margin:0 auto}
+}
+/* スマートフォンの全画面: 浮かぶ枠は図の下に並べず、図の下側に重ねる */
+@media (max-width:720px){
+  .mb-stage.fs-on .mb-fcol{position:absolute;top:auto;left:8px;right:8px;bottom:52px;max-height:50%;padding:0;overflow:auto}
+  .mb-stage.fs-on .mb-ju{position:absolute;left:8px;bottom:52px;width:160px;margin:0}
+  .mb-stage.fs-on .mb-strip{position:absolute;left:8px;right:8px;bottom:52px;margin:0}
 }

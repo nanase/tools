@@ -28,13 +28,6 @@
 .hls .ld{fill:none;stroke:#fff;stroke-width:1.6;opacity:.9}
 .hls .ld.sel{stroke-width:2.6}
 .hls .ln{stroke:#fff;stroke-width:1.2;opacity:.55}
-/* 全画面の切り替え（映像の右上） */
-.hv-fs{position:absolute;top:8px;right:8px;z-index:2;display:grid;place-items:center;width:32px;height:32px;padding:0;border:0;border-radius:6px;background:rgb(0 0 0 / .45);color:#fff;cursor:pointer}
-.hv-fs:hover{background:rgb(0 0 0 / .7)}
-.hv-fs:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
-.hv-fs svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
-.hv-fs .i-close,.fs .hv-fs .i-open{display:none}
-.fs .hv-fs .i-close{display:block}
 .v-rate{margin-left:auto}
 @media (max-width:559px){.v-rate{margin-left:0}}
 

@@ -35,6 +35,17 @@
 .pc-hint{font-size:12px;color:var(--ink-3)}
 .pc-tset{display:flex;flex-wrap:wrap;justify-content:center;gap:6px}
 
+/* 全画面: 正面図を画面いっぱいに。操作と全体図・文字盤は右上に浮かべる */
+.pc-main.fs-on{display:flex;flex-direction:column;padding:8px;background:var(--surface)}
+.pc-main.fs-on .pc-v-front{flex:1;min-height:0}
+.pc-main.fs-on .pc-h-front{height:100%}
+.pc-main .fs-pop{width:min(400px,calc(100% - 16px))}
+.fs-pop .pc-side{display:flex}
+.fs-pop .pc-h-mini{height:190px}
+.fs-pop .pc-h-dial{height:150px}
+.fs-pop #pc-pause{margin-right:0}
+.fs-pop #pc-snd{margin-left:0}
+
 /* 凡例 */
 .pc-leg{margin-bottom:8px}
 .pc-sq{display:inline-block;width:12px;height:12px;border-radius:50%;border:1.5px solid}

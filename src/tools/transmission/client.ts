@@ -4,6 +4,7 @@
  */
 import { Choice } from '../../lib/choice';
 import { $, $$, esc } from '../../lib/dom';
+import { initFullscreen } from '../../lib/fullscreen';
 import { RM } from '../../lib/motion';
 import { ParamGroup } from '../../lib/param';
 import { handheld } from '../../lib/pause';
@@ -232,6 +233,20 @@ function setFloat(on: boolean, save = true): void {
 }
 flBtn.addEventListener('click', () => setFloat(fl.hasAttribute('hidden')));
 $('#tm-fl-x').addEventListener('click', () => setFloat(false));
+/* 全画面: 3 つの図で画面を埋め、操作盤を右下の浮かぶ枠へ移す。閉じたら操作盤の開閉を元に戻す */
+{
+  let flWas = false;
+  initFullscreen({
+    root: $('.tm-tri'),
+    btn: $<HTMLButtonElement>('#tm-fs'),
+    pop: () => [fl],
+    popTitle: '操作盤',
+    change: (on) => {
+      if (on) flWas = !fl.hidden;
+      fl.hidden = on ? false : !flWas;
+    },
+  });
+}
 
 for (const b of $$<HTMLButtonElement>('[data-ped]')) {
   const dir = b.dataset.ped === '1' ? 1 : -1;

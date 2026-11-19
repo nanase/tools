@@ -4,6 +4,7 @@
 import { Choice } from '../../lib/choice';
 import { $, $$, esc } from '../../lib/dom';
 import { minus } from '../../lib/format';
+import { initFullscreen } from '../../lib/fullscreen';
 import { ParamGroup } from '../../lib/param';
 import { reserveHeight } from '../../lib/reserve';
 import { addRow, mark } from '../../lib/reset';
@@ -530,7 +531,7 @@ function drawFigure(): void {
     xs.style.visibility = '';
     $('#xcap').style.visibility = '';
     xn.hidden = true;
-    xs.innerHTML = figureSvg(R2, document.body.contains($('#fs')) && !$('#fs').hidden);
+    xs.innerHTML = figureSvg(R2, $('#fs').classList.contains('fs-on'));
     xs.setAttribute('aria-label', `${name}の光の通り道`);
     const c = caption(h, R2, moon());
     txt('#ray-path', c.path);
@@ -614,60 +615,27 @@ G.on('fov', () => updateResults());
 proj$.root.addEventListener('click', () => queueMicrotask(updateResults));
 
 /* ---------- 全画面 ---------- */
-{
-  const fs = $('#fs'),
-    btn = $<HTMLButtonElement>('#hv-fs');
-  /** 全画面へ移す行: 太陽と氷晶、雲、表示 */
-  const T1 = ['#p-el', '#p-pre', '#p-pop', '#p-ori', '#p-w', '#p-tilt', '#p-ca'],
-    T2 = ['#p-tau', '#p-rough'],
-    T3 = ['#p-proj', '#p-names', '#p-ev'];
-  let back: [Comment, HTMLElement][] = [],
-    sy = 0;
-  const move = (el: HTMLElement, to: HTMLElement, before?: HTMLElement) => {
-    const ph = document.createComment('fs');
-    el.before(ph);
-    back.push([ph, el]);
-    if (before) to.insertBefore(el, before);
-    else to.append(el);
-  };
-  const open = () => {
-    if (!fs.hidden) return;
-    sy = scrollY;
-    move(hv, $('#fs-v'));
-    for (const id of T1) move($(id), $('#fs-t1'));
-    for (const id of T2) move($(id), $('#fs-t2'));
-    for (const id of T3) move($(id), $('#fs-t3'));
-    move($('#xsw'), $('#fs-map'), $('#fs-cap'));
-    fs.hidden = false;
-    document.documentElement.style.overflow = 'hidden';
-    btn.setAttribute('aria-label', '全画面を閉じる');
-    btn.title = '全画面を閉じる';
-    fs.requestFullscreen?.().catch(() => {});
-    canvas.focus();
+/** 全画面へ移す行: 太陽と氷晶、雲、表示 */
+const FS_ROWS: [string[], string][] = [
+  [['#p-el', '#p-pre', '#p-pop', '#p-ori', '#p-w', '#p-tilt', '#p-ca'], '#fs-t1'],
+  [['#p-tau', '#p-rough'], '#fs-t2'],
+  [['#p-proj', '#p-names', '#p-ev'], '#fs-t3'],
+];
+initFullscreen({
+  root: $('#fs'),
+  btn: $<HTMLButtonElement>('#hv-fs'),
+  move: () => [
+    [hv, $('#fs-v')],
+    ...FS_ROWS.flatMap(([ids, to]) => ids.map((id) => [$(id), $(to)] as [HTMLElement, HTMLElement])),
+    [$('#xsw'), $('#fs-map')],
+  ],
+  focus: canvas,
+  change: (on) => {
+    /* 左下の光路の図は見出しの前に置く（全画面では文字を大きく描く） */
+    if (on) $('#fs-map').insertBefore($('#xsw'), $('#fs-cap'));
     later('view', 'lab', 'fig');
-  };
-  const close = () => {
-    if (fs.hidden) return;
-    for (const [ph, el] of back) ph.replaceWith(el);
-    back = [];
-    fs.hidden = true;
-    document.documentElement.style.overflow = '';
-    btn.setAttribute('aria-label', '全画面で表示');
-    btn.title = '全画面で表示';
-    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
-    scrollTo(0, sy);
-    btn.focus();
-    later('view', 'lab', 'fig');
-  };
-  btn.addEventListener('click', () => (fs.hidden ? open() : close()));
-  document.addEventListener('fullscreenchange', () => {
-    if (!document.fullscreenElement) close();
-  });
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && !fs.hidden && !document.fullscreenElement && !(e.target instanceof HTMLInputElement))
-      close();
-  });
-}
+  },
+});
 
 initCompare();
 later('scene', 'cloud', 'view', 'fig', 'lab');

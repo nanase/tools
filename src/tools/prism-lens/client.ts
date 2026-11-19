@@ -4,6 +4,7 @@
  */
 import { Choice } from '../../lib/choice';
 import { $, $$ } from '../../lib/dom';
+import { initFullscreen } from '../../lib/fullscreen';
 import { ParamGroup } from '../../lib/param';
 import { store, stored } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
@@ -89,7 +90,7 @@ function changed(keepScene = false): void {
 
 /* ---------- 大きさ ---------- */
 const NARROW = 700;
-const isFull = () => wrap.classList.contains('full');
+const isFull = () => wrap.classList.contains('fs-on');
 function resize(): void {
   const w = stage.clientWidth;
   if (!w) return;
@@ -409,24 +410,12 @@ new Choice<'1' | '0'>($('#p-partial'), (v) => {
 partial = $('#p-partial [aria-pressed="true"]').getAttribute('data-v') !== '0';
 
 /* ---------- 全画面 ---------- */
-const fsBtn = $<HTMLButtonElement>('#pl-fs');
-function setFull(on: boolean): void {
-  if (on === isFull()) return;
-  wrap.classList.toggle('full', on);
-  document.documentElement.style.overflow = on ? 'hidden' : '';
-  const t = on ? '全画面を閉じる' : '全画面で表示';
-  fsBtn.setAttribute('aria-label', t);
-  fsBtn.title = t;
-  if (on) wrap.requestFullscreen?.().catch(() => {});
-  else if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
-  resize();
-}
-fsBtn.addEventListener('click', () => setFull(!isFull()));
-document.addEventListener('fullscreenchange', () => {
-  if (!document.fullscreenElement) setFull(false);
-});
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && isFull() && !document.fullscreenElement && !sel) setFull(false);
+initFullscreen({
+  root: wrap,
+  btn: $<HTMLButtonElement>('#pl-fs'),
+  /* 部品を選んでいる間の Esc は、選択の解除に使う */
+  esc: () => !sel,
+  change: resize,
 });
 
 /* ---------- 開始 ---------- */

@@ -15,6 +15,14 @@
 .tm-cv{display:block;width:100%}
 .tm-h-sec{height:580px}.tm-h-side{height:auto;aspect-ratio:360/266}.tm-h-drum{height:236px}.tm-hg{height:200px}
 @media (max-width:899px){.tm-h-sec{height:auto;aspect-ratio:246/252}.tm-h-drum{height:236px}}
+/* 全画面: 3 つの図で画面を埋める（広い画面は左に展開図、右に側面図と溝）。操作盤は右下の浮かぶ枠に入れる */
+.tm-tri.fs-on{grid-template-rows:minmax(0,1.3fr) minmax(0,1fr) minmax(0,.6fr);padding:8px;background:var(--surface)}
+.tm-tri.fs-on .tm-cv{height:100%;aspect-ratio:auto}
+.tm-tri .fs-pop{top:auto;bottom:8px}
+.fs-pop .tm-fl{position:static;display:block;width:auto;padding:0;border:0;box-shadow:none}
+.fs-pop .tm-fl-x{display:none}
+@media (min-width:900px) and (min-aspect-ratio:1/1){.tm-tri.fs-on{grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);grid-template-rows:minmax(0,1.2fr) minmax(0,1fr);grid-template-areas:"sec side" "sec drum"}.tm-tri.fs-on .tm-v-sec{grid-area:sec}.tm-tri.fs-on .tm-v-side{grid-area:side}.tm-tri.fs-on .tm-v-drum{grid-area:drum}}
+@media (min-width:900px) and (max-aspect-ratio:1/1){.tm-tri.fs-on{grid-template-columns:minmax(0,1fr);grid-template-areas:none}.tm-tri.fs-on .tm-v{grid-area:auto}}
 .tm-scope{border:1px solid var(--line);border-radius:var(--r);background:var(--screen);padding:4px}
 
 /* 凡例 */

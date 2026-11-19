@@ -4,6 +4,7 @@
 import { Choice } from '../../lib/choice';
 import { $, esc } from '../../lib/dom';
 import { fmtR } from '../../lib/format';
+import { initFullscreen } from '../../lib/fullscreen';
 import { ParamGroup } from '../../lib/param';
 import type { ParamPatch } from '../../lib/param-def';
 import { reserveHeight } from '../../lib/reserve';
@@ -766,9 +767,7 @@ function afState(): void {
 
 /* ---------- 全画面 ---------- */
 {
-  const fs = $('#fs'),
-    btn = $<HTMLButtonElement>('#lv-fs');
-  /** 全画面へ移す要素: 映像、右の入力の行、左下の見取り図 */
+  /** 全画面へ移す行（右の列） */
   const ROWS = [
     '#p-lens',
     '#p-f',
@@ -783,47 +782,15 @@ function afState(): void {
     '#p-df',
     '#p-gd',
   ];
-  let back: [Comment, HTMLElement][] = [],
-    sy = 0;
-  const move = (el: HTMLElement, to: HTMLElement) => {
-    const ph = document.createComment('fs');
-    el.before(ph);
-    back.push([ph, el]);
-    to.append(el);
-  };
-  const open = () => {
-    if (!fs.hidden) return;
-    sy = scrollY;
-    move(lv, $('#fs-v'));
-    for (const id of ROWS) move($(id), $('#fs-t'));
-    move($('#mapw'), $('#fs-map'));
-    fs.hidden = false;
-    document.documentElement.style.overflow = 'hidden';
-    btn.setAttribute('aria-label', '全画面を閉じる');
-    btn.title = '全画面を閉じる';
-    fs.requestFullscreen?.().catch(() => {});
-    canvas.focus();
-  };
-  const close = () => {
-    if (fs.hidden) return;
-    for (const [ph, el] of back) ph.replaceWith(el);
-    back = [];
-    fs.hidden = true;
-    document.documentElement.style.overflow = '';
-    btn.setAttribute('aria-label', '全画面で表示');
-    btn.title = '全画面で表示';
-    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
-    scrollTo(0, sy);
-    btn.focus();
-  };
-  btn.addEventListener('click', () => (fs.hidden ? open() : close()));
-  /* ブラウザの全画面を Esc などで抜けたら、こちらも閉じる */
-  document.addEventListener('fullscreenchange', () => {
-    if (!document.fullscreenElement) close();
-  });
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && !fs.hidden && !document.fullscreenElement && !(e.target instanceof HTMLInputElement))
-      close();
+  initFullscreen({
+    root: $('#fs'),
+    btn: $<HTMLButtonElement>('#lv-fs'),
+    move: () => [
+      [lv, $('#fs-v')],
+      ...ROWS.map((id) => [$(id), $('#fs-t')] as [HTMLElement, HTMLElement]),
+      [$('#mapw'), $('#fs-map')],
+    ],
+    focus: canvas,
   });
 }
 

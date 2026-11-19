@@ -5,6 +5,7 @@
  */
 import { Choice } from '../../lib/choice';
 import { $, $$, esc } from '../../lib/dom';
+import { initFullscreen } from '../../lib/fullscreen';
 import { ParamGroup } from '../../lib/param';
 import { handheld } from '../../lib/pause';
 import { store, stored } from '../../lib/store';
@@ -778,6 +779,12 @@ function frame(now: number): void {
   requestAnimationFrame(frame);
 }
 addEventListener('pagehide', save);
+/* 全画面: 正面図を画面いっぱいに。運転の操作・脱進機・見る場所・全体図・文字盤・揺れを右上に浮かべる */
+initFullscreen({
+  root: $('.pc-main'),
+  btn: $<HTMLButtonElement>('#pc-fs'),
+  pop: () => [$('.pc-aux'), $('.pc-side')],
+});
 const recolor = () => {
   C = readColors();
 };
