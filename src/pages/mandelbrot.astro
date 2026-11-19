@@ -1,0 +1,99 @@
+---
+import Busy from '../components/Busy.astro';
+import Collapsible from '../components/Collapsible.astro';
+import HowSteps from '../components/HowSteps.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/mandelbrot/style.css';
+import { FAMS } from '../tools/mandelbrot/formula';
+import { PALS, swatch } from '../tools/mandelbrot/palette';
+import { PLACES } from '../tools/mandelbrot/places';
+import { STEPS } from '../tools/mandelbrot/steps';
+import Theory from '../tools/mandelbrot/Theory.astro';
+import { fmtZoom } from '../tools/mandelbrot/view';
+
+const name = 'マンデルブロ集合';
+const PANS = [
+  ['fm', '式'],
+  ['ju', 'ジュリア集合'],
+  ['pl', '名所'],
+  ['co', '配色'],
+] as const;
+const SLIDERS = [
+  ['mb-den', '色の間隔', 0.1, 3, 0.01, 0.55],
+  ['mb-ofs', '色のずれ', 0, 1, 0.005, 0],
+  ['mb-shade', '陰影', 0, 1, 0.01, 0.5],
+] as const;
+---
+<SiteLayout title={name} tool={{ id: 'mandelbrot', name }} note="GPU の単精度と摂動法で描いた絵です。">
+  <PageTitle title={name}>式を変えながら、フラクタルを深く拡大します。</PageTitle>
+
+  <div class="tgrid">
+    <Panel hid="hd-fig" title="複素平面" class="a-fig" fixed>
+      <div class="mb-stage" id="mb-stage">
+        <div class="mb-box">
+          <canvas id="mb-cv" tabindex="0" role="img" aria-label="フラクタルの図。ドラッグで移動、ホイールとダブルクリックで拡大"></canvas>
+          <div class="mb-hud mb-tl">
+            <select class="mb-sel" id="mb-fam" aria-label="種類">
+              <option value="" hidden></option>
+              {FAMS.map((f) => <option value={f.id} selected={f.id === 'm'}>{f.n}</option>)}
+            </select>
+          </div>
+          <div class="mb-hud mb-tr">
+            {PANS.map(([k, n]) => <button type="button" class="mb-tg" data-pan={k} aria-pressed="false"><span class="led" aria-hidden="true"></span>{n}</button>)}
+          </div>
+          <div class="mb-hud mb-bl">
+            <button type="button" class="mb-ib" data-z="2" aria-label="拡大" title="拡大"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 4v12M4 10h12"/></svg></button>
+            <button type="button" class="mb-ib" data-z="0.5" aria-label="縮小" title="縮小"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h12"/></svg></button>
+            <button type="button" class="mb-ib" id="mb-home" aria-label="全体" title="全体"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 7V3h4M13 3h4v4M17 13v4h-4M7 17H3v-4"/></svg></button>
+          </div>
+          <div class="mb-hud mb-br"><span class="mb-zv"><span id="mb-zv">×1.00</span><span class="mb-cap" id="mb-cap" hidden>上限</span></span></div>
+          <span class="mb-mark" id="mb-mark" hidden></span>
+          <i class="mb-prog" id="mb-prog"></i>
+          <p class="mb-msg" id="mb-msg" hidden></p>
+          <Busy id="mb-busy" text="準備中…" center />
+        </div>
+        <div class="mb-fcol">
+          <div class="mb-flt" id="mb-p-fm" hidden>
+            <div class="mb-fm" id="mb-fm" aria-live="polite"></div>
+            <canvas class="mb-pad" id="mb-pad" role="img" aria-label="式の板。四隅がマンデルブロ・バーニングシップ・セルティック・バッファロー"></canvas>
+            <div class="mb-row"><label for="mb-p">べき</label><input type="range" id="mb-p" min="1.5" max="8" step="0.01" value="2"><span class="mb-v" id="mb-pv">z²</span></div>
+            <div class="mb-btns">
+              <button type="button" class="mb-tg" id="mb-conj" aria-pressed="false"><span class="led" aria-hidden="true"></span>共役</button>
+              <span class="mb-tg mb-deep" id="mb-deep"><span class="led on" aria-hidden="true"></span>深い拡大</span>
+            </div>
+          </div>
+          <div class="mb-flt" id="mb-p-co" hidden>
+            <div class="mb-pals" role="group" aria-label="配色">
+              {PALS.map((p) => <button type="button" class="mb-pal" data-pal={p.id} aria-pressed={p.id === 'sun' ? 'true' : 'false'} title={p.n} aria-label={p.n} style={`background:${swatch(p)}`}></button>)}
+            </div>
+            {SLIDERS.map(([id, n, lo, hi, st, v]) => <div class="mb-row"><label for={id}>{n}</label><input type="range" id={id} min={lo} max={hi} step={st} value={v}><span class="mb-v" id={`${id}-v`}>{v.toFixed(2)}</span></div>)}
+            <div class="mb-btns mb-end"><button type="button" class="mb-tg" id="mb-cyc" aria-pressed="false"><span class="led" aria-hidden="true"></span>色を回す</button></div>
+          </div>
+        </div>
+        <div class="mb-flt mb-ju" id="mb-p-ju" hidden>
+          <canvas id="mb-jcv" role="img" aria-label="ジュリア集合"></canvas>
+          <p class="mb-jcap" id="mb-jcap"></p>
+        </div>
+        <div class="mb-strip" id="mb-p-pl" hidden>
+          {PLACES.map((p, i) => <button type="button" class="mb-place" data-pl={i}><canvas width="204" height="128" aria-hidden="true"></canvas><span>{p.n}</span><small>{fmtZoom(p.z)}</small></button>)}
+        </div>
+      </div>
+    </Panel>
+
+    <Panel hid="hd-how" title="しくみ" class="a-how">
+      <HowSteps side id="mb-how" steps={STEPS.map((s) => ({ h: s.h, fig: `<canvas role="img" aria-label="${s.h}"></canvas>`, p: s.p }))} />
+    </Panel>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools current="mandelbrot" />
+  <script>
+    import '../tools/mandelbrot/client';
+  </script>
+</SiteLayout>

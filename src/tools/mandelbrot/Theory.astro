@@ -1,0 +1,106 @@
+---
+// 動作原理と式
+const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
+const sub = (s: string, i: string) => `<msub><mi>${s}</mi><mi>${i}</mi></msub>`;
+const sub1 = (s: string) => `<msub><mi>${s}</mi><mrow><mi>n</mi><mo>+</mo><mn>1</mn></mrow></msub>`;
+const zn = sub('z', 'n'),
+  Zn = sub('Z', 'n'),
+  dn = `<msub><mi>δ</mi><mi>n</mi></msub>`,
+  dc = '<mi>δ</mi><mi>c</mi>';
+const abs = (x: string) => `<mo stretchy="false">|</mo>${x}<mo stretchy="false">|</mo>`;
+const par = (x: string) => `<mo stretchy="false">(</mo>${x}<mo stretchy="false">)</mo>`;
+const FAM: [string, string, number?][] = [
+  ['マンデルブロ', `<msup><mi>z</mi><mi>p</mi></msup><mo>+</mo><mi>c</mi>`, 1],
+  [
+    'バーニングシップ',
+    `<msup>${par(`${abs('<mi>x</mi>')}<mo>+</mo><mi>i</mi>${abs('<mi>y</mi>')}`)}<mi>p</mi></msup><mo>+</mo><mi>c</mi>`,
+    2,
+  ],
+  ['トリコーン', `<msup><mover><mi>z</mi><mo>‾</mo></mover><mi>p</mi></msup><mo>+</mo><mi>c</mi>`, 5],
+  [
+    'セルティック',
+    `${abs(`<mi>Re</mi><msup><mi>z</mi><mi>p</mi></msup>`)}<mo>+</mo><mi>i</mi><mi>Im</mi><msup><mi>z</mi><mi>p</mi></msup><mo>+</mo><mi>c</mi>`,
+    5,
+  ],
+  [
+    'バッファロー',
+    `${abs('<mi>Re</mi><mi>w</mi>')}<mo>+</mo><mi>i</mi><mi>Im</mi><mi>w</mi><mo>+</mo><mi>c</mi><mo>,</mo><mspace width="0.4em"/><mi>w</mi><mo>=</mo><msup>${par(`${abs('<mi>x</mi>')}<mo>+</mo><mi>i</mi>${abs('<mi>y</mi>')}`)}<mi>p</mi></msup>`,
+    5,
+  ],
+];
+---
+<h3>式</h3>
+<div class="eqs">
+  <math display="block" set:html={`${sub1('z')}<mo>=</mo><mi>f</mi>${par(zn)}<mo>+</mo><mi>c</mi><mo>,</mo><mspace width="0.6em"/>${sub('z', '0')}<mo>=</mo><mn>0</mn>`} />
+</div>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th>種類</th><th><math><msub><mi>z</mi><mrow><mi>n</mi><mo>+</mo><mn>1</mn></mrow></msub></math>（<math><mi>z</mi><mo>=</mo><mi>x</mi><mo>+</mo><mi>i</mi><mi>y</mi></math>）</th></tr></thead>
+  <tbody>
+    {FAM.map(([n, m, r]) => <tr><th>{n}<Fragment set:html={r ? rf(r) : ''} /></th><td><math set:html={m} /></td></tr>)}
+  </tbody>
+</table></div>
+<ul class="tl">
+  <li>式の板: かける前の <math set:html={`${abs('<mi>x</mi>')}<mo>,</mo>${abs('<mi>y</mi>')}`} /> と、かけた後の <math set:html={abs('<mi>Re</mi>')} /> を割合 <math><mi>t</mi></math> で混ぜる</li>
+  <li>混ぜ方: <math set:html={`<mi>x</mi><mo>+</mo><mi>t</mi>${par(`${abs('<mi>x</mi>')}<mo>−</mo><mi>x</mi>`)}`} />。負の値は <math><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><mn>2</mn><mi>t</mi><mo stretchy="false">)</mo></math> 倍に縮み、<math><mi>t</mi><mo>≈</mo><mn>0.5</mn></math> で図の大部分が黒</li>
+  <li>ジュリア集合: <math><mi>c</mi></math> を固定し、<math set:html={sub('z', '0')} /> を画素の点にして同じ式をくり返す</li>
+</ul>
+
+<h3>発散と色</h3>
+<div class="eqs">
+  <math display="block" set:html={`<mi>ν</mi><mo>=</mo><mi>n</mi><mo>+</mo><mn>1</mn><mo>−</mo><msub><mi>log</mi><mi>p</mi></msub><mfrac><mrow><mi>log</mi>${abs(zn)}</mrow><mrow><mi>log</mi><mi>R</mi></mrow></mfrac>`} />
+</div>
+<ul class="tl">
+  <li><math set:html={`${abs(zn)}<mo>></mo><mi>R</mi>`} /> になった最初の <math><mi>n</mi></math> から、境目でつながる発散の速さ <math><mi>ν</mi></math><Fragment set:html={rf(7)} /></li>
+  <li>色は <math><mi>log</mi><mo stretchy="false">(</mo><mi>ν</mi><mo>+</mo><mn>1</mn><mo stretchy="false">)</mo></math> に色の間隔を掛け、色のずれを足して、端のつながった配色の帯から取る</li>
+  <li>陰影は隣の画素との <math><mi>log</mi><mo stretchy="false">(</mo><mi>ν</mi><mo>+</mo><mn>1</mn><mo stretchy="false">)</mo></math> の差を傾きとみなした光</li>
+</ul>
+
+<h3>摂動法</h3>
+<div class="eqs">
+  <math display="block" set:html={`${zn}<mo>=</mo>${Zn}<mo>+</mo>${dn}<mo>,</mo><mspace width="0.6em"/><mi>c</mi><mo>=</mo><mi>C</mi><mo>+</mo>${dc}`} />
+  <math display="block" set:html={`${sub1('δ')}<mo>=</mo><msup>${par(`${Zn}<mo>+</mo>${dn}`)}<mi>p</mi></msup><mo>−</mo><msup>${Zn}<mi>p</mi></msup><mo>+</mo>${dc}<mo>=</mo>${dn}<munderover><mo>∑</mo><mrow><mi>k</mi><mo>=</mo><mn>0</mn></mrow><mrow><mi>p</mi><mo>−</mo><mn>1</mn></mrow></munderover><msup>${par(`${Zn}<mo>+</mo>${dn}`)}<mi>k</mi></msup><msup>${Zn}<mrow><mi>p</mi><mo>−</mo><mn>1</mn><mo>−</mo><mi>k</mi></mrow></msup><mo>+</mo>${dc}`} />
+</div>
+<ul class="tl">
+  <li>基準の点 <math><mi>C</mi></math> の軌道 <math set:html={Zn} /> だけを多倍長の固定小数点（BigInt）で正確に計算<Fragment set:html={rf(3) + rf(6)} /></li>
+  <li>各画素は差 <math set:html={dn} /> を GPU の単精度で追う。差は小さいので、単精度の 7 桁でも絵が崩れない</li>
+  <li><math><mi>p</mi><mo>=</mo><mn>2</mn></math> では <math set:html={`<mn>2</mn>${Zn}${dn}<mo>+</mo><msup>${dn}<mn>2</mn></msup><mo>+</mo>${dc}`} /></li>
+</ul>
+
+<h3>基準の初めへ戻す</h3>
+<div class="eqs">
+  <math display="block" set:html={`${abs(`${sub('Z', 'm')}<mo>+</mo><mi>δ</mi>`)}<mo>&lt;</mo>${abs('<mi>δ</mi>')}<mspace width="0.6em"/><mo>⇒</mo><mspace width="0.6em"/><mi>δ</mi><mo>←</mo>${sub('Z', 'm')}<mo>+</mo><mi>δ</mi><mo>,</mo><mspace width="0.4em"/><mi>m</mi><mo>←</mo><mn>0</mn>`} />
+</div>
+<ul class="tl">
+  <li>差が基準の値より大きくなると、単精度の差では足りない。今の値を差にして、基準の 0 番目から続ける<Fragment set:html={rf(4)} /></li>
+  <li>基準の軌道の終わり（基準が発散した所）に着いたときも同じ</li>
+</ul>
+
+<h3>絶対値の差</h3>
+<div class="eqs">
+  <math display="block" set:html={`${abs('<mi>X</mi><mo>+</mo><mi>x</mi>')}<mo>−</mo>${abs('<mi>X</mi>')}<mo>=</mo><mrow><mo>{</mo><mtable columnalign="left"><mtr><mtd><mi>x</mi></mtd><mtd><mi>X</mi><mo>≥</mo><mn>0</mn><mo>,</mo><mi>X</mi><mo>+</mo><mi>x</mi><mo>≥</mo><mn>0</mn></mtd></mtr><mtr><mtd><mo>−</mo><mo stretchy="false">(</mo><mn>2</mn><mi>X</mi><mo>+</mo><mi>x</mi><mo stretchy="false">)</mo></mtd><mtd><mi>X</mi><mo>≥</mo><mn>0</mn><mo>,</mo><mi>X</mi><mo>+</mo><mi>x</mi><mo>&lt;</mo><mn>0</mn></mtd></mtr><mtr><mtd><mn>2</mn><mi>X</mi><mo>+</mo><mi>x</mi></mtd><mtd><mi>X</mi><mo>&lt;</mo><mn>0</mn><mo>,</mo><mi>X</mi><mo>+</mo><mi>x</mi><mo>></mo><mn>0</mn></mtd></mtr><mtr><mtd><mo>−</mo><mi>x</mi></mtd><mtd><mi>X</mi><mo>&lt;</mo><mn>0</mn><mo>,</mo><mi>X</mi><mo>+</mo><mi>x</mi><mo>≤</mo><mn>0</mn></mtd></mtr></mtable></mrow>`} />
+</div>
+<ul class="tl">
+  <li>絶対値を含む式の差を、桁を落とさずに求める。バーニングシップの仲間も同じ摂動法で深く拡大できる<Fragment set:html={rf(5)} /></li>
+</ul>
+
+<h3>このツールで決めたこと</h3>
+<ul class="tl">
+  <li>発散の半径 <math><mi>R</mi></math> = 1000</li>
+  <li>反復の上限は <math><mi>L</mi></math> = log₁₀ 倍率 として 200 + 60<math><mi>L</mi></math> + 30<math><msup><mi>L</mi><mn>2</mn></msup></math>、最大 60000</li>
+  <li>倍率の上限は ×10³⁰。べきが整数でない間は単精度のまま計算し、上限 ×10⁴（それより深いと隣の画素が同じ単精度の値になる）</li>
+  <li>混ぜる量は 1/1024 刻み。基準の軌道と GPU で同じ値を使う</li>
+  <li>基準の点は図の中心。中心が早く発散したら、周りの 8 点から最も長く持つ点</li>
+  <li>止まった後の細かい絵は、約 25 ms の横の帯に分けて描き、できてから差し替える</li>
+  <li>描く画素は 240 万まで</li>
+</ul>
+
+<h3>出典</h3>
+<ol class="refs">
+  <li id="thy-r1"><span class="rf-for">マンデルブロ集合</span><span class="rf-src">B. B. Mandelbrot, “Fractal aspects of the iteration of z → λz(1 − z) for complex λ and z,” <i>Annals of the New York Academy of Sciences</i>, vol. 357, pp. 249–259, 1980</span></li>
+  <li id="thy-r2"><span class="rf-for">バーニングシップ</span><span class="rf-src">M. Michelitsch and O. E. Rössler, “The ‘burning ship’ and its quasi-Julia sets,” <i>Computers &amp; Graphics</i>, vol. 16, no. 4, pp. 435–438, 1992</span></li>
+  <li id="thy-r3"><span class="rf-for">摂動法による深い拡大</span><span class="rf-src">K. I. Martin, “SuperFractalThing Maths,” 2013</span></li>
+  <li id="thy-r4"><span class="rf-for">基準の初めへ戻す（リベース）</span><span class="rf-src">Zhuoran, “Another solution to perturbation glitches,” fractalforums.org, 2021</span></li>
+  <li id="thy-r5"><span class="rf-for">絶対値の差・トリコーン・セルティック・バッファロー</span><span class="rf-src">C. Heiland-Allen, “Deep zoom theory and practice,” <a href="https://mathr.co.uk/blog/" target="_blank" rel="noopener">mathr.co.uk</a>, 2021</span></li>
+  <li id="thy-r6"><span class="rf-for">摂動法の手法の一覧</span><span class="rf-src">R. Munafo, “<a href="https://www.mrob.com/pub/muency/perturbationmethods.html" target="_blank" rel="noopener">Perturbation methods</a>,” <i>Mu-Ency</i></span></li>
+  <li id="thy-r7"><span class="rf-for">発散の速さ ν</span><span class="rf-src">L. Vepstas, “<a href="https://linas.org/art-gallery/escape/escape.html" target="_blank" rel="noopener">Renormalizing the Mandelbrot escape</a>,” 1997</span></li>
+</ol>
