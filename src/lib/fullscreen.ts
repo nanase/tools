@@ -3,7 +3,8 @@
  * ブラウザの全画面を使えない環境（iPhone など）でも、root を fixed で画面に重ねるので同じ見た目になる。
  * 開いている間は root に .fs-on、html に data-fs を付ける。各ページは :root[data-fs] で図の高さなどを上書きする。
  * - move: 開いている間だけ移す要素と行き先。閉じると元の場所へ戻す（カメラレンズ・ハロの右の列）
- * - pop: 図の隅に浮かべる操作の枠へ移す要素。見出しで畳め、畳んだかどうかはページごとに保存する
+ * - pop: 図の隅に浮かべる操作の枠へ移す要素。見出しで畳め、畳んだかどうかはページごとに保存する。
+ *   配列で渡した入力の行（.prow）は、枠の中の 1 つの表（.ptab）にまとめる
  * root が hidden の要素なら、開いている間だけ出す（全画面専用の枠）
  */
 import { hide as hideBubble } from './bubble';
@@ -13,7 +14,7 @@ export interface FsOptions {
   root: HTMLElement;
   btn: HTMLButtonElement;
   move?: () => [el: HTMLElement, to: HTMLElement][];
-  pop?: () => HTMLElement[];
+  pop?: () => (HTMLElement | HTMLElement[])[];
   /** 浮かべる枠の見出し */
   popTitle?: string;
   /** 開いたときにフォーカスする要素（既定はボタン） */
@@ -83,8 +84,18 @@ export function initFullscreen(o: FsOptions): Fs {
     const els = o.pop?.() ?? [];
     if (els.length) {
       pop ??= popBox(o.popTitle ?? '操作');
+      pop.body.replaceChildren();
       root.append(pop.box);
-      for (const el of els) move(el, pop.body);
+      for (const el of els) {
+        if (!Array.isArray(el)) {
+          move(el, pop.body);
+          continue;
+        }
+        const tab = document.createElement('div');
+        tab.className = 'ptab';
+        pop.body.append(tab);
+        for (const row of el) move(row, tab);
+      }
     }
     if (dialog) root.hidden = false;
     root.classList.add('fs-on');

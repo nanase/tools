@@ -27,6 +27,16 @@
 .ip-msg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:12px;color:#e8e6df;font:600 15px/1.5 var(--sans);text-align:center}
 .ip-msg[hidden],.ip-tag[hidden]{display:none}
 
+/* 全画面: 断面を縦横比を保って画面に収める。縦長の画面では上に寄せ、下の浮かぶ枠と重ねない */
+.ip-wrap.fs-on{display:flex;align-items:center;justify-content:center;border-radius:0}
+.ip-wrap.fs-on #ip-cv{width:min(100%,calc(100dvh / .56))}
+@media (max-aspect-ratio:4/5){.ip-wrap.fs-on{align-items:flex-start;padding-top:48px}}
+.ip-wrap .fs-pop{width:min(430px,calc(100% - 16px))}
+.fs-pop .ip-tog,.fs-pop .ip-st{margin-top:0}
+.fs-pop .ip-st{grid-template-columns:repeat(2,minmax(0,1fr))}
+.fs-pop .ip-tp{grid-template-columns:auto auto minmax(0,1fr)}
+.fs-pop .ip-tp .seg{grid-column:1/-1}
+
 /* 表示の切り替え */
 .ip-tog{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:10px;font-size:13px;color:var(--ink-2)}
 .ip-tog>div{display:flex;align-items:center;gap:8px}

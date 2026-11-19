@@ -54,6 +54,11 @@
 .pn-vctl{position:absolute;right:8px;top:8px;display:flex;align-items:center;gap:4px}
 .pn-vbtn{min-width:30px;height:28px;padding:0 8px;border:1px solid #48525a;border-radius:4px;background:rgb(10 12 14 / .72);color:#e6e8e4;font:500 13px/1 var(--sans);cursor:pointer}
 .pn-vbtn:hover{background:rgb(10 12 14 / .9)}
+/* 全画面のボタンは拡大・縮小の並びの右端に */
+.pn-vctl .fs-btn{position:static;width:30px;height:28px;border:1px solid #48525a;border-radius:4px;background:rgb(10 12 14 / .72)}
+.pn-vctl .fs-btn:hover{background:rgb(10 12 14 / .9)}
+/* 全画面: 惑星の図を画面いっぱいに。時刻・日時の帯・表示の設定は浮かぶ枠に */
+.pn-view.fs-on{aspect-ratio:auto;border:0}
 .pn-vbtn:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
 .pn-vz{min-width:3.6em;text-align:center;font:500 11.5px var(--mono);color:#e6e8e4;text-shadow:0 0 3px #000}
 .pn-vmsg{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);margin:0;color:#aab3b8;font:500 13px var(--sans)}

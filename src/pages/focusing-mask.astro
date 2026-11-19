@@ -2,6 +2,7 @@
 import Busy from '../components/Busy.astro';
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import FsButton from '../components/FsButton.astro';
 import More from '../components/More.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
@@ -58,15 +59,17 @@ const name = 'フォーカシングマスク';
           <span class="stag">Δz <b id="v-dz" class="hw" data-ph="−0000 µm"></b></span>
           <span class="stag">SEEING <b id="v-see"></b></span>
         </div>
-        <div class="sv" id="sv">
-          <canvas id="sv-c" tabindex="0" role="img" aria-label="カメラの映像" title="ホイール・＋ − キーで拡大と縮小、ドラッグ・矢印キーで移動、ダブルクリック・0 キーで ×1 に戻す"></canvas>
-          <svg class="ov" id="sv-ov" aria-hidden="true" preserveAspectRatio="none"></svg>
-          <div class="lab" id="sv-lab"></div>
-          <div class="sv-z" role="group" aria-label="拡大"><button type="button" id="zm-out" aria-label="縮小" title="縮小"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 8h8"/></svg></button><button type="button" id="zm-v" class="hw" data-ph="×16.0" title="×1 に戻す"></button><button type="button" id="zm-in" aria-label="拡大" title="拡大"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 8h8M8 4v8"/></svg></button></div>
-          <div class="zoom" id="sv-zm"><canvas id="zm-c" aria-hidden="true"></canvas><span>中心 ×4</span></div>
-          <p class="sv-msg" id="sv-msg" hidden></p>
-          <p class="sv-drop" id="sv-drop" hidden>画像を選ぶか、ここへドロップ</p>
-          <Busy id="sv-busy" text="計算中…" center />
+        <div class="sv-fs" id="sv-fs">
+          <div class="sv" id="sv">
+            <canvas id="sv-c" tabindex="0" role="img" aria-label="カメラの映像" title="ホイール・＋ − キーで拡大と縮小、ドラッグ・矢印キーで移動、ダブルクリック・0 キーで ×1 に戻す"></canvas>
+            <svg class="ov" id="sv-ov" aria-hidden="true" preserveAspectRatio="none"></svg>
+            <div class="lab" id="sv-lab"></div>
+            <div class="sv-z" role="group" aria-label="拡大"><button type="button" id="zm-out" aria-label="縮小" title="縮小"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 8h8"/></svg></button><button type="button" id="zm-v" class="hw" data-ph="×16.0" title="×1 に戻す"></button><button type="button" id="zm-in" aria-label="拡大" title="拡大"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 8h8M8 4v8"/></svg></button><FsButton id="sv-fs-b" /></div>
+            <div class="zoom" id="sv-zm"><canvas id="zm-c" aria-hidden="true"></canvas><span>中心 ×4</span></div>
+            <p class="sv-msg" id="sv-msg" hidden></p>
+            <p class="sv-drop" id="sv-drop" hidden>画像を選ぶか、ここへドロップ</p>
+            <Busy id="sv-busy" text="計算中…" center />
+          </div>
         </div>
         <div class="foc">
           <div class="foc-h"><span class="pn" id="n-dz">ピントの位置 <i>Δz</i></span><span class="v"><span id="dz-v" class="hw" data-ph="−0000"></span><small>µm</small></span></div>

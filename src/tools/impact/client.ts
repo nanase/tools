@@ -4,6 +4,7 @@
  */
 import { Choice } from '../../lib/choice';
 import { $, $$ } from '../../lib/dom';
+import { initFullscreen } from '../../lib/fullscreen';
 import { RM } from '../../lib/motion';
 import { ParamGroup } from '../../lib/param';
 import { initToolPage } from '../../lib/tool-page';
@@ -464,4 +465,10 @@ queueMicrotask(() => {
   syncPresets();
   start();
   requestAnimationFrame(frame);
+});
+/* 全画面: 断面を画面いっぱいに。再生・工程・表示・衝突の条件は浮かぶ枠に */
+initFullscreen({
+  root: $('.ip-wrap'),
+  btn: $<HTMLButtonElement>('#ip-fs'),
+  pop: () => [$('.ip-tp'), $('#ip-st'), $('.ip-tog'), $('.ip-pre'), $('.a-in .ptab')],
 });

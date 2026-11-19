@@ -4,6 +4,7 @@
  */
 import { Choice } from '../../lib/choice';
 import { $ } from '../../lib/dom';
+import { initFullscreen } from '../../lib/fullscreen';
 import { ParamGroup } from '../../lib/param';
 import { reserveHeight } from '../../lib/reserve';
 import { mark } from '../../lib/reset';
@@ -1416,6 +1417,13 @@ function results(meas: number | null, Y: Float64Array | null, n: number): void {
 
 ready = true;
 restoreImage();
+/* 全画面: 映像を画面いっぱいに。ピントの位置・重ねる線・マスクの種類・シーイング・表示の設定は浮かぶ枠に */
+initFullscreen({
+  root: $('#sv-fs'),
+  btn: $<HTMLButtonElement>('#sv-fs-b'),
+  pop: () => [$('.foc'), $('#p-ov'), [$('#p-mk'), $('#p-see')], $('#g-view')],
+  focus: $('#sv-c'),
+});
 restoreSrc();
 schedule();
 queueMicrotask(() => {
