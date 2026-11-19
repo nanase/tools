@@ -97,8 +97,9 @@ interface Part {
   /** パッドごとに最後に鳴った時刻 */
   hits: Float64Array;
   sus: boolean;
-  /** MIDI の音量（7）・エクスプレッション（11）は 0〜127、ピッチベンドは −1〜1 */
+  /** MIDI の音量（7）・定位（10）・エクスプレッション（11）は 0〜127、ピッチベンドは −1〜1 */
   cc7: number;
+  cc10: number;
   cc11: number;
   bend: number;
   row: Row;
@@ -123,7 +124,7 @@ const parts = new Map<number, Part>();
 const rowsEl = $('#rows');
 let sel = 0;
 
-const partName = (p: Part) => (p.ch === DRUM_PART ? '打楽器' : GM_NAMES[p.prog]);
+const partName = (p: Part) => (p.ch === DRUM_PART ? 'パーカッション' : GM_NAMES[p.prog]);
 
 /** 保存したパートの音量・定位・残響へ送る量 */
 function partStore(ch: number): [number, number, number] {
@@ -146,7 +147,7 @@ function ensure(ch: number): Part {
     '<div class="fy-nm"><b><i></i><em></em><span></span></b><small></small></div>' +
     '<div class="fy-kbw"><canvas class="kb"></canvas><div class="fy-ctl">' +
     '<span title="ボリューム"><i></i></span><span title="エクスプレッション"><i></i></span>' +
-    '<span class="bd" title="ピッチベンド"><i></i></span></div></div>' +
+    '<span class="bd" title="ピッチベンド"><i></i></span><span class="bd" title="定位"><i></i></span></div></div>' +
     '<div class="fy-vm" title="音量"><i></i></div><canvas class="cv c-w"></canvas>' +
     '<svg class="alg" viewBox="0 0 72 44" aria-hidden="true"></svg><canvas class="cv c-e"></canvas>';
   const row: Row = {
@@ -179,6 +180,7 @@ function ensure(ch: number): Part {
     hits: new Float64Array(PADS.length).fill(-1e9),
     sus: false,
     cc7: 100,
+    cc10: 64,
     cc11: 127,
     bend: 0,
     row,
@@ -229,7 +231,7 @@ function syncMute(p: Part): void {
 /** 行の名前と、GM の番号と系統 */
 function label(p: Part): void {
   p.row.nm.textContent = partName(p);
-  p.row.sub.textContent = p.ch === DRUM_PART ? 'GM の打楽器' : `GM ${p.prog + 1}・${familyOf(p.prog)}`;
+  p.row.sub.textContent = p.ch === DRUM_PART ? 'GM のパーカッション' : `GM ${p.prog + 1}・${familyOf(p.prog)}`;
   p.row.dirty = true;
 }
 
@@ -286,9 +288,11 @@ function vCc(ch: number, num: number, v: number): void {
   const p = parts.get(ch);
   if (!p) return;
   if (num === 7) p.cc7 = v;
+  else if (num === 10) p.cc10 = v;
   else if (num === 11) p.cc11 = v;
   else if (num === 121) {
     p.cc7 = 100;
+    p.cc10 = 64;
     p.cc11 = 127;
     p.bend = 0;
     p.sus = false;
@@ -414,11 +418,18 @@ function drawRow(p: Part, t: number, c: Colors): void {
       );
     else drawKeys(g, w, h, p.down.keys(), p.pend, { white: c.white, black: c.black, down: c.down, sus: c.sus });
   }
-  /* 鍵盤の下の小さなバー: 音量・エクスプレッション・ピッチベンド（中央から左右へ） */
+  /* 鍵盤の下の小さなバー: 音量・エクスプレッション・ピッチベンドと定位（中央から左右へ） */
   r.ctl[0].style.width = `${((p.cc7 / 127) * 100).toFixed(1)}%`;
   r.ctl[1].style.width = `${((p.cc11 / 127) * 100).toFixed(1)}%`;
-  r.ctl[2].style.left = `${(50 + Math.min(0, p.bend) * 50).toFixed(1)}%`;
-  r.ctl[2].style.width = `${(Math.abs(p.bend) * 50).toFixed(1)}%`;
+  /* 定位は音源と同じく、パートの定位に MIDI の定位（CC 10）を足す */
+  const pan = Math.max(-1, Math.min(1, p.pan + (p.cc10 - 64) / 63));
+  for (const [i, v] of [
+    [2, p.bend],
+    [3, pan],
+  ]) {
+    r.ctl[i].style.left = `${(50 + Math.min(0, v) * 50).toFixed(1)}%`;
+    r.ctl[i].style.width = `${(Math.abs(v) * 50).toFixed(1)}%`;
+  }
   /* 波形: 最後に鳴り始めた音の 2 周期 */
   drawWave(r.wv, p, t, c.grid, col, 2);
   /* アルゴリズム */
@@ -575,6 +586,97 @@ function bindPlay(p: Part): void {
 
 /* ---------- サイドバー ---------- */
 const sideTitle = $('#hd-side');
+/*
+ * 広い画面ではサイドバーを横に開閉する。閉じるときは横に縮めてから縦の帯を伸ばし、開くときは帯を縮めてから横に広げる。
+ * 共通の開閉（lib/tool-page.ts。高さだけを動かす）より先に枠で受けて止める。狭い画面では共通の開閉に任せる
+ */
+{
+  const WIDE = matchMedia('(min-width:1000px)'),
+    RM = matchMedia('(prefers-reduced-motion:reduce)'),
+    pnl = $('.a-side'),
+    inner = $('.fy-side'),
+    /** 横に動かす間、見出しを残して右と下の外を切る */
+    CLIP = 'inset(-20px 0 0 -20px)',
+    /** .fy-body の列の幅の transition と同じ長さ [ms] */
+    SLIDE = 260,
+    wait = (ms: number) => new Promise((ok) => setTimeout(ok, ms)),
+    setOpen = (open: boolean) => {
+      pnl.classList.toggle('shut', !open);
+      sideTitle.setAttribute('aria-expanded', String(open));
+      if (open) forget('o:hd-side');
+      else store('o:hd-side', false);
+    },
+    /** 高さを h0 から h1 へ動かす */
+    grow = (h0: number, h1: number, ms: number) =>
+      pnl.animate(
+        [
+          { height: `${h0}px`, clipPath: 'inset(-20px -20px 0 -20px)' },
+          { height: `${h1}px`, clipPath: 'inset(-20px -20px 0 -20px)' },
+        ],
+        { duration: ms, easing: 'ease' },
+      ).finished,
+    clear = () => {
+      for (const p of ['height', 'align-self', 'clip-path']) pnl.style.removeProperty(p);
+      inner.style.removeProperty('width');
+    };
+  pnl.addEventListener(
+    'click',
+    (e) => {
+      if (!WIDE.matches || !(e.target as Element).closest('.fold')) return;
+      e.stopPropagation();
+      if (pnl.dataset.busy) return;
+      const open = pnl.classList.contains('shut');
+      if (RM.matches) {
+        setOpen(open);
+        return;
+      }
+      pnl.dataset.busy = '1';
+      void (open ? slideOpen() : slideShut()).finally(() => {
+        clear();
+        delete pnl.dataset.busy;
+      });
+    },
+    true,
+  );
+  /** 閉じる: 中を見せたまま横に縮め、帯にしてから下へ伸ばす */
+  async function slideShut(): Promise<void> {
+    const h0 = pnl.offsetHeight;
+    inner.style.width = `${inner.offsetWidth}px`;
+    pnl.style.height = `${h0}px`;
+    pnl.style.clipPath = CLIP;
+    pnl.style.alignSelf = 'start';
+    /* 帯と同じ幅の列（style.css の :has）へ、列の幅の transition で縮める */
+    pnl.classList.add('fy-sliding');
+    await wait(SLIDE);
+    pnl.classList.remove('fy-sliding');
+    setOpen(false);
+    pnl.style.removeProperty('clip-path');
+    pnl.style.removeProperty('align-self');
+    pnl.style.removeProperty('height');
+    const h1 = pnl.offsetHeight;
+    await grow(h0, h1, 260);
+  }
+  /** 開く: 帯を開いたときの高さまで縮め、中を見せて横に広げる */
+  async function slideOpen(): Promise<void> {
+    const body = $('.fy-body'),
+      h0 = pnl.offsetHeight;
+    /* 開いたときの高さと中の幅を、列の幅の transition を止めて測る */
+    body.style.transition = 'none';
+    pnl.classList.remove('shut');
+    const h1 = pnl.offsetHeight,
+      w1 = inner.offsetWidth;
+    pnl.classList.add('shut');
+    void pnl.offsetHeight;
+    body.style.removeProperty('transition');
+    pnl.style.alignSelf = 'start';
+    await grow(h0, h1, 200);
+    pnl.style.height = `${h1}px`;
+    inner.style.width = `${w1}px`;
+    pnl.style.clipPath = CLIP;
+    setOpen(true);
+    await wait(SLIDE);
+  }
+}
 const groups = new Map($$<HTMLElement>('.grp').map((g) => [g.dataset.g as string, g]));
 const sideOpen = (g: string) => !groups.get(g)?.classList.contains('shut');
 for (const [k, g] of groups) {
@@ -583,12 +685,13 @@ for (const [k, g] of groups) {
       g.classList.toggle('shut', !open);
       h.setAttribute('aria-expanded', String(open));
     };
-  if (stored(`g:${k}`) === false) set(false);
+  /* 初めは閉じ、開いたグループだけを覚える */
+  set(stored(`g:${k}`) === true);
   h.addEventListener('click', () => {
     const open = g.classList.contains('shut');
     set(open);
-    if (open) forget(`g:${k}`);
-    else store(`g:${k}`, false);
+    if (open) store(`g:${k}`, true);
+    else forget(`g:${k}`);
     side();
   });
 }
@@ -1342,4 +1445,10 @@ new ResizeObserver(() => {
   for (const p of parts.values()) p.row.dirty = true;
   wake();
 }).observe(rowsEl);
+/* 閉じていた音色の枠やグループを開くと、大きさ 0 で描いたキャンバスが広がって白くなるので描き直す */
+const sideRo = new ResizeObserver(() => {
+  sideDirty = true;
+  wake();
+});
+for (const id of ['#s-wave', '#s-env']) sideRo.observe($(id));
 void showSong();

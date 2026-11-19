@@ -50,7 +50,7 @@
 .fy-row .cv{background:var(--screen);border:1px solid var(--line);border-radius:3px}
 .fy-row .kb{height:30px;touch-action:none}
 .fy-kbw{display:flex;flex-direction:column;gap:4px;min-width:0}
-.fy-ctl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;height:7px}
+.fy-ctl{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;height:7px}
 .fy-ctl span{position:relative;border-radius:2px;background:color-mix(in srgb,var(--pc) 14%,var(--line));overflow:hidden}
 /* バーはパートの色を少し混ぜた灰（赤のパートなら赤みの深い灰） */
 .fy-ctl i{position:absolute;top:0;bottom:0;left:0;width:0;background:color-mix(in srgb,var(--pc) 45%,var(--ink-3))}
@@ -147,11 +147,14 @@
  */
 @media (min-width:1000px){
   .fy-body{transition:grid-template-columns .25s ease}
-  .fy-body:has(>.a-side.shut){grid-template-columns:minmax(0,1fr) 34px}
+  .fy-body:has(>.a-side.shut),.fy-body:has(>.a-side.fy-sliding){grid-template-columns:minmax(0,1fr) 34px}
   /* ほかの閉じた枠（上の 1 本の線に見出し）を 90° 回した形: 左の 1 本の縦線に縦書きの見出し */
   .a-side.shut{align-self:stretch;padding:0;border-color:transparent transparent transparent var(--line-2)}
   .a-side.shut>.ph h2{top:10px;left:0;transform:translateX(-50%);padding:6px 0;writing-mode:vertical-rl}
   .a-side.shut>.ph h2 .fold{gap:8px}
   .a-side.shut>.ph>.pha{display:none}
+  /* 開閉のアイコンも横向き: 開いているときは右（閉じる向き）、帯のときは左（開く向き） */
+  .fy-body>.a-side:not(.shut) .fold::after{transform:translateX(-2px) rotate(-45deg)}
+  .fy-body>.a-side.shut .fold::after{transform:translateX(2px) rotate(135deg)}
 }
 @media (min-width:1000px) and (prefers-reduced-motion:reduce){.fy-body{transition:none}}
