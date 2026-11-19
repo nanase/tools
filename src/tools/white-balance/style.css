@@ -1,0 +1,55 @@
+/* ホワイトバランスのページ。広い画面ではカメラを左に、光と調整・結果を右の列に置く。
+   写真をカメラの液晶に見立て、上に重ねる部品は写真に合わせてテーマに依らない暗い地にする */
+.wb-box{position:relative;container-type:inline-size;--wb-glass:rgba(14,16,18,.84);--wb-edge:#3a4048;--wb-ink:#e6e8e4;--wb-sel:#e8e2d4}
+.wb-stage{position:relative;border-radius:var(--r);overflow:hidden;background:#000;user-select:none;-webkit-user-select:none}
+#wb-cv{display:block;width:100%;height:auto;aspect-ratio:16/10;touch-action:none;cursor:crosshair;outline:none}
+#wb-cv:focus-visible{box-shadow:inset 0 0 0 2px var(--focus)}
+.wb-hud{position:absolute;display:flex;gap:6px;align-items:center;pointer-events:none;font-size:13px;color:var(--wb-ink)}
+.wb-hud>*{pointer-events:auto}
+.wb-tl{left:8px;top:8px}
+.wb-tr{right:8px;top:8px}
+.wb-ro{padding:4px 9px;border-radius:6px;background:var(--wb-glass);font:500 13px var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.wb-sel{font:inherit;font-size:13px;color:var(--wb-ink);background:var(--wb-glass);border:1px solid var(--wb-edge);border-radius:8px;padding:5px 8px;min-width:8.5em;cursor:pointer}
+.wb-sel option{background:#1d2126;color:var(--wb-ink)}
+.wb-ring{position:absolute;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1.5px #000,inset 0 0 0 1.5px #000;pointer-events:none}
+.wb-ring[hidden]{display:none}
+
+/* ホワイトバランスのボタン。広い画面では写真の下端に重ね、狭い画面では写真の下に並べる */
+.wb-bar{display:flex;gap:2px;margin-top:6px;padding:3px;border:1px solid var(--wb-edge);border-radius:8px;background:#1b1f23;overflow-x:auto;scrollbar-width:none}
+.wb-bar::-webkit-scrollbar{display:none}
+.wb-bar button{flex:1 1 0;display:flex;flex-direction:column;align-items:center;gap:1px;min-width:0;padding:4px 0 3px;white-space:nowrap;letter-spacing:-.02em;border:1px solid transparent;border-radius:6px;background:none;color:#d8dde2;font:10.5px var(--sans);cursor:pointer}
+.wb-bar button:hover{border-color:#5a646d}
+.wb-bar button[aria-pressed="true"]{background:var(--wb-sel);color:#14171a}
+.wb-bar svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.wb-bar svg text{fill:currentColor;stroke:none;font:700 8.5px var(--sans)}
+.wb-bar svg text.k{font-size:12px}
+@container (min-width:600px){
+  .wb-bar{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);margin:0;max-width:calc(100% - 16px);border-radius:10px;background:var(--wb-glass)}
+  .wb-bar button{flex:none;width:56px;font-size:12px}
+  .wb-bar svg{width:24px;height:24px}
+}
+
+.wb-mode{margin-top:6px}
+.wb-mode b,.wb-sbar b{color:var(--ink);font-weight:600}
+.wb-strip{display:block;width:100%;height:78px;margin-top:2px;touch-action:none;cursor:ew-resize}
+.wb-loc.off button{opacity:.45;cursor:default}
+
+/* 結果 */
+.a-out .m-sub{display:block;margin-top:2px;font:12px/1.5 var(--sans);color:var(--ink-3);letter-spacing:0}
+.a-out .m-main dd{font:600 22px/1.35 var(--sans);letter-spacing:0}
+.wb-sw{display:inline-block;width:.9em;height:.9em;margin-right:.3em;border-radius:3px;vertical-align:-.08em;box-shadow:0 0 0 1px var(--line-2)}
+.wb-gb{display:inline-flex;gap:3px;align-items:flex-end;height:.9em;margin-right:.4em;vertical-align:-.05em}
+.wb-gb i{display:block;width:6px;border-radius:1px 1px 0 0}
+
+#wb-how{--how-min:340px}
+#wb-how canvas{display:block;width:172px;height:104px;border-radius:2px;background:var(--screen)}
+
+/* 右の列が項目名を 1 行に収められる幅（約 370 px）になるのは、ページの幅が最大（1,180 px）のときから */
+@media (min-width:1180px){
+  .tgrid{grid-template-columns:minmax(0,2fr) minmax(0,1fr);align-items:start}
+  .tgrid>*{grid-column:1/-1}
+  .a-cam{grid-column:1;grid-row:1/span 2}
+  .a-light{grid-column:2;grid-row:1}
+  .a-out{grid-column:2;grid-row:2}
+  .a-out .metrics{grid-template-columns:minmax(0,1fr)}
+}

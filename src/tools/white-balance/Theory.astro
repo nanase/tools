@@ -1,0 +1,91 @@
+---
+// 動作原理と式
+const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
+const sub = (s: string, i: string) => `<msub><mi>${s}</mi><mi>${i}</mi></msub>`;
+const par = (x: string) => `<mo stretchy="false">(</mo>${x}<mo stretchy="false">)</mo>`;
+const lam = '<mi>λ</mi>';
+---
+<h3>光の分光分布</h3>
+<div class="eqs">
+  <math display="block" set:html={`<mi>E</mi>${par(`${lam}<mo>,</mo><mi>T</mi>`)}<mo>∝</mo><mfrac><msup>${lam}<mrow><mo>−</mo><mn>5</mn></mrow></msup><mrow><mi>exp</mi>${par(`${sub('c', '2')}<mo>/</mo>${lam}<mi>T</mi>`)}<mo>−</mo><mn>1</mn></mrow></mfrac><mo>,</mo><mspace width="0.6em"/>${sub('c', '2')}<mo>=</mo><mn>1.4388</mn><mo>×</mo><msup><mn>10</mn><mrow><mo>−</mo><mn>2</mn></mrow></msup><mtext> m·K</mtext>`} />
+  <math display="block" set:html={`${sub('E', 'D')}${par(lam)}<mo>=</mo>${sub('S', '0')}${par(lam)}<mo>+</mo>${sub('M', '1')}${sub('S', '1')}${par(lam)}<mo>+</mo>${sub('M', '2')}${sub('S', '2')}${par(lam)}`} />
+</div>
+<ul class="tl">
+  <li>ろうそく・電球は黒体放射（プランクの式）で近似する。温度 <math><mi>T</mi></math> が低いほど赤い側が強い<Fragment set:html={rf(1)} /></li>
+  <li>晴天・曇天・日陰は CIE の昼光。色温度から <math set:html={`${sub('M', '1')}<mo>,</mo>${sub('M', '2')}`} /> を求め、3 つの基底を混ぜる<Fragment set:html={rf(2) + rf(3)} /></li>
+  <li>帯の上で動かした光は、4,000 K 未満を黒体、5,000 K 以上を昼光にし、その間は 2 つを混ぜる</li>
+  <li>蛍光灯は水銀の線と 3 つの蛍光体の山、LED は青の山と黄の蛍光体の広い山で近似する</li>
+</ul>
+
+<h3>カメラの RAW</h3>
+<div class="eqs">
+  <math display="block" set:html={`${sub('C', 'k')}<mo>=</mo><munder><mo>∑</mo>${lam}</munder><mi>R</mi>${par(lam)}<mspace width="0.15em"/><mi>E</mi>${par(lam)}<mspace width="0.15em"/>${sub('S', 'k')}${par(lam)}<mspace width="0.15em"/><mi>Δ</mi>${lam}<mo>,</mo><mspace width="0.6em"/><mi>k</mi><mo>∈</mo><mo stretchy="false">{</mo><mi>R</mi><mo>,</mo><mi>G</mi><mo>,</mo><mi>B</mi><mo stretchy="false">}</mo>`} />
+</div>
+<ul class="tl">
+  <li><math><mi>R</mi></math> は物の分光反射率、<math><mi>E</mi></math> は光、<math set:html={sub('S', 'k')} /> はカメラの感度</li>
+  <li>同じ白い紙でも、光が変われば <math set:html={`${sub('C', 'R')}<mo>:</mo>${sub('C', 'G')}<mo>:</mo>${sub('C', 'B')}`} /> の比が変わる。これが色の転びの元</li>
+  <li>色の名前の判定と色見本の分光反射率は、CIE 1931 の等色関数の近似で求める<Fragment set:html={rf(4)} /></li>
+</ul>
+
+<h3>ゲイン（ホワイトバランス）</h3>
+<div class="eqs">
+  <math display="block" set:html={`${sub('g', 'R')}<mo>=</mo><mfrac>${sub('W', 'G')}${sub('W', 'R')}</mfrac><mo>,</mo><mspace width="0.5em"/>${sub('g', 'G')}<mo>=</mo><mn>1</mn><mo>,</mo><mspace width="0.5em"/>${sub('g', 'B')}<mo>=</mo><mfrac>${sub('W', 'G')}${sub('W', 'B')}</mfrac>`} />
+  <math display="block" set:html={`<msub><mrow><mo stretchy="false">[</mo><mi>R</mi><mo>,</mo><mi>G</mi><mo>,</mo><mi>B</mi><mo stretchy="false">]</mo></mrow><mtext>表示</mtext></msub><mo>=</mo><mi>M</mi><mspace width="0.15em"/><mi>diag</mi>${par(`${sub('g', 'R')}<mo>,</mo>${sub('g', 'G')}<mo>,</mo>${sub('g', 'B')}`)}<mspace width="0.15em"/><mi>C</mi>`} />
+</div>
+<ul class="tl">
+  <li><math><mi>W</mi></math> は「白と見なす光」の RAW。光と同じなら白い紙の R・G・B がそろい、白く写る</li>
+  <li>色ごとに倍率を掛けるだけの補正で、目の順応のモデル（von Kries）と同じ形<Fragment set:html={rf(5)} /></li>
+  <li><math><mi>M</mi></math> は 3 × 3 の色の行列。白をそろえた RAW を画面の線形 sRGB へ移す</li>
+  <li>色かぶり補正は G の倍率を <math><mi>exp</mi><mo stretchy="false">(</mo><mo>−</mo><mn>0.006</mn><mo>×</mo><mtext>補正</mtext><mo stretchy="false">)</mo></math> にする</li>
+</ul>
+
+<h3><math><mi>W</mi></math> の決め方</h3>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th>方法</th><th>白と見なす光 <math><mi>W</mi></math></th></tr></thead>
+  <tbody>
+    <tr><th>太陽光・電球など</th><td>決まった色温度の光の白の RAW</td></tr>
+    <tr><th>色温度</th><td>帯の △ の色温度の光の白の RAW</td></tr>
+    <tr><th>スポイト</th><td>押した所のまわり 7 × 7 画素の RAW の平均</td></tr>
+    <tr><th>オート（平均を灰色に）<Fragment set:html={rf(6)} /></th><td>写真全体の RAW の平均</td></tr>
+    <tr><th>オート（最も明るい所を白に）<Fragment set:html={rf(7)} /></th><td>R + G + B の大きい 0.5 % の画素の RAW の平均</td></tr>
+    <tr><th>場所ごと</th><td>画素ごとに、届いている光を混ぜた白の RAW</td></tr>
+  </tbody>
+</table></div>
+<ul class="tl">
+  <li>グレーワールドは「世界の平均は灰色」と仮定する。青い海や緑の葉ばかりの写真では、その色を打ち消して反対の色に転ぶ</li>
+  <li>最も明るい所を白とする方法は、白い物か光の照り返しが写っていれば当たる</li>
+</ul>
+
+<h3>色温度とミレッド</h3>
+<div class="eqs">
+  <math display="block" set:html={`<mtext>ミレッド</mtext><mo>=</mo><mfrac><msup><mn>10</mn><mn>6</mn></msup><mi>T</mi></mfrac>`} />
+  <math display="block" set:html={`<mi>n</mi><mo>=</mo><mfrac><mrow><mi>x</mi><mo>−</mo><mn>0.3320</mn></mrow><mrow><mn>0.1858</mn><mo>−</mo><mi>y</mi></mrow></mfrac><mo>,</mo><mspace width="0.6em"/><mi>T</mi><mo>≈</mo><mn>449</mn><msup><mi>n</mi><mn>3</mn></msup><mo>+</mo><mn>3525</mn><msup><mi>n</mi><mn>2</mn></msup><mo>+</mo><mn>6823.3</mn><mi>n</mi><mo>+</mo><mn>5520.33</mn>`} />
+</div>
+<ul class="tl">
+  <li>色の違いは色温度の差より逆数（ミレッド）の差によく合う。帯はミレッドで等間隔に並べる</li>
+  <li>蛍光灯や LED の色温度は、色度 <math><mi>x</mi><mo>,</mo><mi>y</mi></math> から求める相関色温度<Fragment set:html={rf(8)} /></li>
+  <li>オートやスポイトで決めた <math><mi>W</mi></math> は、B と R の比が同じになる色温度を帯の △ に出す</li>
+</ul>
+
+<h3>このツールで決めたこと</h3>
+<ul class="tl">
+  <li>波長は 380〜730 nm を 5 nm ごと</li>
+  <li>カメラの感度は仮の値。R・G・B をそれぞれ 600・535・462 nm を中心とするガウスにし、650 nm から上を赤外カットで落とす</li>
+  <li>色の行列 <math><mi>M</mi></math> は、色見本 24 色を昼光 D65 で写した値に最小二乗で合わせ、白が白に移るように行ごとに縮める</li>
+  <li>色見本などの分光反射率は、昼光で同じ色に見えるもののうち最も滑らかなもの（2 階差分の 2 乗和が最小）</li>
+  <li>カメラの設定の色温度は太陽光 5,200 K、日陰 7,000 K、曇天 6,000 K、電球 2,700 K（光の電球に合わせた）、蛍光灯 5,000 K（色かぶり補正 +16）</li>
+  <li>露出は、光の当たる強さの大きい方から 10 % の所に合わせ、さらに 0.82 倍にする</li>
+  <li>写真は 800 × 500 画素で、画素ごとに 2 × 2 の点を平均する</li>
+</ul>
+
+<h3>出典</h3>
+<ol class="refs">
+  <li id="thy-r1"><span class="rf-for">黒体放射</span><span class="rf-src">M. Planck, “Ueber das Gesetz der Energieverteilung im Normalspectrum,” <i>Annalen der Physik</i>, vol. 309, no. 3, pp. 553–563, 1901</span></li>
+  <li id="thy-r2"><span class="rf-for">昼光の基底</span><span class="rf-src">D. B. Judd, D. L. MacAdam, and G. Wyszecki, “Spectral distribution of typical daylight as a function of correlated color temperature,” <i>JOSA</i>, vol. 54, no. 8, pp. 1031–1040, 1964</span></li>
+  <li id="thy-r3"><span class="rf-for">CIE の昼光と等色関数</span><span class="rf-src">CIE 015:2018, <i>Colorimetry</i>, 4th ed., 2018</span></li>
+  <li id="thy-r4"><span class="rf-for">等色関数の近似</span><span class="rf-src">C. Wyman, P.-P. Sloan, and P. Shirley, “Simple analytic approximations to the CIE XYZ color matching functions,” <i>Journal of Computer Graphics Techniques</i>, vol. 2, no. 2, pp. 1–11, 2013</span></li>
+  <li id="thy-r5"><span class="rf-for">色ごとの倍率による順応</span><span class="rf-src">J. von Kries, “Chromatic adaptation,” <i>Festschrift der Albrecht-Ludwigs-Universität</i>, 1902（D. L. MacAdam 訳, <i>Sources of Color Science</i>, MIT Press, 1970）</span></li>
+  <li id="thy-r6"><span class="rf-for">グレーワールド</span><span class="rf-src">G. Buchsbaum, “A spatial processor model for object colour perception,” <i>Journal of the Franklin Institute</i>, vol. 310, no. 1, pp. 1–26, 1980</span></li>
+  <li id="thy-r7"><span class="rf-for">最も明るい所を白に</span><span class="rf-src">E. H. Land and J. J. McCann, “Lightness and retinex theory,” <i>JOSA</i>, vol. 61, no. 1, pp. 1–11, 1971</span></li>
+  <li id="thy-r8"><span class="rf-for">相関色温度の近似</span><span class="rf-src">C. S. McCamy, “Correlated color temperature as an explicit function of chromaticity coordinates,” <i>Color Research &amp; Application</i>, vol. 17, no. 2, pp. 142–144, 1992</span></li>
+</ol>

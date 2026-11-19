@@ -1,0 +1,80 @@
+---
+import Busy from '../components/Busy.astro';
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import HowSteps from '../components/HowSteps.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/white-balance/style.css';
+import { WB_ICON } from '../tools/white-balance/icons';
+import { LP, TINT } from '../tools/white-balance/params';
+import { SCENES } from '../tools/white-balance/scenes';
+import { STEPS } from '../tools/white-balance/steps';
+import Theory from '../tools/white-balance/Theory.astro';
+import { LIGHTS, WB_MENU } from '../tools/white-balance/wb';
+
+const name = 'ホワイトバランス';
+const lights = LIGHTS.map(([k, n]) => [k, n] as const);
+---
+<SiteLayout title={name} tool={{ id: 'white-balance', name }} note="物の反射率と光のスペクトル、仮のカメラの感度から計算した写真です。">
+  <PageTitle title={name}>光の色に合わせて、写真の白を白に戻します。光とカメラの設定を変え、白い物の色の転び方を見ます。</PageTitle>
+
+  <div class="tgrid">
+    <Panel hid="hd-cam" title="カメラ" class="a-cam" fixed>
+      <div slot="aux" class="seg wb-loc" id="wb-locw"><button type="button" id="wb-local" aria-pressed="false" title="画素ごとに、混ざった光の白に合わせる"><span class="led" id="wb-locL" aria-hidden="true"></span> <span>場所ごとに補正</span></button></div>
+      <div class="wb-box" id="wb-box">
+        <div class="wb-stage" id="wb-stage">
+          <canvas id="wb-cv" width="800" height="500" tabindex="0" role="img" aria-label="写真。押した所を白にする（スポイト）"></canvas>
+          <span class="wb-ring" id="wb-ring" hidden></span>
+          <div class="wb-hud wb-tl"><span class="wb-ro" id="wb-ro">WB</span></div>
+          <div class="wb-hud wb-tr">
+            <select class="wb-sel" id="wb-scene" aria-label="場面">
+              {SCENES.map((s, i) => <option value={s.id} selected={i === 0}>{s.name}</option>)}
+            </select>
+          </div>
+          <Busy id="wb-busy" text="準備中…" center />
+        </div>
+        <div class="wb-bar" id="wb-bar" role="group" aria-label="ホワイトバランス">
+          {WB_MENU.map(([k, n]) => <button type="button" data-wb={k} aria-pressed={k === 'sun' ? 'true' : 'false'}><svg viewBox="0 0 24 24" aria-hidden="true" set:html={WB_ICON[k]} /><span>{n}</span></button>)}
+        </div>
+      </div>
+      <p class="sbar wb-mode" id="wb-mode"></p>
+      <canvas class="wb-strip" id="wb-strip" role="img" aria-label="色温度の帯。▼は光、△はカメラの設定。ドラッグで動かす"></canvas>
+      <p class="sbar wb-sbar" id="wb-sbar"></p>
+    </Panel>
+
+    <Panel hid="hd-light" title="光と調整" class="a-light">
+      <div class="ptab">
+        <ChoiceRow k="l0" name="光" sub="写真の場面を照らす光" layout="chips" msg choices={lights} value="bulb" />
+        <ChoiceRow k="l1" name="光 2" sub="光が 2 つの場面の、2 つ目の光" layout="chips" msg choices={lights} value="bulb" />
+        <ParamRow d={LP} />
+        <ChoiceRow k="am" name="オートの方式" sub="オートのときに白を決める方法" layout="chips" msg choices={[['gray', '平均を灰色に'], ['bright', '最も明るい所を白に']]} value="gray" />
+        <ParamRow d={TINT} />
+      </div>
+    </Panel>
+
+    <Panel hid="hd-out" title="結果" class="a-out">
+      <dl class="metrics c3">
+        <div class="m m-main"><dt id="o-r1k">白い所</dt><dd><span id="o-r1"></span><span class="m-sub" id="o-r1s"></span></dd></div>
+        <div class="m"><dt>ゲイン（G を 1 として）</dt><dd><span id="o-g"></span><span class="m-sub" id="o-gs"></span></dd></div>
+        <div class="m"><dt id="o-r3k">光と設定の差</dt><dd><span id="o-r3"></span><span class="m-sub" id="o-r3s"></span></dd></div>
+      </dl>
+    </Panel>
+
+    <Panel hid="hd-how" title="しくみ" class="a-how">
+      <HowSteps side id="wb-how" steps={STEPS.map((s) => ({ h: s.h, fig: `<canvas role="img" aria-label="${s.h}"></canvas>`, p: s.p }))} />
+    </Panel>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools current="white-balance" />
+  <script>
+    import '../tools/white-balance/client';
+  </script>
+</SiteLayout>
