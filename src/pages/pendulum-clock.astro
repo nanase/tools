@@ -1,6 +1,7 @@
 ---
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import FsButton from '../components/FsButton.astro';
 import HowSteps from '../components/HowSteps.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
@@ -82,6 +83,7 @@ const WIND = [
           <div class="pc-v pc-v-front">
             <canvas data-cv="front" class="pc-cv pc-h-front" role="img" aria-label="時計の機械の正面図（板を外した図）"></canvas>
             <div class="pc-tip" hidden></div>
+            <FsButton id="pc-fs" />
           </div>
           <div class="pc-zb">
             <button type="button" class="tg" id="pc-zin" title="拡大" aria-label="拡大">＋</button>

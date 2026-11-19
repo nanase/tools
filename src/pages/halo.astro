@@ -2,6 +2,7 @@
 import Busy from '../components/Busy.astro';
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import FsButton from '../components/FsButton.astro';
 import More from '../components/More.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
@@ -41,7 +42,7 @@ const ORIENTS = [
         <div class="hv" id="hv">
           <canvas id="hvc" tabindex="0" role="img" aria-label="計算した空"></canvas>
           <div class="hls" id="hls"><svg id="hls-g" aria-hidden="true"></svg></div>
-          <button type="button" class="hv-fs" id="hv-fs" aria-label="全画面で表示" title="全画面で表示"><svg class="i-open" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/></svg><svg class="i-close" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 2v4H2M14 6h-4V2M10 14v-4h4M2 10h4v4"/></svg></button>
+          <FsButton id="hv-fs" />
           <p class="hv-msg" id="hv-msg" hidden></p>
           <Busy id="hv-busy" text="計算中…" center />
         </div>

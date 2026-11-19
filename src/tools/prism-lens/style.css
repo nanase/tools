@@ -8,12 +8,6 @@
 .pl-stage{position:relative;overflow:hidden;border-radius:var(--r);background:#000;user-select:none;-webkit-user-select:none}
 #pl-cv{display:block;width:100%;touch-action:none}
 #pl-cv:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
-.pl-fs{position:absolute;top:8px;right:8px;z-index:2;display:grid;place-items:center;width:32px;height:32px;padding:0;border:0;border-radius:6px;background:rgb(255 255 255 / .1);color:#e6e8e4;cursor:pointer}
-.pl-fs:hover{background:rgb(255 255 255 / .2)}
-.pl-fs:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
-.pl-fs svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
-.pl-fs .i-close,.full .pl-fs .i-open{display:none}
-.full .pl-fs .i-close{display:block}
 
 /* 道具のトレイ（図の下端に重ねる） */
 .pl-tray{position:absolute;left:50%;bottom:8px;z-index:2;transform:translateX(-50%);display:flex;align-items:stretch;max-width:calc(100% - 16px);padding:2px 4px;overflow-x:auto;border:1px solid #30363e;border-radius:8px;background:#121519;scrollbar-width:none}
@@ -65,9 +59,12 @@
 .pl-cap{min-height:1.5em;margin:8px 0 2px;font-size:14px;color:var(--ink-2)}
 .pl-view{margin-top:6px}
 
+/* 全画面のボタンは暗い図の上で見えるよう明るい地に */
+.pl-stage .fs-btn{background:rgb(255 255 255 / .1);color:#e6e8e4}
+.pl-stage .fs-btn:hover{background:rgb(255 255 255 / .2)}
 /* 全画面: 図を画面いっぱいに */
-.pl-wrap.full{position:fixed;inset:0;z-index:50;background:#000}
-.pl-wrap.full .pl-stage{height:100%;border-radius:0}
+.pl-wrap.fs-on{background:#000}
+.pl-wrap.fs-on .pl-stage{height:100%;border-radius:0}
 
 /* しくみの絵 */
 .pl-steps .how{grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr))}

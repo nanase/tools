@@ -1,0 +1,11 @@
+---
+/** 全画面の切り替え。図の右上に重ねる（位置はページの CSS で変えてよい）。動作は lib/fullscreen.ts */
+import '../styles/fullscreen.css';
+
+interface Props {
+  id: string;
+  class?: string;
+}
+const { id, class: cls } = Astro.props;
+---
+<button type="button" class:list={['fs-btn', cls]} id={id} aria-label="全画面で表示" title="全画面で表示"><svg class="i-open" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/></svg><svg class="i-close" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 2v4H2M14 6h-4V2M10 14v-4h4M2 10h4v4"/></svg></button>

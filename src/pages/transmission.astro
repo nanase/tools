@@ -1,6 +1,7 @@
 ---
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import FsButton from '../components/FsButton.astro';
 import HowSteps from '../components/HowSteps.astro';
 import More from '../components/More.astro';
 import PageTitle from '../components/PageTitle.astro';
@@ -70,6 +71,7 @@ const playIcon =
             <canvas data-cv={k} class:list={['tm-cv', `tm-h-${k}`]} role="img" aria-label={label}></canvas>
             {cap && <span class="tm-cap">{cap}</span>}
             <div class="tm-tip" hidden></div>
+            {k === 'sec' && <FsButton id="tm-fs" />}
           </div>
         ))}
       </div>

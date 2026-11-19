@@ -3,6 +3,7 @@
  * 描画の段取り（動く間は粗い絵、止まったら帯に分けた細かい絵）、設定の保存をつなぐ
  */
 import { $, $$ } from '../../lib/dom';
+import { initFullscreen } from '../../lib/fullscreen';
 import { store, stored } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
 import { fromDec, fromFix, toFix } from './fixed';
@@ -211,8 +212,8 @@ function info(): void {
       u = fromFix(toFix(jc[0]) - view.cx) / s,
       v = fromFix(toFix(jc[1]) - view.cy) / s;
     mark.hidden = false;
-    mark.style.left = `${r.width / 2 + (u * r.height) / 2}px`;
-    mark.style.top = `${r.height / 2 + (v * r.height) / 2}px`;
+    mark.style.left = `${r.width / 2 + u * half(r)}px`;
+    mark.style.top = `${r.height / 2 + v * half(r)}px`;
   } else mark.hidden = true;
 }
 
@@ -405,9 +406,13 @@ $('#mb-home').addEventListener('click', () => {
 });
 
 /* ---------- 図の上の操作 ---------- */
+/** 画面の座標の 1 に当たる画素数（短い辺の半分。全画面の縦長の画面でも全体が収まるように） */
+function half(r: DOMRect): number {
+  return Math.min(r.width, r.height) / 2;
+}
 function uvOf(x: number, y: number): [number, number] {
   const r = cv.getBoundingClientRect();
-  return [(x - r.left - r.width / 2) / (r.height / 2), (y - r.top - r.height / 2) / (r.height / 2)];
+  return [(x - r.left - r.width / 2) / half(r), (y - r.top - r.height / 2) / half(r)];
 }
 cv.addEventListener(
   'wheel',
@@ -452,7 +457,7 @@ cv.addEventListener('pointermove', (e) => {
   const r = cv.getBoundingClientRect();
   if (ptrs.size === 1) {
     if (down && !down.far) return;
-    view.pan((e.clientX - prev[0]) / (r.height / 2), (e.clientY - prev[1]) / (r.height / 2));
+    view.pan((e.clientX - prev[0]) / half(r), (e.clientY - prev[1]) / half(r));
   } else if (ptrs.size === 2) {
     const [a, b] = [...ptrs.values()],
       mid: [number, number] = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2],
@@ -575,4 +580,5 @@ void Renderer.create(cv).then((r) => {
   }).observe(cv);
   resize();
 });
+initFullscreen({ root: $('#mb-stage'), btn: $<HTMLButtonElement>('#mb-fs'), focus: cv });
 requestAnimationFrame(step);

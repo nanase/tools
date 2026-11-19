@@ -44,7 +44,7 @@ vec2 fstep(vec2 z, vec2 c) {
 }
 void main() {
   /* 画面の下向きを虚軸の正にする */
-  vec2 uv = (gl_FragCoord.xy - 0.5 * uRes) / (0.5 * uRes.y);
+  vec2 uv = (gl_FragCoord.xy - 0.5 * uRes) / (0.5 * min(uRes.x, uRes.y));
   uv.y = -uv.y;
   int n = 0; float r2 = 0., B2 = uBail * uBail;
   if (uMode == 0) {
