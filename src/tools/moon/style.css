@@ -30,6 +30,13 @@
 .vbtn:hover{background:rgb(10 12 14 / .9)}
 .vbtn:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
 .vz{min-width:3.6em;text-align:center;font:500 11.5px var(--mono);color:#e6e8e4;text-shadow:0 0 3px #000}
+/* 全画面のボタンは拡大・縮小の並びの右端に */
+.vctl .fs-btn{position:static;width:30px;height:28px;border:1px solid #48525a;border-radius:4px;background:rgb(10 12 14 / .72)}
+.vctl .fs-btn:hover{background:rgb(10 12 14 / .9)}
+/* 全画面: 月の図を画面いっぱいに。時刻・月の帯・表示の設定は浮かぶ枠に */
+.mview.fs-on{aspect-ratio:auto;border:0}
+.fs-pop .bigclock{gap:6px 16px;margin:0}
+.fs-pop .month{margin-top:0}
 .vmsg{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);margin:0;color:#aab3b8;font:500 13px var(--sans)}
 .mlabs{position:absolute;inset:0;pointer-events:none;overflow:hidden}
 .mlab{position:absolute;transform:translate(7px,-50%);font:500 11px/1.2 var(--sans);color:#e6e8e4;text-shadow:0 0 3px #000,0 0 6px #000,0 0 9px #000;white-space:nowrap}

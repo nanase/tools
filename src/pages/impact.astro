@@ -1,6 +1,7 @@
 ---
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import FsButton from '../components/FsButton.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
@@ -43,6 +44,7 @@ const STAGES = ['接触', '掘削', '崩壊', '噴出物の落下', '完成'];
           <div class="ip-tag" id="ip-tag" hidden></div>
           <div class="ip-msg" id="ip-msg" hidden>地面に届く前に爆発するので、クレーターはできません。</div>
           <i class="ip-busy" aria-hidden="true"></i>
+          <FsButton id="ip-fs" />
         </div>
         <div class="ip-tog">
           <div><span id="ip-p-l">圧力の色</span><div class="seg" id="ip-p" role="group" aria-labelledby="ip-p-l"><button type="button" data-v="1" aria-pressed="true">オン</button><button type="button" data-v="0" aria-pressed="false">オフ</button></div></div>

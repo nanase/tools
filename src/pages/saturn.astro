@@ -3,6 +3,7 @@ import Busy from '../components/Busy.astro';
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
 import DatePicker from '../components/DatePicker.astro';
+import FsButton from '../components/FsButton.astro';
 import More from '../components/More.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
@@ -40,7 +41,7 @@ const name = '土星';
         <div class="pn-lab pn-b" id="v-lab2"></div>
         <p class="pn-vmsg" id="v-msg" hidden></p>
         <Busy id="v-busy" text="読み込み中…" />
-        <div class="pn-vctl" role="group" aria-label="表示の拡大・縮小"><button type="button" class="pn-vbtn" id="vout" aria-label="縮小" title="縮小">−</button><span class="pn-vz" id="vzoom">×1.00</span><button type="button" class="pn-vbtn" id="vin" aria-label="拡大" title="拡大">＋</button><button type="button" class="pn-vbtn" id="vreset" hidden>元の表示</button></div>
+        <div class="pn-vctl" role="group" aria-label="表示の拡大・縮小"><button type="button" class="pn-vbtn" id="vout" aria-label="縮小" title="縮小">−</button><span class="pn-vz" id="vzoom">×1.00</span><button type="button" class="pn-vbtn" id="vin" aria-label="拡大" title="拡大">＋</button><button type="button" class="pn-vbtn" id="vreset" hidden>元の表示</button><FsButton id="v-fs" /></div>
       </div>
       <div class="pn-view pn-strip" id="sview">
         <canvas id="sc" aria-hidden="true"></canvas>

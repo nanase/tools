@@ -9,6 +9,7 @@ import { Choice } from '../../lib/choice';
 import { DatePicker } from '../../lib/date-picker';
 import { dateTimeToJd, secOfDay, toDateTime } from '../../lib/date-picker-core';
 import { $, esc, norm } from '../../lib/dom';
+import { initFullscreen } from '../../lib/fullscreen';
 import { ParamGroup } from '../../lib/param';
 import { reserveHeight } from '../../lib/reserve';
 import { store, stored } from '../../lib/store';
@@ -1321,4 +1322,10 @@ try {
   m.hidden = false;
   m.textContent = 'このブラウザでは WebGL2 を使えないため、月を描けません';
 }
+/* 全画面: 月の図を画面いっぱいに。時刻と表示の操作は右上に浮かべる */
+initFullscreen({
+  root: $('#mview'),
+  btn: $<HTMLButtonElement>('#v-fs'),
+  pop: () => [$('#p-or'), $('#p-play'), $('.bigclock'), $('.month'), $('.tstep'), $('#g-view')],
+});
 later(true);

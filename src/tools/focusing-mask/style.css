@@ -29,6 +29,13 @@
 .sv-z button:disabled{color:#5d676e;cursor:default}
 .sv-z button:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
 .sv-z svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
+/* 全画面のボタンは拡大の並びの右端に */
+.sv-z .fs-btn{position:static;width:auto;height:30px;border-radius:0;background:none}
+/* 全画面: 正方形の映像を画面に収まる最大の大きさで真ん中に。ピントの位置と表示の設定は浮かぶ枠に */
+.sv-fs.fs-on{display:flex;align-items:center;justify-content:center;background:#000}
+.sv-fs.fs-on .sv{width:min(100%,100dvh);border:0;border-radius:0}
+@media (max-aspect-ratio:4/5){.sv-fs.fs-on{align-items:flex-start;padding-top:8px}}
+.fs-pop .foc{margin-top:0}
 .sv .ov{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 .ov .ln{fill:none;stroke-width:1.2;stroke-dasharray:6 5;opacity:.9;vector-effect:non-scaling-stroke}
 .ov .l1{stroke:#f2c230}.ov .l2{stroke:#52c4dd}

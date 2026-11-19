@@ -8,6 +8,7 @@ import { Choice } from '../../lib/choice';
 import { DatePicker } from '../../lib/date-picker';
 import { dateTimeToJd, secOfDay, toDateTime } from '../../lib/date-picker-core';
 import { $, esc } from '../../lib/dom';
+import { initFullscreen } from '../../lib/fullscreen';
 import { cmFromNodeOfDate, Ephem, type Geo, type PlanetState, planetState } from '../../lib/planet/ephem';
 import {
   findMutual,
@@ -1348,4 +1349,10 @@ try {
   m.hidden = false;
   m.textContent = 'このブラウザでは木星を描けません。WebGL2 が必要です。';
 }
+/* 全画面: 木星の図を画面いっぱいに。時刻と表示の操作は右上に浮かべる */
+initFullscreen({
+  root: $('#pview'),
+  btn: $<HTMLButtonElement>('#v-fs'),
+  pop: () => [$('#p-or'), $('#p-play'), $('.pn-clock'), $('#band'), $('#keys'), $('.pn-tstep'), $('#g-view')],
+});
 later(true);

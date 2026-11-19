@@ -8,6 +8,7 @@ import { Choice } from '../../lib/choice';
 import { DatePicker } from '../../lib/date-picker';
 import { dateTimeToJd, secOfDay, toDateTime } from '../../lib/date-picker-core';
 import { $, esc } from '../../lib/dom';
+import { initFullscreen } from '../../lib/fullscreen';
 import { Ephem, type Geo, type PlanetState, planetState, toBody } from '../../lib/planet/ephem';
 import { findPhen, limb, planetShadow, skyOffset, sunHidden, toEarth } from '../../lib/planet/events';
 import { BAND_W, bandAxisY, bandRows, season, timeBand, WIG, wiggle, wiggleTime } from '../../lib/planet/figs';
@@ -1426,4 +1427,10 @@ try {
   m.hidden = false;
   m.textContent = 'このブラウザでは土星を描けません。WebGL2 が必要です。';
 }
+/* 全画面: 土星の図を画面いっぱいに。時刻と表示の操作は右上に浮かべる */
+initFullscreen({
+  root: $('#pview'),
+  btn: $<HTMLButtonElement>('#v-fs'),
+  pop: () => [$('#p-or'), $('#p-play'), $('.pn-clock'), $('#band'), $('#keys'), $('.pn-tstep'), $('#g-view')],
+});
 later(true);
