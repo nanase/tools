@@ -34,7 +34,7 @@ export interface FilePart {
 const DRUM_CH = 9;
 
 /**
- * 音のあるパートを、トラック → チャンネルの順に返す。名前はトラック名、なければ GM の音色名（打楽器は「打楽器」）。
+ * 音のあるパートを、トラック → チャンネルの順に返す。名前はトラック名、なければ GM の音色名（打楽器は「パーカッション」）。
  * 音のあるチャンネルが 2 つ以上あるトラックでは、トラック名を使わない
  */
 export function partsOf(smf: Smf): FilePart[] {
@@ -70,7 +70,7 @@ export function partsOf(smf: Smf): FilePart[] {
   for (const p of out) perTrack.set(p.tr, (perTrack.get(p.tr) ?? 0) + 1);
   for (const p of out) {
     const track = (perTrack.get(p.tr) ?? 0) === 1 ? smf.names[p.tr] : '';
-    p.name = p.drum ? '打楽器' : track || GM_NAMES[prog.get(p.id) ?? 0];
+    p.name = p.drum ? 'パーカッション' : track || GM_NAMES[prog.get(p.id) ?? 0];
     let s = 0;
     for (const x of p.notes) {
       p.lo = Math.min(p.lo, x.n);

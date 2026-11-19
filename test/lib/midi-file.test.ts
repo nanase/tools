@@ -48,7 +48,7 @@ describe('パート', () => {
     expect(ps.map((p) => [p.id, p.name, p.drum])).toEqual([
       ['0:0', 'Right', false],
       ['1:0', 'ヴァイオリン', false],
-      ['1:9', '打楽器', true],
+      ['1:9', 'パーカッション', true],
     ]);
     expect(ps[1].notes).toEqual([{ t: 0, d: 2, n: 48, v: 90 }]);
   });
