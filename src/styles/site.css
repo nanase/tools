@@ -496,6 +496,28 @@ a.unit:hover h3{text-decoration:underline;text-decoration-color:var(--ink-3);tex
 .midi-msg{margin:8px 8px 0}
 .midi-msg:empty{display:none}
 
+/* MIDI ファイルのパートの一覧（MidiFileParts.astro）: 選ぶ欄・チャンネル・名前・音域の図（オルガンは鍵盤）を 1 行に並べる */
+.mf{padding:8px 8px 6px;border-bottom:1px solid var(--line)}
+.mf[hidden]{display:none}
+.mf-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin:0 0 4px calc(var(--sw,26px) + 8px);font-size:13.5px;font-weight:700}
+.mf-sum{font:500 12px var(--mono);color:var(--ink-3);white-space:nowrap}
+.mf-list{display:grid;gap:2px}
+.mf-row{display:grid;grid-template-columns:16px 18px minmax(0,1fr) minmax(90px,140px);align-items:center;gap:6px;min-height:28px;padding:0 4px;border-radius:3px;font-size:13px;cursor:pointer}
+.mf-list.div .mf-row{grid-template-columns:18px minmax(0,1fr) minmax(70px,96px) auto;cursor:default}
+.mf-row.on{background:var(--inset)}
+.mf-row input{width:14px;height:14px;margin:0;accent-color:var(--ink);cursor:pointer}
+.mf-hd{min-height:0;font-size:11px;color:var(--ink-3);cursor:default}
+.mf-ch{font:500 12px var(--mono);color:var(--ink-3);text-align:right}
+.mf-nm{min-width:0;overflow-wrap:anywhere}
+.mf-rng{width:100%;height:12px;overflow:visible}
+.mf-band{fill:var(--line)}
+.mf-line{fill:var(--ink)}
+.mf-line.out{fill:var(--accent)}
+.mf-row:not(.on) .mf-line:not(.out){fill:var(--ink-3)}
+.mf-row .seg button{height:22px;padding:0 6px;font-size:11px}
+.mf-note{margin:4px 4px 0;font-size:12px;color:var(--ink-3)}
+.mf-note:empty{display:none}
+
 /* 数値欄の外に置くスライダ（ファイルの再生位置など） */
 .sl{position:relative}
 .sl input{-webkit-appearance:none;appearance:none;display:block;width:100%;height:28px;margin:0;background:transparent;cursor:pointer;--p:.5}

@@ -6,7 +6,7 @@
 import type { ReverbSpec } from '../../lib/reverb';
 import type { BodySpec } from './body';
 import type { Frame, Manual, Vib } from './player';
-import type { Expr, PieceData } from './score';
+import type { Expr, Piece, PieceData } from './score';
 import type { SynthIn, SynthOut } from './synth';
 import type { PosMsg, VnMsg } from './worklet';
 import workletUrl from './worklet.ts?worker&url';
@@ -197,10 +197,10 @@ export class ViolinAudio {
   }
 
   /** 曲を始める（beat から。null なら頭から） */
-  playPiece(v: string, data: PieceData, expr: Expr, tempo: number, beat: number | null): void {
+  playPiece(piece: Piece, data: PieceData, expr: Expr, tempo: number, beat: number | null): void {
     this.keep();
     this.bowing = false;
-    this.send({ type: 'piece', v, data, expr, tempo, beat });
+    this.send({ type: 'piece', piece, data, expr, tempo, beat });
   }
 
   /** 演奏中の曲の表情とテンポを変える */

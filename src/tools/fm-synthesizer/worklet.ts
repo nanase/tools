@@ -4,8 +4,8 @@
  * 画面で直した音色は、GM の番号（打楽器はノート番号）ごとに表を書き換える
  */
 import { Reverb, type ReverbSpec } from '../../lib/reverb';
+import { BEND, CC, type Kind, OFF, ON, PC } from '../../lib/smf';
 import { DRUM_PART, PARTS, type Src, Synth, type Tone } from './engine';
-import { BEND, CC, type Kind, OFF, ON, PC } from './smf';
 import { DRUM_DEFAULT, DRUM_TONES, GM_TONES } from './tones';
 
 declare const sampleRate: number;

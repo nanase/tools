@@ -129,6 +129,8 @@ export function performPiece(pc: Piece, data: PieceData, tempo: number, expr: Ex
     src = mergeTies(raw);
   if (!src.length) return { notes: [], beatAt: () => 0, secAt: () => 0 };
   const qpm = pc.qpm * tempo,
+    /** テンポの変化（拍の順） */
+    qmap = [...(pc.qpmMap ?? [])].sort((x, y) => x[0] - y[0]),
     b0 = src[0].t,
     bEnd = Math.max(...src.map((x) => x.t + x.d)),
     pLen = pc.phraseBars * pc.meter,
@@ -147,7 +149,14 @@ export function performPiece(pc: Piece, data: PieceData, tempo: number, expr: Ex
       return k;
     };
   secs[0] = LEAD;
-  for (let i = 1; i <= nb; i++) secs[i] = secs[i - 1] + (60 / qpm / speed(b0 + (i - 0.5) * DB)) * DB;
+  /* 拍は増える一方なので、テンポの変化の表は先頭から順に進めて引く（変化の多い MIDI でも表を頭から探さない） */
+  let qi = 0,
+    q = pc.qpm;
+  for (let i = 1; i <= nb; i++) {
+    const b = b0 + (i - 0.5) * DB;
+    while (qi < qmap.length && b >= qmap[qi][0]) q = qmap[qi++][1];
+    secs[i] = secs[i - 1] + (60 / (q * tempo) / speed(b)) * DB;
+  }
   /* 止まる時間: フェルマータ（音の 0.75 倍）、楽句の終わり（表情を付けるとき 0.06 s） */
   const pauses: [number, number][] = [];
   const base = (b: number): number => {

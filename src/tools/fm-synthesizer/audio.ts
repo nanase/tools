@@ -4,8 +4,8 @@
  * 曲の音は AudioContext の時刻で予約し、MIDI 機器の音はすぐ鳴らす。何も鳴らしていない間は AudioContext を止めて CPU を休ませる
  */
 import type { ReverbSpec } from '../../lib/reverb';
+import { PC } from '../../lib/smf';
 import { type Src, type Tone, VOL0 } from './engine';
-import { PC } from './smf';
 import type { SynthEv, SynthMsg } from './worklet';
 import workletUrl from './worklet.ts?worker&url';
 

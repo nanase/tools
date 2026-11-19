@@ -5,7 +5,7 @@
  */
 import type { BodySpec } from './body';
 import { type Frame, type Manual, type Vib, ViolinPlayer } from './player';
-import { type Expr, type PieceData, performPiece, pieceOf } from './score';
+import { type Expr, type Piece, type PieceData, performPiece } from './score';
 import type { VnMsg } from './worklet';
 
 /** 主スレッドから送るもの */
@@ -15,8 +15,8 @@ export type SynthIn =
   | { type: 'body'; body: BodySpec }
   | { type: 'vib'; vib: Vib }
   | { type: 'manual'; m: Manual }
-  /* 曲を始める（beat は始める拍。null なら頭から） */
-  | { type: 'piece'; v: string; data: PieceData; expr: Expr; tempo: number; beat: number | null }
+  /* 曲を始める（beat は始める拍。null なら頭から）。曲は手持ちの MIDI ファイルのこともあるので、id でなく曲そのものを送る */
+  | { type: 'piece'; piece: Piece; data: PieceData; expr: Expr; tempo: number; beat: number | null }
   /* 演奏中の曲の表情とテンポを変える（いまの拍から続ける） */
   | { type: 'retempo'; expr: Expr; tempo: number }
   | { type: 'stopPiece' }
@@ -67,7 +67,7 @@ let port: MessagePort | null = null,
   frames: Frame[] = [],
   busy = false,
   /** 演奏中の曲（表情・テンポを変えるときに使う） */
-  cur: { v: string; data: PieceData; perf: ReturnType<typeof performPiece>; seed: number } | null = null,
+  cur: { p: Piece; data: PieceData; perf: ReturnType<typeof performPiece>; seed: number } | null = null,
   /** 音の波形の表示: 送るか、直前の音の輪、書く位置、前に送ってからの標本の数 */
   scopeOn = false,
   ringPos = 0,
@@ -167,17 +167,17 @@ self.onmessage = (e: MessageEvent<SynthIn>) => {
       if (m.m.strings.length) cur = null;
       pl.setManual(m.m);
     } else if (m.type === 'piece') {
-      const p = pieceOf(m.v),
+      const p = m.piece,
         perf = performPiece(p, m.data, m.expr, m.tempo),
         seed = 5;
-      cur = { v: p.v, data: m.data, perf, seed };
+      cur = { p, data: m.data, perf, seed };
       flush();
       pl.play(perf, seed, m.beat === null ? 0 : perf.sec(m.beat));
       post({ type: 'piece', v: p.v, dur: perf.end, b0: perf.beat(0), b1: perf.beat(perf.end) });
     } else if (m.type === 'retempo') {
       const t = pl.pieceTime();
       if (!cur || t === null) return;
-      const p = pieceOf(cur.v),
+      const p = cur.p,
         b = cur.perf.beat(t),
         perf = performPiece(p, cur.data, m.expr, m.tempo);
       cur = { ...cur, perf, seed: cur.seed + 1 };

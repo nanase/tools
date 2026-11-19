@@ -11,7 +11,7 @@
 | [site.md](site.md) | 上部バー・メニュー・トップ・色・動き |
 | [page.md](page.md) | ツールページの枠・配置・単独・比較・一覧・数値と式・設定の保存 |
 | [input.md](input.md) | 入力の行 |
-| [instruments.md](instruments.md) | 楽器のページの演奏の枠と MIDI の枠 |
+| [instruments.md](instruments.md) | 楽器のページの演奏の枠・MIDI の枠・MIDI ファイル |
 | [card-art.md](card-art.md) | カードの図柄の決まり |
 | [pages/](pages/) | ページごとの決定。ファイル名は `src/data/tools.ts` の `id` |
 

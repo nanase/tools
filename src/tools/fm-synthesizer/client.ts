@@ -11,6 +11,7 @@ import { autoPause, lookahead } from '../../lib/pause';
 import { outVol, type PlayKey, TEMPO } from '../../lib/play';
 import { addRow, mark } from '../../lib/reset';
 import { reverbSpec, roomOf } from '../../lib/reverb';
+import { BEND, CC, OFF, ON, PC, parseSmf, type Smf, type SmfEv } from '../../lib/smf';
 import { forget, store, stored } from '../../lib/store';
 import { TempoMap } from '../../lib/tempo';
 import { initToolPage } from '../../lib/tool-page';
@@ -34,7 +35,6 @@ import {
 import { DRUM_PART, envAt, isCarrier, type Op, REV0, snapshot, type Tone, VOL0, velGain } from './engine';
 import { DRUM_HI, DRUM_LO, DRUM_NAMES, familyOf, GM_NAMES, PADS, padOf } from './gm';
 import { PAD_ICONS } from './icons';
-import { BEND, CC, OFF, ON, PC, parseSmf, type Smf, type SmfEv } from './smf';
 import { songOf } from './songs';
 import { DRUM_DEFAULT, DRUM_TONES, GM_TONES } from './tones';
 

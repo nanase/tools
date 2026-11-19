@@ -26,6 +26,8 @@ export interface Piece {
   meter: number;
   /** 楽句の小節数 */
   phraseBars: number;
+  /** テンポを変えるところ [拍, 4 分音符 / 分]（手持ちの MIDI ファイルのテンポの変化） */
+  qpmMap?: readonly (readonly [number, number])[];
   /** 調号（実音。♭ の数、負なら ♯） */
   flats: number;
   /** 強弱の予定 [拍, dB（mf = 0）]。楽譜の記号を使う曲では省く */

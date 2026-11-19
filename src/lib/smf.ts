@@ -1,6 +1,6 @@
 /**
  * MIDI ファイル（SMF のフォーマット 0・1 と、それを RIFF に入れた RMI）を、演奏する出来事の列に直す（DOM に依存しない）。
- * 読むのはノート・プログラムチェンジ・ピッチベンド・コントロールチェンジ（7・10・11・64・121）と、テンポと拍子。
+ * 読むのはノート・プログラムチェンジ・ピッチベンド・コントロールチェンジ（7・10・11・64・121）と、テンポと拍子とトラック名。
  * 時刻は 4 分音符を 1 とする拍で持ち、テンポは最初のテンポに対する比の表にする（lib/tempo.ts の TempoMap に渡す）
  */
 
@@ -12,9 +12,10 @@ export const ON = 0,
   BEND = 4;
 export type Kind = typeof ON | typeof OFF | typeof PC | typeof CC | typeof BEND;
 
-/** 出来事。ch は 0〜15。a はノート・プログラム・コントロールの番号、v はベロシティと値（0〜127）、ピッチベンドは −1〜1 */
+/** 出来事。tr はトラックの番号（0 から）、ch は 0〜15。a はノート・プログラム・コントロールの番号、v はベロシティと値（0〜127）、ピッチベンドは −1〜1 */
 export interface SmfEv {
   b: number;
+  tr: number;
   ch: number;
   k: Kind;
   a: number;
@@ -34,10 +35,25 @@ export interface Smf {
   end: number;
   /** 音のあるチャンネル（0〜15、小さい順） */
   chans: number[];
+  /** トラックごとの名前（最初のトラック名。なければ ''） */
+  names: string[];
 }
 
 /** 読めないファイル */
 export class SmfError extends Error {}
+
+/** トラック名の文字列: UTF-8 として読めなければ Shift_JIS として読む（日本の MIDI ファイルに多い） */
+function text(d: Uint8Array): string {
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(d).trim();
+  } catch {
+    try {
+      return new TextDecoder('shift_jis').decode(d).trim();
+    } catch {
+      return '';
+    }
+  }
+}
 
 /** 使うコントロールチェンジ */
 const CCS = new Set([7, 10, 11, 64, 121]);
@@ -99,9 +115,11 @@ export function parseSmf(src: ArrayBuffer | Uint8Array): Smf {
   p = h0 + hl;
   const ev: SmfEv[] = [],
     tempo: { t: number; us: number }[] = [],
-    meter: { t: number; num: number; den: number }[] = [];
+    meter: { t: number; num: number; den: number }[] = [],
+    names: string[] = [];
   for (let k = 0; k < ntr && p < buf.length; k++) {
     if (tag() !== 'MTrk') throw new SmfError('MIDI ファイルが壊れています');
+    names.push('');
     const end = Math.min(buf.length, u32() + p);
     let t = 0,
       run = 0;
@@ -121,6 +139,7 @@ export function parseSmf(src: ArrayBuffer | Uint8Array): Smf {
         p += len;
         if (ty === 0x51 && len >= 3) tempo.push({ t, us: (d[0] << 16) | (d[1] << 8) | d[2] });
         else if (ty === 0x58 && len >= 2) meter.push({ t, num: d[0], den: 2 ** d[1] });
+        else if (ty === 0x03 && !names[k]) names[k] = text(d);
         else if (ty === 0x2f) break;
         continue;
       }
@@ -136,11 +155,11 @@ export function parseSmf(src: ArrayBuffer | Uint8Array): Smf {
       const a = buf[p++] & 0x7f,
         v = one ? 0 : buf[p++] & 0x7f,
         b = t / ppq;
-      if (ty === 0x90 && v > 0) ev.push({ b, ch, k: ON, a, v });
-      else if (ty === 0x80 || ty === 0x90) ev.push({ b, ch, k: OFF, a, v: 0 });
-      else if (ty === 0xc0) ev.push({ b, ch, k: PC, a, v: 0 });
-      else if (ty === 0xb0 && CCS.has(a)) ev.push({ b, ch, k: CC, a, v });
-      else if (ty === 0xe0) ev.push({ b, ch, k: BEND, a: 0, v: Math.max(-1, (((v << 7) | a) - 8192) / 8191) });
+      if (ty === 0x90 && v > 0) ev.push({ b, tr: k, ch, k: ON, a, v });
+      else if (ty === 0x80 || ty === 0x90) ev.push({ b, tr: k, ch, k: OFF, a, v: 0 });
+      else if (ty === 0xc0) ev.push({ b, tr: k, ch, k: PC, a, v: 0 });
+      else if (ty === 0xb0 && CCS.has(a)) ev.push({ b, tr: k, ch, k: CC, a, v });
+      else if (ty === 0xe0) ev.push({ b, tr: k, ch, k: BEND, a: 0, v: Math.max(-1, (((v << 7) | a) - 8192) / 8191) });
     }
     p = end;
   }
@@ -204,6 +223,7 @@ export function parseSmf(src: ArrayBuffer | Uint8Array): Smf {
     starts: barStarts(bars, endB),
     end: endB,
     chans: [...new Set(ev.filter((e) => e.k === ON).map((e) => e.ch))].sort((x, y) => x - y),
+    names,
   };
 }
 
