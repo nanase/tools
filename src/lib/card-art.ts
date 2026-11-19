@@ -3449,6 +3449,19 @@ export const ART: Record<string, Art> = {
     });
     return `${s}${P('kr t', `M52 17L${r1(kx)} ${r1(ky)}`)}<circle class="ka" cx="${r1(kx)}" cy="${r1(ky)}" r="2.6"/>`;
   },
+  /* ホワイトバランス: 光（▼・電球）は止めたまま、カメラの設定（△）が青い側から 1 段ずつ寄る。重なると左の紙が白になる */
+  wb(t) {
+    const pos = [4, 4, 3, 3, 2, 2, 1, 1, 1, 1, 1, 1],
+      si = pos[Math.floor((mod(t, 3.6) / 3.6) * 12)] as number,
+      paper = si >= 4 ? 'w0' : si >= 2 ? 'w1' : 'w2',
+      x0 = 44,
+      bw = 14,
+      lx = x0 + 1.5 * bw,
+      sx = x0 + (si + 0.5) * bw;
+    let s = `<rect class="${paper}" x="8" y="9" width="26" height="30" rx="2"/><rect class="c t" x="8" y="9" width="26" height="30" rx="2"/>`;
+    for (let i = 0; i < 5; i++) s += `<rect class="w${i}" x="${x0 + i * bw}" y="19" width="${bw}" height="10"/>`;
+    return `${s}<rect class="c t" x="${x0}" y="19" width="${bw * 5}" height="10"/>${P('fc', `M${lx} 17L${lx - 4.5} 10H${lx + 4.5}Z`)}${P('c', `M${sx} 31L${sx - 4.5} 38H${sx + 4.5}Z`)}`;
+  },
 };
 
 /**
@@ -3540,6 +3553,7 @@ export const LOOP: Record<string, number> = {
   cp: 3.6,
   pcl: 2,
   prl: TAU / 1.4,
+  wb: 3.6,
 };
 
 /** 止まっているときの図柄（ビルド時に HTML へ出す） */

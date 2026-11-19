@@ -519,7 +519,7 @@ export const TOOLS: Tool[] = [
     t: 'デモザイク',
     d: 'ベイヤー配列から RGB を復元する 6 つの手法を比べます。',
     ic: 'dm',
-    r: ['image-convolution', 'image-resize', 'lens', 'sampling-theorem'],
+    r: ['image-convolution', 'white-balance', 'lens', 'sampling-theorem'],
     k: 'demosaic demosaicing デモザイク デモザイキング ベイヤー bayer cfa color filter array カラーフィルタ raw 現像 イメージセンサ image sensor 補間 interpolation 最近傍 nearest バイリニア bilinear malvar he cutler mhc hamilton adams vng variable number of gradients ahd adaptive homogeneity 偽色 false color モアレ moire ジャギー jaggies ジッパー zipper 光学ローパスフィルタ olpf ローパス 色差 メディアン median psnr cpsnr cielab ΔE',
   },
   {
@@ -530,6 +530,15 @@ export const TOOLS: Tool[] = [
     ic: 'rs',
     r: ['lens', 'sampling-theorem', 'demosaic', 'doppler'],
     k: 'rolling shutter ローリングシャッター グローバルシャッター global shutter cmos イメージセンサ image sensor 電子シャッター 走査 読み出し readout 露光 exposure シャッター速度 こんにゃく現象 ゆがみ 歪み skew wobble jello プロペラ propeller 電車 自動車 自転車 ゴルフ スイング モトクロス バックフリップ ヘリコプター ローター rotor スマートフォン iphone z9 r6 α7 gfx',
+  },
+  {
+    id: 'white-balance',
+    c: '画像・光学',
+    t: 'ホワイトバランス',
+    d: '光の色に合わせて、写真の白を白に戻します。',
+    ic: 'wb',
+    r: ['demosaic', 'shading', 'prism-lens', 'rolling-shutter'],
+    k: 'white balance ホワイトバランス wb awb オートホワイトバランス auto white balance 色温度 color temperature ケルビン kelvin ミレッド mired 色かぶり 色かぶり補正 tint グリーン マゼンタ 色の転び 色転び グレーワールド gray world grey world ホワイトパッチ white patch レティネックス retinex スポイト カスタムホワイトバランス マニュアルホワイトバランス プリセット 太陽光 日陰 曇天 電球 白熱電球 蛍光灯 led ろうそく 混合光 ミックス光 mixed lighting 黒体放射 black body プランク planck 昼光 daylight d65 cie 分光 スペクトル spectrum 分光反射率 reflectance 分光感度 spectral sensitivity raw ゲイン gain 色順応 chromatic adaptation von kries フォン・クリース 相関色温度 cct mccamy カメラ camera 写真 photo',
   },
 
   {
@@ -548,7 +557,7 @@ export const TOOLS: Tool[] = [
     t: 'シェーディング',
     d: '同じ光と材質で反射モデルを並べて見比べます。',
     ic: 'sh',
-    r: ['raytracing', 'moon', 'jupiter', 'prism-lens'],
+    r: ['raytracing', 'moon', 'white-balance', 'prism-lens'],
     k: 'shading シェーディング brdf 反射モデル lambert ランバート phong フォン blinn ブリン cook-torrance クック トランス ggx trowbridge-reitz マイクロファセット microfacet pbr 物理ベース physically based レンダリング rendering ローブ lobe ハイライト specular 鏡面 拡散 diffuse フレネル fresnel schlick smith 遮蔽 粗さ roughness 金属 metal メタリック metallic ファーネステスト ホワイトファーネステスト white furnace test 多重散乱 kulla conty グーロー gouraud フラット flat 補間 cg コンピュータグラフィックス',
   },
 
