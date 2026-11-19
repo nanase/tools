@@ -6,6 +6,7 @@ import { Choice } from '../../lib/choice';
 import { $ } from '../../lib/dom';
 import { fmt, fmtR, minus, plain, ro } from '../../lib/format';
 import { logMap, MidiBox, pedalOn, type Touch, touchOf } from '../../lib/midi';
+import { MidiFileBox } from '../../lib/midi-file-box';
 import { ParamGroup } from '../../lib/param';
 import { autoPause, lookahead } from '../../lib/pause';
 import { movePlayStore, outVol, type PlayKey, TEMPO } from '../../lib/play';
@@ -19,6 +20,7 @@ import { barStarts } from '../organ/score';
 import { spectra, toDb } from '../spectrum/fft';
 import { PianoAudio } from './audio';
 import { type BoardDesc, boardDesc } from './engine';
+import { HI as FILE_HI, LO as FILE_LO, fileSong } from './file';
 import { Keys } from './keys';
 import { damperRate, makePiano, NO_DAMPER, type Piano, type PianoSpec, type Strike, strikeKey } from './model';
 import { DIST, THICK, UNI, VEL, VOL0 } from './params';
@@ -107,10 +109,35 @@ const piece = $<HTMLSelectElement>('#piece');
   const v = stored('c:p-piece');
   if (typeof v === 'string' && PIECES.some((p) => p.v === v)) piece.value = v;
 }
-piece.addEventListener('change', () => {
-  store('c:p-piece', piece.value);
+/* 手持ちの MIDI ファイル: 曲の一覧の「MIDI ファイルを開く…」と、パートの一覧（複数を選べる） */
+const fileBox = new MidiFileBox(piece, {
+  pick: 'many',
+  inst: 'ピアノ',
+  range: () => [FILE_LO, FILE_HI],
+  defaults: (ps) => new Map(ps.filter((p) => !p.drum).map((p) => [p.id, true])),
+  changed: () => pieceChanged(),
+  say: (s) => sndMsg(s),
+});
+/** ファイルの曲（パートを選び直すたびに作り直す） */
+let fileCur: ReturnType<typeof fileSong> | null = null;
+/** 選んでいる曲。ファイルの曲でパートを 1 つも選んでいなければ null */
+function curPiece(): Piece | null {
+  if (!fileBox.active()) return pieceOf(piece.value);
+  const ps = fileBox.selected();
+  if (!ps.length || !fileBox.smf) return null;
+  fileCur ??= fileSong(fileBox.smf, ps, fileBox.shift, fileBox.name);
+  return fileCur.piece;
+}
+const NO_PART = 'パートを選んでください。';
+function pieceChanged(): void {
+  fileCur = null;
+  noteCache.delete('file');
   if (PL) stopPiece();
   void showLine();
+}
+piece.addEventListener('change', () => {
+  store('c:p-piece', piece.value);
+  pieceChanged();
 });
 
 /** 数値の入力（保存する） */
@@ -755,8 +782,9 @@ const lineOf = (pc: Piece, d: PieceData): Line => {
 };
 /** 選んだ曲を読み込んで、演奏の位置の欄に小節を描く */
 async function showLine(): Promise<void> {
-  const pc = pieceOf(piece.value);
+  const pc = curPiece();
   transport.setLine(null);
+  if (!pc) return;
   const d = await loadPiece(pc);
   if (piece.value !== pc.v) return;
   if (d) transport.setLine(lineOf(pc, d));
@@ -772,9 +800,13 @@ async function startPiece(b0: number): Promise<void> {
     sndMsg(NO_SOUND);
     return;
   }
+  const pc = curPiece();
+  if (!pc) {
+    sndMsg(NO_PART);
+    return;
+  }
   sndMsg('');
-  const pc = pieceOf(piece.value),
-    data = await loadPiece(pc);
+  const data = await loadPiece(pc);
   if (!data) {
     sndMsg('曲を読み込めませんでした');
     return;

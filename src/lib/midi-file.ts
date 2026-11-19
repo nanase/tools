@@ -130,3 +130,16 @@ export function shiftLabel(semi: number): string {
   if (!semi) return '';
   return `${Math.abs(semi / 12)} オクターブ${semi > 0 ? '上げて' : '下げて'}演奏`;
 }
+
+/**
+ * 小節の頭の拍（Smf.starts）から、拍子の変化 [拍, 1 小節の拍の数] を作る。
+ * 最後の小節は途中で終わることがあるので、その前の小節の長さ（なければ 4）とする
+ */
+export function meterOf(starts: readonly number[]): [number, number][] {
+  const out: [number, number][] = [];
+  for (let i = 0; i < starts.length; i++) {
+    const len = i + 1 < starts.length ? starts[i + 1] - starts[i] : (out[out.length - 1]?.[1] ?? 4);
+    if (!out.length || Math.abs(out[out.length - 1][1] - len) > 1e-6) out.push([starts[i], len]);
+  }
+  return out;
+}

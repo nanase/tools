@@ -1,0 +1,13 @@
+---
+/**
+ * MIDI ファイルのパートの一覧（動作は lib/midi-file-box.ts の MidiFileBox）。演奏の枠の曲の行の直後に置く。
+ * ファイルの曲を選んでいる間だけ出す。曲の一覧の「MIDI ファイルを開く…」と区切りは MidiFileBox が足す
+ */
+---
+<div class="mf" id="mf" hidden>
+  <div class="mf-top"><span class="pn">パート</span><span class="mf-sum" id="mf-sum"></span></div>
+  <div class="mf-list" id="mf-list" role="group" aria-label="パート"></div>
+  <p class="mf-note" id="mf-legend"></p>
+  <p class="mf-note" id="mf-shift" aria-live="polite"></p>
+</div>
+<input type="file" id="mf-in" accept=".mid,.midi,.rmi,audio/midi,audio/x-midi,audio/mid" hidden />

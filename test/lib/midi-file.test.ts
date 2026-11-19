@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { type FilePart, fold, octaveShift, partsOf, pickSingle, shiftLabel } from '../../src/lib/midi-file';
+import { type FilePart, fold, meterOf, octaveShift, partsOf, pickSingle, shiftLabel } from '../../src/lib/midi-file';
 import { parseSmf } from '../../src/lib/smf';
 import { smfBytes } from '../smf-bytes';
 
@@ -73,5 +73,15 @@ describe('音域', () => {
     expect(shiftLabel(0)).toBe('');
     expect(shiftLabel(-12)).toBe('1 オクターブ下げて演奏');
     expect(shiftLabel(24)).toBe('2 オクターブ上げて演奏');
+  });
+});
+
+describe('拍子', () => {
+  it('小節の頭の拍から、拍子の変化 [拍, 1 小節の拍の数] を作る', () => {
+    expect(meterOf([0, 4, 8, 11, 14])).toEqual([
+      [0, 4],
+      [8, 3],
+    ]);
+    expect(meterOf([0])).toEqual([[0, 4]]);
   });
 });
