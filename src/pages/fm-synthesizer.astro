@@ -1,0 +1,146 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import MidiPanel from '../components/MidiPanel.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import RowReset from '../components/RowReset.astro';
+import Transport from '../components/Transport.astro';
+import TransportState from '../components/TransportState.astro';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import { outVol, TEMPO } from '../lib/play';
+import { ROOMS } from '../lib/reverb';
+import '../tools/fm-synthesizer/style.css';
+import { WAVES, waveAt } from '../tools/fm-synth/synth';
+import Credits from '../tools/fm-synthesizer/Credits.astro';
+import { VOL0 } from '../tools/fm-synthesizer/engine';
+import { GM_FAMILIES, GM_NAMES } from '../tools/fm-synthesizer/gm';
+import { SONGS } from '../tools/fm-synthesizer/songs';
+
+/** 波形のボタンの図柄（20 × 12 に 1 周期。FM音源のページと同じ） */
+const waveIcon = (w: number) => {
+  let d = '';
+  for (let i = 0; i <= 48; i++)
+    d += `${i ? 'L' : 'M'}${((i / 48) * 18 + 1).toFixed(2)} ${(6 - 4.6 * waveAt(w, (i / 48) * 2 * Math.PI)).toFixed(2)}`;
+  return d;
+};
+const name = 'FMシンセサイザ';
+const chev = '<svg class="chev" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4"/></svg>';
+/** サイドバーのスライダーの行: [id, 項目名] */
+const sl = (id: string, label: string) => ({ id, label });
+const OP_ROWS = [
+  sl('s-r', '周波数比'),
+  sl('s-a', '変調指数'),
+  sl('s-ar', 'アタック'),
+  sl('s-dr', 'ディケイ'),
+  sl('s-sl', 'サステイン'),
+  sl('s-rr', 'リリース'),
+  sl('s-vs', 'ベロシティ'),
+];
+const LFO_ROWS = [sl('s-lr', '速さ'), sl('s-lv', 'ビブラート'), sl('s-lt', 'トレモロ'), sl('s-ld', '遅れ')];
+const PART_ROWS = [sl('s-pv', '音量'), sl('s-pp', '定位'), sl('s-pr', '残響')];
+---
+<SiteLayout title={name} tool={{ id: 'fm-synthesizer', name }}>
+  <PageTitle title={name}>4 オペレータの FM 音源で、複数のパートを同時に鳴らします。音色は GM の 128 種と打楽器をそろえ、同梱の曲・手持ちの MIDI ファイル・MIDI 機器で演奏できます。パートを選ぶと、アルゴリズム・オペレータ・エンベロープ・LFO を変えられます。</PageTitle>
+
+  <div class="tgrid fy">
+    <Panel hid="hd-play" title="演奏" class="a-play">
+      <TransportState slot="aux" />
+      <div class="ptab">
+        <div class="prow pick" id="p-song">
+          <div class="c-sym" aria-hidden="true"></div>
+          <div class="c-name"><label class="pn" for="song">曲</label></div>
+          <div class="c-val fy-song">
+            <div class="sel"><select id="song" autocomplete="off">{SONGS.map((s) => <option value={s.v} title={s.by}>{s.name}</option>)}<option value="file" id="song-file" hidden></option></select></div>
+            <button type="button" class="fy-open" id="openBtn">MIDI ファイルを開く</button>
+            <input type="file" id="fileIn" accept=".mid,.midi,.rmi,audio/midi,audio/x-midi,audio/mid" hidden />
+          </div>
+        </div>
+      </div>
+      <Transport>
+        <button type="button" class="tp-sq" id="panicBtn" title="すべてのチャンネルの音を止める" aria-label="すべてのチャンネルの音を止める"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 6h2.5L8 3v10l-3.5-3H2zM10.5 6l4 4M14.5 6l-4 4"/></svg></button>
+      </Transport>
+      <div class="ptab">
+        <ParamRow d={TEMPO} />
+        <ParamRow d={outVol(VOL0)} />
+        <ChoiceRow k="room" name="残響" sub="全パートで共有する部屋の残響（パートごとの送る量は右の枠の「パート」）" choices={ROOMS.map((r) => [r.v, r.name] as const)} value="small" />
+        <ChoiceRow k="comp" name="コンプレッサー" sub="全体の大きな音を抑えて、大きさのむらを減らす処理" choices={[['on', 'オン'], ['off', 'オフ']]} value="on" />
+      </div>
+      <p class="msg er snd-msg" id="pl-msg" aria-live="polite"></p>
+    </Panel>
+
+    <MidiPanel>
+      <ChoiceRow k="dst" name="鳴らすパート" sub="MIDI 機器から受けた音を鳴らすパート" choices={[['ch', 'チャンネルと同じ番号'], ['sel', '選んでいるパート']]} value="ch" />
+      <ChoiceRow k="pcm" name="プログラムチェンジ" sub="MIDI 機器から受けたプログラムチェンジで音色を替えるか" choices={[['on', '音色を替える'], ['off', '無視']]} value="on" />
+      <div class="prow wide mi-chs">
+        <div class="c-sym" aria-hidden="true"></div>
+        <div class="c-name"><span class="pn">受信</span></div>
+        <div class="c-sub fy-chs" id="m-chs" aria-hidden="true">{Array.from({ length: 16 }, (_, i) => <span data-c={i}><i></i>{i + 1}</span>)}</div>
+      </div>
+    </MidiPanel>
+
+    <div class="fy-body">
+      <Panel hid="hd-parts" title="パート" class="a-parts" fixed>
+        <div class="fy-list">
+          <div class="fy-hdr" aria-hidden="true"><span></span><span>チャンネル</span><span>鍵盤</span><span></span><span class="c-w">波形</span><span>アルゴリズム</span><span class="c-e">エンベロープ</span></div>
+          <div id="rows" role="listbox" aria-label="パート" data-shift="ok"></div>
+        </div>
+      </Panel>
+
+      <Panel hid="hd-side" title="音色" class="a-side">
+        <div class="fy-side">
+          <canvas class="fy-wavebig" id="s-wave" aria-hidden="true"></canvas>
+          <section class="grp" data-g="tone">
+            <button type="button" class="fy-gh" aria-expanded="true"><b>音色</b><span class="sum" id="sum-tone"></span><Fragment set:html={chev} /></button>
+            <div class="fy-gb">
+              <div class="sel"><select id="s-gm" autocomplete="off" aria-label="GM の音色">{GM_FAMILIES.map((f, fi) => <optgroup label={f}>{GM_NAMES.slice(fi * 8, fi * 8 + 8).map((n, j) => <option value={fi * 8 + j}>{fi * 8 + j + 1} {n}</option>)}</optgroup>)}</select></div>
+              <div id="s-drum" hidden>
+                <div class="chips" id="s-pads" role="group" aria-label="パッド"></div>
+                <div class="fy-dl" id="s-dl" role="group" aria-label="打楽器の音"></div>
+              </div>
+            </div>
+          </section>
+          <section class="grp" data-g="alg">
+            <button type="button" class="fy-gh" aria-expanded="true"><b>アルゴリズム</b><span class="sum" id="sum-alg"></span><Fragment set:html={chev} /></button>
+            <div class="fy-gb">
+              <div class="fy-algbig"><svg id="s-alg" viewBox="0 0 118 64" aria-hidden="true"></svg><div class="chips" id="s-algc" role="group" aria-label="アルゴリズム">{[0, 1, 2, 3, 4, 5, 6, 7].map((a) => <button type="button" class="chip" data-a={a}>{a}</button>)}</div></div>
+              <div class="sl" data-k="fb"><label for="s-fb">帰還量</label><input type="range" id="s-fb" min="0" max="7" step="1" /><b id="s-fb-v"></b><RowReset /></div>
+            </div>
+          </section>
+          <section class="grp" data-g="op">
+            <button type="button" class="fy-gh" aria-expanded="true"><b>オペレータ</b><span class="sum" id="sum-op"></span><Fragment set:html={chev} /></button>
+            <div class="fy-gb">
+              <div class="fy-opbar"><span class="fy-role" id="s-role"></span><span class="seg" id="s-opt" role="group" aria-label="オペレータ">{[0, 1, 2, 3].map((k) => <button type="button" data-o={k}>{k + 1}</button>)}</span></div>
+              <canvas class="fy-envbig" id="s-env" aria-hidden="true"></canvas>
+              <div class="sl fy-wrow"><span class="fy-wl" id="s-w-l">波形</span><div class="seg fy-waves" id="s-w" role="group" aria-labelledby="s-w-l">{WAVES.map(([, l], i) => <button type="button" data-w={i} title={l} aria-label={l}><svg viewBox="0 0 20 12" aria-hidden="true"><path d={waveIcon(i)} /></svg></button>)}</div><RowReset /></div>
+              {OP_ROWS.map((r) => <div class="sl" data-k={r.id}><label for={r.id} id={`${r.id}-l`}>{r.label}</label><input type="range" id={r.id} /><b id={`${r.id}-v`}></b><RowReset /></div>)}
+            </div>
+          </section>
+          <section class="grp" data-g="lfo">
+            <button type="button" class="fy-gh" aria-expanded="true"><b>LFO</b><span class="sum" id="sum-lfo"></span><Fragment set:html={chev} /></button>
+            <div class="fy-gb">
+              {LFO_ROWS.map((r) => <div class="sl" data-k={r.id}><label for={r.id}>{r.label}</label><input type="range" id={r.id} /><b id={`${r.id}-v`}></b><RowReset /></div>)}
+            </div>
+          </section>
+          <section class="grp" data-g="part">
+            <button type="button" class="fy-gh" aria-expanded="true"><b>パート</b><span class="sum" id="sum-part"></span><Fragment set:html={chev} /></button>
+            <div class="fy-gb">
+              {PART_ROWS.map((r) => <div class="sl" data-k={r.id}><label for={r.id}>{r.label}</label><input type="range" id={r.id} /><b id={`${r.id}-v`}></b><RowReset /></div>)}
+            </div>
+          </section>
+        </div>
+      </Panel>
+    </div>
+
+    <Collapsible hid="hd-src" title="曲の出典" class="a-src">
+      <Credits />
+    </Collapsible>
+  </div>
+
+  <RelatedTools current="fm-synthesizer" />
+  <script>
+    import '../tools/fm-synthesizer/client';
+  </script>
+</SiteLayout>

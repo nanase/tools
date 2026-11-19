@@ -1,0 +1,157 @@
+/* FMシンセサイザのページだけのスタイル（共通は src/styles/site.css） */
+
+/* 枠の並び: パートの一覧とサイドバー → 演奏 → MIDI → 曲の出典 */
+.fy-body{order:1}.a-play{order:2}.a-midi{order:3}.a-src{order:4}
+.a-src{font-size:14.5px}
+
+/* 曲の選択と「MIDI ファイルを開く」 */
+.prow.pick{grid-template-columns:var(--sw) auto minmax(0,1fr);grid-template-areas:"sym name val"}
+.fy-song{display:flex;gap:8px;align-items:center;min-width:0}
+.fy-song .sel{flex:1 1 auto;min-width:0}
+.sel{position:relative}
+.sel select{appearance:none;width:100%;height:30px;padding:0 30px 0 10px;border:1px solid var(--line-2);border-radius:4px;background:var(--inset);color:var(--ink);font:500 13px/1.2 var(--sans);text-overflow:ellipsis;cursor:pointer}
+@media (pointer:coarse){.sel select{height:36px}}
+.sel select:hover{border-color:var(--ink-3)}
+.sel select option,.sel select optgroup{background:var(--surface);color:var(--ink)}
+.sel::after{content:"";position:absolute;top:50%;right:12px;width:7px;height:7px;border-right:1.6px solid var(--ink-2);border-bottom:1.6px solid var(--ink-2);transform:translateY(-70%) rotate(45deg);pointer-events:none}
+.fy-open{flex:none;height:30px;padding:0 10px;border:1px solid var(--line-2);border-radius:4px;background:var(--surface);color:var(--ink);font:500 12.5px/1 var(--sans);white-space:nowrap;cursor:pointer}
+.fy-open:hover{border-color:var(--ink-3)}
+.snd-msg{margin:0 8px 6px}
+.snd-msg:empty{display:none}
+
+/* MIDI の枠の受信の LED（16 チャンネル） */
+.fy-chs{display:flex;flex-wrap:wrap;gap:3px}
+.fy-chs span{display:inline-flex;flex-direction:column;align-items:center;gap:2px;width:24px;font:500 11.5px/1 var(--mono);color:var(--ink-3)}
+.fy-chs i{width:20px;height:7px;border-radius:2px;background:var(--led-off)}
+.fy-chs span.on i{background:var(--accent);box-shadow:0 0 4px var(--accent)}
+
+/* 本体: 左にパートの一覧、右にサイドバー。狭い画面ではサイドバーを下へ */
+.fy-body{display:grid;gap:26px 16px;grid-template-columns:minmax(0,1fr);align-items:start}
+@media (min-width:1000px){
+  .fy-body{grid-template-columns:minmax(0,1fr) 320px}
+  .a-side{position:sticky;top:calc(var(--rail-h) + 12px)}
+}
+
+/* パートの一覧 */
+/* ミュート | 名前 | 鍵盤（下に音量・エクスプレッション・ピッチベンド） | 音量のメーター | 波形 | アルゴリズム | エンベロープ */
+.fy-list{--cols:18px 130px minmax(130px,1.7fr) 8px minmax(96px,1.1fr) 72px minmax(84px,.9fr)}
+.fy-hdr,.fy-row{display:grid;grid-template-columns:var(--cols);column-gap:10px;align-items:center}
+.fy-hdr{padding:0 8px 4px;font-size:12px;color:var(--ink-3);border-bottom:1px solid var(--line);white-space:nowrap}
+.fy-row{position:relative;height:60px;padding:0 8px;border-bottom:1px solid var(--line);cursor:pointer;outline-offset:-2px}
+.fy-row:hover{background:var(--inset)}
+.fy-row[aria-selected="true"]{background:var(--inset);box-shadow:inset 3px 0 0 var(--pc)}
+.fy-nm{display:flex;flex-direction:column;gap:1px;min-width:0}
+.fy-nm b{display:flex;align-items:center;gap:6px;min-width:0;font-size:14px;white-space:nowrap}
+.fy-nm b i{flex:none;width:10px;height:10px;border-radius:2px;background:var(--pc)}
+.fy-nm b em{flex:none;padding:2px 4px;border:1px solid var(--line);border-radius:3px;font:500 11.5px/1 var(--mono);font-style:normal;color:var(--ink-3)}
+.fy-nm b span{overflow:hidden;text-overflow:ellipsis}
+.fy-nm small{font-size:12px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fy-row canvas{display:block;width:100%;height:44px}
+.fy-row .cv{background:var(--screen);border:1px solid var(--line);border-radius:3px}
+.fy-row .kb{height:30px;touch-action:none}
+.fy-kbw{display:flex;flex-direction:column;gap:4px;min-width:0}
+.fy-ctl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;height:7px}
+.fy-ctl span{position:relative;border-radius:2px;background:color-mix(in srgb,var(--pc) 14%,var(--line));overflow:hidden}
+/* バーはパートの色を少し混ぜた灰（赤のパートなら赤みの深い灰） */
+.fy-ctl i{position:absolute;top:0;bottom:0;left:0;width:0;background:color-mix(in srgb,var(--pc) 45%,var(--ink-3))}
+.fy-ctl .bd::after{content:"";position:absolute;top:0;bottom:0;left:50%;width:1px;background:var(--line-2)}
+/* パートのオンとオフ（ラジオボタンの形）: 外の輪は変わらず、オンの間は中の丸を出し、ノートオンの間だけ中の丸が光る */
+.fy-mute{position:relative;width:18px;height:18px;padding:0;border:1.5px solid var(--ink-3);border-radius:50%;background:var(--surface);cursor:pointer}
+.fy-mute::after{content:"";position:absolute;inset:3px;border-radius:50%;background:var(--led-off)}
+.fy-mute:hover{border-color:var(--ink)}
+.fy-mute.on::after{background:var(--accent);box-shadow:0 0 5px var(--accent)}
+.fy-mute[aria-pressed="true"]::after{display:none}
+.fy-row.muted>:not(.fy-mute){opacity:.45}
+.fy-row svg.alg{display:block;width:72px;height:44px}
+.fy-vm{position:relative;width:8px;height:44px;border-radius:2px;background:var(--line);overflow:hidden}
+.fy-vm i{position:absolute;left:0;right:0;bottom:0;height:0;background:var(--pc)}
+@media (max-width:640px){
+  .fy-list{--cols:18px 84px minmax(0,1fr) 8px 72px}
+  .fy-list .c-w,.fy-list .c-e{display:none}
+}
+
+/* 一覧の鍵盤の色（暗い配色でも白鍵を明るく、黒鍵を暗くする） */
+.fy-list{--fy-kw:#ffffff;--fy-kb:#2b3035;--fy-down:var(--ic-red);--fy-sus:var(--sp4)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .fy-list{--fy-kw:#c9cdc8;--fy-kb:#14171a}}
+:root[data-theme="dark"] .fy-list{--fy-kw:#c9cdc8;--fy-kb:#14171a}
+
+/* パートの色（チャンネルの並びで割り当てる。打楽器は灰） */
+.fy-row{--pc:var(--ink-3)}
+.fy-row.c0{--pc:var(--sp4)}.fy-row.c1{--pc:var(--sp0)}.fy-row.c2{--pc:var(--sp3)}.fy-row.c3{--pc:var(--sp1)}
+.fy-row.c4{--pc:var(--sp5)}.fy-row.c5{--pc:var(--sp2)}.fy-row.c6{--pc:var(--ch2)}.fy-row.c7{--pc:var(--ch1)}
+
+/* サイドバー: グループごとに開閉。閉じても枠と要約（小さな図と値）を残す */
+.fy-side{display:grid;gap:12px}
+/* 選んだパートの大きな波形 */
+.fy-wavebig{display:block;width:100%;height:110px;background:var(--screen);border:1px solid var(--line);border-radius:3px}
+.grp{border:1px solid var(--line);border-radius:4px;background:var(--surface);padding:0 10px}
+.grp.shut{background:var(--inset)}
+/* 見出しは枠の幅いっぱい（左右の余白も含めて押せる・ホバーの色が付く） */
+.fy-gh{display:flex;align-items:center;gap:8px;width:calc(100% + 20px);min-height:36px;margin:0 -10px;padding:0 10px;border:0;border-radius:3px;background:none;color:var(--ink);text-align:left;cursor:pointer}
+.fy-gh:hover{background:var(--inset)}
+.grp.shut .fy-gh:hover{background:color-mix(in srgb,var(--ink) 6%,var(--inset))}
+.fy-gh b{flex:none;font-size:13.5px}
+.fy-gh .sum{display:none;align-items:center;gap:5px;min-width:0;margin-left:auto;font:500 12.5px/1.2 var(--mono);color:var(--ink-3);white-space:nowrap;overflow:hidden}
+.grp.shut .fy-gh .sum{display:flex}
+.fy-gh .sum svg{flex:none;display:block}
+.fy-gh .chev{flex:none;width:10px;height:6px;margin-left:auto;fill:none;stroke:var(--ink-2);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.grp.shut .fy-gh .chev{margin-left:0}
+.fy-gh[aria-expanded="true"] .chev{transform:rotate(180deg)}
+@media (prefers-reduced-motion:no-preference){.fy-gh .chev{transition:transform .2s ease}}
+.fy-gb{padding:8px 0 10px;border-top:1px solid var(--line)}
+.grp.shut .fy-gb{display:none}
+.fy-algbig{display:flex;gap:10px;align-items:center;margin-bottom:6px}
+.fy-algbig svg{flex:none;width:118px;height:64px;background:var(--screen);border:1px solid var(--line);border-radius:3px}
+.fy-algbig .chips{max-width:150px}
+.fy-algbig .chip{min-width:30px;padding:0 6px}
+.fy-opbar{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.fy-role{font-size:12px;color:var(--ink-3)}
+.fy-envbig{display:block;width:100%;height:70px;margin:6px 0 4px;background:var(--screen);border:1px solid var(--line);border-radius:3px}
+#s-pads{margin-top:8px}
+.fy-dl{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:8px}
+.fy-dl button{height:26px;padding:0 6px;border:1px solid var(--line);border-radius:4px;background:none;color:var(--ink-2);font:12.5px/1 var(--sans);text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+.fy-dl button small{margin-right:4px;font-family:var(--mono);color:var(--ink-3)}
+.fy-dl button[aria-pressed="true"]{border-color:var(--ink);color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+
+/* サイドバーのスライダーの行: 項目名・スライダー・値・↺ */
+.sl{position:relative;display:grid;grid-template-columns:78px minmax(0,1fr) 64px 24px;gap:6px;align-items:center;min-height:32px}
+.sl label{font-size:13px;color:var(--ink-2);white-space:nowrap}
+.sl b{font:500 13px/1 var(--mono);text-align:right;white-space:nowrap}
+.sl input{width:100%;margin:0;accent-color:var(--ink)}
+.sl .c-rst{grid-area:auto}
+.sl.mod .rrst{visibility:visible}
+.sl.mod::before{content:"";position:absolute;left:-6px;top:8px;bottom:8px;width:2px;border-radius:1px;background:var(--ink-2)}
+
+/* サイドバーの打楽器のパッド（アイコン） */
+.chip.fy-pad{display:inline-grid;place-items:center;min-width:31px;padding:0 3px}
+.fy-pad svg{width:24px;height:16px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+
+/* オペレータの波形（FM音源のページと同じ 7 種） */
+.sl.fy-wrow{grid-template-columns:78px minmax(0,1fr) 24px}
+.fy-wl{font-size:13px;color:var(--ink-2)}
+.fy-waves{justify-self:start}
+.fy-waves{max-width:100%}
+.fy-waves button{padding:0 3px}
+.fy-waves svg{display:block;width:15px;height:10px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linejoin:round}
+
+/* 広い画面では、演奏と MIDI の枠を横に並べる（MIDI を使えない環境では演奏を幅いっぱいに） */
+@media (min-width:1000px){
+  .tgrid.fy{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start}
+  .tgrid.fy>.fy-body,.tgrid.fy>.a-src{grid-column:1/-1}
+  .tgrid.fy:has(>.a-midi[hidden])>.a-play{grid-column:1/-1}
+}
+
+/*
+ * 広い画面でサイドバーを閉じたときは、右の列を細い縦の帯にし、見出しを縦書きにする（パートの一覧がその分だけ伸びる）。
+ * 帯の見出しを押すと開く。狭い画面（サイドバーが一覧の下）では、ほかの枠と同じく縦に閉じる
+ */
+@media (min-width:1000px){
+  .fy-body{transition:grid-template-columns .25s ease}
+  .fy-body:has(>.a-side.shut){grid-template-columns:minmax(0,1fr) 34px}
+  /* ほかの閉じた枠（上の 1 本の線に見出し）を 90° 回した形: 左の 1 本の縦線に縦書きの見出し */
+  .a-side.shut{align-self:stretch;padding:0;border-color:transparent transparent transparent var(--line-2)}
+  .a-side.shut>.ph h2{top:10px;left:0;transform:translateX(-50%);padding:6px 0;writing-mode:vertical-rl}
+  .a-side.shut>.ph h2 .fold{gap:8px}
+  .a-side.shut>.ph>.pha{display:none}
+}
+@media (min-width:1000px) and (prefers-reduced-motion:reduce){.fy-body{transition:none}}

@@ -7,15 +7,17 @@
 import { $ } from './dom';
 import { forget, store, stored } from './store';
 
-/** 楽器のページへ渡す入力 */
+/** 楽器のページへ渡す入力。ch は受けたチャンネル（1〜16。チャンネルで分ける楽器だけが使う） */
 export interface MidiSink {
   /** 打鍵。vel は 1〜127 */
-  on(note: number, vel: number): void;
-  off(note: number): void;
+  on(note: number, vel: number, ch: number): void;
+  off(note: number, ch: number): void;
   /** コントロールチェンジ（64 ダンパーペダル・67 ソフトペダルなど）。v は 0〜127 */
-  cc?(num: number, v: number): void;
+  cc?(num: number, v: number, ch: number): void;
   /** ピッチベンド。v は −1〜1（中央が 0） */
-  bend?(v: number): void;
+  bend?(v: number, ch: number): void;
+  /** プログラムチェンジ。prog は 0〜127 */
+  pc?(prog: number, ch: number): void;
 }
 
 /** タッチ（ベロシティの曲線）: 軽いほど弱く弾いても強い音になる */
@@ -36,16 +38,19 @@ export const midiOk = (): boolean =>
 
 /**
  * MIDI のメッセージ 1 つを読む。打鍵は vel > 0 の 0x9n、離鍵は 0x8n と vel = 0 の 0x9n。
- * CC 120（すべての音を止める）と 123（すべての鍵を離す）は 'all' にする。ピッチベンド（0xEn）は −1〜1。ch はチャンネル 1〜16
+ * CC 120（すべての音を止める）と 123（すべての鍵を離す）は 'all' にする。ピッチベンド（0xEn）は −1〜1。
+ * プログラムチェンジ（0xCn、2 バイト）は 'pc'。ch はチャンネル 1〜16
  */
 export type MidiMsg = { ch: number } & (
   | { t: 'on'; note: number; vel: number }
   | { t: 'off'; note: number }
   | { t: 'cc'; num: number; v: number }
   | { t: 'bend'; v: number }
+  | { t: 'pc'; prog: number }
   | { t: 'all' }
 );
 export function parseMidi(d: ArrayLike<number>): MidiMsg | null {
+  if (d.length >= 2 && (d[0] & 0xf0) === 0xc0) return { ch: (d[0] & 0x0f) + 1, t: 'pc', prog: d[1] & 0x7f };
   if (d.length < 3) return null;
   const st = d[0] & 0xf0,
     ch = (d[0] & 0x0f) + 1,
@@ -151,11 +156,12 @@ export class MidiIn {
     this.held.set(id, h);
     if (m.t === 'on') {
       h.add(keyOf(m.ch, m.note));
-      this.sink.on(m.note, m.vel);
+      this.sink.on(m.note, m.vel, m.ch);
     } else if (m.t === 'off') {
-      if (h.delete(keyOf(m.ch, m.note))) this.sink.off(m.note);
-    } else if (m.t === 'cc') this.sink.cc?.(m.num, m.v);
-    else if (m.t === 'bend') this.sink.bend?.(m.v);
+      if (h.delete(keyOf(m.ch, m.note))) this.sink.off(m.note, m.ch);
+    } else if (m.t === 'cc') this.sink.cc?.(m.num, m.v, m.ch);
+    else if (m.t === 'bend') this.sink.bend?.(m.v, m.ch);
+    else if (m.t === 'pc') this.sink.pc?.(m.prog, m.ch);
     else this.lift(id, m.ch);
   }
 
@@ -166,7 +172,7 @@ export class MidiIn {
     for (const k of [...h])
       if (!ch || k >> 7 === ch) {
         h.delete(k);
-        this.sink.off(k & 0x7f);
+        this.sink.off(k & 0x7f, k >> 7);
       }
     if (!h.size) this.held.delete(id);
   }
