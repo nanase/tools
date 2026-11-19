@@ -43,7 +43,7 @@ const LFO_ROWS = [sl('s-lr', '速さ'), sl('s-lv', 'ビブラート'), sl('s-lt'
 const PART_ROWS = [sl('s-pv', '音量'), sl('s-pp', '定位'), sl('s-pr', '残響')];
 ---
 <SiteLayout title={name} tool={{ id: 'fm-synthesizer', name }}>
-  <PageTitle title={name}>4 オペレータの FM 音源で、複数のパートを同時に鳴らします。音色は GM の 128 種と打楽器をそろえ、同梱の曲・手持ちの MIDI ファイル・MIDI 機器で演奏できます。パートを選ぶと、アルゴリズム・オペレータ・エンベロープ・LFO を変えられます。</PageTitle>
+  <PageTitle title={name}>4 オペレータの FM 音源で、複数のパートを同時に鳴らします。音色は GM の 128 種とパーカッションをそろえ、同梱の曲・手持ちの MIDI ファイル・MIDI 機器で演奏できます。パートを選ぶと、アルゴリズム・オペレータ・エンベロープ・LFO を変えられます。</PageTitle>
 
   <div class="tgrid fy">
     <Panel hid="hd-play" title="演奏" class="a-play">
@@ -71,7 +71,7 @@ const PART_ROWS = [sl('s-pv', '音量'), sl('s-pp', '定位'), sl('s-pr', '残�
       <p class="msg er snd-msg" id="pl-msg" aria-live="polite"></p>
     </Panel>
 
-    <MidiPanel>
+    <MidiPanel open>
       <ChoiceRow k="dst" name="鳴らすパート" sub="MIDI 機器から受けた音を鳴らすパート" choices={[['ch', 'チャンネルと同じ番号'], ['sel', '選んでいるパート']]} value="ch" />
       <ChoiceRow k="pcm" name="プログラムチェンジ" sub="MIDI 機器から受けたプログラムチェンジで音色を替えるか" choices={[['on', '音色を替える'], ['off', '無視']]} value="on" />
       <div class="prow wide mi-chs">
@@ -92,25 +92,25 @@ const PART_ROWS = [sl('s-pv', '音量'), sl('s-pp', '定位'), sl('s-pr', '残�
       <Panel hid="hd-side" title="音色" class="a-side">
         <div class="fy-side">
           <canvas class="fy-wavebig" id="s-wave" aria-hidden="true"></canvas>
-          <section class="grp" data-g="tone">
-            <button type="button" class="fy-gh" aria-expanded="true"><b>音色</b><span class="sum" id="sum-tone"></span><Fragment set:html={chev} /></button>
+          <section class="grp shut" data-g="tone">
+            <button type="button" class="fy-gh" aria-expanded="false"><b>音色</b><span class="sum" id="sum-tone"></span><Fragment set:html={chev} /></button>
             <div class="fy-gb">
               <div class="sel"><select id="s-gm" autocomplete="off" aria-label="GM の音色">{GM_FAMILIES.map((f, fi) => <optgroup label={f}>{GM_NAMES.slice(fi * 8, fi * 8 + 8).map((n, j) => <option value={fi * 8 + j}>{fi * 8 + j + 1} {n}</option>)}</optgroup>)}</select></div>
               <div id="s-drum" hidden>
                 <div class="chips" id="s-pads" role="group" aria-label="パッド"></div>
-                <div class="fy-dl" id="s-dl" role="group" aria-label="打楽器の音"></div>
+                <div class="fy-dl" id="s-dl" role="group" aria-label="パーカッションの音"></div>
               </div>
             </div>
           </section>
-          <section class="grp" data-g="alg">
-            <button type="button" class="fy-gh" aria-expanded="true"><b>アルゴリズム</b><span class="sum" id="sum-alg"></span><Fragment set:html={chev} /></button>
+          <section class="grp shut" data-g="alg">
+            <button type="button" class="fy-gh" aria-expanded="false"><b>アルゴリズム</b><span class="sum" id="sum-alg"></span><Fragment set:html={chev} /></button>
             <div class="fy-gb">
               <div class="fy-algbig"><svg id="s-alg" viewBox="0 0 118 64" aria-hidden="true"></svg><div class="chips" id="s-algc" role="group" aria-label="アルゴリズム">{[0, 1, 2, 3, 4, 5, 6, 7].map((a) => <button type="button" class="chip" data-a={a}>{a}</button>)}</div></div>
               <div class="sl" data-k="fb"><label for="s-fb">帰還量</label><input type="range" id="s-fb" min="0" max="7" step="1" /><b id="s-fb-v"></b><RowReset /></div>
             </div>
           </section>
-          <section class="grp" data-g="op">
-            <button type="button" class="fy-gh" aria-expanded="true"><b>オペレータ</b><span class="sum" id="sum-op"></span><Fragment set:html={chev} /></button>
+          <section class="grp shut" data-g="op">
+            <button type="button" class="fy-gh" aria-expanded="false"><b>オペレータ</b><span class="sum" id="sum-op"></span><Fragment set:html={chev} /></button>
             <div class="fy-gb">
               <div class="fy-opbar"><span class="fy-role" id="s-role"></span><span class="seg" id="s-opt" role="group" aria-label="オペレータ">{[0, 1, 2, 3].map((k) => <button type="button" data-o={k}>{k + 1}</button>)}</span></div>
               <canvas class="fy-envbig" id="s-env" aria-hidden="true"></canvas>
@@ -118,14 +118,14 @@ const PART_ROWS = [sl('s-pv', '音量'), sl('s-pp', '定位'), sl('s-pr', '残�
               {OP_ROWS.map((r) => <div class="sl" data-k={r.id}><label for={r.id} id={`${r.id}-l`}>{r.label}</label><input type="range" id={r.id} /><b id={`${r.id}-v`}></b><RowReset /></div>)}
             </div>
           </section>
-          <section class="grp" data-g="lfo">
-            <button type="button" class="fy-gh" aria-expanded="true"><b>LFO</b><span class="sum" id="sum-lfo"></span><Fragment set:html={chev} /></button>
+          <section class="grp shut" data-g="lfo">
+            <button type="button" class="fy-gh" aria-expanded="false"><b>LFO</b><span class="sum" id="sum-lfo"></span><Fragment set:html={chev} /></button>
             <div class="fy-gb">
               {LFO_ROWS.map((r) => <div class="sl" data-k={r.id}><label for={r.id}>{r.label}</label><input type="range" id={r.id} /><b id={`${r.id}-v`}></b><RowReset /></div>)}
             </div>
           </section>
-          <section class="grp" data-g="part">
-            <button type="button" class="fy-gh" aria-expanded="true"><b>パート</b><span class="sum" id="sum-part"></span><Fragment set:html={chev} /></button>
+          <section class="grp shut" data-g="part">
+            <button type="button" class="fy-gh" aria-expanded="false"><b>パート</b><span class="sum" id="sum-part"></span><Fragment set:html={chev} /></button>
             <div class="fy-gb">
               {PART_ROWS.map((r) => <div class="sl" data-k={r.id}><label for={r.id}>{r.label}</label><input type="range" id={r.id} /><b id={`${r.id}-v`}></b><RowReset /></div>)}
             </div>

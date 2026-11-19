@@ -19,8 +19,8 @@ const LN60 = Math.log(1000);
 const SILENT = 1e-4;
 /** 横取りした音を消す時間 [s] */
 const KILL_S = 0.004;
-/** 音量の行の既定値 [dB]。同梱の最初の曲を既定のまま（コンプレッサーと残響あり）鳴らして −26 LUFS 前後（scripts/loudness.ts） */
-export const VOL0 = -20;
+/** 音量の行の既定値 [dB]。ユーザーの指定で −18 dB。同梱の最初の曲を既定のまま（コンプレッサーと残響あり）鳴らして −23.9 LUFS（scripts/loudness.ts） */
+export const VOL0 = -18;
 /** 直流を取り除く高域通過の折れ点 [Hz] */
 const DC_HZ = 10;
 /** 残響へ送る量の既定値（0〜1） */

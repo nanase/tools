@@ -1427,7 +1427,8 @@ export const PICKED_DRUM: Readonly<Record<number, Tone>> = {
       { r: 1, i: 1, l: 0, ar: 0.002, dr: 0.08, sl: 0, rr: 0.1, vs: 0.5, ks: 0, w: 1 },
     ],
     lfo: { rate: 12, vib: 0, trem: 4, delay: 0 },
-    gain: 1.3,
+    /* 試聴のあとユーザーの指定で +2 dB（もとは 1.3） */
+    gain: 3.3,
     key: 52,
   },
   39: {
