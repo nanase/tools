@@ -1,15 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { dayOf } from '../src/tools/sunrise/day';
-import { lonLatAt } from '../src/tools/sunrise/map';
+import { boundView, lonLatAt } from '../src/tools/sunrise/map';
 import { factsOf, num, skyCenter, skyX, solsticeNames } from '../src/tools/sunrise/sky';
 import { apparent, band, geoAltAz, siteSun, subsolar, sunEq, sunEqLow } from '../src/tools/sunrise/sun';
 import {
   approx,
   fromWall,
+  hasDst,
   localDay,
   lookupZone,
   offText,
   shiftTime,
+  stdOffset,
   wallMs,
   zoneOffset,
 } from '../src/tools/sunrise/tz';
@@ -152,12 +154,72 @@ describe('時間帯', () => {
 
 describe('地図の座標', () => {
   it('左上は北西の端、真ん中は経度 0°・緯度 0°', () => {
-    const a = lonLatAt(0, 0, 720, 360);
+    const a = lonLatAt(0.5, 0.5, 720, 360);
     expect(a.lat).toBeCloseTo(89.75, 2);
     expect(a.lon).toBeCloseTo(-179.75, 2);
-    const c = lonLatAt(359.5, 179.5, 720, 360);
+    const c = lonLatAt(360, 180, 720, 360);
     expect(c.lat).toBeCloseTo(0, 6);
     expect(c.lon).toBeCloseTo(0, 6);
+  });
+
+  it('2 倍に拡大すると左上は西経 90°・北緯 45°', () => {
+    const a = lonLatAt(0, 0, 720, 360, { z: 2, x: 0, y: 0 });
+    expect(a.lat).toBeCloseTo(45, 6);
+    expect(a.lon).toBeCloseTo(-90, 6);
+  });
+
+  it('東西はつながる（半周ずらすと左端が経度 0°）', () => {
+    const a = lonLatAt(0, 180, 720, 360, { z: 1, x: 360, y: 0 });
+    expect(a.lon).toBeCloseTo(0, 6);
+    const b = lonLatAt(719.9, 180, 720, 360, { z: 1, x: -360, y: 0 });
+    expect(b.lon).toBeGreaterThanOrEqual(-180);
+    expect(b.lon).toBeLessThan(180);
+  });
+
+  it('縦は地図の外を見せず、横は 1 周に巻く', () => {
+    expect(boundView(1, 0, 50, 720, 360).y).toBe(0);
+    expect(boundView(2, 0, 500, 720, 360).y).toBe(180);
+    expect(boundView(2, 0, -500, 720, 360).y).toBe(-180);
+    expect(boundView(1, 1000, 0, 720, 360).x).toBeCloseTo(280, 6);
+  });
+});
+
+describe('夏時間を使わない', () => {
+  it('ニューヨークの標準時は夏も UTC−5', () => {
+    const jul = Date.UTC(2026, 6, 1, 12);
+    expect(zoneOffset('America/New_York', -74, jul)).toBe(-4 * 36e5);
+    expect(stdOffset('America/New_York', -74, jul)).toBe(-5 * 36e5);
+    expect(hasDst('America/New_York', -74, jul)).toBe(true);
+  });
+
+  it('南半球（シドニー）の標準時は 1 月も UTC+10', () => {
+    const jan = Date.UTC(2026, 0, 15, 12);
+    expect(zoneOffset('Australia/Sydney', 151, jan)).toBe(11 * 36e5);
+    expect(stdOffset('Australia/Sydney', 151, jan)).toBe(10 * 36e5);
+  });
+
+  it('東京・時間帯のない地点は夏時間なし', () => {
+    const t = Date.UTC(2026, 6, 1);
+    expect(hasDst('Asia/Tokyo', 139.7, t)).toBe(false);
+    expect(stdOffset('Asia/Tokyo', 139.7, t)).toBe(9 * 36e5);
+    expect(hasDst(null, -74, t)).toBe(false);
+  });
+
+  it('標準時で数えると 1 年の格子に夏時間の段差が出ない', () => {
+    const std = (ms: number) => stdOffset('America/New_York', -74, ms);
+    const g = yearGrid(40.7128, -74.006, 2026, std);
+    /* 3 月 7 日と 3 月 9 日（夏時間の始まりをまたぐ）の日の出の行の差は 1 行以内 */
+    const riseRow = (d: number) => {
+      for (let k = 0; k < 144; k++) if (g.cells[k * g.nd + d] === 0) return k;
+      return -1;
+    };
+    expect(Math.abs(riseRow(65) - riseRow(67))).toBeLessThanOrEqual(1);
+    const dst = yearGrid(40.7128, -74.006, 2026, (ms) => zoneOffset('America/New_York', -74, ms));
+    const riseDst = (d: number) => {
+      for (let k = 0; k < 144; k++) if (dst.cells[k * dst.nd + d] === 0) return k;
+      return -1;
+    };
+    expect(riseDst(67) - riseDst(65)).toBeGreaterThanOrEqual(5);
   });
 });
 

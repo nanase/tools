@@ -1,21 +1,34 @@
 /**
  * 日の出と日の入りのページ: 時刻（UTC の瞬間）と地点から、昼と夜の世界地図を描く。
- * 1 日の区切りはいつも地点の現地。時刻の表示だけを現地・日本時間・世界時で切り替える
+ * 1 日の区切りはいつも地点の現地。時刻の表示だけを現地・日本時間・世界時で切り替える。
+ * 夏時間を使わないときは、現地をその年の標準時で数える
  */
 import { Choice } from '../../lib/choice';
 import { DatePicker } from '../../lib/date-picker';
 import { $ } from '../../lib/dom';
 import { type Place, SitePicker, TOKYO } from '../../lib/planet/site';
+import { PanZoom } from '../../lib/planet/zoom';
 import { bindRepeat } from '../../lib/repeat';
 import { store, stored } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
-import { type LandMask, landMask, type Rings } from '../solar-eclipse/land';
+import type { Rings } from '../solar-eclipse/land';
 import { type Day, dayOf } from './day';
-import { coastPath, drawMap, lonLatAt } from './map';
-import type { Disp, Speed } from './params';
+import { boundView, coastPath, drawMap, lonLatAt } from './map';
+import type { Disp, Dst, Speed } from './params';
 import { drawSky, factsOf, num } from './sky';
 import { apparent, BANDS, band, geoAltAz, siteSun, sunEq } from './sun';
-import { approx, fromWall, localDay, lookupZone, offText, shiftTime, wallMs, zoneOffset } from './tz';
+import {
+  approx,
+  fromWall,
+  hasDst,
+  localDay,
+  lookupZone,
+  offText,
+  shiftTime,
+  stdOffset,
+  wallMs,
+  zoneOffset,
+} from './tz';
 import { yearGrid } from './year';
 import { drawYear, type YearGeom, yearPick } from './yearview';
 
@@ -29,6 +42,7 @@ const WD = ['日', '月', '火', '水', '木', '金', '土'];
 
 /* ---------- 表示の設定 ---------- */
 const tz$ = new Choice<Disp>($('#p-tz'), () => later());
+const dst$ = new Choice<Dst>($('#p-dst'), () => later());
 const sp$ = new Choice<Speed>($('#p-sp'));
 initToolPage();
 
@@ -75,8 +89,18 @@ function findZone(): void {
     later();
   });
 }
-/** 地点の現地の UTC との差 [ms] */
-const offLocal = (ms: number): number => zoneOffset(zone, picker.place.lon, ms);
+/** 地点の現地の UTC との差 [ms]。夏時間を使わないときは標準時 */
+const offLocal = (ms: number): number =>
+  dst$.value === 'off' ? stdOffset(zone, picker.place.lon, ms) : zoneOffset(zone, picker.place.lon, ms);
+/** 夏時間のない地点では切り替えを押せなくする（引いている間は前のまま） */
+let noDst: boolean | null = null;
+function syncDst(): void {
+  if (zonePending) return;
+  const v = !hasDst(zone, picker.place.lon, T);
+  if (v === noDst) return;
+  noDst = v;
+  dst$.setOff(v, '夏時間のない地点');
+}
 /** 表示の時間帯の UTC との差 [ms] */
 const offDisp = (ms: number): number => (tz$.value === 'jst' ? 9 * 36e5 : tz$.value === 'ut' ? 0 : offLocal(ms));
 /** 表示の時間帯の時刻 h:mm */
@@ -106,7 +130,8 @@ function wallOf(ms: number): {
 function zoneLabel(): string {
   if (tz$.value === 'jst') return 'JST';
   if (tz$.value === 'ut') return 'UT';
-  return `${offText(offLocal(T))}${approx(zone) && !zonePending ? '（経度から概算）' : ''}`;
+  const std = dst$.value === 'off' && noDst === false ? '（標準時）' : '';
+  return `${offText(offLocal(T))}${approx(zone) && !zonePending ? '（経度から概算）' : std}`;
 }
 
 /* ---------- 時刻 ---------- */
@@ -223,12 +248,10 @@ function advance(now: number): void {
 /* ---------- 地図 ---------- */
 const mcv = $<HTMLCanvasElement>('#mc');
 const kcv = $<HTMLCanvasElement>('#kc');
-let mask: LandMask | null = null;
 let coast: Path2D | null = null;
 fetch(`${BASE}solar-eclipse/land110.json`)
   .then((r) => r.json() as Promise<Rings>)
   .then((rings) => {
-    mask = landMask(rings, 1440, 720);
     coast = coastPath(rings);
   })
   .catch(() => {})
@@ -238,25 +261,32 @@ fetch(`${BASE}solar-eclipse/land110.json`)
   });
 const latTxt = (v: number) => `${v >= 0 ? '北緯' : '南緯'} ${Math.abs(v).toFixed(1)}°`;
 const lonTxt = (v: number) => `${v >= 0 ? '東経' : '西経'} ${Math.abs(v).toFixed(1)}°`;
-let down: { x: number; y: number } | null = null;
-mcv.addEventListener('pointerdown', (e) => {
-  down = { x: e.clientX, y: e.clientY };
+/* 拡大・縮小と移動。動かさずに離すとその地点を選ぶ */
+const pz = new PanZoom(mcv, {
+  min: 1,
+  max: 10,
+  bound: boundView,
+  onChange: () => {
+    $('#mreset').hidden = !pz.moved;
+    txt('#mzoom', `×${pz.z.toFixed(pz.z < 2 ? 2 : 1)}`);
+    later();
+  },
+  onTap: (x, y) => {
+    const p = lonLatAt(x, y, mcv.clientWidth, mcv.clientHeight, pz);
+    const lat = Math.max(-89.9, Math.min(89.9, p.lat));
+    const place: Place = {
+      name: `${latTxt(lat)} ${lonTxt(p.lon)}`,
+      sub: '',
+      lat: +lat.toFixed(4),
+      lon: +p.lon.toFixed(4),
+      h: 0,
+    };
+    picker.set(place);
+  },
 });
-mcv.addEventListener('pointerup', (e) => {
-  if (!down || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 6) return;
-  down = null;
-  const r = mcv.getBoundingClientRect();
-  const p = lonLatAt(e.clientX - r.left - 0.5, e.clientY - r.top - 0.5, r.width, r.height);
-  const lat = Math.max(-89.9, Math.min(89.9, p.lat));
-  const place: Place = {
-    name: `${latTxt(lat)} ${lonTxt(p.lon)}`,
-    sub: '',
-    lat: +lat.toFixed(4),
-    lon: +p.lon.toFixed(4),
-    h: 0,
-  };
-  picker.set(place);
-});
+$('#min').addEventListener('click', () => pz.zoomCenter(1.5));
+$('#mout').addEventListener('click', () => pz.zoomCenter(1 / 1.5));
+$('#mreset').addEventListener('click', () => pz.reset());
 
 /* ---------- その日と夏至・冬至 ---------- */
 let dayKey = '';
@@ -278,7 +308,7 @@ let sol: [Day, Day] | null = null;
 function solstice(): [Day, Day] {
   const { lat, lon } = picker.place;
   const y = new Date(T + offLocal(T)).getUTCFullYear();
-  const key = `${y}|${lat}|${lon}|${zone}`;
+  const key = `${y}|${lat}|${lon}|${zone}|${dst$.value}`;
   if (!sol || key !== solKey) {
     solKey = key;
     const at = (m: number) =>
@@ -302,7 +332,7 @@ function dayStartOf(year: number, day: number): number {
 }
 function yearGridNow(year: number): { nd: number; cells: Uint8Array } {
   const { lat, lon } = picker.place;
-  const key = `${year}|${lat}|${lon}|${zone}`;
+  const key = `${year}|${lat}|${lon}|${zone}|${dst$.value}`;
   if (!grid || key !== gridKey) {
     gridKey = key;
     grid = yearGrid(lat, lon, year, offLocal);
@@ -388,8 +418,9 @@ function frame(now: number): void {
   dirty = false;
   drawnT = T;
   drawnAt = now;
+  syncDst();
   drawClock();
-  drawMap(mcv, { sun: sunEq(T), mask, coast, pin: picker.place });
+  drawMap(mcv, { sun: sunEq(T), coast, pin: picker.place, view: pz });
   const d = today();
   const here = siteSun(T, picker.place.lat, picker.place.lon);
   for (const [i, [, v]] of factsOf(d, here, fmt).entries()) txt(`#f${i}`, v);

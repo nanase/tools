@@ -12,7 +12,7 @@ import SiteLayout from '../layouts/SiteLayout.astro';
 import '../lib/planet/planet.css';
 import '../tools/sunrise/style.css';
 import { LANDC, rgb } from '../tools/sunrise/map';
-import { SPEEDS, STEPS, ZONES } from '../tools/sunrise/params';
+import { DSTS, SPEEDS, STEPS, ZONES } from '../tools/sunrise/params';
 import { BANDS } from '../tools/sunrise/sun';
 import Theory from '../tools/sunrise/Theory.astro';
 
@@ -41,8 +41,9 @@ const name = '日の出と日の入り';
         <span class="pn-st">昼の長さ<b id="f5">—</b></span>
       </div>
       <div class="sr-map" id="mview">
-        <canvas id="mc" role="img" aria-label="昼と夜の世界地図。押すとその地点を選ぶ"></canvas>
+        <canvas id="mc" role="img" aria-label="昼と夜の世界地図。押すとその地点を選ぶ。ドラッグで移動、ホイールと 2 本指で拡大・縮小"></canvas>
         <Busy id="m-busy" text="読み込み中…" />
+        <div class="pn-vctl" role="group" aria-label="地図の拡大・縮小"><button type="button" class="pn-vbtn" id="mout" aria-label="縮小" title="縮小">−</button><span class="pn-vz" id="mzoom">×1.00</span><button type="button" class="pn-vbtn" id="min" aria-label="拡大" title="拡大">＋</button><button type="button" class="pn-vbtn" id="mreset" hidden>元の表示</button></div>
       </div>
       <div class="sr-key">
         {BANDS.map((b, i) => <span><i style={`background:${rgb(LANDC[i])}`}></i>{b}</span>)}
@@ -52,6 +53,7 @@ const name = '日の出と日の入り';
       <More id="g-view" title="表示の設定"><div class="ana2">
         <div class="ptab">
           <ChoiceRow k="tz" name="時刻" choices={ZONES} value="local" />
+          <ChoiceRow k="dst" name="夏時間" sub="使わないと現地の時刻を 1 年を通して標準時で数える" choices={DSTS} value="on" />
         </div>
         <div class="ptab">
           <ChoiceRow k="sp" name="再生の速さ" choices={SPEEDS} value="hour" />
@@ -62,7 +64,7 @@ const name = '日の出と日の入り';
     <Panel hid="hd-sky" title="この地点から見た空">
       <div class="sr-sky"><canvas id="kc" role="img" aria-label="地点から見た太陽の 1 日の道すじ（横は方位、縦は高度）"></canvas></div>
       <div class="sr-key">
-        <span><i class="sr-kpath"></i>今日の道すじ（矢じりは進む向き、破線は地平線の下）</span>
+        <span><i class="sr-kpath"></i>今日の道すじ（破線は地平線の下）</span>
         <span><i class="sr-kref"></i>夏至・冬至の道すじ</span>
       </div>
     </Panel>

@@ -6,6 +6,8 @@ export interface PanZoomOpt {
   max: number;
   onChange: () => void;
   onTap?: (x: number, y: number) => void;
+  /** ずれ (x, y) の抑え方。既定は中心が窓の外へ出すぎない範囲 */
+  bound?: (z: number, x: number, y: number, W: number, H: number) => { x: number; y: number };
 }
 
 export class PanZoom {
@@ -109,13 +111,20 @@ export class PanZoom {
     this.changed();
   }
 
-  /** 中心が窓の外へ出すぎないよう抑えて知らせる */
+  /** ずれを抑えて知らせる */
   private changed(): void {
+    if (this.opt.bound)
+      ({ x: this.x, y: this.y } = this.opt.bound(this.z, this.x, this.y, this.el.clientWidth, this.el.clientHeight));
+    else this.clamp();
+    this.el.style.touchAction = this.z > 1.01 ? 'none' : 'pan-y';
+    this.opt.onChange();
+  }
+
+  /** 中心が窓の外へ出すぎないよう抑える */
+  private clamp(): void {
     const lx = this.el.clientWidth * Math.max(1, this.z),
       ly = this.el.clientHeight * Math.max(1, this.z);
     this.x = Math.max(-lx, Math.min(lx, this.x));
     this.y = Math.max(-ly, Math.min(ly, this.y));
-    this.el.style.touchAction = this.z > 1.01 ? 'none' : 'pan-y';
-    this.opt.onChange();
   }
 }

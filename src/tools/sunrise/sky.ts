@@ -178,7 +178,7 @@ export function drawSky(cv: HTMLCanvasElement, o: SkyInput): void {
   const junHigh = top(jun) >= top(dec);
   peak(jun, nJun, junHigh ? -10 : 12);
   peak(dec, nDec, junHigh ? 12 : -10);
-  /* 1 時間ごとの点、3 時間ごとの時刻、時刻の間の進む向きの矢じり */
+  /* 1 時間ごとの点と、3 時間ごとの時刻 */
   const per = 36e5 / STEP;
   for (let i = 0; i <= d.N; i += per) {
     const a = d.hs[i];
@@ -191,25 +191,6 @@ export function drawSky(cv: HTMLCanvasElement, o: SkyInput): void {
     ctx.fill();
     if ((i / per) % 3 === 0 && a > 0)
       haloText(ctx, o.fmt(d.d0 + i * STEP).replace(/:00$/, '時'), x, y - 11, 13, 'center');
-    const j = i + per / 2;
-    if (j + 1 <= d.N && d.hs[j] > 0) {
-      const x1 = X(d.azs[j - 1]);
-      const x2 = X(d.azs[j + 1]);
-      if (Math.abs(x2 - x1) < pw / 4) {
-        const an = Math.atan2(Y(d.hs[j + 1]) - Y(d.hs[j - 1]), x2 - x1);
-        ctx.save();
-        ctx.translate(X(d.azs[j]), Y(d.hs[j]));
-        ctx.rotate(an);
-        ctx.beginPath();
-        ctx.moveTo(5, 0);
-        ctx.lineTo(-4, -4);
-        ctx.lineTo(-4, 4);
-        ctx.closePath();
-        ctx.fillStyle = SUN_LINE;
-        ctx.fill();
-        ctx.restore();
-      }
-    }
   }
   /* 日の出・日の入りの方位の印 */
   const mark = (t: number | null, az: number | null, s: string) => {
