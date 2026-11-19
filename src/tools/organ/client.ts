@@ -8,6 +8,7 @@ import { Choice } from '../../lib/choice';
 import { $, $$ } from '../../lib/dom';
 import { fmt, fmtR, minus, plain, ro } from '../../lib/format';
 import { MidiBox } from '../../lib/midi';
+import { MidiFileBox } from '../../lib/midi-file-box';
 import { ParamGroup } from '../../lib/param';
 import { autoPause, lookahead } from '../../lib/pause';
 import { movePlayStore, outVol, type PlayKey, TEMPO } from '../../lib/play';
@@ -20,6 +21,7 @@ import { OH, specPlot, wavePlot } from '../guitar/plot';
 import { spectra, toDb } from '../spectrum/fft';
 import { OrganAudio } from './audio';
 import type { PipeMsg, WindDesc } from './engine';
+import { fileDefaults, fileSong } from './file';
 import { Keys, type Sounding } from './keys';
 import { flueView, geoOf, type OrganSpec, panOf, pipeMsg, reedView, type Tuned } from './model';
 import { CUT, DIST, SCALE, SWELL, VOL0, WIND } from './params';
@@ -112,10 +114,39 @@ const piece = $<HTMLSelectElement>('#piece');
   const v = stored('c:p-piece');
   if (typeof v === 'string' && PIECES.some((p) => p.v === v)) piece.value = v;
 }
-piece.addEventListener('change', () => {
-  store('c:p-piece', piece.value);
+/* 手持ちの MIDI ファイル: 曲の一覧の「MIDI ファイルを開く…」と、パートごとに鍵盤を選ぶ一覧 */
+const fileBox = new MidiFileBox(piece, {
+  pick: 'div',
+  inst: 'オルガン',
+  divs: DIVS.map((d) => [d.v, d.short] as const),
+  range: (v) => {
+    const d = divOf(v === true ? 'I' : (v as Div));
+    return [d.lo, d.hi];
+  },
+  defaults: (ps) => fileDefaults(ps),
+  changed: () => pieceChanged(),
+  say: (s) => sndMsg(s),
+});
+/** ファイルの曲（パートか鍵盤を選び直すたびに作り直す） */
+let fileCur: ReturnType<typeof fileSong> | null = null;
+/** 選んでいる曲。ファイルの曲はレジストレーションを画面のままにする。パートを 1 つも選んでいなければ null */
+function curPiece(): Piece | null {
+  if (!fileBox.active()) return pieceOf(piece.value);
+  const ps = fileBox.selected();
+  if (!ps.length || !fileBox.smf) return null;
+  fileCur ??= fileSong(fileBox.smf, ps, fileBox.choice as Map<string, Div>, fileBox.shift, fileBox.name);
+  return { ...fileCur.piece, stops: [...on], couplers: [...couplers] };
+}
+const NO_PART = 'パートを選んでください。';
+function pieceChanged(): void {
+  fileCur = null;
+  cache.delete('file');
   if (PL) stopPiece();
   void showLine();
+}
+piece.addEventListener('change', () => {
+  store('c:p-piece', piece.value);
+  pieceChanged();
 });
 
 const V = { wind: WIND.v, dist: DIST.v, tempo: 100 };
@@ -1001,8 +1032,9 @@ function lineOf(pc: Piece, d: PieceData): Line {
 }
 /** 選んだ曲を読み込んで、演奏の位置の欄に小節を描く */
 async function showLine(): Promise<void> {
-  const pc = pieceOf(piece.value);
+  const pc = curPiece();
   transport.setLine(null);
+  if (!pc) return;
   const d = await loadPiece(pc);
   if (piece.value !== pc.v) return;
   if (d) transport.setLine(lineOf(pc, d));
@@ -1023,10 +1055,14 @@ async function startPiece(b0: number): Promise<void> {
     sndMsg(NO_SOUND);
     return;
   }
+  const pc = curPiece();
+  if (!pc) {
+    sndMsg(NO_PART);
+    return;
+  }
   sndMsg('');
   if (audio.fs !== tunedFs) retune();
-  const pc = pieceOf(piece.value),
-    data = await loadPiece(pc);
+  const data = await loadPiece(pc);
   if (!data) {
     sndMsg('曲を読み込めませんでした');
     return;
