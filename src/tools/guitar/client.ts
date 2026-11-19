@@ -6,6 +6,7 @@ import { Choice } from '../../lib/choice';
 import { $, $$, esc } from '../../lib/dom';
 import { fmt, fmtR, minus, plain, ro } from '../../lib/format';
 import { logMap, MidiBox, touchOf } from '../../lib/midi';
+import { MidiFileBox } from '../../lib/midi-file-box';
 import { ParamGroup } from '../../lib/param';
 import { autoPause, lookahead } from '../../lib/pause';
 import { movePlayStore, outVol, type PlayKey, TEMPO } from '../../lib/play';
@@ -35,6 +36,7 @@ import {
   voicings,
 } from './chords';
 import { type BodyDesc, bodyDesc, type PluckMsg, type VibSpec } from './engine';
+import { fileNotes, fileRange } from './file';
 import {
   bendRatio,
   type Guitar,
@@ -186,10 +188,59 @@ const piece = $<HTMLSelectElement>('#piece');
   const v = stored('c:p-piece');
   if (typeof v === 'string' && PIECES.some((p) => p.v === v)) piece.value = v;
 }
-piece.addEventListener('change', () => {
-  store('c:p-piece', piece.value);
+/* 手持ちの MIDI ファイル: 曲の一覧の「MIDI ファイルを開く…」と、パートの一覧（複数を選べる）。音域は調弦とフレットの数で決まる */
+const fileBox = new MidiFileBox(piece, {
+  pick: 'many',
+  inst: 'ギター',
+  range: () => fileRange(tuningOf(tun.value).notes, G.frets),
+  defaults: (ps) => new Map(ps.filter((p) => !p.drum).map((p) => [p.id, true])),
+  changed: () => pieceChanged(),
+  say: (s) => sndMsg(s),
+});
+/** ファイルの曲と、それを作ったときの調弦とフレットの数（変わったら作り直す） */
+let fileCur: { piece: Piece; key: string } | null = null;
+/** 選んでいる曲。ファイルの曲は今の調弦で弾く。パートを 1 つも選んでいなければ null */
+function curPiece(): Piece | null {
+  const smf = fileBox.smf;
+  if (!fileBox.active() || !smf) return pieceOf(piece.value);
+  const ps = fileBox.selected();
+  if (!ps.length) return null;
+  const tuning = tun.value,
+    open = tuningOf(tuning).notes,
+    frets = G.frets,
+    key = `${tuning}|${frets}`;
+  if (fileCur?.key !== key) {
+    const [lo, hi] = fileRange(open, frets),
+      notes = fileNotes(ps, fileBox.shift, lo, hi),
+      bar = smf.starts.length > 1 ? smf.starts[1] - smf.starts[0] : 4;
+    fileCur = {
+      key,
+      piece: {
+        v: 'file',
+        name: fileBox.name,
+        by: '',
+        tuning,
+        bpm: smf.bpm,
+        beat: '4 分音符',
+        bar,
+        pickup: 0,
+        notes,
+        load: async () => ({ notes: finger(notes, open, frets), tempo: smf.tempo }),
+      },
+    };
+  }
+  return fileCur.piece;
+}
+const NO_PART = 'パートを選んでください。';
+function pieceChanged(): void {
+  fileCur = null;
+  for (const k of fingerCache.keys()) if (k.startsWith('file|')) fingerCache.delete(k);
   if (P) stopPiece();
   void showLine();
+}
+piece.addEventListener('change', () => {
+  store('c:p-piece', piece.value);
+  pieceChanged();
 });
 const span = choice<string>('span', () => drawOut());
 const fmax = choice<string>('fmax', () => drawOut());
@@ -362,6 +413,8 @@ function rebuild(): void {
   results();
   bodyView();
   renderOut();
+  /* 調弦とフレットの数でギターの音域が変わるので、MIDI ファイルのパートの図と移す幅を求め直す */
+  fileBox.redraw();
 }
 
 /* ---------- 入力 ---------- */
@@ -1271,8 +1324,9 @@ const lineOf = (pc: Piece, d: PieceData): Line => {
 };
 /** 選んだ曲を読み込んで、演奏の位置の欄に小節を描く */
 async function showLine(): Promise<void> {
-  const pc = pieceOf(piece.value);
+  const pc = curPiece();
   transport.setLine(null);
+  if (!pc) return;
   let pl: PieceData;
   try {
     pl = await placedOf(pc);
@@ -1292,8 +1346,12 @@ async function startPiece(from: number): Promise<void> {
     sndMsg(NO_SOUND);
     return;
   }
+  const pc = curPiece();
+  if (!pc) {
+    sndMsg(NO_PART);
+    return;
+  }
   sndMsg('');
-  const pc = pieceOf(piece.value);
   if (tun.value !== pc.tuning) {
     tun.set(pc.tuning);
     store('c:p-tun', pc.tuning);
