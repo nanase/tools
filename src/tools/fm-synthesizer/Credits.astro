@@ -1,0 +1,13 @@
+---
+// 同梱の曲の出典。開いた MIDI ファイルはブラウザの中で読むだけで、どこにも送らない
+import { SONGS } from './songs';
+---
+<ul class="fy-cred">
+  {SONGS.map((s) => (
+    <li>
+      <b>{s.name}</b>（{s.by}）: {s.credit}
+      {s.url && <> <a href={s.url} rel="noopener" target="_blank">出典</a></>}
+    </li>
+  ))}
+</ul>
+<p>開いた MIDI ファイルは、ブラウザの中で読むだけで、サーバには送りません。</p>

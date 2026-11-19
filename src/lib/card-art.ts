@@ -1428,6 +1428,45 @@ export const ART: Record<string, Art> = {
       )
     );
   },
+  /* FMシンセサイザ: 下の鍵盤で和音を押すと鍵が塗られ、上の波形がその音色で減衰する。0.6 秒ごとに和音と変調指数が替わり、
+     減衰は 0.1 秒ごとのコマ送り */
+  fy(t) {
+    const CH = [
+        [0, 2, 4],
+        [5, 7, 9],
+        [3, 5, 7],
+        [4, 6, 8],
+      ],
+      IX = [2.4, 1.2, 3.2, 1.8],
+      k = Math.floor(mod(t, 2.4) / 0.6),
+      lt = Math.floor(mod(t, 0.6) / 0.1 + 1e-9) * 0.1,
+      amp = Math.exp(-lt * 2.6),
+      I = IX[k] * amp,
+      W = 8,
+      y0 = 30,
+      y1 = 46;
+    let s = `<rect class="c t" x="4" y="${y0}" width="${14 * W}" height="${y1 - y0}"/>`;
+    for (const i of CH[k])
+      s += `<rect class="fa" x="${4 + i * W + 1}" y="${y0 + 1}" width="${W - 2}" height="${y1 - y0 - 2}"/>`;
+    for (let i = 1; i < 14; i++) s += P('c t', `M${4 + i * W} ${y0}V${y1}`);
+    for (const i of [1, 2, 4, 5, 6, 8, 9, 11, 12, 13]) s += P('c w', `M${4 + i * W} ${y0}V${y0 + 10}`);
+    return (
+      s +
+      P('c d', 'M4 15H116') +
+      P(
+        'b',
+        fx(
+          (x) => {
+            const p = (TAU * (x - 4)) / 56;
+            return 15 - 11 * amp * Math.sin(p + I * Math.sin(p));
+          },
+          4,
+          116,
+          112,
+        ),
+      )
+    );
+  },
   /* ドップラー効果: 道路を右へ走る音源（マッハ 0.5）の波面。前で詰まり後ろで広がる。波面はストロボのようにゆっくり広がる */
   dp(t) {
     const g = 8,
@@ -3433,6 +3472,7 @@ export const LOOP: Record<string, number> = {
   os: 48 / 17,
   sp: 2,
   fm: TAU / 1.5,
+  fy: 2.4,
   nz: 2,
   dp: 1.2,
   gt: 3,

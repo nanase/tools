@@ -13,7 +13,10 @@ describe('MIDI のメッセージ', () => {
   });
   it('ほかのメッセージと短いメッセージは読まない', () => {
     expect(parseMidi([0xf8])).toBeNull();
-    expect(parseMidi([0xc0, 5])).toBeNull();
+  });
+  it('プログラムチェンジは 2 バイトで読む', () => {
+    expect(parseMidi([0xc0, 5])).toEqual({ ch: 1, t: 'pc', prog: 5 });
+    expect(parseMidi([0xc9, 0x85])).toEqual({ ch: 10, t: 'pc', prog: 5 });
   });
 });
 
