@@ -6,7 +6,7 @@ import { Choice } from '../../lib/choice';
 import { $, $$, esc } from '../../lib/dom';
 import { fmt, fmtR, minus, plain, ro } from '../../lib/format';
 import { logMap, MidiBox, touchOf } from '../../lib/midi';
-import { MidiFileBox } from '../../lib/midi-file-box';
+import { MidiFileBox, NO_PART } from '../../lib/midi-file-box';
 import { ParamGroup } from '../../lib/param';
 import { autoPause, lookahead } from '../../lib/pause';
 import { movePlayStore, outVol, type PlayKey, TEMPO } from '../../lib/play';
@@ -231,7 +231,6 @@ function curPiece(): Piece | null {
   }
   return fileCur.piece;
 }
-const NO_PART = 'パートを選んでください。';
 function pieceChanged(): void {
   fileCur = null;
   for (const k of fingerCache.keys()) if (k.startsWith('file|')) fingerCache.delete(k);

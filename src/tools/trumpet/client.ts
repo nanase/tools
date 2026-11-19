@@ -8,7 +8,7 @@ import { $ } from '../../lib/dom';
 import { fmt, fmtR, minus, plain, ro } from '../../lib/format';
 import { MidiBox, touchOf } from '../../lib/midi';
 import { pickSingle } from '../../lib/midi-file';
-import { MidiFileBox } from '../../lib/midi-file-box';
+import { MidiFileBox, NO_PART } from '../../lib/midi-file-box';
 import { ParamGroup } from '../../lib/param';
 import { autoPause } from '../../lib/pause';
 import { movePlayStore, outVol, type PlayKey, TEMPO } from '../../lib/play';
@@ -534,7 +534,6 @@ function curPiece(): Piece | null {
 /** 曲の音符のデータ（ファイルの曲は読み込み済み） */
 const dataOf = (pc: Piece): Promise<PieceData> =>
   pc.v === 'file' && fileCur ? Promise.resolve(fileCur.data) : loadScore(pc.file);
-const NO_PART = 'パートを選んでください。';
 function pieceChanged(): void {
   fileCur = null;
   stopPiece();

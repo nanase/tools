@@ -35,6 +35,8 @@ const AX_LO = 21,
   AX_HI = 108;
 const xOf = (n: number) => (100 * (Math.min(AX_HI, Math.max(AX_LO, n)) - AX_LO)) / (AX_HI - AX_LO);
 const NONE = 'none';
+/** パートを 1 つも選んでいないときのメッセージ（演奏できないので、再生ボタンが効かない理由を出す） */
+export const NO_PART = 'パートを選んでください。';
 const SVG = 'http://www.w3.org/2000/svg';
 
 export class MidiFileBox {
@@ -49,6 +51,8 @@ export class MidiFileBox {
   private readonly input = $<HTMLInputElement>('#mf-in');
   private readonly fileOpt = document.createElement('option');
   private prev: string;
+  /** NO_PART を出しているか（出したものだけを消す） */
+  private warned = false;
 
   constructor(
     private readonly sel: HTMLSelectElement,
@@ -74,6 +78,7 @@ export class MidiFileBox {
         }
         this.prev = sel.value;
         this.box.hidden = !this.active();
+        this.hint();
       },
       true,
     );
@@ -121,6 +126,7 @@ export class MidiFileBox {
     /* ページの曲の切り替え（保存・演奏の停止・小節の描き直し）を通す */
     this.sel.value = 'file';
     this.sel.dispatchEvent(new Event('change'));
+    this.hint();
   }
 
   /** 音域が変わったとき（ギターの調弦など）に、幅と図を求め直す */
@@ -195,6 +201,14 @@ export class MidiFileBox {
     this.o.changed();
   }
 
+  /** ファイルの曲でパートを 1 つも選んでいなければ NO_PART を出し、選んだら消す */
+  private hint(): void {
+    const none = this.active() && !this.selected().length;
+    if (none) this.o.say(NO_PART);
+    else if (this.warned) this.o.say('');
+    this.warned = none;
+  }
+
   /** 1 段目の幅を求め、選ぶ欄・音域の図・移した幅を描き直す */
   private update(): void {
     const groups = this.selected()
@@ -205,6 +219,7 @@ export class MidiFileBox {
       });
     this.shift = groups.length ? octaveShift(groups) : 0;
     $('#mf-shift').textContent = shiftLabel(this.shift);
+    this.hint();
     for (const p of this.parts) {
       const row = this.list.querySelector<HTMLElement>(`.mf-row[data-id="${p.id}"]`);
       if (!row) continue;
@@ -230,6 +245,10 @@ export class MidiFileBox {
       el = (cls: string, x0: number, x1: number) => {
         const r = document.createElementNS(SVG, 'rect');
         r.setAttribute('class', cls);
+        /* 縦の位置と高さは属性で入れる（rect の y・height を CSS で指定できないブラウザがある） */
+        const band = cls === 'mf-band';
+        r.setAttribute('y', band ? '3' : '5');
+        r.setAttribute('height', band ? '6' : '2');
         r.setAttribute('x', String(x0));
         r.setAttribute('width', String(Math.max(0.6, x1 - x0)));
         return r;

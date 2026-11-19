@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { FNote } from '../src/lib/midi-file';
-import { monophonic, voiceOf } from '../src/tools/trumpet/file';
+import type { Smf } from '../src/lib/smf';
+import { fileSong, monophonic, voiceOf } from '../src/tools/trumpet/file';
 import { performPiece } from '../src/tools/trumpet/perform';
 import type { Piece } from '../src/tools/trumpet/score';
 import type { ScoreNote } from '../src/tools/trumpet/scores/types';
@@ -24,6 +25,11 @@ describe('トランペットの MIDI ファイル', () => {
       [74, false, true, undefined],
       [76, false, false, 'ff'],
     ]);
+  });
+  it('パートが途中から入るときは、最初の音より前の小節線を捨てる（小節の頭の表を単調に増やす）', () => {
+    const smf: Smf = { ev: [], bpm: 120, tempo: [], starts: [0, 4, 8, 12, 16], end: 20, chans: [0], names: [''] };
+    const { data } = fileSong(smf, [nt(8, 4, 72), nt(12, 4, 74), nt(16, 4, 76)], 0, 'c.mid');
+    expect(data.bars).toEqual([12, 16]);
   });
 });
 
@@ -59,5 +65,39 @@ describe('トランペットのテンポの変化', () => {
       d3 = pf.secAt(3) - pf.secAt(2);
     expect(d1).toBeCloseTo(0.5, 2);
     expect(d3).toBeCloseTo(1, 2);
+  });
+  it('テンポの変化が多くても、拍ごとに表を頭から探さない（600 拍・3000 点で 150 ms 未満）', () => {
+    const pc: Piece = {
+      v: 'x',
+      file: '',
+      name: '',
+      by: '',
+      qpm: 120,
+      tempo: '',
+      meter: 4,
+      phraseBars: 4,
+      flats: 0,
+      license: 'pd',
+      qpmMap: Array.from({ length: 3000 }, (_, i) => [i * 0.2, 100 + (i % 40)] as const),
+    };
+    const voice = Array.from(
+      { length: 600 },
+      (_, i): ScoreNote => ({
+        t: i,
+        d: 1,
+        n: 72,
+        slurOn: false,
+        slurOff: false,
+        trill: false,
+        fermata: false,
+        stacc: false,
+        accent: false,
+        tenuto: false,
+      }),
+    );
+    performPiece(pc, { voices: [voice], bars: [] }, 1, 'plain');
+    const t0 = performance.now();
+    performPiece(pc, { voices: [voice], bars: [] }, 1, 'plain');
+    expect(performance.now() - t0).toBeLessThan(150);
   });
 });

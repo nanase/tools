@@ -71,5 +71,7 @@ export function fileSong(
     license: 'pd',
     ...(smf.tempo.length ? { qpmMap: qpmMapOf(smf) } : {}),
   };
-  return { piece, data: { voices: [voice], bars: smf.starts.slice(1) } };
+  /* 演奏の位置の欄は最初の音を頭とするので、それより前の小節線（パートが途中から入るとき）は捨てる */
+  const head = voice[0]?.t ?? 0;
+  return { piece, data: { voices: [voice], bars: smf.starts.filter((b) => b > head + EPS) } };
 }

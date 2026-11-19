@@ -52,6 +52,24 @@ describe('パート', () => {
     ]);
     expect(ps[1].notes).toEqual([{ t: 0, d: 2, n: 48, v: 90 }]);
   });
+  it('1 つのトラックに音のあるチャンネルが 2 つ以上あれば、トラック名でなく GM の音色名にする（format 0 のトラック名は曲名が多い）', () => {
+    const name = [...'My Song'].map((c) => c.charCodeAt(0));
+    const ps = partsOf(
+      parseSmf(
+        smfBytes(0, 480, [
+          [
+            [0, 0xff, 0x03, name.length, ...name],
+            [0, 0xc1, 32],
+            [0, 0x90, 60, 100],
+            [0, 0x91, 36, 100],
+            [480, 0x80, 60, 0],
+            [0, 0x81, 36, 0],
+          ],
+        ]),
+      ),
+    );
+    expect(ps.map((p) => p.name)).toEqual(['グランドピアノ', 'アコースティックベース']);
+  });
 });
 
 describe('音域', () => {

@@ -33,7 +33,10 @@ export interface FilePart {
 
 const DRUM_CH = 9;
 
-/** 音のあるパートを、トラック → チャンネルの順に返す。名前はトラック名、なければ GM の音色名（打楽器は「打楽器」） */
+/**
+ * 音のあるパートを、トラック → チャンネルの順に返す。名前はトラック名、なければ GM の音色名（打楽器は「打楽器」）。
+ * 音のあるチャンネルが 2 つ以上あるトラックでは、トラック名を使わない
+ */
 export function partsOf(smf: Smf): FilePart[] {
   const parts = new Map<string, FilePart>(),
     prog = new Map<string, number>(),
@@ -61,9 +64,13 @@ export function partsOf(smf: Smf): FilePart[] {
       if (x) x.d = Math.max(0, e.b - x.t);
     }
   }
-  const out = [...parts.values()].sort((a, b) => a.tr - b.tr || a.ch - b.ch);
+  const out = [...parts.values()].sort((a, b) => a.tr - b.tr || a.ch - b.ch),
+    /* トラックごとの、音のあるチャンネルの数（2 つ以上のトラックの名前は曲名が多い。format 0 など） */
+    perTrack = new Map<number, number>();
+  for (const p of out) perTrack.set(p.tr, (perTrack.get(p.tr) ?? 0) + 1);
   for (const p of out) {
-    p.name = p.drum ? '打楽器' : smf.names[p.tr] || GM_NAMES[prog.get(p.id) ?? 0];
+    const track = (perTrack.get(p.tr) ?? 0) === 1 ? smf.names[p.tr] : '';
+    p.name = p.drum ? '打楽器' : track || GM_NAMES[prog.get(p.id) ?? 0];
     let s = 0;
     for (const x of p.notes) {
       p.lo = Math.min(p.lo, x.n);

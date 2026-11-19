@@ -8,7 +8,7 @@ import { Choice } from '../../lib/choice';
 import { $, $$ } from '../../lib/dom';
 import { fmt, fmtR, minus, plain, ro } from '../../lib/format';
 import { MidiBox } from '../../lib/midi';
-import { MidiFileBox } from '../../lib/midi-file-box';
+import { MidiFileBox, NO_PART } from '../../lib/midi-file-box';
 import { ParamGroup } from '../../lib/param';
 import { autoPause, lookahead } from '../../lib/pause';
 import { movePlayStore, outVol, type PlayKey, TEMPO } from '../../lib/play';
@@ -137,7 +137,6 @@ function curPiece(): Piece | null {
   fileCur ??= fileSong(fileBox.smf, ps, fileBox.choice as Map<string, Div>, fileBox.shift, fileBox.name);
   return { ...fileCur.piece, stops: [...on], couplers: [...couplers] };
 }
-const NO_PART = 'パートを選んでください。';
 function pieceChanged(): void {
   fileCur = null;
   cache.delete('file');
