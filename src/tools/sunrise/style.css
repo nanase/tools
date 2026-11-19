@@ -16,7 +16,8 @@
 .sr-map{position:relative;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:#1e2638}
 .sr-sky{border-radius:var(--r);overflow:hidden;background:#1e2638}
 .sr-sky canvas{display:block;width:100%}
-.sr-map canvas{display:block;width:100%;cursor:crosshair;touch-action:manipulation}
+.sr-map canvas{display:block;width:100%;cursor:crosshair;touch-action:pan-y}
+.sr-map canvas.drag{cursor:grabbing}
 
 /* 凡例 */
 .sr-key{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:8px;font-size:13px;color:var(--ink-2)}

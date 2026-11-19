@@ -8,6 +8,13 @@ export const ZONES = [
 ] as const;
 export type Disp = (typeof ZONES)[number][0];
 
+/** 夏時間: 使わないと、現地の時刻をその年の標準時で数える */
+export const DSTS = [
+  ['on', '使う'],
+  ['off', '使わない'],
+] as const;
+export type Dst = (typeof DSTS)[number][0];
+
 /** 再生の速さ。day は時刻を保って 1 日ずつ進める */
 export const SPEEDS = [
   ['real', '実時間'],

@@ -50,6 +50,36 @@ export function zoneOffset(zone: string | null, lon: number, ms: number): number
   return Math.round((local - Math.floor(ms / 6e4) * 6e4) / 6e4) * 6e4;
 }
 
+const spans = new Map<string, [number, number]>();
+/** ms の年（UTC）の差の最小と最大 [ms]。月の 1 日と 16 日の正午で調べる */
+function spanOf(zone: string | null, lon: number, ms: number): [number, number] {
+  const y = new Date(ms).getUTCFullYear();
+  const key = `${zone}|${lon}|${y}`;
+  let s = spans.get(key);
+  if (!s) {
+    let lo = Infinity;
+    let hi = -Infinity;
+    for (let m = 0; m < 12; m++)
+      for (const d of [1, 16]) {
+        const o = zoneOffset(zone, lon, Date.UTC(y, m, d, 12));
+        lo = Math.min(lo, o);
+        hi = Math.max(hi, o);
+      }
+    s = [lo, hi];
+    spans.set(key, s);
+  }
+  return s;
+}
+
+/** 夏時間を除いた差（標準時） [ms]。その年の差のうち最も小さいもの */
+export const stdOffset = (zone: string | null, lon: number, ms: number): number => spanOf(zone, lon, ms)[0];
+
+/** ms の年に夏時間があるか */
+export function hasDst(zone: string | null, lon: number, ms: number): boolean {
+  const [lo, hi] = spanOf(zone, lon, ms);
+  return hi > lo;
+}
+
 /** 差が経度からの概算か（引けなかったか、海の上の Etc/GMT±N） */
 export const approx = (zone: string | null): boolean => !zone || zone.startsWith('Etc/');
 
