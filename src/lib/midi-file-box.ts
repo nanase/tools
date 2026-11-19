@@ -218,11 +218,15 @@ export class MidiFileBox {
     }
   }
 
-  /** 音域の図: 灰の帯（楽器・鍵盤の音域）、パートの線（移した後）、はみ出す所は橙 */
+  /**
+   * 音域の図: 灰の帯（楽器・鍵盤の音域）、パートの線（移した後）、はみ出す所は橙。
+   * 1 つだけ選ぶ楽器では、選んでいないパートもそのパートを選んだときの幅で描く（選ぶ前に収まり方を比べられる）
+   */
   private figure(svg: SVGSVGElement, p: FilePart, v: string | true | undefined): void {
     const [lo, hi] = this.o.range(this.o.pick === 'div' ? (v ?? this.o.divs?.[0]?.[0] ?? true) : true),
-      a = p.lo + this.shift,
-      b = p.hi + this.shift,
+      sh = this.o.pick === 'one' && v === undefined ? octaveShift([{ notes: p.notes, lo, hi }]) : this.shift,
+      a = p.lo + sh,
+      b = p.hi + sh,
       el = (cls: string, x0: number, x1: number) => {
         const r = document.createElementNS(SVG, 'rect');
         r.setAttribute('class', cls);

@@ -6,6 +6,8 @@ import { Choice } from '../../lib/choice';
 import { $ } from '../../lib/dom';
 import { fmt, fmtR, minus, plain, ro } from '../../lib/format';
 import { logMap, MidiBox, touchOf } from '../../lib/midi';
+import { pickSingle } from '../../lib/midi-file';
+import { MidiFileBox } from '../../lib/midi-file-box';
 import { ParamGroup } from '../../lib/param';
 import { autoPause } from '../../lib/pause';
 import { movePlayStore, outVol, type PlayKey, TEMPO } from '../../lib/play';
@@ -20,6 +22,7 @@ import { ViolinAudio } from './audio';
 import { BODY_DEFAULT, type BodySpec, BRIDGE, makeBody, radiation, yTop } from './body';
 import { MU_INF, MU_S } from './bow';
 import { type FigMode, type View, ViolinFigure } from './figure';
+import { HI as FILE_HI, LO as FILE_LO, fileSong } from './file';
 import {
   BETA,
   BOW_F,
@@ -458,16 +461,44 @@ const piece = $<HTMLSelectElement>('#piece');
   const v = stored('c:p-piece');
   if (typeof v === 'string' && [...piece.options].some((o) => o.value === v)) piece.value = v;
 }
-piece.addEventListener('change', () => {
-  store('c:p-piece', piece.value);
+/* 手持ちの MIDI ファイル: 曲の一覧の「MIDI ファイルを開く…」と、パートの一覧（1 つ選ぶ） */
+const fileBox = new MidiFileBox(piece, {
+  pick: 'one',
+  inst: 'ヴァイオリン',
+  range: () => [FILE_LO, FILE_HI],
+  defaults: (ps) => {
+    const id = pickSingle(ps, FILE_LO, FILE_HI);
+    return new Map(id ? [[id, true]] : []);
+  },
+  changed: () => pieceChanged(),
+  say: (s) => sndMsg(s),
+});
+/** ファイルの曲（パートを選び直すたびに作り直す） */
+let fileCur: ReturnType<typeof fileSong> | null = null;
+/** 選んでいる曲。ファイルの曲でパートを選んでいなければ null */
+function curPiece(): Piece | null {
+  if (!fileBox.active()) return pieceOf(piece.value);
+  const [p] = fileBox.selected();
+  if (!p || !fileBox.smf) return null;
+  fileCur ??= fileSong(fileBox.smf, p.notes, fileBox.shift, fileBox.name);
+  return fileCur.piece;
+}
+const NO_PART = 'パートを選んでください。';
+function pieceChanged(): void {
+  fileCur = null;
+  scoreCache.delete('file');
   if (P) stopPiece();
   void showLine();
+}
+piece.addEventListener('change', () => {
+  store('c:p-piece', piece.value);
+  pieceChanged();
 });
 /** 読み込んだ曲（演奏の位置の欄と、弾き始めに使う） */
 const scoreCache = new Map<string, PieceData>();
 /** 曲を読み込む（読み込んだ曲は覚えておく。読めなければ null） */
 async function loadPiece(pc: Piece): Promise<PieceData | null> {
-  let data = scoreCache.get(pc.v);
+  let data = scoreCache.get(pc.v) ?? (pc.v === 'file' ? fileCur?.data : undefined);
   if (!data) {
     try {
       data = await loadScore(pc.file);
@@ -493,8 +524,9 @@ const lineOf = (pc: Piece, d: PieceData): Line => {
 };
 /** 選んだ曲を読み込んで、演奏の位置の欄に小節を描く */
 async function showLine(): Promise<void> {
-  const pc = pieceOf(piece.value);
+  const pc = curPiece();
   transport.setLine(null);
+  if (!pc) return;
   const d = await loadPiece(pc);
   if (piece.value !== pc.v) return;
   if (d) transport.setLine(lineOf(pc, d));
@@ -519,9 +551,13 @@ async function startPiece(b0: number): Promise<void> {
     sndMsg(NO_SOUND);
     return;
   }
+  const pc = curPiece();
+  if (!pc) {
+    sndMsg(NO_PART);
+    return;
+  }
   sndMsg('');
-  const pc = pieceOf(piece.value),
-    data = await loadPiece(pc);
+  const data = await loadPiece(pc);
   if (!data) {
     sndMsg('曲を読み込めませんでした');
     return;
@@ -529,7 +565,7 @@ async function startPiece(b0: number): Promise<void> {
   if (P || piece.value !== pc.v) return;
   M.bowing = false;
   P = { v: pc.v, b0, heard: false, pos: b0 };
-  audio.playPiece(pc.v, data, expr.value, tempo, b0 > 0 ? b0 : null);
+  audio.playPiece(pc, data, expr.value, tempo, b0 > 0 ? b0 : null);
   syncPlay();
 }
 function stopPiece(): void {
