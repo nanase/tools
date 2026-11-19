@@ -110,19 +110,18 @@ export function fitRatio(notes: readonly FNote[], lo: number, hi: number): numbe
   return inside(notes, lo, hi, octaveShift([{ notes, lo, hi }])) / notes.length;
 }
 
-/** 1 パートしか弾けない楽器の既定のパート: 打楽器を除き、収まる割合が最も高いもの。同じなら平均の高さが高いもの（旋律を優先） */
+/** 収まる割合の差がこれ以下のパートは同点とみなす（低音の狭い音域のパートが、わずかな差で旋律に勝たないように） */
+const FIT_TOL = 0.15;
+
+/**
+ * 1 パートしか弾けない楽器の既定のパート: 打楽器を除き、収まる割合が最良から FIT_TOL 以内のパートのうち、
+ * 平均の高さが最も高いもの（旋律を優先）
+ */
 export function pickSingle(parts: readonly FilePart[], lo: number, hi: number): string | null {
-  let best: FilePart | null = null,
-    bestR = -1;
-  for (const p of parts) {
-    if (p.drum) continue;
-    const r = fitRatio(p.notes, lo, hi);
-    if (r > bestR + 1e-9 || (Math.abs(r - bestR) <= 1e-9 && best && p.mean > best.mean)) {
-      best = p;
-      bestR = r;
-    }
-  }
-  return best?.id ?? null;
+  const ps = parts.filter((p) => !p.drum).map((p) => ({ p, r: fitRatio(p.notes, lo, hi) }));
+  if (!ps.length) return null;
+  const top = Math.max(...ps.map((x) => x.r));
+  return ps.filter((x) => x.r >= top - FIT_TOL).reduce((a, b) => (b.p.mean > a.p.mean ? b : a)).p.id;
 }
 
 /** 移した幅の文（移さないときは ''） */

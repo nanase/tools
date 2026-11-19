@@ -1,6 +1,7 @@
 ---
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import MidiFileParts from '../components/MidiFileParts.astro';
 import MidiPanel from '../components/MidiPanel.astro';
 import More from '../components/More.astro';
 import PageTitle from '../components/PageTitle.astro';
@@ -120,6 +121,7 @@ const ROWS = [...PARTIALS].reverse().filter((n) => n <= 8);
             <div class="c-name"><label class="pn" id="n-piece" for="piece">曲</label><p class="desc tip" id="t-piece" role="tooltip" hidden>著作権の切れた曲（メサイアは CC BY 3.0 の電子楽譜）。強弱・舌・息継ぎはこのツールで決定</p></div>
             <div class="c-val sel"><select id="piece" autocomplete="off" aria-describedby="t-piece">{PIECES.map((p) => <option value={p.v} title={p.by}>{p.name}</option>)}</select></div>
           </div>
+          <MidiFileParts />
         </div>
         <Transport>
           <TransportButton id="muteBtn" icon="mute" label="消音" title="鳴っている音の停止（曲の演奏中は使用不可）" />

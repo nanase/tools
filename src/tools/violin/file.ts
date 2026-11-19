@@ -1,9 +1,10 @@
 /**
- * 手持ちの MIDI ファイルを、ヴァイオリンの曲（Piece・PieceData）に直す（DOM に依存しない）。トランペットも使う。
+ * 手持ちの MIDI ファイルを、ヴァイオリンの曲（Piece・PieceData）に直す（DOM に依存しない）。
  *  - 同時に始まる音は和音にする（重音・分散和音は演奏の規則に任せる）
  *  - 伸ばした音の上で始まる音は 2 つ目の声部にし、3 つ目からは前の音を次の音の始まりで切る
  *  - スラー: すき間のない音（すき間が前の音の長さの 1 割未満か、重なる音）を、同じ拍の中でだけつなぐ。拍の頭では弓を返す
  *  - 強弱: ベロシティを最も近い強弱記号にし、記号の変わる音にだけ付ける
+ * スラー（slurs）と強弱記号（dynOf）はトランペット（trumpet/file.ts）も使う
  */
 import { type FNote, fold } from '../../lib/midi-file';
 import type { Smf } from '../../lib/smf';
@@ -90,7 +91,7 @@ export function voicesOf(notes: readonly FNote[]): ScoreNote[][] {
 }
 
 /** スラーを付ける: すき間のない音を同じ拍の中でだけつなぐ（ひとつながりが 2 音以上のときだけ） */
-export function slurs(voice: ScoreNote[]): void {
+export function slurs<T extends { t: number; d: number; slurOn: boolean; slurOff: boolean }>(voice: T[]): void {
   let start = 0;
   const close = (end: number) => {
     if (end > start) {

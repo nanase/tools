@@ -7,6 +7,8 @@ import { Choice } from '../../lib/choice';
 import { $ } from '../../lib/dom';
 import { fmt, fmtR, minus, plain, ro } from '../../lib/format';
 import { MidiBox, touchOf } from '../../lib/midi';
+import { pickSingle } from '../../lib/midi-file';
+import { MidiFileBox } from '../../lib/midi-file-box';
 import { ParamGroup } from '../../lib/param';
 import { autoPause } from '../../lib/pause';
 import { movePlayStore, outVol, type PlayKey, TEMPO } from '../../lib/play';
@@ -20,6 +22,7 @@ import { type Frame, TrumpetAudio } from './audio';
 import { VALVE_LEN } from './bore';
 import { CALIB, RES_DEV } from './calib';
 import { type Cycle, type FigMode, TrumpetFigure } from './figure';
+import { fileSong } from './file';
 import { SCOPE_N } from './frame';
 import { FINGERS, fingering, HIGH, LOW, mtof, nameOf, openNote, semiOf } from './notes';
 import { type BlowKey, DIST, DYNS, dynOf, FLIP, PM, TEMP, VOL0 } from './params';
@@ -500,16 +503,46 @@ function drawOut(): void {
 
 /* ---------- 曲の演奏 ---------- */
 /** 演奏中の曲。h は曲の頭の拍（弱起の音は負の拍）、b0 は弾き始めた位置の拍（位置の欄の拍）、from は弾き始めた時刻 [s] */
-let P: { v: string; data: PieceData; perf: Performance; h: number; b0: number; from: number } | null = null;
+let P: { pc: Piece; data: PieceData; perf: Performance; h: number; b0: number; from: number } | null = null;
 const piece = $<HTMLSelectElement>('#piece');
 {
   const v = stored('c:p-piece');
   if (typeof v === 'string' && [...piece.options].some((o) => o.value === v)) piece.value = v;
 }
-piece.addEventListener('change', () => {
-  store('c:p-piece', piece.value);
+/* 手持ちの MIDI ファイル: 曲の一覧の「MIDI ファイルを開く…」と、パートの一覧（1 つ選ぶ） */
+const fileBox = new MidiFileBox(piece, {
+  pick: 'one',
+  inst: 'トランペット',
+  range: () => [LOW, HIGH],
+  defaults: (ps) => {
+    const id = pickSingle(ps, LOW, HIGH);
+    return new Map(id ? [[id, true]] : []);
+  },
+  changed: () => pieceChanged(),
+  say: (s) => sndMsg(s),
+});
+/** ファイルの曲（パートを選び直すたびに作り直す） */
+let fileCur: ReturnType<typeof fileSong> | null = null;
+/** 選んでいる曲。ファイルの曲でパートを選んでいなければ null */
+function curPiece(): Piece | null {
+  if (!fileBox.active()) return pieceOf(piece.value);
+  const [p] = fileBox.selected();
+  if (!p || !fileBox.smf) return null;
+  fileCur ??= fileSong(fileBox.smf, p.notes, fileBox.shift, fileBox.name);
+  return fileCur.piece;
+}
+/** 曲の音符のデータ（ファイルの曲は読み込み済み） */
+const dataOf = (pc: Piece): Promise<PieceData> =>
+  pc.v === 'file' && fileCur ? Promise.resolve(fileCur.data) : loadScore(pc.file);
+const NO_PART = 'パートを選んでください。';
+function pieceChanged(): void {
+  fileCur = null;
   stopPiece();
   void showLine();
+}
+piece.addEventListener('change', () => {
+  store('c:p-piece', piece.value);
+  pieceChanged();
 });
 /** 途中から弾くとき、小節の頭の音とみなす前のずれ [s]（出だしのばらつきは ±12 ms） */
 const HEAD_TOL = 0.02;
@@ -529,11 +562,12 @@ const lineOf = (pc: Piece, d: PieceData): Line => {
 };
 /** 選んだ曲を読み込んで、演奏の位置の欄に小節を描く */
 async function showLine(): Promise<void> {
-  const pc = pieceOf(piece.value);
+  const pc = curPiece();
   transport.setLine(null);
+  if (!pc) return;
   let data: PieceData;
   try {
-    data = await loadScore(pc.file);
+    data = await dataOf(pc);
   } catch {
     sndMsg('曲のデータを読めませんでした');
     return;
@@ -552,11 +586,15 @@ async function startPiece(b0: number): Promise<void> {
     sndMsg(NO_SOUND);
     return;
   }
+  const pc = curPiece();
+  if (!pc) {
+    sndMsg(NO_PART);
+    return;
+  }
   sndMsg('');
-  const pc = pieceOf(piece.value);
   let data: PieceData;
   try {
-    data = await loadScore(pc.file);
+    data = await dataOf(pc);
   } catch {
     sndMsg('曲のデータを読めませんでした');
     return;
@@ -585,7 +623,7 @@ async function startPiece(b0: number): Promise<void> {
       from = Math.min(s0, notes[0]?.t ?? s0);
     }
   }
-  P = { v: pc.v, data, perf, h, b0, from };
+  P = { pc, data, perf, h, b0, from };
   /* 前の演奏の位置を出さない */
   last = null;
   audio.playPiece(notes, from);
@@ -611,9 +649,8 @@ const posOf = (p: NonNullable<typeof P>, f: Frame) =>
 /** テンポと表情を変えたら、いまの拍から演奏し直す */
 function retempo(): void {
   if (!P || !last) return;
-  const pc = pieceOf(P.v),
-    beat = P.perf.beatAt(last.time),
-    perf = performPiece(pc, P.data, tempo, expr.value);
+  const beat = P.perf.beatAt(last.time),
+    perf = performPiece(P.pc, P.data, tempo, expr.value);
   P.perf = perf;
   P.from = perf.secAt(beat);
   audio.playPiece(perf.notes, P.from);

@@ -69,6 +69,12 @@ describe('音域', () => {
     expect(pickSingle(q, 55, 100)).toBe('vn1');
     expect(pickSingle([{ ...q[0], drum: true }], 55, 100)).toBeNull();
   });
+  it('収まる割合が少し低くても、高いパート（旋律）を選ぶ', () => {
+    /* 旋律は 10 音のうち 1 音が音域の上に外れる（0.9）、低音はすべて収まる（1.0） */
+    const mel = part('mel', 64, 100),
+      bass = part('bass', 40, 60);
+    expect(pickSingle([bass, mel], 52, 86)).toBe('mel');
+  });
   it('移した幅を文にする', () => {
     expect(shiftLabel(0)).toBe('');
     expect(shiftLabel(-12)).toBe('1 オクターブ下げて演奏');

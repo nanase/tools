@@ -129,6 +129,12 @@ export function performPiece(pc: Piece, data: PieceData, tempo: number, expr: Ex
     src = mergeTies(raw);
   if (!src.length) return { notes: [], beatAt: () => 0, secAt: () => 0 };
   const qpm = pc.qpm * tempo,
+    /** 拍 b のテンポ（qpmMap があれば、その拍までの最後の変化） */
+    qpmAt = (b: number): number => {
+      let q = pc.qpm;
+      for (const [bb, x] of pc.qpmMap ?? []) if (b >= bb) q = x;
+      return q * tempo;
+    },
     b0 = src[0].t,
     bEnd = Math.max(...src.map((x) => x.t + x.d)),
     pLen = pc.phraseBars * pc.meter,
@@ -147,7 +153,8 @@ export function performPiece(pc: Piece, data: PieceData, tempo: number, expr: Ex
       return k;
     };
   secs[0] = LEAD;
-  for (let i = 1; i <= nb; i++) secs[i] = secs[i - 1] + (60 / qpm / speed(b0 + (i - 0.5) * DB)) * DB;
+  for (let i = 1; i <= nb; i++)
+    secs[i] = secs[i - 1] + (60 / qpmAt(b0 + (i - 0.5) * DB) / speed(b0 + (i - 0.5) * DB)) * DB;
   /* 止まる時間: フェルマータ（音の 0.75 倍）、楽句の終わり（表情を付けるとき 0.06 s） */
   const pauses: [number, number][] = [];
   const base = (b: number): number => {
