@@ -1,0 +1,136 @@
+import { describe, expect, it } from 'vitest';
+import { encodeNormal, heightMap, normalize, normalMap, PATS, type PatId } from '../src/tools/normal-map/heights';
+import { EL, HS } from '../src/tools/normal-map/params';
+import { camera, fitCamera, LIGHT_Y, pickLight, project, type Vec3 } from '../src/tools/normal-map/render';
+import { STEPS } from '../src/tools/normal-map/steps';
+
+const R = 64;
+const ids = PATS.map(([k]) => k).filter((k): k is Exclude<PatId, 'text'> => k !== 'text');
+
+describe('模様の高さ', () => {
+  it('模様の id と名前は重ならない', () => {
+    expect(new Set(PATS.map((p) => p[0])).size).toBe(PATS.length);
+    expect(new Set(PATS.map((p) => p[1])).size).toBe(PATS.length);
+  });
+
+  it('どの模様も 0〜1 に収まり、平らでない', () => {
+    for (const id of ids) {
+      const h = heightMap(id, R);
+      let lo = 1,
+        hi = 0;
+      for (const v of h) {
+        expect(Number.isFinite(v), id).toBe(true);
+        lo = Math.min(lo, v);
+        hi = Math.max(hi, v);
+      }
+      expect(lo, id).toBeCloseTo(0, 6);
+      expect(hi, id).toBeCloseTo(1, 6);
+    }
+  });
+
+  it('同じ模様は何度作っても同じ', () => {
+    for (const id of ['cobble', 'crater', 'maze', 'pcb'] as const) expect(heightMap(id, R)).toEqual(heightMap(id, R));
+  });
+
+  it('平らな高さは 0 にそろえる', () => {
+    expect([...normalize(new Float32Array([0.3, 0.3]))]).toEqual([0, 0]);
+  });
+});
+
+describe('法線マップ', () => {
+  const at = (nm: Uint8Array, i: number, j: number) => [...nm.slice((j * R + i) * 4, (j * R + i) * 4 + 3)];
+
+  it('真上を向いた所は (128, 128, 255)', () => {
+    expect(encodeNormal(0, 0)).toEqual([128, 128, 255]);
+    const nm = normalMap(new Float32Array(R * R), R);
+    expect(at(nm, 10, 20)).toEqual([128, 128, 255]);
+  });
+
+  it('右へ上る坂は左を向くので赤が減る', () => {
+    const h = new Float32Array(R * R);
+    for (let j = 0; j < R; j++) for (let i = 0; i < R; i++) h[j * R + i] = i / 8;
+    const [r, g, b] = at(normalMap(h, R), 30, 30);
+    expect(r).toBeLessThan(128);
+    expect(g).toBe(128);
+    expect(b).toBeLessThan(255);
+  });
+
+  it('手前（画像の下）へ上る坂は奥（画像の上）を向くので緑が増える', () => {
+    const h = new Float32Array(R * R);
+    for (let j = 0; j < R; j++) for (let i = 0; i < R; i++) h[j * R + i] = j / R;
+    const [r, g] = at(normalMap(h, R), 30, 30);
+    expect(r).toBe(128);
+    expect(g).toBeGreaterThan(128);
+  });
+
+  it('色を向きに戻すと長さはほぼ 1', () => {
+    const nm = normalMap(heightMap('rivet', R), R);
+    for (let k = 0; k < R * R; k += 37) {
+      const v = [nm[k * 4], nm[k * 4 + 1], nm[k * 4 + 2]].map((c) => (c / 255) * 2 - 1);
+      expect(Math.hypot(...v)).toBeCloseTo(1, 1);
+      expect(nm[k * 4 + 2]).toBeGreaterThan(128);
+    }
+  });
+});
+
+describe('カメラ', () => {
+  const corners: Vec3[] = [];
+  for (const x of [-1, 1]) for (const z of [-1, 1]) for (const y of [-0.06, 0.08]) corners.push([x, y, z]);
+
+  it('どの角度と縦横比でも板が画面に収まり、真ん中に来る', () => {
+    for (const el of [EL.min, 30, EL.v, 70, EL.max])
+      for (const asp of [4 / 3, 16 / 10, 1, 0.75]) {
+        const c = fitCamera(el, asp),
+          ps = corners.map((p) => project(c, p)),
+          xs = ps.map((p) => p[0] - c.ox),
+          ys = ps.map((p) => p[1] - c.oy);
+        for (const x of xs) expect(Math.abs(x)).toBeLessThanOrEqual(asp * 0.9 + 1e-6);
+        for (const y of ys) expect(Math.abs(y)).toBeLessThanOrEqual(0.9 + 1e-6);
+        /* 縦か横のどちらかは余白いっぱいまで使う */
+        const fill = Math.max((Math.max(...xs) - Math.min(...xs)) / 2 / asp, (Math.max(...ys) - Math.min(...ys)) / 2);
+        expect(fill, `${el} ${asp}`).toBeCloseTo(0.9, 3);
+        expect(Math.max(...xs) + Math.min(...xs)).toBeCloseTo(0, 6);
+        expect(Math.max(...ys) + Math.min(...ys)).toBeCloseTo(0, 6);
+      }
+  });
+
+  it('指した点を通る光線が、光の高さの面と交わる所に光を置く', () => {
+    const asp = 16 / 10,
+      c = fitCamera(50, asp);
+    for (const [x, y] of [
+      [0, 0],
+      [0.3, -0.4],
+      [-0.5, 0.2],
+    ]) {
+      const p = pickLight(c, x, y, asp);
+      expect(p).not.toBeNull();
+      const q = p as Vec3;
+      expect(q[1]).toBe(LIGHT_Y);
+      const [px, py] = project(c, q);
+      expect(px).toBeCloseTo(x * asp + c.ox, 6);
+      expect(py).toBeCloseTo(y + c.oy, 6);
+    }
+  });
+
+  it('光の高さの面より上を指したときは置かない', () => {
+    const c = camera(10, 4);
+    expect(pickLight(c, 0, 0.99, 1)).toBeNull();
+  });
+});
+
+describe('入力', () => {
+  it('凹凸の高さは 0 から 2 倍、既定は 1 倍', () => {
+    expect([HS.min, HS.v, HS.max]).toEqual([0, 1, 2]);
+    expect(HS.fix?.(3)?.[0]).toBe(2);
+  });
+});
+
+describe('しくみ', () => {
+  it('5 工程で、文に句点を付けない', () => {
+    expect(STEPS).toHaveLength(5);
+    for (const s of STEPS) {
+      expect(s.h.includes('。'), s.h).toBe(false);
+      expect(s.p.includes('。'), s.p).toBe(false);
+    }
+  });
+});

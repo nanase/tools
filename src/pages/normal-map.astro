@@ -1,0 +1,72 @@
+---
+import Busy from '../components/Busy.astro';
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import HowSteps from '../components/HowSteps.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/normal-map/style.css';
+import { PATS } from '../tools/normal-map/heights';
+import { EL, HS } from '../tools/normal-map/params';
+import { STEPS } from '../tools/normal-map/steps';
+import Theory from '../tools/normal-map/Theory.astro';
+
+const name = '法線マップ';
+const pats = PATS.map(([k, n]) => [k, n] as const);
+---
+<SiteLayout title={name} tool={{ id: 'normal-map', name }}>
+  <PageTitle title={name}>平らな板に、光で動く凹凸の陰影を付けます。形そのものの凹凸と並べて見比べることもできます。</PageTitle>
+
+  <div class="tgrid">
+    <Panel hid="hd-fig" title="板" class="a-fig" fixed>
+      <div slot="aux" class="nm-aux">
+        <div class="seg" id="nm-mode" role="group" aria-label="表示">
+          <button type="button" data-v="one" aria-pressed="true">単独</button><button type="button" data-v="cmp" aria-pressed="false">比較</button>
+        </div>
+        <div class="seg"><button type="button" id="nm-rot" aria-pressed="true"><span class="led on" id="nm-rotL" aria-hidden="true"></span> <span>光を回す</span></button></div>
+      </div>
+      <div class="nm-fig" id="nm-fig">
+        <div id="nm-one">
+          <div class="nm-view nm-wide"><canvas id="nm-c0" tabindex="0" role="img" aria-label="法線マップを貼った板。触れた所へ光が動く。矢印キーでも動かせる"></canvas></div>
+        </div>
+        <div class="nm-two" id="nm-two" hidden>
+          <figure>
+            <div class="nm-view"><canvas id="nm-c1" tabindex="0" role="img" aria-label="形そのものの凹凸。触れた所へ光が動く"></canvas><span class="nm-tag">本物の凹凸</span></div>
+            <figcaption class="nm-cap static"><span>三角形 約 52 万</span><span>影あり</span></figcaption>
+          </figure>
+          <figure>
+            <div class="nm-view"><canvas id="nm-c2" tabindex="0" role="img" aria-label="法線マップを貼った平らな板。触れた所へ光が動く"></canvas><span class="nm-tag">法線マップ</span></div>
+            <figcaption class="nm-cap static"><span>三角形 2・画像 1 枚</span><span>影なし</span></figcaption>
+          </figure>
+        </div>
+        <Busy id="nm-busy" text="準備中…" center />
+        <p class="nm-msg" id="nm-msg" hidden>このブラウザでは WebGL2 が使えないため、板を描けません。</p>
+      </div>
+    </Panel>
+
+    <Panel hid="hd-set" title="設定" class="a-set">
+      <div class="ptab">
+        <ChoiceRow k="pat" name="模様" layout="chips" value="brick" choices={pats} />
+        <ParamRow d={EL} />
+        <ParamRow d={HS} />
+        <ChoiceRow k="nm" name="法線マップ" sub="なしでは平らな板の向きのまま光を計算する" value="1" choices={[['0', 'なし'], ['1', 'あり']]} />
+      </div>
+    </Panel>
+
+    <Panel hid="hd-how" title="しくみ" class="a-how">
+      <HowSteps id="nm-how" steps={STEPS.map((s) => ({ h: s.h, fig: `<canvas role="img" aria-label="${s.h}"></canvas>`, p: s.p }))} />
+    </Panel>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools current="normal-map" />
+  <script>
+    import '../tools/normal-map/client';
+  </script>
+</SiteLayout>

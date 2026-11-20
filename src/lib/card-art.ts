@@ -3462,6 +3462,28 @@ export const ART: Record<string, Art> = {
     for (let i = 0; i < 5; i++) s += `<rect class="w${i}" x="${x0 + i * bw}" y="19" width="${bw}" height="10"/>`;
     return `${s}<rect class="c t" x="${x0}" y="19" width="${bw * 5}" height="10"/>${P('fc', `M${lx} 17L${lx - 4.5} 10H${lx + 4.5}Z`)}${P('c', `M${sx} 31L${sx - 4.5} 38H${sx + 4.5}Z`)}`;
   },
+  /* 法線マップ: 光の点が板の上を 16 コマで 1 周し、6 つの鋲の明るい側（三日月）が光の方を向く */
+  nm(t) {
+    const a = -2.4 + (Math.floor((mod(t, 4) / 4) * 16) / 16) * TAU,
+      lx = 60 + 46 * Math.cos(a),
+      ly = 24 + 19 * Math.sin(a),
+      r = 8.5;
+    let s = '';
+    for (const cy of [13.5, 34.5])
+      for (const cx of [30, 60, 90]) {
+        const f = Math.atan2(ly - cy, lx - cx),
+          x1 = r1(cx + r * Math.cos(f - TAU / 4)),
+          y1 = r1(cy + r * Math.sin(f - TAU / 4)),
+          x2 = r1(cx + r * Math.cos(f + TAU / 4)),
+          y2 = r1(cy + r * Math.sin(f + TAU / 4));
+        s += P(
+          'fa',
+          `M${x1} ${y1}A${r} ${r} 0 0 1 ${x2} ${y2}A${r1(r * 0.35)} ${r} ${r1((f * 180) / Math.PI)} 0 0 ${x1} ${y1}Z`,
+        );
+        s += `<circle class="c" cx="${cx}" cy="${cy}" r="${r}"/>`;
+      }
+    return `${s}<circle class="fs" cx="${r1(lx)}" cy="${r1(ly)}" r="4.2"/><circle class="fa" cx="${r1(lx)}" cy="${r1(ly)}" r="2.4"/>`;
+  },
 };
 
 /**
@@ -3554,6 +3576,7 @@ export const LOOP: Record<string, number> = {
   pcl: 2,
   prl: TAU / 1.4,
   wb: 3.6,
+  nm: 4,
 };
 
 /** 止まっているときの図柄（ビルド時に HTML へ出す） */

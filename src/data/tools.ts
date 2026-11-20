@@ -501,7 +501,7 @@ export const TOOLS: Tool[] = [
     t: '画像の畳み込み',
     d: 'ぼかしやエッジ検出の出力をカーネルの積和で 1 画素ずつ作ります。',
     ic: 'icv',
-    r: ['convolution', 'demosaic', 'image-resize', 'fir'],
+    r: ['convolution', 'demosaic', 'image-resize', 'normal-map'],
     k: 'image convolution 画像 畳み込み たたみこみ 2次元 2d kernel 核 カーネル フィルタ filter ぼかし blur 平均 box ガウス gaussian ピンぼけ defocus ぶれ motion blur 鮮鋭化 sharpen アンシャープマスク unsharp mask エッジ検出 edge detection ラプラシアン laplacian sobel ソーベル 勾配 gradient 浮き彫り emboss 点像分布関数 psf mtf 分離 separable 相関 correlation cnn メディアン median 端 padding',
   },
   {
@@ -547,7 +547,7 @@ export const TOOLS: Tool[] = [
     t: 'レイトレーシング',
     d: '光線の反射と屈折をたどって絵を収束させます。',
     ic: 'rt',
-    r: ['shading', 'lens', 'halo', 'image-convolution'],
+    r: ['shading', 'normal-map', 'lens', 'halo'],
     k: 'ray tracing raytracing レイトレーシング レイトレ パストレーシング path tracing cg コンピュータグラフィックス レンダリング rendering モンテカルロ monte carlo 光線 反射 屈折 グローバルイルミネーション global illumination 間接光 コースティクス caustics コーネルボックス cornell box brdf ggx nee 次イベント推定 next event estimation mis 重点的サンプリング importance sampling ウィッテッド whitted ロシアンルーレット russian roulette 被写界深度 色温度 rmse spp サンプル数 ノイズ 収束',
   },
 
@@ -557,8 +557,17 @@ export const TOOLS: Tool[] = [
     t: 'シェーディング',
     d: '同じ光と材質で反射モデルを並べて見比べます。',
     ic: 'sh',
-    r: ['raytracing', 'moon', 'white-balance', 'prism-lens'],
+    r: ['raytracing', 'normal-map', 'moon', 'white-balance'],
     k: 'shading シェーディング brdf 反射モデル lambert ランバート phong フォン blinn ブリン cook-torrance クック トランス ggx trowbridge-reitz マイクロファセット microfacet pbr 物理ベース physically based レンダリング rendering ローブ lobe ハイライト specular 鏡面 拡散 diffuse フレネル fresnel schlick smith 遮蔽 粗さ roughness 金属 metal メタリック metallic ファーネステスト ホワイトファーネステスト white furnace test 多重散乱 kulla conty グーロー gouraud フラット flat 補間 cg コンピュータグラフィックス',
+  },
+  {
+    id: 'normal-map',
+    c: 'CG',
+    t: '法線マップ',
+    d: '平らな板に、光で動く凹凸の陰影を付けます。',
+    ic: 'nm',
+    r: ['shading', 'raytracing', 'image-convolution', 'impact'],
+    k: 'normal map normal mapping 法線マップ ノーマルマップ 法線 normal バンプマップ バンプマッピング bump map bump mapping 高さマップ ハイトマップ height map heightmap 凹凸 テクスチャ texture 接空間 タンジェントスペース tangent space tbn 接線 従法線 tangent bitangent binormal mikktspace opengl directx 緑 green 視差マッピング parallax mapping parallax occlusion ディスプレイスメント displacement レイマーチング ray marching 影 shadow ランバート lambert blinn-phong 点光源 光 レンガ タイル 石畳 うろこ 木目 織物 波板 縞鋼板 ローレット 鋲 くぼみ 回路基板 迷路 岩肌 クレーター 波紋 cg コンピュータグラフィックス',
   },
 
   {
