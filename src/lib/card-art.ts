@@ -3462,7 +3462,7 @@ export const ART: Record<string, Art> = {
     for (let i = 0; i < 5; i++) s += `<rect class="w${i}" x="${x0 + i * bw}" y="19" width="${bw}" height="10"/>`;
     return `${s}<rect class="c t" x="${x0}" y="19" width="${bw * 5}" height="10"/>${P('fc', `M${lx} 17L${lx - 4.5} 10H${lx + 4.5}Z`)}${P('c', `M${sx} 31L${sx - 4.5} 38H${sx + 4.5}Z`)}`;
   },
-  /* 法線マップ: 光の点が板の上を 16 コマで 1 周し、6 つの鋲の明るい側（三日月）が光の方を向く */
+  /* 法線マップ（案 A）: 光の点が板の上を 16 コマで 1 周し、6 つの鋲の明るい側（三日月）が光の方を向く */
   nm(t) {
     const a = -2.4 + (Math.floor((mod(t, 4) / 4) * 16) / 16) * TAU,
       lx = 60 + 46 * Math.cos(a),
