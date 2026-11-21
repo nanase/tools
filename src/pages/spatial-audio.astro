@@ -1,0 +1,106 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import HowSteps from '../components/HowSteps.astro';
+import More from '../components/More.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/spatial-audio/style.css';
+import { HOW } from '../tools/spatial-audio/how';
+import { OBS_PRESETS, SCENES, SOUNDS } from '../tools/spatial-audio/model';
+import { MODE_OPT, OBS_P, ONOFF, PARAMS, PLACE_OPT, SPACE, SRC_VOL } from '../tools/spatial-audio/params';
+import Theory from '../tools/spatial-audio/Theory.astro';
+
+const name = '立体音響';
+---
+<SiteLayout title={name} tool={{ id: 'spatial-audio', name }} note="音はこの端末の中で作り、送信しません。">
+  <PageTitle title={name}>両耳に届く音の違いから、頭のまわりの音の向きを聞き分けます。音源と聞き手を自由に動かし、場所による響きの違いもヘッドホンで聞けます。</PageTitle>
+
+  <div class="tgrid sa-grid" id="sa">
+    <div class="sa-main">
+      <Panel hid="hd-fig" title="聞き手と音源" fixed>
+        <Fragment slot="aux"><span class="aux sa-hp"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 10V8a5.5 5.5 0 0 1 11 0v2"/><rect x="1.8" y="9.3" width="3" height="4.6" rx="1"/><rect x="11.2" y="9.3" width="3" height="4.6" rx="1"/></svg>ヘッドホン</span><span class="seg"><button type="button" id="sa-play" aria-pressed="false"><span class="led" id="sa-led" aria-hidden="true"></span><span id="sa-playT">再生</span></button></span></Fragment>
+        <div class="sa-scenes" id="sa-scenes" role="group" aria-label="場面" data-nosave>
+          <span class="sa-sch">場面</span>
+          {SCENES.map((s) => <button type="button" class="chip" data-v={s.id} aria-pressed="false">{s.name}</button>)}
+        </div>
+        <div class="sbar static sa-sb">
+          <span id="sa-st"></span>
+          <span class="stag right">ドラッグ: 音源・頭（移動）・外の輪（向き）</span>
+        </div>
+        <div class="scope sa-scr"><canvas class="sa-cv" id="sa-cv" tabindex="0" role="img" aria-label="上から見た場所。音源と聞き手の頭。矢印キーで聞き手が向きを変えて歩く"></canvas></div>
+        <div class="sa-tp">
+          <button type="button" class="btn" data-turn="-30">◀ 左へ 30°</button>
+          <button type="button" class="btn" data-turn="30">右へ 30° ▶</button>
+          <button type="button" class="btn" data-walk="1" id="sa-walk-f">前へ 2 m</button>
+          <button type="button" class="btn" data-walk="-1" id="sa-walk-b">後ろへ 2 m</button>
+        </div>
+      </Panel>
+    </div>
+
+    <div class="sa-side">
+      <Panel hid="hd-src" title="音源">
+        <span slot="aux" class="aux" id="sa-count"></span>
+        <ul class="sa-list" id="sa-list" data-shift="ok"></ul>
+        <div class="ptab sa-svol">
+          {SRC_VOL.map((d) => <ParamRow d={d} />)}
+        </div>
+        <div class="sa-add">
+          <span class="sa-addh" id="sa-addh">追加</span>
+          <div class="chips" id="sa-add" role="group" aria-labelledby="sa-addh">
+            {SOUNDS.map((s) => <button type="button" class="chip" data-add={s.id}>{s.name}</button>)}
+          </div>
+        </div>
+      </Panel>
+
+      <Panel hid="hd-space" title="空間">
+        <div class="ptab">
+          <ChoiceRow k="place" name="場所" sub="選ぶと空間の値がその場所の既定に戻る" choices={PLACE_OPT} value="forest" layout="chips" />
+          {SPACE.map((d) => <ParamRow d={d} />)}
+        </div>
+      </Panel>
+
+      <Panel hid="hd-obs" title="障害物">
+        <span slot="aux" class="aux" id="sa-obs-count"></span>
+        <ul class="sa-list" id="sa-obs-list" data-shift="ok"></ul>
+        <div class="ptab sa-svol">
+          {OBS_P.map((d) => <ParamRow d={d} />)}
+        </div>
+        <div class="sa-add">
+          <span class="sa-addh" id="sa-obsh">追加</span>
+          <div class="chips" id="sa-obs-add" role="group" aria-labelledby="sa-obsh">
+            {OBS_PRESETS.map((o, i) => <button type="button" class="chip" data-obs={i}>{o.name}</button>)}
+          </div>
+        </div>
+      </Panel>
+
+      <Panel hid="hd-set" title="聞き方">
+        <div class="ptab">
+          <ChoiceRow k="mode" name="方式" sub="パンは左右の音量だけ、モノラルは両耳に同じ音" choices={MODE_OPT} value="hrtf" layout="chips" />
+          {PARAMS.map((d) => <ParamRow d={d} />)}
+        </div>
+        <More id="g-cue" title="手がかり"><div class="ptab">
+          <ChoiceRow k="itd" name="両耳間時間差" sub="遠い側の耳への遅れ" choices={ONOFF} value="1" />
+          <ChoiceRow k="ild" name="頭の陰" sub="遠い側の耳で弱まる高い音" choices={ONOFF} value="1" />
+          <ChoiceRow k="pinna" name="耳介" sub="耳の形で跳ね返った音による、上下と前後の手がかり" choices={ONOFF} value="1" />
+        </div></More>
+      </Panel>
+    </div>
+
+    <Panel hid="hd-how" title="しくみ" class="sa-howp">
+      <HowSteps steps={HOW} />
+    </Panel>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools current="spatial-audio" />
+  <script>
+    import '../tools/spatial-audio/client';
+  </script>
+</SiteLayout>

@@ -1,0 +1,49 @@
+/* 立体音響のページ */
+.sa-main,.sa-side{display:flex;flex-direction:column;gap:26px;min-width:0}
+@media (min-width:1000px){
+  .sa-grid{grid-template-columns:minmax(0,1.8fr) minmax(330px,1fr);align-items:start}
+  .sa-howp,.sa-grid>.a-thy{grid-column:1/-1}
+}
+.sa-hp{display:inline-flex;align-items:center;gap:4px}
+.sa-hp svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.4}
+
+/* 場面 */
+.sa-scenes{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin:0 0 10px}
+.sa-sch{margin-right:6px;font-size:12.5px;font-weight:700;color:var(--ink-3)}
+
+/* 図 */
+.sa-sb{justify-content:space-between;font-family:var(--sans)}
+.sa-scr{padding:0;overflow:hidden}
+.sa-cv{display:block;width:100%;height:520px;background:var(--screen);touch-action:none;outline:none}
+.sa-cv:focus-visible{outline:2px solid var(--ink-3);outline-offset:-2px}
+.sa-tp{display:flex;flex-wrap:wrap;gap:6px 8px;margin-top:10px}
+
+/* 音源の一覧 */
+.sa-list{list-style:none;margin:0;padding:0;border-top:1px solid var(--line);max-height:260px;overflow-y:auto}
+.sa-list li{display:flex;align-items:stretch;border-bottom:1px solid var(--line)}
+.sa-list li.on{box-shadow:inset 3px 0 0 var(--ink)}
+.sa-pick{flex:1;min-width:0;display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:8px 8px 8px 10px;border:0;background:none;color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.sa-pick b{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sa-at{font:500 13px var(--mono);color:var(--ink-2);white-space:nowrap}
+.sa-del{flex:none;width:36px;border:0;background:none;color:var(--ink-3);font-size:17px;cursor:pointer}
+.sa-del:hover{color:var(--ink)}
+.sa-add{margin-top:12px}
+.sa-addh{display:block;margin-bottom:5px;font-size:12.5px;font-weight:700;color:var(--ink-3)}
+.sa-add .chips{display:flex;flex-wrap:wrap;gap:4px}
+
+/* しくみの小さな図 */
+.sa-mini{display:block;width:100%;height:130px}
+.sa-mini .hd{fill:var(--surface);stroke:var(--ink);stroke-width:1.6}
+.sa-mini .le{fill:var(--ch2)}
+.sa-mini .ri{fill:var(--ch1)}
+.sa-mini .pl{fill:none;stroke:var(--ch2);stroke-width:2}
+.sa-mini .pr{fill:none;stroke:var(--ch1);stroke-width:2}
+.sa-mini .ah-l{fill:var(--ch2)}
+.sa-mini .ah-r{fill:var(--ch1)}
+.sa-mini .ln{fill:none;stroke:var(--ink-3);stroke-width:1.2}
+.sa-mini .dl{fill:none;stroke:var(--ink-3);stroke-width:1.2;stroke-dasharray:4 4}
+.sa-mini .wl{fill:none;stroke:var(--ink-2);stroke-width:3}
+.sa-mini .src{fill:var(--ink)}
+.sa-mini .sh{fill:var(--grid)}
+.sa-mini text{font:12px var(--sans);fill:var(--ink-2)}
+.sa-svol{margin-top:6px}

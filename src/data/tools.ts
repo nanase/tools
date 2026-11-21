@@ -221,7 +221,7 @@ export const TOOLS: Tool[] = [
     t: 'ドップラー効果',
     d: 'すれ違う救急車やエンジンの音の変化を計算して鳴らします。',
     ic: 'dp',
-    r: ['engine', 'vvvf', 'thunder', 'reverb'],
+    r: ['engine', 'vvvf', 'spatial-audio', 'reverb'],
     k: 'doppler effect ドップラー 救急車 サイレン siren 電車 警笛 horn エンジン engine すれ違い 音速 マッハ mach 衝撃波 マッハコーン マッハ円錐 mach cone ソニックブーム sonic boom 波面 空気の吸収 air absorption iso 9613 地面の反射 ground reflection 遅延線 delay line オーディオ audio',
   },
   {
@@ -230,7 +230,7 @@ export const TOOLS: Tool[] = [
     t: '残響',
     d: '部屋の反射を鏡像法で求め、インパルス応答を畳み込んで響きを聞きます。',
     ic: 'rv',
-    r: ['convolution', 'thunder', 'doppler', 'shepard-tone'],
+    r: ['convolution', 'thunder', 'doppler', 'spatial-audio'],
     k: 'reverb reverberation 残響 反響 エコー echo やまびこ 鏡像法 image source method インパルス応答 impulse response rir 残響時間 rt60 t60 sabine セイビン eyring アイリング 吸音率 absorption coefficient 初期反射 early reflection 後部残響 late reverberation 臨界距離 critical distance 平均自由行程 edt t20 t30 c80 d50 schroeder シュレーダー 畳み込み convolution convolver 部屋 ホール 教会 屋外 オーディオ audio',
   },
   {
@@ -239,7 +239,7 @@ export const TOOLS: Tool[] = [
     t: '雷鳴',
     d: '稲妻の放電路の衝撃波を再現し、雷鳴として試聴できます。',
     ic: 'th',
-    r: ['reverb', 'doppler', 'impact', 'noise'],
+    r: ['reverb', 'doppler', 'impact', 'spatial-audio'],
     k: 'thunder 雷鳴 雷 かみなり 稲妻 稲光 lightning 落雷 放電路 衝撃波 shock wave n波 n-wave ゴロゴロ バリバリ rumble clap 光ってから 3秒 1km 距離 空気の吸収 air absorption iso 9613 反射 こだま 影の領域 shadow zone few ribner tortuosity オーディオ audio',
   },
   {
@@ -250,6 +250,15 @@ export const TOOLS: Tool[] = [
     ic: 'shp',
     r: ['temperament', 'fm-synth', 'mandelbrot', 'chord-progression'],
     k: 'shepard tone シェパードトーン shepard risset glissando リセットのグリッサンド 無限音階 無限 音階 上がり続ける 下がり続ける 錯覚 聴覚の錯覚 auditory illusion 和音 コード chord スペクトログラム spectrogram 残響 reverb 音色 オクターブ octave オーディオ audio',
+  },
+  {
+    id: 'spatial-audio',
+    c: '音響',
+    t: '立体音響',
+    d: '両耳に届く音の違いから、音の来る向きを聞き分けます。',
+    ic: 'sa',
+    r: ['reverb', 'doppler', 'thunder', 'convolution'],
+    k: 'spatial audio 立体音響 3d audio 3d オーディオ バイノーラル binaural 頭部伝達関数 hrtf hrir 両耳間時間差 itd 両耳間レベル差 ild iid 音像定位 定位 localization 方向 前後 耳介 pinna 頭の陰 head shadow 球の頭 spherical head woodworth brown duda ヘッドホン headphones パン pan panning モノラル mono 反射 鏡像法 image source 残響 reverb fdn 自然の音 小川 鳥 たき火 朗読 オーディオ audio 音響モデル',
   },
   {
     id: 'guitar',
