@@ -62,7 +62,7 @@ export function project(c: Camera, p: Vec3): [number, number] {
  * 板（上面の四隅と下面の四隅）が縦横比 asp の画面に余白 m を残して収まる距離。
  * 板の写る範囲の中心を画面の中心へずらし、上下左右の余白をそろえる
  */
-export function fitCamera(el: number, asp: number, m = 0.9): Camera {
+export function fitCamera(el: number, asp: number, az = AZ, m = 0.9): Camera {
   const pts: Vec3[] = [];
   for (const x of [-1, 1]) for (const z of [-1, 1]) for (const y of [-0.06, 0.08]) pts.push([x, y, z]);
   const box = (c: Camera) => {
@@ -83,11 +83,11 @@ export function fitCamera(el: number, asp: number, m = 0.9): Camera {
     hi = 12;
   for (let k = 0; k < 30; k++) {
     const d = (lo + hi) / 2,
-      b = box(camera(el, d));
+      b = box(camera(el, d, az));
     if ((b.x1 - b.x0) / 2 <= asp * m && (b.y1 - b.y0) / 2 <= m) hi = d;
     else lo = d;
   }
-  const c = camera(el, hi),
+  const c = camera(el, hi, az),
     b = box(c);
   return { ...c, ox: (b.x0 + b.x1) / 2, oy: (b.y0 + b.y1) / 2 };
 }

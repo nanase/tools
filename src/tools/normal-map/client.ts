@@ -4,15 +4,17 @@
  */
 import { Choice } from '../../lib/choice';
 import { $ } from '../../lib/dom';
+import { initFullscreen } from '../../lib/fullscreen';
 import { RM } from '../../lib/motion';
 import { ParamGroup } from '../../lib/param';
 import { initToolPage } from '../../lib/tool-page';
 import { HR, normalize, normalMap, type PatId } from './heights';
 import { mountHow } from './how';
 import { imagePattern, materialMap } from './materials';
-import { type Key, PARAMS } from './params';
+import { EL, type Key, PARAMS } from './params';
 import { type Camera, fitCamera, LIGHT_Y, PlateRenderer, pickLight, type Vec3 } from './render';
 import { MODE } from './shader';
+import { applyView, HOME, isHome, type View as Look, wrapAz, zoomAt } from './view';
 
 initToolPage();
 
@@ -86,6 +88,10 @@ const st = {
   /** 指やカーソルが図に触れている */
   hold: false,
   light: [RAD0 * Math.cos(ANG0), LIGHT_Y, RAD0 * Math.sin(ANG0)] as Vec3,
+  /** 拡大と見る方位（保存しない） */
+  look: { ...HOME } as Look,
+  /** 右ボタンで回している */
+  turn: null as { x: number; y: number; el: number; az: number } | null,
 };
 
 /* ---------- 模様（高さ・法線マップ・色とつや） ---------- */
@@ -246,12 +252,12 @@ const shown = (): View[] => (st.cmp ? [v1, v2].filter((v): v is View => !!v) : [
 const cams = new WeakMap<HTMLCanvasElement, { key: string; cam: Camera }>();
 function camOf(cv: HTMLCanvasElement): Camera {
   const asp = cv.clientWidth / Math.max(1, cv.clientHeight),
-    key = `${V.el}:${asp.toFixed(3)}`,
+    key = `${V.el}:${asp.toFixed(3)}:${st.look.az}`,
     c = cams.get(cv);
-  if (c && c.key === key) return c.cam;
-  const cam = fitCamera(V.el, asp);
+  if (c && c.key === key) return applyView(c.cam, st.look);
+  const cam = fitCamera(V.el, asp, st.look.az);
   cams.set(cv, { key, cam });
-  return cam;
+  return applyView(cam, st.look);
 }
 const moving = (): boolean => st.rot && !st.hold && !RM.matches;
 function kick(): void {
@@ -307,33 +313,95 @@ function resume(): void {
   dirty = true;
   kick();
 }
+/* ---------- 拡大と回転 ---------- */
+const home = $<HTMLButtonElement>('#nm-home');
+function setLook(v: Look): void {
+  st.look = v;
+  home.classList.toggle('on', !isHome(v));
+  dirty = true;
+  kick();
+}
+home.addEventListener('click', () => setLook({ ...HOME }));
+/** 画面の点（縦の端が ±1、横は縦横比を掛けた座標）と縦横比 */
+function screenOf(cv: HTMLCanvasElement, e: { clientX: number; clientY: number }): [number, number, number] {
+  const b = cv.getBoundingClientRect(),
+    asp = b.width / b.height;
+  return [(((e.clientX - b.left) / b.width) * 2 - 1) * asp, 1 - ((e.clientY - b.top) / b.height) * 2, asp];
+}
+function zoom(cv: HTMLCanvasElement, sx: number, sy: number, f: number): void {
+  const asp = cv.clientWidth / Math.max(1, cv.clientHeight);
+  setLook(zoomAt(st.look, sx, sy, f, asp));
+}
 for (const cv of [c0, c1, c2]) {
+  cv.addEventListener('contextmenu', (e) => e.preventDefault());
+  cv.addEventListener(
+    'wheel',
+    (e) => {
+      e.preventDefault();
+      const dy = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaMode === 2 ? e.deltaY * 400 : e.deltaY,
+        [sx, sy] = screenOf(cv, e);
+      zoom(cv, sx, sy, Math.exp(-dy * 0.0015));
+    },
+    { passive: false },
+  );
   cv.addEventListener('pointermove', (e) => {
+    if (st.turn) {
+      const t = st.turn,
+        el = Math.round(Math.max(EL.min, Math.min(EL.max, t.el + (e.clientY - t.y) * 0.3)));
+      setLook({ ...st.look, az: wrapAz(Math.round(t.az - (e.clientX - t.x) * 0.4)) });
+      if (el !== V.el) G.set('el', el);
+      return;
+    }
     if (e.pointerType === 'mouse' || e.buttons) follow(cv, e);
   });
   cv.addEventListener('pointerdown', (e) => {
     cv.setPointerCapture(e.pointerId);
+    if (e.button === 2) {
+      release();
+      st.turn = { x: e.clientX, y: e.clientY, el: V.el, az: st.look.az };
+      return;
+    }
     follow(cv, e);
   });
   cv.addEventListener('pointerup', (e) => {
+    if (st.turn) {
+      st.turn = null;
+      return;
+    }
     if (e.pointerType !== 'mouse') release();
   });
-  cv.addEventListener('pointerleave', release);
-  cv.addEventListener('pointercancel', release);
-  /* 矢印キーで光を動かす */
+  cv.addEventListener('pointerleave', () => {
+    if (!st.turn) release();
+  });
+  cv.addEventListener('pointercancel', () => {
+    st.turn = null;
+    release();
+  });
+  /* 矢印キーで光を動かす（画面の向きに合わせる）。+ と − で拡大・縮小 */
   cv.addEventListener('keydown', (e) => {
+    if (e.key === '+' || e.key === '=' || e.key === '-') {
+      e.preventDefault();
+      zoom(cv, 0, 0, e.key === '-' ? 1 / 1.25 : 1.25);
+      return;
+    }
     const d = e.shiftKey ? 0.3 : 0.1,
       mv: Record<string, [number, number]> = {
         ArrowLeft: [-d, 0],
         ArrowRight: [d, 0],
-        ArrowUp: [0, -d],
-        ArrowDown: [0, d],
+        ArrowUp: [0, d],
+        ArrowDown: [0, -d],
       },
       m = mv[e.key];
     if (!m) return;
     e.preventDefault();
-    const cl = (v: number) => Math.max(-1.6, Math.min(1.6, v));
-    st.light = [cl(st.light[0] + m[0]), LIGHT_Y, cl(st.light[2] + m[1])];
+    /* 画面の右と奥の向き（板の面の上） */
+    const a = (st.look.az * Math.PI) / 180,
+      rx = Math.cos(a),
+      rz = -Math.sin(a),
+      fx = -Math.sin(a),
+      fz = -Math.cos(a),
+      cl = (v: number) => Math.max(-1.6, Math.min(1.6, v));
+    st.light = [cl(st.light[0] + m[0] * rx + m[1] * fx), LIGHT_Y, cl(st.light[2] + m[0] * rz + m[1] * fz)];
     resume();
   });
 }
@@ -453,6 +521,17 @@ document.addEventListener('visibilitychange', () => {
 RM.addEventListener('change', () => {
   dirty = true;
   kick();
+});
+
+initFullscreen({
+  root: $('#nm-fig'),
+  btn: $<HTMLButtonElement>('#nm-fs'),
+  pop: () => [
+    $('.nm-aux'),
+    [$('#p-pat'), $('#nm-imgrows'), $('#p-el'), $('#p-hs'), $('#p-nm'), $('#p-col'), $('#p-rgh')],
+  ],
+  popTitle: '設定',
+  focus: st.cmp ? c1 : c0,
 });
 
 if (noGl) fail();

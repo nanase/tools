@@ -4,6 +4,7 @@ import { imagePattern, MATS, matAt, materialMap } from '../src/tools/normal-map/
 import { EL, HS } from '../src/tools/normal-map/params';
 import { camera, fitCamera, LIGHT_Y, pickLight, project, type Vec3 } from '../src/tools/normal-map/render';
 import { STEPS } from '../src/tools/normal-map/steps';
+import { applyView, HOME, wrapAz, ZOOM_MAX, zoomAt } from '../src/tools/normal-map/view';
 
 const R = 64;
 const ids = PATS.map(([k]) => k).filter((k): k is Computed => k !== 'text' && k !== 'image');
@@ -206,5 +207,46 @@ describe('画像の模様', () => {
     const { col } = imagePattern(px, false, R);
     expect([...col.slice(0, 3)]).toEqual([255, 255, 255]);
     expect([...col.slice((R - 1) * 4, (R - 1) * 4 + 3)]).toEqual([0, 0, 0]);
+  });
+});
+
+describe('拡大と回転', () => {
+  const asp = 16 / 10;
+
+  it('拡大してもカーソルの下の点は動かない', () => {
+    const base = fitCamera(50, asp);
+    for (const [sx, sy] of [
+      [0, 0],
+      [0.7, -0.3],
+      [-1.2, 0.6],
+    ]) {
+      const v = zoomAt(HOME, sx, sy, 2, asp),
+        a = applyView(base, HOME),
+        b = applyView(base, v);
+      /* 同じ光線の向きになる: (画面の点 + ずれ) × 画角 */
+      expect((sx + b.ox) * b.th).toBeCloseTo((sx + a.ox) * a.th, 9);
+      expect((sy + b.oy) * b.th).toBeCloseTo((sy + a.oy) * a.th, 9);
+      expect(v.z).toBe(2);
+    }
+  });
+
+  it('拡大率は 1〜8 倍で、写る範囲は拡大前の画面の外へ出ない', () => {
+    let v = { ...HOME };
+    for (let k = 0; k < 20; k++) v = zoomAt(v, asp, 1, 1.5, asp);
+    expect(v.z).toBe(ZOOM_MAX);
+    expect(v.cx + asp / v.z).toBeLessThanOrEqual(asp + 1e-9);
+    expect(v.cy + 1 / v.z).toBeLessThanOrEqual(1 + 1e-9);
+    v = zoomAt(v, 0, 0, 1e-3, asp);
+    expect(v).toEqual({ ...HOME, cx: 0, cy: 0 });
+  });
+
+  it('方位は −180〜180° に収める', () => {
+    expect(wrapAz(190)).toBe(-170);
+    expect(wrapAz(-190)).toBe(170);
+    expect(wrapAz(20)).toBe(20);
+  });
+
+  it('どの方位でも板が収まる', () => {
+    for (const az of [-150, -60, 0, 45, 120]) expect(fitCamera(50, asp, az).cp[1]).toBeGreaterThan(0);
   });
 });

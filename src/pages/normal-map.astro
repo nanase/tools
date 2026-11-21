@@ -2,6 +2,7 @@
 import Busy from '../components/Busy.astro';
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import FsButton from '../components/FsButton.astro';
 import HowSteps from '../components/HowSteps.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
@@ -30,18 +31,20 @@ const pats = PATS.map(([k, n]) => [k, n] as const);
       </div>
       <div class="nm-fig" id="nm-fig">
         <div id="nm-one">
-          <div class="nm-view nm-wide"><canvas id="nm-c0" tabindex="0" role="img" aria-label="法線マップを貼った板。触れた所へ光が動く。矢印キーでも動かせる"></canvas></div>
+          <div class="nm-view nm-wide"><canvas id="nm-c0" tabindex="0" role="img" aria-label="法線マップを貼った板。触れた所へ光が動く（矢印キーでも）。ホイールで拡大、右ボタンのドラッグで回す"></canvas></div>
         </div>
         <div class="nm-two" id="nm-two" hidden>
           <figure>
-            <div class="nm-view"><canvas id="nm-c1" tabindex="0" role="img" aria-label="形そのものの凹凸。触れた所へ光が動く"></canvas><span class="nm-tag">本物の凹凸</span></div>
+            <div class="nm-view"><canvas id="nm-c1" tabindex="0" role="img" aria-label="形そのものの凹凸。触れた所へ光が動く。ホイールで拡大、右ボタンのドラッグで回す"></canvas><span class="nm-tag">本物の凹凸</span></div>
             <figcaption class="nm-cap static"><span>三角形 約 52 万</span><span>影あり</span></figcaption>
           </figure>
           <figure>
-            <div class="nm-view"><canvas id="nm-c2" tabindex="0" role="img" aria-label="法線マップを貼った平らな板。触れた所へ光が動く"></canvas><span class="nm-tag">法線マップ</span></div>
+            <div class="nm-view"><canvas id="nm-c2" tabindex="0" role="img" aria-label="法線マップを貼った平らな板。触れた所へ光が動く。ホイールで拡大、右ボタンのドラッグで回す"></canvas><span class="nm-tag">法線マップ</span></div>
             <figcaption class="nm-cap static"><span>三角形 2・画像 1 枚</span><span>影なし</span></figcaption>
           </figure>
         </div>
+        <button type="button" class="nm-home" id="nm-home" aria-label="視点を戻す" title="視点を戻す"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 9.5L10 3.5l7 6M5.5 8v8.5h9V8"/></svg></button>
+        <FsButton id="nm-fs" />
         <Busy id="nm-busy" text="準備中…" center />
         <p class="nm-msg" id="nm-msg" hidden>このブラウザでは WebGL2 が使えないため、板を描けません。</p>
       </div>
