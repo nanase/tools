@@ -44,6 +44,20 @@ import {
 
 export type Art = (t: number) => string;
 
+/**
+ * テクスチャのフィルタの図柄の道路: 地平線の y・図柄の画素の一辺・奥行きの定数 k（y − y0 = k / z）・横の倍率 s（x = 60 + s·x / z）・
+ * 走る速さ [m/s]・コマ数 [/s]・左車線の中心 [m]（道の中心から）
+ */
+const TF = { y0: 14, px: 2, k: 80, s: 25, v: 20, fps: 12, lane: -1.75 };
+/** 道路の模様: 0 なし、1 白（線と縁石の白）、2 赤（縁石）。中央の破線は 8 m 引いて 12 m 空ける（ページの道路と同じ） */
+function tfRoad(x: number, z: number): 0 | 1 | 2 {
+  const ax = Math.abs(x);
+  if (ax < 0.22) return mod(z, 20) < 8 ? 1 : 0;
+  if (ax > 3.25 && ax < 3.6) return 1;
+  if (ax > 3.7 && ax < 4.4) return Math.floor(z / 2.5) % 2 ? 1 : 2;
+  return 0;
+}
+
 /** ソートの図柄のコマ: 配列・比べている位置・交換したか */
 const SO_FRAMES: { a: readonly number[]; i: number; sw: boolean }[] = [];
 function soFrames(): void {
@@ -3484,6 +3498,52 @@ export const ART: Record<string, Art> = {
       }
     return `${s}<circle class="fs" cx="${r1(lx)}" cy="${r1(ly)}" r="4.2"/><circle class="fa" cx="${r1(lx)}" cy="${r1(ly)}" r="2.4"/>`;
   },
+  /* テクスチャのフィルタ: 左車線から前を見た道路を、図柄の画素ごとに最近傍で読む。両側に木、遠くに山。
+     手前へ流れると、遠くの破線と縁石は読む所が飛び飛びに変わってちらつく。1 秒に 12 コマ、3 秒で 60 m（破線 3 本分） */
+  tf(t) {
+    const { y0, px, k, s, v, fps, lane } = TF,
+      go = (Math.floor(t * fps) / fps) * v,
+      crisp = ' shape-rendering="crispEdges"',
+      d = ['', ''];
+    for (let j = 0; j < (44 - y0) / px; j++) {
+      const y = y0 + j * px,
+        z = k / (y + px / 2 - y0);
+      let run = -1,
+        cur = 0;
+      for (let i = 0; i <= 56; i++) {
+        const c = i < 56 ? tfRoad(((4 + (i + 0.5) * px - 60) * z) / s + lane, z + go) : 0;
+        if (c !== cur) {
+          if (cur) d[cur - 1] += `M${4 + run * px} ${y}h${(i - run) * px}v${px}h-${(i - run) * px}Z`;
+          run = i;
+          cur = c;
+        }
+      }
+    }
+    /* 木: 道の両側 6.5 m に 12 m ごと。目の高さ 1.2 m から見た大きさで、とがった輪郭と幹 */
+    let crown = '',
+      trunk = '';
+    /* 遠さの順に並べる（1 周後に同じ木が同じ順で描かれるように） */
+    const zs = Array.from({ length: 6 }, (_, n) => 9 + mod(n * 12 - go, 72)).sort((a, b) => a - b);
+    for (const z of zs) {
+      for (const side of [-1, 1]) {
+        const X = 60 + (s * (side * 6.5 - lane)) / z,
+          yb = y0 + k / z,
+          h = (k / 1.2) * (1.6 / z),
+          w = (s * 1.6) / z;
+        if (X < 4 - w || X > 116 + w || yb - h < 2) continue;
+        crown += `M${r1(X - w)} ${r1(yb - h * 0.25)}L${r1(X)} ${r1(yb - h)}L${r1(X + w)} ${r1(yb - h * 0.25)}Z`;
+        trunk += `M${r1(X)} ${r1(yb - h * 0.25)}V${r1(yb)}`;
+      }
+    }
+    return (
+      P('fc', d[0], crisp) +
+      P('fr', d[1], crisp) +
+      P('c t', `M4 ${y0}H116`) +
+      P('c t', 'M4 14L16 10L28 12.5L44 8.5L60 12L78 9L94 11.5L116 9') +
+      P('s3', crown) +
+      P('c', trunk)
+    );
+  },
 };
 
 /**
@@ -3577,6 +3637,7 @@ export const LOOP: Record<string, number> = {
   prl: TAU / 1.4,
   wb: 3.6,
   nm: 4,
+  tf: 3,
 };
 
 /** 止まっているときの図柄（ビルド時に HTML へ出す） */

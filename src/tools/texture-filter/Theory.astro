@@ -1,0 +1,82 @@
+---
+// 動作原理と式
+const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
+const sub = (s: string, i: string) => `<msub><mi>${s}</mi><mi>${i}</mi></msub>`;
+const par = (x: string) => `<mo stretchy="false">(</mo>${x}<mo stretchy="false">)</mo>`;
+const d = (a: string, b: string) =>
+  `<mfrac><mrow><mo>∂</mo><mi>${a}</mi></mrow><mrow><mo>∂</mo><mi>${b}</mi></mrow></mfrac>`;
+const len = (b: string) =>
+  `<msqrt><msup>${par(d('u', b))}<mn>2</mn></msup><mo>+</mo><msup>${par(d('v', b))}<mn>2</mn></msup></msqrt>`;
+const lam = '<mi>λ</mi>';
+const fl = (x: string) => `<mo>⌊</mo>${x}<mo>⌋</mo>`;
+---
+<h3>1 画素が覆う範囲と詳細度</h3>
+<div class="eqs">
+  <math display="block" set:html={`<mi>ρ</mi><mo>=</mo><mi>max</mi>${par(`${len('x')}<mo>,</mo>${len('y')}`)}`} />
+  <math display="block" set:html={`${lam}<mo>=</mo>${sub('log', '2')}<mi>ρ</mi>`} />
+</div>
+<ul class="tl">
+  <li><math><mi>u</mi><mo>,</mo><mi>v</mi></math> はテクスチャの画素の単位の座標、<math><mi>x</mi><mo>,</mo><mi>y</mi></math> は画面の画素。<math><mi>ρ</mi></math> は画面の 1 画素がテクスチャの何画素ぶんを覆うか<Fragment set:html={rf(2)} /></li>
+  <li>遠い道ほど <math><mi>ρ</mi></math> が大きい。1 画素が多くの画素を覆うのに 1 点だけ読むと、読む点が動くたびに色が飛び、ちらつきとモアレになる</li>
+  <li>詳細度 <math set:html={lam} /> は使う段の番号。0 が元の絵で、1 増えるごとに絵の一辺が半分になる</li>
+</ul>
+
+<h3>ミップマップ</h3>
+<div class="eqs">
+  <math display="block" set:html={`<mn>1</mn><mo>+</mo><mfrac><mn>1</mn><mn>4</mn></mfrac><mo>+</mo><mfrac><mn>1</mn><mn>16</mn></mfrac><mo>+</mo><mo>⋯</mo><mo>=</mo><mfrac><mn>4</mn><mn>3</mn></mfrac><mo>≈</mo><mn>1.33</mn>`} />
+</div>
+<ul class="tl">
+  <li>元の絵の 2 × 2 画素を平均して一辺が半分の絵を作り、1 × 1 画素までくり返す<Fragment set:html={rf(1)} /></li>
+  <li>段 <math><mi>l</mi></math> の 1 画素は元の絵の <math><msup><mn>2</mn><mi>l</mi></msup><mo>×</mo><msup><mn>2</mn><mi>l</mi></msup></math> 画素の平均。遠い所でその段を読めば、1 点で覆う範囲の平均の色になる</li>
+  <li>すべての段を合わせても、メモリは元の絵の 4/3 倍で済む</li>
+</ul>
+
+<h3>フィルタ</h3>
+<div class="eqs">
+  <math display="block" set:html={`<mi>c</mi><mo>=</mo>${par('<mn>1</mn><mo>−</mo><mi>α</mi>')}${par('<mn>1</mn><mo>−</mo><mi>β</mi>')}${sub('c', '00')}<mo>+</mo><mi>α</mi>${par('<mn>1</mn><mo>−</mo><mi>β</mi>')}${sub('c', '10')}<mo>+</mo>${par('<mn>1</mn><mo>−</mo><mi>α</mi>')}<mi>β</mi>${sub('c', '01')}<mo>+</mo><mi>α</mi><mi>β</mi>${sub('c', '11')}`} />
+  <math display="block" set:html={`<mi>c</mi><mo>=</mo>${par('<mn>1</mn><mo>−</mo><mi>f</mi>')}${sub('c', 'l')}<mo>+</mo><mi>f</mi><msub><mi>c</mi><mrow><mi>l</mi><mo>+</mo><mn>1</mn></mrow></msub><mo>,</mo><mspace width="0.6em"/><mi>l</mi><mo>=</mo>${fl(lam)}<mo>,</mo><mspace width="0.4em"/><mi>f</mi><mo>=</mo>${lam}<mo>−</mo><mi>l</mi>`} />
+</div>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th>フィルタ</th><th>読む画素</th><th>色の決め方</th></tr></thead>
+  <tbody>
+    <tr><th>最近傍</th><td>1</td><td>点に最も近い 1 画素の色</td></tr>
+    <tr><th>バイリニア</th><td>4</td><td>周りの 2 × 2 画素を距離の割合 <math><mi>α</mi><mo>,</mo><mi>β</mi></math> で混ぜる（上の式）</td></tr>
+    <tr><th>トライリニア</th><td>8</td><td>段 <math><mi>l</mi></math> と <math><mi>l</mi><mo>+</mo><mn>1</mn></math> をバイリニアで読み、<math set:html={lam} /> の小数部 <math><mi>f</mi></math> で混ぜる（下の式）</td></tr>
+    <tr><th>異方性</th><td>8 × <math><mi>N</mi></math></td><td>細長い範囲を長い辺の向きに <math><mi>N</mi></math> 点に分け、それぞれをトライリニアで読んで平均する</td></tr>
+  </tbody>
+</table></div>
+<ul class="tl">
+  <li>読む画素と混ぜ方の違いが、ぼけとちらつきの兼ね合いを決める<Fragment set:html={rf(4)} /></li>
+  <li>ミップマップを使う最近傍とバイリニアは、<math set:html={lam} /> を丸めた 1 段だけを読む。段の境目で模様の細かさが急に変わり、帯の筋が見える</li>
+  <li>トライリニアは隣の 2 段を混ぜるので、境目の筋が消える</li>
+</ul>
+
+<h3>異方性</h3>
+<div class="eqs">
+  <math display="block" set:html={`<mi>N</mi><mo>=</mo><mi>min</mi>${par(`<mo>⌈</mo><mfrac>${sub('P', 'max')}${sub('P', 'min')}</mfrac><mo>⌉</mo><mo>,</mo><mspace width="0.3em"/><mtext>倍率</mtext>`)}`} />
+  <math display="block" set:html={`${lam}<mo>=</mo>${sub('log', '2')}<mfrac>${sub('P', 'max')}<mi>N</mi></mfrac>`} />
+</div>
+<ul class="tl">
+  <li><math set:html={sub('P', 'max')} />・<math set:html={sub('P', 'min')} /> は 1 画素が覆う範囲の長い辺と短い辺（テクスチャの画素）<Fragment set:html={rf(3)} /></li>
+  <li>浅く見下ろす道では範囲が奥へ細長い。トライリニアは長い辺に合わせた段を読むので、横の向きまでぼける</li>
+  <li>異方性は範囲を <math><mi>N</mi></math> 点に分け、1 点が覆う長さに合わせた細かい段を読む。倍率は <math><mi>N</mi></math> の上限</li>
+</ul>
+
+<h3>このツールで決めたこと</h3>
+<ul class="tl">
+  <li>詳細度と異方性の分け方は GPU に任せず、シェーダで上の式どおりに計算する。どの GPU でも同じ見え方にするため。段の中のバイリニアだけを GPU に任せる</li>
+  <li>異方性の <math><mi>N</mi></math> 点は、画素の中心を通る長い辺の向きに等間隔に並べる</li>
+  <li>道路のテクスチャは 256 × 256 画素で、横 16 m・縦 20 m を覆う。段は 256 から 1 までの 9 段。木は 64 × 64 画素で 7 段</li>
+  <li>2 × 2 画素の平均は sRGB の値のまま取る。木の絵は透明な所の色が混ざらないよう、不透明度で重み付けして平均する</li>
+  <li>映像は CSS の 1 画素を 1 画素として描く。端末の画素密度に依らず、同じ粗さで見える</li>
+  <li>カメラはバイクに乗っている人の目で、左車線の中心、高さ 1.2 m。縦の画角は 44°。道は前方 <math><mi>d</mi></math> で <math><mn>0.5</mn><mi>κ</mi><msup><mi>d</mi><mn>2</mn></msup></math> だけ横へずらして曲げる（<math><mi>κ</mi></math> はいまの曲率）</li>
+  <li>速さは最高 200 km/h。音はエンジンのページのバイク（CT125）の音で、映像の速さを 200/85 で割ったバイクの速さから、ギアと回転数を決める</li>
+</ul>
+
+<h3>出典</h3>
+<ol class="refs">
+  <li id="thy-r1"><span class="rf-for">ミップマップ</span><span class="rf-src">L. Williams, “Pyramidal parametrics,” <i>Computer Graphics (Proc. SIGGRAPH ’83)</i>, vol. 17, no. 3, pp. 1–11, 1983</span></li>
+  <li id="thy-r2"><span class="rf-for">詳細度と縮小のフィルタ</span><span class="rf-src">Khronos Group, <i>OpenGL ES Version 3.0.6</i>, sec. 3.8.10 “Texture Minification,” 2019</span></li>
+  <li id="thy-r3"><span class="rf-for">異方性フィルタ</span><span class="rf-src">Khronos Group, <i>EXT_texture_filter_anisotropic</i>, OpenGL Registry</span></li>
+  <li id="thy-r4"><span class="rf-for">テクスチャマッピングとフィルタの概観</span><span class="rf-src">P. S. Heckbert, “Survey of texture mapping,” <i>IEEE Computer Graphics and Applications</i>, vol. 6, no. 11, pp. 56–67, 1986</span></li>
+</ol>

@@ -510,7 +510,7 @@ export const TOOLS: Tool[] = [
     t: '画像の拡大縮小',
     d: '拡大と縮小の結果を 11 の手法で見比べます。',
     ic: 'rz',
-    r: ['image-convolution', 'demosaic', 'sampling-theorem', 'fir'],
+    r: ['image-convolution', 'demosaic', 'sampling-theorem', 'texture-filter'],
     k: 'image resize resizing scaling rescale 画像 拡大 縮小 リサイズ リサンプリング resampling 解像度 補間 interpolation 最近傍 nearest neighbor 平均画素法 box area バイリニア bilinear バイキュービック bicubic cubic B スプライン b-spline mitchell netravali catmull-rom lanczos ランチョス sinc カーネル kernel ドット絵 ピクセルアート pixel art scale2x scale3x epx eagle ジャギー jaggies ぼけ blur リンギング ringing モアレ moire エイリアシング aliasing アンチエイリアス anti-aliasing ナイキスト nyquist 折り返し ガンマ gamma リニア linear srgb psnr',
   },
   {
@@ -557,7 +557,7 @@ export const TOOLS: Tool[] = [
     t: 'シェーディング',
     d: '同じ光と材質で反射モデルを並べて見比べます。',
     ic: 'sh',
-    r: ['raytracing', 'normal-map', 'moon', 'white-balance'],
+    r: ['raytracing', 'normal-map', 'texture-filter', 'white-balance'],
     k: 'shading シェーディング brdf 反射モデル lambert ランバート phong フォン blinn ブリン cook-torrance クック トランス ggx trowbridge-reitz マイクロファセット microfacet pbr 物理ベース physically based レンダリング rendering ローブ lobe ハイライト specular 鏡面 拡散 diffuse フレネル fresnel schlick smith 遮蔽 粗さ roughness 金属 metal メタリック metallic ファーネステスト ホワイトファーネステスト white furnace test 多重散乱 kulla conty グーロー gouraud フラット flat 補間 cg コンピュータグラフィックス',
   },
   {
@@ -568,6 +568,16 @@ export const TOOLS: Tool[] = [
     ic: 'nm',
     r: ['shading', 'raytracing', 'image-convolution', 'impact'],
     k: 'normal map normal mapping 法線マップ ノーマルマップ 法線 normal バンプマップ バンプマッピング bump map bump mapping 高さマップ ハイトマップ height map heightmap 凹凸 テクスチャ texture 接空間 タンジェントスペース tangent space tbn 接線 従法線 tangent bitangent binormal mikktspace opengl directx 緑 green 視差マッピング parallax mapping parallax occlusion ディスプレイスメント displacement レイマーチング ray marching 影 shadow ランバート lambert blinn-phong 点光源 光 レンガ タイル 石畳 うろこ 木目 織物 波板 縞鋼板 ローレット 鋲 くぼみ 回路基板 迷路 岩肌 クレーター 波紋 画像 写真 浮き彫り レリーフ emboss エンボス 素材 マテリアル material ベースカラー base color albedo アルベド ラフネス roughness 粗さ つや pbr cg コンピュータグラフィックス',
+  },
+
+  {
+    id: 'texture-filter',
+    c: 'CG',
+    t: 'テクスチャのフィルタ',
+    d: '遠くの道路の白線がちらつく理由とフィルタの効き目を見ます。',
+    ic: 'tf',
+    r: ['image-resize', 'shading', 'sampling-theorem', 'raytracing'],
+    k: 'texture filter filtering テクスチャフィルタ テクスチャフィルタリング テクスチャマッピング texture mapping ミップマップ mipmap mip map mipmapping lod 詳細度 level of detail 最近傍 nearest point バイリニア bilinear トライリニア トリリニア trilinear 異方性 異方性フィルタ anisotropic af 16x 8x ちらつき モアレ moire エイリアシング aliasing ジャギー 縮小 minification 拡大 magnification ピラミッド pyramid ゲーム 画質設定 レースゲーム 道路 白線 運転 アクセル ブレーキ エンジン音 gpu シェーダ shader webgl cg コンピュータグラフィックス',
   },
 
   {

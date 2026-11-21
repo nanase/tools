@@ -1,0 +1,105 @@
+---
+import Busy from '../components/Busy.astro';
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import FsButton from '../components/FsButton.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../styles/how.css';
+import '../tools/texture-filter/style.css';
+import { PITCH, VOL } from '../tools/texture-filter/params';
+import { STEPS } from '../tools/texture-filter/steps';
+import Theory from '../tools/texture-filter/Theory.astro';
+
+const name = 'テクスチャのフィルタ';
+const FILTERS = [
+  ['0', '最近傍'],
+  ['1', 'バイリニア'],
+  ['2', 'トライリニア'],
+  ['3', '異方性'],
+] as const;
+const ANISO = [2, 4, 8, 16].map((a) => [String(a), `${a}x`] as const);
+/** 左右の設定。初めは左がトライリニア、右が異方性 */
+const SETS = [
+  { i: 0, h: '左', f: '2' },
+  { i: 1, h: '右', f: '3' },
+];
+const longest = STEPS.reduce((a, s) => (s[2].length > a.length ? s[2] : a), '');
+---
+<SiteLayout title={name} tool={{ id: 'texture-filter', name }}>
+  <PageTitle title={name}>遠くの道路の白線がちらつく理由とフィルタの効き目を見ます。遠い所ほど小さく縮めた絵から色を読むのがミップマップです。</PageTitle>
+
+  <div class="tgrid" id="tf" data-mode="one">
+    <Panel hid="hd-fl" title="映像" class="a-fl" fixed>
+      <div slot="aux" class="tf-aux" id="tf-aux">
+        <div class="seg" id="tf-mode" role="group" aria-label="表示">
+          <button type="button" data-v="one" aria-pressed="true">単独</button><button type="button" data-v="cmp" aria-pressed="false">比較</button>
+        </div>
+      </div>
+      <div class="tf-stage" id="tf-stage">
+        <p class="tf-cap hh" id="tf-cap" data-ph={longest}>{STEPS[0][2]}</p>
+        <div class="tf-view" id="tf-view">
+          <canvas id="tf-cv" tabindex="0" role="img" aria-label="左車線を走る道路の映像。↑ でアクセル、↓ でブレーキ"></canvas>
+          <span class="tf-tag" id="tf-tl" hidden></span><span class="tf-tag r" id="tf-tr" hidden></span>
+          <span class="tf-spd" aria-live="off"><b class="hw" id="tf-spd" data-ph="000">0</b><small>km/h</small></span>
+          <button type="button" class="tf-pedal" id="tf-brk" aria-pressed="false" title="ブレーキ（↓）">ブレーキ<small>↓</small></button>
+          <button type="button" class="tf-pedal r" id="tf-acc" aria-pressed="false" title="アクセル（↑）">アクセル<small>↑</small></button>
+          <div class="tf-pyr" id="tf-pyr" role="group" aria-label="縮めた絵の段" hidden></div>
+          <div class="tf-chips" id="tf-chips" aria-label="段の色" hidden></div>
+          <p class="tf-msg" id="tf-msg" hidden></p>
+          <Busy id="tf-busy" text="準備中…" center />
+          <FsButton id="tf-fs" />
+        </div>
+        <div class="how-pl tf-steps" id="tf-steps" role="group" aria-label="工程">
+          {STEPS.map(([h, s], i) => (
+            <button type="button" class="how-c" data-i={i} aria-pressed={i === 0 ? 'true' : 'false'}><span class="how-h"><b class:list={['how-n', { 'tf-n0': i === 0 }]}>{i === 0 ? '▶' : i}</b><span>{h}</span></span><small>{s}</small></button>
+          ))}
+        </div>
+      </div>
+    </Panel>
+
+    <Panel hid="hd-set" title="設定" class="a-set">
+      <div class="tf-sets" id="tf-sets">
+        {SETS.map((s) => (
+          <div class="tf-set" id={`tf-s${s.i}`} hidden={s.i === 1}>
+            <h3 class="tf-sh">{s.h}</h3>
+            <div class="ptab">
+              <ChoiceRow k={`f${s.i}`} name="テクスチャフィルタ" sub="1 画素の色を決めるときに読むテクスチャの画素と、その混ぜ方" layout="chips" value={s.f} choices={FILTERS} />
+              <ChoiceRow k={`m${s.i}`} name="ミップマップ" sub="半分ずつ縮めた絵の組。遠い所では小さな絵を読む" value="1" choices={[['0', 'なし'], ['1', 'あり']]} />
+              <ChoiceRow k={`a${s.i}`} name="異方性の倍率" sub="斜めに見た所の細長い範囲を分けて読む数の上限" value="16" choices={ANISO} />
+            </div>
+          </div>
+        ))}
+      </div>
+      <div class="ptab">
+        <ChoiceRow k="tree" name="木" sub="道の両側に立てる木。木の絵にも同じフィルタを使う" value="1" choices={[['1', 'あり'], ['0', 'なし']]} />
+        <ParamRow d={PITCH} />
+      </div>
+    </Panel>
+
+    <Panel hid="hd-out" title="計算結果" class="a-out">
+      <dl class="metrics c3">
+        <div class="m m-main"><dt>1 画素で読むテクスチャの画素</dt><dd><span id="o-r">8</span><span class="m-sub hh" id="o-rs" data-ph="左 / 右">&nbsp;</span></dd></div>
+        <div class="m m-wide"><dt>使うメモリ</dt><dd><span id="o-mem">1.33</span><span class="u">倍</span><span class="m-sub">ミップマップなしとの比</span></dd></div>
+      </dl>
+    </Panel>
+
+    <Panel hid="hd-snd" title="音" class="a-snd">
+      <div slot="aux" class="seg" id="tf-sndw"><button type="button" id="tf-snd" aria-pressed="false"><span class="led" id="tf-sndL" aria-hidden="true"></span> <span id="tf-sndT">再生</span></button></div>
+      <div class="ptab"><ParamRow d={VOL} /></div>
+      <p class="msg" id="tf-sndmsg" aria-live="polite"></p>
+    </Panel>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools current="texture-filter" />
+  <script>
+    import '../tools/texture-filter/client';
+  </script>
+</SiteLayout>
