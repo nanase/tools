@@ -1,0 +1,84 @@
+/* テクスチャのフィルタのページ。映像は暗い地の図で、上に重ねる部品もテーマに依らない暗い地にする */
+@media (min-width:900px){
+  #tf{grid-template-columns:minmax(0,3fr) minmax(0,2fr);align-items:start}
+  #tf>*{grid-column:1/-1}
+  #tf>.a-set{grid-column:1;grid-row:2/span 2}
+  #tf>.a-out{grid-column:2;grid-row:2}
+  #tf>.a-snd{grid-column:2;grid-row:3}
+}
+/* 広い画面では映像を左に、設定・計算結果・音を右の列に置き、映像を見ながら設定を変えられるようにする */
+@media (min-width:1100px){
+  #tf{grid-template-columns:minmax(0,2fr) minmax(0,1fr)}
+  #tf>.a-fl{grid-column:1;grid-row:1/span 3}
+  #tf>.a-set{grid-column:2;grid-row:1}
+  #tf>.a-out{grid-column:2;grid-row:2}
+  #tf>.a-snd{grid-column:2;grid-row:3}
+}
+.tf-aux{display:flex;gap:6px;align-items:center}
+
+.tf-cap{margin:0 2px 6px;font-size:14px;font-weight:700;line-height:1.5}
+.tf-view{position:relative;aspect-ratio:16/9;border-radius:var(--r);overflow:hidden;background:#0c0e10;user-select:none;-webkit-user-select:none}
+@media (max-width:560px){.tf-view{aspect-ratio:4/3}}
+.tf-view canvas{display:block}
+#tf-cv{width:100%;height:100%;image-rendering:pixelated;touch-action:pan-y;outline:none}
+.tf-view.split #tf-cv{cursor:ew-resize}
+#tf-cv:focus-visible{box-shadow:inset 0 0 0 2px var(--focus)}
+.tf-tag{position:absolute;left:8px;top:8px;padding:2px 7px;border-radius:3px;background:rgb(0 0 0 / .72);color:#f2f2ee;font:500 13px/1.5 var(--mono);pointer-events:none;white-space:nowrap}
+.tf-tag.r{left:auto;right:48px}
+.tf-tag[hidden],.tf-pyr[hidden],.tf-chips[hidden],.tf-msg[hidden]{display:none}
+.tf-msg{position:absolute;inset:0;display:grid;place-items:center;margin:0;padding:16px;color:#e6e8e4;font-size:14px;text-align:center}
+
+/* 縮めた絵の組: 映像の左上（空の上）に重ねる。下の隅はアクセルとブレーキ */
+.tf-pyr{--pk:.22;position:absolute;left:8px;top:8px;display:flex;align-items:flex-end;gap:4px;padding:5px;border-radius:4px;background:rgb(0 0 0 / .66)}
+@media (max-width:560px){.tf-pyr{--pk:.12;gap:2px;padding:4px}}
+.tf-pyr button{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:24px;padding:3px;border:1px solid #555;border-radius:3px;background:none;color:#e6e8e4;font:500 11px/1.2 var(--mono);cursor:pointer}
+@media (max-width:560px){.tf-pyr button{min-width:20px;padding:2px;font-size:10px}}
+.tf-pyr button:hover{border-color:#888}
+.tf-pyr button[aria-pressed="true"]{border-color:#fff;box-shadow:inset 0 0 0 1px #fff}
+.tf-pyr canvas{width:max(2px,calc(var(--s) * var(--pk) * 1px));height:max(2px,calc(var(--s) * var(--pk) * 1px));image-rendering:pixelated}
+
+/* 段の色の見本 */
+.tf-chips{position:absolute;left:8px;right:48px;top:8px;display:flex;gap:2px;font:500 11px/1.5 var(--mono);pointer-events:none}
+.tf-chips span{flex:1;border-radius:2px;color:#111;text-align:center}
+
+/* 速さ（下の中央）・アクセルとブレーキ（下の隅） */
+.tf-spd{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);padding:1px 10px;border-radius:6px;background:rgb(0 0 0 / .6);color:#f4f4ee;font:700 20px/1.35 var(--mono);white-space:nowrap;pointer-events:none}
+.tf-spd small{margin-left:4px;font-size:12px;font-weight:500;opacity:.8}
+.tf-pedal{position:absolute;bottom:8px;left:8px;display:grid;place-content:center;gap:2px;width:72px;height:72px;padding:0;border:2px solid rgb(255 255 255 / .7);border-radius:12px;background:rgb(0 0 0 / .45);color:#fff;font:700 13px/1.2 var(--sans);text-align:center;cursor:pointer;touch-action:none;user-select:none;-webkit-user-select:none}
+.tf-pedal.r{left:auto;right:8px}
+.tf-pedal small{font:500 11px/1 var(--mono);opacity:.8}
+.tf-pedal[aria-pressed="true"]{background:rgb(255 255 255 / .88);color:#111}
+.tf-pedal:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+@media (max-width:560px){.tf-pedal{width:60px;height:60px;font-size:12px}}
+
+/* 工程のボタン。初めの「映像」は工程ではないので番号の代わりに ▶ を白抜きで */
+.tf-steps{margin:8px 0 0}
+.tf-steps .how-c{gap:2px}
+.tf-n0{background:none;box-shadow:inset 0 0 0 1.5px var(--ink);color:var(--ink);font-size:8px}
+
+/* 設定: 比較では左右 2 組 */
+.tf-sets{display:grid;grid-template-columns:minmax(0,1fr);gap:4px 16px}
+#tf[data-mode="cmp"] .tf-sets{grid-template-columns:repeat(auto-fit,minmax(min(100%,330px),1fr))}
+.tf-sh{margin:4px 0 0;padding-bottom:2px;border-bottom:1px solid var(--line);font-size:12px;font-weight:700}
+#tf[data-mode="one"] .tf-sh{display:none}
+.tf-set[hidden]{display:none}
+.a-set .tf-sets+.ptab{margin-top:6px}
+
+/* 音 */
+#tf-sndmsg:empty{display:none}
+
+/* 計算結果 */
+.a-out .m-sub{margin-top:2px;font:12px/1.5 var(--sans);color:var(--ink-3);letter-spacing:0}
+
+/* 全画面: 説明・映像・工程のボタンを縦に並べ、映像を残りの高さいっぱいに広げる。設定は浮かぶ枠（lib/fullscreen.ts） */
+.tf-stage.fs-on{display:flex;flex-direction:column;padding:8px 8px 4px;background:var(--bg)}
+.tf-stage.fs-on .tf-view{flex:1;min-height:0;aspect-ratio:auto}
+.tf-stage.fs-on .fs-pop .tf-aux{flex-wrap:wrap}
+/* 浮かぶ枠を全画面のボタンと右の札の下から始める */
+.tf-stage.fs-on .fs-pop{top:84px;max-height:calc(100% - 92px)}
+@media (max-width:559px),(max-aspect-ratio:4/5){.tf-stage.fs-on .fs-pop{top:auto}}
+/* 右の列と浮かぶ枠の幅でも、項目名（ミップマップ・異方性の倍率）を 1 行に収める。記号の列は使わないので詰める */
+.a-set .prow,.fs-pop .prow{--sw:0px}
+@container (min-width:330px){
+  .a-set .prow.segr,.fs-pop .prow.segr{grid-template-columns:var(--sw) minmax(6.4em,1fr) minmax(calc(var(--fw) + var(--uw) + 8px),max-content) 24px}
+}
