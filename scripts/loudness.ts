@@ -19,9 +19,10 @@ const TOL = 2;
 /**
  * ページを開いた人が最初にする操作と、測る秒数。click は押すボタンの CSS セレクタで、1 秒おきに順に押す。
  * play は止まっているときだけ押す再生ボタン。key は押したままにするキー（KeyboardEvent の code）。操作がなければ開いたまま測る。
+ * keyAt はキーを送る要素の CSS セレクタ（省けば body。図の中だけでキーを聞くページ）。
  * ear は耳で聴いて目標からずらした量 [LU]。低い音が主のページは LUFS が耳より小さめに出る
  */
-type Scene = { click?: string[]; play?: string; key?: string; ear?: number; dur: number };
+type Scene = { click?: string[]; play?: string; key?: string; keyAt?: string; ear?: number; dur: number };
 const SCENES: Record<string, Scene> = {};
 const put = (pages: string[], s: Scene) => {
   for (const p of pages) SCENES[p] = s;
@@ -44,6 +45,7 @@ put(['noise', 'doppler', 'reverb', 'temperament', 'bifurcation', 'biquad', 'fir'
 /* エンジンはアイドリングと全開で 20 dB ほど違うので、スロットル 50 % で測る */
 put(['engine'], { click: ['#runBtn'], key: 'Digit5', ear: 8, dur: 15 });
 put(['transmission'], { click: ['#tm-snd', '#tm-auto'], ear: 8, dur: 40 });
+put(['texture-filter'], { click: ['#tf-snd'], key: 'ArrowUp', keyAt: '#tf-cv', ear: 8, dur: 30 });
 put(['shepard-tone'], { click: ['#sht-play'], dur: 20 });
 put(['spatial-audio'], { click: ['#sa-play'], dur: 20 });
 put(['pcm', 'mp3', 'adpcm'], { click: ['#ls-pp'], dur: 15 });
@@ -226,7 +228,8 @@ for (const p of pages) {
     if (sc.key) {
       /* 回転が上がりきるまで待ってから測る */
       await sleep(1000);
-      await tab.run(`document.body.dispatchEvent(new KeyboardEvent('keydown', { code: '${sc.key}', bubbles: true }))`);
+      const at = sc.keyAt ? `document.querySelector(${JSON.stringify(sc.keyAt)})` : 'document.body';
+      await tab.run(`${at}.dispatchEvent(new KeyboardEvent('keydown', { code: '${sc.key}', bubbles: true }))`);
       await sleep(3000);
     }
     await tab.run('window.__lu.reset()');
