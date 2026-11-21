@@ -13,10 +13,9 @@
 .nm-msg{position:absolute;inset:0;display:grid;place-items:center;margin:0;padding:16px;color:#d6d9dc;font-size:13.5px;text-align:center;pointer-events:none}
 @media (max-width:560px){.nm-two{grid-template-columns:minmax(0,1fr)}}
 
-/* しくみの図（正方形） */
-/* 1 行に 3 列まで。狭い画面では 1 列 */
-#nm-how{grid-template-columns:repeat(auto-fill,minmax(max(220px,calc((100% - 24px) / 3)),1fr))}
-#nm-how canvas{display:block;width:100%;max-width:340px;aspect-ratio:1;margin:0 auto;border-radius:3px;background:#08090a}
+/* しくみの図（ほかのページと同じ大きさで、図を左に置く） */
+#nm-how{--how-min:340px}
+#nm-how canvas{display:block;width:172px;height:104px;border-radius:2px;background:var(--screen)}
 
 /* 広い画面では板を左に、設定を右の列に置く */
 @media (min-width:1000px){

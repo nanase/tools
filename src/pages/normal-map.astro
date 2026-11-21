@@ -70,7 +70,7 @@ const pats = PATS.map(([k, n]) => [k, n] as const);
     </Panel>
 
     <Panel hid="hd-how" title="しくみ" class="a-how">
-      <HowSteps id="nm-how" steps={STEPS.map((s) => ({ h: s.h, fig: `<canvas role="img" aria-label="${s.h}"></canvas>`, p: s.p }))} />
+      <HowSteps side id="nm-how" steps={STEPS.map((s) => ({ h: s.h, fig: `<canvas role="img" aria-label="${s.h}"></canvas>`, p: s.p }))} />
     </Panel>
 
     <Collapsible hid="hd-thy" title="動作原理と式">
