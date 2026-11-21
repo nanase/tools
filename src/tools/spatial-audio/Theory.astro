@@ -1,0 +1,114 @@
+---
+// 動作原理と式
+type Ref = { for: string; src: string };
+const REFS: readonly Ref[] = [
+  {
+    for: '頭の陰と耳介の反射のモデル（式と係数）',
+    src: 'C. P. Brown, R. O. Duda, A Structural Model for Binaural Sound Synthesis, IEEE Transactions on Speech and Audio Processing, Vol. 6, No. 5, pp. 476–488, 1998',
+  },
+  {
+    for: '頭を回り込む道のりの遅れ（Woodworth の式）',
+    src: 'R. S. Woodworth, Experimental Psychology, Henry Holt, 1938',
+  },
+  {
+    for: '低い音は時間差、高い音は大きさの差で向きを知る（二重説）',
+    src: 'Lord Rayleigh, On our perception of sound direction, Philosophical Magazine, Series 6, Vol. 13, No. 74, pp. 214–232, 1907',
+  },
+  {
+    for: '前後の取り違えと耳介の手がかり',
+    src: 'J. Blauert, Spatial Hearing: The Psychophysics of Human Sound Localization, Revised Edition, MIT Press, 1997',
+  },
+  {
+    for: '鏡像の音源による反射の計算',
+    src: 'J. B. Allen, D. A. Berkley, Image method for efficiently simulating small-room acoustics, The Journal of the Acoustical Society of America, Vol. 65, No. 4, pp. 943–950, 1979',
+  },
+  {
+    for: '遅延線のフィードバック網による残響',
+    src: 'J.-M. Jot, A. Chaigne, Digital Delay Networks for Designing Artificial Reverberators, 90th Convention of the Audio Engineering Society, Preprint 3030, 1991',
+  },
+  {
+    for: '空気の吸収（距離による高い音の減衰）',
+    src: 'ISO 9613-1:1993, Acoustics — Attenuation of sound during propagation outdoors — Part 1: Calculation of the absorption of sound by the atmosphere',
+  },
+  {
+    for: '障害物を回り込む音の減衰（フレネル数）',
+    src: 'Z. Maekawa, Noise reduction by screens, Applied Acoustics, Vol. 1, No. 3, pp. 157–173, 1968',
+  },
+];
+const Rf = (i: number) => `<a class="rf" href="#thy-r${i}">[${i}]</a>`;
+---
+<h3>音の向きの手がかり</h3>
+<p>左右の耳は頭の幅だけ離れています。横から来た音は、遠い側の耳へ遅れて届き、頭に遮られて小さくなります。低い音では時間差が、高い音では大きさの差が効きます <Fragment set:html={Rf(3)} />。</p>
+<p>時間差と大きさの差だけでは、前と後ろ、上と下の区別がつきません。同じ差になる向きが頭のまわりに円錐の形で並ぶためです。この区別には、耳介で跳ね返った音が作るスペクトルの谷が効きます <Fragment set:html={Rf(4)} />。</p>
+
+<h3>両耳間時間差</h3>
+<p>頭を半径 <math><mi>a</mi></math> の球とみなし、片方の耳の軸と音の来る向きのなす角を <math><mi>θ</mi></math> とします。見えている耳へはまっすぐ、陰になった耳へは頭の表面を回り込んで届くとして、耳ごとの遅れを決めます <Fragment set:html={Rf(2)} />。</p>
+<div class="eqs">
+  <math display="block"><mrow><mi>τ</mi><mo stretchy="false">(</mo><mi>θ</mi><mo stretchy="false">)</mo><mo>=</mo><mfrac><mi>a</mi><mi>c</mi></mfrac><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><mi>cos</mi><mi>θ</mi><mo stretchy="false">)</mo><mspace width="0.4em"/><mtext>（</mtext><mi>θ</mi><mo>&lt;</mo><mfrac><mi>π</mi><mn>2</mn></mfrac><mtext>）</mtext><mspace width="1.2em"/><mi>τ</mi><mo stretchy="false">(</mo><mi>θ</mi><mo stretchy="false">)</mo><mo>=</mo><mfrac><mi>a</mi><mi>c</mi></mfrac><mrow><mo>(</mo><mn>1</mn><mo>+</mo><mi>θ</mi><mo>−</mo><mfrac><mi>π</mi><mn>2</mn></mfrac><mo>)</mo></mrow><mspace width="0.4em"/><mtext>（</mtext><mi>θ</mi><mo>≥</mo><mfrac><mi>π</mi><mn>2</mn></mfrac><mtext>）</mtext></mrow></math>
+</div>
+<p>記号: <math><mi>c</mi></math> は音速（343 m/s）、<math><mi>a</mi></math> は 8.75 cm です。真横からの音で、左右の差は最大の約 0.66 ms になります。</p>
+
+<h3>頭の陰</h3>
+<p>頭の陰は 1 次のフィルタで近似します。音の来る側の耳では高い音が最大 6 dB 強まり、陰になった耳では弱まります <Fragment set:html={Rf(1)} />。</p>
+<div class="eqs">
+  <math display="block"><mrow><mi>H</mi><mo stretchy="false">(</mo><mi>ω</mi><mo>,</mo><mi>θ</mi><mo stretchy="false">)</mo><mo>=</mo><mfrac><mrow><mn>1</mn><mo>+</mo><mi>j</mi><mi>α</mi><mo stretchy="false">(</mo><mi>θ</mi><mo stretchy="false">)</mo><mfrac><mi>ω</mi><mrow><mn>2</mn><msub><mi>ω</mi><mn>0</mn></msub></mrow></mfrac></mrow><mrow><mn>1</mn><mo>+</mo><mi>j</mi><mfrac><mi>ω</mi><mrow><mn>2</mn><msub><mi>ω</mi><mn>0</mn></msub></mrow></mfrac></mrow></mfrac><mspace width="1.2em"/><msub><mi>ω</mi><mn>0</mn></msub><mo>=</mo><mfrac><mi>c</mi><mi>a</mi></mfrac></mrow></math>
+  <math display="block"><mrow><mi>α</mi><mo stretchy="false">(</mo><mi>θ</mi><mo stretchy="false">)</mo><mo>=</mo><mrow><mo>(</mo><mn>1</mn><mo>+</mo><mfrac><msub><mi>α</mi><mtext>min</mtext></msub><mn>2</mn></mfrac><mo>)</mo></mrow><mo>+</mo><mrow><mo>(</mo><mn>1</mn><mo>−</mo><mfrac><msub><mi>α</mi><mtext>min</mtext></msub><mn>2</mn></mfrac><mo>)</mo></mrow><mi>cos</mi><mrow><mo>(</mo><mfrac><mi>θ</mi><msub><mi>θ</mi><mtext>min</mtext></msub></mfrac><mn>180</mn><mo>°</mo><mo>)</mo></mrow><mspace width="1.2em"/><msub><mi>α</mi><mtext>min</mtext></msub><mo>=</mo><mn>0.1</mn><mo>,</mo><mspace width="0.3em"/><msub><mi>θ</mi><mtext>min</mtext></msub><mo>=</mo><mn>150</mn><mo>°</mo></mrow></math>
+</div>
+<p>双一次変換でディジタルのフィルタにします。計算結果の両耳間レベル差は、このフィルタの 4 kHz の振幅の左右の比です。</p>
+
+<h3>耳介の反射</h3>
+<p>耳介で跳ね返った 5 本の音を、遅れと強さの違う反射として足します。遅れは音の高さ（仰角 <math><mi>φ</mi></math>）で変わり、重なった音のスペクトルにできる谷の周波数が動きます <Fragment set:html={Rf(1)} />。</p>
+<div class="eqs">
+  <math display="block"><mrow><mi>h</mi><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mo>=</mo><mi>δ</mi><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mo>+</mo><munderover><mo>∑</mo><mrow><mi>k</mi><mo>=</mo><mn>1</mn></mrow><mn>5</mn></munderover><msub><mi>ρ</mi><mi>k</mi></msub><mi>δ</mi><mo stretchy="false">(</mo><mi>t</mi><mo>−</mo><msub><mi>τ</mi><mi>k</mi></msub><mo stretchy="false">)</mo><mspace width="1.2em"/><msub><mi>τ</mi><mi>k</mi></msub><mo>=</mo><msub><mi>A</mi><mi>k</mi></msub><mi>cos</mi><mfrac><msub><mi>θ</mi><mtext>az</mtext></msub><mn>2</mn></mfrac><mi>sin</mi><mo stretchy="false">(</mo><msub><mi>D</mi><mi>k</mi></msub><mo stretchy="false">(</mo><mn>90</mn><mo>°</mo><mo>−</mo><mi>φ</mi><mo stretchy="false">)</mo><mo stretchy="false">)</mo><mo>+</mo><msub><mi>B</mi><mi>k</mi></msub></mrow></math>
+</div>
+<p>記号: <math><msub><mi>θ</mi><mtext>az</mtext></msub></math> は方位で、<math><msub><mi>ρ</mi><mi>k</mi></msub></math>・<math><msub><mi>A</mi><mi>k</mi></msub></math>・<math><msub><mi>B</mi><mi>k</mi></msub></math>・<math><msub><mi>D</mi><mi>k</mi></msub></math> は文献の表の値です。<math><msub><mi>τ</mi><mi>k</mi></msub></math> の単位は 44.1 kHz の標本の数です。</p>
+
+<h3>距離</h3>
+<p>音源から広がる音は、距離 <math><mi>r</mi></math> に反比例して小さくなります（1 m で 1 倍、10 m で 1/10 の −20 dB）。遠い音ほど直接音が弱まり、どこでも同じ大きさの残響との比が下がるので、遠くから聞こえる感じが出ます。</p>
+<p>空気は高い音ほど強く吸収します。20 °C・湿度 50 % の吸収 <Fragment set:html={Rf(7)} /> を、1 次の低域通過 4 段で近似して距離ごとに掛けます。100 m 先では 4 kHz が約 3 dB、8 kHz が約 10 dB 弱まります。</p>
+
+<h3>反射と残響</h3>
+<p>平らな壁・床・天井で跳ね返った音は、壁の向こう側の鏡に映った位置（鏡像）から来る音と同じです <Fragment set:html={Rf(5)} />。壁に垂直な座標を <math><mi>w</mi></math> の位置で折り返します。</p>
+<div class="eqs">
+  <math display="block"><mrow><msup><mi>x</mi><mo>′</mo></msup><mo>=</mo><mn>2</mn><mi>w</mi><mo>−</mo><mi>x</mi><mspace width="1.2em"/><msub><mi>p</mi><mtext>反射</mtext></msub><mo>=</mo><mfrac><mi>R</mi><msup><mi>r</mi><mo>′</mo></msup></mfrac><mspace width="1.2em"/><msub><mi>t</mi><mtext>遅れ</mtext></msub><mo>=</mo><mfrac><mrow><msup><mi>r</mi><mo>′</mo></msup><mo>−</mo><mi>r</mi></mrow><mi>c</mi></mfrac></mrow></math>
+</div>
+<p>記号: <math><mi>R</mi></math> は面の反射率、<math><mi>r</mi></math> と <math><msup><mi>r</mi><mo>′</mo></msup></math> は聞き手から音源と鏡像までの距離です。鏡像ごとに向きを求め、直接音と同じく両耳間時間差と頭の陰を掛けます。そのため、反射音も別の向きから聞こえます。</p>
+<p>その後に密に続く残響は、8 本の遅延線を互いにつないだフィードバック網で作ります <Fragment set:html={Rf(6)} />。遅延線の長さを <math><msub><mi>m</mi><mi>i</mi></msub></math> 標本として、1 周ごとの減り方を残響時間 <math><msub><mi>T</mi><mn>60</mn></msub></math> に合わせます。左右の耳には別の遅延線の組み合わせを出し、響きが頭のまわりに広がるようにします。</p>
+<div class="eqs">
+  <math display="block"><mrow><msub><mi>g</mi><mi>i</mi></msub><mo>=</mo><msup><mn>10</mn><mrow><mo>−</mo><mn>3</mn><msub><mi>m</mi><mi>i</mi></msub><mo>/</mo><mo stretchy="false">(</mo><msub><mi>f</mi><mi>s</mi></msub><msub><mi>T</mi><mn>60</mn></msub><mo stretchy="false">)</mo></mrow></msup></mrow></math>
+</div>
+
+<h3>障害物</h3>
+<p>障害物は床に置いた箱です。音の道すじ（直接音と反射音の線分）が箱を通ると、音は箱の上か横を回り込みます。回り込む道のりの差 <math><mi>δ</mi></math> からフレネル数 <math><mi>N</mi></math> を求めると、<math><mi>N</mi></math> が大きい高い音ほど弱まります <Fragment set:html={Rf(8)} />。</p>
+<div class="eqs">
+  <math display="block"><mrow><mi>N</mi><mo>=</mo><mfrac><mrow><mn>2</mn><mi>δ</mi><mi>f</mi></mrow><mi>c</mi></mfrac><mspace width="1.2em"/><mi>Δ</mi><mi>L</mi><mo>≈</mo><mn>10</mn><msub><mi>log</mi><mn>10</mn></msub><mo stretchy="false">(</mo><mn>3</mn><mo>+</mo><mn>20</mn><mi>N</mi><mo stretchy="false">)</mo><mspace width="0.3em"/><mtext>dB</mtext></mrow></math>
+</div>
+<p>このツールでは、全体を 4.8 dB（<math><mi>N</mi><mo>=</mo><mn>0</mn></math> の値）下げ、<math><mi>N</mi><mo>=</mo><mn>1</mn></math> になる周波数 <math><mi>f</mi><mo>=</mo><mi>c</mi><mo>/</mo><mo stretchy="false">(</mo><mn>2</mn><mi>δ</mi><mo stretchy="false">)</mo></math> より上を 1 次の低域通過で弱めます。耳より高い箱の側面では、音が跳ね返ります。側面も壁と同じく鏡像の音源として扱い、当たる点が面の中にあるときだけ足します。</p>
+
+<h3>パンとモノラル</h3>
+<p>パンは左右の音量の比だけを変える方法で、時間差・頭の陰・耳介の反射を含みません。音は頭の中の左右の線の上に並んで聞こえ、前と後ろの区別もつきません。モノラルは両耳に同じ音を出します。</p>
+
+<h3>出典</h3>
+<ol class="refs">
+  {REFS.map((r, i) => (
+    <li id={`thy-r${i + 1}`}>
+      <span class="rf-for">{r.for}</span>
+      <span class="rf-src">{r.src}</span>
+    </li>
+  ))}
+</ol>
+
+<h3>このツールで決めたこと</h3>
+<ul class="tl">
+  <li>頭は球の近似で、実際の頭で測った頭部伝達関数は使っていない</li>
+  <li>耳介のモデルは前の半分の向きだけの式のため、後ろからの音は 2.5 kHz の 1 次の低域通過を最大 75 % 混ぜて曇らせる</li>
+  <li>場所ごとの寸法・反射率・残響時間・残響の量の既定は、それらしく聞こえるよう選んだ概数</li>
+  <li>反射は 1 回だけ（路地は向かい合う壁の 2 回も）で、木々は残響だけで表す</li>
+  <li>屋外の残響は、まわりの木・建物・地形からの散乱をまとめたもので、量は小さくしてある</li>
+  <li>床の反射率は壁の 0.85 倍。田んぼの地面は水面として高い音もよく返す</li>
+  <li>音源は耳と同じ高さに置き、耳は屋外では地面から 1.6 m、屋内では床から 1.2 m とする</li>
+  <li>録音は大きさをそろえたうえで、音ごとに 1 m 先の大きさを決めた（鐘 +18 dB・カエル +14 dB・朗読 0 dB など）</li>
+  <li>距離による減衰は 1 m より近くでは変えず、音源は聞き手から 1 m 以上離して置く</li>
+  <li>障害物を回り込む道は、箱の上を越える道と 4 つの角を回る道の短い方。高い音は最大 20 dB まで弱める</li>
+  <li>障害物の側面の反射率は 0.6 で、4 kHz より上を落とす。床の上の面での反射は扱わない</li>
+</ul>

@@ -2785,6 +2785,46 @@ export const ART: Record<string, Art> = {
     return P('b t', wave) + P('c t', tick) + P('a', st);
   },
   /*
+   * 立体音響: 左に上から見た頭（左耳 ch2・右耳 ch1）と周回する音源、右に左右の耳に届く音。
+   * 近い耳の音ほど早く大きい。1 周は 6 秒で、10 コマ/秒で動かす
+   */
+  sa(t) {
+    const q = Math.floor(t * 10) / 10,
+      th = (TAU * q) / 6 + 0.9,
+      cx = 24,
+      cy = 24,
+      R = 17,
+      hr = 7,
+      sx = cx + R * Math.sin(th),
+      sy = cy - R * Math.cos(th),
+      x = Math.sin(th);
+    let s =
+      `<circle class="c d t" cx="${cx}" cy="${cy}" r="${R}"/>` +
+      P(
+        'c',
+        `M${cx - hr * 0.32} ${r1(cy - hr * 0.92)}L${cx} ${r1(cy - hr * 1.38)}L${cx + hr * 0.32} ${r1(cy - hr * 0.92)}`,
+      ) +
+      `<circle class="c" cx="${cx}" cy="${cy}" r="${hr}"/>` +
+      `<circle class="fb" cx="${cx - hr - 1.4}" cy="${cy}" r="1.9"/><circle class="fa" cx="${cx + hr + 1.4}" cy="${cy}" r="1.9"/>` +
+      `<circle class="fc" cx="${r1(sx)}" cy="${r1(sy)}" r="3"/>`;
+    /* 耳に届く音: 遅れて始まり、減衰する振動 */
+    const wave = (y0: number, x0: number, amp: number): string => {
+      const pts: [number, number][] = [
+        [50, y0],
+        [x0, y0],
+      ];
+      for (let xx = x0; xx <= 116; xx += 0.6)
+        pts.push([xx, y0 - amp * Math.exp(-(xx - x0) / 16) * Math.sin((TAU * (xx - x0)) / 4)]);
+      return pl(pts);
+    };
+    s += P('c t', 'M50 24H116');
+    return (
+      s +
+      P('b', wave(13, 56 + 5 * (1 + x), 8 * (0.5 - 0.45 * x))) +
+      P('a', wave(35, 56 + 5 * (1 - x), 8 * (0.5 + 0.45 * x)))
+    );
+  },
+  /*
    * VVVF: 基本波とキャリアを比べて、出力のオン・オフを左から順に作る。止まっているときは 1 周期を描き終えた絵。
    * 図柄が小さいので倍率は 9 倍に固定し、速度で変えない。1 周は 4 秒で、36 コマで描く（12 コマ/秒）
    */
@@ -3542,6 +3582,7 @@ export const LOOP: Record<string, number> = {
   imp: 53 / 12,
   vv: 4,
   shp: 3,
+  sa: 6,
   mxd: MX.L,
   i2c: I2C.scl.length / I2C_QPS,
   spi: 6,

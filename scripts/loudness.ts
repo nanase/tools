@@ -45,6 +45,7 @@ put(['noise', 'doppler', 'reverb', 'temperament', 'bifurcation', 'biquad', 'fir'
 put(['engine'], { click: ['#runBtn'], key: 'Digit5', ear: 8, dur: 15 });
 put(['transmission'], { click: ['#tm-snd', '#tm-auto'], ear: 8, dur: 40 });
 put(['shepard-tone'], { click: ['#sht-play'], dur: 20 });
+put(['spatial-audio'], { click: ['#sa-play'], dur: 20 });
 put(['pcm', 'mp3', 'adpcm'], { click: ['#ls-pp'], dur: 15 });
 put(['wavelet-denoise'], { click: ['#ab-pp'], dur: 15 });
 put(['sampling-theorem'], { click: ['#smp-pp'], dur: 15 });
