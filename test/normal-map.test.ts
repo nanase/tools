@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { encodeNormal, heightMap, normalize, normalMap, PATS, type PatId } from '../src/tools/normal-map/heights';
+import { type Computed, encodeNormal, heightMap, normalize, normalMap, PATS } from '../src/tools/normal-map/heights';
+import { imagePattern, MATS, matAt, materialMap } from '../src/tools/normal-map/materials';
 import { EL, HS } from '../src/tools/normal-map/params';
 import { camera, fitCamera, LIGHT_Y, pickLight, project, type Vec3 } from '../src/tools/normal-map/render';
 import { STEPS } from '../src/tools/normal-map/steps';
 
 const R = 64;
-const ids = PATS.map(([k]) => k).filter((k): k is Exclude<PatId, 'text'> => k !== 'text');
+const ids = PATS.map(([k]) => k).filter((k): k is Computed => k !== 'text' && k !== 'image');
 
 describe('模様の高さ', () => {
   it('模様の id と名前は重ならない', () => {
@@ -132,5 +133,78 @@ describe('しくみ', () => {
       expect(s.h.includes('。'), s.h).toBe(false);
       expect(s.p.includes('。'), s.p).toBe(false);
     }
+  });
+});
+
+describe('色とつや', () => {
+  it('画像のほかのどの模様にも色とつやがあり、段は高さの順', () => {
+    for (const [id] of PATS) {
+      if (id === 'image') continue;
+      const m = MATS[id];
+      expect(m, id).toBeDefined();
+      for (let k = 1; k < m.stops.length; k++) expect(m.stops[k][0], id).toBeGreaterThanOrEqual(m.stops[k - 1][0]);
+      for (const [, c, r] of m.stops) {
+        for (const v of c) expect(v >= 0 && v <= 255, id).toBe(true);
+        expect(r >= 0 && r <= 1, id).toBe(true);
+      }
+    }
+  });
+
+  it('段の間は直線で混ぜ、端の外は端の値', () => {
+    const m = {
+      stops: [
+        [0, [0, 0, 0], 0],
+        [1, [200, 100, 50], 1],
+      ] as const,
+      vary: 0,
+    };
+    expect(matAt(m, 0.5)).toEqual([100, 50, 25, 0.5]);
+    expect(matAt(m, -1)).toEqual([0, 0, 0, 0]);
+    expect(matAt(m, 2)).toEqual([200, 100, 50, 1]);
+  });
+
+  it('色とつやの画像は RGBA で、A が粗さ', () => {
+    const h = heightMap('brick', R),
+      c = materialMap('brick', h, R);
+    expect(c).toHaveLength(R * R * 4);
+    /* 目地（低い所）はざらざら、レンガ（高い所）はそれより滑らか */
+    let lo = 0,
+      hi = 0,
+      nl = 0,
+      nh = 0;
+    for (let k = 0; k < R * R; k++)
+      if (h[k] < 0.1) {
+        lo += c[k * 4 + 3];
+        nl++;
+      } else if (h[k] > 0.9) {
+        hi += c[k * 4 + 3];
+        nh++;
+      }
+    expect(lo / nl).toBeGreaterThan(hi / nh);
+  });
+});
+
+describe('画像の模様', () => {
+  /* 左半分が白、右半分が黒の画像 */
+  const px = new Uint8Array(R * R * 4);
+  for (let j = 0; j < R; j++)
+    for (let i = 0; i < R; i++) {
+      const v = i < R / 2 ? 255 : 0;
+      px.set([v, v, v, 255], (j * R + i) * 4);
+    }
+
+  it('明るい所ほど高い。暗い所を高くすると逆になる', () => {
+    const a = imagePattern(px, false, R).h,
+      b = imagePattern(px, true, R).h;
+    expect(a[10 * R + 5]).toBeCloseTo(1, 6);
+    expect(a[10 * R + R - 5]).toBeCloseTo(0, 6);
+    expect(b[10 * R + 5]).toBeCloseTo(0, 6);
+    expect(b[10 * R + R - 5]).toBeCloseTo(1, 6);
+  });
+
+  it('色は画像の色をそのまま使う', () => {
+    const { col } = imagePattern(px, false, R);
+    expect([...col.slice(0, 3)]).toEqual([255, 255, 255]);
+    expect([...col.slice((R - 1) * 4, (R - 1) * 4 + 3)]).toEqual([0, 0, 0]);
   });
 });

@@ -567,7 +567,7 @@ export const TOOLS: Tool[] = [
     d: '平らな板に、光で動く凹凸の陰影を付けます。',
     ic: 'nm',
     r: ['shading', 'raytracing', 'image-convolution', 'impact'],
-    k: 'normal map normal mapping 法線マップ ノーマルマップ 法線 normal バンプマップ バンプマッピング bump map bump mapping 高さマップ ハイトマップ height map heightmap 凹凸 テクスチャ texture 接空間 タンジェントスペース tangent space tbn 接線 従法線 tangent bitangent binormal mikktspace opengl directx 緑 green 視差マッピング parallax mapping parallax occlusion ディスプレイスメント displacement レイマーチング ray marching 影 shadow ランバート lambert blinn-phong 点光源 光 レンガ タイル 石畳 うろこ 木目 織物 波板 縞鋼板 ローレット 鋲 くぼみ 回路基板 迷路 岩肌 クレーター 波紋 cg コンピュータグラフィックス',
+    k: 'normal map normal mapping 法線マップ ノーマルマップ 法線 normal バンプマップ バンプマッピング bump map bump mapping 高さマップ ハイトマップ height map heightmap 凹凸 テクスチャ texture 接空間 タンジェントスペース tangent space tbn 接線 従法線 tangent bitangent binormal mikktspace opengl directx 緑 green 視差マッピング parallax mapping parallax occlusion ディスプレイスメント displacement レイマーチング ray marching 影 shadow ランバート lambert blinn-phong 点光源 光 レンガ タイル 石畳 うろこ 木目 織物 波板 縞鋼板 ローレット 鋲 くぼみ 回路基板 迷路 岩肌 クレーター 波紋 画像 写真 浮き彫り レリーフ emboss エンボス 素材 マテリアル material ベースカラー base color albedo アルベド ラフネス roughness 粗さ つや pbr cg コンピュータグラフィックス',
   },
 
   {

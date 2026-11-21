@@ -50,9 +50,19 @@ const pats = PATS.map(([k, n]) => [k, n] as const);
     <Panel hid="hd-set" title="設定" class="a-set">
       <div class="ptab">
         <ChoiceRow k="pat" name="模様" layout="chips" value="brick" choices={pats} />
+        <div class="nm-imgrows" id="nm-imgrows" hidden>
+          <div class="prow segr" id="p-img">
+            <div class="c-sym" aria-hidden="true"></div>
+            <div class="c-name"><span class="pn" id="n-img">画像</span><p class="desc tip" role="tooltip" hidden>手元の画像の明るさを高さにする。画像は端末の外へ送らない</p></div>
+            <div class="c-val nm-open"><button type="button" class="nm-openb" id="nm-openb" aria-labelledby="n-img nm-openb">開く</button><span class="nm-imgname" id="nm-imgname">見本</span><input type="file" id="nm-file" accept="image/*" hidden></div>
+          </div>
+          <ChoiceRow k="inv" name="高い所" sub="画像のどちらを高くするか" value="light" choices={[['light', '明るい所'], ['dark', '暗い所']]} />
+        </div>
         <ParamRow d={EL} />
         <ParamRow d={HS} />
         <ChoiceRow k="nm" name="法線マップ" sub="なしでは平らな板の向きのまま光を計算する" value="1" choices={[['0', 'なし'], ['1', 'あり']]} />
+        <ChoiceRow k="col" name="色" sub="模様ごとの色の画像を重ねる。なしでは灰色" value="1" choices={[['0', 'なし'], ['1', 'あり']]} />
+        <ChoiceRow k="rgh" name="つや" sub="場所ごとの粗さの画像を重ねる。なしではどこも同じつや" value="1" choices={[['0', 'なし'], ['1', 'あり']]} />
       </div>
     </Panel>
 

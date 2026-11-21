@@ -120,6 +120,9 @@ export interface Frame {
   mode: number;
   /** 凹凸の高さの倍率 */
   hs: number;
+  /** 色とつやの画像を使うか */
+  col: boolean;
+  rgh: boolean;
   /** 背景（線形でなく画面の値） */
   bg: Vec3;
 }
@@ -130,6 +133,7 @@ export class PlateRenderer {
   private readonly u: Record<string, WebGLUniformLocation | null> = {};
   private readonly ht: WebGLTexture;
   private readonly nm: WebGLTexture;
+  private readonly col: WebGLTexture;
   /** シェーダの用意ができたら解決する */
   readonly ready: Promise<void>;
   /** 今送ってある模様 */
@@ -157,6 +161,7 @@ export class PlateRenderer {
     };
     this.ht = tex(0);
     this.nm = tex(1);
+    this.col = tex(2);
     this.ready = programReady(gl, this.prog).then(() => {
       gl.useProgram(this.prog);
       for (const n of [
@@ -172,18 +177,22 @@ export class PlateRenderer {
         'uHs',
         'uHt',
         'uNm',
+        'uCol',
+        'uUseCol',
+        'uUseRgh',
         'uBg',
         'uDx',
       ])
         this.u[n] = gl.getUniformLocation(this.prog, n);
       gl.uniform1i(this.u.uHt, 0);
       gl.uniform1i(this.u.uNm, 1);
+      gl.uniform1i(this.u.uCol, 2);
       gl.uniform1f(this.u.uDx, 2 / HR);
     });
   }
 
-  /** 模様の高さと法線マップを送る */
-  setPattern(id: string, h: Float32Array, nm: Uint8Array): void {
+  /** 模様の高さ・法線マップ・色とつやを送る */
+  setPattern(id: string, h: Float32Array, nm: Uint8Array, col: Uint8Array): void {
     const { gl } = this;
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, this.ht);
@@ -192,6 +201,9 @@ export class PlateRenderer {
     gl.bindTexture(gl.TEXTURE_2D, this.nm);
     gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, HR, HR, 0, gl.RGBA, gl.UNSIGNED_BYTE, nm);
+    gl.activeTexture(gl.TEXTURE2);
+    gl.bindTexture(gl.TEXTURE_2D, this.col);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, HR, HR, 0, gl.RGBA, gl.UNSIGNED_BYTE, col);
     this.pat = id;
   }
 
@@ -217,6 +229,8 @@ export class PlateRenderer {
     gl.uniform3fv(u.uLp, f.light);
     gl.uniform1i(u.uMode, f.mode);
     gl.uniform1f(u.uHs, f.hs);
+    gl.uniform1i(u.uUseCol, f.col ? 1 : 0);
+    gl.uniform1i(u.uUseRgh, f.rgh ? 1 : 0);
     gl.uniform3fv(u.uBg, f.bg);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }

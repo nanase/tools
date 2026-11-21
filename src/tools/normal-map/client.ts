@@ -9,6 +9,7 @@ import { ParamGroup } from '../../lib/param';
 import { initToolPage } from '../../lib/tool-page';
 import { HR, normalize, normalMap, type PatId } from './heights';
 import { mountHow } from './how';
+import { imagePattern, materialMap } from './materials';
 import { type Key, PARAMS } from './params';
 import { type Camera, fitCamera, LIGHT_Y, PlateRenderer, pickLight, type Vec3 } from './render';
 import { MODE } from './shader';
@@ -76,6 +77,8 @@ const st = {
   cmp: false,
   pat: 'brick' as PatId,
   nm: true,
+  col: true,
+  rgh: true,
   rot: !RM.matches,
   /** 回る角度と半径 */
   ang: ANG0,
@@ -85,18 +88,27 @@ const st = {
   light: [RAD0 * Math.cos(ANG0), LIGHT_Y, RAD0 * Math.sin(ANG0)] as Vec3,
 };
 
-/* ---------- 模様（高さと法線マップ） ---------- */
+/* ---------- 模様（高さ・法線マップ・色とつや） ---------- */
 interface PatData {
   h: Float32Array;
   nm: Uint8Array;
+  col: Uint8Array;
 }
 const cache = new Map<string, PatData>();
 let worker: Worker | null = null;
+/** 今描きたい模様のキー（画像は読み直すたびに変える） */
 let want = '';
-function textPattern(): PatData {
+/** 画像の模様の元（HR × HR の RGBA）と、高さを反転するか */
+let imgPx: Uint8ClampedArray | null = null;
+let imgInv = false;
+let imgVer = 0;
+const canvas2d = (): [HTMLCanvasElement, CanvasRenderingContext2D] => {
   const c = document.createElement('canvas');
   c.width = c.height = HR;
-  const g = c.getContext('2d', { willReadFrequently: true }) as CanvasRenderingContext2D;
+  return [c, c.getContext('2d', { willReadFrequently: true }) as CanvasRenderingContext2D];
+};
+function textPattern(): PatData {
+  const [c, g] = canvas2d();
   g.fillStyle = '#000';
   g.fillRect(0, 0, HR, HR);
   g.fillStyle = '#fff';
@@ -110,44 +122,116 @@ function textPattern(): PatData {
   g.strokeStyle = '#fff';
   g.strokeRect(HR * 0.043, HR * 0.043, HR * 0.914, HR * 0.914);
   /* ぼかして縁を斜面にする */
-  const b = document.createElement('canvas');
-  b.width = b.height = HR;
-  const gb = b.getContext('2d', { willReadFrequently: true }) as CanvasRenderingContext2D;
+  const [, gb] = canvas2d();
   gb.filter = `blur(${HR / 128}px)`;
   gb.drawImage(c, 0, 0);
   const d = gb.getImageData(0, 0, HR, HR).data,
     h = new Float32Array(HR * HR);
   for (let i = 0; i < HR * HR; i++) h[i] = d[i * 4] / 255;
   normalize(h);
-  return { h, nm: normalMap(h) };
+  return { h, nm: normalMap(h), col: materialMap('text', h) };
 }
+/** 画像を開くまでの見本: 空と山と太陽の絵 */
+function samplePixels(): Uint8ClampedArray {
+  const [, g] = canvas2d(),
+    sky = g.createLinearGradient(0, 0, 0, HR);
+  sky.addColorStop(0, '#2f5f9e');
+  sky.addColorStop(0.6, '#9cc3e6');
+  g.fillStyle = sky;
+  g.fillRect(0, 0, HR, HR);
+  g.fillStyle = '#ffe7a0';
+  g.beginPath();
+  g.arc(HR * 0.74, HR * 0.24, HR * 0.1, 0, 7);
+  g.fill();
+  const hill = (col: string, pts: [number, number][]) => {
+    g.fillStyle = col;
+    g.beginPath();
+    g.moveTo(0, HR);
+    for (const [x, y] of pts) g.lineTo(x * HR, y * HR);
+    g.lineTo(HR, HR);
+    g.closePath();
+    g.fill();
+  };
+  hill('#6b7f8f', [
+    [0, 0.62],
+    [0.22, 0.38],
+    [0.4, 0.55],
+    [0.58, 0.33],
+    [0.82, 0.56],
+    [1, 0.5],
+  ]);
+  hill('#3f7a45', [
+    [0, 0.78],
+    [0.3, 0.66],
+    [0.6, 0.76],
+    [1, 0.64],
+  ]);
+  hill('#2c5a30', [
+    [0, 0.9],
+    [0.45, 0.84],
+    [1, 0.92],
+  ]);
+  return g.getImageData(0, 0, HR, HR).data;
+}
+/** 画像を板に合わせて切り取る（短い辺を合わせて中央） */
+function readImage(file: File): Promise<Uint8ClampedArray> {
+  return new Promise((ok, ng) => {
+    const im = new Image(),
+      url = URL.createObjectURL(file);
+    im.onload = () => {
+      URL.revokeObjectURL(url);
+      const [, g] = canvas2d(),
+        k = HR / Math.min(im.naturalWidth, im.naturalHeight);
+      g.drawImage(
+        im,
+        (HR - im.naturalWidth * k) / 2,
+        (HR - im.naturalHeight * k) / 2,
+        im.naturalWidth * k,
+        im.naturalHeight * k,
+      );
+      ok(g.getImageData(0, 0, HR, HR).data);
+    };
+    im.onerror = () => {
+      URL.revokeObjectURL(url);
+      ng(new Error('image'));
+    };
+    im.src = url;
+  });
+}
+function imageData(): PatData {
+  imgPx ??= samplePixels();
+  const { h, col } = imagePattern(imgPx, imgInv);
+  return { h, nm: normalMap(h), col };
+}
+const keyOf = (id: PatId): string => (id === 'image' ? `image:${imgVer}` : id);
 /** 模様を用意して送る。届くまでは前の模様のまま描く */
 function loadPattern(id: PatId): void {
-  want = id;
-  const have = cache.get(id);
+  const key = keyOf(id);
+  want = key;
+  const have = cache.get(key);
   if (have) {
-    use(id, have);
+    use(key, have);
     return;
   }
-  if (id === 'text') {
-    const p = textPattern();
-    cache.set(id, p);
-    use(id, p);
+  if (id === 'text' || id === 'image') {
+    const p = id === 'text' ? textPattern() : imageData();
+    cache.set(key, p);
+    use(key, p);
     return;
   }
   busy.hidden = false;
   if (!worker) {
     worker = new Worker(new URL('./pattern-worker.ts', import.meta.url), { type: 'module' });
-    worker.onmessage = (e: MessageEvent<{ id: PatId; h: Float32Array; nm: Uint8Array }>) => {
-      const { id: got, h, nm } = e.data;
-      cache.set(got, { h, nm });
-      if (got === want) use(got, { h, nm });
+    worker.onmessage = (e: MessageEvent<{ id: PatId } & PatData>) => {
+      const { id: got, h, nm, col } = e.data;
+      cache.set(got, { h, nm, col });
+      if (got === want) use(got, { h, nm, col });
     };
   }
   worker.postMessage({ id });
 }
-function use(id: string, p: PatData): void {
-  for (const v of views) if (v.r && v.r.pat !== id) v.r.setPattern(id, p.h, p.nm);
+function use(key: string, p: PatData): void {
+  for (const v of views) if (v.r && v.r.pat !== key) v.r.setPattern(key, p.h, p.nm, p.col);
   busy.hidden = true;
   dirty = true;
   kick();
@@ -191,7 +275,7 @@ function frame(ms: number): void {
         const r = v.r as PlateRenderer;
         r.resize(scale);
         const mode = st.cmp ? (v === v1 ? MODE.REAL : MODE.NMAP) : st.nm ? MODE.NMAP : MODE.FLAT;
-        r.draw({ cam: camOf(v.cv), light: st.light, mode, hs: V.hs, bg: BG });
+        r.draw({ cam: camOf(v.cv), light: st.light, mode, hs: V.hs, col: st.col, rgh: st.rgh, bg: BG });
       }
     }
   }
@@ -278,14 +362,60 @@ function setMode(cmp: boolean): void {
     v1 = makeView(c1);
     v2 = makeView(c2);
     const p = cache.get(want);
-    if (p) for (const v of [v1, v2]) v.r?.setPattern(want, p.h, p.nm);
+    if (p) for (const v of [v1, v2]) v.r?.setPattern(want, p.h, p.nm, p.col);
   }
   nm$.setOff(cmp, '比較では使いません');
   dirty = true;
   kick();
 }
+const col$ = new Choice<string>($('#p-col'), (v) => {
+  st.col = v === '1';
+  dirty = true;
+  kick();
+});
+const rgh$ = new Choice<string>($('#p-rgh'), (v) => {
+  st.rgh = v === '1';
+  dirty = true;
+  kick();
+});
+/* 画像の模様: 開く・高さの向き。行は模様が画像のときだけ出す */
+const imgRows = $('#nm-imgrows'),
+  imgName = $('#nm-imgname'),
+  imgFile = $<HTMLInputElement>('#nm-file');
+const inv$ = new Choice<string>($('#p-inv'), (v) => {
+  imgInv = v === 'dark';
+  imgVer++;
+  if (st.pat === 'image') loadPattern('image');
+});
+$('#nm-openb').addEventListener('click', () => imgFile.click());
+imgFile.addEventListener('change', () => {
+  const f = imgFile.files?.[0];
+  if (!f) return;
+  busy.hidden = false;
+  readImage(f).then(
+    (px) => {
+      imgPx = px;
+      imgVer++;
+      imgName.textContent = f.name;
+      imgName.title = f.name;
+      if (st.pat !== 'image') pat$.set('image');
+      st.pat = 'image';
+      showImgRows();
+      loadPattern('image');
+    },
+    () => {
+      busy.hidden = true;
+      imgName.textContent = '開けない画像';
+    },
+  );
+  imgFile.value = '';
+});
+const showImgRows = (): void => {
+  imgRows.hidden = st.pat !== 'image';
+};
 const pat$ = new Choice<PatId>($('#p-pat'), (v) => {
   st.pat = v;
+  showImgRows();
   loadPattern(v);
 });
 const G = new ParamGroup<Key>(PARAMS, (v) => {
@@ -296,6 +426,10 @@ const G = new ParamGroup<Key>(PARAMS, (v) => {
 V = G.values();
 st.nm = nm$.value === '1';
 st.pat = pat$.value;
+st.col = col$.value === '1';
+st.rgh = rgh$.value === '1';
+imgInv = inv$.value === 'dark';
+showImgRows();
 ready = true;
 setMode(mode$.value === 'cmp');
 loadPattern(st.pat);

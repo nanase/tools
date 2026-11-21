@@ -14,7 +14,7 @@
 @media (max-width:560px){.nm-two{grid-template-columns:minmax(0,1fr)}}
 
 /* しくみの図（正方形） */
-#nm-how{--how-min:140px}
+#nm-how{grid-template-columns:repeat(auto-fit,minmax(min(100%,140px),1fr))}
 #nm-how canvas{display:block;width:100%;max-width:220px;aspect-ratio:1;border-radius:3px;background:#08090a}
 
 /* 広い画面では板を左に、設定を右の列に置く */
@@ -28,3 +28,10 @@
 /* 設定の行は記号を使わないので、記号の列を詰めて項目名を 1 行に収める */
 .a-set .prow{--sw:0px}
 @container (max-width:400px){.a-set .prow{--fw:136px}}
+
+/* 画像の行: 開くボタンとファイル名 */
+.nm-imgrows[hidden]{display:none}
+.nm-open{display:flex;align-items:center;gap:8px;min-width:0}
+.nm-openb{flex:none;height:28px;padding:0 14px;border:1px solid var(--line-2);border-radius:4px;background:var(--surface);color:var(--ink);font:500 13px var(--sans);cursor:pointer}
+.nm-openb:hover{border-color:var(--ink-3)}
+.nm-imgname{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12.5px;color:var(--ink-3)}

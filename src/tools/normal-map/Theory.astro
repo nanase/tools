@@ -58,7 +58,7 @@ const tri = Math.round((2 * (HR - 1) ** 2) / 1e4);
 
 <h3>光の計算</h3>
 <div class="eqs">
-  <math display="block" set:html={`<mi>I</mi><mo>=</mo><mi>ρ</mi>${P(`${sub('k', '<mi>a</mi>')}<mo>+</mo>${max0(dot(n, l))}<mi>a</mi>${P('<mi>d</mi>')}`)}<mo>+</mo>${sub('k', '<mi>s</mi>')}<msup><mrow>${max0(dot(n, h))}</mrow><mn>48</mn></msup>${max0(dot(n, l))}<mi>a</mi>${P('<mi>d</mi>')}`} />
+  <math display="block" set:html={`<mi>I</mi><mo>=</mo><mi>ρ</mi>${P(`${sub('k', '<mi>a</mi>')}<mo>+</mo>${max0(dot(n, l))}<mi>a</mi>${P('<mi>d</mi>')}`)}<mo>+</mo>${sub('k', '<mi>s</mi>')}<msup><mrow>${max0(dot(n, h))}</mrow><mi>m</mi></msup>${max0(dot(n, l))}<mi>a</mi>${P('<mi>d</mi>')}`} />
 </div>
 <ul class="tl">
   <li>拡散反射は Lambert、鏡面反射は Blinn-Phong<Fragment set:html={rf(1)} />
@@ -68,6 +68,34 @@ const tri = Math.round((2 * (HR - 1) ** 2) / 1e4);
     </ul>
   </li>
   <li>法線マップでは <math set:html={n} /> を画像から読み、ほかは同じ式で計算する</li>
+  <li>つやの画像の粗さ <math><mi>r</mi></math> から、ハイライトの鋭さ <math><mi>m</mi></math> と強さ <math set:html={sub('k', '<mi>s</mi>')} /> を決める<Fragment set:html={rf(8) + rf(9)} />
+    <ul class="tl">
+      <li><math set:html={`<mi>α</mi><mo>=</mo><msup><mi>r</mi><mn>2</mn></msup>`} />、<math set:html={`<mi>m</mi><mo>=</mo><mn>2</mn><mo>/</mo><msup><mi>α</mi><mn>2</mn></msup><mo>−</mo><mn>2</mn>`} />、<math set:html={`${sub('k', '<mi>s</mi>')}<mo>=</mo><mn>0.05</mn>${frac('<mi>m</mi><mo>+</mo><mn>8</mn>', '<mn>8</mn><mi>π</mi>')}`} /></li>
+      <li>粗いほどハイライトは広く暗く、滑らかなほど狭く明るい</li>
+    </ul>
+  </li>
+</ul>
+
+<h3>色とつやを重ねる</h3>
+<ul class="tl">
+  <li>ゲームの素材は、役割ごとの画像を同じ座標で重ねて作る<Fragment set:html={rf(8)} />
+    <ul class="tl">
+      <li>色: 面の色 <math><mi>ρ</mi></math>（ベースカラー）</li>
+      <li>法線: 面の向き <math set:html={n} /></li>
+      <li>つや: 粗さ <math><mi>r</mi></math>（ラフネス）</li>
+    </ul>
+  </li>
+  <li>色だけでは模様を描いた紙に見え、法線を足すと凹凸が、つやを足すと目地とレンガのような質感の違いが出る</li>
+</ul>
+
+<h3>画像から作る</h3>
+<div class="eqs">
+  <math display="block" set:html={`<mi>h</mi><mo>∝</mo><mn>0.2126</mn><mi>R</mi><mo>+</mo><mn>0.7152</mn><mi>G</mi><mo>+</mo><mn>0.0722</mn><mi>B</mi>`} />
+</div>
+<ul class="tl">
+  <li>画像の明るさ<Fragment set:html={rf(10)} />を高さとみなし、法線マップを作る。色の画像には元の色を使う</li>
+  <li>ロゴや文字は形どおりの浮き彫りになる</li>
+  <li>写真では明るさが高さを表さないので、模様や影も凹凸になる</li>
 </ul>
 
 <h3>接空間</h3>
@@ -118,11 +146,16 @@ const tri = Math.round((2 * (HR - 1) ** 2) / 1e4);
   </li>
   <li>光: 点光源で、板からの高さは 0.42
     <ul class="tl">
-      <li>減衰 <math set:html={`<mi>a</mi>${P('<mi>d</mi>')}<mo>=</mo>${frac('<mn>2.4</mn>', `<mn>1</mn><mo>+</mo><mn>1.3</mn><msup><mi>d</mi><mn>2</mn></msup>`)}`} />、<math set:html={`${sub('k', '<mi>a</mi>')}<mo>=</mo><mn>0.045</mn>`} />、<math set:html={`${sub('k', '<mi>s</mi>')}<mo>=</mo><mn>0.3</mn>`} /></li>
+      <li>減衰 <math set:html={`<mi>a</mi>${P('<mi>d</mi>')}<mo>=</mo>${frac('<mn>2.4</mn>', `<mn>1</mn><mo>+</mo><mn>1.3</mn><msup><mi>d</mi><mn>2</mn></msup>`)}`} />、<math set:html={`${sub('k', '<mi>a</mi>')}<mo>=</mo><mn>0.045</mn>`} /></li>
+      <li>つやの画像を使わないときは <math set:html={`<mi>m</mi><mo>=</mo><mn>48</mn>`} />、<math set:html={`${sub('k', '<mi>s</mi>')}<mo>=</mo><mn>0.3</mn>`} /></li>
     </ul>
   </li>
-  <li>模様: 式で作った {PATS.length} 種
-    <ul class="tl"><li>文字はブラウザの書体で描き、ぼかして縁を斜面にする</li></ul>
+  <li>模様: 式で作った {PATS.length - 2} 種と、文字・画像
+    <ul class="tl">
+      <li>文字はブラウザの書体で描き、ぼかして縁を斜面にする</li>
+      <li>色とつやは模様ごとに高さの段で決め、ゆっくり変わるノイズでむらを付ける</li>
+      <li>画像は短い辺を板に合わせて中央を切り取り、{HR} × {HR} にする。粒が凹凸にならないよう 2 画素ぼかす。つやは一様（粗さ 0.6）</li>
+    </ul>
   </li>
   <li>関連: <Fragment set:html={to('shading', 'シェーディング')} />・<Fragment set:html={to('raytracing', 'レイトレーシング')} /></li>
 </ul>
@@ -136,4 +169,7 @@ const tri = Math.round((2 * (HR - 1) ** 2) / 1e4);
   <li id="thy-r5"><span class="rf-for">接空間の決め方</span><span class="rf-src">M. S. Mikkelsen, “Simulation of wrinkled surfaces revisited,” Master’s thesis, University of Copenhagen, 2008</span></li>
   <li id="thy-r6"><span class="rf-for">視差マッピング</span><span class="rf-src">T. Kaneko, T. Takahei, M. Inami, N. Kawakami, Y. Yanagida, T. Maeda, and S. Tachi, “Detailed shape representation with parallax mapping,” <i>Proc. ICAT 2001</i>, pp. 205–208, 2001</span></li>
   <li id="thy-r7"><span class="rf-for">ディスプレイスメントマッピング</span><span class="rf-src">R. L. Cook, “Shade trees,” <i>SIGGRAPH ’84</i>, pp. 223–231, 1984. <a href="https://doi.org/10.1145/964965.808602" target="_blank" rel="noopener">doi:10.1145/964965.808602</a></span></li>
+  <li id="thy-r8"><span class="rf-for">色・粗さの画像と α = r²</span><span class="rf-src">B. Burley, “Physically-based shading at Disney,” SIGGRAPH 2012 course: Practical Physically Based Shading in Film and Game Production</span></li>
+  <li id="thy-r9"><span class="rf-for">粗さと Blinn-Phong の指数の対応</span><span class="rf-src">B. Walter, S. R. Marschner, H. Li, and K. E. Torrance, “Microfacet models for refraction through rough surfaces,” <i>EGSR 2007</i>, pp. 195–206. <a href="https://doi.org/10.2312/EGWR/EGSR07/195-206" target="_blank" rel="noopener">doi:10.2312/EGWR/EGSR07/195-206</a></span></li>
+  <li id="thy-r10"><span class="rf-for">明るさの係数</span><span class="rf-src">ITU-R Recommendation BT.709-6, “Parameter values for the HDTV standards for production and international programme exchange,” 2015</span></li>
 </ol>

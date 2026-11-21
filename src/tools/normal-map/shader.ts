@@ -30,6 +30,9 @@ uniform int uMode;
 uniform float uHs;
 uniform sampler2D uHt;
 uniform sampler2D uNm;
+/* 色（sRGB）と粗さ（A）。使うかどうか */
+uniform sampler2D uCol;
+uniform int uUseCol, uUseRgh;
 uniform vec3 uBg;
 /* 板の厚さ・凹凸の高さ・画素の間隔 */
 const float T=.06;
@@ -85,7 +88,11 @@ void main(){
   }
   if(tHit>0.){
     vec3 P=ro+rd*tHit;
-    vec3 alb= top? vec3(.80,.76,.70): vec3(.42,.40,.38);
+    vec4 m=texture(uCol,(P.xz+1.)*.5);
+    vec3 alb= top? (uUseCol==1? pow(m.rgb,vec3(2.2)): vec3(.80,.76,.70)): vec3(.42,.40,.38);
+    /* つや: 粗さから Blinn-Phong の指数と強さを決める（正規化した式、垂直の反射率 0.05） */
+    float pw=48., ks=.3;
+    if(top && uUseRgh==1){ float a=max(m.a,.08); a*=a; pw=clamp(2./(a*a)-2.,2.,800.); ks=(pw+8.)/25.13*.05; }
     vec3 L=uLp-P; float d=length(L); L/=d;
     float ndl=max(dot(N,L),0.), sh=1.;
     /* 影: 光の方へ進み、凹凸の下に入ったら影（本物の凹凸だけ） */
@@ -97,7 +104,7 @@ void main(){
       }
     }
     float att=2.4/(1.+1.3*d*d);
-    vec3 hv=normalize(L-rd); float sp=pow(max(dot(N,hv),0.),48.)*.3*ndl;
+    vec3 hv=normalize(L-rd); float sp=pow(max(dot(N,hv),0.),pw)*ks*ndl;
     col=alb*(.045+ndl*att*sh)+vec3(sp*att*sh);
     col=pow(col,vec3(1./2.2));
   }

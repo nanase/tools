@@ -26,8 +26,11 @@ export const PATS = [
   ['crater', 'クレーター'],
   ['ripple', '波紋'],
   ['text', '文字'],
+  ['image', '画像'],
 ] as const;
 export type PatId = (typeof PATS)[number][0];
+/** 式で作る模様（文字と画像は画面のスクリプトで作る） */
+export type Computed = Exclude<PatId, 'text' | 'image'>;
 
 type F = (x: number, z: number) => number;
 
@@ -63,7 +66,7 @@ function noise(x: number, z: number): number {
   return a + (b - a) * su + (c - a) * sv + (a - b - c + d) * su * sv;
 }
 /** 細かさの違うノイズを重ねる（0〜1 付近） */
-function fbm(x: number, z: number, oct: number): number {
+export function fbm(x: number, z: number, oct: number): number {
   let s = 0,
     a = 0.5,
     f = 1,
@@ -418,7 +421,7 @@ const ripple: F = (x, z) => {
   return Math.cos(a * 26) / (1 + a * 1.2);
 };
 
-const FN: Record<Exclude<PatId, 'text'>, F> = {
+const FN: Record<Computed, F> = {
   brick,
   hex,
   cobble,
@@ -450,8 +453,8 @@ export function normalize(h: Float32Array): Float32Array {
   return h;
 }
 
-/** 模様の高さ。文字は画面の文字で描くので、ここでは作らない（client.ts） */
-export function heightMap(id: Exclude<PatId, 'text'>, R = HR): Float32Array {
+/** 模様の高さ。文字と画像はここでは作らない（client.ts） */
+export function heightMap(id: Computed, R = HR): Float32Array {
   const f = FN[id],
     h = new Float32Array(R * R);
   for (let j = 0; j < R; j++) {
