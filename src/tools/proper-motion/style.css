@@ -1,0 +1,68 @@
+/* 固有運動のページ。星図とその上に重ねる部品・年のバーは、空の色に合わせてテーマに依らない暗い地にする（マンデルブロ集合と同じ作り） */
+.pm-stage{position:relative;border-radius:var(--r);overflow:hidden;background:#050914;user-select:none;-webkit-user-select:none;--pm-glass:rgba(12,16,26,.86);--pm-edge:#343c4c;--pm-ink:#e6e8ee;--pm-ink2:#a3abba;--pm-led:#e8833a;color:var(--pm-ink)}
+.pm-box{position:relative}
+#pm-cv{display:block;width:100%;aspect-ratio:16/10;touch-action:none;cursor:grab;outline:none}
+#pm-cv.drag{cursor:grabbing}
+#pm-cv.on-star{cursor:pointer}
+#pm-cv:focus-visible{box-shadow:inset 0 0 0 2px var(--focus)}
+.pm-hud{position:absolute;display:flex;gap:6px;align-items:center;flex-wrap:wrap;pointer-events:none;font-size:13px}
+.pm-hud>*{pointer-events:auto}
+.pm-tl{left:8px;top:8px}
+.pm-tr{right:8px;top:8px;justify-content:flex-end}
+.pm-bl{left:8px;bottom:8px}
+.pm-br{right:8px;bottom:8px}
+.pm-sel{font:inherit;font-size:13px;color:var(--pm-ink);background:var(--pm-glass);border:1px solid var(--pm-edge);border-radius:8px;padding:5px 8px;min-width:10em;cursor:pointer}
+.pm-sel option,.pm-sel optgroup{background:#1b2030;color:var(--pm-ink)}
+.pm-tg{display:inline-flex;align-items:center;gap:6px;min-height:30px;padding:0 10px;border:1px solid var(--pm-edge);border-radius:8px;background:var(--pm-glass);color:var(--pm-ink);font:inherit;font-size:13px;cursor:pointer;white-space:nowrap}
+.pm-tg:hover{border-color:#5a6475}
+.pm-tg .led{background:#4a5262}
+.pm-tg[aria-pressed="true"] .led{background:var(--pm-led);box-shadow:0 0 5px var(--pm-led)}
+.pm-ib{display:inline-grid;place-items:center;width:34px;height:34px;padding:0;border:1px solid var(--pm-edge);border-radius:8px;background:var(--pm-glass);color:var(--pm-ink);cursor:pointer}
+.pm-ib svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.pm-zv{display:inline-flex;gap:6px;align-items:baseline;padding:5px 10px;border:1px solid var(--pm-edge);border-radius:8px;background:var(--pm-glass);color:var(--pm-ink2)}
+.pm-zv b{font:600 14px var(--mono);color:var(--pm-ink);font-variant-numeric:tabular-nums}
+.pm-yr{position:absolute;left:50%;top:10px;transform:translateX(-50%);font:700 22px var(--sans);color:var(--pm-ink);text-shadow:0 1px 4px #000;pointer-events:none;white-space:nowrap}
+.pm-msg{position:absolute;inset:0;display:grid;place-items:center;margin:0;padding:16px;color:var(--pm-ink);text-align:center}
+.pm-msg[hidden]{display:none}
+/* 星の札: ホバーは星のそば、押した星は左上に置く */
+.pm-tip{position:absolute;z-index:3;min-width:130px;padding:6px 10px 8px;border:1px solid var(--pm-edge);border-radius:8px;background:var(--pm-glass);font-size:13px;line-height:1.5;pointer-events:none;white-space:nowrap}
+.pm-tip[hidden]{display:none}
+.pm-tip.pin{pointer-events:auto}
+.pm-tip b{display:block;font-size:14px}
+.pm-tip span{display:block;color:var(--pm-ink2)}
+.pm-tip i{font-style:normal;font-family:var(--mono);color:var(--pm-ink)}
+.pm-trk{width:100%;justify-content:center;margin-top:6px;background:#1d2232}
+.pm-trk[hidden]{display:none}
+.pm-trk span:not(.led){display:inline;color:var(--pm-ink)}
+/* 年のバー */
+.pm-time{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;padding:10px 10px 12px;border-top:1px solid var(--pm-edge)}
+.pm-time input{flex:1 1 300px;min-width:180px;margin:0;accent-color:var(--pm-led)}
+.pm-run{min-width:88px}
+.pm-yv{display:inline-flex;flex-direction:column;min-width:9.5em;line-height:1.25}
+.pm-yv b{font:700 15px var(--sans);text-align:left}
+.pm-yv small{font:12px var(--mono);color:var(--pm-ink2);text-align:left}
+.pm-jumps{display:flex;flex-wrap:wrap;gap:5px}
+.pm-jumps button{min-height:28px;padding:0 10px;border:1px solid var(--pm-edge);border-radius:14px;background:none;color:var(--pm-ink2);font:500 12.5px var(--sans);cursor:pointer;white-space:nowrap}
+.pm-jumps button:hover{color:var(--pm-ink);border-color:#5a6475}
+.pm-spd{min-width:0;margin-left:auto}
+/* 全画面: 図を画面いっぱいに。全画面のボタンは右上の切り替えの並びに置く */
+.pm-fs{position:static;width:34px;height:34px;border:1px solid var(--pm-edge);border-radius:8px;background:var(--pm-glass);color:var(--pm-ink)}
+.pm-fs:hover{background:var(--pm-glass);border-color:#5a6475}
+.pm-fs svg{width:18px;height:18px;stroke-width:1.8}
+.pm-stage.fs-on{display:flex;flex-direction:column}
+.pm-stage.fs-on .pm-box{flex:1;min-height:0}
+.pm-stage.fs-on #pm-cv{height:100%;aspect-ratio:auto}
+#pm-how{--how-min:340px}
+#pm-how canvas{display:block;width:172px;height:104px;border-radius:2px;background:var(--screen)}
+/* スマートフォン: 図を正方形にし、切り替えは種類の下に並べる。図の上の年は年のバーと重なるので出さない（全画面では出す） */
+@media (max-width:720px){
+  #pm-cv{aspect-ratio:1}
+  .pm-tr{top:48px;left:8px;right:8px;justify-content:flex-start}
+  .pm-yr{display:none}
+  .pm-stage.fs-on .pm-yr{display:block;top:auto;bottom:52px;font-size:18px}
+  .pm-spd{margin-left:0}
+}
+@media (max-width:559px){
+  .pm-tr{gap:4px}
+  .pm-tr .pm-tg{padding:0 7px;font-size:12px;gap:5px}
+}

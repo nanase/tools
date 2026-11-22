@@ -17,7 +17,8 @@
       "!public/solar-eclipse/*.json",
       "!public/moon/*.json",
       "!public/jupiter/*.json",
-      "!public/saturn/*.json"
+      "!public/saturn/*.json",
+      "!public/proper-motion/*.json"
     ]
   },
   "formatter": {
