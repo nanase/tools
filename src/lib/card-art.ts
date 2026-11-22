@@ -19,6 +19,7 @@ import { fanPath } from '../tools/jjy/fan';
 import { field as mbField, iso as mbIso } from '../tools/mandelbrot/contour';
 import { FEAT, PG2, PG3, PW2, PW3, Q_FIG } from '../tools/piano-action/geom';
 import { OUTLINE as PA_OUT } from '../tools/piano-action/outline';
+import { FIXED as PM_FIXED } from '../tools/proper-motion/fixed';
 import { type Encoded, encode } from '../tools/qr-code/encode';
 import {
   DEFS as RB_DEFS,
@@ -1157,6 +1158,51 @@ function mbArt(t: number): string {
   });
   const julia = mbCached(`j${q}`, () => mbFill(mbIso(mbField(48, 0, 120, 48, 0, 0, 3.3 / 72, MB_M2, 60, c), 60)));
   return `${left}${julia}<circle class="fa" cx="${r1(23 + (c[0] + 0.62) / MB_S)}" cy="${r1(24 + c[1] / MB_S)}" r="2.2"/>`;
+}
+
+/**
+ * 固有運動の図柄のコマ: 北斗七星の 7 星を今から 10 万年後まで 36 等分した年に置き、今の星座の中心の接平面へ写して
+ * 図柄の上の枠（x 12〜108、y 4〜31）に収める。並びはアルカイドからドゥーベ・メラク・フェクダを回ってメグレズへ戻る折れ線
+ */
+const PM_DIP = ['アルカイド', 'ミザール', 'アリオト', 'メグレズ', 'ドゥーベ', 'メラク', 'フェクダ', 'メグレズ'];
+let PM_FR: [number, number][][] | null = null;
+function pmFrames(): [number, number][][] {
+  if (PM_FR) return PM_FR;
+  const star = (nm: string) => PM_FIXED.find((x) => x[0] === nm) as (typeof PM_FIXED)[number];
+  const dir = (nm: string, k: number): [number, number, number] => {
+    const s = star(nm),
+      t = (26 + (100000 * k) / 36) / 1000,
+      p = [0, 1, 2].map((j) => (s[1][j] as number) + (s[2][j] as number) * t),
+      l = Math.hypot(p[0] as number, p[1] as number, p[2] as number);
+    return [(p[0] as number) / l, (p[1] as number) / l, (p[2] as number) / l];
+  };
+  const sum = PM_DIP.slice(0, 7).reduce((a, nm) => a.map((x, j) => x + (dir(nm, 0)[j] as number)), [0, 0, 0]),
+    sl = Math.hypot(sum[0] as number, sum[1] as number, sum[2] as number),
+    c = sum.map((x) => x / sl) as [number, number, number],
+    el = Math.hypot(c[1], c[0]),
+    e = [-c[1] / el, c[0] / el, 0],
+    n = [c[1] * e[2] - c[2] * e[1], c[2] * e[0] - c[0] * e[2], c[0] * e[1] - c[1] * e[0]],
+    dot = (a: number[], b: number[]) =>
+      (a[0] as number) * (b[0] as number) + (a[1] as number) * (b[1] as number) + (a[2] as number) * (b[2] as number);
+  const raw = Array.from({ length: 37 }, (_, k) =>
+    PM_DIP.map((nm): [number, number] => {
+      const v = dir(nm, k),
+        z = dot(v, c);
+      return [-dot(v, e) / z, dot(v, n) / z];
+    }),
+  );
+  const all = raw.flat(),
+    xs = all.map((p) => p[0]),
+    ys = all.map((p) => p[1]),
+    x0 = Math.min(...xs),
+    x1 = Math.max(...xs),
+    y0 = Math.min(...ys),
+    y1 = Math.max(...ys),
+    k = Math.min(96 / (x1 - x0), 27 / (y1 - y0)),
+    ox = 60 - ((x0 + x1) / 2) * k,
+    oy = 17.5 + ((y0 + y1) / 2) * k;
+  PM_FR = raw.map((f) => f.map(([x, y]): [number, number] => [r1(ox + x * k), r1(oy - y * k)]));
+  return PM_FR;
 }
 
 export const ART: Record<string, Art> = {
@@ -3540,6 +3586,20 @@ export const ART: Record<string, Art> = {
   },
   /* テクスチャのフィルタ: 左車線から前を見た道路を、図柄の画素ごとに最近傍で読む。両側に木、遠くに山。
      手前へ流れると、遠くの破線と縁石は読む所が飛び飛びに変わってちらつく。1 秒に 12 コマ、3 秒で 60 m（破線 3 本分） */
+  /*
+   * 固有運動（案 C）: 下の年のバーのつまみが今（中央）から右へ 36 コマで進み、北斗七星が 10 万年後の形へゆがむ。
+   * 今の形は点線で残す。終わりで 12 コマ止めて初めへ戻る。止まっているときは今の形
+   */
+  pm(t) {
+    const fr = pmFrames(),
+      k = Math.min(36, Math.floor(t * 12 + 1e-9) % 48),
+      f = fr[k] as [number, number][],
+      line = (ps: [number, number][]) => ps.map((p, j) => `${j ? 'L' : 'M'}${p[0]} ${p[1]}`).join(''),
+      xk = r1(60 + (48 * k) / 36);
+    let s = (k ? P('c t d', line(fr[0] as [number, number][])) : '') + P('c', line(f));
+    for (const p of f.slice(0, 7)) s += `<circle class="fc" cx="${p[0]}" cy="${p[1]}" r="1.9"/>`;
+    return `${s}${P('c t', 'M12 41H108M60 38V44')}${k ? P('a', `M60 41H${xk}`) : ''}<circle class="fa" cx="${xk}" cy="41" r="3"/>`;
+  },
   tf(t) {
     const { y0, px, k, s, v, fps, lane } = TF,
       go = (Math.floor(t * fps) / fps) * v,
@@ -3679,6 +3739,7 @@ export const LOOP: Record<string, number> = {
   wb: 3.6,
   nm: 4,
   tf: 3,
+  pm: 4,
 };
 
 /** 止まっているときの図柄（ビルド時に HTML へ出す） */

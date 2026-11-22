@@ -1,0 +1,75 @@
+---
+// 動作原理と式
+const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
+const sub = (s: string, i: string) => `<msub><mi>${s}</mi><mi>${i}</mi></msub>`;
+const vb = (s: string) => `<mi mathvariant="bold">${s}</mi>`;
+const par = (x: string) => `<mo stretchy="false">(</mo>${x}<mo stretchy="false">)</mo>`;
+const abs = (x: string) => `<mo stretchy="false">|</mo>${x}<mo stretchy="false">|</mo>`;
+---
+<h3>星の位置と速度</h3>
+<div class="eqs">
+  <math display="block" set:html={`${vb('r')}${par('<mi>t</mi>')}<mo>=</mo>${sub(vb('r'), '0')}<mo>+</mo>${vb('v')}${par('<mi>t</mi><mo>−</mo><mn>2000</mn>')}<mo>,</mo><mspace width="0.6em"/>${vb('u')}${par('<mi>t</mi>')}<mo>=</mo><mfrac><mrow>${vb('r')}${par('<mi>t</mi>')}</mrow><mrow>${abs(`${vb('r')}${par('<mi>t</mi>')}`)}</mrow></mfrac>`} />
+  <math display="block" set:html={`${sub('v', 't')}<mo>=</mo><mn>4.74047</mn><mspace width="0.15em"/><mi>μ</mi><mspace width="0.15em"/><mi>d</mi><mo>,</mo><mspace width="0.6em"/><mi>d</mi><mo>=</mo><mfrac><mn>1</mn><mi>ϖ</mi></mfrac>`} />
+</div>
+<ul class="tl">
+  <li><math set:html={sub(vb('r'), '0')} /> は J2000 の太陽から見た星の位置、<math set:html={vb('v')} /> は太陽に対する星の速度。星は等速でまっすぐ進むとする</li>
+  <li>速度は横向き（固有運動 <math><mi>μ</mi></math> と距離 <math><mi>d</mi></math> から）と視線方向（視線速度）を合わせたもの。<math set:html={sub('v', 't')} /> は km/s、<math><mi>μ</mi></math> は ″/年、<math><mi>d</mi></math> は pc、<math><mi>ϖ</mi></math> は年周視差 ″<Fragment set:html={rf(1) + rf(2)} /></li>
+  <li>空の上の位置は向き <math set:html={vb('u')} /> だけで決まる。視線方向の速さは位置を変えず、距離と明るさを変える</li>
+</ul>
+
+<h3>明るさ</h3>
+<div class="eqs">
+  <math display="block" set:html={`<mi>m</mi>${par('<mi>t</mi>')}<mo>=</mo>${sub('m', '0')}<mo>+</mo><mn>5</mn><mspace width="0.15em"/>${sub('log', '10')}<mfrac><mrow>${abs(`${vb('r')}${par('<mi>t</mi>')}`)}</mrow><mrow>${abs(sub(vb('r'), '0'))}</mrow></mfrac>`} />
+</div>
+<ul class="tl">
+  <li>明るさは距離の 2 乗に反比例する。等級は 5 等で 100 倍なので、距離が 10 倍になると 5 等暗くなる</li>
+  <li>近づく星は明るくなる。アルタイルは秒速 26 km で近づいていて、5 万年後には今より明るい</li>
+</ul>
+
+<h3>天の北極</h3>
+<div class="eqs">
+  <math display="block" set:html={`${vb('p')}${par('<mi>t</mi>')}<mo>=</mo><mrow><mo>(</mo><msub><mi>X</mi><mi>A</mi></msub><mo>,</mo><mspace width="0.2em"/><msub><mi>Y</mi><mi>A</mi></msub><mo>,</mo><mspace width="0.2em"/><msqrt><mn>1</mn><mo>−</mo><msubsup><mi>X</mi><mi>A</mi><mn>2</mn></msubsup><mo>−</mo><msubsup><mi>Y</mi><mi>A</mi><mn>2</mn></msubsup></msqrt><mo>)</mo></mrow>`} />
+</div>
+<ul class="tl">
+  <li>地球の自転の軸は月と太陽の引力で首を振り（歳差）、天の北極は約 2 万 6 千年で黄道の北極のまわりを 1 周する</li>
+  <li><math set:html={`<msub><mi>X</mi><mi>A</mi></msub><mo>,</mo><msub><mi>Y</mi><mi>A</mi></msub>`} /> は多項式と 14 の周期項の和で、±20 万年で使える長期の歳差の式<Fragment set:html={rf(3) + rf(4)} /></li>
+  <li>歳差は座標の目盛りを回すだけで、星座の形は変えない。星図は J2000 の座標で描くので、歳差では動かない</li>
+  <li>北極星は紀元前 2800 年頃にトゥバン、今はポラリス、西暦 1 万 3 千〜1 万 4 千年頃にはベガが近くなる</li>
+</ul>
+
+<h3>星図</h3>
+<div class="eqs">
+  <math display="block" set:html={`<mi>ρ</mi><mo>=</mo><mn>2</mn><mspace width="0.15em"/><mi>S</mi><mspace width="0.15em"/><mi>tan</mi><mfrac><mi>θ</mi><mn>2</mn></mfrac><mo>,</mo><mspace width="0.6em"/><mi>S</mi><mo>=</mo><mfrac><mi>W</mi><mrow><mn>4</mn><mspace width="0.15em"/><mi>tan</mi>${par('<mi>F</mi><mo>/</mo><mn>4</mn>')}</mrow></mfrac>`} />
+</div>
+<ul class="tl">
+  <li>ステレオ図法。<math><mi>θ</mi></math> は画面の中心からの角、<math><mi>ρ</mi></math> は中心からの距離、<math><mi>W</mi></math> は図の幅、<math><mi>F</mi></math> は横の視野<Fragment set:html={rf(5)} /></li>
+  <li>小さな星座の形がゆがまず、視野を 200° まで広げられる</li>
+  <li>上が天の北、左が東。空を見上げたときと同じ向き</li>
+</ul>
+
+<h3>天の川</h3>
+<ul class="tl">
+  <li>5〜7.3 等の星を、銀河座標の 2° の格子で数える。この暗さは Hipparcos が全天で漏れなく測った範囲<Fragment set:html={rf(2)} /></li>
+  <li>マスの面積で割り、半径 5.5° でぼかし、対数をとって明るさにする</li>
+  <li>見えている天の川の光は、ほとんどが一つ一つは見えない遠くの星の光である。ここでは近くの明るい星の数で場所の目安だけを描く</li>
+</ul>
+
+<h3>このツールで決めたこと</h3>
+<ul class="tl">
+  <li>星は 10 万年のあいだ等速でまっすぐ進むとする。銀河を回る周期（約 2 億年）に比べて短く、星どうしの引力も無視できる</li>
+  <li>距離が分からない星は 1000 pc に置き、固有運動だけで動かす。明るさは変えない</li>
+  <li>年は今（2026 年）からの年数で示す。バーの範囲は前後 10 万年</li>
+  <li>星は 8 等まで。視野が広いと 5 等まで、狭くするほど暗い星まで描く</li>
+  <li>星座線は d3-celestial の線の頂点を、最も近い星に置き換えた<Fragment set:html={rf(6)} /></li>
+  <li>道すじは、選んだ星座の星と、図の上で 40 px より大きく動いた 4.5 等までの星のうち大きい順に 10 個</li>
+</ul>
+
+<h3>出典</h3>
+<ol class="refs">
+  <li id="thy-r1"><span class="rf-for">星の位置・距離・速度</span><span class="rf-src">D. Nash, <i>HYG Database</i>, v3.8, 2024（CC BY-SA 4.0）</span></li>
+  <li id="thy-r2"><span class="rf-for">Hipparcos と銀河座標</span><span class="rf-src">ESA, <i>The Hipparcos and Tycho Catalogues</i>, ESA SP-1200, 1997</span></li>
+  <li id="thy-r3"><span class="rf-for">長期の歳差</span><span class="rf-src">J. Vondrák, N. Capitaine, and P. Wallace, “New precession expressions, valid for long time intervals,” <i>Astronomy &amp; Astrophysics</i>, vol. 534, A22, 2011</span></li>
+  <li id="thy-r4"><span class="rf-for">長期の歳差の計算と試験値</span><span class="rf-src">IAU SOFA Board, <i>IAU SOFA Software Collection</i>, iauLtpequ</span></li>
+  <li id="thy-r5"><span class="rf-for">ステレオ図法</span><span class="rf-src">J. P. Snyder, <i>Map Projections—A Working Manual</i>, U.S. Geological Survey Professional Paper 1395, 1987</span></li>
+  <li id="thy-r6"><span class="rf-for">星座線と星座名</span><span class="rf-src">O. Frohn, <i>d3-celestial</i>, constellations.lines.json・constellations.json（BSD 3-Clause）</span></li>
+</ol>
