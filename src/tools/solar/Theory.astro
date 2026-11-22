@@ -1,0 +1,101 @@
+---
+// 動作原理と式
+/* 本文の出典番号 */
+const rf = (...ns: number[]) => ns.map((n) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`).join('');
+/* MathML の部品 */
+const sp = '<mspace width="0.17em"/>';
+const par = (x: string) => `<mrow><mo>(</mo>${x}<mo>)</mo></mrow>`;
+const frac = (a: string, b: string) => `<mfrac><mrow>${a}</mrow><mrow>${b}</mrow></mfrac>`;
+const sq = (x: string) => `<msup>${x}<mn>2</mn></msup>`;
+const deg = '<mo>°</mo>';
+---
+<h3>計算と描画の流れ</h3>
+<ol class="flow" aria-label="計算と描画の流れ">
+  <li>日時（UT）に <math><mi mathvariant="normal">Δ</mi><mi>T</mi></math> を足して力学時にする</li>
+  <li>7 惑星と地球の日心位置から、地球の中心から見た惑星の向きと距離を求める</li>
+  <li>距離から見かけの大きさ、太陽との角から欠けと夜空での見え方を出す</li>
+  <li>WebGL2 で画素ごとに模様・周縁減光・欠け・土星の環を描き、同じ倍率で並べる</li>
+</ol>
+
+<h3>惑星の位置</h3>
+<p>惑星と地球の日心位置は VSOP87D の級数で求めます<Fragment set:html={rf(2)} />。木星・土星・地球は木星・土星のページと同じ表です。ほかの 5 惑星は、振幅 × 0.1<sup><i>p</i></sup> が 3 × 10<sup>−7</sup> 以上の項だけを残しました（<i>p</i> は時間のべき）。</p>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th>惑星</th><th>残した項</th><th>地心の向きの差の最大</th></tr></thead>
+  <tbody>
+    <tr><td>水星</td><td>153 / 6827</td><td>0.6″</td></tr>
+    <tr><td>金星</td><td>88 / 1682</td><td>1.1″</td></tr>
+    <tr><td>火星</td><td>270 / 5483</td><td>2.5″</td></tr>
+    <tr><td>天王星</td><td>600 / 3989</td><td>0.9″</td></tr>
+    <tr><td>海王星</td><td>273 / 1929</td><td>0.3″</td></tr>
+  </tbody>
+</table></div>
+<p>差は全項と比べた 1900〜2100 年の値です。手順は Meeus 33 章のとおりで<Fragment set:html={rf(1)} />、光行時間だけ前の惑星と今の地球の差をとり、FK5 への補正・年周光行差・章動を入れます。</p>
+
+<h3>見かけの大きさ</h3>
+<p>赤道半径 <math><mi>a</mi></math> の惑星を距離 <math><mi>Δ</mi></math> から見た視直径です。</p>
+<div class="eqs">
+  <math display="block" set:html={`<mi>θ</mi><mo>=</mo><mn>2</mn>${sp}<mi>asin</mi>${par(frac('<mi>a</mi>', '<mi>Δ</mi>'))}`} />
+</div>
+<p>赤道半径は IAU WGCCRE 2015 の値です<Fragment set:html={rf(3)} />。土星の値は本体だけで、環の外縁は赤道半径の 2.27 倍です。7 惑星の姿は同じ倍率で描くので、画面の上での直径は <math><mi>θ</mi></math> に比例します。</p>
+<p>地球の内側を回る水星と金星は、地球と同じ側に来たとき（内合）に最も大きくなります。外側の惑星は、太陽と反対側に来たとき（衝）の前後で最も大きくなります。</p>
+<ul class="tl">
+  <li>金星: 10″ から 63″ まで 6 倍ほど変わる</li>
+  <li>火星: 衝のたびに 14〜25″ と違う。火星の軌道の離心率が 0.093 と大きく、衝の場所で距離が変わるため</li>
+  <li>天王星・海王星: 太陽からの距離に比べて地球の軌道が小さく、大きさは 2 割ほどしか変わらない</li>
+</ul>
+
+<h3>欠け</h3>
+<p>太陽・惑星・地球のなす角（位相角）<math><mi>α</mi></math> から、照らされた面のうち地球から見える割合 <math><mi>k</mi></math> が決まります。</p>
+<div class="eqs">
+  <math display="block" set:html={`<mi>k</mi><mo>=</mo>${frac(`<mn>1</mn><mo>+</mo><mi>cos</mi>${sp}<mi>α</mi>`, '<mn>2</mn>')}`} />
+</div>
+<p>水星と金星は内合の前後で <math><mi>α</mi></math> が 180° に近づき、細い三日月になります。外側の惑星は <math><mi>α</mi></math> が火星で 47°、木星で 12° を超えないので、ほとんど丸く見えます。描画では欠けの形を式で作らず、太陽の向きを画素ごとに当てて陰を付けます。</p>
+
+<h3>夜空での見え方</h3>
+<p>地球から見た太陽と惑星の角（離角）<math><mi>E</mi></math> を、太陽・惑星・地球の 3 つの距離から求めます。<math><mi>r</mi></math> は太陽と惑星、<math><mi>R</mi></math> は太陽と地球の距離です。</p>
+<div class="eqs">
+  <math display="block" set:html={`<mi>cos</mi>${sp}<mi>E</mi><mo>=</mo>${frac(`${sq('<mi>R</mi>')}<mo>+</mo>${sq('<mi>Δ</mi>')}<mo>−</mo>${sq('<mi>r</mi>')}`, `<mn>2</mn><mi>R</mi><mi>Δ</mi>`)}`} />
+</div>
+<p>太陽より東にある惑星は日の入りの後の西の空に、西にある惑星は日の出の前の東の空に見えます。札は次の境で分けます。</p>
+<ul class="tl">
+  <li>見えない: <math><mi>E</mi><mo>&lt;</mo><mn>15</mn>{deg}</math>（太陽の光に紛れる）</li>
+  <li>一晩中: <math><mi>E</mi><mo>&gt;</mo><mn>120</mn>{deg}</math>（日の入りの頃に昇り、日の出の頃に沈む）</li>
+  <li>夕方・明け方: そのほか。東なら夕方、西なら明け方</li>
+</ul>
+
+<h3>描画</h3>
+<p>木星・土星のページと同じ描画を使います。画素ごとに視線と惑星の楕円体の交点を求め、模様の地図を貼り、Minnaert の式で周縁減光を付けます<Fragment set:html={rf(4)} />。</p>
+<div class="eqs">
+  <math display="block" set:html={`<mi>I</mi><mo>=</mo><mi>A</mi>${sp}<msubsup><mi>μ</mi><mn>0</mn><mi>k</mi></msubsup>${sp}<msup><mi>μ</mi><mrow><mi>k</mi><mo>−</mo><mn>1</mn></mrow></msup>`} />
+</div>
+<p><math><mi>A</mi></math> は地図の色、<math><msub><mi>μ</mi><mn>0</mn></msub></math>・<math><mi>μ</mi></math> は面の法線と太陽・地球の向きの余弦です。</p>
+<ul class="tl">
+  <li>火星: Viking の色付きモザイク<Fragment set:html={rf(5)} /></li>
+  <li>木星・土星: Hubble の OPAL の全球の地図<Fragment set:html={rf(6)} />。木星の模様は大赤斑の経度に合わせて回す</li>
+  <li>土星の環: 土星のページと同じ透け具合と色の表</li>
+  <li>水星・金星・天王星・海王星: 1 色。地球から望遠鏡で見ても模様はほとんど見えない</li>
+</ul>
+<p>画面の上は天の北です。望遠鏡の写真と同じ向きで、東が左になります。</p>
+
+<h3>次の最接近</h3>
+<p>今の日時から 1 日ずつ地心距離を求め、減ってから増える所の前後 2 日を黄金分割で詰めます。探す範囲は会合周期の 1.6 倍までです。</p>
+
+<h3>このツールで決めたこと</h3>
+<ul class="tl">
+  <li>VSOP87D の打ち切りの閾値（3 × 10<sup>−7</sup>）と、計算する範囲（1900〜2100 年）</li>
+  <li>夜空での見え方の境（離角 15° と 120°）</li>
+  <li>7 惑星の姿の倍率（1900〜2100 年で最も大きく見える金星が枠の 94% に収まる）</li>
+  <li>年表の段の上端（1900〜2100 年の最大の視直径）と、表の間隔（2 日）</li>
+  <li>周縁減光の <math><mi>k</mi></math> と明るさの倍率、地図のない惑星の色（見た目の目安）</li>
+  <li>上から見た図の範囲（火星まで 1.75 au・土星まで 10.3 au・海王星まで 31.5 au）</li>
+</ul>
+
+<h3>出典</h3>
+<ol class="refs">
+  <li id="thy-r1"><span class="rf-for">惑星の見かけの位置（33 章）、FK5 への補正（32 章）、章動・歳差</span><span class="rf-src">J. Meeus, <i>Astronomical Algorithms</i>, 2nd ed., Willmann-Bell, 1998</span></li>
+  <li id="thy-r2"><span class="rf-for">惑星と地球の位置の級数 VSOP87D</span><span class="rf-src">P. Bretagnon and G. Francou, “Planetary theories in rectangular and spherical variables. VSOP 87 solutions,” <i>Astron. Astrophys.</i>, vol. 202, pp. 309–315, 1988; IMCCE, <a href="https://ftp.imcce.fr/pub/ephem/planets/vsop87/" target="_blank" rel="noopener">VSOP87</a></span></li>
+  <li id="thy-r3"><span class="rf-for">惑星の形・自転軸・本初子午線</span><span class="rf-src">B. A. Archinal et al., “Report of the IAU Working Group on Cartographic Coordinates and Rotational Elements: 2015,” <i>Celest. Mech. Dyn. Astr.</i>, vol. 130, 22, 2018</span></li>
+  <li id="thy-r4"><span class="rf-for">周縁減光の式</span><span class="rf-src">M. Minnaert, “The reciprocity principle in lunar photometry,” <i>Astrophys. J.</i>, vol. 93, pp. 403–410, 1941</span></li>
+  <li id="thy-r5"><span class="rf-for">火星の地図（パブリックドメイン）</span><span class="rf-src">NASA/JPL/USGS, “<a href="https://astrogeology.usgs.gov/search/details/Mars/Viking/MDIM21/Mars_Viking_MDIM21_ClrMosaic_global_232m/cub" target="_blank" rel="noopener">Mars Viking MDIM 2.1 Colorized Global Mosaic</a>”; Wikimedia Commons, “<a href="https://commons.wikimedia.org/wiki/File:Mars_Viking_MDIM21_ClrMosaic_1km.jpg" target="_blank" rel="noopener">Mars Viking MDIM21 ClrMosaic 1km.jpg</a>”</span></li>
+  <li id="thy-r6"><span class="rf-for">木星・土星の全球の地図（CC BY 4.0）</span><span class="rf-src">A. A. Simon, M. H. Wong and G. S. Orton, “First results from the Hubble OPAL program: Jupiter in 2015,” <i>Astrophys. J.</i>, vol. 812, 55, 2015; MAST, <a href="https://doi.org/10.17909/T9G593" target="_blank" rel="noopener">OPAL, DOI 10.17909/T9G593</a></span></li>
+</ol>

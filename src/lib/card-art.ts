@@ -1160,6 +1160,41 @@ function mbArt(t: number): string {
   return `${left}${julia}<circle class="fa" cx="${r1(23 + (c[0] + 0.62) / MB_S)}" cy="${r1(24 + c[1] / MB_S)}" r="2.2"/>`;
 }
 
+/* ---------- 太陽系: 地球から見た 7 惑星を同じ倍率で並べる ---------- */
+/**
+ * 円軌道で近似した惑星: 軌道半径 [au]・会合周期 [日]・最接近の日（2026-11-22 から）・赤道半径 [km]。
+ * 会合周期は 1 周（金星 4 回分の 2336 日）で割り切れる値に丸めた（水星 20 回・火星 3 回・ほかは 6 回）
+ */
+const SS_PL: readonly (readonly [number, number, number, number])[] = [
+  [0.387, 116.8, 3, 2440],
+  [0.723, 584, -29, 6052],
+  [1.524, 778.67, 90, 3396],
+  [5.203, 389.33, 81, 71492],
+  [9.537, 389.33, -49, 60268],
+  [19.19, 389.33, 3, 25559],
+  [30.07, 389.33, -57, 24764],
+];
+/** 図柄の上の x 座標 */
+const SS_X = [7, 26, 47, 66, 90, 107, 115];
+const ssDist = (i: number, day: number): number => {
+  const [a, S, t0] = SS_PL[i];
+  return Math.sqrt(1 + a * a - 2 * a * Math.cos((TAU * (day - t0)) / S));
+};
+/** 欠けた円盤（内惑星）。明るい側は最接近の前が右（夕方）、後が左（明け方） */
+function ssPhase(i: number, day: number, cx: number, R: number, cls: string): string {
+  const [a, S, t0] = SS_PL[i],
+    d = ssDist(i, day),
+    k = (1 + clamp((a * a + d * d - 1) / (2 * a * d), -1, 1)) / 2,
+    s1 = Math.sin((TAU * (day - t0)) / S) > 0 ? 0 : 1,
+    s2 = k > 0.5 ? s1 : 1 - s1,
+    rx = r1(R * Math.abs(2 * k - 1)),
+    r = r1(R);
+  return (
+    `<circle class="c t" style="fill:var(--screen)" cx="${cx}" cy="24" r="${r}"/>` +
+    `<path class="${cls}" d="M${cx} ${r1(24 - R)}A${r} ${r} 0 0 ${s1} ${cx} ${r1(24 + R)}A${rx} ${r} 0 0 ${s2} ${cx} ${r1(24 - R)}Z"/>`
+  );
+}
+
 /**
  * 固有運動の図柄のコマ: 北斗七星の 7 星を今から 10 万年後まで 36 等分した年に置き、今の星座の中心の接平面へ写して
  * 図柄の上の枠（x 12〜108、y 4〜31）に収める。並びはアルカイドからドゥーベ・メラク・フェクダを回ってメグレズへ戻る折れ線
@@ -3644,6 +3679,34 @@ export const ART: Record<string, Art> = {
       P('c', trunk)
     );
   },
+  /* 太陽系: 7 惑星を同じ倍率で並べる。金星が近づいて大きく細くなり、また離れる（6 秒で金星の 1 周期、12 コマ/秒） */
+  ss(t) {
+    const day = ((Math.floor(t * 12) / 12) * 584) / 6,
+      k = 0.4;
+    let o = '';
+    SS_PL.forEach(([, , , re], i) => {
+      const r = Math.max(1.3, (re / ssDist(i, day)) * 0.0027576 * k * 0.5),
+        x = SS_X[i];
+      if (i < 2) {
+        o += ssPhase(i, day, x, Math.max(r, 1.6), i === 1 ? 'fa' : 'fc');
+        return;
+      }
+      if (i === 4) {
+        const rr = r1(r * 2.25),
+          ring = (h: number) => `M${r1(x - r * 2.25)} 24A${rr} ${r1(r * 0.5)} 0 0 ${h} ${r1(x + r * 2.25)} 24`;
+        o += `${P('c t', ring(1))}<circle class="fc" cx="${x}" cy="24" r="${r1(r)}"/>${P('c t', ring(0))}`;
+        return;
+      }
+      o += `<circle class="fc" cx="${x}" cy="24" r="${r1(r)}"/>`;
+      if (i === 3)
+        o += P(
+          'c t',
+          `M${r1(x - r * 0.9)} ${r1(24 - r * 0.3)}H${r1(x + r * 0.9)}M${r1(x - r * 0.95)} ${r1(24 + r * 0.25)}H${r1(x + r * 0.95)}`,
+          ' style="stroke:var(--screen)"',
+        );
+    });
+    return o;
+  },
 };
 
 /**
@@ -3740,6 +3803,7 @@ export const LOOP: Record<string, number> = {
   nm: 4,
   tf: 3,
   pm: 4,
+  ss: 24,
 };
 
 /** 止まっているときの図柄（ビルド時に HTML へ出す） */

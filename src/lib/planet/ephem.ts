@@ -51,11 +51,13 @@ function helioRect(lon: number, lat: number, r: number, t: number): Vec3 {
   return [r * Math.cos(b) * Math.cos(l), r * Math.cos(b) * Math.sin(l), r * Math.sin(b)];
 }
 
-const planetRect = (tab: VsopTable, t: number): Vec3 => {
+/** 惑星の日心位置（日付の黄道の直交座標、FK5 へ補正）[au]。t は J2000.0 からの TT のユリウス世紀 */
+export const planetRect = (tab: VsopTable, t: number): Vec3 => {
   const tau = t / 10;
   return helioRect(vsop(tab, 'L', tau), vsop(tab, 'B', tau), vsop(tab, 'R', tau), t);
 };
-const earthRect = (t: number): Vec3 => {
+/** 地球の日心位置（planetRect と同じ座標）[au] */
+export const earthRect = (t: number): Vec3 => {
   const e = earthHelio(t);
   return helioRect(e.lon, e.lat, e.r, t);
 };

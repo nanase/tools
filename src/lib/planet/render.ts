@@ -331,16 +331,41 @@ export class PlanetRenderer {
     this.vao = vao;
   }
 
-  /** 地図（正距円筒、左端が経度 0 で西経が右へ減る、上が北）を読む */
+  /** 地図（正距円筒、左端が経度 0 で西経が右へ減る、上が北）を読み、描く地図にする */
   async load(url: string): Promise<void> {
+    const t = await this.texture(url);
+    if (this.tex) this.gl.deleteTexture(this.tex);
+    this.tex = t;
+  }
+
+  /** 地図を読んでテクスチャにする（描く地図は変えない。useMap で切り替える。複数の惑星を 1 つの描画で描くとき） */
+  async texture(url: string): Promise<WebGLTexture> {
     const r = await fetch(url);
     if (!r.ok) throw new Error(`${url}: ${r.status}`);
     const bmp = await createImageBitmap(await r.blob(), { colorSpaceConversion: 'none', premultiplyAlpha: 'none' });
+    const t = this.upload(bmp.width, bmp.height, bmp);
+    bmp.close();
+    return t;
+  }
+
+  /** 1 色の地図（sRGB の 0〜255） */
+  solid(rgb: readonly [number, number, number]): WebGLTexture {
+    return this.upload(1, 1, new Uint8Array([rgb[0], rgb[1], rgb[2], 255]));
+  }
+
+  /** 描く地図を切り替える（load で読んだ地図は消さない） */
+  useMap(t: WebGLTexture | null): void {
+    this.tex = t;
+  }
+
+  private upload(w: number, h: number, src: ImageBitmap | Uint8Array): WebGLTexture {
     const gl = this.gl;
-    const t = gl.createTexture();
+    const t = gl.createTexture() as WebGLTexture;
     gl.bindTexture(gl.TEXTURE_2D, t);
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.SRGB8_ALPHA8, gl.RGBA, gl.UNSIGNED_BYTE, bmp);
+    if (src instanceof Uint8Array)
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.SRGB8_ALPHA8, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, src);
+    else gl.texImage2D(gl.TEXTURE_2D, 0, gl.SRGB8_ALPHA8, gl.RGBA, gl.UNSIGNED_BYTE, src);
     gl.generateMipmap(gl.TEXTURE_2D);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
@@ -348,9 +373,7 @@ export class PlanetRenderer {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     const an = gl.getExtension('EXT_texture_filter_anisotropic');
     if (an) gl.texParameterf(gl.TEXTURE_2D, an.TEXTURE_MAX_ANISOTROPY_EXT, 8);
-    bmp.close();
-    if (this.tex) gl.deleteTexture(this.tex);
-    this.tex = t;
+    return t;
   }
 
   /** 環の表を読む（n 点。1 点あたり RGBA で、RGB は sRGB の色、A は 1 − exp(−τ)） */
