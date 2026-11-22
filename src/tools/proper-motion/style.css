@@ -21,7 +21,6 @@
 .pm-ib svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .pm-zv{display:inline-flex;gap:6px;align-items:baseline;padding:5px 10px;border:1px solid var(--pm-edge);border-radius:8px;background:var(--pm-glass);color:var(--pm-ink2)}
 .pm-zv b{font:600 14px var(--mono);color:var(--pm-ink);font-variant-numeric:tabular-nums}
-.pm-yr{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);font:700 22px var(--sans);color:var(--pm-ink);text-shadow:0 1px 4px #000;pointer-events:none;white-space:nowrap}
 .pm-msg{position:absolute;inset:0;display:grid;place-items:center;margin:0;padding:16px;color:var(--pm-ink);text-align:center}
 .pm-msg[hidden]{display:none}
 /* 星の札: ホバーは星のそば、押した星は左上に置く */
@@ -54,12 +53,10 @@
 .pm-stage.fs-on #pm-cv{height:100%;aspect-ratio:auto}
 #pm-how{--how-min:340px}
 #pm-how canvas{display:block;width:172px;height:104px;border-radius:2px;background:var(--screen)}
-/* スマートフォン: 図を正方形にし、切り替えは種類の下に並べる。図の上の年は年のバーと重なるので出さない（全画面では出す） */
+/* スマートフォン: 図を正方形にし、切り替えは種類の下に並べる */
 @media (max-width:720px){
   #pm-cv{aspect-ratio:1}
   .pm-tr{top:48px;left:8px;right:8px;max-width:none;justify-content:flex-start}
-  .pm-yr{display:none}
-  .pm-stage.fs-on .pm-yr{display:block;bottom:52px;font-size:18px}
   .pm-spd{margin-left:0}
 }
 @media (max-width:559px){

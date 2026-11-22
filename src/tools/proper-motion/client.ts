@@ -349,8 +349,8 @@ function draw(): void {
     c.fill();
     DRAWN.push([p[0], p[1], i, r]);
   }
-  /* 名前: 重なるものは出さない。中央下は年の表示のために空ける */
-  const boxes: number[][] = [[W / 2 - 90, H - 44, W / 2 + 90, H]];
+  /* 名前: 重なるものは出さない */
+  const boxes: number[][] = [];
   const put = (x: number, y: number, t: string, font: string, col: string, center = false): number[] | null => {
     c.font = font;
     const w = c.measureText(t).width,
@@ -476,7 +476,6 @@ function showTip(i: number, p: [number, number] | null): void {
 
 function syncTexts(): void {
   setT($('#pm-fov'), `${Math.round(st.look.fov)}°`);
-  setT($('#pm-yr'), fmtRel(st.year));
   setT($('#pm-yv'), fmtRel(st.year));
   setT($('#pm-ya'), fmtYear(st.year));
   if (document.activeElement !== yearIn) yearIn.value = String(Math.round(st.year - NOW));
