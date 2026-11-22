@@ -2683,6 +2683,30 @@ export const ART: Record<string, Art> = {
       `<circle class="fb" cx="${r1(px)}" cy="${r1(k(px))}" r="2.6"/>`
     );
   },
+  /* 潮の満ち引き: 左は月を追って向きを変える海の膨らみ、右は 1 か月の潮位（大潮で大きく、小潮で小さい）の上を今の点が進む。
+     月の図柄と同じ型。1 秒に 8 コマで、48 コマで 1 周 */
+  td(t) {
+    const e = mod(0.6 + (Math.floor(t * 8) / 48) * TAU, TAU),
+      cx = 24,
+      cy = 24,
+      R = 11;
+    let sea = '';
+    for (let i = 0; i <= 48; i++) {
+      const a = (i / 48) * TAU,
+        r = R + 6 * Math.cos(a - e) ** 2;
+      sea += `${i ? 'L' : 'M'}${r1(cx + r * Math.cos(a))} ${r1(cy - r * Math.sin(a))}`;
+    }
+    const env = (x: number): number => 0.35 + 0.65 * Math.abs(Math.cos(((x - 56) / 60) * TAU)),
+      w = (x: number): number => 24 - 14 * env(x) * Math.cos(((x - 56) / 60) * TAU * 6),
+      px = 56 + (e / TAU) * 60;
+    return (
+      `<path class="fb" d="${sea}Z"/><circle class="fs" cx="${cx}" cy="${cy}" r="${R}"/>` +
+      `<circle class="fa" cx="${r1(cx + 20.5 * Math.cos(e))}" cy="${r1(cy - 20.5 * Math.sin(e))}" r="3.2"/>` +
+      P('c d t', 'M56 24H116') +
+      P('b', fx(w, 56, 116, 160)) +
+      `<circle class="fa" cx="${r1(px)}" cy="${r1(w(px))}" r="2.6"/>`
+    );
+  },
   /* 木星: 縞のある本体の前と後ろを 4 つの衛星が行き来する（周期は 1:2:4:8、裏に回った衛星は隠れる） */
   jv(t) {
     const cx = 60,
@@ -3752,6 +3776,7 @@ export const LOOP: Record<string, number> = {
   fk: TAU / 2.1,
   se: 1 / 0.12,
   mn: TAU / 0.9,
+  td: 6,
   jv: 12.8,
   st: 12.8,
   sun: 6,

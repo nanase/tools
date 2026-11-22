@@ -604,7 +604,7 @@ export const TOOLS: Tool[] = [
     t: '月',
     d: '選んだ日時の月を満ち欠けから地形の影まで再現します。',
     ic: 'mn',
-    r: ['solar-eclipse', 'impact', 'jupiter', 'shading'],
+    r: ['solar-eclipse', 'tide', 'impact', 'shading'],
     k: 'moon 月 満ち欠け 月齢 月相 phase 輝面比 illumination 秤動 libration 地球直下点 sub-earth 視直径 apparent diameter 近地点 遠地点 perigee apogee スーパームーン supermoon 月の出 月の入り 南中 moonrise moonset 欠け際 明暗境界 terminator クレーター crater 月の海 mare 余経度 colongitude 地球照 earthshine 月食 皆既月食 lunar eclipse 本影 半影 赤銅色 danjon 中秋の名月 十三夜 カレンダー lro lola nasa meeus 天文 astronomy',
   },
   {
@@ -613,7 +613,7 @@ export const TOOLS: Tool[] = [
     t: '木星',
     d: '選んだ日時の木星と衛星を、大赤斑や衛星の影まで再現します。',
     ic: 'jv',
-    r: ['saturn', 'solar', 'moon', 'shading'],
+    r: ['saturn', 'solar', 'tide', 'shading'],
     k: 'jupiter 木星 惑星 planet ガリレオ衛星 galilean moons イオ io エウロパ europa ガニメデ ganymede カリスト callisto ヒマリア himalia アマルテア amalthea 不規則衛星 irregular moons 大赤斑 great red spot grs 中央子午線 central meridian system i ii iii 衛星の影 shadow transit 通過 掩蔽 occultation 食 eclipse 相互食 mutual events phemu 衝 opposition 縞 belt hubble opal minnaert 周縁減光 limb darkening vsop87 l1.2 jupos imcce horizons 天文 astronomy',
   },
   {
@@ -662,6 +662,15 @@ export const TOOLS: Tool[] = [
     k: '固有運動 proper motion 星空 星座 constellation 星図 star chart star map 星 star 恒星 北斗七星 big dipper 冬の大三角 夏の大三角 オリオン座 アルクトゥルス シリウス アルタイル バーナード星 視線速度 radial velocity 年周視差 parallax 距離 光年 light year 等級 magnitude 歳差 precession 地軸 北極星 pole star ポラリス ベガ トゥバン 天の北極 天の川 milky way 銀河座標 galactic coordinates hipparcos hyg ステレオ図法 stereographic 追尾 天文 astronomy',
   },
   {
+    id: 'tide',
+    c: '天文',
+    t: '潮の満ち引き',
+    d: '月と太陽が引く海の膨らみと、今日の潮を描きます。',
+    ic: 'td',
+    r: ['moon', 'sunrise', 'solar-eclipse', 'siphon'],
+    k: '潮の満ち引き tide tides 潮汐 潮 満潮 干潮 high tide low tide 満ち潮 引き潮 干満の差 tidal range 大潮 中潮 小潮 長潮 若潮 spring tide neap tide 潮回り 潮見表 潮位 tide table 潮汐力 tidal force 起潮力 引力の差 平衡潮 equilibrium tide 潮の膨らみ tidal bulge 潮齢 月齢 旧暦 朔 望 上弦 下弦 新月 満月 自転 浅水波 shallow water 港 干潟 潮干狩り meeus vsop87 天文 astronomy 月 moon 太陽 sun 海 ocean',
+  },
+  {
     id: 'maxwell-demon',
     c: '物理',
     t: 'マクスウェルの悪魔',
@@ -676,7 +685,7 @@ export const TOOLS: Tool[] = [
     t: 'サイフォン',
     d: '水を管で持ち上げて流す仕組みを身近な物と冷泉で見ます。',
     ic: 'sf',
-    r: ['maxwell-demon', 'impact', 'transmission', 'pendulum'],
+    r: ['maxwell-demon', 'impact', 'transmission', 'tide'],
     k: 'サイフォン サイホン siphon syphon 間欠冷泉 間歇冷泉 間欠泉 intermittent spring periodic spring rhythmic spring 草間 新見 ピリオディック・スプリング wyoming 教訓茶碗 ピタゴラスカップ pythagorean cup tantalus cup 灯油ポンプ 灯油 ポリタンク 水槽 水換え アクアリウム トイレ 便器 サイフォン式 洗浄 呼び水 落差 負圧 大気圧 蒸気圧 沸騰 キャビテーション cavitation ベルヌーイ bernoulli 流体 fluid 水 物理 physics',
   },
   {

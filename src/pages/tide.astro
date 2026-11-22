@@ -1,0 +1,75 @@
+---
+import Collapsible from '../components/Collapsible.astro';
+import HowSteps from '../components/HowSteps.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/tide/style.css';
+import { STEPS } from '../tools/tide/how';
+import Theory from '../tools/tide/Theory.astro';
+
+const name = '潮の満ち引き';
+---
+<SiteLayout title={name} tool={{ id: 'tide', name }} note="月と太陽の位置は Meeus の式と VSOP87、地球の写真は NASA Visible Earth（Blue Marble）、月の模様は NASA's Scientific Visualization Studio の CGI Moon Kit。">
+  <PageTitle title={name}>月と太陽が引く海の膨らみと、今日の潮を描きます。港の潮位は地形を入れない計算の値で、実際の港とは時刻も高さも違います。</PageTitle>
+
+  <div class="tgrid" id="td">
+    <Panel hid="hd-today" title="今日の潮">
+      <span slot="aux" class="aux">日本時間</span>
+      <div class="td-today">
+        <canvas id="td-tmoon" class="td-tmoon" role="img" aria-label="今日の月の形"></canvas>
+        <div class="td-tm"><span class="k" id="td-tdate">—</span><b id="td-tname" class="td-tname">—</b></div>
+        <div class="td-ti"><span class="k">月齢</span><b id="td-tage" class="hw" data-ph="00.0">—</b></div>
+        <div class="td-ti"><span class="k">次の大潮</span><b id="td-tsp" class="hw" data-ph="12月30日">—</b></div>
+        <div class="td-ti"><span class="k">次の小潮</span><b id="td-tnp" class="hw" data-ph="12月30日">—</b></div>
+      </div>
+    </Panel>
+
+    <Panel hid="hd-sky" title="月と太陽の引力" fixed>
+      <button slot="aux" type="button" class="tg" id="td-play" aria-pressed="false"><span class="led" id="td-playLed" aria-hidden="true"></span><span id="td-playT" class="hw" data-ph="一時停止">早送り</span></button>
+      <div slot="aux" class="seg" id="p-sun" role="group" aria-label="引く天体"><button type="button" data-v="moon" aria-pressed="false">月だけ</button><button type="button" data-v="sun" aria-pressed="true">月と太陽</button></div>
+      <div class="td-bar">
+        <div class="seg" id="p-span" role="group" aria-label="潮位のグラフの期間"><button type="button" data-v="day" aria-pressed="true">1 日</button><button type="button" data-v="week" aria-pressed="false">1 週間</button><button type="button" data-v="month" aria-pressed="false">1 か月</button></div>
+        <button type="button" class="tg" id="td-now">今日</button>
+        <span class="td-when hw" id="td-when" data-ph="12月30日（水） 23:59">—</span>
+      </div>
+      <div class="td-cols">
+        <div>
+          <canvas id="td-sky" class="td-sky" role="img" aria-label="北極の上から見た地球と海と月と太陽。月をドラッグすると日時が動く"></canvas>
+          <div class="td-under">
+            <div class="sbar lg">
+              <span class="stag"><i class="td-k-ar" aria-hidden="true"></i>力</span>
+              <span class="stag"><i class="td-k-sea" aria-hidden="true"></i>海</span>
+              <span class="stag"><i class="td-k-port" aria-hidden="true"></i>港</span>
+            </div>
+            <div class="seg" id="p-ar" role="group" aria-label="矢印"><button type="button" data-v="pull" aria-pressed="false">月の引力</button><button type="button" data-v="diff" aria-pressed="true">中心との差</button></div>
+          </div>
+        </div>
+        <div>
+          <h3 class="td-gh">港の潮位<span class="aux">cm・赤道の東経 135°・地形なし</span></h3>
+          <canvas id="td-graph" class="td-graph" role="img" aria-label="港の潮位の変化。満潮と干潮の時刻、大潮と小潮の印。押すとその時刻へ移る"></canvas>
+          <div class="sbar">
+            <span>潮回り <b id="s-shio" class="hw" data-ph="大潮">—</b></span>
+            <span>次の満潮 <b id="s-hi" class="hw td-hi" data-ph="23:59">—</b></span>
+            <span>次の干潮 <b id="s-lo" class="hw td-lo" data-ph="23:59">—</b></span>
+            <span>今 <b id="s-now" class="hw" data-ph="+00 cm">—</b></span>
+          </div>
+        </div>
+      </div>
+    </Panel>
+
+    <Panel hid="hd-how" title="しくみ" class="td-how">
+      <HowSteps steps={STEPS} />
+    </Panel>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools current="tide" />
+  <script>
+    import '../tools/tide/client';
+  </script>
+</SiteLayout>
