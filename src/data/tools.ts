@@ -501,7 +501,7 @@ export const TOOLS: Tool[] = [
     t: 'フォーカシングマスク',
     d: 'バーティノフマスクなどを付けた星の像を、回折で計算します。',
     ic: 'fk',
-    r: ['lens', 'moon', 'fft', 'halo'],
+    r: ['lens', 'moon', 'proper-motion', 'halo'],
     k: 'focusing mask フォーカスマスク ピント合わせ 合焦 focus bahtinov バーティノフ tri-bahtinov トライ・バーティノフ carey キャリー hartmann ハルトマン scheiner シャイナー 望遠鏡 telescope 天体写真 astrophotography 星 光条 回折 diffraction fraunhofer フラウンホーファー fft 点像 psf シーイング seeing 臨界焦点範囲 critical focus zone cfz 光軸 collimation コマ hfd',
   },
   {
@@ -631,7 +631,7 @@ export const TOOLS: Tool[] = [
     t: '太陽系',
     d: '地球から見た 7 惑星の大きさと欠けを日付ごとに比べます。',
     ic: 'ss',
-    r: ['jupiter', 'saturn', 'moon', 'shading'],
+    r: ['jupiter', 'saturn', 'solar-eclipse', 'shading'],
     k: 'solar system 太陽系 惑星 planets 水星 mercury 金星 venus 火星 mars 木星 jupiter 土星 saturn 天王星 uranus 海王星 neptune 視直径 apparent diameter 見かけの大きさ 満ち欠け phase 位相角 輝面比 最接近 closest approach 衝 opposition 内合 inferior conjunction 外合 離角 elongation 宵の明星 明けの明星 夕方 明け方 公転 軌道 orbit 会合周期 synodic period 大接近 vsop87 viking hubble opal 天文 astronomy',
   },
   {
@@ -649,8 +649,17 @@ export const TOOLS: Tool[] = [
     t: '日の出と日の入り',
     d: '世界の昼と夜、選んだ地点の太陽の道すじを描きます。',
     ic: 'sun',
-    r: ['moon', 'solar-eclipse', 'halo', 'lens'],
+    r: ['moon', 'solar-eclipse', 'proper-motion', 'halo'],
     k: '日の出と日の入り sunrise sunset 日の出 日の入り 日没 南中 solar noon culmination 太陽の高度 altitude elevation 方位 azimuth 昼の長さ day length 日照時間 白夜 midnight sun 極夜 polar night 薄明 twilight 市民薄明 civil 航海薄明 nautical 天文薄明 astronomical マジックアワー golden hour blue hour 明暗境界 terminator 昼夜 day night 太陽直下点 subsolar point 夏至 summer solstice 冬至 winter solstice 春分 秋分 equinox 時差 time zone 夏時間 daylight saving 世界地図 world map 大気差 refraction vsop87 meeus 天文 astronomy 太陽 sun',
+  },
+  {
+    id: 'proper-motion',
+    c: '天文',
+    t: '固有運動',
+    d: '数万年で星座の形が崩れる様子を星図で見ます。',
+    ic: 'pm',
+    r: ['sunrise', 'moon', 'doppler', 'focusing-mask'],
+    k: '固有運動 proper motion 星空 星座 constellation 星図 star chart star map 星 star 恒星 北斗七星 big dipper 冬の大三角 夏の大三角 オリオン座 アルクトゥルス シリウス アルタイル バーナード星 視線速度 radial velocity 年周視差 parallax 距離 光年 light year 等級 magnitude 歳差 precession 地軸 北極星 pole star ポラリス ベガ トゥバン 天の北極 天の川 milky way 銀河座標 galactic coordinates hipparcos hyg ステレオ図法 stereographic 追尾 天文 astronomy',
   },
   {
     id: 'maxwell-demon',

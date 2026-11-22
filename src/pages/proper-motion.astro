@@ -1,0 +1,89 @@
+---
+import Busy from '../components/Busy.astro';
+import Collapsible from '../components/Collapsible.astro';
+import FsButton from '../components/FsButton.astro';
+import HowSteps from '../components/HowSteps.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/proper-motion/style.css';
+import { STEPS } from '../tools/proper-motion/steps';
+import Theory from '../tools/proper-motion/Theory.astro';
+
+const name = '固有運動';
+const OPTS = [
+  ['lines', '星座線', true],
+  ['ghost', '今の形', true],
+  ['names', '星座名', true],
+  ['trail', '道すじ', true],
+  ['mw', '天の川', true],
+  ['pole', '天の北極', false],
+] as const;
+const JUMPS = [
+  [-100000, '10 万年前'],
+  [-50000, '5 万年前'],
+  [0, '現在'],
+  [50000, '5 万年後'],
+  [100000, '10 万年後'],
+] as const;
+const SPEEDS = [
+  [100, '100 年/秒'],
+  [500, '500 年/秒'],
+  [2000, '2000 年/秒'],
+  [5000, '5000 年/秒'],
+  [20000, '2 万年/秒'],
+] as const;
+---
+<SiteLayout title={name} tool={{ id: 'proper-motion', name }} note="星: HYG Database v3.8（David Nash、CC BY-SA 4.0）· 星座線と星座名: d3-celestial（Olaf Frohn、BSD 3-Clause）· 天の北極: Vondrák, Capitaine & Wallace (2011) の長期歳差 · 天の川は HYG の星の数から作った目安です。">
+  <PageTitle title={name}>星はそれぞれ違う向きと速さで動いていて、数万年たつと星座の形が崩れます。10 万年前から 10 万年後まで、星図を動かしながら見られます。</PageTitle>
+
+  <div class="tgrid">
+    <Panel hid="hd-sky" title="星図" class="a-sky" fixed>
+      <div class="pm-stage" id="pm-stage">
+        <div class="pm-box">
+          <canvas id="pm-cv" tabindex="0" role="img" aria-label="星図。ドラッグで移動、ホイールとダブルクリックで拡大、星を押すと名前"></canvas>
+          <div class="pm-hud pm-tl">
+            <select class="pm-sel" id="pm-con" aria-label="星座"></select>
+          </div>
+          <div class="pm-hud pm-tr" id="pm-tr">
+            {OPTS.map(([k, n, on]) => <button type="button" class="pm-tg" id={`pm-o-${k}`} data-opt={k} aria-pressed={on ? 'true' : 'false'}><span class="led" aria-hidden="true"></span>{n}</button>)}
+            <FsButton id="pm-fs" class="pm-fs" />
+          </div>
+          <div class="pm-hud pm-bl">
+            <button type="button" class="pm-ib" data-z="0.5" aria-label="拡大" title="拡大"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 4v12M4 10h12"/></svg></button>
+            <button type="button" class="pm-ib" data-z="2" aria-label="縮小" title="縮小"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h12"/></svg></button>
+            <button type="button" class="pm-ib" id="pm-home" aria-label="全体" title="全体"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 9.5L10 3.5l7 6M5.5 8v8.5h9V8"/></svg></button>
+          </div>
+          <div class="pm-hud pm-br"><span class="pm-zv">視野 <b class="hw" id="pm-fov" data-ph="200°">—</b></span></div>
+          <div class="pm-tip" id="pm-tip" hidden>
+            <div id="pm-tipi"></div>
+            <button type="button" class="pm-tg pm-trk" id="pm-trk" aria-pressed="false" hidden><span class="led" aria-hidden="true"></span><span>追尾</span></button>
+          </div>
+          <p class="pm-msg" id="pm-msg" hidden></p>
+          <Busy id="pm-busy" text="読み込み中…" center />
+        </div>
+        <div class="pm-time">
+          <button type="button" class="pm-tg pm-run" id="pm-run" aria-pressed="false"><span class="led" aria-hidden="true"></span><span>停止中</span></button>
+          <input type="range" id="pm-year" min={-100000} max={100000} step="100" value="0" aria-label="年（今からの年数）">
+          <span class="pm-yv"><b class="hw" id="pm-yv" data-ph="9 万 9900 年後">現在</b><small class="hw" id="pm-ya" data-ph="紀元前 97975 年">西暦 2026 年</small></span>
+          <div class="pm-jumps" role="group" aria-label="年へ移る">{JUMPS.map(([y, t]) => <button type="button" data-jump={y}>{t}</button>)}</div>
+          <select class="pm-sel pm-spd" id="pm-spd" aria-label="再生の速さ">{SPEEDS.map(([v, t]) => <option value={v} selected={v === 5000}>{t}</option>)}</select>
+        </div>
+      </div>
+    </Panel>
+
+    <Panel hid="hd-how" title="しくみ" class="a-how">
+      <HowSteps side id="pm-how" steps={STEPS.map((s) => ({ h: s.h, fig: `<canvas role="img" aria-label="${s.h}"></canvas>`, p: s.p }))} />
+    </Panel>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools current="proper-motion" />
+  <script>
+    import '../tools/proper-motion/client';
+  </script>
+</SiteLayout>
