@@ -129,6 +129,8 @@ let W = 0,
   dirty = true;
 /** 描いた星 [x, y, 番号, 半径]（押した星を探す） */
 let DRAWN: [number, number, number, number][] = [];
+/** 描いた星座名の箱 [左, 上, 右, 下, 略符]（押した星座名を探す） */
+let CONHIT: [number, number, number, number, string][] = [];
 const LINEC = 'rgba(130,160,215,.38)',
   SELC = 'rgba(190,215,255,.95)',
   GHOSTC = 'rgba(160,190,240,.55)',
@@ -334,6 +336,7 @@ function draw(): void {
     lim = f > 100 ? 5 : f > 50 ? 5.8 : f > 22 ? 6.6 : f > 10 ? 7.3 : 8,
     k = Math.max(0.95, Math.min(2.1, 2.1 - Math.log2(f / 12) * 0.28));
   DRAWN = [];
+  CONHIT = [];
   for (let i = S.n - 1; i >= 0; i--) {
     const m = MY[i] as number;
     if (m > lim) continue;
@@ -348,11 +351,11 @@ function draw(): void {
   }
   /* 名前: 重なるものは出さない。中央下は年の表示のために空ける */
   const boxes: number[][] = [[W / 2 - 90, H - 44, W / 2 + 90, H]];
-  const put = (x: number, y: number, t: string, font: string, col: string, center = false): void => {
+  const put = (x: number, y: number, t: string, font: string, col: string, center = false): number[] | null => {
     c.font = font;
     const w = c.measureText(t).width,
       bx = center ? [x - w / 2, y - 9, x + w / 2, y + 9] : [x, y - 9, x + w, y + 9];
-    if ((bx[0] as number) < 2 || (bx[2] as number) > W - 2) return;
+    if ((bx[0] as number) < 2 || (bx[2] as number) > W - 2) return null;
     if (
       boxes.some(
         (b) =>
@@ -362,12 +365,13 @@ function draw(): void {
           (b[1] as number) < (bx[3] as number),
       )
     )
-      return;
+      return null;
     boxes.push(bx);
     c.fillStyle = col;
     c.textAlign = center ? 'center' : 'left';
     c.textBaseline = 'middle';
     c.fillText(t, x, y);
+    return bx;
   };
   const nlim = f > 100 ? 1 : f > 50 ? 2 : 3.6,
     named = [...(g ? g.mem : []), ...Object.keys(SKY.names).map(Number)];
@@ -391,7 +395,7 @@ function draw(): void {
         l = Math.hypot(cen[0], cen[1], cen[2]),
         p = P([cen[0] / l, cen[1] / l, cen[2] / l]);
       if (!inView(p, 0)) continue;
-      put(
+      const bx = put(
         p[0],
         p[1] + 16,
         ja,
@@ -399,6 +403,9 @@ function draw(): void {
         code === st.sel ? '#e8eefc' : NAMEC,
         true,
       );
+      /* 押すとその星座を選ぶ。押せる所は文字の上下左右に 4 px 広げる */
+      if (bx)
+        CONHIT.push([(bx[0] as number) - 4, (bx[1] as number) - 4, (bx[2] as number) + 4, (bx[3] as number) + 4, code]);
     }
   }
   if (st.opt.pole) {
@@ -560,14 +567,17 @@ for (const b of $$('[data-opt]')) {
 }
 for (const b of $$('[data-z]')) b.addEventListener('click', () => zoomAt(Number(b.dataset.z), W / 2, H / 2));
 $('#pm-home').addEventListener('click', () => flyTo({ ...st.look, fov: FOV_HOME }));
-sel.addEventListener('change', () => {
-  st.sel = sel.value;
+/** 星座を選び、その星座へ移る（セレクトボックスと、図の中の星座名から） */
+function selectGroup(code: string): void {
+  st.sel = code;
+  sel.value = code;
   store('pm:sel', st.sel);
   unpin();
   st.hover = -1;
   const l = groupLook(st.sel);
   if (l) flyTo(l);
-});
+}
+sel.addEventListener('change', () => selectGroup(sel.value));
 trk.addEventListener('click', () => {
   if (st.pin < 0) return;
   if (st.track === st.pin) st.track = -1;
@@ -604,6 +614,8 @@ const local = (e: PointerEvent | MouseEvent): [number, number] => {
   const r = cv.getBoundingClientRect();
   return [e.clientX - r.left, e.clientY - r.top];
 };
+const conHit = (x: number, y: number): string | null =>
+  CONHIT.find((b) => x >= b[0] && x <= b[2] && y >= b[1] && y <= b[3])?.[4] ?? null;
 function hit(x: number, y: number): number {
   let best = -1,
     bd = 14;
@@ -664,19 +676,22 @@ cv.addEventListener('pointermove', (e) => {
     return;
   }
   if (e.pointerType === 'mouse') {
-    const h = hit(p[0], p[1]);
+    const onName = conHit(p[0], p[1]) !== null,
+      h = onName ? -1 : hit(p[0], p[1]);
     if (h !== st.hover) {
       st.hover = h;
       dirty = true;
     }
-    cv.classList.toggle('on-star', h >= 0);
+    cv.classList.toggle('on-star', onName || h >= 0);
   }
 });
 const up = (e: PointerEvent): void => {
   if (drag && drag.moved <= 3 && ptrs.size === 1) {
     const [x, y] = local(e),
-      i = hit(x, y);
-    if (i < 0 || i === st.pin) unpin();
+      code = conHit(x, y),
+      i = code ? -1 : hit(x, y);
+    if (code) selectGroup(code);
+    else if (i < 0 || i === st.pin) unpin();
     else {
       if (st.track >= 0) st.track = i;
       st.pin = i;
