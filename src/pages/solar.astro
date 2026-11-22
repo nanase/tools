@@ -1,0 +1,71 @@
+---
+import Busy from '../components/Busy.astro';
+import Collapsible from '../components/Collapsible.astro';
+import DatePicker from '../components/DatePicker.astro';
+import HowSteps from '../components/HowSteps.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/solar/style.css';
+import { IDS, NAME } from '../tools/solar/model';
+import { STEPS } from '../tools/solar/steps';
+import Theory from '../tools/solar/Theory.astro';
+
+const name = '太陽系';
+---
+<SiteLayout title={name} tool={{ id: 'solar', name }} note="火星の模様: NASA/JPL/USGS Viking MDIM 2.1（パブリックドメイン）· 木星・土星の模様: NASA/ESA Hubble OPAL（PI: Simon, GO13937, STScI, DOI 10.17909/T9G593, CC BY 4.0）を加工 · 土星の環: NASA PDS Cassini VIMS・NASA/JPL/Space Science Institute（PIA11142）">
+  <PageTitle title={name}>地球から見た 7 惑星の大きさと欠けを日付ごとに比べます。</PageTitle>
+
+  <div class="tgrid ss-grid">
+    <Panel hid="hd-view" title="地球から見た姿" class="ss-viewp" fixed>
+      <div slot="aux" class="seg" id="p-play" data-nosave><button type="button" id="play" aria-pressed="false"><span class="led" id="playLed" aria-hidden="true"></span><span>再生</span></button></div>
+      <div class="ss-time">
+        <span class="ss-date"><b id="o-date">—</b><DatePicker /></span>
+        <button type="button" class="ss-sq" id="mprev" aria-label="1 か月前" title="1 か月前">‹</button>
+        <button type="button" class="ss-sq" id="mnext" aria-label="1 か月後" title="1 か月後">›</button>
+        <button type="button" class="chip" id="today">今日</button>
+        <button type="button" class="chip" id="near"><span class="hw" id="near-t" data-ph="海王星の次の最接近">金星の次の最接近</span></button>
+        <span class="ss-sp">速さ<span class="seg" id="p-sp" role="group" aria-label="速さ"><button type="button" data-v="5" aria-pressed="false">5 日/秒</button><button type="button" data-v="10" aria-pressed="true">10 日/秒</button><button type="button" data-v="30" aria-pressed="false">30 日/秒</button></span></span>
+      </div>
+      <div class="ss-view">
+        <div class="ss-cells" id="p-pl" role="group" aria-label="惑星">
+          {IDS.map((id) => (
+            <button type="button" class="ss-cell" data-v={id} aria-pressed={id === 've' ? 'true' : 'false'}>
+              <canvas role="img" aria-label={`地球から見た${NAME[id]}`}></canvas>
+              <b>{NAME[id]}</b>
+              <span class="ss-v1">—</span>
+              <span class="ss-v2">—</span>
+              <span class="ss-sky"><i></i><span>—</span></span>
+            </button>
+          ))}
+        </div>
+        <Busy id="ss-busy" text="読み込み中…" center />
+      </div>
+      <p class="ss-cap static">どれも同じ倍率・北が上</p>
+    </Panel>
+
+    <Panel hid="hd-size" title="大きさの移り変わり" class="ss-size">
+      <canvas class="ss-cv" id="ss-size" role="img" aria-label="7 惑星の見かけの大きさの移り変わり（横が年、段ごとに上端がその惑星の最大）。横に引くと日付が動き、段を押すとその惑星を選ぶ"></canvas>
+      <p class="ss-cap static">上端はそれぞれの最大の大きさ</p>
+    </Panel>
+
+    <Panel hid="hd-top" title="上から見た位置" class="ss-top">
+      <div slot="aux" class="seg" id="p-rg" role="group" aria-label="範囲"><button type="button" data-v="mars" aria-pressed="true">火星まで</button><button type="button" data-v="saturn" aria-pressed="false">土星まで</button><button type="button" data-v="neptune" aria-pressed="false">海王星まで</button></div>
+      <div class="ss-stage"><canvas id="ss-top" role="img" aria-label="黄道の北から見た惑星の位置と、地球から選んだ惑星までの距離"></canvas></div>
+    </Panel>
+
+    <Panel hid="hd-how" title="しくみ">
+      <HowSteps id="ss-how" steps={STEPS.map((s) => ({ h: s.h, fig: `<svg viewBox="0 0 200 100" aria-hidden="true">${s.svg}</svg>`, p: s.p }))} />
+    </Panel>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools current="solar" />
+  <script>
+    import '../tools/solar/client';
+  </script>
+</SiteLayout>

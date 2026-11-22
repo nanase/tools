@@ -1,0 +1,69 @@
+/* 太陽系のページだけのスタイル。クラス名には ss- を付ける。惑星の姿の枠はテーマに依らず暗い地 */
+.ss-grid{
+  --ss-sun:#e09a00;--ss-me:#7d8088;--ss-ve:#b8901a;--ss-ea:#2a74c4;--ss-ma:#c4411c;--ss-ju:#a8723c;--ss-sa:#9c7f1f;--ss-ur:#1f9494;--ss-ne:#3550bf;
+  --ss-ev:#e07a2e;--ss-al:#2c4a8a;--ss-mo:#2f93b8;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]) .ss-grid{--ss-sun:#ffb21c;--ss-me:#b4b8c0;--ss-ve:#ead07a;--ss-ea:#62aaf2;--ss-ma:#ff7a52;--ss-ju:#dcaa78;--ss-sa:#e5c35e;--ss-ur:#6ad4d4;--ss-ne:#8b9dff;--ss-ev:#ff9a52;--ss-al:#6f8fe0;--ss-mo:#4fc0e6}
+}
+:root[data-theme="dark"] .ss-grid{--ss-sun:#ffb21c;--ss-me:#b4b8c0;--ss-ve:#ead07a;--ss-ea:#62aaf2;--ss-ma:#ff7a52;--ss-ju:#dcaa78;--ss-sa:#e5c35e;--ss-ur:#6ad4d4;--ss-ne:#8b9dff;--ss-ev:#ff9a52;--ss-al:#6f8fe0;--ss-mo:#4fc0e6}
+
+/* 日時の行 */
+.ss-time{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 10px}
+.ss-date{display:inline-flex;align-items:center;gap:4px;margin-right:2px}
+.ss-date b{font:700 15px/1.3 var(--mono);font-variant-numeric:tabular-nums}
+.ss-sq{width:28px;height:28px;padding:0;border:1px solid var(--line);border-radius:4px;background:none;color:var(--ink-2);font:600 14px/1 var(--sans);cursor:pointer}
+.ss-sq:hover{border-color:var(--line-2);color:var(--ink)}
+.ss-time .chip{display:inline-flex;align-items:center;justify-content:center;font-family:var(--sans)}
+.ss-sp{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-3)}
+@media (max-width:640px){.ss-sp{margin-left:0}}
+
+/* 7 惑星の姿 */
+.ss-cells{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px}
+@media (max-width:640px){.ss-cells{grid-template-columns:repeat(4,minmax(0,1fr));gap:10px 6px}}
+.ss-cell{display:flex;flex-direction:column;align-items:center;gap:1px;min-width:0;padding:2px 2px 6px;border:1px solid transparent;border-radius:var(--r);background:none;color:var(--ink);font:inherit;cursor:pointer}
+.ss-cell:hover{border-color:var(--line-2)}
+.ss-cell[aria-pressed="true"]{border-color:var(--ink);background:var(--surface)}
+.ss-cell canvas{display:block;width:100%;aspect-ratio:1;border-radius:4px;background:#08090a;margin-bottom:4px}
+.ss-cell b{font-size:13px}
+.ss-v1{font:700 15px/1.4 var(--mono);font-variant-numeric:tabular-nums}
+.ss-v2{font:500 13px/1.4 var(--mono);color:var(--ink-3);white-space:nowrap}
+.ss-sky{display:inline-flex;align-items:center;gap:5px;margin-top:2px;font-size:12.5px;color:var(--ink-2);white-space:nowrap}
+.ss-sky i{width:9px;height:9px;border-radius:50%;border:1.5px solid var(--ink-3);box-sizing:border-box}
+.ss-sky[data-k="ev"] i{background:var(--ss-ev);border:0}
+.ss-sky[data-k="al"] i{background:var(--ss-al);border:0}
+.ss-sky[data-k="mo"] i{background:var(--ss-mo);border:0}
+.ss-sky[data-k="no"]{color:var(--ink-3)}
+@media (max-width:640px){.ss-v2{font-size:12px}}
+.ss-cap{margin:6px 0 0;font-size:12.5px;color:var(--ink-3);text-align:center}
+.ss-view{position:relative}
+
+/* 年表と上から見た図 */
+.ss-cv{display:block;width:100%;touch-action:pan-y;user-select:none;-webkit-user-select:none}
+.ss-size .ss-cv{cursor:grab}
+.ss-size .ss-cv:active{cursor:grabbing}
+.ss-size .ss-cap{text-align:left}
+.ss-stage{display:flex;justify-content:center}
+.ss-stage canvas{display:block;max-width:100%}
+
+/* しくみの図 */
+#ss-how svg{display:block;width:100%;height:auto;max-height:110px}
+#ss-how svg *{stroke-linecap:round}
+#ss-how .o{fill:none;stroke:var(--line-2);stroke-width:1.2}
+#ss-how .a{fill:none;stroke:var(--ink-2);stroke-width:1.6}
+#ss-how .ah{fill:var(--ink-2)}
+#ss-how text{font:600 12px var(--sans);fill:var(--ink-2)}
+#ss-how .sun{fill:var(--ss-sun)}
+#ss-how .ea{fill:var(--ss-ea)}
+#ss-how .ma{fill:var(--ss-ma)}
+#ss-how .ve{fill:var(--ss-ve)}
+#ss-how .lt{fill:var(--ss-sun);opacity:.3}
+#ss-how .dk{fill:var(--ink-3);opacity:.3}
+
+/* 広い画面では年表と上から見た図を横に並べる */
+@media (min-width:900px){
+  .ss-grid{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);align-items:start}
+  .ss-grid>*{grid-column:1/-1}
+  .ss-grid>.ss-size{grid-column:1}
+  .ss-grid>.ss-top{grid-column:2}
+}

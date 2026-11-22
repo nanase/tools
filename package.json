@@ -30,7 +30,8 @@
     "jupiter-maps": "bun scripts/jupiter-maps.ts",
     "jupiter-moons": "bun scripts/jupiter-moons.ts",
     "saturn-moons": "bun scripts/saturn-moons.ts",
-    "saturn-rings": "bun scripts/saturn-rings.ts"
+    "saturn-rings": "bun scripts/saturn-rings.ts",
+    "solar-data": "bun scripts/solar-data.ts"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",

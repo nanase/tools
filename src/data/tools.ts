@@ -613,7 +613,7 @@ export const TOOLS: Tool[] = [
     t: '木星',
     d: '選んだ日時の木星と衛星を、大赤斑や衛星の影まで再現します。',
     ic: 'jv',
-    r: ['saturn', 'moon', 'solar-eclipse', 'shading'],
+    r: ['saturn', 'solar', 'moon', 'shading'],
     k: 'jupiter 木星 惑星 planet ガリレオ衛星 galilean moons イオ io エウロパ europa ガニメデ ganymede カリスト callisto ヒマリア himalia アマルテア amalthea 不規則衛星 irregular moons 大赤斑 great red spot grs 中央子午線 central meridian system i ii iii 衛星の影 shadow transit 通過 掩蔽 occultation 食 eclipse 相互食 mutual events phemu 衝 opposition 縞 belt hubble opal minnaert 周縁減光 limb darkening vsop87 l1.2 jupos imcce horizons 天文 astronomy',
   },
   {
@@ -622,8 +622,17 @@ export const TOOLS: Tool[] = [
     t: '土星',
     d: '選んだ日時の土星と環と衛星を、環の透け具合や影まで再現します。',
     ic: 'st',
-    r: ['jupiter', 'moon', 'solar-eclipse', 'lens'],
+    r: ['jupiter', 'solar', 'moon', 'lens'],
     k: 'saturn 土星 惑星 planet 環 rings 環の傾き ring tilt 環の消失 ring plane crossing a環 b環 c環 カッシーニの間隙 cassini division エンケの間隙 encke gap 光学的厚さ optical depth タイタン titan レア rhea ディオネ dione テティス tethys エンケラドゥス enceladus ミマス mimas ヒペリオン hyperion イアペトゥス iapetus フェーベ phoebe ヤヌス janus エピメテウス epimetheus 衛星の影 shadow transit タイタンの影 通過 掩蔽 occultation 食 eclipse 衝 opposition 衝効果 opposition effect 北極の六角形 hexagon hubble opal cassini minnaert 周縁減光 limb darkening vsop87 meeus horizons 天文 astronomy',
+  },
+  {
+    id: 'solar',
+    c: '天文',
+    t: '太陽系',
+    d: '地球から見た 7 惑星の大きさと欠けを日付ごとに比べます。',
+    ic: 'ss',
+    r: ['jupiter', 'saturn', 'moon', 'shading'],
+    k: 'solar system 太陽系 惑星 planets 水星 mercury 金星 venus 火星 mars 木星 jupiter 土星 saturn 天王星 uranus 海王星 neptune 視直径 apparent diameter 見かけの大きさ 満ち欠け phase 位相角 輝面比 最接近 closest approach 衝 opposition 内合 inferior conjunction 外合 離角 elongation 宵の明星 明けの明星 夕方 明け方 公転 軌道 orbit 会合周期 synodic period 大接近 vsop87 viking hubble opal 天文 astronomy',
   },
   {
     id: 'impact',
