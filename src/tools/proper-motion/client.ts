@@ -5,7 +5,6 @@
 import type { Vec3 } from '../../lib/astro/vec';
 import { $, $$, esc } from '../../lib/dom';
 import { initFullscreen } from '../../lib/fullscreen';
-import { RM } from '../../lib/motion';
 import { store, stored } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
 import { GAL, MW_H, MW_STEP, MW_W, type SkyJson } from './format';
@@ -60,16 +59,16 @@ const ASTER = [
   ['sum', '夏の大三角'],
   ['win', '冬の大三角'],
 ] as const;
-type Opt = 'lines' | 'names' | 'trail' | 'mw' | 'pole';
+type Opt = 'lines' | 'ghost' | 'names' | 'trail' | 'mw' | 'pole';
 
 /* ---------- 状態 ---------- */
 const st = {
   look: { ra: 180, dec: 55, fov: 70 } as Look,
   year: NOW,
-  run: !RM.matches,
+  run: false,
   spd: 5000,
   sel: 'dip',
-  opt: { lines: true, names: true, trail: true, mw: true, pole: false } as Record<Opt, boolean>,
+  opt: { lines: true, ghost: true, names: true, trail: true, mw: true, pole: false } as Record<Opt, boolean>,
   hover: -1,
   pin: -1,
   track: -1,
@@ -215,7 +214,7 @@ function drawMw(c: CanvasRenderingContext2D): void {
       const z = v[0] * PJ.c[0] + v[1] * PJ.c[1] + v[2] * PJ.c[2],
         r = 1.3 * MW_STEP * D * (2 / (1 + z)) * PJ.S * q;
       rad = Math.max(rad, r);
-      a.fillStyle = `rgba(175,195,255,${(0.02 + 0.09 * lv).toFixed(3)})`;
+      a.fillStyle = `rgba(175,195,255,${(0.008 + 0.032 * lv).toFixed(3)})`;
       a.beginPath();
       a.arc(p[0] * q, p[1] * q, r, 0, 2 * Math.PI);
       a.fill();
@@ -290,7 +289,7 @@ function draw(): void {
     c.stroke();
   }
   if (g) {
-    if (moved) {
+    if (moved && st.opt.ghost) {
       c.strokeStyle = GHOSTC;
       c.lineWidth = 1.2;
       c.setLineDash([4, 4]);
@@ -347,8 +346,8 @@ function draw(): void {
     c.fill();
     DRAWN.push([p[0], p[1], i, r]);
   }
-  /* 名前: 重なるものは出さない。中央上は年の表示のために空ける */
-  const boxes: number[][] = [[W / 2 - 90, 0, W / 2 + 90, 44]];
+  /* 名前: 重なるものは出さない。中央下は年の表示のために空ける */
+  const boxes: number[][] = [[W / 2 - 90, H - 44, W / 2 + 90, H]];
   const put = (x: number, y: number, t: string, font: string, col: string, center = false): void => {
     c.font = font;
     const w = c.measureText(t).width,
@@ -756,7 +755,7 @@ new ResizeObserver(() => {
         $(`#pm-o-${k}`).setAttribute('aria-pressed', String(st.opt[k]));
       }
   const sp = stored('pm:spd');
-  if (sp === 2000 || sp === 5000 || sp === 20000) {
+  if (sp === 100 || sp === 500 || sp === 2000 || sp === 5000 || sp === 20000) {
     st.spd = sp;
     spdSel.value = String(sp);
   }

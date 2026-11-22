@@ -14,6 +14,7 @@ import Theory from '../tools/proper-motion/Theory.astro';
 const name = '固有運動';
 const OPTS = [
   ['lines', '星座線', true],
+  ['ghost', '今の形', true],
   ['names', '星座名', true],
   ['trail', '道すじ', true],
   ['mw', '天の川', true],
@@ -27,6 +28,8 @@ const JUMPS = [
   [100000, '10 万年後'],
 ] as const;
 const SPEEDS = [
+  [100, '100 年/秒'],
+  [500, '500 年/秒'],
   [2000, '2000 年/秒'],
   [5000, '5000 年/秒'],
   [20000, '2 万年/秒'],
