@@ -22,7 +22,7 @@ const LEGEND = [
   ['damper', 'ダンパー'],
 ] as const;
 ---
-<SiteLayout title={name} tool={{ id: 'piano-action', name }} note="動きは Hirschkorn (2004) の多体の模型による計算で、ダンパーは仮の形です。">
+<SiteLayout title={name} tool={{ id: 'piano-action', name }} note="動きは Hirschkorn (2004) の多体モデルによる計算で、ダンパーは仮の形です。">
   <PageTitle title={name}>鍵盤を押すと、グランドピアノの鍵からハンマーまでの機構（アクション）がその場で動きます。弾いた動きは段階ごとにスローで見直せます。</PageTitle>
 
   <div class="tgrid">
@@ -39,7 +39,7 @@ const LEGEND = [
             <div class="alab" id="a-lab"></div>
             <div class="a-info" aria-live="off"><span>時刻 <b id="cap-t"></b></span><span>ハンマー <b id="cap-h"></b></span></div>
             <div class="a-tip" id="a-tip" role="tooltip" hidden></div>
-            <p class="busy" id="busy" hidden>計算しています…</p>
+            <p class="busy" id="busy" hidden>計算中…</p>
           </div>
           <div class="akb">
             <OctaveKeyboard label="鍵盤">
