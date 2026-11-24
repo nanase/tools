@@ -20,12 +20,19 @@
 
 /* 鍵盤と弦。狭い画面では横にスクロールする */
 .kbw{overflow-x:auto;overscroll-behavior-x:contain;border:1px solid var(--line);border-radius:var(--r);background:var(--screen);box-shadow:inset 0 1px 3px rgb(0 0 0 / .12)}
-.kbw{--kb-rim:var(--inset);--kb-s:#9aa2a8;--kb-wd:#737c83;--kb-w:#f4f5f1;--kb-b:#2a2f33}
+.kbw,.sgw{--kb-rim:var(--inset);--kb-s:#9aa2a8;--kb-wd:#737c83;--kb-w:#f4f5f1;--kb-b:#2a2f33;--kb-cu:#b08048}
 @media (prefers-color-scheme:dark){
-  :root:not([data-theme="light"]) .kbw{--kb-rim:var(--surface);--kb-s:#4a5258;--kb-wd:#6a737a;--kb-w:#d9dcd6;--kb-b:#15181a}
+  :root:not([data-theme="light"]) :is(.kbw,.sgw){--kb-rim:var(--surface);--kb-s:#4a5258;--kb-wd:#6a737a;--kb-w:#d9dcd6;--kb-b:#15181a;--kb-cu:#8a6a3c}
 }
-:root[data-theme="dark"] .kbw{--kb-rim:var(--surface);--kb-s:#4a5258;--kb-wd:#6a737a;--kb-w:#d9dcd6;--kb-b:#15181a}
-.kbd{display:block;width:100%;min-width:900px;height:auto;touch-action:pan-x pan-y;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
+:root[data-theme="dark"] :is(.kbw,.sgw){--kb-rim:var(--surface);--kb-s:#4a5258;--kb-wd:#6a737a;--kb-w:#d9dcd6;--kb-b:#15181a;--kb-cu:#8a6a3c}
+/* 図と、鍵盤の上に重ねる canvas（弦の振動・楽譜。図の幅 1000、鍵盤の上端の少し上 264 までを覆う） */
+.kbx{position:relative;min-width:900px}
+.kbd{display:block;width:100%;height:auto;touch-action:pan-x pan-y;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
+/* 弦の振動は明るい配色でも暗い地に描くので、凡例の色も暗い配色の --ch1・--ch2 にそろえる */
+.a-kb .v-vib .sw{background:#ffd648}.a-kb .v-vib .sw.c2{background:#52c4dd}
+.kbc{position:absolute;left:0;top:0;width:100%;height:auto;aspect-ratio:1000/264;pointer-events:none}
+/* 弦のほかの図では、弦・ダンパー・振動・輪・打つ点を隠す */
+.kbd:not([data-view="str"]) :is(.kb-st,.kb-dmp,.kb-v,.kb-rips){display:none}
 .kbd:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
 .kb-rim{fill:var(--kb-rim);stroke:var(--line-2);stroke-width:1}
 .kb-br{fill:none;stroke:var(--rail-2);stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
@@ -51,9 +58,18 @@
 .kb-note{margin-left:auto}
 @media (max-width:559px){.kb-note{margin-left:0}}
 
-/* 弦の枠: 単位の列はセントが入る幅。下に弦の一覧 */
+/* 弦の枠: 単位の列はセントが入る幅。下に弦のグラフ（表は読み上げ用に残す） */
 .a-str .prow{--uw:2.6rem}
-.stw{margin-top:14px;overflow-x:auto;border-top:1px solid var(--line)}
+.sg-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;margin-top:14px}
+.sg-lg{margin:0;gap:4px 12px;flex-wrap:wrap}
+.sg-lg .sw.c3{background:var(--ink-3)}
+.sg-lg .stag.cur{color:var(--ink);font-weight:700}
+.sgw{margin-top:8px;border:1px solid var(--line);border-radius:var(--r);background:var(--screen)}
+.sgc{display:block;width:100%;height:260px;touch-action:pan-y}
+/* 指している鍵の値（欄の数と幅は決まっているので、値が変わっても行の数は変わらない） */
+.sg-rd{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:2px 12px;margin:6px 0 0}
+.sg-rd>.stag{display:flex;justify-content:space-between;gap:8px;white-space:nowrap;color:var(--ink-3)}
+.sg-rd b{color:var(--ink);font-weight:500;font-variant-numeric:tabular-nums}
 .stab{width:100%;border-collapse:collapse;font:500 12.5px/1.4 var(--mono);font-variant-numeric:tabular-nums}
 .stab th{padding:9px 6px 5px;font:700 11.5px/1.3 var(--sans);color:var(--ink-3);text-align:right;white-space:nowrap}
 .stab td{padding:5px 6px;border-top:1px solid var(--line);text-align:right;white-space:nowrap}

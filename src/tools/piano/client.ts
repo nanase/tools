@@ -21,7 +21,8 @@ import { spectra, toDb } from '../spectrum/fft';
 import { PianoAudio } from './audio';
 import { type BoardDesc, boardDesc } from './engine';
 import { HI as FILE_HI, LO as FILE_LO, fileSong } from './file';
-import { Keys } from './keys';
+import { KbCanvas, pedalSpans, type RollNote, type RollView, rollWindow } from './kbview';
+import { type KbView, Keys } from './keys';
 import { damperRate, makePiano, NO_DAMPER, type Piano, type PianoSpec, type Strike, strikeKey } from './model';
 import { DIST, THICK, UNI, VEL, VOL0 } from './params';
 import { BH, boardPlot, fAtX, forcePlot, OH, specPlot, wavePlot, Y1_TOP, Y2_TOP } from './plot';
@@ -37,7 +38,8 @@ import {
   tempoOf,
 } from './score';
 import { admittance, pressure, yMeanOf } from './soundboard';
-import { inharm, KEY_HI, KEY_LO, KEYS, noteHz, noteName, PIANO_TYPES, pianoTypeOf } from './strings';
+import { type SgKind, StrGraph } from './strgraph';
+import { inharm, KEY_HI, KEY_LO, KEYS, keyString, noteHz, noteName, PIANO_TYPES, pianoTypeOf, tuning } from './strings';
 import type { Job, Reply } from './worker';
 import { renderStrike } from './worker';
 
@@ -95,7 +97,14 @@ const ex = choice<string>('ex', (v) => {
   keys.setExag(Number(v));
   kbBar();
 });
-const sym = choice<'on' | 'off'>('sym', (v) => keys.setSym(v === 'on'));
+const sym = choice<'on' | 'off'>('sym', (v) => {
+  keys.setSym(v === 'on');
+  kbBar();
+});
+/** 鍵盤の上の図（弦・弦の振動・楽譜） */
+const kv = choice<KbView>('kv', (v) => setKbView(v));
+/** 弦のグラフの値（弦長・張力・外径・B・調律） */
+const sg = choice<SgKind>('sg', (v) => graph.setKind(v));
 const sl = choice<string>('sl', (v) => {
   keys.setSlow(Number(v));
   kbBar();
@@ -154,7 +163,19 @@ keys.setMode(nv.value);
 keys.setExag(Number(ex.value));
 keys.setSlow(Number(sl.value));
 keys.setSym(sym.value === 'on');
+const kbc = new KbCanvas($<HTMLCanvasElement>('#kbc'), {
+  vels: () => keys.vels(nowS()),
+  roll: () => rollNow(),
+});
+function setKbView(v: KbView): void {
+  keys.setView(v);
+  kbc.setMode(v);
+  kbBar();
+}
 function kbBar(): void {
+  const v = kv.value;
+  for (const el of document.querySelectorAll<HTMLElement>('.a-kb .sbar [class*="v-"]'))
+    el.hidden = !el.classList.contains(`v-${v}`) || (el.classList.contains('v-sym') && sym.value !== 'on');
   $('#sl-row').hidden = nv.value !== 'slow';
   txt('#kb-ex', `×${ex.value}`);
   txt('#kb-tm', nv.value === 'slow' ? `スロー 1/${sl.value}` : '実時間（残像）');
@@ -200,6 +221,7 @@ function rebuildNow(): void {
     })),
   );
   table();
+  graphData();
   results();
   boardView();
   renderOut();
@@ -240,6 +262,60 @@ function table(): void {
     h += `<tr data-k="${k}" aria-selected="${k === S.last}"><td>${noteName(k)}</td><td>${(s.L * 1000).toFixed(0)} mm</td><td>${s.ns}</td><td>${(s.d * 1000).toFixed(2)}${s.wound ? ' 巻' : ''}</td><td>${s.T.toFixed(0)} N</td><td>${plain(inharm(s), 2, true)}</td><td>${signed(cents(PM.f1[k - KEY_LO], k))}</td></tr>`;
   }
   html('#stab tbody', h);
+  graph.setSel(S.last);
+  sgRead(null);
+}
+
+/* ---------- 弦のグラフ（3 つの大きさを重ね、選んでいる大きさを太く） ---------- */
+const graph = new StrGraph($<HTMLCanvasElement>('#sgc'), {
+  cursor: (k) => sgRead(k),
+  pick: (k) => {
+    S.last = k;
+    table();
+    results();
+    boardView();
+    renderOut();
+  },
+});
+graph.setKind(sg.value);
+/** 3 つの大きさのピアノの弦（今の基準の高さと調律で） */
+function graphData(): void {
+  const A4 = Number(a4.value),
+    st = tun.value === 'stretch';
+  graph.setData(
+    PIANO_TYPES.map((t) => {
+      const f = t.v === S.type ? PM.f1 : tuning(t, A4, st),
+        s = Array.from({ length: KEYS }, (_, i) => (t.v === S.type ? PM.keys[i].s : keyString(i + KEY_LO, t, f[i])));
+      return { name: TYPE_NAME[t.v] ?? t.name, s, cents: Float64Array.from(f, (x, i) => cents(x, i + KEY_LO)) };
+    }),
+    Math.max(
+      0,
+      PIANO_TYPES.findIndex((t) => t.v === S.type),
+    ),
+  );
+  sgLegend();
+}
+const TYPE_NAME: Record<string, string> = { concert: 'コンサート', grand: 'グランド', upright: 'アップライト' };
+/** 凡例: 選んでいる大きさを太字に */
+const sgLegend = () => {
+  for (const el of document.querySelectorAll<HTMLElement>('#sg-lg [data-t]'))
+    el.classList.toggle('cur', el.dataset.t === S.type);
+};
+/** 指している鍵（なければ選んでいる鍵）の弦の値 */
+function sgRead(k: number | null): void {
+  const key = k ?? S.last,
+    s = PM.keys[key - KEY_LO].s,
+    cell = (n: string, v: string) => `<span class="stag">${n}<b>${v}</b></span>`;
+  html(
+    '#sg-rd',
+    cell('鍵', noteName(key)) +
+      cell('弦長', `${(s.L * 1000).toFixed(0)} mm`) +
+      cell('本数', String(s.ns)) +
+      cell('外径', `${(s.d * 1000).toFixed(2)} mm${s.wound ? ' 巻' : ''}`) +
+      cell('張力', `${s.T.toFixed(0)} N`) +
+      cell('<i>B</i>', plain(inharm(s), 2, true)) +
+      cell('調律', `${signed(cents(PM.f1[key - KEY_LO], key))}`),
+  );
 }
 $('#stab').addEventListener('click', (e) => {
   const tr = (e.target as Element).closest<HTMLElement>('tr[data-k]');
@@ -940,6 +1016,58 @@ function tick(): void {
     syncPedal();
   }
 }
+/* ---------- 楽譜の図 ---------- */
+/** 楽譜の図に使う、曲ごとの音符・小節の頭・ペダルの区間（曲かペダルの設定が変わったら作り直す） */
+let rollCache: {
+  data: PieceData;
+  ped: string;
+  notes: RollNote[];
+  starts: number[];
+  maxD: number;
+  spans: [number, number][];
+  tm: TempoMap;
+} | null = null;
+/** 楽譜の図の中身（曲を読み込んでいなければ null）。演奏中は今の音の時刻から、止まっていれば次に弾き始める拍から */
+function rollNow(): RollView | null {
+  const pc = curPiece(),
+    data = pc ? noteCache.get(pc.v) : undefined;
+  if (!pc || !data) return null;
+  if (rollCache?.data !== data || rollCache.ped !== ped.value) {
+    const notes = data.notes.map((x) => ({ n: x.n, t: x.t, d: x.d })).sort((a, b) => a.t - b.t),
+      line = lineOf(pc, data),
+      end = endOf(data),
+      pev = playEvents(pc, data.notes, VEL.v, ped.value, data.pedal).flatMap((e) =>
+        e.type === 'pedal' ? [{ b: e.b, on: e.on }] : [],
+      );
+    rollCache = {
+      data,
+      ped: ped.value,
+      notes,
+      starts: Array.from({ length: line.bars }, (_, i) => line.start(i + 1)),
+      maxD: Math.max(0, ...notes.map((x) => x.d)),
+      spans: pedalSpans(pev, end + 2),
+      tm: new TempoMap(tempoOf(pc, data)),
+    };
+  }
+  const c = rollCache,
+    p = PL && PL.piece === pc ? PL : null;
+  let beat: number, sec: (b: number) => number;
+  if (p) {
+    /* 鳴り始める前（予約の 0.25 秒）は、その分だけ先にずらす */
+    const an = audio.now() ?? p.at0,
+      wait = Math.max(0, p.at0 - an);
+    beat = beatOf(p, an);
+    const tau = p.tm.tau(beat);
+    sec = (b) => wait + (p.tm.tau(b) - tau) * p.spb;
+  } else {
+    beat = transport.at;
+    const tau = c.tm.tau(beat),
+      spb = spbOf(pc);
+    sec = (b) => (c.tm.tau(b) - tau) * spb;
+  }
+  return rollWindow(c.notes, c.starts, c.maxD, c.spans, beat, sec);
+}
+
 const transport = new Transport({
   active: () => !!PL,
   start: startPiece,
@@ -952,7 +1080,7 @@ autoPause(audio, { pause: () => transport.pause(), hidden: tick });
 /* ---------- 起動 ---------- */
 rebuildNow();
 void showLine();
-kbBar();
+setKbView(kv.value);
 showOut();
 roomView();
 syncPedal();
