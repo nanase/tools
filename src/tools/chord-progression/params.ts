@@ -5,6 +5,11 @@ import type { ParamDef } from '../../lib/param-def';
 
 /** 音量の既定値 [dB]（既定のまま鳴らして −26 LUFS に合わせる） */
 export const VOL0 = -18;
+/**
+ * MIDI ファイルの原曲（FMシンセサイザの音源）の、このページの音量の手前での大きさ [dB]。
+ * 既定の音量で原曲が −26 LUFS 前後になるよう、書き出して測って決めた
+ */
+export const FM_DB = -6;
 
 const dbIn = (v: number) => minus(v > 0 ? `+${Math.round(v)}` : String(Math.round(v)));
 const dbT = (v: number) => `${dbIn(v)} dB`;

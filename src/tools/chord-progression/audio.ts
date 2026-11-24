@@ -169,6 +169,10 @@ export class CpAudio {
     const { ac, master } = this;
     if (ac && master) master.gain.setTargetAtTime(10 ** (db / 20), ac.currentTime, 0.008);
   }
+  /** ほかの音源（MIDI ファイルの FM 音源）をつなぐ所: 音量と部屋の残響の手前 */
+  input(): AudioNode | null {
+    return this.master;
+  }
   /** 音を集める GainNode（コードごと・試聴ごとに作る） */
   bus(): GainNode | null {
     const { ac, master } = this;

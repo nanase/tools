@@ -5,19 +5,36 @@
  */
 import { Choice } from '../../lib/choice';
 import { $, esc } from '../../lib/dom';
+import { type FNote, partsOf } from '../../lib/midi-file';
 import { ParamGroup } from '../../lib/param';
 import { autoPause } from '../../lib/pause';
 import { outVol, type PlayKey } from '../../lib/play';
+import { parseSmf } from '../../lib/smf';
 import { store, stored } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
+import { SynthAudio } from '../fm-synthesizer/audio';
+import { analyze, chordsOf } from './analyze';
 import { CpAudio } from './audio';
 import { MEMBER_NAMES, MEMBERS, type MemberId, Player, previewNotes } from './band';
 import { Coaster, type CoasterState } from './coaster';
 import { ICON } from './icons';
 import { type MapState, MapView } from './map';
-import { BPM, CLICK, VOL0 } from './params';
+import {
+  type Lit,
+  litAt,
+  MidiPlay,
+  type MidiSong,
+  midiSong,
+  partIcon,
+  progsOf,
+  soundingAt,
+  voiceName,
+} from './midi-play';
+import { BPM, CLICK, FM_DB, VOL0 } from './params';
 import { SAMPLE0, sampleSong } from './samples';
 import {
+  BPM_MAX,
+  BPM_MIN,
   compute,
   type Entry,
   fromFile,
@@ -66,6 +83,11 @@ const S = {
   if (stored('loop') === false) S.loop = false;
   if (stored('met') === true) S.met = true;
 }
+/**
+ * 開いている MIDI ファイル（なければ null）。開いている間の S.song は推したコード進行で、編集できず、ブラウザにも保存しない。
+ * use は解析に使うパート、mute はミュートしたパート、band は原曲の代わりにバンドで鳴らすか、prog はパートの GM の音色
+ */
+let M: { m: MidiSong; use: Set<string>; mute: Set<string>; band: boolean; prog: Map<string, number> } | null = null;
 let entries: Entry[] = [],
   beats = 0;
 function recompute(): void {
@@ -98,12 +120,36 @@ function travel(from: string[], to: string[]): void {
 
 /* ---------- 音と演奏 ---------- */
 const audio = new CpAudio(),
-  player = new Player(audio, () => ({ song: S.song, on: S.on, loop: S.loop, met: S.met }));
+  player = new Player(audio, () => ({ song: S.song, on: S.on, loop: S.loop, met: S.met })),
+  /* MIDI ファイルの原曲は FMシンセサイザの GM 音源で、バンドと同じ AudioContext・同じ音量と残響に通す */
+  fm = new SynthAudio({
+    ready: async () => ((await audio.ready()) ? (audio.ac as AudioContext) : null),
+    out: () => audio.input(),
+  }),
+  mplay = new MidiPlay(audio, fm, () => {
+    const m = M as NonNullable<typeof M>;
+    return { m: m.m, song: S.song, band: m.band, use: m.use, mute: m.mute, on: S.on, loop: S.loop, met: S.met };
+  });
+fm.vol(FM_DB);
+/** 演奏しているか（MIDI ファイルか、地図の曲か） */
+const isPlaying = (): boolean => (M ? mplay.playing : player.playing);
+/** MIDI ファイルの拍 b を含む和音 */
+const entryAt = (b: number): number => {
+  let k = 0;
+  for (let j = 0; j < entries.length; j++) if (entries[j].start <= b + 1e-6) k = j;
+  return k;
+};
+/** 鳴っている和音（止めている間は −1） */
+function curK(): number {
+  if (!M) return player.playing ? (player.current()?.k ?? -1) : -1;
+  const b = mplay.beat();
+  return b === null ? -1 : entryAt(b);
+}
 let previewBus: GainNode | null = null;
 /** 止まっている間の試聴（和音 1 つ） */
 function preview(k: number): void {
   const e = entries[k];
-  if (!e || player.playing) return;
+  if (!e || isPlaying()) return;
   void audio.ready().then((ok) => {
     const ac = audio.ac,
       g = audio.bus();
@@ -119,50 +165,80 @@ function preview(k: number): void {
 }
 const pp = $<HTMLButtonElement>('#cp-pp');
 function syncPlay(): void {
-  const on = player.playing;
+  const on = isPlaying();
   pp.classList.toggle('on', on);
   pp.setAttribute('aria-label', on ? '一時停止' : '演奏');
   pp.title = on ? '一時停止' : '選んだ和音から演奏';
   $('#cp-st').hidden = false;
   $('#cp-led').className = on ? 'led on' : 'led';
   $('#cp-stT').textContent = on ? '演奏中' : '待機中';
-  posText(on ? (player.current()?.k ?? S.cue) : S.cue);
+  posText(on ? Math.max(0, curK()) : S.cue);
+}
+/** 和音の小節（1 から）。MIDI ファイルはファイルの小節で数える */
+function barOf(e: Entry): number {
+  if (!M) return e.bar;
+  const st = M.m.smf.starts;
+  let n = 0;
+  while (n + 1 < st.length && st[n + 1] <= e.start + 1e-6) n++;
+  return n + 1;
 }
 function posText(k: number): void {
   const e = entries[k],
-    t = e ? `${e.bar} 小節 · ${roman(e.ch, e.key)}` : '–';
+    t = e ? `${barOf(e)} 小節 · ${roman(e.ch, e.key)}` : '–';
   const el = $('#cp-pos');
   if (el.textContent !== t) el.textContent = t;
 }
 async function play(): Promise<void> {
-  if (player.playing) return pause();
+  if (isPlaying()) return pause();
   if (previewBus) audio.drop(previewBus);
-  if (!(await player.start(S.sel ?? S.cue))) return;
+  const k = S.sel ?? S.cue;
+  if (!(await (M ? mplay.start(k > 0 ? (entries[k]?.start ?? 0) : 0) : player.start(k)))) return;
   syncPlay();
   requestAnimationFrame(frame);
 }
 function pause(): void {
-  const cur = player.current();
-  player.halt();
-  if (cur) S.cue = cur.k;
+  const k = curK();
+  if (M) {
+    mplay.halt();
+    lit = [];
+    hitParts(null);
+  } else player.halt();
+  if (k >= 0) S.cue = k;
   syncPlay();
   draw();
 }
-player.onEnd = () => {
+player.onEnd = mplay.onEnd = () => {
   S.cue = 0;
+  lit = [];
+  hitParts(null);
   syncPlay();
   draw();
 };
 /** 弾き始めの位置を変える（演奏中はすぐそこへ移る） */
 function cueTo(k: number): void {
   S.cue = k;
-  if (player.playing) player.jump(k);
+  if (M) {
+    if (mplay.playing) mplay.jump(entries[k]?.start ?? 0);
+    else posText(k);
+  } else if (player.playing) player.jump(k);
   else posText(k);
 }
 function barJump(dir: -1 | 1): void {
   if (!entries.length) return;
-  const cur = player.playing ? (player.current()?.k ?? S.cue) : S.cue,
-    target = entries[cur].bar + dir;
+  const cur = isPlaying() ? Math.max(0, curK()) : S.cue;
+  if (M) {
+    /* MIDI ファイルは小節の頭から弾き直す。前へは、小節の頭から 1 拍より後ろならその小節の頭へ */
+    const st = M.m.smf.starts,
+      n = barOf(entries[cur]) - 1,
+      b = mplay.beat() ?? entries[cur].start,
+      to = dir < 0 && b - st[n] > 1 ? st[n] : st[Math.max(0, Math.min(st.length - 1, n + dir))];
+    S.cue = entryAt(to);
+    if (mplay.playing) mplay.jump(to);
+    else posText(S.cue);
+    draw();
+    return;
+  }
+  const target = entries[cur].bar + dir;
   let k = entries.findIndex((e) => e.bar >= target);
   if (target < 1) k = 0;
   if (k < 0) return;
@@ -176,12 +252,12 @@ $('#cp-prev').addEventListener('click', () => barJump(-1));
 $('#cp-next').addEventListener('click', () => barJump(1));
 $('#cp-undo').addEventListener('click', () => travel(undo, redo));
 $('#cp-redo').addEventListener('click', () => travel(redo, undo));
-autoPause(audio, { pause: () => player.playing && pause(), hidden: () => player.tick() });
+autoPause(audio, { pause: () => isPlaying() && pause(), hidden: () => (M ? mplay.tick() : player.tick()) });
 new ParamGroup<PlayKey>([outVol(VOL0)], (v) => audio.vol(v.vol));
 const bpmGroup = new ParamGroup<'bpm'>(
   [BPM],
   (v, k) => {
-    if (!k) return;
+    if (!k || M) return;
     remember();
     S.song.bpm = v.bpm;
     changed();
@@ -203,7 +279,9 @@ let hover: Place | null = null,
   age = 0;
 /** 道の点のドラッグ（動かした先の三角形の和音に変える） */
 let ndrag: { k: number; x0: number; y0: number; moved: boolean; at: Place | null } | null = null;
-const playing = (): number => (player.playing ? (player.current()?.k ?? -1) : -1);
+const playing = (): number => (M ? (isPlaying() ? curK() : (S.sel ?? S.cue)) : curK());
+/** MIDI ファイルで鳴っている音 */
+let lit: Lit[] = [];
 /** 演奏中に次に鳴る和音 */
 function nextOf(k: number): number {
   const n = S.song.chords.length;
@@ -221,6 +299,7 @@ const mapState = (): MapState => {
     drag: ndrag?.moved ? { k: ndrag.k, at: ndrag.at } : null,
     age,
     hover,
+    ...(M ? { next: -1, prev: k - 1, lit, bar: entries[k] ? barOf(entries[k]) : undefined } : {}),
   };
 };
 /** 選んだ和音の後ろ（なければ最後）に三角形の和音を足す */
@@ -259,7 +338,7 @@ const local = (ev: PointerEvent, el: HTMLElement): [number, number] => {
 mapCv.addEventListener('pointerdown', (ev) => {
   if (ev.button > 0) return;
   /* 調や曲の小窓が開いていれば、地図を押しても和音は足さずに閉じるだけ */
-  if (closePops()) return;
+  if (closePops() || M) return;
   const [x, y] = local(ev, mapCv),
     k = mapView.nodeAt(mapState(), x, y);
   if (k >= 0) {
@@ -303,8 +382,8 @@ mapCv.addEventListener('pointermove', (ev) => {
     return;
   }
   if (!(p === hover || (p && hover && samePlace(p, hover)))) {
-    hover = p;
-    if (!player.playing) mapView.draw(mapState());
+    hover = M ? null : p;
+    if (!isPlaying()) mapView.draw(mapState());
   }
 });
 mapCv.addEventListener('pointerup', () => {
@@ -329,7 +408,7 @@ addEventListener('pointerup', () => {
 });
 mapCv.addEventListener('pointerleave', () => {
   hover = null;
-  if (!player.playing) mapView.draw(mapState());
+  if (!isPlaying()) mapView.draw(mapState());
 });
 
 /* ---------- 緊張のレール ---------- */
@@ -342,9 +421,9 @@ const coasterState = (): CoasterState => ({
   entries,
   beats,
   sel: S.sel,
-  play: playing(),
+  play: M ? (isPlaying() ? curK() : -1) : playing(),
   cart: cartBeat ?? entries[S.cue]?.start ?? 0,
-  playing: player.playing,
+  playing: isPlaying(),
   loop: S.loop,
   caret: rdrag?.moved ? rdrag.cx : null,
 });
@@ -358,7 +437,7 @@ rcCv.addEventListener('pointerdown', (ev) => {
 rcCv.addEventListener('pointermove', (ev) => {
   if (!rdrag) return;
   const [x] = local(ev, rcCv);
-  if (Math.abs(x - rdrag.x0) > 6) rdrag.moved = true;
+  if (Math.abs(x - rdrag.x0) > 6 && !M) rdrag.moved = true;
   [rdrag.slot, rdrag.cx] = coaster.slotAt(coasterState(), x);
   if (rdrag.moved) coaster.draw(coasterState());
 });
@@ -367,6 +446,11 @@ rcCv.addEventListener('pointerup', () => {
   rdrag = null;
   if (!d) return;
   if (!d.moved) {
+    if (M) {
+      /* MIDI ファイルでは駅を押すとその和音から弾く */
+      cueTo(d.k);
+      return draw();
+    }
     reveal(d.k);
     return pick(d.k);
   }
@@ -419,7 +503,7 @@ function showEd(): void {
   let ed = document.getElementById('cp-ed');
   const k = S.sel,
     e = k === null ? undefined : entries[k];
-  if (!edOpen || k === null || !e) {
+  if (!edOpen || k === null || !e || M) {
     ed?.remove();
     return;
   }
@@ -567,6 +651,7 @@ function popOpen(btn: HTMLElement, pop: HTMLElement, open: boolean): void {
   btn.setAttribute('aria-expanded', String(open));
 }
 keyBtn.addEventListener('click', () => {
+  if (M) return;
   const open = keyPop.hidden === true;
   popOpen(keyBtn, keyPop, open);
   if (open) {
@@ -738,7 +823,7 @@ document.addEventListener('pointerdown', (ev) => {
   const t = ev.target as Element;
   if (vmenuFor && !vmenu.contains(t) && !t.closest('.cp-vb')) closeVoiceMenu();
 });
-player.onHit = (m, at) => {
+player.onHit = mplay.onHit = (m, at) => {
   const now = audio.now() ?? 0;
   setTimeout(
     () => {
@@ -780,6 +865,7 @@ metBtn.addEventListener('click', () => {
   store('met', S.met);
   syncMet();
   player.resync();
+  mplay.rebar();
 });
 /** 曲を入れ替えたあと、選択肢と数値の行を曲に合わせる */
 function syncControls(): void {
@@ -793,7 +879,7 @@ function syncControls(): void {
 function draw(): void {
   mapView.draw(mapState());
   coaster.draw(coasterState());
-  keyBtn.textContent = keyName(S.song.key);
+  keyBtn.textContent = keyName(M ? (entries[playing()]?.key ?? S.song.key) : S.song.key);
 }
 function changed(): void {
   recompute();
@@ -802,12 +888,25 @@ function changed(): void {
   player.resync();
   draw();
   showEd();
-  posText(player.playing ? (player.current()?.k ?? S.cue) : (S.sel ?? S.cue));
+  posText(isPlaying() ? Math.max(0, curK()) : (S.sel ?? S.cue));
 }
 function frame(): void {
-  if (!player.playing) {
+  if (!isPlaying()) {
     cartBeat = null;
     draw();
+    return;
+  }
+  if (M) {
+    const b = mplay.beat() ?? 0,
+      k = entryAt(b),
+      e = entries[k];
+    cartBeat = b;
+    age = e ? ((M.m.tm.tau(b) - M.m.tm.tau(e.start)) * 60) / M.m.smf.bpm : 0;
+    lit = litAt(soundingGroups(), b, M.band && e ? MidiPlay.chordTones(e) : []);
+    hitParts(b);
+    posText(k);
+    draw();
+    requestAnimationFrame(frame);
     return;
   }
   const occ = player.current(),
@@ -862,6 +961,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', draw);
 document.addEventListener('keydown', (ev) => {
   const t = ev.target as Element;
   if (t.closest('input, textarea')) return;
+  if (M && ev.key !== 'Escape') return;
   if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'z') {
     ev.preventDefault();
     if (ev.shiftKey) travel(redo, undo);
@@ -891,6 +991,7 @@ const SAVE_KEY = 'chord-progression:saved2';
 const nameIn = $<HTMLInputElement>('#cp-name'),
   msg = $('#cp-msg');
 function saveCurrent(): void {
+  if (M) return;
   store('song2', toFile(S.song));
   store('dirty', S.dirty);
 }
@@ -942,10 +1043,14 @@ songBtn.addEventListener('click', () => {
   }
 });
 /** 曲を入れ替える。変更が残っていれば確かめる */
-function load(song: Song): boolean {
+function load(song: Song, midi: typeof M = null): boolean {
   if (S.dirty && !confirm(`保存していない変更は失われます。「${song.name || '新しい進行'}」を開きますか？`))
     return false;
   player.halt(true);
+  mplay.halt(true);
+  M = midi;
+  lit = [];
+  syncMidi();
   undo.length = 0;
   redo.length = 0;
   S.song = song;
@@ -1032,6 +1137,165 @@ fileIn.addEventListener('change', async () => {
     if (load({ ...r, name: r.name || f.name.replace(/\.json$/i, '') })) say('');
   } catch {
     say('このファイルは読み込めません。');
+  }
+});
+
+/* ---------- MIDI ファイル ---------- */
+const midiIn = $<HTMLInputElement>('#cp-midi'),
+  plistEl = $('#cp-plist'),
+  srcEl = $('#cp-src');
+/** 地図で光らせる音: 鳴らしているパートの音（打楽器は除く）。バンドの和音の音は別に足す */
+function soundingGroups(): FNote[][] {
+  if (!M) return [];
+  const { m, use, band, mute } = M;
+  return m.parts.filter((p) => !p.drum && !mute.has(p.id) && !(band && use.has(p.id))).map((p) => p.notes);
+}
+/** 解析に使うパートでコード進行を推し直す */
+function reanalyze(): boolean {
+  if (!M) return false;
+  const { m, use } = M,
+    notes = m.parts.filter((p) => use.has(p.id)).flatMap((p) => p.notes),
+    segs = analyze(notes, m.smf.starts, m.smf.end);
+  if (!segs.length) return false;
+  const { key, chords } = chordsOf(segs);
+  S.song.key = key;
+  S.song.chords = chords;
+  recompute();
+  return true;
+}
+/** 音域の図の範囲（ピアノの 88 鍵） */
+const LO = 21,
+  HI = 108;
+/**
+ * パートの表: アイコン・パート・音色・音域・解析に使うか・ミュート。
+ * バンドのときは、バンドが代わりに弾くパート（解析に使ったパートと打楽器）を薄くする
+ */
+function renderParts(): void {
+  if (!M) return;
+  const { m, use, mute, band, prog } = M,
+    pc = (n: number) => ((Math.max(LO, Math.min(HI, n)) - LO) / (HI - LO)) * 100,
+    last = use.size === 1;
+  plistEl.innerHTML = `<div class="cp-ph" aria-hidden="true"><span></span><span>パート</span><span>音色</span><span>音域</span><span>解析</span><span>音</span></div>${m.parts
+    .map((p) => {
+      const on = use.has(p.id),
+        mu = mute.has(p.id),
+        by = band && (p.drum || on),
+        voice = voiceName(p.drum, prog.get(p.id) ?? 0),
+        dis = p.drum || (on && last);
+      return `<div class="cp-pl${mu ? ' mu' : ''}${by ? ' by' : ''}" data-p="${esc(p.id)}"><span class="cp-pi">${partIcon(p.drum, prog.get(p.id) ?? 0)}</span><span class="cp-pn">${esc(p.name)}</span><span class="cp-pg">${esc(voice === p.name ? '' : voice)}</span><span class="cp-rng" aria-hidden="true"><i style="left:${pc(p.lo)}%;width:${Math.max(1.5, pc(p.hi) - pc(p.lo))}%"></i></span><span class="cp-pu"><input type="checkbox" data-a="use"${on ? ' checked' : ''}${dis ? ' disabled' : ''} aria-label="${esc(`${p.name}を解析に使う`)}"${p.drum ? ' title="打楽器は解析に使いません"' : ''} /></span><button type="button" class="cp-pm" data-a="mute" aria-pressed="${mu}" aria-label="${esc(`${p.name}をミュート`)}" title="${mu ? '鳴らす' : 'ミュート'}">${mu ? ICON.mute : ICON.aud}</button></div>`;
+    })
+    .join('')}`;
+}
+/** 鳴っているパートの行に色を付ける */
+function hitParts(b: number | null): void {
+  if (!M) return;
+  for (const row of plistEl.querySelectorAll<HTMLElement>('.cp-pl')) {
+    const notes = M.m.notes.get(row.dataset.p ?? ''),
+      on =
+        b !== null &&
+        !!notes &&
+        !M.mute.has(row.dataset.p ?? '') &&
+        !row.classList.contains('by') &&
+        soundingAt(notes, b);
+    if (row.classList.contains('hit') !== on) row.classList.toggle('hit', on);
+  }
+}
+plistEl.addEventListener('change', (ev) => {
+  const t = ev.target as HTMLInputElement,
+    id = t.closest<HTMLElement>('[data-p]')?.dataset.p;
+  if (!M || !id || t.dataset.a !== 'use') return;
+  if (t.checked) M.use.add(id);
+  else M.use.delete(id);
+  if (!reanalyze()) {
+    M.use.add(id);
+    t.checked = true;
+    return;
+  }
+  if (S.cue >= entries.length) S.cue = 0;
+  renderParts();
+  /* バンドのときは、バンドが代わりに弾くパートも変わる */
+  mplay.refilter();
+  draw();
+});
+plistEl.addEventListener('click', (ev) => {
+  const b = (ev.target as Element).closest<HTMLElement>('[data-a="mute"]'),
+    id = b?.closest<HTMLElement>('[data-p]')?.dataset.p;
+  if (!M || !id) return;
+  if (M.mute.has(id)) M.mute.delete(id);
+  else M.mute.add(id);
+  renderParts();
+  mplay.refilter();
+});
+srcEl.addEventListener('click', (ev) => {
+  const b = (ev.target as Element).closest<HTMLButtonElement>('[data-v]');
+  if (!b || !M || M.band === (b.dataset.v === 'band')) return;
+  M.band = b.dataset.v === 'band';
+  syncMidi();
+  mplay.refilter();
+});
+/** MIDI ファイルを開いているか・原曲かバンドかで、操作の出し入れを合わせる */
+function syncMidi(): void {
+  const on = !!M,
+    orig = !!M && !M.band;
+  $('#cp-page').classList.toggle('cp-midi', on);
+  srcEl.hidden = !on;
+  plistEl.hidden = !on;
+  bandEl.hidden = orig;
+  $('#p-style').hidden = orig;
+  $('#hd-band').textContent = orig ? '演奏' : 'バンド';
+  const chip = $<HTMLButtonElement>('#cp-midin');
+  chip.hidden = !on;
+  chip.textContent = M?.m.name ?? '';
+  for (const b of srcEl.querySelectorAll<HTMLElement>('[data-v]'))
+    b.setAttribute('aria-pressed', String((b.dataset.v === 'band') === !!M?.band));
+  for (const el of document.querySelectorAll<HTMLElement>('.cp-lgM')) el.hidden = !on;
+  for (const el of document.querySelectorAll<HTMLElement>('.cp-lgE')) el.hidden = on;
+  keyBtn.classList.toggle('ro', on);
+  keyBtn.title = on ? '推した調' : '曲の調';
+  const sig = M?.m.smf.sig[0];
+  bpmGroup.setOff('bpm', on, M ? `${Math.round(M.m.smf.bpm)}（MIDI ファイル）` : '');
+  meterCh.setOff(on, M ? `${sig ? `${sig[1]}/${sig[2]}` : '4/4'}（MIDI ファイル）` : '');
+  if (on) renderParts();
+}
+$('#cp-midib').addEventListener('click', () => midiIn.click());
+midiIn.addEventListener('change', async () => {
+  const f = midiIn.files?.[0];
+  midiIn.value = '';
+  if (!f) return;
+  let m: MidiSong;
+  try {
+    const smf = parseSmf(await f.arrayBuffer());
+    m = midiSong(f.name.replace(/\.(midi?|rmi|kar)$/i, ''), smf, partsOf(smf));
+  } catch {
+    return say(`${f.name} は読み込めません。`);
+  }
+  const use = new Set(m.parts.filter((p) => !p.drum).map((p) => p.id));
+  if (!use.size) return say('打楽器のほかに音がないので、コードを推せません。');
+  const st = m.smf.starts,
+    first = (st[1] ?? m.smf.end) - (st[0] ?? 0),
+    base = sampleSong(SAMPLE0),
+    song: Song = {
+      ...base,
+      name: m.name,
+      meter: first === 3 ? 3 : 4,
+      bpm: Math.max(BPM_MIN, Math.min(BPM_MAX, Math.round(m.smf.bpm))),
+      style: S.song.style,
+      keys: S.song.keys,
+      gtr: S.song.gtr,
+      chords: [],
+    },
+    prev = S.song;
+  S.song = song;
+  const midi = { m, use, mute: new Set<string>(), band: false, prog: progsOf(m.smf) };
+  M = midi;
+  const ok = reanalyze();
+  S.song = prev;
+  M = null;
+  recompute();
+  if (!ok) return say('打楽器のほかに音がないので、コードを推せません。');
+  if (load(song, midi)) {
+    say('');
+    reveal(0);
   }
 });
 

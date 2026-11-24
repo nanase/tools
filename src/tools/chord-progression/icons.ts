@@ -92,6 +92,12 @@ export const ICON = {
   cho: svg24(
     '<circle cx="8" cy="9" r="3"/><path d="M2.5 21c0-3.3 2.4-5.6 5.5-5.6s5.5 2.3 5.5 5.6"/><circle cx="16.5" cy="10.5" r="2.6"/><path d="M13 21c.3-2.8 1.6-4.4 3.5-4.4S20 18.2 20.3 21"/><path d="M21.6 1v4.2"/><circle class="f" cx="20.4" cy="5.3" r="1.3"/><path d="M21.6 1l1.9.8"/>',
   ),
+  /* 木管（MIDI ファイルのパート）: 斜めに構えた笛と指穴 */
+  wind: svg24(
+    '<path d="M2.5 17.5L19 6l2.5 3.5L5 21z"/><path d="M17 7.4l2.5 3.5"/><circle class="f" cx="8.4" cy="15.3" r="1"/><circle class="f" cx="11.1" cy="13.4" r="1"/><circle class="f" cx="13.8" cy="11.5" r="1"/>',
+  ),
+  /* パートの音を出す・止める（16 × 16） */
+  mute: svg('<path d="M2 6h2.5L8 3v10L4.5 10H2z"/><path d="M10.5 6l4 4M14.5 6l-4 4"/>'),
   /* 選んだ和音の操作 */
   aud: svg('<path d="M2 6h2.5L8 3v10L4.5 10H2z"/><path d="M10.5 5.5c1 .7 1 4.3 0 5M12.5 3.5c2 1.6 2 7.4 0 9"/>'),
   del: svg('<path d="M2.5 4h11M6 4V2.5h4V4M4 4l.8 9.5h6.4L12 4"/><path d="M6.8 6.5v5M9.2 6.5v5"/>'),

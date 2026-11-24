@@ -27,7 +27,16 @@ describe('トランペットの MIDI ファイル', () => {
     ]);
   });
   it('パートが途中から入るときは、最初の音より前の小節線を捨てる（小節の頭の表を単調に増やす）', () => {
-    const smf: Smf = { ev: [], bpm: 120, tempo: [], starts: [0, 4, 8, 12, 16], end: 20, chans: [0], names: [''] };
+    const smf: Smf = {
+      ev: [],
+      bpm: 120,
+      tempo: [],
+      starts: [0, 4, 8, 12, 16],
+      end: 20,
+      chans: [0],
+      names: [''],
+      sig: [],
+    };
     const { data } = fileSong(smf, [nt(8, 4, 72), nt(12, 4, 74), nt(16, 4, 76)], 0, 'c.mid');
     expect(data.bars).toEqual([12, 16]);
   });

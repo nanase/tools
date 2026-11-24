@@ -37,6 +37,8 @@ export interface Smf {
   chans: number[];
   /** トラックごとの名前（最初のトラック名。なければ ''） */
   names: string[];
+  /** 拍子記号 [拍, 分子, 分母]（拍の順。なければ空で、4/4 とみなす） */
+  sig: [number, number, number][];
 }
 
 /** 読めないファイル */
@@ -224,6 +226,7 @@ export function parseSmf(src: ArrayBuffer | Uint8Array): Smf {
     end: endB,
     chans: [...new Set(ev.filter((e) => e.k === ON).map((e) => e.ch))].sort((x, y) => x - y),
     names,
+    sig: meter.map((m): [number, number, number] => [m.t / ppq, m.num, m.den]),
   };
 }
 

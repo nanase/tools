@@ -1,11 +1,11 @@
 /*
  * コード進行のページだけのスタイル（共通は src/styles/site.css）。
- * --cp-t・--cp-s・--cp-d は機能（トニック・サブドミナント・ドミナント）の色、--cp-lv はコード進行の矢印、--cp-cand は行きやすい和音、--cp-sel は選んだ和音。
+ * --cp-t・--cp-s・--cp-d は機能（トニック・サブドミナント・ドミナント）の色、--cp-lv はコード進行の矢印、--cp-cand は行きやすい和音、--cp-sel は選んだ和音、--cp-note は MIDI ファイルで鳴っている音。
  * 地図とレールの色はキャンバスがこの値を読む
  */
-:root{--cp-t:#0a6e8a;--cp-s:#3d7f2a;--cp-d:#c0450f;--cp-lv:#9a6c00;--cp-cand:#8b3fc9;--cp-sel:#2a64b0;--cp-map:#f3f5f0}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--cp-t:#52c4dd;--cp-s:#86cf6a;--cp-d:#ff8a4c;--cp-lv:#f2c230;--cp-cand:#c08cff;--cp-sel:#80acee;--cp-map:#101417}}
-:root[data-theme="dark"]{--cp-t:#52c4dd;--cp-s:#86cf6a;--cp-d:#ff8a4c;--cp-lv:#f2c230;--cp-cand:#c08cff;--cp-sel:#80acee;--cp-map:#101417}
+:root{--cp-t:#0a6e8a;--cp-s:#3d7f2a;--cp-d:#c0450f;--cp-lv:#9a6c00;--cp-cand:#8b3fc9;--cp-sel:#2a64b0;--cp-note:#2a64b0;--cp-map:#f3f5f0}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--cp-t:#52c4dd;--cp-s:#86cf6a;--cp-d:#ff8a4c;--cp-lv:#f2c230;--cp-cand:#c08cff;--cp-sel:#80acee;--cp-note:#80acee;--cp-map:#101417}}
+:root[data-theme="dark"]{--cp-t:#52c4dd;--cp-s:#86cf6a;--cp-d:#ff8a4c;--cp-lv:#f2c230;--cp-cand:#c08cff;--cp-sel:#80acee;--cp-note:#80acee;--cp-map:#101417}
 
 .cp-fT{--fn:var(--cp-t)}.cp-fS{--fn:var(--cp-s)}.cp-fD{--fn:var(--cp-d)}
 
@@ -136,3 +136,42 @@
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .cp-hbg{fill:var(--surface)}}
 .cp-hcar{fill:var(--cp-lv)}
 .cp-hwh{fill:var(--ink)}
+
+/* ===== MIDI ファイル ===== */
+.cp-mido{border-color:var(--line-2);color:var(--ink);font-weight:700}
+.cp-midif{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cp-aux{display:inline-flex;align-items:center;gap:10px}
+.cp-aux .tp-st{display:inline-flex;align-items:center;gap:6px}
+/* MIDI ファイルのパートの表: アイコン・パート・音色・音域・解析・ミュート */
+.cp-plist{display:grid;margin-bottom:10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);overflow:hidden}
+.cp-ph,.cp-pl{display:grid;grid-template-columns:40px minmax(0,1.1fr) minmax(0,1fr) minmax(80px,1.3fr) 44px 44px;align-items:center;gap:10px;padding:0 10px}
+.cp-ph{min-height:28px;border-bottom:1px solid var(--line);font-size:11.5px;color:var(--ink-3)}
+.cp-ph span:nth-child(n+5){text-align:center}
+.cp-pl{min-height:40px;border-bottom:1px solid var(--line);transition:background-color .08s}
+.cp-pl:last-child{border-bottom:0}
+.cp-pi .cp-ic{width:28px;height:28px}
+.cp-pn{overflow:hidden;font-size:13px;font-weight:700;text-overflow:ellipsis;white-space:nowrap}
+.cp-pg{overflow:hidden;font-size:12.5px;color:var(--ink-2);text-overflow:ellipsis;white-space:nowrap}
+.cp-pu{display:grid;place-items:center}
+.cp-pu input{margin:0;width:16px;height:16px;accent-color:var(--ink)}
+.cp-pm{display:grid;place-items:center;height:28px;border:1px solid var(--line);border-radius:4px;background:none;color:var(--ink-2);cursor:pointer}
+.cp-pm:hover{border-color:var(--ink-3);color:var(--ink)}
+.cp-pm[aria-pressed="true"]{color:var(--ink-3)}
+.cp-pl.hit{background:color-mix(in srgb,var(--cp-lv) 10%,var(--surface))}
+.cp-pl.hit .cp-pi{color:var(--cp-lv)}
+.cp-pl.mu>:not(.cp-pm),.cp-pl.by>:not(.cp-pm,.cp-pu){opacity:.38}
+.cp-rng{position:relative;height:10px;border-radius:3px;background:var(--inset)}
+.cp-rng i{position:absolute;top:3px;height:4px;border-radius:2px;background:var(--ink-2)}
+@media (max-width:560px){.cp-ph,.cp-pl{grid-template-columns:32px minmax(0,1fr) 36px 36px;gap:6px;padding:0 6px}.cp-ph span:nth-child(3),.cp-ph span:nth-child(4),.cp-pg,.cp-pl .cp-rng{display:none}}
+@media (prefers-reduced-motion:reduce){.cp-pl{transition:none}}
+.cp-src{display:inline-flex;border:1px solid var(--line-2);border-radius:15px;overflow:hidden;background:var(--surface)}
+.cp-src button{display:inline-flex;align-items:center;gap:5px;min-height:28px;padding:0 11px;border:0;background:none;color:var(--ink-2);font:700 13px var(--sans);cursor:pointer}
+.cp-src button+button{border-left:1px solid var(--line)}
+.cp-src button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
+.cp-src svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.4}
+.cp-src button[data-v="orig"] svg circle{fill:currentColor;stroke:none}
+.cp-keyb.ro{border-style:dashed;cursor:default;color:var(--ink-2)}
+.cp-keyb.ro:hover{border-color:var(--line-2)}
+.cp-nt{width:11px;height:11px;border-radius:50%;background:var(--cp-note)}
+.cp-nt.o{background:var(--surface);border:2px solid var(--cp-note);width:10px;height:10px}
+.cp-midi .cp-pi#cp-undo,.cp-midi .cp-pi#cp-redo,.cp-midi .cp-sep{display:none}
