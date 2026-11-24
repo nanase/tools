@@ -342,7 +342,7 @@ function results(): void {
         : E.repress !== null
           ? s2
             ? `押し直しの打弦 ${s2.v.toFixed(2)} m/s`
-            : '押し直しでは打てません'
+            : '押し直しでは弦を打てません'
           : `弦に触れていた時間 ${ms(E.onString, 1)}`,
   );
   const v = (id: string, t: number | null) =>
