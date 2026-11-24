@@ -20,9 +20,19 @@ const TOL = 2;
  * ページを開いた人が最初にする操作と、測る秒数。click は押すボタンの CSS セレクタで、1 秒おきに順に押す。
  * play は止まっているときだけ押す再生ボタン。key は押したままにするキー（KeyboardEvent の code）。操作がなければ開いたまま測る。
  * keyAt はキーを送る要素の CSS セレクタ（省けば body。図の中だけでキーを聞くページ）。
- * ear は耳で聴いて目標からずらした量 [LU]。低い音が主のページは LUFS が耳より小さめに出る
+ * ear は耳で聴いて目標からずらした量 [LU]。低い音が主のページは LUFS が耳より小さめに出る。
+ * page は開くページ（省けば場面の名前）、js は開いたあと操作の前に流す式（Promise なら待つ）
  */
-type Scene = { click?: string[]; play?: string; key?: string; keyAt?: string; ear?: number; dur: number };
+type Scene = {
+  click?: string[];
+  play?: string;
+  key?: string;
+  keyAt?: string;
+  ear?: number;
+  dur: number;
+  page?: string;
+  js?: string;
+};
 const SCENES: Record<string, Scene> = {};
 const put = (pages: string[], s: Scene) => {
   for (const p of pages) SCENES[p] = s;
@@ -53,6 +63,30 @@ put(['wavelet-denoise'], { click: ['#ab-pp'], dur: 15 });
 put(['sampling-theorem'], { click: ['#smp-pp'], dur: 15 });
 put(['vvvf'], { click: ['#vv-auto'], dur: 40 });
 put(['chord-progression'], { click: ['#cp-pp'], dur: 30 });
+/* コード進行のページで MIDI ファイル（FMシンセサイザの同梱曲。開発サーバでだけ取れる）を開いて鳴らす */
+const openMidi = (f: string, band: boolean) =>
+  `(async () => { const r = await fetch('/tools/src/tools/fm-synthesizer/songs/${f}'); if (!r.ok) throw new Error('${f} が取れません');
+  const dt = new DataTransfer(); dt.items.add(new File([await r.arrayBuffer()], '${f}'));
+  const inp = document.querySelector('#cp-midi'); inp.files = dt.files; inp.dispatchEvent(new Event('change'));
+  await new Promise((ok) => setTimeout(ok, 800));${band ? " document.querySelector('#cp-src [data-v=band]').click();" : ''} return 1; })()`;
+put(['chord-progression-midi'], {
+  page: 'chord-progression',
+  js: openMidi('fm-groove.mid', false),
+  click: ['#cp-pp'],
+  dur: 30,
+});
+put(['chord-progression-midi-band'], {
+  page: 'chord-progression',
+  js: openMidi('fm-groove.mid', true),
+  click: ['#cp-pp'],
+  dur: 30,
+});
+put(['chord-progression-midi-kv525'], {
+  page: 'chord-progression',
+  js: openMidi('kv525.mid', false),
+  click: ['#cp-pp'],
+  dur: 30,
+});
 put(['pendulum-clock'], { click: ['#pc-snd'], dur: 15 });
 
 /* ---------- ページへ入れる計測 ---------- */
@@ -213,8 +247,9 @@ for (const p of pages) {
   try {
     await tab.send('Page.enable');
     await tab.send('Page.addScriptToEvaluateOnNewDocument', { source: `(${tap.toString()})(${JSON.stringify(PROC)})` });
-    await tab.send('Page.navigate', { url: `${base}/tools/${p}/` });
+    await tab.send('Page.navigate', { url: `${base}/tools/${sc.page ?? p}/` });
     await sleep(5000);
+    if (sc.js) await tab.run(sc.js);
     for (const [i, c] of (sc.click ?? []).entries()) {
       if (i) await sleep(1000);
       await tab.run(

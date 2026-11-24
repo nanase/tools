@@ -87,6 +87,19 @@ const ROWS: [string, string, string, string][] = [
   <li>音は鳴る直前に予約する。編集すると、鳴っている和音はそのままにして次の和音から並べ直す</li>
 </ul>
 
+<h3>MIDI ファイルのコード</h3>
+<ul class="tl">
+  <li>調は小節ごとに推す。前 3 小節から後ろ 4 小節までの音名の量（鳴る長さ × ベロシティ）を、長調・短調 24 個の調の表と相関で比べる<Fragment set:html={rf(7)} /></li>
+  <li>和音は 1 小節を半分に分けた区間ごとに推す。3 拍子などの奇数拍の小節は 1 小節で 1 区間</li>
+  <li>区間の点は、鳴っている音名の量のうち和音の型の音が占める割合<Fragment set:html={rf(8)} />。型の音がほとんど鳴っていなければ減点し、根音がいちばん低い音なら加点、調の中の和音なら少し加点する</li>
+  <li>型は長三和音・短三和音・7・m7・M7・dim・m7(♭5)・sus4・dim7・aug の 10 個</li>
+  <li>調も和音も、変わるたびに罰点を引き、曲全体で点の和が最も大きい並びを選ぶ（ビタビのアルゴリズム）。音のない区間は前の和音を伸ばす</li>
+  <li>打楽器（チャンネル 10）は解析に使わない</li>
+  <li>原曲は <a href="../fm-synthesizer/">FMシンセサイザ</a>の GM 音源で鳴らし、バンドと同じ音量と残響に通す</li>
+  <li>「バンド」では、解析に使ったパートと打楽器を止めて推したコード進行をバンドが弾く。解析で外したパートは原曲のまま鳴らす。ミュートしたパートはどちらでも鳴らさない</li>
+  <li>地図の丸は、鳴っている音の音名を格子の同じ音名の点すべてに出す。大きさは鳴っている量で、鳴り始めの音は少し大きい。鳴っている和音の音でなければ白抜き</li>
+</ul>
+
 <h3>音色</h3>
 <div class="eqs">
   <math display="block" set:html={`${yn('<mi>n</mi>')}<mo>=</mo><mi>ρ</mi>${p(`<mfrac><mn>1</mn><mn>4</mn></mfrac>${yn('<mi>n</mi><mo>−</mo><mi>N</mi>')}<mo>+</mo><mfrac><mn>1</mn><mn>2</mn></mfrac>${yn('<mi>n</mi><mo>−</mo><mi>N</mi><mo>−</mo><mn>1</mn>')}<mo>+</mo><mfrac><mn>1</mn><mn>4</mn></mfrac>${yn('<mi>n</mi><mo>−</mo><mi>N</mi><mo>−</mo><mn>2</mn>')}`)}<mo>,</mo><mspace width="0.6em"/>${sub('<mi>f</mi>', '<mn>0</mn>')}<mo>=</mo><mfrac>${sub('<mi>f</mi>', '<mi>s</mi>')}<mrow><mi>N</mi><mo>+</mo><mn>1</mn></mrow></mfrac>`} />
@@ -128,6 +141,7 @@ const ROWS: [string, string, string, string][] = [
   <li>バンドの 10 個のスタイルの型と、サンプルの進行・テンポ・音色。このツールのために選び、特定の曲を写したものではない</li>
   <li>音色の値（減衰・弾く位置・変調の深さ・倍音の大きさ・フィルタ・ビブラート）と、和音を置く高さ</li>
   <li>ギターの弦とフレットの割り当て方（12 フレットまで、押さえる幅と高いフレットを減点）</li>
+  <li>MIDI ファイルの解析の値: 調を推す範囲（前 3・後ろ 4 小節）、罰点（調 0.8・和音 0.08）、加点（低音 0.12・調の中 0.05）、型ごとの減点</li>
 </ul>
 
 <h3>出典</h3>
@@ -138,4 +152,6 @@ const ROWS: [string, string, string, string][] = [
   <li id="thy-r4"><span class="rf-for">撥弦の合成の高さの合わせ方</span><span class="rf-src">D. A. Jaffe, J. O. Smith, “Extensions of the Karplus-Strong plucked-string algorithm,” <i>Computer Music Journal</i>, vol. 7, no. 2, pp. 56–69, 1983, <a href="https://doi.org/10.2307/3680063">doi:10.2307/3680063</a></span></li>
   <li id="thy-r5"><span class="rf-for">周波数変調による音の合成</span><span class="rf-src">J. M. Chowning, “The synthesis of complex audio spectra by means of frequency modulation,” <i>J. Audio Eng. Soc.</i>, vol. 21, no. 7, pp. 526–534, 1973</span></li>
   <li id="thy-r6"><span class="rf-for">遅延線の網による残響</span><span class="rf-src">J.-M. Jot, A. Chaigne, “Digital delay networks for designing artificial reverberators,” <i>90th AES Convention</i>, preprint 3030, 1991</span></li>
+  <li id="thy-r7"><span class="rf-for">調の表と相関による調の推定</span><span class="rf-src">C. L. Krumhansl, E. J. Kessler, “Tracing the dynamic changes in perceived tonal organization in a spatial representation of musical keys,” <i>Psychological Review</i>, vol. 89, no. 4, pp. 334–368, 1982, <a href="https://doi.org/10.1037/0033-295X.89.4.334">doi:10.1037/0033-295X.89.4.334</a></span></li>
+  <li id="thy-r8"><span class="rf-for">和音の型との照合による和声の解析</span><span class="rf-src">B. Pardo, W. P. Birmingham, “Algorithms for chordal analysis,” <i>Computer Music Journal</i>, vol. 26, no. 2, pp. 27–49, 2002, <a href="https://doi.org/10.1162/014892602760137167">doi:10.1162/014892602760137167</a></span></li>
 </ol>

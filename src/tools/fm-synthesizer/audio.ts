@@ -42,20 +42,32 @@ export class SynthAudio {
   /** 準備の前に送った設定（音色・パート）。準備ができたら送る */
   private pending = new Map<string, SynthMsg>();
 
+  /**
+   * host を渡すと、ほかのページの AudioContext に相乗りし、出力を host.out へつなぐ（コード進行のページの MIDI ファイル）。
+   * そのときは AudioContext を作らず、止めもしない（動かすのも止めるのも host の役目）
+   */
+  constructor(private readonly host?: { ready: () => Promise<AudioContext | null>; out: () => AudioNode | null }) {}
+
   /** AudioContext の時刻 [s]（作る前・止めている間は null） */
   now(): number | null {
     return this.ac?.state === 'running' ? this.ac.currentTime : null;
   }
 
   suspend(): void {
-    void this.ac?.suspend();
+    if (!this.host) void this.ac?.suspend();
   }
 
   /** AudioContext を作って動かす（押した操作の中で呼ぶ）。鳴らせなかったら false */
   async ready(): Promise<boolean> {
     clearTimeout(this.timer);
-    if (!AC) return false;
-    const ac = this.ac ?? new AC();
+    const { host } = this;
+    if (host) {
+      const ac = await host.ready();
+      if (!ac || (this.ac && this.ac !== ac)) return false;
+      this.ac = ac;
+    }
+    if (!AC && !this.ac) return false;
+    const ac = this.ac ?? new (AC as Ctor)();
     this.ac = ac;
     this.loading ??= ac.audioWorklet
       .addModule(workletUrl)
@@ -72,15 +84,21 @@ export class SynthAudio {
         lim.attack.value = 0.002;
         lim.release.value = 0.15;
         master.gain.value = 10 ** (this.db / 20);
-        node.connect(comp).connect(makeup).connect(master).connect(lim).connect(ac.destination);
+        node
+          .connect(comp)
+          .connect(makeup)
+          .connect(master)
+          .connect(lim)
+          .connect(host?.out() ?? ac.destination);
         this.node = node;
         this.master = master;
         this.comp = comp;
         this.makeup = makeup;
         this.applyComp();
-        ac.addEventListener('statechange', () => {
-          if (ac.state !== 'running') this.onLost?.();
-        });
+        if (!host)
+          ac.addEventListener('statechange', () => {
+            if (ac.state !== 'running') this.onLost?.();
+          });
         for (const m of this.pending.values()) node.port.postMessage(m);
         this.pending.clear();
         return true;
@@ -165,7 +183,7 @@ export class SynthAudio {
   /** 何も鳴らしていなければ、少しあとで AudioContext を止める */
   idle(): void {
     clearTimeout(this.timer);
-    if (this.song || this.midi || this.hand) return;
+    if (this.song || this.midi || this.hand || this.host) return;
     const { ac } = this;
     this.timer = setTimeout(() => {
       if (!this.song && !this.midi && !this.hand) void ac?.suspend();

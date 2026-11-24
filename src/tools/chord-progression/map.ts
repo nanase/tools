@@ -16,11 +16,13 @@ import {
   keyAt,
   LAT,
   type Place,
+  pcAt,
+  pointAt,
   type Song,
   samePlace,
   triadOf,
 } from './song';
-import { chordName, func, inKey, type Key, keyTonic, roman, trans } from './theory';
+import { chordName, func, inKey, type Key, keyTonic, md, QUALS, roman, trans } from './theory';
 
 export interface MapState {
   song: Song;
@@ -35,6 +37,14 @@ export interface MapState {
   /** 鳴っている和音が鳴り始めてからの秒（波紋に使う） */
   age: number;
   hover: Place | null;
+  /**
+   * MIDI ファイルを聴いている間の、鳴っている音の音名と量（なければ null）。
+   * あれば格子の点を光らせ、鳴っている和音の 1 つ前（prev）からの矢印だけを描き、次の和音は描かない
+   */
+  lit?: readonly { pc: number; w: number }[] | null;
+  prev?: number;
+  /** MIDI ファイルで鳴っている和音の小節（1 から）。鳴っている和音の点に書く */
+  bar?: number;
 }
 const css = (n: string): string => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 /** 色（#rgb・#rrggbb）に透明度を付ける。読めなければそのまま */
@@ -72,6 +82,9 @@ const RIPPLE = 0.8;
 /** 演奏中に三角形を薄くする度合い: 使う和音から格子 1 つ離れるごとに FADE_K ずつ、FADE_MIN まで */
 const FADE_K = 0.3,
   FADE_MIN = 0.25;
+/** 光る点を薄くする度合い: 鳴っている和音から格子 1 つ離れるごとに LIT_K ずつ、LIT_MIN まで */
+const LIT_K = 0.35,
+  LIT_MIN = 0.2;
 const REDUCE = matchMedia('(prefers-reduced-motion: reduce)');
 interface Colors {
   lv: string;
@@ -181,6 +194,8 @@ export class MapView {
   }
   /** 描く点: 演奏中は鳴っている和音と次の和音だけ、ドラッグ中は動かす和音と前後の和音だけ */
   private visible(st: MapState): number[] {
+    if (st.lit && st.play >= 0)
+      return st.prev !== undefined && st.prev >= 0 && st.prev !== st.play ? [st.prev, st.play] : [st.play];
     if (st.play >= 0) return st.next >= 0 && st.next !== st.play ? [st.play, st.next] : [st.play];
     const n = st.song.chords.length;
     if (st.drag) return [st.drag.k - 1, st.drag.k, st.drag.k + 1].filter((k) => k >= 0 && k < n);
@@ -314,6 +329,7 @@ export class MapView {
     const c: Colors = { lv, sel, ink, surf, mono, sans };
     this.lines(st, c);
     for (const f of labels) f();
+    if (st.lit) this.lights(st, key, css('--cp-note'), surf, sans);
     this.nodes(st, c);
   }
   /**
@@ -338,8 +354,11 @@ export class MapView {
     const vis = this.visible(st),
       focus = st.sel ?? n - 1,
       /* 演奏中は鳴っている和音から次の和音への 1 本だけ。ほかは描く点のうち続く 2 つの間 */
-      segs: [number, number][] =
-        st.play >= 0
+      segs: [number, number][] = st.lit
+        ? vis.length > 1
+          ? [[vis[0], vis[1]]]
+          : []
+        : st.play >= 0
           ? vis.length > 1
             ? [[st.play, st.next]]
             : []
@@ -350,7 +369,7 @@ export class MapView {
     for (const [k0, k] of segs) {
       const [x0, y0] = pos(k0),
         [x1, y1] = pos(k),
-        on = st.play >= 0 || st.drag !== null || k === focus,
+        on = !st.lit && (st.play >= 0 || st.drag !== null || k === focus),
         a = Math.atan2(y1 - y0, x1 - x0),
         L = Math.hypot(x1 - x0, y1 - y0),
         h = on ? 13 : 9,
@@ -379,16 +398,65 @@ export class MapView {
     }
     ctx.globalAlpha = 1;
   }
+  /**
+   * 鳴っている音の格子の点を丸で光らせる。丸の大きさは音の多さ、鳴っている和音の音でなければ小さな白抜きの丸。
+   * 同じ音名の点は地図に何か所もあるので、鳴っている和音の三角形から遠いほど薄くする
+   */
+  private lights(st: MapState, key: Key, col: string, surf: string, sans: string): void {
+    const { ctx, s } = this,
+      ch = st.song.chords[st.play];
+    if (!ch || !st.lit?.length) return;
+    const tones = new Set(QUALS[ch.q].iv.map((i) => md(ch.r + i))),
+      c0 = centroidOf(ch.at),
+      w = new Map(st.lit.map((x) => [x.pc, x.w]));
+    for (let j = LAT.j0; j <= LAT.j1 + 1; j++)
+      for (let i = LAT.i0; i <= LAT.i1 + 1; i++) {
+        const pc = pcAt(i, j),
+          v = w.get(pc);
+        if (v === undefined) continue;
+        const q = pointAt(i, j),
+          [x, y] = this.px(q),
+          d = Math.hypot(q[0] - c0[0], q[1] - c0[1]);
+        ctx.globalAlpha = Math.max(LIT_MIN, 1 - Math.max(0, d - 0.7) * LIT_K);
+        ctx.beginPath();
+        if (tones.has(pc)) {
+          const r = s * (0.06 + 0.08 * v);
+          ctx.arc(x, y, r, 0, Math.PI * 2);
+          ctx.fillStyle = col;
+          ctx.fill();
+          if (r >= 8) {
+            ctx.fillStyle = surf;
+            ctx.font = `700 ${Math.round(Math.min(14, r * 0.95))}px ${sans}`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(chordName({ d: md(pc - key.t), q: 'M', inv: 0 }, key), x, y + 0.5);
+          }
+        } else {
+          ctx.arc(x, y, Math.max(4, s * 0.06), 0, Math.PI * 2);
+          ctx.fillStyle = surf;
+          ctx.fill();
+          ctx.strokeStyle = col;
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
+      }
+    ctx.globalAlpha = 1;
+  }
   /** 番号の点。鳴り始めた和音の点からは波紋 */
   private nodes(st: MapState, c: Colors): void {
     const { ctx } = this,
       r0 = this.r0,
       tags: { x: number; y: number; to: Key }[] = [];
     for (const k of this.visible(st)) {
+      /* MIDI ファイルでは前の和音の点を描かない（白抜きの丸は「コードに入らない音」と紛らわしい） */
+      if (st.lit && k !== st.play) continue;
       const ch = st.song.chords[k],
         [x, y] = this.nodePos(st, k),
         on = k === st.play,
-        r = on ? r0 + 2 : r0;
+        /* MIDI ファイルは点に小節番号を書く。3 桁でも収まるよう、文字の幅に合わせて点を大きくする */
+        label = st.lit ? (on && st.bar ? String(st.bar) : '') : String(k + 1);
+      ctx.font = `700 ${Math.round(r0 * 1.15)}px ${c.mono}`;
+      const r = Math.max(on ? r0 + 2 : r0, ctx.measureText(label).width / 2 + 3);
       /* 鳴り始めた和音の点から波紋が広がる */
       if (on && !REDUCE.matches)
         for (const d of [0, 0.22]) {
@@ -410,11 +478,13 @@ export class MapView {
       ctx.lineWidth = k === st.sel ? 3.5 : 2;
       ctx.strokeStyle = k === st.sel ? c.sel : c.lv;
       ctx.stroke();
-      ctx.fillStyle = on ? c.surf : c.ink;
-      ctx.font = `700 ${Math.round(r0 * 1.15)}px ${c.mono}`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(String(k + 1), x, y + 0.5);
+      if (label) {
+        ctx.fillStyle = on ? c.surf : c.ink;
+        ctx.font = `700 ${Math.round(r0 * 1.15)}px ${c.mono}`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(label, x, y + 0.5);
+      }
       if (ch.mod) tags.push({ x: x + r, y, to: ch.mod });
     }
     /* 転調する和音には、点の右に新しい調の札を付ける（緊張の図の札と同じ形）。ほかの点に隠れないように最後に描く */
