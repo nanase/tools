@@ -231,8 +231,13 @@ function shapeOf(c: Float64Array, out: Float64Array): Float64Array {
 /** 部分音の成分 c の、弦の上での振れの最大 [m] */
 const peakOf = (c: Float64Array): number => Math.max(...shapeOf(c, new Float64Array(PTS + 1)).map(Math.abs));
 
-/** 白鍵の番号（左から）と、黒鍵の左右の位置 */
-function keyRect(key: number): [number, number, number, number] {
+/** 図の幅・高さと鍵盤の上端（図の単位。鍵盤の上に重ねる図が使う） */
+export const FIG_W = W,
+  FIG_H = H,
+  FIG_KY = KY;
+
+/** 鍵の四角 [x, y, 幅, 高さ]（図の単位） */
+export function keyRect(key: number): [number, number, number, number] {
   let wi = 0;
   for (let k = KEY_LO; k < key; k++) if (!isBlack(k)) wi++;
   const nw = 52,
@@ -241,6 +246,49 @@ function keyRect(key: number): [number, number, number, number] {
   const bw = ww * 0.58;
   return [KX0 + wi * ww - bw / 2, KY, bw, BH];
 }
+
+/** 鍵の中心の横位置（図の単位） */
+export const keyMid = (key: number): number => {
+  const [x, , w] = keyRect(key);
+  return x + w / 2;
+};
+
+/** 横位置 x（図の単位）の鍵（黒鍵の幅の中なら黒鍵、ほかは白鍵。外なら null） */
+export function keyAtX(x: number): number | null {
+  if (x < KX0 || x > KX1) return null;
+  for (let k = KEY_LO; k <= KEY_HI; k++) {
+    if (!isBlack(k)) continue;
+    const [bx, , bw] = keyRect(k);
+    if (x >= bx && x <= bx + bw) return k;
+  }
+  for (let k = KEY_LO; k <= KEY_HI; k++) {
+    if (isBlack(k)) continue;
+    const [wx, , ww] = keyRect(k);
+    if (x >= wx && x <= wx + ww) return k;
+  }
+  return null;
+}
+
+/**
+ * 弦 v の、打ってから td 秒の振れの大きさ: 弦の速さの振幅 [m/s] の上限（モードの大きさ × 角周波数の和）。
+ * 変位より音域による違いが小さい（mf で C1〜C7 が 10 dB ほど）
+ */
+export function velOf(v: StringView, td: number, fade: (own: number) => number): number {
+  let s = 0;
+  for (const p of v.parts)
+    for (let m = 0; m < p.ar.length; m++)
+      s += Math.hypot(p.ar[m], p.ai[m]) * Math.abs(p.lr[m]) * Math.exp(-p.li[m] * td) * fade(p.own[m]);
+  return s;
+}
+
+/** 鍵ごとの弦の振れ [m/s]: 打弦された振動と、共鳴の振動 */
+export interface StringVel {
+  hit: number;
+  res: number;
+}
+
+/** 鍵盤の上に描く図: 弦・弦の振動・楽譜 */
+export type KbView = 'str' | 'vib' | 'roll';
 
 export class Keys {
   private geo: KeyGeo[] = [];
@@ -251,6 +299,8 @@ export class Keys {
   private slow = 50;
   /** 共鳴している弦を描くか */
   private symOn = true;
+  /** 鍵盤の上に描く図（弦のほかは、図の上の canvas が描く） */
+  private view: KbView = 'str';
   private readonly snd = new Map<number, Sounding>();
   /** 鍵ごとの共鳴している弦と、ダンパーの記録。すべて止めた時刻 [s] と、そのときの減衰率 [1/s] */
   private readonly res = new Map<number, Res[]>();
@@ -354,6 +404,34 @@ export class Keys {
   setSym(on: boolean): void {
     this.symOn = on;
     this.kick();
+  }
+  /** 鍵盤の上に描く図。弦のほかでは、弦・ダンパー・振動・輪を隠す */
+  setView(v: KbView): void {
+    this.view = v;
+    this.svg.dataset.view = v;
+  }
+  /** 鳴っている弦の振れ（鍵ごと。共鳴は表示する設定のときだけ）。消えた弦は描くコマで除く */
+  vels(now: number): Map<number, StringVel> {
+    const out = new Map<number, StringVel>(),
+      at = (k: number): StringVel => {
+        let o = out.get(k);
+        if (!o) {
+          o = { hit: 0, res: 0 };
+          out.set(k, o);
+        }
+        return o;
+      };
+    for (const [k, s] of this.snd) {
+      const t = now - s.t0;
+      if (t >= 0) at(k).hit += velOf(s.view, t, this.fader(s.t0, now, s));
+    }
+    if (this.symOn)
+      for (const [k, rs] of this.res)
+        for (const r of rs) {
+          const t = now - r.t0;
+          if (t >= 0) at(k).res += velOf(r.view, t, this.fader(r.t0, now));
+        }
+    return out;
   }
   /** 鍵を押している表示。離したとき、ペダルを踏んでいなければダンパーが下りて弦が止まり始める */
   setDown(key: number, on: boolean): void {
@@ -678,12 +756,7 @@ export class Keys {
   private hit(x: number, y: number): number | null {
     if (x < KX0 || x > KX1 || y < 0 || y > KY + WH) return null;
     if (y >= KY) {
-      if (y <= KY + BH)
-        for (let k = KEY_LO; k <= KEY_HI; k++) {
-          if (!isBlack(k)) continue;
-          const [bx, , bw] = keyRect(k);
-          if (x >= bx && x <= bx + bw) return k;
-        }
+      if (y <= KY + BH) return keyAtX(x);
       for (let k = KEY_LO; k <= KEY_HI; k++) {
         if (isBlack(k)) continue;
         const [wx, , ww] = keyRect(k);
@@ -691,6 +764,8 @@ export class Keys {
       }
       return null;
     }
+    /* 弦の振動・楽譜の図では、鍵の上の縦の帯がその鍵 */
+    if (this.view !== 'str') return keyAtX(x);
     const k = Math.round((x - KX0) / SP - 0.5) + KEY_LO;
     if (k < KEY_LO || k > KEY_HI) return null;
     const g = this.geo[k - KEY_LO];

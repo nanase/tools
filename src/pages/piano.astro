@@ -32,19 +32,27 @@ const name = 'ピアノ';
 
   <div class="tgrid">
     <Panel hid="hd-kb" title="鍵盤と弦" class="a-kb" fixed>
-      <div slot="aux" class="seg" id="p-nv" role="group" aria-label="振動の見せ方"><button type="button" data-v="blur" aria-pressed="true" title="実際の速さの残像（振れる範囲）">残像</button><button type="button" data-v="slow" aria-pressed="false" title="ゆっくりにした弦の形（減衰は実際の速さ）">スロー</button></div>
+      <div slot="aux" class="seg" id="p-kv" role="group" aria-label="鍵盤の上の図"><button type="button" data-v="str" aria-pressed="true" title="上から見た弦と、その振動">弦</button><button type="button" data-v="vib" aria-pressed="false" title="鍵ごとの弦の振れの大きさ（下から上へ流す）">弦の振動</button><button type="button" data-v="roll" aria-pressed="false" title="曲の音符（上から鍵盤へ落ちる）とダンパーペダル">楽譜</button></div>
       <div class="sbar">
-        <span class="stag"><i class="sw" aria-hidden="true"></i>弦の変位 <b id="kb-ex"></b></span>
-        <span class="stag" id="kb-tm"></span>
+        <span class="stag v-str"><i class="sw" aria-hidden="true"></i>弦の変位 <b id="kb-ex"></b></span>
+        <span class="stag v-str" id="kb-tm"></span>
+        <span class="stag v-vib" hidden><i class="sw" aria-hidden="true"></i>打弦された弦</span>
+        <span class="stag v-vib v-sym" hidden><i class="sw c2" aria-hidden="true"></i>共鳴弦</span>
+        <span class="stag v-roll" hidden><i class="sw" aria-hidden="true"></i>音符</span>
+        <span class="stag v-roll" hidden><i class="sw c2" aria-hidden="true"></i>ダンパーペダル</span>
         <span class="stag"><span class="led" id="pedLed" aria-hidden="true"></span>ペダル</span>
         <span class="stag kb-note" id="kb-note"></span>
       </div>
       <div class="kbw" id="kbw">
-        <svg class="kbd" id="kbd" tabindex="0" role="group" aria-roledescription="鍵盤" aria-label="鍵盤と弦（上から見た図）。鍵か弦を押すと、その鍵を打ち、離すとダンパーが下りる。左右の矢印キーで半音、上下でオクターブを選び、Enter で打つ"></svg>
+        <div class="kbx">
+          <svg class="kbd" id="kbd" tabindex="0" role="group" aria-roledescription="鍵盤" aria-label="鍵盤と弦（上から見た図）。鍵か弦を押すと、その鍵を打ち、離すとダンパーが下りる。左右の矢印キーで半音、上下でオクターブを選び、Enter で打つ"></svg>
+          <canvas class="kbc" id="kbc" hidden aria-hidden="true"></canvas>
+        </div>
       </div>
       <p class="sr" id="kb-live" aria-live="polite"></p>
       <More id="g-kb" title="表示の設定"><div class="ana2">
         <div class="ptab">
+          <ChoiceRow k="nv" name="振動の見せ方" sub="残像: 実際の速さで振れる範囲。スロー: ゆっくりにした弦の形（減衰は実際の速さ）" choices={[['blur', '残像'], ['slow', 'スロー']]} value="blur" />
           <ChoiceRow k="ex" name="振幅の強調" sub="弦の変位を描く倍率。×1 は弦の間隔に対して実際の大きさ" choices={EXAG.map((v) => [v, `×${v}`] as const)} value={10} />
           <ChoiceRow k="sym" name="弦の共鳴" sub="ダンパーが上がっている弦の揺れの表示（音は不変）" choices={[['on', '表示'], ['off', 'なし']]} value="on" />
         </div>
@@ -101,7 +109,10 @@ const name = 'ピアノ';
           <ChoiceRow k="a4" name="基準の高さ" sub="A4 の第 1 部分音の周波数" choices={A4S.map((v) => [v, `${v} Hz`] as const)} value={440} />
           <ParamRow d={UNI} />
         </div>
-        <div class="stw">
+        <div class="sg-bar"><div class="seg" id="p-sg" role="group" aria-label="弦のグラフ"><button type="button" data-v="len" aria-pressed="true">弦長</button><button type="button" data-v="ten" aria-pressed="false">張力</button><button type="button" data-v="dia" aria-pressed="false">外径</button><button type="button" data-v="b" aria-pressed="false"><i>B</i></button><button type="button" data-v="tun" aria-pressed="false">調律</button></div><div class="sbar static sg-lg" id="sg-lg"><span class="stag" data-t="concert"><i class="sw" aria-hidden="true"></i>コンサート</span><span class="stag" data-t="grand"><i class="sw c2" aria-hidden="true"></i>グランド</span><span class="stag" data-t="upright"><i class="sw c3" aria-hidden="true"></i>アップライト</span></div></div>
+        <div class="sgw"><canvas class="sgc" id="sgc" role="img" aria-label="鍵ごとの弦の値のグラフ。横軸は鍵盤、3 つの大きさのピアノを重ね、選んでいる大きさを太く描く。押すとその鍵を選ぶ"></canvas></div>
+        <div class="sg-rd" id="sg-rd"></div>
+        <div class="sr">
           <table class="stab" id="stab">
             <thead><tr><th scope="col">鍵</th><th scope="col">弦長</th><th scope="col">本数</th><th scope="col">外径</th><th scope="col">張力</th><th scope="col"><i>B</i></th><th scope="col">調律</th></tr></thead>
             <tbody></tbody>

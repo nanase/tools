@@ -93,6 +93,11 @@ export class Transport {
     this.sync();
   }
 
+  /** 表示している位置の拍（演奏中は今の位置、止まっていれば次に弾き始める拍） */
+  get at(): number {
+    return this.beat;
+  }
+
   /** 表示を描き直す（止まっている間にテンポを変えたとき） */
   refresh(): void {
     this.draw();
