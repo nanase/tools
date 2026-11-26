@@ -189,6 +189,8 @@ export class Voice {
   sustained = false;
   /** 鍵を離したか（ペダルで延ばしていても true） */
   keyUp = false;
+  /** 鳴らす高さ（ノート番号。音色の固定の高さか、移調したノート） */
+  readonly pitch: number;
 
   constructor(
     readonly part: number,
@@ -197,10 +199,12 @@ export class Voice {
     readonly tone: Tone,
     readonly src0: number,
     private readonly sr: number,
+    shift = 0,
   ) {
     this.car = ALGS[tone.alg].c;
     for (const [j, k] of ALGS[tone.alg].e) this.src[k].push(j);
-    const pitch = tone.key ?? note;
+    const pitch = tone.key ?? Math.max(0, Math.min(127, note + shift));
+    this.pitch = pitch;
     /* 音ごとの値は鳴り始めに 1 度だけ求める（標本ごとの計算は増やさない） */
     this.beta = fbBeta(tone, pitch, vel);
     this.gain = 10 ** (tone.gain / 20);
@@ -361,6 +365,8 @@ export class Synth {
   /** 打楽器の音（ノート番号ごと） */
   readonly drums = new Map<number, Tone>();
   voices: Voice[] = [];
+  /** 移調 [半音]（打楽器のパートは移さない。鳴り始めに当てるので、鳴っている音の高さは変えない） */
+  transpose = 0;
   /** 打楽器で音色のないノートに使う音 */
   private drum0: Tone;
 
@@ -390,7 +396,17 @@ export class Synth {
     }
     if (part === DRUM_PART)
       for (const n of CHOKE[note] ?? []) for (const v of this.voices) if (v.part === part && v.note === n) v.steal();
-    this.voices.push(new Voice(part, note, Math.min(1, vel), this.toneOf(part, note), src, this.sr));
+    this.voices.push(
+      new Voice(
+        part,
+        note,
+        Math.min(1, vel),
+        this.toneOf(part, note),
+        src,
+        this.sr,
+        part === DRUM_PART ? 0 : this.transpose,
+      ),
+    );
     this.limit();
   }
 
@@ -498,7 +514,7 @@ export class Synth {
           /* 打楽器は音ごとに、鳴り始めから音色の速さで揺らす（パートの LFO は使わない） */
           w = (k === DRUM_PART ? Math.sin(TAU * lf.rate * v.age) : lfo[k]) * depth,
           cents = w * lf.vib + (k === DRUM_PART ? 0 : p.bend * BEND_RANGE * 100),
-          f = noteHz(v.tone.key ?? v.note) * 2 ** (cents / 1200),
+          f = noteHz(v.pitch) * 2 ** (cents / 1200),
           am = lf.trem > 0 ? 10 ** ((lf.trem * (w - depth)) / 2 / 20) : 1,
           [gl, gr] = gains[k];
         v.render(TL, TR, len, f / this.sr, am, gl, gr);

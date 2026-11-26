@@ -1,10 +1,10 @@
 /**
  * FM シンセサイザを Web Audio API で鳴らす: AudioWorklet（worklet.ts、ステレオ。残響もここで足す）→ コンプレッサー →
- * 音量 → リミッタ → 出力。
+ * 音量 → リミッタ → 波形を読むアナライザ → 出力。
  * 曲の音は AudioContext の時刻で予約し、MIDI 機器の音はすぐ鳴らす。何も鳴らしていない間は AudioContext を止めて CPU を休ませる
  */
 import type { ReverbSpec } from '../../lib/reverb';
-import { PC } from '../../lib/smf';
+import { BEND, CC, PC } from '../../lib/smf';
 import { type Src, type Tone, VOL0 } from './engine';
 import type { SynthEv, SynthMsg } from './worklet';
 import workletUrl from './worklet.ts?worker&url';
@@ -15,6 +15,9 @@ const AC: Ctor | undefined =
 
 /** 最後の音を離してから AudioContext を止めるまでの時間 [ms]（リリースの長い音を切らない） */
 const IDLE_MS = 4000;
+
+/** マスターの波形に読む標本の数 */
+export const SCOPE_N = 2048;
 
 /** 全体のコンプレッサー: しきい値 [dB]・ニー [dB]・比・アタック [s]・リリース [s]・持ち上げ [dB] */
 const COMP = { threshold: -24, knee: 12, ratio: 3, attack: 0.005, release: 0.2, makeup: 6 };
@@ -35,6 +38,7 @@ export class SynthAudio {
   private master: GainNode | null = null;
   private comp: DynamicsCompressorNode | null = null;
   private makeup: GainNode | null = null;
+  private scopeNode: AnalyserNode | null = null;
   private compOn = true;
   private loading: Promise<boolean> | null = null;
   private db = VOL0;
@@ -77,7 +81,10 @@ export class SynthAudio {
           makeup = ac.createGain(),
           master = ac.createGain(),
           /* 和音でフルスケールを超えそうなときだけ働く、安全のためのリミッタ */
-          lim = ac.createDynamicsCompressor();
+          lim = ac.createDynamicsCompressor(),
+          /* マスターの波形とメーター（素通しで出力へ流す） */
+          scope = ac.createAnalyser();
+        scope.fftSize = SCOPE_N;
         lim.threshold.value = -3;
         lim.knee.value = 0;
         lim.ratio.value = 20;
@@ -89,8 +96,10 @@ export class SynthAudio {
           .connect(makeup)
           .connect(master)
           .connect(lim)
+          .connect(scope)
           .connect(host?.out() ?? ac.destination);
         this.node = node;
+        this.scopeNode = scope;
         this.master = master;
         this.comp = comp;
         this.makeup = makeup;
@@ -134,6 +143,26 @@ export class SynthAudio {
   /** パートの音量 [dB]・定位・ミュート・残響へ送る量 */
   part(part: number, vol: number, pan: number, mute: boolean, rev: number): void {
     this.setting(`pt${part}`, { type: 'part', part, vol, pan, mute, rev });
+  }
+
+  /** パート part のコントロールチェンジ（一覧のバーから。準備の前なら、準備ができたときに送る） */
+  cc(part: number, num: number, v: number): void {
+    this.setting(`cc${part}-${num}`, { type: 'ev', at: 0, src: 1, e: { k: CC, ch: part, a: num, v } });
+  }
+  /** パート part のピッチベンド（−1〜1） */
+  bend(part: number, v: number): void {
+    this.setting(`bd${part}`, { type: 'ev', at: 0, src: 1, e: { k: BEND, ch: part, a: 0, v } });
+  }
+  /** 移調 [半音] */
+  transpose(semis: number): void {
+    this.setting('tr', { type: 'transpose', semis });
+  }
+
+  /** 出力の波形を buf に読む（モノラルに混ぜたもの）。動いていなければ false */
+  scope(buf: Float32Array<ArrayBuffer>): boolean {
+    if (!this.scopeNode || this.ac?.state !== 'running') return false;
+    this.scopeNode.getFloatTimeDomainData(buf);
+    return true;
   }
 
   /** 出来事を時刻 at（0 はすぐ）に鳴らす。src は曲（0）か MIDI 機器と手（1） */
