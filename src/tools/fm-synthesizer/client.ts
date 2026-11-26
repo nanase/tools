@@ -1569,10 +1569,13 @@ $('#panicBtn').addEventListener('click', () => {
   vAll();
 });
 autoPause(audio, { pause: () => transport.pause(), hidden: tick });
-songSel.addEventListener('change', () => {
+songSel.addEventListener('change', (e) => {
+  /* 選んだ曲を頭から弾く（利用者が選んだときだけ）。音は押した操作の中で動かす */
+  if (e.isTrusted) void audio.ready();
   stopSong();
   transport.stopped(true);
   void showSong();
+  if (e.isTrusted) transport.playNew();
 });
 
 /* ---------- MIDI ---------- */

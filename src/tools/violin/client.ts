@@ -489,9 +489,12 @@ function pieceChanged(): void {
   if (P) stopPiece();
   void showLine();
 }
-piece.addEventListener('change', () => {
+piece.addEventListener('change', (e) => {
   store('c:p-piece', piece.value);
+  /* 選んだ曲を頭から弾く（MIDI ファイルを読み込んだときなど、利用者が選んだのでなければ弾かない）。音は押した操作の中で動かす */
+  if (e.isTrusted) void audio.ready();
   pieceChanged();
+  if (e.isTrusted) transport.playNew();
 });
 /** 読み込んだ曲（演奏の位置の欄と、弾き始めに使う） */
 const scoreCache = new Map<string, PieceData>();
