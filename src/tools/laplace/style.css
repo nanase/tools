@@ -1,72 +1,26 @@
 /*
- * ラプラス変換のページだけのスタイル（共通は src/styles/site.css）。
- * 章ごとに、図（上）・例のボタン・今の値の文・式・気づいてほしいこと（下）の順に並べる。
- * 色: on 波と矢印（橙）、ons その塗り、tl・tr s 平面の左半分・右半分の地、hatch 収束域の外、b0〜b6 曲面の高さの段
+ * ラプラス変換のページだけのスタイル。章・式・ナビゲーションの共通の見た目は src/styles/chapters.css（ルートの .chp）。
+ * 色: fill2 収束域と断面の塗り（z 変換の --fill-ch2 と同じ）、hatch 収束域の外、b0〜b6 曲面の高さの段
  */
-:root{--lap-on:#d9480f;--lap-ons:#fbe3d3;--lap-tl:#e9f0f2;--lap-tr:#f6ebe4;--lap-hatch:#c9cfc6;
+.lap{--lap-fill2:#d5e8ee;--lap-hatch:#c9cfc6;
   --lap-b0:#f3f1e6;--lap-b1:#efe2c2;--lap-b2:#ebcb95;--lap-b3:#e5a96a;--lap-b4:#d97f44;--lap-b5:#c4582a;--lap-b6:#a33a1a}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--lap-on:#ff8a4c;--lap-ons:#4a2a18;--lap-tl:#10202a;--lap-tr:#2a1810;--lap-hatch:#3a4248;
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .lap{--lap-fill2:#10262d;--lap-hatch:#3a4248;
   --lap-b0:#171b1c;--lap-b1:#3a2f16;--lap-b2:#6a4616;--lap-b3:#9c5c18;--lap-b4:#d0721e;--lap-b5:#f09442;--lap-b6:#ffc47a}}
-:root[data-theme="dark"]{--lap-on:#ff8a4c;--lap-ons:#4a2a18;--lap-tl:#10202a;--lap-tr:#2a1810;--lap-hatch:#3a4248;
+:root[data-theme="dark"] .lap{--lap-fill2:#10262d;--lap-hatch:#3a4248;
   --lap-b0:#171b1c;--lap-b1:#3a2f16;--lap-b2:#6a4616;--lap-b3:#9c5c18;--lap-b4:#d0721e;--lap-b5:#f09442;--lap-b6:#ffc47a}
 
-/* 図の並び。PC は左に s 平面、右に波。曲面の章は右を広く、断面の章は 3 枚 */
-.lap-figs{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:14px;align-items:start}
-.lap-figs.lap-lr{grid-template-columns:minmax(220px,.7fr) minmax(0,1.6fr)}
-.lap-figs.lap-three{grid-template-columns:minmax(200px,.72fr) minmax(0,1.45fr) minmax(0,1fr)}
-@media (max-width:1000px){.lap-figs.lap-three{grid-template-columns:minmax(0,.8fr) minmax(0,1.5fr)}.lap-figs.lap-three>.lap-fg:nth-child(3){grid-column:1/-1}}
-@media (max-width:760px){.lap-figs,.lap-figs.lap-lr,.lap-figs.lap-three{grid-template-columns:minmax(0,1fr)}}
-.lap-fg{min-width:0}
-.lap-ft{display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 10px;margin:0 2px 4px;font-size:12px;color:var(--ink-3)}
-.lap-ft b{font-weight:600;color:var(--ink-2)}
-.lap-ft i,.lap-lg i:not(.sw),.lap-dyn i,.lap-end i,.lap-eqn i{font-family:var(--math);font-size:1.12em}
-.lap-scr{padding:0;overflow:hidden}
-.lap-scr canvas{display:block;width:100%;touch-action:pan-y;user-select:none;-webkit-user-select:none}
-.lap-scr canvas:focus{outline:none}
-.lap-scr canvas:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
-.lap-3d{cursor:ew-resize}
-.lap-lg{justify-content:flex-start;margin:6px 2px 0;font-family:var(--sans)}
-#lap .lap-sw{background:var(--lap-on)}
-#lap .lap-sw-b{background:var(--ch2)}
-#lap .lap-sw-g{background:var(--ink-3)}
-#lap .lap-sw-a{background:var(--ch2)}
-#lap .lap-sw-d{height:0;background:none;border-top:2px dashed var(--ink-3);border-radius:0}
-
-/* 例のボタン・今の値の文・式・気づいてほしいこと */
-.lap-row{margin-top:12px}
-.lap-dyn{margin:14px 2px 0;font-size:15px;line-height:1.75;color:var(--ink)}
-.lap-dyn b{font:700 15px var(--mono);color:var(--lap-on)}
-.lap-dyn .w{color:var(--warn);font-weight:700}
-#lap .eqs math{font-size:1.2em;color:var(--ink)}
-#lap .eqs [data-hl]{cursor:pointer;border-radius:3px}
-#lap .eqs [data-hl]:hover,#lap .eqs [data-hl].hl{color:var(--lap-on)}
-#lap .eqs mn.v{color:var(--ch2)}
-.lap-eqn{margin:0;font-size:12px;color:var(--ink-3)}
-.lap-end{margin:14px 2px 2px;padding:8px 0 0 12px;border-left:3px solid var(--lap-on);font-size:14.5px;font-weight:700;line-height:1.7}
-@media (max-width:479px){.lap-dyn{font-size:14.5px}#lap .eqs math{font-size:1.05em}}
-
-/* 章の移動の帯（画面の下端に固定。色は計算結果の帯 .mini にそろえる） */
-body:has(.lap-nav){padding-bottom:52px}
-/* 1 章ずつでは高さが画面の高さに近くなりやすい。スクロールバーの出入りで幅が変わると、図の高さが変わってまたバーが出入りし、
+/* 1 問ずつではページの高さが画面に近くなりやすい。スクロールバーの出入りで幅が変わると、図の高さが変わってまたバーが出入りし、
    描き直す前に消え続ける。バーの場所をいつも取って幅を変えない */
-html:has(.lap-nav){scrollbar-gutter:stable}
-#lap .pnl:focus{outline:none}
-.lap-nav{position:fixed;left:0;right:0;bottom:0;z-index:22;background:var(--rail-2);color:var(--rail-ink);box-shadow:0 -4px 14px rgb(0 0 0 / .14)}
-.lap-nav-in{display:flex;align-items:center;gap:8px;max-width:1180px;height:52px;margin:0 auto;padding:0 16px}
-.lap-nav button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
-.lap-nav button:focus-visible{outline:2px solid var(--rail-focus);outline-offset:2px}
-.lap-nb{flex:none;display:grid;place-items:center;width:40px;height:40px;border-radius:6px}
-.lap-nb svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.lap-nb:hover:not(:disabled),.lap-cur:hover,.lap-all:hover{background:rgb(255 255 255 / .08)}
-.lap-nb:disabled{opacity:.3;cursor:default}
-.lap-nt{position:relative;flex:1 1 auto;min-width:0}
-.lap-cur{display:flex;align-items:baseline;gap:10px;width:100%;min-width:0;height:40px;padding:0 10px;border-radius:6px;text-align:left}
-.lap-tt{flex:0 1 auto;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font:700 14px/40px var(--sans)}
-.lap-pg{flex:none;font:500 12.5px var(--mono);color:var(--rail-ink-2)}
-.lap-nav .lap-all{flex:none;height:32px;padding:0 12px;border:1px solid var(--rail-ink-2);border-radius:4px;font:500 12.5px var(--sans)}
-.lap-nav .lap-all[aria-pressed="true"]{background:var(--rail-ink);color:var(--rail-2);border-color:var(--rail-ink)}
-.lap-toc{position:absolute;left:0;bottom:calc(100% + 10px);width:min(420px,calc(100vw - 32px));margin:0;padding:6px;list-style:none;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:var(--r);box-shadow:0 6px 24px rgb(0 0 0 / .22)}
-.lap-toc button{display:block;width:100%;padding:9px 10px;border-radius:4px;text-align:left;font:500 14px/1.4 var(--sans)}
-.lap-toc button:hover{background:var(--inset)}
-.lap-toc button[aria-current="true"]{font-weight:700;box-shadow:inset 3px 0 0 var(--lap-on)}
-@media (max-width:479px){.lap-nav-in{gap:4px;padding:0 8px}.lap-cur{gap:6px;padding:0 6px}.lap-tt{font-size:13px}.lap-all{padding:0 8px}}
+html:has(#lap){scrollbar-gutter:stable}
+
+/* 図。点の上で始めたタッチだけをドラッグにし、ほかはスクロールに任せる（client.ts） */
+.lap .scope canvas{display:block;width:100%;touch-action:pan-y;user-select:none;-webkit-user-select:none}
+.lap .scope canvas:focus{outline:none}
+.lap .scope canvas:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+.lap canvas.sf{cursor:ew-resize}
+
+/* 問い 4・5 は s 平面を細く、曲面を広く。狭い画面では曲面を 1 行使う */
+.lap #q4 .g3w{grid-template-columns:minmax(170px,1.7fr) minmax(0,4fr)}
+.lap #q5 .g3w{grid-template-columns:minmax(210px,1.9fr) minmax(0,3.6fr) minmax(0,2.6fr)}
+@media (max-width:1000px){.lap #q5 .g3w{grid-template-columns:minmax(150px,2fr) minmax(0,3fr)}.lap #q5 .g3w .wide{grid-column:1/-1;order:3}}
+@media (max-width:760px){.lap #q4 .g3w,.lap #q5 .g3w{grid-template-columns:minmax(0,1fr)}.lap #q5 .g3w .wide{order:0}}
