@@ -1,0 +1,160 @@
+---
+import Collapsible from '../components/Collapsible.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/laplace/style.css';
+import Theory from '../tools/laplace/Theory.astro';
+
+const name = 'ラプラス変換';
+/* 章の問い（枠の見出しと、下の帯の章の一覧） */
+const Q = [
+  's 平面の 1 点はどんな波を表すのか',
+  'なぜ s は複素数なのか',
+  '実数の波はなぜ 2 つの点で表すのか',
+  'この波で揺れる系は s 平面でどう見えるのか',
+  '虚軸で切った断面は何を表すのか',
+  '極が右半分へ出るとどうなるのか',
+];
+const CH = Q.map((q, i) => `${'①②③④⑤⑥'[i]} ${q}`);
+const chev = (d: string) => `<svg viewBox="0 0 12 12" aria-hidden="true"><path d="${d}"/></svg>`;
+/* 式の部品（MathML） */
+const eST = '<msup><mi>e</mi><mrow><mi>s</mi><mi>t</mi></mrow></msup>';
+const eSgT = '<msup><mi>e</mi><mrow><mi>σ</mi><mi>t</mi></mrow></msup>';
+const P = (...a: string[]) => `<mrow><mo stretchy="false">(</mo>${a.join('')}<mo stretchy="false">)</mo></mrow>`;
+const pTerm = (sg: string) => P('<mi>s</mi><mo>−</mo>', P(`<mi>σ</mi><mo>${sg}</mo><mi>j</mi><mi>ω</mi>`));
+const p2 = '<msup><mrow><mo>|</mo><mi>p</mi><mo>|</mo></mrow><mn>2</mn></msup>';
+const sPlane = (label: string) =>
+  `<canvas class="lap-sp" tabindex="0" aria-label="${label}。ドラッグか矢印キーで移動"></canvas>`;
+---
+<SiteLayout title={name} tool={{ id: 'laplace', name }}>
+  <PageTitle title={name} noReset>s 平面の点が表す波から、ラプラス変換と極を読み解きます。</PageTitle>
+
+  <div class="tgrid" id="lap">
+    <Panel hid="hd-c1" title={CH[0]}>
+      <div class="lap-ch" data-ch="1">
+        <div class="lap-figs">
+          <div class="lap-fg"><div class="lap-ft"><b>s 平面</b><span>ドラッグで s を移動</span></div><div class="scope lap-scr" set:html={sPlane('s 平面の点 s')} /></div>
+          <div class="lap-fg"><div class="lap-ft"><b>波 Re <i>e<sup>st</sup></i></b><span>横は時間 t（秒）</span></div><div class="scope lap-scr"><canvas role="img" aria-label="波 Re e^st の時間変化"></canvas></div>
+            <div class="sbar lg lap-lg"><span class="stag"><i class="sw lap-sw"></i>Re <i>e<sup>st</sup></i></span><span class="stag"><i class="sw lap-sw-d"></i>±<i>e<sup>σt</sup></i></span></div></div>
+        </div>
+        <div class="chips lap-row" role="group" aria-label="例"><button type="button" class="chip" data-p="-0.4,6.28">減衰振動</button><button type="button" class="chip" data-p="0,6.28">持続振動</button><button type="button" class="chip" data-p="0.3,6.28">増大振動</button><button type="button" class="chip" data-p="-0.8,0">実軸の上</button></div>
+        <p class="lap-dyn hh" data-ph="σ = −0.30 なので 1 秒ごとに 0.74 倍に膨らみます。ω = −6.28 rad/s なので 1 秒に 1.00 回まわります。ω が負だと逆向きに回りますが、実部の波は ω が正のときと同じです。"></p>
+        <div class="eqs">
+          <math display="block"><mi mathvariant="normal">Re</mi><mspace width="0.2em"/><mrow data-hl="s" set:html={eST} /><mo>=</mo><mrow data-hl="env" set:html={eSgT} /><mo>·</mo><mrow data-hl="rot"><mi>cos</mi><mi>ω</mi><mi>t</mi></mrow></math>
+          <math display="block"><mi>s</mi><mo>=</mo><mi>σ</mi><mo>+</mo><mi>j</mi><mi>ω</mi><mo>=</mo><mn class="v" id="lap-v-sg">−0.30</mn><mo id="lap-v-pm">+</mo><mn class="v" id="lap-v-om">6.28</mn><mi>j</mi></math>
+          <p class="lap-eqn">項の上で図の該当箇所を強調</p>
+        </div>
+        <p class="lap-end">s は波 <i>e<sup>st</sup></i> の名前です。横の位置 σ が縮み方を、縦の位置 ω が回る速さを決めます。</p>
+      </div>
+    </Panel>
+
+    <Panel hid="hd-c2" title={CH[1]}>
+      <div class="lap-ch" data-ch="2">
+        <div class="lap-figs">
+          <div class="lap-fg"><div class="lap-ft"><b>s 平面</b><span>ドラッグ</span></div><div class="scope lap-scr" set:html={sPlane('s 平面の点 s')} /></div>
+          <div class="lap-fg"><div class="lap-ft"><b>回る矢印 <i>e<sup>st</sup></i> とその実部</b><span>下向きに時間 t</span></div><div class="scope lap-scr"><canvas role="img" aria-label="回る矢印 e^st と、その実部が下へ描く波"></canvas></div>
+            <div class="sbar lg lap-lg"><span class="stag"><i class="sw lap-sw"></i>矢印 <i>e<sup>st</sup></i></span><span class="stag"><i class="sw lap-sw-g"></i>先の通った跡</span><span class="stag"><i class="sw lap-sw-b"></i>実部の波</span></div></div>
+        </div>
+        <p class="lap-dyn hh" data-ph="矢印は反時計回りに 1 秒 1.00 回まわりながら、長さが 1 秒ごとに 0.74 倍になります。実部の波は、矢印の先を実軸に落とした位置です。"></p>
+        <div class="eqs">
+          <math display="block"><mrow set:html={eST} /><mo>=</mo><msup><mi>e</mi><mrow><mo stretchy="false">(</mo><mi>σ</mi><mo>+</mo><mi>j</mi><mi>ω</mi><mo stretchy="false">)</mo><mi>t</mi></mrow></msup><mo>=</mo><mrow data-hl="env" set:html={eSgT} /><mo>·</mo><mrow data-hl="rot"><msup><mi>e</mi><mrow><mi>j</mi><mi>ω</mi><mi>t</mi></mrow></msup></mrow></math>
+          <math display="block"><mrow data-hl="re"><mi mathvariant="normal">Re</mi><mspace width="0.2em"/><msup><mi>e</mi><mrow><mi>s</mi><mi>t</mi></mrow></msup></mrow><mo>=</mo><mrow set:html={eSgT} /><mi>cos</mi><mi>ω</mi><mi>t</mi></math>
+          <p class="lap-eqn"><i>e<sup>σt</sup></i> は矢印の長さ、<i>e<sup>jωt</sup></i> は矢印の向き</p>
+        </div>
+        <p class="lap-end">縮む速さ σ と回る速さ ω を 1 つの数にまとめたものが複素数 s です。</p>
+      </div>
+    </Panel>
+
+    <Panel hid="hd-c3" title={CH[2]}>
+      <div class="lap-ch" data-ch="3">
+        <div class="lap-figs">
+          <div class="lap-fg"><div class="lap-ft"><b>s 平面</b><span>s か s̄ をドラッグ</span></div><div class="scope lap-scr" set:html={sPlane('s 平面の点 s と共役 s̄')} /></div>
+          <div class="lap-fg"><div class="lap-ft"><b>2 本の矢印の和</b><span>複素平面</span></div><div class="scope lap-scr"><canvas role="img" aria-label="逆向きに回る 2 本の矢印と、その和"></canvas></div>
+            <div class="sbar lg lap-lg"><span class="stag"><i class="sw lap-sw"></i>½ <i>e<sup>st</sup></i></span><span class="stag"><i class="sw lap-sw-b"></i>½ <i>e<sup>s̄t</sup></i></span><span class="stag"><i class="sw lap-sw-g"></i>和の通った跡</span></div></div>
+        </div>
+        <p class="lap-dyn hh" data-ph="2 本の矢印は同じ速さで逆向きに回ります。虚部が打ち消し合い、和はいつも実軸の上にあります。"></p>
+        <div class="eqs">
+          <math display="block"><mrow set:html={eSgT} /><mi>cos</mi><mi>ω</mi><mi>t</mi><mo>=</mo><mrow data-hl="a"><mfrac><mn>1</mn><mn>2</mn></mfrac><mrow set:html={eST} /></mrow><mo>+</mo><mrow data-hl="b"><mfrac><mn>1</mn><mn>2</mn></mfrac><msup><mi>e</mi><mrow><mover><mi>s</mi><mo>¯</mo></mover><mi>t</mi></mrow></msup></mrow></math>
+          <math display="block"><mover><mi>s</mi><mo>¯</mo></mover><mo>=</mo><mi>σ</mi><mo>−</mo><mi>j</mi><mi>ω</mi></math>
+          <p class="lap-eqn">s̄ は s の共役（虚部の符号を反転）</p>
+        </div>
+        <p class="lap-end">実数の波は s と共役 s̄ の 2 点で 1 組になります。実数の信号の極が実軸を挟んで対で現れるのはこのためです。</p>
+      </div>
+    </Panel>
+
+    <Panel hid="hd-c4" title={CH[3]}>
+      <div class="lap-ch" data-ch="4">
+        <div class="lap-figs lap-lr">
+          <div class="lap-fg"><div class="lap-ft"><b>極 ×</b><span>ドラッグ</span></div><div class="scope lap-scr" set:html={sPlane('s 平面の極')} /></div>
+          <div class="lap-fg"><div class="lap-ft"><b>s 平面の上の |H(s)|</b><span>高さは対数（上下端で打ち切り）</span></div><div class="scope lap-scr"><canvas class="lap-3d" tabindex="0" aria-label="s 平面の上の |H(s)| の曲面。横にドラッグか矢印キーで回転"></canvas></div></div>
+        </div>
+        <p class="lap-dyn hh" data-ph="極は −0.30 ± 6.28j です。インパルスを入れると、系は 1 秒に 1.00 回振れながら、1 秒ごとに 0.74 倍に膨らみます。"></p>
+        <div class="eqs">
+          <math display="block"><mi>H</mi><mo stretchy="false">(</mo><mi>s</mi><mo stretchy="false">)</mo><mo>=</mo><mfrac><mrow set:html={p2} /><mrow data-hl="den" set:html={pTerm('+') + pTerm('−')} /></mfrac></math>
+          <math display="block"><mi>h</mi><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mo>=</mo><mfrac><mrow set:html={p2} /><mi>ω</mi></mfrac><mrow set:html={eSgT} /><mi>sin</mi><mi>ω</mi><mi>t</mi></math>
+          <p class="lap-eqn">h(t): インパルス応答・|p|²: ω = 0 で大きさを 1 にそろえる係数・項の上で図の該当箇所を強調</p>
+        </div>
+        <p class="lap-end">系の極は、系が自分から出す波の s です。曲面はその真上で突き上がります。</p>
+      </div>
+    </Panel>
+
+    <Panel hid="hd-c5" title={CH[4]}>
+      <div class="lap-ch" data-ch="5">
+        <div class="lap-figs lap-three">
+          <div class="lap-fg"><div class="lap-ft"><b>極 ×</b><span>ドラッグ</span></div><div class="scope lap-scr" set:html={sPlane('s 平面の極')} /></div>
+          <div class="lap-fg"><div class="lap-ft"><b>σ &gt; 0 を切り落とした曲面</b><span>横にドラッグで回転</span></div><div class="scope lap-scr"><canvas class="lap-3d" tabindex="0" aria-label="虚軸で切った |H(s)| の曲面。横にドラッグか矢印キーで回転"></canvas></div></div>
+          <div class="lap-fg"><div class="lap-ft"><b>断面 |H(jω)|</b><span>周波数特性</span></div><div class="scope lap-scr"><canvas role="img" aria-label="虚軸の断面 |H(jω)|"></canvas></div></div>
+        </div>
+        <p class="lap-dyn hh" data-ph="断面の山は ω ≈ ±10.0 rad/s にあり、1 章の波の回る速さと同じです。極は虚軸から 0.30 離れています。離れると山は低くなだらかになります。"></p>
+        <div class="eqs">
+          <math display="block"><mrow data-hl="jw"><mi>H</mi><mo stretchy="false">(</mo><mi>j</mi><mi>ω</mi><mo stretchy="false">)</mo></mrow><mo>=</mo><msubsup><mo>∫</mo><mn>0</mn><mi>∞</mi></msubsup><mi>h</mi><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><msup><mi>e</mi><mrow><mo>−</mo><mi>j</mi><mi>ω</mi><mi>t</mi></mrow></msup><mi>d</mi><mi>t</mi></math>
+          <p class="lap-eqn">ラプラス変換の式に s = jω を入れるとフーリエ変換の式・h(t) のフーリエ変換が周波数特性</p>
+        </div>
+        <p class="lap-end">周波数特性は、伝達関数の曲面を虚軸で切った断面です。極が虚軸に近いほど山は高く細くなります。</p>
+      </div>
+    </Panel>
+
+    <Panel hid="hd-c6" title={CH[5]}>
+      <div class="lap-ch" data-ch="6">
+        <div class="lap-figs">
+          <div class="lap-fg"><div class="lap-ft"><b>s 平面と収束域</b><span>極をドラッグ</span></div><div class="scope lap-scr" set:html={sPlane('s 平面の極と収束域')} /></div>
+          <div class="lap-fg"><div class="lap-ft"><b>インパルス応答 h(t) と |h(t)| の面積</b><span>横は時間 t（秒）</span></div><div class="scope lap-scr"><canvas role="img" aria-label="インパルス応答 h(t) と、0 から t までの |h(t)| の面積"></canvas></div>
+            <div class="sbar lg lap-lg"><span class="stag"><i class="sw lap-sw"></i>h(t)</span><span class="stag"><i class="sw lap-sw-a"></i>0 から t までの面積</span></div></div>
+        </div>
+        <div class="chips lap-row" role="group" aria-label="例"><button type="button" class="chip" data-p6="-0.3">左半分</button><button type="button" class="chip" data-p6="0">虚軸の上</button><button type="button" class="chip" data-p6="0.2">右半分</button></div>
+        <p class="lap-dyn hh" data-ph="極の実部 −0.30 < 0 なので、収束域 Re s > −0.30 に虚軸が入ります。面積は約 20.00 で止まり、フーリエ変換の積分は収束します。"></p>
+        <div class="eqs">
+          <math display="block"><mrow data-hl="roc"><mtext>収束域</mtext><mo>:</mo><mi mathvariant="normal">Re</mi><mspace width="0.2em"/><mi>s</mi><mo>&gt;</mo><mn id="lap-v-roc">−0.30</mn></mrow></math>
+          <math display="block"><msubsup><mo>∫</mo><mn>0</mn><mi>∞</mi></msubsup><mo>|</mo><mi>h</mi><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mo>|</mo><mi>d</mi><mi>t</mi><mo>&lt;</mo><mi>∞</mi></math>
+          <p class="lap-eqn">片側ラプラス変換の収束域は一番右の極より右・右の式が成り立てばフーリエ変換の積分も収束</p>
+        </div>
+        <p class="lap-end">虚軸が収束域に入るのは、極がすべて左半分にあるときだけです。そのときだけ断面がフーリエ変換になります。</p>
+      </div>
+    </Panel>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools current="laplace" />
+  <nav class="lap-nav" aria-label="章の移動">
+    <div class="lap-nav-in">
+      <button type="button" class="lap-nb" id="lap-prev" aria-label="前の章" title="前の章（←）" set:html={chev('M7.5 2L3.5 6l4 4')} />
+      <div class="lap-nt">
+        <button type="button" class="lap-cur" id="lap-cur" aria-expanded="false" aria-controls="lap-toc" title="章の一覧"><span class="lap-tt" id="lap-tt">{CH[0]}</span><span class="lap-pg" id="lap-pg">1 / 6</span></button>
+        <ol class="lap-toc" id="lap-toc" hidden>
+          {CH.map((t, i) => <li><button type="button" data-go={i}>{t}</button></li>)}
+        </ol>
+      </div>
+      <button type="button" class="lap-all" id="lap-all" aria-pressed="false" title="すべての章を並べて表示">全章</button>
+      <button type="button" class="lap-nb" id="lap-next" aria-label="次の章" title="次の章（→）" set:html={chev('M4.5 2l4 4-4 4')} />
+    </div>
+    <p class="sr" aria-live="polite" id="lap-live"></p>
+  </nav>
+  <script>
+    import '../tools/laplace/client';
+  </script>
+</SiteLayout>
