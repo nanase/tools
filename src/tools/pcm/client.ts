@@ -7,6 +7,7 @@ import { $, $$ } from '../../lib/dom';
 import { RM } from '../../lib/motion';
 import { ParamGroup } from '../../lib/param';
 import { handheld } from '../../lib/pause';
+import { onPick, pickAct } from '../../lib/press';
 import { reserveHeight } from '../../lib/reserve';
 import { initToolPage } from '../../lib/tool-page';
 import { Recorder } from '../wavelet-denoise/rec';
@@ -102,6 +103,10 @@ worker.onmessage = (e: MessageEvent<Out>) => {
   $('#ls-busy').hidden = true;
   res = e.data;
   deck.set([res.x, res.so, res.qy, res.bo], res.F);
+  if (startNext) {
+    startNext = false;
+    if (!deck.playing) void deck.play();
+  }
   show();
 };
 
@@ -190,10 +195,35 @@ deck.onState = () => {
   });
   dirty = true;
 };
-pp.addEventListener('click', () => deck.toggle());
+/** 止まっている間にサンプル音源・プリセットを選んだとき、計算し直した音がそろったら鳴らし始める */
+let startNext = false;
+/**
+ * 止まっている間に試聴する音・サンプル音源・プリセットを選んだら鳴らし始める（利用者の操作だけ。録音中は除く）。
+ * next は計算し直した音がそろってから（前の条件の音を鳴らさない）
+ */
+function autoPlay(e: Event, next = false): void {
+  if (rec.on || pickAct(e, deck.playing) !== 'start') return;
+  if (!next) {
+    void deck.play();
+    return;
+  }
+  startNext = true;
+  /* iPhone の Safari は、押した操作の中で resume しないと鳴らない */
+  void deck
+    .ctx()
+    ?.resume()
+    .catch(() => {});
+  run();
+}
+pp.addEventListener('click', () => {
+  startNext = false;
+  deck.toggle();
+});
 $('#ls-keys').addEventListener('click', (e) => {
   const k = (e.target as Element).closest<HTMLElement>('.pcm-key');
-  if (k) deck.select(Number(k.dataset.i));
+  if (!k) return;
+  deck.select(Number(k.dataset.i));
+  autoPlay(e);
 });
 const seekAt = (e: PointerEvent) => {
   const r = wv.getBoundingClientRect();
@@ -258,6 +288,7 @@ new Choice<SrcName>($('#p-src'), (v) => {
   syncTab();
   run();
 });
+onPick($('#p-src'), (e) => autoPlay(e, true));
 new Choice<string>($('#p-aa'), (v) => {
   S.aa = v === '1';
   show();
@@ -280,6 +311,7 @@ $('#ls-pre').addEventListener('click', (e) => {
   applyLaw();
   show();
   run();
+  autoPlay(e, true);
 });
 
 /* ファイル: 選ぶ・枠へ落とす */

@@ -7,6 +7,7 @@ import { Choice } from '../../lib/choice';
 import { $, $$ } from '../../lib/dom';
 import { ParamGroup } from '../../lib/param';
 import { handheld } from '../../lib/pause';
+import { onPick, pickAct } from '../../lib/press';
 import { reserveHeight } from '../../lib/reserve';
 import { initToolPage } from '../../lib/tool-page';
 import type { Wav } from '../wavelet/dwt';
@@ -209,6 +210,10 @@ function show(): void {
     setMiniX('kbps', fx(row.kbps, 0));
   }
   deck.set(tracks, s.fs);
+  if (startNext) {
+    startNext = false;
+    if (!deck.playing) void deck.play();
+  }
   paintGrid($('#sc-cb'), lut, r.scBefore.d, R, r.scBefore.cols, LO);
   paintGrid($('#sc-ca'), lut, r.scAfter.d, R, r.scAfter.cols, LO);
   axes(s.x.length / s.fs);
@@ -353,11 +358,35 @@ deck.onState = () => {
   syncKeys();
   drawWave();
 };
-pp.addEventListener('click', () => deck.toggle());
+/** 止まっている間にサンプル音源を選んだとき、その音がそろったら鳴らし始める */
+let startNext = false;
+/**
+ * 止まっている間に聴く音・サンプル音源を選んだら鳴らし始める（利用者の操作だけ。録音中は除く）。
+ * next は選んだ音がそろってから（計算中に前の音源を鳴らさない）
+ */
+function autoPlay(e: Event, next = false): void {
+  if (rec.on || pickAct(e, deck.playing) !== 'start') return;
+  if (!next) {
+    void deck.play();
+    return;
+  }
+  startNext = true;
+  /* iPhone の Safari は、押した操作の中で resume しないと鳴らない */
+  void deck
+    .ctx()
+    ?.resume()
+    .catch(() => {});
+}
+pp.addEventListener('click', () => {
+  startNext = false;
+  deck.toggle();
+});
 $('#ab-home').addEventListener('click', () => deck.seek(0));
 $('#ab-keys').addEventListener('click', (e) => {
   const k = (e.target as Element).closest<HTMLElement>('.key');
-  if (k) deck.select(Number(k.dataset.i));
+  if (!k) return;
+  deck.select(Number(k.dataset.i));
+  autoPlay(e);
 });
 /* 波形を押す・なぞると頭出し */
 const seekAt = (e: PointerEvent) => {
@@ -384,7 +413,10 @@ document.addEventListener('keydown', (e) => {
   if (t.closest('input,textarea,select,[contenteditable],.sc,.sc-in') || e.ctrlKey || e.metaKey || e.altKey) return;
   if (/^Digit[1-4]$/.test(e.code)) {
     const i = Number(e.code.slice(5)) - 1;
-    if (!keys[i]?.hidden) deck.select(i);
+    if (!keys[i]?.hidden) {
+      deck.select(i);
+      autoPlay(e);
+    }
   } else if (e.code === 'Space') {
     if (t.closest('button,a,[role=slider]') && !t.closest('.key,#ab-wv')) return;
     e.preventDefault();
@@ -405,6 +437,7 @@ new Choice<Clip>($('#p-clip'), (v) => {
   S.clip = v;
   run();
 });
+onPick($('#p-clip'), (e) => autoPlay(e, source() !== cur || !res));
 new Choice<Mode>($('#ab-mode'), (v) => {
   S.mode = v;
   deck.sel = v === 'dn' ? 2 : 1;
