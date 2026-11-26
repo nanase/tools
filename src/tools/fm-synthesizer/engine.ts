@@ -50,6 +50,12 @@ export interface Op {
   w?: number;
   /** キースケール: 高い音ほどディケイとリリースを短くする量（1 オクターブ上で 2^−ks 倍） */
   ks: number;
+  /** キースケール: 高い音ほどアタックを短くする量（1 オクターブ上で 2^−ka 倍。省けば 0） */
+  ka?: number;
+  /** ベロシティで時間を変える量（0〜1。弱いほどアタックを長く、ディケイを短くする。最も弱いとき 4^va 倍。省けば 0） */
+  va?: number;
+  /** デチューン [Hz]（周波数比で決めた周波数に足す。うなりの速さが音の高さによらない。省けば 0） */
+  dt?: number;
 }
 
 /** LFO（パートごと） */
@@ -70,6 +76,10 @@ export interface Tone {
   alg: number;
   /** 帰還量 0〜7 */
   fb: number;
+  /** 帰還量のベロシティの効き（0〜1。オペレータの vs と同じ曲線。省けば 0） */
+  fbv?: number;
+  /** 帰還量のキースケール（1 オクターブ上で 2^−fbk 倍。省けば 0） */
+  fbk?: number;
   ops: readonly [Op, Op, Op, Op];
   lfo: Lfo;
   /** 音量の補正 [dB]（音色ごとの大きさをそろえる） */
@@ -90,19 +100,37 @@ export const keyScale = (op: Op, note: number): number => 2 ** ((-op.ks * (note 
 /** ベロシティ v（0〜1）で大きさに掛ける値 */
 export const velGain = (vs: number, v: number): number => 1 - vs * (1 - v * v);
 
+/** ベロシティで時間を変える幅（最も弱いとき、アタックは 4 倍・ディケイは 1/4 倍） */
+const VEL_T = 4;
+/**
+ * キースケールとベロシティを掛けた、アタック・ディケイ・リリースの時間 [s]。
+ * ベロシティは 1 が音色のままで、弱いほどアタックが長く、ディケイが短い
+ */
+export function opTimes(op: Op, note: number, vel = 1): [number, number, number] {
+  const k = keyScale(op, note),
+    v = VEL_T ** ((op.va ?? 0) * (1 - Math.max(0, Math.min(1, vel))));
+  return [op.ar * 2 ** ((-(op.ka ?? 0) * (note - 60)) / 12) * v, (op.dr * k) / v, op.rr * k];
+}
+
+/** 帰還の強さ（OP1 の 1 標本前と 2 標本前の和に掛ける値）。帰還量・ベロシティ・音の高さで決める */
+export function fbBeta(tone: Tone, note: number, vel = 1): number {
+  const b = (FB[tone.fb] / 2) * velGain(tone.fbv ?? 0, vel) * 2 ** ((-(tone.fbk ?? 0) * (note - 60)) / 12);
+  return Math.min(FB[FB.length - 1] / 2, b);
+}
+
 /**
  * エンベロープの大きさ（0〜1）。t は鳴り始めからの時間 [s]、hold は離した時刻（押したままなら Infinity）。
- * アタックは直線で上がり、ディケイとリリースは指数で下がる（音源の計算と同じ式）
+ * アタックは直線で上がり、ディケイとリリースは指数で下がる（音源の計算と同じ式）。時間は opTimes で決める
  */
-export function envAt(op: Op, t: number, hold = Number.POSITIVE_INFINITY, note = 60): number {
-  const k = keyScale(op, note);
+export function envAt(op: Op, t: number, hold = Number.POSITIVE_INFINITY, note = 60, vel = 1): number {
+  const [ar, dr, rr] = opTimes(op, note, vel);
   const at = (x: number): number => {
-    if (x < op.ar) return op.ar > 0 ? x / op.ar : 1;
-    const td = Math.max(1e-4, op.dr * k);
-    return op.sl + (1 - op.sl) * Math.exp((-LN60 * (x - op.ar)) / td);
+    if (x < ar) return ar > 0 ? x / ar : 1;
+    const td = Math.max(1e-4, dr);
+    return op.sl + (1 - op.sl) * Math.exp((-LN60 * (x - ar)) / td);
   };
   if (t < hold) return Math.max(0, at(t));
-  const tr = Math.max(1e-4, op.rr * k);
+  const tr = Math.max(1e-4, rr);
   return Math.max(0, at(hold) * Math.exp((-LN60 * (t - hold)) / tr));
 }
 
@@ -143,6 +171,8 @@ export class Voice {
   private readonly kr = new Float64Array(4);
   /** オペレータの出力の大きさ（モジュレータは変調指数 rad、キャリアは振幅） */
   private readonly amp = new Float64Array(4);
+  /** デチューンで 1 標本ごとに進む位相（周期の単位） */
+  readonly dInc = new Float64Array(4);
   private src: number[][] = [[], [], [], []];
   private car: readonly number[] = [];
   private h1 = 0;
@@ -170,19 +200,21 @@ export class Voice {
   ) {
     this.car = ALGS[tone.alg].c;
     for (const [j, k] of ALGS[tone.alg].e) this.src[k].push(j);
-    this.beta = FB[tone.fb] / 2;
-    this.gain = 10 ** (tone.gain / 20);
     const pitch = tone.key ?? note;
+    /* 音ごとの値は鳴り始めに 1 度だけ求める（標本ごとの計算は増やさない） */
+    this.beta = fbBeta(tone, pitch, vel);
+    this.gain = 10 ** (tone.gain / 20);
     for (let k = 0; k < 4; k++) {
       const op = tone.ops[k],
-        ks = keyScale(op, pitch),
+        [ar, dr, rr] = opTimes(op, pitch, vel),
         g = velGain(op.vs, vel);
       this.amp[k] = this.car.includes(k) ? 10 ** (op.l / 20) * g : op.i * g;
-      this.up[k] = op.ar > 0 ? 1 / (op.ar * sr) : 1;
-      this.kd[k] = Math.exp(-LN60 / (Math.max(1e-4, op.dr * ks) * sr));
-      this.kr[k] = Math.exp(-LN60 / (Math.max(1e-4, op.rr * ks) * sr));
-      this.lv[k] = op.ar > 0 ? 0 : 1;
-      this.stage[k] = op.ar > 0 ? ATTACK : DECAY;
+      this.dInc[k] = (op.dt ?? 0) / sr;
+      this.up[k] = ar > 0 ? 1 / (ar * sr) : 1;
+      this.kd[k] = Math.exp(-LN60 / (Math.max(1e-4, dr) * sr));
+      this.kr[k] = Math.exp(-LN60 / (Math.max(1e-4, rr) * sr));
+      this.lv[k] = ar > 0 ? 0 : 1;
+      this.stage[k] = ar > 0 ? ATTACK : DECAY;
     }
   }
 
@@ -228,7 +260,8 @@ export class Voice {
     const { ph, s, lv, stage, up, kd, kr, amp, src, car } = this,
       sl = [this.tone.ops[0].sl, this.tone.ops[1].sl, this.tone.ops[2].sl, this.tone.ops[3].sl],
       r = this.tone.ops,
-      inc = [r[0].r * step, r[1].r * step, r[2].r * step, r[3].r * step],
+      d = this.dInc,
+      inc = [r[0].r * step + d[0], r[1].r * step + d[1], r[2].r * step + d[2], r[3].r * step + d[3]],
       tab = [tabOf(r[0].w), tabOf(r[1].w), tabOf(r[2].w), tabOf(r[3].w)],
       beta = this.beta;
     let g = this.gain * am;
@@ -522,7 +555,13 @@ export function snapshot(
     L = new Float32Array(n),
     R = new Float32Array(n),
     v = new Voice(0, note, vel, tone, 0, pts);
-  for (let k = 0; k < 4; k++) v.freeze(k, envAt(tone.ops[k], t, hold, tone.key ?? note));
+  for (let k = 0; k < 4; k++) {
+    v.freeze(k, envAt(tone.ops[k], t, hold, tone.key ?? note, vel));
+    /* デチューンは、時刻 t までにずれた位相から始めて、うなりの進み具合を見せる（描く 2 周期の間のずれは省く） */
+    const dt = tone.ops[k].dt ?? 0;
+    v.ph[k] = dt * t - Math.floor(dt * t);
+    v.dInc[k] = 0;
+  }
   v.render(L, R, n, 1 / pts, 1, 1, 0);
   return L;
 }

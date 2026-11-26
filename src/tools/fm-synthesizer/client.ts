@@ -341,7 +341,7 @@ function busy(p: Part, t: number): boolean {
   const tone = p.ch === DRUM_PART ? drumTone(l.note) : gm[p.prog],
     c = mainCarrier(tone),
     hold = p.ch === DRUM_PART ? Number.POSITIVE_INFINITY : l.off - l.t0;
-  return envAt(tone.ops[c], t - l.t0, hold, tone.key ?? l.note) > 1e-3 || t - l.t0 < 0.3;
+  return envAt(tone.ops[c], t - l.t0, hold, tone.key ?? l.note, l.vel) > 1e-3 || t - l.t0 < 0.3;
 }
 interface Colors {
   white: string;
@@ -440,7 +440,7 @@ function drawRow(p: Part, t: number, c: Colors): void {
     r.algLive = bindAlg(r.alg, false);
   }
   if (r.algLive) {
-    const [lv, mod] = algWork(tone, l ? age : null, hold, pitch);
+    const [lv, mod] = algWork(tone, l ? age : null, hold, pitch, l?.vel ?? 1);
     liveAlg(r.algLive, lv, mod);
   }
   /* エンベロープ: 音量の目安のキャリア */
@@ -459,18 +459,19 @@ function drawRow(p: Part, t: number, c: Colors): void {
       pitch,
       tone.ops.filter((_, k) => k !== mc),
       c.faint,
+      l?.vel ?? 1,
     );
   }
   /* 音量のメーター */
-  const lv = l ? envAt(tone.ops[mc], age, hold, pitch) * velGain(tone.ops[mc].vs, l.vel) : 0;
+  const lv = l ? envAt(tone.ops[mc], age, hold, pitch, l.vel) * velGain(tone.ops[mc].vs, l.vel) : 0;
   r.vm.style.height = `${Math.round(Math.min(1, lv) * 100)}%`;
 }
 /**
  * 結線図に重ねる働き: オペレータごとのエンベロープの大きさと、モジュレータの変調指数の目安（6 rad で 1）。
  * t は鳴り始めからの時間（鳴らしていなければ null）
  */
-function algWork(tone: Tone, t: number | null, hold: number, pitch: number): [number[], number[]] {
-  const lv = tone.ops.map((o) => (t === null ? 0 : envAt(o, t, hold, pitch))),
+function algWork(tone: Tone, t: number | null, hold: number, pitch: number, vel: number): [number[], number[]] {
+  const lv = tone.ops.map((o) => (t === null ? 0 : envAt(o, t, hold, pitch, vel))),
     mod = tone.ops.map((o, k) => (isCarrier(tone.alg, k) ? 0 : Math.min(1, o.i / 6)));
   return [lv, mod];
 }
@@ -512,6 +513,7 @@ function sideWork(t: number): void {
       show && l ? t - l.t0 : null,
       l && !drum ? l.off - l.t0 : Number.POSITIVE_INFINITY,
       tone.key ?? l?.note ?? 60,
+      l?.vel ?? 1,
     );
   liveAlg(sideAlg, lv, mod);
 }
@@ -729,9 +731,10 @@ function editing(): { tone: Tone; def: Tone; save: (t: Tone) => void } {
   };
 }
 /** 音色を直す（写しを fn で書き換えて保存し、音と図に送る） */
-function edit(fn: (t: { alg: number; fb: number; ops: Op[]; lfo: Tone['lfo'] }) => void): void {
+type Editable = { alg: number; fb: number; fbv?: number; fbk?: number; ops: Op[]; lfo: Tone['lfo'] };
+function edit(fn: (t: Editable) => void): void {
   const e = editing(),
-    t = structuredClone(e.tone) as unknown as { alg: number; fb: number; ops: Op[]; lfo: Tone['lfo'] };
+    t = structuredClone(e.tone) as unknown as Editable;
   fn(t);
   e.save(t as unknown as Tone);
   for (const p of parts.values()) p.row.dirty = true;
@@ -767,6 +770,24 @@ const sec = (v: number) => (v <= 0 ? '0 ms' : v < 1 ? `${Math.round(v * 1000)} m
 const pct = (v: number) => `${Math.round(v * 100)} %`;
 const panT = (v: number) => (Math.abs(v) < 0.005 ? '中央' : `${v < 0 ? '左' : '右'} ${Math.round(Math.abs(v) * 100)}`);
 const opOf = (t: Tone) => t.ops[selOp];
+/** 省ける値（0 なら消して、音色の写しを既定値と比べられるようにする） */
+function setOpt<T extends object>(o: T, k: keyof T, v: number): void {
+  if (v === 0) delete o[k];
+  else (o as Record<keyof T, number>)[k] = v;
+}
+/** 省ける値の 0〜100 % のスライダー（帰還量の効きとオペレータの効き） */
+const optPct = (id: string, k: 'fbv' | 'fbk' | 'ka' | 'va', op: boolean): Sl => ({
+  id,
+  get: (t, o) => (op ? (o[k as 'ka' | 'va'] ?? 0) : (t[k as 'fbv' | 'fbk'] ?? 0)),
+  set: (v) =>
+    edit((t) => {
+      if (op) setOpt(t.ops[selOp], k as 'ka' | 'va', v);
+      else setOpt(t, k as 'fbv' | 'fbk', v);
+    }),
+  def: (d, o) => (op ? (o[k as 'ka' | 'va'] ?? 0) : (d[k as 'fbv' | 'fbk'] ?? 0)),
+  ...lin(0, 1, 0.01),
+  text: pct,
+});
 const carSel = () => isCarrier(editing().tone.alg, selOp);
 const SL: Sl[] = [
   {
@@ -781,6 +802,8 @@ const SL: Sl[] = [
     fromPos: (x) => Math.round(x),
     text: (v) => String(v),
   },
+  optPct('s-fbv', 'fbv', false),
+  optPct('s-fbk', 'fbk', false),
   {
     id: 's-r',
     get: (_t, o) => o.r,
@@ -797,6 +820,17 @@ const SL: Sl[] = [
     fromPos: (x) => RATIOS[Math.round(x)],
     /* レビューで選んだ音色には範囲の外の比（0.0005 など）もあるので、有効数字 3 桁で出す */
     text: (v) => `×${Number(v.toPrecision(3))}`,
+  },
+  {
+    id: 's-dt',
+    get: (_t, o) => o.dt ?? 0,
+    set: (v) =>
+      edit((t) => {
+        setOpt(t.ops[selOp], 'dt', v);
+      }),
+    def: (_d, o) => o.dt ?? 0,
+    ...lin(-5, 5, 0.05),
+    text: (v) => (v === 0 ? '0 Hz' : `${v > 0 ? '+' : '−'}${Number(Math.abs(v).toFixed(2))} Hz`),
   },
   {
     id: 's-a',
@@ -863,6 +897,19 @@ const SL: Sl[] = [
         t.ops[selOp].vs = v;
       }),
     def: (_d, o) => o.vs,
+    ...lin(0, 1, 0.01),
+    text: pct,
+  },
+  optPct('s-va', 'va', true),
+  optPct('s-ka', 'ka', true),
+  {
+    id: 's-ks',
+    get: (_t, o) => o.ks,
+    set: (v) =>
+      edit((t) => {
+        t.ops[selOp].ks = v;
+      }),
+    def: (_d, o) => o.ks,
     ...lin(0, 1, 0.01),
     text: pct,
   },
@@ -1057,6 +1104,7 @@ function drawSideEnv(t: number): void {
     tone.key ?? l?.note ?? 60,
     tone.ops.filter((_, k) => k !== selOp),
     grid,
+    l?.vel ?? 1,
   );
 }
 function select(ch: number): void {

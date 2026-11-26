@@ -3,6 +3,7 @@ import { DRUM_PART, Synth, type Tone } from '../src/tools/fm-synthesizer/engine'
 import { DRUM_HI, DRUM_LO } from '../src/tools/fm-synthesizer/gm';
 import { DRUM_DEFAULT, DRUM_TONES, GM_TONES, PIANO } from '../src/tools/fm-synthesizer/tones';
 import { PICKED_DRUM, PICKED_GM } from '../src/tools/fm-synthesizer/tones-picked';
+import { SENS_GM } from '../src/tools/fm-synthesizer/tones-sens';
 
 const SR = 48000;
 /** 大きさを測る区切り（10 ms） */
@@ -112,5 +113,27 @@ describe('音量のそろえ方', () => {
     }
     const d = measure(DRUM_DEFAULT);
     expect(Math.abs(d.db + 22)).toBeLessThan(2);
+  });
+});
+
+describe('ベロシティと音の高さの効き', () => {
+  it('表の音色には効きが入り、ほかの値はレビューで選んだ音色のまま', () => {
+    for (const [p, s] of Object.entries(SENS_GM)) {
+      const t = GM_TONES[Number(p)],
+        base = PICKED_GM[Number(p)];
+      expect(t.fbv ?? 0).toBe(s.fbv ?? 0);
+      for (const [k, o] of t.ops.entries()) {
+        expect(o.va ?? 0).toBe(s.va[k]);
+        expect(o.ka ?? 0).toBe(s.ka?.[k] ?? 0);
+        expect(o.dt ?? 0).toBe(s.dt?.[k] ?? 0);
+        if (base)
+          expect({ ...o, va: undefined, ka: undefined, dt: undefined }).toEqual({
+            ...base.ops[k],
+            va: undefined,
+            ka: undefined,
+            dt: undefined,
+          });
+      }
+    }
   });
 });
