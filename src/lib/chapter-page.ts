@@ -1,12 +1,18 @@
-/*
+/**
+ * 章立てて解説するページ（z 変換・ラプラス変換）の動き。HTML は lib/chapter-html.ts、見た目は styles/chapters.css。
+ *
  * 問いのナビゲーション: 下に貼り付くバー（前へ・一覧・次へ）と、1 問ずつ・すべての切り替え。
  * 1 問ずつのときは今の章のほかを hidden="until-found" で隠す。ページ内検索で当たった章へは beforematch で切り替える。
- * 対応しないブラウザでは普通の hidden にする。今の章は URL の #q1〜#q8 に残し、読み上げには「問い 4 / 8」と知らせる
+ * 対応しないブラウザでは普通の hidden にする。今の章は URL の #q1〜 に残し、読み上げには「問い 4 / 8」と知らせる
  */
-import { $, $$ } from '../../lib/dom';
-import { AU } from './fig';
+import { $, $$ } from './dom';
 
-const KEY = 'zt:view';
+export interface ChapterNavOpts {
+  /** 1 問ずつ・すべての選択を保存するキー（localStorage） */
+  key: string;
+  /** 1 問ずつのときに別の章へ移る直前に呼ぶ（鳴っている音を止めるなど） */
+  onLeave?: () => void;
+}
 
 interface GoOpts {
   /** 読み上げで知らせる（既定は知らせる） */
@@ -17,7 +23,7 @@ interface GoOpts {
   focus?: boolean;
 }
 
-export function initNav(root: HTMLElement): void {
+export function initChapterNav(root: HTMLElement, o: ChapterNavOpts): void {
   const chs = $$('.ch', root);
   const ids = chs.map((c) => c.id);
   const nav = $('.qnav', root);
@@ -31,7 +37,7 @@ export function initNav(root: HTMLElement): void {
   let cur = Math.max(0, ids.indexOf(location.hash.slice(1)));
   let view = 'one';
   try {
-    if (localStorage.getItem(KEY) === 'all') view = 'all';
+    if (localStorage.getItem(o.key) === 'all') view = 'all';
   } catch {
     /* 保存できない環境 */
   }
@@ -62,26 +68,26 @@ export function initNav(root: HTMLElement): void {
     if (announce) live.textContent = `問い ${cur + 1} / ${chs.length}　${heading(cur)?.textContent ?? ''}`;
   }
 
-  function go(i: number, o: GoOpts = {}): void {
+  function go(i: number, g: GoOpts = {}): void {
     const ch = chs[i];
     if (!ch) return;
     const moved = i !== cur;
     cur = i;
-    if (moved && view === 'one') AU.stop();
-    paint(o.announce ?? true);
+    if (moved && view === 'one') o.onLeave?.();
+    paint(g.announce ?? true);
     try {
       history.replaceState(null, '', `#${ids[cur]}`);
     } catch {
       /* file: など */
     }
-    if (o.scroll !== false) toTop(ch, view === 'all');
-    if (o.focus) ch.querySelector<HTMLElement>('h2')?.focus({ preventScroll: true });
+    if (g.scroll !== false) toTop(ch, view === 'all');
+    if (g.focus) ch.querySelector<HTMLElement>('h2')?.focus({ preventScroll: true });
   }
 
   function setView(v: string): void {
     view = v;
     try {
-      localStorage.setItem(KEY, v);
+      localStorage.setItem(o.key, v);
     } catch {
       /* 保存できない環境 */
     }
@@ -119,10 +125,11 @@ export function initNav(root: HTMLElement): void {
       menu.focus();
       return;
     }
-    // ← → で前後へ。入力欄・スライダー・修飾キーのときは使わない
+    // ← → で前後へ。入力欄・スライダー・図・修飾キーのときは使わない（図では点を動かす）
     if ((e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
     const t = e.target;
-    if (!(t instanceof Element) || t.closest('input,textarea,select,[contenteditable],svg') || !list.hidden) return;
+    if (!(t instanceof Element) || t.closest('input,textarea,select,[contenteditable],svg,canvas') || !list.hidden)
+      return;
     e.preventDefault();
     go(cur + (e.key === 'ArrowRight' ? 1 : -1));
   });
@@ -157,4 +164,36 @@ export function initNav(root: HTMLElement): void {
   root.classList.add('ready');
   const ch = chs[cur];
   if (ch && location.hash && ids.includes(location.hash.slice(1))) toTop(ch, false);
+}
+
+/**
+ * 式の項（MathML の data-k）と、それを含む章（.ch）の data-hl を結ぶ。
+ * マウスでは載せている間、タッチとキーでは押すたびに入れ替える。図はページが data-hl を見て光らせる
+ */
+export function bindEq(root: ParentNode): void {
+  for (const el of $$<MathMLElement>('.eq [data-k]', root)) {
+    const ch = el.closest<HTMLElement>('.ch');
+    if (!ch) continue;
+    const on = () => {
+      ch.dataset.hl = el.dataset.k;
+      for (const e of $$(`.eq [data-k="${el.dataset.k}"]`, ch)) e.classList.add('on');
+    };
+    const off = () => {
+      delete ch.dataset.hl;
+      for (const e of $$('.eq [data-k].on', ch)) e.classList.remove('on');
+    };
+    el.addEventListener('pointerenter', (e) => {
+      if (e.pointerType === 'mouse') on();
+    });
+    el.addEventListener('pointerleave', (e) => {
+      if (e.pointerType === 'mouse') off();
+    });
+    el.addEventListener('click', () => {
+      if (ch.dataset.hl === el.dataset.k) off();
+      else {
+        off();
+        on();
+      }
+    });
+  }
 }

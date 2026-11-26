@@ -1,5 +1,4 @@
 /* z 変換のページの図（SVG）と音の部品 */
-import { $$ } from '../../lib/dom';
 
 /** 複素数 [実部, 虚部] */
 export type C = [number, number];
@@ -590,34 +589,6 @@ export function hlCss(): string {
     (k) =>
       `.ch[data-hl="${k}"] .k-${k}:not(text):not(td){stroke:var(--warn)!important;stroke-width:3px}.ch[data-hl="${k}"] text.k-${k}{fill:var(--warn)!important;font-weight:700}.ch[data-hl="${k}"] .hk.k-${k}{display:inline}.ch[data-hl="${k}"] .ah.k-${k},.ch[data-hl="${k}"] .dot.k-${k}{fill:var(--warn)!important;stroke:none!important}.ch[data-hl="${k}"] td.k-${k}{background:var(--hl);color:var(--warn)}`,
   ).join('\n');
-}
-/** 式の項（MathML の data-k）と、それを含む章（.ch）の data-hl を結ぶ */
-export function bindEq(root: ParentNode): void {
-  for (const el of $$<MathMLElement>('.eq [data-k]', root)) {
-    const ch = el.closest<HTMLElement>('.ch');
-    if (!ch) continue;
-    const on = () => {
-      ch.dataset.hl = el.dataset.k;
-      for (const e of $$(`.eq [data-k="${el.dataset.k}"]`, ch)) e.classList.add('on');
-    };
-    const off = () => {
-      delete ch.dataset.hl;
-      for (const e of $$('.eq [data-k].on', ch)) e.classList.remove('on');
-    };
-    el.addEventListener('pointerenter', (e) => {
-      if (e.pointerType === 'mouse') on();
-    });
-    el.addEventListener('pointerleave', (e) => {
-      if (e.pointerType === 'mouse') off();
-    });
-    el.addEventListener('click', () => {
-      if (ch.dataset.hl === el.dataset.k) off();
-      else {
-        off();
-        on();
-      }
-    });
-  }
 }
 // 押した状態を 1 つだけにするボタン群
 export function radio(btns: HTMLElement[], fn: (b: HTMLElement) => void): void {

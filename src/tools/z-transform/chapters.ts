@@ -1,8 +1,5 @@
 /* z 変換のページの章（ビルド時に HTML にする） */
-/** 部: [部の名前, [問いの id, 題][]] */
-type Part = [string, [string, string][]];
-/** 問いの並び: [id, 番号, 題, 部の番号] */
-type Q = [string, number, string, number];
+import { finishChapters, makeChapters, type Part } from '../../lib/chapter-html';
 
 export const TOC: Part[] = [
   [
@@ -29,38 +26,12 @@ export const TOC: Part[] = [
     ],
   ],
 ];
+const C = makeChapters(TOC);
 /** 問いの並び。番号は 1 から通しで振る */
-export const QS: Q[] = TOC.flatMap((p, i) => p[1].map(([q, t]) => ({ q, t, i }))).map(({ q, t, i }, k) => [
-  q,
-  k + 1,
-  t,
-  i,
-]);
-const qOf = (id: string): Q => {
-  const x = QS.find((y) => y[0] === id);
-  if (!x) throw new Error(`no question: ${id}`);
-  return x;
-};
-// 部の見出し: すべて表示のときだけ出す（1 問ずつのときは章の上の小見出しが代わる）
-const part = (i: number): string =>
-  `<div class="part" aria-hidden="true"><span class="how-n">${i + 1}</span>${TOC[i][0]}</div>`;
-const qh = (id: string): string => {
-  const [, k, t, pi] = qOf(id);
-  return `<p class="eyebrow"><span class="how-n">${pi + 1}</span>${TOC[pi][0]}</p><h2 tabindex="-1"><span class="qn">問い ${k}</span>${t}</h2>`;
-};
-
-/** 下に貼り付くナビゲーション: 前へ・問いの一覧・次へ。一覧の上に 1 問ずつ・すべての切り替え */
-const qnav = (): string => `
-<nav class="qnav" aria-label="問い">
-  <button type="button" class="qn-prev" aria-label="前の問い"><span aria-hidden="true">‹</span><span class="qn-lb">前へ</span></button>
-  <button type="button" class="qn-menu" aria-expanded="false" aria-controls="qn-list"><span class="qn-no"></span><span class="qn-t"></span><span class="qn-car" aria-hidden="true">▴</span></button>
-  <button type="button" class="qn-next" aria-label="次の問い"><span class="qn-lb">次へ</span><span aria-hidden="true">›</span></button>
-  <div class="qn-list" id="qn-list" hidden>
-    <div class="qn-view"><span class="lb">表示</span><div class="seg" role="group" aria-label="表示"><button type="button" data-view="one" aria-pressed="true">1 問ずつ</button><button type="button" data-view="all" aria-pressed="false">すべて</button></div></div>
-    ${TOC.map((p, i) => `<div class="qn-part"><b><span class="how-n">${i + 1}</span>${p[0]}</b><ol>${p[1].map(([q, t]) => `<li><a href="#${q}" data-q="${q}"><span class="qn-k">${qOf(q)[1]}</span><span>${t}</span></a></li>`).join('')}</ol></div>`).join('')}
-  </div>
-  <p class="sr" aria-live="polite" id="qn-live"></p>
-</nav>`;
+export const QS = C.QS;
+const part = C.part;
+const qh = C.head;
+const qnav = C.nav;
 
 const raw = (): string => `
 
@@ -217,10 +188,5 @@ ${part(2)}
 </section>
 ${qnav()}`;
 
-/** 章の HTML。MathML の括弧を伸ばさず、式の間の空きで式を分ける */
-export function chaptersHtml(): string {
-  return raw()
-    .replace(/<mo>([()[\]|])<\/mo>/g, '<mo stretchy="false">$1</mo>')
-    .replace(/<mspace width="(1\.2em|1\.4em|1em)"\/>/g, '</math><math display="block">')
-    .replace(/(<span class="qn">[^<]*<\/span>)([\s\S]*?)<\/h2>/g, '$1<span>$2</span></h2>');
-}
+/** 章の HTML */
+export const chaptersHtml = (): string => finishChapters(raw());

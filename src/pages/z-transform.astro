@@ -3,16 +3,17 @@ import PageTitle from '../components/PageTitle.astro';
 import RelatedTools from '../components/RelatedTools.astro';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import '../styles/how.css';
+import '../styles/chapters.css';
 import '../tools/z-transform/style.css';
 import { chaptersHtml } from '../tools/z-transform/chapters';
 
-/* 章立てて解説するページ。章の HTML はビルド時に作り、data-view（1 問ずつ・すべて）は tools/z-transform/nav.ts が切り替える */
+/* 章立てて解説するページ。章の HTML はビルド時に作り、data-view（1 問ずつ・すべて）は lib/chapter-page.ts が切り替える */
 const name = 'z 変換';
 const id = 'z-transform';
 ---
 <SiteLayout title={name} tool={{ id, name }}>
   <PageTitle title={name} noReset>z 平面の点を動かし、数列・s 平面・デジタルフィルタと z 変換のつながりを 8 つの問いで確かめます。</PageTitle>
-  <div class="zt" id="zt" data-view="one" set:html={chaptersHtml()} />
+  <div class="chp zt" id="zt" data-view="one" set:html={chaptersHtml()} />
   <RelatedTools current={id} />
   <script>
     import '../tools/z-transform/client';

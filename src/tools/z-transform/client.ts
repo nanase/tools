@@ -1,11 +1,11 @@
 /* z 変換のページの動き */
+import { bindEq, initChapterNav } from '../../lib/chapter-page';
 import { $, $$ } from '../../lib/dom';
 import { initToolPage } from '../../lib/tool-page';
 import {
   AR,
   ARC,
   AU,
-  bindEq,
   type C,
   CI,
   cabs,
@@ -44,7 +44,6 @@ import {
   TX,
   zBase,
 } from './fig';
-import { initNav } from './nav';
 
 /** 数列の図に並べる標本の数 */
 const N = 30;
@@ -1202,4 +1201,4 @@ document.head.appendChild(st);
 const root = $('#zt');
 for (const init of [q1, q2, q3, q4, q5, q6, q7, q8]) init(root);
 bindEq(root);
-initNav(root);
+initChapterNav(root, { key: 'zt:view', onLeave: () => AU.stop() });
