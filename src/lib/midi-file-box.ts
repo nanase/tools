@@ -36,7 +36,7 @@ const AX_LO = 21,
 const xOf = (n: number) => (100 * (Math.min(AX_HI, Math.max(AX_LO, n)) - AX_LO)) / (AX_HI - AX_LO);
 const NONE = 'none';
 /** パートを 1 つも選んでいないときのメッセージ（演奏できないので、再生ボタンが効かない理由を出す） */
-export const NO_PART = 'パートを選んでください。';
+export const NO_PART = 'パートを選んでください';
 const SVG = 'http://www.w3.org/2000/svg';
 
 export class MidiFileBox {
@@ -105,8 +105,8 @@ export class MidiFileBox {
     } catch (err) {
       this.o.say(
         err instanceof Error && err.message
-          ? `${f.name} を読めませんでした。${err.message}。`
-          : `${f.name} を読めませんでした。`,
+          ? `${f.name} を読めませんでした。${err.message}`
+          : `${f.name} を読めませんでした`,
       );
       return;
     }
