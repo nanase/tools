@@ -722,7 +722,7 @@ function drawOut(): void {
   if (!vis) {
     txt('#o-mt', L.kind === 'none' ? '欠けなし' : '見えない');
     txt('#o-mv', L.kind === 'none' ? '食なし' : '地平線の下');
-    txt('#o-ms', L.kind === 'none' ? '半影がこの地点を通りません。' : '食の間、太陽は地平線の下にあります。');
+    txt('#o-ms', L.kind === 'none' ? '半影がこの地点を通りません' : '食の間、太陽は地平線の下にあります');
   } else if (L.c2 && L.c3) {
     txt('#o-mt', L.kind === 'total' ? '皆既' : '金環');
     txt('#o-mv', `${hms(L.c2.t)} → ${hms(L.c3.t)}`);
@@ -826,7 +826,7 @@ async function drawList(): Promise<void> {
     );
   }
   $('#list').innerHTML =
-    rows.join('') || '<tr><td class="none" colspan="6">この期間に欠けて見える日食はありません。</td></tr>';
+    rows.join('') || '<tr><td class="none" colspan="6">この期間に欠けて見える日食はありません</td></tr>';
 }
 $('#list').addEventListener('click', (e) => {
   const tr = (e.target as Element).closest<HTMLElement>('tr[data-id]');
@@ -859,7 +859,7 @@ async function runFind(): Promise<void> {
         (e) =>
           `<tr data-id="${e.id}"${e.id === ecl?.id ? ' class="on"' : ''}><td>${dateStr(e.entry)}</td><td class="t">${TYPE_S[e.entry.type]}</td><td>${e.entry.saros}</td><td>${e.entry.gamma.toFixed(4)}</td><td>${durShort(e.entry.duration)}</td><td>${llStr(e.entry.lat, e.entry.lon, 1)}</td></tr>`,
       )
-      .join('') || '<tr><td class="none" colspan="6">見つかりません。</td></tr>';
+      .join('') || '<tr><td class="none" colspan="6">見つかりません</td></tr>';
 }
 fq.addEventListener('input', () => void runFind());
 $('#find').addEventListener('click', (e) => {

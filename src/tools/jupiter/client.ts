@@ -238,7 +238,7 @@ function loadMap(m: MapInfo): void {
       mapWant = '';
       const v = $('#v-msg');
       v.hidden = false;
-      v.textContent = '模様の地図を読み込めませんでした。';
+      v.textContent = '模様の地図を読み込めませんでした';
     })
     .finally(() => {
       /* 読み終える前に別の地図へ変わったら、そちらを待つ */
@@ -977,7 +977,7 @@ function drawAll(): void {
   aDots = dots;
   const m = $('#a-msg');
   m.hidden = !outside;
-  if (outside) m.textContent = '外側の衛星は 2015〜2036 年だけ表示します。';
+  if (outside) m.textContent = '外側の衛星は 2015〜2036 年だけ表示します';
   /* 木星 */
   c.fillStyle = '#c9a77c';
   c.beginPath();
@@ -1258,7 +1258,7 @@ function renderSeason(): void {
 function renderMutual(): void {
   const m = seaEv[seaSel];
   if (!m) {
-    txt('#mut-h', 'この期間に見える相互食はありません。');
+    txt('#mut-h', 'この期間に見える相互食はありません');
     $('#mut-p').textContent = '';
     $('#mut-curve').innerHTML = '';
     return;
@@ -1347,7 +1347,7 @@ try {
   mapBusy.hidden = true;
   const m = $('#v-msg');
   m.hidden = false;
-  m.textContent = 'このブラウザでは木星を描けません。WebGL2 が必要です。';
+  m.textContent = 'このブラウザでは木星を描けません。WebGL2 が必要です';
 }
 /* 全画面: 木星の図を画面いっぱいに。時刻と表示の操作は右上に浮かべる */
 initFullscreen({
