@@ -2,7 +2,8 @@
  * 楽器のページの演奏の操作（components/Transport.astro・TransportState.astro）。
  * 演奏と一時停止は 1 つのボタンで切り替える。一時停止は曲を止めて、止めた拍を残す（音は楽器ごとに自然に離し、その間も手で弾ける）。
  * 再開すると、その拍から弾く。位置の欄を押すかドラッグすると、その小節の頭から弾く（演奏中はすぐ、止まっている間は次に演奏したとき）。
- * 曲の頭へ戻ると、一時停止は解く（演奏中なら頭から弾き直す）
+ * 曲の頭へ戻ると、一時停止は解く（演奏中なら頭から弾き直す）。
+ * 利用者が曲を選び直すと、演奏中・一時停止の間・止まっている間のどれでも、新しい曲を頭から弾く（playNew）
  */
 import { $ } from './dom';
 import { asleep } from './pause';
@@ -42,6 +43,27 @@ const KEY_WAIT = 400;
 /** ドラッグとみなす動き [px]（数値欄と同じ） */
 const DRAG_PX = 4;
 
+/**
+ * 曲を選び直したときの、頭からの演奏の予約。曲を読み込む間は待ち、読み込む前にほかの曲へ替わったら捨てる
+ * （設定の復元・MIDI ファイルの読み込みなど、利用者が選んだのでない替え方では予約しない）
+ */
+export class StartCue {
+  private armed = false;
+
+  /** 利用者が曲を選んだ。曲がもう読み込んであれば true（すぐ頭から弾く）、読み込み中なら読み込むまで待つ */
+  arm(loaded: boolean): boolean {
+    this.armed = !loaded;
+    return loaded;
+  }
+
+  /** 曲を替えた・読み込んだ（loaded は小節が分かったか）。頭から弾くなら true。どちらでも予約は消す */
+  line(loaded: boolean): boolean {
+    const go = this.armed && loaded;
+    this.armed = false;
+    return go;
+  }
+}
+
 const mmss = (t: number): string => {
   const s = Math.max(0, Math.floor(t));
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
@@ -58,6 +80,7 @@ export class Transport {
   /** ドラッグ中・キーで動かしている間の小節（null は動かしていない） */
   private pick: number | null = null;
   private keyT: ReturnType<typeof setTimeout> | undefined;
+  private readonly startCue = new StartCue();
 
   private readonly pp = $<HTMLButtonElement>('#tp-pp');
   private readonly home = $<HTMLButtonElement>('#tp-home');
@@ -91,6 +114,15 @@ export class Transport {
     $('#tp-bar').style.minWidth = `${String(l?.bars ?? 1).length}ch`;
     this.drawTicks();
     this.sync();
+    if (this.startCue.line(!!l)) this.fromTop();
+  }
+
+  /**
+   * 利用者が曲を選び直した: 新しい曲を頭から弾く（演奏中は止めずに替え、一時停止の間・止まっている間は弾き始める）。
+   * ページで曲を替えた（setLine を呼んだ）あとに呼ぶ。曲を読み込む間は、読み込んだときに弾く
+   */
+  playNew(): void {
+    if (this.startCue.arm(!!this.line)) this.fromTop();
   }
 
   /** 表示している位置の拍（演奏中は今の位置、止まっていれば次に弾き始める拍） */
@@ -149,6 +181,16 @@ export class Transport {
     if (!this.line) return;
     if (this.hooks.active()) this.pause();
     else void this.play(this.cue);
+  }
+
+  /** 曲の頭から弾く（演奏中なら弾き直す） */
+  private fromTop(): void {
+    if (this.hooks.active()) this.hooks.stop();
+    this.cue = 0;
+    this.beat = 0;
+    this.pick = null;
+    void this.play(0);
+    this.sync();
   }
 
   /** 拍 b から演奏する。弾き始めるのを待つ間に、スマートフォンで画面が隠れたら一時停止する */

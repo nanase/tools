@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { evenLine, tableLine } from '../../src/lib/transport';
+import { evenLine, StartCue, tableLine } from '../../src/lib/transport';
 
 describe('演奏の位置の小節', () => {
   it('拍子が一定の曲: 弱起の拍は 1 小節目に含める', () => {
@@ -19,5 +19,31 @@ describe('演奏の位置の小節', () => {
     expect(l.bars).toBe(4);
     expect([1, 2, 4].map((n) => l.start(n))).toEqual([0, 4.5, 11.5]);
     expect([0, 4.4, 4.5, 11, 12, 99].map((b) => l.barOf(b))).toEqual([1, 1, 2, 3, 4, 4]);
+  });
+});
+
+describe('曲を選び直したときの頭からの演奏', () => {
+  it('読み込んである曲はすぐ弾き、あとで読み込んでも二重に弾かない', () => {
+    const c = new StartCue();
+    expect(c.arm(true)).toBe(true);
+    expect(c.line(true)).toBe(false);
+  });
+
+  it('読み込み中なら、読み込んだときに 1 回だけ弾く', () => {
+    const c = new StartCue();
+    expect(c.arm(false)).toBe(false);
+    expect(c.line(true)).toBe(true);
+    expect(c.line(true)).toBe(false);
+  });
+
+  it('読み込む前にほかの曲へ替わったら（小節なし）、予約を捨てる', () => {
+    const c = new StartCue();
+    c.arm(false);
+    expect(c.line(false)).toBe(false);
+    expect(c.line(true)).toBe(false);
+  });
+
+  it('選んでいなければ、曲を読み込んでも弾かない（初期化・設定の復元・MIDI ファイル）', () => {
+    expect(new StartCue().line(true)).toBe(false);
   });
 });
