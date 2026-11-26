@@ -11,7 +11,7 @@ import { EQS } from './theory';
   <li><b>zlib</b><span>ヘッダ 2 バイトと Adler-32</span></li>
   <li><b>チャンク</b><span>IDAT に分けて CRC-32</span></li>
 </ol>
-<p>PNG の圧縮は可逆です。フィルタは値を変えずに並びを圧縮しやすくし、Deflate が同じ並びの繰り返しと値の偏りを詰めます<a class="rf" href="#thy-r1">[1]</a>。</p>
+<p>PNG の圧縮は可逆です。フィルタは値を元に戻せる形で予測との差に置き換えて圧縮しやすくし、Deflate が同じ並びの繰り返しと値の偏りを詰めます<a class="rf" href="#thy-r1">[1]</a>。</p>
 
 <h3>チャンク</h3>
 <p>ファイルは 8 バイトの署名 <code>89 50 4E 47 0D 0A 1A 0A</code> と、チャンクの並びです<a class="rf" href="#thy-r1">[1]</a>。</p>
