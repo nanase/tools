@@ -9,6 +9,7 @@ import { $ } from '../../lib/dom';
 import { minus } from '../../lib/format';
 import { ParamGroup } from '../../lib/param';
 import { handheld } from '../../lib/pause';
+import { onPick, pickAct } from '../../lib/press';
 import { DV, nice } from '../../lib/scope';
 import { initToolPage } from '../../lib/tool-page';
 import { DopplerAudio } from './audio';
@@ -207,20 +208,29 @@ function setPlay(on: boolean): void {
   playLed.classList.toggle('on', on);
   playT.textContent = on ? '停止' : '再生';
 }
-playBtn.addEventListener('click', async () => {
+playBtn.addEventListener('click', () => {
   if (playing) {
     audio.stop();
     setPlay(false);
     return;
   }
+  void play();
+});
+/* 止まっている間に音源を選んだら鳴らし始める（利用者の操作だけ） */
+onPick($('#p-src'), (e) => {
+  if (pickAct(e, playing) === 'start') void play();
+});
+/** 鳴らし始める */
+async function play(): Promise<void> {
   sndMsg.textContent = '';
   if (!(await audio.ready())) {
     sndMsg.textContent = 'この環境では音を鳴らせません';
     return;
   }
+  if (playing) return;
   setPlay(true);
   start();
-});
+}
 /** 音源を鳴らし始め、今の動きを送る */
 function start(): void {
   off = clock() - audio.now;
