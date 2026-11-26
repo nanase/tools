@@ -107,6 +107,8 @@ function syncIn(): void {
   src.set(s);
   runBtn.setAttribute('aria-pressed', String(live.on));
   runBtn.hidden = file;
+  /* 名前は入力元で決まり、押しても変えない（マイク・テスト信号の再生） */
+  if (runBtn.lastChild) runBtn.lastChild.textContent = s === 'mic' ? 'マイク' : '再生';
   $('#fileSeg').hidden = !file;
   $('#wavBtn').hidden = s !== 'test';
   txt('#runName', file ? 'ファイル' : '受信');
