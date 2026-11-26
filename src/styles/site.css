@@ -608,6 +608,7 @@ a.unit:hover h3{text-decoration:underline;text-decoration-color:var(--ink-3);tex
 .tg[aria-pressed="true"]>.led:not(.man){background:var(--accent);box-shadow:0 0 5px var(--accent)}
 .tg:has(>.led:first-child){padding-left:9px}
 .pha>.tg{min-height:28px}
+.tg:disabled{opacity:.45;cursor:default}
 .scope{padding:6px 4px 2px;border:1px solid var(--line);border-radius:var(--r);background:var(--screen);box-shadow:inset 0 1px 3px rgb(0 0 0 / .19)}
 .scope svg{display:block;width:100%;height:auto;overflow:visible}
 .scope text{fill:var(--screen-ink);font:11px var(--mono)}

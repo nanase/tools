@@ -4,6 +4,7 @@
  * 右上に開始・停止、中に機器とチャンネルの選択と、楽器ごとの行（slot）、最後に弾いた音とペダルの表示（monitor）を置く。
  * 選択欄の形（.prow.pick・.sel）は楽器のページの style.css にある。動作は lib/midi.ts の MidiBox
  */
+import LedToggle from './LedToggle.astro';
 import Panel from './Panel.astro';
 
 interface Props {
@@ -17,7 +18,7 @@ interface Props {
 const { pedals, open, monitor = true } = Astro.props;
 ---
 <Panel hid="hd-midi" title="MIDI" class="a-midi" shut={!open} hidden>
-  <div slot="aux" class="seg"><button type="button" id="midiBtn" aria-pressed="false" title="MIDI 機器の鍵盤で演奏"><span class="led" id="midiLed" aria-hidden="true"></span><span id="midiT">開始</span></button></div>
+  <LedToggle slot="aux" id="midiBtn" label="MIDI" title="MIDI 機器の鍵盤で演奏" />
   <div class="ptab">
     <div class="prow pick">
       <div class="c-sym" aria-hidden="true"></div>

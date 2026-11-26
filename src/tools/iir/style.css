@@ -18,8 +18,6 @@
 /* 周波数特性の表示の設定: 記号の列（A_min が入る幅） */
 .a-fr .prow{--sw:2rem}
 
-/* 枠の右上のボタン（再生の LED） */
-.seg button{display:inline-flex;align-items:center;gap:7px}
 @media (max-width:479px){.presp button{padding:0 6px}}
 
 /* 計算結果 */

@@ -106,8 +106,7 @@ function syncIn(): void {
     file = s === 'file';
   src.set(s);
   runBtn.setAttribute('aria-pressed', String(live.on));
-  txt('#runT', live.on ? '停止' : '開始');
-  $('#runSeg').hidden = file;
+  runBtn.hidden = file;
   $('#fileSeg').hidden = !file;
   $('#wavBtn').hidden = s !== 'test';
   txt('#runName', file ? 'ファイル' : '受信');

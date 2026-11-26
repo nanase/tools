@@ -1,6 +1,7 @@
 ---
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import LedToggle from '../components/LedToggle.astro';
 import More from '../components/More.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
@@ -58,7 +59,7 @@ const pzSvg = (id: string, label: string) =>
       </Panel>
 
       <Panel hid="hd-snd" title="試聴" class="a-snd">
-        <div slot="aux" class="seg"><button type="button" id="playBtn" aria-pressed="false" title="ホワイトノイズにこのフィルタを掛けた音"><span class="led" aria-hidden="true"></span><span id="playT">再生</span></button></div>
+        <LedToggle slot="aux" id="playBtn" label="再生" title="ホワイトノイズにこのフィルタを掛けた音" />
         <div class="sbar">
           <span class="stag">IN <b>WHITE NOISE</b></span>
           <span class="stag"><i class="sw" aria-hidden="true"></i>OUT <b id="lv-t">---</b> dBFS</span>

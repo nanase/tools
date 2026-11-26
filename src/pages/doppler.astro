@@ -1,6 +1,7 @@
 ---
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import LedToggle from '../components/LedToggle.astro';
 import More from '../components/More.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
@@ -23,7 +24,7 @@ const desc =
 
   <div class="tgrid">
     <Panel hid="hd-fig" title="道路と波面" class="a-fig" fixed>
-      <div slot="aux" class="seg"><button type="button" id="runBtn" aria-pressed="true" title="音源の走行・停止"><span class="led on" id="runLed" aria-hidden="true"></span><span id="runT">RUN</span></button></div>
+      <LedToggle slot="aux" id="runBtn" label="走行" on title="音源の走行・停止" />
       <div class="sbar static">
         <span class="stag"><i class="sw c2" aria-hidden="true"></i>波面</span>
         <span class="stag"><i class="sw" aria-hidden="true"></i>マッハコーン</span>
@@ -71,7 +72,7 @@ const desc =
 
     <div class="col c2">
       <Panel hid="hd-snd" title="音" class="a-snd">
-        <div slot="aux" class="seg"><button type="button" id="playBtn" aria-pressed="false" title="聞き手の位置の音"><span class="led" id="playLed" aria-hidden="true"></span><span id="playT">再生</span></button></div>
+        <LedToggle slot="aux" id="playBtn" label="再生" title="聞き手の位置の音" />
         <div class="ptab"><ParamRow d={VOL} /></div>
         <p class="msg er snd-msg" id="snd-msg" aria-live="polite"></p>
       </Panel>

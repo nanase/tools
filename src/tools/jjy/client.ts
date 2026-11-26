@@ -76,9 +76,6 @@ const mode = new Choice<'tone' | 'sync'>($('#p-mode'), (v) => {
 });
 function syncSnd(): void {
   playBtn.setAttribute('aria-pressed', String(audio.play));
-  /* 双2次フィルタの再生ボタンと同じく、鳴らしている間は LED を点ける */
-  $('#sndLed').classList.toggle('on', audio.play);
-  txt('#playT', audio.play ? '停止' : '再生');
   const fixed = audio.mode === 'sync',
     sr = audio.sampleRate;
   g.setOff('f', fixed, '時刻合わせでは 13.333 kHz に固定します');

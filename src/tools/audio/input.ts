@@ -21,6 +21,8 @@ const RUN_TITLE: Record<Src, string> = {
   file: 'ファイルの再生・一時停止',
   test: 'テスト信号の開始・停止',
 };
+/** 開始のボタンの名前（入力元で決まり、押しても変えない） */
+const RUN_LABEL: Record<Src, string> = { mic: 'マイク', file: '再生', test: '再生' };
 
 export interface InputUi {
   readonly a: AudioIn;
@@ -85,8 +87,8 @@ export function initInput(): InputUi {
     rb.disabled = s === 'file' && !a.buf;
     rb.setAttribute('aria-pressed', String(on));
     rb.title = RUN_TITLE[s];
-    $('#runLed').classList.toggle('on', on);
-    txt('#runT', s === 'file' ? (on ? '一時停止' : '再生') : on ? '停止' : '開始');
+    const lb = rb.lastChild;
+    if (lb) lb.textContent = RUN_LABEL[s];
     txt('#in-msg', s === 'mic' ? a.micMsg : '');
     $('#in-tab').dataset.src = s;
     const fm = $('#m-file');
@@ -113,8 +115,6 @@ export function initInput(): InputUi {
       snd.open = !mic && stored('o:hd-snd') !== false;
     }
     $('#monBtn').setAttribute('aria-pressed', String(a.monOn));
-    $('#monLed').classList.toggle('on', a.monOn);
-    txt('#monT', a.monOn ? '停止' : '再生');
     g.note('vol', test && a.monOn && a.testMute ? 'この環境ではテスト信号を鳴らせません' : '');
   }
   a.onChange = sync;

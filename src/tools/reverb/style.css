@@ -8,7 +8,6 @@
   .a-fig{grid-area:fig}.c1{grid-area:c1}.c2{grid-area:c2;display:grid;gap:26px;align-content:start}.a-thy{grid-area:thy}
   .c1{display:grid;gap:26px;align-content:start}
 }
-.ph .seg button{display:inline-flex;align-items:center;justify-content:center;gap:7px}
 .a-fig,.a-out{container-type:inline-size}
 .sbar .right{margin-left:auto}
 

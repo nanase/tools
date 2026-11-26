@@ -536,7 +536,6 @@ async function setSound(on: boolean): Promise<void> {
   const ok = await audio.set(on);
   const now = on && ok;
   playBtn.setAttribute('aria-pressed', String(now));
-  $('#sndLed').classList.toggle('on', now);
   txt('#snd-msg', on && !ok ? 'この環境では音を鳴らせません' : '');
   if (on && !ok) await audio.set(false);
 }
