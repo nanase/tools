@@ -120,9 +120,12 @@ describe('出典', () => {
     expect(cited).toEqual(listed);
   });
 
-  it('一覧は最後の章が閉じたあと、ナビゲーションの前にある（1 問ずつのときも隠れない）', () => {
+  it('一覧は章の外、ナビゲーションのあとにあり、開閉できる', () => {
     const at = html.indexOf('<section class="pnl crefs"');
     expect(html.indexOf('</section>', html.lastIndexOf('<section class="ch"'))).toBeLessThan(at);
-    expect(at).toBeLessThan(html.indexOf('<nav class="qnav"'));
+    expect(html.indexOf('</nav>')).toBeLessThan(at);
+    expect(html.slice(at)).toMatch(
+      /^<section [^>]*data-fold="hd-refs"[^>]*>.*?class="fold" id="hd-refs" aria-expanded="true"/,
+    );
   });
 });

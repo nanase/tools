@@ -52,10 +52,11 @@ export const rf = (...ns: number[]): string => ns.map((n) => `<a class="rf" href
 
 /**
  * 出典の一覧の枠: [何に使ったか, 書誌（HTML）][]。番号は並び順。
- * 1 問ずつのときも隠さないよう、章（section.ch）の外、ナビゲーションの前に置く
+ * 章（section.ch）の外、下に貼り付くナビゲーションのあとに置くので、1 問ずつのときも隠れない。
+ * 見出しを押すと開閉する（初めは開く）。形は components/Panel.astro と同じで、開閉と保存は lib/tool-page.ts
  */
 export const refsBox = (items: [string, string][]): string =>
-  `<section class="pnl crefs" aria-labelledby="hd-refs"><div class="ph"><h2 id="hd-refs">出典</h2></div><ol class="refs">${items.map(([f, s], i) => `<li id="ref-${i + 1}"><span class="rf-for">${f}</span><span class="rf-src">${s}</span></li>`).join('')}</ol></section>`;
+  `<section class="pnl crefs" aria-labelledby="hd-refs" data-fold="hd-refs"><div class="ph"><h2><button type="button" class="fold" id="hd-refs" aria-expanded="true">出典</button></h2><div class="pha"><button type="button" class="prst" hidden></button></div></div><ol class="refs">${items.map(([f, s], i) => `<li id="ref-${i + 1}"><span class="rf-for">${f}</span><span class="rf-src">${s}</span></li>`).join('')}</ol></section>`;
 
 /** 章の HTML の仕上げ。MathML の括弧を伸ばさず、式の間の空き（1em・1.2em・1.4em）で式を分け、見出しの題を span で包む */
 export function finishChapters(raw: string): string {

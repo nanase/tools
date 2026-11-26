@@ -144,8 +144,8 @@ ${part(1)}
   </div>
   <p class="take">虚軸が収束域に入るのは、極がすべて左半分にあるときだけです。そのときだけ断面がフーリエ変換になります。</p>
 </section>
-${refsBox(REFS)}
-${qnav()}`;
+${qnav()}
+${refsBox(REFS)}`;
 
 /** 章の HTML */
 export const chaptersHtml = (): string => finishChapters(raw());

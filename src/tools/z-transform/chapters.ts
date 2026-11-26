@@ -197,8 +197,8 @@ ${part(2)}
   </div>
   <p class="take">単位円の上を歩くことは周波数を上げることで、極の近くを通ると距離が縮んで |H| に山ができます。</p>
 </section>
-${refsBox(REFS)}
-${qnav()}`;
+${qnav()}
+${refsBox(REFS)}`;
 
 /** 章の HTML */
 export const chaptersHtml = (): string => finishChapters(raw());
