@@ -9,7 +9,7 @@ const p = (s: string) => `<mo stretchy="false">(</mo>${s}<mo stretchy="false">)<
 <ol class="flow"><li>入力のローパス</li><li>標本化</li><li>復元</li></ol>
 <ul class="tl">
   <li>標本化は、決まった間隔で波の値を測ること</li>
-  <li>復元は、標本から元の波を作り直すこと</li>
+  <li>復元は標本から元の波を作り直すこと</li>
   <li>標本化周波数が入力の周波数の 2 倍より高ければ、標本から元の波を作り直せる（標本化定理）<Fragment set:html={`${rf(1)}${rf(3)}${rf(4)}`} /></li>
 </ul>
 
@@ -46,7 +46,7 @@ const p = (s: string) => `<mo stretchy="false">(</mo>${s}<mo stretchy="false">)<
 </div>
 <ul class="tl">
   <li>標本ごとに sinc の山を置いて足すと、条件を満たす波は元どおりになる<Fragment set:html={`${rf(1)}${rf(4)}`} /></li>
-  <li>sinc の山は、ほかの標本の位置でちょうど 0 になる</li>
+  <li>sinc の山はほかの標本の位置でちょうど 0 になる</li>
 </ul>
 
 <h3>折り返し</h3>

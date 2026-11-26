@@ -140,7 +140,7 @@ const big = (v: number) => v.toLocaleString('ja-JP');
 <h3>このツールで決めたこと</h3>
 <ul class="tl">
   <li>FFT はスペクトラムアナライザと同じ実装（並べ替えの表と回転因子の表）。図はそれを段ごとに止めて記録したもの</li>
-  <li>節点の矢印は、列ごとに最大の大きさで割って描く</li>
+  <li>節点の矢印は列ごとに最大の大きさで割って描く</li>
   <li>拡大の図は今のバタフライ 1 つを複素平面に描く</li><li>時間間引きは b を回してから足し引き、周波数間引きは足し引きしてから差を回す</li><li>縮尺は 5 つの点（a・b・回した値・和・差）が入る大きさ</li>
   <li>「複素数の掛け算」は回転因子が 1 でも数える。実数の演算の数は自明な回転因子を除く</li>
 </ul>
@@ -151,7 +151,7 @@ const big = (v: number) => v.toLocaleString('ja-JP');
   <li id="thy-r2"><span class="rf-for">回転因子（565 頁）、Cooley の版と Sande の版（566〜567 頁）</span><span class="rf-src">W. M. Gentleman and G. Sande, “Fast Fourier transforms: for fun and profit,” <i>Proc. AFIPS Fall Joint Computer Conference</i>, pp. 563–578, 1966, <a href="https://doi.org/10.1145/1464291.1464352" target="_blank" rel="noopener">doi:10.1145/1464291.1464352</a></span></li>
   <li id="thy-r3"><span class="rf-for">Gauss の 1805 年の計算と 1866 年の出版（再録版 266・269・271 頁）</span><span class="rf-src">M. T. Heideman, D. H. Johnson, and C. S. Burrus, “Gauss and the history of the fast Fourier transform,” <i>IEEE ASSP Magazine</i>, vol. 1, no. 4, pp. 14–21, 1984, <a href="https://doi.org/10.1109/MASSP.1984.1162257" target="_blank" rel="noopener">doi:10.1109/MASSP.1984.1162257</a>。再録 <i>Archive for History of Exact Sciences</i>, vol. 34, pp. 265–277, 1985</span></li>
   <li id="thy-r4"><span class="rf-for">演算の数え方（270 頁）、基数 2 と分割基数の式（式 (25)・(31)）、表 1・2</span><span class="rf-src">P. Duhamel and M. Vetterli, “Fast Fourier transforms: a tutorial review and a state of the art,” <i>Signal Processing</i>, vol. 19, no. 4, pp. 259–299, 1990, <a href="https://doi.org/10.1016/0165-1684(90)90158-U" target="_blank" rel="noopener">doi:10.1016/0165-1684(90)90158-U</a></span></li>
-  <li id="thy-r5"><span class="rf-for">分解（図 12-2）、ビット反転（図 12-3）、バタフライ（図 12-6）、流れ図（図 12-7）、速さの比べ（図 12-8）</span><span class="rf-src">S. W. Smith, <i>The Scientist and Engineer’s Guide to Digital Signal Processing</i>, California Technical Publishing, 1997, <a href="https://www.dspguide.com/ch12.htm" target="_blank" rel="noopener">ch. 12 The Fast Fourier Transform</a></span></li>
+  <li id="thy-r5"><span class="rf-for">分解（図 12-2）、ビット反転（図 12-3）、バタフライ（図 12-6）、流れ図（図 12-7）、速さの比較（図 12-8）</span><span class="rf-src">S. W. Smith, <i>The Scientist and Engineer’s Guide to Digital Signal Processing</i>, California Technical Publishing, 1997, <a href="https://www.dspguide.com/ch12.htm" target="_blank" rel="noopener">ch. 12 The Fast Fourier Transform</a></span></li>
   <li id="thy-r6"><span class="rf-for">その場の計算と並べ替え、時間間引きと周波数間引き（2.3 節）、演算の数（8.5 節、表 8.5.1）</span><span class="rf-src">C. S. Burrus, <a href="https://eng.libretexts.org/Bookshelves/Electrical_Engineering/Signal_Processing_and_Modeling/Fast_Fourier_Transforms_(Burrus)" target="_blank" rel="noopener"><i>Fast Fourier Transforms</i></a>, OpenStax CNX</span></li>
   <li id="thy-r7"><span class="rf-for">分割基数の 4N log₂ N − 6N + 8、改良した分割基数（式 (1)）</span><span class="rf-src">S. G. Johnson and M. Frigo, “A modified split-radix FFT with fewer arithmetic operations,” <i>IEEE Trans. Signal Processing</i>, vol. 55, no. 1, pp. 111–119, 2007, <a href="https://doi.org/10.1109/TSP.2006.882087" target="_blank" rel="noopener">doi:10.1109/TSP.2006.882087</a></span></li>
   <li id="thy-r8"><span class="rf-for">速さの目安 5N log₂ N</span><span class="rf-src">M. Frigo and S. G. Johnson, <a href="https://www.fftw.org/speed/method.html" target="_blank" rel="noopener">FFT Benchmark Methodology</a>, FFTW</span></li>

@@ -77,7 +77,7 @@ const name = 'FFT';
         <div class="chips ff-sig" id="ff-sig" role="group" aria-label="入力の見本">
           {SIGS.map(([v, l]) => <button type="button" class="chip" data-v={v} aria-pressed={v === 'rand' ? 'true' : 'false'}>{l}</button>)}
         </div>
-        <div class="scope"><svg id="ff-in" viewBox="0 0 420 150" role="img" aria-label="入力の実部と虚部。棒をドラッグすると、下で選んだ方を変える"></svg></div>
+        <div class="scope"><svg id="ff-in" viewBox="0 0 420 150" role="img" aria-label="入力の実部と虚部。バーをドラッグすると、下で選んだ方を変える"></svg></div>
         <div class="ff-insb">
           <div class="seg" id="ff-part" role="group" aria-label="ドラッグで変える方" data-nosave>
             <button type="button" data-v="re" aria-pressed="true"><i class="sw" aria-hidden="true"></i>実部</button>

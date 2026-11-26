@@ -70,7 +70,7 @@
   <li><b>積分</b>: 0 Hz で発散するので、極を 5 Hz に置いた漏れのある積分にする</li>
   <li><b>1 次差分</b>: <math><mn>1</mn><mo>−</mo><msup><mi>z</mi><mrow><mo>−</mo><mn>1</mn></mrow></msup></math> の振幅は <math><mn>2</mn><mi>sin</mi><mo>&#x2061;</mo><mo stretchy="false">(</mo><mi>ω</mi><mo>/</mo><mn>2</mn><mo stretchy="false">)</mo></math> で、<math><msub><mi>f</mi><mi mathvariant="normal">s</mi></msub><mo>/</mo><mn>4</mn></math> より上で <math><mi>ω</mi></math> から下がる。48 kHz では 20 kHz で 2.6 dB 足りない</li>
 </ul>
-<p>そこで <math><mi>z</mi><mo>=</mo><mo>−</mo><mi>c</mi></math> に極（積分では零）を 1 つ足して、高域を補います。<math><mi>c</mi></math> は、48 kHz で 20 Hz〜20 kHz のずれが最も小さくなる値です。ずれはブラウン・ブルー・バイオレットとも ±0.2 dB 以内です。</p>
+<p>そこで <math><mi>z</mi><mo>=</mo><mo>−</mo><mi>c</mi></math> に極（積分では零）を 1 つ足して、高域を補います。<math><mi>c</mi></math> は 48 kHz で 20 Hz〜20 kHz のずれが最も小さくなる値です。ずれはブラウン・ブルー・バイオレットとも ±0.2 dB 以内です。</p>
 <div class="eqs">
   <math display="block"><msub><mi>H</mi><mtext>brown</mtext></msub><mo>=</mo><mfrac><mrow><mn>1</mn><mo>+</mo><mi>c</mi><msup><mi>z</mi><mrow><mo>−</mo><mn>1</mn></mrow></msup></mrow><mrow><mn>1</mn><mo>−</mo><mi>a</mi><msup><mi>z</mi><mrow><mo>−</mo><mn>1</mn></mrow></msup></mrow></mfrac><mo>,</mo><mspace width="1em"/><msub><mi>H</mi><mtext>violet</mtext></msub><mo>=</mo><mfrac><mrow><mn>1</mn><mo>−</mo><msup><mi>z</mi><mrow><mo>−</mo><mn>1</mn></mrow></msup></mrow><mrow><mn>1</mn><mo>+</mo><mi>c</mi><msup><mi>z</mi><mrow><mo>−</mo><mn>1</mn></mrow></msup></mrow></mfrac><mo>,</mo><mspace width="1em"/><msub><mi>H</mi><mtext>blue</mtext></msub><mo>=</mo><msub><mi>H</mi><mtext>violet</mtext></msub><msub><mi>H</mi><mtext>pink</mtext></msub></math>
   <math display="block"><mi>a</mi><mo>=</mo><msup><mi>e</mi><mrow><mo>−</mo><mn>2</mn><mi>π</mi><mo>⋅</mo><mn>5</mn><mspace width="0.17em"/><mtext>Hz</mtext><mo>/</mo><msub><mi>f</mi><mi mathvariant="normal">s</mi></msub></mrow></msup><mo>,</mo><mspace width="1em"/><mi>c</mi><mo>=</mo><mn>0.166</mn></math>
@@ -114,7 +114,7 @@
   <math display="block"><msubsup><mi>b</mi><mrow><mi>n</mi><mo>−</mo><mn>1</mn></mrow><mo>′</mo></msubsup><mo>=</mo><msub><mi>b</mi><mn>0</mn></msub><mo>,</mo><mspace width="1em"/><msubsup><mi>b</mi><mi>i</mi><mo>′</mo></msubsup><mo>=</mo><msub><mi>b</mi><mrow><mi>i</mi><mo>+</mo><mn>1</mn></mrow></msub><mo>⊕</mo><mrow><mo stretchy="false">[</mo><mi>i</mi><mo>+</mo><mn>1</mn><mo>∈</mo><mi>E</mi><mo stretchy="false">]</mo></mrow><mspace width="0.1em"/><msub><mi>b</mi><mn>0</mn></msub><mspace width="1em"/><mtext>（ガロア形）</mtext></math>
 </div>
 <h4>周期</h4>
-<p>どちらの形も、帰還の多項式 <math><mi>P</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo></math> で決まります。<math><mi>P</mi></math> が原始多項式なら、すべて 0（XNOR ではすべて 1）以外の状態を残らず回り、周期は最大の <math><msup><mn>2</mn><mi>n</mi></msup><mo>−</mo><mn>1</mn></math> になります。これを M 系列といいます<a class="rf" href="#thy-r9">[9]</a>。</p>
+<p>どちらの形も帰還の多項式 <math><mi>P</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo></math> で決まります。<math><mi>P</mi></math> が原始多項式なら、すべて 0（XNOR ではすべて 1）以外の状態を残らず回り、周期は最大の <math><msup><mn>2</mn><mi>n</mi></msup><mo>−</mo><mn>1</mn></math> になります。これを M 系列といいます<a class="rf" href="#thy-r9">[9]</a>。</p>
 <div class="eqs">
   <math display="block"><mi>P</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo><mo>=</mo><msup><mi>x</mi><mi>n</mi></msup><mo>+</mo><munder><mo>∑</mo><mrow><mi>e</mi><mo>∈</mo><mi>E</mi></mrow></munder><msup><mi>x</mi><mi>e</mi></msup><mo>+</mo><mn>1</mn><mo>,</mo><mspace width="1em"/><mi>P</mi><mo>=</mo><msup><mn>2</mn><mi>n</mi></msup><mo>−</mo><mn>1</mn><mspace width="0.5em"/><mo>⇔</mo><mspace width="0.5em"/><mi>P</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo><mtext> が原始多項式</mtext></math>
 </div>
@@ -123,7 +123,7 @@
 <h4>スペクトル</h4>
 <p>M 系列の出力を ±1 にすると、自己相関は 2 値になります。0 のずれで 1、それ以外で <math><mo>−</mo><mn>1</mn><mo>/</mo><mi>P</mi></math> です<a class="rf" href="#thy-r9">[9]</a>。</p>
 <ul class="tl">
-  <li>スペクトルは、繰り返しの周波数 <math><msub><mi>f</mi><mi>c</mi></msub><mo>/</mo><mi>P</mi></math> おきの線に分かれる</li>
+  <li>スペクトルは繰り返しの周波数 <math><msub><mi>f</mi><mi>c</mi></msub><mo>/</mo><mi>P</mi></math> おきの線に分かれる</li>
   <li>線の高さは、出力をクロックの間保持する矩形の <math><msup><mi>sinc</mi><mn>2</mn></msup></math> で決まり、クロック周波数 <math><msub><mi>f</mi><mi>c</mi></msub></math> の整数倍で 0 になる</li>
   <li>周期が長いと、線の間隔が FFT の分解能より細かくなり、連続したスペクトルに見える</li>
 </ul>

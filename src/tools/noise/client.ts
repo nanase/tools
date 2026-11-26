@@ -791,7 +791,7 @@ function info(): void {
   html(
     '#o-pern',
     spec.locked
-      ? '止まったまま。初期値を変えてください。'
+      ? '止まったまま。初期値を変えてください'
       : p === null
         ? '16777216 ステップより長い'
         : spec.prim
