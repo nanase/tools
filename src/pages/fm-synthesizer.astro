@@ -17,6 +17,7 @@ import { WAVES, waveAt } from '../tools/fm-synth/synth';
 import Credits from '../tools/fm-synthesizer/Credits.astro';
 import { VOL0 } from '../tools/fm-synthesizer/engine';
 import { GM_FAMILIES, GM_NAMES } from '../tools/fm-synthesizer/gm';
+import { TRANSPOSE } from '../tools/fm-synthesizer/params';
 import { SONGS } from '../tools/fm-synthesizer/songs';
 
 /** 波形のボタンの図柄（20 × 12 に 1 周期。FM音源のページと同じ） */
@@ -27,6 +28,9 @@ const waveIcon = (w: number) => {
   return d;
 };
 const name = 'FMシンセサイザ';
+/** マスターの音量の下限 [dB]（演奏の枠の音量と同じ）と、残響の既定の部屋 */
+const VOL_MIN = outVol(VOL0).min;
+const ROOM0 = 'small';
 const chev = '<svg class="chev" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4"/></svg>';
 /** サイドバーのスライダーの行: [id, 項目名] */
 const sl = (id: string, label: string) => ({ id, label });
@@ -70,14 +74,13 @@ const PART_ROWS = [sl('s-pv', '音量'), sl('s-pp', '定位'), sl('s-pr', '残�
       </Transport>
       <div class="ptab">
         <ParamRow d={TEMPO} />
+        <ParamRow d={TRANSPOSE} />
         <ParamRow d={outVol(VOL0)} />
-        <ChoiceRow k="room" name="残響" sub="全パートで共有する部屋の残響（パートごとの送る量は右の枠の「パート」）" choices={ROOMS.map((r) => [r.v, r.name] as const)} value="small" />
-        <ChoiceRow k="comp" name="コンプレッサー" sub="全体の大きな音を抑えて、大きさのむらを減らす処理" choices={[['on', 'オン'], ['off', 'オフ']]} value="on" />
       </div>
       <p class="msg er snd-msg" id="pl-msg" aria-live="polite"></p>
     </Panel>
 
-    <MidiPanel open>
+    <MidiPanel open monitor={false}>
       <ChoiceRow k="dst" name="鳴らすパート" sub="MIDI 機器から受けた音を鳴らすパート" choices={[['ch', 'チャンネルと同じ番号'], ['sel', '選んでいるパート']]} value="ch" />
       <ChoiceRow k="pcm" name="プログラムチェンジ" sub="MIDI 機器から受けたプログラムチェンジで音色を替えるか" choices={[['on', '音色を替える'], ['off', '無視']]} value="on" />
       <div class="prow wide mi-chs">
@@ -92,6 +95,16 @@ const PART_ROWS = [sl('s-pv', '音量'), sl('s-pp', '定位'), sl('s-pr', '残�
         <div class="fy-list">
           <div class="fy-hdr" aria-hidden="true"><span></span><span>チャンネル</span><span>鍵盤</span><span></span><span class="c-w">波形</span><span>アルゴリズム</span><span class="c-e">エンベロープ</span></div>
           <div id="rows" role="listbox" aria-label="パート" data-shift="ok"></div>
+          <div class="fy-row fy-ms" role="group" aria-labelledby="ms-t">
+            <div class="fy-nm ms-nm"><b id="ms-t">マスター</b><small>全パートの出力</small></div>
+            <div class="sl ms-vol"><label for="ms-vol">音量</label><input type="range" id="ms-vol" min={VOL_MIN} max="0" step="1" /><b id="ms-vol-v"></b></div>
+            <div class="fy-vm" title="出力の大きさ"><i id="ms-vm"></i></div>
+            <canvas class="cv c-w" id="ms-wave" aria-hidden="true"></canvas>
+            <div class="ms-fx">
+              <div class="ms-ln"><label for="ms-room">残響</label><div class="sel"><select id="ms-room" autocomplete="off" title="全パートで共有する部屋の残響（パートごとの送る量は音色の枠の「パート」）">{ROOMS.map((r) => <option value={r.v} selected={r.v === ROOM0}>{r.name}</option>)}</select></div></div>
+              <div class="ms-ln"><span id="ms-comp-l" title="全体の大きな音を抑えて、大きさのむらを減らす処理">コンプレッサー</span><span class="seg" id="p-comp" role="group" aria-labelledby="ms-comp-l"><button type="button" data-v="on" aria-pressed="true">オン</button><button type="button" data-v="off" aria-pressed="false">オフ</button></span></div>
+            </div>
+          </div>
         </div>
       </Panel>
 

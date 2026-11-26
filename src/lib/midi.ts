@@ -285,11 +285,13 @@ export class MidiBox {
     if (s && this.box.classList.contains('shut')) $('#hd-midi').click();
   }
 
-  /** 最後に弾いた音を出す: 音名・ベロシティ（1〜127）・楽器の値（「3.2 m/s」など） */
+  /** 最後に弾いた音を出す: 音名・ベロシティ（1〜127）・楽器の値（「3.2 m/s」など）。入力の行のない枠では何もしない */
   show(name: string, vel: number, val: string): void {
-    $('#mi-note').textContent = name || '—';
-    $('#mi-bar').style.width = `${((100 * vel) / 127).toFixed(1)}%`;
-    $('#mi-v').textContent = vel ? `${vel}${val ? ` → ${val}` : ''}` : '';
+    const note = this.box.querySelector<HTMLElement>('#mi-note');
+    if (!note) return;
+    note.textContent = name || '—';
+    $('#mi-bar', this.box).style.width = `${((100 * vel) / 127).toFixed(1)}%`;
+    $('#mi-v', this.box).textContent = vel ? `${vel}${val ? ` → ${val}` : ''}` : '';
   }
 
   /** ペダルの灯り（null は MIDI から受けていない） */
