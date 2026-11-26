@@ -677,8 +677,12 @@ async function press(k: number, vel?: number): Promise<void> {
   keys.setDown(k, true);
   const ok = await audio.ready();
   sndMsg(ok ? '' : NO_SOUND);
-  /* 音を出せないか、準備の間に離した */
-  if (!ok || !S.held.has(k)) return;
+  if (!ok) return;
+  /*
+   * 準備の間に離したときも打ち、すぐダンパーを下ろす。指で押したときは、離すまで AudioContext が動かない
+   * （ブラウザは指の pointerdown を利用者の操作として扱わない。lib/wake.ts）
+   */
+  const gone = !S.held.has(k);
   /* AudioWorklet を作った直後や、リリースでペダルを離したあとでも、ペダルの状態をそろえる（曲の演奏中は曲のペダル） */
   syncPedal();
   const p = PL,
@@ -686,6 +690,8 @@ async function press(k: number, vel?: number): Promise<void> {
     t = nowS(),
     v = qv(vel ?? V.vel),
     view = audio.strike(k, v, softOn(), Number(thump.value), free);
+  /* 打つ計算（Worker）が届いてから離す。先に離すと、ダンパーが下りずに鳴り続ける */
+  if (gone) void view.then(() => S.held.has(k) || audio.release(k));
   S.lastV = midi ? v : null;
   txt('#kb-live', noteName(k));
   /* ダンパーは図が鍵とペダルの状態から決める（表示が届く前に離していても、離した時刻から止める） */
