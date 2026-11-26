@@ -7,10 +7,20 @@ import { mpm, type Pitch, partial } from './mpm';
 import { midiOf, nearestNote, nearestString } from './notes';
 
 const pow2 = (n: number) => 2 ** Math.ceil(Math.log2(n));
-/** MPM の窓の長さ: 探す最低音の 2.5 周期が入る 2 の累乗（2048 以上） */
+/** MPM の窓の長さの上限: 探す最低音の 2.5 周期が入る 2 の累乗（2048 以上） */
 export const mpmWin = (fs: number, fmin: number): number => Math.max(2048, pow2((2.5 * fs) / fmin));
 /** 周波数を詰める窓の長さ: 音の 12 周期（前半・後半にそれぞれ 6 周期）が入る 2 の累乗 */
 export const refWin = (fs: number, f: number): number => pow2((12 * fs) / f);
+/**
+ * MPM は 2048 点の窓から試し、見つけた音の周期がこの数だけ入っていれば、そこで決める（入らなければ窓を倍にする）。
+ * 高い音ほど短い窓で決まり、鳴らしてから読み値が出るまでが短い。周波数の精度の下限は窓の長さの 3/2 乗で良くなるので
+ * （Rife と Boorstyn、1974）、詰める窓（refWin）が長ければ、MPM の窓は周期を決めるだけの長さでよい
+ */
+const MIN_PER = 4;
+/** 1 オクターブ下を確かめる窓: f/2 の 6 周期が入る 2 の累乗（奇数倍の部分音があるかを見るだけなので、詰める窓より短くてよい） */
+const checkWin = (fs: number, f: number): number => Math.max(2048, pow2((6 * fs) / (f / 2)));
+/** 短い窓で決めるときの明瞭度の下限 */
+const SURE = 0.9;
 
 export interface EstOpts {
   fs: number;
@@ -31,6 +41,8 @@ export interface Est {
   ps: { f: number; a: number }[] | null;
   /** 表示に使えるか。詰められる音なのに、出だしからまだ窓の長さが経っていない間は false */
   ready: boolean;
+  /** 周波数を求めた窓の長さ（標本。詰めたら詰めた窓、そうでなければ MPM の窓） */
+  w?: number;
 }
 
 /**
@@ -61,8 +73,15 @@ export function estimate(
   hint: number | null = null,
 ): Est | null {
   const Wm = mpmWin(o.fs, o.fmin);
-  if (end - since < Wm) return null;
-  const r = mpm(x.subarray(end - Wm, end), o);
+  /* 追っている音があれば、その MIN_PER 周期が入る窓から始める */
+  let W = Math.min(Wm, hint ? Math.max(2048, pow2((MIN_PER * o.fs) / hint)) : 2048),
+    r: Pitch | null = null;
+  for (; ; W *= 2) {
+    if (W > end - since) return null;
+    /* 短い窓では、探す最低音を窓の 2.5 周期まで上げる */
+    r = mpm(x.subarray(end - W, end), W < Wm ? { ...o, fmin: Math.max(o.fmin, (2.5 * o.fs) / W) } : o);
+    if (W >= Wm || (r && r.clarity >= SURE && r.f >= (MIN_PER * o.fs) / W)) break;
+  }
   if (!r) return null;
   let f = hint ? fold(r.f, hint) : r.f;
   /*
@@ -70,10 +89,10 @@ export function estimate(
    * MPM は基音の弱い音の第 2 倍音を周期に選んでいる（減衰した低い弦や、基音の弱いマイク）
    */
   if (!hint && f / 2 >= o.fmin) {
-    const W2 = refWin(o.fs, f / 2);
+    const W2 = checkWin(o.fs, f);
     if (W2 <= o.maxW) {
       /* 確かめられる長さが経つまでは出さない（先に上のオクターブで出し始めないように） */
-      if (W2 > end - since) return { f, clarity: r.clarity, ps: null, ready: false };
+      if (W2 > end - since) return { f, clarity: r.clarity, ps: null, ready: false, w: W };
       const x2 = x.subarray(end - W2, end),
         odd = Math.max(partial(x2, f / 2, 1, o.fs).a, partial(x2, f / 2, 3, o.fs).a),
         even = Math.max(partial(x2, f / 2, 2, o.fs).a, partial(x2, f / 2, 4, o.fs).a);
@@ -81,53 +100,10 @@ export function estimate(
     }
   }
   const Wr = refWin(o.fs, f);
-  if (Wr > o.maxW) return { f, clarity: r.clarity, ps: null, ready: true };
-  if (Wr > end - since) return { f, clarity: r.clarity, ps: null, ready: false };
+  if (Wr > o.maxW) return { f, clarity: r.clarity, ps: null, ready: true, w: W };
+  if (Wr > end - since) return { f, clarity: r.clarity, ps: null, ready: false, w: W };
   const xr = x.subarray(end - Wr, end);
-  return { f, clarity: r.clarity, ps: [1, 2, 3].map((h) => partial(xr, f, h, o.fs)), ready: true };
-}
-
-/**
- * ストロボの下見: estimate が使えない間（出だしの直後で窓 mpmWin がまだ埋まらない、または前の音が窓に残って明瞭度が低い）も、
- * mpmWin より短い窓で MPM を回す。窓は出だしより後に収まる 2 の累乗（長いほうから 2048 まで）で、明瞭度が minClarity 以上の
- * 最初のものを返す。探す最低音はその窓の 2.5 周期まで上がる。オクターブなどを取り違えても、そこから測る部分音は本物なので、
- * ストロボの縞は正しく動く（読み値には使わない）
- */
-export function glance(
-  x: Float32Array | Float64Array,
-  end: number,
-  o: EstOpts,
-  since: number,
-  minClarity: number,
-): Pitch | null {
-  for (let W = mpmWin(o.fs, o.fmin) / 2; W >= 2048; W /= 2) {
-    if (W > end - since) continue;
-    const r = mpm(x.subarray(end - W, end), { ...o, fmin: Math.max(o.fmin, (2.5 * o.fs) / W) });
-    if (r && r.clarity >= minClarity) return r;
-  }
-  return null;
-}
-
-/**
- * ストロボに写す第 1〜8 部分音（f の k 倍の近くを位相で詰めたもの。強さはいちばん強い部分音を 1 とする）。
- * 窓は音の 12 周期（maxW まで）で、出だしより後に収まるまで縮める（2048 まで）。W は使った窓の長さ
- */
-export function strobeParts(
-  x: Float32Array | Float64Array,
-  end: number,
-  f: number,
-  fs: number,
-  since: number,
-  maxW: number,
-): { parts: { k: number; f: number; a: number }[]; W: number } {
-  let W = Math.min(maxW, refWin(fs, f));
-  while (W > 2048 && W > end - since) W /= 2;
-  const xs = x.subarray(end - W, end),
-    parts: { k: number; f: number; a: number }[] = [];
-  for (let k = 1; k <= 8 && k * f < fs * 0.45; k++) parts.push({ k, ...partial(xs, f, k, fs) });
-  const top = Math.max(1e-12, ...parts.map((p) => p.a));
-  for (const p of parts) p.a /= top;
-  return { parts, W };
+  return { f, clarity: r.clarity, ps: [1, 2, 3].map((h) => partial(xr, f, h, o.fs)), ready: true, w: Wr };
 }
 
 /**
@@ -244,8 +220,8 @@ export interface Reading {
 const MED = 5;
 /** 音を出し始めるのに要るフレーム数。出し始めは、直近のその数のフレームが中央値から半音の半分以内にそろうのを待つ */
 const MIN_N = 3;
-/** 使えないフレームがこの数だけ続いたら、音が途切れたとする（減衰の終わりに明瞭度が一瞬下がっても、音を保つ） */
-const GRACE = 4;
+/** 使えないフレームがこの数だけ続いたら、音が途切れたとする（減衰の終わりに明瞭度が一瞬下がっても、音を保つ。毎フレームの推定で約 130 ms） */
+const GRACE = 8;
 /**
  * 詰める部分音: 出し始めに、第 1〜3 部分音のうち、いちばん強いものの 1/10（−20 dB）以上ある最も低いものを選び、
  * 音が途切れるまで変えない（弦の非調和性や胴との結合で、部分音ごとに k 倍からのずれが違う。途中で替えると値が跳ぶ）。
@@ -346,5 +322,39 @@ export class Tracker {
       clarity: e.clarity,
       h: e.ps ? this.h : 0,
     };
+  }
+}
+
+/**
+ * 1€ フィルタ（G. Casiez, N. Roussel, D. Vogel, CHI 2012）: 遮断周波数を値の動く速さで変える 1 次の低域通過。
+ * 止まっている間は minCut [Hz] で強くならして揺れを抑え、動くと beta × 速さだけ遮断を上げて遅れを減らす
+ * （糸巻きを回している間は針がすぐ付いてきて、合わせ終えると落ち着く）。速さは dCut [Hz] でならす
+ */
+export class OneEuro {
+  private x: number | null = null;
+  private dx = 0;
+  constructor(
+    public minCut: number,
+    public beta = 0.05,
+    public dCut = 1,
+  ) {}
+  private static a(fc: number, dt: number): number {
+    const r = 2 * Math.PI * fc * dt;
+    return r / (r + 1);
+  }
+  /** 値 v から始め直す */
+  reset(v: number): void {
+    this.x = v;
+    this.dx = 0;
+  }
+  /** dt [s] 進めて v を入れ、ならした値を返す */
+  step(v: number, dt: number): number {
+    if (this.x == null || dt <= 0) {
+      this.x ??= v;
+      return this.x;
+    }
+    this.dx += OneEuro.a(this.dCut, dt) * ((v - this.x) / dt - this.dx);
+    this.x += OneEuro.a(this.minCut + this.beta * Math.abs(this.dx), dt) * (v - this.x);
+    return this.x;
   }
 }

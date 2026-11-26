@@ -1,6 +1,7 @@
 /**
  * チューナーの入口: 入力（マイク・ファイル・テスト信号）→ 高域通過・出だし → 音高の推定と追跡（tracker.ts）→
- * 針のメータか 12 音のストロボ、読み値、弦の並び、測定。推定は 40 ms ごと、描画は毎フレーム
+ * 針のメータ、読み値、弦の並び、測定。12 音のストロボは推定を待たず、入力をそのまま帯ごとに復調する（view.ts の Strobe）。
+ * 推定と描画は毎フレーム（推定が重い端末では間引く）
  */
 import { Choice } from '../../lib/choice';
 import { $, $$, esc } from '../../lib/dom';
@@ -32,7 +33,7 @@ import {
   TRANSPOSE,
   type View,
 } from './params';
-import { estimate, glance, HighPass, Onset, type Reading, strobeParts, Tracker } from './tracker';
+import { estimate, HighPass, OneEuro, Onset, type Reading, Tracker } from './tracker';
 import { meterTicks, needlePath, Strobe, stripes, zonePath } from './view';
 
 initToolPage();
@@ -95,6 +96,7 @@ function retarget(): void {
   tracker.reset(true);
   rd = null;
   shown = null;
+  tuneStrobe();
 }
 
 /* ---------- 入力の行と選択肢 ---------- */
@@ -114,6 +116,7 @@ new Choice<View>($('#p-view'), (v) => {
 });
 new Choice<Spd>($('#p-spd'), (v) => {
   S.spd = v;
+  tuneStrobe();
   sync();
 });
 new Choice<string>($('#p-scale'), (v) => {
@@ -294,6 +297,8 @@ const wins: Win[] = $$('.swin').map((el) => {
   return { el, label: $('span', el), bg, st };
 });
 const sb = new Strobe();
+/** ストロボの基準を今の設定に合わせる */
+const tuneStrobe = () => sb.tune(S.ref, deviations(S.tem, S.ton), S.spd);
 function names(): void {
   wins.forEach((w, p) => {
     txt(w.label, noteLabel(60 + p, nameOpts()).name);
@@ -304,34 +309,48 @@ function names(): void {
 }
 
 /* ---------- 推定 ---------- */
-const xb = new Float64Array(NB);
+const xb = new Float64Array(NB),
+  /** ストロボに渡す新しい標本（マイクとファイルは CH1 と CH2 の平均） */
+  xs = new Float64Array(NB);
 let onset = new Onset(48000),
   since0 = 0,
   fsCur = 0,
   epoch = a.epoch,
   lastAna = 0,
+  /** 前の推定と前のフレームの入力の通し番号（AudioIn.seq） */
+  anaPos = 0,
+  stPos = 0,
+  /** 推定 1 回にかかった時間 [ms]（重い端末では推定を間引く） */
+  cost = 0,
   /** 直近の読み値（追跡の結果）と、表示用にならしたずれ */
   rd: Reading | null = null,
   cs = 0,
   seen = -1e9,
   clar = 0,
   win = 0;
+const euro = new OneEuro(1);
+
+/** 入力元や標本化周波数が変わったら、出だし・追跡・ストロボを始め直す */
+function restart(): void {
+  if (a.fs === fsCur && epoch === a.epoch) return;
+  fsCur = a.fs;
+  epoch = a.epoch;
+  onset = new Onset(a.fs);
+  since0 = 0;
+  tracker.reset(true);
+  rd = null;
+  sb.reset();
+  anaPos = stPos = a.seq;
+}
 
 function analyze(now: number): void {
   const fs = a.fs;
-  if (fs !== fsCur || epoch !== a.epoch) {
-    fsCur = fs;
-    epoch = a.epoch;
-    onset = new Onset(fs);
-    since0 = 0;
-    tracker.reset(true);
-    rd = null;
-  }
   /* マイクとファイルは CH1 と CH2 の平均。テスト信号は CH2 がリサジュー用に周波数比をずらした音なので CH1 だけ */
   if (a.src === 'test') xb.set(a.L);
   else for (let i = 0; i < NB; i++) xb[i] = 0.5 * (a.L[i] + a.R[i]);
   new HighPass(fs).process(xb);
-  const n = Math.min(NB, Math.max(0, Math.round(((now - lastAna) / 1000) * fs)));
+  const n = Math.min(NB, Math.max(0, a.seq - anaPos));
+  anaPos = a.seq;
   onset.push(xb, NB - n, n);
   if (onset.since !== since0) {
     since0 = onset.since;
@@ -339,32 +358,31 @@ function analyze(now: number): void {
   }
   const since = Math.max(0, NB - onset.ago),
     [fmin, fmax] = range(),
-    eo = { fs, fmin, fmax, maxW: 16384 },
-    e = estimate(xb, NB, eo, since, tracker.hint()),
+    e = estimate(xb, NB, { fs, fmin, fmax, maxW: 16384 }, since, tracker.hint()),
     r = tracker.push(e),
-    dt = Math.min(0.2, (now - lastAna) / 1000),
-    mc = tracker.o.minClarity;
+    dt = Math.min(0.2, (now - lastAna) / 1000);
   clar = e?.clarity ?? 0;
   if (r) {
-    const tau = RESP[S.resp];
-    cs =
-      !rd || rd.tgt !== r.tgt || rd.si !== r.si || now - seen > 300
-        ? r.cents
-        : cs + (r.cents - cs) * (1 - Math.exp(-dt / tau));
+    euro.minCut = 1 / (2 * Math.PI * RESP[S.resp]);
+    if (!rd || rd.tgt !== r.tgt || rd.si !== r.si || now - seen > 300) {
+      euro.reset(r.cents);
+      cs = r.cents;
+    } else cs = euro.step(r.cents, dt);
     rd = r;
     seen = now;
+    win = e?.w ?? 0;
     if (r.si >= 0) sv[r.si] = cs;
   }
-  /*
-   * ストロボ: 第 1〜8 部分音の周波数と強さを、出だしより後の窓で測る。読み値が出る前（出だしの直後）も、estimate の値か
-   * 短い窓の下見（glance）で先に描き始める。音を追っている間に読み値のないフレームは、直前の帯のまま
-   */
-  const f = r ? r.f : tracker.active ? null : e && e.clarity >= mc ? e.f : (glance(xb, NB, eo, since, mc)?.f ?? null);
-  if (f) {
-    const sp = strobeParts(xb, NB, f, fs, since, eo.maxW);
-    if (r) win = sp.W;
-    sb.update(f, sp.parts, S.ref, deviations(S.tem, S.ton), S.spd);
-  }
+}
+
+/** ストロボ: 前のフレームから進んだ標本を、通し番号つきで渡す */
+function strobeFeed(): void {
+  const k = Math.min(NB, Math.max(0, a.seq - stPos));
+  stPos = a.seq;
+  if (!k) return;
+  if (a.src === 'test') for (let i = 0; i < k; i++) xs[i] = a.L[NB - k + i];
+  else for (let i = 0; i < k; i++) xs[i] = 0.5 * (a.L[NB - k + i] + a.R[NB - k + i]);
+  sb.feed(xs, 0, k, a.seq - k, a.fs);
 }
 
 /* ---------- 描画 ---------- */
@@ -499,9 +517,16 @@ function loop(now: number): void {
   if (!a.run) {
     rd = null;
     clar = 0;
-  } else if (fresh && now - lastAna >= 40) {
-    analyze(now);
-    lastAna = now;
+  } else if (fresh) {
+    restart();
+    strobeFeed();
+    /* 推定は毎フレーム。1 回が重い端末では、かかった時間の 3 倍は空ける */
+    if (now - lastAna >= Math.max(12, 3 * cost)) {
+      const t0 = performance.now();
+      analyze(now);
+      cost = performance.now() - t0;
+      lastAna = now;
+    }
   }
   render(now, dt);
   if (now - lastMeas >= 100) {

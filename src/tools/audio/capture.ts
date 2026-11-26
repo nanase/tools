@@ -4,6 +4,7 @@
  * マイクとファイルは AnalyserNode から、テスト信号はこの端末の中で作って輪のバッファから取り出す。
  * 初めはマイクを止めた状態で開く
  */
+import { advance } from './advance';
 import { genTest, type TestParams } from './signal';
 import type { TestMsg } from './worklet';
 import workletUrl from './worklet.ts?worker&url';
@@ -44,6 +45,11 @@ export class AudioIn {
   /** 直近 NB 点 */
   readonly L = new Float32Array(NB);
   readonly R = new Float32Array(NB);
+  /**
+   * L・R の末尾の次の標本の通し番号（入力が進んだ標本の数）。位相を続けて追う表示が、前回から何標本進んだかを知るのに使う。
+   * テスト信号は作った数、マイクとファイルは前回の末尾との突き合わせ（advance）で数える
+   */
+  seq = 0;
   test: TestParams = { wave: 'sine', f: 1000, ra: [2, 3], ph: 0 };
   /** モニタを鳴らすか、その音量（dB、0 dB で入力と同じ大きさ） */
   monOn = false;
@@ -72,6 +78,9 @@ export class AudioIn {
   private mic: { st: MediaStream; node: MediaStreamAudioSourceNode } | null = null;
   private tNode: AudioWorkletNode | null = null;
   private wk: boolean | undefined;
+  /** 前回の L の末尾（advance で突き合わせる）と、前回 pull した時刻 */
+  private readonly probe = new Float32Array(32);
+  private lastPull = 0;
 
   constructor() {
     genTest(this.test, TFS, 0, NB, this.rL, this.rR, true);
@@ -99,14 +108,18 @@ export class AudioIn {
       cnt = Math.min(cnt, NB);
       genTest(this.test, TFS, this.w, cnt, this.rL, this.rR, true);
       this.w += cnt;
+      this.seq += cnt;
       this.copyRing();
       return true;
     }
     const g = this.g;
     if (!g) return false;
+    this.probe.set(this.L.subarray(NB - this.probe.length));
     g.aL.getFloatTimeDomainData(this.L);
     g.aR.getFloatTimeDomainData(this.R);
     this.fs = g.ac.sampleRate;
+    this.seq += advance(this.probe, this.L, ((now - this.lastPull) / 1000) * this.fs);
+    this.lastPull = now;
     return true;
   }
 
