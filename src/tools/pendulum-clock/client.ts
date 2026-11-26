@@ -6,13 +6,14 @@
 import { Choice } from '../../lib/choice';
 import { $, $$, esc } from '../../lib/dom';
 import { initFullscreen } from '../../lib/fullscreen';
+import { activates } from '../../lib/gesture';
 import { ParamGroup } from '../../lib/param';
 import { handheld } from '../../lib/pause';
-import { store, stored } from '../../lib/store';
+import { forget, store, stored } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
 import { BOX, type Colors, drawDial, drawFront, drawSection, hitAt, minutesOf, readColors, viewOf } from './fig';
 import { Clock, clamp, type EscType, GEO, isSaved, type Pt, rateOf, type Snap, SPRING, springF, TABLES } from './model';
-import { VOL } from './params';
+import { sndAtOpen, VOL } from './params';
 import { caseIR, roomIR } from './room';
 import { cue, makeSfx, SFX_PRELOAD, type SfxKind, whirOf } from './sfx';
 
@@ -499,12 +500,8 @@ function setSnd(on: boolean): void {
   sndBtn.setAttribute('aria-pressed', String(on));
   $('.led', sndBtn).classList.toggle('on', on);
 }
-sndBtn.addEventListener('click', () => {
-  if (S.snd) {
-    void ac?.suspend();
-    setSnd(false);
-    return;
-  }
+/** 音を鳴らし始める（利用者の操作の処理の中で呼ぶ）。AudioContext は初めて鳴らすときに作る */
+function startSound(): void {
   if (!ACtor) return;
   if (!ac) {
     ac = new ACtor();
@@ -547,13 +544,37 @@ sndBtn.addEventListener('click', () => {
     whir = { bp, g };
     for (const k of SFX_PRELOAD) buf(ac, k);
   }
-  void ac.resume();
+  void ac.resume().catch(() => {});
   setSnd(true);
+}
+/* 音は初めから入（保存した値が切なら切）。「音」で切ったときだけ保存する */
+setSnd(!!ACtor && sndAtOpen(stored('pc-snd')));
+sndBtn.addEventListener('click', () => {
+  if (S.snd) {
+    void ac?.suspend();
+    setSnd(false);
+    store('pc-snd', false);
+    return;
+  }
+  forget('pc-snd');
+  startSound();
 });
+/*
+ * ブラウザは利用者の操作の中でないと音を出さないので、ページで最初の操作（lib/gesture.ts）で鳴らし始める。
+ * 「音」への操作は数えない（その操作のクリックで切る）
+ */
+const FIRST = ['pointerdown', 'pointerup', 'keydown'] as const;
+function firstUse(e: Event): void {
+  if (!activates(e) || (e.target instanceof Element && e.target.closest('#pc-snd'))) return;
+  for (const t of FIRST) document.removeEventListener(t, firstUse, true);
+  if (S.snd && !ac) startSound();
+}
+for (const t of FIRST) document.addEventListener(t, firstUse, true);
 document.addEventListener('visibilitychange', () => {
   /* 隠れたまま閉じられても、開き直したときに続きから進められるよう残す */
   if (document.hidden) save();
-  if (document.hidden && handheld() && S.snd) {
+  /* まだ鳴らし始めていなければ（AudioContext がなければ）入のまま残す */
+  if (document.hidden && handheld() && S.snd && ac) {
     void ac?.suspend();
     setSnd(false);
   }

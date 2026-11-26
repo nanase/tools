@@ -1,7 +1,10 @@
-/** 振り子時計の音の枠の数値の行（ParamRow と ParamGroup で使う） */
+/** 振り子時計の音の枠の数値の行（ParamRow と ParamGroup で使う）と、開いたときの音の入・切 */
 import { linList } from '../../lib/eseries';
 import { minus } from '../../lib/format';
 import type { ParamDef } from '../../lib/param-def';
+
+/** 開いたときに音を入れておくか。保存した値（「音」で切ったときだけ false を保存する）が切なら切、ほかは入 */
+export const sndAtOpen = (saved: unknown): boolean => saved !== false;
 
 const dbIn = (v: number) => minus(`${v > 0 ? '+' : ''}${Math.round(v)}`);
 const dbT = (v: number) => `${dbIn(v)} dB`;

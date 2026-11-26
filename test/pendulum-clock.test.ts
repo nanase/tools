@@ -32,6 +32,7 @@ import {
   W,
   wPinAt,
 } from '../src/tools/pendulum-clock/model';
+import { sndAtOpen } from '../src/tools/pendulum-clock/params';
 import { caseIR, roomIR } from '../src/tools/pendulum-clock/room';
 import { gongModes, makeSfx, PLATE } from '../src/tools/pendulum-clock/sfx';
 
@@ -283,6 +284,13 @@ describe('音', () => {
     expect(g.length).toBeGreaterThan(40);
     const y = makeSfx('tickL', 8000);
     expect(Math.max(...y.map(Math.abs))).toBeCloseTo(1, 5);
+  });
+  it('開いたときは入。「音」で切って保存したときだけ切', () => {
+    expect(sndAtOpen(undefined)).toBe(true);
+    expect(sndAtOpen(true)).toBe(true);
+    expect(sndAtOpen(false)).toBe(false);
+    /* 読めない値は既定の入 */
+    expect(sndAtOpen('off')).toBe(true);
   });
 });
 
