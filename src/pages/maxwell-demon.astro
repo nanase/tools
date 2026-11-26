@@ -22,7 +22,7 @@ const P = Object.fromEntries(PARAMS.map((d) => [d.k, d]));
   <div class="tgrid" id="mxd">
     <div class="mxd-top" id="mxd-top">
       <Panel hid="hd-box" title="2 つの部屋と扉" class="mxd-boxp" fixed>
-        <Fragment slot="aux"><span class="led" id="mxd-led" aria-hidden="true"></span><span class="aux" id="mxd-st" aria-live="polite"></span></Fragment>
+        <span slot="aux" class="aux tp-st"><span class="led" id="mxd-led" aria-hidden="true"></span><span id="mxd-st" aria-live="polite"></span></span>
         <div class="mxd-cmd">
           <button type="button" id="mxd-play" aria-pressed="false"><svg class="i-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.2l7.6 4.8L3 10.8z"/></svg><svg class="i-stop" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="2" width="8" height="8"/></svg><span id="mxd-playT">再生</span></button>
           <button type="button" id="mxd-reset"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.2 6a3.8 3.8 0 1 0 1.2-2.8" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M1.6 1.4v3.2h3.2z"/></svg>最初から</button>

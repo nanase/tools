@@ -19,7 +19,7 @@ const P = Object.fromEntries(PARAMS.map((d) => [d.k, d]));
     <div class="sht-view" id="sht-view">
       <Panel hid="hd-ring" title="音名の環" class="sht-ringp" fixed hidden><canvas class="sht-ring" id="sht-ring" role="img" aria-label="12 の音名と今の和音"></canvas></Panel>
       <Panel hid="hd-sp" title="スペクトログラム" class="sht-specp" fixed>
-        <Fragment slot="aux"><span class="led" id="sht-led" aria-hidden="true"></span><span class="aux" id="sht-st" aria-live="polite"></span></Fragment>
+        <span slot="aux" class="aux tp-st"><span class="led" id="sht-led" aria-hidden="true"></span><span id="sht-st" aria-live="polite"></span></span>
         <div class="sht-specw" id="sht-specw">
           <canvas class="sht-sp" id="sht-sp" role="img" aria-label="スペクトログラム。横が時間、縦が音の高さ"></canvas>
           <canvas class="sht-levels" id="sht-levels" role="img" aria-label="音域ごとの音量と今の音"></canvas>

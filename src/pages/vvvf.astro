@@ -27,7 +27,7 @@ const playIcon =
     <div class="pcm-main">
     <div class="col">
       <Panel hid="hd-wave" title="波形">
-        <Fragment slot="aux"><span class="led" id="vv-led" aria-hidden="true"></span><span class="aux" id="vv-st" aria-live="polite">停止</span></Fragment>
+        <span slot="aux" class="aux tp-st"><span class="led" id="vv-led" aria-hidden="true"></span><span id="vv-st" aria-live="polite">停止</span></span>
         <div class="scope pcm-scr"><canvas class="pcm-cv vv-cy" id="vv-cy" role="img" aria-label="基本波とキャリアと出力の波形"></canvas></div>
         <p class="vv-ratio" id="vv-ratio"></p>
       </Panel>
