@@ -48,6 +48,8 @@ export class GuitarAudio {
     if (!AC) return false;
     const ac = this.ac ?? new AC({ latencyHint: 'interactive' });
     this.ac = ac;
+    /* iPhone の Safari は、押した操作の中で最初の await より前に resume しないと音を出さない */
+    void ac.resume().catch(() => undefined);
     this.loading ??= ac.audioWorklet
       .addModule(workletUrl)
       .then(() => {

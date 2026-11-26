@@ -97,6 +97,8 @@ export class CpAudio {
     if (!AC) return false;
     if (!this.ac) {
       const ac = new AC({ latencyHint: 'interactive' });
+      /* iPhone の Safari は、押した操作の中で最初の await より前に resume しないと音を出さない */
+      void ac.resume().catch(() => undefined);
       ac.addEventListener('statechange', () => {
         if (ac.state !== 'running') this.onLost?.();
       });
