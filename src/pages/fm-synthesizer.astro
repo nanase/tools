@@ -32,13 +32,19 @@ const chev = '<svg class="chev" viewBox="0 0 10 6" aria-hidden="true"><path d="M
 const sl = (id: string, label: string) => ({ id, label });
 const OP_ROWS = [
   sl('s-r', '周波数比'),
+  sl('s-dt', 'デチューン'),
   sl('s-a', '変調指数'),
   sl('s-ar', 'アタック'),
   sl('s-dr', 'ディケイ'),
   sl('s-sl', 'サステイン'),
   sl('s-rr', 'リリース'),
-  sl('s-vs', 'ベロシティ'),
 ];
+/** 小見出しの付いたスライダーの行: [小見出し, 行] */
+const OP_SENS: [string, ReturnType<typeof sl>[]][] = [
+  ['ベロシティの効き', [sl('s-vs', '大きさ'), sl('s-va', '時間')]],
+  ['音の高さの効き', [sl('s-ka', 'アタック'), sl('s-ks', '減衰')]],
+];
+const FB_SENS = [sl('s-fbv', 'ベロシティ'), sl('s-fbk', '音の高さ')];
 const LFO_ROWS = [sl('s-lr', '速さ'), sl('s-lv', 'ビブラート'), sl('s-lt', 'トレモロ'), sl('s-ld', '遅れ')];
 const PART_ROWS = [sl('s-pv', '音量'), sl('s-pp', '定位'), sl('s-pr', '残響')];
 ---
@@ -107,6 +113,8 @@ const PART_ROWS = [sl('s-pv', '音量'), sl('s-pp', '定位'), sl('s-pr', '残�
             <div class="fy-gb">
               <div class="fy-algbig"><svg id="s-alg" viewBox="0 0 118 64" aria-hidden="true"></svg><div class="chips" id="s-algc" role="group" aria-label="アルゴリズム">{[0, 1, 2, 3, 4, 5, 6, 7].map((a) => <button type="button" class="chip" data-a={a}>{a}</button>)}</div></div>
               <div class="sl" data-k="fb"><label for="s-fb">帰還量</label><input type="range" id="s-fb" min="0" max="7" step="1" /><b id="s-fb-v"></b><RowReset /></div>
+              <p class="fy-sub">帰還量の効き</p>
+              {FB_SENS.map((r) => <div class="sl" data-k={r.id}><label for={r.id}>{r.label}</label><input type="range" id={r.id} /><b id={`${r.id}-v`}></b><RowReset /></div>)}
             </div>
           </section>
           <section class="grp shut" data-g="op">
@@ -116,6 +124,12 @@ const PART_ROWS = [sl('s-pv', '音量'), sl('s-pp', '定位'), sl('s-pr', '残�
               <canvas class="fy-envbig" id="s-env" aria-hidden="true"></canvas>
               <div class="sl fy-wrow"><span class="fy-wl" id="s-w-l">波形</span><div class="seg fy-waves" id="s-w" role="group" aria-labelledby="s-w-l">{WAVES.map(([, l], i) => <button type="button" data-w={i} title={l} aria-label={l}><svg viewBox="0 0 20 12" aria-hidden="true"><path d={waveIcon(i)} /></svg></button>)}</div><RowReset /></div>
               {OP_ROWS.map((r) => <div class="sl" data-k={r.id}><label for={r.id} id={`${r.id}-l`}>{r.label}</label><input type="range" id={r.id} /><b id={`${r.id}-v`}></b><RowReset /></div>)}
+              {OP_SENS.map(([h, rows]) => (
+                <>
+                  <p class="fy-sub">{h}</p>
+                  {rows.map((r) => <div class="sl" data-k={r.id}><label for={r.id}>{r.label}</label><input type="range" id={r.id} /><b id={`${r.id}-v`}></b><RowReset /></div>)}
+                </>
+              ))}
             </div>
           </section>
           <section class="grp shut" data-g="lfo">

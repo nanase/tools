@@ -1,0 +1,31 @@
+---
+// 録音の出典。どれも CC0 かパブリックドメインだが、出どころを示す
+import { CREDITS } from './credits';
+import { soundOf } from './model';
+
+const LIC = {
+  cc0: ['CC0 1.0', 'https://creativecommons.org/publicdomain/zero/1.0/deed.ja'],
+  pd: ['パブリックドメイン', ''],
+} as const;
+const GROUPS = [
+  { kind: 'nature', title: '自然の音' },
+  { kind: 'voice', title: '朗読' },
+] as const;
+const rows = (kind: string) => CREDITS.map((c) => ({ ...c, s: soundOf(c.id) })).filter((c) => c.s.kind === kind);
+---
+<ul class="srcs">
+  {GROUPS.map((g) => (
+    <li>
+      <h3>{g.title}</h3>
+      <ul class="tl">
+        {rows(g.kind).map((c) => (
+          <li>{c.s.name}: {c.work && <>{c.work}、</>}<a href={c.url}>{c.by}</a>、{LIC[c.lic][1] ? <a href={LIC[c.lic][1]}>{LIC[c.lic][0]}</a> : LIC[c.lic][0]}</li>
+        ))}
+      </ul>
+    </li>
+  ))}
+  <li>
+    <h3>加工</h3>
+    <p>どの録音も区間を抜き出してモノラルにし、低い音の雑音を落として音量をそろえました。朗読は文の切れ目で 20 秒ほどを抜き出しています。</p>
+  </li>
+</ul>

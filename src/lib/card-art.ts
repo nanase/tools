@@ -1449,6 +1449,32 @@ export const ART: Record<string, Art> = {
       `<circle class="b" cx="${x}" cy="${r1(24 - y)}" r="3.5"/><circle class="b" cx="${x}" cy="${r1(24 + y)}" r="3.5"/>`
     );
   },
+  /*
+   * z 変換: 左の単位円の中で zⁿ（z = 0.88∠40°）の点の列が縮み、右に実部の標本が並ぶ（ページの問い 1）。
+   * 止まっているときは 20 点すべて。乗せると 1 秒に 6 コマで 1 点ずつ増え、最後の 6 コマは描き終えた絵で止まる
+   */
+  zt(t) {
+    const N = 20,
+      cx = 22,
+      R = 19,
+      r = 0.88,
+      th = (40 * Math.PI) / 180;
+    const k = t ? Math.min(Math.floor(t * 6 + 1e-9) % (N + 6), N - 1) : N - 1;
+    const pts: [number, number][] = [];
+    for (let n = 0; n <= k; n++) pts.push([cx + R * r ** n * Math.cos(th * n), 24 - R * r ** n * Math.sin(th * n)]);
+    let s = `${P('c d', `M1 24H43M${cx} 2V46`)}<circle class="c" cx="${cx}" cy="24" r="${R}"/>${P('c t', 'M50 24H117')}`;
+    if (pts.length > 1) s += P('a t', pl(pts));
+    pts.forEach(([x, y], n) => {
+      const big = n === k,
+        sx = 52 + n * 3.3,
+        sy = r1(24 - R * r ** n * Math.cos(th * n));
+      s +=
+        `<circle class="fa" cx="${r1(x)}" cy="${r1(y)}" r="${big ? 2.4 : 1.3}"/>` +
+        P('a t', `M${r1(sx)} 24V${sy}`) +
+        `<circle class="fa" cx="${r1(sx)}" cy="${sy}" r="${big ? 2.2 : 1.2}"/>`;
+    });
+    return s;
+  },
   /* 抵抗カラーコード: 色帯を 1 本ずつ読む */
   cc(t) {
     const k = t ? Math.floor(t * 2.5) % 5 : -1;
@@ -3768,6 +3794,7 @@ export const LOOP: Record<string, number> = {
   qr: TAU / 0.45,
   fir: TAU / 1.8,
   pz: TAU / 0.7,
+  zt: 26 / 6,
   cc: 2,
   os: 48 / 17,
   sp: 2,

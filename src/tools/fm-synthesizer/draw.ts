@@ -2,7 +2,7 @@
  * パートの一覧とサイドバーの小さな図: アルゴリズムの結線図（SVG）、鍵盤・パッド・エンベロープ（キャンバス）。
  * 色は呼ぶ側が CSS の変数から読んで渡す
  */
-import { ALGS, envAt, keyScale, type Op, type Tone } from './engine';
+import { ALGS, envAt, type Op, opTimes, type Tone } from './engine';
 import { PADS } from './gm';
 import { PAD_ICONS } from './icons';
 
@@ -181,7 +181,7 @@ export function envShape(op: Op): { pts: [number, number][]; at: (t: number, hol
 /**
  * エンベロープを描く。線の形は音色だけで決まり、鳴らしていないときも鳴っているときも同じ。
  * t（鳴り始めからの時間）を渡すと今の位置に点を打つ。hold は離した時刻（押している間は Infinity）。
- * others はほかのオペレータで、同じ時間の目盛りで薄く描く（色 faint）
+ * others はほかのオペレータで、同じ時間の目盛りで薄く描く（色 faint）。note と vel は時間を決める音の高さとベロシティ
  */
 export function drawEnv(
   g: CanvasRenderingContext2D,
@@ -195,6 +195,7 @@ export function drawEnv(
   note = 60,
   others: readonly Op[] = [],
   faint = '',
+  vel = 1,
 ): void {
   const pad = 4,
     X = (u: number) => pad + u * (w - 2 * pad),
@@ -216,21 +217,22 @@ export function drawEnv(
    * 離したら h0 からリリースを進む（ディケイの途中で離したときも、線の上に乗せる。実際の大きさは音量のメーターに出る）
    */
   const all = [op, ...others],
-    rel = Math.max(...all.map((o) => o.rr * keyScale(o, note))),
-    h0 = Math.max(...all.map((o) => o.ar + o.dr * keyScale(o, note))) + 0.15,
+    times = (o: Op) => opTimes(o, note, vel),
+    rel = Math.max(...all.map((o) => times(o)[2])),
+    h0 = Math.max(...all.map((o) => times(o)[0] + times(o)[1])) + 0.15,
     T = h0 + rel,
     N = 48,
     u = (tau: number) => Math.sqrt(Math.min(T, Math.max(0, tau)) / T),
     released = t !== null && Number.isFinite(hold) && t >= hold,
-    rrOf = (o: Op) => Math.max(1e-4, o.rr * keyScale(o, note)),
+    rrOf = (o: Op) => Math.max(1e-4, times(o)[2]),
     path = (o: Op): [number, number][] => {
       const pts: [number, number][] = [];
       for (let i = 0; i <= N; i++) {
         const tau = h0 * (i / N) ** 2;
-        pts.push([u(tau), envAt(o, tau, Number.POSITIVE_INFINITY, note)]);
+        pts.push([u(tau), envAt(o, tau, Number.POSITIVE_INFINITY, note, vel)]);
       }
       /* リリース: h0 の大きさから 60 dB 下がる */
-      const top = envAt(o, h0, Number.POSITIVE_INFINITY, note),
+      const top = envAt(o, h0, Number.POSITIVE_INFINITY, note, vel),
         rr = rrOf(o);
       for (let i = 0; i <= N; i++) {
         const tau = h0 + (T - h0) * (i / N) ** 2;
@@ -245,8 +247,8 @@ export function drawEnv(
   const tr = released ? Math.min(T - h0, t - hold) : 0,
     x = released ? u(h0 + tr) : u(Math.min(t, h0)),
     y = released
-      ? envAt(op, h0, Number.POSITIVE_INFINITY, note) * 1e-3 ** (tr / rrOf(op))
-      : envAt(op, Math.min(t, h0), Number.POSITIVE_INFINITY, note);
+      ? envAt(op, h0, Number.POSITIVE_INFINITY, note, vel) * 1e-3 ** (tr / rrOf(op))
+      : envAt(op, Math.min(t, h0), Number.POSITIVE_INFINITY, note, vel);
   g.fillStyle = col;
   g.beginPath();
   g.arc(X(x), Y(y), 3.5, 0, 2 * Math.PI);

@@ -163,12 +163,13 @@ describe('胴', () => {
 });
 
 describe('弦と胴のモード', () => {
-  it('胴との結合を補って調弦すると、開放弦の第 1 部分音は調弦の音から 0.1 セント以内', () => {
+  it('胴との結合を補って調弦すると、開放弦の第 1 部分音（垂直と平行の相乗平均）は調弦の音から 0.1 セント以内', () => {
     for (const v of ['nylon', 'steel'] as const) {
       const g = guitar(v);
       for (let si = 0; si < 6; si++) {
         const m = modesOf(g, si, 0, FS);
-        expect(Math.abs(cents(m.w[0] / (2 * Math.PI), noteHz(tuningOf('std').notes[si])))).toBeLessThan(0.1);
+        const f1 = Math.sqrt(m.w[0] * m.w[m.N]) / (2 * Math.PI);
+        expect(Math.abs(cents(f1, noteHz(tuningOf('std').notes[si])))).toBeLessThan(0.1);
       }
     }
   });
@@ -301,6 +302,92 @@ describe('弦の共鳴', () => {
     /* 共鳴なしで残るのは、離す前の力をゆっくり抜く分だけ */
     expect(run(true)).toBeGreaterThan(20 * run(false));
     expect(run(true)).toBeGreaterThan(1e-3);
+  });
+  it('曲のように撥弦の番号で指を離すと、その弦に共鳴で乗った振動も止まる（6 弦が鳴り続けない）', () => {
+    const g = guitar('steel'),
+      open = [0, 0, 0, 0, 0, 0],
+      msg = (si: number) => {
+        const m = modesOf(g, si, 0, FS),
+          pl = pluckOf(g, si, m, sp),
+          ps = open.flatMap((f, j) => (j === si ? [] : [{ si: j, m: modesOf(g, j, f, FS) }])),
+          { main, sym } = symOf(g, si, pl, ps);
+        return {
+          si,
+          N: 0,
+          w: f64(main.w),
+          s: f64(main.s),
+          f: f64(main.fr),
+          fi: f64(main.fi),
+          pol: Uint8Array.from(main.pol),
+          sym: [...sym].map(([j, o]) => ({
+            si: j,
+            w: f64(o.w),
+            s: f64(o.s),
+            f: f64(o.fr),
+            fi: f64(o.fi),
+            pol: Uint8Array.from(o.pol),
+            pan: 0,
+          })),
+        };
+      },
+      e = new Engine(FS),
+      y = new Float32Array(128),
+      strings = () => new Set((e as unknown as { voices: { si: number }[] }).voices.map((v) => v.si));
+    e.setBody(bodyDesc(g.body));
+    /* 6 弦の E2 を鳴らしている間に 1 弦の E4 を弾き（6 弦に共鳴が乗る）、両方の指を離す */
+    e.pluck(msg(5), 0, 1);
+    for (let i = 0; i < 375; i++) {
+      if (i === 50) e.pluck(msg(0), 0, 2);
+      if (i === 100) {
+        e.damp(5, 0.01, 1);
+        e.damp(0, 0.01, 2);
+      }
+      e.render(y, 0, 128);
+    }
+    /* 離した 2 本は止まり、開放のまま触れていない弦の共鳴は残る */
+    expect(strings().has(5)).toBe(false);
+    expect(strings().has(0)).toBe(false);
+    expect(strings().size).toBeGreaterThan(0);
+  });
+  it('指を離す前に同じ弦を弾き直していたら、古い撥弦の番号で離しても、弾き直した後の共鳴は止めない', () => {
+    const g = guitar('steel'),
+      open = [0, 0, 0, 0, 0, 0],
+      m1 = modesOf(g, 0, 0, FS),
+      pl1 = pluckOf(g, 0, m1, sp),
+      ps = open.flatMap((f, j) => (j === 0 ? [] : [{ si: j, m: modesOf(g, j, f, FS) }])),
+      { main, sym } = symOf(g, 0, pl1, ps),
+      s6 = sym.get(5),
+      m6 = modesOf(g, 5, 0, FS),
+      pl6 = pluckOf(g, 5, m6, sp);
+    expect(s6).toBeDefined();
+    if (!s6) return;
+    const e = new Engine(FS),
+      y = new Float32Array(128);
+    e.setBody(bodyDesc(g.body));
+    e.pluck({ si: 5, N: m6.N, w: m6.w, s: m6.s, f: pl6.f }, 0, 1);
+    e.pluck({ si: 5, N: m6.N, w: m6.w, s: m6.s, f: pl6.f }, 0, 2);
+    /* 弾き直した後に 1 弦を弾き、6 弦に共鳴が乗る */
+    e.pluck(
+      {
+        si: 0,
+        N: 0,
+        w: f64(main.w),
+        s: f64(main.s),
+        f: f64(main.fr),
+        fi: f64(main.fi),
+        pol: Uint8Array.from(main.pol),
+        sym: [
+          { si: 5, w: f64(s6.w), s: f64(s6.s), f: f64(s6.fr), fi: f64(s6.fi), pol: Uint8Array.from(s6.pol), pan: 0 },
+        ],
+      },
+      0,
+      3,
+    );
+    e.damp(5, 0.01, 1);
+    for (let i = 0; i < 100; i++) e.render(y, 0, 128);
+    /* 弾き直した音と共鳴の 2 つが残る */
+    const left = (e as unknown as { voices: { si: number }[] }).voices.filter((v) => v.si === 5).length;
+    expect(left).toBe(2);
   });
 });
 

@@ -47,8 +47,10 @@ const S = {
   sp: 0.5,
   pitch: PITCH.v,
   trees: true,
+  /** 映像の 1 画素を画面の何画素分で描くか */
+  px: 3,
   f: [
-    { b: 2, m: 1, a: 16 },
+    { b: 0, m: 0, a: 16 },
     { b: 3, m: 1, a: 16 },
   ] as Filter[],
   /** 縮めた絵で光らせる段と、自動で移るか */
@@ -90,11 +92,11 @@ try {
   noGl();
 }
 
-/** キャンバスの画素数を表示の大きさに合わせる。CSS の 1 画素を 1 画素として描き、粗さを端末に依らせない */
-function fitTo(c: HTMLCanvasElement): void {
+/** キャンバスの画素数を表示の大きさの 1/k にする。CSS の画素を単位にして、粗さを端末の画素密度に依らせない */
+function fitTo(c: HTMLCanvasElement, k: number): void {
   const r = c.getBoundingClientRect(),
-    w = Math.max(2, Math.round(r.width)),
-    h = Math.max(2, Math.round(r.height));
+    w = Math.max(2, Math.round(r.width / k)),
+    h = Math.max(2, Math.round(r.height / k));
   if (c.width !== w || c.height !== h) {
     c.width = w;
     c.height = h;
@@ -133,7 +135,7 @@ function frame(t: number): void {
   }
   if (R && visible && (dirty || moving)) {
     dirty = false;
-    fitTo(cv);
+    fitTo(cv, S.px);
     const base = { pitch: S.pitch, z: S.z, curv: curv(S.z), head: S.head, trees: S.trees };
     const bil: Filter = { b: 1, m: 1, a: 1 },
       tri: Filter = { b: 2, m: 1, a: 1 };
@@ -274,6 +276,12 @@ const treeC = new Choice<'1' | '0'>($('#p-tree'), (v) => {
   dirty = true;
 });
 S.trees = treeC.value === '1';
+
+const pxC = new Choice($('#p-px'), (v) => {
+  S.px = Number(v);
+  dirty = true;
+});
+S.px = Number(pxC.value);
 
 new ParamGroup<'pitch'>([PITCH], (v) => {
   S.pitch = v.pitch;
@@ -421,7 +429,7 @@ initFullscreen({
   btn: $<HTMLButtonElement>('#tf-fs'),
   focus: cv,
   popTitle: '設定',
-  pop: () => [$('#tf-aux'), $('#tf-sndw'), $('#tf-sets'), [$('#p-tree'), $('#p-pitch')]],
+  pop: () => [$('#tf-aux'), $('#tf-sndw'), $('#tf-sets'), [$('#p-px'), $('#p-tree'), $('#p-pitch')]],
 });
 
 buildPyramid();

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { advance } from '../src/tools/audio/advance';
 import { BODY_TYPES, makeBody } from '../src/tools/guitar/body';
 import { bodyDesc, Engine } from '../src/tools/guitar/engine';
 import { type Guitar, modesOf, pluckOf, tuneCoupled } from '../src/tools/guitar/model';
@@ -16,18 +17,8 @@ import {
   noteText,
 } from '../src/tools/tuner/notes';
 import { deviations, JUST_M3, JUST_m3, TEMPERAMENTS } from '../src/tools/tuner/params';
-import {
-  type Est,
-  estimate,
-  glance,
-  HighPass,
-  mpmWin,
-  Onset,
-  refWin,
-  strobeParts,
-  Tracker,
-} from '../src/tools/tuner/tracker';
-import { bandHz, bandOf, contrast, HOLD, meterTicks, needlePath, Strobe, stripes } from '../src/tools/tuner/view';
+import { type Est, estimate, HighPass, mpmWin, OneEuro, Onset, refWin, Tracker } from '../src/tools/tuner/tracker';
+import { bandHz, meterTicks, needlePath, Strobe, stripes } from '../src/tools/tuner/view';
 
 const FS = 48000;
 let seed = 1;
@@ -257,23 +248,22 @@ describe('追跡', () => {
     expect(r?.cents).toBeCloseTo(-5, 6);
     expect(r?.ft).toBeCloseTo(hzOf(69, 440, 5), 6);
   });
-  it('ストロボの下見は、estimate の窓が埋まる前（出だしから 2048 標本）に音高と部分音を返す。雑音では返さない', () => {
+  it('高い音は短い窓で決まる（A4 は出だしから 2048 標本で読める。E2 は窓を延ばしてから）', () => {
     const o = { fs: FS, fmin: 26, fmax: 4400, maxW: 16384 },
       x = new Float64Array(FS);
-    x.set(tone(midiHz(57), 2048, RICH, 0, 40), FS - 2048);
-    const since = FS - 2048;
-    expect(estimate(x, FS, o, since)).toBeNull();
-    const g = glance(x, FS, o, since, 0.9);
-    expect(g && Math.abs(centsOf(g.f, midiHz(57)))).toBeLessThan(5);
-    const sp = strobeParts(x, FS, g?.f ?? 0, FS, since, o.maxW);
-    expect(sp.W).toBe(2048);
-    expect(sp.parts.length).toBe(8);
-    expect(Math.abs(centsOf(sp.parts[1].f, 2 * midiHz(57)))).toBeLessThan(5);
-    /* 出だしから 2048 標本に満たない間は返さない */
-    expect(glance(x, FS, o, since + 1, 0.9)).toBeNull();
+    x.set(tone(midiHz(69), 4096, RICH, 0, 40), FS - 4096);
+    const since = FS - 4096,
+      e = estimate(x, FS, o, since);
+    expect(e?.ready).toBe(true);
+    expect(Math.abs(centsOf((e?.ps?.[0].f ?? 0) / 1, midiHz(69)))).toBeLessThan(0.5);
+    /* E2 は 2048 点に 3.5 周期しか入らないので、窓を延ばすまで決めない */
+    const y = new Float64Array(FS);
+    y.set(tone(midiHz(40), 2048, RICH, 0, 40), FS - 2048);
+    expect(estimate(y, FS, o, FS - 2048)).toBeNull();
+    /* 雑音は明瞭度が低い */
     const n = new Float64Array(FS);
     for (let i = 0; i < n.length; i++) n[i] = 0.01 * gauss();
-    expect(glance(n, FS, o, 0, 0.9)).toBeNull();
+    expect(estimate(n, FS, o, 0)?.clarity ?? 0).toBeLessThan(0.9);
   });
   it('基音のない雑音入りの低い音も、±1 セント以内', () => {
     const f = midiHz(40),
@@ -282,6 +272,58 @@ describe('追跡', () => {
     const r = track(y, new Tracker(opts()), 60).filter((q) => q.t > 0.5);
     expect(r.length).toBeGreaterThan(20);
     for (const q of r) expect(Math.abs(centsOf(q.f, f))).toBeLessThan(1);
+  });
+});
+
+describe('針のならしと入力の数え方', () => {
+  it('1€ フィルタ: 止まっている揺れは指数のならしと同じくらい抑え、動き出すと遅れが小さい', () => {
+    const dt = 1 / 60,
+      tau = 0.16;
+    let ex = 0;
+    const eu = new OneEuro(1 / (2 * Math.PI * tau));
+    eu.reset(0);
+    /* 1 秒に 20 セントの傾き */
+    let le = 0,
+      lx = 0;
+    for (let t = 0; t < 1; t += dt) {
+      const v = 20 * t;
+      ex += (v - ex) * (1 - Math.exp(-dt / tau));
+      const y = eu.step(v, dt);
+      if (t > 0.5) {
+        le = v - y;
+        lx = v - ex;
+      }
+    }
+    expect(lx).toBeGreaterThan(2.5);
+    expect(le).toBeLessThan(1);
+    /* 止まっている間の揺れ（σ 1 セント） */
+    const e2 = new OneEuro(1 / (2 * Math.PI * tau));
+    e2.reset(0);
+    let ss = 0,
+      n = 0;
+    for (let t = 0; t < 4; t += dt) {
+      const y = e2.step(gauss(), dt);
+      if (t > 1) {
+        ss += y * y;
+        n++;
+      }
+    }
+    expect(Math.sqrt(ss / n)).toBeLessThan(0.4);
+  });
+  it('AnalyserNode の波形が何標本進んだかを、前の末尾との突き合わせで数える', () => {
+    const N = 4096,
+      src = new Float32Array(N + 2000);
+    for (let i = 0; i < src.length; i++) src[i] = gauss();
+    const prev = src.subarray(0, N),
+      probe = prev.slice(N - 32);
+    for (const s of [0, 128, 768, 1111, 2000]) {
+      const cur = src.subarray(s, s + N);
+      /* 時間の見込みが数百標本ずれていても */
+      expect(advance(probe, cur, s + 300)).toBe(s);
+      expect(advance(probe, cur, Math.max(0, s - 250))).toBe(s);
+    }
+    /* 無音では決められないので見込みのまま */
+    expect(advance(new Float32Array(32), new Float32Array(N), 700)).toBe(700);
   });
 });
 
@@ -304,6 +346,36 @@ describe('音律と純正律', () => {
   });
 });
 
+/** 正弦波の和 [周波数, 振幅]（2 秒） */
+function sines(fa: [number, number][]): Float64Array {
+  const x = new Float64Array(2 * FS);
+  for (const [f, a] of fa) for (let i = 0; i < x.length; i++) x[i] += a * Math.sin((2 * Math.PI * f * i) / FS);
+  return x;
+}
+/** 窓 A・帯 4 オクターブ（A4） */
+const A4 = 9 * 4 + 2;
+const wrap = (v: number) => v - Math.round(v);
+/** ページと同じく 60 fps で 800 標本ずつ渡し、フレームごとの位相と濃さを記録する */
+function strobeRun(x: Float64Array, dur: number, spd: 'hz' | 'cent' = 'hz') {
+  const sb = new Strobe(),
+    ph: Float64Array[] = [],
+    c: Float64Array[] = [];
+  sb.tune(440, null, spd);
+  for (let i = 0; i + 800 <= dur * FS; i += 800) {
+    sb.feed(x, i, i + 800, i, FS);
+    sb.frame(1 / 60);
+    ph.push(Float64Array.from(sb.ph));
+    c.push(Float64Array.from(sb.c));
+  }
+  return { sb, ph, c };
+}
+/** 後半 0.5 秒の縞の速さ [本/s] */
+function rateOf(ph: Float64Array[], i: number): number {
+  let s = 0;
+  for (let k = ph.length - 30; k < ph.length; k++) s += wrap(ph[k][i] - ph[k - 1][i]);
+  return s / 0.5;
+}
+
 describe('表示の形', () => {
   it('目盛りは ±50 で 51 本（太い 11 本）、±20 で 41 本（太い 9 本）', () => {
     const n = (s: string) => (s.match(/M/g) ?? []).length;
@@ -321,49 +393,68 @@ describe('表示の形', () => {
     expect(bandHz(0, 0, 440, null)).toBeCloseTo(hzOf(36, 440), 9);
     expect(bandHz(0, 0, 440, deviations('wm3', 0))).toBeCloseTo(hzOf(36, 440, 11.73), 6);
   });
-  it('帯には最も近い部分音が写る。1 オクターブ下の帯は薄く止まり、部分音のない帯はぼける', () => {
-    const parts = [
-      { k: 1, f: 441, a: 1 },
-      { k: 2, f: 882, a: 0.5 },
-      { k: 3, f: 1323, a: 0.3 },
-    ];
-    const a4 = bandOf(440, 441, parts, 'hz'),
-      a3 = bandOf(220, 441, parts, 'hz'),
-      e5 = bandOf(659.26, 441, parts, 'hz');
-    const dc = (1200 * Math.log2(441 / 440)) / 40;
-    expect(a4.vis).toBeCloseTo(Math.exp(-dc * dc), 9);
-    expect(a4.rate).toBeCloseTo(1, 9);
-    expect(a3.vis).toBeCloseTo(0.3, 1);
-    expect(e5.vis).toBeLessThan(0.01);
-    /* セントに比例: 3.93 セント × 0.254 本/s */
-    expect(bandOf(440, 441, parts, 'cent').rate).toBeCloseTo(1200 * Math.log2(441 / 440) * 0.254, 6);
+  it('鳴っている音の窓・帯の縞が止まり、ずれれば周波数の差（本/s）で流れる', () => {
+    const { sb, ph } = strobeRun(sines([[440, 0.5]]), 0.6);
+    expect(sb.c[A4]).toBeGreaterThan(0.9);
+    /* 止まっている（0.3 秒で 0.01 周より動かない） */
+    expect(Math.abs(wrap(ph[ph.length - 1][A4] - ph[ph.length - 19][A4]))).toBeLessThan(0.01);
+    /* ほかの音の窓は灰色（A の窓の 3・2 オクターブの帯には、二重・四重に写って薄く止まる） */
+    for (let i = 0; i < 48; i++) if (i < A4 - 2 || i > A4) expect(sb.c[i], `${i}`).toBeLessThan(0.1);
+    expect(sb.c[A4 - 1]).toBeCloseTo(0.3 * 1.15, 1);
+    expect(sb.c[A4 - 2]).toBeCloseTo(0.15 * 1.15, 1);
+    /* 441 Hz は毎秒 1 本右へ */
+    const r = strobeRun(sines([[441, 0.5]]), 1.2);
+    expect(rateOf(r.ph, A4)).toBeCloseTo(1, 1);
   });
-  it('速く流れる縞は薄くなる', () => {
-    expect(contrast(1, 0)).toBe(1);
-    expect(contrast(1, 4.5)).toBeCloseTo(0.5, 9);
-    expect(contrast(1, 20)).toBeCloseTo(0.1, 9);
+  it('「セント」の縞の速さは、セント × 0.254 本/s（A3 の 220.5 Hz は 3.93 セントで約 1 本/s）', () => {
+    const A3 = A4 - 1,
+      hz = strobeRun(sines([[220.5, 0.5]]), 1.2),
+      ct = strobeRun(sines([[220.5, 0.5]]), 1.2, 'cent');
+    expect(rateOf(hz.ph, A3)).toBeCloseTo(0.5, 1);
+    expect(rateOf(ct.ph, A3)).toBeCloseTo(1200 * Math.log2(220.5 / 220) * 0.254, 1);
   });
-  it('推定が途切れ途切れでも、縞は点滅しない', () => {
-    const sb = new Strobe(),
-      parts = [{ k: 1, f: 440.5, a: 1 }],
-      A4 = 9 * 4 + 2;
-    let lo = 1;
-    /* 60 fps で描き、推定（40 ms ごと）は 3 回に 2 回が空振り */
-    for (let n = 0; n < 300; n++) {
-      if (n % 7 === 0) sb.update(440.5, parts, 440, null, 'hz');
-      sb.frame(1 / 60);
-      if (n > 30) lo = Math.min(lo, sb.c[A4]);
-    }
-    expect(lo).toBeGreaterThan(0.95);
-    /* 縞は 0.5 本/s で流れ続ける */
-    expect(sb.rate[A4]).toBeCloseTo(0.5, 6);
+  it('和音は鳴っている音の窓がそれぞれ止まる。1 オクターブ下の帯は二重に写って薄く止まる', () => {
+    const { sb } = strobeRun(
+      sines([
+        [midiHz(60), 0.3],
+        [midiHz(64), 0.3],
+        [midiHz(67), 0.3],
+      ]),
+      0.6,
+    );
+    for (const p of [0, 4, 7]) expect(sb.c[p * 4 + 2], `${p}`).toBeGreaterThan(0.9);
+    for (const p of [1, 2, 3, 5, 6, 8, 9, 10, 11]) expect(sb.c[p * 4 + 2], `${p}`).toBeLessThan(0.1);
+    /* C3 の帯には C4 が二重に写る（重み 0.3） */
+    expect(sb.c[0 * 4 + 1]).toBeCloseTo(0.3 * 1.15, 1);
   });
-  it('推定が HOLD を超えて途切れたら、縞は薄れて消える', () => {
-    const sb = new Strobe(),
-      A4 = 9 * 4 + 2;
-    sb.update(440, [{ k: 1, f: 440, a: 1 }], 440, null, 'hz');
-    for (let t = 0; t < HOLD + 0.05; t += 1 / 60) sb.frame(1 / 60);
-    expect(sb.c[A4]).toBeGreaterThan(0.8);
+  it('鳴らしてから 80 ms で縞が濃く出る（音高の推定を待たない）', () => {
+    const x = new Float64Array(FS);
+    x.set(sines([[440, 0.5]]).subarray(0, FS / 2), FS / 2);
+
+    const { c } = strobeRun(x, 1);
+    /* 1/60 秒ごとの記録で、鳴らし始め（30 フレーム目）から 5 フレーム */
+    expect(c[30 + 5][A4]).toBeGreaterThan(0.5);
+  });
+  it('雑音では縞を描かない（灰色）', () => {
+    const n = new Float64Array(FS);
+    for (let i = 0; i < n.length; i++) n[i] = 0.1 * gauss();
+    const { sb } = strobeRun(n, 1);
+    for (let i = 0; i < 48; i++) expect(sb.c[i], `${i}`).toBeLessThan(0.05);
+  });
+  it('縞の位相は、入力の区切り方に依らない（通し番号で基準の位相を決める）', () => {
+    const x = sines([[440.3, 0.5]]),
+      a = new Strobe(),
+      b = new Strobe();
+    a.tune(440, null, 'hz');
+    b.tune(440, null, 'hz');
+    for (let i = 0; i < 24000; i += 800) a.feed(x, i, i + 800, i, FS);
+    for (let i = 0; i < 24000; i += 1237) b.feed(x, i, Math.min(24000, i + 1237), i, FS);
+    a.frame(1 / 60);
+    b.frame(1 / 60);
+    expect(Math.abs(wrap(a.ph[A4] - b.ph[A4]))).toBeLessThan(1e-6);
+  });
+  it('入力が止まると縞は薄れて消える', () => {
+    const { sb } = strobeRun(sines([[440, 0.5]]), 0.5);
     for (let t = 0; t < 2; t += 1 / 60) sb.frame(1 / 60);
     expect(sb.c[A4]).toBeLessThan(0.02);
   });
@@ -397,7 +488,7 @@ describe('ギターの物理モデルの音', () => {
     g.str = g.str.map((p, i) => ({ ...p, T: tuneCoupled(g, i, noteHz(notes[i])) }));
     return g;
   }
-  it('開放弦の 6 本とも、弾いて 0.3〜1 秒の値は基音から ±1 セント以内（中央値）、外れ値なし', () => {
+  it('開放弦の 6 本とも、弾いて 0.3〜1 秒の値は基音から ±1 セント以内（中央値）、外れ値は偏波の高さの差の半分 + 3 セントまで', () => {
     const g = steel(),
       notes = tuningOf('std').notes;
     for (let si = 0; si < 6; si++) {
@@ -408,13 +499,16 @@ describe('ギターの物理モデルの音', () => {
         y = new Float32Array(FS * 1.1);
       e.pluck({ si, N: m.N, w: m.w, s: m.s, f: pl.f });
       for (let i = FS / 10; i < y.length; i += 128) e.render(y, i, 128);
-      const f1 = m.w[0] / (2 * Math.PI),
+      /* 垂直と平行の偏波の高さの相乗平均（調弦で合わせる値） */
+      const f1 = Math.sqrt(m.w[0] * m.w[m.N]) / (2 * Math.PI),
         r = track(y, new Tracker(opts(notes)), 70).filter((q) => q.t > 0.4),
         c = r.map((q) => centsOf(q.f, f1)).sort((a, b) => a - b);
       expect(r.length, `${si}`).toBeGreaterThan(30);
       for (const q of r) expect(q.tgt, `${si}`).toBe(notes[si]);
       expect(Math.abs(c[c.length >> 1]), `${si}`).toBeLessThan(1);
-      expect(Math.max(-c[0], c[c.length - 1]), `${si}`).toBeLessThan(3);
+      /* 2 つの偏波の高さの差（うなりで値が揺れる） */
+      const split = Math.abs(centsOf(m.w[m.N] / (2 * Math.PI), m.w[0] / (2 * Math.PI)));
+      expect(Math.max(-c[0], c[c.length - 1]), `${si}`).toBeLessThan(split / 2 + 3);
     }
   });
 });

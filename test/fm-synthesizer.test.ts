@@ -2,9 +2,12 @@ import { describe, expect, it } from 'vitest';
 import {
   DRUM_PART,
   envAt,
+  FB,
+  fbBeta,
   MAX_VOICES,
   newPart,
   type Op,
+  opTimes,
   partGains,
   Synth,
   snapshot,
@@ -64,6 +67,66 @@ describe('エンベロープ', () => {
   it('キースケールで高い音ほど速く減衰する', () => {
     const o = op({ dr: 1, sl: 0, ks: 1 });
     expect(envAt(o, 0.5, Number.POSITIVE_INFINITY, 72)).toBeLessThan(envAt(o, 0.5, Number.POSITIVE_INFINITY, 60));
+  });
+});
+
+describe('ベロシティと音の高さの効き', () => {
+  it('効きが 0 なら、時間と帰還はベロシティと音の高さで変わらない', () => {
+    const o = op({ ar: 0.1, dr: 1, rr: 0.5 });
+    expect(opTimes(o, 84, 0.2)).toEqual([0.1, 1, 0.5]);
+    const t = { ...sine(), fb: 5 };
+    expect(fbBeta(t, 84, 0.2)).toBe(FB[5] / 2);
+  });
+  it('ベロシティの時間の効きで、弱いほどアタックが長く、ディケイが短い（最も弱いとき 4 倍と 1/4 倍）', () => {
+    const o = op({ ar: 0.1, dr: 1, va: 1 });
+    expect(opTimes(o, 60, 1)).toEqual([0.1, 1, 0.3]);
+    const [a, d, r] = opTimes(o, 60, 0);
+    expect(a).toBeCloseTo(0.4, 9);
+    expect(d).toBeCloseTo(0.25, 9);
+    expect(r).toBe(0.3);
+    expect(envAt(o, 0.05, Number.POSITIVE_INFINITY, 60, 0.3)).toBeLessThan(envAt(o, 0.05));
+  });
+  it('アタックのキースケールで、1 オクターブ上は 2^−ka 倍', () => {
+    const o = op({ ar: 0.2, ka: 0.5 });
+    expect(opTimes(o, 72)[0]).toBeCloseTo(0.2 / Math.SQRT2, 9);
+    expect(opTimes(o, 48)[0]).toBeCloseTo(0.2 * Math.SQRT2, 9);
+  });
+  it('帰還量はベロシティで弱まり、高い音で弱まる。最大の帰還量は超えない', () => {
+    const t = { ...sine(), fb: 6, fbv: 1, fbk: 1 };
+    expect(fbBeta(t, 60, 1)).toBeCloseTo(FB[6] / 2, 9);
+    expect(fbBeta(t, 60, 0.5)).toBeCloseTo((FB[6] / 2) * 0.25, 9);
+    expect(fbBeta(t, 72, 1)).toBeCloseTo(FB[6] / 4, 9);
+    expect(fbBeta({ ...t, fb: 7 }, 36, 1)).toBe(FB[7] / 2);
+  });
+  it('デチューンで周波数が Hz だけずれる', () => {
+    /* 1 周期の零交差を数えて周波数を測る */
+    const hz = (dt: number) => {
+      const s = new Synth(SR, sine({ dt }), sine());
+      s.noteOn(0, 69, 1);
+      const n = SR,
+        L = new Float32Array(128),
+        R = new Float32Array(128);
+      let prev = 0,
+        up = 0,
+        first = -1,
+        last = -1;
+      for (let i = 0; i < n; i += 128) {
+        s.render(L, R, 128);
+        for (let k = 0; k < 128; k++) {
+          if (prev < 0 && L[k] >= 0) {
+            up++;
+            const x = i + k - L[k] / (L[k] - prev);
+            if (first < 0) first = x;
+            last = x;
+          }
+          prev = L[k];
+        }
+      }
+      return ((up - 1) * SR) / (last - first);
+    };
+    expect(hz(0)).toBeCloseTo(440, 1);
+    expect(hz(2.5)).toBeCloseTo(442.5, 1);
+    expect(hz(-1)).toBeCloseTo(439, 1);
   });
 });
 

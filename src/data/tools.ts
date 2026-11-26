@@ -158,7 +158,7 @@ export const TOOLS: Tool[] = [
     t: '標本化定理',
     d: '波を復元できる標本化周波数の下限を確かめます。',
     ic: 'smp',
-    r: ['pcm', 'fft', 'rolling-shutter', 'image-resize'],
+    r: ['pcm', 'fft', 'z-transform', 'rolling-shutter'],
     k: 'sampling theorem 標本化定理 サンプリング定理 シャノン shannon ナイキスト nyquist コテルニコフ kotelnikov ホイッタカー whittaker 標本化 サンプリング sampling 標本化周波数 サンプリング周波数 サンプルレート sample rate 2 倍 エイリアシング aliasing 折り返し 折り返し雑音 アンチエイリアス anti-aliasing ローパス 復元 再構成 reconstruction sinc 補間 interpolation スペクトル spectrum 複製 イメージ image 正弦波 矩形波 和音 スイープ sweep 試聴 音 audio',
   },
   {
@@ -329,7 +329,7 @@ export const TOOLS: Tool[] = [
     t: 'ラプラス変換',
     d: 's 平面の点が表す波から、ラプラス変換と極を読み解きます。',
     ic: 'lap',
-    r: ['pole-zero', 'pid', 'convolution', 'fft'],
+    r: ['z-transform', 'pole-zero', 'pid', 'convolution'],
     k: 'laplace transform ラプラス変換 s平面 s-plane 複素周波数 complex frequency 極 pole 零点 zero 伝達関数 transfer function インパルス応答 impulse response 収束域 roc region of convergence フーリエ変換 fourier transform 周波数特性 共役 conjugate 減衰振動 指数 e^st 微分方程式 制御 信号処理',
   },
   {
@@ -338,8 +338,17 @@ export const TOOLS: Tool[] = [
     t: '極と零点',
     d: 'z 平面に極と零点を置いて周波数特性・インパルス応答・係数を求めます。',
     ic: 'pz',
-    r: ['laplace', 'iir', 'biquad', 'pid'],
+    r: ['z-transform', 'laplace', 'iir', 'pid'],
     k: 'pole zero z平面 z-plane 伝達関数 transfer function 周波数特性 振幅 位相 群遅延 group delay 安定 stability 双2次 縦続 sos biquad iir fir 共振 resonator ノッチ notch オールパス allpass くし形 comb 移動平均 デジタルフィルタ',
+  },
+  {
+    id: 'z-transform',
+    c: '信号処理',
+    t: 'z 変換',
+    d: 'z 平面の点と数列のつながりを動かして確かめます。',
+    ic: 'zt',
+    r: ['laplace', 'pole-zero', 'sampling-theorem', 'pid'],
+    k: 'z transform z変換 z-transform z平面 z-plane 数列 sequence 収束域 roc region of convergence 極 pole 単位円 unit circle 標本化 sampling s平面 s-plane ラプラス変換 laplace 写像 エイリアシング aliasing 遅延素子 delay 伝達関数 transfer function インパルス応答 impulse response 周波数特性 デジタルフィルタ',
   },
   {
     id: 'colorcode',
