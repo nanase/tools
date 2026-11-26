@@ -7,6 +7,7 @@ import { $ } from '../../lib/dom';
 import { same } from '../../lib/eseries';
 import { fmt, fmtR, parts, ro } from '../../lib/format';
 import { ParamGroup } from '../../lib/param';
+import { onPick, pickAct } from '../../lib/press';
 import { DV, SW } from '../../lib/scope';
 import { storeToggle } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
@@ -100,6 +101,11 @@ const mode$ = new Choice<Mode>($('#p-mode'), (v) => {
   applyState();
   schedule();
 });
+/* 止まっている間に応答・近似を選んだら鳴らし始める（利用者の操作だけ） */
+for (const id of ['#p-resp', '#p-kind'])
+  onPick($(id), (e) => {
+    if (pickAct(e, playing) === 'start') void play(true);
+  });
 const fview$ = new Choice<FView>($('#fview'), (v) => {
   fview = v;
   $('#p-bot').hidden = v !== 'mag';

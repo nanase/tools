@@ -4,6 +4,7 @@ import { $, $$ } from '../../lib/dom';
 import { prevOf } from '../../lib/eseries';
 import { fmt, fmtR, ro } from '../../lib/format';
 import { ParamGroup } from '../../lib/param';
+import { onPick, pickAct } from '../../lib/press';
 import { DV, SH, SW } from '../../lib/scope';
 import { forget, store, stored, storeToggle } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
@@ -515,10 +516,15 @@ async function play(on: boolean): Promise<void> {
 $('#playBtn').addEventListener('click', () => {
   void play(!playing);
 });
+/** 止まっている間に入力・原音・フィルタの種類を選んだら鳴らし始める（利用者の操作だけ） */
+function autoPlay(e: Event): void {
+  if (pickAct(e, playing) === 'start') void play(true);
+}
 $('#bypBtn').addEventListener('click', (e) => {
   bypass = !bypass;
   (e.currentTarget as HTMLElement).setAttribute('aria-pressed', String(bypass));
   setBypass();
+  autoPlay(e);
 });
 
 /** 入力を選ぶ。ファイルは保存せず、開き直したときは既定に戻す */
@@ -537,13 +543,14 @@ function pick(v: string, load = true): void {
     pick(v, false);
   }
 }
-srcSel.addEventListener('change', () => {
+srcSel.addEventListener('change', (e) => {
   if (srcSel.value === 'open') {
     srcSel.value = prevV;
     fileIn.click();
     return;
   }
   pick(srcSel.value);
+  autoPlay(e);
 });
 fileIn.addEventListener('change', async () => {
   const f = fileIn.files?.[0];
@@ -578,6 +585,7 @@ new Choice($('#p-type'), (v) => {
   for (const e of $$('.egrp')) e.hidden = e.dataset.t !== type.v;
   compute();
 });
+onPick($('#p-type'), autoPlay);
 
 /* 値の確定。範囲や表示長だけのものは、係数と特性を計算し直さない */
 g = new ParamGroup<Key>(PARAMS, (_, k) => {
