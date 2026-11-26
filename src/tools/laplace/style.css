@@ -1,0 +1,26 @@
+/*
+ * ラプラス変換のページだけのスタイル。章・式・ナビゲーションの共通の見た目は src/styles/chapters.css（ルートの .chp）。
+ * 色: fill2 収束域と断面の塗り（z 変換の --fill-ch2 と同じ）、hatch 収束域の外、b0〜b6 曲面の高さの段
+ */
+.lap{--lap-fill2:#d5e8ee;--lap-hatch:#c9cfc6;
+  --lap-b0:#f3f1e6;--lap-b1:#efe2c2;--lap-b2:#ebcb95;--lap-b3:#e5a96a;--lap-b4:#d97f44;--lap-b5:#c4582a;--lap-b6:#a33a1a}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .lap{--lap-fill2:#10262d;--lap-hatch:#3a4248;
+  --lap-b0:#171b1c;--lap-b1:#3a2f16;--lap-b2:#6a4616;--lap-b3:#9c5c18;--lap-b4:#d0721e;--lap-b5:#f09442;--lap-b6:#ffc47a}}
+:root[data-theme="dark"] .lap{--lap-fill2:#10262d;--lap-hatch:#3a4248;
+  --lap-b0:#171b1c;--lap-b1:#3a2f16;--lap-b2:#6a4616;--lap-b3:#9c5c18;--lap-b4:#d0721e;--lap-b5:#f09442;--lap-b6:#ffc47a}
+
+/* 1 問ずつではページの高さが画面に近くなりやすい。スクロールバーの出入りで幅が変わると、図の高さが変わってまたバーが出入りし、
+   描き直す前に消え続ける。バーの場所をいつも取って幅を変えない */
+html:has(#lap){scrollbar-gutter:stable}
+
+/* 図。点の上で始めたタッチだけをドラッグにし、ほかはスクロールに任せる（client.ts） */
+.lap .scope canvas{display:block;width:100%;touch-action:pan-y;user-select:none;-webkit-user-select:none}
+.lap .scope canvas:focus{outline:none}
+.lap .scope canvas:focus-visible{outline:2px solid var(--focus);outline-offset:-2px}
+.lap canvas.sf{cursor:ew-resize}
+
+/* 問い 4・5 は s 平面を細く、曲面を広く。狭い画面では曲面を 1 行使う */
+.lap #q4 .g3w{grid-template-columns:minmax(170px,1.7fr) minmax(0,4fr)}
+.lap #q5 .g3w{grid-template-columns:minmax(210px,1.9fr) minmax(0,3.6fr) minmax(0,2.6fr)}
+@media (max-width:1000px){.lap #q5 .g3w{grid-template-columns:minmax(150px,2fr) minmax(0,3fr)}.lap #q5 .g3w .wide{grid-column:1/-1;order:3}}
+@media (max-width:760px){.lap #q4 .g3w,.lap #q5 .g3w{grid-template-columns:minmax(0,1fr)}.lap #q5 .g3w .wide{order:0}}

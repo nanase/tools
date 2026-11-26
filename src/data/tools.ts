@@ -68,7 +68,7 @@ export const TOOLS: Tool[] = [
     t: 'PID制御',
     d: 'フィードバック制御の一種であるPID制御の応答を計算します。',
     ic: 'pid',
-    r: ['pendulum', 'kalman', 'pole-zero', 'biquad'],
+    r: ['pendulum', 'kalman', 'pole-zero', 'laplace'],
     k: 'フィードバック 比例 積分 微分 control ボート 川 自動調整 itae',
   },
   {
@@ -324,12 +324,21 @@ export const TOOLS: Tool[] = [
     k: 'dark light ダーク ライト テーマ ダークモード チェッカー checker スキーマ schema',
   },
   {
+    id: 'laplace',
+    c: '信号処理',
+    t: 'ラプラス変換',
+    d: 's 平面の点が表す波から、ラプラス変換と極を読み解きます。',
+    ic: 'lap',
+    r: ['z-transform', 'pole-zero', 'pid', 'convolution'],
+    k: 'laplace transform ラプラス変換 s平面 s-plane 複素周波数 complex frequency 極 pole 零点 zero 伝達関数 transfer function インパルス応答 impulse response 収束域 roc region of convergence フーリエ変換 fourier transform 周波数特性 共役 conjugate 減衰振動 指数 e^st 微分方程式 制御 信号処理',
+  },
+  {
     id: 'pole-zero',
     c: '信号処理',
     t: '極と零点',
     d: 'z 平面に極と零点を置いて周波数特性・インパルス応答・係数を求めます。',
     ic: 'pz',
-    r: ['z-transform', 'iir', 'biquad', 'pid'],
+    r: ['z-transform', 'laplace', 'iir', 'pid'],
     k: 'pole zero z平面 z-plane 伝達関数 transfer function 周波数特性 振幅 位相 群遅延 group delay 安定 stability 双2次 縦続 sos biquad iir fir 共振 resonator ノッチ notch オールパス allpass くし形 comb 移動平均 デジタルフィルタ',
   },
   {
@@ -338,7 +347,7 @@ export const TOOLS: Tool[] = [
     t: 'z 変換',
     d: 'z 平面の点と数列のつながりを動かして確かめます。',
     ic: 'zt',
-    r: ['pole-zero', 'sampling-theorem', 'convolution', 'pid'],
+    r: ['laplace', 'pole-zero', 'sampling-theorem', 'pid'],
     k: 'z transform z変換 z-transform z平面 z-plane 数列 sequence 収束域 roc region of convergence 極 pole 単位円 unit circle 標本化 sampling s平面 s-plane ラプラス変換 laplace 写像 エイリアシング aliasing 遅延素子 delay 伝達関数 transfer function インパルス応答 impulse response 周波数特性 デジタルフィルタ',
   },
   {

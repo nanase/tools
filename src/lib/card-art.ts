@@ -2877,6 +2877,24 @@ export const ART: Record<string, Art> = {
    * 標本化定理: 同じ標本の点を通る速い波（原音）と遅い波（復元した波）。
    * 位相が進むと遅い波が大きく滑り、点は上下するだけ。1 周 4 秒を 12 コマ/秒で描く
    */
+  /* ラプラス変換: s 平面の点が左右に動き、その点が表す波 Re e^{st} の縮み方が変わる（1 秒に 12 コマ） */
+  lap(t) {
+    const k = Math.floor(t * 12 + 1e-9) / 12,
+      sg = -0.25 - 0.2 * Math.cos((TAU * k) / 4),
+      px = r1(26 + 16 * sg),
+      tt = (x: number) => ((x - 46) / 70) * 5,
+      env = (x: number) => clamp(18 * Math.exp(sg * tt(x)), 0, 20);
+    return (
+      P('c t', 'M4 24H40M26 44V4') +
+      `<circle class="fa" cx="${px}" cy="9" r="3.2"/><circle class="fa" cx="${px}" cy="39" r="3.2"/>` +
+      P('c t', 'M46 24H116') +
+      P('c d t', fx((x) => 24 - env(x), 46, 116, 40) + fx((x) => 24 + env(x), 46, 116, 40).replace('M', 'M')) +
+      P(
+        'a',
+        fx((x) => 24 - env(x) * Math.cos(5 * tt(x)), 46, 116, 140),
+      )
+    );
+  },
   smp(t) {
     const th = (TAU * Math.floor(t * 12 + 1e-9)) / 48,
       dx = 8,
@@ -3834,6 +3852,7 @@ export const LOOP: Record<string, number> = {
   rx: RX_PTS.length / RX_FPS,
   pcm: 3,
   smp: 4,
+  lap: 4,
   adp: 26 / 8,
   mp3: 4,
   imp: 53 / 12,
