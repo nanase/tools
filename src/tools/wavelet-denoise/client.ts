@@ -495,8 +495,6 @@ const rec = new Recorder(() => deck.ctx(), MAX);
 rec.onChange = () => {
   const b = $('#ab-rec');
   b.setAttribute('aria-pressed', String(rec.on));
-  $('#ab-recLed').classList.toggle('on', rec.on);
-  txt('#ab-recT', rec.on ? '停止' : '録音');
   txt(
     '#ab-micMsg',
     rec.msg ||

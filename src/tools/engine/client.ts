@@ -201,14 +201,10 @@ function rebuild(): void {
 
 /* ---------- 運転 ---------- */
 const runBtn = $('#runBtn'),
-  runLed = $('#runLed'),
-  runT = $('#runT'),
   sndMsg = $('#snd-msg');
 function setRun(on: boolean): void {
   running = on;
   runBtn.setAttribute('aria-pressed', String(on));
-  runLed.classList.toggle('on', on);
-  runT.textContent = on ? '運転中' : '運転';
 }
 runBtn.addEventListener('click', async () => {
   if (running) {
@@ -242,13 +238,11 @@ let target = 0,
   /** 固定（離しても開きを保つ）と、その開き [%] */
   locked = false,
   lockVal = 0;
-const lockBtn = $('#lockBtn'),
-  lockLed = $('#lockLed');
+const lockBtn = $('#lockBtn');
 lockBtn.addEventListener('click', () => {
   locked = !locked;
   lockVal = locked ? thCur : 0;
   lockBtn.setAttribute('aria-pressed', String(locked));
-  lockLed.classList.toggle('on', locked);
 });
 const press = (v: number) => {
   held = true;

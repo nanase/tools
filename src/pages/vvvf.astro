@@ -1,6 +1,7 @@
 ---
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import LedToggle from '../components/LedToggle.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
@@ -47,7 +48,7 @@ const playIcon =
           {CAR_IDS.map((k, i) => <button type="button" class="chip" data-v={k} aria-pressed={i === 0 ? 'true' : 'false'} title={CARS[k].sub}>{CARS[k].name}</button>)}
         </div>
         <div class="vv-cmd">
-          <button type="button" id="vv-auto" aria-pressed="false" title="発車から停止までの自動運転"><span class="led" id="vv-autoLed" aria-hidden="true"></span>自動</button>
+          <LedToggle id="vv-auto" label="自動" title="発車から停止までの自動運転" />
           <button type="button" id="vv-stop" title="速度 0 km/h と消音">緊急停止</button>
         </div>
         <div class="vv-drive">

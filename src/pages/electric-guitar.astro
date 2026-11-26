@@ -1,6 +1,7 @@
 ---
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import LedToggle from '../components/LedToggle.astro';
 import MidiPanel from '../components/MidiPanel.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
@@ -52,7 +53,7 @@ const presetSub = (p: (typeof PRESETS)[number]) =>
         </div>
 
         <div class="eg-pop" id="pop" hidden role="dialog" aria-labelledby="pop-name">
-          <div class="pp-h"><b id="pop-name">アンプ</b><button type="button" class="tg pp-on" id="pop-on" aria-pressed="true"><span class="led on" aria-hidden="true"></span><span class="eg-ont">オン</span></button><button type="button" class="pp-x" id="pop-x" title="閉じる" aria-label="閉じる">×</button></div>
+          <div class="pp-h"><b id="pop-name">アンプ</b><LedToggle id="pop-on" label="オン" on class="pp-on" /><button type="button" class="pp-x" id="pop-x" title="閉じる" aria-label="閉じる">×</button></div>
           <div class="pp-tools">
             <span class="seg" id="pop-mv"><button type="button" id="pop-l" title="左へ（信号の前へ）" aria-label="左へ">◀</button><button type="button" id="pop-r" title="右へ（信号の後ろへ）" aria-label="右へ">▶</button></span>
             <button type="button" class="tg eg-lsn" id="pop-ls" aria-pressed="false" title="この機材を通った音を試聴"><Fragment set:html={EAR} /><span id="pop-lsT">試聴</span></button>

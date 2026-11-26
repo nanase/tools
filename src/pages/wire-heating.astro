@@ -3,6 +3,7 @@ import Busy from '../components/Busy.astro';
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
 import HowSteps from '../components/HowSteps.astro';
+import LedToggle from '../components/LedToggle.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
@@ -69,7 +70,7 @@ const playIcon =
             <div class="chips" id="wh-preset" role="group" aria-label="経路の見本" data-nosave>
               {PRESET_OPT.map(([v, l], i) => <button type="button" class="chip" data-v={v} aria-pressed={i === 2 ? 'true' : 'false'}>{l}</button>)}
             </div>
-            <button type="button" class="tg" id="tg-air" aria-pressed="true" title="周りの空気の温度と流れ"><span class="led on" aria-hidden="true"></span>空気</button>
+            <LedToggle id="tg-air" label="空気" on title="周りの空気の温度と流れ" />
           </div>
           <div class="scope wh-scr"><canvas class="wh-cv wh-hPa wh-drag" id="cv-path" role="img" aria-label="縦に立てた経路の温度と周りの空気。点をドラッグして形を変更"></canvas></div>
           <p class="wh-note">縦に立てた経路を横から。点のドラッグで経路を変更</p>

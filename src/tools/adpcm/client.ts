@@ -335,8 +335,6 @@ pnl.addEventListener('drop', (e) => {
 const rec = new Recorder(() => deck.ctx(), MAX);
 rec.onChange = () => {
   $('#ls-rec').setAttribute('aria-pressed', String(rec.on));
-  $('#ls-recLed').classList.toggle('on', rec.on);
-  txt('#ls-recT', rec.on ? '停止' : '録音');
   txt(
     '#ls-micMsg',
     rec.msg ||

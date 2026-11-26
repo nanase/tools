@@ -246,7 +246,6 @@ function setScene(id: string, save = true): void {
   pg.setOff('lp', !sc.w, off);
   locBtn.disabled = !sc.w;
   locBtn.title = sc.w ? '画素ごとに、混ざった光の白に合わせる' : '光が 2 つの場面で使えます';
-  $('#wb-locw').classList.toggle('off', !sc.w);
   const hit = cache.get(sc.id);
   if (hit) {
     S.data = hit;
@@ -350,7 +349,6 @@ function draw(): void {
 
   for (const b of $$('button[data-wb]', bar)) b.setAttribute('aria-pressed', String(!local && b.dataset.wb === S.wb));
   locBtn.setAttribute('aria-pressed', String(local));
-  $('#wb-locL').classList.toggle('on', local);
   amc.setOff(S.wb !== 'auto' || local, 'オートのときだけ使います');
   setText('#wb-ro', `WB ${local ? '場所ごと' : `${wbName(S.wb)}${sT ? ` ${fmtK(sT)}` : ''}`}`);
   setText('#n-l0', isTwo ? '光 1' : '光');

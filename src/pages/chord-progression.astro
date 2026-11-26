@@ -1,6 +1,7 @@
 ---
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import LedToggle from '../components/LedToggle.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
@@ -82,7 +83,7 @@ const styles = STYLE_ORDER.map((s) => [s, STYLE_NAMES[s]] as [string, string]);
         <ParamRow d={CLICK} />
         <ChoiceRow k="room" name="残響" layout="chips" choices={rooms} value="off" />
       </div>
-      <div class="cp-row"><button type="button" class="tg" id="cp-loop" aria-pressed="true"><span class="led on" aria-hidden="true"></span>くり返し</button><button type="button" class="tg" id="cp-met" aria-pressed="false"><span class="led" aria-hidden="true"></span>メトロノーム</button></div>
+      <div class="cp-row"><LedToggle id="cp-loop" label="くり返し" on /><LedToggle id="cp-met" label="メトロノーム" /></div>
     </Panel>
 
     <Panel hid="hd-how" title="しくみ">

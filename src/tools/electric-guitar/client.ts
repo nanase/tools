@@ -404,8 +404,6 @@ function syncPop(): void {
   on.hidden = !p;
   if (p) {
     on.setAttribute('aria-pressed', String(p.on));
-    $('.led', on).classList.toggle('on', p.on);
-    txt($('.eg-ont', on), p.on ? 'オン' : 'スルー');
     on.title = `${nm}のオンとスルー`;
     const list = S.R[secOf(p)],
       i = list.indexOf(p);

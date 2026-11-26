@@ -583,7 +583,6 @@ async function audioReady(): Promise<boolean> {
 function soundOn(on: boolean): void {
   sndOn = on;
   sndBtn.setAttribute('aria-pressed', String(on));
-  $('#sndLed').classList.toggle('on', on);
   if (on) void audioReady();
   else audio.stop();
 }

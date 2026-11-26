@@ -2,6 +2,7 @@
 import Busy from '../components/Busy.astro';
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import LedToggle from '../components/LedToggle.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
@@ -61,7 +62,7 @@ const name = 'ローリングシャッター';
     </Panel>
 
     <Panel hid="hd-sub" title="題材" class="a-sub">
-      <button slot="aux" type="button" class="tg" id="t-rev" aria-pressed="false" data-rows="prop"><span class="led" aria-hidden="true"></span>逆回転</button>
+      <LedToggle slot="aux" id="t-rev" label="逆回転" data-rows="prop" />
       <div class="ptab">
         <div data-rows="prop"><ParamRow d={RPM} /></div>
         <div data-rows="prop"><ChoiceRow k="nb" name="羽の数" choices={[['2', '2'], ['3', '3'], ['4', '4'], ['5', '5']]} value="2" /></div>

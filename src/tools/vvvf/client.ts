@@ -48,7 +48,6 @@ const autoBtn = $<HTMLButtonElement>('#vv-auto'),
   levBtns = $$<HTMLButtonElement>('#vv-lev button');
 function syncUi(): void {
   autoBtn.setAttribute('aria-pressed', String(S.kind === 'auto'));
-  $('#vv-autoLed').classList.toggle('on', S.kind === 'auto');
   /* aria-pressed は押した段（目標）で、on は今の段。手動で途中の段を通る間だけ 2 つが分かれる */
   for (const b of levBtns) {
     const l = Number(b.dataset.l);

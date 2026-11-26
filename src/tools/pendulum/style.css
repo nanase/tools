@@ -8,8 +8,6 @@
   .c1{grid-area:c1}.c2{grid-area:c2}.a-thy{grid-area:thy}
 }
 
-/* 枠の右上のボタン（LED と文字） */
-#runBtn{display:inline-flex;align-items:center;gap:7px}
 
 /* 記号と単位の列の幅: 枠の中でそろえ、長い記号（Vmax・amax・KPθ など）と長い単位（V/(rad·s)・kg·cm² など）が入る幅にする。
    制御の枠は選んだ制御で変わる（client.ts の showGroups が枠に data-ctl を付ける）。狭い枠では、そのぶん数値欄を詰めて

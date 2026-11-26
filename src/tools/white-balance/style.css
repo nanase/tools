@@ -32,7 +32,6 @@
 .wb-mode{margin-top:6px}
 .wb-mode b,.wb-sbar b{color:var(--ink);font-weight:600}
 .wb-strip{display:block;width:100%;height:78px;margin-top:2px;touch-action:none;cursor:ew-resize}
-.wb-loc.off button{opacity:.45;cursor:default}
 
 /* 結果 */
 .a-out .m-sub{display:block;margin-top:2px;font:12px/1.5 var(--sans);color:var(--ink-3);letter-spacing:0}
