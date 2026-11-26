@@ -57,6 +57,10 @@
 @media (max-width:560px){.chp .eq math{font-size:17px}}
 .chp .take{margin:14px 0 0;padding:2px 0 2px 12px;border-left:3px solid var(--ink);font-size:15px;font-weight:600;max-width:52em}
 .chp .lnk{color:var(--ink);text-decoration:underline;text-decoration-color:var(--line-2);text-underline-offset:3px}
+/* 出典の一覧（章の外、ナビゲーションのあとに置き、1 問ずつのときも出す）。番号と一覧の形はサイトの .rf・.refs */
+.chp .crefs{margin:30px 0 0}
+.chp .crefs a{color:var(--ink-2)}
+.chp .zn .rf{font-size:10.5px}
 
 /* ===== 1 問ずつ・すべて と、下に貼り付くナビゲーション ===== */
 .chp .eyebrow{display:flex;align-items:center;gap:8px;margin:0 0 6px;font-size:13px;font-weight:700;color:var(--ink-3)}

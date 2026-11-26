@@ -30,7 +30,7 @@ describe('章（z 変換のページと同じ形）', () => {
 
   it('本文の文は「です・ます」調', () => {
     const prose = [...html.matchAll(/<(?:p class="take"|span class="zn")>([\s\S]*?)<\/(?:p|span)>/g)].map((m) =>
-      m[1].replace(/<[^>]+>/g, ''),
+      m[1].replace(/<a class="rf"[^>]*>\[\d+\]<\/a>/g, '').replace(/<[^>]+>/g, ''),
     );
     expect(prose).toHaveLength(12);
     for (const s of prose) expect(s, s).toMatch(/(です|ます|ません|ました)。$/);
@@ -106,5 +106,26 @@ describe('点の吸い付け', () => {
     const [a, b] = snap(5, -20);
     expect(a).toBeLessThan(2);
     expect(b).toBeGreaterThan(-10);
+  });
+});
+
+describe('出典', () => {
+  const cited = [...new Set([...html.matchAll(/class="rf" href="#ref-(\d+)"/g)].map((m) => Number(m[1])))].sort(
+    (a, b) => a - b,
+  );
+  const listed = [...html.matchAll(/<li id="ref-(\d+)">/g)].map((m) => Number(m[1]));
+
+  it('本文の番号はどれも一覧にあり、一覧の項目はどれも本文で使う', () => {
+    expect(cited.length).toBeGreaterThan(0);
+    expect(cited).toEqual(listed);
+  });
+
+  it('一覧は章の外、ナビゲーションのあとにあり、開閉できる', () => {
+    const at = html.indexOf('<section class="pnl crefs"');
+    expect(html.indexOf('</section>', html.lastIndexOf('<section class="ch"'))).toBeLessThan(at);
+    expect(html.indexOf('</nav>')).toBeLessThan(at);
+    expect(html.slice(at)).toMatch(
+      /^<section [^>]*data-fold="hd-refs"[^>]*>.*?class="fold" id="hd-refs" aria-expanded="true"/,
+    );
   });
 });

@@ -1,5 +1,5 @@
 /* z 変換のページの章（ビルド時に HTML にする） */
-import { finishChapters, makeChapters, type Part } from '../../lib/chapter-html';
+import { finishChapters, makeChapters, type Part, refsBox, rf } from '../../lib/chapter-html';
 
 export const TOC: Part[] = [
   [
@@ -33,6 +33,17 @@ const part = C.part;
 const qh = C.head;
 const qnav = C.nav;
 
+/** 出典（番号は本文の rf(n) と同じ並び）。節は MIT OpenCourseWare の PDF の目次で確かめた */
+const BOOK = (sec: string): string =>
+  `A. V. Oppenheim, R. W. Schafer, <i>Discrete-Time Signal Processing</i>, 3rd ed., Pearson, 2010, ${sec}（MIT OpenCourseWare で公開: <a href="https://ocw.mit.edu/courses/res-6-dtsp-discrete-time-signal-processing/">ocw.mit.edu</a>）`;
+const REFS: [string, string][] = [
+  ['z 変換・収束域・時間のずれ', BOOK('3 章（3.1・3.2・3.4.2・3.6 節）')],
+  ['標本化と折り返し', BOOK('4.2 節')],
+  ['z = e<sup>sT</sup> の写像（インパルス不変法）', BOOK('4.4.2 節・7.2.1 節')],
+  ['伝達関数・差分方程式のブロック図・フィードバック', BOOK('5.2 節・6.1 節・6.3.4 節')],
+  ['単位円の上の周波数特性と極', BOOK('5.3 節')],
+];
+
 const raw = (): string => `
 
 ${part(0)}
@@ -51,7 +62,7 @@ ${part(0)}
   <p class="live" id="q1t"></p>
   <div class="eq">
     <math display="block"><mi>x</mi><mo>[</mo><mi>n</mi><mo>]</mo><mo>=</mo><msup data-k="zn"><mi>z</mi><mi>n</mi></msup><mo>=</mo><msup data-k="r"><mi>r</mi><mi>n</mi></msup><msup data-k="th"><mi>e</mi><mrow><mi>j</mi><mi>θ</mi><mi>n</mi></mrow></msup><mspace width="1.2em"/><mtext>Re</mtext><mspace width=".3em"/><msup><mi>z</mi><mi>n</mi></msup><mo>=</mo><msup data-k="r"><mi>r</mi><mi>n</mi></msup><mi>cos</mi><mrow data-k="th"><mi>θ</mi><mi>n</mi></mrow></math>
-    <span class="zn">r = |z| は 1 標本ごとに掛かる倍率、θ = ∠z は 1 標本ごとに回る角度です。音は Re zⁿ を 1 秒 8000 標本で鳴らしたものです。聞き取れるよう、縮み方だけ 1/100 に緩めました。</span>
+    <span class="zn">r = |z| は 1 標本ごとに掛かる倍率、θ = ∠z は 1 標本ごとに回る角度です${rf(1)}。音は Re zⁿ を 1 秒 8000 標本で鳴らしたものです。聞き取れるよう、縮み方だけ 1/100 に緩めました。</span>
   </div>
   <p class="take">z は 1 標本ごとに掛ける数で、z を 1 つ決めると数列が 1 本決まります。z 平面の点はそのまま数列の名前になります。</p>
 </section>
@@ -71,7 +82,7 @@ ${part(0)}
   <p class="live" id="q2t"></p>
   <div class="eq">
     <math display="block"><mi>X</mi><mo>(</mo><mi>z</mi><mo>)</mo><mo>=</mo><munderover><mo>∑</mo><mrow><mi>n</mi><mo>=</mo><mn>0</mn></mrow><mi>∞</mi></munderover><msup data-k="a"><mi>a</mi><mi>n</mi></msup><msup data-k="z"><mi>z</mi><mrow><mo>−</mo><mi>n</mi></mrow></msup><mo>=</mo><munderover><mo>∑</mo><mrow><mi>n</mi><mo>=</mo><mn>0</mn></mrow><mi>∞</mi></munderover><msup data-k="q"><mrow><mo>(</mo><mi>a</mi><msup><mi>z</mi><mrow><mo>−</mo><mn>1</mn></mrow></msup><mo>)</mo></mrow><mi>n</mi></msup><mo>=</mo><mfrac><mn>1</mn><mrow data-k="den"><mn>1</mn><mo>−</mo><mi>a</mi><msup><mi>z</mi><mrow><mo>−</mo><mn>1</mn></mrow></msup></mrow></mfrac><mo>=</mo><mfrac><mi>z</mi><mrow data-k="den"><mi>z</mi><mo>−</mo><mi>a</mi></mrow></mfrac></math>
-    <span class="zn">問い 1 の z を a と呼び直し、z は和を求める点にしました。和は n ≥ 0 の項だけでとります（片側 z 変換）。和が収まるのは |a z⁻¹| &lt; 1 のときです。</span>
+    <span class="zn">問い 1 の z を a と呼び直し、z は和を求める点にしました。和は n ≥ 0 の項だけでとります（片側 z 変換）。和が収まるのは |a z⁻¹| &lt; 1 のときです${rf(1)}。</span>
   </div>
   <p class="take">和が収まるのは半径 |a| の円の外側（|z| &gt; |a|、収束域）だけで、z を a に近づけるほど X(z) は大きくなります。この a が X(z) の極です。</p>
 </section>
@@ -86,7 +97,7 @@ ${part(0)}
   <p class="live" id="q3t"></p>
   <div class="eq">
     <math display="block"><msup><mi>r</mi><mi>n</mi></msup><mi>cos</mi><mi>θ</mi><mi>n</mi><mo>=</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><msup data-k="a"><mi>a</mi><mi>n</mi></msup><mo>+</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><msup data-k="q"><mover><mi>a</mi><mo>¯</mo></mover><mi>n</mi></msup><mspace width="1.2em"/><mo>⟷</mo><mspace width="1.2em"/><mi>X</mi><mo>(</mo><mi>z</mi><mo>)</mo><mo>=</mo><mfrac><mrow><mn>1</mn><mo>/</mo><mn>2</mn></mrow><mrow data-k="a"><mn>1</mn><mo>−</mo><mi>a</mi><msup><mi>z</mi><mrow><mo>−</mo><mn>1</mn></mrow></msup></mrow></mfrac><mo>+</mo><mfrac><mrow><mn>1</mn><mo>/</mo><mn>2</mn></mrow><mrow data-k="q"><mn>1</mn><mo>−</mo><mover><mi>a</mi><mo>¯</mo></mover><msup><mi>z</mi><mrow><mo>−</mo><mn>1</mn></mrow></msup></mrow></mfrac></math>
-    <span class="zn">ā は a の共役（実軸で折り返した点）です。極は a と ā の 2 つです。</span>
+    <span class="zn">ā は a の共役（実軸で折り返した点）です。極は a と ā の 2 つです${rf(1)}。</span>
   </div>
   <p class="take">実数の振動 rⁿcos θn は逆向きに回る共役な 2 本の点の列を半分ずつ足したものです。極や零点が実軸を挟んで対になるのはこのためです。</p>
 </section>
@@ -103,7 +114,7 @@ ${part(1)}
   <p class="live" id="q4t"></p>
   <div class="eq">
     <math display="block"><mi>x</mi><mo>(</mo><mi>n</mi><mi>T</mi><mo>)</mo><mo>=</mo><msup><mi>e</mi><mrow><mi>s</mi><mi>n</mi><mi>T</mi></mrow></msup><mo>=</mo><msup><mrow><mo>(</mo><msup data-k="sT"><mi>e</mi><mrow><mi>s</mi><mi>T</mi></mrow></msup><mo>)</mo></mrow><mi>n</mi></msup><mo>=</mo><msup data-k="sT"><mi>z</mi><mi>n</mi></msup><mspace width="1.4em"/><mi>z</mi><mo>=</mo><msup><mi>e</mi><mrow><mi>s</mi><mi>T</mi></mrow></msup><mo>=</mo><msup data-k="sig"><mi>e</mi><mrow><mi>σ</mi><mi>T</mi></mrow></msup><mo>·</mo><msup data-k="om"><mi>e</mi><mrow><mi>j</mi><mi>ω</mi><mi>T</mi></mrow></msup></math>
-    <span class="zn">s = σ + jω、T は標本化の間隔です。図の目盛りは T を 1 とした値です。s 平面は縦と横の目盛りの間隔が違います。</span>
+    <span class="zn">s = σ + jω、T は標本化の間隔です${rf(3)}。図の目盛りは T を 1 とした値です。s 平面は縦と横の目盛りの間隔が違います。</span>
   </div>
   <p class="take">標本の列は z = e<sup>sT</sup> の zⁿ になります。s 平面の虚軸は単位円に、左半分は円の内側に、右半分は円の外側に写ります。</p>
 </section>
@@ -127,7 +138,7 @@ ${part(1)}
   <p class="live" id="q5t"></p>
   <div class="eq">
     <math display="block"><mi>z</mi><mo>=</mo><msup><mi>e</mi><mrow><mi>j</mi><mi>ω</mi><mi>T</mi></mrow></msup><mo>=</mo><msup><mi>e</mi><mrow><mi>j</mi><mn>2</mn><mi>π</mi><mi data-k="f">f</mi><mo>/</mo><msub><mi>f</mi><mi>s</mi></msub></mrow></msup><mspace width="1.4em"/><msup><mi>e</mi><mrow><mi>j</mi><mn>2</mn><mi>π</mi><mo>(</mo><mi>f</mi><mo>+</mo><msub><mi>f</mi><mi>s</mi></msub><mo>)</mo><mo>/</mo><msub><mi>f</mi><mi>s</mi></msub></mrow></msup><mo>=</mo><msup><mi>e</mi><mrow><mi>j</mi><mn>2</mn><mi>π</mi><mi>f</mi><mo>/</mo><msub><mi>f</mi><mi>s</mi></msub></mrow></msup><mo>·</mo><msup data-k="T"><mi>e</mi><mrow><mi>j</mi><mn>2</mn><mi>π</mi></mrow></msup><mo>=</mo><msup><mi>e</mi><mrow><mi>j</mi><mn>2</mn><mi>π</mi><mi>f</mi><mo>/</mo><msub><mi>f</mi><mi>s</mi></msub></mrow></msup></math>
-    <span class="zn">fs = 1/T はサンプリング周波数、ω = 2πf です。cos の波は e<sup>jωt</sup> と e<sup>−jωt</sup> を半分ずつ足したものなので、s も z も上下の 2 点になります（問い 3）。標本の列の音は窓付き sinc で連続の音に戻して鳴らします。</span>
+    <span class="zn">fs = 1/T はサンプリング周波数、ω = 2πf です${rf(2)}。cos の波は e<sup>jωt</sup> と e<sup>−jωt</sup> を半分ずつ足したものなので、s も z も上下の 2 点になります（問い 3）。標本の列の音は窓付き sinc で連続の音に戻して鳴らします。</span>
   </div>
   <p class="take">f が fs 増えるごとに z は単位円を 1 周して同じ点に戻ります。単位円は s 平面の虚軸を巻き付けたものです。</p>
 </section>
@@ -143,7 +154,7 @@ ${part(2)}
   <p class="live" id="q6t"></p>
   <div class="eq">
     <math display="block"><msup data-k="d1"><mi>z</mi><mrow><mo>−</mo><mn>1</mn></mrow></msup><mi>X</mi><mo>(</mo><mi>z</mi><mo>)</mo><mo>=</mo><munder><mo>∑</mo><mi>n</mi></munder><mi>x</mi><mo>[</mo><mi>n</mi><mo>]</mo><msup data-k="d1"><mi>z</mi><mrow><mo>−</mo><mo>(</mo><mi>n</mi><mo>+</mo><mn>1</mn><mo>)</mo></mrow></msup><mo>=</mo><munder><mo>∑</mo><mi>n</mi></munder><mi>x</mi><mo>[</mo><mrow data-k="d1"><mi>n</mi><mo>−</mo><mn>1</mn></mrow><mo>]</mo><msup><mi>z</mi><mrow><mo>−</mo><mi>n</mi></mrow></msup></math>
-    <span class="zn">z⁻ⁿ の係数が n 番目の値です。z⁻¹ を掛けると全部の項の次数が 1 つ上がります。</span>
+    <span class="zn">z⁻ⁿ の係数が n 番目の値です。z⁻¹ を掛けると全部の項の次数が 1 つ上がります${rf(1)}。</span>
   </div>
   <p class="take">z⁻¹ を掛けると全部の項の次数が 1 つ上がり、数列は 1 標本遅れます。z⁻¹ は 1 標本の遅延素子です。</p>
 </section>
@@ -163,7 +174,7 @@ ${part(2)}
   <p class="live" id="q7t"></p>
   <div class="eq">
     <math display="block"><mi>y</mi><mo>[</mo><mi>n</mi><mo>]</mo><mo>=</mo><mi>x</mi><mo>[</mo><mi>n</mi><mo>]</mo><mo>+</mo><mrow data-k="fb"><mi>a</mi><mi>y</mi><mo>[</mo><mi>n</mi><mo>−</mo><mn>1</mn><mo>]</mo></mrow><mspace width="1em"/><mo>⟶</mo><mspace width="1em"/><mi>Y</mi><mo>=</mo><mi>X</mi><mo>+</mo><mrow data-k="fb"><mi>a</mi><msup><mi>z</mi><mrow><mo>−</mo><mn>1</mn></mrow></msup><mi>Y</mi></mrow><mspace width="1em"/><mo>⟶</mo><mspace width="1em"/><mi>H</mi><mo>(</mo><mi>z</mi><mo>)</mo><mo>=</mo><mfrac><mn>1</mn><mrow data-k="den"><mn>1</mn><mo>−</mo><mi>a</mi><msup><mi>z</mi><mrow><mo>−</mo><mn>1</mn></mrow></msup></mrow></mfrac><mo>=</mo><mfrac><mi>z</mi><mrow data-k="den"><mi>z</mi><mo>−</mo><mi>a</mi></mrow></mfrac></math>
-    <span class="zn">H(z) は伝達関数です。分母が 0 になる z = a が極です。音はノイズを 1 秒 8000 標本でこの式に通し、膨らむときは上限で止めます。</span>
+    <span class="zn">H(z) は伝達関数です。分母が 0 になる z = a が極です${rf(4)}。音はノイズを 1 秒 8000 標本でこの式に通し、膨らむときは上限で止めます。</span>
   </div>
   <p class="take">出力を戻すと、1 つのインパルスが問い 2 の数列 aⁿ になります。a は伝達関数の極で、|a| &lt; 1 なら列は消えていきます。</p>
 </section>
@@ -182,11 +193,12 @@ ${part(2)}
   <p class="live" id="q8t"></p>
   <div class="eq">
     <math display="block"><mo>|</mo><mi>H</mi><mo>(</mo><msup><mi>e</mi><mrow><mi>j</mi><mi>ω</mi></mrow></msup><mo>)</mo><mo>|</mo><mo>=</mo><mfrac><mn>1</mn><mrow data-k="den"><mo>|</mo><msup><mi>e</mi><mrow><mi>j</mi><mi>ω</mi></mrow></msup><mo>−</mo><mi>p</mi><mo>|</mo><mspace width=".2em"/><mo>|</mo><msup><mi>e</mi><mrow><mi>j</mi><mi>ω</mi></mrow></msup><mo>−</mo><mover><mi>p</mi><mo>¯</mo></mover><mo>|</mo></mrow></mfrac><mspace width="1.2em"/><mi>H</mi><mo>(</mo><mi>z</mi><mo>)</mo><mo>=</mo><mfrac><mn>1</mn><mrow data-k="den"><mo>(</mo><mn>1</mn><mo>−</mo><mi>p</mi><msup><mi>z</mi><mrow><mo>−</mo><mn>1</mn></mrow></msup><mo>)</mo><mo>(</mo><mn>1</mn><mo>−</mo><mover><mi>p</mi><mo>¯</mo></mover><msup><mi>z</mi><mrow><mo>−</mo><mn>1</mn></mrow></msup><mo>)</mo></mrow></mfrac></math>
-    <span class="zn">p と p̄ は極です。ω は単位円の上の角で、問い 5 の ωT と同じ量です。音は 1 秒 8000 標本でこの式に通します。零点も置いた計算は「<a class="lnk" href="../pole-zero/">極と零点</a>」のページで試せます。</span>
+    <span class="zn">p と p̄ は極です${rf(5)}。ω は単位円の上の角で、問い 5 の ωT と同じ量です。音は 1 秒 8000 標本でこの式に通します。零点も置いた計算は「<a class="lnk" href="../pole-zero/">極と零点</a>」のページで試せます。</span>
   </div>
   <p class="take">単位円の上を歩くことは周波数を上げることで、極の近くを通ると距離が縮んで |H| に山ができます。</p>
 </section>
-${qnav()}`;
+${qnav()}
+${refsBox(REFS)}`;
 
 /** 章の HTML */
 export const chaptersHtml = (): string => finishChapters(raw());

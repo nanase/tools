@@ -160,6 +160,13 @@ export function initChapterNav(root: HTMLElement, o: ChapterNavOpts): void {
   );
   for (const c of chs) io.observe(c);
 
+  // 本文の出典番号 [n] を押したとき、出典の枠が閉じていれば先に開く（開閉は lib/tool-page.ts の見出しのボタン）
+  const refs = root.querySelector<HTMLElement>('.crefs');
+  root.addEventListener('click', (e) => {
+    if (!refs?.classList.contains('shut') || !(e.target instanceof Element) || !e.target.closest('a.rf')) return;
+    refs.querySelector<HTMLElement>('.fold')?.click();
+  });
+
   paint(false);
   root.classList.add('ready');
   const ch = chs[cur];
