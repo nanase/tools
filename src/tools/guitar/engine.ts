@@ -5,7 +5,7 @@
  * ステレオ（再生だけ）では、弾いた弦と胴のモードごとに左右の重みを変えて、定位を少しずらす。
  * 重みは聞こえ方のための目安で、模型には基づかない。モノラル（表示用の計算）は重みがすべて 1 で、結果は変わらない
  */
-import { type Body, cvLp, R_MIC, rng } from './body';
+import { type Body, CV_H, cvLp, R_MIC, rng } from './body';
 import { AIR } from './strings';
 
 /** 胴のモード（AudioWorklet へ送れる形） */
@@ -270,6 +270,8 @@ export class Engine {
   /** 弦ごとの、左手で動かした音の高さの比（目標と、ならした今の値） */
   private readonly bendT = [1, 1, 1, 1, 1, 1];
   private readonly bendC = [1, 1, 1, 1, 1, 1];
+  /** 弦ごとの、最後に弾いた撥弦の番号 */
+  private readonly last = [0, 0, 0, 0, 0, 0];
 
   /** stereo なら 2 チャンネル（左・右）を出す */
   constructor(
@@ -354,6 +356,7 @@ export class Engine {
    */
   pluck(p: PluckMsg, pan = 0, id = 0): void {
     this.damp(p.si, FADE_S);
+    this.last[p.si] = id;
     this.add(new Voice(p, this.fs, this.gains(pan), id));
     /* 共鳴するほかの弦のモード（鳴っているその弦の音は止めない） */
     for (const q of p.sym ?? []) {
@@ -384,11 +387,13 @@ export class Engine {
 
   /**
    * 弦の振動を時定数 tau [s] で止める（指を離す・触れる）。id を渡すと、その撥弦だけを止める
-   * （指を離すより先に同じ弦を弾き直していたら、弾き直した音は止めない）
+   * （指を離すより先に同じ弦を弾き直していたら、弾き直した音は止めない）。
+   * その撥弦が弦の最後の撥弦なら、ほかの弦から共鳴で乗った振動も止める
    */
   damp(si: number, tau = DAMP_S, id = 0): void {
-    const g = Math.exp(-1 / (tau * this.fs));
-    for (const v of this.voices) if (v.si === si && (!id || v.id === id)) v.fade = Math.min(v.fade, g);
+    const g = Math.exp(-1 / (tau * this.fs)),
+      all = !id || id === this.last[si];
+    for (const v of this.voices) if (v.si === si && (all || v.id === id)) v.fade = Math.min(v.fade, g);
   }
 
   /** 弦 si の音の高さを、左手で動かした比 r にする（少しならして追う） */
@@ -561,13 +566,14 @@ export class Engine {
       up = c.uPrev;
     for (let i = 0; i < len; i++) {
       let u = 0;
+      const fd = fv[i] + CV_H * fh[i];
       for (let k = 0; k < 2; k++) {
         const qr = c.cvQr[k],
           qi = c.cvQi[k],
           er = this.cvEr[k],
           ei = this.cvEi[k],
-          nr = qr * er - qi * ei + this.cvBr[k] * fv[i],
-          ni = qr * ei + qi * er + this.cvBi[k] * fv[i];
+          nr = qr * er - qi * ei + this.cvBr[k] * fd,
+          ni = qr * ei + qi * er + this.cvBi[k] * fd;
         c.cvQr[k] = nr;
         c.cvQi[k] = ni;
         u += 2 * (this.cvRr[k] * nr - this.cvRi[k] * ni);

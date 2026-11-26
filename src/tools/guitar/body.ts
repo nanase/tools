@@ -86,6 +86,28 @@ export const F_TOP = 11000;
 /** 統計的なモードの Q の範囲（一様な乱数。Woodhouse 2004 の 30〜80） */
 const Q_MIN = 30,
   Q_MAX = 80;
+/**
+ * 統計的なモードが駒で動く向きの分布: −90° から 10° ごとのモードの数（Woodhouse 2004 の Fig. 12、
+ * 測った古典ギターに当てはめた 251 モード）。平均の sin² は 0.26 で、表板に平行な向きにもかなり動く
+ */
+const TH_HIST = [6, 6, 5, 1, 5, 13, 21, 27, 21, 51, 20, 26, 18, 5, 7, 3, 7, 9];
+/** 標準正規分布の累積分布（Abramowitz–Stegun 26.2.17） */
+function phi(x: number): number {
+  const t = 1 / (1 + 0.2316419 * Math.abs(x)),
+    p =
+      (Math.exp((-x * x) / 2) / Math.sqrt(2 * Math.PI)) *
+      t *
+      (0.31938153 + t * (-0.356563782 + t * (1.781477937 + t * (-1.821255978 + t * 1.330274429))));
+  return x >= 0 ? 1 - p : p;
+}
+/** 標準正規分布の乱数 g を、TH_HIST の分布の角度 [rad] に移す（乱数の並びは変えない） */
+function thOf(g: number): number {
+  const n = TH_HIST.reduce((a, v) => a + v, 0);
+  let u = phi(g) * n,
+    k = 0;
+  while (k < TH_HIST.length - 1 && u > TH_HIST[k]) u -= TH_HIST[k++];
+  return ((-90 + 10 * (k + Math.min(1, u / TH_HIST[k]))) * Math.PI) / 180;
+}
 /** 音圧を求める距離 [m] */
 export const R_MIC = 1;
 /** 統計的なモードの放射: 駒の速度に対する表板の平均の速度の割合と、放射効率の下限 */
@@ -243,7 +265,7 @@ export function makeBody(spec: BodySpec): Body {
     const g = gauss(r),
       invM = 4 * KAPPA * b.yInf * b.df * Math.max(0.02, g * g),
       eta = 1 / (Q_MIN + (Q_MAX - Q_MIN) * rq()),
-      th = 0.4 * gauss(r),
+      th = thOf(gauss(r)),
       x = (f / b.fc) ** 1.5,
       sig = SIG0 + x / (1 + x),
       G = (RAD_K * gauss(r) * AIR.rho * AIR.c * Math.sqrt((sig * ty.area) / (2 * Math.PI))) / R_MIC;
@@ -270,12 +292,22 @@ export function yCv(b: Body, w: Cx): Cx {
   return div(mul(iw, bb), scl(d, b.mp));
 }
 
+/** TH_HIST の平均の sin²（区間の中央の角度で数える） */
+const SIN2 =
+  TH_HIST.reduce((a, v, k) => a + v * Math.sin(((-85 + 10 * k) * Math.PI) / 180) ** 2, 0) /
+  TH_HIST.reduce((a, v) => a + v, 0);
+/**
+ * 2 自由度の模型の駒の、表板に平行な向きの速度 ÷ 垂直な向きの速度。2 つのモードも統計的なモードと同じ分布で傾くとし、
+ * 平均の sin² の角度（約 31°）の tan とする
+ */
+export const CV_H = Math.sqrt(SIN2 / (1 - SIN2));
+
 /**
  * 駒のアドミタンス（速度 ÷ 力） [s/kg]。pol 0 は表板に垂直、1 は表板に平行の向き。
- * 2 自由度の模型は垂直の向きだけに動く
+ * 2 自由度の模型は、平行の向きには垂直の CV_H 倍だけ動く
  */
 export function admittance(b: Body, w: Cx, pol: 0 | 1): Cx {
-  let y = pol ? cx(0) : yCv(b, w);
+  let y = pol ? scl(yCv(b, w), CV_H * CV_H) : yCv(b, w);
   for (const m of b.stat) {
     const c = pol ? Math.sin(m.th) : Math.cos(m.th);
     y = add(y, scl(yMode(m, w), c * c));

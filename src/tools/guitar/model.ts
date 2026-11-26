@@ -101,7 +101,8 @@ export function modesOf(g: Guitar, si: number, fret: number, fs: number, nMax = 
 
 /**
  * 開放弦の第 1 部分音が、胴と結合したあとで f [Hz] になる張力（弦の T を 2 回直す）。
- * 胴の共振の近くでは結合で音程が少しずれるので、チューナーで合わせるのと同じように補う
+ * 胴の共振の近くでは結合で音程が少しずれるので、チューナーで合わせるのと同じように補う。
+ * 垂直と平行の偏波で少し高さが違うので、2 つの相乗平均を合わせる
  */
 export function tuneCoupled(g: Guitar, si: number, f: number): number {
   const p = g.str[si];
@@ -110,7 +111,7 @@ export function tuneCoupled(g: Guitar, si: number, f: number): number {
     const str = g.str.slice();
     str[si] = { ...p, T };
     const m = modesOf({ ...g, str }, si, 0, 1e9, 1),
-      f1 = m.w[0] / (2 * Math.PI);
+      f1 = Math.sqrt(m.w[0] * m.w[1]) / (2 * Math.PI);
     T *= (f / f1) ** 2;
   }
   return T;
