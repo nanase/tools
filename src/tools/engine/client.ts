@@ -4,6 +4,7 @@
  */
 import { Choice } from '../../lib/choice';
 import { $ } from '../../lib/dom';
+import { activates } from '../../lib/gesture';
 import { ParamGroup } from '../../lib/param';
 import { DV, SW } from '../../lib/scope';
 import { initToolPage } from '../../lib/tool-page';
@@ -210,21 +211,38 @@ function setRun(on: boolean): void {
   runLed.classList.toggle('on', on);
   runT.textContent = on ? '運転中' : '運転';
 }
-runBtn.addEventListener('click', async () => {
+/** 掛けている途中（音の準備を待つ間に何度押されても、掛けるのは 1 回） */
+let starting: Promise<boolean> | null = null;
+/** エンジンを掛ける。回っていれば何もしない。掛かったか（回っていたか）を返す */
+function startRun(): Promise<boolean> {
+  if (running) return Promise.resolve(true);
+  starting ??= (async () => {
+    sndMsg.textContent = '';
+    if (!(await audio.ready())) {
+      sndMsg.textContent = 'この環境では音を鳴らせません';
+      return false;
+    }
+    if (!running) {
+      audio.start(eng, muf, runSet());
+      setRun(true);
+    }
+    return true;
+  })().finally(() => {
+    starting = null;
+  });
+  return starting;
+}
+runBtn.addEventListener('click', () => {
   if (running) {
     audio.stop();
     setRun(false);
     stat = null;
     return;
   }
-  sndMsg.textContent = '';
-  if (!(await audio.ready())) {
-    sndMsg.textContent = 'この環境では音を鳴らせません';
-    return;
-  }
-  audio.start(eng, muf, runSet());
-  setRun(true);
+  void startRun();
 });
+/** 止まっているとき、スロットルや変速を押したらエンジンを掛ける（利用者の操作のときだけ） */
+const autoRun = (e: Event): Promise<boolean> => (activates(e) ? startRun() : Promise.resolve(running));
 audio.onStat = (m) => {
   if (running) stat = m;
 };
@@ -270,11 +288,16 @@ const at = (e: PointerEvent) => {
 thr.addEventListener('pointerdown', (e) => {
   thr.setPointerCapture(e.pointerId);
   press(at(e));
+  void autoRun(e);
 });
 thr.addEventListener('pointermove', (e) => {
   if (held && thr.hasPointerCapture(e.pointerId)) press(at(e));
 });
-thr.addEventListener('pointerup', release);
+/* 指で押したときは、離したときにエンジンを掛ける（lib/gesture.ts） */
+thr.addEventListener('pointerup', (e) => {
+  release();
+  void autoRun(e);
+});
 thr.addEventListener('pointercancel', release);
 /* ブレーキのパッド: 押している間だけ、押した位置（右ほど強く）でかける */
 const brk = $('#brk'),
@@ -302,12 +325,20 @@ const brRelease = () => {
 };
 brk.addEventListener('pointerup', brRelease);
 brk.addEventListener('pointercancel', brRelease);
-/* 変速 */
+/* 変速。止まっているときは、エンジンを掛けてから変速する */
 const shift = (dir: 1 | -1) => {
   if (running && mode === 'drive') audio.shift(dir);
 };
-$('#upBtn').addEventListener('click', () => shift(1));
-$('#dnBtn').addEventListener('click', () => shift(-1));
+const shiftBy = (e: Event, dir: 1 | -1) => {
+  if (mode !== 'drive') return;
+  if (running) shift(dir);
+  else
+    void autoRun(e).then((ok) => {
+      if (ok) shift(dir);
+    });
+};
+$('#upBtn').addEventListener('click', (e) => shiftBy(e, 1));
+$('#dnBtn').addEventListener('click', (e) => shiftBy(e, -1));
 /* キーボード: Space で全開、1〜9 で 10〜90 %、0 で 100 %（押している間）。入力欄・ボタン・ほかのスライダにいるときは使わない */
 let key = '';
 const keyVal = (e: KeyboardEvent): number | null =>
@@ -324,7 +355,7 @@ document.addEventListener('keydown', (e) => {
     return;
   if (e.code === 'ArrowUp' || e.code === 'ArrowDown') {
     e.preventDefault();
-    shift(e.code === 'ArrowUp' ? 1 : -1);
+    shiftBy(e, e.code === 'ArrowUp' ? 1 : -1);
     return;
   }
   if (e.code === 'KeyB') {
@@ -339,6 +370,7 @@ document.addEventListener('keydown', (e) => {
   e.preventDefault();
   key = e.code;
   press(v);
+  void autoRun(e);
 });
 document.addEventListener('keyup', (e) => {
   if (e.code === key) {
