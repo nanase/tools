@@ -53,7 +53,7 @@ ${part(0)}
   ${live('q1t', 'σ = −0.30 なので 1 秒ごとに 0.74 倍に膨らみます。ω = −6.28 rad/s なので 1 秒に 1.00 回まわります。ω が負だと逆向きに回りますが、実部の波は ω が正のときと同じです。')}
   <div class="eq">
     <math display="block"><mtext>Re</mtext><mspace width=".3em"/><mrow data-k="s">${eST}</mrow><mo>=</mo><mrow data-k="env">${eSgT}</mrow><mo>·</mo><mrow data-k="rot"><mi>cos</mi><mi>ω</mi><mi>t</mi></mrow><mspace width="1.2em"/><mi>s</mi><mo>=</mo><mi>σ</mi><mo>+</mo><mi>j</mi><mi>ω</mi><mo>=</mo><mpadded height=".72em" depth=".22em"><mn id="lap-v-sg">−0.30</mn></mpadded><mo id="lap-v-pm">+</mo><mpadded height=".72em" depth=".22em"><mn id="lap-v-om">6.28</mn></mpadded><mi>j</mi></math>
-    <span class="zn">σ は 1 秒あたりの縮み方、ω は 1 秒あたりに回る角度（rad/s）です。点線の下線の項に指を載せると、図の同じ所が光ります。</span>
+    <span class="zn">σ は 1 秒あたりの縮み方、ω は 1 秒あたりに回る角度（rad/s）です。点線の下線が付いた項に指を載せると、図の同じ所が光ります。</span>
   </div>
   <p class="take">s は波 e<sup>st</sup> の名前です。横の位置 σ が縮み方を、縦の位置 ω が回る速さを決めます。</p>
 </section>
@@ -65,10 +65,10 @@ ${part(0)}
     <div class="pnl"><h3>回る矢印とその実部</h3><div class="aux"><span style="color:var(--ch1)">→ e<sup>st</sup></span><span style="color:var(--ch2)">— 実部</span></div><div class="scope"><canvas role="img" aria-label="回る矢印 e^st と、その実部が下へ描く波"></canvas></div></div>
   </div>
   <div class="ctl"><span class="sp"></span>${run('q2run')}</div>
-  ${live('q2t', '矢印は反時計回りに 1 秒 1.00 回まわりながら、長さが 1 秒ごとに 0.74 倍になります。実部の波は、矢印の先を実軸に落とした位置です。')}
+  ${live('q2t', '矢印は反時計回りに 1 秒に 1.00 回まわりながら、長さが 1 秒ごとに 0.74 倍になります。実部の波は矢印の先を実軸に落とした位置です。')}
   <div class="eq">
     <math display="block">${eST}<mo>=</mo><msup><mi>e</mi><mrow><mo>(</mo><mi>σ</mi><mo>+</mo><mi>j</mi><mi>ω</mi><mo>)</mo><mi>t</mi></mrow></msup><mo>=</mo><mrow data-k="env">${eSgT}</mrow><mo>·</mo><mrow data-k="rot"><msup><mi>e</mi><mrow><mi>j</mi><mi>ω</mi><mi>t</mi></mrow></msup></mrow><mspace width="1.2em"/><mrow data-k="re"><mtext>Re</mtext><mspace width=".3em"/>${eST}</mrow><mo>=</mo>${eSgT}<mi>cos</mi><mi>ω</mi><mi>t</mi></math>
-    <span class="zn">e<sup>σt</sup> は矢印の長さ、e<sup>jωt</sup> は矢印の向きです。下の波は、上で回る矢印の先を実軸に落とした位置を、時間の順に下へ並べたものです。</span>
+    <span class="zn">e<sup>σt</sup> は矢印の長さ、e<sup>jωt</sup> は矢印の向きです。矢印の下の波は、回る矢印の先を実軸に落とした位置を時間の順に下へ並べたものです。</span>
   </div>
   <p class="take">縮む速さ σ と回る速さ ω を 1 つの数にまとめたものが複素数 s です。</p>
 </section>
@@ -83,7 +83,7 @@ ${part(0)}
   ${live('q3t', '2 本の矢印は同じ速さで逆向きに回ります。虚部が打ち消し合い、和はいつも実軸の上にあります。')}
   <div class="eq">
     <math display="block">${eSgT}<mi>cos</mi><mi>ω</mi><mi>t</mi><mo>=</mo><mrow data-k="a"><mfrac><mn>1</mn><mn>2</mn></mfrac>${eST}</mrow><mo>+</mo><mrow data-k="b"><mfrac><mn>1</mn><mn>2</mn></mfrac><msup><mi>e</mi><mrow><mover><mi>s</mi><mo>¯</mo></mover><mi>t</mi></mrow></msup></mrow><mspace width="1.2em"/><mover><mi>s</mi><mo>¯</mo></mover><mo>=</mo><mi>σ</mi><mo>−</mo><mi>j</mi><mi>ω</mi></math>
-    <span class="zn">s̄ は s の共役で、虚部の符号を反転した点（実軸で折り返した点）です。</span>
+    <span class="zn">s̄ は s の共役で、虚部の符号を反転した点です。s 平面では s を実軸で折り返した位置にあります。</span>
   </div>
   <p class="take">実数の波は s と共役 s̄ の 2 点で 1 組になります。実数の信号の極が実軸を挟んで対で現れるのはこのためです。</p>
 </section>
@@ -95,12 +95,12 @@ ${part(1)}
     <div class="pnl"><h3>s 平面</h3><div class="aux"><span style="color:var(--ch1)">× 極</span></div><div class="scope">${sCv('s 平面の極')}</div></div>
     <div class="pnl wide"><h3>s 平面の上の |H(s)|</h3><div class="aux">高さは対数</div><div class="scope"><canvas class="sf" tabindex="0" aria-label="s 平面の上の |H(s)| の曲面。横にドラッグか矢印キーで回転"></canvas></div></div>
   </div>
-  ${live('q4t', '極は −0.30 ± 6.28j です。インパルスを入れると、系は 1 秒に 1.00 回振れながら、1 秒ごとに 0.74 倍に膨らみます。')}
+  ${live('q4t', '極は −0.30 ± 6.28j です。インパルスを入れると、出力は 1 秒に 1.00 回振れながら、振れ幅が 1 秒ごとに 0.74 倍に膨らみます。')}
   <div class="eq">
     <math display="block"><mi>H</mi><mo>(</mo><mi>s</mi><mo>)</mo><mo>=</mo><mfrac><mrow>${p2}</mrow><mrow data-k="den">${pTerm('+')}${pTerm('−')}</mrow></mfrac><mspace width="1.2em"/><mi>h</mi><mo>(</mo><mi>t</mi><mo>)</mo><mo>=</mo><mfrac><mrow>${p2}</mrow><mi>ω</mi></mfrac>${eSgT}<mi>sin</mi><mi>ω</mi><mi>t</mi></math>
-    <span class="zn">H(s) は伝達関数、h(t) はインパルス応答です。|p|² は ω = 0 で大きさを 1 にそろえる係数です。曲面の高さは 20 log₁₀|H| で、上下の端で打ち切っています。</span>
+    <span class="zn">H(s) は伝達関数、h(t) はインパルス応答です。|p|² は ω = 0 で |H| を 1 にそろえる係数です。曲面の高さは 20 log₁₀|H| で、上下の端で打ち切っています。</span>
   </div>
-  <p class="take">系の極は、系が自分から出す波の s です。曲面はその真上で突き上がります。</p>
+  <p class="take">系の極は、入力が止まったあとも系の出力に残る波の s です。曲面はその真上で突き上がります。</p>
 </section>
 
 <section class="ch" id="q5">
@@ -115,7 +115,7 @@ ${part(1)}
     <math display="block"><mrow data-k="jw"><mi>H</mi><mo>(</mo><mi>j</mi><mi>ω</mi><mo>)</mo></mrow><mo>=</mo><msubsup><mo>∫</mo><mn>0</mn><mi>∞</mi></msubsup><mi>h</mi><mo>(</mo><mi>t</mi><mo>)</mo><msup><mi>e</mi><mrow><mo>−</mo><mi>j</mi><mi>ω</mi><mi>t</mi></mrow></msup><mi>d</mi><mi>t</mi></math>
     <span class="zn">ラプラス変換の式に s = jω を入れるとフーリエ変換の式になります。h(t) のフーリエ変換が周波数特性です。</span>
   </div>
-  <p class="take">周波数特性は、伝達関数の曲面を虚軸で切った断面です。極が虚軸に近いほど山は高く細くなります。</p>
+  <p class="take">周波数特性は伝達関数の曲面を虚軸で切った断面です。極が虚軸に近いほど山は高く細くなります。</p>
 </section>
 
 <section class="ch" id="q6">
@@ -132,7 +132,7 @@ ${part(1)}
   ${live('q6t', '極の実部 −0.30 < 0 なので、収束域 Re s > −0.30 に虚軸が入ります。面積は約 20.00 で止まり、フーリエ変換の積分は収束します。')}
   <div class="eq">
     <math display="block"><mrow data-k="roc"><mtext>収束域</mtext><mo>:</mo><mtext>Re</mtext><mspace width=".3em"/><mi>s</mi><mo>&gt;</mo><mpadded height=".72em" depth=".22em"><mn id="lap-v-roc">−0.30</mn></mpadded></mrow><mspace width="1.2em"/><msubsup><mo>∫</mo><mn>0</mn><mi>∞</mi></msubsup><mo>|</mo><mi>h</mi><mo>(</mo><mi>t</mi><mo>)</mo><mo>|</mo><mi>d</mi><mi>t</mi><mo>&lt;</mo><mi>∞</mi></math>
-    <span class="zn">片側ラプラス変換（t ≥ 0 だけを積分）の収束域は、一番右の極より右の半平面です。右の式が成り立てば、フーリエ変換の積分も収束します。図は 0〜10 秒の面積で、文の値は h(t) が 1 万分の 1 に縮むまでの和です。</span>
+    <span class="zn">片側ラプラス変換（t ≥ 0 だけを積分）の収束域は、一番右の極より右の半平面です。|h(t)| の積分が有限なら、フーリエ変換の積分も収束します。図の面積は 0〜10 秒の分です。上の文の面積の値は、h(t) が 1 万分の 1 に縮むまで足したものです。</span>
   </div>
   <p class="take">虚軸が収束域に入るのは、極がすべて左半分にあるときだけです。そのときだけ断面がフーリエ変換になります。</p>
 </section>
