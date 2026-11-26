@@ -190,8 +190,8 @@ export const PARAMS: (ParamDef & { k: PKey })[] = [
 
 type Opt = readonly (readonly [string, string] | readonly [string, string, string])[];
 export const PRED: Opt = [
-  ['1', '前の値', '前の標本の値で予想'],
-  ['0', 'なし', '予想なしで丸める'],
+  ['1', '前の値', '前の標本の値で予測'],
+  ['0', 'なし', '予測なしで丸める'],
 ];
 export const ADAPT: Opt = [
   ['1', 'あり', '音の大きさに合わせて間隔を調整'],

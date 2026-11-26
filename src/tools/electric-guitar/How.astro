@@ -14,7 +14,7 @@ const STEPS: { h: string; svg: string; p: string }[] = [
   {
     h: '弦の振動',
     svg: `<path class="eg-l0" d="M8 40L118 40"/><path class="eg-l1" d="M8 40L40 18L118 40"/>${[1, 2, 3].map((n) => `<path class="eg-l2 eg-thin" d="${path((x) => (9 / n) * Math.sin(((x - 8) * n * Math.PI) / 110), 8, 118, 40)}"/>`).join('')}<text class="eg-mt" x="40" y="12">弾く点</text>`,
-    p: '弾いた点が角の形から、倍音を重ねた振動',
+    p: '弾いた点を角にした形から、倍音を重ねた振動',
   },
   {
     h: 'ピックアップ',

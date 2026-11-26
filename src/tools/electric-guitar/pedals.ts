@@ -265,7 +265,7 @@ export const FIXED: Record<Fixed, KindDef> = {
       {
         k: 'level',
         name: 'レベル',
-        sub: 'マイクの音量 · 音色のプリセットは、どれも同じくらいの大きさになる値',
+        sub: 'マイクの音量 · 音色のプリセットはどれも同じくらいの大きさになる値',
         v: 0.5,
       },
       {
