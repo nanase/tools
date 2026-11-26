@@ -50,6 +50,7 @@
 <p>弦は駒で胴につながっています。駒のアドミタンス <math><mi>Y</mi><mo stretchy="false">(</mo><mi>ω</mi><mo stretchy="false">)</mo></math> は力に対する速度です。</p>
 <p><math><mi>Y</mi></math> があると、弦のモードの複素角周波数が下の式の根に移ります<a class="rf" href="#thy-r6">[6]</a>。実部が大きい周波数、つまり胴が動きやすい周波数ほど、エネルギーが胴へ逃げて早く減衰し、そのぶん大きな音を出します。</p>
 <p>表板に垂直な振動と平行な振動で <math><mi>Y</mi></math> が違うため、2 つの偏波は別の速さで減衰します。</p>
+<p>スチール弦の減衰は、無響室で測った値と比べました<a class="rf" href="#thy-r16">[16]</a>。</p>
 <div class="eqs">
   <math display="block"><mi>ω</mi><mo>=</mo><msub><mi>ω</mi><mi>n</mi></msub><mo>+</mo><mi>i</mi><mfrac><mrow><msub><mi>η</mi><mi>n</mi></msub><msub><mi>ω</mi><mi>n</mi></msub></mrow><mn>2</mn></mfrac><mo>+</mo><mi>i</mi><mfrac><mi>T</mi><mi>L</mi></mfrac><mi>Y</mi><mo stretchy="false">(</mo><mi>ω</mi><mo stretchy="false">)</mo></math>
   <math display="block"><msub><mi>η</mi><mtext>胴</mtext></msub><mo>≈</mo><mfrac><mrow><mn>2</mn><mi>T</mi><mi>Re</mi><mo>⁡</mo><mi>Y</mi></mrow><mrow><msub><mi>ω</mi><mi>n</mi></msub><mi>L</mi></mrow></mfrac></math>
@@ -82,6 +83,7 @@
   <dt><math><mi>V</mi></math></dt><dd>胴の空気の容積</dd>
 </dl>
 <p>2 つが結合して、ヘルムホルツ共振 <math><msub><mi>f</mi><mi mathvariant="normal">h</mi></msub></math> の下と上に 2 つの共振 <math><msub><mi>f</mi><mo>−</mo></msub></math>・<math><msub><mi>f</mi><mo>+</mo></msub></math> ができます。音圧は表板とサウンドホールの体積速度の和で決まります。</p>
+<p>駒は表板に垂直なだけでなく、少し傾いて動きます。そのため 2 つの共振は、表板に平行な力でも揺れます。傾きは、高い周波数のモードの向きの分布から求めた平均の約 31° とします<a class="rf" href="#thy-r3">[3]</a>。</p>
 <div class="eqs">
   <math display="block"><msub><mi>m</mi><mi mathvariant="normal">p</mi></msub><msub><mover><mi>x</mi><mo>¨</mo></mover><mi mathvariant="normal">p</mi></msub><mo>+</mo><msub><mi>R</mi><mi mathvariant="normal">p</mi></msub><msub><mover><mi>x</mi><mo>˙</mo></mover><mi mathvariant="normal">p</mi></msub><mo>+</mo><mrow><mo>(</mo><msub><mi>k</mi><mi mathvariant="normal">p</mi></msub><mo>+</mo><mfrac><mrow><mi>ρ</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><mi>V</mi></mfrac><msup><mi>A</mi><mn>2</mn></msup><mo>)</mo></mrow><msub><mi>x</mi><mi mathvariant="normal">p</mi></msub><mo>+</mo><mfrac><mrow><mi>ρ</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><mi>V</mi></mfrac><mi>A</mi><mi>S</mi><msub><mi>x</mi><mi mathvariant="normal">h</mi></msub><mo>=</mo><mi>F</mi></math>
   <math display="block"><msub><mi>m</mi><mi mathvariant="normal">h</mi></msub><msub><mover><mi>x</mi><mo>¨</mo></mover><mi mathvariant="normal">h</mi></msub><mo>+</mo><msub><mi>R</mi><mi mathvariant="normal">h</mi></msub><msub><mover><mi>x</mi><mo>˙</mo></mover><mi mathvariant="normal">h</mi></msub><mo>+</mo><mfrac><mrow><mi>ρ</mi><msup><mi>c</mi><mn>2</mn></msup></mrow><mi>V</mi></mfrac><mrow><mo stretchy="false">(</mo><msup><mi>S</mi><mn>2</mn></msup><msub><mi>x</mi><mi mathvariant="normal">h</mi></msub><mo>+</mo><mi>A</mi><mi>S</mi><msub><mi>x</mi><mi mathvariant="normal">p</mi></msub><mo stretchy="false">)</mo></mrow><mo>=</mo><mn>0</mn></math>
@@ -95,7 +97,8 @@
   <li>モードの有効質量: <math><msup><mi>χ</mi><mn>2</mn></msup></math> 分布の乱数</li>
   <li>平均のアドミタンス: 周波数によらず一定</li>
   <li>Q: 30〜80 の一様な乱数</li>
-  <li>振動の向きと放射の強さ: 乱数</li>
+  <li>振動の向き: Woodhouse が測ったギターに当てはめたモードの角度の分布に従う乱数（平均の sin² は 0.26）<a class="rf" href="#thy-r3">[3]</a></li>
+  <li>放射の強さ: 乱数</li>
   <li>放射の効率: 木目方向の一致周波数に近づくほど上がる</li>
 </ul>
 <p>乱数の種は決まっているので、同じ設定なら同じ胴になります。</p>
@@ -231,6 +234,7 @@
   <li id="thy-r13"><span class="rf-for">指先の柔らかさの幅</span><span class="rf-src">J. Woodhouse, E. K. Y. Manuel, L. A. Smith, A. J. C. Wheble and C. Fritz, “Perceptual thresholds for acoustical guitar models,” <i>Acta Acustica united with Acustica</i>, vol. 98, pp. 475–486, 2012</span></li>
   <li id="thy-r14"><span class="rf-for">巻弦の損失を合わせた録音（クラシックギター、mf）</span><span class="rf-src">University of Iowa Electronic Music Studios, “Musical Instrument Samples: Guitar,” 2011, <a href="https://theremin.music.uiowa.edu/MISguitar.html">theremin.music.uiowa.edu/MISguitar.html</a></span></li>
   <li id="thy-r15"><span class="rf-for">弦どうしの駒での結合</span><span class="rf-src">G. Weinreich, “Coupled piano strings,” <i>J. Acoust. Soc. Am.</i>, vol. 62, no. 6, pp. 1474–1484, 1977</span></li>
+  <li id="thy-r16"><span class="rf-for">スチール弦のギターの部分音の減衰（無響室）</span><span class="rf-src">H. Kodama, M. Sato, S. Hoshika and S. Yokoyama, “Attenuation characteristics of tones and vibrations in guitars with nylon, fluorocarbon, and phosphor bronze strings pressed down against fret,” <i>Acoustical Science and Technology</i>, vol. 44, no. 3, pp. 218–229, 2023</span></li>
 </ol>
 
 <h3>このツールで決めたこと</h3>

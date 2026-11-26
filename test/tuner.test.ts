@@ -488,7 +488,7 @@ describe('ギターの物理モデルの音', () => {
     g.str = g.str.map((p, i) => ({ ...p, T: tuneCoupled(g, i, noteHz(notes[i])) }));
     return g;
   }
-  it('開放弦の 6 本とも、弾いて 0.3〜1 秒の値は基音から ±1 セント以内（中央値）、外れ値なし', () => {
+  it('開放弦の 6 本とも、弾いて 0.3〜1 秒の値は基音から ±1 セント以内（中央値）、外れ値は偏波の高さの差の半分 + 3 セントまで', () => {
     const g = steel(),
       notes = tuningOf('std').notes;
     for (let si = 0; si < 6; si++) {
@@ -499,13 +499,16 @@ describe('ギターの物理モデルの音', () => {
         y = new Float32Array(FS * 1.1);
       e.pluck({ si, N: m.N, w: m.w, s: m.s, f: pl.f });
       for (let i = FS / 10; i < y.length; i += 128) e.render(y, i, 128);
-      const f1 = m.w[0] / (2 * Math.PI),
+      /* 垂直と平行の偏波の高さの相乗平均（調弦で合わせる値） */
+      const f1 = Math.sqrt(m.w[0] * m.w[m.N]) / (2 * Math.PI),
         r = track(y, new Tracker(opts(notes)), 70).filter((q) => q.t > 0.4),
         c = r.map((q) => centsOf(q.f, f1)).sort((a, b) => a - b);
       expect(r.length, `${si}`).toBeGreaterThan(30);
       for (const q of r) expect(q.tgt, `${si}`).toBe(notes[si]);
       expect(Math.abs(c[c.length >> 1]), `${si}`).toBeLessThan(1);
-      expect(Math.max(-c[0], c[c.length - 1]), `${si}`).toBeLessThan(3);
+      /* 2 つの偏波の高さの差（うなりで値が揺れる） */
+      const split = Math.abs(centsOf(m.w[m.N] / (2 * Math.PI), m.w[0] / (2 * Math.PI)));
+      expect(Math.max(-c[0], c[c.length - 1]), `${si}`).toBeLessThan(split / 2 + 3);
     }
   });
 });
