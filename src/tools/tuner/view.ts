@@ -74,89 +74,153 @@ export function bandHz(p: number, o: number, a4: number, dev: readonly number[] 
   return a4 * 2 ** ((n - 69) / 12 + (dev ? dev[p] : 0) / 1200);
 }
 
-/** 部分音（第 k 部分音の周波数と、いちばん強い部分音を 1 とした強さ） */
-export interface Part {
-  k: number;
-  f: number;
-  a: number;
-}
 /**
- * 基音の 1/2・1/4 の高さの帯にも、縞が二重・四重に写って薄く止まって見える（機械式のストロボで、
- * 円盤の区画が点滅の 1/2・1/4 のとき）。その見え方の重み
+ * 復調の低域通過（1 次を 2 段）の時定数 [s]。縞の遅れはおよそこの 2 倍。基準からずれた音ほど複素振幅が速く回って
+ * 低域通過で弱まる。60 fps の画面では目のぼけが起きないので、さらに blur で速く流れる縞を薄くする
  */
-const SUBS = [
-  [0.5, 0.3],
-  [0.25, 0.15],
-] as const;
-
+export const STROBE_TAU = 0.03;
+/** 復調する帯の数: 窓ごとに 2〜7 オクターブ（表示は 2〜5。上の 2 つは 1/2・1/4 の重ね写し用） */
+const NO = 6;
 /**
- * 帯の基準の周波数 fb に最も近い部分音を選び、見え方 vis（0〜1）と縞の速さ rate [本/s] を返す。
- * 近さは 40 セントの幅のガウス関数で重みを付ける。縞の速さは、周波数の差（spd = 'hz'、機械式と同じ）か、
- * セント × 0.254（A4 で 1 セント = 0.254 Hz）
+ * 帯 o には、1 つ上・2 つ上の帯の音も、縞が二重・四重に写って薄く止まって見える（機械式の円盤で、区画が点滅の 1/2・1/4 の帯）。
+ * その見え方の重み。縞は帯 o の周期で描き、上の帯の位相の 1/2・1/4 で動かす（二重の縞が 1 本ぶん動くと、帯 o の縞の半分）
  */
-export function bandOf(
-  fb: number,
-  f0: number,
-  parts: readonly Part[],
-  spd: 'hz' | 'cent',
-): { vis: number; rate: number } {
-  let vis = 0,
-    rate = 0;
-  const cand = parts.map((p) => [p.f, p.a] as const).concat(SUBS.map(([k, w]) => [k * f0, w] as const));
-  for (const [f, a] of cand) {
-    const dc = 1200 * Math.log2(f / fb),
-      g = a * Math.exp(-((dc / 40) ** 2));
-    if (g > vis) {
-      vis = g;
-      rate = spd === 'hz' ? f - fb : dc * 0.254;
-    }
-  }
-  return { vis, rate };
-}
-
-/** 縞の濃さ: 見え方 × 動きの速さ（毎秒 1.5 本より速いとぶれて薄くなり、7.5 本でほぼ灰色） */
-export function contrast(vis: number, rate: number): number {
-  const a = Math.abs(rate),
-    mf = a < 1.5 ? 1 : Math.max(0.1, 1 - (a - 1.5) / 6);
-  return Math.min(1, 1.15 * vis) * mf;
-}
-
-/** 推定が途切れても、この間 [s] は直前の部分音で縞を描く（明瞭度が一瞬下がるたび、弾き直すたびに縞が消えないように） */
-export const HOLD = 0.3;
-/** 濃さをならす時定数 [s]: 濃くなるとき、薄くなるとき（縞の速さはならさない。ならすと、別の音へ移った帯が速い縞から遅れて止まる） */
-const UP = 0.04,
-  DOWN = 0.3;
-const ease = (v: number, to: number, dt: number) => v + (to - v) * (1 - Math.exp(-dt / (to > v ? UP : DOWN)));
+const SUBS = [1, 0.3, 0.15] as const;
+/** 音とみなす範囲: いちばん強い帯の振幅が、入力全体の振幅のこの割合を下回ると灰色、上回ると縞をはっきり描く */
+const GATE = [0.08, 0.2] as const;
+/** 入力全体の振幅の下限（これより静かなら灰色） */
+const FLOOR = 1e-4;
+/** 縞の濃さに掛けるぼけ: 毎秒 1.5 本より速いとぶれて薄くなり、7.5 本でほぼ灰色（機械式で、目が追えずにぼけるのと同じ） */
+export const blur = (rate: number): number => {
+  const a = Math.abs(rate);
+  return a < 1.5 ? 1 : Math.max(0.1, 1 - (a - 1.5) / 6);
+};
+/** A4 で 1 セント = 0.254 Hz。「セント」の縞の速さは、周波数の差 × 439.7 / 帯の基準 */
+const CENT_RATE = (0.254 * 1200) / Math.LN2;
 
 /**
- * 12 音のストロボの動き（帯は窓 p・帯 o で p * 4 + o）。推定ごとに update で帯の見え方（濃さの目標）と縞の速さを決め、
- * 描画ごとに frame で縞を進め、濃さを目標へならす。推定が HOLD を超えて途切れたら、縞は薄れて灰色に戻る
+ * 12 音のストロボ（帯は窓 p・帯 o で p * 4 + o）。機械式で、入力で点滅するランプが基準の速さで回る円盤を照らすのと同じく、
+ * 帯の基準の周波数 fb で入力を直交復調し、低域通過した複素振幅の角度を縞の位置に、大きさを縞の濃さにする。
+ * 音高の推定を待たないので、鳴らした直後から写り、和音なら鳴っている音の窓がそれぞれ止まる。
+ * feed に入力を標本の通し番号つきで渡し（位相を続けるため、番号は抜けなく続ける）、描画ごとに frame で縞を求める
  */
 export class Strobe {
-  /** 縞の位相 [周]・速さ [本/s]・濃さ（ならした値） */
+  /** 縞の位相 [周]・濃さ（0〜1） */
   readonly ph = new Float64Array(48);
-  readonly rate = new Float64Array(48);
   readonly c = new Float64Array(48);
-  private readonly vis = new Float64Array(48);
-  /** 最後の update からの時間 [s] */
+  private readonly fb = new Float64Array(12 * NO);
+  /** 2 段の低域通過の状態（実部・虚部） */
+  private readonly z = new Float64Array(12 * NO * 4);
+  /** 縞の位相（積算、1/2・1/4 にしても続くよう 4 周で折り返す）[周] と、前の frame の角度 [周] */
+  private readonly acc = new Float64Array(12 * NO);
+  private readonly prev = new Float64Array(12 * NO);
+  private readonly q = new Float64Array(12 * NO);
+  /** 縞の速さ [本/s]（ならした値） */
+  private readonly rate = new Float64Array(12 * NO);
+  /** 入力の 2 乗の低域通過（2 段） */
+  private p1 = 0;
+  private p2 = 0;
+  private spd: 'hz' | 'cent' = 'hz';
+  /** 最後に feed してからの時間 [s] */
   private age = Number.POSITIVE_INFINITY;
 
-  update(f0: number, parts: readonly Part[], a4: number, dev: readonly number[] | null, spd: 'hz' | 'cent'): void {
-    for (let p = 0; p < 12; p++)
-      for (let o = 0; o < 4; o++) {
-        const b = bandOf(bandHz(p, o, a4, dev), f0, parts, spd);
-        this.vis[p * 4 + o] = b.vis;
-        this.rate[p * 4 + o] = b.rate;
+  /** 基準の周波数と縞の速さの決め方 */
+  tune(a4: number, dev: readonly number[] | null, spd: 'hz' | 'cent'): void {
+    for (let p = 0; p < 12; p++) for (let o = 0; o < NO; o++) this.fb[p * NO + o] = bandHz(p, o, a4, dev);
+    this.spd = spd;
+  }
+
+  /** 前の入力を忘れる（入力元を変えたとき） */
+  reset(): void {
+    this.z.fill(0);
+    this.p1 = this.p2 = 0;
+  }
+
+  /** x[from, to) を通す。pos0 は x[from] の通し番号、fs は標本化周波数 */
+  feed(x: ArrayLike<number>, from: number, to: number, pos0: number, fs: number): void {
+    if (to <= from) return;
+    const al = 1 - Math.exp(-1 / (STROBE_TAU * fs)),
+      z = this.z;
+    for (let d = 0; d < 12 * NO; d++) {
+      const f = this.fb[d] / fs,
+        /* 基準の位相は通し番号から求める（frame ごとの区切り方に依らない） */
+        th = 2 * Math.PI * ((f * pos0) % 1),
+        cw = Math.cos(2 * Math.PI * f),
+        sw = Math.sin(2 * Math.PI * f);
+      let c = Math.cos(th),
+        s = Math.sin(th),
+        r1 = z[4 * d],
+        i1 = z[4 * d + 1],
+        r2 = z[4 * d + 2],
+        i2 = z[4 * d + 3];
+      for (let n = from; n < to; n++) {
+        const v = x[n];
+        r1 += al * (v * c - r1);
+        i1 -= al * (v * s + i1);
+        r2 += al * (r1 - r2);
+        i2 += al * (i1 - i2);
+        const c2 = c * cw - s * sw;
+        s = s * cw + c * sw;
+        c = c2;
       }
+      z[4 * d] = r1;
+      z[4 * d + 1] = i1;
+      z[4 * d + 2] = r2;
+      z[4 * d + 3] = i2;
+    }
+    let p1 = this.p1,
+      p2 = this.p2;
+    for (let n = from; n < to; n++) {
+      p1 += al * (x[n] * x[n] - p1);
+      p2 += al * (p1 - p2);
+    }
+    this.p1 = p1;
+    this.p2 = p2;
     this.age = 0;
   }
 
+  /** 描画ごとに、縞の位相と濃さを求める。入力が来なくなったら（停止）、縞は薄れて灰色に戻る */
   frame(dt: number): void {
     this.age += dt;
-    const live = this.age < HOLD;
-    for (let i = 0; i < 48; i++) {
-      this.ph[i] = (this.ph[i] + this.rate[i] * dt) % 1;
-      this.c[i] = ease(this.c[i], live ? contrast(this.vis[i], this.rate[i]) : 0, dt);
+    if (this.age > 0.1) {
+      for (let i = 0; i < 48; i++) this.c[i] *= Math.exp(-dt / 0.3);
+      return;
     }
+    const z = this.z,
+      /* 正弦波 A sin の複素振幅は A/2、全体の √(平均の 2 乗 / 2) も A/2 */
+      amp = Math.sqrt(Math.max(0, this.p2) / 2);
+    let m = 0;
+    for (let d = 0; d < 12 * NO; d++) {
+      const r = z[4 * d + 2],
+        i = z[4 * d + 3],
+        a = Math.atan2(i, r) / (2 * Math.PI);
+      let da = a - this.prev[d];
+      da -= Math.round(da);
+      this.prev[d] = a;
+      const dv = da * (this.spd === 'hz' ? 1 : CENT_RATE / this.fb[d]);
+      this.acc[d] = (this.acc[d] + dv) % 4;
+      if (dt > 0) this.rate[d] += (dv / dt - this.rate[d]) * Math.min(1, dt / 0.05);
+      this.q[d] = amp > FLOOR ? Math.hypot(r, i) / amp : 0;
+      m = Math.max(m, this.q[d]);
+    }
+    const gate = Math.max(0, Math.min(1, (m - GATE[0]) / (GATE[1] - GATE[0]))),
+      M = Math.max(m, 1e-12);
+    for (let p = 0; p < 12; p++)
+      for (let o = 0; o < 4; o++) {
+        let best = 0,
+          k = 0;
+        SUBS.forEach((w, j) => {
+          const d = p * NO + o + j,
+            /* 1/2・1/4 の重ね写しは、帯 o の縞としては 1/2・1/4 の速さ */
+            g = ((w * this.q[d]) / M) * blur(this.rate[d] / 2 ** j);
+          if (g > best) {
+            best = g;
+            k = j;
+          }
+        });
+        const i = p * 4 + o;
+        this.c[i] = Math.min(1, 1.15 * best) * gate;
+        this.ph[i] = this.acc[p * NO + o + k] / 2 ** k;
+      }
   }
 }
