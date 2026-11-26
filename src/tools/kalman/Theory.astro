@@ -43,7 +43,7 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
 <ul class="tl">
   <li><math><mi>K</mi></math> はカルマンゲイン（0 から 1 の間の値）</li><li>推定は予測から観測へ <math><mi>K</mi></math> の割合だけ寄る</li><li>位置の分布の図の下の目盛りがこの割合を示す</li>
   <li>観測が予測より確か（<math set:html={`${sz2}<mo>&lt;</mo>${sg2('−')}`} />）なほど <math><mi>K</mi></math> は 1 に近く、推定は観測に寄る</li>
-  <li>推定の分散の逆数は、予測と観測の分散の逆数の和。推定は予測と観測のどちらよりも確かになる</li>
+  <li>推定の分散の逆数は予測と観測の分散の逆数の和。推定は予測と観測のどちらよりも確かになる</li>
 </ul>
 <p>止まっていると分かっている台車（場面の「止まった台車」）では、推定をそのまま次の予測にして、観測を重ねるだけになります。<math><mi>k</mi></math> 回観測した後の推定の分散の逆数は <math set:html={`${fr('<mn>1</mn>', sp02)}<mo>+</mo>${fr('<mi>k</mi>', sz2)}`} /> なので、<math><mi>k</mi></math> 回目の <math><mi>K</mi></math> は <math set:html={`<mn>1</mn><mo>/</mo><mo stretchy="false">(</mo><mi>k</mi><mo>+</mo>${sz2}<mo>/</mo>${sp02}<mo stretchy="false">)</mo>`} /> です。観測を重ねるほど新しい観測の重みは小さくなり、推定は観測の平均に近づきます。</p>
 
@@ -76,19 +76,19 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
   <li>面積を増やすのは <math set:html={hat('Q')} /> を足す分。加速度のゆらぎがあるので、先の位置と速度はそのぶん不確かになる</li>
   <li>観測は位置の向きにだけ楕円を縮める</li><li>速度は測っていないが、楕円の傾き（位置と速度の相関）を通して速度の幅も縮む</li><li><math><msub><mi>K</mi><mi>v</mi></msub></math> が位置のずれから速度を直す割合</li>
 </ul>
-<p>位置の分布の図は、楕円を位置の軸に映したものです。予測の山と観測の山を掛け合わせると推定の山になります。1 次元と同じです。</p>
+<p>位置の分布の図は楕円を位置の軸に映したものです。予測の山と観測の山を掛け合わせると推定の山になります。1 次元と同じです。</p>
 
 <h3>雑音の設定を誤ると</h3>
 <p>フィルタは <math set:html={hat('Q')} />・<math set:html={hat('R')} /> が本当の値に合っていると仮定して不確かさ <math><mi>P</mi></math> を見積ります。見積りが外れると、<math><mi>P</mi></math> は本当の誤差の大きさを表さなくなります<Fragment set:html={rf(4)} /><Fragment set:html={rf(3)} />。</p>
 <div class="tt-w"><table class="tt">
   <thead><tr><th>場面</th><th>見積り</th><th>起きること</th></tr></thead>
   <tbody>
-    <tr><td>動きを過信</td><td><math set:html={hat('Q')} /> が小さすぎる</td><td>楕円と ±2σ の帯が細くなり、<math><mi>K</mi></math> が 0 に近づく。観測を聞かなくなり、推定が本当の動きから遅れて離れていく（発散）</td></tr>
+    <tr><td>動きを過信</td><td><math set:html={hat('Q')} /> が小さすぎる</td><td>楕円と ±2σ の帯が細くなり、<math><mi>K</mi></math> が 0 に近づく。観測をほとんど使わなくなり、推定が本当の動きから遅れて離れていく（発散）</td></tr>
     <tr><td>観測を信じすぎ</td><td><math set:html={hat('R')} /> が小さすぎる</td><td><math><mi>K</mi></math> が 1 に近づき、推定が観測の雑音にそのまま振り回される。帯は誤差より細い</td></tr>
     <tr><td>観測を疑いすぎ</td><td><math set:html={hat('R')} /> が大きすぎる</td><td><math><mi>K</mi></math> が小さく、推定が鈍い。帯は誤差より広い</td></tr>
   </tbody>
 </table></div>
-<p>見積りが合っているかは、観測だけから確かめられます。イノベーションの 2 乗をフィルタが見積った分散で割った値が正規化イノベーション 2 乗（NIS）です<Fragment set:html={rf(5)} /><Fragment set:html={rf(4)} />。</p>
+<p>見積りが合っているかは観測だけから確かめられます。イノベーションの 2 乗をフィルタが見積った分散で割った値が正規化イノベーション 2 乗（NIS）です<Fragment set:html={rf(5)} /><Fragment set:html={rf(4)} />。</p>
 <div class="eqs">
   <math display="block" set:html={`${k_('<mi>ε</mi>')}<mo>=</mo>${fr(sq(k_('<mi>y</mi>')), k_('<mi>S</mi>'))}`} />
 </div>
@@ -97,7 +97,7 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
   <li>1 回ごとの値はばらつきが大きいので、<math><mi>N</mi></math> 回の平均で判定する。<math><mi>N</mi></math> 回の和は自由度 <math><mi>N</mi></math> のカイ 2 乗分布に従う</li>
   <li>平均が 95 % の範囲より大きければ、誤差が見積りより大きい（過信）。小さければ、見積りが広すぎる（慎重すぎ）</li>
 </ul>
-<p>このツールは、直近 12 s の NIS の平均を、自由度 <math><mi>N</mi></math> のカイ 2 乗分布の両側 95 % の範囲を <math><mi>N</mi></math> で割った値と比べます。分位点は Wilson と Hilferty の近似で求めます<Fragment set:html={rf(7)} />。</p>
+<p>このツールは直近 12 s の NIS の平均を、自由度 <math><mi>N</mi></math> のカイ 2 乗分布の両側 95 % の範囲を <math><mi>N</mi></math> で割った値と比べます。分位点は Wilson と Hilferty の近似で求めます<Fragment set:html={rf(7)} />。</p>
 <div class="eqs">
   <math display="block" set:html={`${fr('<msubsup><mi>χ</mi><mi>N</mi><mn>2</mn></msubsup>', '<mi>N</mi>')}<mo>≈</mo><msup><mrow><mo>(</mo><mn>1</mn><mo>−</mo>${fr('<mn>2</mn>', '<mn>9</mn><mi>N</mi>')}<mo>±</mo><mn>1.96</mn><msqrt>${fr('<mn>2</mn>', '<mn>9</mn><mi>N</mi>')}</msqrt><mo>)</mo></mrow><mn>3</mn></msup>`} />
 </div>

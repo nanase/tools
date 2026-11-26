@@ -94,7 +94,7 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
 </div>
 
 <h3>LQR</h3>
-<p>LQR は、状態のずれと入力の大きさの重み付きの和 <math><mi>𝒥</mi></math> を最小にするゲインです<Fragment set:html={rf(1) + rf(4)} />。重み <math><mi>Q</mi><mo>=</mo><mi>diag</mi><mo stretchy="false">(</mo><msub><mi>q</mi><mi>x</mi></msub><mo>,</mo><msub><mi>q</mi><mi>θ</mi></msub><mo>,</mo><msub><mi>q</mi><mover><mi>x</mi><mo>˙</mo></mover></msub><mo>,</mo><msub><mi>q</mi><mover><mi>θ</mi><mo>˙</mo></mover></msub><mo stretchy="false">)</mo></math> と <math><mi>R</mi></math> から、代数リカッチ方程式の解 <math><mi>P</mi></math> を求めます。</p>
+<p>LQR は状態のずれと入力の大きさの重み付きの和 <math><mi>𝒥</mi></math> を最小にするゲインです<Fragment set:html={rf(1) + rf(4)} />。重み <math><mi>Q</mi><mo>=</mo><mi>diag</mi><mo stretchy="false">(</mo><msub><mi>q</mi><mi>x</mi></msub><mo>,</mo><msub><mi>q</mi><mi>θ</mi></msub><mo>,</mo><msub><mi>q</mi><mover><mi>x</mi><mo>˙</mo></mover></msub><mo>,</mo><msub><mi>q</mi><mover><mi>θ</mi><mo>˙</mo></mover></msub><mo stretchy="false">)</mo></math> と <math><mi>R</mi></math> から、代数リカッチ方程式の解 <math><mi>P</mi></math> を求めます。</p>
 <div class="eqs">
   <math display="block"><mi>𝒥</mi><mo>=</mo><msubsup><mo>∫</mo><mn>0</mn><mi>∞</mi></msubsup><mrow><mo stretchy="false">(</mo><msup><mi mathvariant="bold">x</mi><mi mathvariant="normal">T</mi></msup><mi>Q</mi><mi mathvariant="bold">x</mi><mo>+</mo><mi>R</mi><msup><mi>u</mi><mn>2</mn></msup><mo stretchy="false">)</mo></mrow><mspace width="0.17em"/><mi>d</mi><mi>t</mi></math>
   <math display="block"><msup><mi>A</mi><mi mathvariant="normal">T</mi></msup><mi>P</mi><mo>+</mo><mi>P</mi><mi>A</mi><mo>−</mo><mi>P</mi><mi>B</mi><msup><mi>R</mi><mrow><mo>−</mo><mn>1</mn></mrow></msup><msup><mi>B</mi><mi mathvariant="normal">T</mi></msup><mi>P</mi><mo>+</mo><mi>Q</mi><mo>=</mo><mn>0</mn></math>
@@ -120,7 +120,7 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
   <li><b>外の位置のループ</b>: 台車の位置のずれから、振子の角度の目標 <math><msub><mi>θ</mi><mi mathvariant="normal">r</mi></msub></math> を作る。<math><msub><mi>θ</mi><mi mathvariant="normal">r</mi></msub></math> は ±10° で切る</li>
   <li><b>内の角度のループ</b>: 振子をその角度に保つ入力を出す</li>
 </ul>
-<p>台車を右へ運ぶには、まず振子を右へ傾ける必要があります。初めに台車が逆へ動くのは、不安定な零点の性質です。積分がなければ、これは状態フィードバックと同じ形です。</p>
+<p>台車を右へ運ぶには、まず振子を右へ傾ける必要があります。初めに台車が逆へ動くのは、不安定な零点の性質です。積分がなければ、この PID は状態フィードバックと同じ形です。</p>
 <figure class="fig">
   <svg viewBox="0 0 380 132" width="380" role="img" aria-label="PID の 2 つのループのブロック線図。位置のループが角度の目標 θr を作り、角度のループが入力 u を台車と振子に出す。計測した位置 x̂ は位置のループへ、角度 θ̂ は角度のループへ戻る">
     <rect class="b" x="6" y="12" width="96" height="44" rx="3" />
@@ -154,7 +154,7 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
 </div>
 
 <h3>振り上げ</h3>
-<p>振り上げは Åström・Furuta のエネルギー法です<Fragment set:html={rf(7)} />。振子のエネルギー <math><mi>E</mi></math> は、台車の加速度 <math><mover><mi>x</mi><mo>¨</mo></mover></math> を通してだけ変わります。<math><mover><mi>θ</mi><mo>˙</mo></mover><mi>cos</mi><mo>⁡</mo><mi>θ</mi></math> と逆の向きに加速すればエネルギーが増え、目標に近づくと加速をやめます。</p>
+<p>振り上げは Åström・Furuta のエネルギー法です<Fragment set:html={rf(7)} />。振子のエネルギー <math><mi>E</mi></math> は台車の加速度 <math><mover><mi>x</mi><mo>¨</mo></mover></math> を通してだけ変わります。<math><mover><mi>θ</mi><mo>˙</mo></mover><mi>cos</mi><mo>⁡</mo><mi>θ</mi></math> と逆の向きに加速すればエネルギーが増え、目標に近づくと加速をやめます。</p>
 <p><math><mi>E</mi></math> は、直立して止まっていると 0、真下で止まっていると <math><mo>−</mo><mn>2</mn><mi>m</mi><mi>g</mi><mi>l</mi></math> です。</p>
 <div class="eqs">
   <math display="block" set:html={`<mi>E</mi><mo>=</mo>${fr('<mn>1</mn>', '<mn>2</mn>')}${Jl}<msup>${d('θ')}<mn>2</mn></msup><mo>+</mo><mi>m</mi><mi>g</mi><mi>l</mi><mo stretchy="false">(</mo><mi>cos</mi><mo>⁡</mo><mi>θ</mi><mo>−</mo><mn>1</mn><mo stretchy="false">)</mo>`} />
@@ -188,7 +188,7 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
   <li><b>入力を決める</b></li>
   <li><b>入力を保つ</b><span>次の周期まで</span></li>
 </ol>
-<p>速度の推定は、微分に 2 次の低域通過フィルタを掛けたもの <math><mi>H</mi><mo stretchy="false">(</mo><mi>s</mi><mo stretchy="false">)</mo></math> を、双一次変換で離散化しています。減衰比 <math><mi>ζ</mi></math> は 0.9 です。一定の速さを正しく読むよう、周波数を合わせる補正はしません。</p>
+<p>速度の推定は微分に 2 次の低域通過フィルタを掛けたもの <math><mi>H</mi><mo stretchy="false">(</mo><mi>s</mi><mo stretchy="false">)</mo></math> を、双一次変換で離散化しています。減衰比 <math><mi>ζ</mi></math> は 0.9 です。一定の速さを正しく読むよう、周波数を合わせる補正はしません。</p>
 <div class="eqs">
   <math display="block" set:html={`${hat('θ')}<mo>=</mo><mi>Δ</mi><mi>θ</mi><mspace width="0.17em"/><mi>round</mi><mo>⁡</mo>${fr('<mi>θ</mi><mo>+</mo><mi>π</mi><mo>+</mo><msub><mi>n</mi><mi>θ</mi></msub>', '<mi>Δ</mi><mi>θ</mi>')}<mo>−</mo><mi>π</mi>`} />
   <math display="block" set:html={`<mi>H</mi><mo stretchy="false">(</mo><mi>s</mi><mo stretchy="false">)</mo><mo>=</mo>${fr('<msubsup><mi>ω</mi><mi mathvariant="normal">f</mi><mn>2</mn></msubsup><mi>s</mi>', '<msup><mi>s</mi><mn>2</mn></msup><mo>+</mo><mn>2</mn><mi>ζ</mi><msub><mi>ω</mi><mi mathvariant="normal">f</mi></msub><mi>s</mi><mo>+</mo><msubsup><mi>ω</mi><mi mathvariant="normal">f</mi><mn>2</mn></msubsup>')}`} />

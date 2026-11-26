@@ -62,7 +62,7 @@ const tuneBtn = $<HTMLButtonElement>('#autoTune');
 tuneBtn.addEventListener('click', () => {
   const v = P.values();
   if (v.x0 === v.r) {
-    P.note('kp', '初期位置と目標位置が同じため、調整できません。', 'er');
+    P.note('kp', '初期位置と目標位置が同じため、調整できません', 'er');
     return;
   }
   tuneBtn.disabled = true;
@@ -73,7 +73,7 @@ tuneBtn.addEventListener('click', () => {
     tuneBtn.disabled = false;
     txt('#autoTune', '自動調整');
     if (!g) {
-      P.note('kp', '100 s 以内に整定するゲインが見つかりませんでした。', 'er');
+      P.note('kp', '100 s 以内に整定するゲインが見つかりませんでした', 'er');
       return;
     }
     P.set('kp', g.kp);
@@ -82,7 +82,7 @@ tuneBtn.addEventListener('click', () => {
     if (!g.ok)
       P.note(
         'kp',
-        `行き過ぎ ${TUNE_OS} % 以下・速さ ${TUNE_VMAX} m/s 以下にできる値がないため、超える分が最も小さい値にしました。`,
+        `行き過ぎ ${TUNE_OS} % 以下・速さ ${TUNE_VMAX} m/s 以下にできる値がないため、超える分が最も小さい値にしました`,
       );
   }, 30);
 });

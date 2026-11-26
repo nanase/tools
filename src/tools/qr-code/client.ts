@@ -542,7 +542,7 @@ function readPanel(): void {
   txt('#q-readst', changed ? `変わったモジュール ${changed} 個` : '');
   if (!d) {
     html('#q-meters', '');
-    html('#q-out', '<span class="q-ng">読み取れません。形式情報が 2 か所とも 4 ビット以上ずれました。</span>');
+    html('#q-out', '<span class="q-ng">読み取れません。形式情報が 2 か所とも 4 ビット以上ずれました</span>');
     return;
   }
   /* ブロックごとの誤りの数（元と違う符号語）と上限 */
@@ -581,10 +581,10 @@ function readPanel(): void {
   if (d.ok && d.parsed.text === q.text)
     out += `<span class="k">リード・ソロモン符号で訂正すると</span><span class="v">${show(d.parsed, fixedPos, 'em')}</span><span class="q-ok">${nFix ? `読み取り成功（${nFix} 語を訂正）` : '読み取り成功（誤りなし）'}</span>`;
   else if (d.ok)
-    out += `<span class="k">リード・ソロモン符号で訂正すると</span><span class="v">${esc(d.parsed.text)}</span><span class="q-ng">読み取れません。誤りが多すぎて、別の正しい符号語に訂正しました。</span>`;
+    out += `<span class="k">リード・ソロモン符号で訂正すると</span><span class="v">${esc(d.parsed.text)}</span><span class="q-ng">読み取れません。誤りが多すぎて、別の正しい符号語に訂正しました</span>`;
   else {
     const bad = d.rs.map((r, i) => (r.ok ? -1 : i + 1)).filter((i) => i > 0);
-    out += `<span class="q-ng">読み取れません。訂正できる上限を超えました${nb > 1 ? `（ブロック ${bad.join('・')}）` : ''}。</span>`;
+    out += `<span class="q-ng">読み取れません。訂正できる上限を超えました${nb > 1 ? `（ブロック ${bad.join('・')}）` : ''}</span>`;
   }
   html('#q-out', out);
 }
