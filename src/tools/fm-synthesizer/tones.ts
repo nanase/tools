@@ -7,6 +7,7 @@
  */
 import { isCarrier, type Op, type Tone } from './engine';
 import { PICKED_DRUM, PICKED_GM } from './tones-picked';
+import { SENS_GM, type Sens } from './tones-sens';
 
 /** オペレータの表の 1 行。ベロシティとキースケールは省くと 0.5 と 0.3 */
 type O = readonly [r: number, x: number, ar: number, dr: number, sl: number, rr: number, vs?: number, ks?: number];
@@ -531,8 +532,34 @@ const DRUM_GAIN: readonly number[] = [
 ];
 const DRUM0_GAIN = -7.2;
 
-/** GM の 128 音色（プログラム番号 0〜127 の順）。レビューで選んだ音色（tones-picked.ts）を優先する */
-export const GM_TONES: readonly Tone[] = GM_ROWS.map((row, p) => PICKED_GM[p] ?? build(row, GM_GAIN[p]));
+/** 音色にベロシティと音の高さの効き、デチューンを重ねる（値が 0 のものは省く） */
+function withSens(t: Tone, s: Sens | undefined): Tone {
+  if (!s) return t;
+  const nz = (v: number | undefined) => (v ? v : undefined);
+  return {
+    ...t,
+    ...(s.fbv ? { fbv: s.fbv } : {}),
+    ...(s.fbk ? { fbk: s.fbk } : {}),
+    ops: t.ops.map((o, k) => {
+      const x: Op = { ...o };
+      for (const [f, v] of [
+        ['va', nz(s.va[k])],
+        ['ka', nz(s.ka?.[k])],
+        ['dt', nz(s.dt?.[k])],
+      ] as const)
+        if (v !== undefined) x[f] = v;
+      return x;
+    }) as unknown as Tone['ops'],
+  };
+}
+
+/**
+ * GM の 128 音色（プログラム番号 0〜127 の順）。レビューで選んだ音色（tones-picked.ts）を優先し、
+ * ベロシティと音の高さの効き（tones-sens.ts）を重ねる
+ */
+export const GM_TONES: readonly Tone[] = GM_ROWS.map((row, p) =>
+  withSens(PICKED_GM[p] ?? build(row, GM_GAIN[p]), SENS_GM[p]),
+);
 
 /** 打楽器（ノート 35〜81）の音色。どれも key で音の高さを決める */
 export const DRUM_TONES: Readonly<Record<number, Tone>> = Object.fromEntries(
