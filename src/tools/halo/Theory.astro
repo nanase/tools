@@ -43,15 +43,15 @@ const M = {
   <li><b>全天図に足す</b><span>等立体角の円盤 2 枚</span></li>
 </ol>
 <h4>光源から出す理由</h4>
-<p>光線は目からではなく、光源から出します。Greenler（1980）以来の方法です<Fragment set:html={rf(1, 2)} />。目から出すと、その向きへ光を送る結晶があるかを調べるために、結晶の向きをすべて試すことになります<Fragment set:html={rf(2)} />。光源から出せば、結晶を出た光線はどれも空のどこかに落ちるので、そのまま足せます。画素から光線を出すカメラレンズのページとは逆の向きです。</p>
+<p>光線は目からではなく光源から出します。Greenler（1980）以来の方法です<Fragment set:html={rf(1, 2)} />。目から出すと、その向きへ光を送る結晶があるかを調べるために、結晶の向きをすべて試すことになります<Fragment set:html={rf(2)} />。光源から出せば、結晶を出た光線はどれも空のどこかに落ちるので、そのまま足せます。画素から光線を出すカメラレンズのページとは逆の向きです。</p>
 <h4>結晶に当てる</h4>
-<p>光線は結晶の中心を通って光線に垂直な円盤の上の一様な点から進めます。円盤の半径は結晶の外接球の半径です<Fragment set:html={rf(2)} />。結晶に当たる確率は光から見た結晶の投影の面積に比例します。正面を向いた板は真横を向いた板よりも多くの光を受けます。当たらなかった光線は捨てます。</p>
-<p>光は、光源の円盤（視直径は太陽が 0.536°、月が 0.518°）の中の一様な点から来るとします。</p>
+<p>光線は、結晶の中心を通り光線に垂直な円盤の上の一様な点から進めます。円盤の半径は結晶の外接球の半径です<Fragment set:html={rf(2)} />。結晶に当たる確率は光から見た結晶の投影の面積に比例します。正面を向いた板は真横を向いた板よりも多くの光を受けます。当たらなかった光線は捨てます。</p>
+<p>光は光源の円盤（視直径は太陽が 0.536°、月が 0.518°）の中の一様な点から来るとします。</p>
 <p>結晶は凸多面体なので、平面との交点だけで面が決まります。入る面は光線が外から入る向きに横切る平面のうち最も遠いもの、出る面は進む向きとの内積が正の平面のうち最も近いものです。</p>
 <h4>2 個目の結晶</h4>
-<p>確率 <Fragment set:html={M.p2} />（入力の「2 個目の結晶」）で、結晶を出た光をもう 1 つの結晶に通します。母集団と向きは引き直し、2 個目に当たらなかった光線は捨てます。雲の中で光が何度も散る多重散乱の主な効果は、ハロをぼかすことです<Fragment set:html={rf(3)} />。板を 2 枚続けて通る光は、44° 幻日のような珍しいハロも作ります<Fragment set:html={rf(4)} />。</p>
+<p>確率 <Fragment set:html={M.p2} />（入力の「2 個目の結晶」）で、結晶を出た光をもう 1 つの結晶に通します。母集団と向きは引き直し、2 個目に当たらなかった光線は捨てます。雲の中で光が何度も散る多重散乱の主な効果は、ハロをぼかすことです<Fragment set:html={rf(3)} />。板を 2 枚続けて通る光は 44° 幻日のような珍しいハロも作ります<Fragment set:html={rf(4)} />。</p>
 <h4>光線の数</h4>
-<p>追跡は GPU（WebGL2）で行い、頂点 1 つを光線 1 本にします。1 回に約 14 ms で終わる本数（<math><msup><mn>2</mn><mn>14</mn></msup></math>〜<math><msup><mn>2</mn><mn>23</mn></msup></math> 本）を追って全天図に足し、そのたびに描き直します。ためる上限は 6 億本で、32 bit の浮動小数で足せない環境では 16 bit でためるので 2,500 万本です。</p>
+<p>GPU（WebGL2）で追跡し、頂点 1 つを光線 1 本にします。1 回に約 14 ms で終わる本数（<math><msup><mn>2</mn><mn>14</mn></msup></math>〜<math><msup><mn>2</mn><mn>23</mn></msup></math> 本）を追って全天図に足し、そのたびに描き直します。ためる上限は 6 億本です。32 bit の浮動小数で足せない環境では 16 bit でためるので、上限は 2,500 万本です。</p>
 
 <h3>結晶の形</h3>
 <p>結晶は六角柱の両端に錐面を付けられる凸多面体です。平面 8 枚（錐面があれば 20 枚）の内側として表します。</p>
@@ -75,7 +75,7 @@ const M = {
 </div>
 <p>側面 3 と 5 は 1 つ置いた面で、60° のくさびになります。3 と 6 は平行です。</p>
 <h4>大きさと割合</h4>
-<p>結晶の表面積はどの母集団も 1 にそろえます。割合 <Fragment set:html={M.w} /> は、表面積をそろえた結晶の数の比です<Fragment set:html={rf(8)} />。割合を光線の数の比とするプログラムもあり<Fragment set:html={rf(9)} />、同じ数字でも意味が違います。</p>
+<p>結晶の表面積はどの母集団も 1 にそろえます。割合 <Fragment set:html={M.w} /> は表面積をそろえた結晶の数の比です<Fragment set:html={rf(8)} />。割合を光線の数の比とするプログラムもあり<Fragment set:html={rf(9)} />、同じ数字でも意味が違います。</p>
 <dl class="syms">
   <dt><math><msub><mi>P</mi><mi>k</mi></msub></math></dt><dd>母集団 <math><mi>k</mi></math> を選ぶ確率</dd>
   <dt><math><msub><mi>r</mi><mrow><mi mathvariant="normal">b</mi><mo>,</mo><mi>k</mi></mrow></msub></math></dt><dd>その結晶の外接球の半径（表面積 1 のとき）</dd>
@@ -85,7 +85,7 @@ const M = {
   <math display="block"><msub><mi>P</mi><mi>k</mi></msub><mo>=</mo><mfrac><mrow><msub><mi>w</mi><mi>k</mi></msub><mi>π</mi><msubsup><mi>r</mi><mrow><mi mathvariant="normal">b</mi><mo>,</mo><mi>k</mi></mrow><mn>2</mn></msubsup></mrow><mrow><munder><mo>∑</mo><mi>j</mi></munder><msub><mi>w</mi><mi>j</mi></msub><mi>π</mi><msubsup><mi>r</mi><mrow><mi mathvariant="normal">b</mi><mo>,</mo><mi>j</mi></mrow><mn>2</mn></msubsup></mrow></mfrac></math>
   <math display="block"><msub><mi>N</mi><mrow><mtext>hit</mtext><mo>,</mo><mi>k</mi></mrow></msub><mo>∝</mo><msub><mi>w</mi><mi>k</mi></msub><msub><mi>S</mi><mi>k</mi></msub></math>
 </div>
-<p>円盤の点から結晶に当たる確率は、投影の面積 ÷ 円盤の面積です。そのため、当たる光線の数 <math><msub><mi>N</mi><mrow><mtext>hit</mtext><mo>,</mo><mi>k</mi></mrow></msub></math> は、割合と投影の面積の積に比例します。</p>
+<p>円盤の点から結晶に当たる確率は投影の面積 ÷ 円盤の面積です。そのため、当たる光線の数 <math><msub><mi>N</mi><mrow><mtext>hit</mtext><mo>,</mo><mi>k</mi></mrow></msub></math> は割合と投影の面積の積に比例します。</p>
 <h4>プリセット</h4>
 <div class="tt-w">
   <table class="tt">
@@ -101,7 +101,7 @@ const M = {
     </tbody>
   </table>
 </div>
-<p>巻雲は岐阜で 2006 年 1 月 16 日に見られたハロを橋詰ほか（2006）が再現した割合です。この再現の板の縦横比は 0.5 で、傾きは書かれていません<Fragment set:html={rf(10)} />。柱の多い空は英国で 2001 年 2 月 9 日に見られたハロを atoptics が再現した値です（太陽の高度は 22.5°）<Fragment set:html={rf(11)} />。</p>
+<p>「巻雲」は岐阜で 2006 年 1 月 16 日に見られたハロを橋詰ほか（2006）が再現した割合です。この再現の板の縦横比は 0.5 で、傾きは書かれていません<Fragment set:html={rf(10)} />。「柱の多い空」は英国で 2001 年 2 月 9 日に見られたハロを atoptics が再現した値です（太陽の高度は 22.5°）<Fragment set:html={rf(11)} />。</p>
 
 <h3>結晶の姿勢</h3>
 <p>母集団ごとに結晶の向きの分布を 5 種類から選びます。座標は z を天頂とし、c 軸の向きと c 軸まわりの回転で向きを決めます。最後に方位を一様に回します。</p>
@@ -156,7 +156,7 @@ const M = {
   <math display="block"><mi mathvariant="bold">t</mi><mo>=</mo><mi>η</mi><mi mathvariant="bold">d</mi><mo>+</mo><mrow><mo stretchy="false">(</mo><mi>η</mi><mi>cos</mi><mo>⁡</mo><msub><mi>θ</mi><mi mathvariant="normal">i</mi></msub><mo>−</mo><mi>cos</mi><mo>⁡</mo><msub><mi>θ</mi><mi mathvariant="normal">t</mi></msub><mo stretchy="false">)</mo></mrow><mi mathvariant="bold">N</mi></math>
   <math display="block"><mi mathvariant="bold">r</mi><mo>=</mo><mi mathvariant="bold">d</mi><mo>+</mo><mn>2</mn><mi>cos</mi><mo>⁡</mo><msub><mi>θ</mi><mi mathvariant="normal">i</mi></msub><mi mathvariant="bold">N</mi></math>
 </div>
-<p><math><mi mathvariant="bold">t</mi></math> は屈折した光、<math><mi mathvariant="bold">r</mi></math> は反射した光の向きです。<math><msup><mi>η</mi><mn>2</mn></msup><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><msup><mi>cos</mi><mn>2</mn></msup><msub><mi>θ</mi><mi mathvariant="normal">i</mi></msub><mo stretchy="false">)</mo><mo>≥</mo><mn>1</mn></math> なら全反射です。550 nm では、中から外へ出るときの臨界角は 49.7° です。</p>
+<p><math><mi mathvariant="bold">t</mi></math> は屈折した光、<math><mi mathvariant="bold">r</mi></math> は反射した光の向きです。<math><msup><mi>η</mi><mn>2</mn></msup><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><msup><mi>cos</mi><mn>2</mn></msup><msub><mi>θ</mi><mi mathvariant="normal">i</mi></msub><mo stretchy="false">)</mo><mo>≥</mo><mn>1</mn></math> なら全反射です。550 nm では中から外へ出るときの臨界角は 49.7° です。</p>
 <h4>反射と屈折の選び方</h4>
 <div class="eqs">
   <math display="block"><msub><mi>R</mi><mi mathvariant="normal">s</mi></msub><mo>=</mo><msup><mrow><mo>(</mo><mfrac><mrow><mi>η</mi><mi>cos</mi><mo>⁡</mo><msub><mi>θ</mi><mi mathvariant="normal">i</mi></msub><mo>−</mo><mi>cos</mi><mo>⁡</mo><msub><mi>θ</mi><mi mathvariant="normal">t</mi></msub></mrow><mrow><mi>η</mi><mi>cos</mi><mo>⁡</mo><msub><mi>θ</mi><mi mathvariant="normal">i</mi></msub><mo>+</mo><mi>cos</mi><mo>⁡</mo><msub><mi>θ</mi><mi mathvariant="normal">t</mi></msub></mrow></mfrac><mo>)</mo></mrow><mn>2</mn></msup></math>
@@ -184,11 +184,11 @@ const M = {
   </table>
 </div>
 <h4>省いたもの</h4>
-<p>次のものは見た目にほとんど効かないので、省いています。</p>
+<p>次のものは見た目をほとんど変えないので省いています。</p>
 <ul class="tl">
-  <li><b>偏光</b>: 内暈の偏光度は、Fresnel の式だけでは 3.7 %<Fragment set:html={rf(18)} />。外暈は計算で約 16 %。どちらも偏光フィルタなしでは見えない。平均の反射率を使う誤差は内暈の光路で −0.03 %、外暈の光路で −0.7 %（計算）</li>
+  <li><b>偏光</b>: 内暈の偏光度は Fresnel の式だけでは 3.7 %<Fragment set:html={rf(18)} />。外暈は計算で約 16 %。どちらも偏光フィルタなしでは見えない。平均の反射率を使う誤差は内暈の光路で −0.03 %、外暈の光路で −0.7 %（計算）</li>
   <li><b>複屈折</b>: 550 nm・−25 °C で <math><msub><mi>n</mi><mi mathvariant="normal">o</mi></msub><mo>=</mo><mn>1.3112</mn></math>、<math><msub><mi>n</mi><mi mathvariant="normal">e</mi></msub><mo>=</mo><mn>1.3126</mn></math>。内暈の内縁は 21.930° と 22.037° に分かれる<Fragment set:html={rf(18)} />。差の 0.11° は太陽の視直径 0.53° より小さい</li>
-  <li><b>吸収</b>: Warren と Brandt の値では、1 mm 通っても 99.8 % 以上が透過する（計算）<Fragment set:html={rf(17)} /></li>
+  <li><b>吸収</b>: Warren と Brandt の値では 1 mm 通っても 99.8 % 以上が透過する（計算）<Fragment set:html={rf(17)} /></li>
   <li><b>温度</b>: 出典や温度による屈折率の違いは <Fragment set:html={sci('7', -4)} /> 以下で、内暈は 0.05° ほどしか動かない（計算）<Fragment set:html={rf(17, 18)} /></li>
 </ul>
 
@@ -220,7 +220,7 @@ const M = {
 </div>
 <p>9° の暈の光路 3-26 は atoptics による値です<Fragment set:html={rf(7)} />。</p>
 <h4>幻日と Bravais の実効屈折率</h4>
-<p>底面が水平な板の側面を高度 <Fragment set:html={M.h} /> の光が斜めに通るとき、水平面に投影した向きは屈折率を <Fragment set:html={M.np} /> にしたくさびと同じに曲がります<Fragment set:html={rf(19)} />。幻日の方位の差 <Fragment set:html={M.dphi} /> は、<Fragment set:html={M.np} /> を最小偏角の式に入れて求めます。</p>
+<p>底面が水平な板の側面を高度 <Fragment set:html={M.h} /> の光が斜めに通るとき、水平面に投影した向きは屈折率を <Fragment set:html={M.np} /> にしたくさびと同じように曲がります<Fragment set:html={rf(19)} />。幻日の方位の差 <Fragment set:html={M.dphi} /> は <Fragment set:html={M.np} /> を最小偏角の式に入れて求めます。</p>
 <dl class="syms">
   <dt set:html={M.h} /><dd>光源の真の高度</dd>
   <dt set:html={M.np} /><dd>Bravais の実効屈折率</dd>
@@ -254,12 +254,12 @@ const M = {
   <math display="block"><msub><mi>h</mi><mtext>CHA</mtext></msub><mo>=</mo><mi>arcsin</mi><mo>⁡</mo><msqrt><mrow><mn>1</mn><mo>−</mo><msup><mi>n</mi><mn>2</mn></msup><mo>+</mo><msup><mi>sin</mi><mn>2</mn></msup><mi>h</mi></mrow></msqrt></math>
   <math display="block"><msub><mi>h</mi><mtext>TIR</mtext></msub><mo>=</mo><mi>arccos</mi><mo>⁡</mo><msqrt><mrow><msup><mi>n</mi><mn>2</mn></msup><mo>−</mo><mn>1</mn></mrow></msqrt></math>
 </div>
-<p>環天頂アークは <math><mi>h</mi><mo>&lt;</mo><msub><mi>h</mi><mtext>TIR</mtext></msub></math> のときだけ、環水平アークは <math><mi>h</mi><mo>&gt;</mo><mn>90</mn><mo>°</mo><mo>−</mo><msub><mi>h</mi><mtext>TIR</mtext></msub></math> のときだけ出ます。それ以外では、出る面で全反射します<Fragment set:html={rf(19)} />。<Fragment set:html={M.hcza} /> の式と出る条件は Selmke らの式で、<Fragment set:html={M.hcha} /> の式は同じ論文の実効屈折率から導いたものです。</p>
+<p>環天頂アークは <math><mi>h</mi><mo>&lt;</mo><msub><mi>h</mi><mtext>TIR</mtext></msub></math> のときだけ、環水平アークは <math><mi>h</mi><mo>&gt;</mo><mn>90</mn><mo>°</mo><mo>−</mo><msub><mi>h</mi><mtext>TIR</mtext></msub></math> のときだけ出ます。それ以外では出る面で全反射します<Fragment set:html={rf(19)} />。<Fragment set:html={M.hcza} /> の式と出る条件は Selmke らの式で、<Fragment set:html={M.hcha} /> の式は同じ論文の実効屈折率から導いたものです。</p>
 <ul class="tl">
   <li>550 nm では <math><msub><mi>h</mi><mtext>TIR</mtext></msub><mo>=</mo><mn>32.04</mn><mo>°</mo></math>。環水平アークは光源が 57.96° より高いときに出る。AKM は 32° と 57.8° を挙げている<Fragment set:html={rf(20)} /></li>
-  <li>環天頂アークの高度は、光源の高度 0° で 57.96°、22° で 67.94°、30° で 79.79°</li>
+  <li>環天頂アークの高度は光源の高度 0° で 57.96°、22° で 67.94°、30° で 79.79°</li>
   <li>光源の高度 22° の環天頂アークは光源から 45.94° で、90° のくさびの最小偏角と同じ</li><li>AKM は環天頂アークが最も明るいのは高度 22.1°、環水平アークは 67.9° としている<Fragment set:html={rf(20)} /></li>
-  <li>環水平アークの高度は、光源の高度 58° で 1.39°、68° で 22.06°、90° で 32.04°</li>
+  <li>環水平アークの高度は光源の高度 58° で 1.39°、68° で 22.06°、90° で 32.04°</li>
 </ul>
 <h4>名前の位置</h4>
 <p>空に出す名前は母集団の姿勢から出ているはずのハロを選んで置きます。位置は真の向きで求め、大気差で浮かせてから画面に写します。</p>
@@ -307,7 +307,7 @@ const M = {
   <math display="block"><msub><mi mathvariant="normal">Δ</mi><mtext>FWHM</mtext></msub><mo>≈</mo><mn>3.2</mn><mfrac><mi>λ</mi><mi>D</mi></mfrac></math>
   <math display="block"><mi>σ</mi><mo>=</mo><mfrac><msub><mi mathvariant="normal">Δ</mi><mtext>FWHM</mtext></msub><mrow><mn>2</mn><msqrt><mrow><mn>2</mn><mi>ln</mi><mo>⁡</mo><mn>2</mn></mrow></msqrt></mrow></mfrac></math>
 </div>
-<p>550 nm では、<math><mi>D</mi><mo>=</mo><mn>20</mn></math> µm で 5.0°、50 µm で 2.0°、100 µm で 1.0°、200 µm で 0.50° です。ハロがはっきり出るには、サイズパラメータ（結晶の周の長さ ÷ 波長）が 100 程度以上要ります<Fragment set:html={rf(22)} />。550 nm では径およそ 18 µm です。2 個目の結晶を通った光は、2 個目の結晶の径でずらします。</p>
+<p>550 nm では、<math><mi>D</mi><mo>=</mo><mn>20</mn></math> µm で 5.0°、50 µm で 2.0°、100 µm で 1.0°、200 µm で 0.50° です。ハロがはっきり出るには、サイズパラメータ（結晶の周の長さ ÷ 波長）が 100 程度以上要ります<Fragment set:html={rf(22)} />。550 nm では径およそ 18 µm です。2 個目の結晶を通った光は 2 個目の結晶の径でずらします。</p>
 <h4>ハロの色が淡い理由</h4>
 <ul class="tl">
   <li>内暈の最小偏角は 400 nm の 22.55° から 700 nm の 21.60° まで 0.95° しか動かず、太陽の視直径 0.53° の 2 倍に満たない</li>
@@ -423,7 +423,7 @@ const M = {
   <li>雲より向こうの空の光と光源の円盤は、<math><msup><mi>e</mi><mrow><mo>−</mo><mi>τ</mi><mo>/</mo><mi>μ</mi></mrow></msup></math> に弱める</li>
   <li>雲は上の空の光も散らす（<math><msub><mi>L</mi><mtext>c,sky</mtext></msub></math>）。上の空を、雲の点から天頂を見た明るさ <math><msub><mi>L</mi><mi mathvariant="normal">z</mi></msub></math>（10 段で積分）で代表させ、前に強く散る雲がそれを下へ送る割合を 0.8 とする</li><li>夕方は赤い直射の光に青い空の光が混ざり、雲が桃色になる</li>
 </ul>
-<p>粗い結晶の割合の初期値 63 % は、HaloCam の 4,400 枚の写真に最もよく合った混ぜ方（滑らかな結晶 37 %、粗い結晶 63 %）です<Fragment set:html={rf(24)} />。ハロのコントラストは、雲の光学的厚さが 1 前後で最も大きくなります<Fragment set:html={rf(29)} />。</p>
+<p>粗い結晶の割合の初期値 63 % は HaloCam の 4,400 枚の写真に最もよく合った混ぜ方（滑らかな結晶 37 %、粗い結晶 63 %）です<Fragment set:html={rf(24)} />。ハロのコントラストは、雲の光学的厚さが 1 前後で最も大きくなります<Fragment set:html={rf(29)} />。</p>
 <h4>地球の影と、雲に届く光の色</h4>
 <p>雲の層の点から光源の向きに大気の上端まで透過率を求め、雲に届く光の色と明るさにします。光源が低いと光は大気を長く通り、青い光ほど弱まって、雲は赤く照らされます。高さ 8 km の真上の雲では、光源の真の高度 0° のとき、680・550・440 nm の透過率が 0.47・0.16・0.031 です（計算）。</p>
 <p>日の入りの後も上空の雲にはしばらく日が当たります。大気差を除くと、高さ <math><mi>z</mi></math> の点に光が届くのは、その点の地平面から測った光源の伏角 <math><mi>δ</mi></math> が次の値より小さいときです<Fragment set:html={rf(30)} />。</p>
@@ -492,7 +492,7 @@ const M = {
   <li><b>光源が 4° より低いとき</b>: 4° のときの露出から実際の露出へ、対数で 6 割まで寄せる（<math><msup><mi>k</mi><mo>′</mo></msup></math>）。薄明の暗さを残すため</li>
   <li><b>ハロだけ</b>: 天頂の雲の点に届く光で割り、1 sr あたり 1 の光が 0.5 に写るようにする</li>
 </ul>
-<p>線形の値 <math><mi>x</mi></math> を <math><mn>1</mn><mo>−</mo><msup><mi>e</mi><mrow><mo>−</mo><mi>x</mi></mrow></msup></math> で圧縮し、sRGB に符号化して表示します。sRGB に収まらない色（負の成分）は、輝度を保って白へ寄せます。地平線の下は地面で、空の明るさの一部で照らします。</p>
+<p>線形の値 <math><mi>x</mi></math> を <math><mn>1</mn><mo>−</mo><msup><mi>e</mi><mrow><mo>−</mo><mi>x</mi></mrow></msup></math> で圧縮し、sRGB に符号化して表示します。sRGB に収まらない色（負の成分）は輝度を保って白へ寄せます。地平線の下は地面で、空の明るさの一部で照らします。</p>
 
 <h3>結晶の中の光路の図</h3>
 <p>図は選んだハロへ向かう光線を 1 本探して描きます。GPU と同じ手順の CPU の追跡で、550 nm の光線をハロごとに決めた結晶に最大 40 万本通し、条件に合った最初の 1 本を使います。乱数の種は決まっているので、同じ高度では同じ光線になります。解析の式で出ない高度では探さず、理由を示します。</p>
@@ -513,7 +513,7 @@ const M = {
     </tbody>
   </table>
 </div>
-<p>空に出す名前のためのパリーアークとローウィッツアークは 15 万本まで探します。ローウィッツアークは Lowitz の板（<Fragment set:html={M.ca} /> 0.25、傾き 0.5°、回転 20°）の 2 面を通り、光源から 20〜26°、光源の 2.5〜6° 上の光線です。</p>
+<p>空に出す名前のために、パリーアークとローウィッツアークの光線は 15 万本まで探します。ローウィッツアークは Lowitz の板（<Fragment set:html={M.ca} /> 0.25、傾き 0.5°、回転 20°）の 2 面を通り、光源から 20〜26°、光源の 2.5〜6° 上の光線です。</p>
 <h4>結晶の形と見る向き</h4>
 <ul class="tl">
   <li>頂点は面の平面を 3 枚ずつ組にして交点を求め、凸多面体の内側にあるものだけを残す</li><li>面ごとの頂点は法線のまわりの角で並べる</li>

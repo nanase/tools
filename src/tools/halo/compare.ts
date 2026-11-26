@@ -90,7 +90,7 @@ export function initCompare(): void {
       try {
         R = new HaloRenderer(cv, 512);
       } catch {
-        $('#ph-scap').textContent = 'このブラウザでは WebGL2 が使えないため、計算した空を出せません。';
+        $('#ph-scap').textContent = 'このブラウザでは WebGL2 が使えないため、計算した空を出せません';
       }
     show(cur);
   });

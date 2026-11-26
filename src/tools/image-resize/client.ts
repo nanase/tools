@@ -720,7 +720,7 @@ fileIn.addEventListener('change', async () => {
     listKey = '';
     pickImage(id);
   } catch {
-    msg.textContent = 'この画像は読み込めません。';
+    msg.textContent = 'この画像は読み込めません';
   }
 });
 /* 重い見本は 1 枚ずつ、画面を止めないように作る */

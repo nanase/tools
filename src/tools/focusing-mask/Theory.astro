@@ -4,7 +4,7 @@
 const rf = (...ns: number[]) => ns.map((n) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`).join('');
 ---
 <h3>星の像</h3>
-<p>星は十分に遠いので、望遠鏡には平らな波面の光が入ります。焦点面の像は、開口を通った光の場のフーリエ変換の強度です（フラウンホーファー回折）<Fragment set:html={rf(1, 2)} />。マスクは開口の光の場に掛ける透過率の模様として入ります。</p>
+<p>星は十分に遠いので、望遠鏡には平らな波面の光が入ります。焦点面の像は開口を通った光の場のフーリエ変換の強度です（フラウンホーファー回折）<Fragment set:html={rf(1, 2)} />。マスクは開口の光の場に掛ける透過率の模様として入ります。</p>
 <ol class="flow" aria-label="星の像を作る流れ">
   <li><b>開口とマスク</b><span>透過率 <math><mi>t</mi></math>（0〜1）を格子に描く</span></li>
   <li><b>ピントのずれの位相</b><span>波長ごとに掛ける</span></li>
@@ -78,7 +78,7 @@ const rf = (...ns: number[]) => ns.map((n) => `<a class="rf" href="#thy-r${n}">[
 <p>穴が 2 つでは、焦点の手前と奥で同じ並びになり、どちらへずれたか分かりません。穴が 3 つなら三角形の向きが逆になります。</p>
 
 <h3>JWST の主鏡と画像のマスク</h3>
-<p>ジェイムズ・ウェッブ宇宙望遠鏡（JWST）の主鏡は、六角形のセグメント 18 枚でできています<Fragment set:html={rf(14)} />。星の像に出る 6 本の大きな光条はセグメントと開口の縁から、横の細い 2 本は副鏡を支える縦の支柱から生まれます<Fragment set:html={rf(15)} />。このツールでは、次の形を開口として描きます<Fragment set:html={rf(16)} />。</p>
+<p>ジェイムズ・ウェッブ宇宙望遠鏡（JWST）の主鏡は、六角形のセグメント 18 枚でできています<Fragment set:html={rf(14)} />。星の像に出る 6 本の大きな光条はセグメントと開口の縁から、横の細い 2 本は副鏡を支える縦の支柱から生まれます<Fragment set:html={rf(15)} />。このツールでは次の形を開口として描きます<Fragment set:html={rf(16)} />。</p>
 <ul class="tl">
   <li>セグメント: 対辺 1.32 m の六角形を 7 mm の隙間で 2 重に並べ、中央の 1 枚を除いた 18 枚</li>
   <li>副鏡の支柱: 幅 0.1 m の 3 本（上・右下・左下）</li>
@@ -92,14 +92,14 @@ const rf = (...ns: number[]) => ns.map((n) => `<a class="rf" href="#thy-r${n}">[
   <math display="block"><mo>|</mo><mi>Δ</mi><mi>z</mi><mo>|</mo><mo>≤</mo><mn>2</mn><mi>λ</mi><msup><mi>N</mi><mn>2</mn></msup></math>
 </div>
 <p>解析ソフトの Bahtinov Grabber は、もっと狭い <math><mo>|</mo><mi>Δ</mi><mi>z</mi><mo>|</mo><mo>&lt;</mo><mn>0.9</mn><mspace width="0.17em"/><mtext>µm</mtext><mo>·</mo><msup><mi>N</mi><mn>2</mn></msup></math> を合焦の判定に使います<Fragment set:html={rf(11)} />。</p>
-<p>この範囲の端での光条のずれは、上の式で約 λ<i>N</i> です。f/5 では 2.8 µm で、3.76 µm の画素の 1 画素に足りません。目では見分けにくいので、解析ソフトは光条全体に直線を当てはめて、画素より細かく読みます。</p>
+<p>この範囲の端での光条のずれは上の式で約 λ<i>N</i> です。f/5 では 2.8 µm で、3.76 µm の画素の 1 画素に足りません。目では見分けにくいので、解析ソフトは光条全体に直線を当てはめて、画素より細かく読みます。</p>
 
 <h3>大気のゆらぎとカメラ</h3>
 <p>長い露出の星像の広がり（シーイング）は、モファット分布で畳み込みます。β = 4.765 で、大気の乱れの理論から求まる長時間露出の像に近くなります<Fragment set:html={rf(12, 13)} />。</p>
 <div class="eqs">
   <math display="block"><mi>I</mi><mo stretchy="false">(</mo><mi>r</mi><mo stretchy="false">)</mo><mo>∝</mo><msup><mrow><mo stretchy="false">(</mo><mn>1</mn><mo>+</mo><msup><mrow><mo stretchy="false">(</mo><mi>r</mi><mo>/</mo><mi>a</mi><mo stretchy="false">)</mo></mrow><mn>2</mn></msup><mo stretchy="false">)</mo></mrow><mrow><mo>−</mo><mi>β</mi></mrow></msup><mo>,</mo><mspace width="1em"/><mtext>半値幅</mtext><mo>=</mo><mn>2</mn><mi>a</mi><msqrt><mrow><msup><mn>2</mn><mrow><mn>1</mn><mo>/</mo><mi>β</mi></mrow></msup><mo>−</mo><mn>1</mn></mrow></msqrt></math>
 </div>
-<p>計算した像は、カメラの画素の大きさに合わせて面積で積分します。明るい星の芯はすぐに飽和し、飽和させるほど暗い光条が見えてきます。</p>
+<p>計算した像はカメラの画素の大きさに合わせて面積で積分します。明るい星の芯はすぐに飽和し、飽和させるほど暗い光条が見えてきます。</p>
 
 <h3>星のほかの光源</h3>
 <p>二重星・星団・画像の像は、光源の明るさの分布 <math><mi>O</mi></math> と点像 <math><mi>h</mi></math> の畳み込みです<Fragment set:html={rf(1)} />。点像は視野のどこでも同じとみなします。</p>

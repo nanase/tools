@@ -52,7 +52,7 @@ const deg = (r: number) => Math.round((r * 180) / Math.PI);
 <ul class="tl">
   <li>横に速さ <math><mi>v</mi></math> で動くもの: 上端と下端が <math><mi mathvariant="normal">Δ</mi><mi>x</mi></math> ずれ、縦の線が <math><mi>θ</mi></math> 傾く（<math><mi>H</mi></math> は画面の高さ）</li>
   <li>角速度 <math><mi>ω</mi></math> で回るもの: 1 走査の間に <math><mi mathvariant="normal">Δ</mi><mi>φ</mi></math> 回る。羽が曲がり、速いと切れて浮く<Fragment set:html={rf(3)} /></li>
-  <li>プロペラの写り方は、羽の形 <math><mi>f</mi></math> を極座標で <math set:html={`<mi>I</mi><mo stretchy="false">(</mo><mi>r</mi><mo>,</mo><mi>θ</mi><mo stretchy="false">)</mo><mo>=</mo><mi>f</mi><mo stretchy="false">(</mo><mi>r</mi><mo>,</mo><mi>θ</mi><mo>+</mo>${frac(`<mi>ω</mi>${Tr}`, '<mi>H</mi>')}<mi>r</mi><mi>sin</mi><mi>θ</mi><mo stretchy="false">)</mo>`} /> と移したもの<Fragment set:html={rf(3)} />。効くのは <math set:html={`<mi>ω</mi>${Tr}`} /> だけ</li>
+  <li>プロペラの写り方は羽の形 <math><mi>f</mi></math> を極座標で <math set:html={`<mi>I</mi><mo stretchy="false">(</mo><mi>r</mi><mo>,</mo><mi>θ</mi><mo stretchy="false">)</mo><mo>=</mo><mi>f</mi><mo stretchy="false">(</mo><mi>r</mi><mo>,</mo><mi>θ</mi><mo>+</mo>${frac(`<mi>ω</mi>${Tr}`, '<mi>H</mi>')}<mi>r</mi><mi>sin</mi><mi>θ</mi><mo stretchy="false">)</mo>`} /> と移したもの<Fragment set:html={rf(3)} />。効くのは <math set:html={`<mi>ω</mi>${Tr}`} /> だけ</li>
   <li>走査を左→右にすると、回るもののゆがみは 90° 回り、右へ動くものは傾かずに <math set:html={`${frac('<mn>1</mn>', `<mn>1</mn><mo>−</mo><mi>v</mi>${Tr}<mo>/</mo><mi>W</mi>`)}`} /> 倍に伸びる（<math><mi>W</mi></math> は画面の幅）</li>
 </ul>
 
