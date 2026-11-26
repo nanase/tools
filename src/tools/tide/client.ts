@@ -110,8 +110,6 @@ syncArrows();
 const playBtn = $<HTMLButtonElement>('#td-play');
 function syncPlay(): void {
   playBtn.setAttribute('aria-pressed', String(S.run));
-  $('#td-playLed').classList.toggle('on', S.run);
-  txt('#td-playT', S.run ? '一時停止' : '早送り');
 }
 playBtn.addEventListener('click', () => {
   S.run = !S.run;

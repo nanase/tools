@@ -817,8 +817,6 @@ let last = 0;
 function stop(): void {
   playing = false;
   $('#play').setAttribute('aria-pressed', 'false');
-  $('#playLed').classList.remove('on');
-  txt('#playT', '再生');
   later(true);
 }
 $('#play').addEventListener('click', () => {
@@ -827,8 +825,6 @@ $('#play').addEventListener('click', () => {
   playing = true;
   last = performance.now();
   $('#play').setAttribute('aria-pressed', 'true');
-  $('#playLed').classList.add('on');
-  txt('#playT', '停止');
   later();
 });
 
@@ -1353,6 +1349,6 @@ try {
 initFullscreen({
   root: $('#pview'),
   btn: $<HTMLButtonElement>('#v-fs'),
-  pop: () => [$('#p-or'), $('#p-play'), $('.pn-clock'), $('#band'), $('#keys'), $('.pn-tstep'), $('#g-view')],
+  pop: () => [$('#p-or'), $('#play'), $('.pn-clock'), $('#band'), $('#keys'), $('.pn-tstep'), $('#g-view')],
 });
 later(true);
