@@ -3,7 +3,7 @@
 import { EQS } from './theory';
 ---
 <h3>符号化の手順</h3>
-<p>JPEG のベースライン方式は、画像を色の成分に分け、8×8 画素のブロックごとに周波数の成分に変え、細かい情報を捨ててから、残った値をハフマン符号で詰めます。</p>
+<p>JPEG のベースライン方式は画像を色の成分に分け、8×8 画素のブロックごとに周波数の成分に変え、細かい情報を捨ててから、残った値をハフマン符号で詰めます。</p>
 <ol class="flow" aria-label="符号化の手順">
   <li><b>色の変換</b><span>RGB から輝度と色差へ</span></li>
   <li><b>色差の間引き</b><span>4:2:2・4:2:0</span></li>
@@ -30,7 +30,7 @@ import { EQS } from './theory';
   <li><b>DC 係数</b>: 左上の係数。平均の明るさから 128 を引いたものの 8 倍</li>
   <li><b>AC 係数</b>: ほかの係数</li>
 </ul>
-<p>なめらかな画像では、エネルギーが低い周波数の少数の係数に集まります。DCT と逆 DCT は、丸めを除けば元に戻る変換です。</p>
+<p>なめらかな画像では、エネルギーが低い周波数の少数の係数に集まります。DCT と逆 DCT は丸めを除けば元に戻る変換です。</p>
 <div class="eqs"><Fragment set:html={EQS.dct} /></div>
 
 <h3>量子化</h3>
@@ -43,7 +43,7 @@ import { EQS } from './theory';
 </div>
 
 <h3>記号化</h3>
-<p>量子化した係数は、低い周波数から高い周波数へジグザグに並べます<a class="rf" href="#thy-r2">[2]</a>。</p>
+<p>量子化した係数は低い周波数から高い周波数へジグザグに並べます<a class="rf" href="#thy-r2">[2]</a>。</p>
 <h4>DC 係数</h4>
 <p>走査の順で 1 つ前の同じ成分のブロックとの差分を、次の 2 つで表します。</p>
 <ul class="tl">
@@ -81,7 +81,7 @@ import { EQS } from './theory';
 <p>このツールはこの並びのファイルを自前の符号器で作り、自前の復号器で画素に戻して表示します。復号では色差を最近傍か線形の補間で画素の数に戻します<a class="rf" href="#thy-r5">[5]</a>。</p>
 
 <h3>PSNR</h3>
-<p>PSNR は元の画像と復号した画像の平均二乗誤差 <math><mi mathvariant="normal">MSE</mi></math> から求めます<a class="rf" href="#thy-r6">[6]</a>。<math><mi>Y</mi></math> は、両方の画像の RGB から JFIF の式で求めた輝度で比べます。</p>
+<p>PSNR は元の画像と復号した画像の平均二乗誤差 <math><mi mathvariant="normal">MSE</mi></math> から求めます<a class="rf" href="#thy-r6">[6]</a>。<math><mi>Y</mi></math> は両方の画像の RGB から JFIF の式で求めた輝度で比べます。</p>
 <div class="eqs"><Fragment set:html={EQS.psnr} /></div>
 
 <h3>出典</h3>

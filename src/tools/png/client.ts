@@ -192,9 +192,9 @@ function request(): void {
     }, 16);
 }
 const FAIL: Record<Fail, string> = {
-  'too-many-colors': '色が 256 を超えるため、パレットにできません。',
-  'not-png': 'PNG ファイルとして読めませんでした。',
-  'too-large': '画素が多すぎるため、元のファイルのままでは調べられません。',
+  'too-many-colors': '色が 256 を超えるため、パレットにできません',
+  'not-png': 'PNG ファイルとして読めませんでした',
+  'too-large': '画素が多すぎるため、元のファイルのままでは調べられません',
 };
 function done(r: Reply): void {
   if (r.kind === 'cmp') {
@@ -232,7 +232,7 @@ function done(r: Reply): void {
         tgForced = true;
         request();
       }
-    } else toast('符号化できませんでした。');
+    } else toast('符号化できませんでした');
   }
 }
 
@@ -783,7 +783,7 @@ async function loadFile(f: File): Promise<void> {
       ms.className = 'msg er';
       ms.textContent = `${f.name} を画像として読めませんでした`;
       /* 見本を選んでいる間はこの行が隠れているので、知らせでも出す */
-      toast(`${f.name} を画像として読めませんでした。`);
+      toast(`${f.name} を画像として読めませんでした`);
     }
   }
 }

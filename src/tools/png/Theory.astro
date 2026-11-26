@@ -53,7 +53,7 @@ import { EQS } from './theory';
 <p>一致の探し方と圧縮レベルは zlib の deflate.c の表にならいます。レベル 1〜3 はすぐに一致を採り、4 以上は次の位置の一致と比べてから決めます（遅延一致）<a class="rf" href="#thy-r4">[4]</a>。復号では符号長の表と符号を puff.c と同じ水準で検査します<a class="rf" href="#thy-r6">[6]</a>。</p>
 
 <h3>Adam7</h3>
-<p>8×8 の区画の画素を 7 つのパスに分け、粗い格子から送ります<a class="rf" href="#thy-r1">[1]</a>。読み込みの途中でも全体の荒い絵が出せる代わりに、隣の画素が離れるのでフィルタと LZ77 が効きにくくなります。</p>
+<p>8×8 の区画の画素を 7 つのパスに分け、粗い格子から送ります<a class="rf" href="#thy-r1">[1]</a>。読み込みの途中でも全体の粗い絵が出せる代わりに、隣の画素が離れるのでフィルタと LZ77 が効きにくくなります。</p>
 <div class="segw"><table class="ptab7">
   <thead><tr><th scope="col">パス</th><th scope="col">1</th><th scope="col">2</th><th scope="col">3</th><th scope="col">4</th><th scope="col">5</th><th scope="col">6</th><th scope="col">7</th></tr></thead>
   <tbody>
@@ -84,7 +84,7 @@ import { EQS } from './theory';
   <li>見本は画素ごとの式と決まった種の乱数で描く。試験図の 5 つの段は、それぞれ Sub・Up・Paeth・Average・None で最も小さくなるように作った</li>
   <li>Deflate のブロックは記号 16,384 個ごとに区切り、stored・固定・動的のうち最も短いものを使う</li>
   <li>残差の画像は 128 に差の 2 倍を足した灰色（RGB はチャンネルごと）。None は元のバイトのまま</li>
-  <li>1 画素あたりのビット数は、記号のビットを記号が作るバイトに等分して配る</li>
+  <li>1 画素あたりのビット数は記号のビットを記号が作るバイトに等分して配る</li>
   <li>グレーは 0.299R + 0.587G + 0.114B を丸めた値</li>
   <li>ブラウザの zlib は CompressionStream の deflate で、同じフィルタ後の並びを圧縮した大きさ</li>
   <li>符号化し直すときは長い辺を 1,024 画素まで、元のファイルのまま調べるのは 1,048,576 画素まで</li>

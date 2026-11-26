@@ -51,7 +51,7 @@ const LOGM = '<math><msub><mi>log</mi><mi>m</mi></msub><mspace width="0.2em"/><m
 const FAN = `<div class="eqs"><math display="block"><mrow><mi>m</mi><mo>=</mo><mo>⌊</mo><mfrac><mtext>ページの大きさ</mtext><mn>${ENTRY}</mn></mfrac><mo>⌋</mo><mspace width="1.2em"/><mi>h</mi><mo>=</mo><mo>⌈</mo><msub><mi>log</mi><mrow><mn>${FILL}</mn><mi>m</mi></mrow></msub><mi>n</mi><mo>⌉</mo></mrow></math></div>`;
 ---
 <h3>ノードの条件</h3>
-<p>次数 <math><mi>m</mi></math> の B木は、1 つのノードに最大 <math><mi>m</mi><mo>−</mo><mn>1</mn></math> 個のキーと <math><mi>m</mi></math> 本の枝を持ちます。根以外のノードは枠の半分以上を埋め、全部の葉を同じ段に置きます <Fragment set:html={Rf(1)} />。ノードの中のキーは昇順で、枝はキーの間から下の段へ伸びます。</p>
+<p>次数 <math><mi>m</mi></math> の B木は 1 つのノードに最大 <math><mi>m</mi><mo>−</mo><mn>1</mn></math> 個のキーと <math><mi>m</mi></math> 本の枝を持ちます。根以外のノードは枠の半分以上を埋め、全部の葉を同じ段に置きます <Fragment set:html={Rf(1)} />。ノードの中のキーは昇順で、枝はキーの間から下の段へ伸びます。</p>
 <div class="eqs"><math display="block"><mrow><mo stretchy="false">⌈</mo><mi>m</mi><mo>/</mo><mn>2</mn><mo stretchy="false">⌉</mo><mo>−</mo><mn>1</mn><mo>≤</mo><mtext>キーの数</mtext><mo>≤</mo><mi>m</mi><mo>−</mo><mn>1</mn></mrow></math></div>
 
 <h3>段数</h3>
@@ -123,12 +123,12 @@ const FAN = `<div class="eqs"><math display="block"><mrow><mi>m</mi><mo>=</mo><m
   <li>比較はノードの中を二分探索してキーを比べた回数</li>
   <li>範囲で親へ戻るときは、読み終えたノードを読み直さない</li>
   <li>回数は工程ごとに 0 から数える</li>
-  <li>B+木の途中のキーは、葉から消えても道案内として残す</li>
+  <li>B+木の途中のキーは葉から消えても道案内として残す</li>
   <li>2-3 木と 2-3-4 木は次数 3・4 の B木として動かす</li>
   <li>トップダウン分割は次数が奇数なら 1 つ上の偶数で動かす</li>
   <li>Bε木の根のバッファはメモリの上にあるものとし、入れるだけなら読み書きに数えない</li>
   <li>Bε木のバッファの大きさは次数と同じにする。計算量の表の値より書き込みは多くなる</li>
   <li>Bε木の削除は消す印を流すだけで、葉の併合はしない</li>
   <li>二分探索木は木の形を整えない</li>
-  <li>操作の表の回数は、31 個で 8 通りのデータを試した 1 回の平均</li>
+  <li>操作の表の回数は 31 個で 8 通りのデータを試した 1 回の平均</li>
 </ul>

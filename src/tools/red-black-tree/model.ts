@@ -524,7 +524,7 @@ function del(R: Run, k: number): void {
   }
   const { x: z } = R.descend(k, 'del');
   if (!z) {
-    R.snap(`${k} はない`, {});
+    R.snap(`${k} なし`, {});
     return;
   }
   if (R.kind === 'rb') rbDel(R, z);
@@ -685,7 +685,7 @@ function moveRedRight(R: Run, h0: Nd): Nd {
 function llrbDel(R: Run, k: number): void {
   if (!R.root || !findIn(R.root, k)) {
     R.descend(k, 'del');
-    R.snap(`${k} はない`, {});
+    R.snap(`${k} なし`, {});
     return;
   }
   const root = R.root;
@@ -745,7 +745,7 @@ function llrbDel(R: Run, k: number): void {
 }
 function find(R: Run, k: number): void {
   const { x } = R.descend(k, 'find');
-  if (!x) R.snap(`${k} はない`, {});
+  if (!x) R.snap(`${k} なし`, {});
 }
 
 /* ---------- 実行 ---------- */

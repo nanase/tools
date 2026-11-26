@@ -196,7 +196,7 @@ const Rf = (k: string) => `<a class="rf" href="#thy-r${num(k)}">[${num(k)}]</a>`
 <p>樹形図の高さは結合したときの距離です。ウォード法は誤差平方和の増加の平方根を高さにしています。</p>
 
 <h3>密度ベース</h3>
-<p>DBSCAN は、半径 <math><mi>ε</mi></math> の円の中に最小点数以上の点がある点をコア点とし、コア点の円でつながる点を 1 つのクラスタにします<Fragment set:html={Rf('ester')} />。形によらず分けられますが、密度の違うクラスタを 1 つの半径で扱えません。OPTICS と HDBSCAN は半径をいくつも見るので、この弱点を減らせます。</p>
+<p>DBSCAN は半径 <math><mi>ε</mi></math> の円の中に最小点数以上の点がある点をコア点とし、コア点の円でつながる点を 1 つのクラスタにします<Fragment set:html={Rf('ester')} />。形によらず分けられますが、密度の違うクラスタを 1 つの半径で扱えません。OPTICS と HDBSCAN は半径をいくつも見るので、この弱点を減らせます。</p>
 <p>Mean Shift はガウス関数で重み付けした平均へ点を動かす反復で、密度の勾配を登ります<Fragment set:html={Rf('comaniciu')} />。</p>
 <div class="eqs"><math display="block"><mrow><msup><mi>x</mi><mo>′</mo></msup><mo>=</mo><mfrac><mrow><msub><mo>∑</mo><mi>i</mi></msub><msub><mi>x</mi><mi>i</mi></msub><mi>exp</mi><mo stretchy="false">(</mo><mo>−</mo><msup><mrow><mo>‖</mo><mi>x</mi><mo>−</mo><msub><mi>x</mi><mi>i</mi></msub><mo>‖</mo></mrow><mn>2</mn></msup><mo>/</mo><mn>2</mn><msup><mi>h</mi><mn>2</mn></msup><mo stretchy="false">)</mo></mrow><mrow><msub><mo>∑</mo><mi>i</mi></msub><mi>exp</mi><mo stretchy="false">(</mo><mo>−</mo><msup><mrow><mo>‖</mo><mi>x</mi><mo>−</mo><msub><mi>x</mi><mi>i</mi></msub><mo>‖</mo></mrow><mn>2</mn></msup><mo>/</mo><mn>2</mn><msup><mi>h</mi><mn>2</mn></msup><mo stretchy="false">)</mo></mrow></mfrac></mrow></math></div>
 
@@ -206,7 +206,7 @@ const Rf = (k: string) => `<a class="rf" href="#thy-r${num(k)}">[${num(k)}]</a>`
 <p>変分ベイズは混合比に事前分布を置くので、要らない成分の重みが 0 へ近づき、クラスタ数が決まります<Fragment set:html={Rf('bishop')} />。</p>
 
 <h3>グラフベース</h3>
-<p>スペクトラルは、近傍グラフの正規化した隣接行列の固有ベクトルを新しい座標にします<Fragment set:html={Rf('ng') + Rf('luxburg')} />。つながりの弱い所で分けるので、三日月や同心円も分けられます。図の座標は第 2 と第 3 の固有ベクトルで、k-means は第 1 から第 k までを行ごとに正規化した座標で行います。</p>
+<p>スペクトラルは近傍グラフの正規化した隣接行列の固有ベクトルを新しい座標にします<Fragment set:html={Rf('ng') + Rf('luxburg')} />。つながりの弱い所で分けるので、三日月や同心円も分けられます。図の座標は第 2 と第 3 の固有ベクトルで、k-means は第 1 から第 k までを行ごとに正規化した座標で行います。</p>
 <div class="eqs"><math display="block"><mrow><mi>A</mi><mo>=</mo><msup><mi>D</mi><mrow><mo>−</mo><mn>1</mn><mo>/</mo><mn>2</mn></mrow></msup><mi>W</mi><msup><mi>D</mi><mrow><mo>−</mo><mn>1</mn><mo>/</mo><mn>2</mn></mrow></msup></mrow></math></div>
 <p>最小全域木の切断は最短距離法と同じ分け方になります。長い辺の切り方が同じだからです。</p>
 
@@ -255,7 +255,7 @@ const Rf = (k: string) => `<a class="rf" href="#thy-r${num(k)}">[${num(k)}]</a>`
   <li>一覧は点の数 150、1 マスのコマは 48 まで。k-means は初期配置の運を除くため k-means++</li>
   <li>k-means の既定の初期配置はランダム。k-means++ だとすぐ収束して動きが見えないため</li>
   <li>既定のパラメータはデータごとに手で選んだ値。半径は点の数の平方根に反比例、近傍数は比例させる</li>
-  <li>スペクトラルの近傍グラフは、全体の 1 割未満の破片を最も近い点へつなぐ。全ての点の組に 10⁻⁶ の重みを足す</li>
+  <li>スペクトラルの近傍グラフは全体の 1 割未満の破片を最も近い点へつなぐ。全ての点の組に 10⁻⁶ の重みを足す</li>
   <li>k-medoids は PAM の BUILD と SWAP</li>
   <li>BIRCH の CF 木は枝分かれと葉の項目数を 8 まで。最後の統合はウォード法。点の再割り当てはしない</li>
   <li>CURE は標本化と分割をしない</li>

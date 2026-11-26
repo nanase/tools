@@ -891,7 +891,7 @@ export function build(src: string, ruleDef: RuleDef, methodId: MethodId): Trace 
   try {
     /* 最初のコマは読み始める前の状態なので、手順に数えない */
     R.F.push(R.frame('字句を左から読み取り'));
-    if (!lx.toks.length) R.fail('式がない', -1);
+    if (!lx.toks.length) R.fail('式なし', -1);
     if (methodId === 'sy') parseSY(R);
     else if (methodId === 'sr') parseSR(R);
     else if (methodId === 'rd') parseRD(R);

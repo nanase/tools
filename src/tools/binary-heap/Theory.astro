@@ -54,7 +54,7 @@ const ONL =
   '<math><mi>O</mi><mo stretchy="false">(</mo><mi>n</mi><mspace width="0.2em"/><mi>log</mi><mspace width="0.2em"/><mi>n</mi><mo stretchy="false">)</mo></math>';
 ---
 <h3>ヒープの条件</h3>
-<p>最大ヒープは、どの親の値も子の値以上になっている木です。最大値はいつも根にあります。左右の子のどちらが大きいかは決めません。上の段から左詰めで埋めるので、段数は要素数の対数で済みます <Fragment set:html={Rf(1)} />。</p>
+<p>最大ヒープはどの親の値も子の値以上になっている木です。最大値はいつも根にあります。左右の子のどちらが大きいかは決めません。上の段から左詰めで埋めるので、段数は要素数の対数で済みます <Fragment set:html={Rf(1)} />。</p>
 <div class="eqs"><math display="block"><mrow><mi>A</mi><mo stretchy="false">[</mo><mi>parent</mi><mo stretchy="false">(</mo><mi>i</mi><mo stretchy="false">)</mo><mo stretchy="false">]</mo><mo>≥</mo><mi>A</mi><mo stretchy="false">[</mo><mi>i</mi><mo stretchy="false">]</mo></mrow></math></div>
 
 <h3>木を配列に入れる</h3>
@@ -124,7 +124,7 @@ const ONL =
   <li>二項ヒープの確認は最良の根を覚えず、根を全部見る</li>
   <li>格納とソートの回数は工程ごとに 0 から数える</li>
   <li>二項・ペアリング・フィボナッチヒープのまとめて構築は 1 個ずつ追加と同じ手順にする</li>
-  <li>操作の表の回数は、31 要素の状態から 1 回実行したときの 24 通りのデータの平均。償却の操作は 31 回続けた 1 回あたり</li>
+  <li>操作の表の回数は 31 要素の状態から 1 回実行したときの 24 通りのデータの平均。償却の操作は 31 回続けた 1 回あたり</li>
   <li>一覧の表から操作を選ぶと、要素数の 2/3 を追加した状態から始める</li>
   <li>配列の図では、取り出した値を末尾から順に置く</li>
 </ul>
