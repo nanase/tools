@@ -1382,7 +1382,7 @@ $<HTMLInputElement>('#fileIn').addEventListener('change', async (e) => {
   } catch (err) {
     plMsg(
       err instanceof Error && err.message
-        ? `${f.name} を読めませんでした。${err.message}。`
+        ? `${f.name} を読めませんでした。${err.message}`
         : `${f.name} を読めませんでした`,
     );
     return;
