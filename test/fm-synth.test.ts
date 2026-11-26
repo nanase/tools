@@ -1,19 +1,26 @@
 import { describe, expect, it } from 'vitest';
 import { algText } from '../src/tools/fm-synth/diagram';
-import { I0, IDX, L0, LVL, noteHz, noteName, R0, RATIOS } from '../src/tools/fm-synth/params';
+import { DT, I0, IDX, L0, LVL, noteHz, noteName, R0, RATIOS, ratioDef, T_MAX } from '../src/tools/fm-synth/params';
+import { INIT, PRESETS } from '../src/tools/fm-synth/presets';
 import {
   ALGS,
+  ENV0,
+  envAt,
   FB,
   isCarrier,
   normGain,
+  noteOf,
   type Patch,
   PTS,
   Voice,
+  velGain,
   WAVES,
   waveAt,
   waveIndex,
   waveOf,
 } from '../src/tools/fm-synth/synth';
+import { GM_NAMES } from '../src/tools/fm-synthesizer/gm';
+import { PICKED_GM } from '../src/tools/fm-synthesizer/tones-picked';
 
 const TAU = 2 * Math.PI;
 const P = (p: Partial<Patch>): Patch => ({
@@ -176,5 +183,115 @@ describe('入力の定義', () => {
     expect(noteHz(69)).toBe(440);
     expect(noteHz(60)).toBeCloseTo(261.6256, 4);
     expect([noteName(60), noteName(61), noteName(69), noteName(24)]).toEqual(['C4', 'C♯4', 'A4', 'C1']);
+  });
+});
+
+describe('エンベロープ・強さ・デチューン', () => {
+  const one = (p: Partial<Patch> = {}) => P({ alg: 7, a: [1, 0, 0, 0], ...p });
+  it('鳴らした音の大きさは envAt の式に沿う（アタックは直線、ディケイとリリースは指数）', () => {
+    const env = [{ ar: 0.01, dr: 0.2, sl: 0.3, rr: 0.1 }, ENV0, ENV0, ENV0],
+      sr = 8000,
+      v = new Voice();
+    v.set(one({ env }));
+    v.start(sr, 1);
+    const out = new Float64Array(1);
+    for (let i = 1; i <= 4000; i++) {
+      v.render(out, 1, 0, 1, 1 / sr);
+      if (i === 40 || i === 80 || i === 800 || i === 3999) expect(v.level(0)).toBeCloseTo(envAt(env[0], i / sr), 2);
+    }
+    v.release();
+    for (let i = 0; i < 800; i++) v.render(out, 1, 0, 1, 1 / sr);
+    /* 0.1 s で 60 dB 下がる */
+    expect(v.level(0)).toBeCloseTo(0.3 * 1e-3, 4);
+  });
+  it('サステイン 0 のキャリアはディケイで鳴り終わる。サステインがあれば離すまで鳴る', () => {
+    const decay = new Voice(),
+      hold = new Voice(),
+      out = new Float32Array(8000);
+    decay.set(one({ env: [{ ar: 0, dr: 0.1, sl: 0, rr: 0.1 }, ENV0, ENV0, ENV0] }));
+    hold.set(one());
+    decay.start(8000);
+    hold.start(8000);
+    decay.render(out, out.length, 0.05, 1, 1 / 8000);
+    hold.render(out, out.length, 0.05, 1, 1 / 8000);
+    expect(decay.done).toBe(true);
+    expect(hold.done).toBe(false);
+    hold.release();
+    hold.render(out, out.length, 0.05, 1, 1 / 8000);
+    expect(hold.done).toBe(true);
+  });
+  it('start しない音（表示と再生ボタン）はエンベロープを掛けない', () => {
+    const y = waveOf(one({ env: [{ ar: 1, dr: 1, sl: 0, rr: 1 }, ENV0, ENV0, ENV0] }), 1);
+    expect(y[PTS / 4]).toBeCloseTo(1, 12);
+  });
+  it('強さは変調指数と振幅の両方に 1 − 0.7 (1 − v²) を掛ける', () => {
+    expect(velGain(1)).toBe(1);
+    expect(velGain(0)).toBeCloseTo(0.3, 15);
+    const g = velGain(0.5),
+      y = waveOf(P({ alg: 4, r: [3, 1, 1, 1], a: [2.5, 0.8, 0, 0] }), 1, 0.5);
+    for (const n of [11, 128, 400]) {
+      const t = n / PTS;
+      expect(y[n]).toBeCloseTo(0.8 * g * Math.sin(TAU * t + 2.5 * g * Math.sin(TAU * 3 * t)), 12);
+    }
+  });
+  it('デチューンは周波数比で決めた周波数に Hz で足す', () => {
+    const f0 = 100,
+      y = waveOf(one({ dt: [3, 0, 0, 0] }), 2, 1, f0);
+    for (const n of [5, 300, 777]) expect(y[n]).toBeCloseTo(Math.sin(TAU * (n / PTS) * (1 + 3 / f0)), 9);
+  });
+  it('時間変化の音は hold で離してリリースに移る', () => {
+    const sr = 8000,
+      y = noteOf(one({ env: [{ ar: 0, dr: 1, sl: 1, rr: 0.05 }, ENV0, ENV0, ENV0] }), 100, sr, sr, 1, 0.5),
+      peak = (a: number, b: number) => Math.max(...y.subarray(a * sr, b * sr).map(Math.abs));
+    expect(peak(0.4, 0.5)).toBeGreaterThan(0.99);
+    expect(peak(0.6, 1)).toBeLessThan(0.01);
+  });
+});
+
+describe('音色の例', () => {
+  it('FMシンセサイザで選んだ音色と同じ値', () => {
+    for (const p of PRESETS) {
+      if (p.gm === undefined) continue;
+      const t = PICKED_GM[p.gm];
+      expect(p.name).toBe(GM_NAMES[p.gm]);
+      expect(p.alg).toBe(t.alg);
+      expect(p.fb).toBe(t.fb);
+      p.ops.forEach((o, k) => {
+        const s = t.ops[k];
+        expect([o.w, o.r, o.i, o.l, o.dt, o.ar, o.dr, o.sl, o.rr]).toEqual([
+          s.w ?? 0,
+          s.r,
+          s.i,
+          s.l,
+          s.dt ?? 0,
+          s.ar,
+          s.dr,
+          s.sl,
+          s.rr,
+        ]);
+      });
+    }
+  });
+  it('どの値も入力の範囲に入る', () => {
+    for (const p of PRESETS)
+      for (const o of p.ops) {
+        expect(o.r >= 0.5 && o.r <= 15).toBe(true);
+        expect(o.i >= IDX.min && o.i <= IDX.max).toBe(true);
+        expect(o.l >= LVL.min && o.l <= LVL.max).toBe(true);
+        expect(o.dt >= DT.min && o.dt <= DT.max).toBe(true);
+        for (const t of [o.ar, o.dr, o.rr]) expect(t >= 0 && t <= T_MAX).toBe(true);
+      }
+  });
+  it('初期値はページを開いたときの値', () => {
+    expect(INIT.ops.map((o) => [o.r, o.i, o.l])).toEqual(R0.map((r, k) => [r, I0[k], L0[k]]));
+  });
+});
+
+describe('周波数比の入力', () => {
+  it('端数を受け付け、範囲の外は丸める', () => {
+    const fix = ratioDef(1).fix;
+    expect(fix?.(1.41)).toEqual([1.41, '']);
+    expect(fix?.(20)?.[0]).toBe(15);
+    expect(fix?.(0.1)?.[0]).toBe(0.5);
   });
 });

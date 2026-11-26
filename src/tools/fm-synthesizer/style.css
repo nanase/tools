@@ -19,12 +19,6 @@
 .snd-msg{margin:0 8px 6px}
 .snd-msg:empty{display:none}
 
-/* MIDI の枠の受信の LED（16 チャンネル） */
-.fy-chs{display:flex;flex-wrap:wrap;gap:3px}
-.fy-chs span{display:inline-flex;flex-direction:column;align-items:center;gap:2px;width:24px;font:500 11.5px/1 var(--mono);color:var(--ink-3)}
-.fy-chs i{width:20px;height:7px;border-radius:2px;background:var(--led-off)}
-.fy-chs span.on i{background:var(--accent);box-shadow:0 0 4px var(--accent)}
-
 /* 本体: 左にパートの一覧、右にサイドバー。狭い画面ではサイドバーを下へ */
 .fy-body{display:grid;gap:26px 16px;grid-template-columns:minmax(0,1fr);align-items:start}
 @media (min-width:1000px){

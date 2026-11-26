@@ -1,11 +1,12 @@
 ---
 /**
- * オペレータの枠の中身: 1 行に 1 つのオペレータの 波形 | 周波数比 | 変調指数（キャリアなら出力レベル）。
- * 波形はボタン、周波数比と強さは数値の行（ParamRow。項目名は読み上げだけ）。動作は client.ts
+ * オペレータの枠の中身: 1 つのオペレータを 2 段に並べる。
+ * 上の段は 波形 | 周波数比 | 変調指数（キャリアなら出力レベル）、下の段は ADSR の小さな図 | A・D・S・R | デチューン。
+ * 波形はボタン、数値は数値の行（ParamRow。項目名は読み上げだけ）。動作は client.ts
  */
 import ParamRow from '../../components/ParamRow.astro';
-import { ALG0, ampDef, OPS, ratioDef, W0 } from './params';
-import { isCarrier, WAVES, waveAt } from './synth';
+import { ALG0, ampDef, detDef, envDef, OPS, ratioDef, SEGS, W0 } from './params';
+import { ENV0, isCarrier, WAVES, waveAt } from './synth';
 
 /** 波形のボタンの図柄（20 × 12 に 1 周期） */
 const icon = (w: number) => {
@@ -14,6 +15,8 @@ const icon = (w: number) => {
     d += `${i ? 'L' : 'M'}${((i / 48) * 18 + 1).toFixed(2)} ${(6 - 4.6 * waveAt(w, (i / 48) * 2 * Math.PI)).toFixed(2)}`;
   return d;
 };
+/** エンベロープの行の既定値（S は %） */
+const env0 = { a: ENV0.ar, d: ENV0.dr, s: ENV0.sl * 100, r: ENV0.rr } as const;
 ---
 <div class="ops" id="ops">
   {OPS.map((n) => {
@@ -27,6 +30,11 @@ const icon = (w: number) => {
         <div class="op-c">
           <div class="ptab"><ParamRow d={ratioDef(n)} /></div>
           <div class="ptab"><ParamRow d={ampDef(n, car)} /></div>
+        </div>
+        <div class="op-e">
+          <svg class="op-env" id={`env${n}`} viewBox="0 0 56 24" aria-hidden="true"><path class={car ? 'car' : ''} /></svg>
+          {SEGS.map((g) => <div class="ptab"><ParamRow d={envDef(n, g, env0[g])} /></div>)}
+          <div class="ptab"><ParamRow d={detDef(n)} /></div>
         </div>
       </div>
     );

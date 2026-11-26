@@ -1,6 +1,7 @@
 ---
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import MidiFileParts from '../components/MidiFileParts.astro';
 import MidiPanel from '../components/MidiPanel.astro';
 import More from '../components/More.astro';
 import OctaveKeyboard from '../components/OctaveKeyboard.astro';
@@ -17,30 +18,38 @@ import '../tools/fm-synth/style.css';
 import Credits from '../tools/fm-synth/Credits.astro';
 import { algH, algSvg, algText, DW } from '../tools/fm-synth/diagram';
 import Operators from '../tools/fm-synth/Operators.astro';
-import { ALG0, FB0, HMAX, KEYS, NORM0, PERIODS, RANGES, VOL } from '../tools/fm-synth/params';
+import { ALG0, FB0, HMAX, I0, KEYS, L0, NORM0, PERIODS, RANGES, SPANS, TR, VEL, VOL } from '../tools/fm-synth/params';
+import { PRESETS } from '../tools/fm-synth/presets';
 import { PIECES } from '../tools/fm-synth/score';
-import { ALGS, FB_LABEL } from '../tools/fm-synth/synth';
+import { ALGS, FB_LABEL, isCarrier } from '../tools/fm-synth/synth';
 import Theory from '../tools/fm-synth/Theory.astro';
 
 const name = 'FM音源';
 /* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
+/** 初期の出力の大きさ（結線図の線の太さと塗り） */
+const A0 = [0, 1, 2, 3].map((k) => (isCarrier(ALG0, k) ? 10 ** (L0[k] / 20) : I0[k]));
 const chain = (a: number) =>
   ALGS[a].e.length
     ? `${ALGS[a].e.map(([j, k]) => `${j + 1}→${k + 1}`).join('、')}、出力 ${ALGS[a].c.map((k) => k + 1).join('・')}`
     : '変調なし、すべて出力';
 ---
-<SiteLayout title={name} tool={{ id: 'fm-synth', name }} note="エンベロープと LFO のない簡略化したモデルの波形です。">
-  <PageTitle title={name}>ヤマハの FM 音源 IC（OPN 系）のように、4 つのオペレータを 8 通りのアルゴリズムでつないで音を作ります。オペレータの波形・周波数比・変調指数を変えると、波形とスペクトルがすぐに変わります。鍵盤を押すと音で聞けます。作った音色で曲も演奏できます。</PageTitle>
+<SiteLayout title={name} tool={{ id: 'fm-synth', name }} note="LFO のない簡略化したモデルの音です。">
+  <PageTitle title={name}>ヤマハの FM 音源 IC（OPN 系）のように、4 つのオペレータを 8 通りのアルゴリズムでつないで音を作ります。オペレータの波形・周波数比・変調指数を変えると、波形とスペクトルがすぐに変わります。鍵盤を押すと、エンベロープを掛けた音で聞けます。作った音色で曲や MIDI ファイルも演奏できます。</PageTitle>
 
   <div class="tgrid">
     <div class="col c1">
       <Panel hid="hd-alg" title="アルゴリズム" class="a-alg">
         <div class="ptab">
+          <div class="prow pick" id="p-tone">
+            <div class="c-sym" aria-hidden="true"></div>
+            <div class="c-name"><label class="pn" id="n-tone" for="tone">音色</label><p class="desc tip" id="t-tone" role="tooltip" hidden>FMシンセサイザの音色からアルゴリズム・オペレータ・エンベロープの値を写す</p></div>
+            <div class="c-val sel"><select id="tone" autocomplete="off" aria-describedby="t-tone">{PRESETS.map((p) => <option value={p.v}>{p.name}</option>)}<option value="custom" hidden>自作</option></select></div>
+          </div>
           <ChoiceRow k="alg" name="アルゴリズム" sub="オペレータのつなぎ方。右端の列（キャリア）の和が出力、ほか（モジュレータ）は矢印の先の位相を変調" choices={ALGS.map((_, a) => [a, String(a), chain(a)] as const)} value={ALG0} layout="chips" wide />
           <ChoiceRow k="fb" name="帰還量" sub="OP1 の出力を自身の位相へ戻す量（位相のずれの最大値）。OPN の FB 0〜7 と同じ値" choices={FB_LABEL.map((l, i) => [i, l, `FB ${i}`] as const)} value={FB0} layout="chips" wide />
           <ChoiceRow k="norm" name="音量の調整" sub="振幅の合計が 1 を超えると出力を合計で割る" choices={[['on', 'あり'], ['off', 'なし']]} value={NORM0} />
         </div>
-        <svg class="sch alg" id="alg-svg" viewBox={`0 0 ${DW} ${algH(ALG0)}`} role="img" aria-label={algText(ALG0)} set:html={algSvg(ALG0, FB0)} />
+        <svg class="sch alg" id="alg-svg" viewBox={`0 0 ${DW} ${algH(ALG0)}`} role="img" aria-label={algText(ALG0)} set:html={algSvg(ALG0, FB0, undefined, A0)} />
       </Panel>
 
       <Panel hid="hd-snd" title="音" class="a-snd">
@@ -49,6 +58,7 @@ const chain = (a: number) =>
         <OctaveKeyboard keys={KEYS} label="鍵盤（音の高さ）" />
         <div class="ptab">
           <ParamRow d={VOL} />
+          <ParamRow d={VEL} />
         </div>
       </Panel>
 
@@ -60,20 +70,30 @@ const chain = (a: number) =>
             <div class="c-name"><label class="pn" id="n-piece" for="piece">曲</label><p class="desc tip" id="t-piece" role="tooltip" hidden>著作権の切れた曲の電子楽譜から変換。全パートを今の音色で演奏</p></div>
             <div class="c-val sel"><select id="piece" autocomplete="off" aria-describedby="t-piece">{PIECES.map((p) => <option value={p.v} title={p.by}>{p.name}</option>)}</select></div>
           </div>
+          <MidiFileParts />
         </div>
-        <Transport />
+        <Transport>
+          <button type="button" class="tp-sq" id="panicBtn" title="鳴っている音をすべて止める" aria-label="鳴っている音をすべて止める"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 6h2.5L8 3v10l-3.5-3H2zM10.5 6l4 4M14.5 6l-4 4"/></svg></button>
+        </Transport>
         <div class="ptab">
           <ParamRow d={TEMPO} />
+          <ParamRow d={TR} />
         </div>
         <p class="msg er snd-msg" id="pl-msg" aria-live="polite"></p>
       </Panel>
 
-      <MidiPanel />
+      <MidiPanel>
+        <div class="prow wide">
+          <div class="c-sym" aria-hidden="true"></div>
+          <div class="c-name"><span class="pn">受信</span></div>
+          <div class="c-sub mi-leds" id="m-chs" aria-hidden="true">{Array.from({ length: 16 }, (_, i) => <span data-c={i}><i></i>{i + 1}</span>)}</div>
+        </div>
+      </MidiPanel>
     </div>
 
     <div class="col c2">
       <Panel hid="hd-wave" title="波形" class="a-wave">
-        <div slot="aux" class="seg" id="p-view" role="group" aria-label="表示"><button type="button" data-v="yt" aria-pressed="true" title="時間に対する波形">波形</button><button type="button" data-v="sp" aria-pressed="false" title="周波数ごとの大きさ">スペクトル</button></div>
+        <div slot="aux" class="seg" id="p-view" role="group" aria-label="表示"><button type="button" data-v="yt" aria-pressed="true" title="時間に対する波形">波形</button><button type="button" data-v="sp" aria-pressed="false" title="周波数ごとの大きさ">スペクトル</button><button type="button" data-v="tv" aria-pressed="false" title="鍵を押して離すまでの周波数ごとの大きさ">時間変化</button></div>
 
         <div id="v-yt">
           <div class="sbar">
@@ -118,10 +138,33 @@ const chain = (a: number) =>
             <ChoiceRow k="hm" name="横軸の範囲" sub="基本周波数の何倍までを表示窓の幅に入れるか" choices={HMAX.map((v) => [v, `${v} 倍`] as const)} value={16} />
           </div></More>
         </div>
+
+        <div id="v-tv" hidden>
+          <div class="sbar">
+            <span class="stag"><i class="sw" aria-hidden="true"></i>CH1 OUT</span>
+            <span class="stag">X <b id="t-x"></b></span>
+            <span class="stag">Y <b id="t-y"></b></span>
+          </div>
+          <div class="scope">
+            <svg viewBox="-66 -14 478 194" id="t-svg" role="img" aria-label="出力の時間変化">
+              <rect class="tv-bg" x="0" y="0" width="400" height="160"/>
+              <image id="t-img" x="0" y="0" width="400" height="160" preserveAspectRatio="none"/>
+              <g set:html={gridSvg(4)} />
+              <path class="tv-off" id="t-off"/>
+              <path class="cur" id="t-cur"/>
+              <g id="t-axes"></g>
+            </svg>
+          </div>
+          <div class="sbar rdbar" data-ph="t 1.234 s   f 12.34 kHz   −123.4 dB"><span class="rd" id="t-rd"></span></div>
+          <More id="g-tv" title="表示の設定"><div class="ana2">
+            <div class="ptab"><ChoiceRow k="span" name="表示する時間" sub="鍵を押してからの時間（3/4 の所で離す）" choices={SPANS.map((v) => [v, `${v} s`] as const)} value={2} /></div>
+            <div class="ptab"><ChoiceRow k="vh" name="縦軸の範囲" sub="基本周波数の何倍までを表示窓の高さに入れるか" choices={HMAX.map((v) => [v, `${v} 倍`] as const)} value={16} /></div>
+          </div></More>
+        </div>
       </Panel>
 
       <Panel hid="hd-ops" title="オペレータ" class="a-ops">
-        <span slot="aux" class="aux">波形・周波数比・変調指数</span>
+        <span slot="aux" class="aux">波形・周波数比・変調指数・エンベロープ</span>
         <Operators />
       </Panel>
     </div>

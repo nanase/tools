@@ -2,11 +2,12 @@
 import { linList } from '../../lib/eseries';
 import { minus, plain } from '../../lib/format';
 import type { ParamDef, ParamFormat, ParamPatch } from '../../lib/param-def';
+import { TRANSPOSE } from '../fm-synthesizer/params';
 
 export type Op = 1 | 2 | 3 | 4;
 export const OPS: readonly Op[] = [1, 2, 3, 4];
 
-/** 周波数比の並び: OPN の MUL と同じ 0.5・1〜15 */
+/** 周波数比の並び（‹ › とドラッグで移る値）: OPN の MUL と同じ 0.5・1〜15。入力では端数も使える */
 export const RATIOS = [0.5, ...linList(1, 15, 1)];
 /** 変調指数（モジュレータ）: 0〜10 rad を 0.1 刻み */
 export const IDX = { min: 0, max: 10, step: 0.1 } as const;
@@ -27,17 +28,17 @@ export const ratioDef = (n: Op): ParamDef => ({
   nm: `OP${n}`,
   sym: '',
   name: `OP${n} の周波数比`,
-  sub: '基本周波数に掛ける倍率',
+  sub: '基本周波数に掛ける倍率（端数も可）',
   unit: '',
   min: 0.5,
   max: 15,
   v: R0[n - 1],
   ph: '例 2',
   list: RATIOS,
-  snap: true,
   notation: 'plain',
   format: { input: p3, view: (v) => `×${p3(v)}`, step: p3, text: (v) => `×${p3(v)}` },
-  bad: '読めない値です（例 0.5・2）',
+  fix: fixTo(0.5, 15, 0.001, (v) => `×${p3(v)}`),
+  bad: '読めない値です（例 0.5・1.41）',
   pre: [],
 });
 /** 範囲外を丸め、刻みに合わせる */
@@ -141,3 +142,138 @@ export const PERIODS = [1, 2, 4, 8] as const;
 export const RANGES = [0.5, 1, 2, 4] as const;
 /** スペクトラムの横軸の右端（基本周波数の何倍まで） */
 export const HMAX = [8, 16, 32, 64] as const;
+
+/* ---------- 強さ・デチューン・エンベロープ（FMシンセサイザから持ち込んだ行） ---------- */
+const intIn = (v: number) => String(Math.round(v));
+/** 強さ（1〜127）。画面の鍵盤・曲・波形の図はこの強さ。MIDI 機器と MIDI ファイルはノートのベロシティ */
+export const VEL: ParamDef & { k: 'vel' } = {
+  k: 'vel',
+  nm: '強さ',
+  sym: '',
+  name: '強さ',
+  sub: '鍵盤と曲の音の強さ（MIDI のベロシティと同じ 1〜127。弱いほど暗く小さい音）',
+  unit: '',
+  min: 1,
+  max: 127,
+  v: 127,
+  ph: '例 64',
+  lin: { step: 1, big: 10 },
+  sign: 'pos',
+  notation: 'plain',
+  format: { input: intIn, step: intIn, text: intIn },
+  fix: (v) => {
+    const c = Math.min(127, Math.max(1, v)),
+      w = Math.round(c);
+    return [w, c !== v ? `${intIn(v)} は範囲外のため${w === 127 ? '上限' : '下限'} ${w} にしました` : ''];
+  },
+  bad: '読めない値です（例 64）',
+  pre: [],
+};
+
+/** デチューンの範囲 [Hz] */
+export const DT = { min: -10, max: 10, step: 0.1 } as const;
+const hzIn = (v: number) => (v > 0 ? '+' : v < 0 ? '−' : '') + plain(Math.abs(Math.round(v * 10) / 10), 3);
+const hzT = (v: number) => `${hzIn(v)} Hz`;
+/** デチューンの行（キー d1〜d4） */
+export const detDef = (n: Op): ParamDef => ({
+  k: `d${n}`,
+  nm: `OP${n}`,
+  sym: '',
+  name: `OP${n} のデチューン`,
+  sub: '周波数比で決めた周波数に足す量 [Hz]',
+  unit: 'Hz',
+  min: DT.min,
+  max: DT.max,
+  v: 0,
+  ph: '例 0.5',
+  lin: { step: DT.step, big: 1 },
+  sign: 'any',
+  notation: 'plain',
+  format: { input: hzIn, view: hzT, step: hzIn, text: hzT },
+  fix: fixTo(DT.min, DT.max, DT.step, hzT),
+  bad: '読めない値です（例 0.5・−1）',
+  pre: [],
+});
+
+/** エンベロープの段: アタック・ディケイ・サステイン・リリース */
+export type Seg = 'a' | 'd' | 's' | 'r';
+export const SEGS: readonly Seg[] = ['a', 'd', 's', 'r'];
+/** 時間の並び [s]（‹ › とドラッグで移る値。入力は 0〜10 s の任意の値） */
+export const TIMES = [
+  0, 0.001, 0.002, 0.005, 0.01, 0.02, 0.03, 0.05, 0.08, 0.1, 0.15, 0.2, 0.3, 0.5, 0.8, 1, 1.5, 2, 3, 5, 8, 10,
+];
+export const T_MAX = 10;
+/** 時間の表記（1 s 未満は ms） */
+export const timeT = (v: number): string =>
+  v >= 1 ? `${plain(Number(v.toPrecision(3)), 3)} s` : `${plain(Number((v * 1000).toPrecision(3)), 3)} ms`;
+const pctT = (v: number) => `${Math.round(v)} %`;
+const SEG_NAME: Record<Seg, string> = { a: 'アタック', d: 'ディケイ', s: 'サステイン', r: 'リリース' };
+const SEG_SUB: Record<Seg, string> = {
+  a: '0 から最大まで上がる時間',
+  d: '最大からサステインへ下がる時間（差が 60 dB 縮む時間）',
+  s: '押している間に落ち着く大きさ（最大に対する割合）',
+  r: '離してから 60 dB 下がる時間',
+};
+/** エンベロープの行（キー ea1・ed1・es1・er1 … ）。v0 は既定値（A・D・R は秒、S は %） */
+export const envDef = (n: Op, g: Seg, v0: number): ParamDef =>
+  g === 's'
+    ? {
+        k: `es${n}`,
+        nm: 'S',
+        sym: '',
+        name: `OP${n} の${SEG_NAME.s}`,
+        sub: SEG_SUB.s,
+        unit: '%',
+        min: 0,
+        max: 100,
+        v: v0,
+        ph: '例 50',
+        lin: { step: 1, big: 10 },
+        sign: 'nonneg',
+        notation: 'plain',
+        format: { input: intIn, view: (v) => `S ${pctT(v)}`, step: intIn, text: pctT },
+        fix: fixTo(0, 100, 1, pctT),
+        bad: '読めない値です（例 50）',
+        pre: [],
+      }
+    : {
+        k: `e${g}${n}`,
+        nm: g.toUpperCase(),
+        sym: '',
+        name: `OP${n} の${SEG_NAME[g]}`,
+        sub: SEG_SUB[g],
+        unit: 's',
+        min: 0,
+        max: T_MAX,
+        v: v0,
+        ph: '例 0.2',
+        list: TIMES,
+        jump: 3,
+        sign: 'nonneg',
+        notation: 'plain',
+        format: {
+          input: (v) => plain(Number(v.toPrecision(4)), 4),
+          view: (v) => `${g.toUpperCase()} ${timeT(v)}`,
+          text: timeT,
+        },
+        fix: (v) => {
+          const c = Math.min(T_MAX, Math.max(0, v)),
+            w = Number(c.toPrecision(3));
+          return [
+            w,
+            c !== v ? `${timeT(v)} は範囲外のため${w === T_MAX ? '上限' : '下限'} ${timeT(w)} にしました` : '',
+          ];
+        },
+        bad: '読めない値です（例 0.2・1.5）',
+        pre: [],
+      };
+
+/* ---------- 時間変化の表示 ---------- */
+/** 表示する時間 [s]（長さの 3/4 で鍵を離す） */
+export const SPANS = [1, 2, 4, 8] as const;
+
+/** トランスポーズ（FMシンセサイザと同じ行。このページにはパーカッションがない） */
+export const TR: ParamDef & { k: 'tr' } = {
+  ...TRANSPOSE,
+  sub: '曲・MIDI ファイル・MIDI 機器の音を半音ずつ上げ下げ（画面の鍵盤は移さない）',
+};

@@ -4,4 +4,6 @@ export interface ScoreNote {
   d: number;
   n: number;
   h: number;
+  /** ベロシティ（1〜127。MIDI ファイルの音だけ。同梱の曲にはなく、強さの行の値で弾く） */
+  v?: number;
 }
