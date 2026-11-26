@@ -1024,7 +1024,7 @@ function renderSaved(): void {
             `<li><button type="button" class="cp-sv" data-open="${j}">${esc(x.name)}</button><button type="button" class="cp-sx" data-rm="${j}" aria-label="${esc(`「${x.name}」を削除`)}" title="削除">×</button></li>`,
         )
         .join('')
-    : '<li class="cp-none">まだ保存した進行はありません。</li>';
+    : '<li class="cp-none">まだ保存した進行はありません</li>';
 }
 /* ---------- 地図の上の曲の選択（サンプル・保存した進行・新規） ---------- */
 const songBtn = $<HTMLButtonElement>('#cp-songb'),
@@ -1089,13 +1089,13 @@ $('#cp-save').addEventListener('click', () => {
     list = readSaved().filter((x) => x.name !== name);
   S.song.name = name;
   list.unshift({ name, at: Date.now(), file: toFile(S.song) });
-  if (!writeSaved(list.slice(0, 50))) return say('このブラウザでは保存できません。');
+  if (!writeSaved(list.slice(0, 50))) return say('このブラウザでは保存できません');
   nameIn.value = name;
   S.dirty = false;
   saveCurrent();
   renderSaved();
   syncSongBtn();
-  say(`「${name}」を保存しました。`);
+  say(`「${name}」を保存しました`);
 });
 $('#cp-saved').addEventListener('click', (ev) => {
   const t = ev.target as Element,
@@ -1105,12 +1105,12 @@ $('#cp-saved').addEventListener('click', (ev) => {
   if (o) {
     const x = list[Number(o.dataset.open)],
       f = x && fromFile(x.file);
-    if (!f) return say('この保存は読み込めません。');
+    if (!f) return say('この保存は読み込めません');
     if (load({ ...f, name: x.name })) say('');
   } else if (r) {
     const j = Number(r.dataset.rm),
       x = list[j];
-    if (!x || !confirm(`「${x.name}」を削除しますか？元に戻せません。`)) return;
+    if (!x || !confirm(`「${x.name}」を削除しますか？元に戻せません`)) return;
     list.splice(j, 1);
     writeSaved(list);
     renderSaved();
@@ -1133,10 +1133,10 @@ fileIn.addEventListener('change', async () => {
   if (!f) return;
   try {
     const r = fromFile(JSON.parse(await f.text()));
-    if (!r) return say('このファイルは読み込めません。');
+    if (!r) return say('このファイルは読み込めません');
     if (load({ ...r, name: r.name || f.name.replace(/\.json$/i, '') })) say('');
   } catch {
-    say('このファイルは読み込めません。');
+    say('このファイルは読み込めません');
   }
 });
 
@@ -1267,10 +1267,10 @@ midiIn.addEventListener('change', async () => {
     const smf = parseSmf(await f.arrayBuffer());
     m = midiSong(f.name.replace(/\.(midi?|rmi|kar)$/i, ''), smf, partsOf(smf));
   } catch {
-    return say(`${f.name} は読み込めません。`);
+    return say(`${f.name} は読み込めません`);
   }
   const use = new Set(m.parts.filter((p) => !p.drum).map((p) => p.id));
-  if (!use.size) return say('打楽器のほかに音がないので、コードを推せません。');
+  if (!use.size) return say('打楽器のほかに音がないので、コードを推せません');
   const st = m.smf.starts,
     first = (st[1] ?? m.smf.end) - (st[0] ?? 0),
     base = sampleSong(SAMPLE0),
@@ -1292,7 +1292,7 @@ midiIn.addEventListener('change', async () => {
   S.song = prev;
   M = null;
   recompute();
-  if (!ok) return say('打楽器のほかに音がないので、コードを推せません。');
+  if (!ok) return say('打楽器のほかに音がないので、コードを推せません');
   if (load(song, midi)) {
     say('');
     reveal(0);
