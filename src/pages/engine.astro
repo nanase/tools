@@ -134,7 +134,7 @@ const name = 'エンジン';
       </Panel>
 
       <Collapsible hid="hd-wave" title="音の波形" class="a-wave">
-        <div class="seg wv-sw" id="p-ov" role="group" aria-label="表示"><button type="button" data-v="yt" aria-pressed="true" title="排気口から 0.5 m の音圧の時間変化">波形</button><button type="button" data-v="sp" aria-pressed="false" title="周波数ごとの大きさ">スペクトラム</button></div>
+        <div class="seg wv-sw" id="p-ov" role="group" aria-label="表示"><button type="button" data-v="yt" aria-pressed="true" title="排気口から 0.5 m の音圧の時間変化">波形</button><button type="button" data-v="sp" aria-pressed="false" title="周波数ごとの大きさ">スペクトル</button></div>
         <div id="v-yt">
           <div class="sbar static">
             <span class="stag"><i class="sw" aria-hidden="true"></i>CH1 音圧 <b class="hw" id="w-vd" data-ph="0.05 Pa"></b>/div</span>
@@ -157,7 +157,7 @@ const name = 'エンジン';
             <span class="stag">X <b>200 Hz</b>/div</span>
           </div>
           <div class="scope">
-            <svg viewBox="-56 -14 468 194" id="s-svg" role="img" aria-label="音のスペクトラム">
+            <svg viewBox="-56 -14 468 194" id="s-svg" role="img" aria-label="音のスペクトル">
               <g set:html={gridSvg(4)} />
               <path class="t1" id="s-t1"/>
               <g id="s-axes"></g>

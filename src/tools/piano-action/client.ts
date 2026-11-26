@@ -576,7 +576,7 @@ function prepAudio(): void {
 async function audioReady(): Promise<boolean> {
   prepAudio();
   const ok = await audio.ready();
-  txt('#snd-msg', ok ? '' : 'このブラウザでは音を鳴らせません');
+  txt('#snd-msg', ok ? '' : 'この環境では音を鳴らせません');
   ready = ok;
   return ok;
 }

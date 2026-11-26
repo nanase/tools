@@ -235,7 +235,7 @@ function noGl(e: unknown): void {
   msg.hidden = false;
   msg.textContent =
     String(e).includes('float') || String(e).includes('webgl2')
-      ? 'このブラウザでは WebGL2（浮動小数点の描画）が使えないため、空を描けません。光路の図と計算結果は使えます'
+      ? 'このブラウザでは WebGL2（浮動小数点の描画）が使えないため、空を表示できません。光路の図と計算結果は使えます'
       : `空を描く準備ができませんでした（${String(e).slice(0, 120)}）`;
   hv.classList.add('nogl');
 }

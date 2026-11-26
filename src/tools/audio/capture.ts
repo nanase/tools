@@ -271,7 +271,7 @@ export class AudioIn {
       this.clear();
       this.play();
     } catch {
-      this.fileMsg = 'このファイルは読み込めませんでした（WAV・MP3・FLAC など）';
+      this.fileMsg = 'このファイルを読み込めませんでした（WAV・MP3・FLAC など）';
     }
     this.onChange();
   }

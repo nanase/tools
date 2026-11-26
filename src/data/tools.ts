@@ -156,7 +156,7 @@ export const TOOLS: Tool[] = [
     id: 'sampling-theorem',
     c: '信号処理',
     t: '標本化定理',
-    d: '波を復元できる標本化周波数の下限を確かめます。',
+    d: '波を復元できるサンプリング周波数の下限を確かめます。',
     ic: 'smp',
     r: ['pcm', 'fft', 'z-transform', 'rolling-shutter'],
     k: 'sampling theorem 標本化定理 サンプリング定理 シャノン shannon ナイキスト nyquist コテルニコフ kotelnikov ホイッタカー whittaker 標本化 サンプリング sampling 標本化周波数 サンプリング周波数 サンプルレート sample rate 2 倍 エイリアシング aliasing 折り返し 折り返し雑音 アンチエイリアス anti-aliasing ローパス 復元 再構成 reconstruction sinc 補間 interpolation スペクトル spectrum 複製 イメージ image 正弦波 矩形波 和音 スイープ sweep 試聴 音 audio',

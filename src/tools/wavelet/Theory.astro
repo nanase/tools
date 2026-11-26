@@ -60,7 +60,7 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
 </div>
 <p>尺度ごとの実部を足すと元に戻ります（式 (11)・表 2）<Fragment set:html={rf(1)} />。</p>
 
-<h3>3 箱の形</h3>
+<h3>3 タイルの形</h3>
 <div class="eqs">
   <math display="block" set:html={`${sub('<mi>σ</mi>', '<mi>t</mi>')}<mspace width="0.2em"/>${sub('<mi>σ</mi>', '<mi>f</mi>')}<mo>≥</mo>${fr('<mn>1</mn>', '<mn>4</mn><mi>π</mi>')}`} />
   <math display="block" set:html={`${sub('<mi>ψ</mi>', '<mi>s</mi>')}<mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mo>=</mo>${fr('<mn>1</mn>', sqrt('<mi>s</mi>'))}<mspace width="0.2em"/>${fn('ψ', fr('<mi>t</mi>', '<mi>s</mi>'))}<mspace width="1em"/><mo>⟹</mo><mspace width="1em"/>${sub('<mi>σ</mi>', '<mi>t</mi>')}<mo>∝</mo><mi>s</mi><mo>,</mo><mspace width="0.5em"/>${sub('<mi>σ</mi>', '<mi>f</mi>')}<mo>∝</mo>${fr('<mn>1</mn>', '<mi>s</mi>')}`} />
@@ -70,8 +70,8 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
   <dt><math set:html={sub('<mi>σ</mi>', '<mi>f</mi>')} /></dt><dd>周波数の広がり</dd>
 </dl>
 <ul class="tl">
-  <li>箱の面積には下限がある。ガウスの窓（Gabor）と Morlet はちょうど下限<Fragment set:html={rf(5)} /><Fragment set:html={rf(8)} /></li>
-  <li>STFT は窓が 1 つなので、どの周波数でも同じ箱</li>
+  <li>タイルの面積には下限がある。ガウスの窓（Gabor）と Morlet はちょうど下限<Fragment set:html={rf(5)} /><Fragment set:html={rf(8)} /></li>
+  <li>STFT は窓が 1 つなので、どの周波数でも同じタイル</li>
   <li>ウェーブレットは尺度で伸び縮みする。低い周波数ほど横長、高いほど縦長。中心の周波数と幅の比（Q）は一定</li>
 </ul>
 
@@ -96,7 +96,7 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
 <ul class="tl">
   <li>Mallat のアルゴリズム。Haar の平均と差を、長さ <math><mi>L</mi></math> のフィルタに広げたもの。長さ <math><mi>N</mi></math> の信号は、ちょうど <math><mi>N</mi></math> 個の係数になる<Fragment set:html={rf(4)} /></li>
   <li>フィルタに通すのは畳み込み（<a href="../convolution/">畳み込み</a>）。1 段ごとに長さが半分になるので、全部の段を合わせても計算は <math><mi>N</mi></math> に比例する</li>
-  <li>段 <math><mi>j</mi></math> の詳細は周波数 <math set:html={`${fr('<msub><mi>f</mi><mi mathvariant="normal">s</mi></msub>', '<msup><mn>2</mn><mrow><mi>j</mi><mo>+</mo><mn>1</mn></mrow></msup>')}<mo>〜</mo>${fr('<msub><mi>f</mi><mi mathvariant="normal">s</mi></msub>', '<msup><mn>2</mn><mi>j</mi></msup>')}`} />、時間の幅 <math set:html={`<msup><mn>2</mn><mi>j</mi></msup><mo>/</mo><msub><mi>f</mi><mi mathvariant="normal">s</mi></msub>`} /> の箱（図 3 の DWT の箱）</li>
+  <li>段 <math><mi>j</mi></math> の詳細は周波数 <math set:html={`${fr('<msub><mi>f</mi><mi mathvariant="normal">s</mi></msub>', '<msup><mn>2</mn><mrow><mi>j</mi><mo>+</mo><mn>1</mn></mrow></msup>')}<mo>〜</mo>${fr('<msub><mi>f</mi><mi mathvariant="normal">s</mi></msub>', '<msup><mn>2</mn><mi>j</mi></msup>')}`} />、時間の幅 <math set:html={`<msup><mn>2</mn><mi>j</mi></msup><mo>/</mo><msub><mi>f</mi><mi mathvariant="normal">s</mi></msub>`} /> のタイル（図 3 の DWT のタイル）</li>
   <li>正規直交なので、係数の 2 乗和は信号の 2 乗和に等しい</li><li>合成は分解の転置</li><li><math><mi>A</mi></math>・<math><mi>D</mi></math> は各段の係数だけを残して戻したもの（多重解像度の成分）</li>
 </ul>
 <div class="tt-w"><table class="tt">
@@ -115,8 +115,8 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
   <li>スカログラムは Morlet で 2〜128 Hz、1 オクターブ 12 行</li><li>信号の平均を引いてから求め、<math set:html={`<mo stretchy="false">|</mo><mi>W</mi><mo stretchy="false">|</mo><mo>/</mo>${sqrt('<mi>s</mi>')}`} /> を最も大きい所から 30 dB の範囲で塗る</li><li>足した値はその最大を 1 とする</li>
   <li>ウェーブレットの帯と「幅」は <math><mo>±</mo><mn>2</mn><mi>s</mi></math>（包絡が 0.14 になる所）</li>
   <li>8 つの数は 2 で割る（整数のまま追えるように）。「小さい差」は <math><mo stretchy="false">|</mo><mi>d</mi><mo stretchy="false">|</mo><mo>≤</mo><mn>1</mn></math></li>
-  <li>平面の DWT の箱は係数 1 つ（実数）で面積 1/2、STFT の箱は複素数 1 つ（実数 2 つ）で面積 1</li>
-  <li>STFT の箱の値は、長さ <math><mi>L</mi></math> のハン窓を <math><mi>L</mi><mo>/</mo><mn>4</mn></math> ずつずらし、中心が箱の中にある 4 つの窓の最大</li><li>箱の端の出来事を窓の裾で見落とさない</li><li>箱の色は最も大きい箱から 36 dB の範囲</li>
+  <li>平面の DWT のタイルは係数 1 つ（実数）で面積 1/2、STFT のタイルは複素数 1 つ（実数 2 つ）で面積 1</li>
+  <li>STFT のタイルの値は、長さ <math><mi>L</mi></math> のハン窓を <math><mi>L</mi><mo>/</mo><mn>4</mn></math> ずつずらし、中心がタイルの中にある 4 つの窓の最大</li><li>タイルの端の出来事を窓の裾で見落とさない</li><li>タイルの色は最も大きいタイルから 36 dB の範囲</li>
   <li>離散変換の端は周期的につなぐ。段の数は、各段の長さがフィルタの長さ以上の所まで</li>
   <li>テスト信号の Blocks・Bumps・HeaviSine・Doppler は Donoho・Johnstone の 4 つ<Fragment set:html={rf(6)} /><Fragment set:html={rf(3)} /></li>
 </ul>
@@ -127,7 +127,7 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
   <li id="thy-r2"><span class="rf-for">台の短い正規直交ウェーブレット、消失モーメント</span><span class="rf-src">I. Daubechies, “Orthonormal bases of compactly supported wavelets,” <i>Communications on Pure and Applied Mathematics</i>, vol. 41, no. 7, pp. 909–996, 1988, <a href="https://doi.org/10.1002/cpa.3160410705" target="_blank" rel="noopener">doi:10.1002/cpa.3160410705</a></span></li>
   <li id="thy-r3"><span class="rf-for">Daubechies の係数の数値、テスト信号（WaveLab の MakeSignal の再実装）</span><span class="rf-src">G. R. Lee, R. Gommers, F. Waselewski, K. Wohlfahrt, and A. O’Leary, “PyWavelets: A Python package for wavelet analysis,” <i>Journal of Open Source Software</i>, vol. 4, no. 36, 1237, 2019, <a href="https://doi.org/10.21105/joss.01237" target="_blank" rel="noopener">doi:10.21105/joss.01237</a></span></li>
   <li id="thy-r4"><span class="rf-for">多重解像度と分解・合成のアルゴリズム</span><span class="rf-src">S. G. Mallat, “A theory for multiresolution signal decomposition: the wavelet representation,” <i>IEEE Transactions on Pattern Analysis and Machine Intelligence</i>, vol. 11, no. 7, pp. 674–693, 1989, <a href="https://doi.org/10.1109/34.192463" target="_blank" rel="noopener">doi:10.1109/34.192463</a></span></li>
-  <li id="thy-r5"><span class="rf-for">時間と周波数の箱（Heisenberg の箱）、不確定性</span><span class="rf-src">S. Mallat, <i>A Wavelet Tour of Signal Processing: The Sparse Way</i>, 3rd ed., Academic Press, 2009</span></li>
+  <li id="thy-r5"><span class="rf-for">時間と周波数のタイル（Heisenberg の箱）、不確定性</span><span class="rf-src">S. Mallat, <i>A Wavelet Tour of Signal Processing: The Sparse Way</i>, 3rd ed., Academic Press, 2009</span></li>
   <li id="thy-r6"><span class="rf-for">テスト信号 Blocks・Bumps・HeaviSine・Doppler</span><span class="rf-src">D. L. Donoho and I. M. Johnstone, “Ideal spatial adaptation by wavelet shrinkage,” <i>Biometrika</i>, vol. 81, no. 3, pp. 425–455, 1994, <a href="https://doi.org/10.1093/biomet/81.3.425" target="_blank" rel="noopener">doi:10.1093/biomet/81.3.425</a></span></li>
   <li id="thy-r7"><span class="rf-for">Haar の関数系</span><span class="rf-src">A. Haar, “Zur Theorie der orthogonalen Funktionensysteme,” <i>Mathematische Annalen</i>, vol. 69, no. 3, pp. 331–371, 1910, <a href="https://doi.org/10.1007/BF01456326" target="_blank" rel="noopener">doi:10.1007/BF01456326</a></span></li>
   <li id="thy-r8"><span class="rf-for">ガウスの窓で区切る時間と周波数の平面</span><span class="rf-src">D. Gabor, “Theory of communication. Part 1: The analysis of information,” <i>Journal of the Institution of Electrical Engineers</i>, vol. 93, no. 26, pp. 429–441, 1946, <a href="https://doi.org/10.1049/ji-3-2.1946.0074" target="_blank" rel="noopener">doi:10.1049/ji-3-2.1946.0074</a></span></li>

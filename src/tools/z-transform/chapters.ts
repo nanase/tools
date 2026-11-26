@@ -127,7 +127,7 @@ ${part(1)}
   <p class="live" id="q5t"></p>
   <div class="eq">
     <math display="block"><mi>z</mi><mo>=</mo><msup><mi>e</mi><mrow><mi>j</mi><mi>ω</mi><mi>T</mi></mrow></msup><mo>=</mo><msup><mi>e</mi><mrow><mi>j</mi><mn>2</mn><mi>π</mi><mi data-k="f">f</mi><mo>/</mo><msub><mi>f</mi><mi>s</mi></msub></mrow></msup><mspace width="1.4em"/><msup><mi>e</mi><mrow><mi>j</mi><mn>2</mn><mi>π</mi><mo>(</mo><mi>f</mi><mo>+</mo><msub><mi>f</mi><mi>s</mi></msub><mo>)</mo><mo>/</mo><msub><mi>f</mi><mi>s</mi></msub></mrow></msup><mo>=</mo><msup><mi>e</mi><mrow><mi>j</mi><mn>2</mn><mi>π</mi><mi>f</mi><mo>/</mo><msub><mi>f</mi><mi>s</mi></msub></mrow></msup><mo>·</mo><msup data-k="T"><mi>e</mi><mrow><mi>j</mi><mn>2</mn><mi>π</mi></mrow></msup><mo>=</mo><msup><mi>e</mi><mrow><mi>j</mi><mn>2</mn><mi>π</mi><mi>f</mi><mo>/</mo><msub><mi>f</mi><mi>s</mi></msub></mrow></msup></math>
-    <span class="zn">fs = 1/T は標本化周波数、ω = 2πf です。cos の波は e<sup>jωt</sup> と e<sup>−jωt</sup> を半分ずつ足したものなので、s も z も上下の 2 点になります（問い 3）。標本の列の音は窓付き sinc で連続の音に戻して鳴らします。</span>
+    <span class="zn">fs = 1/T はサンプリング周波数、ω = 2πf です。cos の波は e<sup>jωt</sup> と e<sup>−jωt</sup> を半分ずつ足したものなので、s も z も上下の 2 点になります（問い 3）。標本の列の音は窓付き sinc で連続の音に戻して鳴らします。</span>
   </div>
   <p class="take">f が fs 増えるごとに z は単位円を 1 周して同じ点に戻ります。単位円は s 平面の虚軸を巻き付けたものです。</p>
 </section>

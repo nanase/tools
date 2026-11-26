@@ -77,7 +77,7 @@ let R: DriveView | null = null,
   roadLevels: Uint8ClampedArray[] = [];
 function noGl(): void {
   busy.hidden = true;
-  msg.textContent = 'このブラウザでは WebGL2 が使えないため、映像を描けません';
+  msg.textContent = 'このブラウザでは WebGL2 が使えないため表示できません';
   msg.hidden = false;
 }
 try {
@@ -405,7 +405,7 @@ sndBtn.addEventListener('click', async () => {
   }
   sndMsg.textContent = '';
   if (!(await audio.ready())) {
-    sndMsg.textContent = 'このブラウザでは音を鳴らせません';
+    sndMsg.textContent = 'この環境では音を鳴らせません';
     return;
   }
   audio.start('ja65', 'stock', { mode: 'hold', rpm: engineAt(S.v).rpm, throttle: throttle() });

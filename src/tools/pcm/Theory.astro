@@ -9,7 +9,7 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
 <ol class="flow"><li>入力のローパス</li><li>標本化</li><li>量子化</li><li>符号化</li><li>再生</li><li>出力のローパス</li></ol>
 <ul class="tl">
   <li>波の高さを一定の間隔で測り、値を 2 進数で表す方式<Fragment set:html={rf(1)} /></li>
-  <li>音の良さは標本化周波数とビット数で決まる</li>
+  <li>音の良さはサンプリング周波数とビット数で決まる</li>
 </ul>
 
 <h3>標本化</h3>
@@ -19,7 +19,7 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
   <math display="block" set:html={`${sub('<mi>f</mi>', '<mi>a</mi>')}<mo>=</mo><mo>|</mo><mi>f</mi><mo>−</mo><mi>k</mi>${fs}<mo>|</mo>`} />
 </div>
 <dl class="syms">
-  <dt><math set:html={fs} /></dt><dd>標本化周波数</dd>
+  <dt><math set:html={fs} /></dt><dd>サンプリング周波数</dd>
   <dt><math set:html={`${fs}<mo>/</mo><mn>2</mn>`} /></dt><dd>ナイキスト周波数</dd>
   <dt><math set:html={sub('<mi>f</mi>', '<mi>a</mi>')} /></dt><dd>折り返したあとの周波数（k は最も近い整数）</dd>
 </dl>
@@ -75,13 +75,13 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
 <h3>このツールで決めたこと</h3>
 <ul class="tl">
   <li>「1. PCM のしくみ」の図は 8 kHz・4 bit・440 Hz の正弦波に固定（細かい値では点と線が見えなくなるため）</li>
-  <li>標本化だけはビット数の影響を入れず、量子化だけは音源の標本化周波数のまま丸める</li>
+  <li>標本化だけはビット数の影響を入れず、量子化だけは音源のサンプリング周波数のまま丸める</li>
   <li>入力と出力のローパスはハン窓の sinc で ±12 標本</li>
-  <li>−6 dB の点は、入力が標本化周波数の 0.46 倍、出力が 0.5 倍</li>
+  <li>−6 dB の点は、入力がサンプリング周波数の 0.46 倍、出力が 0.5 倍</li>
   <li>2 bit 以上の線形は 0 を含む 2 の補数で、正の側が 1 段少ない</li>
   <li>1 bit は ±0.5 の 2 値</li>
   <li>G.711 の変換は 16 ビットの線形との間で行い、フルスケールを 32768 とする</li>
-  <li>標本化周波数が音源以上のときは音源の値を線形補間で読むので、音は変わらない</li>
+  <li>サンプリング周波数が音源以上のときは音源の値を線形補間で読むので、音は変わらない</li>
   <li>SN 比は標本の 2 乗和と誤差の 2 乗和の比</li>
   <li>スペクトルは 4096 点のハン窓の FFT で、振幅 1 の正弦波が 0 dB</li>
   <li>電話のプリセットは G.711 の 2 つの方式で、使う地域が分かれる<Fragment set:html={rf(8)} /></li>

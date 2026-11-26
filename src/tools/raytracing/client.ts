@@ -42,7 +42,7 @@ let noWebGl = false;
 function noGl(): void {
   noWebGl = true;
   wait.hidden = true;
-  msg.textContent = 'このブラウザでは WebGL2 の浮動小数点テクスチャが使えないため、画像を描けません';
+  msg.textContent = 'このブラウザでは WebGL2 の浮動小数点テクスチャが使えないため表示できません';
   msg.hidden = false;
 }
 try {

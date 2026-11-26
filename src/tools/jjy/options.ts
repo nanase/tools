@@ -41,7 +41,7 @@ export const OPT_ROWS: readonly OptRow[] = [
     k: 'callSign',
     sym: 'JJY',
     name: 'コールサイン',
-    sub: '40–48 秒',
+    sub: '40〜48 秒',
     ch: [
       ['default', '15・45 分'],
       ['force', '常に'],
@@ -121,7 +121,7 @@ export function rowNotes(t: Pick<Jst, 'h' | 'mi'>, o: Options): Record<keyof Opt
       : st
         ? 'この分は停波の予告を送るため使いません'
         : '',
-    callSign: o.callSign === 'default' ? (cs ? 'この分は 40–48 秒に送ります' : `次は ${nx} に送ります`) : '',
+    callSign: o.callSign === 'default' ? (cs ? 'この分は 40〜48 秒に送ります' : `次は ${nx} に送ります`) : '',
     stopAfter: cs ? '' : onlyCs,
     stopType: o.stopAfter === 0 ? noStop : cs ? '' : onlyCs,
     stopDuration: o.stopAfter === 0 ? noStop : cs ? '' : onlyCs,

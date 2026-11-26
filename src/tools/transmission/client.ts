@@ -681,7 +681,7 @@ async function toggleSnd(): Promise<void> {
   }
   sndMsg.textContent = '';
   if (!(await audio.ready())) {
-    sndMsg.textContent = 'このブラウザでは音を鳴らせません';
+    sndMsg.textContent = 'この環境では音を鳴らせません';
     return;
   }
   const f = S.src === 'live' ? m.snap() : null;

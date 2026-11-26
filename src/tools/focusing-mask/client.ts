@@ -145,7 +145,7 @@ async function loadFile(f: File): Promise<void> {
     if (mk$.value !== 'image') mk$.set('image');
     schedule();
   } catch {
-    txt('#mf-m', '画像を読めませんでした。PNG・JPEG・WebP・GIF などを選んでください');
+    txt('#mf-m', '画像を読み込めませんでした。PNG・JPEG・WebP・GIF などを選んでください');
   }
 }
 /** 保存した画像を戻す */
@@ -244,7 +244,7 @@ async function loadSrcFile(f: File): Promise<void> {
       setSrc('image');
     } else schedule();
   } catch {
-    txt('#src-m', '画像を読めませんでした。PNG・JPEG・WebP・GIF などを選んでください');
+    txt('#src-m', '画像を読み込めませんでした。PNG・JPEG・WebP・GIF などを選んでください');
   }
 }
 /** 保存した光源の画像を戻す */

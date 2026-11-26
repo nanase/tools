@@ -218,7 +218,7 @@ function designNote(): void {
     tail = `（上限の ${d.N} でも仕様を満たしません）`;
     er = true;
   } else if (s.auto && s.method === 'window' && s.win !== 'kaiser' && s.as > WIN_K[s.win].as)
-    tail = `（${winOf(s.win).ab}窓の阻止域減衰は約 ${WIN_K[s.win].as} dB）`;
+    tail = `（${winOf(s.win).ab}窓の阻止域の減衰量は約 ${WIN_K[s.win].as} dB）`;
   auto$.note(parts.length ? `${s.auto ? '仕様から: ' : ''}${parts.join('・')}${tail}` : tail, er ? 'er' : '');
 }
 
@@ -278,7 +278,7 @@ function drawFr(): void {
   txt('#fr-aux', `${fr.L} 点の FFT`);
   $('#fr-svg').setAttribute(
     'aria-label',
-    `周波数特性。横軸は 0 から ${hzT(s.fs / 2)} の線形、縦軸は振幅 ${FR.dv1}/div。通過域リップル ${plain(m.ripple, 3)} dB、阻止域減衰 ${plain(m.atten, 3)} dB。破線は仕様の枠。`,
+    `周波数特性。横軸は 0 から ${hzT(s.fs / 2)} の線形、縦軸は振幅 ${FR.dv1}/div。通過域のリップル ${plain(m.ripple, 3)} dB、阻止域の減衰量 ${plain(m.atten, 3)} dB。破線は仕様の枠。`,
   );
   frCursor();
 }
