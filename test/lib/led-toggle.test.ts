@@ -10,8 +10,8 @@ const walk = (dir: string, ext: RegExp): string[] =>
   );
 const astro = ['pages/', 'tools/', 'components/'].flatMap((d) => walk(d, /\.astro$/));
 
-/** 図の上に重ねる暗いボタン（配色がページ独自）とオルガンのストップは部品にしない */
-const OWN = /\b(mb-tg|pm-tg|chip stop)\b/;
+/** 図の上に重ねる暗いボタン（配色がページ独自）、時計の横の大きな「現在」、オルガンのストップは部品にしない */
+const OWN = /\b(mb-tg|pm-tg|nowbtn|pn-nowbtn|chip stop)\b/;
 
 describe('LED 付きの切り替え', () => {
   it('LED 付きのボタンは LedToggle で作る', () => {
