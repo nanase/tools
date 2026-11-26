@@ -3,6 +3,7 @@ import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
 import FsButton from '../components/FsButton.astro';
 import HowSteps from '../components/HowSteps.astro';
+import LedToggle from '../components/LedToggle.astro';
 import More from '../components/More.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
@@ -52,7 +53,7 @@ const playIcon =
   <div class="tgrid tm-g" id="tm">
     <Panel hid="hd-fig" title="駆動系" fixed>
       <div slot="aux" class="tm-aux">
-        <button type="button" class="tg" id="tm-pause" aria-pressed="false" title="運転の一時停止（Space）"><span class="led" aria-hidden="true"></span>一時停止</button>
+        <LedToggle id="tm-pause" label="一時停止" title="運転の一時停止（Space）" />
         <div class="seg" id="tm-slow" role="group" aria-label="回転の見え方の速さ">
           {SPEEDS.map(([v, t]) => <button type="button" data-v={v} aria-pressed={v === '1' ? 'true' : 'false'}>{t}</button>)}
         </div>
@@ -126,7 +127,7 @@ const playIcon =
       <Panel hid="hd-run" title="運転">
         <div slot="aux" class="tm-aux">
           <button type="button" class="tg tm-flb" id="tm-flb" aria-pressed="false" title="操作盤を右下に表示" aria-label="操作盤を右下に表示"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="2.5" width="13" height="11" rx="1.5"/><rect class="tm-fi" x="8" y="8" width="5" height="4" rx=".6"/></svg></button>
-          <button type="button" class="tg" id="tm-auto" aria-pressed="false"><span class="led" aria-hidden="true"></span>自動運転</button>
+          <LedToggle id="tm-auto" label="自動運転" />
         </div>
         <div class="drv tm-drv">
           <div class="drv-g"><span class="drv-l">ギア</span><b id="o-gear" data-o="gear">N</b></div>
@@ -143,13 +144,13 @@ const playIcon =
             <span class="thr-l" aria-hidden="true"><b>0</b><b>25</b><b>50</b><b>75</b><b>100 %</b></span>
             <span class="thr-t">スロットル</span><span class="thr-v" aria-hidden="true"></span>
           </div>
-          <button type="button" class="tg thr-lk" id="tm-lock" aria-pressed="false"><span class="led" aria-hidden="true"></span>固定</button>
+          <LedToggle id="tm-lock" label="固定" class="thr-lk" />
         </div>
         <div class="thr brk" data-pad="brk" tabindex="0" role="slider" aria-label="ブレーキ" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span class="thr-f"></span><span class="thr-t">ブレーキ</span><span class="thr-v" aria-hidden="true"></span></div>
       </Panel>
 
       <Panel hid="hd-snd" title="音">
-        <div slot="aux" class="seg"><button type="button" id="tm-snd" aria-pressed="false" title="エンジンのページの音（回転数とスロットルに合わせる）"><span class="led" aria-hidden="true"></span><span id="tm-sndT">再生</span></button></div>
+        <LedToggle slot="aux" id="tm-snd" label="音" title="エンジンのページの音（回転数とスロットルに合わせる）" />
         <div class="ptab">
           <ChoiceRow k="muf" name="マフラー" choices={[['stock', '純正'], ['delta', '社外品']]} value="stock" />
           <ParamRow d={VOL} />
@@ -193,7 +194,7 @@ const playIcon =
   </div>
 
   <div class="tm-fl" id="tm-fl" role="region" aria-label="操作盤" hidden>
-    <div class="tm-fl-h"><button type="button" class="tg" id="tm-fl-snd" aria-pressed="false" title="エンジン音の再生"><span class="led" aria-hidden="true"></span>音</button><button type="button" class="tg" id="tm-fl-auto" aria-pressed="false"><span class="led" aria-hidden="true"></span>自動運転</button><button type="button" class="tg" id="tm-fl-pause" aria-pressed="false" title="運転の一時停止（Space）"><span class="led" aria-hidden="true"></span>一時停止</button><button type="button" class="tm-fl-x" id="tm-fl-x" title="閉じる" aria-label="操作盤を閉じる"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 2.5l7 7M9.5 2.5l-7 7"/></svg></button></div>
+    <div class="tm-fl-h"><LedToggle id="tm-fl-snd" label="音" title="エンジン音の再生" /><LedToggle id="tm-fl-auto" label="自動運転" /><LedToggle id="tm-fl-pause" label="一時停止" title="運転の一時停止（Space）" /><button type="button" class="tm-fl-x" id="tm-fl-x" title="閉じる" aria-label="操作盤を閉じる"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 2.5l7 7M9.5 2.5l-7 7"/></svg></button></div>
     <div class="drv tm-drv tm-fl-drv">
       <div class="drv-g"><span class="drv-l">ギア</span><b data-o="gear">N</b></div>
       <div class="drv-s">
@@ -205,7 +206,7 @@ const playIcon =
     </div>
     <div class="tm-fl-pads">
       <div class="thr" data-pad="thr" tabindex="0" role="slider" aria-label="スロットル" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span class="thr-f"></span><span class="thr-t">スロットル</span><span class="thr-v" aria-hidden="true"></span></div>
-      <button type="button" class="tg thr-lk" id="tm-fl-lock" aria-pressed="false"><span class="led" aria-hidden="true"></span>固定</button>
+      <LedToggle id="tm-fl-lock" label="固定" class="thr-lk" />
       <div class="thr brk" data-pad="brk" tabindex="0" role="slider" aria-label="ブレーキ" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span class="thr-f"></span><span class="thr-t">ブレーキ</span><span class="thr-v" aria-hidden="true"></span></div>
     </div>
   </div>
