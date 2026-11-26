@@ -988,7 +988,7 @@ function drawAll(): void {
   aDots = dots;
   const m = $('#a-msg');
   m.hidden = !outside;
-  if (outside) m.textContent = '外側の衛星は 2015〜2036 年だけ表示します。';
+  if (outside) m.textContent = '外側の衛星は 2015〜2036 年だけ表示します';
   /* 土星 */
   c.fillStyle = '#d8c79c';
   c.beginPath();
@@ -1404,7 +1404,7 @@ try {
     .catch(() => {
       const v = $('#v-msg');
       v.hidden = false;
-      v.textContent = '模様を読み込めませんでした。';
+      v.textContent = '模様を読み込めませんでした';
     })
     .finally(loaded);
   fetch(`${BASE}saturn/rings.bin`)
@@ -1417,7 +1417,7 @@ try {
     .catch(() => {
       const v = $('#v-msg');
       v.hidden = false;
-      v.textContent = '環の表を読み込めませんでした。';
+      v.textContent = '環の表を読み込めませんでした';
     })
     .finally(loaded);
 } catch {
@@ -1425,7 +1425,7 @@ try {
   busy.hidden = true;
   const m = $('#v-msg');
   m.hidden = false;
-  m.textContent = 'このブラウザでは土星を描けません。WebGL2 が必要です。';
+  m.textContent = 'このブラウザでは土星を描けません。WebGL2 が必要です';
 }
 /* 全画面: 土星の図を画面いっぱいに。時刻と表示の操作は右上に浮かべる */
 initFullscreen({

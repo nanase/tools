@@ -55,7 +55,7 @@ const lens = (r2: string, k: string) => {
 ---
 <h3>データ</h3>
 <p>日食の計算は NASA の五千年正典<Fragment set:html={rf(1)} />のベッセル要素から行います。正典は −1999〜+3000 年（紀元前 2000 年〜西暦 3000 年）の 11,898 件の日食を収めたもので、太陽の位置は VSOP87、月の位置は ELP-2000/82 で計算されています<Fragment set:html={rf(1, 2)} />。</p>
-<p>要素は全件を 1 つにまとめた CSV で公開されています<Fragment set:html={rf(2)} />。1 行に、目録の項目と、ベッセル要素の多項式の係数が並びます。</p>
+<p>要素は全件を 1 つにまとめた CSV で公開されています<Fragment set:html={rf(2)} />。1 行に目録の項目とベッセル要素の多項式の係数が並びます。</p>
 <ul class="tl">
   <li><b>目録の項目</b>: 日付、最大食の時刻（力学時 TD）、<math set:html={dT} />、朔望月の番号、サロス番号、型、<math><mi>γ</mi></math>、食分、最大食の地点、経路幅、中心の継続時間</li>
   <li><b><math><mi>γ</mi></math></b>: 最大食の瞬間の、影の円錐の軸と地心の距離。地球の赤道半径を単位とし、軸が地心の北を通れば正<Fragment set:html={rf(1, 3)} /></li>
@@ -65,7 +65,7 @@ const lens = (r2: string, k: string) => {
   <math display="block" set:html={`${of('a', mi('t'))}<mo>=</mo>${sub('a', '0')}<mo>+</mo>${sub('a', '1')}<mi>t</mi><mo>+</mo>${sub('a', '2')}${sq(mi('t'))}<mo>+</mo>${sub('a', '3')}<msup><mi>t</mi><mn>3</mn></msup>`} />
   <math display="block"><mo>−</mo><mn>3</mn><mo>≤</mo><mi>t</mi><mo>≤</mo><mn>3</mn></math>
 </div>
-<p><math><mi>x</mi></math>・<math><mi>y</mi></math> は 3 次まで、<math><mi>d</mi></math>・<math><mi>μ</mi></math>・<math><msub><mi>l</mi><mn>1</mn></msub></math>・<math><msub><mi>l</mi><mn>2</mn></msub></math> は 2 次まで（<math><msub><mi>a</mi><mn>3</mn></msub><mo>=</mo><mn>0</mn></math>）です。時間微分も、この多項式から求めます。</p>
+<p><math><mi>x</mi></math>・<math><mi>y</mi></math> は 3 次まで、<math><mi>d</mi></math>・<math><mi>μ</mi></math>・<math><msub><mi>l</mi><mn>1</mn></msub></math>・<math><msub><mi>l</mi><mn>2</mn></msub></math> は 2 次まで（<math><msub><mi>a</mi><mn>3</mn></msub><mo>=</mo><mn>0</mn></math>）です。時間微分もこの多項式から求めます。</p>
 <div class="tt-w">
   <table class="tt">
     <thead><tr><th scope="col">型</th><th scope="col">日食</th><th scope="col" class="num">正典の件数</th></tr></thead>
@@ -82,9 +82,9 @@ const lens = (r2: string, k: string) => {
 <ul class="tl">
   <li>ビルドのときに CSV を 100 年ごとのファイルとサロス系列ごとのファイルに分ける。ページは要るファイルを初めて要るときに読む</li>
   <li>正典では <math><msub><mi>μ</mi><mn>2</mn></msub></math> がすべて 0、多項式の範囲がすべて ±3 時間なので、この 2 つは省く<Fragment set:html={rf(2)} /></li>
-  <li>暦は、正典と同じく 1582 年 10 月 15 日より前をユリウス暦とし、年を天文学的な数え方（0 年が紀元前 1 年）で表す<Fragment set:html={rf(1)} />。暦と JD の換算は Meeus の方法<Fragment set:html={rf(5)} /></li>
+  <li>暦は正典と同じく 1582 年 10 月 15 日より前をユリウス暦とし、年を天文学的な数え方（0 年が紀元前 1 年）で表す<Fragment set:html={rf(1)} />。暦と JD の換算は Meeus の方法<Fragment set:html={rf(5)} /></li>
 </ul>
-<p>正典のデータは、謝辞 “Eclipse Predictions by Fred Espenak (NASA's GSFC)” を添えれば自由に複製してよいとされています<Fragment set:html={rf(2)} />。地図の陸地は、パブリックドメインの Natural Earth の 1:110m と 1:50m の陸地です<Fragment set:html={rf(6)} />。</p>
+<p>正典のデータは謝辞 “Eclipse Predictions by Fred Espenak (NASA's GSFC)” を添えれば自由に複製してよいとされています<Fragment set:html={rf(2)} />。地図の陸地はパブリックドメインの Natural Earth の 1:110m と 1:50m の陸地です<Fragment set:html={rf(6)} />。</p>
 <p>観測地の地名は、日本の市の位置（市役所）を国土数値情報の市町村役場等データ<Fragment set:html={rf(7)} />から、市の名前と読みを全国地方公共団体コード<Fragment set:html={rf(8)} />から、世界の主要都市を Natural Earth の populated places<Fragment set:html={rf(6)} />から作りました。</p>
 
 <h3>ベッセル要素と基準面</h3>
@@ -103,7 +103,7 @@ const lens = (r2: string, k: string) => {
   <math display="block" set:html={`${bv('k')}<mo>=</mo><mo stretchy="false">(</mo>${mul(cos(mi('d')), cos(mi('G')))}<mo>,</mo>${neg(mul(cos(mi('d')), sin(mi('G'))))}<mo>,</mo>${sin(mi('d'))}<mo stretchy="false">)</mo>`} />
   <math display="block" set:html={`<mi>G</mi><mo>=</mo><mi>μ</mi><mo>−</mo><mn>1.002738</mn><mo>×</mo><mn>15</mn><mo>″</mo><mo>/</mo><mi mathvariant="normal">s</mi><mo>×</mo>${dT}`} />
 </div>
-<p>NASA の <math><mi>μ</mi></math> は、UT1 を TT とみなして求めた時角です。そのため、<math set:html={dT} /> の間に地球が自転する角を引いて <math><mi>G</mi></math> にします<Fragment set:html={rf(10)} />。<math set:html={dT} /> が入るのはここだけです<Fragment set:html={rf(11)} />。</p>
+<p>NASA の <math><mi>μ</mi></math> は UT1 を TT とみなして求めた時角です。そのため、<math set:html={dT} /> の間に地球が自転する角を引いて <math><mi>G</mi></math> にします<Fragment set:html={rf(10)} />。<math set:html={dT} /> が入るのはここだけです<Fragment set:html={rf(11)} />。</p>
 <h4>観測地</h4>
 <p>観測地の測地緯度・経度・標高から地心の座標を出し<Fragment set:html={rf(5)} />、基準面へ写して <math><mo stretchy="false">(</mo><mi>ξ</mi><mo>,</mo><mi>η</mi><mo>,</mo><mi>ζ</mi><mo stretchy="false">)</mo></math> にします<Fragment set:html={rf(11, 12)} />。楕円体は WGS84 です。</p>
 <dl class="syms">
@@ -125,7 +125,7 @@ const lens = (r2: string, k: string) => {
 <p><math><mi>ζ</mi></math> は太陽の向きへの高さで、地表の点ではおよそ太陽の高度の正弦です。</p>
 
 <h3>地方食</h3>
-<p>観測地での食の経過は、時刻 <math><mi>t</mi></math> の要素から観測地と影の関係を求め、反復で解きます。方法は古典的なもので<Fragment set:html={rf(11, 12)} />、観測地の動きの式は satkit の形です<Fragment set:html={rf(10)} />。</p>
+<p>観測地での食の経過は時刻 <math><mi>t</mi></math> の要素から観測地と影の関係を求め、反復で解きます。方法は古典的なもので<Fragment set:html={rf(11, 12)} />、観測地の動きの式は satkit の形です<Fragment set:html={rf(10)} />。</p>
 <ol class="flow" aria-label="地方食の計算の流れ">
   <li><b>観測地</b><span>緯度・経度・標高から地心の座標</span></li>
   <li><b>時刻 <math><mi>t</mi></math> の要素</b><span>多項式から</span></li>
@@ -155,11 +155,11 @@ const lens = (r2: string, k: string) => {
 </div>
 <p>観測地の高さでの影の半径の式は Altmann の式 (7) です<Fragment set:html={rf(12)} />。</p>
 <h4>最大食と接触</h4>
-<p>最大食は観測地が影の軸に最も近づく時刻です。<math><msub><mi>t</mi><mn>0</mn></msub></math> から始め、次の <math><mi>τ</mi></math> を足すことを繰り返します<Fragment set:html={rf(10, 11)} />。打ち切りは、<math><mi>τ</mi></math> が <math set:html={e10('9')} /> 時間より小さくなるか、50 回に達したときです。</p>
+<p>最大食は観測地が影の軸に最も近づく時刻です。<math><msub><mi>t</mi><mn>0</mn></msub></math> から始め、次の <math><mi>τ</mi></math> を足すことを繰り返します<Fragment set:html={rf(10, 11)} />。打ち切りは <math><mi>τ</mi></math> が <math set:html={e10('9')} /> 時間より小さくなるか、50 回に達したときです。</p>
 <div class="eqs">
   <math display="block" set:html={`<mi>τ</mi><mo>=</mo>${neg(fr(ua, '<msup><mi>n</mi><mn>2</mn></msup>'))}`} />
 </div>
-<p>接触は観測地が影の円の上に来る時刻です。最大食の時刻から始め、次の <math><mi>τ</mi></math> を足すことを繰り返します<Fragment set:html={rf(11)} />。打ち切りは、<math><mi>τ</mi></math> が <math set:html={e10('9')} /> 時間より小さくなるか、30 回に達したときです。根号の中が負になれば、その接触はありません。</p>
+<p>接触は観測地が影の円の上に来る時刻です。最大食の時刻から始め、次の <math><mi>τ</mi></math> を足すことを繰り返します<Fragment set:html={rf(11)} />。打ち切りは <math><mi>τ</mi></math> が <math set:html={e10('9')} /> 時間より小さくなるか、30 回に達したときです。根号の中が負になれば、その接触はありません。</p>
 <div class="eqs">
   <math display="block" set:html={`<mi>τ</mi><mo>=</mo>${neg(fr(ua, '<msup><mi>n</mi><mn>2</mn></msup>'))}<mo>±</mo>${fr(mi('L'), mi('n'))}<msqrt><mn>1</mn><mo>−</mo>${sq(par(fr('<mi>u</mi><mi>b</mi><mo>−</mo><mi>v</mi><mi>a</mi>', '<mi>n</mi><mi>L</mi>')))}</msqrt>`} />
 </div>
@@ -171,7 +171,7 @@ const lens = (r2: string, k: string) => {
 </ul>
 <p>見える日食の一覧は選んだ日食の 10 年前から 30 年後までの日食で地方食を求め、C1〜C4 の間に太陽が地平線より上に出る食を並べたものです。</p>
 <h4>食分と面積比</h4>
-<p>食分 <math><mi>M</mi></math> は、太陽の直径のうち月に覆われた割合です。皆既食・金環食・混成食の食分は、月と太陽の見かけの直径の比で表します<Fragment set:html={rf(1, 3)} />。面積比 <math><mi>O</mi></math> は、太陽の円盤の面積のうち月に覆われた割合です<Fragment set:html={rf(4)} />。</p>
+<p>食分 <math><mi>M</mi></math> は太陽の直径のうち月に覆われた割合です。皆既食・金環食・混成食の食分は月と太陽の見かけの直径の比で表します<Fragment set:html={rf(1, 3)} />。面積比 <math><mi>O</mi></math> は太陽の円盤の面積のうち月に覆われた割合です<Fragment set:html={rf(4)} />。</p>
 <p>食分の式<Fragment set:html={rf(11)} />から分かるように、観測地の高さでは、半影の半径 <math set:html={L1} /> が見かけの太陽と月の半径の和に、本影の半径 <math set:html={L2} /> が差に当たります。そこで、見かけの太陽の半径 <math set:html={Rs} />・月の半径 <math set:html={Rm} />・中心の間隔 <math><mi>m</mi></math> を基準面の単位で表し、面積比は 2 つの円の重なりとして求めます<Fragment set:html={rf(11)} />。</p>
 <div class="eqs">
   <math display="block" set:html={`${Rs}<mo>=</mo>${fr(`${L1}<mo>+</mo>${L2}`, '<mn>2</mn>')}`} />
@@ -189,7 +189,7 @@ const lens = (r2: string, k: string) => {
   <math display="block" set:html={`${dM}<mo>=</mo><msqrt><msup><mi>u</mi><mn>2</mn></msup><mo>+</mo><msup><mi>v</mi><mn>2</mn></msup><mo>+</mo>${sq(par(`${zM}<mo>−</mo><mi>ζ</mi>`))}</msqrt>`} />
   <math display="block" set:html={`<mtext>月の見かけの半径</mtext><mo>=</mo>${fn('arcsin', fr(mi('k'), dM))}`} />
 </div>
-<p>太陽の高度と方位（北から東へ）は、影の軸の向きを太陽の向きとみなし、赤緯 <math><mi>d</mi></math> と時角 <math><mi>H</mi></math> から求めます<Fragment set:html={rf(11)} />。望遠の眺めは、太陽面の上で天頂の向きを上にして描きます。</p>
+<p>太陽の高度と方位（北から東へ）は、影の軸の向きを太陽の向きとみなし、赤緯 <math><mi>d</mi></math> と時角 <math><mi>H</mi></math> から求めます<Fragment set:html={rf(11)} />。望遠の眺めは太陽面の上で天頂の向きを上にして描きます。</p>
 <div class="eqs">
   <math display="block" set:html={`${sin('<msub><mi>h</mi><mtext>太陽</mtext></msub>')}<mo>=</mo>${mul(sin(mi('φ')), sin(mi('d')))}<mo>+</mo>${mul(cos(mi('φ')), cos(mi('d')), cos(mi('H')))}`} />
   <math display="block" set:html={`${tan('<msub><mi>A</mi><mtext>太陽</mtext></msub>')}<mo>=</mo>${fr(neg(mul(sin(mi('H')), cos(mi('d')))), `${mul(sin(mi('d')), cos(mi('φ')))}<mo>−</mo>${mul(cos(mi('d')), cos(mi('H')), sin(mi('φ')))}`)}`} />
@@ -207,16 +207,16 @@ const lens = (r2: string, k: string) => {
   <math display="block" set:html={`<mi>z</mi><mo>=</mo>${fr(`<mo>−</mo>${ip('Q', 'k')}<mo>+</mo><msqrt>${sq(ip('Q', 'k'))}<mo>−</mo>${ip('k', 'k')}${par(`${ip('Q', 'Q')}<mo>−</mo><mn>1</mn>`)}</msqrt>`, ip('k', 'k'))}`} />
 </div>
 <h4>南北の限界</h4>
-<p>限界は、影の円のうち、相対速度 <math><mo stretchy="false">(</mo><mi>a</mi><mo>,</mo><mi>b</mi><mo stretchy="false">)</mo></math> に垂直な半径の端が地表に描く線です<Fragment set:html={rf(10)} />。求める点の <math><mi>ζ</mi></math> で本影の半径と地表の速さが変わるので、中心線の点から始めて「限界の点 → その点の <math><mi>ζ</mi></math> → 計算し直す」を 10 回繰り返します。satkit では 8 回で数 cm に収まります<Fragment set:html={rf(10)} />。</p>
+<p>限界は影の円のうち、相対速度 <math><mo stretchy="false">(</mo><mi>a</mi><mo>,</mo><mi>b</mi><mo stretchy="false">)</mo></math> に垂直な半径の端が地表に描く線です<Fragment set:html={rf(10)} />。求める点の <math><mi>ζ</mi></math> で本影の半径と地表の速さが変わるので、中心線の点から始めて「限界の点 → その点の <math><mi>ζ</mi></math> → 計算し直す」を 10 回繰り返します。satkit では 8 回で数 cm に収まります<Fragment set:html={rf(10)} />。</p>
 <div class="eqs">
   <math display="block" set:html={`<mi>ξ</mi><mo>=</mo><mi>x</mi><mo>−</mo><mi>s</mi>${aL2}${fr(mi('b'), mi('n'))}`} />
   <math display="block" set:html={`<mi>η</mi><mo>=</mo><mi>y</mi><mo>+</mo><mi>s</mi>${aL2}${fr(mi('a'), mi('n'))}`} />
 </div>
 <p><math><mi>s</mi><mo>=</mo><mrow><mo>+</mo><mn>1</mn></mrow></math> が影の進む向きの左（ふつうは北限）、<math><mo>−</mo><mn>1</mn></math> が右です。<math set:html={aL2} /> を使うので、皆既帯も金環帯も同じ式で描けます<Fragment set:html={rf(10)} />。</p>
 <h4>月の半径比</h4>
-<p>正典は、半影の接触と食分に <math><mi>k</mi><mo>=</mo><mn>0.2724880</mn></math>、本影の計算（皆既・金環・混成）のすべてに <math><mi>k</mi><mo>=</mo><mn>0.272281</mn></math> を使っています<Fragment set:html={rf(1, 13)} />。</p>
+<p>正典は半影の接触と食分に <math><mi>k</mi><mo>=</mo><mn>0.2724880</mn></math>、本影の計算（皆既・金環・混成）のすべてに <math><mi>k</mi><mo>=</mo><mn>0.272281</mn></math> を使っています<Fragment set:html={rf(1, 13)} />。</p>
 <ul class="tl">
-  <li>小さい方は平均の最小半径で、月の縁の深い谷に近い。IAU の平均の値 0.2725076 では、一部の金環食・混成食を皆既食と誤る。1986 年 10 月 3 日の食は 3 秒の皆既とされたが、実際は月の縁の谷から光が漏れる金環（beaded annular）だった<Fragment set:html={rf(1)} /></li>
+  <li>小さい方は平均の最小半径で、月の縁の深い谷に近い。IAU の平均の値 0.2725076 では一部の金環食・混成食を皆既食と誤る。1986 年 10 月 3 日の食は 3 秒の皆既とされたが、実際は月の縁の谷から光が漏れる金環（beaded annular）だった<Fragment set:html={rf(1)} /></li>
   <li>1968〜1980 年の航海暦局のように金環食に大きい <math><mi>k</mi></math> を使うと、混成食で不連続が出る<Fragment set:html={rf(1)} />。正典は本影の計算のすべてに小さい <math><mi>k</mi></math> を使うので、この不連続は出ない</li>
 </ul>
 <p>このツールは正典の <math><msub><mi>l</mi><mn>1</mn></msub></math>・<math><msub><mi>l</mi><mn>2</mn></msub></math> をそのまま使うので、型・継続時間・経路の幅はこの使い分けのとおりになります。</p>
@@ -226,7 +226,7 @@ const lens = (r2: string, k: string) => {
 <div class="eqs">
   <math display="block" set:html={`<mtext>UT1</mtext><mo>=</mo><mtext>TD</mtext><mo>−</mo>${dT}`} />
 </div>
-<p><math set:html={dT} /> には、正典が日食ごとに使った値をそのまま使います<Fragment set:html={rf(2)} />。この値は、Morrison & Stephenson (2004) の <math set:html={dT} /> をもとにした Espenak & Meeus の区間多項式に、月の永年加速の補正 <math><mi>c</mi></math> を加えたものです<Fragment set:html={rf(14)} />。−500 年より前と 2150 年より後は次の放物線で、その間は 13 の区間に分けた多項式です<Fragment set:html={rf(14)} />。</p>
+<p><math set:html={dT} /> には、正典が日食ごとに使った値をそのまま使います<Fragment set:html={rf(2)} />。この値は Morrison & Stephenson (2004) の <math set:html={dT} /> をもとにした Espenak & Meeus の区間多項式に、月の永年加速の補正 <math><mi>c</mi></math> を加えたものです<Fragment set:html={rf(14)} />。−500 年より前と 2150 年より後は次の放物線で、その間は 13 の区間に分けた多項式です<Fragment set:html={rf(14)} />。</p>
 <dl class="syms">
   <dt><math><mi>Y</mi></math></dt><dd>年の小数</dd>
   <dt><math><mover><mi>n</mi><mo>˙</mo></mover></math></dt><dd>月の永年加速（″/世紀²）</dd>
@@ -239,7 +239,7 @@ const lens = (r2: string, k: string) => {
 </div>
 <p>もとの <math set:html={dT} /> は <math><mover><mi>n</mi><mo>˙</mo></mover><mo>=</mo><mrow><mo>−</mo><mn>26</mn></mrow></math>″/世紀² を前提にしていて、正典の月の暦 ELP-2000/82 は <math><mover><mi>n</mi><mo>˙</mo></mover><mo>=</mo><mrow><mo>−</mo><mn>25.858</mn></mrow></math>″/世紀² なので、<math><mi>c</mi></math> を足します。1955〜2005 年の値は月の暦によらないので、足しません<Fragment set:html={rf(1, 14)} />。</p>
 <h4><math set:html={dT} /> の不確かさ</h4>
-<p>5 千年の端では、経路の位置の不確かさの大部分は <math set:html={dT} /> の不確かさです<Fragment set:html={rf(1)} />。<math set:html={dT} /> は時角にだけ入るので、<math set:html={dT} /> が変わると、経路は形を保ったまま東西に回ります。サロスの枠に出す <math set:html={dT} /> の標準誤差 <math><mi>σ</mi></math> は、NASA の表と式によります<Fragment set:html={rf(15)} />。</p>
+<p>5 千年の端では、経路の位置の不確かさの大部分は <math set:html={dT} /> の不確かさです<Fragment set:html={rf(1)} />。<math set:html={dT} /> は時角にだけ入るので、<math set:html={dT} /> が変わると、経路は形を保ったまま東西に回ります。サロスの枠に出す <math set:html={dT} /> の標準誤差 <math><mi>σ</mi></math> は NASA の表と式によります<Fragment set:html={rf(15)} />。</p>
 <ul class="tl">
   <li><b>−1000〜+1200 年</b>: Morrison & Stephenson の式</li>
   <li><b>−1000 年より前と 2005 年より後</b>: Huber のブラウン運動とドリフトの模型。<math><mi>w</mi></math> は年数で、−1000 年より前は <math><mo>−</mo><mn>500</mn><mo>−</mo><mi>Y</mi></math>、2005 年より後は <math><mi>Y</mi><mo>−</mo><mn>2005</mn></math></li>
@@ -250,7 +250,7 @@ const lens = (r2: string, k: string) => {
   <math display="block" set:html={`<mi>σ</mi><mo>=</mo>${fr(`<mn>365.25</mn><mi>w</mi><msqrt>${fr('<mn>0.058</mn><mi>w</mi>', '<mn>3</mn>')}${par(`<mn>1</mn><mo>+</mo>${fr(mi('w'), '<mn>2500</mn>')}`)}</msqrt>`, '<mn>1000</mn>')}${sec}`} />
   <math display="block" set:html={`<mi mathvariant="normal">Δ</mi><mi>λ</mi><mo>=</mo><mn>0.004178</mn><mo>°</mo><mo>×</mo>${fr(mi('σ'), '<mi mathvariant="normal">s</mi>')}`} />
 </div>
-<p>経度の幅 <math><mi mathvariant="normal">Δ</mi><mi>λ</mi></math> は、<math><mi>σ</mi></math> の間に地球が自転する角です<Fragment set:html={rf(10)} />。−2000 年の 3,732 s は、経度で ±15.6° に当たります<Fragment set:html={rf(15)} />。</p>
+<p>経度の幅 <math><mi mathvariant="normal">Δ</mi><mi>λ</mi></math> は <math><mi>σ</mi></math> の間に地球が自転する角です<Fragment set:html={rf(10)} />。−2000 年の 3,732 s は経度で ±15.6° に当たります<Fragment set:html={rf(15)} />。</p>
 <div class="tt-w">
   <table class="tt">
     <thead><tr><th scope="col">年</th><th scope="col" class="num"><math><mi>σ</mi></math></th></tr></thead>
@@ -275,8 +275,8 @@ const lens = (r2: string, k: string) => {
 <p>表の値は NASA によります<Fragment set:html={rf(15)} />。正典は、<math><mi>σ</mi></math> が 265 s（経度 1.1°）を超える年、つまり +0001 年より前と +2300 年より後では、地図を東西に ±<math><mi>σ</mi></math> の経度だけ回しても標準誤差の内側だとしています<Fragment set:html={rf(1)} />。</p>
 
 <h3>光の量 <math><mi>F</mi></math></h3>
-<p>太陽面は縁ほど暗い（周辺減光）ので、部分食で届く光の量は、欠けずに残った面積だけでなく、残った場所でも変わります。このツールでは、周辺減光で重み付けした太陽面の積分で、残った光の量 <math><mi>F</mi></math>（食のないとき 1）を求めます。空・望遠の眺め・地図・宇宙から見た地球の暗さは、どれもこの <math><mi>F</mi></math> で決めます。</p>
-<p>周辺減光は Hestroffer & Magnan のべき乗則のうち、縁で明るさが 0 になる形で、指数 <math><mi>α</mi></math> は波長で変わります。<math><mi>α</mi></math> の式は、<math><mn>1</mn><mo>/</mo><mi>λ</mi><mo>&lt;</mo><mn>2.4</mn></math> µm⁻¹（<math><mi>λ</mi></math> が約 417 nm より長い）の範囲で、±0.02 ほどの精度です<Fragment set:html={rf(16)} />。<math><mi>F</mi></math> には 550 nm（<math><mi>α</mi><mo>=</mo><mn>0.51</mn></math>）を、太陽面の色には赤 610 nm・緑 550 nm・青 465 nm を使います。</p>
+<p>太陽面は縁ほど暗い（周辺減光）ので、部分食で届く光の量は欠けずに残った面積だけでなく、残った場所でも変わります。このツールでは周辺減光で重み付けした太陽面の積分で、残った光の量 <math><mi>F</mi></math>（食のないとき 1）を求めます。空・望遠の眺め・地図・宇宙から見た地球の暗さは、どれもこの <math><mi>F</mi></math> で決めます。</p>
+<p>周辺減光は Hestroffer & Magnan のべき乗則のうち、縁で明るさが 0 になる形で、指数 <math><mi>α</mi></math> は波長で変わります。<math><mi>α</mi></math> の式は <math><mn>1</mn><mo>/</mo><mi>λ</mi><mo>&lt;</mo><mn>2.4</mn></math> µm⁻¹（<math><mi>λ</mi></math> が約 417 nm より長い）の範囲で、±0.02 ほどの精度です<Fragment set:html={rf(16)} />。<math><mi>F</mi></math> には 550 nm（<math><mi>α</mi><mo>=</mo><mn>0.51</mn></math>）を、太陽面の色には赤 610 nm・緑 550 nm・青 465 nm を使います。</p>
 <dl class="syms">
   <dt><math><mi>r</mi></math></dt><dd>太陽面の中心からの距離（基準面の単位）</dd>
   <dt><math><mi>ψ</mi></math></dt><dd>太陽面の点で、視線と面の法線のなす角</dd>
@@ -291,10 +291,10 @@ const lens = (r2: string, k: string) => {
   <math display="block" set:html={`${of('ϑ', mi('r'))}<mo>=</mo><mi>arccos</mi>${AF}${sp}${fr(`<msup><mi>r</mi><mn>2</mn></msup><mo>+</mo><msup><mi>m</mi><mn>2</mn></msup><mo>−</mo>${Rm2}`, '<mn>2</mn><mi>r</mi><mi>m</mi>')}`} />
 </div>
 <p><math set:html={of('ϑ', mi('r'))} /> は、円がすっかり月に入れば <math><mi>π</mi></math>、月にかからなければ 0 です。周辺減光がない（<math><mi>α</mi><mo>=</mo><mn>0</mn></math>）とき、<math><mi>F</mi></math> は <math><mn>1</mn><mo>−</mo><mi>O</mi></math> です。太陽の中心が隠れたあとに残る細い三日月は縁の暗い所なので、<math><mi>F</mi></math> は <math><mn>1</mn><mo>−</mo><mi>O</mi></math> より小さくなります。</p>
-<p>積分は、縁からの深さ <math set:html={`<mn>1</mn><mo>−</mo><mi>r</mi><mo>/</mo>${Rs}`} /> を <math set:html={e10('6')} />〜1 の対数で 96 に刻んだ円環の和で求めます。縁の近くを細かく刻むので、ダイヤモンドリングの細い光も拾えます。</p>
+<p>積分は縁からの深さ <math set:html={`<mn>1</mn><mo>−</mo><mi>r</mi><mo>/</mo>${Rs}`} /> を <math set:html={e10('6')} />〜1 の対数で 96 に刻んだ円環の和で求めます。縁の近くを細かく刻むので、ダイヤモンドリングの細い光も拾えます。</p>
 
 <h3>空の明るさ</h3>
-<p>空の明るさ <math><mi>B</mi></math> は、食のない昼の空を 1 とした値です。昼の明るさ <math><mi>D</mi></math> は、太陽の高度で 0（夜）から 1（昼）まで変わります。</p>
+<p>空の明るさ <math><mi>B</mi></math> は食のない昼の空を 1 とした値です。昼の明るさ <math><mi>D</mi></math> は太陽の高度で 0（夜）から 1（昼）まで変わります。</p>
 <div class="eqs">
   <math display="block"><mi>B</mi><mo>=</mo><mi>F</mi><mi>D</mi><mspace width="1em"/><mtext>（部分食）</mtext></math>
   <math display="block" set:html={`<mi>B</mi><mo>=</mo>${e10('4')}<mspace width="1em"/><mtext>（皆既）</mtext>`} />
@@ -303,12 +303,12 @@ const lens = (r2: string, k: string) => {
   <li><b>部分食</b>: 昼の空に <math><mi>F</mi></math> を掛ける。天頂の明るさは月に隠された割合が 99.8 % になるまでその割合の一次関数になる、という観測のまとめ<Fragment set:html={rf(17)} />に沿った近似。照度の目安は食の前が約 100,000 lux、99 % 隠れて約 1,000 lux、皆既で約 5 lux<Fragment set:html={rf(18)} /></li>
   <li><b>皆既</b>: 天頂は昼の約 <math set:html={e10('4')} /> で、青い<Fragment set:html={rf(19, 20)} />。約 <math set:html={e10('3')} /> とする資料もある<Fragment set:html={rf(17)} />。地平線から高度 10° ほどまでは橙に光り、この色は地平線の全周に出る<Fragment set:html={rf(18, 20)} /></li>
 </ul>
-<p>広角の空は、目の順応を考えて、明るさの対数で塗ります。</p>
+<p>広角の空は目の順応を考えて、明るさの対数で塗ります。</p>
 
 <h3>太陽とコロナ</h3>
 <p>望遠の眺めは、<math><mi>F</mi></math> が <math set:html={`<mn>2</mn><mo>×</mo>${e10('3')}`} /> より大きい間は減光フィルター越しの太陽面だけを描き、それより暗くなると肉眼の眺めに切り替えます。肉眼の眺めには、コロナ・彩層・紅炎と、月の外に残った光球のぎらつきを描きます。</p>
 <h4>コロナの明るさ</h4>
-<p>コロナの動径方向の輝度は、Baumbach (1937) の式です。1905〜1929 年の 10 回の日食の測光を、すべての位置角で平均したものです<Fragment set:html={rf(21)} />。</p>
+<p>コロナの動径方向の輝度は Baumbach (1937) の式です。1905〜1929 年の 10 回の日食の測光を、すべての位置角で平均したものです<Fragment set:html={rf(21)} />。</p>
 <dl class="syms">
   <dt><math><mi>r</mi></math></dt><dd>太陽の中心からの距離。太陽の半径が単位</dd>
   <dt><math set:html={of('I', '<mn>0</mn>')} /></dt><dd>太陽面の中心の輝度</dd>
@@ -332,17 +332,17 @@ const lens = (r2: string, k: string) => {
   <math display="block" set:html={`<mi>K</mi><mo>=</mo><mn>73.6667</mn><mo>°</mo><mo>+</mo><mn>1.3958333</mn><mo>°</mo><mo>×</mo>${fr('<mtext>JD</mtext><mo>−</mo><mn>2396758</mn>', '<mn>36525</mn>')}`} />
 </div>
 <h4>彩層と紅炎</h4>
-<p>彩層は、Hα の光で赤〜ピンクに見える層です<Fragment set:html={rf(23)} />。太陽の縁の外の薄い層と、ところどころから立つ紅炎として描きます。月に隠れずに残る所だけが見えるので、主に C2 の直後と C3 の直前に、月の縁に沿って見えます。</p>
+<p>彩層は Hα の光で赤〜ピンクに見える層です<Fragment set:html={rf(23)} />。太陽の縁の外の薄い層と、ところどころから立つ紅炎として描きます。月に隠れずに残る所だけが見えるので、主に C2 の直後と C3 の直前に、月の縁に沿って見えます。</p>
 <h4>残った光球</h4>
 <p>月の外に残った光球のまわりには、ぎらつきを重ねます。大きさは <math><mi>F</mi></math> の対数で変え、残った光球が細い三日月や点になると、ダイヤモンドリングに見えます。</p>
 
 <h3>地図と宇宙から見た地球</h3>
-<p>地図と地球儀は、地表の各点に届く太陽の光の量で塗ります。点ごとに基準面の <math><mo stretchy="false">(</mo><mi>ξ</mi><mo>,</mo><mi>η</mi><mo>,</mo><mi>ζ</mi><mo stretchy="false">)</mo></math> を求めて <math><mi>F</mi></math> を引き、昼の明るさ <math><mi>D</mi></math> を掛けます。本影の黒、半影のぼかし、昼夜の境が同じ式から出ます。次の表示の式は、このツールで決めたものです。</p>
+<p>地図と地球儀は地表の各点に届く太陽の光の量で塗ります。点ごとに基準面の <math><mo stretchy="false">(</mo><mi>ξ</mi><mo>,</mo><mi>η</mi><mo>,</mo><mi>ζ</mi><mo stretchy="false">)</mo></math> を求めて <math><mi>F</mi></math> を引き、昼の明るさ <math><mi>D</mi></math> を掛けます。本影の黒、半影のぼかし、昼夜の境が同じ式から出ます。次の表示の式はこのツールで決めたものです。</p>
 <div class="eqs">
   <math display="block"><mtext>地図の明るさ</mtext><mo>=</mo><mn>0.16</mn><mo>+</mo><mn>0.84</mn><msqrt><mi>D</mi><mi>F</mi></msqrt></math>
   <math display="block" set:html={`<mtext>地球儀の明るさ</mtext><mo>=</mo><msup>${par(`<mi>D</mi>${par(`<mn>0.85</mn><mi>max</mi>${AF}<mo stretchy="false">(</mo><mn>0</mn><mo>,</mo>${cos(mi('χ'))}<mo stretchy="false">)</mo><mo>+</mo><mn>0.15</mn>`)}<mi>F</mi>`)}<mrow><mn>1</mn><mo>/</mo><mn>2.2</mn></mrow></msup>`} />
 </div>
-<p><math><mi>χ</mi></math> は、地表に太陽の光が入る角（天頂からの角）です。</p>
+<p><math><mi>χ</mi></math> は地表に太陽の光が入る角（天頂からの角）です。</p>
 <h4>早見表</h4>
 <p>画素ごとに <math><mi>F</mi></math> を積分すると重いので、時刻ごとに早見表を作ります。月と太陽の半径の比を <math><mi>ζ</mi><mo>=</mo><mn>0.5</mn></math> の値に固定し、影の軸からの距離を半影の半径で割った <math set:html={`<mi>m</mi><mo>/</mo>${L1}`} /> の関数として、<math><mi>F</mi></math> を 512 点で持ちます。画素ごとに積分した値との差は 0.01 より小さく、本影の縁は比の違いで数 km ずれることがあります。</p>
 <h4>投影</h4>
@@ -354,7 +354,7 @@ const lens = (r2: string, k: string) => {
 </ul>
 <h4>宇宙からの視点</h4>
 <ul class="tl">
-  <li><b>L1</b>: 地球から 235 地球半径。L1 の DSCOVR は、太陽と地球を結ぶ線から数度外れた軌道を回る<Fragment set:html={rf(26)} />。月が地球に重ならないよう、太陽の向きから北へ 8° ずらして見る</li>
+  <li><b>L1</b>: 地球から 235 地球半径。L1 の DSCOVR は太陽と地球を結ぶ線から数度外れた軌道を回る<Fragment set:html={rf(26)} />。月が地球に重ならないよう、太陽の向きから北へ 8° ずらして見る</li>
   <li><b>ひまわり</b>: 静止軌道（6.62 地球半径）の東経 140.7°</li>
   <li><b>月</b>: 影の軸の上、基準面から 60 地球半径の点</li>
 </ul>
@@ -366,7 +366,7 @@ const lens = (r2: string, k: string) => {
   <li>系列の番号は van den Bergh が付けたもの。日食では、昇交点の系列が奇数、降交点の系列が偶数<Fragment set:html={rf(27)} /></li>
   <li>正典に現れる系列の番号は −13〜190<Fragment set:html={rf(2)} /></li>
 </ul>
-<p>サロスの図は、系列のすべての回の中心線を Equal Earth の地図に重ね、選んだ回は皆既帯（金環帯）も描きます。</p>
+<p>サロスの図は系列のすべての回の中心線を Equal Earth の地図に重ね、選んだ回は皆既帯（金環帯）も描きます。</p>
 <h4>サロス番号と朔望月</h4>
 <p>朔望月の通し番号 <math><mi>N</mi></math>（NASA の Luna Num。2000 年 1 月 6 日の新月が 0）<Fragment set:html={rf(3)} />が 1 増えるごとに、サロス番号 <math><mi>S</mi></math> は 223 を法として 38 ずつ進みます。剰余を −13〜209 に寄せると、正典の 11,898 件すべての番号と一致します。このツールで導き、確かめた式です。</p>
 <div class="eqs">

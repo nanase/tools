@@ -820,7 +820,7 @@ Promise.all([
   .catch(() => {
     const m = $('#pm-msg');
     m.hidden = false;
-    m.textContent = '星の表を読み込めませんでした。';
+    m.textContent = '星の表を読み込めませんでした';
   })
   .finally(() => {
     busy.hidden = true;

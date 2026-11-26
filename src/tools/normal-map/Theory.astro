@@ -22,7 +22,7 @@ const tri = Math.round((2 * (HR - 1) ** 2) / 1e4);
 ---
 <h3>法線マップ</h3>
 <ul class="tl">
-  <li>光の当たり方は、面の向き（法線）で決まる<Fragment set:html={rf(1)} /></li>
+  <li>光の当たり方は面の向き（法線）で決まる<Fragment set:html={rf(1)} /></li>
   <li>法線マップ: 面の向きを画素ごとに色で記録した画像<Fragment set:html={rf(2) + rf(3)} />
     <ul class="tl">
       <li>光を計算するときだけ、面の向きの代わりに画像の向きを使う</li>
@@ -47,7 +47,7 @@ const tri = Math.round((2 * (HR - 1) ** 2) / 1e4);
   <math display="block" set:html={`${P('<mi>R</mi><mo>,</mo><mi>G</mi><mo>,</mo><mi>B</mi>')}<mo>=</mo><mn>255</mn><mo>×</mo>${frac(`${n}<mo>+</mo><mn>1</mn>`, '<mn>2</mn>')}`} />
 </div>
 <ul class="tl">
-  <li>向きの 3 成分（−1〜1）を、色の 3 成分（0〜255）に詰める
+  <li>向きの 3 成分（−1〜1）を色の 3 成分（0〜255）に詰める
     <ul class="tl">
       <li>R: 右向き、G: 画像の上向き、B: 板から外向き</li>
       <li>真上を向いた所は (128, 128, 255) で、法線マップが青紫に見えるのはこのため</li>
@@ -103,7 +103,7 @@ const tri = Math.round((2 * (HR - 1) ** 2) / 1e4);
   <math display="block" set:html={`${sub(n, '<mi>world</mi>')}<mo>=</mo>${sub('n', '<mi>x</mi>')}${t}<mo>+</mo>${sub('n', '<mi>y</mi>')}${b}<mo>+</mo>${sub('n', '<mi>z</mi>')}${n}`} />
 </div>
 <ul class="tl">
-  <li>法線マップの向きは、面に沿った座標（接空間）で記録する<Fragment set:html={rf(4) + rf(5)} />
+  <li>法線マップの向きは面に沿った座標（接空間）で記録する<Fragment set:html={rf(4) + rf(5)} />
     <ul class="tl">
       <li><math set:html={t} />: 画像の右の向き（接線）、<math set:html={b} />: 画像の上の向き（従法線）、<math set:html={n} />: 面の向き</li>
       <li>曲がった面でも、同じ画像を貼れば面に沿って凹凸が付く</li>
@@ -137,7 +137,7 @@ const tri = Math.round((2 * (HR - 1) ** 2) / 1e4);
 <ul class="tl">
   <li>板の幅は 2、凹凸の高さが 1 倍のとき山の高さは 0.08（幅の 4 %）</li>
   <li>高さの画像は {HR} × {HR} の半精度、法線マップは各色 8 ビット</li>
-  <li>凹凸の高さの倍率は、法線マップの R・G の成分に掛けて長さを 1 に直す（画像は作り直さない）</li>
+  <li>凹凸の高さの倍率は法線マップの R・G の成分に掛けて長さを 1 に直す（画像は作り直さない）</li>
   <li>本物の凹凸は三角形を並べずに、画素ごとに光線で高さの面をたどって描く
     <ul class="tl">
       <li>光線を 200 歩で進め、面の下に入ったら 8 回の二分法で当たった所を詰める</li>

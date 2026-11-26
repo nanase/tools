@@ -8,7 +8,7 @@ const rf = (...n: number[]) => n.map((i) => `<a class="rf" href="#thy-r${i}">[${
   <math display="block"><mrow><mi mathvariant="bold">f</mi><mo>=</mo><mi>G</mi><mi>M</mi><mrow><mo>(</mo><mfrac><mrow><mi mathvariant="bold">d</mi><mo>−</mo><mi mathvariant="bold">r</mi></mrow><msup><mrow><mo>|</mo><mi mathvariant="bold">d</mi><mo>−</mo><mi mathvariant="bold">r</mi><mo>|</mo></mrow><mn>3</mn></msup></mfrac><mo>−</mo><mfrac><mi mathvariant="bold">d</mi><msup><mi>d</mi><mn>3</mn></msup></mfrac><mo>)</mo></mrow><mspace width="1.2em"/><mo>≈</mo><mfrac><mrow><mi>G</mi><mi>M</mi></mrow><msup><mi>d</mi><mn>3</mn></msup></mfrac><mrow><mo>(</mo><mn>3</mn><mo stretchy="false">(</mo><mi mathvariant="bold">r</mi><mo>·</mo><mi mathvariant="bold">n</mi><mo stretchy="false">)</mo><mi mathvariant="bold">n</mi><mo>−</mo><mi mathvariant="bold">r</mi><mo>)</mo></mrow></mrow></math>
 </div>
 <p>記号: <math><mi mathvariant="bold">r</mi></math> は地球の中心から海の地点への位置、<math><mi mathvariant="bold">d</mi></math> は地球の中心から月への位置（長さ <math><mi>d</mi></math>、向き <math><mi mathvariant="bold">n</mi></math>）、<math><mi>M</mi></math> は月の質量、<math><mi>G</mi></math> は万有引力定数です。</p>
-<p>右の近似は <math><mi>r</mi><mo>≪</mo><mi>d</mi></math> のときの形です。月の側と裏側では外向き、横では内向きになり、海は月の側と反対側の 2 か所に寄ります。力は距離の 3 乗に反比例するので、月を近づけると急に強くなります。図の矢印は、月の側を近似ではなく差のまま計算しています。太陽は遠いので近似の形で足します。</p>
+<p>右の近似は <math><mi>r</mi><mo>≪</mo><mi>d</mi></math> のときの形です。月の側と裏側では外向き、横では内向きになり、海は月の側と反対側の 2 か所に寄ります。力は距離の 3 乗に反比例するので、月を近づけると急に強くなります。図の矢印は月の側を近似ではなく差のまま計算しています。太陽は遠いので近似の形で足します。</p>
 
 <h3>平衡潮</h3>
 <p>海が潮汐力と釣り合った形になったときの海面の高さを平衡潮といいます。天頂角 <math><mi>z</mi></math>（その地点の真上から天体までの角度）だけで決まります<Fragment set:html={rf(3)} />。</p>
@@ -17,14 +17,14 @@ const rf = (...n: number[]) => n.map((i) => `<a class="rf" href="#thy-r${i}">[${
   <math display="block"><mrow><msub><mi>K</mi><mtext>月</mtext></msub><mo>=</mo><mn>53.5</mn><mspace width="0.2em"/><mtext>cm</mtext><mspace width="1.2em"/><msub><mi>K</mi><mtext>太陽</mtext></msub><mo>=</mo><mn>24.6</mn><mspace width="0.2em"/><mtext>cm</mtext></mrow></math>
 </div>
 <p>記号: <math><mi>E</mi></math> は地球の質量、<math><mi>a</mi></math> は地球の半径です。<math><mi>K</mi></math> は係数 <math><mfrac><mn>3</mn><mn>2</mn></mfrac><mfrac><mi>M</mi><mi>E</mi></mfrac><mfrac><msup><mi>a</mi><mn>4</mn></msup><msup><mi>d</mi><mn>3</mn></msup></mfrac></math> を、月は平均距離 384,400 km、太陽は 1 au で数えた値です。実際の距離ではこれに <math><msup><mrow><mo stretchy="false">(</mo><msub><mi>d</mi><mn>0</mn></msub><mo>/</mo><mi>d</mi><mo stretchy="false">)</mo></mrow><mn>3</mn></msup></math> を掛けます。</p>
-<p>港の潮位は、月の分と太陽の分の平衡潮を足した値です。赤道の東経 135° に港を置きます。地球が 1 日に 1 回転するので、港は 2 つの膨らみの下を通り、満潮と干潮が 1 日に 2 回ずつ来ます。月は 1 日に約 50 分ずつ東へ進むので、満潮も毎日約 50 分ずつ遅れます。</p>
+<p>港の潮位は月の分と太陽の分の平衡潮を足した値です。赤道の東経 135° に港を置きます。地球が 1 日に 1 回転するので、港は 2 つの膨らみの下を通り、満潮と干潮が 1 日に 2 回ずつ来ます。月は 1 日に約 50 分ずつ東へ進むので、満潮も毎日約 50 分ずつ遅れます。</p>
 
 <h3>大潮と小潮</h3>
 <p>太陽の分は月の分の約 0.46 倍です。新月と満月のころは月と太陽が地球から見て同じ向きか反対の向きに並び、2 つの膨らみが重なって干満の差が大きくなります（大潮）。上弦と下弦のころは膨らみが直角にずれて打ち消し合い、差が小さくなります（小潮）<Fragment set:html={rf(4)} />。平衡潮では大潮の干満の差は小潮の約 2.7 倍です。</p>
 <p>実際の海では、大潮は新月や満月の瞬間より遅れて来ます。日本付近では 1〜2 日ほど後で、この遅れを潮齢といいます<Fragment set:html={rf(5)} />。このページの港は平衡潮なので遅れません。</p>
 
 <h3>潮回り</h3>
-<p>潮回り（大潮・中潮・小潮・長潮・若潮）は、旧暦の日付で決まる慣例の呼び名です。旧暦の日付は、朔（新月）を含む日を 1 日として日本時間で数えます。このページは、潮見表で広く使われる次の割り当てを使います。</p>
+<p>潮回り（大潮・中潮・小潮・長潮・若潮）は、旧暦の日付で決まる慣例の呼び名です。旧暦の日付は朔（新月）を含む日を 1 日として日本時間で数えます。このページは潮見表で広く使われる次の割り当てを使います。</p>
 <div class="tt-w"><table class="tt">
   <thead><tr><th>潮回り</th><th>旧暦の日</th></tr></thead>
   <tbody>
@@ -38,7 +38,7 @@ const rf = (...n: number[]) => n.map((i) => `<a class="rf" href="#thy-r${i}">[${
 <p>気象庁は大潮を「朔及び望の頃、満潮と干潮の潮位の差が大きくなった状態」、小潮を「上弦の月及び下弦の月の頃、満潮と干潮の潮位の差が小さくなった状態」と定めています。月齢は朔の時刻から各日の正午までの日数です<Fragment set:html={rf(4)} />。</p>
 
 <h3>図の海</h3>
-<p>図の海は、赤道を一周する浅い水の層として計算します。流れ <math><mi>u</mi></math> と海面の高さ <math><mi>η</mi></math> を 240 区画で解きます<Fragment set:html={rf(3)} />。</p>
+<p>図の海は赤道を一周する浅い水の層として計算します。流れ <math><mi>u</mi></math> と海面の高さ <math><mi>η</mi></math> を 240 区画で解きます<Fragment set:html={rf(3)} />。</p>
 <div class="eqs">
   <math display="block"><mrow><mfrac><mrow><mo>∂</mo><mi>u</mi></mrow><mrow><mo>∂</mo><mi>t</mi></mrow></mfrac><mo>=</mo><mo>−</mo><mi>g</mi><mfrac><mrow><mo>∂</mo><mi>η</mi></mrow><mrow><mo>∂</mo><mi>x</mi></mrow></mfrac><mo>+</mo><mi>F</mi><mo>−</mo><mi>r</mi><mi>u</mi><mspace width="1.2em"/><mfrac><mrow><mo>∂</mo><mi>η</mi></mrow><mrow><mo>∂</mo><mi>t</mi></mrow></mfrac><mo>=</mo><mo>−</mo><mi>H</mi><mfrac><mrow><mo>∂</mo><mi>u</mi></mrow><mrow><mo>∂</mo><mi>x</mi></mrow></mfrac></mrow></math>
 </div>
@@ -61,7 +61,7 @@ const rf = (...n: number[]) => n.map((i) => `<a class="rf" href="#thy-r${i}">[${
 <ul class="tl">
   <li>港は赤道の東経 135° に置く。地方時が日本時間と同じになる</li>
   <li>港の潮位は平衡潮のまま。地形・水深・地球の変形（ラブ数）は入れない</li>
-  <li>潮回りの割り当ては、潮見表で広く使われるもの。気象庁が定めた区切りではない</li>
+  <li>潮回りの割り当ては潮見表で広く使われるもの。気象庁が定めた区切りではない</li>
   <li>図の海は自転を入れず、月と太陽の向きに対して解く。単位は地球の周を 2π、波の速さを 1 とし、流れを弱める係数は 0.25</li>
   <li>図の月の距離は地球の半径の 4 倍に縮め、潮汐力は 4 倍の距離で月の分の振幅を 0.3 とした値に合わせる。月だけの図で月を動かすと、距離の 3 乗に反比例して強くなる</li>
   <li>海の膨らみの高さは誇張して描く。引き潮の所でも海面が陸より上に残るよう、倍率を抑える</li>

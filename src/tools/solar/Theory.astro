@@ -18,7 +18,7 @@ const deg = '<mo>°</mo>';
 </ol>
 
 <h3>惑星の位置</h3>
-<p>惑星と地球の日心位置は VSOP87D の級数で求めます<Fragment set:html={rf(2)} />。木星・土星・地球は木星・土星のページと同じ表です。ほかの 5 惑星は、振幅 × 0.1<sup><i>p</i></sup> が 3 × 10<sup>−7</sup> 以上の項だけを残しました（<i>p</i> は時間のべき）。</p>
+<p>惑星と地球の日心位置は VSOP87D の級数で求めます<Fragment set:html={rf(2)} />。木星・土星・地球は木星・土星のページと同じ表です。ほかの 5 惑星は振幅 × 0.1<sup><i>p</i></sup> が 3 × 10<sup>−7</sup> 以上の項だけを残しました（<i>p</i> は時間のべき）。</p>
 <div class="tt-w"><table class="tt">
   <thead><tr><th>惑星</th><th>残した項</th><th>地心の向きの差の最大</th></tr></thead>
   <tbody>
@@ -56,7 +56,7 @@ const deg = '<mo>°</mo>';
 <div class="eqs">
   <math display="block" set:html={`<mi>cos</mi>${sp}<mi>E</mi><mo>=</mo>${frac(`${sq('<mi>R</mi>')}<mo>+</mo>${sq('<mi>Δ</mi>')}<mo>−</mo>${sq('<mi>r</mi>')}`, `<mn>2</mn><mi>R</mi><mi>Δ</mi>`)}`} />
 </div>
-<p>太陽より東にある惑星は日の入りの後の西の空に、西にある惑星は日の出の前の東の空に見えます。札は次の境で分けます。</p>
+<p>太陽より東にある惑星は日の入りの後の西の空に、西にある惑星は日の出の前の東の空に見えます。見え方は次の境で分けます。</p>
 <ul class="tl">
   <li>見えない: <math><mi>E</mi><mo>&lt;</mo><mn>15</mn>{deg}</math>（太陽の光に紛れる）</li>
   <li>一晩中: <math><mi>E</mi><mo>&gt;</mo><mn>120</mn>{deg}</math>（日の入りの頃に昇り、日の出の頃に沈む）</li>

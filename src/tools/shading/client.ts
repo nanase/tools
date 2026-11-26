@@ -161,7 +161,7 @@ let R: ShadeRenderer | null = null;
 try {
   R = new ShadeRenderer(glCanvas);
 } catch {
-  msg.textContent = 'このブラウザでは WebGL2 が使えないため、球を描けません。';
+  msg.textContent = 'このブラウザでは WebGL2 が使えないため、球を描けません';
   msg.hidden = false;
 }
 let luts: LutSet = buildLuts(true, true);

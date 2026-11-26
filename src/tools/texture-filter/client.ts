@@ -77,7 +77,7 @@ let R: DriveView | null = null,
   roadLevels: Uint8ClampedArray[] = [];
 function noGl(): void {
   busy.hidden = true;
-  msg.textContent = 'このブラウザでは WebGL2 が使えないため、映像を描けません。';
+  msg.textContent = 'このブラウザでは WebGL2 が使えないため、映像を描けません';
   msg.hidden = false;
 }
 try {
