@@ -7,10 +7,10 @@
   <math display="block"><msup><mi>n</mi><mo>′</mo></msup><mo stretchy="false">(</mo><mi>τ</mi><mo stretchy="false">)</mo><mo>=</mo><mfrac><mrow><mn>2</mn><msup><mi>r</mi><mo>′</mo></msup><mo stretchy="false">(</mo><mi>τ</mi><mo stretchy="false">)</mo></mrow><mrow><msup><mi>m</mi><mo>′</mo></msup><mo stretchy="false">(</mo><mi>τ</mi><mo stretchy="false">)</mo></mrow></mfrac><mo>,</mo><mspace width="1em"/><msup><mi>r</mi><mo>′</mo></msup><mo stretchy="false">(</mo><mi>τ</mi><mo stretchy="false">)</mo><mo>=</mo><munderover><mo>∑</mo><mrow><mi>j</mi><mo>=</mo><mn>0</mn></mrow><mrow><mi>W</mi><mo>−</mo><mn>1</mn><mo>−</mo><mi>τ</mi></mrow></munderover><msub><mi>x</mi><mi>j</mi></msub><msub><mi>x</mi><mrow><mi>j</mi><mo>+</mo><mi>τ</mi></mrow></msub><mo>,</mo><mspace width="1em"/><msup><mi>m</mi><mo>′</mo></msup><mo stretchy="false">(</mo><mi>τ</mi><mo stretchy="false">)</mo><mo>=</mo><munderover><mo>∑</mo><mrow><mi>j</mi><mo>=</mo><mn>0</mn></mrow><mrow><mi>W</mi><mo>−</mo><mn>1</mn><mo>−</mo><mi>τ</mi></mrow></munderover><mrow><mo stretchy="false">(</mo><msubsup><mi>x</mi><mi>j</mi><mn>2</mn></msubsup><mo>+</mo><msubsup><mi>x</mi><mrow><mi>j</mi><mo>+</mo><mi>τ</mi></mrow><mn>2</mn></msubsup><mo stretchy="false">)</mo></mrow></math>
 </div>
 <ul class="tl">
-  <li><b>自己相関</b>: <math><msup><mi>r</mi><mo>′</mo></msup></math> は、0 を詰めて 2 倍以上の長さにした FFT で <math><msup><mrow><mo stretchy="false">|</mo><mi>X</mi><mo stretchy="false">|</mo></mrow><mn>2</mn></msup></math> を求め、もう一度 FFT して得る。<math><msup><mi>m</mi><mo>′</mo></msup></math> は <math><mi>τ</mi></math> を 1 つ進めるごとに 2 項を引く</li>
+  <li><b>自己相関</b>: <math><msup><mi>r</mi><mo>′</mo></msup></math> は 0 を詰めて 2 倍以上の長さにした FFT で <math><msup><mrow><mo stretchy="false">|</mo><mi>X</mi><mo stretchy="false">|</mo></mrow><mn>2</mn></msup></math> を求め、もう一度 FFT して得る。<math><msup><mi>m</mi><mo>′</mo></msup></math> は <math><mi>τ</mi></math> を 1 つ進めるごとに 2 項を引く</li>
   <li><b>周期の山</b>: <math><mi>τ</mi><mo>=</mo><mn>0</mn></math> の山を越えてから、正の山ごとの最大を集め、いちばん高いものの 0.9 倍を超える最初の山を周期とする。山の位置と高さは放物線で補う</li>
   <li><b>明瞭度</b>: 選んだ山の高さ。周期がはっきりしているほど 1 に近い。0.9 を下回る間は音高を出さない</li>
-  <li><b>窓の長さ</b>: 2048 点から試し、見つけた音の 4 周期が入っていればそこで決める。入らなければ窓を倍にする（上限は探す最低音の 2.5 周期が入る 2 の累乗）。周期を決めるには、最も長い周期の 2 倍の信号が要る<a class="rf" href="#thy-r2">[2]</a></li>
+  <li><b>窓の長さ</b>: 2048 点から試し、見つけた音の 4 周期が入っていればそこで決める。入らなければ窓を倍にする（上限は探す最低音の 2.5 周期が入る 2 の累乗）。周期を決めるには最も長い周期の 2 倍の信号が要る<a class="rf" href="#thy-r2">[2]</a></li>
   <li><b>短い窓でよい理由</b>: 周波数の標準偏差の下限は、窓の長さの 3/2 乗に反比例する<a class="rf" href="#thy-r3">[3]</a>。MPM は周期（オクターブ）を決めるだけで、精度は次の「周波数を詰める」窓で出すので、高い音ほど早く読み値が出る</li>
 </ul>
 
@@ -70,7 +70,7 @@
 
 <h3>12 音のストロボ</h3>
 <p>機械式のストロボチューナー（Conn の Stroboconn、1936 年）は、半音ごとに 1 枚、計 12 枚の円盤を基準の速さで回し、入力の音で点滅するランプで照らします。円盤には明暗の帯が同心円に並び、外側の帯ほど区画が 2 倍になって、1 枚で何オクターブも受け持ちます。鳴っている音の円盤だけが止まって見え、ずれていればその向きにゆっくり回ります<a class="rf" href="#thy-r15">[15]</a>。</p>
-<p>このツールは、窓 <math><mi>p</mi></math>（C〜B）の帯 <math><mi>o</mi></math>（下から 2〜5 オクターブ）ごとに基準の周波数 <math><msub><mi>f</mi><mi>b</mi></msub></math> を決め、入力をその周波数で直交復調します。低域通過した複素振幅 <math><msub><mi>z</mi><mi>b</mi></msub></math> の角度が縞の位置、大きさが縞の濃さです。機械式のランプと円盤と同じく、基準に対する入力の位相をそのまま見せるので、音高の推定を待たずに写り、和音なら鳴っている音の窓がそれぞれ止まります。電子式のチューナーでも、直交する基準と入力の位相を比べる方法が古くから使われています<a class="rf" href="#thy-r16">[16]</a><a class="rf" href="#thy-r17">[17]</a>。</p>
+<p>このツールは窓 <math><mi>p</mi></math>（C〜B）の帯 <math><mi>o</mi></math>（下から 2〜5 オクターブ）ごとに基準の周波数 <math><msub><mi>f</mi><mi>b</mi></msub></math> を決め、入力をその周波数で直交復調します。低域通過した複素振幅 <math><msub><mi>z</mi><mi>b</mi></msub></math> の角度が縞の位置、大きさが縞の濃さです。機械式のランプと円盤と同じく、基準に対する入力の位相をそのまま見せるので、音高の推定を待たずに写り、和音なら鳴っている音の窓がそれぞれ止まります。電子式のチューナーでも、直交する基準と入力の位相を比べる方法が古くから使われています<a class="rf" href="#thy-r16">[16]</a><a class="rf" href="#thy-r17">[17]</a>。</p>
 <div class="eqs">
   <math display="block"><msub><mi>f</mi><mi>b</mi></msub><mo>=</mo><msub><mi>f</mi><mtext>A4</mtext></msub><mspace width="0.1em"/><msup><mn>2</mn><mrow><mo stretchy="false">(</mo><mn>12</mn><mo stretchy="false">(</mo><mi>o</mi><mo>+</mo><mn>3</mn><mo stretchy="false">)</mo><mo>+</mo><mi>p</mi><mo>−</mo><mn>69</mn><mo stretchy="false">)</mo><mo>/</mo><mn>12</mn><mo>+</mo><msub><mi>d</mi><mi>p</mi></msub><mo>/</mo><mn>1200</mn></mrow></msup><mo>,</mo><mspace width="1em"/><msub><mi>z</mi><mi>b</mi></msub><mo stretchy="false">[</mo><mi>n</mi><mo stretchy="false">]</mo><mo>=</mo><mi>H</mi><mo maxsize="1.2em">{</mo><mi>x</mi><mo stretchy="false">[</mo><mi>n</mi><mo stretchy="false">]</mo><mspace width="0.1em"/><msup><mi>e</mi><mrow><mo>−</mo><mi>j</mi><mn>2</mn><mi>π</mi><msub><mi>f</mi><mi>b</mi></msub><mi>n</mi><mo>/</mo><msub><mi>f</mi><mi mathvariant="normal">s</mi></msub></mrow></msup><mo maxsize="1.2em">}</mo></math>
   <math display="block"><msub><mi>φ</mi><mi>b</mi></msub><mo>=</mo><mfrac><mrow><mi>arg</mi><mo>&#x2061;</mo><msub><mi>z</mi><mi>b</mi></msub></mrow><mrow><mn>2</mn><mi>π</mi></mrow></mfrac><mspace width="0.4em"/><mtext>（縞 1 本 = 1 周）</mtext><mo>,</mo><mspace width="1em"/><msub><mi>q</mi><mi>b</mi></msub><mo>=</mo><mfrac><mrow><mo stretchy="false">|</mo><msub><mi>z</mi><mi>b</mi></msub><mo stretchy="false">|</mo></mrow><msqrt><mrow><mi>H</mi><mo stretchy="false">{</mo><msup><mi>x</mi><mn>2</mn></msup><mo stretchy="false">}</mo><mo>/</mo><mn>2</mn></mrow></msqrt></mfrac></math>
@@ -88,8 +88,8 @@
 
 <h3>マイクとブラウザ</h3>
 <ul class="tl">
-  <li><b>マイクの処理</b>: エコー除去・雑音抑圧・自動ゲインは、どれも音高や音量を変えるので切るよう頼む。指定は努力目標で、Safari は雑音抑圧と自動ゲインの指定に対応していない<a class="rf" href="#thy-r18">[18]</a>。Safari ではエコー除去を切ると自動ゲインも切れる<a class="rf" href="#thy-r19">[19]</a>。実際に効いた設定は入力の枠に出す</li>
-  <li><b>低い音</b>: iOS 端末の内蔵マイクは、約 250 Hz から 24 dB/oct で低域を削るという報告がある<a class="rf" href="#thy-r20">[20]</a>。ベースやチェロの開放弦の基音はほとんど届かないので、周期と第 2・第 3 部分音から求める</li>
+  <li><b>マイクの処理</b>: エコー除去・雑音抑圧・自動ゲインはどれも音高や音量を変えるので切るよう頼む。指定は努力目標で、Safari は雑音抑圧と自動ゲインの指定に対応していない<a class="rf" href="#thy-r18">[18]</a>。Safari ではエコー除去を切ると自動ゲインも切れる<a class="rf" href="#thy-r19">[19]</a>。実際に効いた設定は入力の枠に出す</li>
+  <li><b>低い音</b>: iOS 端末の内蔵マイクは約 250 Hz から 24 dB/oct で低域を削るという報告がある<a class="rf" href="#thy-r20">[20]</a>。ベースやチェロの開放弦の基音はほとんど届かないので、周期と第 2・第 3 部分音から求める</li>
 </ul>
 
 <h3>出典</h3>

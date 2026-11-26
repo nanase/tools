@@ -113,7 +113,7 @@ export const DIST: ParamDef = lin({
   nm: 'r',
   sym: '<i>r</i>',
   name: '聴く位置',
-  sub: '楽器から聴く人までの距離（遠いほど部屋の響きが大）',
+  sub: '楽器から聴く人までの距離（遠いほど部屋の響きが大きい）',
   unit: 'm',
   min: 1,
   max: 30,
