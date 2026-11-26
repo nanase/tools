@@ -145,7 +145,7 @@ async function loadFile(f: File): Promise<void> {
     if (mk$.value !== 'image') mk$.set('image');
     schedule();
   } catch {
-    txt('#mf-m', '画像を読めませんでした。PNG・JPEG・WebP・GIF などを選んでください。');
+    txt('#mf-m', '画像を読めませんでした。PNG・JPEG・WebP・GIF などを選んでください');
   }
 }
 /** 保存した画像を戻す */
@@ -244,7 +244,7 @@ async function loadSrcFile(f: File): Promise<void> {
       setSrc('image');
     } else schedule();
   } catch {
-    txt('#src-m', '画像を読めませんでした。PNG・JPEG・WebP・GIF などを選んでください。');
+    txt('#src-m', '画像を読めませんでした。PNG・JPEG・WebP・GIF などを選んでください');
   }
 }
 /** 保存した光源の画像を戻す */
@@ -1321,10 +1321,10 @@ function results(meas: number | null, Y: Float64Array | null, n: number): void {
     miniX = '';
   const where = (z: number) =>
     Math.abs(z) <= c.cfz
-      ? '臨界焦点範囲の中。ピントは合っています。'
+      ? '臨界焦点範囲の中。ピントは合っています'
       : z > 0
-        ? `臨界焦点範囲の外。センサが焦点より奥にあります。${Math.round(Math.abs(z))} µm 手前へ送ってください。`
-        : `臨界焦点範囲の外。センサが焦点より手前にあります。${Math.round(Math.abs(z))} µm 奥へ送ってください。`;
+        ? `臨界焦点範囲の外。センサが焦点より奥にあります。${Math.round(Math.abs(z))} µm 手前へ送ってください`
+        : `臨界焦点範囲の外。センサが焦点より手前にあります。${Math.round(Math.abs(z))} µm 奥へ送ってください`;
   switch (c.kind) {
     case 'bahtinov': {
       const est = meas != null && g ? meas / g : null;
@@ -1346,7 +1346,7 @@ function results(meas: number | null, Y: Float64Array | null, n: number): void {
     case 'tri':
       mt = '3 組の光条のずれ（幾何光学）';
       mv = rv(r.map((v) => sg3(v)).join(' / '), 'µm');
-      ms = `3 組の差 ${(Math.max(...r) - Math.min(...r)).toFixed(2)} µm。光軸が合っていればそろいます。`;
+      ms = `3 組の差 ${(Math.max(...r) - Math.min(...r)).toFixed(2)} µm。光軸が合っていればそろいます`;
       et = '光条のずれ（扇 1）';
       ev = rv(sg3(r[0] / pitch), 'px');
       es = `${sg3(r[0])} µm`;
@@ -1355,7 +1355,7 @@ function results(meas: number | null, Y: Float64Array | null, n: number): void {
     case 'carey':
       mt = '2 つの X の間隔（幾何光学）';
       mv = rv(sg3(r[0]), 'µm');
-      ms = '2 つの X が重なるとピントが合います。';
+      ms = '2 つの X が重なるとピントが合います';
       et = '2 つの X の間隔';
       ev = rv(sg3(r[0] / pitch), 'px');
       es = `${sg3(r[0])} µm`;
@@ -1374,7 +1374,7 @@ function results(meas: number | null, Y: Float64Array | null, n: number): void {
     default:
       mt = '星像の大きさ HFD';
       mv = rv(sig(hfdNow, 3, true), 'µm');
-      ms = 'マスクなしではピントの手前と奥を区別できません。';
+      ms = 'マスクなしではピントの手前と奥を区別できません';
       et = '星像の大きさ HFD';
       ev = rv(sig(hfdNow / pitch, 3, true), 'px');
       es = `${sig(hfdNow, 3, true)} µm`;
@@ -1392,7 +1392,7 @@ function results(meas: number | null, Y: Float64Array | null, n: number): void {
     txt('#o-ss', '読み値 1 画素あたりのピントのずれ');
   } else {
     html('#o-sv', DASH);
-    txt('#o-ss', 'マスクなしでは読み値がありません。');
+    txt('#o-ss', 'マスクなしでは読み値がありません');
   }
   html('#o-hfd', rv(sig(hfdNow, 3, true), 'µm'));
   const grating = c.kind === 'bahtinov' || c.kind === 'tri' || c.kind === 'carey',
@@ -1404,9 +1404,9 @@ function results(meas: number | null, Y: Float64Array | null, n: number): void {
     txt('#o-pers', `f ÷ ${sig(B, 3)}（口径に ${Math.round(c.D / (c.f / B))} 本）`);
   } else {
     html('#o-ord', DASH);
-    txt('#o-ords', '格子がありません。');
+    txt('#o-ords', '格子がありません');
     html('#o-per', DASH);
-    txt('#o-pers', '格子がありません。');
+    txt('#o-pers', '格子がありません');
   }
   txt('#mZ', `${sgn(dz)} µm`);
   txt('#mE', miniE || DASH);

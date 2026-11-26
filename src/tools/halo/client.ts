@@ -235,8 +235,8 @@ function noGl(e: unknown): void {
   msg.hidden = false;
   msg.textContent =
     String(e).includes('float') || String(e).includes('webgl2')
-      ? 'このブラウザでは WebGL2（浮動小数点の描画）が使えないため、空を描けません。光路の図と計算結果は使えます。'
-      : `空を描く準備ができませんでした（${String(e).slice(0, 120)}）。`;
+      ? 'このブラウザでは WebGL2（浮動小数点の描画）が使えないため、空を描けません。光路の図と計算結果は使えます'
+      : `空を描く準備ができませんでした（${String(e).slice(0, 120)}）`;
   hv.classList.add('nogl');
 }
 try {
@@ -251,7 +251,7 @@ try {
 canvas.addEventListener('webglcontextlost', (e) => {
   e.preventDefault();
   msg.hidden = false;
-  msg.textContent = 'GPU の描画が止まりました。ページを読み込み直してください。';
+  msg.textContent = 'GPU の描画が止まりました。ページを読み込み直してください';
 });
 
 /** 視線のずらし（ドラッグ）[°] */
@@ -522,7 +522,7 @@ function drawFigure(): void {
     xs.innerHTML = '';
     xs.style.visibility = 'hidden';
     xn.hidden = false;
-    xn.textContent = none ?? `この高度では${name}へ向かう光線を見つけられませんでした。`;
+    xn.textContent = none ?? `この高度では${name}へ向かう光線を見つけられませんでした`;
     txt('#ray-path', '');
     $('#xcap').style.visibility = 'hidden';
     txt('#fs-cap', name);

@@ -111,7 +111,7 @@ const name = 'フォーカシングマスク';
           <ChoiceRow k="mk" name="マスクの種類" choices={MASKS} value="bahtinov" layout="chips" msg />
           <ParamRow d={THR} />
           <ChoiceRow k="ic" name="光を通す色" sub="画像の白い所と黒い所の、どちらを穴（光を通す所）にするか" choices={[['white', '白'], ['black', '黒']]} value="white" />
-          <ChoiceRow k="im" name="開口" sub="円の中だけは、鏡筒の円い口の中に画像を重ねる。画像のままは、画像の正方形をそのまま開口にする（鏡筒の口・中央遮蔽・スパイダーを使わない）" choices={[['circle', '円の中だけ'], ['whole', '画像のまま']]} value="circle" />
+          <ChoiceRow k="im" name="開口" sub="「円の中だけ」は鏡筒の円い口の中に画像を重ねる。「画像のまま」は画像の正方形をそのまま開口にする（鏡筒の口・中央遮蔽・スパイダーを使わない）" choices={[['circle', '円の中だけ'], ['whole', '画像のまま']]} value="circle" />
           <ParamRow d={TH} />
           <ParamRow d={BF} />
           <ParamRow d={ROT} />
@@ -171,7 +171,7 @@ const name = 'フォーカシングマスク';
 
     <Panel hid="hd-out" title="計算結果" class="a-out">
       <dl class="metrics c3">
-        <div class="m m-main"><dt id="o-mt"></dt><dd><span id="o-mv"></span><span class="m-sub hh" id="o-ms" data-ph="臨界焦点範囲の外。センサが焦点より手前にあります。0000 µm 奥へ送ってください。"></span></dd></div>
+        <div class="m m-main"><dt id="o-mt"></dt><dd><span id="o-mv"></span><span class="m-sub hh" id="o-ms" data-ph="臨界焦点範囲の外。センサが焦点より手前にあります。0000 µm 奥へ送ってください"></span></dd></div>
         <div class="m"><dt id="o-et"></dt><dd><span id="o-ev"></span><span class="m-sub" id="o-es"></span></dd></div>
         <div class="m"><dt>臨界焦点範囲</dt><dd><span id="o-cfz"></span><span class="m-sub static">±2λN²（λ = 550 nm、レイリーの基準）</span></dd></div>
         <div class="m"><dt id="o-st"></dt><dd><span id="o-sv"></span><span class="m-sub" id="o-ss"></span></dd></div>

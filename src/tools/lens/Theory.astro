@@ -14,7 +14,7 @@ const alb = (a: string, r: string) => `<math><mn>${a}</mn><mo>÷</mo><msup><mn>$
   <li><b>物体の側へ出る</b></li>
   <li><b>3D の被写体</b><span>当たった所の明るさを足し合わせる</span></li>
 </ol>
-<p>射出瞳は、絞りを後ろのレンズ越しに見た像です。</p>
+<p>射出瞳は絞りを後ろのレンズ越しに見た像です。</p>
 <h4>各面での計算</h4>
 <p>各面では球面との交点を求め、交点でスネルの法則に従って屈折させます<Fragment set:html={rf(2)} />。有効径の外や絞りの羽根の外に当たった光線は捨てます（けられ）。</p>
 <dl class="syms">
@@ -60,7 +60,7 @@ const alb = (a: string, r: string) => `<math><mn>${a}</mn><mo>÷</mo><msup><mn>$
   <math display="block"><mi>E</mi><mo>=</mo><mo>∫</mo><mi>L</mi><mi>cos</mi><mo>⁡</mo><mi>θ</mi><mspace width="0.17em"/><mi>d</mi><mi>ω</mi><mo>=</mo><mfrac><mn>1</mn><msup><mi>d</mi><mn>2</mn></msup></mfrac><mo>∫</mo><mi>L</mi><msup><mi>cos</mi><mn>4</mn></msup><mi>θ</mi><mspace width="0.17em"/><mi>d</mi><mi>A</mi></math>
   <math display="block"><mfrac><mi>E</mi><msub><mi>E</mi><mn>0</mn></msub></mfrac><mo>=</mo><mfrac><mn>1</mn><mrow><mi>π</mi><msup><msup><mi>r</mi><mo>′</mo></msup><mn>2</mn></msup></mrow></mfrac><mo>∫</mo><mfrac><mi>L</mi><msub><mi>L</mi><mn>0</mn></msub></mfrac><msup><mi>cos</mi><mn>4</mn></msup><mi>θ</mi><mspace width="0.17em"/><mi>d</mi><mi>A</mi></math>
 </div>
-<p>どの光線が通るかを決めるため、センサの点ごとに、瞳の面のどこまでを調べればよいかの範囲を前もって実光線で求めておきます。点は、その長方形の中に置きます。</p>
+<p>どの光線が通るかを決めるため、センサの点ごとに、瞳の面のどこまでを調べればよいかの範囲を前もって実光線で求めておきます。点はその長方形の中に置きます。</p>
 <p>明るさは中心の点が近軸の射出瞳の径 <math><mn>2</mn><msup><mi>r</mi><mo>′</mo></msup></math> で受ける照度で割ります。これで、F 値を変えても中心の明るさがそろいます。カメラの自動露出と同じです。</p>
 <p>「露出」はこの明るさに 2<sup>EV</sup> を掛けます。ためた光はそのままで、表示だけを変えます。ボケと被写界深度は変わりません。</p>
 <p>周辺が暗くなるのは、この重みと、斜めの光束が前後のレンズの縁でけられるためです。</p>
@@ -84,7 +84,7 @@ const alb = (a: string, r: string) => `<math><mn>${a}</mn><mo>÷</mo><msup><mn>$
   <math display="block"><mi>m</mi><mo>=</mo><mo>−</mo><mfrac><msub><mi>s</mi><mi mathvariant="normal">i</mi></msub><msub><mi>s</mi><mi mathvariant="normal">o</mi></msub></mfrac></math>
 </div>
 <h4>F 値と絞り</h4>
-<p>F 値は無限遠のときの入射瞳の径 <math><mi>D</mi></math> で決めます。近づくほど、実際の明るさを表す実効 F 値 <math><msub><mi>N</mi><mi mathvariant="normal">w</mi></msub></math> が暗くなります<Fragment set:html={rf(4)} />。<math><msub><mi>N</mi><mi mathvariant="normal">w</mi></msub></math> は、軸上の周辺光線の像側の傾き <math><msup><mi>u</mi><mo>′</mo></msup></math> から求めます。</p>
+<p>F 値は無限遠のときの入射瞳の径 <math><mi>D</mi></math> で決めます。近づくほど、実際の明るさを表す実効 F 値 <math><msub><mi>N</mi><mi mathvariant="normal">w</mi></msub></math> が暗くなります<Fragment set:html={rf(4)} />。<math><msub><mi>N</mi><mi mathvariant="normal">w</mi></msub></math> は軸上の周辺光線の像側の傾き <math><msup><mi>u</mi><mo>′</mo></msup></math> から求めます。</p>
 <p>絞り羽根 <math><mi>n</mi></math> 枚の正多角形は、円と面積が等しくなるように外接円の半径 <math><msub><mi>R</mi><mi>n</mi></msub></math> にします。開放では、羽根が引っ込んで円になるとしています。</p>
 <div class="eqs">
   <math display="block"><mi>N</mi><mo>=</mo><mfrac><mi>f</mi><mi>D</mi></mfrac></math>
@@ -156,7 +156,7 @@ const alb = (a: string, r: string) => `<math><mn>${a}</mn><mo>÷</mo><msup><mn>$
 <h3>断面図の光</h3>
 <p>断面図の光線は可視光の 400〜700 nm を 20 nm ごとに分けた 16 の波長で追跡し、光として描きます。図の背景は配色によらず黒です。</p>
 <ul class="tl">
-  <li><b>色</b>: 波長ごとの色は、CIE 1931 の等色関数（多峰のガウス関数による近似<Fragment set:html={rf(8)} />）から求めた sRGB の色</li><li>どの波長も同じ強さの光（等エネルギーの白）を足すと白になるようにそろえる</li><li>sRGB に収まらない単色の色は輝度を保って白へ寄せる</li>
+  <li><b>色</b>: 波長ごとの色は CIE 1931 の等色関数（多峰のガウス関数による近似<Fragment set:html={rf(8)} />）から求めた sRGB の色</li><li>どの波長も同じ強さの光（等エネルギーの白）を足すと白になるようにそろえる</li><li>sRGB に収まらない単色の色は輝度を保って白へ寄せる</li>
   <li><b>明るさ</b>: 光束 1 つを、瞳を等しい間隔に分けた 41 本の光線で追跡し、隣り合う 2 本の間を光で埋める</li><li>2 本の間を通る光の量は一定（エネルギーの保存）なので、光線が集まる所ほど明るい</li><li>画素ごとに足し合わせ、露出 <math><mn>1</mn><mo>−</mo><msup><mi>e</mi><mrow><mo>−</mo><mi>x</mi></mrow></msup></math> で表示する</li>
 </ul>
 <p>波長が重なる所は白く、分かれた所だけ色が見えます。拡大図の印は次の 7 本の輝線の位置です。</p>
@@ -174,7 +174,7 @@ const alb = (a: string, r: string) => `<math><mn>${a}</mn><mo>÷</mo><msup><mn>$
     </tbody>
   </table>
 </div>
-<p>物体の側ではどの波長も同じ光線で、面で屈折するたびに波長で違う屈折率のために分かれます。レンズ全体の図ではこの差が 1 画素に満たないことが多いので、下にセンサの付近を拡大した図を置きます。拡大の倍率は縦と横で別々です。「d 線」に切り替えると d 線だけで追跡し、軸上の光束を CH1、隅への光束を CH2 の色で描きます。</p>
+<p>物体の側ではどの波長も同じ光線で、面で屈折するたびに波長ごとの屈折率の違いで分かれます。レンズ全体の図ではこの差が 1 画素に満たないことが多いので、下にセンサの付近を拡大した図を置きます。拡大の倍率は縦と横で別々です。「d 線」に切り替えると d 線だけで追跡し、軸上の光束を CH1、隅への光束を CH2 の色で描きます。</p>
 <ul class="tl">
   <li><b>中心の図の印</b>: 波長ごとの近軸のピントの位置（軸上色収差）</li>
   <li><b>隅の図の印</b>: 波長ごとの主光線がセンサに当たる高さ（倍率色収差）</li>
@@ -208,7 +208,7 @@ const alb = (a: string, r: string) => `<math><mn>${a}</mn><mo>÷</mo><msup><mn>$
     </tbody>
   </table>
 </div>
-<p>土星の見かけの直径は、環を含めると 46.8″ です。</p>
+<p>土星の見かけの直径は環を含めると 46.8″ です。</p>
 <h4>置き場所と見え方</h4>
 <ul class="tl">
   <li>置き場所は実際の空と関係ない。月を緑の柱の上に置き、惑星は互いに離して低い空に並べる</li>

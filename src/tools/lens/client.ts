@@ -131,8 +131,8 @@ function noGl(e: unknown): void {
   msg.hidden = false;
   msg.textContent =
     String(e).includes('float') || String(e).includes('webgl2')
-      ? 'このブラウザでは WebGL2（浮動小数点の描画）が使えないため、映像を描けません。図と計算結果は使えます。'
-      : `映像を描く準備ができませんでした（${String(e).slice(0, 120)}）。`;
+      ? 'このブラウザでは WebGL2（浮動小数点の描画）が使えないため、映像を描けません。図と計算結果は使えます'
+      : `映像を描く準備ができませんでした（${String(e).slice(0, 120)}）`;
   lv.classList.add('nogl');
 }
 let R: Renderer | null = null;
@@ -162,7 +162,7 @@ if (R) {
 canvas.addEventListener('webglcontextlost', (e) => {
   e.preventDefault();
   msg.hidden = false;
-  msg.textContent = '描画が中断されました。ページを開き直してください。';
+  msg.textContent = '描画が中断されました。ページを開き直してください';
 });
 
 /** キャンバスの大きさを表示に合わせる（画素数は 220 万まで） */

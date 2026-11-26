@@ -54,7 +54,7 @@ export const FIG: FigHalo[] = [
     pop: PLATE,
     none: (e) =>
       Number.isNaN(parAz(e))
-        ? `光源の高度が ${PAR_MAX.toFixed(1)}° を超えると、側面から入った光が次の側面で全反射して出られないため、幻日は出ません。`
+        ? `光源の高度が ${PAR_MAX.toFixed(1)}° を超えると、側面から入った光が次の側面で全反射して出られないため、幻日は出ません`
         : null,
     ok: (p, d, e) => p.length === 2 && family(p) === 1 && Math.abs(altOf(d) - e) < 0.6 && azOf(d) < -10,
   },
@@ -66,8 +66,8 @@ export const FIG: FigHalo[] = [
     none: (e) =>
       Number.isNaN(czaAlt(e))
         ? e < 0
-          ? '光源が地平線の下にあると、光が上の底面に入れないため、環天頂アークは出ません。'
-          : `光源の高度が ${CZA_MAX.toFixed(1)}° を超えると、上の底面から入った光が側面で全反射して出られないため、環天頂アークは出ません。`
+          ? '光源が地平線の下にあると、光が上の底面に入れないため、環天頂アークは出ません'
+          : `光源の高度が ${CZA_MAX.toFixed(1)}° を超えると、上の底面から入った光が側面で全反射して出られないため、環天頂アークは出ません`
         : null,
     ok: (p, d) => p.length === 2 && p[0] === 1 && family(p) === 2 && Math.abs(azOf(d)) < 8 && d[2] > 0,
   },
@@ -100,7 +100,7 @@ export const FIG: FigHalo[] = [
     pop: PLATE,
     none: (e) =>
       Number.isNaN(chaAlt(e))
-        ? `光源の高度が ${CHA_MIN.toFixed(1)}° より低いと、側面から入った光が下の底面で全反射して出られないため、環水平アークは出ません。`
+        ? `光源の高度が ${CHA_MIN.toFixed(1)}° より低いと、側面から入った光が下の底面で全反射して出られないため、環水平アークは出ません`
         : null,
     ok: (p, d) => p.length === 2 && p[1] === 2 && family(p) === 2 && Math.abs(azOf(d)) < 8 && d[2] > 0,
   },
@@ -109,7 +109,7 @@ export const FIG: FigHalo[] = [
     name: '太陽柱',
     cry: '少し傾いた薄い板',
     pop: P({ orient: 'plate', ca: 0.15, tilt: 4 }),
-    none: (e) => (e > 15 ? '光源が高いと柱は短く淡くなり、見分けにくくなります。' : null),
+    none: (e) => (e > 15 ? '光源が高いと柱は短く淡くなり、見分けにくくなります' : null),
     ok: (_p, d, e) => Math.abs(azOf(d)) < 0.8 && altOf(d) > e + 1.5 && altOf(d) < e + 10,
   },
   {

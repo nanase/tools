@@ -38,12 +38,12 @@ const ROWS = MAT_KEYS.map((k) => ({
 }));
 ---
 <h3>屈折</h3>
-<p>光が屈折率の違う物質の境目に入ると、向きが変わります。境目の法線から測った角は、スネルの法則に従います <Fragment set:html={Rf(1)} />。</p>
+<p>光が屈折率の違う物質の境目に入ると、向きが変わります。境目の法線から測った角はスネルの法則に従います <Fragment set:html={Rf(1)} />。</p>
 <div class="eqs"><math display="block"><mrow><msub><mi>n</mi><mn>1</mn></msub><mspace width="0.15em"/><mi>sin</mi><mspace width="0.1em"/><msub><mi>θ</mi><mn>1</mn></msub><mo>=</mo><msub><mi>n</mi><mn>2</mn></msub><mspace width="0.15em"/><mi>sin</mi><mspace width="0.1em"/><msub><mi>θ</mi><mn>2</mn></msub></mrow></math></div>
 <p>記号: <math><msub><mi>n</mi><mn>1</mn></msub></math>・<math><msub><mi>n</mi><mn>2</mn></msub></math> は入る側と出る側の屈折率、<math><msub><mi>θ</mi><mn>1</mn></msub></math>・<math><msub><mi>θ</mi><mn>2</mn></msub></math> は法線からの角です。空気の屈折率は 1 としています。</p>
 
 <h3>分散</h3>
-<p>屈折率は波長で変わります。材質ごとの屈折率は、測定に合わせたセルマイヤーの式で求めます <Fragment set:html={Rf(2)} /> <Fragment set:html={Rf(3)} /> <Fragment set:html={Rf(4)} /> <Fragment set:html={Rf(5)} />。</p>
+<p>屈折率は波長で変わります。材質ごとの屈折率は測定に合わせたセルマイヤーの式で求めます <Fragment set:html={Rf(2)} /> <Fragment set:html={Rf(3)} /> <Fragment set:html={Rf(4)} /> <Fragment set:html={Rf(5)} />。</p>
 <div class="eqs"><math display="block"><mrow><msup><mi>n</mi><mn>2</mn></msup><mo stretchy="false">(</mo><mi>λ</mi><mo stretchy="false">)</mo><mo>=</mo><mn>1</mn><mo>+</mo><munder><mo>∑</mo><mi>i</mi></munder><mfrac><mrow><msub><mi>B</mi><mi>i</mi></msub><msup><mi>λ</mi><mn>2</mn></msup></mrow><mrow><msup><mi>λ</mi><mn>2</mn></msup><mo>−</mo><msub><mi>C</mi><mi>i</mi></msub></mrow></mfrac></mrow></math></div>
 <p>記号: <math><mi>λ</mi></math> は波長 [µm]、<math><msub><mi>B</mi><mi>i</mi></msub></math>・<math><msub><mi>C</mi><mi>i</mi></msub></math> は材質ごとの係数です。</p>
 <table class="tt">
@@ -57,7 +57,7 @@ const ROWS = MAT_KEYS.map((k) => ({
 <h3>反射する割合</h3>
 <p>境目では光の一部が反射します。割合はフレネルの式で決まり、偏光していない光では s 偏光と p 偏光の平均をとります <Fragment set:html={Rf(1)} />。</p>
 <div class="eqs"><math display="block"><mrow><msub><mi>r</mi><mi>s</mi></msub><mo>=</mo><mfrac><mrow><msub><mi>n</mi><mn>1</mn></msub><mi>cos</mi><msub><mi>θ</mi><mn>1</mn></msub><mo>−</mo><msub><mi>n</mi><mn>2</mn></msub><mi>cos</mi><msub><mi>θ</mi><mn>2</mn></msub></mrow><mrow><msub><mi>n</mi><mn>1</mn></msub><mi>cos</mi><msub><mi>θ</mi><mn>1</mn></msub><mo>+</mo><msub><mi>n</mi><mn>2</mn></msub><mi>cos</mi><msub><mi>θ</mi><mn>2</mn></msub></mrow></mfrac><mspace width="1.2em"/><msub><mi>r</mi><mi>p</mi></msub><mo>=</mo><mfrac><mrow><msub><mi>n</mi><mn>2</mn></msub><mi>cos</mi><msub><mi>θ</mi><mn>1</mn></msub><mo>−</mo><msub><mi>n</mi><mn>1</mn></msub><mi>cos</mi><msub><mi>θ</mi><mn>2</mn></msub></mrow><mrow><msub><mi>n</mi><mn>2</mn></msub><mi>cos</mi><msub><mi>θ</mi><mn>1</mn></msub><mo>+</mo><msub><mi>n</mi><mn>1</mn></msub><mi>cos</mi><msub><mi>θ</mi><mn>2</mn></msub></mrow></mfrac><mspace width="1.2em"/><mi>R</mi><mo>=</mo><mfrac><mrow><msubsup><mi>r</mi><mi>s</mi><mn>2</mn></msubsup><mo>+</mo><msubsup><mi>r</mi><mi>p</mi><mn>2</mn></msubsup></mrow><mn>2</mn></mfrac></mrow></math></div>
-<p>ガラスに垂直に入る光の反射は 4 % ほどですが、浅い角度で当たるほど増えます。このページでは光線ごとに確率 <math><mi>R</mi></math> で反射、残りで屈折させます。光線をたくさん重ねると、反射した光の明るさはちょうど <math><mi>R</mi></math> 倍になります。</p>
+<p>ガラスに垂直に入る光の反射は 4 % ほどですが、浅い角度で当たるほど増えます。このページでは光線ごとに確率 <math><mi>R</mi></math> で反射させ、残りで屈折させます。光線をたくさん重ねると、反射した光の明るさはちょうど <math><mi>R</mi></math> 倍になります。</p>
 
 <h3>全反射</h3>
 <p>屈折率の大きい側から小さい側へ出る光は、入射角が臨界角を超えるとスネルの法則を満たす屈折角がなくなり、すべて反射します <Fragment set:html={Rf(1)} />。</p>
@@ -65,13 +65,13 @@ const ROWS = MAT_KEYS.map((k) => ({
 <p>BK7 から空気へは約 41°、ダイヤモンドでは約 24° です。ダイヤモンドが輝くのは、臨界角が小さく光が中で何度も跳ね返るためです。</p>
 
 <h3>レンズと鏡の焦点距離</h3>
-<p>選んだレンズの焦点距離は、厚みを含めた式で 587.6 nm の屈折率から求めます。凹面鏡は曲率半径の半分です。</p>
+<p>選んだレンズの焦点距離は厚みを含めた式で 587.6 nm の屈折率から求めます。凹面鏡は曲率半径の半分です。</p>
 <div class="eqs"><math display="block"><mrow><mfrac><mn>1</mn><mi>f</mi></mfrac><mo>=</mo><mo stretchy="false">(</mo><mi>n</mi><mo>−</mo><mn>1</mn><mo stretchy="false">)</mo><mo>[</mo><mfrac><mn>1</mn><msub><mi>R</mi><mn>1</mn></msub></mfrac><mo>−</mo><mfrac><mn>1</mn><msub><mi>R</mi><mn>2</mn></msub></mfrac><mo>+</mo><mfrac><mrow><mo stretchy="false">(</mo><mi>n</mi><mo>−</mo><mn>1</mn><mo stretchy="false">)</mo><mi>d</mi></mrow><mrow><mi>n</mi><msub><mi>R</mi><mn>1</mn></msub><msub><mi>R</mi><mn>2</mn></msub></mrow></mfrac><mo>]</mo><mspace width="1.6em"/><msub><mi>f</mi><mtext>鏡</mtext></msub><mo>=</mo><mfrac><mi>R</mi><mn>2</mn></mfrac></mrow></math></div>
 <p>記号: <math><msub><mi>R</mi><mn>1</mn></msub></math>・<math><msub><mi>R</mi><mn>2</mn></msub></math> は光の入る面と出る面の曲率半径（中心が出る側にあれば正）、<math><mi>d</mi></math> は中心の厚さです。両凸なら <math><msub><mi>R</mi><mn>1</mn></msub><mo>=</mo><mi>R</mi></math>、<math><msub><mi>R</mi><mn>2</mn></msub><mo>=</mo><mo>−</mo><mi>R</mi></math> です。レンズの面は球面なので、外側を通る光ほど手前で交わります（球面収差）。屈折率が色で違うので、紫は赤より手前で交わります（色収差）。</p>
 
 <h3>光線を重ねて描く</h3>
-<p>光源ごとに 1 回 1,200 本の光線を、光の帯の中のランダムな位置から出します。白色光では波長を 400〜700 nm から一様に選びます。光線が通った画素に、その波長の色を足し込み、回数で割った値を明るさにします。回数を重ねるほどむらが減ります。</p>
-<p>波長の色は、CIE 1931 の等色関数の近似式から XYZ を求め、sRGB に変換します <Fragment set:html={Rf(6)} /> <Fragment set:html={Rf(7)} />。sRGB で出せない鮮やかさの分は切り捨て、400〜700 nm をすべて足すと白になるよう重みをそろえます。明るい所が白く飛ばないよう、明るさ <math><mi>v</mi></math> を次の式で 0〜1 に丸めます。</p>
+<p>光源ごとに 1 回 1,200 本の光線を、光の帯の中のランダムな位置から出します。白色光では波長を 400〜700 nm から一様に選びます。光線が通った画素にその波長の色を足し込み、回数で割った値を明るさにします。回数を重ねるほどむらが減ります。</p>
+<p>波長の色は CIE 1931 の等色関数の近似式から XYZ を求め、sRGB に変換します <Fragment set:html={Rf(6)} /> <Fragment set:html={Rf(7)} />。sRGB で出せない鮮やかさの分は切り捨て、400〜700 nm をすべて足すと白になるよう重みをそろえます。明るい所が白く飛ばないよう、明るさ <math><mi>v</mi></math> を次の式で 0〜1 に丸めます。</p>
 <div class="eqs"><math display="block"><mrow><msub><mi>v</mi><mtext>表示</mtext></msub><mo>=</mo><mn>1</mn><mo>−</mo><msup><mi>e</mi><mrow><mo>−</mo><msup><mn>2</mn><mtext>EV</mtext></msup><mi>v</mi></mrow></msup></mrow></math></div>
 
 <h3>このツールで決めたこと</h3>
