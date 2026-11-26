@@ -1,7 +1,7 @@
 /**
  * 章立てて解説するページ（z 変換・ラプラス変換）の章の HTML をビルド時に組む部品。
  * 章は問いを見出しにした section.ch で、部（いくつかの章のまとまり）に分ける。
- * 下に貼り付くナビゲーションの HTML もここで作り、動きは lib/chapter-page.ts、見た目は styles/chapters.css が受け持つ
+ * 下に貼り付くナビゲーションと出典の一覧の HTML もここで作り、動きは lib/chapter-page.ts、見た目は styles/chapters.css が受け持つ
  */
 
 /** 部: [部の名前, [問いの id, 題（HTML）][]] */
@@ -46,6 +46,16 @@ export function makeChapters(toc: Part[]): Chapters {
 </nav>`;
   return { QS, part, head, nav };
 }
+
+/** 本文の出典番号 [n]。押すと下の出典の一覧の同じ番号へ移る。文の句点の前に置く */
+export const rf = (...ns: number[]): string => ns.map((n) => `<a class="rf" href="#ref-${n}">[${n}]</a>`).join('');
+
+/**
+ * 出典の一覧の枠: [何に使ったか, 書誌（HTML）][]。番号は並び順。
+ * 1 問ずつのときも隠さないよう、章（section.ch）の外、ナビゲーションの前に置く
+ */
+export const refsBox = (items: [string, string][]): string =>
+  `<section class="pnl crefs" aria-labelledby="hd-refs"><div class="ph"><h2 id="hd-refs">出典</h2></div><ol class="refs">${items.map(([f, s], i) => `<li id="ref-${i + 1}"><span class="rf-for">${f}</span><span class="rf-src">${s}</span></li>`).join('')}</ol></section>`;
 
 /** 章の HTML の仕上げ。MathML の括弧を伸ばさず、式の間の空き（1em・1.2em・1.4em）で式を分け、見出しの題を span で包む */
 export function finishChapters(raw: string): string {

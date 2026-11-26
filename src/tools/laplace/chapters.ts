@@ -1,5 +1,5 @@
 /* ラプラス変換のページの章（ビルド時に HTML にする）。形は z 変換のページと同じ（lib/chapter-html.ts） */
-import { finishChapters, makeChapters, type Part } from '../../lib/chapter-html';
+import { finishChapters, makeChapters, type Part, refsBox, rf } from '../../lib/chapter-html';
 
 export const TOC: Part[] = [
   [
@@ -36,6 +36,14 @@ const sCv = (label: string) =>
 /** 今の値が入る文。最も長い文の高さを先に取る（design/page.md の .hh） */
 const live = (id: string, ph: string) => `<p class="live hh" id="${id}" data-ph="${ph}"></p>`;
 
+/** 出典（番号は本文の rf(n) と同じ並び） */
+const REFS: [string, string][] = [
+  [
+    'ラプラス変換・s 平面・収束域・伝達関数',
+    'A. V. Oppenheim, A. S. Willsky, S. H. Nawab, <i>Signals and Systems</i>, 2nd ed., Prentice Hall, 1997, 9 章',
+  ],
+];
+
 const raw = (): string => `
 
 ${part(0)}
@@ -53,7 +61,7 @@ ${part(0)}
   ${live('q1t', 'σ = −0.30 なので 1 秒ごとに 0.74 倍に膨らみます。ω = −6.28 rad/s なので 1 秒に 1.00 回まわります。ω が負だと逆向きに回りますが、実部の波は ω が正のときと同じです。')}
   <div class="eq">
     <math display="block"><mtext>Re</mtext><mspace width=".3em"/><mrow data-k="s">${eST}</mrow><mo>=</mo><mrow data-k="env">${eSgT}</mrow><mo>·</mo><mrow data-k="rot"><mi>cos</mi><mi>ω</mi><mi>t</mi></mrow><mspace width="1.2em"/><mi>s</mi><mo>=</mo><mi>σ</mi><mo>+</mo><mi>j</mi><mi>ω</mi><mo>=</mo><mpadded height=".72em" depth=".22em"><mn id="lap-v-sg">−0.30</mn></mpadded><mo id="lap-v-pm">+</mo><mpadded height=".72em" depth=".22em"><mn id="lap-v-om">6.28</mn></mpadded><mi>j</mi></math>
-    <span class="zn">σ は 1 秒あたりの縮み方、ω は 1 秒あたりに回る角度（rad/s）です。点線の下線が付いた項に指を載せると、図の同じ所が光ります。</span>
+    <span class="zn">σ は 1 秒あたりの縮み方、ω は 1 秒あたりに回る角度（rad/s）です${rf(1)}。点線の下線が付いた項に指を載せると、図の同じ所が光ります。</span>
   </div>
   <p class="take">s は波 e<sup>st</sup> の名前です。横の位置 σ が縮み方を、縦の位置 ω が回る速さを決めます。</p>
 </section>
@@ -98,7 +106,7 @@ ${part(1)}
   ${live('q4t', '極は −0.30 ± 6.28j です。インパルスを入れると、出力は 1 秒に 1.00 回振れながら、振れ幅が 1 秒ごとに 0.74 倍に膨らみます。')}
   <div class="eq">
     <math display="block"><mi>H</mi><mo>(</mo><mi>s</mi><mo>)</mo><mo>=</mo><mfrac><mrow>${p2}</mrow><mrow data-k="den">${pTerm('+')}${pTerm('−')}</mrow></mfrac><mspace width="1.2em"/><mi>h</mi><mo>(</mo><mi>t</mi><mo>)</mo><mo>=</mo><mfrac><mrow>${p2}</mrow><mi>ω</mi></mfrac>${eSgT}<mi>sin</mi><mi>ω</mi><mi>t</mi></math>
-    <span class="zn">H(s) は伝達関数、h(t) はインパルス応答です。|p|² は ω = 0 で |H| を 1 にそろえる係数です。曲面の高さは 20 log₁₀|H| で、上下の端で打ち切っています。</span>
+    <span class="zn">H(s) は伝達関数、h(t) はインパルス応答です${rf(1)}。|p|² は ω = 0 で |H| を 1 にそろえる係数です。曲面の高さは 20 log₁₀|H| で、上下の端で打ち切っています。</span>
   </div>
   <p class="take">系の極は、入力が止まったあとも系の出力に残る波の s です。曲面はその真上で突き上がります。</p>
 </section>
@@ -113,7 +121,7 @@ ${part(1)}
   ${live('q5t', '断面の山は ω ≈ ±10.0 rad/s にあり、問い 1 の波の回る速さと同じです。極は虚軸から 0.30 離れています。離れると山は低くなだらかになります。')}
   <div class="eq">
     <math display="block"><mrow data-k="jw"><mi>H</mi><mo>(</mo><mi>j</mi><mi>ω</mi><mo>)</mo></mrow><mo>=</mo><msubsup><mo>∫</mo><mn>0</mn><mi>∞</mi></msubsup><mi>h</mi><mo>(</mo><mi>t</mi><mo>)</mo><msup><mi>e</mi><mrow><mo>−</mo><mi>j</mi><mi>ω</mi><mi>t</mi></mrow></msup><mi>d</mi><mi>t</mi></math>
-    <span class="zn">ラプラス変換の式に s = jω を入れるとフーリエ変換の式になります。h(t) のフーリエ変換が周波数特性です。</span>
+    <span class="zn">ラプラス変換の式に s = jω を入れるとフーリエ変換の式になります${rf(1)}。h(t) のフーリエ変換が周波数特性です。</span>
   </div>
   <p class="take">周波数特性は伝達関数の曲面を虚軸で切った断面です。極が虚軸に近いほど山は高く細くなります。</p>
 </section>
@@ -132,10 +140,11 @@ ${part(1)}
   ${live('q6t', '極の実部 −0.30 < 0 なので、収束域 Re s > −0.30 に虚軸が入ります。面積は約 20.00 で止まり、フーリエ変換の積分は収束します。')}
   <div class="eq">
     <math display="block"><mrow data-k="roc"><mtext>収束域</mtext><mo>:</mo><mtext>Re</mtext><mspace width=".3em"/><mi>s</mi><mo>&gt;</mo><mpadded height=".72em" depth=".22em"><mn id="lap-v-roc">−0.30</mn></mpadded></mrow><mspace width="1.2em"/><msubsup><mo>∫</mo><mn>0</mn><mi>∞</mi></msubsup><mo>|</mo><mi>h</mi><mo>(</mo><mi>t</mi><mo>)</mo><mo>|</mo><mi>d</mi><mi>t</mi><mo>&lt;</mo><mi>∞</mi></math>
-    <span class="zn">片側ラプラス変換（t ≥ 0 だけを積分）の収束域は、一番右の極より右の半平面です。|h(t)| の積分が有限なら、フーリエ変換の積分も収束します。図の面積は 0〜10 秒の分です。上の文の面積の値は、h(t) が 1 万分の 1 に縮むまで足したものです。</span>
+    <span class="zn">片側ラプラス変換（t ≥ 0 だけを積分）の収束域は、一番右の極より右の半平面です${rf(1)}。|h(t)| の積分が有限なら、フーリエ変換の積分も収束します。図の面積は 0〜10 秒の分です。上の文の面積の値は、h(t) が 1 万分の 1 に縮むまで足したものです。</span>
   </div>
   <p class="take">虚軸が収束域に入るのは、極がすべて左半分にあるときだけです。そのときだけ断面がフーリエ変換になります。</p>
 </section>
+${refsBox(REFS)}
 ${qnav()}`;
 
 /** 章の HTML */
