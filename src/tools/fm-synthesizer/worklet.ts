@@ -34,6 +34,8 @@ export type SynthMsg =
   | { type: 'room'; spec: ReverbSpec }
   /** すべての音をすぐ消す（曲の予約は残す） */
   | { type: 'panic' }
+  /** 移調 [半音] */
+  | { type: 'transpose'; semis: number }
   /** 出来事を時刻 at（AudioContext の時刻。0 はすぐ）に鳴らす */
   | { type: 'ev'; at: number; src: Src; e: SynthEv }
   /** 曲の予約を消し、曲の音を離して、曲で変えたコントローラを戻す（MIDI 機器の音は残す） */
@@ -82,6 +84,7 @@ registerProcessor(
         this.rev.set({ ...m.spec, norm: 1, wet: 1 });
         this.revOn = !m.spec.off;
       } else if (m.type === 'panic') s.panic();
+      else if (m.type === 'transpose') s.transpose = m.semis;
       else if (m.type === 'stop') {
         this.queue = [];
         s.allOff(undefined, 0);

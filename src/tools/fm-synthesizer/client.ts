@@ -16,8 +16,7 @@ import { forget, store, stored } from '../../lib/store';
 import { TempoMap } from '../../lib/tempo';
 import { initToolPage } from '../../lib/tool-page';
 import { type Line, Transport, tableLine } from '../../lib/transport';
-import { noteName } from '../fm-synth/params';
-import { SynthAudio } from './audio';
+import { SCOPE_N, SynthAudio } from './audio';
 import {
   type AlgLive,
   algSvg,
@@ -35,6 +34,7 @@ import {
 import { DRUM_PART, envAt, isCarrier, type Op, REV0, snapshot, type Tone, VOL0, velGain } from './engine';
 import { DRUM_HI, DRUM_LO, DRUM_NAMES, familyOf, GM_NAMES, PADS, padOf } from './gm';
 import { PAD_ICONS } from './icons';
+import { TRANSPOSE } from './params';
 import { songOf } from './songs';
 import { DRUM_DEFAULT, DRUM_TONES, GM_TONES } from './tones';
 
@@ -92,6 +92,8 @@ interface Part {
   down: Map<number, number>;
   /** 離したがダンパーペダルで延ばしている音 */
   pend: Set<number>;
+  /** 押している音の、受けたノート → 鳴らしている（移調した）ノート。down・pend・last は鳴らしているノートで持つ */
+  shown: Map<number, number>;
   /** 最後に鳴り始めた音（t0 は鳴り始めた時刻、off は離した時刻 [s]、performance.now の秒） */
   last: { note: number; vel: number; t0: number; off: number } | null;
   /** パッドごとに最後に鳴った時刻 */
@@ -176,6 +178,7 @@ function ensure(ch: number): Part {
     mute: false,
     down: new Map(),
     pend: new Set(),
+    shown: new Map(),
     last: null,
     hits: new Float64Array(PADS.length).fill(-1e9),
     sus: false,
@@ -192,7 +195,7 @@ function ensure(ch: number): Part {
   rowsEl.insertBefore(el, after ?? null);
   /* 選んでいるパートを押すとサイドバーを開閉し、ほかのパートを押すと選ぶだけ（鍵盤とパッドを押したときは開閉しない） */
   el.addEventListener('click', (e) => {
-    if (ch === sel && !(e.target as Element).closest('.kb')) $('#hd-side').click();
+    if (ch === sel && !(e.target as Element).closest('.kb, .fy-ctl')) $('#hd-side').click();
     else if (ch !== sel) select(ch);
   });
   row.mute.addEventListener('click', (e) => {
@@ -216,6 +219,7 @@ function ensure(ch: number): Part {
   });
   syncMute(p);
   bindPlay(p);
+  bindCtl(p);
   label(p);
   return p;
 }
@@ -260,10 +264,16 @@ function setProg(p: Part, prog: number): void {
 }
 
 /* ---------- 一覧の図に使う出来事 ---------- */
-function vOn(ch: number, note: number, vel: number): void {
+/** 移調 [半音] */
+let shift = 0;
+/** 受けたノートを鳴らす高さへ（パーカッションは移さない） */
+const shifted = (ch: number, note: number) => (ch === DRUM_PART ? note : Math.max(0, Math.min(127, note + shift)));
+function vOn(ch: number, n: number, vel: number): void {
   const p = parts.get(ch);
   if (!p) return;
-  const t = nowS();
+  const t = nowS(),
+    note = shifted(ch, n);
+  p.shown.set(n, note);
   p.down.set(note, vel);
   p.pend.delete(note);
   p.last = { note, vel, t0: t, off: Number.POSITIVE_INFINITY };
@@ -274,9 +284,12 @@ function vOn(ch: number, note: number, vel: number): void {
   p.row.dirty = true;
   wake();
 }
-function vOff(ch: number, note: number): void {
+function vOff(ch: number, n: number): void {
   const p = parts.get(ch);
-  if (!p?.down.has(note)) return;
+  if (!p) return;
+  const note = p.shown.get(n) ?? n;
+  p.shown.delete(n);
+  if (!p.down.has(note)) return;
   p.down.delete(note);
   p.row.dirty = true;
   if (ch === DRUM_PART) return;
@@ -319,6 +332,7 @@ function vAll(): void {
   for (const p of parts.values()) {
     p.down.clear();
     p.pend.clear();
+    p.shown.clear();
     p.sus = false;
     if (p.last && p.last.off > t) p.last.off = t;
     p.row.dirty = true;
@@ -383,7 +397,66 @@ function frame(): void {
     drawSideWave(t, colors.grid);
     sideWork(t);
   }
+  if (drawMaster(colors)) more = true;
   if (more || PL) wake();
+}
+
+/* ---------- マスターの波形とメーター ---------- */
+const scopeBuf = new Float32Array(SCOPE_N);
+/** 波形に出す標本の数（48 kHz で約 11 ms） */
+const SCOPE_W = 512;
+/** 波形の縦の大きさ（鳴っている音の最大に合わせ、小さくなったらゆっくり縮める） */
+let scopeAmp = 0;
+let scopeDrawn = false;
+/** 出力の波形を、上りで 0 を横切る所にそろえて描く。まだ音が残っていれば true */
+function drawMaster(c: Colors): boolean {
+  const cv = $<HTMLCanvasElement>('#ms-wave'),
+    vm = $('#ms-vm'),
+    live = audio.scope(scopeBuf);
+  let peak = 0,
+    sq = 0;
+  if (live)
+    for (const v of scopeBuf) {
+      peak = Math.max(peak, Math.abs(v));
+      sq += v * v;
+    }
+  const quiet = peak < 1e-4;
+  if (quiet && !scopeDrawn) return false;
+  scopeDrawn = !quiet;
+  /* メーター: 実効値を −60〜0 dBFS で */
+  const db = quiet ? -120 : 10 * Math.log10(sq / scopeBuf.length);
+  vm.style.height = `${Math.round(Math.max(0, Math.min(1, (db + 60) / 60)) * 100)}%`;
+  if (!cv.clientWidth) return !quiet;
+  const [g, w, h] = fitCanvas(cv);
+  g.fillStyle = c.grid;
+  g.fillRect(0, h / 2, w, 1);
+  if (quiet) {
+    scopeAmp = 0;
+    return false;
+  }
+  scopeAmp = Math.max(peak, scopeAmp * 0.97);
+  /* いったん 0 より下（最大の 1 割より下）へ行ってから 0 以上に上る所 */
+  const lo = -0.1 * peak;
+  let at = 0,
+    armed = false;
+  for (let i = 0; i < scopeBuf.length - SCOPE_W; i++) {
+    if (scopeBuf[i] < lo) armed = true;
+    else if (armed && scopeBuf[i] >= 0) {
+      at = i;
+      break;
+    }
+  }
+  g.strokeStyle = c.ink2;
+  g.lineWidth = 1.5;
+  g.beginPath();
+  for (let i = 0; i < SCOPE_W; i++) {
+    const x = (i / (SCOPE_W - 1)) * w,
+      y = h / 2 - (scopeBuf[at + i] / scopeAmp) * (h / 2 - 3);
+    if (i) g.lineTo(x, y);
+    else g.moveTo(x, y);
+  }
+  g.stroke();
+  return true;
 }
 /** パッドを塗っておく時間 [s] */
 const PAD_LIT = 0.12;
@@ -532,7 +605,9 @@ function fullScale(t: Tone): number {
 /* ---------- 手で弾く（行の鍵盤とパッド） ---------- */
 function bindPlay(p: Part): void {
   const c = p.row.kb;
+  /** 押している鍵の音として送ったノート。移調しても押した鍵の高さで鳴るよう、移調の分を戻して送る */
   let cur = -1;
+  const unshift = (n: number) => (p.ch === DRUM_PART ? n : Math.max(0, Math.min(127, n - shift)));
   const up = () => {
     if (cur < 0) return;
     audio.ev({ k: OFF, ch: p.ch, a: cur, v: 0 }, 0, 1);
@@ -552,7 +627,7 @@ function bindPlay(p: Part): void {
       if (i < 0) return;
       n = PADS[i].notes.includes(editNote) ? editNote : PADS[i].notes[PADS[i].notes.length > 1 ? 1 : 0];
       editNote = n;
-    } else n = keyAt(x, y, r.width, r.height);
+    } else n = unshift(keyAt(x, y, r.width, r.height));
     c.setPointerCapture(e.pointerId);
     cur = n;
     audio.hand = true;
@@ -573,7 +648,7 @@ function bindPlay(p: Part): void {
       const i = padAt(x, y, r.width, r.height);
       if (i < 0) return;
       n = PADS[i].notes.includes(editNote) ? editNote : PADS[i].notes[PADS[i].notes.length > 1 ? 1 : 0];
-    } else n = keyAt(Math.min(r.width - 1, Math.max(0, x)), y, r.width, r.height);
+    } else n = unshift(keyAt(Math.min(r.width - 1, Math.max(0, x)), y, r.width, r.height));
     if (n === cur) return;
     audio.ev({ k: OFF, ch: p.ch, a: cur, v: 0 }, 0, 1);
     vOff(p.ch, cur);
@@ -584,6 +659,61 @@ function bindPlay(p: Part): void {
   });
   c.addEventListener('pointerup', up);
   c.addEventListener('pointercancel', up);
+}
+
+/*
+ * 鍵盤の下のバーを押して動かす: 音量（CC 7）・エクスプレッション（CC 11）・ピッチベンド・定位（CC 10）。
+ * MIDI 機器のつまみと同じく送るので、曲がそのあとに送る値で上書きされる。ピッチベンドは離すと中央へ戻る
+ */
+function bindCtl(p: Part): void {
+  const box = $('.fy-ctl', p.row.el),
+    bars = $$<HTMLElement>(':scope > span', box);
+  let cur = -1;
+  const put = (e: PointerEvent) => {
+    const r = bars[cur].getBoundingClientRect(),
+      x = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+    if (cur === 0 || cur === 1) {
+      const num = cur === 0 ? 7 : 11,
+        v = Math.round(x * 127);
+      audio.cc(p.ch, num, v);
+      vCc(p.ch, num, v);
+    } else if (cur === 2) {
+      audio.bend(p.ch, 2 * x - 1);
+      vBend(p.ch, 2 * x - 1);
+    } else {
+      /* 表示の定位はパートの定位に CC 10 を足したものなので、押した位置になるように CC 10 を決める */
+      const v = Math.max(0, Math.min(127, Math.round(64 + (2 * x - 1 - p.pan) * 63)));
+      audio.cc(p.ch, 10, v);
+      vCc(p.ch, 10, v);
+    }
+  };
+  box.addEventListener('pointerdown', (e) => {
+    /* 押した横位置のバー（バーの間の隙間は近い方） */
+    let best = Number.POSITIVE_INFINITY;
+    bars.forEach((b, i) => {
+      const r = b.getBoundingClientRect(),
+        d = Math.max(0, r.left - e.clientX, e.clientX - r.right);
+      if (d < best) {
+        best = d;
+        cur = i;
+      }
+    });
+    e.preventDefault();
+    box.setPointerCapture(e.pointerId);
+    put(e);
+  });
+  box.addEventListener('pointermove', (e) => {
+    if (cur >= 0 && box.hasPointerCapture(e.pointerId)) put(e);
+  });
+  const up = () => {
+    if (cur === 2) {
+      audio.bend(p.ch, 0);
+      vBend(p.ch, 0);
+    }
+    cur = -1;
+  };
+  box.addEventListener('pointerup', up);
+  box.addEventListener('pointercancel', up);
 }
 
 /* ---------- サイドバー ---------- */
@@ -1400,10 +1530,37 @@ new ParamGroup<PlayKey>([TEMPO], (v, k) => {
   tempo = v.tempo;
   if (k) transport.refresh();
 });
-new ParamGroup<PlayKey>([outVol(VOL0)], (v) => audio.vol(v.vol));
-/** 残響の部屋（聴く位置は部屋の既定。残響音の大きさはパートの送る量で決める） */
-const roomTo = (v: string) => audio.room(reverbSpec(roomOf(v), roomOf(v).r));
-roomTo(new Choice<string>($('#p-room'), roomTo).value);
+new ParamGroup<'tr'>([TRANSPOSE], (v) => {
+  shift = v.tr;
+  audio.transpose(v.tr);
+});
+
+/* ---------- マスター（一覧の最後の行）: 音量は演奏の枠の音量と同じ値 ---------- */
+const msVol = $<HTMLInputElement>('#ms-vol');
+function showVol(db: number): void {
+  msVol.value = String(db);
+  $('#ms-vol-v').textContent = `${minus(String(db))} dB`;
+}
+const volG = new ParamGroup<PlayKey>([outVol(VOL0)], (v) => {
+  audio.vol(v.vol);
+  showVol(v.vol);
+});
+msVol.addEventListener('input', () => volG.set('vol', Number(msVol.value)));
+/** 残響の部屋（聴く位置は部屋の既定。残響音の大きさはパートの送る量で決める）。保存は演奏の枠の行だったときと同じ名前 */
+{
+  const KEY = 'c:p-room',
+    el = $<HTMLSelectElement>('#ms-room'),
+    def = el.value,
+    sv = stored(KEY),
+    roomTo = () => audio.room(reverbSpec(roomOf(el.value), roomOf(el.value).r));
+  if (typeof sv === 'string' && [...el.options].some((o) => o.value === sv)) el.value = sv;
+  roomTo();
+  el.addEventListener('change', () => {
+    if (el.value === def) forget(KEY);
+    else store(KEY, el.value);
+    roomTo();
+  });
+}
 const compTo = (v: string) => audio.compress(v === 'on');
 compTo(new Choice<string>($('#p-comp'), compTo).value);
 /* すべてのチャンネルの音をすぐ止める（曲の演奏は続ける） */
@@ -1438,7 +1595,7 @@ function midiReady(fn: () => void): void {
   if (audio.now() !== null) fn();
   else void audio.ready().then((ok) => ok && fn());
 }
-const midiBox = new MidiBox(
+new MidiBox(
   {
     on: (note, vel, ch) => {
       led(ch - 1);
@@ -1446,7 +1603,6 @@ const midiBox = new MidiBox(
         key = (ch << 7) | note;
       midiHeld.set(key, part);
       const p = ensure(part);
-      midiBox.show(part === DRUM_PART ? (DRUM_NAMES[note] ?? noteName(note)) : noteName(note), vel, '');
       midiReady(() => midiHeld.get(key) === part && audio.ev({ k: ON, ch: part, a: note, v: vel }, 0, 1));
       vOn(p.ch, note, vel / 127);
     },
@@ -1493,6 +1649,17 @@ new ResizeObserver(() => {
   for (const p of parts.values()) p.row.dirty = true;
   wake();
 }).observe(rowsEl);
+/* 配色を替えたら全部の行を描き直す（鳴っていない行は描き直さないので、前の配色の鍵盤の色が残る） */
+const recolor = () => {
+  for (const p of parts.values()) {
+    p.row.dirty = true;
+    p.row.algDrawn = '';
+  }
+  sideDirty = true;
+  wake();
+};
+new MutationObserver(recolor).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', recolor);
 /* 閉じていた音色の枠やグループを開くと、大きさ 0 で描いたキャンバスが広がって白くなるので描き直す */
 const sideRo = new ResizeObserver(() => {
   sideDirty = true;

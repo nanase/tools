@@ -164,6 +164,20 @@ describe('音源', () => {
     peak(s, 0.05);
     expect(s.voices.length).toBeLessThanOrEqual(MAX_VOICES);
   });
+  it('移調は鳴り始めの高さだけを変え、離すときは受けたノートで離す（パーカッションは移さない）', () => {
+    const s = new Synth(SR, sine({ rr: 0.02 }), sine());
+    s.transpose = 3;
+    s.noteOn(0, 60, 1);
+    s.noteOn(DRUM_PART, 38, 1);
+    expect(s.voices.map((v) => [v.note, v.pitch])).toEqual([
+      [60, 63],
+      [38, 38],
+    ]);
+    s.transpose = -5;
+    s.noteOff(0, 60);
+    peak(s, 0.2);
+    expect(s.voices.filter((v) => v.part === 0)).toHaveLength(0);
+  });
   it('曲を止めても MIDI 機器の音は残る', () => {
     const s = new Synth(SR, sine({ rr: 0.02 }), sine());
     s.noteOn(0, 60, 1, 0);

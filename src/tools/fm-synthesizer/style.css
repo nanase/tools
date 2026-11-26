@@ -34,7 +34,7 @@
 
 /* パートの一覧 */
 /* ミュート | 名前 | 鍵盤（下に音量・エクスプレッション・ピッチベンド） | 音量のメーター | 波形 | アルゴリズム | エンベロープ */
-.fy-list{--cols:18px 130px minmax(130px,1.7fr) 8px minmax(96px,1.1fr) 72px minmax(84px,.9fr)}
+.fy-list{--cols:18px minmax(150px,1.5fr) minmax(112px,1.2fr) 8px minmax(64px,.6fr) 72px minmax(84px,.85fr)}
 .fy-hdr,.fy-row{display:grid;grid-template-columns:var(--cols);column-gap:10px;align-items:center}
 .fy-hdr{padding:0 8px 4px;font-size:12px;color:var(--ink-3);border-bottom:1px solid var(--line);white-space:nowrap}
 .fy-row{position:relative;height:60px;padding:0 8px;border-bottom:1px solid var(--line);cursor:pointer;outline-offset:-2px}
@@ -48,10 +48,12 @@
 .fy-nm small{font-size:12px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fy-row canvas{display:block;width:100%;height:44px}
 .fy-row .cv{background:var(--screen);border:1px solid var(--line);border-radius:3px}
-.fy-row .kb{height:30px;touch-action:none}
+.fy-row .kb{height:28px;touch-action:none}
 .fy-kbw{display:flex;flex-direction:column;gap:4px;min-width:0}
-.fy-ctl{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;height:7px}
+/* バーは押して動かせる。押せる所は下へ広げる（細いバーでも押しやすく） */
+.fy-ctl{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;height:15px;margin-bottom:-6px;padding-bottom:6px;cursor:ew-resize;touch-action:none}
 .fy-ctl span{position:relative;border-radius:2px;background:color-mix(in srgb,var(--pc) 14%,var(--line));overflow:hidden}
+.fy-ctl:hover span{background:color-mix(in srgb,var(--pc) 24%,var(--line-2))}
 /* バーはパートの色を少し混ぜた灰（赤のパートなら赤みの深い灰） */
 .fy-ctl i{position:absolute;top:0;bottom:0;left:0;width:0;background:color-mix(in srgb,var(--pc) 45%,var(--ink-3))}
 .fy-ctl .bd::after{content:"";position:absolute;top:0;bottom:0;left:50%;width:1px;background:var(--line-2)}
@@ -66,8 +68,29 @@
 .fy-vm{position:relative;width:8px;height:44px;border-radius:2px;background:var(--line);overflow:hidden}
 .fy-vm i{position:absolute;left:0;right:0;bottom:0;height:0;background:var(--pc)}
 @media (max-width:640px){
-  .fy-list{--cols:18px 84px minmax(0,1fr) 8px 72px}
+  .fy-list{--cols:18px 96px minmax(0,1fr) 8px 72px}
   .fy-list .c-w,.fy-list .c-e{display:none}
+}
+
+/* マスター（一覧の最後の行）: 名前 | 音量（鍵盤の列） | メーター | 出力の波形 | 残響とコンプレッサー（アルゴリズムとエンベロープの列） */
+.fy-row.fy-ms{height:auto;min-height:60px;padding:6px 8px;border-bottom:0;border-top:1px solid var(--line-2);cursor:default}
+.fy-row.fy-ms:hover{background:none}
+.fy-ms .ms-nm{grid-column:2}
+.fy-ms .ms-nm b{font-size:14px}
+.sl.ms-vol{grid-template-columns:auto minmax(0,1fr) 48px;min-height:28px}
+.ms-vol b{font-size:12.5px}
+.ms-fx{grid-column:6/-1;display:grid;gap:4px;min-width:0}
+.ms-ln{display:flex;align-items:center;gap:8px;min-width:0;font-size:12.5px;color:var(--ink-2);white-space:nowrap}
+.ms-ln .sel{flex:1 1 auto;min-width:0}
+.ms-ln .sel select{height:26px;font-size:12.5px}
+.ms-ln .seg button{height:24px;padding:0 8px;font:500 12px/1 var(--sans)}
+@media (pointer:coarse){.ms-ln .seg button{height:32px}.ms-ln .sel select{height:32px}}
+/* 狭い画面: 1 段目に名前とメーター、2 段目に音量、3 段目に残響とコンプレッサー */
+@media (max-width:640px){
+  .fy-ms .ms-nm{grid-column:2/4;grid-row:1}
+  .fy-ms .fy-vm{grid-column:4;grid-row:1;height:32px}
+  .sl.ms-vol{grid-column:2/-1;grid-row:2}
+  .ms-fx{grid-column:2/-1;grid-row:3;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));column-gap:12px}
 }
 
 /* 一覧の鍵盤の色（暗い配色でも白鍵を明るく、黒鍵を暗くする） */
