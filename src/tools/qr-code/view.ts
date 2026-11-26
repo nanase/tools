@@ -200,7 +200,7 @@ function stData(q: Encoded, c: number): string {
   const header = 4 + ccBits(q.mode, q.ver),
     shift = header % 8,
     tail = note(
-      `ビット列を 8 ビットずつ区切ると、符号語になります。${shift ? `見出しが ${header} ビットなので、文字は語の境目から ${shift} ビットずれます。` : ''}`,
+      `ビット列を 8 ビットずつ区切ると、符号語になります。${shift ? `モードと文字数が ${header} ビットなので、文字は語の境目から ${shift} ビットずれます。` : ''}`,
     );
   if (c < 0 || q.src[c].ec) return h3(`データの符号語 ${q.bk.data} 語`, false) + tail;
   return h3(cwTitle(q, c)) + bitBoxA(q.cw[c], bitGroups(q, dataIndex(q, c))) + tail;

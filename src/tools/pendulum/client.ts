@@ -242,7 +242,7 @@ function designOut(): void {
     txt(
       '#o-cls',
       unstable
-        ? '右半面に極があり、線形の模型でも倒れます。'
+        ? '右半面に極があり、線形の模型でも倒れます'
         : `線形の模型では安定${kindCh.value === 'pid' && ds.cl.length > 4 ? '（積分の極を含む）' : ''}`,
     );
     const units = [`${u}/m`, `${u}/rad`, `${u}·s/m`, `${u}·s/rad`];

@@ -9,9 +9,9 @@ export const MAX_LEN = 8000;
 
 export const ECC_CHOICES: readonly [Ecc, string, string][] = [
   ['L', 'L 7%', '符号語の約 7 % まで訂正'],
-  ['M', 'M 15%', '符号語の約 15 % まで直せる'],
-  ['Q', 'Q 25%', '符号語の約 25 % まで直せる'],
-  ['H', 'H 30%', '符号語の約 30 % まで直せる'],
+  ['M', 'M 15%', '符号語の約 15 % まで訂正'],
+  ['Q', 'Q 25%', '符号語の約 25 % まで訂正'],
+  ['H', 'H 30%', '符号語の約 30 % まで訂正'],
 ];
 export const MODE_CHOICES: readonly [Mode | 'auto', string, string][] = [
   ['auto', '自動', '符号化できるモードのうち、ビット列がいちばん短くなるもの'],

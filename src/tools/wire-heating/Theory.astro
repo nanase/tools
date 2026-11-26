@@ -36,17 +36,17 @@ const REFS: readonly Ref[] = [
 <div class="eqs">
   <math display="block"><mrow><mi>δ</mi><mo>=</mo><msqrt><mfrac><mi>ρ</mi><mrow><mi>π</mi><mi>f</mi><msub><mi>μ</mi><mn>0</mn></msub></mrow></mfrac></msqrt></mrow></math>
 </div>
-<p>丸線は Bessel 関数の厳密解で、交流抵抗と直流抵抗の比を求めます。半径 <math><mi>a</mi></math> が <math><mi>δ</mi></math> よりずっと大きいと、比は <math><mfrac><mi>a</mi><mrow><mn>2</mn><mi>δ</mi></mrow></mfrac><mo>+</mo><mfrac><mn>1</mn><mn>4</mn></mfrac></math> に近づきます。角線と基板の銅箔は、各面から指数関数的に減るとみなした実効厚さ <math><mi>δ</mi><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><msup><mi>e</mi><mrow><mo>−</mo><mi>t</mi><mo>/</mo><mi>δ</mi></mrow></msup><mo stretchy="false">)</mo></math> で電流の通り道を狭めます<a href="#thy-r3">[3]</a>。</p>
+<p>丸線では Bessel 関数の厳密解で、交流抵抗と直流抵抗の比を求めます。半径 <math><mi>a</mi></math> が <math><mi>δ</mi></math> よりずっと大きいと、比は <math><mfrac><mi>a</mi><mrow><mn>2</mn><mi>δ</mi></mrow></mfrac><mo>+</mo><mfrac><mn>1</mn><mn>4</mn></mfrac></math> に近づきます。角線と基板の銅箔では、各面から指数関数的に減るとみなした実効厚さ <math><mi>δ</mi><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><msup><mi>e</mi><mrow><mo>−</mo><mi>t</mi><mo>/</mo><mi>δ</mi></mrow></msup><mo stretchy="false">)</mo></math> で電流の通り道を狭めます<a href="#thy-r3">[3]</a>。</p>
 
 <h3>放熱</h3>
-<p>線の表面からは、対流と放射で熱が逃げます。対流は温まった空気が昇って運ぶ熱で、横置きの円柱の式で熱伝達率 <math><mi>h</mi></math> を求めます<a href="#thy-r1">[1]</a>。風があるときは強制対流の式<a href="#thy-r2">[2]</a>と合わせます。角線は外周の等しい丸線とみなします。</p>
+<p>線の表面からは対流と放射で熱が逃げます。対流は温まった空気が昇って運ぶ熱で、横置きの円柱の式で熱伝達率 <math><mi>h</mi></math> を求めます<a href="#thy-r1">[1]</a>。風があるときは強制対流の式<a href="#thy-r2">[2]</a>と合わせます。角線は外周の等しい丸線とみなします。</p>
 <div class="eqs">
   <math display="block"><mrow><msup><mi>q</mi><mo>′</mo></msup><mo>=</mo><mi>p</mi><mrow><mo>[</mo><mi>h</mi><mo stretchy="false">(</mo><msub><mi>T</mi><mi>s</mi></msub><mo>−</mo><msub><mi>T</mi><mi>a</mi></msub><mo stretchy="false">)</mo><mo>+</mo><mi>ε</mi><mi>σ</mi><mo stretchy="false">(</mo><msubsup><mi>T</mi><mi>s</mi><mn>4</mn></msubsup><mo>−</mo><msubsup><mi>T</mi><mi>a</mi><mn>4</mn></msubsup><mo stretchy="false">)</mo><mo>]</mo></mrow></mrow></math>
 </div>
 <p><math><mi>p</mi></math> は外周、<math><msub><mi>T</mi><mi>s</mi></msub></math> は表面の温度、<math><msub><mi>T</mi><mi>a</mi></msub></math> は気温、<math><mi>ε</mi></math> は放射率です。放射は絶対温度の 4 乗で効くので、高温ほど急に大きくなります。被覆があるときは、被覆の熱抵抗の分だけ表面の温度が導体より低くなります。</p>
 
 <h3>線の中の熱の伝わり</h3>
-<p>線を長さ方向に 60 に分け、それぞれの区間で熱の出入りを数えます。区間の温度は、発熱から放熱と隣への伝導を引いた分だけ上がります。</p>
+<p>線を長さ方向に 60 に分け、それぞれの区間で熱の出入りを数えます。区間の温度は発熱から放熱と隣への伝導を引いた分だけ上がります。</p>
 <div class="eqs">
   <math display="block"><mrow><mi>d</mi><mi>c</mi><mi>A</mi><mfrac><mrow><mo>∂</mo><mi>T</mi></mrow><mrow><mo>∂</mo><mi>t</mi></mrow></mfrac><mo>=</mo><mfrac><mrow><msup><mi>I</mi><mn>2</mn></msup><mi>ρ</mi><mo stretchy="false">(</mo><mi>T</mi><mo stretchy="false">)</mo><msub><mi>k</mi><mi>ac</mi></msub></mrow><mi>A</mi></mfrac><mo>−</mo><msup><mi>q</mi><mo>′</mo></msup><mo stretchy="false">(</mo><mi>T</mi><mo stretchy="false">)</mo><mo>+</mo><mi>k</mi><mi>A</mi><mfrac><mrow><msup><mo>∂</mo><mn>2</mn></msup><mi>T</mi></mrow><mrow><mo>∂</mo><msup><mi>x</mi><mn>2</mn></msup></mrow></mfrac></mrow></math>
 </div>
@@ -58,7 +58,7 @@ const REFS: readonly Ref[] = [
 <div class="eqs">
   <math display="block"><mrow><mi>Δ</mi><msub><mi>T</mi><mi>c</mi></msub><mo>∝</mo><msup><mi>B</mi><mrow><mn>4</mn><mo>/</mo><mn>5</mn></mrow></msup><msup><mi>y</mi><mrow><mo>−</mo><mn>3</mn><mo>/</mo><mn>5</mn></mrow></msup><mo>,</mo><mspace width="1em"/><mi>B</mi><mo>=</mo><mfrac><mrow><mi>g</mi><mi>β</mi><msubsup><mi>q</mi><mi>c</mi><mo>′</mo></msubsup></mrow><mrow><mi>ρ</mi><msub><mi>c</mi><mi>p</mi></msub></mrow></mfrac></mrow></math>
 </div>
-<p>経路では、区間ごとに点の熱源のプルーム<a href="#thy-r5">[5]</a>を考えて重ねます。下の区間が温めた空気に包まれた区間は、対流で逃がせる熱が減ります。</p>
+<p>経路では区間ごとに点の熱源のプルーム<a href="#thy-r5">[5]</a>を考えて重ねます。下の区間が温めた空気に包まれた区間は、対流で逃がせる熱が減ります。</p>
 
 <h3>基板</h3>
 <p>30 × 18 mm の基板を 0.25 mm 角の升に分けます。まず銅箔の電位を解き、電流の分布と升ごとの発熱を求めます。細い所や直角の内側の角では電流が集まり、発熱も集中します。次に、銅箔と基材（FR-4）の面内の熱伝導と、両面からの対流と放射で温度を進めます。</p>
