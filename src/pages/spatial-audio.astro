@@ -9,6 +9,7 @@ import ParamRow from '../components/ParamRow.astro';
 import RelatedTools from '../components/RelatedTools.astro';
 import SiteLayout from '../layouts/SiteLayout.astro';
 import '../tools/spatial-audio/style.css';
+import Credits from '../tools/spatial-audio/Credits.astro';
 import { HOW } from '../tools/spatial-audio/how';
 import { OBS_PRESETS, SCENES, SOUNDS } from '../tools/spatial-audio/model';
 import { MODE_OPT, OBS_P, ONOFF, PARAMS, PLACE_OPT, SPACE, SRC_VOL } from '../tools/spatial-audio/params';
@@ -96,6 +97,10 @@ const name = '立体音響';
 
     <Collapsible hid="hd-thy" title="動作原理と式">
       <Theory />
+    </Collapsible>
+
+    <Collapsible hid="hd-cred" title="録音の出典" class="a-src">
+      <Credits />
     </Collapsible>
   </div>
 

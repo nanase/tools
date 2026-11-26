@@ -2,7 +2,7 @@
 .sa-main,.sa-side{display:flex;flex-direction:column;gap:26px;min-width:0}
 @media (min-width:1000px){
   .sa-grid{grid-template-columns:minmax(0,1.8fr) minmax(330px,1fr);align-items:start}
-  .sa-howp,.sa-grid>.a-thy{grid-column:1/-1}
+  .sa-howp,.sa-grid>.a-thy,.sa-grid>.a-src{grid-column:1/-1}
 }
 .sa-hp{display:inline-flex;align-items:center;gap:4px}
 .sa-hp svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.4}

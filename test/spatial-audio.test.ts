@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { ART, LOOP } from '../src/lib/card-art';
 import { prepareClip } from '../src/tools/spatial-audio/clip';
+import { CREDITS } from '../src/tools/spatial-audio/credits';
 import {
   buildPlace,
   CS,
@@ -99,6 +100,10 @@ describe('場所と鏡像', () => {
 
   it('録音のファイルがそろっている', () => {
     for (const s of SOUNDS) expect(existsSync(`public/spatial-audio/${s.id}.mp3`), s.id).toBe(true);
+  });
+
+  it('どの録音にも出典がある', () => {
+    expect(CREDITS.map((c) => c.id).sort()).toEqual(SOUNDS.map((s) => s.id).sort());
   });
 });
 
