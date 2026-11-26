@@ -11,6 +11,8 @@ export interface PieceData {
   notes: ScoreNote[];
   /** MIDI のテンポの変化 [拍, 標準のテンポに対する比]（変化のない MIDI では空） */
   tempo: readonly (readonly [number, number])[];
+  /** 小節の頭の拍（MIDI ファイルの曲だけ。同梱の曲は Piece の bar と pickup で決める） */
+  starts?: readonly number[];
 }
 const data = (m: { notes: () => ScoreNote[]; TEMPO: readonly (readonly [number, number])[] }): PieceData => ({
   notes: m.notes(),

@@ -41,6 +41,25 @@
   <div class="subst" id="subst" role="group" aria-label="現在の値を代入した式"></div>
 </div>
 
+<h3>エンベロープ</h3>
+<p>オペレータごとに ADSR のエンベロープ <math><msub><mi>e</mi><mi>k</mi></msub><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo></math> を持ちます。モジュレータでは変調指数に、キャリアでは振幅に掛けます。モジュレータのエンベロープが下がると変調が弱まり、倍音が減って音が丸くなります。</p>
+<ul class="tl">
+  <li>アタック: 0 から 1 まで直線で上がる</li>
+  <li>ディケイ: サステインの大きさへ指数で下がる。時間はその差が 60 dB 縮む長さ</li>
+  <li>リリース: 鍵を離したあと指数で下がる。時間は 60 dB 下がる長さ</li>
+</ul>
+<div class="eqs">
+  <math display="block"><msub><mi>s</mi><mi>k</mi></msub><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mo>=</mo><msub><mi>W</mi><mi>k</mi></msub><mrow><mo>(</mo><mn>2</mn><mi>π</mi><mo stretchy="false">(</mo><msub><mi>r</mi><mi>k</mi></msub><msub><mi>f</mi><mn>0</mn></msub><mo>+</mo><msub><mi>d</mi><mi>k</mi></msub><mo stretchy="false">)</mo><mi>t</mi><mo>+</mo><munder><mo>∑</mo><mrow><mi>j</mi><mo>→</mo><mi>k</mi></mrow></munder><mi>g</mi><msub><mi>e</mi><mi>j</mi></msub><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><msub><mi>I</mi><mi>j</mi></msub><msub><mi>s</mi><mi>j</mi></msub><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mo>)</mo></mrow></math>
+  <math display="block"><mi>y</mi><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mo>=</mo><munder><mo>∑</mo><mrow><mi>k</mi><mo>∈</mo><mtext>キャリア</mtext></mrow></munder><mi>g</mi><msub><mi>e</mi><mi>k</mi></msub><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><msub><mi>A</mi><mi>k</mi></msub><msub><mi>s</mi><mi>k</mi></msub><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo></math>
+  <math display="block"><mi>g</mi><mo>=</mo><mn>1</mn><mo>−</mo><mn>0.7</mn><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><msup><mi>v</mi><mn>2</mn></msup><mo stretchy="false">)</mo></math>
+</div>
+<dl class="syms">
+  <dt><math><mi>v</mi></math></dt><dd>強さ ÷ 127。MIDI 機器と MIDI ファイルの音はベロシティ ÷ 127</dd>
+  <dt><math><mi>g</mi></math></dt><dd>強さで変調指数と振幅に掛ける値。弱く弾くほど小さく、暗い音になる</dd>
+  <dt><math><msub><mi>d</mi><mi>k</mi></msub></math></dt><dd>デチューン（Hz）。音の高さによらず同じ速さでうなる</dd>
+</dl>
+<p>再生ボタンの音と、波形・スペクトルの図にはエンベロープを掛けません（<math><msub><mi>e</mi><mi>k</mi></msub><mo>=</mo><mn>1</mn></math>）。時間変化の図は、鍵を押して表示の長さの 3/4 で離す音を計算して描きます。</p>
+
 <h3>波形</h3>
 <p>波形は次の 7 つから選べます。どれも位相 0 で 0 から始まります。</p>
 <div class="tt-w"><table class="tt">
@@ -63,7 +82,9 @@
   <li><b>波形:</b> 1 周期を 512 点に分けて計算する</li>
   <li><b>スペクトル:</b> 1 周期を 512 点に分け、32 周期ぶんにブラックマン-ハリス窓を掛けて求める。振幅 1 の正弦波を 0 dBFS とする</li>
   <li><b>音:</b> 出力のサンプリング周波数で計算する</li>
-  <li><b>曲の音:</b> 1 音ずつ同じ式で計算して足す。音の始まりでは位相を 0 に戻す。始まりと終わりには 5 ms の短いフェードを掛ける</li>
+  <li><b>時間変化:</b> 縦軸の上端の周波数の 4 倍（16〜96 kHz）で標本化し、ハン窓の FFT を 200 列ぶん求める。明るさは −80〜0 dB</li>
+  <li><b>鍵盤・曲・MIDI の音:</b> 1 音ずつ同じ式で計算して足す。音の始まりでは位相を 0 に戻し、エンベロープをアタックから始める</li>
+  <li><b>再生ボタンの音:</b> エンベロープを掛けず、始まりと終わりに 5 ms の短いフェードを掛ける</li>
 </ul>
 
 <h3>出典</h3>
@@ -78,5 +99,7 @@
 <ul class="tl">
   <li>オペレータの出力の大きさの決め方</li>
   <li>帰還の大きさ</li>
-  <li>曲の音のフェードの長さと、同時に鳴らす音の数の上限（32 音）</li>
+  <li>再生ボタンの音のフェードの長さと、同時に鳴らす音の数の上限（32 音）</li>
+  <li>エンベロープの式、強さの効き（0.7）、デチューン。FMシンセサイザと同じ</li>
+  <li>音色の例の値。FMシンセサイザで試聴して選んだ音色から写した</li>
 </ul>
