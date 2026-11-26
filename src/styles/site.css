@@ -494,6 +494,11 @@ a.unit:hover h3{text-decoration:underline;text-decoration-color:var(--ink-3);tex
 .mi-bar i{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--ink-2)}
 .mi-v{min-width:8.5em;white-space:nowrap;font-variant-numeric:tabular-nums}
 .mi-pd{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+/* 受けたチャンネルの LED（16 個。音が来ると光る） */
+.mi-leds{display:grid;grid-template-columns:repeat(16,minmax(0,24px));gap:3px 2px}
+.mi-leds span{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0;font:500 11.5px/1 var(--mono);color:var(--ink-3)}
+.mi-leds i{width:100%;max-width:20px;height:7px;border-radius:2px;background:var(--led-off)}
+.mi-leds span.on i{background:var(--accent);box-shadow:0 0 4px var(--accent)}
 .midi-msg{margin:8px 8px 0}
 .midi-msg:empty{display:none}
 

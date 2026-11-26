@@ -1,10 +1,10 @@
 /**
  * FM 音源を Web Audio API で鳴らす: AudioWorklet（worklet.ts）→ 音量 → リミッタ → 出力。
- * 鍵盤と再生ボタンの音は、鳴らし続ける（再生ボタン、latch）か、鍵盤を押している間（hold）に鳴らす。
- * 曲の音は AudioContext の時刻で予約する。何も鳴らしていない間は AudioContext を止めて CPU を休ませる
+ * 再生ボタンの音（latch）はエンベロープなしで鳴らし続ける。鍵盤・曲・MIDI の音は AudioContext の時刻で予約し、エンベロープを掛ける。
+ * 何も鳴らしていない間は AudioContext を止めて CPU を休ませる
  */
 import type { Patch } from './synth';
-import type { FmMsg } from './worklet';
+import type { FmMsg, FmOut } from './worklet';
 import workletUrl from './worklet.ts?worker&url';
 
 type Ctor = typeof AudioContext;
@@ -25,12 +25,16 @@ export class FmAudio {
   midi = false;
   /** AudioContext が止まったときに呼ぶ（ブラウザや OS が止めたとき。鳴らしていない間に止めたときも） */
   onLost: (() => void) | null = null;
+  /** 最後に鳴り始めた音のエンベロープの大きさ（鳴っていなければ null）。worklet から届くたびに入れる */
+  lv: number[] | null = null;
   private ac: AudioContext | null = null;
   private node: AudioWorkletNode | null = null;
   private master: GainNode | null = null;
   private loading: Promise<boolean> | null = null;
   private patch: Patch | null = null;
   private f0 = 0;
+  /** 強さ（0〜1） */
+  private vel = 1;
   /** 音量（dB、0 dB = フルスケール） */
   private db = -30;
   private timer: ReturnType<typeof setTimeout> | undefined;
@@ -70,6 +74,9 @@ export class FmAudio {
         lim.release.value = 0.15;
         master.gain.value = 10 ** (this.db / 20);
         node.connect(master).connect(lim).connect(ac.destination);
+        node.port.onmessage = (e: MessageEvent<FmOut>) => {
+          if (e.data.type === 'lv') this.lv = e.data.lv;
+        };
         this.node = node;
         this.master = master;
         ac.addEventListener('statechange', () => {
@@ -94,13 +101,14 @@ export class FmAudio {
   }
 
   private hand(): void {
-    this.post({ type: 'hand', f0: this.f0, on: this.play });
+    this.post({ type: 'hand', f0: this.f0, vel: this.vel, on: this.latch });
   }
 
-  /** 音色と、鍵盤と再生ボタンの音の基本周波数を送る */
-  send(p: Patch, f0: number): void {
+  /** 音色と、再生ボタンの音の基本周波数・強さ（0〜1）を送る */
+  send(p: Patch, f0: number, vel: number): void {
     this.patch = p;
     this.f0 = f0;
+    this.vel = vel;
     this.post({ type: 'patch', p });
     this.hand();
   }
@@ -112,26 +120,32 @@ export class FmAudio {
     if (ac && master) master.gain.setTargetAtTime(10 ** (db / 20), ac.currentTime, 0.008);
   }
 
-  /** 曲の音 id を、時刻 at（AudioContext の時刻）に基本周波数 f0 [Hz] で鳴らし始める */
-  on(id: number, f0: number, at: number): void {
-    this.post({ type: 'on', id, f0, at });
+  /** 音 id を、時刻 at（AudioContext の時刻。0 ならすぐ）に基本周波数 f0 [Hz]・強さ vel（0〜1）で鳴らし始める */
+  on(id: number, f0: number, at: number, vel: number): void {
+    this.post({ type: 'on', id, f0, vel, at });
   }
   /** 曲の音 id を時刻 at に離す */
   off(id: number, at: number): void {
     this.post({ type: 'off', id, at });
   }
-  /** 予約を消して、曲の音をすべて離す（MIDI の音は残す） */
+  /** 予約を消して、曲の音をすべて離す（鍵盤と MIDI の音は残す） */
   stop(): void {
     this.post({ type: 'stop' });
   }
+  /** 鳴っている音をすべてすぐ消す（曲の予約は残す） */
+  panic(): void {
+    this.post({ type: 'panic' });
+  }
 
-  /** 何も鳴らしていなければ、少しあとで AudioContext を止める */
+  /** 何も鳴らしていなければ、少しあとで AudioContext を止める（リリースで鳴っている音があれば、鳴り終わるまで待つ） */
   idle(): void {
     clearTimeout(this.timer);
     if (this.play || this.song || this.midi) return;
     const { ac } = this;
     this.timer = setTimeout(() => {
-      if (!this.play && !this.song && !this.midi) void ac?.suspend();
+      if (this.play || this.song || this.midi) return;
+      if (this.lv && ac?.state === 'running') this.idle();
+      else void ac?.suspend();
     }, IDLE_MS);
   }
 
