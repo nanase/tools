@@ -1,16 +1,17 @@
-/** 双2次フィルタのページの入口: 入力 → 係数・特性の計算 → 結果・グラフ・係数・代入式、精密計算（Worker）、試聴（Web Audio） */
+/** 双2次フィルタのページの入口: 入力 → 係数・特性の計算 → 結果・グラフ・係数・代入式、精密計算（Worker）、試聴（Web Audio。入力の音は source.ts） */
 import { Choice } from '../../lib/choice';
 import { $, $$ } from '../../lib/dom';
 import { prevOf } from '../../lib/eseries';
 import { fmt, fmtR, ro } from '../../lib/format';
 import { ParamGroup } from '../../lib/param';
 import { DV, SH, SW } from '../../lib/scope';
-import { storeToggle } from '../../lib/store';
+import { forget, store, stored, storeToggle } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
 import { type Analysis, analyze, coef, type FilterParams, type Summary } from './filter';
 import { hzMath, substHtml } from './math';
 import { fcPatch, hzT, type Key, L0, LENS, PARAMS, sup, type TypeDef, typeOf } from './params';
 import { type FrPlot, fixed, frIndex, frPlot, IH, type ImpPlot, impPlot, LV_HOT, lvX, sig } from './plot';
+import { fileLoop, isRecording, type Loop, makeLoop, SRC0, sourceOf, toLoop } from './source';
 import type { Job, Reply } from './worker';
 
 const html = (id: string, s: string) => {
@@ -289,21 +290,85 @@ precBtn.addEventListener('click', () => {
   }
 });
 
-/* ---------- 試聴（Web Audio API: ホワイトノイズ → 音量 → IIRFilterNode → レベル計測） ---------- */
+/* ---------- 試聴（Web Audio API: 入力 → 音量 → IIRFilterNode（原音のときは通さない）→ レベル計測） ---------- */
+/** くり返し鳴らす音と、その標本化周波数（再生装置と違っても AudioBufferSourceNode が合わせる） */
+interface Clip extends Loop {
+  fs: number;
+}
 interface Sound {
   ctx: AudioContext;
   gain: GainNode;
+  /** フィルタを通した音・通さない音（原音） */
+  wet: GainNode;
+  dry: GainNode;
   an: AnalyserNode;
   iir: IIRFilterNode | null;
   buf: Float32Array<ArrayBuffer>;
+  /** 鳴らしている入力（切り替えるときは前の音を絞ってから止める） */
+  cur: { src: AudioBufferSourceNode; g: GainNode } | null;
 }
 let snd: Sound | null = null,
   playing = false,
+  bypass = false,
   raf = 0,
   level = -Infinity;
+/** ノイズ・楽器は作る標本化周波数を決めておく */
+const GEN_FS = 48000;
+const BASE = import.meta.env.BASE_URL;
+const srcSel = $<HTMLSelectElement>('#src'),
+  fileOpt = $<HTMLOptionElement>('#src-file'),
+  fileIn = $<HTMLInputElement>('#src-in'),
+  busy = $('#src-busy');
+/** 選んでいる入力（'file' は開いたファイル） */
+let srcV = SRC0.v,
+  /** 「ファイルを開く…」を選んだときに戻す値 */
+  prevV = SRC0.v,
+  fileClip: Clip | null = null;
+const clips = new Map<string, Promise<Clip>>();
+
+/** 録音とファイルを読む。再生装置がまだなければ、読むためだけの文脈を使う */
+let decoder: BaseAudioContext | null = null;
+function decode(b: ArrayBuffer): Promise<AudioBuffer> {
+  decoder ??= snd?.ctx ?? new OfflineAudioContext(1, 1, GEN_FS);
+  return decoder.decodeAudioData(b);
+}
+const channels = (b: AudioBuffer) => Array.from({ length: b.numberOfChannels }, (_, i) => b.getChannelData(i));
+
+function clipOf(v: string): Promise<Clip> {
+  let p = clips.get(v);
+  if (p) return p;
+  const s = sourceOf(v) ?? SRC0;
+  if (isRecording(s))
+    p = fetch(`${BASE}spatial-audio/${s.v}.mp3`)
+      .then((r) => {
+        if (!r.ok) throw new Error(String(r.status));
+        return r.arrayBuffer();
+      })
+      .then(decode)
+      .then((b) => ({
+        ...toLoop(channels(b).slice(0, 2), b.sampleRate, s.group === 'voice' ? 'gap' : 'xfade'),
+        fs: b.sampleRate,
+      }));
+  else {
+    const l = makeLoop(s, GEN_FS);
+    p = l ? Promise.resolve({ ...l, fs: GEN_FS }) : Promise.reject(new Error(v));
+  }
+  /* 読めなかったものは、選び直したときに読み直す */
+  p.catch(() => clips.delete(v));
+  clips.set(v, p);
+  return p;
+}
+
 function setVol(): void {
   if (!snd) return;
   snd.gain.gain.setTargetAtTime(10 ** (val('vol') / 20), snd.ctx.currentTime, 0.02);
+}
+/** 原音: フィルタを通した音と通さない音を重ねて切り替える */
+function setBypass(): void {
+  if (!snd) return;
+  const t = snd.ctx.currentTime;
+  snd.wet.gain.setTargetAtTime(bypass ? 0 : 1, t, 0.01);
+  snd.dry.gain.setTargetAtTime(bypass ? 1 : 0, t, 0.01);
 }
 /** 係数は再生装置のサンプリング周波数で求め直す（fc・Q・G は画面と同じ） */
 function setIIR(): void {
@@ -319,7 +384,7 @@ function setIIR(): void {
     return;
   }
   snd.gain.connect(n);
-  n.connect(snd.an);
+  n.connect(snd.wet);
   if (snd.iir) {
     try {
       snd.gain.disconnect(snd.iir);
@@ -330,6 +395,54 @@ function setIIR(): void {
   }
   snd.iir = n;
   txt('#lv-fs', fmt(r, 'Hz', 4) + (fc < fc0 ? `（fc を ${fmt(fc, 'Hz', 3)} に制限）` : ''));
+}
+/** 入力を差し替える。鳴っている音があれば 30 ms で重ねて切り替える */
+function swap(c: Clip): void {
+  if (!snd) return;
+  const { ctx } = snd,
+    t = ctx.currentTime,
+    b = ctx.createBuffer(c.data.length, c.data[0].length, c.fs);
+  c.data.forEach((d, i) => {
+    b.copyToChannel(d, i);
+  });
+  const src = ctx.createBufferSource(),
+    g = ctx.createGain();
+  src.buffer = b;
+  src.loop = true;
+  src.connect(g);
+  g.connect(snd.gain);
+  const old = snd.cur;
+  if (old) {
+    g.gain.setValueAtTime(0, t);
+    g.gain.setTargetAtTime(c.gain, t, 0.01);
+    old.g.gain.setTargetAtTime(0, t, 0.01);
+    old.src.stop(t + 0.15);
+    old.src.onended = () => old.g.disconnect();
+  } else g.gain.value = c.gain;
+  src.start(t);
+  snd.cur = { src, g };
+}
+/** 今の入力を鳴らす（読み終える前に選び直したら、古い方は鳴らさない） */
+async function feed(): Promise<void> {
+  const v = srcV;
+  if (v === 'file') {
+    if (fileClip) swap(fileClip);
+    return;
+  }
+  /* 鳴らす前は、時間のかかる録音の読み込みだけ先に始める */
+  if (!snd && !isRecording(sourceOf(v) ?? SRC0)) return;
+  const t = setTimeout(() => {
+    busy.hidden = false;
+  }, 0);
+  try {
+    const c = await clipOf(v);
+    if (v === srcV) swap(c);
+  } catch {
+    if (v === srcV) toast('読み込めませんでした。選び直してください');
+  } finally {
+    clearTimeout(t);
+    if (v === srcV) busy.hidden = true;
+  }
 }
 function drawLv(v: number): void {
   const x = Number.isFinite(v) ? lvX(v) : 0,
@@ -353,22 +466,30 @@ function open(): Sound | null {
   const AC =
     window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
   if (!AC) return null;
-  const c = new AC(),
-    len = c.sampleRate * 2,
-    b = c.createBuffer(1, len, c.sampleRate),
-    d = b.getChannelData(0);
-  for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
-  const src = c.createBufferSource();
-  src.buffer = b;
-  src.loop = true;
-  const s: Sound = { ctx: c, gain: c.createGain(), an: c.createAnalyser(), iir: null, buf: new Float32Array(2048) };
+  const c = new AC();
+  const s: Sound = {
+    ctx: c,
+    gain: c.createGain(),
+    wet: c.createGain(),
+    dry: c.createGain(),
+    an: c.createAnalyser(),
+    iir: null,
+    buf: new Float32Array(2048),
+    cur: null,
+  };
   s.an.fftSize = 2048;
-  src.connect(s.gain);
+  s.gain.connect(s.dry);
+  s.wet.connect(s.an);
+  s.dry.connect(s.an);
   s.an.connect(c.destination);
   s.gain.gain.value = 10 ** (val('vol') / 20);
+  s.wet.gain.value = bypass ? 0 : 1;
+  s.dry.gain.value = bypass ? 1 : 0;
   snd = s;
+  /* 再生装置ができたら、読むのもこちらで行う（標本化周波数がそろう） */
+  decoder = c;
   setIIR();
-  src.start();
+  void feed();
   return s;
 }
 async function play(on: boolean): Promise<void> {
@@ -393,6 +514,55 @@ async function play(on: boolean): Promise<void> {
 }
 $('#playBtn').addEventListener('click', () => {
   void play(!playing);
+});
+$('#bypBtn').addEventListener('click', (e) => {
+  bypass = !bypass;
+  (e.currentTarget as HTMLElement).setAttribute('aria-pressed', String(bypass));
+  setBypass();
+});
+
+/** 入力を選ぶ。ファイルは保存せず、開き直したときは既定に戻す */
+function pick(v: string, load = true): void {
+  srcV = prevV = v;
+  txt('#in-t', v === 'file' ? fileOpt.textContent || '' : (sourceOf(v) ?? SRC0).label);
+  if (v === SRC0.v || v === 'file') forget('c:p-src');
+  else store('c:p-src', v);
+  busy.hidden = true;
+  if (load) void feed();
+}
+{
+  const v = stored('c:p-src');
+  if (typeof v === 'string' && sourceOf(v)) {
+    srcSel.value = v;
+    pick(v, false);
+  }
+}
+srcSel.addEventListener('change', () => {
+  if (srcSel.value === 'open') {
+    srcSel.value = prevV;
+    fileIn.click();
+    return;
+  }
+  pick(srcSel.value);
+});
+fileIn.addEventListener('change', async () => {
+  const f = fileIn.files?.[0];
+  fileIn.value = '';
+  if (!f) return;
+  busy.hidden = false;
+  try {
+    const b = await decode(await f.arrayBuffer());
+    fileClip = { ...fileLoop(channels(b), b.sampleRate), fs: b.sampleRate };
+  } catch {
+    busy.hidden = true;
+    toast(`${f.name} を読めませんでした。`);
+    return;
+  }
+  busy.hidden = true;
+  fileOpt.hidden = false;
+  fileOpt.textContent = f.name;
+  srcSel.value = 'file';
+  pick('file');
 });
 
 /* ---------- 入力 ---------- */

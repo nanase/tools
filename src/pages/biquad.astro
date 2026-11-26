@@ -1,4 +1,5 @@
 ---
+import Busy from '../components/Busy.astro';
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
 import More from '../components/More.astro';
@@ -12,7 +13,9 @@ import { gridSvg } from '../lib/scope';
 import { hzMath } from '../tools/biquad/math';
 import { L0, LENS, PARAMS, TYPES } from '../tools/biquad/params';
 import { blockSvg, IH, IR, lvGrid } from '../tools/biquad/plot';
+import { GROUPS, SOURCES, SRC0 } from '../tools/biquad/source';
 import Theory from '../tools/biquad/Theory.astro';
+import Credits from '../tools/spatial-audio/Credits.astro';
 
 const name = '双2次フィルタ';
 const row = (ks: string[]) => PARAMS.filter((d) => ks.includes(d.k));
@@ -20,7 +23,7 @@ const t0 = TYPES[0];
 /* 同じカテゴリ（準備中を含む）の後ろに、ほかのカテゴリの公開中のツールを並べる */
 ---
 <SiteLayout title={name} tool={{ id: 'biquad', name }} note="係数と特性は倍精度の数値計算による参考値です。">
-  <PageTitle title={name}>双2次フィルタ（バイクアッドフィルタ）の係数を、フィルタの種類・カットオフ周波数・Q・増幅量・サンプリング周波数から求めます。周波数特性とインパルス応答を描き、ホワイトノイズに掛けた音も聞けます。</PageTitle>
+  <PageTitle title={name}>双2次フィルタ（バイクアッドフィルタ）の係数を、フィルタの種類・カットオフ周波数・Q・増幅量・サンプリング周波数から求めます。周波数特性とインパルス応答を描き、ノイズ・楽器・自然の音・声や手持ちの音のファイルに掛けた音も聞けます。</PageTitle>
   <div class="mini" data-mini="op" aria-hidden="true"><span id="mt"></span><span><i>f</i><sub>c</sub><b id="mfc"></b></span><span><i>Q</i><b id="mq2"></b></span><span><i>A</i>(<i>f</i><sub>c</sub>)<b id="ma"></b></span></div>
 
   <div class="tgrid">
@@ -34,20 +37,34 @@ const t0 = TYPES[0];
       </Panel>
 
       <Panel hid="hd-snd" title="試聴" class="a-snd">
-        <div slot="aux" class="seg"><button type="button" id="playBtn" aria-pressed="false" title="ホワイトノイズにこのフィルタを掛けた音"><span class="led" aria-hidden="true"></span><span id="playT">再生</span></button></div>
+        <Fragment slot="aux"><div class="seg"><button type="button" id="bypBtn" aria-pressed="false" title="フィルタを通さない音">原音</button></div><div class="seg"><button type="button" id="playBtn" aria-pressed="false" title="入力にこのフィルタを掛けた音"><span class="led" aria-hidden="true"></span><span id="playT">再生</span></button></div></Fragment>
         <div class="sbar">
-          <span class="stag">IN <b>WHITE NOISE</b></span>
+          <span class="stag">IN <b id="in-t">{SRC0.label}</b></span>
           <span class="stag"><i class="sw" aria-hidden="true"></i>OUT <b id="lv-t">---</b> dBFS</span>
           <span class="stag">FS <b id="lv-fs">---</b></span>
         </div>
         <div class="scope lvl">
+          <Busy id="src-busy" text="読み込み中…" hidden />
           <svg viewBox="-12 -4 424 42" role="img" aria-label="出力レベル">
             <g set:html={lvGrid()} />
             <rect class="dt1" id="lv-bar" x="0" y="5" width="0" height="12"/>
             <rect class="lv-hot" id="lv-hot" x="0" y="5" width="0" height="12"/>
           </svg>
         </div>
-        <div class="ptab">{row(['vol']).map((d) => <ParamRow d={d} />)}</div>
+        <div class="ptab">
+          <div class="prow pick" id="p-src">
+            <div class="c-sym" aria-hidden="true"></div>
+            <div class="c-name"><label class="pn" for="src">入力</label></div>
+            <div class="c-val sel"><select id="src" autocomplete="off">
+              {GROUPS.map(([g, name]) => <optgroup label={name}>{SOURCES.filter((x) => x.group === g).map((x) => <option value={x.v}>{x.name}</option>)}</optgroup>)}
+              <option value="file" id="src-file" hidden></option>
+              <hr />
+              <option value="open">ファイルを開く…</option>
+            </select></div>
+          </div>
+          {row(['vol']).map((d) => <ParamRow d={d} />)}
+        </div>
+        <input type="file" id="src-in" accept="audio/*,.wav,.mp3,.m4a,.ogg,.flac" hidden />
       </Panel>
     </div>
 
@@ -133,6 +150,10 @@ const t0 = TYPES[0];
 
     <Collapsible hid="hd-thy" title="動作原理と式">
       <Theory />
+    </Collapsible>
+
+    <Collapsible hid="hd-cred" title="録音の出典" class="a-src">
+      <Credits />
     </Collapsible>
   </div>
 
