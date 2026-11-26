@@ -493,7 +493,7 @@ function phraseChanged(): void {
   if (was) void startPhrase(0);
 }
 const msg = (s: string) => txt($('#snd-msg'), s);
-const NO_SOUND = '音を出せませんでした。';
+const NO_SOUND = '音を出せませんでした';
 /** 拍 b から弾く（くり返しの中の位置） */
 async function startPhrase(b: number): Promise<void> {
   if (!(await audio.ready())) {

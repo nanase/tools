@@ -263,7 +263,7 @@ function setRegistration(r: Registration, at = 0): void {
   store('couplers', [...couplers]);
 }
 /** 計算が間に合わないときの、同時に鳴らす管の数の上限（AudioWorklet が知らせる） */
-audio.onBudget = (n) => txt('#pp-load', n ? `計算が重いので管を ${n} 本までにしました。` : '');
+audio.onBudget = (n) => txt('#pp-load', n ? `計算が重いので管を ${n} 本までにしました` : '');
 /** 弁の開いている管のストップのボタンを点ける（AudioWorklet が知らせる） */
 audio.onStops = (ids) => {
   for (const b of stopBtns) b.querySelector('.led')?.classList.toggle('on', ids.includes(b.dataset.stop as string));
