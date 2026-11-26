@@ -22,10 +22,12 @@ const FILTERS = [
   ['3', '異方性'],
 ] as const;
 const ANISO = [2, 4, 8, 16].map((a) => [String(a), `${a}x`] as const);
-/** 左右の設定。初めは左がトライリニア、右が異方性 */
+/** 映像の 1 画素を画面の何画素分で描くか */
+const PX = [1, 2, 3, 4].map((k) => [String(k), k === 1 ? '等倍' : `${k} 倍`] as const);
+/** 左右の設定。初めは左が最近傍（ミップマップなし）、右が異方性 */
 const SETS = [
-  { i: 0, h: '左', f: '2' },
-  { i: 1, h: '右', f: '3' },
+  { i: 0, h: '左', f: '0', m: '0' },
+  { i: 1, h: '右', f: '3', m: '1' },
 ];
 const longest = STEPS.reduce((a, s) => (s[2].length > a.length ? s[2] : a), '');
 ---
@@ -68,13 +70,14 @@ const longest = STEPS.reduce((a, s) => (s[2].length > a.length ? s[2] : a), '');
             <h3 class="tf-sh">{s.h}</h3>
             <div class="ptab">
               <ChoiceRow k={`f${s.i}`} name="テクスチャフィルタ" sub="1 画素の色を決めるときに読むテクスチャの画素と、その混ぜ方" layout="chips" value={s.f} choices={FILTERS} />
-              <ChoiceRow k={`m${s.i}`} name="ミップマップ" sub="半分ずつ縮めた絵の組。遠い所では小さな絵を読む" value="1" choices={[['0', 'なし'], ['1', 'あり']]} />
+              <ChoiceRow k={`m${s.i}`} name="ミップマップ" sub="半分ずつ縮めた絵の組。遠い所では小さな絵を読む" value={s.m} choices={[['0', 'なし'], ['1', 'あり']]} />
               <ChoiceRow k={`a${s.i}`} name="異方性の倍率" sub="斜めに見た所の細長い範囲を分けて読む数の上限" value="16" choices={ANISO} />
             </div>
           </div>
         ))}
       </div>
       <div class="ptab">
+        <ChoiceRow k="px" name="画素の大きさ" sub="映像の 1 画素の幅。大きいほど遠くのちらつきが手前に来る" value="3" choices={PX} />
         <ChoiceRow k="tree" name="木" sub="道の両側に立てる木。木の絵にも同じフィルタを使う" value="1" choices={[['1', 'あり'], ['0', 'なし']]} />
         <ParamRow d={PITCH} />
       </div>
