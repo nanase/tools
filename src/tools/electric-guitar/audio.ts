@@ -2,6 +2,7 @@
  * エレキギターを Web Audio API で鳴らす: AudioWorklet（worklet.ts）→ 音量 → リミッタ → 出力。
  * ワークレットが送る段ごとの波形と弦の様子（Snap）を onSnap で渡す
  */
+import { wakeOnRelease } from '../../lib/wake';
 import type { Msg, Snap } from './proc';
 import workletUrl from './worklet.ts?worker&url';
 
@@ -48,6 +49,7 @@ export class EgAudio {
     this.ac = ac;
     /* iPhone の Safari は、押した操作の中で最初の await より前に resume しないと音を出さない */
     void ac.resume().catch(() => undefined);
+    wakeOnRelease(ac);
     this.loading ??= ac.audioWorklet
       .addModule(workletUrl)
       .then(() => {

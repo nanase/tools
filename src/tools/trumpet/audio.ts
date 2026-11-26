@@ -3,6 +3,7 @@
  * AudioContext は吹く操作の中で作る（自動再生の制限）。鳴らしていない間は止めて CPU を休ませる
  */
 import type { ReverbSpec } from '../../lib/reverb';
+import { wakeOnRelease } from '../../lib/wake';
 import type { Manual, PNote } from './player';
 import type { Opts, TpMsg, TpOut } from './worklet';
 import workletUrl from './worklet.ts?worker&url';
@@ -47,6 +48,7 @@ export class TrumpetAudio {
     this.ac = ac;
     /* iPhone の Safari は、押した操作の中で最初の await より前に resume しないと音を出さない */
     void ac.resume().catch(() => undefined);
+    wakeOnRelease(ac);
     this.loading ??= ac.audioWorklet
       .addModule(workletUrl)
       .then(() => {

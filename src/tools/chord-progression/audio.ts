@@ -5,6 +5,7 @@
  */
 import { lookahead } from '../../lib/pause';
 import { Reverb, reverbSpec, roomOf } from '../../lib/reverb';
+import { wakeOnRelease } from '../../lib/wake';
 import { type GtKind, GtrVoices } from './gtr';
 import type { VoiceId } from './theory';
 
@@ -99,6 +100,7 @@ export class CpAudio {
       const ac = new AC({ latencyHint: 'interactive' });
       /* iPhone の Safari は、押した操作の中で最初の await より前に resume しないと音を出さない */
       void ac.resume().catch(() => undefined);
+      wakeOnRelease(ac);
       ac.addEventListener('statechange', () => {
         if (ac.state !== 'running') this.onLost?.();
       });
@@ -106,6 +108,7 @@ export class CpAudio {
       setInterval(() => this.flush(), 25);
     }
     const ac = this.ac as AudioContext;
+    wakeOnRelease(ac);
     try {
       await ac.resume();
     } catch {
