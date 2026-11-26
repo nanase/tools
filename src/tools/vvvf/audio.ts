@@ -47,6 +47,8 @@ export class VvvfAudio {
     if (!AC) return false;
     const ac = this.ac ?? new AC({ latencyHint: 'interactive' });
     this.ac = ac;
+    /* iPhone の Safari は、操作の処理の中で最初の await より前に resume しないと動かさない */
+    void ac.resume().catch(() => {});
     this.loading ??= ac.audioWorklet
       .addModule(workletUrl)
       .then(() => {
