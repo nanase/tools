@@ -25,7 +25,7 @@
 <p>カラーテーブルは 2〜256 色で、画素は色の番号です<a class="rf" href="#thy-r1">[1]</a>。色の多い画像は median cut で減色します<a class="rf" href="#thy-r3">[3]</a>。誤差拡散は置き換えた誤差を隣の画素へ配ります<a class="rf" href="#thy-r4">[4]</a>。階調は滑らかになりますが、同じ並びが減るので LZW は効きにくくなります。</p>
 
 <h3>インターレース</h3>
-<p>行を 4 つのパスに分けて送ります<a class="rf" href="#thy-r1">[1]</a>。途中まで届いた時点で全体の荒い絵を出せます。上下の行が離れるので LZW は効きにくくなることがあります。</p>
+<p>行を 4 つのパスに分けて送ります<a class="rf" href="#thy-r1">[1]</a>。途中まで届いた時点で全体の粗い絵を出せます。上下の行が離れるので LZW は効きにくくなることがあります。</p>
 <div class="tt-w"><table class="tt">
   <thead><tr><th scope="col">パス</th><th scope="col">始めの行</th><th scope="col">間隔</th></tr></thead>
   <tbody>

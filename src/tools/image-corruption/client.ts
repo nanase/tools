@@ -297,7 +297,7 @@ bindFileInput(fileBtn, $<HTMLInputElement>('#fileIn'), [$('#ic-root')], (f) => {
       setSource({ w: im.w, h: im.h, rgba: im.rgba });
     })
     .catch(() => {
-      $('#m-file').textContent = 'この画像は読めません。';
+      $('#m-file').textContent = 'この画像は読めません';
     });
 });
 

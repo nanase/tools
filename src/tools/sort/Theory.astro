@@ -216,7 +216,7 @@ const Rf = (k: K) => `<a class="rf" href="#thy-r${num(k)}">[${num(k)}]</a>`;
 <h3>比較の回数の下限</h3>
 <p>比較だけで並べ替えるには、<math><mi>n</mi><mo>!</mo></math> 通りの並びを見分ける必要があります<Fragment set:html={Rf('knuth')} />。</p>
 <div class="eqs"><math display="block"><mrow><msub><mi>C</mi><mi>min</mi></msub><mo>≥</mo><mo stretchy="false">⌈</mo><msub><mi>log</mi><mn>2</mn></msub><mi>n</mi><mo>!</mo><mo stretchy="false">⌉</mo><mo>≈</mo><mi>n</mi><msub><mi>log</mi><mn>2</mn></msub><mi>n</mi><mo>−</mo><mn>1.44</mn><mi>n</mi></mrow></math></div>
-<p>計数・基数などの非比較のソートは、値そのものを使うのでこの下限を受けません。</p>
+<p>計数・基数などの非比較のソートは値そのものを使うのでこの下限を受けません。</p>
 
 <h3>データとの相性</h3>
 <ul class="tl">
