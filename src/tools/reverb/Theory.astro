@@ -21,7 +21,7 @@ const ROOMS = PRESETS.map((p) => ({ name: p.name, ac: acoustics(p.room), dim: p.
 </ul>
 
 <h3>鏡像法</h3>
-<p>平らな壁での反射は、壁に映した音源（鏡像）から届く音と同じです。直方体の部屋では鏡像がさらに映り、格子状に並びます<Fragment set:html={rf(1)} />。</p>
+<p>平らな壁での反射は壁に映した音源（鏡像）から届く音と同じです。直方体の部屋では鏡像がさらに映り、格子状に並びます<Fragment set:html={rf(1)} />。</p>
 <div class="eqs">
   <math display="block"><msub><mi>x</mi><mi>i</mi></msub><mo>=</mo><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><mn>2</mn><mi>p</mi><mo stretchy="false">)</mo><msub><mi>x</mi><mi mathvariant="normal">s</mi></msub><mo>+</mo><mn>2</mn><mi>n</mi><msub><mi>L</mi><mi>x</mi></msub><mo>,</mo><mspace width="1em"/><mi>p</mi><mo>∈</mo><mo stretchy="false">{</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo stretchy="false">}</mo><mo>,</mo><mspace width="0.5em"/><mi>n</mi><mo>∈</mo><mi mathvariant="double-struck">Z</mi></math>
   <math display="block"><msub><mi>a</mi><mi>i</mi></msub><mo>=</mo><mfrac><mrow><munder><mo>∏</mo><mi>w</mi></munder><msubsup><mi>β</mi><mi>w</mi><msub><mi>k</mi><mi>w</mi></msub></msubsup></mrow><msub><mi>r</mi><mi>i</mi></msub></mfrac><mo>,</mo><mspace width="1em"/><msub><mi>β</mi><mi>w</mi></msub><mo>=</mo><msqrt><mn>1</mn><mo>−</mo><msub><mi>α</mi><mi>w</mi></msub></msqrt><mo>,</mo><mspace width="1em"/><msub><mi>t</mi><mi>i</mi></msub><mo>=</mo><mfrac><msub><mi>r</mi><mi>i</mi></msub><mi>c</mi></mfrac></math>
@@ -39,7 +39,7 @@ const ROOMS = PRESETS.map((p) => ({ name: p.name, ac: acoustics(p.room), dim: p.
 </ul>
 
 <h3>波面</h3>
-<p>図の波面は、鏡像を中心とする半径 <math><mi>c</mi><mi>t</mi></math> の球を聞き手の高さで水平に切った円です。描くのは部屋の中の弧だけです。壁で跳ね返る波面は、壁の向こうの鏡像の円が入ってきたものです。</p>
+<p>図の波面は鏡像を中心とする半径 <math><mi>c</mi><mi>t</mi></math> の球を聞き手の高さで水平に切った円です。描くのは部屋の中の弧だけです。壁で跳ね返る波面は、壁の向こうの鏡像の円が入ってきたものです。</p>
 <div class="eqs">
   <math display="block"><mi>ρ</mi><mo>=</mo><msqrt><msup><mrow><mo stretchy="false">(</mo><mi>c</mi><mi>t</mi><mo stretchy="false">)</mo></mrow><mn>2</mn></msup><mo>−</mo><msup><mrow><mo stretchy="false">(</mo><msub><mi>z</mi><mi>i</mi></msub><mo>−</mo><msub><mi>z</mi><mi mathvariant="normal">r</mi></msub><mo stretchy="false">)</mo></mrow><mn>2</mn></msup></msqrt></math>
 </div>

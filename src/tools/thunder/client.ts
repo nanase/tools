@@ -328,7 +328,7 @@ function outputs(): void {
     txt('#o-rngs', d > rng ? '聞き手は影の領域の中（雲の中からの音はほとんど届かない）' : '聞き手は届く範囲の中');
   } else {
     html('#o-rng', '制限なし');
-    txt('#o-rngs', '気温が高さで変わらないので音は曲がりません。');
+    txt('#o-rngs', '気温が高さで変わらないので音は曲がりません');
   }
   txt('#m-wait', `${r.first.toFixed(1)} s`);
   txt('#m-dist', `${side} ${fmtKm(d)} km`);

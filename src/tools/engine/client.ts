@@ -736,7 +736,7 @@ function frame(t: number): void {
   drawPV();
   $('#pv-st').textContent = running ? `${grp(vis.rpm)} rpm、スロットル ${Math.round(vis.throttle * 100)} %` : '停止';
   $('#pv-rd').textContent = pvLast.length
-    ? `最高圧力 ${fx(pm, 1)} bar（燃焼の上死点の後 ${Math.round(pmAt - 360)}°）　大きい輪が燃焼の仕事、小さい輪が吸排気のポンプの損失`
+    ? `最高圧力 ${fx(pm, 1)} bar（燃焼の上死点の後 ${Math.round(pmAt - 360)}°）　大きいループが燃焼の仕事、小さいループが吸排気のポンプの損失`
     : '';
   /* 文字の表示は 1 秒に 8 回まで */
   if (t - lastUi > 125) {
