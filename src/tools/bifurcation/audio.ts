@@ -71,7 +71,10 @@ export class MapAudio {
       }, 300);
       return true;
     }
-    if (!(await this.ensure()) || !this.ac) return false;
+    /* iPhone の Safari は、押した操作の中で最初の await より前に resume しないと鳴らない */
+    const ready = this.ensure();
+    void this.ac?.resume().catch(() => {});
+    if (!(await ready) || !this.ac) return false;
     try {
       await this.ac.resume();
     } catch {
