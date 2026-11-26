@@ -148,7 +148,7 @@ const Rf = (i: number) => `<a class="rf" href="#thy-r${i}">[${i}]</a>`;
 <p>記号: <math><msub><mi>v</mi><mi mathvariant="normal">n</mi></msub></math> は法線の向きに離れる速さ、<math><msub><mi>v</mi><mi mathvariant="normal">t</mi></msub></math> は滑りの速さです。tanh で滑りの向きが変わる所を滑らかにします。振り子とがんぎ車を刻み 80 µs の半陰的オイラー法で進めます。</p>
 
 <h3>振り角と進み遅れ</h3>
-<p>駆動が強いほど脱進機の誤差で進み、振れ角が大きいほど円弧誤差で遅れます。Hoyng は 1 周期で平均した振り角 <math><mi>λ</mi></math> と位相 <math><mi>ψ</mi></math> の式でこの 2 つを分けました <Fragment set:html={Rf(3)} />。どちらが勝つかは、動かす点と脱進機の型で変わります。</p>
+<p>駆動が強いほど脱進機の誤差で進み、振れ角が大きいほど円弧誤差で遅れます。Hoyng は 1 周期で平均した振り角 <math><mi>λ</mi></math> と位相 <math><mi>ψ</mi></math> の式でこの 2 つを分けました <Fragment set:html={Rf(3)} />。どちらが上回るかは、動かす点と脱進機の型で変わります。</p>
 <div class="eqs"><math display="block"><mover><mi>ψ</mi><mo>˙</mo></mover><mo>−</mo><mn>1</mn><mo>=</mo><mo>−</mo><mfrac><msup><mi>λ</mi><mn>2</mn></msup><mn>16</mn></mfrac><mo>−</mo><mfrac><mn>1</mn><mi>λ</mi></mfrac><mo>∮</mo><mi>M</mi><mo stretchy="false">(</mo><mi>θ</mi><mo stretchy="false">)</mo><mi>sin</mi><mo>⁡</mo><mi>ψ</mi><mspace width="0.17em"/><mi>d</mi><mi>ψ</mi></math></div>
 <p>記号: 時間は <math><mn>1</mn><mo>/</mo><msub><mi>ω</mi><mn>0</mn></msub></math> を単位にとり、左辺は進み遅れの割合です。第 1 項が円弧誤差、第 2 項が脱進機の誤差で、<math><mi>M</mi></math> は駆動のトルクです。振り角が爪の切り替わる角を下回ると、振り子は止まります <Fragment set:html={Rf(3)} />。</p>
 <p>このツールでは、ゼンマイの力の割合 <math><mi>f</mi></math> ごとに上の接触の計算を 500 秒回し、定常の振り角と周期を表にしました。ページはこの表を引きます。竿の長さは <math><mi>f</mi><mo>=</mo><mn>0.7</mn></math> で進み遅れが 0 になるよう調整済みとみなします。</p>
@@ -292,6 +292,6 @@ const Rf = (i: number) => `<a class="rf" href="#thy-r${i}">[${i}]</a>`;
   <li>アンクル・軸・ほぞ・箱・ゴングの台（80 g）の寸法と質量の多くは見積もり。振り子時計の刻む音を測った文献は見つからず、実物の音とは比べていない</li>
   <li>ゴング: 鋼線 直径 2.3 mm・長さ 1.4 m・巻きの半径 60 mm、面の外へ振れる組は 0.15 倍。革のハンマー 5 g・0.6 m/s、<math><mi>K</mi><mo>=</mo><mn>5</mn><mo>×</mo><msup><mn>10</mn><mn>6</mn></msup></math>、<math><mi>λ</mi><mo>=</mo><mn>1.2</mn></math> s/m</li>
   <li>大きさ: ページの大きさをリコイル式の刻む音で −26 LUFS にそろえ、時打ちはそれより約 6 LU 大きくする</li>
-  <li>箱: 裏板 230×200×4 mm・前板 260×220×6 mm の木（ヤング率 10 GPa・密度 600 kg/m³・Q 30）、ヘルムホルツの共鳴 170 Hz・Q 8、型の音のエネルギーを直接の音の 3 倍。部屋: 居間 5×4×2.4 m（吸音率 0.3・高音 0.38）、広間 10×8×3.5 m（0.18・0.26）。切り替えたときの大きさの補正は、リコイル式の刻む音で測った値</li>
+  <li>箱: 裏板 230×200×4 mm・前板 260×220×6 mm の木（ヤング率 10 GPa・密度 600 kg/m³・Q 30）、ヘルムホルツの共鳴 170 Hz・Q 8、型の音のエネルギーを直接の音の 3 倍。部屋: 居間 5×4×2.4 m（吸音率 0.3・高音 0.38）、広間 10×8×3.5 m（0.18・0.26）。切り替えたときの大きさの補正はリコイル式の刻む音で測った値</li>
   <li>風切りの音の帯域の幅</li>
 </ul>

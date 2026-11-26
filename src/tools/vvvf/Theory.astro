@@ -55,11 +55,11 @@ const rf = (i: number) => `<a class="rf" href="#thy-r${i}">[${i}]</a>`;
   <math display="block" set:html={`<mi>f</mi><mo>=</mo><mi>k</mi>${fc}<mo>±</mo><mi>l</mi>${f1}`} />
 </div>
 <ul class="tl">
-  <li>線間電圧の成分は、キャリアの整数倍の両脇に基本波の整数倍の間隔で並ぶ<Fragment set:html={`${rf(5)}${rf(6)}`} /></li>
+  <li>線間電圧の成分はキャリアの整数倍の両脇に基本波の整数倍の間隔で並ぶ<Fragment set:html={`${rf(5)}${rf(6)}`} /></li>
   <li>変調率が小さい低速は <math set:html={`<mn>2</mn>${fc}<mo>±</mo>${f1}`} /> が強い</li>
   <li>変調率が上がると <math set:html={`${fc}<mo>±</mo><mn>2</mn>${f1}`} /> が強くなり、音の幅が広がる</li>
   <li>1 パルスの成分は基本波の 5・7・11・13 倍…</li>
-  <li>京急の音階は、発車直後にキャリアを段階的に変えて作られている<Fragment set:html={rf(7)} /></li>
+  <li>京急の音階は発車直後にキャリアを段階的に変えて作られている<Fragment set:html={rf(7)} /></li>
   <li>キャリアの選び方でモータの共振に当たるかが変わり、音の大きさが大きく変わる<Fragment set:html={rf(3)} /></li>
 </ul>
 
@@ -73,7 +73,7 @@ const rf = (i: number) => `<a class="rf" href="#thy-r${i}">[${i}]</a>`;
 </dl>
 <ul class="tl">
   <li>25 m のレールで 90 km/h なら、1 秒に 1 回踏む<Fragment set:html={rf(13)} /></li>
-  <li>編成の全車軸が、1 つの継ぎ目を前から順に踏む</li>
+  <li>編成の全車軸が 1 つの継ぎ目を前から順に踏む</li>
   <li>録音では、連結部をはさむ 2 つの台車の 4 本が 2.1・4.1・2.1 m の間隔で 1 組に聞こえる<Fragment set:html={rf(14)} /></li>
   <li>台車の真上の車内は音が大きく、台車から床へ伝わる振動の寄与が大きい<Fragment set:html={rf(16)} /></li>
   <li>遠い車両の音は小さく、遅れて届く</li>

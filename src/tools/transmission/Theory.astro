@@ -96,12 +96,12 @@ const REFS: readonly Ref[] = [
 </ul>
 
 <h3>2→1 の噛み合いの遅れ</h3>
-<p>実車では、止まる直前に 2 速から 1 速へ落とすと、ペダルを踏み終えてから噛み合うまでに 0.5〜3 秒ほどの遅れがあります。1→2・3→2・4→3 ではほとんど遅れません。このツールでは、次の理由だと考えて計算に入れました。</p>
+<p>実車では、止まる直前に 2 速から 1 速へ落とすと、ペダルを踏み終えてから噛み合うまでに 0.5〜3 秒ほどの遅れがあります。1→2・3→2・4→3 ではほとんど遅れません。このツールでは次の理由だと考えて計算に入れました。</p>
 <ul class="tl">
   <li>溝が C3 のフォークを押しきっても、ドグと C1 の穴の位置が合わなければ、ドグは C1 の面に当たったまま止まる</li>
   <li>スロットルを閉じた低い回転では遠心クラッチが開き、クラッチドラムがクランクより遅ければワンウェイクラッチも空転する。ドラム・クラッチアウター・メインシャフト・C1 は、エンジンにも後輪にもつながらない軽い塊になる</li>
   <li>この塊はドグの面の摩擦で C3 と同じ速さにそろい、ドグと穴の位置が動かなくなる。油などの引きずりで少しずつずれ、穴に来たところで噛み合う</li>
-  <li>1 速でクラッチドラムがアイドリングの 1,400 rpm になる車速は約 6.5 km/h。これより速いとワンウェイクラッチでエンジンを背負うので、摩擦では速さがそろわず、すぐ噛み合う</li>
+  <li>1 速でクラッチドラムがアイドリングの 1,400 rpm になる車速は約 6.5 km/h。これより速いとワンウェイクラッチでエンジンにつながるので、摩擦では速さがそろわず、すぐ噛み合う</li>
   <li>1→2 はスロットルを開けていて遠心クラッチがつながり、3→2・4→3 は速い所で落とすので、どちらも塊がエンジンにつながっていて遅れない</li>
 </ul>
 
@@ -111,7 +111,7 @@ const REFS: readonly Ref[] = [
   <math display="block"><msub><mi>T</mi><mi>cf</mi></msub><mo>=</mo><mi>min</mi><mrow><mo>[</mo><mi>k</mi><mo stretchy="false">(</mo><msup><mi>n</mi><mn>2</mn></msup><mo>−</mo><msubsup><mi>n</mi><mi>in</mi><mn>2</mn></msubsup><mo stretchy="false">)</mo><mo>,</mo><mspace width="0.3em"/><mn>45</mn><mtext>&nbsp;N·m</mtext><mo>]</mo></mrow></math>
   <math display="block"><msub><mi>T</mi><mi mathvariant="normal">e</mi></msub><mo>=</mo><mrow><mo>[</mo><mn>1</mn><mo>−</mo><msup><mrow><mo stretchy="false">(</mo><mn>1</mn><mo>−</mo><mi>θ</mi><mo stretchy="false">)</mo></mrow><mn>2.2</mn></msup><mo>]</mo></mrow><msub><mi>T</mi><mi>full</mi></msub><mo stretchy="false">(</mo><mi>n</mi><mo stretchy="false">)</mo><mo>−</mo><msub><mi>T</mi><mi mathvariant="normal">f</mi></msub></math>
 </div>
-<p>3 つのつなぎ目（遠心クラッチ・ワンウェイクラッチ・多板クラッチ）は、両側の回転をそろえる拘束です。0.5 ms の刻みごとに、回転の差を消す力積 <math><mi>λ</mi></math> を求め、足し合わせた値を伝えられる範囲に収めます。これを 10 回くり返します（射影 Gauss–Seidel 法の形）。</p>
+<p>3 つのつなぎ目（遠心クラッチ・ワンウェイクラッチ・多板クラッチ）は、両側の回転をそろえる拘束です。0.5 ms の刻みごとに回転の差を消す力積 <math><mi>λ</mi></math> を求め、足し合わせた値を伝えられる範囲に収めます。これを 10 回くり返します（射影 Gauss–Seidel 法の形）。</p>
 <div class="eqs">
   <math display="block"><mi>λ</mi><mo>=</mo><mfrac><mrow><msub><mi>ω</mi><mi mathvariant="normal">a</mi></msub><mo>−</mo><msub><mi>ω</mi><mi mathvariant="normal">b</mi></msub></mrow><mrow><mi>Δ</mi><mi>t</mi><mo stretchy="false">(</mo><mn>1</mn><mo>/</mo><msub><mi>J</mi><mi mathvariant="normal">a</mi></msub><mo>+</mo><mn>1</mn><mo>/</mo><msub><mi>J</mi><mi mathvariant="normal">b</mi></msub><mo stretchy="false">)</mo></mrow></mfrac></math>
   <math display="block"><mi>L</mi><mo>←</mo><mi>clamp</mi><mo stretchy="false">(</mo><mi>L</mi><mo>+</mo><mi>λ</mi><mo>,</mo><mspace width="0.2em"/><mo>−</mo><msub><mi>T</mi><mi>max</mi></msub><mo>,</mo><mspace width="0.2em"/><msub><mi>T</mi><mi>max</mi></msub><mo stretchy="false">)</mo></math>
@@ -119,7 +119,7 @@ const REFS: readonly Ref[] = [
 <p>上限に届かなければ両側は同じ回転で回り、届けば滑ります。ワンウェイクラッチは範囲を片側だけにします。車体の重さ・転がり抵抗・空気抵抗は、メインシャフトの側の慣性と負荷に換算して入れます。</p>
 
 <h3>録音への当てはめ</h3>
-<p>遠心クラッチの係数は、実車の発進の録音<a class="rf" href="#thy-r10">[10]</a>から回転数を読み、次の 3 つが合うように決めました。</p>
+<p>遠心クラッチの係数は実車の発進の録音<a class="rf" href="#thy-r10">[10]</a>から回転数を読み、次の 3 つが合うように決めました。</p>
 <div class="tt-w"><table class="tt">
   <thead><tr><th></th><th>録音</th><th>模型</th></tr></thead>
   <tbody>
@@ -131,8 +131,8 @@ const REFS: readonly Ref[] = [
 
 <h3>図の描き方</h3>
 <ul class="tl">
-  <li>「回転を止めて見た図」は、クランク軸と一緒に回る座標で描く</li>
-  <li>動きのぶれは、1 フレームの間に通った位置を重ねて描く</li>
+  <li>「回転を止めて見た図」はクランク軸と一緒に回る座標で描く</li>
+  <li>動きのぶれは 1 フレームの間に通った位置を重ねて描く</li>
 </ul>
 
 <h3>出典</h3>

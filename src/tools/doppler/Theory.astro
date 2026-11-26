@@ -15,7 +15,7 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
 </div>
 
 <h3>周波数</h3>
-<p>Doppler が 1842 年に唱え<Fragment set:html={rf(9)} />、Buys Ballot が 1845 年に列車の上で吹いたラッパの音で確かめました<Fragment set:html={rf(10)} />。</p>
+<p>ドップラー効果は Doppler が 1842 年に唱え<Fragment set:html={rf(9)} />、Buys Ballot が 1845 年に列車の上で吹いたラッパの音で確かめました<Fragment set:html={rf(10)} />。</p>
 <p>上の式を <math><mi>t</mi></math> で微分すると、放射時刻の進む速さが出ます。音源が出した周波数 <math><msub><mi>f</mi><mn>0</mn></msub></math> の音はこの比だけ高く（低く）聞こえます<Fragment set:html={rf(1)} />。</p>
 <div class="eqs">
   <math display="block" set:html={`${fr('<mi>f</mi>', '<msub><mi>f</mi><mn>0</mn></msub>')}<mo>=</mo>${fr(`<mi>d</mi>${e_('<mi>t</mi>')}`, '<mi>d</mi><mi>t</mi>')}<mo>=</mo>${fr(`<mi>c</mi><mo>−</mo>${bx('n')}<mo>·</mo>${bx('U')}`, `<mi>c</mi><mo>−</mo>${bx('n')}<mo>·</mo>${bx('V')}`)}`} />
@@ -99,5 +99,5 @@ const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
   <li id="thy-r7"><span class="rf-for">地面の流れ抵抗</span><span class="rf-src">FHWA: Ground and Pavement Effects using FHWA's Traffic Noise Model 2.5, 表 3・表 4. <a target="_blank" rel="noopener" href="https://www.fhwa.dot.gov/Environment/noise/resources/ground_and_pavement_effects/gpeffects02.cfm">Web</a></span></li>
   <li id="thy-r8"><span class="rf-for">地面の流れ抵抗</span><span class="rf-src">T. F. W. Embleton, J. E. Piercy, G. A. Daigle: Effective flow resistivity of ground surfaces determined by acoustical measurements, J. Acoust. Soc. Am. 74(4), 1239–1244 (1983). <a target="_blank" rel="noopener" href="https://doi.org/10.1121/1.390029">DOI</a></span></li>
   <li id="thy-r9"><span class="rf-for">ドップラー効果の提唱</span><span class="rf-src">C. Doppler: Ueber das farbige Licht der Doppelsterne und einiger anderer Gestirne des Himmels, Abhandlungen der k. böhm. Gesellschaft der Wissenschaften, V. Folge, Bd. 2, S. 465–482 (1842)</span></li>
-  <li id="thy-r10"><span class="rf-for">音での確かめ（列車のラッパ）</span><span class="rf-src">C. H. D. Buijs Ballot: Akustische Versuche auf der Niederländischen Eisenbahn, Annalen der Physik und Chemie 66(11), 321–351 (1845). <a target="_blank" rel="noopener" href="https://doi.org/10.1002/andp.18451421102">DOI</a></span></li>
+  <li id="thy-r10"><span class="rf-for">音での確認（列車のラッパ）</span><span class="rf-src">C. H. D. Buijs Ballot: Akustische Versuche auf der Niederländischen Eisenbahn, Annalen der Physik und Chemie 66(11), 321–351 (1845). <a target="_blank" rel="noopener" href="https://doi.org/10.1002/andp.18451421102">DOI</a></span></li>
 </ol>
