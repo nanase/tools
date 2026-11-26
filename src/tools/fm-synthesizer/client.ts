@@ -41,7 +41,7 @@ import { DRUM_DEFAULT, DRUM_TONES, GM_TONES } from './tones';
 initToolPage();
 
 const audio = new SynthAudio();
-const NO_SOUND = '音を出せませんでした。';
+const NO_SOUND = '音を出せませんでした';
 const nowS = () => performance.now() / 1000;
 const css = (el: Element, k: string) => getComputedStyle(el).getPropertyValue(k).trim();
 const minus = (s: string) => s.replace(/^-/, '−');
@@ -225,7 +225,7 @@ function ensure(ch: number): Part {
 }
 function syncMute(p: Part): void {
   const b = p.row.mute,
-    t = `${p.ch + 1} チャンネル: ${p.mute ? 'オフ（押すとオン' : 'オン（押すとオフ'}、右クリックでこのパートだけ）`;
+    t = `${p.ch + 1} チャンネル: ${p.mute ? 'オフ（押すとオン' : 'オン（押すとオフ'}、右クリックでこのパートだけオン）`;
   b.setAttribute('aria-pressed', String(p.mute));
   b.title = t;
   b.setAttribute('aria-label', t);
@@ -1382,8 +1382,8 @@ $<HTMLInputElement>('#fileIn').addEventListener('change', async (e) => {
   } catch (err) {
     plMsg(
       err instanceof Error && err.message
-        ? `${f.name} を読めませんでした。${err.message}。`
-        : `${f.name} を読めませんでした。`,
+        ? `${f.name} を読めませんでした。${err.message}`
+        : `${f.name} を読めませんでした`,
     );
     return;
   }

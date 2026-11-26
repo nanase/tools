@@ -59,7 +59,7 @@ export const THY_PROTO =
   `<dt>${inl(sub(mi('R'), N))}</dt><dd>ヤコビの楕円関数で表すチェビシェフ有理関数${rf(1)}</dd>` +
   `<dt>${inl(sub(mi('θ'), N))}</dt><dd>逆 Bessel 多項式</dd>` +
   '</dl>' +
-  `<p>ベッセルフィルタだけは振幅でなく群遅延を平坦にしたものです${rf(2)}。群遅延は位相の傾きです。直流の近くで遅延がそろい、波形の形が崩れにくくなります。</p>`;
+  `<p>ベッセルフィルタだけは振幅でなく群遅延を平坦にしたものです${rf(2)}。群遅延は位相の傾きです。直流の近くで遅延がそろい、波形が崩れにくくなります。</p>`;
 
 export const EQ_PROTO = [
   blk(row(abs2(HjO), EQ, inv1(row(one, PL, sup(mi('ε'), two), sup(om, row(two, N)))))),
@@ -233,7 +233,7 @@ export const EQ_IMP = blk(
 const bi = (j: number) => sub(mi('b'), row(mn(j), mi('i'))),
   ai = (j: number) => sub(mi('a'), row(mn(j), mi('i')));
 export const THY_SOS =
-  `<p>実装では、極と零点を 2 つずつ組んだ双2次の縦続（SOS）にします${rf(4)}${rf(5)}。</p>` +
+  `<p>実装では極と零点を 2 つずつ組んだ双2次の縦続（SOS）にします${rf(4)}${rf(5)}。</p>` +
   '<ul class="tl">' +
   '<li><b>組み方:</b> 単位円に最も近い極から順に、それに最も近い零点と組む</li>' +
   '<li><b>段のゲイン:</b> 各段の出力の振幅の最大が 1 になるように配る（固定小数点でも途中であふれにくい）</li>' +

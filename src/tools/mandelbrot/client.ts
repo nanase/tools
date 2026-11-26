@@ -568,7 +568,7 @@ void Renderer.create(cv).then((r) => {
   if (!r) {
     $('#mb-busy').hidden = true;
     const m = $('#mb-msg');
-    m.textContent = 'この図は WebGL2 で描きます。WebGL2 に対応したブラウザで開いてください。';
+    m.textContent = 'この図は WebGL2 で描きます。WebGL2 に対応したブラウザで開いてください';
     m.hidden = false;
     return;
   }

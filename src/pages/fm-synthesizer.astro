@@ -70,7 +70,7 @@ const PART_ROWS = [sl('s-pv', '音量'), sl('s-pp', '定位'), sl('s-pr', '残�
         </div>
       </div>
       <Transport>
-        <button type="button" class="tp-sq" id="panicBtn" title="すべてのチャンネルの音を止める" aria-label="すべてのチャンネルの音を止める"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 6h2.5L8 3v10l-3.5-3H2zM10.5 6l4 4M14.5 6l-4 4"/></svg></button>
+        <button type="button" class="tp-sq" id="panicBtn" title="すべてのチャンネルの音を停止" aria-label="すべてのチャンネルの音を停止"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 6h2.5L8 3v10l-3.5-3H2zM10.5 6l4 4M14.5 6l-4 4"/></svg></button>
       </Transport>
       <div class="ptab">
         <ParamRow d={TEMPO} />
@@ -81,8 +81,8 @@ const PART_ROWS = [sl('s-pv', '音量'), sl('s-pp', '定位'), sl('s-pr', '残�
     </Panel>
 
     <MidiPanel open monitor={false}>
-      <ChoiceRow k="dst" name="鳴らすパート" sub="MIDI 機器から受けた音を鳴らすパート" choices={[['ch', 'チャンネルと同じ番号'], ['sel', '選んでいるパート']]} value="ch" />
-      <ChoiceRow k="pcm" name="プログラムチェンジ" sub="MIDI 機器から受けたプログラムチェンジで音色を替えるか" choices={[['on', '音色を替える'], ['off', '無視']]} value="on" />
+      <ChoiceRow k="dst" name="鳴らすパート" sub="MIDI 機器から受信した音を鳴らすパート" choices={[['ch', 'チャンネルと同じ番号'], ['sel', '選んでいるパート']]} value="ch" />
+      <ChoiceRow k="pcm" name="プログラムチェンジ" sub="MIDI 機器から受信したプログラムチェンジで音色を替えるか" choices={[['on', '反映'], ['off', '無視']]} value="on" />
       <div class="prow wide mi-chs">
         <div class="c-sym" aria-hidden="true"></div>
         <div class="c-name"><span class="pn">受信</span></div>
