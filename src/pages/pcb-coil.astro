@@ -19,7 +19,7 @@ const row = (ks: string[]) => PARAMS.filter((d) => ks.includes(d.k));
 /* 同じ電子回路の公開中のツール、続いて信号・フィルタに近いもの */
 ---
 <SiteLayout title={name} tool={{ id: 'pcb-coil', name }} note="計算結果は近似式による参考値です。">
-  <PageTitle title={name}>プリント基板の銅箔で作るうずまき状のコイル（スパイラルコイル）について、形と寸法からインダクタンス・抵抗・Q を求め、指定の周波数で共振させるコンデンサの値を出します。NFC や RFID のアンテナの設計に使えます。</PageTitle>
+  <PageTitle title={name}>プリント基板の銅箔で作る渦巻き状のコイル（スパイラルコイル）について、形と寸法からインダクタンス・抵抗・Q を求め、指定の周波数で共振させるコンデンサの値を出します。NFC や RFID のアンテナの設計に使えます。</PageTitle>
   <div class="mini" data-mini="op" aria-hidden="true"><span><i>L</i><b id="mL"></b></span><span><i>Q</i><b id="mQ"></b></span><span><i>C</i><b id="mC"></b></span></div>
 
   <div class="tgrid">
@@ -32,7 +32,7 @@ const row = (ks: string[]) => PARAMS.filter((d) => ks.includes(d.k));
       </Panel>
       <Panel hid="hd-mat" title="基板と周波数" class="a-mat">
         <div slot="aux" class="seg" id="p-nl" role="group" aria-label="層数">
-          {LAYERS.map((n) => <button type="button" data-v={n} aria-pressed={n === 1 ? 'true' : 'false'} title={n === 1 ? '片面の 1 層だけに巻く' : `${n} 層に同じうずまきを重ねる`}>{n} 層</button>)}
+          {LAYERS.map((n) => <button type="button" data-v={n} aria-pressed={n === 1 ? 'true' : 'false'} title={n === 1 ? '片面の 1 層だけに巻く' : `${n} 層に同じ渦巻きを重ねる`}>{n} 層</button>)}
         </div>
         <div class="ptab">
           <ChoiceRow k="stack" name="基板の構成" sub="板厚と隣り合う銅箔の間の誘電体（FR-4、比誘電率 4.4）の厚さ。一般的な構成の概数" choices={STACKS.filter((s) => s.n > 1).map((s) => [s.v, s.ab, `層の間 ${gapsText(s)}`] as const)} value="2-16" layout="chips" wide msg class="multi" />

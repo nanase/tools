@@ -121,7 +121,7 @@ const ROOMS = PRESETS.map((p) => ({ name: p.name, ac: acoustics(p.room), dim: p.
   <math display="block"><mi>y</mi><mo stretchy="false">[</mo><mi>n</mi><mo stretchy="false">]</mo><mo>=</mo><munder><mo>∑</mo><mi>k</mi></munder><mi>h</mi><mo stretchy="false">[</mo><mi>k</mi><mo stretchy="false">]</mo><mspace width="0.2em"/><mi>x</mi><mo stretchy="false">[</mo><mi>n</mi><mo>−</mo><mi>k</mi><mo stretchy="false">]</mo></math>
 </div>
 <ul class="tl">
-  <li>ブラウザの ConvolverNode で畳み込む。インパルス応答は AudioContext と同じ標本化周波数で作る</li>
+  <li>ブラウザの ConvolverNode で畳み込む。インパルス応答は AudioContext と同じサンプリング周波数で作る</li>
   <li>音の大きさはインパルス応答のエネルギーで割ってそろえる。直接音と残響音の比は部屋ごとに変わる</li>
   <li>楽器ページの残響: 16 本の遅延線のフィードバック遅延網<Fragment set:html={rf(8)} />に、この部屋の Eyring の残響時間（500 Hz・4 kHz）と臨界距離を入れる</li><li>部屋の形と位置を使わないので初期反射の並びはないが、計算は軽い</li>
 </ul>

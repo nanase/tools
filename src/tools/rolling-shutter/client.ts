@@ -122,7 +122,7 @@ function noGl(): void {
   waiting = false;
   busy.hidden = true;
   const m = $('#st-msg');
-  m.textContent = 'このブラウザでは WebGL2 が使えないため、像を描けません。計算結果は使えます';
+  m.textContent = 'このブラウザでは WebGL2 が使えないため、像を表示できません。計算結果は使えます';
   m.hidden = false;
   later();
 }

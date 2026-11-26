@@ -215,7 +215,7 @@ playBtn.addEventListener('click', async () => {
   }
   sndMsg.textContent = '';
   if (!(await audio.ready())) {
-    sndMsg.textContent = 'このブラウザでは音を鳴らせません';
+    sndMsg.textContent = 'この環境では音を鳴らせません';
     return;
   }
   setPlay(true);

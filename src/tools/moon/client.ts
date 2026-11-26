@@ -1320,7 +1320,7 @@ try {
   busy.hidden = true;
   const m = $('#v-msg');
   m.hidden = false;
-  m.textContent = 'このブラウザでは WebGL2 を使えないため、月を描けません';
+  m.textContent = 'このブラウザでは WebGL2 が使えないため表示できません';
 }
 /* 全画面: 月の図を画面いっぱいに。時刻と表示の操作は右上に浮かべる */
 initFullscreen({

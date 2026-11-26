@@ -84,7 +84,7 @@ export const PARAMS: (ParamDef & { k: Key })[] = [
     nm: 'fH',
     sym: '',
     name: '最高周波数',
-    sub: '標本化周波数の半分（fs/2）を超える分は表示しない',
+    sub: 'サンプリング周波数の半分（fs/2）を超える分は表示しない',
     unit: 'Hz',
     min: 500,
     max: 24000,

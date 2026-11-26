@@ -30,7 +30,7 @@ const chain = (a: number) =>
     : '変調なし、すべて出力';
 ---
 <SiteLayout title={name} tool={{ id: 'fm-synth', name }} note="エンベロープと LFO のない簡略化したモデルの波形です。">
-  <PageTitle title={name}>ヤマハの FM 音源 IC（OPN 系）のように、4 つのオペレータを 8 通りのアルゴリズムでつないで音を作ります。オペレータの波形・周波数比・変調指数を変えると、波形とスペクトラムがすぐに変わります。鍵盤を押すと音で聞けます。作った音色で曲も演奏できます。</PageTitle>
+  <PageTitle title={name}>ヤマハの FM 音源 IC（OPN 系）のように、4 つのオペレータを 8 通りのアルゴリズムでつないで音を作ります。オペレータの波形・周波数比・変調指数を変えると、波形とスペクトルがすぐに変わります。鍵盤を押すと音で聞けます。作った音色で曲も演奏できます。</PageTitle>
 
   <div class="tgrid">
     <div class="col c1">
@@ -73,7 +73,7 @@ const chain = (a: number) =>
 
     <div class="col c2">
       <Panel hid="hd-wave" title="波形" class="a-wave">
-        <div slot="aux" class="seg" id="p-view" role="group" aria-label="表示"><button type="button" data-v="yt" aria-pressed="true" title="時間に対する波形">波形</button><button type="button" data-v="sp" aria-pressed="false" title="周波数ごとの大きさ">スペクトラム</button></div>
+        <div slot="aux" class="seg" id="p-view" role="group" aria-label="表示"><button type="button" data-v="yt" aria-pressed="true" title="時間に対する波形">波形</button><button type="button" data-v="sp" aria-pressed="false" title="周波数ごとの大きさ">スペクトル</button></div>
 
         <div id="v-yt">
           <div class="sbar">
@@ -105,7 +105,7 @@ const chain = (a: number) =>
             <span class="stag">WIN <b>B-HARRIS</b></span>
           </div>
           <div class="scope">
-            <svg viewBox="-56 -14 468 194" id="s-svg" role="img" aria-label="出力のスペクトラム">
+            <svg viewBox="-56 -14 468 194" id="s-svg" role="img" aria-label="出力のスペクトル">
               <defs><clipPath id="s-clip"><rect x="0" y="0" width="400" height="160"/></clipPath></defs>
               <g set:html={gridSvg(4)} />
               <g clip-path="url(#s-clip)"><path class="t1 sp" id="s-t1"/></g>

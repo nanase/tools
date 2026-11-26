@@ -1133,10 +1133,10 @@ fileIn.addEventListener('change', async () => {
   if (!f) return;
   try {
     const r = fromFile(JSON.parse(await f.text()));
-    if (!r) return say('このファイルは読み込めません');
+    if (!r) return say('このファイルを読み込めませんでした');
     if (load({ ...r, name: r.name || f.name.replace(/\.json$/i, '') })) say('');
   } catch {
-    say('このファイルは読み込めません');
+    say('このファイルを読み込めませんでした');
   }
 });
 

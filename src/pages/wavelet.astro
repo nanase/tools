@@ -99,11 +99,11 @@ const H8_PH = '平均 (00 + 00) / 2 = 00  差 (00 − 00) / 2 = −0.0  復元 0
         <span class="stag"><span class="bl" id="pl-ax-l">周波数軸</span><span class="seg" id="pl-ax" role="group" aria-labelledby="pl-ax-l"><button type="button" data-v="lin" aria-pressed="true" title="周波数を等間隔に">線形</button><button type="button" data-v="log" aria-pressed="false" title="1 オクターブを同じ高さに">対数</button></span></span>
       </div>
       <div class="pl2">
-        {[{ k: 0, s: PL_N, h: 'STFT（参考）', d: '同じ大きさの箱' }, { k: 1, s: PL_W, h: 'ウェーブレット（DWT）', d: '低いほど横長の箱' }].map((p) => (
+        {[{ k: 0, s: PL_N, h: 'STFT（参考）', d: '同じ大きさのタイル' }, { k: 1, s: PL_W, h: 'ウェーブレット（DWT）', d: '低いほど横長のタイル' }].map((p) => (
           <figure class="plf">
             <figcaption class="vh"><span><b>{p.h}</b> {p.d}</span><span class="seg" id={p.s.id} role="group" aria-label={p.s.label}>{p.s.opts.map(([v, l]) => <button type="button" data-v={v} aria-pressed={v === p.s.v ? 'true' : 'false'} title={p.k ? undefined : `窓の長さ ${l} 点`}>{l}</button>)}</span></figcaption>
-            <div class="scope"><svg viewBox="-50 -6 462 64" id={`pl-x${p.k}`} role="img" aria-label="信号と、選んだ箱の波形"></svg></div>
-            <div class="scope dk"><div class="cv"><canvas id={`pl-c${p.k}`} width="800" height="480"></canvas><svg viewBox="-50 -14 462 282" id={`pl-s${p.k}`} tabindex="0" role="img" aria-label={`${p.h}の時間と周波数の平面。矢印キーで箱を選ぶ`}></svg></div></div>
+            <div class="scope"><svg viewBox="-50 -6 462 64" id={`pl-x${p.k}`} role="img" aria-label="信号と、選んだタイルの波形"></svg></div>
+            <div class="scope dk"><div class="cv"><canvas id={`pl-c${p.k}`} width="800" height="480"></canvas><svg viewBox="-50 -14 462 282" id={`pl-s${p.k}`} tabindex="0" role="img" aria-label={`${p.h}の時間と周波数の平面。矢印キーでタイルを選ぶ`}></svg></div></div>
           </figure>
         ))}
       </div>

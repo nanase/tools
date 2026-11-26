@@ -465,7 +465,7 @@ async function open(f: File | undefined): Promise<void> {
     msg.textContent = `${f.name} · ${b.duration <= MAX ? `${fx(b.duration)} 秒` : `先頭 ${MAX} 秒`}`;
     msg.classList.remove('er');
   } catch {
-    msg.textContent = 'このファイルは読み込めませんでした（WAV・MP3・FLAC など）';
+    msg.textContent = 'このファイルを読み込めませんでした（WAV・MP3・FLAC など）';
     msg.classList.add('er');
     return;
   }

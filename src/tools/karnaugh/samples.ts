@@ -101,8 +101,8 @@ export const SAMPLES: readonly Sample[] = [
   },
   {
     id: 'cmp',
-    name: '2 けたの比較',
-    sub: 'AB と CD を 2 けたの数として比べる',
+    name: '2 桁の比較',
+    sub: 'AB と CD を 2 桁の数として比べる',
     n: 4,
     outs: [
       { name: 'GT', f: tab(4, (k) => b(k >> 2 > (k & 3))) },
@@ -112,7 +112,7 @@ export const SAMPLES: readonly Sample[] = [
   },
   {
     id: 'add2',
-    name: '2 けたの足し算',
+    name: '2 桁の足し算',
     sub: 'AB + CD の 3 けたの和 S2 S1 S0',
     n: 4,
     outs: [2, 1, 0].map((i) => ({ name: `S${i}`, f: tab(4, (k) => b(!!((((k >> 2) + (k & 3)) >> i) & 1))) })),

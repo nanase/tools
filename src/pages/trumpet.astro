@@ -212,7 +212,7 @@ const ROWS = [...PARTIALS].reverse().filter((n) => n <= 8);
       </Panel>
 
       <Collapsible hid="hd-wave" title="音の波形" class="a-wave">
-        <div class="seg wv-sw" id="p-ov" role="group" aria-label="表示"><button type="button" data-v="yt" aria-pressed="true" title="1 m 先の音圧の時間変化（残響を除く）">波形</button><button type="button" data-v="sp" aria-pressed="false" title="周波数ごとの大きさ（直前の 0.17 秒）">スペクトラム</button></div>
+        <div class="seg wv-sw" id="p-ov" role="group" aria-label="表示"><button type="button" data-v="yt" aria-pressed="true" title="1 m 先の音圧の時間変化（残響を除く）">波形</button><button type="button" data-v="sp" aria-pressed="false" title="周波数ごとの大きさ（直前の 0.17 秒）">スペクトル</button></div>
         <div id="v-yt">
           <div class="sbar">
             <span class="stag"><i class="sw" aria-hidden="true"></i>CH1 音圧 <b class="hw" id="w-vd" data-ph="0.005 Pa"></b>/div</span>
@@ -236,14 +236,14 @@ const ROWS = [...PARTIALS].reverse().filter((n) => n <= 8);
             <span class="stag">WIN <b>B-HARRIS</b></span>
           </div>
           <div class="scope">
-            <svg viewBox="-56 -14 468 194" id="s-svg" role="img" aria-label="音のスペクトラム">
+            <svg viewBox="-56 -14 468 194" id="s-svg" role="img" aria-label="音のスペクトル">
               <defs><clipPath id="s-clip"><rect x="0" y="0" width="400" height="160"/></clipPath></defs>
               <g set:html={gridSvg(4)} />
               <g clip-path="url(#s-clip)"><path class="t1 sp" id="s-t1"/></g>
               <g id="s-axes"></g>
             </svg>
           </div>
-          <More id="g-sp" title="表示の設定"><div class="ptab"><ChoiceRow k="fmax" name="横軸の範囲" sub="スペクトラムの右端の周波数" choices={FMAX.map((v) => [v, `${v / 1000} kHz`] as const)} value={5000} /></div></More>
+          <More id="g-sp" title="表示の設定"><div class="ptab"><ChoiceRow k="fmax" name="横軸の範囲" sub="スペクトルの右端の周波数" choices={FMAX.map((v) => [v, `${v / 1000} kHz`] as const)} value={5000} /></div></More>
         </div>
       </Collapsible>
 

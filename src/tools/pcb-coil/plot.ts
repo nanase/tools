@@ -81,7 +81,7 @@ export function figPlot({ sh, n, dout, din, w, s }: FigIn): FigPlot {
     pads,
     dim: h,
     dv,
-    label: `${sh.ab}のうずまきコイル。${n} 巻、外径 ${mmT(dout)}、内径 ${mmT(din)}、配線の幅 ${mmT(w)}、間隔 ${mmT(s)}。方眼は ${sig(dv, 2)} mm/div。`,
+    label: `${sh.ab}の渦巻きコイル。${n} 巻、外径 ${mmT(dout)}、内径 ${mmT(din)}、配線の幅 ${mmT(w)}、間隔 ${mmT(s)}。方眼は ${sig(dv, 2)} mm/div。`,
   };
 }
 
@@ -394,7 +394,7 @@ export function coil3d(v: View3d): Plot3d {
   }
   o += `<text class="ex" x="10" y="270">厚さ ×${sig(ex, 2)}</text>`;
   const label =
-    `${sh.ab}のうずまきコイルを斜めから見た図。${n} 巻、外径 ${mmT(dout)}、配線の幅 ${mmT(w)}、間隔 ${mmT(s)}。` +
+    `${sh.ab}の渦巻きコイルを斜めから見た図。${n} 巻、外径 ${mmT(dout)}、配線の幅 ${mmT(w)}、間隔 ${mmT(s)}。` +
     (nl > 1
       ? `${nl} 層を${conn === 'ser' ? '直列につなぎ、次の層は前の層を鏡に映した形で内側と外側で交互につなぐ' : '並列につなぎ、外側と内側の端で全層をつなぐ'}。`
       : '') +

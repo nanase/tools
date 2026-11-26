@@ -1347,7 +1347,7 @@ try {
   mapBusy.hidden = true;
   const m = $('#v-msg');
   m.hidden = false;
-  m.textContent = 'このブラウザでは木星を描けません。WebGL2 が必要です';
+  m.textContent = 'このブラウザでは WebGL2 が使えないため表示できません';
 }
 /* 全画面: 木星の図を画面いっぱいに。時刻と表示の操作は右上に浮かべる */
 initFullscreen({

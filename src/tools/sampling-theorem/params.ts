@@ -65,8 +65,8 @@ export const PARAMS: (ParamDef & { k: PKey })[] = [
     k: 'fs',
     nm: 'fs',
     sym: '<i>f</i><sub>s</sub>',
-    name: '標本化周波数',
-    sub: '1 秒に波の値を測る回数（サンプリング周波数）',
+    name: 'サンプリング周波数',
+    sub: '1 秒に波の値を測る回数',
     unit: 'Hz',
     min: FS_MIN,
     max: FS_MAX,
@@ -121,5 +121,5 @@ export const SRC: readonly (readonly [SrcId, string] | readonly [SrcId, string, 
 ];
 export const AA: Opt = [
   ['0', 'なし', '高い成分も標本化'],
-  ['1', 'あり', '標本化周波数の半分より上を除去'],
+  ['1', 'あり', 'サンプリング周波数の半分より上を除去'],
 ];

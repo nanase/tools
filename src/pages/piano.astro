@@ -52,8 +52,8 @@ const name = 'ピアノ';
       <p class="sr" id="kb-live" aria-live="polite"></p>
       <More id="g-kb" title="表示の設定"><div class="ana2">
         <div class="ptab">
-          <ChoiceRow k="nv" name="振動の見せ方" sub="残像: 実際の速さで振れる範囲。スロー: ゆっくりにした弦の形（減衰は実際の速さ）" choices={[['blur', '残像'], ['slow', 'スロー']]} value="blur" />
-          <ChoiceRow k="ex" name="振幅の強調" sub="弦の変位を描く倍率。×1 は弦の間隔に対して実際の大きさ" choices={EXAG.map((v) => [v, `×${v}`] as const)} value={10} />
+          <ChoiceRow k="nv" name="振動の見せ方" sub="残像: 実際の速さで振れる範囲 · スロー: ゆっくりにした弦の形（減衰は実際の速さ）" choices={[['blur', '残像'], ['slow', 'スロー']]} value="blur" />
+          <ChoiceRow k="ex" name="振幅の強調" sub="弦の変位を描く倍率 · ×1 は弦の間隔に対して実際の大きさ" choices={EXAG.map((v) => [v, `×${v}`] as const)} value={10} />
           <ChoiceRow k="sym" name="弦の共鳴" sub="ダンパーが上がっている弦の揺れの表示（音は不変）" choices={[['on', '表示'], ['off', 'なし']]} value="on" />
         </div>
         <div class="ptab" id="sl-row" hidden>
@@ -75,10 +75,10 @@ const name = 'ピアノ';
         </div>
         <Transport>
           <TransportButton id="relBtn" icon="up" label="リリース" title="押しているすべての鍵から手を離す（演奏は続ける）" />
-          <TransportButton id="muteBtn" icon="mute" label="消音" title="鳴っている弦の停止（ダンパーを下ろす。演奏と位置はそのまま）" />
+          <TransportButton id="muteBtn" icon="mute" label="消音" title="鳴っている弦をすべて停止（ダンパーを下ろす · 演奏と位置はそのまま）" />
         </Transport>
         <div class="ptab">
-          <ChoiceRow k="pv" name="ベロシティ" sub="自動: 曲の強弱（楽譜の強弱記号と声部ごとの強弱）。固定: すべての音を「打鍵」のベロシティで" choices={[['auto', '自動'], ['fix', '固定']]} value="auto" />
+          <ChoiceRow k="pv" name="ベロシティ" sub="自動: 曲の強弱（楽譜の強弱記号と声部ごとの強弱） · 固定: すべての音を「打鍵」のベロシティで" choices={[['auto', '自動'], ['fix', '固定']]} value="auto" />
           <ParamRow d={TEMPO} />
           <ParamRow d={outVol(VOL0)} />
         </div>
@@ -86,17 +86,17 @@ const name = 'ピアノ';
       </Panel>
 
       <MidiPanel pedals>
-        <ChoiceRow k="mv" name="ベロシティ" sub="鍵盤どおり: MIDI のベロシティ（1〜127）をハンマーの速さ（0.3〜7 m/s）に変換。固定: 打鍵の枠のベロシティ" choices={[['key', '鍵盤どおり'], ['fix', '固定']]} value="key" />
-        <ChoiceRow k="mt" name="タッチ" sub="ベロシティをハンマーの速さに直す曲線。軽いほど弱く弾いても強い音" choices={[['light', '軽い'], ['std', '標準'], ['heavy', '重い']]} value="std" />
+        <ChoiceRow k="mv" name="ベロシティ" sub="鍵盤どおり: MIDI のベロシティ（1〜127）をハンマーの速さ（0.3〜7 m/s）に変換 · 固定: 打鍵の枠のベロシティ" choices={[['key', '鍵盤どおり'], ['fix', '固定']]} value="key" />
+        <ChoiceRow k="mt" name="タッチ" sub="ベロシティをハンマーの速さに直す曲線 · 軽いほど弱く弾いても強い音" choices={[['light', '軽い'], ['std', '標準'], ['heavy', '重い']]} value="std" />
       </MidiPanel>
 
       <Panel hid="hd-hit" title="打鍵" class="a-hit">
         <div class="ptab">
           <ParamRow d={VEL} />
-          <ChoiceRow k="hard" name="ハンマーの硬さ" sub="フェルトの硬さ（整音）。硬いほど高い倍音の強い明るい音" choices={HARD.map(([v, l]) => [v, l] as const)} value="1" />
-          <ChoiceRow k="ped" name="ダンパーペダル" sub="すべてのダンパーを弦から離すペダル。自動: 曲は低音が変わるところで踏みかえ（記録のある曲は記録のとおり）、鍵盤はなし" choices={[['auto', '自動'], ['on', '踏む'], ['off', '踏まない']]} value="auto" />
+          <ChoiceRow k="hard" name="ハンマーの硬さ" sub="フェルトの硬さ（整音） · 硬いほど高い倍音の強い明るい音" choices={HARD.map(([v, l]) => [v, l] as const)} value="1" />
+          <ChoiceRow k="ped" name="ダンパーペダル" sub="すべてのダンパーを弦から離すペダル · 自動: 曲は低音が変わるところで踏みかえ（記録のある曲は記録のとおり）、鍵盤はなし" choices={[['auto', '自動'], ['on', '踏む'], ['off', '踏まない']]} value="auto" />
           <ChoiceRow k="th" name="鍵盤の音" sub="鍵が底に当たって響板を叩く音（コトンという音）の大きさ" choices={THUMP} value="1" />
-          <ChoiceRow k="soft" name="ソフトペダル" sub="踏むと鍵盤とハンマーが横にずれ、3 本弦の鍵は 2 本、2 本弦の鍵は 1 本だけを、フェルトの柔らかい所で打つ。打たない弦も駒を通して揺れる" choices={[['off', '踏まない'], ['on', '踏む']]} value="off" />
+          <ChoiceRow k="soft" name="ソフトペダル" sub="踏むと鍵盤とハンマーが横にずれ、3 本弦の鍵は 2 本、2 本弦の鍵は 1 本だけを、フェルトの柔らかい所で打つ · 打たない弦も駒を通して揺れる" choices={[['off', '踏まない'], ['on', '踏む']]} value="off" />
         </div>
       </Panel>
 
@@ -105,7 +105,7 @@ const name = 'ピアノ';
           {PIANO_TYPES.map((t, i) => <button type="button" data-v={t.v} aria-pressed={i === 0 ? 'true' : 'false'} title={`${t.name}（${t.size} cm、最も長い弦 ${t.Lmax} m 程度、響板 ${t.area} m²）`}>{t.v === 'concert' ? 'コンサート' : t.v === 'grand' ? 'グランド' : 'アップライト'}</button>)}
         </div>
         <div class="ptab">
-          <ChoiceRow k="tun" name="調律" sub="ストレッチ: 非調和性で高くなる部分音にオクターブを合わせた調律（実際の調律に近い）。平均律: 第 1 部分音を計算どおりの 12 平均律に" choices={[['stretch', 'ストレッチ'], ['equal', '平均律']]} value="stretch" />
+          <ChoiceRow k="tun" name="調律" sub="ストレッチ: 非調和性で高くなる部分音にオクターブを合わせた調律（実際の調律に近い） · 平均律: 第 1 部分音を計算どおりの 12 平均律に" choices={[['stretch', 'ストレッチ'], ['equal', '平均律']]} value="stretch" />
           <ChoiceRow k="a4" name="基準の高さ" sub="A4 の第 1 部分音の周波数" choices={A4S.map((v) => [v, `${v} Hz`] as const)} value={440} />
           <ParamRow d={UNI} />
         </div>
@@ -155,7 +155,7 @@ const name = 'ピアノ';
 
       <Panel hid="hd-room" title="残響" class="a-room">
         <div class="ptab">
-          <ChoiceRow k="room" name="部屋" sub="響きを付ける部屋。再生の音だけで、音の波形と計算結果は対象外" choices={ROOMS.map((r) => [r.v, r.name, r.v === 'off' ? '残響なし' : `${r.dim.join(' × ')} m、平均吸音率 ${r.a}`] as const)} value="small" layout="chips" />
+          <ChoiceRow k="room" name="部屋" sub="響きを付ける部屋 · 再生の音だけで、音の波形と計算結果は対象外" choices={ROOMS.map((r) => [r.v, r.name, r.v === 'off' ? '残響なし' : `${r.dim.join(' × ')} m、平均吸音率 ${r.a}`] as const)} value="small" layout="chips" />
           <ParamRow d={DIST} />
         </div>
         <dl class="metrics rmet">
@@ -167,7 +167,7 @@ const name = 'ピアノ';
       </Panel>
 
       <Collapsible hid="hd-wave" title="音の波形" class="a-wave">
-        <div class="seg wv-sw" id="p-ov" role="group" aria-label="表示"><button type="button" data-v="yt" aria-pressed="true" title="1 m 先の音圧の時間変化">波形</button><button type="button" data-v="sp" aria-pressed="false" title="周波数ごとの大きさ（初めの 1.37 秒）">スペクトラム</button><button type="button" data-v="hm" aria-pressed="false" title="ハンマーが弦を押す力の時間変化">ハンマーの力</button></div>
+        <div class="seg wv-sw" id="p-ov" role="group" aria-label="表示"><button type="button" data-v="yt" aria-pressed="true" title="1 m 先の音圧の時間変化">波形</button><button type="button" data-v="sp" aria-pressed="false" title="周波数ごとの大きさ（初めの 1.37 秒）">スペクトル</button><button type="button" data-v="hm" aria-pressed="false" title="ハンマーが弦を押す力の時間変化">ハンマーの力</button></div>
         <div id="v-yt">
           <div class="sbar">
             <span class="stag"><i class="sw" aria-hidden="true"></i>CH1 音圧 <b class="hw" id="w-vd" data-ph="0.005 Pa"></b>/div</span>
@@ -193,7 +193,7 @@ const name = 'ピアノ';
             <span class="stag">WIN <b>B-HARRIS</b></span>
           </div>
           <div class="scope">
-            <svg viewBox="-56 -14 468 194" id="s-svg" role="img" aria-label="音のスペクトラム">
+            <svg viewBox="-56 -14 468 194" id="s-svg" role="img" aria-label="音のスペクトル">
               <defs><clipPath id="s-clip"><rect x="0" y="0" width="400" height="160"/></clipPath></defs>
               <g set:html={gridSvg(4)} />
               <g clip-path="url(#s-clip)"><path class="t1 sp" id="s-t1"/></g>
@@ -202,7 +202,7 @@ const name = 'ピアノ';
             </svg>
           </div>
           <div class="sbar rdbar" data-ph="f 1.234 kHz（12.34 倍）   CH1 −123.4 dB"><span class="rd" id="s-rd"></span></div>
-          <More id="g-sp" title="表示の設定"><div class="ptab"><ChoiceRow k="fmax" name="横軸の範囲" sub="スペクトラムの右端の周波数" choices={FMAX.map((v) => [v, `${v / 1000} kHz`] as const)} value={5000} /></div></More>
+          <More id="g-sp" title="表示の設定"><div class="ptab"><ChoiceRow k="fmax" name="横軸の範囲" sub="スペクトルの右端の周波数" choices={FMAX.map((v) => [v, `${v / 1000} kHz`] as const)} value={5000} /></div></More>
         </div>
         <div id="v-hm" hidden>
           <div class="sbar">

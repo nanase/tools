@@ -66,8 +66,8 @@ export const THY_FIR =
 export const THY_SPEC =
   '<p>仕様の 2 つの量を振幅の許容値に直して使います。</p>' +
   '<dl class="syms">' +
-  `<dt>${inl(Ap)}</dt><dd>通過域リップル</dd>` +
-  `<dt>${inl(As)}</dt><dd>阻止域減衰</dd>` +
+  `<dt>${inl(Ap)}</dt><dd>通過域のリップル</dd>` +
+  `<dt>${inl(As)}</dt><dd>阻止域の減衰量</dd>` +
   `<dt>${inl(dp)}</dt><dd>通過域の許容</dd>` +
   `<dt>${inl(ds)}</dt><dd>阻止域の許容</dd>` +
   '</dl>';

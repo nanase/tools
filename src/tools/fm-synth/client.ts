@@ -286,7 +286,7 @@ function drawSpec(): void {
   txt('#s-x', `0–${fmt(O.hm * f0, 'Hz', 3)}`);
   $('#s-svg').setAttribute(
     'aria-label',
-    `出力のスペクトラム。横軸 0 から ${fmt(O.hm * f0, 'Hz', 3)}（基本周波数の ${O.hm} 倍）、縦軸 0 から −80 dBFS。`,
+    `出力のスペクトル。横軸 0 から ${fmt(O.hm * f0, 'Hz', 3)}（基本周波数の ${O.hm} 倍）、縦軸 0 から −80 dBFS。`,
   );
 }
 
@@ -299,7 +299,7 @@ function draw(): void {
 function showView(): void {
   $('#v-yt').hidden = O.view !== 'yt';
   $('#v-sp').hidden = O.view !== 'sp';
-  txt('#hd-wave', O.view === 'sp' ? 'スペクトラム' : '波形');
+  txt('#hd-wave', O.view === 'sp' ? 'スペクトル' : '波形');
   O.cur = null;
   draw();
 }

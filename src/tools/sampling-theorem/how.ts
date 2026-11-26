@@ -46,7 +46,7 @@ const sum = (x: number) => PULSES.reduce((v, [c, a]) => v + a * sinc((x - c) / 2
 export const HOW: readonly Step[] = [
   {
     t: '標本化',
-    p: ['音の波を決まった間隔で測り、数の列にします。', '1 秒に測る回数を標本化周波数 fs と呼びます。'],
+    p: ['音の波を決まった間隔で測り、数の列にします。', '1 秒に測る回数をサンプリング周波数 fs と呼びます。'],
     svg: svg(
       `<path class="smp-l2" d="${path(slow)}"/>${stems(
         slow,

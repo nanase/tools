@@ -43,7 +43,7 @@ const name = 'JJY デコーダ';
           <ParamRow d={F_PARAM} />
           <ChoiceRow k="mon" sym="<i>~</i>" name="モニタ" sub="テスト信号をスピーカで鳴らす" choices={[['0', '出さない'], ['1', '出す']]} value="0" msg />
         </div>
-        <p class="desc" id="srcTip" role="tooltip" hidden>マイクとライン入力は、エコー除去・ノイズ抑制・自動音量調整を切って取り込みます。JJY のページの可聴音を別の端末で鳴らしてマイクに近づけるか、ケーブルでライン入力へつなぎます。テスト信号は、この端末の時計の時刻を JJY のページと同じ規則で符号にした 440 Hz の音で、マイクを通さずにそのまま解読します。</p>
+        <p class="desc" id="srcTip" role="tooltip" hidden>マイクとライン入力は、エコー除去・ノイズ抑制・自動音量調整を切って取り込みます。JJY のページの可聴音を別の端末で鳴らしてマイクに近づけるか、ケーブルでライン入力へつなぎます。テスト信号は、この端末の時計の時刻を JJY のページと同じ規則で符号にした 440 Hz の音で、マイクを通さずにそのまま復号します。</p>
       </Panel>
 
       <Panel hid="hd-rx" title="受信" class="a-rx">

@@ -527,10 +527,10 @@ function runWorker(x: Float32Array, fs: number, f: number): Promise<Reply> {
 async function analyze(): Promise<void> {
   if (!fileData) return;
   const { name, x, fs, dur, cut } = fileData;
-  mRun.textContent = `${name} を解読中…`;
+  mRun.textContent = `${name} を復号中…`;
   const r = await runWorker(x, fs, ui.fm === 'manual' ? manualF : 0);
   if (!r) {
-    mRun.textContent = `${name} は短すぎて解読できません`;
+    mRun.textContent = `${name} は短すぎて復号できません`;
     fileRes = null;
     reset();
     return;
@@ -792,7 +792,7 @@ function syncState(v: View): [string, string] {
     return fileRes
       ? [`${fileRes.frames.length} 分を検出しました`, 'FILE']
       : fileData
-        ? ['解読できませんでした', 'FILE']
+        ? ['復号できませんでした', 'FILE']
         : ['ファイル未選択', 'IDLE'];
   if (!live.on) return ['停止中', 'IDLE'];
   const d = dec;
@@ -832,7 +832,7 @@ function renderStats(v: View): void {
   html('#r-f', f > 0 ? ro(f, 'Hz', 5) : '—');
   txt(
     '#rx-aux',
-    v.file ? (fileRes ? '48 kHz に変換して解読' : '') : live.on && live.ac ? fmt(live.ac.sampleRate, 'Hz', 3) : '',
+    v.file ? (fileRes ? '48 kHz に変換して復号' : '') : live.on && live.ac ? fmt(live.ac.sampleRate, 'Hz', 3) : '',
   );
   $('#rxLed').classList.toggle('on', !v.file && live.on && !!dec?.sig);
 }

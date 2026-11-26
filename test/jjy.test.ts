@@ -296,7 +296,7 @@ describe('選択肢の行', () => {
     expect(n.stopAfter).toBe('コールサインの分だけ使います（次は 00:15）');
     expect(n.stopType).toBe('停波の予告があるときだけ使います');
     const cs = rowNotes({ h: 9, mi: 45 }, { ...DEFAULTS, stopAfter: 2, leapSecondNotice: true });
-    expect(cs.callSign).toBe('この分は 40–48 秒に送ります');
+    expect(cs.callSign).toBe('この分は 40〜48 秒に送ります');
     expect(cs.summerTime).toBe('この分はコールサインを送るため使いません');
     expect(cs.leapSecondNotice).toBe('この分は停波の予告を送るため使いません');
     expect(cs.stopType).toBe('');

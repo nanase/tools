@@ -537,7 +537,7 @@ async function setSound(on: boolean): Promise<void> {
   const now = on && ok;
   playBtn.setAttribute('aria-pressed', String(now));
   $('#sndLed').classList.toggle('on', now);
-  txt('#snd-msg', on && !ok ? 'このブラウザでは音を鳴らせません' : '');
+  txt('#snd-msg', on && !ok ? 'この環境では音を鳴らせません' : '');
   if (on && !ok) await audio.set(false);
 }
 playBtn.addEventListener('click', () => void setSound(!audio.on));

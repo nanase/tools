@@ -10,7 +10,7 @@ const p = (s: string) => `<mo stretchy="false">(</mo>${s}<mo stretchy="false">)<
 <ul class="tl">
   <li>標本化は、決まった間隔で波の値を測ること</li>
   <li>復元は標本から元の波を作り直すこと</li>
-  <li>標本化周波数が入力の周波数の 2 倍より高ければ、標本から元の波を作り直せる（標本化定理）<Fragment set:html={`${rf(1)}${rf(3)}${rf(4)}`} /></li>
+  <li>サンプリング周波数が入力の周波数の 2 倍より高ければ、標本から元の波を作り直せる（標本化定理）<Fragment set:html={`${rf(1)}${rf(3)}${rf(4)}`} /></li>
 </ul>
 
 <h3>標本化と複製</h3>
@@ -19,7 +19,7 @@ const p = (s: string) => `<mo stretchy="false">(</mo>${s}<mo stretchy="false">)<
   <math display="block" set:html={`<mi>f</mi><mo>,</mo><mspace width="0.4em"/>${fs}<mo>±</mo><mi>f</mi><mo>,</mo><mspace width="0.4em"/><mn>2</mn>${fs}<mo>±</mo><mi>f</mi><mo>,</mo><mspace width="0.4em"/><mo>…</mo>`} />
 </div>
 <dl class="syms">
-  <dt><math set:html={fs} /></dt><dd>標本化周波数</dd>
+  <dt><math set:html={fs} /></dt><dd>サンプリング周波数</dd>
   <dt><math><mi>f</mi></math></dt><dd>入力の成分の周波数</dd>
 </dl>
 <ul class="tl">
@@ -70,8 +70,8 @@ const p = (s: string) => `<mo stretchy="false">(</mo>${s}<mo stretchy="false">)<
   <li>スイープは 50 Hz から 16 kHz まで 8 秒で直線に上がり、くり返す</li>
   <li>復元はブラックマン窓をかけた sinc で、両側 16 標本<Fragment set:html={rf(7)} /></li>
   <li>入力のローパスは理想のローパス。スイープは遮断の手前 300 Hz で弱める</li>
-  <li>標本化周波数を変えると、次の標本から間隔が変わる。決めた標本は動かさず、f<sub>s</sub> は 40 ms の時定数で目標へ寄せるので、音は途切れない</li>
-  <li>「自動」: 標本化周波数を 16 kHz で 0.6 秒、8 秒かけて 700 Hz まで下げ、1.4 秒保つ、をくり返す</li>
+  <li>サンプリング周波数を変えると、次の標本から間隔が変わる。決めた標本は動かさず、f<sub>s</sub> は 40 ms の時定数で目標へ寄せるので、音は途切れない</li>
+  <li>「自動」: サンプリング周波数を 16 kHz で 0.6 秒、8 秒かけて 700 Hz まで下げ、1.4 秒保つ、をくり返す</li>
   <li>波形は入力の位相 0 から描く。幅は正弦波で 6 周期、ほかで 4 周期（スイープは 4 ms）で、標本が 8 個未満なら 2 倍ずつ広げる</li>
   <li>スペクトルの横軸は入力の 10 倍まで（スイープは 20 kHz）</li>
   <li>原音の試聴は 20 kHz より上の成分を除いた音</li>
