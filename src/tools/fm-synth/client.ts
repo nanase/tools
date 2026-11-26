@@ -334,9 +334,15 @@ function applyPreset(p: Preset): void {
   });
   update();
 }
-toneSel.addEventListener('change', () => {
+toneSel.addEventListener('change', (e) => {
   const p = PRESETS.find((x) => x.v === toneSel.value);
   if (p) applyPreset(p);
+  /* 選んだ音色をそのまま鳴らし続ける（曲の演奏中は、曲がその音色で鳴るので足さない） */
+  if (e.isTrusted && !audio.latch && !PL)
+    void audio.setLatch(true).then((ok) => {
+      if (!ok) audio.latch = false;
+      syncSnd(ok ? '' : NO_SOUND);
+    });
 });
 
 /** 入力が変わったら: 音色を作り直し、波形とスペクトラムを計算して描く */
@@ -778,9 +784,12 @@ function pieceChanged(): void {
   if (PL) stopPiece();
   void showLine();
 }
-piece.addEventListener('change', () => {
+piece.addEventListener('change', (e) => {
   store('c:p-piece', piece.value);
+  /* 選んだ曲を頭から弾く（MIDI ファイルを読み込んだときなど、利用者が選んだのでなければ弾かない）。音は押した操作の中で動かす */
+  if (e.isTrusted) void audio.ready();
   pieceChanged();
+  if (e.isTrusted) transport.playNew();
 });
 let tempo = TEMPO.v;
 
