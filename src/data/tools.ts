@@ -383,7 +383,7 @@ export const TOOLS: Tool[] = [
     t: '論理ゲート',
     d: 'ゲートと回路の入力を切り替えて真理値表と見比べます。',
     ic: 'lg',
-    r: ['karnaugh', 'relay-logic', 'timer555', 'spi'],
+    r: ['karnaugh', 'relay-logic', 'cpu', 'spi'],
     k: 'logic gate ロジック 論理回路 デジタル回路 digital and or not nand nor xor xnor 論理積 論理和 否定 排他的論理和 真理値表 truth table 論理式 ブール代数 boolean ド・モルガン de morgan 万能ゲート 半加算器 全加算器 加算器 adder マルチプレクサ multiplexer デコーダ decoder 比較器 comparator パリティ parity 多数決 majority ラッチ latch sr ラッチ d ラッチ フリップフロップ flip-flop リングオシレータ ring oscillator タイミングチャート timing chart 伝搬遅延 propagation delay ハザード hazard グリッチ glitch mil 記号 jis 記号 ieee 91',
   },
   {
@@ -401,8 +401,17 @@ export const TOOLS: Tool[] = [
     t: 'カルノー図',
     d: '真理値表から最小の論理式と回路を求めます。',
     ic: 'km',
-    r: ['logic-gates', 'relay-logic', 'expression-parsing', 'regex'],
+    r: ['logic-gates', 'relay-logic', 'cpu', 'regex'],
     k: 'karnaugh map k-map カルノーマップ ベイチ図 veitch 真理値表 truth table 論理式 簡単化 最小化 minimization 論理圧縮 ブール代数 boolean 論理回路 デジタル回路 積和形 和積形 sop pos 主加法標準形 主乗法標準形 最小項 最大項 minterm maxterm 主項 必須主項 prime implicant クワイン・マクラスキー quine-mccluskey ペトリック petrick ドントケア dont care 不定 グレイコード gray code nand nor ハザード hazard 7 セグメント 全加算器',
+  },
+  {
+    id: 'cpu',
+    c: '論理回路',
+    t: '4 ビット CPU',
+    d: '8 種の命令で動く 4 ビットの CPU を動かします。',
+    ic: 'cpu',
+    r: ['logic-gates', 'karnaugh', 'expression-parsing', 'timer555'],
+    k: 'cpu central processing unit プロセッサ processor マイコン 4 ビット 4bit 命令 instruction 命令セット isa 機械語 machine code アセンブリ assembly rom メモリ memory レジスタ register アキュムレータ プログラムカウンタ program counter pc alu 算術論理演算装置 加算 桁上げ キャリー carry フラグ flag バス bus データパス datapath フェッチ fetch デコード decode 実行 execute ジャンプ jump 条件分岐 branch クロック clock ノイマン型 von neumann プログラム内蔵方式 stored program',
   },
 
   {
