@@ -179,12 +179,7 @@ let last = 0;
 let acc = 0;
 /** 見出しの再生と、時刻の操作の枠の再生は同じ状態 */
 function showPlay(on: boolean): void {
-  for (const b of [$('#play'), $('#sr-fl-play')]) {
-    b.setAttribute('aria-pressed', String(on));
-    b.querySelector('.led')?.classList.toggle('on', on);
-  }
-  txt('#playT', on ? '停止' : '再生');
-  txt('#sr-fl-playT', on ? '停止' : '再生');
+  for (const b of [$('#play'), $('#sr-fl-play')]) b.setAttribute('aria-pressed', String(on));
 }
 function stop(): void {
   playing = false;

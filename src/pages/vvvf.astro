@@ -1,6 +1,7 @@
 ---
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import LedToggle from '../components/LedToggle.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
@@ -26,7 +27,7 @@ const playIcon =
     <div class="pcm-main">
     <div class="col">
       <Panel hid="hd-wave" title="波形">
-        <Fragment slot="aux"><span class="led" id="vv-led" aria-hidden="true"></span><span class="aux" id="vv-st" aria-live="polite">停止</span></Fragment>
+        <span slot="aux" class="aux tp-st"><span class="led" id="vv-led" aria-hidden="true"></span><span id="vv-st" aria-live="polite">停止</span></span>
         <div class="scope pcm-scr"><canvas class="pcm-cv vv-cy" id="vv-cy" role="img" aria-label="基本波とキャリアと出力の波形"></canvas></div>
         <p class="vv-ratio" id="vv-ratio"></p>
       </Panel>
@@ -47,7 +48,7 @@ const playIcon =
           {CAR_IDS.map((k, i) => <button type="button" class="chip" data-v={k} aria-pressed={i === 0 ? 'true' : 'false'} title={CARS[k].sub}>{CARS[k].name}</button>)}
         </div>
         <div class="vv-cmd">
-          <button type="button" id="vv-auto" aria-pressed="false" title="発車から停止までの自動運転"><span class="led" id="vv-autoLed" aria-hidden="true"></span>自動</button>
+          <LedToggle id="vv-auto" label="自動" title="発車から停止までの自動運転" />
           <button type="button" id="vv-stop" title="速度 0 km/h と消音">緊急停止</button>
         </div>
         <div class="vv-drive">

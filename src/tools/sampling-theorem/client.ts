@@ -7,6 +7,7 @@ import { Choice } from '../../lib/choice';
 import { $ } from '../../lib/dom';
 import { ParamGroup } from '../../lib/param';
 import { handheld } from '../../lib/pause';
+import { onPick, pickAct } from '../../lib/press';
 import { initToolPage } from '../../lib/tool-page';
 import { fft, plan } from '../spectrum/fft';
 import { SmpAudio } from './audio';
@@ -120,7 +121,13 @@ keys.addEventListener('click', (e) => {
   S.hear = b.dataset.v === 'orig' ? 'orig' : 'rec';
   for (const x of keys.querySelectorAll('[data-v]')) x.setAttribute('aria-pressed', String(x === b));
   send();
+  autoPlay(e);
 });
+/** 止まっている間に試聴の鍵・入力を選んだら鳴らし始める（利用者の操作だけ） */
+function autoPlay(e: Event): void {
+  if (pickAct(e, S.playing) === 'start') start();
+}
+onPick($('#p-src'), autoPlay);
 function syncPlay(): void {
   pp.classList.toggle('on', S.playing);
   pp.title = pp.ariaLabel = S.playing ? '停止' : '再生';

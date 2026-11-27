@@ -13,7 +13,6 @@
 .srcbar{display:flex;align-items:center;gap:8px}
 @media (max-width:479px){.srcbar .seg button{padding:0 6px}}
 /* 受信の開始・停止（LED は信号の有無） */
-#runSeg button{display:inline-flex;align-items:center;justify-content:center;gap:8px}
 /* 受信の状態の文は出る・消えるので、空の間も 1 行を取る。長い文（ファイル名など）は … で省き、押すと全文（.clip） */
 #m-run{min-height:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* ファイルを枠へ落としているとき */

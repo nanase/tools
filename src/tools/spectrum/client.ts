@@ -124,8 +124,6 @@ new Choice<'sp' | 'sg'>($('#p-view'), (v) => {
 function setRun(on: boolean): void {
   S.run = on;
   $('#runS').setAttribute('aria-pressed', String(on));
-  $('#runSLed').classList.toggle('on', on);
-  txt('#runST', on ? 'RUN' : 'STOP');
 }
 $('#runS').addEventListener('click', () => setRun(!S.run));
 for (const k of ['ch1', 'ch2', 'hold'] as const)

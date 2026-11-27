@@ -58,17 +58,17 @@ const SPEEDS = [
           <div class="pm-hud pm-br"><span class="pm-zv">視野 <b class="hw" id="pm-fov" data-ph="200°">—</b></span></div>
           <div class="pm-tip" id="pm-tip" hidden>
             <div id="pm-tipi"></div>
-            <button type="button" class="pm-tg pm-trk" id="pm-trk" aria-pressed="false" hidden><span class="led" aria-hidden="true"></span><span>追尾</span></button>
+            <button type="button" class="pm-tg pm-trk" id="pm-trk" aria-pressed="false" hidden><span class="led" aria-hidden="true"></span>追尾</button>
           </div>
           <p class="pm-msg" id="pm-msg" hidden></p>
           <Busy id="pm-busy" text="読み込み中…" center />
         </div>
         <div class="pm-time">
-          <button type="button" class="pm-tg pm-run" id="pm-run" aria-pressed="false"><span class="led" aria-hidden="true"></span><span>停止中</span></button>
+          <button type="button" class="pm-tg pm-run" id="pm-run" aria-pressed="false"><span class="led" aria-hidden="true"></span>早送り</button>
           <input type="range" id="pm-year" min={-100000} max={100000} step="100" value="0" aria-label="年（今からの年数）">
           <span class="pm-yv"><b class="hw" id="pm-yv" data-ph="9 万 9900 年後">現在</b><small class="hw" id="pm-ya" data-ph="紀元前 97975 年">西暦 2026 年</small></span>
           <div class="pm-jumps" role="group" aria-label="年へ移る">{JUMPS.map(([y, t]) => <button type="button" data-jump={y}>{t}</button>)}</div>
-          <select class="pm-sel pm-spd" id="pm-spd" aria-label="再生の速さ">{SPEEDS.map(([v, t]) => <option value={v} selected={v === 5000}>{t}</option>)}</select>
+          <select class="pm-sel pm-spd" id="pm-spd" aria-label="早送りの速さ">{SPEEDS.map(([v, t]) => <option value={v} selected={v === 5000}>{t}</option>)}</select>
         </div>
       </div>
     </Panel>

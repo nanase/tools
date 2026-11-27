@@ -1,6 +1,7 @@
 ---
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import LedToggle from '../components/LedToggle.astro';
 import More from '../components/More.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
@@ -44,7 +45,7 @@ const name = 'エンジン';
 
     <div class="col c1">
       <Panel hid="hd-run" title="運転" class="a-run">
-        <div slot="aux" class="seg"><button type="button" id="runBtn" aria-pressed="false" title="エンジンの始動・停止（音が出る）"><span class="led" id="runLed" aria-hidden="true"></span><span id="runT">運転</span></button></div>
+        <LedToggle slot="aux" id="runBtn" label="運転" title="エンジンの始動・停止（音が出る）" />
         <div class="ptab">
           <ChoiceRow k="load" name="走らせ方" sub="走行: 車体を走らせる（N なら空ぶかし）。回転数固定: 台上の動力計のように回転数を一定に" choices={[['drive', '走行'], ['hold', '回転数固定']]} value="drive" />
           <ParamRow d={SPEED} />
@@ -67,7 +68,7 @@ const name = 'エンジン';
           <span class="thr-l" aria-hidden="true"><b>0</b><b>25</b><b>50</b><b>75</b><b>100 %</b></span>
           <span class="thr-t" id="thr-t">スロットル</span>
         </div>
-        <button type="button" class="tg thr-lk" id="lockBtn" aria-pressed="false" title="離しても開きを保持。もう一度押すと閉じる"><span class="led" id="lockLed" aria-hidden="true"></span>固定</button>
+        <LedToggle id="lockBtn" label="固定" class="thr-lk" title="離しても開きを保持。もう一度押すと閉じる" />
         </div>
         <div class="thr brk" id="brk" tabindex="0" role="slider" aria-label="ブレーキのパッド。押している間だけ、押した位置の強さで止める" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-valuetext="なし">
           <span class="thr-f" id="brk-f" aria-hidden="true"></span>

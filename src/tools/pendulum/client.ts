@@ -453,8 +453,6 @@ function kick(): void {
 function setRun(on: boolean): void {
   running = on;
   $('#runBtn').setAttribute('aria-pressed', String(on));
-  $('#runLed').classList.toggle('on', on);
-  txt('#runT', on ? '停止' : '開始');
   if (on) kick();
   else {
     measureOut();

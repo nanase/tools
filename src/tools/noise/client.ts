@@ -9,6 +9,7 @@ import { $, $$ } from '../../lib/dom';
 import { fmt, fmtR, minus, plain, ro } from '../../lib/format';
 import { fx, RM } from '../../lib/motion';
 import { ParamGroup } from '../../lib/param';
+import { onPick, pickAct } from '../../lib/press';
 import { DV } from '../../lib/scope';
 import { store, stored } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
@@ -302,8 +303,6 @@ function views(): void {
 function setRun(on: boolean): void {
   S.run = on;
   $('#runBtn').setAttribute('aria-pressed', String(on));
-  $('#runLed').classList.toggle('on', on);
-  txt('#runT', on ? 'RUN' : 'STOP');
 }
 $('#runBtn').addEventListener('click', () => setRun(!S.run));
 
@@ -311,12 +310,17 @@ $('#runBtn').addEventListener('click', () => setRun(!S.run));
 const playBtn = $('#playBtn');
 function syncSnd(err = ''): void {
   playBtn.setAttribute('aria-pressed', String(audio.playing));
-  $('#sndLed').classList.toggle('on', audio.playing);
-  txt('#playT', audio.playing ? '停止' : '再生');
   txt('#snd-msg', err);
 }
-playBtn.addEventListener('click', async () => {
-  const ok = await audio.setPlay(!audio.playing);
+playBtn.addEventListener('click', () => {
+  void setPlay(!audio.playing);
+});
+/* 止まっている間に種類を選んだら鳴らし始める（利用者の操作だけ） */
+onPick($('#p-kind'), (e) => {
+  if (pickAct(e, audio.playing) === 'start') void setPlay(true);
+});
+async function setPlay(on: boolean): Promise<void> {
+  const ok = await audio.setPlay(on);
   /* AudioContext が 48 kHz にならなかった環境では、表示もその標本化周波数で作る */
   const afs = audio.fs;
   if (ok && afs && afs !== fs) {
@@ -327,7 +331,7 @@ playBtn.addEventListener('click', async () => {
     rebuild();
   }
   syncSnd(ok ? '' : '音を出せませんでした');
-});
+}
 /** 鳴らしている間は、AudioWorklet が送り返す音を表示に使う（古い条件の音は捨てる） */
 audio.onData = (b, v) => {
   if (S.run && v === ver) write(b);

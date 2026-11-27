@@ -18,8 +18,6 @@
 .sel select option{background:var(--surface);color:var(--ink)}
 .sel::after{content:"";position:absolute;top:50%;right:12px;width:7px;height:7px;border-right:1.6px solid var(--ink-2);border-bottom:1.6px solid var(--ink-2);transform:translateY(-70%) rotate(45deg);pointer-events:none}
 
-/* 枠の右上の再生ボタン（JJY のページと同じ。鳴らしている間は LED が点く） */
-#playBtn{display:inline-flex;align-items:center;gap:7px}
 .snd-msg{margin:0 8px 6px}
 .snd-msg:empty{display:none}
 

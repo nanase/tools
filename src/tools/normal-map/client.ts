@@ -35,8 +35,7 @@ const one = $('#nm-one'),
   c2 = $<HTMLCanvasElement>('#nm-c2'),
   busy = $('#nm-busy'),
   msg = $('#nm-msg'),
-  rotBtn = $<HTMLButtonElement>('#nm-rot'),
-  rotLed = $('#nm-rotL');
+  rotBtn = $<HTMLButtonElement>('#nm-rot');
 
 interface View {
   cv: HTMLCanvasElement;
@@ -410,7 +409,6 @@ for (const cv of [c0, c1, c2]) {
 function setRot(on: boolean): void {
   st.rot = on;
   rotBtn.setAttribute('aria-pressed', String(on));
-  rotLed.classList.toggle('on', on);
   if (on) resume();
 }
 rotBtn.addEventListener('click', () => setRot(!st.rot));

@@ -239,7 +239,7 @@ export class Live {
   /** モードに入る（初めと切り替えたとき） */
   private enter(): void {
     const plan = this.plan;
-    $('#rvPid').parentElement?.toggleAttribute('hidden', plan);
+    $('#rvPid').hidden = plan;
     for (const id of ['#rv-pl', '#rv-pr']) $(id).style.visibility = plan ? 'hidden' : '';
     txt('#lv-x-h', plan ? '10 s' : '6 s');
     txt('#lv-x-m', plan ? 'STEP' : 'ROLL');
@@ -301,8 +301,6 @@ export class Live {
     const was = this.boat.on;
     this.boat.setOn(on);
     $('#rvPid').setAttribute('aria-pressed', String(on));
-    $('#rvPidLed').classList.toggle('on', on);
-    txt('#rvPidT', on ? 'PID 入' : 'PID 切');
     if (on && !was) this.event('pid');
     this.frame();
   }
@@ -355,8 +353,6 @@ export class Live {
     if (on && this.div && !this.plan) on = false;
     this.running = on;
     $('#rvRun').setAttribute('aria-pressed', String(on));
-    $('#rvRunLed').classList.toggle('on', on);
-    txt('#rvRunT', on ? '停止' : this.plan ? '再生' : '開始');
     this.kick();
     this.frame();
   }

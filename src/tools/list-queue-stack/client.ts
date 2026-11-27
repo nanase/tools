@@ -569,8 +569,6 @@ trk.addEventListener('keydown', (e) => {
 $('#ls-snd').addEventListener('click', () => {
   audio.on = !audio.on;
   $('#ls-snd').setAttribute('aria-pressed', String(audio.on));
-  $('#ls-sndL').classList.toggle('on', audio.on);
-  $('#ls-sndT').textContent = audio.on ? 'オン' : 'オフ';
 });
 storeToggle($('#ls-snd'));
 

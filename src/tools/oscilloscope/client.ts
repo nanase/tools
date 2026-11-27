@@ -127,8 +127,6 @@ function setRun(on: boolean): void {
   O.run = on;
   const b = $('#runO');
   b.setAttribute('aria-pressed', String(on));
-  $('#runOLed').classList.toggle('on', on);
-  txt('#runOT', on ? 'RUN' : 'STOP');
   if (!on) O.st = 'STOP';
 }
 $('#runO').addEventListener('click', () => setRun(!O.run));

@@ -6,6 +6,7 @@ import { Choice } from '../../lib/choice';
 import { $ } from '../../lib/dom';
 import { fmt, fmtR, minus, parts, ro } from '../../lib/format';
 import { ParamGroup } from '../../lib/param';
+import { onPick, pickAct } from '../../lib/press';
 import { reserveHeight } from '../../lib/reserve';
 import { DV, SH, SW } from '../../lib/scope';
 import { store, stored, storeToggle } from '../../lib/store';
@@ -753,8 +754,6 @@ async function play(on: boolean): Promise<void> {
   playing = on;
   const btn = $('#playBtn');
   btn.setAttribute('aria-pressed', String(on));
-  $('.led', btn).classList.toggle('on', on);
-  txt('#playT', on ? '停止' : '再生');
   cancelAnimationFrame(raf);
   showRate();
   if (on) raf = requestAnimationFrame(meter);
@@ -811,6 +810,11 @@ const src$ = new Choice<Src>($('#p-src'), (v) => {
   sendSrc();
 });
 src = src$.value;
+/* 止まっている間に入力の音・プリセットを選んだら鳴らし始める（利用者の操作だけ） */
+for (const id of ['#p-src', '#p-pre'])
+  onPick($(id), (e) => {
+    if (pickAct(e, playing) === 'start') void play(true);
+  });
 ax = frAxis(lin, fs);
 ws = frWs(ax);
 

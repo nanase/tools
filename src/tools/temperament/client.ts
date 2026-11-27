@@ -158,12 +158,13 @@ abBtn.addEventListener('click', () => {
   update();
 });
 
-/* 鍵盤: 押した鍵を根音にする（オクターブは 3〜5 に収める） */
+/* 鍵盤: 押した鍵を根音にして鳴らす（オクターブは 3〜5 に収める） */
 $('#kb').addEventListener('click', (e) => {
   const b = (e.target as Element).closest<HTMLElement>('button[data-m]');
   if (!b) return;
   const m = Number(b.dataset.m);
   setRoot(pcOf(m), Math.max(3, Math.min(5, Math.floor(m / 12) - 1)));
+  if (!S.play) setPlay(true);
 });
 /* 調ごとの 3 度: 押した調の主和音を鳴らす */
 $('#k12').addEventListener('click', (e) => {
@@ -236,10 +237,7 @@ function draw(): void {
   $('#s-now').style.visibility = S.play ? '' : 'hidden';
   txt($('#s-cur'), (S.ab && S.cmp !== 'none' ? (sideB ? 'B ' : 'A ') : '') + tn);
   playBtn.setAttribute('aria-pressed', String(S.play));
-  $('#playLed').classList.toggle('on', S.play);
-  txt($('#playT'), S.play ? '停止' : '鳴らす');
   abBtn.setAttribute('aria-pressed', String(S.ab));
-  $('#abLed').classList.toggle('on', S.ab);
   (abBtn as HTMLButtonElement).disabled = S.cmp === 'none';
   txt($('#o-ab'), tn);
 

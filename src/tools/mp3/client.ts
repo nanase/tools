@@ -8,6 +8,7 @@ import { minus } from '../../lib/format';
 import { RM } from '../../lib/motion';
 import { ParamGroup } from '../../lib/param';
 import { handheld } from '../../lib/pause';
+import { onPick, pickAct } from '../../lib/press';
 import { initToolPage } from '../../lib/tool-page';
 import { Deck } from '../pcm/deck';
 import { drawOverview } from '../pcm/fig';
@@ -175,6 +176,10 @@ function apply(): void {
     res = r;
     if (orig) deck.set([orig, r.al, r.diff], FS);
   }
+  if (startNext && res && orig) {
+    startNext = false;
+    if (!deck.playing) void deck.play();
+  }
   show();
 }
 
@@ -277,12 +282,14 @@ for (const [i, [c, mode]] of figs.entries()) {
     }
     if (deck.sel !== i) {
       deck.select(i);
+      autoPlay(e);
       return;
     }
     const r = c.getBoundingClientRect();
     if (e.clientY - r.top <= sgBottom(mode, r.height))
       deck.seek(Math.max(0, sgTime(e.clientX - r.left, r.width)) * deck.dur);
     figDirty = true;
+    autoPlay(e);
   });
   c.addEventListener('pointermove', (e) => {
     c.style.cursor = drag || nearLine(e) ? 'ns-resize' : '';
@@ -321,10 +328,34 @@ deck.onState = () => {
   overview = true;
   figDirty = true;
 };
-pp.addEventListener('click', () => deck.toggle());
+/** 止まっている間にサンプル音源を選んだとき、MP3 の結果がそろったら鳴らし始める */
+let startNext = false;
+/**
+ * 止まっている間に試聴する音・スペクトログラム・サンプル音源を選んだら鳴らし始める（利用者の操作だけ）。
+ * next は結果がそろってから（前の音源を鳴らさない）
+ */
+function autoPlay(e: Event, next = false): void {
+  if (pickAct(e, deck.playing) !== 'start') return;
+  if (!next) {
+    void deck.play();
+    return;
+  }
+  startNext = true;
+  /* iPhone の Safari は、押した操作の中で resume しないと鳴らない */
+  void deck
+    .ctx()
+    ?.resume()
+    .catch(() => {});
+}
+pp.addEventListener('click', () => {
+  startNext = false;
+  deck.toggle();
+});
 $('#ls-keys').addEventListener('click', (e) => {
   const k = (e.target as Element).closest<HTMLElement>('.mp3-key');
-  if (k) deck.select(Number(k.dataset.i));
+  if (!k) return;
+  deck.select(Number(k.dataset.i));
+  autoPlay(e);
 });
 const seekAt = (e: PointerEvent) => {
   const r = wv.getBoundingClientRect();
@@ -382,6 +413,7 @@ new Choice<SrcName>($('#p-src'), (v) => {
   S.src = v;
   setSource();
 });
+onPick($('#p-src'), (e) => autoPlay(e, !res));
 $('#lp-pre').addEventListener('click', (e) => {
   const b = (e.target as Element).closest<HTMLElement>('.chip');
   if (b) P.set('lp', b.dataset.v === 'none' ? LP_NONE : LAME_LP[S.kbps]);

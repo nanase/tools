@@ -8,8 +8,7 @@
   .c-a{grid-area:ca}.c-b{grid-area:cb}.a-coef{grid-area:coef}.a-out{grid-area:out}.a-thy{grid-area:thy}.a-src{grid-area:src}
 }
 
-/* 枠の右上のボタン（再生の LED・計算中の無効） */
-.seg button{display:inline-flex;align-items:center;gap:7px}
+/* 枠の右上のボタン（計算中の無効） */
 .seg button:disabled{opacity:.45;cursor:default;color:var(--ink-3)}
 
 /* フィルタの種類（入力の枠の右上）。狭い画面では詰める */

@@ -3,6 +3,7 @@ import Busy from '../components/Busy.astro';
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
 import HowSteps from '../components/HowSteps.astro';
+import LedToggle from '../components/LedToggle.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
@@ -24,7 +25,7 @@ const lights = LIGHTS.map(([k, n]) => [k, n] as const);
 
   <div class="tgrid">
     <Panel hid="hd-cam" title="カメラ" class="a-cam" fixed>
-      <div slot="aux" class="seg wb-loc" id="wb-locw"><button type="button" id="wb-local" aria-pressed="false" title="画素ごとに、混ざった光の白に合わせる"><span class="led" id="wb-locL" aria-hidden="true"></span> <span>場所ごとに補正</span></button></div>
+      <LedToggle slot="aux" id="wb-local" label="場所ごとに補正" title="画素ごとに、混ざった光の白に合わせる" />
       <div class="wb-box" id="wb-box">
         <div class="wb-stage" id="wb-stage">
           <canvas id="wb-cv" width="800" height="500" tabindex="0" role="img" aria-label="写真。押した所を白にする（スポイト）"></canvas>

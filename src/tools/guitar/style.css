@@ -60,7 +60,6 @@
 .cv-shape{flex:1 1 auto;min-width:0;padding:0 8px;border-left:1px solid var(--line);border-right:1px solid var(--line);font:500 13px/30px var(--mono);text-align:center;color:var(--ink)}
 .cv-seg button:disabled{opacity:.35;cursor:default}
 .chd-keys{margin:8px 8px 0}
-#chdSnd{display:inline-flex;align-items:center;gap:7px}
 
 /* 音の波形（開閉できる枠）の表示の切り替え */
 .wv-sw{margin:4px 0 12px}

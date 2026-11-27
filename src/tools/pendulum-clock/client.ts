@@ -498,7 +498,6 @@ function setSnd(on: boolean): void {
   S.snd = on;
   aRef = null;
   sndBtn.setAttribute('aria-pressed', String(on));
-  $('.led', sndBtn).classList.toggle('on', on);
 }
 /** 音を鳴らし始める（利用者の操作の処理の中で呼ぶ）。AudioContext は初めて鳴らすときに作る */
 function startSound(): void {

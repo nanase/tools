@@ -2,6 +2,7 @@
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
 import HowSteps from '../components/HowSteps.astro';
+import LedToggle from '../components/LedToggle.astro';
 import More from '../components/More.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
@@ -23,7 +24,7 @@ const name = '立体音響';
   <div class="tgrid sa-grid" id="sa">
     <div class="sa-main">
       <Panel hid="hd-fig" title="聞き手と音源" fixed>
-        <Fragment slot="aux"><span class="aux sa-hp"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 10V8a5.5 5.5 0 0 1 11 0v2"/><rect x="1.8" y="9.3" width="3" height="4.6" rx="1"/><rect x="11.2" y="9.3" width="3" height="4.6" rx="1"/></svg>ヘッドホン</span><span class="seg"><button type="button" id="sa-play" aria-pressed="false"><span class="led" id="sa-led" aria-hidden="true"></span><span id="sa-playT">再生</span></button></span></Fragment>
+        <Fragment slot="aux"><span class="aux sa-hp"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 10V8a5.5 5.5 0 0 1 11 0v2"/><rect x="1.8" y="9.3" width="3" height="4.6" rx="1"/><rect x="11.2" y="9.3" width="3" height="4.6" rx="1"/></svg>ヘッドホン</span><LedToggle id="sa-play" label="再生" /></Fragment>
         <div class="sa-scenes" id="sa-scenes" role="group" aria-label="場面" data-nosave>
           <span class="sa-sch">場面</span>
           {SCENES.map((s) => <button type="button" class="chip" data-v={s.id} aria-pressed="false">{s.name}</button>)}

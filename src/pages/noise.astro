@@ -1,6 +1,7 @@
 ---
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import LedToggle from '../components/LedToggle.astro';
 import More from '../components/More.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
@@ -37,7 +38,7 @@ const name = 'ノイズジェネレータ';
       </Panel>
 
       <Panel hid="hd-snd" title="音" class="a-snd">
-        <div slot="aux" class="seg"><button type="button" id="playBtn" aria-pressed="false" title="ノイズをスピーカで鳴らす・止める"><span class="led" id="sndLed" aria-hidden="true"></span><span id="playT">再生</span></button></div>
+        <LedToggle slot="aux" id="playBtn" label="再生" title="ノイズをスピーカで鳴らす・止める" />
         <p class="msg er snd-msg" id="snd-msg" aria-live="polite"></p>
         <div class="ptab">
           <ParamRow d={VOL} />
@@ -87,7 +88,7 @@ const name = 'ノイズジェネレータ';
       <Panel hid="hd-wave" title="波形" class="a-wave">
         <div slot="aux" class="pbar">
           <div class="seg" id="p-wv" role="group" aria-label="表示"><button type="button" data-v="yt" aria-pressed="true" title="時間に対する波形">波形</button><button type="button" data-v="hist" aria-pressed="false" title="振幅の分布（ヒストグラム）">分布</button></div>
-          <div class="seg"><button type="button" id="runBtn" aria-pressed="true" title="表示の停止・再開（音は止めない）"><span class="led on" id="runLed" aria-hidden="true"></span><span id="runT">RUN</span></button></div>
+          <LedToggle id="runBtn" label="RUN" on title="表示の停止・再開（音は止めない）" />
         </div>
 
         <div id="v-yt">

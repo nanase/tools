@@ -1,6 +1,7 @@
 ---
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import LedToggle from '../components/LedToggle.astro';
 import More from '../components/More.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
@@ -50,7 +51,7 @@ const name = 'スペクトラムアナライザ';
       <Panel hid="hd-sp" title="スペクトラム" class="a-sp">
         <div slot="aux" class="pbar">
           <div class="seg" id="p-view" role="group" aria-label="表示"><button type="button" data-v="sp" aria-pressed="true" title="周波数ごとの強さ">スペクトラム</button><button type="button" data-v="sg" aria-pressed="false" title="周波数ごとの強さの時間の変化">スペクトログラム</button></div>
-          <div class="seg"><button type="button" id="runS" aria-pressed="true" title="表示の停止・再開"><span class="led on" id="runSLed" aria-hidden="true"></span><span id="runST">RUN</span></button></div>
+          <LedToggle id="runS" label="RUN" on title="表示の停止・再開" />
         </div>
 
         <div id="v-sp">

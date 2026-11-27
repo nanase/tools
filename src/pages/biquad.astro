@@ -2,6 +2,7 @@
 import Busy from '../components/Busy.astro';
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import LedToggle from '../components/LedToggle.astro';
 import More from '../components/More.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
@@ -37,7 +38,7 @@ const t0 = TYPES[0];
       </Panel>
 
       <Panel hid="hd-snd" title="試聴" class="a-snd">
-        <Fragment slot="aux"><div class="seg"><button type="button" id="bypBtn" aria-pressed="false" title="フィルタを通さない音">原音</button></div><div class="seg"><button type="button" id="playBtn" aria-pressed="false" title="入力にこのフィルタを掛けた音"><span class="led" aria-hidden="true"></span><span id="playT">再生</span></button></div></Fragment>
+        <Fragment slot="aux"><div class="seg"><button type="button" id="bypBtn" aria-pressed="false" title="フィルタを通さない音">原音</button></div><LedToggle id="playBtn" label="再生" title="入力にこのフィルタを掛けた音" /></Fragment>
         <div class="sbar">
           <span class="stag">IN <b id="in-t">{SRC0.label}</b></span>
           <span class="stag"><i class="sw" aria-hidden="true"></i>OUT <b id="lv-t">---</b> dBFS</span>

@@ -66,7 +66,7 @@ export const ELEV: ParamDef = {
 
 export const PARAMS: ParamDef[] = [LAT, LON, ELEV];
 
-/** 再生の速さ（実時間の何倍） */
+/** 早送りの速さ（実時間の何倍） */
 export const SPEEDS = [
   ['60', '×60'],
   ['600', '×600'],

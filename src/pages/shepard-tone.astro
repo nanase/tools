@@ -1,5 +1,6 @@
 ---
 import ChoiceRow from '../components/ChoiceRow.astro';
+import LedToggle from '../components/LedToggle.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
@@ -18,14 +19,14 @@ const P = Object.fromEntries(PARAMS.map((d) => [d.k, d]));
     <div class="sht-view" id="sht-view">
       <Panel hid="hd-ring" title="音名の環" class="sht-ringp" fixed hidden><canvas class="sht-ring" id="sht-ring" role="img" aria-label="12 の音名と今の和音"></canvas></Panel>
       <Panel hid="hd-sp" title="スペクトログラム" class="sht-specp" fixed>
-        <Fragment slot="aux"><span class="led" id="sht-led" aria-hidden="true"></span><span class="aux" id="sht-st" aria-live="polite"></span></Fragment>
+        <span slot="aux" class="aux tp-st"><span class="led" id="sht-led" aria-hidden="true"></span><span id="sht-st" aria-live="polite"></span></span>
         <div class="sht-specw" id="sht-specw">
           <canvas class="sht-sp" id="sht-sp" role="img" aria-label="スペクトログラム。横が時間、縦が音の高さ"></canvas>
           <canvas class="sht-levels" id="sht-levels" role="img" aria-label="音域ごとの音量と今の音"></canvas>
         </div>
         <div class="sht-opts" id="sht-opts" role="group" aria-label="追加の表示">
-          <button type="button" class="tg" data-view="ring" aria-pressed="false" title="12 の音名の上で回る今の和音"><span class="led" aria-hidden="true"></span>音名の環</button>
-          <button type="button" class="tg" data-view="levels" aria-pressed="false" title="スペクトログラムの右に今の音と音量"><span class="led" aria-hidden="true"></span>音域ごとの音量</button>
+          <LedToggle label="音名の環" data-view="ring" title="12 の音名の上で回る今の和音" />
+          <LedToggle label="音域ごとの音量" data-view="levels" title="スペクトログラムの右に今の音と音量" />
           <span class="sht-lg" id="sht-lg" hidden><span class="stag"><i class="sw" aria-hidden="true"></i>根音</span><span class="stag"><i class="sw c2" aria-hidden="true"></i>ほかの音</span></span>
         </div>
       </Panel>

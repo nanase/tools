@@ -1,6 +1,7 @@
 ---
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import LedToggle from '../components/LedToggle.astro';
 import More from '../components/More.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
@@ -63,7 +64,7 @@ const prm = (k: string) => {
           <div class="seg" id="p-src" role="group" aria-label="入力の音">
             {SRCS.map(([v, l, t]) => <button type="button" data-v={v} aria-pressed={v === 'noise' ? 'true' : 'false'} title={t}>{l}</button>)}
           </div>
-          <div class="seg"><button type="button" id="playBtn" aria-pressed="false" title="このフィルタを掛けた入力の音"><span class="led" aria-hidden="true"></span><span id="playT">再生</span></button></div>
+          <LedToggle id="playBtn" label="再生" title="このフィルタを掛けた入力の音" />
         </div>
         <div class="sbar">
           <span class="stag">IN <b id="lv-in">WHITE NOISE</b></span>

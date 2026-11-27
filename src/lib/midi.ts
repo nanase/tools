@@ -273,8 +273,6 @@ export class MidiBox {
   private sync(): void {
     const on = this.midi.running;
     this.btn.setAttribute('aria-pressed', String(on));
-    $('#midiLed').classList.toggle('on', on);
-    $('#midiT').textContent = on ? '停止' : '開始';
     this.dev.disabled = !on;
   }
 

@@ -7,6 +7,7 @@ import { $ } from '../../lib/dom';
 import { RM } from '../../lib/motion';
 import { ParamGroup } from '../../lib/param';
 import { autoPause } from '../../lib/pause';
+import { onPick, pickAct } from '../../lib/press';
 import { initToolPage } from '../../lib/tool-page';
 import { RoomAudio } from './audio';
 import { DRY } from './dry';
@@ -103,6 +104,7 @@ function heightMax(): void {
 }
 
 const presetCh = new Choice<string>($('#p-preset'), (v) => applyPreset(v));
+onPick($('#p-preset'), autoPlay);
 const zoomCh = new Choice<string>($('#p-zoom'), () => draw());
 const modeCh = new Choice<string>($('#p-mode'), () => syncMode());
 const dryCh = new Choice<string>($('#p-dry'), (v) => {
@@ -114,10 +116,11 @@ if (dryCh.value === 'file') dryCh.set('clap');
 
 const sels = new Map(FACES.map((f) => [f, $<HTMLSelectElement>(`#m-${f}`)]));
 for (const [f, el] of sels)
-  el.addEventListener('change', () => {
+  el.addEventListener('change', (e) => {
     room.mat[f] = el.value;
     syncPreset();
     changed();
+    autoPlay(e);
   });
 
 function applyPreset(v: string): void {
@@ -324,8 +327,6 @@ function frame(now: number): void {
 function setRun(on: boolean): void {
   S.run = on;
   $('#runBtn').setAttribute('aria-pressed', String(on));
-  $('#runLed').classList.toggle('on', on);
-  txt('#runT', on ? 'RUN' : 'STOP');
 }
 $('#runBtn').addEventListener('click', () => setRun(!S.run));
 watchTheme(draw);
@@ -566,9 +567,12 @@ function stop(): void {
 }
 function setLed(on: boolean): void {
   playBtn.setAttribute('aria-pressed', String(on));
-  $('#playLed').classList.toggle('on', on);
 }
 playBtn.addEventListener('click', () => void play());
+/** 部屋の例・面の材料を選んだら 1 回鳴らす（鳴っている途中なら鳴らし直す。利用者の操作だけ） */
+function autoPlay(e: Event): void {
+  if (pickAct(e, playBtn.getAttribute('aria-pressed') === 'true', true) !== 'none') void play();
+}
 autoPause(audio, { pause: stop, hidden: () => {} });
 function syncMode(): void {
   /* 楽器ページの残響は閉じた部屋だけ */

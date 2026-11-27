@@ -1,0 +1,22 @@
+---
+/**
+ * LED 付きの切り替え（B 案、2026-11-27）。文字は機能の名前で固定し、押しても変えない。
+ * 状態は aria-pressed で持ち、LED は site.css の .tg[aria-pressed="true"]>.led で点く。ページのスクリプトは aria-pressed だけを切り替える。
+ * 名前の決め方は design/page.md。枠の右上に置くときは呼び出し側で slot="aux" を付ける
+ */
+import type { HTMLAttributes } from 'astro/types';
+
+interface Props extends Omit<HTMLAttributes<'button'>, 'type' | 'aria-pressed'> {
+  id?: string;
+  /** 機能の名前（再生・早送り・音・マイクなど） */
+  label: string;
+  /** 初めから押した状態 */
+  on?: boolean;
+  /** LED を押した状態と別の意味で点ける（スクリプトが .led に .on を付け外しする） */
+  man?: boolean;
+  /** LED の要素の id（man のとき、スクリプトが引く） */
+  ledId?: string;
+}
+const { label, on, man, ledId, class: cls, ...rest } = Astro.props;
+---
+<button type="button" class:list={['tg', cls]} aria-pressed={on ? 'true' : 'false'} {...rest}><span class:list={['led', { man }]} id={ledId} aria-hidden="true"></span>{label}</button>
