@@ -448,7 +448,8 @@ function syncPresets(): void {
 }
 
 /* ---------- プリセット ---------- */
-function applyPreset(v: string): void {
+/** プリセットを読み込む。user は利用者が選んだとき: 止まっていれば、そのフレーズを頭から弾く（弾いている間は、新しい音で続ける） */
+function applyPreset(v: string, user = false): void {
   /* 読み込んだプリセットから機材を変えていれば、捨ててよいかを確かめる */
   if (edited() && !confirm(`変更した機材の設定は失われます。「${presetOf(v).name}」に切り替えますか？`)) return;
   S.R = presetRack(v);
@@ -459,10 +460,11 @@ function applyPreset(v: string): void {
   S.menu = null;
   commit(true);
   pickPhrase(presetOf(v).phrase);
+  if (user && !S.playing) transport.playNew();
 }
 $('#tone').addEventListener('click', (e) => {
   const b = (e.target as Element).closest<HTMLElement>('[data-preset]');
-  if (b?.dataset.preset) applyPreset(b.dataset.preset);
+  if (b?.dataset.preset) applyPreset(b.dataset.preset, e.isTrusted);
 });
 
 /* ---------- 演奏 ---------- */
@@ -471,6 +473,15 @@ const phrase = new Choice<string>($('#p-phr'), () => {
   render();
   phraseChanged();
 });
+/* 利用者がフレーズを選び直したら、止まっていても頭から弾く（保存した値に戻したときは弾かない） */
+{
+  const root = $('#p-phr');
+  let was = phrase.value;
+  root.addEventListener('click', () => (was = phrase.value), true);
+  root.addEventListener('click', (e) => {
+    if (e.isTrusted && phrase.value !== was && !S.playing) transport.playNew();
+  });
+}
 function pickPhrase(v: string): void {
   if (phrase.value === v) return;
   phrase.choose(v);

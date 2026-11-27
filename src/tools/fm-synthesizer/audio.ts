@@ -5,6 +5,7 @@
  */
 import type { ReverbSpec } from '../../lib/reverb';
 import { BEND, CC, PC } from '../../lib/smf';
+import { wakeOnRelease } from '../../lib/wake';
 import { type Src, type Tone, VOL0 } from './engine';
 import type { SynthEv, SynthMsg } from './worklet';
 import workletUrl from './worklet.ts?worker&url';
@@ -73,6 +74,9 @@ export class SynthAudio {
     if (!AC && !this.ac) return false;
     const ac = this.ac ?? new (AC as Ctor)();
     this.ac = ac;
+    /* iPhone の Safari は、押した操作の中で最初の await より前に resume しないと音を出さない */
+    void ac.resume().catch(() => undefined);
+    wakeOnRelease(ac);
     this.loading ??= ac.audioWorklet
       .addModule(workletUrl)
       .then(() => {

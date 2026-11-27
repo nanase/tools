@@ -237,9 +237,12 @@ function pieceChanged(): void {
   if (P) stopPiece();
   void showLine();
 }
-piece.addEventListener('change', () => {
+piece.addEventListener('change', (e) => {
   store('c:p-piece', piece.value);
+  /* 選んだ曲を頭から弾く（MIDI ファイルを読み込んだときなど、利用者が選んだのでなければ弾かない）。音は押した操作の中で動かす */
+  if (e.isTrusted) void audio.ready();
   pieceChanged();
+  if (e.isTrusted) transport.playNew();
 });
 const span = choice<string>('span', () => drawOut());
 const fmax = choice<string>('fmax', () => drawOut());
@@ -927,7 +930,8 @@ let CH: { root: number; q: Quality; list: Voicing[]; i: number; f: number[] } | 
 const chLast = { root: 0, q: QUALITIES[0] };
 const chdBox = $<HTMLDetailsElement>('details.a-chd'),
   chdSnd = $<HTMLButtonElement>('#chdSnd');
-chdSnd.setAttribute('aria-pressed', String(stored('chdSnd') === true));
+/* 初めは入（押さえたら鳴る）。切ってあれば、保存した値を使う */
+chdSnd.setAttribute('aria-pressed', String(stored('chdSnd') !== false));
 chdSnd.addEventListener('click', () => {
   const on = chdSnd.getAttribute('aria-pressed') !== 'true';
   chdSnd.setAttribute('aria-pressed', String(on));
@@ -1121,6 +1125,8 @@ function chordRetune(): void {
 /** 押さえているコードを、太い弦から順にかき鳴らす（鳴らさない弦は飛ばす） */
 const STRUM_MS = 14;
 function strumChord(): void {
+  /* 弦はタイマから弾くので、音は押した操作の中で先に動かす */
+  void audio.ready();
   let k = 0;
   for (let si = 5; si >= 0; si--) {
     if (S.mute[si]) continue;

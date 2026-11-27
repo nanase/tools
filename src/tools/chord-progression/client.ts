@@ -1078,7 +1078,10 @@ nameIn.addEventListener('input', () => {
 syncSongBtn();
 $('#cp-samples').addEventListener('click', (ev) => {
   const b = (ev.target as Element).closest<HTMLElement>('[data-s]');
-  if (b && load(sampleSong(b.dataset.s as string))) say('');
+  if (!b || !load(sampleSong(b.dataset.s as string))) return;
+  say('');
+  /* 選んだサンプルを頭から弾く */
+  if (ev.isTrusted) void play();
 });
 $('#cp-new').addEventListener('click', () => {
   const s = sampleSong(SAMPLE0);
