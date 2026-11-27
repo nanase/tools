@@ -3,9 +3,10 @@
  * ギターはギターのページの物理モデル（gtr.ts）、鍵盤は音色ごとの合成、ドラムは雑音と正弦波。
  * すべての音を部屋の残響（lib/reverb.ts）に通す。予約の順と時刻は band.ts が決める
  */
+
+import { wakeOnRelease } from '../../lib/gesture';
 import { lookahead } from '../../lib/pause';
 import { Reverb, reverbSpec, roomOf } from '../../lib/reverb';
-import { wakeOnRelease } from '../../lib/wake';
 import { type GtKind, GtrVoices } from './gtr';
 import type { VoiceId } from './theory';
 

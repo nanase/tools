@@ -2,7 +2,7 @@
  * エレキギターを Web Audio API で鳴らす: AudioWorklet（worklet.ts）→ 音量 → リミッタ → 出力。
  * ワークレットが送る段ごとの波形と弦の様子（Snap）を onSnap で渡す
  */
-import { wakeOnRelease } from '../../lib/wake';
+import { wakeOnRelease } from '../../lib/gesture';
 import type { Msg, Snap } from './proc';
 import workletUrl from './worklet.ts?worker&url';
 

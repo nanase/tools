@@ -3,8 +3,9 @@
  * → 音量 → リミッタ → 出力。Worker の音は MessagePort で AudioWorklet へ直接届く。
  * AudioContext は弾く操作の中で作る（自動再生の制限）。鳴らしていない間は止めて CPU を休ませる
  */
+
+import { wakeOnRelease } from '../../lib/gesture';
 import type { ReverbSpec } from '../../lib/reverb';
-import { wakeOnRelease } from '../../lib/wake';
 import type { BodySpec } from './body';
 import type { Frame, Manual, Vib } from './player';
 import type { Expr, Piece, PieceData } from './score';

@@ -5,10 +5,10 @@
 import { Choice } from '../../lib/choice';
 import { $, $$ } from '../../lib/dom';
 import { minus } from '../../lib/format';
+import { onPick, pickAct } from '../../lib/gesture';
 import { RM } from '../../lib/motion';
 import { ParamGroup } from '../../lib/param';
 import { handheld } from '../../lib/pause';
-import { onPick, pickAct } from '../../lib/press';
 import { initToolPage } from '../../lib/tool-page';
 import { Deck } from '../pcm/deck';
 import { drawOverview } from '../pcm/fig';

@@ -4,10 +4,10 @@
  */
 import { Choice } from '../../lib/choice';
 import { $ } from '../../lib/dom';
+import { onPick, pickAct } from '../../lib/gesture';
 import { RM } from '../../lib/motion';
 import { ParamGroup } from '../../lib/param';
 import { autoPause } from '../../lib/pause';
-import { onPick, pickAct } from '../../lib/press';
 import { initToolPage } from '../../lib/tool-page';
 import { RoomAudio } from './audio';
 import { DRY } from './dry';

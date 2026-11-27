@@ -7,9 +7,9 @@
 import { Choice } from '../../lib/choice';
 import { $, $$ } from '../../lib/dom';
 import { fmt, fmtR, minus, plain, ro } from '../../lib/format';
+import { onPick, pickAct } from '../../lib/gesture';
 import { fx, RM } from '../../lib/motion';
 import { ParamGroup } from '../../lib/param';
-import { onPick, pickAct } from '../../lib/press';
 import { DV } from '../../lib/scope';
 import { store, stored } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';

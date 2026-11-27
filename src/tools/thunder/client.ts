@@ -8,9 +8,9 @@
 import { AIR0, soundSpeed } from '../../lib/air';
 import { Choice } from '../../lib/choice';
 import { $ } from '../../lib/dom';
+import { pickAct } from '../../lib/gesture';
 import { ParamGroup } from '../../lib/param';
 import { handheld } from '../../lib/pause';
-import { pickAct } from '../../lib/press';
 import { initToolPage } from '../../lib/tool-page';
 import { ThunderAudio } from './audio';
 import { type Branch, CH0, type ChannelSet, makeChannel, type Shape, shape, strikeCount } from './channel';

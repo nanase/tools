@@ -2,8 +2,8 @@
 import { Choice } from '../../lib/choice';
 import { $, $$ } from '../../lib/dom';
 import { fmt } from '../../lib/format';
+import { onPick, pickAct } from '../../lib/gesture';
 import { ParamGroup } from '../../lib/param';
-import { onPick, pickAct } from '../../lib/press';
 import { addTip, initToolPage } from '../../lib/tool-page';
 import { JjyAudio } from './audio';
 import { CNAME, CSIG, callSignOn, DEFAULTS, type Minute, meaning, type Options, Signal, stopOn } from './code';

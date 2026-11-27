@@ -5,8 +5,8 @@
 import { Choice } from '../../lib/choice';
 import { $ } from '../../lib/dom';
 import { fmt, fmtR, minus, parts, ro } from '../../lib/format';
+import { onPick, pickAct } from '../../lib/gesture';
 import { ParamGroup } from '../../lib/param';
-import { onPick, pickAct } from '../../lib/press';
 import { reserveHeight } from '../../lib/reserve';
 import { DV, SH, SW } from '../../lib/scope';
 import { store, stored, storeToggle } from '../../lib/store';

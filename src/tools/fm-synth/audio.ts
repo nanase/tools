@@ -3,7 +3,7 @@
  * 再生ボタンの音（latch）はエンベロープなしで鳴らし続ける。鍵盤・曲・MIDI の音は AudioContext の時刻で予約し、エンベロープを掛ける。
  * 何も鳴らしていない間は AudioContext を止めて CPU を休ませる
  */
-import { wakeOnRelease } from '../../lib/wake';
+import { wakeOnRelease } from '../../lib/gesture';
 import type { Patch } from './synth';
 import type { FmMsg, FmOut } from './worklet';
 import workletUrl from './worklet.ts?worker&url';
