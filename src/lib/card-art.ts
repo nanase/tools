@@ -1240,6 +1240,76 @@ function pmFrames(): [number, number][][] {
   return PM_FR;
 }
 
+/** 4 ビット CPU の図柄の ROM: 既定のプログラム「LED を流す」の 6 行（種類 3 ビット・A か B の 1 ビット・数 4 ビット） */
+const CPU_ROM: readonly string[] = ['00000001', '01100000', '10010000', '00100000', '11100001', '11000000'];
+/**
+ * 図柄の 1 命令: 実行した行・種類・値の出どころと行き先（n 数・alu 加算・A・B・out 出力・pc。動かさないときは ''）・
+ * 実行後の A・B・C（桁上げ）・出力
+ */
+interface CpuStep {
+  pc: number;
+  k: string;
+  s: string;
+  d: string;
+  A: number;
+  B: number;
+  C: number;
+  o: number;
+}
+const CPU_TR: CpuStep[] = [];
+/** 「LED を流す」を最初から 36 命令動かし、後半の 18 命令（1 周。1 命令目は 0 行目の転送）を返す */
+function cpuTr(): CpuStep[] {
+  if (CPU_TR.length) return CPU_TR;
+  const K = ['ldi', 'add', 'in', 'out', 'mov', 'hlt', 'jmp', 'jnc'],
+    m = { A: 0, B: 0, C: 0, o: 0 };
+  let pc = 0;
+  for (let i = 0; i < 36; i++) {
+    const w = parseInt(CPU_ROM[pc], 2),
+      k = K[w >> 5],
+      R: 'A' | 'B' = w & 16 ? 'B' : 'A',
+      n = w & 15,
+      at = pc;
+    let s = '',
+      d = '';
+    pc = (pc + 1) & 15;
+    if (k === 'ldi') {
+      s = 'n';
+      d = R;
+      m[R] = n;
+    } else if (k === 'add') {
+      const v = m.A + m.B;
+      s = 'alu';
+      d = R;
+      m.C = v > 15 ? 1 : 0;
+      m[R] = v & 15;
+    } else if (k === 'out') {
+      s = R;
+      d = 'out';
+      m.o = m[R];
+    } else if (k === 'mov') {
+      const src = R === 'A' ? 'B' : 'A';
+      s = src;
+      d = R;
+      m[R] = m[src];
+    } else if (k === 'jmp' || (k === 'jnc' && !m.C)) {
+      s = 'n';
+      d = 'pc';
+      pc = n;
+    }
+    if (i >= 18) CPU_TR.push({ pc: at, k, s, d, ...m });
+  }
+  return CPU_TR;
+}
+/** 4 ビット CPU の図柄のブロック: 左・上・幅・高さ・バスへつなぐ x（alu は台形） */
+const CPU_BLK: Record<string, readonly [number, number, number, number, number]> = {
+  n: [6, 4, 24, 11, 18],
+  out: [76, 4, 38, 11, 95],
+  pc: [6, 33, 16, 11, 14],
+  A: [30, 33, 20, 11, 40],
+  B: [56, 33, 20, 11, 66],
+  alu: [86, 33, 26, 11, 99],
+};
+
 export const ART: Record<string, Art> = {
   /* タイマIC 555: 出力（周期 36、High 24）と C1 の電圧。時間が流れる */
   sq(t) {
@@ -3519,6 +3589,33 @@ export const ART: Record<string, Art> = {
       P(ct ? 'c' : 'c t', 'M100.2 21.8l7.6 8.4M107.8 21.8l-7.6 8.4')
     );
   },
+  /* 4 ビット CPU: 上に命令（青の枠）と出力の LED、下に PC・A・B・ALU。1 命令を 4 コマで、値の四角が
+     出どころ → バスの上 → 行き先の上 → 行き先と跳び、行き先の枠が光る（12 コマ/s、72 コマで 1 周） */
+  cpu(t) {
+    const f = mod(Math.floor(t * 12 + 1e-9) + 9, 72),
+      tr = cpuTr(),
+      e = tr[f >> 2],
+      u = f & 3,
+      o = u < 3 ? tr[mod((f >> 2) - 1, 18)].o : e.o,
+      hot = (k: string) => (u === 0 && e.s === k) || (u === 3 && e.d === k);
+    let s = P('c', 'M4 24H116') + P('c t', 'M18 15V24M95 15V24M14 33V24M40 33V24M66 33V24M99 33V24');
+    for (const k of ['n', 'out', 'pc', 'A', 'B']) {
+      const [x, y, w, h] = CPU_BLK[k];
+      s += P(hot(k) ? 'a' : k === 'n' ? 'b' : 'c', `M${x} ${y}h${w}v${h}h${-w}Z`);
+    }
+    s += P(hot('alu') ? 'a' : 'c', 'M86 33H112L106 44H92Z');
+    [83, 91, 99, 107].forEach((x, i) => {
+      s += gbDot((o >> (3 - i)) & 1 ? 'fa' : 'c t', x, 9.5, 2.6);
+    });
+    if (e.s && !(u === 3 && e.d === 'out')) {
+      const a = CPU_BLK[e.s],
+        b = CPU_BLK[e.d],
+        [x, y] =
+          u === 0 ? [a[4], a[1] + a[3] / 2] : u === 1 ? [a[4], 24] : u === 2 ? [b[4], 24] : [b[4], b[1] + b[3] / 2];
+      s += `<rect class="fa" x="${x - 3}" y="${y - 3}" width="6" height="6"/>`;
+    }
+    return s;
+  },
   /* SPI: 左のマスタから 3 本の線（SCK・MOSI・MISO）と 3 本の CS。選ぶ機器が順に替わり、選んだ機器を塗る。
      MOSI のビットは右へ、MISO のビットは左へ、4 コマで 1 ビット進む（8 コマ/s、1 台に 16 コマ） */
   spi(t) {
@@ -3889,6 +3986,7 @@ export const LOOP: Record<string, number> = {
   lg: 4,
   km: 4,
   rl: 4,
+  cpu: 72 / 12,
   gb: 2,
   sf: 4,
   wh: 3,

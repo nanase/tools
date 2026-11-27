@@ -1,0 +1,88 @@
+---
+// 動作原理と式
+import { OPS, USES_N, USES_R } from './model';
+
+const rf = (i: number) => `<a class="rf" href="#thy-r${i}">[${i}]</a>`;
+const mi = (s: string) => `<mi>${s}</mi>`;
+const mo = (s: string) => `<mo>${s}</mo>`;
+const mn = (s: string | number) => `<mn>${s}</mn>`;
+const S = mi('S'),
+  A = mi('A'),
+  B = mi('B'),
+  C = mi('C');
+const floor = (s: string) => `<mo>⌊</mo>${s}<mo>⌋</mo>`;
+const frac = (a: string, b: string) => `<mfrac>${a}${b}</mfrac>`;
+type Ref = { for: string; src: string };
+const REFS: readonly Ref[] = [
+  {
+    for: '命令を記憶装置に置き、1 語ずつ読んで実行する形',
+    src: 'J. von Neumann, First Draft of a Report on the EDVAC, Moore School of Electrical Engineering, University of Pennsylvania, 1945',
+  },
+  {
+    for: '命令の語を種類・レジスタ・数の欄に分ける形',
+    src: 'D. A. Patterson, J. L. Hennessy, Computer Organization and Design: The Hardware/Software Interface, 5th ed., Morgan Kaufmann, 2013',
+  },
+  {
+    for: 'データパスと制御、命令のフェッチ・デコード・実行',
+    src: 'D. M. Harris, S. L. Harris, Digital Design and Computer Architecture, 2nd ed., Morgan Kaufmann, 2012',
+  },
+];
+const opBits = (i: number) => [2, 1, 0].map((j) => (i >> j) & 1).join('');
+---
+<h3>プログラムを記憶装置に置く</h3>
+<p>命令を数として ROM に並べ、PC（プログラムカウンタ）の指す行を 1 つずつ読んで実行します<Fragment set:html={rf(1)} />。命令も数なので、ビットを書き換えればプログラムが変わり、配線を変えずに ROM の中身だけで働きを変えられます。</p>
+
+<h3>命令の形</h3>
+<p>1 語は 8 ビットで、上から種類の 3 ビット・A か B を選ぶ 1 ビット・数の 4 ビットに分けます<Fragment set:html={rf(2)} />。種類の 3 ビットで 8 種の命令を区別します。</p>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th scope="col">種類</th><th scope="col">命令</th><th scope="col">働き</th><th scope="col">A・B</th><th scope="col">数</th></tr></thead>
+  <tbody>
+    {OPS.map((o, i) => (
+      <tr><td class="num">{opBits(i)}</td><th scope="row">{o.nm}</th><td>{o.g}</td><td>{USES_R.includes(o.k) ? '使う' : '–'}</td><td>{USES_N.includes(o.k) ? '使う' : '–'}</td></tr>
+    ))}
+  </tbody>
+</table></div>
+
+<h3>1 クロックの流れ</h3>
+<ol class="flow">
+  <li><b>フェッチ</b><span>PC の指す行を命令へ</span></li>
+  <li><b>デコード</b><span>種類のビットで出どころと行き先</span></li>
+  <li><b>実行</b><span>バスで値を 1 つ運ぶ</span></li>
+  <li><b>PC を進める</b><span>1 を足すかジャンプ先</span></li>
+</ol>
+<p>命令を読んでから実行するまでを、フェッチ・デコード・実行の段に分けて考えます<Fragment set:html={rf(3)} />。このページのバスは 1 本だけなので、1 クロックで運べる値は 1 つです。</p>
+
+<h3>加算と桁上げ</h3>
+<div class="eqs">
+  <math display="block" set:html={`${S}${mo('=')}${A}${mo('+')}${B}`} />
+  <math display="block" set:html={`${A}${mo('←')}${S}${mo('mod')}${mn(16)}`} />
+  <math display="block" set:html={`${C}${mo('=')}${floor(frac(S, mn(16)))}`} />
+</div>
+<p>レジスタは 4 ビットなので、0〜15 しか持てません。和が 15 を超えると下の 4 ビットだけが残り、あふれた 1 が C（桁上げ）に入ります。C を書き換えるのは加算だけです。</p>
+
+<h3>条件ジャンプでくり返す</h3>
+<p>条件ジャンプは C = 0 のときだけ数の行へ飛び、C = 1 なら次の行へ進みます。「LED を流す」では A を B に写してから A + B を A に入れ、A を 2 倍にしながら出力します。8 + 8 = 16 であふれて C = 1 になると、条件ジャンプは飛ばずに次の行へ進み、その行のジャンプで 0 行目へ戻ります。</p>
+<div class="eqs">
+  <math display="block" set:html={`${mn(1)}${mo('→')}${mn(2)}${mo('→')}${mn(4)}${mo('→')}${mn(8)}`} />
+  <math display="block" set:html={`${mn(8)}${mo('+')}${mn(8)}${mo('=')}${mn(16)}<mspace width="1em"/>${A}${mo('=')}${mn(0)}${mo(',')}<mspace width="0.5em"/>${C}${mo('=')}${mn(1)}`} />
+</div>
+
+<h3>出典</h3>
+<ol class="refs">
+  {REFS.map((r, i) => (
+    <li id={`thy-r${i + 1}`}>
+      <span class="rf-for">{r.for}</span>
+      <span class="rf-src">{r.src}</span>
+    </li>
+  ))}
+</ol>
+
+<h3>このツールで決めたこと</h3>
+<ul class="tl">
+  <li>命令 8 種と語の形はこのページのために決めたもの<ul class="tl"><li>実在の CPU の命令とは違う</li></ul></li>
+  <li>1 クロックで 1 命令を実行する</li>
+  <li>使わない行は停止で埋める<ul class="tl"><li>停止したら止めたままにし、再生で最初から動かす</li></ul></li>
+  <li>レジスタは A と B の 2 つだけ<ul class="tl"><li>かけ算はくり返しで書けないので、足し算を 4 回並べる</li></ul></li>
+  <li>入力のスイッチは動かしている間も切り替えられ、次に入力を読む命令で取り込む</li>
+  <li>書き換えた ROM は保存しない<ul class="tl"><li>プログラムを選び直すと元に戻る</li></ul></li>
+</ul>

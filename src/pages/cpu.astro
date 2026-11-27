@@ -1,0 +1,102 @@
+---
+import ChoiceRow from '../components/ChoiceRow.astro';
+import Collapsible from '../components/Collapsible.astro';
+import HowSteps from '../components/HowSteps.astro';
+import LedToggle from '../components/LedToggle.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/cpu/style.css';
+import { figSvg } from '../tools/cpu/fig';
+import { HOW, OP_CARDS } from '../tools/cpu/how';
+import { DEF_PROG, PROGS } from '../tools/cpu/model';
+import { VOL } from '../tools/cpu/params';
+import Theory from '../tools/cpu/Theory.astro';
+
+const name = '4 ビット CPU';
+const SPEEDS = [
+  ['slow', 'ゆっくり'],
+  ['mid', 'ふつう'],
+  ['fast', '速い'],
+] as const;
+---
+<SiteLayout title={name} tool={{ id: 'cpu', name }}>
+  <PageTitle title={name}>命令を 8 種だけ持つ 4 ビットの CPU です。1 クロックごとに、値がブロックからバスを通って行き先へ移ります。ROM のビットを押すと、動かしたまま命令を書き換えられます。</PageTitle>
+
+  <div class="tgrid cp-grid" id="cp">
+    <Panel hid="hd-cpu" title="CPU" class="cp-a-cpu" fixed>
+      <Fragment slot="aux">
+        <LedToggle id="cp-play" label="再生" />
+        <button type="button" class="tg" id="cp-step">1 クロック</button>
+        <button type="button" class="tg" id="cp-reset">最初から</button>
+      </Fragment>
+      <div class="cp-figw" id="cp-figw">
+        <Fragment set:html={figSvg('wide')} />
+        <Fragment set:html={figSvg('narrow')} />
+        {/* 狭い枠だけ: 押した行を大きなスイッチで書く */}
+        <div class="cp-big" role="group" aria-labelledby="cp-bigT">
+          <p class="cp-bigl"><span id="cp-bigT">0 行目</span><b id="cp-bigC"></b></p>
+          <div class="cp-bgw">
+            {[[0, 1, 2], [3], [4, 5, 6, 7]].map((g, gi) => (
+              <div class="cp-bg"><div class="cp-bgs">{g.map((j) => <button type="button" class="cp-bsw" data-j={j} aria-pressed="false" aria-label={`ビット ${7 - j}`}>0</button>)}</div><span>{['種類', 'A・B', '数'][gi]}</span></div>
+            ))}
+          </div>
+        </div>
+      </div>
+      <div class="sbar cp-sbar"><span id="cp-clk">クロック 0</span><b id="cp-op">最初の行から</b><span id="cp-ex"></span></div>
+      <div class="sbar static cp-lgd">
+        <span class="stag"><i class="cp-ln fw" aria-hidden="true"></i>命令の読み出し</span>
+        <span class="stag"><i class="cp-ln" aria-hidden="true"></i>値の流れ</span>
+        <span class="stag"><i class="cp-edm2" aria-hidden="true"></i>書き換えた行</span>
+        <span class="stag"><i class="cp-sq" aria-hidden="true"></i>押して切り替え</span>
+      </div>
+    </Panel>
+
+    <Panel hid="hd-prog" title="プログラム" class="cp-a-prog">
+      <button slot="aux" type="button" class="tg" id="cp-clear" title="ROM のすべての行を停止に">クリア</button>
+      <div class="chips cp-progs" id="cp-prog" role="group" aria-label="プログラム">
+        {PROGS.map((p) => (
+          <button type="button" class="chip" data-v={p.id} aria-pressed={p.id === DEF_PROG ? 'true' : 'false'}>{p.nm}{p.sub && <span class="cp-cs">{p.sub}</span>}</button>
+        ))}
+      </div>
+      <div class="ptab"><ChoiceRow k="speed" name="速さ" choices={SPEEDS} value="mid" /></div>
+    </Panel>
+
+    <Panel hid="hd-snd" title="音" class="cp-a-snd">
+      <LedToggle slot="aux" id="cp-snd" label="音" on />
+      <div class="ptab"><ParamRow d={VOL} /></div>
+      <div class="sbar static cp-sndl">
+        <span class="stag"><i class="cp-dot" aria-hidden="true"></i>出力の値 → 音の高さ</span>
+        <span>1 → ド</span><span>8 → 高いド</span><span>クロックごとの刻み</span>
+      </div>
+    </Panel>
+
+    <Panel hid="hd-how" title="しくみ" class="cp-a-how">
+      <HowSteps steps={HOW} />
+      <h3 class="cp-oph">命令 8 種</h3>
+      <ul class="cp-ops">
+        {OP_CARDS.map((o) => (
+          <li class="cp-opc">
+            <span class="cp-obs" aria-hidden="true">
+              {o.bits.map((b) => <i class:list={['cp-ob', { on: b }]}>{b}</i>)}
+              <i class:list={['cp-ob', 'r', { na: !o.r }]}>{o.r ? 'A・B' : '–'}</i>
+              <i class:list={['cp-ob', 'n', { na: !o.n }]}>{o.n ? '数' : '–'}</i>
+            </span>
+            <b>{o.nm}</b><span class="cp-og">{o.g}</span>
+          </li>
+        ))}
+      </ul>
+    </Panel>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools current="cpu" />
+  <script>
+    import '../tools/cpu/client';
+  </script>
+</SiteLayout>
