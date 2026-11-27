@@ -45,7 +45,7 @@ const one = (net: Net, lb?: string): Rung[] => [{ net, loads: [lamp(lb)] }];
 const maj = (a: string, b: string, c: string): Net => P(S(ca(a), ca(b)), S(ca(a), ca(c)), S(ca(b), ca(c)));
 const push = (id: string, lb: string, col: 'g' | 'r' | 'b'): Input => ({ id, lb, kind: 'push', col });
 const keepHint = (inp: Record<string, number>, R: Record<string, Relay>): string =>
-  R.R1.a && !inp.SET && !inp.RST ? 'R1 の a 接点で電流が続く' : '';
+  R.R1.a && !inp.SET && !inp.RST ? 'R1 の a 接点を通る電流' : '';
 
 export const DEFS: readonly Def[] = [
   {
@@ -126,7 +126,7 @@ export const DEFS: readonly Def[] = [
     id: 'deco',
     g: 'comb',
     name: 'デコーダ',
-    sub: 'c 接点の木で 4 本に',
+    sub: 'c 接点 3 個で 4 本に',
     ins: rel('A', 'B'),
     rungs: [{ net: DECO('A', 'B'), loads: ['AB 00', 'AB 01', 'AB 10', 'AB 11'].map((l) => lamp(l)) }],
   },
@@ -134,7 +134,7 @@ export const DEFS: readonly Def[] = [
     id: 'eq',
     g: 'comb',
     name: '一致',
-    sub: '2 桁の A と B',
+    sub: '2 桁の A と B が同じで点灯',
     ins: rel('A1', 'A0', 'B1', 'B0'),
     rungs: one(S(CH(['A1', 'B1'], 0), CH(['A0', 'B0'], 0)), '一致'),
   },
@@ -153,7 +153,7 @@ export const DEFS: readonly Def[] = [
     sub: 'リセット優先',
     ins: [push('SET', 'セット', 'g'), push('RST', 'リセット', 'r')],
     rungs: [{ net: S(P(ca('SET'), ca('R1')), cb('RST')), loads: [coil('R1')] }, ...one(ca('R1'))],
-    hint: (inp, R) => (inp.SET && inp.RST ? '両方押すと切れる' : keepHint(inp, R)),
+    hint: (inp, R) => (inp.SET && inp.RST ? '両方押すとリセットが優先' : keepHint(inp, R)),
   },
   {
     id: 'setp',
@@ -162,7 +162,7 @@ export const DEFS: readonly Def[] = [
     sub: 'セット優先',
     ins: [push('SET', 'セット', 'g'), push('RST', 'リセット', 'r')],
     rungs: [{ net: P(ca('SET'), S(ca('R1'), cb('RST'))), loads: [coil('R1')] }, ...one(ca('R1'))],
-    hint: (inp, R) => (inp.SET && inp.RST ? '両方押すと入る' : keepHint(inp, R)),
+    hint: (inp, R) => (inp.SET && inp.RST ? '両方押すとセットが優先' : keepHint(inp, R)),
   },
   {
     id: 'il',

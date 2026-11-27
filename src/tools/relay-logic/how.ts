@@ -21,14 +21,14 @@ export const HOW: readonly (readonly [string, string, string])[] = [
     fig(
       `${hw(true, 'M8 60H40V52M96 30V60H152')}${relayOn(40, 14)}<path d="M100 24L130 24" class="blade on"/><circle cx="100" cy="24" r="2.6" class="dot"/><circle cx="132" cy="24" r="2.6" class="dot"/><text x="64" y="12" class="hl" text-anchor="middle">コイル</text><text x="132" y="14" class="hl" text-anchor="middle">接点</text>`,
     ),
-    'コイルに電流が流れると接極子が引き寄せられて接点が動く',
+    'コイルの電流で接極子を引き寄せ、接点を動かす部品',
   ],
   [
     'a 接点と b 接点',
     fig(
       `${hw(false, 'M6 22H40M76 22H96')}${contact(40, 22, true, 'a')}${lampM(108, 22, true)}${hw(false, 'M6 56H40M76 56H96')}${contact(40, 56, false, 'b')}${lampM(108, 56, false)}<text x="150" y="26" class="hl" text-anchor="end">閉</text><text x="150" y="60" class="hl" text-anchor="end">開</text>`,
     ),
-    '動作すると a 接点は閉じて b 接点は開く',
+    '動作で閉じる a 接点と、動作で開く b 接点',
   ],
   [
     '直列',
@@ -63,7 +63,7 @@ export const HOW: readonly (readonly [string, string, string])[] = [
     fig(
       `${hw(true, 'M6 26H22M22 26H44M54 26H66M66 26H118M138 26H154')}${hw(true, 'M22 26V56H44M54 56H66V26')}<path d="M44 17V35M54 17V35M44 47V65M54 47V65" class="hw"/><rect x="44" y="48" width="10" height="16" class="hfill"/><text x="49" y="12" class="hl" text-anchor="middle">セット</text><text x="49" y="44" class="hl" text-anchor="middle">R1</text>${lampM(128, 26, true)}<text x="128" y="12" class="hl" text-anchor="middle">R1</text>`,
     ),
-    'セットを離しても自分の a 接点で電流が続く',
+    'セットを離した後も自分の a 接点を通る電流',
   ],
   [
     'インターロック',

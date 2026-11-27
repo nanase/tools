@@ -309,7 +309,6 @@ sndBtn.addEventListener('click', () => {
   const v = !soundOn();
   setSound(v);
   sndBtn.setAttribute('aria-pressed', String(v));
-  sndBtn.querySelector('.led')?.classList.toggle('on', v);
 });
 
 new ResizeObserver(() => {
