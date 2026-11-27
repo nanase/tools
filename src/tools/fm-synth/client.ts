@@ -700,7 +700,6 @@ for (const [id, d] of [
 function syncSnd(err = ''): void {
   playBtn.setAttribute('aria-pressed', String(audio.latch));
   $('#sndLed').classList.toggle('on', audio.play);
-  txt('#playT', audio.latch ? '停止' : '再生');
   txt('#snd-msg', err);
 }
 const NO_SOUND = '音を出せませんでした';

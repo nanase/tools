@@ -497,7 +497,6 @@ function setSnd(on: boolean): void {
   S.snd = on;
   aRef = null;
   sndBtn.setAttribute('aria-pressed', String(on));
-  $('.led', sndBtn).classList.toggle('on', on);
 }
 sndBtn.addEventListener('click', () => {
   if (S.snd) {

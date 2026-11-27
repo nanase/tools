@@ -2,6 +2,7 @@
 import Busy from '../components/Busy.astro';
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import LedToggle from '../components/LedToggle.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
@@ -62,7 +63,7 @@ const playIcon =
           <div class="prow" id="p-mic">
             <div class="c-sym" aria-hidden="true"></div>
             <div class="c-name"><span class="pn">マイク</span><p class="desc tip" role="tooltip" hidden>押すと録り始め、もう一度押すか 10 秒で止めます。録っている間は鳴らしません</p></div>
-            <div class="c-val"><div class="seg"><button type="button" id="ls-rec" aria-pressed="false"><span class="led" id="ls-recLed" aria-hidden="true"></span><span id="ls-recT">録音</span></button></div></div>
+            <div class="c-val"><LedToggle id="ls-rec" label="録音" /></div>
             <div class="c-sub"><p class="msg" id="ls-micMsg" aria-live="polite">まだ録音がありません</p></div>
           </div>
           <ParamRow d={P.f} />

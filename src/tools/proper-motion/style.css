@@ -32,11 +32,9 @@
 .pm-tip i{font-style:normal;font-family:var(--mono);color:var(--pm-ink)}
 .pm-trk{width:100%;justify-content:center;margin-top:6px;background:#1d2232}
 .pm-trk[hidden]{display:none}
-.pm-trk span:not(.led){display:inline;color:var(--pm-ink)}
 /* 年のバー */
 .pm-time{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;padding:10px 10px 12px;border-top:1px solid var(--pm-edge)}
 .pm-time input{flex:1 1 300px;min-width:180px;margin:0;accent-color:var(--pm-led)}
-.pm-run{min-width:88px}
 .pm-yv{display:inline-flex;flex-direction:column;min-width:9.5em;line-height:1.25}
 .pm-yv b{font:700 15px var(--sans);text-align:left}
 .pm-yv small{font:12px var(--mono);color:var(--pm-ink2);text-align:left}
@@ -61,5 +59,5 @@
 }
 @media (max-width:559px){
   .pm-tr{gap:4px}
-  .pm-tr .pm-tg{padding:0 7px;font-size:12px;gap:5px}
+  .pm-tr .pm-tg{padding:0 7px;font-size:12px;gap:6px}
 }

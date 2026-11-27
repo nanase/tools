@@ -486,7 +486,6 @@ a.unit:hover h3{text-decoration:underline;text-decoration-color:var(--ink-3);tex
 }
 
 /* MIDI の枠（MidiPanel.astro）: 入力の行は、最後に弾いた音・ベロシティのバー・値・ペダルの灯りを 1 行に並べる */
-#midiBtn{display:inline-flex;align-items:center;gap:7px}
 .prow.mi-in{grid-template-columns:var(--sw) auto minmax(0,1fr);grid-template-areas:"sym name sub"}
 .mi-mon{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;padding:0;font:500 12.5px/1.3 var(--mono);color:var(--ink-2)}
 .mi-mon b{min-width:2.6em;color:var(--ink);font-weight:700}
@@ -602,6 +601,13 @@ a.unit:hover h3{text-decoration:underline;text-decoration-color:var(--ink-3);tex
 .tg:hover{border-color:var(--ink-3)}
 .tg[aria-pressed="false"]{border-color:var(--line);background:none;color:var(--ink-3)}
 .tg[aria-pressed="false"] .sw{background:none;box-shadow:inset 0 0 0 1px var(--ch2)}
+/* LED 付きの切り替え（components/LedToggle.astro）。押した状態で LED が点く。man の LED はスクリプトが点ける。
+   LED の側は丸が小さく見えるので 1px 詰める。枠の右上ではとなりの選択肢（.seg）と同じ高さ */
+.tg[aria-pressed="true"]>.led:not(.man){background:var(--accent);box-shadow:0 0 5px var(--accent)}
+.tg:has(>.led:first-child){padding-left:9px}
+.pha .tg{min-height:28px}
+@media (pointer:coarse){.pha .tg{min-height:36px}}
+.tg:disabled{opacity:.45;cursor:default}
 .scope{padding:6px 4px 2px;border:1px solid var(--line);border-radius:var(--r);background:var(--screen);box-shadow:inset 0 1px 3px rgb(0 0 0 / .19)}
 .scope svg{display:block;width:100%;height:auto;overflow:visible}
 .scope text{fill:var(--screen-ink);font:11px var(--mono)}

@@ -931,13 +931,10 @@ const chLast = { root: 0, q: QUALITIES[0] };
 const chdBox = $<HTMLDetailsElement>('details.a-chd'),
   chdSnd = $<HTMLButtonElement>('#chdSnd');
 /* 初めは入（押さえたら鳴る）。切ってあれば、保存した値を使う */
-const chdOn0 = stored('chdSnd') !== false;
-chdSnd.setAttribute('aria-pressed', String(chdOn0));
-$('#chdLed').classList.toggle('on', chdOn0);
+chdSnd.setAttribute('aria-pressed', String(stored('chdSnd') !== false));
 chdSnd.addEventListener('click', () => {
   const on = chdSnd.getAttribute('aria-pressed') !== 'true';
   chdSnd.setAttribute('aria-pressed', String(on));
-  $('#chdLed').classList.toggle('on', on);
   store('chdSnd', on);
 });
 

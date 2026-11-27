@@ -4,6 +4,7 @@ import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
 import DatePicker from '../components/DatePicker.astro';
 import FsButton from '../components/FsButton.astro';
+import LedToggle from '../components/LedToggle.astro';
 import More from '../components/More.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
@@ -24,7 +25,7 @@ const name = '土星';
     <Panel hid="hd-sat" title="東京から見た土星" class="pn-a-scope" fixed>
       <PlanetSite slot="aux" />
       <div slot="aux" class="seg" id="p-or" role="group" aria-label="画面の向き"><button type="button" data-v="zenith" aria-pressed="false" title="空で見える向き">天頂<span class="pn-w">が上</span></button><button type="button" data-v="planet" aria-pressed="true">土星の北<span class="pn-w">が上</span></button><button type="button" data-v="sky" aria-pressed="false" title="望遠鏡の写真の向き">天の北<span class="pn-w">が上</span></button></div>
-      <div slot="aux" class="seg" id="p-play" data-nosave><button type="button" id="play" aria-pressed="false"><span class="led" id="playLed" aria-hidden="true"></span><span id="playT">再生</span></button></div>
+      <LedToggle slot="aux" id="play" label="早送り" title="時刻の早送り（表示の設定の速さ）" />
       <div class="pn-clock">
         <button type="button" class="pn-nowbtn" id="nowbtn" aria-pressed="true" title="現在の日時へ"><span class="led on" id="nowLed" aria-hidden="true"></span>現在</button>
         <span class="pn-clk"><span id="clk">—</span><small id="clkz">JST</small></span>
@@ -59,7 +60,7 @@ const name = '土星';
         </div>
         <div class="ptab">
           <ChoiceRow k="tz" name="時刻" choices={[['jst', '日本時間'], ['ut', '世界時']]} value="jst" />
-          <ChoiceRow k="sp" name="再生の速さ" choices={SPEEDS} value="600" />
+          <ChoiceRow k="sp" name="早送りの速さ" choices={SPEEDS} value="600" />
         </div>
       </div></More>
     </Panel>

@@ -1,7 +1,5 @@
 /* 入力の枠とモニタの枠（オシロスコープ・スペクトラムアナライザで共有。共通は src/styles/site.css） */
 
-/* 枠の右上のボタン（LED は入力が動いている間・鳴らしている間） */
-.ph .seg button{display:inline-flex;align-items:center;justify-content:center;gap:7px}
 .seg button:disabled{opacity:.45;cursor:default;color:var(--ink-3)}
 /* 入力元と開始・停止を枠の右上に並べる */
 .srcbar{display:flex;align-items:center;gap:8px}

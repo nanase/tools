@@ -1,6 +1,7 @@
 ---
 import Collapsible from '../components/Collapsible.astro';
 import HowSteps from '../components/HowSteps.astro';
+import LedToggle from '../components/LedToggle.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import RelatedTools from '../components/RelatedTools.astro';
@@ -82,7 +83,7 @@ const NS = Array.from({ length: MAX_N - 1 }, (_, i) => i + 2);
       <div class="km-kv" id="km-stat" set:html={statHtml(r)} />
       <p class="km-cap" id="km-capt">{capText(st)}</p>
       <div class="km-row">
-        <button type="button" class="tg" id="km-hz" aria-pressed="false" title="となりどうしの 1 を覆う項を足し、入力を変えた瞬間の出力の揺れを消す"><span class="led" aria-hidden="true"></span>ハザード対策の項</button>
+        <LedToggle id="km-hz" label="ハザード対策の項" title="となりどうしの 1 を覆う項を足し、入力を変えた瞬間の出力の揺れを消す" />
         <span class="km-note" id="km-hzn"></span>
       </div>
     </Panel>

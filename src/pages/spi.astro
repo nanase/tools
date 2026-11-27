@@ -2,6 +2,7 @@
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
 import HowSteps from '../components/HowSteps.astro';
+import LedToggle from '../components/LedToggle.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
@@ -93,7 +94,7 @@ const playIcon =
             <div class="c-name"><span class="pn" id="n-scene">場面</span></div>
             <div class="c-rst"></div>
             <div class="c-sub"><div class="sp-tgs" role="group" aria-labelledby="n-scene">
-              <button type="button" class="tg" id="tg-both" aria-pressed="false" title="宛先と次の機器の CS を同時に Low"><span class="led" aria-hidden="true"></span>2 台を同時に選択</button>
+              <LedToggle id="tg-both" label="2 台を同時に選択" title="宛先と次の機器の CS を同時に Low" />
             </div></div>
           </div>
         </div>

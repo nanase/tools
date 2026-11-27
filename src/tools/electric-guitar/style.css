@@ -122,7 +122,6 @@
 .eg-pop.pp-in{position:relative;margin:8px 0}
 .pp-h{display:flex;align-items:center;gap:8px;margin-bottom:8px}
 .pp-h b{margin-right:auto;font-size:15px}
-.pp-on{min-width:72px}
 .pp-x{width:30px;height:30px;padding:0;border:1px solid var(--line);border-radius:4px;background:none;color:var(--ink-2);font-size:16px;line-height:1;cursor:pointer}
 .pp-x:hover{border-color:var(--ink-3);color:var(--ink)}
 .pp-tools{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px}

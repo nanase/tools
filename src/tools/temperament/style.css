@@ -6,13 +6,11 @@
   .tgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr);grid-template-areas:"fig fig" "c1 c2" "thy thy";align-items:start}
   .a-fig{grid-area:fig}.c1{grid-area:c1}.c2{grid-area:c2}.a-thy{grid-area:thy}
 }
-.ph .seg button{display:inline-flex;align-items:center;justify-content:center;gap:7px}
 .a-fig,.a-out{container-type:inline-size}
 .sbar .right{margin-left:auto}
 .sbar .ab{display:inline-flex;align-items:center;gap:6px;padding:1px 8px;border:1px solid var(--line-2);border-radius:10px}
 .sbar .ab b{font-weight:700}
 .pbar{display:flex;align-items:center;gap:8px}
-.ph .seg button:disabled{opacity:.45;cursor:default}
 
 /* うなりの灯り: うなりの包絡で明滅する。純正（うなりなし）は灯ったまま */
 .lamp{display:inline-block;width:12px;height:12px;border-radius:50%;background:var(--ch1);box-shadow:0 0 0 1px var(--line-2)}

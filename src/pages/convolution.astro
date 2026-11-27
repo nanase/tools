@@ -1,6 +1,7 @@
 ---
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import LedToggle from '../components/LedToggle.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
@@ -93,7 +94,7 @@ const SH = SHAPES.map(([v, l, t]) => [v, l, t] as const);
         <p class="cv-hint" aria-hidden="true">✎ なぞって描く</p>
       </Panel>
       <Panel hid="hd-h" title="核 h" class="a-h">
-        <button slot="aux" type="button" class="tg" id="cv-flip" aria-pressed="true" title="押すと反転せずに滑らせる（相関）"><span class="led on" aria-hidden="true"></span>反転</button>
+        <LedToggle slot="aux" id="cv-flip" label="反転" on title="押すと反転せずに滑らせる（相関）" />
         <div class="ptab">
           <ChoiceRow k="hs" name="形" choices={SH} value="exp" layout="chips" />
           <ParamRow d={W('ha')} />

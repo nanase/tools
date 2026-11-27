@@ -3,6 +3,7 @@ import Busy from '../components/Busy.astro';
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
 import FsButton from '../components/FsButton.astro';
+import LedToggle from '../components/LedToggle.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
@@ -91,7 +92,7 @@ const longest = STEPS.reduce((a, s) => (s[2].length > a.length ? s[2] : a), '');
     </Panel>
 
     <Panel hid="hd-snd" title="音" class="a-snd">
-      <div slot="aux" class="seg" id="tf-sndw"><button type="button" id="tf-snd" aria-pressed="false"><span class="led" id="tf-sndL" aria-hidden="true"></span> <span id="tf-sndT">再生</span></button></div>
+      <LedToggle slot="aux" id="tf-snd" label="再生" />
       <div class="ptab"><ParamRow d={VOL} /></div>
       <p class="msg" id="tf-sndmsg" aria-live="polite"></p>
     </Panel>

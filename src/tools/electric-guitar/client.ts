@@ -326,7 +326,7 @@ function rowHtml(id: StageId): string {
   const grip = p
     ? `<i class="ls-st ls-grip" data-grip="${p.id}" title="ドラッグで並べ替え" aria-hidden="true"></i>`
     : '<i class="ls-st" aria-hidden="true"></i>';
-  return `<div class="eg-st g-${g}${S.sel === id ? ' sel' : ''}${p && !p.on ? ' byp' : ''}" data-strow="${id}" data-dev="${id}">${grip}<div class="eg-stn"><b>${nm}</b><small class="eg-sub">${sub}</small></div>${p ? `<button type="button" class="tg eg-on2" data-on="${id}" aria-pressed="${p.on}" title="${nm}のオンとスルー"><span class="led${p.on ? ' on' : ''}" aria-hidden="true"></span><span>${p.on ? 'オン' : 'スルー'}</span></button>` : '<span></span>'}<canvas class="eg-cv eg-mw" data-mwave="${id}" aria-hidden="true"></canvas><canvas class="eg-cv eg-mc" data-mchar="${id}" data-a="${a}" aria-hidden="true"></canvas>${p ? `<span class="seg eg-mv"><button type="button" data-mv="${id}:-1" ${i === 0 ? 'disabled' : ''} title="前へ" aria-label="前へ">↑</button><button type="button" data-mv="${id}:1" ${i === n - 1 ? 'disabled' : ''} title="後ろへ" aria-label="後ろへ">↓</button></span>` : '<span></span>'}<button type="button" class="eg-ear" data-listen="${id}" aria-pressed="${ls}" title="${nm}を通った音を試聴">${EAR}<span>${ls ? '試聴中' : '試聴'}</span></button></div>`;
+  return `<div class="eg-st g-${g}${S.sel === id ? ' sel' : ''}${p && !p.on ? ' byp' : ''}" data-strow="${id}" data-dev="${id}">${grip}<div class="eg-stn"><b>${nm}</b><small class="eg-sub">${sub}</small></div>${p ? `<button type="button" class="tg eg-on2" data-on="${id}" aria-pressed="${p.on}" title="${nm}のオンとスルー"><span class="led" aria-hidden="true"></span>オン</button>` : '<span></span>'}<canvas class="eg-cv eg-mw" data-mwave="${id}" aria-hidden="true"></canvas><canvas class="eg-cv eg-mc" data-mchar="${id}" data-a="${a}" aria-hidden="true"></canvas>${p ? `<span class="seg eg-mv"><button type="button" data-mv="${id}:-1" ${i === 0 ? 'disabled' : ''} title="前へ" aria-label="前へ">↑</button><button type="button" data-mv="${id}:1" ${i === n - 1 ? 'disabled' : ''} title="後ろへ" aria-label="後ろへ">↓</button></span>` : '<span></span>'}<button type="button" class="eg-ear" data-listen="${id}" aria-pressed="${ls}" title="${nm}を通った音を試聴">${EAR}<span>${ls ? '試聴中' : '試聴'}</span></button></div>`;
 }
 const arw = `<div class="eg-arw" aria-hidden="true">${ARW_D}</div>`;
 function subOf(id: StageId): string {
@@ -404,8 +404,6 @@ function syncPop(): void {
   on.hidden = !p;
   if (p) {
     on.setAttribute('aria-pressed', String(p.on));
-    $('.led', on).classList.toggle('on', p.on);
-    txt($('.eg-ont', on), p.on ? 'オン' : 'スルー');
     on.title = `${nm}のオンとスルー`;
     const list = S.R[secOf(p)],
       i = list.indexOf(p);

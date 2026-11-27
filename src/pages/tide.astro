@@ -1,6 +1,7 @@
 ---
 import Collapsible from '../components/Collapsible.astro';
 import HowSteps from '../components/HowSteps.astro';
+import LedToggle from '../components/LedToggle.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import RelatedTools from '../components/RelatedTools.astro';
@@ -27,7 +28,7 @@ const name = '潮の満ち引き';
     </Panel>
 
     <Panel hid="hd-sky" title="月と太陽の引力" fixed>
-      <button slot="aux" type="button" class="tg" id="td-play" aria-pressed="false"><span class="led" id="td-playLed" aria-hidden="true"></span><span id="td-playT" class="hw" data-ph="一時停止">早送り</span></button>
+      <LedToggle slot="aux" id="td-play" label="早送り" />
       <div slot="aux" class="seg" id="p-sun" role="group" aria-label="引く天体"><button type="button" data-v="moon" aria-pressed="false">月だけ</button><button type="button" data-v="sun" aria-pressed="true">月と太陽</button></div>
       <div class="td-bar">
         <div class="seg" id="p-span" role="group" aria-label="潮位のグラフの期間"><button type="button" data-v="day" aria-pressed="true">1 日</button><button type="button" data-v="week" aria-pressed="false">1 週間</button><button type="button" data-v="month" aria-pressed="false">1 か月</button></div>

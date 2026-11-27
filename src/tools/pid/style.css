@@ -30,7 +30,6 @@
 
 .sbar i.v{font-family:var(--math);font-style:italic;font-size:1.1em}
 #rv-t,#rv-x,#rv-e{font-variant-numeric:tabular-nums}
-#rvRun,#rvPid{display:inline-flex;align-items:center;gap:7px}
 #autoTune{min-height:26px;font-family:var(--sans)}
 .rvw{border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
 /* 図の中はスクロールの位置合わせの基準にしない（倒立振子と同じ） */

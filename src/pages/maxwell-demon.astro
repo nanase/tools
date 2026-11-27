@@ -2,6 +2,7 @@
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
 import HowSteps from '../components/HowSteps.astro';
+import LedToggle from '../components/LedToggle.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
@@ -21,7 +22,7 @@ const P = Object.fromEntries(PARAMS.map((d) => [d.k, d]));
   <div class="tgrid" id="mxd">
     <div class="mxd-top" id="mxd-top">
       <Panel hid="hd-box" title="2 つの部屋と扉" class="mxd-boxp" fixed>
-        <Fragment slot="aux"><span class="led" id="mxd-led" aria-hidden="true"></span><span class="aux" id="mxd-st" aria-live="polite"></span></Fragment>
+        <span slot="aux" class="aux tp-st"><span class="led" id="mxd-led" aria-hidden="true"></span><span id="mxd-st" aria-live="polite"></span></span>
         <div class="mxd-cmd">
           <button type="button" id="mxd-play" aria-pressed="false"><svg class="i-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.2l7.6 4.8L3 10.8z"/></svg><svg class="i-stop" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="2" width="8" height="8"/></svg><span id="mxd-playT">再生</span></button>
           <button type="button" id="mxd-reset"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.2 6a3.8 3.8 0 1 0 1.2-2.8" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M1.6 1.4v3.2h3.2z"/></svg>最初から</button>
@@ -38,7 +39,7 @@ const P = Object.fromEntries(PARAMS.map((d) => [d.k, d]));
           <span class="stag"><i class="mxd-dot" aria-hidden="true"></i>速い分子</span>
           <span class="stag"><i class="mxd-dot c2" aria-hidden="true"></i>遅い分子</span>
           <span class="stag"><i class="mxd-ring" aria-hidden="true"></i>悪魔が見ている分子</span>
-          <button type="button" class="tg mxd-tg" id="mxd-ledT" aria-pressed="true" title="気体と記録と消去の熱のエントロピー"><span class="led on" aria-hidden="true"></span>エントロピーの収支</button>
+          <LedToggle id="mxd-ledT" label="エントロピーの収支" on class="mxd-tg" title="気体と記録と消去の熱のエントロピー" />
         </div>
       </Panel>
 

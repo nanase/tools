@@ -204,3 +204,7 @@
   .tstep .seg button{min-width:0;white-space:nowrap}
   .mview.zoomed .lab.b{display:none}
 }
+/* 見出しの右の操作（向きと早送り）は、見出しと重なる幅では惑星のページと同じく枠の中の 1 行目に下ろす */
+@media (max-width:420px){
+  .a-moon>.ph>.pha{position:static;transform:none;background:none;flex-wrap:wrap;justify-content:flex-end;margin:0 0 10px;padding:0}
+}

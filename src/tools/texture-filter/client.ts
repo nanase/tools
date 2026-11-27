@@ -375,8 +375,6 @@ cv.addEventListener('keydown', (e) => {
 /* ---------- 音: エンジンのページのバイクの音を、回転数を保つ運転で鳴らし、変わったときだけ送る ---------- */
 const audio = new EngineAudio(),
   sndBtn = $<HTMLButtonElement>('#tf-snd'),
-  sndLed = $('#tf-sndL'),
-  sndT = $('#tf-sndT'),
   sndMsg = $('#tf-sndmsg');
 let sentRpm = -1,
   sentThr = -1;
@@ -394,8 +392,6 @@ function sound(): void {
 function setSnd(on: boolean): void {
   S.snd = on;
   sndBtn.setAttribute('aria-pressed', String(on));
-  sndLed.classList.toggle('on', on);
-  sndT.textContent = on ? '停止' : '再生';
 }
 sndBtn.addEventListener('click', async () => {
   if (S.snd) {
@@ -429,7 +425,7 @@ initFullscreen({
   btn: $<HTMLButtonElement>('#tf-fs'),
   focus: cv,
   popTitle: '設定',
-  pop: () => [$('#tf-aux'), $('#tf-sndw'), $('#tf-sets'), [$('#p-px'), $('#p-tree'), $('#p-pitch')]],
+  pop: () => [$('#tf-aux'), $('#tf-snd'), $('#tf-sets'), [$('#p-px'), $('#p-tree'), $('#p-pitch')]],
 });
 
 buildPyramid();

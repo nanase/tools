@@ -2,6 +2,7 @@
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
 import HowSteps from '../components/HowSteps.astro';
+import LedToggle from '../components/LedToggle.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
@@ -52,7 +53,7 @@ const playIcon =
           <div class="tp smp-tp">
             <button type="button" class="tp-pp" id="smp-pp" title="再生" aria-label="再生" set:html={playIcon} />
             <div class="tp-tl">
-              <button type="button" class="tg" id="smp-auto" aria-pressed="false" title="サンプリング周波数を 16 kHz から 700 Hz まで 8 秒で下降、くり返し"><span class="led" aria-hidden="true"></span>自動</button>
+              <LedToggle id="smp-auto" label="自動" title="サンプリング周波数を 16 kHz から 700 Hz まで 8 秒で下降、くり返し" />
               <div class="smp-pos" id="smp-pos" hidden>
                 <div class="tp-trk" id="smp-trk" role="slider" tabindex="0" aria-label="再生位置" aria-valuemin="0" aria-valuemax="8" aria-valuenow="0"><div class="tp-rail"></div><div class="tp-fill" id="smp-fill"></div><div class="tp-th" id="smp-th"></div></div>
                 <div class="tp-tm"><span id="smp-tm"></span></div>
