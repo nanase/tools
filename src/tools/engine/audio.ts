@@ -1,7 +1,7 @@
 /**
  * エンジンの音を Web Audio API で鳴らす: AudioWorklet（worklet.ts、排気口から 0.5 m の音圧 [Pa]）→ 音量 → 制限器 → 出力。
  * 波形とスペクトラムは、音量の前の AnalyserNode から取る（単位は Pa のまま）。
- * AudioContext は「運転」を押した操作の中で作る（自動再生の制限）。止めたら AudioContext も止めて CPU を休ませる
+ * AudioContext は「運転」・スロットル・変速を押した操作の中で作る（自動再生の制限）。止めたら AudioContext も止めて CPU を休ませる
  */
 import type { EngineId, MufflerId } from './spec';
 import type { EngMsg, RunSet, StatMsg, WaveMsg } from './worklet';
@@ -37,6 +37,8 @@ export class EngineAudio {
     if (!AC) return false;
     const ac = this.ac ?? new AC({ latencyHint: 'interactive' });
     this.ac = ac;
+    /* iPhone の Safari は、操作の処理の中で最初の await より前に resume しないと動かさない */
+    void ac.resume().catch(() => {});
     this.loading ??= ac.audioWorklet
       .addModule(workletUrl)
       .then(() => {

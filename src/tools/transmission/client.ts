@@ -5,6 +5,7 @@
 import { Choice } from '../../lib/choice';
 import { $, $$, esc } from '../../lib/dom';
 import { initFullscreen } from '../../lib/fullscreen';
+import { activates } from '../../lib/gesture';
 import { RM } from '../../lib/motion';
 import { ParamGroup } from '../../lib/param';
 import { handheld } from '../../lib/pause';
@@ -202,7 +203,7 @@ const syncAuto = () => {
   syncTg(flAuto, S.auto);
 };
 syncAuto();
-const toggleAuto = () => {
+const toggleAuto = (e: Event) => {
   S.auto = !S.auto;
   syncAuto();
   toLive();
@@ -210,6 +211,7 @@ const toggleAuto = () => {
   m.thr = 0;
   m.brake = 0;
   m.release();
+  if (S.auto) autoSnd(e);
 };
 autoBtn.addEventListener('click', toggleAuto);
 flAuto.addEventListener('click', toggleAuto);
@@ -254,8 +256,11 @@ for (const b of $$<HTMLButtonElement>('[data-ped]')) {
     stopAuto();
     m.press(dir);
     capture(b, e.pointerId);
+    autoSnd(e);
   });
   for (const ev of ['pointerup', 'pointercancel']) b.addEventListener(ev, () => m.release());
+  /* 指で押したときは、離したときに音を入れる（lib/gesture.ts） */
+  b.addEventListener('pointerup', autoSnd);
 }
 for (const pad of $$('[data-pad]')) {
   const key = pad.dataset.pad === 'thr' ? 'thr' : 'brake';
@@ -269,7 +274,9 @@ for (const pad of $$('[data-pad]')) {
     stopAuto();
     capture(pad, e.pointerId);
     set(e);
+    if (key === 'thr') autoSnd(e);
   });
+  if (key === 'thr') pad.addEventListener('pointerup', autoSnd);
   pad.addEventListener('pointermove', (e) => {
     if (pad.hasPointerCapture(e.pointerId)) set(e);
   });
@@ -294,6 +301,7 @@ document.addEventListener('keydown', (e) => {
   e.preventDefault();
   stopAuto();
   m.press(e.code === 'ArrowUp' ? 1 : -1);
+  autoSnd(e);
 });
 document.addEventListener('keyup', (e) => {
   if (e.code === 'ArrowUp' || e.code === 'ArrowDown') m.release();
@@ -335,13 +343,14 @@ scnBtn.addEventListener('click', () => {
 });
 
 /* 再生の操作 */
-pp.addEventListener('click', () => {
+pp.addEventListener('click', (e) => {
   const { rec } = sceneOf(S.scene);
   const playing = S.src === 'scene' && S.play;
   S.src = 'scene';
   S.play = !playing;
   S.endT = 0;
   if (S.play && S.pt >= rec.dur) S.pt = 0;
+  if (S.play) autoSnd(e);
 });
 $('#tp-home').addEventListener('click', () => {
   S.src = 'scene';
@@ -669,29 +678,48 @@ function hit(kind: SfxKind): void {
   src.connect(g).connect(ac.destination);
   src.start();
 }
-async function toggleSnd(): Promise<void> {
+/** 音を入れている途中（音の準備を待つ間に何度押されても、入れるのは 1 回） */
+let sndBusy = false;
+/** 音を入れる。入っていれば何もしない */
+async function sndOn(): Promise<void> {
+  if (S.snd || sndBusy) return;
+  sndBusy = true;
+  sndMsg.textContent = '';
+  /* 効果音の AudioContext も、操作の処理の中で最初の await より前に作って動かす（iPhone の Safari） */
+  if (ACtor) {
+    sfx ??= new ACtor();
+    void sfx.resume().catch(() => {});
+  }
+  try {
+    if (!(await audio.ready())) {
+      sndMsg.textContent = 'この環境では音を鳴らせません';
+      void sfx?.suspend();
+      return;
+    }
+    const f = S.src === 'live' ? m.snap() : null;
+    audio.start('ja65', S.muf, { mode: 'hold', rpm: f ? f.rpm : 1400, throttle: m.thr });
+    sentRpm = sentThr = -1;
+    setSnd(true);
+  } finally {
+    sndBusy = false;
+  }
+}
+function toggleSnd(): void {
+  if (sndBusy) return;
   if (S.snd) {
     audio.stop();
     void sfx?.suspend();
     setSnd(false);
     return;
   }
-  sndMsg.textContent = '';
-  if (!(await audio.ready())) {
-    sndMsg.textContent = 'この環境では音を鳴らせません';
-    return;
-  }
-  const f = S.src === 'live' ? m.snap() : null;
-  audio.start('ja65', S.muf, { mode: 'hold', rpm: f ? f.rpm : 1400, throttle: m.thr });
-  sentRpm = sentThr = -1;
-  setSnd(true);
-  if (ACtor) {
-    sfx ??= new ACtor();
-    void sfx.resume();
-  }
+  void sndOn();
 }
 sndBtn.addEventListener('click', toggleSnd);
 flSnd.addEventListener('click', toggleSnd);
+/** 音が切れているとき、運転や場面の再生を始める操作で音を入れる（利用者の操作のときだけ） */
+function autoSnd(e: Event): void {
+  if (activates(e)) void sndOn();
+}
 S.muf =
   (new Choice<string>($('#p-muf'), (v) => {
     S.muf = v === 'delta' ? 'delta' : 'stock';

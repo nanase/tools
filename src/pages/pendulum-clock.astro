@@ -68,7 +68,7 @@ const WIND = [
         <div class="seg" id="pc-speed" role="group" aria-label="速さ">
           {SPEEDS.map(([v, t]) => <button type="button" data-v={v} aria-pressed={v === '1' ? 'true' : 'false'}>{t}</button>)}
         </div>
-        <LedToggle id="pc-snd" label="音" />
+        <LedToggle id="pc-snd" label="音" on />
       </div>
       <div class="sbar lg pc-leg">
         <span class="stag"><i class="pc-sq go" aria-hidden="true"></i>時計の輪列</span>
