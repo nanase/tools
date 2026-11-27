@@ -172,7 +172,6 @@ function drawBig(): void {
 }
 function syncPlay(): void {
   playBtn.setAttribute('aria-pressed', String(R.playing));
-  playBtn.querySelector('.led')?.classList.toggle('on', R.playing);
 }
 function setPlay(on: boolean): void {
   R.playing = on;
@@ -297,8 +296,6 @@ sndBtn.addEventListener('click', () => {
   audio.on = !audio.on;
   if (audio.on) audio.ready();
   sndBtn.setAttribute('aria-pressed', String(audio.on));
-  $('#cp-sndL').classList.toggle('on', audio.on);
-  $('#cp-sndT').textContent = audio.on ? 'オン' : 'オフ';
 });
 storeToggle(sndBtn);
 const pg = new ParamGroup<Key>([VOL], (v) => audio.vol(v.vol));
