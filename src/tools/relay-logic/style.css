@@ -1,0 +1,141 @@
+/* リレーで作る論理回路のページ。--ry-on 電流の線とランプ（論理ゲートの 1 の色）・--ry-on-soft その地・--ry-off 電流のない線・
+   --ry-tbg 表とチャートの地・--ry-tgrid チャートの罫線・--ry-bench 作業台・リレーの部品の色（鉄・銅線） */
+:root{--ry-on:#d9480f;--ry-on-soft:#fbe3d3;--ry-off:#8d959c;--ry-tbg:#fff;--ry-tgrid:#e4e7e1;--ry-bench:#fff;--ry-rule:#edf0ea;--ry-rule-2:#d9ded6;
+  --ry-iron:#7b858c;--ry-copper:#9a6d4b;--ry-copper-2:#e6d9c8}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--ry-on:#ff8a4c;--ry-on-soft:#4a2a18;--ry-off:#5d666d;--ry-tbg:var(--screen);--ry-tgrid:#1c2428;--ry-bench:transparent;--ry-rule:transparent;--ry-rule-2:transparent;
+  --ry-iron:#5a646b;--ry-copper:#9b7154;--ry-copper-2:#3a3029}}
+:root[data-theme="dark"]{--ry-on:#ff8a4c;--ry-on-soft:#4a2a18;--ry-off:#5d666d;--ry-tbg:var(--screen);--ry-tgrid:#1c2428;--ry-bench:transparent;--ry-rule:transparent;--ry-rule-2:transparent;
+  --ry-iron:#5a646b;--ry-copper:#9b7154;--ry-copper-2:#3a3029}
+
+/* 並び: PC は回路の右に真理値表かタイミングチャート */
+.ry-grid{grid-template-areas:"ckt" "tt" "how" "thy"}
+.ry-a-ckt{grid-area:ckt}.ry-a-tt{grid-area:tt}.ry-a-how{grid-area:how}
+.ry-grid>.a-thy{grid-area:thy}
+@media (min-width:1000px){
+  .ry-grid{grid-template-columns:minmax(0,1.7fr) minmax(260px,1fr);grid-template-areas:"ckt tt" "how how" "thy thy";align-items:start}
+}
+
+/* 回路の選択: ‹ 選択欄 › と回路の説明を 1 行に（論理ゲートのページと同じ形） */
+.ry-pick{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin:0 0 10px}
+.ry-pv{display:inline-grid;place-items:center;width:30px;height:30px;padding:0;border:1px solid var(--line-2);border-radius:4px;background:var(--surface);color:var(--ink-2);cursor:pointer}
+.ry-pv:hover{border-color:var(--ink-3);color:var(--ink)}
+.ry-pv svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.ry-selw{position:relative;width:min(240px,calc(100% - 76px))}
+.ry-selw select{appearance:none;width:100%;height:30px;padding:0 30px 0 10px;border:1px solid var(--line-2);border-radius:4px;background:var(--inset);color:var(--ink);font:700 14px/1.2 var(--sans);text-overflow:ellipsis;cursor:pointer}
+.ry-selw select:hover{border-color:var(--ink-3)}
+.ry-selw select option,.ry-selw select optgroup{background:var(--surface);color:var(--ink)}
+.ry-selw::after{content:"";position:absolute;top:50%;right:12px;width:7px;height:7px;border-right:1.6px solid var(--ink-2);border-bottom:1.6px solid var(--ink-2);transform:translateY(-70%) rotate(45deg);pointer-events:none}
+@media (pointer:coarse){.ry-pv{width:36px;height:36px}.ry-selw select{height:36px}}
+.ry-sub{font-size:12.5px;color:var(--ink-3)}
+
+/* 作業台: ライトテーマは白地に罫線（論理ゲートのページと同じ） */
+.ry-bench{display:flex;overflow-x:auto;overflow-y:hidden;padding:12px 8px;border:1px solid var(--line);border-radius:4px;background-color:var(--ry-bench);
+  background-image:linear-gradient(var(--ry-rule-2) 1px,transparent 1px),linear-gradient(90deg,var(--ry-rule-2) 1px,transparent 1px),linear-gradient(var(--ry-rule) 1px,transparent 1px),linear-gradient(90deg,var(--ry-rule) 1px,transparent 1px);
+  background-size:60px 60px,60px 60px,12px 12px,12px 12px;background-position:-1px -1px;
+  user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.ry-ckt{display:block;flex:none;width:100%;height:auto;margin:0 auto}
+.ry-ckt .w{fill:none;stroke:var(--ry-off);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.ry-ckt .wg.on .w,.ry-ckt .w.on{stroke:var(--ry-on);stroke-width:2.6}
+.ry-ckt .arw{fill:var(--ry-on);visibility:hidden}
+.ry-ckt .wg.on .arw{visibility:visible}
+.ry-ckt .dot{fill:var(--ink-2)}
+.ry-ckt .bp{stroke:var(--ink);stroke-width:2.4}
+.ry-ckt .bp.bs{stroke-width:4.5}
+.ry-ckt .pm{font:700 13px var(--mono);fill:var(--ink-2)}
+.ry-ckt .nm{font:500 13px var(--mono);fill:var(--ink-3)}
+.ry-ckt .lamp .lc{fill:var(--surface);stroke:var(--ink-2);stroke-width:1.6}
+.ry-ckt .lamp .lx{stroke:var(--ink-3);stroke-width:1.3}
+.ry-ckt .lamp.on .lc{fill:var(--ry-on);stroke:var(--ry-on);filter:drop-shadow(0 0 6px var(--ry-on))}
+.ry-ckt .lamp.on .lx{stroke:var(--surface)}
+.ry-ckt .ldg.on>.w{stroke:var(--ry-on);stroke-width:2.6}
+.ry-ckt .hitc{fill:transparent}
+.ry-ckt .cnt .blade,.ry-ckt .ccn .blade{stroke:var(--ink);stroke-width:2.8;stroke-linecap:round}
+.ry-ckt .cnt.on .blade,.ry-ckt .ccn.on .blade,.ry-ckt .cnt.on .w{stroke:var(--ry-on)}
+.ry-ckt .cnt.on .w{stroke-width:2.6}
+.ry-ckt .cref{font:700 15px var(--sans);fill:var(--ink)}
+.ry-ckt .ctp{font:500 13px var(--mono);fill:var(--ink-3)}
+.ry-ckt .lref{font:600 13px var(--sans);fill:var(--ink-2)}
+.ry-ckt .mlb{font:500 13px var(--sans);fill:var(--ink-3)}
+.ry-ckt .capg .w{stroke:var(--ink-2)}
+.ry-ckt .capg.on .w{stroke:var(--ry-on)}
+.ry-ckt .capg .bp{stroke-width:2.6}
+/* 入力: スイッチ（押すたびに 0 と 1）と押しボタン（押している間だけ） */
+.ry-ckt .skey{cursor:pointer}
+.ry-ckt .skey .keyb{fill:var(--inset);stroke:var(--ink-3);stroke-width:1.6}
+.ry-ckt .skey:hover .keyb{stroke-width:2.2}
+.ry-ckt .skey.on .keyb{fill:var(--ry-on-soft);stroke:var(--ry-on)}
+.ry-ckt .skey .kn{font:700 15px var(--sans);fill:var(--ink)}
+.ry-ckt .skey .kvv{font:700 15px var(--mono);fill:var(--ink-2)}
+.ry-ckt .skey.on .kvv{fill:var(--ry-on)}
+.ry-ckt .pkey{cursor:pointer;touch-action:none}
+.ry-ckt .pkey .pring{fill:var(--inset);stroke:var(--line-2);stroke-width:3}
+.ry-ckt .pkey .pcap{stroke:rgb(0 0 0 / .25);stroke-width:1}
+.ry-ckt .pkey.k-g .pcap{fill:#2e9e4f}.ry-ckt .pkey.k-r .pcap{fill:#c9473f}.ry-ckt .pkey.k-b .pcap{fill:#2a64b0}
+.ry-ckt .pkey.down .pcap{transform:scale(.88);transform-box:fill-box;transform-origin:center}
+.ry-ckt .pkey.down .pring{stroke:var(--ry-on)}
+.ry-ckt .kn2{font:700 13.5px var(--sans);fill:var(--ink)}
+.ry-ckt [data-key]:focus{outline:none}
+.ry-ckt .skey:focus-visible .keyb,.ry-ckt .pkey:focus-visible .pring{stroke:var(--focus);stroke-width:2.6}
+/* 小さなリレー */
+.mr .iron{fill:var(--ry-iron);stroke:var(--ink-2);stroke-width:1.2}
+.mr .mcoil{fill:var(--ry-copper-2);stroke:var(--ry-copper);stroke-width:1.2}
+.mr .mw{stroke:var(--ry-copper);stroke-width:1.2}
+.mr.on .mcoil{fill:var(--ry-on-soft);stroke:var(--ry-on)}
+.mr.on .mw{stroke:var(--ry-on)}
+.mr .arm{fill:var(--ry-iron);stroke:var(--ink-2);stroke-width:1}
+.mr .piv{fill:var(--surface);stroke:var(--ink);stroke-width:1.6}
+
+/* 凡例と札 */
+.ry-lg{margin:10px 0 0}
+.ry-lg b{font:700 13px var(--mono);margin-right:2px}
+.ry-sw{background:var(--ry-on)}
+.ry-hint{margin:4px 0 0;min-height:1.3em;color:var(--ink-3)}
+
+/* 真理値表（論理ゲートのページと同じ形） */
+.ry-ttw{max-height:420px;overflow:auto;background:var(--ry-tbg);border:1px solid var(--line);border-radius:3px}
+.ry-tt{border-collapse:collapse;margin:0 auto;font:500 14px/1 var(--mono)}
+.ry-tt th{position:sticky;top:0;z-index:1;background:var(--ry-tbg);padding:7px 8px;font:700 13px var(--sans);border-bottom:1.5px solid var(--ink-3);white-space:nowrap}
+.ry-tt td{padding:6px 8px;text-align:center;border-bottom:1px solid var(--line)}
+.ry-tt .to{color:var(--ink-3)}
+.ry-tt th.to{color:var(--ink)}
+.ry-tt .ti+.to{border-left:1.5px solid var(--ink-3)}
+.ry-tt td.one{color:var(--ry-on);font-weight:700}
+.ry-tt tbody tr{cursor:pointer}
+.ry-tt tbody tr:hover td{background:var(--inset)}
+.ry-tt tr.now td{background:var(--ry-on-soft)}
+.ry-tt tr.now td.ti{font-weight:700;color:var(--ink)}
+
+/* タイミングチャート（論理ゲートのページと同じ色） */
+.ry-chart{overflow:hidden;background:var(--ry-tbg);border:1px solid var(--line);border-radius:3px;user-select:none;-webkit-user-select:none}
+.ry-chart[hidden]{display:none}
+.ry-chart svg{display:block}
+.ry-chart .cg{stroke:var(--ry-tgrid);stroke-width:1}
+.ry-chart .cs{stroke:var(--line-2);stroke-width:1}
+.ry-chart .ca{font:500 11px var(--mono);fill:var(--ink-3)}
+.ry-chart .cl{font:600 12.5px var(--sans);fill:var(--ink-2)}
+.ry-chart .cl.out{fill:var(--ink)}
+.ry-chart .cv{font:700 13px var(--mono);fill:var(--ink-2)}
+.ry-chart .cv.in{fill:var(--ch2)}
+.ry-chart .cv.out{fill:var(--ry-on)}
+.ry-chart .cw{fill:none;stroke:var(--ink-3);stroke-width:1.6;stroke-linejoin:round}
+.ry-chart .cw.in{stroke:var(--ch2)}
+.ry-chart .cw.out{stroke:var(--ry-on);stroke-width:2}
+
+/* しくみ */
+.ry-mini{display:block;width:100%;max-width:160px;height:auto;margin:0 auto;border:1px solid var(--line);border-radius:3px;background:var(--ry-bench)}
+.ry-mini .hw{fill:none;stroke:var(--ink-3);stroke-width:2;stroke-linejoin:round}
+.ry-mini .hw.on{stroke:var(--ry-on)}
+.ry-mini .hg{fill:none;stroke:var(--line-2);stroke-width:1.2}
+.ry-mini .hl{font:600 11px var(--sans);fill:var(--ink-2)}
+.ry-mini .dot{fill:var(--ink-2)}
+.ry-mini .blade{stroke:var(--ink);stroke-width:2.4;stroke-linecap:round}
+.ry-mini .blade.on{stroke:var(--ry-on)}
+.ry-mini .hlamp{fill:var(--surface);stroke:var(--ink-2);stroke-width:1.4}
+.ry-mini .hlamp.on{fill:var(--ry-on);stroke:var(--ry-on)}
+.ry-mini .hlx{stroke:var(--ink-3);stroke-width:1.1}
+.ry-mini .hfill{fill:var(--ry-on-soft);stroke:none}
+
+/* 動作原理と式の否定の上線 */
+math .ry-ov{border-top:.065em solid currentColor;padding-top:.1em;margin-inline:.05em}
+/* 狭い画面: 左右の余白を詰め、入力 2 個までの回路（幅 324）は横にスクロールさせずに収める */
+@media (max-width:500px){.ry-bench{padding:10px 0}}
