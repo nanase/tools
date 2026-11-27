@@ -4,6 +4,7 @@ import { $ } from '../../lib/dom';
 import { same } from '../../lib/eseries';
 import { fmt, fmtR, plain, ro } from '../../lib/format';
 import { ParamGroup } from '../../lib/param';
+import { onPick, pickAct } from '../../lib/press';
 import { reserveHeight } from '../../lib/reserve';
 import { SW } from '../../lib/scope';
 import { forget, store, stored, storeToggle } from '../../lib/store';
@@ -550,10 +551,12 @@ async function reopen(): Promise<void> {
   const old = snd;
   snd = null;
   cancelAnimationFrame(raf);
+  /* 新しい再生装置は、最初の await より前に作って resume する（iPhone の Safari） */
+  const s = playing ? open() : null,
+    on = s?.ctx.resume();
   await old.ctx.close();
-  const s = playing ? open() : null;
   if (s) {
-    await s.ctx.resume();
+    await on;
     raf = requestAnimationFrame(meter);
   }
 }
@@ -578,6 +581,10 @@ async function play(on: boolean): Promise<void> {
 $('#playBtn').addEventListener('click', () => {
   void play(!playing);
 });
+/** 止まっている間に応答の種類・設計法を選んだら鳴らし始める（利用者の操作だけ） */
+function autoPlay(e: Event): void {
+  if (pickAct(e, playing) === 'start') void play(true);
+}
 
 /* ---------- 入力 ---------- */
 const FK = ['f1', 'f2', 'df'] as const;
@@ -684,6 +691,8 @@ new Choice($('#p-method'), (v) => {
   applyMode();
   request();
 });
+onPick($('#p-type'), autoPlay);
+onPick($('#p-method'), autoPlay);
 new Choice($('#p-win'), (v) => {
   win = winOf(v).v;
   applyMode();

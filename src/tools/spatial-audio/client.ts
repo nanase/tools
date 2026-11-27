@@ -7,6 +7,7 @@ import { Choice } from '../../lib/choice';
 import { $, $$ } from '../../lib/dom';
 import { ParamGroup } from '../../lib/param';
 import { autoPause } from '../../lib/pause';
+import { onPick, pickAct } from '../../lib/press';
 import { store, stored } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
 import { SpatialAudio } from './audio';
@@ -221,11 +222,16 @@ function stop(): void {
   audio.stop();
   syncPlay();
 }
-playBtn.addEventListener('click', async () => {
-  if (S.playing) {
-    stop();
-    return;
-  }
+playBtn.addEventListener('click', () => {
+  if (S.playing) stop();
+  else void start();
+});
+/** 止まっている間に場面・音源の追加を選んだら鳴らし始める（利用者の操作だけ） */
+function autoPlay(e: Event): void {
+  if (pickAct(e, S.playing) === 'start') void start();
+}
+onPick($('#sa-scenes'), autoPlay);
+async function start(): Promise<void> {
   S.playing = true;
   syncPlay();
   const ok = await audio.ready();
@@ -239,7 +245,7 @@ playBtn.addEventListener('click', async () => {
   if (!S.playing) return;
   audio.vol(S.vol, true);
   audio.start();
-});
+}
 autoPause(audio, { pause: stop, hidden: () => undefined });
 
 /* ---------- 音源の一覧・音量・追加 ---------- */
@@ -347,6 +353,7 @@ $('#sa-add').addEventListener('click', (e) => {
   S.scene = '';
   syncSrcVol();
   changed();
+  autoPlay(e);
 });
 
 /* ---------- 障害物 ---------- */

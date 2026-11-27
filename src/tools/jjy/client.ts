@@ -3,6 +3,7 @@ import { Choice } from '../../lib/choice';
 import { $, $$ } from '../../lib/dom';
 import { fmt } from '../../lib/format';
 import { ParamGroup } from '../../lib/param';
+import { onPick, pickAct } from '../../lib/press';
 import { addTip, initToolPage } from '../../lib/tool-page';
 import { JjyAudio } from './audio';
 import { CNAME, CSIG, callSignOn, DEFAULTS, type Minute, meaning, type Options, Signal, stopOn } from './code';
@@ -64,15 +65,22 @@ const g = new ParamGroup<Key>(PARAMS, (v) => {
 /** 再生（枠の右上のボタン）。鳴らせなかったときは音の種類の行に知らせる */
 const playBtn = $('#playBtn');
 let playErr = '';
-playBtn.addEventListener('click', async () => {
-  const ok = await audio.setPlay(!audio.play);
+async function setPlay(on: boolean): Promise<void> {
+  const ok = await audio.setPlay(on);
   playErr = ok ? '' : '音を出せませんでした';
   syncSnd();
+}
+playBtn.addEventListener('click', () => {
+  void setPlay(!audio.play);
 });
 const mode = new Choice<'tone' | 'sync'>($('#p-mode'), (v) => {
   audio.mode = v;
   audio.params();
   syncSnd();
+});
+/* 止まっている間に音の種類を選んだら鳴らし始める（利用者の操作だけ） */
+onPick($('#p-mode'), (e) => {
+  if (pickAct(e, audio.play) === 'start') void setPlay(true);
 });
 function syncSnd(): void {
   playBtn.setAttribute('aria-pressed', String(audio.play));

@@ -7,6 +7,7 @@ import { $, $$ } from '../../lib/dom';
 import { RM } from '../../lib/motion';
 import { ParamGroup } from '../../lib/param';
 import { handheld } from '../../lib/pause';
+import { onPick, pickAct } from '../../lib/press';
 import { forget, store, stored } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
 import { readCols } from '../pcm/fig';
@@ -65,10 +66,10 @@ function stop(): void {
   syncUi();
 }
 playBtn.addEventListener('click', () => {
-  if (S.playing) {
-    stop();
-    return;
-  }
+  if (S.playing) stop();
+  else start();
+});
+function start(): void {
   S.playing = true;
   S.preview = false;
   audio.post({ type: 'play', on: true, pos: model.pos });
@@ -78,7 +79,7 @@ playBtn.addEventListener('click', () => {
     S.playing = false;
     syncUi();
   });
-});
+}
 holdBtn.addEventListener('click', () => {
   model.moving = !model.moving;
   audio.post({ type: 'moving', on: model.moving });
@@ -111,6 +112,11 @@ function applyTimbre(v: TimbreId): void {
 /* 音の計算の既定（長三和音・正弦波）とページの既定が違うので、初めの値も送る */
 applyChord(new Choice<ChordId>($('#p-chord'), applyChord).value);
 applyTimbre(new Choice<TimbreId>($('#p-timbre'), applyTimbre).value);
+/* 止まっている間に和音・音色を選んだら鳴らし始める（利用者の操作だけ） */
+for (const id of ['#p-chord', '#p-timbre'])
+  onPick($(id), (e) => {
+    if (pickAct(e, S.playing) === 'start') start();
+  });
 /** 1 オクターブの秒数の表記 */
 const octSec = (r: number): string => {
   const t = 12 / r;

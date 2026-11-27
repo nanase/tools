@@ -10,6 +10,7 @@ import { Choice } from '../../lib/choice';
 import { $ } from '../../lib/dom';
 import { ParamGroup } from '../../lib/param';
 import { handheld } from '../../lib/pause';
+import { pickAct } from '../../lib/press';
 import { initToolPage } from '../../lib/tool-page';
 import { ThunderAudio } from './audio';
 import { type Branch, CH0, type ChannelSet, makeChannel, type Shape, shape, strikeCount } from './channel';
@@ -158,7 +159,10 @@ function reshape(): void {
 }
 /** 届いた計算が今の放電路のものか（違えば放電路を灰で描き、波形は枠だけ） */
 const ready = (): Reply | null => (cur && curKey === shown?.key ? cur : null);
+/** 次の計算が届いたら光らせる（「別の雷」を押したとき、鳴っている途中で条件を変えたとき） */
+let flashNext = false;
 function request(): void {
+  if (play) flashNext = true;
   stop();
   cue = null;
   ppState();
@@ -211,6 +215,10 @@ worker.onmessage = (e: MessageEvent<Reply>) => {
   outputs();
   draw();
   drawSpec();
+  if (!busy && flashNext) {
+    flashNext = false;
+    start();
+  }
 };
 
 /** 本流が雲の底に着いた点 [m]（止まっているときの道すじの始まり） */
@@ -232,7 +240,9 @@ let secPal: Pal = palette(sec),
 /** ドラッグの間は窓を止める（指の下から聞き手が逃げないように）。dragging は動かすもの、moved はドラッグで動いたか */
 let dragView: View | null = null,
   dragging: 'lis' | 'hill' = 'lis',
-  moved = false;
+  moved = false,
+  /** ドラッグを始めたときに鳴っていたか */
+  dragPlay = false;
 const secH = () => (sec.clientWidth < 560 ? 240 : 320);
 
 /** 断面の窓（聞き手の側の端は、聞き手と山の少し先まで） */
@@ -472,12 +482,18 @@ trk.addEventListener('keydown', (e) => {
     ppState();
   }
 });
-$('#th-seed').addEventListener('click', () => {
+$('#th-seed').addEventListener('click', (e) => {
   seed++;
+  /* 計算が届いたら光らせる。AudioContext は押した操作の中で作る */
+  if (pickAct(e, !!play, true) !== 'none') {
+    audio.open();
+    flashNext = true;
+  }
   request();
 });
 document.addEventListener('visibilitychange', () => {
   if (document.hidden && handheld()) {
+    flashNext = false;
     pause();
     audio.suspend();
   }
@@ -515,6 +531,7 @@ function onHill(e: PointerEvent, v: View): boolean {
 }
 sec.addEventListener('pointerdown', (e) => {
   if (!shown || e.button !== 0) return;
+  dragPlay = !!play;
   dragView = viewNow();
   dragging = onHill(e, dragView) ? 'hill' : 'lis';
   moved = false;
@@ -529,8 +546,11 @@ const endDrag = () => {
   if (!dragView) return;
   dragView = null;
   sec.classList.remove('drag');
-  if (moved) request();
-  else {
+  /* 鳴っている途中で動かしたら、計算が届いてから鳴らし直す */
+  if (moved) {
+    if (dragPlay) flashNext = true;
+    request();
+  } else {
     idleSt();
     draw();
   }

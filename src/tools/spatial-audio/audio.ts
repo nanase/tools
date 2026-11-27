@@ -40,6 +40,8 @@ export class SpatialAudio {
         if (ac.state !== 'running' && this.node) this.onLost?.();
       });
     }
+    /* iPhone の Safari は、押した操作の中で最初の await より前に resume しないと鳴らない */
+    void ac.resume().catch(() => {});
     this.loading ??= ac.audioWorklet
       .addModule(workletUrl)
       .then(() => {
