@@ -2,8 +2,9 @@
  * トランペットの音を Web Audio API で鳴らす: 奏者と楽器と残響（AudioWorklet、worklet.ts）→ 音量 → リミッタ → 出力。
  * AudioContext は吹く操作の中で作る（自動再生の制限）。鳴らしていない間は止めて CPU を休ませる
  */
+
+import { wakeOnRelease } from '../../lib/gesture';
 import type { ReverbSpec } from '../../lib/reverb';
-import { wakeOnRelease } from '../../lib/wake';
 import type { Manual, PNote } from './player';
 import type { Opts, TpMsg, TpOut } from './worklet';
 import workletUrl from './worklet.ts?worker&url';

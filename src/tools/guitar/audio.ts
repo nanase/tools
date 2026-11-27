@@ -2,8 +2,9 @@
  * ギターの音を Web Audio API で鳴らす: AudioWorklet（worklet.ts、ステレオと残響）→ 音量 → 出力。
  * AudioContext は弦を弾いた操作の中で作る（自動再生の制限）。鳴らしていない間は止めて CPU を休ませる
  */
+
+import { wakeOnRelease } from '../../lib/gesture';
 import type { ReverbSpec } from '../../lib/reverb';
-import { wakeOnRelease } from '../../lib/wake';
 import type { BodyDesc, PluckMsg } from './engine';
 import type { GtMsg } from './worklet';
 import workletUrl from './worklet.ts?worker&url';

@@ -3,9 +3,10 @@
  * → 音量 → 出力。Worker の結果は MessagePort で AudioWorklet へ直接届く。
  * AudioContext は鍵を押した操作の中で作る（自動再生の制限）。鳴らしていない間は止めて CPU を休ませる
  */
+
+import { wakeOnRelease } from '../../lib/gesture';
 import { handheld } from '../../lib/pause';
 import type { ReverbSpec } from '../../lib/reverb';
-import { wakeOnRelease } from '../../lib/wake';
 import type { BoardDesc } from './engine';
 import { makePiano, type Piano, type PianoSpec, type StringView, strikeKey } from './model';
 import { KEY_LO } from './strings';

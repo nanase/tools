@@ -680,7 +680,7 @@ async function press(k: number, vel?: number): Promise<void> {
   if (!ok) return;
   /*
    * 準備の間に離したときも打ち、すぐダンパーを下ろす。指で押したときは、離すまで AudioContext が動かない
-   * （ブラウザは指の pointerdown を利用者の操作として扱わない。lib/wake.ts）
+   * （ブラウザは指の pointerdown を利用者の操作として扱わない。lib/gesture.ts の wakeOnRelease）
    */
   const gone = !S.held.has(k);
   /* AudioWorklet を作った直後や、リリースでペダルを離したあとでも、ペダルの状態をそろえる（曲の演奏中は曲のペダル） */

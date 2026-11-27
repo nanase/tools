@@ -5,9 +5,9 @@
  */
 import { Choice } from '../../lib/choice';
 import { $, $$ } from '../../lib/dom';
+import { onPick, pickAct } from '../../lib/gesture';
 import { ParamGroup } from '../../lib/param';
 import { autoPause } from '../../lib/pause';
-import { onPick, pickAct } from '../../lib/press';
 import { store, stored } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
 import { SpatialAudio } from './audio';

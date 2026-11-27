@@ -3,9 +3,10 @@
  * 音量 → リミッタ → 波形を読むアナライザ → 出力。
  * 曲の音は AudioContext の時刻で予約し、MIDI 機器の音はすぐ鳴らす。何も鳴らしていない間は AudioContext を止めて CPU を休ませる
  */
+
+import { wakeOnRelease } from '../../lib/gesture';
 import type { ReverbSpec } from '../../lib/reverb';
 import { BEND, CC, PC } from '../../lib/smf';
-import { wakeOnRelease } from '../../lib/wake';
 import { type Src, type Tone, VOL0 } from './engine';
 import type { SynthEv, SynthMsg } from './worklet';
 import workletUrl from './worklet.ts?worker&url';

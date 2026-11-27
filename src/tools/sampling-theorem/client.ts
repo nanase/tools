@@ -5,9 +5,9 @@
  */
 import { Choice } from '../../lib/choice';
 import { $ } from '../../lib/dom';
+import { onPick, pickAct } from '../../lib/gesture';
 import { ParamGroup } from '../../lib/param';
 import { handheld } from '../../lib/pause';
-import { onPick, pickAct } from '../../lib/press';
 import { initToolPage } from '../../lib/tool-page';
 import { fft, plan } from '../spectrum/fft';
 import { SmpAudio } from './audio';

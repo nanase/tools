@@ -2,8 +2,9 @@
  * オルガンの音を Web Audio API で鳴らす: AudioWorklet（worklet.ts、ステレオと残響）→ 音量 → リミッタ → 出力。
  * AudioContext は鍵を押した操作の中で作る（自動再生の制限）。鳴らしていない間は止めて CPU を休ませる
  */
+
+import { wakeOnRelease } from '../../lib/gesture';
 import type { ReverbSpec } from '../../lib/reverb';
-import { wakeOnRelease } from '../../lib/wake';
 import type { PipeMsg, WindDesc } from './engine';
 import type { OgMsg, OgOut } from './worklet';
 import workletUrl from './worklet.ts?worker&url';
