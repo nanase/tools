@@ -1,6 +1,7 @@
 ---
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import LedToggle from '../components/LedToggle.astro';
 import More from '../components/More.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
@@ -62,7 +63,7 @@ const PCS = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯
     <Panel hid="hd-fig" title="メータ" class="a-fig" fixed>
       <div slot="aux" class="pbar">
         <div class="seg" id="p-view" role="group" aria-label="表示"><button type="button" data-v="meter" aria-pressed="true" title="ずれを針の位置で示す">メータ</button><button type="button" data-v="strobe" aria-pressed="false" title="12 の音名の窓の縞の動きでずれを表示">ストロボ</button></div>
-        <div class="seg"><button type="button" id="runBtn" aria-pressed="false" title="マイク入力の開始・停止"><span class="led" id="runLed" aria-hidden="true"></span><span id="runT">開始</span></button></div>
+        <LedToggle id="runBtn" label="マイク" title="マイク入力の開始・停止" />
       </div>
       <div class="sbar">
         <span class="stag"><i class="sw" aria-hidden="true"></i><span id="s-view">針</span></span>

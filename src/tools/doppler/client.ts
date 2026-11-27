@@ -186,26 +186,20 @@ new Choice<'1' | '0'>($('#p-gnd'), (s) => {
   audio.set(propSet());
 });
 
-/* ---------- 走らせる・止める（RUN・STOP） ---------- */
+/* ---------- 走らせる・止める ---------- */
 const runBtn = $('#runBtn');
 runBtn.addEventListener('click', () => {
   moving = !moving;
   runBtn.setAttribute('aria-pressed', String(moving));
-  $('#runLed').classList.toggle('on', moving);
-  $('#runT').textContent = moving ? 'RUN' : 'STOP';
   anchor();
 });
 
 /* ---------- 音 ---------- */
 const playBtn = $('#playBtn'),
-  playLed = $('#playLed'),
-  playT = $('#playT'),
   sndMsg = $('#snd-msg');
 function setPlay(on: boolean): void {
   playing = on;
   playBtn.setAttribute('aria-pressed', String(on));
-  playLed.classList.toggle('on', on);
-  playT.textContent = on ? '停止' : '再生';
 }
 playBtn.addEventListener('click', async () => {
   if (playing) {

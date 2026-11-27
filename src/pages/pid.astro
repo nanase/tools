@@ -1,6 +1,7 @@
 ---
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import LedToggle from '../components/LedToggle.astro';
 import More from '../components/More.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
@@ -27,8 +28,8 @@ const SVB = `-66 -14 482 ${ROWS * 40 + 40}`;
     <Panel hid="hd-riv" title="川" class="a-riv">
       <Fragment slot="aux">
         <div class="seg" id="p-mode" role="group" aria-label="モード"><button type="button" data-v="plan" aria-pressed="true" title="100 s のステップ応答を前もって計算して再生する。入力を変えるとすぐ表示窓が変わる">計算</button><button type="button" data-v="live" aria-pressed="false" title="止めずに計算を続け、ブイを動かす・押すと PID が立て直す">ライブ</button></div>
-        <div class="seg"><button type="button" id="rvPid" aria-pressed="true" title="PID の入・切。切ると操作量は 0"><span class="led on" id="rvPidLed" aria-hidden="true"></span><span id="rvPidT">PID 入</span></button></div>
-        <div class="seg"><button type="button" id="rvRun" aria-pressed="false" title="動かす・止める"><span class="led" id="rvRunLed" aria-hidden="true"></span><span id="rvRunT">再生</span></button></div>
+        <LedToggle id="rvPid" label="PID" on title="PID の入・切。切ると操作量は 0" />
+        <LedToggle id="rvRun" label="再生" title="動かす・止める" />
       </Fragment>
       <div class="sbar">
         <span class="stag">t <b class="hw" id="rv-t" data-ph="00000.0 s"></b></span>

@@ -6,7 +6,6 @@
   .tgrid{grid-template-columns:minmax(0,1.6fr) minmax(340px,1fr);grid-template-areas:"fig fig" "c1 c2" "thy thy";align-items:start}
   .a-fig{grid-area:fig}.c1{grid-area:c1}.c2{grid-area:c2}.a-thy{grid-area:thy}
 }
-.ph .seg button{display:inline-flex;align-items:center;justify-content:center;gap:7px}
 .a-out{container-type:inline-size}
 .sbar .right{margin-left:auto;color:var(--ink-3)}
 .sw.dash{height:0;background:none;border-top:2px dashed var(--ink-3)}

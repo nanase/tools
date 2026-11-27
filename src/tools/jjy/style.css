@@ -18,8 +18,6 @@
 .prow.opt .msg:empty{display:none}
 @container (max-width:400px){.prow.opt{--sw:2.9rem}}
 
-/* 枠の右上の再生ボタン（双2次フィルタと同じ。鳴らしている間は LED が点く） */
-#playBtn{display:inline-flex;align-items:center;gap:7px}
 
 /* 時刻の横の扇形は fan.css（Fan.astro が読み込む） */
 .a-wave{container-type:inline-size}

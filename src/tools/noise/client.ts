@@ -302,8 +302,6 @@ function views(): void {
 function setRun(on: boolean): void {
   S.run = on;
   $('#runBtn').setAttribute('aria-pressed', String(on));
-  $('#runLed').classList.toggle('on', on);
-  txt('#runT', on ? 'RUN' : 'STOP');
 }
 $('#runBtn').addEventListener('click', () => setRun(!S.run));
 
@@ -311,8 +309,6 @@ $('#runBtn').addEventListener('click', () => setRun(!S.run));
 const playBtn = $('#playBtn');
 function syncSnd(err = ''): void {
   playBtn.setAttribute('aria-pressed', String(audio.playing));
-  $('#sndLed').classList.toggle('on', audio.playing);
-  txt('#playT', audio.playing ? '停止' : '再生');
   txt('#snd-msg', err);
 }
 playBtn.addEventListener('click', async () => {

@@ -505,8 +505,6 @@ let last = 0;
 function stop(): void {
   playing = false;
   $('#play').setAttribute('aria-pressed', 'false');
-  $('#playLed').classList.remove('on');
-  txt('#playT', '再生');
 }
 function tick(now: number): void {
   if (!playing) return;
@@ -525,8 +523,6 @@ $('#play').addEventListener('click', () => {
   if (t >= span[1] - 1e-6) t = span[0];
   playing = true;
   $('#play').setAttribute('aria-pressed', 'true');
-  $('#playLed').classList.add('on');
-  txt('#playT', '停止');
   last = performance.now();
   requestAnimationFrame(tick);
 });

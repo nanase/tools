@@ -5,6 +5,7 @@
  * 入力元ごとの行は .ptab の data-src で出し分ける（style.css）。動作は input.ts
  */
 import ChoiceRow from '../../components/ChoiceRow.astro';
+import LedToggle from '../../components/LedToggle.astro';
 import Panel from '../../components/Panel.astro';
 import ParamRow from '../../components/ParamRow.astro';
 import { PHASES, RATIOS, TF_PARAM } from './params';
@@ -31,7 +32,7 @@ const SRCS = [
     <div class="seg" id="p-src" role="group" aria-label="入力元">
       {SRCS.map(([v, l, t]) => <button type="button" data-v={v} aria-pressed={v === 'mic' ? 'true' : 'false'} title={t}>{l}</button>)}
     </div>
-    {!mono && <div class="seg"><button type="button" id="runBtn" aria-pressed="false" title="マイク入力の開始・停止"><span class="led" id="runLed" aria-hidden="true"></span><span id="runT">開始</span></button></div>}
+    {!mono && <LedToggle id="runBtn" label="マイク" title="マイク入力の開始・停止" />}
   </div>
   <p class="msg in-msg" id="in-msg" aria-live="polite"></p>
   <div class="ptab" id="in-tab" data-src="mic">

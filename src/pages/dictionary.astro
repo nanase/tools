@@ -1,6 +1,7 @@
 ---
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import LedToggle from '../components/LedToggle.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import ParamRow from '../components/ParamRow.astro';
@@ -121,7 +122,7 @@ const name = 'ディクショナリ';
         </dl>
       </Panel>
       <Panel hid="hd-snd" title="音" class="a-snd">
-        <div slot="aux" class="seg"><button type="button" id="dc-snd" aria-pressed="true"><span class="led on" id="dc-sndL" aria-hidden="true"></span> <span id="dc-sndT">オン</span></button></div>
+        <LedToggle slot="aux" id="dc-snd" label="音" on />
         <div class="ptab dc-row"><ParamRow d={VOL} /></div>
       </Panel>
     </div>

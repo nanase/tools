@@ -8,8 +8,6 @@
   .a-eng{grid-area:eng}.c1{grid-area:c1}.c2{grid-area:c2}.a-thy{grid-area:thy}.a-src{grid-area:src}
 }
 
-/* 枠の右上のボタン */
-#runBtn{display:inline-flex;align-items:center;gap:7px}
 /* 走行の表示: ギア・変速のボタン・速度・走行距離 */
 .drv{display:grid;grid-template-columns:auto auto 1fr 1fr;align-items:center;gap:6px 14px;margin:10px 8px 0;padding:8px 10px;border:1px solid var(--line);border-radius:6px}
 .drv-l{display:block;font-size:11.5px;color:var(--ink-3)}

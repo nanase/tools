@@ -1,6 +1,7 @@
 ---
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import LedToggle from '../components/LedToggle.astro';
 import More from '../components/More.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
@@ -38,7 +39,7 @@ const rows = (tab: OptRow['tab']) => OPT_ROWS.filter((r) => r.tab === tab);
       </Panel>
 
       <Panel hid="hd-snd" title="音" class="a-snd">
-        <div slot="aux" class="seg"><button type="button" id="playBtn" aria-pressed="false" title="信号の音（低出力は高出力の 10 % の音量）"><span class="led" id="sndLed" aria-hidden="true"></span><span id="playT">再生</span></button></div>
+        <LedToggle slot="aux" id="playBtn" label="再生" title="信号の音（低出力は高出力の 10 % の音量）" />
         <div class="ptab">
           <ChoiceRow k="mode" sym="<i>~</i>" name="音の種類" sub="時刻合わせは 13.333 kHz の矩形波" choices={[['tone', '可聴音'], ['sync', '時刻合わせ']]} value="tone" msg>
             <button slot="help" type="button" class="qbtn" id="syncBtn" aria-expanded="false" aria-controls="syncTip" aria-label="時刻合わせのやりかた" title="時刻合わせのやりかた">?</button>

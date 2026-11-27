@@ -1,6 +1,7 @@
 ---
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import LedToggle from '../components/LedToggle.astro';
 import More from '../components/More.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
@@ -78,7 +79,7 @@ const name = '分岐図';
       </Panel>
 
       <Panel hid="hd-snd" title="音" class="a-snd">
-        <div slot="aux" class="seg"><button type="button" id="playBtn" aria-pressed="false" title="値の列の音"><span class="led" id="sndLed" aria-hidden="true"></span><span>再生</span></button></div>
+        <LedToggle slot="aux" id="playBtn" label="再生" title="値の列の音" />
         <p class="msg er snd-msg" id="snd-msg" aria-live="polite"></p>
         <div class="ptab">
           <ChoiceRow k="mode" name="鳴らし方" sub="波形: 周期が倍になるたびに 1 オクターブ下がり、カオスで雑音になる／旋律: 値 0〜1 を 220〜880 Hz へ" choices={SND_MODES} value="wave" />

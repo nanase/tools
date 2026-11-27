@@ -528,7 +528,6 @@ function pause(): void {
 }
 function syncPlay(): void {
   playBtn.setAttribute('aria-pressed', String(play));
-  $('#playLed').classList.toggle('on', play);
 }
 playBtn.addEventListener('click', () => {
   play = !play;

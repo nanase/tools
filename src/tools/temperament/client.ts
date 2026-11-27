@@ -236,10 +236,7 @@ function draw(): void {
   $('#s-now').style.visibility = S.play ? '' : 'hidden';
   txt($('#s-cur'), (S.ab && S.cmp !== 'none' ? (sideB ? 'B ' : 'A ') : '') + tn);
   playBtn.setAttribute('aria-pressed', String(S.play));
-  $('#playLed').classList.toggle('on', S.play);
-  txt($('#playT'), S.play ? '停止' : '鳴らす');
   abBtn.setAttribute('aria-pressed', String(S.ab));
-  $('#abLed').classList.toggle('on', S.ab);
   (abBtn as HTMLButtonElement).disabled = S.cmp === 'none';
   txt($('#o-ab'), tn);
 

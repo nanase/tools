@@ -928,11 +928,9 @@ const chLast = { root: 0, q: QUALITIES[0] };
 const chdBox = $<HTMLDetailsElement>('details.a-chd'),
   chdSnd = $<HTMLButtonElement>('#chdSnd');
 chdSnd.setAttribute('aria-pressed', String(stored('chdSnd') === true));
-$('#chdLed').classList.toggle('on', stored('chdSnd') === true);
 chdSnd.addEventListener('click', () => {
   const on = chdSnd.getAttribute('aria-pressed') !== 'true';
   chdSnd.setAttribute('aria-pressed', String(on));
-  $('#chdLed').classList.toggle('on', on);
   store('chdSnd', on);
 });
 

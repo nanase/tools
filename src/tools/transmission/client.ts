@@ -184,7 +184,6 @@ const capture = (el: Element, id: number) => {
 };
 const syncTg = (b: HTMLButtonElement, on: boolean) => {
   b.setAttribute('aria-pressed', String(on));
-  b.querySelector('.led')?.classList.toggle('on', on);
 };
 function stopAuto(): void {
   toLive();
@@ -627,14 +626,12 @@ document.addEventListener('keydown', (e) => {
 /* ---------- 音: エンジンのページの音を、回転数を保つ運転で鳴らし、毎フレーム回転数とスロットルを送る ---------- */
 const audio = new EngineAudio(),
   sndBtn = $<HTMLButtonElement>('#tm-snd'),
-  sndT = $('#tm-sndT'),
   sndMsg = $('#tm-sndmsg');
 const flSnd = $<HTMLButtonElement>('#tm-fl-snd');
 function setSnd(on: boolean): void {
   S.snd = on;
   syncTg(sndBtn, on);
   syncTg(flSnd, on);
-  sndT.textContent = on ? '停止' : '再生';
 }
 let sentRpm = -1,
   sentThr = -1;

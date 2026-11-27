@@ -565,8 +565,6 @@ async function play(on: boolean): Promise<void> {
   playing = on;
   const btn = $('#playBtn');
   btn.setAttribute('aria-pressed', String(on));
-  $('.led', btn).classList.toggle('on', on);
-  txt('#playT', on ? '停止' : '再生');
   cancelAnimationFrame(raf);
   if (on) {
     await snd?.ctx.resume();

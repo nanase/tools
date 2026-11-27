@@ -214,8 +214,6 @@ function loadAll(): Promise<unknown> {
 const playBtn = $<HTMLButtonElement>('#sa-play');
 function syncPlay(): void {
   playBtn.setAttribute('aria-pressed', String(S.playing));
-  $('#sa-led').classList.toggle('on', S.playing);
-  txt('#sa-playT', S.playing ? '停止' : '再生');
 }
 function stop(): void {
   if (!S.playing) return;

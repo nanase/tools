@@ -455,7 +455,6 @@ function showTip(i: number, p: [number, number] | null): void {
   tip.classList.toggle('pin', pinned);
   trk.hidden = !pinned;
   trk.setAttribute('aria-pressed', String(st.track === i));
-  setT(trk.lastElementChild as HTMLElement, st.track === i ? '追尾中' : '追尾');
   tip.hidden = false;
   if (pinned) {
     const hud = $(NARROW.matches ? '#pm-tr' : '.pm-tl');
@@ -533,7 +532,6 @@ function zoomAt(f: number, x: number, y: number): void {
 function setRun(v: boolean): void {
   st.run = v;
   runBtn.setAttribute('aria-pressed', String(v));
-  setT(runBtn.lastElementChild as HTMLElement, v ? '再生中' : '停止中');
   dirty = true;
 }
 function unpin(): void {

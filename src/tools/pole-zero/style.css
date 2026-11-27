@@ -9,8 +9,7 @@
   .a-snd{order:2}
 }
 
-/* 枠の右上のボタン（再生の LED・使えないとき） */
-.pha .seg button{display:inline-flex;align-items:center;gap:7px}
+/* 枠の右上のボタン（使えないとき） */
 .seg button:disabled{opacity:.45;cursor:default;color:var(--ink-3)}
 /* 試聴: 入力の音と再生を枠の右上に並べる */
 .srcbar{display:flex;align-items:center;gap:8px}

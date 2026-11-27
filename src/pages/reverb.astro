@@ -1,6 +1,7 @@
 ---
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import LedToggle from '../components/LedToggle.astro';
 import More from '../components/More.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
@@ -30,9 +31,7 @@ const DRYS = [
 
   <div class="tgrid">
     <Panel hid="hd-fig" title="部屋（上から）" class="a-fig" fixed>
-      <div slot="aux" class="seg">
-        <button type="button" id="runBtn" aria-pressed="true" title="波面の停止・再開"><span class="led on" id="runLed" aria-hidden="true"></span><span id="runT">RUN</span></button>
-      </div>
+      <LedToggle slot="aux" id="runBtn" label="RUN" on title="波面の停止・再開" />
       <div class="scn" id="p-preset" data-nosave role="group" aria-label="部屋の例">
         <span class="scn-l" aria-hidden="true">部屋の例</span>
         {PRESETS.map((p) => <button type="button" class="chip" data-v={p.v} aria-pressed={p.v === 'class' ? 'true' : 'false'}>{p.name}</button>)}
@@ -107,9 +106,7 @@ const DRYS = [
       </Panel>
 
       <Panel hid="hd-snd" title="試聴" class="a-snd">
-        <div slot="aux" class="seg">
-          <button type="button" id="playBtn" aria-pressed="false" title="乾いた音に応答を畳み込んだ音"><span class="led" id="playLed" aria-hidden="true"></span><span>再生</span></button>
-        </div>
+        <LedToggle slot="aux" id="playBtn" label="再生" title="乾いた音に応答を畳み込んだ音" />
         <div class="ptab">
           <ChoiceRow k="dry" name="乾いた音" sub="残響のない音" choices={DRYS} value="clap" layout="chips" msg />
           <ChoiceRow k="mode" name="響き" sub="「楽器ページの残響」は楽器のページの残響（フィードバック遅延網）をこの部屋の残響時間で鳴らす" choices={MODES} value="room" layout="chips" msg />

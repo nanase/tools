@@ -324,8 +324,6 @@ function frame(now: number): void {
 function setRun(on: boolean): void {
   S.run = on;
   $('#runBtn').setAttribute('aria-pressed', String(on));
-  $('#runLed').classList.toggle('on', on);
-  txt('#runT', on ? 'RUN' : 'STOP');
 }
 $('#runBtn').addEventListener('click', () => setRun(!S.run));
 watchTheme(draw);
@@ -566,7 +564,6 @@ function stop(): void {
 }
 function setLed(on: boolean): void {
   playBtn.setAttribute('aria-pressed', String(on));
-  $('#playLed').classList.toggle('on', on);
 }
 playBtn.addEventListener('click', () => void play());
 autoPause(audio, { pause: stop, hidden: () => {} });

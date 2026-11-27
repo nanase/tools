@@ -2,6 +2,7 @@
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
 import HowSteps from '../components/HowSteps.astro';
+import LedToggle from '../components/LedToggle.astro';
 import More from '../components/More.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
@@ -64,7 +65,7 @@ const WAVES = [
     </Panel>
 
     <Panel hid="hd-tc" title="タイミングチャート" class="lg-a-tc">
-      <button slot="aux" type="button" class="tg" id="lg-mid" aria-pressed="false" title="中のゲートの出力の行も出す"><span class="led" aria-hidden="true"></span>途中の信号</button>
+      <LedToggle slot="aux" id="lg-mid" label="途中の信号" title="中のゲートの出力の行も出す" />
       {/* 行は回路の入力と出力の数。回路を切り替えると中身ごと替わる */}
       <div class="lg-chart" id="lg-chart" data-shift="ok" tabindex="0" role="slider" aria-label="タイミングチャートの時刻（押すとその時刻の状態を回路に出す）" aria-valuemin={-27} aria-valuemax={0} aria-valuenow={0}></div>
       <div class="lg-tinfo" id="lg-tinfo" aria-live="polite"></div>

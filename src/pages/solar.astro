@@ -3,6 +3,7 @@ import Busy from '../components/Busy.astro';
 import Collapsible from '../components/Collapsible.astro';
 import DatePicker from '../components/DatePicker.astro';
 import HowSteps from '../components/HowSteps.astro';
+import LedToggle from '../components/LedToggle.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
 import RelatedTools from '../components/RelatedTools.astro';
@@ -19,7 +20,7 @@ const name = '太陽系';
 
   <div class="tgrid ss-grid">
     <Panel hid="hd-view" title="地球から見た姿" class="ss-viewp" fixed>
-      <div slot="aux" class="seg" id="p-play" data-nosave><button type="button" id="play" aria-pressed="false"><span class="led" id="playLed" aria-hidden="true"></span><span>再生</span></button></div>
+      <LedToggle slot="aux" id="play" label="早送り" title="時刻の早送り" />
       <div class="ss-time">
         <span class="ss-date"><b id="o-date">—</b><DatePicker /></span>
         <button type="button" class="ss-sq" id="mprev" aria-label="1 か月前" title="1 か月前">‹</button>

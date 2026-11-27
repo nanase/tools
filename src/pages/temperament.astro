@@ -1,6 +1,7 @@
 ---
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import LedToggle from '../components/LedToggle.astro';
 import More from '../components/More.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
@@ -23,9 +24,7 @@ const KEYS = keyboard();
 
   <div class="tgrid">
     <Panel hid="hd-fig" title="部分音" class="a-fig" fixed>
-      <div slot="aux" class="seg">
-        <button type="button" id="playBtn" aria-pressed="false"><span class="led" id="playLed" aria-hidden="true"></span><span id="playT">再生</span></button>
-      </div>
+      <LedToggle slot="aux" id="playBtn" label="再生" />
       <div class="sbar static">
         <span class="stag">A <b id="s-a">平均律</b></span>
         <span class="stag" id="s-bw">B <b id="s-b"></b></span>
@@ -57,9 +56,7 @@ const KEYS = keyboard();
 
     <div class="col c1">
       <Panel hid="hd-tem" title="音律" class="a-tem">
-        <div slot="aux" class="seg">
-          <button type="button" id="abBtn" aria-pressed="false" title="2 秒ごとに入れ替え"><span class="led" id="abLed" aria-hidden="true"></span><span>A・B 交互</span></button>
-        </div>
+        <LedToggle slot="aux" id="abBtn" label="A・B 交互" title="2 秒ごとに入れ替え" />
         <div class="ttab">
           <span class="th">A</span><span class="th">B</span><span class="th">音律</span><span class="th num" id="tt-3">C–E</span><span class="th num" id="tt-5">C–G</span>
           <div class="tcol" id="p-tem" role="group" aria-label="音律 A">

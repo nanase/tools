@@ -10,8 +10,7 @@
   .col>*{order:0}
 }
 
-/* 枠の右上のボタン（再生の LED・コピー） */
-.seg button{display:inline-flex;align-items:center;gap:7px}
+/* 枠の右上のボタン（コピー） */
 .seg button:disabled{opacity:.45;cursor:default;color:var(--ink-3)}
 @media (max-width:479px){.ptype button,#p-method button{padding:0 6px}}
 

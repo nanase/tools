@@ -2,6 +2,7 @@
 import Busy from '../components/Busy.astro';
 import ChoiceRow from '../components/ChoiceRow.astro';
 import Collapsible from '../components/Collapsible.astro';
+import LedToggle from '../components/LedToggle.astro';
 import More from '../components/More.astro';
 import PageTitle from '../components/PageTitle.astro';
 import Panel from '../components/Panel.astro';
@@ -22,7 +23,7 @@ const name = '日食';
   <div class="tgrid">
 
     <Panel hid="hd-sky" title="空" class="a-sky" fixed>
-      <div slot="aux" class="seg" id="p-play" data-nosave><button type="button" id="play" aria-pressed="false" title="時刻の再生（表示の設定の速さ）"><span class="led" id="playLed" aria-hidden="true"></span><span id="playT">再生</span></button></div>
+      <LedToggle slot="aux" id="play" label="早送り" title="時刻の早送り（表示の設定の速さ）" />
       <div class="bigclock">
         <span class="clk"><span id="clk">—</span><small id="clkz">JST</small></span>
         <span class="st">様子<b id="o-ph">—</b></span>
@@ -60,7 +61,7 @@ const name = '日食';
           <ChoiceRow k="zm" name="望遠の視野" sub="小窓の短い辺の角度 · 太陽の見かけの直径は約 0.53°" choices={ZOOMS} value="0.75" />
         </div>
         <div class="ptab">
-          <ChoiceRow k="sp" name="再生の速さ" sub="実際の時間の何倍で進めるか" choices={SPEEDS} value="60" />
+          <ChoiceRow k="sp" name="早送りの速さ" sub="実際の時間の何倍で進めるか" choices={SPEEDS} value="60" />
         </div>
       </div></More>
     </Panel>
