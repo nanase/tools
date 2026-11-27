@@ -383,8 +383,17 @@ export const TOOLS: Tool[] = [
     t: '論理ゲート',
     d: 'ゲートと回路の入力を切り替えて真理値表と見比べます。',
     ic: 'lg',
-    r: ['karnaugh', 'timer555', 'spi', 'i2c'],
+    r: ['karnaugh', 'relay-logic', 'timer555', 'spi'],
     k: 'logic gate ロジック 論理回路 デジタル回路 digital and or not nand nor xor xnor 論理積 論理和 否定 排他的論理和 真理値表 truth table 論理式 ブール代数 boolean ド・モルガン de morgan 万能ゲート 半加算器 全加算器 加算器 adder マルチプレクサ multiplexer デコーダ decoder 比較器 comparator パリティ parity 多数決 majority ラッチ latch sr ラッチ d ラッチ フリップフロップ flip-flop リングオシレータ ring oscillator タイミングチャート timing chart 伝搬遅延 propagation delay ハザード hazard グリッチ glitch mil 記号 jis 記号 ieee 91',
+  },
+  {
+    id: 'relay-logic',
+    c: '論理回路',
+    t: 'リレー回路',
+    d: 'リレーの接点で組んだ論理回路を動かします。',
+    ic: 'rl',
+    r: ['logic-gates', 'karnaugh', 'timer555', 'pid'],
+    k: 'relay リレー 継電器 電磁リレー 接点 a 接点 b 接点 c 接点 メーク ブレーク 切替接点 コイル 接極子 チャタリング 動作時間 復帰時間 リレー回路 リレー論理 シーケンス制御 シーケンス回路 ラダー図 ladder 展開接続図 自己保持 インターロック ブザー 3 路スイッチ 階段 照明 論理回路 and or not nand nor xor 半加算器 全加算器 マルチプレクサ デコーダ パリティ 多数決 t フリップフロップ シャノン shannon 交換機',
   },
   {
     id: 'karnaugh',
@@ -392,7 +401,7 @@ export const TOOLS: Tool[] = [
     t: 'カルノー図',
     d: '真理値表から最小の論理式と回路を求めます。',
     ic: 'km',
-    r: ['logic-gates', 'expression-parsing', 'regex', 'timer555'],
+    r: ['logic-gates', 'relay-logic', 'expression-parsing', 'regex'],
     k: 'karnaugh map k-map カルノーマップ ベイチ図 veitch 真理値表 truth table 論理式 簡単化 最小化 minimization 論理圧縮 ブール代数 boolean 論理回路 デジタル回路 積和形 和積形 sop pos 主加法標準形 主乗法標準形 最小項 最大項 minterm maxterm 主項 必須主項 prime implicant クワイン・マクラスキー quine-mccluskey ペトリック petrick ドントケア dont care 不定 グレイコード gray code nand nor ハザード hazard 7 セグメント 全加算器',
   },
 

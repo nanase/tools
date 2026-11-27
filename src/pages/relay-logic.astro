@@ -1,0 +1,67 @@
+---
+import Collapsible from '../components/Collapsible.astro';
+import HowSteps from '../components/HowSteps.astro';
+import LedToggle from '../components/LedToggle.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/relay-logic/style.css';
+import { DEF, DEFS, GROUPS } from '../tools/relay-logic/circuits';
+import { HOW } from '../tools/relay-logic/how';
+import { buildCircuit } from '../tools/relay-logic/net';
+import { circuitSvg } from '../tools/relay-logic/svg';
+import Theory from '../tools/relay-logic/Theory.astro';
+
+const name = 'リレー回路';
+const D0 = DEF.and;
+---
+<SiteLayout title={name} tool={{ id: 'relay-logic', name }}>
+  <PageTitle title={name}>リレーの接点を直列・並列につないで論理回路を組み、スイッチを入れて電流の通り道とリレーの動きを確かめます。押しボタンで動かす順序回路もあります。</PageTitle>
+
+  <div class="tgrid ry-grid" id="ry">
+    <Panel hid="hd-ckt" title="接点の回路" class="ry-a-ckt" fixed>
+      <div slot="aux" class="seg" id="ry-speed" data-nosave role="group" aria-label="速さ">
+        <button type="button" data-v="1" aria-pressed="true">等倍</button>
+        <button type="button" data-v="0.05" aria-pressed="false" title="リレーの動きと接点の跳ねを見る速さ">1/20</button>
+      </div>
+      <LedToggle slot="aux" id="ry-snd" label="音" on />
+      <div class="ry-pick">
+        <button type="button" class="ry-pv" id="ry-prev" title="前の回路" aria-label="前の回路"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M7.5 2.5L4 6l3.5 3.5"/></svg></button>
+        <div class="ry-selw"><select id="ry-sel" aria-label="回路" autocomplete="off">
+          {GROUPS.map(([g, nm]) => (
+            <optgroup label={nm}>{DEFS.filter((c) => c.g === g).map((c) => <option value={c.id} selected={c.id === D0.id}>{c.name}</option>)}</optgroup>
+          ))}
+        </select></div>
+        <button type="button" class="ry-pv" id="ry-next" title="次の回路" aria-label="次の回路"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M4.5 2.5L8 6l-3.5 3.5"/></svg></button>
+        <span class="ry-sub" id="ry-sub">{D0.sub}</span>
+      </div>
+      {/* 回路を切り替えると図の大きさが変わる（図そのものの大きさ）。枠より広い図は横にスクロール */}
+      <div class="ry-bench" id="ry-bench" data-shift="ok" set:html={circuitSvg(D0, buildCircuit(D0.rungs, D0.ins.length))} />
+      <div class="sbar lg ry-lg" id="ry-lg">
+        <span class="stag"><b>a</b>動作で閉じる接点</span><span class="stag"><b>b</b>動作で開く接点</span><span class="stag" id="ry-lgc"><b>c</b>切り替えの接点</span><span class="stag"><i class="sw ry-sw"></i>電流</span>
+      </div>
+      <div class="sbar ry-hint" id="ry-hint" aria-live="polite"><span></span></div>
+    </Panel>
+
+    <Panel hid="hd-tt" title="真理値表" class="ry-a-tt">
+      <span slot="aux" class="aux" id="ry-ttn"></span>
+      {/* 回路を切り替えると中身ごと替わる（真理値表とタイミングチャート） */}
+      <div class="ry-ttw" id="ry-tt" data-shift="ok"></div>
+      <div class="ry-chart" id="ry-chart" data-shift="ok" hidden></div>
+    </Panel>
+
+    <Panel hid="hd-how" title="しくみ" class="ry-a-how">
+      <HowSteps steps={HOW.map(([h, fig, p]) => ({ h, fig, p }))} />
+    </Panel>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools current="relay-logic" />
+  <script>
+    import '../tools/relay-logic/client';
+  </script>
+</SiteLayout>
