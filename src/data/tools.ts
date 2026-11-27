@@ -113,7 +113,7 @@ export const TOOLS: Tool[] = [
     t: 'JJY',
     d: '電波時計などで利用されているJJYの信号をシミュレートします。',
     ic: 'jjy',
-    r: ['jjy-decoder', 'pendulum-clock', 'i2c', 'qr-code'],
+    r: ['jjy-decoder', 'pendulum-clock', 'i2c', 'counter'],
     k: '電波時計 標準電波 タイムコード シミュレータ simulator',
   },
   {
@@ -410,8 +410,17 @@ export const TOOLS: Tool[] = [
     t: '4 ビット CPU',
     d: '8 種の命令で動く 4 ビットの CPU を動かします。',
     ic: 'cpu',
-    r: ['logic-gates', 'karnaugh', 'expression-parsing', 'timer555'],
+    r: ['logic-gates', 'karnaugh', 'counter', 'expression-parsing'],
     k: 'cpu central processing unit プロセッサ processor マイコン 4 ビット 4bit 命令 instruction 命令セット isa 機械語 machine code アセンブリ assembly rom メモリ memory レジスタ register アキュムレータ プログラムカウンタ program counter pc alu 算術論理演算装置 加算 桁上げ キャリー carry フラグ flag バス bus データパス datapath フェッチ fetch デコード decode 実行 execute ジャンプ jump 条件分岐 branch クロック clock ノイマン型 von neumann プログラム内蔵方式 stored program',
+  },
+  {
+    id: 'counter',
+    c: '論理回路',
+    t: 'カウンタと分周',
+    d: '水晶の振動を半分ずつにして 1 秒を作る時計の中を見ます。',
+    ic: 'ct',
+    r: ['logic-gates', 'pendulum-clock', 'jjy', 'timer555'],
+    k: 'counter カウンター 分周 分周器 frequency divider 2 分周 プリスケーラ prescaler リプルカウンタ ripple counter 非同期カウンタ asynchronous counter 2 進カウンタ binary counter 10 進カウンタ decade counter bcd 6 進 24 進 t フリップフロップ t flip-flop トグル toggle 水晶 水晶振動子 クオーツ quartz crystal 32768 32.768 khz 音叉 腕時計 デジタル時計 clock 7 セグメント seven segment 桁上げ carry 74hc4060 74hc390 4060',
   },
 
   {

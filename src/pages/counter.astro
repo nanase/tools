@@ -1,0 +1,55 @@
+---
+import Collapsible from '../components/Collapsible.astro';
+import HowSteps from '../components/HowSteps.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import '../tools/counter/style.css';
+import { HOW } from '../tools/counter/how';
+import { SPEED, VOL } from '../tools/counter/params';
+import Theory from '../tools/counter/Theory.astro';
+
+const name = 'カウンタと分周';
+---
+<SiteLayout title={name} tool={{ id: 'counter', name }} note="音はこの端末の中で作り、送信しません。">
+  <PageTitle title={name}>水晶の 32768 Hz を T フリップフロップ 15 段で半分ずつにして 1 Hz を作り、カウンタで時・分・秒を数える時計の中を見ます。</PageTitle>
+
+  <div class="tgrid ct-grid" id="ct">
+    <Panel hid="hd-clk" title="時計の中" class="ct-a-clk" fixed>
+      <div slot="aux" class="ct-aux">
+        <button type="button" class="tg" id="ct-jump" title="今の速さで 3 秒後に 0 時になる時刻">0 時の直前</button>
+        <button type="button" class="tg" id="ct-now" title="この端末の時刻">現在時刻</button>
+      </div>
+      <div class="ptab ct-sp"><ParamRow d={SPEED} /></div>
+      {/* 図の高さは幅で変わる（図そのものの大きさ） */}
+      <div class="ct-fig" id="ct-fig" data-shift="ok"></div>
+      <div class="sbar lg ct-lgd">
+        <span class="stag"><i class="ct-mkw" aria-hidden="true"></i>波形を表示中の段</span>
+        <span class="stag"><i class="ct-hatch" aria-hidden="true"></i>表示しきれない速さの波形</span>
+        <span class="stag"><i class="ct-blur" aria-hidden="true"></i>点滅が速すぎるランプ</span>
+        <span class="stag">段を押して波形を表示</span>
+      </div>
+    </Panel>
+
+    <Panel hid="hd-snd" title="音" class="ct-a-snd">
+      <button slot="aux" type="button" class="tg" id="ct-mute" disabled>すべて停止</button>
+      <div class="ptab"><ParamRow d={VOL} /></div>
+      <p class="ct-cap static">図のスピーカーで段ごとに再生</p>
+    </Panel>
+
+    <Panel hid="hd-how" title="しくみ" class="ct-a-how">
+      <HowSteps steps={HOW.map(([h, fig, p]) => ({ h, fig, p }))} />
+    </Panel>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools current="counter" />
+  <script>
+    import '../tools/counter/client';
+  </script>
+</SiteLayout>
