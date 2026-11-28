@@ -1,0 +1,148 @@
+---
+import Collapsible from '../components/Collapsible.astro';
+import LedToggle from '../components/LedToggle.astro';
+import More from '../components/More.astro';
+import PageTitle from '../components/PageTitle.astro';
+import Panel from '../components/Panel.astro';
+import ParamRow from '../components/ParamRow.astro';
+import RelatedTools from '../components/RelatedTools.astro';
+import SeriesSwitch from '../components/SeriesSwitch.astro';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import { gridSvg } from '../lib/scope';
+import '../tools/crystal-oscillator/style.css';
+import { CRYSTALS } from '../tools/crystal-oscillator/crystals';
+import { PARAMS, VIEW_PARAMS } from '../tools/crystal-oscillator/params';
+import { drawSchematic, PROBE_NAME, PROBES } from '../tools/crystal-oscillator/schematic';
+import Theory from '../tools/crystal-oscillator/Theory.astro';
+
+const name = '水晶発振回路';
+const groups = [...new Set(CRYSTALS.map((x) => x.grp))];
+const ROWS = 5;
+const playIcon =
+  '<svg class="i-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.2l7.6 4.8L3 10.8z"/></svg><svg class="i-pause" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="2.8" height="9"/><rect x="7.2" y="1.5" width="2.8" height="9"/></svg>';
+const m = (id: string, dt: string, o: { main?: boolean; sub?: boolean; note?: boolean } = {}) =>
+  `<div class="m${o.main ? ' m-main' : ''}"><dt>${dt}</dt><dd><span id="o-${id}"></span>${o.sub ? `<span class="m-sub xo-ms" id="m-${id}"></span>` : ''}${o.note ? `<span class="m-note" id="n-${id}"></span>` : ''}</dd></div>`;
+const metrics =
+  m('f', '発振周波数 <i>f</i>', { main: true, sub: true, note: true }) +
+  m('mg', '発振余裕度', { sub: true }) +
+  m('rn', '負性抵抗', { sub: true }) +
+  m('q', 'Q 値', { sub: true }) +
+  m('ts', '起動時間', { sub: true }) +
+  m('dl', '励振レベル', { sub: true }) +
+  m('cl', '負荷容量 <i>C</i><sub>L</sub>', { sub: true });
+---
+<SiteLayout title={name} tool={{ id: 'crystal-oscillator', name }}>
+  <PageTitle title={name}>インバータ 1 個と水晶で作るピアス型の発振回路です。水晶の種類と抵抗・コンデンサの値を変えると、発振するか、起動の速さ、各点の波形がすぐに変わります。</PageTitle>
+
+  <div class="tgrid xo-grid">
+    <div class="col">
+      <Panel hid="hd-sch" title="回路" class="a-sch" fixed>
+        <div slot="aux" class="seg" id="xo-view" role="group" aria-label="表示" data-nosave>
+          <button type="button" data-v="sch" aria-pressed="true">回路図</button><button type="button" data-v="map" aria-pressed="false">発振する範囲</button>
+        </div>
+        <div class="xo-pick">
+          <button type="button" class="xo-pv" id="xo-prev" title="前の水晶" aria-label="前の水晶"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M7.5 2.5L4 6l3.5 3.5"/></svg></button>
+          <div class="xo-selw"><select id="xo-xt" aria-label="水晶" autocomplete="off">
+            {groups.map((g) => (
+              <optgroup label={g}>{CRYSTALS.filter((x) => x.grp === g).map((x) => <option value={x.id} selected={x.id === 'm16'}>{x.name}</option>)}</optgroup>
+            ))}
+          </select></div>
+          <button type="button" class="xo-pv" id="xo-next" title="次の水晶" aria-label="次の水晶"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M4.5 2.5L8 6l-3.5 3.5"/></svg></button>
+          <span class="xo-use" id="xo-use">マイコン</span>
+        </div>
+        <div id="xo-schv">
+          <div class="xo-schs"><svg class="sch xo-sch" id="xo-sch" viewBox="0 0 506 344" role="img" aria-label="ピアス型の水晶発振回路。配線の色は電圧、黄色い粒は電流" set:html={drawSchematic()} /></div>
+          <div class="sbar static lg xo-lg">
+            <span class="stag"><i class="xo-lgv" aria-hidden="true"></i>電圧 0〜5 V</span>
+            <span class="stag"><i class="xo-lgp" aria-hidden="true"></i>電流</span>
+            <span class="stag xo-lgh">1〜5 は波形を見る地点</span>
+          </div>
+        </div>
+        <div id="xo-mapv" hidden>
+          <div class="xo-mapw"><canvas class="xo-map" id="xo-map" role="img" aria-label="発振する範囲の図"></canvas></div>
+          <div class="xo-maps">
+            <div class="seg" id="xo-axis" role="group" aria-label="図の軸" data-nosave>
+              <button type="button" data-v="c" aria-pressed="true">C1 と C2</button><button type="button" data-v="rd" aria-pressed="false">Rd と C</button>
+            </div>
+            <span class="xo-axl" id="xo-axl">横 C1 · 縦 C2</span>
+          </div>
+          <div class="sbar static lg xo-lg">
+            <span class="stag"><i class="xo-sw s0" aria-hidden="true"></i>発振しない</span>
+            <span class="stag"><i class="xo-sw s1" aria-hidden="true"></i>余裕が少ない</span>
+            <span class="stag"><i class="xo-sw s2" aria-hidden="true"></i>安定</span>
+            <span class="stag"><i class="xo-sw s3" aria-hidden="true"></i>過励振</span>
+            <span class="stag" id="xo-dash"><i class="xo-dl" aria-hidden="true"></i>公称の周波数</span>
+          </div>
+        </div>
+        <div class="xo-tp">
+          <button type="button" class="tp-pp on" id="xo-pp" title="一時停止" aria-label="一時停止" set:html={playIcon} />
+          <span class="xo-rate hw" id="xo-rate" data-ph="起動の 1.23 ms を 7 秒で表示"></span>
+          <div class="seg xo-sp" id="xo-sp" role="group" aria-label="速さ" data-nosave>
+            <button type="button" data-v="slow" aria-pressed="true">ゆっくり</button><button type="button" data-v="normal" aria-pressed="false">ふつう</button>
+          </div>
+          <LedToggle id="xo-pw" label="電源" on />
+        </div>
+        <More id="g-view" title="表示の設定"><div class="ptab">{VIEW_PARAMS.map((d) => <ParamRow d={d} />)}</div></More>
+      </Panel>
+
+      <Panel hid="hd-wave" title="波形" class="a-wave">
+        <div slot="aux" class="seg" id="xo-mode" role="group" aria-label="波形の表示" data-nosave>
+          <button type="button" data-v="st" aria-pressed="true">定常</button><button type="button" data-v="up" aria-pressed="false">起動</button>
+        </div>
+        <div class="xo-chs" id="xo-chs" role="group" aria-label="波形を見る地点（2 か所まで）">
+          {PROBES.map((k, i) => <button type="button" data-pr={k} aria-pressed="false"><b>{i + 1}</b>{PROBE_NAME[k]}</button>)}
+        </div>
+        <div class="xo-scope" id="xo-wave">
+          <div class="sbar">
+            <span class="stag" id="xo-c1"></span>
+            <span class="stag" id="xo-c2"></span>
+            <span class="stag">H <b id="xo-td" class="hw" data-ph="100 ns"></b>/div</span>
+          </div>
+          <div class="scope">
+            <svg viewBox={`-54 -14 516 ${ROWS * 40 + 40}`} role="img" aria-label="波形">
+              <g set:html={gridSvg(ROWS)} />
+              <path class="xo-env" id="xo-envf" />
+              <path class="t2" id="xo-t2" />
+              <path class="t1" id="xo-t1" />
+              <g class="axes" id="xo-axes"></g>
+            </svg>
+          </div>
+        </div>
+      </Panel>
+    </div>
+
+    <div class="col">
+      <Panel hid="hd-in" title="入力" class="a-in">
+        <SeriesSwitch slot="aux" id="eser" />
+        <div class="ptab">{PARAMS.map((d) => <ParamRow d={d} />)}</div>
+        <div class="sbar static lg xo-lg xo-bandlg">
+          <span class="stag"><i class="xo-sw s0" aria-hidden="true"></i>発振しない</span>
+          <span class="stag"><i class="xo-sw s1" aria-hidden="true"></i>余裕が少ない</span>
+          <span class="stag"><i class="xo-sw s2" aria-hidden="true"></i>安定</span>
+          <span class="stag"><i class="xo-sw s3" aria-hidden="true"></i>過励振</span>
+        </div>
+      </Panel>
+
+      <Panel hid="hd-out" title="計算結果" class="a-out">
+        <dl class="metrics c3" id="xo-m" set:html={metrics} />
+      </Panel>
+
+      <Panel hid="hd-q" title="共振の鋭さ" class="a-q">
+        <div class="xo-qw"><canvas class="xo-q" id="xo-q" role="img" aria-label="水晶の共振の鋭さ"></canvas></div>
+        <div class="sbar static lg xo-lg">
+          <span class="stag">横 直列共振周波数 fs からのずれ</span>
+          <span class="stag">縦 同じ電圧で Rm・Lm・Cm に流れる電流</span>
+        </div>
+      </Panel>
+    </div>
+
+    <Collapsible hid="hd-thy" title="動作原理と式">
+      <Theory />
+    </Collapsible>
+  </div>
+
+  <RelatedTools current="crystal-oscillator" />
+  <script>
+    import '../tools/crystal-oscillator/client';
+  </script>
+</SiteLayout>

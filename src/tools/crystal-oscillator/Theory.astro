@@ -1,0 +1,123 @@
+---
+// 動作原理と式。水晶の定数の表は crystals.ts から作る
+import { fmt } from '../../lib/format';
+import { CRYSTALS } from './crystals';
+
+/** 1 pF 未満は fF で */
+const cap = (v: number) => (v < 1e-12 ? `${Number((v * 1e15).toPrecision(4))} fF` : fmt(v, 'F', 5));
+const rf = (n: number) => `<a class="rf" href="#thy-r${n}">[${n}]</a>`;
+const SRC: Record<string, number> = { k32: 7, m40: 9, cer4: 10, cer8: 10 };
+const src = (id: string) => rf(SRC[id] ?? 8);
+const m = (s: string, sub: string) => `<math><msub><mi>${s}</mi><mi>${sub}</mi></msub></math>`;
+const Rm = m('R', 'm'),
+  Lm = m('L', 'm'),
+  Cm = m('C', 'm'),
+  C0 = '<math><msub><mi>C</mi><mn>0</mn></msub></math>',
+  CL = m('C', 'L');
+---
+<h3>ピアス型の発振回路</h3>
+<p>インバータ U1 の入力と出力の間に水晶をつなぎ、両端から C1・C2 で GND へ落とした回路です<a class="rf" href="#thy-r3">[3]</a>。1 周してもとの位相に戻る周波数で、電源を入れたときの小さな雑音が育って発振します。</p>
+<ol class="flow" aria-label="1 周の位相">
+  <li><b>U1 で反転</b><span>180°</span></li>
+  <li><b>水晶と C1・C2</b><span>さらに 180°</span></li>
+  <li><b>XIN へ戻る</b><span>合わせて 360°</span></li>
+</ol>
+<dl class="syms">
+  <dt><math><msub><mi>R</mi><mi mathvariant="normal">f</mi></msub></math></dt><dd>帰還抵抗。U1 の入力を出力と同じ電圧（中点）にして、増幅できる所に置く</dd>
+  <dt><math><msub><mi>R</mi><mi mathvariant="normal">d</mi></msub></math></dt><dd>制限抵抗。水晶に流れる電流を抑える。C2 と合わせて高い周波数を落とす</dd>
+  <dt>U2</dt><dd>出力のインバータ。波形を矩形波に整える</dd>
+</dl>
+
+<h3>水晶の等価回路</h3>
+<p>水晶は電極の間の水晶片が機械的に振動する部品で、電気的には次の等価回路で表せます<a class="rf" href="#thy-r5">[5]</a>。回路図では水晶の下に点線の枠で描いています。</p>
+<dl class="syms">
+  <dt set:html={Rm} /><dd>振動の損失（等価直列抵抗）。小さいほど発振しやすい</dd>
+  <dt set:html={`${Lm}・${Cm}`} /><dd>振動の重さとばねに当たる。直列共振周波数 <math><msub><mi>f</mi><mi mathvariant="normal">s</mi></msub></math> を決める</dd>
+  <dt set:html={C0} /><dd>電極と端子の間の容量</dd>
+</dl>
+<div class="eqs">
+  <math display="block"><msub><mi>f</mi><mi mathvariant="normal">s</mi></msub><mo>=</mo><mfrac><mn>1</mn><mrow><mn>2</mn><mi>π</mi><msqrt><mrow><msub><mi>L</mi><mi>m</mi></msub><msub><mi>C</mi><mi>m</mi></msub></mrow></msqrt></mrow></mfrac></math>
+  <math display="block"><mi>Q</mi><mo>=</mo><mfrac><mrow><mn>2</mn><mi>π</mi><msub><mi>f</mi><mi mathvariant="normal">s</mi></msub><msub><mi>L</mi><mi>m</mi></msub></mrow><msub><mi>R</mi><mi>m</mi></msub></mfrac><mo>=</mo><mfrac><msub><mi>f</mi><mi mathvariant="normal">s</mi></msub><mrow><mi>Δ</mi><mi>f</mi></mrow></mfrac></math>
+</div>
+<p>共振の鋭さの枠の山は、<span set:html={`${Rm}・${Lm}・${Cm}`} /> に同じ電圧をかけたときの電流です。山の高さの <math><mn>1</mn><mo>/</mo><msqrt><mn>2</mn></msqrt></math> での幅 <math><mi>Δ</mi><mi>f</mi></math> が <math><msub><mi>f</mi><mi mathvariant="normal">s</mi></msub><mo>/</mo><mi>Q</mi></math> になります。水晶の <math><mi>Q</mi></math> は 1 万以上で、セラミック発振子の千前後よりずっと鋭い山です<a class="rf" href="#thy-r10">[10]</a>。</p>
+
+<h3>発振の条件</h3>
+<p>振動の枝（<span set:html={`${Rm}・${Lm}・${Cm}`} />）から外側を見ると、U1・C1・C2 の回路は負の抵抗に見えます。これを負性抵抗 <math><mo>−</mo><msub><mi>R</mi><mi mathvariant="normal">n</mi></msub></math> と呼びます。<math><msub><mi>R</mi><mi mathvariant="normal">n</mi></msub></math> が <span set:html={Rm} /> を上回れば損失を補って振動が育ちます<a class="rf" href="#thy-r1">[1]</a>。</p>
+<div class="eqs">
+  <math display="block"><msub><mi>R</mi><mi mathvariant="normal">n</mi></msub><mo>=</mo><mfrac><mrow><msub><mi>g</mi><mi>m</mi></msub><msub><mi>C</mi><mn>1</mn></msub><msub><mi>C</mi><mn>2</mn></msub></mrow><mrow><msup><mrow><mo stretchy="false">(</mo><msub><mi>g</mi><mi>m</mi></msub><msub><mi>C</mi><mn>0</mn></msub><mo stretchy="false">)</mo></mrow><mn>2</mn></msup><mo>+</mo><msup><mi>ω</mi><mn>2</mn></msup><msup><mrow><mo stretchy="false">(</mo><msub><mi>C</mi><mn>1</mn></msub><msub><mi>C</mi><mn>2</mn></msub><mo>+</mo><msub><mi>C</mi><mn>0</mn></msub><msub><mi>C</mi><mn>1</mn></msub><mo>+</mo><msub><mi>C</mi><mn>0</mn></msub><msub><mi>C</mi><mn>2</mn></msub><mo stretchy="false">)</mo></mrow><mn>2</mn></msup></mrow></mfrac></math>
+  <math display="block"><mtext>発振余裕度</mtext><mo>=</mo><mfrac><msub><mi>R</mi><mi mathvariant="normal">n</mi></msub><msub><mi>R</mi><mi>m</mi></msub></mfrac><mo>≥</mo><mn>5</mn></math>
+</div>
+<p>式の形は <a class="rf" href="#thy-r2">[2]</a> によります。<math><msub><mi>g</mi><mi>m</mi></msub></math> は U1 の相互コンダクタンスです。C1・C2 を大きくすると <math><msub><mi>R</mi><mi mathvariant="normal">n</mi></msub></math> は小さくなり、やがて発振しません。<math><msub><mi>g</mi><mi>m</mi></msub><msub><mi>C</mi><mn>0</mn></msub></math> の項があるので、<math><msub><mi>g</mi><mi>m</mi></msub></math> が大きすぎても <math><msub><mi>R</mi><mi mathvariant="normal">n</mi></msub></math> は下がります。32.768 kHz では C2 のインピーダンスが U1 の出力抵抗よりずっと大きいので、Rd が小さいと C2 で位相が回らず発振しません。</p>
+<p>余裕度は 5 倍以上が目安です<a class="rf" href="#thy-r3">[3]</a><a class="rf" href="#thy-r4">[4]</a>。温度や個体のばらつきで <span set:html={Rm} /> が増えても止まらないようにするためです。このページでは <math><msub><mi>R</mi><mi mathvariant="normal">n</mi></msub></math> を上の近似式ではなく、Rd・Rf と U1 の出力抵抗まで含めた回路を解いて求めています。</p>
+
+<h3>周波数と負荷容量</h3>
+<p>水晶から見た C1・C2 の直列が負荷容量 <span set:html={CL} /> です。端子と配線の浮遊容量 <math><msub><mi>C</mi><mi mathvariant="normal">s</mi></msub></math> も足します<a class="rf" href="#thy-r3">[3]</a>。発振周波数は <span set:html={CL} /> が小さいほど上がります<a class="rf" href="#thy-r5">[5]</a>。</p>
+<div class="eqs">
+  <math display="block"><msub><mi>C</mi><mi>L</mi></msub><mo>=</mo><mfrac><mrow><mo stretchy="false">(</mo><msub><mi>C</mi><mn>1</mn></msub><mo>+</mo><msub><mi>C</mi><mi mathvariant="normal">s</mi></msub><mo stretchy="false">)</mo><mo stretchy="false">(</mo><msub><mi>C</mi><mn>2</mn></msub><mo>+</mo><msub><mi>C</mi><mi mathvariant="normal">s</mi></msub><mo stretchy="false">)</mo></mrow><mrow><msub><mi>C</mi><mn>1</mn></msub><mo>+</mo><msub><mi>C</mi><mn>2</mn></msub><mo>+</mo><mn>2</mn><msub><mi>C</mi><mi mathvariant="normal">s</mi></msub></mrow></mfrac></math>
+  <math display="block"><mi>f</mi><mo>=</mo><msub><mi>f</mi><mi mathvariant="normal">s</mi></msub><msqrt><mrow><mn>1</mn><mo>+</mo><mfrac><msub><mi>C</mi><mi>m</mi></msub><mrow><msub><mi>C</mi><mn>0</mn></msub><mo>+</mo><msub><mi>C</mi><mi>L</mi></msub></mrow></mfrac></mrow></msqrt></math>
+</div>
+<p>水晶はデータシートの <span set:html={CL} /> で公称の周波数になるように作られています。<span set:html={CL} /> がずれると周波数もずれます。発振する範囲の図の破線は、<span set:html={CL} /> が指定に等しい組み合わせです。</p>
+
+<h3>起動と減衰</h3>
+<p>振動の振れ幅は、負性抵抗が損失を上回る分だけ指数関数で増えます。U1 が振り切ると増え方が鈍り、定常の振れ幅で止まります。電源を切ると <span set:html={Rm} /> の損失だけが残り、時定数 <math><mi>τ</mi></math> で減ります。</p>
+<div class="eqs">
+  <math display="block"><mi>A</mi><mo>∝</mo><msup><mi>e</mi><mrow><mi>α</mi><mi>t</mi></mrow></msup><mo>,</mo><mspace width="1em"/><mi>α</mi><mo>=</mo><mfrac><mrow><msub><mi>R</mi><mi mathvariant="normal">n</mi></msub><mo>−</mo><msub><mi>R</mi><mi>m</mi></msub></mrow><mrow><mn>2</mn><msub><mi>L</mi><mi>m</mi></msub></mrow></mfrac></math>
+  <math display="block"><msub><mi>t</mi><mi mathvariant="normal">s</mi></msub><mo>=</mo><mfrac><mrow><mi>ln</mi><mo>⁡</mo><mo stretchy="false">(</mo><msub><mi>A</mi><mi mathvariant="normal">定常</mi></msub><mo>/</mo><msub><mi>A</mi><mi mathvariant="normal">雑音</mi></msub><mo stretchy="false">)</mo></mrow><mi>α</mi></mfrac></math>
+  <math display="block"><mi>τ</mi><mo>=</mo><mfrac><mrow><mn>2</mn><msub><mi>L</mi><mi>m</mi></msub></mrow><msub><mi>R</mi><mi>m</mi></msub></mfrac><mo>=</mo><mfrac><mi>Q</mi><mrow><mi>π</mi><msub><mi>f</mi><mi mathvariant="normal">s</mi></msub></mrow></mfrac></math>
+</div>
+<p><span set:html={Lm} /> が大きく <math><mi>Q</mi></math> の高い水晶ほど起動に時間がかかります。既定の値では、32.768 kHz の水晶は 0.4 秒ほど、セラミック発振子は 0.1 ms ほどで起動します。</p>
+
+<h3>励振レベル</h3>
+<p>水晶で消費する電力を励振レベルと呼びます<a class="rf" href="#thy-r3">[3]</a>。上限を超えると水晶の劣化や周波数のずれの原因になるので、Rd で電流を抑えます。</p>
+<div class="eqs">
+  <math display="block"><mi>P</mi><mo>=</mo><msub><mi>R</mi><mi>m</mi></msub><msubsup><mi>I</mi><mi>rms</mi><mn>2</mn></msubsup><mo>,</mo><mspace width="1em"/><msub><mi>I</mi><mi>rms</mi></msub><mo>=</mo><mn>2</mn><mi>π</mi><mi>f</mi><mo stretchy="false">(</mo><msub><mi>C</mi><mn>1</mn></msub><mo>+</mo><msub><mi>C</mi><mi mathvariant="normal">s</mi></msub><mo stretchy="false">)</mo><msub><mi>V</mi><mi>rms</mi></msub></math>
+</div>
+<p><math><msub><mi>V</mi><mi>rms</mi></msub></math> は XIN の振れ幅の実効値です。Rd の初めの値の目安は <math><mn>1</mn><mo>/</mo><mo stretchy="false">(</mo><mn>2</mn><mi>π</mi><mi>f</mi><msub><mi>C</mi><mn>2</mn></msub><mo stretchy="false">)</mo></math> で、Rd を入れたら余裕度を確かめ直します<a class="rf" href="#thy-r3">[3]</a>。</p>
+
+<h3>水晶の定数</h3>
+<p><span set:html={Rm} /> はデータシートの最大値です。最も発振しにくい個体で余裕度を見るためです。</p>
+<div class="tt-w"><table class="tt">
+  <thead><tr><th>種類</th><th set:html={Rm} /><th set:html={Cm} /><th set:html={C0} /><th set:html={`指定の ${CL}`} /><th>励振レベルの上限</th></tr></thead>
+  <tbody>
+    {CRYSTALS.map((x) => (
+      <tr><th><Fragment set:html={`${x.name}${src(x.id)}`} /></th><td>{fmt(x.rm, 'Ω', 4)}</td><td>{cap(x.cm)}</td><td>{cap(x.c0)}</td><td>{fmt(x.cl, 'F', 3)}</td><td>{Number.isFinite(x.pmax) ? fmt(x.pmax, 'W', 3) : '記載なし'}</td></tr>
+    ))}
+  </tbody>
+</table></div>
+<p>U1 は 74HCU04 で、5 V での相互コンダクタンス 30 mA/V と開ループ利得 20 はデータシートの代表値です<a class="rf" href="#thy-r6">[6]</a>。Rd と Rf の既定値は、同じデータシートの推奨値の範囲から選びました。</p>
+
+<h3>回路図の表し方</h3>
+<dl class="syms">
+  <dt>配線の色</dt><dd>電圧。0 V の灰から 5 V の黄緑まで</dd>
+  <dt>部品の地</dt><dd>両端の電圧のグラデーション。コンデンサの極板の間は電位差</dd>
+  <dt>黄色い粒</dt><dd>電流の向きと大きさ。速さは電流の 0.35 乗に比例（555 と同じ）し、表示の設定で倍率を変えられる。U1・U2 の入力の電流は省く</dd>
+  <dt>1〜5</dt><dd>波形を見る地点。2 周期の波形が左から右へ流れる。押すと波形の CH1・CH2 に入る</dd>
+  <dt>時間</dt><dd>1 周期を 1.5 秒（ゆっくり）か 0.4 秒（ふつう）に伸ばし、振れ幅の育ち方は起動時間の 1.35 倍を 7 秒に縮めて見せる</dd>
+</dl>
+
+<h3>このツールで決めたこと</h3>
+<ul class="tl">
+  <li>電源は 5 V。浮遊容量 <math><msub><mi>C</mi><mi mathvariant="normal">s</mi></msub></math> は端子ごとに 3 pF</li>
+  <li>U1 の出力抵抗は開ループ利得を相互コンダクタンスで割った約 670 Ω、振り切ったときは 100 Ω</li>
+  <li>定常の振れ幅は、U1 の出力を振り切った矩形波とし、その基本波を Rd と C2 で丸めた値から求める。XIN はその C2/C1 倍で、電源電圧の 0.45 倍で頭打ち</li>
+  <li>起動は 1 µV の雑音から始め、振れ幅が定常に近づくと増え方が鈍る形（ロジスティック形）で表す。起動時間は定常の 1/√2 に届く時刻</li>
+  <li>励振レベルの <math><msub><mi>R</mi><mi>m</mi></msub></math> は等価直列抵抗のまま使う。[3] は <math><msub><mi>R</mi><mi>m</mi></msub><msup><mrow><mo stretchy="false">(</mo><mn>1</mn><mo>+</mo><msub><mi>C</mi><mn>0</mn></msub><mo>/</mo><msub><mi>C</mi><mi>L</mi></msub><mo stretchy="false">)</mo></mrow><mn>2</mn></msup></math> も示している</li>
+  <li>状態の境: 余裕度 1 倍以下は発振しない、5 倍未満は余裕が少ない、励振レベルが上限を超えたら過励振</li>
+  <li>周波数のずれは水晶で ±30 ppm、セラミック発振子で ±0.5 % を超えたら黄にする</li>
+  <li>40 MHz の <span set:html={Cm} /> は、同じ系列の 48 MHz 品の引き込み感度 12.8 ppm/pF から逆算した。<span set:html={C0} /> も 48 MHz 品の値</li>
+  <li>セラミック発振子の指定の <span set:html={CL} /> は、資料の共振周波数と定数から 4.00 MHz・8.00 MHz になる値を逆算した。励振レベルの上限は記載がないので見ない</li>
+</ul>
+
+<h3>出典</h3>
+<ol class="refs">
+  <li id="thy-r1"><span class="rf-for">負性抵抗による発振の条件</span><span class="rf-src">E. A. Vittoz, M. G. R. Degrauwe, S. Bitz, “High-performance crystal oscillator circuits: theory and application,” <i>IEEE Journal of Solid-State Circuits</i>, vol. 23, no. 3, pp. 774–783, 1988. <a href="https://doi.org/10.1109/4.318" target="_blank" rel="noopener">doi:10.1109/4.318</a></span></li>
+  <li id="thy-r2"><span class="rf-for">C0 を含めた負性抵抗の式</span><span class="rf-src"><a href="https://patents.google.com/patent/US10608587B2/en" target="_blank" rel="noopener">US 10,608,587 B2</a>（ピアス型の負性抵抗の式）</span></li>
+  <li id="thy-r3"><span class="rf-for">回路の形、余裕度の目安、負荷容量、励振レベル、Rd と Rf の選び方</span><span class="rf-src">STMicroelectronics, <a href="https://www.raltron.com/webproducts/technical/technical_notes/Oscillator-design-guide-for-STM8S-STM8A-and-STM32-microcontrollers-ST-MICRO-1.pdf" target="_blank" rel="noopener">AN2867 Oscillator design guide for STM8S, STM8A and STM32 microcontrollers</a>, Rev 10, 2015</span></li>
+  <li id="thy-r4"><span class="rf-for">負性抵抗は等価直列抵抗の最大値の 5 倍以上</span><span class="rf-src">Seiko Epson, <a href="https://download.epson-europe.com/pub/electronics-de/quartz/applnotes/oscillation%20circuit%20design%20guide.pdf" target="_blank" rel="noopener">Crystal oscillation circuit design guide</a></span></li>
+  <li id="thy-r5"><span class="rf-for">等価回路と、負荷容量による周波数</span><span class="rf-src">Renesas (IDT), <a href="https://www.renesas.com/en/document/apn/831-crystal-load-curve" target="_blank" rel="noopener">AN-831 Crystal Load Curve</a>, Rev B, 2014</span></li>
+  <li id="thy-r6"><span class="rf-for">74HCU04 の相互コンダクタンス・開ループ利得・発振回路の推奨値</span><span class="rf-src">Philips Semiconductors, <a href="https://xdevs.com/doc/Fluke/187_189/74HCU04.pdf" target="_blank" rel="noopener">74HC/HCT/HCU04 Hex inverter データシート</a>, 1993</span></li>
+  <li id="thy-r7"><span class="rf-for">32.768 kHz 音叉型の定数</span><span class="rf-src">Seiko Epson, <a href="https://e2e.ti.com/cfs-file/__key/communityserver-discussions-components-files/156/FC_2D00_135.pdf" target="_blank" rel="noopener">FC-135 データシート</a></span></li>
+  <li id="thy-r8"><span class="rf-for">HC-49/S の定数</span><span class="rf-src">AEL Crystals, <a href="https://static.rapidonline.com/pdf/554703_v1.pdf" target="_blank" rel="noopener">HC-49/S データシート</a></span></li>
+  <li id="thy-r9"><span class="rf-for">40 MHz 3225 の定数</span><span class="rf-src">京セラ, <a href="https://ele.kyocera.com/assets/products/crystal-device/cx3225sb_j.pdf" target="_blank" rel="noopener">CX3225SB カタログ</a>と <a href="https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/2229/CX3225SBxxD0WPTC1_Spec.pdf" target="_blank" rel="noopener">48 MHz 品の仕様書</a></span></li>
+  <li id="thy-r10"><span class="rf-for">セラミック発振子の定数と水晶との比較</span><span class="rf-src">村田製作所, <a href="https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7176/490_p17e.ashx.pdf" target="_blank" rel="noopener">CERALOCK Application Manual</a>（P17E、2018）</span></li>
+</ol>
