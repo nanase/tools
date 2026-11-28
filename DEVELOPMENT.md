@@ -114,6 +114,9 @@ bun run reap -DryRun          # 止めずに一覧だけ出す
 - 止めるのは、使い手の終わったヘッドレスブラウザと、コマンドラインに worktree のパスを含む node・bun・deno
   - ブラウザは、プロファイルが一時フォルダにあるものだけを見る。ふだん使うブラウザには触れない
   - 詳しい判定は [scripts/reap.ps1](scripts/reap.ps1) にある
+- 開発サーバ（`bun run dev`）は次のときに自分で終わる。仕組みは [scripts/dev-lifetime.ts](scripts/dev-lifetime.ts) にある
+  - 起動した端末やコマンドが終わったとき。Windows では親を止めても子が残るので、起動したときの親をたどったプロセスを 5 秒ごとに見る
+  - ページの要求も HMR の接続もないまま 60 分が過ぎたとき。分は環境変数 `TOOLS_DEV_IDLE_MIN` で変え、0 なら見ない
 - スクリプトからブラウザを動かすときは [scripts/headless.ts](scripts/headless.ts) の `launchHeadless` を使う
   - 例外や Ctrl+C で終わっても、ブラウザを止めてプロファイルを消す
 
