@@ -1,0 +1,100 @@
+/* 水晶発振回路のページだけのスタイル（共通は src/styles/site.css） */
+/* 枠の並び: PC は左の列に回路（主役）とその下に波形、右の列に入力・計算結果・共振の鋭さ */
+@media (min-width:1000px){
+  .xo-grid{grid-template-columns:minmax(0,7fr) minmax(0,4fr);align-items:start}
+  .a-thy{grid-column:1/-1}
+}
+
+/* 回路図の色: --xo-v0 は 0 V、--xo-v1 は 5 V（灰 → 黄緑、555 と同じ）。--xo-pt は電流の粒。--xo-s0〜3 は発振する範囲の状態 */
+:root{--xo-v0:#a3abb1;--xo-v1:#5d9e00;--xo-pt:#ffcc00;--xo-ptk:#5a4300;--xo-s0:#c3c8c1;--xo-s1:#e3b23c;--xo-s2:#6aab3f;--xo-s3:#d2505a;--xo-cau:#a86a00;--xo-fill:color-mix(in srgb,var(--ch1) 22%,transparent)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--xo-v0:#566069;--xo-v1:#a8e04a;--xo-pt:#ffd84a;--xo-ptk:#1d1600;--xo-s0:#3a4247;--xo-s1:#a87d22;--xo-s2:#3f7d2c;--xo-s3:#a8333d;--xo-cau:#f0b040}}
+:root[data-theme="dark"]{--xo-v0:#566069;--xo-v1:#a8e04a;--xo-pt:#ffd84a;--xo-ptk:#1d1600;--xo-s0:#3a4247;--xo-s1:#a87d22;--xo-s2:#3f7d2c;--xo-s3:#a8333d;--xo-cau:#f0b040}
+
+/* 水晶の選択 */
+.xo-pick{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin:0 0 8px}
+.xo-pv{display:inline-grid;place-items:center;width:30px;height:30px;padding:0;border:1px solid var(--line-2);border-radius:4px;background:var(--surface);color:var(--ink-2);cursor:pointer}
+.xo-pv:hover{border-color:var(--ink-3);color:var(--ink)}
+.xo-pv svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.xo-selw{position:relative;width:min(240px,calc(100% - 76px))}
+.xo-selw select{appearance:none;width:100%;height:30px;padding:0 30px 0 10px;border:1px solid var(--line-2);border-radius:4px;background:var(--inset);color:var(--ink);font:700 14px/1.2 var(--sans);text-overflow:ellipsis;cursor:pointer}
+.xo-selw select:hover{border-color:var(--ink-3)}
+.xo-selw select option,.xo-selw select optgroup{background:var(--surface);color:var(--ink)}
+.xo-selw::after{content:"";position:absolute;top:50%;right:12px;width:7px;height:7px;border-right:1.6px solid var(--ink-2);border-bottom:1.6px solid var(--ink-2);transform:translateY(-70%) rotate(45deg);pointer-events:none}
+.xo-use{flex:1 1 120px;min-width:0;font-size:12.5px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (pointer:coarse){.xo-pv{width:36px;height:36px}.xo-selw select{height:36px}}
+
+/* 回路図 */
+.xo-sch{max-width:720px;user-select:none;-webkit-user-select:none}
+/* 狭い画面では図を縮めすぎず、横にスクロールする */
+.xo-schs{overflow-x:auto;overscroll-behavior-x:contain}
+@media (max-width:599px){.xo-sch{min-width:470px}}
+.xo-w{fill:none;stroke:var(--xo-v0);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.xo-pl{stroke-width:3.4}
+.xo-b{stroke:var(--ink);stroke-width:1.4}
+.xo-xb{stroke:var(--ink);stroke-width:1.4}
+.xo-inv{fill:var(--surface);stroke:var(--ink);stroke-width:1.5;stroke-linejoin:round}
+.xo-ln{fill:none;stroke:var(--ink-2);stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round}
+.xo-bw{stroke-width:2.2}
+.xo-j{fill:var(--ink-2)}
+.xo-term{fill:var(--surface);stroke:var(--ink);stroke-width:1.4}
+.xo-pt{fill:var(--xo-pt);stroke:var(--xo-ptk);stroke-width:.8;pointer-events:none}
+.xo-dash{fill:none;stroke:var(--ink-3);stroke-width:1;stroke-dasharray:3 3}
+.xo-eqb{fill:var(--inset);stroke:var(--ink-3);stroke-width:1;stroke-dasharray:3 3}
+.xo-rm{fill:var(--ink-2)}
+.xo-lead{fill:none;stroke:var(--ink-3);stroke-width:1;stroke-dasharray:2 2}
+.xo-pr{cursor:pointer;outline:none}
+.xo-prb{fill:var(--screen);stroke:var(--line-2);stroke-width:1.2}
+.xo-prn{fill:var(--line);stroke:none}
+.xo-prt{fill:var(--ink);font:700 11px var(--mono);text-anchor:middle;dominant-baseline:central}
+.xo-spk{fill:none;stroke:var(--screen-ink);stroke-width:1.4;stroke-linejoin:round}
+.xo-pr:hover .xo-prb,.xo-pr:focus-visible .xo-prb{stroke:var(--ink-2)}
+.xo-pr:focus-visible .xo-prb{stroke:var(--focus);stroke-width:2}
+.xo-pr.c1 .xo-prb{stroke:var(--ch1);stroke-width:2}.xo-pr.c1 .xo-prn{fill:var(--ch1)}.xo-pr.c1 .xo-spk{stroke:var(--ch1)}
+.xo-pr.c2 .xo-prb{stroke:var(--ch2);stroke-width:2}.xo-pr.c2 .xo-prn{fill:var(--ch2)}.xo-pr.c2 .xo-spk{stroke:var(--ch2)}
+.xo-pr.c1 .xo-prt,.xo-pr.c2 .xo-prt{fill:var(--surface)}
+
+/* 凡例 */
+.xo-lg{margin-top:6px}
+.xo-lgv{display:inline-block;width:40px;height:5px;margin-right:6px;border-radius:3px;background:linear-gradient(90deg,var(--xo-v0),var(--xo-v1));vertical-align:middle}
+.xo-lgp{display:inline-block;width:8px;height:8px;margin-right:5px;border-radius:50%;background:var(--xo-pt);box-shadow:0 0 0 1px var(--xo-ptk);vertical-align:middle}
+.xo-lgh{color:var(--ink-3)}
+.xo-sw{display:inline-block;width:11px;height:11px;margin-right:5px;border-radius:2px;vertical-align:-1px}
+.xo-sw.s0{background:var(--xo-s0)}.xo-sw.s1{background:var(--xo-s1)}.xo-sw.s2{background:var(--xo-s2)}.xo-sw.s3{background:var(--xo-s3)}
+.xo-dl{display:inline-block;width:18px;height:0;margin-right:5px;border-top:1.5px dashed var(--ink);vertical-align:middle}
+
+/* 発振する範囲 */
+.xo-mapw{max-width:640px;margin:0 auto}
+.xo-map{display:block;width:100%;aspect-ratio:16/10;border:1px solid var(--line);border-radius:4px;background:var(--screen);cursor:crosshair;touch-action:none}
+.xo-maps{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin-top:8px}
+.xo-axl{font:500 12px var(--mono);color:var(--ink-3)}
+
+/* 再生・速さ・電源 */
+.xo-tp{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin-top:10px}
+.xo-rate{margin-left:auto;font-size:12px;color:var(--ink-3);text-align:right}
+
+/* 入力の欄の下端の帯（発振する範囲） */
+/* 欄の地も状態の色で薄く塗り、今の値までの塗り（.sc-f）は同じ色を濃くする */
+.prow .sc.xo-tint{background-image:var(--xo-tint)}
+.prow .sc.xo-tint .sc-f{background-image:var(--xo-tint2);background-color:transparent}
+.prow .sc .xo-band{position:absolute;left:0;right:0;bottom:0;height:3px;border-radius:0 0 3px 3px;pointer-events:none}
+.xo-bandlg{margin-top:4px}
+
+/* 計算結果 */
+.xo-ms{font:500 12px/1.5 var(--mono);color:var(--ink-3);letter-spacing:0}
+.m dd.xo-ng>span:first-child{color:var(--warn)}
+.m dd.xo-cau>span:first-child{color:var(--xo-cau)}
+.m dd.xo-off>span:first-child{color:var(--ink-3)}
+
+/* 波形の地点 */
+.xo-chs{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px}
+.xo-chs button{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px 0 4px;border:1px solid var(--line-2);border-radius:14px;background:var(--surface);color:var(--ink-2);font:500 12.5px var(--sans);cursor:pointer}
+.xo-chs b{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--line);color:var(--ink);font:700 11px var(--mono)}
+.xo-chs .c1{border-color:var(--ch1);color:var(--ink)}.xo-chs .c1 b{background:var(--ch1);color:var(--surface)}
+.xo-chs .c2{border-color:var(--ch2);color:var(--ink)}.xo-chs .c2 b{background:var(--ch2);color:var(--surface)}
+@media (pointer:coarse){.xo-chs button{height:34px}}
+.scope text.xo-a1{fill:var(--ch1)}
+.scope text.xo-a2{fill:var(--ch2)}
+.xo-env{fill:var(--xo-fill);stroke:none}
+
+/* 共振の鋭さ */
+.xo-q{display:block;width:100%;height:150px;border:1px solid var(--line);border-radius:4px;background:var(--screen)}

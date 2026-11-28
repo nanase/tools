@@ -50,8 +50,17 @@ export const TOOLS: Tool[] = [
     t: 'タイマIC 555',
     d: 'タイマIC555の応用回路を動かし、波形と電流の流れを見ます。',
     ic: 'sq',
-    r: ['passive-combination', 'colorcode', 'oscilloscope', 'logic-gates'],
+    r: ['passive-combination', 'colorcode', 'oscilloscope', 'crystal-oscillator'],
     k: 'ne555 発振 非安定 単安定 双安定 マルチバイブレータ シュミットトリガ pwm vco cds timer シミュレータ simulator',
+  },
+  {
+    id: 'crystal-oscillator',
+    c: '電子回路',
+    t: '水晶発振回路',
+    d: '水晶の発振回路が発振する範囲と起動の波形を見ます。',
+    ic: 'xo',
+    r: ['timer555', 'counter', 'biquad', 'jjy'],
+    k: 'crystal oscillator 水晶 水晶振動子 クオーツ quartz crystal xtal ピアス pierce 発振 発振回路 発振器 oscillator インバータ inverter 74hcu04 hcu04 cmos 負性抵抗 negative resistance 発振余裕度 gain margin 励振レベル drive level 負荷容量 load capacitance esr q 値 共振 resonance 32.768 khz 32768 音叉 at カット セラミック発振子 ceramic resonator セラロック 起動時間 startup',
   },
   {
     id: 'passive-combination',
@@ -419,7 +428,7 @@ export const TOOLS: Tool[] = [
     t: 'カウンタと分周',
     d: '水晶の振動を半分ずつにして 1 秒を作る時計の中を見ます。',
     ic: 'ct',
-    r: ['logic-gates', 'pendulum-clock', 'jjy', 'timer555'],
+    r: ['logic-gates', 'pendulum-clock', 'jjy', 'crystal-oscillator'],
     k: 'counter カウンター 分周 分周器 frequency divider 2 分周 プリスケーラ prescaler リプルカウンタ ripple counter 非同期カウンタ asynchronous counter 2 進カウンタ binary counter 10 進カウンタ decade counter bcd 6 進 24 進 t フリップフロップ t flip-flop トグル toggle 水晶 水晶振動子 クオーツ quartz crystal 32768 32.768 khz 音叉 腕時計 デジタル時計 clock 7 セグメント seven segment 桁上げ carry 74hc4060 74hc390 4060',
   },
 
