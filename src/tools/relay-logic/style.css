@@ -1,10 +1,11 @@
 /* リレーで作る論理回路のページ。--ry-on 電流の線とランプ（論理ゲートの 1 の色）・--ry-on-soft その地・--ry-off 電流のない線・
+   --ry-pt 電流の粒（555 のページと同じ黄色）・--ry-open どこにもつながらない端・
    --ry-tbg 表とチャートの地・--ry-tgrid チャートの罫線・--ry-bench 作業台・リレーの部品の色（鉄・銅線） */
-:root{--ry-on:#d9480f;--ry-on-soft:#fbe3d3;--ry-off:#8d959c;--ry-tbg:#fff;--ry-tgrid:#e4e7e1;--ry-bench:#fff;--ry-rule:#edf0ea;--ry-rule-2:#d9ded6;
+:root{--ry-on:#d9480f;--ry-on-soft:#fbe3d3;--ry-off:#8d959c;--ry-pt:#ffcc00;--ry-ptk:#5a4300;--ry-open:#d63a2f;--ry-tbg:#fff;--ry-tgrid:#e4e7e1;--ry-bench:#fff;--ry-rule:#f5f7f3;--ry-rule-2:#e8ebe5;
   --ry-iron:#7b858c;--ry-copper:#9a6d4b;--ry-copper-2:#e6d9c8}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--ry-on:#ff8a4c;--ry-on-soft:#4a2a18;--ry-off:#5d666d;--ry-tbg:var(--screen);--ry-tgrid:#1c2428;--ry-bench:transparent;--ry-rule:transparent;--ry-rule-2:transparent;
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--ry-on:#ff8a4c;--ry-on-soft:#4a2a18;--ry-off:#5d666d;--ry-pt:#ffd84a;--ry-ptk:#1d1600;--ry-open:#ff6b5e;--ry-tbg:var(--screen);--ry-tgrid:#1c2428;--ry-bench:transparent;--ry-rule:transparent;--ry-rule-2:transparent;
   --ry-iron:#5a646b;--ry-copper:#9b7154;--ry-copper-2:#3a3029}}
-:root[data-theme="dark"]{--ry-on:#ff8a4c;--ry-on-soft:#4a2a18;--ry-off:#5d666d;--ry-tbg:var(--screen);--ry-tgrid:#1c2428;--ry-bench:transparent;--ry-rule:transparent;--ry-rule-2:transparent;
+:root[data-theme="dark"]{--ry-on:#ff8a4c;--ry-on-soft:#4a2a18;--ry-off:#5d666d;--ry-pt:#ffd84a;--ry-ptk:#1d1600;--ry-open:#ff6b5e;--ry-tbg:var(--screen);--ry-tgrid:#1c2428;--ry-bench:transparent;--ry-rule:transparent;--ry-rule-2:transparent;
   --ry-iron:#5a646b;--ry-copper:#9b7154;--ry-copper-2:#3a3029}
 
 /* 並び: PC は回路の右に真理値表かタイミングチャート */
@@ -35,10 +36,13 @@
   user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 .ry-ckt{display:block;flex:none;width:100%;height:auto;margin:0 auto}
 .ry-ckt .w{fill:none;stroke:var(--ry-off);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.ry-ckt .wg.on .w,.ry-ckt .w.on{stroke:var(--ry-on);stroke-width:2.6}
-.ry-ckt .arw{fill:var(--ry-on);visibility:hidden}
-.ry-ckt .wg.on .arw{visibility:visible}
+.ry-ckt .w.on{stroke:var(--ry-on);stroke-width:2.6}
 .ry-ckt .dot{fill:var(--ink-2)}
+/* 線どうしのつながる点（灰）・どこにもつながらない端（赤）・同じリレーで動く接点の点線・電流の粒 */
+.ry-ckt .jn{fill:var(--ink-3)}
+.ry-ckt .op{fill:var(--ry-open)}
+.ry-ckt .lk{stroke:var(--ink-3);stroke-width:1.3;stroke-dasharray:3 3}
+.ry-ckt .pt{fill:var(--ry-pt);stroke:var(--ry-ptk);stroke-width:.8;pointer-events:none}
 .ry-ckt .bp{stroke:var(--ink);stroke-width:2.4}
 .ry-ckt .bp.bs{stroke-width:4.5}
 .ry-ckt .pm{font:700 13px var(--mono);fill:var(--ink-2)}
@@ -53,7 +57,13 @@
 .ry-ckt .cnt.on .blade,.ry-ckt .ccn.on .blade,.ry-ckt .cnt.on .w{stroke:var(--ry-on)}
 .ry-ckt .cnt.on .w{stroke-width:2.6}
 .ry-ckt .cref{font:700 15px var(--sans);fill:var(--ink)}
-.ry-ckt .ctp{font:500 13px var(--mono);fill:var(--ink-3)}
+.ry-ckt .cref2{font:700 13px var(--sans);fill:var(--ink)}
+/* 動作で開く側の名前の上線 */
+.ry-ckt .ov{text-decoration:overline}
+/* コイルの記号 */
+.ry-ckt .coil{fill:var(--surface);stroke:var(--ink-2);stroke-width:1.6}
+.ry-ckt .ldg.on .coil{fill:var(--ry-on-soft);stroke:var(--ry-on)}
+.ry-ckt .cname{font:700 13px var(--sans);fill:var(--ink)}
 .ry-ckt .lref{font:600 13px var(--sans);fill:var(--ink-2)}
 .ry-ckt .mlb{font:500 13px var(--sans);fill:var(--ink-3)}
 .ry-ckt .capg .w{stroke:var(--ink-2)}
@@ -87,8 +97,12 @@
 
 /* 凡例と札 */
 .ry-lg{margin:10px 0 0}
-.ry-lg b{font:700 13px var(--mono);margin-right:2px}
-.ry-sw{background:var(--ry-on)}
+.ry-lg b{font:700 13px var(--sans);margin-right:2px}
+.ry-lg b.ov{text-decoration:overline}
+.ry-lg .ry-sw{position:relative;background:var(--ry-on)}
+.ry-lg .ry-sw::after{content:"";position:absolute;top:50%;left:50%;width:6px;height:6px;margin:-3px 0 0 -3px;border-radius:50%;background:var(--ry-pt);box-shadow:0 0 0 .8px var(--ry-ptk)}
+.ry-lg .ry-lk{background:none;border-top:1.5px dashed var(--ink-3);height:0}
+.ry-lg .ry-op{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ry-open);vertical-align:middle}
 .ry-hint{margin:4px 0 0;min-height:1.3em;color:var(--ink-3)}
 
 /* 真理値表（論理ゲートのページと同じ形） */
@@ -127,6 +141,7 @@
 .ry-mini .hw.on{stroke:var(--ry-on)}
 .ry-mini .hg{fill:none;stroke:var(--line-2);stroke-width:1.2}
 .ry-mini .hl{font:600 11px var(--sans);fill:var(--ink-2)}
+.ry-mini .hl.ov{text-decoration:overline}
 .ry-mini .dot{fill:var(--ink-2)}
 .ry-mini .blade{stroke:var(--ink);stroke-width:2.4;stroke-linecap:round}
 .ry-mini .blade.on{stroke:var(--ry-on)}

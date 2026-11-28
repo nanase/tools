@@ -1,6 +1,6 @@
 /** リレーで作る論理回路のサンプル 23 個（基本ゲート 9・組み合わせ回路 8・順序回路 6） */
 import { CH, ca, cb, DECO, type Load, MUX, type Net, P, type Rung, S, WAY3 } from './net';
-import type { Relay } from './relay';
+import { IC_MIN, type Relay } from './relay';
 
 /**
  * 入力: rel はスイッチでリレーのコイルを入り切りする（接点はリレーのもの）、
@@ -10,6 +10,8 @@ export interface Input {
   id: string;
   lb: string;
   kind: 'rel' | 'sw' | 'push';
+  /** リレーと接点の名前（lb と違うときだけ） */
+  rn?: string;
   /** 押しボタンの色 */
   col?: 'g' | 'r' | 'b';
 }
@@ -45,7 +47,7 @@ const one = (net: Net, lb?: string): Rung[] => [{ net, loads: [lamp(lb)] }];
 const maj = (a: string, b: string, c: string): Net => P(S(ca(a), ca(b)), S(ca(a), ca(c)), S(ca(b), ca(c)));
 const push = (id: string, lb: string, col: 'g' | 'r' | 'b'): Input => ({ id, lb, kind: 'push', col });
 const keepHint = (inp: Record<string, number>, R: Record<string, Relay>): string =>
-  R.R1.a && !inp.SET && !inp.RST ? 'R1 の a 接点を通る電流' : '';
+  R.R1.a && !inp.SET && !inp.RST ? 'R1 自身の接点を通る電流' : '';
 
 export const DEFS: readonly Def[] = [
   {
@@ -58,11 +60,32 @@ export const DEFS: readonly Def[] = [
     init: { A: 1 },
   },
   { id: 'or', g: 'basic', name: 'OR', sub: '並列', ins: rel('A', 'B'), rungs: one(P(ca('A'), ca('B'))) },
-  { id: 'not', g: 'basic', name: 'NOT', sub: 'b 接点', ins: rel('A'), rungs: one(cb('A')) },
-  { id: 'nand', g: 'basic', name: 'NAND', sub: 'b 接点の並列', ins: rel('A', 'B'), rungs: one(P(cb('A'), cb('B'))) },
-  { id: 'nor', g: 'basic', name: 'NOR', sub: 'b 接点の直列', ins: rel('A', 'B'), rungs: one(S(cb('A'), cb('B'))) },
-  { id: 'xor', g: 'basic', name: 'XOR', sub: 'c 接点 2 組', ins: rel('A', 'B'), rungs: one(CH(['A', 'B'], 1)) },
-  { id: 'xnor', g: 'basic', name: 'XNOR', sub: 'c 接点 2 組', ins: rel('A', 'B'), rungs: one(CH(['A', 'B'], 0)) },
+  { id: 'not', g: 'basic', name: 'NOT', sub: '動作で開く接点', ins: rel('A'), rungs: one(cb('A')) },
+  {
+    id: 'nand',
+    g: 'basic',
+    name: 'NAND',
+    sub: '動作で開く接点の並列',
+    ins: rel('A', 'B'),
+    rungs: one(P(cb('A'), cb('B'))),
+  },
+  {
+    id: 'nor',
+    g: 'basic',
+    name: 'NOR',
+    sub: '動作で開く接点の直列',
+    ins: rel('A', 'B'),
+    rungs: one(S(cb('A'), cb('B'))),
+  },
+  { id: 'xor', g: 'basic', name: 'XOR', sub: '切り替えの接点 2 組', ins: rel('A', 'B'), rungs: one(CH(['A', 'B'], 1)) },
+  {
+    id: 'xnor',
+    g: 'basic',
+    name: 'XNOR',
+    sub: '切り替えの接点 2 組',
+    ins: rel('A', 'B'),
+    rungs: one(CH(['A', 'B'], 0)),
+  },
   {
     id: 'and3',
     g: 'basic',
@@ -91,10 +114,10 @@ export const DEFS: readonly Def[] = [
     id: 'stairs',
     g: 'comb',
     name: '階段の照明',
-    sub: '3 路スイッチ 2 個と渡り線 2 本',
+    sub: '3 路スイッチの代わりに切り替えの接点 2 個',
     ins: [
-      { id: 'F1', lb: '1 階', kind: 'sw' },
-      { id: 'F2', lb: '2 階', kind: 'sw' },
+      { id: 'F1', lb: '1 階', kind: 'rel', rn: 'F1' },
+      { id: 'F2', lb: '2 階', kind: 'rel', rn: 'F2' },
     ],
     rungs: one(WAY3('F1', 'F2'), '照明'),
   },
@@ -118,7 +141,7 @@ export const DEFS: readonly Def[] = [
     id: 'mux',
     g: 'comb',
     name: 'マルチプレクサ',
-    sub: 'S の c 接点で D0 か D1',
+    sub: 'S の切り替えの接点で D0 か D1',
     ins: rel('D0', 'D1', 'S'),
     rungs: one(MUX('D0', 'D1', 'S'), '出力'),
   },
@@ -126,7 +149,7 @@ export const DEFS: readonly Def[] = [
     id: 'deco',
     g: 'comb',
     name: 'デコーダ',
-    sub: 'c 接点 3 個で 4 本に',
+    sub: '切り替えの接点 3 個で 4 本に',
     ins: rel('A', 'B'),
     rungs: [{ net: DECO('A', 'B'), loads: ['AB 00', 'AB 01', 'AB 10', 'AB 11'].map((l) => lamp(l)) }],
   },
@@ -177,18 +200,18 @@ export const DEFS: readonly Def[] = [
       ...one(ca('R2'), '逆転中'),
     ],
     hint: (inp, R) =>
-      inp.RV && R.R1.a ? 'R1 の b 接点で R2 は入らない' : inp.FW && R.R2.a ? 'R2 の b 接点で R1 は入らない' : '',
+      inp.RV && R.R1.a ? 'R1 が動作中のため R2 は入らない' : inp.FW && R.R2.a ? 'R2 が動作中のため R1 は入らない' : '',
   },
   {
     id: 'buzz',
     g: 'seq',
     name: 'ブザー',
-    sub: '自分の b 接点で発振',
+    sub: '動作で開く自分の接点で発振',
     speed: 0.05,
     init: { RUN: 1 },
     ins: [{ id: 'RUN', lb: '動作', kind: 'sw' }],
     rungs: [{ net: S(ca('RUN'), cb('R1')), loads: [coil('R1')] }, ...one(ca('R1'))],
-    hint: (inp, R) => (!inp.RUN ? '' : R.R1.b ? 'b 接点が閉じてコイルに電流' : 'b 接点が開いてコイルの電流なし'),
+    hint: (inp, R) => (!inp.RUN ? '' : R.R1.b ? '接点が閉じてコイルに電流' : '接点が開いてコイルの電流なし'),
   },
   {
     id: 'tff',
@@ -211,11 +234,15 @@ export const DEFS: readonly Def[] = [
     delay: 1500,
     ins: [push('PB', 'ボタン', 'g')],
     rungs: [{ net: ca('PB'), loads: [{ kind: 'coilC', id: 'R1' }] }, ...one(ca('R1'))],
-    hint: (inp, R) => (!inp.PB && R.R1.held ? 'コンデンサからコイルに電流' : ''),
+    hint: (inp, R) =>
+      !inp.PB && R.R1.held ? 'コンデンサからコイルに電流' : R.R1.ic > IC_MIN ? 'コンデンサを充電する電流' : '',
   },
 ];
 
 export const DEF: Readonly<Record<string, Def>> = Object.fromEntries(DEFS.map((d) => [d.id, d]));
 
-/** 入力の id から表示の名前 */
-export const lbOf = (def: Def, r: string): string => def.ins.find((x) => x.id === r)?.lb ?? r;
+/** 入力の id から接点の名前 */
+export const lbOf = (def: Def, r: string): string => {
+  const q = def.ins.find((x) => x.id === r);
+  return q ? (q.rn ?? q.lb) : r;
+};
