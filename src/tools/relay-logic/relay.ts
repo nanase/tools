@@ -6,6 +6,14 @@
 
 /** 動作時間・復帰時間・チャタリングの長さ [ms] */
 export const RV = { tOn: 8, tOff: 4, ch: 1.2 } as const;
+/**
+ * コイルに並列のコンデンサの充電の時定数 [ms]。図で充電の電流が見える長さとして決めた値。
+ * 放電は、復帰の遅れが終わる頃に電荷が Q_REL まで減る時定数にする
+ */
+const TC = 150,
+  Q_REL = 0.3;
+/** これより小さいコンデンサの電流は流れていないとみなす */
+export const IC_MIN = 0.04;
 
 /** 番号から −1〜1 の決まった値（リレーごとのばらつき） */
 export const hs = (n: number): number => {
@@ -61,6 +69,10 @@ export class Relay implements ContactState {
   readonly exOff: number;
   coil = false;
   ph: Phase = 'r0';
+  /** コンデンサの電荷（0〜1。満充電で 1） */
+  q = 0;
+  /** コンデンサの電流（満充電の電流に対する割合）。正は充電、負は放電（コイルへ流れる） */
+  ic = 0;
   a = false;
   b = true;
   x = 0;
@@ -86,9 +98,9 @@ export class Relay implements ContactState {
   private get M0(): number {
     return 0.6 * this.tOff;
   }
-  /** 動いている途中か */
+  /** 動いている途中か（コンデンサの充電の途中も含む） */
   get busy(): boolean {
-    return this.ph !== 'r0' && this.ph !== 'r1';
+    return (this.ph !== 'r0' && this.ph !== 'r1') || (this.exOff > 0 && this.coil && 1 - this.q > IC_MIN / 4);
   }
   /** コンデンサの電気でコイルに電流が続いているか */
   get held(): boolean {
@@ -98,9 +110,21 @@ export class Relay implements ContactState {
     this.ph = p;
     this.t = 0;
   }
+  /** コンデンサの電荷と電流を h ms 進める。電源から電流が来る間は充電、来ない間はコイルへ放電する */
+  private stepCap(h: number): void {
+    if (this.coil) {
+      this.q += (1 - this.q) * (1 - Math.exp(-h / TC));
+      this.ic = 1 - this.q;
+      return;
+    }
+    this.q *= Math.exp(-h / (this.D0 / Math.log(1 / Q_REL)));
+    /* 復帰した後の残りはコイルを保てないほど小さく、図では流さない */
+    this.ic = this.held ? -this.q : 0;
+  }
   /** h ms 進める。now は進めた後の時刻。音を鳴らす出来事を ev に足す */
   step(h: number, now: number, ev: RelayEvent[]): void {
     this.t += h;
+    if (this.exOff > 0) this.stepCap(h);
     switch (this.ph) {
       case 'r0':
         if (this.coil) this.go('d1');

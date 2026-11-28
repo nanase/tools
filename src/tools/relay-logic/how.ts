@@ -3,9 +3,9 @@ import { miniRelay } from './svg';
 
 const fig = (s: string, vb = '0 0 160 72'): string =>
   `<svg class="ry-mini" viewBox="${vb}" aria-hidden="true">${s}</svg>`;
-/** 接点 1 個（左の端子 x、長さ 36）。closed なら刃を倒す */
-const contact = (x: number, y: number, closed: boolean, lb: string): string =>
-  `<circle cx="${x}" cy="${y}" r="2.6" class="dot"/><circle cx="${x + 36}" cy="${y}" r="2.6" class="dot"/><line x1="${x}" y1="${y}" x2="${x + 37}" y2="${y}" class="blade${closed ? ' on' : ''}" transform="rotate(${closed ? 0 : -24} ${x} ${y})"/>${lb ? `<text x="${x + 18}" y="${y - 13}" class="hl" text-anchor="middle">${lb}</text>` : ''}`;
+/** 接点 1 個（左の端子 x、長さ 36）。closed なら刃を倒す。ov なら名前に上線（動作で開く接点） */
+const contact = (x: number, y: number, closed: boolean, lb: string, ov = false): string =>
+  `<circle cx="${x}" cy="${y}" r="2.6" class="dot"/><circle cx="${x + 36}" cy="${y}" r="2.6" class="dot"/><line x1="${x}" y1="${y}" x2="${x + 37}" y2="${y}" class="blade${closed ? ' on' : ''}" transform="rotate(${closed ? 0 : -24} ${x} ${y})"/>${lb ? `<text x="${x + 18}" y="${y - 13}" class="hl${ov ? ' ov' : ''}" text-anchor="middle">${lb}</text>` : ''}`;
 const lampM = (x: number, y: number, on: boolean): string =>
   `<circle cx="${x}" cy="${y}" r="9" class="hlamp${on ? ' on' : ''}"/><path d="M${x - 6} ${y - 6}L${x + 6} ${y + 6}M${x + 6} ${y - 6}L${x - 6} ${y + 6}" class="hlx"/>`;
 const hw = (on: boolean, d: string): string => `<path d="${d}" class="hw${on ? ' on' : ''}"/>`;
@@ -24,11 +24,11 @@ export const HOW: readonly (readonly [string, string, string])[] = [
     'コイルの電流で接極子を引き寄せ、接点を動かす部品',
   ],
   [
-    'a 接点と b 接点',
+    '閉じる接点と開く接点',
     fig(
-      `${hw(false, 'M6 22H40M76 22H96')}${contact(40, 22, true, 'a')}${lampM(108, 22, true)}${hw(false, 'M6 56H40M76 56H96')}${contact(40, 56, false, 'b')}${lampM(108, 56, false)}<text x="150" y="26" class="hl" text-anchor="end">閉</text><text x="150" y="60" class="hl" text-anchor="end">開</text>`,
+      `${hw(false, 'M6 22H40M76 22H96')}${contact(40, 22, true, 'A')}${lampM(108, 22, true)}${hw(false, 'M6 56H40M76 56H96')}${contact(40, 56, false, 'A', true)}${lampM(108, 56, false)}<text x="150" y="26" class="hl" text-anchor="end">閉</text><text x="150" y="60" class="hl" text-anchor="end">開</text>`,
     ),
-    '動作で閉じる a 接点と、動作で開く b 接点',
+    '上線付きの名前は動作で開く接点',
   ],
   [
     '直列',
@@ -45,32 +45,32 @@ export const HOW: readonly (readonly [string, string, string])[] = [
     'どちらかが閉じれば点灯（OR）',
   ],
   [
-    'c 接点',
+    '切り替えの接点',
     fig(
-      `${hw(true, 'M8 38H40')}<circle cx="40" cy="38" r="3" class="dot"/><line x1="40" y1="38" x2="100" y2="22" class="blade on"/>${hw(true, 'M104 20H150')}${hw(false, 'M104 56H150')}<circle cx="104" cy="20" r="3" class="dot"/><circle cx="104" cy="56" r="3" class="dot"/><text x="112" y="14" class="hl">a</text><text x="112" y="70" class="hl">b</text>`,
+      `${hw(true, 'M8 38H40')}<circle cx="40" cy="38" r="3" class="dot"/><line x1="40" y1="38" x2="100" y2="22" class="blade on"/>${hw(true, 'M104 20H150')}${hw(false, 'M104 56H150')}<circle cx="104" cy="20" r="3" class="dot"/><circle cx="104" cy="56" r="3" class="dot"/><text x="112" y="14" class="hl">A</text><text x="112" y="70" class="hl ov">A</text>`,
     ),
-    '動作すると電流の行き先が b から a へ',
+    '動作すると電流の行き先が下から上へ',
   ],
   [
     '線の入れ替え',
     fig(
       `${hw(false, 'M10 20H50L90 54H150')}${hw(true, 'M10 54H50L90 20H150')}<text x="70" y="70" class="hl" text-anchor="middle">B</text>`,
     ),
-    'c 接点 2 組で上下の線を入れ替え（XOR）',
+    '切り替えの接点 2 組で上下の線を入れ替え（XOR）',
   ],
   [
     '自己保持',
     fig(
       `${hw(true, 'M6 26H22M22 26H44M54 26H66M66 26H118M138 26H154')}${hw(true, 'M22 26V56H44M54 56H66V26')}<path d="M44 17V35M54 17V35M44 47V65M54 47V65" class="hw"/><rect x="44" y="48" width="10" height="16" class="hfill"/><text x="49" y="12" class="hl" text-anchor="middle">セット</text><text x="49" y="44" class="hl" text-anchor="middle">R1</text>${lampM(128, 26, true)}<text x="128" y="12" class="hl" text-anchor="middle">R1</text>`,
     ),
-    'セットを離した後も自分の a 接点を通る電流',
+    'セットを離した後も自分の接点を通る電流',
   ],
   [
     'インターロック',
     fig(
       `${hw(true, 'M10 22H40M60 22H150')}${hw(false, 'M10 52H40M60 52H150')}<path d="M44 12V32M56 12V32M44 42V62M56 42V62M38 62L62 42" class="hw"/><text x="50" y="9" class="hl" text-anchor="middle">R2</text><text x="50" y="72" class="hl" text-anchor="middle">R1</text><text x="146" y="16" class="hl" text-anchor="end">R1</text><text x="146" y="46" class="hl" text-anchor="end">R2</text>`,
     ),
-    '相手の b 接点で両方は同時に入らない',
+    '相手の動作で開く接点で両方は同時に入らない',
   ],
   [
     'チャタリング',

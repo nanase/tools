@@ -1,31 +1,17 @@
 /** リレーで作る論理回路の図（展開接続図・入力の行・タイミングチャート・しくみの小さな図） */
 import { esc } from '../../lib/dom';
 import { type Def, lbOf } from './circuits';
-import { type Circuit, IN_COL, IN_ROW, type Pt } from './net';
+import { type Circuit, type Contacts, IN_COL, IN_ROW, type Pt, RELAY_BOX } from './net';
 
 const rd = (v: number): number => Math.round(v * 10) / 10;
 
-/** 折れ線の配線と、いちばん長い区間の中ほどの矢じり（電流の向き。電流が流れるときだけ見せる） */
-export function wirePath(pts: readonly Pt[], id: string): string {
-  const d = `M${pts.map((p) => p.join(' ')).join('L')}`;
-  let best = 0,
-    bi = 1;
-  for (let i = 1; i < pts.length; i++) {
-    const L = Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
-    if (L > best) {
-      best = L;
-      bi = i;
-    }
-  }
-  const [x0, y0] = pts[bi - 1],
-    [x1, y1] = pts[bi];
-  const an = rd((Math.atan2(y1 - y0, x1 - x0) * 180) / Math.PI);
-  const arr =
-    best >= 36
-      ? `<path class="arw" d="M-5 -4.5L4 0L-5 4.5Z" transform="translate(${rd((x0 + x1) / 2)} ${rd((y0 + y1) / 2)}) rotate(${an})"/>`
-      : '';
-  return `<g class="wg" data-w="${id}"><path class="w" d="${d}"/>${arr}</g>`;
-}
+/** 折れ線の配線 */
+const wirePath = (pts: readonly Pt[], id: string): string =>
+  `<path class="w" data-w="${id}" d="M${pts.map((p) => p.join(' ')).join('L')}"/>`;
+
+/** 接点の名前。動作で開く側（b）は上線を付ける */
+const cname = (t: string, x: number, y: number, cls: string, ov: boolean, anchor = 'middle'): string =>
+  `<text x="${x}" y="${y}" class="${cls}${ov ? ' ov' : ''}" text-anchor="${anchor}">${esc(t)}</text>`;
 
 /** ランプ（丸に ×） */
 export const lamp = (x: number, y: number, r = 12): string =>
@@ -52,47 +38,170 @@ function inputs(def: Def, cols: number): string {
     } else {
       s += `<g class="skey" data-key="${q.id}" tabindex="0" role="switch" aria-checked="false" aria-label="${esc(q.lb)}"><rect x="6" y="14" width="56" height="50" rx="6" class="keyb"/><text x="34" y="36" class="kn" text-anchor="middle">${esc(q.lb)}</text><text x="34" y="55" class="kvv" text-anchor="middle" data-kv="${q.id}">0</text></g>`;
       if (q.kind === 'rel')
-        s += `<path d="M62 39H84" class="w kw" data-kw="${q.id}"/>${miniRelay(86, 18, q.id)}<text x="114" y="86" class="mlb" text-anchor="middle">リレー ${esc(q.lb)}</text>`;
+        s += `<path d="M62 39H84" class="w kw" data-kw="${q.id}"/>${miniRelay(86, 18, q.id)}<text x="114" y="86" class="mlb" text-anchor="middle">リレー ${esc(q.rn ?? q.lb)}</text>`;
     }
     s += '</g>';
   });
   return s;
 }
 
-/** 回路の図。入力の行・電池・配線・接点・負荷 */
+/** 回路の図。入力の行・配線・電流の粒の層・接点・負荷・つながる点・電池。粒は接点の刃と端子を隠さないよう、その下に流す */
 export function circuitSvg(def: Def, G: Circuit): string {
   let s = `<svg viewBox="0 0 ${G.W} ${G.H}" class="ry-ckt" role="group" aria-label="${esc(def.name)}の回路" style="max-width:${Math.round(G.W * 1.08)}px">`;
   s += inputs(def, G.cols);
-  /* 電池（長い板が +） */
-  const [xb, yB] = G.bat;
-  s += `<g class="bat"><line x1="${xb}" y1="${yB - 15}" x2="${xb}" y2="${yB + 15}" class="bp"/><line x1="${xb + 10}" y1="${yB - 8}" x2="${xb + 10}" y2="${yB + 8}" class="bp bs"/><text x="${xb - 5}" y="${yB + 30}" class="pm" text-anchor="middle">+</text></g>`;
   for (const d of G.D) {
     if (d.k === 'w') s += wirePath(d.pts, String(d.e));
-    else if (d.k === 'end') s += `<circle cx="${d.x}" cy="${d.y}" r="3" class="dot"/>`;
     else if (d.k === 'txt') s += `<text x="${d.x}" y="${d.y}" class="mlb" text-anchor="middle">${esc(d.t)}</text>`;
   }
+  s += '<g class="pts"></g>';
   for (const d of G.D) {
     if (d.k === 'c') {
       const { x, y, r, t } = d;
-      s += `<g class="cnt" data-e="${d.e}"><path class="w" d="M${x} ${y}H${x + 8}M${x + 48} ${y}H${x + 56}"/><circle cx="${x + 8}" cy="${y}" r="3" class="dot"/><circle cx="${x + 48}" cy="${y}" r="3" class="dot"/><line x1="${x + 8}" y1="${y}" x2="${x + 49}" y2="${y}" class="blade"/><text x="${x + 28}" y="${y - 19}" class="cref" text-anchor="middle">${esc(lbOf(def, r))}</text><text x="${x + 28}" y="${y + 21}" class="ctp" text-anchor="middle">${t}</text></g>`;
+      s += `<g class="cnt" data-e="${d.e}"><path class="w" d="M${x} ${y}H${x + 8}M${x + 48} ${y}H${x + 56}"/><circle cx="${x + 8}" cy="${y}" r="3" class="dot"/><circle cx="${x + 48}" cy="${y}" r="3" class="dot"/><line x1="${x + 8}" y1="${y}" x2="${x + 49}" y2="${y}" class="blade"/>${cname(lbOf(def, r), x + 28, y - 19, 'cref', t === 'b')}</g>`;
     } else if (d.k === 'cc') {
-      const { com, st, cr } = d;
-      const lx = (com[0] + st[0]) / 2,
-        ly = d.below ? com[1] + 24 : com[1] - 14;
-      s += `<g class="ccn" data-cc="${d.eb}"><circle cx="${com[0]}" cy="${com[1]}" r="3" class="dot"/><circle cx="${st[0]}" cy="${st[1]}" r="3" class="dot"/><circle cx="${cr[0]}" cy="${cr[1]}" r="3" class="dot"/><line x1="${com[0]}" y1="${com[1]}" x2="${st[0]}" y2="${st[1]}" class="blade"/><text x="${lx}" y="${ly}" class="cref" text-anchor="middle">${esc(lbOf(def, d.r))}</text></g>`;
+      const { com, st, cr } = d,
+        nm = lbOf(def, d.r);
+      /* 端子の名前は共通の端子と反対の側に。復帰でつながる側（b）は上線 */
+      const sd = com[0] < st[0] ? 1 : -1,
+        an = sd > 0 ? 'start' : 'end';
+      s += `<g class="ccn" data-cc="${d.eb}"><circle cx="${com[0]}" cy="${com[1]}" r="3" class="dot"/><circle cx="${st[0]}" cy="${st[1]}" r="3" class="dot"/><circle cx="${cr[0]}" cy="${cr[1]}" r="3" class="dot"/><line x1="${com[0]}" y1="${com[1]}" x2="${st[0]}" y2="${st[1]}" class="blade"/>${cname(nm, st[0] + 4 * sd, st[1] - 5, 'cref2', true, an)}${cname(nm, cr[0] + 4 * sd, cr[1] - 5, 'cref2', false, an)}</g>`;
     } else if (d.k === 'load') {
       const { x, y, ld } = d;
       if (ld.kind === 'lamp')
         s += `<g class="ldg" data-ld="${d.e}"><path class="w" d="M${x} ${y}H${x + 16}M${x + 40} ${y}H${x + 56}"/>${lamp(x + 28, y)}<text x="${x + 28}" y="${y - 18}" class="lref" text-anchor="middle">${esc(ld.lb)}</text></g>`;
       else {
-        s += `<g class="ldg" data-ld="${d.e}"><path class="w" d="M${x} ${y}H${x + 56}"/>`;
+        /* 線の上にコイルの記号、その真上にリレーの絵 */
+        s += `<g class="ldg" data-ld="${d.e}"><path class="w" d="M${x} ${y}H${x + 13}M${x + 43} ${y}H${x + 56}"/>`;
         if (ld.kind === 'coilC')
-          s += `<g class="capg" data-capr="${ld.id}"><path class="w" d="M${x + 2} ${y}V${y + 50}H${x + 25}M${x + 31} ${y + 50}H${x + 54}V${y}"/><path d="M${x + 25} ${y + 40}V${y + 60}M${x + 31} ${y + 40}V${y + 60}" class="bp"/><text x="${x + 28}" y="${y + 76}" class="nm" text-anchor="middle">C</text></g>`;
-        s += `${miniRelay(x, y - 27, ld.id)}<text x="${x + 72}" y="${y - 9}" class="lref" text-anchor="middle">${ld.id}</text></g>`;
+          s += `<g class="capg" data-capr="${ld.id}"><path class="w" d="M${x + 2} ${y}V${y + 50}H${x + 25}M${x + 31} ${y + 50}H${x + 54}V${y}"/><path d="M${x + 25} ${y + 40}V${y + 60}M${x + 31} ${y + 40}V${y + 60}" class="bp"/><text x="${x + 28}" y="${y + 76}" class="nm" text-anchor="middle">C</text></g><circle cx="${x + 2}" cy="${y}" r="3.5" class="jn"/><circle cx="${x + 54}" cy="${y}" r="3.5" class="jn"/>`;
+        s += `<rect x="${x + 13}" y="${y - 10}" width="30" height="20" rx="2" class="coil"/><text x="${x + 28}" y="${y + 4.5}" class="cname" text-anchor="middle">${esc(ld.id)}</text>${miniRelay(x + RELAY_BOX[0], y + RELAY_BOX[1], ld.id)}</g>`;
       }
     }
   }
+  for (const [x, y] of G.J) s += `<circle cx="${x}" cy="${y}" r="3.5" class="jn"/>`;
+  for (const [x, y] of G.O) s += `<circle cx="${x}" cy="${y}" r="4" class="op"/>`;
+  G.L.forEach(([i, j], k) => {
+    const [a, b] = linkEnds(G.D[i], G.D[j], REST);
+    s += `<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" class="lk" data-lk="${k}"/>`;
+  });
+  /* 電池（長い板が +）。線の端を隠すように線より上に描く */
+  const [xb, yB] = G.bat;
+  s += `<g class="bat"><line x1="${xb}" y1="${yB - 15}" x2="${xb}" y2="${yB + 15}" class="bp"/><line x1="${xb + 10}" y1="${yB - 8}" x2="${xb + 10}" y2="${yB + 8}" class="bp bs"/><text x="${xb - 5}" y="${yB + 30}" class="pm" text-anchor="middle">+</text></g>`;
   return `${s}</svg>`;
+}
+
+/** 動いていないリレーの接点 */
+const REST: Contacts = () => ({ a: false, b: true, x: 0 });
+
+/** 同じリレーの接点をつなぐ点線の両端。上は刃の中ほど。下の接点の上に名前があれば、名前に重ねずその上で止める */
+export function linkEnds(a: Circuit['D'][number], b: Circuit['D'][number], cs: Contacts): [Pt, Pt] {
+  const p = bladeMid(a, cs);
+  return [p, b.k === 'c' ? [p[0], b.y - 35] : bladeMid(b, cs)];
+}
+
+/** 刃の中ほど */
+function bladeMid(d: Circuit['D'][number], cs: Contacts): Pt {
+  if (d.k === 'c') {
+    const r = cs(d.r),
+      an = (bladeAngle(d.t, d.t === 'a' ? r.a : r.b, r.x) * Math.PI) / 180;
+    return [rd(d.x + 8 + 20.5 * Math.cos(an)), rd(d.y + 20.5 * Math.sin(an))];
+  }
+  if (d.k === 'cc') {
+    const r = cs(d.r),
+      [tx, ty] = ccTip(d, r.a, r.b, r.x);
+    return [rd((d.com[0] + tx) / 2), rd((d.com[1] + ty) / 2)];
+  }
+  return [0, 0];
+}
+
+/**
+ * 電流の粒の通り道: 辺の添字と、u から v への折れ線。負荷は部品の中を通さず、左右の線だけ。
+ * コンデンサ付きのコイルは、コンデンサの枝（cap、充電の向き）と、放電でも電流が通るコイルの左右の線（coil）を足す
+ */
+export interface FlowRun {
+  e: number;
+  pts: readonly Pt[];
+  cap?: string;
+  coil?: string;
+}
+export function flowRuns(G: Circuit): FlowRun[] {
+  const out: FlowRun[] = [];
+  const seg = (e: number, x0: number, x1: number, y: number) =>
+    out.push({
+      e,
+      pts: [
+        [x0, y],
+        [x1, y],
+      ],
+    });
+  for (const d of G.D) {
+    if (d.k === 'w') out.push({ e: d.e, pts: d.pts });
+    else if (d.k === 'c') seg(d.e, d.x, d.x + 56, d.y);
+    else if (d.k === 'cc') {
+      out.push({ e: d.eb, pts: [d.com, d.st] });
+      out.push({ e: d.ea, pts: [d.com, d.cr] });
+    } else if (d.k === 'load') {
+      const { x, y, ld } = d;
+      if (ld.kind === 'coilC') {
+        /* コンデンサの枝が分かれる点（x + 2 と x + 54）の内側だけ。放電の電流はこの内側を回る */
+        out.push({
+          e: d.e,
+          coil: ld.id,
+          pts: [
+            [x + 2, y],
+            [x + 13, y],
+          ],
+        });
+        out.push({
+          e: d.e,
+          coil: ld.id,
+          pts: [
+            [x + 43, y],
+            [x + 54, y],
+          ],
+        });
+        out.push({
+          e: -1,
+          cap: ld.id,
+          pts: [
+            [x + 2, y],
+            [x + 2, y + 50],
+            [x + 25, y + 50],
+          ],
+        });
+        out.push({
+          e: -1,
+          cap: ld.id,
+          pts: [
+            [x + 31, y + 50],
+            [x + 54, y + 50],
+            [x + 54, y],
+          ],
+        });
+        continue;
+      }
+      const [l, r] = ld.kind === 'lamp' ? [16, 40] : [13, 43];
+      seg(d.e, x, x + l, y);
+      seg(d.e, x + r, x + 56, y);
+    }
+  }
+  return out;
+}
+
+/** 凡例: その回路にある接点の種類と、点線・つながらない端・電流 */
+export function legendHtml(def: Def, G: Circuit): string {
+  const name = (t: 'a' | 'b'): string | null => {
+    const d = G.D.find((x) => (x.k === 'c' && x.t === t) || x.k === 'cc');
+    return d && (d.k === 'c' || d.k === 'cc') ? lbOf(def, d.r) : null;
+  };
+  const a = name('a'),
+    b = name('b');
+  let s = '';
+  if (a) s += `<span class="stag"><b>${esc(a)}</b>動作で閉じる接点</span>`;
+  if (b) s += `<span class="stag"><b class="ov">${esc(b)}</b>動作で開く接点</span>`;
+  if (G.L.length) s += '<span class="stag"><i class="sw ry-lk"></i>一緒に動く接点</span>';
+  if (G.O.length) s += '<span class="stag"><i class="ry-op"></i>どこにもつながらない端</span>';
+  return `${s}<span class="stag"><i class="sw ry-sw"></i>電流</span>`;
 }
 
 /** 刃の先（c 接点）。u は 0 で復帰の端子、1 で動作の端子。どちらにも触れない間は少し手前で止める */

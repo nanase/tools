@@ -1,6 +1,6 @@
 /**
  * リレーで作る論理回路のページの入口。回路を選び、スイッチか押しボタンで入力を変える。
- * 時間は実際の速さか 1/20 で進め、リレーが動くたびに音を鳴らす。電流の通る線は橙で塗る。
+ * 時間は実際の速さか 1/20 で進め、リレーが動くたびに音を鳴らす。電流の通る線は橙で塗り、黄色い粒を + から − へ流す。
  * 組み合わせ回路は真理値表、順序回路は直近 10 秒のタイミングチャートを右に出す
  */
 import { Choice } from '../../lib/choice';
@@ -9,16 +9,31 @@ import { forget, store, stored } from '../../lib/store';
 import { initToolPage } from '../../lib/tool-page';
 import { ensure, play, setSound, soundOn } from './audio';
 import { DEF, DEFS, type Def } from './circuits';
-import { buildCircuit, type Circuit, conduct, ideal, loadsOn } from './net';
-import type { RelayEvent } from './relay';
+import { buildCircuit, type Circuit, conduct, ideal, loadsOn, type Pt } from './net';
+import { IC_MIN, type RelayEvent } from './relay';
 import { Sim } from './sim';
-import { armAngle, bladeAngle, type ChartRow, ccTip, chartSvg, circuitSvg } from './svg';
+import {
+  armAngle,
+  bladeAngle,
+  type ChartRow,
+  ccTip,
+  chartSvg,
+  circuitSvg,
+  type FlowRun,
+  flowRuns,
+  legendHtml,
+  linkEnds,
+} from './svg';
 
 initToolPage();
 
 const DEF_ID = 'and';
 /** タイミングチャートの窓 [ms] */
 const WIN = 10000;
+/** 電流の粒の間隔と速さ [図の単位/秒] */
+const GAP = 18,
+  PX_S = 60;
+const NS = 'http://www.w3.org/2000/svg';
 
 const sel = $<HTMLSelectElement>('#ry-sel'),
   bench = $('#ry-bench'),
@@ -36,6 +51,10 @@ interface Els {
   mr: SVGGElement[];
   keys: SVGGElement[];
   cap: Element[];
+  /** 同じリレーの接点をつなぐ点線と、両端の接点 */
+  lk: [Element, Circuit['D'][number], Circuit['D'][number]][];
+  /** 電流の粒: 通り道・区間の長さ・粒・進んだ距離・見せているか */
+  runs: (FlowRun & { seg: number[]; len: number; dots: SVGCircleElement[]; ph: number; vis: boolean })[];
 }
 const st = {
   def: DEF[DEF_ID] as Def,
@@ -44,6 +63,8 @@ const st = {
   el: null as Els | null,
   /** 前に塗ったときの接点の状態（変わったときだけ電流を計算し直す） */
   sig: '',
+  /** 電流の通る辺と向き */
+  on: new Map<number, 1 | -1>(),
   /** 記録（タイミングチャート）: id → [壁の時刻 ms, 値] */
   hist: new Map<string, [number, number][]>(),
   /** 壁の時刻と回路の時刻の対応（この時刻に回路は sim0） */
@@ -73,17 +94,43 @@ function draw(): void {
     mr: $$<SVGGElement>('[data-mr]', svg),
     keys: $$<SVGGElement>('[data-key]', svg),
     cap: $$('[data-capr]', svg),
+    lk: G.L.map(([i, j], k) => [svg.querySelector(`[data-lk="${k}"]`) as Element, G.D[i], G.D[j]]),
+    runs: [],
   };
+  const pts = svg.querySelector('.pts') as SVGGElement;
+  for (const r of flowRuns(G)) {
+    const seg = r.pts.slice(1).map((p, i) => Math.hypot(p[0] - r.pts[i][0], p[1] - r.pts[i][1])),
+      len = seg.reduce((a, b) => a + b, 0),
+      dots: SVGCircleElement[] = [];
+    for (let k = Math.max(1, Math.round(len / GAP)); k > 0; k--) {
+      const c = document.createElementNS(NS, 'circle');
+      c.setAttribute('r', '2.6');
+      c.setAttribute('class', 'pt');
+      c.setAttribute('visibility', 'hidden');
+      pts.appendChild(c);
+      dots.push(c);
+    }
+    st.el.runs.push({ ...r, seg, len, dots, ph: 0, vis: false });
+  }
   /* 図は縮めず、枠より広ければ横にスクロールする（文字を 13〜15 px に保つ） */
   svg.style.minWidth = `${G.W}px`;
-  $('#ry-lgc').style.display = G.D.some((d) => d.k === 'cc') ? '' : 'none';
+  $('#ry-lg').innerHTML = legendHtml(def, G);
   st.sig = '';
   bench.scrollLeft = 0;
   paint();
 }
 const rd = (v: number) => Math.round(v * 100) / 100;
-/** 今の状態を図に塗る */
-function paint(): void {
+/** 折れ線の上の距離 s の点 */
+function along(r: Els['runs'][number], s: number): Pt {
+  let i = 0;
+  while (i < r.seg.length - 1 && s > r.seg[i]) s -= r.seg[i++];
+  const [x0, y0] = r.pts[i],
+    [x1, y1] = r.pts[i + 1],
+    f = r.seg[i] ? s / r.seg[i] : 0;
+  return [x0 + (x1 - x0) * f, y0 + (y1 - y0) * f];
+}
+/** 今の状態を図に塗る。dt は粒を進める実際の時間 [秒] */
+function paint(dt = 0): void {
   const el = st.el,
     sim = st.sim;
   if (!el) return;
@@ -93,6 +140,7 @@ function paint(): void {
   if (sig !== st.sig) {
     st.sig = sig;
     const on = conduct(sim.G, cs);
+    st.on = on;
     for (const [i, w] of el.w.entries()) w?.classList.toggle('on', on.has(i));
     for (const [d, g] of el.c) g.classList.toggle('on', on.has(d.e));
     for (const [d, g] of el.cc) g.classList.toggle('on', on.has(d.ea) || on.has(d.eb));
@@ -111,13 +159,14 @@ function paint(): void {
       if (t) t.textContent = v ? '1' : '0';
       el.svg.querySelector(`[data-kw="${id}"]`)?.classList.toggle('on', v);
     }
-    const h = st.def.hint?.(sim.inp, R) ?? '';
-    if (hint.textContent !== h) hint.textContent = h;
     if (st.def.g !== 'seq') {
       const cur = st.def.ins.map((q) => (sim.inp[q.id] ? 1 : 0)).join('');
       for (const tr of $$<HTMLElement>('tr[data-row]', ttBox)) tr.classList.toggle('now', tr.dataset.row === cur);
     }
   }
+  /* 札はコンデンサの充電・放電で変わるので毎回 */
+  const h = st.def.hint?.(sim.inp, R) ?? '';
+  if (hint.textContent !== h) hint.textContent = h;
   /* 接極子と刃は動いている間も描く */
   for (const [d, g] of el.c) {
     const r = cs(d.r);
@@ -139,9 +188,49 @@ function paint(): void {
     m.querySelector('.marm')?.setAttribute('transform', armAngle(rd(r.x)));
     m.classList.toggle('on', r.coil || r.held);
   }
+  /* コンデンサの枝は電流の流れる間だけ。放電の間はコイルにも電流 */
   for (const c of el.cap) {
-    const r = R[(c as HTMLElement).dataset.capr as string];
-    c.classList.toggle('on', !!r && (r.coil || r.held));
+    const ic = R[(c as HTMLElement).dataset.capr as string]?.ic ?? 0,
+      g = c.parentElement as HTMLElement | null;
+    c.classList.toggle('on', Math.abs(ic) > IC_MIN);
+    g?.classList.toggle('on', st.on.has(Number(g.dataset.ld)) || ic < -IC_MIN);
+  }
+  for (const [l, a, b] of el.lk) {
+    const [[x1, y1], [x2, y2]] = linkEnds(a, b, cs);
+    l.setAttribute('x1', String(x1));
+    l.setAttribute('y1', String(y1));
+    l.setAttribute('x2', String(x2));
+    l.setAttribute('y2', String(y2));
+  }
+  /*
+   * 電流の粒。電池からの電流はどの区間も同じ速さで、u から v へ（向きが −1 なら逆へ）流す。
+   * コンデンサの電流は大きさに比例した速さで、充電は枝の向き、放電は逆向き（コイルは同じ向き）
+   */
+  for (const r of el.runs) {
+    let dir = st.on.get(r.e) ?? 0,
+      f = 1;
+    const ic = R[r.cap ?? r.coil ?? '']?.ic ?? 0;
+    if (r.cap) {
+      dir = Math.abs(ic) > IC_MIN ? Math.sign(ic) : 0;
+      f = Math.abs(ic);
+    } else if (!dir && r.coil && ic < -IC_MIN) {
+      dir = 1;
+      f = -ic;
+    }
+    if (!dir) {
+      if (r.vis) for (const c of r.dots) c.setAttribute('visibility', 'hidden');
+      r.vis = false;
+      continue;
+    }
+    r.ph = (r.ph + dir * f * dt * PX_S) % r.len;
+    const gap = r.len / r.dots.length;
+    r.dots.forEach((c, k) => {
+      const [x, y] = along(r, (((r.ph + k * gap) % r.len) + r.len) % r.len);
+      c.setAttribute('cx', x.toFixed(1));
+      c.setAttribute('cy', y.toFixed(1));
+      if (!r.vis) c.setAttribute('visibility', 'visible');
+    });
+    r.vis = true;
   }
 }
 
@@ -214,7 +303,7 @@ function loop(ts: number): void {
   const t0 = sim.t;
   const ev: RelayEvent[] = sim.advance(dt * st.speed);
   if (ev.length) play(ev.map((e) => ({ e, dt: (e.t - t0) / st.speed / 1000 })));
-  paint();
+  paint(dt / 1000);
   if (st.def.g === 'seq' && ts - st.lastChart > 50) drawChart(ts);
   requestAnimationFrame(loop);
 }

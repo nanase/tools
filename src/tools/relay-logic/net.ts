@@ -51,7 +51,6 @@ export type Draw =
   /** c 接点: com と、復帰のときの st（b）と動作のときの cr（a）。eb と ea が辺 */
   | { k: 'cc'; com: Pt; st: Pt; cr: Pt; r: string; eb: number; ea: number; below?: boolean }
   | { k: 'load'; x: number; y: number; ld: Load; e: number }
-  | { k: 'end'; x: number; y: number }
   | { k: 'txt'; x: number; y: number; t: string };
 
 export interface Circuit {
@@ -67,6 +66,12 @@ export interface Circuit {
   H: number;
   /** 回路の上端（入力の行の下） */
   top: number;
+  /** 線どうしがつながる点（接点の端子は除く） */
+  J: Pt[];
+  /** どこにもつながらない線の端 */
+  O: Pt[];
+  /** 同じリレー（押しボタン）で動く接点の組。D の添字。縦に並び、間を線が横切らない所だけ */
+  L: [number, number][];
   adj: Map<string, { m: string; i: number; f: boolean }[]>;
 }
 
@@ -75,6 +80,10 @@ const ROW = 60;
 /** 接点 1 個の幅、負荷の幅 */
 const CWD = 56,
   LDW = 56;
+/** コイルの段のリレーの絵の枠（負荷の左端と線の高さからの x・y と、幅・高さ）。コイルの記号の真上に置く */
+export const RELAY_BOX = [0, -59, 56, 44] as const;
+/** 絵を置く段の、前の段の最後の行からの間隔の下限 */
+const COIL_GAP = 82;
 
 function sz(n: Net): { w: number; h: number } {
   switch (n.k) {
@@ -114,6 +123,8 @@ function sz(n: Net): { w: number; h: number } {
 class Builder {
   E: Edge[] = [];
   D: Draw[] = [];
+  /** 行き止まりの線の端 */
+  ends: Pt[] = [];
   W(pts: Pt[]): void {
     const q = pts.filter((p, i) => i === 0 || p[0] !== pts[i - 1][0] || p[1] !== pts[i - 1][1]);
     if (q.length < 2) return;
@@ -243,13 +254,13 @@ class Builder {
             [xo, y1],
             [xo, y],
           ]);
-          this.D.push({ k: 'end', x: J, y });
+          this.ends.push([J, y]);
         } else {
           this.W([
             [J, y],
             [xo, y],
           ]);
-          this.D.push({ k: 'end', x: J, y: y1 });
+          this.ends.push([J, y1]);
         }
         return [[xo, y]];
       }
@@ -336,19 +347,24 @@ export const IN_COL = 150,
   IN_ROW = 96;
 
 /** 回路の定義から図と計算の形を作る。nIn は入力の数（上の行に横 1 列に並べる） */
+const hasCoil = (rg: Rung): boolean => rg.loads.some((l) => l.kind !== 'lamp');
+
 export function buildCircuit(rungs: readonly Rung[], nIn: number): Circuit {
   const b = new Builder();
   const cols = nIn;
+  /* 初めの段にコイルがあれば、上に置くリレーの絵の分だけ下げる */
   const XL = 30,
-    top = nIn ? 128 : 40;
+    top = nIn ? (rungs.length && hasCoil(rungs[0]) ? 164 : 128) : 40;
   const wn = Math.max(...rungs.map((r) => sz(r.net).w));
   const XLD = XL + 20 + wn + 24,
     XR = XLD + LDW + 44;
-  let y = top;
+  let y = top,
+    prev = Number.NEGATIVE_INFINITY;
   const lys: number[] = [],
     rys: number[] = [];
   for (const rg of rungs) {
     const s = sz(rg.net);
+    if (hasCoil(rg)) y = Math.max(y, prev + COIL_GAP);
     b.W([
       [XL, y],
       [XL + 20, y],
@@ -372,6 +388,7 @@ export function buildCircuit(rungs: readonly Rung[], nIn: number): Circuit {
       rys.push(oy);
       if (ld.kind === 'coilC') rows = Math.max(rows, 2);
     });
+    prev = y + (rows - 1) * ROW;
     y += rows * ROW + (s.h >= 2 ? 22 : 0);
   }
   const yB = y - ROW + 62;
@@ -421,18 +438,79 @@ export function buildCircuit(rungs: readonly Rung[], nIn: number): Circuit {
       l.push({ m: q, i, f });
     }
   });
+  const src = N(xb, yB),
+    sink = N(xb + 10, yB);
   return {
     E: b.E,
     D: b.D,
-    src: N(xb, yB),
-    sink: N(xb + 10, yB),
+    src,
+    sink,
     bat: [xb, yB],
     cols,
     W: Math.max(XR + 14, cols * IN_COL + 24),
     H: yB + 40,
     top,
     adj,
+    ...marks(b, adj, src, sink),
+    L: links(b.D),
   };
+}
+
+const ptOf = (n: string): Pt => n.split(',').map(Number) as unknown as Pt;
+
+/** つながる点（3 本以上が集まる所）と、どこにもつながらない端 */
+function marks(b: Builder, adj: Circuit['adj'], src: string, sink: string): { J: Pt[]; O: Pt[] } {
+  /* c 接点の端子は丸を描くので除く */
+  const term = new Set<string>();
+  for (const d of b.D) if (d.k === 'cc') for (const p of [d.com, d.st, d.cr]) term.add(N(...p));
+  const J: Pt[] = [],
+    O: Pt[] = b.ends.slice();
+  for (const [n, l] of adj) {
+    if (n === src || n === sink) continue;
+    if (l.length >= 3 && !term.has(n)) J.push(ptOf(n));
+    else if (l.length === 1) O.push(ptOf(n));
+  }
+  return { J, O };
+}
+
+/** 同じリレーの接点の組を点線でつなぐ所。刃の中ほどの x が同じで縦に隣り合い、間を線が横切らないもの */
+function links(D: readonly Draw[]): [number, number][] {
+  const col = new Map<number, { i: number; r: string; y: number }[]>();
+  D.forEach((d, i) => {
+    const c =
+      d.k === 'c'
+        ? { x: d.x + CWD / 2, y: d.y, r: d.r }
+        : d.k === 'cc'
+          ? { x: (d.com[0] + d.st[0]) / 2, y: d.com[1], r: d.r }
+          : null;
+    if (!c) return;
+    const k = Math.round(c.x);
+    let l = col.get(k);
+    if (!l) {
+      l = [];
+      col.set(k, l);
+    }
+    l.push({ i, r: c.r, y: c.y });
+  });
+  const segs = D.flatMap((d) => (d.k === 'w' ? d.pts.slice(1).map((p, j) => [d.pts[j], p] as const) : []));
+  const out: [number, number][] = [];
+  for (const [x, l] of col) {
+    l.sort((p, q) => p.y - q.y);
+    for (let j = 1; j < l.length; j++) {
+      const p = l[j - 1],
+        q = l[j];
+      if (p.r !== q.r) continue;
+      const cross = segs.some(
+        ([a, c]) =>
+          Math.min(a[0], c[0]) < x &&
+          Math.max(a[0], c[0]) > x &&
+          Math.max(a[1], c[1]) > p.y &&
+          Math.min(a[1], c[1]) < q.y,
+      );
+      if (!cross) out.push([p.i, q.i]);
+    }
+  }
+  return out;
 }
 
 /** 接点の状態を返す関数（リレーか入力の id から） */
@@ -471,17 +549,18 @@ export function loadsOn(G: Circuit, cs: Contacts): Set<number> {
 }
 
 /**
- * 電流が通る辺すべて（図の色に使う）。辺を 1 本外して、電源側から一方の端へ・もう一方の端から − 側へ行けるなら通る。
- * 行き止まりの枝は通らない
+ * 電流が通る辺すべてと向き（図の色と粒に使う）。1 は u から v、−1 は v から u。
+ * 辺を 1 本外して、電源側から一方の端へ・もう一方の端から − 側へ行けるなら通る。行き止まりの枝は通らない
  */
-export function conduct(G: Circuit, cs: Contacts): Set<number> {
-  const on = new Set<number>();
+export function conduct(G: Circuit, cs: Contacts): Map<number, 1 | -1> {
+  const on = new Map<number, 1 | -1>();
   if (!reach(G, cs, G.src, G.sink, true, -1).has(G.sink)) return on;
   G.E.forEach((e, i) => {
     if (!okE(e, cs)) return;
     const Sx = reach(G, cs, G.src, G.sink, true, i),
       T = reach(G, cs, G.sink, G.src, false, i);
-    if ((Sx.has(e.u) && T.has(e.v)) || (e.k !== 'load' && Sx.has(e.v) && T.has(e.u))) on.add(i);
+    if (Sx.has(e.u) && T.has(e.v)) on.set(i, 1);
+    else if (e.k !== 'load' && Sx.has(e.v) && T.has(e.u)) on.set(i, -1);
   });
   return on;
 }
