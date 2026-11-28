@@ -1,0 +1,81 @@
+---
+// 動作原理と式
+const rf = (i: number) => `<a class="rf" href="#thy-r${i}">[${i}]</a>`;
+const mi = (s: string) => `<mi>${s}</mi>`;
+const mn = (s: string) => `<mn>${s}</mn>`;
+const sub = (b: string, s: string) => `<msub>${b}${s}</msub>`;
+const eq = '<mo>=</mo>';
+const fk = sub(mi('f'), mi('k')),
+  f0 = sub(mi('f'), mn('0'));
+type Ref = { for: string; src: string };
+const REFS: readonly Ref[] = [
+  {
+    for: '時計用の音叉形水晶振動子（32.768 kHz）',
+    src: 'Seiko Epson, FC-135 Crystal unit product specification（32.768 kHz、音叉形）',
+  },
+  {
+    for: '発振回路と 14 段の 2 進リプルカウンタを 1 つにした IC',
+    src: 'Nexperia, 74HC4060; 74HCT4060 14-stage binary ripple counter with oscillator, data sheet',
+  },
+  {
+    for: '2 分周と 5 分周を組んだ 10 進のリプルカウンタ',
+    src: 'Nexperia, 74HC390; 74HCT390 Dual decade ripple counter, data sheet',
+  },
+  {
+    for: 'フリップフロップ・カウンタ・同期と非同期',
+    src: 'D. M. Harris, S. L. Harris, Digital Design and Computer Architecture, 2nd ed., Morgan Kaufmann, 2013',
+  },
+  {
+    for: '音の大きさをそろえる A 特性',
+    src: 'IEC 61672-1:2013 Electroacoustics – Sound level meters – Part 1: Specifications',
+  },
+];
+---
+<h3>T フリップフロップで半分にする</h3>
+<p>T フリップフロップは、クロックの立ち上がりのたびに出力を反転します<Fragment set:html={rf(4)} />。出力は 2 回の立ち上がりで 1 周するので、周波数はクロックの半分になります。反転出力を次の段のクロックへつなぐと、段を重ねるごとに半分になります。</p>
+<div class="eqs">
+  <math display="block" set:html={`${fk}${eq}<mfrac>${f0}<msup>${mn('2')}${mi('k')}</msup></mfrac>`} />
+  <math display="block" set:html={`${sub(mi('f'), mn('15'))}${eq}<mfrac>${mn('32768')}<msup>${mn('2')}${mn('15')}</msup></mfrac>${eq}${mn('1')}<mspace width="0.2em"/><mi mathvariant="normal">Hz</mi>`} />
+</div>
+<ul class="tl">
+  <li><math set:html={f0} />: 水晶の周波数（32768 Hz）</li>
+  <li><math set:html={fk} />: <math set:html={mi('k')} /> 段目の出力の周波数</li>
+</ul>
+<p>腕時計や時計の IC は 32768 Hz の音叉形の水晶を使います<Fragment set:html={rf(1)} />。水晶は端子が 2 つの部品で、インバータの入力と出力の間に抵抗器を通してつなぐと、その周波数で発振します。図ではこの発振回路のインバータの出力を 1 段目のクロックにしています。32768 は 2 の 15 乗なので、15 段の 2 分周でちょうど 1 Hz になります。発振回路と 14 段の 2 分周を 1 つにした 74HC4060 のような IC もあります<Fragment set:html={rf(2)} />。</p>
+
+<h3>2 進のカウンタとして見る</h3>
+<p>各段の出力を並べると、水晶が振れた回数を 2 進で数えた値になります。<math set:html={mi('k')} /> 段目の出力は、回数 <math set:html={mi('n')} /> の下から <math set:html={mi('k')} /> 桁目のビットです。</p>
+<div class="eqs">
+  <math display="block" set:html={`${sub(mi('Q'), mi('k'))}${eq}<mrow><mo>⌊</mo><mfrac>${mi('n')}<msup>${mn('2')}<mrow>${mi('k')}<mo>−</mo>${mn('1')}</mrow></msup></mfrac><mo>⌋</mo></mrow><mspace width="0.4em"/><mi>mod</mi><mspace width="0.4em"/>${mn('2')}`} />
+</div>
+<p>どの段も前の段の出力の変化を待ってから変わるので、変化は下の段から上の段へ波のように伝わります（リプルカウンタ）。段ごとに少しずつ遅れるので、すべての段を同じクロックで動かす同期カウンタと分けて呼びます<Fragment set:html={rf(4)} />。</p>
+
+<h3>10 進・6 進・24 進</h3>
+<ul class="tl">
+  <li>秒と分の 1 の位: 10 進のカウンタ。9 の次に 0 へ戻り、10 の位へ桁上げを送る</li>
+  <li>秒と分の 10 の位: 6 進のカウンタ。5 の次に 0 へ戻り、次の桁へ桁上げを送る</li>
+  <li>時: 24 進のカウンタ。23 の次に 0 へ戻る</li>
+</ul>
+<p>10 進のカウンタは 4 段の 2 進のカウンタで 10 を数えたら 0 に戻すか、2 分周と 5 分周をつないで作ります<Fragment set:html={rf(3)} />。</p>
+
+<h3>出典</h3>
+<ol class="refs">
+  {REFS.map((r, i) => (
+    <li id={`thy-r${i + 1}`}>
+      <span class="rf-for">{r.for}</span>
+      <span class="rf-src">{r.src}</span>
+    </li>
+  ))}
+</ol>
+
+<h3>このツールで決めたこと</h3>
+<ul class="tl">
+  <li>T フリップフロップは立ち上がりで反転する記号で描き、反転出力を次の段のクロックへつなぐ。74HC4060 は立ち下がりで反転し、出力をそのまま次の段へつなぐ。どちらも出力の波形は同じ</li>
+  <li>伝わりの遅れは 0 とし、すべての段が同じ瞬間に変わるものとして描く</li>
+  <li>時計は開いたときのこの端末の時刻から始め、速さに合わせて進める</li>
+  <li>波形を出す 6 段は、点滅が 1 秒に 16 回以下の最も速い段から下の 6 段。ただし 15 段目が入るよう、先頭は 10 段目までにする</li>
+  <li>点滅が 1 秒に 6 回より速いランプは半分の明るさで点けたままにする</li>
+  <li>音は、今の速さで 20 Hz 以上の段を正弦波、20 Hz 未満の段を出力の変わり目ごとの短い音（立ち上がり 880 Hz・立ち下がり 660 Hz）で鳴らす。16.5 kHz を超える段は鳴らさない</li>
+  <li>実際の分周の出力は矩形波だが、耳に痛い倍音を避けて正弦波にした。1 段ごとにちょうど 1 オクターブ下がるので、重ねるとオクターブの和音になる</li>
+  <li>正弦波の大きさは A 特性<Fragment set:html={rf(5)} />の逆でおおよそそろえる。低い段は 1 kHz の 1/0.6 倍で止め、12 kHz より上は 12 kHz と同じにする</li>
+</ul>

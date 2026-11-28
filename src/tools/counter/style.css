@@ -1,0 +1,97 @@
+/* カウンタと分周のページ。色は論理ゲートのページと同じ: --ct-on 1 の線とランプ・--ct-on-soft 1 の地・--ct-off 0 の線・--ct-tbg 図の地・--ct-tgrid 図の罫線 */
+/* --ct-plate 7 セグメントの板・--ct-seg-off 消えた区画 */
+:root{--ct-on:#d9480f;--ct-on-soft:#fbe3d3;--ct-off:#8d959c;--ct-tbg:#fff;--ct-tgrid:#e4e7e1;--ct-plate:#22272a;--ct-seg-off:#363c40;--ct-seg-on:#ff6a2b}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--ct-on:#ff8a4c;--ct-on-soft:#4a2a18;--ct-off:#5d666d;--ct-tbg:var(--screen);--ct-tgrid:#1c2428;--ct-plate:#000;--ct-seg-off:#1d2226;--ct-seg-on:#ff8a4c}}
+:root[data-theme="dark"]{--ct-on:#ff8a4c;--ct-on-soft:#4a2a18;--ct-off:#5d666d;--ct-tbg:var(--screen);--ct-tgrid:#1c2428;--ct-plate:#000;--ct-seg-off:#1d2226;--ct-seg-on:#ff8a4c}
+
+/* 並び: 時計の中を幅いっぱい、その下に音としくみ */
+.ct-grid{grid-template-areas:"clk" "snd" "how" "thy"}
+.ct-a-clk{grid-area:clk}.ct-a-snd{grid-area:snd}.ct-a-how{grid-area:how}
+.ct-grid>.a-thy{grid-area:thy}
+.ct-a-snd .ptab{max-width:420px}
+.ct-aux{display:flex;flex-wrap:wrap;gap:6px}
+.ct-sp{margin:0 0 10px;max-width:420px}
+.ct-cap{margin:8px 0 0;font-size:12.5px;color:var(--ink-3)}
+
+/* 図: 白い地。押して操作する図なので中の文字を選択させない */
+.ct-fig{overflow:hidden;padding:8px 6px;border:1px solid var(--line);border-radius:4px;background:var(--ct-tbg);user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.ct-fg{display:block;margin:0 auto;max-width:100%;height:auto}
+.ct-fg .w{fill:none;stroke:var(--ct-off);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.ct-fg .on>.w,.ct-fg .w.on{stroke:var(--ct-on);stroke-width:2.6}
+.ct-fg .blur>.w,.ct-fg .w.blur{stroke:var(--ct-on);stroke-width:2.2;opacity:.5}
+.ct-fg .ah{fill:var(--ct-off)}
+.ct-fg .on>.ah,.ct-fg .blur>.ah{fill:var(--ct-on)}
+.ct-fg .ah.ink{fill:var(--ink-2)}
+.ct-fg .bx{fill:var(--surface);stroke:var(--ink);stroke-width:1.6}
+.ct-fg .bub{fill:var(--surface);stroke:var(--ink);stroke-width:1.4}
+.ct-fg .tri{fill:none;stroke:var(--ink);stroke-width:1.3;stroke-linejoin:round}
+.ct-fg .bt{font:700 15px var(--sans);fill:var(--ink)}
+.ct-fg .lb{font:600 13px var(--sans);fill:var(--ink-2)}
+.ct-fg .v{font:700 15px var(--mono);fill:var(--ink)}
+.ct-fg .v .u{font-size:12px;font-weight:500;fill:var(--ink-3)}
+.ct-fg .sm{font:500 13px var(--mono);fill:var(--ink-3)}
+.ct-fg .smj{font:500 12px var(--sans);fill:var(--ink-3)}
+.ct-fg .ledc{fill:var(--led-off);stroke:var(--ink-3);stroke-width:1.2}
+.ct-fg .ledc.on{fill:var(--ct-on);stroke:var(--ct-on);filter:drop-shadow(0 0 4px var(--ct-on))}
+.ct-fg .ledc.blur{fill:color-mix(in srgb,var(--ct-on) 55%,var(--led-off));stroke:var(--ct-on);filter:drop-shadow(0 0 2px var(--ct-on))}
+.ct-fg .cw{fill:none;stroke:var(--ct-on);stroke-width:1.8;stroke-linejoin:round}
+.ct-fg .cg{stroke:var(--ct-tgrid);stroke-width:1}
+.ct-fg .ca{font:500 12px var(--mono);fill:var(--ink-3)}
+.ct-fg .xtal{fill:var(--surface);stroke:var(--ink);stroke-width:1.6}
+.ct-fg .xp{fill:none;stroke:var(--ink);stroke-width:1.8;stroke-linecap:round}
+.ct-fg .res{fill:var(--surface);stroke:var(--ink);stroke-width:1.4}
+.ct-fg .plate{fill:var(--ct-plate);stroke:var(--line-2);stroke-width:1}
+.ct-fg .seg7{fill:var(--ct-seg-off)}
+.ct-fg .seg7.on{fill:var(--ct-seg-on);filter:drop-shadow(0 0 3px var(--ct-seg-on))}
+.ct-fg .col7{fill:var(--ct-seg-on)}
+.ct-fg .dot{fill:var(--ct-off)}
+.ct-fg .on>.dot{fill:var(--ct-on)}
+.ct-fg .blur>.dot{fill:var(--ct-on);opacity:.5}
+/* ランプの列の段: 押すとその段の波形を出す。押した段とその行を少しの間だけ囲む */
+.ct-fg .ct-st{cursor:pointer}
+.ct-fg .ct-st:focus{outline:none}
+.ct-fg .hit{fill:transparent}
+.ct-fg .ct-st:hover .hit{fill:color-mix(in srgb,var(--ink) 7%,transparent)}
+.ct-fg .ct-st:focus-visible .hit{stroke:var(--focus);stroke-width:2}
+.ct-fg .hl{fill:none;stroke:var(--focus);stroke-width:2;opacity:0;pointer-events:none}
+.ct-fg .hl.on{animation:ct-hl 1.6s ease-out forwards}
+@keyframes ct-hl{0%,40%{opacity:1}100%{opacity:0}}
+@media (prefers-reduced-motion:reduce){.ct-fg .hl.on{animation:ct-hl-rm 1.6s steps(1,end) forwards}@keyframes ct-hl-rm{0%{opacity:1}100%{opacity:0}}}
+.ct-fg .mk{fill:color-mix(in srgb,var(--ct-on) 12%,transparent);stroke:none}
+.ct-fg .hb{fill:url(#ct-hatch);stroke:color-mix(in srgb,var(--ct-on) 60%,transparent);stroke-width:1}
+.ct-fg .hp{stroke:color-mix(in srgb,var(--ct-on) 55%,transparent);stroke-width:2}
+:root:not([data-theme="dark"]) .ct-fg .bx,:root:not([data-theme="dark"]) .ct-fg .xtal,:root:not([data-theme="dark"]) .ct-fg .bub,:root:not([data-theme="dark"]) .ct-fg .res{fill:#fff}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .ct-fg .bx,:root:not([data-theme="light"]) .ct-fg .xtal,:root:not([data-theme="light"]) .ct-fg .bub,:root:not([data-theme="light"]) .ct-fg .res{fill:var(--surface)}}
+
+/* スピーカーのボタン */
+.ct-fg .ct-spk{cursor:pointer}
+.ct-fg .ct-spk rect{fill:var(--surface);stroke:var(--line-2);stroke-width:1.2}
+.ct-fg .ct-spk path{fill:var(--ink-3)}
+.ct-fg .ct-spk path.wv{fill:none;stroke:var(--ink-3);stroke-width:1.4;stroke-linecap:round}
+.ct-fg .ct-spk:hover rect{stroke:var(--ink-3)}
+.ct-fg .ct-spk.on rect{fill:var(--ink);stroke:var(--ink)}
+.ct-fg .ct-spk.on path{fill:var(--surface)}
+.ct-fg .ct-spk.on path.wv{fill:none;stroke:var(--surface)}
+.ct-fg .ct-spk:focus{outline:none}
+.ct-fg .ct-spk:focus-visible rect{stroke:var(--focus);stroke-width:2.4}
+.ct-fg .ct-spk.dis{cursor:default;opacity:.35}
+.ct-fg .ct-spk.dis:hover rect{stroke:var(--line-2)}
+
+/* 凡例 */
+.ct-lgd{margin:8px 0 0}
+.ct-mkw,.ct-hatch,.ct-blur{display:inline-block;flex:none;width:16px;height:10px;margin-right:5px;vertical-align:middle;border-radius:2px}
+.ct-mkw{background:color-mix(in srgb,var(--ct-on) 18%,transparent)}
+.ct-hatch{border:1px solid var(--ct-on);border-radius:0;background:repeating-linear-gradient(45deg,color-mix(in srgb,var(--ct-on) 55%,transparent) 0 2px,transparent 2px 5px)}
+.ct-blur{width:10px;border-radius:50%;background:color-mix(in srgb,var(--ct-on) 55%,var(--led-off));border:1px solid var(--ct-on)}
+
+/* しくみ */
+.ct-mini{display:block;width:100%;max-width:150px;height:auto;margin:0 auto}
+.ct-mini .hw{fill:none;stroke:var(--ink-3);stroke-width:1.8;stroke-linejoin:round}
+.ct-mini .hw.on{stroke:var(--ct-on)}
+.ct-mini .hw.in{stroke:var(--ch2)}
+.ct-mini .hg{fill:none;stroke:var(--line);stroke-width:1}
+.ct-mini .hx{fill:var(--surface);stroke:var(--ink-2);stroke-width:1.4}
+.ct-mini .ha{fill:var(--ink-3)}
+.ct-mini .ha.on{fill:var(--ct-on)}
+.ct-mini .ht{font:600 11px var(--mono);fill:var(--ink-2)}
+.ct-mini .ht.on{fill:var(--ct-on)}

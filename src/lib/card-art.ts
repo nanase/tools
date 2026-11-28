@@ -3616,6 +3616,49 @@ export const ART: Record<string, Art> = {
     }
     return s;
   },
+  /* カウンタと分周: 水晶と 5 個のランプが 2 進で数え、最後のランプから秒の 7 セグメント 2 桁へ。
+     59 → 00 で桁上げの矢印が光る（8 コマ/s、32 コマで 1 周）。止まっている絵は 13（01101）で、乗せて 3 コマで 00 になる */
+  ct(t) {
+    const n = mod(Math.floor(t * 8 + 1e-9) + 13, 32),
+      bit = (i: number): boolean => Math.floor(n / 2 ** i) % 2 === 1;
+    const lamp = (x: number, on: boolean): string => P(on ? 'fa' : 'c', `M${x - 4} 12a4 4 0 1 0 8 0a4 4 0 1 0 -8 0Z`);
+    /* 7 セグメントの 1 桁（左上 x, y、幅 9、高さ 18）。消えている区画は細い残像 */
+    const SEG = ['abcdef', 'bc', 'abdeg', 'abcdg', 'bcfg', 'acdfg', 'acdefg', 'abc', 'abcdefg', 'abcdfg'];
+    const d7 = (x: number, y: number, d: number): string => {
+      const w = 9,
+        h = 18,
+        m = y + h / 2,
+        g = 1.5;
+      const seg: Record<string, string> = {
+        a: `M${x + g} ${y}H${x + w - g}`,
+        g: `M${x + g} ${m}H${x + w - g}`,
+        d: `M${x + g} ${y + h}H${x + w - g}`,
+        f: `M${x} ${y + g}V${m - g}`,
+        b: `M${x + w} ${y + g}V${m - g}`,
+        e: `M${x} ${m + g}V${y + h - g}`,
+        c: `M${x + w} ${m + g}V${y + h - g}`,
+      };
+      let on = '',
+        off = '';
+      for (const k of 'abcdefg') {
+        if (SEG[d].includes(k)) on += seg[k];
+        else off += seg[k];
+      }
+      return P('c t g', off) + P('a w', on);
+    };
+    /* 水晶 */
+    let s = P('c', 'M4 5V19M14 5V19') + P('c', 'M6.5 7h5v10h-5Z') + P('c t', 'M14 12H24.5');
+    const xs = [30, 48, 66, 84, 102];
+    xs.forEach((x, i) => {
+      if (i < 4) s += P('c t', `M${x + 5.5} 12H${xs[i + 1] - 5.5}`);
+      s += lamp(x, bit(i));
+    });
+    /* 最後のランプから秒の 2 桁へ */
+    s += P(bit(4) ? 'a' : 'c t', 'M102 17.5V24H76');
+    const sec = n < 16 ? 59 : 0;
+    s += d7(48, 24, Math.floor(sec / 10)) + d7(62, 24, sec % 10);
+    return s + P(n >= 16 && n < 20 ? 'a' : 'c t', 'M60 46H46');
+  },
   /* SPI: 左のマスタから 3 本の線（SCK・MOSI・MISO）と 3 本の CS。選ぶ機器が順に替わり、選んだ機器を塗る。
      MOSI のビットは右へ、MISO のビットは左へ、4 コマで 1 ビット進む（8 コマ/s、1 台に 16 コマ） */
   spi(t) {
@@ -3987,6 +4030,7 @@ export const LOOP: Record<string, number> = {
   km: 4,
   rl: 4,
   cpu: 72 / 12,
+  ct: 4,
   gb: 2,
   sf: 4,
   wh: 3,

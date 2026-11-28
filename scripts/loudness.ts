@@ -88,6 +88,17 @@ put(['chord-progression-midi-kv525'], {
   dur: 30,
 });
 put(['pendulum-clock'], { click: ['#pc-snd'], dur: 15 });
+/* カウンタと分周: 図の中のスピーカー（SVG）を押す。速さは保存されるので、Home で 1/32768 にしてから 2 の e 乗まで上げる。
+   ×64 で 12 段目（512 Hz の正弦波）、×1 で 13〜15 段目（変わり目の短い音） */
+const ctPress = (e: number, ks: number[]) =>
+  `(async () => { const sc = document.querySelector('#p-sp .sc'); sc.focus();
+  const key = (k) => sc.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true }));
+  key('Home'); for (let i = 0; i < ${e + 15}; i++) key('ArrowRight');
+  await new Promise((ok) => setTimeout(ok, 500));
+  for (const k of ${JSON.stringify(ks)}) document.querySelector('[data-snd="' + k + '"]').dispatchEvent(new MouseEvent('click', { bubbles: true }));
+  return 1; })()`;
+put(['counter'], { js: ctPress(6, [12]), dur: 15 });
+put(['counter-tick'], { page: 'counter', js: ctPress(0, [13, 14, 15]), dur: 15 });
 
 /* ---------- ページへ入れる計測 ---------- */
 const PROC = `${kWeight.toString()}
